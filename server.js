@@ -101,7 +101,7 @@ function handleRequest(request, response) {
     return handleJson(request, response, (body) => saveInteraction(normalizeInteraction(body, politicianId)));
   }
 
-  const requestedPath = url.pathname === "/" ? "/index.html" : url.pathname;
+  const requestedPath = url.pathname === "/" ? "index.html" : url.pathname.replace(/^\/+/, "");
   const filePath = path.normalize(path.join(root, requestedPath));
   if (!filePath.startsWith(root)) {
     response.writeHead(403);
