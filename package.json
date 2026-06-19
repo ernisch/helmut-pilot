@@ -1,9 +1,5 @@
 {
-  "scripts": {
-    "dev": "node server.js",
-    "start": "node server.js",
-    "build": "node --check server.js && node --check lib/helmut/runtime.js && node --check lib/helmut/sources.js && node --check lib/helmut/storage.js && node --check lib/helmut/crawler.js && node --check lib/helmut/scheduler.js && node --check lib/helmut/ai.js"
-  },
+  "scripts": {},
   "dependencies": {},
   "devDependencies": {}
 }
