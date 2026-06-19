@@ -1,24 +1,15 @@
 {
-  "crons": [
+  "version": 2,
+  "builds": [
     {
-      "path": "/api/cron/crawl",
-      "schedule": "0 6 * * *"
-    },
+      "src": "server.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
     {
-      "path": "/api/cron/morning-briefing",
-      "schedule": "0 7 * * *"
-    },
-    {
-      "path": "/api/cron/crawl",
-      "schedule": "0 12 * * *"
-    },
-    {
-      "path": "/api/cron/crawl",
-      "schedule": "0 18 * * *"
-    },
-    {
-      "path": "/api/cron/crawl",
-      "schedule": "0 22 * * *"
+      "src": "/(.*)",
+      "dest": "server.js"
     }
   ]
 }
