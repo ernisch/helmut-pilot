@@ -600,8 +600,8 @@ function fallbackArchivedMentions() {
       id: "archive-cem-ince-freitag-vw",
       sourceName: "der Freitag",
       sourceType: "media",
-      sourceUrl: "",
-      url: "",
+      sourceUrl: "https://www.freitag.de/autoren/sebastian-friedrich/von-der-werkbank-in-den-bundestag-der-vw-arbeiter-cem-ince-tritt-fuer-die-linke-an",
+      url: "https://www.freitag.de/autoren/sebastian-friedrich/von-der-werkbank-in-den-bundestag-der-vw-arbeiter-cem-ince-tritt-fuer-die-linke-an",
       title: "Cem Ince über VW-Arbeiter: Die meisten haben einfach keinen Bock, Waffen zu bauen",
       content: "Älterer gefundener Artikel über Cem Ince. Dieser Treffer bleibt als bisherige Quellenlage sichtbar, auch wenn heute keine neue Erwähnung gefunden wurde.",
       publishedAt: "2026-06-15T09:00:00+02:00",
@@ -612,8 +612,8 @@ function fallbackArchivedMentions() {
       id: "archive-cem-ince-freitag-springer",
       sourceName: "der Freitag",
       sourceType: "media",
-      sourceUrl: "",
-      url: "",
+      sourceUrl: "https://www.freitag.de/autoren/der-freitag/gerichtsurteil-springer-verlag-muss-falschbehauptungen-ueber-cem-ince-unterlassen",
+      url: "https://www.freitag.de/autoren/der-freitag/gerichtsurteil-springer-verlag-muss-falschbehauptungen-ueber-cem-ince-unterlassen",
       title: "Gerichtsurteil: Springer-Verlag muss Falschbehauptungen über Cem Ince unterlassen",
       content: "Älterer gefundener Artikel über Cem Ince. Relevant als Reputations- und Quellenhinweis in der namentlichen Suche.",
       publishedAt: "2026-06-14T11:30:00+02:00",
@@ -648,6 +648,7 @@ function mentionRows(items, options = {}) {
             <span>${escapeHtml(item.sourceName || "Quelle")}</span>
             <h3>${escapeHtml(item.title || "Erwähnung gefunden")}</h3>
             <p>${escapeHtml(twoSentenceSummary(item.content || item.excerpt || "Cem wurde in dieser Quelle erwähnt."))}</p>
+            <small class="mention-timestamp">Gefunden: ${escapeHtml(formatMentionFoundAt(item))}</small>
             ${!href ? `<p class="source-missing">Direktlink noch nicht verfügbar.</p>` : ""}
           </div>
         </div>
@@ -661,6 +662,10 @@ function mentionVisual(item) {
   const imageUrl = item.imageUrl || publisherImageUrl(item);
   if (imageUrl) return `<img class="mention-image" src="${escapeAttribute(imageUrl)}" alt="" loading="lazy" />`;
   return `<div class="mention-avatar" aria-hidden="true">${escapeHtml(profileInitials())}</div>`;
+}
+
+function formatMentionFoundAt(item) {
+  return formatBriefingDate(item.retrievedAt || item.publishedAt || new Date().toISOString());
 }
 
 function publisherImageUrl(item) {

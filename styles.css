@@ -943,6 +943,14 @@ small {
   font-size: 13px;
 }
 
+.mention-timestamp {
+  display: block;
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
 .mention-row.no-link {
   grid-template-columns: 72px minmax(0, 1fr);
 }
