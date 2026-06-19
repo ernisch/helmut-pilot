@@ -546,7 +546,9 @@ function renderCommunicationSection() {
 }
 
 function renderRadarView() {
-  const mentions = profileMentions().slice(0, 4);
+  const allMentions = profileMentions();
+  const freshMentions = allMentions.filter(isFreshUpdate).slice(0, 4);
+  const archivedMentions = allMentions.filter((item) => !isFreshUpdate(item)).slice(0, 6);
   return `
     <section class="page-intro compact">
       <h1 class="${headlineClass("Signale.")}">Signale.</h1>
@@ -554,9 +556,17 @@ function renderRadarView() {
     </section>
 
     <section class="plain-list">
-      <h2>Namentliche Erwähnungen</h2>
-      ${mentionRows(mentions)}
+      <h2>Heute</h2>
+      ${mentionRows(freshMentions)}
     </section>
+
+    ${archivedMentions.length ? `
+      <section class="plain-list">
+        <h2>Bisher gefunden</h2>
+        <p class="section-note">Das sind die bisher gefundenen Artikel über dich.</p>
+        ${mentionRows(archivedMentions, { empty: false })}
+      </section>
+    ` : ""}
   `;
 }
 
@@ -572,8 +582,9 @@ function profileMentions() {
     .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
 }
 
-function mentionRows(items) {
+function mentionRows(items, options = {}) {
   if (!items.length) {
+    if (options.empty === false) return "";
     return `
       <article class="list-row empty-signal">
         <div>
