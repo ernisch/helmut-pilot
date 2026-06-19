@@ -19,8 +19,7 @@ const navItems = [
   ["briefing", "Morgenbriefing"],
   ["office", "Büro"],
   ["topics", "Belege"],
-  ["radar", "Signale"],
-  ["settings", "Einstellungen"]
+  ["radar", "Signale"]
 ];
 
 const mandateFunctions = [
