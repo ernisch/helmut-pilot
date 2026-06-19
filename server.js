@@ -19,7 +19,7 @@ const contentTypes = {
   ".json": "application/json; charset=utf-8"
 };
 
-const server = http.createServer((request, response) => {
+function handleRequest(request, response) {
   const url = new URL(request.url || "/", `http://${request.headers.host || "localhost"}`);
   const politicianId = politicianIdFromUrl(url);
 
@@ -119,11 +119,16 @@ const server = http.createServer((request, response) => {
     response.writeHead(200, { "Content-Type": contentTypes[path.extname(filePath)] || "application/octet-stream" });
     response.end(content);
   });
-});
+}
+module.exports = handleRequest;
 
-server.listen(port, () => {
-  console.log(`Helmut demo running at http://localhost:${port}`);
-});
+if (require.main === module) {
+  const server = http.createServer(handleRequest);
+  server.listen(port, () => {
+    console.log(`Helmut demo running at http://localhost:${port}`);
+  });
+}
+
 
 function sendJson(response, payload) {
   response.writeHead(200, {
