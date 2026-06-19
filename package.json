@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "dev": "node server.js",
+    "build": "node --check app.js && node --check server.js && node --check lib/helmut/runtime.js && node --check lib/helmut/sources.js && node --check lib/helmut/storage.js && node --check lib/helmut/crawler.js && node --check lib/helmut/scheduler.js && node --check lib/helmut/ai.js"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
