@@ -937,6 +937,12 @@ small {
   text-decoration: none;
 }
 
+.source-missing {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .mention-row.no-link {
   grid-template-columns: 72px minmax(0, 1fr);
 }

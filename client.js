@@ -600,8 +600,8 @@ function fallbackArchivedMentions() {
       id: "archive-cem-ince-freitag-vw",
       sourceName: "der Freitag",
       sourceType: "media",
-      sourceUrl: "https://www.google.com/search?q=Cem+Ince+VW-Arbeiter+Die+meisten+haben+einfach+keinen+Bock+Waffen+zu+bauen+der+Freitag",
-      url: "https://www.google.com/search?q=Cem+Ince+VW-Arbeiter+Die+meisten+haben+einfach+keinen+Bock+Waffen+zu+bauen+der+Freitag",
+      sourceUrl: "",
+      url: "",
       title: "Cem Ince über VW-Arbeiter: Die meisten haben einfach keinen Bock, Waffen zu bauen",
       content: "Älterer gefundener Artikel über Cem Ince. Dieser Treffer bleibt als bisherige Quellenlage sichtbar, auch wenn heute keine neue Erwähnung gefunden wurde.",
       publishedAt: "2026-06-15T09:00:00+02:00",
@@ -612,8 +612,8 @@ function fallbackArchivedMentions() {
       id: "archive-cem-ince-freitag-springer",
       sourceName: "der Freitag",
       sourceType: "media",
-      sourceUrl: "https://www.google.com/search?q=Gerichtsurteil+Springer-Verlag+muss+Falschbehauptungen+%C3%BCber+Cem+Ince+unterlassen+der+Freitag",
-      url: "https://www.google.com/search?q=Gerichtsurteil+Springer-Verlag+muss+Falschbehauptungen+%C3%BCber+Cem+Ince+unterlassen+der+Freitag",
+      sourceUrl: "",
+      url: "",
       title: "Gerichtsurteil: Springer-Verlag muss Falschbehauptungen über Cem Ince unterlassen",
       content: "Älterer gefundener Artikel über Cem Ince. Relevant als Reputations- und Quellenhinweis in der namentlichen Suche.",
       publishedAt: "2026-06-14T11:30:00+02:00",
@@ -648,6 +648,7 @@ function mentionRows(items, options = {}) {
             <span>${escapeHtml(item.sourceName || "Quelle")}</span>
             <h3>${escapeHtml(item.title || "Erwähnung gefunden")}</h3>
             <p>${escapeHtml(twoSentenceSummary(item.content || item.excerpt || "Cem wurde in dieser Quelle erwähnt."))}</p>
+            ${!href ? `<p class="source-missing">Direktlink noch nicht verfügbar.</p>` : ""}
           </div>
         </div>
         ${href ? `<a class="secondary-button mention-open" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">Artikel öffnen</a>` : ""}
@@ -1325,7 +1326,16 @@ function primarySource(item) {
 
 function sourceHref(source) {
   const candidates = [source?.itemUrl, source?.url, source?.sourceUrl].filter(Boolean);
-  return candidates.find((url) => /^https?:\/\//i.test(url) && !url.includes("example.local")) || "";
+  return candidates.find((url) => /^https?:\/\//i.test(url) && !url.includes("example.local") && !isGoogleArticleProxy(url)) || "";
+}
+
+function isGoogleArticleProxy(url) {
+  try {
+    const parsed = new URL(String(url || ""));
+    return parsed.hostname.includes("google.");
+  } catch {
+    return false;
+  }
 }
 
 function confidenceLabel(confidence) {
