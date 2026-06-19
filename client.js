@@ -576,7 +576,7 @@ function profileMentions() {
   return [...(briefing.personMentions || []), ...(briefing.rawItems || [])]
     .filter((item) => {
       const text = `${item.title || ""} ${item.content || ""}`.toLowerCase();
-      return isPersonSearchItem(item) || text.includes(fullName.toLowerCase()) || new RegExp(`(^|[^a-zäöüß])${escapeRegExp(lastName.toLowerCase())}($|[^a-zäöüß])`, "i").test(text);
+      return text.includes(fullName.toLowerCase()) || new RegExp(`(^|[^a-zäöüß])${escapeRegExp(lastName.toLowerCase())}($|[^a-zäöüß])`, "i").test(text);
     })
     .filter((item, index, items) => items.findIndex((entry) => (entry.url || entry.id) === (item.url || item.id)) === index)
     .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
@@ -587,11 +587,6 @@ function archivedProfileMentions(allMentions, freshMentions) {
   const archived = allMentions.filter((item) => !freshKeys.has(mentionKey(item)) && !isFreshUpdate(item));
   if (archived.length) return archived;
   return fallbackArchivedMentions().filter((item) => !freshKeys.has(mentionKey(item)));
-}
-
-function isPersonSearchItem(item) {
-  const marker = `${item.sourceId || ""} ${item.sourceType || ""} ${item.sourceName || ""} ${item.category || ""}`.toLowerCase();
-  return marker.includes("person") || marker.includes("news-suche") || marker.includes("deine person") || marker.includes("cem ince monitoring");
 }
 
 function mentionKey(item) {
@@ -605,8 +600,8 @@ function fallbackArchivedMentions() {
       id: "archive-cem-ince-freitag-vw",
       sourceName: "der Freitag",
       sourceType: "media",
-      sourceUrl: "https://www.freitag.de/",
-      url: "https://www.freitag.de/",
+      sourceUrl: "https://www.google.com/search?q=Cem+Ince+VW-Arbeiter+Die+meisten+haben+einfach+keinen+Bock+Waffen+zu+bauen+der+Freitag",
+      url: "https://www.google.com/search?q=Cem+Ince+VW-Arbeiter+Die+meisten+haben+einfach+keinen+Bock+Waffen+zu+bauen+der+Freitag",
       title: "Cem Ince über VW-Arbeiter: Die meisten haben einfach keinen Bock, Waffen zu bauen",
       content: "Älterer gefundener Artikel über Cem Ince. Dieser Treffer bleibt als bisherige Quellenlage sichtbar, auch wenn heute keine neue Erwähnung gefunden wurde.",
       publishedAt: "2026-06-15T09:00:00+02:00",
@@ -617,8 +612,8 @@ function fallbackArchivedMentions() {
       id: "archive-cem-ince-freitag-springer",
       sourceName: "der Freitag",
       sourceType: "media",
-      sourceUrl: "https://www.freitag.de/",
-      url: "https://www.freitag.de/",
+      sourceUrl: "https://www.google.com/search?q=Gerichtsurteil+Springer-Verlag+muss+Falschbehauptungen+%C3%BCber+Cem+Ince+unterlassen+der+Freitag",
+      url: "https://www.google.com/search?q=Gerichtsurteil+Springer-Verlag+muss+Falschbehauptungen+%C3%BCber+Cem+Ince+unterlassen+der+Freitag",
       title: "Gerichtsurteil: Springer-Verlag muss Falschbehauptungen über Cem Ince unterlassen",
       content: "Älterer gefundener Artikel über Cem Ince. Relevant als Reputations- und Quellenhinweis in der namentlichen Suche.",
       publishedAt: "2026-06-14T11:30:00+02:00",
