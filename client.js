@@ -573,6 +573,19 @@ function profileMentions() {
 }
 
 function mentionRows(items) {
+  if (!items.length) {
+    return `
+      <article class="list-row empty-signal">
+        <div>
+          <span>Keine neuen Erwähnungen</span>
+          <h3>Heute wurde keine frische namentliche Erwähnung gefunden.</h3>
+          <p>Helmut prüft die Personensuche beim nächsten Quellenlauf erneut. Du kannst die Suche auch jetzt manuell starten.</p>
+        </div>
+        <button class="secondary-button" type="button" data-run-crawl>Personensuche prüfen</button>
+      </article>
+    `;
+  }
+
   return items.map((item) => {
     const href = sourceHref(item);
     return `
@@ -588,7 +601,7 @@ function mentionRows(items) {
         ${href ? `<a class="secondary-button mention-open" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">Artikel öffnen</a>` : ""}
       </article>
     `;
-  }).join("") || `<p class="empty-state">Heute keine namentliche Erwähnung gefunden.</p>`;
+  }).join("");
 }
 
 function mentionVisual(item) {
@@ -925,6 +938,23 @@ function bindActions() {
       if (!task) return;
       copyText(taskShareText(task), "Auftrag bereit");
       logInteraction({ type: "task_copied", taskId: task.id, signalId: task.sourceSignalId || "" });
+    });
+  });
+
+  app.querySelectorAll("[data-run-crawl]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      button.textContent = "Prüft...";
+      try {
+        await fetch(`/api/crawl/run?politicianId=${encodeURIComponent(activePoliticianId)}`);
+        currentView = "radar";
+        showToast("Personensuche geprüft");
+        await loadBriefing();
+      } catch (error) {
+        console.error(error);
+        showToast("Suche konnte nicht gestartet werden");
+        render();
+      }
     });
   });
 
