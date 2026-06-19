@@ -19,7 +19,14 @@ const navItems = [
   ["briefing", "Morgenbriefing"],
   ["office", "Büro"],
   ["topics", "Belege"],
-  ["radar", "Signale"]
+  ["radar", "Radar"]
+];
+
+const mobileNavItems = [
+  ["briefing", "Heute"],
+  ["radar", "Radar"],
+  ["office", "Büro"],
+  ["settings", "Profil"]
 ];
 
 const mandateFunctions = [
@@ -140,6 +147,7 @@ function render() {
         ${renderTopbar()}
         ${renderView()}
       </main>
+      ${renderMobileDock()}
       ${renderUpdatesPanel()}
     </div>
   `;
@@ -155,6 +163,7 @@ function renderSidebar() {
         <div class="brand">HELMUT</div>
         <nav class="nav-list" aria-label="Hauptnavigation">
           ${navItems.map(([id, label]) => `<button class="${currentView === id ? "active" : ""}" type="button" data-view="${id}">${label}</button>`).join("")}
+          <button class="mobile-menu-settings ${currentView === "settings" ? "active" : ""}" type="button" data-view="settings">Einstellungen</button>
         </nav>
       </div>
       <div class="sidebar-foot">
@@ -163,6 +172,36 @@ function renderSidebar() {
       </div>
     </aside>
   `;
+}
+
+function renderMobileDock() {
+  return `
+    <nav class="mobile-dock" aria-label="Mobile Navigation">
+      ${mobileNavItems.map(([id, label]) => `
+        <button class="${isMobileNavActive(id) ? "active" : ""}" type="button" data-view="${id}">
+          <span>${escapeHtml(mobileNavSymbol(id))}</span>
+          ${escapeHtml(label)}
+          ${mobileNavBadge(id)}
+        </button>
+      `).join("")}
+    </nav>
+  `;
+}
+
+function isMobileNavActive(id) {
+  if (id === "briefing") return currentView === "briefing" || currentView === "detail";
+  if (id === "office") return currentView === "office" || currentView === "communication" || currentView === "tasks";
+  if (id === "settings") return currentView === "settings" || currentView === "profile-settings";
+  return currentView === id;
+}
+
+function mobileNavSymbol(id) {
+  return ({ briefing: "H", radar: "R", office: "B", settings: "P" })[id] || "•";
+}
+
+function mobileNavBadge(id) {
+  const count = id === "radar" ? freshMentionCount() : id === "office" ? openOfficeTaskCount() : 0;
+  return count ? `<i>${count > 9 ? "9+" : count}</i>` : "";
 }
 
 function renderTopbar() {
@@ -247,6 +286,8 @@ function renderBriefingView() {
       ${renderPilotStatus()}
     </section>
 
+    ${renderAgentBriefing()}
+
     ${renderChiefRecommendation()}
 
     ${secondaryDecisions.length ? `
@@ -258,6 +299,52 @@ function renderBriefingView() {
 
     <button class="quiet-link" type="button" data-view="topics">Belege ansehen</button>
   `;
+}
+
+function renderAgentBriefing() {
+  const text = agentBriefingText();
+  return `
+    <section class="agent-briefing" aria-label="Lage von Helmut">
+      <div class="agent-orb" aria-hidden="true"><span></span></div>
+      <div class="agent-copy">
+        <span>Lage von Helmut</span>
+        <p>${escapeHtml(text)}</p>
+        <div class="agent-facts">
+          ${agentFacts().map((fact) => `<b>${escapeHtml(fact)}</b>`).join("")}
+        </div>
+      </div>
+      <div class="agent-actions">
+        <button class="secondary-button" type="button" data-speak="${escapeAttribute(text)}">Lage anhören</button>
+        <button class="primary-button" type="button" data-detail="${escapeHtml(decisions[0]?.id || "")}">Entscheidung öffnen</button>
+      </div>
+    </section>
+  `;
+}
+
+function agentBriefingText() {
+  const firstName = (profile?.fullName || "Cem").split(" ")[0];
+  const top = decisions[0];
+  const mentionCount = freshMentionCount();
+  const riskCount = decisions.filter((decision) => decision.priorityType === "risk").length;
+  const officeCount = openOfficeTaskCount();
+  if (!top) return `Guten Morgen, ${firstName}. Ich habe die Lage geprüft. Für dich liegt heute noch keine klare politische Entscheidung vor.`;
+  const mentionSentence = mentionCount
+    ? `Du wurdest seit dem letzten Quellenlauf ${mentionCount} Mal erwähnt.`
+    : "Heute wurde bislang keine neue namentliche Erwähnung gefunden.";
+  const riskSentence = riskCount ? `${riskCount} Risiko solltest du im Blick behalten.` : "Aktuell sehe ich kein neues persönliches Risiko.";
+  return `Guten Morgen, ${firstName}. Ich habe die politische Lage geprüft. Wichtigstes Thema für dich ist heute ${top.title}. ${mentionSentence} ${riskSentence} ${officeCount ? `${officeCount} Auftrag kannst du direkt ans Büro geben.` : "Du musst heute nichts unnötig delegieren."}`;
+}
+
+function agentFacts() {
+  const sourceStats = briefing.sourceStats || {};
+  const checked = Number(sourceStats.checkedSources || 0);
+  const successful = Number(sourceStats.successfulSources || 0);
+  return [
+    `${decisions.length} Entscheidungen`,
+    `${freshMentionCount()} neue Erwähnungen`,
+    `${openOfficeTaskCount()} Büroaufträge`,
+    checked || successful ? `${successful}/${checked || successful} Quellen` : "Quellen vorbereitet"
+  ];
 }
 
 function renderChiefRecommendation() {
@@ -549,25 +636,50 @@ function renderRadarView() {
   const allMentions = profileMentions();
   const freshMentions = allMentions.filter(isFreshUpdate).slice(0, 4);
   const archivedMentions = archivedProfileMentions(allMentions, freshMentions).slice(0, 6);
+  const chanceItems = decisions.filter((decision) => decision.priorityType === "chance").slice(0, 3);
+  const riskItems = decisions.filter((decision) => decision.priorityType === "risk").slice(0, 3);
+  const watchItems = decisions.filter((decision) => decision.priorityType === "watch").slice(0, 4);
   return `
     <section class="page-intro compact">
-      <h1 class="${headlineClass("Signale.")}">Signale.</h1>
-      <p>Namentliche Erwähnungen über dich. Chancen und Risiken bleiben im Briefing.</p>
+      <h1 class="${headlineClass("Radar.")}">Radar.</h1>
+      <p>Was sich seit deinem letzten Blick bewegt hat. Kompakt, priorisiert, ohne Nachrichtenflut.</p>
     </section>
 
-    <section class="plain-list">
-      <h2>Heute</h2>
-      ${mentionRows(freshMentions)}
+    <section class="radar-groups">
+      ${renderRadarGroup("Neue Erwähnungen", freshMentions.length, mentionRows(freshMentions), true)}
+      ${renderRadarGroup("Politische Chancen", chanceItems.length, radarDecisionRows(chanceItems, "chance"), false)}
+      ${renderRadarGroup("Risiken im Blick", riskItems.length, radarDecisionRows(riskItems, "risk"), false)}
+      ${renderRadarGroup("Nur beobachten", watchItems.length, radarDecisionRows(watchItems, "watch"), false)}
+      ${renderRadarGroup("Bisher gefunden", archivedMentions.length, `<p class="section-note">Das sind die bisher gefundenen Artikel über dich.</p>${mentionRows(archivedMentions, { empty: false })}`, false)}
     </section>
-
-    ${archivedMentions.length ? `
-      <section class="plain-list">
-        <h2>Bisher gefunden</h2>
-        <p class="section-note">Das sind die bisher gefundenen Artikel über dich.</p>
-        ${mentionRows(archivedMentions, { empty: false })}
-      </section>
-    ` : ""}
   `;
+}
+
+function renderRadarGroup(title, count, content, open = false) {
+  return `
+    <details class="radar-group" ${open ? "open" : ""}>
+      <summary>
+        <span>${escapeHtml(title)} (${count})</span>
+        <i></i>
+      </summary>
+      <div class="radar-group-body">
+        ${content || `<p class="empty-state">Keine Einträge.</p>`}
+      </div>
+    </details>
+  `;
+}
+
+function radarDecisionRows(items, type) {
+  return items.map((item) => `
+    <article class="radar-mini ${type}">
+      <div>
+        <span>${escapeHtml(item.priorityLabel)}</span>
+        <h3>${escapeHtml(item.title)}</h3>
+        <p>${escapeHtml(item.summary)}</p>
+      </div>
+      <button class="secondary-button" type="button" data-detail="${escapeHtml(item.id)}">Öffnen</button>
+    </article>
+  `).join("");
 }
 
 function profileMentions() {
@@ -1016,6 +1128,12 @@ function bindActions() {
     });
   });
 
+  app.querySelectorAll("[data-speak]").forEach((button) => {
+    button.addEventListener("click", () => {
+      speakAgentBriefing(button.dataset.speak || agentBriefingText());
+    });
+  });
+
   app.querySelectorAll("[data-generate]").forEach((button) => {
     button.addEventListener("click", async () => {
       const input = app.querySelector("#communicationInput")?.value || `Erstelle ein Statement zu ${selectedDecision().title}.`;
@@ -1061,6 +1179,20 @@ function bindActions() {
       await saveProfileFromForm(profileForm);
     });
   }
+}
+
+function speakAgentBriefing(text) {
+  if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
+    showToast("Sprachausgabe nicht verfügbar");
+    return;
+  }
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "de-DE";
+  utterance.rate = 0.96;
+  utterance.pitch = 0.92;
+  window.speechSynthesis.speak(utterance);
+  showToast("Lage wird vorgelesen");
 }
 
 async function saveProfileFromForm(form) {
@@ -1175,6 +1307,14 @@ function getTaskMetrics() {
     criticalCount: tasks.filter((task) => task.status !== "done" && task.priority === "high").length,
     dueByNoonCount: tasks.filter((task) => task.status !== "done" && new Date(task.dueDate) <= noon).length
   };
+}
+
+function freshMentionCount() {
+  return profileMentions().filter(isFreshUpdate).length;
+}
+
+function openOfficeTaskCount() {
+  return tasks.filter((task) => task.status !== "done").length;
 }
 
 function hasUnreadUpdates() {
