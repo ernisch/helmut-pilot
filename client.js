@@ -858,7 +858,7 @@ function renderOfficeView() {
   return `
     <section class="page-intro compact">
       <h1 class="${headlineClass("Büro.")}">Büro.</h1>
-      <p>Was du jetzt direkt weitergeben oder veröffentlichen kannst.</p>
+      <p>Was du selbst entscheidest und was dein Büro direkt vorbereiten kann.</p>
     </section>
     ${renderOfficeTasksSection()}
     ${renderCommunicationSection()}
@@ -867,25 +867,32 @@ function renderOfficeView() {
 }
 
 function renderOfficeTasksSection() {
-  const officeTasks = tasks.slice(0, 1);
+  const officeTasks = tasks.filter((task) => task.status !== "done").slice(0, 3);
   return `
     <section class="plain-list">
-      <h2>Auftrag fürs Büro</h2>
-      ${officeTasks.map(renderTaskRow).join("") || `<p class="empty-state">Keine Büroaufträge vorbereitet.</p>`}
+      <h2>Büroaufträge</h2>
+      <p class="section-note">Kurz genug zum Weitergeben. Konkret genug, damit jemand anfangen kann.</p>
+      ${officeTasks.map(renderTaskRow).join("") || `<p class="empty-state">Heute musst du nichts ans Büro geben.</p>`}
     </section>
   `;
 }
 
 function renderTaskRow(task) {
+  const mailto = taskMailtoHref(task);
   return `
-    <article class="list-row ${priorityClass(task.priority)}">
+    <article class="list-row office-task ${priorityClass(task.priority)}">
       <div>
-        <span>${escapeHtml(task.assignee)} · bis ${escapeHtml(formatDueDate(task.dueDate))}</span>
+        <span>${escapeHtml(taskPriorityLabel(task.priority))} · ${escapeHtml(task.assignee)} · ${escapeHtml(formatDueDate(task.dueDate))}</span>
         <h3>${escapeHtml(shortTaskTitle(task))}</h3>
         <p>${escapeHtml(shortTaskDescription(task))}</p>
+        <dl class="task-brief">
+          <div><dt>Warum wichtig</dt><dd>${escapeHtml(task.politicalBenefit || "Damit deine Linie vor der Debatte vorbereitet ist.")}</dd></div>
+          <div><dt>Wenn nichts passiert</dt><dd>${escapeHtml(task.riskIfIgnored || "Andere Akteure prägen die Debatte zuerst.")}</dd></div>
+        </dl>
       </div>
       <div class="task-actions">
         <button class="primary-button compact-button" type="button" data-task-copy="${escapeHtml(task.id)}">Auftrag kopieren</button>
+        <a class="secondary-button compact-button" href="${escapeAttribute(mailto)}">E-Mail vorbereiten</a>
       </div>
     </article>
   `;
@@ -904,6 +911,10 @@ function shortTaskTitle(task) {
   if (text.includes("mindestlohn")) return "Mindestlohn-Statement vorbereiten";
   if (text.includes("rente")) return "Rentenlinie vorbereiten";
   return String(task.title || "Büroauftrag vorbereiten").replace(/\s+vorbereiten$/i, "").slice(0, 72);
+}
+
+function taskPriorityLabel(priority) {
+  return ({ high: "Heute", medium: "Vorbereiten", low: "Optional" })[priority] || "Vorbereiten";
 }
 
 function renderTopicsView() {
@@ -2097,18 +2108,26 @@ function notificationItems() {
 function taskShareText(task) {
   const sourceUrl = task.primarySource?.itemUrl || task.primarySource?.url || task.primarySource?.sourceUrl || "";
   return [
-    `Bitte vorbereiten: ${task.title}`,
+    `Büroauftrag: ${shortTaskTitle(task)}`,
     "",
     `Zuständig: ${task.assignee}`,
-    `Bis: ${formatDueDate(task.dueDate)}`,
+    `Frist: ${formatDueDate(task.dueDate)}`,
+    `Priorität: ${taskPriorityLabel(task.priority)}`,
     "",
-    task.description || "Bitte diese Aufgabe aus dem Helmut-Briefing bearbeiten.",
+    "Aufgabe:",
+    shortTaskDescription(task),
     "",
     task.politicalBenefit ? `Warum wichtig: ${task.politicalBenefit}` : "",
     task.riskIfIgnored ? `Wenn nichts passiert: ${task.riskIfIgnored}` : "",
     task.primarySource?.sourceName ? `Quelle: ${task.primarySource.sourceName}` : "",
     sourceUrl ? `Link: ${sourceUrl}` : ""
   ].filter((line) => line !== "").join("\n");
+}
+
+function taskMailtoHref(task) {
+  const subject = `Büroauftrag: ${shortTaskTitle(task)}`;
+  const body = taskShareText(task);
+  return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
 function mergeTasks(defaultTasks, persistedTasks) {
