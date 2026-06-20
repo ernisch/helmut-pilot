@@ -120,7 +120,8 @@ function handleRequest(request, response) {
           status: latestBriefing.status,
           generatedAt: latestBriefing.generatedAt || latestBriefing.date,
           itemCount: Array.isArray(latestBriefing.items) ? latestBriefing.items.length : 0,
-          recommendationCount: Array.isArray(latestBriefing.personalizedRecommendations) ? latestBriefing.personalizedRecommendations.length : 0
+          recommendationCount: Array.isArray(latestBriefing.personalizedRecommendations) ? latestBriefing.personalizedRecommendations.length : 0,
+          quality: latestBriefing.quality || null
         } : null,
         cron: {
           timezone: "Europe/Berlin",

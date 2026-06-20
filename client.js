@@ -1197,6 +1197,8 @@ function renderSettingsView() {
   const opsTone = ops.status === "Bereit" ? "low" : ops.status === "Prüfen" ? "medium" : "high";
   const latestCrawlText = crawl?.createdAt ? formatBriefingDate(crawl.createdAt) : "Noch kein Lauf";
   const latestBriefingText = ops.briefing?.generatedAt ? formatBriefingDate(ops.briefing.generatedAt) : formatBriefingDate(briefing.generatedAt || briefing.date);
+  const quality = ops.briefing?.quality || briefing.quality || null;
+  const qualityTone = quality?.status === "Pitchbereit" ? "low" : quality?.status === "Prüfen" ? "medium" : "high";
   return `
     <section class="page-intro compact">
       <h1 class="${headlineClass("Einstellungen.")}">Einstellungen.</h1>
@@ -1247,6 +1249,13 @@ function renderSettingsView() {
           <p>${escapeHtml(briefing.fallbackReason || `Letztes Briefing ${latestBriefingText}. Live-Daten werden für die Morgenlage verwendet.`)}</p>
         </div>
       </article>
+      <article class="list-row ${qualityTone}">
+        <div>
+          <span>Briefingqualität</span>
+          <h3>${escapeHtml(quality?.status || "Noch nicht geprüft")}</h3>
+          <p>${escapeHtml(qualitySummary(quality))}</p>
+        </div>
+      </article>
       <article class="list-row">
         <div>
           <span>Automatik</span>
@@ -1256,6 +1265,13 @@ function renderSettingsView() {
       </article>
     </section>
   `;
+}
+
+function qualitySummary(quality) {
+  if (!quality) return "Der nächste Briefinglauf prüft Handlung, Mandatsbezug, Quelle, Kommunikation und Aufgabe.";
+  const base = `${quality.score || 0}% vollständig · ${quality.recommendationCount || 0} Empfehlungen geprüft.`;
+  if (quality.issues?.length) return `${base} Offen: ${quality.issues[0]}`;
+  return `${base} Alle Kernfragen sind abgedeckt.`;
 }
 
 function operationsSummary(ops) {
