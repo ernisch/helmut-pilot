@@ -1979,22 +1979,66 @@ small {
 
 .loading-card {
   display: grid;
-  gap: 12px;
+  justify-items: center;
+  gap: 14px;
   width: min(680px, calc(100% - 32px));
   margin: 72px auto;
-  padding: 48px;
+  padding: 56px 48px;
+  text-align: center;
+}
+
+.loading-logo {
+  width: 58px;
+  height: 58px;
+  border-radius: 17px;
+  box-shadow: 0 16px 42px rgba(12, 18, 32, .14);
+  animation: loading-logo-breathe 2.8s ease-in-out infinite;
 }
 
 .loading-card p {
   margin: 0;
   font-weight: 800;
   letter-spacing: .08em;
+  color: var(--accent-ink);
+  opacity: .72;
+  text-transform: uppercase;
 }
 
 .loading-card h1 {
   margin: 0;
   font-size: 42px;
   line-height: 1.1;
+  max-width: 520px;
+}
+
+@keyframes loading-logo-breathe {
+  0%, 100% {
+    transform: scale(1);
+    opacity: .92;
+  }
+  50% {
+    transform: scale(1.035);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .loading-card {
+    width: min(100%, calc(100% - 32px));
+    margin: 52px auto;
+    padding: 42px 26px;
+    border-radius: 22px;
+  }
+
+  .loading-logo {
+    width: 52px;
+    height: 52px;
+    border-radius: 15px;
+  }
+
+  .loading-card h1 {
+    font-size: clamp(30px, 8vw, 40px);
+  }
 }
 
 .toast {

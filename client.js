@@ -2481,7 +2481,8 @@ loadBriefing().catch((error) => {
   console.error(error);
   app.innerHTML = `
     <section class="loading-card">
-      <p>HELMUT</p>
+      <img class="loading-logo" src="assets/helmut_appicon_192.png" alt="" />
+      <p>Helmut</p>
       <h1>Briefing konnte nicht geladen werden.</h1>
       <button class="primary-button" type="button" onclick="window.location.reload()">Neu laden</button>
     </section>
