@@ -339,6 +339,11 @@ async function normalizeInteraction(interaction, politicianId = cemInceProfile.i
     politicianId: interaction.politicianId || profile.id,
     signalId: interaction.signalId || "",
     taskId: interaction.taskId || "",
+    recommendationId: interaction.recommendationId || interaction.recommendation_id || "",
+    politicalItemId: interaction.politicalItemId || interaction.political_item_id || "",
+    topic: String(interaction.topic || "").trim(),
+    title: String(interaction.title || "").trim(),
+    sourceName: String(interaction.sourceName || "").trim(),
     type: interaction.type || "unknown",
     metadata: interaction.metadata || {}
   };

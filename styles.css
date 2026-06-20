@@ -1280,6 +1280,33 @@ small {
   flex-wrap: wrap;
 }
 
+.learning-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(18, 29, 54, .08);
+}
+
+.learning-actions button {
+  appearance: none;
+  padding: 0;
+  color: rgba(18, 29, 54, .58);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid rgba(18, 29, 54, .2);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 560;
+  cursor: pointer;
+}
+
+.learning-actions button:hover {
+  color: var(--accent-ink);
+  border-color: var(--accent-ink);
+}
+
 .plain-list {
   display: grid;
   gap: 16px;

@@ -818,6 +818,10 @@ function renderDetailView() {
           <button class="primary-button" type="button" data-communication="${escapeHtml(decision.id)}">Statement erzeugen</button>
           ${decision.taskTemplate?.id ? `<button class="secondary-button" type="button" data-task-copy="${escapeHtml(decision.taskTemplate.id)}">Auftrag kopieren</button>` : ""}
         </div>
+        <div class="learning-actions" aria-label="Helmut trainieren">
+          <button type="button" data-feedback="important" data-feedback-id="${escapeHtml(decision.id)}">Wichtiger merken</button>
+          <button type="button" data-feedback="ignored" data-feedback-id="${escapeHtml(decision.id)}">Nicht relevant</button>
+        </div>
       </section>
       ${renderSourceBasis(decision)}
     </article>
@@ -1451,7 +1455,7 @@ function bindActions() {
       navOpen = false;
       updatesOpen = false;
       const decision = selectedDecision();
-      logInteraction({ type: "detail_opened", signalId: decision?.signalId || "" });
+      logDecisionInteraction("detail_opened", decision);
       render();
     });
   });
@@ -1469,7 +1473,7 @@ function bindActions() {
     button.addEventListener("click", () => {
       const source = app.querySelector(`[data-copy-source="${button.dataset.copy}"]`);
       copyText(source?.textContent?.trim() || "", "Text bereit");
-      logInteraction({ type: "communication_copied", signalId: selectedDecision()?.signalId || "" });
+      logDecisionInteraction("communication_copied", selectedDecision());
     });
   });
 
@@ -1478,7 +1482,17 @@ function bindActions() {
       const task = tasks.find((entry) => entry.id === button.dataset.taskCopy);
       if (!task) return;
       copyText(taskShareText(task), "Auftrag bereit");
-      logInteraction({ type: "task_copied", taskId: task.id, signalId: task.sourceSignalId || "" });
+      const decision = decisions.find((entry) => entry.signalId === task.sourceSignalId || entry.taskTemplate?.id === task.id);
+      logDecisionInteraction("task_copied", decision, { taskId: task.id });
+    });
+  });
+
+  app.querySelectorAll("[data-feedback]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const decision = decisions.find((entry) => entry.id === button.dataset.feedbackId);
+      const type = button.dataset.feedback === "ignored" ? "ignored" : "marked_important";
+      await logDecisionInteraction(type, decision);
+      showToast(type === "ignored" ? "Helmut merkt: weniger wichtig" : "Helmut merkt: wichtiger");
     });
   });
 
@@ -2052,6 +2066,25 @@ async function logInteraction(interaction) {
   } catch (error) {
     console.warn("Interaction not saved", error);
   }
+}
+
+async function logDecisionInteraction(type, decision, extra = {}) {
+  if (!decision) return;
+  return logInteraction({
+    type,
+    signalId: decision.signalId || decision.id || "",
+    recommendationId: decision.id || "",
+    politicalItemId: decision.topic || decision.title || "",
+    topic: decision.topic || decision.title || "",
+    title: decision.title || "",
+    sourceName: decision.primarySource?.sourceName || decision.sources?.[0]?.sourceName || "",
+    metadata: {
+      priority: decision.priorityLabel || decision.decision || "",
+      score: decision.relevanceScore || decision.finalScore || decision.totalScore || decision.priority || "",
+      ...extra
+    },
+    ...extra
+  });
 }
 
 function sanitizePoliticianId(value) {
