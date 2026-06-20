@@ -871,7 +871,7 @@ function renderOfficeTasksSection() {
   return `
     <section class="plain-list">
       <h2>Büroaufträge</h2>
-      <p class="section-note">Kurz genug zum Weitergeben. Konkret genug, damit jemand anfangen kann.</p>
+      <p class="section-note">Kurz genug fürs Team. Konkret genug, damit sofort gearbeitet werden kann.</p>
       ${officeTasks.map(renderTaskRow).join("") || `<p class="empty-state">Heute musst du nichts ans Büro geben.</p>`}
     </section>
   `;
@@ -886,8 +886,8 @@ function renderTaskRow(task) {
         <h3>${escapeHtml(shortTaskTitle(task))}</h3>
         <p>${escapeHtml(shortTaskDescription(task))}</p>
         <dl class="task-brief">
-          <div><dt>Warum wichtig</dt><dd>${escapeHtml(task.politicalBenefit || "Damit deine Linie vor der Debatte vorbereitet ist.")}</dd></div>
-          <div><dt>Wenn nichts passiert</dt><dd>${escapeHtml(task.riskIfIgnored || "Andere Akteure prägen die Debatte zuerst.")}</dd></div>
+          <div><dt>Warum ins Büro</dt><dd>${escapeHtml(task.politicalBenefit || "Damit die Linie vor der Debatte vorbereitet ist.")}</dd></div>
+          <div><dt>Worauf achten</dt><dd>${escapeHtml(task.riskIfIgnored || "Andere Akteure prägen die Debatte zuerst.")}</dd></div>
         </dl>
       </div>
       <div class="task-actions">
@@ -2118,30 +2118,32 @@ function notificationItems() {
 }
 
 function taskShareText(task) {
-  const sourceUrl = task.primarySource?.itemUrl || task.primarySource?.url || task.primarySource?.sourceUrl || "";
+  const articleSource = taskArticleSource(task);
+  const sourceUrl = articleSource?.url || "";
+  const sourceName = articleSource?.source?.sourceName || task.primarySource?.sourceName || "";
   const questions = taskBriefQuestions(task);
-  const sourceLines = task.primarySource?.sourceName || sourceUrl
+  const sourceLines = sourceName || sourceUrl
     ? [
       "",
       "Quelle:",
-      task.primarySource?.sourceName || "",
-      sourceUrl || ""
+      sourceName || "",
+      sourceUrl ? `Direkter Artikel: ${sourceUrl}` : "Direkter Artikellink liegt in Helmut noch nicht belastbar vor."
     ]
     : [];
   return trimEmailLines([
-    "Hallo,",
+    "Hallo zusammen,",
     "",
-    `bitte bereite mir bis ${formatDueDate(task.dueDate)} eine kurze Einschätzung zu folgendem Thema vor:`,
+    `bitte prüft bis ${formatDueDate(task.dueDate)} kurz folgende Lage:`,
     "",
     shortTaskTitle(task),
     "",
-    "Bitte klären:",
+    "Was wir brauchen:",
     ...questions.map((question) => `- ${question}`),
     "",
-    "Ziel:",
-    task.politicalBenefit || "Ich möchte schnell entscheiden können, ob wir dazu heute sprechfähig sein müssen.",
+    "Ziel für uns:",
+    teamBenefitText(task),
     "",
-    task.riskIfIgnored ? `Hintergrund: ${task.riskIfIgnored}` : "",
+    task.riskIfIgnored ? `Einordnung: ${toTeamRiskText(task.riskIfIgnored)}` : "",
     ...sourceLines,
     "",
     "Danke"
@@ -2150,9 +2152,49 @@ function taskShareText(task) {
 
 function taskMailtoHref(task) {
   if (!isActionableOfficeTask(task)) return "";
-  const subject = `Bitte kurz prüfen: ${shortTaskTitle(task)}`;
+  const subject = `Bürobitte: ${shortTaskTitle(task)}`;
   const body = taskShareText(task);
   return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
+function taskArticleSource(task) {
+  const sources = [task.primarySource, ...(task.sources || [])].filter(Boolean);
+  for (const source of sources) {
+    const url = directArticleHref(source);
+    if (url) return { source, url };
+  }
+  return null;
+}
+
+function directArticleHref(source) {
+  const candidates = [source?.itemUrl, source?.url].filter(Boolean);
+  return candidates.find((url) => {
+    if (!/^https?:\/\//i.test(url) || url.includes("example.local") || isGoogleArticleProxy(url)) return false;
+    if (source?.linkType === "publisher") return false;
+    return !isLikelyPublisherHomepage(url, source);
+  }) || "";
+}
+
+function teamBenefitText(task) {
+  const benefit = String(task.politicalBenefit || "").trim();
+  if (!benefit) return "Wir brauchen eine schnelle Einschätzung, ob Cem dazu heute sprechfähig sein sollte.";
+  return benefit
+    .replace(/^Du kannst\b/i, "Wir können")
+    .replace(/^Du hältst\b/i, "Wir halten")
+    .replace(/\bdeine\b/gi, "unsere")
+    .replace(/\bdu\b/gi, "wir")
+    .replace(/\bdich\b/gi, "uns")
+    .replace(/\bdir\b/gi, "uns");
+}
+
+function toTeamRiskText(value) {
+  return String(value || "")
+    .replace(/^Wenn du nicht reagierst,?\s*/i, "Wenn wir keine Linie vorbereiten, ")
+    .replace(/^Wenn du nicht reagierst\b/i, "Wenn wir keine Linie vorbereiten")
+    .replace(/\bdu\b/gi, "wir")
+    .replace(/\bdich\b/gi, "uns")
+    .replace(/\bdeine\b/gi, "unsere")
+    .replace(/\bdein\b/gi, "unser");
 }
 
 function taskBriefQuestions(task) {
@@ -2161,16 +2203,16 @@ function taskBriefQuestions(task) {
     return [
       "Was genau plant oder kritisiert die Bundesregierung beim Wohngeld?",
       "Welche soziale Wirkung hätte das für Menschen mit geringem Einkommen?",
-      "Gibt es eine klare Linie für Arbeit und Soziales?",
-      "Sollten wir öffentlich reagieren oder nur beobachten?"
+      "Welche Linie passt für Arbeit und Soziales?",
+      "Reaktion heute ja oder nein?"
     ];
   }
   if (text.includes("bürgergeld")) {
     return [
       "Was ist der konkrete Anlass der aktuellen Bürgergeld-Debatte?",
       "Welche Linie passt zu Beratung, guter Arbeit und Armutsvermeidung?",
-      "Welche Angriffe oder Frames sollten wir vermeiden?",
-      "Brauchen wir heute ein kurzes Statement?"
+      "Welche Frames sollten wir vermeiden?",
+      "Brauchen wir heute ein kurzes Statement oder reicht interne Sprechfähigkeit?"
     ];
   }
   if (text.includes("pflege")) {
@@ -2191,9 +2233,9 @@ function taskBriefQuestions(task) {
   }
   return [
     "Was ist der konkrete politische Anlass?",
-    "Warum betrifft das unseren Ausschuss oder unser Profil?",
+    "Warum betrifft das Cems Ausschuss oder Profil?",
     "Welche Linie sollten wir vorbereiten?",
-    "Sollten wir öffentlich reagieren oder intern beobachten?"
+    "Reaktion heute ja oder nein?"
   ];
 }
 
