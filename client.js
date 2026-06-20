@@ -12,6 +12,8 @@ let updatesOpen = false;
 let generatedStatement = "";
 let berlinClockTimer = null;
 let currentSpeechAudio = null;
+let speechAbortController = null;
+let speechState = "idle";
 const updateSeenStorageKey = "helmut:lastSeenUpdatesAt";
 let activePoliticianId = "cem-ince";
 
@@ -628,6 +630,7 @@ function renderRiskItem(item) {
 
 function renderAgentBriefing() {
   const text = agentBriefingText();
+  const speechActive = speechState !== "idle";
   return `
     <section class="agent-briefing" aria-label="Lage von Helmut">
       <div class="agent-orb" aria-hidden="true"><span>H</span></div>
@@ -639,7 +642,7 @@ function renderAgentBriefing() {
         </div>
       </div>
       <div class="agent-actions">
-        <button class="secondary-button" type="button" data-speak="${escapeAttribute(text)}">Lage anhören</button>
+        <button class="secondary-button ${speechActive ? "stop-button" : ""}" type="button" ${speechActive ? "data-stop-speech" : `data-speak="${escapeAttribute(text)}"`}>${speechActive ? "Vorlesen stoppen" : "Lage anhören"}</button>
         <button class="primary-button" type="button" data-detail="${escapeHtml(decisions[0]?.id || "")}">Entscheidung öffnen</button>
       </div>
     </section>
@@ -1502,6 +1505,12 @@ function bindActions() {
     });
   });
 
+  app.querySelectorAll("[data-stop-speech]").forEach((button) => {
+    button.addEventListener("click", () => {
+      stopSpeechPlayback();
+    });
+  });
+
   app.querySelectorAll("[data-generate]").forEach((button) => {
     button.addEventListener("click", async () => {
       const input = app.querySelector("#communicationInput")?.value || `Erstelle ein Statement zu ${selectedDecision().title}.`;
@@ -1584,12 +1593,16 @@ async function speakAgentBriefing(text) {
     return;
   }
   try {
-    stopCurrentSpeechAudio();
+    stopCurrentSpeechAudio(false);
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    speechAbortController = new AbortController();
+    speechState = "loading";
+    render();
     showToast("Helmut bereitet die Stimme vor");
     const response = await fetch(`/api/speech?politicianId=${encodeURIComponent(activePoliticianId)}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      signal: speechAbortController.signal,
       body: JSON.stringify({
         text: cleanText,
         voicePreference: profile?.voicePreference || "male"
@@ -1597,28 +1610,55 @@ async function speakAgentBriefing(text) {
     });
     if (!response.ok) throw new Error("Speech endpoint unavailable");
     const audioUrl = URL.createObjectURL(await response.blob());
+    speechState = "playing";
+    render();
     currentSpeechAudio = new Audio(audioUrl);
     currentSpeechAudio.addEventListener("ended", () => {
       URL.revokeObjectURL(audioUrl);
       currentSpeechAudio = null;
+      speechState = "idle";
+      speechAbortController = null;
+      render();
     }, { once: true });
     currentSpeechAudio.addEventListener("error", () => {
       URL.revokeObjectURL(audioUrl);
       currentSpeechAudio = null;
+      speechState = "idle";
+      speechAbortController = null;
+      render();
     }, { once: true });
     await currentSpeechAudio.play();
     showToast("Helmut liest die Lage vor");
   } catch (error) {
+    if (error?.name === "AbortError") return;
+    speechState = "idle";
+    speechAbortController = null;
+    render();
     console.warn(error);
     fallbackSpeechSynthesis(cleanText);
   }
 }
 
-function stopCurrentSpeechAudio() {
-  if (!currentSpeechAudio) return;
-  currentSpeechAudio.pause();
-  currentSpeechAudio.currentTime = 0;
-  currentSpeechAudio = null;
+function stopSpeechPlayback() {
+  if (speechAbortController) speechAbortController.abort();
+  stopCurrentSpeechAudio(true);
+  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+  speechState = "idle";
+  speechAbortController = null;
+  showToast("Vorlesen gestoppt");
+  render();
+}
+
+function stopCurrentSpeechAudio(resetState = true) {
+  if (currentSpeechAudio) {
+    currentSpeechAudio.pause();
+    currentSpeechAudio.currentTime = 0;
+    currentSpeechAudio = null;
+  }
+  if (resetState) {
+    speechState = "idle";
+    speechAbortController = null;
+  }
 }
 
 function fallbackSpeechSynthesis(text) {
