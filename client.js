@@ -11,6 +11,7 @@ let currentView = "briefing";
 let navOpen = false;
 let updatesOpen = false;
 let generatedStatement = "";
+let selectedCommunicationChannel = "press";
 let berlinClockTimer = null;
 let currentSpeechAudio = null;
 let speechAbortController = null;
@@ -33,6 +34,16 @@ const mobileNavItems = [
   ["radar", "Radar"],
   ["office", "Büro"],
   ["settings", "Profil"]
+];
+
+const communicationChannels = [
+  ["press", "Presse"],
+  ["linkedin", "LinkedIn"],
+  ["x", "X"],
+  ["instagram", "Instagram"],
+  ["committee_question", "Ausschussfrage"],
+  ["citizen_dialogue", "Bürgerdialog"],
+  ["internal_line", "Interne Linie"]
 ];
 
 const mandateFunctions = [
@@ -988,13 +999,29 @@ function uniqueSources(sources) {
 
 function renderCommunicationSection() {
   const decision = selectedDecision();
+  const channelLabel = communicationChannelLabel(selectedCommunicationChannel);
   return `
     <section class="plain-list communication-intro">
-      <h2>Textvorschlag</h2>
+      <h2>Kommunikation</h2>
+      <p class="section-note">${escapeHtml(decision.title)} · ${escapeHtml(decision.recommendedChannel || decision.channel || "Kanal auswählen")}</p>
+      <div class="channel-picker" role="group" aria-label="Kommunikationskanal">
+        ${communicationChannels.map(([id, label]) => `
+          <button class="${id === selectedCommunicationChannel ? "active" : ""}" type="button" data-channel="${escapeHtml(id)}">${escapeHtml(label)}</button>
+        `).join("")}
+      </div>
+      <div class="communication-command">
+        <div>
+          <span>${escapeHtml(channelLabel)}</span>
+          <p>${escapeHtml(communicationChannelHint(selectedCommunicationChannel))}</p>
+        </div>
+        <button class="primary-button compact-button" type="button" data-generate>Text erzeugen</button>
+      </div>
       <div class="strategy-answer">
+        <span>${escapeHtml(channelLabel)}</span>
         <p data-copy-source="generated-statement">${escapeHtml(generatedStatement || decision.statement)}</p>
         <div>
           <button class="primary-button" type="button" data-copy="generated-statement">Text kopieren</button>
+          <button class="secondary-button" type="button" data-generate>Neu formulieren</button>
         </div>
       </div>
     </section>
@@ -1574,8 +1601,17 @@ function bindActions() {
   app.querySelectorAll("[data-communication]").forEach((button) => {
     button.addEventListener("click", () => {
       selectedDecisionId = button.dataset.communication;
+      selectedCommunicationChannel = recommendedInitialChannel(selectedDecision());
       generatedStatement = selectedDecision().statement;
       currentView = "office";
+      render();
+    });
+  });
+
+  app.querySelectorAll("[data-channel]").forEach((button) => {
+    button.addEventListener("click", () => {
+      selectedCommunicationChannel = button.dataset.channel || "press";
+      generatedStatement = channelFallbackStatement(selectedDecision(), selectedCommunicationChannel);
       render();
     });
   });
@@ -1642,16 +1678,16 @@ function bindActions() {
 
   app.querySelectorAll("[data-generate]").forEach((button) => {
     button.addEventListener("click", async () => {
-      const input = app.querySelector("#communicationInput")?.value || `Erstelle ein Statement zu ${selectedDecision().title}.`;
+      const input = `Erstelle ${communicationChannelLabel(selectedCommunicationChannel)} zu ${selectedDecision().title}.`;
       button.disabled = true;
       button.textContent = "Erstellt...";
       try {
-        const result = await generateStatementWithBackend(input, selectedDecision());
+        const result = await generateStatementWithBackend(input, selectedDecision(), selectedCommunicationChannel);
         generatedStatement = result.text;
-        showToast(result.aiEnabled ? "KI-Vorschlag erstellt" : "Regelbasiert erstellt");
+        showToast(result.aiEnabled ? `${result.channelLabel || "Text"} erstellt` : "Regelbasiert erstellt");
       } catch (error) {
         console.error(error);
-        generatedStatement = generateStatement(input, selectedDecision());
+        generatedStatement = generateStatement(input, selectedDecision(), selectedCommunicationChannel);
         showToast("Fallback erstellt");
       }
       render();
@@ -1862,17 +1898,17 @@ function lines(value) {
   return String(value || "").split(/\n|,/).map((entry) => entry.trim()).filter(Boolean);
 }
 
-function generateStatement(input, decision) {
-  if (/kurz|social|linkedin/i.test(input)) return decision.statement;
-  return `${decision.statement} ${decision.action}`;
+function generateStatement(input, decision, channel = selectedCommunicationChannel) {
+  return channelFallbackStatement(decision, channel);
 }
 
-async function generateStatementWithBackend(input, decision) {
+async function generateStatementWithBackend(input, decision, channel = selectedCommunicationChannel) {
   const response = await fetch("/api/communication/generate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       prompt: input,
+      channel,
       decision
     })
   });
@@ -1880,8 +1916,62 @@ async function generateStatementWithBackend(input, decision) {
   const result = await response.json();
   return {
     aiEnabled: Boolean(result.aiEnabled),
-    text: result.text || generateStatement(input, decision)
+    channelLabel: result.channelLabel,
+    text: result.text || generateStatement(input, decision, channel)
   };
+}
+
+function recommendedInitialChannel(decision) {
+  const text = `${decision?.recommendedChannel || ""} ${decision?.actionType || ""} ${decision?.action_type || ""}`.toLowerCase();
+  if (text.includes("linkedin")) return "linkedin";
+  if (text.includes("instagram")) return "instagram";
+  if (text.includes("social") || text.includes("x ") || text.includes("twitter")) return "x";
+  if (text.includes("ausschuss")) return "committee_question";
+  if (text.includes("presse")) return "press";
+  return "press";
+}
+
+function communicationChannelLabel(channel) {
+  return Object.fromEntries(communicationChannels)[channel] || "Presse";
+}
+
+function communicationChannelHint(channel) {
+  return ({
+    press: "Zitierfähig, länger, für Presse oder Website.",
+    linkedin: "Fachlich, sichtbar, mit politischem Gewinn.",
+    x: "Kurz, pointiert, ohne Thread.",
+    instagram: "Nahbarer, weniger Fachsprache.",
+    committee_question: "Präzise Kontrollfragen für den Ausschuss.",
+    citizen_dialogue: "Verständlich für Bürgerinnen und Bürger.",
+    internal_line: "Kurze Linie für Büro und Team."
+  })[channel] || "Kanal passend zur Empfehlung.";
+}
+
+function channelFallbackStatement(decision, channel) {
+  const base = String(decision.statement || decision.suggestedStatement || "Dazu liegt aktuell kein belastbarer Kommunikationsvorschlag vor.").trim();
+  const action = String(decision.action || decision.recommendedAction || decision.recommended_action || "").trim();
+  const topic = decision.title || decision.topic || "dieses Thema";
+  if (channel === "x") return shortenStatement(`${base} ${action}`.trim()).slice(0, 240);
+  if (channel === "committee_question") {
+    return [
+      `Welche konkreten Schritte plant die Bundesregierung bei ${topic}?`,
+      "Wie werden Kontrolle, soziale Wirkung und Umsetzung abgesichert?",
+      "Wann liegen belastbare Zahlen und ein Zeitplan vor?"
+    ].join("\n");
+  }
+  if (channel === "internal_line") {
+    return [
+      `- Thema: ${topic}`,
+      `- Linie: ${base}`,
+      `- Nächster Schritt: ${action || "Position fachlich vorbereiten."}`,
+      "- Quellenbasis prüfen.",
+      "- Freigabe für öffentliche Kommunikation vorbereiten."
+    ].join("\n");
+  }
+  if (channel === "citizen_dialogue") return `${base} Mir ist wichtig, dass Politik hier konkret im Alltag wirkt: bei guter Arbeit, sozialer Sicherheit und fairen Chancen.`;
+  if (channel === "instagram") return `${base}\n\nPolitik muss konkret besser machen, was Menschen jeden Tag betrifft.`;
+  if (channel === "linkedin") return `${base}\n\nEntscheidend ist die konkrete Wirkung: bessere Arbeitsbedingungen, soziale Sicherheit und eine Umsetzung, die kontrollierbar ist.`;
+  return `${base} ${action}`.trim();
 }
 
 function shortenStatement(value) {
