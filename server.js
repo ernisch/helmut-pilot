@@ -35,7 +35,15 @@ function handleRequest(request, response) {
   }
 
   if (url.pathname === "/api/briefing/latest") {
-    return sendJson(response, getLatestOrDemoBriefing(politicianId));
+    return handleAsync(response, async () => {
+      const latest = getLatestOrDemoBriefing(politicianId);
+      if (!shouldRefreshLatestBriefing(latest, url)) return latest;
+      const pipeline = await runDailyPipeline(politicianId);
+      return {
+        ...pipeline.briefing,
+        refreshedOnRead: true
+      };
+    });
   }
 
   if (url.pathname === "/api/briefing/run") {
@@ -141,6 +149,18 @@ function sendJson(response, payload) {
     "Cache-Control": "no-store"
   });
   response.end(JSON.stringify(payload, null, 2));
+}
+
+function shouldRefreshLatestBriefing(briefing, url) {
+  if (url.searchParams.get("refresh") === "0") return false;
+  if (process.env.AUTO_REFRESH_ON_READ === "false") return false;
+  if (!briefing || briefing.status === "Demo") return true;
+  const generatedAt = new Date(briefing.generatedAt || briefing.date || 0);
+  const ageMs = Date.now() - generatedAt.getTime();
+  const hasContent = Number(briefing.items?.length || 0) > 0 || Number(briefing.situationalBriefing?.length || 0) > 0 || Number(briefing.personMentions?.length || 0) > 0;
+  if (!hasContent) return true;
+  if (Number.isNaN(generatedAt.getTime())) return true;
+  return ageMs > 4 * 60 * 60 * 1000;
 }
 
 function handleAsync(response, handler) {
