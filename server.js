@@ -20,8 +20,20 @@ const contentTypes = {
   ".json": "application/json; charset=utf-8"
 };
 
+const canonicalHost = process.env.HELMUT_CANONICAL_HOST || "helmut-pilot.vercel.app";
+
 function handleRequest(request, response) {
   const url = new URL(request.url || "/", `http://${request.headers.host || "localhost"}`);
+  if (shouldRedirectToCanonicalHost(request, url)) {
+    url.protocol = "https:";
+    url.host = canonicalHost;
+    response.writeHead(308, {
+      Location: url.toString(),
+      "Cache-Control": "no-store"
+    });
+    response.end();
+    return;
+  }
   const politicianId = politicianIdFromUrl(url);
 
   if (url.pathname === "/api/profile/demo") {
@@ -150,6 +162,12 @@ function handleRequest(request, response) {
     response.writeHead(200, { "Content-Type": contentTypes[path.extname(filePath)] || "application/octet-stream" });
     response.end(content);
   });
+}
+
+function shouldRedirectToCanonicalHost(request, url) {
+  const host = String(request.headers.host || "").toLowerCase();
+  if (!canonicalHost || host === canonicalHost) return false;
+  return host.includes("onrender.com");
 }
 module.exports = handleRequest;
 
