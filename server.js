@@ -119,7 +119,7 @@ function handleRequest(request, response) {
   if (url.pathname === "/api/briefing/run") {
     return handleAsync(response, async () => {
       const latest = await getLatestBriefing(politicianId);
-      if (!hasAdminBypass(request, url) && isRecent(latest?.generatedAt || latest?.date, manualRunMinIntervalMs)) {
+      if (!isForcedPilotRun(url) && !hasAdminBypass(request, url) && isRecent(latest?.generatedAt || latest?.date, manualRunMinIntervalMs)) {
         return {
           ...latest,
           skippedReason: "Briefing wurde gerade erst erzeugt. Helmut nutzt den letzten Lauf, um unnötige Kosten zu vermeiden."
@@ -132,7 +132,7 @@ function handleRequest(request, response) {
   if (url.pathname === "/api/crawl/run") {
     return handleAsync(response, async () => {
       const latest = await getLatestCrawlRun();
-      if (!hasAdminBypass(request, url) && isRecent(latest?.createdAt, manualRunMinIntervalMs)) {
+      if (!isForcedPilotRun(url) && !hasAdminBypass(request, url) && isRecent(latest?.createdAt, manualRunMinIntervalMs)) {
         return {
           ...latest,
           skippedReason: "Quellen wurden gerade erst geprüft. Helmut nutzt den letzten Lauf, um unnötige Last zu vermeiden."
@@ -146,7 +146,7 @@ function handleRequest(request, response) {
     return handleAsync(response, async () => {
       const latestCrawl = await getLatestCrawlRun();
       const latestBriefing = await getLatestBriefing(politicianId);
-      if (!hasAdminBypass(request, url) && isRecent(latestCrawl?.createdAt, manualRunMinIntervalMs) && isRecent(latestBriefing?.generatedAt || latestBriefing?.date, manualRunMinIntervalMs)) {
+      if (!isForcedPilotRun(url) && !hasAdminBypass(request, url) && isRecent(latestCrawl?.createdAt, manualRunMinIntervalMs) && isRecent(latestBriefing?.generatedAt || latestBriefing?.date, manualRunMinIntervalMs)) {
         return {
           crawl: latestCrawl,
           briefing: latestBriefing,
@@ -797,6 +797,10 @@ function hasAdminBypass(request, url) {
   const header = request.headers.authorization || "";
   const token = header.startsWith("Bearer ") ? header.slice(7) : url.searchParams.get("secret");
   return token === secret;
+}
+
+function isForcedPilotRun(url) {
+  return url.searchParams.get("force") === "1";
 }
 
 function isRecent(value, maxAgeMs) {
