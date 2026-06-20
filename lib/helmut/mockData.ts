@@ -70,6 +70,7 @@ export const cemInceProfile: PoliticianProfile = {
   opponents: ["CDU/CSU", "SPD-Regierungslinie", "FDP", "AfD"],
   localMedia: ["taz", "nd", "regionale Tageszeitung", "Lokalradio"],
   communicationStyle: "Lösungsorientiert",
+  voicePreference: "male",
   noGoTopics: ["unbelegte persönliche Angriffe", "verkürzte Kulturkampf-Frames", "unklare Forderungen ohne Handlungsvorschlag"]
 };
 

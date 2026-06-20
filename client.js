@@ -11,6 +11,7 @@ let navOpen = false;
 let updatesOpen = false;
 let generatedStatement = "";
 let berlinClockTimer = null;
+let currentSpeechAudio = null;
 const updateSeenStorageKey = "helmut:lastSeenUpdatesAt";
 let activePoliticianId = "cem-ince";
 
@@ -74,6 +75,10 @@ const priorityTopics = [
 ];
 
 const communicationStyles = ["Sachlich", "Lösungsorientiert", "Angriffslustig", "Vermittelnd", "Aktivistisch"];
+const voiceOptions = [
+  ["male", "Helmut-Stimme"],
+  ["female", "Frauenstimme"]
+];
 
 async function loadBriefing() {
   const params = new URLSearchParams(window.location.search);
@@ -1272,6 +1277,7 @@ function renderProfileSettingsView() {
           <h2>Wie soll Helmut formulieren?</h2>
         </div>
         ${radioGroup("communicationStyle", profile.communicationStyle || "Lösungsorientiert", communicationStyles)}
+        ${profileValueSelect("voicePreference", "Stimme für Lage anhören", profile.voicePreference || "male", voiceOptions)}
         ${profileArea("mainQuestion", "Leitfrage", profile.mainQuestion)}
         ${profileArea("currentCampaigns", "Aktuelle Kampagnen", profile.currentCampaigns)}
         ${profileArea("publicPositions", "Öffentliche Positionen", profile.publicPositions)}
@@ -1297,6 +1303,17 @@ function profileSelect(name, label, value, options) {
       <span>${escapeHtml(label)}</span>
       <select name="${escapeHtml(name)}">
         ${options.map((option) => `<option value="${escapeAttribute(option)}" ${option === value ? "selected" : ""}>${escapeHtml(option)}</option>`).join("")}
+      </select>
+    </label>
+  `;
+}
+
+function profileValueSelect(name, label, value, options) {
+  return `
+    <label class="profile-field">
+      <span>${escapeHtml(label)}</span>
+      <select name="${escapeHtml(name)}">
+        ${options.map(([optionValue, optionLabel]) => `<option value="${escapeAttribute(optionValue)}" ${optionValue === value ? "selected" : ""}>${escapeHtml(optionLabel)}</option>`).join("")}
       </select>
     </label>
   `;
@@ -1560,7 +1577,51 @@ function bindActions() {
   }
 }
 
-function speakAgentBriefing(text) {
+async function speakAgentBriefing(text) {
+  const cleanText = String(text || "").trim();
+  if (!cleanText) {
+    showToast("Keine Lage zum Vorlesen");
+    return;
+  }
+  try {
+    stopCurrentSpeechAudio();
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    showToast("Helmut bereitet die Stimme vor");
+    const response = await fetch(`/api/speech?politicianId=${encodeURIComponent(activePoliticianId)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text: cleanText,
+        voicePreference: profile?.voicePreference || "male"
+      })
+    });
+    if (!response.ok) throw new Error("Speech endpoint unavailable");
+    const audioUrl = URL.createObjectURL(await response.blob());
+    currentSpeechAudio = new Audio(audioUrl);
+    currentSpeechAudio.addEventListener("ended", () => {
+      URL.revokeObjectURL(audioUrl);
+      currentSpeechAudio = null;
+    }, { once: true });
+    currentSpeechAudio.addEventListener("error", () => {
+      URL.revokeObjectURL(audioUrl);
+      currentSpeechAudio = null;
+    }, { once: true });
+    await currentSpeechAudio.play();
+    showToast("Helmut liest die Lage vor");
+  } catch (error) {
+    console.warn(error);
+    fallbackSpeechSynthesis(cleanText);
+  }
+}
+
+function stopCurrentSpeechAudio() {
+  if (!currentSpeechAudio) return;
+  currentSpeechAudio.pause();
+  currentSpeechAudio.currentTime = 0;
+  currentSpeechAudio = null;
+}
+
+function fallbackSpeechSynthesis(text) {
   if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
     showToast("Sprachausgabe nicht verfügbar");
     return;
@@ -1571,7 +1632,7 @@ function speakAgentBriefing(text) {
   utterance.rate = 0.96;
   utterance.pitch = 0.92;
   window.speechSynthesis.speak(utterance);
-  showToast("Lage wird vorgelesen");
+  showToast("Fallback-Stimme aktiv");
 }
 
 async function saveProfileFromForm(form) {
@@ -1595,6 +1656,7 @@ async function saveProfileFromForm(form) {
     location: data.get("location"),
     mainQuestion: data.get("mainQuestion"),
     communicationStyle: data.get("communicationStyle"),
+    voicePreference: data.get("voicePreference") || "male",
     focusTopics: Object.entries(topicPriorities).filter(([, priority]) => priority >= 3).map(([topic]) => topic),
     topicPriorities,
     monitoringTargets: profile.monitoringTargets,
