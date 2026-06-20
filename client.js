@@ -415,9 +415,10 @@ function renderView() {
 
 function renderBriefingView() {
   const firstName = (profile?.fullName || "Cem").split(" ")[0];
+  const greeting = timeGreeting(firstName);
   return `
     <section class="page-intro executive-intro">
-      <h1 class="${headlineClass(`Guten Morgen, ${firstName}.`)}">Guten Morgen, ${escapeHtml(firstName)}.</h1>
+      <h1 class="${headlineClass(greeting)}">${escapeHtml(greeting)}</h1>
       <p>${escapeHtml(referentFocusSentence())}</p>
       ${renderPilotStatus()}
     </section>
@@ -668,16 +669,17 @@ function renderAgentBriefing() {
 
 function agentBriefingText() {
   const firstName = (profile?.fullName || "Cem").split(" ")[0];
+  const greeting = timeGreeting(firstName);
   const top = decisions[0];
   const mentionCount = freshMentionCount();
   const riskCount = decisions.filter((decision) => decision.priorityType === "risk").length;
   const officeCount = openOfficeTaskCount();
-  if (!top) return `Guten Morgen, ${firstName}. Ich habe die Lage geprüft. Für dich liegt heute noch keine klare politische Entscheidung vor.`;
+  if (!top) return `${greeting} Ich habe die Lage geprüft. Für dich liegt heute noch keine klare politische Entscheidung vor.`;
   const mentionSentence = mentionCount
     ? `Du wurdest seit dem letzten Quellenlauf ${mentionCount} Mal erwähnt.`
     : "Heute wurde bislang keine neue namentliche Erwähnung gefunden.";
   const riskSentence = riskCount ? `${riskCount} Risiko solltest du im Blick behalten.` : "Aktuell sehe ich kein neues persönliches Risiko.";
-  return `Guten Morgen, ${firstName}. Ich habe die politische Lage geprüft. Wichtigstes Thema für dich ist heute ${top.title}. ${mentionSentence} ${riskSentence} ${officeCount ? `${officeCount} Auftrag kannst du direkt ans Büro geben.` : "Du musst heute nichts unnötig delegieren."}`;
+  return `${greeting} Ich habe die politische Lage geprüft. Wichtigstes Thema für dich ist heute ${top.title}. ${mentionSentence} ${riskSentence} ${officeCount ? `${officeCount} Auftrag kannst du direkt ans Büro geben.` : "Du musst heute nichts unnötig delegieren."}`;
 }
 
 function agentFacts() {
@@ -2397,6 +2399,24 @@ function formatBerlinNow() {
     hour: "2-digit",
     minute: "2-digit"
   }).format(new Date());
+}
+
+function berlinHour(date = new Date()) {
+  const hour = new Intl.DateTimeFormat("de-DE", {
+    timeZone: "Europe/Berlin",
+    hour: "2-digit",
+    hourCycle: "h23"
+  }).formatToParts(date).find((part) => part.type === "hour")?.value;
+  return Number(hour || 0);
+}
+
+function timeGreeting(firstName = "Cem") {
+  const hour = berlinHour();
+  const name = firstName || "Cem";
+  if (hour >= 5 && hour < 10) return `Guten Morgen, ${name}.`;
+  if (hour >= 10 && hour < 14) return `Mahlzeit, ${name}.`;
+  if (hour >= 14 && hour < 18) return `Guten Nachmittag, ${name}.`;
+  return `Guten Abend, ${name}.`;
 }
 
 function updateBerlinClock() {

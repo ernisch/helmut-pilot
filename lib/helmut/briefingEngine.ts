@@ -752,7 +752,19 @@ function buildExecutiveSummary(items: BriefingItem[], themeOfDay: BriefingFocus)
   const watch = items.filter((item) => item.decision === "Beobachten");
   const ignore = items.filter((item) => item.decision === "Ignorieren");
 
-  return `Guten Morgen. Heute solltest du auf ${react.length} Themen reagieren, ${watch.length} beobachten und ${ignore.length} ignorieren. Dein wichtigstes Thema ist: ${themeOfDay.title}. ${themeOfDay.recommendedAction}`;
+  return `${currentBerlinGreeting()} Heute solltest du auf ${react.length} Themen reagieren, ${watch.length} beobachten und ${ignore.length} ignorieren. Dein wichtigstes Thema ist: ${themeOfDay.title}. ${themeOfDay.recommendedAction}`;
+}
+
+function currentBerlinGreeting(): string {
+  const hour = Number(new Intl.DateTimeFormat("de-DE", {
+    timeZone: "Europe/Berlin",
+    hour: "2-digit",
+    hourCycle: "h23"
+  }).format(new Date()));
+  if (hour >= 5 && hour < 10) return "Guten Morgen.";
+  if (hour >= 10 && hour < 14) return "Mahlzeit.";
+  if (hour >= 14 && hour < 18) return "Guten Nachmittag.";
+  return "Guten Abend.";
 }
 
 function classify(score: RelevanceScore, signal: PoliticalSignal): BriefingClassification {
