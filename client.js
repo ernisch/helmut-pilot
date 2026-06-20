@@ -75,12 +75,11 @@ const communicationStyles = ["Sachlich", "Lösungsorientiert", "Angriffslustig",
 
 async function loadBriefing() {
   const params = new URLSearchParams(window.location.search);
-  const useDemoBriefing = params.get("demo") === "1";
   activePoliticianId = sanitizePoliticianId(params.get("politicianId") || params.get("profileId") || "cem-ince");
   const scope = `politicianId=${encodeURIComponent(activePoliticianId)}`;
   const [profileResponse, briefingResponse, tasksResponse, aiStatusResponse] = await Promise.all([
     fetch(`/api/profile/demo?${scope}`),
-    fetch(`${useDemoBriefing ? "/api/briefing/demo" : "/api/briefing/latest"}?${scope}`),
+    fetch(`/api/briefing/latest?${scope}`),
     fetch(`/api/tasks?${scope}`),
     fetch("/api/ai/status")
   ]);
@@ -88,8 +87,8 @@ async function loadBriefing() {
   profile = await profileResponse.json();
   briefing = await briefingResponse.json();
   aiStatus = aiStatusResponse.ok ? await aiStatusResponse.json() : { enabled: false, model: "" };
-  briefing.status = briefing.status || (useDemoBriefing ? "Demo" : "Aktuell");
-  briefing.sourceStats = briefing.sourceStats || { checkedSources: 9, successfulSources: 9, failedSources: 0 };
+  briefing.status = briefing.status || "Live";
+  briefing.sourceStats = briefing.sourceStats || { checkedSources: 0, successfulSources: 0, failedSources: 0 };
 
   const persistedTasks = tasksResponse.ok ? await tasksResponse.json() : [];
   tasks = mergeTasks(briefing.tasks || [], persistedTasks);
@@ -389,7 +388,7 @@ function renderPilotStatus() {
   const successful = Number(sourceStats.successfulSources || 0);
   const sourceText = checked || successful ? `${successful}/${checked || successful} Quellen geprüft` : "Quellenbasis vorbereitet";
   const updatedText = formatBriefingDate(briefing.generatedAt || briefing.date || new Date().toISOString());
-  const statusLabel = briefing.status === "Aktuell" ? "Aktuell" : briefing.status === "Veraltet" ? "Veraltet" : "Demo";
+  const statusLabel = briefing.status || "Live";
   return `
     <div class="pilot-status" aria-label="Pilotstatus">
       ${escapeHtml(statusLabel)} · ${escapeHtml(sourceText)} · aktualisiert ${escapeHtml(updatedText)}
@@ -696,43 +695,11 @@ function profileMentions() {
 
 function archivedProfileMentions(allMentions, freshMentions) {
   const freshKeys = new Set(freshMentions.map(mentionKey));
-  const archived = allMentions.filter((item) => !freshKeys.has(mentionKey(item)) && !isFreshUpdate(item));
-  if (archived.length) return archived;
-  return fallbackArchivedMentions().filter((item) => !freshKeys.has(mentionKey(item)));
+  return allMentions.filter((item) => !freshKeys.has(mentionKey(item)) && !isFreshUpdate(item));
 }
 
 function mentionKey(item) {
   return item?.url || item?.sourceUrl || item?.id || item?.title || "";
-}
-
-function fallbackArchivedMentions() {
-  if (!String(profile?.fullName || "").toLowerCase().includes("cem ince")) return [];
-  return [
-    {
-      id: "archive-cem-ince-freitag-vw",
-      sourceName: "der Freitag",
-      sourceType: "media",
-      sourceUrl: "https://www.freitag.de/autoren/sebastian-friedrich/von-der-werkbank-in-den-bundestag-der-vw-arbeiter-cem-ince-tritt-fuer-die-linke-an",
-      url: "https://www.freitag.de/autoren/sebastian-friedrich/von-der-werkbank-in-den-bundestag-der-vw-arbeiter-cem-ince-tritt-fuer-die-linke-an",
-      title: "Cem Ince über VW-Arbeiter: Die meisten haben einfach keinen Bock, Waffen zu bauen",
-      content: "Älterer gefundener Artikel über Cem Ince. Dieser Treffer bleibt als bisherige Quellenlage sichtbar, auch wenn heute keine neue Erwähnung gefunden wurde.",
-      publishedAt: "2026-06-15T09:00:00+02:00",
-      retrievedAt: "2026-06-18T07:55:00+02:00",
-      confidence: "medium"
-    },
-    {
-      id: "archive-cem-ince-freitag-springer",
-      sourceName: "der Freitag",
-      sourceType: "media",
-      sourceUrl: "https://www.freitag.de/autoren/der-freitag/gerichtsurteil-springer-verlag-muss-falschbehauptungen-ueber-cem-ince-unterlassen",
-      url: "https://www.freitag.de/autoren/der-freitag/gerichtsurteil-springer-verlag-muss-falschbehauptungen-ueber-cem-ince-unterlassen",
-      title: "Gerichtsurteil: Springer-Verlag muss Falschbehauptungen über Cem Ince unterlassen",
-      content: "Älterer gefundener Artikel über Cem Ince. Relevant als Reputations- und Quellenhinweis in der namentlichen Suche.",
-      publishedAt: "2026-06-14T11:30:00+02:00",
-      retrievedAt: "2026-06-18T07:55:00+02:00",
-      confidence: "medium"
-    }
-  ];
 }
 
 function mentionRows(items, options = {}) {
