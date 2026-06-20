@@ -24,6 +24,8 @@ const contentTypes = {
 };
 
 const canonicalHost = process.env.HELMUT_CANONICAL_HOST || "helmut-pilot.vercel.app";
+const rateBuckets = new Map();
+const manualRunMinIntervalMs = Number(process.env.HELMUT_MANUAL_RUN_MIN_INTERVAL_MS || 10 * 60 * 1000);
 
 function handleRequest(request, response) {
   const url = new URL(request.url || "/", `http://${request.headers.host || "localhost"}`);
@@ -80,15 +82,44 @@ function handleRequest(request, response) {
   }
 
   if (url.pathname === "/api/briefing/run") {
-    return handleAsync(response, () => runMorningBriefing(politicianId));
+    return handleAsync(response, async () => {
+      const latest = await getLatestBriefing(politicianId);
+      if (!hasAdminBypass(request, url) && isRecent(latest?.generatedAt || latest?.date, manualRunMinIntervalMs)) {
+        return {
+          ...latest,
+          skippedReason: "Briefing wurde gerade erst erzeugt. Helmut nutzt den letzten Lauf, um unnötige Kosten zu vermeiden."
+        };
+      }
+      return runMorningBriefing(politicianId);
+    });
   }
 
   if (url.pathname === "/api/crawl/run") {
-    return handleAsync(response, () => runSourceCrawl(politicianId));
+    return handleAsync(response, async () => {
+      const latest = await getLatestCrawlRun();
+      if (!hasAdminBypass(request, url) && isRecent(latest?.createdAt, manualRunMinIntervalMs)) {
+        return {
+          ...latest,
+          skippedReason: "Quellen wurden gerade erst geprüft. Helmut nutzt den letzten Lauf, um unnötige Last zu vermeiden."
+        };
+      }
+      return runSourceCrawl(politicianId);
+    });
   }
 
   if (url.pathname === "/api/pipeline/run") {
-    return handleAsync(response, () => runDailyPipeline(politicianId));
+    return handleAsync(response, async () => {
+      const latestCrawl = await getLatestCrawlRun();
+      const latestBriefing = await getLatestBriefing(politicianId);
+      if (!hasAdminBypass(request, url) && isRecent(latestCrawl?.createdAt, manualRunMinIntervalMs) && isRecent(latestBriefing?.generatedAt || latestBriefing?.date, manualRunMinIntervalMs)) {
+        return {
+          crawl: latestCrawl,
+          briefing: latestBriefing,
+          skippedReason: "Pipeline wurde gerade erst ausgeführt. Helmut nutzt den letzten Lauf."
+        };
+      }
+      return runDailyPipeline(politicianId);
+    });
   }
 
   if (url.pathname === "/api/ai/status") {
@@ -128,24 +159,32 @@ function handleRequest(request, response) {
           crawlTimes: ["06:00", "12:00", "18:00", "22:00"],
           briefingTimes: ["07:00"],
           note: "Vercel Cron ruft die Routen automatisch auf; die Zeiten sind als Berliner Zielzeiten gedacht."
+        },
+        protection: {
+          manualRunMinIntervalMinutes: Math.round(manualRunMinIntervalMs / 60000),
+          communicationDraftsPerHour: 18,
+          speechRequestsPerHour: 12,
+          adminBypassConfigured: Boolean(process.env.HELMUT_ADMIN_SECRET || process.env.CRON_SECRET)
         }
       };
     });
   }
 
   if (url.pathname === "/api/communication/generate" && request.method === "POST") {
+    if (!allowRate(request, "communication", 18, 60 * 60 * 1000)) return sendTooManyRequests(response, "Zu viele Kommunikationsentwürfe in kurzer Zeit.");
     return handleJson(request, response, async (body) => generateCommunicationDraft({
-      prompt: body.prompt,
+      prompt: String(body.prompt || "").slice(0, 1200),
       decision: body.decision,
       profile: await activeProfile(politicianId)
     }));
   }
 
   if (url.pathname === "/api/speech" && request.method === "POST") {
+    if (!allowRate(request, "speech", 12, 60 * 60 * 1000)) return sendTooManyRequests(response, "Zu viele Vorlese-Anfragen in kurzer Zeit.");
     return handleJson(request, response, async (body) => {
       const profile = await activeProfile(politicianId);
       const speech = await generateSpeechAudio({
-        text: body.text,
+        text: String(body.text || "").slice(0, 1600),
         voicePreference: body.voicePreference || profile.voicePreference
       });
       response.writeHead(200, {
@@ -295,6 +334,49 @@ function operationalStatus(crawl, briefing, storage) {
   if (crawlHealthy && briefingHealthy) return "Bereit";
   if (crawl || briefing) return "Prüfen";
   return "Nicht eingerichtet";
+}
+
+function hasAdminBypass(request, url) {
+  const secret = process.env.HELMUT_ADMIN_SECRET || process.env.CRON_SECRET;
+  if (!secret) return false;
+  const header = request.headers.authorization || "";
+  const token = header.startsWith("Bearer ") ? header.slice(7) : url.searchParams.get("secret");
+  return token === secret;
+}
+
+function isRecent(value, maxAgeMs) {
+  if (!value) return false;
+  const timestamp = new Date(value).getTime();
+  if (Number.isNaN(timestamp)) return false;
+  return Date.now() - timestamp < maxAgeMs;
+}
+
+function allowRate(request, key, limit, windowMs) {
+  if (hasAdminBypass(request, new URL(request.url || "/", `http://${request.headers.host || "localhost"}`))) return true;
+  const now = Date.now();
+  const bucketKey = `${clientKey(request)}:${key}`;
+  const current = (rateBuckets.get(bucketKey) || []).filter((timestamp) => now - timestamp < windowMs);
+  if (current.length >= limit) {
+    rateBuckets.set(bucketKey, current);
+    return false;
+  }
+  current.push(now);
+  rateBuckets.set(bucketKey, current);
+  return true;
+}
+
+function clientKey(request) {
+  return String(
+    request.headers["x-forwarded-for"] ||
+    request.headers["x-real-ip"] ||
+    request.headers["cf-connecting-ip"] ||
+    "local"
+  ).split(",")[0].trim();
+}
+
+function sendTooManyRequests(response, message) {
+  response.writeHead(429, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+  response.end(JSON.stringify({ error: message }, null, 2));
 }
 
 function isBriefingStaleForBerlin(briefing) {

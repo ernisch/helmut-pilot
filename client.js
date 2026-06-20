@@ -1263,6 +1263,13 @@ function renderSettingsView() {
           <p>Morgenbriefing um ${escapeHtml((ops.cron?.briefingTimes || ["07:00"]).join(" · "))} Uhr. Zeiten sind Berliner Zielzeiten.</p>
         </div>
       </article>
+      <article class="list-row low">
+        <div>
+          <span>Schutz</span>
+          <h3>Manuelle Läufe begrenzt</h3>
+          <p>${escapeHtml(protectionSummary(ops.protection))}</p>
+        </div>
+      </article>
     </section>
   `;
 }
@@ -1285,6 +1292,13 @@ function operationsSummary(ops) {
   if (ops.status === "Prüfen") return `${checked || "Keine"} Quellen zuletzt geprüft. Bitte einmal manuell prüfen.`;
   if (ops.storage?.backend !== "supabase") return "Supabase ist nicht aktiv. Für den Pilot muss persistenter Speicher laufen.";
   return "Noch kein vollständiger Quellen- und Briefinglauf gefunden.";
+}
+
+function protectionSummary(protection) {
+  const interval = protection?.manualRunMinIntervalMinutes || 10;
+  const speech = protection?.speechRequestsPerHour || 12;
+  const drafts = protection?.communicationDraftsPerHour || 18;
+  return `Manuelle Crawls und Briefings werden ${interval} Minuten wiederverwendet. Stimme: ${speech}/h, Kommunikation: ${drafts}/h.`;
 }
 
 function renderProfileSettingsView() {
