@@ -138,10 +138,12 @@ function handleRequest(request, response) {
       const latestCrawl = await getLatestCrawlRun();
       const latestBriefing = await getLatestBriefing(politicianId);
       const storage = getStorageStatus();
-      const readiness = pilotReadiness(latestCrawl, latestBriefing, storage);
+      const evidenceQuality = sourceEvidenceQuality(latestBriefing);
+      const readiness = pilotReadiness(latestCrawl, latestBriefing, storage, evidenceQuality);
       return {
         status: operationalStatus(latestCrawl, latestBriefing, storage),
         readiness,
+        evidenceQuality,
         storage,
         ai: {
           enabled: isAiEnabled(),
@@ -338,7 +340,7 @@ function operationalStatus(crawl, briefing, storage) {
   return "Nicht eingerichtet";
 }
 
-function pilotReadiness(crawl, briefing, storage) {
+function pilotReadiness(crawl, briefing, storage, evidenceQuality = null) {
   const issues = [];
   const warnings = [];
   const crawlAge = crawl?.createdAt ? Date.now() - new Date(crawl.createdAt).getTime() : Infinity;
@@ -370,6 +372,8 @@ function pilotReadiness(crawl, briefing, storage) {
     if (quality && qualityScore < 90) issues.push("Die Briefingqualität ist noch nicht pitchbereit.");
   }
   if (!process.env.CRON_SECRET) warnings.push("Cron-Routen sind noch nicht mit CRON_SECRET geschützt.");
+  if (evidenceQuality?.missingLinks > 0) issues.push("Mindestens ein sichtbarer Beleg hat keinen belastbaren Link.");
+  if (evidenceQuality?.publisherFallbacks > 0) warnings.push("Einige Belege öffnen nur die Publisher-Quelle statt den direkten Artikel.");
 
   const ready = issues.length === 0;
   return {
@@ -384,6 +388,84 @@ function pilotReadiness(crawl, briefing, storage) {
 
 function readinessScore(issues, warnings) {
   return Math.max(0, Math.min(100, 100 - issues.length * 25 - warnings.length * 8));
+}
+
+function sourceEvidenceQuality(briefing) {
+  const sources = collectBriefingSources(briefing);
+  const unique = new Map();
+  sources.forEach((source) => {
+    const key = [source.sourceName, source.itemUrl || source.url, source.sourceUrl].filter(Boolean).join("|");
+    if (key) unique.set(key, source);
+  });
+  const entries = Array.from(unique.values());
+  let directLinks = 0;
+  let publisherFallbacks = 0;
+  let missingLinks = 0;
+  const weakSamples = [];
+
+  entries.forEach((source) => {
+    const directUrl = [source.itemUrl, source.url].find(isDirectArticleUrl);
+    const publisherUrl = isUsablePublicUrl(source.sourceUrl) ? source.sourceUrl : "";
+    if (directUrl) {
+      directLinks += 1;
+      return;
+    }
+    if (publisherUrl) {
+      publisherFallbacks += 1;
+      if (weakSamples.length < 3) weakSamples.push(source.sourceName || "Quelle");
+      return;
+    }
+    missingLinks += 1;
+    if (weakSamples.length < 3) weakSamples.push(source.sourceName || "Quelle");
+  });
+
+  return {
+    total: entries.length,
+    directLinks,
+    publisherFallbacks,
+    missingLinks,
+    status: missingLinks ? "Prüfen" : publisherFallbacks ? "Belastbar mit Fallbacks" : "Belastbar",
+    weakSamples
+  };
+}
+
+function collectBriefingSources(briefing) {
+  if (!briefing) return [];
+  return [
+    ...(briefing.items || []).flatMap((item) => item.sources || [item.primarySource].filter(Boolean)),
+    ...(briefing.personalizedRecommendations || []).flatMap((item) => item.sources || [item.primarySource].filter(Boolean)),
+    ...(briefing.personMentions || [])
+  ].filter(Boolean);
+}
+
+function isDirectArticleUrl(value) {
+  return isUsablePublicUrl(value) && !isGoogleArticleProxy(value);
+}
+
+function isUsablePublicUrl(value) {
+  try {
+    const parsed = new URL(String(value || ""));
+    const hostname = parsed.hostname.toLowerCase();
+    const pathname = parsed.pathname.toLowerCase();
+    if (!/^https?:$/i.test(parsed.protocol)) return false;
+    if (hostname.includes("example.local")) return false;
+    if (hostname.includes("google-analytics.com") || hostname.includes("googletagmanager.com")) return false;
+    if (hostname.includes("googleapis.com") || hostname.includes("googleadservices.com") || hostname.includes("googlesyndication.com")) return false;
+    if (hostname.includes("gstatic.com") || hostname.includes("googleusercontent.com")) return false;
+    if (hostname === "w3.org" || hostname === "www.w3.org") return false;
+    return !/\.(js|css|png|jpe?g|webp|gif|svg|ico)(\?|$)/i.test(pathname);
+  } catch {
+    return false;
+  }
+}
+
+function isGoogleArticleProxy(value) {
+  try {
+    const hostname = new URL(String(value || "")).hostname.toLowerCase();
+    return hostname.includes("news.google.") || hostname === "news.google.com";
+  } catch {
+    return false;
+  }
 }
 
 function hasAdminBypass(request, url) {

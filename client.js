@@ -1201,6 +1201,8 @@ function renderSettingsView() {
   const qualityTone = quality?.status === "Pitchbereit" ? "low" : quality?.status === "Prüfen" ? "medium" : "high";
   const readiness = ops.readiness || null;
   const readinessTone = readiness?.ready ? "low" : readiness?.issues?.length ? "high" : "medium";
+  const evidence = ops.evidenceQuality || null;
+  const evidenceTone = evidence?.missingLinks ? "high" : evidence?.publisherFallbacks ? "medium" : "low";
   return `
     <section class="page-intro compact">
       <h1 class="${headlineClass("Einstellungen.")}">Einstellungen.</h1>
@@ -1235,6 +1237,13 @@ function renderSettingsView() {
           <span>Quellen</span>
           <h3>${crawl?.successfulSources || sourceStats.successfulSources || 0} von ${crawl?.checkedSources || sourceStats.checkedSources || 0} geprüft</h3>
           <p>${crawl?.failedSources || sourceStats.failedSources || 0} Fehler · letzter Lauf ${escapeHtml(latestCrawlText)} · ${briefing.personMentions?.length || 0} Namensnennungen.</p>
+        </div>
+      </article>
+      <article class="list-row ${evidenceTone}">
+        <div>
+          <span>Belege</span>
+          <h3>${escapeHtml(evidence?.status || "Wird geprüft")}</h3>
+          <p>${escapeHtml(evidenceSummary(evidence))}</p>
         </div>
       </article>
       <article class="list-row ${storage.backend === "supabase" ? "low" : "medium"}">
@@ -1295,6 +1304,16 @@ function readinessSummary(readiness) {
   if (readiness.issues?.length) return `${readiness.score || 0}% · Nächster Fix: ${readiness.issues[0]}`;
   if (readiness.warnings?.length) return `${readiness.score || 0}% · Pilot möglich. Hinweis: ${readiness.warnings[0]}`;
   return `${readiness.score || 100}% · Speicher, Quellen, Briefing und Qualität sind bereit.`;
+}
+
+function evidenceSummary(evidence) {
+  if (!evidence) return "Helmut prüft, ob sichtbare Empfehlungen belastbare Quellenlinks haben.";
+  const direct = evidence.directLinks || 0;
+  const fallback = evidence.publisherFallbacks || 0;
+  const missing = evidence.missingLinks || 0;
+  if (missing) return `${direct} Direktlinks · ${fallback} Publisher-Fallbacks · ${missing} Belege ohne belastbaren Link.`;
+  if (fallback) return `${direct} Direktlinks · ${fallback} Publisher-Fallbacks. Keine technischen Links.`;
+  return `${direct} Direktlinks. Keine technischen Links.`;
 }
 
 function operationsSummary(ops) {
