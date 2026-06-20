@@ -138,8 +138,10 @@ function handleRequest(request, response) {
       const latestCrawl = await getLatestCrawlRun();
       const latestBriefing = await getLatestBriefing(politicianId);
       const storage = getStorageStatus();
+      const readiness = pilotReadiness(latestCrawl, latestBriefing, storage);
       return {
         status: operationalStatus(latestCrawl, latestBriefing, storage),
+        readiness,
         storage,
         ai: {
           enabled: isAiEnabled(),
@@ -334,6 +336,54 @@ function operationalStatus(crawl, briefing, storage) {
   if (crawlHealthy && briefingHealthy) return "Bereit";
   if (crawl || briefing) return "Prüfen";
   return "Nicht eingerichtet";
+}
+
+function pilotReadiness(crawl, briefing, storage) {
+  const issues = [];
+  const warnings = [];
+  const crawlAge = crawl?.createdAt ? Date.now() - new Date(crawl.createdAt).getTime() : Infinity;
+  const briefingDate = briefing?.generatedAt || briefing?.date;
+  const briefingAge = briefingDate ? Date.now() - new Date(briefingDate).getTime() : Infinity;
+  const checkedSources = Number(crawl?.checkedSources || 0);
+  const failedSources = Number(crawl?.failedSources || 0);
+  const successfulSources = Number(crawl?.successfulSources || 0);
+  const recommendationCount = Array.isArray(briefing?.personalizedRecommendations) ? briefing.personalizedRecommendations.length : 0;
+  const quality = briefing?.quality || null;
+  const qualityScore = Number(quality?.score || 0);
+
+  if (storage.backend !== "supabase") issues.push("Supabase ist nicht aktiv.");
+  if (!isAiEnabled()) warnings.push("OpenAI ist nicht aktiv. Helmut läuft dann weniger persönlich.");
+  if (!crawl) {
+    issues.push("Es gibt noch keinen Quellenlauf.");
+  } else {
+    if (crawlAge > 8 * 60 * 60 * 1000) issues.push("Der letzte Quellenlauf ist älter als 8 Stunden.");
+    if (checkedSources < 50) issues.push("Es werden zu wenige Quellen geprüft.");
+    if (checkedSources && failedSources / checkedSources > 0.1) issues.push("Mehr als 10 Prozent der Quellen sind fehlgeschlagen.");
+    if (successfulSources < 40) warnings.push("Die erfolgreiche Quellenbasis ist noch dünn.");
+  }
+  if (!briefing) {
+    issues.push("Es gibt noch kein Briefing.");
+  } else {
+    if (briefingAge > 18 * 60 * 60 * 1000) issues.push("Das letzte Briefing ist veraltet.");
+    if (recommendationCount < 1) issues.push("Das Briefing enthält keine persönliche Empfehlung.");
+    if (!quality) warnings.push("Die Briefingqualität wurde noch nicht geprüft.");
+    if (quality && qualityScore < 90) issues.push("Die Briefingqualität ist noch nicht pitchbereit.");
+  }
+  if (!process.env.CRON_SECRET) warnings.push("Cron-Routen sind noch nicht mit CRON_SECRET geschützt.");
+
+  const ready = issues.length === 0;
+  return {
+    status: ready ? "Pilotbereit" : "Nicht pilotbereit",
+    ready,
+    score: readinessScore(issues, warnings),
+    issues,
+    warnings,
+    checkedAt: new Date().toISOString()
+  };
+}
+
+function readinessScore(issues, warnings) {
+  return Math.max(0, Math.min(100, 100 - issues.length * 25 - warnings.length * 8));
 }
 
 function hasAdminBypass(request, url) {

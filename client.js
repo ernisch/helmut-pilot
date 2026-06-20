@@ -1199,12 +1199,21 @@ function renderSettingsView() {
   const latestBriefingText = ops.briefing?.generatedAt ? formatBriefingDate(ops.briefing.generatedAt) : formatBriefingDate(briefing.generatedAt || briefing.date);
   const quality = ops.briefing?.quality || briefing.quality || null;
   const qualityTone = quality?.status === "Pitchbereit" ? "low" : quality?.status === "Prüfen" ? "medium" : "high";
+  const readiness = ops.readiness || null;
+  const readinessTone = readiness?.ready ? "low" : readiness?.issues?.length ? "high" : "medium";
   return `
     <section class="page-intro compact">
       <h1 class="${headlineClass("Einstellungen.")}">Einstellungen.</h1>
       <p>Profil, Quellen und Briefings werden persistent über Supabase gespeichert.</p>
     </section>
     <section class="plain-list">
+      <article class="list-row ${readinessTone}">
+        <div>
+          <span>Pilot-Readiness</span>
+          <h3>${escapeHtml(readiness?.status || "Wird geprüft")}</h3>
+          <p>${escapeHtml(readinessSummary(readiness))}</p>
+        </div>
+      </article>
       <article class="list-row ${opsTone}">
         <div>
           <span>Betriebscheck</span>
@@ -1279,6 +1288,13 @@ function qualitySummary(quality) {
   const base = `${quality.score || 0}% vollständig · ${quality.recommendationCount || 0} Empfehlungen geprüft.`;
   if (quality.issues?.length) return `${base} Offen: ${quality.issues[0]}`;
   return `${base} Alle Kernfragen sind abgedeckt.`;
+}
+
+function readinessSummary(readiness) {
+  if (!readiness) return "Helmut prüft Speicher, Quellen, Briefing, Qualität und Automatik.";
+  if (readiness.issues?.length) return `${readiness.score || 0}% · Nächster Fix: ${readiness.issues[0]}`;
+  if (readiness.warnings?.length) return `${readiness.score || 0}% · Pilot möglich. Hinweis: ${readiness.warnings[0]}`;
+  return `${readiness.score || 100}% · Speicher, Quellen, Briefing und Qualität sind bereit.`;
 }
 
 function operationsSummary(ops) {
