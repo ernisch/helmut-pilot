@@ -1,24 +1,8 @@
 {
-  "version": 2,
-  "builds": [
+  "rewrites": [
     {
-      "src": "server.js",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": [
-          "index.html",
-          "client.js",
-          "styles.css",
-          "assets/**",
-          "lib/**"
-        ]
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/server.js"
+      "source": "/api/:path*",
+      "destination": "/api/index"
     }
   ],
   "crons": [
