@@ -355,7 +355,7 @@ function referentFocusSentence() {
 function renderReferentHome() {
   const sections = briefing.homeSections || buildFallbackHomeSections();
   return `
-    ${renderPrioritySection("Ihre wichtigsten Aufgaben", sections.topTasks, renderHomeTask)}
+    ${renderPrioritySection("Deine wichtigsten Aufgaben", sections.topTasks, renderHomeTask)}
     ${renderPrioritySection("Neu seit deinem letzten Besuch", sections.changedSinceLastVisit, renderChangeItem)}
     ${renderPrioritySection("Braucht deine Aufmerksamkeit?", sections.needsAttention, renderAttentionItem)}
     ${renderPrioritySection("Politische Chancen", sections.opportunities, renderOpportunityItem)}
