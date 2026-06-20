@@ -867,7 +867,7 @@ function renderOfficeView() {
 }
 
 function renderOfficeTasksSection() {
-  const officeTasks = tasks.filter((task) => task.status !== "done").slice(0, 3);
+  const officeTasks = tasks.filter(isActionableOfficeTask).slice(0, 3);
   return `
     <section class="plain-list">
       <h2>Büroaufträge</h2>
@@ -892,10 +892,22 @@ function renderTaskRow(task) {
       </div>
       <div class="task-actions">
         <button class="primary-button compact-button" type="button" data-task-copy="${escapeHtml(task.id)}">Auftrag kopieren</button>
-        <a class="secondary-button compact-button" href="${escapeAttribute(mailto)}">E-Mail vorbereiten</a>
+        ${mailto ? `<a class="secondary-button compact-button" href="${escapeAttribute(mailto)}">E-Mail vorbereiten</a>` : ""}
       </div>
     </article>
   `;
+}
+
+function isActionableOfficeTask(task) {
+  if (!task || task.status === "done") return false;
+  const text = `${task.title || ""} ${task.description || ""} ${task.riskIfIgnored || ""}`.toLowerCase();
+  return !(
+    text.includes("ignoriere das thema") ||
+    text.includes("keine aktion") ||
+    text.includes("kein schaden") ||
+    text.includes("keine öffentliche kommunikation") ||
+    text.includes("keine oeffentliche kommunikation")
+  );
 }
 
 function shortTaskDescription(task) {
@@ -2107,27 +2119,89 @@ function notificationItems() {
 
 function taskShareText(task) {
   const sourceUrl = task.primarySource?.itemUrl || task.primarySource?.url || task.primarySource?.sourceUrl || "";
-  return [
-    `Büroauftrag: ${shortTaskTitle(task)}`,
+  const questions = taskBriefQuestions(task);
+  const sourceLines = task.primarySource?.sourceName || sourceUrl
+    ? [
+      "",
+      "Quelle:",
+      task.primarySource?.sourceName || "",
+      sourceUrl || ""
+    ]
+    : [];
+  return trimEmailLines([
+    "Hallo,",
     "",
-    `Zuständig: ${task.assignee}`,
-    `Frist: ${formatDueDate(task.dueDate)}`,
-    `Priorität: ${taskPriorityLabel(task.priority)}`,
+    `bitte bereite mir bis ${formatDueDate(task.dueDate)} eine kurze Einschätzung zu folgendem Thema vor:`,
     "",
-    "Aufgabe:",
-    shortTaskDescription(task),
+    shortTaskTitle(task),
     "",
-    task.politicalBenefit ? `Warum wichtig: ${task.politicalBenefit}` : "",
-    task.riskIfIgnored ? `Wenn nichts passiert: ${task.riskIfIgnored}` : "",
-    task.primarySource?.sourceName ? `Quelle: ${task.primarySource.sourceName}` : "",
-    sourceUrl ? `Link: ${sourceUrl}` : ""
-  ].filter((line) => line !== "").join("\n");
+    "Bitte klären:",
+    ...questions.map((question) => `- ${question}`),
+    "",
+    "Ziel:",
+    task.politicalBenefit || "Ich möchte schnell entscheiden können, ob wir dazu heute sprechfähig sein müssen.",
+    "",
+    task.riskIfIgnored ? `Hintergrund: ${task.riskIfIgnored}` : "",
+    ...sourceLines,
+    "",
+    "Danke"
+  ]).join("\n");
 }
 
 function taskMailtoHref(task) {
-  const subject = `Büroauftrag: ${shortTaskTitle(task)}`;
+  if (!isActionableOfficeTask(task)) return "";
+  const subject = `Bitte kurz prüfen: ${shortTaskTitle(task)}`;
   const body = taskShareText(task);
   return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
+function taskBriefQuestions(task) {
+  const text = `${task.title || ""} ${task.description || ""}`.toLowerCase();
+  if (text.includes("wohngeld")) {
+    return [
+      "Was genau plant oder kritisiert die Bundesregierung beim Wohngeld?",
+      "Welche soziale Wirkung hätte das für Menschen mit geringem Einkommen?",
+      "Gibt es eine klare Linie für Arbeit und Soziales?",
+      "Sollten wir öffentlich reagieren oder nur beobachten?"
+    ];
+  }
+  if (text.includes("bürgergeld")) {
+    return [
+      "Was ist der konkrete Anlass der aktuellen Bürgergeld-Debatte?",
+      "Welche Linie passt zu Beratung, guter Arbeit und Armutsvermeidung?",
+      "Welche Angriffe oder Frames sollten wir vermeiden?",
+      "Brauchen wir heute ein kurzes Statement?"
+    ];
+  }
+  if (text.includes("pflege")) {
+    return [
+      "Was ist die neue Entwicklung in der Pflege?",
+      "Welche Auswirkungen hat das auf Beschäftigte und soziale Sicherung?",
+      "Welche Frage sollten wir fachlich stellen?",
+      "Ist eine öffentliche Reaktion sinnvoll?"
+    ];
+  }
+  if (text.includes("arbeitszeit")) {
+    return [
+      "Was ist der konkrete Vorschlag oder Kritikpunkt beim Arbeitszeitgesetz?",
+      "Welche Schutzrechte wären betroffen?",
+      "Welche Linie passt für Arbeit und Soziales?",
+      "Welche Formulierung ist pressefähig?"
+    ];
+  }
+  return [
+    "Was ist der konkrete politische Anlass?",
+    "Warum betrifft das unseren Ausschuss oder unser Profil?",
+    "Welche Linie sollten wir vorbereiten?",
+    "Sollten wir öffentlich reagieren oder intern beobachten?"
+  ];
+}
+
+function trimEmailLines(lines) {
+  const cleaned = lines.map((line) => line == null ? "" : String(line).trimEnd());
+  while (cleaned[0] === "") cleaned.shift();
+  while (cleaned[cleaned.length - 1] === "") cleaned.pop();
+  return cleaned;
 }
 
 function mergeTasks(defaultTasks, persistedTasks) {
