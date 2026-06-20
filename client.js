@@ -392,7 +392,7 @@ function renderView() {
 function renderBriefingView() {
   const firstName = (profile?.fullName || "Cem").split(" ")[0];
   return `
-    <section class="page-intro">
+    <section class="page-intro executive-intro">
       <h1 class="${headlineClass(`Guten Morgen, ${firstName}.`)}">Guten Morgen, ${escapeHtml(firstName)}.</h1>
       <p>${escapeHtml(referentFocusSentence())}</p>
       ${renderPilotStatus()}
@@ -400,7 +400,8 @@ function renderBriefingView() {
 
     ${renderAgentBriefing()}
 
-    ${renderReferentHome()}
+    ${renderDecisionConsole()}
+    ${renderDailyFlow()}
     ${!decisions.length ? renderSituationalBriefing() : ""}
 
     <button class="quiet-link" type="button" data-view="topics">Belege ansehen</button>
@@ -421,6 +422,89 @@ function renderReferentHome() {
     ${renderPrioritySection("Braucht deine Aufmerksamkeit?", sections.needsAttention, renderAttentionItem)}
     ${renderPrioritySection("Politische Chancen", sections.opportunities, renderOpportunityItem)}
     ${renderPrioritySection("Politische Risiken", sections.risks, renderRiskItem)}
+  `;
+}
+
+function renderDecisionConsole() {
+  const top = decisions[0];
+  if (!top) {
+    return `
+      <section class="decision-console empty">
+        <div class="decision-ribbon">
+          <span>Chef-Empfehlung</span>
+          <b>Kein Handlungsdruck</b>
+        </div>
+        <h2>Heute keine politische Entscheidung erzwingen.</h2>
+        <p>Die Quellen wurden geprüft. Wenn keine belastbare Lage entsteht, hält Helmut die Fläche bewusst ruhig.</p>
+        <button class="secondary-button" type="button" data-run-crawl>Quellen erneut prüfen</button>
+      </section>
+    `;
+  }
+  return `
+    <section class="decision-console ${escapeAttribute(top.priorityType || "action")}">
+      <div class="decision-ribbon">
+        <span>Chef-Empfehlung</span>
+        <b>${escapeHtml(top.priorityLabel || top.decision || "Relevant")}</b>
+      </div>
+      <h2>${escapeHtml(top.title)}</h2>
+      <p>${escapeHtml(chiefRecommendationText(top))}</p>
+      <div class="decision-meta">
+        <span>${escapeHtml(top.estimatedTime || "10 Min.")}</span>
+        <span>${escapeHtml(top.primarySource?.sourceName || top.sourceName || "Quelle geprüft")}</span>
+        <span>${escapeHtml(top.confidence ? `Sicherheit ${confidenceLabel(top.confidence)}` : "Sicherheit mittel")}</span>
+      </div>
+      <div class="decision-actions">
+        <button class="primary-button" type="button" data-detail="${escapeHtml(top.id)}">Linie lesen</button>
+        <button class="secondary-button" type="button" data-communication="${escapeHtml(top.id)}">Antwort vorbereiten</button>
+      </div>
+    </section>
+  `;
+}
+
+function renderDailyFlow() {
+  const flow = dailyFlowItems();
+  if (!flow.length) return "";
+  return `
+    <section class="daily-flow" aria-label="Tagesverlauf">
+      <div class="flow-head">
+        <span>Tageslage</span>
+        <h2>Was deine Aufmerksamkeit verdient</h2>
+      </div>
+      <div class="flow-list">
+        ${flow.map(renderFlowRow).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function dailyFlowItems() {
+  const sections = hasHomeSectionContent(briefing.homeSections) ? briefing.homeSections : buildFallbackHomeSections();
+  const rows = [];
+  const top = normalizeHomeItem((sections.topTasks || [])[0] || decisions[0]);
+  const changed = normalizeHomeItem((sections.changedSinceLastVisit || []).find((item) => normalizeHomeItem(item)?.id !== top?.id));
+  const attention = normalizeHomeItem((sections.needsAttention || []).find((item) => normalizeHomeItem(item)?.id !== top?.id && normalizeHomeItem(item)?.id !== changed?.id));
+  const chance = normalizeHomeItem((sections.opportunities || []).find((item) => normalizeHomeItem(item)?.id !== top?.id));
+  const risk = normalizeHomeItem((sections.risks || []).find((item) => normalizeHomeItem(item)?.id !== top?.id));
+  if (top) rows.push({ label: "Jetzt", tone: top.priorityType || "action", item: top, text: top.action || top.summary, cta: "Öffnen" });
+  if (changed) rows.push({ label: "Neu", tone: "change", item: changed, text: changed.changeReason || changed.summary, cta: "Einordnung" });
+  if (attention) rows.push({ label: "Im Blick", tone: attention.priorityType || "watch", item: attention, text: attention.action || attention.summary, cta: "Details" });
+  if (chance) rows.push({ label: "Chance", tone: "chance", item: chance, text: chance.opportunity || chance.summary, cta: "Antwort" });
+  if (risk) rows.push({ label: "Risiko", tone: "risk", item: risk, text: risk.inaction || risk.summary, cta: "Vorbereiten" });
+  return rows.slice(0, 4);
+}
+
+function renderFlowRow(row) {
+  const actionAttribute = row.label === "Chance" ? "data-communication" : "data-detail";
+  return `
+    <article class="flow-row ${escapeAttribute(row.tone)}">
+      <div class="flow-marker" aria-hidden="true"></div>
+      <div class="flow-copy">
+        <span>${escapeHtml(row.label)}</span>
+        <h3>${escapeHtml(row.item.title)}</h3>
+        <p>${escapeHtml(row.text || "Keine weitere Aktion nötig.")}</p>
+      </div>
+      <button class="text-button flow-action" type="button" ${actionAttribute}="${escapeHtml(row.item.id)}">${escapeHtml(row.cta)}</button>
+    </article>
   `;
 }
 
@@ -541,7 +625,7 @@ function renderAgentBriefing() {
   const text = agentBriefingText();
   return `
     <section class="agent-briefing" aria-label="Lage von Helmut">
-      <div class="agent-orb" aria-hidden="true"><span></span></div>
+      <div class="agent-orb" aria-hidden="true"><span>H</span></div>
       <div class="agent-copy">
         <span>Lage von Helmut</span>
         <p>${escapeHtml(text)}</p>
