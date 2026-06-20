@@ -39,6 +39,41 @@ function handleRequest(request, response) {
     response.end();
     return;
   }
+
+  if (url.pathname === "/api/pilot/unlock" && request.method === "POST") {
+    return handleJson(request, response, async (body) => {
+      if (!isPilotAccessConfigured()) return { ok: true, configured: false };
+      const submittedSecret = String(body.secret || "").trim();
+      if (!submittedSecret || submittedSecret !== process.env.PILOT_SECRET) {
+        response.writeHead(401, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+        response.end(JSON.stringify({ error: "Zugangscode nicht korrekt." }, null, 2));
+        return null;
+      }
+      response.writeHead(200, {
+        "Content-Type": "application/json; charset=utf-8",
+        "Cache-Control": "no-store",
+        "Set-Cookie": pilotCookieHeader(process.env.PILOT_SECRET, 30 * 24 * 60 * 60)
+      });
+      response.end(JSON.stringify({ ok: true }, null, 2));
+      return null;
+    });
+  }
+
+  if (url.pathname === "/api/pilot/logout" && request.method === "POST") {
+    response.writeHead(200, {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store",
+      "Set-Cookie": pilotCookieHeader("", 0)
+    });
+    response.end(JSON.stringify({ ok: true }, null, 2));
+    return;
+  }
+
+  if (!hasPilotAccess(request, url)) {
+    if (wantsHtml(request, url)) return sendPilotUnlockPage(response, url);
+    return sendPilotUnauthorized(response);
+  }
+
   const politicianId = politicianIdFromUrl(url);
 
   if (url.pathname === "/api/profile/demo") {
@@ -168,7 +203,8 @@ function handleRequest(request, response) {
           manualRunMinIntervalMinutes: Math.round(manualRunMinIntervalMs / 60000),
           communicationDraftsPerHour: 18,
           speechRequestsPerHour: 12,
-          adminBypassConfigured: Boolean(process.env.HELMUT_ADMIN_SECRET || process.env.CRON_SECRET)
+          adminBypassConfigured: Boolean(process.env.HELMUT_ADMIN_SECRET || process.env.CRON_SECRET),
+          pilotAccessConfigured: isPilotAccessConfigured()
         }
       };
     });
@@ -272,6 +308,227 @@ function shouldRedirectToCanonicalHost(request, url) {
   const host = String(request.headers.host || "").toLowerCase();
   if (!canonicalHost || host === canonicalHost) return false;
   return host.includes("onrender.com");
+}
+
+function hasPilotAccess(request, url) {
+  if (!isPilotAccessConfigured()) return true;
+  if (request.method === "OPTIONS") return true;
+  if (isPublicAssetPath(url.pathname)) return true;
+  if (url.pathname.startsWith("/api/cron/")) return true;
+  if (hasAdminBypass(request, url)) return true;
+
+  const pilotSecret = process.env.PILOT_SECRET;
+  if (url.searchParams.get("pilot") === pilotSecret) return true;
+
+  const auth = parseAuthorization(request.headers.authorization || "");
+  if (auth.bearer && auth.bearer === pilotSecret) return true;
+  if (auth.basic && auth.basic.password === pilotSecret) return true;
+
+  return readCookie(request, "helmut_pilot") === pilotSecret;
+}
+
+function isPilotAccessConfigured() {
+  return Boolean(String(process.env.PILOT_SECRET || "").trim());
+}
+
+function parseAuthorization(header) {
+  const value = String(header || "");
+  if (value.startsWith("Bearer ")) return { bearer: value.slice(7).trim() };
+  if (!value.startsWith("Basic ")) return {};
+  try {
+    const decoded = Buffer.from(value.slice(6), "base64").toString("utf8");
+    const separator = decoded.indexOf(":");
+    return {
+      basic: {
+        username: separator >= 0 ? decoded.slice(0, separator) : "",
+        password: separator >= 0 ? decoded.slice(separator + 1) : decoded
+      }
+    };
+  } catch {
+    return {};
+  }
+}
+
+function isPublicAssetPath(pathname) {
+  return pathname.startsWith("/assets/")
+    || pathname === "/favicon.ico"
+    || pathname === "/site.webmanifest"
+    || pathname === "/robots.txt";
+}
+
+function wantsHtml(request, url) {
+  if (request.method !== "GET") return false;
+  if (url.pathname.startsWith("/api/")) return false;
+  if (isPublicAssetPath(url.pathname)) return false;
+  const accept = String(request.headers.accept || "");
+  return !accept || accept.includes("text/html") || accept.includes("*/*");
+}
+
+function readCookie(request, name) {
+  const cookies = String(request.headers.cookie || "").split(";").map((entry) => entry.trim());
+  const prefix = `${name}=`;
+  const match = cookies.find((entry) => entry.startsWith(prefix));
+  if (!match) return "";
+  try {
+    return decodeURIComponent(match.slice(prefix.length));
+  } catch {
+    return match.slice(prefix.length);
+  }
+}
+
+function pilotCookieHeader(secret, maxAgeSeconds) {
+  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
+  return `helmut_pilot=${encodeURIComponent(secret || "")}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${Math.max(0, maxAgeSeconds)}${secure}`;
+}
+
+function sendPilotUnauthorized(response) {
+  response.writeHead(401, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+  response.end(JSON.stringify({ error: "Pilot access required" }, null, 2));
+}
+
+function sendPilotUnlockPage(response, url) {
+  const safePath = safeReturnPath(url);
+  response.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
+  response.end(`<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#111827" />
+    <title>Helmut Zugang</title>
+    <style>
+      :root { color-scheme: light; --ink: #111111; --muted: #68645f; --line: #e7e0d4; --paper: #f7f4ed; --navy: #101827; --accent: #7d1734; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 28px;
+        background:
+          linear-gradient(rgba(16, 24, 39, 0.035) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(16, 24, 39, 0.035) 1px, transparent 1px),
+          var(--paper);
+        background-size: 38px 38px;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--ink);
+      }
+      main {
+        width: min(100%, 560px);
+        padding: clamp(32px, 7vw, 56px);
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        background: rgba(255, 255, 255, 0.92);
+        box-shadow: 0 28px 80px rgba(16, 24, 39, 0.08);
+      }
+      .mark {
+        width: 48px;
+        height: 48px;
+        display: grid;
+        place-items: center;
+        border-radius: 16px;
+        background: var(--navy);
+        color: white;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        margin-bottom: 42px;
+      }
+      .rule {
+        width: 88px;
+        height: 2px;
+        margin: 0 0 34px;
+        background: linear-gradient(90deg, var(--accent), var(--navy));
+      }
+      h1 {
+        margin: 0;
+        font-size: clamp(42px, 9vw, 68px);
+        line-height: 0.98;
+        letter-spacing: -0.04em;
+      }
+      p {
+        margin: 22px 0 0;
+        font-size: 18px;
+        line-height: 1.55;
+        color: var(--muted);
+      }
+      form {
+        margin-top: 34px;
+        display: grid;
+        gap: 12px;
+      }
+      input {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 18px 18px;
+        font: inherit;
+        font-size: 18px;
+        outline: none;
+        background: #fff;
+      }
+      input:focus { border-color: rgba(16, 24, 39, 0.45); box-shadow: 0 0 0 4px rgba(16, 24, 39, 0.06); }
+      button {
+        border: 0;
+        border-radius: 18px;
+        padding: 18px 20px;
+        background: var(--navy);
+        color: #fff;
+        font: inherit;
+        font-size: 17px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .error {
+        min-height: 24px;
+        margin-top: 4px;
+        color: #a51d2d;
+        font-size: 15px;
+      }
+      @media (max-width: 520px) {
+        body { place-items: stretch; align-items: center; padding: 18px; }
+        main { border-radius: 24px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="mark">H</div>
+      <div class="rule"></div>
+      <h1>Pilot-Zugang.</h1>
+      <p>Helmut ist aktuell ein geschützter Pilot. Gib den Zugangscode ein, um die politische Lage zu öffnen.</p>
+      <form id="unlock">
+        <input id="secret" name="secret" type="password" autocomplete="current-password" placeholder="Zugangscode" autofocus />
+        <button type="submit">Helmut öffnen</button>
+        <div class="error" id="error" role="alert"></div>
+      </form>
+    </main>
+    <script>
+      const form = document.getElementById("unlock");
+      const error = document.getElementById("error");
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        error.textContent = "";
+        const secret = document.getElementById("secret").value.trim();
+        const response = await fetch("/api/pilot/unlock", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ secret })
+        });
+        if (!response.ok) {
+          error.textContent = "Der Zugangscode stimmt nicht.";
+          return;
+        }
+        window.location.href = ${JSON.stringify(safePath)};
+      });
+    </script>
+  </body>
+</html>`);
+}
+
+function safeReturnPath(url) {
+  const path = `${url.pathname || "/"}${url.search || ""}`;
+  if (!path.startsWith("/") || path.startsWith("//")) return "/";
+  return path.replace(/[<>]/g, "");
 }
 module.exports = handleRequest;
 
