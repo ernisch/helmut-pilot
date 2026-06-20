@@ -24,19 +24,19 @@ function handleRequest(request, response) {
   const politicianId = politicianIdFromUrl(url);
 
   if (url.pathname === "/api/profile/demo") {
-    if (request.method === "GET") return sendJson(response, activeProfile(politicianId));
+    if (request.method === "GET") return handleAsync(response, () => activeProfile(politicianId));
     if (request.method === "POST" || request.method === "PATCH") {
-      return handleJson(request, response, (body) => saveProfile(normalizeProfile(body, politicianId)));
+      return handleJson(request, response, async (body) => saveProfile(await normalizeProfile(body, politicianId)));
     }
   }
 
   if (url.pathname === "/api/briefing/demo") {
-    return sendJson(response, generateBriefing(activeProfile(politicianId), demoRawItems, demoSources));
+    return handleAsync(response, async () => generateBriefing(await activeProfile(politicianId), demoRawItems, demoSources));
   }
 
   if (url.pathname === "/api/briefing/latest") {
     return handleAsync(response, async () => {
-      const latest = getLatestOrDemoBriefing(politicianId);
+      const latest = await getLatestOrDemoBriefing(politicianId);
       if (!shouldRefreshLatestBriefing(latest, url)) return latest;
       const pipeline = await runDailyPipeline(politicianId);
       return {
@@ -66,10 +66,10 @@ function handleRequest(request, response) {
   }
 
   if (url.pathname === "/api/communication/generate" && request.method === "POST") {
-    return handleJson(request, response, (body) => generateCommunicationDraft({
+    return handleJson(request, response, async (body) => generateCommunicationDraft({
       prompt: body.prompt,
       decision: body.decision,
-      profile: activeProfile(politicianId)
+      profile: await activeProfile(politicianId)
     }));
   }
 
@@ -89,18 +89,18 @@ function handleRequest(request, response) {
   }
 
   if (url.pathname === "/api/tasks/demo") {
-    return sendJson(response, generateBriefing(activeProfile(politicianId), demoRawItems, demoSources).tasks);
+    return handleAsync(response, async () => generateBriefing(await activeProfile(politicianId), demoRawItems, demoSources).tasks);
   }
 
   if (url.pathname === "/api/tasks") {
-    if (request.method === "GET") return sendJson(response, getTasks(activeProfile(politicianId).id));
-    if (request.method === "POST") return handleJson(request, response, (body) => saveTask(normalizeTask(body, politicianId)));
+    if (request.method === "GET") return handleAsync(response, async () => getTasks((await activeProfile(politicianId)).id));
+    if (request.method === "POST") return handleJson(request, response, async (body) => saveTask(await normalizeTask(body, politicianId)));
   }
 
   if (url.pathname.startsWith("/api/tasks/") && request.method === "PATCH") {
     const taskId = decodeURIComponent(url.pathname.replace("/api/tasks/", ""));
-    return handleJson(request, response, (body) => {
-      const task = updateTaskStatus(taskId, body.status);
+    return handleJson(request, response, async (body) => {
+      const task = await updateTaskStatus(taskId, body.status);
       if (!task) {
         response.writeHead(404, { "Content-Type": "application/json; charset=utf-8" });
         response.end(JSON.stringify({ error: "Task not found" }, null, 2));
@@ -111,7 +111,7 @@ function handleRequest(request, response) {
   }
 
   if (url.pathname === "/api/interactions" && request.method === "POST") {
-    return handleJson(request, response, (body) => saveInteraction(normalizeInteraction(body, politicianId)));
+    return handleJson(request, response, async (body) => saveInteraction(await normalizeInteraction(body, politicianId)));
   }
 
   const requestedPath = url.pathname === "/" ? "index.html" : url.pathname.replace(/^\/+/, "");
@@ -204,8 +204,8 @@ function handleJson(request, response, handler) {
   });
 }
 
-function normalizeTask(task, politicianId = cemInceProfile.id) {
-  const profile = activeProfile(politicianId);
+async function normalizeTask(task, politicianId = cemInceProfile.id) {
+  const profile = await activeProfile(politicianId);
   return {
     id: task.id || `task-${Date.now()}`,
     politicianId: task.politicianId || profile.id,
@@ -226,8 +226,8 @@ function normalizeTask(task, politicianId = cemInceProfile.id) {
   };
 }
 
-function normalizeInteraction(interaction, politicianId = cemInceProfile.id) {
-  const profile = activeProfile(politicianId);
+async function normalizeInteraction(interaction, politicianId = cemInceProfile.id) {
+  const profile = await activeProfile(politicianId);
   return {
     politicianId: interaction.politicianId || profile.id,
     signalId: interaction.signalId || "",
@@ -237,8 +237,8 @@ function normalizeInteraction(interaction, politicianId = cemInceProfile.id) {
   };
 }
 
-function activeProfile(politicianId = cemInceProfile.id) {
-  const stored = getProfile(politicianId);
+async function activeProfile(politicianId = cemInceProfile.id) {
+  const stored = await getProfile(politicianId);
   if (stored) return mergeProfileDefaults(stored);
   if (politicianId === cemInceProfile.id) return cemInceProfile;
   return {
@@ -277,8 +277,8 @@ function mergeProfileDefaults(profile) {
   };
 }
 
-function normalizeProfile(profile, politicianId = cemInceProfile.id) {
-  const base = activeProfile(politicianId);
+async function normalizeProfile(profile, politicianId = cemInceProfile.id) {
+  const base = await activeProfile(politicianId);
   const next = {
     ...base,
     ...profile,
