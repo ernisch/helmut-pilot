@@ -294,6 +294,11 @@ function handleRequest(request, response) {
 
   fs.readFile(filePath, (error, content) => {
     if (error) {
+      if (requestedPath === "index.html") {
+        response.writeHead(200, { "Content-Type": contentTypes[".html"], "Cache-Control": "no-store" });
+        response.end(indexHtml());
+        return;
+      }
       response.writeHead(404);
       response.end("Not found");
       return;
@@ -527,6 +532,36 @@ function sendPilotUnlockPage(response, url) {
     </script>
   </body>
 </html>`);
+}
+
+function indexHtml() {
+  return `<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#111827" />
+    <meta name="apple-mobile-web-app-title" content="Helmut" />
+    <meta name="application-name" content="Helmut" />
+    <title>Helmut</title>
+    <link rel="icon" href="assets/favicon.ico" sizes="any" />
+    <link rel="icon" href="assets/helmut_logo.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="assets/helmut_appicon_192.png" />
+    <link rel="manifest" href="site.webmanifest" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="shell" id="app">
+      <section class="loading-card">
+        <p>Helmut</p>
+        <h1>Bereite deine Morgenlage vor.</h1>
+      </section>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="client.js"></script>
+  </body>
+</html>`;
 }
 
 function safeReturnPath(url) {
