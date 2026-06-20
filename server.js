@@ -564,10 +564,8 @@ function indexHtml() {
   </head>
   <body>
     <main class="shell" id="app">
-      <section class="loading-card">
-        <img class="loading-logo" src="assets/helmut_appicon_192.png" alt="" />
-        <p>Helmut</p>
-        <h1>Bereite deine Morgenlage vor.</h1>
+      <section class="loading-screen" aria-label="Bereite deine Morgenlage vor">
+        <img class="loading-mark" src="assets/helmut_appicon_192.png" alt="" />
       </section>
     </main>
 

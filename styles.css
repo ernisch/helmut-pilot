@@ -1977,6 +1977,22 @@ small {
   text-transform: uppercase;
 }
 
+.loading-screen {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  width: 100%;
+  padding: 32px;
+}
+
+.loading-mark {
+  width: clamp(54px, 5.4vw, 78px);
+  height: clamp(54px, 5.4vw, 78px);
+  border-radius: clamp(16px, 1.5vw, 22px);
+  box-shadow: 0 22px 70px rgba(16, 24, 39, .12);
+  animation: loading-mark-fade 2.6s ease-in-out infinite;
+}
+
 .loading-card {
   display: grid;
   justify-items: center;
@@ -2019,6 +2035,17 @@ small {
   50% {
     transform: scale(1.035);
     opacity: 1;
+  }
+}
+
+@keyframes loading-mark-fade {
+  0%, 100% {
+    opacity: .36;
+    transform: scale(.985);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
