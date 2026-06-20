@@ -6,7 +6,8 @@ loadLocalEnv();
 
 const { cemInceProfile, demoRawItems, demoSources, generateBriefing } = require("./lib/helmut/runtime");
 const { getLatestOrDemoBriefing, runDailyPipeline, runMorningBriefing, runSourceCrawl } = require("./lib/helmut/scheduler");
-const { getProfile, getStorageStatus, getTasks, saveInteraction, saveProfile, saveTask, updateTaskStatus } = require("./lib/helmut/storage");
+const { personalizeBriefing } = require("./lib/helmut/personalization");
+const { getInteractions, getProfile, getStorageStatus, getTasks, getTopicMemory, getUserNotes, saveInteraction, saveProfile, saveTask, saveUserNote, updateTaskStatus } = require("./lib/helmut/storage");
 const { generateCommunicationDraft, isAiEnabled } = require("./lib/helmut/ai");
 
 const root = __dirname;
@@ -31,12 +32,20 @@ function handleRequest(request, response) {
   }
 
   if (url.pathname === "/api/briefing/demo") {
-    return handleAsync(response, async () => generateBriefing(await activeProfile(politicianId), demoRawItems, demoSources));
+    return handleAsync(response, async () => {
+      const profile = await activeProfile(politicianId);
+      const demo = generateBriefing(profile, demoRawItems, demoSources);
+      return personalizeBriefing(demo, profile, await getTopicMemory(profile.id), await getInteractions(profile.id));
+    });
   }
 
   if (url.pathname === "/api/briefing/latest") {
     return handleAsync(response, async () => {
+      const profile = await activeProfile(politicianId);
       const latest = await getLatestOrDemoBriefing(politicianId);
+      if (!latest.homeSections || !latest.personalizedRecommendations) {
+        return personalizeBriefing(latest, profile, await getTopicMemory(profile.id), await getInteractions(profile.id));
+      }
       if (!shouldRefreshLatestBriefing(latest, url)) return latest;
       const pipeline = await runDailyPipeline(politicianId);
       return {
@@ -116,6 +125,11 @@ function handleRequest(request, response) {
 
   if (url.pathname === "/api/interactions" && request.method === "POST") {
     return handleJson(request, response, async (body) => saveInteraction(await normalizeInteraction(body, politicianId)));
+  }
+
+  if (url.pathname === "/api/notes") {
+    if (request.method === "GET") return handleAsync(response, async () => getUserNotes((await activeProfile(politicianId)).id));
+    if (request.method === "POST") return handleJson(request, response, async (body) => saveUserNote(await normalizeUserNote(body, politicianId)));
   }
 
   const requestedPath = url.pathname === "/" ? "index.html" : url.pathname.replace(/^\/+/, "");
@@ -241,6 +255,19 @@ async function normalizeInteraction(interaction, politicianId = cemInceProfile.i
   };
 }
 
+async function normalizeUserNote(note, politicianId = cemInceProfile.id) {
+  const profile = await activeProfile(politicianId);
+  return {
+    id: note.id,
+    user_id: profile.id,
+    recommendation_id: note.recommendation_id || note.recommendationId || "",
+    political_item_id: note.political_item_id || note.politicalItemId || "",
+    type: note.type || "note",
+    text: String(note.text || "").trim(),
+    status: note.status || "open"
+  };
+}
+
 async function activeProfile(politicianId = cemInceProfile.id) {
   const stored = await getProfile(politicianId);
   if (stored) return mergeProfileDefaults(stored);
@@ -258,7 +285,17 @@ async function activeProfile(politicianId = cemInceProfile.id) {
     monitoringTargets: [],
     regionalInterests: [],
     relevantMinistries: ["Bundesregierung"],
-    noGoTopics: []
+    noGoTopics: [],
+    politicalLevel: "Bund",
+    role: "Bundestagsabgeordneter",
+    reportingTopics: [],
+    currentCampaigns: [],
+    publicPositions: [],
+    keyAudiences: [],
+    riskTopics: [],
+    opportunityTopics: [],
+    preferredChannels: [],
+    upcomingAppointments: []
   };
 }
 
@@ -277,7 +314,17 @@ function mergeProfileDefaults(profile) {
     outputNeeds: arrayValue(profile.outputNeeds, cemInceProfile.outputNeeds),
     opponents: arrayValue(profile.opponents, cemInceProfile.opponents),
     localMedia: arrayValue(profile.localMedia, cemInceProfile.localMedia),
-    noGoTopics: arrayValue(profile.noGoTopics, cemInceProfile.noGoTopics)
+    noGoTopics: arrayValue(profile.noGoTopics, cemInceProfile.noGoTopics),
+    politicalLevel: profile.politicalLevel || cemInceProfile.politicalLevel,
+    role: profile.role || profile.function || cemInceProfile.role,
+    reportingTopics: arrayValue(profile.reportingTopics, cemInceProfile.reportingTopics),
+    currentCampaigns: arrayValue(profile.currentCampaigns, cemInceProfile.currentCampaigns),
+    publicPositions: arrayValue(profile.publicPositions, cemInceProfile.publicPositions),
+    keyAudiences: arrayValue(profile.keyAudiences, cemInceProfile.keyAudiences),
+    riskTopics: arrayValue(profile.riskTopics, cemInceProfile.riskTopics),
+    opportunityTopics: arrayValue(profile.opportunityTopics, cemInceProfile.opportunityTopics),
+    preferredChannels: arrayValue(profile.preferredChannels, cemInceProfile.preferredChannels),
+    upcomingAppointments: arrayValue(profile.upcomingAppointments, cemInceProfile.upcomingAppointments)
   };
 }
 
@@ -308,6 +355,16 @@ async function normalizeProfile(profile, politicianId = cemInceProfile.id) {
     noGoTopics: arrayValue(profile.noGoTopics, base.noGoTopics),
     mainQuestion: stringValue(profile.mainQuestion, base.mainQuestion)
   };
+  next.role = stringValue(profile.role, next.function);
+  next.politicalLevel = stringValue(profile.politicalLevel, base.politicalLevel || "Bund");
+  next.reportingTopics = arrayValue(profile.reportingTopics, base.reportingTopics);
+  next.currentCampaigns = arrayValue(profile.currentCampaigns, base.currentCampaigns);
+  next.publicPositions = arrayValue(profile.publicPositions, base.publicPositions);
+  next.keyAudiences = arrayValue(profile.keyAudiences, base.keyAudiences);
+  next.riskTopics = arrayValue(profile.riskTopics, base.riskTopics);
+  next.opportunityTopics = arrayValue(profile.opportunityTopics, base.opportunityTopics);
+  next.preferredChannels = arrayValue(profile.preferredChannels, base.preferredChannels);
+  next.upcomingAppointments = arrayValue(profile.upcomingAppointments, base.upcomingAppointments);
   next.committees = next.committee ? [next.committee] : next.committees;
   return next;
 }

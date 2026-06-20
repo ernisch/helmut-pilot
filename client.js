@@ -3,6 +3,8 @@ let briefing = null;
 let aiStatus = { enabled: false, model: "" };
 let decisions = [];
 let tasks = [];
+let notes = [];
+let recommendations = [];
 let selectedDecisionId = "";
 let currentView = "briefing";
 let navOpen = false;
@@ -77,10 +79,11 @@ async function loadBriefing() {
   const params = new URLSearchParams(window.location.search);
   activePoliticianId = sanitizePoliticianId(params.get("politicianId") || params.get("profileId") || "cem-ince");
   const scope = `politicianId=${encodeURIComponent(activePoliticianId)}`;
-  const [profileResponse, briefingResponse, tasksResponse, aiStatusResponse] = await Promise.all([
+  const [profileResponse, briefingResponse, tasksResponse, notesResponse, aiStatusResponse] = await Promise.all([
     fetch(`/api/profile/demo?${scope}`),
     fetch(`/api/briefing/latest?${scope}`),
     fetch(`/api/tasks?${scope}`),
+    fetch(`/api/notes?${scope}`),
     fetch("/api/ai/status")
   ]);
 
@@ -91,11 +94,14 @@ async function loadBriefing() {
   briefing.sourceStats = briefing.sourceStats || { checkedSources: 0, successfulSources: 0, failedSources: 0 };
 
   const persistedTasks = tasksResponse.ok ? await tasksResponse.json() : [];
+  notes = notesResponse.ok ? await notesResponse.json() : [];
   tasks = mergeTasks(briefing.tasks || [], persistedTasks);
+  recommendations = briefing.personalizedRecommendations || [];
 
   const themeSignalId = briefing.themeOfDay?.signalId;
   const activeItems = briefing.items.filter((item) => item.decision !== "Ignorieren");
-  decisions = (activeItems.length ? activeItems : briefing.items.slice(0, 1))
+  const personalizedItems = recommendations.map(recommendationToDecisionItem);
+  decisions = (personalizedItems.length ? personalizedItems : (activeItems.length ? activeItems : briefing.items.slice(0, 1)))
     .sort((a, b) => {
       if (a.signalId === themeSignalId) return -1;
       if (b.signalId === themeSignalId) return 1;
@@ -134,7 +140,54 @@ function toDecision(item) {
     finalScore: item.finalScore,
     totalScore: item.totalScore,
     taskTemplate: item.taskTemplate,
-    memory: item.memory || null
+    memory: item.memory || null,
+    personalRelevanceExplanation: item.personal_relevance_explanation || item.personalRelevanceExplanation || item.whyItMatters,
+    consequenceIfIgnored: item.consequence_if_ignored || item.inactionConsequence,
+    possibleUpside: item.possible_upside || item.opportunityNote,
+    actionType: item.action_type || item.actionType,
+    deadline: item.deadline || item.taskTemplate?.dueDate,
+    urgency: item.urgency,
+    statusChange: item.status_change,
+    changeReason: item.change_reason,
+    relevanceScore: item.relevance_score || item.finalScore || item.totalScore
+  };
+}
+
+function recommendationToDecisionItem(recommendation) {
+  return {
+    id: recommendation.id,
+    signalId: recommendation.signal_id,
+    title: recommendation.title,
+    topic: recommendation.topic,
+    summary: recommendation.summary,
+    recommendedAction: recommendation.recommended_action,
+    suggestedStatement: recommendation.communication_recommendation,
+    whyNow: recommendation.change_reason,
+    whyItMatters: recommendation.personal_relevance_explanation,
+    inactionConsequence: recommendation.consequence_if_ignored,
+    riskNote: recommendation.consequence_if_ignored,
+    opportunityNote: recommendation.possible_upside,
+    estimatedTimeMinutes: recommendation.estimated_effort_minutes,
+    confidence: recommendation.confidence,
+    sourceCount: recommendation.source_count,
+    sources: recommendation.sources,
+    primarySource: recommendation.primarySource,
+    politicalScore: recommendation.politicalScore,
+    mandateScore: recommendation.mandateScore,
+    finalScore: recommendation.finalScore,
+    totalScore: recommendation.relevance_score,
+    priority: recommendation.relevance_score,
+    decision: recommendation.relevance_score >= 60 ? "Sofort reagieren" : recommendation.relevance_score >= 40 ? "Beobachten" : "Ignorieren",
+    classification: recommendation.risiko_fuer_nutzer > recommendation.chance_fuer_nutzer ? "risk" : "opportunity",
+    action_type: recommendation.action_type,
+    deadline: recommendation.deadline,
+    urgency: recommendation.urgency,
+    status_change: recommendation.status_change,
+    change_reason: recommendation.change_reason,
+    personal_relevance_explanation: recommendation.personal_relevance_explanation,
+    consequence_if_ignored: recommendation.consequence_if_ignored,
+    possible_upside: recommendation.possible_upside,
+    taskTemplate: recommendation.taskTemplate
   };
 }
 
@@ -277,27 +330,144 @@ function renderView() {
 
 function renderBriefingView() {
   const firstName = (profile?.fullName || "Cem").split(" ")[0];
-  const secondaryDecisions = decisions.slice(1);
   return `
     <section class="page-intro">
       <h1 class="${headlineClass(`Guten Morgen, ${firstName}.`)}">Guten Morgen, ${escapeHtml(firstName)}.</h1>
-      <p>${escapeHtml(decisionCountSentence())}</p>
+      <p>${escapeHtml(referentFocusSentence())}</p>
       ${renderPilotStatus()}
     </section>
 
     ${renderAgentBriefing()}
 
-    ${renderChiefRecommendation()}
+    ${renderReferentHome()}
     ${!decisions.length ? renderSituationalBriefing() : ""}
 
-    ${secondaryDecisions.length ? `
-      <section class="briefing-list" aria-label="Weitere Themen">
-        <h2 class="section-kicker">Weitere Themen</h2>
-        ${secondaryDecisions.map(renderDecisionBlock).join("")}
-      </section>
-    ` : ""}
-
     <button class="quiet-link" type="button" data-view="topics">Belege ansehen</button>
+  `;
+}
+
+function referentFocusSentence() {
+  const mode = briefing.dayMode;
+  if (mode?.focus) return `${mode.phase}: ${mode.focus}.`;
+  return decisionCountSentence();
+}
+
+function renderReferentHome() {
+  const sections = briefing.homeSections || buildFallbackHomeSections();
+  return `
+    ${renderPrioritySection("Ihre wichtigsten Aufgaben", sections.topTasks, renderHomeTask)}
+    ${renderPrioritySection("Neu seit deinem letzten Besuch", sections.changedSinceLastVisit, renderChangeItem)}
+    ${renderPrioritySection("Braucht deine Aufmerksamkeit?", sections.needsAttention, renderAttentionItem)}
+    ${renderPrioritySection("Politische Chancen", sections.opportunities, renderOpportunityItem)}
+    ${renderPrioritySection("Politische Risiken", sections.risks, renderRiskItem)}
+  `;
+}
+
+function buildFallbackHomeSections() {
+  return {
+    topTasks: decisions.slice(0, 3),
+    changedSinceLastVisit: decisions.filter((decision) => decision.statusChange && decision.statusChange !== "Unverändert").slice(0, 3),
+    needsAttention: decisions.slice(0, 3),
+    opportunities: decisions.filter((decision) => decision.priorityType === "chance").slice(0, 3),
+    risks: decisions.filter((decision) => decision.priorityType === "risk").slice(0, 3)
+  };
+}
+
+function renderPrioritySection(title, items, renderer) {
+  const normalized = (items || []).map(normalizeHomeItem).filter(Boolean).slice(0, 3);
+  if (!normalized.length) return "";
+  return `
+    <section class="referent-section">
+      <h2>${escapeHtml(title)}</h2>
+      <div class="referent-list">
+        ${normalized.map(renderer).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function normalizeHomeItem(item) {
+  if (!item) return null;
+  if (item.relevance_score || item.recommended_action) return {
+    id: item.id,
+    signalId: item.signal_id || item.signalId,
+    title: item.title,
+    priorityLabel: displayPriority(item.current_priority || item.priority),
+    priorityType: item.risiko_fuer_nutzer > item.chance_fuer_nutzer ? "risk" : item.chance_fuer_nutzer >= 55 ? "chance" : "action",
+    summary: item.summary,
+    action: item.recommended_action,
+    whyItMatters: item.personal_relevance_explanation,
+    inaction: item.consequence_if_ignored,
+    opportunity: item.possible_upside,
+    estimatedTime: `${item.estimated_effort_minutes || 5} Min.`,
+    deadline: item.deadline,
+    statusChange: item.status_change,
+    changeReason: item.change_reason,
+    relevanceScore: item.relevance_score,
+    taskTemplate: item.taskTemplate
+  };
+  return item;
+}
+
+function displayPriority(priority) {
+  const value = String(priority || "Relevant");
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function renderHomeTask(item) {
+  return `
+    <article class="referent-card ${item.priorityType || "action"}">
+      <span>${escapeHtml(item.priorityLabel || "Wichtig")}</span>
+      <h3>${escapeHtml(item.title)}</h3>
+      <p><strong>Warum:</strong> ${escapeHtml(item.whyItMatters || item.personalRelevanceExplanation || item.summary)}</p>
+      <p><strong>Aktion:</strong> ${escapeHtml(item.action || "Linie vorbereiten.")}</p>
+      <small>${escapeHtml(item.deadline ? `Frist ${formatDueDate(item.deadline)} · ` : "")}${escapeHtml(item.estimatedTime || "10 Min.")}</small>
+      <button class="primary-button compact-button" type="button" data-detail="${escapeHtml(item.id)}">Entscheidung öffnen</button>
+    </article>
+  `;
+}
+
+function renderChangeItem(item) {
+  return `
+    <article class="referent-card change">
+      <span>${escapeHtml(item.statusChange || "Neu")}</span>
+      <h3>${escapeHtml(item.title)}</h3>
+      <p>${escapeHtml(item.changeReason || "Neu in deiner politischen Lage.")}</p>
+      <button class="secondary-button compact-button" type="button" data-detail="${escapeHtml(item.id)}">Einordnung lesen</button>
+    </article>
+  `;
+}
+
+function renderAttentionItem(item) {
+  return `
+    <article class="referent-card ${item.priorityType || "action"}">
+      <span>${escapeHtml(item.priorityLabel || "Wichtig")}</span>
+      <h3>${escapeHtml(item.title)}</h3>
+      <p>${escapeHtml(item.action || item.summary)}</p>
+      <button class="secondary-button compact-button" type="button" data-detail="${escapeHtml(item.id)}">Öffnen</button>
+    </article>
+  `;
+}
+
+function renderOpportunityItem(item) {
+  return `
+    <article class="referent-card chance">
+      <span>Chance</span>
+      <h3>${escapeHtml(item.title)}</h3>
+      <p>${escapeHtml(item.opportunity || item.possibleUpside || item.summary)}</p>
+      <button class="secondary-button compact-button" type="button" data-communication="${escapeHtml(item.id)}">Antwort vorbereiten</button>
+    </article>
+  `;
+}
+
+function renderRiskItem(item) {
+  return `
+    <article class="referent-card risk">
+      <span>Risiko</span>
+      <h3>${escapeHtml(item.title)}</h3>
+      <p>${escapeHtml(item.inaction || item.consequenceIfIgnored || item.risk || item.summary)}</p>
+      <button class="secondary-button compact-button" type="button" data-detail="${escapeHtml(item.id)}">Vorbereitung lesen</button>
+    </article>
   `;
 }
 
@@ -516,6 +686,7 @@ function renderOfficeView() {
     </section>
     ${renderOfficeTasksSection()}
     ${renderCommunicationSection()}
+    ${renderNotesSection()}
   `;
 }
 
@@ -660,6 +831,26 @@ function renderCommunicationSection() {
         <div>
           <button class="primary-button" type="button" data-copy="generated-statement">Text kopieren</button>
         </div>
+      </div>
+    </section>
+  `;
+}
+
+function renderNotesSection() {
+  return `
+    <section class="plain-list notes-section">
+      <h2>Merken für später</h2>
+      <form class="note-form" id="noteForm">
+        <textarea name="text" rows="3" placeholder="Frage, Risiko, Verband, Termin oder Recherchepunkt festhalten."></textarea>
+        <button class="secondary-button" type="submit">Merken</button>
+      </form>
+      <div class="note-list">
+        ${notes.slice(0, 5).map((note) => `
+          <article class="note-row">
+            <p>${escapeHtml(note.text)}</p>
+            <small>${escapeHtml(note.type || "Notiz")} · ${escapeHtml(formatBriefingDate(note.created_at || note.createdAt))}</small>
+          </article>
+        `).join("") || `<p class="empty-state">Noch keine Notizen.</p>`}
       </div>
     </section>
   `;
@@ -932,6 +1123,13 @@ function renderProfileSettingsView() {
         </div>
         ${radioGroup("communicationStyle", profile.communicationStyle || "Lösungsorientiert", communicationStyles)}
         ${profileArea("mainQuestion", "Leitfrage", profile.mainQuestion)}
+        ${profileArea("currentCampaigns", "Aktuelle Kampagnen", profile.currentCampaigns)}
+        ${profileArea("publicPositions", "Öffentliche Positionen", profile.publicPositions)}
+        ${profileArea("keyAudiences", "Wichtige Zielgruppen", profile.keyAudiences)}
+        ${profileArea("riskTopics", "Risiko-Themen", profile.riskTopics)}
+        ${profileArea("opportunityTopics", "Chancen-Themen", profile.opportunityTopics)}
+        ${profileArea("preferredChannels", "Bevorzugte Kanäle", profile.preferredChannels)}
+        ${profileArea("upcomingAppointments", "Nächste Termine", profile.upcomingAppointments)}
         ${profileArea("noGoTopics", "No-Go-Themen", profile.noGoTopics)}
       </section>
 
@@ -1082,6 +1280,8 @@ function bindActions() {
       currentView = "detail";
       navOpen = false;
       updatesOpen = false;
+      const decision = selectedDecision();
+      logInteraction({ type: "detail_opened", signalId: decision?.signalId || "" });
       render();
     });
   });
@@ -1180,6 +1380,34 @@ function bindActions() {
       await saveProfileFromForm(profileForm);
     });
   }
+
+  const noteForm = app.querySelector("#noteForm");
+  if (noteForm) {
+    noteForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const text = new FormData(noteForm).get("text");
+      if (!String(text || "").trim()) return;
+      try {
+        const response = await fetch(`/api/notes?politicianId=${encodeURIComponent(activePoliticianId)}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text,
+            type: "note",
+            recommendation_id: selectedDecision()?.id || "",
+            political_item_id: selectedDecision()?.topic || ""
+          })
+        });
+        if (!response.ok) throw new Error("Note save failed");
+        notes.unshift(await response.json());
+        showToast("Notiz gespeichert");
+        render();
+      } catch (error) {
+        console.error(error);
+        showToast("Notiz konnte nicht gespeichert werden");
+      }
+    });
+  }
 }
 
 function speakAgentBriefing(text) {
@@ -1222,6 +1450,13 @@ async function saveProfileFromForm(form) {
     monitoringTargets: profile.monitoringTargets,
     relevantMinistries: profile.relevantMinistries,
     regionalInterests: [data.get("state"), data.get("constituency"), data.get("location")].filter(Boolean),
+    currentCampaigns: lines(data.get("currentCampaigns")),
+    publicPositions: lines(data.get("publicPositions")),
+    keyAudiences: lines(data.get("keyAudiences")),
+    riskTopics: lines(data.get("riskTopics")),
+    opportunityTopics: lines(data.get("opportunityTopics")),
+    preferredChannels: lines(data.get("preferredChannels")),
+    upcomingAppointments: lines(data.get("upcomingAppointments")),
     noGoTopics: lines(data.get("noGoTopics"))
   };
 

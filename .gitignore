@@ -3,3 +3,4 @@
 env.local
 env.local.html
 .helmut-data/
+.vercel
