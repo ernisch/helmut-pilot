@@ -380,6 +380,7 @@ function renderUpdatesPanel() {
 }
 
 function renderNotificationItem(item) {
+  const receivedLine = item.receivedAt ? `<small class="notification-time">Eingetroffen: ${escapeHtml(formatBriefingDate(item.receivedAt))}</small>` : "";
   if (item.href) {
     return `
       <a class="notification-row ${item.type}" href="${escapeAttribute(item.href)}" target="_blank" rel="noopener noreferrer">
@@ -387,6 +388,7 @@ function renderNotificationItem(item) {
         <h3>${escapeHtml(item.title)}</h3>
         <p>${escapeHtml(item.summary)}</p>
         <small>${escapeHtml(item.meta)}</small>
+        ${receivedLine}
       </a>
     `;
   }
@@ -396,6 +398,7 @@ function renderNotificationItem(item) {
       <h3>${escapeHtml(item.title)}</h3>
       <p>${escapeHtml(item.summary)}</p>
       <small>${escapeHtml(item.meta)}</small>
+      ${receivedLine}
     </button>
   `;
 }
@@ -2064,7 +2067,7 @@ function latestUpdateTimestamp() {
 }
 
 function itemTimestamp(item) {
-  const date = new Date(item?.publishedAt || item?.retrievedAt || "");
+  const date = new Date(item?.retrievedAt || item?.createdAt || item?.created_at || item?.updatedAt || item?.updated_at || item?.publishedAt || "");
   return Number.isNaN(date.getTime()) ? 0 : date.getTime();
 }
 
@@ -2099,6 +2102,7 @@ function notificationItems() {
     title: item.title || "Cem wurde erwähnt",
     summary: twoSentenceSummary(item.content || item.excerpt || "Neue namentliche Erwähnung gefunden."),
     meta: `${item.sourceName || "Quelle"} · ${formatBriefingDate(item.publishedAt || item.retrievedAt)}`,
+    receivedAt: item.retrievedAt || item.createdAt || item.created_at || item.updatedAt || item.updated_at || item.publishedAt,
     href: sourceHref(item)
   }));
 
@@ -2109,6 +2113,7 @@ function notificationItems() {
       title: decision.title,
       summary: decision.summary,
       meta: sourceLine(decision),
+      receivedAt: decision.created_at || decision.createdAt || decision.updated_at || decision.updatedAt || briefing.generatedAt || briefing.date,
       decisionId: decision.id
     }))
     : [];

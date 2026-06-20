@@ -332,8 +332,15 @@ small {
 }
 
 .notification-row small {
+  display: block;
   color: var(--muted-2);
   font-size: 12px;
+}
+
+.notification-row .notification-time {
+  margin-top: 5px;
+  color: var(--muted);
+  opacity: .78;
 }
 
 .updates-radar-link {
