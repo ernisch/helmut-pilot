@@ -1173,7 +1173,7 @@ function renderProfileSettingsView() {
       <section class="profile-section">
         <div>
           <span>Wahlkreis</span>
-          <h2>Was zählt lokal?</h2>
+          <h2>Was zählt für deinen Wahlkreis?</h2>
         </div>
         <div class="profile-grid">
           ${profileField("state", "Bundesland", profile.state)}
