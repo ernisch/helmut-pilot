@@ -75,6 +75,11 @@ function handleRequest(request, response) {
     return handleAsync(response, () => runMorningBriefing(politicianId));
   }
 
+  if (url.pathname === "/api/cron/pipeline") {
+    if (!isAuthorizedCron(request, url)) return sendUnauthorized(response);
+    return handleAsync(response, () => runDailyPipeline(politicianId));
+  }
+
   if (url.pathname === "/api/tasks/demo") {
     return sendJson(response, generateBriefing(activeProfile(politicianId), demoRawItems, demoSources).tasks);
   }
