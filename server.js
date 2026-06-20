@@ -284,7 +284,7 @@ function handleRequest(request, response) {
     if (request.method === "POST") return handleJson(request, response, async (body) => saveUserNote(await normalizeUserNote(body, politicianId)));
   }
 
-  const requestedPath = url.pathname === "/" ? "index.html" : url.pathname.replace(/^\/+/, "");
+  const requestedPath = isAppEntryPath(url.pathname) ? "index.html" : url.pathname.replace(/^\/+/, "");
   const filePath = path.normalize(path.join(root, requestedPath));
   if (!filePath.startsWith(root)) {
     response.writeHead(403);
@@ -308,6 +308,10 @@ function shouldRedirectToCanonicalHost(request, url) {
   const host = String(request.headers.host || "").toLowerCase();
   if (!canonicalHost || host === canonicalHost) return false;
   return host.includes("onrender.com");
+}
+
+function isAppEntryPath(pathname) {
+  return pathname === "/" || pathname === "/api/index" || pathname === "/api/index.js";
 }
 
 function hasPilotAccess(request, url) {
