@@ -101,7 +101,8 @@ async function loadBriefing() {
   const themeSignalId = briefing.themeOfDay?.signalId;
   const activeItems = briefing.items.filter((item) => item.decision !== "Ignorieren");
   const personalizedItems = recommendations.map(recommendationToDecisionItem);
-  decisions = (personalizedItems.length ? personalizedItems : (activeItems.length ? activeItems : briefing.items.slice(0, 1)))
+  const situationalItems = (briefing.situationalBriefing || []).map(situationalToDecisionItem);
+  decisions = (personalizedItems.length ? personalizedItems : (activeItems.length ? activeItems : (briefing.items.length ? briefing.items.slice(0, 1) : situationalItems)))
     .sort((a, b) => {
       if (a.signalId === themeSignalId) return -1;
       if (b.signalId === themeSignalId) return 1;
@@ -188,6 +189,66 @@ function recommendationToDecisionItem(recommendation) {
     consequence_if_ignored: recommendation.consequence_if_ignored,
     possible_upside: recommendation.possible_upside,
     taskTemplate: recommendation.taskTemplate
+  };
+}
+
+function situationalToDecisionItem(item) {
+  return {
+    id: item.id,
+    signalId: item.id,
+    title: item.title,
+    topic: item.title,
+    summary: item.summary,
+    recommendedAction: `Beobachte das Thema heute. Prüfe, ob daraus eine Frage an Bundesregierung oder Ausschuss entsteht.`,
+    suggestedStatement: "",
+    whyNow: item.relevanceReason || "Dieses Thema wurde in geprüften Quellen gefunden und berührt dein Mandatsprofil.",
+    whyItMatters: `Das betrifft dich, weil ${item.relevanceReason || "ein Bezug zu deinem Mandatsprofil erkennbar ist"}.`,
+    inactionConsequence: "Wenn du es ignorierst, verpasst du möglicherweise eine frühe fachliche Anschlussstelle. Noch ist aber keine öffentliche Reaktion nötig.",
+    riskNote: "Derzeit kein akutes Risiko, aber beobachtbar.",
+    opportunityNote: "Du bleibst früh informiert, ohne dich in irrelevante Nachrichten zu verlieren.",
+    estimatedTimeMinutes: 5,
+    confidence: item.confidence,
+    sourceCount: 1,
+    sources: [{
+      sourceName: item.sourceName,
+      sourceType: item.sourceType,
+      sourceUrl: item.sourceUrl,
+      itemUrl: item.url,
+      url: item.url,
+      publishedAt: item.publishedAt,
+      retrievedAt: item.retrievedAt,
+      confidence: item.confidence,
+      excerpt: item.summary,
+      relevanceReason: item.relevanceReason
+    }],
+    primarySource: {
+      sourceName: item.sourceName,
+      sourceType: item.sourceType,
+      sourceUrl: item.sourceUrl,
+      itemUrl: item.url,
+      url: item.url,
+      publishedAt: item.publishedAt,
+      retrievedAt: item.retrievedAt,
+      confidence: item.confidence,
+      excerpt: item.summary,
+      relevanceReason: item.relevanceReason
+    },
+    politicalScore: 45,
+    mandateScore: 55,
+    finalScore: 50,
+    totalScore: 50,
+    priority: 50,
+    decision: "Beobachten",
+    classification: "watch",
+    actionType: "observe",
+    deadline: "",
+    urgency: "niedrig",
+    statusChange: "Neu geprüft",
+    changeReason: item.relevanceReason || "Aus geprüfter Quelle in die Lage übernommen.",
+    personal_relevance_explanation: `Das betrifft dich, weil ${item.relevanceReason || "ein Bezug zu deinem Mandatsprofil erkennbar ist"}.`,
+    consequence_if_ignored: "Wenn du es ignorierst, verpasst du möglicherweise eine frühe fachliche Anschlussstelle. Noch ist aber keine öffentliche Reaktion nötig.",
+    possible_upside: "Du bleibst früh informiert, ohne dich in irrelevante Nachrichten zu verlieren.",
+    taskTemplate: null
   };
 }
 
@@ -353,7 +414,7 @@ function referentFocusSentence() {
 }
 
 function renderReferentHome() {
-  const sections = briefing.homeSections || buildFallbackHomeSections();
+  const sections = hasHomeSectionContent(briefing.homeSections) ? briefing.homeSections : buildFallbackHomeSections();
   return `
     ${renderPrioritySection("Deine wichtigsten Aufgaben", sections.topTasks, renderHomeTask)}
     ${renderPrioritySection("Neu seit deinem letzten Besuch", sections.changedSinceLastVisit, renderChangeItem)}
@@ -361,6 +422,11 @@ function renderReferentHome() {
     ${renderPrioritySection("Politische Chancen", sections.opportunities, renderOpportunityItem)}
     ${renderPrioritySection("Politische Risiken", sections.risks, renderRiskItem)}
   `;
+}
+
+function hasHomeSectionContent(sections) {
+  if (!sections) return false;
+  return ["topTasks", "changedSinceLastVisit", "needsAttention", "opportunities", "risks"].some((key) => Array.isArray(sections[key]) && sections[key].length);
 }
 
 function buildFallbackHomeSections() {
@@ -1029,7 +1095,7 @@ function renderSettingsView() {
   return `
     <section class="page-intro compact">
       <h1 class="${headlineClass("Einstellungen.")}">Einstellungen.</h1>
-      <p>Profil und Quellen sind für diese V1 lokal vorbereitet.</p>
+      <p>Profil, Quellen und Briefings werden persistent über Supabase gespeichert.</p>
     </section>
     <section class="plain-list">
       <article class="list-row">
