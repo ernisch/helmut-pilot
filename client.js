@@ -1220,7 +1220,7 @@ function renderSettingsView() {
           <h3>${escapeHtml(ops.status || "Prüfen")}</h3>
           <p>${escapeHtml(operationsSummary(ops))}</p>
         </div>
-        <button class="secondary-button" type="button" data-run-crawl>Jetzt prüfen</button>
+        <button class="secondary-button" type="button" data-run-crawl>System prüfen</button>
       </article>
       <article class="list-row">
         <div>
@@ -1588,16 +1588,20 @@ function bindActions() {
 
   app.querySelectorAll("[data-run-crawl]").forEach((button) => {
     button.addEventListener("click", async () => {
+      const originalText = button.textContent;
       button.disabled = true;
       button.textContent = "Prüft...";
       try {
-        await fetch(`/api/crawl/run?politicianId=${encodeURIComponent(activePoliticianId)}`);
-        currentView = "radar";
-        showToast("Personensuche geprüft");
+        const response = await fetch(`/api/pipeline/run?politicianId=${encodeURIComponent(activePoliticianId)}`);
+        if (!response.ok) throw new Error(`Pilot check failed: ${response.status}`);
+        const result = await response.json();
+        showToast(result.skippedReason ? "Letzter Lauf wird genutzt" : "Helmut ist aktualisiert");
         await loadBriefing();
       } catch (error) {
         console.error(error);
-        showToast("Suche konnte nicht gestartet werden");
+        button.disabled = false;
+        button.textContent = originalText;
+        showToast("Prüfung konnte nicht gestartet werden");
         render();
       }
     });
