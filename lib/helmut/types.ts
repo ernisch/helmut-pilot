@@ -94,6 +94,9 @@ export interface RawItem {
   sourceUrl: string;
   title: string;
   url: string;
+  originalUrl?: string;
+  linkType?: "direct" | "publisher" | "google_proxy" | "missing";
+  linkResolutionNote?: string;
   content: string;
   publishedAt: string;
   retrievedAt: string;
@@ -221,6 +224,11 @@ export interface Evidence {
   sourceName: string;
   sourceType: SourceType;
   sourceUrl: string;
+  url?: string;
+  itemUrl?: string;
+  originalUrl?: string;
+  linkType?: "direct" | "publisher" | "google_proxy" | "missing";
+  linkResolutionNote?: string;
   publishedAt: string;
   retrievedAt: string;
   author: string;

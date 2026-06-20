@@ -711,7 +711,7 @@ function sourceEvidenceQuality(briefing) {
   const weakSamples = [];
 
   entries.forEach((source) => {
-    const directUrl = [source.itemUrl, source.url].find(isDirectArticleUrl);
+    const directUrl = [source.itemUrl, source.url].find((url) => isDirectArticleUrl(url, source));
     const publisherUrl = isUsablePublicUrl(source.sourceUrl) ? source.sourceUrl : "";
     if (directUrl) {
       directLinks += 1;
@@ -731,6 +731,7 @@ function sourceEvidenceQuality(briefing) {
     directLinks,
     publisherFallbacks,
     missingLinks,
+    directRatio: entries.length ? Math.round((directLinks / entries.length) * 100) : 0,
     status: missingLinks ? "Prüfen" : publisherFallbacks ? "Belastbar mit Fallbacks" : "Belastbar",
     weakSamples
   };
@@ -745,8 +746,8 @@ function collectBriefingSources(briefing) {
   ].filter(Boolean);
 }
 
-function isDirectArticleUrl(value) {
-  return isUsablePublicUrl(value) && !isGoogleArticleProxy(value);
+function isDirectArticleUrl(value, source = {}) {
+  return isUsablePublicUrl(value) && !isGoogleArticleProxy(value) && !isLikelyPublisherHomepage(value, source);
 }
 
 function isUsablePublicUrl(value) {
@@ -770,6 +771,19 @@ function isGoogleArticleProxy(value) {
   try {
     const hostname = new URL(String(value || "")).hostname.toLowerCase();
     return hostname.includes("news.google.") || hostname === "news.google.com";
+  } catch {
+    return false;
+  }
+}
+
+function isLikelyPublisherHomepage(value, source = {}) {
+  try {
+    const parsed = new URL(String(value || ""));
+    const path = parsed.pathname.replace(/\/+$/, "");
+    if (!path || path === "/" || path.split("/").filter(Boolean).length === 0) return true;
+    const sourceUrl = source.sourceUrl ? new URL(String(source.sourceUrl)) : null;
+    if (sourceUrl && parsed.hostname === sourceUrl.hostname && parsed.pathname.replace(/\/+$/, "") === sourceUrl.pathname.replace(/\/+$/, "")) return true;
+    return false;
   } catch {
     return false;
   }

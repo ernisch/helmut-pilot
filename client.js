@@ -968,7 +968,7 @@ function renderTopicSourceLinks(topic) {
     <div class="source-link-list" aria-label="Quellen">
       ${sources.map((source) => {
         const href = sourceHref(source);
-        const label = `${source.sourceName || "Quelle"} öffnen`;
+        const label = `${source.sourceName || "Quelle"} · ${sourceLinkLabel(source)}`;
         return href
           ? `<a class="source-pill" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>`
           : `<span class="source-pill muted">${escapeHtml(source.sourceName || "Quelle")} hinterlegt</span>`;
@@ -1109,6 +1109,7 @@ function mentionRows(items, options = {}) {
 
   return items.map((item) => {
     const href = sourceHref(item);
+    const label = sourceLinkLabel(item);
     return `
       <article class="list-row mention mention-row ${href ? "" : "no-link"}">
         ${mentionVisual(item)}
@@ -1118,10 +1119,11 @@ function mentionRows(items, options = {}) {
             <h3>${escapeHtml(item.title || "Erwähnung gefunden")}</h3>
             <p>${escapeHtml(twoSentenceSummary(item.content || item.excerpt || "Cem wurde in dieser Quelle erwähnt."))}</p>
             <small class="mention-timestamp">Gefunden: ${escapeHtml(formatMentionFoundAt(item))}</small>
+            ${href && label !== "Artikel öffnen" ? `<p class="source-missing">Direkter Artikellink noch nicht verfügbar. Helmut öffnet die Publisher-Quelle.</p>` : ""}
             ${!href ? `<p class="source-missing">Direktlink noch nicht verfügbar.</p>` : ""}
           </div>
         </div>
-        ${href ? `<a class="secondary-button mention-open" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">Artikel öffnen</a>` : ""}
+        ${href ? `<a class="secondary-button mention-open" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>` : ""}
       </article>
     `;
   }).join("");
@@ -2044,7 +2046,7 @@ function sourceLink(item) {
   const source = primarySource(item);
   const url = sourceHref(source || item);
   if (!url) return `<span class="source-pill muted">Quelle hinterlegt</span>`;
-  return `<a class="source-pill" href="${escapeAttribute(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(source.sourceName || "Quelle")} öffnen</a>`;
+  return `<a class="source-pill" href="${escapeAttribute(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(sourceLinkLabel(source || item))}</a>`;
 }
 
 function renderSourceBasis(item) {
@@ -2057,11 +2059,13 @@ function renderSourceBasis(item) {
         const href = sourceHref(source);
         const tag = href ? "a" : "div";
         const linkAttrs = href ? ` href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer"` : "";
+        const note = source.linkResolutionNote || (sourceLinkLabel(source) === "Artikel öffnen" ? "Direkter Artikellink." : "Publisher-Quelle als Fallback.");
         return `
         <${tag} class="source-row"${linkAttrs}>
           <div>
             <span>${escapeHtml(source.sourceName || "Quelle")}</span>
             <p>${escapeHtml(source.excerpt || source.relevanceReason || "Quelle wurde für diese Empfehlung herangezogen.")}</p>
+            <small>${escapeHtml(note)}</small>
           </div>
           <small>Sicherheit ${escapeHtml(confidenceLabel(source.confidence))}</small>
         </${tag}>
@@ -2089,10 +2093,33 @@ function sourceHref(source) {
   return candidates.find((url) => /^https?:\/\//i.test(url) && !url.includes("example.local") && !isGoogleArticleProxy(url)) || "";
 }
 
+function sourceLinkLabel(source) {
+  const href = sourceHref(source);
+  if (!href) return "Quelle hinterlegt";
+  if (source?.linkType === "direct") return "Artikel öffnen";
+  if (source?.linkType === "publisher" || isLikelyPublisherHomepage(href, source)) return "Quelle öffnen";
+  return "Artikel öffnen";
+}
+
 function isGoogleArticleProxy(url) {
   try {
     const parsed = new URL(String(url || ""));
     return parsed.hostname.includes("google.");
+  } catch {
+    return false;
+  }
+}
+
+function isLikelyPublisherHomepage(url, source = {}) {
+  try {
+    const parsed = new URL(String(url || ""));
+    const path = parsed.pathname.replace(/\/+$/, "");
+    if (!path || path === "/" || path.split("/").filter(Boolean).length === 0) return true;
+    if (source?.sourceUrl) {
+      const sourceUrl = new URL(String(source.sourceUrl));
+      return parsed.hostname === sourceUrl.hostname && parsed.pathname.replace(/\/+$/, "") === sourceUrl.pathname.replace(/\/+$/, "");
+    }
+    return false;
   } catch {
     return false;
   }
