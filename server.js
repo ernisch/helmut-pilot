@@ -680,8 +680,8 @@ function pilotReadiness(crawl, briefing, storage, evidenceQuality = null) {
     if (quality && qualityScore < 90) issues.push("Die Briefingqualität ist noch nicht pitchbereit.");
   }
   if (!process.env.CRON_SECRET) warnings.push("Cron-Routen sind noch nicht mit CRON_SECRET geschützt.");
-  if (evidenceQuality?.missingLinks > 0) issues.push("Mindestens ein sichtbarer Beleg hat keinen belastbaren Link.");
-  if (evidenceQuality?.publisherFallbacks > 0) warnings.push("Einige Belege öffnen nur die Publisher-Quelle statt den direkten Artikel.");
+  if (evidenceQuality?.missingLinks > 0) issues.push("Mindestens ein sichtbarer Beleg hat keinen präzisen Artikellink.");
+  if (evidenceQuality?.publisherFallbacks > 0) issues.push("Mindestens ein sichtbarer Beleg hat nur eine Publisher-Startseite statt eines Artikellinks.");
 
   const ready = issues.length === 0;
   return {
@@ -733,7 +733,7 @@ function sourceEvidenceQuality(briefing) {
     publisherFallbacks,
     missingLinks,
     directRatio: entries.length ? Math.round((directLinks / entries.length) * 100) : 0,
-    status: missingLinks ? "Prüfen" : publisherFallbacks ? "Belastbar mit Fallbacks" : "Belastbar",
+    status: missingLinks || publisherFallbacks ? "Präzise Links fehlen" : "Belastbar",
     weakSamples
   };
 }
@@ -748,6 +748,7 @@ function collectBriefingSources(briefing) {
 }
 
 function isDirectArticleUrl(value, source = {}) {
+  if (source?.linkType && source.linkType !== "direct") return false;
   return isUsablePublicUrl(value) && !isGoogleArticleProxy(value) && !isLikelyPublisherHomepage(value, source);
 }
 

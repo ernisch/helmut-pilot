@@ -739,7 +739,7 @@ function renderSituationalItem(item) {
         <p>${escapeHtml(twoSentenceSummary(item.summary || item.excerpt || item.content || ""))}</p>
         <small>${escapeHtml(item.relevanceReason || "Relevante politische Lage.")} · ${escapeHtml(formatBriefingDate(item.publishedAt || item.retrievedAt))}</small>
       </div>
-      ${href ? `<a class="source-pill" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">Quelle öffnen</a>` : `<span class="source-pill muted">Quelle hinterlegt</span>`}
+      ${href ? `<a class="source-pill" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">Artikel öffnen</a>` : `<span class="source-pill muted">Direktlink fehlt</span>`}
     </article>
   `;
 }
@@ -1005,7 +1005,7 @@ function renderTopicSourceLinks(topic) {
         const label = `${source.sourceName || "Quelle"} · ${sourceLinkLabel(source)}`;
         return href
           ? `<a class="source-pill" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>`
-          : `<span class="source-pill muted">${escapeHtml(source.sourceName || "Quelle")} hinterlegt</span>`;
+          : `<span class="source-pill muted">${escapeHtml(source.sourceName || "Quelle")} · Direktlink fehlt</span>`;
       }).join("")}
     </div>
   `;
@@ -1169,8 +1169,7 @@ function mentionRows(items, options = {}) {
             <h3>${escapeHtml(item.title || "Erwähnung gefunden")}</h3>
             <p>${escapeHtml(twoSentenceSummary(item.content || item.excerpt || "Cem wurde in dieser Quelle erwähnt."))}</p>
             <small class="mention-timestamp">Gefunden: ${escapeHtml(formatMentionFoundAt(item))}</small>
-            ${href && label !== "Artikel öffnen" ? `<p class="source-missing">Direkter Artikellink noch nicht verfügbar. Helmut öffnet die Publisher-Quelle.</p>` : ""}
-            ${!href ? `<p class="source-missing">Direktlink noch nicht verfügbar.</p>` : ""}
+            ${!href ? `<p class="source-missing">Direkter Artikellink noch nicht verfügbar. Helmut öffnet keine Publisher-Startseite als Ersatz.</p>` : ""}
           </div>
         </div>
         ${href ? `<a class="secondary-button mention-open" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>` : ""}
@@ -1254,7 +1253,7 @@ function renderSettingsView() {
   const readiness = ops.readiness || null;
   const readinessTone = readiness?.ready ? "low" : readiness?.issues?.length ? "high" : "medium";
   const evidence = ops.evidenceQuality || null;
-  const evidenceTone = evidence?.missingLinks ? "high" : evidence?.publisherFallbacks ? "medium" : "low";
+  const evidenceTone = evidence?.missingLinks || evidence?.publisherFallbacks ? "high" : "low";
   return `
     <section class="page-intro compact">
       <h1 class="${headlineClass("Einstellungen.")}">Einstellungen.</h1>
@@ -1363,8 +1362,8 @@ function evidenceSummary(evidence) {
   const direct = evidence.directLinks || 0;
   const fallback = evidence.publisherFallbacks || 0;
   const missing = evidence.missingLinks || 0;
-  if (missing) return `${direct} Direktlinks · ${fallback} Publisher-Fallbacks · ${missing} Belege ohne belastbaren Link.`;
-  if (fallback) return `${direct} Direktlinks · ${fallback} Publisher-Fallbacks. Keine technischen Links.`;
+  if (missing) return `${direct} Direktlinks · ${fallback + missing} Belege ohne präzisen Artikellink.`;
+  if (fallback) return `${direct} Direktlinks · ${fallback} Belege nur mit Publisher-Quelle.`;
   return `${direct} Direktlinks. Keine technischen Links.`;
 }
 
@@ -2168,11 +2167,7 @@ function taskArticleSource(task) {
 
 function directArticleHref(source) {
   const candidates = [source?.itemUrl, source?.url].filter(Boolean);
-  return candidates.find((url) => {
-    if (!/^https?:\/\//i.test(url) || url.includes("example.local") || isGoogleArticleProxy(url)) return false;
-    if (source?.linkType === "publisher") return false;
-    return !isLikelyPublisherHomepage(url, source);
-  }) || "";
+  return candidates.find((url) => isDirectArticleHref(url, source)) || "";
 }
 
 function teamBenefitText(task) {
@@ -2270,7 +2265,7 @@ function sourceLine(item) {
 function sourceLink(item) {
   const source = primarySource(item);
   const url = sourceHref(source || item);
-  if (!url) return `<span class="source-pill muted">Quelle hinterlegt</span>`;
+  if (!url) return `<span class="source-pill muted">Direktlink fehlt</span>`;
   return `<a class="source-pill" href="${escapeAttribute(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(sourceLinkLabel(source || item))}</a>`;
 }
 
@@ -2284,7 +2279,7 @@ function renderSourceBasis(item) {
         const href = sourceHref(source);
         const tag = href ? "a" : "div";
         const linkAttrs = href ? ` href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer"` : "";
-        const note = source.linkResolutionNote || (sourceLinkLabel(source) === "Artikel öffnen" ? "Direkter Artikellink." : "Publisher-Quelle als Fallback.");
+        const note = href ? "Direkter Artikellink." : "Direkter Artikellink liegt noch nicht belastbar vor.";
         return `
         <${tag} class="source-row"${linkAttrs}>
           <div>
@@ -2314,16 +2309,21 @@ function primarySource(item) {
 }
 
 function sourceHref(source) {
-  const candidates = [source?.itemUrl, source?.url, source?.sourceUrl].filter(Boolean);
-  return candidates.find((url) => /^https?:\/\//i.test(url) && !url.includes("example.local") && !isGoogleArticleProxy(url)) || "";
+  const candidates = [source?.itemUrl, source?.url].filter(Boolean);
+  return candidates.find((url) => isDirectArticleHref(url, source)) || "";
 }
 
 function sourceLinkLabel(source) {
   const href = sourceHref(source);
-  if (!href) return "Quelle hinterlegt";
-  if (source?.linkType === "direct") return "Artikel öffnen";
-  if (source?.linkType === "publisher" || isLikelyPublisherHomepage(href, source)) return "Quelle öffnen";
+  if (!href) return "Direktlink fehlt";
   return "Artikel öffnen";
+}
+
+function isDirectArticleHref(url, source = {}) {
+  if (!/^https?:\/\//i.test(String(url || ""))) return false;
+  if (String(url).includes("example.local") || isGoogleArticleProxy(url)) return false;
+  if (source?.linkType && source.linkType !== "direct") return false;
+  return !isLikelyPublisherHomepage(url, source);
 }
 
 function isGoogleArticleProxy(url) {
