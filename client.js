@@ -288,6 +288,7 @@ function renderBriefingView() {
     ${renderAgentBriefing()}
 
     ${renderChiefRecommendation()}
+    ${!decisions.length ? renderSituationalBriefing() : ""}
 
     ${secondaryDecisions.length ? `
       <section class="briefing-list" aria-label="Weitere Themen">
@@ -365,6 +366,39 @@ function renderChiefRecommendation() {
         ${taskId ? `<button class="secondary-button" type="button" data-task-copy="${escapeHtml(taskId)}">Ans Büro geben</button>` : ""}
       </div>
     </section>
+  `;
+}
+
+function renderSituationalBriefing() {
+  const items = briefing.situationalBriefing || [];
+  return `
+    <section class="situational-card" aria-label="Politische Lage">
+      <span>Lage ohne Handlungsdruck</span>
+      <h2>${items.length ? "Heute keine direkte Reaktion nötig." : "Heute keine belastbare Entscheidungslage."}</h2>
+      <p>${items.length ? `Ich habe trotzdem ${items.length} politische Entwicklungen markiert, die du kennen solltest.` : escapeHtml(briefing.fallbackReason || "Die Quellen wurden geprüft. Es gibt aktuell nichts, worauf du politisch reagieren musst.")}</p>
+      ${items.length ? `
+        <div class="situational-list">
+          ${items.map(renderSituationalItem).join("")}
+        </div>
+      ` : `
+        <button class="secondary-button" type="button" data-run-crawl>Quellen erneut prüfen</button>
+      `}
+    </section>
+  `;
+}
+
+function renderSituationalItem(item) {
+  const href = sourceHref(item);
+  return `
+    <article class="situational-item">
+      <div>
+        <span>${escapeHtml(item.sourceName || "Quelle")}</span>
+        <h3>${escapeHtml(item.title || "Politische Entwicklung")}</h3>
+        <p>${escapeHtml(twoSentenceSummary(item.summary || item.excerpt || item.content || ""))}</p>
+        <small>${escapeHtml(item.relevanceReason || "Relevante politische Lage.")} · ${escapeHtml(formatBriefingDate(item.publishedAt || item.retrievedAt))}</small>
+      </div>
+      ${href ? `<a class="source-pill" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">Quelle öffnen</a>` : `<span class="source-pill muted">Quelle hinterlegt</span>`}
+    </article>
   `;
 }
 
