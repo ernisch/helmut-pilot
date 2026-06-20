@@ -7,7 +7,7 @@ loadLocalEnv();
 const { cemInceProfile, demoRawItems, demoSources, generateBriefing } = require("./lib/helmut/runtime");
 const { getLatestOrDemoBriefing, runDailyPipeline, runMorningBriefing, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { personalizeBriefing } = require("./lib/helmut/personalization");
-const { getInteractions, getProfile, getStorageStatus, getTasks, getTopicMemory, getUserNotes, saveInteraction, saveProfile, saveTask, saveUserNote, updateTaskStatus } = require("./lib/helmut/storage");
+const { getInteractions, getLatestBriefing, getLatestCrawlRun, getProfile, getStorageStatus, getTasks, getTopicMemory, getUserNotes, saveInteraction, saveProfile, saveTask, saveUserNote, updateTaskStatus } = require("./lib/helmut/storage");
 const { generateCommunicationDraft, generateSpeechAudio, isAiEnabled } = require("./lib/helmut/ai");
 
 const root = __dirname;
@@ -100,6 +100,36 @@ function handleRequest(request, response) {
 
   if (url.pathname === "/api/storage/status") {
     return sendJson(response, getStorageStatus());
+  }
+
+  if (url.pathname === "/api/ops/status") {
+    return handleAsync(response, async () => {
+      const latestCrawl = await getLatestCrawlRun();
+      const latestBriefing = await getLatestBriefing(politicianId);
+      const storage = getStorageStatus();
+      return {
+        status: operationalStatus(latestCrawl, latestBriefing, storage),
+        storage,
+        ai: {
+          enabled: isAiEnabled(),
+          model: process.env.OPENAI_MODEL || "gpt-4.1"
+        },
+        crawl: latestCrawl || null,
+        briefing: latestBriefing ? {
+          id: latestBriefing.id,
+          status: latestBriefing.status,
+          generatedAt: latestBriefing.generatedAt || latestBriefing.date,
+          itemCount: Array.isArray(latestBriefing.items) ? latestBriefing.items.length : 0,
+          recommendationCount: Array.isArray(latestBriefing.personalizedRecommendations) ? latestBriefing.personalizedRecommendations.length : 0
+        } : null,
+        cron: {
+          timezone: "Europe/Berlin",
+          crawlTimes: ["06:00", "12:00", "18:00", "22:00"],
+          briefingTimes: ["07:00"],
+          note: "Vercel Cron ruft die Routen automatisch auf; die Zeiten sind als Berliner Zielzeiten gedacht."
+        }
+      };
+    });
   }
 
   if (url.pathname === "/api/communication/generate" && request.method === "POST") {
@@ -252,6 +282,18 @@ function decorateBriefingFreshness(briefing) {
             : "Die Quellen wurden geprüft; es gibt aktuell keine belastbare neue Entscheidung."
     }
   };
+}
+
+function operationalStatus(crawl, briefing, storage) {
+  const crawlAge = crawl?.createdAt ? Date.now() - new Date(crawl.createdAt).getTime() : Infinity;
+  const briefingDate = briefing?.generatedAt || briefing?.date;
+  const briefingAge = briefingDate ? Date.now() - new Date(briefingDate).getTime() : Infinity;
+  const crawlHealthy = crawl && crawl.failedSources === 0 && crawlAge < 8 * 60 * 60 * 1000;
+  const briefingHealthy = briefing && briefingAge < 18 * 60 * 60 * 1000;
+  if (storage.backend !== "supabase") return "Achtung";
+  if (crawlHealthy && briefingHealthy) return "Bereit";
+  if (crawl || briefing) return "Prüfen";
+  return "Nicht eingerichtet";
 }
 
 function isBriefingStaleForBerlin(briefing) {

@@ -1,6 +1,7 @@
 let profile = null;
 let briefing = null;
 let aiStatus = { enabled: false, model: "" };
+let opsStatus = null;
 let decisions = [];
 let tasks = [];
 let notes = [];
@@ -86,17 +87,19 @@ async function loadBriefing() {
   const params = new URLSearchParams(window.location.search);
   activePoliticianId = sanitizePoliticianId(params.get("politicianId") || params.get("profileId") || "cem-ince");
   const scope = `politicianId=${encodeURIComponent(activePoliticianId)}`;
-  const [profileResponse, briefingResponse, tasksResponse, notesResponse, aiStatusResponse] = await Promise.all([
+  const [profileResponse, briefingResponse, tasksResponse, notesResponse, aiStatusResponse, opsStatusResponse] = await Promise.all([
     fetch(`/api/profile/demo?${scope}`),
     fetch(`/api/briefing/latest?${scope}`),
     fetch(`/api/tasks?${scope}`),
     fetch(`/api/notes?${scope}`),
-    fetch("/api/ai/status")
+    fetch("/api/ai/status"),
+    fetch(`/api/ops/status?${scope}`)
   ]);
 
   profile = await profileResponse.json();
   briefing = await briefingResponse.json();
   aiStatus = aiStatusResponse.ok ? await aiStatusResponse.json() : { enabled: false, model: "" };
+  opsStatus = opsStatusResponse.ok ? await opsStatusResponse.json() : null;
   briefing.status = briefing.status || "Live";
   briefing.sourceStats = briefing.sourceStats || { checkedSources: 0, successfulSources: 0, failedSources: 0 };
 
@@ -1188,12 +1191,26 @@ function radarRows(items, type) {
 
 function renderSettingsView() {
   const sourceStats = briefing.sourceStats || {};
+  const ops = opsStatus || {};
+  const storage = ops.storage || {};
+  const crawl = ops.crawl || sourceStats;
+  const opsTone = ops.status === "Bereit" ? "low" : ops.status === "Prüfen" ? "medium" : "high";
+  const latestCrawlText = crawl?.createdAt ? formatBriefingDate(crawl.createdAt) : "Noch kein Lauf";
+  const latestBriefingText = ops.briefing?.generatedAt ? formatBriefingDate(ops.briefing.generatedAt) : formatBriefingDate(briefing.generatedAt || briefing.date);
   return `
     <section class="page-intro compact">
       <h1 class="${headlineClass("Einstellungen.")}">Einstellungen.</h1>
       <p>Profil, Quellen und Briefings werden persistent über Supabase gespeichert.</p>
     </section>
     <section class="plain-list">
+      <article class="list-row ${opsTone}">
+        <div>
+          <span>Betriebscheck</span>
+          <h3>${escapeHtml(ops.status || "Prüfen")}</h3>
+          <p>${escapeHtml(operationsSummary(ops))}</p>
+        </div>
+        <button class="secondary-button" type="button" data-run-crawl>Jetzt prüfen</button>
+      </article>
       <article class="list-row">
         <div>
           <span>Mandatsprofil</span>
@@ -1205,8 +1222,15 @@ function renderSettingsView() {
       <article class="list-row">
         <div>
           <span>Quellen</span>
-          <h3>${sourceStats.successfulSources || 0} von ${sourceStats.checkedSources || 0} geprüft</h3>
-          <p>${sourceStats.failedSources || 0} Fehler · ${briefing.liveSignals || 0} Live-Signale · ${briefing.personMentions?.length || 0} Namensnennungen.</p>
+          <h3>${crawl?.successfulSources || sourceStats.successfulSources || 0} von ${crawl?.checkedSources || sourceStats.checkedSources || 0} geprüft</h3>
+          <p>${crawl?.failedSources || sourceStats.failedSources || 0} Fehler · letzter Lauf ${escapeHtml(latestCrawlText)} · ${briefing.personMentions?.length || 0} Namensnennungen.</p>
+        </div>
+      </article>
+      <article class="list-row ${storage.backend === "supabase" ? "low" : "medium"}">
+        <div>
+          <span>Speicher</span>
+          <h3>${storage.backend === "supabase" ? "Supabase aktiv" : "Lokal"}</h3>
+          <p>${storage.backend === "supabase" ? "Briefings, Quellen, Profil und Lernsignale werden persistent gespeichert." : "Achtung: Daten würden lokal gespeichert. Für den Pilot sollte Supabase aktiv sein."}</p>
         </div>
       </article>
       <article class="list-row ${aiStatus.enabled ? "low" : "medium"}">
@@ -1220,11 +1244,31 @@ function renderSettingsView() {
         <div>
           <span>Pilotstatus</span>
           <h3>${escapeHtml(briefing.status || "Bereit")}</h3>
-          <p>${escapeHtml(briefing.fallbackReason || "Live-Daten werden für die Morgenlage verwendet.")}</p>
+          <p>${escapeHtml(briefing.fallbackReason || `Letztes Briefing ${latestBriefingText}. Live-Daten werden für die Morgenlage verwendet.`)}</p>
+        </div>
+      </article>
+      <article class="list-row">
+        <div>
+          <span>Automatik</span>
+          <h3>${escapeHtml((ops.cron?.crawlTimes || ["06:00", "12:00", "18:00", "22:00"]).join(" · "))}</h3>
+          <p>Morgenbriefing um ${escapeHtml((ops.cron?.briefingTimes || ["07:00"]).join(" · "))} Uhr. Zeiten sind Berliner Zielzeiten.</p>
         </div>
       </article>
     </section>
   `;
+}
+
+function operationsSummary(ops) {
+  if (!ops || !ops.status) return "Status konnte noch nicht geladen werden.";
+  const crawl = ops.crawl;
+  const briefingInfo = ops.briefing;
+  const checked = crawl?.checkedSources || 0;
+  const failed = crawl?.failedSources || 0;
+  const recs = briefingInfo?.recommendationCount ?? recommendations.length;
+  if (ops.status === "Bereit") return `${checked} Quellen geprüft, ${failed} Fehler, ${recs} persönliche Empfehlungen bereit.`;
+  if (ops.status === "Prüfen") return `${checked || "Keine"} Quellen zuletzt geprüft. Bitte einmal manuell prüfen.`;
+  if (ops.storage?.backend !== "supabase") return "Supabase ist nicht aktiv. Für den Pilot muss persistenter Speicher laufen.";
+  return "Noch kein vollständiger Quellen- und Briefinglauf gefunden.";
 }
 
 function renderProfileSettingsView() {
