@@ -6,7 +6,7 @@ loadLocalEnv();
 
 const { cemInceProfile, demoRawItems, demoSources, generateBriefing } = require("./lib/helmut/runtime");
 const { getLatestOrDemoBriefing, runDailyPipeline, runMorningBriefing, runSourceCrawl } = require("./lib/helmut/scheduler");
-const { getProfile, getTasks, saveInteraction, saveProfile, saveTask, updateTaskStatus } = require("./lib/helmut/storage");
+const { getProfile, getStorageStatus, getTasks, saveInteraction, saveProfile, saveTask, updateTaskStatus } = require("./lib/helmut/storage");
 const { generateCommunicationDraft, isAiEnabled } = require("./lib/helmut/ai");
 
 const root = __dirname;
@@ -63,6 +63,10 @@ function handleRequest(request, response) {
       enabled: isAiEnabled(),
       model: process.env.OPENAI_MODEL || "gpt-4.1"
     });
+  }
+
+  if (url.pathname === "/api/storage/status") {
+    return sendJson(response, getStorageStatus());
   }
 
   if (url.pathname === "/api/communication/generate" && request.method === "POST") {
