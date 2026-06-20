@@ -7,7 +7,7 @@ loadLocalEnv();
 const { cemInceProfile, demoRawItems, demoSources, generateBriefing } = require("./lib/helmut/runtime");
 const { getLatestOrDemoBriefing, runDailyPipeline, runMorningBriefing, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { personalizeBriefing } = require("./lib/helmut/personalization");
-const { getInteractions, getLatestBriefing, getLatestCrawlRun, getProfile, getStorageStatus, getTasks, getTopicMemory, getUserNotes, saveInteraction, saveProfile, saveTask, saveUserNote, updateTaskStatus } = require("./lib/helmut/storage");
+const { getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestPipelineDebugReport, getProfile, getStorageStatus, getTasks, getTopicMemory, getUserNotes, saveInteraction, saveProfile, saveTask, saveUserNote, updateTaskStatus } = require("./lib/helmut/storage");
 const { generateCommunicationDraft, generateSpeechAudio, isAiEnabled } = require("./lib/helmut/ai");
 
 const root = __dirname;
@@ -154,6 +154,17 @@ function handleRequest(request, response) {
         };
       }
       return runDailyPipeline(politicianId);
+    });
+  }
+
+  if (url.pathname === "/api/pipeline/debug") {
+    return handleAsync(response, async () => {
+      const report = await getLatestPipelineDebugReport(politicianId);
+      if (report) return report;
+      return {
+        status: "Noch kein Pipeline-Debug-Bericht vorhanden.",
+        hint: "Starte ein Briefing oder die Pipeline, damit Helmut einen Debug-Bericht speichert."
+      };
     });
   }
 

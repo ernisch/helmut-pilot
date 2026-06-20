@@ -33,6 +33,7 @@ async function main() {
 
   const status = await checkOpsStatus();
   const briefing = await checkBriefing();
+  await checkPipelineDebug();
   await checkSourceLinks(briefing);
   await maybeCheckSpeech(briefing);
   await maybeRunCrawl();
@@ -101,6 +102,16 @@ async function checkBriefing() {
   ok(Array.isArray(briefing.personalizedRecommendations) && briefing.personalizedRecommendations.length > 0, "Briefing has personalized recommendations");
   ok(Boolean(briefing.executiveSummary || briefing.themeOfDay || briefing.chiefRecommendation || briefing.topicOfTheDay || briefing.agentBriefing), "Briefing has a top-level referent summary");
   return briefing;
+}
+
+async function checkPipelineDebug() {
+  const response = await request("GET", "/api/pipeline/debug", { cookie });
+  const report = parseJson(response, "pipeline debug");
+  ok(response.statusCode === 200, "Pipeline debug endpoint responds");
+  ok(Boolean(report.counts && Number.isFinite(Number(report.counts.rawItemsLast24h))), "Pipeline debug reports raw item counts");
+  ok(Array.isArray(report.rejectionSummary), "Pipeline debug reports rejection reasons");
+  ok(Array.isArray(report.acceptedItems), "Pipeline debug reports accepted item samples");
+  ok(Array.isArray(report.rejectedItems), "Pipeline debug reports rejected item samples");
 }
 
 async function checkSourceLinks(briefing) {
