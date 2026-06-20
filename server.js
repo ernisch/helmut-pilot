@@ -59,14 +59,23 @@ function handleRequest(request, response) {
       const profile = await activeProfile(politicianId);
       const latest = await getLatestOrDemoBriefing(politicianId);
       if (!latest.homeSections || !latest.personalizedRecommendations) {
-        return personalizeBriefing(latest, profile, await getTopicMemory(profile.id), await getInteractions(profile.id));
+        const personalized = personalizeBriefing(latest, profile, await getTopicMemory(profile.id), await getInteractions(profile.id));
+        return decorateBriefingFreshness(personalized);
       }
-      if (!shouldRefreshLatestBriefing(latest, url)) return latest;
-      const pipeline = await runDailyPipeline(politicianId);
-      return {
-        ...pipeline.briefing,
-        refreshedOnRead: true
-      };
+      if (!shouldRefreshLatestBriefing(latest, url)) return decorateBriefingFreshness(latest);
+      try {
+        const pipeline = await runDailyPipeline(politicianId);
+        return decorateBriefingFreshness({
+          ...pipeline.briefing,
+          refreshedOnRead: true
+        });
+      } catch (error) {
+        console.error("Refresh on read failed", error);
+        return decorateBriefingFreshness({
+          ...latest,
+          refreshError: error.message
+        });
+      }
     });
   }
 
@@ -217,7 +226,48 @@ function shouldRefreshLatestBriefing(briefing, url) {
   const hasContent = Number(briefing.items?.length || 0) > 0 || Number(briefing.situationalBriefing?.length || 0) > 0 || Number(briefing.personMentions?.length || 0) > 0;
   if (!hasContent) return true;
   if (Number.isNaN(generatedAt.getTime())) return true;
-  return ageMs > 4 * 60 * 60 * 1000;
+  return isBriefingStaleForBerlin(briefing) || ageMs > 4 * 60 * 60 * 1000;
+}
+
+function decorateBriefingFreshness(briefing) {
+  if (!briefing || briefing.status === "Demo") return briefing;
+  const stale = isBriefingStaleForBerlin(briefing);
+  const hasDecisionItems = Number(briefing.items?.filter((item) => item.decision !== "Ignorieren").length || 0) > 0;
+  const hasSituationalItems = Number(briefing.situationalBriefing?.length || 0) > 0;
+  const status = stale ? "Veraltet" : hasDecisionItems || hasSituationalItems ? "Aktuell" : "Keine neue Entscheidung";
+  return {
+    ...briefing,
+    status,
+    freshness: {
+      status,
+      isStale: stale,
+      generatedAt: briefing.generatedAt || briefing.date || null,
+      berlinDate: berlinDateKey(new Date()),
+      reason: stale
+        ? "Das Briefing stammt nicht aus dem aktuellen Berliner Tag oder ist älter als 18 Stunden."
+        : hasDecisionItems
+          ? "Das Briefing enthält aktuelle politische Entscheidungen."
+          : hasSituationalItems
+            ? "Die Quellen wurden geprüft; es gibt beobachtbare Entwicklungen, aber keinen akuten Handlungsdruck."
+            : "Die Quellen wurden geprüft; es gibt aktuell keine belastbare neue Entscheidung."
+    }
+  };
+}
+
+function isBriefingStaleForBerlin(briefing) {
+  const generatedAt = new Date(briefing?.generatedAt || briefing?.date || 0);
+  if (Number.isNaN(generatedAt.getTime())) return true;
+  const ageMs = Date.now() - generatedAt.getTime();
+  return berlinDateKey(generatedAt) !== berlinDateKey(new Date()) || ageMs > 18 * 60 * 60 * 1000;
+}
+
+function berlinDateKey(date) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Berlin",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(date);
 }
 
 function handleAsync(response, handler) {
