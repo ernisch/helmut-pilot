@@ -1274,6 +1274,10 @@ small {
   align-items: start;
 }
 
+.office-task-main {
+  min-width: 0;
+}
+
 .task-brief {
   display: grid;
   gap: 10px;
@@ -1300,6 +1304,14 @@ small {
   color: var(--muted);
   font-size: 14px;
   line-height: 1.45;
+}
+
+.handoff-brief {
+  grid-template-columns: minmax(0, .82fr) minmax(0, .72fr);
+}
+
+.handoff-brief .wide {
+  grid-column: 1 / -1;
 }
 
 .compact-button {
@@ -4241,6 +4253,24 @@ body {
   box-shadow: 0 22px 70px rgba(0, 0, 0, .24);
 }
 
+.office-task {
+  align-items: stretch;
+}
+
+.office-task .task-brief {
+  border-top-color: var(--command-line);
+}
+
+.office-task .task-actions {
+  width: min(210px, 100%);
+}
+
+.office-task .compact-button {
+  justify-content: center;
+  min-height: 46px;
+  white-space: nowrap;
+}
+
 .mobile-dock {
   border-top-color: var(--command-line);
   background: rgba(5, 9, 20, .88);
@@ -4390,6 +4420,18 @@ body {
 
   .decision-actions .primary-button {
     min-height: 54px;
+  }
+
+  .office-task {
+    gap: 22px;
+  }
+
+  .handoff-brief {
+    grid-template-columns: 1fr;
+  }
+
+  .office-task .task-actions {
+    width: 100%;
   }
 
   .primary-button {

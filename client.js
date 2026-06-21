@@ -431,7 +431,8 @@ function renderNotificationItem(item) {
 
 function renderView() {
   if (currentView === "detail") return renderDetailView();
-  if (currentView === "office" || currentView === "tasks" || currentView === "communication") return renderOfficeView();
+  if (currentView === "communication") return renderCommunicationView();
+  if (currentView === "office" || currentView === "tasks") return renderOfficeView();
   if (currentView === "topics") return renderTopicsView();
   if (currentView === "radar") return renderRadarView();
   if (currentView === "profile-settings") return renderProfileSettingsView();
@@ -937,11 +938,9 @@ function renderOfficeView() {
   return `
     <section class="page-intro compact">
       <h1 class="${headlineClass("Büro.")}">Büro.</h1>
-      <p>Aufträge, die dein Büro ohne weitere Erklärung vorbereiten kann.</p>
+      <p>Was dein Büro dir heute abnehmen kann.</p>
     </section>
     ${renderOfficeTasksSection()}
-    ${renderCommunicationSection()}
-    ${renderNotesSection()}
   `;
 }
 
@@ -949,8 +948,8 @@ function renderOfficeTasksSection() {
   const officeTasks = tasks.filter(isActionableOfficeTask).slice(0, 3);
   return `
     <section class="plain-list">
-      <h2>Büroaufträge</h2>
-      <p class="section-note">Kurz, sauber, direkt kopierbar.</p>
+      <h2>An dein Büro geben</h2>
+      <p class="section-note">Nur konkrete Übergaben. Maximal drei Dinge, die jemand vorbereiten kann.</p>
       ${officeTasks.map(renderTaskRow).join("") || `
         <article class="list-row office-empty">
           <div>
@@ -966,26 +965,49 @@ function renderOfficeTasksSection() {
 
 function renderTaskRow(task) {
   const mailto = taskMailtoHref(task);
+  const articleSource = taskArticleSource(task);
+  const sourceUrl = articleSource?.url || "";
+  const assignee = task.assignee || recommendedTaskAssignee(task);
   return `
     <article class="list-row office-task ${priorityClass(task.priority)}">
-      <div>
-        <span>${escapeHtml(taskPriorityLabel(task.priority))} · ${escapeHtml(formatDueDate(task.dueDate))}</span>
+      <div class="office-task-main">
+        <span>${escapeHtml(taskPriorityLabel(task.priority))} · bis ${escapeHtml(formatDueDate(task.dueDate))}</span>
         <h3>${escapeHtml(shortTaskTitle(task))}</h3>
-        <p>${escapeHtml(officeTaskOneLiner(task))}</p>
-        ${sourceLink(task.primarySource || task.sources?.[0] || task)}
+        <dl class="task-brief handoff-brief">
+          <div>
+            <dt>Zuständig</dt>
+            <dd>${escapeHtml(assignee)}</dd>
+          </div>
+          <div>
+            <dt>Frist</dt>
+            <dd>${escapeHtml(formatDueDate(task.dueDate))}</dd>
+          </div>
+          <div class="wide">
+            <dt>Auftrag</dt>
+            <dd>${escapeHtml(officeTaskRequest(task))}</dd>
+          </div>
+        </dl>
       </div>
       <div class="task-actions">
-        <button class="primary-button compact-button" type="button" data-task-copy="${escapeHtml(task.id)}">Kopieren</button>
-        ${mailto ? `<a class="secondary-button compact-button" href="${escapeAttribute(mailto)}">Mail</a>` : ""}
+        ${sourceUrl ? `<a class="secondary-button compact-button" href="${escapeAttribute(sourceUrl)}" target="_blank" rel="noopener noreferrer">Quelle öffnen</a>` : ""}
+        <button class="primary-button compact-button" type="button" data-task-copy="${escapeHtml(task.id)}">Auftrag kopieren</button>
+        ${mailto ? `<a class="secondary-button compact-button" href="${escapeAttribute(mailto)}">Mail vorbereiten</a>` : ""}
       </div>
     </article>
   `;
 }
 
-function officeTaskOneLiner(task) {
-  const benefit = task.politicalBenefit || "Damit die Linie vor der Debatte vorbereitet ist.";
-  const risk = task.riskIfIgnored || "Andere Akteure prägen die Debatte zuerst.";
-  return `${twoSentenceSummary(benefit)} ${twoSentenceSummary(risk)}`;
+function officeTaskRequest(task) {
+  const questions = taskBriefQuestions(task).slice(0, 2);
+  if (questions.length) return `Kläre kurz: ${questions.join(" ")} Danach einschätzen, ob wir heute reagieren sollten.`;
+  return shortTaskDescription(task);
+}
+
+function recommendedTaskAssignee(task) {
+  const text = `${task.title || ""} ${task.description || ""}`.toLowerCase();
+  if (text.includes("presse") || text.includes("statement") || text.includes("linie")) return "Pressesprecher";
+  if (text.includes("ausschuss") || text.includes("gesetz") || text.includes("reform")) return "Wissenschaftlicher Mitarbeiter";
+  return "Büroleitung";
 }
 
 function isActionableOfficeTask(task) {
@@ -1108,6 +1130,16 @@ function uniqueSources(sources) {
     if (key && !byHref.has(key)) byHref.set(key, source);
   });
   return Array.from(byHref.values());
+}
+
+function renderCommunicationView() {
+  return `
+    <section class="page-intro compact">
+      <h1 class="${headlineClass("Kommunikation.")}">Kommunikation.</h1>
+      <p>Formuliere aus einer politischen Linie einen verwendbaren Text.</p>
+    </section>
+    ${renderCommunicationSection()}
+  `;
 }
 
 function renderCommunicationSection() {
@@ -1736,7 +1768,7 @@ function bindActions() {
       selectedDecisionId = button.dataset.communication;
       selectedCommunicationChannel = recommendedInitialChannel(selectedDecision());
       generatedStatement = selectedDecision().statement;
-      currentView = "office";
+      currentView = "communication";
       render();
     });
   });
