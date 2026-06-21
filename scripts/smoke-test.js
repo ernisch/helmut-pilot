@@ -193,7 +193,8 @@ async function checkOfficeHandoff(briefing) {
   const tasks = parseJson(response, "tasks");
   ok(response.statusCode === 200 && Array.isArray(tasks), "Office tasks endpoint responds");
   const briefingTasks = Array.isArray(briefing.tasks) ? briefing.tasks : [];
-  const actionable = [...tasks, ...briefingTasks].filter((task) => task.status !== "done" && hasTaskDirectSource(task));
+  const storedTasks = Array.isArray(tasks) ? tasks : [];
+  const actionable = [...storedTasks, ...briefingTasks].filter((task) => task.status !== "done" && hasTaskDirectSource(task));
   if ((briefing.items || []).some((item) => item.decision !== "Ignorieren")) {
     ok(actionable.length > 0, "Office handoff has an actionable task with direct source");
   } else {
