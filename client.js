@@ -1324,6 +1324,8 @@ function renderSettingsView() {
   const readinessTone = readiness?.ready ? "low" : readiness?.issues?.length ? "high" : "medium";
   const evidence = ops.evidenceQuality || null;
   const evidenceTone = evidence?.missingLinks || evidence?.publisherFallbacks ? "high" : "low";
+  const learning = ops.learning || briefing.learningProfile || null;
+  const learningTone = learning?.confidence === "hoch" ? "low" : learning?.eventCount ? "medium" : "low";
   return `
     <section class="page-intro compact">
       <h1 class="${headlineClass("Einstellungen.")}">Einstellungen.</h1>
@@ -1374,6 +1376,13 @@ function renderSettingsView() {
           <p>${storage.backend === "supabase" ? "Briefings, Quellen, Profil und Lernsignale werden persistent gespeichert." : "Achtung: Daten würden lokal gespeichert. Für den Pilot sollte Supabase aktiv sein."}</p>
         </div>
       </article>
+      <article class="list-row ${learningTone}">
+        <div>
+          <span>Lernmodus</span>
+          <h3>${escapeHtml(learning?.status || "Bereit")}</h3>
+          <p>${escapeHtml(learningSummary(learning))}</p>
+        </div>
+      </article>
       <article class="list-row ${aiStatus.enabled ? "low" : "medium"}">
         <div>
           <span>OpenAI</span>
@@ -1418,6 +1427,11 @@ function qualitySummary(quality) {
   const base = `${quality.score || 0}% vollständig · ${quality.recommendationCount || 0} Empfehlungen geprüft.`;
   if (quality.issues?.length) return `${base} Offen: ${quality.issues[0]}`;
   return `${base} Alle Kernfragen sind abgedeckt.`;
+}
+
+function learningSummary(learning) {
+  if (!learning || !learning.eventCount) return "Helmut lernt aus Öffnen, Ausblenden, Kopieren, Notizen und Büroaufträgen. Noch gibt es keine gespeicherten Nutzungssignale.";
+  return `${learning.eventCount} Signale · Vertrauen ${learning.confidence}. ${learning.summary || "Ähnliche Themen werden künftig vorsichtig angepasst."}`;
 }
 
 function readinessSummary(readiness) {
@@ -1819,6 +1833,7 @@ function bindActions() {
         });
         if (!response.ok) throw new Error("Note save failed");
         notes.unshift(await response.json());
+        await logDecisionInteraction("note_created", selectedDecision(), { noteLength: String(text || "").length });
         showToast("Notiz gespeichert");
         render();
       } catch (error) {
@@ -2432,6 +2447,8 @@ async function logDecisionInteraction(type, decision, extra = {}) {
     metadata: {
       priority: decision.priorityLabel || decision.decision || "",
       score: decision.relevanceScore || decision.finalScore || decision.totalScore || decision.priority || "",
+      actionType: decision.actionType || "",
+      channel: selectedCommunicationChannel || "",
       ...extra
     },
     ...extra

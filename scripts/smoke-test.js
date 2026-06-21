@@ -32,6 +32,7 @@ async function main() {
 
   const status = await checkOpsStatus();
   const briefing = await checkBriefing();
+  await checkLearningStatus();
   await checkPipelineDebug();
   await checkSourceLinks(briefing);
   await maybeRunCrawl();
@@ -93,6 +94,7 @@ async function checkOpsStatus() {
   ok(Number(status.briefing?.recommendationCount || 0) >= 1, "Latest briefing contains at least one recommendation");
   ok(status.briefing?.quality?.status === "Pitchbereit" || Number(status.briefing?.quality?.score || 0) >= 90, "Briefing quality is pitch-ready");
   ok(Number(status.briefing?.referentEngine?.score || 0) >= 85, "Referent engine audit passes");
+  ok(Boolean(status.learning && typeof status.learning.status === "string"), "Ops status exposes learning mode");
   ok(Number(status.evidenceQuality?.missingLinks || 0) === 0, "Visible evidence has no missing links");
   return status;
 }
@@ -107,6 +109,13 @@ async function checkBriefing() {
   ok(briefing.referentEngine?.status === "Stabschefbereit" || Number(briefing.referentEngine?.score || 0) >= 85, "Briefing has referent-mode audit");
   ok(Boolean(briefing.executiveSummary || briefing.themeOfDay || briefing.chiefRecommendation || briefing.topicOfTheDay || briefing.agentBriefing), "Briefing has a top-level referent summary");
   return briefing;
+}
+
+async function checkLearningStatus() {
+  const response = await request("GET", "/api/learning/status", { cookie });
+  const learning = parseJson(response, "learning status");
+  ok(response.statusCode === 200, "Learning status endpoint responds");
+  ok(typeof learning.status === "string" && Number.isFinite(Number(learning.eventCount || 0)), "Learning status has event count and status");
 }
 
 async function checkPipelineDebug() {

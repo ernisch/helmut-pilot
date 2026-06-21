@@ -7,6 +7,7 @@ loadLocalEnv();
 const { cemInceProfile, demoRawItems, demoSources, generateBriefing } = require("./lib/helmut/runtime");
 const { getLatestOrDemoBriefing, runDailyPipeline, runMorningBriefing, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { personalizeBriefing } = require("./lib/helmut/personalization");
+const { buildLearningProfile } = require("./lib/helmut/learning");
 const { getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestPipelineDebugReport, getProfile, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, saveInteraction, saveProfile, saveTask, saveUserNote, updateTaskStatus } = require("./lib/helmut/storage");
 const { generateCommunicationDraft, isAiEnabled } = require("./lib/helmut/ai");
 
@@ -187,12 +188,14 @@ function handleRequest(request, response) {
       const storage = getStorageStatus();
       const storeSummary = await getStoreSummary(politicianId);
       const evidenceQuality = sourceEvidenceQuality(latestBriefing);
+      const learning = buildLearningProfile(await getInteractions(politicianId));
       const readiness = pilotReadiness(latestCrawl, latestBriefing, storage, evidenceQuality);
-      const backend = backendHealth(latestCrawl, latestBriefing, latestDebug, storage, storeSummary, evidenceQuality, latestBriefing?.referentEngine);
+      const backend = backendHealth(latestCrawl, latestBriefing, latestDebug, storage, storeSummary, evidenceQuality, latestBriefing?.referentEngine, learning);
       return {
         status: operationalStatus(latestCrawl, latestBriefing, storage),
         backend,
         readiness,
+        learning,
         evidenceQuality,
         storage,
         store: storeSummary,
@@ -235,6 +238,10 @@ function handleRequest(request, response) {
       decision: body.decision,
       profile: await activeProfile(politicianId)
     }));
+  }
+
+  if (url.pathname === "/api/learning/status") {
+    return handleAsync(response, async () => buildLearningProfile(await getInteractions((await activeProfile(politicianId)).id)));
   }
 
   if (url.pathname === "/api/cron/crawl") {
@@ -638,7 +645,7 @@ function operationalStatus(crawl, briefing, storage) {
   return "Nicht eingerichtet";
 }
 
-function backendHealth(crawl, briefing, debugReport, storage, storeSummary, evidenceQuality, referentEngine = null) {
+function backendHealth(crawl, briefing, debugReport, storage, storeSummary, evidenceQuality, referentEngine = null, learning = null) {
   const checks = [];
   addBackendCheck(checks, "Persistenter Speicher", storage.backend === "supabase", storage.backend === "supabase" ? "Supabase ist aktiv." : "Helmut speichert noch lokal.");
   addBackendCheck(checks, "Quellenbasis", Number(storeSummary.sources?.active || 0) >= 50, `${storeSummary.sources?.active || 0} aktive Quellen konfiguriert.`);
@@ -660,6 +667,7 @@ function backendHealth(crawl, briefing, debugReport, storage, storeSummary, evid
   addBackendCheck(checks, "Entscheidungswert", recommendationCount > 0 && itemCount > 0, `${recommendationCount} persönliche Empfehlungen, ${itemCount} sichtbare Entscheidungen.`);
   addBackendCheck(checks, "Quellenlinks", Number(evidenceQuality?.missingLinks || 0) === 0 && Number(evidenceQuality?.publisherFallbacks || 0) === 0, `${evidenceQuality?.directLinks || 0}/${evidenceQuality?.total || 0} Belege mit Direktlink.`);
   addBackendCheck(checks, "Referentenmodus", Number(referentEngine?.score || 0) >= 85, referentEngine ? `${referentEngine.status}: ${referentEngine.score}% Referentenqualität.` : "Noch kein Referenten-Audit vorhanden.");
+  addBackendCheck(checks, "Lernmodus", Number(learning?.eventCount || 0) >= 1, learning?.eventCount ? `${learning.eventCount} Nutzungssignale gespeichert, Vertrauen ${learning.confidence}.` : "Noch keine Nutzungssignale gespeichert.");
   addBackendCheck(checks, "Pipeline-Debug", Boolean(debugReport?.counts), debugReport?.createdAt ? `Letzter Debug: ${debugReport.createdAt}.` : "Noch kein Debug-Report gespeichert.");
 
   const passed = checks.filter((check) => check.ok).length;
@@ -713,6 +721,7 @@ function backendActionFor(checkId) {
     "entscheidungswert": "Relevanzfilter und aktuelle Quellenlage prüfen.",
     "quellenlinks": "URL-Resolver und Source Evidence prüfen.",
     "referentenmodus": "Briefing neu erzeugen und Empfehlungen auf direkte Ansprache, Handlung, Konsequenz und Quellenlink prüfen.",
+    "lernmodus": "Cem sollte im Pilot Themen öffnen, markieren, ausblenden oder Kommunikation kopieren, damit Helmut Präferenzen lernt.",
     "pipeline-debug": "Pipeline einmal vollständig ausführen, damit ein Debug-Bericht gespeichert wird."
   };
   return actions[checkId] || "Backend-Check prüfen.";
