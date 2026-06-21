@@ -2028,14 +2028,24 @@ small {
 .strategy-answer.citizen_dialogue::before { background: linear-gradient(180deg, var(--chance), rgba(29, 63, 143, .58)); }
 .strategy-answer.internal_line::before { background: linear-gradient(180deg, var(--accent), rgba(16, 35, 84, .52)); }
 
+.draft-channel-picker {
+  margin: 0 0 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(16, 35, 84, .09);
+}
+
+.draft-channel-picker button {
+  min-height: 38px;
+  padding: 0 14px;
+  background: rgba(255, 255, 255, .74);
+}
+
 .draft-meta {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  padding-bottom: 16px;
   margin-bottom: 18px;
-  border-bottom: 1px solid rgba(16, 35, 84, .09);
 }
 
 .draft-meta span {
@@ -3035,19 +3045,45 @@ small {
   .communication-command {
     grid-template-columns: 1fr;
     gap: 14px;
+    padding: 14px 0 6px;
   }
 
   .communication-command .primary-button {
     width: 100%;
   }
 
+  .communication-command p {
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  .draft-channel-picker {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    flex-wrap: nowrap;
+    gap: 8px;
+    margin: -4px -4px 14px;
+    padding: 4px 4px 14px;
+    overflow-x: auto;
+    background:
+      linear-gradient(135deg, rgba(255, 255, 252, .98), rgba(255, 253, 247, .96));
+    scrollbar-width: none;
+  }
+
+  .draft-channel-picker::-webkit-scrollbar {
+    display: none;
+  }
+
   .channel-picker button {
     min-height: 40px;
     padding: 0 13px;
     font-size: 13px;
+    white-space: nowrap;
   }
 
   .strategy-answer {
+    display: grid;
     padding: 24px 22px;
     border-radius: 22px;
   }
@@ -3061,6 +3097,13 @@ small {
     overflow-wrap: anywhere;
     font-size: 16px;
     line-height: 1.6;
+  }
+
+  .generated-copy {
+    max-height: 38vh;
+    overflow-y: auto;
+    padding-right: 4px;
+    scrollbar-width: thin;
   }
 
   .source-row {

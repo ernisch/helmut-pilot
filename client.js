@@ -1081,11 +1081,6 @@ function renderCommunicationSection() {
     <section class="plain-list communication-intro">
       <h2>Kommunikation</h2>
       <p class="section-note">${escapeHtml(decision.title)} · ${escapeHtml(decision.recommendedChannel || decision.channel || "Kanal auswählen")}</p>
-      <div class="channel-picker" role="group" aria-label="Kommunikationskanal">
-        ${communicationChannels.map(([id, label]) => `
-          <button class="${id === selectedCommunicationChannel ? "active" : ""}" type="button" data-channel="${escapeHtml(id)}">${escapeHtml(label)}</button>
-        `).join("")}
-      </div>
       <div class="communication-command">
         <div>
           <span>${escapeHtml(channelLabel)}</span>
@@ -1094,6 +1089,11 @@ function renderCommunicationSection() {
         <button class="primary-button compact-button" type="button" data-generate>Text erzeugen</button>
       </div>
       <div class="strategy-answer ${escapeAttribute(selectedCommunicationChannel)}" aria-live="polite">
+        <div class="channel-picker draft-channel-picker" role="group" aria-label="Kommunikationskanal">
+          ${communicationChannels.map(([id, label]) => `
+            <button class="${id === selectedCommunicationChannel ? "active" : ""}" type="button" data-channel="${escapeHtml(id)}">${escapeHtml(label)}</button>
+          `).join("")}
+        </div>
         <div class="draft-meta">
           <span>Generierter Entwurf</span>
           <b>${escapeHtml(channelLabel)}</b>
