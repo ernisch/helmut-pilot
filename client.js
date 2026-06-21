@@ -1269,6 +1269,9 @@ function renderRadarView() {
   const archivedLow = profileArticleArchive(allMentions)
     .filter((item) => !freshKeys.has(mentionKey(item)) && !importantKeys.has(mentionKey(item)) && isArchivedLowSignal(item))
     .slice(0, 6);
+  const lastThreeMonthsArticles = profileArticleArchive(allMentions)
+    .filter(isWithinLastThreeMonths)
+    .slice(0, 12);
   return `
     <section class="page-intro compact">
       <h1 class="${headlineClass("Radar.")}">Radar.</h1>
@@ -1280,6 +1283,7 @@ function renderRadarView() {
       ${renderRadarGroup("Wichtige Artikel über dich", importantArticles.length, `<p class="section-note">Treffer mit politischer oder medialer Relevanz, die du wiederfinden können solltest.</p>${mentionRows(importantArticles, { empty: false })}`, false)}
       ${renderRadarGroup("Bisherige Erwähnungen", previousMentions.length, `<p class="section-note">Ältere namentliche Treffer ohne akuten Handlungsdruck.</p>${mentionRows(previousMentions, { empty: false })}`, false)}
       ${renderRadarGroup("Irrelevant / Archiviert", archivedLow.length, `<p class="section-note">Treffer, die Helmut bewusst nicht in deine Entscheidungslage hebt.</p>${mentionRows(archivedLow, { empty: false })}`, false)}
+      ${renderRadarGroup("Artikel der letzten 3 Monate", lastThreeMonthsArticles.length, `<p class="section-note">Alle direkt verlinkten Artikel aus den letzten drei Monaten, in denen du erwähnt wirst oder als Autor auftauchst.</p>${mentionRows(lastThreeMonthsArticles, { empty: false })}`, false)}
     </section>
   `;
 }
@@ -1343,6 +1347,12 @@ function isArchivedLowSignal(item) {
   const old = itemTimestamp(item) ? Date.now() - itemTimestamp(item) > 60 * 24 * 60 * 60 * 1000 : false;
   const weakTopic = /sport|kultur|terminhinweis|randnotiz|social|kommentarspalte/i.test(text);
   return socialOrWeak || old || weakTopic;
+}
+
+function isWithinLastThreeMonths(item) {
+  const timestamp = itemTimestamp(item);
+  if (!timestamp) return false;
+  return Date.now() - timestamp <= 92 * 24 * 60 * 60 * 1000;
 }
 
 function profileNameTerms() {
