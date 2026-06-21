@@ -93,7 +93,7 @@ async function loadBriefing() {
   activePoliticianId = sanitizePoliticianId(params.get("politicianId") || params.get("profileId") || "cem-ince");
   const scope = `politicianId=${encodeURIComponent(activePoliticianId)}`;
   const [profileResponse, briefingResponse, tasksResponse, notesResponse, aiStatusResponse, opsStatusResponse] = await Promise.all([
-    fetch(`/api/profile/demo?${scope}`),
+    fetch(`/api/profile/current?${scope}`),
     fetch(`/api/briefing/latest?${scope}`),
     fetch(`/api/tasks?${scope}`),
     fetch(`/api/notes?${scope}`),
@@ -114,10 +114,11 @@ async function loadBriefing() {
   recommendations = briefing.personalizedRecommendations || [];
 
   const themeSignalId = briefing.themeOfDay?.signalId;
-  const activeItems = briefing.items.filter((item) => item.decision !== "Ignorieren");
-  const personalizedItems = recommendations.map(recommendationToDecisionItem);
-  const situationalItems = (briefing.situationalBriefing || []).map(situationalToDecisionItem);
+  const activeItems = briefing.items.filter((item) => item.decision !== "Ignorieren" && hasPreciseSource(item));
+  const personalizedItems = recommendations.map(recommendationToDecisionItem).filter(hasPreciseSource);
+  const situationalItems = (briefing.situationalBriefing || []).map(situationalToDecisionItem).filter(hasPreciseSource);
   decisions = (personalizedItems.length ? personalizedItems : (activeItems.length ? activeItems : (briefing.items.length ? briefing.items.slice(0, 1) : situationalItems)))
+    .filter(hasPreciseSource)
     .sort((a, b) => {
       if (a.signalId === themeSignalId) return -1;
       if (b.signalId === themeSignalId) return 1;
@@ -463,7 +464,24 @@ function renderBriefingView() {
     <section class="single-decision-stage" aria-label="Wichtigste politische Entscheidung">
       ${renderDecisionConsole()}
     </section>
+    ${renderSecondaryMovements()}
     ${!decisions.length ? renderSituationalBriefing() : ""}
+  `;
+}
+
+function renderSecondaryMovements() {
+  const secondary = decisions.slice(1, 3);
+  if (!secondary.length) return "";
+  return `
+    <section class="secondary-movements" aria-label="Weitere Bewegungen">
+      <span>Danach</span>
+      ${secondary.map((item) => `
+        <button class="movement-row ${escapeAttribute(item.priorityType || "watch")}" type="button" data-detail="${escapeAttribute(item.id)}">
+          <strong>${escapeHtml(item.title)}</strong>
+          <small>${escapeHtml(item.priorityLabel || "Relevant")} · ${escapeHtml(item.estimatedTime || "10 Min.")}</small>
+        </button>
+      `).join("")}
+    </section>
   `;
 }
 
@@ -796,7 +814,7 @@ function renderChiefRecommendation() {
 }
 
 function renderSituationalBriefing() {
-  const items = briefing.situationalBriefing || [];
+  const items = (briefing.situationalBriefing || []).filter(hasPreciseSource).slice(0, 2);
   return `
     <section class="situational-card" aria-label="Politische Lage">
       <span>Lage ohne Handlungsdruck</span>
@@ -815,6 +833,7 @@ function renderSituationalBriefing() {
 
 function renderSituationalItem(item) {
   const href = sourceHref(item);
+  if (!href) return "";
   return `
     <article class="situational-item">
       <div>
@@ -823,7 +842,7 @@ function renderSituationalItem(item) {
         <p>${escapeHtml(twoSentenceSummary(item.summary || item.excerpt || item.content || ""))}</p>
         <small>${escapeHtml(item.relevanceReason || "Relevante politische Lage.")} · ${escapeHtml(formatBriefingDate(item.publishedAt || item.retrievedAt))}</small>
       </div>
-      ${href ? `<a class="source-pill" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">Artikel öffnen</a>` : `<span class="source-pill muted">Direktlink fehlt</span>`}
+      <a class="source-pill" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">Artikel öffnen</a>
     </article>
   `;
 }
@@ -958,7 +977,7 @@ function renderOfficeView() {
 }
 
 function renderOfficeTasksSection() {
-  const officeTasks = tasks.filter(isActionableOfficeTask).slice(0, 3);
+  const officeTasks = tasks.filter((task) => isActionableOfficeTask(task) && taskArticleSource(task)).slice(0, 3);
   return `
     <section class="plain-list">
       <h2>An dein Büro geben</h2>
@@ -977,7 +996,6 @@ function renderOfficeTasksSection() {
 }
 
 function renderTaskRow(task) {
-  const mailto = taskMailtoHref(task);
   const articleSource = taskArticleSource(task);
   const sourceUrl = articleSource?.url || "";
   const assignee = task.assignee || recommendedTaskAssignee(task);
@@ -986,25 +1004,12 @@ function renderTaskRow(task) {
       <div class="office-task-main">
         <span>${escapeHtml(taskPriorityLabel(task.priority))} · bis ${escapeHtml(formatDueDate(task.dueDate))}</span>
         <h3>${escapeHtml(shortTaskTitle(task))}</h3>
-        <dl class="task-brief handoff-brief">
-          <div>
-            <dt>Zuständig</dt>
-            <dd>${escapeHtml(assignee)}</dd>
-          </div>
-          <div>
-            <dt>Frist</dt>
-            <dd>${escapeHtml(formatDueDate(task.dueDate))}</dd>
-          </div>
-          <div class="wide">
-            <dt>Auftrag</dt>
-            <dd>${escapeHtml(officeTaskRequest(task))}</dd>
-          </div>
-        </dl>
+        <p>${escapeHtml(officeTaskRequest(task))}</p>
+        <small>${escapeHtml(assignee)} · Ziel: ${escapeHtml(teamBenefitText(task))}</small>
       </div>
       <div class="task-actions">
         ${sourceUrl ? `<a class="secondary-button compact-button" href="${escapeAttribute(sourceUrl)}" target="_blank" rel="noopener noreferrer">Quelle öffnen</a>` : ""}
-        <button class="primary-button compact-button" type="button" data-task-copy="${escapeHtml(task.id)}">Auftrag kopieren</button>
-        ${mailto ? `<a class="secondary-button compact-button" href="${escapeAttribute(mailto)}">Mail vorbereiten</a>` : ""}
+        <button class="primary-button compact-button" type="button" data-task-copy="${escapeHtml(task.id)}">Übergabe kopieren</button>
       </div>
     </article>
   `;
@@ -1120,7 +1125,8 @@ function topicArchiveItems() {
 }
 
 function renderTopicSourceLinks(topic) {
-  const sources = uniqueSources(topic.sources?.length ? topic.sources : [topic.source].filter(Boolean));
+  const sources = uniqueSources(topic.sources?.length ? topic.sources : [topic.source].filter(Boolean))
+    .filter((source) => Boolean(sourceHref(source)));
   if (!sources.length) return "";
   if (sources.length === 1) return sourceLink(sources[0]);
   return `
@@ -1128,9 +1134,7 @@ function renderTopicSourceLinks(topic) {
       ${sources.map((source) => {
         const href = sourceHref(source);
         const label = `${source.sourceName || "Quelle"} · ${sourceLinkLabel(source)}`;
-        return href
-          ? `<a class="source-pill" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>`
-          : `<span class="source-pill muted">${escapeHtml(source.sourceName || "Quelle")} · Direktlink fehlt</span>`;
+        return `<a class="source-pill" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>`;
       }).join("")}
     </div>
   `;
@@ -1218,24 +1222,28 @@ function renderNotesSection() {
 function renderRadarView() {
   const allMentions = profileMentions();
   const freshMentions = allMentions.filter(isFreshUpdate).slice(0, 4);
-  const archivedMentions = archivedProfileMentions(allMentions, freshMentions).slice(0, 6);
-  const profileArticles = profileArticleArchive(allMentions).slice(0, 8);
-  const chanceItems = decisions.filter((decision) => decision.priorityType === "chance").slice(0, 3);
-  const riskItems = decisions.filter((decision) => decision.priorityType === "risk").slice(0, 3);
-  const watchItems = decisions.filter((decision) => decision.priorityType === "watch").slice(0, 4);
+  const freshKeys = new Set(freshMentions.map(mentionKey));
+  const importantArticles = profileArticleArchive(allMentions)
+    .filter((item) => !freshKeys.has(mentionKey(item)) && isImportantProfileArticle(item))
+    .slice(0, 5);
+  const importantKeys = new Set(importantArticles.map(mentionKey));
+  const previousMentions = archivedProfileMentions(allMentions, freshMentions)
+    .filter((item) => !importantKeys.has(mentionKey(item)) && !isArchivedLowSignal(item))
+    .slice(0, 6);
+  const archivedLow = profileArticleArchive(allMentions)
+    .filter((item) => !freshKeys.has(mentionKey(item)) && !importantKeys.has(mentionKey(item)) && isArchivedLowSignal(item))
+    .slice(0, 6);
   return `
     <section class="page-intro compact">
       <h1 class="${headlineClass("Radar.")}">Radar.</h1>
-      <p>Namentliche Erwähnungen über dich, ältere Artikel und politische Bewegungen, die Helmut beobachtet.</p>
+      <p>Was über dich gefunden wurde. Chancen und Risiken bleiben im Briefing.</p>
     </section>
 
     <section class="radar-groups">
-      ${renderRadarGroup("Neue Erwähnungen", freshMentions.length, mentionRows(freshMentions), true)}
-      ${renderRadarGroup("Frühere Erwähnungen", archivedMentions.length, `<p class="section-note">Ältere Treffer, in denen du namentlich erwähnt wurdest.</p>${mentionRows(archivedMentions, { empty: false })}`, false)}
-      ${renderRadarGroup("Artikel über dich", profileArticles.length, `<p class="section-note">Artikelarchiv zu Cem Ince, inklusive älterer Treffer und Autorenhinweise.</p>${mentionRows(profileArticles, { empty: false })}`, false)}
-      ${renderRadarGroup("Politische Chancen", chanceItems.length, radarDecisionRows(chanceItems, "chance"), false)}
-      ${renderRadarGroup("Risiken im Blick", riskItems.length, radarDecisionRows(riskItems, "risk"), false)}
-      ${renderRadarGroup("Nur beobachten", watchItems.length, radarDecisionRows(watchItems, "watch"), false)}
+      ${renderRadarGroup("Heute neu über dich", freshMentions.length, mentionRows(freshMentions), true)}
+      ${renderRadarGroup("Wichtige Artikel über dich", importantArticles.length, `<p class="section-note">Treffer mit politischer oder medialer Relevanz, die du wiederfinden können solltest.</p>${mentionRows(importantArticles, { empty: false })}`, false)}
+      ${renderRadarGroup("Bisherige Erwähnungen", previousMentions.length, `<p class="section-note">Ältere namentliche Treffer ohne akuten Handlungsdruck.</p>${mentionRows(previousMentions, { empty: false })}`, false)}
+      ${renderRadarGroup("Irrelevant / Archiviert", archivedLow.length, `<p class="section-note">Treffer, die Helmut bewusst nicht in deine Entscheidungslage hebt.</p>${mentionRows(archivedLow, { empty: false })}`, false)}
     </section>
   `;
 }
@@ -1271,6 +1279,7 @@ function profileMentions() {
   const profileTerms = profileNameTerms();
   return [...(briefing.personMentions || []), ...(briefing.rawItems || [])]
     .filter((item) => itemMentionsProfile(item, profileTerms))
+    .filter(hasPreciseSource)
     .filter(uniqueMentionItem)
     .sort(sortNewestFirst);
 }
@@ -1279,8 +1288,25 @@ function profileArticleArchive(allMentions = []) {
   const profileTerms = profileNameTerms();
   return [...allMentions, ...(briefing.personMentions || []), ...(briefing.rawItems || [])]
     .filter((item) => itemMentionsProfile(item, profileTerms) || itemAuthoredByProfile(item, profileTerms))
+    .filter(hasPreciseSource)
     .filter(uniqueMentionItem)
     .sort(sortNewestFirst);
+}
+
+function isImportantProfileArticle(item) {
+  const text = `${item?.title || ""} ${item?.content || ""} ${item?.excerpt || ""}`.toLowerCase();
+  const strongSource = ["media", "local", "party", "faction", "bundestag"].includes(String(item?.sourceType || "").toLowerCase());
+  const titleHit = itemMentionsProfile({ title: item?.title || "" });
+  const politicalHit = /interview|fordert|kritisiert|klage|urteil|bundestag|ausschuss|mindestlohn|bürgergeld|rente|arbeit|soziales|pflege|tarif|wohnung|armut/i.test(text);
+  return strongSource || titleHit || politicalHit;
+}
+
+function isArchivedLowSignal(item) {
+  const text = `${item?.title || ""} ${item?.content || ""} ${item?.excerpt || ""}`.toLowerCase();
+  const socialOrWeak = ["social", "manual"].includes(String(item?.sourceType || "").toLowerCase());
+  const old = itemTimestamp(item) ? Date.now() - itemTimestamp(item) > 60 * 24 * 60 * 60 * 1000 : false;
+  const weakTopic = /sport|kultur|terminhinweis|randnotiz|social|kommentarspalte/i.test(text);
+  return socialOrWeak || old || weakTopic;
 }
 
 function profileNameTerms() {
@@ -1337,6 +1363,7 @@ function mentionRows(items, options = {}) {
 
   return items.map((item) => {
     const href = sourceHref(item);
+    if (!href) return "";
     const label = sourceLinkLabel(item);
     return `
       <article class="list-row mention mention-row ${href ? "" : "no-link"}">
@@ -1347,10 +1374,9 @@ function mentionRows(items, options = {}) {
             <h3>${escapeHtml(item.title || "Erwähnung gefunden")}</h3>
             <p>${escapeHtml(twoSentenceSummary(item.content || item.excerpt || "Cem wurde in dieser Quelle erwähnt."))}</p>
             <small class="mention-timestamp">Gefunden: ${escapeHtml(formatMentionFoundAt(item))}</small>
-            ${!href ? `<p class="source-missing">Direkter Artikellink noch nicht verfügbar. Helmut öffnet keine Publisher-Startseite als Ersatz.</p>` : ""}
           </div>
         </div>
-        ${href ? `<a class="secondary-button mention-open" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>` : ""}
+        <a class="secondary-button mention-open" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>
       </article>
     `;
   }).join("");
@@ -1437,7 +1463,7 @@ function renderSettingsView() {
   return `
     <section class="page-intro compact">
       <h1 class="${headlineClass("Einstellungen.")}">Einstellungen.</h1>
-      <p>Profil, Quellen und Briefings werden persistent über Supabase gespeichert.</p>
+      <p>${storage.backend === "supabase" ? "Profil, Quellen und Briefings werden persistent gespeichert." : "Systemstatus vor dem Pitch prüfen."}</p>
     </section>
     <section class="plain-list">
       <article class="list-row ${readinessTone}">
@@ -1990,7 +2016,7 @@ async function saveProfileFromForm(form) {
   };
 
   try {
-    const response = await fetch(`/api/profile/demo?politicianId=${encodeURIComponent(activePoliticianId)}`, {
+    const response = await fetch(`/api/profile/current?politicianId=${encodeURIComponent(activePoliticianId)}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...payload, id: activePoliticianId })
@@ -2357,30 +2383,27 @@ function sourceLine(item) {
 function sourceLink(item) {
   const source = primarySource(item);
   const url = sourceHref(source || item);
-  if (!url) return `<span class="source-pill muted">Direktlink fehlt</span>`;
+  if (!url) return "";
   return `<a class="source-pill" href="${escapeAttribute(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(sourceLinkLabel(source || item))}</a>`;
 }
 
 function renderSourceBasis(item) {
-  const sources = item.sources || [];
+  const sources = (item.sources || []).filter((source) => Boolean(sourceHref(source)));
   if (!sources.length) return "";
   return `
     <section class="source-basis">
       <h2>Quellenbasis</h2>
       ${sources.slice(0, 4).map((source) => {
         const href = sourceHref(source);
-        const tag = href ? "a" : "div";
-        const linkAttrs = href ? ` href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer"` : "";
-        const note = href ? "Direkter Artikellink." : "Direkter Artikellink liegt noch nicht belastbar vor.";
         return `
-        <${tag} class="source-row"${linkAttrs}>
+        <a class="source-row" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">
           <div>
             <span>${escapeHtml(source.sourceName || "Quelle")}</span>
             <p>${escapeHtml(source.excerpt || source.relevanceReason || "Quelle wurde für diese Empfehlung herangezogen.")}</p>
-            <small>${escapeHtml(note)}</small>
+            <small>Direkter Artikellink.</small>
           </div>
           <small>Sicherheit ${escapeHtml(confidenceLabel(source.confidence))}</small>
-        </${tag}>
+        </a>
       `;
       }).join("")}
     </section>
@@ -2405,9 +2428,14 @@ function sourceHref(source) {
   return candidates.find((url) => isDirectArticleHref(url, source)) || "";
 }
 
+function hasPreciseSource(item) {
+  if (!item) return false;
+  if (sourceHref(item)) return true;
+  const sources = [item.primarySource, ...(item.sources || [])].filter(Boolean);
+  return sources.some((source) => Boolean(sourceHref(source)));
+}
+
 function sourceLinkLabel(source) {
-  const href = sourceHref(source);
-  if (!href) return "Direktlink fehlt";
   return "Artikel öffnen";
 }
 

@@ -4266,6 +4266,46 @@ body {
   display: none;
 }
 
+.secondary-movements {
+  display: grid;
+  gap: 12px;
+  margin: -6px 0 48px;
+}
+
+.secondary-movements > span {
+  color: var(--command-faint);
+  font-size: 12px;
+  font-weight: 780;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.movement-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  width: 100%;
+  padding: 18px 20px;
+  border: 1px solid var(--command-line);
+  border-radius: 22px;
+  color: var(--command-text);
+  background: rgba(255, 255, 255, .035);
+  text-align: left;
+}
+
+.movement-row strong {
+  color: var(--command-text);
+  font-size: clamp(18px, 2vw, 22px);
+  font-weight: 650;
+}
+
+.movement-row small {
+  flex: 0 0 auto;
+  color: var(--command-muted);
+  font-size: 14px;
+}
+
 .detail-page,
 .plain-list,
 .radar-groups,
@@ -4327,6 +4367,13 @@ body {
   justify-content: center;
   min-height: 46px;
   white-space: nowrap;
+}
+
+.office-task-main small {
+  display: block;
+  margin-top: 12px;
+  color: var(--command-muted);
+  line-height: 1.45;
 }
 
 .mobile-dock {
@@ -4457,6 +4504,15 @@ body {
   .decision-brief div:last-child {
     padding-bottom: 0;
     border-bottom: 0;
+  }
+
+  .movement-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .movement-row small {
+    flex: 1 1 auto;
   }
 
   .decision-brief p {

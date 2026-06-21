@@ -8,7 +8,7 @@ loadEnvFiles();
 
 const args = new Set(process.argv.slice(2));
 const baseUrl = stripTrailingSlash(process.env.HELMUT_BASE_URL || "https://helmut-pilot.vercel.app");
-const pilotSecret = process.env.PILOT_SECRET || "";
+const pilotSecret = process.env.PILOT_SECRET || process.env.HELMUT_PILOT_SECRET || "";
 const adminSecret = process.env.HELMUT_ADMIN_SECRET || process.env.CRON_SECRET || "";
 const runCrawl = args.has("--run-crawl") || args.has("--full");
 const checkExternalLinks = !args.has("--no-links");
@@ -31,6 +31,7 @@ async function main() {
   await checkAppShell();
 
   const status = await checkOpsStatus();
+  await checkReleaseReadiness();
   const briefing = await checkBriefing();
   await checkLearningStatus();
   await checkPipelineDebug();
@@ -55,7 +56,11 @@ async function checkPilotGate() {
   }
 
   if (root.text.includes("Pilot-Zugang")) {
-    fail("PILOT_SECRET missing locally", "Production is protected, but the smoke test has no PILOT_SECRET to unlock it.");
+    if (adminSecret) {
+      ok(true, "Pilot gate is present; using admin secret for smoke checks");
+      return;
+    }
+    fail("PILOT_SECRET missing locally", "Production is protected, but the smoke test has no PILOT_SECRET or HELMUT_ADMIN_SECRET/CRON_SECRET to unlock it.");
     return;
   }
   warn("PILOT_SECRET is not set; running against an unprotected/local target.");
@@ -97,6 +102,17 @@ async function checkOpsStatus() {
   ok(Boolean(status.learning && typeof status.learning.status === "string"), "Ops status exposes learning mode");
   ok(Number(status.evidenceQuality?.missingLinks || 0) === 0, "Visible evidence has no missing links");
   return status;
+}
+
+async function checkReleaseReadiness() {
+  const response = await request("GET", "/api/release/check", { cookie });
+  const release = parseJson(response, "release check");
+  ok(response.statusCode === 200, "Release check endpoint responds");
+  ok(release.ready === true && release.status === "Pitchbereit", "Release check is pitch-ready");
+  ok(Number(release.score || 0) >= 90, "Release check score is at least 90");
+  if (Array.isArray(release.blockers)) {
+    release.blockers.slice(0, 3).forEach((blocker) => warn(`Release blocker: ${blocker}`));
+  }
 }
 
 async function checkBriefing() {
@@ -184,7 +200,11 @@ async function checkLink(url) {
 }
 
 function request(method, pathname, options = {}) {
-  return requestAbsolute(method, `${baseUrl}${pathname}`, options);
+  const headers = { ...(options.headers || {}) };
+  if (!options.cookie && adminSecret && !headers.Authorization) {
+    headers.Authorization = `Bearer ${adminSecret}`;
+  }
+  return requestAbsolute(method, `${baseUrl}${pathname}`, { ...options, headers });
 }
 
 function requestAbsolute(method, url, options = {}) {

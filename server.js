@@ -77,7 +77,15 @@ function handleRequest(request, response) {
 
   const politicianId = politicianIdFromUrl(url);
 
+  if (url.pathname === "/api/profile/current") {
+    if (request.method === "GET") return handleAsync(response, () => activeProfile(politicianId));
+    if (request.method === "POST" || request.method === "PATCH") {
+      return handleJson(request, response, async (body) => saveProfile(await normalizeProfile(body, politicianId)));
+    }
+  }
+
   if (url.pathname === "/api/profile/demo") {
+    if (!hasAdminBypass(request, url)) return sendNotFound(response);
     if (request.method === "GET") return handleAsync(response, () => activeProfile(politicianId));
     if (request.method === "POST" || request.method === "PATCH") {
       return handleJson(request, response, async (body) => saveProfile(await normalizeProfile(body, politicianId)));
@@ -85,6 +93,7 @@ function handleRequest(request, response) {
   }
 
   if (url.pathname === "/api/briefing/demo") {
+    if (!hasAdminBypass(request, url)) return sendNotFound(response);
     return handleAsync(response, async () => {
       const profile = await activeProfile(politicianId);
       const demo = generateBriefing(profile, demoRawItems, demoSources);
@@ -230,6 +239,30 @@ function handleRequest(request, response) {
     });
   }
 
+  if (url.pathname === "/api/release/check") {
+    return handleAsync(response, async () => {
+      const latestCrawl = await getLatestCrawlRun();
+      const latestBriefing = await getLatestBriefing(politicianId);
+      const latestDebug = await getLatestPipelineDebugReport(politicianId);
+      const storage = getStorageStatus();
+      const storeSummary = await getStoreSummary(politicianId);
+      const evidenceQuality = sourceEvidenceQuality(latestBriefing);
+      const learning = buildLearningProfile(await getInteractions(politicianId));
+      const backend = backendHealth(latestCrawl, latestBriefing, latestDebug, storage, storeSummary, evidenceQuality, latestBriefing?.referentEngine, learning);
+      const readiness = pilotReadiness(latestCrawl, latestBriefing, storage, evidenceQuality);
+      return releaseCheck({
+        crawl: latestCrawl,
+        briefing: latestBriefing,
+        storage,
+        storeSummary,
+        evidenceQuality,
+        backend,
+        readiness,
+        learning
+      });
+    });
+  }
+
   if (url.pathname === "/api/communication/generate" && request.method === "POST") {
     if (!allowRate(request, "communication", 18, 60 * 60 * 1000)) return sendTooManyRequests(response, "Zu viele Kommunikationsentwürfe in kurzer Zeit.");
     return handleJson(request, response, async (body) => generateCommunicationDraft({
@@ -260,6 +293,7 @@ function handleRequest(request, response) {
   }
 
   if (url.pathname === "/api/tasks/demo") {
+    if (!hasAdminBypass(request, url)) return sendNotFound(response);
     return handleAsync(response, async () => generateBriefing(await activeProfile(politicianId), demoRawItems, demoSources).tasks);
   }
 
@@ -559,7 +593,7 @@ function indexHtml() {
     <link rel="icon" href="assets/helmut_logo.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="assets/helmut_appicon_192.png" />
     <link rel="manifest" href="site.webmanifest" />
-    <link rel="stylesheet" href="styles.css?v=20260621-radararchive1" />
+    <link rel="stylesheet" href="styles.css?v=20260621-pitchready1" />
   </head>
   <body class="is-loading">
     <div class="app-splash" id="appSplash" aria-hidden="true">
@@ -572,7 +606,7 @@ function indexHtml() {
     </main>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="client.js?v=20260621-radararchive1"></script>
+    <script src="client.js?v=20260621-pitchready1"></script>
   </body>
 </html>`;
 }
@@ -587,7 +621,7 @@ module.exports = handleRequest;
 if (require.main === module) {
   const server = http.createServer(handleRequest);
   server.listen(port, () => {
-    console.log(`Helmut demo running at http://localhost:${port}`);
+    console.log(`Helmut running at http://localhost:${port}`);
   });
 }
 
@@ -781,6 +815,54 @@ function pilotReadiness(crawl, briefing, storage, evidenceQuality = null) {
   };
 }
 
+function releaseCheck({ crawl, briefing, storage, storeSummary, evidenceQuality, backend, readiness, learning }) {
+  const checks = [];
+  const crawlAge = crawl?.createdAt ? Date.now() - new Date(crawl.createdAt).getTime() : Infinity;
+  const briefingDate = briefing?.generatedAt || briefing?.date;
+  const briefingAge = briefingDate ? Date.now() - new Date(briefingDate).getTime() : Infinity;
+  const sourceCount = Number(crawl?.checkedSources || storeSummary?.sources?.active || 0);
+  const failedSources = Number(crawl?.failedSources || 0);
+  const failRatio = sourceCount ? failedSources / sourceCount : 1;
+  const visibleDecisionCount = Number((briefing?.items || []).filter((item) => item.decision !== "Ignorieren").length);
+  const recommendationCount = Number(briefing?.personalizedRecommendations?.length || 0);
+
+  addReleaseCheck(checks, "Crawl", Boolean(crawl) && crawlAge < 8 * 60 * 60 * 1000 && sourceCount >= 50 && failRatio <= 0.1, crawl ? `${sourceCount} Quellen geprüft, ${failedSources} Fehler.` : "Noch kein Crawl.");
+  addReleaseCheck(checks, "Supabase", storage?.backend === "supabase", storage?.backend === "supabase" ? "Persistenter Speicher aktiv." : "Speicher ist lokal.");
+  addReleaseCheck(checks, "OpenAI", isAiEnabled(), isAiEnabled() ? `Modell ${process.env.OPENAI_MODEL || "gpt-4.1"} aktiv.` : "OpenAI ist nicht aktiv.");
+  addReleaseCheck(checks, "Briefing", Boolean(briefing) && briefingAge < 18 * 60 * 60 * 1000 && visibleDecisionCount > 0 && recommendationCount > 0 && briefing.status !== "Demo", briefing ? `${visibleDecisionCount} sichtbare Entscheidungen, ${recommendationCount} Empfehlungen.` : "Kein Briefing.");
+  addReleaseCheck(checks, "Quellenlinks", Number(evidenceQuality?.missingLinks || 0) === 0 && Number(evidenceQuality?.publisherFallbacks || 0) === 0, `${evidenceQuality?.directLinks || 0}/${evidenceQuality?.total || 0} sichtbare Belege mit Direktlink.`);
+  addReleaseCheck(checks, "Radar", Array.isArray(briefing?.personMentions), `${briefing?.personMentions?.length || 0} Personenartikel im Radar.`);
+  addReleaseCheck(checks, "Referentenmodus", Number(briefing?.referentEngine?.score || 0) >= 85 || Number(backend?.score || 0) >= 90, briefing?.referentEngine ? `${briefing.referentEngine.score}% Referentenqualität.` : `${backend?.score || 0}% Backendgesundheit.`);
+
+  const passed = checks.filter((check) => check.ok).length;
+  const total = checks.length || 1;
+  const score = Math.round((passed / total) * 100);
+  const blockers = checks.filter((check) => !check.ok).map((check) => `${check.label}: ${check.detail}`);
+  return {
+    status: blockers.length ? "Nicht pitchbereit" : "Pitchbereit",
+    ready: blockers.length === 0,
+    score,
+    passed,
+    total,
+    checks,
+    blockers,
+    warnings: readiness?.warnings || [],
+    learning: {
+      status: learning?.status || "Bereit",
+      eventCount: learning?.eventCount || 0
+    },
+    checkedAt: new Date().toISOString()
+  };
+}
+
+function addReleaseCheck(checks, label, ok, detail) {
+  checks.push({
+    label,
+    ok: Boolean(ok),
+    detail
+  });
+}
+
 function readinessScore(issues, warnings) {
   return Math.max(0, Math.min(100, 100 - issues.length * 25 - warnings.length * 8));
 }
@@ -792,7 +874,8 @@ function sourceEvidenceQuality(briefing) {
     const key = [source.sourceName, source.itemUrl || source.url, source.sourceUrl].filter(Boolean).join("|");
     if (key) unique.set(key, source);
   });
-  const entries = Array.from(unique.values());
+  const allEntries = Array.from(unique.values());
+  const entries = allEntries.filter((source) => [source.itemUrl, source.url].some((url) => isDirectArticleUrl(url, source)));
   let directLinks = 0;
   let publisherFallbacks = 0;
   let missingLinks = 0;
@@ -816,6 +899,7 @@ function sourceEvidenceQuality(briefing) {
 
   return {
     total: entries.length,
+    hiddenWeakSources: allEntries.length - entries.length,
     directLinks,
     publisherFallbacks,
     missingLinks,
@@ -1184,6 +1268,11 @@ function isAuthorizedCron(request, url) {
 function sendUnauthorized(response) {
   response.writeHead(401, { "Content-Type": "application/json; charset=utf-8" });
   response.end(JSON.stringify({ error: "Unauthorized" }, null, 2));
+}
+
+function sendNotFound(response) {
+  response.writeHead(404, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+  response.end(JSON.stringify({ error: "Not found" }, null, 2));
 }
 
 function loadLocalEnv() {
