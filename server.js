@@ -196,6 +196,7 @@ function handleRequest(request, response) {
         evidenceQuality,
         storage,
         store: storeSummary,
+        tenant: tenantStatus(politicianId),
         ai: {
           enabled: isAiEnabled(),
           model: process.env.OPENAI_MODEL || "gpt-4.1"
@@ -691,6 +692,21 @@ function backendHealth(crawl, briefing, debugReport, storage, storeSummary, evid
     checks,
     nextActions: failed.slice(0, 3).map((check) => backendActionFor(check.id)),
     checkedAt: new Date().toISOString()
+  };
+}
+
+function tenantStatus(politicianId) {
+  const mode = process.env.HELMUT_TENANT_MODE || "pilot";
+  const pilotGate = isPilotAccessConfigured();
+  return {
+    mode,
+    activePoliticianId: politicianId,
+    accessControl: pilotGate ? "pilot-gate" : "open",
+    isolation: mode === "pilot" ? "single-pilot-profile" : "profile-scoped",
+    multiTenantReady: mode !== "pilot" && Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
+    nextStep: mode === "pilot"
+      ? "Vor zahlenden Mandanten echte Auth, user_id Mapping und Supabase RLS aktivieren."
+      : "Mandanten in Supabase pro user_id trennen und RLS erzwingen."
   };
 }
 

@@ -2101,6 +2101,18 @@ small {
   font-size: 18px;
 }
 
+.office-empty {
+  box-shadow: none;
+}
+
+.office-empty::before {
+  background: var(--muted-2);
+}
+
+.office-empty h3 {
+  margin-bottom: 8px;
+}
+
 .hidden { display: none !important; }
 
 @media (max-width: 920px) {

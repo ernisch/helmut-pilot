@@ -373,7 +373,7 @@ function renderUpdatesPanel() {
         <div class="updates-list">
           ${updates.length ? updates.map(renderNotificationItem).join("") : `<p class="empty-state">Keine neuen Updates.</p>`}
         </div>
-        <button class="updates-radar-link" type="button" data-view="radar">Alle Signale ansehen</button>
+        <button class="updates-radar-link" type="button" data-view="radar">Alle Erwähnungen ansehen</button>
       </aside>
     </div>
   `;
@@ -876,8 +876,16 @@ function renderOfficeTasksSection() {
   return `
     <section class="plain-list">
       <h2>Büroaufträge</h2>
-      <p class="section-note">Kurz genug fürs Team. Konkret genug, damit sofort gearbeitet werden kann.</p>
-      ${officeTasks.map(renderTaskRow).join("") || `<p class="empty-state">Heute musst du nichts ans Büro geben.</p>`}
+      <p class="section-note">Nur Aufgaben, die wirklich vorbereitet werden sollten.</p>
+      ${officeTasks.map(renderTaskRow).join("") || `
+        <article class="list-row office-empty">
+          <div>
+            <span>Kein Auftrag offen</span>
+            <h3>Heute musst du nichts ans Büro geben.</h3>
+            <p>Helmut zeigt hier nur etwas, wenn dein Büro konkret vorbereiten sollte.</p>
+          </div>
+        </article>
+      `}
     </section>
   `;
 }
@@ -1086,7 +1094,7 @@ function renderRadarView() {
   return `
     <section class="page-intro compact">
       <h1 class="${headlineClass("Radar.")}">Radar.</h1>
-      <p>Was sich seit deinem letzten Blick bewegt hat. Kompakt, priorisiert, ohne Nachrichtenflut.</p>
+      <p>Namentliche Erwähnungen über dich und politische Bewegungen, die Helmut beobachtet.</p>
     </section>
 
     <section class="radar-groups">
@@ -1094,7 +1102,7 @@ function renderRadarView() {
       ${renderRadarGroup("Politische Chancen", chanceItems.length, radarDecisionRows(chanceItems, "chance"), false)}
       ${renderRadarGroup("Risiken im Blick", riskItems.length, radarDecisionRows(riskItems, "risk"), false)}
       ${renderRadarGroup("Nur beobachten", watchItems.length, radarDecisionRows(watchItems, "watch"), false)}
-      ${renderRadarGroup("Bisher gefunden", archivedMentions.length, `<p class="section-note">Das sind die bisher gefundenen Artikel über dich.</p>${mentionRows(archivedMentions, { empty: false })}`, false)}
+      ${renderRadarGroup("Bisher gefunden", archivedMentions.length, `<p class="section-note">Bisherige Artikel, in denen du namentlich erwähnt wurdest.</p>${mentionRows(archivedMentions, { empty: false })}`, false)}
     </section>
   `;
 }

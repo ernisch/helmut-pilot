@@ -85,6 +85,8 @@ async function checkOpsStatus() {
   ok(status.storage?.backend === "supabase", "Supabase storage is active");
   ok(status.backend?.status === "Gesund" || Number(status.backend?.score || 0) >= 90, "Backend health is healthy");
   ok(Array.isArray(status.backend?.checks) && status.backend.checks.length >= 8, "Backend health exposes operational checks");
+  ok(Boolean(status.tenant?.activePoliticianId), "Tenant context exposes active politician");
+  ok(status.tenant?.accessControl === "pilot-gate" || !pilotSecret, "Tenant access is protected in pilot mode");
   ok(Number(status.store?.rawItems?.total || 0) > 0, "Persistent store contains raw items");
   ok(status.ai?.enabled === true, "OpenAI is configured");
   ok(status.protection?.pilotAccessConfigured === true || !pilotSecret, "Pilot access is configured");
