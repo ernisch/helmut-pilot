@@ -1093,16 +1093,32 @@ function renderCommunicationSection() {
         </div>
         <button class="primary-button compact-button" type="button" data-generate>Text erzeugen</button>
       </div>
-      <div class="strategy-answer">
-        <span>${escapeHtml(channelLabel)}</span>
-        <p data-copy-source="generated-statement">${escapeHtml(generatedStatement || decision.statement)}</p>
-        <div>
+      <div class="strategy-answer ${escapeAttribute(selectedCommunicationChannel)}" aria-live="polite">
+        <div class="draft-meta">
+          <span>Generierter Entwurf</span>
+          <b>${escapeHtml(channelLabel)}</b>
+        </div>
+        <div class="generated-copy" data-copy-source="generated-statement">
+          ${renderGeneratedCommunicationText(generatedStatement || decision.statement)}
+        </div>
+        <div class="draft-actions">
           <button class="primary-button" type="button" data-copy="generated-statement">Text kopieren</button>
           <button class="secondary-button" type="button" data-generate>Neu formulieren</button>
         </div>
       </div>
     </section>
   `;
+}
+
+function renderGeneratedCommunicationText(text) {
+  const paragraphs = String(text || "")
+    .split(/\n{2,}|\r?\n/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
+  if (!paragraphs.length) {
+    return "<p>Es liegt noch kein Textvorschlag vor.</p>";
+  }
+  return paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join("");
 }
 
 function renderNotesSection() {
