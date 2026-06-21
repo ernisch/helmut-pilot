@@ -542,14 +542,25 @@ function renderReferentHome() {
 function renderDecisionConsole() {
   const top = decisions[0];
   if (!top) {
+    const watchItems = competentNoActionItems();
     return `
       <section class="decision-console empty">
         <div class="decision-ribbon">
           <span>Chef-Empfehlung</span>
           <b>Kein Handlungsdruck</b>
         </div>
-        <h2>Heute keine politische Entscheidung erzwingen.</h2>
-        <p>Die Quellen wurden geprüft. Wenn keine belastbare Lage entsteht, hält Helmut die Fläche bewusst ruhig.</p>
+        <h2>Heute keine Reaktion nötig.</h2>
+        <p>${escapeHtml(noDecisionLead(watchItems))}</p>
+        ${watchItems.length ? `
+          <div class="calm-watchlist">
+            <span>Ich beobachte für dich</span>
+            ${watchItems.map((item) => `
+              <a href="${escapeAttribute(sourceHref(item))}" target="_blank" rel="noopener noreferrer">
+                ${escapeHtml(item.title || "Politische Entwicklung")}
+              </a>
+            `).join("")}
+          </div>
+        ` : ""}
         <button class="secondary-button" type="button" data-run-crawl>Quellen erneut prüfen</button>
       </section>
     `;
@@ -818,8 +829,8 @@ function renderSituationalBriefing() {
   return `
     <section class="situational-card" aria-label="Politische Lage">
       <span>Lage ohne Handlungsdruck</span>
-      <h2>${items.length ? "Heute keine direkte Reaktion nötig." : "Heute keine belastbare Entscheidungslage."}</h2>
-      <p>${items.length ? `Ich habe trotzdem ${items.length} politische Entwicklungen markiert, die du kennen solltest.` : escapeHtml(briefing.fallbackReason || "Die Quellen wurden geprüft. Es gibt aktuell nichts, worauf du politisch reagieren musst.")}</p>
+      <h2>${items.length ? "Ich halte diese Punkte im Blick." : "Heute keine belastbare Entscheidungslage."}</h2>
+      <p>${items.length ? "Du musst daraus gerade keine öffentliche Position machen. Es reicht, wenn du die Entwicklung kennst und Helmut sie weiter beobachtet." : escapeHtml(briefing.fallbackReason || "Die Quellen wurden geprüft. Es gibt aktuell nichts, worauf du politisch reagieren musst.")}</p>
       ${items.length ? `
         <div class="situational-list">
           ${items.map(renderSituationalItem).join("")}
@@ -829,6 +840,31 @@ function renderSituationalBriefing() {
       `}
     </section>
   `;
+}
+
+function competentNoActionItems() {
+  const situational = (briefing.situationalBriefing || []).filter(hasPreciseSource);
+  const mentions = profileMentions().filter(hasPreciseSource);
+  const raw = (briefing.rawItems || []).filter(hasPreciseSource);
+  return [...situational, ...mentions, ...raw]
+    .filter(uniqueMentionItem)
+    .sort(sortNewestFirst)
+    .slice(0, 3);
+}
+
+function noDecisionLead(items) {
+  if (!items.length) {
+    return "Ich habe die Quellen geprüft. Für dich liegt gerade keine belastbare Lage vor, auf die du politisch reagieren solltest.";
+  }
+  const names = items.map((item) => item.title || item.sourceName || "eine Entwicklung").slice(0, 3);
+  return `Ich habe die Quellen geprüft. Du musst jetzt nichts veröffentlichen; ich beobachte ${humanList(names)} weiter.`;
+}
+
+function humanList(values) {
+  const clean = values.map((value) => String(value || "").trim()).filter(Boolean);
+  if (clean.length <= 1) return clean[0] || "die Lage";
+  if (clean.length === 2) return `${clean[0]} und ${clean[1]}`;
+  return `${clean.slice(0, -1).join(", ")} und ${clean.at(-1)}`;
 }
 
 function renderSituationalItem(item) {

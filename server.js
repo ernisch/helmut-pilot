@@ -825,14 +825,18 @@ function releaseCheck({ crawl, briefing, storage, storeSummary, evidenceQuality,
   const failRatio = sourceCount ? failedSources / sourceCount : 1;
   const visibleDecisionCount = Number((briefing?.items || []).filter((item) => item.decision !== "Ignorieren").length);
   const recommendationCount = Number(briefing?.personalizedRecommendations?.length || 0);
+  const situationalCount = Number((briefing?.situationalBriefing || []).length);
+  const hasDecisionOrCompetentCalm = visibleDecisionCount > 0 && recommendationCount > 0 || situationalCount > 0;
+  const liveFlow = releaseLiveFlow({ crawl, briefing, evidenceQuality, storage });
 
   addReleaseCheck(checks, "Crawl", Boolean(crawl) && crawlAge < 8 * 60 * 60 * 1000 && sourceCount >= 50 && failRatio <= 0.1, crawl ? `${sourceCount} Quellen geprüft, ${failedSources} Fehler.` : "Noch kein Crawl.");
   addReleaseCheck(checks, "Supabase", storage?.backend === "supabase", storage?.backend === "supabase" ? "Persistenter Speicher aktiv." : "Speicher ist lokal.");
   addReleaseCheck(checks, "OpenAI", isAiEnabled(), isAiEnabled() ? `Modell ${process.env.OPENAI_MODEL || "gpt-4.1"} aktiv.` : "OpenAI ist nicht aktiv.");
-  addReleaseCheck(checks, "Briefing", Boolean(briefing) && briefingAge < 18 * 60 * 60 * 1000 && visibleDecisionCount > 0 && recommendationCount > 0 && briefing.status !== "Demo", briefing ? `${visibleDecisionCount} sichtbare Entscheidungen, ${recommendationCount} Empfehlungen.` : "Kein Briefing.");
+  addReleaseCheck(checks, "Briefing", Boolean(briefing) && briefingAge < 18 * 60 * 60 * 1000 && hasDecisionOrCompetentCalm && briefing.status !== "Demo", briefing ? `${visibleDecisionCount} Entscheidungen, ${recommendationCount} Empfehlungen, ${situationalCount} Beobachtungspunkte.` : "Kein Briefing.");
   addReleaseCheck(checks, "Quellenlinks", Number(evidenceQuality?.missingLinks || 0) === 0 && Number(evidenceQuality?.publisherFallbacks || 0) === 0, `${evidenceQuality?.directLinks || 0}/${evidenceQuality?.total || 0} sichtbare Belege mit Direktlink.`);
   addReleaseCheck(checks, "Radar", Array.isArray(briefing?.personMentions), `${briefing?.personMentions?.length || 0} Personenartikel im Radar.`);
   addReleaseCheck(checks, "Referentenmodus", Number(briefing?.referentEngine?.score || 0) >= 85 || Number(backend?.score || 0) >= 90, briefing?.referentEngine ? `${briefing.referentEngine.score}% Referentenqualität.` : `${backend?.score || 0}% Backendgesundheit.`);
+  addReleaseCheck(checks, "Live-Flow", liveFlow.ready, liveFlow.summary);
 
   const passed = checks.filter((check) => check.ok).length;
   const total = checks.length || 1;
@@ -847,11 +851,68 @@ function releaseCheck({ crawl, briefing, storage, storeSummary, evidenceQuality,
     checks,
     blockers,
     warnings: readiness?.warnings || [],
+    liveFlow,
     learning: {
       status: learning?.status || "Bereit",
       eventCount: learning?.eventCount || 0
     },
     checkedAt: new Date().toISOString()
+  };
+}
+
+function releaseLiveFlow({ crawl, briefing, evidenceQuality, storage }) {
+  const visibleDecisions = (briefing?.items || []).filter((item) => item.decision !== "Ignorieren");
+  const tasks = (briefing?.tasks || []).filter((task) => task.status !== "done");
+  const hasOfficeHandoff = visibleDecisions.length === 0 || tasks.some((task) => sourceEvidenceQuality({ items: [], personalizedRecommendations: [], personMentions: [], tasks: [task] }).directLinks > 0);
+  const steps = [
+    {
+      id: "crawl",
+      label: "Crawl starten",
+      ok: Boolean(crawl) && Number(crawl.checkedSources || 0) >= 50,
+      detail: crawl ? `${crawl.checkedSources || 0} Quellen.` : "Kein Crawl."
+    },
+    {
+      id: "briefing",
+      label: "Briefing erzeugen",
+      ok: Boolean(briefing) && briefing.status !== "Demo" && (visibleDecisions.length > 0 || Number(briefing?.situationalBriefing?.length || 0) > 0),
+      detail: briefing ? `${visibleDecisions.length} Entscheidungen, ${briefing.situationalBriefing?.length || 0} Beobachtungen.` : "Kein Briefing."
+    },
+    {
+      id: "radar",
+      label: "Radar prüfen",
+      ok: Array.isArray(briefing?.personMentions),
+      detail: `${briefing?.personMentions?.length || 0} Personenartikel.`
+    },
+    {
+      id: "sources",
+      label: "Quellen öffnen",
+      ok: Number(evidenceQuality?.missingLinks || 0) === 0 && Number(evidenceQuality?.publisherFallbacks || 0) === 0 && Number(evidenceQuality?.directLinks || 0) > 0,
+      detail: `${evidenceQuality?.directLinks || 0} präzise Direktlinks.`
+    },
+    {
+      id: "office",
+      label: "Büro-Übergabe",
+      ok: hasOfficeHandoff,
+      detail: visibleDecisions.length === 0 ? "Nicht nötig, weil keine Entscheidung anliegt." : "Übergabe mit Quellenbasis möglich."
+    },
+    {
+      id: "communication",
+      label: "Statement generieren",
+      ok: isAiEnabled() && (visibleDecisions.length > 0 || Number(briefing?.situationalBriefing?.length || 0) > 0),
+      detail: isAiEnabled() ? "OpenAI aktiv." : "OpenAI nicht aktiv."
+    },
+    {
+      id: "storage",
+      label: "Daten persistent",
+      ok: storage?.backend === "supabase",
+      detail: storage?.backend === "supabase" ? "Supabase aktiv." : "Lokaler Speicher."
+    }
+  ];
+  const failed = steps.filter((step) => !step.ok);
+  return {
+    ready: failed.length === 0,
+    summary: failed.length ? `${steps.length - failed.length}/${steps.length} Live-Schritte grün.` : "Crawl, Briefing, Radar, Quellen, Büro, Kommunikation und Speicher grün.",
+    steps
   };
 }
 
@@ -914,7 +975,8 @@ function collectBriefingSources(briefing) {
   return [
     ...(briefing.items || []).flatMap((item) => item.sources || [item.primarySource].filter(Boolean)),
     ...(briefing.personalizedRecommendations || []).flatMap((item) => item.sources || [item.primarySource].filter(Boolean)),
-    ...(briefing.personMentions || [])
+    ...(briefing.personMentions || []),
+    ...(briefing.tasks || []).flatMap((task) => task.sources || [task.primarySource].filter(Boolean))
   ].filter(Boolean);
 }
 

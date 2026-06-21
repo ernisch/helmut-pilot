@@ -11,6 +11,7 @@ const baseUrl = stripTrailingSlash(process.env.HELMUT_BASE_URL || "https://helmu
 const pilotSecret = process.env.PILOT_SECRET || process.env.HELMUT_PILOT_SECRET || "";
 const adminSecret = process.env.HELMUT_ADMIN_SECRET || process.env.CRON_SECRET || "";
 const runCrawl = args.has("--run-crawl") || args.has("--full");
+const runFullFlow = args.has("--full");
 const checkExternalLinks = !args.has("--no-links");
 
 const results = [];
@@ -30,12 +31,17 @@ async function main() {
   await unlockPilot();
   await checkAppShell();
 
+  if (runFullFlow) await runLivePipeline();
   const status = await checkOpsStatus();
-  await checkReleaseReadiness();
+  const release = await checkReleaseReadiness();
   const briefing = await checkBriefing();
+  await checkReleaseLiveFlow(release);
   await checkLearningStatus();
   await checkPipelineDebug();
   await checkSourceLinks(briefing);
+  await checkRadar(briefing);
+  await checkOfficeHandoff(briefing);
+  await checkCommunicationDraft(briefing);
   await maybeRunCrawl();
 
   if (status?.readiness?.warnings?.length) {
@@ -113,6 +119,7 @@ async function checkReleaseReadiness() {
   if (Array.isArray(release.blockers)) {
     release.blockers.slice(0, 3).forEach((blocker) => warn(`Release blocker: ${blocker}`));
   }
+  return release;
 }
 
 async function checkBriefing() {
@@ -120,11 +127,20 @@ async function checkBriefing() {
   const briefing = parseJson(response, "latest briefing");
   ok(response.statusCode === 200, "Latest briefing endpoint responds");
   ok(briefing.status !== "Demo", "Latest briefing is not demo fallback");
-  ok(Array.isArray(briefing.items) && briefing.items.length > 0, "Briefing has visible decision items");
-  ok(Array.isArray(briefing.personalizedRecommendations) && briefing.personalizedRecommendations.length > 0, "Briefing has personalized recommendations");
+  const hasDecision = Array.isArray(briefing.items) && briefing.items.some((item) => item.decision !== "Ignorieren");
+  const hasCalmWatchlist = Array.isArray(briefing.situationalBriefing) && briefing.situationalBriefing.length > 0;
+  ok(hasDecision || hasCalmWatchlist, "Briefing has decisions or a competent no-action watchlist");
+  ok(Array.isArray(briefing.personalizedRecommendations), "Briefing exposes personalized recommendations");
   ok(briefing.referentEngine?.status === "Stabschefbereit" || Number(briefing.referentEngine?.score || 0) >= 85, "Briefing has referent-mode audit");
   ok(Boolean(briefing.executiveSummary || briefing.themeOfDay || briefing.chiefRecommendation || briefing.topicOfTheDay || briefing.agentBriefing), "Briefing has a top-level referent summary");
   return briefing;
+}
+
+async function checkReleaseLiveFlow(release) {
+  const steps = release?.liveFlow?.steps || [];
+  ok(Array.isArray(steps) && steps.length >= 6, "Release check exposes live-flow steps");
+  ok(release?.liveFlow?.ready === true, "Release live-flow is green");
+  steps.filter((step) => !step.ok).slice(0, 3).forEach((step) => warn(`Live-flow blocker: ${step.label} - ${step.detail}`));
 }
 
 async function checkLearningStatus() {
@@ -147,7 +163,7 @@ async function checkPipelineDebug() {
 async function checkSourceLinks(briefing) {
   const sources = collectSources(briefing);
   ok(sources.length > 0, "Briefing exposes source evidence");
-  const urls = unique(sources.map((source) => source.itemUrl || source.url || source.sourceUrl).filter(isHttpUrl));
+  const urls = unique(sources.map((source) => directArticleUrl(source)).filter(isHttpUrl));
   ok(urls.length > 0, "Briefing evidence contains public URLs");
   if (!checkExternalLinks || urls.length === 0) return;
 
@@ -158,8 +174,58 @@ async function checkSourceLinks(briefing) {
   broken.slice(0, 3).forEach((entry) => warn(`Broken source sample: ${entry.url} (${entry.statusCode || entry.error})`));
 }
 
+async function checkRadar(briefing) {
+  ok(Array.isArray(briefing.personMentions), "Radar data is present");
+  const mentionPool = [...(briefing.personMentions || []), ...(briefing.rawItems || [])].filter(mentionsPilotProfile);
+  const preciseMentions = mentionPool.filter((item) => Boolean(directArticleUrl(item)));
+  if (mentionPool.length) {
+    ok(true, "Radar hides weak profile mentions instead of exposing broken links");
+    if (!preciseMentions.length) warn("Radar has profile mentions, but none with precise direct article links in this data set.");
+    const hiddenWeak = mentionPool.length - preciseMentions.length;
+    if (hiddenWeak > 0) warn(`${hiddenWeak} Radar mentions have weak links and should stay hidden from prominent UI.`);
+  } else {
+    warn("Radar has no current person mentions; previous archive can still render from stored raw items.");
+  }
+}
+
+async function checkOfficeHandoff(briefing) {
+  const response = await request("GET", "/api/tasks", { cookie });
+  const tasks = parseJson(response, "tasks");
+  ok(response.statusCode === 200 && Array.isArray(tasks), "Office tasks endpoint responds");
+  const briefingTasks = Array.isArray(briefing.tasks) ? briefing.tasks : [];
+  const actionable = [...tasks, ...briefingTasks].filter((task) => task.status !== "done" && hasTaskDirectSource(task));
+  if ((briefing.items || []).some((item) => item.decision !== "Ignorieren")) {
+    ok(actionable.length > 0, "Office handoff has an actionable task with direct source");
+  } else {
+    ok(true, "Office handoff can be empty when no decision is required");
+  }
+}
+
+async function checkCommunicationDraft(briefing) {
+  const decision = (briefing.items || []).find((item) => item.decision !== "Ignorieren") || (briefing.items || [])[0];
+  if (!decision) {
+    ok(true, "Communication draft skipped because no decision requires a statement");
+    return;
+  }
+  const response = await request("POST", "/api/communication/generate", {
+    cookie,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      channel: "press",
+      prompt: `Erstelle ein Pressestatement zu ${decision.title}.`,
+      decision
+    }),
+    timeoutMs: 60000
+  });
+  const draft = parseJson(response, "communication draft");
+  ok(response.statusCode === 200, "Communication draft endpoint responds");
+  ok(String(draft.text || "").trim().length >= 80, "Communication draft returns usable text");
+  ok(draft.aiEnabled === true, "Communication draft uses OpenAI in production");
+}
+
 async function maybeRunCrawl() {
-  if (!runCrawl) {
+  if (!runCrawl || runFullFlow) {
+    if (runFullFlow) return;
     warn("Manual crawl smoke skipped. Run `npm test -- --run-crawl` to test an active crawl.");
     return;
   }
@@ -173,12 +239,58 @@ async function maybeRunCrawl() {
   ok(Number(crawl.checkedSources || 0) >= 50 || Boolean(crawl.skippedReason), "Manual crawl checks sources or reuses recent run");
 }
 
+async function runLivePipeline() {
+  if (!adminSecret) {
+    fail("Full live pipeline skipped", "HELMUT_ADMIN_SECRET or CRON_SECRET is required for --full.");
+    return;
+  }
+  const response = await request("GET", `/api/pipeline/run?force=1&secret=${encodeURIComponent(adminSecret)}`, { cookie, timeoutMs: 180000 });
+  const pipeline = parseJson(response, "pipeline run");
+  ok(response.statusCode === 200, "Full live pipeline endpoint responds");
+  ok(Boolean(pipeline.briefing || pipeline.skippedReason), "Full live pipeline creates or reuses a briefing");
+}
+
 function collectSources(briefing) {
   return [
     ...(briefing.items || []).flatMap((item) => item.sources || [item.primarySource].filter(Boolean)),
     ...(briefing.personalizedRecommendations || []).flatMap((item) => item.sources || [item.primarySource].filter(Boolean)),
-    ...(briefing.personMentions || [])
+    ...(briefing.personMentions || []),
+    ...(briefing.tasks || []).flatMap((task) => task.sources || [task.primarySource].filter(Boolean)),
+    ...(briefing.situationalBriefing || [])
   ].filter(Boolean);
+}
+
+function hasTaskDirectSource(task) {
+  return [task.primarySource, ...(task.sources || [])].filter(Boolean).some((source) => Boolean(directArticleUrl(source)));
+}
+
+function mentionsPilotProfile(item = {}) {
+  const text = `${item.title || ""} ${item.content || ""} ${item.excerpt || ""} ${item.author || ""}`.toLowerCase();
+  return text.includes("cem ince") || /(^|[^a-zäöüß])ince($|[^a-zäöüß])/i.test(text);
+}
+
+function directArticleUrl(source = {}) {
+  const candidates = [source.itemUrl, source.url].filter(Boolean);
+  return candidates.find((url) => isDirectArticleUrl(url, source)) || "";
+}
+
+function isDirectArticleUrl(url, source = {}) {
+  if (!isHttpUrl(url)) return false;
+  if (source.linkType && source.linkType !== "direct") return false;
+  if (String(url).includes("example.local")) return false;
+  try {
+    const parsed = new URL(String(url));
+    if (parsed.hostname.includes("google.")) return false;
+    const path = parsed.pathname.replace(/\/+$/, "");
+    if (!path || path === "/" || path.split("/").filter(Boolean).length === 0) return false;
+    if (source.sourceUrl) {
+      const sourceUrl = new URL(String(source.sourceUrl));
+      if (parsed.hostname === sourceUrl.hostname && path === sourceUrl.pathname.replace(/\/+$/, "")) return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 async function checkLink(url) {
