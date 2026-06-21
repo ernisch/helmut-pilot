@@ -92,6 +92,7 @@ async function checkOpsStatus() {
   ok(Number(status.crawl?.failedSources || 0) / Math.max(1, Number(status.crawl?.checkedSources || 0)) <= 0.1, "Crawler failure rate is below 10 percent");
   ok(Number(status.briefing?.recommendationCount || 0) >= 1, "Latest briefing contains at least one recommendation");
   ok(status.briefing?.quality?.status === "Pitchbereit" || Number(status.briefing?.quality?.score || 0) >= 90, "Briefing quality is pitch-ready");
+  ok(Number(status.briefing?.referentEngine?.score || 0) >= 85, "Referent engine audit passes");
   ok(Number(status.evidenceQuality?.missingLinks || 0) === 0, "Visible evidence has no missing links");
   return status;
 }
@@ -103,6 +104,7 @@ async function checkBriefing() {
   ok(briefing.status !== "Demo", "Latest briefing is not demo fallback");
   ok(Array.isArray(briefing.items) && briefing.items.length > 0, "Briefing has visible decision items");
   ok(Array.isArray(briefing.personalizedRecommendations) && briefing.personalizedRecommendations.length > 0, "Briefing has personalized recommendations");
+  ok(briefing.referentEngine?.status === "Stabschefbereit" || Number(briefing.referentEngine?.score || 0) >= 85, "Briefing has referent-mode audit");
   ok(Boolean(briefing.executiveSummary || briefing.themeOfDay || briefing.chiefRecommendation || briefing.topicOfTheDay || briefing.agentBriefing), "Briefing has a top-level referent summary");
   return briefing;
 }

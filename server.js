@@ -188,7 +188,7 @@ function handleRequest(request, response) {
       const storeSummary = await getStoreSummary(politicianId);
       const evidenceQuality = sourceEvidenceQuality(latestBriefing);
       const readiness = pilotReadiness(latestCrawl, latestBriefing, storage, evidenceQuality);
-      const backend = backendHealth(latestCrawl, latestBriefing, latestDebug, storage, storeSummary, evidenceQuality);
+      const backend = backendHealth(latestCrawl, latestBriefing, latestDebug, storage, storeSummary, evidenceQuality, latestBriefing?.referentEngine);
       return {
         status: operationalStatus(latestCrawl, latestBriefing, storage),
         backend,
@@ -208,7 +208,8 @@ function handleRequest(request, response) {
           generatedAt: latestBriefing.generatedAt || latestBriefing.date,
           itemCount: Array.isArray(latestBriefing.items) ? latestBriefing.items.length : 0,
           recommendationCount: Array.isArray(latestBriefing.personalizedRecommendations) ? latestBriefing.personalizedRecommendations.length : 0,
-          quality: latestBriefing.quality || null
+          quality: latestBriefing.quality || null,
+          referentEngine: latestBriefing.referentEngine || null
         } : null,
         cron: {
           timezone: "Europe/Berlin",
@@ -637,7 +638,7 @@ function operationalStatus(crawl, briefing, storage) {
   return "Nicht eingerichtet";
 }
 
-function backendHealth(crawl, briefing, debugReport, storage, storeSummary, evidenceQuality) {
+function backendHealth(crawl, briefing, debugReport, storage, storeSummary, evidenceQuality, referentEngine = null) {
   const checks = [];
   addBackendCheck(checks, "Persistenter Speicher", storage.backend === "supabase", storage.backend === "supabase" ? "Supabase ist aktiv." : "Helmut speichert noch lokal.");
   addBackendCheck(checks, "Quellenbasis", Number(storeSummary.sources?.active || 0) >= 50, `${storeSummary.sources?.active || 0} aktive Quellen konfiguriert.`);
@@ -658,6 +659,7 @@ function backendHealth(crawl, briefing, debugReport, storage, storeSummary, evid
   addBackendCheck(checks, "Demo-Freiheit", Boolean(briefing) && briefing.status !== "Demo", briefing?.status ? `Status: ${briefing.status}.` : "Kein Briefingstatus vorhanden.");
   addBackendCheck(checks, "Entscheidungswert", recommendationCount > 0 && itemCount > 0, `${recommendationCount} persönliche Empfehlungen, ${itemCount} sichtbare Entscheidungen.`);
   addBackendCheck(checks, "Quellenlinks", Number(evidenceQuality?.missingLinks || 0) === 0 && Number(evidenceQuality?.publisherFallbacks || 0) === 0, `${evidenceQuality?.directLinks || 0}/${evidenceQuality?.total || 0} Belege mit Direktlink.`);
+  addBackendCheck(checks, "Referentenmodus", Number(referentEngine?.score || 0) >= 85, referentEngine ? `${referentEngine.status}: ${referentEngine.score}% Referentenqualität.` : "Noch kein Referenten-Audit vorhanden.");
   addBackendCheck(checks, "Pipeline-Debug", Boolean(debugReport?.counts), debugReport?.createdAt ? `Letzter Debug: ${debugReport.createdAt}.` : "Noch kein Debug-Report gespeichert.");
 
   const passed = checks.filter((check) => check.ok).length;
@@ -710,6 +712,7 @@ function backendActionFor(checkId) {
     "demo-freiheit": "Live-Pipeline ausführen und Demo-Fallback ausblenden.",
     "entscheidungswert": "Relevanzfilter und aktuelle Quellenlage prüfen.",
     "quellenlinks": "URL-Resolver und Source Evidence prüfen.",
+    "referentenmodus": "Briefing neu erzeugen und Empfehlungen auf direkte Ansprache, Handlung, Konsequenz und Quellenlink prüfen.",
     "pipeline-debug": "Pipeline einmal vollständig ausführen, damit ein Debug-Bericht gespeichert wird."
   };
   return actions[checkId] || "Backend-Check prüfen.";
