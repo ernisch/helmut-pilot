@@ -20,10 +20,10 @@ const app = document.querySelector("#app");
 const toast = document.querySelector("#toast");
 
 const navItems = [
-  ["briefing", "Morgenbriefing"],
+  ["briefing", "Heute"],
+  ["radar", "Radar"],
   ["office", "Büro"],
-  ["topics", "Belege"],
-  ["radar", "Radar"]
+  ["settings", "Profil"]
 ];
 
 const mobileNavItems = [
@@ -329,12 +329,10 @@ function renderSidebar() {
           <small>Politischer Referent</small>
         </div>
         <nav class="nav-list" aria-label="Hauptnavigation">
-          ${navItems.map(([id, label]) => `<button class="${currentView === id ? "active" : ""}" type="button" data-view="${id}">${label}</button>`).join("")}
-          <button class="mobile-menu-settings ${currentView === "settings" ? "active" : ""}" type="button" data-view="settings">Einstellungen</button>
+          ${navItems.map(([id, label]) => `<button class="${isMobileNavActive(id) ? "active" : ""}" type="button" data-view="${id}">${label}</button>`).join("")}
         </nav>
       </div>
       <div class="sidebar-foot">
-        <button type="button" data-view="settings">Einstellungen</button>
         <p>${escapeHtml(profile?.fullName || "Cem Ince")}<br><span>${escapeHtml(profile?.function || "MdB")}</span></p>
       </div>
     </aside>
@@ -378,6 +376,7 @@ function renderTopbar() {
       <button class="menu-button ${navOpen ? "close" : ""}" type="button" data-menu aria-label="${navOpen ? "Menü schließen" : "Menü öffnen"}">
         ${navOpen ? "×" : "<span></span><span></span><span></span>"}
       </button>
+      <span class="topbar-brand">HELMUT</span>
       <div class="topbar-meta">
         <button class="update-heart ${hasUpdates ? "has-updates" : ""}" type="button" data-updates title="${hasUpdates ? "Updates anzeigen" : "Keine neuen Updates"}" aria-label="${hasUpdates ? "Updates anzeigen" : "Keine neuen Updates"}">
           <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">
@@ -447,24 +446,16 @@ function renderView() {
 }
 
 function renderBriefingView() {
-  const firstName = (profile?.fullName || "Cem").split(" ")[0];
-  const greeting = timeGreeting(firstName);
   return `
     <section class="page-intro executive-intro">
-      <h1 class="${headlineClass(greeting)}">${escapeHtml(greeting)}</h1>
-      <p>${escapeHtml(referentFocusSentence())}</p>
-      ${renderPilotStatus()}
+      <h1 class="hero-title">Guten Morgen, Cem.</h1>
+      <p>Hier ist, was heute zählt.</p>
     </section>
 
-    <section class="briefing-focus" aria-label="Entscheidungslage">
+    <section class="single-decision-stage" aria-label="Wichtigste politische Entscheidung">
       ${renderDecisionConsole()}
-      ${renderBriefingQuickList()}
     </section>
-
-    ${renderDailyFlow()}
     ${!decisions.length ? renderSituationalBriefing() : ""}
-
-    <button class="quiet-link" type="button" data-view="topics">Belege ansehen</button>
   `;
 }
 
@@ -540,19 +531,29 @@ function renderDecisionConsole() {
   return `
     <section class="decision-console ${escapeAttribute(top.priorityType || "action")}">
       <div class="decision-ribbon">
-        <span>Wichtigste Entscheidung</span>
+        <span>Wichtigste politische Entscheidung</span>
         <b>${escapeHtml(top.priorityLabel || top.decision || "Relevant")}</b>
       </div>
       <h2>${escapeHtml(top.title)}</h2>
-      <p>${escapeHtml(chiefRecommendationText(top))}</p>
+      <div class="decision-brief">
+        <div>
+          <span>Warum wichtig für dich</span>
+          <p>${escapeHtml(decisionWhyImportant(top))}</p>
+        </div>
+        <div>
+          <span>Empfohlene Handlung</span>
+          <p>${escapeHtml(chiefRecommendationText(top))}</p>
+        </div>
+        <div>
+          <span>Risiko bei Untätigkeit</span>
+          <p>${escapeHtml(decisionRisk(top))}</p>
+        </div>
+      </div>
       <div class="decision-meta">
         <span>${escapeHtml(top.estimatedTime || "10 Min.")}</span>
-        <span>${escapeHtml(top.primarySource?.sourceName || top.sourceName || "Quelle geprüft")}</span>
-        <span>${escapeHtml(top.confidence ? `Sicherheit ${confidenceLabel(top.confidence)}` : "Sicherheit mittel")}</span>
       </div>
       <div class="decision-actions">
-        <button class="primary-button" type="button" data-detail="${escapeHtml(top.id)}">Empfehlung lesen</button>
-        <button class="secondary-button" type="button" data-communication="${escapeHtml(top.id)}">Text vorbereiten</button>
+        <button class="primary-button" type="button" data-detail="${escapeHtml(top.id)}">Empfehlung öffnen</button>
       </div>
     </section>
   `;
@@ -825,6 +826,14 @@ function chiefRecommendationText(decision) {
     return `${action} Du musst nicht sofort groß veröffentlichen, aber du solltest heute sprechfähig sein.`;
   }
   return action;
+}
+
+function decisionWhyImportant(decision) {
+  return twoSentenceSummary(decision.personalRelevanceExplanation || decision.whyItMatters || decision.summary || "Das Thema berührt dein Mandatsprofil und verdient heute deine Aufmerksamkeit.");
+}
+
+function decisionRisk(decision) {
+  return twoSentenceSummary(decision.inaction || decision.consequenceIfIgnored || decision.risk || "Wenn du nicht reagierst, prägen andere Akteure die Debatte zuerst.");
 }
 
 function taskIdForDecision(decision) {
