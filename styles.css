@@ -2319,38 +2319,29 @@ small {
   position: relative;
   display: grid;
   place-items: center;
-  width: clamp(64px, 14vw, 92px);
-  height: clamp(64px, 14vw, 92px);
-  border: 1px solid rgba(251, 247, 239, .12);
-  border-radius: 26px;
+  width: auto;
+  height: auto;
+  border: 0;
+  border-radius: 0;
   color: #fbf7ef;
-  background: rgba(9, 14, 27, .72);
-  box-shadow: 0 28px 90px rgba(0, 0, 0, .38), inset 0 1px 0 rgba(255, 255, 255, .08);
+  background: transparent;
+  box-shadow: none;
   animation: loading-mark-fade 2.2s ease-in-out infinite;
 }
 
 .splash-mark::before,
 .loading-mark::before {
-  content: "";
-  position: absolute;
-  inset: -1px;
-  padding: 1px;
-  border-radius: inherit;
-  background: linear-gradient(135deg, rgba(140, 92, 255, .56), transparent 34%, rgba(25, 229, 154, .36));
-  opacity: .34;
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  mask-composite: exclude;
+  content: none;
 }
 
 .splash-mark span,
 .loading-mark span,
 .loading-logo span {
-  font-size: clamp(30px, 7vw, 44px);
-  font-weight: 760;
+  font-size: clamp(42px, 13vw, 72px);
+  font-weight: 720;
   letter-spacing: -.04em;
   line-height: 1;
+  text-shadow: 0 20px 70px rgba(140, 92, 255, .34);
 }
 
 .loading-card {
@@ -2560,7 +2551,6 @@ small {
 
 .agent-orb,
 .loading-logo,
-.loading-mark,
 .brand img {
   background: #101827;
   box-shadow: 0 18px 44px rgba(0, 0, 0, .36);
