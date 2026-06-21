@@ -7,7 +7,7 @@ loadLocalEnv();
 const { cemInceProfile, demoRawItems, demoSources, generateBriefing } = require("./lib/helmut/runtime");
 const { getLatestOrDemoBriefing, runDailyPipeline, runMorningBriefing, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { personalizeBriefing } = require("./lib/helmut/personalization");
-const { getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestPipelineDebugReport, getProfile, getStorageStatus, getTasks, getTopicMemory, getUserNotes, saveInteraction, saveProfile, saveTask, saveUserNote, updateTaskStatus } = require("./lib/helmut/storage");
+const { getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestPipelineDebugReport, getProfile, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, saveInteraction, saveProfile, saveTask, saveUserNote, updateTaskStatus } = require("./lib/helmut/storage");
 const { generateCommunicationDraft, generateSpeechAudio, isAiEnabled } = require("./lib/helmut/ai");
 
 const root = __dirname;
@@ -183,14 +183,19 @@ function handleRequest(request, response) {
     return handleAsync(response, async () => {
       const latestCrawl = await getLatestCrawlRun();
       const latestBriefing = await getLatestBriefing(politicianId);
+      const latestDebug = await getLatestPipelineDebugReport(politicianId);
       const storage = getStorageStatus();
+      const storeSummary = await getStoreSummary(politicianId);
       const evidenceQuality = sourceEvidenceQuality(latestBriefing);
       const readiness = pilotReadiness(latestCrawl, latestBriefing, storage, evidenceQuality);
+      const backend = backendHealth(latestCrawl, latestBriefing, latestDebug, storage, storeSummary, evidenceQuality);
       return {
         status: operationalStatus(latestCrawl, latestBriefing, storage),
+        backend,
         readiness,
         evidenceQuality,
         storage,
+        store: storeSummary,
         ai: {
           enabled: isAiEnabled(),
           model: process.env.OPENAI_MODEL || "gpt-4.1"
@@ -639,12 +644,79 @@ function operationalStatus(crawl, briefing, storage) {
   const crawlAge = crawl?.createdAt ? Date.now() - new Date(crawl.createdAt).getTime() : Infinity;
   const briefingDate = briefing?.generatedAt || briefing?.date;
   const briefingAge = briefingDate ? Date.now() - new Date(briefingDate).getTime() : Infinity;
-  const crawlHealthy = crawl && crawl.failedSources === 0 && crawlAge < 8 * 60 * 60 * 1000;
+  const checkedSources = Number(crawl?.checkedSources || 0);
+  const failedSources = Number(crawl?.failedSources || 0);
+  const successfulSources = Number(crawl?.successfulSources || 0);
+  const crawlFailureRatio = checkedSources ? failedSources / checkedSources : 1;
+  const crawlHealthy = crawl && crawlAge < 8 * 60 * 60 * 1000 && checkedSources >= 50 && successfulSources >= 40 && crawlFailureRatio <= 0.1;
   const briefingHealthy = briefing && briefingAge < 18 * 60 * 60 * 1000;
   if (storage.backend !== "supabase") return "Achtung";
   if (crawlHealthy && briefingHealthy) return "Bereit";
   if (crawl || briefing) return "Prüfen";
   return "Nicht eingerichtet";
+}
+
+function backendHealth(crawl, briefing, debugReport, storage, storeSummary, evidenceQuality) {
+  const checks = [];
+  addBackendCheck(checks, "Persistenter Speicher", storage.backend === "supabase", storage.backend === "supabase" ? "Supabase ist aktiv." : "Helmut speichert noch lokal.");
+  addBackendCheck(checks, "Quellenbasis", Number(storeSummary.sources?.active || 0) >= 50, `${storeSummary.sources?.active || 0} aktive Quellen konfiguriert.`);
+  addBackendCheck(checks, "Raw Items", Number(storeSummary.rawItems?.total || 0) > 0, `${storeSummary.rawItems?.total || 0} Artikel gespeichert, ${storeSummary.rawItems?.last24h || 0} in den letzten 24 Stunden.`);
+
+  const crawlAge = crawl?.createdAt ? Date.now() - new Date(crawl.createdAt).getTime() : Infinity;
+  const checkedSources = Number(crawl?.checkedSources || 0);
+  const failedSources = Number(crawl?.failedSources || 0);
+  const crawlFailureRatio = checkedSources ? failedSources / checkedSources : 1;
+  addBackendCheck(checks, "Crawl-Frische", Boolean(crawl) && crawlAge < 8 * 60 * 60 * 1000, crawl?.createdAt ? `Letzter Crawl: ${crawl.createdAt}.` : "Noch kein Crawl gespeichert.");
+  addBackendCheck(checks, "Crawl-Qualität", checkedSources >= 50 && crawlFailureRatio <= 0.1, `${checkedSources} Quellen geprüft, ${failedSources} Fehler.`);
+
+  const briefingDate = briefing?.generatedAt || briefing?.date;
+  const briefingAge = briefingDate ? Date.now() - new Date(briefingDate).getTime() : Infinity;
+  const recommendationCount = Number(briefing?.personalizedRecommendations?.length || 0);
+  const itemCount = Number(briefing?.items?.length || 0);
+  addBackendCheck(checks, "Briefing-Frische", Boolean(briefing) && briefingAge < 18 * 60 * 60 * 1000, briefingDate ? `Letztes Briefing: ${briefingDate}.` : "Noch kein Briefing gespeichert.");
+  addBackendCheck(checks, "Demo-Freiheit", Boolean(briefing) && briefing.status !== "Demo", briefing?.status ? `Status: ${briefing.status}.` : "Kein Briefingstatus vorhanden.");
+  addBackendCheck(checks, "Entscheidungswert", recommendationCount > 0 && itemCount > 0, `${recommendationCount} persönliche Empfehlungen, ${itemCount} sichtbare Entscheidungen.`);
+  addBackendCheck(checks, "Quellenlinks", Number(evidenceQuality?.missingLinks || 0) === 0 && Number(evidenceQuality?.publisherFallbacks || 0) === 0, `${evidenceQuality?.directLinks || 0}/${evidenceQuality?.total || 0} Belege mit Direktlink.`);
+  addBackendCheck(checks, "Pipeline-Debug", Boolean(debugReport?.counts), debugReport?.createdAt ? `Letzter Debug: ${debugReport.createdAt}.` : "Noch kein Debug-Report gespeichert.");
+
+  const passed = checks.filter((check) => check.ok).length;
+  const total = checks.length || 1;
+  const score = Math.round((passed / total) * 100);
+  const failed = checks.filter((check) => !check.ok);
+  return {
+    status: score >= 90 ? "Gesund" : score >= 70 ? "Prüfen" : "Kritisch",
+    score,
+    passed,
+    total,
+    checks,
+    nextActions: failed.slice(0, 3).map((check) => backendActionFor(check.id)),
+    checkedAt: new Date().toISOString()
+  };
+}
+
+function addBackendCheck(checks, label, ok, detail) {
+  checks.push({
+    id: label.toLowerCase().replace(/[^a-z0-9äöüß]+/gi, "-").replace(/^-|-$/g, ""),
+    label,
+    ok: Boolean(ok),
+    detail
+  });
+}
+
+function backendActionFor(checkId) {
+  const actions = {
+    "persistenter-speicher": "Supabase-Environment-Variablen prüfen und Storage-Modus auf supabase setzen.",
+    "quellenbasis": "Quellenliste erweitern oder deaktivierte Quellen prüfen.",
+    "raw-items": "Manuellen Crawl starten und prüfen, ob Artikel gespeichert werden.",
+    "crawl-frische": "Crawl-Route oder Vercel Cron prüfen.",
+    "crawl-qualität": "Fehlgeschlagene Quellen im Pipeline-Debug ansehen.",
+    "briefing-frische": "Morgenbriefing manuell starten oder Cron prüfen.",
+    "demo-freiheit": "Live-Pipeline ausführen und Demo-Fallback ausblenden.",
+    "entscheidungswert": "Relevanzfilter und aktuelle Quellenlage prüfen.",
+    "quellenlinks": "URL-Resolver und Source Evidence prüfen.",
+    "pipeline-debug": "Pipeline einmal vollständig ausführen, damit ein Debug-Bericht gespeichert wird."
+  };
+  return actions[checkId] || "Backend-Check prüfen.";
 }
 
 function pilotReadiness(crawl, briefing, storage, evidenceQuality = null) {

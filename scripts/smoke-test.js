@@ -83,6 +83,9 @@ async function checkOpsStatus() {
   const status = parseJson(response, "ops status");
   ok(response.statusCode === 200, "Ops status endpoint responds");
   ok(status.storage?.backend === "supabase", "Supabase storage is active");
+  ok(status.backend?.status === "Gesund" || Number(status.backend?.score || 0) >= 90, "Backend health is healthy");
+  ok(Array.isArray(status.backend?.checks) && status.backend.checks.length >= 8, "Backend health exposes operational checks");
+  ok(Number(status.store?.rawItems?.total || 0) > 0, "Persistent store contains raw items");
   ok(status.ai?.enabled === true, "OpenAI is configured");
   ok(status.protection?.pilotAccessConfigured === true || !pilotSecret, "Pilot access is configured");
   ok(Number(status.crawl?.checkedSources || 0) >= 50, "Crawler checks at least 50 sources");
