@@ -11,16 +11,19 @@
     <link rel="icon" href="assets/helmut_logo.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="assets/helmut_appicon_192.png" />
     <link rel="manifest" href="site.webmanifest" />
-    <link rel="stylesheet" href="styles.css?v=20260621-cleanbg1" />
+    <link rel="stylesheet" href="styles.css?v=20260621-splash1" />
   </head>
-  <body>
+  <body class="is-loading">
+    <div class="app-splash" id="appSplash" aria-hidden="true">
+      <div class="splash-mark"><span>H</span></div>
+    </div>
     <main class="shell" id="app">
       <section class="loading-screen" aria-label="Bereite deine Morgenlage vor">
-        <img class="loading-mark" src="assets/helmut_appicon_192.png" alt="" />
+        <div class="loading-mark"><span>H</span></div>
       </section>
     </main>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="client.js?v=20260621-cleanbg1"></script>
+    <script src="client.js?v=20260621-splash1"></script>
   </body>
 </html>

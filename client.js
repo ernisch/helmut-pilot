@@ -318,6 +318,17 @@ function render() {
   bindActions();
   updateBerlinClock();
   startBerlinClock();
+  hideStartupSplash();
+}
+
+function hideStartupSplash() {
+  window.setTimeout(() => {
+    document.body.classList.remove("is-loading");
+    document.body.classList.add("app-ready");
+  }, 180);
+  window.setTimeout(() => {
+    document.body.classList.add("splash-gone");
+  }, 980);
 }
 
 function renderSidebar() {
@@ -2548,11 +2559,12 @@ loadBriefing().catch((error) => {
   console.error(error);
   app.innerHTML = `
     <section class="loading-card">
-      <img class="loading-logo" src="assets/helmut_appicon_192.png" alt="" />
+      <div class="loading-logo"><span>H</span></div>
       <p>Helmut</p>
       <h1>Briefing konnte nicht geladen werden.</h1>
       <button class="primary-button" type="button" onclick="window.location.reload()">Neu laden</button>
     </section>
   `;
+  hideStartupSplash();
   showToast("Briefing konnte nicht geladen werden");
 });
