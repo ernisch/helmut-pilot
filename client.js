@@ -1219,21 +1219,23 @@ function renderRadarView() {
   const allMentions = profileMentions();
   const freshMentions = allMentions.filter(isFreshUpdate).slice(0, 4);
   const archivedMentions = archivedProfileMentions(allMentions, freshMentions).slice(0, 6);
+  const profileArticles = profileArticleArchive(allMentions).slice(0, 8);
   const chanceItems = decisions.filter((decision) => decision.priorityType === "chance").slice(0, 3);
   const riskItems = decisions.filter((decision) => decision.priorityType === "risk").slice(0, 3);
   const watchItems = decisions.filter((decision) => decision.priorityType === "watch").slice(0, 4);
   return `
     <section class="page-intro compact">
       <h1 class="${headlineClass("Radar.")}">Radar.</h1>
-      <p>Namentliche Erwähnungen über dich und politische Bewegungen, die Helmut beobachtet.</p>
+      <p>Namentliche Erwähnungen über dich, ältere Artikel und politische Bewegungen, die Helmut beobachtet.</p>
     </section>
 
     <section class="radar-groups">
       ${renderRadarGroup("Neue Erwähnungen", freshMentions.length, mentionRows(freshMentions), true)}
+      ${renderRadarGroup("Frühere Erwähnungen", archivedMentions.length, `<p class="section-note">Ältere Treffer, in denen du namentlich erwähnt wurdest.</p>${mentionRows(archivedMentions, { empty: false })}`, false)}
+      ${renderRadarGroup("Artikel über dich", profileArticles.length, `<p class="section-note">Artikelarchiv zu Cem Ince, inklusive älterer Treffer und Autorenhinweise.</p>${mentionRows(profileArticles, { empty: false })}`, false)}
       ${renderRadarGroup("Politische Chancen", chanceItems.length, radarDecisionRows(chanceItems, "chance"), false)}
       ${renderRadarGroup("Risiken im Blick", riskItems.length, radarDecisionRows(riskItems, "risk"), false)}
       ${renderRadarGroup("Nur beobachten", watchItems.length, radarDecisionRows(watchItems, "watch"), false)}
-      ${renderRadarGroup("Bisher gefunden", archivedMentions.length, `<p class="section-note">Bisherige Artikel, in denen du namentlich erwähnt wurdest.</p>${mentionRows(archivedMentions, { empty: false })}`, false)}
     </section>
   `;
 }
@@ -1266,15 +1268,47 @@ function radarDecisionRows(items, type) {
 }
 
 function profileMentions() {
+  const profileTerms = profileNameTerms();
+  return [...(briefing.personMentions || []), ...(briefing.rawItems || [])]
+    .filter((item) => itemMentionsProfile(item, profileTerms))
+    .filter(uniqueMentionItem)
+    .sort(sortNewestFirst);
+}
+
+function profileArticleArchive(allMentions = []) {
+  const profileTerms = profileNameTerms();
+  return [...allMentions, ...(briefing.personMentions || []), ...(briefing.rawItems || [])]
+    .filter((item) => itemMentionsProfile(item, profileTerms) || itemAuthoredByProfile(item, profileTerms))
+    .filter(uniqueMentionItem)
+    .sort(sortNewestFirst);
+}
+
+function profileNameTerms() {
   const fullName = profile?.fullName || "Cem Ince";
   const lastName = fullName.split(/\s+/).filter(Boolean).at(-1) || "Ince";
-  return [...(briefing.personMentions || []), ...(briefing.rawItems || [])]
-    .filter((item) => {
-      const text = `${item.title || ""} ${item.content || ""}`.toLowerCase();
-      return text.includes(fullName.toLowerCase()) || new RegExp(`(^|[^a-zäöüß])${escapeRegExp(lastName.toLowerCase())}($|[^a-zäöüß])`, "i").test(text);
-    })
-    .filter((item, index, items) => items.findIndex((entry) => (entry.url || entry.id) === (item.url || item.id)) === index)
-    .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
+  return { fullName, lastName };
+}
+
+function itemMentionsProfile(item, terms = profileNameTerms()) {
+  const text = `${item?.title || ""} ${item?.content || ""} ${item?.excerpt || ""}`.toLowerCase();
+  return text.includes(terms.fullName.toLowerCase()) || profileLastNameRegex(terms.lastName).test(text);
+}
+
+function itemAuthoredByProfile(item, terms = profileNameTerms()) {
+  const author = `${item?.author || ""}`.toLowerCase();
+  return Boolean(author) && (author.includes(terms.fullName.toLowerCase()) || profileLastNameRegex(terms.lastName).test(author));
+}
+
+function profileLastNameRegex(lastName) {
+  return new RegExp(`(^|[^a-zäöüß])${escapeRegExp(String(lastName || "").toLowerCase())}($|[^a-zäöüß])`, "i");
+}
+
+function uniqueMentionItem(item, index, items) {
+  return items.findIndex((entry) => mentionKey(entry) === mentionKey(item)) === index;
+}
+
+function sortNewestFirst(a, b) {
+  return new Date(b.retrievedAt || b.publishedAt || 0) - new Date(a.retrievedAt || a.publishedAt || 0);
 }
 
 function archivedProfileMentions(allMentions, freshMentions) {
