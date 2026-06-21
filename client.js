@@ -420,13 +420,59 @@ function renderBriefingView() {
       ${renderPilotStatus()}
     </section>
 
-    ${renderAgentBriefing()}
+    ${renderBriefingTicker()}
 
-    ${renderDecisionConsole()}
+    <section class="briefing-hub" aria-label="Morgenlage">
+      <div class="briefing-lead">
+        ${renderDecisionConsole()}
+      </div>
+      <aside class="briefing-rail" aria-label="Kurzlage">
+        ${renderAgentBriefing()}
+        ${renderBriefingQuickList()}
+      </aside>
+    </section>
+
     ${renderDailyFlow()}
     ${!decisions.length ? renderSituationalBriefing() : ""}
 
     <button class="quiet-link" type="button" data-view="topics">Belege ansehen</button>
+  `;
+}
+
+function renderBriefingTicker() {
+  return `
+    <section class="briefing-ticker" aria-label="Kurzüberblick">
+      <span>Jetzt</span>
+      ${agentFacts().map((fact) => `<b>${escapeHtml(fact)}</b>`).join("")}
+      <small>${escapeHtml(formatBriefingDate(briefing.generatedAt || briefing.date || new Date().toISOString()))}</small>
+    </section>
+  `;
+}
+
+function renderBriefingQuickList() {
+  const quickItems = decisions.slice(0, 3);
+  if (!quickItems.length) {
+    return `
+      <section class="quick-panel">
+        <span>Kurzlage</span>
+        <h2>Keine neue Entscheidung</h2>
+        <p>Helmut hält die Lage bewusst ruhig, solange kein belastbarer Handlungsdruck entsteht.</p>
+      </section>
+    `;
+  }
+  return `
+    <section class="quick-panel">
+      <span>Kurzlage</span>
+      ${quickItems.map((item, index) => `
+        <button class="quick-row ${escapeAttribute(item.priorityType || "watch")}" type="button" data-detail="${escapeAttribute(item.id)}">
+          <b>${String(index + 1).padStart(2, "0")}</b>
+          <span>
+            <strong>${escapeHtml(item.title)}</strong>
+            <small>${escapeHtml(item.priorityLabel || "Relevant")} · ${escapeHtml(item.estimatedTime || "10 Min.")}</small>
+          </span>
+        </button>
+      `).join("")}
+    </section>
   `;
 }
 
