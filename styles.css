@@ -2925,22 +2925,6 @@ small {
     background: linear-gradient(135deg, #f5f1e8, #d7e0ff);
   }
 
-  .mobile-dock button i {
-    position: absolute;
-    top: 6px;
-    right: 23%;
-    min-width: 18px;
-    height: 18px;
-    padding: 0 5px;
-    border-radius: 999px;
-    color: #fff;
-    background: var(--signature);
-    font-size: 10px;
-    font-style: normal;
-    line-height: 18px;
-    box-shadow: 0 0 0 2px rgba(8, 12, 22, .94);
-  }
-
   .page-intro h1,
   .article-head h1 {
     font-size: clamp(44px, 12vw, 64px);

@@ -346,7 +346,6 @@ function renderMobileDock() {
         <button class="${isMobileNavActive(id) ? "active" : ""}" type="button" data-view="${id}">
           <span>${escapeHtml(mobileNavSymbol(id))}</span>
           ${escapeHtml(label)}
-          ${mobileNavBadge(id)}
         </button>
       `).join("")}
     </nav>
@@ -362,11 +361,6 @@ function isMobileNavActive(id) {
 
 function mobileNavSymbol(id) {
   return ({ briefing: "H", radar: "R", office: "B", settings: "P" })[id] || "•";
-}
-
-function mobileNavBadge(id) {
-  const count = id === "radar" ? freshMentionCount() : id === "office" ? openOfficeTaskCount() : 0;
-  return count ? `<i>${count > 9 ? "9+" : count}</i>` : "";
 }
 
 function renderTopbar() {
