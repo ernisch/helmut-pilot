@@ -73,7 +73,6 @@ export interface PoliticianProfile {
   opponents: string[];
   localMedia: string[];
   communicationStyle: CommunicationStyle | string;
-  voicePreference?: "male" | "female" | string;
   noGoTopics: string[];
 }
 

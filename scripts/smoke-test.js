@@ -10,7 +10,6 @@ const args = new Set(process.argv.slice(2));
 const baseUrl = stripTrailingSlash(process.env.HELMUT_BASE_URL || "https://helmut-pilot.vercel.app");
 const pilotSecret = process.env.PILOT_SECRET || "";
 const adminSecret = process.env.HELMUT_ADMIN_SECRET || process.env.CRON_SECRET || "";
-const runSpeech = args.has("--speech") || args.has("--full");
 const runCrawl = args.has("--run-crawl") || args.has("--full");
 const checkExternalLinks = !args.has("--no-links");
 
@@ -35,7 +34,6 @@ async function main() {
   const briefing = await checkBriefing();
   await checkPipelineDebug();
   await checkSourceLinks(briefing);
-  await maybeCheckSpeech(briefing);
   await maybeRunCrawl();
 
   if (status?.readiness?.warnings?.length) {
@@ -131,22 +129,6 @@ async function checkSourceLinks(briefing) {
   const broken = checks.filter((check) => !check.ok);
   ok(broken.length === 0, `Source link sample opens (${sample.length} checked)`);
   broken.slice(0, 3).forEach((entry) => warn(`Broken source sample: ${entry.url} (${entry.statusCode || entry.error})`));
-}
-
-async function maybeCheckSpeech(briefing) {
-  if (!runSpeech) {
-    warn("Speech smoke skipped. Run `npm test -- --speech` for the paid TTS check.");
-    return;
-  }
-  const text = String(briefing.agentBriefing?.text || briefing.executiveSummary || "Guten Morgen. Helmut prueft die Lage.").slice(0, 500);
-  const response = await request("POST", "/api/speech", {
-    cookie,
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text, voicePreference: "male" }),
-    binary: true,
-    timeoutMs: 45000
-  });
-  ok(response.statusCode === 200 && String(response.headers["content-type"] || "").includes("audio") && response.body.length > 1000, "Speech endpoint returns audio");
 }
 
 async function maybeRunCrawl() {

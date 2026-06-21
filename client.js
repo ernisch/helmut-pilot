@@ -13,9 +13,6 @@ let updatesOpen = false;
 let generatedStatement = "";
 let selectedCommunicationChannel = "press";
 let berlinClockTimer = null;
-let currentSpeechAudio = null;
-let speechAbortController = null;
-let speechState = "idle";
 const updateSeenStorageKey = "helmut:lastSeenUpdatesAt";
 let activePoliticianId = "cem-ince";
 
@@ -89,10 +86,6 @@ const priorityTopics = [
 ];
 
 const communicationStyles = ["Sachlich", "Lösungsorientiert", "Angriffslustig", "Vermittelnd", "Aktivistisch"];
-const voiceOptions = [
-  ["male", "Helmut-Stimme"],
-  ["female", "Frauenstimme"]
-];
 
 async function loadBriefing() {
   const params = new URLSearchParams(window.location.search);
@@ -648,7 +641,6 @@ function renderRiskItem(item) {
 
 function renderAgentBriefing() {
   const text = agentBriefingText();
-  const speechActive = speechState !== "idle";
   return `
     <section class="agent-briefing" aria-label="Lage von Helmut">
       <div class="agent-orb" aria-hidden="true"><span>H</span></div>
@@ -660,7 +652,6 @@ function renderAgentBriefing() {
         </div>
       </div>
       <div class="agent-actions">
-        <button class="secondary-button ${speechActive ? "stop-button" : ""}" type="button" ${speechActive ? "data-stop-speech" : `data-speak="${escapeAttribute(text)}"`}>${speechActive ? "Vorlesen stoppen" : "Lage anhören"}</button>
         <button class="primary-button" type="button" data-detail="${escapeHtml(decisions[0]?.id || "")}">Entscheidung öffnen</button>
       </div>
     </section>
@@ -1395,9 +1386,8 @@ function operationsSummary(ops) {
 
 function protectionSummary(protection) {
   const interval = protection?.manualRunMinIntervalMinutes || 10;
-  const speech = protection?.speechRequestsPerHour || 12;
   const drafts = protection?.communicationDraftsPerHour || 18;
-  return `Manuelle Crawls und Briefings werden ${interval} Minuten wiederverwendet. Stimme: ${speech}/h, Kommunikation: ${drafts}/h.`;
+  return `Manuelle Crawls und Briefings werden ${interval} Minuten wiederverwendet. Kommunikation: ${drafts}/h.`;
 }
 
 function renderProfileSettingsView() {
@@ -1457,7 +1447,6 @@ function renderProfileSettingsView() {
           <h2>Wie soll Helmut formulieren?</h2>
         </div>
         ${radioGroup("communicationStyle", profile.communicationStyle || "Lösungsorientiert", communicationStyles)}
-        ${profileValueSelect("voicePreference", "Stimme für Lage anhören", profile.voicePreference || "male", voiceOptions)}
         ${profileArea("mainQuestion", "Leitfrage", profile.mainQuestion)}
         ${profileArea("currentCampaigns", "Aktuelle Kampagnen", profile.currentCampaigns)}
         ${profileArea("publicPositions", "Öffentliche Positionen", profile.publicPositions)}
@@ -1699,18 +1688,6 @@ function bindActions() {
     });
   });
 
-  app.querySelectorAll("[data-speak]").forEach((button) => {
-    button.addEventListener("click", () => {
-      speakAgentBriefing(button.dataset.speak || agentBriefingText());
-    });
-  });
-
-  app.querySelectorAll("[data-stop-speech]").forEach((button) => {
-    button.addEventListener("click", () => {
-      stopSpeechPlayback();
-    });
-  });
-
   app.querySelectorAll("[data-generate]").forEach((button) => {
     button.addEventListener("click", async () => {
       const input = `Erstelle ${communicationChannelLabel(selectedCommunicationChannel)} zu ${selectedDecision().title}.`;
@@ -1786,95 +1763,6 @@ function bindActions() {
   }
 }
 
-async function speakAgentBriefing(text) {
-  const cleanText = String(text || "").trim();
-  if (!cleanText) {
-    showToast("Keine Lage zum Vorlesen");
-    return;
-  }
-  try {
-    stopCurrentSpeechAudio(false);
-    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
-    speechAbortController = new AbortController();
-    speechState = "loading";
-    render();
-    showToast("Helmut bereitet die Stimme vor");
-    const response = await fetch(`/api/speech?politicianId=${encodeURIComponent(activePoliticianId)}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      signal: speechAbortController.signal,
-      body: JSON.stringify({
-        text: cleanText,
-        voicePreference: profile?.voicePreference || "male"
-      })
-    });
-    if (!response.ok) throw new Error("Speech endpoint unavailable");
-    const audioUrl = URL.createObjectURL(await response.blob());
-    speechState = "playing";
-    render();
-    currentSpeechAudio = new Audio(audioUrl);
-    currentSpeechAudio.addEventListener("ended", () => {
-      URL.revokeObjectURL(audioUrl);
-      currentSpeechAudio = null;
-      speechState = "idle";
-      speechAbortController = null;
-      render();
-    }, { once: true });
-    currentSpeechAudio.addEventListener("error", () => {
-      URL.revokeObjectURL(audioUrl);
-      currentSpeechAudio = null;
-      speechState = "idle";
-      speechAbortController = null;
-      render();
-    }, { once: true });
-    await currentSpeechAudio.play();
-    showToast("Helmut liest die Lage vor");
-  } catch (error) {
-    if (error?.name === "AbortError") return;
-    speechState = "idle";
-    speechAbortController = null;
-    render();
-    console.warn(error);
-    fallbackSpeechSynthesis(cleanText);
-  }
-}
-
-function stopSpeechPlayback() {
-  if (speechAbortController) speechAbortController.abort();
-  stopCurrentSpeechAudio(true);
-  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
-  speechState = "idle";
-  speechAbortController = null;
-  showToast("Vorlesen gestoppt");
-  render();
-}
-
-function stopCurrentSpeechAudio(resetState = true) {
-  if (currentSpeechAudio) {
-    currentSpeechAudio.pause();
-    currentSpeechAudio.currentTime = 0;
-    currentSpeechAudio = null;
-  }
-  if (resetState) {
-    speechState = "idle";
-    speechAbortController = null;
-  }
-}
-
-function fallbackSpeechSynthesis(text) {
-  if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
-    showToast("Sprachausgabe nicht verfügbar");
-    return;
-  }
-  window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = "de-DE";
-  utterance.rate = 0.96;
-  utterance.pitch = 0.92;
-  window.speechSynthesis.speak(utterance);
-  showToast("Fallback-Stimme aktiv");
-}
-
 async function saveProfileFromForm(form) {
   const data = new FormData(form);
   const topicPriorities = {};
@@ -1896,7 +1784,6 @@ async function saveProfileFromForm(form) {
     location: data.get("location"),
     mainQuestion: data.get("mainQuestion"),
     communicationStyle: data.get("communicationStyle"),
-    voicePreference: data.get("voicePreference") || "male",
     focusTopics: Object.entries(topicPriorities).filter(([, priority]) => priority >= 3).map(([topic]) => topic),
     topicPriorities,
     monitoringTargets: profile.monitoringTargets,

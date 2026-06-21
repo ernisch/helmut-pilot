@@ -1164,11 +1164,6 @@ small {
   border: 1px solid var(--line);
 }
 
-.secondary-button.stop-button {
-  color: var(--danger);
-  border-color: rgba(229, 72, 77, .28);
-}
-
 .quiet-link,
 .back-link {
   display: block;

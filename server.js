@@ -8,7 +8,7 @@ const { cemInceProfile, demoRawItems, demoSources, generateBriefing } = require(
 const { getLatestOrDemoBriefing, runDailyPipeline, runMorningBriefing, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { personalizeBriefing } = require("./lib/helmut/personalization");
 const { getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestPipelineDebugReport, getProfile, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, saveInteraction, saveProfile, saveTask, saveUserNote, updateTaskStatus } = require("./lib/helmut/storage");
-const { generateCommunicationDraft, generateSpeechAudio, isAiEnabled } = require("./lib/helmut/ai");
+const { generateCommunicationDraft, isAiEnabled } = require("./lib/helmut/ai");
 
 const root = __dirname;
 const port = Number(process.env.PORT || 3000);
@@ -219,7 +219,6 @@ function handleRequest(request, response) {
         protection: {
           manualRunMinIntervalMinutes: Math.round(manualRunMinIntervalMs / 60000),
           communicationDraftsPerHour: 18,
-          speechRequestsPerHour: 12,
           adminBypassConfigured: Boolean(process.env.HELMUT_ADMIN_SECRET || process.env.CRON_SECRET),
           pilotAccessConfigured: isPilotAccessConfigured()
         }
@@ -235,25 +234,6 @@ function handleRequest(request, response) {
       decision: body.decision,
       profile: await activeProfile(politicianId)
     }));
-  }
-
-  if (url.pathname === "/api/speech" && request.method === "POST") {
-    if (!allowRate(request, "speech", 12, 60 * 60 * 1000)) return sendTooManyRequests(response, "Zu viele Vorlese-Anfragen in kurzer Zeit.");
-    return handleJson(request, response, async (body) => {
-      const profile = await activeProfile(politicianId);
-      const speech = await generateSpeechAudio({
-        text: String(body.text || "").slice(0, 1600),
-        voicePreference: body.voicePreference || profile.voicePreference
-      });
-      response.writeHead(200, {
-        "Content-Type": speech.contentType,
-        "Cache-Control": "private, max-age=3600",
-        "X-Helmut-Voice": speech.voice,
-        "X-Helmut-Model": speech.model
-      });
-      response.end(speech.buffer);
-      return null;
-    });
   }
 
   if (url.pathname === "/api/cron/crawl") {
@@ -1051,7 +1031,6 @@ async function activeProfile(politicianId = cemInceProfile.id) {
     regionalInterests: [],
     relevantMinistries: ["Bundesregierung"],
     noGoTopics: [],
-    voicePreference: "male",
     politicalLevel: "Bund",
     role: "Bundestagsabgeordneter",
     reportingTopics: [],
@@ -1081,7 +1060,6 @@ function mergeProfileDefaults(profile) {
     opponents: arrayValue(profile.opponents, cemInceProfile.opponents),
     localMedia: arrayValue(profile.localMedia, cemInceProfile.localMedia),
     noGoTopics: arrayValue(profile.noGoTopics, cemInceProfile.noGoTopics),
-    voicePreference: stringValue(profile.voicePreference, cemInceProfile.voicePreference || "male"),
     politicalLevel: profile.politicalLevel || cemInceProfile.politicalLevel,
     role: profile.role || profile.function || cemInceProfile.role,
     reportingTopics: arrayValue(profile.reportingTopics, cemInceProfile.reportingTopics),
@@ -1119,7 +1097,6 @@ async function normalizeProfile(profile, politicianId = cemInceProfile.id) {
     opponents: arrayValue(profile.opponents, base.opponents),
     localMedia: arrayValue(profile.localMedia, base.localMedia),
     communicationStyle: stringValue(profile.communicationStyle, base.communicationStyle),
-    voicePreference: stringValue(profile.voicePreference, base.voicePreference || "male"),
     noGoTopics: arrayValue(profile.noGoTopics, base.noGoTopics),
     mainQuestion: stringValue(profile.mainQuestion, base.mainQuestion)
   };
