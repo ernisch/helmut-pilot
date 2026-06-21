@@ -2556,6 +2556,58 @@ small {
   background: #070b14;
 }
 
+.topbar-meta {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+.pilot-status {
+  color: rgba(245, 241, 232, .78);
+  border-color: rgba(245, 241, 232, .13);
+  background: rgba(245, 241, 232, .065);
+  box-shadow: none;
+}
+
+.briefing-ticker {
+  border-color: rgba(245, 241, 232, .11);
+  background: rgba(7, 11, 20, .24);
+}
+
+.briefing-ticker span {
+  color: rgba(245, 241, 232, .86);
+}
+
+.briefing-ticker b,
+.briefing-ticker small {
+  color: rgba(245, 241, 232, .74);
+  border-color: rgba(245, 241, 232, .12);
+  background: rgba(245, 241, 232, .06);
+}
+
+.briefing-ticker small {
+  color: rgba(245, 241, 232, .56);
+}
+
+.decision-ribbon span,
+.flow-head span,
+.situational-card > span {
+  color: rgba(245, 241, 232, .72);
+}
+
+.decision-ribbon b,
+.decision-meta span,
+.chief-meta span {
+  color: rgba(245, 241, 232, .52);
+}
+
+.situational-card {
+  border-color: rgba(245, 241, 232, .105);
+  background:
+    linear-gradient(145deg, rgba(15, 22, 38, .9), rgba(9, 13, 24, .78));
+  box-shadow: var(--soft-shadow);
+}
+
 @media (max-width: 640px) {
   .loading-card {
     width: min(100%, calc(100% - 32px));
