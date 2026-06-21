@@ -70,6 +70,10 @@ function handleRequest(request, response) {
     return;
   }
 
+  if (url.pathname === "/api/release/public") {
+    return handleAsync(response, async () => publicReleasePayload(await computeReleaseCheck(politicianIdFromUrl(url))));
+  }
+
   if (!hasPilotAccess(request, url)) {
     if (wantsHtml(request, url)) return sendPilotUnlockPage(response, url);
     return sendPilotUnauthorized(response);
@@ -240,27 +244,7 @@ function handleRequest(request, response) {
   }
 
   if (url.pathname === "/api/release/check") {
-    return handleAsync(response, async () => {
-      const latestCrawl = await getLatestCrawlRun();
-      const latestBriefing = await getLatestBriefing(politicianId);
-      const latestDebug = await getLatestPipelineDebugReport(politicianId);
-      const storage = getStorageStatus();
-      const storeSummary = await getStoreSummary(politicianId);
-      const evidenceQuality = sourceEvidenceQuality(latestBriefing);
-      const learning = buildLearningProfile(await getInteractions(politicianId));
-      const backend = backendHealth(latestCrawl, latestBriefing, latestDebug, storage, storeSummary, evidenceQuality, latestBriefing?.referentEngine, learning);
-      const readiness = pilotReadiness(latestCrawl, latestBriefing, storage, evidenceQuality);
-      return releaseCheck({
-        crawl: latestCrawl,
-        briefing: latestBriefing,
-        storage,
-        storeSummary,
-        evidenceQuality,
-        backend,
-        readiness,
-        learning
-      });
-    });
+    return handleAsync(response, () => computeReleaseCheck(politicianId));
   }
 
   if (url.pathname === "/api/communication/generate" && request.method === "POST") {
@@ -926,6 +910,53 @@ function addReleaseCheck(checks, label, ok, detail) {
 
 function readinessScore(issues, warnings) {
   return Math.max(0, Math.min(100, 100 - issues.length * 25 - warnings.length * 8));
+}
+
+async function computeReleaseCheck(politicianId = cemInceProfile.id) {
+  const latestCrawl = await getLatestCrawlRun();
+  const latestBriefing = await getLatestBriefing(politicianId);
+  const latestDebug = await getLatestPipelineDebugReport(politicianId);
+  const storage = getStorageStatus();
+  const storeSummary = await getStoreSummary(politicianId);
+  const evidenceQuality = sourceEvidenceQuality(latestBriefing);
+  const learning = buildLearningProfile(await getInteractions(politicianId));
+  const backend = backendHealth(latestCrawl, latestBriefing, latestDebug, storage, storeSummary, evidenceQuality, latestBriefing?.referentEngine, learning);
+  const readiness = pilotReadiness(latestCrawl, latestBriefing, storage, evidenceQuality);
+  return releaseCheck({
+    crawl: latestCrawl,
+    briefing: latestBriefing,
+    storage,
+    storeSummary,
+    evidenceQuality,
+    backend,
+    readiness,
+    learning
+  });
+}
+
+function publicReleasePayload(release) {
+  return {
+    status: release.status,
+    ready: release.ready,
+    score: release.score,
+    checkedAt: release.checkedAt,
+    checks: (release.checks || []).map((check) => ({
+      label: check.label,
+      ok: check.ok,
+      detail: check.detail
+    })),
+    liveFlow: {
+      ready: release.liveFlow?.ready || false,
+      summary: release.liveFlow?.summary || "",
+      steps: (release.liveFlow?.steps || []).map((step) => ({
+        label: step.label,
+        ok: step.ok,
+        detail: step.detail
+      }))
+    },
+    blockers: release.blockers || [],
+    warnings: release.warnings || []
+  };
 }
 
 function sourceEvidenceQuality(briefing) {

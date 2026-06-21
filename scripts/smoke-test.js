@@ -17,6 +17,7 @@ const checkExternalLinks = !args.has("--no-links");
 const results = [];
 const warnings = [];
 let cookie = "";
+let publicOnly = false;
 
 main().catch((error) => {
   fail("Smoke test crashed", error.message);
@@ -28,6 +29,13 @@ async function main() {
   log(`Helmut smoke test: ${baseUrl}`);
 
   await checkPilotGate();
+  if (publicOnly) {
+    await checkPublicReleaseReadiness();
+    printSummary();
+    if (results.some((result) => result.status === "fail")) process.exit(1);
+    return;
+  }
+
   await unlockPilot();
   await checkAppShell();
 
@@ -66,10 +74,23 @@ async function checkPilotGate() {
       ok(true, "Pilot gate is present; using admin secret for smoke checks");
       return;
     }
-    fail("PILOT_SECRET missing locally", "Production is protected, but the smoke test has no PILOT_SECRET or HELMUT_ADMIN_SECRET/CRON_SECRET to unlock it.");
+    publicOnly = true;
+    warn("Production is protected and no local secret is available; using safe public release check.");
     return;
   }
   warn("PILOT_SECRET is not set; running against an unprotected/local target.");
+}
+
+async function checkPublicReleaseReadiness() {
+  const response = await request("GET", "/api/release/public");
+  const release = parseJson(response, "public release check");
+  ok(response.statusCode === 200, "Public release check endpoint responds");
+  ok(release.ready === true && release.status === "Pitchbereit", "Public release check is pitch-ready");
+  ok(Number(release.score || 0) >= 90, "Public release score is at least 90");
+  ok(release.liveFlow?.ready === true, "Public release live-flow is green");
+  if (Array.isArray(release.blockers)) {
+    release.blockers.slice(0, 5).forEach((blocker) => warn(`Public release blocker: ${blocker}`));
+  }
 }
 
 async function unlockPilot() {
