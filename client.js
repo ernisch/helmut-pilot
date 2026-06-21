@@ -287,7 +287,11 @@ function renderSidebar() {
   return `
     <aside class="sidebar ${navOpen ? "open" : ""}">
       <div>
-        <div class="brand">HELMUT</div>
+        <div class="brand">
+          <img src="assets/helmut-mark.svg" alt="" />
+          <span>HELMUT</span>
+          <small>Politischer Referent</small>
+        </div>
         <nav class="nav-list" aria-label="Hauptnavigation">
           ${navItems.map(([id, label]) => `<button class="${currentView === id ? "active" : ""}" type="button" data-view="${id}">${label}</button>`).join("")}
           <button class="mobile-menu-settings ${currentView === "settings" ? "active" : ""}" type="button" data-view="settings">Einstellungen</button>
