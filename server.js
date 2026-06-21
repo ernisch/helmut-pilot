@@ -803,7 +803,7 @@ function pilotReadiness(crawl, briefing, storage, evidenceQuality = null) {
   };
 }
 
-function releaseCheck({ crawl, briefing, storage, storeSummary, evidenceQuality, backend, readiness, learning }) {
+function releaseCheck({ crawl, briefing, storage, storeSummary, evidenceQuality, backend, readiness, learning, radarArchive }) {
   const checks = [];
   const crawlAge = crawl?.createdAt ? Date.now() - new Date(crawl.createdAt).getTime() : Infinity;
   const briefingDate = briefing?.generatedAt || briefing?.date;
@@ -815,14 +815,14 @@ function releaseCheck({ crawl, briefing, storage, storeSummary, evidenceQuality,
   const recommendationCount = Number(briefing?.personalizedRecommendations?.length || 0);
   const situationalCount = Number((briefing?.situationalBriefing || []).length);
   const hasDecisionOrCompetentCalm = visibleDecisionCount > 0 && recommendationCount > 0 || situationalCount > 0;
-  const liveFlow = releaseLiveFlow({ crawl, briefing, evidenceQuality, storage });
+  const liveFlow = releaseLiveFlow({ crawl, briefing, evidenceQuality, storage, radarArchive });
 
   addReleaseCheck(checks, "Crawl", Boolean(crawl) && crawlAge < 8 * 60 * 60 * 1000 && sourceCount >= 50 && failRatio <= 0.1, crawl ? `${sourceCount} Quellen geprüft, ${failedSources} Fehler.` : "Noch kein Crawl.");
   addReleaseCheck(checks, "Supabase", storage?.backend === "supabase", storage?.backend === "supabase" ? "Persistenter Speicher aktiv." : "Speicher ist lokal.");
   addReleaseCheck(checks, "OpenAI", isAiEnabled(), isAiEnabled() ? `Modell ${process.env.OPENAI_MODEL || "gpt-4.1"} aktiv.` : "OpenAI ist nicht aktiv.");
   addReleaseCheck(checks, "Briefing", Boolean(briefing) && briefingAge < 18 * 60 * 60 * 1000 && hasDecisionOrCompetentCalm && briefing.status !== "Demo", briefing ? `${visibleDecisionCount} Entscheidungen, ${recommendationCount} Empfehlungen, ${situationalCount} Beobachtungspunkte.` : "Kein Briefing.");
   addReleaseCheck(checks, "Quellenlinks", Number(evidenceQuality?.missingLinks || 0) === 0 && Number(evidenceQuality?.publisherFallbacks || 0) === 0, `${evidenceQuality?.directLinks || 0}/${evidenceQuality?.total || 0} sichtbare Belege mit Direktlink.`);
-  addReleaseCheck(checks, "Radar", Array.isArray(briefing?.personMentions), `${briefing?.personMentions?.length || 0} Personenartikel im Radar.`);
+  addReleaseCheck(checks, "Radar", Array.isArray(briefing?.personMentions) && Array.isArray(radarArchive?.articles), `${briefing?.personMentions?.length || 0} neue Personenartikel, ${radarArchive?.total || 0} Archivartikel.`);
   addReleaseCheck(checks, "Referentenmodus", Number(briefing?.referentEngine?.score || 0) >= 85 || Number(backend?.score || 0) >= 90, briefing?.referentEngine ? `${briefing.referentEngine.score}% Referentenqualität.` : `${backend?.score || 0}% Backendgesundheit.`);
   addReleaseCheck(checks, "Live-Flow", liveFlow.ready, liveFlow.summary);
 
@@ -848,7 +848,7 @@ function releaseCheck({ crawl, briefing, storage, storeSummary, evidenceQuality,
   };
 }
 
-function releaseLiveFlow({ crawl, briefing, evidenceQuality, storage }) {
+function releaseLiveFlow({ crawl, briefing, evidenceQuality, storage, radarArchive }) {
   const visibleDecisions = (briefing?.items || []).filter((item) => item.decision !== "Ignorieren");
   const tasks = (briefing?.tasks || []).filter((task) => task.status !== "done");
   const hasOfficeHandoff = visibleDecisions.length === 0 || tasks.some((task) => sourceEvidenceQuality({ items: [], personalizedRecommendations: [], personMentions: [], tasks: [task] }).directLinks > 0);
@@ -868,8 +868,8 @@ function releaseLiveFlow({ crawl, briefing, evidenceQuality, storage }) {
     {
       id: "radar",
       label: "Radar prüfen",
-      ok: Array.isArray(briefing?.personMentions),
-      detail: `${briefing?.personMentions?.length || 0} Personenartikel.`
+      ok: Array.isArray(briefing?.personMentions) && Array.isArray(radarArchive?.articles),
+      detail: `${briefing?.personMentions?.length || 0} neue Personenartikel, ${radarArchive?.total || 0} Archivartikel.`
     },
     {
       id: "sources",
@@ -923,6 +923,7 @@ async function computeReleaseCheck(politicianId = cemInceProfile.id) {
   const storage = getStorageStatus();
   const storeSummary = await getStoreSummary(politicianId);
   const evidenceQuality = sourceEvidenceQuality(latestBriefing);
+  const radarArchive = await getRadarArchive(await activeProfile(politicianId), 92);
   const learning = buildLearningProfile(await getInteractions(politicianId));
   const backend = backendHealth(latestCrawl, latestBriefing, latestDebug, storage, storeSummary, evidenceQuality, latestBriefing?.referentEngine, learning);
   const readiness = pilotReadiness(latestCrawl, latestBriefing, storage, evidenceQuality);
@@ -934,7 +935,8 @@ async function computeReleaseCheck(politicianId = cemInceProfile.id) {
     evidenceQuality,
     backend,
     readiness,
-    learning
+    learning,
+    radarArchive
   });
 }
 
