@@ -8,7 +8,7 @@ const { cemInceProfile, demoRawItems, demoSources, generateBriefing } = require(
 const { getLatestOrDemoBriefing, runDailyPipeline, runMorningBriefing, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { personalizeBriefing } = require("./lib/helmut/personalization");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestPipelineDebugReport, getProfile, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, saveInteraction, saveProfile, saveTask, saveUserNote, updateTaskStatus } = require("./lib/helmut/storage");
+const { getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestPipelineDebugReport, getProfile, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, saveInteraction, saveProfile, saveTask, saveUserNote, updateTaskStatus } = require("./lib/helmut/storage");
 const { generateCommunicationDraft, isAiEnabled } = require("./lib/helmut/ai");
 
 const root = __dirname;
@@ -180,6 +180,10 @@ function handleRequest(request, response) {
         hint: "Starte ein Briefing oder die Pipeline, damit Helmut einen Debug-Bericht speichert."
       };
     });
+  }
+
+  if (url.pathname === "/api/radar/archive") {
+    return handleAsync(response, async () => getRadarArchive(await activeProfile(politicianId), Number(url.searchParams.get("days") || 92)));
   }
 
   if (url.pathname === "/api/ai/status") {
@@ -999,6 +1003,83 @@ function sourceEvidenceQuality(briefing) {
     status: missingLinks || publisherFallbacks ? "Präzise Links fehlen" : "Belastbar",
     weakSamples
   };
+}
+
+async function getRadarArchive(profile, days = 92) {
+  const boundedDays = Math.max(1, Math.min(180, Number.isFinite(days) ? days : 92));
+  const since = new Date(Date.now() - boundedDays * 24 * 60 * 60 * 1000);
+  const items = await getRawItemsSince(since);
+  const terms = profileArchiveTerms(profile);
+  const articles = items
+    .filter((item) => rawItemMentionsProfile(item, terms) || rawItemAuthoredByProfile(item, terms))
+    .map((item) => normalizeRadarArchiveItem(item))
+    .filter((item) => isDirectArticleUrl(item.url, item))
+    .filter(uniqueByRadarUrl)
+    .sort((a, b) => new Date(b.retrievedAt || b.publishedAt || 0) - new Date(a.retrievedAt || a.publishedAt || 0))
+    .slice(0, 60);
+
+  return {
+    politicianId: profile.id,
+    days: boundedDays,
+    total: articles.length,
+    generatedAt: new Date().toISOString(),
+    articles
+  };
+}
+
+function normalizeRadarArchiveItem(item) {
+  const url = [item.url, item.itemUrl].find((candidate) => isDirectArticleUrl(candidate, item)) || "";
+  return {
+    id: item.id || item.hash || url || item.title,
+    sourceId: item.sourceId || "",
+    sourceName: item.sourceName || item.name || "Quelle",
+    sourceType: item.sourceType || item.type || "media",
+    sourceUrl: item.sourceUrl || "",
+    url,
+    itemUrl: url,
+    linkType: "direct",
+    title: item.title || "Artikel gefunden",
+    content: item.content || item.excerpt || "",
+    excerpt: item.excerpt || item.content || "",
+    publishedAt: item.publishedAt || item.retrievedAt || new Date().toISOString(),
+    retrievedAt: item.retrievedAt || item.publishedAt || new Date().toISOString(),
+    author: item.author || "",
+    imageUrl: item.imageUrl || "",
+    confidence: item.confidence || "medium",
+    linkResolutionNote: "Direkter Artikellink aus dem gespeicherten Quellenarchiv."
+  };
+}
+
+function uniqueByRadarUrl(item, index, items) {
+  const key = item.url || item.title || item.id;
+  return items.findIndex((entry) => (entry.url || entry.title || entry.id) === key) === index;
+}
+
+function profileArchiveTerms(profile) {
+  const fullName = String(profile?.fullName || "Cem Ince").trim();
+  const parts = fullName.split(/\s+/).filter(Boolean);
+  return {
+    fullName,
+    lastName: parts.at(-1) || "Ince"
+  };
+}
+
+function rawItemMentionsProfile(item, terms) {
+  const text = `${item?.title || ""} ${item?.content || ""} ${item?.excerpt || ""}`.toLowerCase();
+  return text.includes(terms.fullName.toLowerCase()) || profileNameBoundaryRegex(terms.lastName).test(text);
+}
+
+function rawItemAuthoredByProfile(item, terms) {
+  const author = String(item?.author || "").toLowerCase();
+  return Boolean(author) && (author.includes(terms.fullName.toLowerCase()) || profileNameBoundaryRegex(terms.lastName).test(author));
+}
+
+function profileNameBoundaryRegex(value) {
+  return new RegExp(`(^|[^a-zäöüß])${escapeRegex(String(value || "").toLowerCase())}($|[^a-zäöüß])`, "i");
+}
+
+function escapeRegex(value) {
+  return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function collectBriefingSources(briefing) {

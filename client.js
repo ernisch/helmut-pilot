@@ -6,6 +6,7 @@ let decisions = [];
 let tasks = [];
 let notes = [];
 let recommendations = [];
+let radarArchive = [];
 let selectedDecisionId = "";
 let currentView = "briefing";
 let detailOriginView = "briefing";
@@ -92,13 +93,14 @@ async function loadBriefing() {
   const params = new URLSearchParams(window.location.search);
   activePoliticianId = sanitizePoliticianId(params.get("politicianId") || params.get("profileId") || "cem-ince");
   const scope = `politicianId=${encodeURIComponent(activePoliticianId)}`;
-  const [profileResponse, briefingResponse, tasksResponse, notesResponse, aiStatusResponse, opsStatusResponse] = await Promise.all([
+  const [profileResponse, briefingResponse, tasksResponse, notesResponse, aiStatusResponse, opsStatusResponse, radarArchiveResponse] = await Promise.all([
     fetch(`/api/profile/current?${scope}`),
     fetch(`/api/briefing/latest?${scope}`),
     fetch(`/api/tasks?${scope}`),
     fetch(`/api/notes?${scope}`),
     fetch("/api/ai/status"),
-    fetch(`/api/ops/status?${scope}`)
+    fetch(`/api/ops/status?${scope}`),
+    fetch(`/api/radar/archive?${scope}&days=92`)
   ]);
 
   profile = await profileResponse.json();
@@ -110,6 +112,8 @@ async function loadBriefing() {
 
   const persistedTasks = tasksResponse.ok ? await tasksResponse.json() : [];
   notes = notesResponse.ok ? await notesResponse.json() : [];
+  const archivePayload = radarArchiveResponse.ok ? await radarArchiveResponse.json() : { articles: [] };
+  radarArchive = Array.isArray(archivePayload.articles) ? archivePayload.articles : [];
   tasks = mergeTasks(briefing.tasks || [], persistedTasks);
   recommendations = briefing.personalizedRecommendations || [];
 
@@ -1269,8 +1273,12 @@ function renderRadarView() {
   const archivedLow = profileArticleArchive(allMentions)
     .filter((item) => !freshKeys.has(mentionKey(item)) && !importantKeys.has(mentionKey(item)) && isArchivedLowSignal(item))
     .slice(0, 6);
-  const lastThreeMonthsArticles = profileArticleArchive(allMentions)
+  const storedArchiveArticles = radarArchive.length ? radarArchive : profileArticleArchive(allMentions);
+  const lastThreeMonthsArticles = storedArchiveArticles
     .filter(isWithinLastThreeMonths)
+    .filter(hasPreciseSource)
+    .filter(uniqueMentionItem)
+    .sort(sortNewestFirst)
     .slice(0, 12);
   return `
     <section class="page-intro compact">
@@ -1283,7 +1291,7 @@ function renderRadarView() {
       ${renderRadarGroup("Wichtige Artikel über dich", importantArticles.length, `<p class="section-note">Treffer mit politischer oder medialer Relevanz, die du wiederfinden können solltest.</p>${mentionRows(importantArticles, { empty: false })}`, false)}
       ${renderRadarGroup("Bisherige Erwähnungen", previousMentions.length, `<p class="section-note">Ältere namentliche Treffer ohne akuten Handlungsdruck.</p>${mentionRows(previousMentions, { empty: false })}`, false)}
       ${renderRadarGroup("Irrelevant / Archiviert", archivedLow.length, `<p class="section-note">Treffer, die Helmut bewusst nicht in deine Entscheidungslage hebt.</p>${mentionRows(archivedLow, { empty: false })}`, false)}
-      ${renderRadarGroup("Artikel der letzten 3 Monate", lastThreeMonthsArticles.length, `<p class="section-note">Alle direkt verlinkten Artikel aus den letzten drei Monaten, in denen du erwähnt wirst oder als Autor auftauchst.</p>${mentionRows(lastThreeMonthsArticles, { empty: false })}`, false)}
+      ${renderRadarGroup("Artikel der letzten 3 Monate", lastThreeMonthsArticles.length, `<p class="section-note">Alle direkt verlinkten Artikel aus dem gespeicherten Quellenarchiv, in denen du erwähnt wirst oder als Autor auftauchst.</p>${mentionRows(lastThreeMonthsArticles, { empty: false }) || `<p class="empty-state">Noch keine direkt verlinkten Archivartikel gespeichert. Der nächste Quellenlauf sucht weiter nach präzisen Artikellinks.</p>`}`, false)}
     </section>
   `;
 }
