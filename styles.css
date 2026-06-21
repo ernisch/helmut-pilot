@@ -2608,6 +2608,125 @@ small {
   box-shadow: var(--soft-shadow);
 }
 
+.source-pill,
+.source-pill:hover {
+  color: rgba(245, 241, 232, .76);
+  border-bottom-color: rgba(245, 241, 232, .28);
+}
+
+.radar-group,
+.radar-group:last-child,
+.radar-mini,
+.draft-channel-picker {
+  border-color: rgba(245, 241, 232, .105);
+}
+
+.radar-group summary i {
+  border-right-color: rgba(245, 241, 232, .54);
+  border-bottom-color: rgba(245, 241, 232, .54);
+}
+
+.radar-mini {
+  background:
+    linear-gradient(145deg, rgba(15, 22, 38, .9), rgba(9, 13, 24, .78));
+}
+
+.topic-row > span,
+.topic-row.evidence-only > span {
+  color: rgba(245, 241, 232, .34);
+}
+
+.topic-row.chance > span {
+  color: rgba(57, 209, 143, .78);
+}
+
+.topic-row.ignore > span {
+  color: rgba(245, 241, 232, .24);
+}
+
+.draft-meta span {
+  color: rgba(245, 241, 232, .62);
+}
+
+.draft-channel-picker button,
+.draft-meta b {
+  color: var(--text);
+  border-color: rgba(245, 241, 232, .12);
+  background: rgba(245, 241, 232, .06);
+}
+
+.strategy-answer.x::before {
+  background: linear-gradient(180deg, rgba(245, 241, 232, .82), rgba(111, 143, 247, .64));
+}
+
+.agent-copy > span,
+.agent-facts b,
+.quick-panel > span,
+.quick-row b,
+.quick-row small,
+.decision-ribbon b,
+.decision-meta span,
+.flow-row span,
+.referent-card > span,
+.chief-meta span,
+.task-brief dt,
+.topic-row small,
+.draft-meta span,
+.profile-section > div:first-child span,
+.settings-card span,
+.quality-row span,
+.ops-row span,
+.source-card span,
+.evidence-card span,
+.notification-row small,
+.article-head small,
+.source-row small {
+  color: var(--muted-2);
+}
+
+.agent-copy p,
+.quick-panel p,
+.quick-row strong,
+.decision-console p,
+.flow-row p,
+.referent-card p,
+.chief-card p,
+.task-brief dd,
+.topic-row p,
+.radar-mini p,
+.note-row p,
+.settings-card p,
+.quality-row p,
+.ops-row p,
+.source-card p,
+.evidence-card p,
+.notification-row p,
+.source-row p {
+  color: var(--muted);
+}
+
+.quick-row strong,
+.radar-group summary span,
+.radar-mini strong,
+.note-row strong,
+.settings-card h2,
+.profile-section h2,
+.source-card h3,
+.evidence-card h3,
+.notification-row strong,
+.source-row strong {
+  color: var(--text);
+}
+
+.source-pill,
+.text-button,
+.quiet-link,
+.back-link,
+.menu-button,
+.sidebar-foot button {
+  color: rgba(245, 241, 232, .76);
+}
+
 @media (max-width: 640px) {
   .loading-card {
     width: min(100%, calc(100% - 32px));
