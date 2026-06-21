@@ -138,11 +138,11 @@ function toDecision(item) {
     priorityLabel: priorityLabelForDecision(item),
     priorityType: priorityTypeForDecision(item),
     summary: twoSentenceSummary(item.summary || item.whyItMatters || item.recommendedAction),
-    action: item.recommendedAction,
+    action: polishReferentText(item.recommendedAction),
     statement: item.suggestedStatement,
     whyNow: item.whyNow,
     whyItMatters: item.whyItMatters,
-    inaction: item.inactionConsequence,
+    inaction: polishReferentText(item.inactionConsequence),
     risk: item.riskNote,
     opportunity: item.opportunityNote,
     estimatedTime: `${item.estimatedTimeMinutes} Min.`,
@@ -204,6 +204,42 @@ function recommendationToDecisionItem(recommendation) {
     possible_upside: recommendation.possible_upside,
     taskTemplate: recommendation.taskTemplate
   };
+}
+
+function polishReferentText(value) {
+  const text = String(value || "").trim();
+  if (!text) return text;
+  const normalized = text
+    .replace(/^Du solltest das analysieren\s+(das|den|die)\s+(.+?)\s+und\s+bereite\s+(.+?)\s+vor\b/i, "Du solltest $1 $2 analysieren und $3 vorbereiten")
+    .replace(/^Du solltest das prüfen\s+(das|den|die)\s+(.+?)\s+und\s+bereite\s+(.+?)\s+vor\b/i, "Du solltest $1 $2 prüfen und $3 vorbereiten");
+  if (normalized !== text) return normalized;
+  const analyzePrepare = text.match(/^Du solltest das analysieren\s+(das|den|die)\s+(.+?)\s+und\s+bereite\s+(.+?)\s+vor(,?\s+.+)?\.?$/i);
+  if (analyzePrepare) {
+    return `Du solltest ${analyzePrepare[1]} ${analyzePrepare[2]} analysieren und ${analyzePrepare[3]} vorbereiten${analyzePrepare[4] || ""}.`;
+  }
+  const analyze = text.match(/^Du solltest das analysieren\s+(das|den|die)\s+(.+?)\.?$/i);
+  if (analyze) {
+    return `Du solltest ${analyze[1]} ${analyze[2]} analysieren.`;
+  }
+  const check = text.match(/^Du solltest das prüfen\s+(das|den|die)\s+(.+?)\.?$/i);
+  if (check) {
+    return `Du solltest ${check[1]} ${check[2]} prüfen.`;
+  }
+  const prepare = text.match(/^Du solltest bereite\s+(.+?)\s+vor\.?$/i);
+  if (prepare) {
+    return `Du solltest ${prepare[1]} vorbereiten.`;
+  }
+  const read = text.match(/^Du solltest lies\s+(.+?)\.?$/i);
+  if (read) {
+    return `Du solltest ${read[1]} lesen.`;
+  }
+  return text
+    .replace(/\bDu solltest analysiere\b/gi, "Du solltest das analysieren")
+    .replace(/\bDu solltest prüfe\b/gi, "Du solltest das prüfen")
+    .replace(/\bDu solltest bereite\b/gi, "Du solltest vorbereiten")
+    .replace(/\bDu solltest lies\b/gi, "Du solltest die Quellen lesen")
+    .replace(/\bDu solltest entwickle\b/gi, "Du solltest eine Linie entwickeln")
+    .replace(/\bDu solltest formuliere\b/gi, "Du solltest eine Formulierung vorbereiten");
 }
 
 function situationalToDecisionItem(item) {
@@ -420,16 +456,9 @@ function renderBriefingView() {
       ${renderPilotStatus()}
     </section>
 
-    ${renderBriefingTicker()}
-
-    <section class="briefing-hub" aria-label="Morgenlage">
-      <div class="briefing-lead">
-        ${renderDecisionConsole()}
-      </div>
-      <aside class="briefing-rail" aria-label="Kurzlage">
-        ${renderAgentBriefing()}
-        ${renderBriefingQuickList()}
-      </aside>
+    <section class="briefing-focus" aria-label="Entscheidungslage">
+      ${renderDecisionConsole()}
+      ${renderBriefingQuickList()}
     </section>
 
     ${renderDailyFlow()}
@@ -462,7 +491,7 @@ function renderBriefingQuickList() {
   }
   return `
     <section class="quick-panel">
-      <span>Kurzlage</span>
+      <span>Außerdem</span>
       ${quickItems.map((item, index) => `
         <button class="quick-row ${escapeAttribute(item.priorityType || "watch")}" type="button" data-detail="${escapeAttribute(item.id)}">
           <b>${String(index + 1).padStart(2, "0")}</b>
@@ -511,7 +540,7 @@ function renderDecisionConsole() {
   return `
     <section class="decision-console ${escapeAttribute(top.priorityType || "action")}">
       <div class="decision-ribbon">
-        <span>Chef-Empfehlung</span>
+        <span>Wichtigste Entscheidung</span>
         <b>${escapeHtml(top.priorityLabel || top.decision || "Relevant")}</b>
       </div>
       <h2>${escapeHtml(top.title)}</h2>
@@ -522,8 +551,8 @@ function renderDecisionConsole() {
         <span>${escapeHtml(top.confidence ? `Sicherheit ${confidenceLabel(top.confidence)}` : "Sicherheit mittel")}</span>
       </div>
       <div class="decision-actions">
-        <button class="primary-button" type="button" data-detail="${escapeHtml(top.id)}">Linie lesen</button>
-        <button class="secondary-button" type="button" data-communication="${escapeHtml(top.id)}">Antwort vorbereiten</button>
+        <button class="primary-button" type="button" data-detail="${escapeHtml(top.id)}">Empfehlung lesen</button>
+        <button class="secondary-button" type="button" data-communication="${escapeHtml(top.id)}">Text vorbereiten</button>
       </div>
     </section>
   `;
@@ -535,8 +564,8 @@ function renderDailyFlow() {
   return `
     <section class="daily-flow" aria-label="Tagesverlauf">
       <div class="flow-head">
-        <span>Tageslage</span>
-        <h2>Was deine Aufmerksamkeit verdient</h2>
+        <span>Danach</span>
+        <h2>Nur was deine Aufmerksamkeit verdient</h2>
       </div>
       <div class="flow-list">
         ${flow.map(renderFlowRow).join("")}
@@ -548,14 +577,14 @@ function renderDailyFlow() {
 function dailyFlowItems() {
   const sections = hasHomeSectionContent(briefing.homeSections) ? briefing.homeSections : buildFallbackHomeSections();
   const rows = [];
-  const top = normalizeHomeItem((sections.topTasks || [])[0] || decisions[0]);
+  const top = decisions[0] || normalizeHomeItem((sections.topTasks || [])[0]);
   const changed = normalizeHomeItem((sections.changedSinceLastVisit || []).find((item) => normalizeHomeItem(item)?.id !== top?.id));
   const attention = normalizeHomeItem((sections.needsAttention || []).find((item) => normalizeHomeItem(item)?.id !== top?.id && normalizeHomeItem(item)?.id !== changed?.id));
   const chance = normalizeHomeItem((sections.opportunities || []).find((item) => normalizeHomeItem(item)?.id !== top?.id));
   const risk = normalizeHomeItem((sections.risks || []).find((item) => normalizeHomeItem(item)?.id !== top?.id));
-  if (top) rows.push({ label: "Jetzt", tone: top.priorityType || "action", item: top, text: top.action || top.summary, cta: "Öffnen" });
+  if (top) rows.push({ label: "Jetzt", tone: top.priorityType || "action", item: top, text: polishReferentText(top.action || top.summary), cta: "Öffnen" });
   if (changed) rows.push({ label: "Neu", tone: "change", item: changed, text: changed.changeReason || changed.summary, cta: "Einordnung" });
-  if (attention) rows.push({ label: "Im Blick", tone: attention.priorityType || "watch", item: attention, text: attention.action || attention.summary, cta: "Details" });
+  if (attention) rows.push({ label: "Im Blick", tone: attention.priorityType || "watch", item: attention, text: polishReferentText(attention.action || attention.summary), cta: "Details" });
   if (chance) rows.push({ label: "Chance", tone: "chance", item: chance, text: chance.opportunity || chance.summary, cta: "Antwort" });
   if (risk) rows.push({ label: "Risiko", tone: "risk", item: risk, text: risk.inaction || risk.summary, cta: "Vorbereiten" });
   return rows.slice(0, 4);
@@ -613,9 +642,9 @@ function normalizeHomeItem(item) {
     priorityLabel: displayPriority(item.current_priority || item.priority),
     priorityType: item.risiko_fuer_nutzer > item.chance_fuer_nutzer ? "risk" : item.chance_fuer_nutzer >= 55 ? "chance" : "action",
     summary: item.summary,
-    action: item.recommended_action,
+    action: polishReferentText(item.recommended_action),
     whyItMatters: item.personal_relevance_explanation,
-    inaction: item.consequence_if_ignored,
+    inaction: polishReferentText(item.consequence_if_ignored),
     opportunity: item.possible_upside,
     estimatedTime: `${item.estimated_effort_minutes || 5} Min.`,
     deadline: item.deadline,
@@ -791,10 +820,11 @@ function renderSituationalItem(item) {
 }
 
 function chiefRecommendationText(decision) {
+  const action = polishReferentText(decision.action || decision.summary || "");
   if (decision.priorityType === "watch") {
-    return `${decision.action} Du musst nicht sofort groß veröffentlichen, aber du solltest heute sprechfähig sein.`;
+    return `${action} Du musst nicht sofort groß veröffentlichen, aber du solltest heute sprechfähig sein.`;
   }
-  return decision.action || decision.summary;
+  return action;
 }
 
 function taskIdForDecision(decision) {
@@ -841,6 +871,7 @@ function renderDecisionBlock(decision) {
 
 function renderDetailView() {
   const decision = selectedDecision();
+  const action = polishReferentText(decision.action);
   return `
     <article class="detail-page">
       <button class="back-link" type="button" data-view="briefing">Zurück zum Briefing</button>
@@ -855,31 +886,30 @@ function renderDetailView() {
 
       <section class="recommendation">
         <span>Helmuts Empfehlung</span>
-        <p>${escapeHtml(decision.action)}</p>
+        <p>${escapeHtml(action)}</p>
       </section>
       ${renderMemorySection(decision)}
 
       <section class="article-grid">
         <div>
-          <h2>Warum betrifft dich das?</h2>
+          <h2>Warum das wichtig ist</h2>
           <p>${escapeHtml(decision.whyItMatters)}</p>
         </div>
         <div>
-          <h2>Was passiert, wenn du nichts tust?</h2>
+          <h2>Wenn du nicht reagierst</h2>
           <p>${escapeHtml(decision.inaction)}</p>
         </div>
       </section>
 
       <section class="article-section">
-        <h2>Konkrete Handlung</h2>
-        ${decision.mandateScore ? `<p class="score-note">Mandatsbezug ${escapeHtml(String(decision.mandateScore))}/100 · finale Priorität ${escapeHtml(String(decision.finalScore || decision.totalScore || decision.priority))}/100</p>` : ""}
-        <p>${escapeHtml(decision.action)}</p>
+        <h2>Was ich tun würde</h2>
+        <p>${escapeHtml(action)}</p>
         <div class="detail-actions">
-          <button class="primary-button" type="button" data-communication="${escapeHtml(decision.id)}">Statement erzeugen</button>
-          ${decision.taskTemplate?.id ? `<button class="secondary-button" type="button" data-task-copy="${escapeHtml(decision.taskTemplate.id)}">Auftrag kopieren</button>` : ""}
+          <button class="primary-button" type="button" data-communication="${escapeHtml(decision.id)}">Text vorbereiten</button>
+          ${decision.taskTemplate?.id ? `<button class="secondary-button" type="button" data-task-copy="${escapeHtml(decision.taskTemplate.id)}">Ans Büro geben</button>` : ""}
         </div>
         <div class="learning-actions" aria-label="Helmut trainieren">
-          <button type="button" data-feedback="important" data-feedback-id="${escapeHtml(decision.id)}">Wichtiger merken</button>
+          <button type="button" data-feedback="important" data-feedback-id="${escapeHtml(decision.id)}">Mehr davon</button>
           <button type="button" data-feedback="ignored" data-feedback-id="${escapeHtml(decision.id)}">Nicht relevant</button>
         </div>
       </section>
@@ -904,7 +934,7 @@ function renderOfficeView() {
   return `
     <section class="page-intro compact">
       <h1 class="${headlineClass("Büro.")}">Büro.</h1>
-      <p>Was du selbst entscheidest und was dein Büro direkt vorbereiten kann.</p>
+      <p>Aufträge, die dein Büro ohne weitere Erklärung vorbereiten kann.</p>
     </section>
     ${renderOfficeTasksSection()}
     ${renderCommunicationSection()}
@@ -917,7 +947,7 @@ function renderOfficeTasksSection() {
   return `
     <section class="plain-list">
       <h2>Büroaufträge</h2>
-      <p class="section-note">Nur Aufgaben, die wirklich vorbereitet werden sollten.</p>
+      <p class="section-note">Kurz, sauber, direkt kopierbar.</p>
       ${officeTasks.map(renderTaskRow).join("") || `
         <article class="list-row office-empty">
           <div>
@@ -936,20 +966,23 @@ function renderTaskRow(task) {
   return `
     <article class="list-row office-task ${priorityClass(task.priority)}">
       <div>
-        <span>${escapeHtml(taskPriorityLabel(task.priority))} · ${escapeHtml(task.assignee)} · ${escapeHtml(formatDueDate(task.dueDate))}</span>
+        <span>${escapeHtml(taskPriorityLabel(task.priority))} · ${escapeHtml(formatDueDate(task.dueDate))}</span>
         <h3>${escapeHtml(shortTaskTitle(task))}</h3>
-        <p>${escapeHtml(shortTaskDescription(task))}</p>
-        <dl class="task-brief">
-          <div><dt>Warum ins Büro</dt><dd>${escapeHtml(task.politicalBenefit || "Damit die Linie vor der Debatte vorbereitet ist.")}</dd></div>
-          <div><dt>Worauf achten</dt><dd>${escapeHtml(task.riskIfIgnored || "Andere Akteure prägen die Debatte zuerst.")}</dd></div>
-        </dl>
+        <p>${escapeHtml(officeTaskOneLiner(task))}</p>
+        ${sourceLink(task.primarySource || task.sources?.[0] || task)}
       </div>
       <div class="task-actions">
-        <button class="primary-button compact-button" type="button" data-task-copy="${escapeHtml(task.id)}">Auftrag kopieren</button>
-        ${mailto ? `<a class="secondary-button compact-button" href="${escapeAttribute(mailto)}">E-Mail vorbereiten</a>` : ""}
+        <button class="primary-button compact-button" type="button" data-task-copy="${escapeHtml(task.id)}">Kopieren</button>
+        ${mailto ? `<a class="secondary-button compact-button" href="${escapeAttribute(mailto)}">Mail</a>` : ""}
       </div>
     </article>
   `;
+}
+
+function officeTaskOneLiner(task) {
+  const benefit = task.politicalBenefit || "Damit die Linie vor der Debatte vorbereitet ist.";
+  const risk = task.riskIfIgnored || "Andere Akteure prägen die Debatte zuerst.";
+  return `${twoSentenceSummary(benefit)} ${twoSentenceSummary(risk)}`;
 }
 
 function isActionableOfficeTask(task) {
@@ -1080,14 +1113,7 @@ function renderCommunicationSection() {
   return `
     <section class="plain-list communication-intro">
       <h2>Kommunikation</h2>
-      <p class="section-note">${escapeHtml(decision.title)} · ${escapeHtml(decision.recommendedChannel || decision.channel || "Kanal auswählen")}</p>
-      <div class="communication-command">
-        <div>
-          <span>${escapeHtml(channelLabel)}</span>
-          <p>${escapeHtml(communicationChannelHint(selectedCommunicationChannel))}</p>
-        </div>
-        <button class="primary-button compact-button" type="button" data-generate>Text erzeugen</button>
-      </div>
+      <p class="section-note">${escapeHtml(decision.title)}</p>
       <div class="strategy-answer ${escapeAttribute(selectedCommunicationChannel)}" aria-live="polite">
         <div class="channel-picker draft-channel-picker" role="group" aria-label="Kommunikationskanal">
           ${communicationChannels.map(([id, label]) => `
@@ -1096,14 +1122,14 @@ function renderCommunicationSection() {
         </div>
         <div class="draft-meta">
           <span>Generierter Entwurf</span>
-          <b>${escapeHtml(channelLabel)}</b>
+          <b>${escapeHtml(channelLabel)} · ${escapeHtml(communicationChannelHint(selectedCommunicationChannel))}</b>
         </div>
         <div class="generated-copy" data-copy-source="generated-statement">
           ${renderGeneratedCommunicationText(generatedStatement || decision.statement)}
         </div>
         <div class="draft-actions">
           <button class="primary-button" type="button" data-copy="generated-statement">Text kopieren</button>
-          <button class="secondary-button" type="button" data-generate>Neu formulieren</button>
+          <button class="secondary-button" type="button" data-generate>Neu schreiben</button>
         </div>
       </div>
     </section>

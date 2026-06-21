@@ -310,7 +310,12 @@ function handleRequest(request, response) {
       return;
     }
 
-    response.writeHead(200, { "Content-Type": contentTypes[path.extname(filePath)] || "application/octet-stream" });
+    const extension = path.extname(filePath);
+    const headers = { "Content-Type": contentTypes[extension] || "application/octet-stream" };
+    if ([".html", ".js", ".css"].includes(extension)) {
+      headers["Cache-Control"] = "no-store";
+    }
+    response.writeHead(200, headers);
     response.end(content);
   });
 }
@@ -554,7 +559,7 @@ function indexHtml() {
     <link rel="icon" href="assets/helmut_logo.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="assets/helmut_appicon_192.png" />
     <link rel="manifest" href="site.webmanifest" />
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=20260621-premium4" />
   </head>
   <body>
     <main class="shell" id="app">
@@ -564,7 +569,7 @@ function indexHtml() {
     </main>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="client.js"></script>
+    <script src="client.js?v=20260621-premium4"></script>
   </body>
 </html>`;
 }
