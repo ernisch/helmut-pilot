@@ -8,6 +8,7 @@ let notes = [];
 let recommendations = [];
 let selectedDecisionId = "";
 let currentView = "briefing";
+let detailOriginView = "briefing";
 let navOpen = false;
 let updatesOpen = false;
 let generatedStatement = "";
@@ -353,7 +354,8 @@ function renderMobileDock() {
 }
 
 function isMobileNavActive(id) {
-  if (id === "briefing") return currentView === "briefing" || currentView === "detail";
+  if (currentView === "detail") return (detailOriginView || "briefing") === id;
+  if (id === "briefing") return currentView === "briefing";
   if (id === "office") return currentView === "office" || currentView === "communication" || currentView === "tasks";
   if (id === "settings") return currentView === "settings" || currentView === "profile-settings";
   return currentView === id;
@@ -1754,6 +1756,7 @@ function bindActions() {
   app.querySelectorAll("[data-detail]").forEach((button) => {
     button.addEventListener("click", () => {
       selectedDecisionId = button.dataset.detail;
+      detailOriginView = currentView === "detail" ? detailOriginView : currentView;
       currentView = "detail";
       navOpen = false;
       updatesOpen = false;

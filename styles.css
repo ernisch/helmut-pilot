@@ -30,10 +30,8 @@ body {
   background:
     radial-gradient(circle at 72% 6%, rgba(111, 143, 247, .16), transparent 30%),
     radial-gradient(circle at 12% 18%, rgba(214, 160, 64, .09), transparent 24%),
-    linear-gradient(90deg, rgba(245, 241, 232, .035) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(245, 241, 232, .026) 1px, transparent 1px),
     linear-gradient(180deg, #090d18 0%, var(--bg) 58%, #05070d 100%);
-  background-size: auto, auto, 52px 52px, 52px 52px, auto;
+  background-size: auto, auto, auto;
   letter-spacing: 0;
 }
 button, input, select, textarea { font: inherit; }
@@ -3909,12 +3907,10 @@ small {
 body {
   color: var(--command-text);
   background:
-    radial-gradient(circle at 72% 8%, rgba(140, 92, 255, .18), transparent 28%),
-    radial-gradient(circle at 8% 22%, rgba(25, 229, 154, .08), transparent 22%),
-    linear-gradient(90deg, rgba(236, 241, 255, .035) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(236, 241, 255, .026) 1px, transparent 1px),
+    radial-gradient(circle at 76% 7%, rgba(140, 92, 255, .14), transparent 30%),
+    radial-gradient(circle at 6% 20%, rgba(25, 229, 154, .055), transparent 25%),
     linear-gradient(180deg, #070b15 0%, #050914 62%, #03050b 100%);
-  background-size: auto, auto, 58px 58px, 58px 58px, auto;
+  background-size: auto, auto, auto;
 }
 
 .app-frame {
