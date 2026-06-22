@@ -17,6 +17,7 @@ let selectedCommunicationChannel = "press";
 let berlinClockTimer = null;
 const updateSeenStorageKey = "helmut:lastSeenUpdatesAt";
 let activePoliticianId = "cem-ince";
+let previewMode = false;
 
 const app = document.querySelector("#app");
 const toast = document.querySelector("#toast");
@@ -92,7 +93,8 @@ const communicationStyles = ["Sachlich", "Lösungsorientiert", "Angriffslustig",
 async function loadBriefing() {
   const params = new URLSearchParams(window.location.search);
   activePoliticianId = sanitizePoliticianId(params.get("politicianId") || params.get("profileId") || "cem-ince");
-  const scope = `politicianId=${encodeURIComponent(activePoliticianId)}`;
+  previewMode = isPreviewModeParam(params);
+  const scope = apiScopeQuery();
   const [profileResponse, briefingResponse, tasksResponse, notesResponse, aiStatusResponse, opsStatusResponse, radarArchiveResponse] = await Promise.all([
     fetch(`/api/profile/current?${scope}`),
     fetch(`/api/briefing/latest?${scope}`),
@@ -105,9 +107,10 @@ async function loadBriefing() {
 
   profile = await profileResponse.json();
   briefing = await briefingResponse.json();
+  previewMode = previewMode || Boolean(briefing.previewMode);
   aiStatus = aiStatusResponse.ok ? await aiStatusResponse.json() : { enabled: false, model: "" };
   opsStatus = opsStatusResponse.ok ? await opsStatusResponse.json() : null;
-  briefing.status = briefing.status || "Live";
+  briefing.status = previewMode ? "Vorschau" : (briefing.status || "Live");
   briefing.sourceStats = briefing.sourceStats || { checkedSources: 0, successfulSources: 0, failedSources: 0 };
 
   const persistedTasks = tasksResponse.ok ? await tasksResponse.json() : [];
@@ -916,10 +919,11 @@ function renderPilotStatus() {
   const successful = Number(sourceStats.successfulSources || 0);
   const sourceText = checked || successful ? `${successful}/${checked || successful} Quellen geprüft` : "Quellenbasis vorbereitet";
   const updatedText = formatBriefingDate(briefing.generatedAt || briefing.date || new Date().toISOString());
-  const statusLabel = briefing.status || "Live";
+  const statusLabel = displayStatusLabel();
   return `
-    <div class="pilot-status" aria-label="Pilotstatus">
+    <div class="pilot-status ${previewMode ? "preview" : ""}" aria-label="Pilotstatus">
       ${escapeHtml(statusLabel)} · ${escapeHtml(sourceText)} · aktualisiert ${escapeHtml(updatedText)}
+      ${previewMode ? `<span>Kontrollansicht · verändert Cem nichts</span>` : ""}
     </div>
   `;
 }
@@ -1947,11 +1951,15 @@ function bindActions() {
 
   app.querySelectorAll("[data-run-crawl]").forEach((button) => {
     button.addEventListener("click", async () => {
+      if (previewMode) {
+        showToast("Vorschau: kein Quellenlauf gestartet");
+        return;
+      }
       const originalText = button.textContent;
       button.disabled = true;
       button.textContent = "Prüft...";
       try {
-        const response = await fetch(`/api/pipeline/run?politicianId=${encodeURIComponent(activePoliticianId)}`);
+        const response = await fetch(`/api/pipeline/run?${apiScopeQuery()}`);
         if (!response.ok) throw new Error(`Pilot check failed: ${response.status}`);
         const result = await response.json();
         showToast(result.skippedReason ? "Letzter Lauf wird genutzt" : "Helmut ist aktualisiert");
@@ -2016,10 +2024,14 @@ function bindActions() {
   if (noteForm) {
     noteForm.addEventListener("submit", async (event) => {
       event.preventDefault();
+      if (previewMode) {
+        showToast("Vorschau: Notiz nicht gespeichert");
+        return;
+      }
       const text = new FormData(noteForm).get("text");
       if (!String(text || "").trim()) return;
       try {
-        const response = await fetch(`/api/notes?politicianId=${encodeURIComponent(activePoliticianId)}`, {
+        const response = await fetch(`/api/notes?${apiScopeQuery()}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -2043,6 +2055,10 @@ function bindActions() {
 }
 
 async function saveProfileFromForm(form) {
+  if (previewMode) {
+    showToast("Vorschau: Profil nicht gespeichert");
+    return;
+  }
   const data = new FormData(form);
   const topicPriorities = {};
   data.forEach((value, key) => {
@@ -2079,7 +2095,7 @@ async function saveProfileFromForm(form) {
   };
 
   try {
-    const response = await fetch(`/api/profile/current?politicianId=${encodeURIComponent(activePoliticianId)}`, {
+    const response = await fetch(`/api/profile/current?${apiScopeQuery()}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...payload, id: activePoliticianId })
@@ -2256,6 +2272,7 @@ function getSeenUpdateTimestamp() {
 }
 
 function markUpdatesSeen() {
+  if (previewMode) return;
   const latest = latestUpdateTimestamp();
   if (!latest) return;
   try {
@@ -2597,7 +2614,7 @@ function timeGreeting(firstName = "Cem") {
 
 function updateBerlinClock() {
   document.querySelectorAll("[data-berlin-clock]").forEach((element) => {
-    element.textContent = `${briefing?.status || "Aktuell"} · ${formatBerlinNow()}`;
+    element.textContent = `${displayStatusLabel()} · ${formatBerlinNow()}`;
   });
 }
 
@@ -2622,9 +2639,10 @@ function showToast(message) {
 }
 
 async function logInteraction(interaction) {
+  if (previewMode) return;
   if (!profile) return;
   try {
-    await fetch(`/api/interactions?politicianId=${encodeURIComponent(activePoliticianId)}`, {
+    await fetch(`/api/interactions?${apiScopeQuery()}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ politicianId: profile.id, ...interaction })
@@ -2661,6 +2679,21 @@ function sanitizePoliticianId(value) {
     .toLowerCase()
     .replace(/[^a-z0-9-]+/g, "-")
     .replace(/^-|-$/g, "") || "cem-ince";
+}
+
+function isPreviewModeParam(params) {
+  const value = String(params.get("preview") || "").toLowerCase();
+  return value === "1" || value === "true" || value === "yes";
+}
+
+function apiScopeQuery(extra = {}) {
+  const params = new URLSearchParams({ politicianId: activePoliticianId, ...extra });
+  if (previewMode) params.set("preview", "1");
+  return params.toString();
+}
+
+function displayStatusLabel() {
+  return previewMode ? "Vorschau" : (briefing?.status || "Aktuell");
 }
 
 function escapeHtml(value) {

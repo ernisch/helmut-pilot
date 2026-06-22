@@ -435,6 +435,8 @@ small {
 
 .pilot-status {
   display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
   width: fit-content;
   padding: 9px 12px;
   border: 1px solid rgba(20, 33, 61, .10);
@@ -445,6 +447,15 @@ small {
   font-size: 13px;
   font-weight: 650;
   line-height: 1.4;
+}
+
+.pilot-status.preview {
+  border-color: rgba(139, 92, 246, .36);
+  background: rgba(139, 92, 246, .10);
+}
+
+.pilot-status.preview span {
+  color: rgba(139, 92, 246, .92);
 }
 
 .briefing-ticker {

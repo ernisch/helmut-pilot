@@ -30,6 +30,7 @@ const manualRunMinIntervalMs = Number(process.env.HELMUT_MANUAL_RUN_MIN_INTERVAL
 
 function handleRequest(request, response) {
   const url = new URL(request.url || "/", `http://${request.headers.host || "localhost"}`);
+  const previewMode = isPreviewMode(url);
   if (shouldRedirectToCanonicalHost(request, url)) {
     url.protocol = "https:";
     url.host = canonicalHost;
@@ -84,6 +85,7 @@ function handleRequest(request, response) {
   if (url.pathname === "/api/profile/current") {
     if (request.method === "GET") return handleAsync(response, () => activeProfile(politicianId));
     if (request.method === "POST" || request.method === "PATCH") {
+      if (previewMode) return sendPreviewReadOnly(response);
       return handleJson(request, response, async (body) => saveProfile(await normalizeProfile(body, politicianId)));
     }
   }
@@ -111,26 +113,27 @@ function handleRequest(request, response) {
       const latest = await getLatestOrDemoBriefing(politicianId);
       if (!latest.homeSections || !latest.personalizedRecommendations) {
         const personalized = personalizeBriefing(latest, profile, await getTopicMemory(profile.id), await getInteractions(profile.id));
-        return decorateBriefingFreshness(personalized);
+        return withPreviewMode(decorateBriefingFreshness(personalized), previewMode);
       }
-      if (!shouldRefreshLatestBriefing(latest, url)) return decorateBriefingFreshness(latest);
+      if (previewMode || !shouldRefreshLatestBriefing(latest, url)) return withPreviewMode(decorateBriefingFreshness(latest), previewMode);
       try {
         const pipeline = await runDailyPipeline(politicianId);
-        return decorateBriefingFreshness({
+        return withPreviewMode(decorateBriefingFreshness({
           ...pipeline.briefing,
           refreshedOnRead: true
-        });
+        }), previewMode);
       } catch (error) {
         console.error("Refresh on read failed", error);
-        return decorateBriefingFreshness({
+        return withPreviewMode(decorateBriefingFreshness({
           ...latest,
           refreshError: error.message
-        });
+        }), previewMode);
       }
     });
   }
 
   if (url.pathname === "/api/briefing/run") {
+    if (previewMode) return sendPreviewReadOnly(response);
     return handleAsync(response, async () => {
       const latest = await getLatestBriefing(politicianId);
       if (!isForcedPilotRun(url) && !hasAdminBypass(request, url) && isRecent(latest?.generatedAt || latest?.date, manualRunMinIntervalMs)) {
@@ -144,6 +147,7 @@ function handleRequest(request, response) {
   }
 
   if (url.pathname === "/api/crawl/run") {
+    if (previewMode) return sendPreviewReadOnly(response);
     return handleAsync(response, async () => {
       const latest = await getLatestCrawlRun();
       if (!isForcedPilotRun(url) && !hasAdminBypass(request, url) && isRecent(latest?.createdAt, manualRunMinIntervalMs)) {
@@ -157,6 +161,7 @@ function handleRequest(request, response) {
   }
 
   if (url.pathname === "/api/pipeline/run") {
+    if (previewMode) return sendPreviewReadOnly(response);
     return handleAsync(response, async () => {
       const latestCrawl = await getLatestCrawlRun();
       const latestBriefing = await getLatestBriefing(politicianId);
@@ -287,10 +292,12 @@ function handleRequest(request, response) {
 
   if (url.pathname === "/api/tasks") {
     if (request.method === "GET") return handleAsync(response, async () => getTasks((await activeProfile(politicianId)).id));
+    if (previewMode) return sendPreviewReadOnly(response);
     if (request.method === "POST") return handleJson(request, response, async (body) => saveTask(await normalizeTask(body, politicianId)));
   }
 
   if (url.pathname.startsWith("/api/tasks/") && request.method === "PATCH") {
+    if (previewMode) return sendPreviewReadOnly(response);
     const taskId = decodeURIComponent(url.pathname.replace("/api/tasks/", ""));
     return handleJson(request, response, async (body) => {
       const task = await updateTaskStatus(taskId, body.status);
@@ -304,11 +311,13 @@ function handleRequest(request, response) {
   }
 
   if (url.pathname === "/api/interactions" && request.method === "POST") {
+    if (previewMode) return sendPreviewReadOnly(response);
     return handleJson(request, response, async (body) => saveInteraction(await normalizeInteraction(body, politicianId)));
   }
 
   if (url.pathname === "/api/notes") {
     if (request.method === "GET") return handleAsync(response, async () => getUserNotes((await activeProfile(politicianId)).id));
+    if (previewMode) return sendPreviewReadOnly(response);
     if (request.method === "POST") return handleJson(request, response, async (body) => saveUserNote(await normalizeUserNote(body, politicianId)));
   }
 
@@ -367,6 +376,21 @@ function hasPilotAccess(request, url) {
   if (auth.basic && auth.basic.password === pilotSecret) return true;
 
   return readCookie(request, "helmut_pilot") === pilotSecret;
+}
+
+function isPreviewMode(url) {
+  const value = String(url.searchParams.get("preview") || "").toLowerCase();
+  return value === "1" || value === "true" || value === "yes";
+}
+
+function withPreviewMode(payload, previewMode) {
+  if (!previewMode || !payload || typeof payload !== "object") return payload;
+  return {
+    ...payload,
+    previewMode: true,
+    status: payload.status === "Demo" ? "Demo" : "Vorschau",
+    previewNote: "Vorschau: Dieser Aufruf verändert keine Gesehen-, Update- oder Lernzustände."
+  };
 }
 
 function isPilotAccessConfigured() {
@@ -620,6 +644,15 @@ function sendJson(response, payload) {
     "Cache-Control": "no-store"
   });
   response.end(JSON.stringify(payload, null, 2));
+}
+
+function sendPreviewReadOnly(response) {
+  return sendJson(response, {
+    ok: true,
+    previewMode: true,
+    skipped: true,
+    message: "Vorschau ist read-only. Es wurden keine Nutzungs-, Update- oder Profildaten verändert."
+  });
 }
 
 function shouldRefreshLatestBriefing(briefing, url) {
