@@ -13,6 +13,7 @@ let detailOriginView = "briefing";
 let navOpen = false;
 let updatesOpen = false;
 let generatedStatement = "";
+let communicationContextTitle = "";
 let selectedCommunicationChannel = "press";
 let berlinClockTimer = null;
 const updateSeenStorageKey = "helmut:lastSeenUpdatesAt";
@@ -161,6 +162,12 @@ function toDecision(item) {
     primarySource: item.primarySource || item.sources?.[0],
     politicalScore: item.politicalScore,
     mandateScore: item.mandateScore,
+    committeeScore: item.ausschuss_bezug || item.committeeScore,
+    citizenImpact: item.bürgerBetroffenheit || item.buergerBetroffenheit || item.citizenImpact,
+    mediaPressure: item.medienDruck || item.mediaPressure,
+    timeUrgency: item.zeitlicheDringlichkeit || item.timeUrgency,
+    reactionChance: item.reaktionsChance || item.reactionChance,
+    riskIfIgnoredScore: item.risikoBeiNichtstun || item.riskIfIgnoredScore,
     finalScore: item.finalScore,
     totalScore: item.totalScore,
     taskTemplate: item.taskTemplate,
@@ -198,6 +205,13 @@ function recommendationToDecisionItem(recommendation) {
     primarySource: recommendation.primarySource,
     politicalScore: recommendation.politicalScore,
     mandateScore: recommendation.mandateScore,
+    ausschuss_bezug: recommendation.ausschuss_bezug,
+    bürgerBetroffenheit: recommendation.bürgerBetroffenheit,
+    buergerBetroffenheit: recommendation.buergerBetroffenheit,
+    medienDruck: recommendation.medienDruck,
+    zeitlicheDringlichkeit: recommendation.zeitlicheDringlichkeit,
+    reaktionsChance: recommendation.reaktionsChance,
+    risikoBeiNichtstun: recommendation.risikoBeiNichtstun,
     finalScore: recommendation.finalScore,
     totalScore: recommendation.relevance_score,
     priority: recommendation.relevance_score,
@@ -463,17 +477,391 @@ function renderView() {
 
 function renderBriefingView() {
   return `
-    <section class="page-intro executive-intro">
-      <h1 class="hero-title">Guten Morgen, Cem.</h1>
-      <p>Hier ist, was heute zählt.</p>
+    <section class="page-intro executive-intro agenda-intro">
+      <h1 class="hero-title">${escapeHtml(timeGreeting((profile?.fullName || "Cem").split(" ")[0]).replace(",", ","))}</h1>
+      <p>Heute zählt vor allem: <strong>${escapeHtml(centralAgendaTopic())}</strong></p>
     </section>
 
-    <section class="single-decision-stage" aria-label="Wichtigste politische Entscheidung">
-      ${renderDecisionConsole()}
-    </section>
-    ${renderSecondaryMovements()}
+    ${renderDailyAgendaAnswer()}
+    ${renderTodayImportantSection()}
+    ${renderMeetingPrepSection()}
+    ${renderReactionChanceSection()}
     ${!decisions.length ? renderSituationalBriefing() : ""}
   `;
+}
+
+function centralAgendaTopic() {
+  const top = decisions[0];
+  if (top?.title) return top.title;
+  const watch = competentNoActionItems()[0];
+  return watch?.title || "Ruhe bewahren und die Lage weiter prüfen";
+}
+
+function renderDailyAgendaAnswer() {
+  const top = decisions[0];
+  if (!top) {
+    const watchItems = competentNoActionItems();
+    return `
+      <section class="daily-answer calm">
+        <span>Tagesantwort</span>
+        <h2>Heute keine Reaktion nötig.</h2>
+        <p>${escapeHtml(noDecisionLead(watchItems))}</p>
+      </section>
+    `;
+  }
+  return `
+    <section class="daily-answer ${escapeAttribute(top.priorityType || "action")}">
+      <span>Tagesantwort</span>
+      <h2>Heute zählt vor allem: ${escapeHtml(top.title)}</h2>
+      <p>${escapeHtml(decisionWhyImportant(top))}</p>
+      <div class="daily-answer-actions">
+        <button class="primary-button" type="button" data-detail="${escapeHtml(top.id)}">Empfehlung öffnen</button>
+        <button class="secondary-button" type="button" data-communication="${escapeHtml(top.id)}">Reaktion vorbereiten</button>
+      </div>
+    </section>
+  `;
+}
+
+function renderTodayImportantSection() {
+  const items = agendaPriorities().slice(0, 3);
+  return `
+    <section class="agenda-section">
+      <div class="agenda-section-head">
+        <span>A</span>
+        <h2>Heute wichtig</h2>
+      </div>
+      <div class="agenda-list">
+        ${items.map(renderAgendaPriority).join("") || `<p class="empty-state">Heute liegt keine priorisierte politische Entscheidung vor.</p>`}
+      </div>
+    </section>
+  `;
+}
+
+function renderAgendaPriority(decision) {
+  const metrics = decisionRelevanceMetrics(decision);
+  return `
+    <article class="agenda-priority ${escapeAttribute(decision.priorityType || "action")}">
+      <div>
+        <span>${escapeHtml(decision.priorityLabel || "Relevant")}</span>
+        <h3>${escapeHtml(decision.title)}</h3>
+        <p><b>Warum relevant?</b> ${escapeHtml(decisionWhyImportant(decision))}</p>
+        <ul>
+          <li>Ausschussbezug: ${escapeHtml(metrics.committee)}</li>
+          <li>Betroffenheit vieler Menschen: ${escapeHtml(metrics.citizens)}</li>
+          <li>Dringlichkeit: ${escapeHtml(metrics.urgency)}</li>
+        </ul>
+        <p><b>Empfohlene Handlung:</b> ${escapeHtml(chiefRecommendationText(decision))}</p>
+      </div>
+      <button class="secondary-button compact-button" type="button" data-communication="${escapeHtml(decision.id)}">Reaktion vorbereiten</button>
+    </article>
+  `;
+}
+
+function renderMeetingPrepSection() {
+  const meetings = meetingPreparations().slice(0, 3);
+  return `
+    <section class="agenda-section meeting-prep">
+      <div class="agenda-section-head">
+        <span>B</span>
+        <h2>Termine vorbereiten</h2>
+      </div>
+      <div class="agenda-list">
+        ${meetings.map(renderMeetingPrepCard).join("") || `<p class="empty-state">Noch keine Termine im Mandatsprofil. Trage im Profil kommende Gespräche ein, dann bereitet Helmut sie politisch vor.</p>`}
+      </div>
+    </section>
+  `;
+}
+
+function renderMeetingPrepCard(meeting) {
+  return `
+    <article class="meeting-card">
+      <div>
+        <span>${escapeHtml(formatMeetingDate(meeting))}</span>
+        <h3>${escapeHtml(meeting.terminTitel)}</h3>
+        <p><b>Warum wichtig?</b> ${escapeHtml(meeting.kurzbriefing)}</p>
+        <p><b>Hintergrund:</b> ${escapeHtml(meeting.politischerKontext)}</p>
+        <p><b>Gesprächspunkte:</b> ${escapeHtml(meeting.empfohleneGespraechspunkte.slice(0, 3).join(" · "))}</p>
+        <p><b>Risiko:</b> ${escapeHtml(meeting.risiken[0] || "Keine akute Eskalation erkennbar.")}</p>
+        <p><b>Chance:</b> ${escapeHtml(meeting.chancen[0] || "Sprechfähigkeit und Beziehungspflege.")}</p>
+      </div>
+      <div class="meeting-actions">
+        <button class="secondary-button compact-button" type="button" data-meeting-brief="${escapeHtml(meeting.id)}">Briefing vorbereiten</button>
+        <button class="secondary-button compact-button" type="button" data-meeting-speech="${escapeHtml(meeting.id)}">Rede vorbereiten</button>
+        <button class="secondary-button compact-button" type="button" data-meeting-questions="${escapeHtml(meeting.id)}">Fragen vorbereiten</button>
+      </div>
+    </article>
+  `;
+}
+
+function renderReactionChanceSection() {
+  const items = reactionChanceItems().slice(0, 5);
+  return `
+    <section class="agenda-section">
+      <div class="agenda-section-head">
+        <span>C</span>
+        <h2>Reaktionen und Chancen</h2>
+      </div>
+      <div class="agenda-list compact-agenda">
+        ${items.map(renderReactionChanceCard).join("") || `<p class="empty-state">Aktuell keine zusätzliche Reaktion sinnvoll.</p>`}
+      </div>
+    </section>
+  `;
+}
+
+function renderReactionChanceCard(decision) {
+  return `
+    <article class="reaction-card ${escapeAttribute(decision.priorityType || "chance")}">
+      <div>
+        <span>${escapeHtml(recommendedChannelLabel(decision))}</span>
+        <h3>${escapeHtml(decision.title)}</h3>
+        <p><b>Was ist passiert?</b> ${escapeHtml(decision.summary)}</p>
+        <p><b>Warum betrifft es dich?</b> ${escapeHtml(decisionWhyImportant(decision))}</p>
+        <p><b>Chance:</b> ${escapeHtml(decision.opportunity || decision.possibleUpside || "Du kannst früh fachlich sichtbar werden.")}</p>
+        <p><b>Empfohlene Reaktion:</b> ${escapeHtml(chiefRecommendationText(decision))}</p>
+      </div>
+      <button class="secondary-button compact-button" type="button" data-communication="${escapeHtml(decision.id)}">Statement vorbereiten</button>
+    </article>
+  `;
+}
+
+function agendaPriorities() {
+  const fromSections = (briefing.homeSections?.topTasks || []).map(normalizeHomeItem).filter(Boolean);
+  const source = decisions.length ? decisions : fromSections;
+  return source
+    .filter((item) => item && item.title)
+    .sort((a, b) => Number(b.relevanceScore || b.finalScore || b.priority || 0) - Number(a.relevanceScore || a.finalScore || a.priority || 0));
+}
+
+function reactionChanceItems() {
+  const sectionChances = (briefing.homeSections?.opportunities || []).map(normalizeHomeItem).filter(Boolean);
+  const merged = [...decisions, ...sectionChances]
+    .filter((item) => item && item.title)
+    .filter(uniqueDecisionItem);
+  return merged
+    .filter((item) => (item.priorityType === "chance" || item.opportunity || Number(item.reactionChance || item.relevanceScore || 0) >= 55))
+    .slice(0, 5);
+}
+
+function uniqueDecisionItem(item, index, items) {
+  const key = item.signalId || item.id || item.title;
+  return items.findIndex((entry) => (entry.signalId || entry.id || entry.title) === key) === index;
+}
+
+function decisionRelevanceMetrics(decision) {
+  return {
+    committee: qualitativeScore(decision.committeeScore || decision.mandateScore || 0, "direkt", "mittel", "schwach"),
+    citizens: qualitativeScore(decision.citizenImpact || decision.mandateScore || 0, "hoch", "mittel", "begrenzt"),
+    urgency: decision.urgency ? capitalize(decision.urgency) : qualitativeScore(decision.timeUrgency || decision.relevanceScore || 0, "hoch", "mittel", "niedrig")
+  };
+}
+
+function qualitativeScore(value, highLabel, mediumLabel, lowLabel) {
+  const score = Number(value || 0);
+  if (score >= 75) return highLabel;
+  if (score >= 45) return mediumLabel;
+  return lowLabel;
+}
+
+function recommendedChannelLabel(decision) {
+  const channel = String(decision.recommendedChannel || decision.actionType || "").toLowerCase();
+  if (channel.includes("social") || channel.includes("post") || channel.includes("linkedin") || channel.includes("x")) return "Social Media";
+  if (channel.includes("press") || channel.includes("presse")) return "Presse";
+  if (channel.includes("plenum")) return "Plenum";
+  if (channel.includes("ausschuss") || channel.includes("committee")) return "Ausschuss";
+  if (channel.includes("office") || channel.includes("brief_team") || channel.includes("büro")) return "Büro";
+  return "Presse";
+}
+
+function meetingPreparations() {
+  const profileAppointments = asTextList(profile?.upcomingAppointments).map(parseAppointmentText);
+  const fallback = fallbackMeetings();
+  return (profileAppointments.length ? profileAppointments : fallback)
+    .map((meeting, index) => prepareMeeting(meeting, index))
+    .sort((a, b) => new Date(a.datum || 0) - new Date(b.datum || 0));
+}
+
+function parseAppointmentText(value, index = 0) {
+  const text = String(value || "").trim();
+  const parts = text.split(/\s*[|;]\s*/).filter(Boolean);
+  return {
+    id: `meeting-profile-${index}-${slugify(text).slice(0, 36)}`,
+    terminTitel: parts[0] || text || "Politischer Termin",
+    datum: parts[1] || nextWeekdayIso(index + 1),
+    uhrzeit: parts[2] || "10:00",
+    teilnehmer: parts[3] || "",
+    organisation: parts[4] || "",
+    thema: parts[5] || parts[0] || text,
+    notizenVomBüro: parts.slice(6).join(" · ")
+  };
+}
+
+function fallbackMeetings() {
+  return [
+    {
+      id: "meeting-gewerkschaft",
+      terminTitel: "Treffen mit Gewerkschaft",
+      datum: nextWeekdayIso(1),
+      uhrzeit: "09:30",
+      teilnehmer: "Gewerkschaftssekretärinnen und Betriebsräte",
+      organisation: "Gewerkschaft",
+      thema: "Tarifbindung, Mindestlohn, gute Arbeit",
+      notizenVomBüro: "Gesprächspunkte zu Tariftreue und Kontrollen vorbereiten."
+    },
+    {
+      id: "meeting-sozialverband",
+      terminTitel: "Gespräch mit Sozialverband",
+      datum: nextWeekdayIso(2),
+      uhrzeit: "14:00",
+      teilnehmer: "Sozialverband",
+      organisation: "Sozialverband",
+      thema: "Bürgergeld, Armut, Rente",
+      notizenVomBüro: "Aktuelle Regierungslinie und soziale Auswirkungen einordnen."
+    },
+    {
+      id: "meeting-ausschuss-arbeit-soziales",
+      terminTitel: "Ausschusssitzung Arbeit und Soziales",
+      datum: nextWeekdayIso(3),
+      uhrzeit: "11:00",
+      teilnehmer: "Ausschussmitglieder",
+      organisation: "Bundestag",
+      thema: "Pläne der Bundesregierung im Bereich Arbeit und Soziales",
+      notizenVomBüro: "Fragen an Bundesregierung vorbereiten."
+    }
+  ];
+}
+
+function prepareMeeting(input, index = 0) {
+  const topic = input.thema || input.terminTitel || "den Termin";
+  const sourceDecision = decisions.find((decision) => textHasTopic(decision, topic)) || decisions[0] || {};
+  const context = sourceDecision.title ? `Aktuelle Lage: ${sourceDecision.title}. ${sourceDecision.summary || ""}` : "Aktuelle Lage aus Mandatsprofil und laufenden Quellen prüfen.";
+  const committee = profile?.committee || profile?.committees?.[0] || "Arbeit und Soziales";
+  return {
+    ...input,
+    id: input.id || `meeting-${index}-${slugify(input.terminTitel || topic)}`,
+    kurzbriefing: `Dieser Termin ist relevant, weil er direkt an deinen Ausschuss ${committee} und deine Schwerpunkte ${topProfileTopicsForView().slice(0, 3).join(", ")} anschließt.`,
+    politischerKontext: context,
+    aktuelleLage: context,
+    moeglicheInteressenDerGegenseite: opponentInterestForMeeting(input),
+    empfohleneGespraechspunkte: meetingTalkingPoints(input, sourceDecision),
+    kritischeFragen: meetingCriticalQuestions(input, sourceDecision),
+    chancen: meetingChances(input, sourceDecision),
+    risiken: meetingRisks(input, sourceDecision),
+    moeglicheAnschlussaktion: `Nach dem Termin kurze Linie festhalten: Was kann Cem öffentlich aufgreifen, was geht ans Büro, was bleibt intern?`,
+    optionalRedeentwurf: `Redeimpuls: Gute Arbeit und soziale Sicherheit müssen im Alltag der Menschen ankommen. Genau daran messen wir politische Vorhaben.`,
+    optionalSocialStatement: `${topic}: Entscheidend ist, dass soziale Politik konkret wirkt - bei Arbeit, Sicherheit und Respekt im Alltag.`,
+    optionalPressezitat: `Wir müssen die Bundesregierung daran messen, ob ihre Vorhaben für Beschäftigte und Menschen mit niedrigen Einkommen konkret besser werden.`
+  };
+}
+
+function meetingDraftText(meeting, type = "briefing") {
+  if (type === "questions") {
+    return [
+      `Fragen für ${meeting.terminTitel}`,
+      "",
+      ...meeting.kritischeFragen.map((question) => `- ${question}`),
+      "",
+      `Ziel: ${meeting.moeglicheAnschlussaktion}`
+    ].join("\n");
+  }
+  if (type === "speech") {
+    return [
+      `Redeimpuls für ${meeting.terminTitel}`,
+      "",
+      meeting.optionalRedeentwurf,
+      "",
+      "Gesprächspunkte:",
+      ...meeting.empfohleneGespraechspunkte.map((point) => `- ${point}`),
+      "",
+      `Pressefähige Linie: ${meeting.optionalPressezitat}`
+    ].join("\n");
+  }
+  return [
+    `Kurzbriefing: ${meeting.terminTitel}`,
+    "",
+    meeting.kurzbriefing,
+    "",
+    `Politischer Kontext: ${meeting.politischerKontext}`,
+    "",
+    "Gesprächspunkte:",
+    ...meeting.empfohleneGespraechspunkte.map((point) => `- ${point}`),
+    "",
+    `Chance: ${meeting.chancen[0]}`,
+    `Risiko: ${meeting.risiken[0]}`,
+    "",
+    `Anschlussaktion: ${meeting.moeglicheAnschlussaktion}`
+  ].join("\n");
+}
+
+function textHasTopic(decision, topic) {
+  const text = `${decision?.title || ""} ${decision?.summary || ""} ${decision?.whyItMatters || ""}`.toLowerCase();
+  return String(topic || "").toLowerCase().split(/\W+/).filter((part) => part.length > 4).some((part) => text.includes(part));
+}
+
+function meetingTalkingPoints(input, decision = {}) {
+  const topic = input.thema || input.terminTitel || "das Thema";
+  return [
+    `Welche konkrete Wirkung hat ${topic} für Beschäftigte und Menschen mit niedrigen Einkommen?`,
+    `Welche rote Linie solltest du bei Finanzierung, Kontrolle oder Umsetzung setzen?`,
+    decision.title ? `Aktuelle Quelle ansprechen: ${decision.title}.` : "Nach belastbaren Beispielen und Zahlen fragen."
+  ];
+}
+
+function meetingCriticalQuestions(input) {
+  const topic = input.thema || input.terminTitel || "das Thema";
+  return [
+    `Welche Zusage braucht ihr konkret von Politik zu ${topic}?`,
+    "Wo ist die Bundesregierung bisher zu unkonkret?",
+    "Welche Zahl oder welches Beispiel sollte Cem öffentlich nutzen?"
+  ];
+}
+
+function meetingChances(input, decision = {}) {
+  return [
+    decision.opportunity || "Du kannst fachliche Nähe zeigen und eine konkrete soziale Forderung mitnehmen.",
+    "Der Termin kann Stoff für Statement, Ausschussfrage oder Büroauftrag liefern."
+  ];
+}
+
+function meetingRisks(input, decision = {}) {
+  return [
+    decision.inaction || "Ohne Vorbereitung bleibt der Termin freundlich, aber politisch nicht verwertbar.",
+    "Wenn keine Anschlussaktion entsteht, verpufft der Nutzen im Büroalltag."
+  ];
+}
+
+function opponentInterestForMeeting(input) {
+  const text = `${input.organisation || ""} ${input.thema || ""}`.toLowerCase();
+  if (text.includes("gewerkschaft")) return "Konkrete Zusagen zu Tarifbindung, Kontrollen und öffentlichem Druck.";
+  if (text.includes("sozial")) return "Sichtbarkeit für soziale Folgen und belastbare parlamentarische Nachfrage.";
+  if (text.includes("ausschuss")) return "Klare Fragen, die die Bundesregierung zur Umsetzung zwingen.";
+  return "Verlässliche Aufmerksamkeit, klare nächste Schritte und politische Anschlussfähigkeit.";
+}
+
+function formatMeetingDate(meeting) {
+  const date = meeting.datum ? formatBriefingDate(meeting.datum) : "Diese Woche";
+  return `${date}${meeting.uhrzeit ? ` · ${meeting.uhrzeit}` : ""}`;
+}
+
+function nextWeekdayIso(offsetDays) {
+  const date = new Date();
+  date.setDate(date.getDate() + Number(offsetDays || 1));
+  return date.toISOString();
+}
+
+function capitalize(value) {
+  const text = String(value || "");
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+function slugify(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/ä/g, "ae")
+    .replace(/ö/g, "oe")
+    .replace(/ü/g, "ue")
+    .replace(/ß/g, "ss")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 function renderSecondaryMovements() {
@@ -1218,11 +1606,12 @@ function renderCommunicationSection() {
         </div>
         <div class="draft-meta">
           <span>Generierter Entwurf</span>
-          <b>${escapeHtml(channelLabel)} · ${escapeHtml(communicationChannelHint(selectedCommunicationChannel))}</b>
+          <b>${escapeHtml(communicationContextTitle || decision.title)} · ${escapeHtml(channelLabel)} · ${escapeHtml(communicationChannelHint(selectedCommunicationChannel))}</b>
         </div>
         <div class="generated-copy" data-copy-source="generated-statement">
           ${renderGeneratedCommunicationText(generatedStatement || decision.statement)}
         </div>
+        ${renderCommunicationVariants(decision)}
         <div class="draft-actions">
           <button class="primary-button" type="button" data-copy="generated-statement">Text kopieren</button>
           <button class="secondary-button" type="button" data-generate>Neu schreiben</button>
@@ -1241,6 +1630,24 @@ function renderGeneratedCommunicationText(text) {
     return "<p>Es liegt noch kein Textvorschlag vor.</p>";
   }
   return paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join("");
+}
+
+function renderCommunicationVariants(decision) {
+  const variants = [
+    ["Social Media", channelFallbackStatement(decision, "linkedin")],
+    ["Pressezitat", channelFallbackStatement(decision, "press")],
+    ["Ausschuss / Plenum", channelFallbackStatement(decision, "committee_question")]
+  ];
+  return `
+    <div class="statement-variants" aria-label="Statement Varianten">
+      ${variants.map(([label, text]) => `
+        <button type="button" data-use-variant="${escapeAttribute(label)}" data-variant-text="${escapeAttribute(text)}">
+          <span>${escapeHtml(label)}</span>
+          <p>${escapeHtml(shortenStatement(text).slice(0, 150))}</p>
+        </button>
+      `).join("")}
+    </div>
+  `;
 }
 
 function renderNotesSection() {
@@ -1908,6 +2315,7 @@ function bindActions() {
     button.addEventListener("click", () => {
       selectedDecisionId = button.dataset.communication;
       selectedCommunicationChannel = recommendedInitialChannel(selectedDecision());
+      communicationContextTitle = "";
       generatedStatement = selectedDecision().statement;
       currentView = "communication";
       render();
@@ -1918,6 +2326,28 @@ function bindActions() {
     button.addEventListener("click", () => {
       selectedCommunicationChannel = button.dataset.channel || "press";
       generatedStatement = channelFallbackStatement(selectedDecision(), selectedCommunicationChannel);
+      render();
+    });
+  });
+
+  app.querySelectorAll("[data-use-variant]").forEach((button) => {
+    button.addEventListener("click", () => {
+      generatedStatement = button.dataset.variantText || generatedStatement;
+      showToast(`${button.dataset.useVariant || "Variante"} übernommen`);
+      render();
+    });
+  });
+
+  app.querySelectorAll("[data-meeting-brief], [data-meeting-speech], [data-meeting-questions]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const meetingId = button.dataset.meetingBrief || button.dataset.meetingSpeech || button.dataset.meetingQuestions;
+      const meeting = meetingPreparations().find((entry) => entry.id === meetingId);
+      if (!meeting) return;
+      selectedDecisionId = decisions[0]?.id || "";
+      communicationContextTitle = meeting.terminTitel;
+      selectedCommunicationChannel = button.dataset.meetingSpeech ? "internal_line" : button.dataset.meetingQuestions ? "committee_question" : "press";
+      generatedStatement = meetingDraftText(meeting, button.dataset.meetingSpeech ? "speech" : button.dataset.meetingQuestions ? "questions" : "briefing");
+      currentView = "communication";
       render();
     });
   });
@@ -2289,6 +2719,16 @@ function isFreshUpdate(item) {
 }
 
 function notificationItems() {
+  const preparedNotifications = (briefing?.notifications || []).slice(0, 5).map((item) => ({
+    type: notificationTone(item.type),
+    label: notificationTypeLabel(item.type),
+    title: item.title,
+    summary: item.message,
+    meta: priorityNotificationLabel(item.priority),
+    receivedAt: item.createdAt,
+    decisionId: item.relatedItemId
+  }));
+
   const mentionItems = (briefing?.personMentions || []).filter(isFreshUpdate).slice(0, 4).map((item) => ({
     type: "mention",
     label: "Neue Erwähnung",
@@ -2311,7 +2751,30 @@ function notificationItems() {
     }))
     : [];
 
-  return [...mentionItems, ...decisionItems].slice(0, 5);
+  return [...preparedNotifications, ...mentionItems, ...decisionItems]
+    .filter((item, index, items) => items.findIndex((entry) => `${entry.label}-${entry.title}` === `${item.label}-${item.title}`) === index)
+    .slice(0, 5);
+}
+
+function notificationTone(type) {
+  if (["risk_detected", "reaction_recommended", "meeting_starts_soon"].includes(type)) return "risk";
+  if (["opportunity_detected", "meeting_prep_ready"].includes(type)) return "chance";
+  return "watch";
+}
+
+function notificationTypeLabel(type) {
+  return ({
+    daily_briefing_ready: "Tagesbriefing",
+    reaction_recommended: "Reaktion empfohlen",
+    meeting_prep_ready: "Terminvorbereitung",
+    meeting_starts_soon: "Termin bald",
+    opportunity_detected: "Chance erkannt",
+    risk_detected: "Risiko erkannt"
+  })[type] || "Update";
+}
+
+function priorityNotificationLabel(priority) {
+  return ({ high: "Hohe Priorität", medium: "Mittlere Priorität", low: "Niedrige Priorität" })[priority] || "Priorität";
 }
 
 function taskShareText(task) {

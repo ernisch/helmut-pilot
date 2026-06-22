@@ -458,6 +458,191 @@ small {
   color: rgba(139, 92, 246, .92);
 }
 
+.agenda-intro p strong {
+  color: var(--command-text, var(--text));
+  font-weight: 720;
+}
+
+.daily-answer,
+.agenda-section {
+  border: 1px solid var(--command-line, var(--line));
+  border-radius: 32px;
+  background:
+    linear-gradient(145deg, rgba(13, 20, 36, .86), rgba(7, 11, 22, .9));
+  box-shadow: 0 28px 90px rgba(0, 0, 0, .24);
+}
+
+.daily-answer {
+  min-height: min(58vh, 620px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 22px;
+  margin: 24px 0 34px;
+  padding: clamp(34px, 6vw, 72px);
+}
+
+.daily-answer > span,
+.agenda-section-head span,
+.agenda-priority > div > span,
+.reaction-card > div > span,
+.meeting-card > div > span {
+  color: var(--signature, #8b5cf6);
+  font-size: 12px;
+  font-weight: 820;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.daily-answer h2 {
+  max-width: 920px;
+  margin: 0;
+  color: var(--command-text, var(--text));
+  font-size: clamp(38px, 6.4vw, 78px);
+  line-height: .98;
+  letter-spacing: -.03em;
+}
+
+.daily-answer p {
+  max-width: 760px;
+  margin: 0;
+  color: var(--command-muted, var(--muted));
+  font-size: clamp(18px, 2vw, 23px);
+  line-height: 1.45;
+}
+
+.daily-answer-actions,
+.meeting-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.agenda-section {
+  display: grid;
+  gap: 22px;
+  margin: 0 0 28px;
+  padding: clamp(24px, 4vw, 42px);
+}
+
+.agenda-section-head {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+
+.agenda-section-head span {
+  color: var(--command-muted, var(--muted));
+}
+
+.agenda-section-head h2 {
+  margin: 0;
+  color: var(--command-text, var(--text));
+  font-size: clamp(26px, 3.4vw, 40px);
+  letter-spacing: -.02em;
+}
+
+.agenda-list {
+  display: grid;
+  gap: 14px;
+}
+
+.agenda-priority,
+.meeting-card,
+.reaction-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 20px;
+  align-items: center;
+  padding: 22px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, .035);
+}
+
+.meeting-card {
+  align-items: start;
+}
+
+.agenda-priority h3,
+.meeting-card h3,
+.reaction-card h3 {
+  margin: 6px 0 12px;
+  color: var(--command-text, var(--text));
+  font-size: clamp(22px, 2.4vw, 31px);
+  line-height: 1.12;
+  letter-spacing: -.015em;
+}
+
+.agenda-priority p,
+.meeting-card p,
+.reaction-card p {
+  max-width: 850px;
+  margin: 8px 0 0;
+  color: var(--command-muted, var(--muted));
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.agenda-priority p b,
+.meeting-card p b,
+.reaction-card p b {
+  color: var(--command-text, var(--text));
+  font-weight: 680;
+}
+
+.agenda-priority ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0;
+  margin: 14px 0;
+  list-style: none;
+}
+
+.agenda-priority li {
+  padding: 7px 10px;
+  border: 1px solid rgba(255, 255, 255, .09);
+  border-radius: 999px;
+  color: var(--command-muted, var(--muted));
+  background: rgba(255, 255, 255, .035);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.statement-variants {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 18px 0 0;
+}
+
+.statement-variants button {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--command-line, var(--line));
+  border-radius: 18px;
+  color: var(--command-text, var(--text));
+  background: rgba(255, 255, 255, .035);
+  text-align: left;
+  cursor: pointer;
+}
+
+.statement-variants span {
+  color: var(--signature, #8b5cf6);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.statement-variants p {
+  margin: 8px 0 0;
+  color: var(--command-muted, var(--muted));
+  font-size: 13px;
+  line-height: 1.35;
+}
+
 .briefing-ticker {
   display: flex;
   align-items: center;
@@ -3143,6 +3328,71 @@ small {
   .article-head p {
     max-width: 100%;
     font-size: 17px;
+  }
+
+  .daily-answer {
+    min-height: auto;
+    margin: 12px 0 24px;
+    padding: 28px 22px;
+    border-radius: 26px;
+  }
+
+  .daily-answer h2 {
+    font-size: clamp(31px, 9vw, 44px);
+    line-height: 1.04;
+  }
+
+  .daily-answer p {
+    font-size: 17px;
+  }
+
+  .daily-answer-actions,
+  .meeting-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .agenda-section {
+    padding: 22px;
+    border-radius: 26px;
+  }
+
+  .agenda-section-head {
+    gap: 10px;
+  }
+
+  .agenda-section-head h2 {
+    font-size: 25px;
+  }
+
+  .agenda-priority,
+  .meeting-card,
+  .reaction-card {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 19px;
+    border-radius: 21px;
+  }
+
+  .agenda-priority h3,
+  .meeting-card h3,
+  .reaction-card h3 {
+    font-size: clamp(22px, 6.4vw, 29px);
+  }
+
+  .agenda-priority p,
+  .meeting-card p,
+  .reaction-card p {
+    font-size: 15px;
+  }
+
+  .agenda-priority ul {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .statement-variants {
+    grid-template-columns: 1fr;
   }
 
   .pilot-status {
