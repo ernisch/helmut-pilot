@@ -1505,109 +1505,118 @@ function renderSettingsView() {
   const crawl = ops.crawl || sourceStats;
   const opsTone = ops.status === "Bereit" ? "low" : ops.status === "Prüfen" ? "medium" : "high";
   const latestCrawlText = crawl?.createdAt ? formatBriefingDate(crawl.createdAt) : "Noch kein Lauf";
-  const latestBriefingText = ops.briefing?.generatedAt ? formatBriefingDate(ops.briefing.generatedAt) : formatBriefingDate(briefing.generatedAt || briefing.date);
-  const quality = ops.briefing?.quality || briefing.quality || null;
-  const qualityTone = quality?.status === "Pitchbereit" ? "low" : quality?.status === "Prüfen" ? "medium" : "high";
-  const readiness = ops.readiness || null;
-  const readinessTone = readiness?.ready ? "low" : readiness?.issues?.length ? "high" : "medium";
-  const evidence = ops.evidenceQuality || null;
-  const evidenceTone = evidence?.missingLinks || evidence?.publisherFallbacks ? "high" : "low";
-  const learning = ops.learning || briefing.learningProfile || null;
-  const learningTone = learning?.confidence === "hoch" ? "low" : learning?.eventCount ? "medium" : "low";
+  const committee = profile.committee || profile.committees?.[0] || "Noch offen";
+  const topTopics = topProfileTopicsForView();
+  const channels = asTextList(profile.preferredChannels).length ? asTextList(profile.preferredChannels) : ["Presse", "LinkedIn", "Ausschuss"];
+  const audiences = asTextList(profile.keyAudiences).length ? asTextList(profile.keyAudiences) : ["Arbeitnehmer", "Gewerkschaften", "soziale Verbände"];
+  const noGos = asTextList(profile.noGoTopics);
+  const risks = asTextList(profile.riskTopics).length ? asTextList(profile.riskTopics) : ["Themen ohne Quellenbasis", "unklare Angriffe", "zu frühe Positionierung ohne Anlass"];
   return `
     <section class="page-intro compact">
-      <h1 class="${headlineClass("Einstellungen.")}">Einstellungen.</h1>
-      <p>${storage.backend === "supabase" ? "Profil, Quellen und Briefings werden persistent gespeichert." : "Systemstatus vor dem Pitch prüfen."}</p>
+      <h1 class="${headlineClass("Mandatsprofil.")}">Mandatsprofil.</h1>
+      <p>So versteht Helmut dein Mandat, deine Themen und deine politische Linie.</p>
     </section>
+
     <section class="plain-list">
-      <article class="list-row ${readinessTone}">
+      <article class="list-row low">
         <div>
-          <span>Pilot-Readiness</span>
-          <h3>${escapeHtml(readiness?.status || "Wird geprüft")}</h3>
-          <p>${escapeHtml(readinessSummary(readiness))}</p>
+          <span>Profil</span>
+          <h3>${escapeHtml(profile.fullName || "Cem Ince")}</h3>
+          <p>${escapeHtml(profile.function || "Bundestagsabgeordneter")} · ${escapeHtml(profile.party || "Die Linke")} · ${escapeHtml(profile.faction || profile.party || "Fraktion offen")}</p>
+        </div>
+        <button class="secondary-button" type="button" data-view="profile-settings">Profil bearbeiten</button>
+      </article>
+
+      <article class="list-row">
+        <div>
+          <span>Ausschuss</span>
+          <h3>${escapeHtml(committee)}</h3>
+          <p>Helmut bewertet Themen höher, wenn sie in deinem Ausschuss, bei BMAS oder in Gesetzesvorhaben zu Arbeit und Sozialem auftauchen.</p>
         </div>
       </article>
+
+      <article class="list-row">
+        <div>
+          <span>Prioritäten</span>
+          <h3>${escapeHtml(topTopics.slice(0, 3).join(" · ") || "Noch nicht gesetzt")}</h3>
+          <p>${escapeHtml(topTopics.slice(3, 8).join(" · ") || "Diese Themen steuern, was Helmut morgens prominent macht.")}</p>
+        </div>
+      </article>
+
+      <article class="list-row">
+        <div>
+          <span>Leitfrage</span>
+          <h3>Worauf sollst du politisch reagieren?</h3>
+          <p>${escapeHtml(profile.mainQuestion || "Welche Pläne hat die Bundesregierung im Bereich Arbeit und Soziales und worauf sollte ich politisch reagieren?")}</p>
+        </div>
+      </article>
+
+      <article class="list-row">
+        <div>
+          <span>Kommunikation</span>
+          <h3>${escapeHtml(profile.communicationStyle || "Lösungsorientiert")}</h3>
+          <p>Bevorzugte Kanäle: ${escapeHtml(channels.slice(0, 4).join(" · "))}</p>
+        </div>
+      </article>
+
+      <article class="list-row">
+        <div>
+          <span>Zielgruppen</span>
+          <h3>${escapeHtml(audiences.slice(0, 3).join(" · "))}</h3>
+          <p>Helmut formuliert Empfehlungen so, dass politische Wirkung und Adressat zusammenpassen.</p>
+        </div>
+      </article>
+
+      <article class="list-row medium">
+        <div>
+          <span>Risiko-Filter</span>
+          <h3>${escapeHtml(risks.slice(0, 2).join(" · "))}</h3>
+          <p>${escapeHtml(noGos.length ? `No-Go: ${noGos.slice(0, 3).join(" · ")}` : "Helmut soll nichts prominent machen, was keinen belastbaren Mandats- oder Quellenbezug hat.")}</p>
+        </div>
+      </article>
+
       <article class="list-row ${opsTone}">
         <div>
-          <span>Betriebscheck</span>
-          <h3>${escapeHtml(ops.status || "Prüfen")}</h3>
-          <p>${escapeHtml(operationsSummary(ops))}</p>
+          <span>System</span>
+          <h3>${escapeHtml(ops.status || (storage.backend === "supabase" ? "Bereit" : "Prüfen"))}</h3>
+          <p>${escapeHtml(profileSystemSummary(storage, crawl, latestCrawlText))}</p>
         </div>
         <button class="secondary-button" type="button" data-run-crawl>System prüfen</button>
       </article>
-      <article class="list-row">
-        <div>
-          <span>Mandatsprofil</span>
-          <h3>${escapeHtml(profile.fullName)}</h3>
-          <p>${escapeHtml(profile.function || "Bundestagsabgeordneter")} · ${escapeHtml(profile.party)} · Ausschuss ${escapeHtml(profile.committee || profile.committees?.[0] || "Noch offen")}</p>
-        </div>
-        <button class="secondary-button" type="button" data-view="profile-settings">Mandatsprofil öffnen</button>
-      </article>
-      <article class="list-row">
-        <div>
-          <span>Quellen</span>
-          <h3>${crawl?.successfulSources || sourceStats.successfulSources || 0} von ${crawl?.checkedSources || sourceStats.checkedSources || 0} geprüft</h3>
-          <p>${crawl?.failedSources || sourceStats.failedSources || 0} Fehler · letzter Lauf ${escapeHtml(latestCrawlText)} · ${briefing.personMentions?.length || 0} Namensnennungen.</p>
-        </div>
-      </article>
-      <article class="list-row ${evidenceTone}">
-        <div>
-          <span>Belege</span>
-          <h3>${escapeHtml(evidence?.status || "Wird geprüft")}</h3>
-          <p>${escapeHtml(evidenceSummary(evidence))}</p>
-        </div>
-      </article>
-      <article class="list-row ${storage.backend === "supabase" ? "low" : "medium"}">
-        <div>
-          <span>Speicher</span>
-          <h3>${storage.backend === "supabase" ? "Supabase aktiv" : "Lokal"}</h3>
-          <p>${storage.backend === "supabase" ? "Briefings, Quellen, Profil und Lernsignale werden persistent gespeichert." : "Achtung: Daten würden lokal gespeichert. Für den Pilot sollte Supabase aktiv sein."}</p>
-        </div>
-      </article>
-      <article class="list-row ${learningTone}">
-        <div>
-          <span>Lernmodus</span>
-          <h3>${escapeHtml(learning?.status || "Bereit")}</h3>
-          <p>${escapeHtml(learningSummary(learning))}</p>
-        </div>
-      </article>
-      <article class="list-row ${aiStatus.enabled ? "low" : "medium"}">
-        <div>
-          <span>OpenAI</span>
-          <h3>${aiStatus.enabled ? "Aktiv" : "Nicht aktiv"}</h3>
-          <p>${aiStatus.enabled ? `Modell ${aiStatus.model || "konfiguriert"} veredelt Briefing und Kommunikation.` : "Helmut läuft regelbasiert weiter."}</p>
-        </div>
-      </article>
-      <article class="list-row ${briefing.status === "Aktuell" ? "low" : "medium"}">
-        <div>
-          <span>Pilotstatus</span>
-          <h3>${escapeHtml(briefing.status || "Bereit")}</h3>
-          <p>${escapeHtml(briefing.fallbackReason || `Letztes Briefing ${latestBriefingText}. Live-Daten werden für die Morgenlage verwendet.`)}</p>
-        </div>
-      </article>
-      <article class="list-row ${qualityTone}">
-        <div>
-          <span>Briefingqualität</span>
-          <h3>${escapeHtml(quality?.status || "Noch nicht geprüft")}</h3>
-          <p>${escapeHtml(qualitySummary(quality))}</p>
-        </div>
-      </article>
-      <article class="list-row">
-        <div>
-          <span>Automatik</span>
-          <h3>${escapeHtml((ops.cron?.crawlTimes || ["06:00", "12:00", "18:00", "22:00"]).join(" · "))}</h3>
-          <p>Morgenbriefing um ${escapeHtml((ops.cron?.briefingTimes || ["07:00"]).join(" · "))} Uhr. Zeiten sind Berliner Zielzeiten.</p>
-        </div>
-      </article>
-      <article class="list-row low">
-        <div>
-          <span>Schutz</span>
-          <h3>Manuelle Läufe begrenzt</h3>
-          <p>${escapeHtml(protectionSummary(ops.protection))}</p>
-        </div>
-      </article>
     </section>
   `;
+}
+
+function topProfileTopicsForView() {
+  const prioritized = Object.entries(profile?.topicPriorities || {})
+    .sort((a, b) => Number(b[1] || 0) - Number(a[1] || 0))
+    .map(([topic]) => topic);
+  return uniqueViewList([...prioritized, ...(profile?.focusTopics || [])]).slice(0, 8);
+}
+
+function asTextList(value) {
+  if (Array.isArray(value)) return value.map((entry) => String(entry || "").trim()).filter(Boolean);
+  return String(value || "")
+    .split(/\n|,/)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+function uniqueViewList(items) {
+  const seen = new Set();
+  return (items || []).filter((item) => {
+    const key = String(item || "").trim().toLowerCase();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function profileSystemSummary(storage, crawl, latestCrawlText) {
+  const backend = storage.backend === "supabase" ? "Supabase aktiv" : "lokaler Speicher";
+  const checked = crawl?.checkedSources || briefing.sourceStats?.checkedSources || 0;
+  const failed = crawl?.failedSources || briefing.sourceStats?.failedSources || 0;
+  return `${backend}. ${checked} Quellen zuletzt geprüft, ${failed} Fehler. Letzter Lauf: ${latestCrawlText}.`;
 }
 
 function qualitySummary(quality) {
@@ -1727,7 +1736,7 @@ function renderProfileSettingsView() {
       </section>
 
       <div class="profile-actions">
-        <button class="secondary-button" type="button" data-view="settings">Zurück</button>
+        <button class="secondary-button" type="button" data-view="settings">Zurück zum Profil</button>
         <button class="primary-button" type="submit">Profil speichern</button>
       </div>
     </form>
