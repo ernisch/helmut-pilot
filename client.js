@@ -97,17 +97,23 @@ async function loadBriefing() {
   previewMode = isPreviewModeParam(params);
   const scope = apiScopeQuery();
   const [profileResponse, briefingResponse, tasksResponse, notesResponse, aiStatusResponse, opsStatusResponse, radarArchiveResponse] = await Promise.all([
-    fetch(`/api/profile/current?${scope}`),
-    fetch(`/api/briefing/latest?${scope}`),
-    fetch(`/api/tasks?${scope}`),
-    fetch(`/api/notes?${scope}`),
-    fetch("/api/ai/status"),
-    fetch(`/api/ops/status?${scope}`),
-    fetch(`/api/radar/archive?${scope}&days=92`)
+    fetchWithTimeout(`/api/profile/current?${scope}`),
+    fetchWithTimeout(`/api/briefing/latest?${scope}`),
+    fetchWithTimeout(`/api/tasks?${scope}`),
+    fetchWithTimeout(`/api/notes?${scope}`),
+    fetchWithTimeout("/api/ai/status"),
+    fetchWithTimeout(`/api/ops/status?${scope}`),
+    fetchWithTimeout(`/api/radar/archive?${scope}&days=92`)
   ]);
 
+  if (!profileResponse.ok) throw new Error(`Profil konnte nicht geladen werden (${profileResponse.status})`);
+  if (!briefingResponse.ok) throw new Error(`Briefing konnte nicht geladen werden (${briefingResponse.status})`);
   profile = await profileResponse.json();
   briefing = await briefingResponse.json();
+  briefing.items = Array.isArray(briefing.items) ? briefing.items : [];
+  briefing.tasks = Array.isArray(briefing.tasks) ? briefing.tasks : [];
+  briefing.personalizedRecommendations = Array.isArray(briefing.personalizedRecommendations) ? briefing.personalizedRecommendations : [];
+  briefing.situationalBriefing = Array.isArray(briefing.situationalBriefing) ? briefing.situationalBriefing : [];
   previewMode = previewMode || Boolean(briefing.previewMode);
   aiStatus = aiStatusResponse.ok ? await aiStatusResponse.json() : { enabled: false, model: "" };
   opsStatus = opsStatusResponse.ok ? await opsStatusResponse.json() : null;
@@ -138,6 +144,14 @@ async function loadBriefing() {
   selectedDecisionId = decisions[0]?.id || "";
   generatedStatement = decisions[0]?.statement || "";
   render();
+}
+
+function fetchWithTimeout(url, options = {}, timeoutMs = 12000) {
+  let timeoutId;
+  const timeout = new Promise((_, reject) => {
+    timeoutId = window.setTimeout(() => reject(new Error(`Zeitüberschreitung beim Laden: ${url}`)), timeoutMs);
+  });
+  return Promise.race([fetch(url, options), timeout]).finally(() => window.clearTimeout(timeoutId));
 }
 
 function toDecision(item) {
@@ -3096,6 +3110,7 @@ async function copyText(text, fallbackMessage) {
 }
 
 function showToast(message) {
+  if (!toast?.classList) return;
   toast.textContent = message;
   toast.classList.add("visible");
   window.setTimeout(() => toast.classList.remove("visible"), 1600);
