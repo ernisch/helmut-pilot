@@ -455,17 +455,60 @@ function compactBriefingPayload(briefing) {
 function compactHomeSections(homeSections) {
   if (!homeSections || typeof homeSections !== "object") return homeSections;
   return {
-    topTasks: compactItems(homeSections.topTasks, 3),
-    changedSinceLastVisit: compactItems(homeSections.changedSinceLastVisit, 3),
-    needsAttention: compactItems(homeSections.needsAttention, 3),
-    opportunities: compactItems(homeSections.opportunities, 3),
-    risks: compactItems(homeSections.risks, 3),
-    situational: compactItems(homeSections.situational, 3)
+    topTasks: compactHomeItems(homeSections.topTasks, 3),
+    changedSinceLastVisit: compactHomeItems(homeSections.changedSinceLastVisit, 3),
+    needsAttention: compactHomeItems(homeSections.needsAttention, 3),
+    opportunities: compactHomeItems(homeSections.opportunities, 3),
+    risks: compactHomeItems(homeSections.risks, 3),
+    situational: compactHomeItems(homeSections.situational, 3)
   };
 }
 
 function compactItems(items, limit) {
   return Array.isArray(items) ? items.slice(0, limit).map(compactItem) : [];
+}
+
+function compactHomeItems(items, limit) {
+  return Array.isArray(items) ? items.slice(0, limit).map(compactHomeItem).filter(Boolean) : [];
+}
+
+function compactHomeItem(item) {
+  if (!item || typeof item !== "object") return item;
+  return {
+    id: item.id,
+    signalId: item.signalId || item.signal_id,
+    signal_id: item.signal_id,
+    title: item.title,
+    priority: item.priority,
+    current_priority: item.current_priority,
+    priorityLabel: item.priorityLabel,
+    priorityType: item.priorityType,
+    relevanceScore: item.relevanceScore || item.relevance_score || item.finalScore,
+    relevance_score: item.relevance_score,
+    finalScore: item.finalScore,
+    chance_fuer_nutzer: item.chance_fuer_nutzer,
+    risiko_fuer_nutzer: item.risiko_fuer_nutzer,
+    summary: truncateText(item.summary, 220),
+    action: truncateText(item.action || item.recommended_action || item.recommendedAction, 260),
+    recommended_action: truncateText(item.recommended_action, 260),
+    whyItMatters: truncateText(item.whyItMatters || item.personal_relevance_explanation || item.personalRelevanceExplanation, 260),
+    personal_relevance_explanation: truncateText(item.personal_relevance_explanation, 260),
+    personalRelevanceExplanation: truncateText(item.personalRelevanceExplanation, 260),
+    inaction: truncateText(item.inaction || item.consequence_if_ignored || item.consequenceIfIgnored, 260),
+    consequence_if_ignored: truncateText(item.consequence_if_ignored, 260),
+    consequenceIfIgnored: truncateText(item.consequenceIfIgnored, 260),
+    opportunity: truncateText(item.opportunity || item.possible_upside || item.possibleUpside, 220),
+    possible_upside: truncateText(item.possible_upside, 220),
+    possibleUpside: truncateText(item.possibleUpside, 220),
+    estimatedTime: item.estimatedTime,
+    estimated_effort_minutes: item.estimated_effort_minutes,
+    deadline: item.deadline,
+    statusChange: item.statusChange || item.status_change,
+    status_change: item.status_change,
+    changeReason: truncateText(item.changeReason || item.change_reason, 220),
+    change_reason: truncateText(item.change_reason, 220),
+    taskTemplate: compactTaskTemplate(item.taskTemplate)
+  };
 }
 
 function compactItem(item) {
