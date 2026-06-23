@@ -554,6 +554,49 @@ small {
   line-height: 1.38;
 }
 
+.pilot-access-card {
+  width: min(100%, 560px);
+}
+
+.pilot-access-copy {
+  max-width: 380px;
+  margin: -6px auto 0;
+  color: var(--command-muted, var(--muted));
+  font-size: 17px;
+  line-height: 1.45;
+}
+
+.pilot-access-form {
+  display: grid;
+  gap: 12px;
+  width: min(100%, 420px);
+  margin: 12px auto 0;
+}
+
+.pilot-access-form input {
+  width: 100%;
+  min-height: 58px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 18px;
+  padding: 0 18px;
+  color: var(--command-text, var(--text));
+  background: rgba(255, 255, 255, .06);
+  font: inherit;
+  font-size: 17px;
+  outline: none;
+}
+
+.pilot-access-form input:focus {
+  border-color: rgba(139, 92, 246, .56);
+  box-shadow: 0 0 0 4px rgba(139, 92, 246, .16);
+}
+
+.pilot-access-form small {
+  min-height: 20px;
+  color: #ff7a8a;
+  font-size: 14px;
+}
+
 .daily-answer-actions,
 .meeting-actions {
   display: flex;

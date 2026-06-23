@@ -100,6 +100,10 @@ async function loadBriefing() {
   const scope = apiScopeQuery();
   const startResponse = await fetchWithTimeout(`/api/app/start?${scope}`);
 
+  if (startResponse.status === 401 || startResponse.status === 403) {
+    renderPilotAccess();
+    return;
+  }
   if (!startResponse.ok) throw new Error(`Helmut konnte nicht gestartet werden (${startResponse.status})`);
   const startPayload = await startResponse.json();
   profile = startPayload.profile || {};
@@ -169,6 +173,46 @@ function fetchWithTimeout(url, options = {}, timeoutMs = 12000) {
     timeoutId = window.setTimeout(() => reject(new Error(`Zeitüberschreitung beim Laden: ${url}`)), timeoutMs);
   });
   return Promise.race([fetch(url, options), timeout]).finally(() => window.clearTimeout(timeoutId));
+}
+
+function renderPilotAccess(message = "") {
+  hideStartupSplash();
+  app.innerHTML = `
+    <section class="loading-card pilot-access-card">
+      <div class="loading-logo"><span>H</span></div>
+      <p>Helmut</p>
+      <h1>Pilot-Zugang.</h1>
+      <p class="pilot-access-copy">Gib den Zugangscode ein, um deine politische Lage zu öffnen.</p>
+      <form class="pilot-access-form" id="pilotAccessForm">
+        <input name="secret" type="password" autocomplete="current-password" placeholder="Zugangscode" aria-label="Zugangscode" />
+        <button class="primary-button" type="submit">Helmut öffnen</button>
+        <small id="pilotAccessError">${escapeHtml(message)}</small>
+      </form>
+    </section>
+  `;
+  const form = document.querySelector("#pilotAccessForm");
+  const input = form?.querySelector("input");
+  const error = document.querySelector("#pilotAccessError");
+  window.setTimeout(() => input?.focus(), 50);
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (error) error.textContent = "";
+    const secret = String(new FormData(form).get("secret") || "").trim();
+    try {
+      const response = await fetch("/api/pilot/unlock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ secret })
+      });
+      if (!response.ok) {
+        if (error) error.textContent = "Der Zugangscode stimmt nicht.";
+        return;
+      }
+      window.location.reload();
+    } catch {
+      if (error) error.textContent = "Zugang konnte nicht geprüft werden. Bitte erneut versuchen.";
+    }
+  });
 }
 
 function toDecision(item) {
