@@ -82,6 +82,23 @@ function handleRequest(request, response) {
 
   const politicianId = politicianIdFromUrl(url);
 
+  if (url.pathname === "/api/app/start") {
+    return handleAsync(response, async () => {
+      const profile = await activeProfile(politicianId);
+      const briefing = await latestBriefingPayload({ politicianId, profile, url, previewMode, compact: true });
+      return {
+        profile,
+        briefing,
+        tasks: await getTasks(profile.id),
+        notes: await getUserNotes(profile.id),
+        aiStatus: {
+          enabled: isAiEnabled(),
+          model: process.env.OPENAI_MODEL || "gpt-4.1"
+        }
+      };
+    });
+  }
+
   if (url.pathname === "/api/profile/current") {
     if (request.method === "GET") return handleAsync(response, () => activeProfile(politicianId));
     if (request.method === "POST" || request.method === "PATCH") {
@@ -110,25 +127,7 @@ function handleRequest(request, response) {
   if (url.pathname === "/api/briefing/latest") {
     return handleAsync(response, async () => {
       const profile = await activeProfile(politicianId);
-      const latest = await getLatestOrDemoBriefing(politicianId);
-      if (!latest.homeSections || !latest.personalizedRecommendations) {
-        const personalized = personalizeBriefing(latest, profile, await getTopicMemory(profile.id), await getInteractions(profile.id));
-        return withPreviewMode(decorateBriefingFreshness(personalized), previewMode);
-      }
-      if (previewMode || !shouldRefreshLatestBriefing(latest, url)) return withPreviewMode(decorateBriefingFreshness(latest), previewMode);
-      try {
-        const pipeline = await runDailyPipeline(politicianId);
-        return withPreviewMode(decorateBriefingFreshness({
-          ...pipeline.briefing,
-          refreshedOnRead: true
-        }), previewMode);
-      } catch (error) {
-        console.error("Refresh on read failed", error);
-        return withPreviewMode(decorateBriefingFreshness({
-          ...latest,
-          refreshError: error.message
-        }), previewMode);
-      }
+      return latestBriefingPayload({ politicianId, profile, url, previewMode, compact: isCompactResponse(url) });
     });
   }
 
@@ -393,6 +392,136 @@ function withPreviewMode(payload, previewMode) {
   };
 }
 
+function isCompactResponse(url) {
+  const value = String(url.searchParams.get("compact") || "").toLowerCase();
+  return value === "1" || value === "true" || value === "yes";
+}
+
+function prepareBriefingResponse(briefing, { previewMode = false, compact = false } = {}) {
+  const decorated = decorateBriefingFreshness(briefing);
+  const payload = compact ? compactBriefingPayload(decorated) : decorated;
+  return withPreviewMode(payload, previewMode);
+}
+
+async function latestBriefingPayload({ politicianId, profile, url, previewMode = false, compact = false }) {
+  const latest = await getLatestOrDemoBriefing(politicianId);
+  if (!latest.homeSections || !latest.personalizedRecommendations) {
+    const personalized = personalizeBriefing(latest, profile, await getTopicMemory(profile.id), await getInteractions(profile.id));
+    return prepareBriefingResponse(personalized, { previewMode, compact });
+  }
+  if (previewMode || !shouldRefreshLatestBriefing(latest, url)) return prepareBriefingResponse(latest, { previewMode, compact });
+  try {
+    const pipeline = await runDailyPipeline(politicianId);
+    return prepareBriefingResponse({
+      ...pipeline.briefing,
+      refreshedOnRead: true
+    }, { previewMode, compact });
+  } catch (error) {
+    console.error("Refresh on read failed", error);
+    return prepareBriefingResponse({
+      ...latest,
+      refreshError: error.message
+    }, { previewMode, compact });
+  }
+}
+
+function compactBriefingPayload(briefing) {
+  if (!briefing || typeof briefing !== "object") return briefing;
+  const clone = {
+    ...briefing,
+    items: compactItems(briefing.items, 6),
+    personalizedRecommendations: compactItems(briefing.personalizedRecommendations, 6),
+    situationalBriefing: compactItems(briefing.situationalBriefing, 3),
+    personMentions: compactItems(briefing.personMentions, 6),
+    tasks: compactItems(briefing.tasks, 5),
+    notifications: compactItems(briefing.notifications, 6),
+    evidence: [],
+    topicMemory: [],
+    signals: [],
+    sources: [],
+    rawItems: [],
+    politicalSignals: [],
+    politicalItems: [],
+    relevanceScores: [],
+    topics: (briefing.topics || []).slice(0, 8),
+    homeSections: compactHomeSections(briefing.homeSections)
+  };
+  if (briefing.themeOfDay) clone.themeOfDay = compactItem(briefing.themeOfDay);
+  if (briefing.chanceOfDay) clone.chanceOfDay = compactItem(briefing.chanceOfDay);
+  if (briefing.riskOfDay) clone.riskOfDay = compactItem(briefing.riskOfDay);
+  return clone;
+}
+
+function compactHomeSections(homeSections) {
+  if (!homeSections || typeof homeSections !== "object") return homeSections;
+  return {
+    topTasks: compactItems(homeSections.topTasks, 3),
+    changedSinceLastVisit: compactItems(homeSections.changedSinceLastVisit, 3),
+    needsAttention: compactItems(homeSections.needsAttention, 3),
+    opportunities: compactItems(homeSections.opportunities, 3),
+    risks: compactItems(homeSections.risks, 3),
+    situational: compactItems(homeSections.situational, 3)
+  };
+}
+
+function compactItems(items, limit) {
+  return Array.isArray(items) ? items.slice(0, limit).map(compactItem) : [];
+}
+
+function compactItem(item) {
+  if (!item || typeof item !== "object") return item;
+  const compact = { ...item };
+  delete compact.memory;
+  delete compact.relevanceBreakdown;
+  delete compact.sourceBasis;
+  delete compact.referent_audit;
+  compact.sources = compactSources(item.sources, 2);
+  compact.primarySource = compactSource(item.primarySource || compact.sources?.[0]);
+  compact.content = truncateText(compact.content, 360);
+  compact.excerpt = truncateText(compact.excerpt, 360);
+  compact.summary = truncateText(compact.summary, 520);
+  compact.whyItMatters = truncateText(compact.whyItMatters, 520);
+  compact.recommendedAction = truncateText(compact.recommendedAction, 520);
+  if (compact.taskTemplate) compact.taskTemplate = compactTaskTemplate(compact.taskTemplate);
+  return compact;
+}
+
+function compactTaskTemplate(task) {
+  if (!task || typeof task !== "object") return task;
+  return {
+    ...task,
+    description: truncateText(task.description, 520),
+    sources: compactSources(task.sources, 1),
+    primarySource: compactSource(task.primarySource || task.sources?.[0])
+  };
+}
+
+function compactSources(sources, limit) {
+  return Array.isArray(sources) ? sources.slice(0, limit).map(compactSource).filter(Boolean) : [];
+}
+
+function compactSource(source) {
+  if (!source || typeof source !== "object") return null;
+  return {
+    sourceName: source.sourceName || source.name,
+    sourceType: source.sourceType || source.type,
+    sourceUrl: source.sourceUrl,
+    url: source.url,
+    itemUrl: source.itemUrl || source.url,
+    linkType: source.linkType,
+    publishedAt: source.publishedAt,
+    retrievedAt: source.retrievedAt,
+    excerpt: truncateText(source.excerpt || source.content || source.relevanceReason, 160),
+    confidence: source.confidence
+  };
+}
+
+function truncateText(value, maxLength) {
+  const text = String(value || "");
+  if (text.length <= maxLength) return value;
+  return `${text.slice(0, maxLength - 1).trim()}…`;
+}
+
 function isPilotAccessConfigured() {
   return Boolean(String(process.env.PILOT_SECRET || "").trim());
 }
@@ -605,7 +734,7 @@ function indexHtml() {
     <link rel="icon" href="assets/helmut_logo.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="assets/helmut_appicon_192.png" />
     <link rel="manifest" href="site.webmanifest" />
-    <link rel="stylesheet" href="styles.css?v=20260623-startupfix1" />
+    <link rel="stylesheet" href="styles.css?v=20260623-faststart1" />
   </head>
   <body class="is-loading">
     <div class="app-splash" id="appSplash" aria-hidden="true">
@@ -618,7 +747,7 @@ function indexHtml() {
     </main>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="client.js?v=20260623-startupfix1"></script>
+    <script src="client.js?v=20260623-faststart1"></script>
   </body>
 </html>`;
 }

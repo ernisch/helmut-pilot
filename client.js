@@ -7,6 +7,8 @@ let tasks = [];
 let notes = [];
 let recommendations = [];
 let radarArchive = [];
+let radarArchiveLoaded = false;
+let opsStatusLoaded = false;
 let selectedDecisionId = "";
 let currentView = "briefing";
 let detailOriginView = "briefing";
@@ -96,34 +98,23 @@ async function loadBriefing() {
   activePoliticianId = sanitizePoliticianId(params.get("politicianId") || params.get("profileId") || "cem-ince");
   previewMode = isPreviewModeParam(params);
   const scope = apiScopeQuery();
-  const [profileResponse, briefingResponse, tasksResponse, notesResponse, aiStatusResponse, opsStatusResponse, radarArchiveResponse] = await Promise.all([
-    fetchWithTimeout(`/api/profile/current?${scope}`),
-    fetchWithTimeout(`/api/briefing/latest?${scope}`),
-    fetchWithTimeout(`/api/tasks?${scope}`),
-    fetchWithTimeout(`/api/notes?${scope}`),
-    fetchWithTimeout("/api/ai/status"),
-    fetchWithTimeout(`/api/ops/status?${scope}`),
-    fetchWithTimeout(`/api/radar/archive?${scope}&days=92`)
-  ]);
+  const startResponse = await fetchWithTimeout(`/api/app/start?${scope}`);
 
-  if (!profileResponse.ok) throw new Error(`Profil konnte nicht geladen werden (${profileResponse.status})`);
-  if (!briefingResponse.ok) throw new Error(`Briefing konnte nicht geladen werden (${briefingResponse.status})`);
-  profile = await profileResponse.json();
-  briefing = await briefingResponse.json();
+  if (!startResponse.ok) throw new Error(`Helmut konnte nicht gestartet werden (${startResponse.status})`);
+  const startPayload = await startResponse.json();
+  profile = startPayload.profile || {};
+  briefing = startPayload.briefing || {};
   briefing.items = Array.isArray(briefing.items) ? briefing.items : [];
   briefing.tasks = Array.isArray(briefing.tasks) ? briefing.tasks : [];
   briefing.personalizedRecommendations = Array.isArray(briefing.personalizedRecommendations) ? briefing.personalizedRecommendations : [];
   briefing.situationalBriefing = Array.isArray(briefing.situationalBriefing) ? briefing.situationalBriefing : [];
   previewMode = previewMode || Boolean(briefing.previewMode);
-  aiStatus = aiStatusResponse.ok ? await aiStatusResponse.json() : { enabled: false, model: "" };
-  opsStatus = opsStatusResponse.ok ? await opsStatusResponse.json() : null;
+  aiStatus = startPayload.aiStatus || { enabled: false, model: "" };
   briefing.status = previewMode ? "Vorschau" : (briefing.status || "Live");
   briefing.sourceStats = briefing.sourceStats || { checkedSources: 0, successfulSources: 0, failedSources: 0 };
 
-  const persistedTasks = tasksResponse.ok ? await tasksResponse.json() : [];
-  notes = notesResponse.ok ? await notesResponse.json() : [];
-  const archivePayload = radarArchiveResponse.ok ? await radarArchiveResponse.json() : { articles: [] };
-  radarArchive = Array.isArray(archivePayload.articles) ? archivePayload.articles : [];
+  const persistedTasks = Array.isArray(startPayload.tasks) ? startPayload.tasks : [];
+  notes = Array.isArray(startPayload.notes) ? startPayload.notes : [];
   tasks = mergeTasks(briefing.tasks || [], persistedTasks);
   recommendations = briefing.personalizedRecommendations || [];
 
@@ -144,6 +135,32 @@ async function loadBriefing() {
   selectedDecisionId = decisions[0]?.id || "";
   generatedStatement = decisions[0]?.statement || "";
   render();
+}
+
+async function ensureViewData(view) {
+  if (view === "radar" && !radarArchiveLoaded) {
+    radarArchiveLoaded = true;
+    try {
+      const response = await fetchWithTimeout(`/api/radar/archive?${apiScopeQuery()}&days=92`);
+      const archivePayload = response.ok ? await response.json() : { articles: [] };
+      radarArchive = Array.isArray(archivePayload.articles) ? archivePayload.articles : [];
+    } catch (error) {
+      radarArchiveLoaded = false;
+      console.warn("Radar archive not loaded", error);
+    }
+    render();
+  }
+  if ((view === "settings" || view === "profile-settings") && !opsStatusLoaded) {
+    opsStatusLoaded = true;
+    try {
+      const response = await fetchWithTimeout(`/api/ops/status?${apiScopeQuery()}`);
+      opsStatus = response.ok ? await response.json() : null;
+    } catch (error) {
+      opsStatusLoaded = false;
+      console.warn("Ops status not loaded", error);
+    }
+    render();
+  }
 }
 
 function fetchWithTimeout(url, options = {}, timeoutMs = 12000) {
@@ -1930,6 +1947,7 @@ function renderSettingsView() {
   const crawl = ops.crawl || sourceStats;
   const opsTone = ops.status === "Bereit" ? "low" : ops.status === "Prüfen" ? "medium" : "high";
   const latestCrawlText = crawl?.createdAt ? formatBriefingDate(crawl.createdAt) : "Noch kein Lauf";
+  const systemStatus = opsStatusLoaded ? (ops.status || (storage.backend === "supabase" ? "Bereit" : "Prüfen")) : "Wird geprüft";
   const committee = profile.committee || profile.committees?.[0] || "Noch offen";
   const topTopics = topProfileTopicsForView();
   const channels = asTextList(profile.preferredChannels).length ? asTextList(profile.preferredChannels) : ["Presse", "LinkedIn", "Ausschuss"];
@@ -2003,8 +2021,8 @@ function renderSettingsView() {
       <article class="list-row ${opsTone}">
         <div>
           <span>System</span>
-          <h3>${escapeHtml(ops.status || (storage.backend === "supabase" ? "Bereit" : "Prüfen"))}</h3>
-          <p>${escapeHtml(profileSystemSummary(storage, crawl, latestCrawlText))}</p>
+          <h3>${escapeHtml(systemStatus)}</h3>
+          <p>${escapeHtml(opsStatusLoaded ? profileSystemSummary(storage, crawl, latestCrawlText) : "Helmut lädt den Systemstatus erst, wenn du das Profil öffnest. Dadurch startet die Morgenlage schneller.")}</p>
         </div>
         <button class="secondary-button" type="button" data-run-crawl>System prüfen</button>
       </article>
@@ -2275,6 +2293,7 @@ function bindActions() {
       navOpen = false;
       updatesOpen = false;
       render();
+      ensureViewData(currentView);
     });
   });
 
