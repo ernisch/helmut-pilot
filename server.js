@@ -763,7 +763,7 @@ function indexHtml() {
     <link rel="icon" href="assets/helmut_logo.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="assets/helmut_appicon_192.png" />
     <link rel="manifest" href="site.webmanifest" />
-    <link rel="stylesheet" href="styles.css?v=20260623-updatesheet1" />
+    <link rel="stylesheet" href="styles.css?v=20260623-audit1" />
   </head>
   <body class="is-loading">
     <div class="app-splash" id="appSplash" aria-hidden="true">
@@ -776,7 +776,7 @@ function indexHtml() {
     </main>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="client.js?v=20260623-updatesheet1"></script>
+    <script src="client.js?v=20260623-audit1"></script>
   </body>
 </html>`;
 }

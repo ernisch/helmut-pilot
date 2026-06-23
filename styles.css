@@ -522,6 +522,38 @@ small {
   line-height: 1.45;
 }
 
+.agenda-answer-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 4px 0 2px;
+}
+
+.agenda-answer-item {
+  min-height: 118px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, .035);
+}
+
+.agenda-answer-item span {
+  display: block;
+  margin: 0 0 10px;
+  color: var(--signature, #8b5cf6);
+  font-size: 11px;
+  font-weight: 820;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.agenda-answer-item p {
+  max-width: none;
+  color: var(--command-text, var(--text));
+  font-size: 15px;
+  line-height: 1.38;
+}
+
 .daily-answer-actions,
 .meeting-actions {
   display: flex;
@@ -600,6 +632,23 @@ small {
 .reaction-card p b {
   color: var(--command-text, var(--text));
   font-weight: 680;
+}
+
+.agenda-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0 4px;
+}
+
+.agenda-metrics span {
+  padding: 7px 10px;
+  border: 1px solid rgba(255, 255, 255, .09);
+  border-radius: 999px;
+  color: var(--command-muted, var(--muted));
+  background: rgba(255, 255, 255, .035);
+  font-size: 13px;
+  font-weight: 650;
 }
 
 .agenda-priority ul {
@@ -3374,6 +3423,21 @@ small {
     font-size: 17px;
   }
 
+  .agenda-answer-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .agenda-answer-item {
+    min-height: 0;
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .agenda-answer-item p {
+    font-size: 14px;
+  }
+
   .daily-answer-actions,
   .meeting-actions {
     display: grid;
@@ -3415,6 +3479,11 @@ small {
   }
 
   .agenda-priority ul {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .agenda-metrics {
     display: grid;
     grid-template-columns: 1fr;
   }

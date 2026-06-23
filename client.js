@@ -510,7 +510,7 @@ function renderBriefingView() {
   return `
     <section class="page-intro executive-intro agenda-intro">
       <h1 class="hero-title">${escapeHtml(timeGreeting((profile?.fullName || "Cem").split(" ")[0]).replace(",", ","))}</h1>
-      <p>Heute zählt vor allem: <strong>${escapeHtml(centralAgendaTopic())}</strong></p>
+      <p>${escapeHtml(currentAgendaLead())}</p>
     </section>
 
     ${renderDailyAgendaAnswer()}
@@ -528,23 +528,37 @@ function centralAgendaTopic() {
   return watch?.title || "Ruhe bewahren und die Lage weiter prüfen";
 }
 
+function currentAgendaLead() {
+  const top = decisions[0];
+  const meeting = nextPreparedMeeting();
+  if (top && meeting) return `Aktuell an: ${top.title}. Danach solltest du ${meeting.terminTitel} vorbereiten.`;
+  if (top) return `Aktuell an: ${top.title}.`;
+  if (meeting) return `Aktuell an: ${meeting.terminTitel} vorbereiten.`;
+  return "Aktuell keine Reaktion nötig. Ich beobachte die Lage weiter und halte sie für dich schlank.";
+}
+
 function renderDailyAgendaAnswer() {
   const top = decisions[0];
+  const meeting = nextPreparedMeeting();
+  const chance = topChanceItem(top);
+  const risk = topRiskItem(top);
   if (!top) {
     const watchItems = competentNoActionItems();
     return `
       <section class="daily-answer calm">
-        <span>Tagesantwort</span>
+        <span>Was steht aktuell an?</span>
         <h2>Heute keine Reaktion nötig.</h2>
         <p>${escapeHtml(noDecisionLead(watchItems))}</p>
+        ${renderAgendaAnswerGrid(null, chance, risk, meeting)}
       </section>
     `;
   }
   return `
     <section class="daily-answer ${escapeAttribute(top.priorityType || "action")}">
-      <span>Tagesantwort</span>
+      <span>Was steht aktuell an?</span>
       <h2>Heute zählt vor allem: ${escapeHtml(top.title)}</h2>
       <p>${escapeHtml(decisionWhyImportant(top))}</p>
+      ${renderAgendaAnswerGrid(top, chance, risk, meeting)}
       <div class="daily-answer-actions">
         <button class="primary-button" type="button" data-detail="${escapeHtml(top.id)}">Empfehlung öffnen</button>
         <button class="secondary-button" type="button" data-communication="${escapeHtml(top.id)}">Reaktion vorbereiten</button>
@@ -553,8 +567,39 @@ function renderDailyAgendaAnswer() {
   `;
 }
 
+function renderAgendaAnswerGrid(top, chance, risk, meeting) {
+  const rows = [
+    {
+      label: "Reaktion",
+      value: top ? compactText(chiefRecommendationText(top), 118) : "Keine öffentliche Reaktion nötig."
+    },
+    {
+      label: "Chance",
+      value: chance ? compactText(chance.opportunity || chance.possibleUpside || chance.summary, 118) : "Keine belastbare Chance für eine Positionierung."
+    },
+    {
+      label: "Risiko",
+      value: risk ? compactText(decisionRisk(risk), 118) : "Kein akutes Risiko durch Nichtreaktion."
+    },
+    {
+      label: "Termin",
+      value: meeting ? `${formatMeetingDate(meeting)}: ${meeting.terminTitel}` : "Kein Termin im Profil, der heute Vorbereitung verlangt."
+    }
+  ];
+  return `
+    <div class="agenda-answer-grid">
+      ${rows.map((row) => `
+        <div class="agenda-answer-item">
+          <span>${escapeHtml(row.label)}</span>
+          <p>${escapeHtml(row.value)}</p>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
 function renderTodayImportantSection() {
-  const items = agendaPriorities().slice(0, 3);
+  const items = agendaPriorities().slice(0, 2);
   return `
     <section class="agenda-section">
       <div class="agenda-section-head">
@@ -575,13 +620,13 @@ function renderAgendaPriority(decision) {
       <div>
         <span>${escapeHtml(decision.priorityLabel || "Relevant")}</span>
         <h3>${escapeHtml(decision.title)}</h3>
-        <p><b>Warum relevant?</b> ${escapeHtml(decisionWhyImportant(decision))}</p>
-        <ul>
-          <li>Ausschussbezug: ${escapeHtml(metrics.committee)}</li>
-          <li>Betroffenheit vieler Menschen: ${escapeHtml(metrics.citizens)}</li>
-          <li>Dringlichkeit: ${escapeHtml(metrics.urgency)}</li>
-        </ul>
-        <p><b>Empfohlene Handlung:</b> ${escapeHtml(chiefRecommendationText(decision))}</p>
+        <p>${escapeHtml(compactText(decisionWhyImportant(decision), 170))}</p>
+        <div class="agenda-metrics">
+          <span>Ausschuss ${escapeHtml(metrics.committee)}</span>
+          <span>Menschen ${escapeHtml(metrics.citizens)}</span>
+          <span>${escapeHtml(metrics.urgency)} dringend</span>
+        </div>
+        <p><b>Aktion:</b> ${escapeHtml(compactText(chiefRecommendationText(decision), 150))}</p>
       </div>
       <button class="secondary-button compact-button" type="button" data-communication="${escapeHtml(decision.id)}">Reaktion vorbereiten</button>
     </article>
@@ -589,7 +634,7 @@ function renderAgendaPriority(decision) {
 }
 
 function renderMeetingPrepSection() {
-  const meetings = meetingPreparations().slice(0, 3);
+  const meetings = meetingPreparations().slice(0, 2);
   return `
     <section class="agenda-section meeting-prep">
       <div class="agenda-section-head">
@@ -609,15 +654,11 @@ function renderMeetingPrepCard(meeting) {
       <div>
         <span>${escapeHtml(formatMeetingDate(meeting))}</span>
         <h3>${escapeHtml(meeting.terminTitel)}</h3>
-        <p><b>Warum wichtig?</b> ${escapeHtml(meeting.kurzbriefing)}</p>
-        <p><b>Hintergrund:</b> ${escapeHtml(meeting.politischerKontext)}</p>
-        <p><b>Gesprächspunkte:</b> ${escapeHtml(meeting.empfohleneGespraechspunkte.slice(0, 3).join(" · "))}</p>
-        <p><b>Risiko:</b> ${escapeHtml(meeting.risiken[0] || "Keine akute Eskalation erkennbar.")}</p>
-        <p><b>Chance:</b> ${escapeHtml(meeting.chancen[0] || "Sprechfähigkeit und Beziehungspflege.")}</p>
+        <p>${escapeHtml(compactText(meeting.kurzbriefing, 160))}</p>
+        <p><b>Gesprächspunkte:</b> ${escapeHtml(compactText(meeting.empfohleneGespraechspunkte.slice(0, 2).join(" · "), 150))}</p>
       </div>
       <div class="meeting-actions">
         <button class="secondary-button compact-button" type="button" data-meeting-brief="${escapeHtml(meeting.id)}">Briefing vorbereiten</button>
-        <button class="secondary-button compact-button" type="button" data-meeting-speech="${escapeHtml(meeting.id)}">Rede vorbereiten</button>
         <button class="secondary-button compact-button" type="button" data-meeting-questions="${escapeHtml(meeting.id)}">Fragen vorbereiten</button>
       </div>
     </article>
@@ -625,7 +666,7 @@ function renderMeetingPrepCard(meeting) {
 }
 
 function renderReactionChanceSection() {
-  const items = reactionChanceItems().slice(0, 5);
+  const items = reactionChanceItems().slice(0, 3);
   return `
     <section class="agenda-section">
       <div class="agenda-section-head">
@@ -645,14 +686,31 @@ function renderReactionChanceCard(decision) {
       <div>
         <span>${escapeHtml(recommendedChannelLabel(decision))}</span>
         <h3>${escapeHtml(decision.title)}</h3>
-        <p><b>Was ist passiert?</b> ${escapeHtml(decision.summary)}</p>
-        <p><b>Warum betrifft es dich?</b> ${escapeHtml(decisionWhyImportant(decision))}</p>
-        <p><b>Chance:</b> ${escapeHtml(decision.opportunity || decision.possibleUpside || "Du kannst früh fachlich sichtbar werden.")}</p>
-        <p><b>Empfohlene Reaktion:</b> ${escapeHtml(chiefRecommendationText(decision))}</p>
+        <p>${escapeHtml(compactText(decision.summary || decisionWhyImportant(decision), 160))}</p>
+        <p><b>Chance:</b> ${escapeHtml(compactText(decision.opportunity || decision.possibleUpside || "Du kannst früh fachlich sichtbar werden.", 140))}</p>
       </div>
       <button class="secondary-button compact-button" type="button" data-communication="${escapeHtml(decision.id)}">Statement vorbereiten</button>
     </article>
   `;
+}
+
+function nextPreparedMeeting() {
+  return meetingPreparations()[0] || null;
+}
+
+function topChanceItem(fallback) {
+  return reactionChanceItems()[0] || (fallback?.priorityType === "chance" ? fallback : null);
+}
+
+function topRiskItem(fallback) {
+  return decisions.find((decision) => decision.priorityType === "risk" || decision.risk || decision.consequenceIfIgnored) || fallback || null;
+}
+
+function compactText(value, maxLength = 140) {
+  const text = twoSentenceSummary(value || "").replace(/\s+/g, " ").trim();
+  if (text.length <= maxLength) return text;
+  const sliced = text.slice(0, maxLength - 1).replace(/\s+\S*$/, "");
+  return `${sliced || text.slice(0, maxLength - 1)}...`;
 }
 
 function agendaPriorities() {
