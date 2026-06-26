@@ -427,6 +427,23 @@ function userRole() {
   return currentUser?.role || "";
 }
 
+// Schaltet Passwortfelder zwischen verdeckt/sichtbar. data-toggle-password trägt
+// die id des zugehörigen Eingabefelds.
+function bindPasswordToggles(root) {
+  (root || document).querySelectorAll("[data-toggle-password]").forEach((button) => {
+    if (button.dataset.toggleBound === "1") return;
+    button.dataset.toggleBound = "1";
+    button.addEventListener("click", () => {
+      const input = (root || document).querySelector(`#${button.dataset.togglePassword}`);
+      if (!input) return;
+      const reveal = input.type === "password";
+      input.type = reveal ? "text" : "password";
+      button.textContent = reveal ? "Verbergen" : "Anzeigen";
+      button.setAttribute("aria-label", reveal ? "Passwort verbergen" : "Passwort anzeigen");
+    });
+  });
+}
+
 async function fetchAuthState() {
   try {
     const res = await fetch("/api/auth/session", { cache: "no-store" });
@@ -460,7 +477,10 @@ function renderLogin(message = "") {
       <p class="pilot-access-copy">Melde dich mit deinem Helmut-Konto an.</p>
       <form class="pilot-access-form" id="loginForm">
         <input name="email" type="email" autocomplete="username" placeholder="E-Mail" aria-label="E-Mail" />
-        <input name="password" type="password" autocomplete="current-password" placeholder="Passwort" aria-label="Passwort" />
+        <div class="password-field">
+          <input name="password" id="loginPassword" type="password" autocomplete="current-password" placeholder="Passwort" aria-label="Passwort" />
+          <button type="button" class="password-toggle" data-toggle-password="loginPassword" aria-label="Passwort anzeigen">Anzeigen</button>
+        </div>
         <button class="primary-button" type="submit">Anmelden</button>
         <small id="loginError">${escapeHtml(message)}</small>
       </form>
@@ -468,6 +488,7 @@ function renderLogin(message = "") {
   `;
   const form = document.querySelector("#loginForm");
   const error = document.querySelector("#loginError");
+  bindPasswordToggles(document);
   window.setTimeout(() => form?.querySelector("input")?.focus(), 50);
   form?.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -665,7 +686,10 @@ function renderAdminView() {
           <option value="referent">Referent:in</option>
           <option value="admin">Admin</option>
         </select>
-        <input name="password" type="password" placeholder="Passwort (min. 8 Zeichen)" aria-label="Passwort" autocomplete="new-password" required />
+        <div class="password-field">
+          <input name="password" id="createUserPassword" type="password" placeholder="Passwort (min. 8 Zeichen)" aria-label="Passwort" autocomplete="new-password" required />
+          <button type="button" class="password-toggle" data-toggle-password="createUserPassword" aria-label="Passwort anzeigen">Anzeigen</button>
+        </div>
         <button class="primary-button" type="submit">Anlegen</button>
         <small class="admin-form-error" id="createUserError"></small>
       </form>
@@ -4181,6 +4205,7 @@ async function apiSend(method, path, body) {
 }
 
 function bindAccountActions() {
+  bindPasswordToggles(app);
   app.querySelectorAll("[data-logout]").forEach((button) => button.addEventListener("click", () => logout()));
   app.querySelectorAll("[data-profile-switch]").forEach((select) => select.addEventListener("change", (event) => switchPolitician(event.target.value)));
 

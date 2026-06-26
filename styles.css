@@ -6502,3 +6502,34 @@ body {
 .daily-input-head [data-remove-daily-input] { margin-left: auto; }
 
 .daily-input-item p { margin: 6px 0; font-size: 13px; }
+
+/* --- Passwort anzeigen/verbergen --- */
+.password-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-field input {
+  flex: 1;
+  width: 100%;
+  padding-right: 92px;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--accent-ink);
+  font-size: 12px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.password-toggle:hover { border-color: var(--accent); }
+
+.pilot-access-form .password-field { width: 100%; }

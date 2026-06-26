@@ -110,6 +110,11 @@ async function handleRequest(request, response) {
       return handleAuthLogout(request, response);
     }
 
+    // Setup-Diagnose fuer die Ersteinrichtung (keine sensiblen Daten).
+    if (url.pathname === "/api/auth/setup-status") {
+      return handleAsync(response, () => accounts.getSetupStatus());
+    }
+
     const ctx = await auth.getAuthContext(request).catch(() => null);
     authUser = ctx?.user || null;
 
