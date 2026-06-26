@@ -9,34 +9,60 @@ let recommendations = [];
 let radarArchive = [];
 let radarArchiveLoaded = false;
 let opsStatusLoaded = false;
+let pushConfig = null;
+let pushAutoSyncStarted = false;
 let selectedDecisionId = "";
 let currentView = "briefing";
 let detailOriginView = "briefing";
 let navOpen = false;
 let updatesOpen = false;
+let helmutThinking = false;
+let helmutThinkingTimer = null;
+let helmutTypingActive = false;
+let helmutTypedText = "";
+let helmutTypingFullText = "";
+let helmutTypingTimer = null;
+let selectedTaskHandoffId = "";
 let generatedStatement = "";
 let communicationContextTitle = "";
 let selectedCommunicationChannel = "press";
 let berlinClockTimer = null;
 const updateSeenStorageKey = "helmut:lastSeenUpdatesAt";
+const officeSeenStorageKey = "helmut:lastSeenOfficeAt";
+const pushEnabledStorageKey = "helmut:pushEnabled";
 let activePoliticianId = "cem-ince";
 let previewMode = false;
 
+// Account-Modus (HELMUT_AUTH_MODE=accounts). Bleibt null im Legacy-Pilotmodus,
+// damit das bestehende Pilot-Code-Verhalten unveraendert ist.
+let authState = null;
+let currentUser = null;
+let allowedProfiles = [];
+let adminData = null;
+let adminDataLoaded = false;
+let dailyInputs = [];
+let dailyInputsLoaded = false;
+
 const app = document.querySelector("#app");
 const toast = document.querySelector("#toast");
+const appStartCachePrefix = "helmut:lastStartPayload:v3";
+const appStartCacheMaxAgeMs = 0;
+const helmutFlowCooldownPrefix = "helmut:lastAssessmentFlow:v1";
+const helmutFlowCooldownMs = 4 * 60 * 60 * 1000;
+let csrfTokenPromise = null;
 
 const navItems = [
-  ["briefing", "Heute"],
+  ["briefing", "Lage"],
   ["radar", "Radar"],
-  ["office", "Büro"],
-  ["settings", "Profil"]
+  ["helmut", "Helmut"],
+  ["office", "Büro"]
 ];
 
 const mobileNavItems = [
-  ["briefing", "Heute"],
+  ["briefing", "Lage"],
   ["radar", "Radar"],
-  ["office", "Büro"],
-  ["settings", "Profil"]
+  ["helmut", "Helmut"],
+  ["office", "Büro"]
 ];
 
 const communicationChannels = [
@@ -47,6 +73,13 @@ const communicationChannels = [
   ["committee_question", "Ausschussfrage"],
   ["citizen_dialogue", "Bürgerdialog"],
   ["internal_line", "Interne Linie"]
+];
+
+const officeHandoffMethods = [
+  ["share", "Teilen"],
+  ["email", "E-Mail"],
+  ["whatsapp", "WhatsApp"],
+  ["telegram", "Telegram"]
 ];
 
 const mandateFunctions = [
@@ -70,6 +103,58 @@ const committeeOptions = [
   "Umwelt",
   "Verkehr"
 ];
+
+const federalStateOptions = [
+  "Baden-Württemberg",
+  "Bayern",
+  "Berlin",
+  "Brandenburg",
+  "Bremen",
+  "Hamburg",
+  "Hessen",
+  "Mecklenburg-Vorpommern",
+  "Niedersachsen",
+  "Nordrhein-Westfalen",
+  "Rheinland-Pfalz",
+  "Saarland",
+  "Sachsen",
+  "Sachsen-Anhalt",
+  "Schleswig-Holstein",
+  "Thüringen"
+];
+
+const constituencyOptionsByState = {
+  "Niedersachsen": [
+    "Salzgitter-Wolfenbüttel",
+    "Braunschweig",
+    "Gifhorn-Peine",
+    "Goslar-Northeim-Osterode",
+    "Göttingen",
+    "Hannover-Land I",
+    "Hannover-Land II",
+    "Stadt Hannover I",
+    "Stadt Hannover II",
+    "Hildesheim",
+    "Oldenburg-Ammerland",
+    "Osnabrück-Land",
+    "Osnabrück-Stadt"
+  ],
+  "Berlin": ["Berlin-Mitte", "Berlin-Pankow", "Berlin-Charlottenburg-Wilmersdorf", "Berlin-Friedrichshain-Kreuzberg-Prenzlauer Berg Ost", "Berlin-Neukölln"],
+  "Hamburg": ["Hamburg-Mitte", "Hamburg-Altona", "Hamburg-Eimsbüttel", "Hamburg-Nord", "Hamburg-Wandsbek"],
+  "Bremen": ["Bremen I", "Bremen II - Bremerhaven"],
+  "Nordrhein-Westfalen": ["Köln I", "Köln II", "Düsseldorf I", "Dortmund I", "Essen I", "Bonn", "Münster", "Bielefeld-Gütersloh II"],
+  "Bayern": ["München-Nord", "München-Ost", "München-Süd", "Nürnberg-Nord", "Nürnberg-Süd", "Augsburg-Stadt", "Regensburg"],
+  "Baden-Württemberg": ["Stuttgart I", "Stuttgart II", "Karlsruhe-Stadt", "Freiburg", "Mannheim", "Heidelberg"],
+  "Hessen": ["Frankfurt am Main I", "Frankfurt am Main II", "Wiesbaden", "Darmstadt", "Kassel"],
+  "Sachsen": ["Dresden I", "Dresden II - Bautzen II", "Leipzig I", "Leipzig II", "Chemnitz"],
+  "Sachsen-Anhalt": ["Magdeburg", "Halle", "Harz", "Dessau-Wittenberg"],
+  "Schleswig-Holstein": ["Kiel", "Lübeck", "Flensburg-Schleswig", "Pinneberg"],
+  "Thüringen": ["Erfurt-Weimar-Weimarer Land II", "Jena-Sömmerda-Weimarer Land I", "Gera-Greiz-Altenburger Land"],
+  "Brandenburg": ["Potsdam", "Cottbus-Spree-Neiße", "Uckermark-Barnim I", "Dahme-Spreewald-Teltow-Fläming III"],
+  "Mecklenburg-Vorpommern": ["Rostock-Landkreis Rostock II", "Schwerin-Ludwigslust-Parchim I", "Vorpommern-Rügen-Vorpommern-Greifswald I"],
+  "Rheinland-Pfalz": ["Mainz", "Koblenz", "Trier", "Ludwigshafen/Frankenthal"],
+  "Saarland": ["Saarbrücken", "Saarlouis", "St. Wendel"]
+};
 
 const priorityTopics = [
   "Arbeit",
@@ -97,15 +182,56 @@ async function loadBriefing() {
   const params = new URLSearchParams(window.location.search);
   activePoliticianId = sanitizePoliticianId(params.get("politicianId") || params.get("profileId") || "cem-ince");
   previewMode = isPreviewModeParam(params);
-  const scope = apiScopeQuery();
-  const startResponse = await fetchWithTimeout(`/api/app/start?${scope}`);
 
-  if (startResponse.status === 401 || startResponse.status === 403) {
-    renderPilotAccess();
-    return;
+  // Account-Modus erkennen: /api/auth/session ist nur dort eine JSON-Antwort.
+  authState = await fetchAuthState();
+  if (authState) {
+    if (!authState.authenticated) {
+      renderLogin();
+      return;
+    }
+    currentUser = authState.user || null;
+    allowedProfiles = Array.isArray(authState.profiles) ? authState.profiles : [];
+    activePoliticianId = resolveAllowedActiveId(params);
   }
-  if (!startResponse.ok) throw new Error(`Helmut konnte nicht gestartet werden (${startResponse.status})`);
-  const startPayload = await startResponse.json();
+
+  const scope = apiScopeQuery();
+  let renderedFromCache = false;
+  const cachedStart = loadCachedStartPayload();
+  if (cachedStart) {
+    try {
+      applyStartPayload(cachedStart);
+      renderedFromCache = true;
+      render();
+    } catch (error) {
+      console.warn("Cached Helmut start payload ignored", error);
+    }
+  }
+
+  try {
+    const startResponse = await fetchWithTimeout(`/api/app/start?${scope}`, {}, renderedFromCache ? 9000 : 12000);
+
+    if (startResponse.status === 401 || startResponse.status === 403) {
+      if (authState) renderLogin();
+      else renderPilotAccess();
+      return;
+    }
+    if (!startResponse.ok) throw new Error(`Helmut konnte nicht gestartet werden (${startResponse.status})`);
+    const startPayload = await startResponse.json();
+    applyStartPayload(startPayload);
+    saveCachedStartPayload(startPayload);
+    render();
+  } catch (error) {
+    if (renderedFromCache) {
+      console.warn("Live update after cached start failed", error);
+      showToast("Helmut aktualisiert im Hintergrund");
+      return;
+    }
+    throw error;
+  }
+}
+
+function applyStartPayload(startPayload) {
   profile = startPayload.profile || {};
   briefing = startPayload.briefing || {};
   briefing.items = Array.isArray(briefing.items) ? briefing.items : [];
@@ -126,19 +252,40 @@ async function loadBriefing() {
   const activeItems = briefing.items.filter((item) => item.decision !== "Ignorieren" && hasPreciseSource(item));
   const personalizedItems = recommendations.map(recommendationToDecisionItem).filter(hasPreciseSource);
   const situationalItems = (briefing.situationalBriefing || []).map(situationalToDecisionItem).filter(hasPreciseSource);
-  decisions = (personalizedItems.length ? personalizedItems : (activeItems.length ? activeItems : (briefing.items.length ? briefing.items.slice(0, 1) : situationalItems)))
+  const prominentPool = (personalizedItems.length ? personalizedItems : (activeItems.length ? activeItems : situationalItems));
+  decisions = prominentPool
     .filter(hasPreciseSource)
     .sort((a, b) => {
       if (a.signalId === themeSignalId) return -1;
       if (b.signalId === themeSignalId) return 1;
-      return b.priority - a.priority;
+      return Number(b.priority || b.finalScore || b.totalScore || 0) - Number(a.priority || a.finalScore || a.totalScore || 0);
     })
     .slice(0, 3)
     .map(toDecision);
 
   selectedDecisionId = decisions[0]?.id || "";
   generatedStatement = decisions[0]?.statement || "";
-  render();
+}
+
+function loadCachedStartPayload() {
+  clearCachedStartPayload();
+  return null;
+}
+
+function saveCachedStartPayload(payload) {
+  clearCachedStartPayload();
+}
+
+function clearCachedStartPayload() {
+  try {
+    window.localStorage.removeItem(appStartCacheKey());
+  } catch {
+    // localStorage can be unavailable in private or restricted browser modes.
+  }
+}
+
+function appStartCacheKey() {
+  return `${appStartCachePrefix}:${activePoliticianId}:${previewMode ? "preview" : "live"}`;
 }
 
 async function ensureViewData(view) {
@@ -154,11 +301,38 @@ async function ensureViewData(view) {
     }
     render();
   }
+  if (view === "admin" && userRole() === "admin" && !adminDataLoaded) {
+    adminDataLoaded = true;
+    try {
+      const response = await fetchWithTimeout(`/api/admin/overview?${apiScopeQuery()}`);
+      adminData = response.ok ? await response.json() : null;
+    } catch (error) {
+      adminDataLoaded = false;
+      console.warn("Admin overview not loaded", error);
+    }
+    render();
+  }
+  if (view === "daily-input" && !dailyInputsLoaded) {
+    dailyInputsLoaded = true;
+    try {
+      const response = await fetchWithTimeout(`/api/daily-inputs?${apiScopeQuery()}`);
+      const payload = response.ok ? await response.json() : { inputs: [] };
+      dailyInputs = Array.isArray(payload.inputs) ? payload.inputs : [];
+    } catch (error) {
+      dailyInputsLoaded = false;
+      console.warn("Daily inputs not loaded", error);
+    }
+    render();
+  }
   if ((view === "settings" || view === "profile-settings") && !opsStatusLoaded) {
     opsStatusLoaded = true;
     try {
-      const response = await fetchWithTimeout(`/api/ops/status?${apiScopeQuery()}`);
+      const [response, pushResponse] = await Promise.all([
+        fetchWithTimeout(`/api/ops/status?${apiScopeQuery()}`),
+        fetchWithTimeout(`/api/push/public-key?${apiScopeQuery()}`).catch(() => null)
+      ]);
       opsStatus = response.ok ? await response.json() : null;
+      pushConfig = pushResponse?.ok ? await pushResponse.json() : null;
     } catch (error) {
       opsStatusLoaded = false;
       console.warn("Ops status not loaded", error);
@@ -167,12 +341,38 @@ async function ensureViewData(view) {
   }
 }
 
-function fetchWithTimeout(url, options = {}, timeoutMs = 12000) {
+async function fetchWithTimeout(url, options = {}, timeoutMs = 12000) {
+  const preparedOptions = await prepareRequestOptions(url, options);
   let timeoutId;
   const timeout = new Promise((_, reject) => {
     timeoutId = window.setTimeout(() => reject(new Error(`Zeitüberschreitung beim Laden: ${url}`)), timeoutMs);
   });
-  return Promise.race([fetch(url, options), timeout]).finally(() => window.clearTimeout(timeoutId));
+  return Promise.race([fetch(url, preparedOptions), timeout]).finally(() => window.clearTimeout(timeoutId));
+}
+
+async function prepareRequestOptions(url, options = {}) {
+  if (!needsCsrfToken(url, options)) return options;
+  const headers = new Headers(options.headers || {});
+  headers.set("X-CSRF-Token", await getCsrfToken());
+  return { ...options, headers };
+}
+
+function needsCsrfToken(url, options = {}) {
+  const method = String(options.method || "GET").toUpperCase();
+  if (method !== "GET" && method !== "HEAD" && method !== "OPTIONS") return true;
+  return ["/api/pipeline/run", "/api/crawl/run", "/api/lage/check", "/api/briefing/run"].some((path) => String(url).startsWith(path));
+}
+
+async function getCsrfToken() {
+  if (!csrfTokenPromise) {
+    csrfTokenPromise = fetch(`/api/security/csrf?${apiScopeQuery()}`, { cache: "no-store" })
+      .then((response) => {
+        if (!response.ok) throw new Error("CSRF token request failed");
+        return response.json();
+      })
+      .then((payload) => payload.token);
+  }
+  return csrfTokenPromise;
 }
 
 function renderPilotAccess(message = "") {
@@ -215,6 +415,315 @@ function renderPilotAccess(message = "") {
   });
 }
 
+// ---------------------------------------------------------------------------
+// Account-Modus: Session, Login, Logout, Mandatsauswahl, Rollen
+// ---------------------------------------------------------------------------
+
+function isAccountMode() {
+  return Boolean(authState);
+}
+
+function userRole() {
+  return currentUser?.role || "";
+}
+
+async function fetchAuthState() {
+  try {
+    const res = await fetch("/api/auth/session", { cache: "no-store" });
+    if (!res.ok) return null;
+    if (!String(res.headers.get("content-type") || "").includes("application/json")) return null;
+    const data = await res.json();
+    return typeof data.authenticated === "boolean" ? data : null;
+  } catch {
+    return null;
+  }
+}
+
+// Waehlt das aktive Mandat innerhalb der erlaubten Profile. URL-Param zaehlt nur,
+// wenn es freigegeben ist; sonst Fallback auf das erste erlaubte Mandat.
+function resolveAllowedActiveId(params) {
+  const requested = sanitizePoliticianId(params.get("politicianId") || params.get("profileId") || "");
+  if (userRole() === "abgeordneter") return currentUser?.politicianId || requested;
+  const ids = allowedProfiles.map((entry) => entry.id);
+  if (authState?.allowedPoliticians === "all") return requested || ids[0] || requested;
+  if (requested && ids.includes(requested)) return requested;
+  return ids[0] || requested;
+}
+
+function renderLogin(message = "") {
+  hideStartupSplash();
+  app.innerHTML = `
+    <section class="loading-card pilot-access-card">
+      <div class="loading-logo"><span>H</span></div>
+      <p>Helmut</p>
+      <h1>Anmeldung.</h1>
+      <p class="pilot-access-copy">Melde dich mit deinem Helmut-Konto an.</p>
+      <form class="pilot-access-form" id="loginForm">
+        <input name="email" type="email" autocomplete="username" placeholder="E-Mail" aria-label="E-Mail" />
+        <input name="password" type="password" autocomplete="current-password" placeholder="Passwort" aria-label="Passwort" />
+        <button class="primary-button" type="submit">Anmelden</button>
+        <small id="loginError">${escapeHtml(message)}</small>
+      </form>
+    </section>
+  `;
+  const form = document.querySelector("#loginForm");
+  const error = document.querySelector("#loginError");
+  window.setTimeout(() => form?.querySelector("input")?.focus(), 50);
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (error) error.textContent = "";
+    const fd = new FormData(form);
+    const email = String(fd.get("email") || "").trim();
+    const password = String(fd.get("password") || "");
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      });
+      if (!res.ok) {
+        let msg = "E-Mail oder Passwort ist nicht korrekt.";
+        try {
+          const payload = await res.json();
+          if (payload && payload.error) msg = payload.error;
+        } catch {}
+        if (error) error.textContent = msg;
+        return;
+      }
+      window.location.reload();
+    } catch {
+      if (error) error.textContent = "Anmeldung fehlgeschlagen. Bitte erneut versuchen.";
+    }
+  });
+}
+
+async function logout() {
+  try {
+    await fetch("/api/auth/logout", { method: "POST" });
+  } catch {}
+  window.location.reload();
+}
+
+async function switchPolitician(id) {
+  const next = sanitizePoliticianId(id);
+  if (!next || next === activePoliticianId) return;
+  activePoliticianId = next;
+  radarArchiveLoaded = false;
+  opsStatusLoaded = false;
+  adminDataLoaded = false;
+  dailyInputsLoaded = false;
+  csrfTokenPromise = null;
+  try {
+    const res = await fetchWithTimeout(`/api/app/start?${apiScopeQuery()}`);
+    if (res.ok) applyStartPayload(await res.json());
+  } catch (error) {
+    console.warn("Mandatswechsel fehlgeschlagen", error);
+  }
+  currentView = "briefing";
+  render();
+}
+
+function roleLabel(role) {
+  return ({ admin: "Admin", abgeordneter: "Abgeordnete:r", referent: "Referent:in" })[role] || role || "";
+}
+
+// Account-Leiste (Nutzer, Mandatsauswahl, Logout) fuer die Topbar im Account-Modus.
+function renderAccountBar() {
+  if (!isAccountMode() || !currentUser) return "";
+  const showSwitcher = allowedProfiles.length > 1;
+  const switcher = showSwitcher
+    ? `<select class="account-switch" data-profile-switch aria-label="Mandat wählen">
+        ${allowedProfiles.map((entry) => `<option value="${escapeAttribute(entry.id)}" ${entry.id === activePoliticianId ? "selected" : ""}>${escapeHtml(entry.name)}</option>`).join("")}
+      </select>`
+    : "";
+  return `
+    <div class="account-bar">
+      ${switcher}
+      <span class="account-chip" title="${escapeAttribute(currentUser.email || "")}">${escapeHtml(currentUser.name || currentUser.email || "")} · ${escapeHtml(roleLabel(currentUser.role))}</span>
+      <button class="account-logout" type="button" data-logout>Abmelden</button>
+    </div>
+  `;
+}
+
+// ---------------------------------------------------------------------------
+// Tagesinput-Ansicht (Referent/Admin): bis zu N Termine/Themen pro Tag
+// ---------------------------------------------------------------------------
+
+function renderDailyInputView() {
+  const max = 3;
+  const mandateName = allowedProfiles.find((entry) => entry.id === activePoliticianId)?.name || profile?.fullName || activePoliticianId;
+  const remaining = Math.max(0, max - dailyInputs.length);
+  const list = dailyInputs.length
+    ? dailyInputs.map((entry) => `
+        <article class="admin-card daily-input-item">
+          <div class="daily-input-head">
+            <strong>${escapeHtml(entry.title)}</strong>
+            ${entry.datetime ? `<span class="daily-input-time">${escapeHtml(entry.datetime)}</span>` : ""}
+            <button class="account-logout" type="button" data-remove-daily-input="${escapeAttribute(entry.id)}">Entfernen</button>
+          </div>
+          ${entry.context ? `<p><b>Kontext:</b> ${escapeHtml(entry.context)}</p>` : ""}
+          ${entry.goal ? `<p><b>Ziel:</b> ${escapeHtml(entry.goal)}</p>` : ""}
+          ${entry.desiredPrep ? `<p><b>Gewünschte Vorbereitung:</b> ${escapeHtml(entry.desiredPrep)}</p>` : ""}
+        </article>
+      `).join("")
+    : `<p class="empty-state">Noch keine Termine/Themen für heute eingetragen.</p>`;
+
+  const form = remaining > 0
+    ? `
+      <form class="admin-card admin-form" id="dailyInputForm">
+        <h3>Termin/Thema hinzufügen</h3>
+        <input name="title" type="text" placeholder="Titel (z. B. Plenardebatte Rente)" aria-label="Titel" required />
+        <input name="datetime" type="text" placeholder="Uhrzeit/Datum (z. B. 10:00 oder 26.06. 10:00)" aria-label="Uhrzeit/Datum" />
+        <textarea name="context" rows="2" placeholder="Kontext" aria-label="Kontext"></textarea>
+        <textarea name="goal" rows="2" placeholder="Ziel" aria-label="Ziel"></textarea>
+        <textarea name="desiredPrep" rows="2" placeholder="Gewünschte Vorbereitung" aria-label="Gewünschte Vorbereitung"></textarea>
+        <button class="primary-button" type="submit">Hinzufügen</button>
+        <small class="admin-form-error" id="dailyInputError"></small>
+      </form>`
+    : `<p class="empty-state">Tageslimit erreicht (${max} Einträge). Entferne einen Eintrag, um Platz zu schaffen.</p>`;
+
+  return `
+    <section class="page-intro executive-intro">
+      <span class="eyebrow-line">Büro · Tagesinput</span>
+      <h1 class="hero-title">Die wichtigsten Termine/Themen heute.</h1>
+      <p>Mandat: ${escapeHtml(mandateName)} · ${dailyInputs.length}/${max} eingetragen</p>
+    </section>
+    <div class="admin-grid">
+      ${list}
+      ${form}
+    </div>
+  `;
+}
+
+// ---------------------------------------------------------------------------
+// Admin-Ansicht: Nutzer, Profile, Assignments, System, Fehler, Audit
+// ---------------------------------------------------------------------------
+
+function renderAdminView() {
+  if (userRole() !== "admin") return `<section class="page-intro"><h1 class="hero-title">Kein Zugriff.</h1></section>`;
+  if (!adminData) {
+    return `
+      <section class="page-intro executive-intro">
+        <span class="eyebrow-line">Verwaltung</span>
+        <h1 class="hero-title">Admin</h1>
+        <p>Lade Admin-Daten …</p>
+      </section>`;
+  }
+  const data = adminData;
+  const mandateOptions = adminMandateOptions();
+  const referenten = (data.users || []).filter((user) => user.role === "referent");
+
+  const userRows = (data.users || []).map((user) => `
+    <tr>
+      <td>${escapeHtml(user.name || "")}</td>
+      <td>${escapeHtml(user.email || "")}</td>
+      <td>${escapeHtml(roleLabel(user.role))}${user.politicianId ? `<br><small>${escapeHtml(user.politicianId)}</small>` : ""}</td>
+      <td>${user.active === false ? '<span class="admin-pill admin-pill-off">inaktiv</span>' : '<span class="admin-pill admin-pill-on">aktiv</span>'}</td>
+      <td><button class="account-logout" type="button" data-toggle-user="${escapeAttribute(user.id)}" data-active="${user.active === false ? "0" : "1"}">${user.active === false ? "Aktivieren" : "Deaktivieren"}</button></td>
+    </tr>
+  `).join("");
+
+  const assignmentRows = (data.assignments || []).length
+    ? data.assignments.map((entry) => {
+        const u = (data.users || []).find((user) => user.id === entry.userId);
+        return `<tr>
+          <td>${escapeHtml(u ? (u.name || u.email) : entry.userId)}</td>
+          <td>${escapeHtml(entry.politicianId)}</td>
+          <td><button class="account-logout" type="button" data-remove-assignment data-user="${escapeAttribute(entry.userId)}" data-mandate="${escapeAttribute(entry.politicianId)}">Entfernen</button></td>
+        </tr>`;
+      }).join("")
+    : `<tr><td colspan="3" class="empty-state">Noch keine Zuweisungen.</td></tr>`;
+
+  const errors = (data.recentErrors || []).slice(0, 12);
+  const audit = (data.auditEvents || []).slice(0, 15);
+  const sys = data.system || {};
+
+  return `
+    <section class="page-intro executive-intro">
+      <span class="eyebrow-line">Verwaltung</span>
+      <h1 class="hero-title">Admin</h1>
+      <p>${data.counts.users} Nutzer · ${data.counts.abgeordnete} Abgeordnete · ${data.counts.referenten} Referent:innen · ${data.counts.profiles} Profile</p>
+    </section>
+
+    <div class="admin-grid">
+      <div class="admin-card">
+        <h3>Nutzer</h3>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Name</th><th>E-Mail</th><th>Rolle</th><th>Status</th><th></th></tr></thead>
+            <tbody>${userRows}</tbody>
+          </table>
+        </div>
+      </div>
+
+      <form class="admin-card admin-form" id="createUserForm">
+        <h3>Nutzer anlegen</h3>
+        <input name="name" type="text" placeholder="Name" aria-label="Name" required />
+        <input name="email" type="email" placeholder="E-Mail" aria-label="E-Mail" required />
+        <select name="role" aria-label="Rolle">
+          <option value="abgeordneter">Abgeordnete:r</option>
+          <option value="referent">Referent:in</option>
+          <option value="admin">Admin</option>
+        </select>
+        <input name="password" type="password" placeholder="Passwort (min. 8 Zeichen)" aria-label="Passwort" autocomplete="new-password" required />
+        <button class="primary-button" type="submit">Anlegen</button>
+        <small class="admin-form-error" id="createUserError"></small>
+      </form>
+
+      <div class="admin-card">
+        <h3>Zuweisungen (Referent:in → Mandat)</h3>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Referent:in</th><th>Mandat</th><th></th></tr></thead>
+            <tbody>${assignmentRows}</tbody>
+          </table>
+        </div>
+        <form class="admin-inline-form" id="assignForm">
+          <select name="userId" aria-label="Referent:in">
+            ${referenten.map((user) => `<option value="${escapeAttribute(user.id)}">${escapeHtml(user.name || user.email)}</option>`).join("") || `<option value="">— keine Referent:innen —</option>`}
+          </select>
+          <select name="politicianId" aria-label="Mandat">
+            ${mandateOptions.map((entry) => `<option value="${escapeAttribute(entry.id)}">${escapeHtml(entry.name)}</option>`).join("")}
+          </select>
+          <button class="secondary-button" type="submit">Zuweisen</button>
+        </form>
+        <small class="admin-form-error" id="assignError"></small>
+      </div>
+
+      <div class="admin-card">
+        <h3>System</h3>
+        <p>Speicher: <b>${escapeHtml(sys.storage?.backend || "?")}</b>${sys.storage?.supabaseConfigured ? " (Supabase konfiguriert)" : ""}</p>
+        <p>AI: <b>${sys.ai?.enabled ? "aktiv" : "aus"}</b> · Modell ${escapeHtml(sys.ai?.model || "—")}</p>
+        <p>Push: <b>${sys.push?.enabled ? "aktiv" : "aus"}</b></p>
+        <p>Auth-Modus: <b>${sys.authMode ? "Accounts" : "Pilot"}</b></p>
+        <p>Briefings gesamt: <b>${escapeHtml(String(sys.store?.briefings?.total ?? "—"))}</b> · Quellen aktiv: <b>${escapeHtml(String(sys.store?.sources?.active ?? "—"))}</b></p>
+      </div>
+
+      <div class="admin-card">
+        <h3>Letzte Fehler</h3>
+        ${errors.length ? errors.map((entry) => `<p class="admin-log-line"><small>${escapeHtml(formatBriefingDate(entry.createdAt))}</small> [${escapeHtml(entry.scope || "")}] ${escapeHtml(entry.message || "")}</p>`).join("") : `<p class="empty-state">Keine Fehler protokolliert.</p>`}
+      </div>
+
+      <div class="admin-card">
+        <h3>Audit-Log</h3>
+        ${audit.length ? audit.map((entry) => `<p class="admin-log-line"><small>${escapeHtml(formatBriefingDate(entry.createdAt))}</small> ${escapeHtml(entry.action || "")}${entry.actorEmail ? ` · ${escapeHtml(entry.actorEmail)}` : ""}${entry.politicianId ? ` · ${escapeHtml(entry.politicianId)}` : ""}</p>`).join("") : `<p class="empty-state">Noch keine Ereignisse.</p>`}
+      </div>
+    </div>
+  `;
+}
+
+// Mandatsoptionen fuer Zuweisungen: vorhandene Profile + Abgeordneten-Mandate.
+function adminMandateOptions() {
+  const map = new Map();
+  (adminData?.profiles || []).forEach((entry) => map.set(entry.id, entry.fullName || entry.id));
+  (adminData?.users || []).forEach((user) => {
+    if (user.role === "abgeordneter" && user.politicianId && !map.has(user.politicianId)) {
+      map.set(user.politicianId, user.name || user.politicianId);
+    }
+  });
+  return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+}
+
 function toDecision(item) {
   return {
     id: item.id,
@@ -255,6 +764,11 @@ function toDecision(item) {
     urgency: item.urgency,
     statusChange: item.status_change,
     changeReason: item.change_reason,
+    lageMovement: item.lageMovement || null,
+    lageMovementReason: item.lageMovementReason || item.lageMovement?.reason || "",
+    lageDevelopment: item.lageDevelopment || item.lageMovement?.development || "",
+    sourceFreshness: item.sourceFreshness || item.lageMovement?.sourceFreshness || "",
+    priorityTrend: item.priorityTrend || item.lageMovement?.priorityTrend || "",
     relevanceScore: item.relevance_score || item.finalScore || item.totalScore
   };
 }
@@ -297,9 +811,17 @@ function recommendationToDecisionItem(recommendation) {
     urgency: recommendation.urgency,
     status_change: recommendation.status_change,
     change_reason: recommendation.change_reason,
+    lageMovement: recommendation.lageMovement || null,
+    lageMovementReason: recommendation.lageMovementReason || recommendation.lageMovement?.reason || "",
+    lageDevelopment: recommendation.lageDevelopment || recommendation.lageMovement?.development || "",
+    sourceFreshness: recommendation.sourceFreshness || recommendation.lageMovement?.sourceFreshness || "",
+    priorityTrend: recommendation.priorityTrend || recommendation.lageMovement?.priorityTrend || "",
     personal_relevance_explanation: recommendation.personal_relevance_explanation,
     consequence_if_ignored: recommendation.consequence_if_ignored,
     possible_upside: recommendation.possible_upside,
+    learningReason: recommendation.learningReason || "",
+    status: recommendation.status || "",
+    feedback: recommendation.feedback || "",
     taskTemplate: recommendation.taskTemplate
   };
 }
@@ -410,12 +932,17 @@ function render() {
       </main>
       ${renderMobileDock()}
       ${renderUpdatesPanel()}
+      ${renderTaskHandoffPanel()}
     </div>
   `;
-  bindActions();
-  updateBerlinClock();
-  startBerlinClock();
   hideStartupSplash();
+  try {
+    bindActions();
+    updateBerlinClock();
+    startBerlinClock();
+  } catch (error) {
+    console.warn("Helmut rendered, post-render binding failed", error);
+  }
 }
 
 function hideStartupSplash() {
@@ -433,16 +960,18 @@ function renderSidebar() {
     <aside class="sidebar ${navOpen ? "open" : ""}">
       <div>
         <div class="brand">
-          <img src="assets/helmut-mark.svg" alt="" />
+          <b class="brand-mark" aria-hidden="true">H</b>
           <span>HELMUT</span>
           <small>Politischer Referent</small>
         </div>
         <nav class="nav-list" aria-label="Hauptnavigation">
           ${navItems.map(([id, label]) => `<button class="${isMobileNavActive(id) ? "active" : ""}" type="button" data-view="${id}">${label}</button>`).join("")}
+          ${roleNavItems().map(([id, label]) => `<button class="${currentView === id ? "active" : ""}" type="button" data-view="${id}">${label}</button>`).join("")}
         </nav>
       </div>
       <div class="sidebar-foot">
         <p>${escapeHtml(profile?.fullName || "Cem Ince")}<br><span>${escapeHtml(profile?.function || "MdB")}</span></p>
+        ${isAccountMode() && currentUser ? `<button class="account-logout sidebar-logout" type="button" data-logout>Abmelden</button>` : ""}
       </div>
     </aside>
   `;
@@ -452,8 +981,9 @@ function renderMobileDock() {
   return `
     <nav class="mobile-dock" aria-label="Mobile Navigation">
       ${mobileNavItems.map(([id, label]) => `
-        <button class="${isMobileNavActive(id) ? "active" : ""}" type="button" data-view="${id}">
+        <button class="nav-${escapeAttribute(id)} ${isMobileNavActive(id) ? "active" : ""}" type="button" data-view="${id}">
           <span>${escapeHtml(mobileNavSymbol(id))}</span>
+          ${id === "office" && actionableOfficeTaskCount() ? `<i>${escapeHtml(String(actionableOfficeTaskCount()))}</i>` : ""}
           ${escapeHtml(label)}
         </button>
       `).join("")}
@@ -465,12 +995,22 @@ function isMobileNavActive(id) {
   if (currentView === "detail") return (detailOriginView || "briefing") === id;
   if (id === "briefing") return currentView === "briefing";
   if (id === "office") return currentView === "office" || currentView === "communication" || currentView === "tasks";
-  if (id === "settings") return currentView === "settings" || currentView === "profile-settings";
+  if (id === "helmut") return currentView === "helmut";
   return currentView === id;
 }
 
 function mobileNavSymbol(id) {
-  return ({ briefing: "H", radar: "R", office: "B", settings: "P" })[id] || "•";
+  return ({ briefing: "▤", radar: "◎", helmut: "H", office: "▱" })[id] || "•";
+}
+
+// Rollenabhaengige Navigationseintraege (nur im Account-Modus).
+function roleNavItems() {
+  if (!isAccountMode()) return [];
+  const items = [];
+  const role = userRole();
+  if (role === "referent" || role === "admin") items.push(["daily-input", "Tagesinput"]);
+  if (role === "admin") items.push(["admin", "Admin"]);
+  return items;
 }
 
 function renderTopbar() {
@@ -482,11 +1022,15 @@ function renderTopbar() {
       </button>
       <span class="topbar-brand">HELMUT</span>
       <div class="topbar-meta">
+        ${renderAccountBar()}
         <button class="update-heart ${hasUpdates ? "has-updates" : ""}" type="button" data-updates title="${hasUpdates ? "Updates anzeigen" : "Keine neuen Updates"}" aria-label="${hasUpdates ? "Updates anzeigen" : "Keine neuen Updates"}">
           <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">
             <path d="M31.7 54.2 11.9 34.5C4.4 27 4.8 15.4 12.8 9.4c6.1-4.6 14.8-3.4 19.1 2.9 4.4-6.3 13.1-7.5 19.2-2.9 8 6 8.3 17.6.8 25.1L31.7 54.2Z" />
           </svg>
           <i></i>
+        </button>
+        <button class="profile-avatar" type="button" data-view="settings" aria-label="Profil öffnen">
+          ${escapeHtml(profileInitials())}
         </button>
         <span data-berlin-clock>${escapeHtml(briefing.status)} · ${formatBerlinNow()}</span>
       </div>
@@ -545,24 +1089,540 @@ function renderView() {
   if (currentView === "office" || currentView === "tasks") return renderOfficeView();
   if (currentView === "topics") return renderTopicsView();
   if (currentView === "radar") return renderRadarView();
+  if (currentView === "helmut") return renderHelmutView();
   if (currentView === "profile-settings") return renderProfileSettingsView();
   if (currentView === "settings") return renderSettingsView();
+  if (currentView === "admin") return renderAdminView();
+  if (currentView === "daily-input") return renderDailyInputView();
   return renderBriefingView();
 }
 
 function renderBriefingView() {
   return `
     <section class="page-intro executive-intro agenda-intro">
-      <h1 class="hero-title">${escapeHtml(timeGreeting((profile?.fullName || "Cem").split(" ")[0]).replace(",", ","))}</h1>
-      <p>${escapeHtml(currentAgendaLead())}</p>
+      <span class="eyebrow-line">${escapeHtml(timeGreeting((profile?.fullName || "Cem").split(" ")[0]).replace(".", ""))}</span>
+      <h1 class="hero-title">Hier ist deine Lage.</h1>
+      <p>${escapeHtml(formatBerlinFullDateTime())}</p>
     </section>
 
-    ${renderDailyAgendaAnswer()}
-    ${renderTodayImportantSection()}
+    ${renderMorningMoment()}
+    ${renderLageSnapshot()}
+    ${renderLearningPulse()}
+    ${renderDailyCommunicationDecision()}
     ${renderMeetingPrepSection()}
-    ${renderReactionChanceSection()}
-    ${!decisions.length ? renderSituationalBriefing() : ""}
+    ${renderWeeklyOutlook()}
+    ${renderPoliticalContextSections()}
+    ${renderWatchlistMini()}
   `;
+}
+
+function renderMorningMoment() {
+  const firstName = (profile?.fullName || "Cem").split(" ")[0] || "Cem";
+  const top = decisions[0];
+  const meeting = nextPreparedMeeting();
+  const watchItems = competentNoActionItems();
+  const watched = watchItems
+    .map((item) => item.title || item.sourceName || "")
+    .filter(Boolean)
+    .slice(0, 3);
+  const phase = helmutDayPhase();
+  const lead = top
+    ? `${momentLeadPrefix(phase.key)} zählt vor allem ${top.title}.`
+    : `${momentLeadPrefix(phase.key)} musst du nicht öffentlich reagieren.`;
+  const action = top
+    ? compactText(chiefRecommendationText(top), 128)
+    : watched.length
+      ? `Ich beobachte ${humanList(watched)} und ziehe es nur hoch, wenn daraus Handlungsdruck entsteht.`
+      : "Ich prüfe weiter Bundesregierung, Fraktion, Ausschuss und Personenlage.";
+  const meetingLine = meeting
+    ? `${meeting.terminTitel}: ${compactText(meeting.entscheidungsfrage || meeting.kurzbriefing, 118)}`
+    : "Kein Termin mit akutem Vorbereitungsdruck.";
+  const communicationLine = top
+    ? `Kommunikation: ${communicationChannelLabel(recommendedInitialChannel(top))} vorbereiten.`
+    : "Kommunikation: keine Aufmerksamkeit verbrauchen, aber sprechfähig bleiben.";
+  return `
+    <section class="morning-moment" aria-label="Persönlicher Morgenmoment">
+      <div class="moment-orb" aria-hidden="true">H</div>
+      <div class="moment-copy">
+        <span>${escapeHtml(momentLabel(phase.key))} · ${escapeHtml(formatBerlinTimeOnly())}</span>
+        <h2>${escapeHtml(lead)}</h2>
+        <p>${escapeHtml(action)}</p>
+      </div>
+      <div class="moment-grid">
+        <div>
+          <span>Termin</span>
+          <p>${escapeHtml(meetingLine)}</p>
+        </div>
+        <div>
+          <span>Kommunikation</span>
+          <p>${escapeHtml(communicationLine)}</p>
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+function momentLabel(phase) {
+  if (phase === "morning") return "Morgenmoment";
+  if (phase === "midday") return "Mittagsmoment";
+  if (phase === "afternoon") return "Nachmittagsmoment";
+  if (phase === "evening") return "Abendmoment";
+  return "Vorbereitung";
+}
+
+function momentLeadPrefix(phase) {
+  if (phase === "morning") return "Heute";
+  if (phase === "midday") return "Seit dem Morgen";
+  if (phase === "afternoon") return "Jetzt";
+  if (phase === "evening") return "Für morgen";
+  return "Morgen";
+}
+
+function renderLageSnapshot() {
+  const top = decisions[0];
+  if (!top) {
+    const watchItems = competentNoActionItems();
+    return `
+      <section class="lage-card calm">
+        <span>${escapeHtml(lagePhaseLabel())}</span>
+        <h2>${escapeHtml(noDecisionHeadline())}</h2>
+        <p>${escapeHtml(noDecisionLead(watchItems))}</p>
+        ${renderNoDecisionFocusStrip(watchItems)}
+        ${renderLageCheckStatus()}
+        <p class="calm-directive">${escapeHtml(noDecisionDirective())}</p>
+        ${renderLearningSignal()}
+        <div class="lage-actions">
+          <button class="primary-button" type="button" data-view="helmut">Helmuts Einschätzung öffnen</button>
+          <button class="secondary-button" type="button" data-run-lage-check>Lage jetzt prüfen</button>
+        </div>
+      </section>
+    `;
+  }
+  return `
+    <section class="lage-card ${escapeAttribute(top.priorityType || "action")}">
+      <div class="lage-card-head">
+        <span>${escapeHtml(topPriorityLabel())}</span>
+        <small>${escapeHtml(sourceLine(top))}</small>
+      </div>
+      <h2>${escapeHtml(top.title)}</h2>
+      <p>${escapeHtml(compactText(top.summary || decisionWhyImportant(top), 190))}</p>
+      ${renderTopDecisionBrief(top)}
+      ${renderLageMovement(top)}
+      ${renderLageCheckStatus()}
+      ${renderMeetingRelevanceForDecision(top)}
+      ${renderLearningSignal(top)}
+      <div class="lage-actions">
+        <button class="primary-button" type="button" data-detail="${escapeHtml(top.id)}">Empfehlung öffnen</button>
+        <button class="secondary-button" type="button" data-quick-communication="${escapeHtml(top.id)}" data-quick-channel="${escapeHtml(recommendedInitialChannel(top))}">Text vorbereiten</button>
+      </div>
+      ${renderFeedbackActions(top)}
+    </section>
+  `;
+}
+
+function renderLearningPulse() {
+  const learning = opsStatus?.learning || briefing.learning || briefing.learningProfile || {};
+  const count = Number(learning.eventCount || 0);
+  const positive = learning.topicWeights?.find((entry) => Number(entry.score || 0) > 0);
+  const negative = learning.topicWeights?.find((entry) => Number(entry.score || 0) < 0);
+  const message = count
+    ? learning.summary || `Helmut hat ${count} Nutzungssignale und passt die Priorisierung vorsichtig an.`
+    : "Markiere Empfehlungen als relevant, später, erledigt oder nicht relevant. Daraus lernt Helmut, was für dein Mandat wirklich zählt.";
+  const focus = positive ? `Stärker: ${positive.label}` : negative ? `Weniger: ${negative.label}` : "Lernmodus bereit";
+  return `
+    <section class="learning-pulse" aria-label="Lernmodus">
+      <span>${escapeHtml(focus)}</span>
+      <p>${escapeHtml(message)}</p>
+    </section>
+  `;
+}
+
+function renderFeedbackActions(decision) {
+  if (!decision?.id) return "";
+  const feedbackState = decision.feedback || (decision.status === "ignored" ? "ignored" : decision.status === "snoozed" ? "snoozed" : decision.status === "done" ? "done" : decision.status === "relevant" ? "marked_relevant" : "");
+  return `
+    <div class="learning-actions inline-learning" aria-label="Helmut trainieren">
+      <button class="${feedbackState === "marked_relevant" || feedbackState === "marked_important" ? "is-active" : ""}" type="button" data-feedback="relevant" data-feedback-id="${escapeHtml(decision.id)}">Relevant</button>
+      <button class="${feedbackState === "snoozed" ? "is-active" : ""}" type="button" data-feedback="later" data-feedback-id="${escapeHtml(decision.id)}">Später</button>
+      <button class="${feedbackState === "done" ? "is-active" : ""}" type="button" data-feedback="done" data-feedback-id="${escapeHtml(decision.id)}">Erledigt</button>
+      <button class="${feedbackState === "ignored" ? "is-active" : ""}" type="button" data-feedback="ignored" data-feedback-id="${escapeHtml(decision.id)}">Nicht relevant</button>
+    </div>
+  `;
+}
+
+function renderNoDecisionFocusStrip(items = []) {
+  const names = items
+    .map((item) => item.title || item.sourceName || "")
+    .filter(Boolean)
+    .slice(0, 3);
+  const labels = names.length ? names : ["Bundesregierung", "Fraktion", "Ausschuss"];
+  return `
+    <div class="no-decision-focus" aria-label="Weiter beobachtet">
+      ${labels.map((label) => `<span>${escapeHtml(compactText(label, 46))}</span>`).join("")}
+    </div>
+  `;
+}
+
+function renderTopDecisionBrief(item) {
+  const rows = [
+    ["Warum für dich", compactText(decisionWhyImportant(item), 112)],
+    ["Jetzt tun", compactText(chiefRecommendationText(item), 112)],
+    ["Wenn du wartest", compactText(decisionRisk(item), 112)]
+  ];
+  return `
+    <div class="decision-brief-grid" aria-label="Entscheidungsgrundlage">
+      ${rows.map(([label, value]) => `
+        <div>
+          <span>${escapeHtml(label)}</span>
+          <p>${escapeHtml(value)}</p>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderLearningSignal(item = null) {
+  const learning = opsStatus?.learning || briefing.learning || {};
+  const reason = item?.learningReason || "";
+  const count = Number(learning.eventCount || 0);
+  if (!reason && count < 1) return "";
+  const copy = reason || `Ich berücksichtige ${count} gespeicherte Nutzungssignale aus deinen bisherigen Entscheidungen.`;
+  return `<p class="learning-signal">${escapeHtml(copy)}</p>`;
+}
+
+function renderMeetingRelevanceForDecision(item) {
+  const meeting = nextMeetingForItem(item);
+  if (!meeting) return "";
+  return `
+    <p class="meeting-relevance">
+      <span>Terminbezug</span>
+      ${escapeHtml(`${meeting.terminTitel} · ${formatMeetingDate(meeting)}. Dieses Thema kann dafür als Gesprächspunkt oder Nachfrage dienen.`)}
+    </p>
+  `;
+}
+
+function renderDailyCommunicationDecision() {
+  const top = decisions[0];
+  const candidate = top || reactionChanceItems().find(hasPreciseSource) || null;
+  const shouldPublish = Boolean(top && top.priorityType !== "watch");
+  const recommendedChannel = candidate ? recommendedInitialChannel(candidate) : "press";
+  const title = shouldPublish ? communicationDecisionTitle() : "Heute lieber Linie parken.";
+  const copy = shouldPublish
+    ? communicationDecisionCopy(top)
+    : `Noch nicht veröffentlichen. Bereite eine interne Linie vor, damit du bei Nachfragen sofort sauber antworten kannst.`;
+  return `
+    <section class="brief-mini communication-decision">
+      <div>
+        <span>Kommunikation</span>
+        <h2>${escapeHtml(title)}</h2>
+        <p>${escapeHtml(copy)}</p>
+        ${candidate ? `<small>${escapeHtml(`Empfohlen: ${communicationChannelLabel(recommendedChannel)} · ${communicationChannelHint(recommendedChannel)}`)}</small>` : ""}
+      </div>
+      ${candidate?.id ? `<div class="mini-action-stack">
+        <button class="primary-button compact-button" type="button" data-quick-communication="${escapeHtml(candidate.id)}" data-quick-channel="${escapeHtml(recommendedChannel)}">${shouldPublish ? "Text vorbereiten" : "Linie parken"}</button>
+        <button class="secondary-button compact-button" type="button" data-quick-communication="${escapeHtml(candidate.id)}" data-quick-channel="x">X kurz</button>
+      </div>` : ""}
+    </section>
+  `;
+}
+
+function renderNextMeetingMini() {
+  const meeting = nextPreparedMeeting();
+  if (!meeting) {
+    return `
+      <section class="brief-mini muted">
+        <div>
+          <span>Termine</span>
+          <h2>Kein Termin mit Vorbereitungsdruck.</h2>
+          <p>Wenn im Profil wichtige Termine stehen, bereitet Helmut Gesprächspunkte und Hintergrund vor.</p>
+        </div>
+      </section>
+    `;
+  }
+  return `
+    <section class="brief-mini meeting">
+      <div>
+        <span>Termin vorbereiten</span>
+        <h2>${escapeHtml(meeting.terminTitel)}</h2>
+        <p>${escapeHtml(compactText(meeting.kurzbriefing || "Helmut bereitet Kontext und Gesprächspunkte vor.", 150))}</p>
+        ${meeting.relevantDecision?.title ? `<small>${escapeHtml(`Aktuelle Lage dafür: ${meeting.relevantDecision.title}`)}</small>` : ""}
+      </div>
+      <button class="secondary-button compact-button" type="button" data-meeting-brief="${escapeHtml(meeting.id)}">Briefing</button>
+    </section>
+  `;
+}
+
+function renderWatchlistMini() {
+  const items = competentNoActionItems().slice(0, 3);
+  if (!items.length) return "";
+  return `
+    <section class="brief-mini watchlist">
+      <div>
+        <span>Wird beobachtet</span>
+        <h2>${escapeHtml(humanList(items.map((item) => item.title || item.sourceName || "eine Entwicklung")))}</h2>
+        <p>Ich zeige diese Punkte bewusst nicht als Entscheidung. Sie bleiben im Blick, bis daraus Handlungsdruck entsteht.</p>
+      </div>
+      <button class="secondary-button compact-button" type="button" data-view="radar">Radar öffnen</button>
+    </section>
+  `;
+}
+
+function lagePhaseLabel() {
+  const phase = helmutDayPhase().key;
+  if (phase === "morning") return "Morgenlage";
+  if (phase === "midday") return "Mittagslage";
+  if (phase === "afternoon") return "Nachmittagslage";
+  if (phase === "evening") return "Abendlage";
+  return "Morgen vorbereiten";
+}
+
+function topPriorityLabel() {
+  const phase = helmutDayPhase().key;
+  if (phase === "morning") return "Heute wichtig";
+  if (phase === "midday") return "Seit dem Morgen";
+  if (phase === "afternoon") return "Jetzt prüfen";
+  if (phase === "evening") return "Für morgen vorbereiten";
+  return "Nächste Priorität";
+}
+
+function noDecisionHeadline() {
+  const phase = helmutDayPhase().key;
+  if (phase === "morning") return "Heute keine Reaktion nötig.";
+  if (phase === "midday") return "Keine neue Prioritätsverschiebung.";
+  if (phase === "afternoon") return "Aktuell keinen Druck erzeugen.";
+  if (phase === "evening") return "Für heute ist die Lage stabil.";
+  return "Morgen ruhig vorbereiten.";
+}
+
+function communicationDecisionTitle() {
+  const phase = helmutDayPhase().key;
+  if (phase === "morning") return "Heute eine Linie vorbereiten?";
+  if (phase === "midday") return "Bis Nachmittag sprechfähig sein?";
+  if (phase === "afternoon") return "Vor Dienstschluss reagieren?";
+  if (phase === "evening") return "Für morgen vorbereiten?";
+  return "Für morgen vormerken?";
+}
+
+function communicationDecisionCopy(top) {
+  const phase = helmutDayPhase().key;
+  const topic = top?.title || "das Thema";
+  if (phase === "morning") return `Ja. Bereite eine kurze Linie zu ${topic} vor. Der Anlass ist belastbar genug, um früh sprechfähig zu sein.`;
+  if (phase === "midday") return `Ja. Prüfe bis zum Nachmittag, ob aus ${topic} eine Presse- oder Social-Linie werden sollte.`;
+  if (phase === "afternoon") return `Ja. Entscheide jetzt, ob zu ${topic} heute noch ein kurzer Text rausgehen soll oder ob die Linie nur intern vorbereitet wird.`;
+  if (phase === "evening") return `Ja. Lege zu ${topic} eine Linie für morgen früh bereit, statt heute ohne Not spät zu senden.`;
+  return `Ja. Halte zu ${topic} eine kurze Linie für die nächste Lage bereit.`;
+}
+
+function renderLageMovement(item) {
+  const development = item.lageDevelopment || sourceExcerpt(item) || "";
+  const reason = item.lageMovementReason || item.changeReason || item.whyNow || "";
+  const markers = [item.sourceFreshness, priorityTrendLabel(item.priorityTrend)].filter(Boolean);
+  if (!development && !reason && !markers.length) return "";
+  return `
+    <div class="lage-movement">
+      ${markers.length ? `<div class="lage-movement-markers">${markers.map((marker) => `<span>${escapeHtml(marker)}</span>`).join("")}</div>` : ""}
+      ${development ? `<p><span>Entwicklung</span>${escapeHtml(compactText(development, 170))}</p>` : ""}
+      ${reason ? `<p><span>Warum jetzt</span>${escapeHtml(compactText(reason, 190))}</p>` : ""}
+    </div>
+  `;
+}
+
+function renderLageCheckStatus() {
+  const check = briefing.latestLageCheck;
+  if (!check?.checkedAt) return "";
+  const changed = check.status === "changed";
+  const label = changed ? "Neue Bewegung" : "Priorität stabil";
+  const text = check.message || (changed ? "Helmut hat eine neue Lage erkannt." : "Helmut hat geprüft: Deine Priorität hat sich nicht verändert.");
+  return `
+    <p class="lage-check-status ${changed ? "changed" : "stable"}">
+      <span>${escapeHtml(label)} · ${escapeHtml(formatBerlinTimeOnly(new Date(check.checkedAt)))}</span>
+      ${escapeHtml(compactText(text, 150))}
+    </p>
+  `;
+}
+
+function priorityTrendLabel(value) {
+  const trend = String(value || "").toLowerCase();
+  if (!trend) return "";
+  if (trend === "neu") return "neue Priorität";
+  if (trend === "gestiegen") return "Priorität gestiegen";
+  if (trend === "gesunken") return "Druck sinkt";
+  if (trend === "neue quelle") return "neuer Beleg";
+  if (trend === "stabil") return "Priorität stabil";
+  return value;
+}
+
+function renderHelmutView() {
+  return helmutThinking ? renderHelmutThinkingView() : renderHelmutAssessmentView();
+}
+
+function renderHelmutThinkingView() {
+  const time = formatBerlinTimeOnly();
+  return `
+    <section class="helmut-thinking-screen" aria-label="Helmut analysiert">
+      <div class="helmut-core" aria-hidden="true">H</div>
+      <h1>Helmut analysiert die Lage ...</h1>
+      <p>${escapeHtml(time)}</p>
+      <div class="helmut-checks">
+        <span>Aktuelle Entwicklungen prüfen</span>
+        <span>Relevanz für dein Mandat bewerten</span>
+        <span>Empfehlung erstellen</span>
+      </div>
+    </section>
+  `;
+}
+
+function renderHelmutAssessmentView() {
+  const assessment = buildHelmutAssessment();
+  if (helmutTypingActive) return renderHelmutTypingResult(assessment);
+  const actionId = decisions[0]?.id || "";
+  return `
+    <section class="helmut-assessment" aria-label="Helmuts Einschätzung">
+      <div class="helmut-assessment-head">
+        <span>Helmut</span>
+        <small>${escapeHtml(assessment.time)} Uhr</small>
+        <h1>Meine Einschätzung für dich.</h1>
+      </div>
+
+      <article class="helmut-note">
+        <b class="priority-status ${escapeAttribute(assessment.priorityStatus || "stable")}">${escapeHtml(priorityStatusText(assessment.priorityStatus))}</b>
+        <p>${escapeHtml(assessment.greeting)}</p>
+        <p>${escapeHtml(assessment.assessment)}</p>
+        <div>
+          <span>Mein Vorschlag:</span>
+          <p>${escapeHtml(assessment.recommendation)}</p>
+        </div>
+      </article>
+
+      <article class="helmut-reason">
+        <span>Warum ist das wichtig?</span>
+        <p>${escapeHtml(assessment.whyImportant)}</p>
+      </article>
+
+      <article class="helmut-reason risk">
+        <span>Risiko bei Nichtreaktion</span>
+        <p>${escapeHtml(assessment.risk)}</p>
+      </article>
+
+      <div class="helmut-assessment-foot">
+        <small>Aktualisiert: ${escapeHtml(formatBriefingDate(briefing.generatedAt || briefing.date || new Date().toISOString()))}</small>
+        <button class="text-button" type="button" data-refresh-helmut aria-label="Einschätzung neu prüfen">↻</button>
+      </div>
+
+      <div class="helmut-actions">
+        ${actionId ? `<button class="primary-button" type="button" data-detail="${escapeHtml(actionId)}">Empfehlung öffnen</button>` : `<button class="secondary-button" type="button" data-run-crawl>Quellen prüfen</button>`}
+        ${actionId ? `<button class="secondary-button" type="button" data-communication="${escapeHtml(actionId)}">Antwort vorbereiten</button>` : ""}
+      </div>
+    </section>
+  `;
+}
+
+function renderHelmutTypingResult(assessment) {
+  return `
+    <section class="helmut-assessment helmut-assessment-typing" aria-label="Helmuts Einschätzung">
+      <div class="helmut-assessment-head">
+        <span>Helmut</span>
+        <small>${escapeHtml(assessment.time)} Uhr</small>
+        <h1>Meine Einschätzung für dich.</h1>
+      </div>
+      <article class="helmut-note helmut-typewriter" aria-live="polite">
+        <b class="priority-status ${escapeAttribute(assessment.priorityStatus || "stable")}">${escapeHtml(priorityStatusText(assessment.priorityStatus))}</b>
+        <p>${escapeHtml(helmutTypedText)}<span class="typing-cursor" aria-hidden="true"></span></p>
+      </article>
+    </section>
+  `;
+}
+
+function buildHelmutAssessment() {
+  const stored = briefing?.helmutAssessment;
+  if (stored && typeof stored === "object") {
+    const normalized = {
+      greeting: String(stored.greeting || timeGreeting((profile?.fullName || "Cem").split(" ")[0] || "Cem")).trim(),
+      time: String(stored.time || formatBerlinTimeOnly()).trim(),
+      assessment: String(stored.assessment || "").trim(),
+      recommendation: String(stored.recommendation || "").trim(),
+      whyImportant: String(stored.whyImportant || "").trim(),
+      risk: String(stored.risk || "").trim(),
+      priorityStatus: String(stored.priorityStatus || "stable").trim(),
+      typingText: String(stored.typingText || "").trim()
+    };
+    if (normalized.assessment || normalized.recommendation || normalized.typingText) {
+      if (!normalized.typingText) normalized.typingText = assessmentTypingText(normalized);
+      return normalized;
+    }
+  }
+  const firstName = (profile?.fullName || "Cem").split(" ")[0] || "Cem";
+  const top = decisions[0];
+  const watch = competentNoActionItems()[0];
+  const topic = top?.title || watch?.title || centralAgendaTopic();
+  const phase = helmutDayPhase();
+  const prioritySentence = helmutPrioritySentence(top, topic);
+  const phaseSentence = helmutPhaseSentence(phase, top, topic);
+  const recommendation = top
+    ? `${phase.recommendationPrefix} ${compactText(chiefRecommendationText(top), 155)}`
+    : `${phase.recommendationPrefix} Halte ${topic} im Blick, aber starte keine öffentliche Reaktion ohne neuen Anlass.`;
+  const fallback = {
+    greeting: timeGreeting(firstName),
+    time: formatBerlinTimeOnly(),
+    assessment: compactText(`${prioritySentence} ${phaseSentence}`, 235),
+    recommendation: compactText(recommendation, 210),
+    whyImportant: top
+      ? compactText(decisionWhyImportant(top), 190)
+      : compactText(`Das ist wichtig, weil ${topic} an dein Mandatsprofil anschließt und sich daraus kurzfristig eine politische Anschlussfrage ergeben kann.`, 190),
+    risk: top
+      ? compactText(decisionRisk(top), 180)
+      : `Wenn du jetzt reagierst, ohne dass sich die Lage verändert hat, verbrauchst du Aufmerksamkeit. Besser: vorbereitet bleiben und erst bei neuer Dynamik handeln.`
+    ,
+    priorityStatus: top ? (top.priorityType === "risk" ? "risk" : top.priorityType === "chance" ? "chance" : top.priorityTrend === "gestiegen" ? "changed" : "stable") : "stable"
+  };
+  fallback.typingText = assessmentTypingText(fallback);
+  return fallback;
+}
+
+function priorityStatusText(value) {
+  return ({
+    stable: "Priorität stabil",
+    changed: "Priorität verändert",
+    risk: "Risiko gestiegen",
+    chance: "Chance erkannt"
+  })[String(value || "stable").toLowerCase()] || "Priorität geprüft";
+}
+
+function assessmentTypingText(assessment) {
+  return [
+    assessment.greeting,
+    assessment.assessment,
+    `Mein Vorschlag: ${assessment.recommendation}`,
+    `Warum wichtig: ${assessment.whyImportant}`,
+    `Risiko bei Nichtreaktion: ${assessment.risk}`
+  ].filter(Boolean).join("\n\n");
+}
+
+function helmutPrioritySentence(top, topic) {
+  if (!top) return `Deine Prioritäten haben sich aktuell nicht verändert. Fokus bleibt auf ${topic}.`;
+  if (top.statusChange && top.statusChange !== "Unverändert") return `${topic} hat sich verändert: ${top.changeReason || top.statusChange}.`;
+  if (top.changeReason && /gestiegen|neue|risiko|chance|dynamik/i.test(top.changeReason)) return `${topic} ist wichtiger geworden. ${top.changeReason}`;
+  if (top.priorityType === "risk") return `${topic} ist aktuell dein größtes Risiko.`;
+  if (top.priorityType === "chance") return `${topic} eröffnet gerade politischen Handlungsspielraum.`;
+  return `${topic} bleibt deine wichtigste Priorität.`;
+}
+
+function helmutPhaseSentence(phase, top, topic) {
+  const mandate = profile?.committee || profile?.committees?.[0] || "dein Ausschuss";
+  if (phase.key === "morning") return top ? `Heute zählt, ob du dazu früh sprechfähig bist, weil ${mandate} berührt ist.` : `Heute reicht Beobachtung; ich prüfe Regierung, Fraktion und Ausschuss weiter.`;
+  if (phase.key === "midday") return top ? `Seit dem Morgen ist entscheidend, ob daraus Reaktionsdruck entsteht.` : `Seit dem Morgen gibt es keine neue Prioritätsverschiebung.`;
+  if (phase.key === "afternoon") return top ? `Jetzt solltest du klären, ob eine Linie vor Dienstschluss vorbereitet werden muss.` : `Der Nachmittag bleibt stabil; keine unnötige Kommunikation.`;
+  if (phase.key === "evening") return top ? `Heute solltest du abschließen, was morgen früh vorbereitet sein muss.` : `Für heute besteht kein akuter Kommunikationsbedarf.`;
+  return top ? `Für morgen solltest du die Linie zu ${topic} vorbereiten.` : `Für morgen bleibt ${topic} der Beobachtungspunkt.`;
+}
+
+function helmutDayPhase() {
+  const hour = berlinHour();
+  if (hour >= 5 && hour < 11) return { key: "morning", recommendationPrefix: "Bereite heute" };
+  if (hour >= 11 && hour < 14) return { key: "midday", recommendationPrefix: "Prüfe bis zum Nachmittag" };
+  if (hour >= 14 && hour < 18) return { key: "afternoon", recommendationPrefix: "Bereite jetzt" };
+  if (hour >= 18 && hour < 22) return { key: "evening", recommendationPrefix: "Bereite bis morgen 09:00 Uhr" };
+  return { key: "late", recommendationPrefix: "Lege für morgen früh" };
 }
 
 function centralAgendaTopic() {
@@ -593,6 +1653,7 @@ function renderDailyAgendaAnswer() {
         <span>Was steht aktuell an?</span>
         <h2>Heute keine Reaktion nötig.</h2>
         <p>${escapeHtml(noDecisionLead(watchItems))}</p>
+        <p class="calm-directive">${escapeHtml(noDecisionDirective())}</p>
         ${renderAgendaAnswerGrid(null, chance, risk, meeting)}
       </section>
     `;
@@ -608,6 +1669,58 @@ function renderDailyAgendaAnswer() {
         <button class="secondary-button" type="button" data-communication="${escapeHtml(top.id)}">Reaktion vorbereiten</button>
       </div>
     </section>
+  `;
+}
+
+function renderPoliticalContextSections() {
+  const governmentItems = governmentPlanItems().slice(0, 1);
+  const partyItems = partyFactionItems().slice(0, 1);
+  return `
+    <section class="agenda-section political-context">
+      <div class="agenda-section-head">
+        <span>Regierung</span>
+        <h2>Vorhaben der Bundesregierung</h2>
+      </div>
+      <div class="agenda-list compact-agenda">
+        ${governmentItems.map((item) => renderPoliticalContextCard(item, "Oppositionslage", "Welche Linie kannst du setzen?")).join("") || `
+          <article class="context-card calm">
+            <span>Kein neues belastbares Vorhaben</span>
+            <h3>Ich prüfe weiter BMAS, Bundesregierung, Bundestag und Ausschuss.</h3>
+            <p>Für dich heißt das: keine vorschnelle Reaktion, aber die Regierungslage bleibt im Blick.</p>
+          </article>
+        `}
+      </div>
+    </section>
+    <section class="agenda-section political-context">
+      <div class="agenda-section-head">
+        <span>Fraktion</span>
+        <h2>Aus Fraktion und Partei</h2>
+      </div>
+      <div class="agenda-list compact-agenda">
+        ${partyItems.map((item) => renderPoliticalContextCard(item, "Linie deiner Seite", "Was ist anschlussfähig?")).join("") || `
+          <article class="context-card calm">
+            <span>Keine neue Fraktionslage</span>
+            <h3>Ich beobachte weiter, welche Linie Die Linke und die Fraktion setzen.</h3>
+            <p>Wenn daraus ein politischer Hebel für Arbeit und Soziales entsteht, hebt Helmut es in die Tageslage.</p>
+          </article>
+        `}
+      </div>
+    </section>
+  `;
+}
+
+function renderPoliticalContextCard(item, label, prompt) {
+  const href = sourceHref(item.primarySource || item);
+  return `
+    <article class="context-card ${escapeAttribute(item.contextType || item.priorityType || "watch")}">
+      <div>
+        <span>${escapeHtml(label)}</span>
+        <h3>${escapeHtml(item.title || "Politische Lage")}</h3>
+        <p>${escapeHtml(compactText(contextItemSummary(item), 180))}</p>
+        <small>${escapeHtml(prompt)} ${escapeHtml(item.sourceName ? `· ${item.sourceName}` : "")}</small>
+      </div>
+      ${href ? `<a class="source-pill" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">Quelle öffnen</a>` : ""}
+    </article>
   `;
 }
 
@@ -651,7 +1764,7 @@ function renderTodayImportantSection() {
         <h2>Heute wichtig</h2>
       </div>
       <div class="agenda-list">
-        ${items.map(renderAgendaPriority).join("") || `<p class="empty-state">Heute liegt keine priorisierte politische Entscheidung vor.</p>`}
+        ${items.map(renderAgendaPriority).join("") || `<p class="empty-state">Heute keine priorisierte Entscheidung. Helmut hält Regierung, Fraktion und Ausschuss im Blick.</p>`}
       </div>
     </section>
   `;
@@ -678,12 +1791,12 @@ function renderAgendaPriority(decision) {
 }
 
 function renderMeetingPrepSection() {
-  const meetings = meetingPreparations().slice(0, 2);
+  const meetings = meetingPreparations().slice(0, 1);
   return `
     <section class="agenda-section meeting-prep">
       <div class="agenda-section-head">
-        <span>B</span>
-        <h2>Termine vorbereiten</h2>
+        <span>Termin</span>
+        <h2>Nächste Vorbereitung</h2>
       </div>
       <div class="agenda-list">
         ${meetings.map(renderMeetingPrepCard).join("") || `<p class="empty-state">Noch keine Termine im Mandatsprofil. Trage im Profil kommende Gespräche ein, dann bereitet Helmut sie politisch vor.</p>`}
@@ -692,18 +1805,137 @@ function renderMeetingPrepSection() {
   `;
 }
 
-function renderMeetingPrepCard(meeting) {
+function renderWeeklyOutlook() {
+  const items = weeklyOutlookItems().slice(0, 3);
   return `
-    <article class="meeting-card">
+    <section class="agenda-section weekly-outlook">
+      <div class="agenda-section-head">
+        <span>Woche</span>
+        <h2>Diese Woche wichtig</h2>
+      </div>
+      <div class="weekly-outlook-list">
+        ${items.map(renderWeeklyOutlookItem).join("") || `
+          <article class="weekly-outlook-item calm">
+            <div>
+              <span>Referentenblick</span>
+              <h3>Keine harte Wochenpriorität.</h3>
+              <p>Ich beobachte Bundesregierung, Fraktion, Ausschuss und Personenlage weiter. Du musst dafür aktuell nichts vorbereiten.</p>
+              <small>Fokus bleibt: nur melden, wenn daraus eine Entscheidung entsteht.</small>
+            </div>
+          </article>
+        `}
+      </div>
+    </section>
+  `;
+}
+
+function weeklyOutlookItems() {
+  const meeting = meetingPreparations()[0];
+  const government = governmentPlanItems()[0];
+  const committee = [...decisions, ...competentNoActionItems()].find((item) => {
+    const text = `${item.title || ""} ${item.summary || ""} ${item.whyItMatters || ""} ${item.personal_relevance_explanation || ""}`.toLowerCase();
+    return text.includes("ausschuss") || text.includes("bmas") || text.includes("arbeit und soziales");
+  });
+  const items = [];
+  if (meeting) {
+    items.push({
+      type: "Termin",
+      title: meeting.terminTitel,
+      body: `${formatMeetingDate(meeting)} · ${compactText(meeting.entscheidungsfrage || meeting.kurzbriefing, 132)}`,
+      action: `Vorbereitung: ${compactText(meeting.kernlinie, 92)}`,
+      href: ""
+    });
+  }
+  if (government) {
+    items.push({
+      type: "Bundesregierung",
+      title: government.title,
+      body: compactText(contextItemSummary(government), 132),
+      action: `Linie prüfen · ${sourceLine(government)}`,
+      href: sourceHref(government.primarySource || government)
+    });
+  }
+  if (committee && committee.id !== government?.id) {
+    items.push({
+      type: "Ausschuss",
+      title: committee.title,
+      body: compactText(decisionWhyImportant(committee), 132),
+      action: `Für Arbeit und Soziales vormerken · ${sourceLine(committee)}`,
+      href: sourceHref(committee.primarySource || committee)
+    });
+  }
+  if (items.length < 3) {
+    const party = partyFactionItems().find((item) => !items.some((existing) => existing.title === item.title));
+    if (party) {
+      items.push({
+        type: "Fraktion",
+        title: party.title,
+        body: compactText(contextItemSummary(party), 132),
+        action: `Anschlussfähigkeit prüfen · ${sourceLine(party)}`,
+        href: sourceHref(party.primarySource || party)
+      });
+    }
+  }
+  if (items.length < 3) {
+    const focusTopic = topProfileTopicsForView()[0] || "Arbeit und Soziales";
+    items.push({
+      type: "Beobachtung",
+      title: `${focusTopic}: Regierungslage im Blick behalten`,
+      body: `Ich prüfe weiter, ob Bundesregierung oder Ausschuss dazu in dieser Woche ein Vorhaben auslösen.`,
+      action: "Nur hochziehen, wenn daraus Handlungsdruck entsteht.",
+      href: ""
+    });
+  }
+  return items;
+}
+
+function renderWeeklyOutlookItem(item) {
+  return `
+    <article class="weekly-outlook-item">
       <div>
+        <span>${escapeHtml(item.type)}</span>
+        <h3>${escapeHtml(item.title)}</h3>
+        <p>${escapeHtml(item.body)}</p>
+        <small>${escapeHtml(item.action)}</small>
+      </div>
+      ${item.href ? `<a class="source-pill" href="${escapeAttribute(item.href)}" target="_blank" rel="noopener noreferrer">Quelle</a>` : ""}
+    </article>
+  `;
+}
+
+function renderMeetingPrepCard(meeting) {
+  const source = meeting.relevantDecision ? sourceLine(meeting.relevantDecision) : "Mandatsprofil · Termin";
+  return `
+    <article class="meeting-card meeting-prep-card">
+      <div class="meeting-prep-main">
         <span>${escapeHtml(formatMeetingDate(meeting))}</span>
         <h3>${escapeHtml(meeting.terminTitel)}</h3>
-        <p>${escapeHtml(compactText(meeting.kurzbriefing, 160))}</p>
-        <p><b>Gesprächspunkte:</b> ${escapeHtml(compactText(meeting.empfohleneGespraechspunkte.slice(0, 2).join(" · "), 150))}</p>
+        <p>${escapeHtml(compactText(meeting.kurzbriefing, 175))}</p>
+        <p class="meeting-decision-question">${escapeHtml(meeting.entscheidungsfrage)}</p>
+        <div class="meeting-line-box">
+          <small>Kernlinie</small>
+          <strong>${escapeHtml(meeting.kernlinie)}</strong>
+        </div>
+        <div class="meeting-prep-grid">
+          <div>
+            <small>Im Termin klären</small>
+            <ul>
+              ${meeting.kritischeFragen.slice(0, 3).map((question) => `<li>${escapeHtml(question)}</li>`).join("")}
+            </ul>
+          </div>
+          <div>
+            <small>Risiko</small>
+            <ul>
+              ${meeting.risiken.slice(0, 2).map((risk) => `<li>${escapeHtml(risk)}</li>`).join("")}
+            </ul>
+          </div>
+        </div>
+        <p class="meeting-source-note">Basis: ${escapeHtml(source)}</p>
       </div>
       <div class="meeting-actions">
-        <button class="secondary-button compact-button" type="button" data-meeting-brief="${escapeHtml(meeting.id)}">Briefing vorbereiten</button>
-        <button class="secondary-button compact-button" type="button" data-meeting-questions="${escapeHtml(meeting.id)}">Fragen vorbereiten</button>
+        <button class="secondary-button compact-button" type="button" data-meeting-brief="${escapeHtml(meeting.id)}">Kurzbriefing kopieren</button>
+        <button class="secondary-button compact-button" type="button" data-meeting-questions="${escapeHtml(meeting.id)}">Fragen kopieren</button>
+        <button class="secondary-button compact-button" type="button" data-meeting-line="${escapeHtml(meeting.id)}">Linie kopieren</button>
       </div>
     </article>
   `;
@@ -775,6 +2007,48 @@ function reactionChanceItems() {
     .slice(0, 5);
 }
 
+function governmentPlanItems() {
+  const home = (briefing.homeSections?.governmentPlans || []).map(normalizeHomeItem).filter(Boolean);
+  const situational = (briefing.situationalBriefing || []).filter((item) => contextTypeForItem(item) === "government");
+  const fromDecisions = decisions.filter((item) => contextTypeForItem(item) === "government");
+  return [...home, ...fromDecisions, ...situational]
+    .filter((item) => item && item.title && hasPreciseSource(item))
+    .filter(uniqueDecisionItem)
+    .sort(sortContextPriority)
+    .slice(0, 3);
+}
+
+function partyFactionItems() {
+  const home = (briefing.homeSections?.partyFaction || []).map(normalizeHomeItem).filter(Boolean);
+  const situational = (briefing.situationalBriefing || []).filter((item) => contextTypeForItem(item) === "party");
+  const fromDecisions = decisions.filter((item) => contextTypeForItem(item) === "party");
+  return [...home, ...fromDecisions, ...situational]
+    .filter((item) => item && item.title && hasPreciseSource(item))
+    .filter(uniqueDecisionItem)
+    .sort(sortContextPriority)
+    .slice(0, 3);
+}
+
+function sortContextPriority(a, b) {
+  return Number(b.relevanceScore || b.finalScore || b.priority || 0) - Number(a.relevanceScore || a.finalScore || a.priority || 0)
+    || new Date(b.publishedAt || b.updatedAt || 0) - new Date(a.publishedAt || a.updatedAt || 0);
+}
+
+function contextTypeForItem(item = {}) {
+  if (item.contextType) return item.contextType;
+  const sourceText = `${item.sourceName || ""} ${item.sourceType || ""} ${item.title || ""} ${item.summary || ""} ${item.content || ""}`.toLowerCase();
+  if (sourceText.includes("bundesregierung") || sourceText.includes("bundesministerium") || sourceText.includes("bmas") || sourceText.includes("bundeskabinett") || sourceText.includes("ministerium")) return "government";
+  if (sourceText.includes("die linke") || sourceText.includes("linksfraktion") || sourceText.includes("fraktion")) return "party";
+  return "";
+}
+
+function contextItemSummary(item = {}) {
+  if (item.action) return item.action;
+  if (item.summary) return item.summary;
+  if (item.relevanceReason) return item.relevanceReason;
+  return item.excerpt || item.content || "Helmut hält diese politische Lage für dich im Blick.";
+}
+
 function uniqueDecisionItem(item, index, items) {
   const key = item.signalId || item.id || item.title;
   return items.findIndex((entry) => (entry.signalId || entry.id || entry.title) === key) === index;
@@ -806,11 +2080,19 @@ function recommendedChannelLabel(decision) {
 }
 
 function meetingPreparations() {
-  const profileAppointments = asTextList(profile?.upcomingAppointments).map(parseAppointmentText);
+  const profileAppointments = asTextList(profile?.upcomingAppointments)
+    .map(parseAppointmentText)
+    .filter(isRelevantMeetingDate);
   const fallback = fallbackMeetings();
   return (profileAppointments.length ? profileAppointments : fallback)
     .map((meeting, index) => prepareMeeting(meeting, index))
     .sort((a, b) => new Date(a.datum || 0) - new Date(b.datum || 0));
+}
+
+function isRelevantMeetingDate(meeting) {
+  const date = new Date(meeting?.datum || "");
+  if (Number.isNaN(date.getTime())) return true;
+  return date.getTime() >= Date.now() - 12 * 60 * 60 * 1000;
 }
 
 function parseAppointmentText(value, index = 0) {
@@ -868,25 +2150,55 @@ function prepareMeeting(input, index = 0) {
   const sourceDecision = decisions.find((decision) => textHasTopic(decision, topic)) || decisions[0] || {};
   const context = sourceDecision.title ? `Aktuelle Lage: ${sourceDecision.title}. ${sourceDecision.summary || ""}` : "Aktuelle Lage aus Mandatsprofil und laufenden Quellen prüfen.";
   const committee = profile?.committee || profile?.committees?.[0] || "Arbeit und Soziales";
+  const coreLine = meetingCoreLine(input, sourceDecision);
   return {
     ...input,
     id: input.id || `meeting-${index}-${slugify(input.terminTitel || topic)}`,
     kurzbriefing: `Dieser Termin ist relevant, weil er direkt an deinen Ausschuss ${committee} und deine Schwerpunkte ${topProfileTopicsForView().slice(0, 3).join(", ")} anschließt.`,
+    kernlinie: coreLine,
+    entscheidungsfrage: meetingDecisionQuestion(input, sourceDecision),
     politischerKontext: context,
     aktuelleLage: context,
+    relevantDecision: sourceDecision?.title ? sourceDecision : null,
     moeglicheInteressenDerGegenseite: opponentInterestForMeeting(input),
     empfohleneGespraechspunkte: meetingTalkingPoints(input, sourceDecision),
     kritischeFragen: meetingCriticalQuestions(input, sourceDecision),
     chancen: meetingChances(input, sourceDecision),
     risiken: meetingRisks(input, sourceDecision),
-    moeglicheAnschlussaktion: `Nach dem Termin kurze Linie festhalten: Was kann Cem öffentlich aufgreifen, was geht ans Büro, was bleibt intern?`,
+    moeglicheAnschlussaktion: `Nach dem Termin kurze Linie festhalten: Was kannst du öffentlich aufgreifen, was geht ans Büro, was bleibt intern?`,
     optionalRedeentwurf: `Redeimpuls: Gute Arbeit und soziale Sicherheit müssen im Alltag der Menschen ankommen. Genau daran messen wir politische Vorhaben.`,
     optionalSocialStatement: `${topic}: Entscheidend ist, dass soziale Politik konkret wirkt - bei Arbeit, Sicherheit und Respekt im Alltag.`,
-    optionalPressezitat: `Wir müssen die Bundesregierung daran messen, ob ihre Vorhaben für Beschäftigte und Menschen mit niedrigen Einkommen konkret besser werden.`
+    optionalPressezitat: coreLine
   };
 }
 
+function nextMeetingForItem(item) {
+  if (!item) return null;
+  return meetingPreparations().find((meeting) => {
+    const meetingText = `${meeting.terminTitel || ""} ${meeting.thema || ""} ${meeting.notizenVomBüro || ""}`.toLowerCase();
+    const itemText = `${item.title || ""} ${item.summary || ""} ${item.whyItMatters || ""} ${item.action || ""}`.toLowerCase();
+    const sharedTopic = meetingText.split(/\W+/).filter((part) => part.length > 4).some((part) => itemText.includes(part));
+    return sharedTopic
+      || (itemText.includes("bmas") && meetingText.includes("bundesregierung"))
+      || (itemText.includes("ausschuss") && meetingText.includes("ausschuss"));
+  }) || null;
+}
+
 function meetingDraftText(meeting, type = "briefing") {
+  if (type === "line") {
+    return [
+      `Kernlinie für ${meeting.terminTitel}`,
+      "",
+      meeting.kernlinie,
+      "",
+      "Warum diese Linie:",
+      `- ${meeting.kurzbriefing}`,
+      `- ${meeting.entscheidungsfrage}`,
+      "",
+      "Nächster Schritt:",
+      meeting.moeglicheAnschlussaktion
+    ].join("\n");
+  }
   if (type === "questions") {
     return [
       `Fragen für ${meeting.terminTitel}`,
@@ -911,15 +2223,20 @@ function meetingDraftText(meeting, type = "briefing") {
   return [
     `Kurzbriefing: ${meeting.terminTitel}`,
     "",
+    `Kernlinie: ${meeting.kernlinie}`,
+    "",
     meeting.kurzbriefing,
     "",
-    `Politischer Kontext: ${meeting.politischerKontext}`,
+    `Entscheidungsfrage: ${meeting.entscheidungsfrage}`,
     "",
-    "Gesprächspunkte:",
-    ...meeting.empfohleneGespraechspunkte.map((point) => `- ${point}`),
+    `Aktuelle Lage: ${meeting.politischerKontext}`,
     "",
-    `Chance: ${meeting.chancen[0]}`,
-    `Risiko: ${meeting.risiken[0]}`,
+    "Bitte im Termin klären:",
+    ...meeting.kritischeFragen.slice(0, 3).map((question) => `- ${question}`),
+    "",
+    "Politisch wichtig:",
+    `- Chance: ${meeting.chancen[0]}`,
+    `- Risiko: ${meeting.risiken[0]}`,
     "",
     `Anschlussaktion: ${meeting.moeglicheAnschlussaktion}`
   ].join("\n");
@@ -937,6 +2254,31 @@ function meetingTalkingPoints(input, decision = {}) {
     `Welche rote Linie solltest du bei Finanzierung, Kontrolle oder Umsetzung setzen?`,
     decision.title ? `Aktuelle Quelle ansprechen: ${decision.title}.` : "Nach belastbaren Beispielen und Zahlen fragen."
   ];
+}
+
+function meetingCoreLine(input, decision = {}) {
+  const topic = input.thema || input.terminTitel || "das Thema";
+  if (decision.title) {
+    return `Deine Linie sollte sein: ${compactText(chiefRecommendationText(decision), 145)}`;
+  }
+  if (String(topic).toLowerCase().includes("tarif")) {
+    return "Tarifbindung muss im Alltag kontrollierbar und durchsetzbar sein, nicht nur als politisches Versprechen auftauchen.";
+  }
+  if (String(topic).toLowerCase().includes("rente")) {
+    return "Soziale Sicherheit im Alter darf nicht gegen Haushaltslogik ausgespielt werden.";
+  }
+  if (String(topic).toLowerCase().includes("bürgergeld") || String(topic).toLowerCase().includes("armut")) {
+    return "Die Debatte darf nicht bei Sanktionen stehen bleiben; entscheidend sind Beratung, gute Arbeit und Armutsvermeidung.";
+  }
+  return `Halte den Termin auf eine klare politische Linie: Was hilft konkret vielen Menschen, und wo muss die Bundesregierung liefern?`;
+}
+
+function meetingDecisionQuestion(input, decision = {}) {
+  const topic = input.thema || input.terminTitel || "das Thema";
+  if (decision.title) {
+    return `Musst du aus dem Termin heraus zu "${decision.title}" öffentlich reagieren oder reicht eine interne Nachbereitung?`;
+  }
+  return `Entsteht aus ${topic} eine öffentliche Position, eine Ausschussfrage oder nur eine interne Notiz?`;
 }
 
 function meetingCriticalQuestions(input) {
@@ -1346,7 +2688,7 @@ function renderChiefRecommendation() {
       <div class="chief-actions">
         <button class="primary-button" type="button" data-detail="${escapeHtml(decision.id)}">Linie lesen</button>
         <button class="secondary-button" type="button" data-communication="${escapeHtml(decision.id)}">Statement erstellen</button>
-        ${taskId ? `<button class="secondary-button" type="button" data-task-copy="${escapeHtml(taskId)}">Ans Büro geben</button>` : ""}
+        ${taskId ? `<button class="secondary-button" type="button" data-task-copy="${escapeHtml(taskId)}">Teilen</button>` : ""}
       </div>
     </section>
   `;
@@ -1381,11 +2723,35 @@ function competentNoActionItems() {
 }
 
 function noDecisionLead(items) {
+  const phase = helmutDayPhase().key;
+  if (briefing.fallbackReason && /bereits|früheren Lage|nicht erneut/i.test(briefing.fallbackReason)) {
+    return "Ich habe neue Quellen geprüft. Einige relevante Artikel kennst du bereits aus einer früheren Lage; ich hebe sie deshalb bewusst nicht erneut als Entscheidung hoch.";
+  }
   if (!items.length) {
-    return "Ich habe die Quellen geprüft. Für dich liegt gerade keine belastbare Lage vor, auf die du politisch reagieren solltest.";
+    if (phase === "morning") return "Ich habe Regierung, Fraktion, Ausschuss und Personenlage geprüft. Heute Morgen liegt keine belastbare Lage vor, auf die du öffentlich reagieren solltest.";
+    if (phase === "midday") return "Seit dem Morgen ist keine Entwicklung stark genug geworden, um deine Priorität zu verändern. Du musst jetzt nichts senden.";
+    if (phase === "afternoon") return "Der Nachmittag bleibt ruhig. Halte dich sprechfähig, aber erzeuge keine Kommunikation ohne politischen Anlass.";
+    if (phase === "evening") return "Für heute ist nichts mehr zu eskalieren. Ich halte Regierungsvorhaben, Fraktionslinie und Ausschusslage für morgen im Blick.";
+    return "Die Lage ist stabil. Ich prüfe weiter, ob sich für morgen ein neuer Handlungsbedarf ergibt.";
   }
   const names = items.map((item) => item.title || item.sourceName || "eine Entwicklung").slice(0, 3);
-  return `Ich habe die Quellen geprüft. Du musst jetzt nichts veröffentlichen; ich beobachte ${humanList(names)} weiter.`;
+  if (phase === "morning") return `Ich habe die Quellen geprüft. Du musst heute Morgen nichts veröffentlichen; ich beobachte für dich ${humanList(names)} weiter.`;
+  if (phase === "midday") return `Seit dem Morgen beobachte ich weiter ${humanList(names)}. Noch entsteht daraus kein neuer Reaktionsdruck.`;
+  if (phase === "afternoon") return `Für den Nachmittag gilt: ${humanList(names)} im Blick behalten, aber keine öffentliche Reaktion ohne neue Dynamik.`;
+  if (phase === "evening") return `Für morgen vormerken: ${humanList(names)}. Heute musst du dazu nichts mehr senden.`;
+  return `Ich beobachte für dich ${humanList(names)} weiter und melde nur, wenn sich daraus eine neue Priorität ergibt.`;
+}
+
+function noDecisionDirective() {
+  const phase = helmutDayPhase().key;
+  const government = governmentPlanItems()[0];
+  const meeting = nextPreparedMeeting();
+  if (government && meeting) return `Für dich als Opposition bleibt vor allem wichtig: ${government.title}. Ich verbinde das mit ${meeting.terminTitel} und prüfe, ob daraus eine Frage an die Bundesregierung oder eine Linie für Arbeit und Soziales entsteht.`;
+  if (government) return `Für dich als Opposition bleibt vor allem wichtig: ${government.title}. ${phase === "evening" || phase === "late" ? "Für morgen prüfe ich" : "Ich prüfe"}, ob daraus eine Frage an die Bundesregierung oder eine Linie für Arbeit und Soziales entsteht.`;
+  const party = partyFactionItems()[0];
+  if (party) return `Aus Fraktion und Partei ist aktuell anschlussfähig: ${party.title}. Noch keine Reaktion nötig, aber politisch im Blick behalten.`;
+  if (meeting) return `Nächster Arbeitsfokus: ${meeting.terminTitel}. Ich halte dafür Gesprächspunkte, Regierungslage und mögliche Nachfragen bereit.`;
+  return "Ich beobachte weiter Regierung, Fraktion, Partei und deinen Ausschuss. Wenn daraus Handlungsdruck entsteht, landet es oben.";
 }
 
 function humanList(values) {
@@ -1473,6 +2839,7 @@ function renderDecisionBlock(decision) {
 function renderDetailView() {
   const decision = selectedDecision();
   const action = polishReferentText(decision.action);
+  const feedbackState = decision.feedback || (decision.status === "ignored" ? "ignored" : decision.status === "snoozed" ? "snoozed" : decision.status === "relevant" ? "marked_relevant" : "");
   return `
     <article class="detail-page">
       <button class="back-link" type="button" data-view="briefing">Zurück zum Briefing</button>
@@ -1507,12 +2874,9 @@ function renderDetailView() {
         <p>${escapeHtml(action)}</p>
         <div class="detail-actions">
           <button class="primary-button" type="button" data-communication="${escapeHtml(decision.id)}">Text vorbereiten</button>
-          ${decision.taskTemplate?.id ? `<button class="secondary-button" type="button" data-task-copy="${escapeHtml(decision.taskTemplate.id)}">Ans Büro geben</button>` : ""}
+          ${decision.taskTemplate?.id ? `<button class="secondary-button" type="button" data-task-copy="${escapeHtml(decision.taskTemplate.id)}">Teilen</button>` : ""}
         </div>
-        <div class="learning-actions" aria-label="Helmut trainieren">
-          <button type="button" data-feedback="important" data-feedback-id="${escapeHtml(decision.id)}">Mehr davon</button>
-          <button type="button" data-feedback="ignored" data-feedback-id="${escapeHtml(decision.id)}">Nicht relevant</button>
-        </div>
+        ${renderFeedbackActions(decision)}
       </section>
       ${renderSourceBasis(decision)}
     </article>
@@ -1546,7 +2910,7 @@ function renderOfficeTasksSection() {
   return `
     <section class="plain-list">
       <h2>An dein Büro geben</h2>
-      <p class="section-note">Nur konkrete Übergaben. Maximal drei Dinge, die jemand vorbereiten kann.</p>
+      <p class="section-note">Nur konkrete Übergaben. Du wählst danach den passenden Weg.</p>
       ${officeTasks.map(renderTaskRow).join("") || `
         <article class="list-row office-empty">
           <div>
@@ -1567,22 +2931,65 @@ function renderTaskRow(task) {
   return `
     <article class="list-row office-task ${priorityClass(task.priority)}">
       <div class="office-task-main">
-        <span>${escapeHtml(taskPriorityLabel(task.priority))} · bis ${escapeHtml(formatDueDate(task.dueDate))}</span>
+        <span>${escapeHtml(assignee)} · ${escapeHtml(taskPriorityLabel(task.priority))} · bis ${escapeHtml(formatDueDate(task.dueDate))}</span>
         <h3>${escapeHtml(shortTaskTitle(task))}</h3>
         <p>${escapeHtml(officeTaskRequest(task))}</p>
-        <small>${escapeHtml(assignee)} · Ziel: ${escapeHtml(teamBenefitText(task))}</small>
+        <small>Ziel: ${escapeHtml(teamBenefitText(task))}</small>
       </div>
       <div class="task-actions">
         ${sourceUrl ? `<a class="secondary-button compact-button" href="${escapeAttribute(sourceUrl)}" target="_blank" rel="noopener noreferrer">Quelle öffnen</a>` : ""}
-        <button class="primary-button compact-button" type="button" data-task-copy="${escapeHtml(task.id)}">Übergabe kopieren</button>
+        <button class="primary-button compact-button" type="button" data-task-copy="${escapeHtml(task.id)}">Teilen</button>
       </div>
     </article>
   `;
 }
 
+function renderTaskHandoffPanel() {
+  const task = selectedTaskHandoffId ? tasks.find((entry) => entry.id === selectedTaskHandoffId) : null;
+  if (!task) return "";
+  const source = taskArticleSource(task);
+  const preferredMethod = preferredOfficeHandoffMethod();
+  const orderedMethods = orderedOfficeHandoffMethods(preferredMethod);
+  return `
+    <div class="handoff-layer open" data-handoff-layer>
+      <aside class="handoff-panel" aria-label="Büro-Übergabe wählen">
+        <div class="handoff-head">
+          <div>
+            <span>Büro-Übergabe</span>
+            <h2>${escapeHtml(shortTaskTitle(task))}</h2>
+          </div>
+          <button type="button" data-close-handoff aria-label="Übergabe schließen">×</button>
+        </div>
+        <p>${escapeHtml(compactText(taskShareText(task), 220))}</p>
+        <small class="handoff-default">Standard: ${escapeHtml(officeHandoffMethodLabel(preferredMethod))}</small>
+        ${source ? `<a class="source-pill" href="${escapeAttribute(source.url)}" target="_blank" rel="noopener noreferrer">Quelle prüfen</a>` : ""}
+        <div class="handoff-actions">
+          ${orderedMethods.map(([method, label], index) => renderOfficeHandoffButton(task, method, label, index === 0)).join("")}
+          <button class="secondary-button" type="button" data-task-copy-text="${escapeHtml(task.id)}">Nur kopieren</button>
+        </div>
+      </aside>
+    </div>
+  `;
+}
+
+function renderOfficeHandoffButton(task, method, label, primary) {
+  const buttonClass = primary ? "primary-button" : "secondary-button";
+  const prefix = primary ? "Standard: " : "";
+  if (method === "email") {
+    return `<a class="${buttonClass}" href="${escapeAttribute(taskMailtoHref(task))}" data-task-mail="${escapeHtml(task.id)}">${escapeHtml(prefix + label)}</a>`;
+  }
+  return `<button class="${buttonClass}" type="button" data-task-share-method="${escapeHtml(method)}" data-task-share="${escapeHtml(task.id)}">${escapeHtml(prefix + label)}</button>`;
+}
+
+function orderedOfficeHandoffMethods(preferredMethod) {
+  const preferred = officeHandoffMethods.find(([method]) => method === preferredMethod) || officeHandoffMethods[0];
+  return [preferred, ...officeHandoffMethods.filter(([method]) => method !== preferred[0])];
+}
+
 function officeTaskRequest(task) {
   const questions = taskBriefQuestions(task).slice(0, 2);
-  if (questions.length) return `Kläre kurz: ${questions.join(" ")} Danach einschätzen, ob wir heute reagieren sollten.`;
+  const assignee = task.assignee || recommendedTaskAssignee(task);
+  if (questions.length) return `${assignee}: Bitte bis ${formatDueDate(task.dueDate)} kurz einordnen. Kläre: ${questions.join(" ")} Ergebnis bitte als Ja/Nein-Empfehlung: reagieren, nur vorbereiten oder liegen lassen.`;
   return shortTaskDescription(task);
 }
 
@@ -1767,9 +3174,11 @@ function renderGeneratedCommunicationText(text) {
 
 function renderCommunicationVariants(decision) {
   const variants = [
-    ["Social Media", channelFallbackStatement(decision, "linkedin")],
-    ["Pressezitat", channelFallbackStatement(decision, "press")],
-    ["Ausschuss / Plenum", channelFallbackStatement(decision, "committee_question")]
+    ["Presse", channelFallbackStatement(decision, "press")],
+    ["LinkedIn", channelFallbackStatement(decision, "linkedin")],
+    ["X", channelFallbackStatement(decision, "x")],
+    ["Instagram", channelFallbackStatement(decision, "instagram")],
+    ["Ausschuss", channelFallbackStatement(decision, "committee_question")]
   ];
   return `
     <div class="statement-variants" aria-label="Statement Varianten">
@@ -1981,8 +3390,15 @@ function mentionRows(items, options = {}) {
 }
 
 function mentionVisual(item) {
-  const imageUrl = item.imageUrl || publisherImageUrl(item);
-  if (imageUrl) return `<img class="mention-image" src="${escapeAttribute(imageUrl)}" alt="" loading="lazy" />`;
+  if (item.imageUrl) {
+    return `<img class="mention-image mention-image-cover" src="${escapeAttribute(item.imageUrl)}" alt="" loading="lazy" />`;
+  }
+
+  const publisherLogo = publisherImageUrl(item);
+  if (publisherLogo) {
+    return `<div class="mention-image mention-image-logo" aria-hidden="true"><img src="${escapeAttribute(publisherLogo)}" alt="" loading="lazy" /></div>`;
+  }
+
   return `<div class="mention-avatar" aria-hidden="true">${escapeHtml(profileInitials())}</div>`;
 }
 
@@ -2047,9 +3463,7 @@ function renderSettingsView() {
   const ops = opsStatus || {};
   const storage = ops.storage || {};
   const crawl = ops.crawl || sourceStats;
-  const opsTone = ops.status === "Bereit" ? "low" : ops.status === "Prüfen" ? "medium" : "high";
   const latestCrawlText = crawl?.createdAt ? formatBriefingDate(crawl.createdAt) : "Noch kein Lauf";
-  const systemStatus = opsStatusLoaded ? (ops.status || (storage.backend === "supabase" ? "Bereit" : "Prüfen")) : "Wird geprüft";
   const committee = profile.committee || profile.committees?.[0] || "Noch offen";
   const topTopics = topProfileTopicsForView();
   const channels = asTextList(profile.preferredChannels).length ? asTextList(profile.preferredChannels) : ["Presse", "LinkedIn", "Ausschuss"];
@@ -2106,6 +3520,14 @@ function renderSettingsView() {
 
       <article class="list-row">
         <div>
+          <span>Büro-Übergabe</span>
+          <h3>${escapeHtml(officeHandoffMethodLabel(preferredOfficeHandoffMethod()))}</h3>
+          <p>Dieser Weg erscheint beim Arbeitsauftrag zuerst. E-Mail, Messenger und Kopieren bleiben immer verfügbar.</p>
+        </div>
+      </article>
+
+      <article class="list-row">
+        <div>
           <span>Zielgruppen</span>
           <h3>${escapeHtml(audiences.slice(0, 3).join(" · "))}</h3>
           <p>Helmut formuliert Empfehlungen so, dass politische Wirkung und Adressat zusammenpassen.</p>
@@ -2119,15 +3541,154 @@ function renderSettingsView() {
           <p>${escapeHtml(noGos.length ? `No-Go: ${noGos.slice(0, 3).join(" · ")}` : "Helmut soll nichts prominent machen, was keinen belastbaren Mandats- oder Quellenbezug hat.")}</p>
         </div>
       </article>
+    </section>
 
-      <article class="list-row ${opsTone}">
-        <div>
+    ${renderProfileSystemSection(ops, storage, crawl, latestCrawlText)}
+    ${renderPrivacyControlsSection()}
+  `;
+}
+
+function renderPrivacyControlsSection() {
+  return `
+    <section class="system-section privacy-section">
+      <div class="section-heading">
+        <span>Datenschutz</span>
+        <h2>Datenrechte</h2>
+        <p>Exportiere oder lösche die gespeicherten Profildaten dieses Pilotprofils.</p>
+      </div>
+      <div class="plain-list compact-list">
+        <article class="list-row low">
+          <div>
+            <span>Auskunft</span>
+            <h3>Profildaten exportieren</h3>
+            <p>Erstellt eine JSON-Datei mit Profil, Briefings, Aufgaben, Notizen, Interaktionen, Push-Daten und personenbezogenen Radar-Daten.</p>
+          </div>
+          <button class="secondary-button" type="button" data-privacy-export>Export</button>
+        </article>
+        <article class="list-row high">
+          <div>
+            <span>Löschung</span>
+            <h3>Profilbezogene Daten löschen</h3>
+            <p>Entfernt die gespeicherten Daten dieses Profils aus dem Helmut-Store. Diese Aktion ist nur nach Bestätigung möglich.</p>
+          </div>
+          <button class="secondary-button" type="button" data-privacy-delete>Löschen</button>
+        </article>
+        <article class="list-row">
+          <div>
+            <span>Information</span>
+            <h3>Datenschutzhinweise</h3>
+            <p>Öffnet die technische Datenschutzzusammenfassung des Piloten.</p>
+          </div>
+          <a class="secondary-button" href="/datenschutz" target="_blank" rel="noopener noreferrer">Öffnen</a>
+        </article>
+      </div>
+    </section>
+  `;
+}
+
+function renderProfileSystemSection(ops, storage, crawl, latestCrawlText) {
+  if (!opsStatusLoaded) {
+    return `
+      <section class="system-section">
+        <div class="section-heading">
           <span>System</span>
-          <h3>${escapeHtml(systemStatus)}</h3>
-          <p>${escapeHtml(opsStatusLoaded ? profileSystemSummary(storage, crawl, latestCrawlText) : "Helmut lädt den Systemstatus erst, wenn du das Profil öffnest. Dadurch startet die Morgenlage schneller.")}</p>
+          <h2>Wird geprüft</h2>
+          <p>Helmut lädt Quellenstatus, Supabase, OpenAI und Produktionscheck erst beim Öffnen des Profils.</p>
         </div>
-        <button class="secondary-button" type="button" data-run-crawl>System prüfen</button>
-      </article>
+        <div class="plain-list compact-list">
+          <article class="list-row medium">
+            <div>
+              <span>Status</span>
+              <h3>Systemstatus wird geladen</h3>
+              <p>Die Morgenlage startet dadurch schneller; technische Details bleiben bewusst im Profil unten.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+    `;
+  }
+
+  const status = opsStatusLoaded ? (ops.status || (storage.backend === "supabase" ? "Bereit" : "Prüfen")) : "Wird geprüft";
+  const storageTone = storage.backend === "supabase" ? "low" : "high";
+  const crawlTone = Number(crawl?.failedSources || 0) > 0 ? "medium" : "low";
+  const evidence = ops.evidenceQuality || {};
+  const evidenceTone = Number(evidence.missingLinks || 0) || Number(evidence.publisherFallbacks || 0) ? "medium" : "low";
+  const aiTone = ops.ai?.enabled ? "low" : "medium";
+  const push = {
+    ...(ops.push || {}),
+    ...(pushConfig || {}),
+    subscriptionCount: ops.store?.push?.subscriptions,
+    latestEventAt: ops.store?.push?.latestEventAt,
+    latestDelivered: ops.store?.push?.latestDelivered,
+    latestReason: ops.store?.push?.latestReason
+  };
+  const pushSupported = browserPushSupported();
+  const pushTone = push.enabled && pushSupported ? "low" : "medium";
+  const pushBlocked = pushPermissionState() === "denied";
+  const pushTestDisabled = !push.enabled || !pushSupported || pushBlocked;
+  const releaseTone = ops.readiness?.issues?.length ? "high" : ops.readiness?.warnings?.length ? "medium" : "low";
+
+  return `
+    <section class="system-section">
+      <div class="section-heading">
+        <span>System</span>
+        <h2>${escapeHtml(status)}</h2>
+        <p>Technik bleibt hier unten. Für Cem zählt oben nur das Mandat, die Themen und die politische Linie.</p>
+      </div>
+      <div class="plain-list compact-list">
+        <article class="list-row ${storageTone}">
+          <div>
+            <span>Speicher</span>
+            <h3>${escapeHtml(storage.backend === "supabase" ? "Supabase aktiv" : "Lokaler Speicher")}</h3>
+            <p>${escapeHtml(storage.backend === "supabase" ? "Profil, Briefings, Radar und Büroübergaben werden persistent gespeichert." : "Achtung: Daten werden noch nicht dauerhaft in Supabase gesichert.")}</p>
+          </div>
+        </article>
+
+        <article class="list-row ${crawlTone}">
+          <div>
+            <span>Quellenstatus</span>
+            <h3>${escapeHtml(`${crawl?.checkedSources || briefing.sourceStats?.checkedSources || 0} Quellen geprüft`)}</h3>
+            <p>${escapeHtml(`${crawl?.failedSources || briefing.sourceStats?.failedSources || 0} Fehler. Letzter Lauf: ${latestCrawlText}.`)}</p>
+          </div>
+          <button class="secondary-button" type="button" data-run-crawl>Jetzt prüfen</button>
+        </article>
+
+        <article class="list-row ${evidenceTone}">
+          <div>
+            <span>Quellenlinks</span>
+            <h3>${escapeHtml(evidenceSummary(evidence))}</h3>
+            <p>Prominente Empfehlungen sollen nur mit belastbarer Quellenbasis erscheinen.</p>
+          </div>
+        </article>
+
+        <article class="list-row ${aiTone}">
+          <div>
+            <span>KI</span>
+            <h3>${escapeHtml(ops.ai?.enabled ? `OpenAI aktiv · ${ops.ai.model || "Modell aktiv"}` : "OpenAI nicht aktiv")}</h3>
+            <p>${escapeHtml(qualitySummary(ops.briefing?.quality))}</p>
+          </div>
+        </article>
+
+        <article class="list-row ${pushTone}">
+          <div>
+            <span>Push</span>
+            <h3>${escapeHtml(pushStatusTitle(push, pushSupported))}</h3>
+            <p>${escapeHtml(pushStatusCopy(push, pushSupported))}</p>
+          </div>
+          <div class="row-actions">
+            <button class="secondary-button" type="button" data-enable-push>${escapeHtml(pushPermissionButtonLabel(push))}</button>
+            <button class="secondary-button" type="button" data-test-push ${pushTestDisabled ? "disabled" : ""}>${escapeHtml(pushTestButtonLabel(push))}</button>
+          </div>
+        </article>
+
+        <article class="list-row ${releaseTone}">
+          <div>
+            <span>Produktionscheck</span>
+            <h3>${escapeHtml(readinessSummary(ops.readiness))}</h3>
+            <p>${escapeHtml(protectionSummary(ops.protection))}</p>
+          </div>
+        </article>
+      </div>
     </section>
   `;
 }
@@ -2157,11 +3718,28 @@ function uniqueViewList(items) {
   });
 }
 
-function profileSystemSummary(storage, crawl, latestCrawlText) {
-  const backend = storage.backend === "supabase" ? "Supabase aktiv" : "lokaler Speicher";
-  const checked = crawl?.checkedSources || briefing.sourceStats?.checkedSources || 0;
-  const failed = crawl?.failedSources || briefing.sourceStats?.failedSources || 0;
-  return `${backend}. ${checked} Quellen zuletzt geprüft, ${failed} Fehler. Letzter Lauf: ${latestCrawlText}.`;
+function uniqueValueOptions(options) {
+  const seen = new Set();
+  return (options || []).filter(([value]) => {
+    const key = String(value || "").trim().toLowerCase();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function constituencyOptionsForState(state, currentValue = "") {
+  const options = constituencyOptionsByState[state] || [];
+  const values = [currentValue, ...options, "Noch offen"].filter(Boolean);
+  return uniqueViewList(values).map((value) => [value, value]);
+}
+
+function updateConstituencySelect(state) {
+  const select = app.querySelector("[data-constituency-select]");
+  if (!select) return;
+  const currentValue = select.value;
+  const options = constituencyOptionsForState(state, currentValue);
+  select.innerHTML = options.map(([value, label]) => `<option value="${escapeAttribute(value)}" ${value === currentValue ? "selected" : ""}>${escapeHtml(label)}</option>`).join("");
 }
 
 function qualitySummary(quality) {
@@ -2172,7 +3750,7 @@ function qualitySummary(quality) {
 }
 
 function learningSummary(learning) {
-  if (!learning || !learning.eventCount) return "Helmut lernt aus Öffnen, Ausblenden, Kopieren, Notizen und Büroaufträgen. Noch gibt es keine gespeicherten Nutzungssignale.";
+  if (!learning || !learning.eventCount) return "Helmut lernt aus Relevant, Später, Nicht relevant, Kopieren, Notizen und Büroaufträgen. Noch gibt es keine gespeicherten Nutzungssignale.";
   return `${learning.eventCount} Signale · Vertrauen ${learning.confidence}. ${learning.summary || "Ähnliche Themen werden künftig vorsichtig angepasst."}`;
 }
 
@@ -2193,6 +3771,44 @@ function evidenceSummary(evidence) {
   return `${direct} Direktlinks. Keine technischen Links.`;
 }
 
+function pushStatusTitle(push = {}, supported = browserPushSupported()) {
+  if (!supported) return "Auf diesem Gerät nicht verfügbar";
+  if (!push.enabled) return "Noch nicht konfiguriert";
+  if (pushEnabledOnThisDevice(push)) return "Aktiviert";
+  if (pushPermissionState() === "granted") return "Berechtigung aktiv";
+  if (pushPermissionState() === "denied") return "Vom Browser blockiert";
+  return "Bereit zum Aktivieren";
+}
+
+function pushStatusCopy(push = {}, supported = browserPushSupported()) {
+  if (!supported) return "Push funktioniert nur in unterstützten Browsern und auf HTTPS. Auf iOS meist erst nach Installation als Web-App.";
+  if (!push.enabled) return "Für echte Pushs fehlen noch VAPID Keys in der Produktionsumgebung.";
+  if (pushEnabledOnThisDevice(push)) return "Helmut informiert dich auf diesem Gerät, sobald das Morgenbriefing bereitsteht.";
+  if (pushPermissionState() === "granted") return "Die Browser-Berechtigung ist aktiv. Mit einem Klick synchronisiert Helmut dieses Gerät.";
+  if (pushPermissionState() === "denied") return "Du hast Benachrichtigungen blockiert. Erlaube sie zuerst in den Website-Einstellungen deines Browsers und lade Helmut danach neu.";
+  return "Einmal aktivieren. Danach kann Helmut das Morgenbriefing direkt auf dein Smartphone melden.";
+}
+
+function pushPermissionButtonLabel(push = {}) {
+  if (!browserPushSupported()) return "Nicht verfügbar";
+  if (pushEnabledOnThisDevice(push)) return "Aktiviert";
+  if (pushPermissionState() === "granted") return "Gerät synchronisieren";
+  if (pushPermissionState() === "denied") return "Blockiert";
+  return "Aktivieren";
+}
+
+function pushTestButtonLabel(push = {}) {
+  if (!browserPushSupported()) return "Nicht verfügbar";
+  if (!push.enabled) return "Nicht konfiguriert";
+  if (pushPermissionState() === "denied") return "Erst erlauben";
+  return "Test senden";
+}
+
+function pushPermissionState() {
+  if (typeof Notification === "undefined") return "unsupported";
+  return Notification.permission;
+}
+
 function operationsSummary(ops) {
   if (!ops || !ops.status) return "Status konnte noch nicht geladen werden.";
   const crawl = ops.crawl;
@@ -2210,6 +3826,127 @@ function protectionSummary(protection) {
   const interval = protection?.manualRunMinIntervalMinutes || 10;
   const drafts = protection?.communicationDraftsPerHour || 18;
   return `Manuelle Crawls und Briefings werden ${interval} Minuten wiederverwendet. Kommunikation: ${drafts}/h.`;
+}
+
+function browserPushSupported() {
+  return Boolean("serviceWorker" in navigator && "PushManager" in window && "Notification" in window);
+}
+
+function pushEnabledKey() {
+  return `${pushEnabledStorageKey}:${activePoliticianId}:${previewMode ? "preview" : "live"}`;
+}
+
+function pushEnabledOnThisDevice(push = {}) {
+  if (!browserPushSupported() || typeof Notification === "undefined" || Notification.permission !== "granted") return false;
+  try {
+    const localEnabled = window.localStorage.getItem(pushEnabledKey()) === "1";
+    const serverCount = Number(push.subscriptionCount);
+    if (Number.isFinite(serverCount) && serverCount <= 0) return false;
+    return localEnabled;
+  } catch {
+    return false;
+  }
+}
+
+async function loadPushConfig() {
+  const configResponse = await fetchWithTimeout(`/api/push/public-key?${apiScopeQuery()}`);
+  pushConfig = configResponse.ok ? await configResponse.json() : null;
+  return pushConfig;
+}
+
+async function ensurePushSubscription(options = {}) {
+  const { prompt = true } = options;
+  if (!browserPushSupported()) {
+    throw new Error("Push wird auf diesem Gerät nicht unterstützt");
+  }
+  await loadPushConfig();
+  if (!pushConfig?.enabled || !pushConfig.publicKey) {
+    throw new Error("Push ist serverseitig noch nicht konfiguriert");
+  }
+  const permission = Notification.permission === "granted"
+    ? "granted"
+    : prompt
+      ? await Notification.requestPermission()
+      : Notification.permission;
+  if (permission !== "granted") {
+    throw new Error("Benachrichtigungen nicht aktiviert");
+  }
+  const registration = await navigator.serviceWorker.register("/sw.js");
+  await navigator.serviceWorker.ready;
+  const existing = await registration.pushManager.getSubscription();
+  const subscription = existing || await registration.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: urlBase64ToUint8Array(pushConfig.publicKey)
+  });
+  const response = await fetchWithTimeout(`/api/push/subscribe?${apiScopeQuery()}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ subscription })
+  });
+  if (!response.ok) throw new Error(`Push subscribe failed: ${response.status}`);
+  const result = await response.json().catch(() => ({}));
+  pushConfig = {
+    ...(pushConfig || {}),
+    subscriptionCount: Math.max(1, Number(pushConfig?.subscriptionCount || 0)),
+    latestReason: ""
+  };
+  if (opsStatus?.store?.push) {
+    opsStatus.store.push.subscriptions = Math.max(1, Number(opsStatus.store.push.subscriptions || 0));
+    opsStatus.store.push.latestReason = "";
+  }
+  try {
+    window.localStorage.setItem(pushEnabledKey(), "1");
+  } catch {
+    // The browser permission is still valid even when localStorage is unavailable.
+  }
+  return result?.id ? { subscription, id: result.id } : subscription;
+}
+
+async function enablePushNotifications() {
+  await ensurePushSubscription();
+  showToast("Push aktiviert");
+  render();
+}
+
+async function sendTestPush() {
+  if (pushPermissionState() === "denied") {
+    throw new Error("Benachrichtigungen sind im Browser blockiert");
+  }
+  await ensurePushSubscription();
+  const response = await fetchWithTimeout(`/api/push/test?${apiScopeQuery()}`, { method: "POST" });
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw new Error(text || `Push test failed: ${response.status}`);
+  }
+  const result = await response.json();
+  if (result.skipped) {
+    throw new Error(result.reason || "Kein Push gesendet");
+  }
+  if (opsStatus?.store?.push) {
+    opsStatus.store.push.latestDelivered = Number(result.event?.delivered || 1);
+    opsStatus.store.push.latestEventAt = result.event?.createdAt || new Date().toISOString();
+    opsStatus.store.push.latestReason = "";
+  }
+  showToast("Test-Push gesendet");
+}
+
+function schedulePushAutoSync() {
+  if (pushAutoSyncStarted || previewMode || !browserPushSupported()) return;
+  if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+  pushAutoSyncStarted = true;
+  window.setTimeout(() => {
+    ensurePushSubscription({ prompt: false })
+      .catch((error) => console.warn("Push auto sync skipped", error));
+  }, 1200);
+}
+
+function urlBase64ToUint8Array(value) {
+  const padding = "=".repeat((4 - value.length % 4) % 4);
+  const base64 = (value + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const raw = window.atob(base64);
+  const output = new Uint8Array(raw.length);
+  for (let index = 0; index < raw.length; index += 1) output[index] = raw.charCodeAt(index);
+  return output;
 }
 
 function renderProfileSettingsView() {
@@ -2257,8 +3994,8 @@ function renderProfileSettingsView() {
           <h2>Was zählt für deinen Wahlkreis?</h2>
         </div>
         <div class="profile-grid">
-          ${profileField("state", "Bundesland", profile.state)}
-          ${profileField("constituency", "Wahlkreis", profile.constituency)}
+          ${profileSelectWithAttrs("state", "Bundesland", profile.state, federalStateOptions, 'data-state-select')}
+          ${profileValueSelectWithAttrs("constituency", "Wahlkreis", profile.constituency, constituencyOptionsForState(profile.state, profile.constituency), 'data-constituency-select')}
           ${profileField("location", "Ort", profile.location)}
         </div>
       </section>
@@ -2276,6 +4013,11 @@ function renderProfileSettingsView() {
         ${profileArea("riskTopics", "Risiko-Themen", profile.riskTopics)}
         ${profileArea("opportunityTopics", "Chancen-Themen", profile.opportunityTopics)}
         ${profileArea("preferredChannels", "Bevorzugte Kanäle", profile.preferredChannels)}
+        <div class="profile-subsection">
+          <span>Büro-Übergabe</span>
+          <p>Welcher Weg soll beim Button „Ans Büro geben” zuerst angeboten werden?</p>
+          ${radioValueGroup("officeHandoffMethod", preferredOfficeHandoffMethod(), officeHandoffMethods)}
+        </div>
         ${profileArea("upcomingAppointments", "Nächste Termine", profile.upcomingAppointments)}
         ${profileArea("noGoTopics", "No-Go-Themen", profile.noGoTopics)}
       </section>
@@ -2305,6 +4047,32 @@ function profileValueSelect(name, label, value, options) {
       <span>${escapeHtml(label)}</span>
       <select name="${escapeHtml(name)}">
         ${options.map(([optionValue, optionLabel]) => `<option value="${escapeAttribute(optionValue)}" ${optionValue === value ? "selected" : ""}>${escapeHtml(optionLabel)}</option>`).join("")}
+      </select>
+    </label>
+  `;
+}
+
+function profileSelectWithAttrs(name, label, value, options, attrs = "") {
+  const normalizedValue = value || options[0] || "";
+  const cleanOptions = uniqueViewList([normalizedValue, ...options]).filter(Boolean);
+  return `
+    <label class="profile-field">
+      <span>${escapeHtml(label)}</span>
+      <select name="${escapeHtml(name)}" ${attrs}>
+        ${cleanOptions.map((option) => `<option value="${escapeAttribute(option)}" ${option === normalizedValue ? "selected" : ""}>${escapeHtml(option)}</option>`).join("")}
+      </select>
+    </label>
+  `;
+}
+
+function profileValueSelectWithAttrs(name, label, value, options, attrs = "") {
+  const normalizedValue = value || options[0]?.[0] || "";
+  const cleanOptions = uniqueValueOptions([[normalizedValue, normalizedValue], ...options]);
+  return `
+    <label class="profile-field">
+      <span>${escapeHtml(label)}</span>
+      <select name="${escapeHtml(name)}" ${attrs}>
+        ${cleanOptions.map(([optionValue, optionLabel]) => `<option value="${escapeAttribute(optionValue)}" ${optionValue === normalizedValue ? "selected" : ""}>${escapeHtml(optionLabel)}</option>`).join("")}
       </select>
     </label>
   `;
@@ -2356,6 +4124,19 @@ function radioGroup(name, value, options) {
   `;
 }
 
+function radioValueGroup(name, value, options) {
+  return `
+    <div class="choice-grid compact">
+      ${options.map(([optionValue, optionLabel]) => `
+        <label class="choice-pill">
+          <input type="radio" name="${escapeAttribute(name)}" value="${escapeAttribute(optionValue)}" ${optionValue === value ? "checked" : ""} />
+          <span>${escapeHtml(optionLabel)}</span>
+        </label>
+      `).join("")}
+    </div>
+  `;
+}
+
 function priorityControl(topic, value) {
   return `
     <label class="priority-row">
@@ -2388,14 +4169,149 @@ function selectedDecision() {
   };
 }
 
+async function apiSend(method, path, body) {
+  const options = { method, headers: { "Content-Type": "application/json" } };
+  if (body !== undefined) options.body = JSON.stringify(body);
+  const res = await fetchWithTimeout(path, options);
+  let json = null;
+  try {
+    json = await res.json();
+  } catch {}
+  return { ok: res.ok, status: res.status, json };
+}
+
+function bindAccountActions() {
+  app.querySelectorAll("[data-logout]").forEach((button) => button.addEventListener("click", () => logout()));
+  app.querySelectorAll("[data-profile-switch]").forEach((select) => select.addEventListener("change", (event) => switchPolitician(event.target.value)));
+
+  const dailyForm = app.querySelector("#dailyInputForm");
+  if (dailyForm) {
+    dailyForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const err = app.querySelector("#dailyInputError");
+      if (err) err.textContent = "";
+      const fd = new FormData(dailyForm);
+      const body = {
+        title: fd.get("title"),
+        datetime: fd.get("datetime"),
+        context: fd.get("context"),
+        goal: fd.get("goal"),
+        desiredPrep: fd.get("desiredPrep")
+      };
+      const res = await apiSend("POST", `/api/daily-inputs?${apiScopeQuery()}`, body);
+      if (!res.ok) {
+        if (err) err.textContent = res.json?.error || "Konnte nicht gespeichert werden.";
+        return;
+      }
+      dailyInputsLoaded = false;
+      await ensureViewData("daily-input");
+      showToast("Eingetragen");
+    });
+  }
+
+  app.querySelectorAll("[data-remove-daily-input]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const id = button.dataset.removeDailyInput;
+      const res = await apiSend("DELETE", `/api/daily-inputs/${encodeURIComponent(id)}?${apiScopeQuery()}`);
+      if (res.ok) {
+        dailyInputsLoaded = false;
+        await ensureViewData("daily-input");
+      }
+    });
+  });
+
+  const createUserForm = app.querySelector("#createUserForm");
+  if (createUserForm) {
+    createUserForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const err = app.querySelector("#createUserError");
+      if (err) err.textContent = "";
+      const fd = new FormData(createUserForm);
+      const body = { name: fd.get("name"), email: fd.get("email"), role: fd.get("role"), password: fd.get("password") };
+      const res = await apiSend("POST", `/api/admin/users?${apiScopeQuery()}`, body);
+      if (!res.ok) {
+        if (err) err.textContent = res.json?.error || "Konnte nicht angelegt werden.";
+        return;
+      }
+      adminDataLoaded = false;
+      await ensureViewData("admin");
+      showToast("Nutzer angelegt");
+    });
+  }
+
+  app.querySelectorAll("[data-toggle-user]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const id = button.dataset.toggleUser;
+      const active = button.dataset.active === "1";
+      const res = await apiSend("PATCH", `/api/admin/users/${encodeURIComponent(id)}?${apiScopeQuery()}`, { active: !active });
+      if (res.ok) {
+        adminDataLoaded = false;
+        await ensureViewData("admin");
+      }
+    });
+  });
+
+  const assignForm = app.querySelector("#assignForm");
+  if (assignForm) {
+    assignForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const err = app.querySelector("#assignError");
+      if (err) err.textContent = "";
+      const fd = new FormData(assignForm);
+      const body = { userId: fd.get("userId"), politicianId: fd.get("politicianId") };
+      if (!body.userId) {
+        if (err) err.textContent = "Keine Referent:in vorhanden.";
+        return;
+      }
+      const res = await apiSend("POST", `/api/admin/assignments?${apiScopeQuery()}`, body);
+      if (!res.ok) {
+        if (err) err.textContent = res.json?.error || "Zuweisung fehlgeschlagen.";
+        return;
+      }
+      adminDataLoaded = false;
+      await ensureViewData("admin");
+      showToast("Zugewiesen");
+    });
+  }
+
+  app.querySelectorAll("[data-remove-assignment]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const body = { userId: button.dataset.user, politicianId: button.dataset.mandate };
+      const res = await apiSend("DELETE", `/api/admin/assignments?${apiScopeQuery()}`, body);
+      if (res.ok) {
+        adminDataLoaded = false;
+        await ensureViewData("admin");
+      }
+    });
+  });
+}
+
 function bindActions() {
+  if (isAccountMode()) {
+    try {
+      bindAccountActions();
+    } catch (error) {
+      console.warn("Account actions binding failed", error);
+    }
+  }
   app.querySelectorAll("[data-view]").forEach((button) => {
     button.addEventListener("click", () => {
       currentView = button.dataset.view;
       navOpen = false;
       updatesOpen = false;
+      if (currentView === "office" || currentView === "tasks") markOfficeSeen();
+      if (currentView === "helmut") startHelmutThinking();
+      else stopHelmutTyping();
       render();
       ensureViewData(currentView);
+    });
+  });
+
+  app.querySelectorAll("[data-refresh-helmut]").forEach((button) => {
+    button.addEventListener("click", () => {
+      currentView = "helmut";
+      startHelmutThinking();
+      render();
     });
   });
 
@@ -2433,6 +4349,27 @@ function bindActions() {
     });
   });
 
+  const stateSelect = app.querySelector("[data-state-select]");
+  if (stateSelect) {
+    stateSelect.addEventListener("change", () => updateConstituencySelect(stateSelect.value));
+  }
+
+  app.querySelectorAll("[data-close-handoff]").forEach((button) => {
+    button.addEventListener("click", () => {
+      selectedTaskHandoffId = "";
+      render();
+    });
+  });
+
+  app.querySelectorAll("[data-handoff-layer]").forEach((layer) => {
+    layer.addEventListener("click", (event) => {
+      if (event.target === layer) {
+        selectedTaskHandoffId = "";
+        render();
+      }
+    });
+  });
+
   app.querySelectorAll("[data-detail]").forEach((button) => {
     button.addEventListener("click", () => {
       selectedDecisionId = button.dataset.detail;
@@ -2457,6 +4394,17 @@ function bindActions() {
     });
   });
 
+  app.querySelectorAll("[data-quick-communication]").forEach((button) => {
+    button.addEventListener("click", () => {
+      selectedDecisionId = button.dataset.quickCommunication;
+      selectedCommunicationChannel = button.dataset.quickChannel || recommendedInitialChannel(selectedDecision());
+      communicationContextTitle = "";
+      generatedStatement = channelFallbackStatement(selectedDecision(), selectedCommunicationChannel);
+      currentView = "communication";
+      render();
+    });
+  });
+
   app.querySelectorAll("[data-channel]").forEach((button) => {
     button.addEventListener("click", () => {
       selectedCommunicationChannel = button.dataset.channel || "press";
@@ -2473,15 +4421,15 @@ function bindActions() {
     });
   });
 
-  app.querySelectorAll("[data-meeting-brief], [data-meeting-speech], [data-meeting-questions]").forEach((button) => {
+  app.querySelectorAll("[data-meeting-brief], [data-meeting-speech], [data-meeting-questions], [data-meeting-line]").forEach((button) => {
     button.addEventListener("click", () => {
-      const meetingId = button.dataset.meetingBrief || button.dataset.meetingSpeech || button.dataset.meetingQuestions;
+      const meetingId = button.dataset.meetingBrief || button.dataset.meetingSpeech || button.dataset.meetingQuestions || button.dataset.meetingLine;
       const meeting = meetingPreparations().find((entry) => entry.id === meetingId);
       if (!meeting) return;
       selectedDecisionId = decisions[0]?.id || "";
       communicationContextTitle = meeting.terminTitel;
-      selectedCommunicationChannel = button.dataset.meetingSpeech ? "internal_line" : button.dataset.meetingQuestions ? "committee_question" : "press";
-      generatedStatement = meetingDraftText(meeting, button.dataset.meetingSpeech ? "speech" : button.dataset.meetingQuestions ? "questions" : "briefing");
+      selectedCommunicationChannel = button.dataset.meetingSpeech || button.dataset.meetingLine ? "internal_line" : button.dataset.meetingQuestions ? "committee_question" : "press";
+      generatedStatement = meetingDraftText(meeting, button.dataset.meetingSpeech ? "speech" : button.dataset.meetingQuestions ? "questions" : button.dataset.meetingLine ? "line" : "briefing");
       currentView = "communication";
       render();
     });
@@ -2499,18 +4447,63 @@ function bindActions() {
     button.addEventListener("click", () => {
       const task = tasks.find((entry) => entry.id === button.dataset.taskCopy);
       if (!task) return;
+      selectedTaskHandoffId = task.id;
+      render();
+    });
+  });
+
+  app.querySelectorAll("[data-task-mail]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const task = tasks.find((entry) => entry.id === button.dataset.taskMail);
+      const decision = decisions.find((entry) => entry.signalId === task?.sourceSignalId || entry.taskTemplate?.id === task?.id);
+      logDecisionInteraction("task_mail_opened", decision, { taskId: task?.id });
+      window.setTimeout(() => {
+        selectedTaskHandoffId = "";
+        render();
+      }, 250);
+    });
+  });
+
+  app.querySelectorAll("[data-task-share]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const task = tasks.find((entry) => entry.id === button.dataset.taskShare);
+      if (!task) return;
+      const method = button.dataset.taskShareMethod || "share";
+      await shareTaskViaMethod(task, method);
+      const decision = decisions.find((entry) => entry.signalId === task.sourceSignalId || entry.taskTemplate?.id === task.id);
+      logDecisionInteraction(`task_${method}_shared`, decision, { taskId: task.id });
+      selectedTaskHandoffId = "";
+      render();
+    });
+  });
+
+  app.querySelectorAll("[data-task-copy-text]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const task = tasks.find((entry) => entry.id === button.dataset.taskCopyText);
+      if (!task) return;
       copyText(taskShareText(task), "Auftrag bereit");
       const decision = decisions.find((entry) => entry.signalId === task.sourceSignalId || entry.taskTemplate?.id === task.id);
       logDecisionInteraction("task_copied", decision, { taskId: task.id });
+      selectedTaskHandoffId = "";
+      render();
     });
   });
 
   app.querySelectorAll("[data-feedback]").forEach((button) => {
     button.addEventListener("click", async () => {
       const decision = decisions.find((entry) => entry.id === button.dataset.feedbackId);
-      const type = button.dataset.feedback === "ignored" ? "ignored" : "marked_important";
+      const type = button.dataset.feedback === "ignored" ? "ignored"
+        : button.dataset.feedback === "later" ? "snoozed"
+          : button.dataset.feedback === "done" ? "done"
+          : "marked_relevant";
       await logDecisionInteraction(type, decision);
-      showToast(type === "ignored" ? "Helmut merkt: weniger wichtig" : "Helmut merkt: wichtiger");
+      if (decision) {
+        decision.feedback = type;
+        decision.status = type === "ignored" ? "ignored" : type === "snoozed" ? "snoozed" : type === "done" ? "done" : "relevant";
+      }
+      button.closest(".learning-actions")?.querySelectorAll("[data-feedback]").forEach((entry) => entry.classList.remove("is-active"));
+      button.classList.add("is-active");
+      showToast(type === "ignored" ? "Wird niedriger gewichtet" : type === "snoozed" ? "Für später gemerkt" : type === "done" ? "Als erledigt gelernt" : "Als relevant gemerkt");
     });
   });
 
@@ -2524,7 +4517,7 @@ function bindActions() {
       button.disabled = true;
       button.textContent = "Prüft...";
       try {
-        const response = await fetch(`/api/pipeline/run?${apiScopeQuery()}`);
+        const response = await fetchWithTimeout(`/api/pipeline/run?${apiScopeQuery()}`);
         if (!response.ok) throw new Error(`Pilot check failed: ${response.status}`);
         const result = await response.json();
         showToast(result.skippedReason ? "Letzter Lauf wird genutzt" : "Helmut ist aktualisiert");
@@ -2535,6 +4528,104 @@ function bindActions() {
         button.textContent = originalText;
         showToast("Prüfung konnte nicht gestartet werden");
         render();
+      }
+    });
+  });
+
+  app.querySelectorAll("[data-run-lage-check]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      if (previewMode) {
+        showToast("Vorschau: kein Lage-Check gestartet");
+        return;
+      }
+      const originalText = button.textContent;
+      button.disabled = true;
+      button.textContent = "Prüft...";
+      try {
+        const response = await fetchWithTimeout(`/api/lage/check?${apiScopeQuery()}`);
+        if (!response.ok) throw new Error(`Lage check failed: ${response.status}`);
+        const result = await response.json();
+        showToast(result.skippedReason ? "Letzter Lage-Check wird genutzt" : result.status === "changed" ? "Neue Lage erkannt" : "Priorität stabil");
+        await loadBriefing();
+      } catch (error) {
+        console.error(error);
+        button.disabled = false;
+        button.textContent = originalText;
+        showToast("Lage-Check konnte nicht gestartet werden");
+        render();
+      }
+    });
+  });
+
+  app.querySelectorAll("[data-privacy-export]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      const originalText = button.textContent;
+      button.textContent = "Exportiert...";
+      try {
+        await exportPrivacyData();
+        showToast("Export erstellt");
+      } catch (error) {
+        console.error(error);
+        showToast("Export konnte nicht erstellt werden");
+      } finally {
+        button.disabled = false;
+        button.textContent = originalText;
+      }
+    });
+  });
+
+  app.querySelectorAll("[data-privacy-delete]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const confirmation = window.prompt("Zum Löschen dieses Profils DELETE eingeben.");
+      if (confirmation !== "DELETE") return;
+      button.disabled = true;
+      const originalText = button.textContent;
+      button.textContent = "Löscht...";
+      try {
+        await deletePrivacyData();
+        showToast("Daten gelöscht");
+        window.location.reload();
+      } catch (error) {
+        console.error(error);
+        showToast("Daten konnten nicht gelöscht werden");
+        button.disabled = false;
+        button.textContent = originalText;
+      }
+    });
+  });
+
+  app.querySelectorAll("[data-enable-push]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      const originalText = button.textContent;
+      button.textContent = "Aktiviere...";
+      try {
+        await enablePushNotifications();
+      } catch (error) {
+        console.error(error);
+        showToast("Push konnte nicht aktiviert werden");
+      } finally {
+        button.disabled = false;
+        button.textContent = originalText;
+        render();
+      }
+    });
+  });
+
+  app.querySelectorAll("[data-test-push]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      const originalText = button.textContent;
+      button.textContent = "Sendet...";
+      try {
+        await sendTestPush();
+      } catch (error) {
+        console.error(error);
+        showToast("Test-Push nicht gesendet");
+      } finally {
+        button.disabled = false;
+        button.textContent = originalText;
       }
     });
   });
@@ -2596,7 +4687,7 @@ function bindActions() {
       const text = new FormData(noteForm).get("text");
       if (!String(text || "").trim()) return;
       try {
-        const response = await fetch(`/api/notes?${apiScopeQuery()}`, {
+        const response = await fetchWithTimeout(`/api/notes?${apiScopeQuery()}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -2616,6 +4707,82 @@ function bindActions() {
         showToast("Notiz konnte nicht gespeichert werden");
       }
     });
+  }
+}
+
+function startHelmutThinking() {
+  if (!shouldStartHelmutFlow()) {
+    helmutThinking = false;
+    stopHelmutTyping();
+    render();
+    return;
+  }
+  markHelmutFlowStarted();
+  helmutThinking = true;
+  stopHelmutTyping();
+  if (helmutThinkingTimer) window.clearTimeout(helmutThinkingTimer);
+  helmutThinkingTimer = window.setTimeout(() => {
+    helmutThinking = false;
+    helmutThinkingTimer = null;
+    if (currentView === "helmut") startHelmutTyping();
+  }, 1400);
+}
+
+function shouldStartHelmutFlow() {
+  try {
+    const lastStartedAt = Number(window.localStorage.getItem(helmutFlowCooldownKey()) || 0);
+    return !lastStartedAt || Date.now() - lastStartedAt > helmutFlowCooldownMs;
+  } catch {
+    return true;
+  }
+}
+
+function markHelmutFlowStarted() {
+  try {
+    window.localStorage.setItem(helmutFlowCooldownKey(), String(Date.now()));
+  } catch (error) {
+    console.warn("Helmut flow cooldown not saved", error);
+  }
+}
+
+function helmutFlowCooldownKey() {
+  return `${helmutFlowCooldownPrefix}:${activePoliticianId}:${previewMode ? "preview" : "live"}`;
+}
+
+function startHelmutTyping() {
+  const assessment = buildHelmutAssessment();
+  const fullText = assessment.typingText || assessmentTypingText(assessment);
+  helmutTypingActive = true;
+  helmutTypedText = "";
+  helmutTypingFullText = fullText;
+  if (helmutTypingTimer) window.clearInterval(helmutTypingTimer);
+  render();
+  helmutTypingTimer = window.setInterval(() => {
+    if (currentView !== "helmut") {
+      stopHelmutTyping();
+      return;
+    }
+    const nextLength = Math.min(helmutTypingFullText.length, helmutTypedText.length + 10);
+    helmutTypedText = helmutTypingFullText.slice(0, nextLength);
+    if (nextLength >= helmutTypingFullText.length) {
+      window.clearInterval(helmutTypingTimer);
+      helmutTypingTimer = null;
+      window.setTimeout(() => {
+        helmutTypingActive = false;
+        if (currentView === "helmut") render();
+      }, 450);
+    }
+    render();
+  }, 34);
+}
+
+function stopHelmutTyping() {
+  helmutTypingActive = false;
+  helmutTypedText = "";
+  helmutTypingFullText = "";
+  if (helmutTypingTimer) {
+    window.clearInterval(helmutTypingTimer);
+    helmutTypingTimer = null;
   }
 }
 
@@ -2655,12 +4822,13 @@ async function saveProfileFromForm(form) {
     riskTopics: lines(data.get("riskTopics")),
     opportunityTopics: lines(data.get("opportunityTopics")),
     preferredChannels: lines(data.get("preferredChannels")),
+    officeHandoffMethod: normalizeOfficeHandoffMethod(data.get("officeHandoffMethod")),
     upcomingAppointments: lines(data.get("upcomingAppointments")),
     noGoTopics: lines(data.get("noGoTopics"))
   };
 
   try {
-    const response = await fetch(`/api/profile/current?${apiScopeQuery()}`, {
+    const response = await fetchWithTimeout(`/api/profile/current?${apiScopeQuery()}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...payload, id: activePoliticianId })
@@ -2676,6 +4844,32 @@ async function saveProfileFromForm(form) {
   }
 }
 
+async function exportPrivacyData() {
+  const response = await fetchWithTimeout(`/api/privacy/export?${apiScopeQuery()}`);
+  if (!response.ok) throw new Error(`Privacy export failed: ${response.status}`);
+  const payload = await response.json();
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const date = new Date().toISOString().slice(0, 10);
+  link.href = url;
+  link.download = `helmut-datenauskunft-${activePoliticianId}-${date}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function deletePrivacyData() {
+  const response = await fetchWithTimeout(`/api/privacy/delete?${apiScopeQuery()}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ confirm: "DELETE" })
+  });
+  if (!response.ok) throw new Error(`Privacy delete failed: ${response.status}`);
+  return response.json();
+}
+
 function lines(value) {
   return String(value || "").split(/\n|,/).map((entry) => entry.trim()).filter(Boolean);
 }
@@ -2685,7 +4879,7 @@ function generateStatement(input, decision, channel = selectedCommunicationChann
 }
 
 async function generateStatementWithBackend(input, decision, channel = selectedCommunicationChannel) {
-  const response = await fetch("/api/communication/generate", {
+  const response = await fetchWithTimeout(`/api/communication/generate?${apiScopeQuery()}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -2806,6 +5000,46 @@ function openOfficeTaskCount() {
   return tasks.filter((task) => task.status !== "done").length;
 }
 
+function actionableOfficeTaskCount() {
+  const actionableTasks = tasks.filter((task) => isActionableOfficeTask(task) && taskArticleSource(task));
+  const seenAt = getSeenOfficeTimestamp();
+  if (!seenAt) return actionableTasks.length;
+  return actionableTasks.filter((task) => taskTimestamp(task) > seenAt).length;
+}
+
+function markOfficeSeen() {
+  const latest = latestOfficeTaskTimestamp();
+  try {
+    window.localStorage.setItem(officeSeenStorageKeyForProfile(), String(latest || Date.now()));
+  } catch (error) {
+    console.warn("Office seen state not saved", error);
+  }
+}
+
+function getSeenOfficeTimestamp() {
+  try {
+    return Number(window.localStorage.getItem(officeSeenStorageKeyForProfile()) || 0);
+  } catch {
+    return 0;
+  }
+}
+
+function latestOfficeTaskTimestamp() {
+  return Math.max(0, ...tasks
+    .filter((task) => isActionableOfficeTask(task) && taskArticleSource(task))
+    .map(taskTimestamp));
+}
+
+function taskTimestamp(task = {}) {
+  const value = task.createdAt || task.created_at || task.updatedAt || task.updated_at || task.dueDate || "";
+  const timestamp = new Date(value).getTime();
+  return Number.isNaN(timestamp) ? 0 : timestamp;
+}
+
+function officeSeenStorageKeyForProfile() {
+  return `${officeSeenStorageKey}:${activePoliticianId}`;
+}
+
 function hasUnreadUpdates() {
   const latest = latestUpdateTimestamp();
   if (!latest) return false;
@@ -2892,7 +5126,7 @@ function notificationItems() {
 }
 
 function notificationTone(type) {
-  if (["risk_detected", "reaction_recommended", "meeting_starts_soon"].includes(type)) return "risk";
+  if (["risk_detected", "reaction_recommended", "meeting_starts_soon", "office_handoff_recommended"].includes(type)) return "risk";
   if (["opportunity_detected", "meeting_prep_ready"].includes(type)) return "chance";
   return "watch";
 }
@@ -2904,7 +5138,8 @@ function notificationTypeLabel(type) {
     meeting_prep_ready: "Terminvorbereitung",
     meeting_starts_soon: "Termin bald",
     opportunity_detected: "Chance erkannt",
-    risk_detected: "Risiko erkannt"
+    risk_detected: "Risiko erkannt",
+    office_handoff_recommended: "Büro-Übergabe"
   })[type] || "Update";
 }
 
@@ -2916,6 +5151,7 @@ function taskShareText(task) {
   const articleSource = taskArticleSource(task);
   const sourceUrl = articleSource?.url || "";
   const sourceName = articleSource?.source?.sourceName || task.primarySource?.sourceName || "";
+  const assignee = task.assignee || recommendedTaskAssignee(task);
   const questions = taskBriefQuestions(task);
   const sourceLines = sourceName || sourceUrl
     ? [
@@ -2928,21 +5164,78 @@ function taskShareText(task) {
   return trimEmailLines([
     "Hallo zusammen,",
     "",
-    `bitte prüft bis ${formatDueDate(task.dueDate)} kurz folgende Lage:`,
+    `bitte prüft mir bis ${formatDueDate(task.dueDate)} kurz folgende Lage:`,
     "",
-    shortTaskTitle(task),
+    `Thema: ${shortTaskTitle(task)}`,
+    `Zuständig: ${assignee}`,
     "",
-    "Was wir brauchen:",
+    "Bitte klären:",
     ...questions.map((question) => `- ${question}`),
     "",
-    "Ziel für uns:",
-    teamBenefitText(task),
+    "Bitte als kurze Rückmeldung:",
+    "- Müssen wir reagieren?",
+    "- Wenn ja: mit welcher Linie?",
+    "- Wenn nein: was beobachten wir weiter?",
     "",
-    task.riskIfIgnored ? `Einordnung: ${toTeamRiskText(task.riskIfIgnored)}` : "",
+    `Ziel: ${teamBenefitText(task)}`,
+    "",
+    task.riskIfIgnored ? `Warum wichtig: ${toTeamRiskText(task.riskIfIgnored)}` : "",
     ...sourceLines,
     "",
     "Danke"
   ]).join("\n");
+}
+
+function preferredOfficeHandoffMethod() {
+  return normalizeOfficeHandoffMethod(profile?.officeHandoffMethod);
+}
+
+function normalizeOfficeHandoffMethod(value, fallback = "share") {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (officeHandoffMethods.some(([method]) => method === normalized)) return normalized;
+  const fallbackValue = String(fallback || "").trim().toLowerCase();
+  return officeHandoffMethods.some(([method]) => method === fallbackValue) ? fallbackValue : "share";
+}
+
+function officeHandoffMethodLabel(method) {
+  return officeHandoffMethods.find(([value]) => value === normalizeOfficeHandoffMethod(method))?.[1] || "Teilen";
+}
+
+async function shareTaskViaMethod(task, method = "share") {
+  const normalizedMethod = officeHandoffMethods.some(([value]) => value === method) ? method : "share";
+  if (normalizedMethod === "whatsapp") {
+    await openExternalShareUrl(`https://wa.me/?text=${encodeURIComponent(taskShareText(task))}`, task, "WhatsApp geöffnet. Falls nicht: Auftrag wurde kopiert.");
+    return;
+  }
+  if (normalizedMethod === "telegram") {
+    const source = taskArticleSource(task);
+    const sourceUrl = source?.url || "";
+    await openExternalShareUrl(`https://t.me/share/url?url=${encodeURIComponent(sourceUrl)}&text=${encodeURIComponent(taskShareText(task))}`, task, "Telegram geöffnet. Falls nicht: Auftrag wurde kopiert.");
+    return;
+  }
+  await shareTaskNative(task, normalizedMethod);
+}
+
+async function openExternalShareUrl(url, task, message) {
+  window.open(url, "_blank", "noopener,noreferrer");
+  await copyText(taskShareText(task), "Auftrag bereit");
+  showToast(message);
+}
+
+async function shareTaskNative(task, method = "share") {
+  const title = `Büroauftrag: ${shortTaskTitle(task)}`;
+  const text = taskShareText(task);
+  if (navigator.share) {
+    try {
+      await navigator.share({ title, text });
+      showToast("Teilen geöffnet");
+      return;
+    } catch (error) {
+      if (error?.name === "AbortError") return;
+    }
+  }
+  await copyText(text, "Auftrag bereit");
+  showToast("Auftrag kopiert. In der gewünschten App einfügen.");
 }
 
 function taskMailtoHref(task) {
@@ -3054,8 +5347,46 @@ function sourceLine(item) {
   const sources = item.sources || [];
   const primary = item.primarySource || sources[0];
   if (!primary) return "Quelle hinterlegt";
-  if (sources.length > 1) return `${sources.map((source) => source.sourceName).join(", ")} · Sicherheit ${confidenceLabel(item.confidence)}`;
-  return `${primary.sourceName} · Sicherheit ${confidenceLabel(item.confidence || primary.confidence)}`;
+  const confidence = `${confidenceAdjective(item.confidence || primary.confidence)} Sicherheit`;
+  const retrievedAt = primary.retrievedAt || item.retrievedAt;
+  const publishedAt = primary.publishedAt || item.publishedAt;
+  const found = retrievedAt ? `gefunden ${sourceTimeLabel(retrievedAt)}` : sourceTimeLabel(publishedAt);
+  if (sources.length > 1) {
+    const names = sources.map((source) => source.sourceName).filter(Boolean).slice(0, 3).join(", ");
+    return `Quellen: ${names} · ${sources.length} Signale · ${found} · ${confidence}`;
+  }
+  return `Quelle: ${primary.sourceName || "Quelle"} · ${found} · ${confidence}`;
+}
+
+function sourceTimeLabel(dateString) {
+  const date = new Date(dateString || "");
+  if (Number.isNaN(date.getTime())) return "Zeitpunkt offen";
+  const nowBerlin = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Berlin",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(new Date());
+  const dateBerlin = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Berlin",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(date);
+  const time = formatBerlinTimeOnly(date);
+  if (dateBerlin === nowBerlin) return `heute ${time}`;
+  return new Intl.DateTimeFormat("de-DE", {
+    timeZone: "Europe/Berlin",
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(date);
+}
+
+function sourceExcerpt(item) {
+  const source = primarySource(item) || item.primarySource || item.sources?.[0] || {};
+  return source.excerpt || item.excerpt || item.summary || "";
 }
 
 function sourceLink(item) {
@@ -3078,9 +5409,9 @@ function renderSourceBasis(item) {
           <div>
             <span>${escapeHtml(source.sourceName || "Quelle")}</span>
             <p>${escapeHtml(source.excerpt || source.relevanceReason || "Quelle wurde für diese Empfehlung herangezogen.")}</p>
-            <small>Direkter Artikellink.</small>
+            <small>${escapeHtml(sourceTimeLabel(source.publishedAt || source.retrievedAt))} · Direkter Artikellink.</small>
           </div>
-          <small>Sicherheit ${escapeHtml(confidenceLabel(source.confidence))}</small>
+          <small>${escapeHtml(confidenceAdjective(source.confidence))} Sicherheit</small>
         </a>
       `;
       }).join("")}
@@ -3152,6 +5483,10 @@ function confidenceLabel(confidence) {
   return ({ high: "hoch", medium: "mittel", low: "niedrig" })[confidence] || "mittel";
 }
 
+function confidenceAdjective(confidence) {
+  return ({ high: "hohe", medium: "mittlere", low: "niedrige" })[confidence] || "mittlere";
+}
+
 function priorityLabel(priority) {
   return ({ high: "Hoch", medium: "Mittel", low: "Niedrig" })[priority] || "Mittel";
 }
@@ -3190,6 +5525,25 @@ function formatBerlinNow() {
     hour: "2-digit",
     minute: "2-digit"
   }).format(new Date());
+}
+
+function formatBerlinFullDateTime(date = new Date()) {
+  return new Intl.DateTimeFormat("de-DE", {
+    timeZone: "Europe/Berlin",
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(date);
+}
+
+function formatBerlinTimeOnly(date = new Date()) {
+  return new Intl.DateTimeFormat("de-DE", {
+    timeZone: "Europe/Berlin",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(date);
 }
 
 function berlinHour(date = new Date()) {
@@ -3241,7 +5595,7 @@ async function logInteraction(interaction) {
   if (previewMode) return;
   if (!profile) return;
   try {
-    await fetch(`/api/interactions?${apiScopeQuery()}`, {
+    await fetchWithTimeout(`/api/interactions?${apiScopeQuery()}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ politicianId: profile.id, ...interaction })
@@ -3312,16 +5666,18 @@ function escapeRegExp(value) {
   return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-loadBriefing().catch((error) => {
-  console.error(error);
-  app.innerHTML = `
-    <section class="loading-card">
-      <div class="loading-logo"><span>H</span></div>
-      <p>Helmut</p>
-      <h1>Briefing konnte nicht geladen werden.</h1>
-      <button class="primary-button" type="button" onclick="window.location.reload()">Neu laden</button>
-    </section>
-  `;
-  hideStartupSplash();
-  showToast("Briefing konnte nicht geladen werden");
-});
+loadBriefing()
+  .then(() => schedulePushAutoSync())
+  .catch((error) => {
+    console.error(error);
+    app.innerHTML = `
+      <section class="loading-card">
+        <div class="loading-logo"><span>H</span></div>
+        <p>Helmut</p>
+        <h1>Briefing konnte nicht geladen werden.</h1>
+        <button class="primary-button" type="button" onclick="window.location.reload()">Neu laden</button>
+      </section>
+    `;
+    hideStartupSplash();
+    showToast("Briefing konnte nicht geladen werden");
+  });

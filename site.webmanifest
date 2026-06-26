@@ -2,11 +2,12 @@
   "name": "Helmut",
   "short_name": "Helmut",
   "description": "Dein digitaler politischer Referent.",
+  "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#f7f7f5",
-  "theme_color": "#111827",
+  "background_color": "#050914",
+  "theme_color": "#050914",
   "icons": [
     {
       "src": "assets/helmut_appicon_192.png",

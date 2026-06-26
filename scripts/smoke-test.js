@@ -13,11 +13,13 @@ const adminSecret = process.env.HELMUT_ADMIN_SECRET || process.env.CRON_SECRET |
 const runCrawl = args.has("--run-crawl") || args.has("--full");
 const runFullFlow = args.has("--full");
 const checkExternalLinks = !args.has("--no-links");
+const minCheckedSources = Number(process.env.HELMUT_MIN_CHECKED_SOURCES || 450);
 
 const results = [];
 const warnings = [];
 let cookie = "";
 let publicOnly = false;
+let csrfToken = "";
 
 main().catch((error) => {
   fail("Smoke test crashed", error.message);
@@ -27,6 +29,15 @@ main().catch((error) => {
 
 async function main() {
   log(`Helmut smoke test: ${baseUrl}`);
+
+  // Account-Modus-Smoke: nur wenn explizit angefordert (HELMUT_SMOKE_AUTH=1),
+  // damit der Standard-Pilotlauf gegen die Produktion unveraendert bleibt.
+  if (String(process.env.HELMUT_SMOKE_AUTH || "").trim() === "1") {
+    await checkAuthMode();
+    printSummary();
+    if (results.some((result) => result.status === "fail")) process.exit(1);
+    return;
+  }
 
   await checkPilotGate();
   if (publicOnly) {
@@ -93,6 +104,96 @@ async function checkPublicReleaseReadiness() {
   }
 }
 
+// Account-Modus end-to-end: Login, RBAC, Mandantentrennung, Deaktivierung.
+// Erwartet einen Server mit HELMUT_AUTH_MODE=accounts und einem Admin-Konto.
+async function checkAuthMode() {
+  const adminEmail = process.env.HELMUT_SMOKE_ADMIN_EMAIL || process.env.HELMUT_ADMIN_EMAIL || "";
+  const adminPassword = process.env.HELMUT_SMOKE_ADMIN_PASSWORD || process.env.HELMUT_ADMIN_PASSWORD || "";
+  if (!adminEmail || !adminPassword) {
+    fail("Auth smoke needs HELMUT_SMOKE_ADMIN_EMAIL and HELMUT_SMOKE_ADMIN_PASSWORD");
+    return;
+  }
+  const stamp = Date.now();
+  const mdbEmail = `mdb+${stamp}@smoke.test`;
+  const refEmail = `ref+${stamp}@smoke.test`;
+
+  const shell = await requestAbsolute("GET", `${baseUrl}/`);
+  ok(shell.statusCode === 200 && shell.text.includes("client.js"), "Account mode: app shell is served to anonymous users");
+
+  const anonSession = await requestAbsolute("GET", `${baseUrl}/api/auth/session`);
+  ok(anonSession.statusCode === 200 && parseJson(anonSession, "anon session").authenticated === false, "Account mode: anonymous session is unauthenticated");
+
+  const anonAdmin = await requestAbsolute("GET", `${baseUrl}/api/admin/overview`);
+  ok(anonAdmin.statusCode === 401, "Account mode: admin route rejects anonymous request");
+
+  const admin = await authLogin(adminEmail, adminPassword);
+  ok(admin.res.statusCode === 200 && admin.cookie.includes("helmut_session="), "Admin login issues a session cookie");
+  const adminCsrf = await authCsrf(admin.cookie);
+
+  const mdb = await authCreateUser(admin, adminCsrf, { email: mdbEmail, name: "Smoke MdB", role: "abgeordneter", password: "smokepass123" });
+  ok(mdb.statusCode === 200, "Admin creates an Abgeordneter");
+  const mdbPolId = parseJson(mdb, "create mdb").politicianId;
+
+  const mdb2 = await authCreateUser(admin, adminCsrf, { email: `mdb2+${stamp}@smoke.test`, name: "Smoke Fremd", role: "abgeordneter", password: "smokepass123" });
+  const foreignPolId = parseJson(mdb2, "create mdb2").politicianId;
+
+  const ref = await authCreateUser(admin, adminCsrf, { email: refEmail, name: "Smoke Referent", role: "referent", password: "smokepass123" });
+  ok(ref.statusCode === 200, "Admin creates a Referent");
+  const refId = parseJson(ref, "create ref").id;
+
+  const assign = await authSend(admin.cookie, adminCsrf, "POST", "/api/admin/assignments", { userId: refId, politicianId: mdbPolId });
+  ok(assign.statusCode === 200, "Admin assigns referent to the MdB mandate");
+
+  const refLogin = await authLogin(refEmail, "smokepass123");
+  ok(refLogin.res.statusCode === 200, "Referent can log in");
+
+  const refForeign = await requestAbsolute("GET", `${baseUrl}/api/profile/current?politicianId=${encodeURIComponent(foreignPolId)}`, { cookie: refLogin.cookie });
+  ok(refForeign.statusCode === 200 && parseJson(refForeign, "ref foreign").id === mdbPolId, "Referent cannot read a foreign mandate via URL param (IDOR blocked)");
+
+  const refCsrf = await authCsrf(refLogin.cookie);
+  const dailyInput = await authSend(refLogin.cookie, refCsrf, "POST", `/api/daily-inputs?politicianId=${encodeURIComponent(mdbPolId)}`, { title: "Smoke Termin", goal: "Test" });
+  ok(dailyInput.statusCode === 200, "Referent can add a daily input for the assigned mandate");
+
+  const deactivate = await authSend(admin.cookie, adminCsrf, "PATCH", `/api/admin/users/${encodeURIComponent(refId)}`, { active: false });
+  ok(deactivate.statusCode === 200, "Admin can deactivate the referent");
+
+  const refRelogin = await authLogin(refEmail, "smokepass123");
+  ok(refRelogin.res.statusCode === 401, "Deactivated account cannot log in");
+
+  const refSessionGone = await requestAbsolute("GET", `${baseUrl}/api/auth/session`, { cookie: refLogin.cookie });
+  ok(parseJson(refSessionGone, "ref session gone").authenticated === false, "Deactivated account existing session is invalidated");
+
+  const logout = await requestAbsolute("POST", `${baseUrl}/api/auth/logout`, { cookie: admin.cookie });
+  ok(logout.statusCode === 200, "Logout works");
+}
+
+async function authLogin(email, password) {
+  const res = await requestAbsolute("POST", `${baseUrl}/api/auth/login`, {
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password })
+  });
+  const setCookie = res.headers["set-cookie"];
+  const cookieValue = Array.isArray(setCookie) ? setCookie.map((entry) => entry.split(";")[0]).join("; ") : "";
+  return { res, cookie: cookieValue };
+}
+
+async function authCsrf(cookie) {
+  const res = await requestAbsolute("GET", `${baseUrl}/api/security/csrf`, { cookie });
+  return parseJson(res, "auth csrf").token || "";
+}
+
+function authSend(cookie, csrf, method, pathname, body) {
+  return requestAbsolute(method, `${baseUrl}${pathname}`, {
+    cookie,
+    headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf },
+    body: body === undefined ? undefined : JSON.stringify(body)
+  });
+}
+
+function authCreateUser(admin, csrf, payload) {
+  return authSend(admin.cookie, csrf, "POST", "/api/admin/users", payload);
+}
+
 async function unlockPilot() {
   if (!pilotSecret) return;
   const response = await request("POST", "/api/pilot/unlock", {
@@ -121,11 +222,13 @@ async function checkOpsStatus() {
   ok(Number(status.store?.rawItems?.total || 0) > 0, "Persistent store contains raw items");
   ok(status.ai?.enabled === true, "OpenAI is configured");
   ok(status.protection?.pilotAccessConfigured === true || !pilotSecret, "Pilot access is configured");
-  ok(Number(status.crawl?.checkedSources || 0) >= 50, "Crawler checks at least 50 sources");
+  ok(Number(status.crawl?.checkedSources || 0) >= minCheckedSources, `Crawler checks at least ${minCheckedSources} sources`);
   ok(Number(status.crawl?.failedSources || 0) / Math.max(1, Number(status.crawl?.checkedSources || 0)) <= 0.1, "Crawler failure rate is below 10 percent");
-  ok(Number(status.briefing?.recommendationCount || 0) >= 1, "Latest briefing contains at least one recommendation");
+  const hasRecommendation = Number(status.briefing?.recommendationCount || 0) >= 1;
+  const hasCalmWatchlist = Number(status.briefing?.situationalCount || 0) > 0 || Boolean(status.briefing?.quality?.calmState);
+  ok(hasRecommendation || hasCalmWatchlist, "Latest briefing contains a recommendation or competent no-action watchlist");
   ok(status.briefing?.quality?.status === "Pitchbereit" || Number(status.briefing?.quality?.score || 0) >= 90, "Briefing quality is pitch-ready");
-  ok(Number(status.briefing?.referentEngine?.score || 0) >= 85, "Referent engine audit passes");
+  ok(Number(status.briefing?.referentEngine?.score || 0) >= 85 || Boolean(status.briefing?.referentEngine?.calmState), "Referent engine audit passes");
   ok(Boolean(status.learning && typeof status.learning.status === "string"), "Ops status exposes learning mode");
   ok(Number(status.evidenceQuality?.missingLinks || 0) === 0, "Visible evidence has no missing links");
   return status;
@@ -152,7 +255,7 @@ async function checkBriefing() {
   const hasCalmWatchlist = Array.isArray(briefing.situationalBriefing) && briefing.situationalBriefing.length > 0;
   ok(hasDecision || hasCalmWatchlist, "Briefing has decisions or a competent no-action watchlist");
   ok(Array.isArray(briefing.personalizedRecommendations), "Briefing exposes personalized recommendations");
-  ok(briefing.referentEngine?.status === "Stabschefbereit" || Number(briefing.referentEngine?.score || 0) >= 85, "Briefing has referent-mode audit");
+  ok(briefing.referentEngine?.status === "Stabschefbereit" || Number(briefing.referentEngine?.score || 0) >= 85 || Boolean(briefing.referentEngine?.calmState), "Briefing has referent-mode audit");
   ok(Boolean(briefing.executiveSummary || briefing.themeOfDay || briefing.chiefRecommendation || briefing.topicOfTheDay || briefing.agentBriefing), "Briefing has a top-level referent summary");
   return briefing;
 }
@@ -258,7 +361,7 @@ async function maybeRunCrawl() {
   const response = await request("GET", `/api/crawl/run?secret=${encodeURIComponent(adminSecret)}`, { cookie, timeoutMs: 120000 });
   const crawl = parseJson(response, "crawl run");
   ok(response.statusCode === 200, "Manual crawl endpoint responds");
-  ok(Number(crawl.checkedSources || 0) >= 50 || Boolean(crawl.skippedReason), "Manual crawl checks sources or reuses recent run");
+  ok(Number(crawl.checkedSources || 0) >= minCheckedSources || Boolean(crawl.skippedReason), "Manual crawl checks sources or reuses recent run");
 }
 
 async function runLivePipeline() {
@@ -333,12 +436,30 @@ async function checkLink(url) {
   }
 }
 
-function request(method, pathname, options = {}) {
+async function request(method, pathname, options = {}) {
   const headers = { ...(options.headers || {}) };
   if (!options.cookie && adminSecret && !headers.Authorization) {
     headers.Authorization = `Bearer ${adminSecret}`;
   }
+  if (options.cookie && needsCsrf(method, pathname) && !headers["X-CSRF-Token"] && !headers.Authorization) {
+    headers["X-CSRF-Token"] = await getCsrfToken();
+  }
   return requestAbsolute(method, `${baseUrl}${pathname}`, { ...options, headers });
+}
+
+async function getCsrfToken() {
+  if (csrfToken) return csrfToken;
+  const response = await requestAbsolute("GET", `${baseUrl}/api/security/csrf`, { cookie });
+  const payload = parseJson(response, "csrf token");
+  csrfToken = payload.token || "";
+  return csrfToken;
+}
+
+function needsCsrf(method, pathname) {
+  const normalizedMethod = String(method || "GET").toUpperCase();
+  if (!["GET", "HEAD", "OPTIONS"].includes(normalizedMethod)) return true;
+  return ["/api/briefing/run", "/api/crawl/run", "/api/pipeline/run", "/api/lage/check", "/api/push/test"]
+    .some((path) => String(pathname || "").startsWith(path));
 }
 
 function requestAbsolute(method, url, options = {}) {

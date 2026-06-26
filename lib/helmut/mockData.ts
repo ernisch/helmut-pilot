@@ -6,9 +6,9 @@ export const cemInceProfile: PoliticianProfile = {
   party: "Die Linke",
   faction: "Die Linke",
   function: "Bundestagsabgeordneter",
-  constituency: "Noch offen",
-  state: "Noch offen",
-  location: "Noch offen",
+  constituency: "Salzgitter-Wolfenbüttel",
+  state: "Niedersachsen",
+  location: "Salzgitter",
   committee: "Arbeit und Soziales",
   committees: ["Arbeit und Soziales"],
   committeeUnknown: false,
@@ -24,6 +24,9 @@ export const cemInceProfile: PoliticianProfile = {
     "Sozialstaat",
     "Armut",
     "Gewerkschaften",
+    "Tariftreue",
+    "Arbeitszeit",
+    "Industriearbeitsplätze",
     "Bundesregierung Vorhaben im Bereich Arbeit und Soziales"
   ],
   topicPriorities: {
@@ -44,9 +47,13 @@ export const cemInceProfile: PoliticianProfile = {
     Familie: 3,
     Rente: 5,
     Gesundheit: 3,
+    Arbeitszeit: 4,
+    Tariftreue: 5,
     Tarifbindung: 5,
     Arbeitsmarkt: 5,
-    Gewerkschaften: 5
+    Gewerkschaften: 5,
+    Industriearbeitsplätze: 4,
+    Niedersachsen: 3
   },
   mainQuestion:
     "Welche Pläne hat die Bundesregierung im Bereich Arbeit und Soziales und worauf sollte ich politisch reagieren?",
@@ -65,10 +72,30 @@ export const cemInceProfile: PoliticianProfile = {
     "Welches Risiko entsteht?",
     "Welche Formulierung kann ich nutzen?"
   ],
-  regionalInterests: ["lokale Beschäftigung", "Pflegeversorgung", "Armutsbekämpfung", "Tarifbindung vor Ort"],
+  regionalInterests: [
+    "Salzgitter",
+    "Wolfenbüttel",
+    "Niedersachsen",
+    "lokale Beschäftigung",
+    "Industriearbeitsplätze",
+    "VW-Beschäftigte",
+    "Betriebsräte",
+    "Stahlindustrie",
+    "Pflegeversorgung",
+    "Armutsbekämpfung",
+    "Tarifbindung vor Ort"
+  ],
   relevantMinistries: ["BMAS", "BMG", "BMF", "Bundesregierung"],
   opponents: ["CDU/CSU", "SPD-Regierungslinie", "FDP", "AfD"],
-  localMedia: ["taz", "nd", "regionale Tageszeitung", "Lokalradio"],
+  localMedia: [
+    "Salzgitter Zeitung",
+    "Braunschweiger Zeitung",
+    "Wolfsburger Nachrichten",
+    "NDR Niedersachsen",
+    "Hannoversche Allgemeine",
+    "taz",
+    "nd"
+  ],
   communicationStyle: "Lösungsorientiert",
   noGoTopics: ["unbelegte persönliche Angriffe", "verkürzte Kulturkampf-Frames", "unklare Forderungen ohne Handlungsvorschlag"]
 };
