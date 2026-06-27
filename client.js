@@ -42,6 +42,10 @@ let adminData = null;
 let adminDataLoaded = false;
 let dailyInputs = [];
 let dailyInputsLoaded = false;
+// Geführter Einstieg (Onboarding) beim ersten Öffnen eines Mandats mit leerem Profil.
+let onboardingActive = false;
+let onboardingStep = 0;
+let onboardingDraft = {};
 
 const app = document.querySelector("#app");
 const toast = document.querySelector("#toast");
@@ -265,6 +269,150 @@ function applyStartPayload(startPayload) {
 
   selectedDecisionId = decisions[0]?.id || "";
   generatedStatement = decisions[0]?.statement || "";
+  maybeStartOnboarding();
+}
+
+const ONBOARDING_STEPS = 6;
+
+function renderOnboarding() {
+  if (!onboardingActive) return "";
+  const d = onboardingDraft;
+  const mandateName = profile?.fullName || allowedProfiles.find((p) => p.id === activePoliticianId)?.name || "dein Mandat";
+  let body = "";
+  if (onboardingStep === 0) {
+    body = `
+      <h2>Willkommen bei Helmut.</h2>
+      <p class="onboarding-lead">Lass uns ${escapeHtml(mandateName)} in unter 2 Minuten einrichten, damit dein Briefing sofort passt.</p>
+      <p class="onboarding-note">Diese Angaben nutzt Helmut nur zur Personalisierung deiner Briefings. Du kannst sie jederzeit ändern oder löschen.</p>`;
+  } else if (onboardingStep === 1) {
+    body = `
+      <h2>Partei & Fraktion</h2>
+      <label>Partei<input name="party" type="text" value="${escapeAttribute(d.party || "")}" placeholder="z. B. SPD" /></label>
+      <label>Fraktion<input name="faction" type="text" value="${escapeAttribute(d.faction || "")}" placeholder="z. B. SPD-Bundestagsfraktion" /></label>`;
+  } else if (onboardingStep === 2) {
+    body = `
+      <h2>Ausschuss</h2>
+      <label>Dein (Haupt-)Ausschuss
+        <input name="committee" type="text" list="onboardingCommittees" value="${escapeAttribute(d.committee || "")}" placeholder="z. B. Gesundheit" />
+      </label>
+      <datalist id="onboardingCommittees">${committeeOptions.map((c) => `<option value="${escapeAttribute(c)}"></option>`).join("")}</datalist>`;
+  } else if (onboardingStep === 3) {
+    const selected = new Set(d.focusTopics || []);
+    body = `
+      <h2>Schwerpunktthemen</h2>
+      <p class="onboarding-note">Wähle aus, was für dein Mandat zählt — das steuert deine Top-Themen.</p>
+      <div class="onboarding-chips">
+        ${priorityTopics.map((t) => `<label class="onboarding-chip"><input type="checkbox" name="focusTopic" value="${escapeAttribute(t)}" ${selected.has(t) ? "checked" : ""}/> ${escapeHtml(t)}</label>`).join("")}
+      </div>
+      <label>Weitere Themen (Komma-getrennt)<input name="focusTopicsFree" type="text" placeholder="z. B. Krankenhausreform, Prävention" /></label>`;
+  } else if (onboardingStep === 4) {
+    body = `
+      <h2>Region & Stil</h2>
+      <label>Wahlkreis<input name="constituency" type="text" value="${escapeAttribute(d.constituency || "")}" placeholder="z. B. Berlin-Mitte" /></label>
+      <label>Bundesland<input name="state" type="text" value="${escapeAttribute(d.state || "")}" placeholder="z. B. Berlin" /></label>
+      <label>Kommunikationsstil
+        <select name="communicationStyle">${communicationStyles.map((s) => `<option value="${escapeAttribute(s)}" ${d.communicationStyle === s ? "selected" : ""}>${escapeHtml(s)}</option>`).join("")}</select>
+      </label>`;
+  } else {
+    body = `
+      <h2>Risiken & Chancen (optional)</h2>
+      <label>Risiko-Themen (Komma-getrennt)<input name="riskTopics" type="text" value="${escapeAttribute(d.riskTopics || "")}" placeholder="z. B. Klinikschließungen" /></label>
+      <label>Chancen-Themen (Komma-getrennt)<input name="opportunityTopics" type="text" value="${escapeAttribute(d.opportunityTopics || "")}" placeholder="z. B. Pflege-Offensive" /></label>
+      <p class="onboarding-note">Fertig — danach ist Helmut auf dich eingestellt.</p>`;
+  }
+  const isFirst = onboardingStep === 0;
+  const isLast = onboardingStep === ONBOARDING_STEPS - 1;
+  return `
+    <div class="onboarding-layer">
+      <form class="onboarding-card" id="onboardingForm" onsubmit="return false">
+        <div class="onboarding-progress">Schritt ${onboardingStep + 1} von ${ONBOARDING_STEPS}</div>
+        <div class="onboarding-body">${body}</div>
+        <div class="onboarding-actions">
+          ${!isFirst ? `<button type="button" class="secondary-button" data-onboard-back>Zurück</button>` : ""}
+          <button type="button" class="account-logout" data-onboard-skip>Später</button>
+          ${isLast
+            ? `<button type="button" class="primary-button" data-onboard-finish>Fertig & speichern</button>`
+            : `<button type="button" class="primary-button" data-onboard-next>${isFirst ? "Los geht's" : "Weiter"}</button>`}
+        </div>
+      </form>
+    </div>
+  `;
+}
+
+function captureOnboardingStep() {
+  const root = document.querySelector("#onboardingForm");
+  if (!root) return;
+  root.querySelectorAll("input[type=text], textarea, select").forEach((el) => {
+    if (el.name && el.name !== "focusTopicsFree") onboardingDraft[el.name] = el.value;
+  });
+  if (root.querySelector("input[name='focusTopic']")) {
+    const checked = Array.from(root.querySelectorAll("input[name='focusTopic']:checked")).map((c) => c.value);
+    const free = root.querySelector("input[name='focusTopicsFree']");
+    const extra = free ? String(free.value || "").split(",").map((s) => s.trim()).filter(Boolean) : [];
+    onboardingDraft.focusTopics = Array.from(new Set([...checked, ...extra]));
+  }
+}
+
+async function finishOnboarding(skip) {
+  onboardingActive = false;
+  const now = new Date().toISOString();
+  const payload = skip
+    ? { id: activePoliticianId, onboardedAt: now }
+    : {
+        id: activePoliticianId,
+        onboardedAt: now,
+        party: onboardingDraft.party,
+        faction: onboardingDraft.faction,
+        committee: onboardingDraft.committee,
+        committees: onboardingDraft.committee ? [onboardingDraft.committee] : undefined,
+        focusTopics: Array.isArray(onboardingDraft.focusTopics) ? onboardingDraft.focusTopics : undefined,
+        constituency: onboardingDraft.constituency,
+        state: onboardingDraft.state,
+        communicationStyle: onboardingDraft.communicationStyle,
+        riskTopics: String(onboardingDraft.riskTopics || "").split(",").map((s) => s.trim()).filter(Boolean),
+        opportunityTopics: String(onboardingDraft.opportunityTopics || "").split(",").map((s) => s.trim()).filter(Boolean)
+      };
+  render();
+  try {
+    const res = await apiSend("PATCH", `/api/profile/current?${apiScopeQuery()}`, payload);
+    if (res.ok && res.json) profile = res.json;
+    showToast(skip ? "Du kannst dein Profil jederzeit in den Einstellungen ergänzen." : "Profil eingerichtet — Helmut ist startklar.");
+  } catch (error) {
+    console.warn("Onboarding speichern fehlgeschlagen", error);
+  }
+  render();
+}
+
+function bindOnboarding() {
+  const next = app.querySelector("[data-onboard-next]");
+  if (next) next.addEventListener("click", () => { captureOnboardingStep(); onboardingStep = Math.min(ONBOARDING_STEPS - 1, onboardingStep + 1); render(); });
+  const back = app.querySelector("[data-onboard-back]");
+  if (back) back.addEventListener("click", () => { captureOnboardingStep(); onboardingStep = Math.max(0, onboardingStep - 1); render(); });
+  const skip = app.querySelector("[data-onboard-skip]");
+  if (skip) skip.addEventListener("click", () => finishOnboarding(true));
+  const finish = app.querySelector("[data-onboard-finish]");
+  if (finish) finish.addEventListener("click", () => { captureOnboardingStep(); finishOnboarding(false); });
+}
+
+// Zeigt den geführten Einstieg, wenn ein Abgeordneter oder zugewiesener Referent
+// ein Mandat mit noch nicht eingerichtetem Profil zum ersten Mal öffnet.
+function maybeStartOnboarding() {
+  if (!isAccountMode() || onboardingActive) return;
+  if (!["abgeordneter", "referent"].includes(userRole())) return;
+  if (!profile || profile.onboardedAt) return;
+  onboardingActive = true;
+  onboardingStep = 0;
+  onboardingDraft = {
+    party: profile.party || "",
+    faction: profile.faction || "",
+    committee: profile.committee || (profile.committees || [])[0] || "",
+    focusTopics: Array.isArray(profile.focusTopics) ? [...profile.focusTopics] : [],
+    constituency: profile.constituency || "",
+    state: profile.state || "",
+    communicationStyle: profile.communicationStyle || "Sachlich",
+    riskTopics: (profile.riskTopics || []).join(", "),
+    opportunityTopics: (profile.opportunityTopics || []).join(", ")
+  };
 }
 
 function loadCachedStartPayload() {
@@ -965,6 +1113,7 @@ function render() {
       ${renderMobileDock()}
       ${renderUpdatesPanel()}
       ${renderTaskHandoffPanel()}
+      ${renderOnboarding()}
     </div>
   `;
   hideStartupSplash();
@@ -4331,6 +4480,7 @@ function bindActions() {
   if (isAccountMode()) {
     try {
       bindAccountActions();
+      bindOnboarding();
     } catch (error) {
       console.warn("Account actions binding failed", error);
     }
