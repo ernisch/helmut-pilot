@@ -1078,10 +1078,10 @@ function sendPrivacyPage(response) {
   <body>
     <main>
       <h1>Datenschutzerklärung</h1>
-      <p class="notice"><strong>Entwurf — vor Produktivbetrieb rechtlich prüfen.</strong> Diese Erklärung beschreibt die technische Datenverarbeitung von Helmut. Die mit <code>[BITTE ERGÄNZEN]</code> markierten Stellen muss der Betreiber (Verantwortliche) mit rechtlicher Beratung ausfüllen und freigeben.</p>
+      <p class="notice">Diese Erklärung beschreibt die Datenverarbeitung von Helmut im Pilotbetrieb. Eine rechtliche Prüfung vor breitem Produktivbetrieb wird empfohlen — insbesondere falls die KI-Funktion (OpenAI) aktiviert wird.</p>
 
       <h2>1. Verantwortlicher</h2>
-      <p><code>[BITTE ERGÄNZEN: Name / Organisation, Anschrift, E-Mail, ggf. Datenschutzbeauftragte:r]</code></p>
+      <p>Lüey Nohut<br>Eresburgstr. 42, 12103 Berlin<br>E-Mail: <a href="mailto:hi@nohut.de">hi@nohut.de</a></p>
 
       <h2>2. Verarbeitete Daten</h2>
       <ul>
@@ -1096,18 +1096,23 @@ function sendPrivacyPage(response) {
       <p>Quellen prüfen, politische Entwicklungen pro Mandat priorisieren, personalisierte Briefings erzeugen, Aufgaben/Kommunikation vorbereiten, Push-Hinweise senden, Sicherheit gewährleisten und die Relevanzlogik verbessern.</p>
 
       <h2>4. Rechtsgrundlagen</h2>
-      <p><code>[BITTE ERGÄNZEN]</code> — in der Regel Art. 6 Abs. 1 DSGVO: Vertrag/Nutzungsverhältnis (lit. b), berechtigtes Interesse (lit. f) und/oder Einwilligung (lit. a, z. B. für Push). Konkrete Zuordnung durch den Verantwortlichen.</p>
+      <p>Die Verarbeitung erfolgt auf Grundlage von Art. 6 Abs. 1 DSGVO:</p>
+      <ul>
+        <li><strong>lit. b</strong> (Vertrag/Nutzungsverhältnis): Bereitstellung der App, Konten und Briefings.</li>
+        <li><strong>lit. f</strong> (berechtigtes Interesse): Personalisierung, Relevanz-Verbesserung und Sicherheit des Dienstes.</li>
+        <li><strong>lit. a</strong> (Einwilligung): optionale Push-Benachrichtigungen.</li>
+      </ul>
 
       <h2>5. Empfänger / Auftragsverarbeiter</h2>
       <ul>
         <li><strong>Vercel</strong> (Hosting/Betrieb der Anwendung).</li>
-        <li><strong>Supabase</strong> (Datenspeicherung). Region <code>[BITTE PRÜFEN: EU-Region wählen/bestätigen]</code>.</li>
+        <li><strong>Supabase</strong> (Datenspeicherung, EU-Region).</li>
         ${isAiEnabled()
           ? "<li><strong>OpenAI</strong> (KI-Textgenerierung) — <strong>derzeit AKTIV</strong>: Inhalte werden zur Texterzeugung an OpenAI in die USA übermittelt.</li>"
           : "<li><strong>OpenAI</strong> (KI-Textgenerierung) — <strong>derzeit deaktiviert</strong>, daher keine Nutzung und keine Übermittlung.</li>"}
         <li><strong>Browser-Push-Dienste</strong> (nur bei aktivierten Benachrichtigungen).</li>
       </ul>
-      <p>Mit allen Auftragsverarbeitern sind <strong>Auftragsverarbeitungsverträge (AVV)</strong> abzuschließen: <code>[BITTE ERGÄNZEN/PRÜFEN]</code>.</p>
+      <p>Mit den eingesetzten Auftragsverarbeitern werden <strong>Auftragsverarbeitungsverträge (AVV)</strong> nach Art. 28 DSGVO geschlossen.</p>
 
       <h2>6. Übermittlung in Drittländer</h2>
       ${isAiEnabled()
@@ -1115,7 +1120,7 @@ function sendPrivacyPage(response) {
         : "<p><strong>Im aktuellen Pilotbetrieb findet keine Übermittlung personenbezogener Daten in Drittländer (z. B. USA) statt.</strong> Die KI-Textgenerierung über OpenAI ist deaktiviert; Briefings werden regelbasiert erzeugt. Sollte die KI-Funktion künftig aktiviert werden, würden Inhalte an OpenAI in die USA übermittelt — dies erfordert dann eine gesonderte Rechtsgrundlage und eine Aktualisierung dieser Erklärung.</p>"}
 
       <h2>7. Speicherdauer</h2>
-      <p>Verläufe werden technisch begrenzt (u. a. Briefings, Interaktionen, Notizen, Sessions, Fehlerprotokolle) und pro Mandat gekappt. Eine organisatorische Löschfrist legt der Verantwortliche fest: <code>[BITTE ERGÄNZEN]</code>.</p>
+      <p>Profil- und Inhaltsdaten werden bis zur Löschung des Kontos bzw. bis zum Ende des Pilotbetriebs gespeichert. Verläufe (u. a. Briefings, Interaktionen, Notizen, Sessions, Fehlerprotokolle) werden technisch begrenzt und pro Mandat gekappt. Auf Wunsch werden Daten umgehend gelöscht (siehe Deine Rechte).</p>
 
       <h2>8. Cookies</h2>
       <p>Helmut setzt ein technisch notwendiges Session-Cookie (<code>helmut_session</code>, HttpOnly, SameSite=Lax) zur Anmeldung. Es dient nicht der Werbung oder dem Tracking.</p>
@@ -1124,7 +1129,7 @@ function sendPrivacyPage(response) {
       <p>Auskunft, Berichtigung, Löschung, Einschränkung, Datenübertragbarkeit und Widerspruch. In der App: Profildaten <strong>exportieren</strong> und <strong>löschen</strong> (Einstellungen). Es besteht ein <strong>Beschwerderecht bei einer Datenschutz-Aufsichtsbehörde</strong>.</p>
 
       <h2>10. Kontakt &amp; Stand</h2>
-      <p>Datenschutzanfragen: <code>[BITTE ERGÄNZEN: Kontakt]</code> · Stand: <code>[BITTE ERGÄNZEN: Datum]</code></p>
+      <p>Datenschutzanfragen: <a href="mailto:hi@nohut.de">hi@nohut.de</a> · Stand: Juni 2026</p>
       <p><a href="/">Zurück zu Helmut</a></p>
     </main>
   </body>
