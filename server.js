@@ -1116,7 +1116,7 @@ function sendPrivacyPage(response) {
 
       <h2>6. Übermittlung in Drittländer</h2>
       ${isAiEnabled()
-        ? "<p><strong>Derzeit ist die KI-Funktion aktiv:</strong> Zur Texterzeugung werden Inhalte an OpenAI in die USA (Drittland) übermittelt. Dies erfordert eine geeignete Rechtsgrundlage (z. B. EU-Standardvertragsklauseln), Datenminimierung und einen AV-Vertrag mit OpenAI. <code>[BITTE ERGÄNZEN/PRÜFEN]</code></p>"
+        ? "<p><strong>Derzeit ist die KI-Funktion aktiv:</strong> Zur Texterzeugung werden Inhalte an OpenAI (USA) übermittelt — im Wesentlichen öffentlich verfügbare Nachrichteninhalte und das fachliche Mandatsprofil; besondere Kategorien personenbezogener Daten werden nicht übermittelt. Die Übermittlung stützt sich auf den Auftragsverarbeitungsvertrag mit OpenAI samt EU-Standardvertragsklauseln. Über die API übermittelte Daten werden von OpenAI nicht zum Training verwendet.</p>"
         : "<p><strong>Im aktuellen Pilotbetrieb findet keine Übermittlung personenbezogener Daten in Drittländer (z. B. USA) statt.</strong> Die KI-Textgenerierung über OpenAI ist deaktiviert; Briefings werden regelbasiert erzeugt. Sollte die KI-Funktion künftig aktiviert werden, würden Inhalte an OpenAI in die USA übermittelt — dies erfordert dann eine gesonderte Rechtsgrundlage und eine Aktualisierung dieser Erklärung.</p>"}
 
       <h2>7. Speicherdauer</h2>
