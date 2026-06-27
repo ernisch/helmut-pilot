@@ -636,11 +636,11 @@ function renderAdminView() {
 
   const userRows = (data.users || []).map((user) => `
     <tr>
-      <td>${escapeHtml(user.name || "")}</td>
-      <td>${escapeHtml(user.email || "")}</td>
-      <td>${escapeHtml(roleLabel(user.role))}${user.politicianId ? `<br><small>${escapeHtml(user.politicianId)}</small>` : ""}</td>
-      <td>${user.active === false ? '<span class="admin-pill admin-pill-off">inaktiv</span>' : '<span class="admin-pill admin-pill-on">aktiv</span>'}</td>
-      <td><button class="account-logout" type="button" data-toggle-user="${escapeAttribute(user.id)}" data-active="${user.active === false ? "0" : "1"}">${user.active === false ? "Aktivieren" : "Deaktivieren"}</button></td>
+      <td data-label="Name">${escapeHtml(user.name || "")}</td>
+      <td data-label="E-Mail">${escapeHtml(user.email || "")}</td>
+      <td data-label="Rolle">${escapeHtml(roleLabel(user.role))}${user.politicianId ? `<br><small>${escapeHtml(user.politicianId)}</small>` : ""}</td>
+      <td data-label="Status">${user.active === false ? '<span class="admin-pill admin-pill-off">inaktiv</span>' : '<span class="admin-pill admin-pill-on">aktiv</span>'}</td>
+      <td data-label="Aktion" class="admin-actions-cell"><button class="account-logout" type="button" data-toggle-user="${escapeAttribute(user.id)}" data-active="${user.active === false ? "0" : "1"}">${user.active === false ? "Aktivieren" : "Deaktivieren"}</button></td>
     </tr>
   `).join("");
 
@@ -648,9 +648,9 @@ function renderAdminView() {
     ? data.assignments.map((entry) => {
         const u = (data.users || []).find((user) => user.id === entry.userId);
         return `<tr>
-          <td>${escapeHtml(u ? (u.name || u.email) : entry.userId)}</td>
-          <td>${escapeHtml(entry.politicianId)}</td>
-          <td><button class="account-logout" type="button" data-remove-assignment data-user="${escapeAttribute(entry.userId)}" data-mandate="${escapeAttribute(entry.politicianId)}">Entfernen</button></td>
+          <td data-label="Referent:in">${escapeHtml(u ? (u.name || u.email) : entry.userId)}</td>
+          <td data-label="Mandat">${escapeHtml(entry.politicianId)}</td>
+          <td data-label="Aktion" class="admin-actions-cell"><button class="account-logout" type="button" data-remove-assignment data-user="${escapeAttribute(entry.userId)}" data-mandate="${escapeAttribute(entry.politicianId)}">Entfernen</button></td>
         </tr>`;
       }).join("")
     : `<tr><td colspan="3" class="empty-state">Noch keine Zuweisungen.</td></tr>`;

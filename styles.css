@@ -6365,6 +6365,7 @@ body {
   padding: 5px 11px;
   font-size: 12px;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .account-logout:hover {
@@ -6533,3 +6534,58 @@ body {
 .password-toggle:hover { border-color: var(--accent); }
 
 .pilot-access-form .password-field { width: 100%; }
+
+/* --- Admin-Tabellen: auf kleinen Screens als gestapelte Karten --- */
+@media (max-width: 720px) {
+  .admin-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .admin-table,
+  .admin-table tbody,
+  .admin-table tr,
+  .admin-table td {
+    display: block;
+    width: 100%;
+  }
+  .admin-table tr {
+    border: 1px solid var(--hairline);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    background: rgba(255, 255, 255, .02);
+  }
+  .admin-table td {
+    border: none;
+    padding: 5px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    text-align: right;
+  }
+  .admin-table td::before {
+    content: attr(data-label);
+    color: var(--muted-2);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    text-align: left;
+    flex: 0 0 auto;
+  }
+  .admin-table td.admin-actions-cell {
+    justify-content: flex-end;
+    padding-top: 10px;
+  }
+  .admin-table td.admin-actions-cell::before {
+    display: none;
+  }
+  .admin-table td.admin-actions-cell .account-logout {
+    width: 100%;
+    padding: 10px;
+    font-size: 13px;
+  }
+}
