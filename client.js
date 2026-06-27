@@ -823,6 +823,17 @@ function renderAdminView() {
             <tbody>${userRows}</tbody>
           </table>
         </div>
+        <form class="admin-inline-form" id="resetPasswordForm">
+          <select name="userId" aria-label="Nutzer">
+            ${(data.users || []).map((user) => `<option value="${escapeAttribute(user.id)}">${escapeHtml(user.name || user.email)}</option>`).join("")}
+          </select>
+          <div class="password-field" style="flex:1; min-width:160px;">
+            <input name="password" id="resetPasswordInput" type="password" placeholder="Neues Passwort (min. 8)" aria-label="Neues Passwort" autocomplete="new-password" />
+            <button type="button" class="password-toggle" data-toggle-password="resetPasswordInput" aria-label="Passwort anzeigen">Anzeigen</button>
+          </div>
+          <button class="secondary-button" type="submit">Passwort zurücksetzen</button>
+        </form>
+        <small class="admin-form-error" id="resetPasswordError"></small>
       </div>
 
       <form class="admin-card admin-form" id="createUserForm">
@@ -4440,6 +4451,30 @@ function bindAccountActions() {
       }
     });
   });
+
+  const resetPasswordForm = app.querySelector("#resetPasswordForm");
+  if (resetPasswordForm) {
+    resetPasswordForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const err = app.querySelector("#resetPasswordError");
+      if (err) err.textContent = "";
+      const fd = new FormData(resetPasswordForm);
+      const userId = fd.get("userId");
+      const password = String(fd.get("password") || "");
+      if (password.length < 8) {
+        if (err) err.textContent = "Passwort muss mindestens 8 Zeichen haben.";
+        return;
+      }
+      const res = await apiSend("PATCH", `/api/admin/users/${encodeURIComponent(userId)}?${apiScopeQuery()}`, { password });
+      if (!res.ok) {
+        if (err) err.textContent = res.json?.error || "Zurücksetzen fehlgeschlagen.";
+        return;
+      }
+      adminDataLoaded = false;
+      await ensureViewData("admin");
+      showToast("Passwort zurückgesetzt — der Nutzer muss sich neu anmelden.");
+    });
+  }
 
   const assignForm = app.querySelector("#assignForm");
   if (assignForm) {

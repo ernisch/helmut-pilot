@@ -553,9 +553,13 @@ async function handleRequest(request, response) {
     const userId = decodeURIComponent(url.pathname.replace("/api/admin/users/", ""));
     return handleJson(request, response, async (body) => {
       const user = await accounts.updateUser(userId, body);
-      // Deaktivierte Nutzer sofort ausloggen.
-      if (body.active === false) await accounts.destroyUserSessions(userId);
-      await accounts.recordAudit({ action: "admin.user.update", userId: authUser.id, actorEmail: authUser.email, detail: user.email });
+      // Deaktivierte Nutzer sofort ausloggen; bei Passwort-Reset bestehende
+      // Sessions ungueltig machen (neues Passwort erzwingt Neu-Login).
+      if (body.active === false || (body.password !== undefined && body.password !== "")) {
+        await accounts.destroyUserSessions(userId);
+      }
+      const action = (body.password !== undefined && body.password !== "") ? "admin.user.password-reset" : "admin.user.update";
+      await accounts.recordAudit({ action, userId: authUser.id, actorEmail: authUser.email, detail: user.email });
       return user;
     });
   }
@@ -1073,20 +1077,50 @@ function sendPrivacyPage(response) {
   </head>
   <body>
     <main>
-      <h1>Datenschutz</h1>
-      <p class="notice">Helmut ist ein geschützter Pilot für politisches Monitoring. Diese Seite beschreibt die technische Datenverarbeitung in der App. Die finale rechtliche Freigabe, insbesondere Rechtsgrundlage und Verantwortlicher, muss durch den Betreiber erfolgen.</p>
-      <h2>Verarbeitete Daten</h2>
-      <p>Die App verarbeitet Mandats- und Profilangaben, politische Themenprioritäten, Briefings, Empfehlungen, Aufgaben, Notizen, Nutzungssignale, Push-Abonnements und technische Metadaten wie Zeitpunkte oder Browser-User-Agent bei Push.</p>
-      <h2>Zwecke</h2>
-      <p>Die Daten werden verwendet, um Quellen zu prüfen, politische Entwicklungen zu priorisieren, persönliche Briefings zu erzeugen, Aufgaben vorzubereiten, Push-Hinweise zu senden und die Relevanzlogik durch Nutzungssignale zu verbessern.</p>
-      <h2>Drittanbieter</h2>
-      <p>Je nach Konfiguration werden Daten serverseitig in Supabase gespeichert, an OpenAI zur Textgenerierung übermittelt und für Web Push an den jeweiligen Browser-Push-Dienst gesendet. Der Betreiber muss passende Auftragsverarbeitungsverträge, Transfergrundlagen und Subprozessor-Informationen dokumentieren.</p>
-      <h2>Speicherung</h2>
-      <p>Der Store begrenzt gespeicherte Verläufe technisch, unter anderem Briefings, Interaktionen, Notizen, Push-Events und Debug-Berichte. Eine organisatorische Löschfrist muss der Betreiber festlegen.</p>
-      <h2>Rechte</h2>
-      <p>Angemeldete Pilotnutzer können ihre gespeicherten Profildaten über <code>/api/privacy/export</code> exportieren und über <code>/api/privacy/delete</code> löschen lassen. Die App-Oberfläche bietet diese Funktionen in den Einstellungen an.</p>
-      <h2>Kontakt</h2>
-      <p>Verantwortlicher, Datenschutzkontakt und Rechtsgrundlagen müssen vor Produktivbetrieb ergänzt werden.</p>
+      <h1>Datenschutzerklärung</h1>
+      <p class="notice"><strong>Entwurf — vor Produktivbetrieb rechtlich prüfen.</strong> Diese Erklärung beschreibt die technische Datenverarbeitung von Helmut. Die mit <code>[BITTE ERGÄNZEN]</code> markierten Stellen muss der Betreiber (Verantwortliche) mit rechtlicher Beratung ausfüllen und freigeben.</p>
+
+      <h2>1. Verantwortlicher</h2>
+      <p><code>[BITTE ERGÄNZEN: Name / Organisation, Anschrift, E-Mail, ggf. Datenschutzbeauftragte:r]</code></p>
+
+      <h2>2. Verarbeitete Daten</h2>
+      <ul>
+        <li><strong>Kontodaten:</strong> Name, E-Mail-Adresse, Rolle, Passwort (nur als kryptografischer Hash), Login-Zeitpunkte.</li>
+        <li><strong>Mandatsprofil:</strong> Partei/Fraktion, Ausschüsse, Schwerpunkt-, Risiko- und Chancen-Themen, Wahlkreis/Region, Kommunikationsstil.</li>
+        <li><strong>Inhalte:</strong> Briefings, Empfehlungen, Aufgaben, Notizen, Tagesinput, Lage-Checks.</li>
+        <li><strong>Nutzungssignale:</strong> markiert/geöffnet/ignoriert zur Verbesserung der Relevanz.</li>
+        <li><strong>Technische Daten:</strong> Session-Cookie, IP-Adresse und Browser-User-Agent (Sicherheit/Push), Zeitstempel, Fehlerprotokolle.</li>
+      </ul>
+
+      <h2>3. Zwecke</h2>
+      <p>Quellen prüfen, politische Entwicklungen pro Mandat priorisieren, personalisierte Briefings erzeugen, Aufgaben/Kommunikation vorbereiten, Push-Hinweise senden, Sicherheit gewährleisten und die Relevanzlogik verbessern.</p>
+
+      <h2>4. Rechtsgrundlagen</h2>
+      <p><code>[BITTE ERGÄNZEN]</code> — in der Regel Art. 6 Abs. 1 DSGVO: Vertrag/Nutzungsverhältnis (lit. b), berechtigtes Interesse (lit. f) und/oder Einwilligung (lit. a, z. B. für Push). Konkrete Zuordnung durch den Verantwortlichen.</p>
+
+      <h2>5. Empfänger / Auftragsverarbeiter</h2>
+      <ul>
+        <li><strong>Vercel</strong> (Hosting/Betrieb der Anwendung).</li>
+        <li><strong>Supabase</strong> (Datenspeicherung). Region <code>[BITTE PRÜFEN: EU-Region wählen/bestätigen]</code>.</li>
+        <li><strong>OpenAI</strong> (Textgenerierung für Briefings/Kommunikation). <strong>Wichtig: Übermittlung in die USA (Drittland).</strong></li>
+        <li><strong>Browser-Push-Dienste</strong> (nur bei aktivierten Benachrichtigungen).</li>
+      </ul>
+      <p>Mit allen Auftragsverarbeitern sind <strong>Auftragsverarbeitungsverträge (AVV)</strong> abzuschließen: <code>[BITTE ERGÄNZEN/PRÜFEN]</code>.</p>
+
+      <h2>6. Übermittlung in Drittländer (OpenAI, USA)</h2>
+      <p>Für die KI-gestützte Textgenerierung können Inhalte an OpenAI in den USA übermittelt werden. Im Abgeordneten-Kontext ist dies <strong>besonders sensibel</strong> und erfordert eine bewusste Entscheidung samt geeigneter Garantien (z. B. EU-Standardvertragsklauseln) sowie ggf. Datenminimierung. <code>[BITTE ERGÄNZEN: Transfergrundlage / Alternative prüfen]</code>. Hinweis: Ohne KI-Schlüssel läuft Helmut regelbasiert ohne diese Übermittlung.</p>
+
+      <h2>7. Speicherdauer</h2>
+      <p>Verläufe werden technisch begrenzt (u. a. Briefings, Interaktionen, Notizen, Sessions, Fehlerprotokolle) und pro Mandat gekappt. Eine organisatorische Löschfrist legt der Verantwortliche fest: <code>[BITTE ERGÄNZEN]</code>.</p>
+
+      <h2>8. Cookies</h2>
+      <p>Helmut setzt ein technisch notwendiges Session-Cookie (<code>helmut_session</code>, HttpOnly, SameSite=Lax) zur Anmeldung. Es dient nicht der Werbung oder dem Tracking.</p>
+
+      <h2>9. Deine Rechte</h2>
+      <p>Auskunft, Berichtigung, Löschung, Einschränkung, Datenübertragbarkeit und Widerspruch. In der App: Profildaten <strong>exportieren</strong> und <strong>löschen</strong> (Einstellungen). Es besteht ein <strong>Beschwerderecht bei einer Datenschutz-Aufsichtsbehörde</strong>.</p>
+
+      <h2>10. Kontakt &amp; Stand</h2>
+      <p>Datenschutzanfragen: <code>[BITTE ERGÄNZEN: Kontakt]</code> · Stand: <code>[BITTE ERGÄNZEN: Datum]</code></p>
       <p><a href="/">Zurück zu Helmut</a></p>
     </main>
   </body>
