@@ -669,23 +669,21 @@ function prepareBriefingResponse(briefing, { previewMode = false, compact = fals
 
 async function latestBriefingPayload({ politicianId, profile, url, previewMode = false, compact = false }) {
   const latest = await getLatestOrDemoBriefing(politicianId);
-  const isEmpty = !latest.homeSections || !latest.personalizedRecommendations;
-  const ageHours = (Date.now() - new Date(latest.generatedAt || latest.date || 0).getTime()) / 3_600_000;
-  // On-Demand-Erzeugung beim Lesen: schnell und OHNE KI. Sorgt dafuer, dass jedes
-  // Mandat (auch ein neues) ein echtes, personalisiertes Briefing sieht, ohne das
-  // Vercel-Zeitlimit zu sprengen. Nur bei leerem ODER >18h altem Briefing — so
-  // bleibt das taegliche KI-Briefing (Cron) tagsueber erhalten. Schwere KI laeuft
-  // nur per Cron und per manuellem "Aktualisieren" (/api/briefing/run).
-  const needsQuickBriefing = isEmpty || !Number.isFinite(ageHours) || ageHours > 18;
-  if (!previewMode && needsQuickBriefing) {
+  const hasStoredBriefing = Boolean(latest.homeSections && latest.personalizedRecommendations);
+  // On-Demand-Erzeugung NUR wenn noch gar kein Briefing existiert (neues Mandat):
+  // schnell und OHNE KI, damit niemand einen leeren Bildschirm sieht. Ein bereits
+  // erzeugtes Briefing wird beim Lesen NIE ueberschrieben (sonst wuerde das gute
+  // taegliche KI-Briefing vom Cron durch ein "nichts Neues" ersetzt). Frische KI-
+  // Briefings laufen ueber Cron und das manuelle "Aktualisieren" (/api/briefing/run).
+  if (!previewMode && !hasStoredBriefing) {
     try {
       const fresh = await runMorningBriefing(politicianId, { skipAi: true });
-      return prepareBriefingResponse(fresh, { previewMode, compact });
+      if (fresh && fresh.homeSections) return prepareBriefingResponse(fresh, { previewMode, compact });
     } catch (error) {
       console.error("Quick briefing failed", error);
     }
   }
-  if (isEmpty) {
+  if (!hasStoredBriefing) {
     const personalized = personalizeBriefing(latest, profile, await getTopicMemory(profile.id), await getInteractions(profile.id));
     return prepareBriefingResponse(personalized, { previewMode, compact });
   }
