@@ -994,7 +994,7 @@ function renderSidebar() {
         </nav>
       </div>
       <div class="sidebar-foot">
-        <p>${escapeHtml(profile?.fullName || "Cem Ince")}<br><span>${escapeHtml(profile?.function || "MdB")}</span></p>
+        <p>${escapeHtml(profile?.fullName || "Profil")}<br><span>${escapeHtml(profile?.function || "MdB")}</span></p>
         ${isAccountMode() && currentUser ? `<button class="account-logout sidebar-logout" type="button" data-logout>Abmelden</button>` : ""}
       </div>
     </aside>
@@ -1124,7 +1124,7 @@ function renderView() {
 function renderBriefingView() {
   return `
     <section class="page-intro executive-intro agenda-intro">
-      <span class="eyebrow-line">${escapeHtml(timeGreeting((profile?.fullName || "Cem").split(" ")[0]).replace(".", ""))}</span>
+      <span class="eyebrow-line">${escapeHtml(timeGreeting((profile?.fullName || "").split(" ")[0]).replace(".", ""))}</span>
       <h1 class="hero-title">Hier ist deine Lage.</h1>
       <p>${escapeHtml(formatBerlinFullDateTime())}</p>
     </section>
@@ -1141,7 +1141,7 @@ function renderBriefingView() {
 }
 
 function renderMorningMoment() {
-  const firstName = (profile?.fullName || "Cem").split(" ")[0] || "Cem";
+  const firstName = (profile?.fullName || "").split(" ")[0];
   const top = decisions[0];
   const meeting = nextPreparedMeeting();
   const watchItems = competentNoActionItems();
@@ -1561,7 +1561,7 @@ function buildHelmutAssessment() {
   const stored = briefing?.helmutAssessment;
   if (stored && typeof stored === "object") {
     const normalized = {
-      greeting: String(stored.greeting || timeGreeting((profile?.fullName || "Cem").split(" ")[0] || "Cem")).trim(),
+      greeting: String(stored.greeting || timeGreeting((profile?.fullName || "").split(" ")[0])).trim(),
       time: String(stored.time || formatBerlinTimeOnly()).trim(),
       assessment: String(stored.assessment || "").trim(),
       recommendation: String(stored.recommendation || "").trim(),
@@ -1575,7 +1575,7 @@ function buildHelmutAssessment() {
       return normalized;
     }
   }
-  const firstName = (profile?.fullName || "Cem").split(" ")[0] || "Cem";
+  const firstName = (profile?.fullName || "").split(" ")[0];
   const top = decisions[0];
   const watch = competentNoActionItems()[0];
   const topic = top?.title || watch?.title || centralAgendaTopic();
@@ -2670,7 +2670,7 @@ function renderAgentBriefing() {
 }
 
 function agentBriefingText() {
-  const firstName = (profile?.fullName || "Cem").split(" ")[0];
+  const firstName = (profile?.fullName || "").split(" ")[0];
   const greeting = timeGreeting(firstName);
   const top = decisions[0];
   const mentionCount = freshMentionCount();
@@ -3341,7 +3341,7 @@ function isWithinLastThreeMonths(item) {
 }
 
 function profileNameTerms() {
-  const fullName = profile?.fullName || "Cem Ince";
+  const fullName = profile?.fullName || "Profil";
   const lastName = fullName.split(/\s+/).filter(Boolean).at(-1) || "Ince";
   return { fullName, lastName };
 }
@@ -3403,7 +3403,7 @@ function mentionRows(items, options = {}) {
           <div>
             <span>${escapeHtml(item.sourceName || "Quelle")}</span>
             <h3>${escapeHtml(item.title || "Erwähnung gefunden")}</h3>
-            <p>${escapeHtml(twoSentenceSummary(item.content || item.excerpt || "Cem wurde in dieser Quelle erwähnt."))}</p>
+            <p>${escapeHtml(twoSentenceSummary(item.content || item.excerpt || "Diese Person wurde in dieser Quelle erwähnt."))}</p>
             <small class="mention-timestamp">Gefunden: ${escapeHtml(formatMentionFoundAt(item))}</small>
           </div>
         </div>
@@ -3459,7 +3459,7 @@ function publisherDomain(item) {
 }
 
 function profileInitials() {
-  return String(profile?.fullName || "Cem Ince")
+  return String(profile?.fullName || "Profil")
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)
@@ -3504,7 +3504,7 @@ function renderSettingsView() {
       <article class="list-row low">
         <div>
           <span>Profil</span>
-          <h3>${escapeHtml(profile.fullName || "Cem Ince")}</h3>
+          <h3>${escapeHtml(profile.fullName || "Profil")}</h3>
           <p>${escapeHtml(profile.function || "Bundestagsabgeordneter")} · ${escapeHtml(profile.party || "Die Linke")} · ${escapeHtml(profile.faction || profile.party || "Fraktion offen")}</p>
         </div>
         <button class="secondary-button" type="button" data-view="profile-settings">Profil bearbeiten</button>
@@ -5126,7 +5126,7 @@ function notificationItems() {
   const mentionItems = (briefing?.personMentions || []).filter(isFreshUpdate).slice(0, 4).map((item) => ({
     type: "mention",
     label: "Neue Erwähnung",
-    title: item.title || "Cem wurde erwähnt",
+    title: item.title || "Erwähnung",
     summary: twoSentenceSummary(item.content || item.excerpt || "Neue namentliche Erwähnung gefunden."),
     meta: `${item.sourceName || "Quelle"} · ${formatBriefingDate(item.publishedAt || item.retrievedAt)}`,
     receivedAt: item.retrievedAt || item.createdAt || item.created_at || item.updatedAt || item.updated_at || item.publishedAt,
@@ -5580,13 +5580,14 @@ function berlinHour(date = new Date()) {
   return Number(hour || 0);
 }
 
-function timeGreeting(firstName = "Cem") {
+function timeGreeting(firstName = "") {
   const hour = berlinHour();
-  const name = firstName || "Cem";
-  if (hour >= 5 && hour < 10) return `Guten Morgen, ${name}.`;
-  if (hour >= 10 && hour < 14) return `Mahlzeit, ${name}.`;
-  if (hour >= 14 && hour < 18) return `Guten Nachmittag, ${name}.`;
-  return `Guten Abend, ${name}.`;
+  const name = String(firstName || "").trim();
+  const suffix = name ? `, ${name}` : "";
+  if (hour >= 5 && hour < 10) return `Guten Morgen${suffix}.`;
+  if (hour >= 10 && hour < 14) return `Mahlzeit${suffix}.`;
+  if (hour >= 14 && hour < 18) return `Guten Nachmittag${suffix}.`;
+  return `Guten Abend${suffix}.`;
 }
 
 function updateBerlinClock() {

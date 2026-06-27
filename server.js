@@ -1332,7 +1332,7 @@ function backendActionFor(checkId) {
     "entscheidungswert": "Relevanzfilter und aktuelle Quellenlage prüfen.",
     "quellenlinks": "URL-Resolver und Source Evidence prüfen.",
     "referentenmodus": "Briefing neu erzeugen und Empfehlungen auf direkte Ansprache, Handlung, Konsequenz und Quellenlink prüfen.",
-    "lernmodus": "Cem sollte im Pilot Themen öffnen, markieren, ausblenden oder Kommunikation kopieren, damit Helmut Präferenzen lernt.",
+    "lernmodus": "Der Nutzer sollte im Pilot Themen öffnen, markieren, ausblenden oder Kommunikation kopieren, damit Helmut Präferenzen lernt.",
     "pipeline-debug": "Pipeline einmal vollständig ausführen, damit ein Debug-Bericht gespeichert wird."
   };
   return actions[checkId] || "Backend-Check prüfen.";
@@ -1642,22 +1642,28 @@ function uniqueByRadarUrl(item, index, items) {
 }
 
 function profileArchiveTerms(profile) {
-  const fullName = String(profile?.fullName || "Cem Ince").trim();
+  // Kein Cem-Fallback: ein Mandat ohne Namen darf NICHT auf fremde Namen matchen.
+  const fullName = String(profile?.fullName || "").trim();
   const parts = fullName.split(/\s+/).filter(Boolean);
   return {
     fullName,
-    lastName: parts.at(-1) || "Ince"
+    lastName: parts.at(-1) || ""
   };
 }
 
 function rawItemMentionsProfile(item, terms) {
+  if (!terms.fullName && !terms.lastName) return false;
   const text = `${item?.title || ""} ${item?.content || ""} ${item?.excerpt || ""}`.toLowerCase();
-  return text.includes(terms.fullName.toLowerCase()) || profileNameBoundaryRegex(terms.lastName).test(text);
+  return (terms.fullName && text.includes(terms.fullName.toLowerCase()))
+    || (terms.lastName && profileNameBoundaryRegex(terms.lastName).test(text));
 }
 
 function rawItemAuthoredByProfile(item, terms) {
+  if (!terms.fullName && !terms.lastName) return false;
   const author = String(item?.author || "").toLowerCase();
-  return Boolean(author) && (author.includes(terms.fullName.toLowerCase()) || profileNameBoundaryRegex(terms.lastName).test(author));
+  if (!author) return false;
+  return (terms.fullName && author.includes(terms.fullName.toLowerCase()))
+    || (terms.lastName && profileNameBoundaryRegex(terms.lastName).test(author));
 }
 
 function profileNameBoundaryRegex(value) {
