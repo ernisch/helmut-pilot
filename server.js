@@ -110,9 +110,11 @@ async function handleRequest(request, response) {
       return handleAuthLogout(request, response);
     }
 
-    // Setup-Diagnose fuer die Ersteinrichtung (keine sensiblen Daten).
+    // Setup-Diagnose: sensible Felder (E-Mails etc.) nur fuer eingeloggte Admins.
     if (url.pathname === "/api/auth/setup-status") {
-      return handleAsync(response, () => accounts.getSetupStatus());
+      const ctx = await auth.getAuthContext(request).catch(() => null);
+      const includeSensitive = ctx?.user?.role === "admin";
+      return handleAsync(response, () => accounts.getSetupStatus({ includeSensitive }));
     }
 
     const ctx = await auth.getAuthContext(request).catch(() => null);
@@ -521,6 +523,25 @@ async function handleRequest(request, response) {
     if (request.method === "POST") {
       return handleJson(request, response, async (body) => {
         const user = await accounts.createUser(body);
+        // Schnellstart: optionale Kern-Mandatsdaten direkt ins Profil schreiben,
+        // damit Helmut ab Tag 1 personalisiert. DSGVO: nur berufliche Pflichtfelder,
+        // editier-/löschbar durch den/die Abgeordnete:n.
+        if (user.role === "abgeordneter" && user.politicianId) {
+          const quickStartKeys = ["party", "faction", "committee", "constituency", "state"];
+          const hasQuickStart = quickStartKeys.some((key) => String(body[key] || "").trim())
+            || (Array.isArray(body.focusTopics) && body.focusTopics.length);
+          if (hasQuickStart) {
+            await saveProfile(await normalizeProfile({
+              fullName: user.name,
+              party: body.party,
+              faction: body.faction,
+              committee: body.committee,
+              constituency: body.constituency,
+              state: body.state,
+              focusTopics: Array.isArray(body.focusTopics) ? body.focusTopics : undefined
+            }, user.politicianId));
+          }
+        }
         await accounts.recordAudit({ action: "admin.user.create", userId: authUser.id, actorEmail: authUser.email, detail: user.email });
         return user;
       });

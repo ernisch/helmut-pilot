@@ -690,6 +690,14 @@ function renderAdminView() {
           <input name="password" id="createUserPassword" type="password" placeholder="Passwort (min. 8 Zeichen)" aria-label="Passwort" autocomplete="new-password" required />
           <button type="button" class="password-toggle" data-toggle-password="createUserPassword" aria-label="Passwort anzeigen">Anzeigen</button>
         </div>
+        <div class="admin-quickstart">
+          <p class="admin-quickstart-hint">Schnellstart (optional, nur für Abgeordnete) — damit Helmut sofort passend personalisiert:</p>
+          <input name="party" type="text" placeholder="Partei / Fraktion" aria-label="Partei" />
+          <input name="committee" type="text" placeholder="Ausschuss" aria-label="Ausschuss" />
+          <input name="constituency" type="text" placeholder="Wahlkreis" aria-label="Wahlkreis" />
+          <input name="state" type="text" placeholder="Bundesland" aria-label="Bundesland" />
+          <input name="focusTopics" type="text" placeholder="Schwerpunktthemen (Komma-getrennt)" aria-label="Schwerpunktthemen" />
+        </div>
         <button class="primary-button" type="submit">Anlegen</button>
         <small class="admin-form-error" id="createUserError"></small>
       </form>
@@ -4253,6 +4261,14 @@ function bindAccountActions() {
       if (err) err.textContent = "";
       const fd = new FormData(createUserForm);
       const body = { name: fd.get("name"), email: fd.get("email"), role: fd.get("role"), password: fd.get("password") };
+      if (body.role === "abgeordneter") {
+        body.party = fd.get("party");
+        body.committee = fd.get("committee");
+        body.constituency = fd.get("constituency");
+        body.state = fd.get("state");
+        const topics = String(fd.get("focusTopics") || "").split(",").map((t) => t.trim()).filter(Boolean);
+        if (topics.length) body.focusTopics = topics;
+      }
       const res = await apiSend("POST", `/api/admin/users?${apiScopeQuery()}`, body);
       if (!res.ok) {
         if (err) err.textContent = res.json?.error || "Konnte nicht angelegt werden.";
