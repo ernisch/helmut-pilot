@@ -49,6 +49,33 @@ let onboardingDraft = {};
 
 const app = document.querySelector("#app");
 const toast = document.querySelector("#toast");
+
+// --- Theme (Dunkel / Hell / System) ---
+const THEME_KEY = "helmut:theme";
+function getThemePref() {
+  try { return localStorage.getItem(THEME_KEY) || "system"; } catch { return "system"; }
+}
+function resolveTheme(pref) {
+  if (pref === "light" || pref === "dark") return pref;
+  return (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) ? "light" : "dark";
+}
+function applyThemePref(pref) {
+  document.documentElement.setAttribute("data-theme", resolveTheme(pref));
+}
+function setThemePref(pref) {
+  try { localStorage.setItem(THEME_KEY, pref); } catch {}
+  applyThemePref(pref);
+  render();
+}
+(function watchSystemTheme() {
+  try {
+    const mq = window.matchMedia("(prefers-color-scheme: light)");
+    const onChange = () => { if (getThemePref() === "system") applyThemePref("system"); };
+    if (mq.addEventListener) mq.addEventListener("change", onChange);
+    else if (mq.addListener) mq.addListener(onChange);
+  } catch {}
+  applyThemePref(getThemePref());
+})();
 const appStartCachePrefix = "helmut:lastStartPayload:v3";
 const appStartCacheMaxAgeMs = 0;
 const helmutFlowCooldownPrefix = "helmut:lastAssessmentFlow:v1";
@@ -3671,6 +3698,21 @@ function renderSettingsView() {
     <section class="plain-list">
       <article class="list-row low">
         <div>
+          <span>Darstellung</span>
+          <h3>Erscheinungsbild</h3>
+          <p>Wähle hell, dunkel oder automatisch nach Systemeinstellung.</p>
+          <div class="theme-toggle">
+            ${[["dark", "Dunkel"], ["light", "Hell"], ["system", "System"]].map(([value, label]) =>
+              `<button class="theme-option ${getThemePref() === value ? "active" : ""}" type="button" data-theme-set="${value}">${label}</button>`
+            ).join("")}
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="plain-list">
+      <article class="list-row low">
+        <div>
           <span>Profil</span>
           <h3>${escapeHtml(profile.fullName || "Profil")}</h3>
           <p>${escapeHtml(profile.function || "Bundestagsabgeordneter")} · ${escapeHtml(profile.party || "Die Linke")} · ${escapeHtml(profile.faction || profile.party || "Fraktion offen")}</p>
@@ -4531,6 +4573,10 @@ function bindActions() {
       render();
       ensureViewData(currentView);
     });
+  });
+
+  app.querySelectorAll("[data-theme-set]").forEach((button) => {
+    button.addEventListener("click", () => setThemePref(button.dataset.themeSet));
   });
 
   app.querySelectorAll("[data-refresh-helmut]").forEach((button) => {

@@ -1153,6 +1153,11 @@ function indexHtml() {
     <style>
       :root{color-scheme:dark;background:#050914}html,body{width:100%;min-height:100%;margin:0;background:#050914;color:#f5f1e8}body.is-loading{background:radial-gradient(circle at 50% 42%,rgba(140,92,255,.12),transparent 26%),linear-gradient(180deg,#070b15 0%,#050914 72%,#03050b 100%)}.app-splash{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:radial-gradient(circle at 50% 42%,rgba(140,92,255,.12),transparent 26%),linear-gradient(180deg,#070b15 0%,#050914 72%,#03050b 100%)}.splash-mark,.loading-mark{display:grid;place-items:center;color:#fbf7ef;background:transparent}.splash-mark span,.loading-mark span{font:720 clamp(42px,13vw,72px)/1 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:-.04em;text-shadow:0 20px 70px rgba(140,92,255,.34)}.shell{width:100%;min-height:100dvh}.loading-screen{display:grid;place-items:center;min-height:100dvh;width:100%;background:#050914}
     </style>
+    <style>
+      :root[data-theme="light"] body.is-loading,:root[data-theme="light"] .app-splash,:root[data-theme="light"] .loading-screen{background:#f7f9fc}
+      :root[data-theme="light"] .splash-mark span,:root[data-theme="light"] .loading-mark span{color:#0f1729;text-shadow:none}
+    </style>
+    <script>(function(){try{var p=localStorage.getItem("helmut:theme")||"system";var t=p==="light"?"light":p==="dark"?"dark":((window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark");document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
     <link rel="stylesheet" href="styles.css?v=20260624-faststart1" />
   </head>
   <body class="is-loading">

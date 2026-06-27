@@ -6699,3 +6699,129 @@ body {
 
 .onboarding-actions .primary-button { margin-left: auto; }
 .onboarding-actions .secondary-button { order: -1; }
+
+/* === Light Mode ===================================================== */
+/* Aktiv über <html data-theme="light">. Dark bleibt Standard. */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #eef1f6;
+  --card: rgba(255, 255, 255, .94);
+  --paper: #ffffff;
+  --line: rgba(15, 23, 42, .14);
+  --hairline: rgba(15, 23, 42, .08);
+  --text: #0f1729;
+  --muted: rgba(15, 23, 42, .64);
+  --muted-2: rgba(15, 23, 42, .46);
+  --danger: #d12b39;
+  --watch: #b07414;
+  --chance: #1f9d63;
+  --accent: #4f6fe0;
+  --accent-ink: #2c3f9e;
+  --accent-soft: rgba(79, 111, 224, .12);
+  --signature: #a54562;
+  --gold: #b07414;
+  --ink-button: #ffffff;
+  --soft-shadow: 0 18px 50px rgba(15, 23, 42, .12);
+  --hard-shadow: 0 28px 80px rgba(15, 23, 42, .18);
+  --command-bg: #f4f6fb;
+  --command-panel: rgba(255, 255, 255, .92);
+  --command-panel-strong: rgba(255, 255, 255, .98);
+  --command-line: rgba(15, 23, 42, .10);
+  --command-text: #0f1729;
+  --command-muted: rgba(15, 23, 42, .64);
+  --command-faint: rgba(15, 23, 42, .46);
+  --command-purple: #6d4cff;
+  --command-green: #0f9d63;
+  --command-red: #d12b39;
+  --command-shadow: 0 24px 70px rgba(15, 23, 42, .14);
+}
+
+:root[data-theme="light"] body {
+  background:
+    radial-gradient(circle at 72% 6%, rgba(79, 111, 224, .10), transparent 30%),
+    radial-gradient(circle at 12% 18%, rgba(176, 116, 20, .06), transparent 24%),
+    linear-gradient(180deg, #f7f9fc 0%, var(--bg) 58%, #e9edf4 100%);
+}
+
+/* Theme-Auswahl in den Einstellungen */
+.theme-toggle { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.theme-option {
+  flex: 1;
+  min-width: 90px;
+  background: var(--paper);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  text-align: center;
+}
+.theme-option.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+/* Light Mode: dunkle Karten-/Panel-Oberflächen (oft als Gradient gesetzt) auf
+   helle Flächen umstellen. Text/Border laufen bereits über Variablen. */
+:root[data-theme="light"] .list-row,
+:root[data-theme="light"] .decision-console,
+:root[data-theme="light"] .command-panel,
+:root[data-theme="light"] .chief-card,
+:root[data-theme="light"] .briefing-block,
+:root[data-theme="light"] .agenda-section,
+:root[data-theme="light"] .updates-panel,
+:root[data-theme="light"] .situational-card,
+:root[data-theme="light"] .radar-mini,
+:root[data-theme="light"] .empty-card,
+:root[data-theme="light"] .loading-card,
+:root[data-theme="light"] .article-section,
+:root[data-theme="light"] .article-grid > div,
+:root[data-theme="light"] .profile-section,
+:root[data-theme="light"] .helmut-assessment,
+:root[data-theme="light"] .brief-mini,
+:root[data-theme="light"] .strategy-answer,
+:root[data-theme="light"] .draft-channel-picker,
+:root[data-theme="light"] .handoff-panel,
+:root[data-theme="light"] .moment-grid > div,
+:root[data-theme="light"] .meeting-card,
+:root[data-theme="light"] .topic-card,
+:root[data-theme="light"] .detail-card,
+:root[data-theme="light"] .ops-card,
+:root[data-theme="light"] .signal-card,
+:root[data-theme="light"] .note-card {
+  background: var(--card) !important;
+  box-shadow: var(--soft-shadow);
+}
+
+:root[data-theme="light"] .sidebar { background: var(--paper) !important; }
+:root[data-theme="light"] .mobile-dock { background: rgba(255, 255, 255, .92) !important; }
+:root[data-theme="light"] .handoff-layer,
+:root[data-theme="light"] .updates-layer { background: rgba(15, 23, 42, .28) !important; }
+
+/* Helle Eingabefelder im Light Mode */
+:root[data-theme="light"] input,
+:root[data-theme="light"] select,
+:root[data-theme="light"] textarea {
+  background: #ffffff;
+  color: var(--text);
+  border-color: var(--line);
+}
+
+:root[data-theme="light"] .morning-moment,
+:root[data-theme="light"] .lage-card,
+:root[data-theme="light"] .learning-pulse,
+:root[data-theme="light"] .morning-moment .moment-grid > div {
+  background: var(--card) !important;
+  box-shadow: var(--soft-shadow);
+}
+/* Lesbarkeit innerhalb heller Karten sicherstellen (Texte, die im Dark-Design
+   sehr blass/cremefarben waren). */
+:root[data-theme="light"] .morning-moment .moment-grid p,
+:root[data-theme="light"] .lage-card p,
+:root[data-theme="light"] .learning-pulse p { color: var(--muted) !important; }
+:root[data-theme="light"] .morning-moment h2,
+:root[data-theme="light"] .lage-card h2,
+:root[data-theme="light"] .lage-card h1 { color: var(--text) !important; }
