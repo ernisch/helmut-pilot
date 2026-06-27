@@ -1102,13 +1102,17 @@ function sendPrivacyPage(response) {
       <ul>
         <li><strong>Vercel</strong> (Hosting/Betrieb der Anwendung).</li>
         <li><strong>Supabase</strong> (Datenspeicherung). Region <code>[BITTE PRÜFEN: EU-Region wählen/bestätigen]</code>.</li>
-        <li><strong>OpenAI</strong> (Textgenerierung für Briefings/Kommunikation). <strong>Wichtig: Übermittlung in die USA (Drittland).</strong></li>
+        ${isAiEnabled()
+          ? "<li><strong>OpenAI</strong> (KI-Textgenerierung) — <strong>derzeit AKTIV</strong>: Inhalte werden zur Texterzeugung an OpenAI in die USA übermittelt.</li>"
+          : "<li><strong>OpenAI</strong> (KI-Textgenerierung) — <strong>derzeit deaktiviert</strong>, daher keine Nutzung und keine Übermittlung.</li>"}
         <li><strong>Browser-Push-Dienste</strong> (nur bei aktivierten Benachrichtigungen).</li>
       </ul>
       <p>Mit allen Auftragsverarbeitern sind <strong>Auftragsverarbeitungsverträge (AVV)</strong> abzuschließen: <code>[BITTE ERGÄNZEN/PRÜFEN]</code>.</p>
 
-      <h2>6. Übermittlung in Drittländer (OpenAI, USA)</h2>
-      <p>Für die KI-gestützte Textgenerierung können Inhalte an OpenAI in den USA übermittelt werden. Im Abgeordneten-Kontext ist dies <strong>besonders sensibel</strong> und erfordert eine bewusste Entscheidung samt geeigneter Garantien (z. B. EU-Standardvertragsklauseln) sowie ggf. Datenminimierung. <code>[BITTE ERGÄNZEN: Transfergrundlage / Alternative prüfen]</code>. Hinweis: Ohne KI-Schlüssel läuft Helmut regelbasiert ohne diese Übermittlung.</p>
+      <h2>6. Übermittlung in Drittländer</h2>
+      ${isAiEnabled()
+        ? "<p><strong>Derzeit ist die KI-Funktion aktiv:</strong> Zur Texterzeugung werden Inhalte an OpenAI in die USA (Drittland) übermittelt. Dies erfordert eine geeignete Rechtsgrundlage (z. B. EU-Standardvertragsklauseln), Datenminimierung und einen AV-Vertrag mit OpenAI. <code>[BITTE ERGÄNZEN/PRÜFEN]</code></p>"
+        : "<p><strong>Im aktuellen Pilotbetrieb findet keine Übermittlung personenbezogener Daten in Drittländer (z. B. USA) statt.</strong> Die KI-Textgenerierung über OpenAI ist deaktiviert; Briefings werden regelbasiert erzeugt. Sollte die KI-Funktion künftig aktiviert werden, würden Inhalte an OpenAI in die USA übermittelt — dies erfordert dann eine gesonderte Rechtsgrundlage und eine Aktualisierung dieser Erklärung.</p>"}
 
       <h2>7. Speicherdauer</h2>
       <p>Verläufe werden technisch begrenzt (u. a. Briefings, Interaktionen, Notizen, Sessions, Fehlerprotokolle) und pro Mandat gekappt. Eine organisatorische Löschfrist legt der Verantwortliche fest: <code>[BITTE ERGÄNZEN]</code>.</p>
