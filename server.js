@@ -165,7 +165,7 @@ async function handleRequest(request, response) {
   if (url.pathname === "/api/app/start") {
     return handleAsync(response, async () => {
       const profile = await activeProfile(politicianId);
-      const briefing = await latestBriefingPayload({ politicianId, profile, url, previewMode, compact: true, skipRefresh: true });
+      const briefing = await latestBriefingPayload({ politicianId, profile, url, previewMode, compact: true });
       return {
         profile,
         briefing,
@@ -667,29 +667,29 @@ function prepareBriefingResponse(briefing, { previewMode = false, compact = fals
   return withPreviewMode(payload, previewMode);
 }
 
-async function latestBriefingPayload({ politicianId, profile, url, previewMode = false, compact = false, skipRefresh = false }) {
+async function latestBriefingPayload({ politicianId, profile, url, previewMode = false, compact = false }) {
   const latest = await getLatestOrDemoBriefing(politicianId);
-  if (!latest.homeSections || !latest.personalizedRecommendations) {
+  const isEmpty = !latest.homeSections || !latest.personalizedRecommendations;
+  const ageHours = (Date.now() - new Date(latest.generatedAt || latest.date || 0).getTime()) / 3_600_000;
+  // On-Demand-Erzeugung beim Lesen: schnell und OHNE KI. Sorgt dafuer, dass jedes
+  // Mandat (auch ein neues) ein echtes, personalisiertes Briefing sieht, ohne das
+  // Vercel-Zeitlimit zu sprengen. Nur bei leerem ODER >18h altem Briefing — so
+  // bleibt das taegliche KI-Briefing (Cron) tagsueber erhalten. Schwere KI laeuft
+  // nur per Cron und per manuellem "Aktualisieren" (/api/briefing/run).
+  const needsQuickBriefing = isEmpty || !Number.isFinite(ageHours) || ageHours > 18;
+  if (!previewMode && needsQuickBriefing) {
+    try {
+      const fresh = await runMorningBriefing(politicianId, { skipAi: true });
+      return prepareBriefingResponse(fresh, { previewMode, compact });
+    } catch (error) {
+      console.error("Quick briefing failed", error);
+    }
+  }
+  if (isEmpty) {
     const personalized = personalizeBriefing(latest, profile, await getTopicMemory(profile.id), await getInteractions(profile.id));
     return prepareBriefingResponse(personalized, { previewMode, compact });
   }
-  // skipRefresh: nie synchron die schwere Pipeline laufen lassen (z. B. beim
-  // App-Start). Das Briefing wird per Cron und per manuellem Aktualisieren erzeugt;
-  // ein synchroner Lauf wuerde das Vercel-Funktionszeitlimit sprengen.
-  if (previewMode || skipRefresh || !shouldRefreshLatestBriefing(latest, url)) return prepareBriefingResponse(latest, { previewMode, compact });
-  try {
-    const pipeline = await runDailyPipeline(politicianId);
-    return prepareBriefingResponse({
-      ...pipeline.briefing,
-      refreshedOnRead: true
-    }, { previewMode, compact });
-  } catch (error) {
-    console.error("Refresh on read failed", error);
-    return prepareBriefingResponse({
-      ...latest,
-      refreshError: error.message
-    }, { previewMode, compact });
-  }
+  return prepareBriefingResponse(latest, { previewMode, compact });
 }
 
 function compactBriefingPayload(briefing) {
