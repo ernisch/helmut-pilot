@@ -163,7 +163,7 @@ async function handleRequest(request, response) {
   if (url.pathname === "/api/app/start") {
     return handleAsync(response, async () => {
       const profile = await activeProfile(politicianId);
-      const briefing = await latestBriefingPayload({ politicianId, profile, url, previewMode, compact: true });
+      const briefing = await latestBriefingPayload({ politicianId, profile, url, previewMode, compact: true, skipRefresh: true });
       return {
         profile,
         briefing,
@@ -646,13 +646,16 @@ function prepareBriefingResponse(briefing, { previewMode = false, compact = fals
   return withPreviewMode(payload, previewMode);
 }
 
-async function latestBriefingPayload({ politicianId, profile, url, previewMode = false, compact = false }) {
+async function latestBriefingPayload({ politicianId, profile, url, previewMode = false, compact = false, skipRefresh = false }) {
   const latest = await getLatestOrDemoBriefing(politicianId);
   if (!latest.homeSections || !latest.personalizedRecommendations) {
     const personalized = personalizeBriefing(latest, profile, await getTopicMemory(profile.id), await getInteractions(profile.id));
     return prepareBriefingResponse(personalized, { previewMode, compact });
   }
-  if (previewMode || !shouldRefreshLatestBriefing(latest, url)) return prepareBriefingResponse(latest, { previewMode, compact });
+  // skipRefresh: nie synchron die schwere Pipeline laufen lassen (z. B. beim
+  // App-Start). Das Briefing wird per Cron und per manuellem Aktualisieren erzeugt;
+  // ein synchroner Lauf wuerde das Vercel-Funktionszeitlimit sprengen.
+  if (previewMode || skipRefresh || !shouldRefreshLatestBriefing(latest, url)) return prepareBriefingResponse(latest, { previewMode, compact });
   try {
     const pipeline = await runDailyPipeline(politicianId);
     return prepareBriefingResponse({

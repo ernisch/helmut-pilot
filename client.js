@@ -209,7 +209,7 @@ async function loadBriefing() {
   }
 
   try {
-    const startResponse = await fetchWithTimeout(`/api/app/start?${scope}`, {}, renderedFromCache ? 9000 : 12000);
+    const startResponse = await fetchWithTimeout(`/api/app/start?${scope}`, {}, renderedFromCache ? 15000 : 25000);
 
     if (startResponse.status === 401 || startResponse.status === 403) {
       if (authState) renderLogin();
