@@ -3297,13 +3297,85 @@ function renderMemorySection(decision) {
   `;
 }
 
+function officeBoardTasks() {
+  return (tasks || []).filter((task) => task && task.title);
+}
+
+async function setBoardTaskStatus(id, status) {
+  const task = (tasks || []).find((entry) => entry.id === id);
+  if (!task) return;
+  if (previewMode) { showToast("Vorschau: kein Status geändert"); return; }
+  task.status = status;
+  render();
+  try {
+    // POST = upsert (saveTask aktualisiert per id), damit auch Vorschläge persistiert werden.
+    await fetchWithTimeout(`/api/tasks?${apiScopeQuery()}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(task)
+    });
+  } catch (error) {
+    console.warn("Status speichern fehlgeschlagen", error);
+  }
+  showToast(status === "done" ? "Erledigt" : status === "in_progress" ? "In Arbeit genommen" : "Wieder geöffnet");
+}
+
+function renderBoardTask(task) {
+  const status = task.status || "open";
+  const prioClass = task.priority === "high" ? "danger" : task.priority === "low" ? "" : "watch";
+  const prioLabel = task.priority === "high" ? "Hoch" : task.priority === "low" ? "Niedrig" : "Mittel";
+  return `
+    <article class="board-task ${escapeAttribute(status)}">
+      <div class="board-task-body">
+        <span class="board-task-tag ${prioClass}">${escapeHtml(prioLabel)}</span>
+        <strong>${escapeHtml(task.title)}</strong>
+        ${task.description ? `<p>${escapeHtml(compactText(task.description, 150))}</p>` : ""}
+      </div>
+      <div class="board-task-actions">
+        ${status === "open" ? `<button class="secondary-button compact-button" type="button" data-task-status="in_progress" data-task-board-id="${escapeAttribute(task.id)}">In Arbeit</button>` : ""}
+        ${status !== "done"
+          ? `<button class="primary-button compact-button" type="button" data-task-status="done" data-task-board-id="${escapeAttribute(task.id)}">Erledigt</button>`
+          : `<button class="secondary-button compact-button" type="button" data-task-status="open" data-task-board-id="${escapeAttribute(task.id)}">Wieder öffnen</button>`}
+        <button class="secondary-button compact-button" type="button" data-task-copy="${escapeAttribute(task.id)}">Teilen</button>
+      </div>
+    </article>`;
+}
+
+function renderBoardGroup(label, list) {
+  if (!list.length) return "";
+  const shown = list.slice(0, label === "Erledigt" ? 6 : 12);
+  return `
+    <section class="board-group">
+      <h2 class="board-group-title">${escapeHtml(label)} <span>${list.length}</span></h2>
+      <div class="board-list">${shown.map((task) => renderBoardTask(task)).join("")}</div>
+    </section>`;
+}
+
 function renderOfficeView() {
+  const all = officeBoardTasks();
+  const isReferent = currentUser?.role === "referent";
+  const open = all.filter((task) => (task.status || "open") === "open" && isActionableOfficeTask(task));
+  const inProgress = all.filter((task) => task.status === "in_progress");
+  const done = all.filter((task) => task.status === "done");
+  const hasAny = open.length || inProgress.length || done.length;
   return `
     <section class="page-intro compact">
       <h1 class="${headlineClass("Büro.")}">Büro.</h1>
-      <p>Was dein Büro dir heute abnehmen kann.</p>
+      <p>${isReferent ? "Aufgaben von deinem Abgeordneten — annehmen, in Arbeit halten, abhaken." : "Was du ans Büro gibst — und wie weit es ist."}</p>
     </section>
-    ${renderOfficeTasksSection()}
+    ${hasAny ? `
+      ${renderBoardGroup("Offen", open)}
+      ${renderBoardGroup("In Arbeit", inProgress)}
+      ${renderBoardGroup("Erledigt", done)}
+    ` : `
+      <article class="list-row office-empty">
+        <div>
+          <span>Nichts offen</span>
+          <h3>Aktuell keine Aufgaben fürs Büro.</h3>
+          <p>Übergaben aus der Lage erscheinen hier — offen, in Arbeit, erledigt. ${isReferent ? "" : "Tippe in der Lage auf „An Büro\", um etwas zu delegieren."}</p>
+        </div>
+      </article>
+    `}
   `;
 }
 
@@ -4800,22 +4872,31 @@ function bindActions() {
       const decision = decisions.find((entry) => entry.id === button.dataset.lageDelegate);
       if (!decision || previewMode) { if (previewMode) showToast("Vorschau: nicht delegiert"); return; }
       try {
-        await fetchWithTimeout(`/api/tasks?${apiScopeQuery()}`, {
+        const res = await fetchWithTimeout(`/api/tasks?${apiScopeQuery()}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             title: decision.title,
             description: compactText(chiefRecommendationText(decision), 220),
             priority: "high",
-            assignee: "Büro"
+            assignee: "Büro",
+            status: "open"
           })
         });
+        if (res.ok) {
+          const saved = await res.json();
+          if (saved && saved.id) tasks = [saved, ...tasks.filter((t) => t.id !== saved.id)];
+        }
         logDecisionInteraction("delegated", decision);
         showToast("An Büro delegiert");
       } catch (error) {
         showToast("Konnte nicht delegiert werden");
       }
     });
+  });
+
+  app.querySelectorAll("[data-task-board-id]").forEach((button) => {
+    button.addEventListener("click", () => setBoardTaskStatus(button.dataset.taskBoardId, button.dataset.taskStatus));
   });
 
   app.querySelectorAll("[data-refresh-helmut]").forEach((button) => {

@@ -6934,3 +6934,20 @@ body {
 .lage-collapse-count { font-size: 12px; color: var(--muted-2); background: var(--accent-soft); border-radius: 999px; padding: 2px 9px; }
 .lage-collapse-chev { color: var(--muted-2); font-size: 12px; }
 .lage-collapse-body { padding: 12px 2px 4px; }
+
+/* === Büro: gemeinsames Aufgaben-Board === */
+.board-group { margin: 4px 0 18px; }
+.board-group-title { font-size: 14px; font-weight: 600; color: var(--muted); margin: 0 0 10px; display: flex; align-items: center; gap: 8px; text-transform: uppercase; letter-spacing: .04em; }
+.board-group-title span { font-size: 12px; color: var(--muted-2); background: var(--accent-soft); border-radius: 999px; padding: 1px 9px; }
+.board-list { display: grid; gap: 10px; }
+.board-task { background: var(--card); border: 1px solid var(--line); border-left: 3px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+.board-task.open { border-left-color: var(--watch); }
+.board-task.in_progress { border-left-color: var(--accent); }
+.board-task.done { border-left-color: var(--chance); opacity: .72; }
+.board-task.done strong { text-decoration: line-through; text-decoration-color: var(--muted-2); }
+.board-task-tag { display: inline-block; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; border-radius: 999px; padding: 2px 9px; margin-bottom: 6px; background: var(--accent-soft); color: var(--accent-ink); }
+.board-task-tag.danger { background: rgba(255,89,103,.16); color: var(--danger); }
+.board-task-tag.watch { background: rgba(214,160,64,.16); color: var(--watch); }
+.board-task-body strong { display: block; font-size: 15px; line-height: 1.3; color: var(--text); }
+.board-task-body p { font-size: 13px; color: var(--muted); margin: 4px 0 0; }
+.board-task-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
