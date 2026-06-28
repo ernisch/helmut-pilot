@@ -45,6 +45,7 @@ let dailyInputsLoaded = false;
 let parliamentItems = [];
 let parliamentLoaded = false;
 let parliamentAssessments = {};
+let expandedSections = new Set();
 // Geführter Einstieg (Onboarding) beim ersten Öffnen eines Mandats mit leerem Profil.
 let onboardingActive = false;
 let onboardingStep = 0;
@@ -1398,23 +1399,122 @@ async function assessParliamentItem(id) {
   render();
 }
 
-function renderBriefingView() {
+function activeDecisions() {
+  return decisions.filter((entry) => entry.status !== "done" && entry.status !== "ignored");
+}
+
+function lageProgress() {
+  const total = decisions.length;
+  const cleared = decisions.filter((entry) => entry.status === "done" || entry.status === "ignored").length;
+  return { total, cleared };
+}
+
+function priorityChipClass(decision) {
+  const t = decision.priorityType || "";
+  if (t === "action" || t === "high") return "danger";
+  if (t === "chance") return "chance";
+  return "watch";
+}
+
+function renderDecisionActions(decision, primary) {
   return `
-    <section class="page-intro executive-intro agenda-intro">
-      <span class="eyebrow-line">${escapeHtml(timeGreeting((profile?.fullName || "").split(" ")[0]).replace(".", ""))}</span>
-      <h1 class="hero-title">Hier ist deine Lage.</h1>
-      <p>${escapeHtml(formatBerlinFullDateTime())}</p>
+    <div class="lage-actions">
+      <button class="${primary ? "primary-button" : "secondary-button compact-button"}" type="button" data-communication="${escapeAttribute(decision.id)}">Reaktion vorbereiten</button>
+      <button class="secondary-button compact-button" type="button" data-detail="${escapeAttribute(decision.id)}">Details</button>
+      <button class="secondary-button compact-button" type="button" data-lage-delegate="${escapeAttribute(decision.id)}">An Büro</button>
+      <button class="lage-icon-btn" type="button" data-lage-done="${escapeAttribute(decision.id)}" aria-label="Als erledigt markieren" title="Erledigt">✓</button>
+      <button class="lage-icon-btn" type="button" data-lage-ignore="${escapeAttribute(decision.id)}" aria-label="Ignorieren" title="Ignorieren">×</button>
+    </div>`;
+}
+
+function renderLageFocus() {
+  const active = activeDecisions();
+  if (!active.length) {
+    return `
+      <section class="lage-focus calm">
+        <span class="lage-focus-chip chance">Alles im Griff</span>
+        <h2 class="lage-focus-title">Heute musst du nicht öffentlich reagieren.</h2>
+        <p class="lage-focus-why">Helmut beobachtet weiter Bundesregierung, Fraktion und Ausschuss und zieht nur hoch, was wirklich zählt.</p>
+      </section>`;
+  }
+  const top = active[0];
+  return `
+    <section class="lage-focus">
+      <span class="lage-focus-chip ${priorityChipClass(top)}">Das zählt heute · ${escapeHtml(top.priorityLabel || "Reagieren")}</span>
+      <h2 class="lage-focus-title">${escapeHtml(top.title)}</h2>
+      <p class="lage-focus-why">${escapeHtml(compactText(top.summary || chiefRecommendationText(top), 180))}</p>
+      ${renderDecisionActions(top, true)}
+    </section>`;
+}
+
+function renderLageGlance() {
+  const active = activeDecisions();
+  const watch = typeof competentNoActionItems === "function" ? competentNoActionItems().length : 0;
+  const { total, cleared } = lageProgress();
+  const progress = total ? `<span class="lage-progress">${cleared} von ${total} erledigt</span>` : "<span class=\"lage-progress\">nichts Dringendes</span>";
+  return `
+    <div class="lage-glance">
+      <div class="glance-row"><span class="dot danger"></span><span>Reagieren</span><b>${active.length}</b></div>
+      <div class="glance-row"><span class="dot watch"></span><span>Beobachten</span><b>${watch}</b></div>
+      <div class="glance-row"><span class="dot chance"></span><span>Sonst ruhig</span>${progress}</div>
+    </div>`;
+}
+
+function renderSecondaryDecisions() {
+  const rest = activeDecisions().slice(1, 3);
+  if (!rest.length) return "";
+  return `
+    <div class="lage-secondary">
+      ${rest.map((decision) => `
+        <article class="lage-sec-item">
+          <span class="lage-sec-chip ${priorityChipClass(decision)}">${escapeHtml(decision.priorityLabel || "Punkt")}</span>
+          <strong>${escapeHtml(decision.title)}</strong>
+          <p>${escapeHtml(compactText(decision.summary || chiefRecommendationText(decision), 120))}</p>
+          ${renderDecisionActions(decision, false)}
+        </article>
+      `).join("")}
+    </div>`;
+}
+
+function renderParliamentListHtml() {
+  if (!parliamentItems.length) return "";
+  return `<div class="parliament-list">${parliamentItems.slice(0, 6).map((item) => renderParliamentItem(item)).join("")}</div>`;
+}
+
+function renderCollapsible(id, title, count, content) {
+  if (!content || !String(content).trim()) return "";
+  const open = expandedSections.has(id);
+  return `
+    <div class="lage-collapsible ${open ? "open" : ""}">
+      <button class="lage-collapse-head" type="button" data-collapse="${escapeAttribute(id)}" aria-expanded="${open}">
+        <span class="lage-collapse-title">${escapeHtml(title)}</span>
+        ${count != null ? `<span class="lage-collapse-count">${escapeHtml(String(count))}</span>` : ""}
+        <span class="lage-collapse-chev">${open ? "▴" : "▾"}</span>
+      </button>
+      ${open ? `<div class="lage-collapse-body">${content}</div>` : ""}
+    </div>`;
+}
+
+function renderBriefingView() {
+  const firstName = (profile?.fullName || "").split(" ")[0];
+  return `
+    <section class="page-intro lage-head">
+      <div class="lage-head-row">
+        <span class="lage-greeting">${escapeHtml(timeGreeting(firstName).replace(".", ""))}</span>
+        <span class="lage-date">${escapeHtml(formatBerlinFullDateTime())}</span>
+      </div>
     </section>
 
-    ${renderMorningMoment()}
-    ${renderLageSnapshot()}
-    ${renderParliamentSection()}
-    ${renderLearningPulse()}
-    ${renderDailyCommunicationDecision()}
-    ${renderMeetingPrepSection()}
-    ${renderWeeklyOutlook()}
-    ${renderPoliticalContextSections()}
-    ${renderWatchlistMini()}
+    ${renderLageFocus()}
+    ${renderLageGlance()}
+    ${renderSecondaryDecisions()}
+
+    <p class="lage-more-label">Mehr, wenn du willst</p>
+    ${renderCollapsible("parlament", "Parlamentarische Vorgänge", parliamentItems.length || null, renderParliamentListHtml())}
+    ${renderCollapsible("termine", "Termine & Vorbereitung", null, renderMeetingPrepSection())}
+    ${renderCollapsible("beobachten", "Beobachten", null, renderWatchlistMini())}
+    ${renderCollapsible("ausblick", "Wochenausblick & Kontext", null, `${renderWeeklyOutlook()}${renderPoliticalContextSections()}`)}
+    ${renderCollapsible("lernen", "Lernpuls", null, renderLearningPulse())}
   `;
 }
 
@@ -4664,6 +4764,58 @@ function bindActions() {
 
   app.querySelectorAll("[data-assess-id]").forEach((button) => {
     button.addEventListener("click", () => assessParliamentItem(button.dataset.assessId));
+  });
+
+  app.querySelectorAll("[data-collapse]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const id = button.dataset.collapse;
+      if (expandedSections.has(id)) expandedSections.delete(id);
+      else expandedSections.add(id);
+      render();
+    });
+  });
+
+  app.querySelectorAll("[data-lage-done]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const decision = decisions.find((entry) => entry.id === button.dataset.lageDone);
+      if (decision) { decision.status = "done"; decision.feedback = "done"; }
+      render();
+      showToast("Als erledigt markiert");
+      logDecisionInteraction("done", decision);
+    });
+  });
+
+  app.querySelectorAll("[data-lage-ignore]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const decision = decisions.find((entry) => entry.id === button.dataset.lageIgnore);
+      if (decision) { decision.status = "ignored"; decision.feedback = "ignored"; }
+      render();
+      showToast("Wird niedriger gewichtet");
+      logDecisionInteraction("ignored", decision);
+    });
+  });
+
+  app.querySelectorAll("[data-lage-delegate]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const decision = decisions.find((entry) => entry.id === button.dataset.lageDelegate);
+      if (!decision || previewMode) { if (previewMode) showToast("Vorschau: nicht delegiert"); return; }
+      try {
+        await fetchWithTimeout(`/api/tasks?${apiScopeQuery()}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: decision.title,
+            description: compactText(chiefRecommendationText(decision), 220),
+            priority: "high",
+            assignee: "Büro"
+          })
+        });
+        logDecisionInteraction("delegated", decision);
+        showToast("An Büro delegiert");
+      } catch (error) {
+        showToast("Konnte nicht delegiert werden");
+      }
+    });
   });
 
   app.querySelectorAll("[data-refresh-helmut]").forEach((button) => {

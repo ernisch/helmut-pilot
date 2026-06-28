@@ -6864,3 +6864,73 @@ body {
 .parliament-assessment { margin-top: 10px; border-top: 1px solid var(--hairline); padding-top: 8px; }
 .parliament-assessment p { margin: 4px 0; font-size: 13px; color: var(--muted); }
 .parliament-assessment b { color: var(--text); }
+
+/* === Lage v2: Fokus + Ampel + einklappbare Bereiche === */
+.lage-head { margin-bottom: 8px; }
+.lage-head-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.lage-greeting { font-size: 15px; font-weight: 600; color: var(--text); }
+.lage-date { font-size: 13px; color: var(--muted-2); }
+
+.lage-focus {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin: 6px 0 14px;
+}
+.lage-focus.calm { border-left-color: var(--chance); }
+.lage-focus-chip {
+  display: inline-block; font-size: 12px; letter-spacing: .02em;
+  border-radius: 999px; padding: 3px 11px; margin-bottom: 10px;
+  background: var(--accent-soft); color: var(--accent-ink);
+}
+.lage-focus-chip.danger { background: rgba(255,89,103,.16); color: var(--danger); }
+.lage-focus-chip.watch { background: rgba(214,160,64,.16); color: var(--watch); }
+.lage-focus-chip.chance { background: rgba(57,209,143,.16); color: var(--chance); }
+.lage-focus-title { font-size: 22px; line-height: 1.25; margin: 0 0 6px; color: var(--text); }
+.lage-focus-why { font-size: 15px; line-height: 1.5; color: var(--muted); margin: 0 0 14px; }
+
+.lage-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.lage-icon-btn {
+  width: 36px; height: 36px; border-radius: 9px;
+  border: 1px solid var(--line); background: var(--paper);
+  color: var(--muted); font-size: 16px; cursor: pointer; line-height: 1;
+}
+.lage-icon-btn:hover { border-color: var(--accent); color: var(--text); }
+
+.lage-glance {
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: 12px; padding: 4px 16px; margin-bottom: 14px;
+}
+.glance-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--hairline); font-size: 14px; color: var(--text); }
+.glance-row:last-child { border-bottom: none; }
+.glance-row span:nth-child(2) { flex: 1; }
+.glance-row b { font-weight: 600; }
+.glance-row .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.dot.danger { background: var(--danger); }
+.dot.watch { background: var(--watch); }
+.dot.chance { background: var(--chance); }
+.lage-progress { font-size: 13px; color: var(--muted-2); }
+
+.lage-secondary { display: grid; gap: 10px; margin-bottom: 18px; }
+.lage-sec-item { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+.lage-sec-chip { display: inline-block; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; border-radius: 999px; padding: 2px 9px; margin-bottom: 6px; background: var(--accent-soft); color: var(--accent-ink); }
+.lage-sec-chip.danger { background: rgba(255,89,103,.16); color: var(--danger); }
+.lage-sec-chip.watch { background: rgba(214,160,64,.16); color: var(--watch); }
+.lage-sec-chip.chance { background: rgba(57,209,143,.16); color: var(--chance); }
+.lage-sec-item strong { display: block; font-size: 15px; line-height: 1.3; color: var(--text); }
+.lage-sec-item p { font-size: 13px; color: var(--muted); margin: 4px 0 10px; }
+
+.lage-more-label { font-size: 12px; color: var(--muted-2); margin: 4px 2px 8px; text-transform: uppercase; letter-spacing: .05em; }
+.lage-collapsible { margin-bottom: 8px; }
+.lage-collapse-head {
+  width: 100%; display: flex; align-items: center; gap: 10px;
+  background: var(--card); border: 1px solid var(--line); border-radius: 11px;
+  padding: 13px 16px; cursor: pointer; color: var(--text); font-size: 14px; text-align: left;
+}
+.lage-collapse-head:hover { border-color: var(--accent); }
+.lage-collapse-title { flex: 1; font-weight: 500; }
+.lage-collapse-count { font-size: 12px; color: var(--muted-2); background: var(--accent-soft); border-radius: 999px; padding: 2px 9px; }
+.lage-collapse-chev { color: var(--muted-2); font-size: 12px; }
+.lage-collapse-body { padding: 12px 2px 4px; }
