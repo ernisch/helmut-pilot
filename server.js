@@ -121,7 +121,7 @@ async function handleRequest(request, response) {
     authUser = ctx?.user || null;
 
     if (url.pathname === "/api/auth/session") {
-      return handleAuthSession(response, authUser);
+      return handleAuthSession(response, authUser, ctx?.token);
     }
 
     if (!authUser) {
@@ -2026,20 +2026,30 @@ async function handleAuthLogout(request, response) {
   response.end(JSON.stringify({ ok: true }, null, 2));
 }
 
-async function handleAuthSession(response, authUser) {
+async function handleAuthSession(response, authUser, token) {
   if (!authUser) {
     response.writeHead(200, jsonHeaders());
     response.end(JSON.stringify({ authenticated: false }, null, 2));
     return;
   }
+  // Rollende Verlaengerung bei jedem App-Start: Session + Cookie auffrischen,
+  // damit man angemeldet bleibt, bis man sich aktiv abmeldet.
+  let extraHeaders = {};
+  try {
+    const ttlSeconds = token ? await accounts.extendSession(token) : null;
+    if (ttlSeconds) extraHeaders = { "Set-Cookie": auth.sessionCookieHeader(token, ttlSeconds) };
+  } catch (error) {
+    console.error("Session-Verlängerung fehlgeschlagen", error);
+  }
   const allowed = await auth.getAllowedPoliticianIds(authUser);
   const profiles = await listAllowedProfiles(authUser, allowed);
-  sendJson(response, {
+  response.writeHead(200, jsonHeaders(extraHeaders));
+  response.end(JSON.stringify({
     authenticated: true,
     user: publicUser(authUser),
     allowedPoliticians: allowed,
     profiles
-  });
+  }, null, 2));
 }
 
 async function allKnownPoliticianIds() {
