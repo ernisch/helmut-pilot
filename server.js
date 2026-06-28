@@ -10,7 +10,7 @@ const { getLatestOrDemoBriefing, runDailyPipeline, runLageCheck, runMorningBrief
 const { personalizeBriefing } = require("./lib/helmut/personalization");
 const { buildLearningProfile } = require("./lib/helmut/learning");
 const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, savePushSubscription, saveTask, saveUserNote, updateTaskStatus } = require("./lib/helmut/storage");
-const { generateCommunicationDraft, isAiEnabled } = require("./lib/helmut/ai");
+const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled } = require("./lib/helmut/ai");
 const { pushStatus, sendBriefingReadyPush, sendLageChangePush, sendPushToPolitician } = require("./lib/helmut/push");
 const auth = require("./lib/helmut/auth");
 const accounts = require("./lib/helmut/accounts");
@@ -487,6 +487,22 @@ async function handleRequest(request, response) {
     return handleAsync(response, async () => {
       const profile = await activeProfile(politicianId);
       return getRelevantParliamentaryItems(profile);
+    });
+  }
+
+  if (url.pathname === "/api/parliament/assess" && request.method === "POST") {
+    if (!allowRate(request, "parliament-assess", 40, 60 * 60 * 1000)) return sendTooManyRequests(response, "Zu viele Einordnungen in kurzer Zeit.");
+    return handleJson(request, response, async (body) => {
+      const profile = await activeProfile(politicianId);
+      return assessParliamentaryItem({
+        item: {
+          type: String(body.type || "").slice(0, 120),
+          title: String(body.title || "").slice(0, 400),
+          urheber: Array.isArray(body.urheber) ? body.urheber.slice(0, 6) : [],
+          date: String(body.date || "").slice(0, 40)
+        },
+        profile
+      });
     });
   }
 

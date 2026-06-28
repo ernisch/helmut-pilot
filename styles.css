@@ -6856,3 +6856,11 @@ body {
 }
 .parliament-item strong { display: block; font-size: 15px; line-height: 1.35; }
 .parliament-item small { color: var(--muted-2); font-size: 12px; }
+
+.parliament-title { display: block; font-size: 15px; line-height: 1.35; font-weight: 600; color: var(--text); text-decoration: none; }
+.parliament-title:hover { color: var(--accent-ink); }
+.parliament-item .compact-button { margin-top: 10px; }
+.parliament-assessing { color: var(--muted); font-size: 13px; margin: 10px 0 0; }
+.parliament-assessment { margin-top: 10px; border-top: 1px solid var(--hairline); padding-top: 8px; }
+.parliament-assessment p { margin: 4px 0; font-size: 13px; color: var(--muted); }
+.parliament-assessment b { color: var(--text); }

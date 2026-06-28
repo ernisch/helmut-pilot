@@ -44,6 +44,7 @@ let dailyInputs = [];
 let dailyInputsLoaded = false;
 let parliamentItems = [];
 let parliamentLoaded = false;
+let parliamentAssessments = {};
 // Geführter Einstieg (Onboarding) beim ersten Öffnen eines Mandats mit leerem Profil.
 let onboardingActive = false;
 let onboardingStep = 0;
@@ -1351,16 +1352,50 @@ function renderParliamentSection() {
         <p>Offizielle Drucksachen, die zu deinen Themen passen.</p>
       </div>
       <div class="parliament-list">
-        ${items.map((item) => `
-          <a class="parliament-item" href="${escapeAttribute(item.url)}" target="_blank" rel="noopener noreferrer">
-            <span class="parliament-type">${escapeHtml(item.type || "Drucksache")}</span>
-            <strong>${escapeHtml(item.title)}</strong>
-            <small>${escapeHtml(formatParliamentMeta(item))}</small>
-          </a>
-        `).join("")}
+        ${items.map((item) => renderParliamentItem(item)).join("")}
       </div>
     </section>
   `;
+}
+
+function renderParliamentItem(item) {
+  const a = parliamentAssessments[item.id];
+  let assessmentBlock = "";
+  if (a && a.loading) {
+    assessmentBlock = `<p class="parliament-assessing">Helmut ordnet ein …</p>`;
+  } else if (a) {
+    assessmentBlock = `
+      <div class="parliament-assessment">
+        <p><b>Warum relevant:</b> ${escapeHtml(a.whyRelevant || "")}</p>
+        <p><b>Empfohlene Handlung:</b> ${escapeHtml(a.recommendedAction || "")}</p>
+      </div>`;
+  } else {
+    assessmentBlock = `<button class="secondary-button compact-button" type="button" data-assess-id="${escapeAttribute(item.id)}">Helmut: einordnen</button>`;
+  }
+  return `
+    <article class="parliament-item">
+      <span class="parliament-type">${escapeHtml(item.type || "Drucksache")}</span>
+      <a class="parliament-title" href="${escapeAttribute(item.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.title)}</a>
+      <small>${escapeHtml(formatParliamentMeta(item))}</small>
+      ${assessmentBlock}
+    </article>
+  `;
+}
+
+async function assessParliamentItem(id) {
+  const item = parliamentItems.find((entry) => entry.id === id);
+  if (!item || parliamentAssessments[id]) return;
+  parliamentAssessments[id] = { loading: true };
+  render();
+  try {
+    const res = await apiSend("POST", `/api/parliament/assess?${apiScopeQuery()}`, {
+      type: item.type, title: item.title, urheber: item.urheber, date: item.date
+    });
+    parliamentAssessments[id] = res.ok && res.json ? res.json : null;
+  } catch (error) {
+    parliamentAssessments[id] = null;
+  }
+  render();
 }
 
 function renderBriefingView() {
@@ -4625,6 +4660,10 @@ function bindActions() {
 
   app.querySelectorAll("[data-theme-set]").forEach((button) => {
     button.addEventListener("click", () => setThemePref(button.dataset.themeSet));
+  });
+
+  app.querySelectorAll("[data-assess-id]").forEach((button) => {
+    button.addEventListener("click", () => assessParliamentItem(button.dataset.assessId));
   });
 
   app.querySelectorAll("[data-refresh-helmut]").forEach((button) => {
