@@ -42,6 +42,8 @@ let adminData = null;
 let adminDataLoaded = false;
 let dailyInputs = [];
 let dailyInputsLoaded = false;
+let parliamentItems = [];
+let parliamentLoaded = false;
 // Geführter Einstieg (Onboarding) beim ersten Öffnen eines Mandats mit leerem Profil.
 let onboardingActive = false;
 let onboardingStep = 0;
@@ -252,6 +254,7 @@ async function loadBriefing() {
     applyStartPayload(startPayload);
     saveCachedStartPayload(startPayload);
     render();
+    loadParliament();
   } catch (error) {
     if (renderedFromCache) {
       console.warn("Live update after cached start failed", error);
@@ -1316,6 +1319,50 @@ function renderView() {
   return renderBriefingView();
 }
 
+async function loadParliament() {
+  if (parliamentLoaded) return;
+  parliamentLoaded = true;
+  try {
+    const res = await fetchWithTimeout(`/api/parliament?${apiScopeQuery()}`, {}, 12000);
+    if (!res.ok) return;
+    const data = await res.json();
+    parliamentItems = Array.isArray(data.items) ? data.items : [];
+    if (parliamentItems.length) render();
+  } catch (error) {
+    console.warn("Parlament-Daten nicht geladen", error);
+  }
+}
+
+function formatParliamentMeta(item) {
+  const parts = [];
+  if (item.date) parts.push(formatBriefingDate(item.date));
+  if ((item.urheber || []).length) parts.push(item.urheber[0]);
+  return parts.join(" · ");
+}
+
+function renderParliamentSection() {
+  if (!parliamentItems.length) return "";
+  const items = parliamentItems.slice(0, 6);
+  return `
+    <section class="parliament-section">
+      <div class="parliament-head">
+        <span class="eyebrow-line">Aus deinem Ausschuss · Bundestag</span>
+        <h2>Parlamentarische Vorgänge</h2>
+        <p>Offizielle Drucksachen, die zu deinen Themen passen.</p>
+      </div>
+      <div class="parliament-list">
+        ${items.map((item) => `
+          <a class="parliament-item" href="${escapeAttribute(item.url)}" target="_blank" rel="noopener noreferrer">
+            <span class="parliament-type">${escapeHtml(item.type || "Drucksache")}</span>
+            <strong>${escapeHtml(item.title)}</strong>
+            <small>${escapeHtml(formatParliamentMeta(item))}</small>
+          </a>
+        `).join("")}
+      </div>
+    </section>
+  `;
+}
+
 function renderBriefingView() {
   return `
     <section class="page-intro executive-intro agenda-intro">
@@ -1326,6 +1373,7 @@ function renderBriefingView() {
 
     ${renderMorningMoment()}
     ${renderLageSnapshot()}
+    ${renderParliamentSection()}
     ${renderLearningPulse()}
     ${renderDailyCommunicationDecision()}
     ${renderMeetingPrepSection()}

@@ -14,6 +14,7 @@ const { generateCommunicationDraft, isAiEnabled } = require("./lib/helmut/ai");
 const { pushStatus, sendBriefingReadyPush, sendLageChangePush, sendPushToPolitician } = require("./lib/helmut/push");
 const auth = require("./lib/helmut/auth");
 const accounts = require("./lib/helmut/accounts");
+const { getRelevantParliamentaryItems, isDipEnabled } = require("./lib/helmut/dip");
 
 const root = __dirname;
 const port = Number(process.env.PORT || 3000);
@@ -480,6 +481,13 @@ async function handleRequest(request, response) {
   if (url.pathname === "/api/interactions" && request.method === "POST") {
     if (previewMode) return sendPreviewReadOnly(response);
     return handleJson(request, response, async (body) => saveInteraction(await normalizeInteraction(body, politicianId)));
+  }
+
+  if (url.pathname === "/api/parliament") {
+    return handleAsync(response, async () => {
+      const profile = await activeProfile(politicianId);
+      return getRelevantParliamentaryItems(profile);
+    });
   }
 
   if (url.pathname === "/api/notes") {

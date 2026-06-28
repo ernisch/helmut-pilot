@@ -6825,3 +6825,34 @@ body {
 :root[data-theme="light"] .morning-moment h2,
 :root[data-theme="light"] .lage-card h2,
 :root[data-theme="light"] .lage-card h1 { color: var(--text) !important; }
+
+/* --- Parlamentarische Vorgänge (DIP) --- */
+.parliament-section { margin: 28px 0; }
+.parliament-head h2 { margin: 6px 0 4px; font-size: 26px; color: var(--text); }
+.parliament-head p { color: var(--muted); font-size: 15px; margin: 0 0 14px; }
+.parliament-list { display: grid; gap: 12px; }
+.parliament-item {
+  display: block;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: 12px;
+  padding: 14px 16px;
+  text-decoration: none;
+  color: var(--text);
+  transition: border-color .15s ease, transform .15s ease;
+}
+.parliament-item:hover { border-color: var(--accent); transform: translateY(-1px); }
+.parliament-type {
+  display: inline-block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+  border-radius: 999px;
+  padding: 2px 9px;
+  margin-bottom: 6px;
+}
+.parliament-item strong { display: block; font-size: 15px; line-height: 1.35; }
+.parliament-item small { color: var(--muted-2); font-size: 12px; }
