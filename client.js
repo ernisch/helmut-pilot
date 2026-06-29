@@ -119,14 +119,14 @@ const officeHandoffMethods = [
 ];
 
 const OFFICE_FORMATS = [
-  { id: "presse",      label: "Pressemitteilung",        icon: "ti-news" },
-  { id: "linkedin",    label: "LinkedIn",                icon: "ti-brand-linkedin" },
-  { id: "x",          label: "X / Twitter",             icon: "ti-brand-x" },
-  { id: "instagram",  label: "Instagram",               icon: "ti-brand-instagram" },
-  { id: "anfrage",    label: "Parlamentarische Anfrage", icon: "ti-file-text" },
-  { id: "rede",       label: "Rede",                    icon: "ti-microphone" },
-  { id: "buergerbrief", label: "Bürgerbrief",           icon: "ti-mail" },
-  { id: "intern",     label: "Interne Linie",           icon: "ti-lock" },
+  { id: "presse",       label: "Pressemitteilung",        icon: "ti-news",             channel: "press" },
+  { id: "linkedin",     label: "LinkedIn",                icon: "ti-brand-linkedin",   channel: "linkedin" },
+  { id: "x",           label: "X / Twitter",             icon: "ti-brand-x",          channel: "x" },
+  { id: "instagram",   label: "Instagram",               icon: "ti-brand-instagram",  channel: "instagram" },
+  { id: "anfrage",     label: "Parlamentarische Anfrage", icon: "ti-file-text",        channel: "committee_question" },
+  { id: "rede",        label: "Rede",                    icon: "ti-microphone",       channel: "internal_line" },
+  { id: "buergerbrief", label: "Bürgerbrief",            icon: "ti-mail",             channel: "citizen_dialogue" },
+  { id: "intern",      label: "Interne Linie",           icon: "ti-lock",             channel: "internal_line" },
 ];
 
 const mandateFunctions = [
@@ -3322,122 +3322,65 @@ function renderMemorySection(decision) {
   `;
 }
 
-function officeBoardTasks() {
-  return (tasks || []).filter((task) => task && task.title);
-}
-
-async function setBoardTaskStatus(id, status) {
-  const task = (tasks || []).find((entry) => entry.id === id);
-  if (!task) return;
-  if (previewMode) { showToast("Vorschau: kein Status geändert"); return; }
-  task.status = status;
-  render();
-  try {
-    // POST = upsert (saveTask aktualisiert per id), damit auch Vorschläge persistiert werden.
-    await fetchWithTimeout(`/api/tasks?${apiScopeQuery()}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(task)
-    });
-  } catch (error) {
-    console.warn("Status speichern fehlgeschlagen", error);
-  }
-  showToast(status === "done" ? "Erledigt" : status === "in_progress" ? "In Arbeit genommen" : "Wieder geöffnet");
-}
-
-function renderBoardTask(task) {
-  const status = task.status || "open";
-  const prioClass = task.priority === "high" ? "danger" : task.priority === "low" ? "" : "watch";
-  const prioLabel = task.priority === "high" ? "Hoch" : task.priority === "low" ? "Niedrig" : "Mittel";
-  return `
-    <article class="board-task ${escapeAttribute(status)}">
-      <div class="board-task-body">
-        <span class="board-task-tag ${prioClass}">${escapeHtml(prioLabel)}</span>
-        <strong>${escapeHtml(task.title)}</strong>
-        ${task.description ? `<p>${escapeHtml(compactText(task.description, 150))}</p>` : ""}
-      </div>
-      <div class="board-task-actions">
-        ${status === "open" ? `<button class="secondary-button compact-button" type="button" data-task-status="in_progress" data-task-board-id="${escapeAttribute(task.id)}">In Arbeit</button>` : ""}
-        ${status !== "done"
-          ? `<button class="primary-button compact-button" type="button" data-task-status="done" data-task-board-id="${escapeAttribute(task.id)}">Erledigt</button>`
-          : `<button class="secondary-button compact-button" type="button" data-task-status="open" data-task-board-id="${escapeAttribute(task.id)}">Wieder öffnen</button>`}
-        <button class="secondary-button compact-button" type="button" data-task-copy="${escapeAttribute(task.id)}">Teilen</button>
-      </div>
-    </article>`;
-}
-
-function renderBoardGroup(label, list) {
-  if (!list.length) return "";
-  const shown = list.slice(0, label === "Erledigt" ? 6 : 12);
-  return `
-    <section class="board-group">
-      <h2 class="board-group-title">${escapeHtml(label)} <span>${list.length}</span></h2>
-      <div class="board-list">${shown.map((task) => renderBoardTask(task)).join("")}</div>
-    </section>`;
-}
-
 function renderOfficeView() {
-  const all = officeBoardTasks();
-  const isReferent = currentUser?.role === "referent";
-  const open = all.filter((task) => (task.status || "open") === "open" && isActionableOfficeTask(task));
-  const inProgress = all.filter((task) => task.status === "in_progress");
-  const done = all.filter((task) => task.status === "done");
-  const hasAny = open.length || inProgress.length || done.length;
+  const formats = activeOfficeFormats();
+  const topDecisions = (decisions || [])
+    .filter((d) => d.decision !== "Ignorieren" && d.title)
+    .slice(0, 2);
+
+  const hasBriefing = topDecisions.length > 0;
+  const formatHint = formats.length
+    ? formats.map((f) => f.label).join(", ")
+    : "Presse, LinkedIn";
+
   return `
     <section class="page-intro compact">
       <h1 class="${headlineClass("Büro.")}">Büro.</h1>
-      <p>${isReferent ? "Aufgaben von deinem Abgeordneten — annehmen, in Arbeit halten, abhaken." : "Was du ans Büro gibst — und wie weit es ist."}</p>
+      <p>Was heute rausgeht.</p>
     </section>
-    ${hasAny ? `
-      ${renderBoardGroup("Offen", open)}
-      ${renderBoardGroup("In Arbeit", inProgress)}
-      ${renderBoardGroup("Erledigt", done)}
-    ` : `
-      <article class="list-row office-empty">
-        <div>
-          <span>Nichts offen</span>
-          <h3>Aktuell keine Aufgaben fürs Büro.</h3>
-          <p>Übergaben aus der Lage erscheinen hier — offen, in Arbeit, erledigt. ${isReferent ? "" : "Tippe in der Lage auf „An Büro\", um etwas zu delegieren."}</p>
-        </div>
+    ${!hasBriefing ? `
+      <article class="empty-card">
+        <span>Noch keine Entwürfe</span>
+        <h3>Entwürfe erscheinen wenn dein Briefing geladen ist.</h3>
+        <p>Helmut bereitet dann automatisch ${escapeHtml(formatHint)} vor.</p>
       </article>
-    `}
+    ` : topDecisions.map((decision) => renderOfficeDraftGroup(decision, formats)).join("")}
   `;
 }
 
-function renderOfficeTasksSection() {
-  const officeTasks = tasks.filter((task) => isActionableOfficeTask(task) && taskArticleSource(task)).slice(0, 3);
+function renderOfficeDraftGroup(decision, formats) {
+  if (!formats.length) return "";
   return `
-    <section class="plain-list">
-      <h2>An dein Büro geben</h2>
-      <p class="section-note">Nur konkrete Übergaben. Du wählst danach den passenden Weg.</p>
-      ${officeTasks.map(renderTaskRow).join("") || `
-        <article class="list-row office-empty">
-          <div>
-            <span>Kein Auftrag offen</span>
-            <h3>Heute musst du nichts ans Büro geben.</h3>
-            <p>Helmut zeigt hier nur etwas, wenn dein Büro konkret vorbereiten sollte.</p>
-          </div>
-        </article>
-      `}
+    <section class="office-draft-group">
+      <div class="office-draft-topic">
+        <span class="office-draft-topic-label">${escapeHtml(decision.title || decision.topic || "Thema")}</span>
+        <span class="office-draft-count">${formats.length} Entwurf${formats.length !== 1 ? "e" : ""}</span>
+      </div>
+      ${formats.map((f) => renderOfficeDraftCard(decision, f)).join("")}
     </section>
   `;
 }
 
-function renderTaskRow(task) {
-  const articleSource = taskArticleSource(task);
-  const sourceUrl = articleSource?.url || "";
-  const assignee = task.assignee || recommendedTaskAssignee(task);
+function renderOfficeDraftCard(decision, format) {
+  const text = channelFallbackStatement(decision, format.channel || "press");
+  const preview = String(text).replace(/\n+/g, " ").slice(0, 180);
+  const cardId = `draft-${escapeAttribute(format.id)}-${escapeAttribute(decision.id || "0")}`;
   return `
-    <article class="list-row office-task ${priorityClass(task.priority)}">
-      <div class="office-task-main">
-        <span>${escapeHtml(assignee)} · ${escapeHtml(taskPriorityLabel(task.priority))} · bis ${escapeHtml(formatDueDate(task.dueDate))}</span>
-        <h3>${escapeHtml(shortTaskTitle(task))}</h3>
-        <p>${escapeHtml(officeTaskRequest(task))}</p>
-        <small>Ziel: ${escapeHtml(teamBenefitText(task))}</small>
+    <article class="office-draft-card">
+      <div class="office-draft-header">
+        <i class="ti ${escapeAttribute(format.icon)}" aria-hidden="true"></i>
+        <span>${escapeHtml(format.label)}</span>
       </div>
-      <div class="task-actions">
-        ${sourceUrl ? `<a class="secondary-button compact-button" href="${escapeAttribute(sourceUrl)}" target="_blank" rel="noopener noreferrer">Quelle öffnen</a>` : ""}
-        <button class="primary-button compact-button" type="button" data-task-copy="${escapeHtml(task.id)}">Teilen</button>
+      <p class="office-draft-preview">${escapeHtml(preview)}${text.length > 180 ? "…" : ""}</p>
+      <div class="office-draft-actions">
+        <button class="primary-button compact-button" type="button"
+          data-office-copy="${escapeAttribute(cardId)}"
+          data-office-text="${escapeAttribute(text)}">Kopieren</button>
+        <button class="secondary-button compact-button icon-only" type="button"
+          data-office-share="${escapeAttribute(cardId)}"
+          data-office-text="${escapeAttribute(text)}"
+          data-office-title="${escapeAttribute(format.label + ": " + (decision.title || ""))}"
+          aria-label="Teilen"><i class="ti ti-share" aria-hidden="true"></i></button>
       </div>
     </article>
   `;
@@ -4960,8 +4903,22 @@ function bindActions() {
     });
   });
 
-  app.querySelectorAll("[data-task-board-id]").forEach((button) => {
-    button.addEventListener("click", () => setBoardTaskStatus(button.dataset.taskBoardId, button.dataset.taskStatus));
+  app.querySelectorAll("[data-office-copy]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const text = button.dataset.officeText || "";
+      await copyText(text, "Entwurf kopiert");
+    });
+  });
+
+  app.querySelectorAll("[data-office-share]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const text = button.dataset.officeText || "";
+      const title = button.dataset.officeTitle || "Helmut Entwurf";
+      if (navigator.share) {
+        try { await navigator.share({ title, text }); return; } catch (_) { /* fallback */ }
+      }
+      await copyText(text, "In Zwischenablage kopiert");
+    });
   });
 
   app.querySelectorAll("[data-refresh-helmut]").forEach((button) => {

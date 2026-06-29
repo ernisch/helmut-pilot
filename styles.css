@@ -7050,3 +7050,90 @@ body {
   background: #3ecf6e;
   font-size: 0;
 }
+
+/* === Büro: Entwurfszentrale (Ausgang) === */
+.office-draft-group { margin: 0 0 28px; }
+
+.office-draft-topic {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 10px;
+}
+.office-draft-topic-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -.01em;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.office-draft-count {
+  font-size: 12px;
+  color: var(--muted-2);
+  flex-shrink: 0;
+}
+
+.office-draft-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 10px;
+}
+
+.office-draft-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.office-draft-header i {
+  font-size: 17px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.office-draft-header span {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--muted);
+}
+
+.office-draft-preview {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+  margin: 0 0 14px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.office-draft-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.office-draft-actions .primary-button { flex: 1; min-height: 44px; }
+.office-draft-actions .icon-only {
+  width: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+}
+
+:root[data-theme="light"] .office-draft-card {
+  background: var(--card) !important;
+  border-color: var(--line) !important;
+  box-shadow: var(--soft-shadow);
+}
