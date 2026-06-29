@@ -4022,15 +4022,17 @@ function renderSettingsView() {
   const crawl = ops.crawl || briefing.sourceStats || {};
   const topTopics = topProfileTopicsForView();
   const committee = profile.committee || profile.committees?.[0] || "";
-  const channels = asTextList(profile.preferredChannels).slice(0, 3);
+  const rawChannels = asTextList(profile.preferredChannels).slice(0, 3);
+  const channels = rawChannels.map((c) => c.charAt(0).toUpperCase() + c.slice(1));
   const initials = (profile.fullName || "?").split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
   const push = { ...(ops.push || {}), ...(pushConfig || {}) };
   const pushSupported = browserPushSupported();
   const pushBlocked = pushPermissionState() === "denied";
   const pushTestDisabled = !push.enabled || !pushSupported || pushBlocked;
+  const role = userRole();
+  const showSystem = role === "admin" || role === "referent";
 
   const systemOk = opsStatusLoaded && storage.backend === "supabase" && ops.ai?.enabled;
-  const systemWarn = opsStatusLoaded && (!storage.backend || !ops.ai?.enabled);
   const systemBadge = !opsStatusLoaded
     ? `<span class="stg-system-badge stg-system-badge--warn">Wird geprüft</span>`
     : systemOk
@@ -4043,6 +4045,7 @@ function renderSettingsView() {
     </section>
 
     <div class="stg-section">
+      <span class="stg-label">Profil</span>
       <div class="stg-group">
         <div class="stg-profile-row" data-view="profile-settings" role="button" tabindex="0">
           <div class="stg-avatar">${escapeHtml(initials)}</div>
@@ -4070,6 +4073,20 @@ function renderSettingsView() {
     </div>
 
     <div class="stg-section">
+      <span class="stg-label">Helmut</span>
+      <div class="stg-group">
+        ${OFFICE_FORMATS.map((f) => {
+          const active = activeOfficeFormats().some((a) => a.id === f.id);
+          return `
+          <label class="stg-row stg-row--tappable">
+            <span class="stg-row-label">${escapeHtml(f.label)}</span>
+            <input type="checkbox" name="settingsOfficeFormat" value="${escapeAttribute(f.id)}" ${active ? "checked" : ""} data-office-format-toggle style="width:18px;height:18px;accent-color:var(--accent);flex-shrink:0"/>
+          </label>`;
+        }).join("")}
+      </div>
+    </div>
+
+    <div class="stg-section">
       <span class="stg-label">Darstellung</span>
       <div class="stg-group">
         <div class="stg-row stg-row--stack">
@@ -4080,20 +4097,6 @@ function renderSettingsView() {
             ).join("")}
           </div>
         </div>
-      </div>
-    </div>
-
-    <div class="stg-section">
-      <span class="stg-label">Büro</span>
-      <div class="stg-group">
-        ${OFFICE_FORMATS.map((f) => {
-          const active = activeOfficeFormats().some((a) => a.id === f.id);
-          return `
-          <label class="stg-row stg-row--tappable">
-            <span class="stg-row-label">${escapeHtml(f.label)}</span>
-            <input type="checkbox" name="settingsOfficeFormat" value="${escapeAttribute(f.id)}" ${active ? "checked" : ""} data-office-format-toggle style="width:18px;height:18px;accent-color:var(--accent);flex-shrink:0"/>
-          </label>`;
-        }).join("")}
       </div>
     </div>
 
@@ -4110,12 +4113,13 @@ function renderSettingsView() {
       </div>
     </div>
 
+    ${showSystem ? `
     <div class="stg-section">
       <span class="stg-label">System</span>
       <div class="stg-group">
         <div class="stg-row">
           <span class="stg-row-label">Status</span>
-          <span class="stg-row-value stg-row-action">${systemBadge}</span>
+          <span class="stg-row-action">${systemBadge}</span>
         </div>
         ${opsStatusLoaded ? `
         <div class="stg-row">
@@ -4130,7 +4134,7 @@ function renderSettingsView() {
           <span class="stg-row-value">${escapeHtml(ops.ai?.enabled ? (ops.ai.model || "Aktiv") : "Nicht aktiv")}</span>
         </div>` : ""}
       </div>
-    </div>
+    </div>` : ""}
 
     <div class="stg-section">
       <span class="stg-label">Datenschutz</span>
@@ -4149,6 +4153,15 @@ function renderSettingsView() {
         </div>
       </div>
     </div>
+
+    ${isAccountMode() && currentUser ? `
+    <div class="stg-section">
+      <div class="stg-group">
+        <div class="stg-row stg-row--tappable stg-row--danger" role="button" data-logout>
+          <span class="stg-row-label">Abmelden</span>
+        </div>
+      </div>
+    </div>` : ""}
   `;
 }
 
