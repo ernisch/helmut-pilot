@@ -764,7 +764,8 @@ function currentBerlinGreeting(): string {
   if (hour >= 5 && hour < 10) return "Guten Morgen.";
   if (hour >= 10 && hour < 14) return "Mahlzeit.";
   if (hour >= 14 && hour < 18) return "Guten Nachmittag.";
-  return "Guten Abend.";
+  if (hour >= 18) return "Guten Abend.";
+  return "Guten Morgen.";
 }
 
 function classify(score: RelevanceScore, signal: PoliticalSignal): BriefingClassification {
