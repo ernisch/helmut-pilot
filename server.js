@@ -412,12 +412,16 @@ async function handleRequest(request, response) {
 
   if (url.pathname === "/api/communication/generate" && request.method === "POST") {
     if (!allowRate(request, "communication", 18, 60 * 60 * 1000)) return sendTooManyRequests(response, "Zu viele Kommunikationsentwürfe in kurzer Zeit.");
-    return handleJson(request, response, async (body) => generateCommunicationDraft({
-      prompt: String(body.prompt || "").slice(0, 1200),
-      channel: body.channel,
-      decision: body.decision,
-      profile: await activeProfile(politicianId)
-    }));
+    return handleJson(request, response, async (body) => {
+      const [commProfile, interactions] = await Promise.all([activeProfile(politicianId), getInteractions(politicianId)]);
+      return generateCommunicationDraft({
+        prompt: String(body.prompt || "").slice(0, 1200),
+        channel: body.channel,
+        decision: body.decision,
+        profile: commProfile,
+        learningProfile: buildLearningProfile(interactions)
+      });
+    });
   }
 
   if (url.pathname === "/api/learning/status") {
