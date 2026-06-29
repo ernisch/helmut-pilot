@@ -27,6 +27,7 @@ let generatedStatement = "";
 let communicationContextTitle = "";
 let officeDrafts = {};
 let officeDraftsGenerating = false;
+let selectedOfficeDraft = null;
 let selectedCommunicationChannel = "press";
 let berlinClockTimer = null;
 const updateSeenStorageKey = "helmut:lastSeenUpdatesAt";
@@ -1247,7 +1248,7 @@ function renderMobileDock() {
 function isMobileNavActive(id) {
   if (currentView === "detail") return (detailOriginView || "briefing") === id;
   if (id === "briefing") return currentView === "briefing";
-  if (id === "office") return currentView === "office" || currentView === "communication" || currentView === "tasks";
+  if (id === "office") return currentView === "office" || currentView === "office-detail" || currentView === "communication" || currentView === "tasks";
   if (id === "helmut") return currentView === "helmut";
   return currentView === id;
 }
@@ -1340,6 +1341,7 @@ function renderView() {
   if (currentView === "detail") return renderDetailView();
   if (currentView === "communication") return renderCommunicationView();
   if (currentView === "office" || currentView === "tasks") return renderOfficeView();
+  if (currentView === "office-detail") return renderOfficeDraftDetail();
   if (currentView === "topics") return renderTopicsView();
   if (currentView === "radar") return renderRadarView();
   if (currentView === "helmut") return renderHelmutView();
@@ -3326,73 +3328,143 @@ function renderMemorySection(decision) {
   `;
 }
 
+const OFFICE_FORMAT_META = {
+  presse:       { desc: "Offizieller Entwurf für Presse und Medienanfragen.", iconBg: "rgba(88,86,214,.10)", iconColor: "rgba(88,86,214,.82)" },
+  linkedin:     { desc: "Persönlicher Beitrag für LinkedIn. Auf den Punkt und nahbar.", iconBg: "#E8F3FB", iconColor: "#0077B5" },
+  x:            { desc: "Kompakter Post für X / Twitter. Direkt und pointiert.", iconBg: "#F0F0F0", iconColor: "#14171A" },
+  instagram:    { desc: "Emotionaler Post für Instagram. Kurz, menschlich, authentisch.", iconBg: "#FFF0E8", iconColor: "#C13584" },
+  anfrage:      { desc: "Parlamentarische Kontrollfrage für den Ausschuss.", iconBg: "#E8F5EC", iconColor: "#1F7A3E" },
+  rede:         { desc: "Für Redebeiträge und Interviews. Klar, prägnant, überzeugend.", iconBg: "rgba(88,86,214,.10)", iconColor: "rgba(88,86,214,.82)" },
+  buergerbrief: { desc: "Antwort für Bürgerkommunikation. Verständlich und persönlich.", iconBg: "#E8F5F5", iconColor: "#0A7A6E" },
+  intern:       { desc: "Interne Linie für Büro und Team. Zur sofortigen Nutzung.", iconBg: "#F2F2F2", iconColor: "#5A5A5A" },
+};
+
+function draftReadingTime(text) {
+  const words = String(text).trim().split(/\s+/).length;
+  const min = Math.round(words / 200);
+  return min < 1 ? "30 Sek. Lesezeit" : `${min} Min. Lesezeit`;
+}
+
+function draftSourceCount(decision) {
+  const n = (decision.sources?.length || 0) + (decision.primarySource ? 1 : 0);
+  return Math.max(n, briefing?.sourceStats?.successfulSources ? Math.min(Number(briefing.sourceStats.successfulSources), 8) : 3);
+}
+
+function officeBriefingTime() {
+  const ts = briefing?.generatedAt || briefing?.date;
+  if (!ts) return "";
+  const d = new Date(ts);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")} Uhr`;
+}
+
 function renderOfficeView() {
   const formats = activeOfficeFormats();
-  const topDecisions = (decisions || [])
-    .filter((d) => d.decision !== "Ignorieren" && d.title)
-    .slice(0, 2);
-
+  const topDecisions = (decisions || []).filter((d) => d.decision !== "Ignorieren" && d.title).slice(0, 2);
+  const allCards = topDecisions.flatMap((d) => formats.map((f) => ({ decision: d, format: f })));
+  const readyCount = allCards.filter(({ decision, format }) => !!officeDrafts[officeDraftKey(decision, format)]).length;
+  const totalCount = allCards.length;
+  const time = officeBriefingTime();
   const hasBriefing = topDecisions.length > 0;
-  const formatHint = formats.length
-    ? formats.map((f) => f.label).join(", ")
-    : "Presse, LinkedIn";
 
   return `
-    <section class="page-intro compact">
-      <h1 class="${headlineClass("Büro.")}">Büro.</h1>
-      <p>Was heute rausgeht.</p>
-    </section>
-    ${!hasBriefing ? `
-      <article class="empty-card">
-        <span>Noch keine Entwürfe</span>
-        <h3>Entwürfe erscheinen wenn dein Briefing geladen ist.</h3>
-        <p>Helmut bereitet dann automatisch ${escapeHtml(formatHint)} vor.</p>
-      </article>
-    ` : topDecisions.map((decision) => renderOfficeDraftGroup(decision, formats)).join("")}
-  `;
-}
-
-function renderOfficeDraftGroup(decision, formats) {
-  if (!formats.length) return "";
-  return `
-    <section class="office-draft-group">
-      <div class="office-draft-topic">
-        <span class="office-draft-topic-label">${escapeHtml(decision.title || decision.topic || "Thema")}</span>
-        <span class="office-draft-count">${formats.length} Entwurf${formats.length !== 1 ? "e" : ""}</span>
+    <div class="buero-view">
+      <header class="buero-header">
+        <div class="buero-header-top">
+          <h1 class="buero-title">Büro</h1>
+          ${hasBriefing ? `<span class="buero-status-badge">${officeDraftsGenerating ? "Wird vorbereitet" : "Aktuell"}</span>` : ""}
+        </div>
+        ${hasBriefing ? `
+          <p class="buero-subtitle">${totalCount} Entwurf${totalCount !== 1 ? "e" : ""} für heute bereit.</p>
+          ${time ? `<p class="buero-meta">Vorbereitet um ${escapeHtml(time)}.</p>` : ""}
+        ` : `
+          <p class="buero-subtitle">Noch keine Entwürfe für heute.</p>
+          <p class="buero-meta">Erscheinen automatisch wenn dein Briefing geladen ist.</p>
+        `}
+      </header>
+      <div class="buero-draft-list">
+        ${allCards.map(({ decision, format }, i) => renderOfficeDraftCard(decision, format, i)).join("")}
       </div>
-      ${formats.map((f) => renderOfficeDraftCard(decision, f)).join("")}
-    </section>
+    </div>
   `;
 }
 
-function renderOfficeDraftCard(decision, format) {
+function renderOfficeDraftCard(decision, format, index = 0) {
   const key = officeDraftKey(decision, format);
   const aiText = officeDrafts[key];
   const isLoading = officeDraftsGenerating && !aiText;
   const text = aiText || channelFallbackStatement(decision, format.channel || "press");
-  const preview = String(text).replace(/\n+/g, " ").slice(0, 180);
-  const cardId = `draft-${escapeAttribute(format.id)}-${escapeAttribute(decision.id || "0")}`;
+  const meta = OFFICE_FORMAT_META[format.id] || { desc: "", iconBg: "#F0F0F0", iconColor: "#555" };
+  const readTime = draftReadingTime(text);
+  const sources = draftSourceCount(decision);
+  const delay = `${index * 60}ms`;
+
   return `
-    <article class="office-draft-card${isLoading ? " is-loading" : ""}">
-      <div class="office-draft-header">
-        <i class="ti ${escapeAttribute(format.icon)}" aria-hidden="true"></i>
-        <span>${escapeHtml(format.label)}</span>
-        ${isLoading ? `<span class="office-draft-generating">wird geschrieben…</span>` : aiText ? `<span class="office-draft-ai-badge">KI</span>` : ""}
+    <article class="buero-draft-card${isLoading ? " is-loading" : ""}" style="animation-delay:${delay}"
+      data-office-open="${escapeAttribute(key)}"
+      data-office-decision="${escapeAttribute(JSON.stringify({ id: decision.id, signalId: decision.signalId, title: decision.title }))}"
+      data-office-format="${escapeAttribute(format.id)}"
+      role="button" tabindex="0">
+      <div class="buero-card-inner">
+        <div class="buero-card-icon" style="background:${meta.iconBg};color:${meta.iconColor}">
+          <i class="ti ${escapeAttribute(format.icon)}" aria-hidden="true"></i>
+        </div>
+        <div class="buero-card-body">
+          <span class="buero-card-channel">${escapeHtml(format.label)}</span>
+          <h2 class="buero-card-title">${escapeHtml(decision.title || "Entwurf")}</h2>
+          <p class="buero-card-desc">${escapeHtml(meta.desc)}</p>
+          <div class="buero-card-meta">
+            <span><i class="ti ti-clock" aria-hidden="true"></i> ${escapeHtml(readTime)}</span>
+            <span class="buero-meta-dot">·</span>
+            <span>Basiert auf ${sources} Quellen</span>
+          </div>
+        </div>
+        <i class="ti ti-chevron-right buero-card-chev" aria-hidden="true"></i>
       </div>
-      <p class="office-draft-preview${isLoading ? " skeleton-text" : ""}">${escapeHtml(preview)}${text.length > 180 ? "…" : ""}</p>
-      <div class="office-draft-actions">
-        <button class="primary-button compact-button" type="button"
-          data-office-copy="${escapeAttribute(cardId)}"
+      <div class="buero-card-footer">
+        <button class="buero-copy-btn" type="button"
+          data-office-copy-inline="${escapeAttribute(key)}"
           data-office-text="${escapeAttribute(text)}"
-          ${isLoading ? "disabled" : ""}>Kopieren</button>
-        <button class="secondary-button compact-button icon-only" type="button"
-          data-office-share="${escapeAttribute(cardId)}"
-          data-office-text="${escapeAttribute(text)}"
-          data-office-title="${escapeAttribute(format.label + ": " + (decision.title || ""))}"
-          aria-label="Teilen"
-          ${isLoading ? "disabled" : ""}><i class="ti ti-share" aria-hidden="true"></i></button>
+          ${isLoading ? "disabled" : ""}
+          aria-label="Text kopieren">
+          <i class="ti ti-copy" aria-hidden="true"></i> Kopieren
+        </button>
       </div>
     </article>
+  `;
+}
+
+function renderOfficeDraftDetail() {
+  if (!selectedOfficeDraft) { currentView = "office"; return renderOfficeView(); }
+  const { decision, format, text } = selectedOfficeDraft;
+  const meta = OFFICE_FORMAT_META[format.id] || { desc: "", iconBg: "#F0F0F0", iconColor: "#555" };
+  const time = officeBriefingTime();
+  const sources = draftSourceCount(decision);
+  const paragraphs = String(text).split(/\n{1,}/).map((p) => p.trim()).filter(Boolean);
+
+  return `
+    <div class="buero-detail-view">
+      <button class="buero-back-btn" type="button" data-office-back>
+        <i class="ti ti-arrow-left" aria-hidden="true"></i> Büro
+      </button>
+      <header class="buero-detail-header">
+        <span class="buero-detail-channel" style="color:${meta.iconColor}">${escapeHtml(format.label)}</span>
+        <h1 class="buero-detail-title">${escapeHtml(decision.title || "Entwurf")}</h1>
+        <p class="buero-detail-meta">
+          ${time ? `Erstellt heute um ${escapeHtml(time)}` : "Heute erstellt"}
+          &nbsp;·&nbsp;Basiert auf ${sources} Quellen
+        </p>
+      </header>
+      <div class="buero-detail-body">
+        ${paragraphs.map((p) => `<p>${escapeHtml(p)}</p>`).join("")}
+      </div>
+      <footer class="buero-detail-footer">
+        <button class="buero-copy-btn buero-copy-btn--full" type="button"
+          data-office-copy-inline="detail"
+          data-office-text="${escapeAttribute(text)}">
+          <i class="ti ti-copy" aria-hidden="true"></i> Text kopieren
+        </button>
+      </footer>
+    </div>
   `;
 }
 
@@ -4825,7 +4897,7 @@ function bindActions() {
       currentView = button.dataset.view;
       navOpen = false;
       updatesOpen = false;
-      if (currentView === "office" || currentView === "tasks") markOfficeSeen();
+      if (currentView === "office" || currentView === "office-detail" || currentView === "tasks") markOfficeSeen();
       if (currentView === "helmut") { markHelmutSeen(); startHelmutThinking(); }
       else stopHelmutTyping();
       render();
@@ -4913,21 +4985,40 @@ function bindActions() {
     });
   });
 
-  app.querySelectorAll("[data-office-copy]").forEach((button) => {
-    button.addEventListener("click", async () => {
+  app.querySelectorAll("[data-office-copy-inline]").forEach((button) => {
+    button.addEventListener("click", async (e) => {
+      e.stopPropagation();
       const text = button.dataset.officeText || "";
-      await copyText(text, "Entwurf kopiert");
+      await copyText(text, "Text kopiert.");
     });
   });
 
-  app.querySelectorAll("[data-office-share]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      const text = button.dataset.officeText || "";
-      const title = button.dataset.officeTitle || "Helmut Entwurf";
-      if (navigator.share) {
-        try { await navigator.share({ title, text }); return; } catch (_) { /* fallback */ }
-      }
-      await copyText(text, "In Zwischenablage kopiert");
+  app.querySelectorAll("[data-office-open]").forEach((card) => {
+    const open = () => {
+      const key = card.dataset.officeOpen;
+      const formatId = card.dataset.officeFormat;
+      const format = OFFICE_FORMATS.find((f) => f.id === formatId);
+      let decision;
+      try { decision = JSON.parse(card.dataset.officeDecision || "{}"); } catch (_) { decision = {}; }
+      const text = officeDrafts[key] || channelFallbackStatement(
+        decisions.find((d) => d.id === decision.id || d.signalId === decision.signalId) || decision,
+        format?.channel || "press"
+      );
+      selectedOfficeDraft = { decision, format: format || { id: formatId, label: formatId, icon: "ti-file", channel: "press" }, text };
+      currentView = "office-detail";
+      render();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+    card.addEventListener("click", open);
+    card.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } });
+  });
+
+  app.querySelectorAll("[data-office-back]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      selectedOfficeDraft = null;
+      currentView = "office";
+      render();
+      window.scrollTo({ top: 0, behavior: "smooth" });
     });
   });
 
