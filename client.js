@@ -4017,113 +4017,136 @@ function radarRows(items, type) {
 }
 
 function renderSettingsView() {
-  const sourceStats = briefing.sourceStats || {};
   const ops = opsStatus || {};
   const storage = ops.storage || {};
-  const crawl = ops.crawl || sourceStats;
-  const latestCrawlText = crawl?.createdAt ? formatBriefingDate(crawl.createdAt) : "Noch kein Lauf";
-  const committee = profile.committee || profile.committees?.[0] || "Noch offen";
+  const crawl = ops.crawl || briefing.sourceStats || {};
   const topTopics = topProfileTopicsForView();
-  const channels = asTextList(profile.preferredChannels).length ? asTextList(profile.preferredChannels) : ["Presse", "LinkedIn", "Ausschuss"];
-  const audiences = asTextList(profile.keyAudiences).length ? asTextList(profile.keyAudiences) : ["Arbeitnehmer", "Gewerkschaften", "soziale Verbände"];
-  const noGos = asTextList(profile.noGoTopics);
-  const risks = asTextList(profile.riskTopics).length ? asTextList(profile.riskTopics) : ["Themen ohne Quellenbasis", "unklare Angriffe", "zu frühe Positionierung ohne Anlass"];
+  const committee = profile.committee || profile.committees?.[0] || "";
+  const channels = asTextList(profile.preferredChannels).slice(0, 3);
+  const initials = (profile.fullName || "?").split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+  const push = { ...(ops.push || {}), ...(pushConfig || {}) };
+  const pushSupported = browserPushSupported();
+  const pushBlocked = pushPermissionState() === "denied";
+  const pushTestDisabled = !push.enabled || !pushSupported || pushBlocked;
+
+  const systemOk = opsStatusLoaded && storage.backend === "supabase" && ops.ai?.enabled;
+  const systemWarn = opsStatusLoaded && (!storage.backend || !ops.ai?.enabled);
+  const systemBadge = !opsStatusLoaded
+    ? `<span class="stg-system-badge stg-system-badge--warn">Wird geprüft</span>`
+    : systemOk
+      ? `<span class="stg-system-badge stg-system-badge--ok">Bereit</span>`
+      : `<span class="stg-system-badge stg-system-badge--warn">${escapeHtml(ops.readiness?.issues?.[0] || "Prüfen")}</span>`;
+
   return `
     <section class="page-intro compact">
-      <h1 class="${headlineClass("Mandatsprofil.")}">Mandatsprofil.</h1>
-      <p>So versteht Helmut dein Mandat, deine Themen und deine politische Linie.</p>
+      <h1 class="${headlineClass("Einstellungen.")}">Einstellungen.</h1>
     </section>
 
-    <section class="plain-list">
-      <article class="list-row low">
-        <div>
-          <span>Darstellung</span>
-          <h3>Erscheinungsbild</h3>
-          <p>Wähle hell, dunkel oder automatisch nach Systemeinstellung.</p>
-          <div class="theme-toggle">
-            ${[["dark", "Dunkel"], ["light", "Hell"], ["system", "System"]].map(([value, label]) =>
+    <div class="stg-section">
+      <div class="stg-group">
+        <div class="stg-profile-row" data-view="profile-settings" role="button" tabindex="0">
+          <div class="stg-avatar">${escapeHtml(initials)}</div>
+          <div class="stg-profile-info">
+            <p class="stg-profile-name">${escapeHtml(profile.fullName || "Profil")}</p>
+            <p class="stg-profile-sub">${escapeHtml([profile.function, profile.party].filter(Boolean).join(" · ") || "MdB")}</p>
+          </div>
+          <span class="stg-row-chevron">›</span>
+        </div>
+        ${committee ? `
+        <div class="stg-row">
+          <span class="stg-row-label">Ausschuss</span>
+          <span class="stg-row-value">${escapeHtml(committee)}</span>
+        </div>` : ""}
+        <div class="stg-row">
+          <span class="stg-row-label">Themen</span>
+          <span class="stg-row-value">${escapeHtml(topTopics.slice(0, 3).join(" · ") || "Noch nicht gesetzt")}</span>
+        </div>
+        ${channels.length ? `
+        <div class="stg-row">
+          <span class="stg-row-label">Kanäle</span>
+          <span class="stg-row-value">${escapeHtml(channels.join(" · "))}</span>
+        </div>` : ""}
+      </div>
+    </div>
+
+    <div class="stg-section">
+      <span class="stg-label">Darstellung</span>
+      <div class="stg-group">
+        <div class="stg-row">
+          <span class="stg-row-label">Erscheinungsbild</span>
+          <div class="theme-toggle stg-row-action">
+            ${[["dark", "Dunkel"], ["light", "Hell"], ["system", "Auto"]].map(([value, label]) =>
               `<button class="theme-option ${getThemePref() === value ? "active" : ""}" type="button" data-theme-set="${value}">${label}</button>`
             ).join("")}
           </div>
         </div>
-      </article>
-    </section>
+      </div>
+    </div>
 
-    <section class="plain-list">
-      <article class="list-row low">
-        <div>
-          <span>Profil</span>
-          <h3>${escapeHtml(profile.fullName || "Profil")}</h3>
-          <p>${escapeHtml(profile.function || "Bundestagsabgeordneter")} · ${escapeHtml(profile.party || "Die Linke")} · ${escapeHtml(profile.faction || profile.party || "Fraktion offen")}</p>
-        </div>
-        <button class="secondary-button" type="button" data-view="profile-settings">Profil bearbeiten</button>
-      </article>
+    <div class="stg-section">
+      <span class="stg-label">Büro</span>
+      <div class="stg-group">
+        ${OFFICE_FORMATS.map((f) => {
+          const active = activeOfficeFormats().some((a) => a.id === f.id);
+          return `
+          <label class="stg-row stg-row--tappable">
+            <span class="stg-row-label">${escapeHtml(f.label)}</span>
+            <input type="checkbox" name="settingsOfficeFormat" value="${escapeAttribute(f.id)}" ${active ? "checked" : ""} data-office-format-toggle style="width:18px;height:18px;accent-color:var(--accent);flex-shrink:0"/>
+          </label>`;
+        }).join("")}
+      </div>
+    </div>
 
-      <article class="list-row">
-        <div>
-          <span>Ausschuss</span>
-          <h3>${escapeHtml(committee)}</h3>
-          <p>Helmut bewertet Themen höher, wenn sie in deinem Ausschuss, bei BMAS oder in Gesetzesvorhaben zu Arbeit und Sozialem auftauchen.</p>
-        </div>
-      </article>
-
-      <article class="list-row">
-        <div>
-          <span>Prioritäten</span>
-          <h3>${escapeHtml(topTopics.slice(0, 3).join(" · ") || "Noch nicht gesetzt")}</h3>
-          <p>${escapeHtml(topTopics.slice(3, 8).join(" · ") || "Diese Themen steuern, was Helmut morgens prominent macht.")}</p>
-        </div>
-      </article>
-
-      <article class="list-row">
-        <div>
-          <span>Leitfrage</span>
-          <h3>Worauf sollst du politisch reagieren?</h3>
-          <p>${escapeHtml(profile.mainQuestion || "Welche Pläne hat die Bundesregierung im Bereich Arbeit und Soziales und worauf sollte ich politisch reagieren?")}</p>
-        </div>
-      </article>
-
-      <article class="list-row">
-        <div>
-          <span>Kommunikation</span>
-          <h3>${escapeHtml(profile.communicationStyle || "Lösungsorientiert")}</h3>
-          <p>Bevorzugte Kanäle: ${escapeHtml(channels.slice(0, 4).join(" · "))}</p>
-        </div>
-      </article>
-
-      <article class="list-row">
-        <div>
-          <span>Büro-Formate</span>
-          <h3>${activeOfficeFormats().length ? activeOfficeFormats().map((f) => escapeHtml(f.label)).join(" · ") : "Noch nicht eingestellt"}</h3>
-          <p>Diese Formate bereitet Helmut automatisch vor, wenn dein Briefing kommt.</p>
-          <div class="onboarding-chips" style="margin-top:10px">
-            ${OFFICE_FORMATS.map((f) => {
-              const active = activeOfficeFormats().some((a) => a.id === f.id);
-              return `<label class="onboarding-chip${active ? " active" : ""}"><input type="checkbox" name="settingsOfficeFormat" value="${escapeAttribute(f.id)}" ${active ? "checked" : ""} data-office-format-toggle/> ${escapeHtml(f.label)}</label>`;
-            }).join("")}
+    <div class="stg-section">
+      <span class="stg-label">Mitteilungen</span>
+      <div class="stg-group">
+        <div class="stg-row">
+          <span class="stg-row-label">${escapeHtml(pushStatusTitle(push, pushSupported))}</span>
+          <div class="row-actions stg-row-action">
+            <button class="secondary-button compact-button" type="button" data-enable-push>${escapeHtml(pushPermissionButtonLabel(push))}</button>
+            <button class="secondary-button compact-button" type="button" data-test-push ${pushTestDisabled ? "disabled" : ""}>Test</button>
           </div>
         </div>
-      </article>
+      </div>
+    </div>
 
-      <article class="list-row">
-        <div>
-          <span>Zielgruppen</span>
-          <h3>${escapeHtml(audiences.slice(0, 3).join(" · "))}</h3>
-          <p>Helmut formuliert Empfehlungen so, dass politische Wirkung und Adressat zusammenpassen.</p>
+    <div class="stg-section">
+      <span class="stg-label">System</span>
+      <div class="stg-group">
+        <div class="stg-row">
+          <span class="stg-row-label">Status</span>
+          <span class="stg-row-value stg-row-action">${systemBadge}</span>
         </div>
-      </article>
-
-      <article class="list-row medium">
-        <div>
-          <span>Risiko-Filter</span>
-          <h3>${escapeHtml(risks.slice(0, 2).join(" · "))}</h3>
-          <p>${escapeHtml(noGos.length ? `No-Go: ${noGos.slice(0, 3).join(" · ")}` : "Helmut soll nichts prominent machen, was keinen belastbaren Mandats- oder Quellenbezug hat.")}</p>
+        ${opsStatusLoaded ? `
+        <div class="stg-row">
+          <span class="stg-row-label">Quellen</span>
+          <span class="stg-row-value">${escapeHtml(`${crawl?.checkedSources || 0} geprüft · ${crawl?.failedSources || 0} Fehler`)}</span>
+          <button class="secondary-button compact-button stg-row-action" type="button" data-run-crawl>Prüfen</button>
         </div>
-      </article>
-    </section>
+        <div class="stg-row">
+          <span class="stg-row-label">KI</span>
+          <span class="stg-row-value">${escapeHtml(ops.ai?.enabled ? (ops.ai.model || "Aktiv") : "Nicht aktiv")}</span>
+        </div>` : ""}
+      </div>
+    </div>
 
-    ${renderProfileSystemSection(ops, storage, crawl, latestCrawlText)}
-    ${renderPrivacyControlsSection()}
+    <div class="stg-section">
+      <span class="stg-label">Datenschutz</span>
+      <div class="stg-group">
+        <div class="stg-row stg-row--tappable" role="button" data-privacy-export>
+          <span class="stg-row-label">Daten exportieren</span>
+          <span class="stg-row-chevron">›</span>
+        </div>
+        <a class="stg-row stg-row--tappable" href="/datenschutz" target="_blank" rel="noopener noreferrer" style="text-decoration:none">
+          <span class="stg-row-label">Datenschutzhinweise</span>
+          <span class="stg-row-chevron">›</span>
+        </a>
+        <div class="stg-row stg-row--tappable stg-row--danger" role="button" data-privacy-delete>
+          <span class="stg-row-label">Daten löschen</span>
+          <span class="stg-row-chevron" style="color:var(--danger,#ff5d6c)">›</span>
+        </div>
+      </div>
+    </div>
   `;
 }
 

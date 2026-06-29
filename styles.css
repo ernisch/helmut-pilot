@@ -2369,6 +2369,93 @@ small {
   margin-bottom: 0;
 }
 
+/* Apple-style Settings */
+.stg-section { margin-bottom: 36px; }
+.stg-label {
+  display: block;
+  padding: 0 4px 8px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+.stg-group {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  overflow: hidden;
+}
+.stg-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.stg-row:last-child { border-bottom: none; }
+.stg-row-label {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+.stg-row-value {
+  font-size: 14px;
+  color: var(--muted);
+  text-align: right;
+  max-width: 55%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.stg-row-action { flex-shrink: 0; }
+.stg-row-chevron {
+  color: var(--muted-2);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.stg-row--tappable { cursor: pointer; }
+.stg-row--tappable:hover { background: var(--paper); }
+.stg-row--danger .stg-row-label { color: var(--danger, #ff5d6c); }
+.stg-profile-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+}
+.stg-profile-row:hover { background: var(--paper); }
+.stg-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--accent-soft, rgba(140,92,255,.18));
+  color: var(--accent);
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+.stg-profile-info { flex: 1; min-width: 0; }
+.stg-profile-name { font-size: 16px; font-weight: 700; color: var(--text); margin: 0 0 2px; }
+.stg-profile-sub { font-size: 13px; color: var(--muted); margin: 0; }
+.stg-system-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 9px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.stg-system-badge--ok { background: rgba(52,199,89,.12); color: #34c759; }
+.stg-system-badge--warn { background: rgba(255,159,10,.12); color: #ff9f0a; }
+.stg-system-badge--err { background: rgba(255,69,58,.12); color: #ff453a; }
+
 .row-actions {
   display: flex;
   gap: 10px;
