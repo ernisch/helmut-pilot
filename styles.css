@@ -6843,11 +6843,12 @@ body {
   box-shadow: var(--soft-shadow) !important;
 }
 
-/* Radar summary (Sektionskopf-Zeile) Textfarbe */
+/* Radar summary (Sektionskopf-Zeile) Textfarbe + Pfeile */
 :root[data-theme="light"] .radar-group summary span { color: var(--text) !important; }
-:root[data-theme="light"] .radar-group summary i {
-  border-right-color: var(--muted) !important;
-  border-bottom-color: var(--muted) !important;
+:root[data-theme="light"] .radar-group summary i,
+:root[data-theme="light"] .radar-group summary i:is(*) {
+  border-right: 2px solid rgba(15, 23, 42, .38) !important;
+  border-bottom: 2px solid rgba(15, 23, 42, .38) !important;
 }
 
 /* Helle Eingabefelder im Light Mode */
