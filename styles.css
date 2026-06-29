@@ -7137,3 +7137,27 @@ body {
   border-color: var(--line) !important;
   box-shadow: var(--soft-shadow);
 }
+
+/* Büro draft: loading + KI-badge */
+.office-draft-card.is-loading { opacity: .72; }
+.office-draft-generating {
+  font-size: 11px;
+  color: var(--accent);
+  margin-left: auto;
+  animation: pulse-opacity 1.4s ease-in-out infinite;
+}
+.office-draft-ai-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-left: auto;
+}
+.skeleton-text { color: var(--muted-2); }
+@keyframes pulse-opacity {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .38; }
+}

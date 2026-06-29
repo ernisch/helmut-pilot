@@ -25,6 +25,8 @@ let helmutTypingTimer = null;
 let selectedTaskHandoffId = "";
 let generatedStatement = "";
 let communicationContextTitle = "";
+let officeDrafts = {};
+let officeDraftsGenerating = false;
 let selectedCommunicationChannel = "press";
 let berlinClockTimer = null;
 const updateSeenStorageKey = "helmut:lastSeenUpdatesAt";
@@ -250,6 +252,7 @@ async function loadBriefing() {
       applyStartPayload(cachedStart);
       renderedFromCache = true;
       render();
+      generateOfficeDraftsInBackground();
     } catch (error) {
       console.warn("Cached Helmut start payload ignored", error);
     }
@@ -269,6 +272,7 @@ async function loadBriefing() {
     saveCachedStartPayload(startPayload);
     render();
     loadParliament();
+    generateOfficeDraftsInBackground();
   } catch (error) {
     if (renderedFromCache) {
       console.warn("Live update after cached start failed", error);
@@ -3362,25 +3366,31 @@ function renderOfficeDraftGroup(decision, formats) {
 }
 
 function renderOfficeDraftCard(decision, format) {
-  const text = channelFallbackStatement(decision, format.channel || "press");
+  const key = officeDraftKey(decision, format);
+  const aiText = officeDrafts[key];
+  const isLoading = officeDraftsGenerating && !aiText;
+  const text = aiText || channelFallbackStatement(decision, format.channel || "press");
   const preview = String(text).replace(/\n+/g, " ").slice(0, 180);
   const cardId = `draft-${escapeAttribute(format.id)}-${escapeAttribute(decision.id || "0")}`;
   return `
-    <article class="office-draft-card">
+    <article class="office-draft-card${isLoading ? " is-loading" : ""}">
       <div class="office-draft-header">
         <i class="ti ${escapeAttribute(format.icon)}" aria-hidden="true"></i>
         <span>${escapeHtml(format.label)}</span>
+        ${isLoading ? `<span class="office-draft-generating">wird geschrieben…</span>` : aiText ? `<span class="office-draft-ai-badge">KI</span>` : ""}
       </div>
-      <p class="office-draft-preview">${escapeHtml(preview)}${text.length > 180 ? "…" : ""}</p>
+      <p class="office-draft-preview${isLoading ? " skeleton-text" : ""}">${escapeHtml(preview)}${text.length > 180 ? "…" : ""}</p>
       <div class="office-draft-actions">
         <button class="primary-button compact-button" type="button"
           data-office-copy="${escapeAttribute(cardId)}"
-          data-office-text="${escapeAttribute(text)}">Kopieren</button>
+          data-office-text="${escapeAttribute(text)}"
+          ${isLoading ? "disabled" : ""}>Kopieren</button>
         <button class="secondary-button compact-button icon-only" type="button"
           data-office-share="${escapeAttribute(cardId)}"
           data-office-text="${escapeAttribute(text)}"
           data-office-title="${escapeAttribute(format.label + ": " + (decision.title || ""))}"
-          aria-label="Teilen"><i class="ti ti-share" aria-hidden="true"></i></button>
+          aria-label="Teilen"
+          ${isLoading ? "disabled" : ""}><i class="ti ti-share" aria-hidden="true"></i></button>
       </div>
     </article>
   `;
@@ -5837,6 +5847,55 @@ function taskShareText(task) {
 function activeOfficeFormats() {
   const saved = Array.isArray(profile?.officeFormats) ? profile.officeFormats : ["presse", "linkedin"];
   return OFFICE_FORMATS.filter((f) => saved.includes(f.id));
+}
+
+function officeDraftCacheKey() {
+  const date = (briefing?.generatedAt || briefing?.date || "").slice(0, 10);
+  return `helmut:officeDrafts:${activePoliticianId}:${date}`;
+}
+
+function officeDraftKey(decision, format) {
+  return `${decision.id || decision.signalId || "0"}-${format.id}`;
+}
+
+async function generateOfficeDraftsInBackground() {
+  if (officeDraftsGenerating) return;
+  const formats = activeOfficeFormats();
+  const topDecisions = (decisions || []).filter((d) => d.decision !== "Ignorieren" && d.title).slice(0, 2);
+  if (!formats.length || !topDecisions.length) return;
+
+  const cacheKey = officeDraftCacheKey();
+  try {
+    const cached = JSON.parse(localStorage.getItem(cacheKey) || "null");
+    if (cached && typeof cached === "object" && Object.keys(cached).length > 0) {
+      officeDrafts = cached;
+      render();
+      return;
+    }
+  } catch (_) { /* ignore parse error */ }
+
+  officeDraftsGenerating = true;
+  render();
+
+  for (const decision of topDecisions) {
+    for (const format of formats) {
+      const key = officeDraftKey(decision, format);
+      if (officeDrafts[key]) continue;
+      try {
+        const result = await generateStatementWithBackend(
+          `Bereite einen ${format.label}-Entwurf vor zum Thema: ${decision.title}`,
+          decision,
+          format.channel || "press"
+        );
+        officeDrafts[key] = result.text;
+        render();
+      } catch (_) { /* keep fallback — no error shown */ }
+    }
+  }
+
+  officeDraftsGenerating = false;
+  render();
+  try { localStorage.setItem(cacheKey, JSON.stringify(officeDrafts)); } catch (_) {}
 }
 
 function preferredOfficeHandoffMethod() {
