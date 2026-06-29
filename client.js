@@ -6154,7 +6154,8 @@ function timeGreeting(firstName = "") {
   if (hour >= 5 && hour < 10) return `Guten Morgen${suffix}.`;
   if (hour >= 10 && hour < 14) return `Mahlzeit${suffix}.`;
   if (hour >= 14 && hour < 18) return `Guten Nachmittag${suffix}.`;
-  return `Guten Abend${suffix}.`;
+  if (hour >= 18) return `Guten Abend${suffix}.`;
+  return `Guten Morgen${suffix}.`;
 }
 
 function updateBerlinClock() {
