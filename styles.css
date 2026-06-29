@@ -6830,8 +6830,28 @@ body {
 /* Draft channel picker in Büro (mobile media query override) */
 :root[data-theme="light"] .draft-channel-picker { background: var(--paper) !important; }
 
-/* Radar: Sektionsgruppen (dunkler Gradient im Dark-Default) */
-:root[data-theme="light"] .radar-group,
+/* Radar: Sektionsgruppen — ganzer Container als eine Karte */
+:root[data-theme="light"] .radar-groups {
+  background: var(--card) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 16px !important;
+  box-shadow: var(--soft-shadow) !important;
+  overflow: hidden !important;
+}
+:root[data-theme="light"] .radar-group {
+  background: transparent !important;
+  border-color: var(--line) !important;
+  box-shadow: none !important;
+}
+:root[data-theme="light"] .radar-group summary {
+  padding: 0 20px !important;
+}
+:root[data-theme="light"] .radar-group-body {
+  padding-left: 20px !important;
+  padding-right: 20px !important;
+}
+
+/* Andere Karten-Typen */
 :root[data-theme="light"] .list-row,
 :root[data-theme="light"] .recommendation,
 :root[data-theme="light"] .article-grid > div,
