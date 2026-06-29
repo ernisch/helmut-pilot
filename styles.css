@@ -2416,6 +2416,9 @@ small {
   font-size: 12px;
   flex-shrink: 0;
 }
+.stg-row--stack { flex-direction: column; align-items: flex-start; gap: 10px; }
+.stg-row--stack .theme-toggle { width: 100%; }
+.stg-row--stack .theme-option { flex: 1; }
 .stg-row--tappable { cursor: pointer; }
 .stg-row--tappable:hover { background: var(--paper); }
 .stg-row--danger .stg-row-label { color: var(--danger, #ff5d6c); }

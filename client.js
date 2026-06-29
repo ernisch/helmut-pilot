@@ -4072,9 +4072,9 @@ function renderSettingsView() {
     <div class="stg-section">
       <span class="stg-label">Darstellung</span>
       <div class="stg-group">
-        <div class="stg-row">
+        <div class="stg-row stg-row--stack">
           <span class="stg-row-label">Erscheinungsbild</span>
-          <div class="theme-toggle stg-row-action">
+          <div class="theme-toggle">
             ${[["dark", "Dunkel"], ["light", "Hell"], ["system", "Auto"]].map(([value, label]) =>
               `<button class="theme-option ${getThemePref() === value ? "active" : ""}" type="button" data-theme-set="${value}">${label}</button>`
             ).join("")}
