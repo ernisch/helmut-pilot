@@ -5859,10 +5859,11 @@ body {
 }
 
 .lage-actions {
-  display: flex;
-  gap: 14px;
-  flex-wrap: wrap;
-  margin-top: 34px;
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  gap: 8px;
+  align-items: stretch;
+  margin-top: 28px;
 }
 
 .brief-mini {
@@ -6244,9 +6245,7 @@ body {
   }
 
   .helmut-actions .primary-button,
-  .helmut-actions .secondary-button,
-  .lage-actions .primary-button,
-  .lage-actions .secondary-button {
+  .helmut-actions .secondary-button {
     width: 100%;
   }
 
@@ -6962,13 +6961,30 @@ body {
 .lage-focus-title { font-size: 22px; line-height: 1.25; margin: 0 0 6px; color: var(--text); }
 .lage-focus-why { font-size: 15px; line-height: 1.5; color: var(--muted); margin: 0 0 14px; }
 
-.lage-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .lage-icon-btn {
-  width: 36px; height: 36px; border-radius: 9px;
-  border: 1px solid var(--line); background: var(--paper);
-  color: var(--muted); font-size: 16px; cursor: pointer; line-height: 1;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 42px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--muted);
+  font-size: 15px;
+  cursor: pointer;
+  transition: border-color .15s, background .15s, color .15s;
 }
-.lage-icon-btn:hover { border-color: var(--accent); color: var(--text); }
+.lage-done-btn:hover {
+  border-color: rgba(52, 199, 89, .35);
+  background: rgba(52, 199, 89, .07);
+  color: #34c759;
+}
+.lage-ignore-btn:hover {
+  border-color: rgba(245, 241, 232, .18);
+  background: var(--card);
+  color: var(--text);
+}
+.lage-details-btn { width: 100%; }
 
 .lage-glance {
   background: var(--card); border: 1px solid var(--line);

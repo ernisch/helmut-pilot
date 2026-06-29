@@ -1449,9 +1449,9 @@ function priorityChipClass(decision) {
 function renderDecisionActions(decision, primary) {
   return `
     <div class="lage-actions">
-      <button class="secondary-button compact-button" type="button" data-detail="${escapeAttribute(decision.id)}">Details</button>
-      <button class="lage-icon-btn" type="button" data-lage-done="${escapeAttribute(decision.id)}" aria-label="Als erledigt markieren" title="Erledigt">✓</button>
-      <button class="lage-icon-btn" type="button" data-lage-ignore="${escapeAttribute(decision.id)}" aria-label="Ignorieren" title="Ignorieren">×</button>
+      <button class="lage-icon-btn lage-done-btn" type="button" data-lage-done="${escapeAttribute(decision.id)}" aria-label="Als erledigt markieren" title="Erledigt">✓</button>
+      <button class="secondary-button compact-button lage-details-btn" type="button" data-detail="${escapeAttribute(decision.id)}">Details</button>
+      <button class="lage-icon-btn lage-ignore-btn" type="button" data-lage-ignore="${escapeAttribute(decision.id)}" aria-label="Ignorieren" title="Ignorieren">✕</button>
     </div>`;
 }
 
