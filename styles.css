@@ -6143,24 +6143,23 @@ body {
 }
 
 .mobile-dock {
-  grid-template-columns: 1fr 1fr 1.24fr 1fr;
+  grid-template-columns: repeat(4, 1fr);
   align-items: center;
 }
 
 .mobile-dock .nav-helmut {
-  transform: translateY(-10px);
   color: #f9cd7f;
   font-weight: 680;
 }
 
 .mobile-dock .nav-helmut span {
-  width: 52px;
-  height: 52px;
-  border-color: rgba(249, 205, 127, .45);
-  color: #fff;
-  background: rgba(255, 255, 255, .04);
-  font-size: 22px;
-  font-weight: 760;
+  width: 28px !important;
+  height: 28px !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  border-color: rgba(249, 205, 127, .45) !important;
+  color: #f9cd7f !important;
+  background: rgba(255, 255, 255, .04) !important;
 }
 
 .mobile-dock .nav-helmut.active span {
@@ -6292,18 +6291,6 @@ body {
   .mobile-dock button span {
     width: 30px;
     height: 30px;
-    margin: 0;
-  }
-
-  .mobile-dock .nav-helmut,
-  .mobile-dock .nav-helmut.active {
-    transform: none !important;
-  }
-
-  .mobile-dock .nav-helmut span,
-  .mobile-dock .nav-helmut.active span {
-    width: 56px;
-    height: 56px;
     margin: 0;
   }
 
