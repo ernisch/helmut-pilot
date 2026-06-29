@@ -4123,7 +4123,7 @@ function renderSettingsView() {
             <div class="stg-row-label">Quellen</div>
             <div class="stg-row-sublabel">${escapeHtml(`${crawl?.checkedSources || 0} geprüft · ${crawl?.failedSources || 0} Fehler`)}</div>
           </div>
-          <button class="secondary-button compact-button stg-row-action" type="button" data-run-crawl>Prüfen</button>
+          <button class="secondary-button compact-button" type="button" data-run-crawl style="flex-shrink:0;width:auto;padding:0 14px">Prüfen</button>
         </div>
         <div class="stg-row">
           <span class="stg-row-label">KI</span>
