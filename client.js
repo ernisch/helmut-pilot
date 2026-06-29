@@ -3411,23 +3411,18 @@ function renderOfficeDraftCard(decision, format, index = 0) {
         <div class="buero-card-body">
           <span class="buero-card-channel">${escapeHtml(format.label)}</span>
           <h2 class="buero-card-title">${escapeHtml(decision.title || "Entwurf")}</h2>
-          <p class="buero-card-desc">${escapeHtml(meta.desc)}</p>
-          <div class="buero-card-meta">
-            <span><i class="ti ti-clock" aria-hidden="true"></i> ${escapeHtml(readTime)}</span>
-            <span class="buero-meta-dot">·</span>
-            <span>Basiert auf ${sources} Quellen</span>
-          </div>
         </div>
-        <i class="ti ti-chevron-right buero-card-chev" aria-hidden="true"></i>
-      </div>
-      <div class="buero-card-footer">
-        <button class="buero-copy-btn" type="button"
-          data-office-copy-inline="${escapeAttribute(key)}"
-          data-office-text="${escapeAttribute(text)}"
-          ${isLoading ? "disabled" : ""}
-          aria-label="Text kopieren">
-          <i class="ti ti-copy" aria-hidden="true"></i> Kopieren
-        </button>
+        <div class="buero-card-right">
+          <span class="buero-card-readtime">${escapeHtml(readTime)}</span>
+          <button class="buero-copy-btn buero-copy-btn--icon" type="button"
+            data-office-copy-inline="${escapeAttribute(key)}"
+            data-office-text="${escapeAttribute(text)}"
+            ${isLoading ? "disabled" : ""}
+            aria-label="Text kopieren">
+            <i class="ti ti-copy" aria-hidden="true"></i>
+          </button>
+          <i class="ti ti-chevron-right buero-card-chev" aria-hidden="true"></i>
+        </div>
       </div>
     </article>
   `;
