@@ -6830,6 +6830,26 @@ body {
 /* Draft channel picker in Büro (mobile media query override) */
 :root[data-theme="light"] .draft-channel-picker { background: var(--paper) !important; }
 
+/* Radar: Sektionsgruppen (dunkler Gradient im Dark-Default) */
+:root[data-theme="light"] .radar-group,
+:root[data-theme="light"] .list-row,
+:root[data-theme="light"] .recommendation,
+:root[data-theme="light"] .article-grid > div,
+:root[data-theme="light"] .article-section,
+:root[data-theme="light"] .strategy-answer,
+:root[data-theme="light"] .profile-section {
+  background: var(--card) !important;
+  border-color: var(--line) !important;
+  box-shadow: var(--soft-shadow) !important;
+}
+
+/* Radar summary (Sektionskopf-Zeile) Textfarbe */
+:root[data-theme="light"] .radar-group summary span { color: var(--text) !important; }
+:root[data-theme="light"] .radar-group summary i {
+  border-right-color: var(--muted) !important;
+  border-bottom-color: var(--muted) !important;
+}
+
 /* Helle Eingabefelder im Light Mode */
 :root[data-theme="light"] input,
 :root[data-theme="light"] select,
