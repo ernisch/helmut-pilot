@@ -770,7 +770,6 @@ function renderAccountBar() {
     <div class="account-bar">
       ${switcher}
       <span class="account-chip" title="${escapeAttribute(currentUser.email || "")}">${escapeHtml(currentUser.name || currentUser.email || "")} · ${escapeHtml(roleLabel(currentUser.role))}</span>
-      <button class="account-logout" type="button" data-logout>Abmelden</button>
     </div>
   `;
 }
@@ -3329,14 +3328,14 @@ function renderMemorySection(decision) {
 }
 
 const OFFICE_FORMAT_META = {
-  presse:       { typeLabel: "PRESSEMITTEILUNG",        einordnung: "Offizieller Kommunikationsentwurf für Presse und Medien.",          defaultStatus: "Zur Veröffentlichung",    lineCheck: "Linie geprüft. Sachlicher Ton empfohlen.",      iconBg: "rgba(88,86,214,.08)", iconColor: "rgba(88,86,214,.78)" },
-  linkedin:     { typeLabel: "LINKEDIN",                einordnung: "Persönlicher Beitrag. Auf den Punkt und nahbar.",                   defaultStatus: "Zur Veröffentlichung",    lineCheck: "Linie geprüft. Persönliche Sprache erwünscht.", iconBg: "#EAF4FC",             iconColor: "#0077B5"             },
-  x:            { typeLabel: "X / TWITTER",             einordnung: "Kompakter Post. Direkt und pointiert.",                            defaultStatus: "Zur Veröffentlichung",    lineCheck: "Linie geprüft. Kurz halten.",                  iconBg: "#F2F2F2",             iconColor: "#14171A"             },
-  instagram:    { typeLabel: "INSTAGRAM",               einordnung: "Kurzer Beitrag. Menschlich und authentisch.",                      defaultStatus: "Zur Veröffentlichung",    lineCheck: "Linie geprüft. Persönliche Sprache erwünscht.", iconBg: "#FFF0EC",             iconColor: "#C13584"             },
-  anfrage:      { typeLabel: "PARLAMENTARISCHE ANFRAGE",einordnung: "Parlamentarische Kontrollfrage für den Ausschuss.",                defaultStatus: "Zum Bereithalten",        lineCheck: "Linie geprüft. Formale Sprache erforderlich.", iconBg: "#EBF5EE",             iconColor: "#1F7A3E"             },
-  rede:         { typeLabel: "REDEBAUSTEIN",            einordnung: "Für Termine, Interviews und kurze Statements.",                    defaultStatus: "Zum Bereithalten",        lineCheck: "Linie geprüft. Kernbotschaft klar halten.",    iconBg: "rgba(88,86,214,.08)", iconColor: "rgba(88,86,214,.78)" },
-  buergerbrief: { typeLabel: "BÜRGERBRIEF",             einordnung: "Antwort für Bürgerkommunikation. Verständlich und persönlich.",    defaultStatus: "Zur Veröffentlichung",    lineCheck: "Linie geprüft. Verständliche Sprache.",        iconBg: "#EBF5F5",             iconColor: "#0A7A6E"             },
-  intern:       { typeLabel: "INTERNE LINIE",           einordnung: "Für Büro und Team. Zur sofortigen Nutzung.",                      defaultStatus: "Zum Bereithalten",        lineCheck: "Nur für internen Gebrauch.",                   iconBg: "#F4F4F4",             iconColor: "#5A5A5A"             },
+  presse:       { typeLabel: "PRESSEMITTEILUNG",         einordnung: "Offizieller Kommunikationsentwurf für Presse und Medien.",       defaultStatus: "Zur Veröffentlichung", fromSource: "Aus Lage empfohlen",      lineCheck: "Linie geprüft. Sachlicher Ton empfohlen.",      iconBg: "var(--paper)", iconColor: "var(--muted)" },
+  linkedin:     { typeLabel: "LINKEDIN",                 einordnung: "Persönlicher Beitrag. Auf den Punkt und nahbar.",                defaultStatus: "Zur Veröffentlichung", fromSource: "Aus Lage empfohlen",      lineCheck: "Linie geprüft. Persönliche Sprache erwünscht.", iconBg: "var(--paper)", iconColor: "var(--muted)" },
+  x:            { typeLabel: "X / TWITTER",              einordnung: "Kompakter Post. Direkt und pointiert.",                         defaultStatus: "Zur Veröffentlichung", fromSource: "Aus Lage empfohlen",      lineCheck: "Linie geprüft. Kurz halten.",                   iconBg: "var(--paper)", iconColor: "var(--muted)" },
+  instagram:    { typeLabel: "INSTAGRAM",                einordnung: "Kurzer Beitrag. Menschlich und authentisch.",                   defaultStatus: "Zur Veröffentlichung", fromSource: "Aus Lage empfohlen",      lineCheck: "Linie geprüft. Persönliche Sprache erwünscht.", iconBg: "var(--paper)", iconColor: "var(--muted)" },
+  anfrage:      { typeLabel: "PARLAMENTARISCHE ANFRAGE", einordnung: "Parlamentarische Kontrollfrage für den Ausschuss.",             defaultStatus: "Zum Bereithalten",     fromSource: "Aus Radar vorbereitet",   lineCheck: "Linie geprüft. Formale Sprache erforderlich.",  iconBg: "var(--paper)", iconColor: "var(--muted)" },
+  rede:         { typeLabel: "REDEBAUSTEIN",             einordnung: "Für Termine, Interviews und kurze Statements.",                 defaultStatus: "Zum Bereithalten",     fromSource: "Aus Radar vorbereitet",   lineCheck: "Linie geprüft. Kernbotschaft klar halten.",     iconBg: "var(--paper)", iconColor: "var(--muted)" },
+  buergerbrief: { typeLabel: "BÜRGERBRIEF",              einordnung: "Antwort für Bürgerkommunikation. Verständlich und persönlich.", defaultStatus: "Zur Veröffentlichung", fromSource: "Aus Lage empfohlen",      lineCheck: "Linie geprüft. Verständliche Sprache.",         iconBg: "var(--paper)", iconColor: "var(--muted)" },
+  intern:       { typeLabel: "INTERNE LINIE",            einordnung: "Für Büro und Team. Zur sofortigen Nutzung.",                   defaultStatus: "Zum Bereithalten",     fromSource: "Aus Radar vorbereitet",   lineCheck: "Nur für internen Gebrauch.",                    iconBg: "var(--paper)", iconColor: "var(--muted)" },
 };
 
 function draftReadingTime(text) {
@@ -3368,8 +3367,17 @@ function draftStatusClass(status) {
   return "buero-status--bereit";
 }
 
-function draftSource(decision) {
-  return decision.signalId ? "Aus Radar vorbereitet" : "Aus Lage empfohlen";
+function draftSource(format) {
+  return OFFICE_FORMAT_META[format.id]?.fromSource || "Aus Lage empfohlen";
+}
+
+function draftTitle(decision) {
+  let t = (decision.title || "Entwurf").trim();
+  t = t.replace(/\s*[\|·•\-—–]\s*(die\s+)?(zeit|spiegel|faz|taz|welt|bild|sz|süddeutsche|ard|zdf|tagesschau|rnd|focus|stern|handelsblatt|tagesspiegel|br\b|ndr|mdr|phoenix)\b.*/i, "");
+  const ci = t.indexOf(": ");
+  if (ci > 12) t = t.slice(0, ci);
+  if (t.length > 58) t = t.slice(0, 56).trimEnd() + "…";
+  return t;
 }
 
 function renderOfficeView() {
@@ -3416,7 +3424,8 @@ function renderOfficeDraftCard(decision, format, index = 0) {
   const readTime = draftReadingTime(text);
   const status = draftStatus(format);
   const statusClass = draftStatusClass(status);
-  const source = draftSource(decision);
+  const source = draftSource(format);
+  const title = draftTitle(decision);
   const delay = `${index * 60}ms`;
 
   return `
@@ -3424,7 +3433,7 @@ function renderOfficeDraftCard(decision, format, index = 0) {
       data-office-open="${escapeAttribute(key)}"
       data-office-decision="${escapeAttribute(JSON.stringify({ id: decision.id, signalId: decision.signalId, title: decision.title }))}"
       data-office-format="${escapeAttribute(format.id)}"
-      role="button" tabindex="0" aria-label="${escapeAttribute(meta.typeLabel + ": " + (decision.title || "Entwurf"))}">
+      role="button" tabindex="0" aria-label="${escapeAttribute(meta.typeLabel + ": " + title)}">
       <div class="buero-card-top">
         <div class="buero-card-type-row">
           <div class="buero-card-icon" style="background:${meta.iconBg};color:${meta.iconColor}" aria-hidden="true">
@@ -3436,7 +3445,7 @@ function renderOfficeDraftCard(decision, format, index = 0) {
       </div>
       <div class="buero-card-main">
         <div class="buero-card-body">
-          <h2 class="buero-card-title">${escapeHtml(decision.title || "Entwurf")}</h2>
+          <h2 class="buero-card-title">${escapeHtml(title)}</h2>
           <p class="buero-card-einordnung">${escapeHtml(meta.einordnung)}</p>
         </div>
         <i class="ti ti-chevron-right buero-card-chev" aria-hidden="true"></i>
@@ -3481,7 +3490,7 @@ function renderOfficeDraftDetail() {
           <span class="buero-card-type">${escapeHtml(meta.typeLabel)}</span>
           <span class="buero-status-pill ${statusClass}">${escapeHtml(status)}</span>
         </div>
-        <h1 class="buero-detail-title">${escapeHtml(decision.title || "Entwurf")}</h1>
+        <h1 class="buero-detail-title">${escapeHtml(draftTitle(decision))}</h1>
         <p class="buero-detail-meta">
           ${time ? `Erstellt heute um ${escapeHtml(time)}` : "Heute erstellt"}
           &nbsp;·&nbsp; Basiert auf ${sources} Quellen
