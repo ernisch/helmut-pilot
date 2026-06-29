@@ -3381,8 +3381,14 @@ function renderOfficeView() {
   const hasBriefing = topDecisions.length > 0;
   const generating = officeDraftsGenerating;
 
+  const publishCount = allCards.filter(({ format }) => draftStatus(format) === "Zur Veröffentlichung").length;
+  const bereitCount = totalCount - publishCount;
+
   const summaryText = hasBriefing
-    ? `${totalCount} Entwurf${totalCount !== 1 ? "e" : ""} für heute bereit.${time ? `<span class="buero-summary-sep">·</span>Vorbereitet um ${escapeHtml(time)}.` : ""}`
+    ? `${totalCount} Entwurf${totalCount !== 1 ? "e" : ""} für heute`
+      + (publishCount ? `<span class="buero-summary-sep">·</span>${publishCount} zur Veröffentlichung` : "")
+      + (bereitCount  ? `<span class="buero-summary-sep">·</span>${bereitCount} zum Bereithalten` : "")
+      + (time ? `<span class="buero-summary-sep">·</span>Vorbereitet um ${escapeHtml(time)}` : "")
     : generating
       ? "Entwürfe werden vorbereitet&hellip;"
       : "Erscheinen automatisch wenn dein Briefing geladen ist.";
@@ -3428,9 +3434,12 @@ function renderOfficeDraftCard(decision, format, index = 0) {
         </div>
         <span class="buero-status-pill ${statusClass}">${escapeHtml(status)}</span>
       </div>
-      <div class="buero-card-body">
-        <h2 class="buero-card-title">${escapeHtml(decision.title || "Entwurf")}</h2>
-        <p class="buero-card-einordnung">${escapeHtml(meta.einordnung)}</p>
+      <div class="buero-card-main">
+        <div class="buero-card-body">
+          <h2 class="buero-card-title">${escapeHtml(decision.title || "Entwurf")}</h2>
+          <p class="buero-card-einordnung">${escapeHtml(meta.einordnung)}</p>
+        </div>
+        <i class="ti ti-chevron-right buero-card-chev" aria-hidden="true"></i>
       </div>
       <div class="buero-card-footer">
         <span class="buero-card-meta-row">

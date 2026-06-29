@@ -7161,7 +7161,19 @@ body {
 .buero-status--unsicher  { background: rgba(100,116,139,.07); color: #718096; }
 
 /* Card body: title + einordnung */
-.buero-card-body { padding: 0 20px 16px; }
+.buero-card-main {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 14px 0 0;
+}
+.buero-card-body { padding: 0 20px 16px; flex: 1; min-width: 0; }
+.buero-card-chev {
+  font-size: 15px;
+  color: var(--muted-2);
+  opacity: .35;
+  flex-shrink: 0;
+}
 .buero-card-title {
   font-size: 19px;
   font-weight: 700;
