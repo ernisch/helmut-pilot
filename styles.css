@@ -6831,6 +6831,18 @@ body {
 /* Helmut-Home logo circle */
 :root[data-theme="light"] .helmut-core { color: var(--text) !important; background: rgba(15, 23, 42, .06) !important; }
 
+/* Helmut Assessment: Text lesbar machen im Light Mode */
+:root[data-theme="light"] .helmut-note p,
+:root[data-theme="light"] .helmut-reason p,
+:root[data-theme="light"] .helmut-typewriter p { color: var(--text) !important; }
+:root[data-theme="light"] .helmut-assessment-head small,
+:root[data-theme="light"] .helmut-assessment-foot small,
+:root[data-theme="light"] .helmut-checks { color: var(--muted) !important; }
+:root[data-theme="light"] .helmut-note,
+:root[data-theme="light"] .helmut-reason { border-color: var(--line) !important; background: var(--paper) !important; }
+:root[data-theme="light"] .helmut-typewriter { background: var(--paper) !important; }
+:root[data-theme="light"] .priority-status { border-color: rgba(15,23,42,.15) !important; color: var(--muted) !important; background: rgba(15,23,42,.05) !important; }
+
 /* Updates layer full-screen panel */
 :root[data-theme="light"] .updates-panel { background: var(--paper) !important; }
 :root[data-theme="light"] .notification-row { background: var(--card) !important; }
