@@ -16,7 +16,7 @@ Stand: technische Haertung im Pilotbetrieb. Letzte Aktualisierung 2026-06-29 (EU
 
 - KI-Verarbeitung: Azure OpenAI EU, Sweden Central, Deployment gpt-5-mini. ERLEDIGT.
 - Server-/Funktionsverarbeitung: Vercel-Region auf Frankfurt (fra1) gepinnt in vercel.json. PRUEFEN ob auf aktuellem Plan wirksam (ggf. Vercel Pro noetig) -- in Function-Logs verifizieren.
-- Datenbank: Supabase-Projektregion auf EU/Frankfurt pruefen. OFFEN -- bei US-Region erneuter Drittlandtransfer, nur per Migration aenderbar.
+- Datenbank: Supabase-Projekt liegt in AWS eu-west-1 (Irland, EU). ERLEDIGT. Hinweis: laeuft auf Free-Plan (NANO) -- fuer Produktivbetrieb spaeter Supabase Pro fuer Backups/keine Pausierung (Zuverlaessigkeit, kein DSGVO-Thema).
 - Drittlandtransfer-Grundlagen (SCCs, TIA) nur noch fuer unvermeidbare Subprozessoren wie Web-Push (Google FCM) dokumentieren.
 
 ## Technisch umgesetzt
