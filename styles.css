@@ -6951,3 +6951,24 @@ body {
 .board-task-body strong { display: block; font-size: 15px; line-height: 1.3; color: var(--text); }
 .board-task-body p { font-size: 13px; color: var(--muted); margin: 4px 0 0; }
 .board-task-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+
+/* Helmut new-assessment dot */
+.helmut-new-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #3ecf6e;
+  margin-left: 6px;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+.mobile-dock button i.helmut-new-dot {
+  min-width: 8px;
+  width: 8px;
+  height: 8px;
+  top: 8px;
+  right: 18px;
+  background: #3ecf6e;
+  font-size: 0;
+}

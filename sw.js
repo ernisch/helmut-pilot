@@ -23,7 +23,7 @@ self.addEventListener("push", (event) => {
     icon: "/assets/helmut_appicon_192.png",
     badge: "/assets/helmut_appicon_192.png",
     tag: payload.tag || payload.type || "helmut-update",
-    renotify: false,
+    renotify: true,
     data: {
       url: payload.url || "/",
       type: payload.type || "update"

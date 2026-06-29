@@ -29,6 +29,7 @@ let selectedCommunicationChannel = "press";
 let berlinClockTimer = null;
 const updateSeenStorageKey = "helmut:lastSeenUpdatesAt";
 const officeSeenStorageKey = "helmut:lastSeenOfficeAt";
+const helmutSeenStorageKey = "helmut:lastSeenHelmutAt";
 const pushEnabledStorageKey = "helmut:pushEnabled";
 let activePoliticianId = "cem-ince";
 let previewMode = false;
@@ -1189,7 +1190,7 @@ function renderSidebar() {
           <small>Politischer Referent</small>
         </div>
         <nav class="nav-list" aria-label="Hauptnavigation">
-          ${navItems.map(([id, label]) => `<button class="${isMobileNavActive(id) ? "active" : ""}" type="button" data-view="${id}">${label}</button>`).join("")}
+          ${navItems.map(([id, label]) => `<button class="${isMobileNavActive(id) ? "active" : ""}" type="button" data-view="${id}">${label}${id === "helmut" && hasNewHelmutAssessment() ? `<i class="helmut-new-dot"></i>` : ""}</button>`).join("")}
           ${roleNavItems().map(([id, label]) => `<button class="${currentView === id ? "active" : ""}" type="button" data-view="${id}">${label}</button>`).join("")}
         </nav>
       </div>
@@ -1208,6 +1209,7 @@ function renderMobileDock() {
         <button class="nav-${escapeAttribute(id)} ${isMobileNavActive(id) ? "active" : ""}" type="button" data-view="${id}">
           <span>${escapeHtml(mobileNavSymbol(id))}</span>
           ${id === "office" && actionableOfficeTaskCount() ? `<i>${escapeHtml(String(actionableOfficeTaskCount()))}</i>` : ""}
+          ${id === "helmut" && hasNewHelmutAssessment() ? `<i class="helmut-new-dot"></i>` : ""}
           ${escapeHtml(label)}
         </button>
       `).join("")}
@@ -1882,7 +1884,7 @@ function renderHelmutAssessmentView() {
     <section class="helmut-assessment" aria-label="Helmuts Einschätzung">
       <div class="helmut-assessment-head">
         <span>Helmut</span>
-        <small>${escapeHtml(assessment.time)} Uhr</small>
+        <small>Erstellt: ${escapeHtml(assessment.time)} Uhr</small>
         <h1>Meine Einschätzung für dich.</h1>
       </div>
 
@@ -1924,7 +1926,7 @@ function renderHelmutTypingResult(assessment) {
     <section class="helmut-assessment helmut-assessment-typing" aria-label="Helmuts Einschätzung">
       <div class="helmut-assessment-head">
         <span>Helmut</span>
-        <small>${escapeHtml(assessment.time)} Uhr</small>
+        <small>Erstellt: ${escapeHtml(assessment.time)} Uhr</small>
         <h1>Meine Einschätzung für dich.</h1>
       </div>
       <article class="helmut-note helmut-typewriter" aria-live="polite">
@@ -4343,6 +4345,18 @@ async function loadPushConfig() {
   return pushConfig;
 }
 
+function applicationServerKeyMatches(subscription, desiredKey) {
+  const current = subscription && subscription.options && subscription.options.applicationServerKey;
+  if (!current) return false;
+  const a = new Uint8Array(current);
+  const b = desiredKey instanceof Uint8Array ? desiredKey : new Uint8Array(desiredKey);
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
 async function ensurePushSubscription(options = {}) {
   const { prompt = true } = options;
   if (!browserPushSupported()) {
@@ -4362,10 +4376,17 @@ async function ensurePushSubscription(options = {}) {
   }
   const registration = await navigator.serviceWorker.register("/sw.js");
   await navigator.serviceWorker.ready;
-  const existing = await registration.pushManager.getSubscription();
+  const desiredKey = urlBase64ToUint8Array(pushConfig.publicKey);
+  let existing = await registration.pushManager.getSubscription();
+  // Bestehendes Abo nur weiterverwenden, wenn es mit dem aktuellen VAPID-Key
+  // erstellt wurde. Nach einem Key-Wechsel sonst dauerhaft 403 -> neu abonnieren.
+  if (existing && !applicationServerKeyMatches(existing, desiredKey)) {
+    try { await existing.unsubscribe(); } catch (error) { /* altes Abo ignorieren */ }
+    existing = null;
+  }
   const subscription = existing || await registration.pushManager.subscribe({
     userVisibleOnly: true,
-    applicationServerKey: urlBase64ToUint8Array(pushConfig.publicKey)
+    applicationServerKey: desiredKey
   });
   const response = await fetchWithTimeout(`/api/push/subscribe?${apiScopeQuery()}`, {
     method: "POST",
@@ -4823,7 +4844,7 @@ function bindActions() {
       navOpen = false;
       updatesOpen = false;
       if (currentView === "office" || currentView === "tasks") markOfficeSeen();
-      if (currentView === "helmut") startHelmutThinking();
+      if (currentView === "helmut") { markHelmutSeen(); startHelmutThinking(); }
       else stopHelmutTyping();
       render();
       ensureViewData(currentView);
@@ -5630,6 +5651,40 @@ function taskTimestamp(task = {}) {
 
 function officeSeenStorageKeyForProfile() {
   return `${officeSeenStorageKey}:${activePoliticianId}`;
+}
+
+function helmutSeenStorageKeyForProfile() {
+  return `${helmutSeenStorageKey}:${activePoliticianId}`;
+}
+
+function helmutAssessmentTimestamp() {
+  const ts = briefing?.helmutAssessment?.generatedAt || briefing?.helmutAssessment?.time;
+  if (!ts) return 0;
+  const parsed = new Date(ts).getTime();
+  if (!Number.isNaN(parsed) && parsed > 1000000000000) return parsed;
+  return briefing?.generatedAt ? new Date(briefing.generatedAt).getTime() : 0;
+}
+
+function getSeenHelmutTimestamp() {
+  try {
+    return Number(window.localStorage.getItem(helmutSeenStorageKeyForProfile()) || 0);
+  } catch {
+    return 0;
+  }
+}
+
+function hasNewHelmutAssessment() {
+  const ts = helmutAssessmentTimestamp();
+  if (!ts) return false;
+  return ts > getSeenHelmutTimestamp();
+}
+
+function markHelmutSeen() {
+  try {
+    window.localStorage.setItem(helmutSeenStorageKeyForProfile(), String(helmutAssessmentTimestamp() || Date.now()));
+  } catch (error) {
+    console.warn("Helmut seen state not saved", error);
+  }
 }
 
 function hasUnreadUpdates() {
