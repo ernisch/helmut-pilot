@@ -10,7 +10,7 @@ const { getLatestOrDemoBriefing, runDailyPipeline, runLageCheck, runMorningBrief
 const { personalizeBriefing } = require("./lib/helmut/personalization");
 const { buildLearningProfile } = require("./lib/helmut/learning");
 const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, savePushSubscription, saveTask, saveUserNote, updateTaskStatus } = require("./lib/helmut/storage");
-const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled } = require("./lib/helmut/ai");
+const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled, activeModelName } = require("./lib/helmut/ai");
 const { pushStatus, sendBriefingReadyPush, sendLageChangePush, sendPushToPolitician } = require("./lib/helmut/push");
 const auth = require("./lib/helmut/auth");
 const accounts = require("./lib/helmut/accounts");
@@ -288,7 +288,8 @@ async function handleRequest(request, response) {
   if (url.pathname === "/api/ai/status") {
     return sendJson(response, {
       enabled: isAiEnabled(),
-      model: process.env.HELMUT_TEXT_MODEL || process.env.OPENAI_MODEL || "gpt-5.5"
+      model: activeModelName(),
+      backend: process.env.AZURE_OPENAI_KEY ? "azure-eu" : "openai"
     });
   }
 
