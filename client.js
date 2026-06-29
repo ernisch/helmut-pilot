@@ -4064,16 +4064,11 @@ function renderSettingsView() {
           <span class="stg-row-label">Themen</span>
           <span class="stg-row-value">${escapeHtml(topTopics.slice(0, 3).join(" · ") || "Noch nicht gesetzt")}</span>
         </div>
-        ${channels.length ? `
-        <div class="stg-row">
-          <span class="stg-row-label">Kanäle</span>
-          <span class="stg-row-value">${escapeHtml(channels.join(" · "))}</span>
-        </div>` : ""}
       </div>
     </div>
 
     <div class="stg-section">
-      <span class="stg-label">Helmut</span>
+      <span class="stg-label">Büro</span>
       <div class="stg-group">
         ${OFFICE_FORMATS.map((f) => {
           const active = activeOfficeFormats().some((a) => a.id === f.id);
