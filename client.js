@@ -3329,14 +3329,14 @@ function renderMemorySection(decision) {
 }
 
 const OFFICE_FORMAT_META = {
-  presse:       { desc: "Offizieller Entwurf für Presse und Medienanfragen.", iconBg: "rgba(88,86,214,.10)", iconColor: "rgba(88,86,214,.82)" },
-  linkedin:     { desc: "Persönlicher Beitrag für LinkedIn. Auf den Punkt und nahbar.", iconBg: "#E8F3FB", iconColor: "#0077B5" },
-  x:            { desc: "Kompakter Post für X / Twitter. Direkt und pointiert.", iconBg: "#F0F0F0", iconColor: "#14171A" },
-  instagram:    { desc: "Emotionaler Post für Instagram. Kurz, menschlich, authentisch.", iconBg: "#FFF0E8", iconColor: "#C13584" },
-  anfrage:      { desc: "Parlamentarische Kontrollfrage für den Ausschuss.", iconBg: "#E8F5EC", iconColor: "#1F7A3E" },
-  rede:         { desc: "Für Redebeiträge und Interviews. Klar, prägnant, überzeugend.", iconBg: "rgba(88,86,214,.10)", iconColor: "rgba(88,86,214,.82)" },
-  buergerbrief: { desc: "Antwort für Bürgerkommunikation. Verständlich und persönlich.", iconBg: "#E8F5F5", iconColor: "#0A7A6E" },
-  intern:       { desc: "Interne Linie für Büro und Team. Zur sofortigen Nutzung.", iconBg: "#F2F2F2", iconColor: "#5A5A5A" },
+  presse:       { typeLabel: "PRESSEMITTEILUNG",        einordnung: "Offizieller Kommunikationsentwurf für Presse und Medien.",          defaultStatus: "Zur Veröffentlichung",    lineCheck: "Linie geprüft. Sachlicher Ton empfohlen.",      iconBg: "rgba(88,86,214,.08)", iconColor: "rgba(88,86,214,.78)" },
+  linkedin:     { typeLabel: "LINKEDIN",                einordnung: "Persönlicher Beitrag. Auf den Punkt und nahbar.",                   defaultStatus: "Zur Veröffentlichung",    lineCheck: "Linie geprüft. Persönliche Sprache erwünscht.", iconBg: "#EAF4FC",             iconColor: "#0077B5"             },
+  x:            { typeLabel: "X / TWITTER",             einordnung: "Kompakter Post. Direkt und pointiert.",                            defaultStatus: "Zur Veröffentlichung",    lineCheck: "Linie geprüft. Kurz halten.",                  iconBg: "#F2F2F2",             iconColor: "#14171A"             },
+  instagram:    { typeLabel: "INSTAGRAM",               einordnung: "Kurzer Beitrag. Menschlich und authentisch.",                      defaultStatus: "Zur Veröffentlichung",    lineCheck: "Linie geprüft. Persönliche Sprache erwünscht.", iconBg: "#FFF0EC",             iconColor: "#C13584"             },
+  anfrage:      { typeLabel: "PARLAMENTARISCHE ANFRAGE",einordnung: "Parlamentarische Kontrollfrage für den Ausschuss.",                defaultStatus: "Zum Bereithalten",        lineCheck: "Linie geprüft. Formale Sprache erforderlich.", iconBg: "#EBF5EE",             iconColor: "#1F7A3E"             },
+  rede:         { typeLabel: "REDEBAUSTEIN",            einordnung: "Für Termine, Interviews und kurze Statements.",                    defaultStatus: "Zum Bereithalten",        lineCheck: "Linie geprüft. Kernbotschaft klar halten.",    iconBg: "rgba(88,86,214,.08)", iconColor: "rgba(88,86,214,.78)" },
+  buergerbrief: { typeLabel: "BÜRGERBRIEF",             einordnung: "Antwort für Bürgerkommunikation. Verständlich und persönlich.",    defaultStatus: "Zur Veröffentlichung",    lineCheck: "Linie geprüft. Verständliche Sprache.",        iconBg: "#EBF5F5",             iconColor: "#0A7A6E"             },
+  intern:       { typeLabel: "INTERNE LINIE",           einordnung: "Für Büro und Team. Zur sofortigen Nutzung.",                      defaultStatus: "Zum Bereithalten",        lineCheck: "Nur für internen Gebrauch.",                   iconBg: "#F4F4F4",             iconColor: "#5A5A5A"             },
 };
 
 function draftReadingTime(text) {
@@ -3357,29 +3357,42 @@ function officeBriefingTime() {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")} Uhr`;
 }
 
+function draftStatus(format) {
+  return OFFICE_FORMAT_META[format.id]?.defaultStatus || "Zum Bereithalten";
+}
+
+function draftStatusClass(status) {
+  if (status === "Zur Veröffentlichung") return "buero-status--publish";
+  if (status === "Bei Nachfrage verwenden") return "buero-status--nachfrage";
+  if (status === "Noch nicht belastbar") return "buero-status--unsicher";
+  return "buero-status--bereit";
+}
+
+function draftSource(decision) {
+  return decision.signalId ? "Aus Radar vorbereitet" : "Aus Lage empfohlen";
+}
+
 function renderOfficeView() {
   const formats = activeOfficeFormats();
   const topDecisions = (decisions || []).filter((d) => d.decision !== "Ignorieren" && d.title).slice(0, 2);
   const allCards = topDecisions.flatMap((d) => formats.map((f) => ({ decision: d, format: f })));
-  const readyCount = allCards.filter(({ decision, format }) => !!officeDrafts[officeDraftKey(decision, format)]).length;
   const totalCount = allCards.length;
   const time = officeBriefingTime();
   const hasBriefing = topDecisions.length > 0;
+  const generating = officeDraftsGenerating;
+
+  const summaryText = hasBriefing
+    ? `${totalCount} Entwurf${totalCount !== 1 ? "e" : ""} für heute bereit.${time ? `<span class="buero-summary-sep">·</span>Vorbereitet um ${escapeHtml(time)}.` : ""}`
+    : generating
+      ? "Entwürfe werden vorbereitet&hellip;"
+      : "Erscheinen automatisch wenn dein Briefing geladen ist.";
 
   return `
     <div class="buero-view">
       <header class="buero-header">
-        <div class="buero-header-top">
-          <h1 class="buero-title">Büro</h1>
-          ${hasBriefing ? `<span class="buero-status-badge">${officeDraftsGenerating ? "Wird vorbereitet" : "Aktuell"}</span>` : ""}
-        </div>
-        ${hasBriefing ? `
-          <p class="buero-subtitle">${totalCount} Entwurf${totalCount !== 1 ? "e" : ""} für heute bereit.</p>
-          ${time ? `<p class="buero-meta">Vorbereitet um ${escapeHtml(time)}.</p>` : ""}
-        ` : `
-          <p class="buero-subtitle">Noch keine Entwürfe für heute.</p>
-          <p class="buero-meta">Erscheinen automatisch wenn dein Briefing geladen ist.</p>
-        `}
+        <h1 class="buero-title">Büro</h1>
+        <p class="buero-eyebrow">Heute vorbereitet.</p>
+        <p class="buero-summary">${summaryText}</p>
       </header>
       <div class="buero-draft-list">
         ${allCards.map(({ decision, format }, i) => renderOfficeDraftCard(decision, format, i)).join("")}
@@ -3393,9 +3406,11 @@ function renderOfficeDraftCard(decision, format, index = 0) {
   const aiText = officeDrafts[key];
   const isLoading = officeDraftsGenerating && !aiText;
   const text = aiText || channelFallbackStatement(decision, format.channel || "press");
-  const meta = OFFICE_FORMAT_META[format.id] || { desc: "", iconBg: "#F0F0F0", iconColor: "#555" };
+  const meta = OFFICE_FORMAT_META[format.id] || { typeLabel: format.label.toUpperCase(), einordnung: "", defaultStatus: "Zum Bereithalten", lineCheck: "", iconBg: "#F0F0F0", iconColor: "#555" };
   const readTime = draftReadingTime(text);
-  const sources = draftSourceCount(decision);
+  const status = draftStatus(format);
+  const statusClass = draftStatusClass(status);
+  const source = draftSource(decision);
   const delay = `${index * 60}ms`;
 
   return `
@@ -3403,26 +3418,33 @@ function renderOfficeDraftCard(decision, format, index = 0) {
       data-office-open="${escapeAttribute(key)}"
       data-office-decision="${escapeAttribute(JSON.stringify({ id: decision.id, signalId: decision.signalId, title: decision.title }))}"
       data-office-format="${escapeAttribute(format.id)}"
-      role="button" tabindex="0">
-      <div class="buero-card-inner">
-        <div class="buero-card-icon" style="background:${meta.iconBg};color:${meta.iconColor}">
-          <i class="ti ${escapeAttribute(format.icon)}" aria-hidden="true"></i>
+      role="button" tabindex="0" aria-label="${escapeAttribute(meta.typeLabel + ": " + (decision.title || "Entwurf"))}">
+      <div class="buero-card-top">
+        <div class="buero-card-type-row">
+          <div class="buero-card-icon" style="background:${meta.iconBg};color:${meta.iconColor}" aria-hidden="true">
+            <i class="ti ${escapeAttribute(format.icon)}"></i>
+          </div>
+          <span class="buero-card-type">${escapeHtml(meta.typeLabel)}</span>
         </div>
-        <div class="buero-card-body">
-          <span class="buero-card-channel">${escapeHtml(format.label)}</span>
-          <h2 class="buero-card-title">${escapeHtml(decision.title || "Entwurf")}</h2>
-        </div>
-        <div class="buero-card-right">
-          <span class="buero-card-readtime">${escapeHtml(readTime)}</span>
-          <button class="buero-copy-btn buero-copy-btn--icon" type="button"
-            data-office-copy-inline="${escapeAttribute(key)}"
-            data-office-text="${escapeAttribute(text)}"
-            ${isLoading ? "disabled" : ""}
-            aria-label="Text kopieren">
-            <i class="ti ti-copy" aria-hidden="true"></i>
-          </button>
-          <i class="ti ti-chevron-right buero-card-chev" aria-hidden="true"></i>
-        </div>
+        <span class="buero-status-pill ${statusClass}">${escapeHtml(status)}</span>
+      </div>
+      <div class="buero-card-body">
+        <h2 class="buero-card-title">${escapeHtml(decision.title || "Entwurf")}</h2>
+        <p class="buero-card-einordnung">${escapeHtml(meta.einordnung)}</p>
+      </div>
+      <div class="buero-card-footer">
+        <span class="buero-card-meta-row">
+          <span>${escapeHtml(source)}</span>
+          <span class="buero-meta-sep">·</span>
+          <span>${escapeHtml(readTime)}</span>
+        </span>
+        <button class="buero-copy-btn" type="button"
+          data-office-copy-inline="${escapeAttribute(key)}"
+          data-office-text="${escapeAttribute(text)}"
+          ${isLoading ? "disabled" : ""}
+          aria-label="Text kopieren">
+          <i class="ti ti-copy" aria-hidden="true"></i> Kopieren
+        </button>
       </div>
     </article>
   `;
@@ -3431,23 +3453,31 @@ function renderOfficeDraftCard(decision, format, index = 0) {
 function renderOfficeDraftDetail() {
   if (!selectedOfficeDraft) { currentView = "office"; return renderOfficeView(); }
   const { decision, format, text } = selectedOfficeDraft;
-  const meta = OFFICE_FORMAT_META[format.id] || { desc: "", iconBg: "#F0F0F0", iconColor: "#555" };
+  const meta = OFFICE_FORMAT_META[format.id] || { typeLabel: format.label.toUpperCase(), einordnung: "", defaultStatus: "Zum Bereithalten", lineCheck: "", iconBg: "#F0F0F0", iconColor: "#555" };
   const time = officeBriefingTime();
   const sources = draftSourceCount(decision);
+  const status = draftStatus(format);
+  const statusClass = draftStatusClass(status);
   const paragraphs = String(text).split(/\n{1,}/).map((p) => p.trim()).filter(Boolean);
 
   return `
     <div class="buero-detail-view">
-      <button class="buero-back-btn" type="button" data-office-back>
-        <i class="ti ti-arrow-left" aria-hidden="true"></i> Büro
-      </button>
+      <nav class="buero-detail-nav">
+        <button class="buero-back-btn" type="button" data-office-back>
+          <i class="ti ti-arrow-left" aria-hidden="true"></i> Büro
+        </button>
+      </nav>
       <header class="buero-detail-header">
-        <span class="buero-detail-channel" style="color:${meta.iconColor}">${escapeHtml(format.label)}</span>
+        <div class="buero-detail-type-row">
+          <span class="buero-card-type">${escapeHtml(meta.typeLabel)}</span>
+          <span class="buero-status-pill ${statusClass}">${escapeHtml(status)}</span>
+        </div>
         <h1 class="buero-detail-title">${escapeHtml(decision.title || "Entwurf")}</h1>
         <p class="buero-detail-meta">
           ${time ? `Erstellt heute um ${escapeHtml(time)}` : "Heute erstellt"}
-          &nbsp;·&nbsp;Basiert auf ${sources} Quellen
+          &nbsp;·&nbsp; Basiert auf ${sources} Quellen
         </p>
+        ${meta.lineCheck ? `<p class="buero-detail-linecheck">${escapeHtml(meta.lineCheck)}</p>` : ""}
       </header>
       <div class="buero-detail-body">
         ${paragraphs.map((p) => `<p>${escapeHtml(p)}</p>`).join("")}
@@ -3456,7 +3486,7 @@ function renderOfficeDraftDetail() {
         <button class="buero-copy-btn buero-copy-btn--full" type="button"
           data-office-copy-inline="detail"
           data-office-text="${escapeAttribute(text)}">
-          <i class="ti ti-copy" aria-hidden="true"></i> Text kopieren
+          <i class="ti ti-copy" aria-hidden="true"></i> Kopieren
         </button>
       </footer>
     </div>
