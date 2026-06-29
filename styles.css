@@ -6687,6 +6687,14 @@ body {
   color: var(--text);
   cursor: pointer;
   margin: 0;
+  transition: border-color .14s, background .14s, color .14s;
+}
+
+.onboarding-chip:has(input:checked),
+.onboarding-chip.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-ink);
 }
 
 .onboarding-actions {

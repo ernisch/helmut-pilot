@@ -118,6 +118,17 @@ const officeHandoffMethods = [
   ["telegram", "Telegram"]
 ];
 
+const OFFICE_FORMATS = [
+  { id: "presse",      label: "Pressemitteilung",        icon: "ti-news" },
+  { id: "linkedin",    label: "LinkedIn",                icon: "ti-brand-linkedin" },
+  { id: "x",          label: "X / Twitter",             icon: "ti-brand-x" },
+  { id: "instagram",  label: "Instagram",               icon: "ti-brand-instagram" },
+  { id: "anfrage",    label: "Parlamentarische Anfrage", icon: "ti-file-text" },
+  { id: "rede",       label: "Rede",                    icon: "ti-microphone" },
+  { id: "buergerbrief", label: "Bürgerbrief",           icon: "ti-mail" },
+  { id: "intern",     label: "Interne Linie",           icon: "ti-lock" },
+];
+
 const mandateFunctions = [
   "Bundestagsabgeordneter",
   "Landtagsabgeordneter",
@@ -305,7 +316,7 @@ function applyStartPayload(startPayload) {
   maybeStartOnboarding();
 }
 
-const ONBOARDING_STEPS = 6;
+const ONBOARDING_STEPS = 7;
 
 function renderOnboarding() {
   if (!onboardingActive) return "";
@@ -346,6 +357,14 @@ function renderOnboarding() {
       <label>Kommunikationsstil
         <select name="communicationStyle">${communicationStyles.map((s) => `<option value="${escapeAttribute(s)}" ${d.communicationStyle === s ? "selected" : ""}>${escapeHtml(s)}</option>`).join("")}</select>
       </label>`;
+  } else if (onboardingStep === 5) {
+    const selectedFormats = new Set(d.officeFormats || ["presse", "linkedin"]);
+    body = `
+      <h2>Büro-Formate</h2>
+      <p class="onboarding-note">Was soll Helmut automatisch vorbereiten, wenn dein Briefing kommt? Du kannst das jederzeit in den Einstellungen ändern.</p>
+      <div class="onboarding-chips">
+        ${OFFICE_FORMATS.map((f) => `<label class="onboarding-chip"><input type="checkbox" name="officeFormat" value="${escapeAttribute(f.id)}" ${selectedFormats.has(f.id) ? "checked" : ""}/> ${escapeHtml(f.label)}</label>`).join("")}
+      </div>`;
   } else {
     body = `
       <h2>Risiken & Chancen (optional)</h2>
@@ -384,6 +403,9 @@ function captureOnboardingStep() {
     const extra = free ? String(free.value || "").split(",").map((s) => s.trim()).filter(Boolean) : [];
     onboardingDraft.focusTopics = Array.from(new Set([...checked, ...extra]));
   }
+  if (root.querySelector("input[name='officeFormat']")) {
+    onboardingDraft.officeFormats = Array.from(root.querySelectorAll("input[name='officeFormat']:checked")).map((c) => c.value);
+  }
 }
 
 async function finishOnboarding(skip) {
@@ -403,7 +425,8 @@ async function finishOnboarding(skip) {
         state: onboardingDraft.state,
         communicationStyle: onboardingDraft.communicationStyle,
         riskTopics: String(onboardingDraft.riskTopics || "").split(",").map((s) => s.trim()).filter(Boolean),
-        opportunityTopics: String(onboardingDraft.opportunityTopics || "").split(",").map((s) => s.trim()).filter(Boolean)
+        opportunityTopics: String(onboardingDraft.opportunityTopics || "").split(",").map((s) => s.trim()).filter(Boolean),
+        officeFormats: Array.isArray(onboardingDraft.officeFormats) ? onboardingDraft.officeFormats : ["presse", "linkedin"]
       };
   render();
   try {
@@ -4011,9 +4034,15 @@ function renderSettingsView() {
 
       <article class="list-row">
         <div>
-          <span>Büro-Übergabe</span>
-          <h3>${escapeHtml(officeHandoffMethodLabel(preferredOfficeHandoffMethod()))}</h3>
-          <p>Dieser Weg erscheint beim Arbeitsauftrag zuerst. E-Mail, Messenger und Kopieren bleiben immer verfügbar.</p>
+          <span>Büro-Formate</span>
+          <h3>${activeOfficeFormats().length ? activeOfficeFormats().map((f) => escapeHtml(f.label)).join(" · ") : "Noch nicht eingestellt"}</h3>
+          <p>Diese Formate bereitet Helmut automatisch vor, wenn dein Briefing kommt.</p>
+          <div class="onboarding-chips" style="margin-top:10px">
+            ${OFFICE_FORMATS.map((f) => {
+              const active = activeOfficeFormats().some((a) => a.id === f.id);
+              return `<label class="onboarding-chip${active ? " active" : ""}"><input type="checkbox" name="settingsOfficeFormat" value="${escapeAttribute(f.id)}" ${active ? "checked" : ""} data-office-format-toggle/> ${escapeHtml(f.label)}</label>`;
+            }).join("")}
+          </div>
         </div>
       </article>
 
@@ -4853,6 +4882,21 @@ function bindActions() {
 
   app.querySelectorAll("[data-theme-set]").forEach((button) => {
     button.addEventListener("click", () => setThemePref(button.dataset.themeSet));
+  });
+
+  app.querySelectorAll("[data-office-format-toggle]").forEach((checkbox) => {
+    checkbox.addEventListener("change", async () => {
+      const checked = Array.from(app.querySelectorAll("[data-office-format-toggle]:checked")).map((c) => c.value);
+      const formats = checked.length ? checked : ["presse"];
+      try {
+        const res = await apiSend("PATCH", `/api/profile/current?${apiScopeQuery()}`, { id: activePoliticianId, officeFormats: formats });
+        if (res.ok && res.json) profile = res.json;
+        render();
+        showToast("Büro-Formate gespeichert.");
+      } catch (e) {
+        showToast("Speichern fehlgeschlagen.");
+      }
+    });
   });
 
   app.querySelectorAll("[data-assess-id]").forEach((button) => {
@@ -5831,6 +5875,11 @@ function taskShareText(task) {
     "",
     "Danke"
   ]).join("\n");
+}
+
+function activeOfficeFormats() {
+  const saved = Array.isArray(profile?.officeFormats) ? profile.officeFormats : ["presse", "linkedin"];
+  return OFFICE_FORMATS.filter((f) => saved.includes(f.id));
 }
 
 function preferredOfficeHandoffMethod() {
