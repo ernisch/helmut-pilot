@@ -7098,7 +7098,7 @@ body {
 .buero-summary-sep { opacity: .4; }
 
 /* ── Draft list ── */
-.buero-draft-list { display: grid; gap: 12px; }
+.buero-draft-list { display: grid; gap: 8px; }
 
 /* ── Draft card ── */
 .buero-draft-card {
@@ -7127,7 +7127,7 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 20px 20px 14px;
+  padding: 14px 16px 10px;
 }
 .buero-card-type-row {
   display: flex;
@@ -7180,7 +7180,7 @@ body {
   gap: 4px;
   padding: 0 14px 0 0;
 }
-.buero-card-body { padding: 0 20px 16px; flex: 1; min-width: 0; }
+.buero-card-body { padding: 0 16px 12px; flex: 1; min-width: 0; }
 .buero-card-chev {
   font-size: 15px;
   color: var(--muted-2);
@@ -7188,18 +7188,18 @@ body {
   flex-shrink: 0;
 }
 .buero-card-title {
-  font-size: 19px;
+  font-size: 16px;
   font-weight: 700;
-  letter-spacing: -.025em;
+  letter-spacing: -.02em;
   color: var(--text);
-  margin: 0 0 6px;
+  margin: 0 0 3px;
   line-height: 1.25;
 }
 .buero-card-einordnung {
-  font-size: 13.5px;
+  font-size: 13px;
   color: var(--muted);
   margin: 0;
-  line-height: 1.45;
+  line-height: 1.4;
 }
 
 /* Card footer: source · readtime + copy button */
@@ -7208,7 +7208,7 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 13px 20px 18px;
+  padding: 10px 16px 14px;
   border-top: 1px solid var(--line);
 }
 .buero-card-meta-row {
