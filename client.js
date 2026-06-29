@@ -4030,7 +4030,7 @@ function renderSettingsView() {
   const pushBlocked = pushPermissionState() === "denied";
   const pushTestDisabled = !push.enabled || !pushSupported || pushBlocked;
   const role = userRole();
-  const showSystem = role === "admin" || role === "referent";
+  const showSystem = role === "admin";
 
   const systemOk = opsStatusLoaded && storage.backend === "supabase" && ops.ai?.enabled;
   const systemBadge = !opsStatusLoaded
