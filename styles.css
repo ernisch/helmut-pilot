@@ -6797,9 +6797,38 @@ body {
 }
 
 :root[data-theme="light"] .sidebar { background: var(--paper) !important; }
-:root[data-theme="light"] .mobile-dock { background: rgba(255, 255, 255, .92) !important; }
+:root[data-theme="light"] .mobile-dock { background: rgba(255, 255, 255, .92) !important; backdrop-filter: blur(24px); border-top-color: var(--line) !important; }
 :root[data-theme="light"] .handoff-layer,
-:root[data-theme="light"] .updates-layer { background: rgba(15, 23, 42, .28) !important; }
+:root[data-theme="light"] .updates-layer,
+:root[data-theme="light"] .onboarding-layer { background: rgba(15, 23, 42, .28) !important; }
+:root[data-theme="light"] .menu-layer { background: var(--paper) !important; }
+
+/* Light mode: text on previously dark panels */
+:root[data-theme="light"] .handoff-panel,
+:root[data-theme="light"] .handoff-panel * { color: var(--text) !important; }
+:root[data-theme="light"] .handoff-head h2,
+:root[data-theme="light"] .handoff-head button { color: var(--text) !important; }
+
+/* Primary button: keep purple gradient but ensure legible text */
+:root[data-theme="light"] .primary-button {
+  color: #ffffff !important;
+}
+
+/* Mobile dock: text/icon colors */
+:root[data-theme="light"] .mobile-dock button { color: var(--muted) !important; }
+:root[data-theme="light"] .mobile-dock button span { color: var(--text) !important; background: var(--card) !important; border-color: var(--line) !important; }
+:root[data-theme="light"] .mobile-dock button.active { color: var(--accent-ink) !important; }
+:root[data-theme="light"] .mobile-dock button.active span { color: var(--accent-ink) !important; background: var(--accent-soft) !important; border-color: var(--accent) !important; }
+
+/* Helmut-Home logo circle */
+:root[data-theme="light"] .helmut-core { color: var(--text) !important; background: rgba(15, 23, 42, .06) !important; }
+
+/* Updates layer full-screen panel */
+:root[data-theme="light"] .updates-panel { background: var(--paper) !important; }
+:root[data-theme="light"] .notification-row { background: var(--card) !important; }
+
+/* Draft channel picker in Büro (mobile media query override) */
+:root[data-theme="light"] .draft-channel-picker { background: var(--paper) !important; }
 
 /* Helle Eingabefelder im Light Mode */
 :root[data-theme="light"] input,
