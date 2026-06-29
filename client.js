@@ -3435,12 +3435,7 @@ function renderOfficeDraftCard(decision, format, index = 0) {
       data-office-format="${escapeAttribute(format.id)}"
       role="button" tabindex="0" aria-label="${escapeAttribute(meta.typeLabel + ": " + title)}">
       <div class="buero-card-top">
-        <div class="buero-card-type-row">
-          <div class="buero-card-icon" style="background:${meta.iconBg};color:${meta.iconColor}" aria-hidden="true">
-            <i class="ti ${escapeAttribute(format.icon)}"></i>
-          </div>
-          <span class="buero-card-type">${escapeHtml(meta.typeLabel)}</span>
-        </div>
+        <span class="buero-card-type">${escapeHtml(meta.typeLabel)}</span>
         <span class="buero-status-pill ${statusClass}">${escapeHtml(status)}</span>
       </div>
       <div class="buero-card-main">
