@@ -3088,7 +3088,7 @@ function agentBriefingText() {
     ? `Du wurdest seit dem letzten Quellenlauf ${mentionCount} Mal erwähnt.`
     : "Heute wurde bislang keine neue namentliche Erwähnung gefunden.";
   const riskSentence = riskCount ? `${riskCount} Risiko solltest du im Blick behalten.` : "Aktuell sehe ich kein neues persönliches Risiko.";
-  return `${greeting} Ich habe die politische Lage geprüft. Wichtigstes Thema für dich ist heute ${top.title}. ${mentionSentence} ${riskSentence} ${officeCount ? `${officeCount} Auftrag kannst du direkt ans Büro geben.` : "Du musst heute nichts unnötig delegieren."}`;
+  return `${greeting} Ich habe die politische Lage geprüft. Wichtigstes Thema für dich ist heute ${top.title}. ${mentionSentence} ${riskSentence} ${officeCount ? `${officeCount} Entwurf${officeCount !== 1 ? "e" : ""} liegen im Büro bereit.` : "Im Büro gibt es noch keine Entwürfe für heute."}`;
 }
 
 function agentFacts() {
@@ -3098,7 +3098,7 @@ function agentFacts() {
   return [
     `${decisions.length} Entscheidungen`,
     `${freshMentionCount()} neue Erwähnungen`,
-    `${openOfficeTaskCount()} Büroaufträge`,
+    `${openOfficeTaskCount()} Büro-Entwürfe`,
     checked || successful ? `${successful}/${checked || successful} Quellen` : "Quellen vorbereitet"
   ];
 }
@@ -5621,20 +5621,20 @@ function freshMentionCount() {
 }
 
 function openOfficeTaskCount() {
-  return tasks.filter((task) => task.status !== "done").length;
+  return Object.keys(officeDrafts).length;
 }
 
 function actionableOfficeTaskCount() {
-  const actionableTasks = tasks.filter((task) => isActionableOfficeTask(task) && taskArticleSource(task));
+  const draftCount = Object.keys(officeDrafts).length;
+  if (!draftCount) return 0;
   const seenAt = getSeenOfficeTimestamp();
-  if (!seenAt) return actionableTasks.length;
-  return actionableTasks.filter((task) => taskTimestamp(task) > seenAt).length;
+  const briefingTs = new Date(briefing?.generatedAt || briefing?.date || 0).getTime();
+  return briefingTs > seenAt ? draftCount : 0;
 }
 
 function markOfficeSeen() {
-  const latest = latestOfficeTaskTimestamp();
   try {
-    window.localStorage.setItem(officeSeenStorageKeyForProfile(), String(latest || Date.now()));
+    window.localStorage.setItem(officeSeenStorageKeyForProfile(), String(Date.now()));
   } catch (error) {
     console.warn("Office seen state not saved", error);
   }
@@ -5646,18 +5646,6 @@ function getSeenOfficeTimestamp() {
   } catch {
     return 0;
   }
-}
-
-function latestOfficeTaskTimestamp() {
-  return Math.max(0, ...tasks
-    .filter((task) => isActionableOfficeTask(task) && taskArticleSource(task))
-    .map(taskTimestamp));
-}
-
-function taskTimestamp(task = {}) {
-  const value = task.createdAt || task.created_at || task.updatedAt || task.updated_at || task.dueDate || "";
-  const timestamp = new Date(value).getTime();
-  return Number.isNaN(timestamp) ? 0 : timestamp;
 }
 
 function officeSeenStorageKeyForProfile() {
