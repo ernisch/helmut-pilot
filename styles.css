@@ -6154,25 +6154,19 @@ body {
 }
 
 .mobile-dock .nav-helmut span {
-  width: 62px;
-  height: 62px;
-  border-color: rgba(249, 205, 127, .72);
+  width: 52px;
+  height: 52px;
+  border-color: rgba(249, 205, 127, .45);
   color: #fff;
-  background:
-    radial-gradient(circle at 50% 50%, rgba(249, 205, 127, .12), rgba(255, 255, 255, .035));
-  box-shadow:
-    0 0 0 7px rgba(249, 205, 127, .035),
-    0 0 30px rgba(249, 205, 127, .26);
-  font-size: 24px;
+  background: rgba(255, 255, 255, .04);
+  font-size: 22px;
   font-weight: 760;
 }
 
 .mobile-dock .nav-helmut.active span {
-  border-color: rgba(249, 205, 127, .94);
+  border-color: rgba(249, 205, 127, .90);
   background: rgba(249, 205, 127, .10);
-  box-shadow:
-    0 0 0 8px rgba(249, 205, 127, .045),
-    0 0 38px rgba(249, 205, 127, .36);
+  box-shadow: 0 0 20px rgba(249, 205, 127, .22);
 }
 
 @media (max-width: 680px) {
