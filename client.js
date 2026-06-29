@@ -1449,9 +1449,7 @@ function priorityChipClass(decision) {
 function renderDecisionActions(decision, primary) {
   return `
     <div class="lage-actions">
-      <button class="${primary ? "primary-button" : "secondary-button compact-button"}" type="button" data-communication="${escapeAttribute(decision.id)}">Reaktion vorbereiten</button>
       <button class="secondary-button compact-button" type="button" data-detail="${escapeAttribute(decision.id)}">Details</button>
-      <button class="secondary-button compact-button" type="button" data-lage-delegate="${escapeAttribute(decision.id)}">An Büro</button>
       <button class="lage-icon-btn" type="button" data-lage-done="${escapeAttribute(decision.id)}" aria-label="Als erledigt markieren" title="Erledigt">✓</button>
       <button class="lage-icon-btn" type="button" data-lage-ignore="${escapeAttribute(decision.id)}" aria-label="Ignorieren" title="Ignorieren">×</button>
     </div>`;
@@ -2098,7 +2096,6 @@ function renderDailyAgendaAnswer() {
       ${renderAgendaAnswerGrid(top, chance, risk, meeting)}
       <div class="daily-answer-actions">
         <button class="primary-button" type="button" data-detail="${escapeHtml(top.id)}">Empfehlung öffnen</button>
-        <button class="secondary-button" type="button" data-communication="${escapeHtml(top.id)}">Reaktion vorbereiten</button>
       </div>
     </section>
   `;
@@ -2217,7 +2214,6 @@ function renderAgendaPriority(decision) {
         </div>
         <p><b>Aktion:</b> ${escapeHtml(compactText(chiefRecommendationText(decision), 150))}</p>
       </div>
-      <button class="secondary-button compact-button" type="button" data-communication="${escapeHtml(decision.id)}">Reaktion vorbereiten</button>
     </article>
   `;
 }
