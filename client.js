@@ -4119,8 +4119,10 @@ function renderSettingsView() {
         </div>
         ${opsStatusLoaded ? `
         <div class="stg-row">
-          <span class="stg-row-label">Quellen</span>
-          <span class="stg-row-value">${escapeHtml(`${crawl?.checkedSources || 0} geprüft · ${crawl?.failedSources || 0} Fehler`)}</span>
+          <div style="flex:1;min-width:0">
+            <div class="stg-row-label">Quellen</div>
+            <div class="stg-row-sublabel">${escapeHtml(`${crawl?.checkedSources || 0} geprüft · ${crawl?.failedSources || 0} Fehler`)}</div>
+          </div>
           <button class="secondary-button compact-button stg-row-action" type="button" data-run-crawl>Prüfen</button>
         </div>
         <div class="stg-row">
