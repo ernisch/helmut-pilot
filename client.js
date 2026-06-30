@@ -1490,6 +1490,10 @@ function renderLageFocus() {
   }
   const top = active[0];
   const warumBullets = generateWarumBullets(top);
+  const readyFormats = activeOfficeFormats().filter((f) => officeDrafts[officeDraftKey(top, f)]);
+  const bueroLine = readyFormats.length
+    ? `<p class="lage-buero-ready">Helmut hat ${escapeHtml(readyFormats.map((f) => f.label).join(" · "))} vorbereitet</p>`
+    : "";
   return `
     <section class="lage-focus">
       <span class="lage-focus-chip ${priorityChipClass(top)}">Das zählt heute · ${escapeHtml(top.priorityLabel || "Reagieren")}</span>
@@ -1502,6 +1506,7 @@ function renderLageFocus() {
         </ul>
       </div>` : ""}
       ${renderDecisionActions(top, true)}
+      ${bueroLine}
     </section>`;
 }
 
