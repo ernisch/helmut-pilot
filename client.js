@@ -47,6 +47,7 @@ let currentUser = null;
 let allowedProfiles = [];
 let adminData = null;
 let adminDataLoaded = false;
+let adminLoadError = false;
 let dailyInputs = [];
 let dailyInputsLoaded = false;
 let parliamentItems = [];
@@ -297,6 +298,8 @@ async function loadBriefing() {
     saveCachedStartPayload(startPayload);
     restorePersistedView();
     render();
+    ensureViewData(currentView);
+    if (userRole() === "admin") ensureViewData("admin");
     loadParliament();
     generateOfficeDraftsInBackground();
   } catch (error) {
@@ -535,13 +538,20 @@ async function ensureViewData(view) {
     }
     render();
   }
-  if (view === "admin" && userRole() === "admin" && !adminDataLoaded) {
+  if (view === "admin" && !adminDataLoaded) {
     adminDataLoaded = true;
+    adminLoadError = false;
     try {
-      const response = await fetchWithTimeout(`/api/admin/overview?${apiScopeQuery()}`);
-      adminData = response.ok ? await response.json() : null;
+      const response = await fetchWithTimeout(`/api/admin/overview?${apiScopeQuery()}`, {}, 20000);
+      if (response.status === 401 || response.status === 403) {
+        adminLoadError = true;
+      } else {
+        adminData = response.ok ? await response.json() : null;
+        if (!adminData) adminLoadError = true;
+      }
     } catch (error) {
       adminDataLoaded = false;
+      adminLoadError = true;
       console.warn("Admin overview not loaded", error);
     }
     render();
@@ -783,6 +793,8 @@ async function switchPolitician(id) {
   radarArchiveLoaded = false;
   opsStatusLoaded = false;
   adminDataLoaded = false;
+  adminLoadError = false;
+  adminData = null;
   dailyInputsLoaded = false;
   csrfTokenPromise = null;
   try {
@@ -873,6 +885,15 @@ function renderDailyInputView() {
 function renderAdminView() {
   if (userRole() !== "admin") return `<section class="page-intro"><h1 class="hero-title">Kein Zugriff.</h1></section>`;
   if (!adminData) {
+    if (adminLoadError) {
+      return `
+        <section class="page-intro executive-intro">
+          <span class="eyebrow-line">Verwaltung</span>
+          <h1 class="hero-title">Admin</h1>
+          <p style="color:var(--muted-2);margin-bottom:16px">Admin-Daten konnten nicht geladen werden.</p>
+          <button class="secondary-button" type="button" data-reload-admin>Neu laden</button>
+        </section>`;
+    }
     return `
       <section class="page-intro executive-intro">
         <span class="eyebrow-line">Verwaltung</span>
@@ -4598,6 +4619,36 @@ function renderSettingsView() {
           <button class="secondary-button compact-button" type="button" data-test-push ${pushTestDisabled ? "disabled" : ""} style="flex-shrink:0;width:auto;padding:0 14px">Senden</button>
         </div>` : ""}
       </div>
+      ${isAccountMode() && currentUser ? (() => {
+        const ns = currentUser.notificationSettings || {};
+        const cats = [
+          { id: "briefing",   label: "Morgenbriefing",   sub: "Tägliche Zusammenfassung" },
+          { id: "lage",       label: "Lage",             sub: "Neue politische Entwicklungen" },
+          { id: "radar",      label: "Radar",            sub: "Neue Erwähnungen" },
+          { id: "crisis",     label: "Krisen",           sub: "Erkannte Risiken" },
+          { id: "opportunity",label: "Chancen",          sub: "Erkannte Möglichkeiten" },
+          { id: "statement",  label: "Statement",        sub: "Reaktionen empfohlen" }
+        ];
+        return `<div class="stg-group" style="margin-top:8px">
+          <div class="stg-row" style="padding-bottom:4px">
+            <span class="stg-row-label" style="font-weight:600;color:var(--text)">Kategorien</span>
+          </div>
+          ${cats.map(c => {
+            const on = ns[c.id] !== false;
+            return `<div class="stg-row">
+              <div style="flex:1;min-width:0">
+                <div class="stg-row-label">${escapeHtml(c.label)}</div>
+                <div class="stg-row-sublabel">${escapeHtml(c.sub)}</div>
+              </div>
+              <label class="stg-toggle">
+                <input type="checkbox" data-notif-toggle="${escapeAttribute(c.id)}" ${on ? "checked" : ""}/>
+                <span class="stg-toggle-track"></span>
+                <span class="stg-toggle-thumb"></span>
+              </label>
+            </div>`;
+          }).join("")}
+        </div>`;
+      })() : ""}
     </div>
 
     ${isAdmin ? `
@@ -5328,6 +5379,15 @@ function bindAccountActions() {
 }
 
 function bindActions() {
+  app.querySelectorAll("[data-reload-admin]").forEach((button) => {
+    button.addEventListener("click", () => {
+      adminDataLoaded = false;
+      adminLoadError = false;
+      render();
+      ensureViewData("admin");
+    });
+  });
+
   if (isAccountMode()) {
     try {
       bindAccountActions();
@@ -5815,6 +5875,28 @@ function bindActions() {
       } finally {
         button.disabled = false;
         button.textContent = originalText;
+      }
+    });
+  });
+
+  app.querySelectorAll("[data-notif-toggle]").forEach((el) => {
+    el.addEventListener("change", async () => {
+      const category = el.dataset.notifToggle;
+      const enabled = el.checked;
+      try {
+        const res = await apiSend("PATCH", `/api/user/notification-settings?${apiScopeQuery()}`, { [category]: enabled });
+        if (res.ok) {
+          if (currentUser) {
+            currentUser.notificationSettings = { ...(currentUser.notificationSettings || {}), [category]: enabled };
+          }
+          showToast("Gespeichert");
+        } else {
+          el.checked = !enabled;
+          showToast("Fehler beim Speichern");
+        }
+      } catch {
+        el.checked = !enabled;
+        showToast("Fehler beim Speichern");
       }
     });
   });

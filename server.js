@@ -328,6 +328,14 @@ async function handleRequest(request, response) {
     }));
   }
 
+  if (url.pathname === "/api/user/notification-settings" && request.method === "PATCH") {
+    if (!authUser) return sendUnauthorized(response);
+    return handleJson(request, response, async (body) => {
+      const updated = await accounts.updateUser(authUser.id, { notificationSettings: body });
+      return { ok: true, notificationSettings: updated.notificationSettings };
+    });
+  }
+
   if (url.pathname === "/api/storage/status") {
     return sendJson(response, getStorageStatus());
   }
