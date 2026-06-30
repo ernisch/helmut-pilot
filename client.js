@@ -3761,13 +3761,7 @@ function renderGeneratedCommunicationText(text) {
 }
 
 function renderCommunicationVariants(decision) {
-  const variants = [
-    ["Presse", channelFallbackStatement(decision, "press")],
-    ["LinkedIn", channelFallbackStatement(decision, "linkedin")],
-    ["X", channelFallbackStatement(decision, "x")],
-    ["Instagram", channelFallbackStatement(decision, "instagram")],
-    ["Ausschuss", channelFallbackStatement(decision, "committee_question")]
-  ];
+  const variants = activeOfficeFormats().map((f) => [f.label, channelFallbackStatement(decision, f.channel)]);
   return `
     <div class="statement-variants" aria-label="Statement Varianten">
       ${variants.map(([label, text]) => `
