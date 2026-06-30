@@ -7557,10 +7557,39 @@ details[open].meeting-detail summary::before { content: '▾ '; }
 }
 .buero-summary-sep { opacity: .4; }
 
+/* ── Priority hint ── */
+.buero-priority-hint {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted-2);
+  margin-bottom: 24px;
+  padding: 10px 14px;
+  background: rgba(100,116,139,.06);
+  border-radius: 12px;
+  border: 1px solid var(--line);
+}
+.buero-priority-label { font-weight: 600; color: var(--muted); }
+.buero-priority-value { color: var(--text); opacity: .8; }
+.buero-priority-sep { opacity: .35; }
+.buero-priority-optional { color: var(--muted-2); }
+
 /* ── Draft list ── */
 .buero-draft-list { display: grid; gap: 28px; }
 .buero-group { display: grid; gap: 10px; }
 .buero-group-title { font-size: 13px; font-weight: 700; color: var(--text); margin: 0 0 2px; padding-bottom: 10px; border-bottom: 1px solid var(--line); line-height: 1.3; }
+.buero-group-eyebrow {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+  opacity: .6;
+  margin-bottom: 3px;
+}
 
 /* ── Draft card ── */
 .buero-draft-card {
@@ -7660,8 +7689,18 @@ details[open].meeting-detail summary::before { content: '▾ '; }
 .buero-card-einordnung {
   font-size: 13px;
   color: var(--muted);
-  margin: 0;
+  margin: 0 0 4px;
   line-height: 1.4;
+}
+.buero-card-anlass {
+  font-size: 11px;
+  color: var(--muted-2);
+  margin: 0;
+  opacity: .6;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Card footer: source · readtime + copy button */
@@ -7684,6 +7723,28 @@ details[open].meeting-detail summary::before { content: '▾ '; }
   flex-wrap: wrap;
 }
 .buero-meta-sep { opacity: .4; }
+
+/* Entwurf prüfen button — primäre Kartenaktion */
+.buero-review-btn {
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -.005em;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 16px;
+  cursor: pointer;
+  flex-shrink: 0;
+  white-space: nowrap;
+  transition: background .12s, border-color .12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.buero-review-btn:hover { background: var(--paper); border-color: rgba(0,0,0,.15); }
+.buero-review-btn:active { transform: scale(.97); }
+.buero-review-btn:disabled { opacity: .4; pointer-events: none; }
 
 /* Kopieren button — outline, dezent, Apple-ähnlich */
 .buero-copy-btn {
@@ -7781,7 +7842,44 @@ details[open].meeting-detail summary::before { content: '▾ '; }
 }
 .buero-detail-body p:last-child { margin-bottom: 0; }
 
+.buero-detail-anlass {
+  font-size: 12px;
+  color: var(--muted-2);
+  margin: 4px 0 12px;
+  opacity: .7;
+}
 .buero-detail-footer { border-top: 1px solid var(--hairline); padding-top: 24px; }
+
+/* ── Qualitätscheck ── */
+.buero-quality-check {
+  margin: 28px 0;
+  padding: 16px 20px;
+  background: rgba(100,116,139,.06);
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  display: grid;
+  gap: 10px;
+}
+.buero-quality-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.buero-quality-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+  min-width: 56px;
+  flex-shrink: 0;
+  opacity: .7;
+}
+.buero-quality-value {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.4;
+}
 
 /* ── Animations ── */
 @keyframes bueroFadeIn {
