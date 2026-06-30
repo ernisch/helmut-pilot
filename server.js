@@ -9,7 +9,7 @@ const { cemInceProfile, demoRawItems, demoSources, generateBriefing } = require(
 const { getLatestOrDemoBriefing, runDailyPipeline, runLageCheck, runMorningBriefing, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { personalizeBriefing } = require("./lib/helmut/personalization");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, savePushSubscription, saveTask, saveUserNote, updateTaskStatus } = require("./lib/helmut/storage");
+const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, saveBriefing } = require("./lib/helmut/storage");
 const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled, activeModelName } = require("./lib/helmut/ai");
 const { pushStatus, sendBriefingReadyPush, sendLageChangePush, sendPushToPolitician } = require("./lib/helmut/push");
 const auth = require("./lib/helmut/auth");
@@ -615,6 +615,20 @@ async function handleRequest(request, response) {
   if (url.pathname === "/api/admin/overview") {
     if (!requireRoleOr403(response, authUser, "admin")) return undefined;
     return handleAsync(response, () => buildAdminOverview());
+  }
+
+  // PILOT TEMP: Einmaliger Hero-Text-Patch — entfernen nach Ausführung
+  if (url.pathname === "/api/admin/hero-patch" && request.method === "POST") {
+    if (!requireRoleOr403(response, authUser, "admin")) return undefined;
+    return handleAsync(response, async () => {
+      const briefing = await getLatestBriefing(politicianId);
+      if (!briefing?.helmutAssessment) throw new Error("Kein helmutAssessment gefunden.");
+      briefing.helmutAssessment.heroWhy      = "Betrifft deine Themen indirekt.";
+      briefing.helmutAssessment.heroRisk     = "Wirtschaftsnahe Deutung setzt sich fest.";
+      briefing.helmutAssessment.heroNextStep = "Gegenlinie vorbereiten.";
+      await saveBriefing(briefing);
+      return { ok: true, heroWhy: briefing.helmutAssessment.heroWhy, heroRisk: briefing.helmutAssessment.heroRisk, heroNextStep: briefing.helmutAssessment.heroNextStep };
+    });
   }
 
   const requestedPath = isAppEntryPath(url.pathname) ? "index.html" : url.pathname.replace(/^\/+/, "");
