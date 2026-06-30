@@ -20,6 +20,10 @@ const root = __dirname;
 const port = Number(process.env.PORT || 3000);
 // Erlaubte Feedback-Typen (Admin-Inbox). Bewusst schlank, kein freier Text-Typ.
 const FEEDBACK_TYPES = ["relevant", "nicht_relevant", "falsch", "mehr_davon", "weniger_davon", "unklar"];
+// Cache-Busting fuer styles.css/client.js. Leitet sich automatisch vom Deploy ab
+// (Vercel setzt VERCEL_GIT_COMMIT_SHA pro Deploy), damit ein neues Release nie mit
+// veralteten, gecachten Assets ausgeliefert wird. Fallback fuer lokal/ohne Vercel.
+const ASSET_VERSION = String(process.env.VERCEL_GIT_COMMIT_SHA || "").slice(0, 8) || "20260701-adminfix1";
 const contentTypes = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
@@ -1230,7 +1234,7 @@ function indexHtml() {
       :root[data-theme="light"] .splash-mark span,:root[data-theme="light"] .loading-mark span{color:#0f1729;text-shadow:none}
     </style>
     <script>(function(){try{var p=localStorage.getItem("helmut:theme")||"system";var t=p==="light"?"light":p==="dark"?"dark":((window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark");document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
-    <link rel="stylesheet" href="styles.css?v=20260624-faststart1" />
+    <link rel="stylesheet" href="styles.css?v=${ASSET_VERSION}" />
   </head>
   <body class="is-loading">
     <div class="app-splash" id="appSplash" aria-hidden="true">
@@ -1243,7 +1247,7 @@ function indexHtml() {
     </main>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="client.js?v=20260624-faststart1"></script>
+    <script src="client.js?v=${ASSET_VERSION}"></script>
   </body>
 </html>`;
 }
