@@ -3435,7 +3435,12 @@ function renderOfficeView() {
         <p class="buero-summary">${summaryText}</p>
       </header>
       <div class="buero-draft-list">
-        ${allCards.map(({ decision, format }, i) => renderOfficeDraftCard(decision, format, i)).join("")}
+        ${topDecisions.map((decision, di) => `
+          <div class="buero-group">
+            <h2 class="buero-group-title">${escapeHtml(draftTitle(decision))}</h2>
+            ${formats.map((format, fi) => renderOfficeDraftCard(decision, format, di * formats.length + fi)).join("")}
+          </div>
+        `).join("")}
       </div>
     </div>
   `;
