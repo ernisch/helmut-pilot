@@ -591,8 +591,9 @@ async function handleRequest(request, response) {
     return handleJson(request, response, async (body) => {
       const user = await accounts.updateUser(userId, body);
       // Deaktivierte Nutzer sofort ausloggen; bei Passwort-Reset bestehende
-      // Sessions ungueltig machen (neues Passwort erzwingt Neu-Login).
-      if (body.active === false || (body.password !== undefined && body.password !== "")) {
+      // Sessions ungueltig machen (neues Passwort erzwingt Neu-Login). Auch wenn
+      // der Status (gekuendigt/deaktiviert) den Login serverseitig gesperrt hat.
+      if (user.active === false || (body.password !== undefined && body.password !== "")) {
         await accounts.destroyUserSessions(userId);
       }
       const action = (body.password !== undefined && body.password !== "") ? "admin.user.password-reset" : "admin.user.update";

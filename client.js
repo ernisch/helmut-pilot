@@ -48,6 +48,7 @@ let allowedProfiles = [];
 let adminData = null;
 let adminDataLoaded = false;
 let adminLoadError = false;
+let expandedAdminUsers = new Set();
 let dailyInputs = [];
 let dailyInputsLoaded = false;
 let parliamentItems = [];
@@ -808,7 +809,37 @@ async function switchPolitician(id) {
 }
 
 function roleLabel(role) {
-  return ({ admin: "Admin", abgeordneter: "Abgeordnete:r", referent: "Referent:in" })[role] || role || "";
+  return ({ admin: "Admin", abgeordneter: "Abgeordnete:r", referent: "Referent:in", demo: "Demo" })[role] || role || "";
+}
+
+const USER_STATUS_OPTIONS = [
+  ["aktiv", "Aktiv"],
+  ["testphase", "Testphase"],
+  ["pausiert", "Pausiert"],
+  ["gekuendigt", "Gekündigt"],
+  ["deaktiviert", "Deaktiviert"]
+];
+
+const PAYMENT_STATUS_OPTIONS = [
+  ["none", "Nicht relevant"],
+  ["open", "Offen"],
+  ["paid", "Bezahlt"],
+  ["overdue", "Überfällig"]
+];
+
+function statusLabel(status) {
+  return (Object.fromEntries(USER_STATUS_OPTIONS))[status] || "Aktiv";
+}
+
+function paymentStatusLabel(status) {
+  return (Object.fromEntries(PAYMENT_STATUS_OPTIONS))[status] || "Nicht relevant";
+}
+
+function formatCreatedAt(isoDate) {
+  if (!isoDate) return "—";
+  const d = new Date(isoDate);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
 // Account-Leiste (Nutzer, Mandatsauswahl, Logout) fuer die Topbar im Account-Modus.
@@ -915,6 +946,8 @@ function renderAdminView() {
           ? `<span class="admin-pill billing-warn">⚠ ${billingDays}d noch</span>`
           : `<span class="admin-pill billing-overdue">✕ überfällig</span>`;
     const initials = (user.name || user.email || "?").split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+    const status = user.status || (user.active === false ? "deaktiviert" : "aktiv");
+    const isExpanded = expandedAdminUsers.has(user.id);
     return `
     <tr>
       <td data-label="Name">
@@ -927,16 +960,19 @@ function renderAdminView() {
         </div>
       </td>
       <td data-label="Rolle"><span class="admin-role-tag admin-role-${escapeAttribute(user.role)}">${escapeHtml(roleLabel(user.role))}</span></td>
-      <td data-label="Status">${user.active === false ? '<span class="admin-pill admin-pill-off">Inaktiv</span>' : '<span class="admin-pill admin-pill-on">Aktiv</span>'}</td>
+      <td data-label="Status"><span class="admin-status-tag admin-status-${escapeAttribute(status)}">${escapeHtml(statusLabel(status))}</span></td>
       <td data-label="Zuletzt aktiv" class="admin-last-login">${escapeHtml(formatLastLogin(user.lastLoginAt))}</td>
+      <td data-label="Erstellt am" class="admin-last-login">${escapeHtml(formatCreatedAt(user.createdAt))}</td>
       <td data-label="Bezahlt bis" class="billing-cell">
         ${billingBadge}
         <input type="date" class="billing-date-input" data-billing-user="${escapeAttribute(user.id)}" value="${user.paidUntil ? user.paidUntil.slice(0, 10) : ""}" title="Bezahlt bis" />
       </td>
       <td data-label="Aktion" class="admin-actions-cell">
+        <button class="account-logout admin-edit-toggle" type="button" data-admin-user-edit="${escapeAttribute(user.id)}">${isExpanded ? "Schließen" : "Bearbeiten"}</button>
         <button class="account-logout" type="button" data-toggle-user="${escapeAttribute(user.id)}" data-active="${user.active === false ? "0" : "1"}">${user.active === false ? "Aktivieren" : "Deaktivieren"}</button>
       </td>
-    </tr>`;
+    </tr>
+    ${isExpanded ? renderAdminUserEditRow(user, status) : ""}`;
   }).join("");
 
   const assignmentRows = (data.assignments || []).length
@@ -994,7 +1030,7 @@ function renderAdminView() {
             </div>
             <div class="admin-table-wrap">
               <table class="admin-table">
-                <thead><tr><th>Name</th><th>Rolle</th><th>Status</th><th>Zuletzt aktiv</th><th>Bezahlt bis</th><th></th></tr></thead>
+                <thead><tr><th>Name</th><th>Rolle</th><th>Status</th><th>Zuletzt aktiv</th><th>Erstellt am</th><th>Bezahlt bis</th><th></th></tr></thead>
                 <tbody>${userRows}</tbody>
               </table>
             </div>
@@ -1059,6 +1095,7 @@ function renderAdminView() {
               <select name="role" aria-label="Rolle">
                 <option value="abgeordneter">Abgeordnete:r</option>
                 <option value="referent">Referent:in</option>
+                <option value="demo">Demo</option>
                 <option value="admin">Administrator</option>
               </select>
               <div class="password-field">
@@ -1165,6 +1202,59 @@ function renderAdminView() {
 
     </div>
   `;
+}
+
+// Aufklappbares Bearbeiten-Panel je Nutzer: Status + Kundenfelder. Speichert
+// additiv via PATCH /api/admin/users/:id mit { status, customer }.
+function renderAdminUserEditRow(user, status) {
+  const c = user.customer || {};
+  const statusSelect = USER_STATUS_OPTIONS
+    .map(([value, label]) => `<option value="${value}" ${value === status ? "selected" : ""}>${escapeHtml(label)}</option>`)
+    .join("");
+  const paymentSelect = PAYMENT_STATUS_OPTIONS
+    .map(([value, label]) => `<option value="${value}" ${value === (c.paymentStatus || "none") ? "selected" : ""}>${escapeHtml(label)}</option>`)
+    .join("");
+  return `
+    <tr class="admin-edit-row">
+      <td colspan="7">
+        <form class="admin-customer-form" data-customer-form="${escapeAttribute(user.id)}">
+          <div class="admin-customer-grid">
+            <label class="admin-cust-field">
+              <span>Status</span>
+              <select name="status">${statusSelect}</select>
+            </label>
+            <label class="admin-cust-field">
+              <span>Zahlungsstatus</span>
+              <select name="paymentStatus">${paymentSelect}</select>
+            </label>
+            <label class="admin-cust-field">
+              <span>Preis pro Monat (€)</span>
+              <input name="pricePerMonth" type="number" min="0" step="1" value="${c.pricePerMonth ?? ""}" placeholder="z. B. 49" />
+            </label>
+            <label class="admin-cust-field">
+              <span>Startdatum</span>
+              <input name="startDate" type="date" value="${c.startDate ? escapeAttribute(c.startDate.slice(0, 10)) : ""}" />
+            </label>
+            <label class="admin-cust-field">
+              <span>Testphase bis</span>
+              <input name="trialUntil" type="date" value="${c.trialUntil ? escapeAttribute(c.trialUntil.slice(0, 10)) : ""}" />
+            </label>
+            <label class="admin-cust-field">
+              <span>Nächste Rechnung</span>
+              <input name="nextInvoice" type="date" value="${c.nextInvoice ? escapeAttribute(c.nextInvoice.slice(0, 10)) : ""}" />
+            </label>
+          </div>
+          <label class="admin-cust-field admin-cust-field--wide">
+            <span>Interne Notiz</span>
+            <textarea name="internalNote" rows="2" placeholder="Nur intern sichtbar">${escapeHtml(c.internalNote || "")}</textarea>
+          </label>
+          <div class="admin-customer-foot">
+            <button class="primary-button" type="submit">Speichern</button>
+            <small class="admin-form-error" data-customer-error="${escapeAttribute(user.id)}"></small>
+          </div>
+        </form>
+      </td>
+    </tr>`;
 }
 
 // Mandatsoptionen fuer Zuweisungen: vorhandene Profile + Abgeordneten-Mandate.
@@ -5315,6 +5405,54 @@ function bindAccountActions() {
         adminDataLoaded = false;
         await ensureViewData("admin");
         showToast(value ? `Bezahlt bis ${new Date(value).toLocaleDateString("de-DE")} gesetzt.` : "Abo-Datum entfernt.");
+      }
+    });
+  });
+
+  app.querySelectorAll("[data-admin-user-edit]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const id = button.dataset.adminUserEdit;
+      if (expandedAdminUsers.has(id)) expandedAdminUsers.delete(id);
+      else expandedAdminUsers.add(id);
+      render();
+    });
+  });
+
+  app.querySelectorAll("[data-customer-form]").forEach((form) => {
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const id = form.dataset.customerForm;
+      const err = app.querySelector(`[data-customer-error="${id}"]`);
+      if (err) err.textContent = "";
+      const fd = new FormData(form);
+      const priceRaw = String(fd.get("pricePerMonth") || "").trim();
+      const body = {
+        status: fd.get("status"),
+        customer: {
+          pricePerMonth: priceRaw === "" ? null : Number(priceRaw),
+          startDate: fd.get("startDate") || null,
+          trialUntil: fd.get("trialUntil") || null,
+          nextInvoice: fd.get("nextInvoice") || null,
+          paymentStatus: fd.get("paymentStatus"),
+          internalNote: String(fd.get("internalNote") || "")
+        }
+      };
+      const submitButton = form.querySelector('button[type="submit"]');
+      if (submitButton) { submitButton.disabled = true; submitButton.textContent = "Speichert…"; }
+      try {
+        const res = await apiSend("PATCH", `/api/admin/users/${encodeURIComponent(id)}?${apiScopeQuery()}`, body);
+        if (!res.ok) {
+          if (err) err.textContent = res.json?.error || "Speichern fehlgeschlagen.";
+          return;
+        }
+        expandedAdminUsers.delete(id);
+        adminDataLoaded = false;
+        await ensureViewData("admin");
+        showToast("Gespeichert");
+      } catch (error) {
+        if (err) err.textContent = "Netzwerkfehler.";
+      } finally {
+        if (submitButton) { submitButton.disabled = false; submitButton.textContent = "Speichern"; }
       }
     });
   });

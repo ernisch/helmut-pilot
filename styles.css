@@ -7300,6 +7300,107 @@ body {
   color: var(--chance);
 }
 
+.admin-role-demo {
+  background: rgba(148, 163, 184, .14);
+  color: var(--muted);
+}
+
+/* Status tags (mehrstufiger Kundenstatus) */
+.admin-status-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 3px 10px;
+  letter-spacing: .02em;
+  white-space: nowrap;
+}
+
+.admin-status-aktiv { background: rgba(57, 209, 143, .16); color: var(--chance); }
+.admin-status-testphase { background: rgba(111, 143, 247, .16); color: var(--accent-ink); }
+.admin-status-pausiert { background: rgba(251, 191, 36, .16); color: #fbbf24; }
+.admin-status-gekuendigt { background: rgba(255, 89, 103, .16); color: var(--danger); }
+.admin-status-deaktiviert { background: rgba(148, 163, 184, .12); color: var(--muted); }
+
+/* Bearbeiten-Panel (aufklappbare Zeile) */
+.admin-edit-row > td {
+  padding: 0 20px 18px !important;
+  background: rgba(255, 255, 255, .015);
+}
+
+.admin-customer-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 0 4px;
+  border-top: 1px solid var(--hairline);
+}
+
+.admin-customer-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.admin-cust-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.admin-cust-field > span {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--muted-2);
+}
+
+.admin-cust-field--wide { width: 100%; }
+
+.admin-customer-form input,
+.admin-customer-form select,
+.admin-customer-form textarea {
+  background: rgba(255, 255, 255, .04);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 13.5px;
+  color: var(--text);
+  font-family: inherit;
+  transition: border-color .15s ease;
+  width: 100%;
+}
+
+.admin-customer-form input:focus,
+.admin-customer-form select:focus,
+.admin-customer-form textarea:focus {
+  outline: none;
+  border-color: rgba(111, 143, 247, .5);
+}
+
+.admin-customer-form textarea { resize: vertical; }
+
+.admin-customer-foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-customer-foot .primary-button {
+  width: auto;
+  padding: 0 20px;
+}
+
+.admin-edit-toggle { margin-bottom: 6px; }
+
+@media (max-width: 720px) {
+  .admin-edit-row { border: 1px solid var(--hairline); border-radius: 12px; margin-bottom: 12px; }
+  .admin-edit-row > td { display: block; padding: 0 14px 14px !important; }
+  .admin-edit-row > td::before { display: none; }
+  .admin-customer-grid { grid-template-columns: 1fr; }
+}
+
 /* Create form field groups */
 .admin-field-group {
   display: flex;
