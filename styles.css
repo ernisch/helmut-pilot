@@ -7057,10 +7057,43 @@ body {
   .admin-table td.admin-actions-cell::before {
     display: none;
   }
+  .admin-table td.admin-actions-cell {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
   .admin-table td.admin-actions-cell .account-logout {
-    width: 100%;
+    flex: 1 1 calc(50% - 4px);
+    width: auto;
+    margin: 0;
     padding: 10px;
     font-size: 13px;
+  }
+  /* "Bezahlt bis": Label auf eigener Zeile, Inhalt darunter ausgerichtet. */
+  .admin-table td.billing-cell {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    text-align: left;
+  }
+  .admin-table td.billing-cell::before {
+    flex: 1 1 100%;
+  }
+  .admin-table td.billing-cell .billing-date-input {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 150px;
+    margin-top: 0;
+  }
+  /* Inline-Formulare (Passwort zuruecksetzen, Zuweisen) sauber stapeln. */
+  .admin-inline-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .admin-inline-form > * {
+    width: 100%;
+  }
+  .admin-inline-form .password-field {
+    width: 100%;
+    min-width: 0;
   }
 }
 
@@ -7396,7 +7429,7 @@ body {
 
 @media (max-width: 720px) {
   .admin-edit-row { border: 1px solid var(--hairline); border-radius: 12px; margin-bottom: 12px; }
-  .admin-edit-row > td { display: block; padding: 0 14px 14px !important; }
+  .admin-edit-row > td { display: block; padding: 0 14px 14px !important; text-align: left; }
   .admin-edit-row > td::before { display: none; }
   .admin-customer-grid { grid-template-columns: 1fr; }
 }
@@ -7441,6 +7474,13 @@ body {
 }
 
 .admin-create-form input::placeholder { color: var(--muted-2); }
+
+/* Passwortfeld: rechtes Padding fuer den "Anzeigen"-Button wiederherstellen.
+   (Die Form-Regeln oben setzen padding und ueberschreiben .password-field input.) */
+.admin-create-form .password-field input,
+.admin-inline-form .password-field input {
+  padding-right: 92px;
+}
 
 /* System info grid */
 .admin-sys-grid {
