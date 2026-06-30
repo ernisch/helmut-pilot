@@ -2410,7 +2410,7 @@ small {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.stg-row-action { flex-shrink: 0; }
+.stg-row-action { flex-shrink: 0; width: auto; }
 .stg-row-chevron {
   color: var(--muted-2);
   font-size: 12px;
