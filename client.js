@@ -872,19 +872,28 @@ function renderAdminView() {
         : billingDays >= 0
           ? `<span class="admin-pill billing-warn">⚠ ${billingDays}d noch</span>`
           : `<span class="admin-pill billing-overdue">✕ überfällig</span>`;
+    const initials = (user.name || user.email || "?").split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
     return `
     <tr>
-      <td data-label="Name">${escapeHtml(user.name || "")}</td>
-      <td data-label="E-Mail">${escapeHtml(user.email || "")}</td>
-      <td data-label="Rolle">${escapeHtml(roleLabel(user.role))}${user.politicianId ? `<br><small>${escapeHtml(user.politicianId)}</small>` : ""}</td>
-      <td data-label="Status">${user.active === false ? '<span class="admin-pill admin-pill-off">inaktiv</span>' : '<span class="admin-pill admin-pill-on">aktiv</span>'}</td>
+      <td data-label="Name">
+        <div class="admin-user-cell">
+          <span class="admin-avatar">${escapeHtml(initials)}</span>
+          <div class="admin-user-info">
+            <strong class="admin-user-name">${escapeHtml(user.name || "")}</strong>
+            <span class="admin-user-email">${escapeHtml(user.email || "")}</span>
+          </div>
+        </div>
+      </td>
+      <td data-label="Rolle"><span class="admin-role-tag admin-role-${escapeAttribute(user.role)}">${escapeHtml(roleLabel(user.role))}</span></td>
+      <td data-label="Status">${user.active === false ? '<span class="admin-pill admin-pill-off">Inaktiv</span>' : '<span class="admin-pill admin-pill-on">Aktiv</span>'}</td>
       <td data-label="Bezahlt bis" class="billing-cell">
         ${billingBadge}
         <input type="date" class="billing-date-input" data-billing-user="${escapeAttribute(user.id)}" value="${user.paidUntil ? user.paidUntil.slice(0, 10) : ""}" title="Bezahlt bis" />
       </td>
-      <td data-label="Aktion" class="admin-actions-cell"><button class="account-logout" type="button" data-toggle-user="${escapeAttribute(user.id)}" data-active="${user.active === false ? "0" : "1"}">${user.active === false ? "Aktivieren" : "Deaktivieren"}</button></td>
-    </tr>
-  `;
+      <td data-label="Aktion" class="admin-actions-cell">
+        <button class="account-logout" type="button" data-toggle-user="${escapeAttribute(user.id)}" data-active="${user.active === false ? "0" : "1"}">${user.active === false ? "Aktivieren" : "Deaktivieren"}</button>
+      </td>
+    </tr>`;
   }).join("");
 
   const assignmentRows = (data.assignments || []).length
@@ -903,97 +912,161 @@ function renderAdminView() {
   const sys = data.system || {};
 
   return `
-    <section class="page-intro executive-intro">
-      <span class="eyebrow-line">Verwaltung</span>
-      <h1 class="hero-title">Admin</h1>
-      <p>${data.counts.users} Nutzer · ${data.counts.abgeordnete} Abgeordnete · ${data.counts.referenten} Referent:innen · ${data.counts.profiles} Profile</p>
-    </section>
+    <div class="admin-page">
 
-    <div class="admin-grid">
-      <div class="admin-card">
-        <h3>Nutzer</h3>
-        <div class="admin-table-wrap">
-          <table class="admin-table">
-            <thead><tr><th>Name</th><th>E-Mail</th><th>Rolle</th><th>Status</th><th>Bezahlt bis</th><th></th></tr></thead>
-            <tbody>${userRows}</tbody>
-          </table>
+      <header class="admin-header">
+        <span class="eyebrow-line">Verwaltung</span>
+        <h1 class="admin-title">Admin</h1>
+        <p class="admin-subtitle">Nutzer, Rollen und Zuweisungen verwalten.</p>
+      </header>
+
+      <div class="admin-stats-row">
+        <div class="admin-stat-card">
+          <span class="admin-stat-num">${data.counts?.users ?? 0}</span>
+          <span class="admin-stat-label">Nutzer</span>
         </div>
-        <form class="admin-inline-form" id="resetPasswordForm">
-          <select name="userId" aria-label="Nutzer">
-            ${(data.users || []).map((user) => `<option value="${escapeAttribute(user.id)}">${escapeHtml(user.name || user.email)}</option>`).join("")}
-          </select>
-          <div class="password-field" style="flex:1; min-width:160px;">
-            <input name="password" id="resetPasswordInput" type="password" placeholder="Neues Passwort (min. 8)" aria-label="Neues Passwort" autocomplete="new-password" />
-            <button type="button" class="password-toggle" data-toggle-password="resetPasswordInput" aria-label="Passwort anzeigen">Anzeigen</button>
+        <div class="admin-stat-card">
+          <span class="admin-stat-num">${data.counts?.abgeordnete ?? 0}</span>
+          <span class="admin-stat-label">Abgeordnete</span>
+        </div>
+        <div class="admin-stat-card">
+          <span class="admin-stat-num">${data.counts?.referenten ?? 0}</span>
+          <span class="admin-stat-label">Referent:innen</span>
+        </div>
+        <div class="admin-stat-card">
+          <span class="admin-stat-num">${data.counts?.profiles ?? 0}</span>
+          <span class="admin-stat-label">Profile</span>
+        </div>
+      </div>
+
+      <div class="admin-body">
+        <div class="admin-col-primary">
+
+          <div class="admin-card admin-card-flush">
+            <div class="admin-card-header">
+              <div>
+                <h2 class="admin-section-title">Nutzerverwaltung</h2>
+                <p class="admin-section-sub">Alle Nutzer im System</p>
+              </div>
+            </div>
+            <div class="admin-table-wrap">
+              <table class="admin-table">
+                <thead><tr><th>Name</th><th>Rolle</th><th>Status</th><th>Bezahlt bis</th><th></th></tr></thead>
+                <tbody>${userRows}</tbody>
+              </table>
+            </div>
+            <div class="admin-subsection">
+              <p class="admin-subsection-label">Passwort zurücksetzen</p>
+              <form class="admin-inline-form" id="resetPasswordForm">
+                <select name="userId" aria-label="Nutzer">
+                  ${(data.users || []).map((user) => `<option value="${escapeAttribute(user.id)}">${escapeHtml(user.name || user.email)}</option>`).join("")}
+                </select>
+                <div class="password-field" style="flex:1; min-width:160px;">
+                  <input name="password" id="resetPasswordInput" type="password" placeholder="Neues Passwort (min. 8)" aria-label="Neues Passwort" autocomplete="new-password" />
+                  <button type="button" class="password-toggle" data-toggle-password="resetPasswordInput" aria-label="Passwort anzeigen">Anzeigen</button>
+                </div>
+                <button class="secondary-button" type="submit">Zurücksetzen</button>
+              </form>
+              <small class="admin-form-error" id="resetPasswordError"></small>
+            </div>
           </div>
-          <button class="secondary-button" type="submit">Passwort zurücksetzen</button>
-        </form>
-        <small class="admin-form-error" id="resetPasswordError"></small>
-      </div>
 
-      <form class="admin-card admin-form" id="createUserForm">
-        <h3>Nutzer anlegen</h3>
-        <input name="name" type="text" placeholder="Name" aria-label="Name" required />
-        <input name="email" type="email" placeholder="E-Mail" aria-label="E-Mail" required />
-        <select name="role" aria-label="Rolle">
-          <option value="abgeordneter">Abgeordnete:r</option>
-          <option value="referent">Referent:in</option>
-          <option value="admin">Admin</option>
-        </select>
-        <div class="password-field">
-          <input name="password" id="createUserPassword" type="password" placeholder="Passwort (min. 8 Zeichen)" aria-label="Passwort" autocomplete="new-password" required />
-          <button type="button" class="password-toggle" data-toggle-password="createUserPassword" aria-label="Passwort anzeigen">Anzeigen</button>
+          <div class="admin-card admin-card-flush">
+            <div class="admin-card-header">
+              <div>
+                <h2 class="admin-section-title">Zuweisungen</h2>
+                <p class="admin-section-sub">Referent:in → Mandat</p>
+              </div>
+            </div>
+            <div class="admin-table-wrap">
+              <table class="admin-table">
+                <thead><tr><th>Referent:in</th><th>Mandat</th><th></th></tr></thead>
+                <tbody>${assignmentRows}</tbody>
+              </table>
+            </div>
+            <div class="admin-subsection">
+              <p class="admin-subsection-label">Neue Zuweisung</p>
+              <form class="admin-inline-form" id="assignForm">
+                <select name="userId" aria-label="Referent:in">
+                  ${referenten.map((user) => `<option value="${escapeAttribute(user.id)}">${escapeHtml(user.name || user.email)}</option>`).join("") || `<option value="">— keine Referent:innen —</option>`}
+                </select>
+                <select name="politicianId" aria-label="Mandat">
+                  ${mandateOptions.map((entry) => `<option value="${escapeAttribute(entry.id)}">${escapeHtml(entry.name)}</option>`).join("")}
+                </select>
+                <button class="primary-button" type="submit">Zuweisen</button>
+              </form>
+              <small class="admin-form-error" id="assignError"></small>
+            </div>
+          </div>
+
         </div>
-        <div class="admin-quickstart">
-          <p class="admin-quickstart-hint">Schnellstart (optional, nur für Abgeordnete) — damit Helmut sofort passend personalisiert:</p>
-          <input name="party" type="text" placeholder="Partei / Fraktion" aria-label="Partei" />
-          <input name="committee" type="text" placeholder="Ausschuss" aria-label="Ausschuss" />
-          <input name="constituency" type="text" placeholder="Wahlkreis" aria-label="Wahlkreis" />
-          <input name="state" type="text" placeholder="Bundesland" aria-label="Bundesland" />
-          <input name="focusTopics" type="text" placeholder="Schwerpunktthemen (Komma-getrennt)" aria-label="Schwerpunktthemen" />
+
+        <div class="admin-col-secondary">
+
+          <form class="admin-card admin-card-flush admin-create-form" id="createUserForm">
+            <div class="admin-card-header">
+              <div>
+                <h2 class="admin-section-title">Nutzer anlegen</h2>
+                <p class="admin-section-sub">Neuen Nutzer im System erstellen</p>
+              </div>
+            </div>
+            <div class="admin-field-group">
+              <input name="name" type="text" placeholder="Vollständiger Name" aria-label="Name" required />
+              <input name="email" type="email" placeholder="name@bundestag.de" aria-label="E-Mail" required />
+              <select name="role" aria-label="Rolle">
+                <option value="abgeordneter">Abgeordnete:r</option>
+                <option value="referent">Referent:in</option>
+                <option value="admin">Administrator</option>
+              </select>
+              <div class="password-field">
+                <input name="password" id="createUserPassword" type="password" placeholder="Mind. 8 Zeichen" aria-label="Passwort" autocomplete="new-password" required />
+                <button type="button" class="password-toggle" data-toggle-password="createUserPassword" aria-label="Passwort anzeigen">Anzeigen</button>
+              </div>
+            </div>
+            <div class="admin-quickstart">
+              <p class="admin-quickstart-hint">Schnellstart <span class="admin-quickstart-opt">(optional)</span></p>
+              <input name="party" type="text" placeholder="Partei / Fraktion" aria-label="Partei" />
+              <input name="committee" type="text" placeholder="Ausschuss" aria-label="Ausschuss" />
+              <input name="constituency" type="text" placeholder="Wahlkreis" aria-label="Wahlkreis" />
+              <input name="state" type="text" placeholder="Bundesland" aria-label="Bundesland" />
+              <input name="focusTopics" type="text" placeholder="Schwerpunktthemen (Komma-getrennt)" aria-label="Schwerpunktthemen" />
+            </div>
+            <div class="admin-form-foot">
+              <button class="primary-button" type="submit">Nutzer erstellen</button>
+              <small class="admin-form-error" id="createUserError"></small>
+            </div>
+          </form>
+
+          <div class="admin-card">
+            <h2 class="admin-section-title">System</h2>
+            <div class="admin-sys-grid">
+              <div class="admin-sys-item"><span class="admin-sys-key">Speicher</span><span class="admin-sys-val">${escapeHtml(sys.storage?.backend || "?")}${sys.storage?.supabaseConfigured ? " ✓" : ""}</span></div>
+              <div class="admin-sys-item"><span class="admin-sys-key">AI</span><span class="admin-sys-val">${sys.ai?.enabled ? "Aktiv" : "Aus"}</span></div>
+              <div class="admin-sys-item"><span class="admin-sys-key">Modell</span><span class="admin-sys-val">${escapeHtml(sys.ai?.model || "—")}</span></div>
+              <div class="admin-sys-item"><span class="admin-sys-key">Push</span><span class="admin-sys-val">${sys.push?.enabled ? "Aktiv" : "Aus"}</span></div>
+              <div class="admin-sys-item"><span class="admin-sys-key">Auth</span><span class="admin-sys-val">${sys.authMode ? "Accounts" : "Pilot"}</span></div>
+              <div class="admin-sys-item"><span class="admin-sys-key">Briefings</span><span class="admin-sys-val">${escapeHtml(String(sys.store?.briefings?.total ?? "—"))}</span></div>
+            </div>
+          </div>
+
         </div>
-        <button class="primary-button" type="submit">Anlegen</button>
-        <small class="admin-form-error" id="createUserError"></small>
-      </form>
+      </div>
 
-      <div class="admin-card">
-        <h3>Zuweisungen (Referent:in → Mandat)</h3>
-        <div class="admin-table-wrap">
-          <table class="admin-table">
-            <thead><tr><th>Referent:in</th><th>Mandat</th><th></th></tr></thead>
-            <tbody>${assignmentRows}</tbody>
-          </table>
+      <div class="admin-bottom-row">
+        <div class="admin-card">
+          <h2 class="admin-section-title">Letzte Fehler</h2>
+          <div class="admin-log-list">
+            ${errors.length ? errors.map((entry) => `<p class="admin-log-line"><small>${escapeHtml(formatBriefingDate(entry.createdAt))}</small> [${escapeHtml(entry.scope || "")}] ${escapeHtml(entry.message || "")}</p>`).join("") : `<p class="empty-state">Keine Fehler protokolliert.</p>`}
+          </div>
         </div>
-        <form class="admin-inline-form" id="assignForm">
-          <select name="userId" aria-label="Referent:in">
-            ${referenten.map((user) => `<option value="${escapeAttribute(user.id)}">${escapeHtml(user.name || user.email)}</option>`).join("") || `<option value="">— keine Referent:innen —</option>`}
-          </select>
-          <select name="politicianId" aria-label="Mandat">
-            ${mandateOptions.map((entry) => `<option value="${escapeAttribute(entry.id)}">${escapeHtml(entry.name)}</option>`).join("")}
-          </select>
-          <button class="secondary-button" type="submit">Zuweisen</button>
-        </form>
-        <small class="admin-form-error" id="assignError"></small>
+        <div class="admin-card">
+          <h2 class="admin-section-title">Audit-Log</h2>
+          <div class="admin-log-list">
+            ${audit.length ? audit.map((entry) => `<p class="admin-log-line"><small>${escapeHtml(formatBriefingDate(entry.createdAt))}</small> ${escapeHtml(entry.action || "")}${entry.actorEmail ? ` · ${escapeHtml(entry.actorEmail)}` : ""}${entry.politicianId ? ` · ${escapeHtml(entry.politicianId)}` : ""}</p>`).join("") : `<p class="empty-state">Noch keine Ereignisse.</p>`}
+          </div>
+        </div>
       </div>
 
-      <div class="admin-card">
-        <h3>System</h3>
-        <p>Speicher: <b>${escapeHtml(sys.storage?.backend || "?")}</b>${sys.storage?.supabaseConfigured ? " (Supabase konfiguriert)" : ""}</p>
-        <p>AI: <b>${sys.ai?.enabled ? "aktiv" : "aus"}</b> · Modell ${escapeHtml(sys.ai?.model || "—")}</p>
-        <p>Push: <b>${sys.push?.enabled ? "aktiv" : "aus"}</b></p>
-        <p>Auth-Modus: <b>${sys.authMode ? "Accounts" : "Pilot"}</b></p>
-        <p>Briefings gesamt: <b>${escapeHtml(String(sys.store?.briefings?.total ?? "—"))}</b> · Quellen aktiv: <b>${escapeHtml(String(sys.store?.sources?.active ?? "—"))}</b></p>
-      </div>
-
-      <div class="admin-card">
-        <h3>Letzte Fehler</h3>
-        ${errors.length ? errors.map((entry) => `<p class="admin-log-line"><small>${escapeHtml(formatBriefingDate(entry.createdAt))}</small> [${escapeHtml(entry.scope || "")}] ${escapeHtml(entry.message || "")}</p>`).join("") : `<p class="empty-state">Keine Fehler protokolliert.</p>`}
-      </div>
-
-      <div class="admin-card">
-        <h3>Audit-Log</h3>
-        ${audit.length ? audit.map((entry) => `<p class="admin-log-line"><small>${escapeHtml(formatBriefingDate(entry.createdAt))}</small> ${escapeHtml(entry.action || "")}${entry.actorEmail ? ` · ${escapeHtml(entry.actorEmail)}` : ""}${entry.politicianId ? ` · ${escapeHtml(entry.politicianId)}` : ""}</p>`).join("") : `<p class="empty-state">Noch keine Ereignisse.</p>`}
-      </div>
     </div>
   `;
 }
@@ -1243,6 +1316,9 @@ function hideStartupSplash() {
 }
 
 function renderSidebar() {
+  const displayName = currentUser?.name || profile?.fullName || "Profil";
+  const displayRole = currentUser ? roleLabel(currentUser.role) : (profile?.function || "MdB");
+  const initials = displayName.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
   return `
     <aside class="sidebar ${navOpen ? "open" : ""}">
       <div>
@@ -1258,7 +1334,13 @@ function renderSidebar() {
       </div>
       <div class="sidebar-foot">
         ${renderAccountBar()}
-        <p>${escapeHtml(profile?.fullName || "Profil")}<br><span>${escapeHtml(profile?.function || "MdB")}</span></p>
+        <div class="sidebar-user-card">
+          <div class="sidebar-user-avatar">${escapeHtml(initials)}</div>
+          <div class="sidebar-user-info">
+            <strong>${escapeHtml(displayName)}</strong>
+            <span>${escapeHtml(displayRole)}</span>
+          </div>
+        </div>
         ${isAccountMode() && currentUser ? `<button class="account-logout sidebar-logout" type="button" data-logout>Abmelden</button>` : ""}
       </div>
     </aside>
