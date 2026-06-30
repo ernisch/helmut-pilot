@@ -18,6 +18,9 @@ let navOpen = false;
 let updatesOpen = false;
 let helmutThinking = false;
 let helmutThinkingTimer = null;
+let pipelineRunning = false;
+let pipelineRunStep = 0;
+let pipelineStepTimer = null;
 let helmutTypingActive = false;
 let helmutTypedText = "";
 let helmutTypingFullText = "";
@@ -1920,6 +1923,23 @@ function renderHelmutView() {
 }
 
 function renderHelmutThinkingView() {
+  if (pipelineRunning) {
+    const stepLabel = PIPELINE_STEPS[pipelineRunStep] || PIPELINE_STEPS[PIPELINE_STEPS.length - 1];
+    const pct = Math.round(((pipelineRunStep + 0.5) / PIPELINE_STEPS.length) * 100);
+    const stepsHtml = PIPELINE_STEPS.map((label, i) => {
+      const done = i < pipelineRunStep;
+      const active = i === pipelineRunStep;
+      return `<span class="pipeline-step ${done ? "done" : active ? "active" : ""}">${done ? "✓ " : active ? "· " : "  "}${escapeHtml(label)}</span>`;
+    }).join("");
+    return `
+      <section class="helmut-thinking-screen" aria-label="Helmut aktualisiert">
+        <div class="helmut-core" aria-hidden="true">H</div>
+        <h1>${escapeHtml(stepLabel)} …</h1>
+        <div class="pipeline-progress-bar"><div class="pipeline-progress-fill" style="width:${pct}%"></div></div>
+        <div class="helmut-checks pipeline-steps">${stepsHtml}</div>
+      </section>
+    `;
+  }
   const time = formatBerlinTimeOnly();
   return `
     <section class="helmut-thinking-screen" aria-label="Helmut analysiert">
@@ -4999,8 +5019,7 @@ function bindActions() {
   app.querySelectorAll("[data-refresh-helmut]").forEach((button) => {
     button.addEventListener("click", () => {
       currentView = "helmut";
-      startHelmutThinking();
-      render();
+      startPipelineRun();
     });
   });
 
@@ -5413,6 +5432,57 @@ function startHelmutThinking() {
     helmutThinkingTimer = null;
     if (currentView === "helmut") startHelmutTyping();
   }, 1400);
+}
+
+const PIPELINE_STEPS = [
+  "Quellen werden gecrawlt",
+  "Artikel werden gefiltert",
+  "Relevanz wird bewertet",
+  "Briefing wird generiert",
+  "Einschätzung wird verfasst",
+];
+const PIPELINE_STEP_MS = 18000;
+
+function startPipelineRun() {
+  if (pipelineRunning) return;
+  pipelineRunning = true;
+  pipelineRunStep = 0;
+  helmutThinking = true;
+  stopHelmutTyping();
+  render();
+  schedulePipelineStep();
+  executePipelineRun();
+}
+
+function schedulePipelineStep() {
+  if (pipelineStepTimer) window.clearTimeout(pipelineStepTimer);
+  pipelineStepTimer = window.setTimeout(() => {
+    if (!pipelineRunning) return;
+    pipelineRunStep = Math.min(pipelineRunStep + 1, PIPELINE_STEPS.length - 1);
+    render();
+    if (pipelineRunStep < PIPELINE_STEPS.length - 1) schedulePipelineStep();
+  }, PIPELINE_STEP_MS);
+}
+
+async function executePipelineRun() {
+  try {
+    const response = await fetchWithTimeout(`/api/pipeline/run?${apiScopeQuery()}`, {}, 90000);
+    const result = response.ok ? await response.json() : null;
+    finishPipelineRun(result?.skippedReason ? "Letzter Lauf wird genutzt" : "Helmut ist aktualisiert");
+  } catch {
+    finishPipelineRun("Wird fertiggestellt — lädt gleich neu");
+    window.setTimeout(async () => { await loadBriefing(); render(); }, 20000);
+  }
+}
+
+async function finishPipelineRun(toastMsg) {
+  pipelineRunning = false;
+  pipelineRunStep = 0;
+  if (pipelineStepTimer) { window.clearTimeout(pipelineStepTimer); pipelineStepTimer = null; }
+  showToast(toastMsg);
+  await loadBriefing();
+  helmutThinking = false;
+  render();
 }
 
 function shouldStartHelmutFlow() {
