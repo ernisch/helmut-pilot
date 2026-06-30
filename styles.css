@@ -2469,6 +2469,48 @@ small {
   color: var(--muted-2);
   margin: 8px 0 32px;
 }
+/* iOS-style toggle */
+.stg-toggle {
+  position: relative;
+  width: 51px;
+  height: 31px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.stg-toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.stg-toggle-track {
+  position: absolute;
+  inset: 0;
+  background: rgba(245, 241, 232, .18);
+  border-radius: 999px;
+  transition: background .2s;
+}
+.stg-toggle input:checked ~ .stg-toggle-track {
+  background: #34c759;
+}
+.stg-toggle input:disabled ~ .stg-toggle-track {
+  opacity: .4;
+}
+.stg-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 27px;
+  height: 27px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0,0,0,.35);
+  transition: transform .2s;
+  pointer-events: none;
+}
+.stg-toggle input:checked ~ .stg-toggle-thumb {
+  transform: translateX(20px);
+}
 
 .row-actions {
   display: flex;

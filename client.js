@@ -4109,12 +4109,21 @@ function renderSettingsView() {
       <span class="stg-label">Mitteilungen</span>
       <div class="stg-group">
         <div class="stg-row">
-          <span class="stg-row-label">${escapeHtml(pushStatusTitle(push, pushSupported))}</span>
-          <div class="row-actions stg-row-action">
-            <button class="secondary-button compact-button" type="button" data-enable-push>${escapeHtml(pushPermissionButtonLabel(push))}</button>
-            ${isAdmin ? `<button class="secondary-button compact-button" type="button" data-test-push ${pushTestDisabled ? "disabled" : ""}>Test</button>` : ""}
+          <div style="flex:1;min-width:0">
+            <div class="stg-row-label">Push-Benachrichtigungen</div>
+            ${pushBlocked ? `<div class="stg-row-sublabel">In den Browser-Einstellungen erlauben</div>` : ""}
           </div>
+          <label class="stg-toggle">
+            <input type="checkbox" data-enable-push ${push.enabled && pushPermissionState() === "granted" ? "checked" : ""} ${!pushSupported || pushBlocked ? "disabled" : ""}/>
+            <span class="stg-toggle-track"></span>
+            <span class="stg-toggle-thumb"></span>
+          </label>
         </div>
+        ${isAdmin ? `
+        <div class="stg-row">
+          <span class="stg-row-label">Testbenachrichtigung</span>
+          <button class="secondary-button compact-button stg-row-action" type="button" data-test-push ${pushTestDisabled ? "disabled" : ""}>Senden</button>
+        </div>` : ""}
       </div>
     </div>
 
@@ -5246,19 +5255,17 @@ function bindActions() {
     });
   });
 
-  app.querySelectorAll("[data-enable-push]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      button.disabled = true;
-      const originalText = button.textContent;
-      button.textContent = "Aktiviere...";
+  app.querySelectorAll("[data-enable-push]").forEach((el) => {
+    el.addEventListener("click", async (e) => {
+      e.preventDefault();
+      el.disabled = true;
       try {
         await enablePushNotifications();
       } catch (error) {
         console.error(error);
         showToast("Push konnte nicht aktiviert werden");
       } finally {
-        button.disabled = false;
-        button.textContent = originalText;
+        el.disabled = false;
         render();
       }
     });
