@@ -473,7 +473,7 @@ async function handleRequest(request, response) {
     if (previewMode) return sendPreviewReadOnly(response);
     const taskId = decodeURIComponent(url.pathname.replace("/api/tasks/", ""));
     return handleJson(request, response, async (body) => {
-      const task = await updateTaskStatus(taskId, body.status);
+      const task = await updateTaskStatus(taskId, body.status, politicianId);
       if (!task) {
         response.writeHead(404, { "Content-Type": "application/json; charset=utf-8" });
         response.end(JSON.stringify({ error: "Task not found" }, null, 2));
