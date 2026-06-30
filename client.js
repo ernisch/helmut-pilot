@@ -1573,7 +1573,7 @@ function renderBriefingView() {
     <p class="lage-more-label">Mehr, wenn du willst</p>
     ${renderCollapsible("parlament", "Parlamentarische Vorgänge", parliamentItems.length || null, renderParliamentListHtml())}
     ${renderCollapsible("termine", "Termine & Vorbereitung", null, renderMeetingPrepSection())}
-    ${renderCollapsible("beobachten", "Beobachten", null, renderWatchlistMini())}
+    ${renderCollapsible("beobachten", "Wird beobachtet", null, renderWatchlistMini())}
     ${renderCollapsible("ausblick", "Wochenausblick & Kontext", null, `${renderWeeklyOutlook()}${renderPoliticalContextSections()}`)}
     ${renderCollapsible("lernen", "Lernpuls", null, renderLearningPulse())}
   `;
