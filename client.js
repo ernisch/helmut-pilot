@@ -1936,12 +1936,13 @@ function priorityTrendLabel(value) {
   return value;
 }
 
-function firstSentence(text, maxLen = 80) {
+function firstSentence(text) {
   if (!text) return "";
-  const m = String(text).match(/^.+?[.!?](?:\s|$)/);
-  const s = (m ? m[0] : String(text).split(/[.!?]/)[0]).trim();
-  const clean = /[.!?]$/.test(s) ? s : s + ".";
-  return clean.length > maxLen ? clean.slice(0, maxLen - 1).trimEnd() + "…" : clean;
+  const t = String(text).trim();
+  const m = t.match(/^.+?[.!?](?:\s|$)/);
+  if (m) return m[0].trim();
+  if (t.length <= 90) return /[.!?]$/.test(t) ? t : t + ".";
+  return t.slice(0, 90).replace(/\s\S*$/, "").trimEnd() + ".";
 }
 
 function helmutDecisionState(assessment) {

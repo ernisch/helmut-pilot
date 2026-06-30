@@ -6170,15 +6170,15 @@ body {
 .helmut-assessment {
   min-height: min(72vh, 760px);
   display: grid;
-  gap: 22px;
-  padding: clamp(30px, 5vw, 52px);
+  gap: 16px;
+  padding: clamp(24px, 4vw, 52px);
 }
 
 .helmut-assessment-head h1 {
   max-width: 720px;
-  margin: 18px 0 0;
+  margin: 10px 0 0;
   color: var(--command-text);
-  font-size: clamp(30px, 5vw, 52px);
+  font-size: clamp(26px, 4.2vw, 48px);
   line-height: 1.05;
   letter-spacing: -.035em;
 }
@@ -6382,7 +6382,7 @@ body {
   }
 
   .helmut-assessment {
-    padding: 28px 22px;
+    padding: 18px 18px;
   }
 
   .helmut-note,
@@ -7613,17 +7613,17 @@ body {
 /* ── Helmut Tab — Hero Decision & Detail Accordions ─────────────────── */
 .helmut-hero {
   display: grid;
-  gap: 18px;
-  padding: clamp(22px, 3.5vw, 34px);
+  gap: 10px;
+  padding: clamp(16px, 2.8vw, 28px);
   border: 1px solid rgba(245, 241, 232, .09);
   border-radius: 22px;
   background: rgba(255, 255, 255, .03);
 }
 
 .helmut-hero-decision {
-  margin: 4px 0 0;
+  margin: 0;
   color: var(--command-text);
-  font-size: clamp(21px, 3.2vw, 30px);
+  font-size: clamp(18px, 2.8vw, 28px);
   font-weight: 620;
   line-height: 1.22;
   letter-spacing: -.02em;
@@ -7631,9 +7631,9 @@ body {
 
 .helmut-hero-bullets {
   display: grid;
-  gap: 11px;
+  gap: 7px;
   margin: 0;
-  padding: 16px 0 0;
+  padding: 10px 0 0;
   border-top: 1px solid rgba(245, 241, 232, .08);
 }
 
@@ -7655,8 +7655,8 @@ body {
 .helmut-hero-bullets dd {
   margin: 0;
   color: rgba(245, 241, 232, .76);
-  font-size: clamp(14px, 1.8vw, 15px);
-  line-height: 1.48;
+  font-size: 13px;
+  line-height: 1.4;
 }
 
 .helmut-detail {
