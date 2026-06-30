@@ -4121,7 +4121,7 @@ function renderSettingsView() {
         </div>
         ${isAdmin ? `
         <div class="stg-row">
-          <span class="stg-row-label">Testbenachrichtigung</span>
+          <span class="stg-row-label">Push-Test</span>
           <button class="secondary-button compact-button stg-row-action" type="button" data-test-push ${pushTestDisabled ? "disabled" : ""}>Senden</button>
         </div>` : ""}
       </div>
