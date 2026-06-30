@@ -641,6 +641,9 @@ function userRole() {
   return currentUser?.role || "";
 }
 
+const EYE_OPEN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+const EYE_CLOSED_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
+
 // Schaltet Passwortfelder zwischen verdeckt/sichtbar. data-toggle-password trägt
 // die id des zugehörigen Eingabefelds.
 function bindPasswordToggles(root) {
@@ -652,7 +655,11 @@ function bindPasswordToggles(root) {
       if (!input) return;
       const reveal = input.type === "password";
       input.type = reveal ? "text" : "password";
-      button.textContent = reveal ? "Verbergen" : "Anzeigen";
+      if (button.querySelector("svg")) {
+        button.innerHTML = reveal ? EYE_CLOSED_SVG : EYE_OPEN_SVG;
+      } else {
+        button.textContent = reveal ? "Verbergen" : "Anzeigen";
+      }
       button.setAttribute("aria-label", reveal ? "Passwort verbergen" : "Passwort anzeigen");
     });
   });
@@ -684,26 +691,35 @@ function resolveAllowedActiveId(params) {
 function renderLogin(message = "") {
   hideStartupSplash();
   app.innerHTML = `
-    <section class="loading-card pilot-access-card">
-      <div class="loading-logo"><span>H</span></div>
-      <p>Helmut</p>
-      <h1>Anmeldung.</h1>
-      <p class="pilot-access-copy">Melde dich mit deinem Helmut-Konto an.</p>
-      <form class="pilot-access-form" id="loginForm">
-        <input name="email" type="email" autocomplete="username" placeholder="E-Mail" aria-label="E-Mail" />
-        <div class="password-field">
-          <input name="password" id="loginPassword" type="password" autocomplete="current-password" placeholder="Passwort" aria-label="Passwort" />
-          <button type="button" class="password-toggle" data-toggle-password="loginPassword" aria-label="Passwort anzeigen">Anzeigen</button>
-        </div>
-        <button class="primary-button" type="submit">Anmelden</button>
-        <small id="loginError">${escapeHtml(message)}</small>
-      </form>
-    </section>
+    <div class="login-screen">
+      <section class="loading-card pilot-access-card">
+        <div class="loading-logo"><span>H</span></div>
+        <p>Helmut</p>
+        <h1>Anmeldung</h1>
+        <p class="pilot-access-copy">Melde dich mit deinem Helmut Konto an, um dein persönliches Briefing zu öffnen.</p>
+        <form class="pilot-access-form" id="loginForm">
+          <input name="email" type="email" autocomplete="username" placeholder="E-Mail" aria-label="E-Mail" required />
+          <div class="password-field">
+            <input name="password" id="loginPassword" type="password" autocomplete="current-password" placeholder="Passwort" aria-label="Passwort" required />
+            <button type="button" class="password-toggle password-toggle--icon" data-toggle-password="loginPassword" aria-label="Passwort anzeigen">${EYE_OPEN_SVG}</button>
+          </div>
+          <button class="primary-button" type="submit" disabled>Anmelden</button>
+          <small id="loginError">${escapeHtml(message)}</small>
+        </form>
+      </section>
+    </div>
   `;
   const form = document.querySelector("#loginForm");
   const error = document.querySelector("#loginError");
+  const submitBtn = form?.querySelector('button[type="submit"]');
   bindPasswordToggles(document);
   window.setTimeout(() => form?.querySelector("input")?.focus(), 50);
+  function syncSubmit() {
+    if (!submitBtn) return;
+    const fd = new FormData(form);
+    submitBtn.disabled = !String(fd.get("email") || "").trim() || !String(fd.get("password") || "");
+  }
+  form?.querySelectorAll("input").forEach((inp) => inp.addEventListener("input", syncSubmit));
   form?.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (error) error.textContent = "";

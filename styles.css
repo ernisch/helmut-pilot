@@ -7509,3 +7509,103 @@ body {
   0%, 100% { opacity: 1; }
   50%       { opacity: .35; }
 }
+
+/* ── Login Screen ─────────────────────────────────────────────────────── */
+.login-screen {
+  display: grid;
+  place-items: center;
+  align-items: start;
+  min-height: 100dvh;
+  width: 100%;
+  padding: clamp(48px, 9dvh, 96px) 20px clamp(32px, 5dvh, 64px);
+  padding-top: max(clamp(48px, 9dvh, 96px), env(safe-area-inset-top, 0px) + 32px);
+  padding-bottom: max(clamp(32px, 5dvh, 64px), env(safe-area-inset-bottom, 0px) + 24px);
+  box-sizing: border-box;
+  overflow-y: auto;
+  background:
+    radial-gradient(ellipse at 84% 10%, rgba(88, 46, 196, .09), transparent 38%),
+    radial-gradient(ellipse at 12% 92%, rgba(28, 66, 168, .07), transparent 34%),
+    radial-gradient(circle at 50% 40%, rgba(140, 92, 255, .11), transparent 26%),
+    linear-gradient(180deg, #070b15 0%, #050914 72%, #03050b 100%);
+}
+
+.pilot-access-card {
+  width: min(100%, 480px);
+  margin: 0 auto;
+  background: linear-gradient(155deg, rgba(15, 21, 38, .97), rgba(7, 10, 21, .96));
+  border: 1px solid rgba(255, 255, 255, .07);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .042),
+    0 36px 80px rgba(0, 0, 0, .44),
+    0 6px 28px rgba(0, 0, 0, .3);
+  border-radius: 24px;
+}
+
+.pilot-access-card .pilot-access-copy {
+  font-size: 15px;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.58;
+  opacity: 1;
+  text-transform: none;
+  color: rgba(245, 241, 232, .5);
+  max-width: 320px;
+  margin-top: -2px;
+}
+
+.password-toggle--icon {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 48px;
+  height: auto;
+  transform: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0;
+  border-radius: 0 18px 18px 0;
+  color: rgba(245, 241, 232, .36);
+  padding: 0;
+  cursor: pointer;
+  transition: color .15s ease;
+}
+.password-toggle--icon:hover {
+  color: rgba(245, 241, 232, .78);
+}
+.password-toggle--icon svg {
+  width: 19px;
+  height: 19px;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+.pilot-access-form .password-field input {
+  padding-right: 52px;
+}
+
+.pilot-access-form .primary-button {
+  width: 100%;
+  margin-top: 4px;
+  transition: box-shadow .18s ease, opacity .15s ease;
+}
+.pilot-access-form .primary-button:not(:disabled):hover {
+  box-shadow: 0 22px 50px rgba(101, 64, 238, .5);
+}
+.pilot-access-form .primary-button:not(:disabled):active {
+  opacity: .88;
+  box-shadow: 0 8px 24px rgba(101, 64, 238, .28);
+}
+
+@media (max-width: 480px) {
+  .login-screen {
+    align-items: start;
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+  .pilot-access-card {
+    border-radius: 20px;
+  }
+}
