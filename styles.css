@@ -7093,9 +7093,10 @@ body {
 }
 .lage-focus.calm { border-left-color: var(--chance); }
 .lage-focus-chip {
-  display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+  display: inline-block; font-size: 12px; font-weight: 600; letter-spacing: .01em;
   border-radius: 999px; padding: 3px 11px; margin-bottom: 12px;
   background: var(--accent-soft); color: var(--accent-ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
 }
 .lage-focus-chip.danger { background: rgba(255,89,103,.16); color: var(--danger); }
 .lage-focus-chip.watch { background: rgba(214,160,64,.16); color: var(--watch); }

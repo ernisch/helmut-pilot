@@ -1467,8 +1467,13 @@ function generateWarumBullets(decision) {
   if (s.citizen >= 60 && bullets.length < 3) bullets.push("Bürger stark betroffen");
 
   if (!bullets.length) {
-    const why = compactText(decision.whyNow || decision.whyItMatters || "", 60);
-    bullets.push(why || "Helmut empfiehlt Aufmerksamkeit");
+    const pl = (decision.priorityLabel || "").toLowerCase();
+    const pt = decision.priorityType || "";
+    if (pl.includes("ausschuss") || pl.includes("fraktion")) bullets.push("Betrifft deinen Ausschuss");
+    else if (pl.includes("intern")) bullets.push("Interne Vorbereitung empfohlen");
+    else if (pt === "action" || pt === "high") bullets.push("Reaktion heute empfohlen");
+    else if (pt === "chance") bullets.push("Positionierungsfenster offen");
+    else bullets.push("Helmut beobachtet Entwicklung");
   }
 
   return bullets.slice(0, 3);
