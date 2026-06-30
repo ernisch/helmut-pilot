@@ -2030,9 +2030,9 @@ function renderHelmutAssessmentView() {
   const state = helmutDecisionState(assessment);
   const btn = helmutButtonConfig(state, actionId);
   const firstName = (profile?.fullName || "").split(" ")[0];
-  const whyLine = heroText(assessment.whyImportant);
-  const riskLine = heroText(assessment.risk);
-  const nextLine = heroText(assessment.recommendation);
+  const whyLine = assessment.heroWhy || heroText(assessment.whyImportant);
+  const riskLine = assessment.heroRisk || heroText(assessment.risk);
+  const nextLine = assessment.heroNextStep || heroText(assessment.recommendation);
   return `
     <section class="helmut-assessment" aria-label="Helmuts Einschätzung">
       <div class="helmut-assessment-head">
@@ -2113,7 +2113,10 @@ function buildHelmutAssessment() {
       whyImportant: String(stored.whyImportant || "").trim(),
       risk: String(stored.risk || "").trim(),
       priorityStatus: String(stored.priorityStatus || "stable").trim(),
-      typingText: String(stored.typingText || "").trim()
+      typingText: String(stored.typingText || "").trim(),
+      heroWhy: String(stored.heroWhy || "").trim(),
+      heroRisk: String(stored.heroRisk || "").trim(),
+      heroNextStep: String(stored.heroNextStep || "").trim()
     };
     if (normalized.assessment || normalized.recommendation || normalized.typingText) {
       if (!normalized.typingText) normalized.typingText = assessmentTypingText(normalized);
@@ -2142,7 +2145,10 @@ function buildHelmutAssessment() {
       ? compactText(decisionRisk(top), 180)
       : `Wenn du jetzt reagierst, ohne dass sich die Lage verändert hat, verbrauchst du Aufmerksamkeit. Besser: vorbereitet bleiben und erst bei neuer Dynamik handeln.`
     ,
-    priorityStatus: top ? (top.priorityType === "risk" ? "risk" : top.priorityType === "chance" ? "chance" : top.priorityTrend === "gestiegen" ? "changed" : "stable") : "stable"
+    priorityStatus: top ? (top.priorityType === "risk" ? "risk" : top.priorityType === "chance" ? "chance" : top.priorityTrend === "gestiegen" ? "changed" : "stable") : "stable",
+    heroWhy: "",
+    heroRisk: "",
+    heroNextStep: ""
   };
   fallback.typingText = assessmentTypingText(fallback);
   return fallback;
