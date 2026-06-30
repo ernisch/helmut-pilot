@@ -1936,13 +1936,18 @@ function priorityTrendLabel(value) {
   return value;
 }
 
-function firstSentence(text) {
+function heroText(text) {
   if (!text) return "";
   const t = String(text).trim();
+  // Short complete first sentence — show as-is
   const m = t.match(/^.+?[.!?](?:\s|$)/);
-  if (m) return m[0].trim();
-  if (t.length <= 90) return /[.!?]$/.test(t) ? t : t + ".";
-  return t.slice(0, 90).replace(/\s\S*$/, "").trimEnd() + ".";
+  if (m && m[0].trim().length <= 55) return m[0].trim();
+  // First clause before comma if meaningful and short
+  const ci = t.indexOf(",");
+  if (ci > 6 && ci <= 50) return t.slice(0, ci).trim() + ".";
+  // Hard cap at word boundary — no ellipsis, always ends with "."
+  if (t.length <= 55) return /[.!?]$/.test(t) ? t : t + ".";
+  return t.slice(0, 50).replace(/\s\S*$/, "").trimEnd() + ".";
 }
 
 function helmutDecisionState(assessment) {
@@ -2025,9 +2030,9 @@ function renderHelmutAssessmentView() {
   const state = helmutDecisionState(assessment);
   const btn = helmutButtonConfig(state, actionId);
   const firstName = (profile?.fullName || "").split(" ")[0];
-  const whyLine = firstSentence(assessment.whyImportant);
-  const riskLine = firstSentence(assessment.risk);
-  const nextLine = firstSentence(assessment.recommendation);
+  const whyLine = heroText(assessment.whyImportant);
+  const riskLine = heroText(assessment.risk);
+  const nextLine = heroText(assessment.recommendation);
   return `
     <section class="helmut-assessment" aria-label="Helmuts Einschätzung">
       <div class="helmut-assessment-head">
