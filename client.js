@@ -4355,7 +4355,6 @@ function renderRadarEarlyWarnings() {
         <h3>Steuerdebatte kann in Arbeit und Soziales wandern</h3>
         <p>Noch kein akuter Druck. Relevant, falls Ausschuss, Fraktion oder Medien nachfassen.</p>
       </div>
-      <button class="secondary-button" type="button">Einordnen</button>
     </article>
   `;
 }
@@ -4368,7 +4367,6 @@ function renderRadarChances() {
         <h3>Soziale Gegenlinie vorbereiten</h3>
         <p>Die Steuerdebatte bietet einen möglichen Anschluss für Mindestlohn, Tarifbindung und soziale Gerechtigkeit.</p>
       </div>
-      <button class="secondary-button" type="button">Linie vorbereiten</button>
     </article>
   `;
 }
@@ -4381,7 +4379,6 @@ function renderRadarCriticalQuery() {
         <h3>Keine kritische Nachfrage absehbar</h3>
         <p>Aktuell gibt es keinen Hinweis auf akuten Medien- oder Fraktionsdruck.</p>
       </div>
-      <button class="secondary-button" type="button">Weiter beobachten</button>
     </article>
   `;
 }
