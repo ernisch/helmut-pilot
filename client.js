@@ -61,6 +61,25 @@ let onboardingDraft = {};
 const app = document.querySelector("#app");
 const toast = document.querySelector("#toast");
 
+// --- View-Persistenz ---
+const VIEW_PERSIST_KEY = "helmut:view";
+const VIEW_PERSIST_SAFE = new Set(["briefing", "radar", "helmut", "office", "tasks", "topics", "settings", "profile-settings", "admin", "daily-input"]);
+
+function persistView(view) {
+  if (!VIEW_PERSIST_SAFE.has(view)) return;
+  try { localStorage.setItem(VIEW_PERSIST_KEY, view); } catch {}
+}
+
+function restorePersistedView() {
+  try {
+    const saved = localStorage.getItem(VIEW_PERSIST_KEY);
+    if (!saved || !VIEW_PERSIST_SAFE.has(saved)) return;
+    if (saved === "admin" && userRole() !== "admin") return;
+    if (saved === "daily-input" && !["admin", "referent"].includes(userRole())) return;
+    currentView = saved;
+  } catch {}
+}
+
 // --- Theme (Dunkel / Hell / System) ---
 const THEME_KEY = "helmut:theme";
 function getThemePref() {
@@ -276,6 +295,7 @@ async function loadBriefing() {
     const startPayload = await startResponse.json();
     applyStartPayload(startPayload);
     saveCachedStartPayload(startPayload);
+    restorePersistedView();
     render();
     loadParliament();
     generateOfficeDraftsInBackground();
@@ -752,6 +772,7 @@ async function logout() {
   try {
     await fetch("/api/auth/logout", { method: "POST" });
   } catch {}
+  try { localStorage.removeItem(VIEW_PERSIST_KEY); } catch {}
   window.location.reload();
 }
 
@@ -5304,6 +5325,7 @@ function bindActions() {
   app.querySelectorAll("[data-view]").forEach((button) => {
     button.addEventListener("click", () => {
       currentView = button.dataset.view;
+      persistView(currentView);
       navOpen = false;
       updatesOpen = false;
       if (currentView === "office" || currentView === "office-detail" || currentView === "tasks") markOfficeSeen();
