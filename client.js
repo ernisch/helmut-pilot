@@ -1492,7 +1492,7 @@ function renderLageFocus() {
   const warumBullets = generateWarumBullets(top);
   const readyFormats = activeOfficeFormats().filter((f) => officeDrafts[officeDraftKey(top, f)]);
   const bueroLine = readyFormats.length
-    ? `<p class="lage-buero-ready">Helmut hat ${escapeHtml(readyFormats.map((f) => f.label).join(" · "))} vorbereitet</p>`
+    ? `<button class="lage-buero-ready" type="button" data-view="office">Helmut hat ${escapeHtml(readyFormats.map((f) => f.label).join(" · "))} vorbereitet</button>`
     : "";
   return `
     <section class="lage-focus">
