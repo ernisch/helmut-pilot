@@ -907,6 +907,7 @@ function renderAdminView() {
       </td>
       <td data-label="Rolle"><span class="admin-role-tag admin-role-${escapeAttribute(user.role)}">${escapeHtml(roleLabel(user.role))}</span></td>
       <td data-label="Status">${user.active === false ? '<span class="admin-pill admin-pill-off">Inaktiv</span>' : '<span class="admin-pill admin-pill-on">Aktiv</span>'}</td>
+      <td data-label="Zuletzt aktiv" class="admin-last-login">${escapeHtml(formatLastLogin(user.lastLoginAt))}</td>
       <td data-label="Bezahlt bis" class="billing-cell">
         ${billingBadge}
         <input type="date" class="billing-date-input" data-billing-user="${escapeAttribute(user.id)}" value="${user.paidUntil ? user.paidUntil.slice(0, 10) : ""}" title="Bezahlt bis" />
@@ -972,7 +973,7 @@ function renderAdminView() {
             </div>
             <div class="admin-table-wrap">
               <table class="admin-table">
-                <thead><tr><th>Name</th><th>Rolle</th><th>Status</th><th>Bezahlt bis</th><th></th></tr></thead>
+                <thead><tr><th>Name</th><th>Rolle</th><th>Status</th><th>Zuletzt aktiv</th><th>Bezahlt bis</th><th></th></tr></thead>
                 <tbody>${userRows}</tbody>
               </table>
             </div>
@@ -5230,9 +5231,22 @@ function bindAccountActions() {
   }
 
   app.querySelectorAll("[data-toggle-user]").forEach((button) => {
+    let confirmTimer = null;
     button.addEventListener("click", async () => {
       const id = button.dataset.toggleUser;
       const active = button.dataset.active === "1";
+      if (active && !button.classList.contains("btn-confirm")) {
+        button.classList.add("btn-confirm");
+        button.textContent = "Wirklich?";
+        clearTimeout(confirmTimer);
+        confirmTimer = setTimeout(() => {
+          button.classList.remove("btn-confirm");
+          button.textContent = "Deaktivieren";
+        }, 3000);
+        return;
+      }
+      clearTimeout(confirmTimer);
+      button.classList.remove("btn-confirm");
       const res = await apiSend("PATCH", `/api/admin/users/${encodeURIComponent(id)}?${apiScopeQuery()}`, { active: !active });
       if (res.ok) {
         adminDataLoaded = false;
@@ -6821,6 +6835,16 @@ function formatDueDate(dateString) {
     day: "2-digit",
     month: "2-digit"
   }).format(new Date(dateString));
+}
+
+function formatLastLogin(isoDate) {
+  if (!isoDate) return "Noch nie";
+  const d = new Date(isoDate);
+  const diffDays = Math.floor((Date.now() - d) / 86400000);
+  if (diffDays === 0) return "Heute";
+  if (diffDays === 1) return "Gestern";
+  if (diffDays < 7) return `Vor ${diffDays} Tagen`;
+  return d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
 function formatBriefingDate(dateString) {

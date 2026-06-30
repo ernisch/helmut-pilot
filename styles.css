@@ -6788,6 +6788,19 @@ body {
   border-color: var(--accent);
 }
 
+.account-logout.btn-confirm {
+  border-color: var(--danger) !important;
+  color: var(--danger) !important;
+  background: rgba(255, 89, 103, .08) !important;
+  font-weight: 600;
+}
+
+.admin-last-login {
+  color: var(--muted-2);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 .sidebar-logout {
   margin-top: 10px;
   width: 100%;
