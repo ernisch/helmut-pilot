@@ -1460,11 +1460,11 @@ function generateWarumBullets(decision) {
   const s = Object.fromEntries(Object.entries(raw).map(([k, v]) => [k, v * scale]));
 
   const bullets = [];
-  if (s.committee >= 55) bullets.push("Betrifft deinen Ausschuss");
-  if (s.media >= 60) bullets.push("Hohe mediale Aufmerksamkeit");
-  if ((s.time >= 62 || s.risk >= 65) && bullets.length < 3) bullets.push("Presseanfragen wahrscheinlich");
-  if (s.reaction >= 60 && bullets.length < 3) bullets.push("Gute Positionierungschance");
-  if (s.citizen >= 60 && bullets.length < 3) bullets.push("Bürger stark betroffen");
+  if (s.committee >= 50) bullets.push("Betrifft deinen Ausschuss");
+  if (s.media >= 52) bullets.push("Hohe mediale Aufmerksamkeit");
+  if ((s.time >= 52 || s.risk >= 58) && bullets.length < 3) bullets.push("Presseanfragen wahrscheinlich");
+  if (s.reaction >= 55 && bullets.length < 3) bullets.push("Gute Positionierungschance");
+  if (s.citizen >= 55 && bullets.length < 3) bullets.push("Bürger stark betroffen");
 
   return bullets.slice(0, 3);
 }
