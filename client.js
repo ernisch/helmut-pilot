@@ -1466,16 +1466,6 @@ function generateWarumBullets(decision) {
   if (s.reaction >= 60 && bullets.length < 3) bullets.push("Gute Positionierungschance");
   if (s.citizen >= 60 && bullets.length < 3) bullets.push("Bürger stark betroffen");
 
-  if (!bullets.length) {
-    const pl = (decision.priorityLabel || "").toLowerCase();
-    const pt = decision.priorityType || "";
-    if (pl.includes("ausschuss") || pl.includes("fraktion")) bullets.push("Betrifft deinen Ausschuss");
-    else if (pl.includes("intern")) bullets.push("Entwurf liegt im Büro bereit");
-    else if (pt === "action" || pt === "high") bullets.push("Reaktion heute empfohlen");
-    else if (pt === "chance") bullets.push("Positionierungsfenster offen");
-    else bullets.push("Helmut beobachtet Entwicklung");
-  }
-
   return bullets.slice(0, 3);
 }
 
@@ -1504,12 +1494,13 @@ function renderLageFocus() {
     <section class="lage-focus">
       <span class="lage-focus-chip ${priorityChipClass(top)}">Das zählt heute · ${escapeHtml(top.priorityLabel || "Reagieren")}</span>
       <h2 class="lage-focus-title">${escapeHtml(draftTitle(top))}</h2>
+      ${warumBullets.length ? `
       <div class="lage-warum">
         <span class="lage-warum-label">Warum heute wichtig</span>
         <ul class="lage-warum-list">
           ${warumBullets.map((b) => `<li>${escapeHtml(b)}</li>`).join("")}
         </ul>
-      </div>
+      </div>` : ""}
       ${renderDecisionActions(top, true)}
     </section>`;
 }
