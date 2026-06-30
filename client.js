@@ -1446,11 +1446,39 @@ function priorityChipClass(decision) {
   return "watch";
 }
 
+function generateWarumBullets(decision) {
+  const raw = {
+    committee: Number(decision.committeeScore || 0),
+    media: Number(decision.mediaPressure || 0),
+    time: Number(decision.timeUrgency || 0),
+    risk: Number(decision.riskIfIgnoredScore || 0),
+    reaction: Number(decision.reactionChance || 0),
+    citizen: Number(decision.citizenImpact || 0),
+  };
+  const maxVal = Math.max(...Object.values(raw));
+  const scale = maxVal > 10 ? 1 : 10;
+  const s = Object.fromEntries(Object.entries(raw).map(([k, v]) => [k, v * scale]));
+
+  const bullets = [];
+  if (s.committee >= 55) bullets.push("Betrifft deinen Ausschuss");
+  if (s.media >= 60) bullets.push("Hohe mediale Aufmerksamkeit");
+  if ((s.time >= 62 || s.risk >= 65) && bullets.length < 3) bullets.push("Presseanfragen wahrscheinlich");
+  if (s.reaction >= 60 && bullets.length < 3) bullets.push("Gute Positionierungschance");
+  if (s.citizen >= 60 && bullets.length < 3) bullets.push("Bürger stark betroffen");
+
+  if (!bullets.length) {
+    const why = compactText(decision.whyNow || decision.whyItMatters || "", 60);
+    bullets.push(why || "Helmut empfiehlt Aufmerksamkeit");
+  }
+
+  return bullets.slice(0, 3);
+}
+
 function renderDecisionActions(decision, primary) {
   return `
     <div class="lage-actions">
       <button class="lage-icon-btn lage-done-btn" type="button" data-lage-done="${escapeAttribute(decision.id)}" aria-label="Als erledigt markieren" title="Erledigt">✓</button>
-      <button class="secondary-button compact-button lage-details-btn" type="button" data-detail="${escapeAttribute(decision.id)}">Details</button>
+      <button class="secondary-button compact-button lage-details-btn" type="button" data-detail="${escapeAttribute(decision.id)}">Einordnen</button>
       <button class="lage-icon-btn lage-ignore-btn" type="button" data-lage-ignore="${escapeAttribute(decision.id)}" aria-label="Ignorieren" title="Ignorieren">✕</button>
     </div>`;
 }
@@ -1466,11 +1494,17 @@ function renderLageFocus() {
       </section>`;
   }
   const top = active[0];
+  const warumBullets = generateWarumBullets(top);
   return `
     <section class="lage-focus">
       <span class="lage-focus-chip ${priorityChipClass(top)}">Das zählt heute · ${escapeHtml(top.priorityLabel || "Reagieren")}</span>
       <h2 class="lage-focus-title">${escapeHtml(top.title)}</h2>
-      <p class="lage-focus-why">${escapeHtml(compactText(top.summary || chiefRecommendationText(top), 180))}</p>
+      <div class="lage-warum">
+        <span class="lage-warum-label">Warum heute wichtig</span>
+        <ul class="lage-warum-list">
+          ${warumBullets.map((b) => `<li>${escapeHtml(b)}</li>`).join("")}
+        </ul>
+      </div>
       ${renderDecisionActions(top, true)}
     </section>`;
 }
@@ -1497,7 +1531,6 @@ function renderSecondaryDecisions() {
         <article class="lage-sec-item">
           <span class="lage-sec-chip ${priorityChipClass(decision)}">${escapeHtml(decision.priorityLabel || "Punkt")}</span>
           <strong>${escapeHtml(decision.title)}</strong>
-          <p>${escapeHtml(compactText(decision.summary || chiefRecommendationText(decision), 120))}</p>
           ${renderDecisionActions(decision, false)}
         </article>
       `).join("")}
