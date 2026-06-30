@@ -7173,6 +7173,7 @@ body {
 .lage-sec-item strong { display: block; font-size: 15px; line-height: 1.3; color: var(--text); margin-bottom: 12px; }
 .lage-sec-item p { font-size: 13px; color: var(--muted); margin: 4px 0 10px; }
 
+.lage-today-label { font-size: 13px; font-weight: 700; color: var(--text); margin: 10px 2px 6px; letter-spacing: .01em; }
 .lage-section-label { font-size: 12px; color: var(--muted-2); margin: 18px 2px 8px; text-transform: uppercase; letter-spacing: .05em; }
 .lage-more-label { font-size: 12px; color: var(--muted-2); margin: 4px 2px 8px; text-transform: uppercase; letter-spacing: .05em; }
 .lage-focus-action { font-size: 15px; line-height: 1.45; color: var(--muted); margin: -4px 0 14px; }
@@ -7192,6 +7193,16 @@ body {
 .lage-collapse-count { font-size: 12px; color: var(--muted-2); background: var(--accent-soft); border-radius: 999px; padding: 2px 9px; }
 .lage-collapse-chev { color: var(--muted-2); font-size: 12px; }
 .lage-collapse-body { padding: 12px 2px 4px; }
+.meeting-detail { margin-top: 12px; }
+.meeting-detail summary { font-size: 13px; color: var(--accent-ink); cursor: pointer; list-style: none; padding: 0; }
+.meeting-detail summary::-webkit-details-marker { display: none; }
+.meeting-detail summary::before { content: '▸ '; font-size: 10px; }
+details[open].meeting-detail summary::before { content: '▾ '; }
+.meeting-detail > *:not(summary) { margin-top: 12px; }
+.weekly-outlook-compact { display: flex; flex-direction: column; gap: 3px; }
+.weekly-outlook-compact span { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--muted-2); }
+.weekly-outlook-compact strong { font-size: 14px; line-height: 1.3; color: var(--text); }
+.weekly-outlook-compact small { font-size: 12px; color: var(--muted-2); }
 
 /* === Büro: gemeinsames Aufgaben-Board === */
 .board-group { margin: 4px 0 18px; }

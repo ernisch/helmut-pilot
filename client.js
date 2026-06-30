@@ -1474,6 +1474,18 @@ function lageFocusChipText(decision) {
   return "Im Blick";
 }
 
+function lageCardReco(decision) {
+  const text = String(decision.action || decision.summary || "").trim();
+  const m = text.match(/^.+?[.!?](?=\s|$)/);
+  const first = m ? m[0].trim() : text;
+  if (first.length <= 68) return first;
+  const t = decision.priorityType || "";
+  if (t === "action" || t === "high") return "Heute öffentlich reagieren.";
+  if (t === "chance") return "Linie vorbereiten.";
+  if (t === "risk") return "Sofort positionieren.";
+  return "Beobachten. Nicht öffentlich reagieren.";
+}
+
 function generateWarumBullets(decision) {
   const raw = {
     committee: Number(decision.committeeScore || 0),
@@ -1522,7 +1534,7 @@ function renderLageFocus() {
   const bueroLine = readyFormats.length
     ? `<button class="lage-buero-ready" type="button" data-view="office">Helmut hat ${escapeHtml(readyFormats.map((f) => f.label).join(" · "))} vorbereitet</button>`
     : "";
-  const actionLine = compactText(top.action || top.summary || "", 110);
+  const actionLine = lageCardReco(top);
   return `
     <section class="lage-focus">
       <span class="lage-focus-chip ${priorityChipClass(top)}">${escapeHtml(lageFocusChipText(top))}</span>
@@ -1560,13 +1572,13 @@ function renderSecondaryDecisions() {
     <p class="lage-section-label">Danach</p>
     <div class="lage-secondary">
       ${rest.map((decision) => {
-        const summary = compactText(decision.action || decision.summary || "", 90);
+        const reco = lageCardReco(decision);
         return `
         <article class="lage-sec-item">
           <span class="lage-sec-chip ${priorityChipClass(decision)}">${escapeHtml(decision.priorityLabel || "Punkt")}</span>
           <strong>${escapeHtml(draftTitle(decision))}</strong>
-          ${summary ? `<p>${escapeHtml(summary)}</p>` : ""}
-          ${renderDecisionActions(decision, false)}
+          ${reco ? `<p>${escapeHtml(reco)}</p>` : ""}
+          <button class="secondary-button compact-button lage-details-btn" type="button" data-detail="${escapeAttribute(decision.id)}">Einordnen</button>
         </article>`;
       }).join("")}
     </div>`;
@@ -1602,6 +1614,7 @@ function renderBriefingView() {
       </div>
     </section>
 
+    <p class="lage-today-label">Heute zählt</p>
     ${renderLageFocus()}
     ${renderSecondaryDecisions()}
     ${watchHtml ? `<p class="lage-section-label">Vorbereiten</p>${watchHtml}` : ""}
@@ -1609,7 +1622,7 @@ function renderBriefingView() {
     <p class="lage-more-label">Mehr, wenn du willst</p>
     ${renderCollapsible("parlament", "Parlamentarische Vorgänge", parliamentItems.length || null, renderParliamentListHtml())}
     ${renderCollapsible("termine", "Termine & Vorbereitung", null, renderMeetingPrepSection())}
-    ${renderCollapsible("ausblick", "Wochenausblick & Kontext", null, `${renderWeeklyOutlook()}${renderPoliticalContextSections()}`)}
+    ${renderCollapsible("ausblick", "Wochenausblick & Kontext", null, renderWeeklyOutlook())}
     ${renderCollapsible("lernen", "Lernpuls", null, renderLearningPulse())}
   `;
 }
@@ -1851,7 +1864,7 @@ function renderNextMeetingMini() {
 }
 
 function renderWatchlistMini() {
-  const items = competentNoActionItems().slice(0, 3);
+  const items = competentNoActionItems().slice(0, 1);
   if (!items.length) return "";
   return `<div class="lage-watch-grid">${items.map((item) => {
     const summary = compactText(item.summary || item.relevanceReason || "", 90);
@@ -2378,41 +2391,14 @@ function renderAgendaPriority(decision) {
 
 function renderMeetingPrepSection() {
   const meetings = meetingPreparations().slice(0, 1);
-  return `
-    <section class="agenda-section meeting-prep">
-      <div class="agenda-section-head">
-        <span>Termin</span>
-        <h2>Nächste Vorbereitung</h2>
-      </div>
-      <div class="agenda-list">
-        ${meetings.map(renderMeetingPrepCard).join("") || `<p class="empty-state">Noch keine Termine im Mandatsprofil. Trage im Profil kommende Gespräche ein, dann bereitet Helmut sie politisch vor.</p>`}
-      </div>
-    </section>
-  `;
+  if (!meetings.length) return `<p class="empty-state">Noch keine Termine im Mandatsprofil.</p>`;
+  return `<div class="agenda-list">${meetings.map(renderMeetingPrepCard).join("")}</div>`;
 }
 
 function renderWeeklyOutlook() {
-  const items = weeklyOutlookItems().slice(0, 3);
-  return `
-    <section class="agenda-section weekly-outlook">
-      <div class="agenda-section-head">
-        <span>Woche</span>
-        <h2>Diese Woche wichtig</h2>
-      </div>
-      <div class="weekly-outlook-list">
-        ${items.map(renderWeeklyOutlookItem).join("") || `
-          <article class="weekly-outlook-item calm">
-            <div>
-              <span>Referentenblick</span>
-              <h3>Keine harte Wochenpriorität.</h3>
-              <p>Ich beobachte Bundesregierung, Fraktion, Ausschuss und Personenlage weiter. Du musst dafür aktuell nichts vorbereiten.</p>
-              <small>Fokus bleibt: nur melden, wenn daraus eine Entscheidung entsteht.</small>
-            </div>
-          </article>
-        `}
-      </div>
-    </section>
-  `;
+  const items = weeklyOutlookItems().slice(0, 4);
+  if (!items.length) return `<p class="lage-focus-why">Keine harte Wochenpriorität. Ich melde, wenn sich das ändert.</p>`;
+  return `<div class="weekly-outlook-list">${items.map(renderWeeklyOutlookItem).join("")}</div>`;
 }
 
 function weeklyOutlookItems() {
@@ -2427,8 +2413,8 @@ function weeklyOutlookItems() {
     items.push({
       type: "Termin",
       title: meeting.terminTitel,
-      body: `${formatMeetingDate(meeting)} · ${compactText(meeting.entscheidungsfrage || meeting.kurzbriefing, 132)}`,
-      action: `Vorbereitung: ${compactText(meeting.kernlinie, 92)}`,
+      body: "",
+      action: formatMeetingDate(meeting),
       href: ""
     });
   }
@@ -2477,47 +2463,36 @@ function weeklyOutlookItems() {
 
 function renderWeeklyOutlookItem(item) {
   return `
-    <article class="weekly-outlook-item">
+    <article class="weekly-outlook-item weekly-outlook-compact">
       <span>${escapeHtml(item.type)}</span>
-      <h3>${escapeHtml(item.title)}</h3>
-      <p>${escapeHtml(item.body)}</p>
-      <small>${escapeHtml(item.action)}${item.href ? ` · <a class="outlook-source-link" href="${escapeAttribute(item.href)}" target="_blank" rel="noopener noreferrer">Quelle ↗</a>` : ""}</small>
+      <strong>${escapeHtml(compactText(item.title, 60))}</strong>
+      <small>${escapeHtml(item.action)}${item.href ? ` <a class="outlook-source-link" href="${escapeAttribute(item.href)}" target="_blank" rel="noopener noreferrer">↗</a>` : ""}</small>
     </article>
   `;
 }
 
 function renderMeetingPrepCard(meeting) {
   const source = meeting.relevantDecision ? sourceLine(meeting.relevantDecision) : "Mandatsprofil · Termin";
+  const hint = compactText(meeting.entscheidungsfrage || meeting.kurzbriefing, 100);
   return `
     <article class="meeting-card meeting-prep-card">
       <div class="meeting-prep-main">
         <span>${escapeHtml(formatMeetingDate(meeting))}</span>
         <h3>${escapeHtml(meeting.terminTitel)}</h3>
-        <p>${escapeHtml(compactText(meeting.kurzbriefing, 175))}</p>
-        <p class="meeting-decision-question">${escapeHtml(meeting.entscheidungsfrage)}</p>
-        <div class="meeting-line-box">
-          <small>Kernlinie</small>
-          <strong>${escapeHtml(meeting.kernlinie)}</strong>
-        </div>
-        <div class="meeting-prep-grid">
-          <div>
-            <small>Im Termin klären</small>
-            <ul>
-              ${meeting.kritischeFragen.slice(0, 3).map((question) => `<li>${escapeHtml(question)}</li>`).join("")}
-            </ul>
-          </div>
-          <div>
-            <small>Risiko</small>
-            <ul>
-              ${meeting.risiken.slice(0, 2).map((risk) => `<li>${escapeHtml(risk)}</li>`).join("")}
-            </ul>
-          </div>
-        </div>
-        <p class="meeting-source-note">Basis: ${escapeHtml(source)}</p>
+        ${hint ? `<p>${escapeHtml(hint)}</p>` : ""}
+        <details class="meeting-detail">
+          <summary>Vorbereitung öffnen</summary>
+          ${meeting.kernlinie ? `<div class="meeting-line-box"><small>Kernlinie</small><strong>${escapeHtml(meeting.kernlinie)}</strong></div>` : ""}
+          ${(meeting.kritischeFragen || []).length ? `
+          <div class="meeting-prep-grid">
+            <div><small>Im Termin klären</small><ul>${meeting.kritischeFragen.slice(0, 3).map((q) => `<li>${escapeHtml(q)}</li>`).join("")}</ul></div>
+            ${(meeting.risiken || []).length ? `<div><small>Risiko</small><ul>${meeting.risiken.slice(0, 2).map((r) => `<li>${escapeHtml(r)}</li>`).join("")}</ul></div>` : ""}
+          </div>` : ""}
+          <p class="meeting-source-note">Basis: ${escapeHtml(source)}</p>
+        </details>
       </div>
       <div class="meeting-actions">
-        <button class="secondary-button compact-button" type="button" data-meeting-brief="${escapeHtml(meeting.id)}">Kurzbriefing kopieren</button>
-        <button class="secondary-button compact-button" type="button" data-meeting-questions="${escapeHtml(meeting.id)}">Fragen kopieren</button>
+        <button class="secondary-button compact-button" type="button" data-meeting-brief="${escapeHtml(meeting.id)}">Kurzbriefing</button>
         <button class="secondary-button compact-button" type="button" data-meeting-line="${escapeHtml(meeting.id)}">Linie kopieren</button>
       </div>
     </article>
