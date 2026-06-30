@@ -4125,8 +4125,7 @@ function mentionRows(items, options = {}) {
             </div>
             <h3>${escapeHtml(item.title || "Erwähnung gefunden")}</h3>
             <div class="radar-mention-actions">
-              <a class="secondary-button" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">Einordnen</a>
-              <a class="radar-mention-link" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">Quelle öffnen →</a>
+              <a class="secondary-button" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">Quelle öffnen</a>
             </div>
           </div>
         </article>

@@ -2633,9 +2633,10 @@ small {
   justify-content: space-between;
   gap: 18px;
   min-height: 92px;
-  padding: 0 4px;
+  padding: 0 20px 0 4px;
   list-style: none;
   cursor: pointer;
+  overflow: visible;
 }
 
 .radar-group summary::-webkit-details-marker {
