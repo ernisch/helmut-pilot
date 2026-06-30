@@ -1498,7 +1498,7 @@ function renderLageFocus() {
   return `
     <section class="lage-focus">
       <span class="lage-focus-chip ${priorityChipClass(top)}">Das zählt heute · ${escapeHtml(top.priorityLabel || "Reagieren")}</span>
-      <h2 class="lage-focus-title">${escapeHtml(top.title)}</h2>
+      <h2 class="lage-focus-title">${escapeHtml(draftTitle(top))}</h2>
       <div class="lage-warum">
         <span class="lage-warum-label">Warum heute wichtig</span>
         <ul class="lage-warum-list">
@@ -1530,7 +1530,7 @@ function renderSecondaryDecisions() {
       ${rest.map((decision) => `
         <article class="lage-sec-item">
           <span class="lage-sec-chip ${priorityChipClass(decision)}">${escapeHtml(decision.priorityLabel || "Punkt")}</span>
-          <strong>${escapeHtml(decision.title)}</strong>
+          <strong>${escapeHtml(draftTitle(decision))}</strong>
           ${renderDecisionActions(decision, false)}
         </article>
       `).join("")}
