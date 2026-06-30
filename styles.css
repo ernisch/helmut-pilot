@@ -6290,25 +6290,11 @@ body {
   align-items: center;
 }
 
-.mobile-dock .nav-helmut {
-  color: #f9cd7f;
-  font-weight: 680;
-}
-
 .mobile-dock .nav-helmut span {
   width: 28px !important;
   height: 28px !important;
   font-size: 12px !important;
   font-weight: 800 !important;
-  border-color: rgba(249, 205, 127, .45) !important;
-  color: #f9cd7f !important;
-  background: rgba(255, 255, 255, .04) !important;
-}
-
-.mobile-dock .nav-helmut.active span {
-  border-color: rgba(249, 205, 127, .90);
-  background: rgba(249, 205, 127, .10);
-  box-shadow: 0 0 20px rgba(249, 205, 127, .22);
 }
 
 @media (max-width: 680px) {
@@ -6435,7 +6421,7 @@ body {
     margin: 0;
   }
 
-  .mobile-dock button.active:not(.nav-helmut) span {
+  .mobile-dock button.active span {
     color: #cbb8ff;
     border-color: rgba(140, 92, 255, .34);
     background: rgba(140, 92, 255, .16);
