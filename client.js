@@ -1422,7 +1422,7 @@ function renderParliamentItem(item) {
         <p><b>Empfohlene Handlung:</b> ${escapeHtml(a.recommendedAction || "")}</p>
       </div>`;
   } else {
-    assessmentBlock = `<button class="secondary-button compact-button" type="button" data-assess-id="${escapeAttribute(item.id)}">Soll Helmut einordnen?</button>`;
+    assessmentBlock = `<button class="secondary-button compact-button" type="button" data-assess-id="${escapeAttribute(item.id)}">Einordnen</button>`;
   }
   return `
     <article class="parliament-item">
@@ -1465,6 +1465,13 @@ function priorityChipClass(decision) {
   if (t === "action" || t === "high") return "danger";
   if (t === "chance") return "chance";
   return "watch";
+}
+
+function lageFocusChipText(decision) {
+  const t = decision.priorityType || "";
+  if (t === "action" || t === "high" || t === "risk") return "Heute reagieren";
+  if (t === "chance") return "Chance nutzen";
+  return "Im Blick";
 }
 
 function generateWarumBullets(decision) {
@@ -1515,13 +1522,15 @@ function renderLageFocus() {
   const bueroLine = readyFormats.length
     ? `<button class="lage-buero-ready" type="button" data-view="office">Helmut hat ${escapeHtml(readyFormats.map((f) => f.label).join(" · "))} vorbereitet</button>`
     : "";
+  const actionLine = compactText(top.action || top.summary || "", 110);
   return `
     <section class="lage-focus">
-      <span class="lage-focus-chip ${priorityChipClass(top)}">Das zählt heute · ${escapeHtml(top.priorityLabel || "Reagieren")}</span>
+      <span class="lage-focus-chip ${priorityChipClass(top)}">${escapeHtml(lageFocusChipText(top))}</span>
       <h2 class="lage-focus-title">${escapeHtml(draftTitle(top))}</h2>
+      ${actionLine ? `<p class="lage-focus-action">${escapeHtml(actionLine)}</p>` : ""}
       ${warumBullets.length ? `
       <div class="lage-warum">
-        <span class="lage-warum-label">Warum heute wichtig</span>
+        <span class="lage-warum-label">Warum du</span>
         <ul class="lage-warum-list">
           ${warumBullets.map((b) => `<li>${escapeHtml(b)}</li>`).join("")}
         </ul>
@@ -1548,14 +1557,18 @@ function renderSecondaryDecisions() {
   const rest = activeDecisions().slice(1, 3);
   if (!rest.length) return "";
   return `
+    <p class="lage-section-label">Danach</p>
     <div class="lage-secondary">
-      ${rest.map((decision) => `
+      ${rest.map((decision) => {
+        const summary = compactText(decision.action || decision.summary || "", 90);
+        return `
         <article class="lage-sec-item">
           <span class="lage-sec-chip ${priorityChipClass(decision)}">${escapeHtml(decision.priorityLabel || "Punkt")}</span>
           <strong>${escapeHtml(draftTitle(decision))}</strong>
+          ${summary ? `<p>${escapeHtml(summary)}</p>` : ""}
           ${renderDecisionActions(decision, false)}
-        </article>
-      `).join("")}
+        </article>`;
+      }).join("")}
     </div>`;
 }
 
@@ -1580,6 +1593,7 @@ function renderCollapsible(id, title, count, content) {
 
 function renderBriefingView() {
   const firstName = (profile?.fullName || "").split(" ")[0];
+  const watchHtml = renderWatchlistMini();
   return `
     <section class="page-intro lage-head">
       <div class="lage-head-row">
@@ -1589,13 +1603,12 @@ function renderBriefingView() {
     </section>
 
     ${renderLageFocus()}
-    ${renderLageGlance()}
     ${renderSecondaryDecisions()}
+    ${watchHtml ? `<p class="lage-section-label">Vorbereiten</p>${watchHtml}` : ""}
 
     <p class="lage-more-label">Mehr, wenn du willst</p>
     ${renderCollapsible("parlament", "Parlamentarische Vorgänge", parliamentItems.length || null, renderParliamentListHtml())}
     ${renderCollapsible("termine", "Termine & Vorbereitung", null, renderMeetingPrepSection())}
-    ${renderCollapsible("beobachten", "Wird beobachtet", null, renderWatchlistMini())}
     ${renderCollapsible("ausblick", "Wochenausblick & Kontext", null, `${renderWeeklyOutlook()}${renderPoliticalContextSections()}`)}
     ${renderCollapsible("lernen", "Lernpuls", null, renderLearningPulse())}
   `;
@@ -1840,15 +1853,15 @@ function renderNextMeetingMini() {
 function renderWatchlistMini() {
   const items = competentNoActionItems().slice(0, 3);
   if (!items.length) return "";
-  return `
-    <section class="brief-mini watchlist">
-      <div>
-        <span>Wird beobachtet</span>
-        <h2>${escapeHtml(humanList(items.map((item) => item.title || item.sourceName || "eine Entwicklung")))}</h2>
-        <p>Ich zeige diese Punkte bewusst nicht als Entscheidung. Sie bleiben im Blick, bis daraus Handlungsdruck entsteht.</p>
-      </div>
-    </section>
-  `;
+  return `<div class="lage-watch-grid">${items.map((item) => {
+    const summary = compactText(item.summary || item.relevanceReason || "", 90);
+    return `
+    <article class="lage-watch-item">
+      <span class="lage-watch-chip">Beobachten</span>
+      <strong>${escapeHtml(compactText(item.title || item.sourceName || "Entwicklung", 70))}</strong>
+      ${summary ? `<p>${escapeHtml(summary)}</p>` : ""}
+    </article>`;
+  }).join("")}</div>`;
 }
 
 function lagePhaseLabel() {
