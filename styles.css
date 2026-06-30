@@ -7728,6 +7728,15 @@ body {
   font-size: 13px;
 }
 
+@media (max-width: 480px) {
+  .helmut-hero-bullets > div {
+    display: block;
+  }
+  .helmut-hero-bullets dd {
+    margin-top: 5px;
+  }
+}
+
 @media (max-width: 680px) {
   .helmut-hero-bullets > div {
     grid-template-columns: max-content minmax(0, 1fr);

@@ -1936,7 +1936,7 @@ function priorityTrendLabel(value) {
   return value;
 }
 
-function firstSentence(text, maxLen = 120) {
+function firstSentence(text, maxLen = 80) {
   if (!text) return "";
   const m = String(text).match(/^.+?[.!?](?:\s|$)/);
   const s = (m ? m[0] : String(text).split(/[.!?]/)[0]).trim();
