@@ -1025,10 +1025,63 @@ function renderAdminView() {
             </div>
             <div class="admin-quickstart">
               <p class="admin-quickstart-hint">Schnellstart <span class="admin-quickstart-opt">(optional)</span></p>
-              <input name="party" type="text" placeholder="Partei / Fraktion" aria-label="Partei" />
-              <input name="committee" type="text" placeholder="Ausschuss" aria-label="Ausschuss" />
-              <input name="constituency" type="text" placeholder="Wahlkreis" aria-label="Wahlkreis" />
-              <input name="state" type="text" placeholder="Bundesland" aria-label="Bundesland" />
+              <select name="party" aria-label="Partei / Fraktion">
+                <option value="">Partei / Fraktion</option>
+                <option>SPD</option>
+                <option>CDU</option>
+                <option>CSU</option>
+                <option>Bündnis 90/Die Grünen</option>
+                <option>FDP</option>
+                <option>AfD</option>
+                <option>BSW</option>
+                <option>Die Linke</option>
+                <option>SSW</option>
+                <option>Fraktionslos</option>
+              </select>
+              <select name="committee" aria-label="Ausschuss">
+                <option value="">Ausschuss wählen</option>
+                <option>Auswärtiger Ausschuss</option>
+                <option>Innenausschuss</option>
+                <option>Rechtsausschuss</option>
+                <option>Finanzausschuss</option>
+                <option>Haushaltsausschuss</option>
+                <option>Wirtschaftsausschuss</option>
+                <option>Arbeit und Soziales</option>
+                <option>Verteidigungsausschuss</option>
+                <option>Ernährung und Landwirtschaft</option>
+                <option>Familienausschuss</option>
+                <option>Gesundheitsausschuss</option>
+                <option>Verkehrsausschuss</option>
+                <option>Umweltausschuss</option>
+                <option>Bildung und Forschung</option>
+                <option>Digitales</option>
+                <option>Wohnungsbau</option>
+                <option>Sportausschuss</option>
+                <option>Tourismus</option>
+                <option>Europaausschuss</option>
+                <option>Wirtschaftliche Zusammenarbeit</option>
+                <option>Petitionsausschuss</option>
+              </select>
+              <input name="constituency" type="text" placeholder="Wahlkreis (z. B. 096 – Köln I)" aria-label="Wahlkreis" />
+              <select name="state" aria-label="Bundesland">
+                <option value="">Bundesland wählen</option>
+                <option>Baden-Württemberg</option>
+                <option>Bayern</option>
+                <option>Berlin</option>
+                <option>Brandenburg</option>
+                <option>Bremen</option>
+                <option>Hamburg</option>
+                <option>Hessen</option>
+                <option>Mecklenburg-Vorpommern</option>
+                <option>Niedersachsen</option>
+                <option>Nordrhein-Westfalen</option>
+                <option>Rheinland-Pfalz</option>
+                <option>Saarland</option>
+                <option>Sachsen</option>
+                <option>Sachsen-Anhalt</option>
+                <option>Schleswig-Holstein</option>
+                <option>Thüringen</option>
+              </select>
               <input name="focusTopics" type="text" placeholder="Schwerpunktthemen (Komma-getrennt)" aria-label="Schwerpunktthemen" />
             </div>
             <div class="admin-form-foot">
