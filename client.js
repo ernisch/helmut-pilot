@@ -3465,7 +3465,7 @@ const OFFICE_FORMAT_META = {
     formatLabel: "LinkedIn Beitrag", typeLabel: "LINKEDIN", einordnung: "Persönlich, kurz, anschlussfähig.",
     defaultStatus: "Entwurf bereit", fromSource: "Aus Lage empfohlen", lineCheck: "Linie geprüft. Persönliche Sprache erwünscht.",
     qualityTone: "Persönlich, direkt, nahbar", qualityUsage: "LinkedIn",
-    fallbackDraft: "Steuerpolitik muss Menschen stärken – nicht nur wirtschaftsnahe Interessen bedienen.\n\nWer über Entlastung spricht, muss auch über Löhne, Tarifbindung und soziale Sicherheit sprechen. Das ist für mich der Maßstab.",
+    fallbackDraft: "Die Debatte über Steuerentlastungen darf nicht an den Menschen vorbeigehen, die jeden Tag arbeiten und trotzdem unter Druck stehen.\n\nWenn über Reformen gesprochen wird, müssen Löhne, Tarifbindung und soziale Sicherheit genauso im Mittelpunkt stehen wie wirtschaftliche Interessen.\n\nFür mich ist klar: Politik muss diejenigen stärken, die dieses Land jeden Tag tragen. Deshalb braucht jede Steuerdebatte auch eine soziale Antwort.",
     iconBg: "var(--paper)", iconColor: "var(--muted)",
   },
   x: {
@@ -3617,7 +3617,7 @@ function renderOfficeDraftCard(decision, format, index = 0) {
   const aiText = officeDrafts[key];
   const isLoading = officeDraftsGenerating && !aiText;
   const meta = OFFICE_FORMAT_META[format.id] || { typeLabel: format.label.toUpperCase(), einordnung: "", defaultStatus: "Zum Bereithalten", lineCheck: "", iconBg: "#F0F0F0", iconColor: "#555" };
-  const text = aiText || meta.fallbackDraft || channelFallbackStatement(decision, format.channel || "press");
+  const text = (isValidDraft(aiText) ? aiText : null) || meta.fallbackDraft || channelFallbackStatement(decision, format.channel || "press");
   const readTime = draftReadingTime(text);
   const status = draftStatus(format);
   const statusClass = draftStatusClass(status);
@@ -5243,7 +5243,8 @@ function bindActions() {
       try { decision = JSON.parse(card.dataset.officeDecision || "{}"); } catch (_) { decision = {}; }
       const resolvedFormat = format || { id: formatId, label: formatId, icon: "ti-file", channel: "press" };
       const resolvedMeta = OFFICE_FORMAT_META[formatId] || {};
-      const text = officeDrafts[key] || resolvedMeta.fallbackDraft || channelFallbackStatement(
+      const cachedText = officeDrafts[key];
+      const text = (isValidDraft(cachedText) ? cachedText : null) || resolvedMeta.fallbackDraft || channelFallbackStatement(
         decisions.find((d) => d.id === decision.id || d.signalId === decision.signalId) || decision,
         resolvedFormat.channel || "press"
       );
@@ -5923,6 +5924,10 @@ function lines(value) {
 
 function generateStatement(input, decision, channel = selectedCommunicationChannel) {
   return channelFallbackStatement(decision, channel);
+}
+
+function isValidDraft(text) {
+  return Boolean(text) && !String(text).includes("kein belastbarer Kommunikationsvorschlag");
 }
 
 async function generateStatementWithBackend(input, decision, channel = selectedCommunicationChannel) {
