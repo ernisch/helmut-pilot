@@ -1222,6 +1222,7 @@ function renderSidebar() {
         </nav>
       </div>
       <div class="sidebar-foot">
+        ${renderAccountBar()}
         <p>${escapeHtml(profile?.fullName || "Profil")}<br><span>${escapeHtml(profile?.function || "MdB")}</span></p>
         ${isAccountMode() && currentUser ? `<button class="account-logout sidebar-logout" type="button" data-logout>Abmelden</button>` : ""}
       </div>
@@ -1275,7 +1276,6 @@ function renderTopbar() {
       </button>
       <span class="topbar-brand">HELMUT</span>
       <div class="topbar-meta">
-        ${renderAccountBar()}
         <button class="update-heart ${hasUpdates ? "has-updates" : ""}" type="button" data-updates title="${hasUpdates ? "Updates anzeigen" : "Keine neuen Updates"}" aria-label="${hasUpdates ? "Updates anzeigen" : "Keine neuen Updates"}">
           <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">
             <path d="M31.7 54.2 11.9 34.5C4.4 27 4.8 15.4 12.8 9.4c6.1-4.6 14.8-3.4 19.1 2.9 4.4-6.3 13.1-7.5 19.2-2.9 8 6 8.3 17.6.8 25.1L31.7 54.2Z" />
