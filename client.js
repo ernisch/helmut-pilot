@@ -1319,6 +1319,12 @@ function renderSidebar() {
   const displayName = currentUser?.name || profile?.fullName || "Profil";
   const displayRole = currentUser ? roleLabel(currentUser.role) : (profile?.function || "MdB");
   const initials = displayName.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+  const showSwitcher = isAccountMode() && currentUser && allowedProfiles.length > 1;
+  const profileSwitcher = showSwitcher
+    ? `<select class="account-switch" data-profile-switch aria-label="Mandat wählen">
+        ${allowedProfiles.map((entry) => `<option value="${escapeAttribute(entry.id)}" ${entry.id === activePoliticianId ? "selected" : ""}>${escapeHtml(entry.name)}</option>`).join("")}
+      </select>`
+    : "";
   return `
     <aside class="sidebar ${navOpen ? "open" : ""}">
       <div>
@@ -1333,7 +1339,7 @@ function renderSidebar() {
         </nav>
       </div>
       <div class="sidebar-foot">
-        ${renderAccountBar()}
+        ${profileSwitcher}
         <div class="sidebar-user-card">
           <div class="sidebar-user-avatar">${escapeHtml(initials)}</div>
           <div class="sidebar-user-info">
