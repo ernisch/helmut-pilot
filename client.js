@@ -1401,7 +1401,7 @@ function renderParliamentItem(item) {
         <p><b>Empfohlene Handlung:</b> ${escapeHtml(a.recommendedAction || "")}</p>
       </div>`;
   } else {
-    assessmentBlock = `<button class="secondary-button compact-button" type="button" data-assess-id="${escapeAttribute(item.id)}">Helmut: einordnen</button>`;
+    assessmentBlock = `<button class="secondary-button compact-button" type="button" data-assess-id="${escapeAttribute(item.id)}">Soll Helmut einordnen?</button>`;
   }
   return `
     <article class="parliament-item">
