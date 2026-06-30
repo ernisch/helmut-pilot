@@ -2706,6 +2706,196 @@ small {
   line-height: 1.5;
 }
 
+.radar-group-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  margin-left: 8px;
+  border-radius: 6px;
+  background: rgba(20, 33, 61, .08);
+  color: var(--muted-2);
+  font-size: 12px;
+  font-weight: 700;
+  font-style: normal;
+  letter-spacing: 0;
+  vertical-align: middle;
+}
+
+.radar-status-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  border-radius: 14px;
+  border-left: 3px solid transparent;
+}
+
+.radar-status-card.radar-status-ok {
+  background: rgba(57, 209, 143, .07);
+  border-left-color: var(--chance);
+}
+
+.radar-status-card.radar-status-risk {
+  background: rgba(255, 89, 103, .07);
+  border-left-color: var(--danger);
+}
+
+.radar-status-main {
+  min-width: 0;
+}
+
+.radar-status-label {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.radar-status-ok .radar-status-label { color: var(--chance); }
+.radar-status-risk .radar-status-label { color: var(--danger); }
+
+.radar-status-card p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+  opacity: .85;
+}
+
+.radar-signal-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 20px;
+  border-radius: 14px;
+  background: rgba(255, 255, 252, .84);
+  border: 1px solid rgba(20, 33, 61, .07);
+  border-left: 3px solid transparent;
+}
+
+.radar-signal-card.radar-signal-watch { border-left-color: var(--watch); }
+.radar-signal-card.radar-signal-chance { border-left-color: var(--chance); }
+.radar-signal-card.radar-signal-ok { border-left-color: rgba(20, 33, 61, .15); }
+
+.radar-signal-body {
+  min-width: 0;
+}
+
+.radar-signal-status {
+  display: inline-block;
+  margin-bottom: 6px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.radar-signal-watch .radar-signal-status {
+  color: var(--watch);
+  background: rgba(214, 160, 64, .11);
+}
+
+.radar-signal-chance .radar-signal-status {
+  color: var(--chance);
+  background: rgba(57, 209, 143, .11);
+}
+
+.radar-signal-ok .radar-signal-status {
+  color: var(--muted-2);
+  background: rgba(20, 33, 61, .06);
+}
+
+.radar-signal-card h3 {
+  margin: 0 0 5px;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.22;
+}
+
+.radar-signal-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.radar-mention-compact {
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: rgba(255, 255, 252, .84);
+  border: 1px solid rgba(20, 33, 61, .07);
+}
+
+.radar-mention-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 5px;
+}
+
+.radar-mention-source {
+  color: var(--muted-2);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.radar-mention-status {
+  color: var(--muted-2);
+  font-size: 10px;
+  opacity: .6;
+}
+
+.radar-mention-compact h3 {
+  margin: 0 0 5px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.28;
+}
+
+.radar-mention-compact p {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.radar-mention-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.radar-mention-link {
+  color: var(--muted-2);
+  font-size: 13px;
+  text-decoration: none;
+  transition: color .15s ease;
+}
+
+.radar-mention-link:hover { color: var(--text); }
+
+.radar-source-link {
+  display: inline-block;
+  margin-top: 8px;
+  color: var(--muted-2);
+  font-size: 13px;
+  text-decoration: none;
+  transition: color .15s ease;
+}
+
+.radar-source-link:hover { color: var(--text); }
+
 .plain-list > h2 {
   margin-bottom: 10px;
   color: var(--accent-ink);
@@ -4591,6 +4781,38 @@ small {
     grid-template-columns: 1fr;
     gap: 16px;
     padding: 20px 0;
+  }
+
+  .radar-status-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+
+  .radar-status-card .secondary-button {
+    width: auto;
+    align-self: flex-start;
+  }
+
+  .radar-signal-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .radar-signal-card .secondary-button {
+    width: auto;
+    align-self: flex-start;
+  }
+
+  .radar-mention-compact {
+    padding: 12px 14px;
+  }
+
+  .radar-mention-actions {
+    flex-wrap: wrap;
+    gap: 10px;
   }
 
   .secondary-button,

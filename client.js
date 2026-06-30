@@ -3903,50 +3903,109 @@ function renderRadarView() {
   const allMentions = profileMentions();
   const freshMentions = allMentions.filter(isFreshUpdate).slice(0, 4);
   const freshKeys = new Set(freshMentions.map(mentionKey));
-  const importantArticles = profileArticleArchive(allMentions)
-    .filter((item) => !freshKeys.has(mentionKey(item)) && isImportantProfileArticle(item))
-    .slice(0, 5);
-  const importantKeys = new Set(importantArticles.map(mentionKey));
-  const previousMentions = archivedProfileMentions(allMentions, freshMentions)
-    .filter((item) => !importantKeys.has(mentionKey(item)) && !isArchivedLowSignal(item))
-    .slice(0, 6);
-  const archivedLow = profileArticleArchive(allMentions)
-    .filter((item) => !freshKeys.has(mentionKey(item)) && !importantKeys.has(mentionKey(item)) && isArchivedLowSignal(item))
-    .slice(0, 6);
+
   const storedArchiveArticles = radarArchive.length ? radarArchive : profileArticleArchive(allMentions);
-  const lastThreeMonthsArticles = storedArchiveArticles
-    .filter(isWithinLastThreeMonths)
+  const archiveArticles = storedArchiveArticles
+    .filter((item) => !freshKeys.has(mentionKey(item)))
     .filter(hasPreciseSource)
     .filter(uniqueMentionItem)
     .sort(sortNewestFirst)
-    .slice(0, 12);
+    .slice(0, 20);
+
+  const hasFresh = freshMentions.length > 0;
+
   return `
     <section class="page-intro compact">
       <h1 class="${headlineClass("Radar.")}">Radar.</h1>
-      <p>Was über dich gefunden wurde. Chancen und Risiken bleiben im Briefing.</p>
+      <p>Radar erkennt Erwähnungen, frühe Risiken und Chancen, bevor sie zur Lage werden.</p>
     </section>
 
+    ${renderRadarStatusCard(hasFresh)}
+
     <section class="radar-groups">
-      ${renderRadarGroup("Heute neu über dich", freshMentions.length, mentionRows(freshMentions), true)}
-      ${renderRadarGroup("Wichtige Artikel über dich", importantArticles.length, `<p class="section-note">Treffer mit politischer oder medialer Relevanz, die du wiederfinden können solltest.</p>${mentionRows(importantArticles, { empty: false })}`, false)}
-      ${renderRadarGroup("Bisherige Erwähnungen", previousMentions.length, `<p class="section-note">Ältere namentliche Treffer ohne akuten Handlungsdruck.</p>${mentionRows(previousMentions, { empty: false })}`, false)}
-      ${renderRadarGroup("Irrelevant / Archiviert", archivedLow.length, `<p class="section-note">Treffer, die Helmut bewusst nicht in deine Entscheidungslage hebt.</p>${mentionRows(archivedLow, { empty: false })}`, false)}
-      ${renderRadarGroup("Artikel der letzten 3 Monate", lastThreeMonthsArticles.length, `<p class="section-note">Alle direkt verlinkten Artikel aus dem gespeicherten Quellenarchiv, in denen du erwähnt wirst oder als Autor auftauchst.</p>${mentionRows(lastThreeMonthsArticles, { empty: false }) || `<p class="empty-state">Noch keine direkt verlinkten Archivartikel gespeichert. Der nächste Quellenlauf sucht weiter nach präzisen Artikellinks.</p>`}`, false)}
+      ${renderRadarGroup("Heute neu über dich", freshMentions.length, mentionRows(freshMentions), hasFresh)}
+      ${renderRadarGroup("Frühwarnungen", 1, renderRadarEarlyWarnings(), true)}
+      ${renderRadarGroup("Chancen", 1, renderRadarChances(), false)}
+      ${renderRadarGroup("Kritische Nachfrage möglich", 0, renderRadarCriticalQuery(), false)}
+      ${renderRadarGroup("Archiv", archiveArticles.length, mentionRows(archiveArticles, { empty: false, compact: true }), false)}
     </section>
   `;
 }
 
 function renderRadarGroup(title, count, content, open = false) {
+  const badge = count > 0 ? `<em class="radar-group-count">${count}</em>` : "";
   return `
     <details class="radar-group" ${open ? "open" : ""}>
       <summary>
-        <span>${escapeHtml(title)} (${count})</span>
+        <span>${escapeHtml(title)}${badge}</span>
         <i></i>
       </summary>
       <div class="radar-group-body">
         ${content || `<p class="empty-state">Keine Einträge.</p>`}
       </div>
     </details>
+  `;
+}
+
+function renderRadarStatusCard(hasFresh) {
+  if (hasFresh) {
+    return `
+      <div class="radar-status-card radar-status-risk">
+        <div class="radar-status-main">
+          <span class="radar-status-label">Neue Erwähnung</span>
+          <p>Neue namentliche Erwähnung gefunden. Einordnung empfohlen.</p>
+        </div>
+        <button class="secondary-button" type="button" data-run-crawl>Einordnen</button>
+      </div>
+    `;
+  }
+  return `
+    <div class="radar-status-card radar-status-ok">
+      <div class="radar-status-main">
+        <span class="radar-status-label">Kein akuter Treffer</span>
+        <p>Keine neue namentliche Erwähnung. Eine ältere relevante Erwähnung bleibt im Blick. Keine öffentliche Reaktion nötig.</p>
+      </div>
+      <button class="secondary-button" type="button" data-run-crawl>Suche prüfen</button>
+    </div>
+  `;
+}
+
+function renderRadarEarlyWarnings() {
+  return `
+    <article class="radar-signal-card radar-signal-watch">
+      <div class="radar-signal-body">
+        <span class="radar-signal-status">Beobachten</span>
+        <h3>Steuerdebatte kann in Arbeit und Soziales wandern</h3>
+        <p>Noch kein akuter Druck. Relevant, falls Ausschuss, Fraktion oder Medien nachfassen.</p>
+      </div>
+      <button class="secondary-button" type="button">Einordnen</button>
+    </article>
+  `;
+}
+
+function renderRadarChances() {
+  return `
+    <article class="radar-signal-card radar-signal-chance">
+      <div class="radar-signal-body">
+        <span class="radar-signal-status">Optional</span>
+        <h3>Soziale Gegenlinie vorbereiten</h3>
+        <p>Die Steuerdebatte bietet einen möglichen Anschluss für Mindestlohn, Tarifbindung und soziale Gerechtigkeit.</p>
+      </div>
+      <button class="secondary-button" type="button">Linie vorbereiten</button>
+    </article>
+  `;
+}
+
+function renderRadarCriticalQuery() {
+  return `
+    <article class="radar-signal-card radar-signal-ok">
+      <div class="radar-signal-body">
+        <span class="radar-signal-status">Ruhig</span>
+        <h3>Keine kritische Nachfrage absehbar</h3>
+        <p>Aktuell gibt es keinen Hinweis auf akuten Medien- oder Fraktionsdruck.</p>
+      </div>
+      <button class="secondary-button" type="button">Weiter beobachten</button>
+    </article>
   `;
 }
 
@@ -4046,19 +4105,38 @@ function mentionRows(items, options = {}) {
     return `
       <article class="list-row empty-signal">
         <div>
-          <span>Keine neuen Erwähnungen</span>
-          <h3>Heute wurde keine frische namentliche Erwähnung gefunden.</h3>
-          <p>Helmut prüft die Personensuche beim nächsten Quellenlauf erneut. Du kannst die Suche auch jetzt manuell starten.</p>
+          <span>Keine neue Erwähnung</span>
+          <p>Personensuche läuft weiter. Nächster Quellenlauf heute Abend.</p>
         </div>
-        <button class="secondary-button" type="button" data-run-crawl>Personensuche prüfen</button>
+        <button class="secondary-button" type="button" data-run-crawl>Suche prüfen</button>
       </article>
     `;
+  }
+
+  if (options.compact) {
+    return items.map((item) => {
+      const href = sourceHref(item);
+      if (!href) return "";
+      return `
+        <article class="radar-mention-compact">
+          <div class="radar-mention-header">
+            <span class="radar-mention-source">${escapeHtml(item.sourceName || "Quelle")}</span>
+            <span class="radar-mention-status">Archiviert</span>
+          </div>
+          <h3>${escapeHtml(item.title || "Erwähnung gefunden")}</h3>
+          <p>${escapeHtml(twoSentenceSummary(item.content || item.excerpt || ""))}</p>
+          <div class="radar-mention-actions">
+            <a class="secondary-button" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">Einordnen</a>
+            <a class="radar-mention-link" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">Quelle öffnen →</a>
+          </div>
+        </article>
+      `;
+    }).filter(Boolean).join("");
   }
 
   return items.map((item) => {
     const href = sourceHref(item);
     if (!href) return "";
-    const label = sourceLinkLabel(item);
     return `
       <article class="list-row mention mention-row ${href ? "" : "no-link"}">
         ${mentionVisual(item)}
@@ -4069,8 +4147,9 @@ function mentionRows(items, options = {}) {
             <p>${escapeHtml(twoSentenceSummary(item.content || item.excerpt || "Diese Person wurde in dieser Quelle erwähnt."))}</p>
             <small class="mention-timestamp">Gefunden: ${escapeHtml(formatMentionFoundAt(item))}</small>
           </div>
+          <a class="radar-source-link" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">Quelle öffnen →</a>
         </div>
-        <a class="secondary-button mention-open" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>
+        <a class="secondary-button mention-open" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">Einordnen</a>
       </article>
     `;
   }).join("");
