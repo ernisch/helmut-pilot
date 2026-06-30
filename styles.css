@@ -7609,3 +7609,137 @@ body {
     border-radius: 20px;
   }
 }
+
+/* ── Helmut Tab — Hero Decision & Detail Accordions ─────────────────── */
+.helmut-hero {
+  display: grid;
+  gap: 18px;
+  padding: clamp(22px, 3.5vw, 34px);
+  border: 1px solid rgba(245, 241, 232, .09);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, .03);
+}
+
+.helmut-hero-decision {
+  margin: 4px 0 0;
+  color: var(--command-text);
+  font-size: clamp(21px, 3.2vw, 30px);
+  font-weight: 620;
+  line-height: 1.22;
+  letter-spacing: -.02em;
+}
+
+.helmut-hero-bullets {
+  display: grid;
+  gap: 11px;
+  margin: 0;
+  padding: 16px 0 0;
+  border-top: 1px solid rgba(245, 241, 232, .08);
+}
+
+.helmut-hero-bullets > div {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 12px;
+  align-items: baseline;
+}
+
+.helmut-hero-bullets dt {
+  color: rgba(249, 205, 127, .8);
+  font-size: 11px;
+  font-weight: 820;
+  letter-spacing: .10em;
+  text-transform: uppercase;
+}
+
+.helmut-hero-bullets dd {
+  margin: 0;
+  color: rgba(245, 241, 232, .76);
+  font-size: clamp(14px, 1.8vw, 15px);
+  line-height: 1.48;
+}
+
+.helmut-detail {
+  border: 1px solid rgba(245, 241, 232, .09);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, .03);
+  overflow: hidden;
+}
+
+.helmut-detail summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: clamp(14px, 2vw, 20px) clamp(18px, 2.8vw, 26px);
+  color: rgba(245, 241, 232, .65);
+  font-size: 12px;
+  font-weight: 820;
+  letter-spacing: .10em;
+  text-transform: uppercase;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.helmut-detail summary::-webkit-details-marker { display: none; }
+
+.helmut-detail summary::after {
+  content: "+";
+  flex-shrink: 0;
+  font-size: 20px;
+  font-weight: 300;
+  line-height: 1;
+  color: rgba(245, 241, 232, .32);
+  transition: transform .18s ease;
+}
+
+.helmut-detail[open] > summary::after {
+  content: "−";
+}
+
+.helmut-detail-body {
+  display: grid;
+  gap: 14px;
+  padding: 0 clamp(18px, 2.8vw, 26px) clamp(18px, 2.8vw, 26px);
+}
+
+.helmut-detail-body p {
+  margin: 0;
+  color: rgba(245, 241, 232, .80);
+  font-size: clamp(15px, 2vw, 17px);
+  line-height: 1.58;
+}
+
+.helmut-detail--risk > summary {
+  color: rgba(243, 106, 116, .78);
+}
+
+.helmut-detail--risk > summary::after {
+  color: rgba(243, 106, 116, .42);
+}
+
+.helmut-detail--risk .helmut-detail-body p {
+  color: rgba(243, 106, 116, .88);
+}
+
+.helmut-assessment-head small {
+  color: rgba(245, 241, 232, .48);
+  font-size: 13px;
+}
+
+@media (max-width: 680px) {
+  .helmut-hero-bullets > div {
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: 8px;
+  }
+  .helmut-hero-decision {
+    font-size: clamp(19px, 6vw, 26px);
+  }
+  .helmut-detail summary {
+    padding: 14px 18px;
+  }
+  .helmut-detail-body {
+    padding: 0 18px 18px;
+  }
+}

@@ -1936,6 +1936,41 @@ function priorityTrendLabel(value) {
   return value;
 }
 
+function firstSentence(text, maxLen = 120) {
+  if (!text) return "";
+  const m = String(text).match(/^.+?[.!?](?:\s|$)/);
+  const s = (m ? m[0] : String(text).split(/[.!?]/)[0]).trim();
+  const clean = /[.!?]$/.test(s) ? s : s + ".";
+  return clean.length > maxLen ? clean.slice(0, maxLen - 1).trimEnd() + "…" : clean;
+}
+
+function helmutDecisionState(assessment) {
+  const s = String(assessment?.priorityStatus || "stable");
+  if (s === "risk") return "reagieren";
+  if (s === "chance" || s === "changed") return "vorbereiten";
+  return "beobachten";
+}
+
+function helmutDecisionLabel(state) {
+  return ({
+    reagieren:   "Heute reagieren — öffentliche Position einnehmen",
+    vorbereiten: "Heute vorbereiten — Position bereithalten",
+    beobachten:  "Heute beobachten, nicht öffentlich reagieren",
+    ignorieren:  "Kein Handlungsbedarf heute",
+  })[state] || "Heute beobachten, nicht öffentlich reagieren";
+}
+
+function helmutButtonConfig(state, actionId) {
+  const id = escapeHtml(actionId || "");
+  const cfg = {
+    reagieren:   { primary: "Jetzt reagieren",        pAttr: id ? `data-detail="${id}"` : "data-run-crawl",             secondary: "Antwort vorbereiten",   sAttr: id ? `data-communication="${id}"` : "data-run-crawl" },
+    vorbereiten: { primary: "Linie vorbereiten",       pAttr: id ? `data-communication="${id}"` : `data-view="office"`,  secondary: "Quellen prüfen",        sAttr: "data-run-crawl" },
+    beobachten:  { primary: "Linie vorbereiten",       pAttr: id ? `data-communication="${id}"` : `data-view="office"`,  secondary: "Beobachten bestätigen", sAttr: `data-view="lage"` },
+    ignorieren:  { primary: "Als erledigt markieren",  pAttr: id ? `data-lage-done="${id}"` : "data-run-crawl",          secondary: "Quellen prüfen",        sAttr: "data-run-crawl" },
+  };
+  return cfg[state] || cfg.beobachten;
+}
+
 function renderHelmutView() {
   return helmutThinking ? renderHelmutThinkingView() : renderHelmutAssessmentView();
 }
@@ -1986,42 +2021,60 @@ function renderHelmutAssessmentView() {
   const assessment = buildHelmutAssessment();
   if (helmutTypingActive) return renderHelmutTypingResult(assessment);
   const actionId = decisions[0]?.id || "";
+  const state = helmutDecisionState(assessment);
+  const btn = helmutButtonConfig(state, actionId);
+  const firstName = (profile?.fullName || "").split(" ")[0];
+  const whyLine = firstSentence(assessment.whyImportant);
+  const riskLine = firstSentence(assessment.risk);
+  const nextLine = firstSentence(assessment.recommendation);
   return `
     <section class="helmut-assessment" aria-label="Helmuts Einschätzung">
       <div class="helmut-assessment-head">
         <span>Helmut</span>
-        <small>Erstellt: ${escapeHtml(assessment.time)} Uhr</small>
-        <h1>Meine Einschätzung für dich.</h1>
+        <small>${escapeHtml(timeGreeting(firstName))} · ${escapeHtml(assessment.time)} Uhr</small>
+        <h1>Was ich dir empfehle</h1>
       </div>
 
-      <article class="helmut-note">
+      <div class="helmut-hero">
         <b class="priority-status ${escapeAttribute(assessment.priorityStatus || "stable")}">${escapeHtml(priorityStatusText(assessment.priorityStatus))}</b>
-        <p>${escapeHtml(assessment.greeting)}</p>
-        <p>${escapeHtml(assessment.assessment)}</p>
-        <div>
-          <span>Mein Vorschlag:</span>
-          <p>${escapeHtml(assessment.recommendation)}</p>
+        <h2 class="helmut-hero-decision">${escapeHtml(helmutDecisionLabel(state))}</h2>
+        <dl class="helmut-hero-bullets">
+          <div><dt>Warum</dt><dd>${escapeHtml(whyLine)}</dd></div>
+          <div><dt>Risiko</dt><dd>${escapeHtml(riskLine)}</dd></div>
+          <div><dt>Nächster Schritt</dt><dd>${escapeHtml(nextLine)}</dd></div>
+        </dl>
+      </div>
+
+      <div class="helmut-actions">
+        <button class="primary-button" type="button" ${btn.pAttr}>${escapeHtml(btn.primary)}</button>
+        <button class="secondary-button" type="button" ${btn.sAttr}>${escapeHtml(btn.secondary)}</button>
+      </div>
+
+      <details class="helmut-detail" open>
+        <summary>Mein Vorschlag</summary>
+        <div class="helmut-detail-body">
+          <p>${escapeHtml(assessment.assessment)}</p>
+          ${assessment.recommendation ? `<p>${escapeHtml(assessment.recommendation)}</p>` : ""}
         </div>
-      </article>
+      </details>
 
-      <article class="helmut-reason">
-        <span>Warum ist das wichtig?</span>
-        <p>${escapeHtml(assessment.whyImportant)}</p>
-      </article>
+      <details class="helmut-detail">
+        <summary>Warum ist das wichtig?</summary>
+        <div class="helmut-detail-body">
+          <p>${escapeHtml(assessment.whyImportant)}</p>
+        </div>
+      </details>
 
-      <article class="helmut-reason risk">
-        <span>Risiko bei Nichtreaktion</span>
-        <p>${escapeHtml(assessment.risk)}</p>
-      </article>
+      <details class="helmut-detail helmut-detail--risk">
+        <summary>Risiko bei Nichtreaktion</summary>
+        <div class="helmut-detail-body">
+          <p>${escapeHtml(assessment.risk)}</p>
+        </div>
+      </details>
 
       <div class="helmut-assessment-foot">
         <small>Aktualisiert: ${escapeHtml(formatBriefingDate(briefing.generatedAt || briefing.date || new Date().toISOString()))}</small>
         ${renderRefreshButton()}
-      </div>
-
-      <div class="helmut-actions">
-        ${actionId ? `<button class="primary-button" type="button" data-detail="${escapeHtml(actionId)}">Empfehlung öffnen</button>` : `<button class="secondary-button" type="button" data-run-crawl>Quellen prüfen</button>`}
-        ${actionId ? `<button class="secondary-button" type="button" data-communication="${escapeHtml(actionId)}">Antwort vorbereiten</button>` : ""}
       </div>
     </section>
   `;
@@ -2032,8 +2085,8 @@ function renderHelmutTypingResult(assessment) {
     <section class="helmut-assessment helmut-assessment-typing" aria-label="Helmuts Einschätzung">
       <div class="helmut-assessment-head">
         <span>Helmut</span>
-        <small>Erstellt: ${escapeHtml(assessment.time)} Uhr</small>
-        <h1>Meine Einschätzung für dich.</h1>
+        <small>${escapeHtml(assessment.time)} Uhr</small>
+        <h1>Was ich dir empfehle</h1>
       </div>
       <article class="helmut-note helmut-typewriter" aria-live="polite">
         <b class="priority-status ${escapeAttribute(assessment.priorityStatus || "stable")}">${escapeHtml(priorityStatusText(assessment.priorityStatus))}</b>
@@ -2047,7 +2100,7 @@ function buildHelmutAssessment() {
   const stored = briefing?.helmutAssessment;
   if (stored && typeof stored === "object") {
     const normalized = {
-      greeting: String(stored.greeting || timeGreeting((profile?.fullName || "").split(" ")[0])).trim(),
+      greeting: timeGreeting((profile?.fullName || "").split(" ")[0]),
       time: String(stored.time || formatBerlinTimeOnly()).trim(),
       assessment: String(stored.assessment || "").trim(),
       recommendation: String(stored.recommendation || "").trim(),
@@ -5242,6 +5295,16 @@ function bindActions() {
     });
   });
 
+  app.querySelectorAll(".helmut-detail").forEach((detail) => {
+    detail.addEventListener("toggle", () => {
+      if (detail.open) {
+        app.querySelectorAll(".helmut-detail").forEach((other) => {
+          if (other !== detail) other.removeAttribute("open");
+        });
+      }
+    });
+  });
+
   app.querySelectorAll("[data-run-crawl]").forEach((button) => {
     button.addEventListener("click", async () => {
       if (previewMode) {
@@ -6431,11 +6494,9 @@ function timeGreeting(firstName = "") {
   const hour = berlinHour();
   const name = String(firstName || "").trim();
   const suffix = name ? `, ${name}` : "";
-  if (hour >= 5 && hour < 10) return `Guten Morgen${suffix}.`;
-  if (hour >= 10 && hour < 14) return `Mahlzeit${suffix}.`;
-  if (hour >= 14 && hour < 18) return `Guten Nachmittag${suffix}.`;
-  if (hour >= 18) return `Guten Abend${suffix}.`;
-  return `Guten Morgen${suffix}.`;
+  if (hour >= 5 && hour < 11) return `Guten Morgen${suffix}.`;
+  if (hour >= 11 && hour < 17) return `Guten Tag${suffix}.`;
+  return `Guten Abend${suffix}.`;
 }
 
 function updateBerlinClock() {
