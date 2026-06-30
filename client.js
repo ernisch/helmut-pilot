@@ -3955,7 +3955,7 @@ function renderRadarStatusCard(hasFresh) {
           <span class="radar-status-label">Neue Erwähnung</span>
           <p>Neue namentliche Erwähnung gefunden. Einordnung empfohlen.</p>
         </div>
-        <button class="secondary-button" type="button" data-run-crawl>Einordnen</button>
+        <button class="secondary-button" type="button" data-radar-search>Suche prüfen</button>
       </div>
     `;
   }
@@ -3965,7 +3965,7 @@ function renderRadarStatusCard(hasFresh) {
         <span class="radar-status-label">Kein akuter Treffer</span>
         <p>Keine neue namentliche Erwähnung. Eine ältere relevante Erwähnung bleibt im Blick. Keine öffentliche Reaktion nötig.</p>
       </div>
-      <button class="secondary-button" type="button" data-run-crawl>Suche prüfen</button>
+      <button class="secondary-button" type="button" data-radar-search>Suche prüfen</button>
     </div>
   `;
 }
@@ -4105,7 +4105,7 @@ function mentionRows(items, options = {}) {
     return `
       <div class="radar-empty-hint">
         <p><strong>Keine neue Erwähnung</strong><br>Personensuche läuft weiter. Nächster Quellenlauf heute Abend.</p>
-        <button class="secondary-button" type="button" data-run-crawl>Suche prüfen</button>
+        <button class="secondary-button" type="button" data-radar-search>Suche prüfen</button>
       </div>
     `;
   }
@@ -5404,6 +5404,25 @@ function bindActions() {
         button.textContent = originalText;
         showToast("Prüfung konnte nicht gestartet werden");
         render();
+      }
+    });
+  });
+
+  app.querySelectorAll("[data-radar-search]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const originalText = button.textContent;
+      button.disabled = true;
+      button.textContent = "Suche wird geprüft";
+      try {
+        const response = await fetchWithTimeout(`/api/pipeline/run?${apiScopeQuery()}`);
+        if (!response.ok) throw new Error(`Search failed: ${response.status}`);
+        const result = await response.json();
+        button.textContent = result.skippedReason ? "Keine neue Erwähnung gefunden." : "Suche aktualisiert.";
+        window.setTimeout(() => { button.disabled = false; button.textContent = originalText; }, 2600);
+        await loadBriefing();
+      } catch {
+        button.textContent = "Suche wird beim nächsten Quellenlauf aktualisiert.";
+        window.setTimeout(() => { button.disabled = false; button.textContent = originalText; }, 2600);
       }
     });
   });
