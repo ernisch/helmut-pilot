@@ -863,15 +863,29 @@ function renderAdminView() {
   const mandateOptions = adminMandateOptions();
   const referenten = (data.users || []).filter((user) => user.role === "referent");
 
-  const userRows = (data.users || []).map((user) => `
+  const userRows = (data.users || []).map((user) => {
+    const billingDays = user.paidUntil ? Math.ceil((new Date(user.paidUntil) - Date.now()) / 86400000) : null;
+    const billingBadge = user.paidUntil === null || user.paidUntil === undefined
+      ? '<span class="admin-pill billing-none">Kein Abo</span>'
+      : billingDays > 7
+        ? `<span class="admin-pill billing-ok">✓ bis ${new Date(user.paidUntil).toLocaleDateString("de-DE")}</span>`
+        : billingDays >= 0
+          ? `<span class="admin-pill billing-warn">⚠ ${billingDays}d noch</span>`
+          : `<span class="admin-pill billing-overdue">✕ überfällig</span>`;
+    return `
     <tr>
       <td data-label="Name">${escapeHtml(user.name || "")}</td>
       <td data-label="E-Mail">${escapeHtml(user.email || "")}</td>
       <td data-label="Rolle">${escapeHtml(roleLabel(user.role))}${user.politicianId ? `<br><small>${escapeHtml(user.politicianId)}</small>` : ""}</td>
       <td data-label="Status">${user.active === false ? '<span class="admin-pill admin-pill-off">inaktiv</span>' : '<span class="admin-pill admin-pill-on">aktiv</span>'}</td>
+      <td data-label="Bezahlt bis" class="billing-cell">
+        ${billingBadge}
+        <input type="date" class="billing-date-input" data-billing-user="${escapeAttribute(user.id)}" value="${user.paidUntil ? user.paidUntil.slice(0, 10) : ""}" title="Bezahlt bis" />
+      </td>
       <td data-label="Aktion" class="admin-actions-cell"><button class="account-logout" type="button" data-toggle-user="${escapeAttribute(user.id)}" data-active="${user.active === false ? "0" : "1"}">${user.active === false ? "Aktivieren" : "Deaktivieren"}</button></td>
     </tr>
-  `).join("");
+  `;
+  }).join("");
 
   const assignmentRows = (data.assignments || []).length
     ? data.assignments.map((entry) => {
@@ -900,7 +914,7 @@ function renderAdminView() {
         <h3>Nutzer</h3>
         <div class="admin-table-wrap">
           <table class="admin-table">
-            <thead><tr><th>Name</th><th>E-Mail</th><th>Rolle</th><th>Status</th><th></th></tr></thead>
+            <thead><tr><th>Name</th><th>E-Mail</th><th>Rolle</th><th>Status</th><th>Bezahlt bis</th><th></th></tr></thead>
             <tbody>${userRows}</tbody>
           </table>
         </div>
@@ -5061,6 +5075,19 @@ function bindAccountActions() {
       if (res.ok) {
         adminDataLoaded = false;
         await ensureViewData("admin");
+      }
+    });
+  });
+
+  app.querySelectorAll("[data-billing-user]").forEach((input) => {
+    input.addEventListener("change", async () => {
+      const id = input.dataset.billingUser;
+      const value = input.value || null;
+      const res = await apiSend("PATCH", `/api/admin/users/${encodeURIComponent(id)}?${apiScopeQuery()}`, { paidUntil: value });
+      if (res.ok) {
+        adminDataLoaded = false;
+        await ensureViewData("admin");
+        showToast(value ? `Bezahlt bis ${new Date(value).toLocaleDateString("de-DE")} gesetzt.` : "Abo-Datum entfernt.");
       }
     });
   });

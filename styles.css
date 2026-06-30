@@ -6854,6 +6854,24 @@ body {
 
 .admin-pill-on { background: rgba(57, 209, 143, .16); color: var(--chance); }
 .admin-pill-off { background: rgba(255, 89, 103, .16); color: var(--danger); }
+.billing-ok   { background: rgba(57, 209, 143, .16); color: var(--chance); }
+.billing-warn { background: rgba(251, 191, 36, .16); color: #fbbf24; }
+.billing-overdue { background: rgba(255, 89, 103, .18); color: var(--danger); font-weight: 600; }
+.billing-none { background: rgba(148, 163, 184, .1); color: var(--muted); }
+
+.billing-cell { white-space: nowrap; }
+.billing-date-input {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  background: var(--surface-2, rgba(255,255,255,.05));
+  border: 1px solid var(--border, rgba(255,255,255,.1));
+  border-radius: 6px;
+  color: var(--text);
+  padding: 2px 6px;
+  width: 130px;
+  cursor: pointer;
+}
 
 .admin-form,
 .admin-inline-form {
