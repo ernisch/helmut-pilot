@@ -2715,7 +2715,7 @@ small {
   padding: 0 6px;
   margin-left: 8px;
   border-radius: 6px;
-  background: rgba(20, 33, 61, .08);
+  background: rgba(245, 241, 232, .1);
   color: var(--muted-2);
   font-size: 12px;
   font-weight: 700;
@@ -2775,14 +2775,14 @@ small {
   gap: 20px;
   padding: 18px 20px;
   border-radius: 14px;
-  background: rgba(255, 255, 252, .84);
-  border: 1px solid rgba(20, 33, 61, .07);
+  background: var(--card);
+  border: 1px solid var(--line);
   border-left: 3px solid transparent;
 }
 
 .radar-signal-card.radar-signal-watch { border-left-color: var(--watch); }
 .radar-signal-card.radar-signal-chance { border-left-color: var(--chance); }
-.radar-signal-card.radar-signal-ok { border-left-color: rgba(20, 33, 61, .15); }
+.radar-signal-card.radar-signal-ok { border-left-color: rgba(245, 241, 232, .2); }
 
 .radar-signal-body {
   min-width: 0;
@@ -2811,7 +2811,7 @@ small {
 
 .radar-signal-ok .radar-signal-status {
   color: var(--muted-2);
-  background: rgba(20, 33, 61, .06);
+  background: var(--line);
 }
 
 .radar-signal-card h3 {
@@ -2831,8 +2831,8 @@ small {
 .radar-mention-compact {
   padding: 14px 18px;
   border-radius: 12px;
-  background: rgba(255, 255, 252, .84);
-  border: 1px solid rgba(20, 33, 61, .07);
+  background: var(--card);
+  border: 1px solid var(--line);
 }
 
 .radar-mention-header {
@@ -7158,7 +7158,9 @@ body {
 :root[data-theme="light"] .detail-card,
 :root[data-theme="light"] .ops-card,
 :root[data-theme="light"] .signal-card,
-:root[data-theme="light"] .note-card {
+:root[data-theme="light"] .note-card,
+:root[data-theme="light"] .radar-signal-card,
+:root[data-theme="light"] .radar-mention-compact {
   background: var(--card) !important;
   box-shadow: var(--soft-shadow);
 }
