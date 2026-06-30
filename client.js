@@ -3454,14 +3454,62 @@ function renderMemorySection(decision) {
 }
 
 const OFFICE_FORMAT_META = {
-  presse:       { formatLabel: "Pressemitteilung",        typeLabel: "PRESSEMITTEILUNG",         einordnung: "Offizielle Linie für Medien.",                  defaultStatus: "Entwurf bereit",   fromSource: "Aus Lage empfohlen",    lineCheck: "Linie geprüft. Sachlicher Ton empfohlen.",      qualityTone: "Sachlich, klar, politisch anschlussfähig", qualityUsage: "Presse und Medien",        iconBg: "var(--paper)", iconColor: "var(--muted)" },
-  linkedin:     { formatLabel: "LinkedIn Beitrag",         typeLabel: "LINKEDIN",                 einordnung: "Persönlich, kurz, anschlussfähig.",             defaultStatus: "Entwurf bereit",   fromSource: "Aus Lage empfohlen",    lineCheck: "Linie geprüft. Persönliche Sprache erwünscht.", qualityTone: "Persönlich, direkt, nahbar",               qualityUsage: "LinkedIn",                 iconBg: "var(--paper)", iconColor: "var(--muted)" },
-  x:            { formatLabel: "X Beitrag",                typeLabel: "X / TWITTER",              einordnung: "Kurz, pointiert, öffentlich.",                  defaultStatus: "Entwurf bereit",   fromSource: "Aus Lage empfohlen",    lineCheck: "Linie geprüft. Kurz halten.",                   qualityTone: "Direkt, knapp, pointiert",                 qualityUsage: "X / Twitter",              iconBg: "var(--paper)", iconColor: "var(--muted)" },
-  instagram:    { formatLabel: "Instagram Beitrag",        typeLabel: "INSTAGRAM",                einordnung: "Kurz, klar, mobil lesbar.",                     defaultStatus: "Entwurf bereit",   fromSource: "Aus Lage empfohlen",    lineCheck: "Linie geprüft. Persönliche Sprache erwünscht.", qualityTone: "Menschlich, authentisch, kurz",            qualityUsage: "Instagram",                iconBg: "var(--paper)", iconColor: "var(--muted)" },
-  anfrage:      { formatLabel: "Parlamentarische Anfrage", typeLabel: "PARLAMENTARISCHE ANFRAGE", einordnung: "Für Ausschuss und parlamentarische Kontrolle.", defaultStatus: "Zum Bereithalten", fromSource: "Aus Radar vorbereitet", lineCheck: "Linie geprüft. Formale Sprache erforderlich.",  qualityTone: "Formal, sachlich, präzise",                qualityUsage: "Parlamentarische Arbeit",  iconBg: "var(--paper)", iconColor: "var(--muted)" },
-  rede:         { formatLabel: "Redebaustein",             typeLabel: "REDEBAUSTEIN",             einordnung: "Für Termine, Interviews und kurze Statements.", defaultStatus: "Zum Bereithalten", fromSource: "Aus Radar vorbereitet", lineCheck: "Linie geprüft. Kernbotschaft klar halten.",     qualityTone: "Klar, überzeugend, politisch",             qualityUsage: "Termine und Interviews",   iconBg: "var(--paper)", iconColor: "var(--muted)" },
-  buergerbrief: { formatLabel: "Bürgerbrief",              typeLabel: "BÜRGERBRIEF",              einordnung: "Verständliche Antwort für Bürgeranfragen.",     defaultStatus: "Entwurf bereit",   fromSource: "Aus Lage empfohlen",    lineCheck: "Linie geprüft. Verständliche Sprache.",         qualityTone: "Zugänglich, klar, persönlich",             qualityUsage: "Bürgeranfragen",           iconBg: "var(--paper)", iconColor: "var(--muted)" },
-  intern:       { formatLabel: "Interne Linie",            typeLabel: "INTERNE LINIE",            einordnung: "Für Büro und Team.",                            defaultStatus: "Zum Bereithalten", fromSource: "Aus Radar vorbereitet", lineCheck: "Nur für internen Gebrauch.",                    qualityTone: "Sachlich, intern, klar",                   qualityUsage: "Interner Gebrauch",        iconBg: "var(--paper)", iconColor: "var(--muted)" },
+  presse: {
+    formatLabel: "Pressemitteilung", typeLabel: "PRESSEMITTEILUNG", einordnung: "Offizielle Linie für Medien.",
+    defaultStatus: "Entwurf bereit", fromSource: "Aus Lage empfohlen", lineCheck: "Linie geprüft. Sachlicher Ton empfohlen.",
+    qualityTone: "Sachlich, klar, politisch anschlussfähig", qualityUsage: "Presse und Medien",
+    fallbackDraft: "Die aktuelle Steuerdebatte darf nicht an den Lebensrealitäten von Beschäftigten vorbeigehen. Wer über Entlastung spricht, muss auch über Löhne, Tarifbindung und soziale Sicherheit sprechen.\n\nFür uns ist klar: Steuerpolitik muss Menschen mit kleinen und mittleren Einkommen stärken. Eine Debatte, die vor allem wirtschaftsnahe Forderungen aufgreift, greift zu kurz.\n\nWir beobachten die Vorschläge der Bundesregierung genau und erwarten, dass soziale Gerechtigkeit, Beschäftigte und öffentliche Daseinsvorsorge im Mittelpunkt stehen.",
+    iconBg: "var(--paper)", iconColor: "var(--muted)",
+  },
+  linkedin: {
+    formatLabel: "LinkedIn Beitrag", typeLabel: "LINKEDIN", einordnung: "Persönlich, kurz, anschlussfähig.",
+    defaultStatus: "Entwurf bereit", fromSource: "Aus Lage empfohlen", lineCheck: "Linie geprüft. Persönliche Sprache erwünscht.",
+    qualityTone: "Persönlich, direkt, nahbar", qualityUsage: "LinkedIn",
+    fallbackDraft: "Steuerpolitik muss Menschen stärken – nicht nur wirtschaftsnahe Interessen bedienen.\n\nWer über Entlastung spricht, muss auch über Löhne, Tarifbindung und soziale Sicherheit sprechen. Das ist für mich der Maßstab.",
+    iconBg: "var(--paper)", iconColor: "var(--muted)",
+  },
+  x: {
+    formatLabel: "X Beitrag", typeLabel: "X / TWITTER", einordnung: "Kurz, pointiert, öffentlich.",
+    defaultStatus: "Entwurf bereit", fromSource: "Aus Lage empfohlen", lineCheck: "Linie geprüft. Kurz halten.",
+    qualityTone: "Direkt, knapp, pointiert", qualityUsage: "X / Twitter",
+    fallbackDraft: "Steuerpolitik muss Beschäftigte stärken. Wer nur wirtschaftsnahe Forderungen bedient, greift zu kurz.",
+    iconBg: "var(--paper)", iconColor: "var(--muted)",
+  },
+  instagram: {
+    formatLabel: "Instagram Beitrag", typeLabel: "INSTAGRAM", einordnung: "Kurz, klar, mobil lesbar.",
+    defaultStatus: "Entwurf bereit", fromSource: "Aus Lage empfohlen", lineCheck: "Linie geprüft. Persönliche Sprache erwünscht.",
+    qualityTone: "Menschlich, authentisch, kurz", qualityUsage: "Instagram",
+    fallbackDraft: "Steuerpolitik muss im Alltag ankommen – bei Löhnen, sozialer Sicherheit und fairen Chancen. Das ist unser Maßstab.",
+    iconBg: "var(--paper)", iconColor: "var(--muted)",
+  },
+  anfrage: {
+    formatLabel: "Parlamentarische Anfrage", typeLabel: "PARLAMENTARISCHE ANFRAGE", einordnung: "Für Ausschuss und parlamentarische Kontrolle.",
+    defaultStatus: "Zum Bereithalten", fromSource: "Aus Radar vorbereitet", lineCheck: "Linie geprüft. Formale Sprache erforderlich.",
+    qualityTone: "Formal, sachlich, präzise", qualityUsage: "Parlamentarische Arbeit",
+    fallbackDraft: "Welche konkreten Maßnahmen plant die Bundesregierung, um sicherzustellen, dass die geplante Steuerreform Menschen mit kleinen und mittleren Einkommen direkt entlastet?\n\nWie wird die Tarifbindung dabei gestärkt und welche sozialen Sicherungsmechanismen sind vorgesehen?",
+    iconBg: "var(--paper)", iconColor: "var(--muted)",
+  },
+  rede: {
+    formatLabel: "Redebaustein", typeLabel: "REDEBAUSTEIN", einordnung: "Für Termine, Interviews und kurze Statements.",
+    defaultStatus: "Zum Bereithalten", fromSource: "Aus Radar vorbereitet", lineCheck: "Linie geprüft. Kernbotschaft klar halten.",
+    qualityTone: "Klar, überzeugend, politisch", qualityUsage: "Termine und Interviews",
+    fallbackDraft: "Steuerpolitik braucht einen klaren sozialen Kompass. Für uns gilt: Entlastung ja – aber sie muss bei Beschäftigten ankommen. Wir werden die Bundesregierung daran messen.",
+    iconBg: "var(--paper)", iconColor: "var(--muted)",
+  },
+  buergerbrief: {
+    formatLabel: "Bürgerbrief", typeLabel: "BÜRGERBRIEF", einordnung: "Verständliche Antwort für Bürgeranfragen.",
+    defaultStatus: "Entwurf bereit", fromSource: "Aus Lage empfohlen", lineCheck: "Linie geprüft. Verständliche Sprache.",
+    qualityTone: "Zugänglich, klar, persönlich", qualityUsage: "Bürgeranfragen",
+    fallbackDraft: "Vielen Dank für Ihre Nachricht zur aktuellen Steuerdebatte.\n\nFür mich ist klar: Steuerreformen müssen Menschen mit kleinen und mittleren Einkommen stärken und dürfen nicht einseitig wirtschaftsnahe Interessen bedienen. Ich werde die Vorschläge der Bundesregierung genau beobachten und mich für soziale Gerechtigkeit einsetzen.",
+    iconBg: "var(--paper)", iconColor: "var(--muted)",
+  },
+  intern: {
+    formatLabel: "Interne Linie", typeLabel: "INTERNE LINIE", einordnung: "Für Büro und Team.",
+    defaultStatus: "Zum Bereithalten", fromSource: "Aus Radar vorbereitet", lineCheck: "Nur für internen Gebrauch.",
+    qualityTone: "Sachlich, intern, klar", qualityUsage: "Interner Gebrauch",
+    fallbackDraft: "Thema: Steuerreformdebatte\nLinie: Soziale Gerechtigkeit ins Zentrum. Keine einseitige Entlastung für Spitzenverdiener.\nNächster Schritt: Öffentliche Reaktion vorbereiten. Parlamentarische Anfrage prüfen.",
+    iconBg: "var(--paper)", iconColor: "var(--muted)",
+  },
 };
 
 function draftReadingTime(text) {
@@ -3568,8 +3616,8 @@ function renderOfficeDraftCard(decision, format, index = 0) {
   const key = officeDraftKey(decision, format);
   const aiText = officeDrafts[key];
   const isLoading = officeDraftsGenerating && !aiText;
-  const text = aiText || channelFallbackStatement(decision, format.channel || "press");
   const meta = OFFICE_FORMAT_META[format.id] || { typeLabel: format.label.toUpperCase(), einordnung: "", defaultStatus: "Zum Bereithalten", lineCheck: "", iconBg: "#F0F0F0", iconColor: "#555" };
+  const text = aiText || meta.fallbackDraft || channelFallbackStatement(decision, format.channel || "press");
   const readTime = draftReadingTime(text);
   const status = draftStatus(format);
   const statusClass = draftStatusClass(status);
@@ -5193,11 +5241,13 @@ function bindActions() {
       const format = OFFICE_FORMATS.find((f) => f.id === formatId);
       let decision;
       try { decision = JSON.parse(card.dataset.officeDecision || "{}"); } catch (_) { decision = {}; }
-      const text = officeDrafts[key] || channelFallbackStatement(
+      const resolvedFormat = format || { id: formatId, label: formatId, icon: "ti-file", channel: "press" };
+      const resolvedMeta = OFFICE_FORMAT_META[formatId] || {};
+      const text = officeDrafts[key] || resolvedMeta.fallbackDraft || channelFallbackStatement(
         decisions.find((d) => d.id === decision.id || d.signalId === decision.signalId) || decision,
-        format?.channel || "press"
+        resolvedFormat.channel || "press"
       );
-      selectedOfficeDraft = { decision, format: format || { id: formatId, label: formatId, icon: "ti-file", channel: "press" }, text };
+      selectedOfficeDraft = { decision, format: resolvedFormat, text };
       currentView = "office-detail";
       render();
       window.scrollTo({ top: 0, behavior: "smooth" });
