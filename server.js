@@ -9,7 +9,7 @@ const { cemInceProfile, demoRawItems, demoSources, generateBriefing } = require(
 const { getLatestOrDemoBriefing, runDailyPipeline, runLageCheck, runMorningBriefing, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { personalizeBriefing } = require("./lib/helmut/personalization");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, savePushSubscription, saveTask, saveUserNote, updateTaskStatus } = require("./lib/helmut/storage");
+const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus } = require("./lib/helmut/storage");
 const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled, activeModelName } = require("./lib/helmut/ai");
 const { pushStatus, sendBriefingReadyPush, sendLageChangePush, sendPushToPolitician } = require("./lib/helmut/push");
 const auth = require("./lib/helmut/auth");
@@ -18,6 +18,8 @@ const { getRelevantParliamentaryItems, isDipEnabled } = require("./lib/helmut/di
 
 const root = __dirname;
 const port = Number(process.env.PORT || 3000);
+// Erlaubte Feedback-Typen (Admin-Inbox). Bewusst schlank, kein freier Text-Typ.
+const FEEDBACK_TYPES = ["relevant", "nicht_relevant", "falsch", "mehr_davon", "weniger_davon", "unklar"];
 const contentTypes = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
@@ -496,6 +498,26 @@ async function handleRequest(request, response) {
     return handleJson(request, response, async (body) => saveInteraction(await normalizeInteraction(body, politicianId)));
   }
 
+  // Nutzer-Feedback erfassen (jede angemeldete Rolle). Landet in der Admin-Inbox.
+  if (url.pathname === "/api/feedback" && request.method === "POST") {
+    if (accountAuth && !authUser) return sendUnauthorized(response);
+    if (previewMode) return sendPreviewReadOnly(response);
+    return handleJson(request, response, async (body) => {
+      const type = String(body.type || "").trim().toLowerCase();
+      if (!FEEDBACK_TYPES.includes(type)) throw accounts.httpError(400, "Ungueltiger Feedback-Typ.");
+      const entry = await saveFeedback({
+        politicianId,
+        userId: authUser?.id || null,
+        userName: authUser?.name || authUser?.email || "Pilot",
+        area: String(body.area || "Allgemein").slice(0, 80),
+        topic: String(body.topic || "").slice(0, 240),
+        type,
+        comment: String(body.comment || "").slice(0, 1000)
+      });
+      return { ok: true, feedback: { id: entry.id } };
+    });
+  }
+
   if (url.pathname === "/api/parliament") {
     return handleAsync(response, async () => {
       const profile = await activeProfile(politicianId);
@@ -624,6 +646,18 @@ async function handleRequest(request, response) {
   if (url.pathname === "/api/admin/overview") {
     if (!requireRoleOr403(response, authUser, "admin")) return undefined;
     return handleAsync(response, () => buildAdminOverview());
+  }
+
+  // Admin: Feedback als erledigt/offen markieren.
+  if (url.pathname.startsWith("/api/admin/feedback/") && (request.method === "PATCH" || request.method === "POST")) {
+    if (!requireRoleOr403(response, authUser, "admin")) return undefined;
+    const feedbackId = decodeURIComponent(url.pathname.replace("/api/admin/feedback/", ""));
+    return handleJson(request, response, async (body) => {
+      const entry = await setFeedbackDone(feedbackId, body.done !== false);
+      if (!entry) throw accounts.httpError(404, "Feedback nicht gefunden.");
+      await accounts.recordAudit({ action: "admin.feedback.update", userId: authUser.id, actorEmail: authUser.email, detail: feedbackId });
+      return { ok: true, feedback: entry };
+    });
   }
 
   const requestedPath = isAppEntryPath(url.pathname) ? "index.html" : url.pathname.replace(/^\/+/, "");
@@ -2121,12 +2155,14 @@ async function defaultPoliticianIdForUser(user, allowed) {
 }
 
 async function buildAdminOverview() {
-  const [users, profiles, assignments, errors, audit] = await Promise.all([
+  const [users, profiles, mandates, assignments, errors, audit, feedback] = await Promise.all([
     accounts.listUsers(),
     listProfiles(),
+    listFullProfiles(),
     accounts.listAssignments(),
     accounts.listSystemErrors(50),
-    accounts.listAuditEvents(50)
+    accounts.listAuditEvents(50),
+    listFeedback(80)
   ]);
   const storage = getStorageStatus();
   const storeSummary = await getStoreSummary();
@@ -2138,11 +2174,14 @@ async function buildAdminOverview() {
       abgeordnete: users.filter((user) => user.role === "abgeordneter").length,
       referenten: users.filter((user) => user.role === "referent").length,
       profiles: profiles.length,
-      assignments: assignments.length
+      assignments: assignments.length,
+      feedbackOpen: feedback.filter((item) => !item.done).length
     },
     users,
     profiles,
+    mandates: mandates.map(adminMandateSummary),
     assignments,
+    feedback,
     system: {
       storage,
       store: storeSummary,
@@ -2155,6 +2194,28 @@ async function buildAdminOverview() {
     },
     recentErrors: errors,
     auditEvents: audit
+  };
+}
+
+// Schlanke, read-only Sicht eines Mandatsprofils fuer den Admin. Keine Geheimnisse,
+// nur die politisch/redaktionell relevanten Felder.
+function adminMandateSummary(p = {}) {
+  return {
+    id: p.id,
+    fullName: p.fullName || p.name || p.id,
+    party: p.party || "",
+    faction: p.faction || "",
+    state: p.state || "",
+    constituency: p.constituency || "",
+    committees: Array.isArray(p.committees) && p.committees.length ? p.committees : (p.committee ? [p.committee] : []),
+    focusTopics: p.focusTopics || [],
+    relevantTopics: p.opportunityTopics || p.reportingTopics || [],
+    ignoreTopics: p.ignoreTopics || [],
+    communicationStyle: p.communicationStyle || "",
+    tonality: p.tonality || "",
+    keyAudiences: p.keyAudiences || [],
+    noGoPhrases: p.noGoPhrases || p.noGoTopics || [],
+    updatedAt: p.updatedAt || null
   };
 }
 

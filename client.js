@@ -989,6 +989,8 @@ function renderAdminView() {
   const errors = (data.recentErrors || []).slice(0, 12);
   const audit = (data.auditEvents || []).slice(0, 15);
   const sys = data.system || {};
+  const feedback = Array.isArray(data.feedback) ? data.feedback : [];
+  const mandates = Array.isArray(data.mandates) ? data.mandates : [];
 
   return `
     <div class="admin-page">
@@ -1185,6 +1187,10 @@ function renderAdminView() {
         </div>
       </div>
 
+      ${renderAdminFeedbackSection(feedback)}
+
+      ${renderAdminMandatesSection(mandates)}
+
       <div class="admin-bottom-row">
         <div class="admin-card">
           <h2 class="admin-section-title">Letzte Fehler</h2>
@@ -1255,6 +1261,103 @@ function renderAdminUserEditRow(user, status) {
         </form>
       </td>
     </tr>`;
+}
+
+const FEEDBACK_TYPE_META = {
+  relevant: { label: "Relevant", cls: "fb-relevant" },
+  nicht_relevant: { label: "Nicht relevant", cls: "fb-nichtrelevant" },
+  falsch: { label: "Falsch", cls: "fb-falsch" },
+  mehr_davon: { label: "Mehr davon", cls: "fb-mehr" },
+  weniger_davon: { label: "Weniger davon", cls: "fb-weniger" },
+  unklar: { label: "Unklar", cls: "fb-unklar" }
+};
+
+function feedbackTypeLabel(type) {
+  return FEEDBACK_TYPE_META[type]?.label || type || "—";
+}
+
+// Admin: Feedback-Inbox. Zeigt alle Rueckmeldungen, Admin kann auf erledigt setzen.
+function renderAdminFeedbackSection(feedback) {
+  const open = feedback.filter((item) => !item.done);
+  const openCount = open.length;
+  const rows = feedback.length
+    ? feedback.map((item) => {
+        const meta = FEEDBACK_TYPE_META[item.type] || { label: item.type || "—", cls: "fb-unklar" };
+        return `
+        <tr class="${item.done ? "admin-fb-done" : ""}">
+          <td data-label="Typ"><span class="admin-fb-tag ${meta.cls}">${escapeHtml(meta.label)}</span></td>
+          <td data-label="Bereich">${escapeHtml(item.area || "—")}</td>
+          <td data-label="Thema">${escapeHtml(item.topic || "—")}${item.comment ? `<span class="admin-fb-comment">„${escapeHtml(item.comment)}"</span>` : ""}</td>
+          <td data-label="Nutzer">${escapeHtml(item.userName || "—")}</td>
+          <td data-label="Zeitpunkt" class="admin-last-login">${escapeHtml(formatBriefingDate(item.createdAt))}</td>
+          <td data-label="Status" class="admin-actions-cell">
+            ${item.done
+              ? `<span class="admin-pill admin-pill-on">Erledigt</span>`
+              : `<button class="account-logout" type="button" data-feedback-done="${escapeAttribute(item.id)}">Erledigt</button>`}
+          </td>
+        </tr>`;
+      }).join("")
+    : `<tr><td colspan="6" class="empty-state">Noch kein Feedback eingegangen.</td></tr>`;
+  return `
+    <div class="admin-card admin-card-flush">
+      <div class="admin-card-header">
+        <div>
+          <h2 class="admin-section-title">Feedback-Inbox</h2>
+          <p class="admin-section-sub">${openCount > 0 ? `${openCount} offen · ` : ""}${feedback.length} gesamt</p>
+        </div>
+      </div>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead><tr><th>Typ</th><th>Bereich</th><th>Thema</th><th>Nutzer</th><th>Zeitpunkt</th><th></th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+// Admin: Mandatsprofile (read-only). Zeigt das politische/redaktionelle Profil je Mandat.
+function renderAdminMandatesSection(mandates) {
+  if (!mandates.length) {
+    return `
+    <div class="admin-card">
+      <h2 class="admin-section-title">Mandatsprofile</h2>
+      <p class="empty-state">Noch keine Mandatsprofile angelegt.</p>
+    </div>`;
+  }
+  const field = (label, value) => {
+    const text = Array.isArray(value) ? value.filter(Boolean).join(" · ") : value;
+    return `<div class="admin-mandate-field"><span class="admin-mandate-key">${escapeHtml(label)}</span><span class="admin-mandate-val">${text ? escapeHtml(text) : "—"}</span></div>`;
+  };
+  const cards = mandates.map((m) => `
+    <div class="admin-mandate-card">
+      <div class="admin-mandate-head">
+        <strong>${escapeHtml(m.fullName || m.id)}</strong>
+        ${m.party ? `<span class="admin-role-tag admin-role-abgeordneter">${escapeHtml(m.party)}</span>` : ""}
+      </div>
+      <div class="admin-mandate-grid">
+        ${field("Fraktion", m.faction)}
+        ${field("Bundesland", m.state)}
+        ${field("Wahlkreis", m.constituency)}
+        ${field("Ausschüsse", m.committees)}
+        ${field("Politische Schwerpunkte", m.focusTopics)}
+        ${field("Relevante Themen", m.relevantTopics)}
+        ${field("Ignorierte Themen", m.ignoreTopics)}
+        ${field("Kommunikationsstil", m.communicationStyle)}
+        ${field("Tonalität", m.tonality)}
+        ${field("Zielgruppen", m.keyAudiences)}
+        ${field("No-Go-Formulierungen", m.noGoPhrases)}
+      </div>
+    </div>`).join("");
+  return `
+    <div class="admin-card">
+      <div class="admin-card-header" style="padding:0 0 4px">
+        <div>
+          <h2 class="admin-section-title">Mandatsprofile</h2>
+          <p class="admin-section-sub">Politisches Profil je Mandat — steuert Helmuts Relevanzlogik</p>
+        </div>
+      </div>
+      <div class="admin-mandate-list">${cards}</div>
+    </div>`;
 }
 
 // Mandatsoptionen fuer Zuweisungen: vorhandene Profile + Abgeordneten-Mandate.
@@ -3725,8 +3828,30 @@ function renderDetailView() {
         ${renderFeedbackActions(decision)}
       </section>
       ${renderSourceBasis(decision)}
+      ${renderUserFeedbackWidget(decision)}
     </article>
   `;
+}
+
+// Echte Feedback-Erfassung: landet in der Admin-Inbox. Kein Fake, keine KI.
+function renderUserFeedbackWidget(decision) {
+  const topic = decision?.title || "";
+  const buttons = [
+    ["relevant", "Relevant"],
+    ["nicht_relevant", "Nicht relevant"],
+    ["falsch", "Falsch"],
+    ["mehr_davon", "Mehr davon"],
+    ["weniger_davon", "Weniger davon"],
+    ["unklar", "Unklar"]
+  ];
+  return `
+    <section class="article-section feedback-widget" data-feedback-widget>
+      <h2>War diese Einschätzung hilfreich?</h2>
+      <p class="feedback-widget-hint">Dein Feedback verbessert Helmuts Relevanz-Einschätzung.</p>
+      <div class="feedback-widget-buttons">
+        ${buttons.map(([type, label]) => `<button class="feedback-chip" type="button" data-feedback-type="${type}" data-feedback-area="Lage" data-feedback-topic="${escapeAttribute(topic)}">${escapeHtml(label)}</button>`).join("")}
+      </div>
+    </section>`;
 }
 
 function renderMemorySection(decision) {
@@ -5454,6 +5579,27 @@ function bindAccountActions() {
     });
   });
 
+  app.querySelectorAll("[data-feedback-done]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const id = button.dataset.feedbackDone;
+      button.disabled = true;
+      try {
+        const res = await apiSend("PATCH", `/api/admin/feedback/${encodeURIComponent(id)}?${apiScopeQuery()}`, { done: true });
+        if (res.ok) {
+          adminDataLoaded = false;
+          await ensureViewData("admin");
+          showToast("Als erledigt markiert");
+        } else {
+          button.disabled = false;
+          showToast("Fehler beim Speichern");
+        }
+      } catch (error) {
+        button.disabled = false;
+        showToast("Netzwerkfehler");
+      }
+    });
+  });
+
   const resetPasswordForm = app.querySelector("#resetPasswordForm");
   if (resetPasswordForm) {
     resetPasswordForm.addEventListener("submit", async (event) => {
@@ -5547,6 +5693,31 @@ function bindActions() {
 
   app.querySelectorAll("[data-theme-set]").forEach((button) => {
     button.addEventListener("click", () => setThemePref(button.dataset.themeSet));
+  });
+
+  app.querySelectorAll("[data-feedback-type]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const widget = button.closest("[data-feedback-widget]");
+      const body = {
+        type: button.dataset.feedbackType,
+        area: button.dataset.feedbackArea || "Allgemein",
+        topic: button.dataset.feedbackTopic || ""
+      };
+      if (widget) widget.querySelectorAll(".feedback-chip").forEach((b) => { b.disabled = true; });
+      try {
+        const res = await apiSend("POST", `/api/feedback?${apiScopeQuery()}`, body);
+        if (res.ok) {
+          if (widget) widget.innerHTML = `<p class="feedback-widget-thanks">Danke für dein Feedback.</p>`;
+          showToast("Danke für dein Feedback");
+        } else {
+          if (widget) widget.querySelectorAll(".feedback-chip").forEach((b) => { b.disabled = false; });
+          showToast("Feedback nicht gespeichert");
+        }
+      } catch (error) {
+        if (widget) widget.querySelectorAll(".feedback-chip").forEach((b) => { b.disabled = false; });
+        showToast("Netzwerkfehler");
+      }
+    });
   });
 
   app.querySelectorAll("[data-office-format-toggle]").forEach((checkbox) => {

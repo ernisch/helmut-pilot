@@ -7434,6 +7434,111 @@ body {
   .admin-customer-grid { grid-template-columns: 1fr; }
 }
 
+/* Feedback-Inbox (Admin) */
+.admin-fb-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+.admin-fb-tag.fb-relevant { background: rgba(57, 209, 143, .16); color: var(--chance); }
+.admin-fb-tag.fb-nichtrelevant { background: rgba(148, 163, 184, .14); color: var(--muted); }
+.admin-fb-tag.fb-falsch { background: rgba(255, 89, 103, .16); color: var(--danger); }
+.admin-fb-tag.fb-mehr { background: rgba(57, 209, 143, .12); color: var(--chance); }
+.admin-fb-tag.fb-weniger { background: rgba(251, 191, 36, .16); color: #fbbf24; }
+.admin-fb-tag.fb-unklar { background: rgba(111, 143, 247, .14); color: var(--accent-ink); }
+
+.admin-fb-comment {
+  display: block;
+  font-size: 12px;
+  color: var(--muted-2);
+  margin-top: 3px;
+  font-style: italic;
+}
+.admin-fb-done td { opacity: .55; }
+
+/* Mandatsprofile (Admin, read-only) */
+.admin-mandate-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+.admin-mandate-card {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px 18px;
+  background: rgba(255, 255, 255, .015);
+}
+.admin-mandate-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.admin-mandate-head strong {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+.admin-mandate-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.admin-mandate-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.admin-mandate-key {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--muted-2);
+  font-weight: 600;
+}
+.admin-mandate-val {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+/* Nutzer-Feedback-Widget (Detail-Ansicht) */
+.feedback-widget-hint {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 2px 0 12px;
+}
+.feedback-widget-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.feedback-chip {
+  background: rgba(255, 255, 255, .04);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color .15s ease, background .15s ease;
+}
+.feedback-chip:hover { border-color: var(--accent); background: rgba(111, 143, 247, .08); }
+.feedback-chip:disabled { opacity: .5; cursor: default; }
+.feedback-widget-thanks {
+  font-size: 14px;
+  color: var(--chance);
+  font-weight: 600;
+  margin: 4px 0;
+}
+
 /* Create form field groups */
 .admin-field-group {
   display: flex;
