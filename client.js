@@ -2310,18 +2310,18 @@ function weeklyOutlookItems() {
   if (government) {
     items.push({
       type: "Bundesregierung",
-      title: government.title,
+      title: draftTitle(government),
       body: compactText(contextItemSummary(government), 132),
-      action: `Linie prüfen · ${sourceLine(government)}`,
+      action: "Linie prüfen",
       href: sourceHref(government.primarySource || government)
     });
   }
   if (committee && committee.id !== government?.id) {
     items.push({
       type: "Ausschuss",
-      title: committee.title,
+      title: draftTitle(committee),
       body: compactText(decisionWhyImportant(committee), 132),
-      action: `Für Arbeit und Soziales vormerken · ${sourceLine(committee)}`,
+      action: "Für Ausschuss vormerken",
       href: sourceHref(committee.primarySource || committee)
     });
   }
@@ -2330,9 +2330,9 @@ function weeklyOutlookItems() {
     if (party) {
       items.push({
         type: "Fraktion",
-        title: party.title,
+        title: draftTitle(party),
         body: compactText(contextItemSummary(party), 132),
-        action: `Anschlussfähigkeit prüfen · ${sourceLine(party)}`,
+        action: "Anschlussfähigkeit prüfen",
         href: sourceHref(party.primarySource || party)
       });
     }
@@ -2353,13 +2353,10 @@ function weeklyOutlookItems() {
 function renderWeeklyOutlookItem(item) {
   return `
     <article class="weekly-outlook-item">
-      <div>
-        <span>${escapeHtml(item.type)}</span>
-        <h3>${escapeHtml(item.title)}</h3>
-        <p>${escapeHtml(item.body)}</p>
-        <small>${escapeHtml(item.action)}</small>
-      </div>
-      ${item.href ? `<a class="source-pill" href="${escapeAttribute(item.href)}" target="_blank" rel="noopener noreferrer">Quelle</a>` : ""}
+      <span>${escapeHtml(item.type)}</span>
+      <h3>${escapeHtml(item.title)}</h3>
+      <p>${escapeHtml(item.body)}</p>
+      <small>${escapeHtml(item.action)}${item.href ? ` · <a class="outlook-source-link" href="${escapeAttribute(item.href)}" target="_blank" rel="noopener noreferrer">Quelle ↗</a>` : ""}</small>
     </article>
   `;
 }

@@ -956,13 +956,12 @@ small {
 }
 
 .weekly-outlook-item {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 16px;
-  align-items: center;
-  padding: 18px 0;
+  display: block;
+  padding: 16px 0;
   border-top: 1px solid rgba(245, 241, 232, .08);
 }
+.outlook-source-link { color: var(--accent-ink); text-decoration: none; }
+.outlook-source-link:hover { text-decoration: underline; }
 
 .weekly-outlook-item span {
   color: #f9cd7f;
