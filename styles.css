@@ -7230,9 +7230,9 @@ body {
 .buero-summary-sep { opacity: .4; }
 
 /* ── Draft list ── */
-.buero-draft-list { display: grid; gap: 20px; }
-.buero-group { display: grid; gap: 8px; }
-.buero-group-title { font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--muted-2); margin: 0 2px 2px; }
+.buero-draft-list { display: grid; gap: 28px; }
+.buero-group { display: grid; gap: 10px; }
+.buero-group-title { font-size: 13px; font-weight: 700; color: var(--text); margin: 0 0 2px; padding-bottom: 10px; border-bottom: 1px solid var(--line); line-height: 1.3; }
 
 /* ── Draft card ── */
 .buero-draft-card {
