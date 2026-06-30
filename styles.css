@@ -7154,7 +7154,6 @@ body {
 /* Flush card (header bleeds to edge) */
 .admin-card-flush {
   padding: 0;
-  overflow: hidden;
 }
 
 .admin-card-flush .admin-table-wrap {
@@ -7427,6 +7426,7 @@ body {
   .admin-col-secondary {
     flex-direction: row;
     flex-wrap: wrap;
+    order: -1;
   }
   .admin-col-secondary > * {
     flex: 1 1 320px;
