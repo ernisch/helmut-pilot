@@ -2829,10 +2829,43 @@ small {
 }
 
 .radar-mention-compact {
+  display: grid;
+  grid-template-columns: 60px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
   padding: 14px 18px;
   border-radius: 12px;
   background: var(--card);
   border: 1px solid var(--line);
+}
+
+.radar-mention-thumb {
+  grid-row: 1 / -1;
+}
+
+.radar-mention-thumb .mention-avatar,
+.radar-mention-thumb .mention-image {
+  width: 60px;
+  height: 60px;
+  border-radius: 10px;
+}
+
+.radar-mention-thumb .mention-image-cover {
+  width: 60px;
+  height: 60px;
+}
+
+.radar-mention-thumb .mention-image-logo img {
+  width: 34px;
+  height: 34px;
+}
+
+.radar-mention-thumb .mention-avatar {
+  font-size: 14px;
+}
+
+.radar-mention-content {
+  min-width: 0;
 }
 
 .radar-mention-header {

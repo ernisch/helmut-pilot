@@ -4119,15 +4119,18 @@ function mentionRows(items, options = {}) {
       if (!href) return "";
       return `
         <article class="radar-mention-compact">
-          <div class="radar-mention-header">
-            <span class="radar-mention-source">${escapeHtml(item.sourceName || "Quelle")}</span>
-            <span class="radar-mention-status">Archiviert</span>
-          </div>
-          <h3>${escapeHtml(item.title || "Erwähnung gefunden")}</h3>
-          <p>${escapeHtml(twoSentenceSummary(item.content || item.excerpt || ""))}</p>
-          <div class="radar-mention-actions">
-            <a class="secondary-button" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">Einordnen</a>
-            <a class="radar-mention-link" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">Quelle öffnen →</a>
+          <div class="radar-mention-thumb">${mentionVisual(item)}</div>
+          <div class="radar-mention-content">
+            <div class="radar-mention-header">
+              <span class="radar-mention-source">${escapeHtml(item.sourceName || "Quelle")}</span>
+              <span class="radar-mention-status">Archiviert</span>
+            </div>
+            <h3>${escapeHtml(item.title || "Erwähnung gefunden")}</h3>
+            <p>${escapeHtml(twoSentenceSummary(item.content || item.excerpt || ""))}</p>
+            <div class="radar-mention-actions">
+              <a class="secondary-button" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">Einordnen</a>
+              <a class="radar-mention-link" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">Quelle öffnen →</a>
+            </div>
           </div>
         </article>
       `;
