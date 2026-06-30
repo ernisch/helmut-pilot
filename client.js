@@ -91,6 +91,8 @@ const appStartCachePrefix = "helmut:lastStartPayload:v3";
 const appStartCacheMaxAgeMs = 0;
 const helmutFlowCooldownPrefix = "helmut:lastAssessmentFlow:v1";
 const helmutFlowCooldownMs = 4 * 60 * 60 * 1000;
+const pipelineCooldownKey = "helmut:lastPipelineRun:v1";
+const pipelineCooldownMs = 10 * 60 * 1000;
 let csrfTokenPromise = null;
 
 const navItems = [
@@ -1922,6 +1924,15 @@ function renderHelmutView() {
   return helmutThinking ? renderHelmutThinkingView() : renderHelmutAssessmentView();
 }
 
+function renderRefreshButton() {
+  const remaining = pipelineCooldownRemaining();
+  if (remaining > 0) {
+    const mins = Math.ceil(remaining / 60000);
+    return `<button class="text-button refresh-cooldown" type="button" disabled title="Wieder in ${mins} Min verfügbar">${mins}m</button>`;
+  }
+  return `<button class="text-button" type="button" data-refresh-helmut aria-label="Einschätzung neu prüfen">↻</button>`;
+}
+
 function renderHelmutThinkingView() {
   if (pipelineRunning) {
     const stepLabel = PIPELINE_STEPS[pipelineRunStep] || PIPELINE_STEPS[PIPELINE_STEPS.length - 1];
@@ -1989,7 +2000,7 @@ function renderHelmutAssessmentView() {
 
       <div class="helmut-assessment-foot">
         <small>Aktualisiert: ${escapeHtml(formatBriefingDate(briefing.generatedAt || briefing.date || new Date().toISOString()))}</small>
-        <button class="text-button" type="button" data-refresh-helmut aria-label="Einschätzung neu prüfen">↻</button>
+        ${renderRefreshButton()}
       </div>
 
       <div class="helmut-actions">
@@ -5443,11 +5454,23 @@ const PIPELINE_STEPS = [
 ];
 const PIPELINE_STEP_MS = 18000;
 
+function pipelineCooldownRemaining() {
+  try {
+    const last = Number(window.localStorage.getItem(pipelineCooldownKey) || 0);
+    return last ? Math.max(0, pipelineCooldownMs - (Date.now() - last)) : 0;
+  } catch { return 0; }
+}
+
+function markPipelineRun() {
+  try { window.localStorage.setItem(pipelineCooldownKey, String(Date.now())); } catch {}
+}
+
 function startPipelineRun() {
-  if (pipelineRunning) return;
+  if (pipelineRunning || pipelineCooldownRemaining() > 0) return;
   pipelineRunning = true;
   pipelineRunStep = 0;
   helmutThinking = true;
+  markPipelineRun();
   stopHelmutTyping();
   render();
   schedulePipelineStep();
