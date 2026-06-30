@@ -1688,7 +1688,7 @@ function sourceEvidenceQuality(briefing) {
 }
 
 async function getRadarArchive(profile, days = 92) {
-  const boundedDays = Math.max(1, Math.min(180, Number.isFinite(days) ? days : 92));
+  const boundedDays = Math.max(1, Math.min(365, Number.isFinite(days) ? days : 365));
   const since = new Date(Date.now() - boundedDays * 24 * 60 * 60 * 1000);
   const items = await getRawItemsSince(since);
   const terms = profileArchiveTerms(profile);

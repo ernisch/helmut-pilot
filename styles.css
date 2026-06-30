@@ -2909,6 +2909,14 @@ small {
   gap: 16px;
 }
 
+.radar-mention-date {
+  margin-left: auto;
+  color: var(--muted-2);
+  font-size: 10px;
+  opacity: .6;
+  white-space: nowrap;
+}
+
 .radar-mention-link {
   color: var(--muted-2);
   font-size: 13px;
@@ -2917,6 +2925,21 @@ small {
 }
 
 .radar-mention-link:hover { color: var(--text); }
+
+.radar-empty-hint {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 0 4px;
+}
+
+.radar-empty-hint p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.45;
+}
 
 .radar-source-link {
   display: inline-block;

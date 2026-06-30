@@ -506,7 +506,7 @@ async function ensureViewData(view) {
   if (view === "radar" && !radarArchiveLoaded) {
     radarArchiveLoaded = true;
     try {
-      const response = await fetchWithTimeout(`/api/radar/archive?${apiScopeQuery()}&days=92`);
+      const response = await fetchWithTimeout(`/api/radar/archive?${apiScopeQuery()}&days=365`);
       const archivePayload = response.ok ? await response.json() : { articles: [] };
       radarArchive = Array.isArray(archivePayload.articles) ? archivePayload.articles : [];
     } catch (error) {
@@ -3910,7 +3910,7 @@ function renderRadarView() {
     .filter(hasPreciseSource)
     .filter(uniqueMentionItem)
     .sort(sortNewestFirst)
-    .slice(0, 20);
+    .slice(0, 60);
 
   const hasFresh = freshMentions.length > 0;
 
@@ -4103,13 +4103,10 @@ function mentionRows(items, options = {}) {
   if (!items.length) {
     if (options.empty === false) return "";
     return `
-      <article class="list-row empty-signal">
-        <div>
-          <span>Keine neue Erwähnung</span>
-          <p>Personensuche läuft weiter. Nächster Quellenlauf heute Abend.</p>
-        </div>
+      <div class="radar-empty-hint">
+        <p><strong>Keine neue Erwähnung</strong><br>Personensuche läuft weiter. Nächster Quellenlauf heute Abend.</p>
         <button class="secondary-button" type="button" data-run-crawl>Suche prüfen</button>
-      </article>
+      </div>
     `;
   }
 
@@ -4124,9 +4121,9 @@ function mentionRows(items, options = {}) {
             <div class="radar-mention-header">
               <span class="radar-mention-source">${escapeHtml(item.sourceName || "Quelle")}</span>
               <span class="radar-mention-status">Archiviert</span>
+              <span class="radar-mention-date">${escapeHtml(formatBriefingDate(item.publishedAt || item.retrievedAt || ""))}</span>
             </div>
             <h3>${escapeHtml(item.title || "Erwähnung gefunden")}</h3>
-            <p>${escapeHtml(twoSentenceSummary(item.content || item.excerpt || ""))}</p>
             <div class="radar-mention-actions">
               <a class="secondary-button" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">Einordnen</a>
               <a class="radar-mention-link" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">Quelle öffnen →</a>
