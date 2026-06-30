@@ -1470,7 +1470,7 @@ function generateWarumBullets(decision) {
     const pl = (decision.priorityLabel || "").toLowerCase();
     const pt = decision.priorityType || "";
     if (pl.includes("ausschuss") || pl.includes("fraktion")) bullets.push("Betrifft deinen Ausschuss");
-    else if (pl.includes("intern")) bullets.push("Interne Vorbereitung empfohlen");
+    else if (pl.includes("intern")) bullets.push("Entwurf liegt im Büro bereit");
     else if (pt === "action" || pt === "high") bullets.push("Reaktion heute empfohlen");
     else if (pt === "chance") bullets.push("Positionierungsfenster offen");
     else bullets.push("Helmut beobachtet Entwicklung");
