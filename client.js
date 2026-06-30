@@ -1825,7 +1825,6 @@ function renderWatchlistMini() {
         <h2>${escapeHtml(humanList(items.map((item) => item.title || item.sourceName || "eine Entwicklung")))}</h2>
         <p>Ich zeige diese Punkte bewusst nicht als Entscheidung. Sie bleiben im Blick, bis daraus Handlungsdruck entsteht.</p>
       </div>
-      <button class="secondary-button compact-button" type="button" data-view="radar">Radar öffnen</button>
     </section>
   `;
 }
