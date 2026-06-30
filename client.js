@@ -4022,15 +4022,21 @@ function renderSettingsView() {
   const crawl = ops.crawl || briefing.sourceStats || {};
   const topTopics = topProfileTopicsForView();
   const committee = profile.committee || profile.committees?.[0] || "";
-  const rawChannels = asTextList(profile.preferredChannels).slice(0, 3);
-  const channels = rawChannels.map((c) => c.charAt(0).toUpperCase() + c.slice(1));
   const initials = (profile.fullName || "?").split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
   const push = { ...(ops.push || {}), ...(pushConfig || {}) };
   const pushSupported = browserPushSupported();
   const pushBlocked = pushPermissionState() === "denied";
   const pushTestDisabled = !push.enabled || !pushSupported || pushBlocked;
   const role = userRole();
-  const showSystem = role === "admin";
+  const isAdmin = role === "admin";
+
+  const learning = ops.learning || {};
+  const learnCount = Number(learning.eventCount || 0);
+  const learnLabel = learnCount === 0
+    ? "Noch keine Signale"
+    : learnCount < 5
+      ? `${learnCount} Signal${learnCount === 1 ? "" : "e"} · lernt an`
+      : `${learnCount} Signale · Vertrauen ${learning.confidence || "mittel"}`;
 
   const systemOk = opsStatusLoaded && storage.backend === "supabase" && ops.ai?.enabled;
   const systemBadge = !opsStatusLoaded
@@ -4078,6 +4084,10 @@ function renderSettingsView() {
             <input type="checkbox" name="settingsOfficeFormat" value="${escapeAttribute(f.id)}" ${active ? "checked" : ""} data-office-format-toggle style="width:18px;height:18px;accent-color:var(--accent);flex-shrink:0"/>
           </label>`;
         }).join("")}
+        <div class="stg-row">
+          <span class="stg-row-label">Helmut lernt</span>
+          <span class="stg-row-value">${escapeHtml(learnLabel)}</span>
+        </div>
       </div>
     </div>
 
@@ -4102,13 +4112,13 @@ function renderSettingsView() {
           <span class="stg-row-label">${escapeHtml(pushStatusTitle(push, pushSupported))}</span>
           <div class="row-actions stg-row-action">
             <button class="secondary-button compact-button" type="button" data-enable-push>${escapeHtml(pushPermissionButtonLabel(push))}</button>
-            <button class="secondary-button compact-button" type="button" data-test-push ${pushTestDisabled ? "disabled" : ""}>Test</button>
+            ${isAdmin ? `<button class="secondary-button compact-button" type="button" data-test-push ${pushTestDisabled ? "disabled" : ""}>Test</button>` : ""}
           </div>
         </div>
       </div>
     </div>
 
-    ${showSystem ? `
+    ${isAdmin ? `
     <div class="stg-section">
       <span class="stg-label">System</span>
       <div class="stg-group">
@@ -4152,11 +4162,13 @@ function renderSettingsView() {
     ${isAccountMode() && currentUser ? `
     <div class="stg-section">
       <div class="stg-group">
-        <div class="stg-row stg-row--tappable stg-row--danger" role="button" data-logout>
+        <div class="stg-row stg-row--tappable" role="button" data-logout>
           <span class="stg-row-label">Abmelden</span>
         </div>
       </div>
     </div>` : ""}
+
+    <p class="stg-version">Helmut · Pilotversion</p>
   `;
 }
 
