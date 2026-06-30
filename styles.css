@@ -7259,6 +7259,18 @@ body {
 :root[data-theme="light"] .helmut-note,
 :root[data-theme="light"] .helmut-reason { border-color: var(--line) !important; background: var(--paper) !important; }
 :root[data-theme="light"] .helmut-typewriter { background: var(--paper) !important; }
+
+/* Helmut Hero bullets + Details: hardcodierte near-white Farben überschreiben */
+:root[data-theme="light"] .helmut-hero { border-color: var(--line) !important; }
+:root[data-theme="light"] .helmut-hero-bullets { border-top-color: var(--line) !important; }
+:root[data-theme="light"] .helmut-hero-bullets dt { color: var(--watch) !important; }
+:root[data-theme="light"] .helmut-hero-bullets dd { color: var(--muted) !important; }
+:root[data-theme="light"] .helmut-detail { border-color: var(--line) !important; background: rgba(15,23,42,.04) !important; }
+:root[data-theme="light"] .helmut-detail summary { color: var(--muted) !important; }
+:root[data-theme="light"] .helmut-detail summary::after { color: var(--muted-2) !important; }
+:root[data-theme="light"] .helmut-detail-body p { color: var(--text) !important; }
+:root[data-theme="light"] .helmut-detail--risk > summary { color: var(--danger) !important; }
+:root[data-theme="light"] .helmut-detail--risk .helmut-detail-body p { color: var(--danger) !important; }
 :root[data-theme="light"] .priority-status { border-color: rgba(15,23,42,.15) !important; color: var(--muted) !important; background: rgba(15,23,42,.05) !important; }
 
 /* Updates layer full-screen panel */
