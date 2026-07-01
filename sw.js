@@ -10,15 +10,15 @@ const PRECACHE_URLS = [
 // und ohne zusaetzliche Datei/Route garantiert verfuegbar ist.
 const OFFLINE_HTML = `<!doctype html><html lang="de"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#050914"><title>Keine Internetverbindung · Helmut</title>
+<meta name="theme-color" content="#050914"><title>Ich hab gerade keine Verbindung · Helmut</title>
 <style>:root{color-scheme:dark}*{box-sizing:border-box}html,body{margin:0;height:100%}
 body{display:grid;place-items:center;min-height:100dvh;padding:32px;background:radial-gradient(circle at 50% 38%,rgba(140,92,255,.14),transparent 30%),linear-gradient(180deg,#070b15,#050914 70%,#03050b);color:#f5f1e8;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;text-align:center}
 .wrap{max-width:340px}.mark{width:76px;height:76px;margin:0 auto 26px;border-radius:20px;display:grid;place-items:center;background:#0f1729;box-shadow:0 24px 70px rgba(140,92,255,.28);font:800 40px/1 Inter,sans-serif;color:#fbf7ef;letter-spacing:-.04em}
 h1{font-size:22px;margin:0 0 12px;letter-spacing:-.02em}p{margin:0 0 28px;font-size:15px;line-height:1.55;color:rgba(245,241,232,.62)}
 button{appearance:none;border:0;cursor:pointer;width:100%;padding:15px 20px;border-radius:14px;font:600 16px Inter,sans-serif;color:#0b0f1a;background:#f5f1e8}button:active{transform:translateY(1px)}</style></head>
-<body><div class="wrap"><div class="mark">H</div><h1>Keine Internetverbindung</h1>
-<p>Helmut benötigt eine Verbindung, um aktuelle politische Entwicklungen abzurufen.</p>
-<button type="button" onclick="location.reload()">Erneut versuchen</button></div>
+<body><div class="wrap"><div class="mark">H</div><h1>Ich hab gerade keine Verbindung</h1>
+<p>Ohne Netz komme ich nicht an deine aktuelle Lage. Sobald du wieder online bist, bin ich sofort für dich da.</p>
+<button type="button" onclick="location.reload()">Nochmal versuchen</button></div>
 <script>addEventListener("online",function(){location.reload()});</script></body></html>`;
 
 self.addEventListener("install", (event) => {

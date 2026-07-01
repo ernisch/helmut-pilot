@@ -7543,9 +7543,9 @@ loadBriefing()
       app.innerHTML = `
         <section class="loading-card offline-card">
           <div class="loading-logo"><span>H</span></div>
-          <h1>Keine Internetverbindung</h1>
-          <p>Helmut benötigt eine Verbindung, um aktuelle politische Entwicklungen abzurufen.</p>
-          <button class="primary-button" type="button" onclick="window.location.reload()">Erneut versuchen</button>
+          <h1>Ich hab gerade keine Verbindung</h1>
+          <p>Ohne Netz komme ich nicht an deine aktuelle Lage. Sobald du wieder online bist, bin ich sofort für dich da.</p>
+          <button class="primary-button" type="button" onclick="window.location.reload()">Nochmal versuchen</button>
         </section>
       `;
       window.addEventListener("online", () => window.location.reload(), { once: true });
