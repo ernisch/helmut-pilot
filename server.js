@@ -133,7 +133,7 @@ async function handleRequest(request, response) {
 
     if (!authUser) {
       // SPA-HTML und oeffentliche Assets ausliefern, damit der Login-Screen laden kann.
-      // Cron-Routen schuetzen sich selbst (isAuthorizedCron). Jeder andere API-Aufruf: 401.
+      // Cron-Routen schuetzen sich selbst (authorizeCron, fail closed). Jeder andere API-Aufruf: 401.
       const isCron = url.pathname.startsWith("/api/cron/");
       if (url.pathname.startsWith("/api/") && !isCron) {
         return sendUnauthorized(response);
@@ -158,7 +158,14 @@ async function handleRequest(request, response) {
     politicianId = auth.pickPoliticianId(authUser, requested, allowedPoliticians);
     if (!politicianId) politicianId = await defaultPoliticianIdForUser(authUser, allowedPoliticians);
   } else {
-    politicianId = politicianIdFromUrl(url);
+    // Legacy-Pilot-Modus: EIN geteiltes Pilotmandat hinter PILOT_SECRET.
+    // SICHERHEIT: Ein clientseitig gesetztes ?politicianId darf hier NICHT als
+    // Mandanten-Auswahl dienen — sonst koennte ein Pilot-Client die Daten eines
+    // anderen Mandats laden. Nur der (secret-geschuetzte) Admin-Bypass darf
+    // explizit ein anderes Mandat waehlen. Alle anderen bekommen das Pilotmandat.
+    politicianId = hasAdminBypass(request, url)
+      ? politicianIdFromUrl(url)
+      : cemInceProfile.id;
   }
 
   if (url.pathname === "/api/security/csrf") {
@@ -445,12 +452,12 @@ async function handleRequest(request, response) {
   }
 
   if (url.pathname === "/api/cron/crawl") {
-    if (!isAuthorizedCron(request, url)) return sendUnauthorized(response);
+    if (!authorizeCron(request, url, response)) return;
     return handleAsync(response, () => runSourceCrawl(politicianId));
   }
 
   if (url.pathname === "/api/cron/morning-briefing") {
-    if (!isAuthorizedCron(request, url)) return sendUnauthorized(response);
+    if (!authorizeCron(request, url, response)) return;
     return handleAsync(response, async () => {
       const profile = await activeProfile(politicianId);
       const briefing = await runMorningBriefing(politicianId);
@@ -460,14 +467,14 @@ async function handleRequest(request, response) {
   }
 
   if (url.pathname === "/api/cron/pipeline") {
-    if (!isAuthorizedCron(request, url)) return sendUnauthorized(response);
+    if (!authorizeCron(request, url, response)) return;
     return handleAsync(response, () => runDailyPipeline(politicianId));
   }
 
   // Morgen-Health-Report per WhatsApp (CallMeBot). Antwort enthaelt den Text +
   // Zustellstatus, damit man ihn manuell testen kann (?secret=CRON_SECRET).
   if (url.pathname === "/api/cron/health-report") {
-    if (!isAuthorizedCron(request, url)) return sendUnauthorized(response);
+    if (!authorizeCron(request, url, response)) return;
     return handleAsync(response, async () => {
       const report = await buildHealthReport(politicianId);
       const delivery = await sendCallMeBotMessage(report.text);
@@ -486,7 +493,7 @@ async function handleRequest(request, response) {
   }
 
   if (url.pathname === "/api/cron/lage-check") {
-    if (!isAuthorizedCron(request, url)) return sendUnauthorized(response);
+    if (!authorizeCron(request, url, response)) return;
     return handleAsync(response, async () => {
       const profile = await activeProfile(politicianId);
       const lageCheck = await runLageCheck(politicianId);
@@ -1542,7 +1549,7 @@ function pilotReadiness(crawl, briefing, storage, evidenceQuality = null, lageCh
     if (!quality) warnings.push("Die Briefingqualität wurde noch nicht geprüft.");
     if (quality && qualityScore < 90 && !calmState) issues.push("Die Briefingqualität ist noch nicht pitchbereit.");
   }
-  if (!process.env.CRON_SECRET) warnings.push("Cron-Routen sind noch nicht mit CRON_SECRET geschützt.");
+  if (!process.env.CRON_SECRET) warnings.push("CRON_SECRET ist nicht gesetzt: Cron-Routen sind aus Sicherheitsgründen deaktiviert (503). Bitte CRON_SECRET in Vercel setzen, damit crawl/pipeline/briefing/health laufen.");
   if (evidenceQuality?.missingLinks > 0) issues.push("Mindestens ein sichtbarer Beleg hat keinen präzisen Artikellink.");
   if (evidenceQuality?.publisherFallbacks > 0) issues.push("Mindestens ein sichtbarer Beleg hat nur eine Publisher-Startseite statt eines Artikellinks.");
 
@@ -2614,16 +2621,33 @@ function topicPriorityValue(value, fallback) {
   return Object.keys(priorities).length ? { ...(fallback || {}), ...priorities } : fallback || {};
 }
 
-function isAuthorizedCron(request, url) {
+// Cron-Autorisierung — FAIL CLOSED.
+// Schreibt bei Ablehnung selbst die Antwort und gibt false zurueck; bei Erfolg true.
+// - Fehlt CRON_SECRET: Endpoint ist NICHT offen, sondern 503 mit klarer Meldung.
+// - Falsches/fehlendes Secret: 403.
+// So kann eine vergessene Env-Variable die Cron-Routen (Voll-Crawl, Pipeline,
+// Briefing, Health) niemals weltweit ausloesbar machen.
+function authorizeCron(request, url, response) {
   const secret = process.env.CRON_SECRET;
-  if (!secret) return true;
+  if (!secret) {
+    response.writeHead(503, jsonHeaders());
+    response.end(JSON.stringify({
+      error: "Cron-Endpunkte sind deaktiviert: CRON_SECRET ist auf dem Server nicht gesetzt. Bitte die Umgebungsvariable CRON_SECRET in Vercel (Project → Settings → Environment Variables) setzen."
+    }, null, 2));
+    return false;
+  }
   const header = request.headers.authorization || "";
   const token = header.startsWith("Bearer ")
     ? header.slice(7)
     : allowQuerySecrets()
       ? url.searchParams.get("secret")
       : "";
-  return token === secret;
+  if (token !== secret) {
+    response.writeHead(403, jsonHeaders());
+    response.end(JSON.stringify({ error: "Forbidden: ungültiges oder fehlendes Cron-Secret." }, null, 2));
+    return false;
+  }
+  return true;
 }
 
 function sendUnauthorized(response) {

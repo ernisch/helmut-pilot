@@ -1,7 +1,8 @@
 {
   "scripts": {
     "test": "node scripts/smoke-test.js",
-    "smoke": "node scripts/smoke-test.js"
+    "smoke": "node scripts/smoke-test.js",
+    "test:p1": "node scripts/p1-security-check.js"
   },
   "dependencies": {},
   "devDependencies": {}
