@@ -178,9 +178,43 @@ async function llmBudgetChecks() {
   }
 }
 
+// Datenmotor V2 — Commit 2: echte Personalisierung / Cem-Entkopplung.
+// Deterministischer Unit-Test der reinen Merge-Funktion (kein Store noetig).
+function personalizationChecks() {
+  const scheduler = require(path.join(root, "lib/helmut/scheduler.js"));
+
+  // Demo-Profil cem-ince behaelt seine reichhaltigen Defaults (kein Regress).
+  const cem = scheduler.mergeProfileDefaults({ id: "cem-ince" });
+  check("Personalisierung: cem-ince behaelt Ausschuss 'Arbeit und Soziales'",
+    Array.isArray(cem.committees) && cem.committees.includes("Arbeit und Soziales"),
+    `committees=${JSON.stringify(cem.committees)}`);
+  check("Personalisierung: cem-ince behaelt Fokusthemen (z. B. Bürgergeld)",
+    Array.isArray(cem.focusTopics) && cem.focusTopics.includes("Bürgergeld"));
+
+  // Fremdes Mandat erbt KEINE Cem-Inhalte mehr.
+  const other = scheduler.mergeProfileDefaults({
+    id: "erika-muster", fullName: "Erika Muster", party: "CDU", faction: "CDU/CSU",
+    committees: ["Umwelt"], focusTopics: ["Klima"], topicPriorities: { Klima: 5 }
+  });
+  check("Personalisierung: Fremd-Mandat hat NUR eigene Ausschuesse (kein Cem-Leak)",
+    JSON.stringify(other.committees) === JSON.stringify(["Umwelt"]),
+    `committees=${JSON.stringify(other.committees)}`);
+  check("Personalisierung: Fremd-Mandat erbt KEINE Cem-Themen (kein 'Bürgergeld'/'Mindestlohn')",
+    !other.focusTopics.includes("Bürgergeld") && !other.focusTopics.includes("Mindestlohn") && other.focusTopics.includes("Klima"),
+    `focusTopics=${JSON.stringify(other.focusTopics)}`);
+  check("Personalisierung: Fremd-Mandat erbt KEINE Cem-Topicprioritaeten (nur eigene)",
+    JSON.stringify(other.topicPriorities) === JSON.stringify({ Klima: 5 }),
+    `topicPriorities=${JSON.stringify(other.topicPriorities)}`);
+  check("Personalisierung: Fremd-Mandat erbt KEINE Cem-Gegner/Regionalbezuege",
+    (other.opponents || []).length === 0 && (other.regionalInterests || []).length === 0 && (other.upcomingAppointments || []).length === 0);
+  check("Personalisierung: Fremd-Mandat behaelt eigene Partei/Fraktion",
+    other.party === "CDU" && other.faction === "CDU/CSU");
+}
+
 async function main() {
   console.log("== Helmut P1 Security & Trust Checks ==\n");
   staticChecks();
+  personalizationChecks();
   await cronChecks();
   await llmLoggingChecks();
   await llmBudgetChecks();
