@@ -9,7 +9,7 @@ const { cemInceProfile, demoRawItems, demoSources, generateBriefing } = require(
 const { getLatestOrDemoBriefing, runDailyPipeline, runLageCheck, runMorningBriefing, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { personalizeBriefing } = require("./lib/helmut/personalization");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus } = require("./lib/helmut/storage");
+const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents } = require("./lib/helmut/storage");
 const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled, activeModelName } = require("./lib/helmut/ai");
 const { pushStatus, sendBriefingReadyPush, sendLageChangePush, sendPushToPolitician } = require("./lib/helmut/push");
 const auth = require("./lib/helmut/auth");
@@ -1709,13 +1709,15 @@ function publicReleasePayload(release) {
 // Betriebssignale (Crawl/Briefing frisch, Speicher aktiv, Fehler-Spike) statt des
 // strengen Pitch-Gates, plus Engagement aus dem Nutzungs-Tracking.
 async function buildHealthReport(politicianId = cemInceProfile.id) {
-  const [crawl, lageCheck, briefing, errors, users, feedback] = await Promise.all([
+  const [crawl, lageCheck, briefing, pipeline, errors, users, feedback, pushEvents] = await Promise.all([
     getLatestCrawlRun(),
     getLatestLageCheck(politicianId),
     getLatestBriefing(politicianId),
+    getLatestPipelineDebugReport(politicianId),
     accounts.listSystemErrors(100),
     accounts.listUsers(),
-    listFeedback(200)
+    listFeedback(200),
+    listPushEvents(politicianId, 200)
   ]);
   const storage = getStorageStatus();
   const now = Date.now();
@@ -1726,8 +1728,11 @@ async function buildHealthReport(politicianId = cemInceProfile.id) {
   const crawlH = hoursSince(crawl?.checkedAt || crawl?.createdAt);
   const briefingH = hoursSince(briefing?.generatedAt || briefing?.date);
   const lageH = hoursSince(lageCheck?.checkedAt || lageCheck?.createdAt);
+  const pipelineH = hoursSince(pipeline?.createdAt);
+  const briefingItems = Array.isArray(briefing?.items) ? briefing.items.length : 0;
   const errors24 = (errors || []).filter((e) => e.createdAt && (now - new Date(e.createdAt).getTime()) < day).length;
   const feedback24 = (feedback || []).filter((f) => f.createdAt && (now - new Date(f.createdAt).getTime()) < day).length;
+  const pushSent24 = (pushEvents || []).filter((e) => e.createdAt && (now - new Date(e.createdAt).getTime()) < day && Number(e.delivered) > 0).length;
   const active7 = (users || []).filter((u) => {
     const seen = u.lastSeenAt || u.lastLoginAt;
     return seen && (now - new Date(seen).getTime()) < 7 * day;
@@ -1738,27 +1743,32 @@ async function buildHealthReport(politicianId = cemInceProfile.id) {
   const problems = [];
   if (crawlH == null || crawlH > 28) problems.push(`Crawl ${crawlH == null ? "nie gelaufen" : "seit " + Math.round(crawlH) + "h aus"}`);
   if (briefingH == null || briefingH > 30) problems.push(`Briefing ${briefingH == null ? "fehlt" : "seit " + Math.round(briefingH) + "h alt"}`);
+  // Briefing ist frisch, aber leer -> stiller KI-/Crawl-Ausfall (technisch gruen, inhaltlich tot).
+  if (briefingH != null && briefingH <= 30 && briefingItems === 0) problems.push("Briefing leer (0 Einträge) – KI/Crawl prüfen");
+  // Pipeline-Debug-Report wird am Ende jedes Briefing-Laufs geschrieben (05/16 UTC).
+  // Nur bei vorhandenem, aber veraltetem Marker alarmieren (kein Fehlalarm bei fehlendem Report).
+  if (pipelineH != null && pipelineH > 28) problems.push(`Pipeline seit ${Math.round(pipelineH)}h nicht durchgelaufen`);
   if (storage.backend !== "supabase") problems.push("Speicher: Supabase inaktiv");
   if (errors24 > 15) problems.push(`${errors24} Systemfehler (24h)`);
   const ok = problems.length === 0;
 
-  const engagement = `👤 ${active7} aktiv (7T) · 💬 ${feedback24} Feedback (24h)`;
+  const engagement = `👤 ${active7} aktiv (7T) · 💬 ${feedback24} Feedback · 📲 ${pushSent24} Push (24h)`;
   const text = ok
     ? [
         "✅ Helmut läuft.",
         `Crawl: ${fmtAge(crawlH)} (${checked} Quellen, ${failed} Fehler)`,
-        `Briefing: ${fmtAge(briefingH)} · Lage: ${fmtAge(lageH)}`,
-        `Fehler (24h): ${errors24}`,
+        `Briefing: ${fmtAge(briefingH)} (${briefingItems} Einträge) · Lage: ${fmtAge(lageH)}`,
+        `Pipeline: ${fmtAge(pipelineH)} · Fehler (24h): ${errors24}`,
         engagement
       ].join("\n")
     : [
         "⚠️ Helmut: Achtung.",
         ...problems.map((p) => "• " + p),
-        `Crawl ${fmtAge(crawlH)} · Briefing ${fmtAge(briefingH)} · Lage ${fmtAge(lageH)}`,
+        `Crawl ${fmtAge(crawlH)} · Briefing ${fmtAge(briefingH)} (${briefingItems}) · Lage ${fmtAge(lageH)} · Pipeline ${fmtAge(pipelineH)}`,
         engagement
       ].join("\n");
 
-  return { ok, text, active7, feedback24, errors24 };
+  return { ok, text, active7, feedback24, errors24, briefingItems, pushSent24, pipelineH };
 }
 
 // WhatsApp-Versand via CallMeBot (kostenloser Self-Notify-Dienst). Zugangsdaten
