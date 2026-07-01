@@ -88,6 +88,29 @@ function staticChecks() {
   const server = fs.readFileSync(path.join(root, "server.js"), "utf8");
   check("Cron fail-open Helper entfernt (kein isAuthorizedCron)", !server.includes("isAuthorizedCron"));
   check("Cron fail-closed Helper vorhanden (authorizeCron)", server.includes("function authorizeCron"));
+
+  // Datenmotor V2, Commit 3: keine hardcodierten Cem-Namen mehr im KI-/Entity-Pfad.
+  const ai = fs.readFileSync(path.join(root, "lib/helmut/ai.js"), "utf8");
+  check("KI: kein hardcodiertes 'Guten Abend, Cem.'", !ai.includes("Guten Abend, Cem."));
+  check("KI: kein 'Cem'-Fallbackname mehr", !ai.includes('|| "Cem"'));
+  const runtimeSrc = fs.readFileSync(path.join(root, "lib/helmut/runtime.js"), "utf8");
+  check("Entity-Erkennung: kein hardcodiertes 'Cem Ince' in inferEntities-Liste", !/const entities = \[.*Cem Ince/.test(runtimeSrc));
+}
+
+// Datenmotor V2, Commit 3: inferEntities leitet Personen/Partei aus dem Profil ab.
+function entityChecks() {
+  const { inferEntities } = require(path.join(root, "lib/helmut/runtime.js"));
+  const item = { title: "Muster fordert mehr Klimaschutz", content: "Die Grünen im Bundestag unterstützen Erika Muster.", sourceId: "source-x" };
+
+  const forMuster = inferEntities(item, { fullName: "Erika Muster", party: "Grüne", faction: "Bündnis 90/Die Grünen", committees: [], relevantMinistries: [], opponents: [] });
+  check("Entity: Mandats-Person/Partei aus Profil erkannt (Muster/Grüne)",
+    forMuster.includes("Erika Muster") && forMuster.includes("Bundestag"), `entities=${JSON.stringify(forMuster)}`);
+  check("Entity: KEIN fremder 'Cem Ince' bei Fremd-Mandat",
+    !forMuster.includes("Cem Ince") && !forMuster.includes("Die Linke"), `entities=${JSON.stringify(forMuster)}`);
+
+  const noProfile = inferEntities(item, null);
+  check("Entity: ohne Profil nur generische Institutionen (kein Personenname)",
+    noProfile.includes("Bundestag") && !noProfile.some((e) => e.includes("Muster")), `entities=${JSON.stringify(noProfile)}`);
 }
 
 async function llmLoggingChecks() {
@@ -215,6 +238,7 @@ async function main() {
   console.log("== Helmut P1 Security & Trust Checks ==\n");
   staticChecks();
   personalizationChecks();
+  entityChecks();
   await cronChecks();
   await llmLoggingChecks();
   await llmBudgetChecks();
