@@ -471,6 +471,16 @@ async function handleRequest(request, response) {
     return handleAsync(response, async () => {
       const report = await buildHealthReport(politicianId);
       const delivery = await sendCallMeBotMessage(report.text);
+      // Echten Zustellfehler (nicht: Keys fehlen) protokollieren, damit er in der
+      // Admin-Fehlerliste auftaucht und morgen in errors24 zaehlt. Sonst waere ein
+      // stiller WhatsApp-Ausfall unsichtbar.
+      if (delivery && delivery.sent === false && !delivery.skipped) {
+        await accounts.recordSystemError({
+          scope: "health-report",
+          message: `WhatsApp-Zustellung fehlgeschlagen: ${delivery.reason || ("HTTP " + (delivery.status || "?"))}`,
+          path: "/api/cron/health-report"
+        }).catch(() => {});
+      }
       return { ok: report.ok, text: report.text, delivery };
     });
   }
@@ -1748,6 +1758,8 @@ async function buildHealthReport(politicianId = cemInceProfile.id) {
   // Pipeline-Debug-Report wird am Ende jedes Briefing-Laufs geschrieben (05/16 UTC).
   // Nur bei vorhandenem, aber veraltetem Marker alarmieren (kein Fehlalarm bei fehlendem Report).
   if (pipelineH != null && pipelineH > 28) problems.push(`Pipeline seit ${Math.round(pipelineH)}h nicht durchgelaufen`);
+  // Lage-Check laeuft taeglich 10 UTC; nur bei vorhandenem, aber veraltetem Marker alarmieren.
+  if (lageH != null && lageH > 28) problems.push(`Lage-Check seit ${Math.round(lageH)}h aus`);
   if (storage.backend !== "supabase") problems.push("Speicher: Supabase inaktiv");
   if (errors24 > 15) problems.push(`${errors24} Systemfehler (24h)`);
   const ok = problems.length === 0;
@@ -1776,7 +1788,7 @@ async function buildHealthReport(politicianId = cemInceProfile.id) {
 async function sendCallMeBotMessage(text) {
   const phone = String(process.env.CALLMEBOT_PHONE || "").replace(/[^\d]/g, "");
   const apikey = String(process.env.CALLMEBOT_APIKEY || "").trim();
-  if (!phone || !apikey) return { sent: false, reason: "CALLMEBOT_PHONE/CALLMEBOT_APIKEY nicht gesetzt." };
+  if (!phone || !apikey) return { sent: false, skipped: true, reason: "CALLMEBOT_PHONE/CALLMEBOT_APIKEY nicht gesetzt." };
   const endpoint = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(phone)}&text=${encodeURIComponent(text)}&apikey=${encodeURIComponent(apikey)}`;
   try {
     const res = await fetch(endpoint, { method: "GET" });
