@@ -7419,8 +7419,28 @@ function escapeRegExp(value) {
   return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+// App-Icon-Badge loeschen, sobald die App offen/sichtbar ist: direkt via
+// navigator.clearAppBadge und zusaetzlich den Service-Worker-Zaehler zuruecksetzen.
+function clearAppIconBadge() {
+  try {
+    if ("clearAppBadge" in navigator) navigator.clearAppBadge().catch(() => {});
+  } catch { /* nicht unterstuetzt */ }
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.ready
+      .then((reg) => reg.active && reg.active.postMessage("clear-badge"))
+      .catch(() => {});
+  }
+}
+
+if (typeof document !== "undefined") {
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") clearAppIconBadge();
+  });
+}
+
 loadBriefing()
   .then(() => schedulePushAutoSync())
+  .then(() => clearAppIconBadge())
   .catch((error) => {
     console.error(error);
     app.innerHTML = `
