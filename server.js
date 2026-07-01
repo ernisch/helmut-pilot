@@ -170,6 +170,8 @@ async function handleRequest(request, response) {
   }
 
   if (url.pathname === "/api/app/start") {
+    // Nutzungs-Tracking: App-Oeffnung erfassen (nicht-blockierend, gedrosselt).
+    if (accountAuth && authUser) accounts.recordUserActivity(authUser.id).catch(() => {});
     return handleAsync(response, async () => {
       const profile = await activeProfile(politicianId);
       const briefing = await latestBriefingPayload({ politicianId, profile, url, previewMode, compact: true });
@@ -2179,7 +2181,11 @@ async function buildAdminOverview() {
       referenten: users.filter((user) => user.role === "referent").length,
       profiles: profiles.length,
       assignments: assignments.length,
-      feedbackOpen: feedback.filter((item) => !item.done).length
+      feedbackOpen: feedback.filter((item) => !item.done).length,
+      activeLast7d: users.filter((user) => {
+        const seen = user.lastSeenAt || user.lastLoginAt;
+        return seen && (Date.now() - new Date(seen).getTime()) < 7 * 24 * 60 * 60 * 1000;
+      }).length
     },
     users,
     profiles,

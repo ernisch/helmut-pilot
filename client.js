@@ -935,6 +935,10 @@ function renderAdminView() {
   const data = adminData;
   const mandateOptions = adminMandateOptions();
   const referenten = (data.users || []).filter((user) => user.role === "referent");
+  const feedbackCountByUser = {};
+  (Array.isArray(data.feedback) ? data.feedback : []).forEach((item) => {
+    if (item.userId) feedbackCountByUser[item.userId] = (feedbackCountByUser[item.userId] || 0) + 1;
+  });
 
   const userRows = (data.users || []).map((user) => {
     const billingDays = user.paidUntil ? Math.ceil((new Date(user.paidUntil) - Date.now()) / 86400000) : null;
@@ -972,7 +976,7 @@ function renderAdminView() {
         <button class="account-logout" type="button" data-toggle-user="${escapeAttribute(user.id)}" data-active="${user.active === false ? "0" : "1"}">${user.active === false ? "Aktivieren" : "Deaktivieren"}</button>
       </td>
     </tr>
-    ${isExpanded ? renderAdminUserEditRow(user, status) : ""}`;
+    ${isExpanded ? renderAdminUserEditRow(user, status, feedbackCountByUser[user.id] || 0) : ""}`;
   }).join("");
 
   const assignmentRows = (data.assignments || []).length
@@ -1017,6 +1021,14 @@ function renderAdminView() {
         <div class="admin-stat-card">
           <span class="admin-stat-num">${data.counts?.profiles ?? 0}</span>
           <span class="admin-stat-label">Profile</span>
+        </div>
+        <div class="admin-stat-card">
+          <span class="admin-stat-num">${data.counts?.activeLast7d ?? 0}</span>
+          <span class="admin-stat-label">Aktiv (7 Tage)</span>
+        </div>
+        <div class="admin-stat-card">
+          <span class="admin-stat-num">${data.counts?.feedbackOpen ?? 0}</span>
+          <span class="admin-stat-label">Feedback offen</span>
         </div>
       </div>
 
@@ -1212,7 +1224,7 @@ function renderAdminView() {
 
 // Aufklappbares Bearbeiten-Panel je Nutzer: Status + Kundenfelder. Speichert
 // additiv via PATCH /api/admin/users/:id mit { status, customer }.
-function renderAdminUserEditRow(user, status) {
+function renderAdminUserEditRow(user, status, feedbackCount = 0) {
   const c = user.customer || {};
   const statusSelect = USER_STATUS_OPTIONS
     .map(([value, label]) => `<option value="${value}" ${value === status ? "selected" : ""}>${escapeHtml(label)}</option>`)
@@ -1220,9 +1232,20 @@ function renderAdminUserEditRow(user, status) {
   const paymentSelect = PAYMENT_STATUS_OPTIONS
     .map(([value, label]) => `<option value="${value}" ${value === (c.paymentStatus || "none") ? "selected" : ""}>${escapeHtml(label)}</option>`)
     .join("");
+  const activity = `
+    <div class="admin-activity">
+      <span class="admin-subsection-label">Aktivität</span>
+      <div class="admin-activity-grid">
+        <div class="admin-activity-item"><span class="admin-activity-num">${Number(user.openCount) || 0}</span><span class="admin-activity-lbl">App-Öffnungen</span></div>
+        <div class="admin-activity-item"><span class="admin-activity-num">${Number(user.loginCount) || 0}</span><span class="admin-activity-lbl">Logins</span></div>
+        <div class="admin-activity-item"><span class="admin-activity-num">${Number(feedbackCount) || 0}</span><span class="admin-activity-lbl">Feedback</span></div>
+        <div class="admin-activity-item"><span class="admin-activity-num-sm">${escapeHtml(formatLastLogin(user.lastSeenAt || user.lastLoginAt))}</span><span class="admin-activity-lbl">Zuletzt aktiv</span></div>
+      </div>
+    </div>`;
   return `
     <tr class="admin-edit-row">
       <td colspan="7">
+        ${activity}
         <form class="admin-customer-form" data-customer-form="${escapeAttribute(user.id)}">
           <div class="admin-customer-grid">
             <label class="admin-cust-field">

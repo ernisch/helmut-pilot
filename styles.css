@@ -7149,7 +7149,7 @@ body {
 /* Stats row */
 .admin-stats-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 12px;
 }
 
@@ -7432,6 +7432,47 @@ body {
   .admin-edit-row > td { display: block; padding: 0 14px 14px !important; text-align: left; }
   .admin-edit-row > td::before { display: none; }
   .admin-customer-grid { grid-template-columns: 1fr; }
+}
+
+/* Aktivitäts-Panel (Nutzungs-Tracking im Bearbeiten-Panel) */
+.admin-activity {
+  padding: 14px 0 4px;
+  border-top: 1px solid var(--hairline);
+}
+.admin-activity-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+}
+.admin-activity-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: rgba(255, 255, 255, .03);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.admin-activity-num {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -.02em;
+  color: var(--text);
+  line-height: 1;
+}
+.admin-activity-num-sm {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+}
+.admin-activity-lbl {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--muted-2);
+  font-weight: 600;
 }
 
 /* Feedback-Inbox (Admin) */
