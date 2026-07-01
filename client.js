@@ -7419,6 +7419,21 @@ function escapeRegExp(value) {
   return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+// Service Worker bei jedem Laden registrieren (unabhaengig von Push). Ohne
+// registrierten SW mit fetch-Handler bietet Chrome/Brave keinen Installieren-Dialog
+// an. Die spaetere Push-Registrierung nutzt dieselbe Registrierung weiter.
+function registerServiceWorker() {
+  if (!("serviceWorker" in navigator)) return;
+  const doRegister = () => {
+    navigator.serviceWorker.register("/sw.js").catch((error) => {
+      console.warn("Service-Worker-Registrierung fehlgeschlagen", error);
+    });
+  };
+  if (document.readyState === "complete") doRegister();
+  else window.addEventListener("load", doRegister, { once: true });
+}
+registerServiceWorker();
+
 // App-Icon-Badge loeschen, sobald die App offen/sichtbar ist: direkt via
 // navigator.clearAppBadge und zusaetzlich den Service-Worker-Zaehler zuruecksetzen.
 function clearAppIconBadge() {

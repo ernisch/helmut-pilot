@@ -6,6 +6,15 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(self.clients.claim());
 });
 
+// Fetch-Handler: reiner Netzwerk-Passthrough fuer Navigationen (kein Caching,
+// kein Offline-Verhalten geaendert). Notwendig, damit Chrome/Brave die Seite als
+// installierbare PWA erkennen und den "App installieren"-Dialog anbieten.
+self.addEventListener("fetch", (event) => {
+  if (event.request.mode === "navigate") {
+    event.respondWith(fetch(event.request));
+  }
+});
+
 // --- App-Icon-Badge (Zahl auf dem Startbildschirm-Icon) ---------------------
 // Der Zaehler muss persistent sein, weil der Service Worker zwischen zwei Pushes
 // beendet wird. Wir legen ihn im Cache Storage ab (kein IndexedDB-Boilerplate).
