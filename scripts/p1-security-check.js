@@ -212,6 +212,62 @@ async function llmBudgetChecks() {
   }
 }
 
+// Datenmotor V3 — Commit C1: Sicherheitsnetz (Budget fail-closed + globaler
+// Understanding-Lock). Rein additiv, alles hinter Flags, Default UNVERAENDERT.
+async function c1SafetyNetChecks() {
+  const storage = require(path.join(root, "lib/helmut/storage.js"));
+
+  // (a) Budget-Fehlerfall: Default fail-OPEN (Flag aus) -> allowed:true.
+  const origFailClosed = process.env.HELMUT_LLM_BUDGET_FAIL_CLOSED;
+  try {
+    delete process.env.HELMUT_LLM_BUDGET_FAIL_CLOSED;
+    const openRes = storage.llmBudgetFailResult(Infinity);
+    check("C1 Budget: Default fail-OPEN (Flag aus) -> allowed:true (App bleibt lauffaehig)",
+      openRes.allowed === true && openRes.reason === "budget-check-failed-open", `res=${JSON.stringify(openRes)}`);
+
+    process.env.HELMUT_LLM_BUDGET_FAIL_CLOSED = "1";
+    const closedRes = storage.llmBudgetFailResult(Infinity);
+    check("C1 Budget: Flag AN -> fail-CLOSED (allowed:false, kein unkontrollierter KI-Call)",
+      closedRes.allowed === false && closedRes.reason === "budget-check-failed-closed", `res=${JSON.stringify(closedRes)}`);
+  } finally {
+    if (origFailClosed === undefined) delete process.env.HELMUT_LLM_BUDGET_FAIL_CLOSED;
+    else process.env.HELMUT_LLM_BUDGET_FAIL_CLOSED = origFailClosed;
+  }
+
+  // (b) Globaler Understanding-Lock: Default INAKTIV (Flag aus) -> No-Op.
+  const origLock = process.env.HELMUT_UNDERSTANDING_LOCK;
+  const authBefore = await storage.readAuthStore();
+  const originalLocks = authBefore.pipelineLocks ? { ...authBefore.pipelineLocks } : {};
+  try {
+    delete process.env.HELMUT_UNDERSTANDING_LOCK;
+    check("C1 Lock: understandingLockEnabled() Default false (Flag aus)", storage.understandingLockEnabled() === false);
+    const inactive = await storage.acquireGlobalUnderstandingLock();
+    const authAfterNoop = await storage.readAuthStore();
+    check("C1 Lock: Default INAKTIV -> granted:true, active:false, KEIN Lock geschrieben (No-Op)",
+      inactive.granted === true && inactive.active === false
+        && !(authAfterNoop.pipelineLocks && authAfterNoop.pipelineLocks["global-understanding"]),
+      `res=${JSON.stringify(inactive)}`);
+
+    // Flag AN: erster Acquire granted, zweiter (vor Release) blockiert, nach Release frei.
+    process.env.HELMUT_UNDERSTANDING_LOCK = "1";
+    const first = await storage.acquireGlobalUnderstandingLock(60 * 1000);
+    const second = await storage.acquireGlobalUnderstandingLock(60 * 1000);
+    check("C1 Lock: Flag AN -> 1. Acquire granted, 2. blockiert (verhindert Doppel-Understanding)",
+      first.granted === true && first.active === true && second.granted === false,
+      `first=${first.granted} second=${second.granted}`);
+    await storage.releaseGlobalUnderstandingLock();
+    const third = await storage.acquireGlobalUnderstandingLock(60 * 1000);
+    check("C1 Lock: nach Release wieder frei (granted:true)", third.granted === true, `third=${third.granted}`);
+    await storage.releaseGlobalUnderstandingLock();
+  } finally {
+    if (origLock === undefined) delete process.env.HELMUT_UNDERSTANDING_LOCK;
+    else process.env.HELMUT_UNDERSTANDING_LOCK = origLock;
+    // pipelineLocks auf Ausgangszustand zuruecksetzen (Test-Hygiene).
+    const authNow = await storage.readAuthStore();
+    await storage.writeAuthStore({ ...authNow, pipelineLocks: originalLocks });
+  }
+}
+
 // Datenmotor V2 — Commit 2: echte Personalisierung / Cem-Entkopplung.
 // Deterministischer Unit-Test der reinen Merge-Funktion (kein Store noetig).
 function personalizationChecks() {
@@ -341,6 +397,7 @@ async function main() {
   await cronChecks();
   await llmLoggingChecks();
   await llmBudgetChecks();
+  await c1SafetyNetChecks();
 
   const failed = results.filter((r) => !r.ok);
   console.log(`\n${results.length - failed.length}/${results.length} Checks bestanden.`);
