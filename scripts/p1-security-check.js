@@ -192,6 +192,17 @@ async function llmBudgetChecks() {
     const at = await storage.canSpendLlm(mp, ref);
     check("Budget: bei erreichtem Limit blockiert (allowed=false, Grund gesetzt)",
       at.allowed === false && at.reason === "daily-llm-budget-reached", `allowed=${at.allowed} reason=${at.reason}`);
+
+    // Skip-Eintraege ("skipped-*") zaehlen NICHT gegen das Budget.
+    const auth2 = await storage.readAuthStore();
+    auth2.llmUsage = [
+      { id: "s1", createdAt: "2026-07-01T11:00:00.000Z", politicianId: mp, userId: mp, model: "none", callType: "skipped-budget", estimatedCost: 0, success: true },
+      { id: "s2", createdAt: "2026-07-01T11:30:00.000Z", politicianId: mp, userId: mp, model: "gpt-5-mini", callType: "v2ScoreAndPrioritize", estimatedCost: 0.001, success: true }
+    ];
+    await storage.writeAuthStore(auth2);
+    const skipDay = await storage.getLlmUsageToday(mp, ref);
+    check("Budget: skipped-* zaehlt NICHT als Call (nur echter Call gezaehlt)",
+      skipDay.calls === 1, `calls=${skipDay.calls}`);
   } finally {
     if (originalLimit === undefined) delete process.env.HELMUT_MAX_LLM_CALLS_PER_DAY;
     else process.env.HELMUT_MAX_LLM_CALLS_PER_DAY = originalLimit;
@@ -271,6 +282,12 @@ async function engineV2Checks() {
     // aiScoreCandidates mit leerer Liste -> [] (kein Call, kein Crash).
     const empty = await ai.aiScoreCandidates([], { id: "x" });
     check("V2: aiScoreCandidates([]) -> [] (kein LLM-Call)", Array.isArray(empty) && empty.length === 0);
+
+    // Kostenoptimierung: V2 nutzt gpt-5-mini (OpenAI direkt, kein Azure).
+    const origV2Model = process.env.HELMUT_ENGINE_V2_MODEL;
+    delete process.env.HELMUT_ENGINE_V2_MODEL;
+    check("V2-Kosten: Default-Modell ist gpt-5-mini (guenstig)", ai.v2ModelName() === "gpt-5-mini", `model=${ai.v2ModelName()}`);
+    if (origV2Model !== undefined) process.env.HELMUT_ENGINE_V2_MODEL = origV2Model;
   } finally {
     if (originalFlag === undefined) delete process.env.HELMUT_ENGINE_V2; else process.env.HELMUT_ENGINE_V2 = originalFlag;
     if (originalOpenAi !== undefined) process.env.OPENAI_API_KEY = originalOpenAi;
