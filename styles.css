@@ -8892,3 +8892,91 @@ details[open].meeting-detail summary::before { content: '▾ '; }
     padding: 0 18px 18px;
   }
 }
+
+/* --- In-App Installieren-Banner + Offline-Ansicht ------------------------- */
+.install-banner {
+  position: fixed;
+  left: 50%;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 9998;
+  width: min(440px, calc(100vw - 24px));
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: rgba(16, 23, 41, 0.94);
+  border: 1px solid rgba(140, 92, 255, 0.28);
+  box-shadow: 0 22px 60px rgba(3, 6, 16, 0.6);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: #f5f1e8;
+  animation: install-banner-in 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes install-banner-in {
+  from { opacity: 0; transform: translate(-50%, 14px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+.install-banner__mark {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: #0b0f1a;
+  font: 800 22px/1 Inter, ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.04em;
+  color: #fbf7ef;
+}
+.install-banner__text {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.install-banner__text strong { font-size: 14px; font-weight: 650; }
+.install-banner__text span { font-size: 12px; line-height: 1.4; color: rgba(245, 241, 232, 0.6); }
+.install-banner__cta {
+  flex: 0 0 auto;
+  appearance: none;
+  border: 0;
+  cursor: pointer;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font: 600 14px Inter, ui-sans-serif, system-ui, sans-serif;
+  color: #0b0f1a;
+  background: #f5f1e8;
+}
+.install-banner__cta:active { transform: translateY(1px); }
+.install-banner__close {
+  flex: 0 0 auto;
+  appearance: none;
+  border: 0;
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 18px;
+  line-height: 1;
+  color: rgba(245, 241, 232, 0.55);
+  background: rgba(245, 241, 232, 0.08);
+}
+.offline-card h1 { margin: 8px 0 10px; }
+.offline-card p {
+  max-width: 300px;
+  margin: 0 auto 22px;
+  color: rgba(245, 241, 232, 0.62);
+  line-height: 1.55;
+}
+:root[data-theme="light"] .install-banner {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(15, 23, 42, 0.12);
+  color: #0f1729;
+}
+:root[data-theme="light"] .install-banner__text span { color: rgba(15, 23, 42, 0.6); }
+:root[data-theme="light"] .install-banner__mark { background: #0f1729; color: #fbf7ef; }
+:root[data-theme="light"] .install-banner__cta { background: #0f1729; color: #f5f1e8; }
+:root[data-theme="light"] .install-banner__close { color: rgba(15, 23, 42, 0.5); background: rgba(15, 23, 42, 0.06); }

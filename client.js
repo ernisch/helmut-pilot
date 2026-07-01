@@ -7434,7 +7434,87 @@ function registerServiceWorker() {
 }
 registerServiceWorker();
 
-// App-Icon-Badge loeschen, sobald die App offen/sichtbar ist: direkt via
+// --- Eigener In-App "Installieren"-Button ------------------------------------
+// Chrome/Brave feuern beforeinstallprompt, wenn die PWA installierbar ist. Wir
+// fangen es ab und bieten einen eigenen, zum Design passenden Button an. Das
+// Banner haengt an <body> (ausserhalb von #app), damit Re-Renders es nicht loeschen.
+let deferredInstallPrompt = null;
+
+function isStandaloneDisplay() {
+  return (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches)
+    || window.navigator.standalone === true;
+}
+function isIosDevice() {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent || "");
+}
+function removeInstallBanner() {
+  const el = document.getElementById("helmutInstallBanner");
+  if (el) el.remove();
+}
+function installDismissed() {
+  try { return sessionStorage.getItem("helmut:install-dismissed") === "1"; } catch { return false; }
+}
+function dismissInstall() {
+  try { sessionStorage.setItem("helmut:install-dismissed", "1"); } catch { /* egal */ }
+  removeInstallBanner();
+}
+function buildInstallBanner(inner) {
+  if (document.getElementById("helmutInstallBanner")) return null;
+  const bar = document.createElement("div");
+  bar.id = "helmutInstallBanner";
+  bar.className = "install-banner";
+  bar.innerHTML = inner;
+  document.body.appendChild(bar);
+  const close = document.getElementById("helmutInstallClose");
+  if (close) close.addEventListener("click", dismissInstall);
+  return bar;
+}
+function showInstallBanner() {
+  if (isStandaloneDisplay() || installDismissed() || previewMode) return;
+  buildInstallBanner(`
+    <div class="install-banner__mark">H</div>
+    <div class="install-banner__text">
+      <strong>Helmut installieren</strong>
+      <span>Als App öffnen – ohne Browserleiste, mit eigenem Icon.</span>
+    </div>
+    <button type="button" class="install-banner__cta" id="helmutInstallCta">Installieren</button>
+    <button type="button" class="install-banner__close" id="helmutInstallClose" aria-label="Schließen">×</button>
+  `);
+  const cta = document.getElementById("helmutInstallCta");
+  if (cta) cta.addEventListener("click", async () => {
+    if (!deferredInstallPrompt) return;
+    removeInstallBanner();
+    deferredInstallPrompt.prompt();
+    try { await deferredInstallPrompt.userChoice; } catch { /* egal */ }
+    deferredInstallPrompt = null;
+  });
+}
+function maybeShowIosInstallHint() {
+  // iOS feuert kein beforeinstallprompt -> dezenter Hinweis auf den Teilen-Weg.
+  if (!isIosDevice() || isStandaloneDisplay() || installDismissed() || previewMode) return;
+  buildInstallBanner(`
+    <div class="install-banner__mark">H</div>
+    <div class="install-banner__text">
+      <strong>Helmut zum Home-Bildschirm</strong>
+      <span>In Safari: Teilen&nbsp;⬆️ &rarr; „Zum Home-Bildschirm".</span>
+    </div>
+    <button type="button" class="install-banner__close" id="helmutInstallClose" aria-label="Schließen">×</button>
+  `);
+}
+window.addEventListener("beforeinstallprompt", (event) => {
+  event.preventDefault();
+  deferredInstallPrompt = event;
+  showInstallBanner();
+});
+window.addEventListener("appinstalled", () => {
+  deferredInstallPrompt = null;
+  removeInstallBanner();
+});
+if (typeof window !== "undefined") {
+  window.addEventListener("load", () => { setTimeout(maybeShowIosInstallHint, 2500); }, { once: true });
+}
+
+// --- App-Icon-Badge loeschen, sobald die App offen/sichtbar ist: direkt via
 // navigator.clearAppBadge und zusaetzlich den Service-Worker-Zaehler zuruecksetzen.
 function clearAppIconBadge() {
   try {
@@ -7458,14 +7538,27 @@ loadBriefing()
   .then(() => clearAppIconBadge())
   .catch((error) => {
     console.error(error);
-    app.innerHTML = `
-      <section class="loading-card">
-        <div class="loading-logo"><span>H</span></div>
-        <p>Helmut</p>
-        <h1>Briefing konnte nicht geladen werden.</h1>
-        <button class="primary-button" type="button" onclick="window.location.reload()">Neu laden</button>
-      </section>
-    `;
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      // Kein Netz -> elegante Offline-Ansicht im Helmut-Design statt Fehlermeldung.
+      app.innerHTML = `
+        <section class="loading-card offline-card">
+          <div class="loading-logo"><span>H</span></div>
+          <h1>Keine Internetverbindung</h1>
+          <p>Helmut benötigt eine Verbindung, um aktuelle politische Entwicklungen abzurufen.</p>
+          <button class="primary-button" type="button" onclick="window.location.reload()">Erneut versuchen</button>
+        </section>
+      `;
+      window.addEventListener("online", () => window.location.reload(), { once: true });
+    } else {
+      app.innerHTML = `
+        <section class="loading-card">
+          <div class="loading-logo"><span>H</span></div>
+          <p>Helmut</p>
+          <h1>Briefing konnte nicht geladen werden.</h1>
+          <button class="primary-button" type="button" onclick="window.location.reload()">Neu laden</button>
+        </section>
+      `;
+      showToast("Briefing konnte nicht geladen werden");
+    }
     hideStartupSplash();
-    showToast("Briefing konnte nicht geladen werden");
   });

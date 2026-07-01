@@ -1,17 +1,83 @@
+// Version bei jedem groesseren SW-Update erhoehen -> alte Asset-Caches werden
+// beim activate aufgeraeumt. BADGE_CACHE wird bewusst NICHT geloescht.
+const ASSET_CACHE = "helmut-assets-v1";
+const PRECACHE_URLS = [
+  "/assets/helmut_appicon_192.png",
+  "/assets/helmut_appicon_512.png"
+];
+
+// Elegante Offline-Ansicht im Helmut-Design. Inline im SW, damit sie ohne Netz
+// und ohne zusaetzliche Datei/Route garantiert verfuegbar ist.
+const OFFLINE_HTML = `<!doctype html><html lang="de"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#050914"><title>Keine Internetverbindung · Helmut</title>
+<style>:root{color-scheme:dark}*{box-sizing:border-box}html,body{margin:0;height:100%}
+body{display:grid;place-items:center;min-height:100dvh;padding:32px;background:radial-gradient(circle at 50% 38%,rgba(140,92,255,.14),transparent 30%),linear-gradient(180deg,#070b15,#050914 70%,#03050b);color:#f5f1e8;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;text-align:center}
+.wrap{max-width:340px}.mark{width:76px;height:76px;margin:0 auto 26px;border-radius:20px;display:grid;place-items:center;background:#0f1729;box-shadow:0 24px 70px rgba(140,92,255,.28);font:800 40px/1 Inter,sans-serif;color:#fbf7ef;letter-spacing:-.04em}
+h1{font-size:22px;margin:0 0 12px;letter-spacing:-.02em}p{margin:0 0 28px;font-size:15px;line-height:1.55;color:rgba(245,241,232,.62)}
+button{appearance:none;border:0;cursor:pointer;width:100%;padding:15px 20px;border-radius:14px;font:600 16px Inter,sans-serif;color:#0b0f1a;background:#f5f1e8}button:active{transform:translateY(1px)}</style></head>
+<body><div class="wrap"><div class="mark">H</div><h1>Keine Internetverbindung</h1>
+<p>Helmut benötigt eine Verbindung, um aktuelle politische Entwicklungen abzurufen.</p>
+<button type="button" onclick="location.reload()">Erneut versuchen</button></div>
+<script>addEventListener("online",function(){location.reload()});</script></body></html>`;
+
 self.addEventListener("install", (event) => {
-  event.waitUntil(self.skipWaiting());
+  event.waitUntil((async () => {
+    try {
+      const cache = await caches.open(ASSET_CACHE);
+      await cache.addAll(PRECACHE_URLS);
+    } catch { /* Precache best effort */ }
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil((async () => {
+    // Alte Asset-Caches aufraeumen, Badge-Cache behalten.
+    const keys = await caches.keys();
+    await Promise.all(keys.map((k) => (k !== ASSET_CACHE && k !== BADGE_CACHE) ? caches.delete(k) : null));
+    await self.clients.claim();
+  })());
 });
 
-// Fetch-Handler: reiner Netzwerk-Passthrough fuer Navigationen (kein Caching,
-// kein Offline-Verhalten geaendert). Notwendig, damit Chrome/Brave die Seite als
-// installierbare PWA erkennen und den "App installieren"-Dialog anbieten.
+// Fetch-Strategie:
+//  - Navigationen: erst Netz, bei Fehler elegante Offline-Seite (nie Browser-Fehler).
+//  - Statische Assets (css/js/bilder/fonts): stale-while-revalidate -> schneller Start
+//    auch bei schlechtem Netz, im Hintergrund aktualisiert.
+//  - Alles andere (API, POST): unveraendert direkt ans Netz.
 self.addEventListener("fetch", (event) => {
-  if (event.request.mode === "navigate") {
-    event.respondWith(fetch(event.request));
+  const req = event.request;
+  if (req.method !== "GET") return;
+  let url;
+  try { url = new URL(req.url); } catch { return; }
+  if (url.origin !== self.location.origin) return;
+
+  if (req.mode === "navigate") {
+    event.respondWith((async () => {
+      try {
+        return await fetch(req);
+      } catch {
+        return new Response(OFFLINE_HTML, {
+          status: 200,
+          headers: { "Content-Type": "text/html; charset=utf-8" }
+        });
+      }
+    })());
+    return;
+  }
+
+  if (["style", "script", "image", "font"].includes(req.destination)) {
+    event.respondWith((async () => {
+      const cache = await caches.open(ASSET_CACHE);
+      const cached = await cache.match(req);
+      const network = fetch(req)
+        .then((res) => {
+          if (res && res.ok) cache.put(req, res.clone()).catch(() => {});
+          return res;
+        })
+        .catch(() => null);
+      return cached || (await network) || new Response("", { status: 504 });
+    })());
   }
 });
 
