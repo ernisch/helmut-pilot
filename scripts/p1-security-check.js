@@ -296,11 +296,47 @@ async function engineV2Checks() {
   }
 }
 
+// Datenmotor V2 — Commit 6: Erklaerbarkeit im Pipeline-Debug-Report.
+function debugReportChecks() {
+  const scheduler = require(path.join(root, "lib/helmut/scheduler.js"));
+  const savedBriefing = {
+    status: "Aktuell",
+    ai: { enabled: true, engine: "v2", model: "gpt-5-mini" },
+    v2: { scored: true, candidates: 20, ranked: 5, top1Justification: "Betrifft deinen Ausschuss direkt und ist heute entscheidungsreif." },
+    topics: [],
+    items: [
+      { id: "i1", title: "Top-Thema", decision: "Sofort reagieren", priority: 82, aiRelevanceScore: 91, reactOrObserve: "react", affectsMandate: true, rank: 1, rankReason: "Hoechste Dringlichkeit + Mandatsbezug", whyItMatters: "Kernthema", riskNote: "Deutungshoheit", inactionConsequence: "Andere besetzen das Thema", sources: [] }
+    ]
+  };
+  const report = scheduler.buildPipelineDebugReport({
+    profile: { id: "cem-ince", fullName: "Cem Ince", party: "Die Linke", committees: ["Arbeit und Soziales"], focusTopics: [] },
+    latestCrawl: null, recentItems: [], situationalRecentItems: [], mentionItems: [],
+    relevanceDiagnostics: [], relevantItems: [], situationalItems: [],
+    promotedSituationalItems: [], briefingInputItems: [],
+    liveBriefing: null, savedBriefing, usesLiveBriefing: true,
+    aiBudget: { allowed: true, used: 2, limit: 6, remaining: 4, reason: null }, aiUsed: true
+  });
+
+  check("Debug: engine-Block zeigt V2-Modus + Modell",
+    report.engine && report.engine.mode === "v2" && report.engine.model === "gpt-5-mini",
+    `mode=${report.engine && report.engine.mode}`);
+  check("Debug: 'Warum Top 1' (top1Justification) protokolliert",
+    typeof report.engine.top1Justification === "string" && report.engine.top1Justification.length > 0);
+  check("Debug: Budget-Status im Report (used/limit)",
+    report.engine.budget && report.engine.budget.used === 2 && report.engine.budget.limit === 6);
+  const fi = report.finalItems[0];
+  check("Debug: Final-Item zeigt Regel-Score UND KI-Score getrennt",
+    fi.ruleScore === 82 && fi.aiRelevanceScore === 91, `rule=${fi.ruleScore} ai=${fi.aiRelevanceScore}`);
+  check("Debug: Final-Item zeigt KI-Entscheid + Rang + Begruendung",
+    fi.reactOrObserve === "react" && fi.rank === 1 && fi.rankReason.length > 0 && fi.affectsMandate === true);
+}
+
 async function main() {
   console.log("== Helmut P1 Security & Trust Checks ==\n");
   staticChecks();
   personalizationChecks();
   entityChecks();
+  debugReportChecks();
   await engineV2Checks();
   await cronChecks();
   await llmLoggingChecks();
