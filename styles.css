@@ -44,26 +44,43 @@
 }
 
 /* Sanfte View-Transitions fuer Tab-/Ansichtswechsel (client.js: render() nutzt
-   document.startViewTransition, wenn der Browser es unterstuetzt). Ersetzt den
-   harten Standard-Crossfade durch ein ruhiges Fade+Scale nach Apple-Kadenz. */
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation-duration: var(--dur-base);
+   document.startViewTransition, wenn der Browser es unterstuetzt). Der
+   Inhaltsbereich (.content-shell) bekommt einen eigenen, deutlich sichtbaren
+   Fade+Slide-Uebergang; alles andere (Sidebar, mobile Tableiste) bleibt im
+   root-Uebergang und wechselt nur ganz kurz/subtil (dort aendert sich meist
+   nur die aktive Markierung, kein neuer Inhalt). Getrennt zu behandeln
+   verhindert, dass die ganze Seite bei jedem Klick unnoetig komplett blinkt. */
+.content-shell {
+  view-transition-name: helmut-content;
+}
+
+::view-transition-group(helmut-content) {
+  animation-duration: var(--dur-slow);
+}
+::view-transition-old(helmut-content),
+::view-transition-new(helmut-content) {
+  animation-duration: var(--dur-slow);
   animation-timing-function: var(--ease-out-soft);
 }
-::view-transition-old(root) {
-  animation-name: helmut-view-out;
+::view-transition-old(helmut-content) {
+  animation-name: helmut-content-out;
 }
+::view-transition-new(helmut-content) {
+  animation-name: helmut-content-in;
+}
+@keyframes helmut-content-out {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-10px); }
+}
+@keyframes helmut-content-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-name: helmut-view-in;
-}
-@keyframes helmut-view-out {
-  from { opacity: 1; transform: scale(1); }
-  to { opacity: 0; transform: scale(.994); }
-}
-@keyframes helmut-view-in {
-  from { opacity: 0; transform: scale(1.006); }
-  to { opacity: 1; transform: scale(1); }
+  animation-duration: var(--dur-fast);
+  animation-timing-function: var(--ease-out-soft);
 }
 
 * { box-sizing: border-box; }
