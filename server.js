@@ -10,7 +10,7 @@ const { getLatestOrDemoBriefing, runDailyPipeline, runLageCheck, runMorningBrief
 const { personalizeBriefing } = require("./lib/helmut/personalization");
 const { buildLearningProfile } = require("./lib/helmut/learning");
 const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents } = require("./lib/helmut/storage");
-const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled, activeModelName } = require("./lib/helmut/ai");
+const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled, activeModelName, isEngineV2Enabled } = require("./lib/helmut/ai");
 const { pushStatus, sendBriefingReadyPush, sendLageChangePush, sendPushToPolitician } = require("./lib/helmut/push");
 const auth = require("./lib/helmut/auth");
 const accounts = require("./lib/helmut/accounts");
@@ -305,6 +305,26 @@ async function handleRequest(request, response) {
       enabled: isAiEnabled(),
       model: activeModelName(),
       backend: process.env.AZURE_OPENAI_KEY ? "azure-eu" : "openai"
+    });
+  }
+
+  // TEMPORAER (Diagnose Datenmotor V2): Zeigt, was der laufende Prozess wirklich
+  // in process.env.HELMUT_ENGINE_V2 sieht — Rohwert JSON-kodiert (macht
+  // unsichtbare Zeichen sichtbar), Laenge, das Ergebnis von isEngineV2Enabled()
+  // und ALLE env-Keys mit "ENGINE" im Namen (entlarvt einen Tippfehler-Namen).
+  // Nach der Fehlersuche wieder entfernen. Leakt keine fremden Secrets.
+  if (url.pathname === "/api/debug/engine-flag") {
+    const raw = process.env.HELMUT_ENGINE_V2;
+    const engineKeys = Object.keys(process.env)
+      .filter((k) => /ENGINE|HELMUT_ENG/i.test(k))
+      .map((k) => ({ key: JSON.stringify(k), length: k.length }));
+    return sendJson(response, {
+      HELMUT_ENGINE_V2_present: typeof raw !== "undefined",
+      HELMUT_ENGINE_V2_json: JSON.stringify(raw ?? null),
+      HELMUT_ENGINE_V2_length: (raw || "").length,
+      isEngineV2Enabled: isEngineV2Enabled(),
+      control_budget_limit_json: JSON.stringify(process.env.HELMUT_MAX_LLM_CALLS_PER_DAY ?? null),
+      matchingEnvKeys: engineKeys
     });
   }
 
