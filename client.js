@@ -929,7 +929,12 @@ function renderAdminView() {
       <section class="page-intro executive-intro">
         <span class="eyebrow-line">Verwaltung</span>
         <h1 class="hero-title">Admin</h1>
-        <p>Lade Admin-Daten …</p>
+        <div class="skeleton-stack" aria-busy="true" aria-label="Admin-Daten werden geladen">
+          <div class="skeleton skeleton-line short"></div>
+          <div class="skeleton skeleton-card"></div>
+          <div class="skeleton skeleton-card"></div>
+          <div class="skeleton skeleton-card"></div>
+        </div>
       </section>`;
   }
   const data = adminData;
@@ -1593,27 +1598,63 @@ function situationalToDecisionItem(item) {
   };
 }
 
-function render() {
-  app.innerHTML = `
-    <div class="app-frame">
-      ${renderSidebar()}
-      <main class="content-shell">
-        ${renderTopbar()}
-        ${renderView()}
-      </main>
-      ${renderMobileDock()}
-      ${renderUpdatesPanel()}
-      ${renderTaskHandoffPanel()}
-      ${renderOnboarding()}
-    </div>
-  `;
-  hideStartupSplash();
+function prefersReducedMotion() {
   try {
-    bindActions();
-    updateBerlinClock();
-    startBerlinClock();
-  } catch (error) {
-    console.warn("Helmut rendered, post-render binding failed", error);
+    return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  } catch {
+    return false;
+  }
+}
+
+// Verhindert ueberlappende View-Transitions: render() wird an vielen Stellen
+// schnell hintereinander aufgerufen (z.B. waehrend des Ladens). Startet man dann
+// eine zweite Transition, waehrend die erste noch laeuft, bricht der Browser sie
+// ab, was zu unbehandelten Fehlern fuehren kann. Daher: erst wieder eine neue
+// Transition starten, wenn die vorherige abgeschlossen ist; sonst direkt rendern.
+let activeViewTransition = null;
+
+function render() {
+  const applyRender = () => {
+    app.innerHTML = `
+      <div class="app-frame">
+        ${renderSidebar()}
+        <main class="content-shell">
+          ${renderTopbar()}
+          ${renderView()}
+        </main>
+        ${renderMobileDock()}
+        ${renderUpdatesPanel()}
+        ${renderTaskHandoffPanel()}
+        ${renderOnboarding()}
+      </div>
+    `;
+    hideStartupSplash();
+    try {
+      bindActions();
+      updateBerlinClock();
+      startBerlinClock();
+    } catch (error) {
+      console.warn("Helmut rendered, post-render binding failed", error);
+    }
+  };
+  // View Transitions API: laesst Tab-/Ansichtswechsel sanft ueberblenden statt
+  // hart zu springen. Faellt auf direktes Rendern zurueck, wenn der Browser es
+  // nicht unterstuetzt (aeltere Safari/Firefox) oder Nutzer reduzierte Bewegung
+  // wollen -> Verhalten bleibt dort exakt wie zuvor.
+  if (typeof document.startViewTransition === "function" && !prefersReducedMotion() && !activeViewTransition) {
+    try {
+      const transition = document.startViewTransition(applyRender);
+      activeViewTransition = transition;
+      const release = () => { if (activeViewTransition === transition) activeViewTransition = null; };
+      transition.ready.catch(() => {});
+      transition.updateCallbackDone.catch(() => {});
+      transition.finished.catch(() => {}).then(release, release);
+    } catch {
+      activeViewTransition = null;
+      applyRender();
+    }
+  } else {
+    applyRender();
   }
 }
 
@@ -1828,7 +1869,11 @@ function renderParliamentItem(item) {
   const a = parliamentAssessments[item.id];
   let assessmentBlock = "";
   if (a && a.loading) {
-    assessmentBlock = `<p class="parliament-assessing">Helmut ordnet ein …</p>`;
+    assessmentBlock = `
+      <div class="skeleton-stack" aria-busy="true" aria-label="Helmut ordnet ein">
+        <div class="skeleton skeleton-line medium"></div>
+        <div class="skeleton skeleton-line short"></div>
+      </div>`;
   } else if (a) {
     assessmentBlock = `
       <div class="parliament-assessment">
@@ -2011,7 +2056,7 @@ function renderCollapsible(id, title, count, content) {
       <button class="lage-collapse-head" type="button" data-collapse="${escapeAttribute(id)}" aria-expanded="${open}">
         <span class="lage-collapse-title">${escapeHtml(title)}</span>
         ${count != null ? `<span class="lage-collapse-count">${escapeHtml(String(count))}</span>` : ""}
-        <span class="lage-collapse-chev">${open ? "▴" : "▾"}</span>
+        <span class="lage-collapse-chev">▾</span>
       </button>
       ${open ? `<div class="lage-collapse-body">${content}</div>` : ""}
     </div>`;
