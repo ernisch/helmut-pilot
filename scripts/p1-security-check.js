@@ -127,11 +127,63 @@ async function llmLoggingChecks() {
   }
 }
 
+// Datenmotor V2 — Commit 1: LLM-Budget-Fundament (Tages-Aggregation + Gate).
+// Rein additiv; prueft nur die neuen Storage-Helfer, kein Pipeline-Verhalten.
+async function llmBudgetChecks() {
+  const storage = require(path.join(root, "lib/helmut/storage.js"));
+  const ref = "2026-07-01T12:00:00.000Z";
+  const mp = "p1-budget-mp";
+
+  const authBefore = await storage.readAuthStore();
+  const originalUsage = Array.isArray(authBefore.llmUsage) ? authBefore.llmUsage.slice() : [];
+  const originalLimit = process.env.HELMUT_MAX_LLM_CALLS_PER_DAY;
+  try {
+    // Store deterministisch bestuecken: 2 Calls heute, 1 an einem anderen Tag.
+    const auth = await storage.readAuthStore();
+    auth.llmUsage = [
+      { id: "b1", createdAt: "2026-07-01T09:00:00.000Z", politicianId: mp, userId: mp, model: "gpt-5-mini", callType: "test", estimatedCost: 0.001, success: true },
+      { id: "b2", createdAt: "2026-07-01T10:00:00.000Z", politicianId: mp, userId: mp, model: "gpt-5-mini", callType: "test", estimatedCost: 0.002, success: true },
+      { id: "b3", createdAt: "2026-06-30T10:00:00.000Z", politicianId: mp, userId: mp, model: "gpt-5-mini", callType: "test", estimatedCost: 0.5, success: true }
+    ];
+    await storage.writeAuthStore(auth);
+
+    const today = await storage.getLlmUsageToday(mp, ref);
+    check("Budget: getLlmUsageToday zaehlt nur heutige Calls (Mandanten-gefiltert)",
+      today.calls === 2 && Math.abs(today.estimatedCostUsd - 0.003) < 1e-9,
+      `calls=${today.calls} cost=${today.estimatedCostUsd}`);
+
+    // Kein Limit gesetzt -> immer erlaubt.
+    delete process.env.HELMUT_MAX_LLM_CALLS_PER_DAY;
+    const noLimit = await storage.canSpendLlm(mp, ref);
+    check("Budget: ohne Limit erlaubt canSpendLlm (allowed=true, limit=null)",
+      noLimit.allowed === true && noLimit.limit === null, `allowed=${noLimit.allowed}`);
+
+    // Limit 5, erst 2 verbraucht -> erlaubt, 3 Rest.
+    process.env.HELMUT_MAX_LLM_CALLS_PER_DAY = "5";
+    const under = await storage.canSpendLlm(mp, ref);
+    check("Budget: unter Limit erlaubt (remaining korrekt)",
+      under.allowed === true && under.remaining === 3, `remaining=${under.remaining}`);
+
+    // Limit 2, bereits 2 verbraucht -> blockiert.
+    process.env.HELMUT_MAX_LLM_CALLS_PER_DAY = "2";
+    const at = await storage.canSpendLlm(mp, ref);
+    check("Budget: bei erreichtem Limit blockiert (allowed=false, Grund gesetzt)",
+      at.allowed === false && at.reason === "daily-llm-budget-reached", `allowed=${at.allowed} reason=${at.reason}`);
+  } finally {
+    if (originalLimit === undefined) delete process.env.HELMUT_MAX_LLM_CALLS_PER_DAY;
+    else process.env.HELMUT_MAX_LLM_CALLS_PER_DAY = originalLimit;
+    const authNow = await storage.readAuthStore();
+    authNow.llmUsage = originalUsage;
+    await storage.writeAuthStore(authNow);
+  }
+}
+
 async function main() {
   console.log("== Helmut P1 Security & Trust Checks ==\n");
   staticChecks();
   await cronChecks();
   await llmLoggingChecks();
+  await llmBudgetChecks();
 
   const failed = results.filter((r) => !r.ok);
   console.log(`\n${results.length - failed.length}/${results.length} Checks bestanden.`);
