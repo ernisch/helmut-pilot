@@ -1598,63 +1598,27 @@ function situationalToDecisionItem(item) {
   };
 }
 
-function prefersReducedMotion() {
-  try {
-    return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  } catch {
-    return false;
-  }
-}
-
-// Verhindert ueberlappende View-Transitions: render() wird an vielen Stellen
-// schnell hintereinander aufgerufen (z.B. waehrend des Ladens). Startet man dann
-// eine zweite Transition, waehrend die erste noch laeuft, bricht der Browser sie
-// ab, was zu unbehandelten Fehlern fuehren kann. Daher: erst wieder eine neue
-// Transition starten, wenn die vorherige abgeschlossen ist; sonst direkt rendern.
-let activeViewTransition = null;
-
 function render() {
-  const applyRender = () => {
-    app.innerHTML = `
-      <div class="app-frame">
-        ${renderSidebar()}
-        <main class="content-shell">
-          ${renderTopbar()}
-          ${renderView()}
-        </main>
-        ${renderMobileDock()}
-        ${renderUpdatesPanel()}
-        ${renderTaskHandoffPanel()}
-        ${renderOnboarding()}
-      </div>
-    `;
-    hideStartupSplash();
-    try {
-      bindActions();
-      updateBerlinClock();
-      startBerlinClock();
-    } catch (error) {
-      console.warn("Helmut rendered, post-render binding failed", error);
-    }
-  };
-  // View Transitions API: laesst Tab-/Ansichtswechsel sanft ueberblenden statt
-  // hart zu springen. Faellt auf direktes Rendern zurueck, wenn der Browser es
-  // nicht unterstuetzt (aeltere Safari/Firefox) oder Nutzer reduzierte Bewegung
-  // wollen -> Verhalten bleibt dort exakt wie zuvor.
-  if (typeof document.startViewTransition === "function" && !prefersReducedMotion() && !activeViewTransition) {
-    try {
-      const transition = document.startViewTransition(applyRender);
-      activeViewTransition = transition;
-      const release = () => { if (activeViewTransition === transition) activeViewTransition = null; };
-      transition.ready.catch(() => {});
-      transition.updateCallbackDone.catch(() => {});
-      transition.finished.catch(() => {}).then(release, release);
-    } catch {
-      activeViewTransition = null;
-      applyRender();
-    }
-  } else {
-    applyRender();
+  app.innerHTML = `
+    <div class="app-frame">
+      ${renderSidebar()}
+      <main class="content-shell">
+        ${renderTopbar()}
+        ${renderView()}
+      </main>
+      ${renderMobileDock()}
+      ${renderUpdatesPanel()}
+      ${renderTaskHandoffPanel()}
+      ${renderOnboarding()}
+    </div>
+  `;
+  hideStartupSplash();
+  try {
+    bindActions();
+    updateBerlinClock();
+    startBerlinClock();
+  } catch (error) {
+    console.warn("Helmut rendered, post-render binding failed", error);
   }
 }
 
@@ -3097,11 +3061,12 @@ function recommendedChannelLabel(decision) {
 }
 
 function meetingPreparations() {
-  const profileAppointments = asTextList(profile?.upcomingAppointments)
+  // Nur ECHTE Termine aus dem Mandatsprofil. Keine erfundenen Fallback-Termine:
+  // ist nichts hinterlegt, bleibt die Liste leer und der Render zeigt den
+  // Empty-State ("Noch keine Termine im Mandatsprofil.").
+  return asTextList(profile?.upcomingAppointments)
     .map(parseAppointmentText)
-    .filter(isRelevantMeetingDate);
-  const fallback = fallbackMeetings();
-  return (profileAppointments.length ? profileAppointments : fallback)
+    .filter(isRelevantMeetingDate)
     .map((meeting, index) => prepareMeeting(meeting, index))
     .sort((a, b) => new Date(a.datum || 0) - new Date(b.datum || 0));
 }
@@ -3127,39 +3092,10 @@ function parseAppointmentText(value, index = 0) {
   };
 }
 
+// Bewusst leer: Es werden KEINE erfundenen Termine mehr erzeugt. Echte Termine
+// kommen ausschließlich aus profile.upcomingAppointments (siehe meetingPreparations).
 function fallbackMeetings() {
-  return [
-    {
-      id: "meeting-gewerkschaft",
-      terminTitel: "Treffen mit Gewerkschaft",
-      datum: nextWeekdayIso(1),
-      uhrzeit: "09:30",
-      teilnehmer: "Gewerkschaftssekretärinnen und Betriebsräte",
-      organisation: "Gewerkschaft",
-      thema: "Tarifbindung, Mindestlohn, gute Arbeit",
-      notizenVomBüro: "Gesprächspunkte zu Tariftreue und Kontrollen vorbereiten."
-    },
-    {
-      id: "meeting-sozialverband",
-      terminTitel: "Gespräch mit Sozialverband",
-      datum: nextWeekdayIso(2),
-      uhrzeit: "14:00",
-      teilnehmer: "Sozialverband",
-      organisation: "Sozialverband",
-      thema: "Bürgergeld, Armut, Rente",
-      notizenVomBüro: "Aktuelle Regierungslinie und soziale Auswirkungen einordnen."
-    },
-    {
-      id: "meeting-ausschuss-arbeit-soziales",
-      terminTitel: "Ausschusssitzung Arbeit und Soziales",
-      datum: nextWeekdayIso(3),
-      uhrzeit: "11:00",
-      teilnehmer: "Ausschussmitglieder",
-      organisation: "Bundestag",
-      thema: "Pläne der Bundesregierung im Bereich Arbeit und Soziales",
-      notizenVomBüro: "Fragen an Bundesregierung vorbereiten."
-    }
-  ];
+  return [];
 }
 
 function prepareMeeting(input, index = 0) {
@@ -3939,56 +3875,56 @@ const OFFICE_FORMAT_META = {
     formatLabel: "Pressemitteilung", typeLabel: "PRESSEMITTEILUNG", einordnung: "Offizielle Linie für Medien.",
     defaultStatus: "Entwurf bereit", fromSource: "Aus Lage empfohlen", lineCheck: "Linie geprüft. Sachlicher Ton empfohlen.",
     qualityTone: "Sachlich, klar, politisch anschlussfähig", qualityUsage: "Presse und Medien",
-    fallbackDraft: "Die aktuelle Steuerdebatte darf nicht an den Lebensrealitäten von Beschäftigten vorbeigehen. Wer über Entlastung spricht, muss auch über Löhne, Tarifbindung und soziale Sicherheit sprechen.\n\nFür uns ist klar: Steuerpolitik muss Menschen mit kleinen und mittleren Einkommen stärken. Eine Debatte, die vor allem wirtschaftsnahe Forderungen aufgreift, greift zu kurz.\n\nWir beobachten die Vorschläge der Bundesregierung genau und erwarten, dass soziale Gerechtigkeit, Beschäftigte und öffentliche Daseinsvorsorge im Mittelpunkt stehen.",
+    fallbackDraft: "",
     iconBg: "var(--paper)", iconColor: "var(--muted)",
   },
   linkedin: {
     formatLabel: "LinkedIn Beitrag", typeLabel: "LINKEDIN", einordnung: "Persönlich, kurz, anschlussfähig.",
     defaultStatus: "Entwurf bereit", fromSource: "Aus Lage empfohlen", lineCheck: "Linie geprüft. Persönliche Sprache erwünscht.",
     qualityTone: "Persönlich, direkt, nahbar", qualityUsage: "LinkedIn",
-    fallbackDraft: "Die Debatte über Steuerentlastungen darf nicht an den Menschen vorbeigehen, die jeden Tag arbeiten und trotzdem unter Druck stehen.\n\nWenn über Reformen gesprochen wird, müssen Löhne, Tarifbindung und soziale Sicherheit genauso im Mittelpunkt stehen wie wirtschaftliche Interessen.\n\nFür mich ist klar: Politik muss diejenigen stärken, die dieses Land jeden Tag tragen. Deshalb braucht jede Steuerdebatte auch eine soziale Antwort.",
+    fallbackDraft: "",
     iconBg: "var(--paper)", iconColor: "var(--muted)",
   },
   x: {
     formatLabel: "X Beitrag", typeLabel: "X / TWITTER", einordnung: "Kurz, pointiert, öffentlich.",
     defaultStatus: "Entwurf bereit", fromSource: "Aus Lage empfohlen", lineCheck: "Linie geprüft. Kurz halten.",
     qualityTone: "Direkt, knapp, pointiert", qualityUsage: "X / Twitter",
-    fallbackDraft: "Steuerpolitik muss Beschäftigte stärken. Wer nur wirtschaftsnahe Forderungen bedient, greift zu kurz.",
+    fallbackDraft: "",
     iconBg: "var(--paper)", iconColor: "var(--muted)",
   },
   instagram: {
     formatLabel: "Instagram Beitrag", typeLabel: "INSTAGRAM", einordnung: "Kurz, klar, mobil lesbar.",
     defaultStatus: "Entwurf bereit", fromSource: "Aus Lage empfohlen", lineCheck: "Linie geprüft. Persönliche Sprache erwünscht.",
     qualityTone: "Menschlich, authentisch, kurz", qualityUsage: "Instagram",
-    fallbackDraft: "Steuerpolitik muss im Alltag ankommen – bei Löhnen, sozialer Sicherheit und fairen Chancen. Das ist unser Maßstab.",
+    fallbackDraft: "",
     iconBg: "var(--paper)", iconColor: "var(--muted)",
   },
   anfrage: {
     formatLabel: "Parlamentarische Anfrage", typeLabel: "PARLAMENTARISCHE ANFRAGE", einordnung: "Für Ausschuss und parlamentarische Kontrolle.",
     defaultStatus: "Zum Bereithalten", fromSource: "Aus Radar vorbereitet", lineCheck: "Linie geprüft. Formale Sprache erforderlich.",
     qualityTone: "Formal, sachlich, präzise", qualityUsage: "Parlamentarische Arbeit",
-    fallbackDraft: "Welche konkreten Maßnahmen plant die Bundesregierung, um sicherzustellen, dass die geplante Steuerreform Menschen mit kleinen und mittleren Einkommen direkt entlastet?\n\nWie wird die Tarifbindung dabei gestärkt und welche sozialen Sicherungsmechanismen sind vorgesehen?",
+    fallbackDraft: "",
     iconBg: "var(--paper)", iconColor: "var(--muted)",
   },
   rede: {
     formatLabel: "Redebaustein", typeLabel: "REDEBAUSTEIN", einordnung: "Für Termine, Interviews und kurze Statements.",
     defaultStatus: "Zum Bereithalten", fromSource: "Aus Radar vorbereitet", lineCheck: "Linie geprüft. Kernbotschaft klar halten.",
     qualityTone: "Klar, überzeugend, politisch", qualityUsage: "Termine und Interviews",
-    fallbackDraft: "Steuerpolitik braucht einen klaren sozialen Kompass. Für uns gilt: Entlastung ja – aber sie muss bei Beschäftigten ankommen. Wir werden die Bundesregierung daran messen.",
+    fallbackDraft: "",
     iconBg: "var(--paper)", iconColor: "var(--muted)",
   },
   buergerbrief: {
     formatLabel: "Bürgerbrief", typeLabel: "BÜRGERBRIEF", einordnung: "Verständliche Antwort für Bürgeranfragen.",
     defaultStatus: "Entwurf bereit", fromSource: "Aus Lage empfohlen", lineCheck: "Linie geprüft. Verständliche Sprache.",
     qualityTone: "Zugänglich, klar, persönlich", qualityUsage: "Bürgeranfragen",
-    fallbackDraft: "Vielen Dank für Ihre Nachricht zur aktuellen Steuerdebatte.\n\nFür mich ist klar: Steuerreformen müssen Menschen mit kleinen und mittleren Einkommen stärken und dürfen nicht einseitig wirtschaftsnahe Interessen bedienen. Ich werde die Vorschläge der Bundesregierung genau beobachten und mich für soziale Gerechtigkeit einsetzen.",
+    fallbackDraft: "",
     iconBg: "var(--paper)", iconColor: "var(--muted)",
   },
   intern: {
     formatLabel: "Interne Linie", typeLabel: "INTERNE LINIE", einordnung: "Für Büro und Team.",
     defaultStatus: "Zum Bereithalten", fromSource: "Aus Radar vorbereitet", lineCheck: "Nur für internen Gebrauch.",
     qualityTone: "Sachlich, intern, klar", qualityUsage: "Interner Gebrauch",
-    fallbackDraft: "Thema: Steuerreformdebatte\nLinie: Soziale Gerechtigkeit ins Zentrum. Keine einseitige Entlastung für Spitzenverdiener.\nNächster Schritt: Öffentliche Reaktion vorbereiten. Parlamentarische Anfrage prüfen.",
+    fallbackDraft: "",
     iconBg: "var(--paper)", iconColor: "var(--muted)",
   },
 };
@@ -4098,7 +4034,11 @@ function renderOfficeDraftCard(decision, format, index = 0) {
   const aiText = officeDrafts[key];
   const isLoading = officeDraftsGenerating && !aiText;
   const meta = OFFICE_FORMAT_META[format.id] || { typeLabel: format.label.toUpperCase(), einordnung: "", defaultStatus: "Zum Bereithalten", lineCheck: "", iconBg: "#F0F0F0", iconColor: "#555" };
-  const text = (isValidDraft(aiText) ? aiText : null) || meta.fallbackDraft || channelFallbackStatement(decision, format.channel || "press");
+  // Kein erfundener Muster-Entwurf mehr: entweder gültiger (KI-/regelbasierter)
+  // Text oder ein aus DIESER Entscheidung abgeleiteter Vorschlag. Fehlt beides,
+  // liefert channelFallbackStatement die klare Meldung "kein belastbarer
+  // Kommunikationsvorschlag vor" (siehe isValidDraft/renderOfficeDraftCard).
+  const text = (isValidDraft(aiText) ? aiText : null) || channelFallbackStatement(decision, format.channel || "press");
   const readTime = draftReadingTime(text);
   const status = draftStatus(format);
   const statusClass = draftStatusClass(status);
@@ -4494,8 +4434,8 @@ function renderRadarView() {
 
     <section class="radar-groups">
       ${renderRadarGroup("Heute neu über dich", freshMentions.length, mentionRows(freshMentions), hasFresh)}
-      ${renderRadarGroup("Frühwarnungen", 1, renderRadarEarlyWarnings(), true)}
-      ${renderRadarGroup("Chancen", 1, renderRadarChances(), false)}
+      ${renderRadarGroup("Frühwarnungen", 0, renderRadarEarlyWarnings(), false)}
+      ${renderRadarGroup("Chancen", 0, renderRadarChances(), false)}
       ${renderRadarGroup("Kritische Nachfrage möglich", 0, renderRadarCriticalQuery(), false)}
       ${renderRadarGroup("Archiv", archiveArticles.length, mentionRows(archiveArticles, { empty: false, compact: true }), false)}
     </section>
@@ -4540,40 +4480,20 @@ function renderRadarStatusCard(hasFresh) {
   `;
 }
 
+// Bewusst leer: Diese Radar-Signale waren zuvor HART KODIERTE Beispielinhalte
+// ("Steuerdebatte …"), die als echte Signale wirkten. Bis eine echte
+// Signal-Datenquelle existiert, zeigt der Radar hier den ehrlichen Empty-State
+// ("Keine Einträge."), statt erfundene Signale auszugeben.
 function renderRadarEarlyWarnings() {
-  return `
-    <article class="radar-signal-card radar-signal-watch">
-      <div class="radar-signal-body">
-        <span class="radar-signal-status">Beobachten</span>
-        <h3>Steuerdebatte kann in Arbeit und Soziales wandern</h3>
-        <p>Noch kein akuter Druck. Relevant, falls Ausschuss, Fraktion oder Medien nachfassen.</p>
-      </div>
-    </article>
-  `;
+  return "";
 }
 
 function renderRadarChances() {
-  return `
-    <article class="radar-signal-card radar-signal-chance">
-      <div class="radar-signal-body">
-        <span class="radar-signal-status">Optional</span>
-        <h3>Soziale Gegenlinie vorbereiten</h3>
-        <p>Die Steuerdebatte bietet einen möglichen Anschluss für Mindestlohn, Tarifbindung und soziale Gerechtigkeit.</p>
-      </div>
-    </article>
-  `;
+  return "";
 }
 
 function renderRadarCriticalQuery() {
-  return `
-    <article class="radar-signal-card radar-signal-ok">
-      <div class="radar-signal-body">
-        <span class="radar-signal-status">Ruhig</span>
-        <h3>Keine kritische Nachfrage absehbar</h3>
-        <p>Aktuell gibt es keinen Hinweis auf akuten Medien- oder Fraktionsdruck.</p>
-      </div>
-    </article>
-  `;
+  return "";
 }
 
 function radarDecisionRows(items, type) {
@@ -5882,7 +5802,7 @@ function bindActions() {
       const resolvedFormat = format || { id: formatId, label: formatId, icon: "ti-file", channel: "press" };
       const resolvedMeta = OFFICE_FORMAT_META[formatId] || {};
       const cachedText = officeDrafts[key];
-      const text = (isValidDraft(cachedText) ? cachedText : null) || resolvedMeta.fallbackDraft || channelFallbackStatement(
+      const text = (isValidDraft(cachedText) ? cachedText : null) || channelFallbackStatement(
         decisions.find((d) => d.id === decision.id || d.signalId === decision.signalId) || decision,
         resolvedFormat.channel || "press"
       );
