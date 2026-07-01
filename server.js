@@ -464,6 +464,17 @@ async function handleRequest(request, response) {
     return handleAsync(response, () => runDailyPipeline(politicianId));
   }
 
+  // Morgen-Health-Report per WhatsApp (CallMeBot). Antwort enthaelt den Text +
+  // Zustellstatus, damit man ihn manuell testen kann (?secret=CRON_SECRET).
+  if (url.pathname === "/api/cron/health-report") {
+    if (!isAuthorizedCron(request, url)) return sendUnauthorized(response);
+    return handleAsync(response, async () => {
+      const report = await buildHealthReport(politicianId);
+      const delivery = await sendCallMeBotMessage(report.text);
+      return { ok: report.ok, text: report.text, delivery };
+    });
+  }
+
   if (url.pathname === "/api/cron/lage-check") {
     if (!isAuthorizedCron(request, url)) return sendUnauthorized(response);
     return handleAsync(response, async () => {
@@ -1692,6 +1703,78 @@ function publicReleasePayload(release) {
     blockers: release.blockers || [],
     warnings: release.warnings || []
   };
+}
+
+// Operativer Morgen-Health-Report (fuer WhatsApp). Bewusst pragmatisch: prueft echte
+// Betriebssignale (Crawl/Briefing frisch, Speicher aktiv, Fehler-Spike) statt des
+// strengen Pitch-Gates, plus Engagement aus dem Nutzungs-Tracking.
+async function buildHealthReport(politicianId = cemInceProfile.id) {
+  const [crawl, lageCheck, briefing, errors, users, feedback] = await Promise.all([
+    getLatestCrawlRun(),
+    getLatestLageCheck(politicianId),
+    getLatestBriefing(politicianId),
+    accounts.listSystemErrors(100),
+    accounts.listUsers(),
+    listFeedback(200)
+  ]);
+  const storage = getStorageStatus();
+  const now = Date.now();
+  const hoursSince = (t) => t ? (now - new Date(t).getTime()) / 3600000 : null;
+  const fmtAge = (h) => h == null ? "nie" : h < 1 ? "gerade" : h < 48 ? `vor ${Math.round(h)}h` : `vor ${Math.round(h / 24)}T`;
+  const day = 24 * 3600000;
+
+  const crawlH = hoursSince(crawl?.checkedAt || crawl?.createdAt);
+  const briefingH = hoursSince(briefing?.generatedAt || briefing?.date);
+  const lageH = hoursSince(lageCheck?.checkedAt || lageCheck?.createdAt);
+  const errors24 = (errors || []).filter((e) => e.createdAt && (now - new Date(e.createdAt).getTime()) < day).length;
+  const feedback24 = (feedback || []).filter((f) => f.createdAt && (now - new Date(f.createdAt).getTime()) < day).length;
+  const active7 = (users || []).filter((u) => {
+    const seen = u.lastSeenAt || u.lastLoginAt;
+    return seen && (now - new Date(seen).getTime()) < 7 * day;
+  }).length;
+  const checked = Number(crawl?.checkedSources || 0);
+  const failed = Number(crawl?.failedSources || 0);
+
+  const problems = [];
+  if (crawlH == null || crawlH > 28) problems.push(`Crawl ${crawlH == null ? "nie gelaufen" : "seit " + Math.round(crawlH) + "h aus"}`);
+  if (briefingH == null || briefingH > 30) problems.push(`Briefing ${briefingH == null ? "fehlt" : "seit " + Math.round(briefingH) + "h alt"}`);
+  if (storage.backend !== "supabase") problems.push("Speicher: Supabase inaktiv");
+  if (errors24 > 15) problems.push(`${errors24} Systemfehler (24h)`);
+  const ok = problems.length === 0;
+
+  const engagement = `👤 ${active7} aktiv (7T) · 💬 ${feedback24} Feedback (24h)`;
+  const text = ok
+    ? [
+        "✅ Helmut läuft.",
+        `Crawl: ${fmtAge(crawlH)} (${checked} Quellen, ${failed} Fehler)`,
+        `Briefing: ${fmtAge(briefingH)} · Lage: ${fmtAge(lageH)}`,
+        `Fehler (24h): ${errors24}`,
+        engagement
+      ].join("\n")
+    : [
+        "⚠️ Helmut: Achtung.",
+        ...problems.map((p) => "• " + p),
+        `Crawl ${fmtAge(crawlH)} · Briefing ${fmtAge(briefingH)} · Lage ${fmtAge(lageH)}`,
+        engagement
+      ].join("\n");
+
+  return { ok, text, active7, feedback24, errors24 };
+}
+
+// WhatsApp-Versand via CallMeBot (kostenloser Self-Notify-Dienst). Zugangsdaten
+// kommen ausschliesslich aus Env-Variablen (CALLMEBOT_PHONE, CALLMEBOT_APIKEY).
+async function sendCallMeBotMessage(text) {
+  const phone = String(process.env.CALLMEBOT_PHONE || "").replace(/[^\d]/g, "");
+  const apikey = String(process.env.CALLMEBOT_APIKEY || "").trim();
+  if (!phone || !apikey) return { sent: false, reason: "CALLMEBOT_PHONE/CALLMEBOT_APIKEY nicht gesetzt." };
+  const endpoint = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(phone)}&text=${encodeURIComponent(text)}&apikey=${encodeURIComponent(apikey)}`;
+  try {
+    const res = await fetch(endpoint, { method: "GET" });
+    const body = await res.text().catch(() => "");
+    return { sent: res.ok, status: res.status, body: body.slice(0, 200) };
+  } catch (error) {
+    return { sent: false, reason: error && error.message };
+  }
 }
 
 function sourceEvidenceQuality(briefing) {
