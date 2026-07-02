@@ -99,6 +99,57 @@ async function handleRequest(request, response) {
     return sendPrivacyPage(response);
   }
 
+  // TEMPORAER: oeffentlicher Status-Check fuer Live-Gang-Diagnose (kein Secret).
+  // Gibt nur unkritische Bits zurueck (kein PII, keine Secrets).
+  // Entfernen nach erfolgreichem Live-Gang.
+  if (url.pathname === "/api/debug/public/status") {
+    return handleAsync(response, async () => {
+      const storage = getStorageStatus();
+      const adminExists = await accounts.adminExists().catch(() => null);
+      const testPolitician = await getProfile("test-mdb").catch(() => null);
+      let dbReachable = null;
+      if (storage.backend === "supabase" && storage.supabaseConfigured) {
+        try {
+          // Leichtgewichtiger Ping: HEAD auf /rest/v1/ ohne Daten
+          const baseUrl = String(process.env.SUPABASE_URL || "").replace(/\/+$/, "");
+          const key = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+          const resp = await fetch(`${baseUrl}/rest/v1/`, {
+            method: "HEAD",
+            headers: { apikey: key, Authorization: `Bearer ${key}` }
+          });
+          dbReachable = resp.ok || resp.status === 200 || resp.status === 404;
+        } catch {
+          dbReachable = false;
+        }
+      }
+      return {
+        timestamp: new Date().toISOString(),
+        flags: {
+          HELMUT_AUTH_MODE: process.env.HELMUT_AUTH_MODE || "(nicht gesetzt)",
+          HELMUT_ADMIN_EMAIL_set: Boolean(process.env.HELMUT_ADMIN_EMAIL),
+          HELMUT_ADMIN_PASSWORD_set: Boolean(process.env.HELMUT_ADMIN_PASSWORD),
+          HELMUT_STORAGE_BACKEND: process.env.HELMUT_STORAGE_BACKEND || "(nicht gesetzt)",
+          SUPABASE_URL_set: Boolean(process.env.SUPABASE_URL),
+          SUPABASE_SERVICE_ROLE_KEY_set: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
+          AZURE_OPENAI_KEY_set: Boolean(process.env.AZURE_OPENAI_KEY),
+          AZURE_OPENAI_DEPLOYMENT: process.env.AZURE_OPENAI_DEPLOYMENT || "(nicht gesetzt)",
+          HELMUT_V3_STORE: process.env.HELMUT_V3_STORE || "(nicht gesetzt)",
+          HELMUT_V3_MATCHING: process.env.HELMUT_V3_MATCHING || "(nicht gesetzt)",
+          HELMUT_V3_BRIEFING: process.env.HELMUT_V3_BRIEFING || "(nicht gesetzt)",
+          HELMUT_V3_LAZY_UNDERSTANDING: process.env.HELMUT_V3_LAZY_UNDERSTANDING || "(nicht gesetzt)",
+          HELMUT_V3_OFFICE: process.env.HELMUT_V3_OFFICE || "(nicht gesetzt)",
+          HELMUT_UNDERSTANDING_LOCK: process.env.HELMUT_UNDERSTANDING_LOCK || "(nicht gesetzt)",
+          HELMUT_LLM_BUDGET_FAIL_CLOSED: process.env.HELMUT_LLM_BUDGET_FAIL_CLOSED || "(nicht gesetzt)",
+          DIP_API_KEY_set: Boolean(process.env.DIP_API_KEY),
+        },
+        storage: { backend: storage.backend, supabaseConfigured: storage.supabaseConfigured },
+        db: { reachable: dbReachable },
+        accounts: { adminExists },
+        testPolitician: { exists: Boolean(testPolitician), id: testPolitician?.id || null }
+      };
+    });
+  }
+
   // TEMPORAERE DEBUG-ENDPUNKTE (Live-Gang-Diagnose).
   // Kein Auth, kein CSRF — nur durch HELMUT_ADMIN_SECRET + ?secret= gesichert.
   // Entfernen nach erfolgreichem Live-Gang.
