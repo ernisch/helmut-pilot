@@ -4897,13 +4897,29 @@ function publisherDomain(item) {
   return match ? match[1] : "";
 }
 
+const RADAR_V3_PALETTE = [
+  "#c0392b", "#d35400", "#8e44ad", "#2980b9",
+  "#27ae60", "#16a085", "#2c3e50", "#e74c3c",
+  "#9b59b6", "#3498db", "#1abc9c", "#e67e22",
+  "#7f8c8d", "#95a5a6"
+];
+
+function radarV3AvatarColor(name) {
+  let h = 5381;
+  const s = String(name || "");
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) & 0x7fffffff;
+  return RADAR_V3_PALETTE[h % RADAR_V3_PALETTE.length];
+}
+
 function radarV3SourceIcon(item) {
-  const initial = escapeAttribute((item.sourceName || "Q").charAt(0).toUpperCase());
+  const sourceName = item.sourceName || "Quelle";
+  const initial = escapeHtml(sourceName.charAt(0).toUpperCase());
+  const color = radarV3AvatarColor(sourceName);
   const logoUrl = publisherImageUrl(item);
-  if (!logoUrl) {
-    return `<span class="radar-v3-source-icon" data-initial="${initial}" aria-hidden="true"></span>`;
-  }
-  return `<span class="radar-v3-source-icon" aria-hidden="true"><img class="radar-v3-source-logo" src="${escapeAttribute(logoUrl)}" alt="" loading="lazy" onerror="this.style.display='none';this.parentNode.setAttribute('data-initial','${initial}')"></span>`;
+  const img = logoUrl
+    ? `<img class="radar-v3-source-logo" src="${escapeAttribute(logoUrl)}" alt="" loading="lazy" onerror="this.style.display='none'">`
+    : "";
+  return `<span class="radar-v3-source-icon" style="background:${color}" aria-hidden="true">${initial}${img}</span>`;
 }
 
 function profileInitials() {
