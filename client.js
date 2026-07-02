@@ -4656,10 +4656,22 @@ function renderRadarV3Category(cat, items) {
       </div>
       <div class="radar-v3-signals">
         ${signalHtml}
-        ${moreHtml}
       </div>
+      ${moreHtml}
     </div>
   `;
+}
+
+function radarV3Badge(type) {
+  const MAP = {
+    risk:    ["Risiko",      "radar-v3-badge-risk"],
+    demand:  ["Nachfrage",   "radar-v3-badge-demand"],
+    chance:  ["Chance",      "radar-v3-badge-chance"],
+    warning: ["Frühwarnung", "radar-v3-badge-warning"],
+    mention: ["Neutral",     "radar-v3-badge-neutral"]
+  };
+  const [label, cls] = MAP[type] || MAP.mention;
+  return `<span class="radar-v3-badge ${cls}">${escapeHtml(label)}</span>`;
 }
 
 function renderRadarV3Signal(item, cat) {
@@ -4669,24 +4681,26 @@ function renderRadarV3Signal(item, cat) {
   const titleText = escapeHtml(item.title || "Erwähnung gefunden");
   const iconHtml = radarV3SourceIcon(item);
 
-  const actionBtn = cat.actionLabel && href
-    ? `<button class="primary-button radar-v3-act-btn" type="button" data-view="office">${escapeHtml(cat.actionLabel)}</button>`
+  const articleLink = href
+    ? `<a class="radar-v3-article-link" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">Zum Artikel →</a>`
     : "";
-  const sourceBtn = href
-    ? `<a class="secondary-button" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">Quelle</a>`
+  const actionBtn = cat.actionLabel && href
+    ? `<button class="secondary-button radar-v3-act-btn" type="button" data-view="office">${escapeHtml(cat.actionLabel)}</button>`
     : "";
 
   return `
-    <article class="radar-v3-signal ${escapeHtml(cat.colorClass)}">
-      ${iconHtml}
-      <div class="radar-v3-signal-body">
-        <span class="radar-v3-signal-source">${sourceLabel}</span>
-        <h3>${titleText}</h3>
-        <small>${date}</small>
+    <article class="radar-v3-card">
+      <div class="radar-v3-card-meta">
+        ${iconHtml}
+        <span class="radar-v3-card-source">${sourceLabel}</span>
+        <span class="radar-v3-card-dot" aria-hidden="true">·</span>
+        <span class="radar-v3-card-date">${date}</span>
+        ${radarV3Badge(cat.type)}
       </div>
-      <div class="radar-v3-signal-actions">
+      <h3 class="radar-v3-card-title">${titleText}</h3>
+      <div class="radar-v3-card-footer">
+        ${articleLink}
         ${actionBtn}
-        ${sourceBtn}
       </div>
     </article>
   `;

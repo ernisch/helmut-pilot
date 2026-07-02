@@ -3080,27 +3080,20 @@ small {
 
 .radar-v3-signals {
   border-top: 1px solid var(--hairline);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
 }
 
 .radar-v3-empty {
-  padding: 12px 16px;
+  padding: 4px 4px 2px;
   color: var(--muted-2);
   font-size: 13px;
   margin: 0;
 }
 
-.radar-v3-signal {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  padding: 12px 16px;
-  border-top: 1px solid var(--hairline);
-}
-
-.radar-v3-signal:first-child {
-  border-top: none;
-}
-
+/* Quellen-Icon: farbiger Kreis mit Buchstabe, Favicon optional drüber */
 .radar-v3-source-icon {
   position: relative;
   flex-shrink: 0;
@@ -3111,7 +3104,6 @@ small {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: 1px;
   font-size: 11px;
   font-weight: 800;
   color: #fff;
@@ -3128,45 +3120,97 @@ small {
   background: #fff;
 }
 
-.radar-v3-signal-body {
-  flex: 1;
+/* Karte */
+.radar-v3-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 13px 14px 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.radar-v3-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   min-width: 0;
 }
 
-.radar-v3-signal-source {
-  display: block;
-  font-size: 10px;
+.radar-v3-card-source {
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: .06em;
+  letter-spacing: .05em;
   text-transform: uppercase;
   color: var(--muted-2);
-  margin-bottom: 3px;
+  white-space: nowrap;
 }
 
-.radar-v3-signal h3 {
-  font-size: 13px;
-  font-weight: 600;
-  margin: 0 0 4px;
+.radar-v3-card-dot {
+  color: var(--muted-2);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.radar-v3-card-date {
+  font-size: 11px;
+  color: var(--muted-2);
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.radar-v3-card-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0;
   line-height: 1.35;
   color: var(--text);
 }
 
-.radar-v3-signal small {
-  font-size: 11px;
-  color: var(--muted-2);
+.radar-v3-card-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
-.radar-v3-signal-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  flex-shrink: 0;
-  align-items: flex-end;
+.radar-v3-article-link {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  transition: opacity var(--dur-fast) ease;
 }
+
+.radar-v3-article-link:hover { opacity: .75; }
+
+/* Badge */
+.radar-v3-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.radar-v3-badge-risk    { color: var(--danger); background: rgba(255, 89, 103, .13); }
+.radar-v3-badge-demand  { color: var(--watch);  background: rgba(214, 160, 64, .13); }
+.radar-v3-badge-chance  { color: var(--chance); background: rgba(57, 209, 143, .13); }
+.radar-v3-badge-warning { color: #b88ed9;       background: rgba(155, 109, 178, .13); }
+.radar-v3-badge-neutral { color: var(--muted-2); background: var(--line); }
 
 .radar-v3-act-btn {
   font-size: 12px;
-  padding: 6px 10px;
+  padding: 5px 10px;
   white-space: nowrap;
 }
 
