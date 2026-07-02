@@ -37,3 +37,38 @@ Stand: technische Haertung im Pilotbetrieb. Letzte Aktualisierung 2026-06-29 (EU
 - Supabase relational nutzen und RLS-Policies pro `user_id` statt zentralem JSONB-Store erzwingen.
 - Audit-Log fuer Export und Loeschung mit minimalen Metadaten ergaenzen.
 - Datenschutzhinweise mit finalem Verantwortlichen, Rechtsgrundlagen, Speicherdauer und Kontakt ausfuellen.
+
+## Helmut Core V3 — Datenschutz by design (Stand C6)
+
+Grundtrennung: **oeffentliche politische Daten** (mandantenlos, kein `user_id`) sind
+strikt von **Nutzerdaten** getrennt.
+
+- **Global/public (keine Nutzerdaten):** `sources`, `raw_documents`, `knowledge_objects`,
+  `ko_document_links`, `ko_relations`, `pipeline_locks`. Enthalten ausschliesslich
+  oeffentliche politische Vorgaenge und Quell-Metadaten.
+- **Pro Nutzer (loeschbar):** `profiles`, `mandate_profiles`, `matching_weights`,
+  `decisions`, `topic_memory`, `interactions`, `office_outputs`, `briefings`,
+  `user_notes`, `daily_tasks` — alle mit `on delete cascade` auf `profiles(id)`.
+
+### In V3 bereits umgesetzt (C6, Datenminimierung)
+- `raw_documents` speichert nur Dedup-Identitaet + oeffentliche Schlagzeile + **gekuerzten**
+  Kontext (`summary` <= 240 Zeichen). Bewusst NICHT gespeichert: Volltext/`content`,
+  `excerpt`, `imageUrl`, Autor-PII, kompletter Rohpayload.
+- Erwaehnungen (`mentioned_*` in `knowledge_objects`) sind ausschliesslich **oeffentliche
+  politische** Erwaehnungen (Abgeordnete/Parteien/Ausschuesse/Ministerien in ihrer
+  amtlichen Rolle). Es werden KEINE privaten Personenprofile aus Artikeln abgeleitet.
+- `llm_usage` (Kostenlog) speichert nur Tokens/Kosten/Modell/`call_type` — **keine
+  Prompt- oder Antwortinhalte**.
+
+### Vor V3-Produktivbetrieb noch ergaenzen
+- **Loeschung erweitern:** `deleteProfileData`/`/api/privacy/delete` muss auch die neuen
+  V3-Nutzer-Tabellen abdecken (FK-`cascade` greift beim Loeschen der `profiles`-Zeile;
+  Export `/api/privacy/export` analog erweitern).
+- **Aufbewahrungsfristen** fuer `raw_documents` (z. B. Rohdoku-TTL) und Nutzer-Artefakte
+  organisatorisch + technisch festlegen.
+- **RLS-Policies** pro `user_id` auf den V3-Nutzer-Tabellen definieren (aktuell RLS aktiv
+  = deny-by-default; Server nutzt Service-Role). Vor Nicht-Server-Zugriff Policies noetig.
+- **Art. 9 / DSFA** fuer die globale, geteilte KI-Analyse (`knowledge_objects`) im DSFA-Scope
+  mitfuehren (politische Daten = besondere Kategorie).
+- **Mentions-Freigabe:** Understanding-Prompt (C7) so einschraenken, dass `mentioned_people`
+  nur oeffentlich handelnde politische Akteure erfasst, keine zufaellig genannten Privatpersonen.

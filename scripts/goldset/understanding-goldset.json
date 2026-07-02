@@ -1,0 +1,311 @@
+{
+  "version": 1,
+  "note": "Illustratives, DSGVO-konformes Understanding-Goldset (C7b). Personennamen sind FIKTIV; verwendet werden nur oeffentlich-politische Rollen, Parteien und Institutionen. Kein Volltext, kein excerpt, keine privaten PII. Dient als Regressionsnetz fuer den spaeteren understandDocument()-Call (C7): erwartetes knowledge_object je Rohdokument-Satz.",
+  "cases": [
+    {
+      "name": "rentenpaket-neu",
+      "case_type": "neuer_vorgang",
+      "raw_documents": [
+        {
+          "id": "rd-rente-1",
+          "title": "Bundeskabinett beschliesst Rentenpaket 2026",
+          "summary": "Das Kabinett hat den Gesetzentwurf zum Rentenpaket 2026 beschlossen.",
+          "url": "https://www.bmas.de/rentenpaket-2026",
+          "source_name": "BMAS",
+          "source_type": "ministry",
+          "published_at": "2026-06-30T09:00:00Z"
+        }
+      ],
+      "expected": {
+        "id": "ko-rentenpaket-2026",
+        "vorgang_id": "vg-rentenpaket-2026",
+        "ko_version": 1,
+        "headline": "Rentenpaket 2026 im Kabinett beschlossen",
+        "status": "neu",
+        "confidence_score": 88,
+        "source_document_count": 1,
+        "was_ist_passiert": "Das Bundeskabinett hat den Gesetzentwurf zum Rentenpaket 2026 beschlossen.",
+        "warum_wichtig": "Der Entwurf betrifft Rentenniveau und Beitragssatz von Millionen Versicherten.",
+        "wer_ist_betroffen": "Rentnerinnen und Rentner, Beitragszahler und Arbeitgeber.",
+        "zeitdruck": "hoch",
+        "handlungsempfehlung": "Fachpolitische Linie zum Rentenniveau vorbereiten und im Ausschuss positionieren.",
+        "parteien": ["SPD", "CDU/CSU"],
+        "ausschuesse": ["Ausschuss fuer Arbeit und Soziales"],
+        "ministerien": ["BMAS"],
+        "risiken": ["Ein steigender Beitragssatz koennte oeffentliche Kritik ausloesen."],
+        "chancen": ["Positionierung als Anwalt stabiler Renten."],
+        "mentioned_people": [],
+        "mentioned_mps": [],
+        "mentioned_parties": ["SPD", "CDU/CSU"],
+        "mentioned_committees": ["Ausschuss fuer Arbeit und Soziales"],
+        "mentioned_ministries": ["BMAS"],
+        "mentioned_locations": [],
+        "mentioned_organizations": ["Deutsche Rentenversicherung"]
+      }
+    },
+    {
+      "name": "rentenpaket-update",
+      "case_type": "update_bestehender_vorgang",
+      "raw_documents": [
+        {
+          "id": "rd-rente-2",
+          "title": "Rentenpaket 2026: Erste Lesung im Bundestag terminiert",
+          "summary": "Fuer das Rentenpaket 2026 wurde die erste Lesung im Bundestag angesetzt.",
+          "url": "https://www.bundestag.de/rentenpaket-erste-lesung",
+          "source_name": "Bundestag",
+          "source_type": "bundestag",
+          "published_at": "2026-07-01T08:00:00Z"
+        }
+      ],
+      "expected": {
+        "id": "ko-rentenpaket-2026-v2",
+        "vorgang_id": "vg-rentenpaket-2026",
+        "ko_version": 2,
+        "headline": "Rentenpaket 2026: erste Lesung terminiert",
+        "status": "update",
+        "confidence_score": 84,
+        "source_document_count": 2,
+        "was_ist_passiert": "Fuer das bereits beschlossene Rentenpaket 2026 wurde die erste Lesung im Bundestag terminiert.",
+        "warum_wichtig": "Der parlamentarische Prozess beginnt; jetzt ist der Zeitpunkt fuer Aenderungsantraege.",
+        "wer_ist_betroffen": "Fraktionen im Bundestag, Rentnerinnen und Rentner, Beitragszahler.",
+        "zeitdruck": "hoch",
+        "handlungsempfehlung": "Redebeitrag zur ersten Lesung vorbereiten und Aenderungsbedarf buendeln.",
+        "parteien": ["SPD", "CDU/CSU"],
+        "ausschuesse": ["Ausschuss fuer Arbeit und Soziales"],
+        "ministerien": ["BMAS"],
+        "risiken": ["Ohne fruehe Positionierung besetzen andere Fraktionen das Thema."],
+        "chancen": ["Sichtbarkeit durch fruehe fachliche Wortmeldung."],
+        "mentioned_people": [],
+        "mentioned_mps": [],
+        "mentioned_parties": ["SPD", "CDU/CSU"],
+        "mentioned_committees": ["Ausschuss fuer Arbeit und Soziales"],
+        "mentioned_ministries": ["BMAS"],
+        "mentioned_locations": [],
+        "mentioned_organizations": []
+      }
+    },
+    {
+      "name": "tariftreue-mehrere-quellen",
+      "case_type": "mehrere_artikel_selber_vorgang",
+      "raw_documents": [
+        {
+          "id": "rd-tariftreue-1",
+          "title": "Bundestariftreuegesetz: Regierung legt Entwurf vor",
+          "summary": "Die Regierung hat einen Entwurf fuer ein Bundestariftreuegesetz vorgelegt.",
+          "url": "https://www.bmas.de/bundestariftreuegesetz",
+          "source_name": "BMAS",
+          "source_type": "ministry",
+          "published_at": "2026-06-29T10:00:00Z"
+        },
+        {
+          "id": "rd-tariftreue-2",
+          "title": "Tariftreuegesetz stoesst auf Kritik der Wirtschaft",
+          "summary": "Wirtschaftsverbaende kritisieren den Entwurf zum Tariftreuegesetz.",
+          "url": "https://www.beispielzeitung.de/tariftreue-kritik",
+          "source_name": "Beispielzeitung",
+          "source_type": "media",
+          "published_at": "2026-06-29T14:00:00Z"
+        },
+        {
+          "id": "rd-tariftreue-3",
+          "title": "Gewerkschaften begruessen Tariftreuegesetz",
+          "summary": "Gewerkschaften begruessen den Entwurf zum Tariftreuegesetz.",
+          "url": "https://www.beispielagentur.de/tariftreue-gewerkschaften",
+          "source_name": "Beispielagentur",
+          "source_type": "media",
+          "published_at": "2026-06-29T16:00:00Z"
+        }
+      ],
+      "expected": {
+        "id": "ko-tariftreue-2026",
+        "vorgang_id": "vg-tariftreue-2026",
+        "ko_version": 1,
+        "headline": "Bundestariftreuegesetz: Entwurf vorgelegt, Reaktionen gespalten",
+        "status": "neu",
+        "confidence_score": 82,
+        "source_document_count": 3,
+        "was_ist_passiert": "Die Regierung hat einen Entwurf fuer ein Bundestariftreuegesetz vorgelegt; Wirtschaft und Gewerkschaften reagieren gegensaetzlich.",
+        "warum_wichtig": "Das Gesetz bindet oeffentliche Auftraege an Tariftreue und betrifft Vergabe und Arbeitsbedingungen.",
+        "wer_ist_betroffen": "Oeffentliche Auftraggeber, Unternehmen, Beschaeftigte, Gewerkschaften.",
+        "zeitdruck": "mittel",
+        "handlungsempfehlung": "Abgewogene Linie zwischen Vergabepraxis und Tarifbindung vorbereiten.",
+        "parteien": ["SPD"],
+        "ausschuesse": ["Ausschuss fuer Arbeit und Soziales"],
+        "ministerien": ["BMAS"],
+        "risiken": ["Buerokratie- und Kostenkritik aus der Wirtschaft."],
+        "chancen": ["Rueckhalt bei Gewerkschaften und Beschaeftigten."],
+        "mentioned_people": [],
+        "mentioned_mps": [],
+        "mentioned_parties": ["SPD"],
+        "mentioned_committees": ["Ausschuss fuer Arbeit und Soziales"],
+        "mentioned_ministries": ["BMAS"],
+        "mentioned_locations": [],
+        "mentioned_organizations": ["Deutscher Gewerkschaftsbund", "Bundesvereinigung der Deutschen Arbeitgeberverbaende"]
+      }
+    },
+    {
+      "name": "mindestlohn-lokal",
+      "case_type": "lokaler_bezug",
+      "raw_documents": [
+        {
+          "id": "rd-lokal-1",
+          "title": "Landesregierung NRW fordert hoeheren Mindestlohn fuer Landesbetriebe",
+          "summary": "Die Landesregierung in Nordrhein-Westfalen will fuer Landesbetriebe einen hoeheren Mindestlohn.",
+          "url": "https://www.beispiel-nrw.de/mindestlohn-landesbetriebe",
+          "source_name": "Beispielportal NRW",
+          "source_type": "local",
+          "published_at": "2026-07-01T07:30:00Z"
+        }
+      ],
+      "expected": {
+        "id": "ko-mindestlohn-nrw-2026",
+        "vorgang_id": "vg-mindestlohn-nrw-2026",
+        "ko_version": 1,
+        "headline": "NRW: hoeherer Mindestlohn fuer Landesbetriebe gefordert",
+        "status": "neu",
+        "confidence_score": 76,
+        "source_document_count": 1,
+        "was_ist_passiert": "Die Landesregierung in Nordrhein-Westfalen fordert einen hoeheren Mindestlohn fuer Landesbetriebe.",
+        "warum_wichtig": "Regionaler Vorstoss mit Signalwirkung fuer die bundesweite Mindestlohndebatte.",
+        "wer_ist_betroffen": "Beschaeftigte in NRW-Landesbetrieben, Kommunen, Arbeitgeber.",
+        "zeitdruck": "mittel",
+        "handlungsempfehlung": "Regionalen Bezug zum Wahlkreis pruefen und Position abstimmen.",
+        "parteien": [],
+        "ausschuesse": [],
+        "ministerien": [],
+        "risiken": ["Landes- und Bundesebene koennten in der Botschaft auseinanderlaufen."],
+        "chancen": ["Anschlussfaehig fuer lokale Kommunikation im Wahlkreis."],
+        "mentioned_people": [],
+        "mentioned_mps": [],
+        "mentioned_parties": [],
+        "mentioned_committees": [],
+        "mentioned_ministries": [],
+        "mentioned_locations": ["Nordrhein-Westfalen", "Koeln"],
+        "mentioned_organizations": []
+      }
+    },
+    {
+      "name": "buergergeld-partei",
+      "case_type": "partei_bezug",
+      "raw_documents": [
+        {
+          "id": "rd-buergergeld-1",
+          "title": "Streit ueber Buergergeld-Sanktionen zwischen den Fraktionen",
+          "summary": "Zwischen den Fraktionen gibt es Streit ueber schaerfere Buergergeld-Sanktionen.",
+          "url": "https://www.beispielzeitung.de/buergergeld-sanktionen",
+          "source_name": "Beispielzeitung",
+          "source_type": "media",
+          "published_at": "2026-06-30T12:00:00Z"
+        }
+      ],
+      "expected": {
+        "id": "ko-buergergeld-sanktionen-2026",
+        "vorgang_id": "vg-buergergeld-2026",
+        "ko_version": 1,
+        "headline": "Fraktionsstreit ueber Buergergeld-Sanktionen",
+        "status": "neu",
+        "confidence_score": 80,
+        "source_document_count": 1,
+        "was_ist_passiert": "Zwischen den Fraktionen ist ein Streit ueber schaerfere Buergergeld-Sanktionen entbrannt.",
+        "warum_wichtig": "Sanktionen sind hoch umstritten und beruehren Grundsicherung und Existenzminimum.",
+        "wer_ist_betroffen": "Buergergeld-Beziehende, Jobcenter, Fraktionen.",
+        "zeitdruck": "mittel",
+        "handlungsempfehlung": "Eigene Position zu Sanktionen klar und sachlich formulieren.",
+        "parteien": ["SPD", "CDU/CSU", "Die Linke"],
+        "ausschuesse": ["Ausschuss fuer Arbeit und Soziales"],
+        "ministerien": ["BMAS"],
+        "risiken": ["Emotional aufgeladene Debatte mit hohem Fehltritt-Risiko."],
+        "chancen": ["Profilbildung mit klarer sozialpolitischer Haltung."],
+        "mentioned_people": [],
+        "mentioned_mps": [],
+        "mentioned_parties": ["SPD", "CDU/CSU", "Die Linke"],
+        "mentioned_committees": ["Ausschuss fuer Arbeit und Soziales"],
+        "mentioned_ministries": ["BMAS"],
+        "mentioned_locations": [],
+        "mentioned_organizations": []
+      }
+    },
+    {
+      "name": "arbeitszeit-ausschuss",
+      "case_type": "ausschuss_bezug",
+      "raw_documents": [
+        {
+          "id": "rd-arbeitszeit-1",
+          "title": "Ausschuss fuer Arbeit und Soziales beraet Reform des Arbeitszeitgesetzes",
+          "summary": "Der Ausschuss fuer Arbeit und Soziales beraet ueber die Reform des Arbeitszeitgesetzes.",
+          "url": "https://www.bundestag.de/arbeitszeit-anhoerung",
+          "source_name": "Bundestag",
+          "source_type": "committee",
+          "published_at": "2026-07-01T09:30:00Z"
+        }
+      ],
+      "expected": {
+        "id": "ko-arbeitszeit-2026",
+        "vorgang_id": "vg-arbeitszeit-2026",
+        "ko_version": 1,
+        "headline": "Ausschuss beraet Reform des Arbeitszeitgesetzes",
+        "status": "neu",
+        "confidence_score": 83,
+        "source_document_count": 1,
+        "was_ist_passiert": "Der Ausschuss fuer Arbeit und Soziales beraet ueber die Reform des Arbeitszeitgesetzes.",
+        "warum_wichtig": "Aenderungen an der Arbeitszeit betreffen Millionen Beschaeftigte und Betriebe.",
+        "wer_ist_betroffen": "Beschaeftigte, Betriebe, Gewerkschaften, Arbeitgeber.",
+        "zeitdruck": "hoch",
+        "handlungsempfehlung": "Anhoerung vorbereiten, fachliche Fragen fuer den Ausschuss zusammenstellen.",
+        "parteien": [],
+        "ausschuesse": ["Ausschuss fuer Arbeit und Soziales"],
+        "ministerien": ["BMAS"],
+        "risiken": ["Detailfragen der Hoechstarbeitszeit koennen schnell politisch werden."],
+        "chancen": ["Fachliche Sichtbarkeit im Ausschuss."],
+        "mentioned_people": [],
+        "mentioned_mps": [],
+        "mentioned_parties": [],
+        "mentioned_committees": ["Ausschuss fuer Arbeit und Soziales"],
+        "mentioned_ministries": ["BMAS"],
+        "mentioned_locations": [],
+        "mentioned_organizations": []
+      }
+    },
+    {
+      "name": "mindestlohn-mdb-erwaehnung",
+      "case_type": "abgeordneten_erwaehnung",
+      "raw_documents": [
+        {
+          "id": "rd-mdb-1",
+          "title": "Abgeordnete Mustermann fordert schnellere Mindestlohn-Anpassung",
+          "summary": "Die Abgeordnete Dr. Erika Mustermann fordert eine schnellere Anpassung des Mindestlohns.",
+          "url": "https://www.beispielzeitung.de/mindestlohn-mustermann",
+          "source_name": "Beispielzeitung",
+          "source_type": "media",
+          "published_at": "2026-07-01T06:45:00Z"
+        }
+      ],
+      "expected": {
+        "id": "ko-mindestlohn-debatte-2026",
+        "vorgang_id": "vg-mindestlohn-debatte-2026",
+        "ko_version": 1,
+        "headline": "Forderung nach schnellerer Mindestlohn-Anpassung",
+        "status": "neu",
+        "confidence_score": 78,
+        "source_document_count": 1,
+        "was_ist_passiert": "Eine Abgeordnete hat oeffentlich eine schnellere Anpassung des Mindestlohns gefordert.",
+        "warum_wichtig": "Die Aeusserung setzt die Mindestlohn-Kommission und die Fraktionen unter Druck.",
+        "wer_ist_betroffen": "Beschaeftigte im Niedriglohnbereich, Arbeitgeber, Mindestlohn-Kommission.",
+        "zeitdruck": "niedrig",
+        "handlungsempfehlung": "Eigene Haltung zur Anpassungsgeschwindigkeit intern abstimmen.",
+        "parteien": ["SPD"],
+        "ausschuesse": [],
+        "ministerien": [],
+        "risiken": ["Ueberbietungswettbewerb bei Forderungen ohne Deckung."],
+        "chancen": ["Anschluss an eine sichtbare oeffentliche Debatte."],
+        "mentioned_people": ["Dr. Erika Mustermann"],
+        "mentioned_mps": ["Dr. Erika Mustermann (MdB)"],
+        "mentioned_parties": ["SPD"],
+        "mentioned_committees": [],
+        "mentioned_ministries": [],
+        "mentioned_locations": [],
+        "mentioned_organizations": ["Mindestlohn-Kommission"]
+      }
+    }
+  ]
+}

@@ -1,0 +1,4000 @@
+{
+  "t": "object",
+  "keys": {
+    "aiStatus": {
+      "t": "object",
+      "keys": {
+        "enabled": {
+          "t": "boolean"
+        },
+        "model": {
+          "t": "string"
+        }
+      }
+    },
+    "briefing": {
+      "t": "object",
+      "keys": {
+        "ai": {
+          "t": "object",
+          "keys": {
+            "enabled": {
+              "t": "boolean"
+            },
+            "enhancedAt": {
+              "t": "string"
+            },
+            "model": {
+              "t": "string"
+            }
+          }
+        },
+        "chanceOfDay": {
+          "t": "object",
+          "keys": {
+            "actionType": {
+              "t": "string"
+            },
+            "aiEnhanced": {
+              "t": "boolean"
+            },
+            "briefingId": {
+              "t": "string"
+            },
+            "classification": {
+              "t": "string"
+            },
+            "confidence": {
+              "t": "string"
+            },
+            "decision": {
+              "t": "string"
+            },
+            "estimatedTimeMinutes": {
+              "t": "number"
+            },
+            "finalScore": {
+              "t": "number"
+            },
+            "id": {
+              "t": "string"
+            },
+            "inactionConsequence": {
+              "t": "string"
+            },
+            "mandateScore": {
+              "t": "number"
+            },
+            "opportunityNote": {
+              "t": "string"
+            },
+            "politicalBenefit": {
+              "t": "string"
+            },
+            "politicalScore": {
+              "t": "number"
+            },
+            "primarySource": {
+              "t": "object",
+              "keys": {
+                "confidence": {
+                  "t": "string"
+                },
+                "excerpt": {
+                  "t": "string"
+                },
+                "itemUrl": {
+                  "t": "string"
+                },
+                "linkType": {
+                  "t": "string"
+                },
+                "publishedAt": {
+                  "t": "string"
+                },
+                "retrievedAt": {
+                  "t": "string"
+                },
+                "sourceName": {
+                  "t": "string"
+                },
+                "sourceType": {
+                  "t": "string"
+                },
+                "sourceUrl": {
+                  "t": "string"
+                },
+                "url": {
+                  "t": "string"
+                }
+              }
+            },
+            "priority": {
+              "t": "number"
+            },
+            "recommendedAction": {
+              "t": "string"
+            },
+            "recommendedChannel": {
+              "t": "string"
+            },
+            "recommendedPreparation": {
+              "t": "string"
+            },
+            "relevanceLevel": {
+              "t": "string"
+            },
+            "riskLevel": {
+              "t": "string"
+            },
+            "riskNote": {
+              "t": "string"
+            },
+            "signalId": {
+              "t": "string"
+            },
+            "sourceCount": {
+              "t": "number"
+            },
+            "sourceNote": {
+              "t": "string"
+            },
+            "sources": {
+              "t": "array",
+              "el": {
+                "t": "object",
+                "keys": {
+                  "confidence": {
+                    "t": "string"
+                  },
+                  "excerpt": {
+                    "t": "string"
+                  },
+                  "itemUrl": {
+                    "t": "string"
+                  },
+                  "linkType": {
+                    "t": "string"
+                  },
+                  "publishedAt": {
+                    "t": "string"
+                  },
+                  "retrievedAt": {
+                    "t": "string"
+                  },
+                  "sourceName": {
+                    "t": "string"
+                  },
+                  "sourceType": {
+                    "t": "string"
+                  },
+                  "sourceUrl": {
+                    "t": "string"
+                  },
+                  "url": {
+                    "t": "string"
+                  }
+                }
+              }
+            },
+            "suggestedStatement": {
+              "t": "string"
+            },
+            "summary": {
+              "t": "string"
+            },
+            "targetGroup": {
+              "t": "string"
+            },
+            "taskTemplate": {
+              "t": "object",
+              "keys": {
+                "assignee": {
+                  "t": "string"
+                },
+                "confidence": {
+                  "t": "string"
+                },
+                "createdAt": {
+                  "t": "string"
+                },
+                "description": {
+                  "t": "string"
+                },
+                "dueDate": {
+                  "t": "string"
+                },
+                "id": {
+                  "t": "string"
+                },
+                "politicalBenefit": {
+                  "t": "string"
+                },
+                "primarySource": {
+                  "t": "object",
+                  "keys": {
+                    "confidence": {
+                      "t": "string"
+                    },
+                    "excerpt": {
+                      "t": "string"
+                    },
+                    "itemUrl": {
+                      "t": "string"
+                    },
+                    "linkType": {
+                      "t": "string"
+                    },
+                    "publishedAt": {
+                      "t": "string"
+                    },
+                    "retrievedAt": {
+                      "t": "string"
+                    },
+                    "sourceName": {
+                      "t": "string"
+                    },
+                    "sourceType": {
+                      "t": "string"
+                    },
+                    "sourceUrl": {
+                      "t": "string"
+                    },
+                    "url": {
+                      "t": "string"
+                    }
+                  }
+                },
+                "priority": {
+                  "t": "string"
+                },
+                "riskIfIgnored": {
+                  "t": "string"
+                },
+                "sourceNote": {
+                  "t": "string"
+                },
+                "sourceSignalId": {
+                  "t": "string"
+                },
+                "sources": {
+                  "t": "array",
+                  "el": {
+                    "t": "object",
+                    "keys": {
+                      "confidence": {
+                        "t": "string"
+                      },
+                      "excerpt": {
+                        "t": "string"
+                      },
+                      "itemUrl": {
+                        "t": "string"
+                      },
+                      "linkType": {
+                        "t": "string"
+                      },
+                      "publishedAt": {
+                        "t": "string"
+                      },
+                      "retrievedAt": {
+                        "t": "string"
+                      },
+                      "sourceName": {
+                        "t": "string"
+                      },
+                      "sourceType": {
+                        "t": "string"
+                      },
+                      "sourceUrl": {
+                        "t": "string"
+                      },
+                      "url": {
+                        "t": "string"
+                      }
+                    }
+                  }
+                },
+                "status": {
+                  "t": "string"
+                },
+                "title": {
+                  "t": "string"
+                }
+              }
+            },
+            "title": {
+              "t": "string"
+            },
+            "topic": {
+              "t": "string"
+            },
+            "totalScore": {
+              "t": "number"
+            },
+            "whyItMatters": {
+              "t": "string"
+            },
+            "whyNow": {
+              "t": "string"
+            }
+          }
+        },
+        "date": {
+          "t": "string"
+        },
+        "dayMode": {
+          "t": "object",
+          "keys": {
+            "focus": {
+              "t": "string"
+            },
+            "phase": {
+              "t": "string"
+            }
+          }
+        },
+        "decisionMetrics": {
+          "t": "object",
+          "keys": {
+            "chanceCount": {
+              "t": "number"
+            },
+            "estimatedMinutes": {
+              "t": "number"
+            },
+            "ignoreCount": {
+              "t": "number"
+            },
+            "reactCount": {
+              "t": "number"
+            },
+            "riskCount": {
+              "t": "number"
+            },
+            "watchCount": {
+              "t": "number"
+            }
+          }
+        },
+        "evidence": {
+          "t": "array",
+          "el": null
+        },
+        "executiveSummary": {
+          "t": "string"
+        },
+        "fallbackReason": {
+          "t": "string"
+        },
+        "freshness": {
+          "t": "object",
+          "keys": {
+            "berlinDate": {
+              "t": "string"
+            },
+            "generatedAt": {
+              "t": "string"
+            },
+            "isStale": {
+              "t": "boolean"
+            },
+            "reason": {
+              "t": "string"
+            },
+            "status": {
+              "t": "string"
+            }
+          }
+        },
+        "generatedAt": {
+          "t": "string"
+        },
+        "helmutAssessment": {
+          "t": "object",
+          "keys": {
+            "aiEnabled": {
+              "t": "boolean"
+            },
+            "assessment": {
+              "t": "string"
+            },
+            "generatedAt": {
+              "t": "string"
+            },
+            "greeting": {
+              "t": "string"
+            },
+            "heroNextStep": {
+              "t": "string"
+            },
+            "heroRisk": {
+              "t": "string"
+            },
+            "heroWhy": {
+              "t": "string"
+            },
+            "model": {
+              "t": "string"
+            },
+            "priorityStatus": {
+              "t": "string"
+            },
+            "recommendation": {
+              "t": "string"
+            },
+            "risk": {
+              "t": "string"
+            },
+            "sourceNote": {
+              "t": "string"
+            },
+            "time": {
+              "t": "string"
+            },
+            "typingText": {
+              "t": "string"
+            },
+            "whyImportant": {
+              "t": "string"
+            }
+          }
+        },
+        "homeSections": {
+          "t": "object",
+          "keys": {
+            "changedSinceLastVisit": {
+              "t": "array",
+              "el": {
+                "t": "object",
+                "keys": {
+                  "action": {
+                    "t": "string"
+                  },
+                  "changeReason": {
+                    "t": "string"
+                  },
+                  "deadline": {
+                    "t": "string"
+                  },
+                  "estimatedTime": {
+                    "t": "string"
+                  },
+                  "id": {
+                    "t": "string"
+                  },
+                  "inaction": {
+                    "t": "string"
+                  },
+                  "lageDevelopment": {
+                    "t": "string"
+                  },
+                  "lageMovement": {
+                    "t": "object",
+                    "keys": {
+                      "category": {
+                        "t": "string"
+                      },
+                      "development": {
+                        "t": "string"
+                      },
+                      "hasFreshSource": {
+                        "t": "boolean"
+                      },
+                      "isFreshSource": {
+                        "t": "boolean"
+                      },
+                      "priorityTrend": {
+                        "t": "string"
+                      },
+                      "reason": {
+                        "t": "string"
+                      },
+                      "sourceFreshness": {
+                        "t": "string"
+                      }
+                    }
+                  },
+                  "lageMovementReason": {
+                    "t": "string"
+                  },
+                  "opportunity": {
+                    "t": "string"
+                  },
+                  "primarySource": {
+                    "t": "object",
+                    "keys": {
+                      "confidence": {
+                        "t": "string"
+                      },
+                      "excerpt": {
+                        "t": "string"
+                      },
+                      "itemUrl": {
+                        "t": "string"
+                      },
+                      "linkType": {
+                        "t": "string"
+                      },
+                      "publishedAt": {
+                        "t": "string"
+                      },
+                      "retrievedAt": {
+                        "t": "string"
+                      },
+                      "sourceName": {
+                        "t": "string"
+                      },
+                      "sourceType": {
+                        "t": "string"
+                      },
+                      "sourceUrl": {
+                        "t": "string"
+                      },
+                      "url": {
+                        "t": "string"
+                      }
+                    }
+                  },
+                  "priority": {
+                    "t": "string"
+                  },
+                  "priorityLabel": {
+                    "t": "string"
+                  },
+                  "priorityTrend": {
+                    "t": "string"
+                  },
+                  "relevanceScore": {
+                    "t": "number"
+                  },
+                  "signalId": {
+                    "t": "string"
+                  },
+                  "sourceFreshness": {
+                    "t": "string"
+                  },
+                  "sources": {
+                    "t": "array",
+                    "el": {
+                      "t": "object",
+                      "keys": {
+                        "confidence": {
+                          "t": "string"
+                        },
+                        "excerpt": {
+                          "t": "string"
+                        },
+                        "itemUrl": {
+                          "t": "string"
+                        },
+                        "linkType": {
+                          "t": "string"
+                        },
+                        "publishedAt": {
+                          "t": "string"
+                        },
+                        "retrievedAt": {
+                          "t": "string"
+                        },
+                        "sourceName": {
+                          "t": "string"
+                        },
+                        "sourceType": {
+                          "t": "string"
+                        },
+                        "sourceUrl": {
+                          "t": "string"
+                        },
+                        "url": {
+                          "t": "string"
+                        }
+                      }
+                    }
+                  },
+                  "statusChange": {
+                    "t": "string"
+                  },
+                  "summary": {
+                    "t": "string"
+                  },
+                  "title": {
+                    "t": "string"
+                  },
+                  "whyItMatters": {
+                    "t": "string"
+                  }
+                }
+              }
+            },
+            "governmentPlans": {
+              "t": "array",
+              "el": {
+                "t": "object",
+                "keys": {
+                  "action": {
+                    "t": "string"
+                  },
+                  "changeReason": {
+                    "t": "string"
+                  },
+                  "deadline": {
+                    "t": "string"
+                  },
+                  "estimatedTime": {
+                    "t": "string"
+                  },
+                  "id": {
+                    "t": "string"
+                  },
+                  "inaction": {
+                    "t": "string"
+                  },
+                  "lageDevelopment": {
+                    "t": "string"
+                  },
+                  "lageMovement": {
+                    "t": "object",
+                    "keys": {
+                      "category": {
+                        "t": "string"
+                      },
+                      "development": {
+                        "t": "string"
+                      },
+                      "hasFreshSource": {
+                        "t": "boolean"
+                      },
+                      "isFreshSource": {
+                        "t": "boolean"
+                      },
+                      "priorityTrend": {
+                        "t": "string"
+                      },
+                      "reason": {
+                        "t": "string"
+                      },
+                      "sourceFreshness": {
+                        "t": "string"
+                      }
+                    }
+                  },
+                  "lageMovementReason": {
+                    "t": "string"
+                  },
+                  "opportunity": {
+                    "t": "string"
+                  },
+                  "primarySource": {
+                    "t": "object",
+                    "keys": {
+                      "confidence": {
+                        "t": "string"
+                      },
+                      "excerpt": {
+                        "t": "string"
+                      },
+                      "itemUrl": {
+                        "t": "string"
+                      },
+                      "linkType": {
+                        "t": "string"
+                      },
+                      "publishedAt": {
+                        "t": "string"
+                      },
+                      "retrievedAt": {
+                        "t": "string"
+                      },
+                      "sourceName": {
+                        "t": "string"
+                      },
+                      "sourceType": {
+                        "t": "string"
+                      },
+                      "sourceUrl": {
+                        "t": "string"
+                      },
+                      "url": {
+                        "t": "string"
+                      }
+                    }
+                  },
+                  "priority": {
+                    "t": "string"
+                  },
+                  "priorityLabel": {
+                    "t": "string"
+                  },
+                  "priorityTrend": {
+                    "t": "string"
+                  },
+                  "relevanceScore": {
+                    "t": "number"
+                  },
+                  "signalId": {
+                    "t": "string"
+                  },
+                  "sourceFreshness": {
+                    "t": "string"
+                  },
+                  "sources": {
+                    "t": "array",
+                    "el": {
+                      "t": "object",
+                      "keys": {
+                        "confidence": {
+                          "t": "string"
+                        },
+                        "excerpt": {
+                          "t": "string"
+                        },
+                        "itemUrl": {
+                          "t": "string"
+                        },
+                        "linkType": {
+                          "t": "string"
+                        },
+                        "publishedAt": {
+                          "t": "string"
+                        },
+                        "retrievedAt": {
+                          "t": "string"
+                        },
+                        "sourceName": {
+                          "t": "string"
+                        },
+                        "sourceType": {
+                          "t": "string"
+                        },
+                        "sourceUrl": {
+                          "t": "string"
+                        },
+                        "url": {
+                          "t": "string"
+                        }
+                      }
+                    }
+                  },
+                  "statusChange": {
+                    "t": "string"
+                  },
+                  "summary": {
+                    "t": "string"
+                  },
+                  "title": {
+                    "t": "string"
+                  },
+                  "whyItMatters": {
+                    "t": "string"
+                  }
+                }
+              }
+            },
+            "needsAttention": {
+              "t": "array",
+              "el": {
+                "t": "object",
+                "keys": {
+                  "action": {
+                    "t": "string"
+                  },
+                  "changeReason": {
+                    "t": "string"
+                  },
+                  "deadline": {
+                    "t": "string"
+                  },
+                  "estimatedTime": {
+                    "t": "string"
+                  },
+                  "id": {
+                    "t": "string"
+                  },
+                  "inaction": {
+                    "t": "string"
+                  },
+                  "lageDevelopment": {
+                    "t": "string"
+                  },
+                  "lageMovement": {
+                    "t": "object",
+                    "keys": {
+                      "category": {
+                        "t": "string"
+                      },
+                      "development": {
+                        "t": "string"
+                      },
+                      "hasFreshSource": {
+                        "t": "boolean"
+                      },
+                      "isFreshSource": {
+                        "t": "boolean"
+                      },
+                      "priorityTrend": {
+                        "t": "string"
+                      },
+                      "reason": {
+                        "t": "string"
+                      },
+                      "sourceFreshness": {
+                        "t": "string"
+                      }
+                    }
+                  },
+                  "lageMovementReason": {
+                    "t": "string"
+                  },
+                  "opportunity": {
+                    "t": "string"
+                  },
+                  "primarySource": {
+                    "t": "object",
+                    "keys": {
+                      "confidence": {
+                        "t": "string"
+                      },
+                      "excerpt": {
+                        "t": "string"
+                      },
+                      "itemUrl": {
+                        "t": "string"
+                      },
+                      "linkType": {
+                        "t": "string"
+                      },
+                      "publishedAt": {
+                        "t": "string"
+                      },
+                      "retrievedAt": {
+                        "t": "string"
+                      },
+                      "sourceName": {
+                        "t": "string"
+                      },
+                      "sourceType": {
+                        "t": "string"
+                      },
+                      "sourceUrl": {
+                        "t": "string"
+                      },
+                      "url": {
+                        "t": "string"
+                      }
+                    }
+                  },
+                  "priority": {
+                    "t": "string"
+                  },
+                  "priorityLabel": {
+                    "t": "string"
+                  },
+                  "priorityTrend": {
+                    "t": "string"
+                  },
+                  "relevanceScore": {
+                    "t": "number"
+                  },
+                  "signalId": {
+                    "t": "string"
+                  },
+                  "sourceFreshness": {
+                    "t": "string"
+                  },
+                  "sources": {
+                    "t": "array",
+                    "el": {
+                      "t": "object",
+                      "keys": {
+                        "confidence": {
+                          "t": "string"
+                        },
+                        "excerpt": {
+                          "t": "string"
+                        },
+                        "itemUrl": {
+                          "t": "string"
+                        },
+                        "linkType": {
+                          "t": "string"
+                        },
+                        "publishedAt": {
+                          "t": "string"
+                        },
+                        "retrievedAt": {
+                          "t": "string"
+                        },
+                        "sourceName": {
+                          "t": "string"
+                        },
+                        "sourceType": {
+                          "t": "string"
+                        },
+                        "sourceUrl": {
+                          "t": "string"
+                        },
+                        "url": {
+                          "t": "string"
+                        }
+                      }
+                    }
+                  },
+                  "statusChange": {
+                    "t": "string"
+                  },
+                  "summary": {
+                    "t": "string"
+                  },
+                  "title": {
+                    "t": "string"
+                  },
+                  "whyItMatters": {
+                    "t": "string"
+                  }
+                }
+              }
+            },
+            "opportunities": {
+              "t": "array",
+              "el": {
+                "t": "object",
+                "keys": {
+                  "action": {
+                    "t": "string"
+                  },
+                  "changeReason": {
+                    "t": "string"
+                  },
+                  "deadline": {
+                    "t": "string"
+                  },
+                  "estimatedTime": {
+                    "t": "string"
+                  },
+                  "id": {
+                    "t": "string"
+                  },
+                  "inaction": {
+                    "t": "string"
+                  },
+                  "lageDevelopment": {
+                    "t": "string"
+                  },
+                  "lageMovement": {
+                    "t": "object",
+                    "keys": {
+                      "category": {
+                        "t": "string"
+                      },
+                      "development": {
+                        "t": "string"
+                      },
+                      "hasFreshSource": {
+                        "t": "boolean"
+                      },
+                      "isFreshSource": {
+                        "t": "boolean"
+                      },
+                      "priorityTrend": {
+                        "t": "string"
+                      },
+                      "reason": {
+                        "t": "string"
+                      },
+                      "sourceFreshness": {
+                        "t": "string"
+                      }
+                    }
+                  },
+                  "lageMovementReason": {
+                    "t": "string"
+                  },
+                  "opportunity": {
+                    "t": "string"
+                  },
+                  "primarySource": {
+                    "t": "object",
+                    "keys": {
+                      "confidence": {
+                        "t": "string"
+                      },
+                      "excerpt": {
+                        "t": "string"
+                      },
+                      "itemUrl": {
+                        "t": "string"
+                      },
+                      "linkType": {
+                        "t": "string"
+                      },
+                      "publishedAt": {
+                        "t": "string"
+                      },
+                      "retrievedAt": {
+                        "t": "string"
+                      },
+                      "sourceName": {
+                        "t": "string"
+                      },
+                      "sourceType": {
+                        "t": "string"
+                      },
+                      "sourceUrl": {
+                        "t": "string"
+                      },
+                      "url": {
+                        "t": "string"
+                      }
+                    }
+                  },
+                  "priority": {
+                    "t": "string"
+                  },
+                  "priorityLabel": {
+                    "t": "string"
+                  },
+                  "priorityTrend": {
+                    "t": "string"
+                  },
+                  "relevanceScore": {
+                    "t": "number"
+                  },
+                  "signalId": {
+                    "t": "string"
+                  },
+                  "sourceFreshness": {
+                    "t": "string"
+                  },
+                  "sources": {
+                    "t": "array",
+                    "el": {
+                      "t": "object",
+                      "keys": {
+                        "confidence": {
+                          "t": "string"
+                        },
+                        "excerpt": {
+                          "t": "string"
+                        },
+                        "itemUrl": {
+                          "t": "string"
+                        },
+                        "linkType": {
+                          "t": "string"
+                        },
+                        "publishedAt": {
+                          "t": "string"
+                        },
+                        "retrievedAt": {
+                          "t": "string"
+                        },
+                        "sourceName": {
+                          "t": "string"
+                        },
+                        "sourceType": {
+                          "t": "string"
+                        },
+                        "sourceUrl": {
+                          "t": "string"
+                        },
+                        "url": {
+                          "t": "string"
+                        }
+                      }
+                    }
+                  },
+                  "statusChange": {
+                    "t": "string"
+                  },
+                  "summary": {
+                    "t": "string"
+                  },
+                  "title": {
+                    "t": "string"
+                  },
+                  "whyItMatters": {
+                    "t": "string"
+                  }
+                }
+              }
+            },
+            "partyFaction": {
+              "t": "array",
+              "el": null
+            },
+            "risks": {
+              "t": "array",
+              "el": {
+                "t": "object",
+                "keys": {
+                  "action": {
+                    "t": "string"
+                  },
+                  "changeReason": {
+                    "t": "string"
+                  },
+                  "deadline": {
+                    "t": "string"
+                  },
+                  "estimatedTime": {
+                    "t": "string"
+                  },
+                  "id": {
+                    "t": "string"
+                  },
+                  "inaction": {
+                    "t": "string"
+                  },
+                  "lageDevelopment": {
+                    "t": "string"
+                  },
+                  "lageMovement": {
+                    "t": "object",
+                    "keys": {
+                      "category": {
+                        "t": "string"
+                      },
+                      "development": {
+                        "t": "string"
+                      },
+                      "hasFreshSource": {
+                        "t": "boolean"
+                      },
+                      "isFreshSource": {
+                        "t": "boolean"
+                      },
+                      "priorityTrend": {
+                        "t": "string"
+                      },
+                      "reason": {
+                        "t": "string"
+                      },
+                      "sourceFreshness": {
+                        "t": "string"
+                      }
+                    }
+                  },
+                  "lageMovementReason": {
+                    "t": "string"
+                  },
+                  "opportunity": {
+                    "t": "string"
+                  },
+                  "primarySource": {
+                    "t": "object",
+                    "keys": {
+                      "confidence": {
+                        "t": "string"
+                      },
+                      "excerpt": {
+                        "t": "string"
+                      },
+                      "itemUrl": {
+                        "t": "string"
+                      },
+                      "linkType": {
+                        "t": "string"
+                      },
+                      "publishedAt": {
+                        "t": "string"
+                      },
+                      "retrievedAt": {
+                        "t": "string"
+                      },
+                      "sourceName": {
+                        "t": "string"
+                      },
+                      "sourceType": {
+                        "t": "string"
+                      },
+                      "sourceUrl": {
+                        "t": "string"
+                      },
+                      "url": {
+                        "t": "string"
+                      }
+                    }
+                  },
+                  "priority": {
+                    "t": "string"
+                  },
+                  "priorityLabel": {
+                    "t": "string"
+                  },
+                  "priorityTrend": {
+                    "t": "string"
+                  },
+                  "relevanceScore": {
+                    "t": "number"
+                  },
+                  "signalId": {
+                    "t": "string"
+                  },
+                  "sourceFreshness": {
+                    "t": "string"
+                  },
+                  "sources": {
+                    "t": "array",
+                    "el": {
+                      "t": "object",
+                      "keys": {
+                        "confidence": {
+                          "t": "string"
+                        },
+                        "excerpt": {
+                          "t": "string"
+                        },
+                        "itemUrl": {
+                          "t": "string"
+                        },
+                        "linkType": {
+                          "t": "string"
+                        },
+                        "publishedAt": {
+                          "t": "string"
+                        },
+                        "retrievedAt": {
+                          "t": "string"
+                        },
+                        "sourceName": {
+                          "t": "string"
+                        },
+                        "sourceType": {
+                          "t": "string"
+                        },
+                        "sourceUrl": {
+                          "t": "string"
+                        },
+                        "url": {
+                          "t": "string"
+                        }
+                      }
+                    }
+                  },
+                  "statusChange": {
+                    "t": "string"
+                  },
+                  "summary": {
+                    "t": "string"
+                  },
+                  "title": {
+                    "t": "string"
+                  },
+                  "whyItMatters": {
+                    "t": "string"
+                  }
+                }
+              }
+            },
+            "situational": {
+              "t": "array",
+              "el": null
+            },
+            "topTasks": {
+              "t": "array",
+              "el": {
+                "t": "object",
+                "keys": {
+                  "action": {
+                    "t": "string"
+                  },
+                  "changeReason": {
+                    "t": "string"
+                  },
+                  "deadline": {
+                    "t": "string"
+                  },
+                  "estimatedTime": {
+                    "t": "string"
+                  },
+                  "id": {
+                    "t": "string"
+                  },
+                  "inaction": {
+                    "t": "string"
+                  },
+                  "lageDevelopment": {
+                    "t": "string"
+                  },
+                  "lageMovement": {
+                    "t": "object",
+                    "keys": {
+                      "category": {
+                        "t": "string"
+                      },
+                      "development": {
+                        "t": "string"
+                      },
+                      "hasFreshSource": {
+                        "t": "boolean"
+                      },
+                      "isFreshSource": {
+                        "t": "boolean"
+                      },
+                      "priorityTrend": {
+                        "t": "string"
+                      },
+                      "reason": {
+                        "t": "string"
+                      },
+                      "sourceFreshness": {
+                        "t": "string"
+                      }
+                    }
+                  },
+                  "lageMovementReason": {
+                    "t": "string"
+                  },
+                  "opportunity": {
+                    "t": "string"
+                  },
+                  "primarySource": {
+                    "t": "object",
+                    "keys": {
+                      "confidence": {
+                        "t": "string"
+                      },
+                      "excerpt": {
+                        "t": "string"
+                      },
+                      "itemUrl": {
+                        "t": "string"
+                      },
+                      "linkType": {
+                        "t": "string"
+                      },
+                      "publishedAt": {
+                        "t": "string"
+                      },
+                      "retrievedAt": {
+                        "t": "string"
+                      },
+                      "sourceName": {
+                        "t": "string"
+                      },
+                      "sourceType": {
+                        "t": "string"
+                      },
+                      "sourceUrl": {
+                        "t": "string"
+                      },
+                      "url": {
+                        "t": "string"
+                      }
+                    }
+                  },
+                  "priority": {
+                    "t": "string"
+                  },
+                  "priorityLabel": {
+                    "t": "string"
+                  },
+                  "priorityTrend": {
+                    "t": "string"
+                  },
+                  "relevanceScore": {
+                    "t": "number"
+                  },
+                  "signalId": {
+                    "t": "string"
+                  },
+                  "sourceFreshness": {
+                    "t": "string"
+                  },
+                  "sources": {
+                    "t": "array",
+                    "el": {
+                      "t": "object",
+                      "keys": {
+                        "confidence": {
+                          "t": "string"
+                        },
+                        "excerpt": {
+                          "t": "string"
+                        },
+                        "itemUrl": {
+                          "t": "string"
+                        },
+                        "linkType": {
+                          "t": "string"
+                        },
+                        "publishedAt": {
+                          "t": "string"
+                        },
+                        "retrievedAt": {
+                          "t": "string"
+                        },
+                        "sourceName": {
+                          "t": "string"
+                        },
+                        "sourceType": {
+                          "t": "string"
+                        },
+                        "sourceUrl": {
+                          "t": "string"
+                        },
+                        "url": {
+                          "t": "string"
+                        }
+                      }
+                    }
+                  },
+                  "statusChange": {
+                    "t": "string"
+                  },
+                  "summary": {
+                    "t": "string"
+                  },
+                  "title": {
+                    "t": "string"
+                  },
+                  "whyItMatters": {
+                    "t": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "id": {
+          "t": "string"
+        },
+        "items": {
+          "t": "array",
+          "el": {
+            "t": "object",
+            "keys": {
+              "actionType": {
+                "t": "string"
+              },
+              "aiEnhanced": {
+                "t": "boolean"
+              },
+              "briefingId": {
+                "t": "string"
+              },
+              "classification": {
+                "t": "string"
+              },
+              "confidence": {
+                "t": "string"
+              },
+              "decision": {
+                "t": "string"
+              },
+              "estimatedTimeMinutes": {
+                "t": "number"
+              },
+              "finalScore": {
+                "t": "number"
+              },
+              "id": {
+                "t": "string"
+              },
+              "inactionConsequence": {
+                "t": "string"
+              },
+              "lageDevelopment": {
+                "t": "string"
+              },
+              "lageMovement": {
+                "t": "object",
+                "keys": {
+                  "category": {
+                    "t": "string"
+                  },
+                  "development": {
+                    "t": "string"
+                  },
+                  "hasFreshSource": {
+                    "t": "boolean"
+                  },
+                  "isFreshSource": {
+                    "t": "boolean"
+                  },
+                  "priorityTrend": {
+                    "t": "string"
+                  },
+                  "reason": {
+                    "t": "string"
+                  },
+                  "sourceFreshness": {
+                    "t": "string"
+                  }
+                }
+              },
+              "lageMovementReason": {
+                "t": "string"
+              },
+              "mandateScore": {
+                "t": "number"
+              },
+              "opportunityNote": {
+                "t": "string"
+              },
+              "politicalBenefit": {
+                "t": "string"
+              },
+              "politicalScore": {
+                "t": "number"
+              },
+              "primarySource": {
+                "t": "object",
+                "keys": {
+                  "confidence": {
+                    "t": "string"
+                  },
+                  "excerpt": {
+                    "t": "string"
+                  },
+                  "itemUrl": {
+                    "t": "string"
+                  },
+                  "linkType": {
+                    "t": "string"
+                  },
+                  "publishedAt": {
+                    "t": "string"
+                  },
+                  "retrievedAt": {
+                    "t": "string"
+                  },
+                  "sourceName": {
+                    "t": "string"
+                  },
+                  "sourceType": {
+                    "t": "string"
+                  },
+                  "sourceUrl": {
+                    "t": "string"
+                  },
+                  "url": {
+                    "t": "string"
+                  }
+                }
+              },
+              "priority": {
+                "t": "number"
+              },
+              "priorityTrend": {
+                "t": "string"
+              },
+              "recommendedAction": {
+                "t": "string"
+              },
+              "recommendedChannel": {
+                "t": "string"
+              },
+              "recommendedPreparation": {
+                "t": "string"
+              },
+              "relevanceLevel": {
+                "t": "string"
+              },
+              "riskLevel": {
+                "t": "string"
+              },
+              "riskNote": {
+                "t": "string"
+              },
+              "signalId": {
+                "t": "string"
+              },
+              "sourceCount": {
+                "t": "number"
+              },
+              "sourceFreshness": {
+                "t": "string"
+              },
+              "sourceNote": {
+                "t": "string"
+              },
+              "sources": {
+                "t": "array",
+                "el": {
+                  "t": "object",
+                  "keys": {
+                    "confidence": {
+                      "t": "string"
+                    },
+                    "excerpt": {
+                      "t": "string"
+                    },
+                    "itemUrl": {
+                      "t": "string"
+                    },
+                    "linkType": {
+                      "t": "string"
+                    },
+                    "publishedAt": {
+                      "t": "string"
+                    },
+                    "retrievedAt": {
+                      "t": "string"
+                    },
+                    "sourceName": {
+                      "t": "string"
+                    },
+                    "sourceType": {
+                      "t": "string"
+                    },
+                    "sourceUrl": {
+                      "t": "string"
+                    },
+                    "url": {
+                      "t": "string"
+                    }
+                  }
+                }
+              },
+              "suggestedStatement": {
+                "t": "string"
+              },
+              "summary": {
+                "t": "string"
+              },
+              "targetGroup": {
+                "t": "string"
+              },
+              "taskTemplate": {
+                "t": "object",
+                "keys": {
+                  "assignee": {
+                    "t": "string"
+                  },
+                  "confidence": {
+                    "t": "string"
+                  },
+                  "createdAt": {
+                    "t": "string"
+                  },
+                  "description": {
+                    "t": "string"
+                  },
+                  "dueDate": {
+                    "t": "string"
+                  },
+                  "id": {
+                    "t": "string"
+                  },
+                  "politicalBenefit": {
+                    "t": "string"
+                  },
+                  "primarySource": {
+                    "t": "object",
+                    "keys": {
+                      "confidence": {
+                        "t": "string"
+                      },
+                      "excerpt": {
+                        "t": "string"
+                      },
+                      "itemUrl": {
+                        "t": "string"
+                      },
+                      "linkType": {
+                        "t": "string"
+                      },
+                      "publishedAt": {
+                        "t": "string"
+                      },
+                      "retrievedAt": {
+                        "t": "string"
+                      },
+                      "sourceName": {
+                        "t": "string"
+                      },
+                      "sourceType": {
+                        "t": "string"
+                      },
+                      "sourceUrl": {
+                        "t": "string"
+                      },
+                      "url": {
+                        "t": "string"
+                      }
+                    }
+                  },
+                  "priority": {
+                    "t": "string"
+                  },
+                  "riskIfIgnored": {
+                    "t": "string"
+                  },
+                  "sourceNote": {
+                    "t": "string"
+                  },
+                  "sourceSignalId": {
+                    "t": "string"
+                  },
+                  "sources": {
+                    "t": "array",
+                    "el": {
+                      "t": "object",
+                      "keys": {
+                        "confidence": {
+                          "t": "string"
+                        },
+                        "excerpt": {
+                          "t": "string"
+                        },
+                        "itemUrl": {
+                          "t": "string"
+                        },
+                        "linkType": {
+                          "t": "string"
+                        },
+                        "publishedAt": {
+                          "t": "string"
+                        },
+                        "retrievedAt": {
+                          "t": "string"
+                        },
+                        "sourceName": {
+                          "t": "string"
+                        },
+                        "sourceType": {
+                          "t": "string"
+                        },
+                        "sourceUrl": {
+                          "t": "string"
+                        },
+                        "url": {
+                          "t": "string"
+                        }
+                      }
+                    }
+                  },
+                  "status": {
+                    "t": "string"
+                  },
+                  "title": {
+                    "t": "string"
+                  }
+                }
+              },
+              "title": {
+                "t": "string"
+              },
+              "topic": {
+                "t": "string"
+              },
+              "totalScore": {
+                "t": "number"
+              },
+              "whyItMatters": {
+                "t": "string"
+              },
+              "whyNow": {
+                "t": "string"
+              }
+            }
+          }
+        },
+        "latestLageCheck": {
+          "t": "null"
+        },
+        "learningProfile": {
+          "t": "object",
+          "keys": {
+            "actionWeights": {
+              "t": "array",
+              "el": {
+                "t": "object",
+                "keys": {
+                  "key": {
+                    "t": "string"
+                  },
+                  "label": {
+                    "t": "string"
+                  },
+                  "score": {
+                    "t": "number"
+                  }
+                }
+              }
+            },
+            "confidence": {
+              "t": "string"
+            },
+            "eventCount": {
+              "t": "number"
+            },
+            "keywordWeights": {
+              "t": "array",
+              "el": {
+                "t": "object",
+                "keys": {
+                  "key": {
+                    "t": "string"
+                  },
+                  "label": {
+                    "t": "string"
+                  },
+                  "score": {
+                    "t": "number"
+                  }
+                }
+              }
+            },
+            "negativeCount": {
+              "t": "number"
+            },
+            "positiveCount": {
+              "t": "number"
+            },
+            "sourceWeights": {
+              "t": "array",
+              "el": {
+                "t": "object",
+                "keys": {
+                  "key": {
+                    "t": "string"
+                  },
+                  "label": {
+                    "t": "string"
+                  },
+                  "score": {
+                    "t": "number"
+                  }
+                }
+              }
+            },
+            "status": {
+              "t": "string"
+            },
+            "summary": {
+              "t": "string"
+            },
+            "topicWeights": {
+              "t": "array",
+              "el": {
+                "t": "object",
+                "keys": {
+                  "key": {
+                    "t": "string"
+                  },
+                  "label": {
+                    "t": "string"
+                  },
+                  "score": {
+                    "t": "number"
+                  }
+                }
+              }
+            },
+            "updatedAt": {
+              "t": "string"
+            }
+          }
+        },
+        "liveSignals": {
+          "t": "number"
+        },
+        "newSignals": {
+          "t": "number"
+        },
+        "notifications": {
+          "t": "array",
+          "el": {
+            "t": "object",
+            "keys": {
+              "createdAt": {
+                "t": "string"
+              },
+              "id": {
+                "t": "string"
+              },
+              "message": {
+                "t": "string"
+              },
+              "primarySource": {
+                "t": "null"
+              },
+              "priority": {
+                "t": "string"
+              },
+              "read": {
+                "t": "boolean"
+              },
+              "relatedItemId": {
+                "t": "string"
+              },
+              "sources": {
+                "t": "array",
+                "el": null
+              },
+              "title": {
+                "t": "string"
+              },
+              "type": {
+                "t": "string"
+              }
+            }
+          }
+        },
+        "personMentions": {
+          "t": "array",
+          "el": {
+            "t": "object",
+            "keys": {
+              "author": {
+                "t": "string"
+              },
+              "category": {
+                "t": "string"
+              },
+              "confidence": {
+                "t": "string"
+              },
+              "content": {
+                "t": "string"
+              },
+              "excerpt": {
+                "t": "string"
+              },
+              "hash": {
+                "t": "string"
+              },
+              "id": {
+                "t": "string"
+              },
+              "imageUrl": {
+                "t": "string"
+              },
+              "linkResolutionNote": {
+                "t": "string"
+              },
+              "linkType": {
+                "t": "string"
+              },
+              "originalUrl": {
+                "t": "string"
+              },
+              "primarySource": {
+                "t": "null"
+              },
+              "publishedAt": {
+                "t": "string"
+              },
+              "retrievedAt": {
+                "t": "string"
+              },
+              "sourceId": {
+                "t": "string"
+              },
+              "sourceName": {
+                "t": "string"
+              },
+              "sourcePriority": {
+                "t": "number"
+              },
+              "sourceType": {
+                "t": "string"
+              },
+              "sourceUrl": {
+                "t": "string"
+              },
+              "sources": {
+                "t": "array",
+                "el": null
+              },
+              "title": {
+                "t": "string"
+              },
+              "url": {
+                "t": "string"
+              }
+            }
+          }
+        },
+        "personalizedRecommendations": {
+          "t": "array",
+          "el": {
+            "t": "object",
+            "keys": {
+              "action_type": {
+                "t": "string"
+              },
+              "ausschuss_bezug": {
+                "t": "number"
+              },
+              "buergerBetroffenheit": {
+                "t": "number"
+              },
+              "bürgerBetroffenheit": {
+                "t": "number"
+              },
+              "chance_fuer_nutzer": {
+                "t": "number"
+              },
+              "change_reason": {
+                "t": "string"
+              },
+              "communication_recommendation": {
+                "t": "string"
+              },
+              "confidence": {
+                "t": "string"
+              },
+              "consequence_if_ignored": {
+                "t": "string"
+              },
+              "created_at": {
+                "t": "string"
+              },
+              "current_priority": {
+                "t": "string"
+              },
+              "deadline": {
+                "t": "string"
+              },
+              "decision_readiness": {
+                "t": "string"
+              },
+              "estimated_effort_minutes": {
+                "t": "number"
+              },
+              "finalScore": {
+                "t": "number"
+              },
+              "fraktion_bezug": {
+                "t": "number"
+              },
+              "id": {
+                "t": "string"
+              },
+              "interactionBias": {
+                "t": "number"
+              },
+              "lageDevelopment": {
+                "t": "string"
+              },
+              "lageMovement": {
+                "t": "object",
+                "keys": {
+                  "category": {
+                    "t": "string"
+                  },
+                  "development": {
+                    "t": "string"
+                  },
+                  "hasFreshSource": {
+                    "t": "boolean"
+                  },
+                  "isFreshSource": {
+                    "t": "boolean"
+                  },
+                  "priorityTrend": {
+                    "t": "string"
+                  },
+                  "reason": {
+                    "t": "string"
+                  },
+                  "sourceFreshness": {
+                    "t": "string"
+                  }
+                }
+              },
+              "lageMovementReason": {
+                "t": "string"
+              },
+              "last_seen_by_user": {
+                "t": "null"
+              },
+              "learningReason": {
+                "t": "string"
+              },
+              "mandateScore": {
+                "t": "number"
+              },
+              "medienDruck": {
+                "t": "number"
+              },
+              "medien_relevanz": {
+                "t": "number"
+              },
+              "noGoPenalty": {
+                "t": "number"
+              },
+              "partei_bezug": {
+                "t": "number"
+              },
+              "personal_relevance_explanation": {
+                "t": "string"
+              },
+              "politicalScore": {
+                "t": "number"
+              },
+              "political_item_id": {
+                "t": "string"
+              },
+              "possible_upside": {
+                "t": "string"
+              },
+              "previous_priority": {
+                "t": "string"
+              },
+              "primarySource": {
+                "t": "object",
+                "keys": {
+                  "confidence": {
+                    "t": "string"
+                  },
+                  "excerpt": {
+                    "t": "string"
+                  },
+                  "itemUrl": {
+                    "t": "string"
+                  },
+                  "linkType": {
+                    "t": "string"
+                  },
+                  "publishedAt": {
+                    "t": "string"
+                  },
+                  "retrievedAt": {
+                    "t": "string"
+                  },
+                  "sourceName": {
+                    "t": "string"
+                  },
+                  "sourceType": {
+                    "t": "string"
+                  },
+                  "sourceUrl": {
+                    "t": "string"
+                  },
+                  "url": {
+                    "t": "string"
+                  }
+                }
+              },
+              "priority": {
+                "t": "string"
+              },
+              "priorityTrend": {
+                "t": "string"
+              },
+              "reaktionsChance": {
+                "t": "number"
+              },
+              "recommended_action": {
+                "t": "string"
+              },
+              "recommended_channel": {
+                "t": "string"
+              },
+              "relevance_score": {
+                "t": "number"
+              },
+              "risikoBeiNichtstun": {
+                "t": "number"
+              },
+              "risiko_fuer_nutzer": {
+                "t": "number"
+              },
+              "signal_id": {
+                "t": "string"
+              },
+              "sourceFreshness": {
+                "t": "string"
+              },
+              "sourceScore": {
+                "t": "number"
+              },
+              "sourceStrength": {
+                "t": "string"
+              },
+              "source_count": {
+                "t": "number"
+              },
+              "sources": {
+                "t": "array",
+                "el": {
+                  "t": "object",
+                  "keys": {
+                    "confidence": {
+                      "t": "string"
+                    },
+                    "excerpt": {
+                      "t": "string"
+                    },
+                    "itemUrl": {
+                      "t": "string"
+                    },
+                    "linkType": {
+                      "t": "string"
+                    },
+                    "publishedAt": {
+                      "t": "string"
+                    },
+                    "retrievedAt": {
+                      "t": "string"
+                    },
+                    "sourceName": {
+                      "t": "string"
+                    },
+                    "sourceType": {
+                      "t": "string"
+                    },
+                    "sourceUrl": {
+                      "t": "string"
+                    },
+                    "url": {
+                      "t": "string"
+                    }
+                  }
+                }
+              },
+              "status": {
+                "t": "string"
+              },
+              "status_change": {
+                "t": "string"
+              },
+              "summary": {
+                "t": "string"
+              },
+              "taskTemplate": {
+                "t": "object",
+                "keys": {
+                  "assignee": {
+                    "t": "string"
+                  },
+                  "confidence": {
+                    "t": "string"
+                  },
+                  "createdAt": {
+                    "t": "string"
+                  },
+                  "description": {
+                    "t": "string"
+                  },
+                  "dueDate": {
+                    "t": "string"
+                  },
+                  "id": {
+                    "t": "string"
+                  },
+                  "politicalBenefit": {
+                    "t": "string"
+                  },
+                  "primarySource": {
+                    "t": "object",
+                    "keys": {
+                      "confidence": {
+                        "t": "string"
+                      },
+                      "excerpt": {
+                        "t": "string"
+                      },
+                      "itemUrl": {
+                        "t": "string"
+                      },
+                      "linkType": {
+                        "t": "string"
+                      },
+                      "publishedAt": {
+                        "t": "string"
+                      },
+                      "retrievedAt": {
+                        "t": "string"
+                      },
+                      "sourceName": {
+                        "t": "string"
+                      },
+                      "sourceType": {
+                        "t": "string"
+                      },
+                      "sourceUrl": {
+                        "t": "string"
+                      },
+                      "url": {
+                        "t": "string"
+                      }
+                    }
+                  },
+                  "priority": {
+                    "t": "string"
+                  },
+                  "riskIfIgnored": {
+                    "t": "string"
+                  },
+                  "sourceNote": {
+                    "t": "string"
+                  },
+                  "sourceSignalId": {
+                    "t": "string"
+                  },
+                  "sources": {
+                    "t": "array",
+                    "el": {
+                      "t": "object",
+                      "keys": {
+                        "confidence": {
+                          "t": "string"
+                        },
+                        "excerpt": {
+                          "t": "string"
+                        },
+                        "itemUrl": {
+                          "t": "string"
+                        },
+                        "linkType": {
+                          "t": "string"
+                        },
+                        "publishedAt": {
+                          "t": "string"
+                        },
+                        "retrievedAt": {
+                          "t": "string"
+                        },
+                        "sourceName": {
+                          "t": "string"
+                        },
+                        "sourceType": {
+                          "t": "string"
+                        },
+                        "sourceUrl": {
+                          "t": "string"
+                        },
+                        "url": {
+                          "t": "string"
+                        }
+                      }
+                    }
+                  },
+                  "status": {
+                    "t": "string"
+                  },
+                  "title": {
+                    "t": "string"
+                  }
+                }
+              },
+              "termin_bezug": {
+                "t": "number"
+              },
+              "themen_bezug": {
+                "t": "number"
+              },
+              "title": {
+                "t": "string"
+              },
+              "topic": {
+                "t": "string"
+              },
+              "updated_at": {
+                "t": "string"
+              },
+              "urgency": {
+                "t": "string"
+              },
+              "user_id": {
+                "t": "string"
+              },
+              "wahlkreis_bezug": {
+                "t": "number"
+              },
+              "zeitdruck": {
+                "t": "number"
+              },
+              "zeitlicheDringlichkeit": {
+                "t": "number"
+              }
+            }
+          }
+        },
+        "politicalItems": {
+          "t": "array",
+          "el": null
+        },
+        "politicalSignals": {
+          "t": "array",
+          "el": null
+        },
+        "politicianId": {
+          "t": "string"
+        },
+        "priorityChanges": {
+          "t": "array",
+          "el": {
+            "t": "object",
+            "keys": {
+              "change_reason": {
+                "t": "string"
+              },
+              "created_at": {
+                "t": "string"
+              },
+              "current_priority": {
+                "t": "string"
+              },
+              "id": {
+                "t": "string"
+              },
+              "political_item_id": {
+                "t": "string"
+              },
+              "previous_priority": {
+                "t": "string"
+              },
+              "recommendation_id": {
+                "t": "string"
+              },
+              "status_change": {
+                "t": "string"
+              },
+              "user_id": {
+                "t": "string"
+              }
+            }
+          }
+        },
+        "profile": {
+          "t": "object",
+          "keys": {
+            "committee": {
+              "t": "string"
+            },
+            "committeeUnknown": {
+              "t": "boolean"
+            },
+            "committees": {
+              "t": "array",
+              "el": {
+                "t": "string"
+              }
+            },
+            "communicationStyle": {
+              "t": "string"
+            },
+            "constituency": {
+              "t": "string"
+            },
+            "currentCampaigns": {
+              "t": "array",
+              "el": {
+                "t": "string"
+              }
+            },
+            "faction": {
+              "t": "string"
+            },
+            "focusTopics": {
+              "t": "array",
+              "el": {
+                "t": "string"
+              }
+            },
+            "fullName": {
+              "t": "string"
+            },
+            "function": {
+              "t": "string"
+            },
+            "id": {
+              "t": "string"
+            },
+            "keyAudiences": {
+              "t": "array",
+              "el": {
+                "t": "string"
+              }
+            },
+            "localMedia": {
+              "t": "array",
+              "el": {
+                "t": "string"
+              }
+            },
+            "location": {
+              "t": "string"
+            },
+            "mainQuestion": {
+              "t": "string"
+            },
+            "monitoringTargets": {
+              "t": "array",
+              "el": {
+                "t": "string"
+              }
+            },
+            "noGoTopics": {
+              "t": "array",
+              "el": {
+                "t": "string"
+              }
+            },
+            "officeHandoffMethod": {
+              "t": "string"
+            },
+            "opponents": {
+              "t": "array",
+              "el": {
+                "t": "string"
+              }
+            },
+            "opportunityTopics": {
+              "t": "array",
+              "el": {
+                "t": "string"
+              }
+            },
+            "outputNeeds": {
+              "t": "array",
+              "el": {
+                "t": "string"
+              }
+            },
+            "party": {
+              "t": "string"
+            },
+            "politicalLevel": {
+              "t": "string"
+            },
+            "preferredChannels": {
+              "t": "array",
+              "el": {
+                "t": "string"
+              }
+            },
+            "publicPositions": {
+              "t": "array",
+              "el": {
+                "t": "string"
+              }
+            },
+            "regionalInterests": {
+              "t": "array",
+              "el": {
+                "t": "string"
+              }
+            },
+            "relevantMinistries": {
+              "t": "array",
+              "el": {
+                "t": "string"
+              }
+            },
+            "reportingTopics": {
+              "t": "array",
+              "el": {
+                "t": "string"
+              }
+            },
+            "riskTopics": {
+              "t": "array",
+              "el": {
+                "t": "string"
+              }
+            },
+            "role": {
+              "t": "string"
+            },
+            "state": {
+              "t": "string"
+            },
+            "topicPriorities": {
+              "t": "object",
+              "keys": {
+                "Arbeit": {
+                  "t": "number"
+                },
+                "Arbeitsmarkt": {
+                  "t": "number"
+                },
+                "Arbeitszeit": {
+                  "t": "number"
+                },
+                "Außenpolitik": {
+                  "t": "number"
+                },
+                "Bildung": {
+                  "t": "number"
+                },
+                "Bürgergeld": {
+                  "t": "number"
+                },
+                "Digitalisierung": {
+                  "t": "number"
+                },
+                "Energie": {
+                  "t": "number"
+                },
+                "Europa": {
+                  "t": "number"
+                },
+                "Familie": {
+                  "t": "number"
+                },
+                "Gesundheit": {
+                  "t": "number"
+                },
+                "Gewerkschaften": {
+                  "t": "number"
+                },
+                "Industriearbeitsplätze": {
+                  "t": "number"
+                },
+                "Klima": {
+                  "t": "number"
+                },
+                "Migration": {
+                  "t": "number"
+                },
+                "Mindestlohn": {
+                  "t": "number"
+                },
+                "Niedersachsen": {
+                  "t": "number"
+                },
+                "Pflege": {
+                  "t": "number"
+                },
+                "Pflegeversicherung": {
+                  "t": "number"
+                },
+                "Rente": {
+                  "t": "number"
+                },
+                "Soziales": {
+                  "t": "number"
+                },
+                "Tarifbindung": {
+                  "t": "number"
+                },
+                "Tariftreue": {
+                  "t": "number"
+                },
+                "Verteidigung": {
+                  "t": "number"
+                },
+                "Wohnen": {
+                  "t": "number"
+                }
+              }
+            },
+            "upcomingAppointments": {
+              "t": "array",
+              "el": {
+                "t": "string"
+              }
+            },
+            "updatedAt": {
+              "t": "string"
+            }
+          }
+        },
+        "quality": {
+          "t": "object",
+          "keys": {
+            "checkedAt": {
+              "t": "string"
+            },
+            "issues": {
+              "t": "array",
+              "el": null
+            },
+            "passed": {
+              "t": "number"
+            },
+            "recommendationCount": {
+              "t": "number"
+            },
+            "score": {
+              "t": "number"
+            },
+            "status": {
+              "t": "string"
+            },
+            "total": {
+              "t": "number"
+            }
+          }
+        },
+        "rawItems": {
+          "t": "array",
+          "el": null
+        },
+        "referentEngine": {
+          "t": "object",
+          "keys": {
+            "checkedAt": {
+              "t": "string"
+            },
+            "issues": {
+              "t": "array",
+              "el": null
+            },
+            "passed": {
+              "t": "number"
+            },
+            "recommendationCount": {
+              "t": "number"
+            },
+            "score": {
+              "t": "number"
+            },
+            "status": {
+              "t": "string"
+            },
+            "total": {
+              "t": "number"
+            }
+          }
+        },
+        "relevanceScores": {
+          "t": "array",
+          "el": null
+        },
+        "riskOfDay": {
+          "t": "object",
+          "keys": {
+            "actionType": {
+              "t": "string"
+            },
+            "aiEnhanced": {
+              "t": "boolean"
+            },
+            "briefingId": {
+              "t": "string"
+            },
+            "classification": {
+              "t": "string"
+            },
+            "confidence": {
+              "t": "string"
+            },
+            "decision": {
+              "t": "string"
+            },
+            "estimatedTimeMinutes": {
+              "t": "number"
+            },
+            "finalScore": {
+              "t": "number"
+            },
+            "id": {
+              "t": "string"
+            },
+            "inactionConsequence": {
+              "t": "string"
+            },
+            "mandateScore": {
+              "t": "number"
+            },
+            "opportunityNote": {
+              "t": "string"
+            },
+            "politicalBenefit": {
+              "t": "string"
+            },
+            "politicalScore": {
+              "t": "number"
+            },
+            "primarySource": {
+              "t": "object",
+              "keys": {
+                "confidence": {
+                  "t": "string"
+                },
+                "excerpt": {
+                  "t": "string"
+                },
+                "itemUrl": {
+                  "t": "string"
+                },
+                "linkType": {
+                  "t": "string"
+                },
+                "publishedAt": {
+                  "t": "string"
+                },
+                "retrievedAt": {
+                  "t": "string"
+                },
+                "sourceName": {
+                  "t": "string"
+                },
+                "sourceType": {
+                  "t": "string"
+                },
+                "sourceUrl": {
+                  "t": "string"
+                },
+                "url": {
+                  "t": "string"
+                }
+              }
+            },
+            "priority": {
+              "t": "number"
+            },
+            "recommendedAction": {
+              "t": "string"
+            },
+            "recommendedChannel": {
+              "t": "string"
+            },
+            "recommendedPreparation": {
+              "t": "string"
+            },
+            "relevanceLevel": {
+              "t": "string"
+            },
+            "riskLevel": {
+              "t": "string"
+            },
+            "riskNote": {
+              "t": "string"
+            },
+            "signalId": {
+              "t": "string"
+            },
+            "sourceCount": {
+              "t": "number"
+            },
+            "sourceNote": {
+              "t": "string"
+            },
+            "sources": {
+              "t": "array",
+              "el": {
+                "t": "object",
+                "keys": {
+                  "confidence": {
+                    "t": "string"
+                  },
+                  "excerpt": {
+                    "t": "string"
+                  },
+                  "itemUrl": {
+                    "t": "string"
+                  },
+                  "linkType": {
+                    "t": "string"
+                  },
+                  "publishedAt": {
+                    "t": "string"
+                  },
+                  "retrievedAt": {
+                    "t": "string"
+                  },
+                  "sourceName": {
+                    "t": "string"
+                  },
+                  "sourceType": {
+                    "t": "string"
+                  },
+                  "sourceUrl": {
+                    "t": "string"
+                  },
+                  "url": {
+                    "t": "string"
+                  }
+                }
+              }
+            },
+            "suggestedStatement": {
+              "t": "string"
+            },
+            "summary": {
+              "t": "string"
+            },
+            "targetGroup": {
+              "t": "string"
+            },
+            "taskTemplate": {
+              "t": "object",
+              "keys": {
+                "assignee": {
+                  "t": "string"
+                },
+                "confidence": {
+                  "t": "string"
+                },
+                "createdAt": {
+                  "t": "string"
+                },
+                "description": {
+                  "t": "string"
+                },
+                "dueDate": {
+                  "t": "string"
+                },
+                "id": {
+                  "t": "string"
+                },
+                "politicalBenefit": {
+                  "t": "string"
+                },
+                "primarySource": {
+                  "t": "object",
+                  "keys": {
+                    "confidence": {
+                      "t": "string"
+                    },
+                    "excerpt": {
+                      "t": "string"
+                    },
+                    "itemUrl": {
+                      "t": "string"
+                    },
+                    "linkType": {
+                      "t": "string"
+                    },
+                    "publishedAt": {
+                      "t": "string"
+                    },
+                    "retrievedAt": {
+                      "t": "string"
+                    },
+                    "sourceName": {
+                      "t": "string"
+                    },
+                    "sourceType": {
+                      "t": "string"
+                    },
+                    "sourceUrl": {
+                      "t": "string"
+                    },
+                    "url": {
+                      "t": "string"
+                    }
+                  }
+                },
+                "priority": {
+                  "t": "string"
+                },
+                "riskIfIgnored": {
+                  "t": "string"
+                },
+                "sourceNote": {
+                  "t": "string"
+                },
+                "sourceSignalId": {
+                  "t": "string"
+                },
+                "sources": {
+                  "t": "array",
+                  "el": {
+                    "t": "object",
+                    "keys": {
+                      "confidence": {
+                        "t": "string"
+                      },
+                      "excerpt": {
+                        "t": "string"
+                      },
+                      "itemUrl": {
+                        "t": "string"
+                      },
+                      "linkType": {
+                        "t": "string"
+                      },
+                      "publishedAt": {
+                        "t": "string"
+                      },
+                      "retrievedAt": {
+                        "t": "string"
+                      },
+                      "sourceName": {
+                        "t": "string"
+                      },
+                      "sourceType": {
+                        "t": "string"
+                      },
+                      "sourceUrl": {
+                        "t": "string"
+                      },
+                      "url": {
+                        "t": "string"
+                      }
+                    }
+                  }
+                },
+                "status": {
+                  "t": "string"
+                },
+                "title": {
+                  "t": "string"
+                }
+              }
+            },
+            "title": {
+              "t": "string"
+            },
+            "topic": {
+              "t": "string"
+            },
+            "totalScore": {
+              "t": "number"
+            },
+            "whyItMatters": {
+              "t": "string"
+            },
+            "whyNow": {
+              "t": "string"
+            }
+          }
+        },
+        "scores": {
+          "t": "array",
+          "el": {
+            "t": "object",
+            "keys": {
+              "decision": {
+                "t": "string"
+              },
+              "finalScore": {
+                "t": "number"
+              },
+              "id": {
+                "t": "string"
+              },
+              "mandateScore": {
+                "t": "number"
+              },
+              "mediaScore": {
+                "t": "number"
+              },
+              "opportunityScore": {
+                "t": "number"
+              },
+              "politicalScore": {
+                "t": "number"
+              },
+              "politicianId": {
+                "t": "string"
+              },
+              "reason": {
+                "t": "string"
+              },
+              "riskScore": {
+                "t": "number"
+              },
+              "signalId": {
+                "t": "string"
+              },
+              "totalScore": {
+                "t": "number"
+              },
+              "urgencyScore": {
+                "t": "number"
+              }
+            }
+          }
+        },
+        "signals": {
+          "t": "array",
+          "el": null
+        },
+        "situationalBriefing": {
+          "t": "array",
+          "el": null
+        },
+        "sourceRun": {
+          "t": "object",
+          "keys": {
+            "checkedSources": {
+              "t": "number"
+            },
+            "createdAt": {
+              "t": "string"
+            },
+            "errors": {
+              "t": "array",
+              "el": null
+            },
+            "failedSources": {
+              "t": "number"
+            },
+            "mode": {
+              "t": "string"
+            },
+            "newCandidateItems": {
+              "t": "number"
+            },
+            "savedItems": {
+              "t": "number"
+            },
+            "successfulSources": {
+              "t": "number"
+            }
+          }
+        },
+        "sourceStats": {
+          "t": "object",
+          "keys": {
+            "checkedSources": {
+              "t": "number"
+            },
+            "createdAt": {
+              "t": "string"
+            },
+            "errors": {
+              "t": "array",
+              "el": null
+            },
+            "failedSources": {
+              "t": "number"
+            },
+            "mode": {
+              "t": "string"
+            },
+            "newCandidateItems": {
+              "t": "number"
+            },
+            "savedItems": {
+              "t": "number"
+            },
+            "successfulSources": {
+              "t": "number"
+            }
+          }
+        },
+        "sources": {
+          "t": "array",
+          "el": null
+        },
+        "status": {
+          "t": "string"
+        },
+        "taskMetrics": {
+          "t": "object",
+          "keys": {
+            "criticalCount": {
+              "t": "number"
+            },
+            "dueByNoonCount": {
+              "t": "number"
+            },
+            "openCount": {
+              "t": "number"
+            }
+          }
+        },
+        "tasks": {
+          "t": "array",
+          "el": {
+            "t": "object",
+            "keys": {
+              "assignee": {
+                "t": "string"
+              },
+              "confidence": {
+                "t": "string"
+              },
+              "createdAt": {
+                "t": "string"
+              },
+              "description": {
+                "t": "string"
+              },
+              "dueDate": {
+                "t": "string"
+              },
+              "id": {
+                "t": "string"
+              },
+              "politicalBenefit": {
+                "t": "string"
+              },
+              "primarySource": {
+                "t": "object",
+                "keys": {
+                  "confidence": {
+                    "t": "string"
+                  },
+                  "excerpt": {
+                    "t": "string"
+                  },
+                  "itemUrl": {
+                    "t": "string"
+                  },
+                  "linkType": {
+                    "t": "string"
+                  },
+                  "publishedAt": {
+                    "t": "string"
+                  },
+                  "retrievedAt": {
+                    "t": "string"
+                  },
+                  "sourceName": {
+                    "t": "string"
+                  },
+                  "sourceType": {
+                    "t": "string"
+                  },
+                  "sourceUrl": {
+                    "t": "string"
+                  },
+                  "url": {
+                    "t": "string"
+                  }
+                }
+              },
+              "priority": {
+                "t": "string"
+              },
+              "riskIfIgnored": {
+                "t": "string"
+              },
+              "sourceNote": {
+                "t": "string"
+              },
+              "sourceSignalId": {
+                "t": "string"
+              },
+              "sources": {
+                "t": "array",
+                "el": {
+                  "t": "object",
+                  "keys": {
+                    "confidence": {
+                      "t": "string"
+                    },
+                    "excerpt": {
+                      "t": "string"
+                    },
+                    "itemUrl": {
+                      "t": "string"
+                    },
+                    "linkType": {
+                      "t": "string"
+                    },
+                    "publishedAt": {
+                      "t": "string"
+                    },
+                    "retrievedAt": {
+                      "t": "string"
+                    },
+                    "sourceName": {
+                      "t": "string"
+                    },
+                    "sourceType": {
+                      "t": "string"
+                    },
+                    "sourceUrl": {
+                      "t": "string"
+                    },
+                    "url": {
+                      "t": "string"
+                    }
+                  }
+                }
+              },
+              "status": {
+                "t": "string"
+              },
+              "title": {
+                "t": "string"
+              }
+            }
+          }
+        },
+        "themeOfDay": {
+          "t": "object",
+          "keys": {
+            "actionType": {
+              "t": "string"
+            },
+            "aiEnhanced": {
+              "t": "boolean"
+            },
+            "briefingId": {
+              "t": "string"
+            },
+            "classification": {
+              "t": "string"
+            },
+            "confidence": {
+              "t": "string"
+            },
+            "decision": {
+              "t": "string"
+            },
+            "estimatedTimeMinutes": {
+              "t": "number"
+            },
+            "finalScore": {
+              "t": "number"
+            },
+            "id": {
+              "t": "string"
+            },
+            "inactionConsequence": {
+              "t": "string"
+            },
+            "mandateScore": {
+              "t": "number"
+            },
+            "opportunityNote": {
+              "t": "string"
+            },
+            "politicalBenefit": {
+              "t": "string"
+            },
+            "politicalScore": {
+              "t": "number"
+            },
+            "primarySource": {
+              "t": "object",
+              "keys": {
+                "confidence": {
+                  "t": "string"
+                },
+                "excerpt": {
+                  "t": "string"
+                },
+                "itemUrl": {
+                  "t": "string"
+                },
+                "linkType": {
+                  "t": "string"
+                },
+                "publishedAt": {
+                  "t": "string"
+                },
+                "retrievedAt": {
+                  "t": "string"
+                },
+                "sourceName": {
+                  "t": "string"
+                },
+                "sourceType": {
+                  "t": "string"
+                },
+                "sourceUrl": {
+                  "t": "string"
+                },
+                "url": {
+                  "t": "string"
+                }
+              }
+            },
+            "priority": {
+              "t": "number"
+            },
+            "recommendedAction": {
+              "t": "string"
+            },
+            "recommendedChannel": {
+              "t": "string"
+            },
+            "recommendedPreparation": {
+              "t": "string"
+            },
+            "relevanceLevel": {
+              "t": "string"
+            },
+            "riskLevel": {
+              "t": "string"
+            },
+            "riskNote": {
+              "t": "string"
+            },
+            "signalId": {
+              "t": "string"
+            },
+            "sourceCount": {
+              "t": "number"
+            },
+            "sourceNote": {
+              "t": "string"
+            },
+            "sources": {
+              "t": "array",
+              "el": {
+                "t": "object",
+                "keys": {
+                  "confidence": {
+                    "t": "string"
+                  },
+                  "excerpt": {
+                    "t": "string"
+                  },
+                  "itemUrl": {
+                    "t": "string"
+                  },
+                  "linkType": {
+                    "t": "string"
+                  },
+                  "publishedAt": {
+                    "t": "string"
+                  },
+                  "retrievedAt": {
+                    "t": "string"
+                  },
+                  "sourceName": {
+                    "t": "string"
+                  },
+                  "sourceType": {
+                    "t": "string"
+                  },
+                  "sourceUrl": {
+                    "t": "string"
+                  },
+                  "url": {
+                    "t": "string"
+                  }
+                }
+              }
+            },
+            "suggestedStatement": {
+              "t": "string"
+            },
+            "summary": {
+              "t": "string"
+            },
+            "targetGroup": {
+              "t": "string"
+            },
+            "taskTemplate": {
+              "t": "object",
+              "keys": {
+                "assignee": {
+                  "t": "string"
+                },
+                "confidence": {
+                  "t": "string"
+                },
+                "createdAt": {
+                  "t": "string"
+                },
+                "description": {
+                  "t": "string"
+                },
+                "dueDate": {
+                  "t": "string"
+                },
+                "id": {
+                  "t": "string"
+                },
+                "politicalBenefit": {
+                  "t": "string"
+                },
+                "primarySource": {
+                  "t": "object",
+                  "keys": {
+                    "confidence": {
+                      "t": "string"
+                    },
+                    "excerpt": {
+                      "t": "string"
+                    },
+                    "itemUrl": {
+                      "t": "string"
+                    },
+                    "linkType": {
+                      "t": "string"
+                    },
+                    "publishedAt": {
+                      "t": "string"
+                    },
+                    "retrievedAt": {
+                      "t": "string"
+                    },
+                    "sourceName": {
+                      "t": "string"
+                    },
+                    "sourceType": {
+                      "t": "string"
+                    },
+                    "sourceUrl": {
+                      "t": "string"
+                    },
+                    "url": {
+                      "t": "string"
+                    }
+                  }
+                },
+                "priority": {
+                  "t": "string"
+                },
+                "riskIfIgnored": {
+                  "t": "string"
+                },
+                "sourceNote": {
+                  "t": "string"
+                },
+                "sourceSignalId": {
+                  "t": "string"
+                },
+                "sources": {
+                  "t": "array",
+                  "el": {
+                    "t": "object",
+                    "keys": {
+                      "confidence": {
+                        "t": "string"
+                      },
+                      "excerpt": {
+                        "t": "string"
+                      },
+                      "itemUrl": {
+                        "t": "string"
+                      },
+                      "linkType": {
+                        "t": "string"
+                      },
+                      "publishedAt": {
+                        "t": "string"
+                      },
+                      "retrievedAt": {
+                        "t": "string"
+                      },
+                      "sourceName": {
+                        "t": "string"
+                      },
+                      "sourceType": {
+                        "t": "string"
+                      },
+                      "sourceUrl": {
+                        "t": "string"
+                      },
+                      "url": {
+                        "t": "string"
+                      }
+                    }
+                  }
+                },
+                "status": {
+                  "t": "string"
+                },
+                "title": {
+                  "t": "string"
+                }
+              }
+            },
+            "title": {
+              "t": "string"
+            },
+            "topic": {
+              "t": "string"
+            },
+            "totalScore": {
+              "t": "number"
+            },
+            "whyItMatters": {
+              "t": "string"
+            },
+            "whyNow": {
+              "t": "string"
+            }
+          }
+        },
+        "topicMemory": {
+          "t": "array",
+          "el": null
+        },
+        "topics": {
+          "t": "array",
+          "el": {
+            "t": "object",
+            "keys": {
+              "confidence": {
+                "t": "string"
+              },
+              "evidenceIds": {
+                "t": "array",
+                "el": {
+                  "t": "string"
+                }
+              },
+              "id": {
+                "t": "string"
+              },
+              "isConfirmed": {
+                "t": "boolean"
+              },
+              "primarySource": {
+                "t": "string"
+              },
+              "rawItemIds": {
+                "t": "array",
+                "el": {
+                  "t": "string"
+                }
+              },
+              "sourceCount": {
+                "t": "number"
+              },
+              "summary": {
+                "t": "string"
+              },
+              "title": {
+                "t": "string"
+              }
+            }
+          }
+        },
+        "userInteractions": {
+          "t": "array",
+          "el": null
+        }
+      }
+    },
+    "notes": {
+      "t": "array",
+      "el": null
+    },
+    "profile": {
+      "t": "object",
+      "keys": {
+        "committee": {
+          "t": "string"
+        },
+        "committeeUnknown": {
+          "t": "boolean"
+        },
+        "committees": {
+          "t": "array",
+          "el": {
+            "t": "string"
+          }
+        },
+        "communicationStyle": {
+          "t": "string"
+        },
+        "constituency": {
+          "t": "string"
+        },
+        "currentCampaigns": {
+          "t": "array",
+          "el": {
+            "t": "string"
+          }
+        },
+        "faction": {
+          "t": "string"
+        },
+        "focusTopics": {
+          "t": "array",
+          "el": {
+            "t": "string"
+          }
+        },
+        "fullName": {
+          "t": "string"
+        },
+        "function": {
+          "t": "string"
+        },
+        "id": {
+          "t": "string"
+        },
+        "keyAudiences": {
+          "t": "array",
+          "el": {
+            "t": "string"
+          }
+        },
+        "localMedia": {
+          "t": "array",
+          "el": {
+            "t": "string"
+          }
+        },
+        "location": {
+          "t": "string"
+        },
+        "mainQuestion": {
+          "t": "string"
+        },
+        "monitoringTargets": {
+          "t": "array",
+          "el": {
+            "t": "string"
+          }
+        },
+        "noGoTopics": {
+          "t": "array",
+          "el": {
+            "t": "string"
+          }
+        },
+        "officeHandoffMethod": {
+          "t": "string"
+        },
+        "opponents": {
+          "t": "array",
+          "el": {
+            "t": "string"
+          }
+        },
+        "opportunityTopics": {
+          "t": "array",
+          "el": {
+            "t": "string"
+          }
+        },
+        "outputNeeds": {
+          "t": "array",
+          "el": {
+            "t": "string"
+          }
+        },
+        "party": {
+          "t": "string"
+        },
+        "politicalLevel": {
+          "t": "string"
+        },
+        "preferredChannels": {
+          "t": "array",
+          "el": {
+            "t": "string"
+          }
+        },
+        "publicPositions": {
+          "t": "array",
+          "el": {
+            "t": "string"
+          }
+        },
+        "regionalInterests": {
+          "t": "array",
+          "el": {
+            "t": "string"
+          }
+        },
+        "relevantMinistries": {
+          "t": "array",
+          "el": {
+            "t": "string"
+          }
+        },
+        "reportingTopics": {
+          "t": "array",
+          "el": {
+            "t": "string"
+          }
+        },
+        "riskTopics": {
+          "t": "array",
+          "el": {
+            "t": "string"
+          }
+        },
+        "role": {
+          "t": "string"
+        },
+        "state": {
+          "t": "string"
+        },
+        "topicPriorities": {
+          "t": "object",
+          "keys": {
+            "Arbeit": {
+              "t": "number"
+            },
+            "Arbeitsmarkt": {
+              "t": "number"
+            },
+            "Arbeitszeit": {
+              "t": "number"
+            },
+            "Außenpolitik": {
+              "t": "number"
+            },
+            "Bildung": {
+              "t": "number"
+            },
+            "Bürgergeld": {
+              "t": "number"
+            },
+            "Digitalisierung": {
+              "t": "number"
+            },
+            "Energie": {
+              "t": "number"
+            },
+            "Europa": {
+              "t": "number"
+            },
+            "Familie": {
+              "t": "number"
+            },
+            "Gesundheit": {
+              "t": "number"
+            },
+            "Gewerkschaften": {
+              "t": "number"
+            },
+            "Industriearbeitsplätze": {
+              "t": "number"
+            },
+            "Klima": {
+              "t": "number"
+            },
+            "Migration": {
+              "t": "number"
+            },
+            "Mindestlohn": {
+              "t": "number"
+            },
+            "Niedersachsen": {
+              "t": "number"
+            },
+            "Pflege": {
+              "t": "number"
+            },
+            "Pflegeversicherung": {
+              "t": "number"
+            },
+            "Rente": {
+              "t": "number"
+            },
+            "Soziales": {
+              "t": "number"
+            },
+            "Tarifbindung": {
+              "t": "number"
+            },
+            "Tariftreue": {
+              "t": "number"
+            },
+            "Verteidigung": {
+              "t": "number"
+            },
+            "Wohnen": {
+              "t": "number"
+            }
+          }
+        },
+        "upcomingAppointments": {
+          "t": "array",
+          "el": {
+            "t": "string"
+          }
+        },
+        "updatedAt": {
+          "t": "string"
+        }
+      }
+    },
+    "tasks": {
+      "t": "array",
+      "el": {
+        "t": "object",
+        "keys": {
+          "assignee": {
+            "t": "string"
+          },
+          "confidence": {
+            "t": "string"
+          },
+          "createdAt": {
+            "t": "string"
+          },
+          "description": {
+            "t": "string"
+          },
+          "dueDate": {
+            "t": "string"
+          },
+          "id": {
+            "t": "string"
+          },
+          "politicalBenefit": {
+            "t": "string"
+          },
+          "politicianId": {
+            "t": "string"
+          },
+          "primarySource": {
+            "t": "object",
+            "keys": {
+              "author": {
+                "t": "string"
+              },
+              "confidence": {
+                "t": "string"
+              },
+              "excerpt": {
+                "t": "string"
+              },
+              "id": {
+                "t": "string"
+              },
+              "itemUrl": {
+                "t": "string"
+              },
+              "publishedAt": {
+                "t": "string"
+              },
+              "relevanceReason": {
+                "t": "string"
+              },
+              "retrievedAt": {
+                "t": "string"
+              },
+              "sourceName": {
+                "t": "string"
+              },
+              "sourceType": {
+                "t": "string"
+              },
+              "sourceUrl": {
+                "t": "string"
+              },
+              "url": {
+                "t": "string"
+              }
+            }
+          },
+          "priority": {
+            "t": "string"
+          },
+          "riskIfIgnored": {
+            "t": "string"
+          },
+          "sourceNote": {
+            "t": "string"
+          },
+          "sourceSignalId": {
+            "t": "string"
+          },
+          "sources": {
+            "t": "array",
+            "el": {
+              "t": "object",
+              "keys": {
+                "author": {
+                  "t": "string"
+                },
+                "confidence": {
+                  "t": "string"
+                },
+                "excerpt": {
+                  "t": "string"
+                },
+                "id": {
+                  "t": "string"
+                },
+                "itemUrl": {
+                  "t": "string"
+                },
+                "publishedAt": {
+                  "t": "string"
+                },
+                "relevanceReason": {
+                  "t": "string"
+                },
+                "retrievedAt": {
+                  "t": "string"
+                },
+                "sourceName": {
+                  "t": "string"
+                },
+                "sourceType": {
+                  "t": "string"
+                },
+                "sourceUrl": {
+                  "t": "string"
+                },
+                "url": {
+                  "t": "string"
+                }
+              }
+            }
+          },
+          "status": {
+            "t": "string"
+          },
+          "title": {
+            "t": "string"
+          },
+          "updatedAt": {
+            "t": "string"
+          }
+        }
+      }
+    }
+  }
+}

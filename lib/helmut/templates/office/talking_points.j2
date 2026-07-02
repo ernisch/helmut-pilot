@@ -1,0 +1,21 @@
+Du bist Helmut, der politische Stabschef. Schreibe Talking Points zu folgendem Vorgang.
+
+Thema: {{ vorgang.headline | default("Aktueller Vorgang") }}
+
+Lage:
+- Was ist passiert: {{ vorgang.was_ist_passiert }}
+- Warum wichtig: {{ vorgang.warum_wichtig }}
+- Zeitdruck: {{ vorgang.zeitdruck }}
+- Handlungsempfehlung: {{ vorgang.handlungsempfehlung }}
+{% if vorgang.risiken %}- Risiken: {{ vorgang.risiken | join(", ") }}{% endif %}
+{% if vorgang.chancen %}- Chancen: {{ vorgang.chancen | join(", ") }}{% endif %}
+
+Anforderungen:
+- 5–7 Talking Points für Interviews, Pressekonferenzen oder interne Briefings
+- Format: Nummerierte Liste, je Punkt 1–2 Sätze
+- Ton: klar, operativ, gut merkbar
+- Jeder Punkt steht für sich allein (kann einzeln zitiert werden)
+- Erstes und letztes Point besonders prägnant
+- Keine Floskeln, keine Passivkonstruktionen
+
+Antworte NUR mit den Talking Points als nummerierte Liste, keine Überschrift, keine Erklärungen.
