@@ -9,7 +9,7 @@ const { cemInceProfile, demoRawItems, demoSources, generateBriefing } = require(
 const { getLatestOrDemoBriefing, runDailyPipeline, runLageCheck, runMorningBriefing, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { personalizeBriefing } = require("./lib/helmut/personalization");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getAdminCostsPerUser, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments } = require("./lib/helmut/storage");
+const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getAdminCostsPerUser, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments } = require("./lib/helmut/storage");
 const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled, activeModelName, isEngineV2Enabled } = require("./lib/helmut/ai");
 const { pushStatus, sendBriefingReadyPush, sendLageChangePush, sendPushToPolitician } = require("./lib/helmut/push");
 const auth = require("./lib/helmut/auth");
@@ -3032,6 +3032,56 @@ async function handleDebugRequest(request, response, url) {
         processed,
         skippedNoCluster,
         result
+      };
+    });
+  }
+
+  // GET /api/debug/create-test-vorgang?secret=... — Test-pending-KOs aus letzten 5 raw_documents anlegen.
+  // Clustert die neuesten Dokumente deterministisch und legt fuer jeden neuen Cluster
+  // einen KO mit status='pending' an. Danach kann /api/debug/run-understanding die KI starten.
+  // TEMP: nach erstem erfolgreichen Lauf entfernen.
+  if (url.pathname === "/api/debug/create-test-vorgang") {
+    return handleAsync(response, async () => {
+      const { toRawDocumentRow, dedupeRawDocuments } = require("./lib/helmut/dedup");
+      const flags = {
+        HELMUT_V3_STORE: process.env.HELMUT_V3_STORE || "(nicht gesetzt — Understanding AUS)",
+        HELMUT_V3_LAZY_UNDERSTANDING: process.env.HELMUT_V3_LAZY_UNDERSTANDING || "(nicht gesetzt — C7c AUS: kein auto-pending nach Crawl)",
+        AZURE_OPENAI_KEY_set: Boolean(process.env.AZURE_OPENAI_KEY),
+        SUPABASE_URL_set: Boolean(process.env.SUPABASE_URL),
+        SUPABASE_SERVICE_ROLE_KEY_set: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
+      };
+      const rawDocs = await listRecentRawDocuments(5);
+      if (!rawDocs.length) {
+        return { debug: true, flags, rawDocsLoaded: 0, error: "Keine raw_documents gefunden — Crawl hat noch nichts gespeichert oder HELMUT_V3_STORE fehlt." };
+      }
+      const rows = dedupeRawDocuments(rawDocs.map(toRawDocumentRow).filter((r) => r && r.id));
+      const clusters = clusterRawDocuments(rows);
+      const created = [];
+      const skipped = [];
+      for (const cluster of clusters) {
+        const vorgangId = deriveVorgangId(cluster);
+        const headline = (cluster.documents[0] && cluster.documents[0].title) || "(kein Titel)";
+        const result = await savePendingKnowledgeObject(vorgangId, {
+          headline,
+          source_document_count: cluster.documents.length
+        });
+        if (result && result.saved) {
+          created.push({ vorgangId, id: `ko-${vorgangId}`, headline, documents: cluster.documents.length });
+        } else {
+          skipped.push({ vorgangId, headline, reason: result && result.reason });
+        }
+      }
+      console.log(`[debug/create-test-vorgang] rawDocs=${rawDocs.length} clusters=${clusters.length} created=${created.length} skipped=${skipped.length}`);
+      return {
+        debug: true,
+        flags,
+        rawDocsLoaded: rawDocs.length,
+        clustersFound: clusters.length,
+        created,
+        skipped,
+        nextStep: created.length
+          ? `${created.length} pending KO(s) angelegt. Rufe jetzt /api/debug/run-understanding auf.`
+          : "Alle Cluster haben bereits KOs (oder Store nicht bereit). Prüfe flags und /api/debug/cluster."
       };
     });
   }
