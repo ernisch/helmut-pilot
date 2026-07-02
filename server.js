@@ -9,7 +9,7 @@ const { cemInceProfile, demoRawItems, demoSources, generateBriefing } = require(
 const { getLatestOrDemoBriefing, runDailyPipeline, runLageCheck, runMorningBriefing, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { personalizeBriefing } = require("./lib/helmut/personalization");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getAdminCostsPerUser, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments } = require("./lib/helmut/storage");
+const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getAdminCostsPerUser, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments } = require("./lib/helmut/storage");
 const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled, activeModelName, isEngineV2Enabled } = require("./lib/helmut/ai");
 const { pushStatus, sendBriefingReadyPush, sendLageChangePush, sendPushToPolitician } = require("./lib/helmut/push");
 const auth = require("./lib/helmut/auth");
@@ -3109,6 +3109,65 @@ async function handleDebugRequest(request, response, url) {
         message: removed > 0
           ? `${removed} heutige LLM-Eintraege entfernt. Budget ist wieder frei.`
           : "Keine heutigen Eintraege gefunden — Budget war bereits bei 0."
+      };
+    });
+  }
+
+  // GET /api/debug/understanding-logs?secret=... — letzte Understanding-Fehler + Azure-Diagnose.
+  // Liest llmUsage-Log und filtert fehlgeschlagene Understanding-Calls heraus.
+  // WICHTIG: Der rohe Azure-Fehlertext (Body) landet NUR in Vercel-Console-Logs,
+  // nicht im Store (DSGVO). Dieser Endpunkt zeigt Fehlerklassen wie "Azure HTTP 401".
+  // TEMP: nach Diagnose entfernen.
+  if (url.pathname === "/api/debug/understanding-logs") {
+    return handleAsync(response, async () => {
+      const azureConfig = {
+        AZURE_OPENAI_KEY_set: Boolean(process.env.AZURE_OPENAI_KEY),
+        AZURE_OPENAI_ENDPOINT: process.env.AZURE_OPENAI_ENDPOINT || "(nicht gesetzt)",
+        AZURE_OPENAI_DEPLOYMENT: process.env.AZURE_OPENAI_DEPLOYMENT || "(nicht gesetzt)",
+        isAzure: Boolean(process.env.AZURE_OPENAI_KEY && process.env.AZURE_OPENAI_ENDPOINT),
+        isAiEnabled: isAiEnabled(),
+        model: activeModelName(),
+        azureApiUrl: process.env.AZURE_OPENAI_ENDPOINT
+          ? `${process.env.AZURE_OPENAI_ENDPOINT}/openai/v1/responses`
+          : "(nicht konfiguriert)"
+      };
+
+      const budget = await canSpendLlm(null).catch(() => ({ error: "canSpendLlm fehlgeschlagen" }));
+
+      const all = await getLlmUsage(null, 500);
+      const failed = all.filter((e) => e.success === false);
+      const understandingFailed = failed
+        .filter((e) => String(e.callType || "").toLowerCase().includes("understanding"))
+        .slice(0, 10)
+        .map((e) => ({ when: e.createdAt, callType: e.callType, model: e.model, error: e.error, durationMs: e.durationMs }));
+
+      const hint = !azureConfig.isAzure
+        ? "Azure NICHT konfiguriert — weder AZURE_OPENAI_KEY noch AZURE_OPENAI_ENDPOINT gesetzt."
+        : !azureConfig.AZURE_OPENAI_KEY_set
+          ? "AZURE_OPENAI_KEY fehlt → alle Calls schlagen mit 401 fehl."
+          : understandingFailed.some((e) => String(e.error || "").includes("401"))
+            ? "HTTP 401: Key ungültig oder abgelaufen. Key in Vercel prüfen."
+            : understandingFailed.some((e) => String(e.error || "").includes("404"))
+              ? "HTTP 404: Endpoint oder Deployment falsch. AZURE_OPENAI_ENDPOINT + AZURE_OPENAI_DEPLOYMENT prüfen."
+              : understandingFailed.some((e) => String(e.error || "").includes("400"))
+                ? "HTTP 400: Azure lehnt den Request ab. Wahrscheinlich Prompt oder JSON-Schema inkompatibel mit dem Deployment."
+                : understandingFailed.some((e) => String(e.error || "").includes("parse"))
+                  ? "response-parse-error: Modell gibt kein valides JSON zurück. Deployment prüfen (gpt-4o-mini?)."
+                  : understandingFailed.some((e) => String(e.error || "").includes("timeout"))
+                    ? "Timeout: Azure antwortet nicht. Endpoint erreichbar?"
+                    : "Fehler vorhanden — Details oben unter understandingErrors.";
+
+      console.log(`[debug/understanding-logs] total=${all.length} failed=${failed.length} understandingFailed=${understandingFailed.length}`);
+      return {
+        debug: true,
+        azureConfig,
+        budget,
+        understandingErrors: {
+          total: understandingFailed.length,
+          note: "Roher Azure-Fehlertext (Body) steht NUR in Vercel-Logs → Functions → letzte Invocation.",
+          last10: understandingFailed
+        },
+        hint
       };
     });
   }
