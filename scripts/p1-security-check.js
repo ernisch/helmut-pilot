@@ -508,6 +508,351 @@ function c7bGoldsetChecks() {
     validateGoldset(tampered).valid === false);
 }
 
+// Datenmotor V3 — Commit C7: Schatten-Understanding (deterministisch getestet,
+// KI ueber injizierte Fakes -> kein Netzwerk, keine echten Kosten).
+async function c7UnderstandingChecks() {
+  const u = require(path.join(root, "lib/helmut/understanding.js"));
+  const { validateKnowledgeObject } = require(path.join(root, "lib/helmut/understanding-schema.js"));
+  const goldset = JSON.parse(fs.readFileSync(path.join(root, "scripts/goldset/understanding-goldset.json"), "utf8"));
+  const analysis = goldset.cases[0].expected; // gueltige Analyse als Fake-KI-Antwort
+
+  // (a) Deterministisches Clustering: gleicher Vorgang faltet zusammen, anderer trennt.
+  const clusters = u.clusterRawDocuments([
+    { title: "Rentenpaket 2026 im Kabinett beschlossen" },
+    { title: "Rentenpaket 2026 geht in erste Lesung" },
+    { title: "Mindestlohn-Kommission tagt in Berlin" }
+  ]);
+  check("C7 Cluster: gleicher Vorgang (Rentenpaket) -> 1 Cluster, Mindestlohn getrennt -> 2 gesamt",
+    clusters.length === 2, `clusters=${clusters.length}`);
+  const compound = u.clusterRawDocuments([
+    { title: "Bundestariftreuegesetz vorgelegt" },
+    { title: "Tariftreuegesetz stoesst auf Kritik" }
+  ]);
+  check("C7 Cluster: Komposit-Variante (Bundestariftreuegesetz ~ Tariftreuegesetz) -> 1 Cluster",
+    compound.length === 1, `clusters=${compound.length}`);
+  check("C7 Cluster: deriveVorgangId stabil aus Wurzel-Anker (vg-tariftreuegesetz)",
+    u.deriveVorgangId(compound[0]) === "vg-tariftreuegesetz", `id=${u.deriveVorgangId(compound[0])}`);
+
+  // (b) Prompt traegt die DSGVO-Regeln + Pflichtfelder, kein Volltext.
+  const prompt = u.buildUnderstandingPrompt({ documents: [{ title: "Rentenpaket", summary: "Kabinett beschliesst." }] });
+  check("C7 Prompt: DSGVO-Regeln eingebaut (nur oeffentlich-politische Akteure, keine Privatpersonen/Kontaktdaten)",
+    /oeffentlich handelnde politische Akteure/i.test(prompt) && /keine privaten Personenprofile|keine Adressen\/E-Mails/i.test(prompt)
+      && /mentioned_people/.test(prompt));
+
+  // (c) DSGVO-Whitelist beim Assemblieren: Fremdfelder/PII raus, Identitaet deterministisch.
+  const dirty = { ...analysis, email: "x@example.com", geheim: "intern", mentioned_people: ["a@b.de", "X".repeat(300), "Dr. Erika Mustermann"] };
+  const ko = u.assembleKnowledgeObject(dirty, { documents: [{}, {}] }, "vg-test");
+  check("C7 Assemble: Fremd-/PII-Felder werden NICHT uebernommen (kein email/geheim in KO)",
+    !("email" in ko) && !("geheim" in ko));
+  check("C7 Assemble: Identitaet deterministisch (id=ko-vg-test, status neu, source_document_count=2)",
+    ko.id === "ko-vg-test" && ko.vorgang_id === "vg-test" && ko.status === "neu" && ko.source_document_count === 2);
+  check("C7 Assemble/DSGVO: mentioned_people ohne E-Mail, Eintraege gekuerzt (<=120)",
+    !ko.mentioned_people.some((x) => x.includes("@")) && ko.mentioned_people.every((x) => x.length <= 120)
+      && ko.mentioned_people.includes("Dr. Erika Mustermann"), `mp=${JSON.stringify(ko.mentioned_people)}`);
+  check("C7 Assemble: Ergebnis validiert gegen das knowledge_objects-Schema", validateKnowledgeObject(ko).valid === true);
+
+  // --- Orchestrator mit injizierten Deps (kein Netzwerk/keine echte KI) -------
+  const saved = [];
+  const skips = [];
+  let understandCalls = 0;
+  const canSpendCalls = [];
+  const baseDeps = {
+    enabled: () => true,
+    aiEnabled: () => true,
+    acquireLock: () => ({ granted: true, active: true }),
+    releaseLock: () => {},
+    getExisting: () => null,
+    canSpend: (...args) => { canSpendCalls.push(args); return { allowed: true }; },
+    requestUnderstanding: () => { understandCalls += 1; return { ...analysis }; },
+    save: (k) => { saved.push(k); return { saved: true, id: k.id }; },
+    logSkip: (c) => skips.push(c)
+  };
+  const items = [{ title: "Rentenpaket 2026 im Kabinett beschlossen", url: "https://bmas.de/rente" }];
+
+  // (d) Flag/AI/Lock-Gates.
+  const off = await u.runUnderstandingShadow(items, { ...baseDeps, enabled: () => false });
+  check("C7 Gate: enabled=false -> skipped (v3-store-disabled), keine KI", off.skipped === true && off.reason === "v3-store-disabled");
+  const noAi = await u.runUnderstandingShadow(items, { ...baseDeps, aiEnabled: () => false });
+  check("C7 Gate: aiEnabled=false -> skipped (ai-disabled)", noAi.skipped === true && noAi.reason === "ai-disabled");
+  const locked = await u.runUnderstandingShadow(items, { ...baseDeps, acquireLock: () => ({ granted: false }) });
+  check("C7 Gate: Lock nicht erteilt -> skipped (understanding-locked), verhindert Doppel-KI",
+    locked.skipped === true && locked.reason === "understanding-locked");
+
+  // (e) Happy Path: 1 Vorgang -> 1 KI-Call -> 1 gespeichertes, valides KO (mandantenlos).
+  saved.length = 0; understandCalls = 0; canSpendCalls.length = 0;
+  const ok = await u.runUnderstandingShadow(items, baseDeps);
+  check("C7 Happy: genau 1 KI-Call fuer 1 Vorgang, 1 KO gespeichert",
+    understandCalls === 1 && saved.length === 1 && ok.counts && ok.counts.saved === 1, `calls=${understandCalls} saved=${saved.length}`);
+  check("C7 Happy: gespeichertes KO ist valide UND mandantenlos (kein user_id/politicianId)",
+    validateKnowledgeObject(saved[0]).valid === true && !("user_id" in saved[0]) && !("politicianId" in saved[0]));
+  check("C7 nicht-pro-Nutzer: canSpend wird GLOBAL ohne Nutzer-Argument aufgerufen",
+    canSpendCalls.length === 1 && canSpendCalls[0].length === 0);
+
+  // (f) Idempotenz: existiert das KO bereits -> KEIN KI-Call (einmal pro Vorgang).
+  understandCalls = 0;
+  const exists = await u.runUnderstandingShadow(items, { ...baseDeps, getExisting: () => ({ id: "ko-vg-rentenpaket" }) });
+  check("C7 Idempotenz: vorhandener Vorgang -> skipped-exists, KEIN KI-Call",
+    understandCalls === 0 && exists.counts && exists.counts["skipped-exists"] === 1);
+
+  // (g) Budget: canSpend verweigert -> kein KI-Call, sauberer Skip + Log.
+  understandCalls = 0; skips.length = 0;
+  const budget = await u.runUnderstandingShadow(items, { ...baseDeps, canSpend: () => ({ allowed: false, reason: "daily-llm-budget-reached" }) });
+  check("C7 Budget: canSpend=false -> kein KI-Call, skipped-budget geloggt",
+    understandCalls === 0 && budget.counts["skipped-budget"] === 1 && skips.includes("skipped-understanding-budget"));
+
+  // (h) Ungueltige KI-Antwort -> nicht speichern, sauber skippen + loggen, kein Crash.
+  saved.length = 0; skips.length = 0;
+  const invalid = await u.runUnderstandingShadow(items, { ...baseDeps, requestUnderstanding: () => ({ was_ist_passiert: "x" }) });
+  check("C7 Robustheit: ungueltige KI-Antwort -> nicht gespeichert, skipped-invalid geloggt (kein Crash)",
+    saved.length === 0 && invalid.counts["skipped-invalid"] === 1 && skips.includes("skipped-understanding-invalid"));
+
+  // (i) KI-Fehler (throw) -> sauberer Skip, kein Crash.
+  skips.length = 0;
+  const errored = await u.runUnderstandingShadow(items, { ...baseDeps, requestUnderstanding: () => { throw new Error("boom mit http body"); } });
+  check("C7 Robustheit: KI-Fehler -> skipped-error, kein Antwort-/Fehlertext im Log",
+    errored.counts["skipped-error"] === 1 && skips.includes("skipped-understanding-error")
+      && !skips.some((s) => s.includes("boom")));
+}
+
+// Datenmotor V3 — Commit C7a: Matching Engine (pgvector, deterministisch, KEINE KI).
+// Getestet wird der reine, offline-deterministische Kern + der Runner mit
+// injizierten Deps (kein Netzwerk, keine echte pgvector-Abfrage, keine KI).
+async function c7aMatchingChecks() {
+  const matching = require(path.join(root, "lib/helmut/matching.js"));
+  const storage = require(path.join(root, "lib/helmut/storage.js"));
+
+  const profile = {
+    id: "u-1", party: "SPD", faction: "SPD", committee: "Arbeit und Soziales",
+    focusTopics: ["Rente", "Mindestlohn"], constituency: "Berlin-Mitte"
+  };
+  const koRente = {
+    id: "ko-a", vorgang_id: "vg-rente", status: "neu", headline: "Rentenpaket 2026",
+    was_ist_passiert: "Kabinett beschliesst Rentenpaket.", parteien: ["SPD"],
+    ausschuesse: ["Arbeit und Soziales"], tags: ["Rente"]
+  };
+  const koKlima = {
+    id: "ko-b", vorgang_id: "vg-klima", status: "neu", headline: "Klimapaket",
+    was_ist_passiert: "Umweltausschuss beraet Klimaziele.", parteien: ["Grüne"],
+    ausschuesse: ["Umwelt"], tags: ["Klima"]
+  };
+  const koPending = { id: "ko-c", vorgang_id: "vg-pending", status: "pending", headline: "Noch offen" };
+
+  // (a) Determinismus (KEINE KI): identischer Vektor bei erneutem Aufruf.
+  const e1 = matching.embedProfile(profile);
+  const e2 = matching.embedProfile(profile);
+  check("C7a Embedding: deterministisch + korrekte Dimension (keine KI)",
+    Array.isArray(e1) && e1.length === matching.EMBEDDING_DIM && JSON.stringify(e1) === JSON.stringify(e2));
+  check("C7a Embedding: Selbst-Kosinus ~ 1 (normalisiert)",
+    Math.abs(matching.cosineSimilarity(e1, e2) - 1) < 1e-9);
+
+  // (b) Ranking + Pending-Ausschluss.
+  const ranked = matching.matchProfileToKnowledgeObjects(profile, [koKlima, koRente, koPending]);
+  check("C7a Ranking: relevanter Vorgang (Partei+Ausschuss+Thema) auf Rang 1",
+    ranked.length >= 1 && ranked[0].knowledge_object_id === "ko-a" && ranked[0].rank === 1,
+    `top=${ranked[0] && ranked[0].knowledge_object_id}`);
+  check("C7a Pending: status=pending (noch nicht verstanden) wird NICHT gematcht",
+    !ranked.some((r) => r.knowledge_object_id === "ko-c"));
+
+  // (c) Erklaerbarkeit: matched_features nennen Partei + Ausschuss, kurze Labels.
+  const top = ranked[0];
+  const types = (top.matched_features || []).map((f) => f.type);
+  check("C7a Erklaerbarkeit: matched_features enthalten partei UND ausschuss (kurze Labels <=120)",
+    types.includes("partei") && types.includes("ausschuss")
+      && top.matched_features.every((f) => String(f.value).length <= 120),
+    `feat=${JSON.stringify(top.matched_features)}`);
+
+  // (d) Filter Partei/Ausschuss/Wahlkreis (threshold=-1 isoliert den Filter vom Score).
+  const fParty = matching.matchProfileToKnowledgeObjects(profile, [koKlima, koRente], { filters: { parties: ["SPD"] }, threshold: -1 });
+  check("C7a Filter Partei: SPD -> nur SPD-Vorgang (Grüne faellt raus)",
+    fParty.length === 1 && fParty[0].knowledge_object_id === "ko-a", `n=${fParty.length}`);
+  const fComm = matching.matchProfileToKnowledgeObjects(profile, [koKlima, koRente], { filters: { committees: ["Umwelt"] }, threshold: -1 });
+  check("C7a Filter Ausschuss: Umwelt -> nur Umwelt-Vorgang",
+    fComm.length === 1 && fComm[0].knowledge_object_id === "ko-b", `n=${fComm.length}`);
+
+  // (e) profileHash: stabil, aendert sich bei Profiländerung.
+  check("C7a profileHash: stabil bei gleichem Profil, verschieden bei Aenderung",
+    matching.profileHash(profile) === matching.profileHash({ ...profile })
+      && matching.profileHash(profile) !== matching.profileHash({ ...profile, party: "CDU" }));
+
+  // (f) Keine KI: matching.js ruft kein ai-Modul.
+  const src = fs.readFileSync(path.join(root, "lib/helmut/matching.js"), "utf8");
+  check("C7a Keine KI: matching.js ruft KEIN ai-Modul (kein require('./ai'))",
+    !/require\(["']\.\/ai["']\)/.test(src));
+
+  // (g) Flag AUS (Default): Runner inert, kein Netzwerk.
+  const origFlag = process.env.HELMUT_V3_MATCHING;
+  try {
+    delete process.env.HELMUT_V3_MATCHING;
+    check("C7a Flag: v3MatchingEnabled() Default false", storage.v3MatchingEnabled() === false);
+    const off = await matching.runMatchingShadow({ profile });
+    check("C7a Flag aus -> runMatchingShadow skipped (matching-disabled), kein Netzwerk",
+      off && off.skipped === true && off.reason === "matching-disabled", `res=${JSON.stringify(off)}`);
+  } finally {
+    if (origFlag === undefined) delete process.env.HELMUT_V3_MATCHING; else process.env.HELMUT_V3_MATCHING = origFlag;
+  }
+
+  // (h) Runner mit injizierten Deps: gefakte pgvector-Suche -> erklaerbare Zeile.
+  const savedRows = [];
+  const res = await matching.runMatchingShadow({ profile, limit: 5 }, {
+    enabled: () => true,
+    saveProfileEmbedding: () => ({ saved: true }),
+    matchByEmbedding: () => ({ results: [{ id: "ko-a", vorgang_id: "vg-rente", similarity: 0.9 }] }),
+    listKnowledgeObjects: () => [koRente, koKlima],
+    saveMatchingResults: (rows) => { savedRows.push(...rows); return { saved: rows.length }; }
+  });
+  check("C7a Runner: 1 gespeicherte Match-Zeile mit matched_features, nutzergebunden + vorgang_id",
+    res && res.saved === 1 && savedRows.length === 1 && savedRows[0].knowledge_object_id === "ko-a"
+      && savedRows[0].user_id === "u-1" && savedRows[0].vorgang_id === "vg-rente"
+      && Array.isArray(savedRows[0].matched_features) && savedRows[0].matched_features.length > 0,
+    `res=${JSON.stringify(res)}`);
+}
+
+// Datenmotor V3 — Commit C7b: Briefing Engine (Jinja2-Mini-Renderer, KEINE KI).
+async function c7bBriefingEngineChecks() {
+  const tpl = require(path.join(root, "lib/helmut/template.js"));
+  const briefing = require(path.join(root, "lib/helmut/briefing.js"));
+  const storage = require(path.join(root, "lib/helmut/storage.js"));
+
+  // (a) Mini-Renderer: {{var}}, |default, {% if/else %}, {% for %}, loop.last.
+  const out = tpl.renderString(
+    "Hallo {{ name | default('Welt') }}!{% if items %} {{ items | length }}x:{% for i in items %} {{ i }}{% if not loop.last %},{% endif %}{% endfor %}{% else %} leer{% endif %}",
+    { name: "Helmut", items: ["a", "b"] }
+  );
+  check("C7b Renderer: {{var}}, |default, {% if %}, {% for %}, loop.last (kein Fremdpaket)",
+    out === "Hallo Helmut! 2x: a, b", `out=${JSON.stringify(out)}`);
+  const empty = tpl.renderString("{{ x | default('-') }}{% if y %}Y{% else %}N{% endif %}", {});
+  check("C7b Renderer: default-Filter + else greifen bei fehlenden Werten", empty === "-N", `out=${JSON.stringify(empty)}`);
+
+  // (b) Rollen-Aufloesung.
+  check("C7b Rolle: abgeordneter->mdb, referent->mitarbeiter, fraktion->fraktion, unbekannt->mdb",
+    briefing.resolveBriefingRole("abgeordneter") === "mdb"
+      && briefing.resolveBriefingRole("referent") === "mitarbeiter"
+      && briefing.resolveBriefingRole({ role: "fraktion" }) === "fraktion"
+      && briefing.resolveBriefingRole("irgendwas") === "mdb");
+
+  const profile = { id: "u-1", fullName: "Erika Muster", party: "SPD", committee: "Arbeit und Soziales", role: "abgeordneter" };
+  const koUnderstood = {
+    id: "ko-a", vorgang_id: "vg-rente", status: "neu", headline: "Rentenpaket 2026",
+    was_ist_passiert: "Kabinett beschliesst.", warum_wichtig: "Betrifft Millionen.",
+    zeitdruck: "hoch", handlungsempfehlung: "Position beziehen.",
+    parteien: ["SPD"], ausschuesse: ["Arbeit und Soziales"], tags: ["Rente"]
+  };
+  const koPending = { id: "ko-b", vorgang_id: "vg-neu", status: "pending", headline: "Neuer Vorgang" };
+  const matches = [
+    { knowledge_object_id: "ko-a", vorgang_id: "vg-rente", similarity: 0.9, matched_features: [{ type: "partei", value: "SPD" }, { type: "ausschuss", value: "Arbeit und Soziales" }] },
+    { knowledge_object_id: "ko-b", vorgang_id: "vg-neu", similarity: 0.3, matched_features: [] }
+  ];
+
+  // (c) Rendern mit intelligence (verstanden) UND ohne (pending).
+  const rendered = briefing.renderBriefing({ profile, knowledgeObjects: [koUnderstood, koPending], matches });
+  check("C7b Briefing: verstandener Vorgang zeigt Handlungsempfehlung + matched_features",
+    rendered.text.includes("Handlungsempfehlung: Position beziehen.") && rendered.text.includes("SPD (partei)"),
+    `role=${rendered.role} items=${rendered.itemCount}`);
+  check("C7b Briefing: pending-Vorgang zeigt 'Analyse steht noch aus' (keine erfundene Empfehlung), Rolle mdb",
+    rendered.text.includes("Analyse steht noch aus") && rendered.role === "mdb");
+
+  // (d) Keine KI.
+  const src = fs.readFileSync(path.join(root, "lib/helmut/briefing.js"), "utf8");
+  check("C7b Keine KI: briefing.js ruft KEIN ai-Modul (kein require('./ai'))",
+    !/require\(["']\.\/ai["']\)/.test(src));
+
+  // (e) Flag AUS (Default): Runner inert.
+  const origFlag = process.env.HELMUT_V3_BRIEFING;
+  try {
+    delete process.env.HELMUT_V3_BRIEFING;
+    check("C7b Flag: v3BriefingEnabled() Default false", storage.v3BriefingEnabled() === false);
+    const off = await briefing.runBriefingShadow({ profile });
+    check("C7b Flag aus -> runBriefingShadow skipped (briefing-disabled)",
+      off && off.skipped === true && off.reason === "briefing-disabled");
+  } finally {
+    if (origFlag === undefined) delete process.env.HELMUT_V3_BRIEFING; else process.env.HELMUT_V3_BRIEFING = origFlag;
+  }
+
+  // (f) Runner mit injizierten Deps: rendert aus C7a-Matches + speichert 1 Briefing.
+  const savedBriefings = [];
+  const res = await briefing.runBriefingShadow({ profile, slot: "morgens" }, {
+    enabled: () => true,
+    listKnowledgeObjects: () => [koUnderstood, koPending],
+    listMatchingResults: () => matches,
+    saveBriefing: (e) => { savedBriefings.push(e); return { saved: true, id: e.id }; }
+  });
+  check("C7b Runner: 1 Briefing gespeichert (payload.text + role), nutzergebunden",
+    res && res.saved === true && savedBriefings.length === 1 && savedBriefings[0].user_id === "u-1"
+      && savedBriefings[0].payload && typeof savedBriefings[0].payload.text === "string"
+      && savedBriefings[0].payload.role === "mdb",
+    `res=${JSON.stringify({ saved: res.saved, role: res.role, itemCount: res.itemCount })}`);
+}
+
+// Datenmotor V3 — Commit C7c: Lazy Understanding-Trigger (KEINE KI in dieser Stufe).
+async function c7cLazyUnderstandingChecks() {
+  const lazy = require(path.join(root, "lib/helmut/lazyUnderstanding.js"));
+  const storage = require(path.join(root, "lib/helmut/storage.js"));
+
+  const spdProfile = { id: "u-1", party: "SPD", committee: "Arbeit und Soziales", focusTopics: ["Rente"] };
+  const cluster = {
+    vorgang_id: "vg-rente", headline: "Rentenpaket 2026", summary: "Kabinett beschliesst Rentenpaket.",
+    parteien: ["SPD"], ausschuesse: ["Arbeit und Soziales"], tags: ["Rente"]
+  };
+
+  // (a) Schon verstanden / schon pending -> nichts tun.
+  check("C7c Entscheidung: vorhandenes KO (status!=pending) -> skip-exists",
+    lazy.decideLazyUnderstanding({ vorgangId: "vg-rente", existingKo: { status: "neu" } }).action === "skip-exists");
+  check("C7c Entscheidung: bereits pending -> skip-already-pending (kein Doppel-Vormerken)",
+    lazy.decideLazyUnderstanding({ vorgangId: "vg-rente", existingKo: { status: "pending" } }).action === "skip-already-pending");
+
+  // (b) Interesse steuert das Vormerken (matched_features -> interessiert).
+  const interested = lazy.decideLazyUnderstanding({ cluster, profiles: [spdProfile] });
+  check("C7c Interesse: passender Nutzer -> trigger-pending (interestedCount>=1)",
+    interested.action === "trigger-pending" && interested.interestedCount >= 1, `action=${interested.action}`);
+  const noInterest = lazy.decideLazyUnderstanding({
+    cluster: { vorgang_id: "vg-klima", headline: "Klima", summary: "Umwelt", parteien: ["Grüne"], ausschuesse: ["Umwelt"], tags: ["Klima"] },
+    profiles: [spdProfile], threshold: 0.5
+  });
+  check("C7c Interesse: kein passender Nutzer -> skip-no-interest (kein Vormerken)",
+    noInterest.action === "skip-no-interest", `action=${noInterest.action}`);
+
+  // (c) Keine KI: Datei importiert kein ai-Modul.
+  const src = fs.readFileSync(path.join(root, "lib/helmut/lazyUnderstanding.js"), "utf8");
+  check("C7c Keine KI: lazyUnderstanding.js macht KEINEN Modell-Call (kein require('./ai'))",
+    !/require\(["']\.\/ai["']\)/.test(src));
+
+  // (d) Flag AUS (Default): Runner inert.
+  const origFlag = process.env.HELMUT_V3_LAZY_UNDERSTANDING;
+  try {
+    delete process.env.HELMUT_V3_LAZY_UNDERSTANDING;
+    check("C7c Flag: v3LazyUnderstandingEnabled() Default false", storage.v3LazyUnderstandingEnabled() === false);
+    const off = await lazy.runLazyUnderstandingShadow({ cluster, profiles: [spdProfile] });
+    check("C7c Flag aus -> runLazyUnderstandingShadow skipped (lazy-understanding-disabled)",
+      off && off.skipped === true && off.reason === "lazy-understanding-disabled");
+  } finally {
+    if (origFlag === undefined) delete process.env.HELMUT_V3_LAZY_UNDERSTANDING; else process.env.HELMUT_V3_LAZY_UNDERSTANDING = origFlag;
+  }
+
+  // (e) Runner: interessierter, unverstandener Vorgang -> genau 1x als pending
+  //     vorgemerkt, OHNE KI-Call.
+  const pendingCalls = [];
+  const res = await lazy.runLazyUnderstandingShadow({ cluster, profiles: [spdProfile] }, {
+    enabled: () => true,
+    getExisting: () => null,
+    listProfiles: () => [spdProfile],
+    savePending: (vorgangId, meta) => { pendingCalls.push({ vorgangId, meta }); return { saved: true, id: `ko-${vorgangId}`, status: "pending" }; }
+  });
+  check("C7c Runner: interessierter Vorgang -> 1x pending vorgemerkt (kein KI-Call)",
+    res && res.triggered === true && res.action === "trigger-pending"
+      && pendingCalls.length === 1 && pendingCalls[0].vorgangId === "vg-rente",
+    `res=${JSON.stringify({ triggered: res.triggered, action: res.action })}`);
+
+  // (f) Idempotenz: existierendes KO -> savePending wird NICHT aufgerufen.
+  const idem = await lazy.runLazyUnderstandingShadow({ cluster, profiles: [spdProfile] }, {
+    enabled: () => true,
+    getExisting: () => ({ status: "neu" }),
+    listProfiles: () => [spdProfile],
+    savePending: () => { throw new Error("darf nicht aufgerufen werden"); }
+  });
+  check("C7c Runner: existierendes KO -> NICHT erneut vorgemerkt (idempotent, kein throw)",
+    idem && idem.triggered === false && idem.action === "skip-exists");
+}
+
 // Datenmotor V2 — Commit 2: echte Personalisierung / Cem-Entkopplung.
 // Deterministischer Unit-Test der reinen Merge-Funktion (kein Store noetig).
 function personalizationChecks() {
@@ -642,6 +987,10 @@ async function main() {
   await c5V3StoreChecks();
   await c6DedupDsgvoChecks();
   c7bGoldsetChecks();
+  await c7UnderstandingChecks();
+  await c7aMatchingChecks();
+  await c7bBriefingEngineChecks();
+  await c7cLazyUnderstandingChecks();
 
   const failed = results.filter((r) => !r.ok);
   console.log(`\n${results.length - failed.length}/${results.length} Checks bestanden.`);
