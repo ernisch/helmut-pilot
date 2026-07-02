@@ -2915,6 +2915,39 @@ async function handleDebugRequest(request, response, url) {
     });
   }
 
+  // GET /api/debug/admin-fix — Admin-User-Diagnose + Force-Reset auf HELMUT_ADMIN_PASSWORD.
+  // TEMPORAER: nach erfolgreichem Login entfernen.
+  if (url.pathname === "/api/debug/admin-fix") {
+    return handleAsync(response, async () => {
+      const email = accounts.normalizeEmail(process.env.HELMUT_ADMIN_EMAIL || "");
+      const password = process.env.HELMUT_ADMIN_PASSWORD || "";
+      const envOk = Boolean(email && password);
+      const user = email ? await accounts.getUserByEmailRaw(email).catch(() => null) : null;
+      const diagnosis = {
+        envAdminEmail: email || "(nicht gesetzt)",
+        envAdminPasswordLength: password.length,
+        envAdminPasswordHasQuotes: /^['"]|['"]$/.test(password),
+        envAdminPasswordHasWhitespace: password !== password.trim(),
+        envOk,
+        userFound: Boolean(user),
+        userActive: user?.active ?? null,
+        userRole: user?.role || null,
+        hashPresent: Boolean(user?.passwordHash),
+        saltPresent: Boolean(user?.passwordSalt),
+      };
+      if (!envOk) {
+        return { debug: true, step: "diagnose-only", diagnosis, fix: null, error: "HELMUT_ADMIN_EMAIL oder HELMUT_ADMIN_PASSWORD nicht gesetzt" };
+      }
+      if (!user) {
+        await accounts.createUser({ email, name: process.env.HELMUT_ADMIN_NAME || "Administrator", role: "admin", password });
+        const fresh = await accounts.getUserByEmailRaw(email).catch(() => null);
+        return { debug: true, step: "created", diagnosis, fix: { action: "created", userId: fresh?.id || null } };
+      }
+      await accounts.updateUser(user.id, { password, email, active: true });
+      return { debug: true, step: "updated", diagnosis, fix: { action: "password-reset", userId: user.id } };
+    });
+  }
+
   return sendNotFound(response);
 }
 
