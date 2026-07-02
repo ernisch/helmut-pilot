@@ -268,6 +268,56 @@ async function c1SafetyNetChecks() {
   }
 }
 
+// Datenmotor V3 — Commit C3: DIP als Primärquelle (hinter Flag, Default UNVERAENDERT).
+async function c3DipPrimaryChecks() {
+  const scheduler = require(path.join(root, "lib/helmut/scheduler.js"));
+  const dip = require(path.join(root, "lib/helmut/dip.js"));
+
+  const doc = {
+    id: "300123", title: "Gesetzentwurf zur Rente", url: "https://dserver.bundestag.de/btd/21/003/2100123.pdf",
+    date: "2026-07-01", urheber: ["Fraktion A"], ressort: ["BMAS"], type: "Gesetzentwurf", wahlperiode: "21"
+  };
+
+  const origFlag = process.env.HELMUT_DIP_PRIMARY;
+  const origKey = process.env.DIP_API_KEY;
+  try {
+    // (a) Flag AUS -> Mapping identisch zu bisher (kein linkType, keine priority).
+    delete process.env.HELMUT_DIP_PRIMARY;
+    check("C3 DIP: dipPrimaryEnabled() Default false (Flag aus)", scheduler.dipPrimaryEnabled() === false);
+    const plain = scheduler.dipDocToRawItem(doc, { primary: false });
+    check("C3 DIP: Default-Mapping unveraendert (id/hash/sourceType/confidence, KEIN linkType/priority)",
+      plain.id === "dip-300123" && plain.hash === "dip-300123" && plain.sourceId === "dip"
+        && plain.sourceType === "bundestag" && plain.confidence === "high"
+        && plain.linkType === undefined && plain.priority === undefined,
+      `keys=${JSON.stringify(Object.keys(plain).sort())}`);
+
+    // (b) Flag AN -> Primaerquelle: Direktlink + hohe Prioritaet.
+    const primary = scheduler.dipDocToRawItem(doc, { primary: true });
+    check("C3 DIP: Primary-Mapping setzt linkType=direct + priority 95 (ueberlebt Deckel, wird nicht ausgeblendet)",
+      primary.linkType === "direct" && primary.priority === 95 && primary.sourcePriority === 95
+        && primary.confidence === "high" && primary.sourceType === "bundestag",
+      `linkType=${primary.linkType} priority=${primary.priority}`);
+
+    // (c) Primary ohne echten Direktlink -> KEIN linkType (kein falsches "direct").
+    const noUrl = scheduler.dipDocToRawItem({ id: "9", title: "Ohne Link", url: "" }, { primary: true });
+    check("C3 DIP: Primary ohne http-URL setzt KEIN linkType (kein falsches 'direct')",
+      noUrl.linkType === undefined && noUrl.priority === 95, `linkType=${noUrl.linkType}`);
+
+    // (d) Fail-safe: ohne DIP_API_KEY crasht nichts, alles leer.
+    delete process.env.DIP_API_KEY;
+    const rel = await dip.getRelevantParliamentaryItems({ committees: ["Arbeit und Soziales"] });
+    check("C3 DIP: ohne DIP_API_KEY -> {enabled:false, items:[]} (kein Crash, kein Netzwerk)",
+      rel && rel.enabled === false && Array.isArray(rel.items) && rel.items.length === 0,
+      `rel=${JSON.stringify(rel)}`);
+    const raw = await scheduler.fetchDipAsRawItems({ committees: ["Arbeit und Soziales"] });
+    check("C3 DIP: fetchDipAsRawItems ohne Key -> [] (Crawl laeuft normal weiter)",
+      Array.isArray(raw) && raw.length === 0, `n=${raw.length}`);
+  } finally {
+    if (origFlag === undefined) delete process.env.HELMUT_DIP_PRIMARY; else process.env.HELMUT_DIP_PRIMARY = origFlag;
+    if (origKey === undefined) delete process.env.DIP_API_KEY; else process.env.DIP_API_KEY = origKey;
+  }
+}
+
 // Datenmotor V2 — Commit 2: echte Personalisierung / Cem-Entkopplung.
 // Deterministischer Unit-Test der reinen Merge-Funktion (kein Store noetig).
 function personalizationChecks() {
@@ -398,6 +448,7 @@ async function main() {
   await llmLoggingChecks();
   await llmBudgetChecks();
   await c1SafetyNetChecks();
+  await c3DipPrimaryChecks();
 
   const failed = results.filter((r) => !r.ok);
   console.log(`\n${results.length - failed.length}/${results.length} Checks bestanden.`);
