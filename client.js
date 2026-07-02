@@ -2421,8 +2421,8 @@ function helmutButtonConfig(state, actionId) {
   const id = escapeHtml(actionId || "");
   const cfg = {
     reagieren:   { primary: "Jetzt reagieren",        pAttr: id ? `data-detail="${id}"` : "data-run-crawl",             secondary: "Antwort vorbereiten",   sAttr: id ? `data-communication="${id}"` : "data-run-crawl" },
-    vorbereiten: { primary: "Linie vorbereiten",       pAttr: id ? `data-communication="${id}"` : `data-view="office"`,  secondary: "Quellen prüfen",        sAttr: "data-run-crawl" },
-    beobachten:  { primary: "Linie vorbereiten",       pAttr: id ? `data-communication="${id}"` : `data-view="office"`,  secondary: "Beobachten bestätigen", sAttr: `data-view="lage"` },
+    vorbereiten: { primary: "Jetzt Entwurf erstellen",  pAttr: id ? `data-communication="${id}"` : `data-view="office"`,  secondary: "Quellen prüfen",        sAttr: "data-run-crawl" },
+    beobachten:  { primary: "Jetzt Entwurf erstellen",  pAttr: id ? `data-communication="${id}"` : `data-view="office"`,  secondary: "Beobachten bestätigen", sAttr: `data-view="lage"` },
     ignorieren:  { primary: "Als erledigt markieren",  pAttr: id ? `data-lage-done="${id}"` : "data-run-crawl",          secondary: "Quellen prüfen",        sAttr: "data-run-crawl" },
   };
   return cfg[state] || cfg.beobachten;
@@ -2477,13 +2477,18 @@ function renderHelmutThinkingView() {
 function renderHelmutAssessmentView() {
   const assessment = buildHelmutAssessment();
   if (helmutTypingActive) return renderHelmutTypingResult(assessment);
-  const actionId = decisions[0]?.id || "";
+  const top = decisions[0];
+  const actionId = top?.id || "";
   const state = helmutDecisionState(assessment);
   const btn = helmutButtonConfig(state, actionId);
   const firstName = (profile?.fullName || "").split(" ")[0];
   const whyLine = assessment.heroWhy || heroText(assessment.whyImportant);
   const riskLine = assessment.heroRisk || heroText(assessment.risk);
   const nextLine = assessment.heroNextStep || heroText(assessment.recommendation);
+  const deadlineText = top?.deadline
+    ? `Antwort erforderlich bis: ${formatDeadlineDate(top.deadline)}`
+    : "Keine Frist gesetzt";
+  const srcLine = helmutBriefingSourceLine(top);
   return `
     <section class="helmut-assessment" aria-label="Helmuts Einschätzung">
       <div class="helmut-assessment-head">
@@ -2531,6 +2536,8 @@ function renderHelmutAssessmentView() {
 
       <div class="helmut-assessment-foot">
         <small>Aktualisiert: ${escapeHtml(formatBriefingDate(briefing.generatedAt || briefing.date || new Date().toISOString()))}</small>
+        <small class="helmut-deadline">${escapeHtml(deadlineText)}</small>
+        ${srcLine ? `<small class="helmut-source">${escapeHtml(srcLine)}</small>` : ""}
         ${renderRefreshButton()}
       </div>
     </section>
@@ -7446,6 +7453,32 @@ function formatBriefingDate(dateString) {
     hour: "2-digit",
     minute: "2-digit"
   }).format(date);
+}
+
+function formatDeadlineDate(dateString) {
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return dateString || "—";
+  return new Intl.DateTimeFormat("de-DE", {
+    timeZone: "Europe/Berlin",
+    day: "2-digit",
+    month: "long",
+    year: "numeric"
+  }).format(date);
+}
+
+function helmutBriefingSourceLine(item) {
+  if (!item) return "";
+  const sources = Array.isArray(item.sources) ? item.sources : [];
+  const primary = item.primarySource || sources[0];
+  if (!primary && !item.sourceName) return "";
+  const primaryName = primary?.sourceName || item.sourceName || "";
+  const dateStr = primary?.publishedAt || primary?.retrievedAt || item.publishedAt || item.retrievedAt || "";
+  const dateLabel = dateStr ? `, ${sourceTimeLabel(dateStr)}` : "";
+  if (sources.length > 1) {
+    const names = sources.map((s) => s.sourceName).filter(Boolean).slice(0, 3).join(", ");
+    return `Quellen: ${names}`;
+  }
+  return primaryName ? `Quelle: ${primaryName}${dateLabel}` : "";
 }
 
 function formatBerlinNow() {
