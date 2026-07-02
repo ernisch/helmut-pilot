@@ -370,6 +370,80 @@ async function c5V3StoreChecks() {
   }
 }
 
+// Datenmotor V3 — Commit C6: kanonische Dedup + DSGVO-Datenminimierung.
+async function c6DedupDsgvoChecks() {
+  const dedup = require(path.join(root, "lib/helmut/dedup.js"));
+  const scheduler = require(path.join(root, "lib/helmut/scheduler.js"));
+
+  // (a) Kanonische URL: Tracking/Fragment/Trailing-Slash weg, Host klein + www weg.
+  const canon = dedup.canonicalizeUrl("https://WWW.Example.com/Artikel/?utm_source=x&id=5&utm_medium=y#top");
+  check("C6 Dedup: canonicalizeUrl entfernt utm/Fragment/Trailing-Slash, Host klein+www weg",
+    canon === "https://example.com/Artikel?id=5", `canon=${canon}`);
+  check("C6 Dedup: canonicalizeUrl auf Nicht-http -> '' (kein Crash)",
+    dedup.canonicalizeUrl("javascript:alert(1)") === "" && dedup.canonicalizeUrl("") === "");
+
+  // (b) contentHash: deterministisch; gleiche kanonische URL -> gleicher Hash.
+  const h1 = dedup.contentHash({ url: "https://example.com/a?utm_source=z" });
+  const h2 = dedup.contentHash({ url: "https://example.com/a" });
+  check("C6 Dedup: contentHash ist URL-kanonisch & deterministisch (Tracking egal)", h1 === h2 && h1.length === 64);
+  const hTitle = dedup.contentHash({ url: "", title: "Rente steigt", publishedAt: "2026-07-01T09:00:00Z" });
+  check("C6 Dedup: contentHash faellt bei leerer URL auf Titel+Tag zurueck", typeof hTitle === "string" && hTitle.length === 64);
+
+  // (c) DSGVO-Datenminimierung: KEIN Volltext/excerpt/imageUrl/author in raw_documents.
+  const row = dedup.toRawDocumentRow({
+    id: "x1", title: "Kabinett beschliesst Rentenpaket",
+    summary: "S".repeat(500), content: "GEHEIMER VOLLTEXT MIT PERSONENDATEN", excerpt: "langer excerpt",
+    imageUrl: "https://img", author: "Max Mustermann", url: "https://taz.de/rente/?utm_source=news",
+    sourceName: "taz", sourceId: "taz", sourceType: "media", confidence: "high", linkType: "direct",
+    publishedAt: "2026-07-01T09:00:00Z"
+  });
+  const rowKeys = Object.keys(row);
+  const forbidden = ["content", "excerpt", "imageUrl", "author", "body", "text"];
+  check("C6 DSGVO: toRawDocumentRow speichert KEINEN Volltext/excerpt/imageUrl/author",
+    forbidden.every((k) => !(k in row)) && !("content" in row.raw) && !("excerpt" in row.raw),
+    `keys=${JSON.stringify(rowKeys)}`);
+  check("C6 DSGVO: summary ist gekuerzt (Datenminimierung, kein Volltext)",
+    typeof row.summary === "string" && row.summary.length <= dedup.SUMMARY_MAX, `len=${row.summary.length}`);
+  check("C6 DSGVO: Pflicht-Identitaet vorhanden (id=rd-<hash>, content_hash, canonical_url, title)",
+    row.id.startsWith("rd-") && typeof row.content_hash === "string" && row.canonical_url === "https://taz.de/rente"
+      && row.title === "Kabinett beschliesst Rentenpaket");
+  check("C6 DSGVO: raw enthaelt NUR nicht-personenbezogene Metadaten (sourcePriority/originalUrl)",
+    JSON.stringify(Object.keys(row.raw).sort()) === JSON.stringify(["originalUrl", "sourcePriority"]));
+
+  // (d) Cross-Source-Dedup: gleiche Story aus 2 Quellen -> 1 Zeile, direkter Link gewinnt.
+  const a = dedup.toRawDocumentRow({ title: "Rente", url: "https://x.de/rente", linkType: "direct", confidence: "high" });
+  const b = dedup.toRawDocumentRow({ title: "Rente", url: "https://x.de/rente?utm_source=q", linkType: "publisher", confidence: "medium" });
+  const merged = dedup.dedupeRawDocuments([a, b]);
+  check("C6 Dedup: Cross-Source-Dedup faltet gleiche Story auf 1 Zeile (direkter Link gewinnt)",
+    merged.length === 1 && merged[0].link_type === "direct", `n=${merged.length} link=${merged[0] && merged[0].link_type}`);
+
+  // (e) Schatten-Persist ist ohne V3-Flag ein No-Op (kein Netzwerk, kein Crash).
+  const origV3 = process.env.HELMUT_V3_STORE;
+  try {
+    delete process.env.HELMUT_V3_STORE;
+    const res = await scheduler.persistRawDocumentsShadow([a, b]);
+    check("C6 Schatten: persistRawDocumentsShadow ohne HELMUT_V3_STORE -> No-Op (skipped, kein Netzwerk)",
+      res && res.skipped === true && res.persisted === 0, `res=${JSON.stringify(res)}`);
+  } finally {
+    if (origV3 === undefined) delete process.env.HELMUT_V3_STORE; else process.env.HELMUT_V3_STORE = origV3;
+  }
+
+  // (f) DSGVO-Guardrails im Schema: Trennung public/user + Kostenlog ohne Prompt-Inhalte.
+  const schema = fs.readFileSync(path.join(root, "supabase/schema.sql"), "utf8");
+  const block = (table) => {
+    const start = schema.indexOf(`create table if not exists public.${table} (`);
+    return start < 0 ? "" : schema.slice(start, schema.indexOf(");", start));
+  };
+  const rawDocBlock = block("raw_documents");
+  const koBlock = block("knowledge_objects");
+  check("C6 DSGVO: raw_documents & knowledge_objects sind PUBLIC (kein user_id -> saubere Trennung)",
+    rawDocBlock && koBlock && !/\buser_id\b/.test(rawDocBlock) && !/\buser_id\b/.test(koBlock));
+  const llmBlock = block("llm_usage");
+  check("C6 DSGVO: llm_usage (Kostenlog) speichert KEINE Prompt-/Antwort-Inhalte",
+    llmBlock && !/response|messages|prompt\s+text|content\s+text|input\s+text|output\s+text/i.test(llmBlock),
+    "nur Tokens/Kosten/Modell/call_type — keine Prompt-Texte.");
+}
+
 // Datenmotor V2 — Commit 2: echte Personalisierung / Cem-Entkopplung.
 // Deterministischer Unit-Test der reinen Merge-Funktion (kein Store noetig).
 function personalizationChecks() {
@@ -502,6 +576,7 @@ async function main() {
   await c1SafetyNetChecks();
   await c3DipPrimaryChecks();
   await c5V3StoreChecks();
+  await c6DedupDsgvoChecks();
 
   const failed = results.filter((r) => !r.ok);
   console.log(`\n${results.length - failed.length}/${results.length} Checks bestanden.`);
