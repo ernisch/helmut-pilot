@@ -8046,6 +8046,67 @@ body {
 .cost-bar-fill--usd { background: #3b82f6; }
 .cost-bar-fill--eur { background: #22c55e; }
 
+/* Cost bar name variant without max-width truncation (for engine chart) */
+.cost-bar-name--wide { max-width: none; }
+
+/* Percentage share badge in engine chart */
+.cost-share {
+  display: inline-block;
+  margin-left: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(111, 143, 247, .12);
+  color: var(--accent-ink, #6f8ff7);
+  border-radius: 10px;
+  padding: 1px 5px;
+}
+
+/* Charts row: Engine (left) + User costs (right) */
+.admin-charts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* Crawl stats card */
+.admin-crawl-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+.admin-crawl-metric {
+  background: rgba(255, 255, 255, .02);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.admin-crawl-num {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -.02em;
+  color: var(--text);
+  line-height: 1;
+}
+.admin-crawl-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--muted-2);
+  font-weight: 600;
+}
+.admin-crawl-errors {
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--danger, #ff5967);
+  padding: 6px 10px;
+  background: rgba(255, 89, 103, .06);
+  border-radius: 6px;
+}
+
 /* Bottom log row */
 .admin-bottom-row {
   display: grid;
@@ -8128,6 +8189,7 @@ body {
   .admin-stats-row--5 {
     grid-template-columns: repeat(2, 1fr);
   }
+  .admin-charts-row { grid-template-columns: 1fr; }
   .admin-col-secondary {
     flex-direction: column;
   }

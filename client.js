@@ -1054,6 +1054,13 @@ function renderAdminView() {
         </div>
       </div>
 
+      <div class="admin-charts-row">
+        ${renderAdminEngineChart(data.aiStats)}
+        ${renderAdminCostsCard(data.costs)}
+      </div>
+
+      ${renderAdminCrawlStats(data.crawlReport)}
+
       <div class="admin-body">
         <div class="admin-col-primary">
 
@@ -1218,7 +1225,6 @@ function renderAdminView() {
             </div>
           </div>
 
-          ${renderAdminCostsCard(data.costs)}
 
         </div>
       </div>
@@ -1342,6 +1348,92 @@ function renderAdminCostsCard(costs) {
         <span class="cost-legend-rate">1 USD = ${USD_TO_EUR.toFixed(2)} EUR</span>
       </div>
       <div class="cost-bar-list">${bars}</div>
+    </div>`;
+}
+
+function renderAdminEngineChart(aiStats) {
+  if (!aiStats?.perCategory) return "";
+  const ENGINES = [
+    { key: "intelligence", label: "Intelligence" },
+    { key: "briefing", label: "Briefing" },
+    { key: "office", label: "Office" }
+  ];
+  const total = typeof aiStats.totalCostUsd === "number" ? aiStats.totalCostUsd : 0;
+  const cat = aiStats.perCategory || {};
+  const maxCost = Math.max(...ENGINES.map((e) => cat[e.key]?.estimatedCostUsd || 0), 0.000001);
+
+  const bars = ENGINES.map(({ key, label }) => {
+    const entry = cat[key] || { calls: 0, estimatedCostUsd: 0 };
+    const usd = typeof entry.estimatedCostUsd === "number" ? entry.estimatedCostUsd : 0;
+    const eur = usd * USD_TO_EUR;
+    const sharePct = total > 0 ? Math.round((usd / total) * 100) : 0;
+    const barPct = Math.round((usd / maxCost) * 100);
+    const eurBarPct = Math.round(barPct * USD_TO_EUR);
+    return `
+    <div class="cost-bar-item">
+      <div class="cost-bar-head">
+        <span class="cost-bar-name cost-bar-name--wide">${escapeHtml(label)}</span>
+        <span class="cost-bar-amounts">
+          <span class="cost-usd">$${usd.toFixed(4)}</span>
+          <span class="cost-sep">|</span>
+          <span class="cost-eur">€${eur.toFixed(4)}</span>
+          <span class="cost-share">${sharePct}%</span>
+        </span>
+      </div>
+      <div class="cost-bar-track">
+        <div class="cost-bar-fill cost-bar-fill--usd" style="width:${barPct}%"></div>
+        <div class="cost-bar-fill cost-bar-fill--eur" style="width:${eurBarPct}%"></div>
+      </div>
+    </div>`;
+  }).join("");
+
+  return `
+    <div class="admin-card">
+      <h2 class="admin-section-title">Kosten pro Engine <span class="admin-stat-period">(${aiStats.periodDays ?? 30}d · ${aiStats.totalCalls ?? 0} Calls)</span></h2>
+      <div class="cost-legend">
+        <span class="cost-legend-dot cost-legend-dot--usd"></span><span>USD</span>
+        <span class="cost-legend-dot cost-legend-dot--eur"></span><span>EUR</span>
+        <span class="cost-legend-rate">1 USD = ${USD_TO_EUR.toFixed(2)} EUR</span>
+      </div>
+      <div class="cost-bar-list">${bars || '<p class="empty-state" style="font-size:12px;margin:8px 0">Noch keine KI-Calls.</p>'}</div>
+    </div>`;
+}
+
+function renderAdminCrawlStats(crawlReport) {
+  if (!crawlReport || crawlReport.noData) {
+    return `
+    <div class="admin-card admin-crawl-card">
+      <h2 class="admin-section-title">Letzter Crawl</h2>
+      <p class="empty-state">Kein Crawl-Lauf vorhanden.</p>
+    </div>`;
+  }
+  const scanned = crawlReport.scannedArticles ?? 0;
+  const saved = crawlReport.deduplicatedArticles ?? 0;
+  const dupes = Math.max(0, scanned - saved);
+  const crawlDate = crawlReport.lastCrawlAt
+    ? new Date(crawlReport.lastCrawlAt).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
+    : "—";
+  const metrics = [
+    { label: "Gescannt", value: scanned },
+    { label: "Duplikate", value: dupes },
+    { label: "Neu", value: saved },
+    { label: "Vorgänge", value: crawlReport.newVorgaenge ?? "—" },
+    { label: "Neue KOs", value: crawlReport.newKnowledgeObjects ?? "—" },
+    { label: "Dauer", value: crawlReport.durationSec !== null && crawlReport.durationSec !== undefined ? `${crawlReport.durationSec}s` : "—" }
+  ];
+  const metricCards = metrics.map((m) => `
+    <div class="admin-crawl-metric">
+      <span class="admin-crawl-num">${escapeHtml(String(m.value))}</span>
+      <span class="admin-crawl-label">${escapeHtml(m.label)}</span>
+    </div>`).join("");
+  const errorLine = crawlReport.errorCount > 0
+    ? `<p class="admin-crawl-errors">${crawlReport.errorCount} Fehler: ${(crawlReport.errors || []).slice(0, 3).map((e) => escapeHtml(e.sourceName || e.error || "")).join(", ")}</p>`
+    : "";
+  return `
+    <div class="admin-card admin-crawl-card">
+      <h2 class="admin-section-title">Letzter Crawl <span class="admin-stat-period">${escapeHtml(crawlDate)} · ${escapeHtml(crawlReport.mode || "full")}</span></h2>
+      <div class="admin-crawl-grid">${metricCards}</div>
+      ${errorLine}
     </div>`;
 }
 

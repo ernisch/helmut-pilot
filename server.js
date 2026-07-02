@@ -2426,7 +2426,7 @@ async function defaultPoliticianIdForUser(user, allowed) {
 }
 
 async function buildAdminOverview() {
-  const [users, profiles, mandates, assignments, errors, audit, feedback, costsRaw, koCount] = await Promise.all([
+  const [users, profiles, mandates, assignments, errors, audit, feedback, costsRaw, koCount, aiStats, crawlReport] = await Promise.all([
     accounts.listUsers(),
     listProfiles(),
     listFullProfiles(),
@@ -2435,7 +2435,9 @@ async function buildAdminOverview() {
     accounts.listAuditEvents(50),
     listFeedback(80),
     getAdminCostsPerUser({ days: 30 }),
-    getKnowledgeObjectCount()
+    getKnowledgeObjectCount(),
+    getAdminStatsCosts({ days: 30 }),
+    getAdminStatsCrawlReport()
   ]);
   const storage = getStorageStatus();
   const storeSummary = await getStoreSummary();
@@ -2473,6 +2475,13 @@ async function buildAdminOverview() {
     assignments,
     feedback,
     costs,
+    aiStats: {
+      totalCostUsd: aiStats.totalCostUsd,
+      totalCalls: aiStats.totalCalls,
+      perCategory: aiStats.perCategory,
+      periodDays: aiStats.periodDays
+    },
+    crawlReport,
     system: {
       storage,
       store: storeSummary,
