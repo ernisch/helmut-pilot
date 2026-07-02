@@ -9,7 +9,7 @@ const { cemInceProfile, demoRawItems, demoSources, generateBriefing } = require(
 const { getLatestOrDemoBriefing, runDailyPipeline, runLageCheck, runMorningBriefing, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { personalizeBriefing } = require("./lib/helmut/personalization");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getAdminCostsPerUser, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, listMatchingResults, v3BriefingEnabled, releasePipelineLock, understandingLockEnabled } = require("./lib/helmut/storage");
+const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getAdminCostsPerUser, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, listMatchingResults, v3BriefingEnabled, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed } = require("./lib/helmut/storage");
 const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled, activeModelName, isEngineV2Enabled } = require("./lib/helmut/ai");
 const { pushStatus, sendBriefingReadyPush, sendLageChangePush, sendPushToPolitician } = require("./lib/helmut/push");
 const auth = require("./lib/helmut/auth");
@@ -3172,6 +3172,76 @@ async function handleDebugRequest(request, response, url) {
     });
   }
 
+  // GET /api/debug/azure-ping?secret=... — prüft ob der aktuelle AZURE_OPENAI_KEY gültig ist.
+  // Kein KI-Call, kein Token-Verbrauch: listet Azure-Deployments (read-only REST).
+  // Antwort: { ok: true, deployments: [...] } oder { ok: false, httpStatus: 401, hint: "..." }
+  if (url.pathname === "/api/debug/azure-ping") {
+    return handleAsync(response, async () => {
+      const keyRaw = process.env.AZURE_OPENAI_KEY || "";
+      const endpoint = String(process.env.AZURE_OPENAI_ENDPOINT || "").replace(/\/+$/, "");
+      const deployment = process.env.AZURE_OPENAI_DEPLOYMENT || "(nicht gesetzt)";
+      const keySet = keyRaw.length > 0;
+      const endpointSet = endpoint.length > 0;
+      // Letzten 4 Zeichen zeigen (nie den vollen Key).
+      const keyPrefix = keySet ? `...${keyRaw.slice(-4)}` : "(nicht gesetzt)";
+
+      if (!keySet || !endpointSet) {
+        return {
+          debug: true, ok: false,
+          reason: !keySet ? "AZURE_OPENAI_KEY nicht gesetzt" : "AZURE_OPENAI_ENDPOINT nicht gesetzt",
+          keyPrefix, endpoint: endpoint || null, deployment
+        };
+      }
+
+      // Azure Deployments-Liste: keine Tokens, nur Auth-Check.
+      let httpStatus = null;
+      let deployments = null;
+      let errorBody = null;
+      try {
+        const res = await fetch(`${endpoint}/openai/deployments?api-version=2024-02-01`, {
+          headers: { "api-key": keyRaw, "Content-Type": "application/json" },
+          signal: AbortSignal.timeout(8000)
+        });
+        httpStatus = res.status;
+        if (res.ok) {
+          const data = await res.json().catch(() => ({}));
+          deployments = (data.data || []).map((d) => d.id || d.model || "(unbekannt)");
+        } else {
+          errorBody = (await res.text().catch(() => "")).slice(0, 200);
+        }
+      } catch (err) {
+        return {
+          debug: true, ok: false, keyPrefix, endpoint, deployment,
+          error: String(err && err.message || "fetch-fehler").slice(0, 120)
+        };
+      }
+
+      const hint = httpStatus === 401
+        ? "Key ungültig oder abgelaufen → in Vercel erneuern (siehe /api/debug/azure-ping Antwort für Schritte)."
+        : httpStatus === 403
+          ? "Key hat keine Berechtigung für diesen Endpoint."
+          : httpStatus === 404
+            ? "Endpoint falsch. AZURE_OPENAI_ENDPOINT prüfen (Format: https://<resource>.openai.azure.com)."
+            : httpStatus >= 500
+              ? "Azure Serverfehler — kurz warten und erneut prüfen."
+              : null;
+
+      console.log(`[debug/azure-ping] keyPrefix=${keyPrefix} endpoint=${endpoint} httpStatus=${httpStatus} deployments=${deployments ? deployments.length : "n/a"}`);
+
+      return {
+        debug: true,
+        ok: httpStatus === 200,
+        httpStatus,
+        keyPrefix,
+        endpoint,
+        deployment,
+        deployments,
+        ...(hint ? { hint } : {}),
+        ...(errorBody ? { errorBody } : {})
+      };
+    });
+  }
+
   // GET /api/debug/cluster?secret=... — Clustering-Trichter diagnostizieren (rein lesend).
   // Zeigt wie viele raw_documents zu Vorgaengen geclustert werden, welche KOs bereits
   // existieren und ob C7c/C8 aktiv sind. KEIN KI-Call, KEIN Write.
@@ -3368,40 +3438,32 @@ async function handleDebugRequest(request, response, url) {
   }
 
   // GET /api/debug/reset-failed-kos?secret=...
-  // Setzt alle KOs mit understanding_status='failed' zurueck auf 'pending' und
-  // startet dann den Understanding-Trigger (C8). Loest den Zustand auf, bei dem
-  // KOs dauerhaft als 'failed' geparkt sind und nie verarbeitet werden.
-  // TEMP: nach erstem erfolgreichen Verarbeitungslauf entfernen.
+  // SQL-Aequivalent: UPDATE knowledge_objects SET understanding_status='pending'
+  // WHERE understanding_status='failed' — dann C8-Trigger mit erweitertem rawDocs-Fenster.
+  // Loest den Zustand auf, bei dem failed KOs nie verarbeitet werden (listPendingKnowledgeObjects
+  // filtert sie explizit aus). Bulk-PATCH ohne Limit: trifft alle failed KOs in der DB.
   if (url.pathname === "/api/debug/reset-failed-kos") {
     return handleAsync(response, async () => {
-      // 1. Alle KOs laden, failed herausfiltern
-      const allKos = await listKnowledgeObjects({ limit: 500 }).catch((e) => {
-        console.error("[debug/reset-failed-kos] listKnowledgeObjects fehlgeschlagen:", e.message);
-        return [];
-      });
-      const failedKos = allKos.filter((k) => k && k.understanding_status === "failed");
+      // Vor dem Reset: wie viele KOs waren failed?
+      const allKosBefore = await listKnowledgeObjects({ limit: 500 }).catch(() => []);
+      const failedCount = allKosBefore.filter((k) => k && k.understanding_status === "failed").length;
 
-      // 2. Failed-KOs auf understanding_status='pending' zuruecksetzen
-      const resets = await Promise.all(
-        failedKos.map((k) => saveKnowledgeObject({ id: k.id, vorgang_id: k.vorgang_id, understanding_status: "pending" })
-          .catch((e) => ({ skipped: true, reason: e.message })))
-      );
-      const resetOk = resets.filter((r) => r && r.saved).length;
-      const resetSkipped = resets.filter((r) => r && r.skipped).length;
+      // Bulk-PATCH: alle failed KOs auf pending (ohne Row-Limit, SQL-Äquivalent)
+      const resetResult = await bulkResetUnderstandingFailed().catch((e) => ({ skipped: true, reason: e.message }));
 
-      // 3. Understanding-Trigger starten (laedt rawDocs + verarbeitet pending KOs)
-      const rawDocs = await listRecentRawDocuments(500).catch(() => []);
+      // C8-Trigger: rawDocs mit erweitertem Fenster (90 Tage / 2000 Docs) laden —
+      // erhoeht die Chance, die Source-Dokumente der gerade reseteten KOs zu finden.
+      const rawDocs = await listRecentRawDocuments(2000, 90).catch(() => []);
       const result = await runPendingUnderstandingShadow(rawDocs).catch((e) => ({
-        skipped: true,
-        reason: e.message
+        skipped: true, reason: e.message
       }));
 
-      console.log(`[debug/reset-failed-kos] total=${allKos.length} failed=${failedKos.length} resetOk=${resetOk} resetSkipped=${resetSkipped} rawDocs=${rawDocs.length}`);
+      console.log(`[debug/reset-failed-kos] failedBefore=${failedCount} reset=${JSON.stringify(resetResult)} rawDocs=${rawDocs.length}`);
 
       return {
         debug: true,
-        knowledgeObjects: { total: allKos.length, failed: failedKos.length },
-        resets: { ok: resetOk, skipped: resetSkipped },
+        failedBefore: failedCount,
+        reset: resetResult,
         rawDocsLoaded: rawDocs.length,
         understanding: result
       };
