@@ -9,7 +9,7 @@ const { cemInceProfile, demoRawItems, demoSources, generateBriefing } = require(
 const { getLatestOrDemoBriefing, runDailyPipeline, runLageCheck, runMorningBriefing, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { personalizeBriefing } = require("./lib/helmut/personalization");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getAdminCostsPerUser, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments } = require("./lib/helmut/storage");
+const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getAdminCostsPerUser, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments } = require("./lib/helmut/storage");
 const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled, activeModelName, isEngineV2Enabled } = require("./lib/helmut/ai");
 const { pushStatus, sendBriefingReadyPush, sendLageChangePush, sendPushToPolitician } = require("./lib/helmut/push");
 const auth = require("./lib/helmut/auth");
@@ -3082,6 +3082,33 @@ async function handleDebugRequest(request, response, url) {
         nextStep: created.length
           ? `${created.length} pending KO(s) angelegt. Rufe jetzt /api/debug/run-understanding auf.`
           : "Alle Cluster haben bereits KOs (oder Store nicht bereit). Prüfe flags und /api/debug/cluster."
+      };
+    });
+  }
+
+  // GET /api/debug/reset-llm-budget?secret=... — heutige LLM-Usage-Eintraege loeschen.
+  // Setzt den Tages-Zaehler fuer canSpendLlm() auf 0, ohne das Limit-Flag zu aendern.
+  // TEMP: nur fuer Debugging-Sessions — danach entfernen.
+  if (url.pathname === "/api/debug/reset-llm-budget") {
+    return handleAsync(response, async () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const store = await readAuthStore();
+      const all = Array.isArray(store.llmUsage) ? store.llmUsage : [];
+      const kept = all.filter((e) => {
+        const d = String(e.createdAt || "").slice(0, 10);
+        return d !== today;
+      });
+      const removed = all.length - kept.length;
+      await writeAuthStore({ ...store, llmUsage: kept });
+      console.log(`[debug/reset-llm-budget] removed=${removed} today=${today}`);
+      return {
+        debug: true,
+        today,
+        removedEntries: removed,
+        remainingTotal: kept.length,
+        message: removed > 0
+          ? `${removed} heutige LLM-Eintraege entfernt. Budget ist wieder frei.`
+          : "Keine heutigen Eintraege gefunden — Budget war bereits bei 0."
       };
     });
   }
