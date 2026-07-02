@@ -2488,7 +2488,7 @@ function renderHelmutAssessmentView() {
   const deadlineText = top?.deadline
     ? `Antwort erforderlich bis: ${formatDeadlineDate(top.deadline)}`
     : "Keine Frist gesetzt";
-  const srcLine = helmutBriefingSourceLine(top);
+  const srcLine = helmutBriefingSourceHtml(top);
   return `
     <section class="helmut-assessment" aria-label="Helmuts Einschätzung">
       <div class="helmut-assessment-head">
@@ -2537,7 +2537,7 @@ function renderHelmutAssessmentView() {
       <div class="helmut-assessment-foot">
         <small>Aktualisiert: ${escapeHtml(formatBriefingDate(briefing.generatedAt || briefing.date || new Date().toISOString()))}</small>
         <small class="helmut-deadline">${escapeHtml(deadlineText)}</small>
-        ${srcLine ? `<small class="helmut-source">${escapeHtml(srcLine)}</small>` : ""}
+        ${srcLine ? `<small class="helmut-source">${srcLine}</small>` : ""}
         ${renderRefreshButton()}
       </div>
     </section>
@@ -7482,19 +7482,23 @@ function formatDeadlineDate(dateString) {
   }).format(date);
 }
 
-function helmutBriefingSourceLine(item) {
+function helmutBriefingSourceHtml(item) {
   if (!item) return "";
   const sources = Array.isArray(item.sources) ? item.sources : [];
-  const primary = item.primarySource || sources[0];
-  if (!primary && !item.sourceName) return "";
-  const primaryName = primary?.sourceName || item.sourceName || "";
-  const dateStr = primary?.publishedAt || primary?.retrievedAt || item.publishedAt || item.retrievedAt || "";
-  const dateLabel = dateStr ? `, ${sourceTimeLabel(dateStr)}` : "";
+  const prim = item.primarySource || sources[0];
+  if (!prim && !item.sourceName) return "";
+  const primName = prim?.sourceName || item.sourceName || "";
+  const dateStr = prim?.publishedAt || prim?.retrievedAt || item.publishedAt || item.retrievedAt || "";
+  const dateLabel = dateStr ? `, ${escapeHtml(sourceTimeLabel(dateStr))}` : "";
+  const href = sourceHref(prim || item);
+  const nameHtml = href
+    ? `<a href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(primName)}</a>`
+    : escapeHtml(primName);
   if (sources.length > 1) {
-    const names = sources.map((s) => s.sourceName).filter(Boolean).slice(0, 3).join(", ");
-    return `Quellen: ${names}`;
+    const extra = sources.length - 1;
+    return `Quellen: ${nameHtml} + ${extra} weitere`;
   }
-  return primaryName ? `Quelle: ${primaryName}${dateLabel}` : "";
+  return primName ? `Quelle: ${nameHtml}${dateLabel}` : "";
 }
 
 function formatBerlinNow() {
