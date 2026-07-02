@@ -9,7 +9,7 @@ const { cemInceProfile, demoRawItems, demoSources, generateBriefing } = require(
 const { getLatestOrDemoBriefing, runDailyPipeline, runLageCheck, runMorningBriefing, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { personalizeBriefing } = require("./lib/helmut/personalization");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getAdminCostsPerUser, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, listMatchingResults, v3BriefingEnabled } = require("./lib/helmut/storage");
+const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getAdminCostsPerUser, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, listMatchingResults, v3BriefingEnabled, releasePipelineLock, understandingLockEnabled } = require("./lib/helmut/storage");
 const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled, activeModelName, isEngineV2Enabled } = require("./lib/helmut/ai");
 const { pushStatus, sendBriefingReadyPush, sendLageChangePush, sendPushToPolitician } = require("./lib/helmut/push");
 const auth = require("./lib/helmut/auth");
@@ -3404,6 +3404,36 @@ async function handleDebugRequest(request, response, url) {
         resets: { ok: resetOk, skipped: resetSkipped },
         rawDocsLoaded: rawDocs.length,
         understanding: result
+      };
+    });
+  }
+
+  // GET /api/debug/release-understanding-lock?secret=...
+  // Gibt einen haengengebliebenen globalen Understanding-Lock manuell frei.
+  // TEMP: nach erstem stabilen Cron-Lauf entfernen.
+  if (url.pathname === "/api/debug/release-understanding-lock") {
+    return handleAsync(response, async () => {
+      const store = await readAuthStore().catch(() => ({}));
+      const locks = store.pipelineLocks || {};
+      const lockBefore = locks["global-understanding"] || null;
+
+      await releasePipelineLock("global-understanding").catch((e) =>
+        console.error("[debug/release-understanding-lock] release fehlgeschlagen:", e.message)
+      );
+
+      const storeAfter = await readAuthStore().catch(() => ({}));
+      const lockAfter = (storeAfter.pipelineLocks || {})["global-understanding"] || null;
+
+      const released = lockBefore !== null && lockAfter === null;
+      console.log(`[debug/release-understanding-lock] lockEnabled=${understandingLockEnabled()} released=${released} before=${JSON.stringify(lockBefore)}`);
+
+      return {
+        debug: true,
+        lockEnabled: understandingLockEnabled(),
+        before: lockBefore
+          ? { lockedAt: new Date(lockBefore.lockedAt).toISOString(), expiresAt: new Date(lockBefore.expiresAt).toISOString() }
+          : null,
+        result: released ? "lock released" : lockBefore === null ? "no lock found" : "release failed"
       };
     });
   }
