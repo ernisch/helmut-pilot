@@ -318,6 +318,58 @@ async function c3DipPrimaryChecks() {
   }
 }
 
+// Datenmotor V3 — Commit C5: V3-Store-Funktionen hinter Flag HELMUT_V3_STORE.
+// Prueft die Sicherheitsgarantien OFFLINE (kein Netzwerk): Flag aus -> inert,
+// Flag an ohne Supabase -> inert statt Crash. Bestehende App bleibt unberuehrt.
+async function c5V3StoreChecks() {
+  const storage = require(path.join(root, "lib/helmut/storage.js"));
+  const origFlag = process.env.HELMUT_V3_STORE;
+  const origUrl = process.env.SUPABASE_URL;
+  const origKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const origKey2 = process.env.SUPABASE_SERVICE_KEY;
+  const origKey3 = process.env.SUPABASE_SECRET_KEY;
+  try {
+    // (a) Flag AUS (Default): alle V3-Funktionen inert, kein Crash, kein Netzwerk.
+    delete process.env.HELMUT_V3_STORE;
+    check("C5 V3Store: v3StoreEnabled() Default false (Flag aus)", storage.v3StoreEnabled() === false);
+    const offSave = await storage.saveKnowledgeObject({ id: "ko-1", vorgang_id: "vg-1" });
+    check("C5 V3Store: Flag aus -> saveKnowledgeObject no-op (skipped, reason v3-store-disabled)",
+      offSave && offSave.skipped === true && offSave.reason === "v3-store-disabled", `res=${JSON.stringify(offSave)}`);
+    const offRaw = await storage.saveRawDocument({ id: "rd-1" });
+    check("C5 V3Store: Flag aus -> saveRawDocument no-op (skipped)",
+      offRaw && offRaw.skipped === true && offRaw.reason === "v3-store-disabled", `res=${JSON.stringify(offRaw)}`);
+    const offById = await storage.getKnowledgeObjectById("ko-1");
+    const offByVg = await storage.getKnowledgeObjectByVorgang("vg-1");
+    const offList = await storage.listKnowledgeObjects();
+    check("C5 V3Store: Flag aus -> Reads liefern null/null/[] (kein Netzwerk)",
+      offById === null && offByVg === null && Array.isArray(offList) && offList.length === 0,
+      `byId=${offById} byVg=${offByVg} list=${offList.length}`);
+
+    // (b) Flag AN, aber Supabase NICHT verfuegbar -> inert statt Crash.
+    process.env.HELMUT_V3_STORE = "true";
+    delete process.env.SUPABASE_URL;
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    delete process.env.SUPABASE_SERVICE_KEY;
+    delete process.env.SUPABASE_SECRET_KEY;
+    check("C5 V3Store: v3StoreEnabled() true bei Flag AN", storage.v3StoreEnabled() === true);
+    const naSave = await storage.saveKnowledgeObject({ id: "ko-2", vorgang_id: "vg-2" });
+    check("C5 V3Store: Flag AN ohne Supabase -> inert (skipped, reason v3-store-unavailable), KEIN Crash",
+      naSave && naSave.skipped === true && naSave.reason === "v3-store-unavailable", `res=${JSON.stringify(naSave)}`);
+    const naList = await storage.listKnowledgeObjects();
+    check("C5 V3Store: Flag AN ohne Supabase -> listKnowledgeObjects [] (kein Netzwerk)",
+      Array.isArray(naList) && naList.length === 0, `list=${naList.length}`);
+
+    // (c) Guard: fehlende Pflichtfelder werden sauber abgewiesen (kein Crash).
+    // (hier waeren echte Supabase-Writes noetig; wir pruefen nur den No-Crash-Pfad ueber (b))
+  } finally {
+    if (origFlag === undefined) delete process.env.HELMUT_V3_STORE; else process.env.HELMUT_V3_STORE = origFlag;
+    if (origUrl === undefined) delete process.env.SUPABASE_URL; else process.env.SUPABASE_URL = origUrl;
+    if (origKey === undefined) delete process.env.SUPABASE_SERVICE_ROLE_KEY; else process.env.SUPABASE_SERVICE_ROLE_KEY = origKey;
+    if (origKey2 === undefined) delete process.env.SUPABASE_SERVICE_KEY; else process.env.SUPABASE_SERVICE_KEY = origKey2;
+    if (origKey3 === undefined) delete process.env.SUPABASE_SECRET_KEY; else process.env.SUPABASE_SECRET_KEY = origKey3;
+  }
+}
+
 // Datenmotor V2 — Commit 2: echte Personalisierung / Cem-Entkopplung.
 // Deterministischer Unit-Test der reinen Merge-Funktion (kein Store noetig).
 function personalizationChecks() {
@@ -449,6 +501,7 @@ async function main() {
   await llmBudgetChecks();
   await c1SafetyNetChecks();
   await c3DipPrimaryChecks();
+  await c5V3StoreChecks();
 
   const failed = results.filter((r) => !r.ok);
   console.log(`\n${results.length - failed.length}/${results.length} Checks bestanden.`);
