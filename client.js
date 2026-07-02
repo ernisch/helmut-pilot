@@ -1413,37 +1413,59 @@ function renderAdminCrawlStats(crawlReport) {
   if (!crawlReport || crawlReport.noData) {
     return `
     <div class="admin-card admin-crawl-card">
-      <h2 class="admin-section-title">Letzter Crawl</h2>
+      <h2 class="admin-section-title">Crawl-Trichter</h2>
       <p class="empty-state">Kein Crawl-Lauf vorhanden.</p>
     </div>`;
   }
-  const scanned = crawlReport.scannedArticles ?? 0;
-  const saved = crawlReport.deduplicatedArticles ?? 0;
-  const dupes = Math.max(0, scanned - saved);
-  const durRaw = crawlReport.durationSec;
+
+  const scanned   = crawlReport.scannedArticles ?? 0;
+  const saved     = crawlReport.deduplicatedArticles ?? 0;
+  const dupes     = Math.max(0, scanned - saved);
+  const vorgaenge = crawlReport.newVorgaenge ?? null;
+  const kos       = crawlReport.newKnowledgeObjects ?? null;
+  const durRaw    = crawlReport.durationSec;
+  const durStr    = durRaw != null ? `${durRaw} Sek.` : "—";
+
   const crawlDate = crawlReport.lastCrawlAt
     ? new Date(crawlReport.lastCrawlAt).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
     : "—";
 
-  function dot(status) {
-    return `<span class="crawl-dot crawl-dot--${status}" title="${{ green: "Alles gut", yellow: "Achtung", red: "Problem", gray: "Keine Daten" }[status]}"></span>`;
+  const max = Math.max(scanned, 1);
+
+  function pct(val) {
+    if (val === null || val === undefined) return 0;
+    return Math.min(100, Math.round((val / max) * 100));
   }
 
-  const metrics = [
-    { label: "Gescannt",  value: scanned,                                           status: scanned > 0 ? "green" : "yellow" },
-    { label: "Duplikate", value: dupes,                                              status: dupes > 0   ? "green" : "yellow" },
-    { label: "Neu",       value: saved,                                              status: saved > 0   ? "green" : "yellow" },
-    { label: "Vorgänge",  value: crawlReport.newVorgaenge   ?? "—",                 status: (crawlReport.newVorgaenge ?? 0) > 0 ? "green" : crawlReport.newVorgaenge === null || crawlReport.newVorgaenge === undefined ? "gray" : "yellow" },
-    { label: "Neue KOs",  value: crawlReport.newKnowledgeObjects ?? "—",            status: (crawlReport.newKnowledgeObjects ?? 0) > 0 ? "green" : crawlReport.newKnowledgeObjects === null || crawlReport.newKnowledgeObjects === undefined ? "gray" : "red" },
-    { label: "Dauer",     value: durRaw !== null && durRaw !== undefined ? `${durRaw}s` : "—", status: "gray" }
-  ];
+  function fmtNum(val) {
+    if (val === null || val === undefined) return "—";
+    return escapeHtml(String(val));
+  }
 
-  const metricCards = metrics.map((m) => `
-    <div class="admin-crawl-metric">
-      ${dot(m.status)}
-      <span class="admin-crawl-num">${escapeHtml(String(m.value))}</span>
-      <span class="admin-crawl-label">${escapeHtml(m.label)}</span>
-    </div>`).join("");
+  function fmtPct(val) {
+    if (val === null || val === undefined || scanned === 0) return "";
+    return `${pct(val)}%`;
+  }
+
+  function stage(motorName, motorKey, stageName, stageDesc, count) {
+    return `
+    <div class="cf-stage">
+      <div class="cf-stage-meta">
+        <span class="cf-badge cf-badge--${motorKey}">${escapeHtml(motorName)}</span>
+        <span class="cf-stage-label">${escapeHtml(stageName)}</span>
+        <span class="cf-stage-desc">${escapeHtml(stageDesc)}</span>
+      </div>
+      <div class="cf-stage-bar">
+        <div class="cf-bar-track">
+          <div class="cf-bar cf-bar--${motorKey}" style="width:${pct(count)}%"></div>
+        </div>
+        <div class="cf-bar-stats">
+          <span class="cf-count">${fmtNum(count)}</span>
+          <span class="cf-pct">${fmtPct(count)}</span>
+        </div>
+      </div>
+    </div>`;
+  }
 
   const errorLine = crawlReport.errorCount > 0
     ? `<p class="admin-crawl-errors">${crawlReport.errorCount} Fehler: ${(crawlReport.errors || []).slice(0, 3).map((e) => escapeHtml(e.sourceName || e.error || "")).join(", ")}</p>`
@@ -1451,14 +1473,25 @@ function renderAdminCrawlStats(crawlReport) {
 
   return `
     <div class="admin-card admin-crawl-card">
-      <h2 class="admin-section-title">Letzter Crawl <span class="admin-stat-period">${escapeHtml(crawlDate)} · ${escapeHtml(crawlReport.mode || "full")}</span></h2>
-      <div class="admin-crawl-grid">${metricCards}</div>
+      <h2 class="admin-section-title">Crawl-Trichter <span class="admin-stat-period">${escapeHtml(crawlDate)} · ${escapeHtml(crawlReport.mode || "full")}</span></h2>
+      <div class="crawl-funnel">
+        ${stage("Source Engine",       "blue",   "Gescannt",           "Alle Artikel aller Quellen",             scanned)}
+        ${stage("Deduplizierung",      "gray",   "Duplikate entfernt", "Bereits bekannte Artikel gefiltert",     dupes)}
+        ${stage("Knowledge Engine",    "green",  "Neu",                "Unbekannte Artikel übernommen",          saved)}
+        ${stage("Update Engine",       "orange", "Vorgänge gebildet",  "Artikel zu Themen gruppiert",            vorgaenge)}
+        ${stage("Intelligence Engine", "violet", "KI-analysiert",      "Vorgänge als Wissenshäppchen bewertet",  kos)}
+      </div>
       ${errorLine}
-      <div class="crawl-legend">
-        <span class="crawl-dot crawl-dot--green"></span><span>Alles gut</span>
-        <span class="crawl-dot crawl-dot--yellow"></span><span>Achtung (0 erwartet)</span>
-        <span class="crawl-dot crawl-dot--red"></span><span>Problem (0 kritisch)</span>
-        <span class="crawl-dot crawl-dot--gray"></span><span>Keine Daten</span>
+      <div class="cf-footer">
+        <span class="cf-footer-dur">⏱ ${escapeHtml(durStr)}</span>
+        <span class="cf-footer-sources">${escapeHtml(String(crawlReport.checkedSources || 0))} Quellen geprüft · ${escapeHtml(String(crawlReport.failedSources || 0))} Fehler</span>
+      </div>
+      <div class="cf-legend">
+        <span class="cf-legend-item"><span class="cf-dot cf-dot--blue"></span>Source Engine · Quellen gecrawlt</span>
+        <span class="cf-legend-item"><span class="cf-dot cf-dot--gray"></span>Deduplizierung · Duplikatfilter</span>
+        <span class="cf-legend-item"><span class="cf-dot cf-dot--green"></span>Knowledge Engine · Neue Artikel</span>
+        <span class="cf-legend-item"><span class="cf-dot cf-dot--orange"></span>Update Engine · Vorgänge</span>
+        <span class="cf-legend-item"><span class="cf-dot cf-dot--violet"></span>Intelligence Engine · KI-Analyse</span>
       </div>
     </div>`;
 }
