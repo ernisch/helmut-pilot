@@ -9,7 +9,7 @@ const { cemInceProfile, demoRawItems, demoSources, generateBriefing } = require(
 const { getLatestOrDemoBriefing, runDailyPipeline, runLageCheck, runMorningBriefing, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { personalizeBriefing } = require("./lib/helmut/personalization");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport } = require("./lib/helmut/storage");
+const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getAdminCostsPerUser } = require("./lib/helmut/storage");
 const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled, activeModelName, isEngineV2Enabled } = require("./lib/helmut/ai");
 const { pushStatus, sendBriefingReadyPush, sendLageChangePush, sendPushToPolitician } = require("./lib/helmut/push");
 const auth = require("./lib/helmut/auth");
@@ -2426,17 +2426,30 @@ async function defaultPoliticianIdForUser(user, allowed) {
 }
 
 async function buildAdminOverview() {
-  const [users, profiles, mandates, assignments, errors, audit, feedback] = await Promise.all([
+  const [users, profiles, mandates, assignments, errors, audit, feedback, costsRaw] = await Promise.all([
     accounts.listUsers(),
     listProfiles(),
     listFullProfiles(),
     accounts.listAssignments(),
     accounts.listSystemErrors(50),
     accounts.listAuditEvents(50),
-    listFeedback(80)
+    listFeedback(80),
+    getAdminCostsPerUser({ days: 30 })
   ]);
   const storage = getStorageStatus();
   const storeSummary = await getStoreSummary();
+
+  // Nutzernamen zu userId / politicianId auflösen
+  const userById = new Map(users.map((u) => [u.id, u.name || u.email]));
+  const userByPoliticianId = new Map(users.filter((u) => u.politicianId).map((u) => [u.politicianId, u.name || u.email]));
+  const costs = {
+    ...costsRaw,
+    perUser: costsRaw.perUser.map((entry) => ({
+      ...entry,
+      name: userById.get(entry.userId) || userByPoliticianId.get(entry.userId) || entry.userId
+    }))
+  };
+
   return {
     generatedAt: new Date().toISOString(),
     counts: {
@@ -2457,6 +2470,7 @@ async function buildAdminOverview() {
     mandates: mandates.map(adminMandateSummary),
     assignments,
     feedback,
+    costs,
     system: {
       storage,
       store: storeSummary,

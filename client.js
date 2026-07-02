@@ -64,6 +64,14 @@ let onboardingDraft = {};
 const app = document.querySelector("#app");
 const toast = document.querySelector("#toast");
 
+const USD_TO_EUR = 0.92;
+
+function formatUsdEur(usd) {
+  if (typeof usd !== "number") return "—";
+  const eur = usd * USD_TO_EUR;
+  return `$${usd.toFixed(4)} | €${eur.toFixed(4)}`;
+}
+
 // --- View-Persistenz ---
 const VIEW_PERSIST_KEY = "helmut:view";
 const VIEW_PERSIST_SAFE = new Set(["briefing", "radar", "helmut", "office", "tasks", "topics", "settings", "profile-settings", "admin", "daily-input"]);
@@ -1203,6 +1211,8 @@ function renderAdminView() {
             </div>
           </div>
 
+          ${renderAdminCostsCard(data.costs)}
+
         </div>
       </div>
 
@@ -1291,6 +1301,34 @@ function renderAdminUserEditRow(user, status, feedbackCount = 0) {
         </form>
       </td>
     </tr>`;
+}
+
+function renderAdminCostsCard(costs) {
+  if (!costs) return "";
+  const total = costs.totalCostUsd ?? 0;
+  const days = costs.periodDays ?? 30;
+  const perUser = Array.isArray(costs.perUser) ? costs.perUser : [];
+  const userRows = perUser.length
+    ? perUser.map((u) => `
+        <div class="admin-sys-item admin-cost-row">
+          <span class="admin-sys-key">${escapeHtml(u.name || u.userId)}</span>
+          <span class="admin-sys-val admin-cost-val">${escapeHtml(formatUsdEur(u.totalCostUsd))}</span>
+        </div>`).join("")
+    : `<p class="empty-state" style="font-size:12px;margin:4px 0">Noch keine KI-Calls.</p>`;
+  return `
+    <div class="admin-card">
+      <h2 class="admin-section-title">KI-Kosten <span style="font-weight:400;font-size:12px;color:var(--muted-2)">(${days} Tage)</span></h2>
+      <div class="admin-sys-grid">
+        <div class="admin-sys-item admin-cost-row">
+          <span class="admin-sys-key">Gesamt</span>
+          <span class="admin-sys-val admin-cost-val">${escapeHtml(formatUsdEur(total))}</span>
+        </div>
+        <div class="admin-sys-item" style="grid-column:1/-1">
+          <span class="admin-sys-key" style="color:var(--muted-2);font-size:11px">1 USD = ${USD_TO_EUR.toFixed(2)} EUR</span>
+        </div>
+      </div>
+      <div style="margin-top:8px">${userRows}</div>
+    </div>`;
 }
 
 const FEEDBACK_TYPE_META = {
