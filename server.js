@@ -249,7 +249,7 @@ async function handleRequest(request, response) {
         notes: await getUserNotes(profile.id),
         aiStatus: {
           enabled: isAiEnabled(),
-          model: process.env.HELMUT_TEXT_MODEL || process.env.OPENAI_MODEL || "gpt-5.5"
+          model: activeModelName()
         }
       };
     });
@@ -491,7 +491,7 @@ async function handleRequest(request, response) {
         tenant: tenantStatus(politicianId),
         ai: {
           enabled: isAiEnabled(),
-          model: process.env.HELMUT_TEXT_MODEL || process.env.OPENAI_MODEL || "gpt-5.5"
+          model: activeModelName()
         },
         push: {
           ...pushStatus(),
@@ -1716,7 +1716,7 @@ function releaseCheck({ crawl, briefing, storage, storeSummary, evidenceQuality,
 
   addReleaseCheck(checks, "Lage-Frische", Boolean(crawl) && lageFresh && sourceCount >= minCheckedSources && failRatio <= maxCrawlFailureRatio, crawl ? `${sourceCount} Quellen geprüft, ${failedSources} Fehler. ${latestLageFreshnessDetail(crawl, lageCheck)}.` : "Noch kein Crawl.");
   addReleaseCheck(checks, "Supabase", storage?.backend === "supabase", storage?.backend === "supabase" ? "Persistenter Speicher aktiv." : "Speicher ist lokal.");
-  addReleaseCheck(checks, "OpenAI", isAiEnabled(), isAiEnabled() ? `Modell ${process.env.HELMUT_TEXT_MODEL || process.env.OPENAI_MODEL || "gpt-5.5"} aktiv.` : "OpenAI ist nicht aktiv.");
+  addReleaseCheck(checks, "OpenAI", isAiEnabled(), isAiEnabled() ? `Modell ${activeModelName()} aktiv.` : "OpenAI ist nicht aktiv.");
   addReleaseCheck(checks, "Briefing", Boolean(briefing) && briefingAge < 18 * 60 * 60 * 1000 && hasDecisionOrCompetentCalm && briefing.status !== "Demo", briefing ? `${visibleDecisionCount} Entscheidungen, ${recommendationCount} Empfehlungen, ${situationalCount} Beobachtungspunkte.` : "Kein Briefing.");
   addReleaseCheck(checks, "Quellenlinks", Number(evidenceQuality?.missingLinks || 0) === 0 && Number(evidenceQuality?.publisherFallbacks || 0) === 0, `${evidenceQuality?.directLinks || 0}/${evidenceQuality?.total || 0} sichtbare Belege mit Direktlink.`);
   addReleaseCheck(checks, "Radar", Array.isArray(briefing?.personMentions) && Array.isArray(radarArchive?.articles), `${briefing?.personMentions?.length || 0} neue Personenartikel, ${radarArchive?.total || 0} Archivartikel.`);
@@ -2451,7 +2451,7 @@ async function buildAdminOverview() {
       store: storeSummary,
       ai: {
         enabled: isAiEnabled(),
-        model: process.env.HELMUT_TEXT_MODEL || process.env.OPENAI_MODEL || "gpt-5.5"
+        model: activeModelName()
       },
       push: pushStatus(),
       authMode: auth.authMode()
