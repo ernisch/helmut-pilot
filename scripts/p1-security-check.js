@@ -1146,6 +1146,181 @@ function debugReportChecks() {
     fi.reactOrObserve === "react" && fi.rank === 1 && fi.rankReason.length > 0 && fi.affectsMandate === true);
 }
 
+async function c9OfficeChecks() {
+  const office = require(path.join(root, "lib/helmut/office.js"));
+  const tmpl = require(path.join(root, "lib/helmut/template.js"));
+
+  const koComplete = {
+    id: "ko-testvorgang", vorgang_id: "testvorgang", status: "neu",
+    understanding_status: "complete",
+    headline: "Testgesetz passiert Bundesrat",
+    was_ist_passiert: "Das Testgesetz wurde verabschiedet.",
+    warum_wichtig: "Es betrifft alle Buerger.", wer_ist_betroffen: "Alle Buerger",
+    zeitdruck: "hoch", handlungsempfehlung: "Sofort kommunizieren.",
+    risiken: ["Ablehnung"], chancen: ["Sichtbarkeit"], parteien: ["SPD"]
+  };
+  const koPending = { ...koComplete, understanding_status: "pending" };
+  const koFailed = { ...koComplete, understanding_status: "failed" };
+
+  let aiCallCount = 0;
+  let lastMeta = null;
+  let lastPrompt = null;
+  const savedOutputs = [];
+
+  function makeDeps(overrides = {}) {
+    aiCallCount = 0; lastMeta = null; lastPrompt = null; savedOutputs.length = 0;
+    return {
+      storage: {
+        getOfficeOutput: async () => null,
+        canSpendOfficeOutput: async () => ({ allowed: true, used: 0, limit: 10, remaining: 10 }),
+        saveOfficeOutput: async (e) => { savedOutputs.push(e); return { saved: true, id: e.id }; },
+        officeOutputId: (u, v, c) => `office-${u}-${v}-${c}`.slice(0, 200)
+      },
+      ai: {
+        requestText: async (p, m) => { aiCallCount += 1; lastPrompt = p; lastMeta = m; return "Generierter Inhalt."; },
+        activeModelName: () => "gpt-5-mini"
+      },
+      template: tmpl,
+      ...overrides
+    };
+  }
+
+  const origFlag = process.env.HELMUT_V3_OFFICE;
+  try {
+    // (a) Flag aus -> skipped.
+    delete process.env.HELMUT_V3_OFFICE;
+    const flagOff = await office.generateOfficeOutput("u1", "vg-test", "rede", koComplete, makeDeps());
+    check("C9 Flag aus: generateOfficeOutput -> skipped (office-disabled)",
+      flagOff.skipped === true && flagOff.reason === "office-disabled");
+    check("C9 isOfficeEnabled() = false wenn Flag nicht gesetzt",
+      office.isOfficeEnabled() === false);
+
+    process.env.HELMUT_V3_OFFICE = "1";
+
+    // (b) isOfficeEnabled true, wenn gesetzt.
+    check("C9 isOfficeEnabled() = true wenn HELMUT_V3_OFFICE=1",
+      office.isOfficeEnabled() === true);
+
+    // (c) Alle 15 Kanaele gelten als valide.
+    const ALL = office.OFFICE_CHANNELS;
+    check("C9 OFFICE_CHANNELS enthaelt alle 15 Kanaele",
+      ALL.length === 15 && ALL.includes("rede") && ALL.includes("tiktok") && ALL.includes("interview_vorbereitung"));
+    check("C9 isValidChannel: alle 15 bekannten Kanaele valide",
+      ALL.every((c) => office.isValidChannel(c)));
+    check("C9 isValidChannel: unbekannter Kanal ('xyzkanal') abgelehnt",
+      !office.isValidChannel("xyzkanal") && !office.isValidChannel(""));
+
+    // (d) Ungültiger Kanal -> skipped.
+    const inv = await office.generateOfficeOutput("u1", "vg-test", "unbekannt", koComplete, makeDeps());
+    check("C9 Ungültiger Kanal -> skipped (invalid-channel), kein KI-Call",
+      inv.skipped === true && inv.reason === "invalid-channel" && aiCallCount === 0);
+
+    // (e) Fehlende Params -> skipped.
+    const noUser = await office.generateOfficeOutput("", "vg-test", "rede", koComplete, makeDeps());
+    check("C9 Fehlende userId -> skipped (missing-params)",
+      noUser.skipped === true && noUser.reason === "missing-params");
+
+    // (f) KO nicht complete (pending) -> skipped.
+    const notReady = await office.generateOfficeOutput("u1", "vg-test", "rede", koPending, makeDeps());
+    check("C9 KO pending -> skipped (ko-not-ready), kein KI-Call",
+      notReady.skipped === true && notReady.reason === "ko-not-ready" && aiCallCount === 0);
+
+    // (f2) KO failed -> skipped.
+    const failedKoRes = await office.generateOfficeOutput("u1", "vg-test", "rede", koFailed, makeDeps());
+    check("C9 KO failed -> skipped (ko-not-ready), kein KI-Call",
+      failedKoRes.skipped === true && failedKoRes.reason === "ko-not-ready" && aiCallCount === 0);
+
+    // (g) Cache-Hit -> kein KI-Call, content zurueck.
+    const deps = makeDeps({
+      storage: {
+        getOfficeOutput: async () => ({ id: "office-u1-vg-test-rede", content: "Gecachter Inhalt." }),
+        canSpendOfficeOutput: async () => ({ allowed: true }),
+        saveOfficeOutput: async (e) => { savedOutputs.push(e); return { saved: true }; },
+        officeOutputId: (u, v, c) => `office-${u}-${v}-${c}`.slice(0, 200)
+      }
+    });
+    const cached = await office.generateOfficeOutput("u1", "vg-test", "rede", koComplete, deps);
+    check("C9 Cache-Hit: kein KI-Call, gecachten Inhalt zurueck",
+      cached.status === "cache-hit" && cached.content === "Gecachter Inhalt." && aiCallCount === 0);
+
+    // (h) Rate-Limit ueberschritten -> skipped, kein KI-Call.
+    const rateDeps = makeDeps({
+      storage: {
+        getOfficeOutput: async () => null,
+        canSpendOfficeOutput: async () => ({ allowed: false, used: 10, limit: 10, remaining: 0, reason: "daily-limit" }),
+        saveOfficeOutput: async () => ({ saved: true }),
+        officeOutputId: (u, v, c) => `office-${u}-${v}-${c}`
+      }
+    });
+    const rateLimited = await office.generateOfficeOutput("u1", "vg-test", "rede", koComplete, rateDeps);
+    check("C9 Rate-Limit: skipped (budget-denied), kein KI-Call",
+      rateLimited.skipped === true && rateLimited.reason === "budget-denied" && aiCallCount === 0);
+
+    // (i) KI-Fehler -> skipped (ai-error), kein Crash.
+    const errDeps = makeDeps({
+      ai: { requestText: async () => { aiCallCount += 1; throw new Error("Azure down"); }, activeModelName: () => "gpt-5-mini" }
+    });
+    const aiErr = await office.generateOfficeOutput("u1", "vg-test", "rede", koComplete, errDeps);
+    check("C9 KI-Fehler -> skipped (ai-error), kein Crash",
+      aiErr.skipped === true && aiErr.reason === "ai-error" && aiCallCount === 1);
+
+    // (j) Leere KI-Antwort -> skipped (empty-response).
+    const emptyDeps = makeDeps({
+      ai: { requestText: async () => { aiCallCount += 1; return "   "; }, activeModelName: () => "gpt-5-mini" }
+    });
+    const emptyRes = await office.generateOfficeOutput("u1", "vg-test", "rede", koComplete, emptyDeps);
+    check("C9 Leere KI-Antwort -> skipped (empty-response)",
+      emptyRes.skipped === true && emptyRes.reason === "empty-response");
+
+    // (k) Happy path: generated, content gesetzt, gespeichert.
+    const happy = await office.generateOfficeOutput("u1", "vg-test", "rede", koComplete, makeDeps());
+    check("C9 Happy path: status=generated, content gesetzt, 1 KI-Call",
+      happy.status === "generated" && typeof happy.content === "string" && happy.content.length > 0 && aiCallCount === 1);
+    check("C9 Happy path: output gespeichert (user_id, channel, content gesetzt)",
+      savedOutputs.length === 1 && savedOutputs[0].user_id === "u1"
+        && savedOutputs[0].channel === "rede" && savedOutputs[0].content === "Generierter Inhalt.");
+
+    // (l) DSGVO: userId nicht im Prompt, nur callType + vorgangId im meta.
+    check("C9 DSGVO: userId 'u1' erscheint NICHT im KI-Prompt (kein PII zum Modell)",
+      lastPrompt && !lastPrompt.includes("u1"));
+    check("C9 DSGVO: LLM-meta enthaelt callType + vorgangId, kein Prompt, kein userId",
+      lastMeta && lastMeta.callType === "office-output" && lastMeta.vorgangId === "vg-test"
+        && !("prompt" in lastMeta) && !("userId" in lastMeta) && !("user_id" in lastMeta));
+
+    // (m) Save fehlgeschlagen -> save-skipped, content trotzdem zurueck.
+    const saveFail = makeDeps({
+      storage: {
+        getOfficeOutput: async () => null,
+        canSpendOfficeOutput: async () => ({ allowed: true }),
+        saveOfficeOutput: async () => ({ skipped: true, reason: "v3-store-disabled" }),
+        officeOutputId: (u, v, c) => `office-${u}-${v}-${c}`
+      }
+    });
+    const saveSkipped = await office.generateOfficeOutput("u1", "vg-test", "rede", koComplete, saveFail);
+    check("C9 Save-Fehler (Store aus) -> save-skipped, content trotzdem im Response",
+      saveSkipped.status === "save-skipped" && typeof saveSkipped.content === "string" && saveSkipped.content.length > 0);
+
+    // (n) Template-Fehler -> skipped (template-error), kein KI-Call.
+    const tmplErrDeps = makeDeps({
+      template: { renderFile: () => { throw new Error("template not found"); } }
+    });
+    const tmplErr = await office.generateOfficeOutput("u1", "vg-test", "rede", koComplete, tmplErrDeps);
+    check("C9 Template-Fehler -> skipped (template-error), kein KI-Call",
+      tmplErr.skipped === true && tmplErr.reason === "template-error" && aiCallCount === 0);
+
+    // (o) Struktur: office.js kapselt Deps, kein direktes require('./ai') ausserhalb Deps.
+    const officeSrc = fs.readFileSync(path.join(root, "lib/helmut/office.js"), "utf8");
+    check("C9 Struktur: office.js kapselt KI hinter injizierbaren Deps (ai.requestText, storage.getOfficeOutput)",
+      /deps\.ai/.test(officeSrc) && /deps\.storage/.test(officeSrc) && /requestText/.test(officeSrc));
+    check("C9 DSGVO: buildOfficeContext enthaelt kein userId-Feld im Kontext",
+      /buildOfficeContext/.test(officeSrc) && !/userId/.test(officeSrc.match(/function buildOfficeContext[\s\S]*?\n\}/)[0]));
+
+  } finally {
+    if (origFlag === undefined) delete process.env.HELMUT_V3_OFFICE;
+    else process.env.HELMUT_V3_OFFICE = origFlag;
+  }
+}
+
 async function main() {
   console.log("== Helmut P1 Security & Trust Checks ==\n");
   staticChecks();
@@ -1166,6 +1341,7 @@ async function main() {
   await c7bBriefingEngineChecks();
   await c7cLazyUnderstandingChecks();
   await c8UnderstandingChecks();
+  await c9OfficeChecks();
 
   const failed = results.filter((r) => !r.ok);
   console.log(`\n${results.length - failed.length}/${results.length} Checks bestanden.`);
