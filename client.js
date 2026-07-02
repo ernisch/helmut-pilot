@@ -8,6 +8,7 @@ let notes = [];
 let recommendations = [];
 let radarArchive = [];
 let radarArchiveLoaded = false;
+let features = {};
 let opsStatusLoaded = false;
 let pushConfig = null;
 let pushAutoSyncStarted = false;
@@ -322,6 +323,7 @@ function applyStartPayload(startPayload) {
   briefing.situationalBriefing = Array.isArray(briefing.situationalBriefing) ? briefing.situationalBriefing : [];
   previewMode = previewMode || Boolean(briefing.previewMode);
   aiStatus = startPayload.aiStatus || { enabled: false, model: "" };
+  features = startPayload.features || {};
   briefing.status = previewMode ? "Vorschau" : (briefing.status || "Live");
   briefing.sourceStats = briefing.sourceStats || { checkedSources: 0, successfulSources: 0, failedSources: 0 };
 
@@ -4410,6 +4412,7 @@ function renderNotesSection() {
 }
 
 function renderRadarView() {
+  if (features.v3Radar) return renderRadarV3View();
   const allMentions = profileMentions();
   const freshMentions = allMentions.filter(isFreshUpdate).slice(0, 4);
   const freshKeys = new Set(freshMentions.map(mentionKey));
@@ -4507,6 +4510,177 @@ function radarDecisionRows(items, type) {
       <button class="secondary-button" type="button" data-detail="${escapeHtml(item.id)}">Öffnen</button>
     </article>
   `).join("");
+}
+
+// ── Radar V3 – Frühwarn- und Entscheidungssystem ─────────────────────────────
+
+const RADAR_V3_RISK_KW = [
+  "kritisiert", "vorwurf", "rücktritt", "skandal", "klage", "versagen",
+  "gescheitert", "ermittlung", "verhaftung", "betrug", "lüge", "belastet",
+  "angriff", "blamage", "niederlage", "razzia", "ablehnung", "scheitert"
+];
+
+const RADAR_V3_CHANCE_KW = [
+  "fordert", "setzt sich ein", "antrag", "initiative", "erfolg", "durchbruch",
+  "einigung", "experte", "gelobt", "zustimmung", "stärkt", "unterstützt", "interview"
+];
+
+const RADAR_V3_DEMAND_KW = [
+  "anfrage", "kleine anfrage", "fragestunde", "interpellation",
+  "parlamentarische anfrage", "ausschuss-sitzung", "ausschusssitzung"
+];
+
+const RADAR_V3_HIGH_RISK_SOURCES = ["bild", "welt", "focus", "stern", "spiegel"];
+
+const RADAR_V3_WARN_MS = 48 * 60 * 60 * 1000;
+
+function classifyRadarV3Signal(item) {
+  const text = `${item.title || ""} ${item.content || ""} ${item.excerpt || ""}`.toLowerCase();
+  const title = (item.title || "").toLowerCase();
+  const source = (item.sourceName || "").toLowerCase();
+  const ageMs = Date.now() - (itemTimestamp(item) || 0);
+
+  const isHighRiskSrc = RADAR_V3_HIGH_RISK_SOURCES.some((s) => source.includes(s));
+  const hasRisk = RADAR_V3_RISK_KW.some((k) => text.includes(k));
+  const hasTitleRisk = RADAR_V3_RISK_KW.some((k) => title.includes(k));
+  const hasChance = RADAR_V3_CHANCE_KW.some((k) => text.includes(k));
+  const hasDemand = RADAR_V3_DEMAND_KW.some((k) => text.includes(k));
+
+  if (hasTitleRisk || (hasRisk && isHighRiskSrc)) return "risk";
+  if (hasRisk) return "risk";
+  if (hasDemand) return "demand";
+  if (hasChance) return "chance";
+  if (ageMs < RADAR_V3_WARN_MS && !isFreshUpdate(item)) return "warning";
+  return "mention";
+}
+
+function renderRadarV3View() {
+  const archive = radarArchive.length
+    ? radarArchive
+    : profileArticleArchive().filter(hasPreciseSource).filter(uniqueMentionItem).sort(sortNewestFirst).slice(0, 60);
+
+  const buckets = { risk: [], demand: [], chance: [], warning: [], mention: [] };
+  archive.forEach((item) => {
+    const type = classifyRadarV3Signal(item);
+    buckets[type].push(item);
+  });
+
+  const CATEGORIES = [
+    {
+      type: "risk",
+      icon: "🚨",
+      label: "Risiko",
+      desc: "Kritische Berichte oder Angriffe, die dir schaden könnten.",
+      actionLabel: "Stellungnahme entwerfen",
+      colorClass: "radar-v3-risk"
+    },
+    {
+      type: "demand",
+      icon: "⚡",
+      label: "Kritische Nachfrage",
+      desc: "Anfragen, Ausschusstermine oder parlamentarische Fragen, die dich betreffen.",
+      actionLabel: "Antwort vorbereiten",
+      colorClass: "radar-v3-demand"
+    },
+    {
+      type: "chance",
+      icon: "📈",
+      label: "Chance",
+      desc: "Themen, bei denen du als Experte punkten oder positiv positionieren kannst.",
+      actionLabel: "Pressemitteilung verfassen",
+      colorClass: "radar-v3-chance"
+    },
+    {
+      type: "warning",
+      icon: "🔍",
+      label: "Frühwarnung",
+      desc: "Neue Themen der letzten 48 Stunden, die relevant werden könnten.",
+      actionLabel: null,
+      colorClass: "radar-v3-warning"
+    },
+    {
+      type: "mention",
+      icon: "🧑‍💼",
+      label: "Eigene Erwähnung",
+      desc: "Alle Erwähnungen deines Namens in den Medien.",
+      actionLabel: null,
+      colorClass: "radar-v3-mention"
+    }
+  ];
+
+  const categoryHtml = CATEGORIES.map((cat) => renderRadarV3Category(cat, buckets[cat.type])).join("");
+
+  return `
+    <section class="page-intro compact">
+      <h1 class="${headlineClass("Radar.")}">Radar.</h1>
+      <p>Strategisches Frühwarnsystem: Risiken, Chancen und Nachfragen auf einen Blick.</p>
+    </section>
+    <section class="radar-v3-categories">
+      ${categoryHtml}
+    </section>
+  `;
+}
+
+function renderRadarV3Category(cat, items) {
+  const visible = items.slice(0, 4);
+  const more = items.length > 4 ? items.slice(4) : [];
+  const count = items.length;
+  const badge = count > 0 ? `<em class="radar-v3-count">${count}</em>` : "";
+
+  const signalHtml = visible.length
+    ? visible.map((item) => renderRadarV3Signal(item, cat)).join("")
+    : `<p class="radar-v3-empty">Keine Einträge.</p>`;
+
+  const moreHtml = more.length ? `
+    <details class="radar-v3-more">
+      <summary>${more.length} ältere Einträge</summary>
+      ${more.map((item) => renderRadarV3Signal(item, cat)).join("")}
+    </details>
+  ` : "";
+
+  return `
+    <div class="radar-v3-category ${escapeHtml(cat.colorClass)}">
+      <div class="radar-v3-cat-header">
+        <span class="radar-v3-cat-icon" aria-hidden="true">${cat.icon}</span>
+        <div class="radar-v3-cat-text">
+          <h2>${escapeHtml(cat.label)}${badge}</h2>
+          <p>${escapeHtml(cat.desc)}</p>
+        </div>
+      </div>
+      <div class="radar-v3-signals">
+        ${signalHtml}
+        ${moreHtml}
+      </div>
+    </div>
+  `;
+}
+
+function renderRadarV3Signal(item, cat) {
+  const href = sourceHref(item);
+  const date = escapeHtml(formatBriefingDate(item.publishedAt || item.retrievedAt || ""));
+  const sourceLabel = escapeHtml(item.sourceName || "Quelle");
+  const titleText = escapeHtml(item.title || "Erwähnung gefunden");
+
+  const actionBtn = cat.actionLabel && href
+    ? `<button class="primary-button radar-v3-act-btn" type="button" data-view="office">${escapeHtml(cat.actionLabel)}</button>`
+    : "";
+  const sourceBtn = href
+    ? `<a class="secondary-button" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">Quelle</a>`
+    : "";
+
+  return `
+    <article class="radar-v3-signal ${escapeHtml(cat.colorClass)}">
+      <div class="radar-v3-signal-body">
+        <span class="radar-v3-signal-source">${sourceLabel}</span>
+        <h3>${titleText}</h3>
+        <small>${date}</small>
+      </div>
+      <div class="radar-v3-signal-actions">
+        ${actionBtn}
+        ${sourceBtn}
+      </div>
+    </article>
+  `;
 }
 
 function profileMentions() {

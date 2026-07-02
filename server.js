@@ -138,6 +138,7 @@ async function handleRequest(request, response) {
           HELMUT_V3_BRIEFING: process.env.HELMUT_V3_BRIEFING || "(nicht gesetzt)",
           HELMUT_V3_LAZY_UNDERSTANDING: process.env.HELMUT_V3_LAZY_UNDERSTANDING || "(nicht gesetzt)",
           HELMUT_V3_OFFICE: process.env.HELMUT_V3_OFFICE || "(nicht gesetzt)",
+          HELMUT_V3_RADAR: process.env.HELMUT_V3_RADAR || "(nicht gesetzt)",
           HELMUT_UNDERSTANDING_LOCK: process.env.HELMUT_UNDERSTANDING_LOCK || "(nicht gesetzt)",
           HELMUT_LLM_BUDGET_FAIL_CLOSED: process.env.HELMUT_LLM_BUDGET_FAIL_CLOSED || "(nicht gesetzt)",
           DIP_API_KEY_set: Boolean(process.env.DIP_API_KEY),
@@ -250,6 +251,9 @@ async function handleRequest(request, response) {
         aiStatus: {
           enabled: isAiEnabled(),
           model: activeModelName()
+        },
+        features: {
+          v3Radar: ["1", "true", "on", "yes"].includes(String(process.env.HELMUT_V3_RADAR || "").trim().toLowerCase())
         }
       };
     });
