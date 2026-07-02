@@ -9,7 +9,7 @@ const { cemInceProfile, demoRawItems, demoSources, generateBriefing } = require(
 const { getLatestOrDemoBriefing, runDailyPipeline, runLageCheck, runMorningBriefing, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { personalizeBriefing } = require("./lib/helmut/personalization");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getAdminCostsPerUser, getKnowledgeObjectCount } = require("./lib/helmut/storage");
+const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getAdminCostsPerUser, getKnowledgeObjectCount, getAdminPeriodStats } = require("./lib/helmut/storage");
 const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled, activeModelName, isEngineV2Enabled } = require("./lib/helmut/ai");
 const { pushStatus, sendBriefingReadyPush, sendLageChangePush, sendPushToPolitician } = require("./lib/helmut/push");
 const auth = require("./lib/helmut/auth");
@@ -2426,7 +2426,7 @@ async function defaultPoliticianIdForUser(user, allowed) {
 }
 
 async function buildAdminOverview() {
-  const [users, profiles, mandates, assignments, errors, audit, feedback, costsRaw, koCount, aiStats, crawlReport] = await Promise.all([
+  const [users, profiles, mandates, assignments, errors, audit, feedback, koCountTotal, statsToday, stats30d, crawlReport] = await Promise.all([
     accounts.listUsers(),
     listProfiles(),
     listFullProfiles(),
@@ -2434,24 +2434,19 @@ async function buildAdminOverview() {
     accounts.listSystemErrors(50),
     accounts.listAuditEvents(50),
     listFeedback(80),
-    getAdminCostsPerUser({ days: 30 }),
     getKnowledgeObjectCount(),
-    getAdminStatsCosts({ days: 30 }),
+    getAdminPeriodStats(1),
+    getAdminPeriodStats(30),
     getAdminStatsCrawlReport()
   ]);
   const storage = getStorageStatus();
   const storeSummary = await getStoreSummary();
 
-  // Nutzernamen zu userId / politicianId auflösen
   const userById = new Map(users.map((u) => [u.id, u.name || u.email]));
   const userByPoliticianId = new Map(users.filter((u) => u.politicianId).map((u) => [u.politicianId, u.name || u.email]));
-  const costs = {
-    ...costsRaw,
-    perUser: costsRaw.perUser.map((entry) => ({
-      ...entry,
-      name: userById.get(entry.userId) || userByPoliticianId.get(entry.userId) || entry.userId
-    }))
-  };
+  function addNames(s) {
+    return { ...s, perUser: s.perUser.map((e) => ({ ...e, name: userById.get(e.userId) || userByPoliticianId.get(e.userId) || e.userId })) };
+  }
 
   return {
     generatedAt: new Date().toISOString(),
@@ -2463,7 +2458,7 @@ async function buildAdminOverview() {
       profiles: profiles.length,
       assignments: assignments.length,
       feedbackOpen: feedback.filter((item) => !item.done).length,
-      knowledgeObjects: koCount,
+      knowledgeObjects: koCountTotal,
       activeLast7d: users.filter((user) => {
         const seen = user.lastSeenAt || user.lastLoginAt;
         return seen && (Date.now() - new Date(seen).getTime()) < 7 * 24 * 60 * 60 * 1000;
@@ -2474,12 +2469,9 @@ async function buildAdminOverview() {
     mandates: mandates.map(adminMandateSummary),
     assignments,
     feedback,
-    costs,
-    aiStats: {
-      totalCostUsd: aiStats.totalCostUsd,
-      totalCalls: aiStats.totalCalls,
-      perCategory: aiStats.perCategory,
-      periodDays: aiStats.periodDays
+    stats: {
+      today: addNames(statsToday),
+      days30: addNames(stats30d)
     },
     crawlReport,
     system: {

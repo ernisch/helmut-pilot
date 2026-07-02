@@ -49,6 +49,7 @@ let allowedProfiles = [];
 let adminData = null;
 let adminDataLoaded = false;
 let adminLoadError = false;
+let adminPeriod = "today";
 let expandedAdminUsers = new Set();
 let dailyInputs = [];
 let dailyInputsLoaded = false;
@@ -1030,33 +1031,42 @@ function renderAdminView() {
         <p class="admin-subtitle">Nutzer, Rollen und Zuweisungen verwalten.</p>
       </header>
 
+      <div class="admin-period-toggle">
+        <button class="admin-period-btn${adminPeriod === "today" ? " is-active" : ""}" type="button" data-admin-period="today">Heute</button>
+        <button class="admin-period-btn${adminPeriod === "days30" ? " is-active" : ""}" type="button" data-admin-period="days30">30 Tage</button>
+      </div>
+
       <div class="admin-stats-row admin-stats-row--5">
         <div class="admin-stat-card">
           <span class="admin-stat-num">${data.counts?.users ?? 0}</span>
           <span class="admin-stat-label">Nutzer</span>
         </div>
         <div class="admin-stat-card">
-          <span class="admin-stat-num">${sys.store?.rawItems?.total ?? "—"}</span>
+          <span class="admin-stat-num">${data.stats?.[adminPeriod]?.articles ?? "—"}</span>
           <span class="admin-stat-label">Artikel</span>
         </div>
         <div class="admin-stat-card">
-          <span class="admin-stat-num">${data.counts?.knowledgeObjects ?? "—"}</span>
+          <span class="admin-stat-num">${data.stats?.[adminPeriod]?.kos ?? "—"}</span>
           <span class="admin-stat-label">KOs</span>
         </div>
         <div class="admin-stat-card">
-          <span class="admin-stat-num">${sys.store?.briefings?.total ?? "—"}</span>
+          <span class="admin-stat-num">${data.stats?.[adminPeriod]?.briefings ?? "—"}</span>
           <span class="admin-stat-label">Briefings</span>
         </div>
         <div class="admin-stat-card">
-          <span class="admin-stat-num admin-stat-num--cost">$${typeof data.costs?.totalCostUsd === "number" ? data.costs.totalCostUsd.toFixed(3) : "—"}</span>
-          <span class="admin-stat-sub">€${typeof data.costs?.totalCostUsd === "number" ? (data.costs.totalCostUsd * USD_TO_EUR).toFixed(3) : "—"}</span>
-          <span class="admin-stat-label">KI-Kosten (30d)</span>
+          ${(function() {
+            const cost = data.stats?.[adminPeriod]?.totalCostUsd;
+            return typeof cost === "number"
+              ? `<span class="admin-stat-num admin-stat-num--cost">$${cost.toFixed(3)}</span><span class="admin-stat-sub">€${(cost * USD_TO_EUR).toFixed(3)}</span>`
+              : `<span class="admin-stat-num admin-stat-num--cost">—</span>`;
+          })()}
+          <span class="admin-stat-label">KI-Kosten</span>
         </div>
       </div>
 
       <div class="admin-charts-row">
-        ${renderAdminEngineChart(data.aiStats)}
-        ${renderAdminCostsCard(data.costs)}
+        ${renderAdminEngineChart(data.stats?.[adminPeriod])}
+        ${renderAdminCostsCard(data.stats?.[adminPeriod])}
       </div>
 
       ${renderAdminCrawlStats(data.crawlReport)}
@@ -6042,6 +6052,14 @@ function bindAccountActions() {
 }
 
 function bindActions() {
+  app.querySelectorAll("[data-admin-period]").forEach((button) => {
+    button.addEventListener("click", () => {
+      adminPeriod = button.dataset.adminPeriod;
+      render();
+      bindActions();
+    });
+  });
+
   app.querySelectorAll("[data-reload-admin]").forEach((button) => {
     button.addEventListener("click", () => {
       adminDataLoaded = false;

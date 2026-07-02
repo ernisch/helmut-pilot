@@ -8107,6 +8107,33 @@ body {
   border-radius: 6px;
 }
 
+/* Period Toggle */
+.admin-period-toggle {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.admin-period-btn {
+  padding: 5px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border, rgba(255,255,255,.1));
+  background: transparent;
+  color: var(--muted-2, #888);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.admin-period-btn:hover {
+  background: var(--surface-2, rgba(255,255,255,.06));
+  color: var(--text, #fff);
+}
+.admin-period-btn.is-active {
+  background: var(--accent, #4f8ef7);
+  border-color: var(--accent, #4f8ef7);
+  color: #fff;
+}
+
 /* Bottom log row */
 .admin-bottom-row {
   display: grid;
