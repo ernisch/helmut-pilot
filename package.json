@@ -4,7 +4,9 @@
     "smoke": "node scripts/smoke-test.js",
     "test:p1": "node scripts/p1-security-check.js",
     "test:contract": "node scripts/contract-snapshot-test.js",
-    "test:goldset": "node scripts/goldset-test.js"
+    "test:goldset": "node scripts/goldset-test.js",
+    "test:understanding-eval": "node scripts/understanding-eval.js",
+    "test:understanding-smoke": "node scripts/understanding-live-smoke.js"
   },
   "dependencies": {},
   "devDependencies": {}

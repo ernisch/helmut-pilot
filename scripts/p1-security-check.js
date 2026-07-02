@@ -853,6 +853,180 @@ async function c7cLazyUnderstandingChecks() {
     idem && idem.triggered === false && idem.action === "skip-exists");
 }
 
+// Datenmotor V3 — Commit C8: echter KI-Understanding-Call (im Schatten).
+// "Einmal verstehen (global, KI) -> mehrfach bewerten (0 KI)". Getestet wird die
+// vollstaendige Zustandslogik (pending -> complete/failed), das Pending-Orchestrieren,
+// Budget/Lock/Flags, DSGVO (kein Inhalt in Log/Metadaten) und die Goldset-Eval —
+// alles mit injizierten Deps, KEIN Netzwerk, KEINE echte KI.
+async function c8UnderstandingChecks() {
+  const u = require(path.join(root, "lib/helmut/understanding.js"));
+  const matching = require(path.join(root, "lib/helmut/matching.js"));
+  const { toRawDocumentRow, dedupeRawDocuments } = require(path.join(root, "lib/helmut/dedup.js"));
+  const { validateKnowledgeObject } = require(path.join(root, "lib/helmut/understanding-schema.js"));
+  const goldset = JSON.parse(fs.readFileSync(path.join(root, "scripts/goldset/understanding-goldset.json"), "utf8"));
+  const analysis = goldset.cases[0].expected; // valide Analyse als perfekte Fake-KI-Antwort
+
+  const cluster = { documents: [{ title: "Rentenpaket 2026 im Kabinett beschlossen", summary: "Kabinett beschliesst Rentenpaket." }] };
+  const pendingKo = { id: "ko-vg-x", vorgang_id: "vg-x", status: "pending", understanding_status: "pending", headline: "Rentenpaket 2026" };
+
+  let understandCalls = 0;
+  const saved = [];
+  const skips = [];
+  const failed = [];
+  const canSpendCalls = [];
+  const baseDeps = {
+    enabled: () => true,
+    aiEnabled: () => true,
+    acquireLock: () => ({ granted: true, active: true }),
+    releaseLock: () => {},
+    getExisting: () => null,
+    canSpend: (...args) => { canSpendCalls.push(args); return { allowed: true }; },
+    requestUnderstanding: () => { understandCalls += 1; return { ...analysis }; },
+    save: (k) => { saved.push(k); return { saved: true, id: k.id }; },
+    markFailed: (vorgangId, meta) => { failed.push({ vorgangId, meta }); return { saved: true }; },
+    modelName: () => "gpt-5-mini",
+    logSkip: (c) => skips.push(c)
+  };
+
+  // (a) Pending -> complete: 1 KI-Call, status = Analyse-Klasse, understanding_status='complete'.
+  const done = await u.understandOneCluster(cluster, baseDeps, { vorgangId: "vg-x", existing: { ...pendingKo } });
+  check("C8 Pending->complete: 1 KI-Call, KO gespeichert (status='neu', understanding_status='complete')",
+    understandCalls === 1 && saved.length === 1 && done.status === "saved"
+      && saved[0].status === "neu" && saved[0].understanding_status === "complete",
+    `calls=${understandCalls} status=${saved[0] && saved[0].status}/${saved[0] && saved[0].understanding_status}`);
+  check("C8 complete: understanding_model als Metadatum gesetzt (kein Prompt-/Antwortinhalt im KO)",
+    saved[0].understanding_model === "gpt-5-mini" && !("prompt" in saved[0]) && !("answer" in saved[0]) && !("email" in saved[0]));
+  check("C8 complete: gespeichertes KO ist schema-valide UND mandantenlos (kein user_id/politicianId)",
+    validateKnowledgeObject(saved[0]).valid === true && !("user_id" in saved[0]) && !("politicianId" in saved[0]));
+  check("C8 nicht-pro-Nutzer: canSpend wird GLOBAL ohne Nutzer-Argument aufgerufen",
+    canSpendCalls.length === 1 && canSpendCalls[0].length === 0);
+
+  // (b) Ungueltige KI-Antwort auf pending -> failed markiert, NICHT gespeichert, kein Crash.
+  understandCalls = 0; saved.length = 0; skips.length = 0; failed.length = 0;
+  const inv = await u.understandOneCluster(cluster, { ...baseDeps, requestUnderstanding: () => ({ was_ist_passiert: "x" }) },
+    { vorgangId: "vg-x", existing: { ...pendingKo } });
+  check("C8 Robustheit: ungueltige KI-Antwort auf pending -> skipped-invalid, KO als failed geparkt (nicht gespeichert)",
+    inv.status === "skipped-invalid" && saved.length === 0 && failed.length === 1 && failed[0].vorgangId === "vg-x"
+      && skips.includes("skipped-understanding-invalid"));
+  check("C8 DSGVO: failed-Metadaten tragen KEINEN Antwort-/Fehler-/Prompt-Inhalt (nur headline + Modell)",
+    !("error" in failed[0].meta) && !("answer" in failed[0].meta) && !("prompt" in failed[0].meta)
+      && failed[0].meta.understanding_model === "gpt-5-mini");
+
+  // (c) KI-Fehler (throw) auf pending -> failed markiert, sauberer Skip, kein Inhalt geloggt.
+  understandCalls = 0; skips.length = 0; failed.length = 0;
+  const err = await u.understandOneCluster(cluster, { ...baseDeps, requestUnderstanding: () => { throw new Error("boom http body 500"); } },
+    { vorgangId: "vg-x", existing: { ...pendingKo } });
+  check("C8 Robustheit: KI-Fehler auf pending -> skipped-error, failed markiert, kein Fehlertext im Log",
+    err.status === "skipped-error" && failed.length === 1 && skips.includes("skipped-understanding-error")
+      && !skips.some((s) => s.includes("boom")));
+
+  // (c2) Eager-Pfad: KI-Fehler bei NEUEM Vorgang (kein existing) -> ebenfalls geparkt.
+  // Verhindert Endlos-Retry auch dort, wo (noch) kein pending-KO existiert.
+  understandCalls = 0; failed.length = 0; skips.length = 0;
+  const eagerFail = await u.understandOneCluster(cluster, { ...baseDeps, requestUnderstanding: () => { throw new Error("boom"); } },
+    { vorgangId: "vg-neu", existing: null });
+  check("C8 Kein Endlos-Retry (eager): KI-Fehler bei NEUEM Vorgang -> failed geparkt (markFailed aufgerufen)",
+    eagerFail.status === "skipped-error" && failed.length === 1 && failed[0].vorgangId === "vg-neu");
+
+  // (d) Bereits verstandenes KO -> skipped-exists, KEIN KI-Call (einmal pro Vorgang).
+  understandCalls = 0;
+  const ex = await u.understandOneCluster(cluster, baseDeps, { vorgangId: "vg-x", existing: { id: "ko-vg-x", status: "neu" } });
+  check("C8 Idempotenz: verstandenes KO -> skipped-exists, KEIN KI-Call",
+    ex.status === "skipped-exists" && understandCalls === 0);
+
+  // (e) Geparktes (failed) KO -> skipped-failed, KEIN KI-Call (kein Endlos-Retry).
+  understandCalls = 0;
+  const parked = await u.understandOneCluster(cluster, baseDeps, { vorgangId: "vg-x", existing: { status: "pending", understanding_status: "failed" } });
+  check("C8 Kein Endlos-Retry: geparktes failed-KO -> skipped-failed, KEIN KI-Call",
+    parked.status === "skipped-failed" && understandCalls === 0);
+
+  // (f) Budget-Gate (fail-closed-faehig): canSpend=false -> kein KI-Call, skipped-budget.
+  understandCalls = 0; skips.length = 0;
+  const budget = await u.understandOneCluster(cluster, { ...baseDeps, canSpend: () => ({ allowed: false, reason: "daily-llm-budget-reached" }) },
+    { vorgangId: "vg-x", existing: { ...pendingKo } });
+  check("C8 Budget: canSpend=false -> kein KI-Call, skipped-budget geloggt",
+    budget.status === "skipped-budget" && understandCalls === 0 && skips.includes("skipped-understanding-budget"));
+
+  // --- runPendingUnderstandingShadow: Orchestrierung ueber status='pending' -----
+  const items = [{ title: "Rentenpaket 2026 im Kabinett beschlossen", summary: "Kabinett beschliesst.", url: "https://bmas.de/rente" }];
+  const rows = dedupeRawDocuments(items.map(toRawDocumentRow).filter((r) => r && r.id));
+  const vid = u.deriveVorgangId(u.clusterRawDocuments(rows)[0]);
+  const pendingForVid = { id: `ko-${vid}`, vorgang_id: vid, status: "pending", understanding_status: "pending", headline: "Rentenpaket" };
+
+  const runDeps = {
+    ...baseDeps,
+    listPending: () => [pendingForVid]
+  };
+
+  // (g) Flag/AI/Lock/Pending-Gates.
+  const off = await u.runPendingUnderstandingShadow(items, { ...runDeps, enabled: () => false });
+  check("C8 Gate: enabled=false -> skipped (v3-store-disabled), keine KI", off.skipped === true && off.reason === "v3-store-disabled");
+  const noAi = await u.runPendingUnderstandingShadow(items, { ...runDeps, aiEnabled: () => false });
+  check("C8 Gate: aiEnabled=false -> skipped (ai-disabled)", noAi.skipped === true && noAi.reason === "ai-disabled");
+  const noPend = await u.runPendingUnderstandingShadow(items, { ...runDeps, listPending: () => [] });
+  check("C8 Gate: keine pending-Vorgaenge -> skipped (no-pending), keine KI", noPend.skipped === true && noPend.reason === "no-pending");
+  const locked = await u.runPendingUnderstandingShadow(items, { ...runDeps, acquireLock: () => ({ granted: false }) });
+  check("C8 Gate: Lock nicht erteilt -> skipped (understanding-locked), verhindert Doppel-KI",
+    locked.skipped === true && locked.reason === "understanding-locked");
+
+  // (h) Happy Path: pending-Vorgang mit passendem Cluster -> genau 1 KI-Call, 1 KO complete.
+  understandCalls = 0; saved.length = 0;
+  const runOk = await u.runPendingUnderstandingShadow(items, runDeps);
+  check("C8 Pending-Runner: pending-Vorgang mit Quellen -> 1 KI-Call, 1 KO complete gespeichert",
+    understandCalls === 1 && saved.length === 1 && runOk.counts && runOk.counts.saved === 1
+      && saved[0].understanding_status === "complete", `calls=${understandCalls} counts=${JSON.stringify(runOk.counts)}`);
+
+  // (i) Pending-Vorgang OHNE Quell-Dokumente in diesem Lauf -> KEIN KI-Call (Kosten).
+  understandCalls = 0; saved.length = 0;
+  const noCluster = await u.runPendingUnderstandingShadow(items, {
+    ...runDeps,
+    listPending: () => [{ id: "ko-vg-unbekannt", vorgang_id: "vg-voellig-anderer-vorgang", status: "pending", understanding_status: "pending" }]
+  });
+  check("C8 Kostendisziplin: pending ohne passenden Cluster -> skipped-no-cluster, KEIN KI-Call",
+    understandCalls === 0 && noCluster.counts && noCluster.counts["skipped-no-cluster"] === 1);
+
+  // (i2) Runner fail-safe: wirft ein Vorgang (hier via save-throw), crasht der Batch NICHT.
+  let crashed = false; let runSafe;
+  try {
+    runSafe = await u.runPendingUnderstandingShadow(items, {
+      ...runDeps, listPending: () => [pendingForVid],
+      save: () => { throw new Error("db down"); }
+    });
+  } catch (_) { crashed = true; }
+  check("C8 Runner fail-safe: geworfener Vorgang crasht den Batch NICHT (cluster-error gezaehlt, kein throw)",
+    !crashed && runSafe && runSafe.counts && runSafe.counts["cluster-error"] === 1);
+
+  // (j) Cross-Engine (C7a): complete-KO ist matchbar, failed/pending-KO NICHT.
+  const profile = { party: "SPD", committee: "Ausschuss fuer Arbeit und Soziales", focusTopics: ["Rente"] };
+  const completeKo = { ...analysis, id: "ko-complete", vorgang_id: "vg-c", status: "neu", understanding_status: "complete" };
+  const failedKo = { id: "ko-failed", vorgang_id: "vg-f", status: "pending", understanding_status: "failed", parteien: ["SPD"], ausschuesse: ["Ausschuss fuer Arbeit und Soziales"] };
+  const matches = matching.matchProfileToKnowledgeObjects(profile, [completeKo, failedKo]);
+  check("C8 Cross-Engine: complete-KO wird gematcht, failed/pending-KO wird NIE ausgeliefert (status='pending')",
+    matches.some((m) => m.knowledge_object_id === "ko-complete") && !matches.some((m) => m.knowledge_object_id === "ko-failed"),
+    `ids=${matches.map((m) => m.knowledge_object_id).join(",")}`);
+
+  // (k) DSGVO-Prompt: Regeln + Pflichtfelder eingebaut, nur oeffentlich-politische Akteure.
+  const prompt = u.buildUnderstandingPrompt(cluster);
+  check("C8 Prompt: DSGVO-Regeln (nur oeffentliche Akteure, keine Privatpersonen/Kontaktdaten) + mentioned_people",
+    /oeffentlich handelnde politische Akteure/i.test(prompt) && /keine privaten Personenprofile|keine Adressen\/E-Mails/i.test(prompt)
+      && /mentioned_people/.test(prompt));
+
+  // (l) Goldset-Eval: perfekte KI -> alle Faelle valide; schlechte KI -> alle abgefangen.
+  const perfect = (_prompt, caseObj) => ({ ...caseObj.expected });
+  const evalGood = await u.evaluateUnderstandingGoldset(goldset, perfect);
+  check("C8 Goldset-Eval: perfekte KI-Antwort -> alle 7 Faelle valide (Pipeline erfuellt den Vertrag)",
+    evalGood.total === 7 && evalGood.valid === 7, `valid=${evalGood.valid}/${evalGood.total}`);
+  const badAi = () => ({ was_ist_passiert: "x", mentioned_people: ["kontakt@example.com"] });
+  const evalBad = await u.evaluateUnderstandingGoldset(goldset, badAi);
+  check("C8 Goldset-Eval: schlechte/PII-behaftete KI-Antwort -> 0 valide (fail-safe, nichts durchgelassen)",
+    evalBad.valid === 0 && evalBad.failures.length === 7, `valid=${evalBad.valid}`);
+
+  // (m) Kein require('./ai') als Roh-String-Umgehung: understanding.js nutzt ai NUR ueber defaultDeps.
+  const src = fs.readFileSync(path.join(root, "lib/helmut/understanding.js"), "utf8");
+  check("C8 Struktur: understanding.js kapselt die KI hinter injizierbaren Deps (requestUnderstanding/save/markFailed)",
+    /requestUnderstanding/.test(src) && /markFailed/.test(src) && /understanding_status/.test(src));
+}
+
 // Datenmotor V2 — Commit 2: echte Personalisierung / Cem-Entkopplung.
 // Deterministischer Unit-Test der reinen Merge-Funktion (kein Store noetig).
 function personalizationChecks() {
@@ -991,6 +1165,7 @@ async function main() {
   await c7aMatchingChecks();
   await c7bBriefingEngineChecks();
   await c7cLazyUnderstandingChecks();
+  await c8UnderstandingChecks();
 
   const failed = results.filter((r) => !r.ok);
   console.log(`\n${results.length - failed.length}/${results.length} Checks bestanden.`);

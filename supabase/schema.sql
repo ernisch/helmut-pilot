@@ -253,7 +253,14 @@ create table if not exists public.knowledge_objects (
   handlungsempfehlung text,
   confidence_score integer,
   source_document_count integer not null default 0,
+  -- status = ANALYSE-Klasse (neu/update/beobachtung/abgeschlossen) bzw. 'pending'
+  -- solange der Vorgang von C7c vorgemerkt, aber noch nicht verstanden ist. Das
+  -- Matching (C7a) schliesst genau 'pending' aus.
   status text not null default 'neu',
+  -- understanding_status = LIFECYCLE des KI-Understanding (C8), getrennt von der
+  -- Analyse-Klasse: 'pending' (vorgemerkt), 'complete' (verstanden), 'failed'
+  -- (KI ungueltig/Fehler; status bleibt dann 'pending' -> nie ausgeliefert/gematcht).
+  understanding_status text not null default 'pending',
   -- Radar-Erwaehnungen: EINMAL global befuellt, danach ohne KI-Kosten fuer das
   -- personenscharfe Matching (z. B. "wird mein MdB/meine Partei erwaehnt?").
   mentioned_people text[] not null default '{}',
@@ -280,6 +287,12 @@ create table if not exists public.knowledge_objects (
 );
 create index if not exists knowledge_objects_vorgang_id_idx on public.knowledge_objects (vorgang_id);
 create index if not exists knowledge_objects_status_idx on public.knowledge_objects (status);
+-- C8: understanding_status auch fuer BESTEHENDE Datenbanken sicherstellen (create table
+-- ist dort ein No-Op). MUSS vor der RPC match_knowledge_objects stehen, die die Spalte
+-- referenziert (SQL-Funktionskoerper werden bei create geprueft).
+alter table public.knowledge_objects
+  add column if not exists understanding_status text not null default 'pending';
+create index if not exists knowledge_objects_understanding_status_idx on public.knowledge_objects (understanding_status);
 
 -- KO <-> Rohdokument (N:M): "70 Artikel -> 1 Vorgang".
 create table if not exists public.ko_document_links (
@@ -491,9 +504,12 @@ as $$
   from public.knowledge_objects ko
   where ko.embedding is not null
     and ko.status <> 'pending'
+    and ko.understanding_status <> 'failed'  -- C8 defense-in-depth: geparkte KOs nie ausliefern
     and (filter_parties is null or ko.parteien && filter_parties or ko.mentioned_parties && filter_parties)
     and (filter_committees is null or ko.ausschuesse && filter_committees or ko.mentioned_committees && filter_committees)
     and (filter_regions is null or ko.tags && filter_regions or ko.mentioned_locations && filter_regions)
   order by ko.embedding <=> query_embedding
   limit greatest(1, match_count);
 $$;
+-- C8-Lifecycle (understanding_status) wird oben — direkt nach knowledge_objects und
+-- VOR dieser RPC — additiv/idempotent angelegt.
