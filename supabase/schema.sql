@@ -414,3 +414,86 @@ alter table public.topic_memory enable row level security;
 alter table public.interactions enable row level security;
 alter table public.office_outputs enable row level security;
 alter table public.briefings enable row level security;
+
+-- =============================================================================
+-- Helmut Core V3 — C7a: Matching Engine (pgvector, KEINE KI)
+-- =============================================================================
+-- Rein ADDITIV und idempotent. Aktiv erst, wenn HELMUT_V3_MATCHING (und
+-- HELMUT_V3_STORE) gesetzt sind; solange bleibt dieser Teil ungenutzt.
+--
+-- "Einmal verstehen (global) -> mehrfach bewerten (pro Nutzer, 0 KI)":
+-- Das Matching ist deterministisch. Die Embeddings werden NICHT von einer KI,
+-- sondern regelbasiert aus oeffentlichen Merkmalen (Partei/Ausschuss/Themen/
+-- Wahlkreis) berechnet (siehe lib/helmut/matching.js) -> 100% reproduzierbar,
+-- kein Netzwerk, kein Modell. pgvector traegt nur die Aehnlichkeitssuche.
+--
+-- DSGVO: knowledge_objects/embedding bleiben mandantenlos (kein user_id).
+-- profile_embeddings/matching_results sind pro Nutzer und RLS-geschuetzt; sie
+-- speichern KEINE Freitext-PII, nur Merkmalsvektoren, Scores und die erklaerenden
+-- matched_features (kurze oeffentliche Labels wie 'partei:SPD', 'ausschuss:...').
+
+create extension if not exists vector;
+
+-- Deterministischer Merkmalsvektor des Vorgangs (mandantenlos, global 1x befuellt).
+-- Dimension muss zu EMBEDDING_DIM in lib/helmut/matching.js passen (Default 256).
+alter table public.knowledge_objects add column if not exists embedding vector(256);
+create index if not exists knowledge_objects_embedding_idx
+  on public.knowledge_objects using ivfflat (embedding vector_cosine_ops) with (lists = 100);
+
+-- Merkmalsvektor des Nutzerprofils — EINMALIG gespeichert, bei Profiländerung neu
+-- berechnet (profile_hash erkennt Änderungen). Kein Freitext, nur Vektor + Hash.
+create table if not exists public.profile_embeddings (
+  user_id text primary key references public.profiles(id) on delete cascade,
+  embedding vector(256),
+  profile_hash text,
+  dim integer not null default 256,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+-- Ergebnis der deterministischen Aehnlichkeitssuche pro Nutzer x Vorgang.
+-- matched_features = erklaerbare Treffer (welcher Filter/welches Merkmal, warum).
+create table if not exists public.matching_results (
+  id text primary key,
+  user_id text references public.profiles(id) on delete cascade,
+  knowledge_object_id text references public.knowledge_objects(id) on delete cascade,
+  vorgang_id text,
+  similarity numeric,
+  rank integer,
+  matched_features jsonb not null default '[]'::jsonb,
+  filters jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+create index if not exists matching_results_user_idx on public.matching_results (user_id, created_at);
+create index if not exists matching_results_ko_idx on public.matching_results (knowledge_object_id);
+
+alter table public.profile_embeddings enable row level security;
+alter table public.matching_results enable row level security;
+
+-- pgvector-Suche als RPC (PostgREST kann '<=>' nicht ordnen). Deterministische
+-- Kosinus-Aehnlichkeit + harte Merkmalsfilter (Partei/Ausschuss/Wahlkreis) via
+-- Array-Overlap. Pending-KOs (status='pending', noch nicht verstanden) sind
+-- ausgeschlossen. Nur SELECT, security invoker -> RLS bleibt wirksam.
+create or replace function public.match_knowledge_objects(
+  query_embedding vector(256),
+  match_count integer default 20,
+  filter_parties text[] default null,
+  filter_committees text[] default null,
+  filter_regions text[] default null
+)
+returns table (id text, vorgang_id text, similarity double precision)
+language sql
+stable
+as $$
+  select ko.id,
+         ko.vorgang_id,
+         1 - (ko.embedding <=> query_embedding) as similarity
+  from public.knowledge_objects ko
+  where ko.embedding is not null
+    and ko.status <> 'pending'
+    and (filter_parties is null or ko.parteien && filter_parties or ko.mentioned_parties && filter_parties)
+    and (filter_committees is null or ko.ausschuesse && filter_committees or ko.mentioned_committees && filter_committees)
+    and (filter_regions is null or ko.tags && filter_regions or ko.mentioned_locations && filter_regions)
+  order by ko.embedding <=> query_embedding
+  limit greatest(1, match_count);
+$$;
