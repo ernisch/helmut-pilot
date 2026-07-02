@@ -444,6 +444,70 @@ async function c6DedupDsgvoChecks() {
     "nur Tokens/Kosten/Modell/call_type — keine Prompt-Texte.");
 }
 
+// Datenmotor V3 — Commit C7b: Understanding-Goldset (Struktur + DSGVO, keine KI).
+function c7bGoldsetChecks() {
+  const schemaMod = require(path.join(root, "lib/helmut/understanding-schema.js"));
+  const { validateGoldset, validateKnowledgeObject, KNOWLEDGE_OBJECT_SCHEMA, GOLDSET_CASE_TYPES } = schemaMod;
+
+  // (a) Goldset laedt & validiert vollstaendig, alle geforderten Fall-Typen abgedeckt.
+  let goldset = null;
+  try {
+    goldset = JSON.parse(fs.readFileSync(path.join(root, "scripts/goldset/understanding-goldset.json"), "utf8"));
+  } catch (error) {
+    check("C7b Goldset: Datei lesbar & JSON gueltig", false, error.message);
+    return;
+  }
+  const gs = validateGoldset(goldset);
+  check("C7b Goldset: alle Faelle erfuellen das knowledge_objects-Schema (DSGVO inkl.)",
+    gs.valid === true, gs.valid ? `${goldset.cases.length} Faelle` : gs.errors.slice(0, 4).join(" | "));
+  check("C7b Goldset: alle 7 geforderten Fall-Typen abgedeckt (neu/update/mehrere/lokal/partei/ausschuss/mdb)",
+    gs.caseTypes.length === GOLDSET_CASE_TYPES.length, `abgedeckt=${gs.caseTypes.length}/${GOLDSET_CASE_TYPES.length}`);
+
+  // (b) Schema deckt ALLE geforderten Pflichtfelder ab.
+  const mustHave = [
+    "was_ist_passiert", "warum_wichtig", "wer_ist_betroffen", "parteien", "ausschuesse",
+    "ministerien", "risiken", "chancen", "zeitdruck", "handlungsempfehlung",
+    "mentioned_people", "mentioned_mps", "mentioned_parties", "mentioned_committees",
+    "mentioned_ministries", "mentioned_locations", "mentioned_organizations"
+  ];
+  const missing = mustHave.filter((f) => !KNOWLEDGE_OBJECT_SCHEMA.required.includes(f));
+  check("C7b Schema: alle geforderten Pflichtfelder sind required (inkl. mentioned_*)",
+    missing.length === 0, missing.length ? `fehlend=${missing.join(", ")}` : "");
+
+  // (c) NEGATIV: fehlendes Pflichtfeld -> invalid (Validator ist kein No-Op).
+  const base = JSON.parse(JSON.stringify(goldset.cases[0].expected));
+  const noAction = JSON.parse(JSON.stringify(base)); delete noAction.handlungsempfehlung;
+  check("C7b Validator: fehlendes Pflichtfeld (handlungsempfehlung) -> invalid",
+    validateKnowledgeObject(noAction).valid === false);
+
+  // (d) NEGATIV: leeres mentioned_* fehlt -> invalid (Feld muss PRAESENT sein, auch leer).
+  const noMention = JSON.parse(JSON.stringify(base)); delete noMention.mentioned_mps;
+  check("C7b Validator: fehlendes mentioned_mps -> invalid (Feld muss praesent sein)",
+    validateKnowledgeObject(noMention).valid === false);
+
+  // (e) NEGATIV DSGVO: verbotenes PII-Feld -> invalid.
+  const withPii = JSON.parse(JSON.stringify(base)); withPii.email = "max@example.com";
+  const piiRes = validateKnowledgeObject(withPii);
+  check("C7b DSGVO: verbotenes PII-Feld (email) -> invalid",
+    piiRes.valid === false && piiRes.errors.some((e) => e.includes("PII")));
+
+  // (f) NEGATIV DSGVO: E-Mail-Muster im Text -> invalid.
+  const withMail = JSON.parse(JSON.stringify(base)); withMail.wer_ist_betroffen = "Kontakt: buero@example.com";
+  check("C7b DSGVO: E-Mail-Muster im Freitext -> invalid",
+    validateKnowledgeObject(withMail).valid === false);
+
+  // (g) NEGATIV DSGVO: langes mentioned_*-Dossier statt kurzer Erwaehnung -> invalid.
+  const withDossier = JSON.parse(JSON.stringify(base)); withDossier.mentioned_people = ["X ".repeat(80)];
+  check("C7b DSGVO: ueberlanges mentioned_people (Dossier) -> invalid",
+    validateKnowledgeObject(withDossier).valid === false);
+
+  // (h) NEGATIV DSGVO: Rohdokument mit Volltext-Feld -> Goldset invalid.
+  const tampered = JSON.parse(JSON.stringify(goldset));
+  tampered.cases[0].raw_documents[0].content = "GEHEIMER VOLLTEXT";
+  check("C7b DSGVO: raw_document mit 'content' (Volltext) -> Goldset invalid",
+    validateGoldset(tampered).valid === false);
+}
+
 // Datenmotor V2 — Commit 2: echte Personalisierung / Cem-Entkopplung.
 // Deterministischer Unit-Test der reinen Merge-Funktion (kein Store noetig).
 function personalizationChecks() {
@@ -577,6 +641,7 @@ async function main() {
   await c3DipPrimaryChecks();
   await c5V3StoreChecks();
   await c6DedupDsgvoChecks();
+  c7bGoldsetChecks();
 
   const failed = results.filter((r) => !r.ok);
   console.log(`\n${results.length - failed.length}/${results.length} Checks bestanden.`);
