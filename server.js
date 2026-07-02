@@ -344,7 +344,8 @@ async function handleRequest(request, response) {
       if (!outputType) throw accounts.httpError(400, "outputType ist erforderlich.");
       if (!isValidChannel(outputType)) throw accounts.httpError(400, `Unbekannter outputType: ${outputType}`);
       const userId = politicianId;
-      return generateOfficeOutput(userId, vorgangId, outputType);
+      const ko = await getKnowledgeObjectByVorgang(vorgangId);
+      return generateOfficeOutput(userId, vorgangId, outputType, ko);
     });
   }
 
