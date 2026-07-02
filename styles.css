@@ -5388,8 +5388,6 @@ small {
 }
 
 .pilot-status,
-.briefing-ticker b,
-.briefing-ticker small,
 .agent-facts b,
 .quick-panel,
 .decision-console,
@@ -8683,6 +8681,23 @@ body {
 :root[data-theme="light"] .profile-section {
   background: var(--card) !important;
   border-color: var(--line) !important;
+  box-shadow: var(--soft-shadow) !important;
+}
+
+/* Light Mode: Elemente aus dem Dark-First premium override, die kein Override hatten */
+:root[data-theme="light"] .agent-briefing,
+:root[data-theme="light"] .quick-panel,
+:root[data-theme="light"] .pilot-status,
+:root[data-theme="light"] .briefing-ticker b,
+:root[data-theme="light"] .briefing-ticker small,
+:root[data-theme="light"] .choice-pill,
+:root[data-theme="light"] .priority-row,
+:root[data-theme="light"] .source-card,
+:root[data-theme="light"] .evidence-card,
+:root[data-theme="light"] .profile-field {
+  background: var(--card) !important;
+  border-color: var(--line) !important;
+  color: var(--text) !important;
   box-shadow: var(--soft-shadow) !important;
 }
 

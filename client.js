@@ -67,10 +67,15 @@ const toast = document.querySelector("#toast");
 
 const USD_TO_EUR = 0.92;
 
+function fmtCost(n) {
+  if (typeof n !== "number") return "—";
+  return n < 0.01 ? n.toFixed(4) : n.toFixed(2);
+}
+
 function formatUsdEur(usd) {
   if (typeof usd !== "number") return "—";
   const eur = usd * USD_TO_EUR;
-  return `$${usd.toFixed(4)} | €${eur.toFixed(4)}`;
+  return `$${fmtCost(usd)} | €${fmtCost(eur)}`;
 }
 
 // --- View-Persistenz ---
@@ -1339,7 +1344,7 @@ function renderAdminCostsCard(costs) {
         <div class="cost-bar-item">
           <div class="cost-bar-head">
             <span class="cost-bar-name">${escapeHtml(u.name || u.userId)}</span>
-            <span class="cost-bar-amounts"><span class="cost-usd">$${u.totalCostUsd.toFixed(4)}</span> <span class="cost-sep">|</span> <span class="cost-eur">€${(u.totalCostUsd * USD_TO_EUR).toFixed(4)}</span></span>
+            <span class="cost-bar-amounts"><span class="cost-usd">$${fmtCost(u.totalCostUsd)}</span> <span class="cost-sep">|</span> <span class="cost-eur">€${fmtCost(u.totalCostUsd * USD_TO_EUR)}</span></span>
           </div>
           <div class="cost-bar-track">
             <div class="cost-bar-fill cost-bar-fill--usd" style="width:${pct}%"></div>
@@ -1384,9 +1389,9 @@ function renderAdminEngineChart(aiStats) {
       <div class="cost-bar-head">
         <span class="cost-bar-name cost-bar-name--wide">${escapeHtml(label)}</span>
         <span class="cost-bar-amounts">
-          <span class="cost-usd">$${usd.toFixed(4)}</span>
+          <span class="cost-usd">$${fmtCost(usd)}</span>
           <span class="cost-sep">|</span>
-          <span class="cost-eur">€${eur.toFixed(4)}</span>
+          <span class="cost-eur">€${fmtCost(eur)}</span>
           <span class="cost-share">${sharePct}%</span>
         </span>
       </div>
