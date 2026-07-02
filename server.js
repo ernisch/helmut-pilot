@@ -3172,33 +3172,43 @@ async function handleDebugRequest(request, response, url) {
     });
   }
 
-  // GET /api/debug/azure-ping?secret=... — prüft ob der aktuelle AZURE_OPENAI_KEY gültig ist.
+  // GET /api/debug/azure-ping?secret=... — prüft ob AZURE_OPENAI_KEY + ENDPOINT korrekt sind.
   // Kein KI-Call, kein Token-Verbrauch: listet Azure-Deployments (read-only REST).
-  // Antwort: { ok: true, deployments: [...] } oder { ok: false, httpStatus: 401, hint: "..." }
+  // Erkennt häufigen Konfigurationsfehler: AZURE_OPENAI_ENDPOINT enthält Pfadsuffix (/openai/v1),
+  // was zu doppelten Pfaden führt (https://.../openai/v1/openai/v1/responses → 404).
   if (url.pathname === "/api/debug/azure-ping") {
     return handleAsync(response, async () => {
       const keyRaw = process.env.AZURE_OPENAI_KEY || "";
-      const endpoint = String(process.env.AZURE_OPENAI_ENDPOINT || "").replace(/\/+$/, "");
+      const endpointRaw = String(process.env.AZURE_OPENAI_ENDPOINT || "").replace(/\/+$/, "");
       const deployment = process.env.AZURE_OPENAI_DEPLOYMENT || "(nicht gesetzt)";
       const keySet = keyRaw.length > 0;
-      const endpointSet = endpoint.length > 0;
-      // Letzten 4 Zeichen zeigen (nie den vollen Key).
+      const endpointSet = endpointRaw.length > 0;
       const keyPrefix = keySet ? `...${keyRaw.slice(-4)}` : "(nicht gesetzt)";
 
       if (!keySet || !endpointSet) {
         return {
           debug: true, ok: false,
           reason: !keySet ? "AZURE_OPENAI_KEY nicht gesetzt" : "AZURE_OPENAI_ENDPOINT nicht gesetzt",
-          keyPrefix, endpoint: endpoint || null, deployment
+          keyPrefix, endpointRaw: endpointRaw || null, deployment
         };
       }
 
-      // Azure Deployments-Liste: keine Tokens, nur Auth-Check.
+      // Häufiger Fehler: AZURE_OPENAI_ENDPOINT enthält Pfad-Suffix (/openai/v1 o.ä.).
+      // Der Code in ai.js baut: ${AZURE_OPENAI_ENDPOINT}/openai/v1/responses
+      // → mit /openai/v1 im Env entsteht ein doppelter Pfad → 404.
+      // Korrekt ist nur die Base-URL: https://<resource>.openai.azure.com
+      const pathSuffixMatch = endpointRaw.match(/^(https:\/\/[^/]+)(\/.*)?$/);
+      const baseUrl = pathSuffixMatch ? pathSuffixMatch[1] : endpointRaw;
+      const hasSuffix = endpointRaw !== baseUrl;
+      const derivedAppUrl = `${endpointRaw}/openai/v1/responses`;
+      const correctedAppUrl = `${baseUrl}/openai/v1/responses`;
+
+      // Deployments-Liste gegen die KORRIGIERTE Base-URL testen (kein Token-Verbrauch).
       let httpStatus = null;
       let deployments = null;
       let errorBody = null;
       try {
-        const res = await fetch(`${endpoint}/openai/deployments?api-version=2024-02-01`, {
+        const res = await fetch(`${baseUrl}/openai/deployments?api-version=2024-02-01`, {
           headers: { "api-key": keyRaw, "Content-Type": "application/json" },
           signal: AbortSignal.timeout(8000)
         });
@@ -3211,30 +3221,37 @@ async function handleDebugRequest(request, response, url) {
         }
       } catch (err) {
         return {
-          debug: true, ok: false, keyPrefix, endpoint, deployment,
+          debug: true, ok: false, keyPrefix, endpointRaw, baseUrl, deployment,
+          hasSuffix, derivedAppUrl,
           error: String(err && err.message || "fetch-fehler").slice(0, 120)
         };
       }
 
-      const hint = httpStatus === 401
-        ? "Key ungültig oder abgelaufen → in Vercel erneuern (siehe /api/debug/azure-ping Antwort für Schritte)."
-        : httpStatus === 403
-          ? "Key hat keine Berechtigung für diesen Endpoint."
-          : httpStatus === 404
-            ? "Endpoint falsch. AZURE_OPENAI_ENDPOINT prüfen (Format: https://<resource>.openai.azure.com)."
-            : httpStatus >= 500
-              ? "Azure Serverfehler — kurz warten und erneut prüfen."
-              : null;
+      const hint = hasSuffix
+        ? `AZURE_OPENAI_ENDPOINT enthält Pfad-Suffix ('${endpointRaw.slice(baseUrl.length)}'). Korrekter Wert: '${baseUrl}' (nur Base-URL).`
+        : httpStatus === 401
+          ? "Key ungültig oder abgelaufen → in Vercel unter AZURE_OPENAI_KEY erneuern."
+          : httpStatus === 403
+            ? "Key hat keine Berechtigung für diesen Endpoint."
+            : httpStatus === 404
+              ? `Endpoint nicht gefunden. Azure Portal → deine Resource → 'Keys and Endpoint' → Endpoint-URL kopieren.`
+              : httpStatus >= 500
+                ? "Azure Serverfehler — kurz warten und erneut prüfen."
+                : null;
 
-      console.log(`[debug/azure-ping] keyPrefix=${keyPrefix} endpoint=${endpoint} httpStatus=${httpStatus} deployments=${deployments ? deployments.length : "n/a"}`);
+      console.log(`[debug/azure-ping] keyPrefix=${keyPrefix} baseUrl=${baseUrl} hasSuffix=${hasSuffix} httpStatus=${httpStatus} deployments=${deployments ? deployments.length : "n/a"}`);
 
       return {
         debug: true,
-        ok: httpStatus === 200,
+        ok: httpStatus === 200 && !hasSuffix,
         httpStatus,
         keyPrefix,
-        endpoint,
+        endpointRaw,
+        baseUrl,
+        hasSuffix,
         deployment,
+        derivedAppUrl: hasSuffix ? derivedAppUrl : correctedAppUrl,
+        ...(hasSuffix ? { fix: `Vercel: AZURE_OPENAI_ENDPOINT = '${baseUrl}'` } : {}),
         deployments,
         ...(hint ? { hint } : {}),
         ...(errorBody ? { errorBody } : {})
