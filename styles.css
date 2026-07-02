@@ -8106,6 +8106,35 @@ body {
   background: rgba(255, 89, 103, .06);
   border-radius: 6px;
 }
+.crawl-dot {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-bottom: 4px;
+  flex-shrink: 0;
+}
+.crawl-dot--green  { background: #3ecf8e; box-shadow: 0 0 4px rgba(62,207,142,.5); }
+.crawl-dot--yellow { background: #f5a623; box-shadow: 0 0 4px rgba(245,166,35,.4); }
+.crawl-dot--red    { background: #ff5967; box-shadow: 0 0 4px rgba(255,89,103,.5); }
+.crawl-dot--gray   { background: var(--muted-2, #666); }
+.crawl-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-size: 10px;
+  color: var(--muted-2);
+  align-items: center;
+}
+.crawl-legend .crawl-dot {
+  display: inline-block;
+  margin-bottom: 0;
+  margin-right: 4px;
+  vertical-align: middle;
+}
 
 /* Period Toggle */
 .admin-period-toggle {

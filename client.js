@@ -1420,30 +1420,46 @@ function renderAdminCrawlStats(crawlReport) {
   const scanned = crawlReport.scannedArticles ?? 0;
   const saved = crawlReport.deduplicatedArticles ?? 0;
   const dupes = Math.max(0, scanned - saved);
+  const durRaw = crawlReport.durationSec;
   const crawlDate = crawlReport.lastCrawlAt
     ? new Date(crawlReport.lastCrawlAt).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
     : "—";
+
+  function dot(status) {
+    return `<span class="crawl-dot crawl-dot--${status}" title="${{ green: "Alles gut", yellow: "Achtung", red: "Problem", gray: "Keine Daten" }[status]}"></span>`;
+  }
+
   const metrics = [
-    { label: "Gescannt", value: scanned },
-    { label: "Duplikate", value: dupes },
-    { label: "Neu", value: saved },
-    { label: "Vorgänge", value: crawlReport.newVorgaenge ?? "—" },
-    { label: "Neue KOs", value: crawlReport.newKnowledgeObjects ?? "—" },
-    { label: "Dauer", value: crawlReport.durationSec !== null && crawlReport.durationSec !== undefined ? `${crawlReport.durationSec}s` : "—" }
+    { label: "Gescannt",  value: scanned,                                           status: scanned > 0 ? "green" : "yellow" },
+    { label: "Duplikate", value: dupes,                                              status: dupes > 0   ? "green" : "yellow" },
+    { label: "Neu",       value: saved,                                              status: saved > 0   ? "green" : "yellow" },
+    { label: "Vorgänge",  value: crawlReport.newVorgaenge   ?? "—",                 status: (crawlReport.newVorgaenge ?? 0) > 0 ? "green" : crawlReport.newVorgaenge === null || crawlReport.newVorgaenge === undefined ? "gray" : "yellow" },
+    { label: "Neue KOs",  value: crawlReport.newKnowledgeObjects ?? "—",            status: (crawlReport.newKnowledgeObjects ?? 0) > 0 ? "green" : crawlReport.newKnowledgeObjects === null || crawlReport.newKnowledgeObjects === undefined ? "gray" : "red" },
+    { label: "Dauer",     value: durRaw !== null && durRaw !== undefined ? `${durRaw}s` : "—", status: "gray" }
   ];
+
   const metricCards = metrics.map((m) => `
     <div class="admin-crawl-metric">
+      ${dot(m.status)}
       <span class="admin-crawl-num">${escapeHtml(String(m.value))}</span>
       <span class="admin-crawl-label">${escapeHtml(m.label)}</span>
     </div>`).join("");
+
   const errorLine = crawlReport.errorCount > 0
     ? `<p class="admin-crawl-errors">${crawlReport.errorCount} Fehler: ${(crawlReport.errors || []).slice(0, 3).map((e) => escapeHtml(e.sourceName || e.error || "")).join(", ")}</p>`
     : "";
+
   return `
     <div class="admin-card admin-crawl-card">
       <h2 class="admin-section-title">Letzter Crawl <span class="admin-stat-period">${escapeHtml(crawlDate)} · ${escapeHtml(crawlReport.mode || "full")}</span></h2>
       <div class="admin-crawl-grid">${metricCards}</div>
       ${errorLine}
+      <div class="crawl-legend">
+        <span class="crawl-dot crawl-dot--green"></span><span>Alles gut</span>
+        <span class="crawl-dot crawl-dot--yellow"></span><span>Achtung (0 erwartet)</span>
+        <span class="crawl-dot crawl-dot--red"></span><span>Problem (0 kritisch)</span>
+        <span class="crawl-dot crawl-dot--gray"></span><span>Keine Daten</span>
+      </div>
     </div>`;
 }
 
