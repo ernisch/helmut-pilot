@@ -9,12 +9,14 @@ const { cemInceProfile, demoRawItems, demoSources, generateBriefing } = require(
 const { getLatestOrDemoBriefing, runDailyPipeline, runLageCheck, runMorningBriefing, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { personalizeBriefing } = require("./lib/helmut/personalization");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents } = require("./lib/helmut/storage");
+const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang } = require("./lib/helmut/storage");
 const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled, activeModelName, isEngineV2Enabled } = require("./lib/helmut/ai");
 const { pushStatus, sendBriefingReadyPush, sendLageChangePush, sendPushToPolitician } = require("./lib/helmut/push");
 const auth = require("./lib/helmut/auth");
 const accounts = require("./lib/helmut/accounts");
 const { getRelevantParliamentaryItems, isDipEnabled } = require("./lib/helmut/dip");
+const { runPendingUnderstandingShadow } = require("./lib/helmut/understanding");
+const { generateOfficeOutput, isValidChannel } = require("./lib/helmut/office");
 
 const root = __dirname;
 const port = Number(process.env.PORT || 3000);
@@ -95,6 +97,13 @@ async function handleRequest(request, response) {
 
   if (url.pathname === "/privacy" || url.pathname === "/datenschutz") {
     return sendPrivacyPage(response);
+  }
+
+  // TEMPORAERE DEBUG-ENDPUNKTE (Live-Gang-Diagnose).
+  // Kein Auth, kein CSRF — nur durch HELMUT_ADMIN_SECRET + ?secret= gesichert.
+  // Entfernen nach erfolgreichem Live-Gang.
+  if (url.pathname.startsWith("/api/debug/") && isDebugSecretOk(url)) {
+    return handleDebugRequest(request, response, url);
   }
 
   const accountAuth = auth.authMode();
@@ -268,6 +277,23 @@ async function handleRequest(request, response) {
         };
       }
       return runDailyPipeline(politicianId);
+    });
+  }
+
+  // C11c: Buero-Engine (C9) — KI-Kommunikations-Output pro Vorgang + Kanal generieren.
+  // POST { vorgangId, outputType } -> { content, channel, cached }
+  // Setzt understanding_status='complete' voraus (Guard in generateOfficeOutput).
+  // Hinter HELMUT_V3_OFFICE + HELMUT_V3_STORE; userId aus Auth-Session.
+  if (url.pathname === "/api/office/generate" && request.method === "POST") {
+    if (previewMode) return sendPreviewReadOnly(response);
+    return handleJson(request, response, async (body) => {
+      const vorgangId = String(body.vorgangId || "").trim();
+      const outputType = String(body.outputType || "").trim();
+      if (!vorgangId) throw accounts.httpError(400, "vorgangId ist erforderlich.");
+      if (!outputType) throw accounts.httpError(400, "outputType ist erforderlich.");
+      if (!isValidChannel(outputType)) throw accounts.httpError(400, `Unbekannter outputType: ${outputType}`);
+      const userId = politicianId;
+      return generateOfficeOutput(userId, vorgangId, outputType);
     });
   }
 
@@ -519,6 +545,19 @@ async function handleRequest(request, response) {
       const lageCheck = await runLageCheck(politicianId);
       const push = await sendLageChangePush(lageCheck, profile);
       return { lageCheck, push };
+    });
+  }
+
+  // C11b: Hintergrund-Understanding fuer als 'pending' vorgemerkte Vorgaenge (C7c+C8).
+  // Verarbeitet alle offenen pending-KOs unabhaengig vom Crawl-Lauf.
+  // Geschuetzt durch CRON_SECRET (fail closed). Hinter HELMUT_V3_STORE + KI-Key.
+  if (url.pathname === "/api/cron/understanding") {
+    if (!authorizeCron(request, url, response)) return;
+    return handleAsync(response, async () => {
+      const result = await runPendingUnderstandingShadow([]);
+      const processed = (result && result.results && result.results.filter((r) => r && r.status === "complete").length) || 0;
+      console.log(`[cron/understanding] Ergebnis: ${JSON.stringify({ processed, result })}`);
+      return { ok: true, processed, result };
     });
   }
 
@@ -2678,6 +2717,154 @@ function sendUnauthorized(response) {
 function sendNotFound(response) {
   response.writeHead(404, jsonHeaders());
   response.end(JSON.stringify({ error: "Not found" }, null, 2));
+}
+
+// ---------------------------------------------------------------------------
+// TEMPORAERE DEBUG-ENDPUNKTE (Live-Gang-Diagnose) — nach Live-Gang entfernen
+// ---------------------------------------------------------------------------
+
+function isDebugSecretOk(url) {
+  const adminSecret = process.env.HELMUT_ADMIN_SECRET;
+  if (!adminSecret) return false;
+  return url.searchParams.get("secret") === adminSecret;
+}
+
+async function handleDebugRequest(request, response, url) {
+  const politicianId = politicianIdFromUrl(url);
+
+  // GET /api/debug/status — Env-Flags + Storage, KEINE Secrets
+  if (url.pathname === "/api/debug/status") {
+    const storage = getStorageStatus();
+    return sendJson(response, {
+      timestamp: new Date().toISOString(),
+      flags: {
+        HELMUT_AUTH_MODE: process.env.HELMUT_AUTH_MODE || "(nicht gesetzt — Legacy-Pilotgate aktiv!)",
+        HELMUT_ADMIN_EMAIL_set: Boolean(process.env.HELMUT_ADMIN_EMAIL),
+        HELMUT_ADMIN_PASSWORD_set: Boolean(process.env.HELMUT_ADMIN_PASSWORD),
+        HELMUT_ADMIN_RESET: process.env.HELMUT_ADMIN_RESET || "(nicht gesetzt)",
+        HELMUT_STORAGE_BACKEND: process.env.HELMUT_STORAGE_BACKEND || "(nicht gesetzt)",
+        SUPABASE_URL_set: Boolean(process.env.SUPABASE_URL),
+        SUPABASE_SERVICE_ROLE_KEY_set: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
+        AZURE_OPENAI_KEY_set: Boolean(process.env.AZURE_OPENAI_KEY),
+        AZURE_OPENAI_ENDPOINT: process.env.AZURE_OPENAI_ENDPOINT || "(nicht gesetzt)",
+        AZURE_OPENAI_DEPLOYMENT: process.env.AZURE_OPENAI_DEPLOYMENT || "(nicht gesetzt)",
+        PILOT_SECRET_set: Boolean(process.env.PILOT_SECRET),
+        CRON_SECRET_set: Boolean(process.env.CRON_SECRET),
+        HELMUT_V3_STORE: process.env.HELMUT_V3_STORE || "(nicht gesetzt)",
+        HELMUT_V3_MATCHING: process.env.HELMUT_V3_MATCHING || "(nicht gesetzt)",
+        HELMUT_V3_BRIEFING: process.env.HELMUT_V3_BRIEFING || "(nicht gesetzt)",
+        HELMUT_V3_LAZY_UNDERSTANDING: process.env.HELMUT_V3_LAZY_UNDERSTANDING || "(nicht gesetzt)",
+        HELMUT_V3_OFFICE: process.env.HELMUT_V3_OFFICE || "(nicht gesetzt)",
+        HELMUT_UNDERSTANDING_LOCK: process.env.HELMUT_UNDERSTANDING_LOCK || "(nicht gesetzt)",
+        HELMUT_LLM_BUDGET_FAIL_CLOSED: process.env.HELMUT_LLM_BUDGET_FAIL_CLOSED || "(nicht gesetzt)",
+        DIP_API_KEY_set: Boolean(process.env.DIP_API_KEY),
+        HELMUT_DIP_PRIMARY: process.env.HELMUT_DIP_PRIMARY || "(nicht gesetzt)",
+      },
+      storage,
+      loginDiagnosis: {
+        accountModeActive: String(process.env.HELMUT_AUTH_MODE || "").trim().toLowerCase() === "accounts",
+        adminEmailConfigured: Boolean(process.env.HELMUT_ADMIN_EMAIL),
+        adminPasswordConfigured: Boolean(process.env.HELMUT_ADMIN_PASSWORD),
+        hint: String(process.env.HELMUT_AUTH_MODE || "").trim().toLowerCase() !== "accounts"
+          ? "HELMUT_AUTH_MODE ist NICHT 'accounts' — Login unmoeglich! In Vercel setzen."
+          : !process.env.HELMUT_ADMIN_EMAIL || !process.env.HELMUT_ADMIN_PASSWORD
+            ? "HELMUT_ADMIN_EMAIL oder HELMUT_ADMIN_PASSWORD fehlt — kein Admin-User kann angelegt werden."
+            : "Flags korrekt gesetzt. Seed-Status pruefen mit /api/debug/seed-status?secret=..."
+      }
+    });
+  }
+
+  // GET /api/debug/seed-status — Prueft ob Admin-User existiert
+  if (url.pathname === "/api/debug/seed-status") {
+    return handleAsync(response, async () => {
+      const status = await accounts.getSetupStatus({ includeSensitive: true });
+      return { debug: true, ...status };
+    });
+  }
+
+  // GET /api/debug/crawl?politicianId=test-mdb&secret=... — Crawl ausfuehren
+  if (url.pathname === "/api/debug/crawl") {
+    return handleAsync(response, async () => {
+      const result = await runSourceCrawl(politicianId);
+      return { debug: true, politicianId, result };
+    });
+  }
+
+  // GET /api/debug/briefing?politicianId=test-mdb&vorgangId=test&secret=...
+  if (url.pathname === "/api/debug/briefing") {
+    const vorgangId = url.searchParams.get("vorgangId") || "";
+    return handleAsync(response, async () => {
+      const [profile, briefing, ko] = await Promise.all([
+        activeProfile(politicianId),
+        getLatestOrDemoBriefing(politicianId),
+        vorgangId ? getKnowledgeObjectByVorgang(vorgangId) : Promise.resolve(null)
+      ]);
+      return {
+        debug: true,
+        politicianId,
+        vorgangId: vorgangId || "(nicht angegeben)",
+        profile: profile ? { id: profile.id, name: profile.fullName } : null,
+        briefing: briefing
+          ? { date: briefing.generatedAt || briefing.date, items: briefing.items?.length || 0, hasContent: true }
+          : null,
+        knowledgeObject: ko || null,
+        storageStatus: getStorageStatus()
+      };
+    });
+  }
+
+  // POST /api/debug/seed-ko?secret=... — legt Test-KnowledgeObject an
+  if (url.pathname === "/api/debug/seed-ko" && request.method === "POST") {
+    return handleAsync(response, async () => {
+      const now = new Date().toISOString();
+      const testKo = {
+        id: "test-ko-seed-001",
+        vorgang_id: "test-vorgang-001",
+        headline: "Testvorgang: Rentenpaket 2026",
+        was_ist_passiert: "Der Bundestag hat das Rentenpaket 2026 in zweiter Lesung beraten. Die Koalitionsfraktionen haben sich auf einen Kompromiss geeinigt.",
+        warum_wichtig: "Das Gesetz betrifft rund 20 Millionen Rentenempfaenger und veraendert den Renteneintritt fuer Jahrgang 1965+.",
+        wer_ist_betroffen: "Alle Rentnerinnen und Rentner sowie Erwerbstaetige ab Jahrgang 1965",
+        parteien: ["SPD", "Gruene"],
+        ausschuesse: ["Ausschuss fuer Arbeit und Soziales"],
+        ministerien: ["Bundesministerium fuer Arbeit und Soziales"],
+        risiken: "Finanzierungsluecke bei steigender Lebenserwartung moeglich",
+        chancen: "Stabilisierung des Rentenniveaus bis 2035",
+        zeitdruck: "mittel",
+        handlungsempfehlung: "Abstimmungsverhalten pruefen, Pressemitteilung vorbereiten",
+        confidence_score: 0.9,
+        source_document_count: 3,
+        status: "neu",
+        understanding_status: "complete",
+        mentioned_people: [],
+        mentioned_mps: ["Hubertus Heil"],
+        mentioned_parties: ["SPD", "Gruene", "CDU"],
+        mentioned_committees: ["Ausschuss fuer Arbeit und Soziales"],
+        mentioned_ministries: ["BMAS"],
+        mentioned_locations: ["Berlin"],
+        mentioned_organizations: ["Deutsche Rentenversicherung"],
+        policy_field: "Sozialpolitik",
+        political_level: "Bund",
+        instrument: "Gesetz",
+        stage: "Beratung",
+        tags: ["Rente", "Sozialpolitik", "2026"],
+        best_source_url: "https://www.bundestag.de/dokumente/textarchiv/2026/kw01-testvorgang",
+        best_link_type: "direct",
+        source_trust: "high",
+        understanding_model: "debug-seed",
+        understanding_tokens: 0,
+        created_at: now,
+        updated_at: now
+      };
+      const result = await saveKnowledgeObject(testKo);
+      return {
+        debug: true,
+        seeded: result,
+        ko: { id: testKo.id, vorgang_id: testKo.vorgang_id, understanding_status: testKo.understanding_status }
+      };
+    });
+  }
+
+  return sendNotFound(response);
 }
 
 function loadLocalEnv() {
