@@ -3101,6 +3101,33 @@ small {
   border-top: none;
 }
 
+.radar-v3-source-icon {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: var(--line);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+
+.radar-v3-source-icon[data-initial]::after {
+  content: attr(data-initial);
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--muted-2);
+}
+
+.radar-v3-source-logo {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  border-radius: 5px;
+}
+
 .radar-v3-signal-body {
   flex: 1;
   min-width: 0;

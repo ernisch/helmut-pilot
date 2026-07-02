@@ -4660,6 +4660,7 @@ function renderRadarV3Signal(item, cat) {
   const date = escapeHtml(formatBriefingDate(item.publishedAt || item.retrievedAt || ""));
   const sourceLabel = escapeHtml(item.sourceName || "Quelle");
   const titleText = escapeHtml(item.title || "Erwähnung gefunden");
+  const iconHtml = radarV3SourceIcon(item);
 
   const actionBtn = cat.actionLabel && href
     ? `<button class="primary-button radar-v3-act-btn" type="button" data-view="office">${escapeHtml(cat.actionLabel)}</button>`
@@ -4670,6 +4671,7 @@ function renderRadarV3Signal(item, cat) {
 
   return `
     <article class="radar-v3-signal ${escapeHtml(cat.colorClass)}">
+      ${iconHtml}
       <div class="radar-v3-signal-body">
         <span class="radar-v3-signal-source">${sourceLabel}</span>
         <h3>${titleText}</h3>
@@ -4845,6 +4847,7 @@ function publisherDomain(item) {
     ["junge welt", "jungewelt.de"],
     ["morgenpost", "morgenpost.de"],
     ["tagesspiegel", "tagesspiegel.de"],
+    ["welt am sonntag", "welt.de"],
     ["welt", "welt.de"],
     ["nd-aktuell", "nd-aktuell.de"],
     ["zdf", "zdf.de"],
@@ -4854,10 +4857,46 @@ function publisherDomain(item) {
     ["sz.de", "sueddeutsche.de"],
     ["spiegel", "spiegel.de"],
     ["saarbrücker zeitung", "saarbruecker-zeitung.de"],
-    ["phoenix", "phoenix.de"]
+    ["phoenix", "phoenix.de"],
+    ["bild am sonntag", "bild.de"],
+    ["bild", "bild.de"],
+    ["frankfurter allgemeine", "faz.net"],
+    ["faz", "faz.net"],
+    ["handelsblatt", "handelsblatt.com"],
+    ["rheinische post", "rp-online.de"],
+    ["rp-online", "rp-online.de"],
+    ["focus", "focus.de"],
+    ["stern", "stern.de"],
+    ["ard", "ard.de"],
+    ["ndr", "ndr.de"],
+    ["wdr", "wdr.de"],
+    ["mdr", "mdr.de"],
+    ["bayerischer rundfunk", "br.de"],
+    ["n-tv", "n-tv.de"],
+    ["t-online", "t-online.de"],
+    ["berliner zeitung", "berliner-zeitung.de"],
+    ["hamburger abendblatt", "abendblatt.de"],
+    ["augsburger allgemeine", "augsburger-allgemeine.de"],
+    ["rhein-zeitung", "rhein-zeitung.de"],
+    ["volksfreund", "volksfreund.de"],
+    ["watson", "watson.de"],
+    ["business insider", "businessinsider.de"],
+    ["heise", "heise.de"],
+    ["deutsche welle", "dw.com"],
+    ["bundestag", "bundestag.de"],
+    ["bundesrat", "bundesrat.de"]
   ];
   const match = known.find(([name]) => text.includes(name));
   return match ? match[1] : "";
+}
+
+function radarV3SourceIcon(item) {
+  const initial = escapeAttribute((item.sourceName || "Q").charAt(0).toUpperCase());
+  const logoUrl = publisherImageUrl(item);
+  if (!logoUrl) {
+    return `<span class="radar-v3-source-icon" data-initial="${initial}" aria-hidden="true"></span>`;
+  }
+  return `<span class="radar-v3-source-icon" aria-hidden="true"><img class="radar-v3-source-logo" src="${escapeAttribute(logoUrl)}" alt="" loading="lazy" onerror="this.style.display='none';this.parentNode.setAttribute('data-initial','${initial}')"></span>`;
 }
 
 function profileInitials() {
