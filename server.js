@@ -9,7 +9,7 @@ const { cemInceProfile, demoRawItems, demoSources, generateBriefing } = require(
 const { getLatestOrDemoBriefing, runDailyPipeline, runLageCheck, runMorningBriefing, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { personalizeBriefing } = require("./lib/helmut/personalization");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang } = require("./lib/helmut/storage");
+const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview } = require("./lib/helmut/storage");
 const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled, activeModelName, isEngineV2Enabled } = require("./lib/helmut/ai");
 const { pushStatus, sendBriefingReadyPush, sendLageChangePush, sendPushToPolitician } = require("./lib/helmut/push");
 const auth = require("./lib/helmut/auth");
@@ -790,6 +790,32 @@ async function handleRequest(request, response) {
   if (url.pathname === "/api/admin/overview") {
     if (!requireRoleOr403(response, authUser, "admin")) return undefined;
     return handleAsync(response, () => buildAdminOverview());
+  }
+
+  // Admin-Stats: Heute (1 Tag)
+  if (url.pathname === "/api/admin/stats/daily") {
+    if (!requireRoleOr403(response, authUser, "admin")) return undefined;
+    return handleAsync(response, () => getAdminStatsOverview({ days: 1 }));
+  }
+
+  // Admin-Stats: Letzte 7 Tage
+  if (url.pathname === "/api/admin/stats/weekly") {
+    if (!requireRoleOr403(response, authUser, "admin")) return undefined;
+    return handleAsync(response, () => getAdminStatsOverview({ days: 7 }));
+  }
+
+  // Admin-Stats: KI-Kosten (default 30 Tage, ?days=N überschreibbar, max 90)
+  if (url.pathname === "/api/admin/stats/costs") {
+    if (!requireRoleOr403(response, authUser, "admin")) return undefined;
+    const days = Math.min(90, Math.max(1, Number(url.searchParams.get("days") || 30) || 30));
+    return handleAsync(response, () => getAdminStatsCosts({ days }));
+  }
+
+  // Admin-Stats: Crawl-Statistik (default 30 Tage, ?days=N überschreibbar, max 90)
+  if (url.pathname === "/api/admin/stats/crawl") {
+    if (!requireRoleOr403(response, authUser, "admin")) return undefined;
+    const days = Math.min(90, Math.max(1, Number(url.searchParams.get("days") || 30) || 30));
+    return handleAsync(response, () => getAdminStatsCrawl({ days }));
   }
 
   // Admin: Feedback als erledigt/offen markieren.
