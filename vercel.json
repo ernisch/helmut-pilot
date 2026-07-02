@@ -60,6 +60,14 @@
     {
       "path": "/api/cron/crawl",
       "schedule": "0 20 * * *"
+    },
+    {
+      "path": "/api/cron/understanding",
+      "schedule": "30 5 * * *"
+    },
+    {
+      "path": "/api/cron/understanding",
+      "schedule": "30 21 * * *"
     }
   ]
 }

@@ -9,7 +9,7 @@ const { cemInceProfile, demoRawItems, demoSources, generateBriefing } = require(
 const { getLatestOrDemoBriefing, runDailyPipeline, runLageCheck, runMorningBriefing, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { personalizeBriefing } = require("./lib/helmut/personalization");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getAdminCostsPerUser, getKnowledgeObjectCount, getAdminPeriodStats } = require("./lib/helmut/storage");
+const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getAdminCostsPerUser, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments } = require("./lib/helmut/storage");
 const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled, activeModelName, isEngineV2Enabled } = require("./lib/helmut/ai");
 const { pushStatus, sendBriefingReadyPush, sendLageChangePush, sendPushToPolitician } = require("./lib/helmut/push");
 const auth = require("./lib/helmut/auth");
@@ -610,10 +610,11 @@ async function handleRequest(request, response) {
   if (url.pathname === "/api/cron/understanding") {
     if (!authorizeCron(request, url, response)) return;
     return handleAsync(response, async () => {
-      const result = await runPendingUnderstandingShadow([]);
-      const processed = (result && result.results && result.results.filter((r) => r && r.status === "complete").length) || 0;
-      console.log(`[cron/understanding] Ergebnis: ${JSON.stringify({ processed, result })}`);
-      return { ok: true, processed, result };
+      const rawDocs = await listRecentRawDocuments(500);
+      const result = await runPendingUnderstandingShadow(rawDocs);
+      const processed = (result && result.results && result.results.filter((r) => r && r.status === "saved").length) || 0;
+      console.log(`[cron/understanding] rawDocs=${rawDocs.length} Ergebnis: ${JSON.stringify({ processed, result })}`);
+      return { ok: true, rawDocsLoaded: rawDocs.length, processed, result };
     });
   }
 
@@ -2999,6 +3000,26 @@ async function handleDebugRequest(request, response, url) {
       }
       await accounts.updateUser(user.id, { password, email, active: true });
       return { debug: true, step: "updated", diagnosis, fix: { action: "password-reset", userId: user.id } };
+    });
+  }
+
+  // GET /api/debug/run-understanding?secret=... — Understanding manuell ausloesen.
+  // Laedt raw_documents der letzten 30 Tage aus Supabase und ruft
+  // runPendingUnderstandingShadow auf. Zeigt Anzahl verarbeiteter Vorgaenge.
+  if (url.pathname === "/api/debug/run-understanding") {
+    return handleAsync(response, async () => {
+      const rawDocs = await listRecentRawDocuments(500);
+      const result = await runPendingUnderstandingShadow(rawDocs);
+      const processed = (result && result.results && result.results.filter((r) => r && r.status === "saved").length) || 0;
+      const skippedNoCluster = (result && result.results && result.results.filter((r) => r && r.status === "skipped-no-cluster").length) || 0;
+      console.log(`[debug/run-understanding] rawDocs=${rawDocs.length} processed=${processed} skippedNoCluster=${skippedNoCluster}`);
+      return {
+        debug: true,
+        rawDocsLoaded: rawDocs.length,
+        processed,
+        skippedNoCluster,
+        result
+      };
     });
   }
 
