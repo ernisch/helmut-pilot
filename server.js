@@ -3367,6 +3367,47 @@ async function handleDebugRequest(request, response, url) {
     });
   }
 
+  // GET /api/debug/reset-failed-kos?secret=...
+  // Setzt alle KOs mit understanding_status='failed' zurueck auf 'pending' und
+  // startet dann den Understanding-Trigger (C8). Loest den Zustand auf, bei dem
+  // KOs dauerhaft als 'failed' geparkt sind und nie verarbeitet werden.
+  // TEMP: nach erstem erfolgreichen Verarbeitungslauf entfernen.
+  if (url.pathname === "/api/debug/reset-failed-kos") {
+    return handleAsync(response, async () => {
+      // 1. Alle KOs laden, failed herausfiltern
+      const allKos = await listKnowledgeObjects({ limit: 500 }).catch((e) => {
+        console.error("[debug/reset-failed-kos] listKnowledgeObjects fehlgeschlagen:", e.message);
+        return [];
+      });
+      const failedKos = allKos.filter((k) => k && k.understanding_status === "failed");
+
+      // 2. Failed-KOs auf understanding_status='pending' zuruecksetzen
+      const resets = await Promise.all(
+        failedKos.map((k) => saveKnowledgeObject({ id: k.id, vorgang_id: k.vorgang_id, understanding_status: "pending" })
+          .catch((e) => ({ skipped: true, reason: e.message })))
+      );
+      const resetOk = resets.filter((r) => r && r.saved).length;
+      const resetSkipped = resets.filter((r) => r && r.skipped).length;
+
+      // 3. Understanding-Trigger starten (laedt rawDocs + verarbeitet pending KOs)
+      const rawDocs = await listRecentRawDocuments(500).catch(() => []);
+      const result = await runPendingUnderstandingShadow(rawDocs).catch((e) => ({
+        skipped: true,
+        reason: e.message
+      }));
+
+      console.log(`[debug/reset-failed-kos] total=${allKos.length} failed=${failedKos.length} resetOk=${resetOk} resetSkipped=${resetSkipped} rawDocs=${rawDocs.length}`);
+
+      return {
+        debug: true,
+        knowledgeObjects: { total: allKos.length, failed: failedKos.length },
+        resets: { ok: resetOk, skipped: resetSkipped },
+        rawDocsLoaded: rawDocs.length,
+        understanding: result
+      };
+    });
+  }
+
   return sendNotFound(response);
 }
 
