@@ -9,7 +9,7 @@ const { cemInceProfile, demoRawItems, demoSources, generateBriefing } = require(
 const { getLatestOrDemoBriefing, runDailyPipeline, runLageCheck, runMorningBriefing, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { personalizeBriefing } = require("./lib/helmut/personalization");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getAdminCostsPerUser } = require("./lib/helmut/storage");
+const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getAdminCostsPerUser, getKnowledgeObjectCount } = require("./lib/helmut/storage");
 const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled, activeModelName, isEngineV2Enabled } = require("./lib/helmut/ai");
 const { pushStatus, sendBriefingReadyPush, sendLageChangePush, sendPushToPolitician } = require("./lib/helmut/push");
 const auth = require("./lib/helmut/auth");
@@ -2426,7 +2426,7 @@ async function defaultPoliticianIdForUser(user, allowed) {
 }
 
 async function buildAdminOverview() {
-  const [users, profiles, mandates, assignments, errors, audit, feedback, costsRaw] = await Promise.all([
+  const [users, profiles, mandates, assignments, errors, audit, feedback, costsRaw, koCount] = await Promise.all([
     accounts.listUsers(),
     listProfiles(),
     listFullProfiles(),
@@ -2434,7 +2434,8 @@ async function buildAdminOverview() {
     accounts.listSystemErrors(50),
     accounts.listAuditEvents(50),
     listFeedback(80),
-    getAdminCostsPerUser({ days: 30 })
+    getAdminCostsPerUser({ days: 30 }),
+    getKnowledgeObjectCount()
   ]);
   const storage = getStorageStatus();
   const storeSummary = await getStoreSummary();
@@ -2460,6 +2461,7 @@ async function buildAdminOverview() {
       profiles: profiles.length,
       assignments: assignments.length,
       feedbackOpen: feedback.filter((item) => !item.done).length,
+      knowledgeObjects: koCount,
       activeLast7d: users.filter((user) => {
         const seen = user.lastSeenAt || user.lastLoginAt;
         return seen && (Date.now() - new Date(seen).getTime()) < 7 * 24 * 60 * 60 * 1000;

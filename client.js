@@ -957,16 +957,28 @@ function renderAdminView() {
 
   const userRows = (data.users || []).map((user) => {
     const billingDays = user.paidUntil ? Math.ceil((new Date(user.paidUntil) - Date.now()) / 86400000) : null;
-    const billingBadge = user.paidUntil === null || user.paidUntil === undefined
-      ? '<span class="admin-pill billing-none">Kein Abo</span>'
+    const billingBadge = !user.paidUntil
+      ? ""
       : billingDays > 7
         ? `<span class="admin-pill billing-ok">✓ bis ${new Date(user.paidUntil).toLocaleDateString("de-DE")}</span>`
         : billingDays >= 0
           ? `<span class="admin-pill billing-warn">⚠ ${billingDays}d noch</span>`
           : `<span class="admin-pill billing-overdue">✕ überfällig</span>`;
+    const billingInput = user.paidUntil
+      ? `<input type="date" class="billing-date-input" data-billing-user="${escapeAttribute(user.id)}" value="${user.paidUntil.slice(0, 10)}" title="Bezahlt bis" />`
+      : "";
     const initials = (user.name || user.email || "?").split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
     const status = user.status || (user.active === false ? "deaktiviert" : "aktiv");
     const isExpanded = expandedAdminUsers.has(user.id);
+    const lastSeen = user.lastSeenAt || user.lastLoginAt;
+    const daysSince = lastSeen ? Math.floor((Date.now() - new Date(lastSeen).getTime()) / 86400000) : null;
+    const activityBadge = daysSince === null
+      ? `<span class="admin-activity-badge admin-activity-none">Nie</span>`
+      : daysSince <= 7
+        ? `<span class="admin-activity-badge admin-activity-active">Aktiv</span>`
+        : daysSince <= 30
+          ? `<span class="admin-activity-badge admin-activity-idle">Vor ${daysSince}d</span>`
+          : `<span class="admin-activity-badge admin-activity-idle">Vor ${Math.floor(daysSince / 30)}M</span>`;
     return `
     <tr>
       <td data-label="Name">
@@ -980,11 +992,9 @@ function renderAdminView() {
       </td>
       <td data-label="Rolle"><span class="admin-role-tag admin-role-${escapeAttribute(user.role)}">${escapeHtml(roleLabel(user.role))}</span></td>
       <td data-label="Status"><span class="admin-status-tag admin-status-${escapeAttribute(status)}">${escapeHtml(statusLabel(status))}</span></td>
-      <td data-label="Zuletzt aktiv" class="admin-last-login">${escapeHtml(formatLastLogin(user.lastLoginAt))}</td>
-      <td data-label="Erstellt am" class="admin-last-login">${escapeHtml(formatCreatedAt(user.createdAt))}</td>
+      <td data-label="Aktivität">${activityBadge}</td>
       <td data-label="Bezahlt bis" class="billing-cell">
-        ${billingBadge}
-        <input type="date" class="billing-date-input" data-billing-user="${escapeAttribute(user.id)}" value="${user.paidUntil ? user.paidUntil.slice(0, 10) : ""}" title="Bezahlt bis" />
+        ${billingBadge}${billingInput}
       </td>
       <td data-label="Aktion" class="admin-actions-cell">
         <button class="account-logout admin-edit-toggle" type="button" data-admin-user-edit="${escapeAttribute(user.id)}">${isExpanded ? "Schließen" : "Bearbeiten"}</button>
@@ -1020,30 +1030,27 @@ function renderAdminView() {
         <p class="admin-subtitle">Nutzer, Rollen und Zuweisungen verwalten.</p>
       </header>
 
-      <div class="admin-stats-row">
+      <div class="admin-stats-row admin-stats-row--5">
         <div class="admin-stat-card">
           <span class="admin-stat-num">${data.counts?.users ?? 0}</span>
           <span class="admin-stat-label">Nutzer</span>
         </div>
         <div class="admin-stat-card">
-          <span class="admin-stat-num">${data.counts?.abgeordnete ?? 0}</span>
-          <span class="admin-stat-label">Abgeordnete</span>
+          <span class="admin-stat-num">${sys.store?.rawItems?.total ?? "—"}</span>
+          <span class="admin-stat-label">Artikel</span>
         </div>
         <div class="admin-stat-card">
-          <span class="admin-stat-num">${data.counts?.referenten ?? 0}</span>
-          <span class="admin-stat-label">Referent:innen</span>
+          <span class="admin-stat-num">${data.counts?.knowledgeObjects ?? "—"}</span>
+          <span class="admin-stat-label">KOs</span>
         </div>
         <div class="admin-stat-card">
-          <span class="admin-stat-num">${data.counts?.profiles ?? 0}</span>
-          <span class="admin-stat-label">Profile</span>
+          <span class="admin-stat-num">${sys.store?.briefings?.total ?? "—"}</span>
+          <span class="admin-stat-label">Briefings</span>
         </div>
         <div class="admin-stat-card">
-          <span class="admin-stat-num">${data.counts?.activeLast7d ?? 0}</span>
-          <span class="admin-stat-label">Aktiv (7 Tage)</span>
-        </div>
-        <div class="admin-stat-card">
-          <span class="admin-stat-num">${data.counts?.feedbackOpen ?? 0}</span>
-          <span class="admin-stat-label">Feedback offen</span>
+          <span class="admin-stat-num admin-stat-num--cost">$${typeof data.costs?.totalCostUsd === "number" ? data.costs.totalCostUsd.toFixed(3) : "—"}</span>
+          <span class="admin-stat-sub">€${typeof data.costs?.totalCostUsd === "number" ? (data.costs.totalCostUsd * USD_TO_EUR).toFixed(3) : "—"}</span>
+          <span class="admin-stat-label">KI-Kosten (30d)</span>
         </div>
       </div>
 
@@ -1059,7 +1066,7 @@ function renderAdminView() {
             </div>
             <div class="admin-table-wrap">
               <table class="admin-table">
-                <thead><tr><th>Name</th><th>Rolle</th><th>Status</th><th>Zuletzt aktiv</th><th>Erstellt am</th><th>Bezahlt bis</th><th></th></tr></thead>
+                <thead><tr><th>Name</th><th>Rolle</th><th>Status</th><th>Aktivität</th><th>Bezahlt bis</th><th></th></tr></thead>
                 <tbody>${userRows}</tbody>
               </table>
             </div>
@@ -1305,29 +1312,36 @@ function renderAdminUserEditRow(user, status, feedbackCount = 0) {
 
 function renderAdminCostsCard(costs) {
   if (!costs) return "";
-  const total = costs.totalCostUsd ?? 0;
-  const days = costs.periodDays ?? 30;
   const perUser = Array.isArray(costs.perUser) ? costs.perUser : [];
-  const userRows = perUser.length
-    ? perUser.map((u) => `
-        <div class="admin-sys-item admin-cost-row">
-          <span class="admin-sys-key">${escapeHtml(u.name || u.userId)}</span>
-          <span class="admin-sys-val admin-cost-val">${escapeHtml(formatUsdEur(u.totalCostUsd))}</span>
-        </div>`).join("")
-    : `<p class="empty-state" style="font-size:12px;margin:4px 0">Noch keine KI-Calls.</p>`;
+  const maxCost = perUser.reduce((m, u) => Math.max(m, u.totalCostUsd || 0), 0);
+
+  const bars = perUser.length
+    ? perUser.map((u) => {
+        const pct = maxCost > 0 ? Math.round((u.totalCostUsd / maxCost) * 100) : 0;
+        const pctEur = Math.round(pct * USD_TO_EUR);
+        return `
+        <div class="cost-bar-item">
+          <div class="cost-bar-head">
+            <span class="cost-bar-name">${escapeHtml(u.name || u.userId)}</span>
+            <span class="cost-bar-amounts"><span class="cost-usd">$${u.totalCostUsd.toFixed(4)}</span> <span class="cost-sep">|</span> <span class="cost-eur">€${(u.totalCostUsd * USD_TO_EUR).toFixed(4)}</span></span>
+          </div>
+          <div class="cost-bar-track">
+            <div class="cost-bar-fill cost-bar-fill--usd" style="width:${pct}%"></div>
+            <div class="cost-bar-fill cost-bar-fill--eur" style="width:${pctEur}%"></div>
+          </div>
+        </div>`;
+      }).join("")
+    : `<p class="empty-state" style="font-size:12px;margin:8px 0">Noch keine KI-Calls.</p>`;
+
   return `
     <div class="admin-card">
-      <h2 class="admin-section-title">KI-Kosten <span style="font-weight:400;font-size:12px;color:var(--muted-2)">(${days} Tage)</span></h2>
-      <div class="admin-sys-grid">
-        <div class="admin-sys-item admin-cost-row">
-          <span class="admin-sys-key">Gesamt</span>
-          <span class="admin-sys-val admin-cost-val">${escapeHtml(formatUsdEur(total))}</span>
-        </div>
-        <div class="admin-sys-item" style="grid-column:1/-1">
-          <span class="admin-sys-key" style="color:var(--muted-2);font-size:11px">1 USD = ${USD_TO_EUR.toFixed(2)} EUR</span>
-        </div>
+      <h2 class="admin-section-title">KI-Kosten pro Nutzer <span class="admin-stat-period">(${costs.periodDays ?? 30}d)</span></h2>
+      <div class="cost-legend">
+        <span class="cost-legend-dot cost-legend-dot--usd"></span><span>USD</span>
+        <span class="cost-legend-dot cost-legend-dot--eur"></span><span>EUR</span>
+        <span class="cost-legend-rate">1 USD = ${USD_TO_EUR.toFixed(2)} EUR</span>
       </div>
-      <div style="margin-top:8px">${userRows}</div>
+      <div class="cost-bar-list">${bars}</div>
     </div>`;
 }
 
