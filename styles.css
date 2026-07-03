@@ -9726,6 +9726,274 @@ details[open].meeting-detail summary::before { content: '▾ '; }
   text-align: center;
 }
 
+/* ============================================================================
+   Helmut-Referent (Zielvision) — nutzt ausschließlich bestehende Tokens.
+   Status: handeln=rot(--command-red), beobachten=amber(--watch), ignorieren=neutral.
+   Motion: nur transform/opacity, --ease-out-soft / --dur-*.
+   ========================================================================== */
+.helmut-referent { display: grid; gap: 30px; }
+.helmut-referent-head { display: grid; gap: 10px; }
+.helmut-referent-head h1 {
+  margin: 0; color: var(--command-text);
+  font-weight: 680; letter-spacing: -.02em; line-height: 1.02;
+}
+.helmut-referent-head p {
+  margin: 0; color: var(--command-muted);
+  font-size: clamp(15px, 2.1vw, 17px); line-height: 1.5;
+}
+
+/* ── Status-Cards ── */
+.helmut-status-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.helmut-status-card {
+  display: grid; gap: 16px; padding: 16px;
+  border-radius: 16px; background: rgba(255, 255, 255, .03);
+  border: 1px solid rgba(245, 241, 232, .09);
+}
+.helmut-status-top { display: flex; align-items: center; justify-content: space-between; }
+.helmut-status-num { font-size: clamp(24px, 6vw, 30px); font-weight: 760; color: var(--command-text); line-height: 1; }
+.helmut-status-label { font-size: 12px; font-weight: 600; color: rgba(245, 241, 232, .62); white-space: nowrap; }
+.helmut-status-card.handeln    { border-color: rgba(243, 106, 116, .30); }
+.helmut-status-card.handeln    .helmut-status-icon { color: #ff7a84; }
+.helmut-status-card.beobachten { border-color: rgba(249, 205, 127, .28); }
+.helmut-status-card.beobachten .helmut-status-icon { color: #f9cd7f; }
+.helmut-status-card.ignorieren .helmut-status-icon { color: rgba(245, 241, 232, .5); }
+
+/* ── Sektionsköpfe ── */
+.helmut-section-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.helmut-section-head h2 {
+  margin: 0; color: var(--command-text);
+  font-size: clamp(17px, 2.6vw, 21px); font-weight: 660; letter-spacing: -.01em;
+}
+.helmut-section-count {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 22px; height: 22px; padding: 0 7px; border-radius: 999px;
+  background: rgba(245, 241, 232, .10); color: rgba(245, 241, 232, .68);
+  font-size: 12px; font-weight: 780;
+}
+
+/* ── Deck (Fokus-Card) ── */
+.helmut-deck-wrap { display: grid; gap: 14px; }
+.helmut-deck-track { perspective: 1000px; }
+.helmut-deck-card {
+  display: grid; gap: 16px;
+  padding: clamp(20px, 4vw, 28px);
+  border-radius: 28px;
+  background: linear-gradient(160deg, rgba(20, 27, 45, .82), rgba(9, 13, 24, .9));
+  border: 1px solid var(--command-line);
+  box-shadow: var(--command-shadow);
+  animation: helmutDeckIn var(--dur-slow) var(--ease-out-soft);
+  will-change: transform, opacity;
+}
+.helmut-deck-card.handeln {
+  border-color: rgba(243, 106, 116, .5);
+  box-shadow: 0 0 0 1px rgba(243, 106, 116, .22), 0 24px 70px rgba(0, 0, 0, .34), 0 0 34px rgba(243, 106, 116, .16);
+}
+.helmut-deck-card.beobachten {
+  border-color: rgba(249, 205, 127, .46);
+  box-shadow: 0 0 0 1px rgba(249, 205, 127, .20), 0 24px 70px rgba(0, 0, 0, .34), 0 0 34px rgba(249, 205, 127, .15);
+}
+.helmut-deck-card.ignorieren { border-color: rgba(245, 241, 232, .14); }
+.helmut-deck-card.is-leaving {
+  animation: none;
+  opacity: 0; transform: translateY(-8px) scale(.98);
+  transition: opacity .26s var(--ease-out-soft), transform .26s var(--ease-out-soft);
+}
+.helmut-deck-card-head { display: flex; align-items: center; gap: 12px; }
+.helmut-deck-progress { color: rgba(245, 241, 232, .5); font-size: 13px; font-weight: 600; }
+.helmut-deck-badge {
+  font-size: 11px; font-weight: 820; letter-spacing: .08em; text-transform: uppercase;
+  padding: 4px 11px; border-radius: 999px;
+  background: rgba(245, 241, 232, .08); color: rgba(245, 241, 232, .72);
+}
+.helmut-deck-badge.handeln    { background: rgba(243, 106, 116, .16); color: #ff8a92; }
+.helmut-deck-badge.beobachten { background: rgba(249, 205, 127, .16); color: #f9cd7f; }
+.helmut-deck-badge.ignorieren { background: rgba(245, 241, 232, .08); color: rgba(245, 241, 232, .6); }
+.helmut-deck-star {
+  margin-left: auto; display: inline-flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; border-radius: 999px;
+  border: 1px solid rgba(245, 241, 232, .16); background: none;
+  color: rgba(245, 241, 232, .5); cursor: pointer;
+  transition: color .15s, border-color .15s;
+}
+.helmut-deck-star:hover { color: #f9cd7f; border-color: rgba(249, 205, 127, .4); }
+.helmut-deck-title {
+  margin: 0; color: var(--command-text);
+  font-family: Georgia, "Times New Roman", ui-serif, serif;
+  font-size: clamp(24px, 5vw, 32px); font-weight: 500; line-height: 1.08; letter-spacing: -.02em;
+}
+.helmut-deck-subtitle { margin: -6px 0 0; color: rgba(245, 241, 232, .56); font-size: 15px; line-height: 1.4; }
+.helmut-deck-bullets { display: grid; gap: 14px; margin: 4px 0 0; }
+.helmut-deck-bullets > div { display: grid; gap: 4px; }
+.helmut-deck-bullets dt {
+  display: flex; align-items: center; gap: 8px;
+  color: rgba(249, 205, 127, .85); font-size: 11px; font-weight: 780;
+  letter-spacing: .06em; text-transform: uppercase;
+}
+.helmut-deck-bullets .helmut-bullet-ico { display: inline-flex; color: #f9cd7f; }
+.helmut-deck-bullets dd { margin: 0; color: rgba(245, 241, 232, .82); font-size: clamp(14px, 1.9vw, 16px); line-height: 1.5; }
+.helmut-deck-line dd { display: flex; align-items: center; gap: 10px; }
+.helmut-score-bar {
+  display: inline-block; width: 160px; max-width: 48vw; height: 6px;
+  border-radius: 999px; background: rgba(245, 241, 232, .12); overflow: hidden; vertical-align: middle;
+}
+.helmut-score-fill {
+  display: block; height: 100%; border-radius: 999px;
+  background: linear-gradient(90deg, #8c5cff, #b897ff);
+  transition: width .5s var(--ease-out-soft);
+}
+.helmut-score-val { font-size: 13px; font-weight: 700; color: rgba(245, 241, 232, .8); }
+
+/* ── Drei runde Action-Buttons ── */
+.helmut-deck-actions { display: flex; align-items: flex-end; justify-content: space-around; gap: 12px; margin-top: 6px; }
+.helmut-action-btn { display: grid; justify-items: center; gap: 8px; background: none; border: none; padding: 0; cursor: pointer; }
+.helmut-action-ico {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 64px; height: 64px; border-radius: 999px;
+  transition: transform var(--dur-base) var(--ease-out-soft), box-shadow var(--dur-base) var(--ease-out-soft);
+}
+.helmut-action-btn.ignore .helmut-action-ico { border: 1.5px solid rgba(245, 241, 232, .26); color: rgba(245, 241, 232, .72); }
+.helmut-action-btn.draft  .helmut-action-ico {
+  width: 72px; height: 72px;
+  background: linear-gradient(160deg, #9a6cff, #7a44ff); color: #fff;
+  box-shadow: 0 16px 40px rgba(140, 92, 255, .42);
+}
+.helmut-action-btn.watch  .helmut-action-ico { border: 1.5px solid rgba(249, 205, 127, .5); color: #f9cd7f; }
+.helmut-action-btn:active .helmut-action-ico { transform: scale(.92); }
+.helmut-action-label { font-size: 12px; font-weight: 700; color: rgba(245, 241, 232, .7); text-align: center; line-height: 1.15; }
+
+.helmut-deck-hint { margin: 0; text-align: center; color: rgba(245, 241, 232, .42); font-size: 13px; }
+.helmut-deck-empty { color: rgba(245, 241, 232, .55); font-size: 15px; line-height: 1.5; padding: 8px 0; }
+
+/* ── State C: letzte Entscheidung ── */
+.helmut-last-decision {
+  display: grid; justify-items: center; gap: 8px; text-align: center;
+  padding: 26px; border-radius: 24px;
+  background: rgba(255, 255, 255, .03); border: 1px solid rgba(24, 228, 155, .22);
+}
+.helmut-last-check {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 56px; height: 56px; border-radius: 999px;
+  background: rgba(24, 228, 155, .14); color: #18e49b;
+  animation: helmutSuccessPop var(--dur-slow) var(--ease-out-soft);
+}
+.helmut-last-title { font-size: 18px; font-weight: 680; color: var(--command-text); }
+.helmut-last-meta { font-size: 14px; color: rgba(245, 241, 232, .6); }
+.helmut-last-meta b { color: #b897ff; font-weight: 700; }
+.helmut-last-time { font-size: 13px; color: rgba(245, 241, 232, .42); }
+
+/* ── Weitere Briefings (kompakte Liste) ── */
+.helmut-further-lead { margin: -6px 0 14px; color: rgba(245, 241, 232, .5); font-size: 14px; line-height: 1.45; }
+.helmut-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.helmut-list-row {
+  width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 12px;
+  text-align: left; padding: 14px 16px; border-radius: 16px;
+  background: rgba(255, 255, 255, .025);
+  border: 1px solid rgba(245, 241, 232, .08);
+  border-left: 3px solid rgba(245, 241, 232, .2);
+  cursor: pointer; transition: background .15s, border-color .15s;
+}
+.helmut-list-row:hover { background: rgba(255, 255, 255, .05); }
+.helmut-list-row.handeln    { border-left-color: rgba(243, 106, 116, .8); }
+.helmut-list-row.beobachten { border-left-color: rgba(249, 205, 127, .8); }
+.helmut-list-row.ignorieren { border-left-color: rgba(245, 241, 232, .16); opacity: .74; }
+.helmut-list-main { display: grid; gap: 4px; justify-items: start; min-width: 0; }
+.helmut-list-badge {
+  font-size: 10px; font-weight: 820; letter-spacing: .08em; text-transform: uppercase;
+  color: rgba(245, 241, 232, .55);
+}
+.helmut-list-row.handeln    .helmut-list-badge { color: #ff8a92; }
+.helmut-list-row.beobachten .helmut-list-badge { color: #f9cd7f; }
+.helmut-list-title { color: var(--command-text); font-size: 15px; font-weight: 640; line-height: 1.25; }
+.helmut-list-desc { color: rgba(245, 241, 232, .5); font-size: 13px; line-height: 1.35; }
+.helmut-list-time { color: rgba(245, 241, 232, .5); font-size: 13px; font-weight: 600; white-space: nowrap; }
+.helmut-list-chevron { display: inline-flex; color: rgba(245, 241, 232, .4); }
+
+/* ── „So funktioniert Helmut" ── */
+.helmut-howto {
+  padding: 24px; border-radius: 24px;
+  background: rgba(255, 255, 255, .025); border: 1px solid rgba(245, 241, 232, .08);
+}
+.helmut-howto-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin-bottom: 18px; }
+.helmut-howto-col { display: grid; gap: 8px; align-content: start; }
+.helmut-howto-step {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; border-radius: 999px;
+  background: rgba(140, 92, 255, .18); color: #b897ff; font-size: 12px; font-weight: 820;
+}
+.helmut-howto-title { color: var(--command-text); font-size: 15px; font-weight: 660; }
+.helmut-howto-desc { color: rgba(245, 241, 232, .58); font-size: 13px; line-height: 1.45; }
+.helmut-howto-link {
+  background: none; border: none; padding: 0; cursor: pointer;
+  color: rgba(245, 241, 232, .5); font-size: 13px; text-decoration: underline; text-underline-offset: 3px;
+}
+
+@keyframes helmutDeckIn { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
+@keyframes helmutSuccessPop { from { opacity: 0; transform: scale(.8); } to { opacity: 1; transform: scale(1); } }
+
+@media (max-width: 480px) {
+  .helmut-referent { gap: 26px; }
+  .helmut-status-card { padding: 14px; }
+  .helmut-action-btn.draft .helmut-action-ico { width: 68px; height: 68px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .helmut-deck-card, .helmut-last-check { animation: none; }
+  .helmut-deck-card.is-leaving { transition: none; }
+  .helmut-score-fill { transition: none; }
+}
+
+/* ── Light-Theme-Parität für die neuen Referent-Flächen ── */
+:root[data-theme="light"] .helmut-referent-head h1 { color: var(--text); }
+:root[data-theme="light"] .helmut-referent-head p { color: var(--muted); }
+:root[data-theme="light"] .helmut-status-card,
+:root[data-theme="light"] .helmut-last-decision,
+:root[data-theme="light"] .helmut-list-row,
+:root[data-theme="light"] .helmut-howto {
+  background: var(--card); border-color: var(--line);
+}
+:root[data-theme="light"] .helmut-deck-card {
+  background: var(--card);
+  box-shadow: var(--soft-shadow);
+}
+:root[data-theme="light"] .helmut-status-num,
+:root[data-theme="light"] .helmut-section-head h2,
+:root[data-theme="light"] .helmut-deck-title,
+:root[data-theme="light"] .helmut-list-title,
+:root[data-theme="light"] .helmut-last-title,
+:root[data-theme="light"] .helmut-howto-title { color: var(--text); }
+:root[data-theme="light"] .helmut-status-label,
+:root[data-theme="light"] .helmut-deck-bullets dd,
+:root[data-theme="light"] .helmut-list-desc,
+:root[data-theme="light"] .helmut-deck-subtitle,
+:root[data-theme="light"] .helmut-action-label,
+:root[data-theme="light"] .helmut-last-meta,
+:root[data-theme="light"] .helmut-howto-desc { color: var(--muted); }
+:root[data-theme="light"] .helmut-deck-progress,
+:root[data-theme="light"] .helmut-deck-hint,
+:root[data-theme="light"] .helmut-score-val,
+:root[data-theme="light"] .helmut-list-time,
+:root[data-theme="light"] .helmut-list-chevron,
+:root[data-theme="light"] .helmut-further-lead,
+:root[data-theme="light"] .helmut-last-time,
+:root[data-theme="light"] .helmut-howto-link { color: var(--muted-2); }
+:root[data-theme="light"] .helmut-deck-star {
+  color: var(--muted-2); border-color: var(--line);
+}
+:root[data-theme="light"] .helmut-action-btn.ignore .helmut-action-ico {
+  border-color: rgba(15, 23, 42, .22); color: var(--muted);
+}
+:root[data-theme="light"] .helmut-action-btn.watch .helmut-action-ico {
+  border-color: rgba(176, 116, 20, .5); color: var(--watch);
+}
+:root[data-theme="light"] .helmut-status-card.beobachten .helmut-status-icon,
+:root[data-theme="light"] .helmut-list-row.beobachten .helmut-list-badge,
+:root[data-theme="light"] .helmut-deck-bullets dt,
+:root[data-theme="light"] .helmut-deck-bullets .helmut-bullet-ico { color: var(--watch); }
+:root[data-theme="light"] .helmut-section-count {
+  background: rgba(15, 23, 42, .08); color: var(--muted);
+}
+:root[data-theme="light"] .helmut-score-bar { background: rgba(15, 23, 42, .10); }
+
 .helmut-assessment-head small {
   color: rgba(245, 241, 232, .48);
   font-size: 13px;

@@ -6,6 +6,16 @@ let decisions = [];
 let helmutBriefings = [];
 let helmutCarouselFilter = "Alle";
 let helmutCarouselIndex = 0;
+// Größe des Entscheidungs-Decks ("Deine wichtigsten Entscheidungen"). Default 3,
+// bewusst als Named Constant — später problemlos auf 5–10 erhöhbar, ohne dass sich
+// am UI-Konzept etwas ändert (die Deck-Render-Engine ist bereits N-fähig).
+const HELMUT_DECK_SIZE = 3;
+let helmutDeck = [];
+let helmutDecisionsMade = 0;
+let helmutLastDecision = null;
+let helmutDeckLeavingId = "";
+let helmutDecidedIds = new Set();
+let helmutHowtoForceOpen = false;
 let tasks = [];
 let notes = [];
 let recommendations = [];
@@ -354,15 +364,20 @@ function applyStartPayload(startPayload) {
   const personalizedItems = recommendations.map(recommendationToDecisionItem).filter(hasPreciseSource);
   const situationalItems = (briefing.situationalBriefing || []).map(situationalToDecisionItem).filter(hasPreciseSource);
   const prominentPool = (personalizedItems.length ? personalizedItems : (activeItems.length ? activeItems : situationalItems));
-  decisions = prominentPool
+  const decisionComparator = (a, b) => {
+    if (a.signalId === themeSignalId) return -1;
+    if (b.signalId === themeSignalId) return 1;
+    return Number(b.priority || b.finalScore || b.totalScore || 0) - Number(a.priority || a.finalScore || a.totalScore || 0);
+  };
+  const sortedDecisions = prominentPool
     .filter(hasPreciseSource)
-    .sort((a, b) => {
-      if (a.signalId === themeSignalId) return -1;
-      if (b.signalId === themeSignalId) return 1;
-      return Number(b.priority || b.finalScore || b.totalScore || 0) - Number(a.priority || a.finalScore || a.totalScore || 0);
-    })
-    .slice(0, 3)
+    .sort(decisionComparator)
     .map(toDecision);
+  // decisions bleibt bei 3 (Home/Quick/Summary hängen daran). helmutDeck ist das
+  // entkoppelte Fokus-Deck — bei HELMUT_DECK_SIZE=3 identisch, aber unabhängig
+  // skalierbar auf 5–10, ohne andere Views zu berühren.
+  decisions = sortedDecisions.slice(0, 3);
+  helmutDeck = sortedDecisions.slice(0, HELMUT_DECK_SIZE);
 
   const allHelmutRaw = [
     ...recommendations.map(recommendationToDecisionItem),
@@ -377,12 +392,15 @@ function applyStartPayload(startPayload) {
       seenHelmutKeys.add(key);
       return true;
     })
-    .sort((a, b) => {
-      if (a.signalId === themeSignalId) return -1;
-      if (b.signalId === themeSignalId) return 1;
-      return Number(b.priority || b.finalScore || b.totalScore || 0) - Number(a.priority || a.finalScore || a.totalScore || 0);
-    })
+    .sort(decisionComparator)
     .map(toDecision);
+
+  // Deck-Zustand bei frischem Briefing zurücksetzen (neuer Morgen = neuer Stapel).
+  helmutCarouselIndex = 0;
+  helmutDecisionsMade = 0;
+  helmutLastDecision = null;
+  helmutDeckLeavingId = "";
+  helmutDecidedIds = new Set();
 
   selectedDecisionId = decisions[0]?.id || "";
   generatedStatement = decisions[0]?.statement || "";
@@ -2705,72 +2723,240 @@ function renderHelmutThinkingView() {
   `;
 }
 
+// --- Helmut-Referent: Icons (inline SVG, currentColor -> Status-Tokens) ---------
+const HELMUT_ICON_BOLT = `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>`;
+const HELMUT_ICON_EYE = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>`;
+const HELMUT_ICON_IGNORE = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M6 6l12 12"/></svg>`;
+const HELMUT_ICON_STAR = `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="m12 3 2.6 5.6 6 .6-4.5 4 1.3 6L12 16.9 6.6 19.2l1.3-6L3.4 9.2l6-.6z"/></svg>`;
+const HELMUT_ICON_CLOCK = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`;
+const HELMUT_ICON_SPARK = `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8z"/></svg>`;
+const HELMUT_ICON_X = `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>`;
+const HELMUT_ICON_DOC = `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 3h7l4 4v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v4h4M9 13h6M9 17h6"/></svg>`;
+const HELMUT_ICON_CHECK = `<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>`;
+const HELMUT_ICON_CHEVRON = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>`;
+
+const HELMUT_BUCKET_LABEL = { handeln: "Handeln", beobachten: "Beobachten", ignorieren: "Ignorieren" };
+
+// Priorität -> die drei Referent-Kategorien der Zielvision.
+function helmutStatusBucket(priorityType) {
+  if (priorityType === "ignore") return "ignorieren";
+  if (priorityType === "watch" || priorityType === "chance") return "beobachten";
+  return "handeln"; // risk, action
+}
+
+function helmutDeckWhy(card) {
+  return polishReferentText(card.whyItMatters || card.personalRelevanceExplanation || "") || "";
+}
+
+function helmutDeckRisk(card) {
+  return polishReferentText(card.risk || card.inaction || card.consequenceIfIgnored || "") || "";
+}
+
+function helmutDeckTime(card) {
+  const raw = String(card.estimatedTime || "").replace(/\s*Min\.?$/i, "").trim();
+  if (!raw || /undefined|null|NaN/i.test(raw)) return "";
+  return `Ca. ${raw} Minuten`;
+}
+
+// Vertrauensscore in Prozent, nur wenn belastbare Daten vorliegen (sonst null).
+function helmutConfidencePercent(card) {
+  const raw = Number(card.finalScore ?? card.totalScore ?? card.relevanceScore);
+  if (Number.isFinite(raw) && raw > 0) return Math.max(1, Math.min(100, Math.round(raw)));
+  const word = String(card.confidence || "").toLowerCase();
+  if (word === "high" || word === "hoch") return 85;
+  if (word === "medium" || word === "mittel") return 65;
+  if (word === "low" || word === "niedrig") return 45;
+  return null;
+}
+
+function helmutNowHHMM() {
+  const now = new Date();
+  return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+}
+
+// Kopf: State A (Morgen, noch keine Entscheidung) vs. State C (Referent-Bestätigung).
+function renderHelmutHeader() {
+  const firstName = (profile?.fullName || "").split(" ")[0] || "";
+  const total = helmutBriefings.length;
+  const deckN = helmutDeck.length;
+  if (helmutDecisionsMade > 0) {
+    const remaining = Math.max(0, deckN - helmutDecisionsMade);
+    const madeText = helmutDecisionsMade === 1 ? "1 Entscheidung getroffen" : `${helmutDecisionsMade} Entscheidungen getroffen`;
+    const remainText = remaining === 0
+      ? "Für heute bist du durch — um den Rest kümmere ich mich."
+      : remaining === 1 ? "Noch 1 wichtiges Thema für heute."
+        : `Noch ${remaining} wichtige Themen für heute.`;
+    const stark = `Stark, ${firstName}`;
+    return `
+      <header class="helmut-referent-head">
+        <h1 class="${headlineClass(stark)}">Stark, ${escapeHtml(firstName)}! 💪</h1>
+        <p>Du hast ${escapeHtml(madeText)}. ${escapeHtml(remainText)}</p>
+      </header>`;
+  }
+  const greeting = timeGreeting(firstName); // enthält bereits den Punkt, z. B. "Guten Morgen, Cem."
+  return `
+    <header class="helmut-referent-head">
+      <h1 class="${headlineClass(greeting)}">${escapeHtml(greeting)}</h1>
+      <p>Heute gibt es ${total} ${total === 1 ? "relevanten Vorgang" : "relevante Vorgänge"}.<br>Davon solltest du dich heute um ${deckN} kümmern.</p>
+    </header>`;
+}
+
+// Drei Status-Cards. Zahlen aus den TATSÄCHLICH ausgelieferten Briefings (nicht aus
+// decisionMetrics), damit Kopfzahl X = Summe der Cards = sichtbare Liste bleibt.
+function renderHelmutStatusCards() {
+  if (!helmutBriefings.length) return "";
+  const counts = { handeln: 0, beobachten: 0, ignorieren: 0 };
+  helmutBriefings.forEach((d) => { counts[helmutStatusBucket(d.priorityType || "watch")] += 1; });
+  const cards = [
+    { key: "handeln", label: "Handeln", icon: HELMUT_ICON_BOLT, n: counts.handeln },
+    { key: "beobachten", label: "Beobachten", icon: HELMUT_ICON_EYE, n: counts.beobachten },
+    { key: "ignorieren", label: "Ignorieren", icon: HELMUT_ICON_IGNORE, n: counts.ignorieren }
+  ];
+  return `
+    <div class="helmut-status-cards" role="list" aria-label="So habe ich deine Themen sortiert">
+      ${cards.map((c) => `
+        <div class="helmut-status-card ${c.key}" role="listitem">
+          <div class="helmut-status-top">
+            <span class="helmut-status-num">${c.n}</span>
+            <span class="helmut-status-icon" aria-hidden="true">${c.icon}</span>
+          </div>
+          <span class="helmut-status-label">${c.label}</span>
+        </div>`).join("")}
+    </div>`;
+}
+
+// State C: „Deine letzte Entscheidung" mit ruhiger Success-Bestätigung.
+function renderLastDecisionCard() {
+  if (!helmutLastDecision) return "";
+  return `
+    <section class="helmut-last-wrap" aria-label="Deine letzte Entscheidung">
+      <div class="helmut-section-head"><h2>Deine letzte Entscheidung</h2></div>
+      <div class="helmut-last-decision">
+        <span class="helmut-last-check" aria-hidden="true">${HELMUT_ICON_CHECK}</span>
+        <span class="helmut-last-title">${escapeHtml(helmutLastDecision.title || "")}</span>
+        <span class="helmut-last-meta">Entscheidung: <b>${escapeHtml(helmutLastDecision.actionLabel || "")}</b></span>
+        <span class="helmut-last-time">${escapeHtml(helmutLastDecision.time || "")} Uhr</span>
+      </div>
+    </section>`;
+}
+
+// Deck-Sektion: kuratierte Top-N (helmutDeck). Titel wechselt in State C.
+function renderHelmutDeckSection() {
+  if (!helmutDeck.length) {
+    return `
+      <section class="helmut-deck-section" aria-label="Deine wichtigsten Entscheidungen">
+        <p class="helmut-deck-empty">Heute ist wenig Dringendes dabei — ich melde mich, sobald sich etwas bewegt.</p>
+      </section>`;
+  }
+  const remaining = Math.max(0, helmutDeck.length - helmutDecisionsMade);
+  const title = helmutDecisionsMade > 0 ? "Nächstes wichtiges Thema" : "Deine wichtigsten Entscheidungen";
+  return `
+    <section class="helmut-deck-section" aria-label="Deine wichtigsten Entscheidungen">
+      <div class="helmut-section-head">
+        <h2>${title}</h2>
+        ${remaining ? `<span class="helmut-section-count">${remaining}</span>` : ""}
+      </div>
+      ${renderHelmutBriefingList()}
+    </section>`;
+}
+
+// Drei große runde Action-Buttons. Entscheidung NUR hierüber (nie per Swipe).
+function renderDeckActions(card) {
+  const id = escapeAttribute(card.id);
+  return `
+    <div class="helmut-deck-actions" role="group" aria-label="Entscheidung treffen">
+      <button class="helmut-action-btn ignore" type="button" data-deck-decide="${id}" data-deck-action="ignore">
+        <span class="helmut-action-ico" aria-hidden="true">${HELMUT_ICON_X}</span>
+        <span class="helmut-action-label">Ignorieren</span>
+      </button>
+      <button class="helmut-action-btn draft" type="button" data-deck-decide="${id}" data-deck-action="draft">
+        <span class="helmut-action-ico" aria-hidden="true">${HELMUT_ICON_DOC}</span>
+        <span class="helmut-action-label">Entwurf<br>erstellen</span>
+      </button>
+      <button class="helmut-action-btn watch" type="button" data-deck-decide="${id}" data-deck-action="watch">
+        <span class="helmut-action-ico" aria-hidden="true">${HELMUT_ICON_EYE}</span>
+        <span class="helmut-action-label">Beobachten</span>
+      </button>
+    </div>`;
+}
+
+// Weitere Briefings: ALLE übrigen (helmutBriefings ohne Deck) als kompakte Zeilen.
+// Jede Zeile öffnet via data-detail die volle Empfehlung (Quelle/Zeit/Öffnen).
+function renderFurtherBriefings() {
+  const deckIds = new Set(helmutDeck.map((d) => d.id));
+  const rest = helmutBriefings.filter((d) => !deckIds.has(d.id));
+  if (!rest.length) return "";
+  return `
+    <section class="helmut-further" aria-label="Weitere Briefings">
+      <div class="helmut-section-head">
+        <h2>Weitere Briefings</h2>
+        <span class="helmut-section-count">${rest.length}</span>
+      </div>
+      <p class="helmut-further-lead">Den Rest habe ich für dich eingeordnet — falls du reinschauen willst.</p>
+      <ul class="helmut-list">
+        ${rest.map((d) => renderFurtherRow(d)).join("")}
+      </ul>
+    </section>`;
+}
+
+function renderFurtherRow(d) {
+  const bucket = helmutStatusBucket(d.priorityType || "watch");
+  const desc = helmutDeckWhy(d) || d.summary || "";
+  const time = helmutDeckTime(d);
+  return `
+    <li>
+      <button class="helmut-list-row ${escapeAttribute(bucket)}" type="button" data-detail="${escapeAttribute(d.id)}">
+        <span class="helmut-list-main">
+          <span class="helmut-list-badge ${escapeAttribute(bucket)}">${escapeHtml(HELMUT_BUCKET_LABEL[bucket])}</span>
+          <span class="helmut-list-title">${escapeHtml(d.title || "Thema")}</span>
+          ${desc ? `<span class="helmut-list-desc">${escapeHtml(compactText(desc, 90))}</span>` : ""}
+        </span>
+        ${time ? `<span class="helmut-list-time">${escapeHtml(time)}</span>` : ""}
+        <span class="helmut-list-chevron" aria-hidden="true">${HELMUT_ICON_CHEVRON}</span>
+      </button>
+    </li>`;
+}
+
+// „So funktioniert Helmut" — einmaliges Onboarding, danach über den Fuß-Link erneut.
+function renderHelmutHowTo() {
+  let seen = false;
+  try { seen = localStorage.getItem("helmut:howtoSeen") === "1"; } catch { seen = false; }
+  if (seen && !helmutHowtoForceOpen) return "";
+  const cols = [
+    { t: "Überblick in 3 Sekunden", d: "Helmut zeigt dir, wie viele Themen heute wichtig sind – und wie du sie priorisieren solltest." },
+    { t: "Wichtigste Entscheidungen zuerst", d: "Du bekommst nacheinander die 1–3 wichtigsten Themen. Wische nach links, triff deine Entscheidung und bleib im Flow." },
+    { t: "Entscheiden statt informieren", d: "Jedes Thema kommt mit einer klaren Empfehlung. Helmut erklärt dir kurz das Warum, Risiko und deinen Aufwand." },
+    { t: "Alle weiteren Themen im Blick", d: "Nach deinen Top-Entscheidungen siehst du alle weiteren Vorgänge – kompakt, sortiert und filterbar." }
+  ];
+  return `
+    <section class="helmut-howto" aria-label="So funktioniert Helmut">
+      <div class="helmut-section-head"><h2>So funktioniert Helmut</h2></div>
+      <div class="helmut-howto-grid">
+        ${cols.map((c, i) => `
+          <div class="helmut-howto-col">
+            <span class="helmut-howto-step">${i + 1}</span>
+            <span class="helmut-howto-title">${escapeHtml(c.t)}</span>
+            <span class="helmut-howto-desc">${escapeHtml(c.d)}</span>
+          </div>`).join("")}
+      </div>
+      <button class="secondary-button compact-button" type="button" data-helmut-howto-dismiss>Verstanden</button>
+    </section>`;
+}
+
 function renderHelmutAssessmentView() {
   const assessment = buildHelmutAssessment();
   if (helmutTypingActive) return renderHelmutTypingResult(assessment);
-  const top = decisions[0];
-  const actionId = top?.id || "";
-  const state = helmutDecisionState(assessment);
-  const btn = helmutButtonConfig(state, actionId);
-  const firstName = (profile?.fullName || "").split(" ")[0];
-  const whyLine = assessment.heroWhy || heroText(assessment.whyImportant);
-  const riskLine = assessment.heroRisk || heroText(assessment.risk);
-  const nextLine = assessment.heroNextStep || heroText(assessment.recommendation);
-  const deadlineText = top?.deadline
-    ? `Antwort erforderlich bis: ${formatDeadlineDate(top.deadline)}`
-    : "Keine Frist gesetzt";
-  const srcLine = helmutBriefingSourceHtml(top);
   return `
-    <section class="helmut-assessment" aria-label="Helmuts Einschätzung">
-      <div class="helmut-assessment-head">
-        <span>Helmut</span>
-        <small>${escapeHtml(timeGreeting(firstName))} · ${escapeHtml(assessment.time)} Uhr</small>
-        <h1>Was ich dir empfehle</h1>
-      </div>
-
-      <div class="helmut-hero">
-        <b class="priority-status ${escapeAttribute(assessment.priorityStatus || "stable")}">${escapeHtml(priorityStatusText(assessment.priorityStatus))}</b>
-        <h2 class="helmut-hero-decision">${escapeHtml(helmutDecisionLabel(state))}</h2>
-        <dl class="helmut-hero-bullets">
-          <div><dt>Warum</dt><dd>${escapeHtml(whyLine)}</dd></div>
-          <div><dt>Risiko</dt><dd>${escapeHtml(riskLine)}</dd></div>
-          <div><dt>Nächster Schritt</dt><dd>${escapeHtml(nextLine)}</dd></div>
-        </dl>
-      </div>
-
-      <div class="helmut-actions">
-        <button class="primary-button" type="button" ${btn.pAttr}>${escapeHtml(btn.primary)}</button>
-        <button class="secondary-button" type="button" ${btn.sAttr}>${escapeHtml(btn.secondary)}</button>
-      </div>
-
-      <details class="helmut-detail" open>
-        <summary>Mein Vorschlag</summary>
-        <div class="helmut-detail-body">
-          <p>${escapeHtml(assessment.assessment)}</p>
-          ${assessment.recommendation ? `<p>${escapeHtml(assessment.recommendation)}</p>` : ""}
-        </div>
-      </details>
-
-      <details class="helmut-detail">
-        <summary>Warum ist das wichtig?</summary>
-        <div class="helmut-detail-body">
-          <p>${escapeHtml(assessment.whyImportant)}</p>
-        </div>
-      </details>
-
-      <details class="helmut-detail helmut-detail--risk">
-        <summary>Risiko bei Nichtreaktion</summary>
-        <div class="helmut-detail-body">
-          <p>${escapeHtml(assessment.risk)}</p>
-        </div>
-      </details>
-
-      ${renderHelmutBriefingList()}
-
+    <section class="helmut-referent" aria-label="Helmut – dein Referent">
+      ${renderHelmutHeader()}
+      ${renderHelmutStatusCards()}
+      ${renderLastDecisionCard()}
+      ${renderHelmutDeckSection()}
+      ${renderFurtherBriefings()}
+      ${renderHelmutHowTo()}
       <div class="helmut-assessment-foot">
         <small>Aktualisiert: ${escapeHtml(formatBriefingDate(briefing.generatedAt || briefing.date || new Date().toISOString()))}</small>
-        <small class="helmut-deadline">${escapeHtml(deadlineText)}</small>
-        ${srcLine ? `<small class="helmut-source">${srcLine}</small>` : ""}
+        <button class="helmut-howto-link" type="button" data-helmut-howto-show>So funktioniert Helmut</button>
         ${renderRefreshButton()}
       </div>
     </section>
@@ -2791,73 +2977,65 @@ const CAROUSEL_FILTERS = [
   { key: "watch",     label: "Beobachten" }
 ];
 
+// Das Deck ist das kuratierte Fokus-Set (helmutDeck). Kategorie-Filter der alten
+// Carousel-Ansicht entfällt bewusst — die Zielvision hat keine Filter-Chips.
 function filteredCarouselItems() {
-  if (helmutCarouselFilter === "Alle") return helmutBriefings;
-  return helmutBriefings.filter((d) => (d.priorityType || "watch") === helmutCarouselFilter);
+  return helmutDeck;
 }
 
 function renderHelmutBriefingList() {
-  if (!helmutBriefings.length) return "";
+  if (!helmutDeck.length) return "";
   return `
-    <section class="helmut-carousel-wrap" aria-label="Alle Briefings" id="helmutCarousel">
+    <section class="helmut-carousel-wrap helmut-deck-wrap" aria-label="Deine wichtigsten Entscheidungen" id="helmutCarousel">
       ${renderCarouselInner()}
     </section>`;
 }
 
+// Eine große Entscheidungs-Card im Fokus. Swipe/Pfeile blättern nur; entschieden
+// wird ausschließlich über die drei Buttons (data-deck-decide).
 function renderCarouselInner() {
   const items = filteredCarouselItems();
+  if (!items.length) return "";
   const safeIndex = Math.min(helmutCarouselIndex, Math.max(0, items.length - 1));
-  const filters = CAROUSEL_FILTERS.filter((f) => f.key === "Alle" || helmutBriefings.some((d) => (d.priorityType || "watch") === f.key));
-  const filterRow = `
-    <div class="helmut-carousel-filters" role="tablist" aria-label="Briefing-Filter">
-      ${filters.map((f) => `
-        <button class="helmut-carousel-chip ${helmutCarouselFilter === f.key ? "active" : ""}" type="button"
-          role="tab" aria-selected="${helmutCarouselFilter === f.key}"
-          data-carousel-filter="${escapeAttribute(f.key)}">${escapeHtml(f.label)}</button>`).join("")}
-    </div>`;
-  if (!items.length) {
-    return `${filterRow}<p class="helmut-carousel-empty">Keine Briefings in dieser Kategorie.</p>`;
-  }
   const card = items[safeIndex];
-  const headline = card.title || `Briefing ${safeIndex + 1}`;
-  const action = twoSentenceSummary(chiefRecommendationText(card)) || "Keine konkrete Handlungsempfehlung hinterlegt.";
-  const why = decisionWhyImportant(card);
-  const srcLine = helmutBriefingSourceHtml(card);
-  const totalLabel = items.length === 1 ? "1 Briefing" : `${items.length} Briefings`;
+  const bucket = helmutStatusBucket(card.priorityType || "watch");
+  const why = helmutDeckWhy(card);
+  const risk = helmutDeckRisk(card);
+  const time = helmutDeckTime(card);
+  const pct = helmutConfidencePercent(card);
+  const subtitle = card.summary && card.summary !== why ? compactText(card.summary, 80) : "";
+  const leaving = helmutDeckLeavingId === card.id ? " is-leaving" : "";
   const dots = items.length > 1 ? `
     <div class="helmut-carousel-dots" aria-hidden="true">
       ${items.map((_, i) => `<span class="helmut-carousel-dot ${i === safeIndex ? "active" : ""}"></span>`).join("")}
     </div>` : "";
-  const prevDisabled = safeIndex === 0 ? "disabled" : "";
-  const nextDisabled = safeIndex === items.length - 1 ? "disabled" : "";
+  const nav = items.length > 1 ? `
+    <div class="helmut-carousel-nav">
+      <button class="helmut-carousel-arrow" type="button" data-carousel-prev ${safeIndex === 0 ? "disabled" : ""} aria-label="Vorheriges Thema">←</button>
+      <button class="helmut-carousel-arrow" type="button" data-carousel-next ${safeIndex === items.length - 1 ? "disabled" : ""} aria-label="Nächstes Thema">→</button>
+    </div>` : "";
   return `
-    ${filterRow}
-    <div class="helmut-carousel-header">
-      <span class="helmut-carousel-count">${safeIndex + 1} / ${items.length} ${totalLabel}</span>
-    </div>
-    <div class="helmut-carousel-track" data-carousel-touch>
-      <article class="helmut-brief-card ${escapeAttribute(card.priorityType || "watch")}">
-        <div class="helmut-brief-card-head">
-          <span class="helmut-brief-rank">${safeIndex + 1}</span>
-          <span class="helmut-brief-chip ${priorityChipClass(card)}">${escapeHtml(card.priorityLabel || "Punkt")}</span>
+    <div class="helmut-deck-track" data-carousel-touch>
+      <article class="helmut-deck-card ${escapeAttribute(bucket)}${leaving}">
+        <div class="helmut-deck-card-head">
+          <span class="helmut-deck-progress">${safeIndex + 1} von ${items.length}</span>
+          <span class="helmut-deck-badge ${escapeAttribute(bucket)}">${escapeHtml(HELMUT_BUCKET_LABEL[bucket])}</span>
+          <button class="helmut-deck-star" type="button" data-detail="${escapeAttribute(card.id)}" aria-label="Empfehlung öffnen">${HELMUT_ICON_STAR}</button>
         </div>
-        <h3 class="helmut-brief-headline">${escapeHtml(headline)}</h3>
-        <dl class="helmut-brief-bullets">
-          <div><dt>Empfehlung</dt><dd>${escapeHtml(action)}</dd></div>
-          <div><dt>Warum wichtig</dt><dd>${escapeHtml(why)}</dd></div>
+        <h3 class="helmut-deck-title">${escapeHtml(card.title || "Thema")}</h3>
+        ${subtitle ? `<p class="helmut-deck-subtitle">${escapeHtml(subtitle)}</p>` : ""}
+        <dl class="helmut-deck-bullets">
+          ${why ? `<div><dt><span class="helmut-bullet-ico">${HELMUT_ICON_STAR}</span>Warum betrifft dich das?</dt><dd>${escapeHtml(why)}</dd></div>` : ""}
+          ${risk ? `<div><dt><span class="helmut-bullet-ico">${HELMUT_ICON_STAR}</span>Risiko bei Nichtreaktion</dt><dd>${escapeHtml(risk)}</dd></div>` : ""}
+          ${time ? `<div class="helmut-deck-line"><dt><span class="helmut-bullet-ico">${HELMUT_ICON_CLOCK}</span>Zeitaufwand</dt><dd>${escapeHtml(time)}</dd></div>` : ""}
+          ${pct != null ? `<div class="helmut-deck-line helmut-deck-score"><dt><span class="helmut-bullet-ico">${HELMUT_ICON_SPARK}</span>Vertrauensscore</dt><dd><span class="helmut-score-bar"><span class="helmut-score-fill" style="width:${pct}%"></span></span><span class="helmut-score-val">${pct} %</span></dd></div>` : ""}
         </dl>
-        ${srcLine ? `<small class="helmut-brief-source">${srcLine}</small>` : ""}
-        <div class="helmut-carousel-actions">
-          <button class="secondary-button compact-button" type="button" data-detail="${escapeAttribute(card.id)}">Empfehlung öffnen</button>
-        </div>
+        ${renderDeckActions(card)}
       </article>
     </div>
+    <p class="helmut-deck-hint">Wische nach links, um dir in Ruhe das nächste Thema anzusehen.</p>
     ${dots}
-    ${items.length > 1 ? `
-    <div class="helmut-carousel-nav">
-      <button class="helmut-carousel-arrow" type="button" data-carousel-prev ${prevDisabled} aria-label="Vorheriges Briefing">←</button>
-      <button class="helmut-carousel-arrow" type="button" data-carousel-next ${nextDisabled} aria-label="Nächstes Briefing">→</button>
-    </div>` : ""}`;
+    ${nav}`;
 }
 
 function patchCarousel() {
@@ -6382,6 +6560,61 @@ function bindActions() {
       render();
       showToast("Wird niedriger gewichtet");
       logDecisionInteraction("ignored", decision);
+    });
+  });
+
+  // Deck-Entscheidung: ausschließlich über die drei runden Buttons. Swipe entscheidet
+  // NIE (keine versehentlichen Entscheidungen). Ruhige Erledigen-Geste + Auto-Advance
+  // via patchCarousel (kein globales render bis zum State-Wechsel).
+  app.querySelectorAll("[data-deck-decide]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const id = button.dataset.deckDecide;
+      const action = button.dataset.deckAction || "watch";
+      const card = helmutDeck.find((entry) => entry.id === id);
+      if (!card || helmutDeckLeavingId) return;
+      const labelMap = { ignore: "Ignoriert", draft: "Entwurf erstellen", watch: "Beobachten" };
+      const logMap = { ignore: "ignored", draft: "draft", watch: "watch" };
+      if (action === "draft" && !previewMode) {
+        fetchWithTimeout(`/api/tasks?${apiScopeQuery()}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: card.title,
+            description: compactText(chiefRecommendationText(card), 220),
+            priority: "high",
+            assignee: "Büro",
+            status: "open"
+          })
+        }).then((res) => (res && res.ok ? res.json() : null))
+          .then((data) => { if (data && data.task) tasks = [data.task, ...tasks]; })
+          .catch(() => {});
+      }
+      card.status = action === "ignore" ? "ignored" : action === "draft" ? "drafting" : "watching";
+      if (!helmutDecidedIds.has(id)) { helmutDecidedIds.add(id); helmutDecisionsMade += 1; }
+      helmutLastDecision = { title: card.title, actionLabel: labelMap[action] || "Beobachten", time: helmutNowHHMM() };
+      logDecisionInteraction(logMap[action] || "watch", card);
+      helmutDeckLeavingId = id;
+      patchCarousel();
+      window.setTimeout(() => {
+        helmutDeckLeavingId = "";
+        helmutCarouselIndex = Math.min(Math.max(0, helmutDeck.length - 1), helmutCarouselIndex + 1);
+        render();
+      }, 280);
+    });
+  });
+
+  app.querySelectorAll("[data-helmut-howto-dismiss]").forEach((button) => {
+    button.addEventListener("click", () => {
+      try { localStorage.setItem("helmut:howtoSeen", "1"); } catch { /* Speicher gesperrt */ }
+      helmutHowtoForceOpen = false;
+      render();
+    });
+  });
+
+  app.querySelectorAll("[data-helmut-howto-show]").forEach((button) => {
+    button.addEventListener("click", () => {
+      helmutHowtoForceOpen = true;
+      render();
     });
   });
 

@@ -965,9 +965,9 @@ function compactBriefingPayload(briefing) {
   if (!briefing || typeof briefing !== "object") return briefing;
   const clone = {
     ...briefing,
-    items: compactItems(briefing.items, 6),
-    personalizedRecommendations: compactItems(briefing.personalizedRecommendations, 6),
-    situationalBriefing: compactItems(briefing.situationalBriefing, 10),
+    items: compactItems(briefing.items, 15),
+    personalizedRecommendations: compactItems(briefing.personalizedRecommendations, 15),
+    situationalBriefing: compactItems(briefing.situationalBriefing, 15),
     personMentions: compactItems(briefing.personMentions, 6),
     tasks: compactItems(briefing.tasks, 5),
     notifications: compactItems(briefing.notifications, 6),
