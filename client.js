@@ -2814,14 +2814,20 @@ function renderHelmutStatusCards() {
   ];
   return `
     <div class="helmut-status-cards" role="list" aria-label="So habe ich deine Themen sortiert">
-      ${cards.map((c) => `
-        <div class="helmut-status-card ${c.key}" role="listitem">
+      ${cards.map((c) => {
+        // Handeln/Beobachten springen zum ersten passenden Thema. Ignorieren ist
+        // reine Statistik und bleibt nicht interaktiv.
+        const jumpable = c.key !== "ignorieren" && c.n > 0;
+        const inner = `
           <div class="helmut-status-top">
             <span class="helmut-status-num">${c.n}</span>
             <span class="helmut-status-icon" aria-hidden="true">${c.icon}</span>
           </div>
-          <span class="helmut-status-label">${c.label}</span>
-        </div>`).join("")}
+          <span class="helmut-status-label">${c.label}</span>`;
+        return jumpable
+          ? `<button type="button" class="helmut-status-card ${c.key} is-jumpable" role="listitem" data-helmut-jump="${c.key}" aria-label="Zu ${c.label} springen">${inner}</button>`
+          : `<div class="helmut-status-card ${c.key}" role="listitem">${inner}</div>`;
+      }).join("")}
     </div>`;
 }
 
@@ -2882,6 +2888,40 @@ function renderDeckActions(card) {
 
 // Weitere Briefings: ALLE übrigen (helmutBriefings ohne Deck) als kompakte Zeilen.
 // Jede Zeile öffnet via data-detail die volle Empfehlung (Quelle/Zeit/Öffnen).
+// Ruhiger Premium-Highlight: dezenter Ring + Glow + sanfte Aufhellung, danach
+// automatisch zurück. Kein Blinken. Rein über CSS-Animation (transform/box-shadow).
+function helmutScrollHighlight(el) {
+  if (!el) return;
+  try { el.scrollIntoView({ behavior: "smooth", block: "center" }); } catch { el.scrollIntoView(); }
+  el.classList.remove("helmut-highlight");
+  void el.offsetWidth; // Reflow erzwingen -> Animation startet neu
+  el.classList.add("helmut-highlight");
+  window.setTimeout(() => el.classList.remove("helmut-highlight"), 2100);
+}
+
+// Springt zum ersten Element des Buckets: bevorzugt die Deck-Karte (Karussell auf
+// den Index setzen), sonst die passende Zeile in „Weitere Briefings".
+function helmutJumpToBucket(bucket) {
+  const deckIdx = helmutDeck.findIndex((d) => helmutStatusBucket(d.priorityType || "watch") === bucket);
+  if (deckIdx >= 0) {
+    helmutCarouselIndex = deckIdx;
+    patchCarousel();
+    bindActions();
+    window.requestAnimationFrame(() => {
+      const wrap = app.querySelector("#helmutCarousel");
+      helmutScrollHighlight((wrap && wrap.querySelector(".helmut-deck-card")) || wrap);
+    });
+    return;
+  }
+  const deckIds = new Set(helmutDeck.map((d) => d.id));
+  const rest = helmutBriefings.filter((d) => !deckIds.has(d.id));
+  const restIdx = rest.findIndex((d) => helmutStatusBucket(d.priorityType || "watch") === bucket);
+  if (restIdx < 0) return;
+  const rows = app.querySelectorAll(".helmut-list .helmut-list-row");
+  const row = rows[restIdx];
+  if (row) helmutScrollHighlight(row);
+}
+
 function renderFurtherBriefings() {
   const deckIds = new Set(helmutDeck.map((d) => d.id));
   const rest = helmutBriefings.filter((d) => !deckIds.has(d.id));
@@ -2901,17 +2941,24 @@ function renderFurtherBriefings() {
 
 function renderFurtherRow(d) {
   const bucket = helmutStatusBucket(d.priorityType || "watch");
-  const desc = helmutDeckWhy(d) || d.summary || "";
+  // Nur eine sehr kurze Empfehlung — schnell scannbar, keine Textwand. Warum/Risiko/
+  // Quellen erscheinen erst im Detail (data-detail).
+  const short = compactText(polishReferentText(d.action) || d.summary || helmutDeckWhy(d) || "", 58);
   const time = helmutDeckTime(d);
+  const srcN = Number(d.sourceCount || (Array.isArray(d.sources) ? d.sources.length : 0)) || 0;
+  const srcHint = srcN >= 2 ? `${srcN} Quellen` : srcN === 1 ? "Quelle anzeigen" : "";
   return `
     <li>
       <button class="helmut-list-row ${escapeAttribute(bucket)}" type="button" data-detail="${escapeAttribute(d.id)}">
         <span class="helmut-list-main">
           <span class="helmut-list-badge ${escapeAttribute(bucket)}">${escapeHtml(HELMUT_BUCKET_LABEL[bucket])}</span>
           <span class="helmut-list-title">${escapeHtml(d.title || "Thema")}</span>
-          ${desc ? `<span class="helmut-list-desc">${escapeHtml(compactText(desc, 90))}</span>` : ""}
+          ${short ? `<span class="helmut-list-desc">${escapeHtml(short)}</span>` : ""}
         </span>
-        ${time ? `<span class="helmut-list-time">${escapeHtml(time)}</span>` : ""}
+        <span class="helmut-list-side">
+          ${time ? `<span class="helmut-list-time">${escapeHtml(time)}</span>` : ""}
+          ${srcHint ? `<span class="helmut-list-src">${escapeHtml(srcHint)}</span>` : ""}
+        </span>
         <span class="helmut-list-chevron" aria-hidden="true">${HELMUT_ICON_CHEVRON}</span>
       </button>
     </li>`;
@@ -6618,6 +6665,10 @@ function bindActions() {
     });
   });
 
+  app.querySelectorAll("[data-helmut-jump]").forEach((button) => {
+    button.addEventListener("click", () => helmutJumpToBucket(button.dataset.helmutJump));
+  });
+
   app.querySelectorAll("[data-lage-delegate]").forEach((button) => {
     button.addEventListener("click", async () => {
       const decision = decisions.find((entry) => entry.id === button.dataset.lageDelegate);
@@ -7974,7 +8025,7 @@ function renderSourceBasis(item) {
   return `
     <section class="source-basis">
       <h2>Quellenbasis</h2>
-      ${sources.slice(0, 4).map((source) => {
+      ${sources.slice(0, 12).map((source) => {
         const href = sourceHref(source);
         return `
         <a class="source-row" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">
