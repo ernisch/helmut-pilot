@@ -9745,10 +9745,18 @@ details[open].meeting-detail summary::before { content: '▾ '; }
 /* ── Status-Cards ── */
 .helmut-status-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .helmut-status-card {
-  display: grid; gap: 16px; padding: 16px;
+  display: grid; gap: 16px; padding: 16px; margin: 0;
   border-radius: 16px; background: rgba(255, 255, 255, .03);
   border: 1px solid rgba(245, 241, 232, .09);
+  font: inherit; text-align: left; color: inherit;
 }
+/* Handeln/Beobachten sind klickbar (springen zum ersten passenden Thema). */
+.helmut-status-card.is-jumpable {
+  cursor: pointer;
+  transition: transform var(--dur-base) var(--ease-out-soft), border-color var(--dur-base) var(--ease-out-soft), box-shadow var(--dur-base) var(--ease-out-soft);
+}
+.helmut-status-card.is-jumpable:hover { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(0, 0, 0, .28); }
+.helmut-status-card.is-jumpable:active { transform: translateY(0) scale(.98); }
 .helmut-status-top { display: flex; align-items: center; justify-content: space-between; }
 .helmut-status-num { font-size: clamp(24px, 6vw, 30px); font-weight: 760; color: var(--command-text); line-height: 1; }
 .helmut-status-label { font-size: 12px; font-weight: 600; color: rgba(245, 241, 232, .62); white-space: nowrap; }
@@ -9884,29 +9892,38 @@ details[open].meeting-detail summary::before { content: '▾ '; }
 /* ── Weitere Briefings (kompakte Liste) ── */
 .helmut-further-lead { margin: -6px 0 14px; color: rgba(245, 241, 232, .5); font-size: 14px; line-height: 1.45; }
 .helmut-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+/* Kompakte, schnell scannbare Zeile (Apple Reminders / Linear Inbox). */
 .helmut-list-row {
   width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 12px;
-  text-align: left; padding: 14px 16px; border-radius: 16px;
-  background: rgba(255, 255, 255, .025);
-  border: 1px solid rgba(245, 241, 232, .08);
+  text-align: left; padding: 12px 14px; border-radius: 14px;
+  background: rgba(255, 255, 255, .022);
+  border: 1px solid rgba(245, 241, 232, .07);
   border-left: 3px solid rgba(245, 241, 232, .2);
   cursor: pointer; transition: background .15s, border-color .15s;
 }
 .helmut-list-row:hover { background: rgba(255, 255, 255, .05); }
 .helmut-list-row.handeln    { border-left-color: rgba(243, 106, 116, .8); }
 .helmut-list-row.beobachten { border-left-color: rgba(249, 205, 127, .8); }
-.helmut-list-row.ignorieren { border-left-color: rgba(245, 241, 232, .16); opacity: .74; }
-.helmut-list-main { display: grid; gap: 4px; justify-items: start; min-width: 0; }
+.helmut-list-row.ignorieren { border-left-color: rgba(245, 241, 232, .16); opacity: .7; }
+.helmut-list-main { display: grid; gap: 3px; justify-items: start; min-width: 0; }
 .helmut-list-badge {
-  font-size: 10px; font-weight: 820; letter-spacing: .08em; text-transform: uppercase;
-  color: rgba(245, 241, 232, .55);
+  font-size: 9.5px; font-weight: 820; letter-spacing: .08em; text-transform: uppercase;
+  color: rgba(245, 241, 232, .5);
 }
 .helmut-list-row.handeln    .helmut-list-badge { color: #ff8a92; }
 .helmut-list-row.beobachten .helmut-list-badge { color: #f9cd7f; }
-.helmut-list-title { color: var(--command-text); font-size: 15px; font-weight: 640; line-height: 1.25; }
-.helmut-list-desc { color: rgba(245, 241, 232, .5); font-size: 13px; line-height: 1.35; }
+.helmut-list-title {
+  max-width: 100%; color: var(--command-text); font-size: 15px; font-weight: 640; line-height: 1.2;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.helmut-list-desc {
+  max-width: 100%; color: rgba(245, 241, 232, .48); font-size: 12.5px; line-height: 1.3;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.helmut-list-side { display: grid; justify-items: end; gap: 3px; }
 .helmut-list-time { color: rgba(245, 241, 232, .5); font-size: 13px; font-weight: 600; white-space: nowrap; }
-.helmut-list-chevron { display: inline-flex; color: rgba(245, 241, 232, .4); }
+.helmut-list-src { color: rgba(245, 241, 232, .38); font-size: 11px; font-weight: 600; white-space: nowrap; }
+.helmut-list-chevron { display: inline-flex; color: rgba(245, 241, 232, .38); }
 
 /* ── „So funktioniert Helmut" ── */
 .helmut-howto {
@@ -9930,6 +9947,15 @@ details[open].meeting-detail summary::before { content: '▾ '; }
 @keyframes helmutDeckIn { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
 @keyframes helmutSuccessPop { from { opacity: 0; transform: scale(.8); } to { opacity: 1; transform: scale(1); } }
 
+/* Ruhiger Premium-Highlight nach dem Springen: Ring + Glow + sanfte Aufhellung
+   (inset-Tint über der eigenen Card-Fläche), dann automatisch zurück. Kein Blinken. */
+.helmut-highlight { animation: helmutHighlight 2s var(--ease-out-soft); }
+@keyframes helmutHighlight {
+  0%   { box-shadow: 0 0 0 0 rgba(140, 92, 255, 0), inset 0 0 0 240px rgba(140, 92, 255, 0); }
+  18%  { box-shadow: 0 0 0 1.5px rgba(140, 92, 255, .55), 0 0 30px rgba(140, 92, 255, .24), inset 0 0 0 240px rgba(140, 92, 255, .06); }
+  100% { box-shadow: 0 0 0 0 rgba(140, 92, 255, 0), inset 0 0 0 240px rgba(140, 92, 255, 0); }
+}
+
 @media (max-width: 480px) {
   .helmut-referent { gap: 26px; }
   .helmut-status-card { padding: 14px; }
@@ -9940,6 +9966,8 @@ details[open].meeting-detail summary::before { content: '▾ '; }
   .helmut-deck-card, .helmut-last-check { animation: none; }
   .helmut-deck-card.is-leaving { transition: none; }
   .helmut-score-fill { transition: none; }
+  /* Statt Animation ein ruhiger statischer Ring (JS entfernt ihn nach ~2s). */
+  .helmut-highlight { box-shadow: 0 0 0 1.5px rgba(140, 92, 255, .5); }
 }
 
 /* ── Light-Theme-Parität für die neuen Referent-Flächen ── */
@@ -9973,6 +10001,7 @@ details[open].meeting-detail summary::before { content: '▾ '; }
 :root[data-theme="light"] .helmut-score-val,
 :root[data-theme="light"] .helmut-list-time,
 :root[data-theme="light"] .helmut-list-chevron,
+:root[data-theme="light"] .helmut-list-src,
 :root[data-theme="light"] .helmut-further-lead,
 :root[data-theme="light"] .helmut-last-time,
 :root[data-theme="light"] .helmut-howto-link { color: var(--muted-2); }
