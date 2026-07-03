@@ -967,7 +967,7 @@ function compactBriefingPayload(briefing) {
     ...briefing,
     items: compactItems(briefing.items, 6),
     personalizedRecommendations: compactItems(briefing.personalizedRecommendations, 6),
-    situationalBriefing: compactItems(briefing.situationalBriefing, 3),
+    situationalBriefing: compactItems(briefing.situationalBriefing, 10),
     personMentions: compactItems(briefing.personMentions, 6),
     tasks: compactItems(briefing.tasks, 5),
     notifications: compactItems(briefing.notifications, 6),
