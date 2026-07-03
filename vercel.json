@@ -66,6 +66,10 @@
       "schedule": "30 5 * * *"
     },
     {
+      "path": "/api/cron/lage-briefing",
+      "schedule": "45 5 * * *"
+    },
+    {
       "path": "/api/cron/understanding",
       "schedule": "30 21 * * *"
     }

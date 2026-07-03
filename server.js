@@ -17,6 +17,8 @@ const accounts = require("./lib/helmut/accounts");
 const { getRelevantParliamentaryItems, isDipEnabled } = require("./lib/helmut/dip");
 const { runPendingUnderstandingShadow, clusterRawDocuments, deriveVorgangId } = require("./lib/helmut/understanding");
 const { generateOfficeOutput, isValidChannel } = require("./lib/helmut/office");
+const { buildLageBriefing } = require("./lib/helmut/lage");
+const { backfillProvenance } = require("./lib/helmut/backfill");
 
 const root = __dirname;
 const port = Number(process.env.PORT || 3000);
@@ -256,6 +258,10 @@ async function handleRequest(request, response) {
     return handleAsync(response, async () => {
       const profile = await activeProfile(politicianId);
       const briefing = await latestBriefingPayload({ politicianId, profile, url, previewMode, compact: true });
+      // Lage = das politische Morgen-Briefing des Referenten (keine Empfehlung/Bewertung).
+      // Additiv: hängt am bestehenden Aggregat, damit die App es ohne Extra-Call rendert.
+      try { briefing.lageBriefing = await buildLageBriefing(profile, { politicianId }); }
+      catch (error) { console.error("Lage-Briefing fehlgeschlagen", error && error.message); }
       return {
         profile,
         briefing,
@@ -377,6 +383,16 @@ async function handleRequest(request, response) {
         };
       }
       return runLageCheck(politicianId);
+    });
+  }
+
+  // Lage-Briefing (V3): KO-basiertes, gecachtes KI-Briefing + echte Vorgänge/Quellen.
+  // Reiner Read; erzeugt nur bei fehlendem/veraltetem Cache neu (?force=1 erzwingt).
+  if (url.pathname === "/api/lage/briefing") {
+    return handleAsync(response, async () => {
+      const profile = await activeProfile(politicianId);
+      const force = isForcedPilotRun(url) || hasAdminBypass(request, url);
+      return buildLageBriefing(profile, { politicianId, force });
     });
   }
 
@@ -614,6 +630,36 @@ async function handleRequest(request, response) {
       const lageCheck = await runLageCheck(politicianId);
       const push = await sendLageChangePush(lageCheck, profile);
       return { lageCheck, push };
+    });
+  }
+
+  // Vorwaerm-Lauf: erzeugt das Lage-Briefing pro Profil einmal (generate-if-missing),
+  // damit die erste Oeffnung des Tages sofort aus dem Cache liest. CRON_SECRET-geschuetzt.
+  if (url.pathname === "/api/cron/lage-briefing") {
+    if (!authorizeCron(request, url, response)) return;
+    return handleAsync(response, async () => {
+      let profiles = await listProfiles().catch(() => []);
+      if (!Array.isArray(profiles) || !profiles.length) profiles = [{ id: politicianId }];
+      const results = [];
+      for (const p of profiles) {
+        const profile = await activeProfile(p.id || politicianId);
+        const res = await buildLageBriefing(profile, { politicianId: profile.id })
+          .catch((e) => ({ available: false, reason: "error", error: e && e.message }));
+        results.push({ userId: profile.id, available: res.available, fromCache: res.fromCache, reason: res.reason || null, vorgaenge: (res.vorgaenge || []).length });
+      }
+      return { prewarmed: results.length, results };
+    });
+  }
+
+  // Provenienz-Backfill fuer BESTEHENDE Vorgaenge (kein KI-Call). ?secret=CRON_SECRET.
+  // ?dryRun=1 zeigt nur, was verlinkt wuerde; ?days= / ?limit= steuern das Zeitfenster.
+  if (url.pathname === "/api/debug/lage-backfill") {
+    if (!authorizeCron(request, url, response)) return;
+    return handleAsync(response, async () => {
+      const days = Number(url.searchParams.get("days")) || undefined;
+      const limit = Number(url.searchParams.get("limit")) || undefined;
+      const dryRun = url.searchParams.get("dryRun") === "1";
+      return backfillProvenance({ days, limit, dryRun });
     });
   }
 
