@@ -17,6 +17,7 @@ const accounts = require("./lib/helmut/accounts");
 const { getRelevantParliamentaryItems, isDipEnabled } = require("./lib/helmut/dip");
 const { runPendingUnderstandingShadow, clusterRawDocuments, deriveVorgangId } = require("./lib/helmut/understanding");
 const { generateOfficeOutput, isValidChannel } = require("./lib/helmut/office");
+const { buildLageBriefing } = require("./lib/helmut/lage");
 
 const root = __dirname;
 const port = Number(process.env.PORT || 3000);
@@ -256,6 +257,10 @@ async function handleRequest(request, response) {
     return handleAsync(response, async () => {
       const profile = await activeProfile(politicianId);
       const briefing = await latestBriefingPayload({ politicianId, profile, url, previewMode, compact: true });
+      // Lage = das politische Morgen-Briefing des Referenten (keine Empfehlung/Bewertung).
+      // Additiv: hängt am bestehenden Aggregat, damit die App es ohne Extra-Call rendert.
+      try { briefing.lageBriefing = await buildLageBriefing(profile, { politicianId }); }
+      catch (error) { console.error("Lage-Briefing fehlgeschlagen", error && error.message); }
       return {
         profile,
         briefing,

@@ -26,6 +26,7 @@ let opsStatusLoaded = false;
 let pushConfig = null;
 let pushAutoSyncStarted = false;
 let selectedDecisionId = "";
+let selectedVorgangId = "";
 let currentView = "briefing";
 let detailOriginView = "briefing";
 let navOpen = false;
@@ -1937,7 +1938,7 @@ function renderMobileDock() {
 }
 
 function isMobileNavActive(id) {
-  if (currentView === "detail") return (detailOriginView || "briefing") === id;
+  if (currentView === "detail" || currentView === "vorgang") return (detailOriginView || "briefing") === id;
   if (id === "briefing") return currentView === "briefing";
   if (id === "office") return currentView === "office" || currentView === "office-detail" || currentView === "communication" || currentView === "tasks";
   if (id === "helmut") return currentView === "helmut";
@@ -2028,6 +2029,7 @@ function renderNotificationItem(item) {
 }
 
 function renderView() {
+  if (currentView === "vorgang") return renderVorgangDetailView();
   if (currentView === "detail") return renderDetailView();
   if (currentView === "communication") return renderCommunicationView();
   if (currentView === "office" || currentView === "tasks") return renderOfficeView();
@@ -2039,7 +2041,213 @@ function renderView() {
   if (currentView === "settings") return renderSettingsView();
   if (currentView === "admin") return renderAdminView();
   if (currentView === "daily-input") return renderDailyInputView();
-  return renderBriefingView();
+  return renderLageView();
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Lage — das politische Morgen-Briefing des Referenten.
+// Beantwortet AUSSCHLIESSLICH "Worüber muss ich heute Bescheid wissen?".
+// KEINE Empfehlung, KEINE Bewertung, KEINE Priorisierung (das macht Helmut).
+// ─────────────────────────────────────────────────────────────────────────
+
+function lageData() {
+  return (briefing && briefing.lageBriefing) || null;
+}
+
+function lageDateLabel() {
+  try {
+    return new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "numeric", month: "long", year: "numeric" }).format(new Date());
+  } catch (_) { return ""; }
+}
+
+function lageChevIcon() {
+  return `<svg class="chev" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M3 1.5 6.5 5 3 8.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+
+function lageSourceMonogram(name) {
+  const clean = String(name || "").replace(/^(die|der|das)\s+/i, "").replace(/[–—-].*$/, "").trim();
+  const words = clean.split(/\s+/).filter(Boolean);
+  const m = words.length >= 2 ? (words[0][0] + words[1][0]) : clean.slice(0, 2);
+  return (m || "•").toUpperCase();
+}
+
+function lageSourceBadge(source) {
+  return `<span class="lage2-badge" title="${escapeAttribute(source.name || "")}">${escapeHtml(lageSourceMonogram(source.name))}</span>`;
+}
+
+function lageSourceRow(source) {
+  const meta = [source.type, source.dateLabel || source.publishedAt, source.host].filter(Boolean).join(" · ");
+  const href = source.url || (source.host ? `https://${source.host}` : "");
+  const inner = `
+    <span class="lage2-src-main">
+      <span class="lage2-src-name">${escapeHtml(source.name || "Quelle")}</span>
+      <span class="lage2-src-meta">${escapeHtml(meta)}</span>
+    </span>
+    <span class="lage2-src-open">${escapeHtml(source.documentType === "PDF" ? "PDF öffnen ↗" : "Öffnen ↗")}</span>`;
+  return href
+    ? `<a class="lage2-src-row" href="${escapeAttribute(href)}" target="_blank" rel="noopener">${inner}</a>`
+    : `<div class="lage2-src-row">${inner}</div>`;
+}
+
+function lageDocRow(doc) {
+  const meta = [doc.kind, doc.sizeLabel].filter(Boolean).join(" · ");
+  const href = doc.url && doc.url !== "#" ? doc.url : "";
+  const inner = `
+    <span class="lage2-doc-ico" aria-hidden="true">PDF</span>
+    <span class="lage2-doc-main">
+      <span class="lage2-doc-name">${escapeHtml(doc.name || "Dokument")}</span>
+      <span class="lage2-doc-meta">${escapeHtml(meta)}</span>
+    </span>`;
+  return href
+    ? `<a class="lage2-doc" href="${escapeAttribute(href)}" target="_blank" rel="noopener">${inner}</a>`
+    : `<div class="lage2-doc">${inner}</div>`;
+}
+
+function renderLageParagraph(para) {
+  const sources = Array.isArray(para.sources) ? para.sources : [];
+  const badges = sources.slice(0, 5).map(lageSourceBadge).join("");
+  const extra = sources.length > 5 ? `<span class="lage2-badge more">+${sources.length - 5}</span>` : "";
+  return `
+    <article class="lage2-para">
+      <p class="lage2-para-text">${escapeHtml(para.text)}</p>
+      <details class="lage2-quellen">
+        <summary>
+          <span class="lage2-quellen-label">${lageChevIcon()}${sources.length} ${sources.length === 1 ? "Quelle" : "Quellen"}</span>
+          <span class="lage2-badges" aria-hidden="true">${badges}${extra}</span>
+        </summary>
+        <div class="lage2-quellen-list">${sources.map(lageSourceRow).join("")}</div>
+      </details>
+    </article>`;
+}
+
+function renderVorgangCard(v) {
+  return `
+    <button class="lage2-vcard" type="button" data-vorgang="${escapeAttribute(v.id)}">
+      <span class="lage2-vtag">${escapeHtml(v.policyField || "")}</span>
+      <span class="lage2-vtitle">${escapeHtml(v.title || "")}</span>
+      <span class="lage2-vstand"><b>Aktueller Stand</b>${escapeHtml(v.standLabel || "")}</span>
+      <span class="lage2-vtime"><i class="lage2-dot ${escapeAttribute(v.updatedDot || "today")}"></i>${escapeHtml(v.updatedLabel || "")}</span>
+    </button>`;
+}
+
+function renderLageEmpty(greeting) {
+  return `
+    <section class="lage2">
+      <header class="lage2-head">
+        <div class="lage2-head-text">
+          <h1 class="lage2-greeting">${escapeHtml(greeting)}</h1>
+          <p class="lage2-subtitle">Dein politisches Briefing für heute — ${escapeHtml(lageDateLabel())}</p>
+        </div>
+      </header>
+      <div class="lage2-briefing">
+        <article class="lage2-para">
+          <p class="lage2-para-text">Für heute liegt noch kein Briefing vor. Sobald neue politische Vorgänge vorliegen, fasst Helmut sie hier zusammen.</p>
+        </article>
+      </div>
+    </section>`;
+}
+
+function renderLageView() {
+  const data = lageData();
+  const firstName = (profile && profile.fullName ? profile.fullName : "Cem").split(" ")[0];
+  const greeting = (typeof timeGreeting === "function" ? timeGreeting(firstName) : `Guten Morgen, ${firstName}.`);
+  if (!data || !Array.isArray(data.paragraphs) || !data.paragraphs.length) return renderLageEmpty(greeting);
+  const vorgaenge = Array.isArray(data.vorgaenge) ? data.vorgaenge : [];
+  return `
+    <section class="lage2">
+      <header class="lage2-head">
+        <div class="lage2-head-text">
+          <h1 class="lage2-greeting">${escapeHtml(greeting)}</h1>
+          <p class="lage2-subtitle">Dein politisches Briefing für heute — ${escapeHtml(lageDateLabel())}</p>
+        </div>
+        <button class="lage2-pdf" type="button" data-lage-pdf>${lagePdfIcon()} Briefing als PDF</button>
+      </header>
+      ${data.demo ? `<p class="lage2-demo">Beispiel-Briefing · Demodaten</p>` : ""}
+
+      <div class="lage2-briefing">
+        ${data.paragraphs.map(renderLageParagraph).join("")}
+      </div>
+
+      ${vorgaenge.length ? `
+      <div class="lage2-vorgaenge-head">
+        <h2>Alle politischen Vorgänge</h2>
+        <span class="lage2-vorgaenge-count">${vorgaenge.length}</span>
+      </div>
+      <div class="lage2-vorgaenge-grid">
+        ${vorgaenge.map(renderVorgangCard).join("")}
+      </div>` : ""}
+
+      <p class="lage2-foot">Lage zeigt, worüber du heute Bescheid wissen musst — ohne Empfehlung oder Bewertung. Was das für dich bedeutet und was zu tun ist, sagt dir <button class="lage2-inline-link" type="button" data-view="helmut">Helmut</button>.</p>
+    </section>`;
+}
+
+function lagePdfIcon() {
+  return `<svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 1.5h5L12.5 5v9.5a0 0 0 0 1 0 0H4a0 0 0 0 1 0 0V1.5Z" stroke="currentColor" stroke-width="1.2"/><path d="M9 1.5V5h3.5" stroke="currentColor" stroke-width="1.2"/></svg>`;
+}
+
+function lageStarIcon() {
+  return `<svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m10 2.5 2.2 4.6 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5L2.8 7.8l5-.7L10 2.5Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>`;
+}
+
+function renderVorgangDetailView() {
+  const data = lageData();
+  const list = (data && Array.isArray(data.vorgaenge)) ? data.vorgaenge : [];
+  const v = list.find((x) => x.id === selectedVorgangId) || list[0];
+  if (!v) { currentView = "briefing"; return renderLageView(); }
+
+  const sources = Array.isArray(v.sources) ? v.sources : [];
+  const docs = Array.isArray(v.documents) ? v.documents : [];
+  const chrono = Array.isArray(v.chronologie) ? v.chronologie : [];
+  const summary = v.summary || {};
+  const summaryHtml = summary.text
+    ? `<p>${escapeHtml(summary.text)}</p>`
+    : [summary.wasIstPassiert, summary.warumWichtig, summary.werIstBetroffen].filter(Boolean).map((t) => `<p>${escapeHtml(t)}</p>`).join("");
+  const meta = [
+    v.standLabel ? `<span><b>Aktueller Stand:</b> ${escapeHtml(v.standLabel)}</span>` : "",
+    v.nextStep ? `<span><b>Nächster Schritt:</b> ${escapeHtml(v.nextStep)}</span>` : "",
+    v.updatedLabel ? `<span><b>Letzte Aktualisierung:</b> ${escapeHtml(v.updatedLabel)}</span>` : ""
+  ].filter(Boolean).join("");
+
+  return `
+    <section class="vdetail">
+      <button class="vdetail-back" type="button" data-view="briefing">← Zurück zur Lage</button>
+      <div class="vdetail-grid">
+        <div class="vdetail-main">
+          <div class="vdetail-topline">
+            <div>
+              <span class="lage2-vtag">${escapeHtml(v.policyField || "")}</span>
+              <h1 class="vdetail-title">${escapeHtml(v.title || "")} <span class="vdetail-star" aria-hidden="true">${lageStarIcon()}</span></h1>
+            </div>
+            <button class="vdetail-helmut" type="button" data-view="helmut">${lageStarIcon()} In Helmut öffnen</button>
+          </div>
+          ${meta ? `<div class="vdetail-meta">${meta}</div>` : ""}
+
+          <h2 class="vdetail-h2">Zusammenfassung</h2>
+          <div class="vdetail-summary">${summaryHtml}</div>
+
+          ${chrono.length ? `
+          <h2 class="vdetail-h2">Chronologie</h2>
+          <ul class="vdetail-chrono">
+            ${chrono.map((c) => `<li><time>${escapeHtml([c.dateLabel, c.timeLabel].filter(Boolean).join(", "))}</time><p>${escapeHtml(c.text)}</p></li>`).join("")}
+          </ul>
+          <button class="vdetail-linkmore" type="button">Alle Ereignisse anzeigen →</button>` : ""}
+        </div>
+
+        <aside class="vdetail-side">
+          <div class="vdetail-box">
+            <h3>Quellen (${sources.length})</h3>
+            <div class="vdetail-box-list">${sources.map(lageSourceRow).join("")}</div>
+            <button class="vdetail-linkmore" type="button">Alle Quellen anzeigen →</button>
+          </div>
+          ${docs.length ? `
+          <div class="vdetail-box">
+            <h3>Dokumente</h3>
+            <div class="vdetail-box-list">${docs.map(lageDocRow).join("")}</div>
+            <button class="vdetail-linkmore" type="button">Alle Dokumente anzeigen →</button>
+          </div>` : ""}
+        </aside>
+      </div>
+    </section>`;
 }
 
 async function loadParliament() {
@@ -6809,6 +7017,25 @@ function bindActions() {
       const decision = selectedDecision();
       logDecisionInteraction("detail_opened", decision);
       render();
+    });
+  });
+
+  app.querySelectorAll("[data-vorgang]").forEach((button) => {
+    button.addEventListener("click", () => {
+      selectedVorgangId = button.dataset.vorgang;
+      detailOriginView = (currentView === "vorgang") ? detailOriginView : currentView;
+      currentView = "vorgang";
+      navOpen = false;
+      updatesOpen = false;
+      render();
+      window.scrollTo({ top: 0, behavior: "auto" });
+    });
+  });
+
+  app.querySelectorAll("[data-lage-pdf]").forEach((button) => {
+    button.addEventListener("click", () => {
+      try { window.print(); }
+      catch (_) { showToast("PDF-Export folgt"); }
     });
   });
 
