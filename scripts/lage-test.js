@@ -155,6 +155,37 @@ async function run() {
     if (beforeDemo !== undefined) process.env.HELMUT_LAGE_DEMO = beforeDemo; else delete process.env.HELMUT_LAGE_DEMO;
   }
 
+  // ── 10) Backfill: bestehende KOs -> Links + best_source_url (kein KI-Call) ──
+  console.log("backfillProvenance");
+  {
+    const { backfillProvenance } = require("../lib/helmut/backfill");
+    const { clusterRawDocuments, deriveVorgangId } = require("../lib/helmut/understanding");
+    const rawDocs = [
+      { id: "rd-1", title: "Tariftreuegesetz kommt in den Bundestag", summary: "", url: "https://tagesschau.de/x", link_type: "direct", confidence: "high", published_at: "2025-06-12T08:00:00Z" },
+      { id: "rd-2", title: "Tariftreuegesetz Debatte im Ausschuss", summary: "", url: "https://bundestag.de/y", published_at: "2025-06-11T08:00:00Z" }
+    ];
+    const vid = deriveVorgangId(clusterRawDocuments(rawDocs)[0]);
+    const ko = { id: `ko-${vid}`, vorgang_id: vid, understanding_status: "complete", best_source_url: null };
+    let linkedDocs = null, savedKoUpdate = null;
+    const fakeStorage = {
+      v3StoreReady: () => true,
+      listKnowledgeObjects: async () => [ko, { id: "ko-x", vorgang_id: "vg-ohne-cluster", understanding_status: "complete", best_source_url: null }],
+      getSourcesForVorgang: async () => [], // noch nicht verlinkt
+      saveKoDocumentLinks: async (koId, docs) => { if (koId === ko.id) linkedDocs = { koId, docs }; return { saved: docs.length }; },
+      saveKnowledgeObject: async (row) => { if (row.id === ko.id) savedKoUpdate = row; return { saved: true }; },
+      listRawDocuments: async () => rawDocs
+    };
+    const res = await backfillProvenance({ days: 45 }, { storage: fakeStorage });
+    ok("backfill betrachtet beide KOs", res.total === 2);
+    ok("passendes KO wird verlinkt", linkedDocs && linkedDocs.koId === ko.id && linkedDocs.docs.length === 2);
+    ok("best_source_url = staerkstes Dokument", savedKoUpdate && savedKoUpdate.best_source_url === "https://tagesschau.de/x");
+    ok("KO ohne Cluster: noCluster=1", res.noCluster === 1);
+    ok("linked=1", res.linked === 1);
+
+    const res2 = await backfillProvenance({ days: 45 }, { storage: { ...fakeStorage, getSourcesForVorgang: async () => [{ id: "rd-1" }] } });
+    ok("bereits verlinkte KOs -> uebersprungen (idempotent)", res2.skippedExisting === 2 && res2.linked === 0);
+  }
+
   console.log(`\nAlle ${passed} Lage-Assertions erfolgreich.`);
 }
 
