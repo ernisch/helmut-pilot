@@ -3,6 +3,7 @@ let briefing = null;
 let aiStatus = { enabled: false, model: "" };
 let opsStatus = null;
 let decisions = [];
+let helmutBriefings = [];
 let tasks = [];
 let notes = [];
 let recommendations = [];
@@ -360,6 +361,14 @@ function applyStartPayload(startPayload) {
     })
     .slice(0, 3)
     .map(toDecision);
+
+  helmutBriefings = (briefing.items || [])
+    .map(toDecision)
+    .sort((a, b) => {
+      if (a.signalId === themeSignalId) return -1;
+      if (b.signalId === themeSignalId) return 1;
+      return briefingRelevanceScore(b) - briefingRelevanceScore(a);
+    });
 
   selectedDecisionId = decisions[0]?.id || "";
   generatedStatement = decisions[0]?.statement || "";
@@ -2742,6 +2751,8 @@ function renderHelmutAssessmentView() {
         </div>
       </details>
 
+      ${renderHelmutBriefingList()}
+
       <div class="helmut-assessment-foot">
         <small>Aktualisiert: ${escapeHtml(formatBriefingDate(briefing.generatedAt || briefing.date || new Date().toISOString()))}</small>
         <small class="helmut-deadline">${escapeHtml(deadlineText)}</small>
@@ -2750,6 +2761,45 @@ function renderHelmutAssessmentView() {
       </div>
     </section>
   `;
+}
+
+function briefingRelevanceScore(decision) {
+  const priorityWeight = ({ risk: 4, action: 3, chance: 2, watch: 1, ignore: 0 })[decision.priorityType] || 1;
+  const score = Number(decision.finalScore || decision.totalScore || decision.relevanceScore || 0);
+  return priorityWeight * 1000 + score;
+}
+
+function renderHelmutBriefingList() {
+  const list = helmutBriefings;
+  if (!list.length) return "";
+  const cards = list.map((decision, index) => {
+    const headline = decision.title || `Briefing ${index + 1}`;
+    const action = twoSentenceSummary(chiefRecommendationText(decision)) || "Keine konkrete Handlungsempfehlung hinterlegt.";
+    const why = decisionWhyImportant(decision);
+    const srcLine = helmutBriefingSourceHtml(decision);
+    return `
+      <article class="helmut-brief-card ${escapeAttribute(decision.priorityType || "watch")}">
+        <div class="helmut-brief-card-head">
+          <span class="helmut-brief-rank">${index + 1}</span>
+          <span class="helmut-brief-chip ${priorityChipClass(decision)}">${escapeHtml(decision.priorityLabel || "Punkt")}</span>
+        </div>
+        <h3 class="helmut-brief-headline">${escapeHtml(headline)}</h3>
+        <dl class="helmut-brief-bullets">
+          <div><dt>Empfehlung</dt><dd>${escapeHtml(action)}</dd></div>
+          <div><dt>Warum wichtig</dt><dd>${escapeHtml(why)}</dd></div>
+        </dl>
+        ${srcLine ? `<small class="helmut-brief-source">${srcLine}</small>` : ""}
+        <button class="secondary-button compact-button" type="button" data-detail="${escapeAttribute(decision.id)}">Empfehlung öffnen</button>
+      </article>`;
+  }).join("");
+  return `
+    <section class="helmut-brief-list" aria-label="Alle Briefings">
+      <div class="helmut-brief-list-head">
+        <h2>Alle Briefings</h2>
+        <span>${list.length} nach Relevanz sortiert</span>
+      </div>
+      <div class="helmut-brief-cards">${cards}</div>
+    </section>`;
 }
 
 function renderHelmutTypingResult(assessment) {
@@ -5844,7 +5894,7 @@ function inferTopicPriority(topic) {
 }
 
 function selectedDecision() {
-  return decisions.find((decision) => decision.id === selectedDecisionId) || decisions[0] || {
+  return decisions.find((decision) => decision.id === selectedDecisionId) || helmutBriefings.find((decision) => decision.id === selectedDecisionId) || decisions[0] || {
     id: "",
     signalId: "",
     title: "Noch kein Briefing",

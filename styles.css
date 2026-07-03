@@ -8648,6 +8648,13 @@ body {
 :root[data-theme="light"] .helmut-detail-body p { color: var(--text) !important; }
 :root[data-theme="light"] .helmut-detail--risk > summary { color: var(--danger) !important; }
 :root[data-theme="light"] .helmut-detail--risk .helmut-detail-body p { color: var(--danger) !important; }
+:root[data-theme="light"] .helmut-brief-card { border-color: var(--line) !important; background: rgba(15,23,42,.04) !important; }
+:root[data-theme="light"] .helmut-brief-headline { color: var(--text) !important; }
+:root[data-theme="light"] .helmut-brief-bullets dd { color: var(--text) !important; }
+:root[data-theme="light"] .helmut-brief-bullets dt { color: var(--watch) !important; }
+:root[data-theme="light"] .helmut-brief-rank { background: rgba(15,23,42,.06) !important; color: var(--muted) !important; }
+:root[data-theme="light"] .helmut-brief-source { color: var(--muted-2) !important; }
+:root[data-theme="light"] .helmut-brief-list-head span { color: var(--muted) !important; }
 :root[data-theme="light"] .priority-status { border-color: rgba(15,23,42,.15) !important; color: var(--muted) !important; background: rgba(15,23,42,.05) !important; }
 
 /* Updates layer full-screen panel */
@@ -9558,6 +9565,32 @@ details[open].meeting-detail summary::before { content: '▾ '; }
 .helmut-detail--risk .helmut-detail-body p {
   color: rgba(243, 106, 116, .88);
 }
+
+.helmut-brief-list { display: grid; gap: 14px; margin-top: 4px; }
+.helmut-brief-list-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.helmut-brief-list-head h2 { margin: 0; color: var(--command-text); font-size: clamp(16px, 2.4vw, 20px); font-weight: 640; letter-spacing: -.01em; }
+.helmut-brief-list-head span { color: rgba(245, 241, 232, .5); font-size: 12px; font-weight: 600; }
+.helmut-brief-cards { display: grid; gap: 12px; }
+.helmut-brief-card { display: grid; gap: 10px; padding: clamp(14px, 2.4vw, 20px); border: 1px solid rgba(245, 241, 232, .09); border-left: 3px solid rgba(245, 241, 232, .2); border-radius: 18px; background: rgba(255, 255, 255, .03); }
+.helmut-brief-card.risk { border-left-color: rgba(243, 106, 116, .82); }
+.helmut-brief-card.action { border-left-color: rgba(249, 205, 127, .85); }
+.helmut-brief-card.chance { border-left-color: rgba(126, 217, 168, .8); }
+.helmut-brief-card.watch { border-left-color: rgba(245, 241, 232, .3); }
+.helmut-brief-card.ignore { border-left-color: rgba(245, 241, 232, .16); opacity: .72; }
+.helmut-brief-card-head { display: flex; align-items: center; gap: 10px; }
+.helmut-brief-rank { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 999px; background: rgba(245, 241, 232, .08); color: rgba(245, 241, 232, .72); font-size: 12px; font-weight: 820; }
+.helmut-brief-chip { font-size: 11px; font-weight: 820; letter-spacing: .08em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; background: rgba(245, 241, 232, .08); color: rgba(245, 241, 232, .72); }
+.helmut-brief-chip.danger { background: rgba(243, 106, 116, .16); color: rgba(243, 106, 116, .95); }
+.helmut-brief-chip.chance { background: rgba(126, 217, 168, .16); color: rgba(126, 217, 168, .95); }
+.helmut-brief-chip.watch { background: rgba(245, 241, 232, .08); color: rgba(245, 241, 232, .72); }
+.helmut-brief-headline { margin: 0; color: var(--command-text); font-size: clamp(15px, 2.2vw, 19px); font-weight: 620; line-height: 1.25; letter-spacing: -.01em; }
+.helmut-brief-bullets { display: grid; gap: 7px; margin: 0; }
+.helmut-brief-bullets > div { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 12px; align-items: baseline; }
+.helmut-brief-bullets dt { color: rgba(249, 205, 127, .8); font-size: 10px; font-weight: 820; letter-spacing: .10em; text-transform: uppercase; }
+.helmut-brief-bullets dd { margin: 0; color: rgba(245, 241, 232, .78); font-size: 13px; line-height: 1.45; }
+.helmut-brief-source { color: rgba(245, 241, 232, .45); font-size: 11px; }
+.helmut-brief-source a { color: inherit; }
+.helmut-brief-card .secondary-button { justify-self: start; }
 
 .helmut-assessment-head small {
   color: rgba(245, 241, 232, .48);
