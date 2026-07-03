@@ -2130,6 +2130,32 @@ function renderVorgangCard(v) {
     </button>`;
 }
 
+// Fallback (req 6): kein KI-Briefing verfügbar → klar markieren, Vorgänge trotzdem zeigen.
+function renderLageUnavailable(greeting, data, vorgaenge) {
+  const notice = (vorgaenge && vorgaenge.length)
+    ? "Für heute wurde noch kein aktuelles Briefing erzeugt. Die aktuellen politischen Vorgänge findest du unten."
+    : "Für heute liegen noch keine politischen Vorgänge vor. Sobald welche vorliegen, fasst Helmut sie hier zusammen.";
+  return `
+    <section class="lage2">
+      <header class="lage2-head">
+        <div class="lage2-head-text">
+          <h1 class="lage2-greeting">${escapeHtml(greeting)}</h1>
+          <p class="lage2-subtitle">Dein politisches Briefing für heute — ${escapeHtml(lageDateLabel())}</p>
+        </div>
+      </header>
+      <p class="lage2-notice">${escapeHtml(notice)}</p>
+      ${(vorgaenge && vorgaenge.length) ? `
+      <div class="lage2-vorgaenge-head">
+        <h2>Alle politischen Vorgänge</h2>
+        <span class="lage2-vorgaenge-count">${vorgaenge.length}</span>
+      </div>
+      <div class="lage2-vorgaenge-grid">
+        ${vorgaenge.map(renderVorgangCard).join("")}
+      </div>` : ""}
+      <p class="lage2-foot">Lage zeigt, worüber du heute Bescheid wissen musst — ohne Empfehlung oder Bewertung. Was das für dich bedeutet und was zu tun ist, sagt dir <button class="lage2-inline-link" type="button" data-view="helmut">Helmut</button>.</p>
+    </section>`;
+}
+
 function renderLageEmpty(greeting) {
   return `
     <section class="lage2">
@@ -2151,8 +2177,10 @@ function renderLageView() {
   const data = lageData();
   const firstName = (profile && profile.fullName ? profile.fullName : "Cem").split(" ")[0];
   const greeting = (typeof timeGreeting === "function" ? timeGreeting(firstName) : `Guten Morgen, ${firstName}.`);
-  if (!data || !Array.isArray(data.paragraphs) || !data.paragraphs.length) return renderLageEmpty(greeting);
+  if (!data) return renderLageEmpty(greeting);
   const vorgaenge = Array.isArray(data.vorgaenge) ? data.vorgaenge : [];
+  const hasBriefing = Array.isArray(data.paragraphs) && data.paragraphs.length;
+  if (!hasBriefing) return renderLageUnavailable(greeting, data, vorgaenge);
   return `
     <section class="lage2">
       <header class="lage2-head">

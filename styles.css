@@ -10171,6 +10171,11 @@ details[open].meeting-detail summary::before { content: '▾ '; }
   letter-spacing: .1em; text-transform: uppercase; color: var(--muted-2);
   border: 1px dashed var(--line); border-radius: 999px; padding: 4px 10px;
 }
+.lage2-notice {
+  font-size: 14px; line-height: 1.55; color: var(--muted);
+  background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+  padding: 14px 16px; margin: 0 0 30px;
+}
 
 /* Briefing-Absätze */
 .lage2-briefing { margin: 0 0 46px; }

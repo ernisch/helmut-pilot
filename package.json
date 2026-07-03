@@ -6,7 +6,8 @@
     "test:contract": "node scripts/contract-snapshot-test.js",
     "test:goldset": "node scripts/goldset-test.js",
     "test:understanding-eval": "node scripts/understanding-eval.js",
-    "test:understanding-smoke": "node scripts/understanding-live-smoke.js"
+    "test:understanding-smoke": "node scripts/understanding-live-smoke.js",
+    "test:lage": "node scripts/lage-test.js"
   },
   "dependencies": {},
   "devDependencies": {}

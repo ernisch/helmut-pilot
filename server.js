@@ -385,6 +385,16 @@ async function handleRequest(request, response) {
     });
   }
 
+  // Lage-Briefing (V3): KO-basiertes, gecachtes KI-Briefing + echte Vorgänge/Quellen.
+  // Reiner Read; erzeugt nur bei fehlendem/veraltetem Cache neu (?force=1 erzwingt).
+  if (url.pathname === "/api/lage/briefing") {
+    return handleAsync(response, async () => {
+      const profile = await activeProfile(politicianId);
+      const force = isForcedPilotRun(url) || hasAdminBypass(request, url);
+      return buildLageBriefing(profile, { politicianId, force });
+    });
+  }
+
   if (url.pathname === "/api/pipeline/debug") {
     return handleAsync(response, async () => {
       const report = await getLatestPipelineDebugReport(politicianId);
