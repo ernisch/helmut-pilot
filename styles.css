@@ -8606,6 +8606,7 @@ body {
 :root[data-theme="light"] .article-section,
 :root[data-theme="light"] .article-grid > div,
 :root[data-theme="light"] .profile-section,
+:root[data-theme="light"] .helmut-thinking-screen,
 :root[data-theme="light"] .helmut-assessment,
 :root[data-theme="light"] .brief-mini,
 :root[data-theme="light"] .strategy-answer,
@@ -8665,6 +8666,17 @@ body {
 :root[data-theme="light"] .helmut-note,
 :root[data-theme="light"] .helmut-reason { border-color: var(--line) !important; background: var(--paper) !important; }
 :root[data-theme="light"] .helmut-typewriter { background: var(--paper) !important; }
+
+/* Helmut Thinking / Pipeline-Ladescreen: helle Karte, lesbare Schritte */
+:root[data-theme="light"] .helmut-thinking-screen p { color: var(--muted) !important; }
+:root[data-theme="light"] .helmut-checks span::before {
+  border-color: var(--line) !important;
+  color: var(--gold) !important;
+}
+:root[data-theme="light"] .pipeline-progress-bar { background: rgba(15, 23, 42, .10) !important; }
+:root[data-theme="light"] .pipeline-step { color: var(--muted-2) !important; }
+:root[data-theme="light"] .pipeline-step.done { color: var(--gold) !important; }
+:root[data-theme="light"] .pipeline-step.active { color: var(--text) !important; }
 
 /* Helmut Hero bullets + Details: hardcodierte near-white Farben überschreiben */
 :root[data-theme="light"] .helmut-hero { border-color: var(--line) !important; }
