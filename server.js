@@ -3323,6 +3323,129 @@ async function handleDebugRequest(request, response, url) {
     });
   }
 
+  // GET /api/debug/system-errors?secret=... — letzte 100 Systemfehler aus dem Auth-Store.
+  // Rein lesend. Zeigt 24h-Zaehler, Aufschluesselung nach scope und die letzten Eintraege.
+  if (url.pathname === "/api/debug/system-errors") {
+    return handleAsync(response, async () => {
+      const errors = await accounts.listSystemErrors(100).catch(() => []);
+      const now = Date.now();
+      const day = 24 * 3600000;
+      const within24h = errors.filter((e) => e.createdAt && (now - new Date(e.createdAt).getTime()) < day);
+      const byScope = errors.reduce((acc, e) => {
+        const k = String(e.scope || "unknown");
+        acc[k] = (acc[k] || 0) + 1;
+        return acc;
+      }, {});
+      const topMessages = Object.entries(
+        errors.reduce((acc, e) => {
+          const k = String(e.message || "").slice(0, 120);
+          acc[k] = (acc[k] || 0) + 1;
+          return acc;
+        }, {})
+      ).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([message, count]) => ({ message, count }));
+      console.log(`[debug/system-errors] total=${errors.length} last24h=${within24h.length} scopes=${JSON.stringify(byScope)}`);
+      return {
+        debug: true,
+        total: errors.length,
+        last24h: within24h.length,
+        byScope,
+        topMessages,
+        errors: errors.slice(0, 100)
+      };
+    });
+  }
+
+  // GET /api/debug/diagnose?secret=... — Ein-Klick-Gesamtdiagnose der Vorgangs-Pipeline.
+  // Rein lesend: prueft Flags, KI-Config, Budget, Lock, pending KOs und Cluster in EINEM Aufruf
+  // und gibt einen klaren Verdict-Text, wo die Kette haengt. Kein KI-Call, kein Write.
+  if (url.pathname === "/api/debug/diagnose") {
+    return handleAsync(response, async () => {
+      const on = (v) => ["1", "true", "on", "yes"].includes(String(v || "").toLowerCase());
+      const v3Store = on(process.env.HELMUT_V3_STORE);
+      const lazyUnderstanding = on(process.env.HELMUT_V3_LAZY_UNDERSTANDING);
+      const supabaseReady = Boolean(process.env.SUPABASE_URL) && Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
+      const azureConfigured = Boolean(process.env.AZURE_OPENAI_KEY && process.env.AZURE_OPENAI_ENDPOINT);
+      const aiEnabled = isAiEnabled();
+
+      const budget = await canSpendLlm(null).catch(() => ({ allowed: null, error: "canSpendLlm fehlgeschlagen" }));
+      const lockActive = understandingLockEnabled();
+
+      let rawDocsLoaded = 0;
+      let totalClusters = 0;
+      let pendingKos = 0;
+      let failedKos = 0;
+      try {
+        const { toRawDocumentRow, dedupeRawDocuments } = require("./lib/helmut/dedup");
+        const rawDocs = await listRecentRawDocuments(500);
+        rawDocsLoaded = rawDocs.length;
+        const rows = dedupeRawDocuments(rawDocs.map(toRawDocumentRow).filter((r) => r && r.id));
+        totalClusters = clusterRawDocuments(rows).length;
+        const pending = await listPendingKnowledgeObjects({ limit: 100 }).catch(() => []);
+        pendingKos = pending.length;
+        failedKos = pending.filter((k) => k && k.understanding_status === "failed").length;
+      } catch (e) {
+        console.error("[debug/diagnose] cluster-check fehlgeschlagen:", e && e.message);
+      }
+
+      const errors = await accounts.listSystemErrors(100).catch(() => []);
+      const now = Date.now();
+      const errors24h = errors.filter((e) => e.createdAt && (now - new Date(e.createdAt).getTime()) < 24 * 3600000).length;
+
+      // Verdict: erste blockierende Ursache in der Reihenfolge der Pipeline.
+      let verdict;
+      let fix;
+      if (!v3Store) {
+        verdict = "BLOCKIERT: HELMUT_V3_STORE ist AUS — der komplette Vorgangs-/KO-Pfad ist inert. Nichts wird gebildet.";
+        fix = "Vercel: HELMUT_V3_STORE=1 setzen (+ SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY) und redeployen.";
+      } else if (!supabaseReady) {
+        verdict = "BLOCKIERT: HELMUT_V3_STORE ist AN, aber Supabase-Zugang fehlt — KOs koennen nicht gespeichert werden.";
+        fix = "Vercel: SUPABASE_URL und SUPABASE_SERVICE_ROLE_KEY setzen.";
+      } else if (!aiEnabled) {
+        verdict = "BLOCKIERT: Keine KI konfiguriert (weder AZURE_OPENAI_KEY+ENDPOINT noch OPENAI_API_KEY) — Understanding wird uebersprungen.";
+        fix = "Vercel: AZURE_OPENAI_KEY + AZURE_OPENAI_ENDPOINT setzen. Danach /api/debug/azure-ping pruefen.";
+      } else if (!lazyUnderstanding) {
+        verdict = "TEILWEISE: HELMUT_V3_LAZY_UNDERSTANDING ist AUS — C7c legt keine pending KOs an, der Understanding-Cron findet immer 'no-pending'.";
+        fix = "Vercel: HELMUT_V3_LAZY_UNDERSTANDING=1 setzen. Sofort-Test ohne Cron: /api/debug/create-test-vorgang dann /api/debug/run-understanding.";
+      } else if (budget && budget.allowed === false) {
+        verdict = `BLOCKIERT: LLM-Tagesbudget erreicht (${budget.reason || "daily-llm-budget-reached"}) — jeder Cluster wird als 'skipped-budget' uebersprungen.`;
+        fix = "/api/debug/reset-llm-budget aufrufen oder HELMUT_MAX_LLM_CALLS_PER_DAY erhoehen.";
+      } else if (failedKos > 0) {
+        verdict = `TEILWEISE: ${failedKos} pending KO(s) stehen auf understanding_status='failed' (fruehere Azure-Fehler) und werden nie erneut versucht.`;
+        fix = "/api/debug/reset-failed-kos aufrufen, dann /api/debug/run-understanding. Vorher Azure mit /api/debug/azure-ping fixen.";
+      } else if (pendingKos === 0) {
+        verdict = "OK-Config, aber 0 pending KOs: entweder matcht kein Nutzerprofil die Cluster, oder alle Vorgaenge sind bereits verstanden.";
+        fix = "/api/debug/cluster fuer Details. Ggf. /api/debug/create-test-vorgang + /api/debug/run-understanding.";
+      } else {
+        verdict = `OK: Config vollstaendig, ${pendingKos} pending KO(s) warten auf C8.`;
+        fix = "/api/debug/run-understanding aufrufen oder auf den Cron (05:30/21:30 UTC) warten.";
+      }
+
+      console.log(`[debug/diagnose] v3Store=${v3Store} lazy=${lazyUnderstanding} ai=${aiEnabled} azure=${azureConfigured} budget=${budget && budget.allowed} pending=${pendingKos} failed=${failedKos} clusters=${totalClusters} errors24h=${errors24h}`);
+      return {
+        debug: true,
+        verdict,
+        fix,
+        flags: {
+          HELMUT_V3_STORE: v3Store,
+          HELMUT_V3_LAZY_UNDERSTANDING: lazyUnderstanding,
+          supabaseReady,
+          HELMUT_UNDERSTANDING_LOCK_aktiv: lockActive
+        },
+        ki: {
+          aiEnabled,
+          azureConfigured,
+          model: activeModelName(),
+          AZURE_OPENAI_ENDPOINT: process.env.AZURE_OPENAI_ENDPOINT || "(nicht gesetzt)",
+          AZURE_OPENAI_DEPLOYMENT: process.env.AZURE_OPENAI_DEPLOYMENT || "(nicht gesetzt)",
+          hinweis: "Live-Verbindung testen mit /api/debug/azure-ping"
+        },
+        budget,
+        pipeline: { rawDocsLoaded, totalClusters, pendingKos, failedKos },
+        systemErrors: { last24h: errors24h, gesamtGeladen: errors.length, details: "/api/debug/system-errors" }
+      };
+    });
+  }
+
   // GET /api/debug/briefing-manual?politicianId=...&secret=...
   // Diagnostiziert die Briefing-Pipeline C7b fuer einen Nutzer:
   //   1. Flags pruefen (v3BriefingEnabled)
