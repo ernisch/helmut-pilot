@@ -364,13 +364,17 @@ function applyStartPayload(startPayload) {
     .slice(0, 3)
     .map(toDecision);
 
-  helmutBriefings = (briefing.items || [])
-    .map(toDecision)
+  const rawPersonalizedPool = recommendations.map(recommendationToDecisionItem);
+  const rawActivePool = briefing.items.filter((item) => item.decision !== "Ignorieren");
+  const rawSituationalPool = (briefing.situationalBriefing || []).map(situationalToDecisionItem);
+  const rawHelmutPool = rawPersonalizedPool.length > 0 ? rawPersonalizedPool : (rawActivePool.length > 0 ? rawActivePool : rawSituationalPool);
+  helmutBriefings = rawHelmutPool
     .sort((a, b) => {
       if (a.signalId === themeSignalId) return -1;
       if (b.signalId === themeSignalId) return 1;
-      return briefingRelevanceScore(b) - briefingRelevanceScore(a);
-    });
+      return Number(b.priority || b.finalScore || b.totalScore || 0) - Number(a.priority || a.finalScore || a.totalScore || 0);
+    })
+    .map(toDecision);
 
   selectedDecisionId = decisions[0]?.id || "";
   generatedStatement = decisions[0]?.statement || "";
