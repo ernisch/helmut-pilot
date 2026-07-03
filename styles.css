@@ -8750,6 +8750,13 @@ body {
   box-shadow: var(--soft-shadow) !important;
 }
 
+:root[data-theme="light"] .source-row {
+  background: transparent !important;
+  border-color: var(--line) !important;
+  color: var(--text) !important;
+  box-shadow: none !important;
+}
+
 /* Radar summary (Sektionskopf-Zeile) Textfarbe + Pfeile */
 :root[data-theme="light"] .radar-group summary span { color: var(--text) !important; }
 :root[data-theme="light"] .radar-group summary i,
