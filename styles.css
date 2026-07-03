@@ -7001,16 +7001,16 @@ body {
   .mobile-dock {
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
     align-items: center !important;
-    min-height: calc(96px + env(safe-area-inset-bottom));
-    padding-top: 8px;
-    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+    min-height: calc(72px + env(safe-area-inset-bottom));
+    padding-top: 6px;
+    padding-bottom: calc(6px + env(safe-area-inset-bottom));
   }
 
   .mobile-dock button,
   .mobile-dock button.active {
     width: 100%;
-    height: 76px;
-    min-height: 76px;
+    height: 56px;
+    min-height: 56px;
     align-content: center;
     gap: 5px;
     padding: 0 4px;
