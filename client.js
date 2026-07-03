@@ -366,7 +366,7 @@ function applyStartPayload(startPayload) {
 
   const allHelmutRaw = [
     ...recommendations.map(recommendationToDecisionItem),
-    ...briefing.items.filter((item) => item.decision !== "Ignorieren"),
+    ...(briefing.items || []),
     ...(briefing.situationalBriefing || []).map(situationalToDecisionItem)
   ];
   const seenHelmutKeys = new Set();
