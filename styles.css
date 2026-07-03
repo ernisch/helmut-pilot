@@ -6865,13 +6865,30 @@ body {
 
 .helmut-assessment-foot {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  gap: 6px 18px;
   margin-top: 4px;
 }
 
+.helmut-assessment-foot small {
+  min-width: max-content;
+}
+
+.helmut-source a {
+  color: inherit;
+  font: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(245, 241, 232, .32);
+}
+
+.helmut-source a:hover {
+  color: rgba(245, 241, 232, .82);
+  border-bottom-color: rgba(245, 241, 232, .55);
+}
+
 .helmut-assessment-foot .text-button {
+  margin-left: auto;
   width: 34px;
   height: 34px;
   display: grid;
@@ -8633,6 +8650,8 @@ body {
 :root[data-theme="light"] .helmut-assessment-head small,
 :root[data-theme="light"] .helmut-assessment-foot small,
 :root[data-theme="light"] .helmut-checks { color: var(--muted) !important; }
+:root[data-theme="light"] .helmut-source a { color: var(--muted) !important; border-bottom-color: rgba(15, 23, 42, .28) !important; }
+:root[data-theme="light"] .helmut-source a:hover { color: var(--text) !important; border-bottom-color: rgba(15, 23, 42, .48) !important; }
 :root[data-theme="light"] .helmut-note,
 :root[data-theme="light"] .helmut-reason { border-color: var(--line) !important; background: var(--paper) !important; }
 :root[data-theme="light"] .helmut-typewriter { background: var(--paper) !important; }
