@@ -7001,26 +7001,26 @@ body {
   .mobile-dock {
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
     align-items: center !important;
-    min-height: calc(72px + env(safe-area-inset-bottom));
-    padding-top: 6px;
-    padding-bottom: calc(6px + env(safe-area-inset-bottom));
+    min-height: calc(56px + env(safe-area-inset-bottom)) !important;
+    padding-top: 4px !important;
+    padding-bottom: calc(4px + env(safe-area-inset-bottom)) !important;
   }
 
   .mobile-dock button,
   .mobile-dock button.active {
     width: 100%;
-    height: 56px;
-    min-height: 56px;
+    height: 44px !important;
+    min-height: 44px !important;
     align-content: center;
-    gap: 5px;
-    padding: 0 4px;
+    gap: 3px !important;
+    padding: 0 4px !important;
     background: transparent !important;
     transform: none !important;
   }
 
   .mobile-dock button span {
-    width: 30px;
-    height: 30px;
+    width: 24px !important;
+    height: 24px !important;
     margin: 0;
   }
 
