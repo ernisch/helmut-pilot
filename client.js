@@ -3,6 +3,9 @@ let briefing = null;
 let aiStatus = { enabled: false, model: "" };
 let opsStatus = null;
 let decisions = [];
+let helmutBriefings = [];
+let helmutCarouselFilter = "Alle";
+let helmutCarouselIndex = 0;
 let tasks = [];
 let notes = [];
 let recommendations = [];
@@ -360,6 +363,14 @@ function applyStartPayload(startPayload) {
     })
     .slice(0, 3)
     .map(toDecision);
+
+  helmutBriefings = (briefing.items || [])
+    .map(toDecision)
+    .sort((a, b) => {
+      if (a.signalId === themeSignalId) return -1;
+      if (b.signalId === themeSignalId) return 1;
+      return briefingRelevanceScore(b) - briefingRelevanceScore(a);
+    });
 
   selectedDecisionId = decisions[0]?.id || "";
   generatedStatement = decisions[0]?.statement || "";
@@ -2742,6 +2753,8 @@ function renderHelmutAssessmentView() {
         </div>
       </details>
 
+      ${renderHelmutBriefingList()}
+
       <div class="helmut-assessment-foot">
         <small>Aktualisiert: ${escapeHtml(formatBriefingDate(briefing.generatedAt || briefing.date || new Date().toISOString()))}</small>
         <small class="helmut-deadline">${escapeHtml(deadlineText)}</small>
@@ -2750,6 +2763,144 @@ function renderHelmutAssessmentView() {
       </div>
     </section>
   `;
+}
+
+function briefingRelevanceScore(decision) {
+  const priorityWeight = ({ risk: 4, action: 3, chance: 2, watch: 1, ignore: 0 })[decision.priorityType] || 1;
+  const score = Number(decision.finalScore || decision.totalScore || decision.relevanceScore || 0);
+  return priorityWeight * 1000 + score;
+}
+
+const CAROUSEL_FILTERS = [
+  { key: "Alle",       label: "Alle" },
+  { key: "risk",      label: "Risiko" },
+  { key: "chance",    label: "Chance" },
+  { key: "action",    label: "Aktion" },
+  { key: "watch",     label: "Beobachten" }
+];
+
+function filteredCarouselItems() {
+  if (helmutCarouselFilter === "Alle") return helmutBriefings;
+  return helmutBriefings.filter((d) => (d.priorityType || "watch") === helmutCarouselFilter);
+}
+
+function renderHelmutBriefingList() {
+  if (!helmutBriefings.length) return "";
+  return `
+    <section class="helmut-carousel-wrap" aria-label="Alle Briefings" id="helmutCarousel">
+      ${renderCarouselInner()}
+    </section>`;
+}
+
+function renderCarouselInner() {
+  const items = filteredCarouselItems();
+  const safeIndex = Math.min(helmutCarouselIndex, Math.max(0, items.length - 1));
+  const filters = CAROUSEL_FILTERS.filter((f) => f.key === "Alle" || helmutBriefings.some((d) => (d.priorityType || "watch") === f.key));
+  const filterRow = `
+    <div class="helmut-carousel-filters" role="tablist" aria-label="Briefing-Filter">
+      ${filters.map((f) => `
+        <button class="helmut-carousel-chip ${helmutCarouselFilter === f.key ? "active" : ""}" type="button"
+          role="tab" aria-selected="${helmutCarouselFilter === f.key}"
+          data-carousel-filter="${escapeAttribute(f.key)}">${escapeHtml(f.label)}</button>`).join("")}
+    </div>`;
+  if (!items.length) {
+    return `${filterRow}<p class="helmut-carousel-empty">Keine Briefings in dieser Kategorie.</p>`;
+  }
+  const card = items[safeIndex];
+  const headline = card.title || `Briefing ${safeIndex + 1}`;
+  const action = twoSentenceSummary(chiefRecommendationText(card)) || "Keine konkrete Handlungsempfehlung hinterlegt.";
+  const why = decisionWhyImportant(card);
+  const srcLine = helmutBriefingSourceHtml(card);
+  const totalLabel = items.length === 1 ? "1 Briefing" : `${items.length} Briefings`;
+  const dots = items.length > 1 ? `
+    <div class="helmut-carousel-dots" aria-hidden="true">
+      ${items.map((_, i) => `<span class="helmut-carousel-dot ${i === safeIndex ? "active" : ""}"></span>`).join("")}
+    </div>` : "";
+  const prevDisabled = safeIndex === 0 ? "disabled" : "";
+  const nextDisabled = safeIndex === items.length - 1 ? "disabled" : "";
+  return `
+    ${filterRow}
+    <div class="helmut-carousel-header">
+      <span class="helmut-carousel-count">${safeIndex + 1} / ${items.length} ${totalLabel}</span>
+    </div>
+    <div class="helmut-carousel-track" data-carousel-touch>
+      <article class="helmut-brief-card ${escapeAttribute(card.priorityType || "watch")}">
+        <div class="helmut-brief-card-head">
+          <span class="helmut-brief-rank">${safeIndex + 1}</span>
+          <span class="helmut-brief-chip ${priorityChipClass(card)}">${escapeHtml(card.priorityLabel || "Punkt")}</span>
+        </div>
+        <h3 class="helmut-brief-headline">${escapeHtml(headline)}</h3>
+        <dl class="helmut-brief-bullets">
+          <div><dt>Empfehlung</dt><dd>${escapeHtml(action)}</dd></div>
+          <div><dt>Warum wichtig</dt><dd>${escapeHtml(why)}</dd></div>
+        </dl>
+        ${srcLine ? `<small class="helmut-brief-source">${srcLine}</small>` : ""}
+        <div class="helmut-carousel-actions">
+          <button class="secondary-button compact-button" type="button" data-detail="${escapeAttribute(card.id)}">Empfehlung öffnen</button>
+        </div>
+      </article>
+    </div>
+    ${dots}
+    ${items.length > 1 ? `
+    <div class="helmut-carousel-nav">
+      <button class="helmut-carousel-arrow" type="button" data-carousel-prev ${prevDisabled} aria-label="Vorheriges Briefing">←</button>
+      <button class="helmut-carousel-arrow" type="button" data-carousel-next ${nextDisabled} aria-label="Nächstes Briefing">→</button>
+    </div>` : ""}`;
+}
+
+function patchCarousel() {
+  const wrap = app.querySelector("#helmutCarousel");
+  if (!wrap) return;
+  wrap.innerHTML = renderCarouselInner();
+  bindCarousel(wrap);
+}
+
+function bindCarousel(root) {
+  root = root || app.querySelector("#helmutCarousel");
+  if (!root) return;
+
+  root.querySelectorAll("[data-carousel-filter]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      helmutCarouselFilter = btn.dataset.carouselFilter;
+      helmutCarouselIndex = 0;
+      patchCarousel();
+      bindActions();
+    });
+  });
+
+  const prevBtn = root.querySelector("[data-carousel-prev]");
+  const nextBtn = root.querySelector("[data-carousel-next]");
+  const items = filteredCarouselItems();
+
+  if (prevBtn) {
+    prevBtn.addEventListener("click", () => {
+      helmutCarouselIndex = Math.max(0, helmutCarouselIndex - 1);
+      patchCarousel();
+      bindActions();
+    });
+  }
+  if (nextBtn) {
+    nextBtn.addEventListener("click", () => {
+      helmutCarouselIndex = Math.min(items.length - 1, helmutCarouselIndex + 1);
+      patchCarousel();
+      bindActions();
+    });
+  }
+
+  const track = root.querySelector("[data-carousel-touch]");
+  if (track) {
+    let touchStartX = 0;
+    track.addEventListener("touchstart", (e) => { touchStartX = e.touches[0].clientX; }, { passive: true });
+    track.addEventListener("touchend", (e) => {
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      if (Math.abs(dx) < 40) return;
+      const count = filteredCarouselItems().length;
+      if (dx < 0) helmutCarouselIndex = Math.min(count - 1, helmutCarouselIndex + 1);
+      else helmutCarouselIndex = Math.max(0, helmutCarouselIndex - 1);
+      patchCarousel();
+      bindActions();
+    }, { passive: true });
+  }
 }
 
 function renderHelmutTypingResult(assessment) {
@@ -5844,7 +5995,7 @@ function inferTopicPriority(topic) {
 }
 
 function selectedDecision() {
-  return decisions.find((decision) => decision.id === selectedDecisionId) || decisions[0] || {
+  return decisions.find((decision) => decision.id === selectedDecisionId) || helmutBriefings.find((decision) => decision.id === selectedDecisionId) || decisions[0] || {
     id: "",
     signalId: "",
     title: "Noch kein Briefing",
@@ -6364,6 +6515,8 @@ function bindActions() {
       render();
     });
   });
+
+  bindCarousel();
 
   app.querySelectorAll("[data-communication]").forEach((button) => {
     button.addEventListener("click", () => {

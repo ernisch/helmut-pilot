@@ -8677,6 +8677,20 @@ body {
 :root[data-theme="light"] .helmut-detail-body p { color: var(--text) !important; }
 :root[data-theme="light"] .helmut-detail--risk > summary { color: var(--danger) !important; }
 :root[data-theme="light"] .helmut-detail--risk .helmut-detail-body p { color: var(--danger) !important; }
+:root[data-theme="light"] .helmut-brief-card { border-color: var(--line) !important; background: rgba(15,23,42,.04) !important; }
+:root[data-theme="light"] .helmut-brief-headline { color: var(--text) !important; }
+:root[data-theme="light"] .helmut-brief-bullets dd { color: var(--text) !important; }
+:root[data-theme="light"] .helmut-brief-bullets dt { color: var(--watch) !important; }
+:root[data-theme="light"] .helmut-brief-rank { background: rgba(15,23,42,.06) !important; color: var(--muted) !important; }
+:root[data-theme="light"] .helmut-brief-source { color: var(--muted-2) !important; }
+:root[data-theme="light"] .helmut-carousel-count { color: var(--muted) !important; }
+:root[data-theme="light"] .helmut-carousel-chip { border-color: var(--line) !important; color: var(--muted) !important; }
+:root[data-theme="light"] .helmut-carousel-chip.active { background: rgba(15,23,42,.08) !important; color: var(--text) !important; border-color: var(--muted) !important; }
+:root[data-theme="light"] .helmut-carousel-dot { background: rgba(15,23,42,.18) !important; }
+:root[data-theme="light"] .helmut-carousel-dot.active { background: var(--text) !important; }
+:root[data-theme="light"] .helmut-carousel-arrow { border-color: var(--line) !important; background: rgba(15,23,42,.04) !important; color: var(--text) !important; }
+:root[data-theme="light"] .helmut-carousel-arrow:hover:not(:disabled) { background: rgba(15,23,42,.09) !important; }
+:root[data-theme="light"] .helmut-carousel-empty { color: var(--muted) !important; }
 :root[data-theme="light"] .priority-status { border-color: rgba(15,23,42,.15) !important; color: var(--muted) !important; background: rgba(15,23,42,.05) !important; }
 
 /* Updates layer full-screen panel */
@@ -9586,6 +9600,123 @@ details[open].meeting-detail summary::before { content: '▾ '; }
 
 .helmut-detail--risk .helmut-detail-body p {
   color: rgba(243, 106, 116, .88);
+}
+
+/* ── Helmut carousel ───────────────────────────────────────── */
+.helmut-carousel-wrap { display: grid; gap: 14px; }
+
+.helmut-carousel-filters {
+  display: flex; flex-wrap: wrap; gap: 7px;
+}
+.helmut-carousel-chip {
+  padding: 6px 14px;
+  border: 1px solid rgba(245, 241, 232, .14);
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(245, 241, 232, .55);
+  font-size: 12px; font-weight: 700; letter-spacing: .05em;
+  cursor: pointer; transition: background .15s, color .15s, border-color .15s;
+}
+.helmut-carousel-chip:hover { background: rgba(245, 241, 232, .07); color: rgba(245, 241, 232, .85); }
+.helmut-carousel-chip.active { background: rgba(245, 241, 232, .12); border-color: rgba(245, 241, 232, .28); color: rgba(245, 241, 232, .95); }
+
+.helmut-carousel-header {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.helmut-carousel-count {
+  color: rgba(245, 241, 232, .45); font-size: 12px; font-weight: 600;
+}
+
+.helmut-carousel-track {
+  min-width: 0; /* prevent overflow */
+}
+
+/* ── card ── */
+.helmut-brief-card {
+  display: grid; gap: 14px;
+  padding: clamp(18px, 3vw, 26px);
+  border: 1px solid rgba(245, 241, 232, .09);
+  border-left: 3px solid rgba(245, 241, 232, .22);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, .03);
+  animation: carouselFadeIn .22s ease;
+}
+@keyframes carouselFadeIn { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: translateX(0); } }
+.helmut-brief-card.risk   { border-left-color: rgba(243, 106, 116, .82); }
+.helmut-brief-card.action { border-left-color: rgba(249, 205, 127, .85); }
+.helmut-brief-card.chance { border-left-color: rgba(126, 217, 168, .80); }
+.helmut-brief-card.watch  { border-left-color: rgba(245, 241, 232, .30); }
+.helmut-brief-card.ignore { border-left-color: rgba(245, 241, 232, .14); opacity: .72; }
+
+.helmut-brief-card-head { display: flex; align-items: center; gap: 10px; }
+.helmut-brief-rank {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; border-radius: 999px;
+  background: rgba(245, 241, 232, .08);
+  color: rgba(245, 241, 232, .65); font-size: 12px; font-weight: 820;
+  flex-shrink: 0;
+}
+.helmut-brief-chip {
+  font-size: 11px; font-weight: 820; letter-spacing: .08em; text-transform: uppercase;
+  padding: 3px 10px; border-radius: 999px;
+  background: rgba(245, 241, 232, .08); color: rgba(245, 241, 232, .72);
+}
+.helmut-brief-chip.danger { background: rgba(243, 106, 116, .16); color: rgba(243, 106, 116, .95); }
+.helmut-brief-chip.chance { background: rgba(126, 217, 168, .16); color: rgba(126, 217, 168, .95); }
+.helmut-brief-chip.watch  { background: rgba(245, 241, 232, .08); color: rgba(245, 241, 232, .68); }
+
+.helmut-brief-headline {
+  margin: 0;
+  color: var(--command-text);
+  font-size: clamp(16px, 2.4vw, 22px); font-weight: 640; line-height: 1.22; letter-spacing: -.015em;
+}
+
+.helmut-brief-bullets { display: grid; gap: 10px; margin: 0; }
+.helmut-brief-bullets > div {
+  display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 14px; align-items: baseline;
+}
+.helmut-brief-bullets dt {
+  color: rgba(249, 205, 127, .8); font-size: 10px; font-weight: 820;
+  letter-spacing: .10em; text-transform: uppercase; padding-top: 2px;
+}
+.helmut-brief-bullets dd {
+  margin: 0; color: rgba(245, 241, 232, .80); font-size: clamp(14px, 1.8vw, 16px); line-height: 1.5;
+}
+
+.helmut-brief-source { color: rgba(245, 241, 232, .42); font-size: 11px; }
+.helmut-brief-source a { color: inherit; }
+
+.helmut-carousel-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* ── dots ── */
+.helmut-carousel-dots {
+  display: flex; gap: 6px; justify-content: center; padding: 2px 0;
+}
+.helmut-carousel-dot {
+  width: 6px; height: 6px; border-radius: 999px;
+  background: rgba(245, 241, 232, .22); transition: background .2s, width .2s;
+}
+.helmut-carousel-dot.active { background: rgba(245, 241, 232, .80); width: 18px; }
+
+/* ── nav arrows ── */
+.helmut-carousel-nav {
+  display: flex; gap: 10px; justify-content: flex-end;
+}
+.helmut-carousel-arrow {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; border-radius: 999px;
+  border: 1px solid rgba(245, 241, 232, .16);
+  background: rgba(255, 255, 255, .04);
+  color: rgba(245, 241, 232, .72);
+  font-size: 18px; cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.helmut-carousel-arrow:hover:not(:disabled) { background: rgba(245, 241, 232, .10); color: rgba(245, 241, 232, 1); border-color: rgba(245, 241, 232, .32); }
+.helmut-carousel-arrow:disabled { opacity: .28; cursor: default; }
+
+.helmut-carousel-empty {
+  color: rgba(245, 241, 232, .5); font-size: 14px; padding: 20px 0;
+  text-align: center;
 }
 
 .helmut-assessment-head small {
