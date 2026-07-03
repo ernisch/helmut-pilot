@@ -3446,6 +3446,97 @@ async function handleDebugRequest(request, response, url) {
     });
   }
 
+  // GET /api/debug/pipeline-probe?secret=... — LIVE-Test der Vorgangs-Pipeline.
+  // Testet DIREKT (umgeht die fail-safe-Wrapper, die Fehler still verschlucken):
+  //   1. Supabase raw_documents + knowledge_objects: Tabelle erreichbar? wie viele Zeilen?
+  //      (listRecentRawDocuments faengt Fehler ab und liefert [] -> "Tabelle fehlt" sieht
+  //       aus wie "0 Zeilen". Hier wird der ROHE HTTP-Status gezeigt.)
+  //   2. Azure: echter Call gegen die TATSAECHLICHE API-URL /openai/v1/responses — genau
+  //      die URL, die ai.js nutzt. azure-ping testet nur /openai/deployments (andere Flaeche!).
+  // Rein lesend fuer Supabase; genau EIN minimaler Azure-Call (max 16 Output-Tokens). Kein Write.
+  if (url.pathname === "/api/debug/pipeline-probe") {
+    return handleAsync(response, async () => {
+      const out = { debug: true, supabase: {}, azure: {} };
+
+      // --- 1. Supabase direkt: surfacet echte Fehler (fehlende Tabelle/RLS) statt sie zu verschlucken ---
+      const supaUrl = String(process.env.SUPABASE_URL || "").replace(/\/+$/, "");
+      const supaKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+      if (!supaUrl || !supaKey) {
+        out.supabase = { ok: false, reason: !supaUrl ? "SUPABASE_URL fehlt" : "SUPABASE_SERVICE_ROLE_KEY fehlt" };
+      } else {
+        for (const table of ["raw_documents", "knowledge_objects"]) {
+          try {
+            const res = await fetch(`${supaUrl}/rest/v1/${table}?select=id&limit=1`, {
+              headers: { apikey: supaKey, Authorization: `Bearer ${supaKey}`, Prefer: "count=exact", Range: "0-0" },
+              signal: AbortSignal.timeout(8000)
+            });
+            const contentRange = res.headers.get("content-range") || "";
+            const count = contentRange.includes("/") ? contentRange.split("/").pop() : null;
+            out.supabase[table] = {
+              httpStatus: res.status, ok: res.ok, count,
+              ...(res.ok ? {} : { error: (await res.text().catch(() => "")).slice(0, 300) })
+            };
+          } catch (err) {
+            out.supabase[table] = { ok: false, error: String((err && err.message) || "fetch-fehler").slice(0, 200) };
+          }
+        }
+      }
+
+      // --- 2. Azure gegen die ECHTE API-URL testen (die azure-ping NICHT prueft) ---
+      const azEndpoint = String(process.env.AZURE_OPENAI_ENDPOINT || "").replace(/\/+$/, "");
+      const azKey = process.env.AZURE_OPENAI_KEY || "";
+      const azDeployment = process.env.AZURE_OPENAI_DEPLOYMENT || "gpt-5-mini";
+      if (!azEndpoint || !azKey) {
+        out.azure = { ok: false, reason: !azKey ? "AZURE_OPENAI_KEY fehlt" : "AZURE_OPENAI_ENDPOINT fehlt" };
+      } else {
+        const apiUrl = `${azEndpoint}/openai/v1/responses`;
+        const startedAt = Date.now();
+        try {
+          const res = await fetch(apiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "api-key": azKey },
+            body: JSON.stringify({ model: azDeployment, input: "ping", max_output_tokens: 16 }),
+            signal: AbortSignal.timeout(15000)
+          });
+          const bodyText = (await res.text().catch(() => "")).slice(0, 300);
+          out.azure = {
+            apiUrl, httpStatus: res.status, ok: res.ok, deployment: azDeployment,
+            latencyMs: Date.now() - startedAt,
+            ...(res.ok ? {} : { error: bodyText }),
+            hint: res.status === 404 ? "404: Diese Azure-Ressource unterstuetzt /openai/v1/responses nicht ODER Endpoint/Deployment ist falsch."
+              : res.status === 401 ? "401: AZURE_OPENAI_KEY ungueltig oder passt nicht zur Ressource."
+                : res.status === 400 ? "400: Deployment lehnt den Request ab (Modell-/API-Version-/Parameter-Mismatch)."
+                  : res.status === 429 ? "429: Azure Rate-Limit / Kontingent erschoepft."
+                    : res.ok ? "Azure-Call OK — der KI-Pfad funktioniert." : null
+          };
+        } catch (err) {
+          out.azure = { apiUrl, ok: false, deployment: azDeployment, error: String((err && err.message) || "fetch-fehler").slice(0, 200) };
+        }
+      }
+
+      // --- Verdict: erste blockierende Ursache ---
+      const rawProbe = out.supabase.raw_documents;
+      const supaRawOk = rawProbe && rawProbe.ok;
+      const supaRawCount = supaRawOk ? Number(rawProbe.count || 0) : null;
+      if (rawProbe && !supaRawOk) {
+        out.verdict = `BLOCKIERT: Supabase-Tabelle raw_documents nicht erreichbar (HTTP ${rawProbe.httpStatus || "?"}) — C6-Writes schlagen still fehl, deshalb 0 Vorgaenge.`;
+        out.fix = "supabase/schema.sql im Supabase SQL-Editor ausfuehren (legt raw_documents/knowledge_objects an). Danach frischen Crawl: /api/crawl/run?secret=...";
+      } else if (supaRawCount === 0) {
+        out.verdict = "BLOCKIERT: raw_documents existiert, ist aber LEER. Die 886 Artikel liegen im Blob-Store (V2); in V3 wurde nichts geschrieben — sehr wahrscheinlich lief der letzte Crawl VOR dem Setzen von HELMUT_V3_STORE=1. Flags wirken NICHT rueckwirkend.";
+        out.fix = "Einen FRISCHEN Crawl ausloesen: /api/crawl/run?secret=... (oder /api/cron/crawl?secret=CRON_SECRET). Erst der naechste Crawl fuellt raw_documents.";
+      } else if (!out.azure.ok) {
+        out.verdict = `TEILWEISE: raw_documents gefuellt (${supaRawCount}), aber der echte Azure-Call scheitert (HTTP ${out.azure.httpStatus || "n/a"}) — Understanding kann keine KOs analysieren.`;
+        out.fix = out.azure.hint || "Azure-Config in Vercel pruefen, dann erneut proben.";
+      } else {
+        out.verdict = `OK: Supabase (${supaRawCount} raw_documents) + Azure (HTTP ${out.azure.httpStatus}) funktionieren. Wenn trotzdem 0 Vorgaenge: C7c-Matching greift nicht (kein Profil matcht die Cluster) oder KOs stehen auf 'failed'.`;
+        out.fix = "/api/debug/cluster pruefen; ggf. /api/debug/reset-failed-kos, dann /api/debug/create-test-vorgang + /api/debug/run-understanding.";
+      }
+
+      console.log(`[debug/pipeline-probe] raw=${JSON.stringify(rawProbe)} azureStatus=${out.azure.httpStatus} verdict=${out.verdict.slice(0, 60)}`);
+      return out;
+    });
+  }
+
   // GET /api/debug/briefing-manual?politicianId=...&secret=...
   // Diagnostiziert die Briefing-Pipeline C7b fuer einen Nutzer:
   //   1. Flags pruefen (v3BriefingEnabled)
