@@ -386,6 +386,12 @@ function applyStartPayload(startPayload) {
 
   selectedDecisionId = decisions[0]?.id || "";
   generatedStatement = decisions[0]?.statement || "";
+  console.log("[Helmut] briefing sources", {
+    items: (briefing.items || []).length,
+    personalizedRecommendations: (briefing.personalizedRecommendations || []).length,
+    situationalBriefing: (briefing.situationalBriefing || []).length,
+    helmutBriefings: helmutBriefings.length
+  });
   maybeStartOnboarding();
 }
 
