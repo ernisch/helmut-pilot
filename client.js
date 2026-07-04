@@ -3386,7 +3386,7 @@ function renderHelmutTypingResult(assessment) {
       </div>
       <article class="helmut-note helmut-typewriter" aria-live="polite">
         <b class="priority-status ${escapeAttribute(assessment.priorityStatus || "stable")}">${escapeHtml(priorityStatusText(assessment.priorityStatus))}</b>
-        <p>${escapeHtml(helmutTypedText)}<span class="typing-cursor" aria-hidden="true"></span></p>
+        <p><span id="helmutTypingText">${escapeHtml(helmutTypedText)}</span><span class="typing-cursor" aria-hidden="true"></span></p>
       </article>
     </section>
   `;
@@ -7562,6 +7562,13 @@ function startHelmutTyping() {
     }
     const nextLength = Math.min(helmutTypingFullText.length, helmutTypedText.length + 10);
     helmutTypedText = helmutTypingFullText.slice(0, nextLength);
+    // Nur den Text-Node patchen statt 29x/Sek. die komplette App neu zu rendern
+    // (kompletter innerHTML-Rebuild + Listener-Rebind waeren spuerbares Jank/
+    // Akkuverbrauch auf Mobilgeraeten). Fallback auf render(), falls das Element
+    // aus irgendeinem Grund (noch) nicht im DOM ist.
+    const textEl = document.getElementById("helmutTypingText");
+    if (textEl) textEl.textContent = helmutTypedText;
+    else render();
     if (nextLength >= helmutTypingFullText.length) {
       window.clearInterval(helmutTypingTimer);
       helmutTypingTimer = null;
@@ -7570,7 +7577,6 @@ function startHelmutTyping() {
         if (currentView === "helmut") render();
       }, 450);
     }
-    render();
   }, 34);
 }
 

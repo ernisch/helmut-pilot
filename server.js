@@ -904,6 +904,16 @@ async function handleRequest(request, response) {
   }
 
   const requestedPath = isAppEntryPath(url.pathname) ? "index.html" : url.pathname.replace(/^\/+/, "");
+  // App-Entry immer dynamisch erzeugen (indexHtml()) statt die statische Datei zu
+  // lesen: nur so traegt <script>/<link> wirklich den aktuellen ASSET_VERSION
+  // (VERCEL_GIT_COMMIT_SHA). Die statische index.html hatte ein manuell gepflegtes
+  // ?v=-Query, das seit mehreren Deploys nicht mehr erhoeht wurde -> installierte
+  // PWA-Clients konnten auf altem client.js/styles.css haengen bleiben.
+  if (requestedPath === "index.html") {
+    response.writeHead(200, htmlHeaders());
+    response.end(indexHtml());
+    return;
+  }
   const filePath = path.normalize(path.join(root, requestedPath));
   if (!filePath.startsWith(root)) {
     response.writeHead(403);
@@ -913,11 +923,6 @@ async function handleRequest(request, response) {
 
   fs.readFile(filePath, (error, content) => {
     if (error) {
-      if (requestedPath === "index.html") {
-        response.writeHead(200, htmlHeaders());
-        response.end(indexHtml());
-        return;
-      }
       response.writeHead(404);
       response.end("Not found");
       return;

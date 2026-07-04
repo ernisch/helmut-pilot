@@ -4,6 +4,9 @@ name: Briefing Watchdog
 # - Erzwingt täglich ein frisches Briefing (falls Vercels eigener Cron ausfällt).
 # - Prüft die Antwort und schlägt fehl (-> GitHub schickt dir eine E-Mail),
 #   wenn der Lauf nicht 200 liefert oder das Briefing nicht frisch (< 6h) ist.
+# - Prüft VORHER günstig (/api/ops/status), ob das Briefing schon frisch ist, und
+#   überspringt den teuren Crawl+KI-Lauf dann komplett (spart täglich einen
+#   doppelten Pipeline-Lauf, wenn Vercels eigener 05:00-Cron schon erfolgreich war).
 
 on:
   schedule:
@@ -19,7 +22,7 @@ jobs:
   refresh-and-check:
     runs-on: ubuntu-latest
     steps:
-      - name: Pipeline triggern und Frische prüfen
+      - name: Frische prüfen, Pipeline nur bei Bedarf triggern
         env:
           BASE_URL: ${{ vars.HELMUT_PROD_URL || 'https://helmut-pilot.vercel.app' }}
           CRON_SECRET: ${{ secrets.HELMUT_CRON_SECRET }}
@@ -29,6 +32,35 @@ jobs:
           if [ -z "${CRON_SECRET:-}" ]; then
             echo "::error::HELMUT_CRON_SECRET ist nicht gesetzt."
             exit 1
+          fi
+
+          # 0) Guenstige Vorab-Pruefung: ist das heutige Briefing schon frisch genug?
+          #    Vercels eigener 05:00-Cron laeuft meist zuerst erfolgreich durch - in
+          #    dem Fall erspart sich der Watchdog einen kompletten zweiten
+          #    Crawl+KI-Lauf. JEDER Fehler/Nicht-200/fehlendes Feld hier faellt
+          #    sicher auf den vollen Pipeline-Lauf zurueck (Backstop-Verhalten
+          #    bleibt unveraendert, dies ist nur eine Kostenoptimierung obendrauf).
+          STATUS_CODE=$(curl -sS --max-time 30 \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -o status.json -w "%{http_code}" \
+            "${BASE_URL}/api/ops/status" || echo "000")
+
+          if [ "${STATUS_CODE}" = "200" ]; then
+            PRECHECK_AGE_MIN=$(node -e '
+              const fs = require("fs");
+              try {
+                const data = JSON.parse(fs.readFileSync("status.json", "utf8"));
+                const ts = (data.briefing && data.briefing.generatedAt) || "";
+                const ageMs = ts ? Date.now() - new Date(ts).getTime() : NaN;
+                if (Number.isNaN(ageMs)) process.exit(1);
+                process.stdout.write(String(Math.round(ageMs / 60000)));
+              } catch (e) { process.exit(1); }
+            ') || PRECHECK_AGE_MIN=""
+
+            if [ -n "${PRECHECK_AGE_MIN}" ] && [ "${PRECHECK_AGE_MIN}" -le 360 ]; then
+              echo "::notice::Briefing bereits frisch (${PRECHECK_AGE_MIN} min alt) — überspringe redundanten Pipeline-Lauf."
+              exit 0
+            fi
           fi
 
           echo "Rufe Pipeline auf: ${BASE_URL}/api/cron/pipeline"
