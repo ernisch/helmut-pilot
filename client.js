@@ -94,15 +94,35 @@ function formatUsdEur(usd) {
 
 // --- View-Persistenz ---
 const VIEW_PERSIST_KEY = "helmut:view";
+const VIEW_PERSIST_DATE_KEY = "helmut:view:date";
 const VIEW_PERSIST_SAFE = new Set(["briefing", "radar", "helmut", "office", "tasks", "topics", "settings", "profile-settings", "admin", "daily-input"]);
+
+function berlinDateKey(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("de-DE", {
+    timeZone: "Europe/Berlin",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(date);
+  const get = (type) => parts.find((p) => p.type === type)?.value || "";
+  return `${get("year")}-${get("month")}-${get("day")}`;
+}
 
 function persistView(view) {
   if (!VIEW_PERSIST_SAFE.has(view)) return;
-  try { localStorage.setItem(VIEW_PERSIST_KEY, view); } catch {}
+  try {
+    localStorage.setItem(VIEW_PERSIST_KEY, view);
+    localStorage.setItem(VIEW_PERSIST_DATE_KEY, berlinDateKey());
+  } catch {}
 }
 
+// Stellt die zuletzt offene Ansicht nur INNERHALB DESSELBEN Kalendertages (Berlin) wieder
+// her. An einem neuen Tag soll die Morgenlage immer zuerst erscheinen, statt einer gestern
+// verlassenen Detail-/Büro-Ansicht — sonst sieht die Abgeordnete nicht zuverlässig als
+// Erstes, was heute wichtig ist.
 function restorePersistedView() {
   try {
+    if (localStorage.getItem(VIEW_PERSIST_DATE_KEY) !== berlinDateKey()) return;
     const saved = localStorage.getItem(VIEW_PERSIST_KEY);
     if (!saved || !VIEW_PERSIST_SAFE.has(saved)) return;
     if (saved === "admin" && userRole() !== "admin") return;
@@ -2907,7 +2927,7 @@ function helmutButtonConfig(state, actionId) {
   const cfg = {
     reagieren:   { primary: "Jetzt reagieren",        pAttr: id ? `data-detail="${id}"` : "data-run-crawl",             secondary: "Antwort vorbereiten",   sAttr: id ? `data-communication="${id}"` : "data-run-crawl" },
     vorbereiten: { primary: "Jetzt Entwurf erstellen",  pAttr: id ? `data-communication="${id}"` : `data-view="office"`,  secondary: "Quellen prüfen",        sAttr: "data-run-crawl" },
-    beobachten:  { primary: "Jetzt Entwurf erstellen",  pAttr: id ? `data-communication="${id}"` : `data-view="office"`,  secondary: "Beobachten bestätigen", sAttr: `data-view="lage"` },
+    beobachten:  { primary: "Jetzt Entwurf erstellen",  pAttr: id ? `data-communication="${id}"` : `data-view="office"`,  secondary: "Beobachten bestätigen", sAttr: `data-view="briefing"` },
     ignorieren:  { primary: "Als erledigt markieren",  pAttr: id ? `data-lage-done="${id}"` : "data-run-crawl",          secondary: "Quellen prüfen",        sAttr: "data-run-crawl" },
   };
   return cfg[state] || cfg.beobachten;
@@ -3030,10 +3050,19 @@ function renderHelmutHeader() {
       </header>`;
   }
   const greeting = timeGreeting(firstName); // enthält bereits den Punkt, z. B. "Guten Morgen, Cem."
+  const summary = total === 0
+    ? "Heute ist es ruhig — nichts Relevantes, um das du dich kümmern musst."
+    : `Heute gibt es ${total} ${total === 1 ? "relevanten Vorgang" : "relevante Vorgänge"}.<br>${
+        deckN === 0
+          ? "Nichts davon braucht heute deine Entscheidung."
+          : deckN === 1
+            ? "Davon solltest du dich heute um eines kümmern."
+            : `Davon solltest du dich heute um ${deckN} kümmern.`
+      }`;
   return `
     <header class="helmut-referent-head">
       <h1 class="${headlineClass(greeting)}">${escapeHtml(greeting)}</h1>
-      <p>Heute gibt es ${total} ${total === 1 ? "relevanten Vorgang" : "relevante Vorgänge"}.<br>Davon solltest du dich heute um ${deckN} kümmern.</p>
+      <p>${summary}</p>
     </header>`;
 }
 
@@ -3226,12 +3255,30 @@ function renderHelmutHowTo() {
     </section>`;
 }
 
+// Kurzfassung der Helmut-Einschätzung (heroWhy/heroRisk/heroNextStep, je ≤7 Wörter,
+// von ai.js:generateHelmutAssessment bewusst fürs 3-Sekunden-Lesen erzeugt). Bislang
+// wurden diese Felder nur im seltenen, 4h-gecoolten Typewriter-Reveal berechnet, aber
+// nirgends dargestellt — dieser Block zeigt sie dauerhaft im Normalzustand.
+function renderHelmutHeroFacts(assessment) {
+  if (!assessment.heroWhy && !assessment.heroRisk && !assessment.heroNextStep) return "";
+  return `
+    <section class="article-section helmut-hero-facts" aria-label="Helmuts Kurz-Einschätzung">
+      <h2>Was ich dir empfehle</h2>
+      <dl class="helmut-deck-bullets">
+        ${assessment.heroWhy ? `<div><dt><span class="helmut-bullet-ico">${HELMUT_ICON_STAR}</span>Warum</dt><dd>${escapeHtml(assessment.heroWhy)}</dd></div>` : ""}
+        ${assessment.heroRisk ? `<div><dt><span class="helmut-bullet-ico">${HELMUT_ICON_STAR}</span>Risiko</dt><dd>${escapeHtml(assessment.heroRisk)}</dd></div>` : ""}
+        ${assessment.heroNextStep ? `<div><dt><span class="helmut-bullet-ico">${HELMUT_ICON_BOLT}</span>Nächster Schritt</dt><dd>${escapeHtml(assessment.heroNextStep)}</dd></div>` : ""}
+      </dl>
+    </section>`;
+}
+
 function renderHelmutAssessmentView() {
   const assessment = buildHelmutAssessment();
   if (helmutTypingActive) return renderHelmutTypingResult(assessment);
   return `
     <section class="helmut-referent" aria-label="Helmut – dein Referent">
       ${renderHelmutHeader()}
+      ${renderHelmutHeroFacts(assessment)}
       ${renderHelmutStatusCards()}
       ${renderLastDecisionCard()}
       ${renderHelmutDeckSection()}
@@ -4692,7 +4739,7 @@ function renderUserFeedbackWidget(decision) {
   return `
     <section class="article-section feedback-widget" data-feedback-widget>
       <h2>War diese Einschätzung hilfreich?</h2>
-      <p class="feedback-widget-hint">Dein Feedback verbessert Helmuts Relevanz-Einschätzung.</p>
+      <p class="feedback-widget-hint">Dein Feedback geht an das Helmut-Team und hilft, die Einschätzungen laufend zu verbessern.</p>
       <div class="feedback-widget-buttons">
         ${buttons.map(([type, label]) => `<button class="feedback-chip" type="button" data-feedback-type="${type}" data-feedback-area="Lage" data-feedback-topic="${escapeAttribute(topic)}">${escapeHtml(label)}</button>`).join("")}
       </div>
@@ -5276,9 +5323,6 @@ function renderRadarView() {
 
     <section class="radar-groups">
       ${renderRadarGroup("Heute neu über dich", freshMentions.length, mentionRows(freshMentions), hasFresh)}
-      ${renderRadarGroup("Frühwarnungen", 0, renderRadarEarlyWarnings(), false)}
-      ${renderRadarGroup("Chancen", 0, renderRadarChances(), false)}
-      ${renderRadarGroup("Kritische Nachfrage möglich", 0, renderRadarCriticalQuery(), false)}
       ${renderRadarGroup("Archiv", archiveArticles.length, mentionRows(archiveArticles, { empty: false, compact: true }), false)}
     </section>
   `;
