@@ -79,6 +79,64 @@ let onboardingDraft = {};
 const app = document.querySelector("#app");
 const toast = document.querySelector("#toast");
 
+// --- Fokus-Erhalt ueber volle Re-Renders hinweg ------------------------------
+// render() ersetzt app.innerHTML bei jedem Aufruf komplett neu; ohne Gegenmass-
+// nahme faellt der Tastatur-/Screenreader-Fokus dabei jedes Mal auf <body>
+// zurueck (Fokusverlust nach praktisch jeder Interaktion). captureFocusRef merkt
+// sich das fokussierte Element ueber ein stabiles Attribut, restoreFocusRef holt
+// den Fokus danach zurueck, wenn ein gleichwertiges Element im neuen DOM existiert.
+function stableSelectorFor(el) {
+  if (el.id) return `#${CSS.escape(el.id)}`;
+  const attrs = [
+    "data-view", "data-deck-decide", "data-collapse", "data-detail", "data-communication",
+    "data-feedback-type", "data-assess-id", "data-admin-period", "data-notif-toggle",
+    "data-office-format-toggle", "data-lage-done", "data-lage-ignore", "data-theme-set",
+    "data-task-copy", "data-task-mail", "data-task-share", "data-task-copy-text",
+    "data-menu", "data-updates", "data-close-updates", "data-close-handoff", "name"
+  ];
+  for (const attr of attrs) {
+    if (el.hasAttribute(attr)) {
+      const val = el.getAttribute(attr);
+      return val ? `[${attr}="${CSS.escape(val)}"]` : `[${attr}]`;
+    }
+  }
+  return null;
+}
+
+function captureFocusRef() {
+  const el = document.activeElement;
+  if (!el || el === document.body || !app.contains(el)) return null;
+  const selector = stableSelectorFor(el);
+  if (!selector) return null;
+  const ref = { selector };
+  if ((el.tagName === "INPUT" || el.tagName === "TEXTAREA") && typeof el.selectionStart === "number") {
+    ref.selStart = el.selectionStart;
+    ref.selEnd = el.selectionEnd;
+  }
+  return ref;
+}
+
+function restoreFocusRef(ref) {
+  if (!ref) return;
+  let el;
+  try { el = app.querySelector(ref.selector); } catch { return; }
+  if (!el || typeof el.focus !== "function") return;
+  el.focus({ preventScroll: true });
+  if (ref.selStart != null && typeof el.setSelectionRange === "function") {
+    try { el.setSelectionRange(ref.selStart, ref.selEnd); } catch { /* nicht alle Inputtypen unterstuetzen das */ }
+  }
+}
+
+// Fuer Overlays, deren eigener Ausloeser (z. B. eine Task-Zeile) nach dem
+// Schliessen erhalten bleibt, aber deren Schliessen-Button verschwindet: Fokus
+// gezielt auf den Ausloeser zuruecklegen statt ihn an <body> zu verlieren.
+function focusSelector(selector) {
+  if (!selector) return;
+  let el;
+  try { el = app.querySelector(selector); } catch { return; }
+  if (el && typeof el.focus === "function") el.focus({ preventScroll: true });
+}
+
 const USD_TO_EUR = 0.92;
 
 function fmtCost(n) {
@@ -417,17 +475,17 @@ function renderOnboarding() {
   let body = "";
   if (onboardingStep === 0) {
     body = `
-      <h2>Willkommen bei Helmut.</h2>
+      <h1>Willkommen bei Helmut.</h1>
       <p class="onboarding-lead">Lass uns ${escapeHtml(mandateName)} in unter 2 Minuten einrichten, damit dein Briefing sofort passt.</p>
       <p class="onboarding-note">Diese Angaben nutzt Helmut nur zur Personalisierung deiner Briefings. Du kannst sie jederzeit ändern oder löschen.</p>`;
   } else if (onboardingStep === 1) {
     body = `
-      <h2>Partei & Fraktion</h2>
+      <h1>Partei & Fraktion</h1>
       <label>Partei<input name="party" type="text" value="${escapeAttribute(d.party || "")}" placeholder="z. B. SPD" /></label>
       <label>Fraktion<input name="faction" type="text" value="${escapeAttribute(d.faction || "")}" placeholder="z. B. SPD-Bundestagsfraktion" /></label>`;
   } else if (onboardingStep === 2) {
     body = `
-      <h2>Ausschuss</h2>
+      <h1>Ausschuss</h1>
       <label>Dein (Haupt-)Ausschuss
         <input name="committee" type="text" list="onboardingCommittees" value="${escapeAttribute(d.committee || "")}" placeholder="z. B. Gesundheit" />
       </label>
@@ -435,15 +493,15 @@ function renderOnboarding() {
   } else if (onboardingStep === 3) {
     const selected = new Set(d.focusTopics || []);
     body = `
-      <h2>Schwerpunktthemen</h2>
+      <h1>Schwerpunktthemen</h1>
       <p class="onboarding-note">Wähle aus, was für dein Mandat zählt — das steuert deine Top-Themen.</p>
-      <div class="onboarding-chips">
+      <div class="onboarding-chips" role="group" aria-label="Schwerpunktthemen">
         ${priorityTopics.map((t) => `<label class="onboarding-chip"><input type="checkbox" name="focusTopic" value="${escapeAttribute(t)}" ${selected.has(t) ? "checked" : ""}/> ${escapeHtml(t)}</label>`).join("")}
       </div>
       <label>Weitere Themen (Komma-getrennt)<input name="focusTopicsFree" type="text" placeholder="z. B. Krankenhausreform, Prävention" /></label>`;
   } else if (onboardingStep === 4) {
     body = `
-      <h2>Region & Stil</h2>
+      <h1>Region & Stil</h1>
       <label>Wahlkreis<input name="constituency" type="text" value="${escapeAttribute(d.constituency || "")}" placeholder="z. B. Berlin-Mitte" /></label>
       <label>Bundesland<input name="state" type="text" value="${escapeAttribute(d.state || "")}" placeholder="z. B. Berlin" /></label>
       <label>Kommunikationsstil
@@ -452,14 +510,14 @@ function renderOnboarding() {
   } else if (onboardingStep === 5) {
     const selectedFormats = new Set(d.officeFormats || ["presse", "linkedin"]);
     body = `
-      <h2>Büro-Formate</h2>
+      <h1>Büro-Formate</h1>
       <p class="onboarding-note">Was soll Helmut automatisch vorbereiten, wenn dein Briefing kommt? Du kannst das jederzeit in den Einstellungen ändern.</p>
-      <div class="onboarding-chips">
+      <div class="onboarding-chips" role="group" aria-label="Büro-Formate">
         ${OFFICE_FORMATS.map((f) => `<label class="onboarding-chip"><input type="checkbox" name="officeFormat" value="${escapeAttribute(f.id)}" ${selectedFormats.has(f.id) ? "checked" : ""}/> ${escapeHtml(f.label)}</label>`).join("")}
       </div>`;
   } else {
     body = `
-      <h2>Risiken & Chancen (optional)</h2>
+      <h1>Risiken & Chancen (optional)</h1>
       <label>Risiko-Themen (Komma-getrennt)<input name="riskTopics" type="text" value="${escapeAttribute(d.riskTopics || "")}" placeholder="z. B. Klinikschließungen" /></label>
       <label>Chancen-Themen (Komma-getrennt)<input name="opportunityTopics" type="text" value="${escapeAttribute(d.opportunityTopics || "")}" placeholder="z. B. Pflege-Offensive" /></label>
       <p class="onboarding-note">Fertig — danach ist Helmut auf dich eingestellt.</p>`;
@@ -468,7 +526,7 @@ function renderOnboarding() {
   const isLast = onboardingStep === ONBOARDING_STEPS - 1;
   return `
     <div class="onboarding-layer">
-      <form class="onboarding-card" id="onboardingForm" onsubmit="return false">
+      <form class="onboarding-card" id="onboardingForm" onsubmit="return false" role="dialog" aria-modal="true" aria-label="Profil einrichten">
         <div class="onboarding-progress">Schritt ${onboardingStep + 1} von ${ONBOARDING_STEPS}</div>
         <div class="onboarding-body">${body}</div>
         <div class="onboarding-actions">
@@ -687,9 +745,9 @@ function renderPilotAccess(message = "") {
       <h1>Pilot-Zugang.</h1>
       <p class="pilot-access-copy">Gib den Zugangscode ein, um deine politische Lage zu öffnen.</p>
       <form class="pilot-access-form" id="pilotAccessForm">
-        <input name="secret" type="password" autocomplete="current-password" placeholder="Zugangscode" aria-label="Zugangscode" />
+        <input name="secret" type="password" autocomplete="current-password" placeholder="Zugangscode" aria-label="Zugangscode" aria-describedby="pilotAccessError" />
         <button class="primary-button" type="submit">Helmut öffnen</button>
-        <small id="pilotAccessError">${escapeHtml(message)}</small>
+        <small id="pilotAccessError" role="alert">${escapeHtml(message)}</small>
       </form>
     </section>
   `;
@@ -787,13 +845,13 @@ function renderLogin(message = "") {
         <h1>Anmeldung</h1>
         <p class="pilot-access-copy">Melde dich mit deinem Helmut Konto an, um dein persönliches Briefing zu öffnen.</p>
         <form class="pilot-access-form" id="loginForm">
-          <input name="email" type="email" autocomplete="username" placeholder="E-Mail" aria-label="E-Mail" required />
+          <input name="email" type="email" autocomplete="username" placeholder="E-Mail" aria-label="E-Mail" aria-describedby="loginError" required />
           <div class="password-field">
-            <input name="password" id="loginPassword" type="password" autocomplete="current-password" placeholder="Passwort" aria-label="Passwort" required />
+            <input name="password" id="loginPassword" type="password" autocomplete="current-password" placeholder="Passwort" aria-label="Passwort" aria-describedby="loginError" required />
             <button type="button" class="password-toggle password-toggle--icon" data-toggle-password="loginPassword" aria-label="Passwort anzeigen">${EYE_OPEN_SVG}</button>
           </div>
           <button class="primary-button" type="submit" disabled>Anmelden</button>
-          <small id="loginError">${escapeHtml(message)}</small>
+          <small id="loginError" role="alert">${escapeHtml(message)}</small>
         </form>
       </section>
     </div>
@@ -943,14 +1001,14 @@ function renderDailyInputView() {
   const form = remaining > 0
     ? `
       <form class="admin-card admin-form" id="dailyInputForm">
-        <h3>Termin/Thema hinzufügen</h3>
-        <input name="title" type="text" placeholder="Titel (z. B. Plenardebatte Rente)" aria-label="Titel" required />
+        <h2>Termin/Thema hinzufügen</h2>
+        <input name="title" type="text" placeholder="Titel (z. B. Plenardebatte Rente)" aria-label="Titel" aria-describedby="dailyInputError" required />
         <input name="datetime" type="text" placeholder="Uhrzeit/Datum (z. B. 10:00 oder 26.06. 10:00)" aria-label="Uhrzeit/Datum" />
         <textarea name="context" rows="2" placeholder="Kontext" aria-label="Kontext"></textarea>
         <textarea name="goal" rows="2" placeholder="Ziel" aria-label="Ziel"></textarea>
         <textarea name="desiredPrep" rows="2" placeholder="Gewünschte Vorbereitung" aria-label="Gewünschte Vorbereitung"></textarea>
         <button class="primary-button" type="submit">Hinzufügen</button>
-        <small class="admin-form-error" id="dailyInputError"></small>
+        <small class="admin-form-error" id="dailyInputError" role="alert"></small>
       </form>`
     : `<p class="empty-state">Tageslimit erreicht (${max} Einträge). Entferne einen Eintrag, um Platz zu schaffen.</p>`;
 
@@ -987,7 +1045,7 @@ function renderAdminView() {
       <section class="page-intro executive-intro">
         <span class="eyebrow-line">Verwaltung</span>
         <h1 class="hero-title">Admin</h1>
-        <div class="skeleton-stack" aria-busy="true" aria-label="Admin-Daten werden geladen">
+        <div class="skeleton-stack" role="status" aria-busy="true" aria-label="Admin-Daten werden geladen">
           <div class="skeleton skeleton-line short"></div>
           <div class="skeleton skeleton-card"></div>
           <div class="skeleton skeleton-card"></div>
@@ -1013,7 +1071,7 @@ function renderAdminView() {
           ? `<span class="admin-pill billing-warn">⚠ ${billingDays}d noch</span>`
           : `<span class="admin-pill billing-overdue">✕ überfällig</span>`;
     const billingInput = user.paidUntil
-      ? `<input type="date" class="billing-date-input" data-billing-user="${escapeAttribute(user.id)}" value="${user.paidUntil.slice(0, 10)}" title="Bezahlt bis" />`
+      ? `<input type="date" class="billing-date-input" data-billing-user="${escapeAttribute(user.id)}" value="${user.paidUntil.slice(0, 10)}" aria-label="Bezahlt bis" />`
       : "";
     const initials = (user.name || user.email || "?").split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
     const status = user.status || (user.active === false ? "deaktiviert" : "aktiv");
@@ -1046,7 +1104,7 @@ function renderAdminView() {
       </td>
       <td data-label="Aktion" class="admin-actions-cell">
         <button class="account-logout admin-edit-toggle" type="button" data-admin-user-edit="${escapeAttribute(user.id)}">${isExpanded ? "Schließen" : "Bearbeiten"}</button>
-        <button class="account-logout" type="button" data-toggle-user="${escapeAttribute(user.id)}" data-active="${user.active === false ? "0" : "1"}">${user.active === false ? "Aktivieren" : "Deaktivieren"}</button>
+        <button class="account-logout" type="button" data-toggle-user="${escapeAttribute(user.id)}" data-active="${user.active === false ? "0" : "1"}" aria-live="polite">${user.active === false ? "Aktivieren" : "Deaktivieren"}</button>
       </td>
     </tr>
     ${isExpanded ? renderAdminUserEditRow(user, status, feedbackCountByUser[user.id] || 0) : ""}`;
@@ -1079,8 +1137,8 @@ function renderAdminView() {
       </header>
 
       <div class="admin-period-toggle">
-        <button class="admin-period-btn${adminPeriod === "today" ? " is-active" : ""}" type="button" data-admin-period="today">Heute</button>
-        <button class="admin-period-btn${adminPeriod === "days30" ? " is-active" : ""}" type="button" data-admin-period="days30">30 Tage</button>
+        <button class="admin-period-btn${adminPeriod === "today" ? " is-active" : ""}" type="button" data-admin-period="today" aria-pressed="${adminPeriod === "today"}">Heute</button>
+        <button class="admin-period-btn${adminPeriod === "days30" ? " is-active" : ""}" type="button" data-admin-period="days30" aria-pressed="${adminPeriod === "days30"}">30 Tage</button>
       </div>
 
       <div class="admin-stats-row admin-stats-row--5">
@@ -1141,12 +1199,12 @@ function renderAdminView() {
                   ${(data.users || []).map((user) => `<option value="${escapeAttribute(user.id)}">${escapeHtml(user.name || user.email)}</option>`).join("")}
                 </select>
                 <div class="password-field" style="flex:1; min-width:160px;">
-                  <input name="password" id="resetPasswordInput" type="password" placeholder="Neues Passwort (min. 8)" aria-label="Neues Passwort" autocomplete="new-password" />
+                  <input name="password" id="resetPasswordInput" type="password" placeholder="Neues Passwort (min. 8)" aria-label="Neues Passwort" aria-describedby="resetPasswordError" autocomplete="new-password" />
                   <button type="button" class="password-toggle" data-toggle-password="resetPasswordInput" aria-label="Passwort anzeigen">Anzeigen</button>
                 </div>
                 <button class="secondary-button" type="submit">Zurücksetzen</button>
               </form>
-              <small class="admin-form-error" id="resetPasswordError"></small>
+              <small class="admin-form-error" id="resetPasswordError" role="alert"></small>
             </div>
           </div>
 
@@ -1166,15 +1224,15 @@ function renderAdminView() {
             <div class="admin-subsection">
               <p class="admin-subsection-label">Neue Zuweisung</p>
               <form class="admin-inline-form" id="assignForm">
-                <select name="userId" aria-label="Referent:in">
+                <select name="userId" aria-label="Referent:in" aria-describedby="assignError">
                   ${referenten.map((user) => `<option value="${escapeAttribute(user.id)}">${escapeHtml(user.name || user.email)}</option>`).join("") || `<option value="">— keine Referent:innen —</option>`}
                 </select>
-                <select name="politicianId" aria-label="Mandat">
+                <select name="politicianId" aria-label="Mandat" aria-describedby="assignError">
                   ${mandateOptions.map((entry) => `<option value="${escapeAttribute(entry.id)}">${escapeHtml(entry.name)}</option>`).join("")}
                 </select>
                 <button class="primary-button" type="submit">Zuweisen</button>
               </form>
-              <small class="admin-form-error" id="assignError"></small>
+              <small class="admin-form-error" id="assignError" role="alert"></small>
             </div>
           </div>
 
@@ -1191,7 +1249,7 @@ function renderAdminView() {
             </div>
             <div class="admin-field-group">
               <input name="name" type="text" placeholder="Vollständiger Name" aria-label="Name" required />
-              <input name="email" type="email" placeholder="name@bundestag.de" aria-label="E-Mail" required />
+              <input name="email" type="email" placeholder="name@bundestag.de" aria-label="E-Mail" aria-describedby="createUserError" required />
               <select name="role" aria-label="Rolle">
                 <option value="abgeordneter">Abgeordnete:r</option>
                 <option value="referent">Referent:in</option>
@@ -1199,7 +1257,7 @@ function renderAdminView() {
                 <option value="admin">Administrator</option>
               </select>
               <div class="password-field">
-                <input name="password" id="createUserPassword" type="password" placeholder="Mind. 8 Zeichen" aria-label="Passwort" autocomplete="new-password" required />
+                <input name="password" id="createUserPassword" type="password" placeholder="Mind. 8 Zeichen" aria-label="Passwort" aria-describedby="createUserError" autocomplete="new-password" required />
                 <button type="button" class="password-toggle" data-toggle-password="createUserPassword" aria-label="Passwort anzeigen">Anzeigen</button>
               </div>
             </div>
@@ -1266,7 +1324,7 @@ function renderAdminView() {
             </div>
             <div class="admin-form-foot">
               <button class="primary-button" type="submit">Nutzer erstellen</button>
-              <small class="admin-form-error" id="createUserError"></small>
+              <small class="admin-form-error" id="createUserError" role="alert"></small>
             </div>
           </form>
 
@@ -1366,7 +1424,7 @@ function renderAdminUserEditRow(user, status, feedbackCount = 0) {
           </label>
           <div class="admin-customer-foot">
             <button class="primary-button" type="submit">Speichern</button>
-            <small class="admin-form-error" data-customer-error="${escapeAttribute(user.id)}"></small>
+            <small class="admin-form-error" data-customer-error="${escapeAttribute(user.id)}" role="alert"></small>
           </div>
         </form>
       </td>
@@ -1851,6 +1909,7 @@ function situationalToDecisionItem(item) {
 }
 
 function render() {
+  const focusRef = captureFocusRef();
   app.innerHTML = `
     <div class="app-frame">
       ${renderSidebar()}
@@ -1872,6 +1931,21 @@ function render() {
   } catch (error) {
     console.warn("Helmut rendered, post-render binding failed", error);
   }
+  applyOverlayInertState();
+  restoreFocusRef(focusRef);
+}
+
+// Solange ein Dialog-artiges Overlay offen ist (Updates, Büro-Uebergabe,
+// Onboarding), macht diese Funktion den Rest der Seite fuer Tastatur/Screen-
+// reader unerreichbar (inert), statt ihn nur visuell mit einem Backdrop zu
+// verdecken. Ohne das koennte z. B. Shift+Tab aus einem offenen Panel heraus
+// auf Sidebar-/Hauptinhalt-Buttons springen, die hinter dem Overlay verdeckt sind.
+function applyOverlayInertState() {
+  const overlayOpen = updatesOpen || Boolean(selectedTaskHandoffId) || onboardingActive;
+  [".sidebar", ".content-shell", ".mobile-dock"].forEach((selector) => {
+    const el = app.querySelector(selector);
+    if (el) el.inert = overlayOpen;
+  });
 }
 
 function hideStartupSplash() {
@@ -1895,7 +1969,7 @@ function renderSidebar() {
       </select>`
     : "";
   return `
-    <aside class="sidebar ${navOpen ? "open" : ""}">
+    <aside class="sidebar ${navOpen ? "open" : ""}" aria-label="Seitenleiste">
       <div>
         <div class="brand">
           <b class="brand-mark" aria-hidden="true">H</b>
@@ -1987,7 +2061,7 @@ function renderUpdatesPanel() {
   const updates = notificationItems();
   return `
     <div class="updates-layer ${updatesOpen ? "open" : ""}" data-updates-layer>
-      <aside class="updates-panel" aria-label="Benachrichtigungen">
+      <div class="updates-panel" role="dialog" aria-modal="true" aria-label="Benachrichtigungen">
         <div class="updates-head">
           <div>
             <span>Benachrichtigungen</span>
@@ -1999,7 +2073,7 @@ function renderUpdatesPanel() {
           ${updates.length ? updates.map(renderNotificationItem).join("") : `<p class="empty-state">Keine neuen Updates.</p>`}
         </div>
         <button class="updates-radar-link" type="button" data-view="radar">Alle Erwähnungen ansehen</button>
-      </aside>
+      </div>
     </div>
   `;
 }
@@ -2261,7 +2335,7 @@ function renderVorgangDetailView() {
           <button class="vdetail-linkmore" type="button">Alle Ereignisse anzeigen →</button>` : ""}
         </div>
 
-        <aside class="vdetail-side">
+        <aside class="vdetail-side" aria-label="Quellen und Dokumente">
           <div class="vdetail-box">
             <h3>Quellen (${sources.length})</h3>
             <div class="vdetail-box-list">${sources.map(lageSourceRow).join("")}</div>
@@ -2321,7 +2395,7 @@ function renderParliamentItem(item) {
   let assessmentBlock = "";
   if (a && a.loading) {
     assessmentBlock = `
-      <div class="skeleton-stack" aria-busy="true" aria-label="Helmut ordnet ein">
+      <div class="skeleton-stack" role="status" aria-busy="true" aria-label="Helmut ordnet ein">
         <div class="skeleton skeleton-line medium"></div>
         <div class="skeleton skeleton-line short"></div>
       </div>`;
@@ -2662,11 +2736,11 @@ function renderFeedbackActions(decision) {
   if (!decision?.id) return "";
   const feedbackState = decision.feedback || (decision.status === "ignored" ? "ignored" : decision.status === "snoozed" ? "snoozed" : decision.status === "done" ? "done" : decision.status === "relevant" ? "marked_relevant" : "");
   return `
-    <div class="learning-actions inline-learning" aria-label="Helmut trainieren">
-      <button class="${feedbackState === "marked_relevant" || feedbackState === "marked_important" ? "is-active" : ""}" type="button" data-feedback="relevant" data-feedback-id="${escapeHtml(decision.id)}">Relevant</button>
-      <button class="${feedbackState === "snoozed" ? "is-active" : ""}" type="button" data-feedback="later" data-feedback-id="${escapeHtml(decision.id)}">Später</button>
-      <button class="${feedbackState === "done" ? "is-active" : ""}" type="button" data-feedback="done" data-feedback-id="${escapeHtml(decision.id)}">Erledigt</button>
-      <button class="${feedbackState === "ignored" ? "is-active" : ""}" type="button" data-feedback="ignored" data-feedback-id="${escapeHtml(decision.id)}">Nicht relevant</button>
+    <div class="learning-actions inline-learning" role="group" aria-label="Helmut trainieren">
+      <button class="${feedbackState === "marked_relevant" || feedbackState === "marked_important" ? "is-active" : ""}" type="button" data-feedback="relevant" data-feedback-id="${escapeHtml(decision.id)}" aria-pressed="${feedbackState === "marked_relevant" || feedbackState === "marked_important"}">Relevant</button>
+      <button class="${feedbackState === "snoozed" ? "is-active" : ""}" type="button" data-feedback="later" data-feedback-id="${escapeHtml(decision.id)}" aria-pressed="${feedbackState === "snoozed"}">Später</button>
+      <button class="${feedbackState === "done" ? "is-active" : ""}" type="button" data-feedback="done" data-feedback-id="${escapeHtml(decision.id)}" aria-pressed="${feedbackState === "done"}">Erledigt</button>
+      <button class="${feedbackState === "ignored" ? "is-active" : ""}" type="button" data-feedback="ignored" data-feedback-id="${escapeHtml(decision.id)}" aria-pressed="${feedbackState === "ignored"}">Nicht relevant</button>
     </div>
   `;
 }
@@ -2921,7 +2995,7 @@ function renderRefreshButton() {
   const remaining = pipelineCooldownRemaining();
   if (remaining > 0) {
     const mins = Math.ceil(remaining / 60000);
-    return `<button class="text-button refresh-cooldown" type="button" disabled title="Wieder in ${mins} Min verfügbar">${mins}m</button>`;
+    return `<button class="text-button refresh-cooldown" type="button" disabled title="Wieder in ${mins} Min verfügbar" aria-label="Aktualisieren, wieder in ${mins} Minuten verfügbar">${mins}m</button>`;
   }
   return `<button class="text-button" type="button" data-refresh-helmut aria-label="Einschätzung neu prüfen">↻</button>`;
 }
@@ -2936,7 +3010,7 @@ function renderHelmutThinkingView() {
       return `<span class="pipeline-step ${done ? "done" : active ? "active" : ""}">${done ? "✓ " : active ? "· " : "  "}${escapeHtml(label)}</span>`;
     }).join("");
     return `
-      <section class="helmut-thinking-screen" aria-label="Helmut aktualisiert">
+      <section class="helmut-thinking-screen" aria-label="Helmut aktualisiert" role="status">
         <div class="helmut-core" aria-hidden="true">H</div>
         <h1>${escapeHtml(stepLabel)} …</h1>
         <div class="pipeline-progress-bar"><div class="pipeline-progress-fill" style="width:${pct}%"></div></div>
@@ -2946,7 +3020,7 @@ function renderHelmutThinkingView() {
   }
   const time = formatBerlinTimeOnly();
   return `
-    <section class="helmut-thinking-screen" aria-label="Helmut analysiert">
+    <section class="helmut-thinking-screen" aria-label="Helmut analysiert" role="status">
       <div class="helmut-core" aria-hidden="true">H</div>
       <h1>Helmut analysiert die Lage ...</h1>
       <p>${escapeHtml(time)}</p>
@@ -4890,7 +4964,7 @@ function renderOfficeDraftCard(decision, format, index = 0) {
   const formatLabel = meta.formatLabel || title;
 
   return `
-    <article class="buero-draft-card${isLoading ? " is-loading" : ""}" style="animation-delay:${delay}"
+    <div class="buero-draft-card${isLoading ? " is-loading" : ""}" style="animation-delay:${delay}"
       data-office-open="${escapeAttribute(key)}"
       data-office-decision="${escapeAttribute(JSON.stringify({ id: decision.id, signalId: decision.signalId, title: decision.title }))}"
       data-office-format="${escapeAttribute(format.id)}"
@@ -4901,7 +4975,7 @@ function renderOfficeDraftCard(decision, format, index = 0) {
       </div>
       <div class="buero-card-main">
         <div class="buero-card-body">
-          <h2 class="buero-card-title">${escapeHtml(formatLabel)}</h2>
+          <h3 class="buero-card-title">${escapeHtml(formatLabel)}</h3>
           <p class="buero-card-einordnung">${escapeHtml(meta.einordnung)}</p>
           <p class="buero-card-anlass">Anlass: ${escapeHtml(title)}</p>
         </div>
@@ -4913,11 +4987,11 @@ function renderOfficeDraftCard(decision, format, index = 0) {
           <span class="buero-meta-sep">·</span>
           <span>${escapeHtml(readTime)}</span>
         </span>
-        <button class="buero-review-btn" type="button" ${isLoading ? "disabled" : ""}>
+        <span class="buero-review-btn">
           Entwurf prüfen
-        </button>
+        </span>
       </div>
-    </article>
+    </div>
   `;
 }
 
@@ -4938,7 +5012,7 @@ function renderOfficeDraftDetail() {
 
   return `
     <div class="buero-detail-view">
-      <nav class="buero-detail-nav">
+      <nav class="buero-detail-nav" aria-label="Zurück-Navigation">
         <button class="buero-back-btn" type="button" data-office-back>
           <i class="ti ti-arrow-left" aria-hidden="true"></i> Büro
         </button>
@@ -4996,7 +5070,7 @@ function renderTaskHandoffPanel() {
   const orderedMethods = orderedOfficeHandoffMethods(preferredMethod);
   return `
     <div class="handoff-layer open" data-handoff-layer>
-      <aside class="handoff-panel" aria-label="Büro-Übergabe wählen">
+      <div class="handoff-panel" role="dialog" aria-modal="true" aria-label="Büro-Übergabe wählen">
         <div class="handoff-head">
           <div>
             <span>Büro-Übergabe</span>
@@ -5011,7 +5085,7 @@ function renderTaskHandoffPanel() {
           ${orderedMethods.map(([method, label], index) => renderOfficeHandoffButton(task, method, label, index === 0)).join("")}
           <button class="secondary-button" type="button" data-task-copy-text="${escapeHtml(task.id)}">Nur kopieren</button>
         </div>
-      </aside>
+      </div>
     </div>
   `;
 }
@@ -5084,6 +5158,7 @@ function renderTopicsView() {
     </section>
 
     <section class="topic-board" aria-label="Themen">
+      <h2 class="sr-only">Themen</h2>
       ${topicItems.map((topic, index) => `
         <article class="topic-row evidence-only">
           <span>${String(index + 1).padStart(2, "0")}</span>
@@ -5235,7 +5310,7 @@ function renderNotesSection() {
     <section class="plain-list notes-section">
       <h2>Merken für später</h2>
       <form class="note-form" id="noteForm">
-        <textarea name="text" rows="3" placeholder="Frage, Risiko, Verband, Termin oder Recherchepunkt festhalten."></textarea>
+        <textarea name="text" rows="3" placeholder="Frage, Risiko, Verband, Termin oder Recherchepunkt festhalten." aria-label="Notiz"></textarea>
         <button class="secondary-button" type="submit">Merken</button>
       </form>
       <div class="note-list">
@@ -5275,6 +5350,7 @@ function renderRadarView() {
     ${renderRadarStatusCard(hasFresh)}
 
     <section class="radar-groups">
+      <h2 class="sr-only">Erwähnungen nach Kategorie</h2>
       ${renderRadarGroup("Heute neu über dich", freshMentions.length, mentionRows(freshMentions), hasFresh)}
       ${renderRadarGroup("Frühwarnungen", 0, renderRadarEarlyWarnings(), false)}
       ${renderRadarGroup("Chancen", 0, renderRadarChances(), false)}
@@ -5827,7 +5903,7 @@ function renderSettingsView() {
     </section>
 
     <div class="stg-section">
-      <span class="stg-label">Profil</span>
+      <h2 class="stg-label">Profil</h2>
       <div class="stg-group">
         <div class="stg-profile-row" data-view="profile-settings" role="button" tabindex="0">
           <div class="stg-avatar">${escapeHtml(initials)}</div>
@@ -5850,16 +5926,18 @@ function renderSettingsView() {
     </div>
 
     <div class="stg-section">
-      <span class="stg-label">Büro</span>
+      <h2 class="stg-label">Büro</h2>
       <div class="stg-group">
-        ${OFFICE_FORMATS.map((f) => {
-          const active = activeOfficeFormats().some((a) => a.id === f.id);
-          return `
-          <label class="stg-row stg-row--tappable">
-            <span class="stg-row-label">${escapeHtml(f.label)}</span>
-            <input type="checkbox" name="settingsOfficeFormat" value="${escapeAttribute(f.id)}" ${active ? "checked" : ""} data-office-format-toggle style="width:18px;height:18px;accent-color:var(--accent);flex-shrink:0"/>
-          </label>`;
-        }).join("")}
+        <div role="group" aria-label="Büro-Formate">
+          ${OFFICE_FORMATS.map((f) => {
+            const active = activeOfficeFormats().some((a) => a.id === f.id);
+            return `
+            <label class="stg-row stg-row--tappable">
+              <span class="stg-row-label">${escapeHtml(f.label)}</span>
+              <input type="checkbox" name="settingsOfficeFormat" value="${escapeAttribute(f.id)}" ${active ? "checked" : ""} data-office-format-toggle style="width:18px;height:18px;accent-color:var(--accent);flex-shrink:0"/>
+            </label>`;
+          }).join("")}
+        </div>
         <div class="stg-row">
           <span class="stg-row-label">Helmut lernt</span>
           <span class="stg-row-value">${escapeHtml(learnLabel)}</span>
@@ -5868,13 +5946,13 @@ function renderSettingsView() {
     </div>
 
     <div class="stg-section">
-      <span class="stg-label">Darstellung</span>
+      <h2 class="stg-label">Darstellung</h2>
       <div class="stg-group">
         <div class="stg-row stg-row--stack">
-          <span class="stg-row-label">Erscheinungsbild</span>
-          <div class="theme-toggle">
+          <span class="stg-row-label" id="themeToggleLabel">Erscheinungsbild</span>
+          <div class="theme-toggle" role="group" aria-labelledby="themeToggleLabel">
             ${[["dark", "Dunkel"], ["light", "Hell"], ["system", "Auto"]].map(([value, label]) =>
-              `<button class="theme-option ${getThemePref() === value ? "active" : ""}" type="button" data-theme-set="${value}">${label}</button>`
+              `<button class="theme-option ${getThemePref() === value ? "active" : ""}" type="button" data-theme-set="${value}" aria-pressed="${getThemePref() === value}">${label}</button>`
             ).join("")}
           </div>
         </div>
@@ -5882,15 +5960,15 @@ function renderSettingsView() {
     </div>
 
     <div class="stg-section">
-      <span class="stg-label">Mitteilungen</span>
+      <h2 class="stg-label">Mitteilungen</h2>
       <div class="stg-group">
         <div class="stg-row">
           <div style="flex:1;min-width:0">
             <div class="stg-row-label">Push-Benachrichtigungen</div>
-            ${pushBlocked ? `<div class="stg-row-sublabel">In den Browser-Einstellungen erlauben</div>` : ""}
+            ${pushBlocked ? `<div class="stg-row-sublabel" id="pushBlockedReason">In den Browser-Einstellungen erlauben</div>` : ""}
           </div>
           <label class="stg-toggle">
-            <input type="checkbox" data-enable-push ${push.enabled && pushPermissionState() === "granted" ? "checked" : ""} ${!pushSupported || pushBlocked ? "disabled" : ""}/>
+            <input type="checkbox" data-enable-push aria-label="Push-Benachrichtigungen" ${pushBlocked ? 'aria-describedby="pushBlockedReason"' : ""} ${push.enabled && pushPermissionState() === "granted" ? "checked" : ""} ${!pushSupported || pushBlocked ? "disabled" : ""}/>
             <span class="stg-toggle-track"></span>
             <span class="stg-toggle-thumb"></span>
           </label>
@@ -5923,7 +6001,7 @@ function renderSettingsView() {
                 <div class="stg-row-sublabel">${escapeHtml(c.sub)}</div>
               </div>
               <label class="stg-toggle">
-                <input type="checkbox" data-notif-toggle="${escapeAttribute(c.id)}" ${on ? "checked" : ""}/>
+                <input type="checkbox" data-notif-toggle="${escapeAttribute(c.id)}" aria-label="${escapeAttribute(c.label)}" ${on ? "checked" : ""}/>
                 <span class="stg-toggle-track"></span>
                 <span class="stg-toggle-thumb"></span>
               </label>
@@ -5935,7 +6013,7 @@ function renderSettingsView() {
 
     ${isAdmin ? `
     <div class="stg-section">
-      <span class="stg-label">System</span>
+      <h2 class="stg-label">System</h2>
       <div class="stg-group">
         <div class="stg-row">
           <span class="stg-row-label">Status</span>
@@ -5957,9 +6035,9 @@ function renderSettingsView() {
     </div>` : ""}
 
     <div class="stg-section">
-      <span class="stg-label">Datenschutz</span>
+      <h2 class="stg-label">Datenschutz</h2>
       <div class="stg-group">
-        <div class="stg-row stg-row--tappable" role="button" data-privacy-export>
+        <div class="stg-row stg-row--tappable" role="button" tabindex="0" data-privacy-export>
           <span class="stg-row-label">Daten exportieren</span>
           <span class="stg-row-chevron">›</span>
         </div>
@@ -5967,7 +6045,7 @@ function renderSettingsView() {
           <span class="stg-row-label">Datenschutzhinweise</span>
           <span class="stg-row-chevron">›</span>
         </a>
-        <div class="stg-row stg-row--tappable stg-row--danger" role="button" data-privacy-delete>
+        <div class="stg-row stg-row--tappable stg-row--danger" role="button" tabindex="0" data-privacy-delete>
           <span class="stg-row-label">Daten löschen</span>
           <span class="stg-row-chevron" style="color:var(--danger,#ff5d6c)">›</span>
         </div>
@@ -5977,7 +6055,7 @@ function renderSettingsView() {
     ${isAccountMode() && currentUser ? `
     <div class="stg-section">
       <div class="stg-group">
-        <div class="stg-row stg-row--tappable" role="button" data-logout>
+        <div class="stg-row stg-row--tappable" role="button" tabindex="0" data-logout>
           <span class="stg-row-label">Abmelden</span>
         </div>
       </div>
@@ -6290,7 +6368,7 @@ function renderProfileSettingsView() {
           <span>Ausschüsse</span>
           <h2>Wo entsteht fachlicher Handlungsdruck?</h2>
         </div>
-        ${checkboxGroup("committees", profile.committees || [profile.committee], committeeOptions)}
+        ${checkboxGroup("committees", profile.committees || [profile.committee], committeeOptions, "Wo entsteht fachlicher Handlungsdruck?")}
       </section>
 
       <section class="profile-section">
@@ -6320,7 +6398,7 @@ function renderProfileSettingsView() {
           <span>Kommunikationsstil</span>
           <h2>Wie soll Helmut formulieren?</h2>
         </div>
-        ${radioGroup("communicationStyle", profile.communicationStyle || "Lösungsorientiert", communicationStyles)}
+        ${radioGroup("communicationStyle", profile.communicationStyle || "Lösungsorientiert", communicationStyles, "Wie soll Helmut formulieren?")}
         ${profileArea("mainQuestion", "Leitfrage", profile.mainQuestion)}
         ${profileArea("currentCampaigns", "Aktuelle Kampagnen", profile.currentCampaigns)}
         ${profileArea("publicPositions", "Öffentliche Positionen", profile.publicPositions)}
@@ -6331,7 +6409,7 @@ function renderProfileSettingsView() {
         <div class="profile-subsection">
           <span>Büro-Übergabe</span>
           <p>Welcher Weg soll beim Button „Ans Büro geben” zuerst angeboten werden?</p>
-          ${radioValueGroup("officeHandoffMethod", preferredOfficeHandoffMethod(), officeHandoffMethods)}
+          ${radioValueGroup("officeHandoffMethod", preferredOfficeHandoffMethod(), officeHandoffMethods, "Welcher Weg soll beim Button „Ans Büro geben“ zuerst angeboten werden?")}
         </div>
         ${profileArea("upcomingAppointments", "Nächste Termine", profile.upcomingAppointments)}
         ${profileArea("noGoTopics", "No-Go-Themen", profile.noGoTopics)}
@@ -6412,10 +6490,10 @@ function profileArea(name, label, value) {
   `;
 }
 
-function checkboxGroup(name, selectedValues, options) {
+function checkboxGroup(name, selectedValues, options, groupLabel = name) {
   const selected = new Set((selectedValues || []).filter(Boolean));
   return `
-    <div class="choice-grid">
+    <div class="choice-grid" role="group" aria-label="${escapeAttribute(groupLabel)}">
       ${options.map((option) => `
         <label class="choice-pill">
           <input type="checkbox" name="${escapeAttribute(name)}" value="${escapeAttribute(option)}" ${selected.has(option) ? "checked" : ""} />
@@ -6426,9 +6504,9 @@ function checkboxGroup(name, selectedValues, options) {
   `;
 }
 
-function radioGroup(name, value, options) {
+function radioGroup(name, value, options, groupLabel = name) {
   return `
-    <div class="choice-grid compact">
+    <div class="choice-grid compact" role="radiogroup" aria-label="${escapeAttribute(groupLabel)}">
       ${options.map((option) => `
         <label class="choice-pill">
           <input type="radio" name="${escapeAttribute(name)}" value="${escapeAttribute(option)}" ${option === value ? "checked" : ""} />
@@ -6439,9 +6517,9 @@ function radioGroup(name, value, options) {
   `;
 }
 
-function radioValueGroup(name, value, options) {
+function radioValueGroup(name, value, options, groupLabel = name) {
   return `
-    <div class="choice-grid compact">
+    <div class="choice-grid compact" role="radiogroup" aria-label="${escapeAttribute(groupLabel)}">
       ${options.map(([optionValue, optionLabel]) => `
         <label class="choice-pill">
           <input type="radio" name="${escapeAttribute(name)}" value="${escapeAttribute(optionValue)}" ${optionValue === value ? "checked" : ""} />
@@ -6961,7 +7039,6 @@ function bindActions() {
       window.scrollTo({ top: 0, behavior: "smooth" });
     };
     card.addEventListener("click", open);
-    card.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } });
   });
 
   app.querySelectorAll("[data-office-back]").forEach((btn) => {
@@ -6995,6 +7072,10 @@ function bindActions() {
       navOpen = false;
       if (shouldOpen) markUpdatesSeen();
       render();
+      // Fokus nach dem Oeffnen ins Panel legen (Screenreader merkt sofort den
+      // neuen Kontext), nach dem Schliessen zurueck auf den Ausloeser-Button.
+      if (shouldOpen) focusSelector("[data-close-updates]");
+      else focusSelector("[data-updates]");
     });
   });
 
@@ -7002,6 +7083,7 @@ function bindActions() {
     button.addEventListener("click", () => {
       updatesOpen = false;
       render();
+      focusSelector("[data-updates]");
     });
   });
 
@@ -7010,6 +7092,7 @@ function bindActions() {
       if (event.target === layer) {
         updatesOpen = false;
         render();
+        focusSelector("[data-updates]");
       }
     });
   });
@@ -7021,8 +7104,10 @@ function bindActions() {
 
   app.querySelectorAll("[data-close-handoff]").forEach((button) => {
     button.addEventListener("click", () => {
+      const openerId = selectedTaskHandoffId;
       selectedTaskHandoffId = "";
       render();
+      focusSelector(openerId ? `[data-task-copy="${CSS.escape(openerId)}"]` : null);
     });
   });
 
@@ -7135,6 +7220,7 @@ function bindActions() {
       if (!task) return;
       selectedTaskHandoffId = task.id;
       render();
+      focusSelector("[data-close-handoff]");
     });
   });
 
@@ -7144,8 +7230,10 @@ function bindActions() {
       const decision = decisions.find((entry) => entry.signalId === task?.sourceSignalId || entry.taskTemplate?.id === task?.id);
       logDecisionInteraction("task_mail_opened", decision, { taskId: task?.id });
       window.setTimeout(() => {
+        const openerId = selectedTaskHandoffId;
         selectedTaskHandoffId = "";
         render();
+        focusSelector(openerId ? `[data-task-copy="${CSS.escape(openerId)}"]` : null);
       }, 250);
     });
   });
@@ -7158,8 +7246,10 @@ function bindActions() {
       await shareTaskViaMethod(task, method);
       const decision = decisions.find((entry) => entry.signalId === task.sourceSignalId || entry.taskTemplate?.id === task.id);
       logDecisionInteraction(`task_${method}_shared`, decision, { taskId: task.id });
+      const openerId = selectedTaskHandoffId;
       selectedTaskHandoffId = "";
       render();
+      focusSelector(openerId ? `[data-task-copy="${CSS.escape(openerId)}"]` : null);
     });
   });
 
@@ -7170,8 +7260,10 @@ function bindActions() {
       copyText(taskShareText(task), "Auftrag bereit");
       const decision = decisions.find((entry) => entry.signalId === task.sourceSignalId || entry.taskTemplate?.id === task.id);
       logDecisionInteraction("task_copied", decision, { taskId: task.id });
+      const openerId = selectedTaskHandoffId;
       selectedTaskHandoffId = "";
       render();
+      focusSelector(openerId ? `[data-task-copy="${CSS.escape(openerId)}"]` : null);
     });
   });
 
@@ -7547,13 +7639,29 @@ function helmutFlowCooldownKey() {
   return `${helmutFlowCooldownPrefix}:${activePoliticianId}:${previewMode ? "preview" : "live"}`;
 }
 
+function prefersReducedMotion() {
+  try { return Boolean(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); }
+  catch { return false; }
+}
+
 function startHelmutTyping() {
   const assessment = buildHelmutAssessment();
   const fullText = assessment.typingText || assessmentTypingText(assessment);
+  if (helmutTypingTimer) window.clearInterval(helmutTypingTimer);
+  if (prefersReducedMotion()) {
+    // Reduzierte Bewegung gewuenscht: sofort das Endergebnis zeigen statt der
+    // buchstabenweisen Schreibmaschinen-Animation (34ms-Intervall, mehrere
+    // Sekunden Re-Renders).
+    helmutTypingActive = false;
+    helmutTypedText = fullText;
+    helmutTypingFullText = fullText;
+    helmutTypingTimer = null;
+    render();
+    return;
+  }
   helmutTypingActive = true;
   helmutTypedText = "";
   helmutTypingFullText = fullText;
-  if (helmutTypingTimer) window.clearInterval(helmutTypingTimer);
   render();
   helmutTypingTimer = window.setInterval(() => {
     if (currentView !== "helmut") {
@@ -8598,6 +8706,45 @@ function registerServiceWorker() {
   else window.addEventListener("load", doRegister, { once: true });
 }
 registerServiceWorker();
+
+// --- Escape schliesst das jeweils oberste offene Overlay ---------------------
+// Reihenfolge = Prioritaet: Updates-Panel und Task-Uebergabe liegen ueber der
+// Seitenleiste, darum zuerst pruefen. Fokus geht danach gezielt auf den
+// jeweiligen Ausloeser zurueck (siehe focusSelector-Aufrufe in bindActions()).
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") return;
+  if (updatesOpen) {
+    updatesOpen = false;
+    render();
+    focusSelector("[data-updates]");
+    return;
+  }
+  if (selectedTaskHandoffId) {
+    const openerId = selectedTaskHandoffId;
+    selectedTaskHandoffId = "";
+    render();
+    focusSelector(openerId ? `[data-task-copy="${CSS.escape(openerId)}"]` : null);
+    return;
+  }
+  if (navOpen) {
+    navOpen = false;
+    render();
+    focusSelector("[data-menu]");
+  }
+});
+
+// --- Enter/Leertaste aktivieren generisch jedes role="button"-Element -------
+// Native <button>-Elemente bekommen das automatisch vom Browser; div/a-basierte
+// Custom-Buttons (z. B. Datenschutz-Zeilen) sonst nicht. Ein Delegations-
+// Listener statt vieler Einzel-Handler, damit kein Fall vergessen wird.
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") return;
+  const target = event.target.closest?.('[role="button"]');
+  if (!target || !app.contains(target)) return;
+  if (target.getAttribute("aria-disabled") === "true" || target.disabled) return;
+  event.preventDefault();
+  target.click();
+});
 
 // --- Eigener In-App "Installieren"-Button ------------------------------------
 // Chrome/Brave feuern beforeinstallprompt, wenn die PWA installierbar ist. Wir

@@ -7,7 +7,7 @@
   --hairline: rgba(226, 232, 240, .08);
   --text: #f5f1e8;
   --muted: rgba(245, 241, 232, .68);
-  --muted-2: rgba(245, 241, 232, .46);
+  --muted-2: rgba(245, 241, 232, .5);
   --danger: #ff5967;
   --watch: #d6a040;
   --chance: #39d18f;
@@ -52,6 +52,21 @@ body {
 }
 button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
+
+/* Nur fuer Screenreader: visuell unsichtbar, aber im Accessibility-Tree und in
+   der Fokusreihenfolge vorhanden. Fuer strukturelle Ueberschriften, die ein
+   sinnvolles Heading-Level herstellen, ohne zusaetzlichen sichtbaren Text. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 
 h1,
 h2,
@@ -278,14 +293,17 @@ small {
     radial-gradient(circle at 78% 8%, rgba(111, 143, 247, .12), transparent 28%),
     linear-gradient(180deg, #090d18 0%, #070b14 100%);
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
   transform: none;
-  transition: opacity 460ms ease;
+  transition: opacity 460ms ease, visibility 0s linear 460ms;
 }
 
 .updates-layer.open {
   opacity: 1;
+  visibility: visible;
   pointer-events: auto;
+  transition: opacity 460ms ease, visibility 0s linear 0s;
 }
 
 .updates-panel {
@@ -2408,6 +2426,7 @@ small {
 .stg-section { margin-bottom: 36px; }
 .stg-label {
   display: block;
+  margin: 0;
   padding: 0 4px 8px;
   color: var(--muted);
   font-size: 11px;
@@ -3665,6 +3684,11 @@ small {
   grid-column: 1 / -1;
 }
 
+.profile-field:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
 .profile-field span {
   color: var(--muted-2);
   font-size: 12px;
@@ -3735,6 +3759,11 @@ small {
   cursor: pointer;
 }
 
+.choice-pill:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
 .choice-pill input {
   position: absolute;
   opacity: 0;
@@ -3770,6 +3799,11 @@ small {
   background: var(--paper);
   border: 1px solid var(--line);
   border-radius: 18px;
+}
+
+.priority-row:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
 .priority-row span {
@@ -4420,15 +4454,18 @@ small {
       linear-gradient(180deg, #080d19 0%, #050812 100%);
     border-right: 0;
     opacity: 0;
+    visibility: hidden;
     pointer-events: none;
     transform: translateY(-14px);
-    transition: opacity 320ms ease, transform 320ms ease;
+    transition: opacity 320ms ease, transform 320ms ease, visibility 0s linear 320ms;
   }
 
   .sidebar.open {
     opacity: 1;
+    visibility: visible;
     pointer-events: auto;
     transform: translateY(0);
+    transition: opacity 320ms ease, transform 320ms ease, visibility 0s linear 0s;
   }
 
   .content-shell {
@@ -5742,7 +5779,7 @@ small {
   --command-line: rgba(236, 241, 255, .105);
   --command-text: #fbf7ef;
   --command-muted: rgba(251, 247, 239, .66);
-  --command-faint: rgba(251, 247, 239, .42);
+  --command-faint: rgba(251, 247, 239, .5);
   --command-purple: #8c5cff;
   --command-green: #19e59a;
   --command-red: #ff5b68;
@@ -7141,6 +7178,7 @@ body {
   box-shadow: var(--soft-shadow);
 }
 
+.admin-card h2,
 .admin-card h3 {
   margin: 0 0 14px;
   font-size: 14px;
@@ -8457,6 +8495,7 @@ body {
   color: var(--muted-2);
 }
 
+.onboarding-body h1,
 .onboarding-body h2 {
   margin: 0 0 10px;
   font-size: 22px;
@@ -8537,7 +8576,7 @@ body {
   --hairline: rgba(15, 23, 42, .08);
   --text: #0f1729;
   --muted: rgba(15, 23, 42, .64);
-  --muted-2: rgba(15, 23, 42, .46);
+  --muted-2: rgba(15, 23, 42, .6);
   --danger: #d12b39;
   --watch: #b07414;
   --chance: #1f9d63;
@@ -8555,8 +8594,8 @@ body {
   --command-line: rgba(15, 23, 42, .10);
   --command-text: #0f1729;
   --command-muted: rgba(15, 23, 42, .64);
-  --command-faint: rgba(15, 23, 42, .46);
-  --command-purple: #6d4cff;
+  --command-faint: rgba(15, 23, 42, .62);
+  --command-purple: #6949f6;
   --command-green: #0f9d63;
   --command-red: #d12b39;
   --command-shadow: 0 24px 70px rgba(15, 23, 42, .14);
@@ -8748,6 +8787,13 @@ body {
   border-color: var(--line) !important;
   color: var(--text) !important;
   box-shadow: var(--soft-shadow) !important;
+}
+
+:root[data-theme="light"] .profile-field:focus-within,
+:root[data-theme="light"] .choice-pill:focus-within,
+:root[data-theme="light"] .priority-row:focus-within {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px var(--accent-soft) !important;
 }
 
 :root[data-theme="light"] .source-row {
