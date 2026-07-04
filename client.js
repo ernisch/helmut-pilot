@@ -485,7 +485,7 @@ function renderOnboarding() {
 
 function captureOnboardingStep() {
   const root = document.querySelector("#onboardingForm");
-  if (!root) return;
+  if (!root) { persistOnboardingDraft(); return; }
   root.querySelectorAll("input[type=text], textarea, select").forEach((el) => {
     if (el.name && el.name !== "focusTopicsFree") onboardingDraft[el.name] = el.value;
   });
@@ -498,48 +498,82 @@ function captureOnboardingStep() {
   if (root.querySelector("input[name='officeFormat']")) {
     onboardingDraft.officeFormats = Array.from(root.querySelectorAll("input[name='officeFormat']:checked")).map((c) => c.value);
   }
+  persistOnboardingDraft();
+}
+
+// Onboarding lief bisher rein im Speicher — ein Reload mitten im Einstieg (7 Schritte) hat den
+// kompletten Fortschritt kommentarlos verworfen. sessionStorage übersteht Reload/Navigation,
+// wird aber beim Schließen des Tabs geleert (kein verwaistes Draft nach echtem Abschluss/Abbruch).
+function onboardingDraftStorageKey() {
+  return `helmut:onboardingDraft:${activePoliticianId}`;
+}
+function persistOnboardingDraft() {
+  try {
+    sessionStorage.setItem(onboardingDraftStorageKey(), JSON.stringify({ step: onboardingStep, draft: onboardingDraft }));
+  } catch { /* sessionStorage kann in privaten/eingeschränkten Modi fehlen */ }
+}
+function restoreOnboardingDraft() {
+  try {
+    const raw = sessionStorage.getItem(onboardingDraftStorageKey());
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || !parsed.draft) return null;
+    return parsed;
+  } catch { return null; }
+}
+function clearOnboardingDraft() {
+  try { sessionStorage.removeItem(onboardingDraftStorageKey()); } catch { /* egal */ }
 }
 
 async function finishOnboarding(skip) {
-  onboardingActive = false;
+  // Capture whatever the current step already holds (including on "Später") so skipping the
+  // rest of the flow never throws away answers already given — only Fertig/Später decide
+  // whether the remaining steps are required, not whether progress so far is kept.
+  captureOnboardingStep();
   const now = new Date().toISOString();
-  const payload = skip
-    ? { id: activePoliticianId, onboardedAt: now }
-    : {
-        id: activePoliticianId,
-        onboardedAt: now,
-        party: onboardingDraft.party,
-        faction: onboardingDraft.faction,
-        committee: onboardingDraft.committee,
-        committees: onboardingDraft.committee ? [onboardingDraft.committee] : undefined,
-        focusTopics: Array.isArray(onboardingDraft.focusTopics) ? onboardingDraft.focusTopics : undefined,
-        constituency: onboardingDraft.constituency,
-        state: onboardingDraft.state,
-        communicationStyle: onboardingDraft.communicationStyle,
-        riskTopics: String(onboardingDraft.riskTopics || "").split(",").map((s) => s.trim()).filter(Boolean),
-        opportunityTopics: String(onboardingDraft.opportunityTopics || "").split(",").map((s) => s.trim()).filter(Boolean),
-        officeFormats: Array.isArray(onboardingDraft.officeFormats) ? onboardingDraft.officeFormats : ["presse", "linkedin"]
-      };
-  render();
+  const payload = {
+    id: activePoliticianId,
+    onboardedAt: now,
+    party: onboardingDraft.party,
+    faction: onboardingDraft.faction,
+    committee: onboardingDraft.committee,
+    committees: onboardingDraft.committee ? [onboardingDraft.committee] : undefined,
+    focusTopics: Array.isArray(onboardingDraft.focusTopics) ? onboardingDraft.focusTopics : undefined,
+    constituency: onboardingDraft.constituency,
+    state: onboardingDraft.state,
+    communicationStyle: onboardingDraft.communicationStyle,
+    riskTopics: String(onboardingDraft.riskTopics || "").split(",").map((s) => s.trim()).filter(Boolean),
+    opportunityTopics: String(onboardingDraft.opportunityTopics || "").split(",").map((s) => s.trim()).filter(Boolean),
+    officeFormats: Array.isArray(onboardingDraft.officeFormats) ? onboardingDraft.officeFormats : ["presse", "linkedin"]
+  };
+  const buttons = app.querySelectorAll("[data-onboard-finish], [data-onboard-skip]");
+  buttons.forEach((button) => { button.disabled = true; });
   try {
     const res = await apiSend("PATCH", `/api/profile/current?${apiScopeQuery()}`, payload);
-    if (res.ok && res.json) profile = res.json;
+    if (!res.ok) throw new Error(`Profil speichern fehlgeschlagen (${res.status})`);
+    if (res.json) profile = res.json;
+    // Only dismiss the guided setup once the save is actually confirmed — otherwise a network
+    // hiccup on the very first save silently loses everything the user just entered.
+    onboardingActive = false;
+    clearOnboardingDraft();
     showToast(skip ? "Du kannst dein Profil jederzeit in den Einstellungen ergänzen." : "Profil eingerichtet — Helmut ist startklar.");
   } catch (error) {
     console.warn("Onboarding speichern fehlgeschlagen", error);
+    showToast("Speichern fehlgeschlagen. Bitte erneut versuchen.");
+    buttons.forEach((button) => { button.disabled = false; });
   }
   render();
 }
 
 function bindOnboarding() {
   const next = app.querySelector("[data-onboard-next]");
-  if (next) next.addEventListener("click", () => { captureOnboardingStep(); onboardingStep = Math.min(ONBOARDING_STEPS - 1, onboardingStep + 1); render(); });
+  if (next) next.addEventListener("click", () => { captureOnboardingStep(); onboardingStep = Math.min(ONBOARDING_STEPS - 1, onboardingStep + 1); persistOnboardingDraft(); render(); });
   const back = app.querySelector("[data-onboard-back]");
-  if (back) back.addEventListener("click", () => { captureOnboardingStep(); onboardingStep = Math.max(0, onboardingStep - 1); render(); });
+  if (back) back.addEventListener("click", () => { captureOnboardingStep(); onboardingStep = Math.max(0, onboardingStep - 1); persistOnboardingDraft(); render(); });
   const skip = app.querySelector("[data-onboard-skip]");
   if (skip) skip.addEventListener("click", () => finishOnboarding(true));
   const finish = app.querySelector("[data-onboard-finish]");
-  if (finish) finish.addEventListener("click", () => { captureOnboardingStep(); finishOnboarding(false); });
+  if (finish) finish.addEventListener("click", () => finishOnboarding(false));
 }
 
 // Zeigt den geführten Einstieg, wenn ein Abgeordneter oder zugewiesener Referent
@@ -549,6 +583,12 @@ function maybeStartOnboarding() {
   if (!["abgeordneter", "referent"].includes(userRole())) return;
   if (!profile || profile.onboardedAt) return;
   onboardingActive = true;
+  const saved = restoreOnboardingDraft();
+  if (saved) {
+    onboardingStep = Number.isInteger(saved.step) ? Math.min(Math.max(saved.step, 0), ONBOARDING_STEPS - 1) : 0;
+    onboardingDraft = saved.draft;
+    return;
+  }
   onboardingStep = 0;
   onboardingDraft = {
     party: profile.party || "",
@@ -1765,19 +1805,21 @@ function polishReferentText(value) {
   if (analyzePrepare) {
     return `Du solltest ${analyzePrepare[1]} ${analyzePrepare[2]} analysieren und ${analyzePrepare[3]} vorbereiten${analyzePrepare[4] || ""}.`;
   }
-  const analyze = text.match(/^Du solltest das analysieren\s+(das|den|die)\s+(.+?)\.?$/i);
+  const analyze = text.match(/^Du solltest das analysieren\s+(das|den|die)\s+(.+)$/i);
   if (analyze) {
     return `Du solltest ${analyze[1]} ${analyze[2]} analysieren.`;
   }
-  const check = text.match(/^Du solltest das prüfen\s+(das|den|die)\s+(.+?)\.?$/i);
+  const check = text.match(/^Du solltest das prüfen\s+(das|den|die)\s+(.+)$/i);
   if (check) {
     return `Du solltest ${check[1]} ${check[2]} prüfen.`;
   }
-  const prepare = text.match(/^Du solltest bereite\s+(.+?)\s+vor\.?$/i);
+  // Non-greedy up to the literal separable-prefix "vor", so trailing elaboration after a colon
+  // (e.g. "...vor: Details") is preserved instead of being swallowed by an end-of-string anchor.
+  const prepare = text.match(/^Du solltest bereite\s+(.+?)\s+vor\b(.*)$/i);
   if (prepare) {
-    return `Du solltest ${prepare[1]} vorbereiten.`;
+    return `Du solltest ${prepare[1]} vorbereiten${prepare[2]}`;
   }
-  const read = text.match(/^Du solltest lies\s+(.+?)\.?$/i);
+  const read = text.match(/^Du solltest lies\s+(.+)$/i);
   if (read) {
     return `Du solltest ${read[1]} lesen.`;
   }
@@ -6804,7 +6846,8 @@ function bindActions() {
       const formats = checked.length ? checked : ["presse"];
       try {
         const res = await apiSend("PATCH", `/api/profile/current?${apiScopeQuery()}`, { id: activePoliticianId, officeFormats: formats });
-        if (res.ok && res.json) profile = res.json;
+        if (!res.ok) throw new Error(`Speichern fehlgeschlagen (${res.status})`);
+        if (res.json) profile = res.json;
         render();
         showToast("Büro-Formate gespeichert.");
       } catch (e) {

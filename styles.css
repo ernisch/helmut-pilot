@@ -10078,6 +10078,15 @@ details[open].meeting-detail summary::before { content: '▾ '; }
   from { opacity: 0; transform: translate(-50%, 14px); }
   to { opacity: 1; transform: translate(-50%, 0); }
 }
+/* Auf schmalen Viewports liegt die untere Nav-Leiste (.mobile-dock) fest bei bottom:0 mit
+   ~56-58px Hoehe. Das Install-Banner sass mit bottom:16px direkt darueber und blockierte per
+   hoeherem z-index alle Taps auf Lage/Radar/Helmut/Büro, solange es sichtbar war. Banner auf
+   mobilen Breiten daher oberhalb der Dock-Leiste einhaengen statt darauf. */
+@media (max-width: 920px) {
+  .install-banner {
+    bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  }
+}
 .install-banner__mark {
   flex: 0 0 auto;
   width: 40px;

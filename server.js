@@ -94,7 +94,11 @@ async function handleRequest(request, response) {
   }
 
   if (url.pathname === "/api/release/public") {
-    return handleAsync(response, async () => publicReleasePayload(await computeReleaseCheck(politicianIdFromUrl(url))));
+    // Bewusst oeffentlich (Pitch-Status ohne Login) — aber NIE die vom Aufrufer per
+    // Query-Param gewaehlte politicianId verwenden: das erlaubte bislang jedem, ohne jede
+    // Authentifizierung den Betriebsstatus eines BELIEBIGEN Mandats abzufragen (Slug erraten
+    // genuegte). Zeigt daher immer nur das eine, dafuer vorgesehene Pilot-Mandat.
+    return handleAsync(response, async () => publicReleasePayload(await computeReleaseCheck(cemInceProfile.id)));
   }
 
   if (url.pathname === "/privacy" || url.pathname === "/datenschutz") {
@@ -497,10 +501,14 @@ async function handleRequest(request, response) {
     return handleJson(request, response, async (body) => {
       if (String(body.confirm || "").trim() !== "DELETE") {
         response.writeHead(400, jsonHeaders());
-        response.end(JSON.stringify({ error: "Deletion requires confirm: DELETE" }, null, 2));
+        response.end(JSON.stringify({ error: "Löschung erfordert confirm: DELETE" }, null, 2));
         return null;
       }
-      return deleteProfileData(politicianId);
+      const result = await deleteProfileData(politicianId);
+      // dailyInputs leben im geteilten Auth-Store (accounts.js), nicht im Politiker-Blob, den
+      // deleteProfileData leert — ohne diesen Aufruf ueberlebten Termine/Themen die Loeschung.
+      const removedDailyInputs = await accounts.removeAllDailyInputsForPolitician(politicianId).catch(() => 0);
+      return { ...result, removedDailyInputs };
     });
   }
 
