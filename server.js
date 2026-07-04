@@ -260,7 +260,9 @@ async function handleRequest(request, response) {
       const briefing = await latestBriefingPayload({ politicianId, profile, url, previewMode, compact: true });
       // Lage = das politische Morgen-Briefing des Referenten (keine Empfehlung/Bewertung).
       // Additiv: hängt am bestehenden Aggregat, damit die App es ohne Extra-Call rendert.
-      try { briefing.lageBriefing = await buildLageBriefing(profile, { politicianId }); }
+      // Hart mit Timeout begrenzt: ein haengender Call darf den App-Start NIE blockieren
+      // (try/catch allein faengt kein Haengenbleiben ab, nur geworfene Fehler).
+      try { briefing.lageBriefing = await withTimeout(buildLageBriefing(profile, { politicianId }), 12000, "lage-briefing"); }
       catch (error) { console.error("Lage-Briefing fehlgeschlagen", error && error.message); }
       return {
         profile,
@@ -1528,6 +1530,18 @@ if (require.main === module) {
 function sendJson(response, payload) {
   response.writeHead(200, jsonHeaders());
   response.end(JSON.stringify(payload, null, 2));
+}
+
+// Begrenzt eine Promise hart auf maxMs, damit ein haengender Aufruf (Netz, DB) nie den
+// gesamten Request blockiert. Die urspruengliche Promise laeuft im Hintergrund weiter
+// (Node kennt kein echtes Cancel), aber der Aufrufer bekommt garantiert eine Antwort.
+function withTimeout(promise, maxMs, label = "operation") {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(`Timeout nach ${maxMs}ms: ${label}`)), maxMs);
+    })
+  ]);
 }
 
 function securityHeaders(extra = {}) {
