@@ -31,22 +31,65 @@ jobs:
             exit 1
           fi
 
-          echo "Rufe Pipeline auf: ${BASE_URL}/api/cron/pipeline"
-          HTTP_CODE=$(curl -sS --max-time 120 \
+          # Kosten-/Last-Vorpruefung: Vercels eigener Cron (05:00 UTC) lief 30 Min
+          # vorher. War der bereits erfolgreich, ist ein zweiter voller Crawl+Briefing-
+          # Lauf hier reine Verdopplung (Kosten, Google-News-Last, KI-Calls). Nur wenn
+          # das Briefing NICHT frisch ist, greift der Backstop wie bisher. Jeder Fehler
+          # in der Vorpruefung (Timeout, unerwartete Antwort) faellt sicher auf den
+          # bisherigen, unbedingten Pipeline-Lauf zurueck — niemals stillschweigend
+          # uebersprungen.
+          echo "Vorpruefung: ist bereits ein frisches Briefing vorhanden?"
+          PRECHECK_CODE=$(curl -sS --max-time 20 \
             -H "Authorization: Bearer ${CRON_SECRET}" \
-            -o response.json -w "%{http_code}" \
-            "${BASE_URL}/api/cron/pipeline" || echo "000")
+            -o precheck.json -w "%{http_code}" \
+            "${BASE_URL}/api/briefing/latest" || echo "000")
 
-          echo "HTTP-Status: ${HTTP_CODE}"
-          echo "--- Antwort (gekürzt) ---"
-          head -c 1200 response.json || true
-          echo ""
-
-          if [ "${HTTP_CODE}" != "200" ]; then
-            echo "::error::Pipeline-Aufruf fehlgeschlagen (HTTP ${HTTP_CODE}). Briefing wurde NICHT erneuert."
-            exit 1
+          SKIP_PIPELINE="false"
+          if [ "${PRECHECK_CODE}" = "200" ]; then
+            PRECHECK_AGE_MIN=$(node -e '
+              let data;
+              try { data = JSON.parse(require("fs").readFileSync("precheck.json", "utf8")); }
+              catch (e) { process.exit(1); }
+              const ts = data.generatedAt || data.date || "";
+              const ageMs = Date.now() - new Date(ts).getTime();
+              if (!ts || Number.isNaN(ageMs)) process.exit(1);
+              process.stdout.write(String(Math.round(ageMs / 60000)));
+            ' 2>/dev/null) || PRECHECK_AGE_MIN=""
+            if [ -n "${PRECHECK_AGE_MIN}" ] && [ "${PRECHECK_AGE_MIN}" -ge 0 ] 2>/dev/null && [ "${PRECHECK_AGE_MIN}" -lt 120 ] 2>/dev/null; then
+              SKIP_PIPELINE="true"
+              echo "::notice::Briefing ist bereits frisch (${PRECHECK_AGE_MIN} min, Vercel-Cron war erfolgreich) — ueberspringe redundanten Pipeline-Lauf."
+            fi
           fi
 
+          if [ "${SKIP_PIPELINE}" = "true" ]; then
+            # /api/briefing/latest liefert das Briefing direkt (kein {briefing:...}-
+            # Wrapper wie /api/cron/pipeline) - fuer die gemeinsame Frische-Pruefung
+            # unten auf dieselbe Form bringen.
+            node -e '
+              const fs = require("fs");
+              const data = JSON.parse(fs.readFileSync("precheck.json", "utf8"));
+              fs.writeFileSync("response.json", JSON.stringify({ briefing: data }));
+            '
+          else
+            echo "Rufe Pipeline auf: ${BASE_URL}/api/cron/pipeline"
+            HTTP_CODE=$(curl -sS --max-time 120 \
+              -H "Authorization: Bearer ${CRON_SECRET}" \
+              -o response.json -w "%{http_code}" \
+              "${BASE_URL}/api/cron/pipeline" || echo "000")
+
+            echo "HTTP-Status: ${HTTP_CODE}"
+            echo "--- Antwort (gekürzt) ---"
+            head -c 1200 response.json || true
+            echo ""
+
+            if [ "${HTTP_CODE}" != "200" ]; then
+              echo "::error::Pipeline-Aufruf fehlgeschlagen (HTTP ${HTTP_CODE}). Briefing wurde NICHT erneuert."
+              exit 1
+            fi
+          fi
+
+          # Ab hier gemeinsam fuer beide Zweige (Skip ODER echter Pipeline-Lauf):
+          # dieselbe Frische-Pruefung wie bisher, response.json existiert in jedem Fall.
           GENERATED_AT=$(node -e '
             const fs = require("fs");
             let data;

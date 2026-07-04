@@ -153,9 +153,11 @@ async function handleRequest(request, response) {
     });
   }
 
-  // TEMP: run-understanding ohne Secret — zum manuellen Testen ob KI-Vorgaenge entstehen.
-  // TODO: nach erstem erfolgreichen Lauf entfernen.
-  if (url.pathname === "/api/debug/run-understanding" && request.method === "GET") {
+  // Perf/Kosten-Fix: dieser Endpunkt loest echte, unbegrenzte KI-Calls aus
+  // (runPendingUnderstandingShadow) und lief zuvor komplett ohne Secret — von
+  // jedem im Internet beliebig oft aufrufbar (Kosten-DoS). Jetzt hinter demselben
+  // Secret-Gate wie alle anderen /api/debug/*-Routen (isDebugSecretOk).
+  if (url.pathname === "/api/debug/run-understanding" && request.method === "GET" && isDebugSecretOk(url)) {
     return handleAsync(response, async () => {
       const rawDocs = await listRecentRawDocuments(500);
       const result = await runPendingUnderstandingShadow(rawDocs);
@@ -257,18 +259,30 @@ async function handleRequest(request, response) {
     if (accountAuth && authUser) accounts.recordUserActivity(authUser.id).catch(() => {});
     return handleAsync(response, async () => {
       const profile = await activeProfile(politicianId);
-      const briefing = await latestBriefingPayload({ politicianId, profile, url, previewMode, compact: true });
+      // Perf-Fix: briefing/lageBriefing/tasks/notes haengen nur von `profile` ab,
+      // nicht voneinander - vorher liefen sie seriell (jede Netzwerk-/Storage-
+      // Latenz addierte sich). Jetzt parallel, gleiches Ergebnis, weniger Wartezeit
+      // pro App-Start.
       // Lage = das politische Morgen-Briefing des Referenten (keine Empfehlung/Bewertung).
       // Additiv: hängt am bestehenden Aggregat, damit die App es ohne Extra-Call rendert.
       // Hart mit Timeout begrenzt: ein haengender Call darf den App-Start NIE blockieren
       // (try/catch allein faengt kein Haengenbleiben ab, nur geworfene Fehler).
-      try { briefing.lageBriefing = await withTimeout(buildLageBriefing(profile, { politicianId }), 12000, "lage-briefing"); }
-      catch (error) { console.error("Lage-Briefing fehlgeschlagen", error && error.message); }
+      const [briefing, lageBriefing, tasks, notes] = await Promise.all([
+        latestBriefingPayload({ politicianId, profile, url, previewMode, compact: true }),
+        withTimeout(buildLageBriefing(profile, { politicianId }), 12000, "lage-briefing")
+          .catch((error) => {
+            console.error("Lage-Briefing fehlgeschlagen", error && error.message);
+            return null;
+          }),
+        getTasks(profile.id),
+        getUserNotes(profile.id)
+      ]);
+      if (lageBriefing) briefing.lageBriefing = lageBriefing;
       return {
         profile,
         briefing,
-        tasks: await getTasks(profile.id),
-        notes: await getUserNotes(profile.id),
+        tasks,
+        notes,
         aiStatus: {
           enabled: isAiEnabled(),
           model: activeModelName()
