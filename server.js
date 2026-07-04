@@ -555,9 +555,16 @@ async function handleRequest(request, response) {
         } : null,
         cron: {
           timezone: "Europe/Berlin",
-          crawlTimes: ["06:00", "18:00", "22:00"],
-          briefingTimes: ["07:00"],
-          lageCheckTimes: ["12:00"],
+          // Aus dem echten vercel.json-Plan zur Aufrufzeit berechnet (siehe
+          // VERCEL_CRON_SCHEDULE_UTC) - dadurch automatisch korrekt in MESZ/MEZ, statt
+          // fest verdrahteter Zeiten, die zur Hälfte des Jahres eine Stunde daneben lagen.
+          crawlTimes: cronTimesForRoute("crawl"),
+          briefingTimes: cronTimesForRoute("morning-briefing"),
+          lageCheckTimes: cronTimesForRoute("lage-check"),
+          lageBriefingTimes: cronTimesForRoute("lage-briefing"),
+          pipelineTimes: cronTimesForRoute("pipeline"),
+          understandingTimes: cronTimesForRoute("understanding"),
+          healthReportTimes: cronTimesForRoute("health-report"),
           note: "Vercel Cron ruft die Routen automatisch auf. Auf Hobby laufen tägliche Cron-Jobs; häufigere Lage-Checks brauchen Pro oder externen Cron."
         },
         protection: {
@@ -2323,6 +2330,38 @@ function clientKey(request) {
 function sendTooManyRequests(response, message) {
   response.writeHead(429, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
   response.end(JSON.stringify({ error: message }, null, 2));
+}
+
+// Kanonischer Cron-Plan, 1:1 aus vercel.json "crons" uebernommen (UTC, wie Vercel sie ausfuehrt).
+// /api/ops/status zeigte bisher fest verdrahtete Berlin-Zeiten ("06:00/18:00/22:00" etc.), die
+// weder zu diesem Plan passten (u.a. wurde die Pipeline-Zeit faelschlich als dritte Crawl-Zeit
+// gefuehrt) noch die Sommerzeit beruecksichtigten - von Ende Oktober bis Ende Maerz waren daher
+// ALLE angezeigten Zeiten eine Stunde falsch. Jetzt aus dem echten Plan zur Aufrufzeit berechnet.
+const VERCEL_CRON_SCHEDULE_UTC = [
+  { route: "crawl", utcHour: 4, utcMinute: 0 },
+  { route: "morning-briefing", utcHour: 5, utcMinute: 0 },
+  { route: "understanding", utcHour: 5, utcMinute: 30 },
+  { route: "lage-briefing", utcHour: 5, utcMinute: 45 },
+  { route: "health-report", utcHour: 6, utcMinute: 0 },
+  { route: "lage-check", utcHour: 10, utcMinute: 0 },
+  { route: "pipeline", utcHour: 16, utcMinute: 0 },
+  { route: "crawl", utcHour: 20, utcMinute: 0 },
+  { route: "understanding", utcHour: 21, utcMinute: 30 }
+];
+
+// Wandelt eine UTC-Uhrzeit aus dem Cron-Plan in die HEUTIGE Berlin-Ortszeit um (Intl.DateTimeFormat
+// kennt die aktuelle DST-Regel fuer "heute" -> automatisch richtig in MESZ wie MEZ, ohne dass der
+// Aufrufer selbst zwischen Sommer-/Winterzeit unterscheiden muss).
+function berlinTimeFromUtcHourMinute(utcHour, utcMinute) {
+  const now = new Date();
+  const utcMoment = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), utcHour, utcMinute));
+  return new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit", hour12: false }).format(utcMoment);
+}
+
+function cronTimesForRoute(route) {
+  return VERCEL_CRON_SCHEDULE_UTC
+    .filter((entry) => entry.route === route)
+    .map((entry) => berlinTimeFromUtcHourMinute(entry.utcHour, entry.utcMinute));
 }
 
 function isBriefingStaleForBerlin(briefing) {
