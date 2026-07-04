@@ -101,75 +101,17 @@ async function handleRequest(request, response) {
     return sendPrivacyPage(response);
   }
 
-  // TEMPORAER: oeffentlicher Status-Check fuer Live-Gang-Diagnose (kein Secret).
-  // Gibt nur unkritische Bits zurueck (kein PII, keine Secrets).
-  // Entfernen nach erfolgreichem Live-Gang.
-  if (url.pathname === "/api/debug/public/status") {
-    return handleAsync(response, async () => {
-      const storage = getStorageStatus();
-      const adminExists = await accounts.adminExists().catch(() => null);
-      const testPolitician = await getProfile("test-mdb").catch(() => null);
-      let dbReachable = null;
-      if (storage.backend === "supabase" && storage.supabaseConfigured) {
-        try {
-          // Leichtgewichtiger Ping: HEAD auf /rest/v1/ ohne Daten
-          const baseUrl = String(process.env.SUPABASE_URL || "").replace(/\/+$/, "");
-          const key = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-          const resp = await fetch(`${baseUrl}/rest/v1/`, {
-            method: "HEAD",
-            headers: { apikey: key, Authorization: `Bearer ${key}` }
-          });
-          dbReachable = resp.ok || resp.status === 200 || resp.status === 404;
-        } catch {
-          dbReachable = false;
-        }
-      }
-      return {
-        timestamp: new Date().toISOString(),
-        flags: {
-          HELMUT_AUTH_MODE: process.env.HELMUT_AUTH_MODE || "(nicht gesetzt)",
-          HELMUT_ADMIN_EMAIL_set: Boolean(process.env.HELMUT_ADMIN_EMAIL),
-          HELMUT_ADMIN_PASSWORD_set: Boolean(process.env.HELMUT_ADMIN_PASSWORD),
-          HELMUT_STORAGE_BACKEND: process.env.HELMUT_STORAGE_BACKEND || "(nicht gesetzt)",
-          SUPABASE_URL_set: Boolean(process.env.SUPABASE_URL),
-          SUPABASE_SERVICE_ROLE_KEY_set: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
-          AZURE_OPENAI_KEY_set: Boolean(process.env.AZURE_OPENAI_KEY),
-          AZURE_OPENAI_DEPLOYMENT: process.env.AZURE_OPENAI_DEPLOYMENT || "(nicht gesetzt)",
-          HELMUT_V3_STORE: process.env.HELMUT_V3_STORE || "(nicht gesetzt)",
-          HELMUT_V3_MATCHING: process.env.HELMUT_V3_MATCHING || "(nicht gesetzt)",
-          HELMUT_V3_BRIEFING: process.env.HELMUT_V3_BRIEFING || "(nicht gesetzt)",
-          HELMUT_V3_LAZY_UNDERSTANDING: process.env.HELMUT_V3_LAZY_UNDERSTANDING || "(nicht gesetzt)",
-          HELMUT_V3_OFFICE: process.env.HELMUT_V3_OFFICE || "(nicht gesetzt)",
-          HELMUT_V3_RADAR: process.env.HELMUT_V3_RADAR || "(nicht gesetzt)",
-          HELMUT_UNDERSTANDING_LOCK: process.env.HELMUT_UNDERSTANDING_LOCK || "(nicht gesetzt)",
-          HELMUT_LLM_BUDGET_FAIL_CLOSED: process.env.HELMUT_LLM_BUDGET_FAIL_CLOSED || "(nicht gesetzt)",
-          DIP_API_KEY_set: Boolean(process.env.DIP_API_KEY),
-        },
-        storage: { backend: storage.backend, supabaseConfigured: storage.supabaseConfigured },
-        db: { reachable: dbReachable },
-        accounts: { adminExists },
-        testPolitician: { exists: Boolean(testPolitician), id: testPolitician?.id || null }
-      };
-    });
-  }
-
-  // TEMP: run-understanding ohne Secret — zum manuellen Testen ob KI-Vorgaenge entstehen.
-  // TODO: nach erstem erfolgreichen Lauf entfernen.
-  if (url.pathname === "/api/debug/run-understanding" && request.method === "GET") {
-    return handleAsync(response, async () => {
-      const rawDocs = await listRecentRawDocuments(500);
-      const result = await runPendingUnderstandingShadow(rawDocs);
-      const processed = (result && result.results && result.results.filter((r) => r && r.status === "saved").length) || 0;
-      const skippedNoCluster = (result && result.results && result.results.filter((r) => r && r.status === "skipped-no-cluster").length) || 0;
-      console.log(`[debug/run-understanding-open] rawDocs=${rawDocs.length} processed=${processed} skippedNoCluster=${skippedNoCluster}`);
-      return { debug: true, rawDocsLoaded: rawDocs.length, processed, skippedNoCluster, result };
-    });
-  }
-
-  // TEMPORAERE DEBUG-ENDPUNKTE (Live-Gang-Diagnose).
-  // Kein Auth, kein CSRF — nur durch HELMUT_ADMIN_SECRET + ?secret= gesichert.
-  // Entfernen nach erfolgreichem Live-Gang.
-  if (url.pathname.startsWith("/api/debug/") && isDebugSecretOk(url)) {
+  // Debug-/Diagnose-Endpunkte (/api/debug/*): FAIL CLOSED, kein oeffentlicher Zugriff.
+  // Erreichbar nur wenn ALLE Bedingungen gelten:
+  //   1) HELMUT_DEBUG_ENDPOINTS_ENABLED=true ist gesetzt (Default: AUS — auch in
+  //      Produktion, falls die Variable vergessen wird; die Umgebung muss es explizit erlauben).
+  //   2) HELMUT_ADMIN_SECRET ist gesetzt.
+  //   3) Der Request traegt genau dieses Secret: Header "Authorization: Bearer <secret>"
+  //      (ein "?secret="-Query-Param wird nur akzeptiert, wenn zusaetzlich
+  //      HELMUT_ALLOW_QUERY_SECRETS=true gesetzt ist — sonst landet das Secret in Logs/Proxys).
+  // Der Vergleich ist konstant-zeitig (timingSafeEqual, siehe isDebugSecretOk). Bei
+  // fehlender Freigabe faellt die Route durch (kein offener Fallback mehr).
+  if (url.pathname.startsWith("/api/debug/") && isDebugSecretOk(request, url)) {
     return handleDebugRequest(request, response, url);
   }
 
@@ -418,26 +360,6 @@ async function handleRequest(request, response) {
       enabled: isAiEnabled(),
       model: activeModelName(),
       backend: process.env.AZURE_OPENAI_KEY ? "azure-eu" : "openai"
-    });
-  }
-
-  // TEMPORAER (Diagnose Datenmotor V2): Zeigt, was der laufende Prozess wirklich
-  // in process.env.HELMUT_ENGINE_V2 sieht — Rohwert JSON-kodiert (macht
-  // unsichtbare Zeichen sichtbar), Laenge, das Ergebnis von isEngineV2Enabled()
-  // und ALLE env-Keys mit "ENGINE" im Namen (entlarvt einen Tippfehler-Namen).
-  // Nach der Fehlersuche wieder entfernen. Leakt keine fremden Secrets.
-  if (url.pathname === "/api/debug/engine-flag") {
-    const raw = process.env.HELMUT_ENGINE_V2;
-    const engineKeys = Object.keys(process.env)
-      .filter((k) => /ENGINE|HELMUT_ENG/i.test(k))
-      .map((k) => ({ key: JSON.stringify(k), length: k.length }));
-    return sendJson(response, {
-      HELMUT_ENGINE_V2_present: typeof raw !== "undefined",
-      HELMUT_ENGINE_V2_json: JSON.stringify(raw ?? null),
-      HELMUT_ENGINE_V2_length: (raw || "").length,
-      isEngineV2Enabled: isEngineV2Enabled(),
-      control_budget_limit_json: JSON.stringify(process.env.HELMUT_MAX_LLM_CALLS_PER_DAY ?? null),
-      matchingEnvKeys: engineKeys
     });
   }
 
@@ -2899,13 +2821,31 @@ function sendNotFound(response) {
 }
 
 // ---------------------------------------------------------------------------
-// TEMPORAERE DEBUG-ENDPUNKTE (Live-Gang-Diagnose) — nach Live-Gang entfernen
+// DEBUG-ENDPUNKTE (Live-Gang-Diagnose). FAIL CLOSED — siehe isDebugSecretOk:
+// erfordert HELMUT_DEBUG_ENDPOINTS_ENABLED=true (Default AUS) + HELMUT_ADMIN_SECRET.
+// Kandidaten fuer vollstaendige Entfernung, sobald der Live-Gang stabil ist.
 // ---------------------------------------------------------------------------
 
-function isDebugSecretOk(url) {
+function debugEndpointsEnabled() {
+  return String(process.env.HELMUT_DEBUG_ENDPOINTS_ENABLED || "").trim().toLowerCase() === "true";
+}
+
+// Wie hasAdminBypass/authorizeCron: Bearer-Header bevorzugt; ein "?secret="-Query-Param
+// wird nur akzeptiert, wenn HELMUT_ALLOW_QUERY_SECRETS=true gesetzt ist. Vergleich
+// konstant-zeitig (timingSafeEqual). Zusaetzlich FAIL CLOSED ueber
+// HELMUT_DEBUG_ENDPOINTS_ENABLED, damit eine vergessene Env-Variable diese Routen
+// niemals versehentlich in Produktion oeffnet — selbst mit korrektem Secret.
+function isDebugSecretOk(request, url) {
+  if (!debugEndpointsEnabled()) return false;
   const adminSecret = process.env.HELMUT_ADMIN_SECRET;
   if (!adminSecret) return false;
-  return url.searchParams.get("secret") === adminSecret;
+  const header = request.headers.authorization || "";
+  const token = header.startsWith("Bearer ")
+    ? header.slice(7)
+    : allowQuerySecrets()
+      ? url.searchParams.get("secret") || ""
+      : "";
+  return Boolean(token) && timingSafeEqual(token, adminSecret);
 }
 
 async function handleDebugRequest(request, response, url) {
@@ -2958,6 +2898,25 @@ async function handleDebugRequest(request, response, url) {
     return handleAsync(response, async () => {
       const status = await accounts.getSetupStatus({ includeSensitive: true });
       return { debug: true, ...status };
+    });
+  }
+
+  // GET /api/debug/engine-flag — Diagnose Datenmotor V2: zeigt, was der laufende
+  // Prozess wirklich in process.env.HELMUT_ENGINE_V2 sieht (Rohwert JSON-kodiert,
+  // macht unsichtbare Zeichen sichtbar), Laenge, das Ergebnis von isEngineV2Enabled()
+  // und ALLE env-Keys mit "ENGINE" im Namen (entlarvt einen Tippfehler-Namen).
+  if (url.pathname === "/api/debug/engine-flag") {
+    const raw = process.env.HELMUT_ENGINE_V2;
+    const engineKeys = Object.keys(process.env)
+      .filter((k) => /ENGINE|HELMUT_ENG/i.test(k))
+      .map((k) => ({ key: JSON.stringify(k), length: k.length }));
+    return sendJson(response, {
+      HELMUT_ENGINE_V2_present: typeof raw !== "undefined",
+      HELMUT_ENGINE_V2_json: JSON.stringify(raw ?? null),
+      HELMUT_ENGINE_V2_length: (raw || "").length,
+      isEngineV2Enabled: isEngineV2Enabled(),
+      control_budget_limit_json: JSON.stringify(process.env.HELMUT_MAX_LLM_CALLS_PER_DAY ?? null),
+      matchingEnvKeys: engineKeys
     });
   }
 

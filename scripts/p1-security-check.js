@@ -74,6 +74,101 @@ async function cronChecks() {
   }
 }
 
+// P1-Fix "Debug-Endpunkte absichern": /api/debug/* darf in Produktion nie oeffentlich
+// erreichbar sein. Prueft: (1) die zwei vormals unauthentifizierten Endpunkte sind weg,
+// (2) der verbleibende Secret-Gate ist FAIL CLOSED per Default (HELMUT_DEBUG_ENDPOINTS_ENABLED),
+// (3) Query-Secrets bleiben ohne HELMUT_ALLOW_QUERY_SECRETS wirkungslos, (4) die bestehende,
+// unabhaengige CRON_SECRET-Route /api/debug/lage-backfill wird von der neuen Sperre nicht verschluckt.
+async function debugEndpointChecks() {
+  const server = http.createServer(handler);
+  await new Promise((r) => server.listen(0, "127.0.0.1", r));
+  const secret = "p1-test-debug-secret";
+
+  try {
+    delete process.env.HELMUT_ADMIN_SECRET;
+    delete process.env.HELMUT_DEBUG_ENDPOINTS_ENABLED;
+    delete process.env.HELMUT_ALLOW_QUERY_SECRETS;
+    delete process.env.CRON_SECRET;
+
+    // 1) Die zwei vormals unauthentifizierten P1-Endpunkte existieren nicht mehr.
+    const openStatus = await request(server, { pathname: "/api/debug/public/status" });
+    check("Alter oeffentlicher GET /api/debug/public/status ist entfernt (404)", openStatus.status === 404, `status=${openStatus.status}`);
+
+    const openUnderstanding = await request(server, { pathname: "/api/debug/run-understanding" });
+    check("Alter unauthentifizierter GET /api/debug/run-understanding ist entfernt (404)",
+      openUnderstanding.status === 404 && !openUnderstanding.body.includes('"debug":true'), `status=${openUnderstanding.status}`);
+
+    // 2) Fail closed per Default: HELMUT_DEBUG_ENDPOINTS_ENABLED fehlt -> blockiert,
+    // SELBST mit korrektem Secret im richtigen Header.
+    process.env.HELMUT_ADMIN_SECRET = secret;
+    const flagOff = await request(server, { pathname: "/api/debug/status", headers: { Authorization: `Bearer ${secret}` } });
+    check("Debug-Routen ohne HELMUT_DEBUG_ENDPOINTS_ENABLED blockiert, auch mit richtigem Secret (nicht 200)",
+      flagOff.status !== 200, `status=${flagOff.status}`);
+
+    // 3) Flag an, aber falsches oder fehlendes Secret -> weiterhin blockiert.
+    process.env.HELMUT_DEBUG_ENDPOINTS_ENABLED = "true";
+    const wrongSecret = await request(server, { pathname: "/api/debug/status", headers: { Authorization: "Bearer falsch" } });
+    check("Debug-Routen mit Flag an, aber falschem Secret weiterhin blockiert (nicht 200)",
+      wrongSecret.status !== 200, `status=${wrongSecret.status}`);
+    const noSecret = await request(server, { pathname: "/api/debug/status" });
+    check("Debug-Routen mit Flag an, aber ganz ohne Secret weiterhin blockiert (nicht 200)",
+      noSecret.status !== 200, `status=${noSecret.status}`);
+
+    // 4) Flag an + richtiges Secret per Bearer-Header -> autorisiert (Ops-Zugang bleibt nutzbar).
+    const authorized = await request(server, { pathname: "/api/debug/status", headers: { Authorization: `Bearer ${secret}` } });
+    check("Debug-Routen mit Flag an + richtigem Bearer-Secret autorisiert (200)", authorized.status === 200, `status=${authorized.status}`);
+
+    const understandingAuthorized = await request(server, { pathname: "/api/debug/run-understanding", headers: { Authorization: `Bearer ${secret}` } });
+    check("Secret-gated /api/debug/run-understanding bleibt fuer Ops nutzbar (autorisiert -> 200)",
+      understandingAuthorized.status === 200, `status=${understandingAuthorized.status}`);
+
+    // 5) Query-Param "?secret=" wirkt NUR mit HELMUT_ALLOW_QUERY_SECRETS=true (sonst Log-/Proxy-Leak-Risiko).
+    const queryIgnored = await request(server, { pathname: `/api/debug/status?secret=${secret}` });
+    check("'?secret='-Query-Param wird ohne HELMUT_ALLOW_QUERY_SECRETS ignoriert (nicht 200)",
+      queryIgnored.status !== 200, `status=${queryIgnored.status}`);
+
+    process.env.HELMUT_ALLOW_QUERY_SECRETS = "true";
+    const queryAllowed = await request(server, { pathname: `/api/debug/status?secret=${secret}` });
+    check("'?secret='-Query-Param funktioniert erst mit HELMUT_ALLOW_QUERY_SECRETS=true (200)",
+      queryAllowed.status === 200, `status=${queryAllowed.status}`);
+    delete process.env.HELMUT_ALLOW_QUERY_SECRETS;
+
+    // 6) /api/debug/engine-flag (frueher: komplett ungeschuetzt) ist jetzt genauso gated.
+    const engineFlagBlocked = await request(server, { pathname: "/api/debug/engine-flag" });
+    check("/api/debug/engine-flag ist nicht mehr oeffentlich erreichbar (nicht 200)",
+      engineFlagBlocked.status !== 200, `status=${engineFlagBlocked.status}`);
+    const engineFlagAuthorized = await request(server, { pathname: "/api/debug/engine-flag", headers: { Authorization: `Bearer ${secret}` } });
+    check("/api/debug/engine-flag bleibt mit Flag + richtigem Secret erreichbar (200)",
+      engineFlagAuthorized.status === 200, `status=${engineFlagAuthorized.status}`);
+
+    // 7) Regressionsschutz: /api/debug/lage-backfill haengt an CRON_SECRET/authorizeCron,
+    // NICHT an HELMUT_ADMIN_SECRET — die neue Debug-Sperre darf diese bestehende,
+    // bereits fail-closed abgesicherte Route nicht verschlucken.
+    delete process.env.HELMUT_ADMIN_SECRET;
+    delete process.env.HELMUT_DEBUG_ENDPOINTS_ENABLED;
+    delete process.env.CRON_SECRET;
+    const backfillNoEnv = await request(server, { pathname: "/api/debug/lage-backfill?dryRun=1" });
+    check("/api/debug/lage-backfill ohne CRON_SECRET-Env weiterhin fail-closed (503) — von der Debug-Sperre unberuehrt",
+      backfillNoEnv.status === 503, `status=${backfillNoEnv.status}`);
+
+    process.env.CRON_SECRET = "p1-test-cron-secret";
+    const backfillWrongToken = await request(server, { pathname: "/api/debug/lage-backfill?dryRun=1", headers: { Authorization: "Bearer falsch" } });
+    check("/api/debug/lage-backfill mit falschem Token weiterhin 403 — von der Debug-Sperre unberuehrt",
+      backfillWrongToken.status === 403, `status=${backfillWrongToken.status}`);
+
+    const backfillWithCronSecret = await request(server, { pathname: "/api/debug/lage-backfill?dryRun=1", headers: { Authorization: "Bearer p1-test-cron-secret" } });
+    check("/api/debug/lage-backfill mit korrektem CRON_SECRET weiterhin autorisiert (nicht 403/404/503)",
+      backfillWithCronSecret.status !== 403 && backfillWithCronSecret.status !== 404 && backfillWithCronSecret.status !== 503,
+      `status=${backfillWithCronSecret.status}`);
+  } finally {
+    delete process.env.HELMUT_ADMIN_SECRET;
+    delete process.env.HELMUT_DEBUG_ENDPOINTS_ENABLED;
+    delete process.env.HELMUT_ALLOW_QUERY_SECRETS;
+    delete process.env.CRON_SECRET;
+    await new Promise((r) => server.close(r));
+  }
+}
+
 function staticChecks() {
   const crawler = fs.readFileSync(path.join(root, "lib/helmut/crawler.js"), "utf8");
   check("TLS: kein rejectUnauthorized im Crawler", !crawler.includes("rejectUnauthorized"));
@@ -88,6 +183,15 @@ function staticChecks() {
   const server = fs.readFileSync(path.join(root, "server.js"), "utf8");
   check("Cron fail-open Helper entfernt (kein isAuthorizedCron)", !server.includes("isAuthorizedCron"));
   check("Cron fail-closed Helper vorhanden (authorizeCron)", server.includes("function authorizeCron"));
+
+  // P1-Fix "Debug-Endpunkte absichern": alte offene Endpunkte bleiben entfernt, neuer
+  // Fail-Closed-Gate (Flag + Secret) ist vorhanden.
+  check("Kein oeffentlicher /api/debug/public/status mehr im Code", !server.includes('"/api/debug/public/status"'));
+  check("Kein unauthentifizierter run-understanding-Log-Marker mehr im Code", !server.includes("debug/run-understanding-open"));
+  check("Debug-Endpunkte: Enabled-Flag-Helper vorhanden (debugEndpointsEnabled)", server.includes("function debugEndpointsEnabled"));
+  check("Debug-Endpunkte: Gate liest HELMUT_DEBUG_ENDPOINTS_ENABLED", server.includes("HELMUT_DEBUG_ENDPOINTS_ENABLED"));
+  check("Debug-Endpunkte: Secret-Vergleich konstant-zeitig (timingSafeEqual in isDebugSecretOk)",
+    /function isDebugSecretOk[\s\S]*?timingSafeEqual/.test(server));
 
   // Datenmotor V2, Commit 3: keine hardcodierten Cem-Namen mehr im KI-/Entity-Pfad.
   const ai = fs.readFileSync(path.join(root, "lib/helmut/ai.js"), "utf8");
@@ -1329,6 +1433,7 @@ async function main() {
   debugReportChecks();
   await engineV2Checks();
   await cronChecks();
+  await debugEndpointChecks();
   await llmLoggingChecks();
   await llmBudgetChecks();
   await c1SafetyNetChecks();
