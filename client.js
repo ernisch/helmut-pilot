@@ -3030,10 +3030,15 @@ function renderHelmutHeader() {
       </header>`;
   }
   const greeting = timeGreeting(firstName); // enthält bereits den Punkt, z. B. "Guten Morgen, Cem."
+  const summary = total === 0
+    ? "Heute nichts, um das du dich kümmern musst — ich melde mich, sobald sich das ändert."
+    : deckN === 0
+      ? `Heute ${total === 1 ? "1 relevanter Vorgang" : `${total} relevante Vorgänge`} — nichts davon braucht dein Handeln.`
+      : `Heute ${total === 1 ? "1 relevanter Vorgang" : `${total} relevante Vorgänge`}.<br>Davon solltest du dich um ${deckN === 1 ? "1 kümmern" : `${deckN} kümmern`}.`;
   return `
     <header class="helmut-referent-head">
       <h1 class="${headlineClass(greeting)}">${escapeHtml(greeting)}</h1>
-      <p>Heute gibt es ${total} ${total === 1 ? "relevanten Vorgang" : "relevante Vorgänge"}.<br>Davon solltest du dich heute um ${deckN} kümmern.</p>
+      <p>${summary}</p>
     </header>`;
 }
 
@@ -3422,7 +3427,7 @@ function buildHelmutAssessment() {
   const phaseSentence = helmutPhaseSentence(phase, top, topic);
   const recommendation = top
     ? `${phase.recommendationPrefix} ${compactText(chiefRecommendationText(top), 155)}`
-    : `${phase.recommendationPrefix} Halte ${topic} im Blick, aber starte keine öffentliche Reaktion ohne neuen Anlass.`;
+    : noTopRecommendationText(phase, watch ? topic : null);
   const fallback = {
     greeting: timeGreeting(firstName),
     time: formatBerlinTimeOnly(),
@@ -3464,7 +3469,7 @@ function assessmentTypingText(assessment) {
 }
 
 function helmutPrioritySentence(top, topic) {
-  if (!top) return `Deine Prioritäten haben sich aktuell nicht verändert. Fokus bleibt auf ${topic}.`;
+  if (!top) return `Deine Prioritäten haben sich aktuell nicht verändert. Weiterhin im Fokus: ${topic}.`;
   if (top.statusChange && top.statusChange !== "Unverändert") return `${topic} hat sich verändert: ${top.changeReason || top.statusChange}.`;
   if (top.changeReason && /gestiegen|neue|risiko|chance|dynamik/i.test(top.changeReason)) return `${topic} ist wichtiger geworden. ${top.changeReason}`;
   if (top.priorityType === "risk") return `${topic} ist aktuell dein größtes Risiko.`;
@@ -3490,11 +3495,23 @@ function helmutDayPhase() {
   return { key: "late", recommendationPrefix: "Lege für morgen früh" };
 }
 
+// Eigenständiger, korrekt formulierter Satz für den Fall ohne Top-Entscheidung —
+// bewusst getrennt von chiefRecommendationText/recommendationPrefix, deren Fragment-Grammatik
+// ("Bereite heute" + Fortsetzung) nur zu echten Entscheidungstexten passt.
+function noTopRecommendationText(phase, topic) {
+  const suffix = topic ? ` Ich behalte ${topic} für dich im Blick.` : "";
+  if (phase.key === "morning") return `Heute reicht Beobachtung, starte noch keine öffentliche Reaktion.${suffix}`;
+  if (phase.key === "midday") return `Bislang kein Anlass für eine öffentliche Reaktion.${suffix}`;
+  if (phase.key === "afternoon") return `Der Nachmittag bleibt ruhig, keine Kommunikation ohne neuen Anlass.${suffix}`;
+  if (phase.key === "evening") return `Für heute ist nichts mehr vorzubereiten.${suffix}`;
+  return `Für morgen früh gibt es aktuell nichts vorzubereiten.${suffix}`;
+}
+
 function centralAgendaTopic() {
   const top = decisions[0];
   if (top?.title) return top.title;
   const watch = competentNoActionItems()[0];
-  return watch?.title || "Ruhe bewahren und die Lage weiter prüfen";
+  return watch?.title || "die aktuelle Lage";
 }
 
 function currentAgendaLead() {
@@ -4835,7 +4852,7 @@ function renderOfficeView() {
       + (time ? `<span class="buero-summary-sep">·</span>Vorbereitet um ${escapeHtml(time)}` : "")
     : generating
       ? "Entwürfe werden vorbereitet&hellip;"
-      : "Erscheinen automatisch wenn dein Briefing geladen ist.";
+      : "Entwürfe erscheinen automatisch, sobald dein Briefing geladen ist.";
 
   const readyFormats = formats.filter((f) => draftStatus(f) === "Entwurf bereit");
   const holdFormats = formats.filter((f) => draftStatus(f) !== "Entwurf bereit");

@@ -8691,6 +8691,8 @@ body {
 :root[data-theme="light"] .helmut-carousel-arrow { border-color: var(--line) !important; background: rgba(15,23,42,.04) !important; color: var(--text) !important; }
 :root[data-theme="light"] .helmut-carousel-arrow:hover:not(:disabled) { background: rgba(15,23,42,.09) !important; }
 :root[data-theme="light"] .helmut-carousel-empty { color: var(--muted) !important; }
+:root[data-theme="light"] .helmut-deck-empty { color: var(--muted) !important; }
+:root[data-theme="light"] .helmut-further-lead { color: var(--muted) !important; }
 :root[data-theme="light"] .priority-status { border-color: rgba(15,23,42,.15) !important; color: var(--muted) !important; background: rgba(15,23,42,.05) !important; }
 
 /* Updates layer full-screen panel */
