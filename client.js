@@ -2124,18 +2124,34 @@ function lageShortTitle(v) {
   // letzte, saubere Absicherung (nie ein harter Abbruch).
   const FITS = 34;
   if (raw.length <= FITS) return raw;
-  const cut = raw.match(/^(.{8,90}?)(?:[,;:]|\s(?:und|dass|weil|nachdem|obwohl|während|wodurch|wobei)\s)/i);
-  if (cut && cut[1]) {
-    const cutClean = cut[1].trim().replace(/[,;:]+$/, "");
-    if (cutClean.split(" ").length >= 3 && cutClean.length <= FITS) return cutClean;
+  // Entfernt Satzzeichen, die eine Kürzung sonst "abgebrochen" aussehen
+  // lassen (z. B. ein hängendes Komma, wenn genau davor gekappt wurde).
+  const clean = (s) => s.trim().replace(/[,;:.\-–—]+$/, "").trim();
+  // Endet der gekürzte Titel auf einem "schwachen" Funktionswort (Artikel/
+  // Präposition/Hilfsverb), wirkt er ebenfalls unfertig ("...im", "...und
+  // die") — wird nach Möglichkeit vermieden.
+  const endsWeak = (word) => /^(?:der|die|das|des|dem|den|ein|eine|einer|eines|und|oder|im|in|am|an|auf|für|zu|zur|zum|von|vom|bei|mit|nach|ist|sind|hat|haben|wird|werden|soll|sollen|kann|können|muss|müssen|will|wollen)$/i.test(word.replace(/[,;:.\-–—]+$/, ""));
+
+  // 1) Natürliche Zäsuren der Reihe nach durchprobieren (nicht nur die
+  // erste — ein früher Doppelpunkt wie "Name: ..." wäre allein zu kurz).
+  const boundary = /[,;:]|\s(?:und|dass|weil|nachdem|obwohl|während|wodurch|wobei)\s/gi;
+  let m;
+  while ((m = boundary.exec(raw))) {
+    const candidate = clean(raw.slice(0, m.index));
+    if (candidate.split(" ").length >= 3 && candidate.length <= FITS) return candidate;
   }
-  // Wortweise von 6 auf minimal 3 Wörter kappen, bis es ins Zeichenbudget passt.
+
+  // 2) Wortweise von 6 auf minimal 3 Wörter kappen, bis es ins Zeichenbudget
+  // passt — dabei möglichst nicht auf einem schwachen Wort enden.
   const words = raw.split(" ");
+  let fallback = null;
   for (let n = 6; n >= 3; n--) {
-    const candidate = words.slice(0, n).join(" ");
-    if (candidate.length <= FITS) return candidate;
+    const candidate = clean(words.slice(0, n).join(" "));
+    if (candidate.length > FITS) continue;
+    if (!fallback) fallback = candidate;
+    if (!endsWeak(words[n - 1])) return candidate;
   }
-  return words.slice(0, 3).join(" ");
+  return fallback || clean(words.slice(0, 3).join(" "));
 }
 
 // Häufige deutsche Abkürzungen/Ordinalzahlen, vor denen ein "." KEIN
