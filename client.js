@@ -2086,6 +2086,131 @@ function lageCardCategory(v) {
   return (firstSource && firstSource.name) || "Vorgang";
 }
 
+// Dezenter Status-Chip oben rechts — ausschließlich aus dem bestehenden,
+// bereits an den Client durchgereichten Feld v.status abgeleitet (kein neues
+// Datenfeld, keine KI, keine erfundene Dringlichkeit).
+// Object.create(null): v.status kann kein Fremdwert wie "constructor" den
+// Prototype-Lookup umleiten (sonst würde z. B. "constructor" auf die echte
+// Object-Konstruktorfunktion statt auf undefined auflösen).
+const LAGE_STATUS_LABEL = Object.assign(Object.create(null), {
+  neu: "Neu", update: "Aktualisiert", beobachtung: "Beobachten", abgeschlossen: "Abgeschlossen"
+});
+function lageStatusChip(v) {
+  return LAGE_STATUS_LABEL[v.status] || "";
+}
+
+// Redaktioneller Kurztitel ohne KI: bevorzugt ein explizites Kurztitel-Feld,
+// falls die Datenquelle das irgendwann liefert. Sonst wird der vorhandene
+// Titel rein mechanisch an der besten verfügbaren natürlichen Zäsur gekappt
+// (Satzzeichen/Konjunktion) statt mit "..." abgeschnitten — das ist KEINE
+// echte redaktionelle Umformulierung (die bräuchte KI), nur eine saubere,
+// deterministische Kürzung.
+function lageShortTitle(v) {
+  const explicit = [v.shortTitle, v.titleShort, v.summaryTitle]
+    .map((c) => String(c || "").replace(/\s+/g, " ").trim())
+    .find(Boolean);
+  if (explicit) return explicit;
+  const raw = String(v.title || "").replace(/\s+/g, " ").trim();
+  if (!raw) return "";
+  // 34 Zeichen ist per Messung (scrollHeight vs. clientHeight im Browser bei
+  // .lage2-card-title: font-size clamp(21px,5.5vw,26px), Card-Innenbreite auf
+  // Mobile ~78vw minus Padding) die Schwelle, ab der die Titelzeile
+  // zuverlässig in 2 Zeilen umbricht statt eine dritte Zeile zu brauchen (die
+  // dann per CSS-Line-Clamp mit "…" abgeschnitten würde). Ändert sich Font-
+  // Größe/Card-Breite/Padding von .lage2-card-title bzw. .lage2-card in
+  // styles.css spürbar, muss dieser Wert neu gemessen werden — er ist NICHT
+  // automatisch daraus abgeleitet. Einzelne sehr lange Komposita können die
+  // Schätzung dennoch vereinzelt reißen — dafür bleibt der Line-Clamp als
+  // letzte, saubere Absicherung (nie ein harter Abbruch).
+  const FITS = 34;
+  if (raw.length <= FITS) return raw;
+  const cut = raw.match(/^(.{8,90}?)(?:[,;:]|\s(?:und|dass|weil|nachdem|obwohl|während|wodurch|wobei)\s)/i);
+  if (cut && cut[1]) {
+    const cutClean = cut[1].trim().replace(/[,;:]+$/, "");
+    if (cutClean.split(" ").length >= 3 && cutClean.length <= FITS) return cutClean;
+  }
+  // Wortweise von 6 auf minimal 3 Wörter kappen, bis es ins Zeichenbudget passt.
+  const words = raw.split(" ");
+  for (let n = 6; n >= 3; n--) {
+    const candidate = words.slice(0, n).join(" ");
+    if (candidate.length <= FITS) return candidate;
+  }
+  return words.slice(0, 3).join(" ");
+}
+
+// Häufige deutsche Abkürzungen/Ordinalzahlen, vor denen ein "." KEIN
+// Satzende ist (sonst würde z. B. "...in 2. Lesung beraten." schon nach
+// "2." abgeschnitten, oder "Art. 5 Abs. 2 GG" mitten im Aktenzeichen).
+const LAGE_ABBREV_TAIL = /(?:\b(?:Dr|Prof|Nr|Art|Abs|Std|Mio|Mrd|ca|etc|bzw|ggf|inkl|exkl|Kap|Abschn|Az|Str|Hr|Fr|z\.\s?B|u\.\s?a|d\.\s?h|u\.\s?U|o\.\s?ä)|[A-ZÄÖÜ]|\d{1,2})$/;
+
+// Nimmt nur den ersten echten Satz (kein zweiter Satz, kein Fließtext) und
+// kappt zusätzlich auf ein Zeichenbudget, das auf der Karte zuverlässig in
+// die erlaubte Zeilenzahl passt. Erkennt gängige Abkürzungen/Ordinalzahlen,
+// damit "2. Lesung"/"Art. 5"/"bzw." nicht fälschlich als Satzende gilt.
+function lageFirstSentence(text, maxLen) {
+  const t = String(text || "").replace(/\s+/g, " ").trim();
+  if (!t) return "";
+  const boundary = /[.!?](?=\s|$)/g;
+  let m;
+  let cutAt = -1;
+  while ((m = boundary.exec(t))) {
+    const idx = m.index;
+    if (t[idx] === "." && LAGE_ABBREV_TAIL.test(t.slice(Math.max(0, idx - 8), idx))) continue;
+    cutAt = idx + 1;
+    break;
+  }
+  // Kein echtes Satzende gefunden -> auf ein festes Zeichenbudget begrenzen
+  // (NICHT den ganzen Rohtext durchreichen, sonst könnte eine nachgelagerte
+  // Kürzung mehr als einen Satz zusammenfassen).
+  const first = (cutAt >= 0 ? t.slice(0, cutAt) : t.slice(0, 220)).trim();
+  // Bewusst NICHT compactText() nutzen: das splittet intern über
+  // twoSentenceSummary() erneut naiv auf jedem Satzzeichen (ohne
+  // Abkürzungs-Erkennung) und würde den oben sauber bestimmten Satz wieder
+  // an "Art."/"Abs."/"2." zerreißen. Nur das reine Zeichenbudget aus
+  // compactText nachbilden, ohne die erneute Satzsplittung.
+  if (first.length <= maxLen) return first;
+  const sliced = first.slice(0, maxLen - 1).replace(/\s+\S*$/, "");
+  return `${sliced || first.slice(0, maxLen - 1)}...`;
+}
+
+// Entfernt bekannte unpersönliche/analytische Floskeln ("Die Aussage
+// signalisiert...", "Parteien und Akteure sollten..."), damit Warum-wichtig
+// und Empfehlung direkt statt wie eine Analyseformel klingen. Rein
+// listenbasiert (kein Sprachmodell) — greift nur bei bekannten Mustern am
+// Satzanfang, erfindet nie neuen Inhalt. Bleibt nur das Satzzeichen übrig
+// (Floskel ohne jeden eigenen Inhalt), wird der Originaltext gezeigt statt
+// eine leere/fast leere Zeile.
+const LAGE_STIFF_OPENERS = [
+  /^die aussage signalisiert(?:\s+eine)?\s*/i,
+  /^dies deutet auf\s*/i,
+  /^es zeigt sich,?\s*dass\s*/i,
+  /^die politische bewertung zeigt,?\s*dass\s*/i,
+  /^parteien und akteure sollten\s*/i,
+  /^politische akteure sollten\s*/i,
+  /^akteure sollten\s*/i,
+  /^es wird empfohlen,?\s*dass\s*/i,
+  /^es empfiehlt sich,?\s*/i
+];
+function lageHumanize(text) {
+  const original = String(text || "").trim();
+  let t = original;
+  for (const re of LAGE_STIFF_OPENERS) t = t.replace(re, "");
+  t = t.trim();
+  if (!t || !/[a-zA-ZÀ-ÖØ-öø-ÿ0-9]/.test(t)) return original;
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
+// Kurze Viewports (z. B. iPhone SE): .lage2-card-row p klemmt dort per CSS
+// auf 2 statt 3 Zeilen (@media max-height:700px in styles.css), damit die
+// Karte nie unter die Bottom Navigation reicht. Die Zeichenbudgets müssen
+// diese Zeilengrenze kennen — sonst kürzt JS auf "3 Zeilen Länge" und CSS
+// klemmt zusätzlich auf 2, was wie eine doppelte Kürzung wirken kann.
+// Dieselbe Schwelle wie die CSS-Media-Query, bewusst dieselbe Zahl.
+function lageIsShortViewport() {
+  try { return Boolean(window.matchMedia && window.matchMedia("(max-height: 700px)").matches); }
+  catch (_) { return false; }
+}
+
 function lageSourceRow(source) {
   const meta = [source.type, source.dateLabel || source.publishedAt, source.host].filter(Boolean).join(" · ");
   const href = source.url || (source.host ? `https://${source.host}` : "");
@@ -2128,18 +2253,29 @@ function lageCheckIcon() {
   return `<svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="7.25" stroke="currentColor" stroke-width="1.3"/><path d="M6.7 10.3l2.1 2.1 4.4-4.7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 }
 
-// Eine große Karussell-Karte: Kategorie -> Titel -> Kurzfassung -> Warum wichtig
-// -> Empfehlung. Tippen öffnet die volle Vorgang-Detailansicht (Quellen, Chronologie).
+// Eine große Karussell-Karte: Kategorie+Status -> Kurztitel -> Kurzfassung ->
+// Warum wichtig -> Empfehlung. Rein informativ, nicht antippbar — die
+// Detailansicht (Quellen, Chronologie) folgt in einer späteren Iteration.
 function renderVorgangCard(v) {
   const category = lageCardCategory(v);
+  const statusChip = lageStatusChip(v);
+  const title = lageShortTitle(v);
   const summary = v.summary || {};
-  const kurzfassung = compactText(summary.wasIstPassiert || "", 170);
-  const warum = compactText(summary.warumWichtig || "", 130);
-  const empfehlung = compactText(v.empfehlung || "", 130);
+  // Zeichenbudgets sind per Messung so gewählt, dass sie in die jeweils
+  // erlaubte Zeilenzahl von .lage2-card-row p passen (3 Zeilen normal, 2 auf
+  // kurzen Viewports) — sonst kann CSS-Line-Clamp den JS-Text zusätzlich
+  // kappen ("doppelte Kürzung").
+  const shortVp = lageIsShortViewport();
+  const kurzfassung = lageFirstSentence(summary.wasIstPassiert || "", shortVp ? 58 : 95);
+  const warum = lageFirstSentence(lageHumanize(summary.warumWichtig || ""), shortVp ? 58 : 85);
+  const empfehlung = lageFirstSentence(lageHumanize(v.empfehlung || ""), shortVp ? 58 : 75);
   return `
-    <button type="button" class="lage2-card" data-vorgang="${escapeAttribute(v.id)}">
-      <span class="lage2-vtag">${escapeHtml(category)}</span>
-      <h2 class="lage2-card-title">${escapeHtml(v.title || "")}</h2>
+    <article class="lage2-card">
+      <div class="lage2-card-head">
+        <span class="lage2-vtag">${escapeHtml(category)}</span>
+        ${statusChip ? `<span class="lage2-status-chip">${escapeHtml(statusChip)}</span>` : ""}
+      </div>
+      <h2 class="lage2-card-title">${escapeHtml(title)}</h2>
       <div class="lage2-card-body">
         ${kurzfassung ? `
         <div class="lage2-card-row">
@@ -2157,7 +2293,7 @@ function renderVorgangCard(v) {
           <p>${escapeHtml(empfehlung)}</p>
         </div>` : ""}
       </div>
-    </button>`;
+    </article>`;
 }
 
 // Leerer Zustand: keine Fake-/Seed-/Platzhalter-Karten, nur ein ruhiger Hinweis.
