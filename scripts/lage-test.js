@@ -9,6 +9,13 @@ const assert = require("assert");
 const ai = require("../lib/helmut/ai");
 const lage = require("../lib/helmut/lage");
 const understanding = require("../lib/helmut/understanding");
+const { validateKnowledgeObject, KNOWLEDGE_OBJECT_SCHEMA } = require("../lib/helmut/understanding-schema");
+
+const TITLE_MAX = KNOWLEDGE_OBJECT_SCHEMA.properties.display_title.maxLength;
+const CATEGORY_MAX = KNOWLEDGE_OBJECT_SCHEMA.properties.display_category.maxLength;
+const SUMMARY_MAX = KNOWLEDGE_OBJECT_SCHEMA.properties.display_summary.maxLength;
+const WHY_MAX = KNOWLEDGE_OBJECT_SCHEMA.properties.why_relevant.maxLength;
+const RECO_MAX = KNOWLEDGE_OBJECT_SCHEMA.properties.recommendation.maxLength;
 
 let passed = 0;
 function ok(name, cond) {
@@ -103,6 +110,12 @@ async function run() {
     const ko = {
       vorgang_id: "vg-tar", headline: "Bundestariftreuegesetz", status: "update",
       was_ist_passiert: "Referentenentwurf liegt vor.", warum_wichtig: "Tarifbindung.", wer_ist_betroffen: "Auftraggeber.",
+      handlungsempfehlung: "Linie vorbereiten.",
+      display_title: "Tarifbindung: Entwurf vorgelegt",
+      display_summary: "Das BMAS hat den Referentenentwurf vorgelegt.",
+      why_relevant: "Betrifft die Tarifbindung bei öffentlichen Aufträgen.",
+      recommendation: "Linie vorbereiten, heute keine öffentliche Reaktion.",
+      display_category: "BMAS",
       ausschuesse: ["Arbeit und Soziales"], updated_at: new Date().toISOString()
     };
     const docs = [
@@ -115,7 +128,191 @@ async function run() {
     ok("Quellen gemappt", card.sources.length === 2 && card.sources.some((s) => s.name === "Bundestag"));
     ok("PDF als Dokument erkannt", card.documents.length === 1 && card.documents[0].kind === "PDF");
     ok("Chronologie aus published_at (neuste zuerst)", card.chronologie[0].dateLabel && card.chronologie.length === 2);
-    ok("keine Handlungsempfehlung im Card-Objekt", !("handlungsempfehlung" in card) && !("empfehlung" in card));
+    // Empfehlung ist bewusst vorgangsbezogen (1:1 aus dem bestehenden Feld
+    // handlungsempfehlung) — keine globale Prioritaet/Rangfolge im Card-Objekt,
+    // kein zusaetzliches Score-/Rank-Feld (das bleibt Helmut).
+    ok("Empfehlung 1:1 aus handlungsempfehlung, vorgangsbezogen", card.empfehlung === "Linie vorbereiten.");
+    ok("keine globale Prioritaet/Rangfolge im Card-Objekt", !("priority" in card) && !("rank" in card) && !("score" in card));
+    // UI-Zeigefelder (C7/C8, einmalig erzeugt) 1:1 durchgereicht — keine
+    // Umformulierung/Kuerzung in koToVorgangCard.
+    ok("displayTitle 1:1 aus display_title", card.displayTitle === "Tarifbindung: Entwurf vorgelegt");
+    ok("displaySummary 1:1 aus display_summary", card.displaySummary === "Das BMAS hat den Referentenentwurf vorgelegt.");
+    ok("whyRelevant 1:1 aus why_relevant", card.whyRelevant === "Betrifft die Tarifbindung bei öffentlichen Aufträgen.");
+    ok("recommendation 1:1 aus recommendation", card.recommendation === "Linie vorbereiten, heute keine öffentliche Reaktion.");
+    ok("displayCategory 1:1 aus display_category", card.displayCategory === "BMAS");
+  }
+
+  // ── 6b) Vorgang-Mapping: aeltere KOs ohne die neuen UI-Felder ──
+  console.log("koToVorgangCard (Fallback ohne neue Felder)");
+  {
+    const ko = {
+      vorgang_id: "vg-alt", headline: "Altes Thema", status: "neu",
+      was_ist_passiert: "X ist passiert.", warum_wichtig: "Y ist wichtig.", handlungsempfehlung: "Z."
+    };
+    const card = lage.koToVorgangCard(ko, []);
+    ok("kein display_title -> displayTitle leer (Client faellt auf vollstaendigen Titel zurueck)", card.displayTitle === "");
+    ok("kein display_summary -> displaySummary leer", card.displaySummary === "");
+    ok("kein why_relevant -> whyRelevant leer", card.whyRelevant === "");
+    ok("kein recommendation -> recommendation leer", card.recommendation === "");
+    ok("kein display_category -> displayCategory leer", card.displayCategory === "");
+    ok("bestehende Felder bleiben trotzdem gefuellt", card.title === "Altes Thema" && card.empfehlung === "Z.");
+  }
+
+  // ── 6c) assembleKnowledgeObject: neue UI-Felder saeubern/kappen ──
+  console.log("assembleKnowledgeObject (neue Anzeige-Felder)");
+  {
+    const cluster = { documents: [{ title: "X" }] };
+    const wellFormed = understanding.assembleKnowledgeObject({
+      was_ist_passiert: "A.", warum_wichtig: "B.", wer_ist_betroffen: "C.", handlungsempfehlung: "D.", zeitdruck: "mittel",
+      display_title: "Merz lehnt Vergesellschaftung ab",
+      display_summary: "  Kurze   Zusammenfassung.  ",
+      why_relevant: "Betrifft den Gesundheitsausschuss direkt.",
+      recommendation: "Heute nicht öffentlich reagieren.",
+      display_category: "Bundestag"
+    }, cluster, "vg-x", {});
+    ok("display_title uebernommen (passt ins Budget)", wellFormed.display_title === "Merz lehnt Vergesellschaftung ab");
+    ok("display_summary getrimmt/normalisiert", wellFormed.display_summary === "Kurze Zusammenfassung.");
+    ok("why_relevant uebernommen", wellFormed.why_relevant === "Betrifft den Gesundheitsausschuss direkt.");
+    ok("recommendation uebernommen", wellFormed.recommendation === "Heute nicht öffentlich reagieren.");
+    ok("display_category uebernommen", wellFormed.display_category === "Bundestag");
+
+    // Der eigentliche Bug-Fix: ein zu langer display_title wird VERWORFEN statt
+    // mitten im Satz abgeschnitten (das war die Ursache abgebrochener Titel).
+    const tooLong = "Dies ist ein deutlich zu langer Titel, der auf keinen Fall in eine kurze UI-Ueberschrift passt und daher niemals gekappt werden darf";
+    const overlong = understanding.assembleKnowledgeObject({
+      was_ist_passiert: "A.", warum_wichtig: "B.", wer_ist_betroffen: "C.", handlungsempfehlung: "D.", zeitdruck: "mittel",
+      display_title: tooLong, display_category: "Ministerium fuer Arbeit, Gesundheit und Soziales des Landes"
+    }, cluster, "vg-y", {});
+    ok("zu langer display_title wird verworfen statt abgeschnitten (kein Fragment)", overlong.display_title === "");
+    ok("zu langer display_category wird verworfen statt abgeschnitten", overlong.display_category === "");
+
+    const blank = understanding.assembleKnowledgeObject({
+      was_ist_passiert: "A.", warum_wichtig: "B.", wer_ist_betroffen: "C.", handlungsempfehlung: "D.", zeitdruck: "mittel",
+      display_title: "   "
+    }, cluster, "vg-z", {});
+    ok("nur-Leerzeichen display_title wird verworfen", blank.display_title === "");
+
+    const missing = understanding.assembleKnowledgeObject({
+      was_ist_passiert: "A.", warum_wichtig: "B.", wer_ist_betroffen: "C.", handlungsempfehlung: "D.", zeitdruck: "mittel"
+    }, cluster, "vg-w", {});
+    ok("fehlende neue Felder -> leere Strings, kein Absturz", missing.display_title === "" && missing.display_summary === ""
+      && missing.why_relevant === "" && missing.recommendation === "" && missing.display_category === "");
+    // Leere/verworfene neue Felder duerfen die Gesamtvalidierung nicht zu Fall
+    // bringen (bewusst NICHT required/minLength — anders als was_ist_passiert etc.).
+    ok("KO mit verworfenem display_title bleibt insgesamt schema-valide", validateKnowledgeObject(overlong).valid === true);
+    ok("KO ganz ohne neue Felder bleibt insgesamt schema-valide", validateKnowledgeObject(missing).valid === true);
+  }
+
+  // ── 6d) Laengen-Grenzwerte GENAU an der Schema-Obergrenze (kein Off-by-one,
+  // keine vertauschten Caps zwischen den drei cleanEntry-Feldern) ──
+  console.log("assembleKnowledgeObject (Laengen-Grenzwerte, schema-abgeleitet)");
+  {
+    const cluster = { documents: [{ title: "X" }] };
+    const base = { was_ist_passiert: "A.", warum_wichtig: "B.", wer_ist_betroffen: "C.", handlungsempfehlung: "D.", zeitdruck: "mittel" };
+
+    // Ein sonst gueltiger (mehrwortiger, starkes Schlusswort) Titel von exakt n
+    // Zeichen — isoliert die LAENGEN-Grenze von den Qualitaetsregeln (Wortzahl/
+    // Schlusswort), damit dieser Test nur die maxLength prueft.
+    const titleOfLength = (n) => { const p = "Titel Alpha Beta "; return p + "R".repeat(n - p.length); };
+    const atTitleMax = titleOfLength(TITLE_MAX);
+    const overTitleMax = titleOfLength(TITLE_MAX + 1);
+    const koTitleAtMax = understanding.assembleKnowledgeObject({ ...base, display_title: atTitleMax }, cluster, "vg-title-at-max", {});
+    const koTitleOverMax = understanding.assembleKnowledgeObject({ ...base, display_title: overTitleMax }, cluster, "vg-title-over-max", {});
+    ok(`display_title genau an der Grenze (${TITLE_MAX} Zeichen) wird behalten`, koTitleAtMax.display_title === atTitleMax && atTitleMax.length === TITLE_MAX);
+    ok(`display_title 1 Zeichen ueber der Grenze wird verworfen (kein Off-by-one)`, koTitleOverMax.display_title === "");
+
+    const atCategoryMax = "y".repeat(CATEGORY_MAX);
+    const overCategoryMax = "y".repeat(CATEGORY_MAX + 1);
+    const koCatAtMax = understanding.assembleKnowledgeObject({ ...base, display_category: atCategoryMax }, cluster, "vg-cat-at-max", {});
+    const koCatOverMax = understanding.assembleKnowledgeObject({ ...base, display_category: overCategoryMax }, cluster, "vg-cat-over-max", {});
+    ok(`display_category genau an der Grenze (${CATEGORY_MAX} Zeichen) wird behalten`, koCatAtMax.display_category === atCategoryMax);
+    ok(`display_category 1 Zeichen ueber der Grenze wird verworfen`, koCatOverMax.display_category === "");
+
+    // display_summary/why_relevant/recommendation duerfen NICHT dasselbe Budget
+    // teilen (sonst waere ein Vertauschen der drei cleanEntry-Aufrufe unsichtbar).
+    ok("die drei Body-Budgets sind tatsaechlich unterschiedlich", RECO_MAX < WHY_MAX && WHY_MAX < SUMMARY_MAX);
+
+    const overRecoUnderWhy = "z".repeat(RECO_MAX + 10);
+    const koSwapCheck1 = understanding.assembleKnowledgeObject({ ...base,
+      why_relevant: overRecoUnderWhy, recommendation: overRecoUnderWhy
+    }, cluster, "vg-swap-1", {});
+    ok("why_relevant behaelt einen Wert oberhalb des (kleineren) recommendation-Caps",
+      koSwapCheck1.why_relevant.length === overRecoUnderWhy.length);
+    ok("recommendation kappt denselben Wert exakt auf sein eigenes, kleineres Budget",
+      koSwapCheck1.recommendation.length === RECO_MAX);
+
+    const overWhyUnderSummary = "w".repeat(WHY_MAX + 10);
+    const koSwapCheck2 = understanding.assembleKnowledgeObject({ ...base,
+      display_summary: overWhyUnderSummary, why_relevant: overWhyUnderSummary
+    }, cluster, "vg-swap-2", {});
+    ok("display_summary behaelt einen Wert oberhalb des (kleineren) why_relevant-Caps",
+      koSwapCheck2.display_summary.length === overWhyUnderSummary.length);
+    ok("why_relevant kappt denselben Wert exakt auf sein eigenes, kleineres Budget",
+      koSwapCheck2.why_relevant.length === WHY_MAX);
+  }
+
+  // ── 6f) Qualitaetsgate fuer den Anzeige-Titel (isValidDisplayTitle):
+  // politischer Lage-Titel, kein Nachrichten-Fragment, keine Ellipse, endet
+  // nicht auf einem Funktionswort ──
+  console.log("isValidDisplayTitle (Qualitaetsgate Anzeige-Titel)");
+  {
+    const good = [
+      "Merz lehnt Vergesellschaftung ab",          // endet auf trennbarem Praefix "ab" (ablehnen)
+      "Regierung legt Tariftreuegesetz vor",         // trennbares "vor" (vorlegen)
+      "Fraktion stimmt Reform zu",                   // trennbares "zu" (zustimmen)
+      "Regierung bringt Klimagesetz ein",            // trennbares "ein" (einbringen)
+      "Land setzt EU-Vorgabe um",                    // trennbares "um" (umsetzen)
+      "Bundestag räumt Fehler ein",                  // trennbares "ein" (einraeumen)
+      "Völklingen ringt um Sportplätze",
+      "Ministerium plant neue Arbeitsmarktreform",
+      "Mehrere Sozialreformen stehen zur Debatte",   // "zur" nur in der Mitte, Ende stark
+      "Kabinett beschließt Rentenpaket 2026"          // endet auf Zahl
+    ];
+    for (const t of good) ok(`gueltiger Anzeige-Titel: "${t}"`, understanding.isValidDisplayTitle(t) === true);
+
+    const bad = [
+      ["Friedrich Merz hat öffentlich eine scharfe Ablehnung gegenüber", "schwaches Schlusswort 'gegenüber'"],
+      ["Reform der Grundsicherung zur", "endet auf 'zur'"],
+      ["Debatte über Rente und", "endet auf 'und'"],
+      ["Ministerium plant Reform für", "endet auf 'für'"],
+      ["Kabinett berät Reform …", "Ellipse (…)"],
+      ["Kabinett berät Reform...", "Ellipse (...)"],
+      ["Im Völklinger Stadtrat besteht Ratlosigkeit,", "haengendes Komma"],
+      ["Streit um Haushalt:", "haengender Doppelpunkt"],
+      ["öffentlich eine scharfe Ablehnung", "Kleinbuchstabe am Anfang (Fragment)"],
+      ["Rentenreform", "nur ein Wort"],
+      ["Das Bundeskabinett hat heute nach langer Debatte den Gesetzentwurf beschlossen", "zu viele Woerter / zu lang"]
+    ];
+    for (const [t, why] of bad) ok(`ungueltiger Anzeige-Titel (${why}): "${t}"`, understanding.isValidDisplayTitle(t) === false);
+
+    // Ende-zu-Ende: ungueltiger Titel wird beim Assemble VERWORFEN (-> Client
+    // zeigt Legacy-Titel), gueltiger bleibt 1:1 erhalten.
+    const cluster = { documents: [{ title: "X" }] };
+    const base = { was_ist_passiert: "A.", warum_wichtig: "B.", wer_ist_betroffen: "C.", handlungsempfehlung: "D.", zeitdruck: "mittel" };
+    const koBad = understanding.assembleKnowledgeObject({ ...base, display_title: "Reform der Grundsicherung zur" }, cluster, "vg-badtitle", {});
+    ok("Assemble verwirft ungueltigen Titel (schwaches Ende) -> ''", koBad.display_title === "");
+    const koGood = understanding.assembleKnowledgeObject({ ...base, display_title: "Merz lehnt Vergesellschaftung ab" }, cluster, "vg-goodtitle", {});
+    ok("Assemble behaelt gueltigen Titel 1:1 (endet auf trennbarem 'ab')", koGood.display_title === "Merz lehnt Vergesellschaftung ab");
+  }
+
+  // ── 6e) Schema-maxLength wird von validateKnowledgeObject TATSAECHLICH als
+  // ungueltig erkannt (nicht nur als Dokumentation) ──
+  console.log("validateKnowledgeObject (maxLength greift auch in der 'ungueltig'-Richtung)");
+  {
+    const cluster = { documents: [{ title: "X" }] };
+    const validKo = understanding.assembleKnowledgeObject({
+      was_ist_passiert: "A.", warum_wichtig: "B.", wer_ist_betroffen: "C.", handlungsempfehlung: "D.", zeitdruck: "mittel",
+      display_summary: "Kurz."
+    }, cluster, "vg-valid", {});
+    ok("Baseline: gut geformtes KO ist schema-valide", validateKnowledgeObject(validKo).valid === true);
+
+    // Bewusst NICHT ueber assembleKnowledgeObject/cleanEntry, sondern direkt auf
+    // dem bereits assemblierten KO gesetzt — prueft checkValue()'s maxLength-Zweig
+    // isoliert (assembleKnowledgeObject selbst wuerde das nie durchlassen).
+    const tooLongSummary = { ...validKo, display_summary: "s".repeat(SUMMARY_MAX + 1) };
+    const res = validateKnowledgeObject(tooLongSummary);
+    ok("display_summary ueber Schema-maxLength macht das KO ungueltig", res.valid === false);
+    ok("Fehlermeldung benennt das betroffene Feld", res.errors.some((e) => e.includes("display_summary")));
   }
 
   // ── 7) resolveParagraphSources: Vereinigung + Dedup ──

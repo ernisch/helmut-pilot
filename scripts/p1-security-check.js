@@ -85,6 +85,16 @@ function staticChecks() {
   check("Keine Live-Referenz auf resolvedMeta.fallbackDraft", !client.includes("resolvedMeta.fallbackDraft"));
   check("Erfundene Radar-Signale entfernt (keine 'Steuerdebatte …')", !client.includes("Steuerdebatte kann in Arbeit und Soziales wandern"));
 
+  // Lage-Kartentitel: darf NIE wieder algorithmisch gekürzt werden (Ursache
+  // der abgebrochenen Titel wie "Friedrich Merz hat öffentlich"). Statischer
+  // Quelltext-Guard, da renderVorgangCard() als Browser-Funktion nicht ohne
+  // DOM ausführbar ist — verhindert zumindest ein Wiederauftauchen der alten
+  // Kürzungsfunktion bzw. ein Zurückrudern der Fallback-Zeile auf eine
+  // zeichenbudget-kappende Funktion.
+  check("lageShortTitle (Ursache abgebrochener Titel) bleibt entfernt", !client.includes("function lageShortTitle"));
+  check("Lage-Kartentitel-Fallback zeigt vollständigen Originaltitel (kein Kürzungs-Call)",
+    client.includes("const title = displayTitle || lageField(v.title);"));
+
   const server = fs.readFileSync(path.join(root, "server.js"), "utf8");
   check("Cron fail-open Helper entfernt (kein isAuthorizedCron)", !server.includes("isAuthorizedCron"));
   check("Cron fail-closed Helper vorhanden (authorizeCron)", server.includes("function authorizeCron"));

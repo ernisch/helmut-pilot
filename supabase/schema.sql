@@ -277,6 +277,16 @@ create table if not exists public.knowledge_objects (
   stage text,
   tags text[] not null default '{}',
   deadline timestamptz,
+  -- UI-Zeigefelder: EINMALIG vom Understanding-Call (C7/C8) befuellt, dauerhaft
+  -- gespeichert. Lage (und spaeter Radar/Helmut/Benachrichtigungen/Detailansicht)
+  -- liest nur noch diese fertigen Felder -- keine Kuerzung/Umformulierung beim
+  -- Rendern. display_title bleibt leer statt abgeschnitten, wenn die KI-Antwort
+  -- zu lang war (siehe assembleKnowledgeObject in understanding.js).
+  display_title text,
+  display_summary text,
+  why_relevant text,
+  recommendation text,
+  display_category text,
   best_source_url text,
   best_link_type text,
   source_trust text,
@@ -293,6 +303,15 @@ create index if not exists knowledge_objects_status_idx on public.knowledge_obje
 alter table public.knowledge_objects
   add column if not exists understanding_status text not null default 'pending';
 create index if not exists knowledge_objects_understanding_status_idx on public.knowledge_objects (understanding_status);
+
+-- UI-Zeigefelder auch fuer BESTEHENDE Datenbanken sicherstellen (create table
+-- ist dort ein No-Op). Aeltere Zeilen bleiben einfach NULL -- die Anwendung
+-- faellt dafuer sauber auf bestehende Felder zurueck (kein Backfill hier).
+alter table public.knowledge_objects add column if not exists display_title text;
+alter table public.knowledge_objects add column if not exists display_summary text;
+alter table public.knowledge_objects add column if not exists why_relevant text;
+alter table public.knowledge_objects add column if not exists recommendation text;
+alter table public.knowledge_objects add column if not exists display_category text;
 
 -- KO <-> Rohdokument (N:M): "70 Artikel -> 1 Vorgang".
 create table if not exists public.ko_document_links (

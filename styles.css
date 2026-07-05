@@ -10142,86 +10142,132 @@ details[open].meeting-detail summary::before { content: '▾ '; }
 :root[data-theme="light"] .install-banner__close { color: rgba(15, 23, 42, 0.5); background: rgba(15, 23, 42, 0.06); }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   LAGE — das politische Morgen-Briefing des Referenten.
-   Ruhig, hochwertig, viel Weißraum. Keine Empfehlung/Bewertung/Priorisierung
-   (das ist Helmut). Baut auf bestehenden Tokens (--command-purple Akzent,
-   --card/--line/--text/--muted) → Light/Dark automatisch.
+   LAGE — reine Übersicht bereits vorhandener, quellengestützter Vorgänge.
+   Ruhig, hochwertig, viel Weißraum: ein großes Karussell, eine Karte im
+   Fokus. Pro Karte genau EINE vorgangsbezogene Empfehlung — keine
+   übergreifende Bewertung/Priorisierung (das bleibt Helmut). Baut auf
+   bestehenden Tokens (--command-purple Akzent, --card/--line/--text/--muted)
+   → Light/Dark automatisch.
    ═══════════════════════════════════════════════════════════════════════ */
 .lage2 { max-width: 720px; margin: 0 auto; }
 
-.lage2-head {
-  display: flex; align-items: flex-start; justify-content: space-between;
-  gap: 20px; margin: 4px 0 30px;
+/* Ruhigerer Hintergrund NUR für Lage (skaliert über :has, kein globaler
+   Eingriff in den übrigen App-Hintergrund/andere Tabs): weniger Glow, etwas
+   dunklerer Grundton -> mehr Kontrast zur Karte. */
+body:has(.lage2) {
+  background:
+    radial-gradient(circle at 76% 4%, rgba(140, 92, 255, .06), transparent 26%),
+    linear-gradient(180deg, #06090f 0%, #05070d 55%, #03040a 100%);
 }
+
+.lage2-head { display: flex; flex-direction: column; gap: 7px; margin: 4px 0 22px; }
+.lage2-date { font-size: 14px; font-weight: 650; color: var(--command-purple); }
 .lage2-greeting {
   font-size: clamp(26px, 4vw, 34px); font-weight: 700; letter-spacing: -.022em;
   line-height: 1.08; margin: 0; color: var(--text); text-wrap: balance;
 }
-.lage2-subtitle { margin: 8px 0 0; font-size: 15px; color: var(--muted); line-height: 1.5; }
-.lage2-pdf {
-  display: inline-flex; align-items: center; gap: 8px; flex: none;
-  padding: 9px 14px; border-radius: 10px; border: 1px solid var(--line);
-  background: var(--card); color: var(--muted); font-size: 13px; font-weight: 550;
-  cursor: pointer; transition: border-color var(--dur-base) var(--ease-out-soft), color var(--dur-base) var(--ease-out-soft);
-}
-.lage2-pdf svg { width: 15px; height: 15px; }
-.lage2-pdf:hover { border-color: var(--command-purple); color: var(--text); }
+.lage2-count { margin: 2px 0 0; font-size: 16px; color: var(--muted); line-height: 1.5; }
+.lage2-count b { color: var(--command-purple); font-weight: 700; }
 .lage2-demo {
   display: inline-block; margin: 0 0 18px; font-size: 11px; font-weight: 650;
   letter-spacing: .1em; text-transform: uppercase; color: var(--muted-2);
   border: 1px dashed var(--line); border-radius: 999px; padding: 4px 10px;
 }
-.lage2-notice {
-  font-size: 14px; line-height: 1.55; color: var(--muted);
-  background: var(--card); border: 1px solid var(--line); border-radius: 12px;
-  padding: 14px 16px; margin: 0 0 30px;
+
+/* Karussell: eine große Karte im Fokus, nächste Karte peekt am rechten Rand.
+   Der Bleed-Trick (unten, @media) setzt voraus, dass KEIN Vorfahre zwischen
+   .lage2-carousel-bleed und <body> ein eigenes position:relative/absolute/fixed
+   bekommt — sonst löst left:50% gegen die falsche Box auf. */
+.lage2-carousel-bleed { margin: 0 0 20px; }
+.lage2-carousel {
+  display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory;
+  /* Vertikales Padding hält den (bewusst kleinen) Card-Shadow vollständig
+     sichtbar: overflow-x:auto erzwingt laut CSS-Overflow-Spec auch einen
+     (auto-)Clip auf der Y-Achse. Padding > Schatten-Reichweite
+     (offset+blur der .lage2-card box-shadow), nicht nur gleich groß. */
+  padding: 16px 0 36px; margin: -16px 0 -36px; scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.lage2-carousel::-webkit-scrollbar { display: none; }
+
+/* Reine Informationskarte — (noch) nicht antippbar: die Detailansicht folgt
+   erst in einer späteren Iteration, daher bewusst ohne Klick-Affordanz
+   (kein cursor:pointer, kein Hover/Focus-Zustand). Schatten bewusst klein
+   und ruhig (weniger "Glow", mehr Kontrast zum Hintergrund; spart zugleich
+   vertikalen Platz für kurze Mobile-Viewports). */
+.lage2-card {
+  flex: 0 0 86%; min-width: 0; scroll-snap-align: start; scroll-snap-stop: always;
+  display: flex; flex-direction: column; text-align: left;
+  padding: 24px 22px 20px; border-radius: 26px; border: 1px solid var(--line);
+  background: var(--card); box-shadow: 0 10px 24px rgba(0, 0, 0, .22);
+  min-height: 52dvh;
+  font: inherit; color: inherit;
+  /* Karte ist nicht antippbar, aber weiterhin der erste Touch-Kontaktpunkt
+     beim Wischen im Karussell — ohne dies flackert iOS Safari kurz den
+     Standard-Tap-Highlight auf, bevor die Scroll-Geste erkannt wird. */
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* Briefing-Absätze */
-.lage2-briefing { margin: 0 0 46px; }
-.lage2-para {
-  position: relative; padding: 22px 0 22px 22px; border-bottom: 1px solid var(--hairline);
+.lage2-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+/* max-width/ellipsis: Fallback-Kategorien ohne v.displayCategory (lange
+   Ausschuss-/Ministeriumsnamen bei älteren Vorgängen) sollen die Pille nie
+   umbrechen/aufblähen lassen, sondern sauber auf einer Zeile enden. */
+.lage2-vtag {
+  font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--command-purple); background: rgba(140, 92, 255, .12);
+  border-radius: 6px; padding: 3px 7px; align-self: flex-start;
+  max-width: 68%; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.lage2-para:first-child { padding-top: 4px; }
-.lage2-para:last-child { border-bottom: 0; }
-.lage2-para::before {
-  content: ""; position: absolute; left: 0; top: 26px; width: 3px; height: 1.5em;
-  background: var(--command-purple); border-radius: 2px;
+/* Status-Chip: bewusst zurückhaltend (muted, dünner Rahmen, keine Fläche) —
+   deutlich ruhiger als die violette Kategorie-Pill, keine Alarm-Optik. */
+.lage2-status-chip {
+  font-size: 10.5px; font-weight: 600; color: var(--muted-2);
+  border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px;
+  white-space: nowrap; flex: none;
 }
-.lage2-para:first-child::before { top: 8px; }
-.lage2-para-text {
-  margin: 0; font-size: 17px; line-height: 1.62; color: var(--text); letter-spacing: .002em;
+/* Bewusst KEIN Line-Clamp: ein Titel darf nie mit "…" abgeschnitten werden —
+   weder algorithmisch (JS) noch nativ per CSS (das war die Ursache der
+   abgebrochenen Überschriften, die dieses Feld behebt). v.displayTitle ist
+   serverseitig auf ~45 Zeichen (max. 70) angelegt und passt normalerweise in
+   1–2 Zeilen; in seltenen Randfällen wird die Karte statt zu kappen minimal
+   höher (Flex-Stretch im Karussell gleicht alle Karten der Reihe ohnehin an). */
+.lage2-card-title {
+  margin: 12px 0 0; font-size: clamp(21px, 5.5vw, 26px); font-weight: 700;
+  letter-spacing: -.02em; line-height: 1.22; color: var(--text);
+  hyphens: auto; overflow-wrap: break-word;
+}
+/* Fallback ohne generiertes v.displayTitle (ältere Vorgänge): voller
+   Originaltitel statt algorithmischer Kürzung, nur mit kleinerer Schrift
+   (mehr Zeichenbudget pro Zeile) — ebenfalls ohne Line-Clamp. */
+.lage2-card-title.lage2-card-title-fallback { font-size: clamp(17px, 4.4vw, 20px); }
+.lage2-card-body {
+  display: flex; flex-direction: column; gap: 12px; margin-top: 14px;
+  padding-top: 14px; border-top: 1px solid var(--hairline);
+}
+.lage2-card-row { display: flex; flex-direction: column; gap: 5px; }
+.lage2-card-row-head {
+  display: inline-flex; align-items: center;
+  font-size: 12px; font-weight: 650; color: var(--command-purple);
+}
+.lage2-card-row p {
+  margin: 0; font-size: 15px; line-height: 1.48; color: var(--text); overflow-wrap: break-word;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden;
 }
 
-/* Quellen-Aufklapper (nativ, tastaturbedienbar) */
-.lage2-quellen { margin-top: 14px; }
-.lage2-quellen > summary {
-  list-style: none; cursor: pointer; display: flex; align-items: center;
-  justify-content: space-between; gap: 16px; padding: 2px 0; user-select: none;
+/* Pagination-Punkte: rein dekorativ, sehr dezent */
+.lage2-dots { display: flex; justify-content: center; gap: 6px; margin: 14px 0 0; }
+.lage2-dot-item {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--line);
+  transition: background var(--dur-base) var(--ease-out-soft), transform var(--dur-base) var(--ease-out-soft);
 }
-.lage2-quellen > summary::-webkit-details-marker { display: none; }
-.lage2-quellen > summary:focus-visible { outline: 2px solid var(--command-purple); outline-offset: 3px; border-radius: 6px; }
-.lage2-quellen-label {
-  display: inline-flex; align-items: center; gap: 7px;
-  font-size: 13px; font-weight: 600; color: var(--command-purple);
-}
-.lage2-quellen .chev { width: 9px; height: 9px; transition: transform var(--dur-base) var(--ease-out-soft); }
-.lage2-quellen[open] > summary .chev { transform: rotate(90deg); }
+.lage2-dot-item.active { background: var(--command-purple); transform: scale(1.25); }
 
-.lage2-badges { display: inline-flex; align-items: center; }
-.lage2-badge {
-  width: 26px; height: 26px; border-radius: 50%; margin-left: -7px;
-  display: inline-grid; place-items: center; font-size: 9.5px; font-weight: 700;
-  letter-spacing: .01em; color: var(--muted); background: var(--card);
-  border: 1px solid var(--line); box-shadow: var(--soft-shadow);
-}
-.lage2-badge:first-child { margin-left: 0; }
-.lage2-badge.more { color: var(--muted-2); font-size: 10px; }
+/* Leerer Zustand: keine Fake-/Seed-Karten, nur ein ruhiger Hinweis */
+.lage2-empty { margin-top: 8px; max-width: 420px; }
+.lage2-empty-title { margin: 0; font-size: 17px; font-weight: 600; color: var(--text); line-height: 1.5; }
+.lage2-empty-sub { margin: 10px 0 0; font-size: 14.5px; color: var(--muted); line-height: 1.55; }
 
-.lage2-quellen-list {
-  margin-top: 12px; padding-top: 4px; border-top: 1px solid var(--hairline);
-  display: flex; flex-direction: column;
-}
+/* Quellen-Zeile (wird auch in der Vorgang-Detailansicht wiederverwendet) */
 .lage2-src-row {
   display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
   padding: 11px 0; border-bottom: 1px solid var(--hairline); text-decoration: none; color: inherit;
@@ -10233,46 +10279,23 @@ details[open].meeting-detail summary::before { content: '▾ '; }
 .lage2-src-open { font-size: 12px; color: var(--command-purple); white-space: nowrap; flex: none; opacity: .9; }
 .lage2-src-row:hover .lage2-src-open { opacity: 1; text-decoration: underline; }
 
-/* Vorgänge-Raster */
-.lage2-vorgaenge-head { display: flex; align-items: baseline; gap: 10px; margin: 0 0 16px; }
-.lage2-vorgaenge-head h2 { margin: 0; font-size: 15px; font-weight: 700; letter-spacing: -.01em; color: var(--text); }
-.lage2-vorgaenge-count {
-  font-size: 12px; color: var(--muted-2); border: 1px solid var(--line);
-  border-radius: 999px; padding: 1px 8px; font-variant-numeric: tabular-nums;
+/* Mobile: Karussell bricht bis zum Displayrand aus (86 % Basisbreite reicht auf
+   breiten Screens/Desktop; hier gezielt schmaler + volle Breite für den Peek-Effekt) */
+@media (max-width: 920px) {
+  .lage2-carousel-bleed {
+    width: 100vw; position: relative; left: 50%; right: 50%;
+    margin-left: -50vw; margin-right: -50vw;
+  }
+  .lage2-carousel { padding-left: 20px; padding-right: 20px; scroll-padding-left: 20px; }
+  .lage2-card { flex-basis: 78vw; max-width: 420px; }
 }
-.lage2-vorgaenge-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(158px, 1fr)); gap: 14px; margin: 0 0 40px;
-}
-.lage2-vcard {
-  display: flex; flex-direction: column; gap: 8px; text-align: left; cursor: pointer;
-  padding: 16px; border-radius: 14px; border: 1px solid var(--line); background: var(--card);
-  transition: transform var(--dur-base) var(--ease-out-soft), border-color var(--dur-base) var(--ease-out-soft), box-shadow var(--dur-base) var(--ease-out-soft);
-}
-.lage2-vcard:hover { transform: translateY(-2px); border-color: var(--command-purple); box-shadow: var(--soft-shadow); }
-.lage2-vcard:focus-visible { outline: 2px solid var(--command-purple); outline-offset: 2px; }
-.lage2-vtag {
-  font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
-  color: var(--command-purple); background: rgba(140, 92, 255, .12);
-  border-radius: 6px; padding: 3px 7px; align-self: flex-start;
-}
-.lage2-vtitle { font-size: 16px; font-weight: 650; letter-spacing: -.01em; color: var(--text); line-height: 1.25; hyphens: auto; overflow-wrap: break-word; }
-.lage2-vstand { display: flex; flex-direction: column; gap: 2px; font-size: 12.5px; color: var(--muted); line-height: 1.4; }
-.lage2-vstand b { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted-2); }
-.lage2-vtime {
-  display: inline-flex; align-items: center; gap: 7px; margin-top: auto; padding-top: 4px;
-  font-size: 12px; color: var(--muted-2); font-variant-numeric: tabular-nums;
-}
-.lage2-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; background: var(--muted-2); }
-.lage2-dot.today { background: var(--command-purple); }
-.lage2-dot.yesterday { background: var(--muted-2); }
 
-.lage2-foot {
-  font-size: 13px; line-height: 1.6; color: var(--muted-2); max-width: 560px;
-  margin: 0; padding-top: 4px;
-}
-.lage2-inline-link {
-  background: none; border: 0; padding: 0; font: inherit; color: var(--command-purple);
-  font-weight: 600; cursor: pointer; text-decoration: underline; text-underline-offset: 2px;
+/* Niedrige Viewports (z. B. iPhone SE): Karte darf nicht unter die fixe Bottom
+   Navigation geraten. Absätze bekommen dort eine Zeile weniger (weiterhin
+   sauber mit "…", kein hartes Abschneiden) statt dass die Karte wächst. */
+@media (max-height: 700px) {
+  .lage2-card { min-height: 46dvh; }
+  .lage2-card-row p { -webkit-line-clamp: 2; }
 }
 
 /* ── Vorgang-Detail (zweispaltig: Zusammenfassung/Chronologie · Quellen/Dokumente) ── */
@@ -10348,12 +10371,11 @@ details[open].meeting-detail summary::before { content: '▾ '; }
 @media (max-width: 720px) {
   .vdetail-grid { grid-template-columns: 1fr; gap: 28px; }
   .vdetail-topline { flex-direction: column; }
-  .lage2-head { flex-direction: column; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .lage2-vcard, .lage2-quellen .chev, .lage2-pdf { transition: none; }
+  .lage2-dot-item { transition: none; }
 }
 
 /* Light-Theme-Feinschliff (die Basistokens flippen bereits; hier nur Akzent-Tints) */
 :root[data-theme="light"] .lage2-vtag { background: rgba(140, 92, 255, .10); }
-:root[data-theme="light"] .lage2-badge { box-shadow: 0 1px 3px rgba(15, 23, 42, .08); }
+:root[data-theme="light"] .lage2-card { box-shadow: 0 10px 24px rgba(15, 23, 42, .08); }

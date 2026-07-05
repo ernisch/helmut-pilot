@@ -2045,9 +2045,20 @@ function renderView() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// Lage — das politische Morgen-Briefing des Referenten.
+// Lage — reine Übersicht bereits vorhandener, quellengestützter Vorgänge.
 // Beantwortet AUSSCHLIESSLICH "Worüber muss ich heute Bescheid wissen?".
-// KEINE Empfehlung, KEINE Bewertung, KEINE Priorisierung (das macht Helmut).
+// Erzeugt nichts, bewertet nichts global, priorisiert nichts global. Pro Karte
+// genau EINE kurze, ausschließlich auf diesen einen Vorgang bezogene Empfehlung
+// (bestehendes Feld v.empfehlung). Übergreifende Priorisierung, Strategie,
+// Kommunikation und Tagesentscheidung bleiben Helmut vorbehalten.
+//
+// Titel, Kurzfassung, Warum-wichtig, Empfehlung und Kategorie kommen bevorzugt
+// aus den vom V3-Verstehensschritt EINMALIG erzeugten, dauerhaft gespeicherten
+// Feldern (v.displayTitle/displaySummary/whyRelevant/recommendation/
+// displayCategory) — hier findet KEINE KI-Umformulierung/-Kürzung statt, nur
+// Anzeige bereits gespeicherter Werte. Ältere Vorgänge ohne diese Felder nutzen
+// einen rein deterministischen Fallback (nie ein KI-Aufruf beim Rendern, nie
+// ein mitten im Satz abgeschnittener Titel).
 // ─────────────────────────────────────────────────────────────────────────
 
 function lageData() {
@@ -2060,19 +2071,121 @@ function lageDateLabel() {
   } catch (_) { return ""; }
 }
 
-function lageChevIcon() {
-  return `<svg class="chev" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M3 1.5 6.5 5 3 8.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+// Quellenregel: nur Vorgänge mit mind. einer echten Quelle dürfen erscheinen.
+function lageHasSource(v) {
+  if (!v) return false;
+  if (Array.isArray(v.sources) && v.sources.length > 0) return true;
+  return Number(v.sourceCount) > 0;
 }
 
-function lageSourceMonogram(name) {
-  const clean = String(name || "").replace(/^(die|der|das)\s+/i, "").replace(/[–—-].*$/, "").trim();
-  const words = clean.split(/\s+/).filter(Boolean);
-  const m = words.length >= 2 ? (words[0][0] + words[1][0]) : clean.slice(0, 2);
-  return (m || "•").toUpperCase();
+// Die tatsächlich sichtbare Menge — Kopfzahl ("Heute gibt es N neue Vorgänge")
+// und Karussell leiten sich BEIDE hieraus ab, damit sie nie auseinanderlaufen.
+function lageVisibleVorgaenge(data) {
+  const list = (data && Array.isArray(data.vorgaenge)) ? data.vorgaenge : [];
+  return list.filter(lageHasSource);
 }
 
-function lageSourceBadge(source) {
-  return `<span class="lage2-badge" title="${escapeAttribute(source.name || "")}">${escapeHtml(lageSourceMonogram(source.name))}</span>`;
+// Fallback-Kategorie für Vorgänge ohne v.displayCategory (ältere Vorgänge):
+// Ausschuss/Ministerium falls vorhanden, sonst die erste echte Quelle (z. B.
+// "Tagesschau"), sonst ein neutraler Fallback. Reine Anzeigelogik, kein neues
+// Datenfeld.
+function lageCardCategory(v) {
+  if (v.policyField) return v.policyField;
+  const firstSource = Array.isArray(v.sources) ? v.sources[0] : null;
+  return (firstSource && firstSource.name) || "Vorgang";
+}
+
+// Dezenter Status-Chip oben rechts — ausschließlich aus dem bestehenden,
+// bereits an den Client durchgereichten Feld v.status abgeleitet (kein neues
+// Datenfeld, keine KI, keine erfundene Dringlichkeit).
+// Object.create(null): v.status kann kein Fremdwert wie "constructor" den
+// Prototype-Lookup umleiten (sonst würde z. B. "constructor" auf die echte
+// Object-Konstruktorfunktion statt auf undefined auflösen).
+const LAGE_STATUS_LABEL = Object.assign(Object.create(null), {
+  neu: "Neu", update: "Aktualisiert", beobachtung: "Beobachten", abgeschlossen: "Abgeschlossen"
+});
+function lageStatusChip(v) {
+  return LAGE_STATUS_LABEL[v.status] || "";
+}
+
+// Behandelt eine leere/nur-Leerzeichen-Zeichenkette wie "nicht vorhanden" —
+// verhindert, dass ein Whitespace-Wert (z. B. v.displayTitle === "   ") ein
+// Feld fälschlich als "gesetzt" gelten lässt.
+function lageField(value) {
+  return String(value == null ? "" : value).replace(/\s+/g, " ").trim();
+}
+
+// Häufige deutsche Abkürzungen/Ordinalzahlen, vor denen ein "." KEIN
+// Satzende ist (sonst würde z. B. "...in 2. Lesung beraten." schon nach
+// "2." abgeschnitten, oder "Art. 5 Abs. 2 GG" mitten im Aktenzeichen).
+const LAGE_ABBREV_TAIL = /(?:\b(?:Dr|Prof|Nr|Art|Abs|Std|Mio|Mrd|ca|etc|bzw|ggf|inkl|exkl|Kap|Abschn|Az|Str|Hr|Fr|z\.\s?B|u\.\s?a|d\.\s?h|u\.\s?U|o\.\s?ä)|[A-ZÄÖÜ]|\d{1,2})$/;
+
+// Nimmt nur den ersten echten Satz (kein zweiter Satz, kein Fließtext) und
+// kappt zusätzlich auf ein Zeichenbudget, das auf der Karte zuverlässig in
+// die erlaubte Zeilenzahl passt. Erkennt gängige Abkürzungen/Ordinalzahlen,
+// damit "2. Lesung"/"Art. 5"/"bzw." nicht fälschlich als Satzende gilt.
+function lageFirstSentence(text, maxLen) {
+  const t = lageField(text);
+  if (!t) return "";
+  const boundary = /[.!?](?=\s|$)/g;
+  let m;
+  let cutAt = -1;
+  while ((m = boundary.exec(t))) {
+    const idx = m.index;
+    if (t[idx] === "." && LAGE_ABBREV_TAIL.test(t.slice(Math.max(0, idx - 8), idx))) continue;
+    cutAt = idx + 1;
+    break;
+  }
+  // Kein echtes Satzende gefunden -> auf ein festes Zeichenbudget begrenzen
+  // (NICHT den ganzen Rohtext durchreichen, sonst könnte eine nachgelagerte
+  // Kürzung mehr als einen Satz zusammenfassen).
+  const first = (cutAt >= 0 ? t.slice(0, cutAt) : t.slice(0, 220)).trim();
+  // Bewusst NICHT compactText() nutzen: das splittet intern über
+  // twoSentenceSummary() erneut naiv auf jedem Satzzeichen (ohne
+  // Abkürzungs-Erkennung) und würde den oben sauber bestimmten Satz wieder
+  // an "Art."/"Abs."/"2." zerreißen. Nur das reine Zeichenbudget aus
+  // compactText nachbilden, ohne die erneute Satzsplittung.
+  if (first.length <= maxLen) return first;
+  const sliced = first.slice(0, maxLen - 1).replace(/\s+\S*$/, "");
+  return `${sliced || first.slice(0, maxLen - 1)}...`;
+}
+
+// Entfernt bekannte unpersönliche/analytische Floskeln ("Die Aussage
+// signalisiert...", "Parteien und Akteure sollten..."), damit Warum-wichtig
+// und Empfehlung direkt statt wie eine Analyseformel klingen. Rein
+// listenbasiert (kein Sprachmodell) — greift nur bei bekannten Mustern am
+// Satzanfang, erfindet nie neuen Inhalt. Bleibt nur das Satzzeichen übrig
+// (Floskel ohne jeden eigenen Inhalt), wird der Originaltext gezeigt statt
+// eine leere/fast leere Zeile.
+const LAGE_STIFF_OPENERS = [
+  /^die aussage signalisiert(?:\s+eine)?\s*/i,
+  /^dies deutet auf\s*/i,
+  /^es zeigt sich,?\s*dass\s*/i,
+  /^die politische bewertung zeigt,?\s*dass\s*/i,
+  /^parteien und akteure sollten\s*/i,
+  /^politische akteure sollten\s*/i,
+  /^akteure sollten\s*/i,
+  /^es wird empfohlen,?\s*dass\s*/i,
+  /^es empfiehlt sich,?\s*/i
+];
+function lageHumanize(text) {
+  const original = String(text || "").trim();
+  let t = original;
+  for (const re of LAGE_STIFF_OPENERS) t = t.replace(re, "");
+  t = t.trim();
+  if (!t || !/[a-zA-ZÀ-ÖØ-öø-ÿ0-9]/.test(t)) return original;
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
+// Kurze Viewports (z. B. iPhone SE): .lage2-card-row p klemmt dort per CSS
+// auf 2 statt 3 Zeilen (@media max-height:700px in styles.css), damit die
+// Karte nie unter die Bottom Navigation reicht. Die Zeichenbudgets müssen
+// diese Zeilengrenze kennen — sonst kürzt JS auf "3 Zeilen Länge" und CSS
+// klemmt zusätzlich auf 2, was wie eine doppelte Kürzung wirken kann.
+// Dieselbe Schwelle wie die CSS-Media-Query, bewusst dieselbe Zahl.
+function lageIsShortViewport() {
+  try { return Boolean(window.matchMedia && window.matchMedia("(max-height: 700px)").matches); }
+  catch (_) { return false; }
 }
 
 function lageSourceRow(source) {
@@ -2103,72 +2216,78 @@ function lageDocRow(doc) {
     : `<div class="lage2-doc">${inner}</div>`;
 }
 
-function renderLageParagraph(para) {
-  const sources = Array.isArray(para.sources) ? para.sources : [];
-  const badges = sources.slice(0, 5).map(lageSourceBadge).join("");
-  const extra = sources.length > 5 ? `<span class="lage2-badge more">+${sources.length - 5}</span>` : "";
+// Eine große Karussell-Karte: Kategorie+Status -> Kurztitel -> Kurzfassung ->
+// Warum wichtig -> Empfehlung. Rein informativ, nicht antippbar — die
+// Detailansicht (Quellen, Chronologie) folgt in einer späteren Iteration.
+//
+// Bevorzugt die vom V3-Verstehensschritt EINMALIG erzeugten, dauerhaft
+// gespeicherten Felder (v.displayTitle/displaySummary/whyRelevant/
+// recommendation/displayCategory) — hier passiert keine KI-Umformulierung,
+// nur Anzeige bereits gespeicherter Werte (kein KI-Aufruf beim Rendern).
+function renderVorgangCard(v) {
+  // v.displayTitle ist der EINZIGE echte Anzeige-Titel: einmal in der
+  // Understanding-Engine erzeugt, qualitätsgeprüft, dauerhaft gespeichert. Die
+  // UI erzeugt/kürzt/repariert hier NICHTS (kein slice/substring/Ellipse).
+  const displayTitle = lageField(v.displayTitle);
+  const category = lageField(v.displayCategory) || lageCardCategory(v);
+  const statusChip = lageStatusChip(v);
+  // LEGACY-FALLBACK (nur für Alt-Vorgänge ohne display_title): den vollständigen
+  // bisherigen Titel unverändert zeigen — NIE algorithmisch kürzen (das war die
+  // Ursache abgebrochener Titel wie "Friedrich Merz hat öffentlich"), nur
+  // kleinere Schrift (siehe .lage2-card-title-fallback). Dieser Zweig soll nach
+  // einem Backfill der neuen Felder vollständig verschwinden.
+  const title = displayTitle || lageField(v.title);
+  const summary = v.summary || {};
+  // Zeichenbudgets sind per Messung so gewählt, dass sie in die jeweils
+  // erlaubte Zeilenzahl von .lage2-card-row p passen (3 Zeilen normal, 2 auf
+  // kurzen Viewports) — sonst kann CSS-Line-Clamp den Text zusätzlich kappen
+  // ("doppelte Kürzung"). Gilt für BEIDE Pfade: die gespeicherten Felder sind
+  // zwar redaktionell kurz angelegt (~1 Satz), aber nicht hart auf das
+  // Karten-Zeichenbudget begrenzt — lageFirstSentence bleibt daher auch für
+  // v.displaySummary/whyRelevant/recommendation die letzte Absicherung gegen
+  // eine von CSS unsauber (mitten in der Zeile) abgeschnittene Zeile.
+  const shortVp = lageIsShortViewport();
+  const kurzfassung = lageFirstSentence(lageField(v.displaySummary) || summary.wasIstPassiert || "", shortVp ? 58 : 95);
+  const warum = lageFirstSentence(lageHumanize(lageField(v.whyRelevant) || summary.warumWichtig || ""), shortVp ? 58 : 85);
+  const empfehlung = lageFirstSentence(lageHumanize(lageField(v.recommendation) || v.empfehlung || ""), shortVp ? 58 : 75);
   return `
-    <article class="lage2-para">
-      <p class="lage2-para-text">${escapeHtml(para.text)}</p>
-      <details class="lage2-quellen">
-        <summary>
-          <span class="lage2-quellen-label">${lageChevIcon()}${sources.length} ${sources.length === 1 ? "Quelle" : "Quellen"}</span>
-          <span class="lage2-badges" aria-hidden="true">${badges}${extra}</span>
-        </summary>
-        <div class="lage2-quellen-list">${sources.map(lageSourceRow).join("")}</div>
-      </details>
+    <article class="lage2-card">
+      <div class="lage2-card-head">
+        <span class="lage2-vtag">${escapeHtml(category)}</span>
+        ${statusChip ? `<span class="lage2-status-chip">${escapeHtml(statusChip)}</span>` : ""}
+      </div>
+      <h2 class="lage2-card-title${displayTitle ? "" : " lage2-card-title-fallback"}">${escapeHtml(title)}</h2>
+      <div class="lage2-card-body">
+        ${kurzfassung ? `
+        <div class="lage2-card-row">
+          <span class="lage2-card-row-head">Kurzfassung</span>
+          <p>${escapeHtml(kurzfassung)}</p>
+        </div>` : ""}
+        ${warum ? `
+        <div class="lage2-card-row">
+          <span class="lage2-card-row-head">Warum wichtig?</span>
+          <p>${escapeHtml(warum)}</p>
+        </div>` : ""}
+        ${empfehlung ? `
+        <div class="lage2-card-row">
+          <span class="lage2-card-row-head">Empfehlung</span>
+          <p>${escapeHtml(empfehlung)}</p>
+        </div>` : ""}
+      </div>
     </article>`;
 }
 
-function renderVorgangCard(v) {
+// Leerer Zustand: keine Fake-/Seed-/Platzhalter-Karten, nur ein ruhiger Hinweis.
+function renderLageEmpty(greeting, dateLabel) {
   return `
-    <button class="lage2-vcard" type="button" data-vorgang="${escapeAttribute(v.id)}">
-      <span class="lage2-vtag">${escapeHtml(v.policyField || "")}</span>
-      <span class="lage2-vtitle">${escapeHtml(v.title || "")}</span>
-      <span class="lage2-vstand"><b>Aktueller Stand</b>${escapeHtml(v.standLabel || "")}</span>
-      <span class="lage2-vtime"><i class="lage2-dot ${escapeAttribute(v.updatedDot || "today")}"></i>${escapeHtml(v.updatedLabel || "")}</span>
-    </button>`;
-}
-
-// Fallback (req 6): kein KI-Briefing verfügbar → klar markieren, Vorgänge trotzdem zeigen.
-function renderLageUnavailable(greeting, data, vorgaenge) {
-  const notice = (vorgaenge && vorgaenge.length)
-    ? "Für heute wurde noch kein aktuelles Briefing erzeugt. Die aktuellen politischen Vorgänge findest du unten."
-    : "Für heute liegen noch keine politischen Vorgänge vor. Sobald welche vorliegen, fasst Helmut sie hier zusammen.";
-  return `
-    <section class="lage2">
+    <section class="lage2 lage2-empty-wrap">
       <header class="lage2-head">
-        <div class="lage2-head-text">
-          <h1 class="lage2-greeting">${escapeHtml(greeting)}</h1>
-          <p class="lage2-subtitle">Dein politisches Briefing für heute — ${escapeHtml(lageDateLabel())}</p>
-        </div>
+        <span class="lage2-date">${escapeHtml(dateLabel)}</span>
+        <h1 class="lage2-greeting">${escapeHtml(greeting)}</h1>
       </header>
-      <p class="lage2-notice">${escapeHtml(notice)}</p>
-      ${(vorgaenge && vorgaenge.length) ? `
-      <div class="lage2-vorgaenge-head">
-        <h2>Alle politischen Vorgänge</h2>
-        <span class="lage2-vorgaenge-count">${vorgaenge.length}</span>
-      </div>
-      <div class="lage2-vorgaenge-grid">
-        ${vorgaenge.map(renderVorgangCard).join("")}
-      </div>` : ""}
-      <p class="lage2-foot">Lage zeigt, worüber du heute Bescheid wissen musst — ohne Empfehlung oder Bewertung. Was das für dich bedeutet und was zu tun ist, sagt dir <button class="lage2-inline-link" type="button" data-view="helmut">Helmut</button>.</p>
-    </section>`;
-}
-
-function renderLageEmpty(greeting) {
-  return `
-    <section class="lage2">
-      <header class="lage2-head">
-        <div class="lage2-head-text">
-          <h1 class="lage2-greeting">${escapeHtml(greeting)}</h1>
-          <p class="lage2-subtitle">Dein politisches Briefing für heute — ${escapeHtml(lageDateLabel())}</p>
-        </div>
-      </header>
-      <div class="lage2-briefing">
-        <article class="lage2-para">
-          <p class="lage2-para-text">Für heute liegt noch kein Briefing vor. Sobald neue politische Vorgänge vorliegen, fasst Helmut sie hier zusammen.</p>
-        </article>
+      <div class="lage2-empty">
+        <p class="lage2-empty-title">Heute liegen noch keine quellengestützten Vorgänge vor.</p>
+        <p class="lage2-empty-sub">Sobald neue geprüfte Quellen verfügbar sind, erscheint hier deine Lage.</p>
       </div>
     </section>`;
 }
@@ -2177,40 +2296,63 @@ function renderLageView() {
   const data = lageData();
   const firstName = (profile && profile.fullName ? profile.fullName : "Cem").split(" ")[0];
   const greeting = (typeof timeGreeting === "function" ? timeGreeting(firstName) : `Guten Morgen, ${firstName}.`);
-  if (!data) return renderLageEmpty(greeting);
-  const vorgaenge = Array.isArray(data.vorgaenge) ? data.vorgaenge : [];
-  const hasBriefing = Array.isArray(data.paragraphs) && data.paragraphs.length;
-  if (!hasBriefing) return renderLageUnavailable(greeting, data, vorgaenge);
+  const dateLabel = lageDateLabel();
+  const vorgaenge = lageVisibleVorgaenge(data);
+  if (!vorgaenge.length) return renderLageEmpty(greeting, dateLabel);
+  const count = vorgaenge.length;
+  const countWord = count === 1 ? "neuen Vorgang" : "neue Vorgänge";
   return `
     <section class="lage2">
       <header class="lage2-head">
-        <div class="lage2-head-text">
-          <h1 class="lage2-greeting">${escapeHtml(greeting)}</h1>
-          <p class="lage2-subtitle">Dein politisches Briefing für heute — ${escapeHtml(lageDateLabel())}</p>
-        </div>
-        <button class="lage2-pdf" type="button" data-lage-pdf>${lagePdfIcon()} Briefing als PDF</button>
+        <span class="lage2-date">${escapeHtml(dateLabel)}</span>
+        <h1 class="lage2-greeting">${escapeHtml(greeting)}</h1>
+        <p class="lage2-count">Heute gibt es <b>${count}</b> ${countWord}.</p>
       </header>
-      ${data.demo ? `<p class="lage2-demo">Beispiel-Briefing · Demodaten</p>` : ""}
+      ${data.demo ? `<span class="lage2-demo">Beispiel-Briefing · Demodaten</span>` : ""}
 
-      <div class="lage2-briefing">
-        ${data.paragraphs.map(renderLageParagraph).join("")}
+      <div class="lage2-carousel-bleed">
+        <div class="lage2-carousel" data-lage-track>
+          ${vorgaenge.map(renderVorgangCard).join("")}
+        </div>
+        ${count > 1 ? `
+        <div class="lage2-dots" data-lage-dots aria-hidden="true">
+          ${vorgaenge.map((_, i) => `<span class="lage2-dot-item${i === 0 ? " active" : ""}"></span>`).join("")}
+        </div>` : ""}
       </div>
-
-      ${vorgaenge.length ? `
-      <div class="lage2-vorgaenge-head">
-        <h2>Alle politischen Vorgänge</h2>
-        <span class="lage2-vorgaenge-count">${vorgaenge.length}</span>
-      </div>
-      <div class="lage2-vorgaenge-grid">
-        ${vorgaenge.map(renderVorgangCard).join("")}
-      </div>` : ""}
-
-      <p class="lage2-foot">Lage zeigt, worüber du heute Bescheid wissen musst — ohne Empfehlung oder Bewertung. Was das für dich bedeutet und was zu tun ist, sagt dir <button class="lage2-inline-link" type="button" data-view="helmut">Helmut</button>.</p>
     </section>`;
 }
 
-function lagePdfIcon() {
-  return `<svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 1.5h5L12.5 5v9.5a0 0 0 0 1 0 0H4a0 0 0 0 1 0 0V1.5Z" stroke="currentColor" stroke-width="1.2"/><path d="M9 1.5V5h3.5" stroke="currentColor" stroke-width="1.2"/></svg>`;
+// Merkt sich die Scroll-Position übers volle Re-Rendern hinweg (z. B. Menü/Update-
+// Panel öffnen&schließen ersetzt app.innerHTML komplett) — sonst spränge das
+// Karussell beim nächsten Render ungefragt auf die erste Karte zurück.
+let lageCarouselScrollLeft = 0;
+
+// Aktualisiert die Pagination-Punkte beim nativen Scroll (kein Re-Render nötig).
+function bindLageCarousel() {
+  const track = app.querySelector("[data-lage-track]");
+  if (!track) return;
+  if (lageCarouselScrollLeft) track.scrollLeft = lageCarouselScrollLeft;
+  const dotsWrap = app.querySelector("[data-lage-dots]");
+  const cards = track.querySelectorAll(".lage2-card");
+  const dots = dotsWrap ? dotsWrap.querySelectorAll(".lage2-dot-item") : null;
+  const updateDots = () => {
+    if (!dots || !dots.length || !cards.length) return;
+    const trackLeft = track.getBoundingClientRect().left;
+    let closest = 0;
+    let closestDist = Infinity;
+    cards.forEach((card, i) => {
+      const dist = Math.abs(card.getBoundingClientRect().left - trackLeft);
+      if (dist < closestDist) { closestDist = dist; closest = i; }
+    });
+    dots.forEach((dot, i) => dot.classList.toggle("active", i === closest));
+  };
+  let scrollTimer = null;
+  track.addEventListener("scroll", () => {
+    lageCarouselScrollLeft = track.scrollLeft;
+    window.clearTimeout(scrollTimer);
+    scrollTimer = window.setTimeout(updateDots, 80);
+  }, { passive: true });
+  updateDots();
 }
 
 function lageStarIcon() {
@@ -2243,7 +2385,7 @@ function renderVorgangDetailView() {
         <div class="vdetail-main">
           <div class="vdetail-topline">
             <div>
-              <span class="lage2-vtag">${escapeHtml(v.policyField || "")}</span>
+              <span class="lage2-vtag">${escapeHtml(lageCardCategory(v))}</span>
               <h1 class="vdetail-title">${escapeHtml(v.title || "")} <span class="vdetail-star" aria-hidden="true">${lageStarIcon()}</span></h1>
             </div>
             <button class="vdetail-helmut" type="button" data-view="helmut">${lageStarIcon()} In Helmut öffnen</button>
@@ -2252,6 +2394,10 @@ function renderVorgangDetailView() {
 
           <h2 class="vdetail-h2">Zusammenfassung</h2>
           <div class="vdetail-summary">${summaryHtml}</div>
+
+          ${v.empfehlung ? `
+          <h2 class="vdetail-h2">Empfehlung</h2>
+          <div class="vdetail-summary"><p>${escapeHtml(v.empfehlung)}</p></div>` : ""}
 
           ${chrono.length ? `
           <h2 class="vdetail-h2">Chronologie</h2>
@@ -7060,14 +7206,8 @@ function bindActions() {
     });
   });
 
-  app.querySelectorAll("[data-lage-pdf]").forEach((button) => {
-    button.addEventListener("click", () => {
-      try { window.print(); }
-      catch (_) { showToast("PDF-Export folgt"); }
-    });
-  });
-
   bindCarousel();
+  bindLageCarousel();
 
   app.querySelectorAll("[data-communication]").forEach((button) => {
     button.addEventListener("click", () => {
