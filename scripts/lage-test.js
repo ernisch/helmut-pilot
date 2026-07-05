@@ -9,6 +9,7 @@ const assert = require("assert");
 const ai = require("../lib/helmut/ai");
 const lage = require("../lib/helmut/lage");
 const understanding = require("../lib/helmut/understanding");
+const { validateKnowledgeObject } = require("../lib/helmut/understanding-schema");
 
 let passed = 0;
 function ok(name, cond) {
@@ -104,6 +105,11 @@ async function run() {
       vorgang_id: "vg-tar", headline: "Bundestariftreuegesetz", status: "update",
       was_ist_passiert: "Referentenentwurf liegt vor.", warum_wichtig: "Tarifbindung.", wer_ist_betroffen: "Auftraggeber.",
       handlungsempfehlung: "Linie vorbereiten.",
+      display_title: "Tarifbindung: Entwurf vorgelegt",
+      display_summary: "Das BMAS hat den Referentenentwurf vorgelegt.",
+      why_relevant: "Betrifft die Tarifbindung bei öffentlichen Aufträgen.",
+      recommendation: "Linie vorbereiten, heute keine öffentliche Reaktion.",
+      display_category: "BMAS",
       ausschuesse: ["Arbeit und Soziales"], updated_at: new Date().toISOString()
     };
     const docs = [
@@ -121,6 +127,74 @@ async function run() {
     // kein zusaetzliches Score-/Rank-Feld (das bleibt Helmut).
     ok("Empfehlung 1:1 aus handlungsempfehlung, vorgangsbezogen", card.empfehlung === "Linie vorbereiten.");
     ok("keine globale Prioritaet/Rangfolge im Card-Objekt", !("priority" in card) && !("rank" in card) && !("score" in card));
+    // UI-Zeigefelder (C7/C8, einmalig erzeugt) 1:1 durchgereicht — keine
+    // Umformulierung/Kuerzung in koToVorgangCard.
+    ok("displayTitle 1:1 aus display_title", card.displayTitle === "Tarifbindung: Entwurf vorgelegt");
+    ok("displaySummary 1:1 aus display_summary", card.displaySummary === "Das BMAS hat den Referentenentwurf vorgelegt.");
+    ok("whyRelevant 1:1 aus why_relevant", card.whyRelevant === "Betrifft die Tarifbindung bei öffentlichen Aufträgen.");
+    ok("recommendation 1:1 aus recommendation", card.recommendation === "Linie vorbereiten, heute keine öffentliche Reaktion.");
+    ok("displayCategory 1:1 aus display_category", card.displayCategory === "BMAS");
+  }
+
+  // ── 6b) Vorgang-Mapping: aeltere KOs ohne die neuen UI-Felder ──
+  console.log("koToVorgangCard (Fallback ohne neue Felder)");
+  {
+    const ko = {
+      vorgang_id: "vg-alt", headline: "Altes Thema", status: "neu",
+      was_ist_passiert: "X ist passiert.", warum_wichtig: "Y ist wichtig.", handlungsempfehlung: "Z."
+    };
+    const card = lage.koToVorgangCard(ko, []);
+    ok("kein display_title -> displayTitle leer (Client faellt auf vollstaendigen Titel zurueck)", card.displayTitle === "");
+    ok("kein display_summary -> displaySummary leer", card.displaySummary === "");
+    ok("kein why_relevant -> whyRelevant leer", card.whyRelevant === "");
+    ok("kein recommendation -> recommendation leer", card.recommendation === "");
+    ok("kein display_category -> displayCategory leer", card.displayCategory === "");
+    ok("bestehende Felder bleiben trotzdem gefuellt", card.title === "Altes Thema" && card.empfehlung === "Z.");
+  }
+
+  // ── 6c) assembleKnowledgeObject: neue UI-Felder saeubern/kappen ──
+  console.log("assembleKnowledgeObject (neue Anzeige-Felder)");
+  {
+    const cluster = { documents: [{ title: "X" }] };
+    const wellFormed = understanding.assembleKnowledgeObject({
+      was_ist_passiert: "A.", warum_wichtig: "B.", wer_ist_betroffen: "C.", handlungsempfehlung: "D.", zeitdruck: "mittel",
+      display_title: "Merz lehnt Vergesellschaftung ab",
+      display_summary: "  Kurze   Zusammenfassung.  ",
+      why_relevant: "Betrifft den Gesundheitsausschuss direkt.",
+      recommendation: "Heute nicht öffentlich reagieren.",
+      display_category: "Bundestag"
+    }, cluster, "vg-x", {});
+    ok("display_title uebernommen (passt ins Budget)", wellFormed.display_title === "Merz lehnt Vergesellschaftung ab");
+    ok("display_summary getrimmt/normalisiert", wellFormed.display_summary === "Kurze Zusammenfassung.");
+    ok("why_relevant uebernommen", wellFormed.why_relevant === "Betrifft den Gesundheitsausschuss direkt.");
+    ok("recommendation uebernommen", wellFormed.recommendation === "Heute nicht öffentlich reagieren.");
+    ok("display_category uebernommen", wellFormed.display_category === "Bundestag");
+
+    // Der eigentliche Bug-Fix: ein zu langer display_title wird VERWORFEN statt
+    // mitten im Satz abgeschnitten (das war die Ursache abgebrochener Titel).
+    const tooLong = "Dies ist ein deutlich zu langer Titel, der auf keinen Fall in eine kurze UI-Ueberschrift passt und daher niemals gekappt werden darf";
+    const overlong = understanding.assembleKnowledgeObject({
+      was_ist_passiert: "A.", warum_wichtig: "B.", wer_ist_betroffen: "C.", handlungsempfehlung: "D.", zeitdruck: "mittel",
+      display_title: tooLong, display_category: "Ministerium fuer Arbeit, Gesundheit und Soziales des Landes"
+    }, cluster, "vg-y", {});
+    ok("zu langer display_title wird verworfen statt abgeschnitten (kein Fragment)", overlong.display_title === "");
+    ok("zu langer display_category wird verworfen statt abgeschnitten", overlong.display_category === "");
+
+    const blank = understanding.assembleKnowledgeObject({
+      was_ist_passiert: "A.", warum_wichtig: "B.", wer_ist_betroffen: "C.", handlungsempfehlung: "D.", zeitdruck: "mittel",
+      display_title: "   "
+    }, cluster, "vg-z", {});
+    ok("nur-Leerzeichen display_title wird verworfen", blank.display_title === "");
+
+    const missing = understanding.assembleKnowledgeObject({
+      was_ist_passiert: "A.", warum_wichtig: "B.", wer_ist_betroffen: "C.", handlungsempfehlung: "D.", zeitdruck: "mittel"
+    }, cluster, "vg-w", {});
+    ok("fehlende neue Felder -> leere Strings, kein Absturz", missing.display_title === "" && missing.display_summary === ""
+      && missing.why_relevant === "" && missing.recommendation === "" && missing.display_category === "");
+    // Leere/verworfene neue Felder duerfen die Gesamtvalidierung nicht zu Fall
+    // bringen (bewusst NICHT required/minLength — anders als was_ist_passiert etc.).
+    ok("KO mit verworfenem display_title bleibt insgesamt schema-valide", validateKnowledgeObject(overlong).valid === true);
+    ok("KO ganz ohne neue Felder bleibt insgesamt schema-valide", validateKnowledgeObject(missing).valid === true);
   }
 
   // ── 7) resolveParagraphSources: Vereinigung + Dedup ──

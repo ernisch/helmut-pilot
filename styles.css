@@ -10209,10 +10209,14 @@ body:has(.lage2) {
 }
 
 .lage2-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+/* max-width/ellipsis: Fallback-Kategorien ohne v.displayCategory (lange
+   Ausschuss-/Ministeriumsnamen bei älteren Vorgängen) sollen die Pille nie
+   umbrechen/aufblähen lassen, sondern sauber auf einer Zeile enden. */
 .lage2-vtag {
   font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
   color: var(--command-purple); background: rgba(140, 92, 255, .12);
   border-radius: 6px; padding: 3px 7px; align-self: flex-start;
+  max-width: 68%; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 /* Status-Chip: bewusst zurückhaltend (muted, dünner Rahmen, keine Fläche) —
    deutlich ruhiger als die violette Kategorie-Pill, keine Alarm-Optik. */
@@ -10221,26 +10225,30 @@ body:has(.lage2) {
   border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px;
   white-space: nowrap; flex: none;
 }
+/* Bewusst KEIN Line-Clamp: ein Titel darf nie mit "…" abgeschnitten werden —
+   weder algorithmisch (JS) noch nativ per CSS (das war die Ursache der
+   abgebrochenen Überschriften, die dieses Feld behebt). v.displayTitle ist
+   serverseitig auf ~45 Zeichen (max. 70) angelegt und passt normalerweise in
+   1–2 Zeilen; in seltenen Randfällen wird die Karte statt zu kappen minimal
+   höher (Flex-Stretch im Karussell gleicht alle Karten der Reihe ohnehin an). */
 .lage2-card-title {
   margin: 12px 0 0; font-size: clamp(21px, 5.5vw, 26px); font-weight: 700;
   letter-spacing: -.02em; line-height: 1.22; color: var(--text);
-  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
-  overflow: hidden; hyphens: auto; overflow-wrap: break-word;
+  hyphens: auto; overflow-wrap: break-word;
 }
+/* Fallback ohne generiertes v.displayTitle (ältere Vorgänge): voller
+   Originaltitel statt algorithmischer Kürzung, nur mit kleinerer Schrift
+   (mehr Zeichenbudget pro Zeile) — ebenfalls ohne Line-Clamp. */
+.lage2-card-title.lage2-card-title-fallback { font-size: clamp(17px, 4.4vw, 20px); }
 .lage2-card-body {
   display: flex; flex-direction: column; gap: 12px; margin-top: 14px;
   padding-top: 14px; border-top: 1px solid var(--hairline);
 }
 .lage2-card-row { display: flex; flex-direction: column; gap: 5px; }
 .lage2-card-row-head {
-  display: inline-flex; align-items: center; gap: 8px;
+  display: inline-flex; align-items: center;
   font-size: 12px; font-weight: 650; color: var(--command-purple);
 }
-.lage2-card-ico {
-  display: inline-grid; place-items: center; width: 20px; height: 20px;
-  border-radius: 50%; background: rgba(140, 92, 255, .14); flex: none;
-}
-.lage2-card-ico svg { width: 12px; height: 12px; }
 .lage2-card-row p {
   margin: 0; font-size: 15px; line-height: 1.48; color: var(--text); overflow-wrap: break-word;
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden;
@@ -10253,15 +10261,6 @@ body:has(.lage2) {
   transition: background var(--dur-base) var(--ease-out-soft), transform var(--dur-base) var(--ease-out-soft);
 }
 .lage2-dot-item.active { background: var(--command-purple); transform: scale(1.25); }
-
-.lage2-foot {
-  font-size: 13px; line-height: 1.6; color: var(--muted-2); max-width: 560px;
-  margin: 26px 0 0; padding-top: 4px;
-}
-.lage2-inline-link {
-  background: none; border: 0; padding: 0; font: inherit; color: var(--command-purple);
-  font-weight: 600; cursor: pointer; text-decoration: underline; text-underline-offset: 2px;
-}
 
 /* Leerer Zustand: keine Fake-/Seed-Karten, nur ein ruhiger Hinweis */
 .lage2-empty { margin-top: 8px; max-width: 420px; }

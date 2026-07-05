@@ -2051,6 +2051,14 @@ function renderView() {
 // genau EINE kurze, ausschließlich auf diesen einen Vorgang bezogene Empfehlung
 // (bestehendes Feld v.empfehlung). Übergreifende Priorisierung, Strategie,
 // Kommunikation und Tagesentscheidung bleiben Helmut vorbehalten.
+//
+// Titel, Kurzfassung, Warum-wichtig, Empfehlung und Kategorie kommen bevorzugt
+// aus den vom V3-Verstehensschritt EINMALIG erzeugten, dauerhaft gespeicherten
+// Feldern (v.displayTitle/displaySummary/whyRelevant/recommendation/
+// displayCategory) — hier findet KEINE KI-Umformulierung/-Kürzung statt, nur
+// Anzeige bereits gespeicherter Werte. Ältere Vorgänge ohne diese Felder nutzen
+// einen rein deterministischen Fallback (nie ein KI-Aufruf beim Rendern, nie
+// ein mitten im Satz abgeschnittener Titel).
 // ─────────────────────────────────────────────────────────────────────────
 
 function lageData() {
@@ -2077,9 +2085,10 @@ function lageVisibleVorgaenge(data) {
   return list.filter(lageHasSource);
 }
 
-// Kategorie-Pill: Ausschuss/Ministerium falls vorhanden, sonst die erste echte
-// Quelle (z. B. "Tagesschau"), sonst ein neutraler Fallback. Reine Anzeigelogik,
-// kein neues Datenfeld.
+// Fallback-Kategorie für Vorgänge ohne v.displayCategory (ältere Vorgänge):
+// Ausschuss/Ministerium falls vorhanden, sonst die erste echte Quelle (z. B.
+// "Tagesschau"), sonst ein neutraler Fallback. Reine Anzeigelogik, kein neues
+// Datenfeld.
 function lageCardCategory(v) {
   if (v.policyField) return v.policyField;
   const firstSource = Array.isArray(v.sources) ? v.sources[0] : null;
@@ -2099,59 +2108,11 @@ function lageStatusChip(v) {
   return LAGE_STATUS_LABEL[v.status] || "";
 }
 
-// Redaktioneller Kurztitel ohne KI: bevorzugt ein explizites Kurztitel-Feld,
-// falls die Datenquelle das irgendwann liefert. Sonst wird der vorhandene
-// Titel rein mechanisch an der besten verfügbaren natürlichen Zäsur gekappt
-// (Satzzeichen/Konjunktion) statt mit "..." abgeschnitten — das ist KEINE
-// echte redaktionelle Umformulierung (die bräuchte KI), nur eine saubere,
-// deterministische Kürzung.
-function lageShortTitle(v) {
-  const explicit = [v.shortTitle, v.titleShort, v.summaryTitle]
-    .map((c) => String(c || "").replace(/\s+/g, " ").trim())
-    .find(Boolean);
-  if (explicit) return explicit;
-  const raw = String(v.title || "").replace(/\s+/g, " ").trim();
-  if (!raw) return "";
-  // 34 Zeichen ist per Messung (scrollHeight vs. clientHeight im Browser bei
-  // .lage2-card-title: font-size clamp(21px,5.5vw,26px), Card-Innenbreite auf
-  // Mobile ~78vw minus Padding) die Schwelle, ab der die Titelzeile
-  // zuverlässig in 2 Zeilen umbricht statt eine dritte Zeile zu brauchen (die
-  // dann per CSS-Line-Clamp mit "…" abgeschnitten würde). Ändert sich Font-
-  // Größe/Card-Breite/Padding von .lage2-card-title bzw. .lage2-card in
-  // styles.css spürbar, muss dieser Wert neu gemessen werden — er ist NICHT
-  // automatisch daraus abgeleitet. Einzelne sehr lange Komposita können die
-  // Schätzung dennoch vereinzelt reißen — dafür bleibt der Line-Clamp als
-  // letzte, saubere Absicherung (nie ein harter Abbruch).
-  const FITS = 34;
-  if (raw.length <= FITS) return raw;
-  // Entfernt Satzzeichen, die eine Kürzung sonst "abgebrochen" aussehen
-  // lassen (z. B. ein hängendes Komma, wenn genau davor gekappt wurde).
-  const clean = (s) => s.trim().replace(/[,;:.\-–—]+$/, "").trim();
-  // Endet der gekürzte Titel auf einem "schwachen" Funktionswort (Artikel/
-  // Präposition/Hilfsverb), wirkt er ebenfalls unfertig ("...im", "...und
-  // die") — wird nach Möglichkeit vermieden.
-  const endsWeak = (word) => /^(?:der|die|das|des|dem|den|ein|eine|einer|eines|und|oder|im|in|am|an|auf|für|zu|zur|zum|von|vom|bei|mit|nach|ist|sind|hat|haben|wird|werden|soll|sollen|kann|können|muss|müssen|will|wollen)$/i.test(word.replace(/[,;:.\-–—]+$/, ""));
-
-  // 1) Natürliche Zäsuren der Reihe nach durchprobieren (nicht nur die
-  // erste — ein früher Doppelpunkt wie "Name: ..." wäre allein zu kurz).
-  const boundary = /[,;:]|\s(?:und|dass|weil|nachdem|obwohl|während|wodurch|wobei)\s/gi;
-  let m;
-  while ((m = boundary.exec(raw))) {
-    const candidate = clean(raw.slice(0, m.index));
-    if (candidate.split(" ").length >= 3 && candidate.length <= FITS) return candidate;
-  }
-
-  // 2) Wortweise von 6 auf minimal 3 Wörter kappen, bis es ins Zeichenbudget
-  // passt — dabei möglichst nicht auf einem schwachen Wort enden.
-  const words = raw.split(" ");
-  let fallback = null;
-  for (let n = 6; n >= 3; n--) {
-    const candidate = clean(words.slice(0, n).join(" "));
-    if (candidate.length > FITS) continue;
-    if (!fallback) fallback = candidate;
-    if (!endsWeak(words[n - 1])) return candidate;
-  }
-  return fallback || clean(words.slice(0, 3).join(" "));
+// Behandelt eine leere/nur-Leerzeichen-Zeichenkette wie "nicht vorhanden" —
+// verhindert, dass ein Whitespace-Wert (z. B. v.displayTitle === "   ") ein
+// Feld fälschlich als "gesetzt" gelten lässt.
+function lageField(value) {
+  return String(value == null ? "" : value).replace(/\s+/g, " ").trim();
 }
 
 // Häufige deutsche Abkürzungen/Ordinalzahlen, vor denen ein "." KEIN
@@ -2255,57 +2216,54 @@ function lageDocRow(doc) {
     : `<div class="lage2-doc">${inner}</div>`;
 }
 
-// Wiederverwendetes Dokument-Icon (identisch zu HELMUT_ICON_DOC weiter unten) —
-// kein zweites Icon-Design pflegen.
-function lageDocIcon() {
-  return HELMUT_ICON_DOC;
-}
-
-function lageInfoIcon() {
-  return `<svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="7.25" stroke="currentColor" stroke-width="1.3"/><path d="M10 9.3v4.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="10" cy="6.8" r="1" fill="currentColor"/></svg>`;
-}
-
-function lageCheckIcon() {
-  return `<svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="7.25" stroke="currentColor" stroke-width="1.3"/><path d="M6.7 10.3l2.1 2.1 4.4-4.7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-}
-
 // Eine große Karussell-Karte: Kategorie+Status -> Kurztitel -> Kurzfassung ->
 // Warum wichtig -> Empfehlung. Rein informativ, nicht antippbar — die
 // Detailansicht (Quellen, Chronologie) folgt in einer späteren Iteration.
+//
+// Bevorzugt die vom V3-Verstehensschritt EINMALIG erzeugten, dauerhaft
+// gespeicherten Felder (v.displayTitle/displaySummary/whyRelevant/
+// recommendation/displayCategory) — hier passiert keine KI-Umformulierung,
+// nur Anzeige bereits gespeicherter Werte (kein KI-Aufruf beim Rendern).
 function renderVorgangCard(v) {
-  const category = lageCardCategory(v);
+  const displayTitle = lageField(v.displayTitle);
+  const category = lageField(v.displayCategory) || lageCardCategory(v);
   const statusChip = lageStatusChip(v);
-  const title = lageShortTitle(v);
+  // Kein sinnvoller displayTitle vorhanden (ältere Vorgänge): NIE algorithmisch
+  // kürzen (das war die Ursache abgebrochener Titel wie "Friedrich Merz hat
+  // öffentlich") — stattdessen den vollständigen Originaltitel zeigen, mit
+  // kleinerer Schrift statt Kürzung (siehe .lage2-card-title-fallback).
+  const title = displayTitle || lageField(v.title);
   const summary = v.summary || {};
   // Zeichenbudgets sind per Messung so gewählt, dass sie in die jeweils
   // erlaubte Zeilenzahl von .lage2-card-row p passen (3 Zeilen normal, 2 auf
   // kurzen Viewports) — sonst kann CSS-Line-Clamp den JS-Text zusätzlich
-  // kappen ("doppelte Kürzung").
+  // kappen ("doppelte Kürzung"). Gilt nur für den Fallback-Pfad — die
+  // gespeicherten Felder sind bereits redaktionell kurz.
   const shortVp = lageIsShortViewport();
-  const kurzfassung = lageFirstSentence(summary.wasIstPassiert || "", shortVp ? 58 : 95);
-  const warum = lageFirstSentence(lageHumanize(summary.warumWichtig || ""), shortVp ? 58 : 85);
-  const empfehlung = lageFirstSentence(lageHumanize(v.empfehlung || ""), shortVp ? 58 : 75);
+  const kurzfassung = lageField(v.displaySummary) || lageFirstSentence(summary.wasIstPassiert || "", shortVp ? 58 : 95);
+  const warum = lageField(v.whyRelevant) || lageFirstSentence(lageHumanize(summary.warumWichtig || ""), shortVp ? 58 : 85);
+  const empfehlung = lageField(v.recommendation) || lageFirstSentence(lageHumanize(v.empfehlung || ""), shortVp ? 58 : 75);
   return `
     <article class="lage2-card">
       <div class="lage2-card-head">
         <span class="lage2-vtag">${escapeHtml(category)}</span>
         ${statusChip ? `<span class="lage2-status-chip">${escapeHtml(statusChip)}</span>` : ""}
       </div>
-      <h2 class="lage2-card-title">${escapeHtml(title)}</h2>
+      <h2 class="lage2-card-title${displayTitle ? "" : " lage2-card-title-fallback"}">${escapeHtml(title)}</h2>
       <div class="lage2-card-body">
         ${kurzfassung ? `
         <div class="lage2-card-row">
-          <span class="lage2-card-row-head"><i class="lage2-card-ico">${lageDocIcon()}</i>Kurzfassung</span>
+          <span class="lage2-card-row-head">Kurzfassung</span>
           <p>${escapeHtml(kurzfassung)}</p>
         </div>` : ""}
         ${warum ? `
         <div class="lage2-card-row">
-          <span class="lage2-card-row-head"><i class="lage2-card-ico">${lageInfoIcon()}</i>Warum wichtig?</span>
+          <span class="lage2-card-row-head">Warum wichtig?</span>
           <p>${escapeHtml(warum)}</p>
         </div>` : ""}
         ${empfehlung ? `
         <div class="lage2-card-row">
-          <span class="lage2-card-row-head"><i class="lage2-card-ico">${lageCheckIcon()}</i>Empfehlung</span>
+          <span class="lage2-card-row-head">Empfehlung</span>
           <p>${escapeHtml(empfehlung)}</p>
         </div>` : ""}
       </div>
@@ -2354,8 +2312,6 @@ function renderLageView() {
           ${vorgaenge.map((_, i) => `<span class="lage2-dot-item${i === 0 ? " active" : ""}"></span>`).join("")}
         </div>` : ""}
       </div>
-
-      <p class="lage2-foot">Lage zeigt dir die aktuellen Vorgänge mit kurzer Einordnung je Thema. Priorisierung, Strategie und Kommunikation liefert dir <button class="lage2-inline-link" type="button" data-view="helmut">Helmut</button>.</p>
     </section>`;
 }
 
