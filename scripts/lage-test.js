@@ -103,6 +103,7 @@ async function run() {
     const ko = {
       vorgang_id: "vg-tar", headline: "Bundestariftreuegesetz", status: "update",
       was_ist_passiert: "Referentenentwurf liegt vor.", warum_wichtig: "Tarifbindung.", wer_ist_betroffen: "Auftraggeber.",
+      handlungsempfehlung: "Linie vorbereiten.",
       ausschuesse: ["Arbeit und Soziales"], updated_at: new Date().toISOString()
     };
     const docs = [
@@ -115,7 +116,11 @@ async function run() {
     ok("Quellen gemappt", card.sources.length === 2 && card.sources.some((s) => s.name === "Bundestag"));
     ok("PDF als Dokument erkannt", card.documents.length === 1 && card.documents[0].kind === "PDF");
     ok("Chronologie aus published_at (neuste zuerst)", card.chronologie[0].dateLabel && card.chronologie.length === 2);
-    ok("keine Handlungsempfehlung im Card-Objekt", !("handlungsempfehlung" in card) && !("empfehlung" in card));
+    // Empfehlung ist bewusst vorgangsbezogen (1:1 aus dem bestehenden Feld
+    // handlungsempfehlung) — keine globale Prioritaet/Rangfolge im Card-Objekt,
+    // kein zusaetzliches Score-/Rank-Feld (das bleibt Helmut).
+    ok("Empfehlung 1:1 aus handlungsempfehlung, vorgangsbezogen", card.empfehlung === "Linie vorbereiten.");
+    ok("keine globale Prioritaet/Rangfolge im Card-Objekt", !("priority" in card) && !("rank" in card) && !("score" in card));
   }
 
   // ── 7) resolveParagraphSources: Vereinigung + Dedup ──

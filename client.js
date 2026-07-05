@@ -2045,9 +2045,12 @@ function renderView() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// Lage — das politische Morgen-Briefing des Referenten.
+// Lage — reine Übersicht bereits vorhandener, quellengestützter Vorgänge.
 // Beantwortet AUSSCHLIESSLICH "Worüber muss ich heute Bescheid wissen?".
-// KEINE Empfehlung, KEINE Bewertung, KEINE Priorisierung (das macht Helmut).
+// Erzeugt nichts, bewertet nichts global, priorisiert nichts global. Pro Karte
+// genau EINE kurze, ausschließlich auf diesen einen Vorgang bezogene Empfehlung
+// (bestehendes Feld v.empfehlung). Übergreifende Priorisierung, Strategie,
+// Kommunikation und Tagesentscheidung bleiben Helmut vorbehalten.
 // ─────────────────────────────────────────────────────────────────────────
 
 function lageData() {
@@ -2060,19 +2063,28 @@ function lageDateLabel() {
   } catch (_) { return ""; }
 }
 
-function lageChevIcon() {
-  return `<svg class="chev" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M3 1.5 6.5 5 3 8.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+// Quellenregel: nur Vorgänge mit mind. einer echten Quelle dürfen erscheinen.
+function lageHasSource(v) {
+  if (!v) return false;
+  if (Array.isArray(v.sources) && v.sources.length > 0) return true;
+  return Number(v.sourceCount) > 0;
 }
 
-function lageSourceMonogram(name) {
-  const clean = String(name || "").replace(/^(die|der|das)\s+/i, "").replace(/[–—-].*$/, "").trim();
-  const words = clean.split(/\s+/).filter(Boolean);
-  const m = words.length >= 2 ? (words[0][0] + words[1][0]) : clean.slice(0, 2);
-  return (m || "•").toUpperCase();
+// Die tatsächlich sichtbare Menge — Kopfzahl ("Heute gibt es N neue Vorgänge")
+// und Karussell leiten sich BEIDE hieraus ab, damit sie nie auseinanderlaufen.
+function lageVisibleVorgaenge() {
+  const data = lageData();
+  const list = (data && Array.isArray(data.vorgaenge)) ? data.vorgaenge : [];
+  return list.filter(lageHasSource);
 }
 
-function lageSourceBadge(source) {
-  return `<span class="lage2-badge" title="${escapeAttribute(source.name || "")}">${escapeHtml(lageSourceMonogram(source.name))}</span>`;
+// Kategorie-Pill: Ausschuss/Ministerium falls vorhanden, sonst die erste echte
+// Quelle (z. B. "Tagesschau"), sonst ein neutraler Fallback. Reine Anzeigelogik,
+// kein neues Datenfeld.
+function lageCardCategory(v) {
+  if (v.policyField) return v.policyField;
+  const firstSource = Array.isArray(v.sources) ? v.sources[0] : null;
+  return (firstSource && firstSource.name) || "Vorgang";
 }
 
 function lageSourceRow(source) {
@@ -2103,72 +2115,61 @@ function lageDocRow(doc) {
     : `<div class="lage2-doc">${inner}</div>`;
 }
 
-function renderLageParagraph(para) {
-  const sources = Array.isArray(para.sources) ? para.sources : [];
-  const badges = sources.slice(0, 5).map(lageSourceBadge).join("");
-  const extra = sources.length > 5 ? `<span class="lage2-badge more">+${sources.length - 5}</span>` : "";
-  return `
-    <article class="lage2-para">
-      <p class="lage2-para-text">${escapeHtml(para.text)}</p>
-      <details class="lage2-quellen">
-        <summary>
-          <span class="lage2-quellen-label">${lageChevIcon()}${sources.length} ${sources.length === 1 ? "Quelle" : "Quellen"}</span>
-          <span class="lage2-badges" aria-hidden="true">${badges}${extra}</span>
-        </summary>
-        <div class="lage2-quellen-list">${sources.map(lageSourceRow).join("")}</div>
-      </details>
-    </article>`;
+function lageDocIcon() {
+  return `<svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5.5 3h6l3 3v10.5a.5.5 0 0 1-.5.5h-8.5a.5.5 0 0 1-.5-.5V3.5a.5.5 0 0 1 .5-.5Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M7 9.2h6M7 12h6M7 14.8h3.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>`;
 }
 
+function lageInfoIcon() {
+  return `<svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="7.25" stroke="currentColor" stroke-width="1.3"/><path d="M10 9.3v4.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="10" cy="6.8" r="1" fill="currentColor"/></svg>`;
+}
+
+function lageCheckIcon() {
+  return `<svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="7.25" stroke="currentColor" stroke-width="1.3"/><path d="M6.7 10.3l2.1 2.1 4.4-4.7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+
+// Eine große Karussell-Karte: Kategorie -> Titel -> Kurzfassung -> Warum wichtig
+// -> Empfehlung. Tippen öffnet die volle Vorgang-Detailansicht (Quellen, Chronologie).
 function renderVorgangCard(v) {
+  const category = lageCardCategory(v);
+  const summary = v.summary || {};
+  const kurzfassung = compactText(summary.wasIstPassiert || "", 170);
+  const warum = compactText(summary.warumWichtig || "", 130);
+  const empfehlung = compactText(v.empfehlung || "", 130);
   return `
-    <button class="lage2-vcard" type="button" data-vorgang="${escapeAttribute(v.id)}">
-      <span class="lage2-vtag">${escapeHtml(v.policyField || "")}</span>
-      <span class="lage2-vtitle">${escapeHtml(v.title || "")}</span>
-      <span class="lage2-vstand"><b>Aktueller Stand</b>${escapeHtml(v.standLabel || "")}</span>
-      <span class="lage2-vtime"><i class="lage2-dot ${escapeAttribute(v.updatedDot || "today")}"></i>${escapeHtml(v.updatedLabel || "")}</span>
+    <button type="button" class="lage2-card" data-vorgang="${escapeAttribute(v.id)}">
+      <span class="lage2-vtag">${escapeHtml(category)}</span>
+      <h2 class="lage2-card-title">${escapeHtml(v.title || "")}</h2>
+      <div class="lage2-card-body">
+        ${kurzfassung ? `
+        <div class="lage2-card-row">
+          <span class="lage2-card-row-head"><i class="lage2-card-ico">${lageDocIcon()}</i>Kurzfassung</span>
+          <p>${escapeHtml(kurzfassung)}</p>
+        </div>` : ""}
+        ${warum ? `
+        <div class="lage2-card-row">
+          <span class="lage2-card-row-head"><i class="lage2-card-ico">${lageInfoIcon()}</i>Warum wichtig?</span>
+          <p>${escapeHtml(warum)}</p>
+        </div>` : ""}
+        ${empfehlung ? `
+        <div class="lage2-card-row lage2-card-row-rec">
+          <span class="lage2-card-row-head"><i class="lage2-card-ico">${lageCheckIcon()}</i>Empfehlung</span>
+          <p>${escapeHtml(empfehlung)}</p>
+        </div>` : ""}
+      </div>
     </button>`;
 }
 
-// Fallback (req 6): kein KI-Briefing verfügbar → klar markieren, Vorgänge trotzdem zeigen.
-function renderLageUnavailable(greeting, data, vorgaenge) {
-  const notice = (vorgaenge && vorgaenge.length)
-    ? "Für heute wurde noch kein aktuelles Briefing erzeugt. Die aktuellen politischen Vorgänge findest du unten."
-    : "Für heute liegen noch keine politischen Vorgänge vor. Sobald welche vorliegen, fasst Helmut sie hier zusammen.";
+// Leerer Zustand: keine Fake-/Seed-/Platzhalter-Karten, nur ein ruhiger Hinweis.
+function renderLageEmpty(greeting, dateLabel) {
   return `
-    <section class="lage2">
+    <section class="lage2 lage2-empty-wrap">
       <header class="lage2-head">
-        <div class="lage2-head-text">
-          <h1 class="lage2-greeting">${escapeHtml(greeting)}</h1>
-          <p class="lage2-subtitle">Dein politisches Briefing für heute — ${escapeHtml(lageDateLabel())}</p>
-        </div>
+        <span class="lage2-date">${escapeHtml(dateLabel)}</span>
+        <h1 class="lage2-greeting">${escapeHtml(greeting)}</h1>
       </header>
-      <p class="lage2-notice">${escapeHtml(notice)}</p>
-      ${(vorgaenge && vorgaenge.length) ? `
-      <div class="lage2-vorgaenge-head">
-        <h2>Alle politischen Vorgänge</h2>
-        <span class="lage2-vorgaenge-count">${vorgaenge.length}</span>
-      </div>
-      <div class="lage2-vorgaenge-grid">
-        ${vorgaenge.map(renderVorgangCard).join("")}
-      </div>` : ""}
-      <p class="lage2-foot">Lage zeigt, worüber du heute Bescheid wissen musst — ohne Empfehlung oder Bewertung. Was das für dich bedeutet und was zu tun ist, sagt dir <button class="lage2-inline-link" type="button" data-view="helmut">Helmut</button>.</p>
-    </section>`;
-}
-
-function renderLageEmpty(greeting) {
-  return `
-    <section class="lage2">
-      <header class="lage2-head">
-        <div class="lage2-head-text">
-          <h1 class="lage2-greeting">${escapeHtml(greeting)}</h1>
-          <p class="lage2-subtitle">Dein politisches Briefing für heute — ${escapeHtml(lageDateLabel())}</p>
-        </div>
-      </header>
-      <div class="lage2-briefing">
-        <article class="lage2-para">
-          <p class="lage2-para-text">Für heute liegt noch kein Briefing vor. Sobald neue politische Vorgänge vorliegen, fasst Helmut sie hier zusammen.</p>
-        </article>
+      <div class="lage2-empty">
+        <p class="lage2-empty-title">Heute liegen noch keine quellengestützten Vorgänge vor.</p>
+        <p class="lage2-empty-sub">Sobald neue geprüfte Quellen verfügbar sind, erscheint hier deine Lage.</p>
       </div>
     </section>`;
 }
@@ -2177,40 +2178,57 @@ function renderLageView() {
   const data = lageData();
   const firstName = (profile && profile.fullName ? profile.fullName : "Cem").split(" ")[0];
   const greeting = (typeof timeGreeting === "function" ? timeGreeting(firstName) : `Guten Morgen, ${firstName}.`);
-  if (!data) return renderLageEmpty(greeting);
-  const vorgaenge = Array.isArray(data.vorgaenge) ? data.vorgaenge : [];
-  const hasBriefing = Array.isArray(data.paragraphs) && data.paragraphs.length;
-  if (!hasBriefing) return renderLageUnavailable(greeting, data, vorgaenge);
+  const dateLabel = lageDateLabel();
+  const vorgaenge = lageVisibleVorgaenge();
+  if (!vorgaenge.length) return renderLageEmpty(greeting, dateLabel);
+  const count = vorgaenge.length;
+  const countWord = count === 1 ? "neuen Vorgang" : "neue Vorgänge";
   return `
     <section class="lage2">
       <header class="lage2-head">
-        <div class="lage2-head-text">
-          <h1 class="lage2-greeting">${escapeHtml(greeting)}</h1>
-          <p class="lage2-subtitle">Dein politisches Briefing für heute — ${escapeHtml(lageDateLabel())}</p>
-        </div>
-        <button class="lage2-pdf" type="button" data-lage-pdf>${lagePdfIcon()} Briefing als PDF</button>
+        <span class="lage2-date">${escapeHtml(dateLabel)}</span>
+        <h1 class="lage2-greeting">${escapeHtml(greeting)}</h1>
+        <p class="lage2-count">Heute gibt es <b>${count}</b> ${countWord}.</p>
       </header>
-      ${data.demo ? `<p class="lage2-demo">Beispiel-Briefing · Demodaten</p>` : ""}
+      ${data && data.demo ? `<span class="lage2-demo">Beispiel-Briefing · Demodaten</span>` : ""}
 
-      <div class="lage2-briefing">
-        ${data.paragraphs.map(renderLageParagraph).join("")}
+      <div class="lage2-carousel-bleed">
+        <div class="lage2-carousel" data-lage-track>
+          ${vorgaenge.map(renderVorgangCard).join("")}
+        </div>
+        ${count > 1 ? `
+        <div class="lage2-dots" data-lage-dots aria-hidden="true">
+          ${vorgaenge.map((_, i) => `<span class="lage2-dot-item${i === 0 ? " active" : ""}"></span>`).join("")}
+        </div>` : ""}
       </div>
 
-      ${vorgaenge.length ? `
-      <div class="lage2-vorgaenge-head">
-        <h2>Alle politischen Vorgänge</h2>
-        <span class="lage2-vorgaenge-count">${vorgaenge.length}</span>
-      </div>
-      <div class="lage2-vorgaenge-grid">
-        ${vorgaenge.map(renderVorgangCard).join("")}
-      </div>` : ""}
-
-      <p class="lage2-foot">Lage zeigt, worüber du heute Bescheid wissen musst — ohne Empfehlung oder Bewertung. Was das für dich bedeutet und was zu tun ist, sagt dir <button class="lage2-inline-link" type="button" data-view="helmut">Helmut</button>.</p>
+      <p class="lage2-foot">Lage zeigt dir die aktuellen Vorgänge mit kurzer Einordnung je Thema. Priorisierung, Strategie und Kommunikation liefert dir <button class="lage2-inline-link" type="button" data-view="helmut">Helmut</button>.</p>
     </section>`;
 }
 
-function lagePdfIcon() {
-  return `<svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 1.5h5L12.5 5v9.5a0 0 0 0 1 0 0H4a0 0 0 0 1 0 0V1.5Z" stroke="currentColor" stroke-width="1.2"/><path d="M9 1.5V5h3.5" stroke="currentColor" stroke-width="1.2"/></svg>`;
+// Aktualisiert die Pagination-Punkte beim nativen Scroll (kein Re-Render nötig).
+function bindLageCarousel() {
+  const track = app.querySelector("[data-lage-track]");
+  if (!track) return;
+  const dotsWrap = app.querySelector("[data-lage-dots]");
+  const updateDots = () => {
+    if (!dotsWrap) return;
+    const cards = track.querySelectorAll(".lage2-card");
+    if (!cards.length) return;
+    const trackLeft = track.getBoundingClientRect().left;
+    let closest = 0;
+    let closestDist = Infinity;
+    cards.forEach((card, i) => {
+      const dist = Math.abs(card.getBoundingClientRect().left - trackLeft);
+      if (dist < closestDist) { closestDist = dist; closest = i; }
+    });
+    dotsWrap.querySelectorAll(".lage2-dot-item").forEach((dot, i) => dot.classList.toggle("active", i === closest));
+  };
+  let scrollTimer = null;
+  track.addEventListener("scroll", () => {
+    window.clearTimeout(scrollTimer);
+    scrollTimer = window.setTimeout(updateDots, 80);
+  }, { passive: true });
 }
 
 function lageStarIcon() {
@@ -7068,6 +7086,7 @@ function bindActions() {
   });
 
   bindCarousel();
+  bindLageCarousel();
 
   app.querySelectorAll("[data-communication]").forEach((button) => {
     button.addEventListener("click", () => {
