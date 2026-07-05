@@ -2072,8 +2072,7 @@ function lageHasSource(v) {
 
 // Die tatsächlich sichtbare Menge — Kopfzahl ("Heute gibt es N neue Vorgänge")
 // und Karussell leiten sich BEIDE hieraus ab, damit sie nie auseinanderlaufen.
-function lageVisibleVorgaenge() {
-  const data = lageData();
+function lageVisibleVorgaenge(data) {
   const list = (data && Array.isArray(data.vorgaenge)) ? data.vorgaenge : [];
   return list.filter(lageHasSource);
 }
@@ -2115,8 +2114,10 @@ function lageDocRow(doc) {
     : `<div class="lage2-doc">${inner}</div>`;
 }
 
+// Wiederverwendetes Dokument-Icon (identisch zu HELMUT_ICON_DOC weiter unten) —
+// kein zweites Icon-Design pflegen.
 function lageDocIcon() {
-  return `<svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5.5 3h6l3 3v10.5a.5.5 0 0 1-.5.5h-8.5a.5.5 0 0 1-.5-.5V3.5a.5.5 0 0 1 .5-.5Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M7 9.2h6M7 12h6M7 14.8h3.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>`;
+  return HELMUT_ICON_DOC;
 }
 
 function lageInfoIcon() {
@@ -2151,7 +2152,7 @@ function renderVorgangCard(v) {
           <p>${escapeHtml(warum)}</p>
         </div>` : ""}
         ${empfehlung ? `
-        <div class="lage2-card-row lage2-card-row-rec">
+        <div class="lage2-card-row">
           <span class="lage2-card-row-head"><i class="lage2-card-ico">${lageCheckIcon()}</i>Empfehlung</span>
           <p>${escapeHtml(empfehlung)}</p>
         </div>` : ""}
@@ -2179,7 +2180,7 @@ function renderLageView() {
   const firstName = (profile && profile.fullName ? profile.fullName : "Cem").split(" ")[0];
   const greeting = (typeof timeGreeting === "function" ? timeGreeting(firstName) : `Guten Morgen, ${firstName}.`);
   const dateLabel = lageDateLabel();
-  const vorgaenge = lageVisibleVorgaenge();
+  const vorgaenge = lageVisibleVorgaenge(data);
   if (!vorgaenge.length) return renderLageEmpty(greeting, dateLabel);
   const count = vorgaenge.length;
   const countWord = count === 1 ? "neuen Vorgang" : "neue Vorgänge";
@@ -2190,7 +2191,7 @@ function renderLageView() {
         <h1 class="lage2-greeting">${escapeHtml(greeting)}</h1>
         <p class="lage2-count">Heute gibt es <b>${count}</b> ${countWord}.</p>
       </header>
-      ${data && data.demo ? `<span class="lage2-demo">Beispiel-Briefing · Demodaten</span>` : ""}
+      ${data.demo ? `<span class="lage2-demo">Beispiel-Briefing · Demodaten</span>` : ""}
 
       <div class="lage2-carousel-bleed">
         <div class="lage2-carousel" data-lage-track>
@@ -2206,15 +2207,21 @@ function renderLageView() {
     </section>`;
 }
 
+// Merkt sich die Scroll-Position übers volle Re-Rendern hinweg (z. B. Menü/Update-
+// Panel öffnen&schließen ersetzt app.innerHTML komplett) — sonst spränge das
+// Karussell beim nächsten Render ungefragt auf die erste Karte zurück.
+let lageCarouselScrollLeft = 0;
+
 // Aktualisiert die Pagination-Punkte beim nativen Scroll (kein Re-Render nötig).
 function bindLageCarousel() {
   const track = app.querySelector("[data-lage-track]");
   if (!track) return;
+  if (lageCarouselScrollLeft) track.scrollLeft = lageCarouselScrollLeft;
   const dotsWrap = app.querySelector("[data-lage-dots]");
+  const cards = track.querySelectorAll(".lage2-card");
+  const dots = dotsWrap ? dotsWrap.querySelectorAll(".lage2-dot-item") : null;
   const updateDots = () => {
-    if (!dotsWrap) return;
-    const cards = track.querySelectorAll(".lage2-card");
-    if (!cards.length) return;
+    if (!dots || !dots.length || !cards.length) return;
     const trackLeft = track.getBoundingClientRect().left;
     let closest = 0;
     let closestDist = Infinity;
@@ -2222,13 +2229,15 @@ function bindLageCarousel() {
       const dist = Math.abs(card.getBoundingClientRect().left - trackLeft);
       if (dist < closestDist) { closestDist = dist; closest = i; }
     });
-    dotsWrap.querySelectorAll(".lage2-dot-item").forEach((dot, i) => dot.classList.toggle("active", i === closest));
+    dots.forEach((dot, i) => dot.classList.toggle("active", i === closest));
   };
   let scrollTimer = null;
   track.addEventListener("scroll", () => {
+    lageCarouselScrollLeft = track.scrollLeft;
     window.clearTimeout(scrollTimer);
     scrollTimer = window.setTimeout(updateDots, 80);
   }, { passive: true });
+  updateDots();
 }
 
 function lageStarIcon() {
@@ -2261,7 +2270,7 @@ function renderVorgangDetailView() {
         <div class="vdetail-main">
           <div class="vdetail-topline">
             <div>
-              <span class="lage2-vtag">${escapeHtml(v.policyField || "")}</span>
+              <span class="lage2-vtag">${escapeHtml(lageCardCategory(v))}</span>
               <h1 class="vdetail-title">${escapeHtml(v.title || "")} <span class="vdetail-star" aria-hidden="true">${lageStarIcon()}</span></h1>
             </div>
             <button class="vdetail-helmut" type="button" data-view="helmut">${lageStarIcon()} In Helmut öffnen</button>
@@ -2270,6 +2279,10 @@ function renderVorgangDetailView() {
 
           <h2 class="vdetail-h2">Zusammenfassung</h2>
           <div class="vdetail-summary">${summaryHtml}</div>
+
+          ${v.empfehlung ? `
+          <h2 class="vdetail-h2">Empfehlung</h2>
+          <div class="vdetail-summary"><p>${escapeHtml(v.empfehlung)}</p></div>` : ""}
 
           ${chrono.length ? `
           <h2 class="vdetail-h2">Chronologie</h2>
@@ -7075,13 +7088,6 @@ function bindActions() {
       updatesOpen = false;
       render();
       window.scrollTo({ top: 0, behavior: "auto" });
-    });
-  });
-
-  app.querySelectorAll("[data-lage-pdf]").forEach((button) => {
-    button.addEventListener("click", () => {
-      try { window.print(); }
-      catch (_) { showToast("PDF-Export folgt"); }
     });
   });
 

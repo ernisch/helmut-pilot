@@ -10165,11 +10165,16 @@ details[open].meeting-detail summary::before { content: '▾ '; }
   border: 1px dashed var(--line); border-radius: 999px; padding: 4px 10px;
 }
 
-/* Karussell: eine große Karte im Fokus, nächste Karte peekt am rechten Rand */
+/* Karussell: eine große Karte im Fokus, nächste Karte peekt am rechten Rand.
+   Der Bleed-Trick (unten, @media) setzt voraus, dass KEIN Vorfahre zwischen
+   .lage2-carousel-bleed und <body> ein eigenes position:relative/absolute/fixed
+   bekommt — sonst löst left:50% gegen die falsche Box auf. */
 .lage2-carousel-bleed { margin: 0 0 20px; }
 .lage2-carousel {
   display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory;
-  padding: 2px 0 14px; margin: -2px 0 -14px; scrollbar-width: none;
+  /* Vertikales Padding hält den Card-Shadow vollständig sichtbar: overflow-x:auto
+     erzwingt laut CSS-Overflow-Spec auch einen (auto-)Clip auf der Y-Achse. */
+  padding: 22px 0 50px; margin: -22px 0 -50px; scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
 }
 .lage2-carousel::-webkit-scrollbar { display: none; }
@@ -10178,8 +10183,8 @@ details[open].meeting-detail summary::before { content: '▾ '; }
   flex: 0 0 86%; min-width: 0; scroll-snap-align: start; scroll-snap-stop: always;
   display: flex; flex-direction: column; text-align: left; cursor: pointer;
   padding: 30px 26px 28px; border-radius: 28px; border: 1px solid var(--line);
-  background: var(--card); box-shadow: var(--soft-shadow);
-  min-height: 54vh; min-height: 54dvh;
+  background: var(--card); box-shadow: 0 14px 34px rgba(0, 0, 0, .26);
+  min-height: 54dvh;
   font: inherit; color: inherit; -webkit-tap-highlight-color: transparent;
   transition: transform var(--dur-base) var(--ease-out-soft), border-color var(--dur-base) var(--ease-out-soft);
 }
@@ -10256,7 +10261,7 @@ details[open].meeting-detail summary::before { content: '▾ '; }
     margin-left: -50vw; margin-right: -50vw;
   }
   .lage2-carousel { padding-left: 20px; padding-right: 20px; scroll-padding-left: 20px; }
-  .lage2-card { flex-basis: 78vw; max-width: 420px; min-height: 58vh; min-height: 58dvh; padding: 28px 22px 26px; }
+  .lage2-card { flex-basis: 78vw; max-width: 420px; min-height: 58dvh; padding: 28px 22px 26px; }
 }
 
 /* ── Vorgang-Detail (zweispaltig: Zusammenfassung/Chronologie · Quellen/Dokumente) ── */
@@ -10339,3 +10344,4 @@ details[open].meeting-detail summary::before { content: '▾ '; }
 
 /* Light-Theme-Feinschliff (die Basistokens flippen bereits; hier nur Akzent-Tints) */
 :root[data-theme="light"] .lage2-vtag { background: rgba(140, 92, 255, .10); }
+:root[data-theme="light"] .lage2-card { box-shadow: 0 14px 34px rgba(15, 23, 42, .10); }
