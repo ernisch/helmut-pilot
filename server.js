@@ -56,55 +56,59 @@ async function handleRequest(request, response) {
   if (shouldRedirectToCanonicalHost(request, url)) {
     url.protocol = "https:";
     url.host = canonicalHost;
-    response.writeHead(308, {
+    response.writeHead(308, securityHeaders({
       Location: url.toString(),
       "Cache-Control": "no-store"
-    });
+    }));
     response.end();
     return;
   }
 
   if (url.pathname === "/api/pilot/unlock" && request.method === "POST") {
+    // SICHERHEIT: frueher voellig unbegrenzt erratbar (kein Rate-Limit, kein
+    // konstantzeitiger Vergleich) — jetzt wie /api/auth/login gedrosselt + timingsafe.
+    if (!allowRate(request, "pilot-unlock", 10, 15 * 60 * 1000)) {
+      return sendTooManyRequests(response, "Zu viele Versuche. Bitte später erneut.");
+    }
     return handleJson(request, response, async (body) => {
       if (!isPilotAccessConfigured()) return { ok: true, configured: false };
       const submittedSecret = String(body.secret || "").trim();
-      if (!submittedSecret || submittedSecret !== process.env.PILOT_SECRET) {
-        response.writeHead(401, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+      if (!submittedSecret || !timingSafeEqual(submittedSecret, process.env.PILOT_SECRET)) {
+        response.writeHead(401, jsonHeaders());
         response.end(JSON.stringify({ error: "Zugangscode nicht korrekt." }, null, 2));
         return null;
       }
-      response.writeHead(200, {
-        "Content-Type": "application/json; charset=utf-8",
-        "Cache-Control": "no-store",
-        "Set-Cookie": pilotCookieHeader(process.env.PILOT_SECRET, 30 * 24 * 60 * 60)
-      });
+      response.writeHead(200, jsonHeaders({ "Set-Cookie": pilotCookieHeader(process.env.PILOT_SECRET, 30 * 24 * 60 * 60) }));
       response.end(JSON.stringify({ ok: true }, null, 2));
       return null;
     });
   }
 
   if (url.pathname === "/api/pilot/logout" && request.method === "POST") {
-    response.writeHead(200, {
-      "Content-Type": "application/json; charset=utf-8",
-      "Cache-Control": "no-store",
-      "Set-Cookie": pilotCookieHeader("", 0)
-    });
+    response.writeHead(200, jsonHeaders({ "Set-Cookie": pilotCookieHeader("", 0) }));
     response.end(JSON.stringify({ ok: true }, null, 2));
     return;
   }
 
   if (url.pathname === "/api/release/public") {
-    return handleAsync(response, async () => publicReleasePayload(await computeReleaseCheck(politicianIdFromUrl(url))));
+    // SICHERHEIT: bewusst oeffentlich (externe Smoke-Tests/Monitoring ohne Login), aber
+    // OHNE client-waehlbare politicianId — sonst liesse sich per ?politicianId= erraten/
+    // brute-forcen, ob ein bestimmtes Mandat existiert und wie sein Status ist (Mandanten-
+    // Oracle). scripts/smoke-test.js ruft diesen Endpunkt nie mit politicianId auf.
+    return handleAsync(response, async () => publicReleasePayload(await computeReleaseCheck()));
   }
 
   if (url.pathname === "/privacy" || url.pathname === "/datenschutz") {
     return sendPrivacyPage(response);
   }
 
-  // TEMPORAER: oeffentlicher Status-Check fuer Live-Gang-Diagnose (kein Secret).
-  // Gibt nur unkritische Bits zurueck (kein PII, keine Secrets).
-  // Entfernen nach erfolgreichem Live-Gang.
+  // Status-Check fuer Live-Gang-Diagnose. SICHERHEIT: urspruenglich ohne Secret
+  // ("public"), das machte Config-Recon (welche Provider/Keys gesetzt sind, ob ein
+  // Admin existiert) fuer jeden im Internet abrufbar und stiess bei jedem Aufruf
+  // einen echten Supabase-Request an. Jetzt wie alle anderen /api/debug/*-Routen
+  // hinter HELMUT_ADMIN_SECRET.
   if (url.pathname === "/api/debug/public/status") {
+    if (!isDebugSecretOk(request, url)) return sendNotFound(response);
     return handleAsync(response, async () => {
       const storage = getStorageStatus();
       const adminExists = await accounts.adminExists().catch(() => null);
@@ -153,24 +157,21 @@ async function handleRequest(request, response) {
     });
   }
 
-  // TEMP: run-understanding ohne Secret — zum manuellen Testen ob KI-Vorgaenge entstehen.
-  // TODO: nach erstem erfolgreichen Lauf entfernen.
-  if (url.pathname === "/api/debug/run-understanding" && request.method === "GET") {
-    return handleAsync(response, async () => {
-      const rawDocs = await listRecentRawDocuments(500);
-      const result = await runPendingUnderstandingShadow(rawDocs);
-      const processed = (result && result.results && result.results.filter((r) => r && r.status === "saved").length) || 0;
-      const skippedNoCluster = (result && result.results && result.results.filter((r) => r && r.status === "skipped-no-cluster").length) || 0;
-      console.log(`[debug/run-understanding-open] rawDocs=${rawDocs.length} processed=${processed} skippedNoCluster=${skippedNoCluster}`);
-      return { debug: true, rawDocsLoaded: rawDocs.length, processed, skippedNoCluster, result };
-    });
-  }
-
   // TEMPORAERE DEBUG-ENDPUNKTE (Live-Gang-Diagnose).
-  // Kein Auth, kein CSRF — nur durch HELMUT_ADMIN_SECRET + ?secret= gesichert.
-  // Entfernen nach erfolgreichem Live-Gang.
-  if (url.pathname.startsWith("/api/debug/") && isDebugSecretOk(url)) {
-    return handleDebugRequest(request, response, url);
+  // Kein Auth, kein CSRF — nur durch HELMUT_ADMIN_SECRET + ?secret= gesichert, zusaetzlich
+  // ratenbegrenzt (SICHERHEIT: verhindert Brute-Force auf HELMUT_ADMIN_SECRET). Ein
+  // frueherer, komplett ungeschuetzter Duplikat-Pfad fuer run-understanding wurde entfernt.
+  // Zwei Pfade (engine-flag, lage-backfill) haben eigene, weiter unten geprüfte Gates
+  // (Session/Pilot- bzw. CRON_SECRET-Gate) und fallen hier bewusst durch.
+  const OWN_GATE_DEBUG_PATHS = new Set(["/api/debug/engine-flag", "/api/debug/lage-backfill"]);
+  if (url.pathname.startsWith("/api/debug/") && !OWN_GATE_DEBUG_PATHS.has(url.pathname)) {
+    if (!allowRate(request, "debug-secret", 20, 15 * 60 * 1000)) {
+      return sendTooManyRequests(response, "Zu viele Debug-Anfragen. Bitte später erneut.");
+    }
+    if (isDebugSecretOk(request, url)) {
+      return handleDebugRequest(request, response, url);
+    }
+    return sendNotFound(response);
   }
 
   const accountAuth = auth.authMode();
@@ -316,7 +317,7 @@ async function handleRequest(request, response) {
     if (previewMode) return sendPreviewReadOnly(response);
     return handleAsync(response, async () => {
       const latest = await getLatestBriefing(politicianId);
-      if (!isForcedPilotRun(url) && !hasAdminBypass(request, url) && isRecent(latest?.generatedAt || latest?.date, manualRunMinIntervalMs)) {
+      if (!isForcedPilotRun(request, url) && !hasAdminBypass(request, url) && isRecent(latest?.generatedAt || latest?.date, manualRunMinIntervalMs)) {
         return {
           ...latest,
           skippedReason: "Briefing wurde gerade erst erzeugt. Helmut nutzt den letzten Lauf, um unnötige Kosten zu vermeiden."
@@ -330,7 +331,7 @@ async function handleRequest(request, response) {
     if (previewMode) return sendPreviewReadOnly(response);
     return handleAsync(response, async () => {
       const latest = await getLatestCrawlRun();
-      if (!isForcedPilotRun(url) && !hasAdminBypass(request, url) && isRecent(latest?.createdAt, manualRunMinIntervalMs)) {
+      if (!isForcedPilotRun(request, url) && !hasAdminBypass(request, url) && isRecent(latest?.createdAt, manualRunMinIntervalMs)) {
         return {
           ...latest,
           skippedReason: "Quellen wurden gerade erst geprüft. Helmut nutzt den letzten Lauf, um unnötige Last zu vermeiden."
@@ -345,7 +346,7 @@ async function handleRequest(request, response) {
     return handleAsync(response, async () => {
       const latestCrawl = await getLatestCrawlRun();
       const latestBriefing = await getLatestBriefing(politicianId);
-      if (!isForcedPilotRun(url) && !hasAdminBypass(request, url) && isRecent(latestCrawl?.createdAt, manualRunMinIntervalMs) && isRecent(latestBriefing?.generatedAt || latestBriefing?.date, manualRunMinIntervalMs)) {
+      if (!isForcedPilotRun(request, url) && !hasAdminBypass(request, url) && isRecent(latestCrawl?.createdAt, manualRunMinIntervalMs) && isRecent(latestBriefing?.generatedAt || latestBriefing?.date, manualRunMinIntervalMs)) {
         return {
           crawl: latestCrawl,
           briefing: latestBriefing,
@@ -378,7 +379,7 @@ async function handleRequest(request, response) {
     if (previewMode) return sendPreviewReadOnly(response);
     return handleAsync(response, async () => {
       const latest = await getLatestLageCheck(politicianId);
-      if (!isForcedPilotRun(url) && !hasAdminBypass(request, url) && isRecent(latest?.checkedAt || latest?.createdAt, manualRunMinIntervalMs)) {
+      if (!isForcedPilotRun(request, url) && !hasAdminBypass(request, url) && isRecent(latest?.checkedAt || latest?.createdAt, manualRunMinIntervalMs)) {
         return {
           ...latest,
           skippedReason: "Die Lage wurde gerade erst geprüft. Helmut nutzt den letzten Lage-Check."
@@ -393,7 +394,7 @@ async function handleRequest(request, response) {
   if (url.pathname === "/api/lage/briefing") {
     return handleAsync(response, async () => {
       const profile = await activeProfile(politicianId);
-      const force = isForcedPilotRun(url) || hasAdminBypass(request, url);
+      const force = isForcedPilotRun(request, url) || hasAdminBypass(request, url);
       return buildLageBriefing(profile, { politicianId, force });
     });
   }
@@ -426,7 +427,10 @@ async function handleRequest(request, response) {
   // unsichtbare Zeichen sichtbar), Laenge, das Ergebnis von isEngineV2Enabled()
   // und ALLE env-Keys mit "ENGINE" im Namen (entlarvt einen Tippfehler-Namen).
   // Nach der Fehlersuche wieder entfernen. Leakt keine fremden Secrets.
+  // SICHERHEIT: bislang reichte jede gueltige Session/Pilot-Zugang (jede Rolle) fuer
+  // diesen internen Diagnose-Endpunkt — jetzt zusaetzlich hinter dem Debug-Secret.
   if (url.pathname === "/api/debug/engine-flag") {
+    if (!isDebugSecretOk(request, url)) return sendNotFound(response);
     const raw = process.env.HELMUT_ENGINE_V2;
     const engineKeys = Object.keys(process.env)
       .filter((k) => /ENGINE|HELMUT_ENG/i.test(k))
@@ -450,7 +454,7 @@ async function handleRequest(request, response) {
     return handleJson(request, response, async (body) => {
       const status = pushStatus();
       if (!status.enabled) {
-        response.writeHead(503, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+        response.writeHead(503, jsonHeaders());
         response.end(JSON.stringify(status, null, 2));
         return null;
       }
@@ -696,8 +700,7 @@ async function handleRequest(request, response) {
     return handleJson(request, response, async (body) => {
       const task = await updateTaskStatus(taskId, body.status, politicianId);
       if (!task) {
-        response.writeHead(404, { "Content-Type": "application/json; charset=utf-8" });
-        response.end(JSON.stringify({ error: "Task not found" }, null, 2));
+        sendNotFound(response);
         return null;
       }
       return task;
@@ -773,7 +776,11 @@ async function handleRequest(request, response) {
       if (accountAuth && !requireRoleOr403(response, authUser, ["referent", "admin"])) return undefined;
       return handleJson(request, response, async (body) => {
         const entry = await accounts.addDailyInput({ ...body, politicianId, createdBy: authUser?.id || null });
-        if (accountAuth) await accounts.recordAudit({ action: "daily-input.create", userId: authUser?.id, actorEmail: authUser?.email, politicianId, detail: entry.title });
+        // SICHERHEIT/DSGVO: nur die ID loggen, nicht den Freitext-Titel (minimale Audit-
+        // Metadaten, wie an jeder anderen recordAudit-Stelle — und die ID bleibt loeschbar
+        // ueber die Aufgabe selbst, waehrend der Auth-Store nicht Teil der /api/privacy/
+        // delete-Kaskade ist).
+        if (accountAuth) await accounts.recordAudit({ action: "daily-input.create", userId: authUser?.id, actorEmail: authUser?.email, politicianId, detail: entry.id });
         return entry;
       });
     }
@@ -903,10 +910,21 @@ async function handleRequest(request, response) {
     });
   }
 
+  // SICHERHEIT: dieser Fallback bediente frueher JEDEN auf dem Server liegenden Pfad
+  // (server.js, lib/helmut/*.js, supabase/schema.sql, docs/*, .env.example, sogar .git/*)
+  // an JEDEN Aufrufer ohne Session — im Account-Modus faellt ein nicht eingeloggter
+  // Request fuer alles ausser /api/* genau hier durch (Zeile ~214 blockt nur /api/*).
+  // Nur die tatsaechlich oeffentliche SPA-Shell + ihre statischen Assets duerfen raus;
+  // path.normalize/startsWith(root) schuetzt nur vor Verzeichnis-Traversal, nicht davor,
+  // dass JEDE existierende Datei im Projekt grundsaetzlich erreichbar waere.
+  if (!isAppEntryPath(url.pathname) && !isPublicAssetPath(url.pathname)) {
+    return sendNotFound(response);
+  }
+
   const requestedPath = isAppEntryPath(url.pathname) ? "index.html" : url.pathname.replace(/^\/+/, "");
   const filePath = path.normalize(path.join(root, requestedPath));
   if (!filePath.startsWith(root)) {
-    response.writeHead(403);
+    response.writeHead(403, securityHeaders());
     response.end("Forbidden");
     return;
   }
@@ -918,7 +936,7 @@ async function handleRequest(request, response) {
         response.end(indexHtml());
         return;
       }
-      response.writeHead(404);
+      response.writeHead(404, securityHeaders());
       response.end("Not found");
       return;
     }
@@ -944,20 +962,28 @@ function isAppEntryPath(pathname) {
 }
 
 function hasPilotAccess(request, url) {
-  if (!isPilotAccessConfigured()) return true;
+  if (!isPilotAccessConfigured()) {
+    // Kein PILOT_SECRET gesetzt: lokal/dev bewusst offen (Entwicklerkomfort, kein
+    // Redeploy noetig, um die App ohne jede Env-Variable zu starten). SICHERHEIT: auf
+    // einem echten Deployment (Vercel) waere ein vergessenes PILOT_SECRET sonst ein
+    // Fehlkonfigurations-GAU — die komplette App inkl. aller politischen Daten laege
+    // fuer jeden im Internet offen. Dort daher fail-closed statt fail-open, analog zum
+    // bestehenden CRON_SECRET-Fail-closed-Fix.
+    return !isProductionLikeDeployment();
+  }
   if (request.method === "OPTIONS") return true;
   if (isPublicAssetPath(url.pathname)) return true;
   if (url.pathname.startsWith("/api/cron/")) return true;
   if (hasAdminBypass(request, url)) return true;
 
   const pilotSecret = process.env.PILOT_SECRET;
-  if (allowQuerySecrets() && url.searchParams.get("pilot") === pilotSecret) return true;
+  if (allowQuerySecrets() && timingSafeEqual(url.searchParams.get("pilot"), pilotSecret)) return true;
 
   const auth = parseAuthorization(request.headers.authorization || "");
-  if (auth.bearer && auth.bearer === pilotSecret) return true;
-  if (auth.basic && auth.basic.password === pilotSecret) return true;
+  if (auth.bearer && timingSafeEqual(auth.bearer, pilotSecret)) return true;
+  if (auth.basic && timingSafeEqual(auth.basic.password, pilotSecret)) return true;
 
-  return readCookie(request, "helmut_pilot") === pilotSecret;
+  return timingSafeEqual(readCookie(request, "helmut_pilot"), pilotSecret);
 }
 
 function isPreviewMode(url) {
@@ -1167,6 +1193,14 @@ function isPilotAccessConfigured() {
   return Boolean(String(process.env.PILOT_SECRET || "").trim());
 }
 
+// Vercel setzt VERCEL/VERCEL_ENV automatisch auf JEDEM Deployment (Prod, Preview,
+// `vercel dev`) — robuster als sich auf ein von Hand gesetztes NODE_ENV=production zu
+// verlassen. Siehe hasPilotAccess und isHttpsDeployment (lib/helmut/auth.js) fuer den
+// jeweiligen Verwendungszweck.
+function isProductionLikeDeployment() {
+  return Boolean(process.env.VERCEL || process.env.VERCEL_ENV || process.env.NODE_ENV === "production");
+}
+
 function parseAuthorization(header) {
   const value = String(header || "");
   if (value.startsWith("Bearer ")) return { bearer: value.slice(7).trim() };
@@ -1190,7 +1224,9 @@ function isPublicAssetPath(pathname) {
     || pathname === "/favicon.ico"
     || pathname === "/site.webmanifest"
     || pathname === "/sw.js"
-    || pathname === "/robots.txt";
+    || pathname === "/robots.txt"
+    || pathname === "/client.js"
+    || pathname === "/styles.css";
 }
 
 function wantsHtml(request, url) {
@@ -1214,7 +1250,8 @@ function readCookie(request, name) {
 }
 
 function pilotCookieHeader(secret, maxAgeSeconds) {
-  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
+  // SICHERHEIT: siehe isProductionLikeDeployment — robuster als nur NODE_ENV=production.
+  const secure = isProductionLikeDeployment() ? "; Secure" : "";
   return `helmut_pilot=${encodeURIComponent(secret || "")}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${Math.max(0, maxAgeSeconds)}${secure}`;
 }
 
@@ -1544,12 +1581,37 @@ function withTimeout(promise, maxMs, label = "operation") {
   ]);
 }
 
+// CSP-Hinweis: script-src/style-src brauchen noch 'unsafe-inline' fuer die wenigen
+// bestehenden Inline-<script>/style="..."-Stellen (index.html, ein paar Onclick-Handler
+// in client.js). Das zu entfernen (Nonce/Refactor auf addEventListener) ist eine separate,
+// groessere Aufraeumarbeit — hier bewusst NICHT angefasst, um kein bestehendes Verhalten
+// zu riskieren. Alles andere unten ist bereits so restriktiv wie moeglich, ohne dass
+// etwas an der Anwendung sich aendert (keine externen Scripts/Fetches/Fonts vorhanden;
+// Artikel-/Publisher-Bilder kommen von echten externen https-Quellen, daher img-src https:).
+const CONTENT_SECURITY_POLICY = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' https: data:",
+  "font-src 'self' data:",
+  "connect-src 'self'",
+  "object-src 'none'",
+  "base-uri 'none'",
+  "frame-ancestors 'none'",
+  "form-action 'self'"
+].join("; ");
+
 function securityHeaders(extra = {}) {
   return {
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
     "Referrer-Policy": "strict-origin-when-cross-origin",
     "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+    "Content-Security-Policy": CONTENT_SECURITY_POLICY,
+    // App laeuft ausschliesslich ueber HTTPS (Vercel) — kein includeSubDomains/preload,
+    // da die Subdomain-/Praeload-Topologie einer echten Custom-Domain hier nicht bekannt
+    // ist und eine falsche Praeload-Eintragung kaum rueckgaengig zu machen ist.
+    "Strict-Transport-Security": "max-age=63072000",
     ...extra
   };
 }
@@ -2221,15 +2283,23 @@ function hasAdminBypass(request, url) {
     : allowQuerySecrets()
       ? url.searchParams.get("secret")
       : "";
-  return token === secret;
+  return Boolean(token) && timingSafeEqual(token, secret);
 }
 
 function allowQuerySecrets() {
   return String(process.env.HELMUT_ALLOW_QUERY_SECRETS || "").trim().toLowerCase() === "true";
 }
 
+// Fallback-Secret NUR falls kein einziges echtes Secret konfiguriert ist (z.B. reiner
+// lokaler Dev-Betrieb ohne jede Env-Variable). SICHERHEIT: frueher ein hartkodierter,
+// im Quellcode oeffentlich sichtbarer String ("helmut-local-csrf") — damit haette jeder,
+// der den Code kennt, gueltige CSRF-Tokens offline faelschen koennen, sobald ein
+// Deployment versehentlich ganz ohne PILOT_SECRET/CRON_SECRET/HELMUT_ADMIN_SECRET laeuft.
+// Stattdessen jetzt ein zufaelliges Prozess-Secret (einmal pro kaltem Start erzeugt).
+const FALLBACK_CSRF_SECRET = crypto.randomBytes(32).toString("hex");
+
 function csrfSecret() {
-  return process.env.PILOT_SECRET || process.env.CRON_SECRET || process.env.HELMUT_ADMIN_SECRET || "helmut-local-csrf";
+  return process.env.PILOT_SECRET || process.env.CRON_SECRET || process.env.HELMUT_ADMIN_SECRET || FALLBACK_CSRF_SECRET;
 }
 
 function createCsrfToken() {
@@ -2265,6 +2335,7 @@ function requiresCsrf(request, url) {
     "/api/crawl/run",
     "/api/pipeline/run",
     "/api/lage/check",
+    "/api/lage/briefing",
     "/api/push/test"
   ]);
   if (request.method === "GET" && stateChangingGetPaths.has(url.pathname)) {
@@ -2278,8 +2349,13 @@ function requiresCsrf(request, url) {
   return url.pathname.startsWith("/api/");
 }
 
-function isForcedPilotRun(url) {
-  return url.searchParams.get("force") === "1";
+// SICHERHEIT: ?force=1 alleine (ohne Admin/Cron-Secret) erzwang frueher einen sofortigen
+// Kosten-Refresh (Crawl/Briefing/Lage/KI) unter Umgehung der 10-Minuten-Drossel — ein
+// Kostenmissbrauch-Hebel fuer jeden eingeloggten Nutzer, ohne Ratenlimit. client.js nutzt
+// ?force=1 nirgends (rein internes Ops-/Debug-Werkzeug) — daher jetzt zusaetzlich hinter
+// hasAdminBypass, ohne Produktverhalten zu aendern.
+function isForcedPilotRun(request, url) {
+  return url.searchParams.get("force") === "1" && hasAdminBypass(request, url);
 }
 
 function isRecent(value, maxAgeMs) {
@@ -2303,17 +2379,22 @@ function allowRate(request, key, limit, windowMs) {
   return true;
 }
 
+// SICHERHEIT: den LETZTEN Hop von X-Forwarded-For nehmen (den die vertrauenswuerdige
+// Vercel-Edge selbst anhaengt), nicht den ERSTEN. Vercel steht als einziger Reverse-Proxy
+// direkt vor der Funktion; in einer mehrhop-Kette ist der erste Eintrag vom Client frei
+// waehlbar (Spoofing-Vektor gegen das Rate-Limit), der letzte ist der tatsaechlich
+// gesehene Absender. Aendert nichts, falls Vercel den Header ohnehin ueberschreibt statt
+// anzuhaengen — schliesst aber die Luecke, falls nicht.
 function clientKey(request) {
-  return String(
-    request.headers["x-forwarded-for"] ||
-    request.headers["x-real-ip"] ||
-    request.headers["cf-connecting-ip"] ||
-    "local"
-  ).split(",")[0].trim();
+  const xff = String(request.headers["x-forwarded-for"] || "");
+  const hops = xff.split(",").map((s) => s.trim()).filter(Boolean);
+  if (hops.length) return hops[hops.length - 1];
+  const other = String(request.headers["x-real-ip"] || request.headers["cf-connecting-ip"] || "").trim();
+  return other || request.socket?.remoteAddress || "local";
 }
 
 function sendTooManyRequests(response, message) {
-  response.writeHead(429, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+  response.writeHead(429, jsonHeaders());
   response.end(JSON.stringify({ error: message }, null, 2));
 }
 
@@ -2417,8 +2498,12 @@ function handleAuthLogin(request, response, url) {
     const password = String(body.password || "");
     const user = await accounts.getUserByEmailRaw(email);
     // Generische Antwort: keine Unterscheidung zwischen "kein Nutzer", "deaktiviert"
-    // oder "falsches Passwort" (kein User-Enumeration).
-    if (!user || user.active === false || !accounts.verifyPassword(password, user)) {
+    // oder "falsches Passwort" (kein User-Enumeration). SICHERHEIT: verifyPassword wird
+    // IMMER aufgerufen (auch ohne/deaktivierten Nutzer, dann gegen einen Dummy-Salt) —
+    // sonst waere "deaktiviert"/"kein Nutzer" per Timing vom scrypt-Aufwand unterscheidbar,
+    // obwohl die Antwort absichtlich identisch ist.
+    const passwordOk = accounts.verifyPassword(password, user);
+    if (!user || user.active === false || !passwordOk) {
       await accounts.recordAudit({ action: "auth.login.failed", actorEmail: email, ip: auth.clientIp(request) });
       response.writeHead(401, jsonHeaders());
       response.end(JSON.stringify({ error: "E-Mail oder Passwort ist nicht korrekt." }, null, 2));
@@ -2589,7 +2674,10 @@ async function normalizeTask(task, politicianId = cemInceProfile.id) {
   const profile = await activeProfile(politicianId);
   return {
     id: task.id || `task-${Date.now()}`,
-    politicianId: task.politicianId || profile.id,
+    // SICHERHEIT: politicianId kommt AUSSCHLIESSLICH aus der serverseitig aufgeloesten
+    // Session (profile.id), niemals aus dem Client-Body — sonst koennte ein Nutzer
+    // Aufgaben in ein fremdes Mandat schreiben (IDOR/Mandantenbruch).
+    politicianId: profile.id,
     title: String(task.title || "").trim(),
     description: String(task.description || "").trim(),
     priority: ["high", "medium", "low"].includes(task.priority) ? task.priority : "medium",
@@ -2610,7 +2698,8 @@ async function normalizeTask(task, politicianId = cemInceProfile.id) {
 async function normalizeInteraction(interaction, politicianId = cemInceProfile.id) {
   const profile = await activeProfile(politicianId);
   return {
-    politicianId: interaction.politicianId || profile.id,
+    // SICHERHEIT: siehe normalizeTask — politicianId niemals aus dem Client-Body.
+    politicianId: profile.id,
     signalId: interaction.signalId || "",
     taskId: interaction.taskId || "",
     recommendationId: interaction.recommendationId || interaction.recommendation_id || "",
@@ -2880,7 +2969,7 @@ function authorizeCron(request, url, response) {
     : allowQuerySecrets()
       ? url.searchParams.get("secret")
       : "";
-  if (token !== secret) {
+  if (!token || !timingSafeEqual(token, secret)) {
     response.writeHead(403, jsonHeaders());
     response.end(JSON.stringify({ error: "Forbidden: ungültiges oder fehlendes Cron-Secret." }, null, 2));
     return false;
@@ -2902,10 +2991,20 @@ function sendNotFound(response) {
 // TEMPORAERE DEBUG-ENDPUNKTE (Live-Gang-Diagnose) — nach Live-Gang entfernen
 // ---------------------------------------------------------------------------
 
-function isDebugSecretOk(url) {
+// SICHERHEIT: bevorzugt (wie hasAdminBypass/authorizeCron) den Authorization-Header;
+// ein Secret in der Query-String landet sonst in Access-Logs/Referer/Browserverlauf.
+// Query-Secret nur noch, wenn explizit ueber HELMUT_ALLOW_QUERY_SECRETS=true erlaubt
+// (vorher war das hier die einzige Stelle im Code, die dieses Flag ignorierte).
+function isDebugSecretOk(request, url) {
   const adminSecret = process.env.HELMUT_ADMIN_SECRET;
   if (!adminSecret) return false;
-  return url.searchParams.get("secret") === adminSecret;
+  const header = request?.headers?.authorization || "";
+  const token = header.startsWith("Bearer ")
+    ? header.slice(7)
+    : allowQuerySecrets()
+      ? url.searchParams.get("secret")
+      : "";
+  return Boolean(token) && timingSafeEqual(token, adminSecret);
 }
 
 async function handleDebugRequest(request, response, url) {
@@ -3043,38 +3142,12 @@ async function handleDebugRequest(request, response, url) {
     });
   }
 
-  // GET /api/debug/admin-fix — Admin-User-Diagnose + Force-Reset auf HELMUT_ADMIN_PASSWORD.
-  // TEMPORAER: nach erfolgreichem Login entfernen.
-  if (url.pathname === "/api/debug/admin-fix") {
-    return handleAsync(response, async () => {
-      const email = accounts.normalizeEmail(process.env.HELMUT_ADMIN_EMAIL || "");
-      const password = process.env.HELMUT_ADMIN_PASSWORD || "";
-      const envOk = Boolean(email && password);
-      const user = email ? await accounts.getUserByEmailRaw(email).catch(() => null) : null;
-      const diagnosis = {
-        envAdminEmail: email || "(nicht gesetzt)",
-        envAdminPasswordLength: password.length,
-        envAdminPasswordHasQuotes: /^['"]|['"]$/.test(password),
-        envAdminPasswordHasWhitespace: password !== password.trim(),
-        envOk,
-        userFound: Boolean(user),
-        userActive: user?.active ?? null,
-        userRole: user?.role || null,
-        hashPresent: Boolean(user?.passwordHash),
-        saltPresent: Boolean(user?.passwordSalt),
-      };
-      if (!envOk) {
-        return { debug: true, step: "diagnose-only", diagnosis, fix: null, error: "HELMUT_ADMIN_EMAIL oder HELMUT_ADMIN_PASSWORD nicht gesetzt" };
-      }
-      if (!user) {
-        await accounts.createUser({ email, name: process.env.HELMUT_ADMIN_NAME || "Administrator", role: "admin", password });
-        const fresh = await accounts.getUserByEmailRaw(email).catch(() => null);
-        return { debug: true, step: "created", diagnosis, fix: { action: "created", userId: fresh?.id || null } };
-      }
-      await accounts.updateUser(user.id, { password, email, active: true });
-      return { debug: true, step: "updated", diagnosis, fix: { action: "password-reset", userId: user.id } };
-    });
-  }
+  // /api/debug/admin-fix wurde entfernt (SICHERHEIT): es setzte hinter demselben
+  // Debug-Secret wie alle anderen /api/debug/*-Routen unbedingt und ohne Audit-Log das
+  // Admin-Passwort auf HELMUT_ADMIN_PASSWORD zurueck/legte den Admin neu an — komplett
+  // redundant zum bestehenden, sichereren Bootstrap: ensureAdminSeed() legt den Admin
+  // beim Serverstart ohnehin automatisch an, und HELMUT_ADMIN_RESET=1 (+ Neustart) setzt
+  // sein Passwort kontrolliert zurueck (inkl. Audit-Log-Eintrag "admin.reset").
 
   // GET /api/debug/run-understanding?secret=... — Understanding manuell ausloesen.
   // Laedt raw_documents der letzten 30 Tage aus Supabase und ruft
@@ -3240,7 +3313,23 @@ async function handleDebugRequest(request, response, url) {
       const keyRaw = process.env.AZURE_OPENAI_KEY || "";
       const endpointFromEnv = String(process.env.AZURE_OPENAI_ENDPOINT || "").replace(/\/+$/, "");
       // testEndpoint-Parameter: testet anderen Resource-Namen ohne Vercel-Redeploy.
-      const testEndpointParam = String(url.searchParams.get("testEndpoint") || "").replace(/\/+$/, "");
+      // SICHERHEIT: der echte AZURE_OPENAI_KEY wird IMMER mitgeschickt — ohne Hostname-
+      // Allowlist koennte testEndpoint auf eine beliebige, angreiferkontrollierte URL
+      // zeigen und so den Key dorthin exfiltrieren. Nur echte Azure-OpenAI-Hosts erlauben.
+      let testEndpointParam = String(url.searchParams.get("testEndpoint") || "").replace(/\/+$/, "");
+      let testEndpointRejected = false;
+      if (testEndpointParam) {
+        try {
+          const host = new URL(testEndpointParam).hostname.toLowerCase();
+          if (!host.endsWith(".openai.azure.com") && !host.endsWith(".cognitiveservices.azure.com")) {
+            testEndpointRejected = true;
+            testEndpointParam = "";
+          }
+        } catch {
+          testEndpointRejected = true;
+          testEndpointParam = "";
+        }
+      }
       const endpointRaw = testEndpointParam || endpointFromEnv;
       const isTesting = Boolean(testEndpointParam);
       const deployment = process.env.AZURE_OPENAI_DEPLOYMENT || "(nicht gesetzt)";
@@ -3251,7 +3340,8 @@ async function handleDebugRequest(request, response, url) {
         return {
           debug: true, ok: false,
           reason: !keySet ? "AZURE_OPENAI_KEY nicht gesetzt" : "AZURE_OPENAI_ENDPOINT nicht gesetzt",
-          keyPrefix, endpointRaw: endpointRaw || null, deployment
+          keyPrefix, endpointRaw: endpointRaw || null, deployment,
+          ...(testEndpointRejected ? { testEndpointRejected: true, hint: "testEndpoint muss ein *.openai.azure.com- oder *.cognitiveservices.azure.com-Host sein." } : {})
         };
       }
 
@@ -3309,6 +3399,7 @@ async function handleDebugRequest(request, response, url) {
         isTesting,
         hasSuffix,
         deployment,
+        ...(testEndpointRejected ? { testEndpointRejected: true } : {}),
         derivedAppUrl: `${baseUrl}/openai/v1/responses`,
         ...(hasSuffix ? { fix: `Vercel: AZURE_OPENAI_ENDPOINT = '${baseUrl}'` } : {}),
         ...(httpStatus === 200 && isTesting ? { fix: `Vercel: AZURE_OPENAI_ENDPOINT = '${baseUrl}'` } : {}),

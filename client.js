@@ -2337,7 +2337,7 @@ function renderParliamentItem(item) {
   return `
     <article class="parliament-item">
       <span class="parliament-type">${escapeHtml(item.type || "Drucksache")}</span>
-      <a class="parliament-title" href="${escapeAttribute(item.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.title)}</a>
+      <a class="parliament-title" href="${escapeAttribute(isHttpUrl(item.url) ? item.url : "#")}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.title)}</a>
       <small>${escapeHtml(formatParliamentMeta(item))}</small>
       ${assessmentBlock}
     </article>
@@ -5671,12 +5671,12 @@ function mentionRows(items, options = {}) {
 }
 
 function mentionVisual(item) {
-  if (item.imageUrl) {
+  if (item.imageUrl && isHttpUrl(item.imageUrl)) {
     return `<img class="mention-image mention-image-cover" src="${escapeAttribute(item.imageUrl)}" alt="" loading="lazy" />`;
   }
 
   const publisherLogo = publisherImageUrl(item);
-  if (publisherLogo) {
+  if (publisherLogo && isHttpUrl(publisherLogo)) {
     return `<div class="mention-image mention-image-logo" aria-hidden="true"><img src="${escapeAttribute(publisherLogo)}" alt="" loading="lazy" /></div>`;
   }
 
@@ -8578,6 +8578,12 @@ function escapeHtml(value) {
 
 function escapeAttribute(value) {
   return escapeHtml(value);
+}
+
+// SICHERHEIT: nur echte http(s)-URLs durchlassen, bevor ein Wert in href/src landet —
+// HTML-Escaping allein verhindert kein "javascript:"/"data:"-URI in einem Attribut.
+function isHttpUrl(value) {
+  return /^https?:\/\//i.test(String(value || ""));
 }
 
 function escapeRegExp(value) {

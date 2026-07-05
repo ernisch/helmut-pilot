@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+const crypto = require("crypto");
 const fs = require("fs");
 const http = require("http");
 const https = require("https");
@@ -116,6 +117,12 @@ async function checkAuthMode() {
   const stamp = Date.now();
   const mdbEmail = `mdb+${stamp}@smoke.test`;
   const refEmail = `ref+${stamp}@smoke.test`;
+  // SICHERHEIT: zufaellig statt hartkodiert — diese Testkonten bleiben nach dem Lauf im
+  // echten Zielsystem bestehen (kein Delete-Endpunkt fuer Nutzer vorhanden), ein fester
+  // String waere ein bekanntes Passwort auf einem echten Deployment. Am Ende des Laufs
+  // werden alle drei Testkonten zusaetzlich deaktiviert (nutzt den bereits vorhandenen
+  // Admin-Endpunkt, kein neuer Code-Pfad).
+  const smokePassword = crypto.randomBytes(18).toString("base64url");
 
   const shell = await requestAbsolute("GET", `${baseUrl}/`);
   ok(shell.statusCode === 200 && shell.text.includes("client.js"), "Account mode: app shell is served to anonymous users");
@@ -130,21 +137,21 @@ async function checkAuthMode() {
   ok(admin.res.statusCode === 200 && admin.cookie.includes("helmut_session="), "Admin login issues a session cookie");
   const adminCsrf = await authCsrf(admin.cookie);
 
-  const mdb = await authCreateUser(admin, adminCsrf, { email: mdbEmail, name: "Smoke MdB", role: "abgeordneter", password: "smokepass123" });
+  const mdb = await authCreateUser(admin, adminCsrf, { email: mdbEmail, name: "Smoke MdB", role: "abgeordneter", password: smokePassword });
   ok(mdb.statusCode === 200, "Admin creates an Abgeordneter");
   const mdbPolId = parseJson(mdb, "create mdb").politicianId;
 
-  const mdb2 = await authCreateUser(admin, adminCsrf, { email: `mdb2+${stamp}@smoke.test`, name: "Smoke Fremd", role: "abgeordneter", password: "smokepass123" });
+  const mdb2 = await authCreateUser(admin, adminCsrf, { email: `mdb2+${stamp}@smoke.test`, name: "Smoke Fremd", role: "abgeordneter", password: smokePassword });
   const foreignPolId = parseJson(mdb2, "create mdb2").politicianId;
 
-  const ref = await authCreateUser(admin, adminCsrf, { email: refEmail, name: "Smoke Referent", role: "referent", password: "smokepass123" });
+  const ref = await authCreateUser(admin, adminCsrf, { email: refEmail, name: "Smoke Referent", role: "referent", password: smokePassword });
   ok(ref.statusCode === 200, "Admin creates a Referent");
   const refId = parseJson(ref, "create ref").id;
 
   const assign = await authSend(admin.cookie, adminCsrf, "POST", "/api/admin/assignments", { userId: refId, politicianId: mdbPolId });
   ok(assign.statusCode === 200, "Admin assigns referent to the MdB mandate");
 
-  const refLogin = await authLogin(refEmail, "smokepass123");
+  const refLogin = await authLogin(refEmail, smokePassword);
   ok(refLogin.res.statusCode === 200, "Referent can log in");
 
   const refForeign = await requestAbsolute("GET", `${baseUrl}/api/profile/current?politicianId=${encodeURIComponent(foreignPolId)}`, { cookie: refLogin.cookie });
@@ -157,11 +164,21 @@ async function checkAuthMode() {
   const deactivate = await authSend(admin.cookie, adminCsrf, "PATCH", `/api/admin/users/${encodeURIComponent(refId)}`, { active: false });
   ok(deactivate.statusCode === 200, "Admin can deactivate the referent");
 
-  const refRelogin = await authLogin(refEmail, "smokepass123");
+  const refRelogin = await authLogin(refEmail, smokePassword);
   ok(refRelogin.res.statusCode === 401, "Deactivated account cannot log in");
 
   const refSessionGone = await requestAbsolute("GET", `${baseUrl}/api/auth/session`, { cookie: refLogin.cookie });
   ok(parseJson(refSessionGone, "ref session gone").authenticated === false, "Deactivated account existing session is invalidated");
+
+  // Aufraeumen: es gibt keinen Delete-Endpunkt fuer Nutzer, daher die beiden verbleibenden
+  // (noch aktiven) Testkonten deaktivieren, statt sie mit Zugangsdaten im Zielsystem
+  // liegen zu lassen. "ref" ist oben bereits deaktiviert.
+  const mdbId = parseJson(mdb, "create mdb").id;
+  const mdb2Id = parseJson(mdb2, "create mdb2").id;
+  const cleanupMdb = await authSend(admin.cookie, adminCsrf, "PATCH", `/api/admin/users/${encodeURIComponent(mdbId)}`, { active: false });
+  ok(cleanupMdb.statusCode === 200, "Cleanup: smoke-test MdB account deactivated");
+  const cleanupMdb2 = await authSend(admin.cookie, adminCsrf, "PATCH", `/api/admin/users/${encodeURIComponent(mdb2Id)}`, { active: false });
+  ok(cleanupMdb2.statusCode === 200, "Cleanup: smoke-test foreign MdB account deactivated");
 
   const logout = await requestAbsolute("POST", `${baseUrl}/api/auth/logout`, { cookie: admin.cookie });
   ok(logout.statusCode === 200, "Logout works");
