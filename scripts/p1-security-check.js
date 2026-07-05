@@ -74,6 +74,46 @@ async function cronChecks() {
   }
 }
 
+// Presentation-Backfill-Trigger (/api/admin/presentation-backfill): CRON_SECRET-
+// geschuetzt (fail closed), GET + Bearer (wie /api/cron|debug), Default DRY-RUN,
+// echter Lauf nur mit ?execute=1. In dieser Testumgebung ist der V3-Store aus ->
+// der Backfill selbst skippt (v3-store-not-ready), es wird also NIE etwas geschrieben;
+// geprueft wird die Absicherung (Secret, mutierende Methode) und die Flag-Logik.
+async function presentationBackfillEndpointChecks() {
+  const server = http.createServer(handler);
+  await new Promise((r) => server.listen(0, "127.0.0.1", r));
+  const p = "/api/admin/presentation-backfill";
+  const parse = (r) => { try { return JSON.parse(r.body); } catch (_) { return {}; } };
+  try {
+    // 1) kein Secret -> 503 (fail closed)
+    delete process.env.CRON_SECRET;
+    const a = await request(server, { pathname: p, headers: { Authorization: "Bearer irgendwas" } });
+    check("Presentation-Backfill ohne CRON_SECRET blockiert (503, fail closed)", a.status === 503, `status=${a.status}`);
+
+    process.env.CRON_SECRET = "p1-test-secret";
+    // 2) falsches Secret -> 403
+    const b = await request(server, { pathname: p, headers: { Authorization: "Bearer falsch" } });
+    check("Presentation-Backfill mit falschem Secret blockiert (403)", b.status === 403, `status=${b.status}`);
+
+    // 3) richtiges Secret, ohne execute -> Default DRY-RUN (sicher)
+    const d = await request(server, { pathname: p, headers: { Authorization: "Bearer p1-test-secret" } });
+    const dj = parse(d);
+    check("Presentation-Backfill: ohne execute -> mode=dry-run (sicherer Default)", d.status === 200 && dj.mode === "dry-run", `status=${d.status} mode=${dj.mode}`);
+
+    // 4) execute=1 -> mode=execute (Flag-Logik; ohne Store trotzdem kein Schreibvorgang)
+    const e = await request(server, { pathname: `${p}?execute=1`, headers: { Authorization: "Bearer p1-test-secret" } });
+    const ej = parse(e);
+    check("Presentation-Backfill: execute=1 -> mode=execute", e.status === 200 && ej.mode === "execute", `status=${e.status} mode=${ej.mode}`);
+
+    // 5) ganz ohne Authorization (Secret ist gesetzt) -> 403: die Route ist nie offen
+    const noauth = await request(server, { pathname: p });
+    check("Presentation-Backfill ohne Authorization blockiert (403, nie offen)", noauth.status === 403, `status=${noauth.status}`);
+  } finally {
+    delete process.env.CRON_SECRET;
+    await new Promise((r) => server.close(r));
+  }
+}
+
 function staticChecks() {
   const crawler = fs.readFileSync(path.join(root, "lib/helmut/crawler.js"), "utf8");
   check("TLS: kein rejectUnauthorized im Crawler", !crawler.includes("rejectUnauthorized"));
@@ -1339,6 +1379,7 @@ async function main() {
   debugReportChecks();
   await engineV2Checks();
   await cronChecks();
+  await presentationBackfillEndpointChecks();
   await llmLoggingChecks();
   await llmBudgetChecks();
   await c1SafetyNetChecks();

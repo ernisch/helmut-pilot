@@ -19,6 +19,7 @@ const { runPendingUnderstandingShadow, clusterRawDocuments, deriveVorgangId } = 
 const { generateOfficeOutput, isValidChannel } = require("./lib/helmut/office");
 const { buildLageBriefing } = require("./lib/helmut/lage");
 const { backfillProvenance } = require("./lib/helmut/backfill");
+const { backfillPresentationFields } = require("./lib/helmut/presentation-backfill");
 
 const root = __dirname;
 const port = Number(process.env.PORT || 3000);
@@ -666,6 +667,25 @@ async function handleRequest(request, response) {
       const limit = Number(url.searchParams.get("limit")) || undefined;
       const dryRun = url.searchParams.get("dryRun") === "1";
       return backfillProvenance({ days, limit, dryRun });
+    });
+  }
+
+  // Presentation-Fields-Backfill fuer BESTEHENDE Vorgaenge (manueller Wartungs-Trigger).
+  // Geschuetzt durch CRON_SECRET (authorizeCron ist FAIL CLOSED: 503 ohne Secret, 403 bei
+  // falschem Secret). Wie die uebrigen /api/cron|debug-Routen per GET + Bearer-Secret:
+  // GET umgeht den globalen CSRF-Guard (der jeden POST ohne Session-Token blockt), und da
+  // Query-Secrets standardmaessig AUS sind, MUSS das Secret im Authorization-Header stehen
+  // -- kein Prefetch/Link kann den Lauf ausloesen. KEINE Cron-Anbindung, KEINE automatische
+  // Ausfuehrung. SICHER per Default: nur DRY-RUN (Plan + Kostenschaetzung, KEINE KI-Calls,
+  // kein Schreibvorgang); ein echter Lauf passiert ausschliesslich mit ?execute=1.
+  // ?limit= begrenzt optional die Menge. Der Backfill selbst ist idempotent.
+  if (url.pathname === "/api/admin/presentation-backfill") {
+    if (!authorizeCron(request, url, response)) return;
+    return handleAsync(response, async () => {
+      const limit = Number(url.searchParams.get("limit")) || undefined;
+      const dryRun = url.searchParams.get("execute") !== "1"; // Default DRY-RUN; echter Lauf nur mit execute=1
+      const result = await backfillPresentationFields({ dryRun, limit });
+      return { ok: !(result && result.skipped), mode: dryRun ? "dry-run" : "execute", result };
     });
   }
 
