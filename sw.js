@@ -71,15 +71,40 @@ self.addEventListener("fetch", (event) => {
       const cache = await caches.open(ASSET_CACHE);
       const cached = await cache.match(req);
       const network = fetch(req)
-        .then((res) => {
-          if (res && res.ok) cache.put(req, res.clone()).catch(() => {});
+        .then(async (res) => {
+          if (res && res.ok) {
+            await cache.put(req, res.clone()).catch(() => {});
+            await pruneOldVersions(cache, req);
+          }
           return res;
         })
         .catch(() => null);
+      // Lauft im Hintergrund weiter (Cache-Update + Aufraeumen alter Versionen),
+      // auch wenn "cached" die Antwort schon geliefert hat -> ohne waitUntil
+      // darf der Browser den SW beenden, bevor das fertig ist (v.a. mobil haeufig).
+      event.waitUntil(network);
       return cached || (await network) || new Response("", { status: 504 });
     })());
   }
 });
+
+// client.js/styles.css tragen bei jedem Deploy eine neue ?v=-Query-Version --
+// die URL (und damit der Cache-Key) aendert sich, der Cache-NAME aber nicht.
+// Ohne Aufraeumen sammeln sich so ueber viele Deploys hinweg veraltete Versionen
+// desselben Pfads im selben Cache an. Nach jedem frischen Fetch alte Versionen
+// desselben Pfads (gleicher pathname, andere Query) verwerfen.
+async function pruneOldVersions(cache, freshRequest) {
+  let freshUrl;
+  try { freshUrl = new URL(freshRequest.url); } catch { return; }
+  const keys = await cache.keys();
+  await Promise.all(keys.map((key) => {
+    if (key.url === freshRequest.url) return null;
+    let keyUrl;
+    try { keyUrl = new URL(key.url); } catch { return null; }
+    if (keyUrl.pathname !== freshUrl.pathname) return null;
+    return cache.delete(key);
+  }));
+}
 
 // --- App-Icon-Badge (Zahl auf dem Startbildschirm-Icon) ---------------------
 // Der Zaehler muss persistent sein, weil der Service Worker zwischen zwei Pushes

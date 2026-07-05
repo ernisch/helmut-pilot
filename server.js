@@ -921,7 +921,17 @@ async function handleRequest(request, response) {
     return sendNotFound(response);
   }
 
-  const requestedPath = isAppEntryPath(url.pathname) ? "index.html" : url.pathname.replace(/^\/+/, "");
+  // Die SPA-Shell kommt immer aus indexHtml() (dynamische ASSET_VERSION je Deploy,
+  // Theme-Flash-Vermeidung) statt von der gleichnamigen Datei auf der Platte — sonst
+  // liefe die Datei der Funktion unbemerkt den Rang ab (kein Cache-Bust, kein
+  // Theme-Script) und beide Stände liefen auseinander.
+  if (isAppEntryPath(url.pathname)) {
+    response.writeHead(200, htmlHeaders());
+    response.end(indexHtml());
+    return;
+  }
+
+  const requestedPath = url.pathname.replace(/^\/+/, "");
   const filePath = path.normalize(path.join(root, requestedPath));
   if (!filePath.startsWith(root)) {
     response.writeHead(403, securityHeaders());
@@ -931,11 +941,6 @@ async function handleRequest(request, response) {
 
   fs.readFile(filePath, (error, content) => {
     if (error) {
-      if (requestedPath === "index.html") {
-        response.writeHead(200, htmlHeaders());
-        response.end(indexHtml());
-        return;
-      }
       response.writeHead(404, securityHeaders());
       response.end("Not found");
       return;
@@ -1493,7 +1498,7 @@ function indexHtml() {
 <html lang="de">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#050914" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -1515,7 +1520,7 @@ function indexHtml() {
       :root[data-theme="light"] body.is-loading,:root[data-theme="light"] .app-splash,:root[data-theme="light"] .loading-screen{background:#f7f9fc}
       :root[data-theme="light"] .splash-mark span,:root[data-theme="light"] .loading-mark span{color:#0f1729;text-shadow:none}
     </style>
-    <script>(function(){try{var p=localStorage.getItem("helmut:theme")||"system";var t=p==="light"?"light":p==="dark"?"dark":((window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark");document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+    <script>(function(){try{var p=localStorage.getItem("helmut:theme")||"system";var t=p==="light"?"light":p==="dark"?"dark":((window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark");document.documentElement.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",t==="light"?"#f7f9fc":"#050914");}catch(e){}})();</script>
     <link rel="stylesheet" href="styles.css?v=${ASSET_VERSION}" />
   </head>
   <body class="is-loading">

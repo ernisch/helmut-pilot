@@ -4414,7 +4414,7 @@ small {
     z-index: 40;
     width: 100vw;
     height: 100dvh;
-    padding: 76px 42px calc(42px + env(safe-area-inset-bottom));
+    padding: calc(76px + env(safe-area-inset-top)) 42px calc(42px + env(safe-area-inset-bottom));
     background:
       radial-gradient(circle at 78% 14%, rgba(140, 92, 255, .12), transparent 30%),
       linear-gradient(180deg, #080d19 0%, #050812 100%);
@@ -4653,7 +4653,7 @@ small {
 
   .sidebar.open ~ .content-shell .menu-button {
     position: fixed;
-    top: 76px;
+    top: calc(76px + env(safe-area-inset-top));
     right: 42px;
     z-index: 45;
     display: block;
@@ -5795,7 +5795,7 @@ body {
 
 .content-shell {
   width: min(1040px, calc(100% - 72px));
-  padding-top: 42px;
+  padding-top: calc(42px + env(safe-area-inset-top));
 }
 
 .topbar {
@@ -6225,7 +6225,7 @@ body {
 
   .content-shell {
     width: 100%;
-    padding: 30px 24px 124px;
+    padding: calc(30px + env(safe-area-inset-top)) 24px 124px;
   }
 
   .topbar {
@@ -6249,7 +6249,7 @@ body {
 
 @media (max-width: 680px) {
   .content-shell {
-    padding: 18px 20px 112px;
+    padding: calc(18px + env(safe-area-inset-top)) 20px 112px;
   }
 
   .topbar {
@@ -10140,6 +10140,18 @@ details[open].meeting-detail summary::before { content: '▾ '; }
 :root[data-theme="light"] .install-banner__mark { background: #0f1729; color: #fbf7ef; }
 :root[data-theme="light"] .install-banner__cta { background: #0f1729; color: #f5f1e8; }
 :root[data-theme="light"] .install-banner__close { color: rgba(15, 23, 42, 0.5); background: rgba(15, 23, 42, 0.06); }
+
+/* Auf Telefonbreiten liegt die Mobile-Dock-Leiste am unteren Rand — der
+   Installieren-Hinweis muss darüber schweben, statt sie zu verdecken. */
+@media (max-width: 920px) {
+  .install-banner {
+    bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* .offline-card p erbt sonst die für dunkle Flächen gedachte helle Textfarbe —
+   auf der hellen Karte im Light-Mode war das fast unlesbar. */
+:root[data-theme="light"] .offline-card p { color: var(--muted); }
 
 /* ═══════════════════════════════════════════════════════════════════════
    LAGE — das politische Morgen-Briefing des Referenten.

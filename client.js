@@ -121,7 +121,12 @@ function resolveTheme(pref) {
   return (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) ? "light" : "dark";
 }
 function applyThemePref(pref) {
-  document.documentElement.setAttribute("data-theme", resolveTheme(pref));
+  const theme = resolveTheme(pref);
+  document.documentElement.setAttribute("data-theme", theme);
+  // Statusleiste/Adressleiste sollen zum aktiven Theme passen, nicht dauerhaft dunkel
+  // bleiben — sonst wirkt der Hell-Modus wie ein Browser-Bruch statt native App.
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute("content", theme === "light" ? "#f7f9fc" : "#050914");
 }
 function setThemePref(pref) {
   try { localStorage.setItem(THEME_KEY, pref); } catch {}
@@ -8683,6 +8688,35 @@ window.addEventListener("appinstalled", () => {
 });
 if (typeof window !== "undefined") {
   window.addEventListener("load", () => { setTimeout(maybeShowIosInstallHint, 2500); }, { once: true });
+}
+
+// --- Service-Worker-Update sichtbar machen -----------------------------------
+// sw.js ruft skipWaiting()/clients.claim() bewusst sofort auf (siehe dort) —
+// die neue Version uebernimmt einen offenen Tab also automatisch im Hintergrund.
+// Ohne Hinweis wuerde das unbemerkt passieren; "controllerchange" feuert genau
+// dann, wenn das fuer eine bereits kontrollierte Seite passiert (nie beim allerersten,
+// noch unkontrollierten Laden), ist also ein zuverlaessiges Update-Signal.
+function showUpdateBanner() {
+  removeInstallBanner();
+  if (document.getElementById("helmutUpdateBanner")) return;
+  const bar = document.createElement("div");
+  bar.id = "helmutUpdateBanner";
+  bar.className = "install-banner";
+  bar.innerHTML = `
+    <div class="install-banner__mark">H</div>
+    <div class="install-banner__text">
+      <strong>Neue Version da</strong>
+      <span>Helmut wurde aktualisiert.</span>
+    </div>
+    <button type="button" class="install-banner__cta" id="helmutUpdateReload">Neu laden</button>
+    <button type="button" class="install-banner__close" id="helmutUpdateClose" aria-label="Schließen">×</button>
+  `;
+  document.body.appendChild(bar);
+  document.getElementById("helmutUpdateReload")?.addEventListener("click", () => window.location.reload());
+  document.getElementById("helmutUpdateClose")?.addEventListener("click", () => bar.remove());
+}
+if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
+  navigator.serviceWorker.addEventListener("controllerchange", showUpdateBanner);
 }
 
 // --- App-Icon-Badge loeschen, sobald die App offen/sichtbar ist: direkt via
