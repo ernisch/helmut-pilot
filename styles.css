@@ -3378,6 +3378,12 @@ small {
   line-height: 1.55;
 }
 
+.composer textarea:focus-visible {
+  outline: 2px solid rgba(139, 92, 246, .56);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 .composer div {
   display: flex;
   justify-content: flex-end;
