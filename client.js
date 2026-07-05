@@ -182,7 +182,7 @@ const OFFICE_FORMATS = [
   { id: "x",           label: "X / Twitter",             icon: "ti-brand-x",          channel: "x" },
   { id: "instagram",   label: "Instagram",               icon: "ti-brand-instagram",  channel: "instagram" },
   { id: "anfrage",     label: "Parlamentarische Anfrage", icon: "ti-file-text",        channel: "committee_question" },
-  { id: "rede",        label: "Rede",                    icon: "ti-microphone",       channel: "internal_line" },
+  { id: "rede",        label: "Rede",                    icon: "ti-microphone",       channel: "press" },
   { id: "buergerbrief", label: "Bürgerbrief",            icon: "ti-mail",             channel: "citizen_dialogue" },
   { id: "intern",      label: "Interne Linie",           icon: "ti-lock",             channel: "internal_line" },
 ];
@@ -5269,7 +5269,7 @@ function renderRadarView() {
   return `
     <section class="page-intro compact">
       <h1 class="${headlineClass("Radar.")}">Radar.</h1>
-      <p>Radar erkennt Erwähnungen, frühe Risiken und Chancen, bevor sie zur Lage werden.</p>
+      <p>Radar erkennt namentliche Erwähnungen von dir, bevor sie zur Lage werden.</p>
     </section>
 
     ${renderRadarStatusCard(hasFresh)}
