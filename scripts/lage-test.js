@@ -383,6 +383,142 @@ async function run() {
     ok("bereits verlinkte KOs -> uebersprungen (idempotent)", res2.skippedExisting === 2 && res2.linked === 0);
   }
 
+  // ── 11) Presentation-Fields-Backfill (bestehende Engine, injizierte Deps) ──
+  console.log("backfillPresentationFields");
+  {
+    const pb = require("../lib/helmut/presentation-backfill");
+
+    // Eine vollstaendige, schema-valide KI-Antwort (wie der echte Understanding-Call).
+    const fullAi = (over = {}) => ({
+      headline: "H", was_ist_passiert: "Etwas ist passiert.", warum_wichtig: "Ist wichtig.",
+      wer_ist_betroffen: "Betroffene.", handlungsempfehlung: "Linie vorbereiten.", zeitdruck: "mittel", confidence_score: 70,
+      parteien: [], ausschuesse: [], ministerien: [], risiken: [], chancen: [],
+      mentioned_people: [], mentioned_mps: [], mentioned_parties: [], mentioned_committees: [],
+      mentioned_ministries: [], mentioned_locations: [], mentioned_organizations: [],
+      display_title: "Kabinett beschließt Rentenpaket 2026",
+      display_summary: "Das Kabinett hat das Rentenpaket beschlossen.",
+      why_relevant: "Betrifft den Ausschuss direkt.",
+      recommendation: "Position abstimmen.",
+      display_category: "BMAS",
+      ...over
+    });
+    const SOURCES = [{ id: "rd-1", title: "Rentenpaket", summary: "Kabinett beschließt.", source_name: "BMAS", published_at: "2026-06-30T09:00:00Z" }];
+    const makeDeps = (cfg = {}) => {
+      const calls = { ai: 0, saved: [] };
+      const deps = {
+        storeReady: () => cfg.storeReady !== false,
+        aiEnabled: () => cfg.aiEnabled !== false,
+        listKnowledgeObjects: async () => cfg.kos || [],
+        getSourcesForVorgang: async (vid) => (typeof cfg.sources === "function" ? cfg.sources(vid) : (cfg.sources || SOURCES)),
+        canSpend: async () => (cfg.canSpend ? cfg.canSpend() : { allowed: true }),
+        requestUnderstanding: async () => { calls.ai += 1; const r = cfg.ai ? cfg.ai(calls.ai) : fullAi(); return r; },
+        save: async (patch) => { calls.saved.push(patch); return { saved: true }; },
+        modelName: () => "gpt-5-mini",
+        estimateCost: () => 0.002,
+        sumActualCost: async () => 0.004,
+        now: () => 1000
+      };
+      return { deps, calls };
+    };
+    const koFull = { id: "ko-vg-full", vorgang_id: "vg-full", understanding_status: "complete",
+      display_title: "Voller Titel da", display_summary: "Da.", why_relevant: "Da.", recommendation: "Da.", display_category: "BMG" };
+    const koMissingAll = { id: "ko-vg-a", vorgang_id: "vg-a", understanding_status: "complete" };
+    const koPending = { id: "ko-vg-p", vorgang_id: "vg-p", understanding_status: "pending" };
+
+    // missingPresentationFields: erkennt fehlende/leere/whitespace Felder.
+    ok("vollstaendiges KO -> keine fehlenden Felder", pb.missingPresentationFields(koFull).length === 0);
+    ok("leeres KO -> alle 5 Felder fehlen", pb.missingPresentationFields(koMissingAll).length === 5);
+    ok("whitespace zaehlt als fehlend", pb.missingPresentationFields({ display_title: "   ", display_summary: "x", why_relevant: "x", recommendation: "x", display_category: "x" }).length === 1);
+
+    // Dry-run: Plan korrekt, KEINE KI-/Save-Calls, nur complete-KOs geprueft.
+    {
+      const { deps, calls } = makeDeps({ kos: [koFull, koMissingAll, koPending] });
+      const r = await pb.backfillPresentationFields({ dryRun: true }, deps);
+      ok("dry-run: geprueft = nur complete (2)", r.plan.checked === 2);
+      ok("dry-run: zu verarbeiten = nur unvollstaendige complete (1)", r.plan.toProcess === 1);
+      ok("dry-run: uebersprungen-voll = 1", r.plan.skippedComplete === 1);
+      ok("dry-run: Kostenschaetzung gesetzt", typeof r.plan.estTotalCostUsd === "number" && r.plan.estTotalCostUsd > 0);
+      ok("dry-run: KEIN KI-Call, KEIN Save", calls.ai === 0 && calls.saved.length === 0);
+    }
+
+    // Happy path: alle 5 fehlen -> Patch enthaelt id+vorgang_id + genau die 5 Felder, KEINE Raw Fields.
+    {
+      const { deps, calls } = makeDeps({ kos: [koMissingAll] });
+      const r = await pb.backfillPresentationFields({ dryRun: false }, deps);
+      ok("happy: 1 verarbeitet, vollstaendig", r.processed === 1 && r.fullyCompleted === 1 && r.failed === 0);
+      ok("happy: genau 1 KI-Call", calls.ai === 1);
+      const patch = calls.saved[0];
+      const keys = Object.keys(patch).sort().join(",");
+      ok("happy: Patch = id+vorgang_id + 5 Presentation Fields", keys === "display_category,display_summary,display_title,id,recommendation,vorgang_id,why_relevant");
+      const rawKeys = ["was_ist_passiert", "warum_wichtig", "wer_ist_betroffen", "headline", "handlungsempfehlung", "parteien", "ausschuesse", "status", "understanding_status", "ko_version", "best_source_url", "sources"];
+      ok("happy: KEINE Raw Fields im Patch", rawKeys.every((k) => !(k in patch)));
+      ok("happy: display_title 1:1 aus der (validierten) KI-Antwort", patch.display_title === "Kabinett beschließt Rentenpaket 2026");
+      ok("happy: tatsaechliche Kosten aus Log gemeldet", r.actualCostUsd === 0.004);
+    }
+
+    // Partial: nur why_relevant fehlt -> Patch enthaelt NUR why_relevant (bestehende Felder unangetastet).
+    {
+      const koPartial = { ...koFull, id: "ko-vg-part", vorgang_id: "vg-part", why_relevant: "" };
+      const { deps, calls } = makeDeps({ kos: [koPartial] });
+      const r = await pb.backfillPresentationFields({ dryRun: false }, deps);
+      const patch = calls.saved[0];
+      ok("partial: Patch enthaelt NUR das fehlende Feld (+id/vorgang_id)", Object.keys(patch).sort().join(",") === "id,vorgang_id,why_relevant");
+      ok("partial: bestehendes display_title wird NICHT ueberschrieben", !("display_title" in patch));
+      ok("partial: als vollstaendig gezaehlt", r.fullyCompleted === 1);
+    }
+
+    // Partial-bleibt-unvollstaendig: fehlt display_title+why_relevant, KI liefert UNGUELTIGEN Titel
+    // -> Titel wird verworfen (leer), nur why_relevant geschrieben -> partiallyFilled.
+    {
+      const koTwo = { id: "ko-vg-two", vorgang_id: "vg-two", understanding_status: "complete",
+        display_summary: "Da.", recommendation: "Da.", display_category: "BMG" };
+      const badTitle = fullAi({ display_title: "Dies ist ein viel zu langer Titel der garantiert nicht durch den Validator passt und daher verworfen wird" });
+      const { deps, calls } = makeDeps({ kos: [koTwo], ai: () => badTitle });
+      const r = await pb.backfillPresentationFields({ dryRun: false }, deps);
+      const patch = calls.saved[0];
+      ok("teilweise: verworfener display_title NICHT geschrieben", !("display_title" in patch) && "why_relevant" in patch);
+      ok("teilweise: als partiallyFilled gezaehlt", r.partiallyFilled === 1 && r.fullyCompleted === 0);
+    }
+
+    // Idempotenz: nur vollstaendige KOs -> nichts zu tun, kein KI-Call.
+    {
+      const { deps, calls } = makeDeps({ kos: [koFull] });
+      const r = await pb.backfillPresentationFields({ dryRun: false }, deps);
+      ok("idempotent: vollstaendige KOs -> 0 verarbeitet, 0 KI-Calls", r.processed === 0 && calls.ai === 0 && r.plan.skippedComplete === 1);
+    }
+
+    // Keine Quellen -> uebersprungen, kein KI-Call (Provenienz zuerst noetig).
+    {
+      const { deps, calls } = makeDeps({ kos: [koMissingAll], sources: [] });
+      const r = await pb.backfillPresentationFields({ dryRun: false }, deps);
+      ok("ohne Quellen: skippedNoSources=1, kein KI-Call", r.skippedNoSources === 1 && calls.ai === 0 && r.processed === 0);
+    }
+
+    // Fail-safe: KI wirft beim 1. KO, gelingt beim 2. -> Lauf bricht NICHT ab.
+    {
+      const koB = { id: "ko-vg-b", vorgang_id: "vg-b", understanding_status: "complete" };
+      const { deps, calls } = makeDeps({ kos: [koMissingAll, koB], ai: (n) => { if (n === 1) throw new Error("boom 500"); return fullAi(); } });
+      const r = await pb.backfillPresentationFields({ dryRun: false }, deps);
+      ok("fail-safe: 1 fehlgeschlagen, 1 verarbeitet, weitergelaufen", r.failed === 1 && r.processed === 1 && calls.ai === 2);
+      ok("fail-safe: Fehler protokolliert (mit KO-id)", r.errors.some((e) => e.id === "ko-vg-a" && e.reason === "ai-error"));
+    }
+
+    // Budget erschoepft -> Rest wird nicht versucht, KEIN KI-Call.
+    {
+      const koB = { id: "ko-vg-b2", vorgang_id: "vg-b2", understanding_status: "complete" };
+      const { deps, calls } = makeDeps({ kos: [koMissingAll, koB], canSpend: () => ({ allowed: false, reason: "daily-limit" }) });
+      const r = await pb.backfillPresentationFields({ dryRun: false }, deps);
+      ok("budget: skippedBudget = alle Kandidaten, KEIN KI-Call", r.skippedBudget === 2 && calls.ai === 0 && r.processed === 0);
+    }
+
+    // Store nicht bereit -> sauberer Skip (kein Absturz).
+    {
+      const { deps } = makeDeps({ kos: [koMissingAll], storeReady: false });
+      const r = await pb.backfillPresentationFields({ dryRun: false }, deps);
+      ok("store nicht bereit -> skipped", r.skipped === true && r.reason === "v3-store-not-ready");
+    }
+  }
+
   console.log(`\nAlle ${passed} Lage-Assertions erfolgreich.`);
 }
 

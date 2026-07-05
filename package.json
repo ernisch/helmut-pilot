@@ -8,7 +8,8 @@
     "test:understanding-eval": "node scripts/understanding-eval.js",
     "test:understanding-smoke": "node scripts/understanding-live-smoke.js",
     "test:lage": "node scripts/lage-test.js",
-    "lage:backfill": "node scripts/lage-backfill.js"
+    "lage:backfill": "node scripts/lage-backfill.js",
+    "backfill:presentation": "node scripts/presentation-backfill.js"
   },
   "dependencies": {},
   "devDependencies": {}
