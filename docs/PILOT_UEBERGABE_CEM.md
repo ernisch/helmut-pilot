@@ -6,7 +6,10 @@ Stand: 23. Juni 2026
 
 https://helmut-pilot.vercel.app
 
-Pilot-Passwort: `nohut`
+Pilot-Passwort: siehe Vercel Environment Variable `PILOT_SECRET` (nicht mehr hier
+dokumentiert — dieses Dokument ist Teil des Repos und damit kein sicherer Ort für
+das aktive Passwort). Vor der echten Übergabe ein neues, zufälliges `PILOT_SECRET`
+setzen und Cem separat (z.B. mündlich oder per Passwortmanager) mitteilen.
 
 ## Wofuer Helmut gedacht ist
 

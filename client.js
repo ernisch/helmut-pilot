@@ -2175,8 +2175,8 @@ function renderLageEmpty(greeting) {
 
 function renderLageView() {
   const data = lageData();
-  const firstName = (profile && profile.fullName ? profile.fullName : "Cem").split(" ")[0];
-  const greeting = (typeof timeGreeting === "function" ? timeGreeting(firstName) : `Guten Morgen, ${firstName}.`);
+  const firstName = (profile?.fullName || "").split(" ")[0];
+  const greeting = (typeof timeGreeting === "function" ? timeGreeting(firstName) : `Guten Morgen${firstName ? `, ${firstName}` : ""}.`);
   if (!data) return renderLageEmpty(greeting);
   const vorgaenge = Array.isArray(data.vorgaenge) ? data.vorgaenge : [];
   const hasBriefing = Array.isArray(data.paragraphs) && data.paragraphs.length;
@@ -4080,7 +4080,7 @@ function meetingCriticalQuestions(input) {
   return [
     `Welche Zusage braucht ihr konkret von Politik zu ${topic}?`,
     "Wo ist die Bundesregierung bisher zu unkonkret?",
-    "Welche Zahl oder welches Beispiel sollte Cem öffentlich nutzen?"
+    "Welche Zahl oder welches Beispiel solltet ihr öffentlich nutzen?"
   ];
 }
 
@@ -4540,8 +4540,9 @@ function noDecisionDirective() {
   const phase = helmutDayPhase().key;
   const government = governmentPlanItems()[0];
   const meeting = nextPreparedMeeting();
-  if (government && meeting) return `Für dich als Opposition bleibt vor allem wichtig: ${government.title}. Ich verbinde das mit ${meeting.terminTitel} und prüfe, ob daraus eine Frage an die Bundesregierung oder eine Linie für Arbeit und Soziales entsteht.`;
-  if (government) return `Für dich als Opposition bleibt vor allem wichtig: ${government.title}. ${phase === "evening" || phase === "late" ? "Für morgen prüfe ich" : "Ich prüfe"}, ob daraus eine Frage an die Bundesregierung oder eine Linie für Arbeit und Soziales entsteht.`;
+  const committeeLine = profile?.committee || profile?.committees?.[0] || "deinen Ausschuss";
+  if (government && meeting) return `Für dich als Opposition bleibt vor allem wichtig: ${government.title}. Ich verbinde das mit ${meeting.terminTitel} und prüfe, ob daraus eine Frage an die Bundesregierung oder eine Linie für ${committeeLine} entsteht.`;
+  if (government) return `Für dich als Opposition bleibt vor allem wichtig: ${government.title}. ${phase === "evening" || phase === "late" ? "Für morgen prüfe ich" : "Ich prüfe"}, ob daraus eine Frage an die Bundesregierung oder eine Linie für ${committeeLine} entsteht.`;
   const party = partyFactionItems()[0];
   if (party) return `Aus Fraktion und Partei ist aktuell anschlussfähig: ${party.title}. Noch keine Reaktion nötig, aber politisch im Blick behalten.`;
   if (meeting) return `Nächster Arbeitsfokus: ${meeting.terminTitel}. Ich halte dafür Gesprächspunkte, Regierungslage und mögliche Nachfragen bereit.`;
@@ -4604,7 +4605,7 @@ function renderPilotStatus() {
   return `
     <div class="pilot-status ${previewMode ? "preview" : ""}" aria-label="Pilotstatus">
       ${escapeHtml(statusLabel)} · ${escapeHtml(sourceText)} · aktualisiert ${escapeHtml(updatedText)}
-      ${previewMode ? `<span>Kontrollansicht · verändert Cem nichts</span>` : ""}
+      ${previewMode ? `<span>Kontrollansicht · verändert nichts</span>` : ""}
     </div>
   `;
 }
@@ -5057,7 +5058,7 @@ function isActionableOfficeTask(task) {
 }
 
 function shortTaskDescription(task) {
-  const text = task.description || "Bitte diese Empfehlung für Cem vorbereiten.";
+  const text = task.description || "Bitte diese Empfehlung vorbereiten.";
   return twoSentenceSummary(text);
 }
 
@@ -8139,7 +8140,7 @@ function directArticleHref(source) {
 
 function teamBenefitText(task) {
   const benefit = String(task.politicalBenefit || "").trim();
-  if (!benefit) return "Wir brauchen eine schnelle Einschätzung, ob Cem dazu heute sprechfähig sein sollte.";
+  if (!benefit) return "Wir brauchen eine schnelle Einschätzung, ob dazu heute Sprechfähigkeit nötig ist.";
   return benefit
     .replace(/^Du kannst\b/i, "Wir können")
     .replace(/^Du hältst\b/i, "Wir halten")
@@ -8161,11 +8162,12 @@ function toTeamRiskText(value) {
 
 function taskBriefQuestions(task) {
   const text = `${task.title || ""} ${task.description || ""}`.toLowerCase();
+  const committeeLine = profile?.committee || profile?.committees?.[0] || "deinen Ausschuss";
   if (text.includes("wohngeld")) {
     return [
       "Was genau plant oder kritisiert die Bundesregierung beim Wohngeld?",
       "Welche soziale Wirkung hätte das für Menschen mit geringem Einkommen?",
-      "Welche Linie passt für Arbeit und Soziales?",
+      `Welche Linie passt für ${committeeLine}?`,
       "Reaktion heute ja oder nein?"
     ];
   }
@@ -8189,13 +8191,13 @@ function taskBriefQuestions(task) {
     return [
       "Was ist der konkrete Vorschlag oder Kritikpunkt beim Arbeitszeitgesetz?",
       "Welche Schutzrechte wären betroffen?",
-      "Welche Linie passt für Arbeit und Soziales?",
+      `Welche Linie passt für ${committeeLine}?`,
       "Welche Formulierung ist pressefähig?"
     ];
   }
   return [
     "Was ist der konkrete politische Anlass?",
-    "Warum betrifft das Cems Ausschuss oder Profil?",
+    "Warum betrifft das unseren Ausschuss oder das Mandatsprofil?",
     "Welche Linie sollten wir vorbereiten?",
     "Reaktion heute ja oder nein?"
   ];
