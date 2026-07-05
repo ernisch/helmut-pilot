@@ -4788,8 +4788,17 @@ function officeBriefingTime() {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")} Uhr`;
 }
 
-function draftStatus(format) {
+function draftStatus(format, hasContent) {
+  // hasContent kommt vom Aufrufer (isValidDraft-Check auf den echten Text).
+  // Ohne echten Inhalt darf die Pille nie "Entwurf bereit" behaupten - dafuer
+  // existiert bereits der Status "Noch nicht belastbar" (siehe draftStatusClass).
+  if (hasContent === false) return "Noch nicht belastbar";
   return OFFICE_FORMAT_META[format.id]?.defaultStatus || "Zum Bereithalten";
+}
+
+function officeCardHasRealContent(decision, format) {
+  const key = officeDraftKey(decision, format);
+  return isValidDraft(officeDrafts[key]);
 }
 
 function draftStatusClass(status) {
@@ -4821,7 +4830,7 @@ function renderOfficeView() {
   const hasBriefing = topDecisions.length > 0;
   const generating = officeDraftsGenerating;
 
-  const readyCount = allCards.filter(({ format }) => draftStatus(format) === "Entwurf bereit").length;
+  const readyCount = allCards.filter(({ decision, format }) => draftStatus(format, officeCardHasRealContent(decision, format)) === "Entwurf bereit").length;
   const holdCount = totalCount - readyCount;
 
   const firstTwoFormats = formats.slice(0, 2).map((f) => OFFICE_FORMAT_META[f.id]?.formatLabel || f.label).filter(Boolean);
@@ -4837,8 +4846,8 @@ function renderOfficeView() {
       ? "Entwürfe werden vorbereitet&hellip;"
       : "Erscheinen automatisch wenn dein Briefing geladen ist.";
 
-  const readyFormats = formats.filter((f) => draftStatus(f) === "Entwurf bereit");
-  const holdFormats = formats.filter((f) => draftStatus(f) !== "Entwurf bereit");
+  const readyFormats = formats.filter((f) => topDecisions.some((d) => draftStatus(f, officeCardHasRealContent(d, f)) === "Entwurf bereit"));
+  const holdFormats = formats.filter((f) => !topDecisions.some((d) => draftStatus(f, officeCardHasRealContent(d, f)) === "Entwurf bereit"));
   const priorityHint = hasBriefing && readyFormats.length ? `
     <div class="buero-priority-hint">
       ${readyFormats.slice(0, 1).map((f) => `<span class="buero-priority-label">Zuerst prüfen:</span><span class="buero-priority-value">${escapeHtml(OFFICE_FORMAT_META[f.id]?.formatLabel || f.label)}</span>`).join("")}
@@ -4879,9 +4888,10 @@ function renderOfficeDraftCard(decision, format, index = 0) {
   // Text oder ein aus DIESER Entscheidung abgeleiteter Vorschlag. Fehlt beides,
   // liefert channelFallbackStatement die klare Meldung "kein belastbarer
   // Kommunikationsvorschlag vor" (siehe isValidDraft/renderOfficeDraftCard).
-  const text = (isValidDraft(aiText) ? aiText : null) || channelFallbackStatement(decision, format.channel || "press");
+  const hasRealContent = isValidDraft(aiText);
+  const text = (hasRealContent ? aiText : null) || channelFallbackStatement(decision, format.channel || "press");
   const readTime = draftReadingTime(text);
-  const status = draftStatus(format);
+  const status = draftStatus(format, hasRealContent);
   const statusClass = draftStatusClass(status);
   const source = draftSource(format);
   const title = draftTitle(decision);
@@ -4927,7 +4937,7 @@ function renderOfficeDraftDetail() {
   const meta = OFFICE_FORMAT_META[format.id] || { formatLabel: format.label, typeLabel: format.label.toUpperCase(), einordnung: "", defaultStatus: "Zum Bereithalten", lineCheck: "", qualityTone: "Sachlich, klar, politisch anschlussfähig", qualityUsage: "Presse und Medien", iconBg: "#F0F0F0", iconColor: "#555" };
   const time = officeBriefingTime();
   const sources = draftSourceCount(decision);
-  const status = draftStatus(format);
+  const status = draftStatus(format, isValidDraft(text));
   const statusClass = draftStatusClass(status);
   const paragraphs = String(text).split(/\n{1,}/).map((p) => p.trim()).filter(Boolean);
   const lageDateStr = (() => {
