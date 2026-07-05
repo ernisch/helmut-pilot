@@ -9,7 +9,13 @@ const assert = require("assert");
 const ai = require("../lib/helmut/ai");
 const lage = require("../lib/helmut/lage");
 const understanding = require("../lib/helmut/understanding");
-const { validateKnowledgeObject } = require("../lib/helmut/understanding-schema");
+const { validateKnowledgeObject, KNOWLEDGE_OBJECT_SCHEMA } = require("../lib/helmut/understanding-schema");
+
+const TITLE_MAX = KNOWLEDGE_OBJECT_SCHEMA.properties.display_title.maxLength;
+const CATEGORY_MAX = KNOWLEDGE_OBJECT_SCHEMA.properties.display_category.maxLength;
+const SUMMARY_MAX = KNOWLEDGE_OBJECT_SCHEMA.properties.display_summary.maxLength;
+const WHY_MAX = KNOWLEDGE_OBJECT_SCHEMA.properties.why_relevant.maxLength;
+const RECO_MAX = KNOWLEDGE_OBJECT_SCHEMA.properties.recommendation.maxLength;
 
 let passed = 0;
 function ok(name, cond) {
@@ -195,6 +201,70 @@ async function run() {
     // bringen (bewusst NICHT required/minLength — anders als was_ist_passiert etc.).
     ok("KO mit verworfenem display_title bleibt insgesamt schema-valide", validateKnowledgeObject(overlong).valid === true);
     ok("KO ganz ohne neue Felder bleibt insgesamt schema-valide", validateKnowledgeObject(missing).valid === true);
+  }
+
+  // ── 6d) Laengen-Grenzwerte GENAU an der Schema-Obergrenze (kein Off-by-one,
+  // keine vertauschten Caps zwischen den drei cleanEntry-Feldern) ──
+  console.log("assembleKnowledgeObject (Laengen-Grenzwerte, schema-abgeleitet)");
+  {
+    const cluster = { documents: [{ title: "X" }] };
+    const base = { was_ist_passiert: "A.", warum_wichtig: "B.", wer_ist_betroffen: "C.", handlungsempfehlung: "D.", zeitdruck: "mittel" };
+
+    const atTitleMax = "x".repeat(TITLE_MAX);
+    const overTitleMax = "x".repeat(TITLE_MAX + 1);
+    const koTitleAtMax = understanding.assembleKnowledgeObject({ ...base, display_title: atTitleMax }, cluster, "vg-title-at-max", {});
+    const koTitleOverMax = understanding.assembleKnowledgeObject({ ...base, display_title: overTitleMax }, cluster, "vg-title-over-max", {});
+    ok(`display_title genau an der Grenze (${TITLE_MAX} Zeichen) wird behalten`, koTitleAtMax.display_title === atTitleMax);
+    ok(`display_title 1 Zeichen ueber der Grenze wird verworfen (kein Off-by-one)`, koTitleOverMax.display_title === "");
+
+    const atCategoryMax = "y".repeat(CATEGORY_MAX);
+    const overCategoryMax = "y".repeat(CATEGORY_MAX + 1);
+    const koCatAtMax = understanding.assembleKnowledgeObject({ ...base, display_category: atCategoryMax }, cluster, "vg-cat-at-max", {});
+    const koCatOverMax = understanding.assembleKnowledgeObject({ ...base, display_category: overCategoryMax }, cluster, "vg-cat-over-max", {});
+    ok(`display_category genau an der Grenze (${CATEGORY_MAX} Zeichen) wird behalten`, koCatAtMax.display_category === atCategoryMax);
+    ok(`display_category 1 Zeichen ueber der Grenze wird verworfen`, koCatOverMax.display_category === "");
+
+    // display_summary/why_relevant/recommendation duerfen NICHT dasselbe Budget
+    // teilen (sonst waere ein Vertauschen der drei cleanEntry-Aufrufe unsichtbar).
+    ok("die drei Body-Budgets sind tatsaechlich unterschiedlich", RECO_MAX < WHY_MAX && WHY_MAX < SUMMARY_MAX);
+
+    const overRecoUnderWhy = "z".repeat(RECO_MAX + 10);
+    const koSwapCheck1 = understanding.assembleKnowledgeObject({ ...base,
+      why_relevant: overRecoUnderWhy, recommendation: overRecoUnderWhy
+    }, cluster, "vg-swap-1", {});
+    ok("why_relevant behaelt einen Wert oberhalb des (kleineren) recommendation-Caps",
+      koSwapCheck1.why_relevant.length === overRecoUnderWhy.length);
+    ok("recommendation kappt denselben Wert exakt auf sein eigenes, kleineres Budget",
+      koSwapCheck1.recommendation.length === RECO_MAX);
+
+    const overWhyUnderSummary = "w".repeat(WHY_MAX + 10);
+    const koSwapCheck2 = understanding.assembleKnowledgeObject({ ...base,
+      display_summary: overWhyUnderSummary, why_relevant: overWhyUnderSummary
+    }, cluster, "vg-swap-2", {});
+    ok("display_summary behaelt einen Wert oberhalb des (kleineren) why_relevant-Caps",
+      koSwapCheck2.display_summary.length === overWhyUnderSummary.length);
+    ok("why_relevant kappt denselben Wert exakt auf sein eigenes, kleineres Budget",
+      koSwapCheck2.why_relevant.length === WHY_MAX);
+  }
+
+  // ── 6e) Schema-maxLength wird von validateKnowledgeObject TATSAECHLICH als
+  // ungueltig erkannt (nicht nur als Dokumentation) ──
+  console.log("validateKnowledgeObject (maxLength greift auch in der 'ungueltig'-Richtung)");
+  {
+    const cluster = { documents: [{ title: "X" }] };
+    const validKo = understanding.assembleKnowledgeObject({
+      was_ist_passiert: "A.", warum_wichtig: "B.", wer_ist_betroffen: "C.", handlungsempfehlung: "D.", zeitdruck: "mittel",
+      display_summary: "Kurz."
+    }, cluster, "vg-valid", {});
+    ok("Baseline: gut geformtes KO ist schema-valide", validateKnowledgeObject(validKo).valid === true);
+
+    // Bewusst NICHT ueber assembleKnowledgeObject/cleanEntry, sondern direkt auf
+    // dem bereits assemblierten KO gesetzt — prueft checkValue()'s maxLength-Zweig
+    // isoliert (assembleKnowledgeObject selbst wuerde das nie durchlassen).
+    const tooLongSummary = { ...validKo, display_summary: "s".repeat(SUMMARY_MAX + 1) };
+    const res = validateKnowledgeObject(tooLongSummary);
+    ok("display_summary ueber Schema-maxLength macht das KO ungueltig", res.valid === false);
+    ok("Fehlermeldung benennt das betroffene Feld", res.errors.some((e) => e.includes("display_summary")));
   }
 
   // ── 7) resolveParagraphSources: Vereinigung + Dedup ──

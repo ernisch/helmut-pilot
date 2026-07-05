@@ -2125,7 +2125,7 @@ const LAGE_ABBREV_TAIL = /(?:\b(?:Dr|Prof|Nr|Art|Abs|Std|Mio|Mrd|ca|etc|bzw|ggf|
 // die erlaubte Zeilenzahl passt. Erkennt gängige Abkürzungen/Ordinalzahlen,
 // damit "2. Lesung"/"Art. 5"/"bzw." nicht fälschlich als Satzende gilt.
 function lageFirstSentence(text, maxLen) {
-  const t = String(text || "").replace(/\s+/g, " ").trim();
+  const t = lageField(text);
   if (!t) return "";
   const boundary = /[.!?](?=\s|$)/g;
   let m;
@@ -2236,13 +2236,16 @@ function renderVorgangCard(v) {
   const summary = v.summary || {};
   // Zeichenbudgets sind per Messung so gewählt, dass sie in die jeweils
   // erlaubte Zeilenzahl von .lage2-card-row p passen (3 Zeilen normal, 2 auf
-  // kurzen Viewports) — sonst kann CSS-Line-Clamp den JS-Text zusätzlich
-  // kappen ("doppelte Kürzung"). Gilt nur für den Fallback-Pfad — die
-  // gespeicherten Felder sind bereits redaktionell kurz.
+  // kurzen Viewports) — sonst kann CSS-Line-Clamp den Text zusätzlich kappen
+  // ("doppelte Kürzung"). Gilt für BEIDE Pfade: die gespeicherten Felder sind
+  // zwar redaktionell kurz angelegt (~1 Satz), aber nicht hart auf das
+  // Karten-Zeichenbudget begrenzt — lageFirstSentence bleibt daher auch für
+  // v.displaySummary/whyRelevant/recommendation die letzte Absicherung gegen
+  // eine von CSS unsauber (mitten in der Zeile) abgeschnittene Zeile.
   const shortVp = lageIsShortViewport();
-  const kurzfassung = lageField(v.displaySummary) || lageFirstSentence(summary.wasIstPassiert || "", shortVp ? 58 : 95);
-  const warum = lageField(v.whyRelevant) || lageFirstSentence(lageHumanize(summary.warumWichtig || ""), shortVp ? 58 : 85);
-  const empfehlung = lageField(v.recommendation) || lageFirstSentence(lageHumanize(v.empfehlung || ""), shortVp ? 58 : 75);
+  const kurzfassung = lageFirstSentence(lageField(v.displaySummary) || summary.wasIstPassiert || "", shortVp ? 58 : 95);
+  const warum = lageFirstSentence(lageHumanize(lageField(v.whyRelevant) || summary.warumWichtig || ""), shortVp ? 58 : 85);
+  const empfehlung = lageFirstSentence(lageHumanize(lageField(v.recommendation) || v.empfehlung || ""), shortVp ? 58 : 75);
   return `
     <article class="lage2-card">
       <div class="lage2-card-head">
