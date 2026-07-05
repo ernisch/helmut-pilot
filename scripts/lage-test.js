@@ -210,11 +210,15 @@ async function run() {
     const cluster = { documents: [{ title: "X" }] };
     const base = { was_ist_passiert: "A.", warum_wichtig: "B.", wer_ist_betroffen: "C.", handlungsempfehlung: "D.", zeitdruck: "mittel" };
 
-    const atTitleMax = "x".repeat(TITLE_MAX);
-    const overTitleMax = "x".repeat(TITLE_MAX + 1);
+    // Ein sonst gueltiger (mehrwortiger, starkes Schlusswort) Titel von exakt n
+    // Zeichen — isoliert die LAENGEN-Grenze von den Qualitaetsregeln (Wortzahl/
+    // Schlusswort), damit dieser Test nur die maxLength prueft.
+    const titleOfLength = (n) => { const p = "Titel Alpha Beta "; return p + "R".repeat(n - p.length); };
+    const atTitleMax = titleOfLength(TITLE_MAX);
+    const overTitleMax = titleOfLength(TITLE_MAX + 1);
     const koTitleAtMax = understanding.assembleKnowledgeObject({ ...base, display_title: atTitleMax }, cluster, "vg-title-at-max", {});
     const koTitleOverMax = understanding.assembleKnowledgeObject({ ...base, display_title: overTitleMax }, cluster, "vg-title-over-max", {});
-    ok(`display_title genau an der Grenze (${TITLE_MAX} Zeichen) wird behalten`, koTitleAtMax.display_title === atTitleMax);
+    ok(`display_title genau an der Grenze (${TITLE_MAX} Zeichen) wird behalten`, koTitleAtMax.display_title === atTitleMax && atTitleMax.length === TITLE_MAX);
     ok(`display_title 1 Zeichen ueber der Grenze wird verworfen (kein Off-by-one)`, koTitleOverMax.display_title === "");
 
     const atCategoryMax = "y".repeat(CATEGORY_MAX);
@@ -245,6 +249,50 @@ async function run() {
       koSwapCheck2.display_summary.length === overWhyUnderSummary.length);
     ok("why_relevant kappt denselben Wert exakt auf sein eigenes, kleineres Budget",
       koSwapCheck2.why_relevant.length === WHY_MAX);
+  }
+
+  // ── 6f) Qualitaetsgate fuer den Anzeige-Titel (isValidDisplayTitle):
+  // politischer Lage-Titel, kein Nachrichten-Fragment, keine Ellipse, endet
+  // nicht auf einem Funktionswort ──
+  console.log("isValidDisplayTitle (Qualitaetsgate Anzeige-Titel)");
+  {
+    const good = [
+      "Merz lehnt Vergesellschaftung ab",          // endet auf trennbarem Praefix "ab" (ablehnen)
+      "Regierung legt Tariftreuegesetz vor",         // trennbares "vor" (vorlegen)
+      "Fraktion stimmt Reform zu",                   // trennbares "zu" (zustimmen)
+      "Regierung bringt Klimagesetz ein",            // trennbares "ein" (einbringen)
+      "Land setzt EU-Vorgabe um",                    // trennbares "um" (umsetzen)
+      "Bundestag räumt Fehler ein",                  // trennbares "ein" (einraeumen)
+      "Völklingen ringt um Sportplätze",
+      "Ministerium plant neue Arbeitsmarktreform",
+      "Mehrere Sozialreformen stehen zur Debatte",   // "zur" nur in der Mitte, Ende stark
+      "Kabinett beschließt Rentenpaket 2026"          // endet auf Zahl
+    ];
+    for (const t of good) ok(`gueltiger Anzeige-Titel: "${t}"`, understanding.isValidDisplayTitle(t) === true);
+
+    const bad = [
+      ["Friedrich Merz hat öffentlich eine scharfe Ablehnung gegenüber", "schwaches Schlusswort 'gegenüber'"],
+      ["Reform der Grundsicherung zur", "endet auf 'zur'"],
+      ["Debatte über Rente und", "endet auf 'und'"],
+      ["Ministerium plant Reform für", "endet auf 'für'"],
+      ["Kabinett berät Reform …", "Ellipse (…)"],
+      ["Kabinett berät Reform...", "Ellipse (...)"],
+      ["Im Völklinger Stadtrat besteht Ratlosigkeit,", "haengendes Komma"],
+      ["Streit um Haushalt:", "haengender Doppelpunkt"],
+      ["öffentlich eine scharfe Ablehnung", "Kleinbuchstabe am Anfang (Fragment)"],
+      ["Rentenreform", "nur ein Wort"],
+      ["Das Bundeskabinett hat heute nach langer Debatte den Gesetzentwurf beschlossen", "zu viele Woerter / zu lang"]
+    ];
+    for (const [t, why] of bad) ok(`ungueltiger Anzeige-Titel (${why}): "${t}"`, understanding.isValidDisplayTitle(t) === false);
+
+    // Ende-zu-Ende: ungueltiger Titel wird beim Assemble VERWORFEN (-> Client
+    // zeigt Legacy-Titel), gueltiger bleibt 1:1 erhalten.
+    const cluster = { documents: [{ title: "X" }] };
+    const base = { was_ist_passiert: "A.", warum_wichtig: "B.", wer_ist_betroffen: "C.", handlungsempfehlung: "D.", zeitdruck: "mittel" };
+    const koBad = understanding.assembleKnowledgeObject({ ...base, display_title: "Reform der Grundsicherung zur" }, cluster, "vg-badtitle", {});
+    ok("Assemble verwirft ungueltigen Titel (schwaches Ende) -> ''", koBad.display_title === "");
+    const koGood = understanding.assembleKnowledgeObject({ ...base, display_title: "Merz lehnt Vergesellschaftung ab" }, cluster, "vg-goodtitle", {});
+    ok("Assemble behaelt gueltigen Titel 1:1 (endet auf trennbarem 'ab')", koGood.display_title === "Merz lehnt Vergesellschaftung ab");
   }
 
   // ── 6e) Schema-maxLength wird von validateKnowledgeObject TATSAECHLICH als

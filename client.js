@@ -2225,13 +2225,17 @@ function lageDocRow(doc) {
 // recommendation/displayCategory) — hier passiert keine KI-Umformulierung,
 // nur Anzeige bereits gespeicherter Werte (kein KI-Aufruf beim Rendern).
 function renderVorgangCard(v) {
+  // v.displayTitle ist der EINZIGE echte Anzeige-Titel: einmal in der
+  // Understanding-Engine erzeugt, qualitätsgeprüft, dauerhaft gespeichert. Die
+  // UI erzeugt/kürzt/repariert hier NICHTS (kein slice/substring/Ellipse).
   const displayTitle = lageField(v.displayTitle);
   const category = lageField(v.displayCategory) || lageCardCategory(v);
   const statusChip = lageStatusChip(v);
-  // Kein sinnvoller displayTitle vorhanden (ältere Vorgänge): NIE algorithmisch
-  // kürzen (das war die Ursache abgebrochener Titel wie "Friedrich Merz hat
-  // öffentlich") — stattdessen den vollständigen Originaltitel zeigen, mit
-  // kleinerer Schrift statt Kürzung (siehe .lage2-card-title-fallback).
+  // LEGACY-FALLBACK (nur für Alt-Vorgänge ohne display_title): den vollständigen
+  // bisherigen Titel unverändert zeigen — NIE algorithmisch kürzen (das war die
+  // Ursache abgebrochener Titel wie "Friedrich Merz hat öffentlich"), nur
+  // kleinere Schrift (siehe .lage2-card-title-fallback). Dieser Zweig soll nach
+  // einem Backfill der neuen Felder vollständig verschwinden.
   const title = displayTitle || lageField(v.title);
   const summary = v.summary || {};
   // Zeichenbudgets sind per Messung so gewählt, dass sie in die jeweils
