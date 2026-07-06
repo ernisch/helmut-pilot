@@ -17,19 +17,55 @@ Analysen + Synthese).
 
 ## Umsetzungsstand (laufend)
 
-| # | Increment | Status | Verifikation |
-|---|---|---|---|
-| A | Toter Code entfernt (5 TS-Dateien + 2 runtime.js-Funktionen) | ✅ erledigt | p1/goldset/lage/understanding-eval grün |
-| — | V3 Decision Engine (`decisions.js` + storage-CRUD) — additive Grundlage | ✅ erledigt | decisions 36/36 |
-| 3 | Rollen-Text-Briefing entfernt (`briefing.js` + 3 `.j2` + Flag `HELMUT_V3_BRIEFING` + Debug-Endpoint); Scheduler-Slot → `runDecisionShadow` | ✅ erledigt | p1 175/175, alle offline grün |
-| D | `toBriefingContractV3`-Adapter (`briefingContract.js`) — V3-Daten → exakte V2-Vertragsform, deterministisch/0-KI. **Gebaut + getestet**, noch nicht am Live-Read-Pfad. | ✅ erledigt (Build) | contract-adapter 22/22 |
-| — | Adversarialer Review der Decision Engine + 3 Fixes (vorgang_id persistiert, chance/risk gekappt, deadline sanitisiert) | ✅ erledigt | decisions 38/38 |
-| — | Radar-Server-Engine aus KOs (`radar.js`) — deterministische Klassifikation aus Strukturfeldern, personen-/parteischarf. **Gebaut + getestet**, noch nicht am Live-Read-Pfad/Client. | ✅ erledigt (Build) | radar 22/22 |
-| — | Toten `HELMUT_ENGINE_V2`-Motor entfernt (ai.js-Hybrid-Block + Flag + `_MODEL` + `/api/debug/engine-flag` + p1-Checks + orphaned `maxCandidatesPerBriefing`). `referentEngine` bewusst unberührt (separat, aus personalization.js). | ✅ erledigt | p1 170/170, require-smoke, alle offline grün |
-| C/E | Live-Cutover + V2-Löschung (Prod-Flags, Live-Verifikation) | 🔒 operativ (Betreiber) | smoke/contract gegen Deployment |
+### Bausteine gebaut + getestet (additiv)
+| Baustein | Status | Verifikation |
+|---|---|---|
+| Toter Code entfernt (5 TS-Dateien + 2 runtime.js-Funktionen) | ✅ | offline grün |
+| V3 Decision Engine (`decisions.js` + storage-CRUD) | ✅ | decisions 38/38 |
+| `toBriefingContractV3`-Adapter (`briefingContract.js`) | ✅ | briefing-contract 27/27 |
+| Radar-Server-Engine (`radar.js`) | ✅ | radar 22/22 |
+| Adversarialer Review + 3 Fixes (vorgang_id/chance-risk-cap/deadline) | ✅ | decisions 38/38 |
 
-> **Nur noch 5 V3-Flags** (statt 6): `HELMUT_V3_BRIEFING` ist entfernt — die
-> Lage-Karten (`koToVorgangCard`) sind die eine V3-Briefing-Oberfläche.
+### Cutover (Read-Path → V3, kein V2-Fallback)
+| Schritt | Status | Verifikation |
+|---|---|---|
+| Rollen-Text-Briefing entfernt (`briefing.js` + `.j2` + Flag `HELMUT_V3_BRIEFING`) | ✅ | offline grün |
+| Toter `HELMUT_ENGINE_V2`-Motor entfernt (ai.js-Block + Flag + Debug-Endpoint) | ✅ | p1, require-smoke |
+| **Home/Briefing/Helmut** Read-Path → V3 (`buildV3Briefing`, fail-safe leer, KEIN V2-Fallback) | ✅ | Gate 8/8, contract 17/17 |
+| **Radar** Read-Path → V3-Engine; Client liest server-`signalType`; `features`/`HELMUT_V3_RADAR` entfernt | ✅ | Gate 8/8 |
+| Client-**60/40**-Nachrechnung entfernt → Server ist Entscheidungs-Quelle | ✅ | contract 17/17 |
+| V2-Radar-Toter-Code + `situationalToDecisionItem`-Fabrikation + orphaned Client-Helfer entfernt | ✅ | Gate 8/8 |
+| Contract-Snapshot auf V3-Form rebaselined (null↔Objekt datenabhängig) | ✅ | contract 17/17 |
+
+**Was der Nutzer SIEHT, kommt jetzt aus V3:** `/api/app/start` (Home/Briefing/Helmut)
+und `/api/radar/archive` (Radar) + Lage (schon vorher V3). Kein stiller V2-Fallback —
+fehlen V3-Daten, kommt ein expliziter Leerzustand (`available:false`).
+
+### Noch V2 — WRITE-/OPS-Pfad (nicht am Nutzer-Read-Pfad; live zu verifizieren)
+Diese Reste sind **nicht** offline verifizierbar (der Offline-Gate bootet die
+Pipeline/Cron/Ops-mit-Daten nicht) und werden daher **nicht blind gelöscht**:
+
+| V2-Rest | Wo | Grund noch da |
+|---|---|---|
+| `runMorningBriefing` (V2-Briefing-Motor) | scheduler.js | erzeugt (ungelesene) V2-Briefings; getriggert von `/api/briefing/run`, `/api/pipeline/run`, Cron, `runLageCheck` |
+| `personalization.js` | Modul | nur noch vom V2-Write-Pipeline genutzt (aus dem Read-Path entfernt) |
+| `runtime.js` `generateBriefing`-Familie | Modul | vom V2-Write-Pipeline + Demo-Endpunkten genutzt; `cemInceProfile` ist Single-Tenant-Default (in ~5 Stellen) |
+| `getLatestBriefing` (V2-Blob-Lesen) | server.js Ops/Health/Release-Check | Readiness-Dashboards lesen noch den Blob + `referentEngine` |
+| `runLageCheck` regeneriert V2-Briefing | scheduler.js | Lage-Check-Feature erzeugt bei neuer Lage ein V2-Briefing |
+| `/api/briefing/latest`, `/api/briefing/demo`, `/api/profile/demo` | server.js | V2-Read/Demo-Endpunkte (vom Client NICHT für die Anzeige gefetcht) |
+| Flags `HELMUT_V3_STORE/_MATCHING/_LAZY_UNDERSTANDING/_OFFICE` + `HELMUT_UNDERSTANDING_LOCK` | env | erst „unbedingt live" schalten, wenn V3 als alleiniger Store bestätigt |
+
+**Nächster Schritt (live-verifiziert, Betreiber gegen Vercel):**
+1. `/api/briefing/run` + `/api/pipeline/run` von `runMorningBriefing`/`runDailyPipeline`
+   auf den V3-Pfad umhängen (`runSourceCrawl` speist V3; Lesen kommt aus `buildV3Briefing`).
+2. Ops/Health/Release-Check (`backendHealth`/`computeReleaseCheck`/`buildHealthReport`)
+   von `getLatestBriefing`+`referentEngine` auf V3-Qualitätssignale (KOs/decisions) umstellen.
+3. `runLageCheck` auf V3 umstellen (kein V2-Briefing mehr regenerieren).
+4. Erst dann `runMorningBriefing` + `personalization.js` + `runtime.js`-Briefing-Familie
+   löschen (vorher `cemInceProfile`/`demoSources`/`getActiveProfile` in ein Config-Modul
+   verschieben). Nach jedem Schritt: `npm test` (Smoke) + `npm run test:contract` gegen
+   das Deployment.
+5. Flags in `storage.js` unbedingt-live schalten + entfernen.
 
 ---
 
