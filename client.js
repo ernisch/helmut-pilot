@@ -2078,11 +2078,31 @@ function lageHasSource(v) {
   return Number(v.sourceCount) > 0;
 }
 
+// ── Legacy-Fallback (TEMPORÄR) — SPIEGELT lib/helmut/lage.js selectLageVorgaenge ──
+// Zweistufige Auswahl über bereits vorhandene Daten (kein KI-Call, kein Backfill):
+//   1) Gibt es mind. EINEN modernen Vorgang (alle fünf Presentation-Felder),
+//      werden AUSSCHLIESSLICH moderne Vorgänge gezeigt (Legacy NICHT beigemischt).
+//   2) Gibt es KEINEN modernen Vorgang, werden Legacy-Vorgänge mit echter Quelle
+//      gezeigt, damit die Lage für den Piloten nicht leer bleibt.
+// In beiden Stufen nur Vorgänge mit echter Quelle. Der Server wählt bereits
+// zentral so aus; diese Spiegelung garantiert dieselbe Regel zur Anzeigezeit
+// (Kopfzahl UND Karussell stammen aus DERSELBEN Menge, nie gemischt). Bei
+// Regeländerung BEIDE Stellen anpassen. Sobald Backfill/neue Understanding-Läufe
+// moderne Vorgänge liefern, greift automatisch wieder Stufe 1 — der Fallback
+// verschwindet dann von selbst.
+const LAGE_PRESENTATION_FIELDS = ["displayTitle", "displaySummary", "whyRelevant", "recommendation", "displayCategory"];
+function lageVorgangModern(v) {
+  return LAGE_PRESENTATION_FIELDS.every((f) => lageField(v[f]) !== "");
+}
+
 // Die tatsächlich sichtbare Menge — Kopfzahl ("Heute gibt es N neue Vorgänge")
 // und Karussell leiten sich BEIDE hieraus ab, damit sie nie auseinanderlaufen.
 function lageVisibleVorgaenge(data) {
   const list = (data && Array.isArray(data.vorgaenge)) ? data.vorgaenge : [];
-  return list.filter(lageHasSource);
+  const withSource = list.filter(lageHasSource);
+  const modern = withSource.filter(lageVorgangModern);
+  // Vorrang moderne Vorgänge; nur wenn KEINER existiert -> Legacy (mit Quelle).
+  return modern.length ? modern : withSource;
 }
 
 // Fallback-Kategorie für Vorgänge ohne v.displayCategory (ältere Vorgänge):
@@ -2217,8 +2237,8 @@ function lageDocRow(doc) {
 }
 
 // Eine große Karussell-Karte: Kategorie+Status -> Kurztitel -> Kurzfassung ->
-// Warum wichtig -> Empfehlung. Rein informativ, nicht antippbar — die
-// Detailansicht (Quellen, Chronologie) folgt in einer späteren Iteration.
+// Warum wichtig -> Empfehlung. Antippbar: öffnet die Vorgang-Detailansicht als
+// Bottom Sheet (Quellen, Betroffene, Chronologie) — siehe openVorgangSheet.
 //
 // Bevorzugt die vom V3-Verstehensschritt EINMALIG erzeugten, dauerhaft
 // gespeicherten Felder (v.displayTitle/displaySummary/whyRelevant/
@@ -2250,8 +2270,12 @@ function renderVorgangCard(v) {
   const kurzfassung = lageFirstSentence(lageField(v.displaySummary) || summary.wasIstPassiert || "", shortVp ? 58 : 95);
   const warum = lageFirstSentence(lageHumanize(lageField(v.whyRelevant) || summary.warumWichtig || ""), shortVp ? 58 : 85);
   const empfehlung = lageFirstSentence(lageHumanize(lageField(v.recommendation) || v.empfehlung || ""), shortVp ? 58 : 75);
+  // Antippbar: öffnet die Detailansicht als Bottom Sheet (kein Seitenwechsel).
+  // role/tabindex/aria machen die Karte für Tastatur & Screenreader bedienbar;
+  // der eigentliche Tap-vs-Swipe-Handler sitzt in bindLageCarousel.
+  const openId = escapeAttribute(v.vorgangId || v.id || "");
   return `
-    <article class="lage2-card">
+    <article class="lage2-card" data-lage-open="${openId}" role="button" tabindex="0" aria-haspopup="dialog" aria-label="${escapeAttribute("Details öffnen: " + (title || "Vorgang"))}">
       <div class="lage2-card-head">
         <span class="lage2-vtag">${escapeHtml(category)}</span>
         ${statusChip ? `<span class="lage2-status-chip">${escapeHtml(statusChip)}</span>` : ""}
@@ -2353,6 +2377,537 @@ function bindLageCarousel() {
     scrollTimer = window.setTimeout(updateDots, 80);
   }, { passive: true });
   updateDots();
+  bindLageCardTap(track);
+}
+
+// Tap-vs-Swipe-Wächter: das Karussell scrollt horizontal, deshalb darf ein
+// Wisch NICHT als Kartentipp gelten. Wir merken uns Startpunkt/-zeit und öffnen
+// die Detailansicht nur bei geringer Bewegung und kurzer Dauer (echter Tap).
+// Delegation am Track (nur einmal gebunden, überlebt Karten-Neuaufbau nicht —
+// wird bei jedem Render neu verdrahtet, daher hier lokale Handler ohne Leak).
+function bindLageCardTap(track) {
+  let sx = 0, sy = 0, st = 0, moved = false;
+  track.addEventListener("pointerdown", (e) => {
+    const card = e.target.closest("[data-lage-open]");
+    if (!card) { st = 0; return; }
+    sx = e.clientX; sy = e.clientY; st = Date.now(); moved = false;
+  }, { passive: true });
+  track.addEventListener("pointermove", (e) => {
+    if (!st) return;
+    if (Math.abs(e.clientX - sx) > 10 || Math.abs(e.clientY - sy) > 10) moved = true;
+  }, { passive: true });
+  const endTap = (e) => {
+    if (!st) return;
+    const dt = Date.now() - st;
+    const card = e.target.closest("[data-lage-open]");
+    st = 0;
+    if (card && !moved && dt < 600) openVorgangSheet(card.getAttribute("data-lage-open"));
+  };
+  track.addEventListener("pointerup", endTap, { passive: true });
+  track.addEventListener("pointercancel", () => { st = 0; }, { passive: true });
+  // Tastaturbedienung: Enter/Leertaste auf der fokussierten Karte öffnet.
+  track.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const card = e.target.closest("[data-lage-open]");
+    if (!card) return;
+    e.preventDefault();
+    openVorgangSheet(card.getAttribute("data-lage-open"));
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Vorgang-Detailansicht als Bottom Sheet (Apple-Maps/Wallet-Anmutung)
+// ───────────────────────────────────────────────────────────────────────────
+// GRUNDSATZ: Diese Ansicht ERZEUGT NIE Inhalte. Sie zeigt ausschließlich bereits
+// in der Karte vorhandene, vom V3-Verstehensschritt EINMALIG erzeugten KO-Daten
+// (Single Source of Truth). KEIN KI-Aufruf, KEINE neue API, KEINE neue
+// DB-Abfrage, KEIN neuer State — die Vorgangsdaten liegen schon im Frontend
+// (briefing.lageBriefing.vorgaenge).
+//
+// Technik: Das Sheet wird IMPERATIV als Overlay direkt an document.body gehängt,
+// NICHT als Teil von app.innerHTML. So zerstört ein Re-Render der App (Menü,
+// Update-Panel, Datenaktualisierung) das offene Sheet nicht und die
+// Drag-Animation läuft flüssig ohne Framework/Re-Render.
+// ═══════════════════════════════════════════════════════════════════════════
+let vsheetEl = null;          // aktueller Overlay-Wurzelknoten oder null
+let vsheetLastFocus = null;   // Fokus-Rückgabeziel (die angetippte Karte)
+let vsheetKeyHandler = null;  // globaler Escape/Tab-Handler (zum sauberen Entfernen)
+let vsheetGhostGuard = null;  // löst den Ghost-Click-Fänger (siehe openVorgangSheet)
+
+// Findet den Vorgang in den bereits geladenen Briefing-Daten (kein Fetch).
+function vsheetFindVorgang(id) {
+  const data = lageData();
+  const list = (data && Array.isArray(data.vorgaenge)) ? data.vorgaenge : [];
+  return list.find((v) => String(v.vorgangId || v.id || "") === String(id)) || null;
+}
+
+// Respektiert die Systemeinstellung „Bewegung reduzieren" (keine Slide-Animation).
+function vsheetReduceMotion() {
+  try { return Boolean(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); }
+  catch (_) { return false; }
+}
+
+// Vereinigt mehrere Betroffene-Listen dedupliziert (case-insensitiv), deckelt
+// die Chip-Zahl je Gruppe. Reine Anzeige, erfindet nichts.
+function vsheetMergeNames(...lists) {
+  const out = [];
+  const seen = new Set();
+  for (const list of lists) {
+    if (!Array.isArray(list)) continue;
+    for (const raw of list) {
+      const s = lageField(raw);
+      if (!s) continue;
+      const key = s.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(s);
+      if (out.length >= 14) return out;
+    }
+  }
+  return out;
+}
+
+// Zerlegt bereits vorhandenen Text deterministisch in einzelne Sätze für die
+// Stichpunkt-Darstellung von „Warum wichtig?". KEINE KI, kein neuer Inhalt —
+// nur Formatierung; erkennt gängige Abkürzungen wie lageFirstSentence.
+function vsheetSentences(text, max) {
+  const t = lageField(text);
+  if (!t) return [];
+  const out = [];
+  const boundary = /[.!?](?=\s|$)/g;
+  let m, start = 0;
+  while ((m = boundary.exec(t))) {
+    const idx = m.index;
+    if (t[idx] === "." && LAGE_ABBREV_TAIL.test(t.slice(Math.max(0, idx - 8), idx))) continue;
+    const s = t.slice(start, idx + 1).trim();
+    if (s) out.push(s);
+    start = idx + 1;
+    if (out.length >= max) break;
+  }
+  const tail = t.slice(start).trim();
+  if (tail && out.length < max) out.push(tail);
+  return out.length ? out : [t];
+}
+
+// Kopfzeilen-Datum: bevorzugt created_at (Entstehung des Vorgangs), sonst das
+// bereits berechnete updatedLabel. Nur Anzeige eines bestehenden Wertes.
+function vsheetDateLabel(v) {
+  const iso = lageField(v.createdAt);
+  if (iso) {
+    const d = new Date(iso);
+    if (!isNaN(d.getTime())) {
+      try {
+        return new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "numeric", month: "long", year: "numeric" }).format(d);
+      } catch (_) { /* fällt unten auf updatedLabel zurück */ }
+    }
+  }
+  return lageField(v.updatedLabel);
+}
+
+// Sortier-Zeitstempel einer Quelle: nur echte, parsbare Daten zählen; „Heute"
+// o. Ä. ist nicht parsbar -> 0 (Originalreihenfolge bleibt stabil erhalten).
+function vsheetSourceTime(s) {
+  const cand = s && (s.publishedAt || s.published_at || s.dateLabel || s.date);
+  const t = cand ? Date.parse(cand) : NaN;
+  return isNaN(t) ? 0 : t;
+}
+
+// Quellen „neueste zuerst": stabil nach parsbarem Datum absteigend; Quellen ohne
+// parsbares Datum behalten ihre Reihenfolge (beste Quelle zuerst aus dedupSources).
+function vsheetSourcesSorted(sources) {
+  const arr = Array.isArray(sources) ? sources.slice() : [];
+  return arr
+    .map((s, i) => ({ s, i, t: vsheetSourceTime(s) }))
+    .sort((a, b) => (b.t - a.t) || (a.i - b.i))
+    .map((x) => x.s);
+}
+
+// Baut das Betroffene-Segment (Chips, nach Typ gruppiert). Leere Gruppen und ein
+// komplett leeres Segment werden weggelassen (kein Platzhalter, kein Spinner).
+function vsheetBetroffeneHtml(v) {
+  const groups = [
+    { label: "Parteien", items: vsheetMergeNames(v.parteien, v.mentionedParties) },
+    { label: "Ministerien", items: vsheetMergeNames(v.ministerien, v.mentionedMinistries) },
+    { label: "Ausschüsse", items: vsheetMergeNames(v.ausschuesse, v.mentionedCommittees) },
+    { label: "Personen", items: vsheetMergeNames(v.mentionedPeople) }
+  ].filter((g) => g.items.length);
+  if (!groups.length) return "";
+  return `
+    <section class="vsheet-sec">
+      <h3 class="vsheet-h">Betroffene</h3>
+      <div class="vsheet-groups">
+        ${groups.map((g) => `
+        <div class="vsheet-group">
+          <span class="vsheet-group-label">${escapeHtml(g.label)}</span>
+          <div class="vsheet-chips">
+            ${g.items.map((it) => `<span class="vsheet-chip">${escapeHtml(it)}</span>`).join("")}
+          </div>
+        </div>`).join("")}
+      </div>
+    </section>`;
+}
+
+// Quellen-Zeile speziell fürs Sheet: klare Hierarchie — Name (primär), darunter
+// Zeit · Quelle (sekundär), rechts ein dezentes Externer-Link-Symbol. Nutzt
+// ausschließlich vorhandene Quellenfelder (kein neuer Datenzugriff).
+function vsheetSourceRow(source) {
+  const name = lageField(source.name) || "Quelle";
+  const time = lageField(source.dateLabel || source.publishedAt || source.published_at);
+  const host = lageField(source.host);
+  const meta = [time, host].filter(Boolean).join(" · ");
+  const href = source.url && isHttpUrl(source.url) ? source.url : (host ? `https://${host}` : "");
+  const ext = `<svg class="vsheet-src-ext" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 3h6v6M10 14 21 3M19 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const inner = `
+    <span class="vsheet-src-main">
+      <span class="vsheet-src-name">${escapeHtml(name)}</span>
+      ${meta ? `<span class="vsheet-src-meta">${escapeHtml(meta)}</span>` : ""}
+    </span>
+    ${href ? ext : ""}`;
+  return href
+    ? `<a class="vsheet-src" href="${escapeAttribute(href)}" target="_blank" rel="noopener">${inner}</a>`
+    : `<div class="vsheet-src">${inner}</div>`;
+}
+
+// Status DIESES Vorgangs — rein aus dem bereits vorhandenen Feld v.status
+// (dieselbe Zuordnung wie der Karten-Status-Chip, LAGE_STATUS_LABEL). KEIN neues
+// Feld, KEINE KI, KEINE Berechnung, KEINE Tagesentscheidung. Farbe ist reine
+// Anzeigekonvention des vorhandenen Status. Unbekannter/fehlender Status ->
+// Abschnitt wird weggelassen (keine Dummy-Werte).
+const VSHEET_STATUS_DOT = Object.assign(Object.create(null), {
+  beobachtung: "is-green", neu: "is-amber", update: "is-amber", abgeschlossen: "is-neutral"
+});
+function vsheetStatusHtml(v) {
+  const label = LAGE_STATUS_LABEL[v && v.status];
+  if (!label) return "";
+  const dot = VSHEET_STATUS_DOT[v.status] || "is-neutral";
+  return `<div class="vsheet-status"><span class="vsheet-status-dot ${dot}" aria-hidden="true"></span><span>${escapeHtml(label)}</span></div>`;
+}
+
+// Rendert den kompletten Sheet-Inhalt (8 Abschnitte, leere ausgeblendet) aus den
+// bereits vorhandenen Kartendaten — keinerlei Neuberechnung/Fetch/KI.
+function vsheetContentHtml(v) {
+  const displayTitle = lageField(v.displayTitle);
+  const title = displayTitle || lageField(v.title) || "Vorgang";
+  const category = lageField(v.displayCategory) || lageCardCategory(v);
+  const dateLabel = vsheetDateLabel(v);
+  const sourcesSorted = vsheetSourcesSorted(v.sources);
+  const firstSourceName = sourcesSorted.length ? lageField(sourcesSorted[0].name) : "";
+
+  // (2) Kurzfassung — bestehendes display_summary (Fallback: was_ist_passiert).
+  const kurz = lageField(v.displaySummary) || lageField(v.summary && v.summary.wasIstPassiert);
+  // (3) Warum wichtig — bestehendes why_relevant als Stichpunkte (Fallback:
+  // warumWichtig). In der Detailansicht VOLLSTÄNDIG: alle Sätze als Stichpunkte,
+  // keine künstliche Begrenzung. Der hohe Wert ist nur ein Sicherheitsnetz gegen
+  // pathologisches Splitten — es wird KEIN Inhalt erzeugt oder gekürzt.
+  const warumSrc = lageHumanize(lageField(v.whyRelevant) || lageField(v.summary && v.summary.warumWichtig));
+  const warumPoints = warumSrc ? vsheetSentences(warumSrc, 40) : [];
+  // (4) Empfehlung — bestehendes recommendation (Fallback: handlungsempfehlung).
+  const reco = lageHumanize(lageField(v.recommendation) || lageField(v.empfehlung));
+  // (5) Betroffene
+  const betroffene = vsheetBetroffeneHtml(v);
+  // (7) Chronologie — bereits in der Karte vorhanden (buildChronology), keine Neuberechnung.
+  const chrono = Array.isArray(v.chronologie) ? v.chronologie : [];
+
+  const hasBody = kurz || warumPoints.length || reco || betroffene || sourcesSorted.length || chrono.length;
+
+  return `
+    <header class="vsheet-head">
+      <span class="lage2-vtag">${escapeHtml(category)}</span>
+      <h2 id="vsheet-title" class="vsheet-title${displayTitle ? "" : " vsheet-title-fallback"}">${escapeHtml(title)}</h2>
+      <div class="vsheet-metaline">
+        <span class="vsheet-meta-type">Politischer Vorgang</span>
+        ${dateLabel ? `<span class="vsheet-metasep" aria-hidden="true">·</span><span>${escapeHtml(dateLabel)}</span>` : ""}
+        ${firstSourceName ? `<span class="vsheet-metasep" aria-hidden="true">·</span><span>${escapeHtml(firstSourceName)}</span>` : ""}
+      </div>
+    </header>
+
+    ${kurz ? `
+    <section class="vsheet-sec">
+      <p class="vsheet-lede">${escapeHtml(kurz)}</p>
+      ${vsheetStatusHtml(v)}
+    </section>` : vsheetStatusHtml(v) ? `<section class="vsheet-sec">${vsheetStatusHtml(v)}</section>` : ""}
+
+    ${warumPoints.length ? `
+    <section class="vsheet-sec">
+      <h3 class="vsheet-h">Warum wichtig?</h3>
+      <ul class="vsheet-why">
+        ${warumPoints.map((p) => `<li>${escapeHtml(p)}</li>`).join("")}
+      </ul>
+    </section>` : ""}
+
+    ${reco ? `
+    <section class="vsheet-sec">
+      <h3 class="vsheet-h">Empfehlung</h3>
+      <p class="vsheet-reco">${escapeHtml(reco)}</p>
+    </section>` : ""}
+
+    ${betroffene}
+
+    ${sourcesSorted.length ? `
+    <section class="vsheet-sec">
+      <h3 class="vsheet-h">Originalquellen</h3>
+      <div class="vsheet-sources">${sourcesSorted.map(vsheetSourceRow).join("")}</div>
+    </section>` : ""}
+
+    ${chrono.length ? `
+    <section class="vsheet-sec">
+      <h3 class="vsheet-h">Chronologie</h3>
+      <ul class="vsheet-chrono">
+        ${chrono.map((c) => `<li><time>${escapeHtml([c.dateLabel, c.timeLabel].filter(Boolean).join(", "))}</time><p>${escapeHtml(c.text)}</p></li>`).join("")}
+      </ul>
+    </section>` : ""}
+
+    ${hasBody ? "" : `<section class="vsheet-sec"><p class="vsheet-empty">Information nicht verfügbar.</p></section>`}`;
+}
+
+// Öffnet das Bottom Sheet für einen Vorgang. Idempotent: ein bereits offenes
+// Sheet wird zuerst entfernt.
+function openVorgangSheet(id) {
+  const v = vsheetFindVorgang(id);
+  if (!v) return;
+  if (vsheetEl) { vsheetTeardown(); }
+
+  vsheetLastFocus = document.activeElement;
+
+  const root = document.createElement("div");
+  root.className = "vsheet-root";
+  root.innerHTML = `
+    <div class="vsheet-backdrop" data-vsheet-close></div>
+    <div class="vsheet" role="dialog" aria-modal="true" aria-labelledby="vsheet-title" tabindex="-1">
+      <div class="vsheet-topbar" data-vsheet-topbar>
+        <div class="vsheet-grip" data-vsheet-grip aria-hidden="true"><span class="vsheet-grabber"></span></div>
+        <button class="vsheet-close" type="button" data-vsheet-close aria-label="Detailansicht schließen">
+          <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="vsheet-scroll" data-vsheet-scroll>${vsheetContentHtml(v)}</div>
+    </div>`;
+  document.body.appendChild(root);
+  vsheetEl = root;
+
+  const sheet = root.querySelector(".vsheet");
+  const scroller = root.querySelector("[data-vsheet-scroll]");
+
+  // Obere Bedienebene (Grabber + X) beim Scrollen dezent absetzen: sobald der
+  // Inhalt scrollt, erscheint unter der sticky Leiste eine feine Trennlinie —
+  // wirkt hochwertiger und hält die Bedienelemente klar erreichbar.
+  const topbar = root.querySelector("[data-vsheet-topbar]");
+  scroller.addEventListener("scroll", () => {
+    if (topbar) topbar.classList.toggle("is-scrolled", scroller.scrollTop > 4);
+  }, { passive: true });
+
+  // Hintergrund-Scroll sperren, solange das Sheet offen ist.
+  const prevOverflow = document.body.style.overflow;
+  root.dataset.prevOverflow = prevOverflow || "";
+  document.body.style.overflow = "hidden";
+
+  // Schließen-Auslöser (X, Backdrop).
+  root.querySelectorAll("[data-vsheet-close]").forEach((el) => {
+    el.addEventListener("click", () => closeVorgangSheet());
+  });
+
+  // ── Ghost-Click-Schutz (behebt „Sheet öffnet und schließt sofort") ────────
+  // Der Tap, der das Sheet öffnet, endet mit pointerup auf der KARTE; direkt
+  // danach feuert der Browser (auf Touch als verzögertes Kompat-Event) genau
+  // EINEN click an derselben Bildschirmstelle. Da das bildschirmfüllende Backdrop
+  // nun über der Tap-Stelle liegt, träfe dieser eine Klick das Backdrop und würde
+  // das gerade geöffnete Sheet SOFORT wieder schließen. Wir fangen exakt diesen
+  // einen nachfolgenden Klick in der CAPTURE-Phase ab (läuft vor dem Backdrop-
+  // Handler) und lösen den Fänger danach wieder — spätere, bewusste Backdrop-
+  // Klicks (neue Geste) schließen wie vorgesehen.
+  {
+    let ghostTimer = 0;
+    const swallow = (ev) => { ev.stopPropagation(); ev.preventDefault(); releaseGuard(); };
+    const releaseGuard = () => {
+      if (ghostTimer) { window.clearTimeout(ghostTimer); ghostTimer = 0; }
+      document.removeEventListener("click", swallow, true);
+      vsheetGhostGuard = null;
+    };
+    document.addEventListener("click", swallow, true);
+    ghostTimer = window.setTimeout(releaseGuard, 700); // falls doch kein Klick folgt
+    vsheetGhostGuard = releaseGuard;
+  }
+
+  // Escape + einfacher Fokus-Trap (Tab bleibt im Sheet).
+  vsheetKeyHandler = (e) => {
+    if (e.key === "Escape") { e.preventDefault(); closeVorgangSheet(); return; }
+    if (e.key === "Tab") vsheetTrapFocus(e, sheet);
+  };
+  document.addEventListener("keydown", vsheetKeyHandler);
+
+  // Snap-Geometrie nach dem ersten Layout messen und Drag verdrahten.
+  const setup = () => {
+    const H = window.innerHeight || document.documentElement.clientHeight || 800;
+    const sheetH = sheet.getBoundingClientRect().height || Math.round(H * 0.92);
+    // Standard-Öffnungshöhe: hoch & dominant (~83 % der Bildschirmhöhe) — der
+    // Nutzer tippt bewusst und will sofort lesen. Per Ziehen weiter bis Vollbild
+    // (expanded = 0), per Wisch nach unten / X schließen.
+    const collapsed = Math.max(0, Math.round(sheetH - H * 0.83)); // ~83 % sichtbar
+    const geom = { H, sheetH, collapsed, expanded: 0, current: collapsed };
+    vsheetInstallDrag(root, sheet, scroller, geom);
+    // Einfahren: von unten (offscreen) auf die eingeklappte Position.
+    if (vsheetReduceMotion()) {
+      vsheetApplyY(sheet, geom.collapsed); geom.current = geom.collapsed;
+      root.classList.add("open");
+    } else {
+      vsheetApplyY(sheet, sheetH); // Startposition unten
+      // Reflow erzwingen, damit die Transition zur Zielposition greift.
+      void sheet.getBoundingClientRect().height;
+      requestAnimationFrame(() => {
+        root.classList.add("open");
+        sheet.classList.add("vsheet-anim");
+        vsheetApplyY(sheet, geom.collapsed);
+        geom.current = geom.collapsed;
+      });
+    }
+  };
+  requestAnimationFrame(setup);
+
+  // Fokus in den Dialog selbst (nicht auf das X) — Fokus liegt auf dem Inhalt,
+  // kein prominenter Fokusring auf der Schließen-Schaltfläche. Der Fokus-Trap
+  // (Tab) und Escape bleiben aktiv.
+  requestAnimationFrame(() => {
+    if (sheet) { try { sheet.focus({ preventScroll: true }); } catch (_) { sheet.focus(); } }
+  });
+}
+
+// Setzt die vertikale Verschiebung des Sheets (Snap/Drag).
+function vsheetApplyY(sheet, y) {
+  sheet.style.transform = `translateY(${Math.round(y)}px)`;
+}
+
+// Verdrahtet Drag/Swipe: Griff und (bei ScrollTop 0) das Sheet lassen sich
+// ziehen; Loslassen snappt zur nächsten Rastung oder schließt (Wisch nach unten).
+function vsheetInstallDrag(root, sheet, scroller, geom) {
+  let active = false;       // Drag aktiv (Pointer erfasst)
+  let decided = false;      // Richtung entschieden (Drag vs. Scroll)
+  let startY = 0, startT = 0, lastY = 0, lastTime = 0, velocity = 0;
+  let fromGrip = false;
+
+  const onDown = (e) => {
+    if (e.button != null && e.button !== 0) return;
+    const grip = e.target.closest("[data-vsheet-grip]");
+    fromGrip = Boolean(grip);
+    active = true; decided = fromGrip;
+    startY = e.clientY; startT = geom.current;
+    lastY = e.clientY; lastTime = Date.now(); velocity = 0;
+    if (fromGrip) {
+      sheet.classList.remove("vsheet-anim");
+      try { sheet.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+    }
+  };
+
+  const onMove = (e) => {
+    if (!active) return;
+    const dy = e.clientY - startY;
+    if (!decided) {
+      const canDragDown = dy > 4 && scroller.scrollTop <= 0;
+      const canDragUp = dy < -4 && geom.current > 1 && scroller.scrollTop <= 0;
+      if (canDragDown || canDragUp) {
+        decided = true;
+        sheet.classList.remove("vsheet-anim");
+        try { sheet.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+      } else if (Math.abs(dy) > 4) {
+        // Vertikaler Scroll im Inhalt -> kein Drag.
+        active = false;
+        return;
+      } else {
+        return;
+      }
+    }
+    // Position aktualisieren (nicht über die eingefahrene Kante hinaus nach oben).
+    let y = startT + dy;
+    if (y < geom.expanded) y = geom.expanded;
+    if (y > geom.sheetH) y = geom.sheetH;
+    geom.current = y;
+    vsheetApplyY(sheet, y);
+    const now = Date.now();
+    const dt = now - lastTime;
+    if (dt > 0) velocity = (e.clientY - lastY) / dt; // px/ms, positiv = nach unten
+    lastY = e.clientY; lastTime = now;
+    if (e.cancelable) e.preventDefault();
+  };
+
+  const onUp = (e) => {
+    if (!active) return;
+    active = false;
+    try { sheet.releasePointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+    if (!decided) return;
+    decided = false;
+    sheet.classList.add("vsheet-anim");
+    const y = geom.current;
+    const flungDown = velocity > 0.8;
+    const flungUp = velocity < -0.8;
+    // Schließen: weit unter die Rastung gezogen oder kräftig nach unten gewischt.
+    if ((y > geom.collapsed + geom.H * 0.12) || (flungDown && y > geom.collapsed - 4)) {
+      closeVorgangSheet();
+      return;
+    }
+    // Sonst zur nächsten Rastung snappen (Wischrichtung hat Vorrang).
+    let target;
+    if (flungUp) target = geom.expanded;
+    else if (flungDown) target = geom.collapsed;
+    else target = (y < geom.collapsed / 2) ? geom.expanded : geom.collapsed;
+    geom.current = target;
+    vsheetApplyY(sheet, target);
+  };
+
+  sheet.addEventListener("pointerdown", onDown);
+  sheet.addEventListener("pointermove", onMove);
+  sheet.addEventListener("pointerup", onUp);
+  sheet.addEventListener("pointercancel", onUp);
+  // Referenzen für sauberes Entfernen merken.
+  root._vsheetDrag = { sheet, onDown, onMove, onUp };
+}
+
+// Hält den Tastaturfokus innerhalb des Sheets (einfacher Trap für Tab/Shift+Tab).
+function vsheetTrapFocus(e, sheet) {
+  const focusables = sheet.querySelectorAll('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])');
+  if (!focusables.length) return;
+  const first = focusables[0];
+  const last = focusables[focusables.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+}
+
+// Schließt das Sheet mit Ausfahr-Animation (oder sofort bei reduzierter Bewegung).
+function closeVorgangSheet(instant) {
+  const root = vsheetEl;
+  if (!root) return;
+  const sheet = root.querySelector(".vsheet");
+  const finish = () => vsheetTeardown();
+  if (instant || vsheetReduceMotion() || !sheet) { finish(); return; }
+  sheet.classList.add("vsheet-anim");
+  root.classList.remove("open");
+  const H = window.innerHeight || 800;
+  vsheetApplyY(sheet, H);
+  let done = false;
+  const onEnd = () => { if (done) return; done = true; finish(); };
+  sheet.addEventListener("transitionend", onEnd, { once: true });
+  window.setTimeout(onEnd, 360); // Fallback, falls transitionend ausbleibt
+}
+
+// Entfernt das Overlay vollständig und stellt Fokus/Scroll wieder her.
+function vsheetTeardown() {
+  const root = vsheetEl;
+  if (!root) return;
+  vsheetEl = null;
+  if (vsheetKeyHandler) { document.removeEventListener("keydown", vsheetKeyHandler); vsheetKeyHandler = null; }
+  if (vsheetGhostGuard) { vsheetGhostGuard(); vsheetGhostGuard = null; }
+  const d = root._vsheetDrag;
+  if (d && d.sheet) {
+    d.sheet.removeEventListener("pointerdown", d.onDown);
+    d.sheet.removeEventListener("pointermove", d.onMove);
+    d.sheet.removeEventListener("pointerup", d.onUp);
+    d.sheet.removeEventListener("pointercancel", d.onUp);
+  }
+  document.body.style.overflow = root.dataset.prevOverflow || "";
+  if (root.parentNode) root.parentNode.removeChild(root);
+  const back = vsheetLastFocus;
+  vsheetLastFocus = null;
+  if (back && typeof back.focus === "function" && document.contains(back)) {
+    try { back.focus({ preventScroll: true }); } catch (_) { back.focus(); }
+  }
 }
 
 function lageStarIcon() {
@@ -6903,6 +7458,7 @@ function bindActions() {
   }
   app.querySelectorAll("[data-view]").forEach((button) => {
     button.addEventListener("click", () => {
+      if (vsheetEl) closeVorgangSheet(true); // Detail-Sheet bei Navigation schließen
       currentView = button.dataset.view;
       persistView(currentView);
       navOpen = false;
