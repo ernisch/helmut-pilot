@@ -20,6 +20,7 @@ let tasks = [];
 let notes = [];
 let recommendations = [];
 let radarArchive = [];
+let radarBuckets = null;
 let radarArchiveLoaded = false;
 let opsStatusLoaded = false;
 let pushConfig = null;
@@ -586,11 +587,18 @@ function appStartCacheKey() {
 
 async function ensureViewData(view) {
   if (view === "radar" && !radarArchiveLoaded) {
-    radarArchiveLoaded = true;
+    radarArchiveLoaded = true; // In-Flight-Guard gegen Doppel-Fetch
     try {
       const response = await fetchWithTimeout(`/api/radar/archive?${apiScopeQuery()}&days=365`);
-      const archivePayload = response.ok ? await response.json() : { articles: [] };
+      const archivePayload = response.ok ? await response.json() : { articles: [], buckets: null };
       radarArchive = Array.isArray(archivePayload.articles) ? archivePayload.articles : [];
+      // Server liefert die Signale bereits klassifiziert UND gruppiert — diese
+      // Gruppierung ist maßgeblich (kein Client-Re-Scoring nötig).
+      radarBuckets = archivePayload.buckets && typeof archivePayload.buckets === "object" ? archivePayload.buckets : null;
+      // Leeres/fehlgeschlagenes Ergebnis NICHT dauerhaft cachen: beim nächsten
+      // Öffnen erneut laden (verhindert dauerhaft leeres Radar, wenn die KOs beim
+      // ersten Besuch noch nicht verstanden waren).
+      if (!radarArchive.length && !radarBucketsHaveSignals(radarBuckets)) radarArchiveLoaded = false;
     } catch (error) {
       radarArchiveLoaded = false;
       console.warn("Radar archive not loaded", error);
@@ -5900,16 +5908,24 @@ function renderRadarView() {
 
 // ── Radar V3 – Frühwarn- und Entscheidungssystem ─────────────────────────────
 
+function radarBucketsHaveSignals(b) {
+  return Boolean(b) && ["risk", "demand", "chance", "warning", "mention"].some((t) => Array.isArray(b[t]) && b[t].length > 0);
+}
+
 function renderRadarV3View() {
   // V3-Radar: die Signale kommen fertig klassifiziert vom Server (signalType) —
   // kein Client-Scoring, kein V2-Client-Fallback. Leer -> Leerzustand.
-  const archive = radarArchive;
-
   const buckets = { risk: [], demand: [], chance: [], warning: [], mention: [] };
-  archive.forEach((item) => {
-    const type = buckets[item.signalType] ? item.signalType : "mention";
-    buckets[type].push(item);
-  });
+  if (radarBucketsHaveSignals(radarBuckets)) {
+    // Maßgeblich: die bereits vom Server gruppierten Buckets 1:1 übernehmen.
+    for (const t of Object.keys(buckets)) buckets[t] = Array.isArray(radarBuckets[t]) ? radarBuckets[t].slice() : [];
+  } else {
+    // Fallback (Kompat): aus der flachen articles-Liste nach signalType gruppieren.
+    (Array.isArray(radarArchive) ? radarArchive : []).forEach((item) => {
+      const type = Object.prototype.hasOwnProperty.call(buckets, item.signalType) ? item.signalType : "mention";
+      buckets[type].push(item);
+    });
+  }
 
   const CATEGORIES = [
     {
