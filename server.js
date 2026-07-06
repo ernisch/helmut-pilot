@@ -557,12 +557,17 @@ async function handleRequest(request, response) {
   if (url.pathname === "/api/cron/morning-briefing") {
     if (!authorizeCron(request, url, response)) return;
     return handleAsync(response, async () => {
+      const t0 = Date.now();
       const profile = await activeProfile(politicianId);
-      // V3: das Briefing entsteht frisch aus den aktuellen Knowledge Objects
-      // (Decision Engine, 0 KI) — kein V2-runMorningBriefing mehr. Der Daten-Refresh
-      // (Crawl -> Understanding) läuft über /api/cron/crawl + /api/cron/understanding.
-      const briefing = await buildV3Briefing(profile, politicianId);
-      const push = await sendBriefingReadyPush(briefing, profile);
+      // V3: das Briefing entsteht frisch aus den aktuellen Knowledge Objects (0 KI) —
+      // kein V2-runMorningBriefing mehr. Beide Schritte (Build + Push) hart begrenzt,
+      // damit der Cron immer antwortet; fail-safe -> Leerzustand statt Hänger.
+      const briefing = await withTimeout(buildV3Briefing(profile, politicianId), 60000, "cron-briefing-build")
+        .catch((error) => ({ available: false, reason: "build-timeout", error: error && error.message, items: [], personalizedRecommendations: [], personMentions: [] }));
+      const tBuild = Date.now();
+      const push = await withTimeout(sendBriefingReadyPush(briefing, profile), 30000, "cron-briefing-push")
+        .catch((error) => ({ ok: false, reason: "push-timeout", error: error && error.message }));
+      console.log(`[cron/morning-briefing] build=${tBuild - t0}ms push=${Date.now() - tBuild}ms available=${briefing && briefing.available} items=${((briefing && briefing.items) || []).length}`);
       return { briefing, push };
     });
   }
@@ -571,7 +576,15 @@ async function handleRequest(request, response) {
     if (!authorizeCron(request, url, response)) return;
     // V3-Pipeline: der Crawl speist die V3-Tabellen (raw_documents) und triggert
     // Understanding/Matching/Decision (runSourceCrawl). Kein V2-Briefing-Lauf mehr.
-    return handleAsync(response, () => runSourceCrawl(politicianId));
+    // Hart begrenzt (280s < maxDuration 300s), damit der Cron IMMER antwortet;
+    // der interne Fortschritt (Crawl/Shadows) ist idempotent + zeitbudgetiert.
+    return handleAsync(response, async () => {
+      const t0 = Date.now();
+      const result = await withTimeout(runSourceCrawl(politicianId), 280000, "cron-pipeline")
+        .catch((error) => ({ ok: false, bounded: true, reason: "pipeline-timeout", error: error && error.message }));
+      console.log(`[cron/pipeline] runSourceCrawl ${Date.now() - t0}ms bounded=${Boolean(result && result.bounded)}`);
+      return result;
+    });
   }
 
   // Morgen-Health-Report per WhatsApp (CallMeBot). Antwort enthaelt den Text +
@@ -661,7 +674,10 @@ async function handleRequest(request, response) {
     if (!authorizeCron(request, url, response)) return;
     return handleAsync(response, async () => {
       const rawDocs = await listRecentRawDocuments(500);
-      const result = await runPendingUnderstandingShadow(rawDocs);
+      // ZEITBUDGET (Default 240s): der serielle KI-Understanding-Loop darf die
+      // Serverless-Funktion nicht über ihr Limit (300s) treiben. Rest bleibt pending
+      // und wird beim nächsten Lauf nachgeholt (idempotent).
+      const result = await runPendingUnderstandingShadow(rawDocs, { budgetMs: Number(process.env.HELMUT_UNDERSTAND_BUDGET_MS || 240000) });
       const processed = (result && result.results && result.results.filter((r) => r && r.status === "saved").length) || 0;
       console.log(`[cron/understanding] rawDocs=${rawDocs.length} Ergebnis: ${JSON.stringify({ processed, result })}`);
       return { ok: true, rawDocsLoaded: rawDocs.length, processed, result };

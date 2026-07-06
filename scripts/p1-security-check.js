@@ -638,6 +638,25 @@ async function c7UnderstandingChecks() {
   check("C7 nicht-pro-Nutzer: canSpend wird GLOBAL ohne Nutzer-Argument aufgerufen",
     canSpendCalls.length === 1 && canSpendCalls[0].length === 0);
 
+  // (e2) ZEITBUDGET: der serielle KI-Loop stoppt bei erschöpftem Budget; nicht
+  // verstandene Cluster werden deferred (bleiben pending -> nächster Lauf). Genau das
+  // verhindert, dass der Crawl-/Understanding-Cron das Serverless-Zeitlimit (300s)
+  // überschreitet und ohne Antwort hängt.
+  understandCalls = 0;
+  const slowDeps = { ...baseDeps, requestUnderstanding: async () => { await new Promise((r) => setTimeout(r, 50)); understandCalls += 1; return { ...analysis }; } };
+  const multiItems = [
+    { title: "Rentenpaket 2026 im Kabinett beschlossen", url: "https://bmas.de/rente" },
+    { title: "Mindestlohn steigt auf 15 Euro bundesweit", url: "https://bmas.de/mindestlohn" },
+    { title: "Pflegereform heute offiziell vorgestellt", url: "https://bmg.de/pflege" },
+    { title: "Buergergeld Sanktionen deutlich verschaerft", url: "https://bmas.de/buergergeld" }
+  ];
+  const budgeted = await u.runUnderstandingShadow(multiItems, { ...slowDeps, budgetMs: 10 });
+  check("C7 Zeitbudget: erschöpftes Budget stoppt den KI-Loop (deferred > 0, nicht alle Cluster)",
+    budgeted.clusters > 1 && budgeted.deferred > 0 && budgeted.processed >= 1 && budgeted.processed < budgeted.clusters,
+    `clusters=${budgeted.clusters} processed=${budgeted.processed} deferred=${budgeted.deferred}`);
+  check("C7 Zeitbudget: KEIN KI-Call fuer deferred Cluster (Kostenschutz)",
+    understandCalls === budgeted.processed, `calls=${understandCalls} processed=${budgeted.processed}`);
+
   // (f) Idempotenz: existiert das KO bereits -> KEIN KI-Call (einmal pro Vorgang).
   understandCalls = 0;
   const exists = await u.runUnderstandingShadow(items, { ...baseDeps, getExisting: () => ({ id: "ko-vg-rentenpaket" }) });
