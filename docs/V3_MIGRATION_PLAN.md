@@ -72,6 +72,8 @@ Pipeline/Cron/Ops-mit-Daten nicht) und werden daher **nicht blind gelöscht**:
    frisch gecrawlten Lage-Items via `foldLageItemsIntoV3` (persistRawDocumentsShadow→runUnderstandingShadow
    [budget `HELMUT_LAGE_UNDERSTAND_BUDGET_MS`, default 60s]→runMatchingShadow→runDecisionShadow) in V3.
    `runMorningBriefing`-Aufruf + `briefingId`/`briefing`-Rückgabe raus; stabile Lage-Meldung ohne V2-Feldzugriff.
+   Legacy-Feld `regeneratedBriefing` bleibt honest **immer `false`** (nie ein V2-Briefing regeneriert); ob die
+   neue Lage in V3 gefaltet wurde, sagt jetzt das V3-Feld `v3Refreshed` (+ `v3Refresh`-Detail in der Antwort).
    `/api/cron/lage-check` wie Step 1 mit `withTimeout` (280s) + Timing-Log gehärtet. Offline-Gate 8/8 grün.
    `runMorningBriefing` bleibt (nur noch `runDailyPipeline`) — Löschung erst in Step 4.
 4. Erst dann `runMorningBriefing` + `personalization.js` + `runtime.js`-Briefing-Familie
