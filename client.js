@@ -21,7 +21,6 @@ let notes = [];
 let recommendations = [];
 let radarArchive = [];
 let radarArchiveLoaded = false;
-let features = {};
 let opsStatusLoaded = false;
 let pushConfig = null;
 let pushAutoSyncStarted = false;
@@ -351,7 +350,6 @@ function applyStartPayload(startPayload) {
   briefing.situationalBriefing = Array.isArray(briefing.situationalBriefing) ? briefing.situationalBriefing : [];
   previewMode = previewMode || Boolean(briefing.previewMode);
   aiStatus = startPayload.aiStatus || { enabled: false, model: "" };
-  features = startPayload.features || {};
   briefing.status = previewMode ? "Vorschau" : (briefing.status || "Live");
   briefing.sourceStats = briefing.sourceStats || { checkedSources: 0, successfulSources: 0, failedSources: 0 };
 
@@ -5952,156 +5950,20 @@ function renderNotesSection() {
 }
 
 function renderRadarView() {
-  if (features.v3Radar) return renderRadarV3View();
-  const allMentions = profileMentions();
-  const freshMentions = allMentions.filter(isFreshUpdate).slice(0, 4);
-  const freshKeys = new Set(freshMentions.map(mentionKey));
-
-  const storedArchiveArticles = radarArchive.length ? radarArchive : profileArticleArchive(allMentions);
-  const archiveArticles = storedArchiveArticles
-    .filter((item) => !freshKeys.has(mentionKey(item)))
-    .filter(hasPreciseSource)
-    .filter(uniqueMentionItem)
-    .sort(sortNewestFirst)
-    .slice(0, 60);
-
-  const hasFresh = freshMentions.length > 0;
-
-  return `
-    <section class="page-intro compact">
-      <h1 class="${headlineClass("Radar.")}">Radar.</h1>
-      <p>Radar erkennt Erwähnungen, frühe Risiken und Chancen, bevor sie zur Lage werden.</p>
-    </section>
-
-    ${renderRadarStatusCard(hasFresh)}
-
-    <section class="radar-groups">
-      ${renderRadarGroup("Heute neu über dich", freshMentions.length, mentionRows(freshMentions), hasFresh)}
-      ${renderRadarGroup("Frühwarnungen", 0, renderRadarEarlyWarnings(), false)}
-      ${renderRadarGroup("Chancen", 0, renderRadarChances(), false)}
-      ${renderRadarGroup("Kritische Nachfrage möglich", 0, renderRadarCriticalQuery(), false)}
-      ${renderRadarGroup("Archiv", archiveArticles.length, mentionRows(archiveArticles, { empty: false, compact: true }), false)}
-    </section>
-  `;
-}
-
-function renderRadarGroup(title, count, content, open = false) {
-  const badge = count > 0 ? `<em class="radar-group-count">${count}</em>` : "";
-  return `
-    <details class="radar-group" ${open ? "open" : ""}>
-      <summary>
-        <span>${escapeHtml(title)}${badge}</span>
-        <i></i>
-      </summary>
-      <div class="radar-group-body">
-        ${content || `<p class="empty-state">Keine Einträge.</p>`}
-      </div>
-    </details>
-  `;
-}
-
-function renderRadarStatusCard(hasFresh) {
-  if (hasFresh) {
-    return `
-      <div class="radar-status-card radar-status-risk">
-        <div class="radar-status-main">
-          <span class="radar-status-label">Neue Erwähnung</span>
-          <p>Neue namentliche Erwähnung gefunden. Einordnung empfohlen.</p>
-        </div>
-        <button class="secondary-button" type="button" data-radar-search>Suche prüfen</button>
-      </div>
-    `;
-  }
-  return `
-    <div class="radar-status-card radar-status-ok">
-      <div class="radar-status-main">
-        <span class="radar-status-label">Kein akuter Treffer</span>
-        <p>Keine neue namentliche Erwähnung. Eine ältere relevante Erwähnung bleibt im Blick. Keine öffentliche Reaktion nötig.</p>
-      </div>
-      <button class="secondary-button" type="button" data-radar-search>Suche prüfen</button>
-    </div>
-  `;
-}
-
-// Bewusst leer: Diese Radar-Signale waren zuvor HART KODIERTE Beispielinhalte
-// ("Steuerdebatte …"), die als echte Signale wirkten. Bis eine echte
-// Signal-Datenquelle existiert, zeigt der Radar hier den ehrlichen Empty-State
-// ("Keine Einträge."), statt erfundene Signale auszugeben.
-function renderRadarEarlyWarnings() {
-  return "";
-}
-
-function renderRadarChances() {
-  return "";
-}
-
-function renderRadarCriticalQuery() {
-  return "";
-}
-
-function radarDecisionRows(items, type) {
-  return items.map((item) => `
-    <article class="radar-mini ${type}">
-      <div>
-        <span>${escapeHtml(item.priorityLabel)}</span>
-        <h3>${escapeHtml(item.title)}</h3>
-        <p>${escapeHtml(item.summary)}</p>
-      </div>
-      <button class="secondary-button" type="button" data-detail="${escapeHtml(item.id)}">Öffnen</button>
-    </article>
-  `).join("");
+  // V3 ist der einzige Radar-Renderer (kein V2-Feature-Flag mehr).
+  return renderRadarV3View();
 }
 
 // ── Radar V3 – Frühwarn- und Entscheidungssystem ─────────────────────────────
 
-const RADAR_V3_RISK_KW = [
-  "kritisiert", "vorwurf", "rücktritt", "skandal", "klage", "versagen",
-  "gescheitert", "ermittlung", "verhaftung", "betrug", "lüge", "belastet",
-  "angriff", "blamage", "niederlage", "razzia", "ablehnung", "scheitert"
-];
-
-const RADAR_V3_CHANCE_KW = [
-  "fordert", "setzt sich ein", "antrag", "initiative", "erfolg", "durchbruch",
-  "einigung", "experte", "gelobt", "zustimmung", "stärkt", "unterstützt", "interview"
-];
-
-const RADAR_V3_DEMAND_KW = [
-  "anfrage", "kleine anfrage", "fragestunde", "interpellation",
-  "parlamentarische anfrage", "ausschuss-sitzung", "ausschusssitzung"
-];
-
-const RADAR_V3_HIGH_RISK_SOURCES = ["bild", "welt", "focus", "stern", "spiegel"];
-
-const RADAR_V3_WARN_MS = 48 * 60 * 60 * 1000;
-
-function classifyRadarV3Signal(item) {
-  const text = `${item.title || ""} ${item.content || ""} ${item.excerpt || ""}`.toLowerCase();
-  const title = (item.title || "").toLowerCase();
-  const source = (item.sourceName || "").toLowerCase();
-  const ageMs = Date.now() - (itemTimestamp(item) || 0);
-
-  const isHighRiskSrc = RADAR_V3_HIGH_RISK_SOURCES.some((s) => source.includes(s));
-  const hasRisk = RADAR_V3_RISK_KW.some((k) => text.includes(k));
-  const hasTitleRisk = RADAR_V3_RISK_KW.some((k) => title.includes(k));
-  const hasChance = RADAR_V3_CHANCE_KW.some((k) => text.includes(k));
-  const hasDemand = RADAR_V3_DEMAND_KW.some((k) => text.includes(k));
-
-  if (hasTitleRisk || (hasRisk && isHighRiskSrc)) return "risk";
-  if (hasRisk) return "risk";
-  if (hasDemand) return "demand";
-  if (hasChance) return "chance";
-  if (ageMs < RADAR_V3_WARN_MS && !isFreshUpdate(item)) return "warning";
-  return "mention";
-}
-
 function renderRadarV3View() {
-  const archive = radarArchive.length
-    ? radarArchive
-    : profileArticleArchive().filter(hasPreciseSource).filter(uniqueMentionItem).sort(sortNewestFirst).slice(0, 60);
+  // V3-Radar: die Signale kommen fertig klassifiziert vom Server (signalType) —
+  // kein Client-Scoring, kein V2-profileArticleArchive-Fallback. Leer -> Leerzustand.
+  const archive = radarArchive;
 
   const buckets = { risk: [], demand: [], chance: [], warning: [], mention: [] };
   archive.forEach((item) => {
-    const type = classifyRadarV3Signal(item);
+    const type = buckets[item.signalType] ? item.signalType : "mention";
     buckets[type].push(item);
   });
 

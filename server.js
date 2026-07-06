@@ -144,7 +144,6 @@ async function handleRequest(request, response) {
           HELMUT_V3_MATCHING: process.env.HELMUT_V3_MATCHING || "(nicht gesetzt)",
           HELMUT_V3_LAZY_UNDERSTANDING: process.env.HELMUT_V3_LAZY_UNDERSTANDING || "(nicht gesetzt)",
           HELMUT_V3_OFFICE: process.env.HELMUT_V3_OFFICE || "(nicht gesetzt)",
-          HELMUT_V3_RADAR: process.env.HELMUT_V3_RADAR || "(nicht gesetzt)",
           HELMUT_UNDERSTANDING_LOCK: process.env.HELMUT_UNDERSTANDING_LOCK || "(nicht gesetzt)",
           HELMUT_LLM_BUDGET_FAIL_CLOSED: process.env.HELMUT_LLM_BUDGET_FAIL_CLOSED || "(nicht gesetzt)",
           DIP_API_KEY_set: Boolean(process.env.DIP_API_KEY),
@@ -273,9 +272,6 @@ async function handleRequest(request, response) {
         aiStatus: {
           enabled: isAiEnabled(),
           model: activeModelName()
-        },
-        features: {
-          v3Radar: ["1", "true", "on", "yes"].includes(String(process.env.HELMUT_V3_RADAR || "").trim().toLowerCase())
         }
       };
     });
@@ -2157,25 +2153,21 @@ function sourceEvidenceQuality(briefing) {
   };
 }
 
-async function getRadarArchive(profile, days = 92) {
-  const boundedDays = Math.max(1, Math.min(365, Number.isFinite(days) ? days : 365));
-  const since = new Date(Date.now() - boundedDays * 24 * 60 * 60 * 1000);
-  const items = await getRawItemsSince(since);
-  const terms = profileArchiveTerms(profile);
-  const articles = items
-    .filter((item) => rawItemMentionsProfile(item, terms) || rawItemAuthoredByProfile(item, terms))
-    .map((item) => normalizeRadarArchiveItem(item))
-    .filter((item) => isDirectArticleUrl(item.url, item))
-    .filter(uniqueByRadarUrl)
-    .sort((a, b) => new Date(b.retrievedAt || b.publishedAt || 0) - new Date(a.retrievedAt || a.publishedAt || 0))
-    .slice(0, 60);
-
+// V3-Radar: personenscharfe Signale aus knowledge_objects (server-seitig
+// klassifiziert, kein Client-Scoring, kein V2-rawItems-Archiv). Fehlt der V3-Store,
+// liefert die Engine einen expliziten Leerzustand (kein V2-Fallback). Das Feld
+// `articles` trägt die V3-Signale (jedes mit signalType) — der Client rendert nur.
+async function getRadarArchive(profile, _days = 92) {
+  const radar = require("./lib/helmut/radar");
+  const result = await radar.buildRadarForUser({ profile, limit: 60 });
   return {
     politicianId: profile.id,
-    days: boundedDays,
-    total: articles.length,
-    generatedAt: new Date().toISOString(),
-    articles
+    generatedAt: result.generatedAt || new Date().toISOString(),
+    total: result.total || 0,
+    articles: result.signals || [],
+    buckets: result.buckets || { risk: [], demand: [], chance: [], warning: [], mention: [] },
+    available: !result.skipped,
+    reason: result.reason || null
   };
 }
 

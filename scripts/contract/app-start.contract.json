@@ -247,14 +247,6 @@
         }
       }
     },
-    "features": {
-      "t": "object",
-      "keys": {
-        "v3Radar": {
-          "t": "boolean"
-        }
-      }
-    },
     "notes": {
       "t": "array",
       "el": null
