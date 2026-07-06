@@ -2078,23 +2078,31 @@ function lageHasSource(v) {
   return Number(v.sourceCount) > 0;
 }
 
-// Produktive Lage zeigt NUR Vorgänge, deren Presentation-Fields bereits von der
-// Understanding-Engine erzeugt wurden — gültiges display_title UND display_summary.
-// Alt-Vorgänge ohne diese Felder werden AUSGEBLENDET, statt einen kaputten
-// Legacy-Titel zu zeigen (headline/was_ist_passiert, oft mitten im Satz
-// abgeschnitten wie "Friedrich Merz hat öffentlich …"). Kein Fake, kein
-// Fallback-Titel — lieber weniger, aber ausschließlich saubere Karten. Sobald der
-// Presentation-Backfill gelaufen ist, erscheinen die betroffenen Vorgänge wieder.
-function lageVorgangReady(v) {
-  return Boolean(lageField(v.displayTitle)) && Boolean(lageField(v.displaySummary));
+// ── Legacy-Fallback (TEMPORÄR) — SPIEGELT lib/helmut/lage.js selectLageVorgaenge ──
+// Zweistufige Auswahl über bereits vorhandene Daten (kein KI-Call, kein Backfill):
+//   1) Gibt es mind. EINEN modernen Vorgang (alle fünf Presentation-Felder),
+//      werden AUSSCHLIESSLICH moderne Vorgänge gezeigt (Legacy NICHT beigemischt).
+//   2) Gibt es KEINEN modernen Vorgang, werden Legacy-Vorgänge mit echter Quelle
+//      gezeigt, damit die Lage für den Piloten nicht leer bleibt.
+// In beiden Stufen nur Vorgänge mit echter Quelle. Der Server wählt bereits
+// zentral so aus; diese Spiegelung garantiert dieselbe Regel zur Anzeigezeit
+// (Kopfzahl UND Karussell stammen aus DERSELBEN Menge, nie gemischt). Bei
+// Regeländerung BEIDE Stellen anpassen. Sobald Backfill/neue Understanding-Läufe
+// moderne Vorgänge liefern, greift automatisch wieder Stufe 1 — der Fallback
+// verschwindet dann von selbst.
+const LAGE_PRESENTATION_FIELDS = ["displayTitle", "displaySummary", "whyRelevant", "recommendation", "displayCategory"];
+function lageVorgangModern(v) {
+  return LAGE_PRESENTATION_FIELDS.every((f) => lageField(v[f]) !== "");
 }
 
 // Die tatsächlich sichtbare Menge — Kopfzahl ("Heute gibt es N neue Vorgänge")
 // und Karussell leiten sich BEIDE hieraus ab, damit sie nie auseinanderlaufen.
-// Der Filter (echte Quelle + fertige Presentation-Fields) läuft VOR der Zählung.
 function lageVisibleVorgaenge(data) {
   const list = (data && Array.isArray(data.vorgaenge)) ? data.vorgaenge : [];
-  return list.filter((v) => lageHasSource(v) && lageVorgangReady(v));
+  const withSource = list.filter(lageHasSource);
+  const modern = withSource.filter(lageVorgangModern);
+  // Vorrang moderne Vorgänge; nur wenn KEINER existiert -> Legacy (mit Quelle).
+  return modern.length ? modern : withSource;
 }
 
 // Fallback-Kategorie für Vorgänge ohne v.displayCategory (ältere Vorgänge):
