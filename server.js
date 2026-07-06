@@ -5,8 +5,8 @@ const path = require("path");
 
 loadLocalEnv();
 
-const { cemInceProfile, demoRawItems, demoSources, generateBriefing } = require("./lib/helmut/runtime");
-const { getLatestOrDemoBriefing, runLageCheck, runSourceCrawl } = require("./lib/helmut/scheduler");
+const { cemInceProfile } = require("./lib/helmut/config");
+const { runLageCheck, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { buildLearningProfile } = require("./lib/helmut/learning");
 const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getAdminCostsPerUser, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, listMatchingResults, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed } = require("./lib/helmut/storage");
 const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled, activeModelName } = require("./lib/helmut/ai");
@@ -695,11 +695,6 @@ async function handleRequest(request, response) {
       console.log(`[cron/understanding] rawDocs=${rawDocs.length} Ergebnis: ${JSON.stringify({ processed, result })}`);
       return { ok: true, rawDocsLoaded: rawDocs.length, processed, result };
     });
-  }
-
-  if (url.pathname === "/api/tasks/demo") {
-    if (!hasAdminBypass(request, url)) return sendNotFound(response);
-    return handleAsync(response, async () => generateBriefing(await activeProfile(politicianId), demoRawItems, demoSources).tasks);
   }
 
   if (url.pathname === "/api/tasks") {
@@ -3076,21 +3071,23 @@ async function handleDebugRequest(request, response, url) {
   }
 
   // GET /api/debug/briefing?politicianId=test-mdb&vorgangId=test&secret=...
+  // V3: zeigt das frisch aus Knowledge Objects erzeugte Briefing (kein V2-Blob).
   if (url.pathname === "/api/debug/briefing") {
     const vorgangId = url.searchParams.get("vorgangId") || "";
     return handleAsync(response, async () => {
-      const [profile, briefing, ko] = await Promise.all([
-        activeProfile(politicianId),
-        getLatestOrDemoBriefing(politicianId),
+      const profile = await activeProfile(politicianId);
+      const [briefing, ko] = await Promise.all([
+        buildV3Briefing(profile, politicianId),
         vorgangId ? getKnowledgeObjectByVorgang(vorgangId) : Promise.resolve(null)
       ]);
       return {
         debug: true,
+        engine: "v3",
         politicianId,
         vorgangId: vorgangId || "(nicht angegeben)",
         profile: profile ? { id: profile.id, name: profile.fullName } : null,
         briefing: briefing
-          ? { date: briefing.generatedAt || briefing.date, items: briefing.items?.length || 0, hasContent: true }
+          ? { engine: "v3", date: briefing.generatedAt, available: Boolean(briefing.available), items: briefing.items?.length || 0 }
           : null,
         knowledgeObject: ko || null,
         storageStatus: getStorageStatus()

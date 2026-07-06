@@ -143,13 +143,13 @@ function staticChecks() {
   const ai = fs.readFileSync(path.join(root, "lib/helmut/ai.js"), "utf8");
   check("KI: kein hardcodiertes 'Guten Abend, Cem.'", !ai.includes("Guten Abend, Cem."));
   check("KI: kein 'Cem'-Fallbackname mehr", !ai.includes('|| "Cem"'));
-  const runtimeSrc = fs.readFileSync(path.join(root, "lib/helmut/runtime.js"), "utf8");
-  check("Entity-Erkennung: kein hardcodiertes 'Cem Ince' in inferEntities-Liste", !/const entities = \[.*Cem Ince/.test(runtimeSrc));
+  const configSrc = fs.readFileSync(path.join(root, "lib/helmut/config.js"), "utf8");
+  check("Entity-Erkennung: kein hardcodiertes 'Cem Ince' in inferEntities-Liste", !/const entities = \[.*Cem Ince/.test(configSrc));
 }
 
 // Datenmotor V2, Commit 3: inferEntities leitet Personen/Partei aus dem Profil ab.
 function entityChecks() {
-  const { inferEntities } = require(path.join(root, "lib/helmut/runtime.js"));
+  const { inferEntities } = require(path.join(root, "lib/helmut/config.js"));
   const item = { title: "Muster fordert mehr Klimaschutz", content: "Die Grünen im Bundestag unterstützen Erika Muster.", sourceId: "source-x" };
 
   const forMuster = inferEntities(item, { fullName: "Erika Muster", party: "Grüne", faction: "Bündnis 90/Die Grünen", committees: [], relevantMinistries: [], opponents: [] });
