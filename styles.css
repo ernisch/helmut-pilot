@@ -10411,21 +10411,33 @@ body:has(.lage2) {
   box-shadow: 0 -24px 60px rgba(0, 0, 0, .46);
   transform: translateY(100%);
   will-change: transform; touch-action: none; overscroll-behavior: contain;
+  overflow: hidden; /* saubere runde Ecken über der sticky Bedienleiste */
 }
 /* Weiche, hochwertige Bewegung (Apple-Maps/Music/Wallet-Anmutung, kein technisches Snappen). */
 .vsheet.vsheet-anim { transition: transform 460ms cubic-bezier(.32, .72, 0, 1); }
 
+/* Obere Bedienebene (sticky): Grabber + Schließen bleiben beim Scrollen stabil
+   erreichbar. NUR diese Leiste ist fixiert — Titel/Meta scrollen normal weg.
+   Beim Scrollen erscheint eine feine Trennlinie (.is-scrolled) für Wertigkeit. */
+.vsheet-topbar {
+  flex: none; position: relative; height: 50px; background: var(--bg);
+  border-top-left-radius: 26px; border-top-right-radius: 26px;
+  border-bottom: 1px solid transparent;
+  transition: border-color 220ms var(--ease-out-soft);
+}
+.vsheet-topbar.is-scrolled { border-bottom-color: var(--hairline); }
+
 /* Griff (Grabber) — die primäre Ziehfläche zum Ein-/Ausklappen & Schließen. */
 .vsheet-grip {
-  flex: none; display: grid; place-items: center;
-  height: 30px; padding-top: 9px; cursor: grab; touch-action: none;
+  position: absolute; left: 0; right: 0; top: 0; height: 30px;
+  display: grid; place-items: center; padding-top: 10px; cursor: grab; touch-action: none;
 }
 .vsheet-grip:active { cursor: grabbing; }
-.vsheet-grabber { width: 38px; height: 5px; border-radius: 999px; background: var(--muted-2); opacity: .55; }
+.vsheet-grabber { width: 36px; height: 5px; border-radius: 999px; background: var(--muted-2); opacity: .5; }
 
-/* Schließen (X) — Touch-Ziel ≥44px. */
+/* Schließen (X) — Touch-Ziel ≥44px, in der sticky Leiste rechts. */
 .vsheet-close {
-  position: absolute; top: 8px; right: 10px; z-index: 3;
+  position: absolute; top: 50%; right: 10px; transform: translateY(-50%); z-index: 3;
   width: 44px; height: 44px; display: grid; place-items: center;
   border: 0; background: none; color: var(--muted); cursor: pointer; border-radius: 12px;
   transition: background var(--dur-base) var(--ease-out-soft), color var(--dur-base) var(--ease-out-soft);
@@ -10437,11 +10449,12 @@ body:has(.lage2) {
 .vsheet-scroll {
   flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain; touch-action: pan-y;
-  padding: 6px 24px calc(36px + env(safe-area-inset-bottom, 0px));
+  padding: 8px 24px calc(36px + env(safe-area-inset-bottom, 0px));
 }
 
-/* Kopfbereich: großer Titel, darunter kompakte Meta-Zeile. */
-.vsheet-head { padding: 6px 46px 4px 0; }
+/* Kopfbereich: großer Titel, darunter kompakte Meta-Zeile. Kein rechter
+   Freiraum mehr nötig — das X sitzt jetzt in der sticky Bedienleiste darüber. */
+.vsheet-head { padding: 4px 0 2px 0; }
 .vsheet-head .lage2-vtag { margin-bottom: 15px; }
 .vsheet-title {
   margin: 0; font-size: clamp(24px, 6.2vw, 31px); font-weight: 700;
@@ -10465,22 +10478,32 @@ body:has(.lage2) {
   text-transform: uppercase; color: var(--muted-2);
 }
 
-/* (2) Kurzfassung — ruhige Lesetype, viel Zeilenabstand. */
-.vsheet-lede { margin: 0; font-size: 17px; line-height: 1.72; color: var(--text); }
+/* (2) Kurzfassung — ruhige Lesetype; sichtbar auf max. 4 Zeilen begrenzt
+   (kompakte Akte statt Bericht). Kürzt sauber mit „…", erzeugt keinen Inhalt. */
+.vsheet-lede {
+  margin: 0; font-size: 16px; line-height: 1.6; color: var(--text);
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden;
+}
 
-/* (3) Warum wichtig — klassische, dezente Stichpunkte (neutraler Marker, nicht bunt). */
-.vsheet-why { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 15px; }
-.vsheet-why li { position: relative; padding-left: 24px; font-size: 16px; line-height: 1.62; color: var(--text); }
+/* (3) Warum wichtig — ruhige, kompakte politische Notiz: kleinere Schrift,
+   engere Zeilenhöhe, je Punkt max. 2 Zeilen (max. 3 Punkte via JS). */
+.vsheet-why { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 11px; }
+.vsheet-why li {
+  position: relative; padding-left: 22px; font-size: 14.5px; line-height: 1.48; color: var(--text);
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+}
 .vsheet-why li::before {
-  content: ""; position: absolute; left: 4px; top: 10px; width: 6px; height: 6px;
+  content: ""; position: absolute; left: 4px; top: 8px; width: 5px; height: 5px;
   border-radius: 50%; background: var(--muted-2);
 }
 
-/* (4) Empfehlung — dezent hervorgehoben, weniger Box: kein Rahmen, mehr Innenabstand. */
+/* (4) Empfehlung — kompakter & dezenter: weniger Padding, kleinere Schrift,
+   ruhigerer Grund, sichtbar auf max. 4 Zeilen begrenzt. Kein Rahmen. */
 .vsheet-reco {
-  margin: 0; padding: 20px 22px; border-radius: 18px;
-  background: rgba(140, 92, 255, .07); border: 0;
-  font-size: 16px; line-height: 1.62; color: var(--text);
+  margin: 0; padding: 13px 15px; border-radius: 13px;
+  background: rgba(140, 92, 255, .05); border: 0;
+  font-size: 14.5px; line-height: 1.5; color: var(--text);
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden;
 }
 
 /* (5) Betroffene — kleinere, elegantere Chips mit mehr Abstand (unterstützen, nicht dominieren). */
@@ -10522,5 +10545,5 @@ body:has(.lage2) {
 }
 
 /* Light-Theme: Tints an helle Fläche anpassen. */
-:root[data-theme="light"] .vsheet-reco { background: rgba(109, 76, 255, .06); }
+:root[data-theme="light"] .vsheet-reco { background: rgba(109, 76, 255, .05); }
 :root[data-theme="light"] .vsheet-close:hover { background: rgba(15, 23, 42, .07); }

@@ -2580,9 +2580,11 @@ function vsheetContentHtml(v) {
 
   // (2) Kurzfassung — bestehendes display_summary (Fallback: was_ist_passiert).
   const kurz = lageField(v.displaySummary) || lageField(v.summary && v.summary.wasIstPassiert);
-  // (3) Warum wichtig — bestehendes why_relevant als Stichpunkte (Fallback: warumWichtig).
+  // (3) Warum wichtig — bestehendes why_relevant als Stichpunkte (Fallback:
+  // warumWichtig). Max. 3 Stichpunkte (kompakte politische Akte, kein Fließtext);
+  // jeder Punkt wird zusätzlich per CSS auf 2 Zeilen begrenzt.
   const warumSrc = lageHumanize(lageField(v.whyRelevant) || lageField(v.summary && v.summary.warumWichtig));
-  const warumPoints = warumSrc ? vsheetSentences(warumSrc, 4) : [];
+  const warumPoints = warumSrc ? vsheetSentences(warumSrc, 3) : [];
   // (4) Empfehlung — bestehendes recommendation (Fallback: handlungsempfehlung).
   const reco = lageHumanize(lageField(v.recommendation) || lageField(v.empfehlung));
   // (5) Betroffene
@@ -2655,10 +2657,12 @@ function openVorgangSheet(id) {
   root.innerHTML = `
     <div class="vsheet-backdrop" data-vsheet-close></div>
     <div class="vsheet" role="dialog" aria-modal="true" aria-labelledby="vsheet-title">
-      <div class="vsheet-grip" data-vsheet-grip aria-hidden="true"><span class="vsheet-grabber"></span></div>
-      <button class="vsheet-close" type="button" data-vsheet-close aria-label="Detailansicht schließen">
-        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-      </button>
+      <div class="vsheet-topbar" data-vsheet-topbar>
+        <div class="vsheet-grip" data-vsheet-grip aria-hidden="true"><span class="vsheet-grabber"></span></div>
+        <button class="vsheet-close" type="button" data-vsheet-close aria-label="Detailansicht schließen">
+          <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </button>
+      </div>
       <div class="vsheet-scroll" data-vsheet-scroll>${vsheetContentHtml(v)}</div>
     </div>`;
   document.body.appendChild(root);
@@ -2666,6 +2670,14 @@ function openVorgangSheet(id) {
 
   const sheet = root.querySelector(".vsheet");
   const scroller = root.querySelector("[data-vsheet-scroll]");
+
+  // Obere Bedienebene (Grabber + X) beim Scrollen dezent absetzen: sobald der
+  // Inhalt scrollt, erscheint unter der sticky Leiste eine feine Trennlinie —
+  // wirkt hochwertiger und hält die Bedienelemente klar erreichbar.
+  const topbar = root.querySelector("[data-vsheet-topbar]");
+  scroller.addEventListener("scroll", () => {
+    if (topbar) topbar.classList.toggle("is-scrolled", scroller.scrollTop > 4);
+  }, { passive: true });
 
   // Hintergrund-Scroll sperren, solange das Sheet offen ist.
   const prevOverflow = document.body.style.overflow;
