@@ -757,82 +757,6 @@ async function c7aMatchingChecks() {
     `res=${JSON.stringify(res)}`);
 }
 
-// Datenmotor V3 — Commit C7b: Briefing Engine (Jinja2-Mini-Renderer, KEINE KI).
-async function c7bBriefingEngineChecks() {
-  const tpl = require(path.join(root, "lib/helmut/template.js"));
-  const briefing = require(path.join(root, "lib/helmut/briefing.js"));
-  const storage = require(path.join(root, "lib/helmut/storage.js"));
-
-  // (a) Mini-Renderer: {{var}}, |default, {% if/else %}, {% for %}, loop.last.
-  const out = tpl.renderString(
-    "Hallo {{ name | default('Welt') }}!{% if items %} {{ items | length }}x:{% for i in items %} {{ i }}{% if not loop.last %},{% endif %}{% endfor %}{% else %} leer{% endif %}",
-    { name: "Helmut", items: ["a", "b"] }
-  );
-  check("C7b Renderer: {{var}}, |default, {% if %}, {% for %}, loop.last (kein Fremdpaket)",
-    out === "Hallo Helmut! 2x: a, b", `out=${JSON.stringify(out)}`);
-  const empty = tpl.renderString("{{ x | default('-') }}{% if y %}Y{% else %}N{% endif %}", {});
-  check("C7b Renderer: default-Filter + else greifen bei fehlenden Werten", empty === "-N", `out=${JSON.stringify(empty)}`);
-
-  // (b) Rollen-Aufloesung.
-  check("C7b Rolle: abgeordneter->mdb, referent->mitarbeiter, fraktion->fraktion, unbekannt->mdb",
-    briefing.resolveBriefingRole("abgeordneter") === "mdb"
-      && briefing.resolveBriefingRole("referent") === "mitarbeiter"
-      && briefing.resolveBriefingRole({ role: "fraktion" }) === "fraktion"
-      && briefing.resolveBriefingRole("irgendwas") === "mdb");
-
-  const profile = { id: "u-1", fullName: "Erika Muster", party: "SPD", committee: "Arbeit und Soziales", role: "abgeordneter" };
-  const koUnderstood = {
-    id: "ko-a", vorgang_id: "vg-rente", status: "neu", headline: "Rentenpaket 2026",
-    was_ist_passiert: "Kabinett beschliesst.", warum_wichtig: "Betrifft Millionen.",
-    zeitdruck: "hoch", handlungsempfehlung: "Position beziehen.",
-    parteien: ["SPD"], ausschuesse: ["Arbeit und Soziales"], tags: ["Rente"]
-  };
-  const koPending = { id: "ko-b", vorgang_id: "vg-neu", status: "pending", headline: "Neuer Vorgang" };
-  const matches = [
-    { knowledge_object_id: "ko-a", vorgang_id: "vg-rente", similarity: 0.9, matched_features: [{ type: "partei", value: "SPD" }, { type: "ausschuss", value: "Arbeit und Soziales" }] },
-    { knowledge_object_id: "ko-b", vorgang_id: "vg-neu", similarity: 0.3, matched_features: [] }
-  ];
-
-  // (c) Rendern mit intelligence (verstanden) UND ohne (pending).
-  const rendered = briefing.renderBriefing({ profile, knowledgeObjects: [koUnderstood, koPending], matches });
-  check("C7b Briefing: verstandener Vorgang zeigt Handlungsempfehlung + matched_features",
-    rendered.text.includes("Handlungsempfehlung: Position beziehen.") && rendered.text.includes("SPD (partei)"),
-    `role=${rendered.role} items=${rendered.itemCount}`);
-  check("C7b Briefing: pending-Vorgang zeigt 'Analyse steht noch aus' (keine erfundene Empfehlung), Rolle mdb",
-    rendered.text.includes("Analyse steht noch aus") && rendered.role === "mdb");
-
-  // (d) Keine KI.
-  const src = fs.readFileSync(path.join(root, "lib/helmut/briefing.js"), "utf8");
-  check("C7b Keine KI: briefing.js ruft KEIN ai-Modul (kein require('./ai'))",
-    !/require\(["']\.\/ai["']\)/.test(src));
-
-  // (e) Flag AUS (Default): Runner inert.
-  const origFlag = process.env.HELMUT_V3_BRIEFING;
-  try {
-    delete process.env.HELMUT_V3_BRIEFING;
-    check("C7b Flag: v3BriefingEnabled() Default false", storage.v3BriefingEnabled() === false);
-    const off = await briefing.runBriefingShadow({ profile });
-    check("C7b Flag aus -> runBriefingShadow skipped (briefing-disabled)",
-      off && off.skipped === true && off.reason === "briefing-disabled");
-  } finally {
-    if (origFlag === undefined) delete process.env.HELMUT_V3_BRIEFING; else process.env.HELMUT_V3_BRIEFING = origFlag;
-  }
-
-  // (f) Runner mit injizierten Deps: rendert aus C7a-Matches + speichert 1 Briefing.
-  const savedBriefings = [];
-  const res = await briefing.runBriefingShadow({ profile, slot: "morgens" }, {
-    enabled: () => true,
-    listKnowledgeObjects: () => [koUnderstood, koPending],
-    listMatchingResults: () => matches,
-    saveBriefing: (e) => { savedBriefings.push(e); return { saved: true, id: e.id }; }
-  });
-  check("C7b Runner: 1 Briefing gespeichert (payload.text + role), nutzergebunden",
-    res && res.saved === true && savedBriefings.length === 1 && savedBriefings[0].user_id === "u-1"
-      && savedBriefings[0].payload && typeof savedBriefings[0].payload.text === "string"
-      && savedBriefings[0].payload.role === "mdb",
-    `res=${JSON.stringify({ saved: res.saved, role: res.role, itemCount: res.itemCount })}`);
-}
-
 // Datenmotor V3 — Commit C7c: Lazy Understanding-Trigger (KEINE KI in dieser Stufe).
 async function c7cLazyUnderstandingChecks() {
   const lazy = require(path.join(root, "lib/helmut/lazyUnderstanding.js"));
@@ -1389,7 +1313,6 @@ async function main() {
   c7bGoldsetChecks();
   await c7UnderstandingChecks();
   await c7aMatchingChecks();
-  await c7bBriefingEngineChecks();
   await c7cLazyUnderstandingChecks();
   await c8UnderstandingChecks();
   await c9OfficeChecks();

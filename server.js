@@ -9,7 +9,7 @@ const { cemInceProfile, demoRawItems, demoSources, generateBriefing } = require(
 const { getLatestOrDemoBriefing, runDailyPipeline, runLageCheck, runMorningBriefing, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { personalizeBriefing } = require("./lib/helmut/personalization");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getAdminCostsPerUser, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, listMatchingResults, v3BriefingEnabled, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed } = require("./lib/helmut/storage");
+const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getAdminCostsPerUser, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, listMatchingResults, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed } = require("./lib/helmut/storage");
 const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled, activeModelName, isEngineV2Enabled } = require("./lib/helmut/ai");
 const { pushStatus, sendBriefingReadyPush, sendLageChangePush, sendPushToPolitician } = require("./lib/helmut/push");
 const auth = require("./lib/helmut/auth");
@@ -142,7 +142,6 @@ async function handleRequest(request, response) {
           AZURE_OPENAI_DEPLOYMENT: process.env.AZURE_OPENAI_DEPLOYMENT || "(nicht gesetzt)",
           HELMUT_V3_STORE: process.env.HELMUT_V3_STORE || "(nicht gesetzt)",
           HELMUT_V3_MATCHING: process.env.HELMUT_V3_MATCHING || "(nicht gesetzt)",
-          HELMUT_V3_BRIEFING: process.env.HELMUT_V3_BRIEFING || "(nicht gesetzt)",
           HELMUT_V3_LAZY_UNDERSTANDING: process.env.HELMUT_V3_LAZY_UNDERSTANDING || "(nicht gesetzt)",
           HELMUT_V3_OFFICE: process.env.HELMUT_V3_OFFICE || "(nicht gesetzt)",
           HELMUT_V3_RADAR: process.env.HELMUT_V3_RADAR || "(nicht gesetzt)",
@@ -3050,7 +3049,6 @@ async function handleDebugRequest(request, response, url) {
         CRON_SECRET_set: Boolean(process.env.CRON_SECRET),
         HELMUT_V3_STORE: process.env.HELMUT_V3_STORE || "(nicht gesetzt)",
         HELMUT_V3_MATCHING: process.env.HELMUT_V3_MATCHING || "(nicht gesetzt)",
-        HELMUT_V3_BRIEFING: process.env.HELMUT_V3_BRIEFING || "(nicht gesetzt)",
         HELMUT_V3_LAZY_UNDERSTANDING: process.env.HELMUT_V3_LAZY_UNDERSTANDING || "(nicht gesetzt)",
         HELMUT_V3_OFFICE: process.env.HELMUT_V3_OFFICE || "(nicht gesetzt)",
         HELMUT_UNDERSTANDING_LOCK: process.env.HELMUT_UNDERSTANDING_LOCK || "(nicht gesetzt)",
@@ -3705,137 +3703,6 @@ async function handleDebugRequest(request, response, url) {
 
       console.log(`[debug/pipeline-probe] raw=${JSON.stringify(rawProbe)} azureStatus=${out.azure.httpStatus} verdict=${out.verdict.slice(0, 60)}`);
       return out;
-    });
-  }
-
-  // GET /api/debug/briefing-manual?politicianId=...&secret=...
-  // Diagnostiziert die Briefing-Pipeline C7b fuer einen Nutzer:
-  //   1. Flags pruefen (v3BriefingEnabled)
-  //   2. Profil + KOs laden
-  //   3. Gespeicherte Matching-Ergebnisse laden
-  //   4. Falls keine Matches: deterministisches Offline-Matching durchfuehren
-  //   5. Briefing rendern (KEIN Save — nur Diagnose)
-  // TEMP: nach erfolgreichem Live-Gang entfernen.
-  if (url.pathname === "/api/debug/briefing-manual") {
-    return handleAsync(response, async () => {
-      const { renderBriefing } = require("./lib/helmut/briefing");
-      const { matchProfileToKnowledgeObjects } = require("./lib/helmut/matching");
-
-      const briefingEnabled = v3BriefingEnabled();
-      const flags = {
-        HELMUT_V3_BRIEFING: process.env.HELMUT_V3_BRIEFING || "(nicht gesetzt — Briefing AUS)",
-        HELMUT_V3_STORE: process.env.HELMUT_V3_STORE || "(nicht gesetzt)",
-        HELMUT_V3_MATCHING: process.env.HELMUT_V3_MATCHING || "(nicht gesetzt)",
-        SUPABASE_URL_set: Boolean(process.env.SUPABASE_URL),
-        briefingEnabled,
-      };
-
-      // 1. Profil laden
-      const profile = await activeProfile(politicianId).catch((e) => ({ error: e.message }));
-      if (!profile || profile.error) {
-        return { debug: true, flags, politicianId, error: "Profil nicht gefunden", profile };
-      }
-
-      // 2. KOs laden
-      const kos = await listKnowledgeObjects({ limit: 200 }).catch((e) => {
-        console.error("[debug/briefing-manual] listKnowledgeObjects fehlgeschlagen:", e.message);
-        return [];
-      });
-      const kosUnderstood = kos.filter((k) =>
-        k.status !== "pending" && (k.was_ist_passiert || k.warum_wichtig || k.handlungsempfehlung)
-      );
-
-      // 3. Gespeicherte Matching-Ergebnisse laden
-      const storedMatches = await listMatchingResults({ userId: politicianId, limit: 50 }).catch((e) => {
-        console.error("[debug/briefing-manual] listMatchingResults fehlgeschlagen:", e.message);
-        return [];
-      });
-
-      // 4. Offline-Matching als Fallback
-      const offlineMatches = matchProfileToKnowledgeObjects(profile, kos, { limit: 10 });
-
-      // Welche Matches werden fuer das Briefing verwendet?
-      const matchSource = storedMatches.length ? "supabase-stored" : "offline-fallback";
-      const activeMaps = storedMatches.length
-        ? storedMatches.map((s) => ({
-            knowledge_object_id: s.knowledge_object_id,
-            vorgang_id: s.vorgang_id,
-            similarity: s.similarity,
-            matched_features: s.matched_features || []
-          }))
-        : offlineMatches;
-
-      // 5. Briefing rendern (kein Save)
-      let rendered = null;
-      let renderError = null;
-      try {
-        rendered = renderBriefing({ profile, knowledgeObjects: kos, matches: activeMaps, limit: 10 });
-      } catch (e) {
-        renderError = e.message;
-        console.error("[debug/briefing-manual] renderBriefing fehlgeschlagen:", e.message);
-      }
-
-      console.log(`[debug/briefing-manual] politicianId=${politicianId} kos=${kos.length} understood=${kosUnderstood.length} storedMatches=${storedMatches.length} offlineMatches=${offlineMatches.length} items=${rendered?.itemCount ?? "n/a"}`);
-
-      return {
-        debug: true,
-        politicianId,
-        flags,
-        profile: { id: profile.id, name: profile.fullName, party: profile.party, committees: profile.committees },
-        knowledgeObjects: {
-          total: kos.length,
-          understood: kosUnderstood.length,
-          pending: kos.length - kosUnderstood.length,
-          sample: kos.slice(0, 3).map((k) => ({
-            id: k.id,
-            vorgang_id: k.vorgang_id,
-            headline: k.headline,
-            status: k.status,
-            understanding_status: k.understanding_status,
-            hasIntelligence: Boolean(k.was_ist_passiert || k.warum_wichtig || k.handlungsempfehlung)
-          }))
-        },
-        matching: {
-          storedMatches: storedMatches.length,
-          offlineMatches: offlineMatches.length,
-          matchSource,
-          activeMatchCount: activeMaps.length,
-          sample: activeMaps.slice(0, 3)
-        },
-        briefing: rendered
-          ? {
-              role: rendered.role,
-              itemCount: rendered.itemCount,
-              slot: rendered.slot,
-              textPreview: rendered.text ? rendered.text.slice(0, 400) : "(leer)",
-              items: (rendered.context?.items || []).slice(0, 5).map((i) => ({
-                headline: i.headline,
-                hasIntelligence: i.hasIntelligence,
-                similarity: i.similarity
-              }))
-            }
-          : { error: renderError || "Rendering fehlgeschlagen" },
-        diagnose: {
-          problem: !briefingEnabled
-            ? "HELMUT_V3_BRIEFING ist nicht aktiv — runBriefingShadow wird beim Cron übersprungen."
-            : kosUnderstood.length === 0
-              ? "Keine verstandenen KOs — alle KOs sind pending oder haben keine Analyse-Felder (was_ist_passiert etc.)."
-              : storedMatches.length === 0
-                ? "Keine gespeicherten Matches in Supabase — HELMUT_V3_MATCHING prüfen oder matching_results-Tabelle leer."
-                : rendered && rendered.itemCount === 0
-                  ? "Matches vorhanden, aber Briefing hat 0 Items — KOs per knowledge_object_id in Matches nicht in KO-Liste gefunden."
-                  : `OK — ${rendered?.itemCount ?? 0} Briefing-Items aus ${activeMaps.length} Matches (via ${matchSource}).`,
-          nextStep: !briefingEnabled
-            ? "HELMUT_V3_BRIEFING=1 in Vercel setzen."
-            : kosUnderstood.length === 0
-              ? "run-understanding aufrufen: /api/debug/run-understanding?secret=..."
-              : storedMatches.length === 0
-                ? "Matching-Cron pruefen oder /api/debug/cluster aufrufen."
-                : rendered && rendered.itemCount > 0
-                  ? "Briefing-Pipeline funktioniert. Briefings erscheinen beim nächsten Cron-Lauf."
-                  : "KO-IDs in Matches pruefen — stimmen knowledge_object_id mit KO-IDs ueberein?"
-        }
-      };
     });
   }
 

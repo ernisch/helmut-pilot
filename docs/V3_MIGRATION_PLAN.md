@@ -15,6 +15,23 @@ Analysen + Synthese).
 
 ---
 
+## Umsetzungsstand (laufend)
+
+| # | Increment | Status | Verifikation |
+|---|---|---|---|
+| A | Toter Code entfernt (5 TS-Dateien + 2 runtime.js-Funktionen) | ✅ erledigt | p1/goldset/lage/understanding-eval grün |
+| — | V3 Decision Engine (`decisions.js` + storage-CRUD) — additive Grundlage | ✅ erledigt | decisions 36/36 |
+| 3 | Rollen-Text-Briefing entfernt (`briefing.js` + 3 `.j2` + Flag `HELMUT_V3_BRIEFING` + Debug-Endpoint); Scheduler-Slot → `runDecisionShadow` | ✅ erledigt | p1 175/175, alle offline grün |
+| D | `toBriefingContractV3`-Adapter (Home/Briefing/Helmut) | ⏳ offen | — |
+| — | Radar-Server-Engine aus KOs | ⏳ offen | — |
+| — | Toten `HELMUT_ENGINE_V2`-Motor entfernen | ⏳ offen | — |
+| C/E | Live-Cutover + V2-Löschung (Prod-Flags, Live-Verifikation) | 🔒 operativ (Betreiber) | smoke/contract gegen Deployment |
+
+> **Nur noch 5 V3-Flags** (statt 6): `HELMUT_V3_BRIEFING` ist entfernt — die
+> Lage-Karten (`koToVorgangCard`) sind die eine V3-Briefing-Oberfläche.
+
+---
+
 ## 0. Kernbefund (ehrliche V3-Readiness)
 
 Der Zustand ist **gespalten** — nicht „Flag umlegen und fertig":
