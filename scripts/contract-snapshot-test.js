@@ -124,9 +124,13 @@ function describe(value) {
 function compareShape(snap, cur, pathStr, issues) {
   if (!snap || !cur) return;
   if (snap.t !== cur.t) {
-    // Array, das aktuell leer ist (el:null) ist mit befülltem Snapshot verträglich
-    // und umgekehrt — kein Typwechsel, nur datenabhängig.
-    if (!(snap.t === "array" || cur.t === "array")) {
+    // Datenabhängige Typen sind KEIN Vertragsbruch:
+    //  - Array leer (el:null) <-> befüllt (beide Richtungen),
+    //  - null <-> Objekt/Wert: ein Feld ist null, wenn keine Daten vorliegen
+    //    (z. B. themeOfDay/riskOfDay/chanceOfDay ohne Vorgänge) und ein Objekt,
+    //    sobald Daten da sind. Das Frontend liest solche Felder optional (?.).
+    const dataDependent = (t) => t === "array" || t === "null";
+    if (!(dataDependent(snap.t) || dataDependent(cur.t))) {
       issues.push({ level: "fail", msg: `Typwechsel bei ${pathStr || "<root>"}: erwartet ${snap.t}, jetzt ${cur.t}` });
     }
     return;

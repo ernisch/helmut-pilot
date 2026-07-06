@@ -147,9 +147,17 @@ check("helmutAssessment ist deterministisch/0-KI (source=deterministic)", briefi
 // --- 8) Determinismus + Leerfall --------------------------------------------
 const briefing2 = buildContractFromKnowledgeObjects(profile, kos, sourcesByVorgang, { userId: "u-health", now: NOW });
 check("Adapter ist deterministisch (2 Läufe gleich)", JSON.stringify(briefing) === JSON.stringify(briefing2));
-const empty = buildContractFromKnowledgeObjects(profile, [], {}, { userId: "u-health", now: NOW });
+const empty = buildContractFromKnowledgeObjects(profile, [], {}, { userId: "u-health", now: NOW, reason: "no-vorgaenge" });
 check("Leerfall: alle Pflicht-Keys vorhanden, Arrays leer, kein Crash",
   BRIEFING_REQUIRED_KEYS.every((k) => k in empty) && empty.items.length === 0 && empty.personalizedRecommendations.length === 0);
+check("Leerfall: EXPLIZITER V3-Leerzustand (available:false + reason), KEIN V2-Fallback",
+  empty.available === false && empty.reason === "no-vorgaenge" && empty.status === "Keine aktuellen Vorgänge");
+check("Befüllt: available:true, reason:null", briefing.available === true && briefing.reason === null);
+
+// --- 11) Hero-Felder (Frontend-Vertrag) ------------------------------------
+check("themeOfDay = wichtigster nicht-ignorierter Vorgang", briefing.themeOfDay && briefing.themeOfDay.decision !== "Ignorieren");
+check("riskOfDay ist ein risk-Item (falls vorhanden)", !briefing.riskOfDay || briefing.riskOfDay.priorityType === "risk");
+check("executiveSummary == helmutAssessment.assessment", briefing.executiveSummary === briefing.helmutAssessment.assessment);
 
 // --- 9) DSGVO: keine Profil-PII in der Ausgabe ------------------------------
 const serialized = JSON.stringify(briefing);

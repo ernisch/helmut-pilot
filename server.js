@@ -9,7 +9,7 @@ const { cemInceProfile, demoRawItems, demoSources, generateBriefing } = require(
 const { getLatestOrDemoBriefing, runDailyPipeline, runLageCheck, runMorningBriefing, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { personalizeBriefing } = require("./lib/helmut/personalization");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getAdminCostsPerUser, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, listMatchingResults, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed } = require("./lib/helmut/storage");
+const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getAdminCostsPerUser, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, listMatchingResults, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed } = require("./lib/helmut/storage");
 const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled, activeModelName } = require("./lib/helmut/ai");
 const { pushStatus, sendBriefingReadyPush, sendLageChangePush, sendPushToPolitician } = require("./lib/helmut/push");
 const auth = require("./lib/helmut/auth");
@@ -1008,27 +1008,51 @@ function prepareBriefingResponse(briefing, { previewMode = false, compact = fals
   return withPreviewMode(payload, previewMode);
 }
 
+// V3-Read-Path: das Briefing (Home/Briefing/Helmut) entsteht ausschließlich aus
+// V3-Daten (verstandene knowledge_objects -> deterministische decisions ->
+// Contract-Adapter). KEIN V2-Blob, KEIN Regel-Scoring, KEIN V2-Fallback. Fehlen
+// V3-Daten, liefert der Adapter einen EXPLIZITEN Leerzustand (available:false).
 async function latestBriefingPayload({ politicianId, profile, url, previewMode = false, compact = false }) {
-  const latest = await getLatestOrDemoBriefing(politicianId);
-  const hasStoredBriefing = Boolean(latest.homeSections && latest.personalizedRecommendations);
-  // On-Demand-Erzeugung NUR wenn noch gar kein Briefing existiert (neues Mandat):
-  // schnell und OHNE KI, damit niemand einen leeren Bildschirm sieht. Ein bereits
-  // erzeugtes Briefing wird beim Lesen NIE ueberschrieben (sonst wuerde das gute
-  // taegliche KI-Briefing vom Cron durch ein "nichts Neues" ersetzt). Frische KI-
-  // Briefings laufen ueber Cron und das manuelle "Aktualisieren" (/api/briefing/run).
-  if (!previewMode && !hasStoredBriefing) {
-    try {
-      const fresh = await runMorningBriefing(politicianId, { skipAi: true });
-      if (fresh && fresh.homeSections) return prepareBriefingResponse(fresh, { previewMode, compact });
-    } catch (error) {
-      console.error("Quick briefing failed", error);
-    }
-  }
-  if (!hasStoredBriefing) {
-    const personalized = personalizeBriefing(latest, profile, await getTopicMemory(profile.id), await getInteractions(profile.id));
-    return prepareBriefingResponse(personalized, { previewMode, compact });
-  }
-  return prepareBriefingResponse(latest, { previewMode, compact });
+  const briefing = await buildV3Briefing(profile, politicianId);
+  return prepareBriefingResponse(briefing, { previewMode, compact });
+}
+
+async function buildV3Briefing(profile, politicianId) {
+  const briefingContract = require("./lib/helmut/briefingContract");
+  const decisionsEngine = require("./lib/helmut/decisions");
+  const userId = (profile && profile.id) || politicianId;
+  const empty = (reason) => briefingContract.toBriefingContractV3({ profile, decisions: [], kosById: {}, sourcesByVorgang: {}, reason });
+
+  // Fail-safe, KEIN V2-Fallback: kein Store -> expliziter Leerzustand.
+  if (!v3StoreReady()) return empty("v3-store-disabled");
+
+  let kos = [];
+  try { kos = await listKnowledgeObjects({ limit: 200 }); }
+  catch (error) { console.error("[v3-briefing] listKnowledgeObjects fehlgeschlagen:", error && error.message); }
+  const understood = (kos || []).filter((k) =>
+    k && k.status !== "pending" && k.understanding_status === "complete" && (k.was_ist_passiert || k.warum_wichtig)
+  );
+  if (!understood.length) return empty("keine-vorgaenge");
+
+  // Deterministische Bewertung (0 KI). Nur für die getroffenen Vorgänge Quellen laden.
+  const decisions = decisionsEngine.decideForUser(profile, understood, { userId, limit: 50 });
+  if (!decisions.length) return empty("keine-treffer");
+  const kosById = {};
+  for (const ko of understood) if (ko && ko.id) kosById[ko.id] = ko;
+  const selected = decisions.map((d) => kosById[d.knowledge_object_id]).filter(Boolean);
+  const sourcesByVorgang = await loadSourcesByVorgang(selected);
+  return briefingContract.toBriefingContractV3({ profile, decisions, kosById, sourcesByVorgang });
+}
+
+// Quellen aller Vorgänge PARALLEL laden (nicht seriell) — ein hängender Call darf
+// nicht alle nachfolgenden blockieren. Fallback auf best_source_url erledigt der Adapter.
+async function loadSourcesByVorgang(kos) {
+  const entries = await Promise.all((kos || []).map(async (ko) => {
+    let docs = [];
+    try { docs = await getSourcesForVorgang(ko.vorgang_id); } catch (_) { docs = []; }
+    return [ko.vorgang_id, docs || []];
+  }));
+  return Object.fromEntries(entries);
 }
 
 function compactBriefingPayload(briefing) {
