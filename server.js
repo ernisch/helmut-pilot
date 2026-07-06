@@ -10,7 +10,7 @@ const { getLatestOrDemoBriefing, runDailyPipeline, runLageCheck, runMorningBrief
 const { personalizeBriefing } = require("./lib/helmut/personalization");
 const { buildLearningProfile } = require("./lib/helmut/learning");
 const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getAdminCostsPerUser, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, listMatchingResults, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed } = require("./lib/helmut/storage");
-const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled, activeModelName, isEngineV2Enabled } = require("./lib/helmut/ai");
+const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled, activeModelName } = require("./lib/helmut/ai");
 const { pushStatus, sendBriefingReadyPush, sendLageChangePush, sendPushToPolitician } = require("./lib/helmut/push");
 const auth = require("./lib/helmut/auth");
 const accounts = require("./lib/helmut/accounts");
@@ -161,9 +161,9 @@ async function handleRequest(request, response) {
   // Kein Auth, kein CSRF — nur durch HELMUT_ADMIN_SECRET + ?secret= gesichert, zusaetzlich
   // ratenbegrenzt (SICHERHEIT: verhindert Brute-Force auf HELMUT_ADMIN_SECRET). Ein
   // frueherer, komplett ungeschuetzter Duplikat-Pfad fuer run-understanding wurde entfernt.
-  // Zwei Pfade (engine-flag, lage-backfill) haben eigene, weiter unten geprüfte Gates
-  // (Session/Pilot- bzw. CRON_SECRET-Gate) und fallen hier bewusst durch.
-  const OWN_GATE_DEBUG_PATHS = new Set(["/api/debug/engine-flag", "/api/debug/lage-backfill"]);
+  // Ein Pfad (lage-backfill) hat ein eigenes, weiter unten geprüftes Gate
+  // (CRON_SECRET-Gate) und fällt hier bewusst durch.
+  const OWN_GATE_DEBUG_PATHS = new Set(["/api/debug/lage-backfill"]);
   if (url.pathname.startsWith("/api/debug/") && !OWN_GATE_DEBUG_PATHS.has(url.pathname)) {
     if (!allowRate(request, "debug-secret", 20, 15 * 60 * 1000)) {
       return sendTooManyRequests(response, "Zu viele Debug-Anfragen. Bitte später erneut.");
@@ -419,29 +419,6 @@ async function handleRequest(request, response) {
       enabled: isAiEnabled(),
       model: activeModelName(),
       backend: process.env.AZURE_OPENAI_KEY ? "azure-eu" : "openai"
-    });
-  }
-
-  // TEMPORAER (Diagnose Datenmotor V2): Zeigt, was der laufende Prozess wirklich
-  // in process.env.HELMUT_ENGINE_V2 sieht — Rohwert JSON-kodiert (macht
-  // unsichtbare Zeichen sichtbar), Laenge, das Ergebnis von isEngineV2Enabled()
-  // und ALLE env-Keys mit "ENGINE" im Namen (entlarvt einen Tippfehler-Namen).
-  // Nach der Fehlersuche wieder entfernen. Leakt keine fremden Secrets.
-  // SICHERHEIT: bislang reichte jede gueltige Session/Pilot-Zugang (jede Rolle) fuer
-  // diesen internen Diagnose-Endpunkt — jetzt zusaetzlich hinter dem Debug-Secret.
-  if (url.pathname === "/api/debug/engine-flag") {
-    if (!isDebugSecretOk(request, url)) return sendNotFound(response);
-    const raw = process.env.HELMUT_ENGINE_V2;
-    const engineKeys = Object.keys(process.env)
-      .filter((k) => /ENGINE|HELMUT_ENG/i.test(k))
-      .map((k) => ({ key: JSON.stringify(k), length: k.length }));
-    return sendJson(response, {
-      HELMUT_ENGINE_V2_present: typeof raw !== "undefined",
-      HELMUT_ENGINE_V2_json: JSON.stringify(raw ?? null),
-      HELMUT_ENGINE_V2_length: (raw || "").length,
-      isEngineV2Enabled: isEngineV2Enabled(),
-      control_budget_limit_json: JSON.stringify(process.env.HELMUT_MAX_LLM_CALLS_PER_DAY ?? null),
-      matchingEnvKeys: engineKeys
     });
   }
 

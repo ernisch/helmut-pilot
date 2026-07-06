@@ -1034,56 +1034,6 @@ function personalizationChecks() {
     other.party === "CDU" && other.faction === "CDU/CSU");
 }
 
-// Datenmotor V2 — Commit 4: Hybrid-Scoring hinter Flag HELMUT_ENGINE_V2.
-// Offline-Test: Flag-Parsing + ehrlicher Fallback bei deaktivierter KI (kein Key).
-async function engineV2Checks() {
-  const ai = require(path.join(root, "lib/helmut/ai.js"));
-  const originalFlag = process.env.HELMUT_ENGINE_V2;
-  const originalOpenAi = process.env.OPENAI_API_KEY;
-  const originalAzKey = process.env.AZURE_OPENAI_KEY;
-  const originalAzEnd = process.env.AZURE_OPENAI_ENDPOINT;
-  try {
-    // Flag-Parsing: Default OFF, diverse Wahr-Werte AN.
-    delete process.env.HELMUT_ENGINE_V2;
-    check("V2-Flag: Default AUS (kein Env)", ai.isEngineV2Enabled() === false);
-    process.env.HELMUT_ENGINE_V2 = "1";
-    const on1 = ai.isEngineV2Enabled();
-    process.env.HELMUT_ENGINE_V2 = "true";
-    const on2 = ai.isEngineV2Enabled();
-    process.env.HELMUT_ENGINE_V2 = "off";
-    const off = ai.isEngineV2Enabled();
-    check("V2-Flag: '1'/'true' AN, 'off' AUS", on1 === true && on2 === true && off === false);
-
-    // KI deaktivieren -> ehrlicher Fallback ohne Fake-Inhalt, Items unveraendert.
-    delete process.env.OPENAI_API_KEY;
-    delete process.env.AZURE_OPENAI_KEY;
-    delete process.env.AZURE_OPENAI_ENDPOINT;
-    const briefing = { id: "b-v2", items: [
-      { id: "i1", title: "A", decision: "Sofort reagieren", priority: 80 },
-      { id: "i2", title: "B", decision: "Beobachten", priority: 50 }
-    ] };
-    const out = await ai.enrichBriefingWithAiV2(briefing, { id: "cem-ince", fullName: "Cem Ince" });
-    check("V2-Fallback (KI aus): Items unveraendert, ehrlich markiert (kein Fake)",
-      out.ai && out.ai.enabled === false && out.v2 && out.v2.scored === false
-        && out.items.length === 2 && out.items[0].id === "i1" && !out.items[0].aiEnhanced,
-      `enabled=${out.ai && out.ai.enabled} scored=${out.v2 && out.v2.scored}`);
-
-    // aiScoreCandidates mit leerer Liste -> [] (kein Call, kein Crash).
-    const empty = await ai.aiScoreCandidates([], { id: "x" });
-    check("V2: aiScoreCandidates([]) -> [] (kein LLM-Call)", Array.isArray(empty) && empty.length === 0);
-
-    // Kostenoptimierung: V2 nutzt gpt-5-mini (OpenAI direkt, kein Azure).
-    const origV2Model = process.env.HELMUT_ENGINE_V2_MODEL;
-    delete process.env.HELMUT_ENGINE_V2_MODEL;
-    check("V2-Kosten: Default-Modell ist gpt-5-mini (guenstig)", ai.v2ModelName() === "gpt-5-mini", `model=${ai.v2ModelName()}`);
-    if (origV2Model !== undefined) process.env.HELMUT_ENGINE_V2_MODEL = origV2Model;
-  } finally {
-    if (originalFlag === undefined) delete process.env.HELMUT_ENGINE_V2; else process.env.HELMUT_ENGINE_V2 = originalFlag;
-    if (originalOpenAi !== undefined) process.env.OPENAI_API_KEY = originalOpenAi;
-    if (originalAzKey !== undefined) process.env.AZURE_OPENAI_KEY = originalAzKey;
-    if (originalAzEnd !== undefined) process.env.AZURE_OPENAI_ENDPOINT = originalAzEnd;
-  }
-}
 
 // Datenmotor V2 — Commit 6: Erklaerbarkeit im Pipeline-Debug-Report.
 function debugReportChecks() {
@@ -1301,7 +1251,6 @@ async function main() {
   personalizationChecks();
   entityChecks();
   debugReportChecks();
-  await engineV2Checks();
   await cronChecks();
   await presentationBackfillEndpointChecks();
   await llmLoggingChecks();

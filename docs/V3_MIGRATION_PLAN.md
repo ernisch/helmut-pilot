@@ -25,7 +25,7 @@ Analysen + Synthese).
 | D | `toBriefingContractV3`-Adapter (`briefingContract.js`) — V3-Daten → exakte V2-Vertragsform, deterministisch/0-KI. **Gebaut + getestet**, noch nicht am Live-Read-Pfad. | ✅ erledigt (Build) | contract-adapter 22/22 |
 | — | Adversarialer Review der Decision Engine + 3 Fixes (vorgang_id persistiert, chance/risk gekappt, deadline sanitisiert) | ✅ erledigt | decisions 38/38 |
 | — | Radar-Server-Engine aus KOs (`radar.js`) — deterministische Klassifikation aus Strukturfeldern, personen-/parteischarf. **Gebaut + getestet**, noch nicht am Live-Read-Pfad/Client. | ✅ erledigt (Build) | radar 22/22 |
-| — | Toten `HELMUT_ENGINE_V2`-Motor entfernen | ⏳ offen | — |
+| — | Toten `HELMUT_ENGINE_V2`-Motor entfernt (ai.js-Hybrid-Block + Flag + `_MODEL` + `/api/debug/engine-flag` + p1-Checks + orphaned `maxCandidatesPerBriefing`). `referentEngine` bewusst unberührt (separat, aus personalization.js). | ✅ erledigt | p1 170/170, require-smoke, alle offline grün |
 | C/E | Live-Cutover + V2-Löschung (Prod-Flags, Live-Verifikation) | 🔒 operativ (Betreiber) | smoke/contract gegen Deployment |
 
 > **Nur noch 5 V3-Flags** (statt 6): `HELMUT_V3_BRIEFING` ist entfernt — die
