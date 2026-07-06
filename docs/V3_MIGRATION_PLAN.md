@@ -103,7 +103,7 @@ Büro / Office                      →  —   (V3 vorhanden, flag-gated aus; V2
 | `HELMUT_V3_OFFICE` | `isOfficeEnabled` in `office.js`. | An, sobald `complete`-KOs existieren; Gate löschen. Ersetzt `ai.generateCommunicationDraft` (V2-Comms). |
 | `HELMUT_V3_RADAR` | Reiner UI-Toggle (`server.js:279` → Client `renderRadarV3View`). | **ENTSCHEIDUNG:** Server-Engine oder Client-View? Danach Flag + `features`-Objekt löschen. |
 | `HELMUT_ENGINE_V2` (+`_MODEL`) | **Toter** „Datenmotor V2"-Hybrid-Scoring-Versuch (`ai.js` `enrichBriefingWithAiV2`/`applyV2Upgrade`). **Kein V3-Flag.** | **Sofort löschbar** (Default aus, läuft nie): Flag + `ai.js`-Block + `scheduler`-Toggle + `/api/debug/engine-flag` + `referentEngine`-Plumbing + p1-`engineV2Checks`. |
-| `HELMUT_UNDERSTANDING_LOCK` | `understandingLockEnabled`. **Codiert, aber NIRGENDS aufgerufen.** | **Vor** Write-Aktivierung in `understanding.js` verdrahten (sonst Doppel-Abrechnung beim 2×/Tag-Cron), dann immer-an, Flag löschen. |
+| `HELMUT_UNDERSTANDING_LOCK` | `understandingLockEnabled`. **Bereits verdrahtet** — `runUnderstandingShadow` (scheduler.js:218) und `runPendingUnderstandingShadow` (`/api/cron/understanding`, server.js:699) akquirieren/releasen den globalen Lock über `defaultDeps.acquireLock`; die einzigen Prod-Aufrufer von `understandOneCluster` sind diese beiden gelockten Runner. Inert nur, solange das Flag aus ist. | Für den Write-Betrieb **Flag an** (verhindert Doppel-Abrechnung beim 2×/Tag-Cron); am Ende immer-an schalten, Flag löschen. **Kein Code-Fix nötig — Naht ist da.** |
 | `HELMUT_LLM_BUDGET_FAIL_CLOSED` | `canSpendLlm` fail-open vs. fail-closed bei Budget-Lookup-Fehler. | Für Pilot **an** bevor bezahlte Pipeline läuft; danach hart fail-closed verdrahten, Flag löschen. |
 
 ---
@@ -215,8 +215,7 @@ Risiko · Tests · was danach gelöscht werden kann.**
 - **Verify:** `test:p1`, `test:goldset`, `test:lage`, `node --check` grün.
 
 ### Phase B — V3-**Write**-Pipeline in Pilot-Env beweisen *(Read bleibt V2)*
-- `acquire/releaseGlobalUnderstandingLock` in `understanding.js` um den globalen
-  Batch verdrahten (heute codiert, aber nie aufgerufen).
+- *(Lock ist bereits verdrahtet — kein Code-Fix; nur Flag anschalten.)*
 - Pilot/Staging: `HELMUT_V3_STORE`, `_LAZY_UNDERSTANDING`, `_MATCHING`,
   `HELMUT_UNDERSTANDING_LOCK`, `HELMUT_LLM_BUDGET_FAIL_CLOSED` = an. Read bleibt V2.
 - `/api/cron/crawl` → `/api/cron/understanding` ausführen; `knowledge_objects`
@@ -340,33 +339,45 @@ Risiko · Tests · was danach gelöscht werden kann.**
 
 ---
 
-## 7. Offene Entscheidungen (brauchen dich)
+## 7. Entscheidungen (getroffen 2026-07-06)
 
-Diese Punkte ändern **den Bauumfang** — insbesondere ob Phase D ein großer Neubau
-oder ein Rückbau ist:
+Die vier bau-bestimmenden Forks sind entschieden:
 
-1. **Helmut/Recommendations-Fläche:** `toBriefingContractV3`-Adapter **bauen**
-   (Helmut-Tab + Home-Recommendations erhalten) **oder** die Fläche **zurückbauen**
-   und die App auf **Lage + Office** reduzieren? *(Größter Hebel.)*
-2. **„Helmut lernt" (learning.js):** streichen (sichtbare Funktion entfällt) oder
-   V3-Ersatz bauen?
-3. **Zwei Briefing-Renderer:** Rollen-Text-Briefing (`briefing.js` + `.j2`) noch
-   Produkt, oder von Lage-Karten abgelöst (→ löschen)?
-4. **Radar-Identität:** echter Server-Engine (emittiert Bucket aus KO-Feldern) oder
-   die Client-View? (Heute null Testabdeckung.)
-5. **Backfill-Kosten & -Freigabe:** Produktion hat **0 KOs**. Wer gibt die LLM-
-   Ausgaben (1 bezahlter Understanding-Call pro Vorgang) + ein Tages-Kostenlimit
-   frei, um genug KOs zu backfillen, dass die Lage nicht leer ist?
-6. **Empty-to-Live-Toleranz:** Kann der eine Pilot (cem-ince) ein „Shadow-anhäufen-
-   dann-umschalten"-Fenster tolerieren, oder atomar nach Backfill-Schwelle umschalten?
-7. **`decisions`-Layer:** wird die (im Schema vorhandene, CRUD-lose) Entscheidungs-
-   tabelle für Office/Radar/Helmut gebraucht → CRUD bauen?
-8. **Single-Tenant-Hardcodes:** Cem-Ince/„Arbeit und Soziales"-Biases liegen auf dem
-   **Live-Pfad** (personalization.js/runtime.js). Vor Tenant #2 konfigurierbar machen,
-   oder Pilot bleibt Single-Tenant durch den Cutover?
-9. **Safe-Rollout-Gerüst:** dokumentiertes DUAL_WRITE/CANARY/READ_THROUGH/
-   SHADOW_COMPARE ist **komplett ungebaut**. Bauen (graduell, reversibel) oder — da
-   effektiv **ein** Nutzer — direkter Pilot-Env-First-Switch?
+1. **Helmut/Recommendations-Fläche → V3-Adapter BAUEN.** `toBriefingContractV3`
+   (KOs + Matching + `decisions`) speist Helmut-Tab + Home-Recommendations. Die
+   Fläche bleibt als Produkt erhalten. → Phase D ist ein Neubau.
+2. **Radar → Server-Engine aus KOs.** Radar wird server-seitig aus KO-Feldern
+   (`mentioned_people`/`mps`/`parties`) gebaut, ein Renderer, mit Tests. Der
+   client-seitige Klassifikator + `renderRadarView`(V2) + `features.v3Radar`
+   entfallen.
+3. **Rollen-Text-Briefing → LÖSCHEN.** `briefing.js` + `templates/{mdb,fraktion,
+   mitarbeiter}.j2` + Flag `HELMUT_V3_BRIEFING` werden entfernt. Die Lage-Karten
+   (`koToVorgangCard`) sind die **eine** V3-Briefing-Oberfläche.
+4. **„Helmut lernt" (learning.js) → vorerst STREICHEN.** `learning.js` + zugehörige
+   Endpunkte + Lernmodus-Health-Check entfallen. Späterer sauberer V3-Feedback-Loop
+   auf der bereits vorhandenen `interactions`-Tabelle möglich.
+
+Zusätzlich entschieden:
+- **`decisions`-Layer wird gebaut** (CRUD in storage.js) — Grundlage für Adapter,
+  Radar und Office (`decision_id`).
+- **Single-Tenant bleibt** durch den Cutover (ein Pilot cem-ince); Hardcodes werden
+  im Zuge des V2-Rückbaus in Profil-/Config-Daten überführt, nicht vorher.
+
+### Noch operativ (durch den Betreiber, gegen das Live-Deployment)
+- **Backfill-Kosten & -Freigabe:** Produktion hat 0 KOs. Freigabe der LLM-Ausgaben
+  (1 bezahlter Understanding-Call pro Vorgang) + Tages-Kostenlimit, um genug KOs zu
+  backfillen, dass Lage nicht leer ist.
+- **Empty-to-Live-Umschaltung:** Shadow-anhäufen-dann-umschalten vs. atomar nach
+  Backfill-Schwelle.
+- **Safe-Rollout-Gerüst:** DUAL_WRITE/CANARY/READ_THROUGH/SHADOW_COMPARE bleibt
+  **ungebaut** — bei effektiv einem Nutzer direkter Pilot-Env-First-Switch.
+
+> **Sandbox-Hinweis:** Diese Entwicklungsumgebung hat kein Supabase, keine KI-Keys,
+> keine Live-Daten. Offline **baubar + unit-testbar** (injizierte Deps, wie p1/lage):
+> Contract-Adapter, `decisions`-CRUD, Lock-Wiring, Radar-Server-Engine, Löschen des
+> toten `HELMUT_ENGINE_V2`. **Nur live** (Betreiber gegen Vercel) ausführ-/
+> verifizierbar: Prod-Flag-Flips, Live-Cutover, Live-V2-Löschung + Smoke/Contract
+> gegen das Deployment.
 
 ---
 
@@ -377,7 +388,8 @@ oder ein Rückbau ist:
 2. **Stiller Contract-Bruch:** Contract-Test deckt nur V2-app/start. Lage-Karten,
    Client-60/40, Push-Shaping, Radar sind **ungedeckt** — Feld-Rename degradiert still.
 3. **Unbewiesene bezahlte Pipeline:** globaler Understanding-Call pro Vorgang;
-   Lock unverdrahtet (Doppel-Abrechnung), Budget default fail-OPEN.
+   Lock ist verdrahtet, aber flag-inert (bis `HELMUT_UNDERSTANDING_LOCK=1` droht
+   Doppel-Abrechnung beim 2×/Tag-Cron); Budget default fail-OPEN.
 4. **Ungegatetes V2-`personalization.js`:** live auf Read **und** Write, ohne Flag,
    ohne V3-Ersatz — vor Phase-D-Producer löschen = Home/Helmut/Push/Health leer.
 5. **Doppelte heilige Entscheidung:** 60/40 + erfundene Scores im Browser; Server-
