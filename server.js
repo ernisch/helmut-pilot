@@ -232,6 +232,15 @@ async function handleRequest(request, response) {
     const requested = url.searchParams.get("politicianId") || url.searchParams.get("profileId");
     politicianId = auth.pickPoliticianId(authUser, requested, allowedPoliticians);
     if (!politicianId) politicianId = await defaultPoliticianIdForUser(authUser, allowedPoliticians);
+    // DATENLECK-SCHUTZ: Ein eingeloggter Account-Nutzer OHNE gültiges Mandat darf
+    // NIE still auf cem-ince (oder ein fremdes Mandat) fallen. Klarer Zustand statt
+    // fremder Daten: API -> 403 (no-mandate); SPA-HTML/Assets fallen durch (Leerzustand).
+    if (!politicianId) {
+      if (url.pathname.startsWith("/api/") && !url.pathname.startsWith("/api/cron/")) {
+        return sendForbidden(response, "Kein Mandat zugewiesen. Bitte an einen Administrator wenden.", "no-mandate");
+      }
+      // sonst: statische Auslieferung unten (Login/leerer Zustand), kein Daten-Read.
+    }
   } else {
     // Legacy-Pilot-Modus: EIN geteiltes Pilotmandat hinter PILOT_SECRET.
     // SICHERHEIT: Ein clientseitig gesetztes ?politicianId darf hier NICHT als
@@ -2580,11 +2589,20 @@ async function listAllowedProfiles(user, allowed) {
 }
 
 async function defaultPoliticianIdForUser(user, allowed) {
-  if (user.role === "abgeordneter") return user.politicianId || cemInceProfile.id;
+  // SaaS-Datenleck-Schutz: KEIN stiller Fallback auf cem-ince (oder ein fremdes
+  // Mandat) für Account-Nutzer. Wer kein gültiges eigenes/zugewiesenes Mandat hat,
+  // bekommt null -> der Aufrufer liefert einen klaren Fehler statt fremder Daten.
+  if (user.role === "abgeordneter") return user.politicianId || null;
   if (Array.isArray(allowed) && allowed.length) return allowed[0];
-  const users = await accounts.listUsers();
-  const firstMandate = users.find((entry) => entry.role === "abgeordneter" && entry.politicianId);
-  return firstMandate ? firstMandate.politicianId : cemInceProfile.id;
+  // NUR Admin (allowed==="all") darf mangels Auswahl auf ein beliebiges ECHTES
+  // Mandat fallen — Admins sind für alle Mandate berechtigt. Referent/Demo OHNE
+  // Zuweisung bekommt KEIN Mandat (null) -> klarer Fehler statt fremder Daten.
+  if (allowed === "all") {
+    const users = await accounts.listUsers();
+    const firstMandate = users.find((entry) => entry.role === "abgeordneter" && entry.politicianId);
+    return firstMandate ? firstMandate.politicianId : null;
+  }
+  return null;
 }
 
 async function buildAdminOverview() {
@@ -2988,6 +3006,11 @@ function sendUnauthorized(response) {
 function sendNotFound(response) {
   response.writeHead(404, jsonHeaders());
   response.end(JSON.stringify({ error: "Not found" }, null, 2));
+}
+
+function sendForbidden(response, error = "Forbidden", reason = null) {
+  response.writeHead(403, jsonHeaders());
+  response.end(JSON.stringify(reason ? { error, reason } : { error }, null, 2));
 }
 
 // ---------------------------------------------------------------------------

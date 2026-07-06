@@ -114,6 +114,62 @@ async function presentationBackfillEndpointChecks() {
   }
 }
 
+// SaaS-Hardening Step 1: kein stiller cem-ince-/Fremd-Mandats-Fallback.
+// - Isolations-Kern (auth.pickPoliticianId) direkt geprüft.
+// - E2E im Account-Modus: eingeloggter Nutzer OHNE Mandat -> 403 no-mandate,
+//   NIEMALS cem-ince-Daten.
+async function saasMandateHardeningChecks() {
+  const auth = require(path.join(root, "lib/helmut/auth.js"));
+  // Unit: Isolation
+  check("SaaS: Abgeordneter an eigenes Mandat gebunden (fremdes ?politicianId ignoriert)",
+    auth.pickPoliticianId({ role: "abgeordneter", politicianId: "mdb-a" }, "mdb-b", ["mdb-a"]) === "mdb-a");
+  check("SaaS: Referent — nicht zugewiesenes Mandat wird blockiert (-> erstes erlaubtes)",
+    auth.pickPoliticianId({ role: "referent" }, "mdb-fremd", ["mdb-a"]) === "mdb-a");
+  check("SaaS: Referent ohne Zuweisung -> kein Mandat (null)",
+    auth.pickPoliticianId({ role: "referent" }, "mdb-a", []) === null);
+  check("SaaS: Abgeordneter ohne Mandat -> null (kein Fallback)",
+    auth.pickPoliticianId({ role: "abgeordneter", politicianId: null }, null, []) === null);
+
+  function requestFull(server, { method = "GET", pathname, headers = {}, body = null }) {
+    const { port } = server.address();
+    return new Promise((resolve, reject) => {
+      const req = http.request({ host: "127.0.0.1", port, method, path: pathname, headers, timeout: 20000 }, (res) => {
+        let b = ""; res.on("data", (c) => (b += c)); res.on("end", () => resolve({ status: res.statusCode, body: b, headers: res.headers }));
+      });
+      req.on("timeout", () => req.destroy(new Error("request timeout")));
+      req.on("error", reject);
+      if (body != null) req.write(body);
+      req.end();
+    });
+  }
+
+  // E2E: Account-Modus, Admin ohne jedes Mandat
+  const prev = { mode: process.env.HELMUT_AUTH_MODE, email: process.env.HELMUT_ADMIN_EMAIL, pass: process.env.HELMUT_ADMIN_PASSWORD };
+  process.env.HELMUT_AUTH_MODE = "accounts";
+  process.env.HELMUT_ADMIN_EMAIL = "p1admin@test.local";
+  process.env.HELMUT_ADMIN_PASSWORD = "p1-admin-pass-123";
+  const server = http.createServer(handler);
+  await new Promise((r) => server.listen(0, "127.0.0.1", r));
+  try {
+    const loginBody = JSON.stringify({ email: "p1admin@test.local", password: "p1-admin-pass-123" });
+    const login = await requestFull(server, { method: "POST", pathname: "/api/auth/login", headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(loginBody) }, body: loginBody });
+    const setCookie = (login.headers["set-cookie"] || [])[0] || "";
+    const cookie = setCookie.split(";")[0];
+    check("SaaS: Account-Login liefert Session-Cookie", login.status === 200 && Boolean(cookie), `status=${login.status}`);
+    const start = await requestFull(server, { pathname: "/api/app/start", headers: { Cookie: cookie } });
+    let j = {}; try { j = JSON.parse(start.body); } catch (_) {}
+    check("SaaS: Account-Nutzer OHNE Mandat -> 403 no-mandate (kein stiller Fallback)",
+      start.status === 403 && j.reason === "no-mandate", `status=${start.status} reason=${j.reason}`);
+    check("SaaS: Antwort für nicht-mandatierten Account enthält KEINE cem-ince-Daten",
+      !String(start.body).toLowerCase().includes("cem-ince") && !String(start.body).includes("Cem Ince"), start.body.slice(0, 80));
+  } finally {
+    await new Promise((r) => server.close(r));
+    if (prev.mode === undefined) delete process.env.HELMUT_AUTH_MODE; else process.env.HELMUT_AUTH_MODE = prev.mode;
+    if (prev.email === undefined) delete process.env.HELMUT_ADMIN_EMAIL; else process.env.HELMUT_ADMIN_EMAIL = prev.email;
+    if (prev.pass === undefined) delete process.env.HELMUT_ADMIN_PASSWORD; else process.env.HELMUT_ADMIN_PASSWORD = prev.pass;
+  }
+}
+
 // /api/debug/briefing: existiert, secret-geschützt (fail-closed 404) und V3
 // (engine:"v3"). Deckt genau den Live-Fall ab: Authorization: Bearer <Secret>,
 // Query-Secrets AUS (wie Production). Gate = HELMUT_ADMIN_SECRET, ersatzweise CRON_SECRET.
@@ -1309,6 +1365,7 @@ async function main() {
   await cronChecks();
   await presentationBackfillEndpointChecks();
   await debugBriefingEndpointChecks();
+  await saasMandateHardeningChecks();
   await llmLoggingChecks();
   await llmBudgetChecks();
   await c1SafetyNetChecks();
