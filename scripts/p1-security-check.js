@@ -114,6 +114,42 @@ async function presentationBackfillEndpointChecks() {
   }
 }
 
+// /api/debug/briefing: existiert, secret-geschützt (fail-closed 404) und V3
+// (engine:"v3"). Deckt genau den Live-Fall ab: Authorization: Bearer <Secret>,
+// Query-Secrets AUS (wie Production). Gate = HELMUT_ADMIN_SECRET, ersatzweise CRON_SECRET.
+async function debugBriefingEndpointChecks() {
+  const server = http.createServer(handler);
+  await new Promise((r) => server.listen(0, "127.0.0.1", r));
+  const p = "/api/debug/briefing";
+  const parse = (r) => { try { return JSON.parse(r.body); } catch (_) { return {}; } };
+  const prevAdmin = process.env.HELMUT_ADMIN_SECRET, prevCron = process.env.CRON_SECRET, prevQ = process.env.HELMUT_ALLOW_QUERY_SECRETS;
+  try {
+    delete process.env.HELMUT_ALLOW_QUERY_SECRETS; // wie Production: nur Bearer, kein ?secret=
+    // A) HELMUT_ADMIN_SECRET gesetzt
+    process.env.HELMUT_ADMIN_SECRET = "p1-admin-secret";
+    delete process.env.CRON_SECRET;
+    const noAuth = await request(server, { pathname: p });
+    check("Debug-Briefing ohne Secret -> 404 (fail closed)", noAuth.status === 404, `status=${noAuth.status}`);
+    const wrong = await request(server, { pathname: p, headers: { Authorization: "Bearer falsch" } });
+    check("Debug-Briefing mit falschem Secret -> 404", wrong.status === 404, `status=${wrong.status}`);
+    const ok = await request(server, { pathname: p, headers: { Authorization: "Bearer p1-admin-secret" } });
+    const okj = parse(ok);
+    check("Debug-Briefing mit Bearer HELMUT_ADMIN_SECRET -> 200 + engine v3",
+      ok.status === 200 && okj.engine === "v3" && okj.briefing && okj.briefing.engine === "v3", `status=${ok.status} engine=${okj.engine}`);
+    // B) HELMUT_ADMIN_SECRET NICHT gesetzt -> CRON_SECRET ist der Fallback (konsistent zu hasAdminBypass)
+    delete process.env.HELMUT_ADMIN_SECRET;
+    process.env.CRON_SECRET = "p1-cron-secret";
+    const cronOk = await request(server, { pathname: p, headers: { Authorization: "Bearer p1-cron-secret" } });
+    check("Debug-Briefing: ohne ADMIN_SECRET akzeptiert Bearer CRON_SECRET (Fallback) -> 200 + engine v3",
+      cronOk.status === 200 && parse(cronOk).engine === "v3", `status=${cronOk.status}`);
+  } finally {
+    if (prevAdmin === undefined) delete process.env.HELMUT_ADMIN_SECRET; else process.env.HELMUT_ADMIN_SECRET = prevAdmin;
+    if (prevCron === undefined) delete process.env.CRON_SECRET; else process.env.CRON_SECRET = prevCron;
+    if (prevQ === undefined) delete process.env.HELMUT_ALLOW_QUERY_SECRETS; else process.env.HELMUT_ALLOW_QUERY_SECRETS = prevQ;
+    await new Promise((r) => server.close(r));
+  }
+}
+
 function staticChecks() {
   const crawler = fs.readFileSync(path.join(root, "lib/helmut/crawler.js"), "utf8");
   check("TLS: kein rejectUnauthorized im Crawler", !crawler.includes("rejectUnauthorized"));
@@ -1272,6 +1308,7 @@ async function main() {
   debugReportChecks();
   await cronChecks();
   await presentationBackfillEndpointChecks();
+  await debugBriefingEndpointChecks();
   await llmLoggingChecks();
   await llmBudgetChecks();
   await c1SafetyNetChecks();
