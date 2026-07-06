@@ -558,7 +558,10 @@ async function handleRequest(request, response) {
     if (!authorizeCron(request, url, response)) return;
     return handleAsync(response, async () => {
       const profile = await activeProfile(politicianId);
-      const briefing = await runMorningBriefing(politicianId);
+      // V3: das Briefing entsteht frisch aus den aktuellen Knowledge Objects
+      // (Decision Engine, 0 KI) — kein V2-runMorningBriefing mehr. Der Daten-Refresh
+      // (Crawl -> Understanding) läuft über /api/cron/crawl + /api/cron/understanding.
+      const briefing = await buildV3Briefing(profile, politicianId);
       const push = await sendBriefingReadyPush(briefing, profile);
       return { briefing, push };
     });
@@ -566,7 +569,9 @@ async function handleRequest(request, response) {
 
   if (url.pathname === "/api/cron/pipeline") {
     if (!authorizeCron(request, url, response)) return;
-    return handleAsync(response, () => runDailyPipeline(politicianId));
+    // V3-Pipeline: der Crawl speist die V3-Tabellen (raw_documents) und triggert
+    // Understanding/Matching/Decision (runSourceCrawl). Kein V2-Briefing-Lauf mehr.
+    return handleAsync(response, () => runSourceCrawl(politicianId));
   }
 
   // Morgen-Health-Report per WhatsApp (CallMeBot). Antwort enthaelt den Text +
