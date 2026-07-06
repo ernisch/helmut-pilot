@@ -116,6 +116,19 @@ check("Signal trägt title + signalType + url + reason", sig && sig.title && sig
     ownRisk.buckets.mention.some((s) => s.vorgangId === "vg-or") && ownRisk.buckets.risk.some((s) => s.vorgangId === "vg-or"));
 }
 
+// --- 9) Scan-Umfang: Eigenerwähnung unabhängig von Top-Risk/Party-Signalen ---
+{
+  const ince = { id: "u-ci2", fullName: "Cem İnce", party: "Die Linke" };
+  // 80 aktuelle Partei-Signale + 1 SEHR ALTE Eigenerwähnung: Anzeige-Cap darf die
+  // Eigenerwähnung nicht wegkappen (Produktanforderung 4).
+  const many = [];
+  for (let i = 0; i < 80; i++) many.push({ ...base, id: "kp" + i, vorgang_id: "vp" + i, mentioned_parties: ["Die Linke"], updated_at: iso(i * 3600e3) });
+  many.push({ ...base, id: "kp-ince", vorgang_id: "vp-ince", mentioned_mps: ["Cem İnce"], updated_at: new Date(0).toISOString() });
+  const res = radar.buildRadarSignals(ince, many, { now: NOW, limit: 60 });
+  check("Anzeige-Cap: alte Eigenerwähnung wird NICHT weggekappt (bleibt im mention-Bucket)",
+    res.buckets.mention.some((s) => s.vorgangId === "vp-ince"));
+}
+
 // --- 6) Shadow-Runner: Fail-safe + Happy-Path (injizierte Deps) -------------
 (async () => {
   const off = await radar.buildRadarForUser({ userId: "u-1" }, { enabled: () => false });
@@ -126,6 +139,15 @@ check("Signal trägt title + signalType + url + reason", sig && sig.title && sig
     listKnowledgeObjects: () => allKos
   });
   check("buildRadarForUser Happy-Path: erwähnte Signale, korrekt gruppiert", ok.total === 6 && ok.buckets.risk.length >= 1);
+
+  // Produktanforderung 3/4: Scan-Umfang groß + unabhängig vom Anzeige-Limit.
+  let scanArgs = null;
+  await radar.buildRadarForUser({ profile, now: NOW, limit: 60 }, {
+    enabled: () => true,
+    listKnowledgeObjects: (o) => { scanArgs = o; return []; }
+  });
+  check("buildRadarForUser: lädt großen Scan-Umfang (>=200), nicht nur das Anzeige-Limit",
+    scanArgs && Number(scanArgs.limit) >= 200, `limit=${scanArgs && scanArgs.limit}`);
 
   const errSafe = await radar.buildRadarForUser({ profile, now: NOW }, {
     enabled: () => true,
