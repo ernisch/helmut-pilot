@@ -52,7 +52,7 @@ Pipeline/Cron/Ops-mit-Daten nicht) und werden daher **nicht blind gelöscht**:
 | `personalization.js` | Modul | nur noch vom V2-Write-Pipeline genutzt (aus dem Read-Path entfernt) |
 | `runtime.js` `generateBriefing`-Familie | Modul | vom V2-Write-Pipeline + Demo-Endpunkten genutzt; `cemInceProfile` ist Single-Tenant-Default (in ~5 Stellen) |
 | ~~`getLatestBriefing` (V2-Blob-Lesen) | server.js Ops/Health/Release-Check~~ | ✅ **Step 2 erledigt:** Ops/Health/Release-Check lesen jetzt `buildV3Briefing` + `v3BriefingQuality` (Datenmotor-V3-Signal); `referentEngine`/`quality`-Blob raus. Import `getLatestBriefing` ist jetzt ungenutzt (Cleanup im Modul-Löschschritt). |
-| `runLageCheck` regeneriert V2-Briefing | scheduler.js | Lage-Check-Feature erzeugt bei neuer Lage ein V2-Briefing |
+| ~~`runLageCheck` regeneriert V2-Briefing | scheduler.js~~ | ✅ **Step 3 erledigt:** Lage-Check liest Vorwissen aus verstandenen Knowledge Objects (nicht mehr `getLatestBriefing`) und faltet bei neuer Lage die frischen Items via `foldLageItemsIntoV3` (understanding→matching→decisions, zeitbudgetiert) in V3 — **kein** `runMorningBriefing` mehr, kein V2-Fallback. |
 | `/api/briefing/latest`, `/api/briefing/demo`, `/api/profile/demo` | server.js | V2-Read/Demo-Endpunkte (vom Client NICHT für die Anzeige gefetcht) |
 | Flags `HELMUT_V3_STORE/_MATCHING/_LAZY_UNDERSTANDING/_OFFICE` + `HELMUT_UNDERSTANDING_LOCK` | env | erst „unbedingt live" schalten, wenn V3 als alleiniger Store bestätigt |
 
@@ -67,7 +67,13 @@ Pipeline/Cron/Ops-mit-Daten nicht) und werden daher **nicht blind gelöscht**:
    `releaseCheck`/`pilotReadiness`/`operationalStatus`/`computeReleaseCheck`/`buildHealthReport` + `/api/ops/status`-
    Antwort lesen jetzt `buildV3Briefing`; Check „Referentenmodus"→„Datenmotor V3"; Smoke-Asserts (Ops + `/api/briefing/latest`)
    auf V3-Signale (`briefing.engine==="v3"`, `datenmotor.score`) umgestellt. Offline-Gate 8/8 grün.
-3. `runLageCheck` auf V3 umstellen (kein V2-Briefing mehr regenerieren).
+3. ~~`runLageCheck` auf V3 umstellen (kein V2-Briefing mehr regenerieren).~~ ✅ **erledigt (Step 3):**
+   `runLageCheck` liest Vorwissen aus verstandenen KOs statt `getLatestBriefing`; „Refresh" faltet die
+   frisch gecrawlten Lage-Items via `foldLageItemsIntoV3` (persistRawDocumentsShadow→runUnderstandingShadow
+   [budget `HELMUT_LAGE_UNDERSTAND_BUDGET_MS`, default 60s]→runMatchingShadow→runDecisionShadow) in V3.
+   `runMorningBriefing`-Aufruf + `briefingId`/`briefing`-Rückgabe raus; stabile Lage-Meldung ohne V2-Feldzugriff.
+   `/api/cron/lage-check` wie Step 1 mit `withTimeout` (280s) + Timing-Log gehärtet. Offline-Gate 8/8 grün.
+   `runMorningBriefing` bleibt (nur noch `runDailyPipeline`) — Löschung erst in Step 4.
 4. Erst dann `runMorningBriefing` + `personalization.js` + `runtime.js`-Briefing-Familie
    löschen (vorher `cemInceProfile`/`demoSources`/`getActiveProfile` in ein Config-Modul
    verschieben). Nach jedem Schritt: `npm test` (Smoke) + `npm run test:contract` gegen

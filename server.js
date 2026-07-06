@@ -614,10 +614,19 @@ async function handleRequest(request, response) {
 
   if (url.pathname === "/api/cron/lage-check") {
     if (!authorizeCron(request, url, response)) return;
+    // V3: Lage-Check regeneriert kein V2-Briefing mehr — bei neuer Lage werden die
+    // frischen Items in Knowledge Objects + Decisions gefaltet (runLageCheck).
+    // Hart begrenzt (280s < maxDuration 300s), damit der Cron IMMER antwortet;
+    // der interne Understanding-Loop ist zeitbudgetiert + fail-safe.
     return handleAsync(response, async () => {
+      const t0 = Date.now();
       const profile = await activeProfile(politicianId);
-      const lageCheck = await runLageCheck(politicianId);
-      const push = await sendLageChangePush(lageCheck, profile);
+      const lageCheck = await withTimeout(runLageCheck(politicianId), 280000, "cron-lage-check")
+        .catch((error) => ({ status: "stable", bounded: true, reason: "lage-check-timeout", error: error && error.message }));
+      const tCheck = Date.now();
+      const push = await withTimeout(sendLageChangePush(lageCheck, profile), 30000, "cron-lage-push")
+        .catch((error) => ({ ok: false, reason: "push-timeout", error: error && error.message }));
+      console.log(`[cron/lage-check] check=${tCheck - t0}ms push=${Date.now() - tCheck}ms status=${lageCheck && lageCheck.status}`);
       return { lageCheck, push };
     });
   }
