@@ -7,7 +7,6 @@ loadLocalEnv();
 
 const { cemInceProfile, demoRawItems, demoSources, generateBriefing } = require("./lib/helmut/runtime");
 const { getLatestOrDemoBriefing, runDailyPipeline, runLageCheck, runMorningBriefing, runSourceCrawl } = require("./lib/helmut/scheduler");
-const { personalizeBriefing } = require("./lib/helmut/personalization");
 const { buildLearningProfile } = require("./lib/helmut/learning");
 const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getAdminCostsPerUser, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, listMatchingResults, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed } = require("./lib/helmut/storage");
 const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled, activeModelName } = require("./lib/helmut/ai");
@@ -293,15 +292,6 @@ async function handleRequest(request, response) {
     }
   }
 
-  if (url.pathname === "/api/briefing/demo") {
-    if (!hasAdminBypass(request, url)) return sendNotFound(response);
-    return handleAsync(response, async () => {
-      const profile = await activeProfile(politicianId);
-      const demo = generateBriefing(profile, demoRawItems, demoSources);
-      return personalizeBriefing(demo, profile, await getTopicMemory(profile.id), await getInteractions(profile.id));
-    });
-  }
-
   if (url.pathname === "/api/briefing/latest") {
     return handleAsync(response, async () => {
       const profile = await activeProfile(politicianId);
@@ -312,14 +302,11 @@ async function handleRequest(request, response) {
   if (url.pathname === "/api/briefing/run") {
     if (previewMode) return sendPreviewReadOnly(response);
     return handleAsync(response, async () => {
-      const latest = await getLatestBriefing(politicianId);
-      if (!isForcedPilotRun(request, url) && !hasAdminBypass(request, url) && isRecent(latest?.generatedAt || latest?.date, manualRunMinIntervalMs)) {
-        return {
-          ...latest,
-          skippedReason: "Briefing wurde gerade erst erzeugt. Helmut nutzt den letzten Lauf, um unnötige Kosten zu vermeiden."
-        };
-      }
-      return runMorningBriefing(politicianId);
+      // V3: das Briefing entsteht bei jedem Lesen frisch aus den aktuellen
+      // Knowledge Objects (Decision Engine, 0 KI) — kein separater V2-Erzeugungslauf.
+      // Der Daten-Refresh (Crawl -> Understanding) läuft über /api/pipeline/run bzw. Cron.
+      const profile = await activeProfile(politicianId);
+      return latestBriefingPayload({ politicianId, profile, url, previewMode, compact: isCompactResponse(url) });
     });
   }
 
@@ -340,16 +327,17 @@ async function handleRequest(request, response) {
   if (url.pathname === "/api/pipeline/run") {
     if (previewMode) return sendPreviewReadOnly(response);
     return handleAsync(response, async () => {
+      // V3-Pipeline: der Crawl speist die V3-Tabellen (raw_documents) und triggert
+      // die V3-Engines (Understanding/Matching/Decision) über runSourceCrawl.
+      // Kein V2-Briefing-Lauf mehr. Das Briefing liest der Client danach frisch aus V3.
       const latestCrawl = await getLatestCrawlRun();
-      const latestBriefing = await getLatestBriefing(politicianId);
-      if (!isForcedPilotRun(request, url) && !hasAdminBypass(request, url) && isRecent(latestCrawl?.createdAt, manualRunMinIntervalMs) && isRecent(latestBriefing?.generatedAt || latestBriefing?.date, manualRunMinIntervalMs)) {
+      if (!isForcedPilotRun(request, url) && !hasAdminBypass(request, url) && isRecent(latestCrawl?.createdAt, manualRunMinIntervalMs)) {
         return {
-          crawl: latestCrawl,
-          briefing: latestBriefing,
+          ...latestCrawl,
           skippedReason: "Pipeline wurde gerade erst ausgeführt. Helmut nutzt den letzten Lauf."
         };
       }
-      return runDailyPipeline(politicianId);
+      return runSourceCrawl(politicianId);
     });
   }
 
