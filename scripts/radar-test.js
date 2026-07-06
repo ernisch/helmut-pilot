@@ -45,10 +45,14 @@ check("Namens-Erwähnung -> reason 'person'", (result.signals.find((s) => s.vorg
 check("Partei-Erwähnung -> reason 'partei'", (result.signals.find((s) => s.vorgangId === "vg-c") || {}).reason === "partei");
 check("6 erwähnte Vorgänge im Radar (r,d,c,w,m,b)", result.total === 6, `total=${result.total}`);
 
-// --- 3) Buckets: gültig + vollständige Partition ---------------------------
+// --- 3) Buckets: gültig + Sichtbarkeit ------------------------------------
 check("Alle signalType ∈ RADAR_BUCKETS", result.signals.every((s) => radar.RADAR_BUCKETS.includes(s.signalType)));
-const bucketSum = radar.RADAR_BUCKETS.reduce((n, b) => n + result.buckets[b].length, 0);
-check("Buckets partitionieren die Signale vollständig", bucketSum === result.total, `sum=${bucketSum} total=${result.total}`);
+// mention ist QUERSCHNITT (Eigenerwähnungen); Inhaltsbuckets ergänzen -> jedes Signal in >=1 Bucket sichtbar.
+check("Jedes Signal ist in mind. einem Bucket sichtbar",
+  result.signals.every((s) => radar.RADAR_BUCKETS.some((b) => result.buckets[b].includes(s))));
+check("mention-Bucket = genau die Eigenerwähnungen (reason=person)",
+  result.buckets.mention.length === result.signals.filter((s) => s.reason === "person").length
+  && result.buckets.mention.every((s) => s.reason === "person"));
 check("Risiko-Vorgang liegt im risk-Bucket", result.buckets.risk.some((s) => s.vorgangId === "vg-r"));
 
 // --- 4) Determinismus + Leerfall -------------------------------------------
@@ -85,6 +89,31 @@ check("Signal trägt title + signalType + url + reason", sig && sig.title && sig
   check("Kein Teilwort-Fehltreffer: 'ince' in 'Provinces' matcht nicht",
     radar.buildRadarSignals({ id: "u-ince", fullName: "Cem Ince", party: "Die Linke" },
       [{ ...base, id: "ko-y", vorgang_id: "vg-y", updated_at: iso(3600e3), display_title: "Debatte über Provinces und Finanzen" }], { now: NOW }).total === 0);
+}
+
+// --- 8) Cem İnce: Schreibweisen + "Eigene Erwähnung"-Bucket (Produktanforderung)
+{
+  // Aktives Profil ist Cem İnce (türkisches İ). Alle Schreibweisen müssen greifen.
+  const ince = { id: "u-ci", fullName: "Cem İnce", party: "Die Linke" };
+  const koWith = (extra) => radar.buildRadarSignals(ince, [{ ...base, id: "ko-i", vorgang_id: "vg-i", updated_at: iso(3600e3), ...extra }], { now: NOW });
+  check("İnce: Schreibweise 'Cem İnce' (türkisches İ) wird erkannt",
+    (koWith({ mentioned_mps: ["Cem İnce"] }).signals[0] || {}).reason === "person");
+  check("İnce: Schreibweise 'Cem Ince' (ohne Punkt) wird erkannt",
+    (koWith({ mentioned_people: ["Cem Ince"] }).signals[0] || {}).reason === "person");
+  check("İnce: Nachname 'İnce' im Titel wird erkannt (Prosa-Fallback)",
+    (koWith({ display_title: "İnce kritisiert Sozialkürzungen" }).signals[0] || {}).reason === "person");
+  check("İnce: Nachname 'Ince' im Titel wird erkannt (Prosa-Fallback)",
+    (koWith({ display_title: "Ince fordert Nachbesserung" }).signals[0] || {}).reason === "person");
+  // Produktanforderung 11: reine Parteierwähnung ohne Namensnennung ist KEINE Eigenerwähnung.
+  const partyOnly = radar.buildRadarSignals(ince, [{ ...base, id: "ko-po", vorgang_id: "vg-po", updated_at: iso(3600e3), mentioned_parties: ["Die Linke"], display_title: "Die Linke legt Rentenkonzept vor" }], { now: NOW });
+  check("İnce: nur 'Die Linke' ohne Namen -> reason=partei, NICHT im mention-Bucket",
+    (partyOnly.signals[0] || {}).reason === "partei" && partyOnly.buckets.mention.length === 0);
+  // Produktanforderung 4-6: Eigenerwähnung landet IMMER im mention-Bucket — auch wenn zusätzlich Risiko.
+  const ownMention = radar.buildRadarSignals(ince, [{ ...base, id: "ko-om", vorgang_id: "vg-om", updated_at: iso(3600e3), mentioned_mps: ["Cem İnce"] }], { now: NOW });
+  check("İnce: Eigenerwähnung landet im Bucket 'mention'", ownMention.buckets.mention.length === 1);
+  const ownRisk = radar.buildRadarSignals(ince, [{ ...base, id: "ko-or", vorgang_id: "vg-or", updated_at: iso(3600e3), mentioned_mps: ["Cem İnce"], risiken: ["Scharfe Kritik"], best_source_url: "https://a.de/x" }], { now: NOW });
+  check("İnce: Eigenerwähnung MIT Risiko -> in mention UND risk sichtbar",
+    ownRisk.buckets.mention.some((s) => s.vorgangId === "vg-or") && ownRisk.buckets.risk.some((s) => s.vorgangId === "vg-or"));
 }
 
 // --- 6) Shadow-Runner: Fail-safe + Happy-Path (injizierte Deps) -------------

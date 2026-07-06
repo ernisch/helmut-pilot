@@ -5920,10 +5920,16 @@ function renderRadarV3View() {
     // Maßgeblich: die bereits vom Server gruppierten Buckets 1:1 übernehmen.
     for (const t of Object.keys(buckets)) buckets[t] = Array.isArray(radarBuckets[t]) ? radarBuckets[t].slice() : [];
   } else {
-    // Fallback (Kompat): aus der flachen articles-Liste nach signalType gruppieren.
+    // Fallback (Kompat): aus der flachen articles-Liste gruppieren — gleiches
+    // Modell wie der Server: Eigenerwähnung (reason===person) immer unter "mention".
     (Array.isArray(radarArchive) ? radarArchive : []).forEach((item) => {
       const type = Object.prototype.hasOwnProperty.call(buckets, item.signalType) ? item.signalType : "mention";
-      buckets[type].push(item);
+      if (item.reason === "person") {
+        buckets.mention.push(item);
+        if (type !== "mention") buckets[type].push(item);
+      } else {
+        buckets[type === "mention" ? "warning" : type].push(item);
+      }
     });
   }
 
