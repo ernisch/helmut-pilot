@@ -2547,6 +2547,27 @@ function vsheetBetroffeneHtml(v) {
     </section>`;
 }
 
+// Quellen-Zeile speziell fürs Sheet: klare Hierarchie — Name (primär), darunter
+// Zeit · Quelle (sekundär), rechts ein dezentes Externer-Link-Symbol. Nutzt
+// ausschließlich vorhandene Quellenfelder (kein neuer Datenzugriff).
+function vsheetSourceRow(source) {
+  const name = lageField(source.name) || "Quelle";
+  const time = lageField(source.dateLabel || source.publishedAt || source.published_at);
+  const host = lageField(source.host);
+  const meta = [time, host].filter(Boolean).join(" · ");
+  const href = source.url && isHttpUrl(source.url) ? source.url : (host ? `https://${host}` : "");
+  const ext = `<svg class="vsheet-src-ext" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 3h6v6M10 14 21 3M19 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const inner = `
+    <span class="vsheet-src-main">
+      <span class="vsheet-src-name">${escapeHtml(name)}</span>
+      ${meta ? `<span class="vsheet-src-meta">${escapeHtml(meta)}</span>` : ""}
+    </span>
+    ${href ? ext : ""}`;
+  return href
+    ? `<a class="vsheet-src" href="${escapeAttribute(href)}" target="_blank" rel="noopener">${inner}</a>`
+    : `<div class="vsheet-src">${inner}</div>`;
+}
+
 // Rendert den kompletten Sheet-Inhalt (8 Abschnitte, leere ausgeblendet) aus den
 // bereits vorhandenen Kartendaten — keinerlei Neuberechnung/Fetch/KI.
 function vsheetContentHtml(v) {
@@ -2575,12 +2596,11 @@ function vsheetContentHtml(v) {
     <header class="vsheet-head">
       <span class="lage2-vtag">${escapeHtml(category)}</span>
       <h2 id="vsheet-title" class="vsheet-title${displayTitle ? "" : " vsheet-title-fallback"}">${escapeHtml(title)}</h2>
-      ${(dateLabel || firstSourceName) ? `
       <div class="vsheet-metaline">
-        ${dateLabel ? `<span>${escapeHtml(dateLabel)}</span>` : ""}
-        ${(dateLabel && firstSourceName) ? `<span class="vsheet-metasep" aria-hidden="true">·</span>` : ""}
-        ${firstSourceName ? `<span>${escapeHtml(firstSourceName)}</span>` : ""}
-      </div>` : ""}
+        <span class="vsheet-meta-type">Politischer Vorgang</span>
+        ${dateLabel ? `<span class="vsheet-metasep" aria-hidden="true">·</span><span>${escapeHtml(dateLabel)}</span>` : ""}
+        ${firstSourceName ? `<span class="vsheet-metasep" aria-hidden="true">·</span><span>${escapeHtml(firstSourceName)}</span>` : ""}
+      </div>
     </header>
 
     ${kurz ? `
@@ -2607,7 +2627,7 @@ function vsheetContentHtml(v) {
     ${sourcesSorted.length ? `
     <section class="vsheet-sec">
       <h3 class="vsheet-h">Quellen</h3>
-      <div class="vsheet-sources">${sourcesSorted.map(lageSourceRow).join("")}</div>
+      <div class="vsheet-sources">${sourcesSorted.map(vsheetSourceRow).join("")}</div>
     </section>` : ""}
 
     ${chrono.length ? `
@@ -2690,7 +2710,10 @@ function openVorgangSheet(id) {
   const setup = () => {
     const H = window.innerHeight || document.documentElement.clientHeight || 800;
     const sheetH = sheet.getBoundingClientRect().height || Math.round(H * 0.92);
-    const collapsed = Math.max(0, Math.round(sheetH - H * 0.60)); // ~60 % sichtbar
+    // Standard-Öffnungshöhe: hoch & dominant (~83 % der Bildschirmhöhe) — der
+    // Nutzer tippt bewusst und will sofort lesen. Per Ziehen weiter bis Vollbild
+    // (expanded = 0), per Wisch nach unten / X schließen.
+    const collapsed = Math.max(0, Math.round(sheetH - H * 0.83)); // ~83 % sichtbar
     const geom = { H, sheetH, collapsed, expanded: 0, current: collapsed };
     vsheetInstallDrag(root, sheet, scroller, geom);
     // Einfahren: von unten (offscreen) auf die eingeklappte Position.

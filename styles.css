@@ -10396,23 +10396,24 @@ body:has(.lage2) {
 }
 .vsheet-backdrop {
   position: absolute; inset: 0; background: rgba(4, 7, 14, 0);
-  transition: background var(--dur-base) var(--ease-out-soft);
+  transition: background 420ms cubic-bezier(.32, .72, 0, 1);
   -webkit-tap-highlight-color: transparent;
 }
-.vsheet-root.open .vsheet-backdrop { background: rgba(4, 7, 14, .48); }
+.vsheet-root.open .vsheet-backdrop { background: rgba(4, 7, 14, .5); }
 
 .vsheet {
   position: relative; z-index: 1; width: 100%; max-width: 640px;
   height: 92vh; height: 92dvh; max-height: 92vh; max-height: 92dvh;
   display: flex; flex-direction: column;
   background: var(--bg); color: var(--text);
-  border-top-left-radius: 22px; border-top-right-radius: 22px;
+  border-top-left-radius: 26px; border-top-right-radius: 26px;
   border: 1px solid var(--line); border-bottom: 0;
-  box-shadow: 0 -18px 48px rgba(0, 0, 0, .40);
+  box-shadow: 0 -24px 60px rgba(0, 0, 0, .46);
   transform: translateY(100%);
   will-change: transform; touch-action: none; overscroll-behavior: contain;
 }
-.vsheet.vsheet-anim { transition: transform 320ms var(--ease-out-soft); }
+/* Weiche, hochwertige Bewegung (Apple-Maps/Music/Wallet-Anmutung, kein technisches Snappen). */
+.vsheet.vsheet-anim { transition: transform 460ms cubic-bezier(.32, .72, 0, 1); }
 
 /* Griff (Grabber) — die primäre Ziehfläche zum Ein-/Ausklappen & Schließen. */
 .vsheet-grip {
@@ -10436,63 +10437,76 @@ body:has(.lage2) {
 .vsheet-scroll {
   flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain; touch-action: pan-y;
-  padding: 2px 22px calc(30px + env(safe-area-inset-bottom, 0px));
+  padding: 6px 24px calc(36px + env(safe-area-inset-bottom, 0px));
 }
 
-/* Kopfbereich: großer Titel, darunter Datum · Quelle. */
-.vsheet-head { padding: 6px 44px 2px 0; }
-.vsheet-head .lage2-vtag { margin-bottom: 13px; }
+/* Kopfbereich: großer Titel, darunter kompakte Meta-Zeile. */
+.vsheet-head { padding: 6px 46px 4px 0; }
+.vsheet-head .lage2-vtag { margin-bottom: 15px; }
 .vsheet-title {
-  margin: 0; font-size: clamp(23px, 6vw, 30px); font-weight: 700;
-  letter-spacing: -.02em; line-height: 1.16; color: var(--text);
+  margin: 0; font-size: clamp(24px, 6.2vw, 31px); font-weight: 700;
+  letter-spacing: -.021em; line-height: 1.2; color: var(--text);
   hyphens: auto; overflow-wrap: break-word;
 }
-.vsheet-title-fallback { font-size: clamp(19px, 5vw, 23px); }
+.vsheet-title-fallback { font-size: clamp(19px, 5vw, 23px); line-height: 1.28; }
+/* Kompakte Meta-Zeile: „Politischer Vorgang · Datum · Quelle" — sofort einordnen. */
 .vsheet-metaline {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
-  margin-top: 11px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 7px;
+  margin-top: 14px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums;
 }
+.vsheet-meta-type { font-weight: 600; color: var(--muted); }
 .vsheet-metasep { color: var(--muted-2); }
 
-/* Abschnitte + ruhige Überschriften. */
-.vsheet-sec { margin-top: 26px; }
-.vsheet-sec:first-of-type { margin-top: 20px; }
+/* Abschnitte — mehr Weißraum, ruhigere Überschriften (Premium statt Formular). */
+.vsheet-sec { margin-top: 36px; }
+.vsheet-sec:first-of-type { margin-top: 24px; }
 .vsheet-h {
-  margin: 0 0 12px; font-size: 12px; font-weight: 700; letter-spacing: .08em;
+  margin: 0 0 15px; font-size: 12px; font-weight: 650; letter-spacing: .09em;
   text-transform: uppercase; color: var(--muted-2);
 }
 
-/* (2) Kurzfassung — normale Lesetype, nicht fett, keine Aufzählung. */
-.vsheet-lede { margin: 0; font-size: 16px; line-height: 1.62; color: var(--text); }
+/* (2) Kurzfassung — ruhige Lesetype, viel Zeilenabstand. */
+.vsheet-lede { margin: 0; font-size: 17px; line-height: 1.72; color: var(--text); }
 
-/* (3) Warum wichtig — 2–4 dezente Stichpunkte. */
-.vsheet-why { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
-.vsheet-why li { position: relative; padding-left: 20px; font-size: 15.5px; line-height: 1.55; color: var(--text); }
+/* (3) Warum wichtig — klassische, dezente Stichpunkte (neutraler Marker, nicht bunt). */
+.vsheet-why { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 15px; }
+.vsheet-why li { position: relative; padding-left: 24px; font-size: 16px; line-height: 1.62; color: var(--text); }
 .vsheet-why li::before {
-  content: ""; position: absolute; left: 3px; top: 9px; width: 6px; height: 6px;
-  border-radius: 50%; background: var(--command-purple);
+  content: ""; position: absolute; left: 4px; top: 10px; width: 6px; height: 6px;
+  border-radius: 50%; background: var(--muted-2);
 }
 
-/* (4) Empfehlung — dezent hervorgehoben (leichte Fläche, KEINE Warnbox). */
+/* (4) Empfehlung — dezent hervorgehoben, weniger Box: kein Rahmen, mehr Innenabstand. */
 .vsheet-reco {
-  margin: 0; padding: 14px 16px; border-radius: 14px;
-  background: rgba(140, 92, 255, .08); border: 1px solid rgba(140, 92, 255, .16);
-  font-size: 15.5px; line-height: 1.55; color: var(--text);
+  margin: 0; padding: 20px 22px; border-radius: 18px;
+  background: rgba(140, 92, 255, .07); border: 0;
+  font-size: 16px; line-height: 1.62; color: var(--text);
 }
 
-/* (5) Betroffene — Chips nach Typ gruppiert. */
-.vsheet-groups { display: flex; flex-direction: column; gap: 14px; }
-.vsheet-group { display: flex; flex-direction: column; gap: 8px; }
+/* (5) Betroffene — kleinere, elegantere Chips mit mehr Abstand (unterstützen, nicht dominieren). */
+.vsheet-groups { display: flex; flex-direction: column; gap: 17px; }
+.vsheet-group { display: flex; flex-direction: column; gap: 9px; }
 .vsheet-group-label { font-size: 12px; font-weight: 600; color: var(--muted); }
-.vsheet-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.vsheet-chips { display: flex; flex-wrap: wrap; gap: 9px; }
 .vsheet-chip {
-  font-size: 13px; font-weight: 550; color: var(--text);
-  background: var(--card); border: 1px solid var(--line);
-  border-radius: 999px; padding: 7px 12px; line-height: 1;
+  font-size: 12px; font-weight: 550; color: var(--muted);
+  background: transparent; border: 1px solid var(--line);
+  border-radius: 999px; padding: 5px 11px; line-height: 1.2;
 }
 
-/* (6) Quellen — bestehende .lage2-src-row wird 1:1 wiederverwendet. */
-.vsheet-sources { display: flex; flex-direction: column; }
+/* (6) Quellen — gut sichtbarer Vertrauensblock: Name > Zeit · Quelle > Externer Link. */
+.vsheet-sources { border: 1px solid var(--line); border-radius: 16px; background: var(--card); padding: 2px 16px; }
+.vsheet-src {
+  display: flex; align-items: center; gap: 14px; padding: 14px 0; min-height: 44px;
+  text-decoration: none; color: inherit; border-bottom: 1px solid var(--hairline);
+}
+.vsheet-src:last-child { border-bottom: 0; }
+.vsheet-src-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.vsheet-src-name { font-size: 15px; font-weight: 600; color: var(--text); line-height: 1.3; }
+.vsheet-src-meta { font-size: 12.5px; color: var(--muted-2); font-variant-numeric: tabular-nums; }
+.vsheet-src-ext { width: 17px; height: 17px; flex: none; color: var(--muted-2); transition: color 200ms var(--ease-out-soft); }
+.vsheet-src:hover .vsheet-src-name { color: var(--command-purple); }
+.vsheet-src:hover .vsheet-src-ext { color: var(--command-purple); }
 /* (8) Chronologie nutzt die bestehenden .vdetail-chrono-Styles unverändert. */
 .vsheet-empty { margin: 0; font-size: 14.5px; color: var(--muted); }
 
@@ -10507,6 +10521,6 @@ body:has(.lage2) {
   .vsheet { border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
 }
 
-/* Light-Theme: Chip-/Empfehlungs-Tints an helle Fläche anpassen. */
-:root[data-theme="light"] .vsheet-reco { background: rgba(109, 76, 255, .07); border-color: rgba(109, 76, 255, .18); }
+/* Light-Theme: Tints an helle Fläche anpassen. */
+:root[data-theme="light"] .vsheet-reco { background: rgba(109, 76, 255, .06); }
 :root[data-theme="light"] .vsheet-close:hover { background: rgba(15, 23, 42, .07); }
