@@ -116,7 +116,14 @@ async function run() {
       why_relevant: "Betrifft die Tarifbindung bei öffentlichen Aufträgen.",
       recommendation: "Linie vorbereiten, heute keine öffentliche Reaktion.",
       display_category: "BMAS",
-      ausschuesse: ["Arbeit und Soziales"], updated_at: new Date().toISOString()
+      ausschuesse: ["Arbeit und Soziales"], updated_at: new Date().toISOString(),
+      created_at: "2025-06-12T08:30:00Z",
+      // Betroffene-Rohfelder (inkl. absichtlich „schmutziger" Werte: Duplikat,
+      // Whitespace, Leerstring) zum Prüfen der Normalisierung in cleanStringList.
+      parteien: ["SPD", "  spd  ", "", "Die Linke"],
+      ministerien: ["BMAS"],
+      mentioned_people: ["Hubertus Heil", null],
+      mentioned_parties: ["CDU"]
     };
     const docs = [
       { id: "rd-a", title: "Drucksache 20/1234", url: "https://dip.bundestag.de/x.pdf", source_name: "Bundestag", source_type: "bundestag", document_type: "Drucksache", published_at: "2025-06-12T08:30:00Z" },
@@ -140,6 +147,15 @@ async function run() {
     ok("whyRelevant 1:1 aus why_relevant", card.whyRelevant === "Betrifft die Tarifbindung bei öffentlichen Aufträgen.");
     ok("recommendation 1:1 aus recommendation", card.recommendation === "Linie vorbereiten, heute keine öffentliche Reaktion.");
     ok("displayCategory 1:1 aus display_category", card.displayCategory === "BMAS");
+    // Betroffene (additiv, 1:1 aus dem bereits geladenen KO durchgereicht — kein
+    // neuer KI-Aufruf, keine neue Abfrage). cleanStringList entfernt Leerwerte
+    // und Duplikate (case-insensitiv), erfindet aber NIE neue Namen.
+    ok("parteien normalisiert (dedupe + trim, leere raus)", JSON.stringify(card.parteien) === JSON.stringify(["SPD", "Die Linke"]));
+    ok("ministerien 1:1 durchgereicht", JSON.stringify(card.ministerien) === JSON.stringify(["BMAS"]));
+    ok("mentionedPeople bereinigt (null raus)", JSON.stringify(card.mentionedPeople) === JSON.stringify(["Hubertus Heil"]));
+    ok("mentionedParties 1:1 durchgereicht", JSON.stringify(card.mentionedParties) === JSON.stringify(["CDU"]));
+    ok("createdAt 1:1 durchgereicht", card.createdAt === "2025-06-12T08:30:00Z");
+    ok("keine Betroffene erfunden (leere Gruppen bleiben leer)", card.mentionedCommittees.length === 0 && card.mentionedMinistries.length === 0);
   }
 
   // ── 6b) Vorgang-Mapping: aeltere KOs ohne die neuen UI-Felder ──
@@ -156,6 +172,9 @@ async function run() {
     ok("kein recommendation -> recommendation leer", card.recommendation === "");
     ok("kein display_category -> displayCategory leer", card.displayCategory === "");
     ok("bestehende Felder bleiben trotzdem gefuellt", card.title === "Altes Thema" && card.empfehlung === "Z.");
+    // Ohne Betroffene-Rohfelder: leere Arrays (nie undefined) -> Client blendet
+    // die Betroffene-Sektion sauber aus, statt zu crashen.
+    ok("keine Betroffene-Felder -> leere Arrays", Array.isArray(card.parteien) && card.parteien.length === 0 && Array.isArray(card.mentionedPeople) && card.mentionedPeople.length === 0);
   }
 
   // ── 6c) assembleKnowledgeObject: neue UI-Felder saeubern/kappen ──

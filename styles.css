@@ -10379,3 +10379,134 @@ body:has(.lage2) {
 /* Light-Theme-Feinschliff (die Basistokens flippen bereits; hier nur Akzent-Tints) */
 :root[data-theme="light"] .lage2-vtag { background: rgba(140, 92, 255, .10); }
 :root[data-theme="light"] .lage2-card { box-shadow: 0 10px 24px rgba(15, 23, 42, .08); }
+
+/* ═══ Vorgang-Detail als Bottom Sheet ═══════════════════════════════════════
+   Native-feel Sheet (Apple Maps/Wallet): Overlay direkt an <body>, liegt über
+   Inhalt UND Mobile-Dock (z-index > 35). Backdrop dimmt, die Lage bleibt
+   dahinter sichtbar. Slide-up per translateY — JS steuert die Rastung (~60 %
+   eingeklappt / ~92 % ausgeklappt) und das Ziehen; .vsheet-anim schaltet die
+   Transition NUR fürs Snappen/Ein-/Ausfahren zu, damit das Ziehen 1:1 am Finger
+   klebt (kein Nachlaufen). Reine Anzeige bestehender KO-Daten. */
+.vsheet-root {
+  /* Über allem Übrigen (Mobile-Dock 35, Onboarding 1000, Install-Banner 9998):
+     ein bewusst geöffnetes Detail-Modal soll den Schirm besitzen, solange es
+     offen ist. Der Lade-Splash (9999) koexistiert nie mit dem offenen Sheet. */
+  position: fixed; inset: 0; z-index: 10000;
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.vsheet-backdrop {
+  position: absolute; inset: 0; background: rgba(4, 7, 14, 0);
+  transition: background var(--dur-base) var(--ease-out-soft);
+  -webkit-tap-highlight-color: transparent;
+}
+.vsheet-root.open .vsheet-backdrop { background: rgba(4, 7, 14, .48); }
+
+.vsheet {
+  position: relative; z-index: 1; width: 100%; max-width: 640px;
+  height: 92vh; height: 92dvh; max-height: 92vh; max-height: 92dvh;
+  display: flex; flex-direction: column;
+  background: var(--bg); color: var(--text);
+  border-top-left-radius: 22px; border-top-right-radius: 22px;
+  border: 1px solid var(--line); border-bottom: 0;
+  box-shadow: 0 -18px 48px rgba(0, 0, 0, .40);
+  transform: translateY(100%);
+  will-change: transform; touch-action: none; overscroll-behavior: contain;
+}
+.vsheet.vsheet-anim { transition: transform 320ms var(--ease-out-soft); }
+
+/* Griff (Grabber) — die primäre Ziehfläche zum Ein-/Ausklappen & Schließen. */
+.vsheet-grip {
+  flex: none; display: grid; place-items: center;
+  height: 30px; padding-top: 9px; cursor: grab; touch-action: none;
+}
+.vsheet-grip:active { cursor: grabbing; }
+.vsheet-grabber { width: 38px; height: 5px; border-radius: 999px; background: var(--muted-2); opacity: .55; }
+
+/* Schließen (X) — Touch-Ziel ≥44px. */
+.vsheet-close {
+  position: absolute; top: 8px; right: 10px; z-index: 3;
+  width: 44px; height: 44px; display: grid; place-items: center;
+  border: 0; background: none; color: var(--muted); cursor: pointer; border-radius: 12px;
+  transition: background var(--dur-base) var(--ease-out-soft), color var(--dur-base) var(--ease-out-soft);
+}
+.vsheet-close:hover { background: rgba(140, 140, 160, .14); color: var(--text); }
+.vsheet-close svg { width: 20px; height: 20px; }
+
+/* Scrollbereich — nur der Inhalt scrollt, das Sheet-Gerüst bleibt fix. */
+.vsheet-scroll {
+  flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain; touch-action: pan-y;
+  padding: 2px 22px calc(30px + env(safe-area-inset-bottom, 0px));
+}
+
+/* Kopfbereich: großer Titel, darunter Datum · Quelle. */
+.vsheet-head { padding: 6px 44px 2px 0; }
+.vsheet-head .lage2-vtag { margin-bottom: 13px; }
+.vsheet-title {
+  margin: 0; font-size: clamp(23px, 6vw, 30px); font-weight: 700;
+  letter-spacing: -.02em; line-height: 1.16; color: var(--text);
+  hyphens: auto; overflow-wrap: break-word;
+}
+.vsheet-title-fallback { font-size: clamp(19px, 5vw, 23px); }
+.vsheet-metaline {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+  margin-top: 11px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums;
+}
+.vsheet-metasep { color: var(--muted-2); }
+
+/* Abschnitte + ruhige Überschriften. */
+.vsheet-sec { margin-top: 26px; }
+.vsheet-sec:first-of-type { margin-top: 20px; }
+.vsheet-h {
+  margin: 0 0 12px; font-size: 12px; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--muted-2);
+}
+
+/* (2) Kurzfassung — normale Lesetype, nicht fett, keine Aufzählung. */
+.vsheet-lede { margin: 0; font-size: 16px; line-height: 1.62; color: var(--text); }
+
+/* (3) Warum wichtig — 2–4 dezente Stichpunkte. */
+.vsheet-why { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.vsheet-why li { position: relative; padding-left: 20px; font-size: 15.5px; line-height: 1.55; color: var(--text); }
+.vsheet-why li::before {
+  content: ""; position: absolute; left: 3px; top: 9px; width: 6px; height: 6px;
+  border-radius: 50%; background: var(--command-purple);
+}
+
+/* (4) Empfehlung — dezent hervorgehoben (leichte Fläche, KEINE Warnbox). */
+.vsheet-reco {
+  margin: 0; padding: 14px 16px; border-radius: 14px;
+  background: rgba(140, 92, 255, .08); border: 1px solid rgba(140, 92, 255, .16);
+  font-size: 15.5px; line-height: 1.55; color: var(--text);
+}
+
+/* (5) Betroffene — Chips nach Typ gruppiert. */
+.vsheet-groups { display: flex; flex-direction: column; gap: 14px; }
+.vsheet-group { display: flex; flex-direction: column; gap: 8px; }
+.vsheet-group-label { font-size: 12px; font-weight: 600; color: var(--muted); }
+.vsheet-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.vsheet-chip {
+  font-size: 13px; font-weight: 550; color: var(--text);
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: 999px; padding: 7px 12px; line-height: 1;
+}
+
+/* (6) Quellen — bestehende .lage2-src-row wird 1:1 wiederverwendet. */
+.vsheet-sources { display: flex; flex-direction: column; }
+/* (8) Chronologie nutzt die bestehenden .vdetail-chrono-Styles unverändert. */
+.vsheet-empty { margin: 0; font-size: 14.5px; color: var(--muted); }
+
+/* Reduzierte Bewegung: kein Slide/kein Fade-Timing — sofort sichtbar. */
+@media (prefers-reduced-motion: reduce) {
+  .vsheet.vsheet-anim { transition: none; }
+  .vsheet-backdrop { transition: none; }
+}
+
+/* Größere Viewports (Desktop-Vorschau): Sheet zentriert, seitlich gerahmt. */
+@media (min-width: 700px) {
+  .vsheet { border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
+}
+
+/* Light-Theme: Chip-/Empfehlungs-Tints an helle Fläche anpassen. */
+:root[data-theme="light"] .vsheet-reco { background: rgba(109, 76, 255, .07); border-color: rgba(109, 76, 255, .18); }
+:root[data-theme="light"] .vsheet-close:hover { background: rgba(15, 23, 42, .07); }
