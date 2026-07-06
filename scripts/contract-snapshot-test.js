@@ -301,11 +301,17 @@ async function main() {
     inconsistent.length ? `divergent: ${inconsistent.slice(0, 3).map((o) => `score=${o.relevance_score} decision=${o.decision}`).join(", ")}`
       : `${bothObjs.length} Objekte mit beiden Feldern`);
 
-  // --- (5)(6) Client-Quelle verankern: Schwelle + hasPreciseSource-Regel ---
+  // --- (5)(6) Client-Quelle verankern: Server-Entscheidung + hasPreciseSource-Regel ---
   const clientSrc = fs.readFileSync(path.join(root, "client.js"), "utf8");
-  check("(6) Client-Schwellenregel unverändert (relevance_score ≥60/≥40 → decision)",
-    clientSrc.includes('relevance_score >= 60 ? "Sofort reagieren" : recommendation.relevance_score >= 40 ? "Beobachten" : "Ignorieren"'),
-    "Ändert sich die Client-Schwelle, muss die Server-Decision-Logik mitgezogen werden.");
+  // V3: Der Server (Decision Engine) ist die EINZIGE Quelle der Entscheidung. Der
+  // Client rechnet die 60/40-Schwelle NICHT mehr selbst nach, sondern liest
+  // recommendation.decision. Diese Prüfung sichert genau das ab (kein Rückfall auf
+  // clientseitiges Scoring). Die Schwellenregel lebt server-seitig in decisions.js
+  // (decisionFromScore) und wird dort + im contract-adapter-test verifiziert.
+  check("(6) Client rechnet die Entscheidung NICHT mehr selbst — liest recommendation.decision (Server ist Quelle)",
+    clientSrc.includes("recommendation.decision")
+      && !clientSrc.includes('relevance_score >= 60 ? "Sofort reagieren"'),
+    "Die 60/40-Schwelle darf nur noch server-seitig (decisions.js) existieren.");
   check("(5) Client-Regel 'nur linkType===direct ist präzise' verankert (hasPreciseSource)",
     clientSrc.includes('source?.linkType && source.linkType !== "direct"'),
     "Ein Item ohne direkten Link wird vom Client STILL ausgeblendet.");

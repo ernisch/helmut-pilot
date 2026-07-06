@@ -9,7 +9,7 @@ const { cemInceProfile, demoRawItems, demoSources, generateBriefing } = require(
 const { getLatestOrDemoBriefing, runDailyPipeline, runLageCheck, runMorningBriefing, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { personalizeBriefing } = require("./lib/helmut/personalization");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getRawItemsSince, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getAdminCostsPerUser, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, listMatchingResults, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed } = require("./lib/helmut/storage");
+const { deleteProfileData, exportProfileData, getInteractions, getLatestBriefing, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getTopicMemory, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getAdminCostsPerUser, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, listMatchingResults, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed } = require("./lib/helmut/storage");
 const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled, activeModelName } = require("./lib/helmut/ai");
 const { pushStatus, sendBriefingReadyPush, sendLageChangePush, sendPushToPolitician } = require("./lib/helmut/push");
 const auth = require("./lib/helmut/auth");
@@ -2169,67 +2169,6 @@ async function getRadarArchive(profile, _days = 92) {
     available: !result.skipped,
     reason: result.reason || null
   };
-}
-
-function normalizeRadarArchiveItem(item) {
-  const url = [item.url, item.itemUrl].find((candidate) => isDirectArticleUrl(candidate, item)) || "";
-  return {
-    id: item.id || item.hash || url || item.title,
-    sourceId: item.sourceId || "",
-    sourceName: item.sourceName || item.name || "Quelle",
-    sourceType: item.sourceType || item.type || "media",
-    sourceUrl: item.sourceUrl || "",
-    url,
-    itemUrl: url,
-    linkType: "direct",
-    title: item.title || "Artikel gefunden",
-    content: item.content || item.excerpt || "",
-    excerpt: item.excerpt || item.content || "",
-    publishedAt: item.publishedAt || item.retrievedAt || new Date().toISOString(),
-    retrievedAt: item.retrievedAt || item.publishedAt || new Date().toISOString(),
-    author: item.author || "",
-    imageUrl: item.imageUrl || "",
-    confidence: item.confidence || "medium",
-    linkResolutionNote: "Direkter Artikellink aus dem gespeicherten Quellenarchiv."
-  };
-}
-
-function uniqueByRadarUrl(item, index, items) {
-  const key = item.url || item.title || item.id;
-  return items.findIndex((entry) => (entry.url || entry.title || entry.id) === key) === index;
-}
-
-function profileArchiveTerms(profile) {
-  // Kein Cem-Fallback: ein Mandat ohne Namen darf NICHT auf fremde Namen matchen.
-  const fullName = String(profile?.fullName || "").trim();
-  const parts = fullName.split(/\s+/).filter(Boolean);
-  return {
-    fullName,
-    lastName: parts.at(-1) || ""
-  };
-}
-
-function rawItemMentionsProfile(item, terms) {
-  if (!terms.fullName && !terms.lastName) return false;
-  const text = `${item?.title || ""} ${item?.content || ""} ${item?.excerpt || ""}`.toLowerCase();
-  return (terms.fullName && text.includes(terms.fullName.toLowerCase()))
-    || (terms.lastName && profileNameBoundaryRegex(terms.lastName).test(text));
-}
-
-function rawItemAuthoredByProfile(item, terms) {
-  if (!terms.fullName && !terms.lastName) return false;
-  const author = String(item?.author || "").toLowerCase();
-  if (!author) return false;
-  return (terms.fullName && author.includes(terms.fullName.toLowerCase()))
-    || (terms.lastName && profileNameBoundaryRegex(terms.lastName).test(author));
-}
-
-function profileNameBoundaryRegex(value) {
-  return new RegExp(`(^|[^a-zäöüß])${escapeRegex(String(value || "").toLowerCase())}($|[^a-zäöüß])`, "i");
-}
-
-function escapeRegex(value) {
-  return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function collectBriefingSources(briefing) {

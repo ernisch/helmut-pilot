@@ -361,7 +361,9 @@ function applyStartPayload(startPayload) {
   const themeSignalId = briefing.themeOfDay?.signalId;
   const activeItems = briefing.items.filter((item) => item.decision !== "Ignorieren" && hasPreciseSource(item));
   const personalizedItems = recommendations.map(recommendationToDecisionItem).filter(hasPreciseSource);
-  const situationalItems = (briefing.situationalBriefing || []).map(situationalToDecisionItem).filter(hasPreciseSource);
+  // V3: situationalBriefing-Einträge sind bereits vollständige Entscheidungs-Items
+  // (aus dem Contract-Adapter) — direkt verwenden, kein clientseitiges Fabrizieren.
+  const situationalItems = (briefing.situationalBriefing || []).filter(hasPreciseSource);
   const prominentPool = (personalizedItems.length ? personalizedItems : (activeItems.length ? activeItems : situationalItems));
   const decisionComparator = (a, b) => {
     if (a.signalId === themeSignalId) return -1;
@@ -381,7 +383,7 @@ function applyStartPayload(startPayload) {
   const allHelmutRaw = [
     ...recommendations.map(recommendationToDecisionItem),
     ...(briefing.items || []),
-    ...(briefing.situationalBriefing || []).map(situationalToDecisionItem)
+    ...(briefing.situationalBriefing || [])
   ];
   const seenHelmutKeys = new Set();
   helmutBriefings = allHelmutRaw
@@ -1730,8 +1732,10 @@ function recommendationToDecisionItem(recommendation) {
     finalScore: recommendation.finalScore,
     totalScore: recommendation.relevance_score,
     priority: recommendation.relevance_score,
-    decision: recommendation.relevance_score >= 60 ? "Sofort reagieren" : recommendation.relevance_score >= 40 ? "Beobachten" : "Ignorieren",
-    classification: recommendation.risiko_fuer_nutzer > recommendation.chance_fuer_nutzer ? "risk" : "opportunity",
+    // Entscheidung kommt vom Server (V3 Decision Engine) — der Client rechnet die
+    // Schwelle NICHT mehr selbst nach (Server ist die einzige Quelle der Wahrheit).
+    decision: recommendation.decision || "Beobachten",
+    classification: recommendation.priorityType === "risk" ? "risk" : "opportunity",
     action_type: recommendation.action_type,
     deadline: recommendation.deadline,
     urgency: recommendation.urgency,
@@ -1786,66 +1790,6 @@ function polishReferentText(value) {
     .replace(/\bDu solltest lies\b/gi, "Du solltest die Quellen lesen")
     .replace(/\bDu solltest entwickle\b/gi, "Du solltest eine Linie entwickeln")
     .replace(/\bDu solltest formuliere\b/gi, "Du solltest eine Formulierung vorbereiten");
-}
-
-function situationalToDecisionItem(item) {
-  return {
-    id: item.id,
-    signalId: item.id,
-    title: item.title,
-    topic: item.title,
-    summary: item.summary,
-    recommendedAction: `Beobachte das Thema heute. Prüfe, ob daraus eine Frage an Bundesregierung oder Ausschuss entsteht.`,
-    suggestedStatement: "",
-    whyNow: item.relevanceReason || "Dieses Thema wurde in geprüften Quellen gefunden und berührt dein Mandatsprofil.",
-    whyItMatters: `Das betrifft dich, weil ${item.relevanceReason || "ein Bezug zu deinem Mandatsprofil erkennbar ist"}.`,
-    inactionConsequence: "Wenn du es ignorierst, verpasst du möglicherweise eine frühe fachliche Anschlussstelle. Noch ist aber keine öffentliche Reaktion nötig.",
-    riskNote: "Derzeit kein akutes Risiko, aber beobachtbar.",
-    opportunityNote: "Du bleibst früh informiert, ohne dich in irrelevante Nachrichten zu verlieren.",
-    estimatedTimeMinutes: 5,
-    confidence: item.confidence,
-    sourceCount: 1,
-    sources: [{
-      sourceName: item.sourceName,
-      sourceType: item.sourceType,
-      sourceUrl: item.sourceUrl,
-      itemUrl: item.url,
-      url: item.url,
-      publishedAt: item.publishedAt,
-      retrievedAt: item.retrievedAt,
-      confidence: item.confidence,
-      excerpt: item.summary,
-      relevanceReason: item.relevanceReason
-    }],
-    primarySource: {
-      sourceName: item.sourceName,
-      sourceType: item.sourceType,
-      sourceUrl: item.sourceUrl,
-      itemUrl: item.url,
-      url: item.url,
-      publishedAt: item.publishedAt,
-      retrievedAt: item.retrievedAt,
-      confidence: item.confidence,
-      excerpt: item.summary,
-      relevanceReason: item.relevanceReason
-    },
-    politicalScore: 45,
-    mandateScore: 55,
-    finalScore: 50,
-    totalScore: 50,
-    priority: 50,
-    decision: "Beobachten",
-    classification: "watch",
-    actionType: "observe",
-    deadline: "",
-    urgency: "niedrig",
-    statusChange: "Neu geprüft",
-    changeReason: item.relevanceReason || "Aus geprüfter Quelle in die Lage übernommen.",
-    personal_relevance_explanation: `Das betrifft dich, weil ${item.relevanceReason || "ein Bezug zu deinem Mandatsprofil erkennbar ist"}.`,
-    consequence_if_ignored: "Wenn du es ignorierst, verpasst du möglicherweise eine frühe fachliche Anschlussstelle. Noch ist aber keine öffentliche Reaktion nötig.",
-    possible_upside: "Du bleibst früh informiert, ohne dich in irrelevante Nachrichten zu verlieren.",
-    taskTemplate: null
-  };
 }
 
 function render() {
@@ -5958,7 +5902,7 @@ function renderRadarView() {
 
 function renderRadarV3View() {
   // V3-Radar: die Signale kommen fertig klassifiziert vom Server (signalType) —
-  // kein Client-Scoring, kein V2-profileArticleArchive-Fallback. Leer -> Leerzustand.
+  // kein Client-Scoring, kein V2-Client-Fallback. Leer -> Leerzustand.
   const archive = radarArchive;
 
   const buckets = { risk: [], demand: [], chance: [], warning: [], mention: [] };
@@ -6108,37 +6052,6 @@ function profileMentions() {
     .filter(hasPreciseSource)
     .filter(uniqueMentionItem)
     .sort(sortNewestFirst);
-}
-
-function profileArticleArchive(allMentions = []) {
-  const profileTerms = profileNameTerms();
-  return [...allMentions, ...(briefing.personMentions || []), ...(briefing.rawItems || [])]
-    .filter((item) => itemMentionsProfile(item, profileTerms) || itemAuthoredByProfile(item, profileTerms))
-    .filter(hasPreciseSource)
-    .filter(uniqueMentionItem)
-    .sort(sortNewestFirst);
-}
-
-function isImportantProfileArticle(item) {
-  const text = `${item?.title || ""} ${item?.content || ""} ${item?.excerpt || ""}`.toLowerCase();
-  const strongSource = ["media", "local", "party", "faction", "bundestag"].includes(String(item?.sourceType || "").toLowerCase());
-  const titleHit = itemMentionsProfile({ title: item?.title || "" });
-  const politicalHit = /interview|fordert|kritisiert|klage|urteil|bundestag|ausschuss|mindestlohn|bürgergeld|rente|arbeit|soziales|pflege|tarif|wohnung|armut/i.test(text);
-  return strongSource || titleHit || politicalHit;
-}
-
-function isArchivedLowSignal(item) {
-  const text = `${item?.title || ""} ${item?.content || ""} ${item?.excerpt || ""}`.toLowerCase();
-  const socialOrWeak = ["social", "manual"].includes(String(item?.sourceType || "").toLowerCase());
-  const old = itemTimestamp(item) ? Date.now() - itemTimestamp(item) > 60 * 24 * 60 * 60 * 1000 : false;
-  const weakTopic = /sport|kultur|terminhinweis|randnotiz|social|kommentarspalte/i.test(text);
-  return socialOrWeak || old || weakTopic;
-}
-
-function isWithinLastThreeMonths(item) {
-  const timestamp = itemTimestamp(item);
-  if (!timestamp) return false;
-  return Date.now() - timestamp <= 92 * 24 * 60 * 60 * 1000;
 }
 
 function profileNameTerms() {
