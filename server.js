@@ -2999,15 +2999,17 @@ function sendNotFound(response) {
 // Query-Secret nur noch, wenn explizit ueber HELMUT_ALLOW_QUERY_SECRETS=true erlaubt
 // (vorher war das hier die einzige Stelle im Code, die dieses Flag ignorierte).
 function isDebugSecretOk(request, url) {
-  const adminSecret = process.env.HELMUT_ADMIN_SECRET;
-  if (!adminSecret) return false;
+  // Konsistent mit hasAdminBypass: HELMUT_ADMIN_SECRET, ersatzweise CRON_SECRET.
+  // Bleibt fail-closed (kein Secret gesetzt -> 404) und admin-/secret-geschützt.
+  const secret = process.env.HELMUT_ADMIN_SECRET || process.env.CRON_SECRET;
+  if (!secret) return false;
   const header = request?.headers?.authorization || "";
   const token = header.startsWith("Bearer ")
     ? header.slice(7)
     : allowQuerySecrets()
       ? url.searchParams.get("secret")
       : "";
-  return Boolean(token) && timingSafeEqual(token, adminSecret);
+  return Boolean(token) && timingSafeEqual(token, secret);
 }
 
 async function handleDebugRequest(request, response, url) {
