@@ -36,6 +36,7 @@ Analysen + Synthese).
 | Client-**60/40**-Nachrechnung entfernt → Server ist Entscheidungs-Quelle | ✅ | contract 17/17 |
 | V2-Radar-Toter-Code + `situationalToDecisionItem`-Fabrikation + orphaned Client-Helfer entfernt | ✅ | Gate 8/8 |
 | Contract-Snapshot auf V3-Form rebaselined (null↔Objekt datenabhängig) | ✅ | contract 17/17 |
+| **Client-Refresh** auf V3 umgehängt: `/api/pipeline/run`→`runSourceCrawl` (V3-Feed), `/api/briefing/run`→V3-Read; `/api/briefing/demo` (V2) entfernt | ✅ | Gate 8/8 |
 
 **Was der Nutzer SIEHT, kommt jetzt aus V3:** `/api/app/start` (Home/Briefing/Helmut)
 und `/api/radar/archive` (Radar) + Lage (schon vorher V3). Kein stiller V2-Fallback —
@@ -47,7 +48,7 @@ Pipeline/Cron/Ops-mit-Daten nicht) und werden daher **nicht blind gelöscht**:
 
 | V2-Rest | Wo | Grund noch da |
 |---|---|---|
-| `runMorningBriefing` (V2-Briefing-Motor) | scheduler.js | erzeugt (ungelesene) V2-Briefings; getriggert von `/api/briefing/run`, `/api/pipeline/run`, Cron, `runLageCheck` |
+| `runMorningBriefing` (V2-Briefing-Motor) | scheduler.js | erzeugt (ungelesene) V2-Briefings; nur noch von **Cron** (`/api/cron/morning-briefing`, `/api/cron/pipeline`) + `runLageCheck` getriggert — die Client-Refresh-Endpunkte sind bereits auf V3 umgehängt |
 | `personalization.js` | Modul | nur noch vom V2-Write-Pipeline genutzt (aus dem Read-Path entfernt) |
 | `runtime.js` `generateBriefing`-Familie | Modul | vom V2-Write-Pipeline + Demo-Endpunkten genutzt; `cemInceProfile` ist Single-Tenant-Default (in ~5 Stellen) |
 | `getLatestBriefing` (V2-Blob-Lesen) | server.js Ops/Health/Release-Check | Readiness-Dashboards lesen noch den Blob + `referentEngine` |
@@ -56,8 +57,10 @@ Pipeline/Cron/Ops-mit-Daten nicht) und werden daher **nicht blind gelöscht**:
 | Flags `HELMUT_V3_STORE/_MATCHING/_LAZY_UNDERSTANDING/_OFFICE` + `HELMUT_UNDERSTANDING_LOCK` | env | erst „unbedingt live" schalten, wenn V3 als alleiniger Store bestätigt |
 
 **Nächster Schritt (live-verifiziert, Betreiber gegen Vercel):**
-1. `/api/briefing/run` + `/api/pipeline/run` von `runMorningBriefing`/`runDailyPipeline`
-   auf den V3-Pfad umhängen (`runSourceCrawl` speist V3; Lesen kommt aus `buildV3Briefing`).
+1. ~~Client-Refresh-Endpunkte auf V3 umhängen~~ ✅ erledigt (`/api/pipeline/run`→
+   `runSourceCrawl`, `/api/briefing/run`→V3-Read). Verbleibend: die **Cron**-Routen
+   (`/api/cron/morning-briefing`, `/api/cron/pipeline`) auf den V3-Feed umstellen
+   (nur `runSourceCrawl`, kein V2-Briefing + kein V2-Push).
 2. Ops/Health/Release-Check (`backendHealth`/`computeReleaseCheck`/`buildHealthReport`)
    von `getLatestBriefing`+`referentEngine` auf V3-Qualitätssignale (KOs/decisions) umstellen.
 3. `runLageCheck` auf V3 umstellen (kein V2-Briefing mehr regenerieren).
