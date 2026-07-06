@@ -10,6 +10,7 @@
     "test:lage": "node scripts/lage-test.js",
     "test:decisions": "node scripts/decisions-test.js",
     "test:contract-adapter": "node scripts/contract-adapter-test.js",
+    "test:radar": "node scripts/radar-test.js",
     "lage:backfill": "node scripts/lage-backfill.js",
     "backfill:presentation": "node scripts/presentation-backfill.js"
   },
