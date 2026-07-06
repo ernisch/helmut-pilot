@@ -169,5 +169,36 @@ const it1 = briefing.items.find((i) => i.vorgangId === "vg-1");
 check("Item mit Quelle: primarySource gesetzt, sources nicht leer, linkType direct",
   it1 && it1.primarySource && it1.primarySource.url === "https://bmg.bund.de/pflege" && it1.sources.length >= 1 && it1.linkType === "direct");
 
+// --- 12) Regression: robuste Titel-/Quellen-Fallbacks (Step-4-Nachschliff) ---
+// KO OHNE display_title/headline -> Titel darf NIE leer, "Thema" oder ein roher
+// vorgang_id-Slug sein; Recommendation muss identisch befüllt sein (Helmut-Tab).
+{
+  const NOW2 = NOW;
+  const sparseKo = {
+    id: "ko-sparse", vorgang_id: "vg-sparse", status: "neu", understanding_status: "complete",
+    was_ist_passiert: "Der Ausschuss berät einen neuen Antrag zur Pflegefinanzierung.", warum_wichtig: "Betrifft das Mandat."
+  };
+  const dec = { knowledge_object_id: "ko-sparse", vorgang_id: "vg-sparse", score: 70, decision: "Sofort reagieren", priority_type: "action", matched_features: [], risk: "", chance: "" };
+  const src = { "vg-sparse": [{ source_name: "Bundestag", title: "Antrag zur Pflegefinanzierung eingebracht", url: "https://bundestag.de/antrag", link_type: "direct" }] };
+  const b = toBriefingContractV3({ profile, decisions: [dec], kosById: { "ko-sparse": sparseKo }, sourcesByVorgang: src, now: NOW2 });
+  const item = b.items[0]; const rec = b.personalizedRecommendations[0];
+  check("Fallback: Item-Titel nie leer/Slug/'Thema' bei fehlendem display_title",
+    Boolean(item && item.title && item.title !== "Thema" && item.title !== "vg-sparse" && item.title.length > 3), item && JSON.stringify(item.title));
+  check("Fallback: Recommendation-Titel identisch befüllt (kein leerer Helmut-Titel -> kein 'Thema')",
+    Boolean(rec && rec.title === item.title && rec.title.length > 3));
+  check("Fallback: Recommendation trägt summary + primarySource + source_count",
+    Boolean(rec && rec.summary && rec.primarySource && rec.primarySource.url === "https://bundestag.de/antrag" && rec.source_count === 1));
+  // KO ganz ohne Analysetext -> Titel aus der Primärquelle (nicht leer/Slug).
+  const b2 = toBriefingContractV3({
+    profile,
+    decisions: [{ ...dec, knowledge_object_id: "ko-empty", vorgang_id: "vg-empty" }],
+    kosById: { "ko-empty": { id: "ko-empty", vorgang_id: "vg-empty", status: "neu", understanding_status: "complete" } },
+    sourcesByVorgang: { "vg-empty": [{ source_name: "Quelle", title: "Kabinett beschließt Eckpunkte", url: "https://x.de/a", link_type: "direct" }] },
+    now: NOW2
+  });
+  check("Fallback: Titel aus Primärquelle, wenn KO-Analysetext fehlt",
+    Boolean(b2.items[0] && b2.items[0].title === "Kabinett beschließt Eckpunkte"), b2.items[0] && JSON.stringify(b2.items[0].title));
+}
+
 console.log(`\n${passed}/${passed + failed} Contract-Adapter-Assertions erfolgreich.`);
 if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exit(1); }
