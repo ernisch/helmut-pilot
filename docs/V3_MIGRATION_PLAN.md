@@ -22,7 +22,8 @@ Analysen + Synthese).
 | A | Toter Code entfernt (5 TS-Dateien + 2 runtime.js-Funktionen) | ✅ erledigt | p1/goldset/lage/understanding-eval grün |
 | — | V3 Decision Engine (`decisions.js` + storage-CRUD) — additive Grundlage | ✅ erledigt | decisions 36/36 |
 | 3 | Rollen-Text-Briefing entfernt (`briefing.js` + 3 `.j2` + Flag `HELMUT_V3_BRIEFING` + Debug-Endpoint); Scheduler-Slot → `runDecisionShadow` | ✅ erledigt | p1 175/175, alle offline grün |
-| D | `toBriefingContractV3`-Adapter (Home/Briefing/Helmut) | ⏳ offen | — |
+| D | `toBriefingContractV3`-Adapter (`briefingContract.js`) — V3-Daten → exakte V2-Vertragsform, deterministisch/0-KI. **Gebaut + getestet**, noch nicht am Live-Read-Pfad. | ✅ erledigt (Build) | contract-adapter 22/22 |
+| — | Adversarialer Review der Decision Engine + 3 Fixes (vorgang_id persistiert, chance/risk gekappt, deadline sanitisiert) | ✅ erledigt | decisions 38/38 |
 | — | Radar-Server-Engine aus KOs | ⏳ offen | — |
 | — | Toten `HELMUT_ENGINE_V2`-Motor entfernen | ⏳ offen | — |
 | C/E | Live-Cutover + V2-Löschung (Prod-Flags, Live-Verifikation) | 🔒 operativ (Betreiber) | smoke/contract gegen Deployment |

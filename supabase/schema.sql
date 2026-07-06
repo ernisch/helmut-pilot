@@ -371,6 +371,7 @@ create table if not exists public.decisions (
   id text primary key,
   user_id text references public.profiles(id) on delete cascade,
   knowledge_object_id text references public.knowledge_objects(id) on delete cascade,
+  vorgang_id text,
   score integer not null default 0,
   decision text,
   priority_type text,
@@ -383,7 +384,11 @@ create table if not exists public.decisions (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+-- vorgang_id auch fuer BESTEHENDE Datenbanken sicherstellen (Join-frei nach Vorgang
+-- filterbar, konsistent mit matching_results). create table ist dort ein No-Op.
+alter table public.decisions add column if not exists vorgang_id text;
 create index if not exists decisions_user_ko_idx on public.decisions (user_id, knowledge_object_id);
+create index if not exists decisions_vorgang_idx on public.decisions (vorgang_id);
 
 -- Themengedaechtnis pro Nutzer, an den stabilen Vorgang gebunden (nicht an Strings).
 create table if not exists public.topic_memory (

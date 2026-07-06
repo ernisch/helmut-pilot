@@ -111,6 +111,15 @@ check("matched_features tragen nur öffentliche Labels {type,value}",
   })));
 check("Stabile, upsertbare id dec-<user>-<ko>", decA.every((d) => d.id === `dec-u-health-${d.knowledge_object_id}`));
 
+// --- Review-Fixes: Freitext-Kappung + vorgang_id-Verkettung -----------------
+const koLongRisk = {
+  id: "ko-long", vorgang_id: "vg-long", status: "neu", understanding_status: "complete",
+  was_ist_passiert: "x", parteien: ["SPD"], ausschuesse: ["Gesundheit"], risiken: ["R".repeat(500)]
+};
+const decLong = decisions.buildDecision("u-health", koLongRisk, { similarity: 0.5, matched_features: [{ type: "ausschuss", value: "Gesundheit" }] });
+check("Freitext risk/chance wird gekappt (Datenminimierung, <= 240)", decLong.risk != null && decLong.risk.length <= 240, `len=${decLong.risk && decLong.risk.length}`);
+check("Entscheidung trägt vorgang_id (Verkettung zum Vorgang)", decLong.vorgang_id === "vg-long");
+
 // --- 7) runDecisionShadow: Fail-safe + Happy-Path (injizierte Deps) ----------
 (async () => {
   const off = await decisions.runDecisionShadow({ userId: "u-health" }, { enabled: () => false });
