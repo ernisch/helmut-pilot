@@ -48,9 +48,9 @@ Pipeline/Cron/Ops-mit-Daten nicht) und werden daher **nicht blind gelöscht**:
 
 | V2-Rest | Wo | Grund noch da |
 |---|---|---|
-| `runMorningBriefing` (V2-Briefing-Motor) | scheduler.js | erzeugt (ungelesene) V2-Briefings; nur noch von **Cron** (`/api/cron/morning-briefing`, `/api/cron/pipeline`) + `runLageCheck` getriggert — die Client-Refresh-Endpunkte sind bereits auf V3 umgehängt |
-| `personalization.js` | Modul | nur noch vom V2-Write-Pipeline genutzt (aus dem Read-Path entfernt) |
-| `runtime.js` `generateBriefing`-Familie | Modul | vom V2-Write-Pipeline + Demo-Endpunkten genutzt; `cemInceProfile` ist Single-Tenant-Default (in ~5 Stellen) |
+| ~~`runMorningBriefing` (V2-Briefing-Motor) | scheduler.js~~ | ✅ **Step 4 erledigt:** kein aktiver Aufruf mehr (nur `runDailyPipeline`, selbst tot). `runDailyPipeline` + `runMorningBriefing` + die gesamte exklusiv genutzte V2-Helper-Kaskade entfernt (−742 Zeilen). |
+| ~~`personalization.js` | Modul~~ | ✅ **Step 4 erledigt:** einziger Importeur war `runMorningBriefing` → **Datei gelöscht** (−888 Zeilen). |
+| `runtime.js` `generateBriefing`-Familie | Modul | ⚠️ **NOCH GEBRAUCHT (Step 4 bewusst NICHT gelöscht):** `generateBriefing`+`demoRawItems`+`demoSources` speisen `/api/tasks/demo` (Admin-Demo); `cemInceProfile` = Single-Tenant-Default (~20 Stellen); `inferEntities` nutzt der p1-Test. Ebenso bleibt `getLatestOrDemoBriefing`+`buildEmptyBriefing` (→ `/api/debug/briefing`) und `buildPipelineDebugReport` (→ p1). Erst ablösen, wenn die Demo-/Debug-Endpunkte umgestellt oder entfernt sind. |
 | ~~`getLatestBriefing` (V2-Blob-Lesen) | server.js Ops/Health/Release-Check~~ | ✅ **Step 2 erledigt:** Ops/Health/Release-Check lesen jetzt `buildV3Briefing` + `v3BriefingQuality` (Datenmotor-V3-Signal); `referentEngine`/`quality`-Blob raus. Import `getLatestBriefing` ist jetzt ungenutzt (Cleanup im Modul-Löschschritt). |
 | ~~`runLageCheck` regeneriert V2-Briefing | scheduler.js~~ | ✅ **Step 3 erledigt:** Lage-Check liest Vorwissen aus verstandenen Knowledge Objects (nicht mehr `getLatestBriefing`) und faltet bei neuer Lage die frischen Items via `foldLageItemsIntoV3` (understanding→matching→decisions, zeitbudgetiert) in V3 — **kein** `runMorningBriefing` mehr, kein V2-Fallback. |
 | `/api/briefing/latest`, `/api/briefing/demo`, `/api/profile/demo` | server.js | V2-Read/Demo-Endpunkte (vom Client NICHT für die Anzeige gefetcht) |
@@ -76,11 +76,19 @@ Pipeline/Cron/Ops-mit-Daten nicht) und werden daher **nicht blind gelöscht**:
    neue Lage in V3 gefaltet wurde, sagt jetzt das V3-Feld `v3Refreshed` (+ `v3Refresh`-Detail in der Antwort).
    `/api/cron/lage-check` wie Step 1 mit `withTimeout` (280s) + Timing-Log gehärtet. Offline-Gate 8/8 grün.
    `runMorningBriefing` bleibt (nur noch `runDailyPipeline`) — Löschung erst in Step 4.
-4. Erst dann `runMorningBriefing` + `personalization.js` + `runtime.js`-Briefing-Familie
-   löschen (vorher `cemInceProfile`/`demoSources`/`getActiveProfile` in ein Config-Modul
-   verschieben). Nach jedem Schritt: `npm test` (Smoke) + `npm run test:contract` gegen
-   das Deployment.
-5. Flags in `storage.js` unbedingt-live schalten + entfernen.
+4. ~~`runMorningBriefing` + `personalization.js` + `runtime.js`-Briefing-Familie löschen.~~
+   ✅ **teilweise erledigt (Step 4):** `runDailyPipeline` (tot) + `runMorningBriefing` (kein aktiver
+   Aufruf) + exklusive V2-Helper-Kaskade **entfernt** (scheduler −742 Z.); `personalization.js` **gelöscht**
+   (−888 Z.); tote Imports in `server.js` raus. Offline-Gate 8/8 grün. **Bewusst NICHT gelöscht** (noch
+   gebraucht → berichtet, kein blindes Löschen): `runtime.js` (`generateBriefing`/`demoRawItems`/`demoSources`
+   → `/api/tasks/demo`; `cemInceProfile` = Single-Tenant-Default; `inferEntities` → p1-Test),
+   `getLatestOrDemoBriefing`+`buildEmptyBriefing` (→ `/api/debug/briefing`), `buildPipelineDebugReport` (→ p1).
+   **Config-Modul-Move entfällt vorerst:** `runtime.js` bleibt bestehen, daher behält `cemInceProfile` sein Zuhause;
+   `getActiveProfile` liegt ohnehin in `scheduler.js`. Der Config-Move lohnt erst, wenn `runtime.js` wirklich gelöscht wird.
+5. **(Follow-up vor endgültigem `runtime.js`-Löschen):** Demo-/Debug-Endpunkte `/api/tasks/demo` +
+   `/api/debug/briefing` auf V3 umstellen **oder** entfernen; danach `runtime.js`-Briefing-Familie +
+   `getLatestOrDemoBriefing`/`buildEmptyBriefing` löschen und `cemInceProfile`/`inferEntities` in ein Config-Modul ziehen.
+6. Flags in `storage.js` unbedingt-live schalten + entfernen.
 
 ---
 
