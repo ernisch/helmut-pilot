@@ -2568,6 +2568,21 @@ function vsheetSourceRow(source) {
     : `<div class="vsheet-src">${inner}</div>`;
 }
 
+// Status DIESES Vorgangs — rein aus dem bereits vorhandenen Feld v.status
+// (dieselbe Zuordnung wie der Karten-Status-Chip, LAGE_STATUS_LABEL). KEIN neues
+// Feld, KEINE KI, KEINE Berechnung, KEINE Tagesentscheidung. Farbe ist reine
+// Anzeigekonvention des vorhandenen Status. Unbekannter/fehlender Status ->
+// Abschnitt wird weggelassen (keine Dummy-Werte).
+const VSHEET_STATUS_DOT = Object.assign(Object.create(null), {
+  beobachtung: "is-green", neu: "is-amber", update: "is-amber", abgeschlossen: "is-neutral"
+});
+function vsheetStatusHtml(v) {
+  const label = LAGE_STATUS_LABEL[v && v.status];
+  if (!label) return "";
+  const dot = VSHEET_STATUS_DOT[v.status] || "is-neutral";
+  return `<div class="vsheet-status"><span class="vsheet-status-dot ${dot}" aria-hidden="true"></span><span>${escapeHtml(label)}</span></div>`;
+}
+
 // Rendert den kompletten Sheet-Inhalt (8 Abschnitte, leere ausgeblendet) aus den
 // bereits vorhandenen Kartendaten — keinerlei Neuberechnung/Fetch/KI.
 function vsheetContentHtml(v) {
@@ -2608,7 +2623,8 @@ function vsheetContentHtml(v) {
     ${kurz ? `
     <section class="vsheet-sec">
       <p class="vsheet-lede">${escapeHtml(kurz)}</p>
-    </section>` : ""}
+      ${vsheetStatusHtml(v)}
+    </section>` : vsheetStatusHtml(v) ? `<section class="vsheet-sec">${vsheetStatusHtml(v)}</section>` : ""}
 
     ${warumPoints.length ? `
     <section class="vsheet-sec">
@@ -2628,14 +2644,14 @@ function vsheetContentHtml(v) {
 
     ${sourcesSorted.length ? `
     <section class="vsheet-sec">
-      <h3 class="vsheet-h">Quellen</h3>
+      <h3 class="vsheet-h">Originalquellen</h3>
       <div class="vsheet-sources">${sourcesSorted.map(vsheetSourceRow).join("")}</div>
     </section>` : ""}
 
     ${chrono.length ? `
     <section class="vsheet-sec">
       <h3 class="vsheet-h">Chronologie</h3>
-      <ul class="vdetail-chrono">
+      <ul class="vsheet-chrono">
         ${chrono.map((c) => `<li><time>${escapeHtml([c.dateLabel, c.timeLabel].filter(Boolean).join(", "))}</time><p>${escapeHtml(c.text)}</p></li>`).join("")}
       </ul>
     </section>` : ""}
@@ -2656,11 +2672,11 @@ function openVorgangSheet(id) {
   root.className = "vsheet-root";
   root.innerHTML = `
     <div class="vsheet-backdrop" data-vsheet-close></div>
-    <div class="vsheet" role="dialog" aria-modal="true" aria-labelledby="vsheet-title">
+    <div class="vsheet" role="dialog" aria-modal="true" aria-labelledby="vsheet-title" tabindex="-1">
       <div class="vsheet-topbar" data-vsheet-topbar>
         <div class="vsheet-grip" data-vsheet-grip aria-hidden="true"><span class="vsheet-grabber"></span></div>
         <button class="vsheet-close" type="button" data-vsheet-close aria-label="Detailansicht schließen">
-          <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
         </button>
       </div>
       <div class="vsheet-scroll" data-vsheet-scroll>${vsheetContentHtml(v)}</div>
@@ -2746,10 +2762,11 @@ function openVorgangSheet(id) {
   };
   requestAnimationFrame(setup);
 
-  // Fokus auf die Schließen-Schaltfläche (nach dem Einfahren, ohne Scroll-Sprung).
+  // Fokus in den Dialog selbst (nicht auf das X) — Fokus liegt auf dem Inhalt,
+  // kein prominenter Fokusring auf der Schließen-Schaltfläche. Der Fokus-Trap
+  // (Tab) und Escape bleiben aktiv.
   requestAnimationFrame(() => {
-    const closeBtn = root.querySelector(".vsheet-close");
-    if (closeBtn) { try { closeBtn.focus({ preventScroll: true }); } catch (_) { closeBtn.focus(); } }
+    if (sheet) { try { sheet.focus({ preventScroll: true }); } catch (_) { sheet.focus(); } }
   });
 }
 

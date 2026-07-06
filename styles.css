@@ -10415,6 +10415,10 @@ body:has(.lage2) {
 }
 /* Weiche, hochwertige Bewegung (Apple-Maps/Music/Wallet-Anmutung, kein technisches Snappen). */
 .vsheet.vsheet-anim { transition: transform 460ms cubic-bezier(.32, .72, 0, 1); }
+/* Der Dialog wird beim Öffnen programmatisch fokussiert (Fokus in den Modal
+   holen) — dafür KEIN sichtbarer Ring um das ganze Sheet. Echte Bedienelemente
+   (X, Links) behalten ihren Fokusring. */
+.vsheet:focus, .vsheet:focus-visible { outline: none; }
 
 /* Obere Bedienebene (sticky): Grabber + Schließen bleiben beim Scrollen stabil
    erreichbar. NUR diese Leiste ist fixiert — Titel/Meta scrollen normal weg.
@@ -10435,15 +10439,17 @@ body:has(.lage2) {
 .vsheet-grip:active { cursor: grabbing; }
 .vsheet-grabber { width: 36px; height: 5px; border-radius: 999px; background: var(--muted-2); opacity: .5; }
 
-/* Schließen (X) — Touch-Ziel ≥44px, in der sticky Leiste rechts. */
+/* Schließen (X) — ruhig & klein: dünne Linie, kein Rahmen/keine Fläche, mehr
+   Abstand zum Rand. Die 44px-Trefferfläche bleibt für die Bedienbarkeit, das
+   Glyph ist bewusst klein und dezent, damit der Fokus auf dem Inhalt liegt. */
 .vsheet-close {
-  position: absolute; top: 50%; right: 10px; transform: translateY(-50%); z-index: 3;
+  position: absolute; top: 50%; right: 14px; transform: translateY(-50%); z-index: 3;
   width: 44px; height: 44px; display: grid; place-items: center;
-  border: 0; background: none; color: var(--muted); cursor: pointer; border-radius: 12px;
-  transition: background var(--dur-base) var(--ease-out-soft), color var(--dur-base) var(--ease-out-soft);
+  border: 0; background: none; color: var(--muted-2); cursor: pointer; border-radius: 10px;
+  transition: color var(--dur-base) var(--ease-out-soft);
 }
-.vsheet-close:hover { background: rgba(140, 140, 160, .14); color: var(--text); }
-.vsheet-close svg { width: 20px; height: 20px; }
+.vsheet-close:hover { color: var(--text); }
+.vsheet-close svg { width: 16px; height: 16px; }
 
 /* Scrollbereich — nur der Inhalt scrollt, das Sheet-Gerüst bleibt fix. */
 .vsheet-scroll {
@@ -10457,64 +10463,72 @@ body:has(.lage2) {
 .vsheet-head { padding: 4px 0 2px 0; }
 .vsheet-head .lage2-vtag { margin-bottom: 15px; }
 .vsheet-title {
-  margin: 0; font-size: clamp(24px, 6.2vw, 31px); font-weight: 700;
-  letter-spacing: -.021em; line-height: 1.2; color: var(--text);
+  margin: 0; font-size: clamp(25px, 6.6vw, 33px); font-weight: 700;
+  letter-spacing: -.022em; line-height: 1.18; color: var(--text);
   hyphens: auto; overflow-wrap: break-word;
 }
 .vsheet-title-fallback { font-size: clamp(19px, 5vw, 23px); line-height: 1.28; }
-/* Kompakte Meta-Zeile: „Politischer Vorgang · Datum · Quelle" — sofort einordnen. */
+/* Kompakte Meta-Zeile (kleiner als Fließtext): „Politischer Vorgang · Datum · Quelle". */
 .vsheet-metaline {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 7px;
-  margin-top: 14px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+  margin-top: 13px; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums;
 }
 .vsheet-meta-type { font-weight: 600; color: var(--muted); }
 .vsheet-metasep { color: var(--muted-2); }
 
-/* Abschnitte — mehr Weißraum, ruhigere Überschriften (Premium statt Formular). */
-.vsheet-sec { margin-top: 36px; }
-.vsheet-sec:first-of-type { margin-top: 24px; }
+/* Abschnitte — deutlich mehr Weißraum zwischen Bereichen; ruhigere, kleinere
+   Überschriften. Hierarchie durch Abstand & Größe, nicht durch Farbe. */
+.vsheet-sec { margin-top: 42px; }
+.vsheet-sec:first-of-type { margin-top: 22px; }
 .vsheet-h {
-  margin: 0 0 15px; font-size: 12px; font-weight: 650; letter-spacing: .09em;
+  margin: 0 0 14px; font-size: 11px; font-weight: 600; letter-spacing: .1em;
   text-transform: uppercase; color: var(--muted-2);
 }
 
-/* (2) Kurzfassung — ruhige Lesetype; sichtbar auf max. 4 Zeilen begrenzt
-   (kompakte Akte statt Bericht). Kürzt sauber mit „…", erzeugt keinen Inhalt. */
+/* (2) Kurzfassung — ruhige, etwas kleinere Lesetype; sichtbar auf max. 4 Zeilen
+   begrenzt (kompakte Akte statt Bericht). Kürzt sauber mit „…", erzeugt nichts. */
 .vsheet-lede {
-  margin: 0; font-size: 16px; line-height: 1.6; color: var(--text);
+  margin: 0; font-size: 15px; line-height: 1.58; color: var(--text);
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden;
 }
+/* Status DIESES Vorgangs — kleine, ruhige Statuszeile direkt unter der
+   Kurzfassung (aus bestehendem v.status). Farbe ist ruhig, kein Alarm. */
+.vsheet-status { display: inline-flex; align-items: center; gap: 8px; margin-top: 13px; font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.vsheet-status-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.vsheet-status-dot.is-green { background: #3fb769; }
+.vsheet-status-dot.is-amber { background: #e0a53c; }
+.vsheet-status-dot.is-neutral { background: var(--muted-2); }
 
 /* (3) Warum wichtig — ruhige, kompakte politische Notiz: kleinere Schrift,
    engere Zeilenhöhe, je Punkt max. 2 Zeilen (max. 3 Punkte via JS). */
-.vsheet-why { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 11px; }
+.vsheet-why { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
 .vsheet-why li {
-  position: relative; padding-left: 22px; font-size: 14.5px; line-height: 1.48; color: var(--text);
+  position: relative; padding-left: 20px; font-size: 14px; line-height: 1.45; color: var(--text);
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
 }
 .vsheet-why li::before {
-  content: ""; position: absolute; left: 4px; top: 8px; width: 5px; height: 5px;
+  content: ""; position: absolute; left: 3px; top: 8px; width: 4px; height: 4px;
   border-radius: 50%; background: var(--muted-2);
 }
 
 /* (4) Empfehlung — kompakter & dezenter: weniger Padding, kleinere Schrift,
    ruhigerer Grund, sichtbar auf max. 4 Zeilen begrenzt. Kein Rahmen. */
 .vsheet-reco {
-  margin: 0; padding: 13px 15px; border-radius: 13px;
-  background: rgba(140, 92, 255, .05); border: 0;
-  font-size: 14.5px; line-height: 1.5; color: var(--text);
+  margin: 0; padding: 11px 13px; border-radius: 12px;
+  background: rgba(140, 92, 255, .045); border: 0;
+  font-size: 14px; line-height: 1.48; color: var(--text);
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden;
 }
 
 /* (5) Betroffene — kleinere, elegantere Chips mit mehr Abstand (unterstützen, nicht dominieren). */
-.vsheet-groups { display: flex; flex-direction: column; gap: 17px; }
+.vsheet-groups { display: flex; flex-direction: column; gap: 16px; }
 .vsheet-group { display: flex; flex-direction: column; gap: 9px; }
-.vsheet-group-label { font-size: 12px; font-weight: 600; color: var(--muted); }
-.vsheet-chips { display: flex; flex-wrap: wrap; gap: 9px; }
+.vsheet-group-label { font-size: 11.5px; font-weight: 600; color: var(--muted); }
+.vsheet-chips { display: flex; flex-wrap: wrap; gap: 10px; }
 .vsheet-chip {
   font-size: 12px; font-weight: 550; color: var(--muted);
   background: transparent; border: 1px solid var(--line);
-  border-radius: 999px; padding: 5px 11px; line-height: 1.2;
+  border-radius: 999px; padding: 4px 11px; line-height: 1.25;
 }
 
 /* (6) Quellen — gut sichtbarer Vertrauensblock: Name > Zeit · Quelle > Externer Link. */
@@ -10530,8 +10544,17 @@ body:has(.lage2) {
 .vsheet-src-ext { width: 17px; height: 17px; flex: none; color: var(--muted-2); transition: color 200ms var(--ease-out-soft); }
 .vsheet-src:hover .vsheet-src-name { color: var(--command-purple); }
 .vsheet-src:hover .vsheet-src-ext { color: var(--command-purple); }
-/* (8) Chronologie nutzt die bestehenden .vdetail-chrono-Styles unverändert. */
-.vsheet-empty { margin: 0; font-size: 14.5px; color: var(--muted); }
+/* (8) Chronologie — minimalistische Timeline: dünne vertikale Linie, kleine
+   ruhige Punkte (statt großer Kreise mit Akzentrand). */
+.vsheet-chrono { list-style: none; margin: 0; padding: 0; }
+.vsheet-chrono li { position: relative; padding: 0 0 15px 20px; }
+.vsheet-chrono li:last-child { padding-bottom: 0; }
+.vsheet-chrono li::before { content: ""; position: absolute; left: 3px; top: 6px; bottom: -5px; width: 1px; background: var(--line); }
+.vsheet-chrono li:last-child::before { display: none; }
+.vsheet-chrono li::after { content: ""; position: absolute; left: 0; top: 5px; width: 7px; height: 7px; border-radius: 50%; background: var(--muted-2); }
+.vsheet-chrono time { display: block; font-size: 11px; font-weight: 600; color: var(--muted-2); margin: 0 0 2px; font-variant-numeric: tabular-nums; }
+.vsheet-chrono p { margin: 0; font-size: 13.5px; line-height: 1.45; color: var(--text); }
+.vsheet-empty { margin: 0; font-size: 14px; color: var(--muted); }
 
 /* Reduzierte Bewegung: kein Slide/kein Fade-Timing — sofort sichtbar. */
 @media (prefers-reduced-motion: reduce) {
@@ -10545,5 +10568,5 @@ body:has(.lage2) {
 }
 
 /* Light-Theme: Tints an helle Fläche anpassen. */
-:root[data-theme="light"] .vsheet-reco { background: rgba(109, 76, 255, .05); }
+:root[data-theme="light"] .vsheet-reco { background: rgba(109, 76, 255, .045); }
 :root[data-theme="light"] .vsheet-close:hover { background: rgba(15, 23, 42, .07); }
