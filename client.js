@@ -2078,11 +2078,23 @@ function lageHasSource(v) {
   return Number(v.sourceCount) > 0;
 }
 
+// Produktive Lage zeigt NUR Vorgänge, deren Presentation-Fields bereits von der
+// Understanding-Engine erzeugt wurden — gültiges display_title UND display_summary.
+// Alt-Vorgänge ohne diese Felder werden AUSGEBLENDET, statt einen kaputten
+// Legacy-Titel zu zeigen (headline/was_ist_passiert, oft mitten im Satz
+// abgeschnitten wie "Friedrich Merz hat öffentlich …"). Kein Fake, kein
+// Fallback-Titel — lieber weniger, aber ausschließlich saubere Karten. Sobald der
+// Presentation-Backfill gelaufen ist, erscheinen die betroffenen Vorgänge wieder.
+function lageVorgangReady(v) {
+  return Boolean(lageField(v.displayTitle)) && Boolean(lageField(v.displaySummary));
+}
+
 // Die tatsächlich sichtbare Menge — Kopfzahl ("Heute gibt es N neue Vorgänge")
 // und Karussell leiten sich BEIDE hieraus ab, damit sie nie auseinanderlaufen.
+// Der Filter (echte Quelle + fertige Presentation-Fields) läuft VOR der Zählung.
 function lageVisibleVorgaenge(data) {
   const list = (data && Array.isArray(data.vorgaenge)) ? data.vorgaenge : [];
-  return list.filter(lageHasSource);
+  return list.filter((v) => lageHasSource(v) && lageVorgangReady(v));
 }
 
 // Fallback-Kategorie für Vorgänge ohne v.displayCategory (ältere Vorgänge):
@@ -2412,6 +2424,7 @@ function bindLageCardTap(track) {
 let vsheetEl = null;          // aktueller Overlay-Wurzelknoten oder null
 let vsheetLastFocus = null;   // Fokus-Rückgabeziel (die angetippte Karte)
 let vsheetKeyHandler = null;  // globaler Escape/Tab-Handler (zum sauberen Entfernen)
+let vsheetGhostGuard = null;  // löst den Ghost-Click-Fänger (siehe openVorgangSheet)
 
 // Findet den Vorgang in den bereits geladenen Briefing-Daten (kein Fetch).
 function vsheetFindVorgang(id) {
@@ -2636,6 +2649,28 @@ function openVorgangSheet(id) {
     el.addEventListener("click", () => closeVorgangSheet());
   });
 
+  // ── Ghost-Click-Schutz (behebt „Sheet öffnet und schließt sofort") ────────
+  // Der Tap, der das Sheet öffnet, endet mit pointerup auf der KARTE; direkt
+  // danach feuert der Browser (auf Touch als verzögertes Kompat-Event) genau
+  // EINEN click an derselben Bildschirmstelle. Da das bildschirmfüllende Backdrop
+  // nun über der Tap-Stelle liegt, träfe dieser eine Klick das Backdrop und würde
+  // das gerade geöffnete Sheet SOFORT wieder schließen. Wir fangen exakt diesen
+  // einen nachfolgenden Klick in der CAPTURE-Phase ab (läuft vor dem Backdrop-
+  // Handler) und lösen den Fänger danach wieder — spätere, bewusste Backdrop-
+  // Klicks (neue Geste) schließen wie vorgesehen.
+  {
+    let ghostTimer = 0;
+    const swallow = (ev) => { ev.stopPropagation(); ev.preventDefault(); releaseGuard(); };
+    const releaseGuard = () => {
+      if (ghostTimer) { window.clearTimeout(ghostTimer); ghostTimer = 0; }
+      document.removeEventListener("click", swallow, true);
+      vsheetGhostGuard = null;
+    };
+    document.addEventListener("click", swallow, true);
+    ghostTimer = window.setTimeout(releaseGuard, 700); // falls doch kein Klick folgt
+    vsheetGhostGuard = releaseGuard;
+  }
+
   // Escape + einfacher Fokus-Trap (Tab bleibt im Sheet).
   vsheetKeyHandler = (e) => {
     if (e.key === "Escape") { e.preventDefault(); closeVorgangSheet(); return; }
@@ -2797,6 +2832,7 @@ function vsheetTeardown() {
   if (!root) return;
   vsheetEl = null;
   if (vsheetKeyHandler) { document.removeEventListener("keydown", vsheetKeyHandler); vsheetKeyHandler = null; }
+  if (vsheetGhostGuard) { vsheetGhostGuard(); vsheetGhostGuard = null; }
   const d = root._vsheetDrag;
   if (d && d.sheet) {
     d.sheet.removeEventListener("pointerdown", d.onDown);
