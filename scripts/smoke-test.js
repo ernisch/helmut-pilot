@@ -244,8 +244,8 @@ async function checkOpsStatus() {
   const hasRecommendation = Number(status.briefing?.recommendationCount || 0) >= 1;
   const hasCalmWatchlist = Number(status.briefing?.situationalCount || 0) > 0 || Boolean(status.briefing?.quality?.calmState);
   ok(hasRecommendation || hasCalmWatchlist, "Latest briefing contains a recommendation or competent no-action watchlist");
-  ok(status.briefing?.quality?.status === "Pitchbereit" || Number(status.briefing?.quality?.score || 0) >= 90, "Briefing quality is pitch-ready");
-  ok(Number(status.briefing?.referentEngine?.score || 0) >= 85 || Boolean(status.briefing?.referentEngine?.calmState), "Referent engine audit passes");
+  ok(status.briefing?.quality?.status === "Pitchbereit" || Number(status.briefing?.quality?.score || 0) >= 90 || Boolean(status.briefing?.quality?.calmState), "Briefing quality is pitch-ready");
+  ok(status.briefing?.engine === "v3" && (Number(status.briefing?.datenmotor?.score || 0) >= 70 || Boolean(status.briefing?.datenmotor?.ready) || Boolean(status.briefing?.datenmotor?.calmState)), "V3 data engine audit passes");
   ok(Boolean(status.learning && typeof status.learning.status === "string"), "Ops status exposes learning mode");
   ok(Number(status.evidenceQuality?.missingLinks || 0) === 0, "Visible evidence has no missing links");
   return status;
@@ -272,7 +272,7 @@ async function checkBriefing() {
   const hasCalmWatchlist = Array.isArray(briefing.situationalBriefing) && briefing.situationalBriefing.length > 0;
   ok(hasDecision || hasCalmWatchlist, "Briefing has decisions or a competent no-action watchlist");
   ok(Array.isArray(briefing.personalizedRecommendations), "Briefing exposes personalized recommendations");
-  ok(briefing.referentEngine?.status === "Stabschefbereit" || Number(briefing.referentEngine?.score || 0) >= 85 || Boolean(briefing.referentEngine?.calmState), "Briefing has referent-mode audit");
+  ok(briefing.engine === "v3" && briefing.decisionMetrics && typeof briefing.decisionMetrics === "object", "Briefing is served by the V3 data engine");
   ok(Boolean(briefing.executiveSummary || briefing.themeOfDay || briefing.chiefRecommendation || briefing.topicOfTheDay || briefing.agentBriefing), "Briefing has a top-level referent summary");
   return briefing;
 }

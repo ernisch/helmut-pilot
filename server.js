@@ -471,18 +471,21 @@ async function handleRequest(request, response) {
 
   if (url.pathname === "/api/ops/status") {
     return handleAsync(response, async () => {
+      const profile = await activeProfile(politicianId);
       const latestCrawl = await getLatestCrawlRun();
       const latestLageCheck = await getLatestLageCheck(politicianId);
-      const latestBriefing = await getLatestBriefing(politicianId);
+      // V3: Ops liest das frisch aus Knowledge Objects erzeugte Briefing (kein V2-Blob).
+      const v3Briefing = await buildV3Briefing(profile, politicianId);
       const latestDebug = await getLatestPipelineDebugReport(politicianId);
       const storage = getStorageStatus();
       const storeSummary = await getStoreSummary(politicianId);
-      const evidenceQuality = sourceEvidenceQuality(latestBriefing);
+      const evidenceQuality = sourceEvidenceQuality(v3Briefing);
       const learning = buildLearningProfile(await getInteractions(politicianId));
-      const readiness = pilotReadiness(latestCrawl, latestBriefing, storage, evidenceQuality, latestLageCheck);
-      const backend = backendHealth(latestCrawl, latestBriefing, latestDebug, storage, storeSummary, evidenceQuality, latestBriefing?.referentEngine, learning, latestLageCheck);
+      const motorQuality = v3BriefingQuality(v3Briefing, evidenceQuality);
+      const readiness = pilotReadiness(latestCrawl, v3Briefing, storage, evidenceQuality, latestLageCheck);
+      const backend = backendHealth(latestCrawl, v3Briefing, latestDebug, storage, storeSummary, evidenceQuality, motorQuality, learning, latestLageCheck);
       return {
-        status: operationalStatus(latestCrawl, latestBriefing, storage, latestLageCheck),
+        status: operationalStatus(latestCrawl, v3Briefing, storage, latestLageCheck),
         backend,
         readiness,
         learning,
@@ -500,15 +503,16 @@ async function handleRequest(request, response) {
         },
         crawl: latestCrawl || null,
         lageCheck: latestLageCheck || null,
-        briefing: latestBriefing ? {
-          id: latestBriefing.id,
-          status: latestBriefing.status,
-          generatedAt: latestBriefing.generatedAt || latestBriefing.date,
-          itemCount: Array.isArray(latestBriefing.items) ? latestBriefing.items.length : 0,
-          recommendationCount: Array.isArray(latestBriefing.personalizedRecommendations) ? latestBriefing.personalizedRecommendations.length : 0,
-          situationalCount: Array.isArray(latestBriefing.situationalBriefing) ? latestBriefing.situationalBriefing.length : 0,
-          quality: latestBriefing.quality || null,
-          referentEngine: latestBriefing.referentEngine || null
+        briefing: v3Briefing ? {
+          engine: "v3",
+          status: v3Briefing.status,
+          generatedAt: v3Briefing.generatedAt,
+          available: Boolean(v3Briefing.available),
+          itemCount: Array.isArray(v3Briefing.items) ? v3Briefing.items.length : 0,
+          recommendationCount: Array.isArray(v3Briefing.personalizedRecommendations) ? v3Briefing.personalizedRecommendations.length : 0,
+          situationalCount: Array.isArray(v3Briefing.situationalBriefing) ? v3Briefing.situationalBriefing.length : 0,
+          quality: motorQuality,
+          datenmotor: motorQuality
         } : null,
         cron: {
           timezone: "Europe/Berlin",
@@ -1740,7 +1744,35 @@ function latestLageFreshnessDetail(crawl, lageCheck) {
   return parts.length ? parts.join(" · ") : "Noch keine Lageprüfung gespeichert.";
 }
 
-function backendHealth(crawl, briefing, debugReport, storage, storeSummary, evidenceQuality, referentEngine = null, learning = null, lageCheck = null) {
+// V3-Datenmotor-Qualität: ersetzt die V2-referentEngine-Signale in Ops/Health/
+// Release-Check. Bewertet den V3-Briefing-Zustand deterministisch aus available +
+// decisionMetrics + Quellenlinks — ohne V2, ohne KI.
+function v3BriefingQuality(briefing, evidenceQuality) {
+  const available = Boolean(briefing && briefing.available);
+  const dm = (briefing && briefing.decisionMetrics) || {};
+  const total = Number(dm.total || 0);
+  const react = Number(dm.react || 0);
+  const situational = Array.isArray(briefing && briefing.situationalBriefing) ? briefing.situationalBriefing.length : 0;
+  // Ruhelage: verstandene Vorgänge vorhanden, aber keine akute Reaktion nötig.
+  const calmState = available && react === 0 && (total > 0 || situational > 0);
+  const linksOk = Number(evidenceQuality?.missingLinks || 0) === 0 && Number(evidenceQuality?.publisherFallbacks || 0) === 0;
+  let score = 0;
+  if (available || calmState) score += 60;
+  if (total > 0 || situational > 0) score += 20;
+  if (linksOk) score += 20;
+  score = Math.min(100, score);
+  return {
+    engine: "v3",
+    status: score >= 90 ? "Pitchbereit" : score >= 70 ? "Prüfen" : "Aufbau",
+    score,
+    ready: score >= 90 || calmState,
+    calmState,
+    understoodVorgaenge: total,
+    reactCount: react
+  };
+}
+
+function backendHealth(crawl, briefing, debugReport, storage, storeSummary, evidenceQuality, motorQuality = null, learning = null, lageCheck = null) {
   const checks = [];
   addBackendCheck(checks, "Persistenter Speicher", storage.backend === "supabase", storage.backend === "supabase" ? "Supabase ist aktiv." : "Helmut speichert noch lokal.");
   addBackendCheck(checks, "Quellenbasis", Number(storeSummary.sources?.active || 0) >= minConfiguredSources, `${storeSummary.sources?.active || 0} aktive Quellen konfiguriert.`);
@@ -1757,13 +1789,13 @@ function backendHealth(crawl, briefing, debugReport, storage, storeSummary, evid
   const recommendationCount = Number(briefing?.personalizedRecommendations?.length || 0);
   const itemCount = Number(briefing?.items?.length || 0);
   const situationalCount = Number(briefing?.situationalBriefing?.length || 0);
-  const calmState = Boolean(briefing?.quality?.calmState || referentEngine?.calmState || situationalCount > 0);
+  const calmState = Boolean(motorQuality?.calmState || situationalCount > 0);
   const hasDecisionValue = recommendationCount > 0 && itemCount > 0;
   addBackendCheck(checks, "Briefing-Frische", Boolean(briefing) && briefingAge < 18 * 60 * 60 * 1000, briefingDate ? `Letztes Briefing: ${briefingDate}.` : "Noch kein Briefing gespeichert.");
   addBackendCheck(checks, "Demo-Freiheit", Boolean(briefing) && briefing.status !== "Demo", briefing?.status ? `Status: ${briefing.status}.` : "Kein Briefingstatus vorhanden.");
   addBackendCheck(checks, "Entscheidungswert", hasDecisionValue || calmState, hasDecisionValue ? `${recommendationCount} persönliche Empfehlungen, ${itemCount} sichtbare Entscheidungen.` : `${situationalCount} Beobachtungspunkte, keine neue Reaktion nötig.`);
   addBackendCheck(checks, "Quellenlinks", Number(evidenceQuality?.missingLinks || 0) === 0 && Number(evidenceQuality?.publisherFallbacks || 0) === 0, `${evidenceQuality?.directLinks || 0}/${evidenceQuality?.total || 0} Belege mit Direktlink.`);
-  addBackendCheck(checks, "Referentenmodus", Number(referentEngine?.score || 0) >= 85 || calmState, referentEngine ? `${referentEngine.status}: ${referentEngine.score}% Referentenqualität.` : "Stabile Lage ohne neue Handlungspflicht.");
+  addBackendCheck(checks, "Datenmotor V3", Number(motorQuality?.score || 0) >= 70 || Boolean(motorQuality?.ready) || calmState, motorQuality ? `${motorQuality.status}: ${motorQuality.score}% (${motorQuality.understoodVorgaenge || 0} Vorgänge bewertet).` : "Stabile Lage ohne neue Handlungspflicht.");
   addBackendCheck(checks, "Lernmodus", Number(learning?.eventCount || 0) >= 1, learning?.eventCount ? `${learning.eventCount} Nutzungssignale gespeichert, Vertrauen ${learning.confidence}.` : "Noch keine Nutzungssignale gespeichert.");
   addBackendCheck(checks, "Pipeline-Debug", Boolean(debugReport?.counts), debugReport?.createdAt ? `Letzter Debug: ${debugReport.createdAt}.` : "Noch kein Debug-Report gespeichert.");
 
@@ -1835,9 +1867,10 @@ function pilotReadiness(crawl, briefing, storage, evidenceQuality = null, lageCh
   const successfulSources = Number(crawl?.successfulSources || 0);
   const recommendationCount = Array.isArray(briefing?.personalizedRecommendations) ? briefing.personalizedRecommendations.length : 0;
   const situationalCount = Array.isArray(briefing?.situationalBriefing) ? briefing.situationalBriefing.length : 0;
-  const quality = briefing?.quality || null;
+  // V3: Qualität kommt deterministisch aus dem V3-Datenmotor (kein V2-quality-Blob).
+  const quality = briefing ? v3BriefingQuality(briefing, evidenceQuality) : null;
   const qualityScore = Number(quality?.score || 0);
-  const calmState = Boolean(quality?.calmState || briefing?.referentEngine?.calmState || situationalCount > 0);
+  const calmState = Boolean(quality?.calmState || situationalCount > 0);
 
   if (storage.backend !== "supabase") issues.push("Supabase ist nicht aktiv.");
   if (!isAiEnabled()) warnings.push("OpenAI ist nicht aktiv. Helmut läuft dann weniger persönlich.");
@@ -1892,7 +1925,8 @@ function releaseCheck({ crawl, briefing, storage, storeSummary, evidenceQuality,
   addReleaseCheck(checks, "Briefing", Boolean(briefing) && briefingAge < 18 * 60 * 60 * 1000 && hasDecisionOrCompetentCalm && briefing.status !== "Demo", briefing ? `${visibleDecisionCount} Entscheidungen, ${recommendationCount} Empfehlungen, ${situationalCount} Beobachtungspunkte.` : "Kein Briefing.");
   addReleaseCheck(checks, "Quellenlinks", Number(evidenceQuality?.missingLinks || 0) === 0 && Number(evidenceQuality?.publisherFallbacks || 0) === 0, `${evidenceQuality?.directLinks || 0}/${evidenceQuality?.total || 0} sichtbare Belege mit Direktlink.`);
   addReleaseCheck(checks, "Radar", Array.isArray(briefing?.personMentions) && Array.isArray(radarArchive?.articles), `${briefing?.personMentions?.length || 0} neue Personenartikel, ${radarArchive?.total || 0} Archivartikel.`);
-  addReleaseCheck(checks, "Referentenmodus", Number(briefing?.referentEngine?.score || 0) >= 85 || Boolean(briefing?.quality?.calmState) || Number(backend?.score || 0) >= 90, briefing?.referentEngine ? `${briefing.referentEngine.status || "Referentenmodus"}: ${briefing.referentEngine.score}% Referentenqualität.` : `${backend?.score || 0}% Backendgesundheit.`);
+  const releaseMotor = v3BriefingQuality(briefing, evidenceQuality);
+  addReleaseCheck(checks, "Datenmotor V3", releaseMotor.score >= 70 || releaseMotor.calmState || Number(backend?.score || 0) >= 90, `${releaseMotor.status}: ${releaseMotor.score}% (${releaseMotor.understoodVorgaenge} Vorgänge bewertet).`);
   addReleaseCheck(checks, "Live-Flow", liveFlow.ready, liveFlow.summary);
 
   const passed = checks.filter((check) => check.ok).length;
@@ -1986,21 +2020,24 @@ function readinessScore(issues, warnings) {
 }
 
 async function computeReleaseCheck(politicianId = cemInceProfile.id) {
+  const profile = await activeProfile(politicianId);
   const latestCrawl = await getLatestCrawlRun();
   const latestLageCheck = await getLatestLageCheck(politicianId);
-  const latestBriefing = await getLatestBriefing(politicianId);
+  // V3: Release-Check bewertet das frisch erzeugte V3-Briefing (kein V2-Blob).
+  const v3Briefing = await buildV3Briefing(profile, politicianId);
   const latestDebug = await getLatestPipelineDebugReport(politicianId);
   const storage = getStorageStatus();
   const storeSummary = await getStoreSummary(politicianId);
-  const evidenceQuality = sourceEvidenceQuality(latestBriefing);
-  const radarArchive = await getRadarArchive(await activeProfile(politicianId), 92);
+  const evidenceQuality = sourceEvidenceQuality(v3Briefing);
+  const radarArchive = await getRadarArchive(profile, 92);
   const learning = buildLearningProfile(await getInteractions(politicianId));
-  const backend = backendHealth(latestCrawl, latestBriefing, latestDebug, storage, storeSummary, evidenceQuality, latestBriefing?.referentEngine, learning, latestLageCheck);
-  const readiness = pilotReadiness(latestCrawl, latestBriefing, storage, evidenceQuality, latestLageCheck);
+  const motorQuality = v3BriefingQuality(v3Briefing, evidenceQuality);
+  const backend = backendHealth(latestCrawl, v3Briefing, latestDebug, storage, storeSummary, evidenceQuality, motorQuality, learning, latestLageCheck);
+  const readiness = pilotReadiness(latestCrawl, v3Briefing, storage, evidenceQuality, latestLageCheck);
   return releaseCheck({
     crawl: latestCrawl,
     lageCheck: latestLageCheck,
-    briefing: latestBriefing,
+    briefing: v3Briefing,
     storage,
     storeSummary,
     evidenceQuality,
@@ -2040,10 +2077,12 @@ function publicReleasePayload(release) {
 // Betriebssignale (Crawl/Briefing frisch, Speicher aktiv, Fehler-Spike) statt des
 // strengen Pitch-Gates, plus Engagement aus dem Nutzungs-Tracking.
 async function buildHealthReport(politicianId = cemInceProfile.id) {
+  // V3: Health-Report bewertet das frisch erzeugte V3-Briefing (kein V2-Blob).
+  const profile = await activeProfile(politicianId);
   const [crawl, lageCheck, briefing, pipeline, errors, users, feedback, pushEvents] = await Promise.all([
     getLatestCrawlRun(),
     getLatestLageCheck(politicianId),
-    getLatestBriefing(politicianId),
+    buildV3Briefing(profile, politicianId),
     getLatestPipelineDebugReport(politicianId),
     accounts.listSystemErrors(100),
     accounts.listUsers(),
