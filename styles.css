@@ -10485,12 +10485,10 @@ body:has(.lage2) {
   text-transform: uppercase; color: var(--muted-2);
 }
 
-/* (2) Kurzfassung — ruhige, etwas kleinere Lesetype; sichtbar auf max. 4 Zeilen
-   begrenzt (kompakte Akte statt Bericht). Kürzt sauber mit „…", erzeugt nichts. */
-.vsheet-lede {
-  margin: 0; font-size: 15px; line-height: 1.58; color: var(--text);
-  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden;
-}
+/* (2) Kurzfassung — VOLLSTÄNDIG in der Detailansicht (kein Line-Clamp, keine
+   Ellipse): der Nutzer will hier bewusst lesen und scrollt bei Bedarf im Sheet.
+   Die kompakte Kürzung passiert nur auf der Lage-Karte (eigener Code-Pfad). */
+.vsheet-lede { margin: 0; font-size: 15px; line-height: 1.6; color: var(--text); }
 /* Status DIESES Vorgangs — kleine, ruhige Statuszeile direkt unter der
    Kurzfassung (aus bestehendem v.status). Farbe ist ruhig, kein Alarm. */
 .vsheet-status { display: inline-flex; align-items: center; gap: 8px; margin-top: 13px; font-size: 12.5px; font-weight: 600; color: var(--muted); }
@@ -10501,23 +10499,23 @@ body:has(.lage2) {
 
 /* (3) Warum wichtig — ruhige, kompakte politische Notiz: kleinere Schrift,
    engere Zeilenhöhe, je Punkt max. 2 Zeilen (max. 3 Punkte via JS). */
-.vsheet-why { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+/* Warum wichtig — alle Stichpunkte VOLLSTÄNDIG (kein Clamp, kein abgeschnittener Satz). */
+.vsheet-why { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 11px; }
 .vsheet-why li {
-  position: relative; padding-left: 20px; font-size: 14px; line-height: 1.45; color: var(--text);
-  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+  position: relative; padding-left: 20px; font-size: 14.5px; line-height: 1.5; color: var(--text);
 }
 .vsheet-why li::before {
   content: ""; position: absolute; left: 3px; top: 8px; width: 4px; height: 4px;
   border-radius: 50%; background: var(--muted-2);
 }
 
-/* (4) Empfehlung — kompakter & dezenter: weniger Padding, kleinere Schrift,
-   ruhigerer Grund, sichtbar auf max. 4 Zeilen begrenzt. Kein Rahmen. */
+/* (4) Empfehlung — dezent hervorgehoben, aber VOLLSTÄNDIG (kein Line-Clamp, kein
+   abgeschnittener Satz). Kompakt/ruhig durch dezenten Grund & kleine Schrift,
+   nicht durch Kürzung; wächst mit dem Text, das Sheet scrollt. */
 .vsheet-reco {
-  margin: 0; padding: 11px 13px; border-radius: 12px;
+  margin: 0; padding: 13px 15px; border-radius: 12px;
   background: rgba(140, 92, 255, .045); border: 0;
-  font-size: 14px; line-height: 1.48; color: var(--text);
-  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden;
+  font-size: 14.5px; line-height: 1.55; color: var(--text);
 }
 
 /* (5) Betroffene — kleinere, elegantere Chips mit mehr Abstand (unterstützen, nicht dominieren). */

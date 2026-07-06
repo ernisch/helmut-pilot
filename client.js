@@ -2596,10 +2596,11 @@ function vsheetContentHtml(v) {
   // (2) Kurzfassung — bestehendes display_summary (Fallback: was_ist_passiert).
   const kurz = lageField(v.displaySummary) || lageField(v.summary && v.summary.wasIstPassiert);
   // (3) Warum wichtig — bestehendes why_relevant als Stichpunkte (Fallback:
-  // warumWichtig). Max. 3 Stichpunkte (kompakte politische Akte, kein Fließtext);
-  // jeder Punkt wird zusätzlich per CSS auf 2 Zeilen begrenzt.
+  // warumWichtig). In der Detailansicht VOLLSTÄNDIG: alle Sätze als Stichpunkte,
+  // keine künstliche Begrenzung. Der hohe Wert ist nur ein Sicherheitsnetz gegen
+  // pathologisches Splitten — es wird KEIN Inhalt erzeugt oder gekürzt.
   const warumSrc = lageHumanize(lageField(v.whyRelevant) || lageField(v.summary && v.summary.warumWichtig));
-  const warumPoints = warumSrc ? vsheetSentences(warumSrc, 3) : [];
+  const warumPoints = warumSrc ? vsheetSentences(warumSrc, 40) : [];
   // (4) Empfehlung — bestehendes recommendation (Fallback: handlungsempfehlung).
   const reco = lageHumanize(lageField(v.recommendation) || lageField(v.empfehlung));
   // (5) Betroffene
