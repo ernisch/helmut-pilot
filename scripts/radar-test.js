@@ -65,6 +65,28 @@ check("Signale tragen nur öffentliche Vorgangsdaten (kein privates Profilfeld)"
 const sig = result.signals.find((s) => s.vorgangId === "vg-r");
 check("Signal trägt title + signalType + url + reason", sig && sig.title && sig.signalType && sig.knowledgeObjectId === "ko-r");
 
+// --- 7) Eigenerwähnung des Abgeordneten zuverlässig erkennen (Step-4-Nachschliff)
+// Radar muss Eigenerwähnungen finden — auch wenn der Name NICHT als strukturierte
+// mentioned_*-Erwähnung extrahiert wurde, sondern nur im öffentlichen KO-Analysetext steht.
+{
+  const mdb = { id: "u-mdb", fullName: "Cem Özdemir", party: "Grüne" };
+  const one = (ko) => radar.buildRadarSignals(mdb, [{ ...base, id: "ko-x", vorgang_id: "vg-x", updated_at: iso(3600e3), ...ko }], { now: NOW });
+  check("Eigenerwähnung: voller Name in mentioned_mps -> reason=person",
+    one({ mentioned_mps: ["Cem Özdemir"] }).signals[0] && one({ mentioned_mps: ["Cem Özdemir"] }).signals[0].reason === "person");
+  check("Eigenerwähnung: Nachname allein in mentioned_people -> reason=person",
+    (one({ mentioned_people: ["Özdemir"] }).signals[0] || {}).reason === "person");
+  check("Eigenerwähnung PROSE-Fallback: voller Name im display_title (nicht extrahiert) -> person",
+    (one({ display_title: "Cem Özdemir fordert schnellere Agrarwende" }).signals[0] || {}).reason === "person");
+  check("Eigenerwähnung PROSE-Fallback: distinktiver Nachname als Wort im was_ist_passiert -> person",
+    (one({ was_ist_passiert: "Im Ausschuss kritisierte Özdemir die Verzögerung." }).signals[0] || {}).reason === "person");
+  check("Kein Fehltreffer: anderer Politiker + fremde Partei -> kein Signal",
+    one({ mentioned_people: ["Robert Habeck"], mentioned_parties: ["SPD"], display_title: "Habeck stellt Plan vor" }).total === 0);
+  // Whole-word-Guard: Nachname darf NICHT als Teilwort matchen ('ince' in 'provinces').
+  check("Kein Teilwort-Fehltreffer: 'ince' in 'Provinces' matcht nicht",
+    radar.buildRadarSignals({ id: "u-ince", fullName: "Cem Ince", party: "Die Linke" },
+      [{ ...base, id: "ko-y", vorgang_id: "vg-y", updated_at: iso(3600e3), display_title: "Debatte über Provinces und Finanzen" }], { now: NOW }).total === 0);
+}
+
 // --- 6) Shadow-Runner: Fail-safe + Happy-Path (injizierte Deps) -------------
 (async () => {
   const off = await radar.buildRadarForUser({ userId: "u-1" }, { enabled: () => false });
