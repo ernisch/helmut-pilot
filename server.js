@@ -2893,16 +2893,24 @@ async function dsQuarantineStats({ limit = 200 } = {}) {
     k && k.status !== "pending" && k.understanding_status === "complete" && (k.was_ist_passiert || k.warum_wichtig)
   );
   const sourcesByVorgang = await loadSourcesByVorgang(understood).catch(() => ({}));
+  const hasTitle = (v) => String(v == null ? "" : v).replace(/\s+/g, " ").trim() !== "";
   let quarantaeniert = 0, kritischeClaimsUnbestaetigt = 0;
   let dokumenteGeprueft = 0, unbekannteQuellen = 0, blockierteQuellen = 0;
+  let mitDisplayTitle = 0, ohneDisplayTitle = 0, backfillFaehig = 0;
   for (const ko of understood) {
-    const verdict = sourceSafety.guardKnowledgeObject(ko, sourcesByVorgang[ko.vorgang_id] || []);
+    const docs = sourcesByVorgang[ko.vorgang_id] || [];
+    const verdict = sourceSafety.guardKnowledgeObject(ko, docs);
     const f = verdict.flags || {};
     if (verdict.status === "quarantine") quarantaeniert += 1;
     if (f.criticalUnconfirmed) kritischeClaimsUnbestaetigt += 1;
     dokumenteGeprueft += dsNum(f.sourceCount);
     unbekannteQuellen += dsNum(f.unknownSources);
     blockierteQuellen += dsNum(f.blockedSources);
+    // Praesentations-Abdeckung (Backfill-Sichtbarkeit): hat der Vorgang einen
+    // kuratierten display_title? Backfill-faehig = ohne display_title UND mit Quellen
+    // (der Presentation-Backfill braucht verknuepfte Quell-Dokumente).
+    if (hasTitle(ko.display_title)) { mitDisplayTitle += 1; }
+    else { ohneDisplayTitle += 1; if (docs.length) backfillFaehig += 1; }
   }
   return {
     vorgaengeGeprueft: understood.length,
@@ -2910,7 +2918,8 @@ async function dsQuarantineStats({ limit = 200 } = {}) {
     kritischeClaimsUnbestaetigt,
     dokumenteGeprueft,
     unbekannteQuellen,
-    blockierteQuellen
+    blockierteQuellen,
+    praesentation: { vorgaengeGeprueft: understood.length, mitDisplayTitle, ohneDisplayTitle, backfillFaehig }
   };
 }
 
@@ -3025,6 +3034,10 @@ async function buildAdminDataStatus({ perAccountLimit = 25 } = {}) {
       katalog: catalogQuality || naLive({ note: "Quellenkatalog nicht ladbar" }),
       quarantaene: quarantineStats || naLive()
     },
+    // Praesentations-Abdeckung: wie viele verstandene Vorgaenge haben einen
+    // kuratierten display_title, wie viele fehlen, wie viele sind backfill-faehig
+    // (ohne Titel + mit Quellen). Ehrlich gezaehlt, n/v ohne V3-Store.
+    praesentation: (quarantineStats && quarantineStats.praesentation) || naLive(),
     lage: { vorgaengeGesamt: sumLage },
     radar: { chancen: sumChance, risiken: sumRisk },
     briefing: { punkteGesamt: sumBriefing, sichtbarBeiAccounts: shown, accountsOhneBriefing: noBriefing },
@@ -3063,6 +3076,7 @@ const DATA_STATUS_LEGEND = {
   "dokumente.quarantaeniert": "Wegen unbekannter Quelle/niedriger Vertrauensstufe/kritischem unbestaetigtem Claim nicht ins Briefing.",
   "quellenSicherheit.katalog": "Konfigurierter Quellenkatalog nach Kategorie (offiziell/medien/partei_fraktion/regional/profil/unbekannt) und Vertrauensstufe (hoch/mittel/niedrig/blockiert/unbekannt). Medien bleibt eigene Kategorie.",
   "quellenSicherheit.quarantaene": "Live gezaehlt ueber verstandene Vorgaenge: quarantaeniert (nicht ins Briefing), kritische unbestaetigte Claims, gepruefte Dokumente sowie unbekannte/blockierte Quell-Dokumente.",
+  "praesentation": "Anzeige-Titel-Abdeckung: mitDisplayTitle (kuratierter Titel vorhanden), ohneDisplayTitle (Fallback-Ableitung noetig), backfillFaehig (ohne Titel + mit Quellen -> per Presentation-Backfill verbesserbar).",
   "vorgaenge.erzeugt": "Neue politische Themencluster (Vorgaenge) aus den Dokumenten.",
   "vorgaenge.aktualisiert": "Bestehende Vorgaenge, die durch neue Dokumente ergaenzt wurden.",
   "vorgaenge.analysiert": "Vorgaenge, die von Helmut inhaltlich bewertet wurden.",

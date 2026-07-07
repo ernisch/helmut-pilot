@@ -2350,18 +2350,62 @@ function lageFirstBoundaryWithin(t, minIdx, maxIdx) {
   return -1;
 }
 
+// Offizielle Kürzel langer Bundesbehörden — FAKTEN (amtliche Abkürzungen), KEINE
+// Erfindung. Zweck: eine abgeleitete Überschrift soll nicht mit einem überlangen
+// Institutionsnamen BEGINNEN. Längere/spezifischere Namen zuerst (Prefix-Match).
+const LAGE_INSTITUTION_ABBR = [
+  ["bundesministerium für umwelt, naturschutz, nukleare sicherheit und verbraucherschutz", "BMUV"],
+  ["bundesministerium für familie, senioren, frauen und jugend", "BMFSFJ"],
+  ["bundesministerium für wirtschaftliche zusammenarbeit und entwicklung", "BMZ"],
+  ["bundesministerium für wohnen, stadtentwicklung und bauwesen", "BMWSB"],
+  ["bundesministerium für wirtschaft und klimaschutz", "BMWK"],
+  ["bundesministerium für ernährung und landwirtschaft", "BMEL"],
+  ["bundesministerium für bildung und forschung", "BMBF"],
+  ["bundesministerium für digitales und verkehr", "BMDV"],
+  ["bundesministerium für arbeit und soziales", "BMAS"],
+  ["bundesministerium des innern und für heimat", "BMI"],
+  ["bundesministerium der verteidigung", "BMVg"],
+  ["bundesministerium für gesundheit", "BMG"],
+  ["bundesministerium der finanzen", "BMF"],
+  ["bundesministerium der justiz", "BMJ"],
+  ["bundesministerium des innern", "BMI"]
+];
+// Stichwörter, an denen "Langname (KÜRZEL)" als INSTITUTION erkannt wird — so wird
+// "… (BMAS)" gekürzt, aber "Heil (SPD)" (Person/Partei) NIE verzerrt.
+const LAGE_INSTITUTION_HINT = /ministerium|bundesamt|bundesanstalt|bundesagentur|beh[öo]rde|kommission|agentur|\bamt\b|anstalt|ausschuss|gewerkschaft|\bverband\b|\binstitut\b/i;
+
+// Kürzt führende/überlange Institutionsnamen auf ihr amtliches Kürzel. Rein
+// textuell/deterministisch, ERFINDET NICHTS (nur bekannte Abkürzungen bzw. das im
+// Text selbst genannte Kürzel in Klammern). Person(Partei) bleibt unangetastet.
+function lageShortenInstitutions(raw) {
+  let s = String(raw || "");
+  // (1) "… Langname (KÜRZEL) …" -> "… KÜRZEL …", NUR wenn der Langname eine
+  //     Institution ist (Hint). So bleibt "Heil (SPD)" erhalten, "… (BMAS)" wird gekürzt.
+  s = s.replace(/([A-Za-zÄÖÜäöüß][^()]{5,70}?)\s*\(([A-ZÄÖÜ][A-ZÄÖÜ0-9.]{1,8})\)/g,
+    (m, name, abbr) => LAGE_INSTITUTION_HINT.test(name) ? abbr : m);
+  // (2) Bekannter langer Behördenname AM ANFANG (optional mit Artikel) -> Kürzel.
+  const lc = s.toLowerCase();
+  for (const [long, abbr] of LAGE_INSTITUTION_ABBR) {
+    for (const pre of ["das ", "der ", "die ", ""]) {
+      if (lc.startsWith(pre + long)) return (abbr + s.slice((pre + long).length)).replace(/\s{2,}/g, " ").trim();
+    }
+  }
+  return s.replace(/\s{2,}/g, " ").trim();
+}
+
 // Leitet NUR für Alt-Vorgänge OHNE kuratierten displayTitle eine kurze, saubere
 // Anzeigeüberschrift aus dem rohen Quellentitel ab. Rein deterministisch, KEINE
-// KI, ERFINDET NICHTS: nur Normalisieren + sauberes Kürzen an Satz-/Klausel-/
-// Wortgrenzen. So wirkt der Titel nicht mehr roh, zu lang oder mitten im Satz
-// abgeschnitten ("billiger Abriss"). Kuratierte displayTitle werden NIE hier
-// durchgereicht (der Aufrufer bevorzugt sie unverändert).
+// KI, ERFINDET NICHTS: Institutionsnamen auf amtliche Kürzel + Normalisieren +
+// sauberes Kürzen an Satz-/Klausel-/Wortgrenzen. So wirkt der Titel nicht mehr roh,
+// zu lang, mit langer Institution beginnend oder mitten im Satz abgeschnitten.
+// Kuratierte displayTitle werden NIE hier durchgereicht (Aufrufer bevorzugt sie).
 const LAGE_TITLE_MAX = 72;
 function lageDisplayHeadline(raw) {
   let t = lageField(raw);
   if (!t) return "";
   const hadEllipsis = /(?:\.{3,}|…)\s*$/.test(t);  // Quelle selbst schon angeschnitten?
   t = t.replace(/\s*(?:\.{3,}|…)\s*$/, "").trim(); // evtl. vorhandene Roh-Ellipse entfernen
+  t = lageShortenInstitutions(t);                  // lange Behördennamen -> amtl. Kürzel
   let head;
   if (t.length <= LAGE_TITLE_MAX) {
     head = t;                                       // schon kurz -> im Kern unverändert

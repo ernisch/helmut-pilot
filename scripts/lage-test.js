@@ -578,6 +578,27 @@ async function run() {
       const r = await pb.backfillPresentationFields({ dryRun: false }, deps);
       ok("store nicht bereit -> skipped", r.skipped === true && r.reason === "v3-store-not-ready");
     }
+
+    // Limit: wird an listKnowledgeObjects durchgereicht und begrenzt Laden/Verarbeiten.
+    {
+      const many = Array.from({ length: 5 }, (_, i) => ({ id: `ko-lim-${i}`, vorgang_id: `vg-lim-${i}`, understanding_status: "complete" }));
+      const { deps, calls } = makeDeps({ kos: many });
+      let seenOpts = null;
+      deps.listKnowledgeObjects = async (o) => { seenOpts = o; return many.slice(0, o.limit); }; // echtes Storage ehrt limit
+      const r = await pb.backfillPresentationFields({ dryRun: false, limit: 3 }, deps);
+      ok("limit: an listKnowledgeObjects durchgereicht", seenOpts && seenOpts.limit === 3);
+      ok("limit: nur begrenzte Anzahl geladen & verarbeitet (3, nicht 5)", r.plan.loaded === 3 && r.processed === 3 && calls.ai === 3);
+      ok("limit: Ladegrenze erreicht wird gemeldet", r.plan.loadCapReached === true && r.plan.loadLimit === 3);
+    }
+
+    // Dry-run mit Limit: begrenzt geladen, aber trotzdem KEIN KI-/Save-Call.
+    {
+      const many = Array.from({ length: 4 }, (_, i) => ({ id: `ko-dl-${i}`, vorgang_id: `vg-dl-${i}`, understanding_status: "complete" }));
+      const { deps, calls } = makeDeps({ kos: many });
+      deps.listKnowledgeObjects = async (o) => many.slice(0, o.limit);
+      const r = await pb.backfillPresentationFields({ dryRun: true, limit: 2 }, deps);
+      ok("dry-run+limit: 2 geladen, 2 zu verarbeiten, aber 0 KI/Save", r.plan.loaded === 2 && r.plan.toProcess === 2 && calls.ai === 0 && calls.saved.length === 0);
+    }
   }
 
   console.log(`\nAlle ${passed} Lage-Assertions erfolgreich.`);

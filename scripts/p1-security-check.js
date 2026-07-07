@@ -294,14 +294,19 @@ function staticChecks() {
     const headline = new Function(client.slice(s, e) + "\nreturn lageDisplayHeadline;")();
     const long = "Das Bundesministerium für Arbeit und Soziales (BMAS) kündigt an, die Abgabe zur Künstlersozialversicherung zu ändern";
     const out = headline(long);
-    check("lageDisplayHeadline: langer Rohtitel wird sauber gekürzt (kürzer, aber nicht leer)",
-      out.length > 0 && out.length < long.length && out.length <= 84, `len=${out.length}`);
+    check("lageDisplayHeadline: BMAS-Rohtitel wird kurz & sauber (kürzer, nicht leer, <= 90)",
+      out.length > 0 && out.length < long.length && out.length <= 90, `len=${out.length}`);
+    check("lageDisplayHeadline: Titel beginnt NICHT mit langer Institution (BMAS statt 'Das Bundesministerium …')",
+      !/^(?:das |der |die )?bundesministerium/i.test(out) && /^BMAS\b/.test(out), out);
     check("lageDisplayHeadline: kein billiger Abriss (kein '…', kein baumelndes Funktionswort/Satzzeichen am Ende)",
       !/[…,;:]$/.test(out) && !/\s(?:der|die|das|den|dem|des|und|oder|zur|zum|für|mit|von|vom)$/i.test(out), out);
+    // Verbpartikel bleibt bei einem Komma-Schnitt erhalten (Nicht-Institutions-Fall).
+    const clause = headline("Die Regierungskoalition kündigt an, das Rentenpaket noch vor der Sommerpause umfassend zu reformieren");
     check("lageDisplayHeadline: sauberer Klausel-Schluss bleibt erhalten (kündigt an -> nicht 'kündigt')",
-      /kündigt an$/.test(out), out);
-    check("lageDisplayHeadline: erfindet nichts / verzerrt Person(Partei) nicht (Name bleibt)",
-      headline("Minister Hubertus Heil (SPD) fordert höhere Löhne im Pflegebereich und mehr Tarifbindung").includes("Heil"));
+      /kündigt an$/.test(clause), clause);
+    check("lageDisplayHeadline: erfindet nichts / verzerrt Person(Partei) nicht (Name bleibt, keine Partei-Ersetzung)",
+      /Heil/.test(headline("Minister Hubertus Heil (SPD) fordert höhere Löhne im Pflegebereich und mehr Tarifbindung"))
+      && !/^SPD\b/.test(headline("Minister Hubertus Heil (SPD) fordert höhere Löhne")));
     check("lageDisplayHeadline: kurzer, guter Titel bleibt unverändert",
       headline("Bürgergeld-Reform passiert den Bundesrat") === "Bürgergeld-Reform passiert den Bundesrat");
     check("lageDisplayHeadline: Roh-Ellipse der Quelle wird entfernt (kein '…')",
