@@ -929,6 +929,61 @@ async function handleRequest(request, response) {
     return handleAsync(response, () => buildAdminDataStatus());
   }
 
+  // Interner Pipeline-Recovery (NUR Admin, ueber die bestehende Admin-SESSION — KEIN
+  // Debug-Secret). POST-Aktionen sind zusaetzlich CSRF-geschuetzt (globaler Guard).
+  // READ ist reine Anzeige (kein KI-Call). Nichts laeuft automatisch — nur je Aufruf.
+  if (url.pathname === "/api/admin/recovery-status") {
+    if (!requireRoleOr403(response, authUser, "admin")) return undefined;
+    return handleAsync(response, () => buildPipelineRecoveryStatus());
+  }
+  // AKTION 1: haengenden/abgelaufenen Understanding-Lock loesen.
+  if (url.pathname === "/api/admin/recovery/release-lock" && request.method === "POST") {
+    if (!requireRoleOr403(response, authUser, "admin")) return undefined;
+    return handleJson(request, response, async () => {
+      const readLock = async () => readAuthStore().then((s) => (s.pipelineLocks || {})["global-understanding"] || null).catch(() => null);
+      const before = await readLock();
+      await releasePipelineLock("global-understanding").catch(() => {});
+      const after = await readLock();
+      return { ok: true, lockVorher: Boolean(before), lockNachher: Boolean(after), geloest: Boolean(before) && !after };
+    });
+  }
+  // AKTION 2: failed -> pending zuruecksetzen. NUR mit ausdruecklicher Bestaetigung
+  // (confirm:true). Setzt ausschliesslich understanding_status um — KEINE Rohdokumente
+  // werden geloescht, keine anderen Felder angefasst.
+  if (url.pathname === "/api/admin/recovery/reset-failed" && request.method === "POST") {
+    if (!requireRoleOr403(response, authUser, "admin")) return undefined;
+    return handleJson(request, response, async (body) => {
+      const all = await listKnowledgeObjects({ limit: 1000 }).catch(() => []);
+      const failedBetroffen = (all || []).filter((k) => k && k.understanding_status === "failed").length;
+      if (!body || body.confirm !== true) {
+        return { ok: false, bestaetigungErforderlich: true, failedBetroffen, zurueckgesetzt: 0 };
+      }
+      const reset = await bulkResetUnderstandingFailed().catch((e) => ({ skipped: true, reason: e && e.message }));
+      return { ok: true, failedBetroffen, zurueckgesetzt: failedBetroffen, reset };
+    });
+  }
+  // AKTION 3: vorhandenen Understanding-Lauf starten (runPendingUnderstandingShadow) —
+  // KEINE neue Pipeline, zeitbudgetiert wie der Cron. Antwort ist eine skalare
+  // Zusammenfassung (keine Secrets, keine rohen Detailfelder).
+  if (url.pathname === "/api/admin/recovery/run-understanding" && request.method === "POST") {
+    if (!requireRoleOr403(response, authUser, "admin")) return undefined;
+    return handleJson(request, response, async () => {
+      const rawDocs = await listRecentRawDocuments(500).catch(() => []);
+      const result = await runPendingUnderstandingShadow(rawDocs, { budgetMs: Number(process.env.HELMUT_UNDERSTAND_BUDGET_MS || 240000) })
+        .catch((e) => ({ skipped: true, reason: e && e.message }));
+      const verarbeitet = (result && Array.isArray(result.results)) ? result.results.filter((r) => r && r.status === "saved").length : 0;
+      return {
+        ok: true,
+        rohdokumenteGeladen: (rawDocs || []).length,
+        verarbeitet,
+        pending: dsNumOrNull(result && result.pending),
+        zurueckgestellt: dsNumOrNull(result && result.deferred),
+        status: result && result.skipped ? (result.reason || "skipped") : "ausgefuehrt",
+        zusammenfassung: (result && result.counts) || null
+      };
+    });
+  }
+
   // Admin: Feedback als erledigt/offen markieren.
   if (url.pathname.startsWith("/api/admin/feedback/") && (request.method === "PATCH" || request.method === "POST")) {
     if (!requireRoleOr403(response, authUser, "admin")) return undefined;
@@ -1681,6 +1736,7 @@ module.exports = requestHandler;
 // Test-Hook (nur fuer Offline-Tests; veraendert den HTTP-Pfad nicht): erlaubt den
 // direkten, auth-freien Aufruf der internen Datenstatus-Funktion.
 module.exports.__buildAdminDataStatus = buildAdminDataStatus;
+module.exports.__buildPipelineRecoveryStatus = buildPipelineRecoveryStatus;
 
 if (require.main === module) {
   const server = http.createServer(requestHandler);
@@ -2971,6 +3027,66 @@ async function dsKiStatus() {
     hinweis: deploymentNotFound
       ? "Azure Deployment nicht gefunden. Bitte AZURE_OPENAI_DEPLOYMENT und AZURE_OPENAI_ENDPOINT in Vercel prüfen."
       : null
+  };
+}
+
+// Interner Pipeline-Recovery-Status (nur Betreiber). READ-ONLY: liest KO-Zustände,
+// Understanding-Lock, letzten Understanding-Lauf und KI-Fehler/-Erfolg aus Store bzw.
+// llm_usage. KEIN KI-Call, KEINE Kosten, KEINE Secrets/Env-Werte.
+async function buildPipelineRecoveryStatus() {
+  const v3 = v3StoreReady();
+  const naLive = { available: false, note: v3 ? "nur zur Laufzeit mit Daten ermittelbar" : "nur mit aktivem V3-Store (Supabase) ermittelbar" };
+
+  let koStatus = naLive;
+  if (v3) {
+    let kos = [];
+    try { kos = await listKnowledgeObjects({ limit: 1000 }); } catch (_) { kos = []; }
+    const c = { pending: 0, failed: 0, complete: 0, sonstige: 0, gesamt: (kos || []).length };
+    for (const k of (kos || [])) {
+      const s = String((k && k.understanding_status) || "");
+      if (s === "pending") c.pending += 1;
+      else if (s === "failed") c.failed += 1;
+      else if (s === "complete") c.complete += 1;
+      else c.sonstige += 1;
+    }
+    koStatus = c;
+  }
+
+  // Understanding-Lock: aktiv = vorhanden & nicht abgelaufen; verdächtig = abgelaufen,
+  // aber nicht aufgeräumt (Kandidat zum Lösen). Struktur: { lockedAt, expiresAt }.
+  let lock = { aktiv: false, verdaechtig: false, gesetztVorSek: null };
+  try {
+    const store = await readAuthStore();
+    const l = (store.pipelineLocks || {})["global-understanding"] || null;
+    if (l) {
+      const now = Date.now();
+      const expired = typeof l.expiresAt === "number" && l.expiresAt <= now;
+      lock = {
+        aktiv: !expired,
+        verdaechtig: Boolean(expired),
+        gesetztVorSek: typeof l.lockedAt === "number" ? Math.max(0, Math.round((now - l.lockedAt) / 1000)) : null
+      };
+    }
+  } catch (_) { /* fail-safe: kein Lock-Status */ }
+
+  // Letzter Understanding-Lauf aus dem letzten Crawl-Run (processed/deferred/reason).
+  const cr = await getLatestCrawlRun().catch(() => null);
+  const u = (cr && cr.understanding) || null;
+  const letztesErgebnis = u
+    ? { verarbeitet: dsNumOrNull(u.processed), zurueckgestellt: dsNumOrNull(u.deferred), grund: u.reason || null }
+    : null;
+
+  // KI-Fehler/-Erfolg aus dem vorhandenen llm_usage-Log (kein KI-Call).
+  const ki = await dsKiStatus().catch(() => null);
+
+  return {
+    v3StoreAktiv: v3,
+    knowledgeObjects: koStatus,
+    understandingLock: lock,
+    letzterUnderstandingLauf: cr ? (cr.createdAt || null) : null,
+    letztesUnderstandingErgebnis: letztesErgebnis,
+    letzterKiFehler: ki ? ki.letzterFehler : null,
+    letzterKiErfolg: ki ? ki.letzterErfolg : null
   };
 }
 

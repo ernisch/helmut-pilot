@@ -7627,6 +7627,23 @@ body {
 .ds-legend summary { cursor: pointer; color: var(--muted-2); font-size: 13px; }
 .ds-legend ul { font-size: 12px; color: var(--muted-2); line-height: 1.6; margin: 8px 0 0; padding-left: 18px; }
 
+/* Pipeline-Recovery-Aktionen (nur Admin, ruhig & verständlich) */
+.ds-recovery-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.ds-recovery-btn {
+  appearance: none; border: 1px solid var(--line); background: var(--card); color: var(--text);
+  font: inherit; font-size: 13px; font-weight: 600; padding: 8px 12px; border-radius: 10px; cursor: pointer;
+}
+.ds-recovery-btn:hover:not(:disabled) { border-color: rgba(249, 205, 127, .55); }
+.ds-recovery-btn:disabled { opacity: .45; cursor: default; }
+.ds-recovery-btn--warn:not(:disabled) { border-color: rgba(198, 40, 40, .5); color: #c62828; }
+.ds-recovery-btn--primary:not(:disabled) { border-color: rgba(214, 160, 64, .6); color: rgba(214, 160, 64, .95); }
+.ds-recovery-result { margin-top: 12px; }
+.ds-recovery-result-head { font-weight: 700; font-size: 13px; }
+.ds-recovery-json {
+  margin: 6px 0 0; padding: 10px 12px; border-radius: 10px; background: rgba(140, 140, 150, .1);
+  font-size: 11px; line-height: 1.5; color: var(--muted-2); white-space: pre-wrap; word-break: break-word; overflow-x: auto;
+}
+
 /* Desktop: Account-Karten nebeneinander */
 @media (min-width: 720px) {
   .ds-accounts { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }

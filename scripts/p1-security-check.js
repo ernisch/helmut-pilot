@@ -432,6 +432,111 @@ async function kiStatusChecks() {
   check("KI-Status: /api/admin/data-status bleibt admin-gegatet", /requireRoleOr403\(response, authUser, "admin"\)/.test(gateWindow));
 }
 
+// Admin-Pipeline-Recovery: NUR Admin (Session), CSRF fuer POST, Bestaetigung fuer
+// reset-failed, keine Secrets in Antworten. Deckt Rollen-Gating + Aktionen ab.
+async function pipelineRecoveryChecks() {
+  const auth = require(path.join(root, "lib/helmut/auth.js"));
+  const accounts = require(path.join(root, "lib/helmut/accounts.js"));
+
+  // Unit: normale Rollen bekommen KEINEN Admin-Zugriff.
+  check("Recovery: requireRole — Referent ist NICHT admin", auth.requireRole({ role: "referent" }, "admin") === false);
+  check("Recovery: requireRole — Abgeordneter ist NICHT admin", auth.requireRole({ role: "abgeordneter" }, "admin") === false);
+  check("Recovery: requireRole — Admin ist admin", auth.requireRole({ role: "admin" }, "admin") === true);
+
+  const requestFull = (server, { method = "GET", pathname, headers = {}, body = null }) => {
+    const { port } = server.address();
+    return new Promise((resolve, reject) => {
+      const req = http.request({ host: "127.0.0.1", port, method, path: pathname, headers, timeout: 20000 }, (res) => {
+        let b = ""; res.on("data", (c) => (b += c)); res.on("end", () => resolve({ status: res.statusCode, body: b, headers: res.headers }));
+      });
+      req.on("timeout", () => req.destroy(new Error("request timeout")));
+      req.on("error", reject);
+      if (body != null) req.write(body);
+      req.end();
+    });
+  };
+  const parse = (r) => { try { return JSON.parse(r.body); } catch (_) { return {}; } };
+  const SECRET_RE = /AZURE_OPENAI_KEY|SUPABASE_SERVICE_ROLE|SERVICE_ROLE|"?password"?\s*[:=]|Bearer\s|sk-[A-Za-z0-9]/i;
+
+  const storage = require(path.join(root, "lib/helmut/storage.js"));
+  // WICHTIG: Konten liegen im AUTH-Store (nicht im Main-Store). Vollständig
+  // snapshoten + wiederherstellen, damit die Testkonten die Suite NICHT verschmutzen
+  // (sonst sieht ein späterer Lauf den Test-Abgeordneten und Mandats-Checks brechen).
+  const authSnap = JSON.stringify(await storage.readAuthStore());
+  const restore = async () => { try { await storage.writeAuthStore(JSON.parse(authSnap)); } catch (_) { /* best effort */ } };
+  const prev = { mode: process.env.HELMUT_AUTH_MODE };
+
+  try {
+    process.env.HELMUT_AUTH_MODE = "accounts";
+    // Konten direkt anlegen (der Env-Admin-Seed ist prozessweit gecached -> unzuverlaessig
+    // in einer langen Testsuite). Eindeutige E-Mails, daher keine Kollision.
+    await accounts.createUser({ email: "p1recadmin@test.local", name: "Rec Admin", role: "admin", password: "p1-rec-admin-123" }).catch(() => {});
+    await accounts.createUser({ email: "p1ref@test.local", name: "Ref", role: "referent", password: "p1-ref-pass-123" }).catch(() => {});
+    // Ein Abgeordneter mit Mandat, damit der Admin (allowed="all") ueber die globale
+    // Mandats-Aufloesung ein echtes Mandat bekommt und die /api/-Guard passiert (wie in Prod).
+    await accounts.createUser({ email: "p1mdb@test.local", name: "MdB", role: "abgeordneter", password: "p1-mdb-pass-123", politicianId: "p1-test-mdb" }).catch(() => {});
+    const server = http.createServer(handler);
+    await new Promise((r) => server.listen(0, "127.0.0.1", r));
+    try {
+      // 1) Ohne Session -> 401 (kein Zugriff).
+      const noAuth = await requestFull(server, { pathname: "/api/admin/recovery-status" });
+      check("Recovery: ohne Session -> 401", noAuth.status === 401);
+
+      // Admin-Login.
+      const loginBody = JSON.stringify({ email: "p1recadmin@test.local", password: "p1-rec-admin-123" });
+      const login = await requestFull(server, { method: "POST", pathname: "/api/auth/login", headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(loginBody) }, body: loginBody });
+      const cookie = ((login.headers["set-cookie"] || [])[0] || "").split(";")[0];
+      check("Recovery: Admin-Login liefert Session", login.status === 200 && Boolean(cookie));
+
+      // 2) Normaler Nutzer (Referent) -> 403.
+      const refLoginBody = JSON.stringify({ email: "p1ref@test.local", password: "p1-ref-pass-123" });
+      const refLogin = await requestFull(server, { method: "POST", pathname: "/api/auth/login", headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(refLoginBody) }, body: refLoginBody });
+      const refCookie = ((refLogin.headers["set-cookie"] || [])[0] || "").split(";")[0];
+      const refStatus = await requestFull(server, { pathname: "/api/admin/recovery-status", headers: { Cookie: refCookie } });
+      check("Recovery: normaler Nutzer (Referent) -> 403", refStatus.status === 403, `status=${refStatus.status}`);
+
+      // 3) Admin darf Status lesen; keine Secrets.
+      const st = await requestFull(server, { pathname: "/api/admin/recovery-status", headers: { Cookie: cookie } });
+      const stj = parse(st);
+      check("Recovery: Admin darf Status lesen (200)", st.status === 200 && "understandingLock" in stj && "knowledgeObjects" in stj);
+      check("Recovery: Status-Antwort enthält KEINE Secrets/Env-Werte", !SECRET_RE.test(st.body));
+
+      // CSRF-Token (mit Admin-Cookie) fuer die POST-Aktionen.
+      const csrfResp = await requestFull(server, { pathname: "/api/security/csrf", headers: { Cookie: cookie } });
+      const csrf = parse(csrfResp).token;
+      const H = (bodyStr) => ({ Cookie: cookie, "x-csrf-token": csrf, "Content-Type": "application/json", "Content-Length": Buffer.byteLength(bodyStr) });
+
+      // 4) Admin darf Lock lösen.
+      const rel = await requestFull(server, { method: "POST", pathname: "/api/admin/recovery/release-lock", headers: H("{}"), body: "{}" });
+      check("Recovery: Admin darf Lock lösen (200)", rel.status === 200 && parse(rel).ok === true);
+
+      // 5) reset-failed OHNE Bestätigung -> setzt NICHTS zurück.
+      const rf0 = await requestFull(server, { method: "POST", pathname: "/api/admin/recovery/reset-failed", headers: H("{}"), body: "{}" });
+      const rf0j = parse(rf0);
+      check("Recovery: reset-failed OHNE Bestätigung setzt NICHTS zurück", rf0.status === 200 && rf0j.ok === false && rf0j.bestaetigungErforderlich === true && rf0j.zurueckgesetzt === 0);
+
+      // 6) reset-failed MIT Bestätigung -> ok.
+      const rf1Body = JSON.stringify({ confirm: true });
+      const rf1 = await requestFull(server, { method: "POST", pathname: "/api/admin/recovery/reset-failed", headers: H(rf1Body), body: rf1Body });
+      check("Recovery: Admin darf failed zurücksetzen (mit Bestätigung, 200)", rf1.status === 200 && parse(rf1).ok === true);
+
+      // 7) Understanding starten -> 200 (offline: skipped, kein KI-Call, kein Crash).
+      const ru = await requestFull(server, { method: "POST", pathname: "/api/admin/recovery/run-understanding", headers: H("{}"), body: "{}" });
+      check("Recovery: Admin darf Understanding starten (200)", ru.status === 200 && parse(ru).ok === true);
+
+      // 8) Keine Aktions-Antwort enthält Secrets.
+      check("Recovery: Aktions-Antworten enthalten KEINE Secrets", ![rel.body, rf0.body, rf1.body, ru.body].some((b) => SECRET_RE.test(b)));
+
+      // 9) POST ohne CSRF-Token -> blockiert (nicht 200).
+      const noCsrf = await requestFull(server, { method: "POST", pathname: "/api/admin/recovery/release-lock", headers: { Cookie: cookie, "Content-Type": "application/json", "Content-Length": 2 }, body: "{}" });
+      check("Recovery: POST ohne CSRF-Token -> blockiert (403)", noCsrf.status === 403);
+    } finally { await new Promise((r) => server.close(r)); }
+  } finally {
+    await restore();
+    if (prev.mode === undefined) delete process.env.HELMUT_AUTH_MODE; else process.env.HELMUT_AUTH_MODE = prev.mode;
+  }
+}
+
 // Datenmotor V2 — Commit 1: LLM-Budget-Fundament (Tages-Aggregation + Gate).
 // Rein additiv; prueft nur die neuen Storage-Helfer, kein Pipeline-Verhalten.
 async function llmBudgetChecks() {
@@ -1559,6 +1664,7 @@ async function main() {
   await legalPagesChecks();
   await llmLoggingChecks();
   await kiStatusChecks();
+  await pipelineRecoveryChecks();
   await llmBudgetChecks();
   await c1SafetyNetChecks();
   await c3DipPrimaryChecks();

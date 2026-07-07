@@ -69,6 +69,9 @@ let adminDataLoaded = false;
 let adminLoadError = false;
 let adminPeriod = "today";
 let adminDataStatus = null; // interner Datenmotor-Status (global + pro Account)
+let adminRecovery = null;      // interner Pipeline-Recovery-Status (nur Admin)
+let adminRecoveryResult = null; // Ergebnis der letzten Recovery-Aktion (Anzeige)
+let adminRecoveryBusy = false;  // verhindert Doppelklick/Parallelausführung
 let expandedAdminUsers = new Set();
 let dailyInputs = [];
 let dailyInputsLoaded = false;
@@ -638,6 +641,13 @@ async function ensureViewData(view) {
       } catch (_) {
         adminDataStatus = null;
       }
+      // Interner Pipeline-Recovery-Status (nur Anzeige, kein KI-Call). Fehlertolerant.
+      try {
+        const rvResp = await fetchWithTimeout(`/api/admin/recovery-status?${apiScopeQuery()}`, {}, 25000);
+        adminRecovery = rvResp.ok ? await rvResp.json() : null;
+      } catch (_) {
+        adminRecovery = null;
+      }
     } catch (error) {
       adminDataLoaded = false;
       adminLoadError = true;
@@ -1150,6 +1160,8 @@ function renderAdminView() {
 
       ${renderAdminDataStatus(adminDataStatus)}
 
+      ${renderAdminRecovery(adminRecovery, adminRecoveryResult)}
+
       <div class="admin-body">
         <div class="admin-col-primary">
 
@@ -1653,6 +1665,101 @@ function renderAdminDataStatus(ds) {
       ${ds.hinweis ? `<p class="ds-note">${escapeHtml(ds.hinweis)}</p>` : ""}
       ${legend ? `<details class="ds-legend"><summary>Bedeutung der Werte</summary><ul>${legend}</ul></details>` : ""}
     </section>`;
+}
+
+// Interner Pipeline-Recovery-Bereich (nur Admin). Zeigt KO-Zustände, Lock, letzten
+// Understanding-Lauf, KI-Fehler/-Erfolg + drei bewusste Aktionen. Serverseitig ist
+// alles admin-gegatet; hier nur Anzeige/Klick. Keine Secrets, keine Env-Werte.
+function renderAdminRecovery(rec, result) {
+  if (!rec) return "";
+  const ko = rec.knowledgeObjects;
+  const koAvail = ko && ko.available !== false;
+  const lock = rec.understandingLock || {};
+  const lockUnknown = rec.v3StoreAktiv === false;
+  const lockActionable = Boolean(lock.aktiv || lock.verdaechtig);
+  const erg = rec.letztesUnderstandingErgebnis;
+  const kiErr = rec.letzterKiFehler;
+  const kiOk = rec.letzterKiErfolg;
+  const busy = adminRecoveryBusy;
+  const failedN = koAvail ? Number(ko.failed) : 0;
+  const lockLabel = lock.aktiv
+    ? `<span class="ds-bad">Ja</span>`
+    : lock.verdaechtig ? `<span class="ds-warn">Abgelaufen (verdächtig)</span>` : `<span class="ds-ok">Nein</span>`;
+  return `
+    <section class="ds-status">
+      <div class="ds-card">
+        <div class="ds-card-title">Pipeline-Recovery (intern)</div>
+        ${dsRow("Pending Vorgänge", koAvail ? dsFmt(ko.pending) : dsFmt(ko))}
+        ${dsRow("Failed Vorgänge", koAvail ? (failedN > 0 ? `<span class="ds-bad">${dsFmt(ko.failed)}</span>` : dsFmt(ko.failed)) : dsFmt(ko))}
+        ${dsRow("Complete Vorgänge", koAvail ? dsFmt(ko.complete) : dsFmt(ko))}
+        ${dsRow("Understanding-Lock aktiv", lockUnknown ? `<span class="ds-sub">–</span>` : lockLabel)}
+        ${dsRow("Letzter Understanding-Lauf", rec.letzterUnderstandingLauf ? dsDateLabel(rec.letzterUnderstandingLauf) : `<span class="ds-sub">–</span>`)}
+        ${dsRow("Letztes Ergebnis", erg ? `verarbeitet ${dsFmt(erg.verarbeitet)} · zurückgestellt ${dsFmt(erg.zurueckgestellt)}${erg.grund ? ` · ${escapeHtml(String(erg.grund))}` : ""}` : `<span class="ds-sub">–</span>`)}
+        ${dsRow("Letzter KI-Fehler", kiErr ? `<span class="ds-bad">${escapeHtml(kiErr.grund || "Fehler")}</span>${kiErr.when ? ` <span class="ds-sub">· ${dsDateLabel(kiErr.when)}</span>` : ""}` : `<span class="ds-ok">Keiner</span>`)}
+        ${dsRow("Letzter erfolgreicher KI-Call", kiOk && kiOk.when ? dsDateLabel(kiOk.when) : `<span class="ds-sub">–</span>`)}
+        <div class="ds-recovery-actions">
+          <button class="ds-recovery-btn" type="button" data-recovery-action="release-lock" ${busy || !lockActionable ? "disabled" : ""}>Lock lösen</button>
+          <button class="ds-recovery-btn ds-recovery-btn--warn" type="button" data-recovery-action="reset-failed" ${busy || !(koAvail && failedN > 0) ? "disabled" : ""}>Failed → Pending zurücksetzen</button>
+          <button class="ds-recovery-btn ds-recovery-btn--primary" type="button" data-recovery-action="run-understanding" ${busy ? "disabled" : ""}>Understanding-Lauf starten</button>
+        </div>
+        <p class="ds-note">Aktionen laufen nur nach bewusstem Klick. „Failed → Pending" fragt vorher nach Bestätigung und löscht keine Rohdokumente. „Understanding-Lauf" nutzt die bestehende Funktion und kann KI-Kosten verursachen.</p>
+        ${renderRecoveryResult(result)}
+      </div>
+    </section>`;
+}
+
+function renderRecoveryResult(r) {
+  if (!r) return "";
+  const label = { "release-lock": "Lock lösen", "reset-failed": "Failed zurücksetzen", "run-understanding": "Understanding-Lauf" }[r.action] || "Aktion";
+  if (r.pending) return `<div class="ds-recovery-result"><span class="ds-sub">${escapeHtml(label)} läuft …</span></div>`;
+  const okClass = r.ok === false ? "ds-bad" : "ds-ok";
+  // Nur die skalare Server-Zusammenfassung anzeigen (die Endpunkte liefern KEINE
+  // Secrets/Keys/Env — nur Zahlen/Status). action/pending sind reine UI-Felder.
+  const safe = { ...r }; delete safe.action; delete safe.pending;
+  return `<div class="ds-recovery-result">
+      <div class="ds-recovery-result-head"><span class="${okClass}">Ergebnis: ${escapeHtml(label)}</span></div>
+      <pre class="ds-recovery-json">${escapeHtml(JSON.stringify(safe, null, 2))}</pre>
+    </div>`;
+}
+
+async function runRecoveryAction(action) {
+  if (adminRecoveryBusy) return;
+  if (action === "reset-failed") {
+    const n = adminRecovery && adminRecovery.knowledgeObjects && adminRecovery.knowledgeObjects.failed;
+    const suffix = typeof n === "number" ? ` (${n} betroffen)` : "";
+    if (!window.confirm(`Failed-Vorgänge auf „pending" zurücksetzen${suffix}? Es werden KEINE Rohdokumente gelöscht.`)) return;
+  }
+  if (action === "run-understanding") {
+    if (!window.confirm("Understanding-Lauf jetzt starten? Das nutzt die bestehende Pipeline und kann echte KI-Kosten verursachen.")) return;
+  }
+  const endpoints = {
+    "release-lock": "/api/admin/recovery/release-lock",
+    "reset-failed": "/api/admin/recovery/reset-failed",
+    "run-understanding": "/api/admin/recovery/run-understanding"
+  };
+  const endpoint = endpoints[action];
+  if (!endpoint) return;
+  adminRecoveryBusy = true;
+  adminRecoveryResult = { action, pending: true };
+  render(); bindActions();
+  try {
+    const body = action === "reset-failed" ? { confirm: true } : {};
+    const resp = await fetchWithTimeout(`${endpoint}?${apiScopeQuery()}`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body)
+    }, action === "run-understanding" ? 250000 : 30000);
+    let json;
+    try { json = await resp.json(); } catch (_) { json = {}; }
+    adminRecoveryResult = resp.ok ? { action, ...json } : { action, ok: false, fehler: `HTTP ${resp.status}` };
+    try {
+      const s = await fetchWithTimeout(`/api/admin/recovery-status?${apiScopeQuery()}`, {}, 25000);
+      if (s.ok) adminRecovery = await s.json();
+    } catch (_) { /* Status-Reload optional */ }
+  } catch (_) {
+    adminRecoveryResult = { action, ok: false, fehler: "Aktion fehlgeschlagen" };
+  } finally {
+    adminRecoveryBusy = false;
+    render(); bindActions();
+  }
 }
 
 function renderAdminCrawlStats(crawlReport) {
@@ -7576,6 +7683,12 @@ function bindActions() {
       render();
       ensureViewData("admin");
     });
+  });
+
+  // Pipeline-Recovery-Aktionen: laufen NUR nach bewusstem Klick (kein Auto-Run).
+  // Serverseitig admin-gegatet + CSRF (fetchWithTimeout setzt den Token).
+  app.querySelectorAll("[data-recovery-action]").forEach((button) => {
+    button.addEventListener("click", () => { runRecoveryAction(button.dataset.recoveryAction); });
   });
 
   if (isAccountMode()) {
