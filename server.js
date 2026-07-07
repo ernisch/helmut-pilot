@@ -978,6 +978,31 @@ async function handleRequest(request, response) {
         }
         return { pending, complete };
       };
+      // LOCK-VORRANG: denselben Lock lesen, den der Status anzeigt (nicht den flag-
+      // abhaengigen NO-OP-Lock von runPendingUnderstandingShadow). Existiert ein
+      // Eintrag, NICHT starten (kein KI-Call, keine Pipeline) und ehrlich melden:
+      // aktiv -> 'understanding-locked', abgelaufen/haengend -> 'understanding-lock-stale'.
+      // KEIN Auto-Loesen: der Admin muss bewusst 'Lock loesen' klicken.
+      const lockEntry = await readAuthStore()
+        .then((s) => (s.pipelineLocks || {})["global-understanding"] || null)
+        .catch(() => null);
+      if (lockEntry) {
+        const abgelaufen = typeof lockEntry.expiresAt === "number" && lockEntry.expiresAt <= Date.now();
+        const c = await koCounts();
+        return {
+          ok: true,
+          ergebnis: "uebersprungen",
+          grund: abgelaufen ? "understanding-lock-stale" : "understanding-locked",
+          lockAktiv: !abgelaufen,
+          lockVerdaechtig: abgelaufen,
+          verarbeitet: 0,
+          zurueckgestellt: 0,
+          rohdokumenteGeladen: 0,
+          pendingVorher: c.pending, pendingNachher: c.pending,
+          completeVorher: c.complete, completeNachher: c.complete,
+          zusammenfassung: {}
+        };
+      }
       const vorher = await koCounts();
       // WEITES Fenster (wie /api/debug/reset-failed-kos): erhoeht die Chance, die
       // Quell-Dokumente der pending-Vorgaenge zu finden. Ein zu enges Fenster fuehrt

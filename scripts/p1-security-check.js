@@ -539,6 +539,33 @@ async function pipelineRecoveryChecks() {
       // 9) POST ohne CSRF-Token -> blockiert (nicht 200).
       const noCsrf = await requestFull(server, { method: "POST", pathname: "/api/admin/recovery/release-lock", headers: { Cookie: cookie, "Content-Type": "application/json", "Content-Length": 2 }, body: "{}" });
       check("Recovery: POST ohne CSRF-Token -> blockiert (403)", noCsrf.status === 403);
+
+      // 10) LOCK-VORRANG: ist ein Lock gesetzt, startet run-understanding NICHT, sondern
+      //     meldet den Lock (Vorrang vor Dokument-Zeitfenster) — KEIN KI-Call, keine Pipeline.
+      const seedLock = async (expiresAt) => {
+        const s = await storage.readAuthStore();
+        await storage.writeAuthStore({ ...s, pipelineLocks: { ...(s.pipelineLocks || {}), "global-understanding": { lockedAt: Date.now(), expiresAt } } });
+      };
+      await seedLock(Date.now() + 600000); // aktiv (10 Min in der Zukunft)
+      const ruLocked = parse(await requestFull(server, { method: "POST", pathname: "/api/admin/recovery/run-understanding", headers: H("{}"), body: "{}" }));
+      check("Recovery: aktiver Lock hat Vorrang -> 'understanding-locked' (kein Start, 0 verarbeitet)",
+        ruLocked.ergebnis === "uebersprungen" && ruLocked.grund === "understanding-locked" && ruLocked.lockAktiv === true && ruLocked.verarbeitet === 0,
+        `ergebnis=${ruLocked.ergebnis} grund=${ruLocked.grund}`);
+
+      // 10b) Abgelaufener Lock -> 'understanding-lock-stale' (haengend), ebenfalls kein Start.
+      await seedLock(Date.now() - 1000); // abgelaufen
+      const ruStale = parse(await requestFull(server, { method: "POST", pathname: "/api/admin/recovery/run-understanding", headers: H("{}"), body: "{}" }));
+      check("Recovery: abgelaufener Lock -> 'understanding-lock-stale' (kein Start)",
+        ruStale.ergebnis === "uebersprungen" && ruStale.grund === "understanding-lock-stale" && ruStale.lockVerdaechtig === true,
+        `grund=${ruStale.grund}`);
+
+      // 10c) Nach 'Lock loesen' bleibt KEIN Lock aktiv -> run-understanding blockiert nicht mehr am Lock
+      //      (der Grund ist dann NICHT mehr ein Lock-Grund; not_started laesst den Lock nicht aktiv).
+      await requestFull(server, { method: "POST", pathname: "/api/admin/recovery/release-lock", headers: H("{}"), body: "{}" });
+      const ruAfter = parse(await requestFull(server, { method: "POST", pathname: "/api/admin/recovery/run-understanding", headers: H("{}"), body: "{}" }));
+      check("Recovery: nach Lock loesen blockiert der Lock den Lauf nicht mehr",
+        ruAfter.grund !== "understanding-locked" && ruAfter.grund !== "understanding-lock-stale",
+        `grund=${ruAfter.grund}`);
     } finally { await new Promise((r) => server.close(r)); }
   } finally {
     await restore();
@@ -567,9 +594,14 @@ async function dataStatusResilienceChecks() {
 
   // Understanding-Lauf-Fix (Server): WEITES Rohdokument-Fenster fuer den Recovery-Lauf,
   // damit die Quell-Dokumente aelterer pending-Vorgaenge gefunden werden (sonst 0 verarbeitet).
-  const ruBlock = serverSrc.slice(serverSrc.indexOf("/api/admin/recovery/run-understanding"), serverSrc.indexOf("/api/admin/recovery/run-understanding") + 2600);
+  const ruBlock = serverSrc.slice(serverSrc.indexOf("/api/admin/recovery/run-understanding"), serverSrc.indexOf("/api/admin/recovery/run-understanding") + 3600);
   check("Recovery: run-understanding nutzt WEITES Rohdokument-Fenster (2000, 90)",
     /listRecentRawDocuments\(\s*2000\s*,\s*90\s*\)/.test(ruBlock));
+  // Lock-Vorrang: der Lock wird VOR dem Lauf geprueft (vor runPendingUnderstandingShadow)
+  // und hat als Grund Vorrang vor dem Dokument-Zeitfenster.
+  check("Recovery: run-understanding prueft den Lock VOR dem Lauf (Vorrang)",
+    ruBlock.includes("understanding-lock-stale") && ruBlock.includes("pipelineLocks")
+      && ruBlock.indexOf("pipelineLocks") < ruBlock.indexOf("runPendingUnderstandingShadow(rawDocs"));
   check("Recovery: run-understanding zaehlt pending/complete vorher UND nachher",
     /pendingVorher/.test(ruBlock) && /pendingNachher/.test(ruBlock) && /completeVorher/.test(ruBlock) && /completeNachher/.test(ruBlock));
   check("Recovery: run-understanding Budget bleibt unter dem Client-Timeout (<=180000ms)",
@@ -589,6 +621,14 @@ async function dataStatusResilienceChecks() {
     /const startedAt = helmutNowHHMM\(\)/.test(clientSrc) && /finishedAt: helmutNowHHMM\(\)/.test(clientSrc));
   check("Recovery-UI: run-understanding-Klick ruft das richtige Endpoint",
     clientSrc.includes('"run-understanding": "/api/admin/recovery/run-understanding"'));
+  // Lock-Zustand: bei aktivem/verdaechtigem Lock ist 'Understanding-Lauf starten'
+  // deaktiviert und ein klarer Hinweis erscheint (kein stiller No-op mehr).
+  check("Recovery-UI: 'Understanding-Lauf starten' ist bei aktivem/verdaechtigem Lock deaktiviert",
+    clientSrc.includes('busy || lockActionable ? "disabled"'));
+  check("Recovery-UI: klarer Lock-Hinweis, wenn ein Lock aktiv/verdaechtig ist",
+    clientSrc.includes("Ein Understanding-Lauf ist gesperrt oder hängt"));
+  check("Recovery-UI: Lock-Grund 'understanding-lock-stale' hat verstaendlichen Text",
+    clientSrc.includes('"understanding-lock-stale":'));
 
   // Behavioral (offline): der gesamte Datenstatus baut sich fehlerfrei zusammen und
   // liefert weiterhin das global-Objekt (keine harte Ausnahme, wenn Teile leer sind).

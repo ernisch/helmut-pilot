@@ -1707,8 +1707,9 @@ function renderAdminRecovery(rec, result) {
         <div class="ds-recovery-actions">
           <button class="ds-recovery-btn" type="button" data-recovery-action="release-lock" ${busy || !lockActionable ? "disabled" : ""}>Lock lösen</button>
           <button class="ds-recovery-btn ds-recovery-btn--warn" type="button" data-recovery-action="reset-failed" ${busy || !(koAvail && failedN > 0) ? "disabled" : ""}>Failed → Pending zurücksetzen</button>
-          <button class="ds-recovery-btn ds-recovery-btn--primary" type="button" data-recovery-action="run-understanding" ${busy ? "disabled" : ""}>Understanding-Lauf starten</button>
+          <button class="ds-recovery-btn ds-recovery-btn--primary" type="button" data-recovery-action="run-understanding" ${busy || lockActionable ? "disabled" : ""}>Understanding-Lauf starten</button>
         </div>
+        ${lockActionable ? `<p class="ds-note ds-note--warn">Ein Understanding-Lauf ist gesperrt oder hängt. „Understanding-Lauf starten" ist deaktiviert. Bitte „Lock lösen", falls kein Lauf mehr aktiv ist.</p>` : ""}
         <p class="ds-note">Aktionen laufen nur nach bewusstem Klick. „Failed → Pending" fragt vorher nach Bestätigung und löscht keine Rohdokumente. „Understanding-Lauf" nutzt die bestehende Funktion und kann KI-Kosten verursachen.</p>
         ${renderRecoveryResult(result)}
       </div>
@@ -1719,7 +1720,8 @@ function renderAdminRecovery(rec, result) {
 function recoveryGrundText(grund) {
   const map = {
     "no-pending": "Keine pending-Vorgänge gefunden.",
-    "understanding-locked": "Ein anderer Understanding-Lauf ist aktiv (Lock).",
+    "understanding-locked": "Understanding-Lock ist aktiv – bitte warten oder Lock lösen, falls kein Lauf mehr aktiv ist.",
+    "understanding-lock-stale": "Lock wirkt veraltet (hängt) – bitte „Lock lösen“, falls kein Lauf mehr aktiv ist.",
     "ai-disabled": "KI ist nicht konfiguriert.",
     "v3-store-disabled": "V3-Store ist nicht aktiv.",
     "skipped-no-cluster": "Quell-Dokumente der pending-Vorgänge nicht im Zeitfenster gefunden.",
