@@ -72,6 +72,8 @@ let adminDataStatus = null; // interner Datenmotor-Status (global + pro Account)
 let adminRecovery = null;      // interner Pipeline-Recovery-Status (nur Admin)
 let adminRecoveryResult = null; // Ergebnis der letzten Recovery-Aktion (Anzeige)
 let adminRecoveryBusy = false;  // verhindert Doppelklick/Parallelausführung
+let adminPendingDiagnose = null; // Ergebnis der letzten Pending-Diagnose (nur lesen)
+let adminPendingDiagnoseBusy = false;
 let expandedAdminUsers = new Set();
 let dailyInputs = [];
 let dailyInputsLoaded = false;
@@ -1160,7 +1162,7 @@ function renderAdminView() {
 
       ${renderAdminDataStatus(adminDataStatus)}
 
-      ${renderAdminRecovery(adminRecovery, adminRecoveryResult)}
+      ${renderAdminRecovery(adminRecovery, adminRecoveryResult, adminPendingDiagnose)}
 
       <div class="admin-body">
         <div class="admin-col-primary">
@@ -1670,7 +1672,7 @@ function renderAdminDataStatus(ds) {
 // Interner Pipeline-Recovery-Bereich (nur Admin). Zeigt KO-Zustände, Lock, letzten
 // Understanding-Lauf, KI-Fehler/-Erfolg + drei bewusste Aktionen. Serverseitig ist
 // alles admin-gegatet; hier nur Anzeige/Klick. Keine Secrets, keine Env-Werte.
-function renderAdminRecovery(rec, result) {
+function renderAdminRecovery(rec, result, diagnose) {
   // Fail-safe: laedt der Recovery-Status nicht (Timeout/Fehler), bleibt der restliche
   // Admin-Datenstatus sichtbar; hier steht dann nur ein ruhiger Hinweis.
   if (!rec) {
@@ -1708,10 +1710,12 @@ function renderAdminRecovery(rec, result) {
           <button class="ds-recovery-btn" type="button" data-recovery-action="release-lock" ${busy || !lockActionable ? "disabled" : ""}>Lock lösen</button>
           <button class="ds-recovery-btn ds-recovery-btn--warn" type="button" data-recovery-action="reset-failed" ${busy || !(koAvail && failedN > 0) ? "disabled" : ""}>Failed → Pending zurücksetzen</button>
           <button class="ds-recovery-btn ds-recovery-btn--primary" type="button" data-recovery-action="run-understanding" ${busy || lockActionable ? "disabled" : ""}>Understanding-Lauf starten</button>
+          <button class="ds-recovery-btn" type="button" data-pending-diagnose="1" ${busy || adminPendingDiagnoseBusy ? "disabled" : ""}>Pending-Diagnose starten</button>
         </div>
         ${lockActionable ? `<p class="ds-note ds-note--warn">Ein Understanding-Lauf ist gesperrt oder hängt. „Understanding-Lauf starten" ist deaktiviert. Bitte „Lock lösen", falls kein Lauf mehr aktiv ist.</p>` : ""}
         <p class="ds-note">Aktionen laufen nur nach bewusstem Klick. „Failed → Pending" fragt vorher nach Bestätigung und löscht keine Rohdokumente. „Understanding-Lauf" nutzt die bestehende Funktion und kann KI-Kosten verursachen.</p>
         ${renderRecoveryResult(result)}
+        ${renderPendingDiagnose(diagnose)}
       </div>
     </section>`;
 }
@@ -1766,6 +1770,102 @@ function renderRecoveryResult(r) {
   const safe = { ...r }; delete safe.action; delete safe.pending; delete safe.startedAt; delete safe.finishedAt;
   return wrap(`<div class="ds-recovery-result-head"><span class="ds-ok">Ergebnis: ${escapeHtml(label)}</span></div>
       <pre class="ds-recovery-json">${escapeHtml(JSON.stringify(safe, null, 2))}</pre>`);
+}
+
+// Ursache -> ruhiger Klartext (grün = verarbeitbar, sonst gelb/erklärend). Keine Secrets.
+function pendingDiagnoseUrsacheText(u) {
+  const map = {
+    "keine-pending": "Keine pending-Vorgänge – nichts zu tun.",
+    "verarbeitbar": "Pending-Vorgänge sind grundsätzlich verarbeitbar.",
+    "ausserhalb-fenster": "Rohdokumente liegen außerhalb des aktuellen Recovery-Fensters.",
+    "verwaist": "Pending-Vorgänge wirken verwaist (keine Rohdokumente im Store gefunden).",
+    "mapping-fehlt": "Mapping zwischen Vorgang und Rohdokument fehlt oder ist unvollständig.",
+    "gemischt": "Gemischt: teils im Fenster, teils außerhalb, teils verwaist.",
+    "v3-store-disabled": "Diagnose nicht möglich, V3-Store nicht aktiv."
+  };
+  return map[String(u || "")] || `Ursache: ${escapeHtml(String(u || "unbekannt"))}`;
+}
+
+// Read-only Pending-Diagnose (kein KI, keine Writes). Ruhige, minimale Anzeige.
+function renderPendingDiagnose(d) {
+  if (!d) return "";
+  const wrap = (inner) => `<div class="ds-recovery-result">${inner}</div>`;
+  if (d.pending) {
+    return wrap(`<div class="ds-recovery-result-head"><span class="ds-warn">Pending-Diagnose läuft</span></div>
+      <p class="ds-sub">Nur lesen … einen Moment.</p>`);
+  }
+  if (d.ok === false) {
+    return wrap(`<div class="ds-recovery-result-head"><span class="ds-bad">Pending-Diagnose: Fehlgeschlagen</span></div>
+      <p class="ds-sub">${escapeHtml(d.fehler || "Unbekannter Fehler")}</p>`);
+  }
+  if (d.verfuegbar === false) {
+    return wrap(`<div class="ds-recovery-result-head"><span class="ds-warn">Pending-Diagnose</span></div>
+      <p class="ds-sub">${pendingDiagnoseUrsacheText(d.grund || "v3-store-disabled")}</p>`);
+  }
+  // Grün nur bei "verarbeitbar", sonst gelb (ehrliche Erklärung).
+  const gruen = d.ursache === "verarbeitbar" || d.ursache === "keine-pending";
+  const kopf = gruen ? "ds-ok" : "ds-warn";
+  const rows = [
+    ["Gesamt pending", dsFmt(d.gesamt)],
+    ["Mit Cluster", dsFmt(d.mitCluster)],
+    ["Ohne Cluster", dsFmt(d.ohneCluster)],
+    ["Rohdokumente im aktuellen Fenster gefunden", dsFmt(d.imFenster)],
+    ["Rohdokumente außerhalb des Fensters gefunden", dsFmt(d.ausserhalb)],
+    ["Keine Rohdokumente gefunden", dsFmt(d.keine)],
+    ["Pending ohne Quell-Zahl (V2/Seed-Hinweis)", dsFmt(d.ohneQuellzahl)],
+    ["Ältester pending Vorgang", d.pendingAeltesterTage != null ? `${dsFmt(d.pendingAeltesterTage)} Tage` : "–"],
+    ["Neuester pending Vorgang", d.pendingNeuesterTage != null ? `${dsFmt(d.pendingNeuesterTage)} Tage` : "–"],
+    ["Rohdokumente Alter (ältestes/neuestes)", (d.rohdokAeltesterTage != null || d.rohdokNeuesterTage != null) ? `${dsFmt(d.rohdokAeltesterTage)} / ${dsFmt(d.rohdokNeuesterTage)} Tage` : "–"],
+    ["Rohdokumente gelesen (Fenster / weit)", `${dsFmt(d.rohdokumenteFenster)} / ${dsFmt(d.rohdokumenteWeit)}${d.weitGedeckelt ? " (gedeckelt)" : ""}`]
+  ].map(([k, v]) => dsRow(k, v)).join("");
+  const bsp = (d.beispiele || []).map((b) => `
+    <tr>
+      <td>${escapeHtml(b.vorgangId || "")}</td>
+      <td>${escapeHtml(b.titelKurz || "")}</td>
+      <td>${escapeHtml(b.status || "")}</td>
+      <td>${b.alterTage != null ? dsFmt(b.alterTage) + "d" : "–"}</td>
+      <td>${b.clusterVorhanden ? "ja" : "nein"}</td>
+      <td>${b.rohdokumentGefunden ? "ja" : "nein"}</td>
+      <td>${b.rohdokumentAlterTage != null ? dsFmt(b.rohdokumentAlterTage) + "d" : "–"}</td>
+      <td>${escapeHtml(pendingDiagnoseGrundKurz(b.grund))}</td>
+    </tr>`).join("");
+  const tabelle = bsp
+    ? `<div class="ds-diag-table-wrap"><table class="ds-diag-table">
+        <thead><tr><th>Vorgang</th><th>Titel</th><th>Status</th><th>Alter</th><th>Cluster</th><th>Rohdok</th><th>Rohdok-Alter</th><th>Grund</th></tr></thead>
+        <tbody>${bsp}</tbody></table></div>`
+    : "";
+  return wrap(`<div class="ds-recovery-result-head"><span class="${kopf}">Pending-Diagnose</span></div>
+    ${rows}
+    ${dsRow("Wahrscheinlichste Ursache", `<span class="${kopf}">${escapeHtml(pendingDiagnoseUrsacheText(d.ursache))}</span>`)}
+    ${dsRow("Empfohlener nächster Schritt", escapeHtml(String(d.empfehlung || "–")))}
+    ${tabelle}
+    <p class="ds-note">Nur gelesen – keine KI, keine Pipeline, keine Datenänderung. Bis zu 10 Beispiele ohne Rohtext.</p>`);
+}
+
+function pendingDiagnoseGrundKurz(g) {
+  const map = { "im-fenster": "im Fenster", "ausserhalb-fenster": "außerhalb Fenster", "keine-rohdokumente": "keine Rohdok." };
+  return map[String(g || "")] || String(g || "");
+}
+
+// Read-only Aktion: Pending-Diagnose. Kein confirm (verändert nichts), kein KI-Call.
+async function runPendingDiagnose() {
+  if (adminPendingDiagnoseBusy || adminRecoveryBusy) return;
+  adminPendingDiagnoseBusy = true;
+  adminPendingDiagnose = { pending: true };
+  render(); bindActions();
+  try {
+    const resp = await fetchWithTimeout(`/api/admin/recovery/pending-diagnose?${apiScopeQuery()}`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: "{}"
+    }, 60000);
+    let json;
+    try { json = await resp.json(); } catch (_) { json = {}; }
+    adminPendingDiagnose = resp.ok ? json : { ok: false, fehler: `HTTP ${resp.status}` };
+  } catch (_) {
+    adminPendingDiagnose = { ok: false, fehler: "Zeitüberschreitung oder Netzwerkfehler" };
+  } finally {
+    adminPendingDiagnoseBusy = false;
+    render(); bindActions();
+  }
 }
 
 async function runRecoveryAction(action) {
@@ -7738,6 +7838,9 @@ function bindActions() {
   // Serverseitig admin-gegatet + CSRF (fetchWithTimeout setzt den Token).
   app.querySelectorAll("[data-recovery-action]").forEach((button) => {
     button.addEventListener("click", () => { runRecoveryAction(button.dataset.recoveryAction); });
+  });
+  app.querySelectorAll("[data-pending-diagnose]").forEach((button) => {
+    button.addEventListener("click", () => { runPendingDiagnose(); });
   });
 
   if (isAccountMode()) {

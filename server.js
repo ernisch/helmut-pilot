@@ -15,7 +15,7 @@ const { pushStatus, sendBriefingReadyPush, sendLageChangePush, sendPushToPolitic
 const auth = require("./lib/helmut/auth");
 const accounts = require("./lib/helmut/accounts");
 const { getRelevantParliamentaryItems } = require("./lib/helmut/dip");
-const { runPendingUnderstandingShadow, clusterRawDocuments, deriveVorgangId } = require("./lib/helmut/understanding");
+const { runPendingUnderstandingShadow, clusterRawDocuments, deriveVorgangId, diagnosePendingUnderstanding } = require("./lib/helmut/understanding");
 const { generateOfficeOutput, isValidChannel } = require("./lib/helmut/office");
 const { buildLageBriefing } = require("./lib/helmut/lage");
 const { backfillProvenance } = require("./lib/helmut/backfill");
@@ -1032,6 +1032,34 @@ async function handleRequest(request, response) {
         pendingVorher: vorher.pending, pendingNachher: nachher.pending,
         completeVorher: vorher.complete, completeNachher: nachher.complete,
         zusammenfassung: counts
+      };
+    });
+  }
+
+  // AKTION 4 (NUR LESEN): Pending-Diagnose. Erklaert, WARUM pending-Vorgaenge keine
+  // Quell-Dokumente finden. KEIN KI-Call, KEINE Pipeline, KEINE Writes, KEIN externer
+  // Netzaufruf — nur Store-Reads + deterministisches Clustering (wie der Lauf). Liest
+  // das Fenster (2000, 90 — identisch zum Lauf) UND einen bounded weiteren Read, um
+  // 'ausserhalb Fenster' von 'verwaist' zu unterscheiden. Antwort ohne Rohtext/Secrets.
+  if (url.pathname === "/api/admin/recovery/pending-diagnose" && request.method === "POST") {
+    if (!requireRoleOr403(response, authUser, "admin")) return undefined;
+    return handleJson(request, response, async () => {
+      if (!v3StoreReady()) return { verfuegbar: false, grund: "v3-store-disabled" };
+      // Bounded Reads (read-only). Fenster identisch zum Recovery-Lauf; weiter = mehr
+      // Tage/Zeilen, um aeltere Quell-Dokumente ueberhaupt sichtbar zu machen.
+      const DIAG_RAW_LIMIT = 6000;
+      const DIAG_RAW_DAYS = 3650;
+      const pending = await listPendingKnowledgeObjects({ limit: 1000 }).catch(() => []);
+      const windowDocs = await listRecentRawDocuments(2000, 90).catch(() => []);
+      const widerDocs = await listRecentRawDocuments(DIAG_RAW_LIMIT, DIAG_RAW_DAYS).catch(() => []);
+      const d = diagnosePendingUnderstanding(pending, windowDocs, widerDocs, { now: Date.now(), windowDays: 90 });
+      return {
+        verfuegbar: true,
+        ...d,
+        rohdokumenteFenster: (windowDocs || []).length,
+        rohdokumenteWeit: (widerDocs || []).length,
+        // Ehrlich: der weite Read ist gedeckelt; 'keine' heisst 'nicht in bis zu N gelesenen Dok.'
+        weitGedeckelt: (widerDocs || []).length >= DIAG_RAW_LIMIT
       };
     });
   }

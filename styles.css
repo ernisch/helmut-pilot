@@ -7643,6 +7643,10 @@ body {
   margin: 6px 0 0; padding: 10px 12px; border-radius: 10px; background: rgba(140, 140, 150, .1);
   font-size: 11px; line-height: 1.5; color: var(--muted-2); white-space: pre-wrap; word-break: break-word; overflow-x: auto;
 }
+.ds-diag-table-wrap { margin-top: 8px; overflow-x: auto; }
+.ds-diag-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.ds-diag-table th, .ds-diag-table td { text-align: left; padding: 4px 8px; border-bottom: 1px solid rgba(140, 140, 150, .18); white-space: nowrap; }
+.ds-diag-table th { color: var(--muted-2); font-weight: 600; }
 
 /* Desktop: Account-Karten nebeneinander */
 @media (min-width: 720px) {

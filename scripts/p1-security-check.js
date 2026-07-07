@@ -566,6 +566,18 @@ async function pipelineRecoveryChecks() {
       check("Recovery: nach Lock loesen blockiert der Lock den Lauf nicht mehr",
         ruAfter.grund !== "understanding-locked" && ruAfter.grund !== "understanding-lock-stale",
         `grund=${ruAfter.grund}`);
+
+      // 11) Pending-Diagnose (NUR LESEN): Admin darf; offline ohne V3-Store -> gelber Grund,
+      //     kein Crash, keine Secrets. (Der eigentliche Klassifikator wird separat unit-getestet.)
+      const diag = await requestFull(server, { method: "POST", pathname: "/api/admin/recovery/pending-diagnose", headers: H("{}"), body: "{}" });
+      const diagj = parse(diag);
+      check("Recovery: Admin darf Pending-Diagnose starten (200, read-only)", diag.status === 200);
+      check("Recovery: Pending-Diagnose ohne V3-Store -> gelber Grund (verfuegbar:false, v3-store-disabled)",
+        diagj.verfuegbar === false && diagj.grund === "v3-store-disabled", `body=${diag.body.slice(0, 80)}`);
+      check("Recovery: Pending-Diagnose-Antwort enthaelt KEINE Secrets", !SECRET_RE.test(diag.body));
+      // Normaler Nutzer (Referent) -> 403 (admin-gegatet wie die anderen Aktionen).
+      const diagRef = await requestFull(server, { method: "POST", pathname: "/api/admin/recovery/pending-diagnose", headers: { Cookie: refCookie, "x-csrf-token": csrf, "Content-Type": "application/json", "Content-Length": 2 }, body: "{}" });
+      check("Recovery: Pending-Diagnose fuer normalen Nutzer -> 403", diagRef.status === 403, `status=${diagRef.status}`);
     } finally { await new Promise((r) => server.close(r)); }
   } finally {
     await restore();
@@ -630,6 +642,23 @@ async function dataStatusResilienceChecks() {
   check("Recovery-UI: Lock-Grund 'understanding-lock-stale' hat verstaendlichen Text",
     clientSrc.includes('"understanding-lock-stale":'));
 
+  // Pending-Diagnose (NUR LESEN): der Endpoint darf NICHT schreiben und NICHT die Pipeline
+  // starten (kein runPendingUnderstandingShadow, kein save/bulkReset im Diagnose-Block).
+  const diagBlock = serverSrc.slice(serverSrc.indexOf("/api/admin/recovery/pending-diagnose"),
+    serverSrc.indexOf("/api/admin/recovery/pending-diagnose") + 1400);
+  check("Diagnose: Endpoint existiert und ist admin-gegatet",
+    diagBlock.includes("requireRoleOr403") && diagBlock.includes("diagnosePendingUnderstanding"));
+  check("Diagnose: Endpoint ist NUR LESEN (kein runPendingUnderstandingShadow, kein save/bulkReset)",
+    !diagBlock.includes("runPendingUnderstandingShadow") && !/save\w+\(|bulkReset|markUnderstanding|releasePipelineLock/.test(diagBlock));
+  check("Diagnose: aendert das Recovery-Fenster des Laufs NICHT (nutzt weiterhin 2000,90 fuers Fenster)",
+    /listRecentRawDocuments\(2000,\s*90\)/.test(diagBlock));
+  check("Diagnose-UI: 'Pending-Diagnose starten' Button vorhanden (read-only Aktion)",
+    clientSrc.includes('data-pending-diagnose="1"') && clientSrc.includes("Pending-Diagnose starten"));
+  check("Diagnose-UI: eigener Renderer + Aktion ruft den Diagnose-Endpoint",
+    clientSrc.includes("function renderPendingDiagnose") && clientSrc.includes("/api/admin/recovery/pending-diagnose"));
+  check("Diagnose-UI: zeigt keine Rohtexte (nur gekuerzte Felder, Hinweis 'ohne Rohtext')",
+    clientSrc.includes("Beispiele ohne Rohtext") || clientSrc.includes("ohne Rohtext"));
+
   // Behavioral (offline): der gesamte Datenstatus baut sich fehlerfrei zusammen und
   // liefert weiterhin das global-Objekt (keine harte Ausnahme, wenn Teile leer sind).
   try {
@@ -639,6 +668,46 @@ async function dataStatusResilienceChecks() {
   } catch (err) {
     check("Datenstatus: baut sich fehlerfrei zusammen", false, String((err && err.message) || err));
   }
+}
+
+// Pending-Diagnose (read-only): der Klassifikator muss dieselbe Cluster-/vorgang_id-
+// Ableitung wie der Lauf nutzen und die Faelle sauber trennen. Rein deterministisch,
+// KEINE KI, KEINE Writes (nur die reine Funktion, kein Netz/Store).
+function pendingDiagnoseChecks() {
+  const { diagnosePendingUnderstanding, clusterRawDocuments, deriveVorgangId } = require(path.join(root, "lib/helmut/understanding.js"));
+  const { toRawDocumentRow } = require(path.join(root, "lib/helmut/dedup.js"));
+  const now = Date.parse("2026-07-07T00:00:00Z");
+  const day = 86400000;
+  const mk = (id, title, ageDays) => ({ id, title, summary: title, published_at: new Date(now - ageDays * day).toISOString(), created_at: new Date(now - ageDays * day).toISOString() });
+  const docFenster = mk("d1", "Tariftreuegesetz im Bundestag beschlossen", 5);
+  const docAlt = mk("d2", "Klimaschutzgesetz Novelle vorgelegt", 200);
+  const vidFenster = deriveVorgangId(clusterRawDocuments([toRawDocumentRow(docFenster)])[0]);
+  const vidAlt = deriveVorgangId(clusterRawDocuments([toRawDocumentRow(docAlt)])[0]);
+  const koFenster = { vorgang_id: vidFenster, understanding_status: "pending", source_document_count: 2, created_at: new Date(now - 5 * day).toISOString() };
+  const koAlt = { vorgang_id: vidAlt, understanding_status: "pending", source_document_count: 3, created_at: new Date(now - 200 * day).toISOString() };
+  const koVerwaist = { vorgang_id: "vg-existiert-nicht", understanding_status: "pending", source_document_count: 0, created_at: new Date(now - 300 * day).toISOString() };
+
+  const A = diagnosePendingUnderstanding([koFenster], [docFenster], [docFenster], { now, windowDays: 90 });
+  check("Diagnose: alle im Fenster -> 'verarbeitbar'", A.ursache === "verarbeitbar" && A.imFenster === 1 && A.keine === 0, `ursache=${A.ursache}`);
+
+  const B = diagnosePendingUnderstanding([koAlt], [], [docAlt], { now, windowDays: 90 });
+  check("Diagnose: Rohdokument ausserhalb Fenster erkannt -> 'ausserhalb-fenster'", B.ursache === "ausserhalb-fenster" && B.ausserhalb === 1 && B.imFenster === 0, `ursache=${B.ursache} ausserhalb=${B.ausserhalb}`);
+
+  const C = diagnosePendingUnderstanding([koVerwaist], [], [], { now, windowDays: 90 });
+  check("Diagnose: pending ohne Rohdokumente -> 'verwaist' (+ V2/Seed-Hinweis ohneQuellzahl)", C.ursache === "verwaist" && C.keine === 1 && C.ohneQuellzahl === 1, `ursache=${C.ursache}`);
+
+  const D = diagnosePendingUnderstanding([koVerwaist], [], [docAlt], { now, windowDays: 90 });
+  check("Diagnose: Rohdoks vorhanden aber kein Match -> 'mapping-fehlt'", D.ursache === "mapping-fehlt" && D.keine === 1, `ursache=${D.ursache}`);
+
+  // Rein lesend: Eingaben unveraendert; max 10 Beispiele; keine Rohtext-Felder in den Beispielen.
+  const pendingIn = [koFenster, koAlt, koVerwaist];
+  const before = JSON.stringify(pendingIn);
+  const E = diagnosePendingUnderstanding(pendingIn, [docFenster], [docFenster, docAlt], { now, windowDays: 90 });
+  check("Diagnose: veraendert die Eingabedaten NICHT (rein lesend)", JSON.stringify(pendingIn) === before);
+  check("Diagnose: max 10 Beispiele, ohne Rohtext-Felder (summary/content/body)",
+    E.beispiele.length <= 10 && E.beispiele.every((b) => !("summary" in b) && !("content" in b) && !("body" in b)));
+  check("Diagnose: liefert die verlangten Zaehlwerte",
+    ["gesamt", "mitCluster", "ohneCluster", "imFenster", "ausserhalb", "keine", "ohneQuellzahl"].every((k) => k in E));
 }
 
 // Datenmotor V2 — Commit 1: LLM-Budget-Fundament (Tages-Aggregation + Gate).
@@ -1770,6 +1839,7 @@ async function main() {
   await kiStatusChecks();
   await pipelineRecoveryChecks();
   await dataStatusResilienceChecks();
+  pendingDiagnoseChecks();
   await llmBudgetChecks();
   await c1SafetyNetChecks();
   await c3DipPrimaryChecks();
