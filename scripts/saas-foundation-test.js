@@ -225,6 +225,31 @@ async function catalogDecoupling() {
   const summary = safety.summarizeSources(sources.v1Sources);
   check("Admin: Quellen-Summary zaehlt Medien als eigene Kategorie", summary.byCategory.medien > 0 && summary.byCategory.offiziell > 0);
   check("Admin: Quellen-Summary liefert Vertrauensstufen (hoch vorhanden)", summary.byTrust.hoch > 0);
+
+  // (g) Wortgrenzen-Theme-Matching: Sozialquellen duerfen NICHT durch zufaellige
+  //     Wortbestandteile ausgeloest werden (Fix aus dem Read-Only-Review).
+  const socialProbeIds = ["bmas", "dgb", "ausschuss-arbeit-soziales", "news-deutsche-rentenversicherung", "news-arbeitsagentur"];
+  const hasAnySocial = (src) => { const s = idset(src); return socialProbeIds.some((id) => s.has(id)) || socialThemed(src).length > 0; };
+  const mkProfile = (label, topics, extra = {}) => ({ id: `wb-${label}`, fullName: `WB ${label}`, party: "Grüne", parliamentType: "Bundestag", focusTopics: topics, ...extra });
+
+  const kultur = await scheduler.getSourcesForProfile(mkProfile("kultur", ["Denkmalpflege"], { committee: "Kultur und Medien" }));
+  check("Wortgrenze: Kulturprofil 'Denkmalpflege' -> 0 Sozialquellen (kein BMAS/DGB/Rente)", !hasAnySocial(kultur), `soz=${socialThemed(kultur).length}`);
+
+  const umwelt = await scheduler.getSourcesForProfile(mkProfile("umwelt", ["Landschaftspflege", "Gewässerpflege", "Gartenpflege"], { committee: "Umwelt" }));
+  check("Wortgrenze: Umweltprofil 'Landschaftspflege' -> 0 Sozialquellen", !hasAnySocial(umwelt), `soz=${socialThemed(umwelt).length}`);
+
+  const digital = await scheduler.getSourcesForProfile(mkProfile("digital", ["IT", "Digitalisierung"], { committee: "Digitales" }));
+  check("Wortgrenze: Digitalprofil 'IT' -> 0 Sozialquellen (nicht ueber 'Arbeitszeit')", !hasAnySocial(digital), `soz=${socialThemed(digital).length}`);
+
+  const echtPflege = await scheduler.getSourcesForProfile(mkProfile("pflege", ["Pflege", "Pflegeversicherung", "Altenpflege"], { committee: "Gesundheit", party: "SPD" }));
+  check("Wortgrenze: echtes Pflegeprofil 'Pflege/Pflegeversicherung' -> bekommt Sozialquellen", socialThemed(echtPflege).length > 0 && idset(echtPflege).has("bmas"));
+
+  const haushalt = await scheduler.getSourcesForProfile(mkProfile("haushalt", ["Bundeshaushalt", "Schuldenbremse", "Steuern"], { committee: "Haushaltsausschuss", party: "FDP", relevantMinistries: ["BMF"] }));
+  check("Wortgrenze: Haushaltspolitiker -> weiterhin 0 Sozialquellen", !hasAnySocial(haushalt), `soz=${socialThemed(haushalt).length}`);
+  // Verteidigung (aus (a)) bleibt sauber:
+  check("Wortgrenze: Verteidigungsprofil -> weiterhin 0 Sozialquellen", !hasAnySocial(dSrc));
+  // Cem (aus (b)) bleibt funktionsfaehig:
+  check("Wortgrenze: Cem bekommt weiterhin passende Sozialquellen aus Profil", socialThemed(cSrc).length > 0 && cIds.has("bmas"));
 }
 
 // ================================ Zusammenfassung ============================
