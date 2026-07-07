@@ -520,9 +520,18 @@ async function pipelineRecoveryChecks() {
       const rf1 = await requestFull(server, { method: "POST", pathname: "/api/admin/recovery/reset-failed", headers: H(rf1Body), body: rf1Body });
       check("Recovery: Admin darf failed zurücksetzen (mit Bestätigung, 200)", rf1.status === 200 && parse(rf1).ok === true);
 
-      // 7) Understanding starten -> 200 (offline: skipped, kein KI-Call, kein Crash).
+      // 7) Understanding starten -> 200 (offline: uebersprungen, kein KI-Call, kein Crash).
       const ru = await requestFull(server, { method: "POST", pathname: "/api/admin/recovery/run-understanding", headers: H("{}"), body: "{}" });
-      check("Recovery: Admin darf Understanding starten (200)", ru.status === 200 && parse(ru).ok === true);
+      const ruj = parse(ru);
+      check("Recovery: Admin darf Understanding starten (200)", ru.status === 200 && ruj.ok === true);
+      // 7b) Antwort traegt die sichtbaren Fortschritts-Felder (vorher/nachher + Klassifikation).
+      check("Recovery: run-understanding liefert Fortschritts-Felder (ergebnis + vorher/nachher)",
+        ["ergebnis", "pendingVorher", "pendingNachher", "completeVorher", "completeNachher", "rohdokumenteGeladen", "verarbeitet"].every((k) => k in ruj),
+        `keys=${Object.keys(ruj).join(",")}`);
+      // 7c) Offline (kein V3-Store) -> nicht "erfolgreich", aber sauber klassifiziert mit Grund.
+      check("Recovery: run-understanding offline -> klassifiziert (nicht erfolgreich, mit Grund)",
+        ruj.ergebnis !== "erfolgreich" && typeof ruj.grund === "string" && ruj.verarbeitet === 0,
+        `ergebnis=${ruj.ergebnis} grund=${ruj.grund}`);
 
       // 8) Keine Aktions-Antwort enthält Secrets.
       check("Recovery: Aktions-Antworten enthalten KEINE Secrets", ![rel.body, rf0.body, rf1.body, ru.body].some((b) => SECRET_RE.test(b)));
@@ -555,6 +564,31 @@ async function dataStatusResilienceChecks() {
 
   check("Recovery-Bereich ist fail-safe (eigener 'nicht verfuegbar'-Hinweis, versteckt Datenstatus nicht)",
     clientSrc.includes("Recovery-Status derzeit nicht verfügbar"));
+
+  // Understanding-Lauf-Fix (Server): WEITES Rohdokument-Fenster fuer den Recovery-Lauf,
+  // damit die Quell-Dokumente aelterer pending-Vorgaenge gefunden werden (sonst 0 verarbeitet).
+  const ruBlock = serverSrc.slice(serverSrc.indexOf("/api/admin/recovery/run-understanding"), serverSrc.indexOf("/api/admin/recovery/run-understanding") + 2600);
+  check("Recovery: run-understanding nutzt WEITES Rohdokument-Fenster (2000, 90)",
+    /listRecentRawDocuments\(\s*2000\s*,\s*90\s*\)/.test(ruBlock));
+  check("Recovery: run-understanding zaehlt pending/complete vorher UND nachher",
+    /pendingVorher/.test(ruBlock) && /pendingNachher/.test(ruBlock) && /completeVorher/.test(ruBlock) && /completeNachher/.test(ruBlock));
+  check("Recovery: run-understanding Budget bleibt unter dem Client-Timeout (<=180000ms)",
+    /Math\.min\(Number\(process\.env\.HELMUT_UNDERSTAND_BUDGET_MS[^)]*\)\s*,\s*180000\)/.test(ruBlock));
+
+  // Understanding-Lauf-Fix (Client): reiche, klar klassifizierte Rueckmeldung, die nach
+  // dem Klick sofort sichtbar ist und nach dem Lauf Erfolg/Grund/Fehler klar anzeigt.
+  check("Recovery-UI: zeigt 'Läuft seit' waehrend des Laufs (sofortiges Feedback)",
+    clientSrc.includes("Läuft seit"));
+  check("Recovery-UI: zeigt Erfolg ('Erfolgreich abgeschlossen') mit pending/complete vorher->nachher",
+    clientSrc.includes("Erfolgreich abgeschlossen") && /pending \$\{dsFmt\(r\.pendingVorher\)\}→\$\{dsFmt\(r\.pendingNachher\)\}/.test(clientSrc));
+  check("Recovery-UI: zeigt 'Nicht gestartet' (gelb) mit verstaendlichem Grund",
+    clientSrc.includes("Nicht gestartet") && clientSrc.includes("recoveryGrundText"));
+  check("Recovery-UI: zeigt 'Fehlgeschlagen' (rot) bei HTTP-/Netzfehler",
+    clientSrc.includes("Fehlgeschlagen"));
+  check("Recovery-UI: setzt Start-/Endzeit ueber helmutNowHHMM (keine Server-Uhr noetig)",
+    /const startedAt = helmutNowHHMM\(\)/.test(clientSrc) && /finishedAt: helmutNowHHMM\(\)/.test(clientSrc));
+  check("Recovery-UI: run-understanding-Klick ruft das richtige Endpoint",
+    clientSrc.includes('"run-understanding": "/api/admin/recovery/run-understanding"'));
 
   // Behavioral (offline): der gesamte Datenstatus baut sich fehlerfrei zusammen und
   // liefert weiterhin das global-Objekt (keine harte Ausnahme, wenn Teile leer sind).

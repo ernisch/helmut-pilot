@@ -1715,18 +1715,55 @@ function renderAdminRecovery(rec, result) {
     </section>`;
 }
 
+// Technische Understanding-Gründe -> verständlicher Klartext (keine Secrets).
+function recoveryGrundText(grund) {
+  const map = {
+    "no-pending": "Keine pending-Vorgänge gefunden.",
+    "understanding-locked": "Ein anderer Understanding-Lauf ist aktiv (Lock).",
+    "ai-disabled": "KI ist nicht konfiguriert.",
+    "v3-store-disabled": "V3-Store ist nicht aktiv.",
+    "skipped-no-cluster": "Quell-Dokumente der pending-Vorgänge nicht im Zeitfenster gefunden.",
+    "skipped-no-vorgang": "Pending-Einträge ohne Vorgangsbezug.",
+    "skipped-exists": "Vorgänge bereits verstanden.",
+    "skipped-budget": "Zeitbudget erreicht – Rest bleibt pending (nächster Lauf holt nach).",
+    "skipped-error": "KI-Aufruf für einzelne Vorgänge fehlgeschlagen.",
+    "skipped-invalid": "KI-Ergebnis war nicht schema-valide.",
+    "skipped-store": "Ergebnis konnte nicht gespeichert werden.",
+    "cluster-error": "Fehler bei einzelnen Vorgängen.",
+    "keine-verarbeitung": "Es wurde nichts verarbeitet."
+  };
+  return map[String(grund || "")] || `Grund: ${escapeHtml(String(grund || "unbekannt"))}`;
+}
+
 function renderRecoveryResult(r) {
   if (!r) return "";
   const label = { "release-lock": "Lock lösen", "reset-failed": "Failed zurücksetzen", "run-understanding": "Understanding-Lauf" }[r.action] || "Aktion";
-  if (r.pending) return `<div class="ds-recovery-result"><span class="ds-sub">${escapeHtml(label)} läuft …</span></div>`;
-  const okClass = r.ok === false ? "ds-bad" : "ds-ok";
-  // Nur die skalare Server-Zusammenfassung anzeigen (die Endpunkte liefern KEINE
-  // Secrets/Keys/Env — nur Zahlen/Status). action/pending sind reine UI-Felder.
-  const safe = { ...r }; delete safe.action; delete safe.pending;
-  return `<div class="ds-recovery-result">
-      <div class="ds-recovery-result-head"><span class="${okClass}">Ergebnis: ${escapeHtml(label)}</span></div>
-      <pre class="ds-recovery-json">${escapeHtml(JSON.stringify(safe, null, 2))}</pre>
-    </div>`;
+  const wrap = (inner) => `<div class="ds-recovery-result">${inner}</div>`;
+  // Läuft gerade (sofort nach Klick sichtbar) — Button ist derweil deaktiviert.
+  if (r.pending) {
+    return wrap(`<div class="ds-recovery-result-head"><span class="ds-warn">${escapeHtml(label)} gestartet</span></div>
+      <p class="ds-sub">Läuft seit ${escapeHtml(r.startedAt || "")} … bitte warten (bis zu einige Minuten).</p>`);
+  }
+  // Fehlgeschlagen (HTTP-Fehler / Zeitüberschreitung / Netz).
+  if (r.ok === false) {
+    return wrap(`<div class="ds-recovery-result-head"><span class="ds-bad">${escapeHtml(label)}: Fehlgeschlagen</span></div>
+      <p class="ds-sub">${escapeHtml(r.fehler || "Unbekannter Fehler")}${r.finishedAt ? ` · ${escapeHtml(r.finishedAt)}` : ""}</p>`);
+  }
+  // Understanding-Lauf: reiche, klar klassifizierte Rückmeldung.
+  if (r.action === "run-understanding") {
+    const zeit = r.finishedAt ? ` <span class="ds-sub">· ${escapeHtml(r.finishedAt)}</span>` : "";
+    if (r.ergebnis === "erfolgreich") {
+      return wrap(`<div class="ds-recovery-result-head"><span class="ds-ok">Erfolgreich abgeschlossen</span>${zeit}</div>
+        <p class="ds-sub">verarbeitet ${dsFmt(r.verarbeitet)} · zurückgestellt ${dsFmt(r.zurueckgestellt)} · pending ${dsFmt(r.pendingVorher)}→${dsFmt(r.pendingNachher)} · complete ${dsFmt(r.completeVorher)}→${dsFmt(r.completeNachher)}</p>`);
+    }
+    const rest = r.ergebnis === "nichts-verarbeitet" ? ` · pending unverändert (${dsFmt(r.pendingNachher)})` : "";
+    return wrap(`<div class="ds-recovery-result-head"><span class="ds-warn">Nicht gestartet</span>${zeit}</div>
+      <p class="ds-sub">${recoveryGrundText(r.grund)}${rest}</p>`);
+  }
+  // Andere Aktionen (Lock lösen / Failed zurücksetzen): sanitisiertes Ergebnis-JSON.
+  const safe = { ...r }; delete safe.action; delete safe.pending; delete safe.startedAt; delete safe.finishedAt;
+  return wrap(`<div class="ds-recovery-result-head"><span class="ds-ok">Ergebnis: ${escapeHtml(label)}</span></div>
+      <pre class="ds-recovery-json">${escapeHtml(JSON.stringify(safe, null, 2))}</pre>`);
 }
 
 async function runRecoveryAction(action) {
@@ -1747,7 +1784,8 @@ async function runRecoveryAction(action) {
   const endpoint = endpoints[action];
   if (!endpoint) return;
   adminRecoveryBusy = true;
-  adminRecoveryResult = { action, pending: true };
+  const startedAt = helmutNowHHMM();
+  adminRecoveryResult = { action, pending: true, startedAt };
   render(); bindActions();
   try {
     const body = action === "reset-failed" ? { confirm: true } : {};
@@ -1756,13 +1794,15 @@ async function runRecoveryAction(action) {
     }, action === "run-understanding" ? 250000 : 30000);
     let json;
     try { json = await resp.json(); } catch (_) { json = {}; }
-    adminRecoveryResult = resp.ok ? { action, ...json } : { action, ok: false, fehler: `HTTP ${resp.status}` };
+    adminRecoveryResult = resp.ok
+      ? { action, startedAt, finishedAt: helmutNowHHMM(), ...json }
+      : { action, ok: false, startedAt, finishedAt: helmutNowHHMM(), fehler: `HTTP ${resp.status}` };
     try {
       const s = await fetchWithTimeout(`/api/admin/recovery-status?${apiScopeQuery()}`, {}, 25000);
       if (s.ok) adminRecovery = await s.json();
     } catch (_) { /* Status-Reload optional */ }
   } catch (_) {
-    adminRecoveryResult = { action, ok: false, fehler: "Aktion fehlgeschlagen" };
+    adminRecoveryResult = { action, ok: false, startedAt, finishedAt: helmutNowHHMM(), fehler: "Zeitüberschreitung oder Netzwerkfehler" };
   } finally {
     adminRecoveryBusy = false;
     render(); bindActions();

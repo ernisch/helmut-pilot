@@ -968,18 +968,45 @@ async function handleRequest(request, response) {
   if (url.pathname === "/api/admin/recovery/run-understanding" && request.method === "POST") {
     if (!requireRoleOr403(response, authUser, "admin")) return undefined;
     return handleJson(request, response, async () => {
-      const rawDocs = await listRecentRawDocuments(500).catch(() => []);
-      const result = await runPendingUnderstandingShadow(rawDocs, { budgetMs: Number(process.env.HELMUT_UNDERSTAND_BUDGET_MS || 240000) })
+      // KO-Zaehlung vorher/nachher fuer sichtbaren Fortschritt (pending/complete).
+      const koCounts = async () => {
+        const all = await listKnowledgeObjects({ limit: 1000 }).catch(() => []);
+        let pending = 0, complete = 0;
+        for (const k of (all || [])) {
+          const s = String((k && k.understanding_status) || "");
+          if (s === "pending") pending += 1; else if (s === "complete") complete += 1;
+        }
+        return { pending, complete };
+      };
+      const vorher = await koCounts();
+      // WEITES Fenster (wie /api/debug/reset-failed-kos): erhoeht die Chance, die
+      // Quell-Dokumente der pending-Vorgaenge zu finden. Ein zu enges Fenster fuehrt
+      // sonst zu 'skipped-no-cluster' -> 0 verarbeitet trotz vorhandener pending-KOs.
+      const rawDocs = await listRecentRawDocuments(2000, 90).catch(() => []);
+      // Budget knapp unter dem Client-Timeout (250s), damit der Lauf antwortet, bevor
+      // der Browser abbricht; Rest bleibt pending und wird beim naechsten Klick geholt.
+      const budgetMs = Math.min(Number(process.env.HELMUT_UNDERSTAND_BUDGET_MS || 180000), 180000);
+      const result = await runPendingUnderstandingShadow(rawDocs, { budgetMs })
         .catch((e) => ({ skipped: true, reason: e && e.message }));
-      const verarbeitet = (result && Array.isArray(result.results)) ? result.results.filter((r) => r && r.status === "saved").length : 0;
+      const nachher = await koCounts();
+      const counts = (result && result.counts) || {};
+      const verarbeitet = dsNum(counts.saved);
+      // Klassifikation fuer die UI (keine Secrets): uebersprungen (gar nicht gelaufen)
+      // / erfolgreich (>=1 verarbeitet) / nichts-verarbeitet (lief, aber 0 -> Grund).
+      let ergebnis, grund = null;
+      if (result && result.skipped) { ergebnis = "uebersprungen"; grund = result.reason || "skipped"; }
+      else if (verarbeitet > 0) { ergebnis = "erfolgreich"; }
+      else { ergebnis = "nichts-verarbeitet"; grund = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0] || "keine-verarbeitung"; }
       return {
         ok: true,
-        rohdokumenteGeladen: (rawDocs || []).length,
+        ergebnis,
+        grund,
         verarbeitet,
-        pending: dsNumOrNull(result && result.pending),
-        zurueckgestellt: dsNumOrNull(result && result.deferred),
-        status: result && result.skipped ? (result.reason || "skipped") : "ausgefuehrt",
-        zusammenfassung: (result && result.counts) || null
+        zurueckgestellt: dsNum(result && result.deferred),
+        rohdokumenteGeladen: (rawDocs || []).length,
+        pendingVorher: vorher.pending, pendingNachher: nachher.pending,
+        completeVorher: vorher.complete, completeNachher: nachher.complete,
+        zusammenfassung: counts
       };
     });
   }
