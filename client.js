@@ -64,6 +64,7 @@ let adminData = null;
 let adminDataLoaded = false;
 let adminLoadError = false;
 let adminPeriod = "today";
+let adminDataStatus = null; // interner Datenmotor-Status (global + pro Account)
 let expandedAdminUsers = new Set();
 let dailyInputs = [];
 let dailyInputsLoaded = false;
@@ -616,6 +617,14 @@ async function ensureViewData(view) {
         adminData = response.ok ? await response.json() : null;
         if (!adminData) adminLoadError = true;
       }
+      // Interner Datenmotor-Status (separater, etwas teurerer Endpoint) — bewusst
+      // fehlertolerant: schlaegt er fehl, bleibt der restliche Admin sichtbar.
+      try {
+        const dsResp = await fetchWithTimeout(`/api/admin/data-status?${apiScopeQuery()}`, {}, 25000);
+        adminDataStatus = dsResp.ok ? await dsResp.json() : null;
+      } catch (_) {
+        adminDataStatus = null;
+      }
     } catch (error) {
       adminDataLoaded = false;
       adminLoadError = true;
@@ -1126,6 +1135,8 @@ function renderAdminView() {
 
       ${renderAdminCrawlStats(data.crawlReport)}
 
+      ${renderAdminDataStatus(adminDataStatus)}
+
       <div class="admin-body">
         <div class="admin-col-primary">
 
@@ -1462,6 +1473,83 @@ function renderAdminEngineChart(aiStats) {
       </div>
       <div class="cost-bar-list">${bars || '<p class="empty-state" style="font-size:12px;margin:8px 0">Noch keine KI-Calls.</p>'}</div>
     </div>`;
+}
+
+// Interner Datenmotor-Status (nur Admin/Betreiber): global + pro Account. Bewusst
+// schlicht (kein Kunden-Dashboard) — Ziel: morgens sehen, ob Helmut echten Wert liefert.
+function renderAdminDataStatus(ds) {
+  if (!ds || !ds.global) {
+    return `<section class="admin-crawl-stats"><h2 class="admin-section-title">Datenstatus (intern)</h2>
+      <p style="color:var(--muted-2)">Datenstatus derzeit nicht verfügbar.</p></section>`;
+  }
+  const g = ds.global;
+  const ampelColor = { gruen: "#2e7d32", gelb: "#f9a825", rot: "#c62828" };
+  const ampelLabel = { gruen: "GRÜN", gelb: "GELB", rot: "ROT" };
+  const dot = (a) => `<span style="display:inline-block;padding:2px 10px;border-radius:999px;color:#fff;font-weight:700;font-size:12px;background:${ampelColor[a] || "#777"}">${ampelLabel[a] || String(a || "–")}</span>`;
+  const val = (v) => {
+    if (v && typeof v === "object" && v.available === false) return `<span title="${escapeHtml(v.note || "nicht verfügbar")}" style="color:var(--muted-2)">n/v</span>`;
+    if (v === null || v === undefined) return "–";
+    return escapeHtml(String(v));
+  };
+  const cat = g.quellen && g.quellen.nachKategorie && typeof g.quellen.nachKategorie === "object" && !g.quellen.nachKategorie.available
+    ? Object.entries(g.quellen.nachKategorie).map(([k, o]) => `${escapeHtml(k)}: ${val(o && (o.checked ?? o))}`).join(" · ")
+    : val(g.quellen && g.quellen.nachKategorie);
+  const stat = (label, v) => `<div class="admin-stat-item"><span class="admin-stat-value">${val(v)}</span><span class="admin-stat-label">${escapeHtml(label)}</span></div>`;
+
+  const rows = (Array.isArray(ds.perAccount) ? ds.perAccount : []).map((a) => `
+    <tr>
+      <td>${escapeHtml(a.name || a.politicianId || "")}</td>
+      <td>${dot(a.ampel)}</td>
+      <td>${escapeHtml((a.profilVollstaendigkeit && a.profilVollstaendigkeit.level) || "–")}${a.personalisierungEingeschraenkt ? ' <span title="Personalisierung eingeschränkt" style="color:#f9a825">⚠</span>' : ""}</td>
+      <td>${(a.profilVollstaendigkeit && a.profilVollstaendigkeit.fehlendePflichtfelder || []).map(escapeHtml).join(", ") || "–"}</td>
+      <td>${a.briefingSichtbar ? "ja" : "nein"}</td>
+      <td>${val(a.briefingPunkte)}</td>
+      <td>${val(a.lageVorgaenge)}</td>
+      <td>${val(a.radarChancen)}</td>
+      <td>${val(a.radarRisiken)}</td>
+      <td>${a.kiKosten && a.kiKosten.estimatedUsd != null ? "$" + escapeHtml(String(a.kiKosten.estimatedUsd)) : "n/v"}</td>
+    </tr>`).join("");
+
+  const legend = ds.legende && typeof ds.legende === "object"
+    ? Object.entries(ds.legende).map(([k, v]) => `<li><strong>${escapeHtml(k)}</strong>: ${escapeHtml(String(v))}</li>`).join("")
+    : "";
+
+  return `
+    <section class="admin-crawl-stats" style="border:1px solid var(--border);border-radius:12px;padding:16px;margin:12px 0">
+      <h2 class="admin-section-title">Datenstatus (intern) ${dot(g.ampel)}</h2>
+      <p style="color:var(--muted-2);font-size:13px;margin:4px 0 12px">
+        Datenmotor heute · letzter Lauf: ${val(g.letzterLauf || "–")} · Morgenstatus 7:30: ${g.morgenstatus0730 && g.morgenstatus0730.ok ? "ok" : "<span style='color:#c62828'>nicht ok</span>"}${g.morgenstatus0730 && g.morgenstatus0730.note ? ` (${escapeHtml(g.morgenstatus0730.note)})` : ""}
+        ${ds.v3StoreAktiv ? "" : ' · <span style="color:#f9a825">V3-Store offline: Live-Zahlen n/v</span>'}
+      </p>
+      <div class="admin-stats-grid" style="display:flex;flex-wrap:wrap;gap:16px">
+        ${stat("Quellen geprüft", g.quellen && g.quellen.geprueft)}
+        ${stat("Quellen erfolgreich", g.quellen && g.quellen.erfolgreich)}
+        ${stat("Quellen fehlgeschlagen", g.quellen && g.quellen.fehlgeschlagen)}
+        ${stat("Dokumente neu", g.dokumente && g.dokumente.neu)}
+        ${stat("Dok. verworfen", g.dokumente && g.dokumente.verworfen)}
+        ${stat("Duplikate", g.dokumente && g.dokumente.duplikate)}
+        ${stat("Vorgänge analysiert", g.vorgaenge && g.vorgaenge.analysiert)}
+        ${stat("Briefing-Punkte", g.briefing && g.briefing.punkteGesamt)}
+        ${stat("Radar Chancen", g.radar && g.radar.chancen)}
+        ${stat("Radar Risiken", g.radar && g.radar.risiken)}
+        ${stat("Accounts ohne Briefing", g.briefing && g.briefing.accountsOhneBriefing)}
+        ${stat("Personalisierung eingeschr.", g.profile && g.profile.personalisierungEingeschraenkt)}
+      </div>
+      <p style="color:var(--muted-2);font-size:12px;margin:10px 0 0">Quellen nach Kategorie: ${cat}</p>
+      ${g.letzterFehler ? `<p style="color:#c62828;font-size:12px;margin:6px 0 0">Letzter Fehler: ${escapeHtml(String((g.letzterFehler.message || g.letzterFehler.error || g.letzterFehler.createdAt || "")).slice(0, 200))}</p>` : ""}
+      ${rows ? `
+      <h3 style="margin:16px 0 6px;font-size:14px">Pro Account</h3>
+      <div style="overflow-x:auto">
+        <table class="admin-table" style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead><tr style="text-align:left;color:var(--muted-2)">
+            <th>Account</th><th>Ampel</th><th>Profil</th><th>Fehlende Pflichtfelder</th><th>Briefing</th><th>Punkte</th><th>Lage</th><th>Chancen</th><th>Risiken</th><th>KI-Kosten</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>` : `<p style="color:var(--muted-2);font-size:13px;margin-top:12px">Noch keine Accounts zur Auswertung.</p>`}
+      ${ds.hinweis ? `<p style="color:var(--muted-2);font-size:12px;margin-top:8px">${escapeHtml(ds.hinweis)}</p>` : ""}
+      ${legend ? `<details style="margin-top:12px"><summary style="cursor:pointer;color:var(--muted-2);font-size:13px">Bedeutung der Werte</summary><ul style="font-size:12px;color:var(--muted-2);line-height:1.6;margin:8px 0 0;padding-left:18px">${legend}</ul></details>` : ""}
+    </section>`;
 }
 
 function renderAdminCrawlStats(crawlReport) {

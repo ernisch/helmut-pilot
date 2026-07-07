@@ -11,6 +11,7 @@
     "test:decisions": "node scripts/decisions-test.js",
     "test:briefing-contract": "node scripts/contract-adapter-test.js",
     "test:radar": "node scripts/radar-test.js",
+    "test:saas": "node scripts/saas-foundation-test.js",
     "lage:backfill": "node scripts/lage-backfill.js",
     "backfill:presentation": "node scripts/presentation-backfill.js"
   },

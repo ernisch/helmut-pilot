@@ -5,7 +5,8 @@ const path = require("path");
 
 loadLocalEnv();
 
-const { cemInceProfile } = require("./lib/helmut/config");
+const { cemInceProfile, profileCompleteness } = require("./lib/helmut/config");
+const sourceSafety = require("./lib/helmut/sourceSafety");
 const { runLageCheck, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { buildLearningProfile } = require("./lib/helmut/learning");
 const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed } = require("./lib/helmut/storage");
@@ -920,6 +921,14 @@ async function handleRequest(request, response) {
     return handleAsync(response, () => getAdminStatsCrawlReport());
   }
 
+  // Admin-Datenstatus (NUR intern, Betreiber): Gesundheit des Datenmotors heute
+  // (global) + Wert/Datenversorgung pro Account. Nutzt vorhandene Crawl-Runs,
+  // Stats, LLM-Usage und die V3-Read-Funktionen — keine neue Analytics-Architektur.
+  if (url.pathname === "/api/admin/data-status") {
+    if (!requireRoleOr403(response, authUser, "admin")) return undefined;
+    return handleAsync(response, () => buildAdminDataStatus());
+  }
+
   // Admin: Feedback als erledigt/offen markieren.
   if (url.pathname.startsWith("/api/admin/feedback/") && (request.method === "PATCH" || request.method === "POST")) {
     if (!requireRoleOr403(response, authUser, "admin")) return undefined;
@@ -1067,7 +1076,15 @@ async function buildV3Briefing(profile, politicianId) {
   for (const ko of understood) if (ko && ko.id) kosById[ko.id] = ko;
   const selected = decisions.map((d) => kosById[d.knowledge_object_id]).filter(Boolean);
   const sourcesByVorgang = await loadSourcesByVorgang(selected);
-  return briefingContract.toBriefingContractV3({ profile, decisions, kosById, sourcesByVorgang });
+  // Source Safety Guard (regelbasiert, 0 KI): kritische, unbestaetigte Claims aus
+  // unbekannten/schwachen Quellen NICHT ins Helmut-Briefing. Quarantaene wird verworfen.
+  const safeDecisions = decisions.filter((d) => {
+    const ko = kosById[d.knowledge_object_id];
+    if (!ko) return false;
+    return sourceSafety.guardKnowledgeObject(ko, sourcesByVorgang[ko.vorgang_id] || []).status !== "quarantine";
+  });
+  if (!safeDecisions.length) return empty("keine-treffer");
+  return briefingContract.toBriefingContractV3({ profile, decisions: safeDecisions, kosById, sourcesByVorgang });
 }
 
 // Quellen aller Vorgänge PARALLEL laden (nicht seriell) — ein hängender Call darf
@@ -1661,6 +1678,9 @@ function requestHandler(request, response) {
 }
 
 module.exports = requestHandler;
+// Test-Hook (nur fuer Offline-Tests; veraendert den HTTP-Pfad nicht): erlaubt den
+// direkten, auth-freien Aufruf der internen Datenstatus-Funktion.
+module.exports.__buildAdminDataStatus = buildAdminDataStatus;
 
 if (require.main === module) {
   const server = http.createServer(requestHandler);
@@ -2758,6 +2778,194 @@ function adminMandateSummary(p = {}) {
   };
 }
 
+// --- Admin-Datenstatus (intern, Betreiber) ----------------------------------
+// Ziel: morgens erkennen, ob Helmut echte Daten verarbeitet hat (global) und ob
+// einzelne Accounts heute Wert bekommen (pro Account). Nutzt AUSSCHLIESSLICH
+// vorhandene Quellen (Crawl-Runs, Admin-Stats, LLM-Usage, V3-Read-Funktionen).
+// Keine erfundenen Zahlen: was aktuell nicht sicher ermittelbar ist, wird als
+// { available:false, note } markiert.
+function dsNum(v) { const n = Number(v); return Number.isFinite(n) ? n : 0; }
+function dsNumOrNull(v) { const n = Number(v); return Number.isFinite(n) ? n : null; }
+
+function dsBerlinParts(date = new Date()) {
+  try {
+    const fmt = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false });
+    const p = Object.fromEntries(fmt.formatToParts(date).filter((x) => x.type !== "literal").map((x) => [x.type, x.value]));
+    return { day: `${p.year}-${p.month}-${p.day}`, minutes: Number(p.hour) * 60 + Number(p.minute) };
+  } catch (_) {
+    return { day: date.toISOString().slice(0, 10), minutes: date.getUTCHours() * 60 + date.getUTCMinutes() };
+  }
+}
+
+// Morgenstatus 7:30 Berlin: gab es HEUTE einen erfolgreichen Lauf mit Zeit <= 7:30?
+function dsMorningStatus(run) {
+  if (!run || !run.createdAt) return { ok: false, note: "kein Crawl-Lauf vorhanden" };
+  const now = dsBerlinParts();
+  const runB = dsBerlinParts(new Date(run.createdAt));
+  const today = runB.day === now.day;
+  const successful = dsNum(run.successfulSources) > 0;
+  const cutoff = 7 * 60 + 30;
+  const ok = successful && today && runB.minutes <= cutoff;
+  const hhmm = `${String(Math.floor(runB.minutes / 60)).padStart(2, "0")}:${String(runB.minutes % 60).padStart(2, "0")}`;
+  return { ok, today, successful, letzterLaufBerlin: hhmm, note: ok ? "brauchbarer Stand bis 7:30" : (today ? "heutiger Lauf nach 7:30 oder ohne Erfolg" : "kein heutiger Lauf") };
+}
+
+function dsAccountCost(records) {
+  let cost = 0, calls = 0, known = false;
+  for (const r of records || []) { calls += 1; if (typeof r.estimatedCost === "number") { cost += r.estimatedCost; known = true; } }
+  return { calls, estimatedUsd: known ? Number(cost.toFixed(4)) : null, note: known ? undefined : "keine Kosten-Schaetzung verfuegbar" };
+}
+
+function dsAccountAmpel({ level, restricted, hasBriefing }) {
+  if (!level || level === "empty") return "rot";       // kein verwertbares Profil
+  if (restricted || !hasBriefing) return "gelb";       // eingeschraenkt oder heute kein Briefing
+  return "gruen";
+}
+
+async function buildAdminDataStatus({ perAccountLimit = 25 } = {}) {
+  const radar = require("./lib/helmut/radar");
+  const [users, statsToday, crawlReport, latestCrawl, recentErrors] = await Promise.all([
+    accounts.listUsers().catch(() => []),
+    getAdminStatsOverview({ days: 1 }).catch(() => null),
+    getAdminStatsCrawlReport().catch(() => null),
+    getLatestCrawlRun().catch(() => null),
+    accounts.listSystemErrors(5).catch(() => [])
+  ]);
+  const v3 = v3StoreReady();
+  const naLive = (extra = {}) => ({ value: null, available: false, note: v3 ? "nur zur Laufzeit mit Daten ermittelbar" : "nur mit aktivem V3-Store (Supabase) ermittelbar", ...extra });
+
+  const cr = latestCrawl || {};
+  const morning = dsMorningStatus(latestCrawl);
+
+  // ---------- pro Account ----------
+  const mdbUsers = users.filter((u) => (u.role === "abgeordneter" || u.role === "referent") && u.politicianId);
+  const seen = new Set();
+  const accountsToScan = mdbUsers.filter((u) => (seen.has(u.politicianId) ? false : seen.add(u.politicianId)));
+  const capped = accountsToScan.slice(0, perAccountLimit);
+
+  let sumLage = 0, sumChance = 0, sumRisk = 0, sumBriefing = 0, shown = 0, noBriefing = 0, restrictedCount = 0;
+  const perAccount = [];
+  for (const u of capped) {
+    const id = u.politicianId;
+    const profile = await activeProfile(id).catch(() => null);
+    const comp = profile ? profileCompleteness(profile) : { level: "empty", missing: ["profil"], restricted: false, complete: false };
+    let briefing = null, lage = null, rad = null;
+    try { briefing = await buildV3Briefing(profile, id); } catch (_) {}
+    try { lage = await buildLageBriefing(profile, { politicianId: id }); } catch (_) {}
+    try { rad = await radar.buildRadarForUser({ profile, userId: id }); } catch (_) {}
+    const briefingPoints = briefing && briefing.available ? (briefing.items || []).length : 0;
+    const lageCount = lage && lage.available ? (lage.vorgaenge || []).length : 0;
+    const chance = rad && rad.buckets ? (rad.buckets.chance || []).length : 0;
+    const risk = rad && rad.buckets ? (rad.buckets.risk || []).length : 0;
+    const hasBriefing = Boolean(briefing && briefing.available && briefingPoints > 0);
+    if (hasBriefing) shown += 1; else noBriefing += 1;
+    if (comp.restricted || comp.empty) restrictedCount += 1;
+    sumLage += lageCount; sumChance += chance; sumRisk += risk; sumBriefing += briefingPoints;
+    const cost = dsAccountCost(await getLlmUsage(id, 500).catch(() => []));
+    perAccount.push({
+      politicianId: id,
+      name: u.name || u.email || id,
+      profilVollstaendigkeit: { level: comp.level, complete: comp.complete, fehlendePflichtfelder: comp.missing },
+      personalisierungEingeschraenkt: Boolean(comp.restricted || comp.empty),
+      briefingSichtbar: hasBriefing,
+      briefingPunkte: briefingPoints,
+      lageVorgaenge: lageCount,
+      radarChancen: chance,
+      radarRisiken: risk,
+      kiKosten: cost,
+      ampel: dsAccountAmpel({ level: comp.level, restricted: comp.restricted || comp.empty, hasBriefing })
+    });
+  }
+
+  // ---------- global ----------
+  const pipelineOk = dsNum(cr.successfulSources) > 0;
+  const hasData = dsNum(crawlReport && crawlReport.newKnowledgeObjects) > 0 || sumBriefing > 0;
+  const weakCoverage = dsNum(cr.checkedSources) > 0 && (dsNum(cr.failedSources) / Math.max(1, dsNum(cr.checkedSources))) > 0.5;
+  const restrictedShare = capped.length ? restrictedCount / capped.length : 0;
+  const globalAmpel = !pipelineOk || !morning.ok ? "rot" : (weakCoverage || !hasData || restrictedShare > 0.5 ? "gelb" : "gruen");
+
+  const global = {
+    letzterLauf: cr.createdAt || null,
+    modus: cr.mode || null,
+    quellen: {
+      geprueft: dsNum(cr.checkedSources),
+      erfolgreich: dsNum(cr.successfulSources),
+      fehlgeschlagen: dsNum(cr.failedSources),
+      nachKategorie: cr.sourcesByCategory || naLive({ note: "ab dem naechsten Crawl-Lauf verfuegbar" })
+    },
+    dokumente: {
+      geladen: dsNumOrNull(cr.loadedItems) ?? naLive({ note: "ab dem naechsten Crawl-Lauf verfuegbar" }),
+      neu: dsNum(cr.savedItems),
+      verworfen: dsNumOrNull(cr.discardedItems) ?? naLive({ note: "ab dem naechsten Crawl-Lauf verfuegbar" }),
+      duplikate: dsNumOrNull(cr.duplicates) ?? naLive({ note: "ab dem naechsten Crawl-Lauf verfuegbar" }),
+      quarantaeniert: naLive()
+    },
+    vorgaenge: {
+      erzeugt: crawlReport ? dsNumOrNull(crawlReport.newVorgaenge) : null,
+      knowledgeObjectsNeu: crawlReport ? dsNumOrNull(crawlReport.newKnowledgeObjects) : null,
+      analysiert: dsNum(cr.understanding && cr.understanding.processed),
+      aktualisiert: naLive(),
+      mitQuellen: naLive(),
+      mitMandatsbezug: (cr.matching && dsNumOrNull(cr.matching.matched)) ?? naLive(),
+      mitEmpfehlung: (cr.decisions && dsNumOrNull(cr.decisions.candidates)) ?? naLive()
+    },
+    lage: { vorgaengeGesamt: sumLage },
+    radar: { chancen: sumChance, risiken: sumRisk },
+    briefing: { punkteGesamt: sumBriefing, sichtbarBeiAccounts: shown, accountsOhneBriefing: noBriefing },
+    profile: { accountsGesamt: mdbUsers.length, ausgewertet: capped.length, personalisierungEingeschraenkt: restrictedCount },
+    ki: statsToday && statsToday.ai
+      ? { proLauf: statsToday.ai.totalCostUsd, calls: statsToday.ai.totalCalls, tokens: statsToday.ai.totalTokens, note: "Tages-Summe (heute)" }
+      : naLive(),
+    letzterErfolgreicherLauf: pipelineOk ? (cr.createdAt || null) : null,
+    letzterFehler: recentErrors[0] || null,
+    morgenstatus0730: morning,
+    ampel: globalAmpel
+  };
+
+  return {
+    generatedAt: new Date().toISOString(),
+    intern: true,
+    v3StoreAktiv: v3,
+    hinweis: capped.length < mdbUsers.length ? `Pro-Account-Auswertung auf ${perAccountLimit} Accounts begrenzt (${mdbUsers.length} gesamt).` : null,
+    global,
+    perAccount,
+    legende: DATA_STATUS_LEGEND
+  };
+}
+
+// Klare deutsche Bedeutungen fuer die Admin-Datenstatus-Werte (Punkt 10: Zahlen erklaeren).
+const DATA_STATUS_LEGEND = {
+  "quellen.geprueft": "Wie viele Quellen im letzten Lauf abgefragt wurden.",
+  "quellen.erfolgreich": "Quellen, die erreichbar waren und Daten geliefert haben.",
+  "quellen.fehlgeschlagen": "Quellen, die nicht erreichbar waren oder Fehler hatten.",
+  "quellen.nachKategorie": "Geprueft je Kategorie: offiziell, medien, partei_fraktion, regional, profil, unbekannt.",
+  "dokumente.geladen": "Roh eingesammelte Artikel/Meldungen/Dokumente.",
+  "dokumente.neu": "Davon noch nicht in Helmut bekannt.",
+  "dokumente.verworfen": "Aussortiert (Dedup im Lauf + Kandidaten-Cap).",
+  "dokumente.duplikate": "Inhalte, die ueber Laeufe bereits bekannt waren.",
+  "dokumente.quarantaeniert": "Wegen unbekannter Quelle/niedriger Vertrauensstufe/kritischem unbestaetigtem Claim nicht ins Briefing.",
+  "vorgaenge.erzeugt": "Neue politische Themencluster (Vorgaenge) aus den Dokumenten.",
+  "vorgaenge.aktualisiert": "Bestehende Vorgaenge, die durch neue Dokumente ergaenzt wurden.",
+  "vorgaenge.analysiert": "Vorgaenge, die von Helmut inhaltlich bewertet wurden.",
+  "vorgaenge.mitQuellen": "Vorgaenge mit mindestens einer nachvollziehbaren Quelle.",
+  "vorgaenge.mitMandatsbezug": "Vorgaenge, die zu mindestens einem Account-Profil passen.",
+  "vorgaenge.mitEmpfehlung": "Vorgaenge mit verwertbarer Handlungsempfehlung.",
+  "lage.vorgaengeGesamt": "In Aktuelle Lage angezeigte Vorgaenge (Summe ueber Accounts).",
+  "radar.chancen": "Erkannte Chancen (global = ueber alle Accounts).",
+  "radar.risiken": "Erkannte Risiken (global = ueber alle Accounts).",
+  "briefing.punkteGesamt": "Konkrete Helmut-Briefing-Punkte (priorisierte Info/Empfehlung/Entscheidungshilfe, keine Einzelquelle).",
+  "briefing.sichtbarBeiAccounts": "Accounts, bei denen heute ein Briefing sichtbar war.",
+  "briefing.accountsOhneBriefing": "Accounts ohne ausreichendes Briefing heute.",
+  "profilVollstaendigkeit": "Ob ein Account genug Angaben hat, damit Helmut sinnvoll personalisiert (fehlende Pflichtfelder markiert).",
+  "personalisierungEingeschraenkt": "Profil zu unvollstaendig fuer starke Personalisierung — Helmut raet NICHT und nutzt KEIN fremdes Profil.",
+  "letzterErfolgreicherLauf": "Wann der Datenmotor zuletzt erfolgreich lief.",
+  "letzterFehler": "Wann/wo zuletzt ein Fehler auftrat.",
+  "morgenstatus0730": "Ob Helmut bis 7:30 Berlin-Zeit einen brauchbaren Stand hatte.",
+  "ki.proLauf": "Ungefaehrer KI-Verbrauch (heute, USD-Schaetzung).",
+  "kiKosten": "Ungefaehrer KI-Verbrauch je Account.",
+  "ampel": "Gruen: Lauf ok + relevante Vorgaenge oder sauberer Leerstatus. Gelb: wenig Daten/unvollstaendiges Profil/eingeschraenkte Personalisierung/schwache Abdeckung. Rot: Pipeline-Fehler, kein aktueller Stand, fremder Fallback oder kein Stand bis 7:30."
+};
+
 async function normalizeTask(task, politicianId = cemInceProfile.id) {
   const profile = await activeProfile(politicianId);
   return {
@@ -2836,6 +3044,8 @@ function blankProfile(id) {
     faction: "",
     function: "Bundestagsabgeordnete:r",
     role: "Bundestagsabgeordnete:r",
+    accountType: "abgeordneter",
+    parliamentType: "",
     politicalLevel: "Bund",
     constituency: "",
     state: "",
@@ -2944,6 +3154,10 @@ async function normalizeProfile(profile, politicianId = cemInceProfile.id) {
     mainQuestion: stringValue(profile.mainQuestion, base.mainQuestion)
   };
   next.role = stringValue(profile.role, next.function);
+  // Kontotyp + politische Ebene (Bundestag/Landtag) persistieren — Grundlage fuer
+  // profilbasierte Ingestion und Admin-Vollstaendigkeitspruefung.
+  next.accountType = stringValue(profile.accountType, base.accountType || "abgeordneter");
+  next.parliamentType = stringValue(profile.parliamentType, base.parliamentType || "");
   next.politicalLevel = stringValue(profile.politicalLevel, base.politicalLevel || "Bund");
   next.reportingTopics = arrayValue(profile.reportingTopics, base.reportingTopics);
   next.currentCampaigns = arrayValue(profile.currentCampaigns, base.currentCampaigns);
