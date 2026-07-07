@@ -1834,9 +1834,19 @@ function renderPendingDiagnose(d) {
         <thead><tr><th>Vorgang</th><th>Titel</th><th>Status</th><th>Alter</th><th>Cluster</th><th>Rohdok</th><th>Rohdok-Alter</th><th>Grund</th></tr></thead>
         <tbody>${bsp}</tbody></table></div>`
     : "";
+  const hinweis = pendingDiagnoseUrsacheHinweis(d.ursache);
   return wrap(`<div class="ds-recovery-result-head"><span class="${kopf}">Pending-Diagnose</span></div>
+    <p class="ds-note">Diese Diagnose prüft nur, warum pending Vorgänge nicht verarbeitet werden. Sie startet keine KI, verändert keine Daten und repariert nichts automatisch.</p>
     ${rows}
+    <div class="ds-diag-legend">
+      <p><strong>Mit Cluster</strong> bedeutet: Der Vorgang kann grundsätzlich einem Rohdokument-Bündel zugeordnet werden.</p>
+      <p><strong>Ohne Cluster</strong> bedeutet: Für diesen Vorgang wurde aktuell keine passende Rohdokument-Verbindung gefunden.</p>
+      <p><strong>Rohdokumente im aktuellen Fenster</strong> bedeutet: Diese Vorgänge könnten grundsätzlich vom Recovery-Lauf verarbeitet werden.</p>
+      <p><strong>Rohdokumente außerhalb des Fensters</strong> bedeutet: Dokumente existieren, liegen aber außerhalb des aktuellen Recovery-Bereichs.</p>
+      <p><strong>Keine Rohdokumente gefunden</strong> bedeutet: Der Vorgang wirkt verwaist oder stammt möglicherweise aus alten Seed- oder V2-Daten.</p>
+    </div>
     ${dsRow("Wahrscheinlichste Ursache", `<span class="${kopf}">${escapeHtml(pendingDiagnoseUrsacheText(d.ursache))}</span>`)}
+    ${hinweis ? `<p class="ds-note">${escapeHtml(hinweis)}</p>` : ""}
     ${dsRow("Empfohlener nächster Schritt", escapeHtml(String(d.empfehlung || "–")))}
     ${tabelle}
     <p class="ds-note">Nur gelesen – keine KI, keine Pipeline, keine Datenänderung. Bis zu 10 Beispiele ohne Rohtext.</p>`);
@@ -1845,6 +1855,17 @@ function renderPendingDiagnose(d) {
 function pendingDiagnoseGrundKurz(g) {
   const map = { "im-fenster": "im Fenster", "ausserhalb-fenster": "außerhalb Fenster", "keine-rohdokumente": "keine Rohdok." };
   return map[String(g || "")] || String(g || "");
+}
+
+// Kurzer, ruhiger Klartext-Satz zur wahrscheinlichsten Ursache (keine Handlung, kein Auto-Fix).
+function pendingDiagnoseUrsacheHinweis(u) {
+  const map = {
+    "gemischt": "Ein kleiner Teil wirkt verarbeitbar. Der größere Teil hat keine passenden Rohdokumente und sollte später separat bewertet werden.",
+    "ausserhalb-fenster": "Die Rohdokumente existieren, werden aber vom aktuellen Recovery-Fenster nicht erreicht.",
+    "verwaist": "Für diese Vorgänge wurden keine passenden Rohdokumente gefunden. Sie sollten nicht automatisch verarbeitet werden.",
+    "mapping-fehlt": "Rohdokumente existieren, werden aber nicht mehr eindeutig diesem Vorgang zugeordnet."
+  };
+  return map[String(u || "")] || "";
 }
 
 // Read-only Aktion: Pending-Diagnose. Kein confirm (verändert nichts), kein KI-Call.

@@ -658,6 +658,20 @@ async function dataStatusResilienceChecks() {
     clientSrc.includes("function renderPendingDiagnose") && clientSrc.includes("/api/admin/recovery/pending-diagnose"));
   check("Diagnose-UI: zeigt keine Rohtexte (nur gekuerzte Felder, Hinweis 'ohne Rohtext')",
     clientSrc.includes("Beispiele ohne Rohtext") || clientSrc.includes("ohne Rohtext"));
+  // Ruhige Admin-Erklaerung: Intro (keine KI/keine Aenderung), Werte-Legende und ein
+  // kurzer Ursachen-Satz je Fall. Rein textlich, keine Logikaenderung.
+  check("Diagnose-UI: ruhige Erklaerung oberhalb der Werte (keine KI/keine Datenaenderung)",
+    clientSrc.includes("Diese Diagnose prüft nur, warum pending Vorgänge nicht verarbeitet werden"));
+  check("Diagnose-UI: Werte-Legende (Mit/Ohne Cluster, im/ausserhalb Fenster, keine Rohdok.)",
+    clientSrc.includes("Mit Cluster</strong> bedeutet") && clientSrc.includes("Ohne Cluster</strong> bedeutet")
+      && clientSrc.includes("Rohdokumente im aktuellen Fenster</strong> bedeutet")
+      && clientSrc.includes("Rohdokumente außerhalb des Fensters</strong> bedeutet")
+      && clientSrc.includes("Keine Rohdokumente gefunden</strong> bedeutet"));
+  check("Diagnose-UI: kurzer Ursachen-Satz je Fall (verwaist/ausserhalb/mapping-fehlt/gemischt)",
+    /function pendingDiagnoseUrsacheHinweis/.test(clientSrc)
+      && clientSrc.includes("Sie sollten nicht automatisch verarbeitet werden.")
+      && clientSrc.includes("werden aber vom aktuellen Recovery-Fenster nicht erreicht.")
+      && clientSrc.includes("nicht mehr eindeutig diesem Vorgang zugeordnet."));
 
   // Behavioral (offline): der gesamte Datenstatus baut sich fehlerfrei zusammen und
   // liefert weiterhin das global-Objekt (keine harte Ausnahme, wenn Teile leer sind).
