@@ -2573,7 +2573,10 @@ async function allKnownPoliticianIds() {
   users.forEach((user) => {
     if (user.role === "abgeordneter" && user.politicianId) ids.add(user.politicianId);
   });
-  ids.add(cemInceProfile.id);
+  // Pilot-Modus: das geteilte Demo-Mandat cem-ince ist immer erreichbar.
+  // Account-Modus: cem-ince erscheint nur, wenn ein Profil gespeichert oder ein
+  // Nutzer zugewiesen ist - kein automatischer cem-ince-Eintrag im Switcher.
+  if (!auth.authMode()) ids.add(cemInceProfile.id);
   return Array.from(ids);
 }
 
@@ -2749,7 +2752,11 @@ async function normalizeUserNote(note, politicianId = cemInceProfile.id) {
 async function activeProfile(politicianId = cemInceProfile.id) {
   const stored = await getProfile(politicianId);
   if (stored) return mergeProfileDefaults(stored);
-  if (politicianId === cemInceProfile.id) return cemInceProfile;
+  // Immer zuerst das gespeicherte Profil (oben). cem-ince erhaelt seine reichen
+  // Seed-Defaults NUR im Pilot-Modus, solange noch kein Profil gespeichert ist.
+  // Im Account-Modus gibt es keinen stillen cem-ince-Ersatz: fehlt das Profil,
+  // greift das neutrale blankProfile wie fuer jedes andere Mandat.
+  if (!auth.authMode() && politicianId === cemInceProfile.id) return cemInceProfile;
   return blankProfile(politicianId);
 }
 
@@ -2802,10 +2809,12 @@ function blankProfile(id) {
   };
 }
 
-// Demo-Profil cem-ince erbt seine reichhaltigen Defaults; jedes andere Mandat
-// erhaelt die neutralen blankProfile-Defaults.
+// Nur im Pilot-Modus erbt das Demo-Mandat cem-ince seine reichhaltigen Defaults
+// als Merge-Basis. Im Account-Modus erhaelt cem-ince (wie jedes andere Mandat)
+// die neutrale blankProfile-Basis; gespeicherte Felder ueberschreiben sie ohnehin.
 function baseProfileFor(id) {
-  return id === cemInceProfile.id ? cemInceProfile : blankProfile(id);
+  if (!auth.authMode() && id === cemInceProfile.id) return cemInceProfile;
+  return blankProfile(id);
 }
 
 function mergeProfileDefaults(profile) {

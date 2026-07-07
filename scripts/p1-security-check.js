@@ -32,6 +32,9 @@ delete process.env.CRON_SECRET;
 // UNGESETZTE Keys — ein definierter Wert bleibt also erhalten und useSupabase()
 // bleibt false (kein Netzwerk/Node-fetch noetig).
 process.env.HELMUT_STORAGE_BACKEND = "local";
+// Tests: Store-Cache aus -> die Datei ist die einzige Wahrheit. So bleiben Save/Read-
+// Checks deterministisch und Aufraeumen (Datei loeschen) wirkt sofort.
+process.env.HELMUT_STORE_CACHE_MS = "0";
 
 const handler = require(path.join(root, "server.js"));
 
@@ -143,27 +146,86 @@ async function saasMandateHardeningChecks() {
     });
   }
 
-  // E2E: Account-Modus, Admin ohne jedes Mandat
+  const storage = require(path.join(root, "lib/helmut/storage.js"));
+  const parse = (r) => { try { return JSON.parse(r.body); } catch (_) { return {}; } };
+
+  // Deterministischer Datei-Store: sicherstellen, dass cem-ince im Ausgangszustand
+  // KEIN gespeichertes Profil hat; Zustand am Ende exakt wiederherstellen.
+  // (Store-Cache ist im Harness aus -> die Datei ist die Wahrheit.)
+  const dataDir = path.join(root, ".helmut-data");
+  const storeFile = path.join(dataDir, "store.json");
+  const storeExisted = fs.existsSync(storeFile);
+  const storeSnapshot = storeExisted ? fs.readFileSync(storeFile) : null;
+  const clearStore = () => { if (fs.existsSync(storeFile)) fs.rmSync(storeFile); };
+  const restoreStore = () => {
+    if (storeExisted) fs.writeFileSync(storeFile, storeSnapshot);
+    else clearStore();
+  };
+
   const prev = { mode: process.env.HELMUT_AUTH_MODE, email: process.env.HELMUT_ADMIN_EMAIL, pass: process.env.HELMUT_ADMIN_PASSWORD };
-  process.env.HELMUT_AUTH_MODE = "accounts";
-  process.env.HELMUT_ADMIN_EMAIL = "p1admin@test.local";
-  process.env.HELMUT_ADMIN_PASSWORD = "p1-admin-pass-123";
-  const server = http.createServer(handler);
-  await new Promise((r) => server.listen(0, "127.0.0.1", r));
   try {
-    const loginBody = JSON.stringify({ email: "p1admin@test.local", password: "p1-admin-pass-123" });
-    const login = await requestFull(server, { method: "POST", pathname: "/api/auth/login", headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(loginBody) }, body: loginBody });
-    const setCookie = (login.headers["set-cookie"] || [])[0] || "";
-    const cookie = setCookie.split(";")[0];
-    check("SaaS: Account-Login liefert Session-Cookie", login.status === 200 && Boolean(cookie), `status=${login.status}`);
-    const start = await requestFull(server, { pathname: "/api/app/start", headers: { Cookie: cookie } });
-    let j = {}; try { j = JSON.parse(start.body); } catch (_) {}
-    check("SaaS: Account-Nutzer OHNE Mandat -> 403 no-mandate (kein stiller Fallback)",
-      start.status === 403 && j.reason === "no-mandate", `status=${start.status} reason=${j.reason}`);
-    check("SaaS: Antwort für nicht-mandatierten Account enthält KEINE cem-ince-Daten",
-      !String(start.body).toLowerCase().includes("cem-ince") && !String(start.body).includes("Cem Ince"), start.body.slice(0, 80));
+    clearStore();
+
+    // A) PILOT-Modus: cem-ince behaelt seine reichen Seed-Defaults, solange kein
+    //    Profil gespeichert ist. Der Pilot bleibt unveraendert funktionsfaehig.
+    delete process.env.HELMUT_AUTH_MODE;
+    const pilot = http.createServer(handler);
+    await new Promise((r) => pilot.listen(0, "127.0.0.1", r));
+    try {
+      const res = await requestFull(pilot, { pathname: "/api/profile/current" });
+      const p = parse(res);
+      check("SaaS: Pilot-Modus — cem-ince ohne gespeichertes Profil erhaelt Seed-Defaults (Pilot funktioniert)",
+        res.status === 200 && p.id === "cem-ince" && p.party === "Die Linke" &&
+        Array.isArray(p.committees) && p.committees.includes("Arbeit und Soziales"),
+        `status=${res.status} party=${p.party}`);
+    } finally { await new Promise((r) => pilot.close(r)); }
+
+    // Account-Modus vorbereiten (Admin-Seed via Env).
+    process.env.HELMUT_AUTH_MODE = "accounts";
+    process.env.HELMUT_ADMIN_EMAIL = "p1admin@test.local";
+    process.env.HELMUT_ADMIN_PASSWORD = "p1-admin-pass-123";
+    const server = http.createServer(handler);
+    await new Promise((r) => server.listen(0, "127.0.0.1", r));
+    try {
+      const loginBody = JSON.stringify({ email: "p1admin@test.local", password: "p1-admin-pass-123" });
+      const login = await requestFull(server, { method: "POST", pathname: "/api/auth/login", headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(loginBody) }, body: loginBody });
+      const setCookie = (login.headers["set-cookie"] || [])[0] || "";
+      const cookie = setCookie.split(";")[0];
+      check("SaaS: Account-Login liefert Session-Cookie", login.status === 200 && Boolean(cookie), `status=${login.status}`);
+
+      // B) Account-Nutzer OHNE Mandat -> 403 no-mandate, keine fremden Daten.
+      const start = await requestFull(server, { pathname: "/api/app/start", headers: { Cookie: cookie } });
+      const j = parse(start);
+      check("SaaS: Account-Nutzer OHNE Mandat -> 403 no-mandate (kein stiller Fallback)",
+        start.status === 403 && j.reason === "no-mandate", `status=${start.status} reason=${j.reason}`);
+      check("SaaS: Antwort für nicht-mandatierten Account enthält KEINE cem-ince-Daten",
+        !String(start.body).toLowerCase().includes("cem-ince") && !String(start.body).includes("Cem Ince"), start.body.slice(0, 80));
+
+      // C) De-Privilegierung: Admin waehlt explizit cem-ince, ABER es gibt kein
+      //    gespeichertes Profil -> leeres blankProfile. KEIN stiller cem-ince-Seed
+      //    im Account-Modus (party leer, keine Ausschuesse, keine cem-ince-Themen).
+      clearStore();
+      const blank = await requestFull(server, { pathname: "/api/profile/current?politicianId=cem-ince", headers: { Cookie: cookie } });
+      const bp = parse(blank);
+      check("SaaS: Account-Modus — cem-ince ohne gespeichertes Profil -> leeres blankProfile (kein Seed-Fallback)",
+        blank.status === 200 && bp.id === "cem-ince" && bp.party === "" &&
+        Array.isArray(bp.committees) && bp.committees.length === 0 &&
+        !JSON.stringify(bp).includes("Bürgergeld"),
+        `status=${blank.status} party="${bp.party}" committees=${JSON.stringify(bp.committees)}`);
+
+      // D) Gespeichertes Profil hat Vorrang und wird NICHT von hardcodierten
+      //    cem-ince Defaults ueberschrieben (activeProfile laedt zuerst den Store).
+      await storage.saveProfile({ id: "cem-ince", fullName: "Cem Ince", party: "STORED-MARKER-Partei", committees: ["Stored-Testausschuss"], focusTopics: ["Stored-Thema"] });
+      const stored = await requestFull(server, { pathname: "/api/profile/current?politicianId=cem-ince", headers: { Cookie: cookie } });
+      const sp = parse(stored);
+      check("SaaS: gespeichertes cem-ince Profil hat Vorrang — hardcodierte Defaults ueberschreiben es NICHT",
+        stored.status === 200 && sp.party === "STORED-MARKER-Partei" &&
+        Array.isArray(sp.committees) && sp.committees.includes("Stored-Testausschuss") &&
+        !sp.committees.includes("Arbeit und Soziales") && !JSON.stringify(sp).includes("Bürgergeld"),
+        `party=${sp.party} committees=${JSON.stringify(sp.committees)}`);
+    } finally { await new Promise((r) => server.close(r)); }
   } finally {
-    await new Promise((r) => server.close(r));
+    restoreStore();
     if (prev.mode === undefined) delete process.env.HELMUT_AUTH_MODE; else process.env.HELMUT_AUTH_MODE = prev.mode;
     if (prev.email === undefined) delete process.env.HELMUT_ADMIN_EMAIL; else process.env.HELMUT_ADMIN_EMAIL = prev.email;
     if (prev.pass === undefined) delete process.env.HELMUT_ADMIN_PASSWORD; else process.env.HELMUT_ADMIN_PASSWORD = prev.pass;
