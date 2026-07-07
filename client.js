@@ -384,12 +384,6 @@ function applyStartPayload(startPayload) {
   // entkoppelte Fokus-Deck — bei HELMUT_DECK_SIZE=3 identisch, aber unabhängig
   // skalierbar auf 5–10, ohne andere Views zu berühren.
   decisions = sortedDecisions.slice(0, 3);
-  // "Deine wichtigsten Entscheidungen" zeigt NUR echte Handlungs-/Beobachtungs-
-  // Vorgänge — niemals Ignorieren. Sonst füllt bei 0 Handeln + 2 Beobachten der
-  // höchstbewertete Ignorieren-Vorgang die 3. Kachel (widersprüchlich zur Statistik).
-  helmutDeck = sortedDecisions
-    .filter((d) => helmutStatusBucket(d.priorityType || "watch") !== "ignorieren")
-    .slice(0, HELMUT_DECK_SIZE);
 
   const allHelmutRaw = [
     ...recommendations.map(recommendationToDecisionItem),
@@ -406,6 +400,16 @@ function applyStartPayload(startPayload) {
     })
     .sort(decisionComparator)
     .map(toDecision);
+
+  // "Deine wichtigsten Entscheidungen" = die obersten ECHTEN Handeln/Beobachten-
+  // Vorgänge aus DEMSELBEN Set wie Zähler und "Weitere Briefings" (helmutBriefings),
+  // damit Zahl, Einleitungstext und Karten übereinstimmen — auch wenn ein Vorgang
+  // (z. B. eine "Sammlung") keine direkte Einzelquelle hat (sonst leeres Deck trotz
+  // "2 Beobachten"). Ignorieren bleibt außen vor; renderFurtherBriefings blendet die
+  // Deck-IDs aus, sodass keine Doppelung entsteht.
+  helmutDeck = helmutBriefings
+    .filter((d) => helmutStatusBucket(d.priorityType || "watch") !== "ignorieren")
+    .slice(0, HELMUT_DECK_SIZE);
 
   // Deck-Zustand bei frischem Briefing zurücksetzen (neuer Morgen = neuer Stapel).
   helmutCarouselIndex = 0;
