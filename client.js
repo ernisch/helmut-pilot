@@ -35,6 +35,8 @@ let helmutThinking = false;
 let helmutThinkingTimer = null;
 let pipelineRunning = false;
 let pipelineRunStep = 0;
+let pipelinePhase = null;          // null | "running" | "skipped" | "done" (ehrlicher Abschluss)
+let pipelineCompletionTimer = null;
 let pipelineStepTimer = null;
 let helmutTypingActive = false;
 let helmutTypedText = "";
@@ -3735,20 +3737,29 @@ function renderRefreshButton() {
 }
 
 function renderHelmutThinkingView() {
+  // Ruhiger, hochwertiger Refresh-Screen (eine Statuszeile + dezenter Fortschritt),
+  // keine laute Checklisten-/Debug-Optik.
   if (pipelineRunning) {
     const stepLabel = PIPELINE_STEPS[pipelineRunStep] || PIPELINE_STEPS[PIPELINE_STEPS.length - 1];
-    const pct = Math.round(((pipelineRunStep + 0.5) / PIPELINE_STEPS.length) * 100);
-    const stepsHtml = PIPELINE_STEPS.map((label, i) => {
-      const done = i < pipelineRunStep;
-      const active = i === pipelineRunStep;
-      return `<span class="pipeline-step ${done ? "done" : active ? "active" : ""}">${done ? "✓ " : active ? "· " : "  "}${escapeHtml(label)}</span>`;
-    }).join("");
+    const pct = Math.round(((pipelineRunStep + 1) / PIPELINE_STEPS.length) * 100);
     return `
-      <section class="helmut-thinking-screen" aria-label="Helmut aktualisiert">
-        <div class="helmut-core" aria-hidden="true">H</div>
-        <h1>${escapeHtml(stepLabel)} …</h1>
-        <div class="pipeline-progress-bar"><div class="pipeline-progress-fill" style="width:${pct}%"></div></div>
-        <div class="helmut-checks pipeline-steps">${stepsHtml}</div>
+      <section class="helmut-refresh" aria-live="polite" aria-label="Helmut prüft den aktuellen Stand">
+        <div class="helmut-refresh-core"><span class="helmut-refresh-ring" aria-hidden="true"></span><span class="helmut-refresh-mark" aria-hidden="true">H</span></div>
+        <p class="helmut-refresh-title">Helmut prüft den aktuellen Stand</p>
+        <p class="helmut-refresh-step">${escapeHtml(stepLabel)}</p>
+        <div class="helmut-refresh-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><div class="helmut-refresh-fill" style="width:${pct}%"></div></div>
+      </section>
+    `;
+  }
+  // Ehrlicher Abschluss: "done" = echter Lauf, "skipped" = Server hat den Lauf
+  // uebersprungen (Throttle/Lock) -> KEIN "gecrawlt/analysiert" vortaeuschen.
+  if (pipelinePhase === "skipped" || pipelinePhase === "done") {
+    const done = pipelinePhase === "done";
+    return `
+      <section class="helmut-refresh helmut-refresh--done" aria-live="polite">
+        <div class="helmut-refresh-core helmut-refresh-core--done" aria-hidden="true">${HELMUT_ICON_CHECK}</div>
+        <p class="helmut-refresh-title">${done ? "Aktueller Stand geladen" : "Stand ist aktuell"}</p>
+        <p class="helmut-refresh-sub">${done ? "Helmut hat die Lage für dein Mandat neu geprüft." : "Gerade erst aktualisiert – kein neuer Lauf nötig."}</p>
       </section>
     `;
   }
@@ -8117,12 +8128,16 @@ function startHelmutThinking() {
   }, 1400);
 }
 
+// V3-korrekte Schritte: der Refresh startet runSourceCrawl (Crawl -> Understanding ->
+// Matching -> Decision). KEINE V2-Aussagen ("Briefing wird generiert" / "Einschätzung
+// wird verfasst") — in V3 wird das Briefing/die Einschätzung deterministisch beim
+// Read zusammengebaut, nicht serverseitig neu verfasst.
 const PIPELINE_STEPS = [
-  "Quellen werden gecrawlt",
-  "Artikel werden gefiltert",
-  "Relevanz wird bewertet",
-  "Briefing wird generiert",
-  "Einschätzung wird verfasst",
+  "Quellen werden geprüft",
+  "Neue Vorgänge werden erkannt",
+  "Relevanz für dein Mandat wird bewertet",
+  "Lage und Empfehlungen werden aktualisiert",
+  "Aktueller Stand wird geladen",
 ];
 const PIPELINE_STEP_MS = 18000;
 
@@ -8139,7 +8154,9 @@ function markPipelineRun() {
 
 function startPipelineRun() {
   if (pipelineRunning || pipelineCooldownRemaining() > 0) return;
+  if (pipelineCompletionTimer) { window.clearTimeout(pipelineCompletionTimer); pipelineCompletionTimer = null; }
   pipelineRunning = true;
+  pipelinePhase = "running";
   pipelineRunStep = 0;
   helmutThinking = true;
   markPipelineRun();
@@ -8163,21 +8180,31 @@ async function executePipelineRun() {
   try {
     const response = await fetchWithTimeout(`/api/pipeline/run?${apiScopeQuery()}`, {}, 90000);
     const result = response.ok ? await response.json() : null;
-    finishPipelineRun(result?.skippedReason ? "Letzter Lauf wird genutzt" : "Helmut ist aktualisiert");
+    // Ehrlich: hat der Server den Lauf übersprungen (Throttle/Lock), NICHT so tun,
+    // als wären Quellen gecrawlt und KI-Analyse gelaufen -> ruhige "Stand ist aktuell"-Meldung.
+    await finishPipelineRun(result && result.skippedReason ? "skipped" : "done");
   } catch {
-    finishPipelineRun("Wird fertiggestellt — lädt gleich neu");
-    window.setTimeout(async () => { await loadBriefing(); render(); }, 20000);
+    await finishPipelineRun("done", { reload: true });
   }
 }
 
-async function finishPipelineRun(toastMsg) {
+async function finishPipelineRun(phase, opts = {}) {
   pipelineRunning = false;
   pipelineRunStep = 0;
   if (pipelineStepTimer) { window.clearTimeout(pipelineStepTimer); pipelineStepTimer = null; }
-  showToast(toastMsg);
-  await loadBriefing();
-  helmutThinking = false;
-  render();
+  pipelinePhase = phase === "skipped" ? "skipped" : "done";
+  render(); // ruhige Abschlussmeldung anzeigen (kein Toast, keine Debug-Liste)
+  try { await loadBriefing(); } catch (_) { /* Anzeige bleibt beim letzten Stand */ }
+  // Bei Netzfehler kann der Serverlauf noch nachlaufen -> spät nochmal frisch lesen.
+  if (opts.reload) window.setTimeout(async () => { try { await loadBriefing(); } catch (_) {} if (currentView === "helmut") render(); }, 20000);
+  if (pipelineCompletionTimer) window.clearTimeout(pipelineCompletionTimer);
+  const holdMs = pipelinePhase === "skipped" ? 1400 : 1700;
+  pipelineCompletionTimer = window.setTimeout(() => {
+    pipelinePhase = null;
+    helmutThinking = false;
+    pipelineCompletionTimer = null;
+    if (currentView === "helmut") render();
+  }, holdMs);
 }
 
 function shouldStartHelmutFlow() {

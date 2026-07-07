@@ -9,7 +9,7 @@ const { cemInceProfile, profileCompleteness } = require("./lib/helmut/config");
 const sourceSafety = require("./lib/helmut/sourceSafety");
 const { runLageCheck, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed } = require("./lib/helmut/storage");
+const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed } = require("./lib/helmut/storage");
 const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled, activeModelName } = require("./lib/helmut/ai");
 const { pushStatus, sendBriefingReadyPush, sendLageChangePush, sendPushToPolitician } = require("./lib/helmut/push");
 const auth = require("./lib/helmut/auth");
@@ -2797,17 +2797,33 @@ function dsBerlinParts(date = new Date()) {
   }
 }
 
-// Morgenstatus 7:30 Berlin: gab es HEUTE einen erfolgreichen Lauf mit Zeit <= 7:30?
-function dsMorningStatus(run) {
-  if (!run || !run.createdAt) return { ok: false, note: "kein Crawl-Lauf vorhanden" };
+// Morgenstatus 7:30 Berlin — ROBUST gegen manuelle Ad-hoc-Läufe: bewertet den
+// FRÜHESTEN ERFOLGREICHEN Lauf des heutigen Tages, nicht blind den letzten Lauf.
+// So kippt ein Nutzer-Refresh um 14:29 die Betreiber-Ampel nicht, wenn der
+// morgendliche (Cron-)Lauf ≤ 7:30 erfolgreich war. Nimmt die Lauf-Liste; ein
+// einzelnes Run-Objekt wird zur Kompatibilität akzeptiert.
+function dsMorningStatus(runs) {
+  const list = Array.isArray(runs) ? runs : (runs ? [runs] : []);
+  if (!list.length) return { ok: false, today: false, successful: false, note: "kein Crawl-Lauf vorhanden" };
   const now = dsBerlinParts();
-  const runB = dsBerlinParts(new Date(run.createdAt));
-  const today = runB.day === now.day;
-  const successful = dsNum(run.successfulSources) > 0;
   const cutoff = 7 * 60 + 30;
-  const ok = successful && today && runB.minutes <= cutoff;
-  const hhmm = `${String(Math.floor(runB.minutes / 60)).padStart(2, "0")}:${String(runB.minutes % 60).padStart(2, "0")}`;
-  return { ok, today, successful, letzterLaufBerlin: hhmm, note: ok ? "brauchbarer Stand bis 7:30" : (today ? "heutiger Lauf nach 7:30 oder ohne Erfolg" : "kein heutiger Lauf") };
+  const todayRuns = list
+    .filter((r) => r && r.createdAt)
+    .map((r) => ({ successful: dsNum(r.successfulSources) > 0, b: dsBerlinParts(new Date(r.createdAt)) }))
+    .filter((x) => x.b.day === now.day);
+  const todaySuccessful = todayRuns.filter((x) => x.successful).sort((a, b) => a.b.minutes - b.b.minutes);
+  const earliest = todaySuccessful[0] || null;
+  const ok = Boolean(earliest && earliest.b.minutes <= cutoff);
+  const hhmm = earliest ? `${String(Math.floor(earliest.b.minutes / 60)).padStart(2, "0")}:${String(earliest.b.minutes % 60).padStart(2, "0")}` : null;
+  return {
+    ok,
+    today: todayRuns.length > 0,
+    successful: todaySuccessful.length > 0,
+    ersterErfolgreicherLaufBerlin: hhmm,
+    note: ok
+      ? `brauchbarer Stand bis 7:30 (früher Tageslauf ${hhmm} ok)`
+      : (todaySuccessful.length ? "erfolgreicher Tageslauf erst nach 7:30" : (todayRuns.length ? "heutiger Lauf ohne Erfolg" : "kein heutiger Lauf"))
+  };
 }
 
 function dsAccountCost(records) {
@@ -2855,18 +2871,21 @@ function dsSummarizeError(err) {
 
 async function buildAdminDataStatus({ perAccountLimit = 25 } = {}) {
   const radar = require("./lib/helmut/radar");
-  const [users, statsToday, crawlReport, latestCrawl, recentErrors] = await Promise.all([
+  const [users, statsToday, crawlReport, latestCrawl, crawlRuns, recentErrors] = await Promise.all([
     accounts.listUsers().catch(() => []),
     getAdminStatsOverview({ days: 1 }).catch(() => null),
     getAdminStatsCrawlReport().catch(() => null),
     getLatestCrawlRun().catch(() => null),
+    listCrawlRuns(20).catch(() => []),
     accounts.listSystemErrors(5).catch(() => [])
   ]);
   const v3 = v3StoreReady();
   const naLive = (extra = {}) => ({ value: null, available: false, note: v3 ? "nur zur Laufzeit mit Daten ermittelbar" : "nur mit aktivem V3-Store (Supabase) ermittelbar", ...extra });
 
   const cr = latestCrawl || {};
-  const morning = dsMorningStatus(latestCrawl);
+  // Morgenstatus über die Lauf-Liste (frühester erfolgreicher Tageslauf) — nicht
+  // über den letzten (evtl. manuellen) Lauf. cr bleibt der Anzeige-"letzter Lauf".
+  const morning = dsMorningStatus(crawlRuns && crawlRuns.length ? crawlRuns : latestCrawl);
 
   // ---------- pro Account ----------
   const mdbUsers = users.filter((u) => (u.role === "abgeordneter" || u.role === "referent") && u.politicianId);

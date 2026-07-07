@@ -6675,6 +6675,39 @@ body {
   font-weight: 740;
 }
 
+/* ── Refresh-Ablauf im Helmut-Tab (ruhig, premium, mobil sauber) ───────────── */
+.helmut-refresh {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 20px;
+  min-height: 62vh;
+  padding: 32px max(22px, env(safe-area-inset-left)) calc(128px + env(safe-area-inset-bottom)) max(22px, env(safe-area-inset-right));
+  animation: helmutRefreshIn .5s ease both;
+}
+.helmut-refresh-core { position: relative; display: grid; place-items: center; width: 132px; height: 132px; }
+.helmut-refresh-ring {
+  position: absolute; inset: 0; border-radius: 999px;
+  border: 1.5px solid rgba(249, 205, 127, .5);
+  box-shadow: 0 0 0 10px rgba(249, 205, 127, .03), 0 0 46px rgba(249, 205, 127, .30), inset 0 0 26px rgba(249, 205, 127, .08);
+  animation: helmutRefreshPulse 2.6s ease-in-out infinite;
+}
+.helmut-refresh-mark { font-size: 34px; font-weight: 300; letter-spacing: .06em; color: rgba(240, 224, 190, .92); }
+.helmut-refresh-title { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -.01em; color: var(--text); }
+.helmut-refresh-step { margin: -8px 0 0; font-size: 14px; color: var(--muted-2); min-height: 20px; transition: opacity .4s ease; }
+.helmut-refresh-sub { margin: -8px 0 0; font-size: 14px; line-height: 1.5; color: var(--muted-2); max-width: 30ch; }
+.helmut-refresh-track { width: min(240px, 68%); height: 3px; border-radius: 999px; background: rgba(140, 140, 150, .18); overflow: hidden; }
+.helmut-refresh-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, rgba(214, 160, 64, .55), rgba(249, 205, 127, .95)); transition: width .9s cubic-bezier(.22, .61, .36, 1); }
+.helmut-refresh-core--done { color: #34c07a; animation: helmutRefreshPop .5s cubic-bezier(.22, 1.2, .36, 1) both; }
+.helmut-refresh-core--done svg { width: 40px; height: 40px; }
+@keyframes helmutRefreshPulse { 0%, 100% { transform: scale(1); opacity: .8; } 50% { transform: scale(1.045); opacity: 1; } }
+@keyframes helmutRefreshPop { from { transform: scale(.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes helmutRefreshIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .helmut-refresh, .helmut-refresh-ring, .helmut-refresh-core--done { animation: none; } }
+@media (max-width: 380px) { .helmut-refresh-core { width: 112px; height: 112px; } .helmut-refresh-title { font-size: 17px; } }
+
 .helmut-thinking-screen h1 {
   margin: 12px 0 0;
   color: var(--command-text);
