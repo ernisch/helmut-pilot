@@ -1671,7 +1671,14 @@ function renderAdminDataStatus(ds) {
 // Understanding-Lauf, KI-Fehler/-Erfolg + drei bewusste Aktionen. Serverseitig ist
 // alles admin-gegatet; hier nur Anzeige/Klick. Keine Secrets, keine Env-Werte.
 function renderAdminRecovery(rec, result) {
-  if (!rec) return "";
+  // Fail-safe: laedt der Recovery-Status nicht (Timeout/Fehler), bleibt der restliche
+  // Admin-Datenstatus sichtbar; hier steht dann nur ein ruhiger Hinweis.
+  if (!rec) {
+    return `<section class="ds-status"><div class="ds-card">
+      <div class="ds-card-title">Pipeline-Recovery (intern)</div>
+      <p class="ds-note">Recovery-Status derzeit nicht verfügbar.</p>
+    </div></section>`;
+  }
   const ko = rec.knowledgeObjects;
   const koAvail = ko && ko.available !== false;
   const lock = rec.understandingLock || {};

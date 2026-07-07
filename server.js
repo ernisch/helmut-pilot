@@ -3125,7 +3125,10 @@ async function buildAdminDataStatus({ perAccountLimit = 25 } = {}) {
     const comp = profile ? profileCompleteness(profile) : { level: "empty", missing: ["profil"], restricted: false, complete: false };
     let briefing = null, lage = null, rad = null;
     try { briefing = await buildV3Briefing(profile, id); } catch (_) {}
-    try { lage = await buildLageBriefing(profile, { politicianId: id }); } catch (_) {}
+    // countOnly: NUR zaehlen, KEIN KI-Narrativ generieren. Sonst wuerde der
+    // Datenstatus bis zu einen KI-Call PRO ACCOUNT ausloesen (Zeitueberschreitung +
+    // KI-Kosten allein fuer die Admin-Anzeige). buildV3Briefing/radar sind 0-KI.
+    try { lage = await buildLageBriefing(profile, { politicianId: id, countOnly: true }); } catch (_) {}
     try { rad = await radar.buildRadarForUser({ profile, userId: id }); } catch (_) {}
     const briefingPoints = briefing && briefing.available ? (briefing.items || []).length : 0;
     const lageCount = lage && lage.available ? (lage.vorgaenge || []).length : 0;

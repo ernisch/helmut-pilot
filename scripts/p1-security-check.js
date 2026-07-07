@@ -537,6 +537,36 @@ async function pipelineRecoveryChecks() {
   }
 }
 
+// Datenstatus-Resilienz: (1) die Admin-Pro-Account-Zaehlung darf KEINEN KI-Live-Call
+// ausloesen (sonst Timeout/Kosten allein fuer die Anzeige), (2) der Recovery-Bereich
+// muss fail-safe sein und darf den restlichen Datenstatus nicht verstecken.
+async function dataStatusResilienceChecks() {
+  const serverSrc = fs.readFileSync(path.join(root, "server.js"), "utf8");
+  const clientSrc = fs.readFileSync(path.join(root, "client.js"), "utf8");
+  const lageSrc = fs.readFileSync(path.join(root, "lib/helmut/lage.js"), "utf8");
+
+  check("Datenstatus: Admin-Loop zaehlt Lage OHNE KI (countOnly:true an buildLageBriefing)",
+    /buildLageBriefing\(profile,\s*\{\s*politicianId:\s*id,\s*countOnly:\s*true\s*\}\)/.test(serverSrc));
+
+  const idxCountOnly = lageSrc.indexOf("opts.countOnly");
+  const idxGenerate = lageSrc.indexOf("ai.generateLageBriefing(");
+  check("Lage: countOnly-Pfad kehrt VOR der KI-Generierung zurueck (kein KI-Call)",
+    idxCountOnly >= 0 && idxGenerate >= 0 && idxCountOnly < idxGenerate);
+
+  check("Recovery-Bereich ist fail-safe (eigener 'nicht verfuegbar'-Hinweis, versteckt Datenstatus nicht)",
+    clientSrc.includes("Recovery-Status derzeit nicht verfügbar"));
+
+  // Behavioral (offline): der gesamte Datenstatus baut sich fehlerfrei zusammen und
+  // liefert weiterhin das global-Objekt (keine harte Ausnahme, wenn Teile leer sind).
+  try {
+    const ds = await handler.__buildAdminDataStatus({ perAccountLimit: 2 });
+    check("Datenstatus: baut sich vollstaendig zusammen (global vorhanden, kein Absturz)",
+      Boolean(ds && ds.global) && "kiStatus" in ds.global);
+  } catch (err) {
+    check("Datenstatus: baut sich fehlerfrei zusammen", false, String((err && err.message) || err));
+  }
+}
+
 // Datenmotor V2 — Commit 1: LLM-Budget-Fundament (Tages-Aggregation + Gate).
 // Rein additiv; prueft nur die neuen Storage-Helfer, kein Pipeline-Verhalten.
 async function llmBudgetChecks() {
@@ -1665,6 +1695,7 @@ async function main() {
   await llmLoggingChecks();
   await kiStatusChecks();
   await pipelineRecoveryChecks();
+  await dataStatusResilienceChecks();
   await llmBudgetChecks();
   await c1SafetyNetChecks();
   await c3DipPrimaryChecks();
