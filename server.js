@@ -2822,6 +2822,37 @@ function dsAccountAmpel({ level, restricted, hasBriefing }) {
   return "gruen";
 }
 
+// Verwandelt einen rohen Systemfehler in eine kurze, verstaendliche Admin-Meldung
+// (Headline + Grund); der Rohtext bleibt nur als optionales Detail erhalten. So sieht
+// der Betreiber nicht mehr einen langen roten JSON-Block, sondern z. B.
+// "KI-Analyse fehlgeschlagen — Grund: Azure-Deployment nicht gefunden".
+function dsSummarizeError(err) {
+  if (!err) return null;
+  const raw = String(err.message || err.error || "").trim();
+  const lower = raw.toLowerCase();
+  const scope = String(err.scope || "").toLowerCase();
+  const aiish = /azure|openai|deployment|\bllm\b|gpt|responses|understand|\bmodel\b|token/.test(lower)
+    || scope.includes("ai") || scope.includes("brief") || scope.includes("understand");
+  let reason;
+  if (/deploymentnotfound|deployment.{0,20}not.{0,5}found|not.{0,5}found.{0,20}deployment/.test(lower)) reason = "Azure-Deployment nicht gefunden";
+  else if (aiish && /\b404\b|not found/.test(lower)) reason = "KI-Endpunkt/Deployment nicht gefunden (404)";
+  else if (/\b401\b|\b403\b|unauthor|invalid.{0,10}key|api key/.test(lower)) reason = "KI-Zugang nicht autorisiert (Schlüssel prüfen)";
+  else if (/\b429\b|rate.?limit|quota/.test(lower)) reason = "KI-Ratenlimit/Quota erreicht";
+  else if (/timeout|timed out|etimedout|abort/.test(lower)) reason = "Zeitüberschreitung bei der KI-Anfrage";
+  else {
+    const m = raw.match(/"message"\s*:\s*"([^"]{3,140})"/i) || raw.match(/"code"\s*:\s*"([^"]{3,80})"/i);
+    reason = m ? m[1] : (raw ? raw.replace(/\s+/g, " ").slice(0, 140) : "Unbekannter Fehler");
+  }
+  return {
+    headline: aiish ? "KI-Analyse fehlgeschlagen" : "Systemfehler",
+    reason: String(reason).slice(0, 160),
+    scope: err.scope || null,
+    path: err.path || null,
+    when: err.createdAt || null,
+    detail: raw ? raw.replace(/\s+/g, " ").slice(0, 400) : null
+  };
+}
+
 async function buildAdminDataStatus({ perAccountLimit = 25 } = {}) {
   const radar = require("./lib/helmut/radar");
   const [users, statsToday, crawlReport, latestCrawl, recentErrors] = await Promise.all([
@@ -2873,16 +2904,27 @@ async function buildAdminDataStatus({ perAccountLimit = 25 } = {}) {
       radarChancen: chance,
       radarRisiken: risk,
       kiKosten: cost,
+      // Konto-Typ NUR wenn sicher ermittelbar (nicht raten): das Pilot-/Demo-Seed-Mandat
+      // cem-ince -> "Pilot"; sonst ein evtl. vorhandenes explizites Flag; sonst null.
+      kontoTyp: id === cemInceProfile.id ? "Pilot" : (u.kontoTyp || u.accountKind || u.kind || null),
       ampel: dsAccountAmpel({ level: comp.level, restricted: comp.restricted || comp.empty, hasBriefing })
     });
   }
 
   // ---------- global ----------
   const pipelineOk = dsNum(cr.successfulSources) > 0;
+  const analyzed = dsNum(cr.understanding && cr.understanding.processed);
   const hasData = dsNum(crawlReport && crawlReport.newKnowledgeObjects) > 0 || sumBriefing > 0;
   const weakCoverage = dsNum(cr.checkedSources) > 0 && (dsNum(cr.failedSources) / Math.max(1, dsNum(cr.checkedSources))) > 0.5;
   const restrictedShare = capped.length ? restrictedCount / capped.length : 0;
-  const globalAmpel = !pipelineOk || !morning.ok ? "rot" : (weakCoverage || !hasData || restrictedShare > 0.5 ? "gelb" : "gruen");
+  // KI-/Analyse-Ausfall: heute fehlgeschlagene KI-Calls ODER Dokumente geladen, aber
+  // 0 Vorgaenge analysiert. Dann NIE gruen (der Crawl lief evtl. technisch, aber es
+  // entstand kein brauchbarer inhaltlicher Stand).
+  const aiFailedToday = Boolean(statsToday && statsToday.ai && dsNum(statsToday.ai.failedCalls) > 0);
+  const analysisGap = aiFailedToday || (analyzed === 0 && dsNum(cr.savedItems) > 0);
+  const globalAmpel = (!pipelineOk || !morning.ok)
+    ? "rot"
+    : ((weakCoverage || !hasData || restrictedShare > 0.5 || analysisGap) ? "gelb" : "gruen");
 
   const global = {
     letzterLauf: cr.createdAt || null,
@@ -2917,7 +2959,8 @@ async function buildAdminDataStatus({ perAccountLimit = 25 } = {}) {
       ? { proLauf: statsToday.ai.totalCostUsd, calls: statsToday.ai.totalCalls, tokens: statsToday.ai.totalTokens, note: "Tages-Summe (heute)" }
       : naLive(),
     letzterErfolgreicherLauf: pipelineOk ? (cr.createdAt || null) : null,
-    letzterFehler: recentErrors[0] || null,
+    letzterFehler: dsSummarizeError(recentErrors[0]),
+    kiAnalyseFehler: aiFailedToday,
     morgenstatus0730: morning,
     ampel: globalAmpel
   };

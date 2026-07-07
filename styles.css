@@ -7502,6 +7502,78 @@ body {
   letter-spacing: .06em;
 }
 
+/* ── Interner Admin-Datenstatus (mobile-first, vertikale Karten) ───────────── */
+.ds-status { display: flex; flex-direction: column; gap: 14px; margin: 12px 0 40px; }
+.ds-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.ds-note { color: var(--muted-2); font-size: 13px; margin: 0; }
+.ds-note--warn { color: #b26a00; }
+.ds-sub { color: var(--muted-2); font-weight: 500; }
+
+.ds-ampel { display: inline-block; padding: 3px 12px; border-radius: 999px; color: #fff; font-weight: 800; font-size: 11px; letter-spacing: .05em; white-space: nowrap; }
+.ds-ampel--gruen { background: #2e7d32; }
+.ds-ampel--gelb { background: #f9a825; color: #3a2c00; }
+.ds-ampel--rot { background: #c62828; }
+.ds-ampel--unbekannt { background: #777; }
+
+.ds-card, .ds-account-card {
+  background: var(--card, #fff);
+  border: 1px solid var(--line, #e3e3e3);
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+.ds-card-title, .ds-accounts-title {
+  font-size: 13px; font-weight: 700; color: var(--text); text-transform: uppercase; letter-spacing: .05em; margin: 0 0 8px;
+}
+.ds-accounts-title { margin: 6px 0 2px; }
+
+/* Zeile: Label links, Wert rechts — nie zusammenklebend */
+.ds-row {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 14px;
+  padding: 9px 0; border-bottom: 1px solid var(--line, #ececec); font-size: 14px;
+}
+.ds-row:last-child { border-bottom: none; }
+.ds-row-label { color: var(--muted-2); flex: 1 1 auto; min-width: 0; }
+.ds-row-value { color: var(--text); font-weight: 600; text-align: right; flex: 0 0 auto; max-width: 60%; overflow-wrap: anywhere; }
+.ds-row--wide { flex-direction: column; align-items: stretch; }
+.ds-row--wide .ds-row-value { max-width: 100%; text-align: left; }
+
+.ds-unavail { color: var(--muted-2); font-weight: 500; font-style: italic; }
+.ds-ok { color: #2e7d32; font-weight: 700; }
+.ds-warn { color: #b26a00; font-weight: 600; }
+.ds-bad { color: #c62828; font-weight: 700; }
+
+.ds-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.ds-chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; background: var(--line, #eee); color: var(--text); font-size: 12px; font-weight: 500; }
+.ds-chip b { font-weight: 800; }
+
+.ds-accounts { display: flex; flex-direction: column; gap: 12px; }
+.ds-account-card { display: flex; flex-direction: column; }
+.ds-account-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.ds-account-name { font-weight: 700; font-size: 15px; color: var(--text); margin-right: auto; overflow-wrap: anywhere; }
+
+.ds-badge { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: .04em; background: #e0e7ff; color: #3730a3; }
+.ds-badge--pilot { background: #e0e7ff; color: #3730a3; }
+.ds-badge--demo { background: #fef3c7; color: #92400e; }
+.ds-badge--test { background: #f3e8ff; color: #6b21a8; }
+.ds-badge--echt { background: #dcfce7; color: #166534; }
+
+.ds-error { border: 1px solid #f2c2c2; background: rgba(198,40,40,.06); border-radius: 12px; padding: 12px 14px; }
+.ds-error-head { font-weight: 800; color: #c62828; font-size: 14px; }
+.ds-error-reason { color: var(--text); font-size: 13px; margin-top: 3px; }
+.ds-error-meta { color: var(--muted-2); font-size: 12px; margin-top: 4px; }
+.ds-error-detail { margin-top: 8px; }
+.ds-error-detail summary { cursor: pointer; color: var(--muted-2); font-size: 12px; }
+.ds-error-detail code { display: block; margin-top: 6px; font-size: 11px; color: var(--muted-2); white-space: pre-wrap; word-break: break-word; }
+
+.ds-legend { margin-top: 4px; }
+.ds-legend summary { cursor: pointer; color: var(--muted-2); font-size: 13px; }
+.ds-legend ul { font-size: 12px; color: var(--muted-2); line-height: 1.6; margin: 8px 0 0; padding-left: 18px; }
+
+/* Desktop: Account-Karten nebeneinander */
+@media (min-width: 720px) {
+  .ds-accounts { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+}
+
 /* Two-column body */
 .admin-body {
   display: grid;

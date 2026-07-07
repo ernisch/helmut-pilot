@@ -1477,78 +1477,147 @@ function renderAdminEngineChart(aiStats) {
 
 // Interner Datenmotor-Status (nur Admin/Betreiber): global + pro Account. Bewusst
 // schlicht (kein Kunden-Dashboard) — Ziel: morgens sehen, ob Helmut echten Wert liefert.
+// Kurzer, verständlicher Ersatz für "n/v" – abgeleitet aus dem Server-Hinweis.
+function dsUnavailText(note) {
+  const n = String(note || "").toLowerCase();
+  if (/n(ae|ä)chst/.test(n)) return "Ab nächstem Lauf verfügbar";
+  if (/supabase|v3-store|datenspeicher/.test(n)) return "Nur mit aktivem Datenspeicher";
+  if (/laufzeit|mit daten/.test(n)) return "Noch nicht verfügbar";
+  return "Nicht sicher ermittelbar";
+}
+
+// Wert sicher formatieren: NIE ein rohes Objekt ausgeben. Zahl -> Zahl,
+// {available:false,note} -> verständlicher Hinweis, sonst "–".
+function dsFmt(v) {
+  if (v && typeof v === "object") {
+    if (v.available === false) return `<span class="ds-unavail" title="${escapeHtml(v.note || "")}">${escapeHtml(dsUnavailText(v.note))}</span>`;
+    if (typeof v.value === "number" || typeof v.value === "string") return escapeHtml(String(v.value));
+    return `<span class="ds-unavail">Noch nicht verfügbar</span>`;
+  }
+  if (v === null || v === undefined) return "–";
+  if (typeof v === "number") return escapeHtml(String(v));
+  return escapeHtml(String(v));
+}
+
+function dsRow(label, valueHtml) {
+  return `<div class="ds-row"><span class="ds-row-label">${escapeHtml(label)}</span><span class="ds-row-value">${valueHtml}</span></div>`;
+}
+
+// Quellen nach Kategorie: echte Kategorie-Map -> Chips; sonst verständlicher Hinweis
+// (verhindert das Rendern des rohen {value,available,note}-Objekts).
+function dsCategories(nk) {
+  if (!nk || typeof nk !== "object") return dsFmt(nk);
+  if (nk.available === false) return `<span class="ds-unavail" title="${escapeHtml(nk.note || "")}">Ab nächstem Crawl-Lauf verfügbar</span>`;
+  const parts = Object.entries(nk)
+    .filter(([k]) => !["value", "available", "note"].includes(k))
+    .map(([k, o]) => {
+      const n = (o && typeof o === "object") ? (o.checked ?? o.count ?? o.value ?? o) : o;
+      return `<span class="ds-chip">${escapeHtml(k)}<b>${dsFmt(n)}</b></span>`;
+    });
+  return parts.length ? `<div class="ds-chips">${parts.join("")}</div>` : `<span class="ds-unavail">Ab nächstem Crawl-Lauf verfügbar</span>`;
+}
+
+function dsCost(c) {
+  if (!c || typeof c !== "object") return `<span class="ds-unavail">Keine Daten heute</span>`;
+  if (c.estimatedUsd != null) return `$${escapeHtml(String(c.estimatedUsd))}${c.calls ? ` · ${escapeHtml(String(c.calls))} Calls` : ""}`;
+  if (c.calls) return `${escapeHtml(String(c.calls))} Calls · <span class="ds-unavail" title="${escapeHtml(c.note || "")}">Kosten nicht ermittelbar</span>`;
+  return `<span class="ds-unavail">Keine Daten heute</span>`;
+}
+
+function dsDateLabel(iso) {
+  if (!iso) return "–";
+  try { return new Date(iso).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); }
+  catch (_) { return escapeHtml(String(iso)); }
+}
+
 function renderAdminDataStatus(ds) {
   if (!ds || !ds.global) {
-    return `<section class="admin-crawl-stats"><h2 class="admin-section-title">Datenstatus (intern)</h2>
-      <p style="color:var(--muted-2)">Datenstatus derzeit nicht verfügbar.</p></section>`;
+    return `<section class="ds-status"><h2 class="admin-section-title">Datenstatus (intern)</h2>
+      <p class="ds-note">Datenstatus derzeit nicht verfügbar.</p></section>`;
   }
   const g = ds.global;
-  const ampelColor = { gruen: "#2e7d32", gelb: "#f9a825", rot: "#c62828" };
   const ampelLabel = { gruen: "GRÜN", gelb: "GELB", rot: "ROT" };
-  const dot = (a) => `<span style="display:inline-block;padding:2px 10px;border-radius:999px;color:#fff;font-weight:700;font-size:12px;background:${ampelColor[a] || "#777"}">${ampelLabel[a] || String(a || "–")}</span>`;
-  const val = (v) => {
-    if (v && typeof v === "object" && v.available === false) return `<span title="${escapeHtml(v.note || "nicht verfügbar")}" style="color:var(--muted-2)">n/v</span>`;
-    if (v === null || v === undefined) return "–";
-    return escapeHtml(String(v));
-  };
-  const cat = g.quellen && g.quellen.nachKategorie && typeof g.quellen.nachKategorie === "object" && !g.quellen.nachKategorie.available
-    ? Object.entries(g.quellen.nachKategorie).map(([k, o]) => `${escapeHtml(k)}: ${val(o && (o.checked ?? o))}`).join(" · ")
-    : val(g.quellen && g.quellen.nachKategorie);
-  const stat = (label, v) => `<div class="admin-stat-item"><span class="admin-stat-value">${val(v)}</span><span class="admin-stat-label">${escapeHtml(label)}</span></div>`;
+  const pill = (a) => `<span class="ds-ampel ds-ampel--${escapeHtml(String(a || "unbekannt"))}">${ampelLabel[a] || "?"}</span>`;
+  const profilLabel = { full: "Vollständig", restricted: "Eingeschränkt", empty: "Kein Profil" };
 
-  const rows = (Array.isArray(ds.perAccount) ? ds.perAccount : []).map((a) => `
-    <tr>
-      <td>${escapeHtml(a.name || a.politicianId || "")}</td>
-      <td>${dot(a.ampel)}</td>
-      <td>${escapeHtml((a.profilVollstaendigkeit && a.profilVollstaendigkeit.level) || "–")}${a.personalisierungEingeschraenkt ? ' <span title="Personalisierung eingeschränkt" style="color:#f9a825">⚠</span>' : ""}</td>
-      <td>${(a.profilVollstaendigkeit && a.profilVollstaendigkeit.fehlendePflichtfelder || []).map(escapeHtml).join(", ") || "–"}</td>
-      <td>${a.briefingSichtbar ? "ja" : "nein"}</td>
-      <td>${val(a.briefingPunkte)}</td>
-      <td>${val(a.lageVorgaenge)}</td>
-      <td>${val(a.radarChancen)}</td>
-      <td>${val(a.radarRisiken)}</td>
-      <td>${a.kiKosten && a.kiKosten.estimatedUsd != null ? "$" + escapeHtml(String(a.kiKosten.estimatedUsd)) : "n/v"}</td>
-    </tr>`).join("");
+  const morning = g.morgenstatus0730 || {};
+  const err = g.letzterFehler;
+
+  const errorCard = (err || g.kiAnalyseFehler) ? `
+    <div class="ds-error">
+      <div class="ds-error-head">${escapeHtml((err && err.headline) || "KI-Analyse fehlgeschlagen")}</div>
+      ${err && err.reason ? `<div class="ds-error-reason">Grund: ${escapeHtml(err.reason)}</div>` : ""}
+      <div class="ds-error-meta">${err && err.when ? dsDateLabel(err.when) : ""}${err && err.scope ? ` · ${escapeHtml(err.scope)}` : ""}</div>
+      ${err && err.detail ? `<details class="ds-error-detail"><summary>Technische Details</summary><code>${escapeHtml(err.detail)}</code></details>` : ""}
+    </div>` : "";
+
+  const globalCard = `
+    <div class="ds-card">
+      <div class="ds-card-title">Datenmotor heute</div>
+      ${dsRow("Letzter Lauf", dsDateLabel(g.letzterLauf))}
+      ${dsRow("Morgenstatus 7:30", morning.ok ? `<span class="ds-ok">Brauchbarer Stand</span>` : `<span class="ds-bad">Nicht ok</span>${morning.note ? ` <span class="ds-sub">(${escapeHtml(morning.note)})</span>` : ""}`)}
+      ${dsRow("Geprüfte Quellen", dsFmt(g.quellen && g.quellen.geprueft))}
+      ${dsRow("Erfolgreiche Quellen", dsFmt(g.quellen && g.quellen.erfolgreich))}
+      ${dsRow("Fehlgeschlagene Quellen", dsFmt(g.quellen && g.quellen.fehlgeschlagen))}
+      ${dsRow("Rohdokumente geladen", dsFmt(g.dokumente && g.dokumente.geladen))}
+      ${dsRow("Neue Dokumente", dsFmt(g.dokumente && g.dokumente.neu))}
+      ${dsRow("Verworfene Dokumente", dsFmt(g.dokumente && g.dokumente.verworfen))}
+      ${dsRow("Duplikate", dsFmt(g.dokumente && g.dokumente.duplikate))}
+      ${dsRow("Quarantänierte Dokumente", dsFmt(g.dokumente && g.dokumente.quarantaeniert))}
+      ${dsRow("Erzeugte Vorgänge", dsFmt(g.vorgaenge && g.vorgaenge.erzeugt))}
+      ${dsRow("Analysierte Vorgänge", dsFmt(g.vorgaenge && g.vorgaenge.analysiert))}
+      ${dsRow("Vorgänge mit Mandatsbezug", dsFmt(g.vorgaenge && g.vorgaenge.mitMandatsbezug))}
+      ${dsRow("Vorgänge mit Empfehlung", dsFmt(g.vorgaenge && g.vorgaenge.mitEmpfehlung))}
+      ${dsRow("Lage-Vorgänge (gesamt)", dsFmt(g.lage && g.lage.vorgaengeGesamt))}
+      ${dsRow("Radar Chancen", dsFmt(g.radar && g.radar.chancen))}
+      ${dsRow("Radar Risiken", dsFmt(g.radar && g.radar.risiken))}
+      ${dsRow("Briefing-Punkte (gesamt)", dsFmt(g.briefing && g.briefing.punkteGesamt))}
+      ${dsRow("Briefing sichtbar bei Accounts", dsFmt(g.briefing && g.briefing.sichtbarBeiAccounts))}
+      ${dsRow("Accounts ohne Briefing", dsFmt(g.briefing && g.briefing.accountsOhneBriefing))}
+      ${dsRow("KI-Kosten heute", g.ki && g.ki.available === false ? dsFmt(g.ki) : (g.ki ? `${g.ki.proLauf != null ? "$" + escapeHtml(String(g.ki.proLauf)) : "–"}${g.ki.calls != null ? ` · ${escapeHtml(String(g.ki.calls))} Calls` : ""}` : "–"))}
+      <div class="ds-row ds-row--wide"><span class="ds-row-label">Quellen nach Kategorie</span>${dsCategories(g.quellen && g.quellen.nachKategorie)}</div>
+    </div>`;
+
+  const accountCards = (Array.isArray(ds.perAccount) ? ds.perAccount : []).map((a) => {
+    const comp = a.profilVollstaendigkeit || {};
+    const missing = Array.isArray(comp.fehlendePflichtfelder) ? comp.fehlendePflichtfelder : [];
+    const kontoBadge = a.kontoTyp ? `<span class="ds-badge ds-badge--${escapeHtml(String(a.kontoTyp).toLowerCase())}">${escapeHtml(a.kontoTyp)}</span>` : "";
+    return `
+    <div class="ds-account-card">
+      <div class="ds-account-head">
+        <span class="ds-account-name">${escapeHtml(a.name || a.politicianId || "")}</span>
+        ${kontoBadge}
+        ${pill(a.ampel)}
+      </div>
+      ${dsRow("Status", a.ampel === "gruen" ? `<span class="ds-ok">In Ordnung</span>` : a.ampel === "gelb" ? `<span class="ds-warn">Eingeschränkt</span>` : `<span class="ds-bad">Kein Wert</span>`)}
+      ${dsRow("Profil", `${escapeHtml(profilLabel[comp.level] || comp.level || "–")}${a.personalisierungEingeschraenkt ? ` <span class="ds-warn">· Personalisierung eingeschränkt</span>` : ""}`)}
+      ${missing.length ? dsRow("Fehlende Pflichtfelder", `<span class="ds-warn">${missing.map(escapeHtml).join(", ")}</span>`) : ""}
+      ${dsRow("Briefing sichtbar", a.briefingSichtbar ? `<span class="ds-ok">Ja</span>` : `<span class="ds-sub">Nein</span>`)}
+      ${dsRow("Briefing-Punkte", dsFmt(a.briefingPunkte))}
+      ${dsRow("Lage-Vorgänge", dsFmt(a.lageVorgaenge))}
+      ${dsRow("Radar Chancen", dsFmt(a.radarChancen))}
+      ${dsRow("Radar Risiken", dsFmt(a.radarRisiken))}
+      ${dsRow("KI-Kosten heute", dsCost(a.kiKosten))}
+    </div>`;
+  }).join("");
 
   const legend = ds.legende && typeof ds.legende === "object"
     ? Object.entries(ds.legende).map(([k, v]) => `<li><strong>${escapeHtml(k)}</strong>: ${escapeHtml(String(v))}</li>`).join("")
     : "";
 
   return `
-    <section class="admin-crawl-stats" style="border:1px solid var(--border);border-radius:12px;padding:16px;margin:12px 0">
-      <h2 class="admin-section-title">Datenstatus (intern) ${dot(g.ampel)}</h2>
-      <p style="color:var(--muted-2);font-size:13px;margin:4px 0 12px">
-        Datenmotor heute · letzter Lauf: ${val(g.letzterLauf || "–")} · Morgenstatus 7:30: ${g.morgenstatus0730 && g.morgenstatus0730.ok ? "ok" : "<span style='color:#c62828'>nicht ok</span>"}${g.morgenstatus0730 && g.morgenstatus0730.note ? ` (${escapeHtml(g.morgenstatus0730.note)})` : ""}
-        ${ds.v3StoreAktiv ? "" : ' · <span style="color:#f9a825">V3-Store offline: Live-Zahlen n/v</span>'}
-      </p>
-      <div class="admin-stats-grid" style="display:flex;flex-wrap:wrap;gap:16px">
-        ${stat("Quellen geprüft", g.quellen && g.quellen.geprueft)}
-        ${stat("Quellen erfolgreich", g.quellen && g.quellen.erfolgreich)}
-        ${stat("Quellen fehlgeschlagen", g.quellen && g.quellen.fehlgeschlagen)}
-        ${stat("Dokumente neu", g.dokumente && g.dokumente.neu)}
-        ${stat("Dok. verworfen", g.dokumente && g.dokumente.verworfen)}
-        ${stat("Duplikate", g.dokumente && g.dokumente.duplikate)}
-        ${stat("Vorgänge analysiert", g.vorgaenge && g.vorgaenge.analysiert)}
-        ${stat("Briefing-Punkte", g.briefing && g.briefing.punkteGesamt)}
-        ${stat("Radar Chancen", g.radar && g.radar.chancen)}
-        ${stat("Radar Risiken", g.radar && g.radar.risiken)}
-        ${stat("Accounts ohne Briefing", g.briefing && g.briefing.accountsOhneBriefing)}
-        ${stat("Personalisierung eingeschr.", g.profile && g.profile.personalisierungEingeschraenkt)}
+    <section class="ds-status">
+      <div class="ds-header">
+        <h2 class="admin-section-title">Datenstatus (intern)</h2>
+        ${pill(g.ampel)}
       </div>
-      <p style="color:var(--muted-2);font-size:12px;margin:10px 0 0">Quellen nach Kategorie: ${cat}</p>
-      ${g.letzterFehler ? `<p style="color:#c62828;font-size:12px;margin:6px 0 0">Letzter Fehler: ${escapeHtml(String((g.letzterFehler.message || g.letzterFehler.error || g.letzterFehler.createdAt || "")).slice(0, 200))}</p>` : ""}
-      ${rows ? `
-      <h3 style="margin:16px 0 6px;font-size:14px">Pro Account</h3>
-      <div style="overflow-x:auto">
-        <table class="admin-table" style="width:100%;border-collapse:collapse;font-size:13px">
-          <thead><tr style="text-align:left;color:var(--muted-2)">
-            <th>Account</th><th>Ampel</th><th>Profil</th><th>Fehlende Pflichtfelder</th><th>Briefing</th><th>Punkte</th><th>Lage</th><th>Chancen</th><th>Risiken</th><th>KI-Kosten</th>
-          </tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>` : `<p style="color:var(--muted-2);font-size:13px;margin-top:12px">Noch keine Accounts zur Auswertung.</p>`}
-      ${ds.hinweis ? `<p style="color:var(--muted-2);font-size:12px;margin-top:8px">${escapeHtml(ds.hinweis)}</p>` : ""}
-      ${legend ? `<details style="margin-top:12px"><summary style="cursor:pointer;color:var(--muted-2);font-size:13px">Bedeutung der Werte</summary><ul style="font-size:12px;color:var(--muted-2);line-height:1.6;margin:8px 0 0;padding-left:18px">${legend}</ul></details>` : ""}
+      ${ds.v3StoreAktiv ? "" : `<p class="ds-note ds-note--warn">V3-Store offline: einige Live-Zahlen sind erst mit aktivem Datenspeicher verfügbar.</p>`}
+      ${errorCard}
+      ${globalCard}
+      <div class="ds-accounts-title">Pro Account</div>
+      ${accountCards ? `<div class="ds-accounts">${accountCards}</div>` : `<p class="ds-note">Noch keine Accounts zur Auswertung.</p>`}
+      ${ds.hinweis ? `<p class="ds-note">${escapeHtml(ds.hinweis)}</p>` : ""}
+      ${legend ? `<details class="ds-legend"><summary>Bedeutung der Werte</summary><ul>${legend}</ul></details>` : ""}
     </section>`;
 }
 
