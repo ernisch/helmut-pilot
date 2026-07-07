@@ -162,8 +162,75 @@ const { cemInceProfile } = config;
   check("partitionBySafety: trennt erlaubt/quarantaene korrekt", part.allowed.length === 1 && part.quarantined.length === 1);
 })();
 
+// ============= 5) Geteilter Quellenkatalog: SaaS-Entkopplung =================
+// Der geteilte Katalog (getSources) wird PROFILBASIERT gefiltert: neutrale Basis
+// fuer jedes Mandat, sozial-/partei-/regional-gebundene Quellen NUR bei passendem
+// Profil. Kein Sozialthema und keine Person ist Produktstandard.
+async function catalogDecoupling() {
+  const sources = require("../lib/helmut/sources");
+  const themed = (srcs) => srcs.filter((s) => s.neutral === false);
+  const socialThemed = (srcs) => srcs.filter((s) => s.neutral === false && !s.regional && !s.party && Array.isArray(s.themeTerms));
+  const idset = (srcs) => new Set(srcs.map((s) => s.id));
+
+  // (a) Verteidigungspolitiker (kein Sozialprofil): KEINE Sozialquellen als Standard.
+  const defense = {
+    id: "vt-mdb", fullName: "V Teidiger", party: "CDU", parliamentType: "Bundestag",
+    committee: "Verteidigungsausschuss", committees: ["Verteidigungsausschuss"],
+    focusTopics: ["Verteidigung", "Bundeswehr", "NATO"], relevantMinistries: ["BMVg"]
+  };
+  const dSrc = await scheduler.getSourcesForProfile(defense);
+  const dIds = idset(dSrc);
+  check("Katalog: Verteidigungsprofil bekommt 0 sozial-thematische Quellen", socialThemed(dSrc).length === 0, `themed=${JSON.stringify(themed(dSrc).map((s) => s.id))}`);
+  check("Katalog: Verteidigungsprofil OHNE BMAS/DGB/Ausschuss-Arbeit-Soziales", !dIds.has("bmas") && !dIds.has("dgb") && !dIds.has("ausschuss-arbeit-soziales"));
+  check("Katalog: Verteidigungsprofil OHNE Partei-Fremdquellen (Die Linke)", themed(dSrc).filter((s) => s.party).length === 0);
+  check("Katalog: neutrale Basis vorhanden (Bundestag + Verteidigungsausschuss)", dIds.has("bundestag") && dSrc.some((s) => s.type === "committee"));
+  check("Katalog: Medien bleibt eigene Quellen-Kategorie (neben offiziell)", dSrc.some((s) => s.category === "medien") && dSrc.some((s) => s.category === "offiziell"));
+
+  // (b) Cem als normaler Account mit Sozialprofil: bekommt Sozialthemen WEITERHIN.
+  delete process.env.HELMUT_AUTH_MODE;
+  const cem = scheduler.mergeProfileDefaults({ id: "cem-ince" });
+  const cSrc = await scheduler.getSourcesForProfile(cem);
+  const cIds = idset(cSrc);
+  check("Katalog: Cem (Sozialprofil) bekommt sozial-thematische Quellen", socialThemed(cSrc).length > 0);
+  check("Katalog: Cem bekommt BMAS + DGB (Profil traegt Arbeit und Soziales)", cIds.has("bmas") && cIds.has("dgb"));
+  check("Katalog: Cem bekommt regionale Quellen (Niedersachsen/Salzgitter)", themed(cSrc).some((s) => s.regional && /niedersachsen|salzgitter|wolfenb/i.test(s.name)));
+
+  // (c) Landtag Bayern: nutzt state/Region, KEINE Sozialquellen als Standard.
+  const landtag = {
+    id: "by-mdl", fullName: "Max Bayer", party: "CSU", parliamentType: "Landtag",
+    state: "Bayern", regionalInterests: ["München"], focusTopics: ["Verkehr"]
+  };
+  const lSrc = await scheduler.getSourcesForProfile(landtag);
+  const lblob = JSON.stringify(lSrc.map((s) => ({ n: s.name, q: s.queryTerms }))).toLowerCase();
+  check("Katalog: Landtag Bayern nutzt state/Region (Bayern in Profilquellen)", lblob.includes("bayern"));
+  check("Katalog: Landtag Bayern ohne Sozialquellen als Standard", socialThemed(lSrc).length === 0);
+  check("Katalog: Landtag Bayern erbt KEINE Fremd-Region (Salzgitter/Braunschweig)", !themed(lSrc).some((s) => /salzgitter|braunschweig|wolfenb/i.test(s.name)));
+
+  // (d) Unvollstaendiges Profil (Account-Modus): NUR neutrale Basis, kein fremder Fallback.
+  process.env.HELMUT_AUTH_MODE = "accounts";
+  const empty = scheduler.mergeProfileDefaults({ id: "leer-mdb" });
+  const eSrc = await scheduler.getSourcesForProfile(empty);
+  check("Katalog: unvollstaendiges Profil -> nur neutrale Basis (0 thematisch)", themed(eSrc).length === 0);
+  check("Katalog: unvollstaendiges Profil -> KEINE Personenquelle als Standard", !eSrc.some((s) => s.type === "person"));
+  check("Katalog: unvollstaendiges Profil -> trotzdem neutrale Institutionen", eSrc.some((s) => s.category === "offiziell"));
+  delete process.env.HELMUT_AUTH_MODE;
+
+  // (e) Die-Linke-Profil bekommt seine Fraktionsquellen (Partei-Gating funktioniert).
+  const linke = { id: "linke-mdb", fullName: "L Inke", party: "Die Linke", faction: "Die Linke", parliamentType: "Bundestag", focusTopics: ["Frieden"] };
+  const linkeSrc = await scheduler.getSourcesForProfile(linke);
+  check("Katalog: Die-Linke-Profil bekommt Linke-Parteiquellen (Partei-Gating)", themed(linkeSrc).some((s) => s.party === "Die Linke"));
+
+  // (f) Katalog-Qualitaet (Admin Datenstatus nutzt genau dieses summarizeSources):
+  //     Medien ist eine eigene, gezaehlte Kategorie neben offiziell.
+  const summary = safety.summarizeSources(sources.v1Sources);
+  check("Admin: Quellen-Summary zaehlt Medien als eigene Kategorie", summary.byCategory.medien > 0 && summary.byCategory.offiziell > 0);
+  check("Admin: Quellen-Summary liefert Vertrauensstufen (hoch vorhanden)", summary.byTrust.hoch > 0);
+}
+
 // ================================ Zusammenfassung ============================
-const failed = results.filter((r) => !r.ok);
-console.log(`\n${results.length - failed.length}/${results.length} SaaS-Foundation-Checks bestanden.`);
-if (failed.length) { console.error("FEHLGESCHLAGEN:\n" + failed.map((f) => " - " + f.name).join("\n")); process.exit(1); }
-process.exit(0);
+catalogDecoupling().then(() => {
+  const failed = results.filter((r) => !r.ok);
+  console.log(`\n${results.length - failed.length}/${results.length} SaaS-Foundation-Checks bestanden.`);
+  if (failed.length) { console.error("FEHLGESCHLAGEN:\n" + failed.map((f) => " - " + f.name).join("\n")); process.exit(1); }
+  process.exit(0);
+}).catch((err) => { console.error("TESTLAUF-FEHLER:", err && err.stack || err); process.exit(1); });
