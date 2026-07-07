@@ -542,15 +542,19 @@ async function pipelineRecoveryChecks() {
 
       // 10) LOCK-VORRANG: ist ein Lock gesetzt, startet run-understanding NICHT, sondern
       //     meldet den Lock (Vorrang vor Dokument-Zeitfenster) — KEIN KI-Call, keine Pipeline.
-      const seedLock = async (expiresAt) => {
+      const seedLock = async (expiresAt, lockedAt) => {
         const s = await storage.readAuthStore();
-        await storage.writeAuthStore({ ...s, pipelineLocks: { ...(s.pipelineLocks || {}), "global-understanding": { lockedAt: Date.now(), expiresAt } } });
+        await storage.writeAuthStore({ ...s, pipelineLocks: { ...(s.pipelineLocks || {}), "global-understanding": { lockedAt: lockedAt || Date.now(), expiresAt } } });
       };
+      const readLock = async () => storage.readAuthStore().then((s) => (s.pipelineLocks || {})["global-understanding"] || null).catch(() => null);
       await seedLock(Date.now() + 600000); // aktiv (10 Min in der Zukunft)
       const ruLocked = parse(await requestFull(server, { method: "POST", pathname: "/api/admin/recovery/run-understanding", headers: H("{}"), body: "{}" }));
       check("Recovery: aktiver Lock hat Vorrang -> 'understanding-locked' (kein Start, 0 verarbeitet)",
         ruLocked.ergebnis === "uebersprungen" && ruLocked.grund === "understanding-locked" && ruLocked.lockAktiv === true && ruLocked.verarbeitet === 0,
         `ergebnis=${ruLocked.ergebnis} grund=${ruLocked.grund}`);
+      // FREMDER/VORBESTEHENDER Lock wird NICHT automatisch geloest (nur bewusstes 'Lock loesen').
+      check("Recovery: fremder/vorbestehender Lock bleibt nach abgelehntem Start bestehen (kein Auto-Loesen)",
+        Boolean(await readLock()));
 
       // 10b) Abgelaufener Lock -> 'understanding-lock-stale' (haengend), ebenfalls kein Start.
       await seedLock(Date.now() - 1000); // abgelaufen
@@ -566,6 +570,10 @@ async function pipelineRecoveryChecks() {
       check("Recovery: nach Lock loesen blockiert der Lock den Lauf nicht mehr",
         ruAfter.grund !== "understanding-locked" && ruAfter.grund !== "understanding-lock-stale",
         `grund=${ruAfter.grund}`);
+      // PRODUCTION-FALL: Lock vorher Nein, Lauf endet 'nicht gestartet'/0 verarbeitet ->
+      // danach darf KEIN eigener Lock haengen bleiben (Status wieder Nein).
+      check("Recovery: nach nicht-gestartetem Lauf bleibt KEIN eigener Lock haengen (Status Nein)",
+        (await readLock()) === null);
 
       // 11) Pending-Diagnose (NUR LESEN): Admin darf; offline ohne V3-Store -> gelber Grund,
       //     kein Crash, keine Secrets. (Der eigentliche Klassifikator wird separat unit-getestet.)
@@ -606,7 +614,7 @@ async function dataStatusResilienceChecks() {
 
   // Understanding-Lauf-Fix (Server): WEITES Rohdokument-Fenster fuer den Recovery-Lauf,
   // damit die Quell-Dokumente aelterer pending-Vorgaenge gefunden werden (sonst 0 verarbeitet).
-  const ruBlock = serverSrc.slice(serverSrc.indexOf("/api/admin/recovery/run-understanding"), serverSrc.indexOf("/api/admin/recovery/run-understanding") + 3600);
+  const ruBlock = serverSrc.slice(serverSrc.indexOf("/api/admin/recovery/run-understanding"), serverSrc.indexOf("/api/admin/recovery/run-understanding") + 4400);
   check("Recovery: run-understanding nutzt WEITES Rohdokument-Fenster (2000, 90)",
     /listRecentRawDocuments\(\s*2000\s*,\s*90\s*\)/.test(ruBlock));
   // Lock-Vorrang: der Lock wird VOR dem Lauf geprueft (vor runPendingUnderstandingShadow)
@@ -618,6 +626,10 @@ async function dataStatusResilienceChecks() {
     /pendingVorher/.test(ruBlock) && /pendingNachher/.test(ruBlock) && /completeVorher/.test(ruBlock) && /completeNachher/.test(ruBlock));
   check("Recovery: run-understanding Budget bleibt unter dem Client-Timeout (<=180000ms)",
     /Math\.min\(Number\(process\.env\.HELMUT_UNDERSTAND_BUDGET_MS[^)]*\)\s*,\s*180000\)/.test(ruBlock));
+  // Eigener Lock wird nach dem Lauf zuverlaessig geloest — aber NUR der eigene
+  // (lockedAt >= startTs), nie ein fremder/vorbestehender Lock.
+  check("Recovery: run-understanding loest NUR den eigenen Lock nach dem Lauf (lockedAt >= startTs)",
+    /const startTs = Date\.now\(\)/.test(ruBlock) && /lockNach\.lockedAt >= startTs/.test(ruBlock) && ruBlock.includes('releasePipelineLock("global-understanding")'));
 
   // Understanding-Lauf-Fix (Client): reiche, klar klassifizierte Rueckmeldung, die nach
   // dem Klick sofort sichtbar ist und nach dem Lauf Erfolg/Grund/Fehler klar anzeigt.
@@ -672,6 +684,8 @@ async function dataStatusResilienceChecks() {
       && clientSrc.includes("Sie sollten nicht automatisch verarbeitet werden.")
       && clientSrc.includes("werden aber vom aktuellen Recovery-Fenster nicht erreicht.")
       && clientSrc.includes("nicht mehr eindeutig diesem Vorgang zugeordnet."));
+  check("Diagnose-UI: praeziser Ursachen-Text 'Teilweise verarbeitbar, überwiegend verwaist'",
+    clientSrc.includes('"teils-verarbeitbar-verwaist": "Teilweise verarbeitbar, überwiegend verwaist."'));
 
   // Behavioral (offline): der gesamte Datenstatus baut sich fehlerfrei zusammen und
   // liefert weiterhin das global-Objekt (keine harte Ausnahme, wenn Teile leer sind).
@@ -712,6 +726,19 @@ function pendingDiagnoseChecks() {
 
   const D = diagnosePendingUnderstanding([koVerwaist], [], [docAlt], { now, windowDays: 90 });
   check("Diagnose: Rohdoks vorhanden aber kein Match -> 'mapping-fehlt'", D.ursache === "mapping-fehlt" && D.keine === 1, `ursache=${D.ursache}`);
+
+  // PRODUCTION-FALL: im Fenster 3, ausserhalb 0, keine viele -> praezise 'teils-verarbeitbar-verwaist',
+  // NICHT 'gemischt'/'ausserhalb' (ausserhalb ist 0). Empfehlung nennt erneuten Lauf + separate Bewertung.
+  const docs3 = [mk("f1", "Tariftreuegesetz beschlossen", 5), mk("f2", "Klimaschutzgesetz vorgelegt", 5), mk("f3", "Rentenpaket verabschiedet", 4)];
+  const v3ids = docs3.map((d) => deriveVorgangId(clusterRawDocuments([toRawDocumentRow(d)])[0]));
+  const pendingProd = v3ids.map((v, i) => ({ vorgang_id: v, source_document_count: 2, understanding_status: "pending", created_at: new Date(now - (5 - i) * day).toISOString() }));
+  for (let i = 0; i < 62; i++) pendingProd.push({ vorgang_id: "vg-verwaist-" + i, source_document_count: 0, understanding_status: "pending", created_at: new Date(now - 5 * day).toISOString() });
+  const P = diagnosePendingUnderstanding(pendingProd, docs3, docs3, { now, windowDays: 90 });
+  check("Diagnose: im Fenster>0 & ausserhalb=0 & keine>0 -> 'teils-verarbeitbar-verwaist' (nicht 'gemischt'/'ausserhalb')",
+    P.ursache === "teils-verarbeitbar-verwaist" && P.imFenster === 3 && P.ausserhalb === 0 && P.keine === 62,
+    `ursache=${P.ursache} imFenster=${P.imFenster} ausserhalb=${P.ausserhalb} keine=${P.keine}`);
+  check("Diagnose: Empfehlung nennt erneuten Lauf + separate Bewertung (kein Auto-Fix)",
+    /erneut starten/.test(P.empfehlung) && /separat bewerten/.test(P.empfehlung));
 
   // Rein lesend: Eingaben unveraendert; max 10 Beispiele; keine Rohtext-Felder in den Beispielen.
   const pendingIn = [koFenster, koAlt, koVerwaist];

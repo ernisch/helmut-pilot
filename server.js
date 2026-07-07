@@ -968,6 +968,9 @@ async function handleRequest(request, response) {
   if (url.pathname === "/api/admin/recovery/run-understanding" && request.method === "POST") {
     if (!requireRoleOr403(response, authUser, "admin")) return undefined;
     return handleJson(request, response, async () => {
+      // Request-Start: Marke, um NUR den in DIESEM Lauf gesetzten Lock am Ende zu loesen
+      // (ein Lock mit lockedAt >= startTs stammt aus diesem Lauf; aeltere bleiben unberuehrt).
+      const startTs = Date.now();
       // KO-Zaehlung vorher/nachher fuer sichtbaren Fortschritt (pending/complete).
       const koCounts = async () => {
         const all = await listKnowledgeObjects({ limit: 1000 }).catch(() => []);
@@ -1013,6 +1016,21 @@ async function handleRequest(request, response) {
       const budgetMs = Math.min(Number(process.env.HELMUT_UNDERSTAND_BUDGET_MS || 180000), 180000);
       const result = await runPendingUnderstandingShadow(rawDocs, { budgetMs })
         .catch((e) => ({ skipped: true, reason: e && e.message }));
+      // EIGENEN Lock zuverlaessig loesen: Wir sind nur hier, weil VOR dem Lauf KEIN Lock
+      // existierte (sonst kehrt der Guard oben frueh zurueck). runPendingUnderstandingShadow
+      // loest seinen Lock zwar im finally, aber unter Serverless ist das bei Timeout/Kill
+      // NICHT garantiert -> ein danach noch vorhandener Lock mit lockedAt >= startTs stammt
+      // aus DIESEM Lauf und darf gefahrlos geloest werden (egal ob erfolgreich / nichts-
+      // verarbeitet / Fehler). Ein fremder/vorbestehender Lock (lockedAt < startTs) wird NIE
+      // angefasst; releasePipelineLock ist idempotent.
+      try {
+        const lockNach = await readAuthStore()
+          .then((s) => (s.pipelineLocks || {})["global-understanding"] || null)
+          .catch(() => null);
+        if (lockNach && typeof lockNach.lockedAt === "number" && lockNach.lockedAt >= startTs) {
+          await releasePipelineLock("global-understanding").catch(() => {});
+        }
+      } catch (_) { /* fail-safe: Lock-Aufraeumen darf die Antwort nie verhindern */ }
       const nachher = await koCounts();
       const counts = (result && result.counts) || {};
       const verarbeitet = dsNum(counts.saved);

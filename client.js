@@ -1780,7 +1780,8 @@ function pendingDiagnoseUrsacheText(u) {
     "ausserhalb-fenster": "Rohdokumente liegen außerhalb des aktuellen Recovery-Fensters.",
     "verwaist": "Pending-Vorgänge wirken verwaist (keine Rohdokumente im Store gefunden).",
     "mapping-fehlt": "Mapping zwischen Vorgang und Rohdokument fehlt oder ist unvollständig.",
-    "gemischt": "Gemischt: teils im Fenster, teils außerhalb, teils verwaist.",
+    "teils-verarbeitbar-verwaist": "Teilweise verarbeitbar, überwiegend verwaist.",
+    "gemischt": "Gemischt – siehe Aufschlüsselung oben (im Fenster / außerhalb / keine).",
     "v3-store-disabled": "Diagnose nicht möglich, V3-Store nicht aktiv."
   };
   return map[String(u || "")] || `Ursache: ${escapeHtml(String(u || "unbekannt"))}`;
@@ -1860,6 +1861,7 @@ function pendingDiagnoseGrundKurz(g) {
 // Kurzer, ruhiger Klartext-Satz zur wahrscheinlichsten Ursache (keine Handlung, kein Auto-Fix).
 function pendingDiagnoseUrsacheHinweis(u) {
   const map = {
+    "teils-verarbeitbar-verwaist": "Ein kleiner Teil wirkt verarbeitbar. Der größere Teil hat keine passenden Rohdokumente und sollte später separat bewertet werden.",
     "gemischt": "Ein kleiner Teil wirkt verarbeitbar. Der größere Teil hat keine passenden Rohdokumente und sollte später separat bewertet werden.",
     "ausserhalb-fenster": "Die Rohdokumente existieren, werden aber vom aktuellen Recovery-Fenster nicht erreicht.",
     "verwaist": "Für diese Vorgänge wurden keine passenden Rohdokumente gefunden. Sie sollten nicht automatisch verarbeitet werden.",
