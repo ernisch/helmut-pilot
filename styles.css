@@ -6726,6 +6726,12 @@ body {
 @keyframes helmutRefreshIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .helmut-refresh, .helmut-refresh-ring, .helmut-refresh-core--done { animation: none; } }
 @media (max-width: 380px) { .helmut-refresh-core { width: 112px; height: 112px; } .helmut-refresh-title { font-size: 17px; } }
+/* App-Start-Ladezustand (helmut-refresh--intro): an den Premium-Refresh angelehnt,
+   aber ruhiger — etwas kleinerer Kreis, weicherer Titel, kein Fortschrittsbalken.
+   Klar getrennt vom manuellen Refresh (der Fortschritt/Abschluss zeigt). */
+.helmut-refresh--intro { min-height: 56vh; gap: 18px; }
+.helmut-refresh--intro .helmut-refresh-core { width: 108px; height: 108px; }
+.helmut-refresh--intro .helmut-refresh-title { font-weight: 500; color: var(--muted-2); }
 
 .helmut-thinking-screen h1 {
   margin: 12px 0 0;

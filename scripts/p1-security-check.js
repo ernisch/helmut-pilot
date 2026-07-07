@@ -279,15 +279,36 @@ function staticChecks() {
   check("Keine Live-Referenz auf resolvedMeta.fallbackDraft", !client.includes("resolvedMeta.fallbackDraft"));
   check("Erfundene Radar-Signale entfernt (keine 'Steuerdebatte …')", !client.includes("Steuerdebatte kann in Arbeit und Soziales wandern"));
 
-  // Lage-Kartentitel: darf NIE wieder algorithmisch gekürzt werden (Ursache
-  // der abgebrochenen Titel wie "Friedrich Merz hat öffentlich"). Statischer
-  // Quelltext-Guard, da renderVorgangCard() als Browser-Funktion nicht ohne
-  // DOM ausführbar ist — verhindert zumindest ein Wiederauftauchen der alten
-  // Kürzungsfunktion bzw. ein Zurückrudern der Fallback-Zeile auf eine
-  // zeichenbudget-kappende Funktion.
+  // Lage-Kartentitel: die alte naive Kürzung (Ursache abgebrochener Titel wie
+  // "Friedrich Merz hat öffentlich") bleibt entfernt. Der Fallback leitet aus
+  // rohen Alt-Titeln jetzt eine KURZE, SAUBERE Anzeigeüberschrift ab
+  // (lageDisplayHeadline) — deterministisch, ohne KI, ohne erfundene Fakten und
+  // OHNE "billigen" Abriss mitten im Satz. lageDisplayHeadline ist rein, daher
+  // hier direkt ausführbar prüfbar (renderVorgangCard braucht DOM).
   check("lageShortTitle (Ursache abgebrochener Titel) bleibt entfernt", !client.includes("function lageShortTitle"));
-  check("Lage-Kartentitel-Fallback zeigt vollständigen Originaltitel (kein Kürzungs-Call)",
-    client.includes("const title = displayTitle || lageField(v.title);"));
+  check("Lage-Kartentitel-Fallback nutzt sauberen Ableiter (lageDisplayHeadline), kuratierter displayTitle zuerst",
+    client.includes("const title = displayTitle || lageDisplayHeadline(v.title);"));
+  try {
+    const s = client.indexOf("function lageField(value)");
+    const e = client.indexOf("// Kurze Viewports");
+    const headline = new Function(client.slice(s, e) + "\nreturn lageDisplayHeadline;")();
+    const long = "Das Bundesministerium für Arbeit und Soziales (BMAS) kündigt an, die Abgabe zur Künstlersozialversicherung zu ändern";
+    const out = headline(long);
+    check("lageDisplayHeadline: langer Rohtitel wird sauber gekürzt (kürzer, aber nicht leer)",
+      out.length > 0 && out.length < long.length && out.length <= 84, `len=${out.length}`);
+    check("lageDisplayHeadline: kein billiger Abriss (kein '…', kein baumelndes Funktionswort/Satzzeichen am Ende)",
+      !/[…,;:]$/.test(out) && !/\s(?:der|die|das|den|dem|des|und|oder|zur|zum|für|mit|von|vom)$/i.test(out), out);
+    check("lageDisplayHeadline: sauberer Klausel-Schluss bleibt erhalten (kündigt an -> nicht 'kündigt')",
+      /kündigt an$/.test(out), out);
+    check("lageDisplayHeadline: erfindet nichts / verzerrt Person(Partei) nicht (Name bleibt)",
+      headline("Minister Hubertus Heil (SPD) fordert höhere Löhne im Pflegebereich und mehr Tarifbindung").includes("Heil"));
+    check("lageDisplayHeadline: kurzer, guter Titel bleibt unverändert",
+      headline("Bürgergeld-Reform passiert den Bundesrat") === "Bürgergeld-Reform passiert den Bundesrat");
+    check("lageDisplayHeadline: Roh-Ellipse der Quelle wird entfernt (kein '…')",
+      !/…|\.\.\./.test(headline("Die Regierung will die Abgabe zur …")));
+  } catch (err) {
+    check("lageDisplayHeadline ausführbar/extrahierbar", false, String((err && err.message) || err));
+  }
 
   const server = fs.readFileSync(path.join(root, "server.js"), "utf8");
   check("Cron fail-open Helper entfernt (kein isAuthorizedCron)", !server.includes("isAuthorizedCron"));

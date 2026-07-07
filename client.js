@@ -2326,6 +2326,63 @@ function lageHumanize(text) {
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
+function lageUpperFirst(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+
+// Baumelnde Funktionswörter am Ende (nur entfernt, wenn der Titel wirklich
+// gekürzt/angeschnitten wurde), damit ein Titel nicht auf "... die"/"... zur"/
+// "... und" endet. BEWUSST OHNE trennbare Verbpartikeln/mehrdeutige Präpositionen
+// (an/auf/zu/über/nach/vor/bei/aus/in/im/um ...) — sonst würde ein sauberer
+// Klausel-Schluss wie "kündigt an" fälschlich zu "kündigt" verstümmelt.
+const LAGE_TRAILING_FUNCTION_WORDS = /\s+(?:der|die|das|den|dem|des|dessen|deren|ein|eine|einen|einer|einem|eines|und|oder|aber|sowie|bzw|zur|zum|für|mit|von|vom|the|of)$/i;
+
+// Erste natürliche Schnittgrenze (Satzzeichen/Doppelpunkt/Gedankenstrich/Komma)
+// innerhalb [minIdx, maxIdx]. "." in gängigen Abkürzungen/Zahlen gilt NICHT als
+// Grenze (nutzt dieselbe LAGE_ABBREV_TAIL-Erkennung wie lageFirstSentence).
+function lageFirstBoundaryWithin(t, minIdx, maxIdx) {
+  const re = /[.!?:;–—,]/g;
+  let m;
+  while ((m = re.exec(t))) {
+    if (m.index > maxIdx) break;
+    if (m.index < minIdx) continue;
+    if (t[m.index] === "." && LAGE_ABBREV_TAIL.test(t.slice(Math.max(0, m.index - 8), m.index))) continue;
+    return m.index;
+  }
+  return -1;
+}
+
+// Leitet NUR für Alt-Vorgänge OHNE kuratierten displayTitle eine kurze, saubere
+// Anzeigeüberschrift aus dem rohen Quellentitel ab. Rein deterministisch, KEINE
+// KI, ERFINDET NICHTS: nur Normalisieren + sauberes Kürzen an Satz-/Klausel-/
+// Wortgrenzen. So wirkt der Titel nicht mehr roh, zu lang oder mitten im Satz
+// abgeschnitten ("billiger Abriss"). Kuratierte displayTitle werden NIE hier
+// durchgereicht (der Aufrufer bevorzugt sie unverändert).
+const LAGE_TITLE_MAX = 72;
+function lageDisplayHeadline(raw) {
+  let t = lageField(raw);
+  if (!t) return "";
+  const hadEllipsis = /(?:\.{3,}|…)\s*$/.test(t);  // Quelle selbst schon angeschnitten?
+  t = t.replace(/\s*(?:\.{3,}|…)\s*$/, "").trim(); // evtl. vorhandene Roh-Ellipse entfernen
+  let head;
+  if (t.length <= LAGE_TITLE_MAX) {
+    head = t;                                       // schon kurz -> im Kern unverändert
+  } else {
+    // 1) An der ersten natürlichen Klausel-/Satzgrenze kürzen -> sauberer Schnitt.
+    const boundary = lageFirstBoundaryWithin(t, 24, LAGE_TITLE_MAX + 14);
+    const clause = boundary > 0 ? t.slice(0, boundary).replace(/[\s,;:–—-]+$/, "").trim() : "";
+    // 2) Sonst an der letzten Wortgrenze vor dem Budget kappen (nie im Wort).
+    head = clause.length >= 20 ? clause : t.slice(0, LAGE_TITLE_MAX).replace(/\s+\S*$/, "").trim();
+  }
+  // Abschluss: Satzzeichen weg; NUR wenn wirklich gekürzt/angeschnitten zusätzlich
+  // ein baumelndes Funktionswort entfernen -> nie ein "billiger" Abriss, aber ein
+  // sauberer Klausel-Schluss ("kündigt an") bleibt erhalten. KEIN "…".
+  head = head.replace(/[\s,;:–—-]+$/, "");
+  if (hadEllipsis || t.length > LAGE_TITLE_MAX) {
+    head = head.replace(LAGE_TRAILING_FUNCTION_WORDS, "").replace(/[\s,;:–—-]+$/, "");
+  }
+  head = head.trim();
+  return lageUpperFirst(head || t.slice(0, LAGE_TITLE_MAX).replace(/\s+\S*$/, "").trim());
+}
+
 // Kurze Viewports (z. B. iPhone SE): .lage2-card-row p klemmt dort per CSS
 // auf 2 statt 3 Zeilen (@media max-height:700px in styles.css), damit die
 // Karte nie unter die Bottom Navigation reicht. Die Zeichenbudgets müssen
@@ -2380,12 +2437,13 @@ function renderVorgangCard(v) {
   const displayTitle = lageField(v.displayTitle);
   const category = lageField(v.displayCategory) || lageCardCategory(v);
   const statusChip = lageStatusChip(v);
-  // LEGACY-FALLBACK (nur für Alt-Vorgänge ohne display_title): den vollständigen
-  // bisherigen Titel unverändert zeigen — NIE algorithmisch kürzen (das war die
-  // Ursache abgebrochener Titel wie "Friedrich Merz hat öffentlich"), nur
-  // kleinere Schrift (siehe .lage2-card-title-fallback). Dieser Zweig soll nach
+  // LEGACY-FALLBACK (nur für Alt-Vorgänge ohne display_title): aus dem rohen
+  // Quellentitel eine kurze, saubere Anzeigeüberschrift ableiten (deterministisch,
+  // ohne KI, ohne erfundene Fakten) — statt den rohen, überlangen Satz roh zu
+  // zeigen oder ihn per CSS mitten im Satz "billig" abzuschneiden. Kuratierte
+  // displayTitle werden weiterhin unverändert bevorzugt. Dieser Zweig soll nach
   // einem Backfill der neuen Felder vollständig verschwinden.
-  const title = displayTitle || lageField(v.title);
+  const title = displayTitle || lageDisplayHeadline(v.title);
   const summary = v.summary || {};
   // Zeichenbudgets sind per Messung so gewählt, dass sie in die jeweils
   // erlaubte Zeilenzahl von .lage2-card-row p passen (3 Zeilen normal, 2 auf
@@ -3788,17 +3846,15 @@ function renderHelmutThinkingView() {
       </section>
     `;
   }
-  const time = formatBerlinTimeOnly();
+  // App-Start / ruhiger Ladezustand: hier werden nur VORHANDENE Daten geladen —
+  // KEIN Crawl, KEINE KI-Analyse. Deshalb kein "analysiert"-Text und keine
+  // Prozess-Checkliste mehr (das war der alte dunkle Such-/Denk-Screen, der ein
+  // falsches Prozessversprechen machte). Optik an den Premium-Refresh angelehnt,
+  // aber ruhiger: nur der Ring + eine ehrliche Statuszeile, kein Fortschrittsbalken.
   return `
-    <section class="helmut-thinking-screen" aria-label="Helmut analysiert">
-      <div class="helmut-core" aria-hidden="true">H</div>
-      <h1>Helmut analysiert die Lage ...</h1>
-      <p>${escapeHtml(time)}</p>
-      <div class="helmut-checks">
-        <span>Aktuelle Entwicklungen prüfen</span>
-        <span>Relevanz für dein Mandat bewerten</span>
-        <span>Empfehlung erstellen</span>
-      </div>
+    <section class="helmut-refresh helmut-refresh--intro" aria-live="polite" aria-label="Aktueller Stand wird geladen">
+      <div class="helmut-refresh-core"><span class="helmut-refresh-ring" aria-hidden="true"></span><span class="helmut-refresh-mark" aria-hidden="true">H</span></div>
+      <p class="helmut-refresh-title">Aktueller Stand wird geladen</p>
     </section>
   `;
 }
