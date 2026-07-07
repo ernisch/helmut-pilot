@@ -37,6 +37,8 @@ let pipelineRunning = false;
 let pipelineRunStep = 0;
 let pipelinePhase = null;          // null | "running" | "skipped" | "done" (ehrlicher Abschluss)
 let pipelineCompletionTimer = null;
+let lastAnimatedView = null;       // Karten-Eintritts-Animation nur bei echtem (Wieder-)Eintritt
+let animateNextRender = false;     // Einmal-Schuss: nächstes render() darf Eintritt animieren
 let pipelineStepTimer = null;
 let helmutTypingActive = false;
 let helmutTypedText = "";
@@ -1960,6 +1962,13 @@ function polishReferentText(value) {
 }
 
 function render() {
+  // Eintritts-Animationen (Karten/Refresh-Screen) nur bei echtem (Wieder-)Eintritt
+  // abspielen: Ansichtswechsel ODER ein bewusst gesetzter Einmal-Schuss. Alle
+  // übrigen Rebuilds (Hintergrund-Nachladen von Parlament/Office, Refresh-Fortschritt)
+  // bleiben ruhig -> keine mehrfach aufpoppenden Karten. Klasse VOR innerHTML setzen,
+  // damit die neu gemounteten Knoten den Zustand sehen.
+  const enterAnim = animateNextRender || currentView !== lastAnimatedView;
+  if (app) app.classList.toggle("anim-enter", enterAnim);
   app.innerHTML = `
     <div class="app-frame">
       ${renderSidebar()}
@@ -1973,6 +1982,8 @@ function render() {
       ${renderOnboarding()}
     </div>
   `;
+  lastAnimatedView = currentView;
+  animateNextRender = false;
   hideStartupSplash();
   try {
     bindActions();
@@ -8161,6 +8172,7 @@ function startPipelineRun() {
   helmutThinking = true;
   markPipelineRun();
   stopHelmutTyping();
+  animateNextRender = true; // Refresh-Screen einmal sanft einblenden
   render();
   schedulePipelineStep();
   executePipelineRun();
@@ -8171,9 +8183,23 @@ function schedulePipelineStep() {
   pipelineStepTimer = window.setTimeout(() => {
     if (!pipelineRunning) return;
     pipelineRunStep = Math.min(pipelineRunStep + 1, PIPELINE_STEPS.length - 1);
-    render();
+    updatePipelineProgress();
     if (pipelineRunStep < PIPELINE_STEPS.length - 1) schedulePipelineStep();
   }, PIPELINE_STEP_MS);
+}
+
+// Fortschritt IN PLACE aktualisieren (nur Statuszeile + Balken) statt render() —
+// so wird der Refresh-Screen nicht bei jedem Schritt neu gemountet und blendet
+// nicht wiederholt ein. Fallback auf render(), falls der Screen (noch) nicht da ist.
+function updatePipelineProgress() {
+  const stepEl = app && app.querySelector(".helmut-refresh-step");
+  const fillEl = app && app.querySelector(".helmut-refresh-fill");
+  if (!stepEl || !fillEl) { render(); return; }
+  stepEl.textContent = PIPELINE_STEPS[pipelineRunStep] || PIPELINE_STEPS[PIPELINE_STEPS.length - 1];
+  const pct = Math.round(((pipelineRunStep + 1) / PIPELINE_STEPS.length) * 100);
+  fillEl.style.width = pct + "%";
+  const track = app.querySelector(".helmut-refresh-track");
+  if (track) track.setAttribute("aria-valuenow", String(pct));
 }
 
 async function executePipelineRun() {
@@ -8193,9 +8219,12 @@ async function finishPipelineRun(phase, opts = {}) {
   pipelineRunStep = 0;
   if (pipelineStepTimer) { window.clearTimeout(pipelineStepTimer); pipelineStepTimer = null; }
   pipelinePhase = phase === "skipped" ? "skipped" : "done";
+  animateNextRender = true;   // Abschlusskarte EINMAL sanft einblenden
   render(); // ruhige Abschlussmeldung anzeigen (kein Toast, keine Debug-Liste)
+  // loadBriefing kann mehrfach rendern (Cache + Netz) — während der Abschluss sichtbar
+  // ist, bleiben diese Renders bewusst ruhig (kein erneutes Aufpoppen der Abschlusskarte).
   try { await loadBriefing(); } catch (_) { /* Anzeige bleibt beim letzten Stand */ }
-  // Bei Netzfehler kann der Serverlauf noch nachlaufen -> spät nochmal frisch lesen.
+  // Bei Netzfehler kann der Serverlauf noch nachlaufen -> spät nochmal frisch rendern (ruhig).
   if (opts.reload) window.setTimeout(async () => { try { await loadBriefing(); } catch (_) {} if (currentView === "helmut") render(); }, 20000);
   if (pipelineCompletionTimer) window.clearTimeout(pipelineCompletionTimer);
   const holdMs = pipelinePhase === "skipped" ? 1400 : 1700;
@@ -8203,6 +8232,7 @@ async function finishPipelineRun(phase, opts = {}) {
     pipelinePhase = null;
     helmutThinking = false;
     pipelineCompletionTimer = null;
+    animateNextRender = true; // Helmut-Inhalt genau EINMAL weich einblenden, danach ruhig
     if (currentView === "helmut") render();
   }, holdMs);
 }

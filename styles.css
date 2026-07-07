@@ -2723,6 +2723,25 @@ small {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Anti-Aufpoppen: render() baut #app bei JEDEM Aufruf komplett neu auf, wodurch
+   diese Eintritts-Animationen sonst bei jedem Hintergrund-Rebuild (Parlament/
+   Office-Nachladen, Refresh-Abschluss) erneut abspielen. Sie laufen jetzt NUR
+   noch bei einem echten (Wieder-)Eintritt — #app.anim-enter wird dafür einmalig
+   gesetzt (siehe render()/Refresh-Flow in client.js). Ohne die Klasse: keine
+   Eintritts-Animation, der Inhalt steht ruhig. Interaktions-Fades (Lage-/Radar-
+   Aufklappen) bleiben bewusst ungegatet. */
+#app:not(.anim-enter) .helmut-deck-card,
+#app:not(.anim-enter) .helmut-last-check,
+#app:not(.anim-enter) .helmut-refresh,
+#app:not(.anim-enter) .helmut-refresh-core--done,
+#app:not(.anim-enter) .briefing-block,
+#app:not(.anim-enter) .quick-row,
+#app:not(.anim-enter) .movement-row,
+#app:not(.anim-enter) .mention-row,
+#app:not(.anim-enter) .radar-mention-compact {
+  animation: none !important;
+}
+
 .radar-mini {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
