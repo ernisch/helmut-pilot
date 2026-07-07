@@ -1037,13 +1037,39 @@ async function handleRequest(request, response) {
       // Klassifikation fuer die UI (keine Secrets): uebersprungen (gar nicht gelaufen)
       // / erfolgreich (>=1 verarbeitet) / nichts-verarbeitet (lief, aber 0 -> Grund).
       let ergebnis, grund = null;
+      let diagnoseFelder = null;
       if (result && result.skipped) { ergebnis = "uebersprungen"; grund = result.reason || "skipped"; }
       else if (verarbeitet > 0) { ergebnis = "erfolgreich"; }
-      else { ergebnis = "nichts-verarbeitet"; grund = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0] || "keine-verarbeitung"; }
+      else {
+        ergebnis = "nichts-verarbeitet";
+        // EHRLICHER GRUND: nicht pauschal 'Zeitfenster'. Die bestehende Read-only-Diagnose
+        // nutzen (KEIN KI-Call, KEINE Writes), um verarbeitbar / außerhalb / verwaist zu
+        // trennen — der Lauf allein sieht nur das Fenster (skipped-no-cluster deckt beides).
+        try {
+          const pend = await listPendingKnowledgeObjects({ limit: 1000 }).catch(() => []);
+          const widerDocs = await listRecentRawDocuments(6000, 3650).catch(() => []);
+          const dg = diagnosePendingUnderstanding(pend, rawDocs, widerDocs, { now: Date.now(), windowDays: 90 });
+          // Versucht-aber-nicht-gespeichert = in-window Cluster mit KI-Fehler/ungültig/Budget/Store.
+          const versuchtKeys = ["skipped-error", "cluster-error", "skipped-invalid", "skipped-budget", "skipped-store"];
+          const versucht = versuchtKeys.reduce((a, k) => a + (Number(counts[k]) || 0), 0);
+          const versuchtGrundKey = versuchtKeys.filter((k) => counts[k]).sort((a, b) => counts[b] - counts[a])[0] || null;
+          diagnoseFelder = {
+            imFensterVerarbeitbar: dsNum(dg.imFenster),
+            ausserhalbFenster: dsNum(dg.ausserhalb),
+            ohneRohdokumente: dsNum(dg.keine),
+            versuchtNichtGespeichert: versucht,
+            versuchtGrundKey
+          };
+          grund = dg.ursache; // teils-verarbeitbar-verwaist / verwaist / ausserhalb-fenster / mapping-fehlt / gemischt
+        } catch (_) {
+          grund = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0] || "keine-verarbeitung";
+        }
+      }
       return {
         ok: true,
         ergebnis,
         grund,
+        ...(diagnoseFelder || {}),
         verarbeitet,
         zurueckgestellt: dsNum(result && result.deferred),
         rohdokumenteGeladen: (rawDocs || []).length,

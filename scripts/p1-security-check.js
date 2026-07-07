@@ -614,7 +614,7 @@ async function dataStatusResilienceChecks() {
 
   // Understanding-Lauf-Fix (Server): WEITES Rohdokument-Fenster fuer den Recovery-Lauf,
   // damit die Quell-Dokumente aelterer pending-Vorgaenge gefunden werden (sonst 0 verarbeitet).
-  const ruBlock = serverSrc.slice(serverSrc.indexOf("/api/admin/recovery/run-understanding"), serverSrc.indexOf("/api/admin/recovery/run-understanding") + 4400);
+  const ruBlock = serverSrc.slice(serverSrc.indexOf("/api/admin/recovery/run-understanding"), serverSrc.indexOf("/api/admin/recovery/run-understanding") + 7000);
   check("Recovery: run-understanding nutzt WEITES Rohdokument-Fenster (2000, 90)",
     /listRecentRawDocuments\(\s*2000\s*,\s*90\s*\)/.test(ruBlock));
   // Lock-Vorrang: der Lock wird VOR dem Lauf geprueft (vor runPendingUnderstandingShadow)
@@ -630,6 +630,12 @@ async function dataStatusResilienceChecks() {
   // (lockedAt >= startTs), nie ein fremder/vorbestehender Lock.
   check("Recovery: run-understanding loest NUR den eigenen Lock nach dem Lauf (lockedAt >= startTs)",
     /const startTs = Date\.now\(\)/.test(ruBlock) && /lockNach\.lockedAt >= startTs/.test(ruBlock) && ruBlock.includes('releasePipelineLock("global-understanding")'));
+  // Ehrlicher Ergebnisgrund bei 0 gespeichert: bestehende Read-only-Diagnose nutzen
+  // (kein KI-Call), um verarbeitbar / außerhalb / verwaist zu trennen — nicht pauschal 'Zeitfenster'.
+  check("Recovery: run-understanding formuliert bei 0 gespeichert einen ehrlichen Grund (Read-only-Diagnose, kein KI)",
+    ruBlock.includes("diagnosePendingUnderstanding(pend") && /grund = dg\.ursache/.test(ruBlock));
+  check("Recovery: run-understanding trennt verarbeitbar/außerhalb/verwaist + versucht-nicht-gespeichert",
+    ruBlock.includes("imFensterVerarbeitbar") && ruBlock.includes("ausserhalbFenster") && ruBlock.includes("ohneRohdokumente") && ruBlock.includes("versuchtNichtGespeichert"));
 
   // Understanding-Lauf-Fix (Client): reiche, klar klassifizierte Rueckmeldung, die nach
   // dem Klick sofort sichtbar ist und nach dem Lauf Erfolg/Grund/Fehler klar anzeigt.
@@ -686,6 +692,16 @@ async function dataStatusResilienceChecks() {
       && clientSrc.includes("nicht mehr eindeutig diesem Vorgang zugeordnet."));
   check("Diagnose-UI: praeziser Ursachen-Text 'Teilweise verarbeitbar, überwiegend verwaist'",
     clientSrc.includes('"teils-verarbeitbar-verwaist": "Teilweise verarbeitbar, überwiegend verwaist."'));
+
+  // Ehrlicher Ergebnis-Text nach dem Lauf: ehrliche Aufschluesselung statt pauschal 'Zeitfenster'.
+  check("Recovery-UI: ehrliche Aufschluesselung bei 0 gespeichert (verarbeitbar / keine Rohdokumente)",
+    clientSrc.includes("Vorgänge wirken grundsätzlich verarbeitbar") && clientSrc.includes("Vorgänge haben keine passenden Rohdokumente"));
+  check("Recovery-UI: 'außerhalb des Zeitfensters' NUR wenn ausserhalbFenster > 0",
+    /dsNum\(r\.ausserhalbFenster\) > 0\) zeilen\.push\(`\$\{dsFmt\(r\.ausserhalbFenster\)\} Vorgänge liegen außerhalb des Zeitfensters/.test(clientSrc));
+  check("Recovery-UI: 'versucht, aber nicht gespeichert' mit kurzem Grund (kein Stacktrace/Secret)",
+    clientSrc.includes("versucht, aber nicht gespeichert") && /function recoveryVersuchtGrundText/.test(clientSrc));
+  check("Recovery-UI: ehrliche Aufschluesselung nur bei vorhandenen Diagnose-Feldern (sonst Fallback-Grund)",
+    clientSrc.includes("r.ergebnis === \"nichts-verarbeitet\" && r.imFensterVerarbeitbar != null"));
 
   // Behavioral (offline): der gesamte Datenstatus baut sich fehlerfrei zusammen und
   // liefert weiterhin das global-Objekt (keine harte Ausnahme, wenn Teile leer sind).

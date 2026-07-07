@@ -1720,6 +1720,18 @@ function renderAdminRecovery(rec, result, diagnose) {
     </section>`;
 }
 
+// Grund, warum in-window verarbeitbare Vorgänge NICHT gespeichert wurden (kein Stacktrace, keine Secrets).
+function recoveryVersuchtGrundText(key) {
+  const map = {
+    "skipped-error": "Fehler beim KI-Aufruf",
+    "cluster-error": "Fehler beim KI-Aufruf",
+    "skipped-invalid": "ungültiges KI-Ergebnis",
+    "skipped-budget": "Tagesbudget erreicht",
+    "skipped-store": "Speichern fehlgeschlagen"
+  };
+  return map[String(key || "")] || "unbekannt";
+}
+
 // Technische Understanding-Gründe -> verständlicher Klartext (keine Secrets).
 function recoveryGrundText(grund) {
   const map = {
@@ -1761,6 +1773,20 @@ function renderRecoveryResult(r) {
     if (r.ergebnis === "erfolgreich") {
       return wrap(`<div class="ds-recovery-result-head"><span class="ds-ok">Erfolgreich abgeschlossen</span>${zeit}</div>
         <p class="ds-sub">verarbeitet ${dsFmt(r.verarbeitet)} · zurückgestellt ${dsFmt(r.zurueckgestellt)} · pending ${dsFmt(r.pendingVorher)}→${dsFmt(r.pendingNachher)} · complete ${dsFmt(r.completeVorher)}→${dsFmt(r.completeNachher)}</p>`);
+    }
+    // EHRLICHE Aufschlüsselung, wenn die Read-only-Diagnose-Felder vorliegen (0 gespeichert):
+    // nicht pauschal 'Zeitfenster' — das nur, wenn außerhalb wirklich > 0 ist.
+    if (r.ergebnis === "nichts-verarbeitet" && r.imFensterVerarbeitbar != null) {
+      const zeilen = [];
+      zeilen.push(pendingDiagnoseUrsacheText(r.grund)); // Kurzfazit (identisch zur Diagnose)
+      zeilen.push(`${dsFmt(r.verarbeitet)} Vorgänge gespeichert.`);
+      if (dsNum(r.imFensterVerarbeitbar) > 0) zeilen.push(`${dsFmt(r.imFensterVerarbeitbar)} Vorgänge wirken grundsätzlich verarbeitbar.`);
+      if (dsNum(r.ausserhalbFenster) > 0) zeilen.push(`${dsFmt(r.ausserhalbFenster)} Vorgänge liegen außerhalb des Zeitfensters.`);
+      if (dsNum(r.ohneRohdokumente) > 0) zeilen.push(`${dsFmt(r.ohneRohdokumente)} Vorgänge haben keine passenden Rohdokumente.`);
+      if (dsNum(r.versuchtNichtGespeichert) > 0) zeilen.push(`${dsFmt(r.versuchtNichtGespeichert)} verarbeitbare Vorgänge wurden versucht, aber nicht gespeichert. Grund: ${recoveryVersuchtGrundText(r.versuchtGrundKey)}.`);
+      zeilen.push(`pending unverändert ${dsFmt(r.pendingNachher)}.`);
+      return wrap(`<div class="ds-recovery-result-head"><span class="ds-warn">Nicht gestartet</span>${zeit}</div>
+        ${zeilen.map((z) => `<p class="ds-sub">${escapeHtml(z)}</p>`).join("")}`);
     }
     const rest = r.ergebnis === "nichts-verarbeitet" ? ` · pending unverändert (${dsFmt(r.pendingNachher)})` : "";
     return wrap(`<div class="ds-recovery-result-head"><span class="ds-warn">Nicht gestartet</span>${zeit}</div>
