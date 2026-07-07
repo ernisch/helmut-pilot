@@ -1669,6 +1669,30 @@ function renderAdminDataStatus(ds) {
     </section>`;
 }
 
+// „Letztes Ergebnis" aus dem PERSISTIERTEN manuellen Lauf (überlebt Reload). Ruhig,
+// mobil lesbar, keine Rohtexte/Secrets. Gibt null zurück, wenn kein Lauf gespeichert ist.
+function recoveryLastRunValue(rl) {
+  if (!rl || !rl.startedAt) return null;
+  const st = rl.anzeigeStatus || rl.status || "";
+  const zeit = (iso) => (iso ? `<span class="ds-sub">· ${dsDateLabel(iso)}</span>` : "");
+  if (st === "running") {
+    return `<span class="ds-warn">Läuft seit ${escapeHtml(dsDateLabel(rl.startedAt))}</span>`;
+  }
+  if (st === "ohne-abschluss") {
+    return `<span class="ds-warn">Ohne Abschluss zurückgemeldet</span> ${zeit(rl.startedAt)}<br><span class="ds-sub">Kein Abschluss-Ergebnis erhalten – bitte Status prüfen oder erneut starten.</span>`;
+  }
+  if (st === "erfolgreich") {
+    return `<span class="ds-ok">Erfolgreich abgeschlossen</span> ${zeit(rl.finishedAt)}<br><span class="ds-sub">verarbeitet ${dsFmt(rl.verarbeitet)} · pending ${dsFmt(rl.pendingVorher)}→${dsFmt(rl.pendingNachher)} · complete ${dsFmt(rl.completeVorher)}→${dsFmt(rl.completeNachher)}</span>`;
+  }
+  if (st === "fehlgeschlagen") {
+    return `<span class="ds-bad">Fehlgeschlagen</span> ${zeit(rl.finishedAt)}<br><span class="ds-sub">${escapeHtml(rl.fehler || "Unbekannter Fehler")}</span>`;
+  }
+  // nichts-verarbeitet / uebersprungen -> "Nicht gestartet um HH:MM" + knapper Grund.
+  // (recoveryGrundText/pendingDiagnoseUrsacheText liefern bereits HTML-sichere Strings.)
+  const grundText = st === "uebersprungen" ? recoveryGrundText(rl.grund) : pendingDiagnoseUrsacheText(rl.grund);
+  return `<span class="ds-warn">Nicht gestartet</span> ${zeit(rl.finishedAt || rl.startedAt)}<br><span class="ds-sub">${grundText}</span>`;
+}
+
 // Interner Pipeline-Recovery-Bereich (nur Admin). Zeigt KO-Zustände, Lock, letzten
 // Understanding-Lauf, KI-Fehler/-Erfolg + drei bewusste Aktionen. Serverseitig ist
 // alles admin-gegatet; hier nur Anzeige/Klick. Keine Secrets, keine Env-Werte.
@@ -1687,6 +1711,7 @@ function renderAdminRecovery(rec, result, diagnose) {
   const lockUnknown = rec.v3StoreAktiv === false;
   const lockActionable = Boolean(lock.aktiv || lock.verdaechtig);
   const erg = rec.letztesUnderstandingErgebnis;
+  const recLauf = rec.letzterRecoveryLauf; // persistierter manueller Lauf (überlebt Reload)
   const kiErr = rec.letzterKiFehler;
   const kiOk = rec.letzterKiErfolg;
   const busy = adminRecoveryBusy;
@@ -1703,7 +1728,7 @@ function renderAdminRecovery(rec, result, diagnose) {
         ${dsRow("Complete Vorgänge", koAvail ? dsFmt(ko.complete) : dsFmt(ko))}
         ${dsRow("Understanding-Lock aktiv", lockUnknown ? `<span class="ds-sub">–</span>` : lockLabel)}
         ${dsRow("Letzter Understanding-Lauf", rec.letzterUnderstandingLauf ? dsDateLabel(rec.letzterUnderstandingLauf) : `<span class="ds-sub">–</span>`)}
-        ${dsRow("Letztes Ergebnis", erg ? `verarbeitet ${dsFmt(erg.verarbeitet)} · zurückgestellt ${dsFmt(erg.zurueckgestellt)}${erg.grund ? ` · ${escapeHtml(String(erg.grund))}` : ""}` : `<span class="ds-sub">–</span>`)}
+        ${dsRow("Letztes Ergebnis", recoveryLastRunValue(recLauf) || (erg ? `verarbeitet ${dsFmt(erg.verarbeitet)} · zurückgestellt ${dsFmt(erg.zurueckgestellt)}${erg.grund ? ` · ${escapeHtml(String(erg.grund))}` : ""}` : `<span class="ds-sub">–</span>`))}
         ${dsRow("Letzter KI-Fehler", kiErr ? `<span class="ds-bad">${escapeHtml(kiErr.grund || "Fehler")}</span>${kiErr.when ? ` <span class="ds-sub">· ${dsDateLabel(kiErr.when)}</span>` : ""}` : `<span class="ds-ok">Keiner</span>`)}
         ${dsRow("Letzter erfolgreicher KI-Call", kiOk && kiOk.when ? dsDateLabel(kiOk.when) : `<span class="ds-sub">–</span>`)}
         <div class="ds-recovery-actions">

@@ -9,7 +9,7 @@ const { cemInceProfile, profileCompleteness } = require("./lib/helmut/config");
 const sourceSafety = require("./lib/helmut/sourceSafety");
 const { runLageCheck, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed } = require("./lib/helmut/storage");
+const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun } = require("./lib/helmut/storage");
 const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled, activeModelName } = require("./lib/helmut/ai");
 const { pushStatus, sendBriefingReadyPush, sendLageChangePush, sendPushToPolitician } = require("./lib/helmut/push");
 const auth = require("./lib/helmut/auth");
@@ -1007,6 +1007,10 @@ async function handleRequest(request, response) {
         };
       }
       const vorher = await koCounts();
+      // Laufversuch SOFORT persistieren (bevor der Lauf haengen/gekillt werden kann), damit
+      // das Ergebnis einen Reload/Function-Kill uebersteht. Metadaten im bestehenden Auth-Store.
+      const startedAtIso = new Date(startTs).toISOString();
+      await saveAdminRecoveryLastRun({ startedAt: startedAtIso, finishedAt: null, status: "running", grund: null, pendingVorher: vorher.pending, completeVorher: vorher.complete }).catch(() => {});
       // WEITES Fenster (wie /api/debug/reset-failed-kos): erhoeht die Chance, die
       // Quell-Dokumente der pending-Vorgaenge zu finden. Ein zu enges Fenster fuehrt
       // sonst zu 'skipped-no-cluster' -> 0 verarbeitet trotz vorhandener pending-KOs.
@@ -1065,6 +1069,20 @@ async function handleRequest(request, response) {
           grund = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0] || "keine-verarbeitung";
         }
       }
+      // Endergebnis persistieren (ueberlebt Reload) — Status/Zahlen/kurzer Grund, keine Secrets.
+      await saveAdminRecoveryLastRun({
+        startedAt: startedAtIso,
+        finishedAt: new Date().toISOString(),
+        status: ergebnis, // erfolgreich | nichts-verarbeitet | uebersprungen
+        grund,
+        verarbeitet,
+        versucht: diagnoseFelder ? diagnoseFelder.versuchtNichtGespeichert : null,
+        imFenster: diagnoseFelder ? diagnoseFelder.imFensterVerarbeitbar : null,
+        ausserhalb: diagnoseFelder ? diagnoseFelder.ausserhalbFenster : null,
+        ohneRohdokumente: diagnoseFelder ? diagnoseFelder.ohneRohdokumente : null,
+        pendingVorher: vorher.pending, pendingNachher: nachher.pending,
+        completeVorher: vorher.complete, completeNachher: nachher.complete
+      }).catch(() => {});
       return {
         ok: true,
         ergebnis,
@@ -3200,6 +3218,22 @@ async function buildPipelineRecoveryStatus() {
     ? { verarbeitet: dsNumOrNull(u.processed), zurueckgestellt: dsNumOrNull(u.deferred), grund: u.reason || null }
     : null;
 
+  // Letzter MANUELLER Admin-Recovery-Lauf (persistiert im Auth-Store). NUR LESEN, KEIN Write.
+  // 'ohne-abschluss' abgeleitet: gestartet (status=running), aber kein Finish und Lock nicht
+  // mehr aktiv -> der Lauf wurde nie sauber zurueckgemeldet (Reload/Function-Kill).
+  const rec = await getAdminRecoveryLastRun().catch(() => null);
+  let letzterRecoveryLauf = null;
+  if (rec && rec.startedAt) {
+    const ohneAbschluss = rec.status === "running" && !rec.finishedAt && !lock.aktiv;
+    letzterRecoveryLauf = { ...rec, ohneAbschluss, anzeigeStatus: ohneAbschluss ? "ohne-abschluss" : (rec.status || null) };
+  }
+
+  // Letzter Understanding-Lauf = juengster aus Crawl-Run ODER manuellem Recovery-Lauf
+  // (ISO-Strings sortieren chronologisch). So verschwindet ein manueller Lauf nicht.
+  const crawlAt = cr ? (cr.createdAt || null) : null;
+  const recAt = rec ? (rec.startedAt || null) : null;
+  const letzterUnderstandingLauf = [crawlAt, recAt].filter(Boolean).sort().pop() || null;
+
   // KI-Fehler/-Erfolg aus dem vorhandenen llm_usage-Log (kein KI-Call).
   const ki = await dsKiStatus().catch(() => null);
 
@@ -3207,8 +3241,9 @@ async function buildPipelineRecoveryStatus() {
     v3StoreAktiv: v3,
     knowledgeObjects: koStatus,
     understandingLock: lock,
-    letzterUnderstandingLauf: cr ? (cr.createdAt || null) : null,
+    letzterUnderstandingLauf,
     letztesUnderstandingErgebnis: letztesErgebnis,
+    letzterRecoveryLauf,
     letzterKiFehler: ki ? ki.letzterFehler : null,
     letzterKiErfolg: ki ? ki.letzterErfolg : null
   };

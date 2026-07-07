@@ -586,6 +586,32 @@ async function pipelineRecoveryChecks() {
       // Normaler Nutzer (Referent) -> 403 (admin-gegatet wie die anderen Aktionen).
       const diagRef = await requestFull(server, { method: "POST", pathname: "/api/admin/recovery/pending-diagnose", headers: { Cookie: refCookie, "x-csrf-token": csrf, "Content-Type": "application/json", "Content-Length": 2 }, body: "{}" });
       check("Recovery: Pending-Diagnose fuer normalen Nutzer -> 403", diagRef.status === 403, `status=${diagRef.status}`);
+
+      // 12) PERSISTENZ: ein manueller Lauf wird dauerhaft gespeichert und ueberlebt einen
+      //     Reload -> recovery-status liefert letzterRecoveryLauf (start/finish/status) und
+      //     'Letzter Understanding-Lauf' ist nicht mehr leer.
+      await requestFull(server, { method: "POST", pathname: "/api/admin/recovery/release-lock", headers: H("{}"), body: "{}" });
+      const runP = parse(await requestFull(server, { method: "POST", pathname: "/api/admin/recovery/run-understanding", headers: H("{}"), body: "{}" }));
+      const stAfter = parse(await requestFull(server, { pathname: "/api/admin/recovery-status", headers: { Cookie: cookie } }));
+      const rl = stAfter.letzterRecoveryLauf;
+      check("Recovery: manueller Lauf wird persistiert (letzterRecoveryLauf mit start/finish/status nach Reload)",
+        Boolean(rl && rl.startedAt && rl.finishedAt && rl.status), `rl=${JSON.stringify(rl)}`);
+      check("Recovery: 'Letzter Understanding-Lauf' spiegelt den manuellen Lauf (nicht mehr leer)",
+        Boolean(stAfter.letzterUnderstandingLauf));
+      check("Recovery: 0 gespeichert wird NICHT als 'erfolgreich' persistiert (ehrlich)",
+        rl && rl.status !== "erfolgreich", `status=${rl && rl.status}`);
+      check("Recovery: recovery-status mit persistiertem Lauf enthaelt KEINE Secrets", !SECRET_RE.test(JSON.stringify(stAfter)));
+
+      // 13) OHNE ABSCHLUSS: gestartet (running) aber kein Finish und Lock frei -> Status zeigt
+      //     'ohne-abschluss' (nicht leer, KEINE falsche Erfolgsmeldung). Status-Endpoint SCHREIBT NICHT.
+      await storage.saveAdminRecoveryLastRun({ startedAt: new Date(Date.now() - 60000).toISOString(), status: "running", finishedAt: null });
+      await requestFull(server, { method: "POST", pathname: "/api/admin/recovery/release-lock", headers: H("{}"), body: "{}" });
+      const stOhne = parse(await requestFull(server, { pathname: "/api/admin/recovery-status", headers: { Cookie: cookie } }));
+      check("Recovery: gestartet ohne Finish + Lock frei -> 'ohne-abschluss' (sichtbar, keine Erfolgsmeldung)",
+        stOhne.letzterRecoveryLauf && stOhne.letzterRecoveryLauf.ohneAbschluss === true && stOhne.letzterRecoveryLauf.anzeigeStatus === "ohne-abschluss",
+        `rl=${JSON.stringify(stOhne.letzterRecoveryLauf)}`);
+      check("Recovery: Status-Endpoint SCHREIBT NICHT (running bleibt running nach dem Lesen)",
+        (await storage.getAdminRecoveryLastRun()).status === "running");
     } finally { await new Promise((r) => server.close(r)); }
   } finally {
     await restore();
@@ -702,6 +728,23 @@ async function dataStatusResilienceChecks() {
     clientSrc.includes("versucht, aber nicht gespeichert") && /function recoveryVersuchtGrundText/.test(clientSrc));
   check("Recovery-UI: ehrliche Aufschluesselung nur bei vorhandenen Diagnose-Feldern (sonst Fallback-Grund)",
     clientSrc.includes("r.ergebnis === \"nichts-verarbeitet\" && r.imFensterVerarbeitbar != null"));
+
+  // Persistenz des letzten Recovery-Laufs (Auth-Store-Metadaten, keine Migration).
+  check("Recovery-Persistenz: run-understanding speichert Start (running) UND Ende via saveAdminRecoveryLastRun",
+    /saveAdminRecoveryLastRun\(\{\s*startedAt: startedAtIso, finishedAt: null, status: "running"/.test(ruBlock)
+      && /status: ergebnis/.test(ruBlock) && (ruBlock.match(/saveAdminRecoveryLastRun/g) || []).length >= 2);
+  // Status-Endpoint LIEST die Metadaten, SCHREIBT sie aber NICHT (kein KI, kein Write beim Öffnen).
+  const recStatusBlock = serverSrc.slice(serverSrc.indexOf("async function buildPipelineRecoveryStatus"), serverSrc.indexOf("async function buildPipelineRecoveryStatus") + 2600);
+  check("Recovery-Persistenz: buildPipelineRecoveryStatus LIEST (getAdminRecoveryLastRun), SCHREIBT NICHT",
+    recStatusBlock.includes("getAdminRecoveryLastRun") && !recStatusBlock.includes("saveAdminRecoveryLastRun"));
+  check("Recovery-Persistenz: Store-Metadaten liegen im bestehenden Auth-Store (keine neue Tabelle/Migration)",
+    fs.readFileSync(path.join(root, "lib/helmut/storage.js"), "utf8").includes("adminRecoveryLastRun") &&
+    /async function saveAdminRecoveryLastRun/.test(fs.readFileSync(path.join(root, "lib/helmut/storage.js"), "utf8")));
+  // Client zeigt den persistierten Lauf: 'Läuft seit' / 'Ohne Abschluss zurückgemeldet' / kein leeres '–'.
+  check("Recovery-UI: persistiertes 'Letztes Ergebnis' (recoveryLastRunValue) statt leerem Strich",
+    /function recoveryLastRunValue/.test(clientSrc) && clientSrc.includes("recoveryLastRunValue(recLauf)"));
+  check("Recovery-UI: zeigt 'Ohne Abschluss zurückgemeldet' bei abgebrochenem Lauf",
+    clientSrc.includes("Ohne Abschluss zurückgemeldet"));
 
   // Behavioral (offline): der gesamte Datenstatus baut sich fehlerfrei zusammen und
   // liefert weiterhin das global-Objekt (keine harte Ausnahme, wenn Teile leer sind).
