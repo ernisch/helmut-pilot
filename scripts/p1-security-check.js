@@ -380,6 +380,58 @@ async function llmLoggingChecks() {
   }
 }
 
+// Admin-KI-Status: nur Env-FLAGS + vorhandenes llm_usage-Log, KEIN Live-KI-Call,
+// KEINE Secrets. Prueft Provider-Logik, DeploymentNotFound-Hinweis UND dass niemals
+// Key-/Endpoint-WERTE ausgegeben werden (nur ja/nein + Deployment-Name).
+async function kiStatusChecks() {
+  const storage = require(path.join(root, "lib/helmut/storage.js"));
+  const FAKE_KEY = "sk-FAKE-do-not-leak-123";
+  const FAKE_ENDPOINT = "https://secret-resource.openai.azure.com";
+  const envBefore = {
+    k: process.env.AZURE_OPENAI_KEY, e: process.env.AZURE_OPENAI_ENDPOINT,
+    d: process.env.AZURE_OPENAI_DEPLOYMENT, o: process.env.OPENAI_API_KEY
+  };
+  const authBefore = await storage.readAuthStore();
+  const originalUsage = Array.isArray(authBefore.llmUsage) ? authBefore.llmUsage.slice() : [];
+  try {
+    process.env.AZURE_OPENAI_KEY = FAKE_KEY;
+    process.env.AZURE_OPENAI_ENDPOINT = FAKE_ENDPOINT;
+    process.env.AZURE_OPENAI_DEPLOYMENT = "gpt-5-mini";
+    delete process.env.OPENAI_API_KEY;
+    await storage.recordLlmUsage({ callType: "understanding", model: "gpt-5-mini", success: true, usage: { input_tokens: 100, output_tokens: 40 } });
+    await storage.recordLlmUsage({ callType: "understanding", model: "gpt-5-mini", success: false, error: "Azure HTTP 404" });
+
+    const ds = await handler.__buildAdminDataStatus({ perAccountLimit: 1 });
+    const ki = ds && ds.global && ds.global.kiStatus;
+    check("KI-Status: vorhanden im Admin-Datenstatus", Boolean(ki) && ki.available !== false);
+    check("KI-Status: Anbieter = azure (Key+Endpoint gesetzt)", ki && ki.anbieter === "azure");
+    check("KI-Status: Azure-Flags = ja (nur Boolean)", ki && ki.azureKeyGesetzt === true && ki.azureEndpointGesetzt === true && ki.azureDeploymentGesetzt === true);
+    check("KI-Status: Deployment-NAME sichtbar (kein Secret)", ki && ki.azureDeploymentName === "gpt-5-mini");
+    check("KI-Status: letzter Fehler aus llm_usage (Azure HTTP 404)", ki && ki.letzterFehler && /404/.test(ki.letzterFehler.grund || ""));
+    check("KI-Status: letzter Erfolg erfasst", ki && ki.letzterErfolg && Boolean(ki.letzterErfolg.when));
+    check("KI-Status: heute erfolgreich>=1 und fehlgeschlagen>=1", ki && Number(ki.heute.erfolgreich) >= 1 && Number(ki.heute.fehlgeschlagen) >= 1);
+    check("KI-Status: DeploymentNotFound-Hinweis gesetzt", ki && /Azure Deployment nicht gefunden/.test(ki.hinweis || ""));
+    // SICHERHEIT: der komplette KI-Status darf NIE den Key oder den vollen Endpoint enthalten.
+    const serialized = JSON.stringify(ki || {});
+    check("KI-Status: KEIN Azure-Key im Output (kein Secret-Leak)", !serialized.includes(FAKE_KEY));
+    check("KI-Status: KEIN voller Azure-Endpoint im Output", !serialized.includes(FAKE_ENDPOINT) && !serialized.includes("secret-resource"));
+  } finally {
+    // Env + Store zuruecksetzen (echten Zustand nicht verschmutzen).
+    if (envBefore.k === undefined) delete process.env.AZURE_OPENAI_KEY; else process.env.AZURE_OPENAI_KEY = envBefore.k;
+    if (envBefore.e === undefined) delete process.env.AZURE_OPENAI_ENDPOINT; else process.env.AZURE_OPENAI_ENDPOINT = envBefore.e;
+    if (envBefore.d === undefined) delete process.env.AZURE_OPENAI_DEPLOYMENT; else process.env.AZURE_OPENAI_DEPLOYMENT = envBefore.d;
+    if (envBefore.o === undefined) delete process.env.OPENAI_API_KEY; else process.env.OPENAI_API_KEY = envBefore.o;
+    const authNow = await storage.readAuthStore();
+    authNow.llmUsage = originalUsage;
+    await storage.writeAuthStore(authNow);
+  }
+  // Statisches Gate: data-status bleibt admin-only.
+  const server = fs.readFileSync(path.join(root, "server.js"), "utf8");
+  const dsIdx = server.indexOf('"/api/admin/data-status"');
+  const gateWindow = dsIdx >= 0 ? server.slice(dsIdx, dsIdx + 220) : "";
+  check("KI-Status: /api/admin/data-status bleibt admin-gegatet", /requireRoleOr403\(response, authUser, "admin"\)/.test(gateWindow));
+}
+
 // Datenmotor V2 — Commit 1: LLM-Budget-Fundament (Tages-Aggregation + Gate).
 // Rein additiv; prueft nur die neuen Storage-Helfer, kein Pipeline-Verhalten.
 async function llmBudgetChecks() {
@@ -1506,6 +1558,7 @@ async function main() {
   await saasMandateHardeningChecks();
   await legalPagesChecks();
   await llmLoggingChecks();
+  await kiStatusChecks();
   await llmBudgetChecks();
   await c1SafetyNetChecks();
   await c3DipPrimaryChecks();

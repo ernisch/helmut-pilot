@@ -9,7 +9,7 @@ const { cemInceProfile, profileCompleteness } = require("./lib/helmut/config");
 const sourceSafety = require("./lib/helmut/sourceSafety");
 const { runLageCheck, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed } = require("./lib/helmut/storage");
+const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed } = require("./lib/helmut/storage");
 const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled, activeModelName } = require("./lib/helmut/ai");
 const { pushStatus, sendBriefingReadyPush, sendLageChangePush, sendPushToPolitician } = require("./lib/helmut/push");
 const auth = require("./lib/helmut/auth");
@@ -2923,9 +2923,60 @@ async function dsQuarantineStats({ limit = 200 } = {}) {
   };
 }
 
+// Interner KI-Status für den Admin-Datenstatus (Betreiber-Diagnose). Beruht
+// AUSSCHLIESSLICH auf Env-FLAGS (nur Präsenz, NIE Werte/Secrets) und dem bereits
+// VORHANDENEN llm_usage-Log. KEIN Live-KI-Call, KEINE KI-Kosten, keine Quellen-/
+// Pipeline-/DB-Änderung. Nur über den admin-gegateten /api/admin/data-status sichtbar.
+async function dsKiStatus() {
+  // Nur Präsenz prüfen — Key/Endpoint/Service-Role werden NIE ausgegeben.
+  const azureKey = Boolean(process.env.AZURE_OPENAI_KEY);
+  const azureEndpoint = Boolean(process.env.AZURE_OPENAI_ENDPOINT);
+  const azureDeployment = String(process.env.AZURE_OPENAI_DEPLOYMENT || "").trim();
+  const openaiKey = Boolean(process.env.OPENAI_API_KEY);
+  // Anbieter wie ai.isAzure()/isAiEnabled(): Azure NUR wenn Key UND Endpoint gesetzt.
+  const anbieter = (azureKey && azureEndpoint) ? "azure" : (openaiKey ? "openai" : "nicht-konfiguriert");
+
+  // Vorhandenes Kostenlog auswerten (newest-first). error ist bereits sanitisiert
+  // (z. B. "Azure HTTP 404") — enthält keinen Rohbody/keine Secrets.
+  let recent = [];
+  try { recent = await getLlmUsage(null, 500); } catch (_) { recent = []; }
+  const realCalls = (Array.isArray(recent) ? recent : []).filter((e) => e && !String(e.callType || "").startsWith("skipped"));
+  const lastError = realCalls.find((e) => e.success === false) || null;
+  const lastSuccess = realCalls.find((e) => e.success !== false) || null;
+
+  let today = {};
+  try { today = (await getLlmUsageToday(null)) || {}; } catch (_) { today = {}; }
+  const gesamtHeute = dsNumOrNull(today.calls);
+  const erfolgreichHeute = dsNumOrNull(today.successfulCalls);
+  const fehlgeschlagenHeute = (gesamtHeute != null && erfolgreichHeute != null)
+    ? Math.max(0, gesamtHeute - erfolgreichHeute) : null;
+
+  const lastErrText = lastError && lastError.error ? String(lastError.error) : "";
+  const deploymentNotFound = anbieter === "azure" && /404|deployment/i.test(lastErrText);
+
+  return {
+    anbieter,                                   // "azure" | "openai" | "nicht-konfiguriert"
+    azureKeyGesetzt: azureKey,
+    azureEndpointGesetzt: azureEndpoint,
+    azureDeploymentGesetzt: Boolean(azureDeployment),
+    azureDeploymentName: azureDeployment || null,   // NAME ist kein Secret (bewusst sichtbar)
+    openaiKeyGesetzt: openaiKey,
+    letzterFehler: lastError
+      ? { when: lastError.createdAt || null, grund: lastErrText.slice(0, 160) || null, callType: lastError.callType || null }
+      : null,
+    letzterErfolg: lastSuccess
+      ? { when: lastSuccess.createdAt || null, callType: lastSuccess.callType || null }
+      : null,
+    heute: { erfolgreich: erfolgreichHeute, fehlgeschlagen: fehlgeschlagenHeute, gesamt: gesamtHeute },
+    hinweis: deploymentNotFound
+      ? "Azure Deployment nicht gefunden. Bitte AZURE_OPENAI_DEPLOYMENT und AZURE_OPENAI_ENDPOINT in Vercel prüfen."
+      : null
+  };
+}
+
 async function buildAdminDataStatus({ perAccountLimit = 25 } = {}) {
   const radar = require("./lib/helmut/radar");
-  const [users, statsToday, crawlReport, latestCrawl, crawlRuns, recentErrors, catalogQuality, quarantineStats] = await Promise.all([
+  const [users, statsToday, crawlReport, latestCrawl, crawlRuns, recentErrors, catalogQuality, quarantineStats, kiStatus] = await Promise.all([
     accounts.listUsers().catch(() => []),
     getAdminStatsOverview({ days: 1 }).catch(() => null),
     getAdminStatsCrawlReport().catch(() => null),
@@ -2933,7 +2984,8 @@ async function buildAdminDataStatus({ perAccountLimit = 25 } = {}) {
     listCrawlRuns(20).catch(() => []),
     accounts.listSystemErrors(5).catch(() => []),
     dsSourceCatalogQuality().catch(() => null),
-    dsQuarantineStats().catch(() => null)
+    dsQuarantineStats().catch(() => null),
+    dsKiStatus().catch(() => null)
   ]);
   const v3 = v3StoreReady();
   const naLive = (extra = {}) => ({ value: null, available: false, note: v3 ? "nur zur Laufzeit mit Daten ermittelbar" : "nur mit aktivem V3-Store (Supabase) ermittelbar", ...extra });
@@ -3038,6 +3090,9 @@ async function buildAdminDataStatus({ perAccountLimit = 25 } = {}) {
     // kuratierten display_title, wie viele fehlen, wie viele sind backfill-faehig
     // (ohne Titel + mit Quellen). Ehrlich gezaehlt, n/v ohne V3-Store.
     praesentation: (quarantineStats && quarantineStats.praesentation) || naLive(),
+    // Interner KI-Status: Anbieter + Env-FLAGS (keine Werte/Secrets) + Fehler/Erfolg
+    // aus dem vorhandenen llm_usage-Log. KEIN Live-KI-Call, KEINE Kosten.
+    kiStatus: kiStatus || naLive({ note: "KI-Status nicht ermittelbar" }),
     lage: { vorgaengeGesamt: sumLage },
     radar: { chancen: sumChance, risiken: sumRisk },
     briefing: { punkteGesamt: sumBriefing, sichtbarBeiAccounts: shown, accountsOhneBriefing: noBriefing },
@@ -3077,6 +3132,7 @@ const DATA_STATUS_LEGEND = {
   "quellenSicherheit.katalog": "Konfigurierter Quellenkatalog nach Kategorie (offiziell/medien/partei_fraktion/regional/profil/unbekannt) und Vertrauensstufe (hoch/mittel/niedrig/blockiert/unbekannt). Medien bleibt eigene Kategorie.",
   "quellenSicherheit.quarantaene": "Live gezaehlt ueber verstandene Vorgaenge: quarantaeniert (nicht ins Briefing), kritische unbestaetigte Claims, gepruefte Dokumente sowie unbekannte/blockierte Quell-Dokumente.",
   "praesentation": "Anzeige-Titel-Abdeckung: mitDisplayTitle (kuratierter Titel vorhanden), ohneDisplayTitle (Fallback-Ableitung noetig), backfillFaehig (ohne Titel + mit Quellen -> per Presentation-Backfill verbesserbar).",
+  "kiStatus": "Interner KI-Status (nur Betreiber): aktiver Anbieter, ob Azure Key/Endpoint/Deployment GESETZT sind (nur ja/nein, keine Werte), erwarteter Deployment-Name, letzter KI-Fehler/-Erfolg und Erfolgs-/Fehlerzahl heute aus dem llm_usage-Log. Kein Live-KI-Call.",
   "vorgaenge.erzeugt": "Neue politische Themencluster (Vorgaenge) aus den Dokumenten.",
   "vorgaenge.aktualisiert": "Bestehende Vorgaenge, die durch neue Dokumente ergaenzt wurden.",
   "vorgaenge.analysiert": "Vorgaenge, die von Helmut inhaltlich bewertet wurden.",

@@ -1564,6 +1564,26 @@ function renderAdminDataStatus(ds) {
       ${err && err.detail ? `<details class="ds-error-detail"><summary>Technische Details</summary><code>${escapeHtml(err.detail)}</code></details>` : ""}
     </div>` : "";
 
+  // Interner KI-Status (nur Admin, keine Secrets): Anbieter + Env-Flags (ja/nein) +
+  // Fehler/Erfolg aus dem vorhandenen llm_usage-Log. Keine Keys/Endpoints/Werte.
+  const ki = g.kiStatus && g.kiStatus.available !== false ? g.kiStatus : null;
+  const kiJaNein = (b) => b ? `<span class="ds-ok">Ja</span>` : `<span class="ds-bad">Nein</span>`;
+  const kiAnbieter = { azure: "Azure OpenAI", openai: "OpenAI", "nicht-konfiguriert": "Nicht konfiguriert" };
+  const kiCard = ki ? `
+    <div class="ds-card">
+      <div class="ds-card-title">KI-Status (intern)</div>
+      ${dsRow("Anbieter aktiv", `<strong>${escapeHtml(kiAnbieter[ki.anbieter] || ki.anbieter || "?")}</strong>`)}
+      ${dsRow("Azure Key gesetzt", kiJaNein(ki.azureKeyGesetzt))}
+      ${dsRow("Azure Endpoint gesetzt", kiJaNein(ki.azureEndpointGesetzt))}
+      ${dsRow("Azure Deployment gesetzt", kiJaNein(ki.azureDeploymentGesetzt))}
+      ${dsRow("Erwartetes Azure Deployment", ki.azureDeploymentName ? `<code>${escapeHtml(ki.azureDeploymentName)}</code>` : `<span class="ds-sub">– (nicht gesetzt)</span>`)}
+      ${dsRow("Erfolgreiche KI-Calls heute", dsFmt(ki.heute && ki.heute.erfolgreich))}
+      ${dsRow("Fehlgeschlagene KI-Calls heute", ki.heute && Number(ki.heute.fehlgeschlagen) > 0 ? `<span class="ds-bad">${dsFmt(ki.heute.fehlgeschlagen)}</span>` : dsFmt(ki.heute && ki.heute.fehlgeschlagen))}
+      ${dsRow("Letzter erfolgreicher KI-Call", ki.letzterErfolg && ki.letzterErfolg.when ? dsDateLabel(ki.letzterErfolg.when) : `<span class="ds-sub">–</span>`)}
+      ${dsRow("Letzter KI-Fehler", ki.letzterFehler ? `<span class="ds-bad">${escapeHtml(ki.letzterFehler.grund || "Fehler")}</span>${ki.letzterFehler.when ? ` <span class="ds-sub">· ${dsDateLabel(ki.letzterFehler.when)}</span>` : ""}` : `<span class="ds-ok">Keiner</span>`)}
+      ${ki.hinweis ? `<div class="ds-error ds-error--hint"><div class="ds-error-reason">${escapeHtml(ki.hinweis)}</div></div>` : ""}
+    </div>` : "";
+
   const globalCard = `
     <div class="ds-card">
       <div class="ds-card-title">Datenmotor heute</div>
@@ -1626,6 +1646,7 @@ function renderAdminDataStatus(ds) {
       </div>
       ${ds.v3StoreAktiv ? "" : `<p class="ds-note ds-note--warn">V3-Store offline: einige Live-Zahlen sind erst mit aktivem Datenspeicher verfügbar.</p>`}
       ${errorCard}
+      ${kiCard}
       ${globalCard}
       <div class="ds-accounts-title">Pro Account</div>
       ${accountCards ? `<div class="ds-accounts">${accountCards}</div>` : `<p class="ds-note">Noch keine Accounts zur Auswertung.</p>`}
