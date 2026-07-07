@@ -384,7 +384,12 @@ function applyStartPayload(startPayload) {
   // entkoppelte Fokus-Deck — bei HELMUT_DECK_SIZE=3 identisch, aber unabhängig
   // skalierbar auf 5–10, ohne andere Views zu berühren.
   decisions = sortedDecisions.slice(0, 3);
-  helmutDeck = sortedDecisions.slice(0, HELMUT_DECK_SIZE);
+  // "Deine wichtigsten Entscheidungen" zeigt NUR echte Handlungs-/Beobachtungs-
+  // Vorgänge — niemals Ignorieren. Sonst füllt bei 0 Handeln + 2 Beobachten der
+  // höchstbewertete Ignorieren-Vorgang die 3. Kachel (widersprüchlich zur Statistik).
+  helmutDeck = sortedDecisions
+    .filter((d) => helmutStatusBucket(d.priorityType || "watch") !== "ignorieren")
+    .slice(0, HELMUT_DECK_SIZE);
 
   const allHelmutRaw = [
     ...recommendations.map(recommendationToDecisionItem),
@@ -3735,7 +3740,12 @@ function helmutButtonConfig(state, actionId) {
 }
 
 function renderHelmutView() {
-  return helmutThinking ? renderHelmutThinkingView() : renderHelmutAssessmentView();
+  // Refresh-/Abschluss-Zustand hat Vorrang und ist UNABHÄNGIG von helmutThinking
+  // (der Intro-Denkanimation). So bleibt der Refresh-Screen beim Tabwechsel erhalten:
+  // kommt der Nutzer während einer laufenden Aktualisierung zurück, sieht er wieder
+  // "Aktualisierung läuft" bzw. "Stand ist aktuell" / "Aktueller Stand geladen".
+  const refreshActive = pipelineRunning || Boolean(pipelinePhase);
+  return (refreshActive || helmutThinking) ? renderHelmutThinkingView() : renderHelmutAssessmentView();
 }
 
 function renderRefreshButton() {
@@ -3860,10 +3870,25 @@ function renderHelmutHeader() {
       </header>`;
   }
   const greeting = timeGreeting(firstName); // enthält bereits den Punkt, z. B. "Guten Morgen, Cem."
+  // Einleitung an die TATSÄCHLICHEN Zahlen koppeln (keine falsche Dringlichkeit):
+  // nur bei echten Handeln-Vorgängen "kümmern"; sonst "beobachten, aktives Handeln nicht nötig".
+  const introCounts = { handeln: 0, beobachten: 0, ignorieren: 0 };
+  helmutBriefings.forEach((d) => { introCounts[helmutStatusBucket(d.priorityType || "watch")] += 1; });
+  const actN = introCounts.handeln;
+  const watchN = introCounts.beobachten;
+  const totalLine = `Heute gibt es ${total} ${total === 1 ? "relevanten Vorgang" : "relevante Vorgänge"}.`;
+  let actionLine;
+  if (actN > 0) {
+    actionLine = `Davon solltest du dich heute um ${actN} ${actN === 1 ? "Vorgang" : "Vorgänge"} kümmern${watchN ? ` und ${watchN} beobachten` : ""}.`;
+  } else if (watchN > 0) {
+    actionLine = `${watchN} ${watchN === 1 ? "Vorgang" : "Vorgänge"} solltest du heute beobachten. Aktives Handeln ist nicht nötig.`;
+  } else {
+    actionLine = "Aktives Handeln ist heute nicht nötig.";
+  }
   return `
     <header class="helmut-referent-head">
       <h1 class="${headlineClass(greeting)}">${escapeHtml(greeting)}</h1>
-      <p>Heute gibt es ${total} ${total === 1 ? "relevanten Vorgang" : "relevante Vorgänge"}.<br>Davon solltest du dich heute um ${deckN} kümmern.</p>
+      <p>${escapeHtml(totalLine)}<br>${escapeHtml(actionLine)}</p>
     </header>`;
 }
 
@@ -8122,6 +8147,11 @@ function bindActions() {
 }
 
 function startHelmutThinking() {
+  // Läuft gerade ein Refresh (oder dessen Abschluss)? Dann NICHT die Intro-Denk-
+  // animation starten — sonst würde ihr 1,4-s-Timer helmutThinking abschalten und
+  // den sichtbaren Refresh-Screen beim Zurückwechseln überschreiben. Kein zweiter
+  // Pipeline-Lauf, nur der bestehende Zustand bleibt erhalten.
+  if (pipelineRunning || pipelinePhase) return;
   if (!shouldStartHelmutFlow()) {
     helmutThinking = false;
     stopHelmutTyping();
@@ -8192,6 +8222,9 @@ function schedulePipelineStep() {
 // so wird der Refresh-Screen nicht bei jedem Schritt neu gemountet und blendet
 // nicht wiederholt ein. Fallback auf render(), falls der Screen (noch) nicht da ist.
 function updatePipelineProgress() {
+  // Im Hintergrund (anderer Tab) nur den Schritt-State fortschreiben, NICHT rendern —
+  // beim Zurückwechseln zeigt render() den Refresh-Screen am aktuellen Schritt.
+  if (currentView !== "helmut") return;
   const stepEl = app && app.querySelector(".helmut-refresh-step");
   const fillEl = app && app.querySelector(".helmut-refresh-fill");
   if (!stepEl || !fillEl) { render(); return; }
