@@ -98,6 +98,10 @@ async function handleRequest(request, response) {
     return handleAsync(response, async () => publicReleasePayload(await computeReleaseCheck()));
   }
 
+  if (url.pathname === "/impressum") {
+    return sendImpressumPage(response);
+  }
+
   if (url.pathname === "/privacy" || url.pathname === "/datenschutz") {
     return sendPrivacyPage(response);
   }
@@ -1417,7 +1421,7 @@ function sendPilotUnlockPage(response, url) {
       <div class="rule"></div>
       <h1>Pilot-Zugang.</h1>
       <p>Helmut ist aktuell ein geschützter Pilot. Gib den Zugangscode ein, um die politische Lage zu öffnen.</p>
-      <p><a href="/datenschutz">Datenschutz</a></p>
+      <p><a href="/impressum">Impressum</a> · <a href="/datenschutz">Datenschutz</a></p>
       <form id="unlock">
         <input id="secret" name="secret" type="password" autocomplete="current-password" placeholder="Zugangscode" autofocus />
         <button type="submit">Helmut öffnen</button>
@@ -1447,7 +1451,64 @@ function sendPilotUnlockPage(response, url) {
 </html>`);
 }
 
+// Beschreibt den aktuell konfigurierten KI-Empfänger für die Datenschutzseite.
+// Reiner Env-Read (Azure vs. OpenAI) — keine Änderung am KI-/Datenmotor.
+function aiRecipientDescriptor() {
+  const azure = Boolean(process.env.AZURE_OPENAI_KEY && process.env.AZURE_OPENAI_ENDPOINT);
+  const openai = Boolean(process.env.OPENAI_API_KEY);
+  if (azure) return { enabled: true, name: "Azure OpenAI", location: "Serverregion gemäß Betreiber-Konfiguration" };
+  if (openai) return { enabled: true, name: "OpenAI", location: "USA" };
+  return { enabled: false, name: "Azure OpenAI bzw. OpenAI", location: "je nach Konfiguration (ggf. USA)" };
+}
+
+// Impressum nach § 5 DDG (früher § 5 TMG). Nur faktische Angaben aus dem
+// vorhandenen Verantwortlichen-Datensatz — keine erfundenen Pflichtangaben.
+// Was gewerblich ggf. zusätzlich nötig ist (Telefon, USt-IdNr, Register),
+// bleibt bewusst offen und ist als Betreiber-To-do markiert (HTML-Kommentar).
+function sendImpressumPage(response) {
+  response.writeHead(200, htmlHeaders());
+  response.end(`<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Impressum · Helmut</title>
+    <style>
+      :root { color-scheme: light; --ink: #111; --muted: #5f615f; --line: #d9ddd7; --paper: #f7f7f2; --accent: #7d1734; }
+      * { box-sizing: border-box; }
+      body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--paper); color: var(--ink); line-height: 1.6; }
+      main { width: min(100% - 32px, 880px); margin: 0 auto; padding: 56px 0 72px; }
+      a { color: var(--accent); }
+      h1 { font-size: clamp(36px, 6vw, 64px); line-height: 1; margin: 0 0 24px; letter-spacing: -0.03em; }
+      h2 { margin: 36px 0 10px; font-size: 22px; }
+      p, li { color: var(--muted); font-size: 17px; }
+      .notice { border: 1px solid var(--line); background: #fff; padding: 18px 20px; border-radius: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Impressum</h1>
+
+      <h2>Angaben gemäß § 5 DDG</h2>
+      <p>Lüey Nohut<br>Eresburgstr. 42<br>12103 Berlin<br>Deutschland</p>
+
+      <h2>Kontakt</h2>
+      <p>E-Mail: <a href="mailto:hi@nohut.de">hi@nohut.de</a></p>
+
+      <h2>Verantwortlich für den Inhalt</h2>
+      <p>Lüey Nohut (Anschrift wie oben).</p>
+
+      <p class="notice">Helmut befindet sich im Pilotbetrieb. Weitere nach § 5 DDG ggf. erforderliche Angaben (z. B. Telefonnummer, Umsatzsteuer-Identifikationsnummer oder Registereintrag) werden ergänzt, sobald sie für den Betrieb zutreffen.</p>
+      <!-- BETREIBER-TODO: Bei gewerblichem/geschäftsmäßigem Betrieb Pflichtangaben ergänzen: Telefonnummer, USt-IdNr (§ 27a UStG) bzw. Handelsregister/Rechtsform. Bewusst nicht erfunden — vom Betreiber einzutragen. -->
+
+      <p><a href="/datenschutz">Datenschutz</a> · <a href="/">Zurück zu Helmut</a></p>
+    </main>
+  </body>
+</html>`);
+}
+
 function sendPrivacyPage(response) {
+  const ai = aiRecipientDescriptor();
   response.writeHead(200, htmlHeaders());
   response.end(`<!doctype html>
 <html lang="de">
@@ -1472,7 +1533,7 @@ function sendPrivacyPage(response) {
   <body>
     <main>
       <h1>Datenschutzerklärung</h1>
-      <p class="notice">Diese Erklärung beschreibt die Datenverarbeitung von Helmut im Pilotbetrieb. Eine rechtliche Prüfung vor breitem Produktivbetrieb wird empfohlen — insbesondere falls die KI-Funktion (OpenAI) aktiviert wird.</p>
+      <p class="notice">Diese Erklärung beschreibt die Datenverarbeitung von Helmut im Pilotbetrieb. Vor einem breiten oder kommerziellen Produktivbetrieb wird eine rechtliche Prüfung ausdrücklich empfohlen — insbesondere zur Rechtsgrundlage für politische Daten (Art. 9 DSGVO), zu den Auftragsverarbeitungsverträgen und zur Aktivierung der KI-Funktion.</p>
 
       <h2>1. Verantwortlicher</h2>
       <p>Lüey Nohut<br>Eresburgstr. 42, 12103 Berlin<br>E-Mail: <a href="mailto:hi@nohut.de">hi@nohut.de</a></p>
@@ -1496,22 +1557,25 @@ function sendPrivacyPage(response) {
         <li><strong>lit. f</strong> (berechtigtes Interesse): Personalisierung, Relevanz-Verbesserung und Sicherheit des Dienstes.</li>
         <li><strong>lit. a</strong> (Einwilligung): optionale Push-Benachrichtigungen.</li>
       </ul>
+      <p><strong>Besondere Datenkategorien (Art. 9 DSGVO):</strong> Das Mandatsprofil kann politische Meinungen abbilden. Für deren Verarbeitung ist eine gesonderte Rechtsgrundlage nach Art. 9 DSGVO erforderlich. Die rechtssichere Festlegung dieser Grundlage sowie eine ggf. erforderliche Datenschutz-Folgenabschätzung (DSFA) obliegen dem Betreiber und sind vor einem Produktivbetrieb mit mehreren Mandaten abzuschließen.</p>
+      <!-- BETREIBER-TODO: Art. 9-Rechtsgrundlage rechtssicher festlegen und DSFA durchführen (siehe docs/dsgvo-checklist.md). Nicht aus dem Code lösbar. -->
 
       <h2>5. Empfänger / Auftragsverarbeiter</h2>
       <ul>
-        <li><strong>Vercel</strong> (Hosting/Betrieb der Anwendung).</li>
-        <li><strong>Supabase</strong> (Datenspeicherung, EU-Region).</li>
-        ${isAiEnabled()
-          ? "<li><strong>OpenAI</strong> (KI-Textgenerierung) — <strong>derzeit AKTIV</strong>: Inhalte werden zur Texterzeugung an OpenAI in die USA übermittelt.</li>"
-          : "<li><strong>OpenAI</strong> (KI-Textgenerierung) — <strong>derzeit deaktiviert</strong>, daher keine Nutzung und keine Übermittlung.</li>"}
+        <li><strong>Vercel</strong> (Hosting/Betrieb der Anwendung; konfigurierte Region Frankfurt, <code>fra1</code>).</li>
+        <li><strong>Supabase</strong> (Datenbank und Datenspeicherung).</li>
+        ${ai.enabled
+          ? `<li><strong>${ai.name}</strong> (KI-Textgenerierung) — <strong>derzeit AKTIV</strong>: Inhalte werden zur Texterzeugung an ${ai.name} übermittelt (Serverstandort: ${ai.location}).</li>`
+          : `<li><strong>KI-Dienst (${ai.name})</strong> (KI-Textgenerierung) — <strong>derzeit deaktiviert</strong>, daher keine Nutzung und keine Übermittlung.</li>`}
         <li><strong>Browser-Push-Dienste</strong> (nur bei aktivierten Benachrichtigungen).</li>
       </ul>
-      <p>Mit den eingesetzten Auftragsverarbeitern werden <strong>Auftragsverarbeitungsverträge (AVV)</strong> nach Art. 28 DSGVO geschlossen.</p>
+      <p>Für die eingesetzten Auftragsverarbeiter sind <strong>Auftragsverarbeitungsverträge (AVV)</strong> nach Art. 28 DSGVO erforderlich. Ihr Abschluss sowie die verbindliche Festlegung der Serverregionen (u. a. Supabase, KI-Dienst) liegen in der Verantwortung des Betreibers.</p>
+      <!-- BETREIBER-TODO: AVV nach Art. 28 mit Vercel, Supabase, KI-Dienst und Push-Anbietern tatsächlich abschließen; reale Serverregionen dokumentieren. Nicht aus dem Code lösbar. -->
 
       <h2>6. Übermittlung in Drittländer</h2>
-      ${isAiEnabled()
-        ? "<p><strong>Derzeit ist die KI-Funktion aktiv:</strong> Zur Texterzeugung werden Inhalte an OpenAI (USA) übermittelt — im Wesentlichen öffentlich verfügbare Nachrichteninhalte und das fachliche Mandatsprofil; besondere Kategorien personenbezogener Daten werden nicht übermittelt. Die Übermittlung stützt sich auf den Auftragsverarbeitungsvertrag mit OpenAI samt EU-Standardvertragsklauseln. Über die API übermittelte Daten werden von OpenAI nicht zum Training verwendet.</p>"
-        : "<p><strong>Im aktuellen Pilotbetrieb findet keine Übermittlung personenbezogener Daten in Drittländer (z. B. USA) statt.</strong> Die KI-Textgenerierung über OpenAI ist deaktiviert; Briefings werden regelbasiert erzeugt. Sollte die KI-Funktion künftig aktiviert werden, würden Inhalte an OpenAI in die USA übermittelt — dies erfordert dann eine gesonderte Rechtsgrundlage und eine Aktualisierung dieser Erklärung.</p>"}
+      ${ai.enabled
+        ? `<p><strong>Die KI-Funktion ist derzeit aktiv.</strong> Zur Texterzeugung werden Inhalte an ${ai.name} übermittelt (Serverstandort: ${ai.location}) — im Wesentlichen öffentlich verfügbare Nachrichteninhalte sowie das fachliche Mandatsprofil. <strong>Dieses Mandatsprofil kann politische Schwerpunkt-, Risiko- und No-Go-Themen enthalten; solche politischen Informationen können damit zur KI-Verarbeitung an den KI-Dienst übermittelt werden.</strong> Sofern der Serverstandort in einem Drittland (z. B. USA) liegt, ist dafür eine gültige Rechtsgrundlage (etwa EU-Standardvertragsklauseln) erforderlich; deren Sicherstellung obliegt dem Betreiber.</p>`
+        : `<p><strong>Im aktuellen Betrieb ist die KI-Textgenerierung deaktiviert; eine entsprechende Übermittlung findet nicht statt.</strong> Wird die KI-Funktion aktiviert, können Inhalte einschließlich des Mandatsprofils — das politische Schwerpunkt-, Risiko- und No-Go-Themen enthalten kann — zur KI-Verarbeitung an den KI-Dienst (${ai.name}) übermittelt werden, ggf. in ein Drittland (z. B. USA). Dies erfordert dann eine gültige Rechtsgrundlage und eine Aktualisierung dieser Erklärung.</p>`}
 
       <h2>7. Speicherdauer</h2>
       <p>Profil- und Inhaltsdaten werden bis zur Löschung des Kontos bzw. bis zum Ende des Pilotbetriebs gespeichert. Verläufe (u. a. Briefings, Interaktionen, Notizen, Sessions, Fehlerprotokolle) werden technisch begrenzt und pro Mandat gekappt. Auf Wunsch werden Daten umgehend gelöscht (siehe Deine Rechte).</p>
@@ -1523,8 +1587,8 @@ function sendPrivacyPage(response) {
       <p>Auskunft, Berichtigung, Löschung, Einschränkung, Datenübertragbarkeit und Widerspruch. In der App: Profildaten <strong>exportieren</strong> und <strong>löschen</strong> (Einstellungen). Es besteht ein <strong>Beschwerderecht bei einer Datenschutz-Aufsichtsbehörde</strong>.</p>
 
       <h2>10. Kontakt &amp; Stand</h2>
-      <p>Datenschutzanfragen: <a href="mailto:hi@nohut.de">hi@nohut.de</a> · Stand: Juni 2026</p>
-      <p><a href="/">Zurück zu Helmut</a></p>
+      <p>Datenschutzanfragen: <a href="mailto:hi@nohut.de">hi@nohut.de</a> · Stand: Juli 2026</p>
+      <p><a href="/impressum">Impressum</a> · <a href="/">Zurück zu Helmut</a></p>
     </main>
   </body>
 </html>`);

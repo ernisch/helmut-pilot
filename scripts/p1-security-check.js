@@ -1418,6 +1418,56 @@ async function c9OfficeChecks() {
   }
 }
 
+// Rechtstexte: /impressum existiert und ist öffentlich erreichbar (auch bei scharfem
+// Pilot-Gate, da vor dem Gate geroutet); die Datenschutzseite entfernt die falsche
+// Art.-9-Ausschlussaussage und macht die politische KI-Übermittlung transparent —
+// in BEIDEN Zuständen (KI aus / KI an).
+async function legalPagesChecks() {
+  const prev = {
+    openai: process.env.OPENAI_API_KEY, azureK: process.env.AZURE_OPENAI_KEY,
+    azureE: process.env.AZURE_OPENAI_ENDPOINT, pilot: process.env.PILOT_SECRET
+  };
+  const FALSE_ART9 = "besondere Kategorien personenbezogener Daten werden nicht übermittelt";
+  const server = http.createServer(handler);
+  await new Promise((r) => server.listen(0, "127.0.0.1", r));
+  const get = (pathname) => request(server, { pathname });
+  try {
+    // Pilot-Gate scharf: Rechtstexte müssen trotzdem ohne Login erreichbar sein.
+    process.env.PILOT_SECRET = "p1-pilot-secret";
+    delete process.env.OPENAI_API_KEY; delete process.env.AZURE_OPENAI_KEY; delete process.env.AZURE_OPENAI_ENDPOINT;
+
+    const imp = await get("/impressum");
+    check("Recht: /impressum -> 200, öffentlich trotz scharfem Pilot-Gate", imp.status === 200, `status=${imp.status}`);
+    check("Recht: /impressum nennt § 5 DDG + Kontakt + Verantwortlichen",
+      imp.body.includes("§ 5 DDG") && imp.body.includes("hi@nohut.de") && imp.body.includes("Lüey Nohut"));
+    check("Recht: /impressum verlinkt Datenschutz", imp.body.includes("/datenschutz"));
+
+    // Datenschutz, KI AUS
+    const dsOff = await get("/datenschutz");
+    check("Recht: /datenschutz -> 200 + verlinkt Impressum", dsOff.status === 200 && dsOff.body.includes("/impressum"), `status=${dsOff.status}`);
+    check("Recht: /datenschutz (KI aus) enthält KEINE falsche Art.-9-Ausschlussaussage",
+      !dsOff.body.includes(FALSE_ART9));
+    check("Recht: /datenschutz (KI aus) benennt Art. 9 + politische Daten als Betreiber-Grundlage",
+      dsOff.body.includes("Art. 9 DSGVO") && dsOff.body.includes("politische"));
+
+    // Datenschutz, KI AN (OpenAI)
+    process.env.OPENAI_API_KEY = "p1-openai-key";
+    const dsOn = await get("/datenschutz");
+    check("Recht: /datenschutz (KI aktiv) enthält KEINE falsche Art.-9-Ausschlussaussage",
+      !dsOn.body.includes(FALSE_ART9));
+    check("Recht: /datenschutz (KI aktiv) macht politische KI-Übermittlung transparent + nennt Anbieter",
+      dsOn.body.includes("politische") && dsOn.body.includes("übermittelt") && dsOn.body.includes("OpenAI"));
+    check("Recht: /datenschutz (KI aktiv) macht KEINE 'kein Training'-Garantie mehr",
+      !dsOn.body.includes("nicht zum Training verwendet"));
+  } finally {
+    await new Promise((r) => server.close(r));
+    if (prev.openai === undefined) delete process.env.OPENAI_API_KEY; else process.env.OPENAI_API_KEY = prev.openai;
+    if (prev.azureK === undefined) delete process.env.AZURE_OPENAI_KEY; else process.env.AZURE_OPENAI_KEY = prev.azureK;
+    if (prev.azureE === undefined) delete process.env.AZURE_OPENAI_ENDPOINT; else process.env.AZURE_OPENAI_ENDPOINT = prev.azureE;
+    if (prev.pilot === undefined) delete process.env.PILOT_SECRET; else process.env.PILOT_SECRET = prev.pilot;
+  }
+}
+
 async function main() {
   console.log("== Helmut P1 Security & Trust Checks ==\n");
   staticChecks();
@@ -1428,6 +1478,7 @@ async function main() {
   await presentationBackfillEndpointChecks();
   await debugBriefingEndpointChecks();
   await saasMandateHardeningChecks();
+  await legalPagesChecks();
   await llmLoggingChecks();
   await llmBudgetChecks();
   await c1SafetyNetChecks();

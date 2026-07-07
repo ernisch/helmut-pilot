@@ -2268,8 +2268,8 @@ function renderLageEmpty(greeting, dateLabel) {
 
 function renderLageView() {
   const data = lageData();
-  const firstName = (profile && profile.fullName ? profile.fullName : "Cem").split(" ")[0];
-  const greeting = (typeof timeGreeting === "function" ? timeGreeting(firstName) : `Guten Morgen, ${firstName}.`);
+  const firstName = (profile && profile.fullName ? profile.fullName : "").split(" ")[0];
+  const greeting = (typeof timeGreeting === "function" ? timeGreeting(firstName) : (firstName ? `Guten Morgen, ${firstName}.` : "Guten Morgen."));
   const dateLabel = lageDateLabel();
   const vorgaenge = lageVisibleVorgaenge(data);
   if (!vorgaenge.length) return renderLageEmpty(greeting, dateLabel);
@@ -5255,7 +5255,7 @@ function renderPilotStatus() {
   return `
     <div class="pilot-status ${previewMode ? "preview" : ""}" aria-label="Pilotstatus">
       ${escapeHtml(statusLabel)} · ${escapeHtml(sourceText)} · aktualisiert ${escapeHtml(updatedText)}
-      ${previewMode ? `<span>Kontrollansicht · verändert Cem nichts</span>` : ""}
+      ${previewMode ? `<span>Kontrollansicht · verändert echte Daten nichts</span>` : ""}
     </div>
   `;
 }
@@ -6078,7 +6078,7 @@ function profileMentions() {
 
 function profileNameTerms() {
   const fullName = profile?.fullName || "Profil";
-  const lastName = fullName.split(/\s+/).filter(Boolean).at(-1) || "Ince";
+  const lastName = fullName.split(/\s+/).filter(Boolean).at(-1) || fullName;
   return { fullName, lastName };
 }
 
@@ -6463,6 +6463,10 @@ function renderSettingsView() {
         </div>
         <a class="stg-row stg-row--tappable" href="/datenschutz" target="_blank" rel="noopener noreferrer" style="text-decoration:none">
           <span class="stg-row-label">Datenschutzhinweise</span>
+          <span class="stg-row-chevron">›</span>
+        </a>
+        <a class="stg-row stg-row--tappable" href="/impressum" target="_blank" rel="noopener noreferrer" style="text-decoration:none">
+          <span class="stg-row-label">Impressum</span>
           <span class="stg-row-chevron">›</span>
         </a>
         <div class="stg-row stg-row--tappable stg-row--danger" role="button" data-privacy-delete>
