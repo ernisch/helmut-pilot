@@ -293,6 +293,14 @@ create table if not exists public.knowledge_objects (
   opportunity_summary text,
   recommended_communication text,
   action_items text[] not null default '{}',
+  -- Strukturierte Stabschef-Werte (Runde 2): rueckwaertsverträglich NEBEN den Alt-Feldern.
+  -- risk_level/opportunity_level = Enum-Klassifikation (low/medium/high/unknown).
+  -- *_struct = jsonb (empfohlene Kommunikation als Objekt, action_items als Objektliste).
+  -- 'unknown'/leer ist ein gueltiger, ehrlicher Zustand (kein Raten im Frontend).
+  risk_level text,
+  opportunity_level text,
+  recommended_communication_struct jsonb,
+  action_items_struct jsonb not null default '[]'::jsonb,
   best_source_url text,
   best_link_type text,
   source_trust text,
@@ -329,6 +337,15 @@ alter table public.knowledge_objects add column if not exists risk_of_no_action 
 alter table public.knowledge_objects add column if not exists opportunity_summary text;
 alter table public.knowledge_objects add column if not exists recommended_communication text;
 alter table public.knowledge_objects add column if not exists action_items text[] not null default '{}';
+
+-- Strukturierte Stabschef-Werte (Runde 2) auch fuer BESTEHENDE Datenbanken sicherstellen.
+-- Rueckwaertsverträglich (add column if not exists): die Alt-Spalten recommended_communication
+-- (text) und action_items (text[]) bleiben UNANGETASTET. Neue Spalten sind additiv; aeltere
+-- Zeilen bleiben NULL/'[]' -> der Contract-Adapter normalisiert dann aus den Alt-Spalten.
+alter table public.knowledge_objects add column if not exists risk_level text;
+alter table public.knowledge_objects add column if not exists opportunity_level text;
+alter table public.knowledge_objects add column if not exists recommended_communication_struct jsonb;
+alter table public.knowledge_objects add column if not exists action_items_struct jsonb not null default '[]'::jsonb;
 
 -- KO <-> Rohdokument (N:M): "70 Artikel -> 1 Vorgang".
 create table if not exists public.ko_document_links (

@@ -114,11 +114,19 @@ const NOW = new Date("2026-07-07T08:00:00Z");
 const staff = contract.koStaffFields(koFull, NOW);
 check("Adapter: alle vier camelCase-Felder vorhanden",
   STAFF_CAMEL.every((k) => k in staff));
-check("Adapter: Inhalte kommen 1:1 aus dem KO (V3-Motor)",
+check("Adapter: Prosa-Inhalte kommen 1:1 aus dem KO (V3-Motor)",
   staff.riskOfNoAction === "Ohne Reaktion droht Kritik." &&
-  staff.recommendedCommunication === "Kurzstatement." &&
-  JSON.stringify(staff.actionItems) === JSON.stringify(["Referent briefen", "Zitat vorbereiten"]));
-check("qualityStatus=valid, wenn alle Felder befuellt & frisch",
+  staff.opportunitySummary === "Chance zur Profilierung.");
+check("Adapter: recommendedCommunication ist strukturiert (Alt-Zeile -> communicationLine)",
+  staff.recommendedCommunication && typeof staff.recommendedCommunication === "object" &&
+  staff.recommendedCommunication.communicationLine === "Kurzstatement." &&
+  staff.recommendedCommunication.recommendedChannel === "unknown" &&
+  staff.recommendedCommunication.recommendedFormat === "unknown");
+check("Adapter: actionItems sind strukturiert (Alt-text[] -> {title,...})",
+  Array.isArray(staff.actionItems) && staff.actionItems.length === 2 &&
+  staff.actionItems[0].title === "Referent briefen" &&
+  staff.actionItems[0].priority === "unknown" && staff.actionItems[0].actionType === "unknown");
+check("qualityStatus=valid, wenn alle vier Inhalts-Dimensionen befuellt & frisch",
   staff.helmutQualityStatus === "valid", staff.helmutQualityStatus);
 
 check("qualityStatus=empty, wenn kein Stabschef-Feld befuellt",
@@ -139,9 +147,14 @@ check("qualityStatus=empty, wenn Vorgang pending",
 
 // Leere Felder duerfen NIE erfunden werden (kein Demo-Text, keine Partei/Person).
 const staffEmpty = contract.koStaffFields(baseKo({ understanding_status: "complete" }), NOW);
-check("Adapter: leere Stabschef-Felder bleiben leer (kein Fallback-Text)",
+check("Adapter: leere Stabschef-Felder bleiben leer/unknown (kein Fallback-Text)",
   staffEmpty.riskOfNoAction === "" && staffEmpty.opportunitySummary === "" &&
-  staffEmpty.recommendedCommunication === "" && staffEmpty.actionItems.length === 0 &&
+  staffEmpty.recommendedCommunication.communicationLine === "" &&
+  staffEmpty.recommendedCommunication.recommendedChannel === "unknown" &&
+  staffEmpty.recommendedCommunication.recommendedFormat === "unknown" &&
+  staffEmpty.recommendedCommunication.suggestedOutputs.length === 0 &&
+  staffEmpty.actionItems.length === 0 &&
+  staffEmpty.riskLevel === "unknown" && staffEmpty.opportunityLevel === "unknown" &&
   staffEmpty.helmutQualityStatus === "empty");
 
 // --- 5) Voller Vertrag: Stabschef-Felder vorhanden, KEINE Kostenwerte --------
@@ -167,6 +180,143 @@ const FORBIDDEN_COST_KEYS = ["estimatedCost", "estimated_cost", "costEstimate", 
 check("Vertrag: KEIN Kosten-/Token-Feld in den (Client-)Vertragsdaten",
   FORBIDDEN_COST_KEYS.every((k) => !serialized.includes(k)),
   FORBIDDEN_COST_KEYS.filter((k) => serialized.includes(k)).join(","));
+
+// --- 5b) Strukturierte Stabschef-Werte (Runde 2) ----------------------------
+const STRUCT_COLS = ["risk_level", "opportunity_level", "recommended_communication_struct", "action_items_struct"];
+
+// Schema: Enum-Validierung riskLevel/opportunityLevel.
+check("Schema akzeptiert gueltiges risk_level/opportunity_level",
+  schema.validateKnowledgeObject(baseKo({ risk_level: "high", opportunity_level: "low" })).valid);
+check("Schema akzeptiert 'unknown' als risk_level (ehrlicher Default erlaubt)",
+  schema.validateKnowledgeObject(baseKo({ risk_level: "unknown" })).valid);
+check("Schema lehnt ungueltiges risk_level ab (kein Frei-String)",
+  !schema.validateKnowledgeObject(baseKo({ risk_level: "kritisch" })).valid);
+check("Schema lehnt ungueltiges opportunity_level ab",
+  !schema.validateKnowledgeObject(baseKo({ opportunity_level: "gross" })).valid);
+// Schema: strukturierte Objekte + verschachtelte Enums.
+check("Schema akzeptiert gueltiges recommended_communication_struct",
+  schema.validateKnowledgeObject(baseKo({
+    recommended_communication_struct: { communicationLine: "X", recommendedChannel: "press", recommendedFormat: "statement", suggestedOutputs: ["qa"] }
+  })).valid);
+check("Schema lehnt ungueltigen recommendedChannel im Struct ab",
+  !schema.validateKnowledgeObject(baseKo({ recommended_communication_struct: { recommendedChannel: "email" } })).valid);
+check("Schema lehnt recommended_communication_struct als Array ab (erwartet object)",
+  !schema.validateKnowledgeObject(baseKo({ recommended_communication_struct: ["x"] })).valid);
+check("Schema akzeptiert gueltige action_items_struct-Liste",
+  schema.validateKnowledgeObject(baseKo({
+    action_items_struct: [{ title: "T", description: "D", dueHint: "heute", priority: "high", actionType: "prepareStatement" }]
+  })).valid);
+check("Schema lehnt ungueltigen actionType im action_items_struct ab",
+  !schema.validateKnowledgeObject(baseKo({ action_items_struct: [{ title: "T", actionType: "flyDrone" }] })).valid);
+check("Kein strukturiertes Feld ist Pflicht (Pipeline bricht ohne sie nicht ab)",
+  STRUCT_COLS.every((f) => !schema.KNOWLEDGE_OBJECT_SCHEMA.required.includes(f)) &&
+  schema.validateKnowledgeObject(baseKo()).valid);
+
+// assemble: strukturierte Werte fehlertolerant, unknown/leer als Default.
+const asmEmpty = understanding.assembleKnowledgeObject({
+  was_ist_passiert: "A", warum_wichtig: "B", wer_ist_betroffen: "C", handlungsempfehlung: "D"
+}, cluster, "vg-test");
+check("assemble: fehlendes risk_level/opportunity_level -> 'unknown'",
+  asmEmpty.risk_level === "unknown" && asmEmpty.opportunity_level === "unknown");
+check("assemble: fehlender comm-struct -> Objekt mit unknown/leer (kein Fake)",
+  asmEmpty.recommended_communication_struct.communicationLine === "" &&
+  asmEmpty.recommended_communication_struct.recommendedChannel === "unknown" &&
+  asmEmpty.recommended_communication_struct.recommendedFormat === "unknown" &&
+  Array.isArray(asmEmpty.recommended_communication_struct.suggestedOutputs) &&
+  asmEmpty.recommended_communication_struct.suggestedOutputs.length === 0);
+check("assemble: fehlende action_items_struct -> []",
+  Array.isArray(asmEmpty.action_items_struct) && asmEmpty.action_items_struct.length === 0);
+check("assemble: KO mit strukturierten Defaults bleibt schema-valide (kein Abbruch)",
+  schema.validateKnowledgeObject(asmEmpty).valid, JSON.stringify(schema.validateKnowledgeObject(asmEmpty).errors));
+
+const asmStruct = understanding.assembleKnowledgeObject({
+  was_ist_passiert: "A", warum_wichtig: "B", wer_ist_betroffen: "C", handlungsempfehlung: "D",
+  risk_level: "HIGH", opportunity_level: "medium",
+  recommended_communication_struct: {
+    communicationLine: "Intern abstimmen.", recommendedChannel: "internal",
+    recommendedFormat: "internalLine", recommendedFormatXXX: "ignored", suggestedOutputs: ["talkingPoints", "qa"]
+  },
+  action_items_struct: [
+    { title: "Linie abstimmen", description: "Mit Fraktion", dueHint: "bis 14 Uhr", priority: "high", actionType: "alignInternally" },
+    { description: "ohne title -> verworfen", priority: "low" },
+    { title: "Monitoring", priority: "quatsch", actionType: "monitor" }
+  ]
+}, cluster, "vg-test");
+check("assemble: risk_level enum-sanitisiert (ungueltige Grossschreibung -> unknown)",
+  asmStruct.risk_level === "unknown" && asmStruct.opportunity_level === "medium");
+check("assemble: comm-struct uebernimmt gueltige Enums + kappt unbekannte Keys",
+  asmStruct.recommended_communication_struct.recommendedChannel === "internal" &&
+  asmStruct.recommended_communication_struct.recommendedFormat === "internalLine" &&
+  JSON.stringify(asmStruct.recommended_communication_struct.suggestedOutputs) === JSON.stringify(["talkingPoints", "qa"]));
+check("assemble: action_items_struct dropped title-lose Eintraege + sanitisiert Enums",
+  asmStruct.action_items_struct.length === 2 &&
+  asmStruct.action_items_struct[0].title === "Linie abstimmen" &&
+  asmStruct.action_items_struct[0].actionType === "alignInternally" &&
+  asmStruct.action_items_struct[1].priority === "unknown");
+check("assemble: Alt-Spalten rueckwaertsverträglich aus Struct gespiegelt (kein Bruch)",
+  asmStruct.recommended_communication === "Intern abstimmen." &&
+  JSON.stringify(asmStruct.action_items) === JSON.stringify(["Linie abstimmen", "Monitoring"]));
+
+// Storage-Whitelist traegt die neuen strukturierten Spalten.
+check("Storage-Whitelist traegt die vier strukturierten Spalten",
+  STRUCT_COLS.every((f) => storage.V3_KNOWLEDGE_OBJECT_COLUMNS.includes(f)),
+  STRUCT_COLS.filter((f) => !storage.V3_KNOWLEDGE_OBJECT_COLUMNS.includes(f)).join(","));
+
+// Contract: primaerer Struct-Pfad.
+const koStructRead = baseKo({
+  understanding_status: "complete", risk_level: "high", opportunity_level: "medium",
+  recommended_communication_struct: { communicationLine: "Nicht zuspitzen.", recommendedChannel: "internal", recommendedFormat: "internalLine", suggestedOutputs: ["talkingPoints"] },
+  action_items_struct: [{ title: "Abstimmen", description: "", dueHint: "heute", priority: "high", actionType: "alignInternally" }],
+  risk_of_no_action: "Risiko.", opportunity_summary: "Chance.", updated_at: NOW.toISOString()
+});
+const sRead = contract.koStaffFields(koStructRead, NOW);
+check("Contract: riskLevel/opportunityLevel aus Struct-KO gelesen",
+  sRead.riskLevel === "high" && sRead.opportunityLevel === "medium");
+check("Contract: recommendedCommunication.* vollstaendig aus Struct-KO",
+  sRead.recommendedCommunication.communicationLine === "Nicht zuspitzen." &&
+  sRead.recommendedCommunication.recommendedChannel === "internal" &&
+  sRead.recommendedCommunication.recommendedFormat === "internalLine" &&
+  JSON.stringify(sRead.recommendedCommunication.suggestedOutputs) === JSON.stringify(["talkingPoints"]));
+check("Contract: actionItems[].{title,dueHint,priority,actionType} aus Struct-KO",
+  sRead.actionItems[0].title === "Abstimmen" && sRead.actionItems[0].dueHint === "heute" &&
+  sRead.actionItems[0].priority === "high" && sRead.actionItems[0].actionType === "alignInternally");
+check("Contract: lastUpdatedAt durchgereicht (Letzte Aktualisierung)",
+  sRead.lastUpdatedAt === NOW.toISOString());
+
+// Contract: Rueckwaertskompatibilitaet — ALT-Zeile/-Liste ohne Struct.
+const koLegacy = baseKo({
+  understanding_status: "complete",
+  recommended_communication: "Alt-Kurzzeile.", action_items: ["Alt-Schritt A", "Alt-Schritt B"],
+  updated_at: NOW.toISOString()
+});
+const sLegacy = contract.koStaffFields(koLegacy, NOW);
+check("Contract backward-compat: Alt recommended_communication -> communicationLine + unknown",
+  sLegacy.recommendedCommunication.communicationLine === "Alt-Kurzzeile." &&
+  sLegacy.recommendedCommunication.recommendedChannel === "unknown" &&
+  sLegacy.recommendedCommunication.recommendedFormat === "unknown");
+check("Contract backward-compat: Alt action_items[] -> [{title, unknown-Rest}]",
+  sLegacy.actionItems.length === 2 && sLegacy.actionItems[0].title === "Alt-Schritt A" &&
+  sLegacy.actionItems[0].priority === "unknown" && sLegacy.actionItems[1].title === "Alt-Schritt B");
+check("Contract backward-compat: qualityStatus erkennt Alt-Felder als vorhanden",
+  contract.deriveHelmutQualityStatus(koLegacy, NOW) === "partial"); // nur comm+actions -> partial
+
+// Vollstaendigkeits-Check: jeder von CurrentHelmutState benoetigte Pfad ist befuellbar.
+const CURRENT_STATE_PATHS = {
+  riskLevel: sRead.riskLevel,
+  opportunityLevel: sRead.opportunityLevel,
+  "recommendedCommunication.communicationLine": sRead.recommendedCommunication.communicationLine,
+  "recommendedCommunication.recommendedChannel": sRead.recommendedCommunication.recommendedChannel,
+  "recommendedCommunication.recommendedFormat": sRead.recommendedCommunication.recommendedFormat,
+  "recommendedCommunication.suggestedOutputs": sRead.recommendedCommunication.suggestedOutputs,
+  "actionItems[].title": sRead.actionItems[0] && sRead.actionItems[0].title,
+  "actionItems[].description": sRead.actionItems[0] && sRead.actionItems[0].description,
+  "actionItems[].dueHint": sRead.actionItems[0] && sRead.actionItems[0].dueHint,
+  "actionItems[].priority": sRead.actionItems[0] && sRead.actionItems[0].priority,
+  "actionItems[].actionType": sRead.actionItems[0] && sRead.actionItems[0].actionType
+};
+check("CurrentHelmutState: alle geforderten Pfade sind aus dem V3-Motor befuellbar",
+  Object.values(CURRENT_STATE_PATHS).every((v) => v !== undefined),
+  Object.entries(CURRENT_STATE_PATHS).filter(([, v]) => v === undefined).map(([k]) => k).join(","));
 
 // --- 6) Kosten-Logging: SaaS-Felder + Rueckwaertskompatibilitaet ------------
 const rec1 = storage.buildLlmUsageRecord({
