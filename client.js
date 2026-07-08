@@ -72,6 +72,10 @@ let adminDataStatus = null; // interner Datenmotor-Status (global + pro Account)
 let adminRecovery = null;      // interner Pipeline-Recovery-Status (nur Admin)
 let adminRecoveryResult = null; // Ergebnis der letzten Recovery-Aktion (Anzeige)
 let adminRecoveryBusy = false;  // verhindert Doppelklick/Parallelausführung
+let adminRecoveryStartMs = 0;       // Date.now() beim Start des laufenden Laufs (Live-Laufzeit)
+let adminRecoveryLastCheck = null;  // HH:MM des letzten read-only Status-Polls
+let adminRecoveryPollTimer = null;  // Intervall-Handle des Status-Pollings
+let adminRecoveryPrevFinishedAt = null; // finishedAt des VORHERIGEN Laufs (Abschluss-Erkennung)
 let adminPendingDiagnose = null; // Ergebnis der letzten Pending-Diagnose (nur lesen)
 let adminPendingDiagnoseBusy = false;
 let expandedAdminUsers = new Set();
@@ -1693,6 +1697,22 @@ function recoveryLastRunValue(rl) {
   return `<span class="ds-warn">Nicht gestartet</span> ${zeit(rl.finishedAt || rl.startedAt)}<br><span class="ds-sub">${grundText}</span>`;
 }
 
+// Kompakte Einzeiler-Fassung des vorherigen Laufs (für die de-emphasierte Anzeige während ein neuer Lauf läuft).
+function recoveryLastRunShort(rl) {
+  if (!rl || !rl.startedAt) return "";
+  const st = rl.anzeigeStatus || rl.status || "";
+  const label = {
+    "erfolgreich": "Erfolgreich abgeschlossen",
+    "nichts-verarbeitet": "Nicht gestartet",
+    "uebersprungen": "Nicht gestartet",
+    "fehlgeschlagen": "Fehlgeschlagen",
+    "ohne-abschluss": "Ohne Abschluss zurückgemeldet",
+    "running": "Läuft"
+  }[st] || "Ergebnis";
+  const t = rl.finishedAt || rl.startedAt;
+  return `${label}${t ? ` (${dsDateLabel(t)})` : ""}`;
+}
+
 // Interner Pipeline-Recovery-Bereich (nur Admin). Zeigt KO-Zustände, Lock, letzten
 // Understanding-Lauf, KI-Fehler/-Erfolg + drei bewusste Aktionen. Serverseitig ist
 // alles admin-gegatet; hier nur Anzeige/Klick. Keine Secrets, keine Env-Werte.
@@ -1728,7 +1748,9 @@ function renderAdminRecovery(rec, result, diagnose) {
         ${dsRow("Complete Vorgänge", koAvail ? dsFmt(ko.complete) : dsFmt(ko))}
         ${dsRow("Understanding-Lock aktiv", lockUnknown ? `<span class="ds-sub">–</span>` : lockLabel)}
         ${dsRow("Letzter Understanding-Lauf", rec.letzterUnderstandingLauf ? dsDateLabel(rec.letzterUnderstandingLauf) : `<span class="ds-sub">–</span>`)}
-        ${dsRow("Letztes Ergebnis", recoveryLastRunValue(recLauf) || (erg ? `verarbeitet ${dsFmt(erg.verarbeitet)} · zurückgestellt ${dsFmt(erg.zurueckgestellt)}${erg.grund ? ` · ${escapeHtml(String(erg.grund))}` : ""}` : `<span class="ds-sub">–</span>`))}
+        ${dsRow("Letztes Ergebnis", (busy && adminRecoveryResult && adminRecoveryResult.pending)
+          ? `<span class="ds-warn">Aktueller Lauf läuft</span> <span class="ds-sub">· Läuft seit ${escapeHtml(adminRecoveryResult.startedAt || "")}${adminRecoveryLastCheck ? ` · zuletzt geprüft ${escapeHtml(adminRecoveryLastCheck)}` : ""}</span>${recLauf ? `<br><span class="ds-sub">vorheriges Ergebnis: ${escapeHtml(recoveryLastRunShort(recLauf))}</span>` : ""}`
+          : (recoveryLastRunValue(recLauf) || (erg ? `verarbeitet ${dsFmt(erg.verarbeitet)} · zurückgestellt ${dsFmt(erg.zurueckgestellt)}${erg.grund ? ` · ${escapeHtml(String(erg.grund))}` : ""}` : `<span class="ds-sub">–</span>`)))}
         ${dsRow("Letzter KI-Fehler", kiErr ? `<span class="ds-bad">${escapeHtml(kiErr.grund || "Fehler")}</span>${kiErr.when ? ` <span class="ds-sub">· ${dsDateLabel(kiErr.when)}</span>` : ""}` : `<span class="ds-ok">Keiner</span>`)}
         ${dsRow("Letzter erfolgreicher KI-Call", kiOk && kiOk.when ? dsDateLabel(kiOk.when) : `<span class="ds-sub">–</span>`)}
         <div class="ds-recovery-actions">
@@ -1782,10 +1804,17 @@ function renderRecoveryResult(r) {
   if (!r) return "";
   const label = { "release-lock": "Lock lösen", "reset-failed": "Failed zurücksetzen", "run-understanding": "Understanding-Lauf" }[r.action] || "Aktion";
   const wrap = (inner) => `<div class="ds-recovery-result">${inner}</div>`;
-  // Läuft gerade (sofort nach Klick sichtbar) — Button ist derweil deaktiviert.
+  // Läuft gerade (sofort nach Klick sichtbar) — Button ist derweil deaktiviert. Live-Feedback:
+  // Laufzeit + „zuletzt geprüft" aus dem read-only Polling; ruhige Hinweise bei langer Dauer.
   if (r.pending) {
-    return wrap(`<div class="ds-recovery-result-head"><span class="ds-warn">${escapeHtml(label)} gestartet</span></div>
-      <p class="ds-sub">Läuft seit ${escapeHtml(r.startedAt || "")} … bitte warten (bis zu einige Minuten).</p>`);
+    const elapsedS = adminRecoveryStartMs ? Math.max(0, Math.floor((Date.now() - adminRecoveryStartMs) / 1000)) : 0;
+    const check = adminRecoveryLastCheck ? ` · zuletzt geprüft ${escapeHtml(adminRecoveryLastCheck)}` : "";
+    let hinweis = "Status wird geprüft …";
+    if (elapsedS > 180) hinweis = "Der Lauf hat noch kein Abschluss-Ergebnis zurückgemeldet. Bitte Seite neu laden oder später erneut prüfen.";
+    else if (elapsedS > 90) hinweis = "Der Lauf dauert ungewöhnlich lange. Der Status wird weiter geprüft.";
+    return wrap(`<div class="ds-recovery-result-head"><span class="ds-warn">${escapeHtml(label)} läuft</span></div>
+      <p class="ds-sub">Läuft seit ${escapeHtml(r.startedAt || "")}${check}</p>
+      <p class="ds-sub">${hinweis}</p>`);
   }
   // Fehlgeschlagen (HTTP-Fehler / Zeitüberschreitung / Netz).
   if (r.ok === false) {
@@ -1942,6 +1971,39 @@ async function runPendingDiagnose() {
   }
 }
 
+function stopRecoveryPolling() {
+  if (adminRecoveryPollTimer) { clearInterval(adminRecoveryPollTimer); adminRecoveryPollTimer = null; }
+}
+
+// Read-only Status-Polling waehrend eines laufenden Understanding-Laufs: haelt die UI
+// lebendig (zuletzt geprueft / Live-Laufzeit) und uebernimmt ein serverseitig persistiertes
+// Abschluss-Ergebnis, falls der POST haengt/abbricht. NUTZT NUR den read-only Status-Endpoint
+// -> kein KI-Call, keine Datenaenderung, kein zweiter Lauf, kein Auto-Lock-Lösen.
+function startRecoveryPolling() {
+  stopRecoveryPolling();
+  adminRecoveryPollTimer = setInterval(async () => {
+    if (!adminRecoveryBusy) { stopRecoveryPolling(); return; }
+    try {
+      const s = await fetchWithTimeout(`/api/admin/recovery-status?${apiScopeQuery()}`, {}, 20000);
+      if (s.ok) {
+        adminRecovery = await s.json();
+        adminRecoveryLastCheck = helmutNowHHMM();
+        // Requirement E: hat der Server ein NEUES Abschluss-Ergebnis persistiert (finishedAt
+        // aendert sich ggü. dem vorherigen Lauf), lokalen Läuft-Zustand beenden -> das
+        // persistierte Ergebnis (oben) wird angezeigt. Uhr-unabhaengig (vergleicht Server-Zeiten).
+        const rl = adminRecovery.letzterRecoveryLauf;
+        if (rl && rl.finishedAt && rl.finishedAt !== adminRecoveryPrevFinishedAt && rl.anzeigeStatus !== "running") {
+          adminRecoveryResult = null;   // persistiertes Ergebnis (oben) ist jetzt die Quelle
+          adminRecoveryBusy = false;
+          adminRecoveryStartMs = 0;      // späten POST vom Überschreiben abkoppeln
+          stopRecoveryPolling();
+        }
+      }
+    } catch (_) { /* Poll ist optional – niemals einen zweiten Lauf starten */ }
+    render(); bindActions();
+  }, 7000);
+}
+
 async function runRecoveryAction(action) {
   if (adminRecoveryBusy) return;
   if (action === "reset-failed") {
@@ -1961,7 +2023,16 @@ async function runRecoveryAction(action) {
   if (!endpoint) return;
   adminRecoveryBusy = true;
   const startedAt = helmutNowHHMM();
+  const myStart = Date.now();
   adminRecoveryResult = { action, pending: true, startedAt };
+  if (action === "run-understanding") {
+    // Live-Feedback vorbereiten: Startzeit merken, vorheriges Abschluss-Ergebnis festhalten
+    // (zur Abschluss-Erkennung) und read-only Status-Polling starten.
+    adminRecoveryStartMs = myStart;
+    adminRecoveryLastCheck = null;
+    adminRecoveryPrevFinishedAt = (adminRecovery && adminRecovery.letzterRecoveryLauf && adminRecovery.letzterRecoveryLauf.finishedAt) || null;
+    startRecoveryPolling();
+  }
   render(); bindActions();
   try {
     const body = action === "reset-failed" ? { confirm: true } : {};
@@ -1970,16 +2041,23 @@ async function runRecoveryAction(action) {
     }, action === "run-understanding" ? 250000 : 30000);
     let json;
     try { json = await resp.json(); } catch (_) { json = {}; }
-    adminRecoveryResult = resp.ok
-      ? { action, startedAt, finishedAt: helmutNowHHMM(), ...json }
-      : { action, ok: false, startedAt, finishedAt: helmutNowHHMM(), fehler: `HTTP ${resp.status}` };
+    // Nur anwenden, wenn dieser Lauf noch aktuell ist (das Polling hat evtl. schon abgeschlossen).
+    if (adminRecoveryStartMs === myStart || action !== "run-understanding") {
+      adminRecoveryResult = resp.ok
+        ? { action, startedAt, finishedAt: helmutNowHHMM(), ...json }
+        : { action, ok: false, startedAt, finishedAt: helmutNowHHMM(), fehler: `HTTP ${resp.status}` };
+    }
     try {
       const s = await fetchWithTimeout(`/api/admin/recovery-status?${apiScopeQuery()}`, {}, 25000);
       if (s.ok) adminRecovery = await s.json();
     } catch (_) { /* Status-Reload optional */ }
   } catch (_) {
-    adminRecoveryResult = { action, ok: false, startedAt, finishedAt: helmutNowHHMM(), fehler: "Zeitüberschreitung oder Netzwerkfehler" };
+    // Nur wenn das Polling nicht bereits ein persistiertes Ergebnis uebernommen hat.
+    if ((adminRecoveryStartMs === myStart && adminRecoveryBusy) || action !== "run-understanding") {
+      adminRecoveryResult = { action, ok: false, startedAt, finishedAt: helmutNowHHMM(), fehler: "Zeitüberschreitung oder Netzwerkfehler" };
+    }
   } finally {
+    stopRecoveryPolling();
     adminRecoveryBusy = false;
     render(); bindActions();
   }

@@ -746,6 +746,23 @@ async function dataStatusResilienceChecks() {
   check("Recovery-UI: zeigt 'Ohne Abschluss zurückgemeldet' bei abgebrochenem Lauf",
     clientSrc.includes("Ohne Abschluss zurückgemeldet"));
 
+  // Laufendes Feedback: read-only Polling haelt die UI lebendig, kein Einfrieren.
+  const pollBlock = clientSrc.slice(clientSrc.indexOf("function startRecoveryPolling"), clientSrc.indexOf("async function runRecoveryAction"));
+  check("Recovery-UI: Status-Polling nutzt NUR den read-only Status-Endpoint (kein KI/Aktion)",
+    pollBlock.includes("/api/admin/recovery-status")
+      && !pollBlock.includes("run-understanding") && !pollBlock.includes("reset-failed")
+      && !pollBlock.includes("release-lock") && !pollBlock.includes("pending-diagnose"));
+  check("Recovery-UI: Polling laeuft periodisch waehrend busy und stoppt danach (setInterval + stopRecoveryPolling im finally)",
+    /setInterval\(/.test(pollBlock) && /function stopRecoveryPolling/.test(clientSrc) && /finally\s*\{\s*\n?\s*stopRecoveryPolling\(\);/.test(clientSrc));
+  check("Recovery-UI: waehrend busy zeigt 'Letztes Ergebnis' den aktuellen Lauf (nicht nur das alte Ergebnis)",
+    clientSrc.includes("Aktueller Lauf läuft") && clientSrc.includes("vorheriges Ergebnis:"));
+  check("Recovery-UI: laufender Zustand zeigt 'zuletzt geprüft' + Live-Laufzeit",
+    clientSrc.includes("zuletzt geprüft") && clientSrc.includes("adminRecoveryStartMs"));
+  check("Recovery-UI: ruhige Hinweise bei langer Laufzeit (>90s und >180s)",
+    clientSrc.includes("dauert ungewöhnlich lange") && clientSrc.includes("noch kein Abschluss-Ergebnis zurückgemeldet"));
+  check("Recovery-UI: uebernimmt persistiertes Abschluss-Ergebnis und beendet lokalen Läuft-Zustand",
+    /rl\.finishedAt !== adminRecoveryPrevFinishedAt/.test(clientSrc) && /adminRecoveryBusy = false/.test(pollBlock));
+
   // Behavioral (offline): der gesamte Datenstatus baut sich fehlerfrei zusammen und
   // liefert weiterhin das global-Objekt (keine harte Ausnahme, wenn Teile leer sind).
   try {
