@@ -175,8 +175,12 @@ check("Vertrag rueckwaertskompatibel: bestehende REC-Pflichtfelder unveraendert 
     "personal_relevance_explanation", "action_type", "status"].every((k) => k in rec));
 
 const serialized = JSON.stringify(briefing);
+// Kosten-/Token-Werte duerfen NIE in die (Client-)Vertragsdaten. Hinweis: tenantId/
+// profileId sind KEINE Kostenwerte -- sie sind gueltige oeffentliche CurrentHelmutState-
+// Felder (SaaS-Kontext) und daher bewusst NICHT verboten. Verboten ist nur echtes
+// Kosten-Logging (estimatedCost/Token/pipelineStep).
 const FORBIDDEN_COST_KEYS = ["estimatedCost", "estimated_cost", "costEstimate", "promptTokens",
-  "completionTokens", "totalTokens", "prompt_tokens", "inputTokens", "outputTokens", "pipelineStep", "tenantId"];
+  "completionTokens", "totalTokens", "prompt_tokens", "inputTokens", "outputTokens", "pipelineStep"];
 check("Vertrag: KEIN Kosten-/Token-Feld in den (Client-)Vertragsdaten",
   FORBIDDEN_COST_KEYS.every((k) => !serialized.includes(k)),
   FORBIDDEN_COST_KEYS.filter((k) => serialized.includes(k)).join(","));

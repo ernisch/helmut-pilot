@@ -21,6 +21,124 @@
         "chanceOfDay": {
           "t": "null"
         },
+        "currentHelmutState": {
+          "t": "object",
+          "keys": {
+            "actionItems": {
+              "t": "array",
+              "el": null
+            },
+            "briefingType": {
+              "t": "string"
+            },
+            "contextChips": {
+              "t": "array",
+              "el": null
+            },
+            "errorState": {
+              "t": "boolean"
+            },
+            "generatedAt": {
+              "t": "string"
+            },
+            "headline": {
+              "t": "string"
+            },
+            "items": {
+              "t": "array",
+              "el": null
+            },
+            "opportunityLevel": {
+              "t": "string"
+            },
+            "opportunitySummary": {
+              "t": "string"
+            },
+            "primaryItem": {
+              "t": "null"
+            },
+            "primaryVorgangId": {
+              "t": "null"
+            },
+            "profileId": {
+              "t": "string"
+            },
+            "qualityStatus": {
+              "t": "string"
+            },
+            "recommendation": {
+              "t": "string"
+            },
+            "recommendedCommunication": {
+              "t": "object",
+              "keys": {
+                "communicationLine": {
+                  "t": "string"
+                },
+                "recommendedChannel": {
+                  "t": "string"
+                },
+                "recommendedFormat": {
+                  "t": "string"
+                },
+                "suggestedOutputs": {
+                  "t": "array",
+                  "el": null
+                }
+              }
+            },
+            "relatedVorgangIds": {
+              "t": "array",
+              "el": null
+            },
+            "riskLevel": {
+              "t": "string"
+            },
+            "riskOfNoAction": {
+              "t": "string"
+            },
+            "riskSummary": {
+              "t": "string"
+            },
+            "sourceIds": {
+              "t": "array",
+              "el": null
+            },
+            "sourcesSummary": {
+              "t": "object",
+              "keys": {
+                "lastUpdated": {
+                  "t": "null"
+                },
+                "qualityStatus": {
+                  "t": "string"
+                },
+                "sourceCount": {
+                  "t": "number"
+                },
+                "sourceIds": {
+                  "t": "array",
+                  "el": null
+                }
+              }
+            },
+            "staleState": {
+              "t": "boolean"
+            },
+            "status": {
+              "t": "string"
+            },
+            "tenantId": {
+              "t": "null"
+            },
+            "urgency": {
+              "t": "string"
+            },
+            "whyItMatters": {
+              "t": "string"
+            }
+          }
+        },
         "decisionMetrics": {
           "t": "object",
           "keys": {
