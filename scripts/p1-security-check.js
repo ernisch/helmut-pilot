@@ -14,6 +14,7 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const vm = require("vm");
 
 const root = path.join(__dirname, "..");
 const results = [];
@@ -804,6 +805,74 @@ async function dataStatusResilienceChecks() {
   } catch (err) {
     check("Datenstatus: baut sich fehlerfrei zusammen", false, String((err && err.message) || err));
   }
+}
+
+// BEHAVIORAL: renderAdminRecovery muss mit dem Production-Shape (und teilweise fehlenden
+// optionalen Feldern) vollstaendig rendern — KEIN Fallback, KEINE Exception. Laedt client.js
+// in einem vm mit Browser-Stubs und ruft die echten Render-Funktionen auf.
+function recoveryRenderChecks() {
+  const src = fs.readFileSync(path.join(root, "client.js"), "utf8");
+  const noop = () => {};
+  // client.js startet beim Laden Hintergrund-Fetches (loadBriefing). Im Test nie ablehnen
+  // (nie-aufloesende Promise) + Rejection-Guard, damit detachte vm-Promises den p1-Prozess
+  // nicht abbrechen. Wir brauchen ohnehin nur die SYNCHRONEN Render-Funktionen.
+  const swallow = () => {};
+  process.on("unhandledRejection", swallow);
+  const fakeEl = new Proxy({}, { get: (t, p) => (p === "classList" ? { add: noop, remove: noop, toggle: noop, contains: () => false } : (p === "querySelectorAll" ? () => [] : noop)), set: () => true });
+  const win = { addEventListener: noop, removeEventListener: noop, matchMedia: () => ({ matches: false, addEventListener: noop, addListener: noop }), location: { href: "", search: "", pathname: "/" }, navigator: { serviceWorker: null, userAgent: "t" } };
+  const ctx = { window: win, document: { querySelector: () => fakeEl, querySelectorAll: () => [], getElementById: () => fakeEl, createElement: () => fakeEl, addEventListener: noop, body: fakeEl, documentElement: fakeEl, cookie: "", visibilityState: "visible" }, navigator: win.navigator, localStorage: { getItem: () => null, setItem: noop, removeItem: noop }, sessionStorage: { getItem: () => null, setItem: noop, removeItem: noop }, console, fetch: () => new Promise(() => {}), location: win.location, setTimeout: noop, clearTimeout: noop, setInterval: () => 0, clearInterval: noop, requestAnimationFrame: noop, URLSearchParams, Date, Math, JSON, Intl };
+  ctx.globalThis = ctx;
+  let fns = null;
+  try {
+    vm.createContext(ctx);
+    vm.runInContext(src + "\n;globalThis.__fns={renderAdminRecovery,safeRenderAdminRecovery};\n", ctx, { filename: "client.js" });
+    fns = ctx.__fns;
+  } catch (e) {
+    check("Recovery-Render: client.js laedt im Test-Harness", false, String((e && e.message) || e));
+    return;
+  }
+  check("Recovery-Render: client.js laedt + Render-Funktionen vorhanden", Boolean(fns && fns.renderAdminRecovery && fns.safeRenderAdminRecovery));
+
+  const rec = {
+    v3StoreAktiv: true,
+    knowledgeObjects: { pending: 63, failed: 0, complete: 102, sonstige: 0, gesamt: 165 },
+    understandingLock: { aktiv: false, verdaechtig: false, gesetztVorSek: null },
+    letzterUnderstandingLauf: "2026-07-08T02:29:00.000Z",
+    letztesUnderstandingErgebnis: null,
+    letzterRecoveryLauf: { startedAt: "2026-07-08T02:29:00.000Z", finishedAt: "2026-07-08T02:29:20.000Z", status: "nichts-verarbeitet", anzeigeStatus: "nichts-verarbeitet", grund: "teils-verarbeitbar-verwaist", verarbeitet: 0, versucht: 1, imFenster: 1, ausserhalb: 0, ohneRohdokumente: 62, pendingVorher: 63, pendingNachher: 63, completeVorher: 102, completeNachher: 102, fehler: null, ohneAbschluss: false },
+    letzterKiFehler: null, letzterKiErfolg: { when: "2026-07-08T02:26:00.000Z", callType: "understanding" }
+  };
+  const diagLoaded = { verfuegbar: true, gesamt: 63, mitCluster: 1, ohneCluster: 62, imFenster: 1, ausserhalb: 0, keine: 62, ohneQuellzahl: 60, ursache: "teils-verarbeitbar-verwaist", empfehlung: "…", beispiele: [], kandidaten: [{ vorgangId: "vg-x", titelKurz: "T", status: "pending", clusterDokumente: 1, alterTage: 4, quellDokAnzahl: 2, rohdokumentAlterTage: 4 }], letzterLauf: { status: "nichts-verarbeitet", finishedAt: "2026-07-08T02:29:20.000Z", verarbeitet: 0, versucht: 1, grund: "teils-verarbeitbar-verwaist" }, rohdokumenteFenster: 1000, rohdokumenteWeit: 1000 };
+  const noThrow = (label, r, res, d) => {
+    let html = null, threw = null;
+    try { html = fns.renderAdminRecovery(r, res, d); } catch (e) { threw = e; }
+    const core = html && /Pending Vorgänge/.test(html) && /Understanding-Lauf starten/.test(html);
+    const fallback = /konnte nicht vollständig dargestellt/.test(fns.safeRenderAdminRecovery(r, res, d));
+    check(label, !threw && core && !fallback, threw ? `throw=${threw.message}` : `core=${core} fallback=${fallback}`);
+  };
+
+  // A: Production-Shape (Diagnose + Kandidaten geladen) -> normale Card, kein Fallback.
+  noThrow("Recovery-Render: Production-Shape (63/102, Diagnose geladen) rendert Card ohne Fallback", rec, null, diagLoaded);
+  // B: kandidaten undefined -> kein Wurf.
+  noThrow("Recovery-Render: fehlende kandidaten werfen nicht", rec, null, { ...diagLoaded, kandidaten: undefined });
+  // C: pending-Diagnose nicht geladen (null) -> kein Wurf.
+  noThrow("Recovery-Render: fehlende Pending-Diagnose wirft nicht", rec, null, null);
+  // D: letzterRecoveryLauf fehlt -> kein Wurf.
+  noThrow("Recovery-Render: fehlender letzterRecoveryLauf wirft nicht", { ...rec, letzterRecoveryLauf: undefined }, null, null);
+  // 0-Lauf-Ergebnis mit Diagnose-Feldern (die dsNum-Nutzung in renderRecoveryResult).
+  noThrow("Recovery-Render: 0-Lauf-Ergebnis (imFensterVerarbeitbar) rendert ohne Fallback", rec, { action: "run-understanding", ergebnis: "nichts-verarbeitet", grund: "teils-verarbeitbar-verwaist", verarbeitet: 0, imFensterVerarbeitbar: 1, ausserhalbFenster: 0, ohneRohdokumente: 62, versuchtNichtGespeichert: 1, versuchtGrundKey: "skipped-budget", pendingNachher: 63, startedAt: "02:29", finishedAt: "02:29" }, null);
+
+  // E: kaputter optionaler Block zerstoert NICHT die Basis-Card (nur der Block wird ersetzt).
+  const boom = new Proxy({ verfuegbar: true }, { get(t, p) { if (p === "kandidaten") throw new Error("boom"); return t[p]; } });
+  const hBoom = fns.safeRenderAdminRecovery(rec, null, boom);
+  check("Recovery-Render: kaputter optionaler Block -> Basis-Card bleibt, nur Zusatzblock ersetzt",
+    /Pending Vorgänge/.test(hBoom) && /Understanding-Lauf starten/.test(hBoom) && !/konnte nicht vollständig dargestellt/.test(hBoom) && /Zusatzdaten konnten nicht dargestellt werden/.test(hBoom));
+
+  // F: unerwartete Response loescht den letzten Stand nicht (rec bleibt sichtbar bei result 'unerwartet').
+  noThrow("Recovery-Render: unerwartete Antwort (result.unerwartet) haelt Basis-Card", rec, { action: "run-understanding", unerwartet: true, startedAt: "02:29", finishedAt: "02:29" }, null);
+
+  // Regressions-Guard: dsNum ist im Client definiert (kein Server-only-Helfer mehr genutzt).
+  check("Recovery-Render: dsNum ist im Client definiert (Regressions-Guard)", /function dsNum\(/.test(src));
 }
 
 // Pending-Diagnose (read-only): der Klassifikator muss dieselbe Cluster-/vorgang_id-
@@ -2006,6 +2075,7 @@ async function main() {
   await pipelineRecoveryChecks();
   await dataStatusResilienceChecks();
   pendingDiagnoseChecks();
+  recoveryRenderChecks();
   await llmBudgetChecks();
   await c1SafetyNetChecks();
   await c3DipPrimaryChecks();

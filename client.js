@@ -1535,6 +1535,10 @@ function dsFmt(v) {
   return escapeHtml(String(v));
 }
 
+// Numerische Koerzierung fuer Vergleiche/Guards (finite Zahl oder 0). Pendant zum
+// gleichnamigen Server-Helfer; im Client zuvor versehentlich genutzt, aber nicht definiert.
+function dsNum(v) { const n = Number(v); return Number.isFinite(n) ? n : 0; }
+
 function dsRow(label, valueHtml) {
   return `<div class="ds-row"><span class="ds-row-label">${escapeHtml(label)}</span><span class="ds-row-value">${valueHtml}</span></div>`;
 }
@@ -1718,6 +1722,15 @@ function recoveryLastRunShort(rl) {
   return `${label}${t ? ` (${dsDateLabel(t)})` : ""}`;
 }
 
+// Optionalen Zusatzblock einzeln kapseln: wirft er, bleibt die restliche Recovery-Card
+// intakt; nur dieser Block wird durch einen neutralen Ersatz-HTML-Schnipsel ersetzt.
+function safeInline(fn, fallbackHtml) {
+  try { return fn(); } catch (error) {
+    try { console.warn("Helmut: Recovery-Zusatzblock fehlgeschlagen", error); } catch (_) { /* ignore */ }
+    return fallbackHtml != null ? fallbackHtml : "";
+  }
+}
+
 // FEHLER-ISOLATION: ein Wurf im Recovery-Render (unerwarteter Response-Shape, fehlendes
 // Feld) darf NIEMALS den ganzen Admin-Bereich ausblenden. Fängt den Fehler ab und zeigt
 // eine ruhige Ersatzkarte — der restliche Admin-Datenstatus bleibt sichtbar.
@@ -1774,9 +1787,9 @@ function renderAdminRecovery(rec, result, diagnose) {
         ${dsRow("Complete Vorgänge", koAvail ? dsFmt(ko.complete) : dsFmt(ko))}
         ${dsRow("Understanding-Lock aktiv", lockUnknown ? `<span class="ds-sub">–</span>` : lockLabel)}
         ${dsRow("Letzter Understanding-Lauf", rec.letzterUnderstandingLauf ? dsDateLabel(rec.letzterUnderstandingLauf) : `<span class="ds-sub">–</span>`)}
-        ${dsRow("Letztes Ergebnis", (busy && adminRecoveryResult && adminRecoveryResult.pending)
+        ${dsRow("Letztes Ergebnis", safeInline(() => (busy && adminRecoveryResult && adminRecoveryResult.pending)
           ? `<span class="ds-warn">Aktueller Lauf läuft</span> <span class="ds-sub">· Läuft seit ${escapeHtml(adminRecoveryResult.startedAt || "")}${adminRecoveryLastCheck ? ` · zuletzt geprüft ${escapeHtml(adminRecoveryLastCheck)}` : ""}</span>${recLauf ? `<br><span class="ds-sub">vorheriges Ergebnis: ${escapeHtml(recoveryLastRunShort(recLauf))}</span>` : ""}`
-          : (recoveryLastRunValue(recLauf) || (erg ? `verarbeitet ${dsFmt(erg.verarbeitet)} · zurückgestellt ${dsFmt(erg.zurueckgestellt)}${erg.grund ? ` · ${escapeHtml(String(erg.grund))}` : ""}` : `<span class="ds-sub">–</span>`)))}
+          : (recoveryLastRunValue(recLauf) || (erg ? `verarbeitet ${dsFmt(erg.verarbeitet)} · zurückgestellt ${dsFmt(erg.zurueckgestellt)}${erg.grund ? ` · ${escapeHtml(String(erg.grund))}` : ""}` : `<span class="ds-sub">–</span>`)), `<span class="ds-sub">–</span>`))}
         ${dsRow("Letzter KI-Fehler", kiErr ? `<span class="ds-bad">${escapeHtml(kiErr.grund || "Fehler")}</span>${kiErr.when ? ` <span class="ds-sub">· ${dsDateLabel(kiErr.when)}</span>` : ""}` : `<span class="ds-ok">Keiner</span>`)}
         ${dsRow("Letzter erfolgreicher KI-Call", kiOk && kiOk.when ? dsDateLabel(kiOk.when) : `<span class="ds-sub">–</span>`)}
         <div class="ds-recovery-actions">
@@ -1787,8 +1800,8 @@ function renderAdminRecovery(rec, result, diagnose) {
         </div>
         ${lockActionable ? `<p class="ds-note ds-note--warn">Ein Understanding-Lauf ist gesperrt oder hängt. „Understanding-Lauf starten" ist deaktiviert. Bitte „Lock lösen", falls kein Lauf mehr aktiv ist.</p>` : ""}
         <p class="ds-note">Aktionen laufen nur nach bewusstem Klick. „Failed → Pending" fragt vorher nach Bestätigung und löscht keine Rohdokumente. „Understanding-Lauf" nutzt die bestehende Funktion und kann KI-Kosten verursachen.</p>
-        ${renderRecoveryResult(result)}
-        ${renderPendingDiagnose(diagnose)}
+        ${safeInline(() => renderRecoveryResult(result), `<p class="ds-note ds-note--warn">Zusatzdaten konnten nicht dargestellt werden.</p>`)}
+        ${safeInline(() => renderPendingDiagnose(diagnose), `<p class="ds-note ds-note--warn">Zusatzdaten konnten nicht dargestellt werden.</p>`)}
       </div>
     </section>`;
 }
