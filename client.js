@@ -4385,7 +4385,11 @@ function renderHelmutView() {
   // kommt der Nutzer während einer laufenden Aktualisierung zurück, sieht er wieder
   // "Aktualisierung läuft" bzw. "Stand ist aktuell" / "Aktueller Stand geladen".
   const refreshActive = pipelineRunning || Boolean(pipelinePhase);
-  return (refreshActive || helmutThinking) ? renderHelmutThinkingView() : renderHelmutAssessmentView();
+  // V3-Stabschefstand: der Inhalt kommt AUSSCHLIESSLICH aus briefing.currentHelmutState
+  // (deterministisch, serverseitig gebaut). Der Refresh-/Intro-Ring bleibt als reiner
+  // TECHNISCHER Ladezustand erhalten; danach rendert der ruhige Stand. Die alte
+  // Assessment-/Typing-Ansicht (mit berechneten Ersatztexten) wird nicht mehr genutzt.
+  return (refreshActive || helmutThinking) ? renderHelmutThinkingView() : renderHelmutStandView();
 }
 
 function renderRefreshButton() {
@@ -4448,6 +4452,313 @@ const HELMUT_ICON_X = `<svg viewBox="0 0 24 24" width="22" height="22" fill="non
 const HELMUT_ICON_DOC = `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 3h7l4 4v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v4h4M9 13h6M9 17h6"/></svg>`;
 const HELMUT_ICON_CHECK = `<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>`;
 const HELMUT_ICON_CHEVRON = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>`;
+const HELMUT_ICON_LIST = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M9 4h6a1 1 0 0 1 1 1v0a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v0a1 1 0 0 1 1-1z"/><path d="M8 5H6a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-2"/><path d="M9 11h6M9 15h4"/></svg>`;
+const HELMUT_ICON_CHAT = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.5 7.2L4 20l.9-4.4A8 8 0 1 1 21 12z"/></svg>`;
+
+// ─────────────────────────────────────────────────────────────────────────
+// V3 — Helmut Stabschefstand (renderHelmutStandView)
+// Rendert AUSSCHLIESSLICH aus briefing.currentHelmutState. Keine berechneten
+// Ersatztexte, keine politischen Fallbacks, keine hartkodierte Partei, keine
+// Kostenwerte, keine Client-KI. Das Frontend formatiert/zeigt nur — es leitet
+// keine politische Bedeutung neu ab. Fehlt ein Wert -> leer / neutraler Zustand.
+// ─────────────────────────────────────────────────────────────────────────
+
+// Reine Label-Zuordnungen (i18n der Enum-Tokens des V3-Motors — KEIN Inhalt).
+const HSTAND_URGENCY_LABEL = { hoch: "Hohe Dringlichkeit", mittel: "Mittlere Dringlichkeit", niedrig: "Niedrige Dringlichkeit", keiner: "Keine akute Dringlichkeit" };
+const HSTAND_LEVEL_LABEL = { low: "Niedrig", medium: "Mittel", high: "Hoch" };
+const HSTAND_CHANNEL_LABEL = { press: "Presse", social: "Social Media", internal: "Intern", parliamentary: "Parlamentarisch" };
+const HSTAND_FORMAT_LABEL = { statement: "Statement", pressRelease: "Pressemitteilung", qa: "Q&A", socialPost: "Social Post", internalLine: "Interne Linie" };
+const HSTAND_OUTPUT_LABEL = { statement: "Statement", qa: "Q&A", pressRelease: "Pressemitteilung", talkingPoints: "Talking Points", socialPost: "Social Post" };
+const HSTAND_PRIORITY_LABEL = { low: "Niedrig", medium: "Mittel", high: "Hoch" };
+const HSTAND_STATUS_LABEL = {
+  fresh: { label: "Aktuell", tone: "ok" },
+  stale: { label: "Nicht mehr ganz frisch", tone: "warn" },
+  updating: { label: "Wird aktualisiert", tone: "muted" },
+  empty: { label: "Kein aktueller Stand", tone: "muted" },
+  error: { label: "Stand nicht verfügbar", tone: "danger" }
+};
+const HSTAND_TYPE_LABEL = { daily: "Tagesbriefing", morning: "Morgenbriefing", midday: "Mittagsbriefing", evening: "Abendlage" };
+const HSTAND_QUALITY = {
+  valid: { tone: "ok", label: "Belastbar" },
+  partial: { tone: "warn", label: "Teilweise belastbar" },
+  stale: { tone: "warn", label: "Veraltet" },
+  empty: { tone: "muted", label: "Offen" },
+  error: { tone: "danger", label: "Fehler" }
+};
+
+function hstandText(v) {
+  return String(v == null ? "" : v).replace(/\s+/g, " ").trim();
+}
+
+// Echter Zeitstempel -> ruhiges Datum/Uhrzeit (de-DE). Fehlt/ungueltig -> "" (keine Fake-Zeit).
+function hstandWhen(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  try {
+    return new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }).format(d);
+  } catch { return ""; }
+}
+
+function hstandContextChips(list) {
+  const chips = (Array.isArray(list) ? list : []).map(hstandText).filter(Boolean);
+  if (!chips.length) return "";
+  return chips.slice(0, 4).map((c) => `<span class="hstand-chip hstand-chip--ctx">${escapeHtml(c)}</span>`).join("");
+}
+
+// Dringlichkeits-Chip — unbekannt/leer -> nichts (kein Ersatz, nicht dramatisieren).
+function hstandUrgencyChip(urgency) {
+  const u = String(urgency || "").toLowerCase();
+  const label = HSTAND_URGENCY_LABEL[u];
+  if (!label) return "";
+  const tone = u === "hoch" ? "danger" : u === "mittel" ? "warn" : "muted";
+  return `<span class="hstand-chip hstand-chip--${tone}"><span class="hstand-dot"></span>${escapeHtml(label)}</span>`;
+}
+
+// Risiko-/Chancenstufe — ruhig. unknown/leer -> weglassen (nicht dramatisieren).
+function hstandLevelChip(level, kind) {
+  const l = String(level || "").toLowerCase();
+  const label = HSTAND_LEVEL_LABEL[l];
+  if (!label) return "";
+  let tone = "muted";
+  if (l === "high") tone = kind === "chance" ? "chance" : "risk";
+  else if (l === "medium") tone = "warn";
+  const prefix = kind === "chance" ? "Chance" : "Risiko";
+  return `<span class="hstand-level hstand-level--${tone}" title="${escapeAttribute(`${prefix}: ${label}`)}"><span class="hstand-dot"></span>${escapeHtml(label)}</span>`;
+}
+
+function hstandPriorityChip(p) {
+  const v = String(p || "").toLowerCase();
+  const label = HSTAND_PRIORITY_LABEL[v];
+  if (!label) return ""; // unknown/leer -> nichts
+  const tone = v === "high" ? "risk" : v === "medium" ? "warn" : "muted";
+  return `<span class="hstand-prio hstand-prio--${tone}">${escapeHtml(label)}</span>`;
+}
+
+function hstandQuality(q) {
+  const m = HSTAND_QUALITY[String(q || "").toLowerCase()] || HSTAND_QUALITY.empty;
+  return `<span class="hstand-q"><span class="hstand-qdot hstand-qdot--${m.tone}"></span>${escapeHtml(m.label)}</span>`;
+}
+
+// --- Entry: der Stand oder ein ehrlicher Zustand ---------------------------
+function renderHelmutStandView() {
+  const state = briefing && briefing.currentHelmutState;
+  if (!state || typeof state !== "object") return renderHstandUnavailable();
+  if (state.status === "error" || state.errorState) return renderHstandStateCard(state, "error");
+  if (state.status === "empty" || !state.primaryItem) return renderHstandStateCard(state, "empty");
+  return `
+    <section class="hstand" aria-label="Helmut – aktueller Stabschefstand">
+      ${renderHstandHeader(state)}
+      ${renderHstandProposal(state)}
+      ${renderHstandWhy(state)}
+      ${renderHstandRiskChance(state)}
+      ${renderHstandComms(state)}
+      ${renderHstandActions(state)}
+      ${renderHstandPrimary(state)}
+      ${renderHstandItems(state)}
+      ${renderHstandSources(state)}
+    </section>`;
+}
+
+function renderHstandHeader(state) {
+  const st = HSTAND_STATUS_LABEL[state.status] || HSTAND_STATUS_LABEL.empty;
+  const when = hstandWhen(state.sourcesSummary && state.sourcesSummary.lastUpdated) || hstandWhen(state.generatedAt);
+  const type = HSTAND_TYPE_LABEL[String(state.briefingType || "").toLowerCase()] || "Briefing";
+  const partial = state.qualityStatus === "partial";
+  return `
+    <header class="hstand-head">
+      <div class="hstand-head-row">
+        <div class="hstand-head-titles">
+          <h1 class="hstand-title">Helmut</h1>
+          <p class="hstand-subtitle">Dein aktueller Stabschefstand</p>
+        </div>
+        <span class="hstand-status hstand-status--${st.tone}">${escapeHtml(st.label)}</span>
+      </div>
+      <p class="hstand-meta-line">${HELMUT_ICON_CLOCK}<span>${escapeHtml(type)}${when ? ` · ${escapeHtml(when)}` : ""}</span></p>
+      ${partial ? `<p class="hstand-partial">${HELMUT_ICON_EYE}<span>Nur teilweise belastbar – einige Angaben fehlen noch.</span></p>` : ""}
+    </header>`;
+}
+
+// Wichtigster Bereich: Mein Vorschlag (recommendation + urgency + contextChips).
+function renderHstandProposal(state) {
+  const rec = hstandText(state.recommendation);
+  const urgency = hstandUrgencyChip(state.urgency);
+  const chips = hstandContextChips(state.contextChips);
+  const chiprow = (urgency || chips) ? `<div class="hstand-chiprow">${urgency}${chips}</div>` : "";
+  return `
+    <section class="hstand-card hstand-proposal" aria-label="Mein Vorschlag">
+      <span class="hstand-kicker hstand-kicker--accent">${HELMUT_ICON_SPARK}<span>Mein Vorschlag</span></span>
+      ${rec
+        ? `<p class="hstand-proposal-text">${escapeHtml(rec)}</p>`
+        : `<p class="hstand-empty-line">Für diesen Stand liegt aktuell keine Empfehlung vor.</p>`}
+      ${chiprow}
+    </section>`;
+}
+
+function renderHstandWhy(state) {
+  const why = hstandText(state.whyItMatters);
+  if (!why) return "";
+  return `
+    <section class="hstand-card hstand-why" aria-label="Warum ist das wichtig">
+      <span class="hstand-kicker">${HELMUT_ICON_EYE}<span>Warum ist das wichtig</span></span>
+      <p class="hstand-body">${escapeHtml(why)}</p>
+    </section>`;
+}
+
+function renderHstandRiskChance(state) {
+  const risk = hstandText(state.riskOfNoAction);
+  const riskLevel = hstandLevelChip(state.riskLevel, "risk");
+  const chance = hstandText(state.opportunitySummary);
+  const chanceLevel = hstandLevelChip(state.opportunityLevel, "chance");
+  const riskCard = (risk || riskLevel) ? `
+    <section class="hstand-card hstand-split hstand-risk" aria-label="Risiko bei Nichtreaktion">
+      <span class="hstand-kicker hstand-kicker--risk">${HELMUT_ICON_BOLT}<span>Risiko bei Nichtreaktion</span></span>
+      ${risk ? `<p class="hstand-body">${escapeHtml(risk)}</p>` : ""}
+      ${riskLevel ? `<div class="hstand-chiprow">${riskLevel}</div>` : ""}
+    </section>` : "";
+  const chanceCard = (chance || chanceLevel) ? `
+    <section class="hstand-card hstand-split hstand-chance" aria-label="Chance">
+      <span class="hstand-kicker hstand-kicker--chance">${HELMUT_ICON_SPARK}<span>Chance</span></span>
+      ${chance ? `<p class="hstand-body">${escapeHtml(chance)}</p>` : ""}
+      ${chanceLevel ? `<div class="hstand-chiprow">${chanceLevel}</div>` : ""}
+    </section>` : "";
+  if (!riskCard && !chanceCard) return "";
+  return `<div class="hstand-duo">${riskCard}${chanceCard}</div>`;
+}
+
+function renderHstandComms(state) {
+  const c = (state.recommendedCommunication && typeof state.recommendedCommunication === "object") ? state.recommendedCommunication : {};
+  const line = hstandText(c.communicationLine);
+  // recommendedChannel ist kleingeschrieben, recommendedFormat/Outputs sind camelCase
+  // (pressRelease/socialPost/internalLine/talkingPoints) -> exakter Token-Lookup (kein toLowerCase).
+  const channel = HSTAND_CHANNEL_LABEL[String(c.recommendedChannel || "")];
+  const format = HSTAND_FORMAT_LABEL[String(c.recommendedFormat || "")];
+  const outputs = (Array.isArray(c.suggestedOutputs) ? c.suggestedOutputs : []).map(hstandText).filter(Boolean);
+  if (!line && !channel && !format && !outputs.length) return ""; // zurueckhaltend ausblenden
+  const meta = [];
+  if (format) meta.push(`Format: ${format}`);
+  if (channel) meta.push(`Kanal: ${channel}`);
+  const chips = outputs.slice(0, 5).map((o) => {
+    const lbl = HSTAND_OUTPUT_LABEL[String(o)] || o;
+    return `<span class="hstand-chip hstand-chip--out">${escapeHtml(lbl)}</span>`;
+  }).join("");
+  return `
+    <section class="hstand-card hstand-comms" aria-label="Empfohlene Kommunikation">
+      <span class="hstand-kicker">${HELMUT_ICON_CHAT}<span>Empfohlene Kommunikation</span></span>
+      ${line ? `<p class="hstand-body">${escapeHtml(line)}</p>` : ""}
+      ${meta.length ? `<p class="hstand-comms-meta">${escapeHtml(meta.join("   ·   "))}</p>` : ""}
+      ${chips ? `<div class="hstand-chiprow">${chips}</div>` : ""}
+    </section>`;
+}
+
+function renderHstandActions(state) {
+  const items = (Array.isArray(state.actionItems) ? state.actionItems : []).filter((a) => a && hstandText(a.title));
+  if (!items.length) return "";
+  const rows = items.slice(0, 4).map((a, i) => {
+    const desc = hstandText(a.description);
+    const due = hstandText(a.dueHint);
+    const prio = hstandPriorityChip(a.priority);
+    const metaRow = (due || prio) ? `<div class="hstand-step-meta">${due ? `<span class="hstand-step-due">${HELMUT_ICON_CLOCK}${escapeHtml(due)}</span>` : ""}${prio}</div>` : "";
+    return `
+      <li class="hstand-step">
+        <span class="hstand-step-num">${i + 1}</span>
+        <div class="hstand-step-body">
+          <p class="hstand-step-title">${escapeHtml(hstandText(a.title))}</p>
+          ${desc ? `<p class="hstand-step-desc">${escapeHtml(desc)}</p>` : ""}
+          ${metaRow}
+        </div>
+      </li>`;
+  }).join("");
+  return `
+    <section class="hstand-card hstand-actions" aria-label="Was du jetzt tun solltest">
+      <span class="hstand-kicker">${HELMUT_ICON_LIST}<span>Was du jetzt tun solltest</span></span>
+      <ol class="hstand-steps">${rows}</ol>
+    </section>`;
+}
+
+function renderHstandPrimary(state) {
+  const p = state.primaryItem;
+  if (!p || typeof p !== "object") return "";
+  const title = hstandText(p.displayTitle) || hstandText(p.title);
+  if (!title) return "";
+  const urgency = hstandUrgencyChip(p.urgency);
+  const chips = hstandContextChips(p.contextChips);
+  const count = Number(p.sourceCount);
+  const when = hstandWhen(p.lastUpdated);
+  return `
+    <section class="hstand-card hstand-primary" aria-label="Aktueller Vorgang">
+      <span class="hstand-kicker">${HELMUT_ICON_DOC}<span>Aktueller Vorgang</span></span>
+      <h3 class="hstand-primary-title">${escapeHtml(title)}</h3>
+      ${(urgency || chips) ? `<div class="hstand-chiprow">${urgency}${chips}</div>` : ""}
+      <dl class="hstand-metrics">
+        <div class="hstand-metric"><dt>Quellen</dt><dd>${Number.isFinite(count) && count > 0 ? count : "—"}</dd></div>
+        <div class="hstand-metric"><dt>Letzte Aktualisierung</dt><dd>${when ? escapeHtml(when) : "—"}</dd></div>
+        <div class="hstand-metric"><dt>Qualität</dt><dd>${hstandQuality(p.qualityStatus)}</dd></div>
+      </dl>
+    </section>`;
+}
+
+function renderHstandItems(state) {
+  const items = (Array.isArray(state.items) ? state.items : []).filter((i) => i && (hstandText(i.displayTitle) || hstandText(i.title)));
+  if (!items.length) return "";
+  const rows = items.slice(0, 3).map((i) => {
+    const title = hstandText(i.displayTitle) || hstandText(i.title);
+    const why = hstandText(i.whyRelevant);
+    const urgency = hstandUrgencyChip(i.urgency);
+    const chips = hstandContextChips(i.contextChips);
+    return `
+      <li class="hstand-rel">
+        <p class="hstand-rel-title">${escapeHtml(title)}</p>
+        ${why ? `<p class="hstand-rel-why">${escapeHtml(why)}</p>` : ""}
+        ${(urgency || chips) ? `<div class="hstand-chiprow hstand-chiprow--sm">${urgency}${chips}</div>` : ""}
+      </li>`;
+  }).join("");
+  return `
+    <section class="hstand-card hstand-related" aria-label="Weitere relevante Vorgänge">
+      <span class="hstand-kicker">${HELMUT_ICON_EYE}<span>Weitere relevante Vorgänge</span></span>
+      <ul class="hstand-rels">${rows}</ul>
+    </section>`;
+}
+
+function renderHstandSources(state) {
+  const s = (state.sourcesSummary && typeof state.sourcesSummary === "object") ? state.sourcesSummary : {};
+  const count = Number(s.sourceCount);
+  const when = hstandWhen(s.lastUpdated);
+  const countLabel = Number.isFinite(count) && count > 0 ? `${count} ${count === 1 ? "Quelle" : "Quellen"}` : "Keine Quellen";
+  return `
+    <footer class="hstand-foot" aria-label="Quellen und Qualität">
+      <span class="hstand-foot-cell">${escapeHtml(countLabel)}</span>
+      ${when ? `<span class="hstand-foot-cell">Stand: ${escapeHtml(when)}</span>` : ""}
+      <span class="hstand-foot-cell">${hstandQuality(s.qualityStatus)}</span>
+    </footer>`;
+}
+
+// Neutraler technischer Zustand (kein politischer Ersatzinhalt).
+function renderHstandUnavailable() {
+  return `
+    <section class="hstand hstand--state" aria-label="Helmut">
+      <div class="hstand-state-card">
+        <span class="hstand-state-mark" aria-hidden="true">H</span>
+        <p class="hstand-state-title">Kein aktueller Stand verfügbar</p>
+        <p class="hstand-state-sub">Sobald belastbare Vorgänge für dein Mandat vorliegen, erscheint hier dein Stabschefstand.</p>
+      </div>
+    </section>`;
+}
+
+function renderHstandStateCard(state, kind) {
+  const isError = kind === "error";
+  return `
+    <section class="hstand hstand--state" aria-label="Helmut">
+      ${renderHstandHeader(state)}
+      <div class="hstand-state-card${isError ? " hstand-state-card--error" : ""}">
+        <span class="hstand-state-mark" aria-hidden="true">${isError ? "!" : "H"}</span>
+        <p class="hstand-state-title">${isError ? "Stand konnte nicht geladen werden" : "Heute kein Handlungsbedarf"}</p>
+        <p class="hstand-state-sub">${isError
+          ? "Die Auswertung ist derzeit nicht belastbar. Bitte später erneut prüfen."
+          : "Für dein Mandat liegen derzeit keine belastbaren Vorgänge vor."}</p>
+      </div>
+    </section>`;
+}
 
 const HELMUT_BUCKET_LABEL = { handeln: "Handeln", beobachten: "Beobachten", ignorieren: "Ignorieren" };
 
@@ -8812,7 +9123,9 @@ function startHelmutThinking() {
   helmutThinkingTimer = window.setTimeout(() => {
     helmutThinking = false;
     helmutThinkingTimer = null;
-    if (currentView === "helmut") startHelmutTyping();
+    // Nach dem ruhigen Intro-Ring direkt den V3-Stand zeigen (KEINE Typing-Animation
+    // mit berechneten Ersatztexten mehr — der Stand kommt rein aus currentHelmutState).
+    if (currentView === "helmut") render();
   }, 1400);
 }
 
