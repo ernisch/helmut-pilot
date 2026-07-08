@@ -76,6 +76,7 @@ let adminRecoveryStartMs = 0;       // Date.now() beim Start des laufenden Laufs
 let adminRecoveryLastCheck = null;  // HH:MM des letzten read-only Status-Polls
 let adminRecoveryPollTimer = null;  // Intervall-Handle des Status-Pollings
 let adminRecoveryPrevFinishedAt = null; // finishedAt des VORHERIGEN Laufs (Abschluss-Erkennung)
+let adminRecoveryStale = false;     // letzter Status-Reload/Poll schlug fehl -> letzter Stand bleibt sichtbar
 let adminPendingDiagnose = null; // Ergebnis der letzten Pending-Diagnose (nur lesen)
 let adminPendingDiagnoseBusy = false;
 let expandedAdminUsers = new Set();
@@ -647,12 +648,16 @@ async function ensureViewData(view) {
       } catch (_) {
         adminDataStatus = null;
       }
-      // Interner Pipeline-Recovery-Status (nur Anzeige, kein KI-Call). Fehlertolerant.
+      // Interner Pipeline-Recovery-Status (nur Anzeige, kein KI-Call). Fehlertolerant:
+      // nur mit gültigem Objekt überschreiben, sonst letzten bekannten Stand behalten.
       try {
         const rvResp = await fetchWithTimeout(`/api/admin/recovery-status?${apiScopeQuery()}`, {}, 25000);
-        adminRecovery = rvResp.ok ? await rvResp.json() : null;
+        const j = rvResp.ok ? await rvResp.json().catch(() => null) : null;
+        if (j && typeof j === "object" && !Array.isArray(j)) { adminRecovery = j; adminRecoveryStale = false; }
+        else if (adminRecovery) { adminRecoveryStale = true; } // vorhandenen Stand behalten
+        else { adminRecovery = null; }                          // erster Load ohne Daten -> Fail-safe-Karte
       } catch (_) {
-        adminRecovery = null;
+        if (adminRecovery) adminRecoveryStale = true; else adminRecovery = null;
       }
     } catch (error) {
       adminDataLoaded = false;
@@ -1166,7 +1171,7 @@ function renderAdminView() {
 
       ${renderAdminDataStatus(adminDataStatus)}
 
-      ${renderAdminRecovery(adminRecovery, adminRecoveryResult, adminPendingDiagnose)}
+      ${safeRenderAdminRecovery(adminRecovery, adminRecoveryResult, adminPendingDiagnose)}
 
       <div class="admin-body">
         <div class="admin-col-primary">
@@ -1713,6 +1718,26 @@ function recoveryLastRunShort(rl) {
   return `${label}${t ? ` (${dsDateLabel(t)})` : ""}`;
 }
 
+// FEHLER-ISOLATION: ein Wurf im Recovery-Render (unerwarteter Response-Shape, fehlendes
+// Feld) darf NIEMALS den ganzen Admin-Bereich ausblenden. Fängt den Fehler ab und zeigt
+// eine ruhige Ersatzkarte — der restliche Admin-Datenstatus bleibt sichtbar.
+function safeRenderAdminRecovery(rec, result, diagnose) {
+  try {
+    return renderAdminRecovery(rec, result, diagnose);
+  } catch (error) {
+    try { console.warn("Helmut: Recovery-Render fehlgeschlagen, Ersatzkarte", error); } catch (_) { /* ignore */ }
+    const ko = rec && rec.knowledgeObjects;
+    const basis = (ko && ko.available !== false)
+      ? `<p class="ds-sub">Letzter bekannter Stand: pending ${dsFmt(ko.pending)} · complete ${dsFmt(ko.complete)}</p>`
+      : "";
+    return `<section class="ds-status"><div class="ds-card">
+      <div class="ds-card-title">Pipeline-Recovery (intern)</div>
+      <p class="ds-note ds-note--warn">Recovery-Ansicht konnte nicht vollständig dargestellt werden. Der letzte bekannte Stand bleibt erhalten – bitte Seite neu laden.</p>
+      ${basis}
+    </div></section>`;
+  }
+}
+
 // Interner Pipeline-Recovery-Bereich (nur Admin). Zeigt KO-Zustände, Lock, letzten
 // Understanding-Lauf, KI-Fehler/-Erfolg + drei bewusste Aktionen. Serverseitig ist
 // alles admin-gegatet; hier nur Anzeige/Klick. Keine Secrets, keine Env-Werte.
@@ -1743,6 +1768,7 @@ function renderAdminRecovery(rec, result, diagnose) {
     <section class="ds-status">
       <div class="ds-card">
         <div class="ds-card-title">Pipeline-Recovery (intern)</div>
+        ${adminRecoveryStale ? `<p class="ds-note ds-note--warn">Recovery-Status konnte nicht aktualisiert werden. Der letzte bekannte Stand bleibt sichtbar.</p>` : ""}
         ${dsRow("Pending Vorgänge", koAvail ? dsFmt(ko.pending) : dsFmt(ko))}
         ${dsRow("Failed Vorgänge", koAvail ? (failedN > 0 ? `<span class="ds-bad">${dsFmt(ko.failed)}</span>` : dsFmt(ko.failed)) : dsFmt(ko))}
         ${dsRow("Complete Vorgänge", koAvail ? dsFmt(ko.complete) : dsFmt(ko))}
@@ -1801,9 +1827,14 @@ function recoveryGrundText(grund) {
 }
 
 function renderRecoveryResult(r) {
-  if (!r) return "";
+  if (!r || typeof r !== "object") return "";
   const label = { "release-lock": "Lock lösen", "reset-failed": "Failed zurücksetzen", "run-understanding": "Understanding-Lauf" }[r.action] || "Aktion";
   const wrap = (inner) => `<div class="ds-recovery-result">${inner}</div>`;
+  // Unerwartete Server-Antwort: klare Meldung statt roher/leerer Anzeige.
+  if (r.unerwartet) {
+    return wrap(`<div class="ds-recovery-result-head"><span class="ds-warn">${escapeHtml(label)}: Unerwartete Antwort vom Server</span></div>
+      <p class="ds-sub">Die Aktion wurde gesendet, aber die Antwort war nicht lesbar. Bitte Status prüfen oder Seite neu laden.${r.finishedAt ? ` · ${escapeHtml(r.finishedAt)}` : ""}</p>`);
+  }
   // Läuft gerade (sofort nach Klick sichtbar) — Button ist derweil deaktiviert. Live-Feedback:
   // Laufzeit + „zuletzt geprüft" aus dem read-only Polling; ruhige Hinweise bei langer Dauer.
   if (r.pending) {
@@ -2031,9 +2062,13 @@ function startRecoveryPolling() {
     if (!adminRecoveryBusy) { stopRecoveryPolling(); return; }
     try {
       const s = await fetchWithTimeout(`/api/admin/recovery-status?${apiScopeQuery()}`, {}, 20000);
-      if (s.ok) {
-        adminRecovery = await s.json();
-        adminRecoveryLastCheck = helmutNowHHMM();
+      adminRecoveryLastCheck = helmutNowHHMM();
+      // Nur mit einem GÜLTIGEN Objekt überschreiben — sonst letzten bekannten Stand behalten
+      // (verhindert die leere "nicht verfügbar"-Karte bei leerer/unerwarteter Antwort).
+      const j = s.ok ? await s.json().catch(() => null) : null;
+      if (j && typeof j === "object" && !Array.isArray(j)) {
+        adminRecovery = j;
+        adminRecoveryStale = false;
         // Requirement E: hat der Server ein NEUES Abschluss-Ergebnis persistiert (finishedAt
         // aendert sich ggü. dem vorherigen Lauf), lokalen Läuft-Zustand beenden -> das
         // persistierte Ergebnis (oben) wird angezeigt. Uhr-unabhaengig (vergleicht Server-Zeiten).
@@ -2044,8 +2079,10 @@ function startRecoveryPolling() {
           adminRecoveryStartMs = 0;      // späten POST vom Überschreiben abkoppeln
           stopRecoveryPolling();
         }
+      } else {
+        adminRecoveryStale = true;       // letzten Stand behalten, ruhige Notiz anzeigen
       }
-    } catch (_) { /* Poll ist optional – niemals einen zweiten Lauf starten */ }
+    } catch (_) { adminRecoveryStale = true; /* Poll optional – niemals einen zweiten Lauf starten */ }
     render(); bindActions();
   }, 7000);
 }
@@ -2085,18 +2122,27 @@ async function runRecoveryAction(action) {
     const resp = await fetchWithTimeout(`${endpoint}?${apiScopeQuery()}`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body)
     }, action === "run-understanding" ? 250000 : 30000);
-    let json;
-    try { json = await resp.json(); } catch (_) { json = {}; }
+    let json = null;
+    try { json = await resp.json(); } catch (_) { json = null; }
+    const okShape = json && typeof json === "object" && !Array.isArray(json);
     // Nur anwenden, wenn dieser Lauf noch aktuell ist (das Polling hat evtl. schon abgeschlossen).
     if (adminRecoveryStartMs === myStart || action !== "run-understanding") {
-      adminRecoveryResult = resp.ok
-        ? { action, startedAt, finishedAt: helmutNowHHMM(), ...json }
-        : { action, ok: false, startedAt, finishedAt: helmutNowHHMM(), fehler: `HTTP ${resp.status}` };
+      if (!resp.ok) {
+        adminRecoveryResult = { action, ok: false, startedAt, finishedAt: helmutNowHHMM(), fehler: `HTTP ${resp.status}` };
+      } else if (!okShape) {
+        // Unerwarteter Response-Shape -> klare Meldung statt roher/leerer Anzeige.
+        adminRecoveryResult = { action, unerwartet: true, startedAt, finishedAt: helmutNowHHMM() };
+      } else {
+        adminRecoveryResult = { action, startedAt, finishedAt: helmutNowHHMM(), ...json };
+      }
     }
+    // Status-Reload: NUR mit gültigem Objekt überschreiben, sonst letzten Stand behalten.
     try {
       const s = await fetchWithTimeout(`/api/admin/recovery-status?${apiScopeQuery()}`, {}, 25000);
-      if (s.ok) adminRecovery = await s.json();
-    } catch (_) { /* Status-Reload optional */ }
+      const j = s.ok ? await s.json().catch(() => null) : null;
+      if (j && typeof j === "object" && !Array.isArray(j)) { adminRecovery = j; adminRecoveryStale = false; }
+      else adminRecoveryStale = true;
+    } catch (_) { adminRecoveryStale = true; /* Status-Reload optional */ }
   } catch (_) {
     // Nur wenn das Polling nicht bereits ein persistiertes Ergebnis uebernommen hat.
     if ((adminRecoveryStartMs === myStart && adminRecoveryBusy) || action !== "run-understanding") {

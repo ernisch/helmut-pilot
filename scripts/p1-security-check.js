@@ -778,6 +778,23 @@ async function dataStatusResilienceChecks() {
     diagBlock2.includes("getAdminRecoveryLastRun") && diagBlock2.includes("letzterLauf")
       && !diagBlock2.includes("saveAdminRecoveryLastRun") && !/runPendingUnderstandingShadow|requestUnderstanding/.test(diagBlock2));
 
+  // Render-Guards: der Admin-Bereich darf nach Klick NIE leer/kaputt wirken.
+  check("Guard: Recovery-Render ist fehler-isoliert (safeRenderAdminRecovery try/catch, im Admin-View genutzt)",
+    /function safeRenderAdminRecovery/.test(clientSrc) && /try\s*\{\s*\n?\s*return renderAdminRecovery/.test(clientSrc)
+      && clientSrc.includes("safeRenderAdminRecovery(adminRecovery, adminRecoveryResult, adminPendingDiagnose)"));
+  check("Guard: adminRecovery wird NUR mit gueltigem Objekt ueberschrieben (Klick loescht den Stand nicht)",
+    (clientSrc.match(/j && typeof j === "object" && !Array\.isArray\(j\)/g) || []).length >= 3);
+  check("Guard: fehlgeschlagener Status-Reload/Poll behaelt letzten Stand + zeigt ruhige Notiz",
+    clientSrc.includes("Recovery-Status konnte nicht aktualisiert werden") && /adminRecoveryStale = true/.test(clientSrc));
+  check("Guard: unerwartete Server-Antwort -> klare Meldung statt roher/leerer Anzeige",
+    /r\.unerwartet/.test(clientSrc) && clientSrc.includes("Unerwartete Antwort vom Server") && /unerwartet: true/.test(clientSrc));
+  check("Guard: renderRecoveryResult defensiv bei fehlendem/kaputtem Ergebnis (typeof-Check)",
+    /if \(!r \|\| typeof r !== "object"\) return ""/.test(clientSrc));
+  check("Guard: Kandidaten-Diagnose rendert defensiv, wenn kandidaten fehlen/leer sind",
+    /Array\.isArray\(d && d\.kandidaten\)/.test(clientSrc) && clientSrc.includes("Keine verarbeitbaren pending Vorgänge gefunden."));
+  check("Guard: Ersatzkarte bei Render-Fehler zeigt letzten bekannten Stand, blendet Admin nicht aus",
+    clientSrc.includes("Recovery-Ansicht konnte nicht vollständig dargestellt werden") && clientSrc.includes("Letzter bekannter Stand"));
+
   // Behavioral (offline): der gesamte Datenstatus baut sich fehlerfrei zusammen und
   // liefert weiterhin das global-Objekt (keine harte Ausnahme, wenn Teile leer sind).
   try {
