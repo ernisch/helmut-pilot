@@ -1929,8 +1929,54 @@ function renderPendingDiagnose(d) {
     ${dsRow("Wahrscheinlichste Ursache", `<span class="${kopf}">${escapeHtml(pendingDiagnoseUrsacheText(d.ursache))}</span>`)}
     ${hinweis ? `<p class="ds-note">${escapeHtml(hinweis)}</p>` : ""}
     ${dsRow("Empfohlener nächster Schritt", escapeHtml(String(d.empfehlung || "–")))}
+    ${renderPendingKandidaten(d)}
     ${tabelle}
     <p class="ds-note">Nur gelesen – keine KI, keine Pipeline, keine Datenänderung. Bis zu 10 Beispiele ohne Rohtext.</p>`);
+}
+
+// Kurzer Klartext für den letzten Lauf-Status (Kandidaten-Kontext). Keine Secrets.
+function pendingLetzterLaufLabel(ll) {
+  if (!ll || !ll.finishedAt) return null;
+  const st = { "erfolgreich": "Erfolgreich abgeschlossen", "nichts-verarbeitet": "Nicht gestartet", "uebersprungen": "Nicht gestartet", "fehlgeschlagen": "Fehlgeschlagen", "ohne-abschluss": "Ohne Abschluss", "running": "Läuft" }[String(ll.status || "")] || "Lauf";
+  const zahlen = (ll.verarbeitet != null || ll.versucht != null) ? ` · verarbeitet ${dsFmt(ll.verarbeitet)} · versucht ${dsFmt(ll.versucht)}` : "";
+  return `${st} (${dsDateLabel(ll.finishedAt)})${zahlen}`;
+}
+
+// Ehrlicher, code-gestützter Grund, warum ein verarbeitbarer Kandidat nicht gespeichert wurde.
+// Fakt: harte KI-Fehler (skipped-error/-invalid) parken den Vorgang als 'failed' und entfernen
+// ihn aus der pending-Liste. Ein noch pending Kandidat war also KEIN hartes KI-Fail. Der genaue
+// Grund pro Vorgang wird nicht durabel gespeichert -> ehrlich benennen, NICHT raten.
+function pendingKandidatGrund(ll) {
+  if (!ll || !ll.finishedAt) return "Noch kein abgeschlossener Lauf – bitte Understanding-Lauf starten.";
+  return "Cluster vorhanden, im letzten Lauf nicht gespeichert. Vorgang ist noch pending (kein hartes KI-Fail, sonst wäre er „failed“) – wahrscheinlich Zeit-/Tagesbudget oder Speichern. Genauer Grund pro Vorgang nicht in den Metadaten gespeichert.";
+}
+
+// „Verarbeitbare pending Vorgänge" – der/die im aktuellen Fenster verarbeitbare(n) Kandidat(en).
+// Ruhig, mobil (gestapelt), max. 5, keine Rohtexte/Secrets.
+function renderPendingKandidaten(d) {
+  const ks = Array.isArray(d && d.kandidaten) ? d.kandidaten : [];
+  const total = dsNum(d && d.imFenster);
+  if (!ks.length) {
+    return `<div class="ds-diag-kandidaten"><div class="ds-recovery-result-head"><span class="ds-sub">Verarbeitbare pending Vorgänge</span></div>
+      <p class="ds-sub">Keine verarbeitbaren pending Vorgänge gefunden.</p></div>`;
+  }
+  const kopf = total === 1 ? "1 verarbeitbarer Vorgang übrig" : `${dsFmt(total)} verarbeitbare pending Vorgänge${ks.length < total ? ` (erste ${ks.length} angezeigt)` : ""}`;
+  const ll = pendingLetzterLaufLabel(d && d.letzterLauf);
+  const grund = pendingKandidatGrund(d && d.letzterLauf);
+  const bloecke = ks.map((k) => `
+    <div class="ds-diag-kandidat">
+      ${dsRow("Vorgang", escapeHtml(k.vorgangId || "–"))}
+      ${dsRow("Titel", k.titelKurz ? escapeHtml(k.titelKurz) : `<span class="ds-sub">–</span>`)}
+      ${dsRow("Status", escapeHtml(k.status || "–"))}
+      ${dsRow("Rohdokumente im Cluster", dsFmt(k.clusterDokumente))}
+      ${dsRow("Alter", k.alterTage != null ? `${dsFmt(k.alterTage)} Tage${k.rohdokumentAlterTage != null ? ` · Rohdok ${dsFmt(k.rohdokumentAlterTage)} Tage` : ""}` : "–")}
+      ${dsRow("Letzter Versuch", ll ? escapeHtml(ll) : `<span class="ds-sub">–</span>`)}
+      ${dsRow("Grund", `<span class="ds-sub">${escapeHtml(grund)}</span>`)}
+      ${dsRow("Empfehlung", `<span class="ds-sub">Understanding-Lauf erneut starten (ohne aktiven Lock). Bleibt der Vorgang, KI-Budget und Speicherpfad prüfen.</span>`)}
+    </div>`).join("");
+  return `<div class="ds-diag-kandidaten">
+    <div class="ds-recovery-result-head"><span class="ds-warn">${escapeHtml(kopf)}</span></div>
+    ${bloecke}</div>`;
 }
 
 function pendingDiagnoseGrundKurz(g) {

@@ -1115,9 +1115,16 @@ async function handleRequest(request, response) {
       const windowDocs = await listRecentRawDocuments(2000, 90).catch(() => []);
       const widerDocs = await listRecentRawDocuments(DIAG_RAW_LIMIT, DIAG_RAW_DAYS).catch(() => []);
       const d = diagnosePendingUnderstanding(pending, windowDocs, widerDocs, { now: Date.now(), windowDays: 90 });
+      // Letzter manueller Lauf (read-only, aus Auth-Store-Metadaten) — Kontext fuer die
+      // Kandidaten-Anzeige ("warum nicht gespeichert"). KEIN KI-Call, KEIN Write.
+      const rl = await getAdminRecoveryLastRun().catch(() => null);
+      const letzterLauf = rl && rl.startedAt
+        ? { status: rl.status || null, finishedAt: rl.finishedAt || null, verarbeitet: dsNumOrNull(rl.verarbeitet), versucht: dsNumOrNull(rl.versucht), grund: rl.grund || null }
+        : null;
       return {
         verfuegbar: true,
         ...d,
+        letzterLauf,
         rohdokumenteFenster: (windowDocs || []).length,
         rohdokumenteWeit: (widerDocs || []).length,
         // Ehrlich: der weite Read ist gedeckelt; 'keine' heisst 'nicht in bis zu N gelesenen Dok.'

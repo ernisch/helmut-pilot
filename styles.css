@@ -7646,6 +7646,8 @@ body {
 .ds-diag-legend { margin: 8px 0 2px; }
 .ds-diag-legend p { margin: 0 0 4px; color: var(--muted-2); font-size: 12px; line-height: 1.45; }
 .ds-diag-legend strong { color: var(--muted-1, var(--muted-2)); font-weight: 600; }
+.ds-diag-kandidaten { margin-top: 10px; }
+.ds-diag-kandidat { margin-top: 6px; padding: 8px 10px; border-radius: 10px; background: rgba(140, 140, 150, .08); }
 .ds-diag-table-wrap { margin-top: 8px; overflow-x: auto; }
 .ds-diag-table { width: 100%; border-collapse: collapse; font-size: 11px; }
 .ds-diag-table th, .ds-diag-table td { text-align: left; padding: 4px 8px; border-bottom: 1px solid rgba(140, 140, 150, .18); white-space: nowrap; }

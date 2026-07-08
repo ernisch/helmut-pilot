@@ -763,6 +763,21 @@ async function dataStatusResilienceChecks() {
   check("Recovery-UI: uebernimmt persistiertes Abschluss-Ergebnis und beendet lokalen Läuft-Zustand",
     /rl\.finishedAt !== adminRecoveryPrevFinishedAt/.test(clientSrc) && /adminRecoveryBusy = false/.test(pollBlock));
 
+  // Kandidaten-Diagnose (verarbeitbare pending Vorgaenge) — read-only, ehrlich, kein Raten.
+  check("Diagnose-UI: eigene Sektion 'Verarbeitbare pending Vorgänge' + '1 verarbeitbarer Vorgang übrig'",
+    /function renderPendingKandidaten/.test(clientSrc) && clientSrc.includes("Verarbeitbare pending Vorgänge") && clientSrc.includes("1 verarbeitbarer Vorgang übrig"));
+  check("Diagnose-UI: leerer Fall zeigt 'Keine verarbeitbaren pending Vorgänge gefunden'",
+    clientSrc.includes("Keine verarbeitbaren pending Vorgänge gefunden."));
+  check("Diagnose-UI: Kandidat zeigt Cluster-Dok-Zahl, Alter, Letzten Versuch, Grund, Empfehlung",
+    clientSrc.includes("Rohdokumente im Cluster") && clientSrc.includes("Letzter Versuch") && /dsRow\("Grund"/.test(clientSrc) && /dsRow\("Empfehlung"/.test(clientSrc));
+  check("Diagnose-UI: Kandidaten-Grund ist ehrlich (kein hartes KI-Fail -> 'failed'; sonst nicht in Metadaten)",
+    clientSrc.includes("kein hartes KI-Fail") && clientSrc.includes("nicht in den Metadaten gespeichert"));
+  // Endpoint: liest den letzten Lauf read-only als Kontext dazu (KEIN Write, KEIN KI).
+  const diagBlock2 = serverSrc.slice(serverSrc.indexOf("/api/admin/recovery/pending-diagnose"), serverSrc.indexOf("/api/admin/recovery/pending-diagnose") + 2000);
+  check("Diagnose: Endpoint haengt 'letzterLauf' read-only an (getAdminRecoveryLastRun, kein Write/KI)",
+    diagBlock2.includes("getAdminRecoveryLastRun") && diagBlock2.includes("letzterLauf")
+      && !diagBlock2.includes("saveAdminRecoveryLastRun") && !/runPendingUnderstandingShadow|requestUnderstanding/.test(diagBlock2));
+
   // Behavioral (offline): der gesamte Datenstatus baut sich fehlerfrei zusammen und
   // liefert weiterhin das global-Objekt (keine harte Ausnahme, wenn Teile leer sind).
   try {
@@ -815,6 +830,23 @@ function pendingDiagnoseChecks() {
     `ursache=${P.ursache} imFenster=${P.imFenster} ausserhalb=${P.ausserhalb} keine=${P.keine}`);
   check("Diagnose: Empfehlung nennt erneuten Lauf + separate Bewertung (kein Auto-Fix)",
     /erneut starten/.test(P.empfehlung) && /separat bewerten/.test(P.empfehlung));
+
+  // KANDIDATEN: verarbeitbare (im-fenster) pending-Vorgaenge werden separat, klar markiert
+  // ausgegeben — mit Cluster-Metadaten, aber OHNE Rohtext-Felder.
+  check("Diagnose: kandidaten markiert die verarbeitbaren (im-fenster) Vorgaenge (max 5)",
+    Array.isArray(P.kandidaten) && P.kandidaten.length === 3 && P.kandidaten.every((k) => k.clusterDokumente >= 1),
+    `kandidaten=${P.kandidaten && P.kandidaten.length}`);
+  check("Diagnose: kandidaten enthalten KEINE Rohtext-Felder (summary/content/body/url)",
+    P.kandidaten.every((k) => !("summary" in k) && !("content" in k) && !("body" in k) && !("url" in k)));
+  // Genau-1-Kandidat (Production-Fall): 1 im-fenster + viele verwaist -> genau 1 Kandidat.
+  const einDoc = [mk("only1", "Tariftreuegesetz beschlossen", 4)];
+  const v1 = deriveVorgangId(clusterRawDocuments([toRawDocumentRow(einDoc[0])])[0]);
+  const pending1 = [{ vorgang_id: v1, headline: "Tariftreue", understanding_status: "pending", source_document_count: 2, created_at: new Date(now - 4 * day).toISOString() }];
+  for (let i = 0; i < 62; i++) pending1.push({ vorgang_id: "vg-w-" + i, source_document_count: 0, understanding_status: "pending", created_at: new Date(now - 5 * day).toISOString() });
+  const P1 = diagnosePendingUnderstanding(pending1, einDoc, einDoc, { now, windowDays: 90 });
+  check("Diagnose: Production-Fall mit genau 1 Kandidat -> imFenster===1 && kandidaten.length===1",
+    P1.imFenster === 1 && P1.kandidaten.length === 1 && P1.kandidaten[0].status === "pending",
+    `imFenster=${P1.imFenster} kandidaten=${P1.kandidaten.length}`);
 
   // Rein lesend: Eingaben unveraendert; max 10 Beispiele; keine Rohtext-Felder in den Beispielen.
   const pendingIn = [koFenster, koAlt, koVerwaist];
