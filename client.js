@@ -4470,6 +4470,10 @@ const HELMUT_ICON_CHECK = `<svg viewBox="0 0 24 24" width="26" height="26" fill=
 const HELMUT_ICON_CHEVRON = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>`;
 const HELMUT_ICON_LIST = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M9 4h6a1 1 0 0 1 1 1v0a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v0a1 1 0 0 1 1-1z"/><path d="M8 5H6a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-2"/><path d="M9 11h6M9 15h4"/></svg>`;
 const HELMUT_ICON_CHAT = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.5 7.2L4 20l.9-4.4A8 8 0 1 1 21 12z"/></svg>`;
+// Zielbild-Icons: Glühbirne (Empfehlung), Warndreieck (Risiko), Trend-Chart (Chance).
+const HELMUT_ICON_BULB = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 0-3.8 10.6c.5.4.8 1 .8 1.6v.3h6v-.3c0-.6.3-1.2.8-1.6A6 6 0 0 0 12 3z"/></svg>`;
+const HELMUT_ICON_WARN = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 2.5 20h19L12 3.5z"/><path d="M12 10v4.2"/><path d="M12 17.4v.1"/></svg>`;
+const HELMUT_ICON_TREND = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M16 7h5v5"/></svg>`;
 
 // ─────────────────────────────────────────────────────────────────────────
 // V3 — Helmut Stabschefstand (renderHelmutStandView)
@@ -4612,7 +4616,7 @@ function renderHstandProposal(state) {
   const chiprow = (urgency || chips) ? `<div class="hstand-chiprow">${urgency}${chips}</div>` : "";
   return `
     <section class="hstand-card hstand-proposal" aria-label="Mein Vorschlag">
-      ${hstandKicker(HELMUT_ICON_SPARK, "Mein Vorschlag", "accent")}
+      ${hstandKicker(HELMUT_ICON_BULB, "Mein Vorschlag", "accent")}
       ${rec
         ? `<p class="hstand-proposal-text">${escapeHtml(rec)}</p>`
         : `<p class="hstand-empty-line">Für diesen Stand liegt aktuell keine Empfehlung vor.</p>`}
@@ -4637,13 +4641,13 @@ function renderHstandRiskChance(state) {
   const chanceLevel = hstandLevelChip(state.opportunityLevel, "chance");
   const riskCard = (risk || riskLevel) ? `
     <section class="hstand-card hstand-split hstand-risk" aria-label="Risiko bei Nichtreaktion">
-      ${hstandKicker(HELMUT_ICON_BOLT, "Risiko bei Nichtreaktion", "risk")}
+      ${hstandKicker(HELMUT_ICON_WARN, "Risiko bei Nichtreaktion", "risk")}
       ${risk ? `<p class="hstand-body hstand-body--tight">${escapeHtml(risk)}</p>` : ""}
       ${riskLevel}
     </section>` : "";
   const chanceCard = (chance || chanceLevel) ? `
     <section class="hstand-card hstand-split hstand-chance" aria-label="Chance">
-      ${hstandKicker(HELMUT_ICON_SPARK, "Chance", "chance")}
+      ${hstandKicker(HELMUT_ICON_TREND, "Chance", "chance")}
       ${chance ? `<p class="hstand-body hstand-body--tight">${escapeHtml(chance)}</p>` : ""}
       ${chanceLevel}
     </section>` : "";
@@ -4660,11 +4664,13 @@ function renderHstandComms(state) {
   const format = HSTAND_FORMAT_LABEL[String(c.recommendedFormat || "")];
   const outputs = (Array.isArray(c.suggestedOutputs) ? c.suggestedOutputs : []).map(hstandText).filter(Boolean);
   if (!line && !channel && !format && !outputs.length) return ""; // zurueckhaltend ausblenden
-  // Schnell verständlich: "Empfohlen: <Format> · <Kanal>" statt getrennter Label-Paare.
-  const rec = [];
-  if (format) rec.push(format);
-  if (channel) rec.push(channel);
-  const meta = rec.length ? [`Empfohlen: ${rec.join(" · ")}`] : [];
+  // Klare empfohlene Linie: hervorgehobene "Empfohlen: <Format> · <Kanal>"-Zeile.
+  const recParts = [];
+  if (format) recParts.push(format);
+  if (channel) recParts.push(channel);
+  const recLine = recParts.length
+    ? `<p class="hstand-comms-rec"><span class="hstand-comms-rec-k">Empfohlen</span><span class="hstand-comms-rec-v">${escapeHtml(recParts.join(" · "))}</span></p>`
+    : "";
   const chips = outputs.slice(0, 5).map((o) => {
     const lbl = HSTAND_OUTPUT_LABEL[String(o)] || o;
     return `<span class="hstand-chip hstand-chip--out">${escapeHtml(lbl)}</span>`;
@@ -4673,7 +4679,7 @@ function renderHstandComms(state) {
     <section class="hstand-card hstand-comms" aria-label="Empfohlene Kommunikation">
       ${hstandKicker(HELMUT_ICON_CHAT, "Empfohlene Kommunikation", "comms")}
       ${line ? `<p class="hstand-body">${escapeHtml(line)}</p>` : ""}
-      ${meta.length ? `<p class="hstand-comms-meta">${escapeHtml(meta.join("   ·   "))}</p>` : ""}
+      ${recLine}
       ${chips ? `<div class="hstand-comms-formats"><span class="hstand-comms-formats-label">Denkbare Formate</span><div class="hstand-chiprow hstand-chiprow--sm">${chips}</div></div>` : ""}
     </section>`;
 }

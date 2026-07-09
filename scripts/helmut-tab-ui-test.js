@@ -159,8 +159,11 @@ check("Zielbild: farbige Sektions-Icon-Badges (hstand-kico) je Überschrift",
   (html.match(/hstand-kico/g) || []).length >= 6);
 check("Feinschliff: Kommunikation labelt Format-Vorschläge ('Denkbare Formate')",
   html.includes("Denkbare Formate") && html.includes("hstand-comms-formats"));
-check("Feinschliff: Kommunikation zeigt 'Empfohlen: <Format> · <Kanal>'",
-  ((html.match(/hstand-comms[\s\S]*?<\/section>/) || [""])[0]).includes("Empfohlen: Pressemitteilung · Presse"));
+{
+  const commsBlock = (html.match(/hstand-comms"[\s\S]*?<\/section>/) || [""])[0];
+  check("Feinschliff: Kommunikation zeigt hervorgehobene Empfehlung (Label + Format · Kanal)",
+    commsBlock.includes("hstand-comms-rec-k") && commsBlock.includes(">Empfohlen<") && commsBlock.includes("Pressemitteilung · Presse"));
+}
 {
   const prop = (html.match(/hstand-proposal"[\s\S]*?<\/section>/) || [""])[0];
   // Nur echte Chips zählen (jeder trägt einen --Modifier); NICHT den Container hstand-chiprow.

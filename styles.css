@@ -10793,15 +10793,15 @@ body:has(.lage2) {
 .hstand-kicker--actions { color: var(--gold); }
 .hstand-kicker--muted { color: var(--muted); }
 
-/* Mein Vorschlag — der Fokus (kompakt & entschlossen) */
+/* Mein Vorschlag — der Fokus (kompakt, edel, konzentriert) */
 .hstand-proposal {
-  background: color-mix(in srgb, var(--accent) 5%, var(--card));
-  border-color: color-mix(in srgb, var(--accent) 20%, var(--line));
-  padding: 14px 16px;
-  gap: 9px;
+  background: color-mix(in srgb, var(--accent) 6%, var(--card));
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--line));
+  padding: 13px 15px;
+  gap: 7px;
 }
 .hstand-proposal-text {
-  margin: 0; font-size: 20px; font-weight: 600; line-height: 1.24; letter-spacing: -.02em;
+  margin: 0; font-size: 20px; font-weight: 600; line-height: 1.22; letter-spacing: -.02em;
   color: var(--text); text-wrap: balance;
 }
 .hstand-empty-line { margin: 0; font-size: 15px; color: var(--muted-2); line-height: 1.45; }
@@ -10810,12 +10810,12 @@ body:has(.lage2) {
 .hstand-body { margin: 0; font-size: 14.5px; line-height: 1.48; color: color-mix(in srgb, var(--text) 87%, transparent); }
 .hstand-body--tight { font-size: 13px; line-height: 1.42; }
 
-/* Chips */
-.hstand-chiprow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+/* Chips — enger */
+.hstand-chiprow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .hstand-chiprow--sm { gap: 6px; }
 .hstand-chip {
-  display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; border-radius: 999px;
-  font-size: 12.5px; font-weight: 500; letter-spacing: -.005em;
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px;
+  font-size: 12px; font-weight: 500; letter-spacing: -.005em;
   border: 1px solid var(--hairline); background: rgba(255, 255, 255, .015); color: var(--muted);
 }
 .hstand-chip--ctx { color: var(--muted); }
@@ -10839,31 +10839,39 @@ body:has(.lage2) {
 .hstand-level--muted { color: var(--muted); background: color-mix(in srgb, var(--muted) 12%, transparent); }
 
 /* Risiko + Chance IMMER nebeneinander (auch mobil), dicht — politische Abwägung. */
-.hstand-duo { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
-.hstand-split { height: 100%; gap: 7px; padding: 13px 14px; }
+.hstand-duo { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.hstand-split { height: 100%; gap: 6px; padding: 11px 12px; }
 .hstand-split .hstand-body { flex: 1 1 auto; }
 .hstand-split .hstand-level { margin-top: 1px; align-self: flex-start; }
-.hstand-comms-meta { margin: 0; font-size: 13px; color: var(--muted); letter-spacing: .005em; }
-.hstand-comms-meta { margin: 0; font-size: 13.5px; color: var(--muted-2); letter-spacing: .01em; }
-/* Empfohlene Kommunikation: Format-Vorschlaege als ruhige, klar gelabelte Chips */
-.hstand-comms-formats { display: flex; flex-direction: column; gap: 7px; }
-.hstand-comms-formats-label { font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted-2); }
 
-/* Nächste Schritte — kompakter */
-.hstand-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
-.hstand-step { display: flex; gap: 11px; align-items: flex-start; }
-.hstand-step-num {
-  flex: none; width: 21px; height: 21px; border-radius: 999px; display: grid; place-items: center;
-  font-size: 12px; font-weight: 600; color: var(--muted);
-  border: 1px solid var(--line); background: rgba(255, 255, 255, .02);
+/* Empfohlene Kommunikation: klare, hervorgehobene Empfehlungslinie (lila, seriös) */
+.hstand-comms-rec { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.hstand-comms-rec-k {
+  font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--command-purple); padding: 3px 8px; border-radius: 6px;
+  background: color-mix(in srgb, var(--command-purple) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--command-purple) 24%, transparent);
 }
-.hstand-step-body { display: flex; flex-direction: column; gap: 3px; padding-top: 1px; }
-.hstand-step-title { margin: 0; font-size: 14px; font-weight: 550; color: var(--text); line-height: 1.32; }
-.hstand-step-desc { margin: 0; font-size: 12.5px; color: var(--muted); line-height: 1.4; }
-.hstand-step-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 2px; }
-.hstand-step-due { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted-2); }
-.hstand-step-due svg { width: 14px; height: 14px; opacity: .8; }
-.hstand-prio { padding: 3px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 600; letter-spacing: .02em; border: 1px solid var(--hairline); color: var(--muted); }
+.hstand-comms-rec-v { font-size: 13.5px; font-weight: 550; color: color-mix(in srgb, var(--text) 88%, transparent); }
+/* Format-Vorschläge als ruhige, klar gelabelte (nicht klickbare) Chips */
+.hstand-comms-formats { display: flex; flex-direction: column; gap: 6px; }
+.hstand-comms-formats-label { font-size: 10.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted-2); }
+
+/* Nächste Schritte — klare Arbeitsanweisung, kompakt */
+.hstand-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.hstand-step { display: flex; gap: 10px; align-items: flex-start; }
+.hstand-step-num {
+  flex: none; width: 20px; height: 20px; border-radius: 999px; display: grid; place-items: center;
+  font-size: 11.5px; font-weight: 600; color: var(--muted); line-height: 1;
+  border: 1px solid var(--line); background: rgba(255, 255, 255, .02); margin-top: 1px;
+}
+.hstand-step-body { display: flex; flex-direction: column; gap: 2px; }
+.hstand-step-title { margin: 0; font-size: 14px; font-weight: 550; color: var(--text); line-height: 1.3; }
+.hstand-step-desc { margin: 0; font-size: 12.5px; color: var(--muted); line-height: 1.38; }
+.hstand-step-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 1px; }
+.hstand-step-due { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted-2); }
+.hstand-step-due svg { width: 13px; height: 13px; opacity: .8; }
+.hstand-prio { padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: .02em; border: 1px solid var(--hairline); color: var(--muted); }
 .hstand-prio--risk { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 32%, transparent); }
 .hstand-prio--warn { color: var(--watch); border-color: color-mix(in srgb, var(--watch) 32%, transparent); }
 .hstand-prio--muted { color: var(--muted-2); }
@@ -10892,13 +10900,13 @@ body:has(.lage2) {
 .hstand-qdot--danger { background: var(--danger); }
 .hstand-qdot--muted { background: var(--muted-2); }
 
-/* Quellen-Fußzeile */
+/* Quellen-Fußzeile — ruhig, hochwertig, kompakt */
 .hstand-foot {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 18px;
-  padding: 4px 4px 2px; margin-top: 2px;
-  font-size: 13px; color: var(--muted-2);
+  display: flex; flex-wrap: wrap; align-items: center; gap: 14px;
+  padding: 2px 4px 0; margin-top: 1px;
+  font-size: 12px; color: var(--muted-2);
 }
-.hstand-foot-cell { display: inline-flex; align-items: center; gap: 7px; }
+.hstand-foot-cell { display: inline-flex; align-items: center; gap: 6px; }
 
 /* Neutrale/ehrliche Zustände */
 .hstand--state { min-height: 40vh; }
