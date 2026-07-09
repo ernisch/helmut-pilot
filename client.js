@@ -4540,6 +4540,13 @@ function hstandQuality(q) {
   return `<span class="hstand-q"><span class="hstand-qdot hstand-qdot--${m.tone}"></span>${escapeHtml(m.label)}</span>`;
 }
 
+// Sektions-Überschrift: farbiges Icon-Badge + farbiges Label (Zielbild-Look).
+// tone ∈ accent | risk | chance | comms | actions | muted -> färbt Badge + Label.
+function hstandKicker(icon, label, tone) {
+  const cls = tone ? ` hstand-kicker--${tone}` : "";
+  return `<span class="hstand-kicker${cls}"><span class="hstand-kico">${icon}</span><span>${escapeHtml(label)}</span></span>`;
+}
+
 // --- Entry: der Stand oder ein ehrlicher Zustand ---------------------------
 function renderHelmutStandView() {
   const state = briefing && briefing.currentHelmutState;
@@ -4589,7 +4596,7 @@ function renderHstandProposal(state) {
   const chiprow = (urgency || chips) ? `<div class="hstand-chiprow">${urgency}${chips}</div>` : "";
   return `
     <section class="hstand-card hstand-proposal" aria-label="Mein Vorschlag">
-      <span class="hstand-kicker hstand-kicker--accent">${HELMUT_ICON_SPARK}<span>Mein Vorschlag</span></span>
+      ${hstandKicker(HELMUT_ICON_SPARK, "Mein Vorschlag", "accent")}
       ${rec
         ? `<p class="hstand-proposal-text">${escapeHtml(rec)}</p>`
         : `<p class="hstand-empty-line">Für diesen Stand liegt aktuell keine Empfehlung vor.</p>`}
@@ -4602,7 +4609,7 @@ function renderHstandWhy(state) {
   if (!why) return "";
   return `
     <section class="hstand-card hstand-why" aria-label="Warum ist das wichtig">
-      <span class="hstand-kicker">${HELMUT_ICON_EYE}<span>Warum ist das wichtig?</span></span>
+      ${hstandKicker(HELMUT_ICON_EYE, "Warum ist das wichtig?", "accent")}
       <p class="hstand-body">${escapeHtml(why)}</p>
     </section>`;
 }
@@ -4614,19 +4621,15 @@ function renderHstandRiskChance(state) {
   const chanceLevel = hstandLevelChip(state.opportunityLevel, "chance");
   const riskCard = (risk || riskLevel) ? `
     <section class="hstand-card hstand-split hstand-risk" aria-label="Risiko bei Nichtreaktion">
-      <div class="hstand-split-head">
-        <span class="hstand-kicker hstand-kicker--risk">${HELMUT_ICON_BOLT}<span>Risiko bei Nichtreaktion</span></span>
-        ${riskLevel}
-      </div>
+      ${hstandKicker(HELMUT_ICON_BOLT, "Risiko bei Nichtreaktion", "risk")}
       ${risk ? `<p class="hstand-body hstand-body--tight">${escapeHtml(risk)}</p>` : ""}
+      ${riskLevel}
     </section>` : "";
   const chanceCard = (chance || chanceLevel) ? `
     <section class="hstand-card hstand-split hstand-chance" aria-label="Chance">
-      <div class="hstand-split-head">
-        <span class="hstand-kicker hstand-kicker--chance">${HELMUT_ICON_SPARK}<span>Chance</span></span>
-        ${chanceLevel}
-      </div>
+      ${hstandKicker(HELMUT_ICON_SPARK, "Chance", "chance")}
       ${chance ? `<p class="hstand-body hstand-body--tight">${escapeHtml(chance)}</p>` : ""}
+      ${chanceLevel}
     </section>` : "";
   if (!riskCard && !chanceCard) return "";
   return `<div class="hstand-duo">${riskCard}${chanceCard}</div>`;
@@ -4652,7 +4655,7 @@ function renderHstandComms(state) {
   }).join("");
   return `
     <section class="hstand-card hstand-comms" aria-label="Empfohlene Kommunikation">
-      <span class="hstand-kicker">${HELMUT_ICON_CHAT}<span>Empfohlene Kommunikation</span></span>
+      ${hstandKicker(HELMUT_ICON_CHAT, "Empfohlene Kommunikation", "comms")}
       ${line ? `<p class="hstand-body">${escapeHtml(line)}</p>` : ""}
       ${meta.length ? `<p class="hstand-comms-meta">${escapeHtml(meta.join("   ·   "))}</p>` : ""}
       ${chips ? `<div class="hstand-comms-formats"><span class="hstand-comms-formats-label">Denkbare Formate</span><div class="hstand-chiprow hstand-chiprow--sm">${chips}</div></div>` : ""}
@@ -4679,7 +4682,7 @@ function renderHstandActions(state) {
   }).join("");
   return `
     <section class="hstand-card hstand-actions" aria-label="Was du jetzt tun solltest">
-      <span class="hstand-kicker">${HELMUT_ICON_LIST}<span>Was du jetzt tun solltest</span></span>
+      ${hstandKicker(HELMUT_ICON_LIST, "Was du jetzt tun solltest", "actions")}
       <ol class="hstand-steps">${rows}</ol>
     </section>`;
 }
@@ -4695,7 +4698,7 @@ function renderHstandPrimary(state) {
   const when = hstandWhen(p.lastUpdated);
   return `
     <section class="hstand-card hstand-primary" aria-label="Aktueller Vorgang">
-      <span class="hstand-kicker">${HELMUT_ICON_DOC}<span>Aktueller Vorgang</span></span>
+      ${hstandKicker(HELMUT_ICON_DOC, "Aktueller Vorgang", "accent")}
       <h3 class="hstand-primary-title">${escapeHtml(title)}</h3>
       ${(urgency || chips) ? `<div class="hstand-chiprow">${urgency}${chips}</div>` : ""}
       <dl class="hstand-metrics">
@@ -4723,7 +4726,7 @@ function renderHstandItems(state) {
   }).join("");
   return `
     <section class="hstand-card hstand-related" aria-label="Weitere relevante Vorgänge">
-      <span class="hstand-kicker">${HELMUT_ICON_EYE}<span>Weitere relevante Vorgänge</span></span>
+      ${hstandKicker(HELMUT_ICON_EYE, "Weitere relevante Vorgänge", "muted")}
       <ul class="hstand-rels">${rows}</ul>
     </section>`;
 }

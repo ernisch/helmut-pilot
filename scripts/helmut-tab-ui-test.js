@@ -153,8 +153,10 @@ check("Feinschliff: Untertitel 'Dein politischer Stabschef'",
   html.includes("Dein politischer Stabschef") && !html.includes("Dein aktueller Stabschefstand"));
 check("Feinschliff: 'Warum ist das wichtig?' mit Fragezeichen",
   html.includes("Warum ist das wichtig?"));
-check("Feinschliff: Risiko/Chance-Level sitzt im split-head (unter dem Titel)",
-  /hstand-split-head[\s\S]*?hstand-level/.test(html));
+check("Zielbild: Risiko/Chance-Level als gefülltes Badge in der jeweiligen Karte",
+  /hstand-risk[\s\S]*?hstand-level--risk/.test(html) && /hstand-chance[\s\S]*?hstand-level--chance/.test(html));
+check("Zielbild: farbige Sektions-Icon-Badges (hstand-kico) je Überschrift",
+  (html.match(/hstand-kico/g) || []).length >= 6);
 check("Feinschliff: Kommunikation labelt Format-Vorschläge ('Denkbare Formate')",
   html.includes("Denkbare Formate") && html.includes("hstand-comms-formats"));
 check("Feinschliff: Kommunikation zeigt 'Empfohlen: <Format> · <Kanal>'",
