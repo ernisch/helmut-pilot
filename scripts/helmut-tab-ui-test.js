@@ -149,6 +149,18 @@ const html = api.render();
 
 check("Voll: rendert den Stand (.hstand), nicht den Leerzustand",
   /class="hstand"/.test(html) && !/hstand--state/.test(html));
+check("Feinschliff: Untertitel 'Dein politischer Stabschef'",
+  html.includes("Dein politischer Stabschef") && !html.includes("Dein aktueller Stabschefstand"));
+check("Feinschliff: 'Warum ist das wichtig?' mit Fragezeichen",
+  html.includes("Warum ist das wichtig?"));
+check("Feinschliff: Risiko/Chance-Level sitzt im split-head (unter dem Titel)",
+  /hstand-split-head[\s\S]*?hstand-level/.test(html));
+check("Feinschliff: Kommunikation labelt Format-Vorschläge ('Denkbare Formate')",
+  html.includes("Denkbare Formate") && html.includes("hstand-comms-formats"));
+check("Feinschliff: Output-Chips ruhig (keine Accent-Button-Klasse mehr am Chip-Style)",
+  html.includes('hstand-chip hstand-chip--out'));
+check("Feinschliff: Mobil-Kurzlabel 'Stand' vorhanden (neben 'Letzte Aktualisierung')",
+  html.includes("hstand-mk-short") && html.includes(">Stand<") && html.includes(">Letzte Aktualisierung<"));
 check("Voll: Mein Vorschlag zeigt die recommendation",
   html.includes("Mein Vorschlag") && html.includes("Intern abstimmen"));
 check("Voll: Warum-ist-das-wichtig sichtbar",

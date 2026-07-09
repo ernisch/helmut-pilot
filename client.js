@@ -4570,7 +4570,7 @@ function renderHstandHeader(state) {
       <div class="hstand-head-row">
         <div class="hstand-head-titles">
           <h1 class="hstand-title">Helmut</h1>
-          <p class="hstand-subtitle">Dein aktueller Stabschefstand</p>
+          <p class="hstand-subtitle">Dein politischer Stabschef</p>
         </div>
         <span class="hstand-status hstand-status--${st.tone}">${escapeHtml(st.label)}</span>
       </div>
@@ -4600,7 +4600,7 @@ function renderHstandWhy(state) {
   if (!why) return "";
   return `
     <section class="hstand-card hstand-why" aria-label="Warum ist das wichtig">
-      <span class="hstand-kicker">${HELMUT_ICON_EYE}<span>Warum ist das wichtig</span></span>
+      <span class="hstand-kicker">${HELMUT_ICON_EYE}<span>Warum ist das wichtig?</span></span>
       <p class="hstand-body">${escapeHtml(why)}</p>
     </section>`;
 }
@@ -4612,15 +4612,19 @@ function renderHstandRiskChance(state) {
   const chanceLevel = hstandLevelChip(state.opportunityLevel, "chance");
   const riskCard = (risk || riskLevel) ? `
     <section class="hstand-card hstand-split hstand-risk" aria-label="Risiko bei Nichtreaktion">
-      <span class="hstand-kicker hstand-kicker--risk">${HELMUT_ICON_BOLT}<span>Risiko bei Nichtreaktion</span></span>
-      ${risk ? `<p class="hstand-body">${escapeHtml(risk)}</p>` : ""}
-      ${riskLevel ? `<div class="hstand-chiprow">${riskLevel}</div>` : ""}
+      <div class="hstand-split-head">
+        <span class="hstand-kicker hstand-kicker--risk">${HELMUT_ICON_BOLT}<span>Risiko bei Nichtreaktion</span></span>
+        ${riskLevel}
+      </div>
+      ${risk ? `<p class="hstand-body hstand-body--tight">${escapeHtml(risk)}</p>` : ""}
     </section>` : "";
   const chanceCard = (chance || chanceLevel) ? `
     <section class="hstand-card hstand-split hstand-chance" aria-label="Chance">
-      <span class="hstand-kicker hstand-kicker--chance">${HELMUT_ICON_SPARK}<span>Chance</span></span>
-      ${chance ? `<p class="hstand-body">${escapeHtml(chance)}</p>` : ""}
-      ${chanceLevel ? `<div class="hstand-chiprow">${chanceLevel}</div>` : ""}
+      <div class="hstand-split-head">
+        <span class="hstand-kicker hstand-kicker--chance">${HELMUT_ICON_SPARK}<span>Chance</span></span>
+        ${chanceLevel}
+      </div>
+      ${chance ? `<p class="hstand-body hstand-body--tight">${escapeHtml(chance)}</p>` : ""}
     </section>` : "";
   if (!riskCard && !chanceCard) return "";
   return `<div class="hstand-duo">${riskCard}${chanceCard}</div>`;
@@ -4647,7 +4651,7 @@ function renderHstandComms(state) {
       <span class="hstand-kicker">${HELMUT_ICON_CHAT}<span>Empfohlene Kommunikation</span></span>
       ${line ? `<p class="hstand-body">${escapeHtml(line)}</p>` : ""}
       ${meta.length ? `<p class="hstand-comms-meta">${escapeHtml(meta.join("   ·   "))}</p>` : ""}
-      ${chips ? `<div class="hstand-chiprow">${chips}</div>` : ""}
+      ${chips ? `<div class="hstand-comms-formats"><span class="hstand-comms-formats-label">Denkbare Formate</span><div class="hstand-chiprow hstand-chiprow--sm">${chips}</div></div>` : ""}
     </section>`;
 }
 
@@ -4692,7 +4696,7 @@ function renderHstandPrimary(state) {
       ${(urgency || chips) ? `<div class="hstand-chiprow">${urgency}${chips}</div>` : ""}
       <dl class="hstand-metrics">
         <div class="hstand-metric"><dt>Quellen</dt><dd>${Number.isFinite(count) && count > 0 ? count : "—"}</dd></div>
-        <div class="hstand-metric"><dt>Letzte Aktualisierung</dt><dd>${when ? escapeHtml(when) : "—"}</dd></div>
+        <div class="hstand-metric"><dt><span class="hstand-mk-full">Letzte Aktualisierung</span><span class="hstand-mk-short">Stand</span></dt><dd>${when ? escapeHtml(when) : "—"}</dd></div>
         <div class="hstand-metric"><dt>Qualität</dt><dd>${hstandQuality(p.qualityStatus)}</dd></div>
       </dl>
     </section>`;

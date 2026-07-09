@@ -10735,15 +10735,15 @@ body:has(.lage2) {
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 4px 0 12px;
+  gap: 12px;
+  padding: 2px 0 12px;
 }
 
 /* Kopf */
-.hstand-head { display: flex; flex-direction: column; gap: 10px; padding: 4px 2px 6px; }
+.hstand-head { display: flex; flex-direction: column; gap: 7px; padding: 2px 2px 2px; }
 .hstand-head-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
-.hstand-title { margin: 0; font-size: 30px; font-weight: 600; letter-spacing: -.03em; color: var(--text); line-height: 1.05; }
-.hstand-subtitle { margin: 4px 0 0; font-size: 15px; color: var(--muted-2); letter-spacing: -.01em; }
+.hstand-title { margin: 0; font-size: 29px; font-weight: 600; letter-spacing: -.03em; color: var(--text); line-height: 1.05; }
+.hstand-subtitle { margin: 3px 0 0; font-size: 15px; color: var(--muted-2); letter-spacing: -.01em; }
 .hstand-meta-line { margin: 0; display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--muted-2); }
 .hstand-meta-line svg { width: 15px; height: 15px; opacity: .8; }
 .hstand-status {
@@ -10762,11 +10762,11 @@ body:has(.lage2) {
 .hstand-card {
   background: var(--card);
   border: 1px solid var(--hairline);
-  border-radius: 20px;
-  padding: 20px 22px;
+  border-radius: 18px;
+  padding: 16px 18px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 .hstand-kicker {
   display: inline-flex; align-items: center; gap: 8px;
@@ -10778,20 +10778,22 @@ body:has(.lage2) {
 .hstand-kicker--risk { color: var(--danger); }
 .hstand-kicker--chance { color: var(--chance); }
 
-/* Mein Vorschlag — der Fokus */
+/* Mein Vorschlag — der Fokus (kompakter, aber stark) */
 .hstand-proposal {
   background: color-mix(in srgb, var(--accent) 7%, var(--card));
   border-color: color-mix(in srgb, var(--accent) 26%, var(--hairline));
-  padding: 22px 24px;
+  padding: 17px 20px;
+  gap: 12px;
 }
 .hstand-proposal-text {
-  margin: 0; font-size: 23px; font-weight: 600; line-height: 1.32; letter-spacing: -.02em;
+  margin: 0; font-size: 21px; font-weight: 600; line-height: 1.28; letter-spacing: -.02em;
   color: var(--text); text-wrap: balance;
 }
 .hstand-empty-line { margin: 0; font-size: 16px; color: var(--muted-2); line-height: 1.5; }
 
 /* Fließtexte */
-.hstand-body { margin: 0; font-size: 15.5px; line-height: 1.6; color: color-mix(in srgb, var(--text) 88%, transparent); }
+.hstand-body { margin: 0; font-size: 15px; line-height: 1.55; color: color-mix(in srgb, var(--text) 88%, transparent); }
+.hstand-body--tight { font-size: 14px; line-height: 1.5; }
 
 /* Chips */
 .hstand-chiprow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
@@ -10802,7 +10804,9 @@ body:has(.lage2) {
   border: 1px solid var(--hairline); background: rgba(255, 255, 255, .015); color: var(--muted);
 }
 .hstand-chip--ctx { color: var(--muted); }
-.hstand-chip--out { color: var(--accent-ink); border-color: color-mix(in srgb, var(--accent) 26%, transparent); background: var(--accent-soft); }
+/* suggestedOutputs sind NICHT klickbar -> ruhige Chips (keine Button-/Accent-Optik,
+   damit keine Funktion vorgetaeuscht wird). */
+.hstand-chip--out { color: var(--muted); }
 .hstand-chip--danger { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 32%, transparent); }
 .hstand-chip--warn { color: var(--watch); border-color: color-mix(in srgb, var(--watch) 32%, transparent); }
 .hstand-chip--muted { color: var(--muted); }
@@ -10819,10 +10823,15 @@ body:has(.lage2) {
 .hstand-level--warn { color: var(--watch); border-color: color-mix(in srgb, var(--watch) 36%, transparent); background: color-mix(in srgb, var(--watch) 9%, transparent); }
 .hstand-level--muted { color: var(--muted); }
 
-/* Risiko + Chance nebeneinander (Desktop), gestapelt (Mobil) */
-.hstand-duo { display: grid; grid-template-columns: 1fr; gap: 14px; }
-.hstand-split { height: 100%; }
+/* Risiko + Chance nebeneinander (Desktop), gestapelt (Mobil) — kompakt */
+.hstand-duo { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.hstand-split { height: 100%; gap: 9px; }
+/* Level-Chip direkt unter der Ueberschrift (nicht am Kartenende) */
+.hstand-split-head { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
 .hstand-comms-meta { margin: 0; font-size: 13.5px; color: var(--muted-2); letter-spacing: .01em; }
+/* Empfohlene Kommunikation: Format-Vorschlaege als ruhige, klar gelabelte Chips */
+.hstand-comms-formats { display: flex; flex-direction: column; gap: 7px; }
+.hstand-comms-formats-label { font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted-2); }
 
 /* Nächste Schritte */
 .hstand-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
@@ -10844,11 +10853,13 @@ body:has(.lage2) {
 .hstand-prio--muted { color: var(--muted-2); }
 
 /* Aktueller Vorgang */
-.hstand-primary-title { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -.01em; color: var(--text); line-height: 1.35; }
-.hstand-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 6px 0 0; padding-top: 14px; border-top: 1px solid var(--hairline); }
+.hstand-primary-title { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -.01em; color: var(--text); line-height: 1.35; }
+.hstand-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 4px 0 0; padding-top: 13px; border-top: 1px solid var(--hairline); }
 .hstand-metric { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .hstand-metric dt { font-size: 11.5px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted-2); }
 .hstand-metric dd { margin: 0; font-size: 14.5px; font-weight: 600; color: var(--text); }
+/* Kurzlabel „Stand" nur mobil, „Letzte Aktualisierung" auf Desktop */
+.hstand-mk-short { display: none; }
 
 /* Weitere relevante Vorgänge */
 .hstand-rels { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
@@ -10890,19 +10901,31 @@ body:has(.lage2) {
 
 /* Desktop: luftiger, Risiko/Chance nebeneinander */
 @media (min-width: 720px) {
-  .hstand { gap: 16px; padding-top: 8px; }
+  .hstand { gap: 15px; padding-top: 6px; }
   .hstand-duo { grid-template-columns: 1fr 1fr; }
-  .hstand-title { font-size: 34px; }
-  .hstand-proposal-text { font-size: 25px; }
+  .hstand-card { padding: 20px 22px; }
+  .hstand-proposal { padding: 20px 24px; }
+  .hstand-title { font-size: 32px; }
+  .hstand-proposal-text { font-size: 23px; }
+  .hstand-body { font-size: 15.5px; }
 }
 
-/* Mobil: kompaktere Kartenränder, Metriken bleiben lesbar */
+/* Mobil: „Aktueller Vorgang"-Metriken als ruhige Zeilen-Liste (kein 3-Spalten-
+   Gedränge; „Letzte Aktualisierung" -> „Stand", bricht nicht mehr um) */
+@media (max-width: 600px) {
+  .hstand-metrics { grid-template-columns: 1fr; gap: 0; padding-top: 11px; }
+  .hstand-metric { flex-direction: row; align-items: baseline; justify-content: space-between; gap: 14px; padding: 7px 0; border-bottom: 1px solid var(--hairline); }
+  .hstand-metric:first-child { padding-top: 0; }
+  .hstand-metric:last-child { padding-bottom: 0; border-bottom: none; }
+  .hstand-metric dt { text-transform: none; letter-spacing: 0; font-size: 13px; color: var(--muted); }
+  .hstand-metric dd { font-size: 13.5px; text-align: right; }
+  .hstand-mk-full { display: none; }
+  .hstand-mk-short { display: inline; }
+}
+
+/* Sehr schmal: Vorschlag minimal kleiner, Fußzeile enger */
 @media (max-width: 480px) {
-  .hstand-card { padding: 18px; border-radius: 18px; }
-  .hstand-proposal { padding: 20px; }
-  .hstand-proposal-text { font-size: 21px; }
-  .hstand-title { font-size: 27px; }
-  .hstand-metrics { gap: 10px; }
-  .hstand-metric dd { font-size: 13.5px; }
+  .hstand-proposal-text { font-size: 19.5px; }
+  .hstand-title { font-size: 26px; }
   .hstand-foot { gap: 12px; }
 }
