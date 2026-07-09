@@ -1262,6 +1262,17 @@ async function buildV3Briefing(profile, politicianId) {
   const userId = (profile && profile.id) || politicianId;
   const empty = (reason) => briefingContract.toBriefingContractV3({ profile, decisions: [], kosById: {}, sourcesByVorgang: {}, reason });
 
+  // REVIEW-FIXTURE (nur PR-/Preview-/Lokal-Abnahme): streng hinter HELMUT_REVIEW_FIXTURE
+  // (Default AUS). In main/Produktion nicht gesetzt -> dieser Zweig ist inert und der
+  // echte V3-Read-Pfad unten läuft unverändert. Nutzt den ECHTEN Adapter mit fiktiven
+  // Daten (keine Kostenwerte, keine reale Partei/Person). KEIN Produktions-Demo.
+  const reviewFixture = require("./lib/helmut/reviewFixture");
+  if (reviewFixture.reviewFixtureEnabled()) {
+    console.warn("[helmut] REVIEW-FIXTURE aktiv (HELMUT_REVIEW_FIXTURE=1) — nur fuer Abnahme, NICHT fuer Produktion.");
+    const fx = reviewFixture.buildReviewFixture(new Date());
+    return briefingContract.toBriefingContractV3({ profile: fx.profile, decisions: fx.decisions, kosById: fx.kosById, sourcesByVorgang: fx.sourcesByVorgang, now: new Date(), reason: "review-fixture" });
+  }
+
   // Fail-safe, KEIN V2-Fallback: kein Store -> expliziter Leerzustand.
   if (!v3StoreReady()) return empty("v3-store-disabled");
 

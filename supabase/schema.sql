@@ -287,6 +287,20 @@ create table if not exists public.knowledge_objects (
   why_relevant text,
   recommendation text,
   display_category text,
+  -- Stabschef-Felder (V3-Fundament): global vom Understanding-Call befuellt, mandantenlos.
+  -- Fehlen sie (Modell liefert nichts) -> NULL/'{}' -> Adapter liest ehrlich leer.
+  risk_of_no_action text,
+  opportunity_summary text,
+  recommended_communication text,
+  action_items text[] not null default '{}',
+  -- Strukturierte Stabschef-Werte (Runde 2): rueckwaertsverträglich NEBEN den Alt-Feldern.
+  -- risk_level/opportunity_level = Enum-Klassifikation (low/medium/high/unknown).
+  -- *_struct = jsonb (empfohlene Kommunikation als Objekt, action_items als Objektliste).
+  -- 'unknown'/leer ist ein gueltiger, ehrlicher Zustand (kein Raten im Frontend).
+  risk_level text,
+  opportunity_level text,
+  recommended_communication_struct jsonb,
+  action_items_struct jsonb not null default '[]'::jsonb,
   best_source_url text,
   best_link_type text,
   source_trust text,
@@ -313,6 +327,26 @@ alter table public.knowledge_objects add column if not exists why_relevant text;
 alter table public.knowledge_objects add column if not exists recommendation text;
 alter table public.knowledge_objects add column if not exists display_category text;
 
+-- Stabschef-Felder (V3-Fundament fuer den spaeteren Helmut-Stabschefstand). EINMALIG
+-- vom globalen Understanding-Call (C7/C8) additiv befuellt, mandantenlos, dauerhaft
+-- gespeichert. Rueckwaertsverträglich (add column if not exists): bestehende Zeilen
+-- bleiben NULL bzw. '{}' -- die Anwendung liest sie leer und macht das ueber
+-- helmutQualityStatus (valid/partial/stale/empty/error) ehrlich sichtbar, statt zu
+-- erfinden. text[]-Liste fuer action_items mit leerem Default (nie NULL-Handling noetig).
+alter table public.knowledge_objects add column if not exists risk_of_no_action text;
+alter table public.knowledge_objects add column if not exists opportunity_summary text;
+alter table public.knowledge_objects add column if not exists recommended_communication text;
+alter table public.knowledge_objects add column if not exists action_items text[] not null default '{}';
+
+-- Strukturierte Stabschef-Werte (Runde 2) auch fuer BESTEHENDE Datenbanken sicherstellen.
+-- Rueckwaertsverträglich (add column if not exists): die Alt-Spalten recommended_communication
+-- (text) und action_items (text[]) bleiben UNANGETASTET. Neue Spalten sind additiv; aeltere
+-- Zeilen bleiben NULL/'[]' -> der Contract-Adapter normalisiert dann aus den Alt-Spalten.
+alter table public.knowledge_objects add column if not exists risk_level text;
+alter table public.knowledge_objects add column if not exists opportunity_level text;
+alter table public.knowledge_objects add column if not exists recommended_communication_struct jsonb;
+alter table public.knowledge_objects add column if not exists action_items_struct jsonb not null default '[]'::jsonb;
+
 -- KO <-> Rohdokument (N:M): "70 Artikel -> 1 Vorgang".
 create table if not exists public.ko_document_links (
   knowledge_object_id text not null references public.knowledge_objects(id) on delete cascade,
@@ -331,8 +365,15 @@ create table if not exists public.ko_relations (
 );
 
 -- KI-Nutzung/Kosten aus dem JSON-Blob in eine echte Tabelle (fail-closed-tauglich).
+-- INTERN: estimated_cost/Token duerfen NIE im Helmut-Tab / CurrentHelmutState fuer
+-- Abgeordnete erscheinen -- diese Tabelle bedient ausschliesslich Admin-/Kosten-Reports.
 create table if not exists public.llm_usage (
   id text primary key,
+  -- SaaS-Kontext (mandantenfaehig, keine tenant-spezifische Sonderlogik):
+  tenant_id text,
+  profile_id text,
+  run_id text,
+  pipeline_step text,
   politician_id text,
   user_id text,
   model text,
@@ -347,6 +388,13 @@ create table if not exists public.llm_usage (
   created_at timestamptz not null default now()
 );
 create index if not exists llm_usage_politician_created_idx on public.llm_usage (politician_id, created_at);
+-- SaaS-Kontextspalten auch fuer BESTEHENDE Datenbanken sicherstellen (rueckwaertsverträglich,
+-- create table ist dort ein No-Op). Aeltere Zeilen bleiben NULL.
+alter table public.llm_usage add column if not exists tenant_id text;
+alter table public.llm_usage add column if not exists profile_id text;
+alter table public.llm_usage add column if not exists run_id text;
+alter table public.llm_usage add column if not exists pipeline_step text;
+create index if not exists llm_usage_tenant_created_idx on public.llm_usage (tenant_id, created_at);
 
 -- Globaler Understanding-Lock (mandantenlos) — Zeilen-Backing fuer den Lock aus C1.
 create table if not exists public.pipeline_locks (
