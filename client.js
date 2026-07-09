@@ -128,8 +128,24 @@ function restorePersistedView() {
 
 // --- Theme (Dunkel / Hell / System) ---
 const THEME_KEY = "helmut:theme";
+// Vercel-VORSCHAU-Hosts (Branch-Previews) heißen "<projekt>-git-<branch>-<team>.vercel.app".
+// Produktion (helmut-pilot.vercel.app / Custom-Domain) enthält KEIN "-git-" -> nie betroffen.
+function isReviewPreviewHost() {
+  try { return /-git-[a-z0-9-]+\.vercel\.app$/i.test(location.hostname); } catch { return false; }
+}
 function getThemePref() {
-  try { return localStorage.getItem(THEME_KEY) || "system"; } catch { return "system"; }
+  try {
+    // 1) Expliziter URL-Override ?theme=dark|light (wird gemerkt) — für gezielte Abnahme.
+    const q = String(new URLSearchParams(location.search).get("theme") || "").toLowerCase();
+    if (q === "dark" || q === "light") { try { localStorage.setItem(THEME_KEY, q); } catch (_) {} return q; }
+    const stored = localStorage.getItem(THEME_KEY);
+    // 2) Explizite Nutzerwahl gewinnt immer.
+    if (stored === "dark" || stored === "light" || stored === "system") return stored;
+    // 3) In der Vercel-VORSCHAU (nie Produktion) ist Dark der Standard, damit die
+    //    Dark-Abnahme ohne Umschalten sichtbar ist. Sonst dem Gerät folgen ("system").
+    if (isReviewPreviewHost()) return "dark";
+    return "system";
+  } catch { return "system"; }
 }
 function resolveTheme(pref) {
   if (pref === "light" || pref === "dark") return pref;
