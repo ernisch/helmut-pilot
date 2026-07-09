@@ -129,8 +129,17 @@ check("Adapter: actionItems sind strukturiert (Alt-text[] -> {title,...})",
 check("qualityStatus=valid, wenn alle vier Inhalts-Dimensionen befuellt & frisch",
   staff.helmutQualityStatus === "valid", staff.helmutQualityStatus);
 
-check("qualityStatus=empty, wenn kein Stabschef-Feld befuellt",
-  contract.deriveHelmutQualityStatus(baseKo({ understanding_status: "complete" }), NOW) === "empty");
+// baseKo traegt echten V3-Kern (warum_wichtig + handlungsempfehlung), aber KEINES der
+// vier neuen Stabschef-Felder -> rueckwaertsvertraeglich "partial" (nicht "empty"):
+// aeltere KOs bleiben mit ihrem vorhandenen Vorschlag sichtbar statt versteckt.
+check("qualityStatus=partial, wenn nur V3-Kern (Empfehlung/Warum) vorhanden, keine Stabschef-Felder",
+  contract.deriveHelmutQualityStatus(baseKo({ understanding_status: "complete" }), NOW) === "partial");
+// Wirklich leer bleibt leer: WEDER Stabschef-Feld NOCH V3-Kern (Empfehlung/Warum) befuellt.
+check("qualityStatus=empty, wenn WEDER Stabschef-Feld NOCH V3-Kern befuellt",
+  contract.deriveHelmutQualityStatus(baseKo({
+    understanding_status: "complete", warum_wichtig: "", handlungsempfehlung: "",
+    why_relevant: "", recommendation: ""
+  }), NOW) === "empty");
 check("qualityStatus=partial, wenn nur ein Teil befuellt",
   contract.deriveHelmutQualityStatus(baseKo({
     understanding_status: "complete", risk_of_no_action: "Nur eins.", updated_at: "2026-07-06T00:00:00Z"
@@ -155,7 +164,8 @@ check("Adapter: leere Stabschef-Felder bleiben leer/unknown (kein Fallback-Text)
   staffEmpty.recommendedCommunication.suggestedOutputs.length === 0 &&
   staffEmpty.actionItems.length === 0 &&
   staffEmpty.riskLevel === "unknown" && staffEmpty.opportunityLevel === "unknown" &&
-  staffEmpty.helmutQualityStatus === "empty");
+  // Stabschef-Felder leer, aber V3-Kern (warum_wichtig/handlungsempfehlung) vorhanden -> partial.
+  staffEmpty.helmutQualityStatus === "partial");
 
 // --- 5) Voller Vertrag: Stabschef-Felder vorhanden, KEINE Kostenwerte --------
 const profile = { id: "u-1", firstName: "Test", party: "SPD", committee: "Gesundheit", focusTopics: ["Pflege"] };

@@ -160,7 +160,11 @@ const stateThin = contract.buildCurrentHelmutState({
 check("Duennes KO: kein Crash, strukturierte Defaults (unknown/leer)",
   stateThin.riskLevel === "unknown" && stateThin.opportunityLevel === "unknown" &&
   stateThin.recommendedCommunication.communicationLine === "" && stateThin.actionItems.length === 0);
-check("Duennes KO ohne Stabschef-Inhalt -> qualityStatus empty (ehrlich)", stateThin.qualityStatus === "empty");
+// Duennes KO traegt echten V3-Kern (warum_wichtig) -> "partial", NICHT "empty":
+// der vorhandene Vorschlag bleibt sichtbar (status "fresh"), Stabschef-Felder ehrlich leer.
+check("Duennes KO mit V3-Kern -> qualityStatus partial (nicht empty, ehrlich)", stateThin.qualityStatus === "partial");
+check("Duennes KO mit V3-Kern -> status fresh + primaryItem vorhanden (kein Leerzustand)",
+  stateThin.status === "fresh" && Boolean(stateThin.primaryItem) && stateThin.primaryItem.id === "vg-3");
 check("Duennes KO: sourceCount aus source_document_count, sourceIds leer (keine geladenen Quellen)",
   stateThin.sourcesSummary.sourceCount === 1 && stateThin.sourceIds.length === 0);
 

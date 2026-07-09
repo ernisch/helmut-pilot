@@ -220,6 +220,40 @@ check("Stale: Kopf-Status 'Nicht mehr ganz frisch' (nicht alarmistisch)",
 check("Stale: Inhalt bleibt sichtbar (Vorschlag rendert weiter)",
   htmlStale.includes("Mein Vorschlag"));
 
+// === 2b) PRODUKTIONS-REPRO: aelteres KO (nur V3-Kern, KEINE neuen Stabschef-Felder) ===
+// Genau der Production-Fall: available=true + primaryItem vorhanden, aber die vier neuen
+// Stabschef-Felder sind leer (KO wurde vor deren Einfuehrung verstanden). Frueher wurde
+// das faelschlich als "empty" versteckt. Jetzt: partial -> status fresh -> voller Stand
+// mit dem vorhandenen Vorschlag (aus handlungsempfehlung) + ehrlichem "teilweise"-Hinweis.
+const koOld = {
+  id: "ko-old-1", vorgang_id: "vg-old-1", status: "neu", understanding_status: "complete",
+  display_title: "Antrag zur Anpassung der Ausschussarbeit",
+  was_ist_passiert: "Ein Antrag wurde eingebracht.",
+  warum_wichtig: "Betrifft die Ausschussarbeit des Mandats.",
+  handlungsempfehlung: "Intern kurz abstimmen und die Linie festhalten.",
+  ausschuesse: ["Arbeit & Soziales"], zeitdruck: "mittel",
+  source_document_count: 3, updated_at: NOW.toISOString()
+};
+const oldState = contract.buildCurrentHelmutState({
+  profile, kosById: { "ko-old-1": koOld },
+  decisions: [{ knowledge_object_id: "ko-old-1", vorgang_id: "vg-old-1", score: 72, decision: "Sofort reagieren", priority_type: "risk", risk: "", chance: "", matched_features: [] }],
+  sourcesByVorgang: {}, now: NOW
+});
+check("Prod-Repro: aelteres KO (nur V3-Kern) -> qualityStatus partial, status fresh (nicht empty)",
+  oldState.qualityStatus === "partial" && oldState.status === "fresh" && Boolean(oldState.primaryItem));
+check("Prod-Repro: recommendation aus handlungsempfehlung durchgereicht (echter Motor-Inhalt)",
+  oldState.recommendation === "Intern kurz abstimmen und die Linie festhalten.");
+api.setBriefing(briefingWith(oldState));
+const htmlOld = api.render();
+check("Prod-Repro: rendert den vollen Stand (.hstand), NICHT den Leerzustand",
+  /class="hstand"/.test(htmlOld) && !/hstand--state/.test(htmlOld) && !htmlOld.includes("Heute kein Handlungsbedarf"));
+check("Prod-Repro: Vorschlag sichtbar (hstand-proposal-text mit Motor-Empfehlung)",
+  htmlOld.includes("hstand-proposal-text") && htmlOld.includes("Intern kurz abstimmen"));
+check("Prod-Repro: ehrlicher 'teilweise belastbar'-Hinweis im Kopf (keine erfundenen Inhalte)",
+  htmlOld.includes("Nur teilweise belastbar"));
+check("Prod-Repro: leere Stabschef-Sektionen entfallen sauber (kein Risiko/Chance/Kommunikation erfunden)",
+  !/hstand-risk|hstand-chance|hstand-comms|hstand-actions/.test(htmlOld));
+
 // === 3) Leerer Zustand ===
 api.setBriefing(briefingWith(emptyState));
 const htmlEmpty = api.render();
