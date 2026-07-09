@@ -4500,10 +4500,10 @@ function hstandWhen(iso) {
   } catch { return ""; }
 }
 
-function hstandContextChips(list) {
+function hstandContextChips(list, limit = 4) {
   const chips = (Array.isArray(list) ? list : []).map(hstandText).filter(Boolean);
   if (!chips.length) return "";
-  return chips.slice(0, 4).map((c) => `<span class="hstand-chip hstand-chip--ctx">${escapeHtml(c)}</span>`).join("");
+  return chips.slice(0, limit).map((c) => `<span class="hstand-chip hstand-chip--ctx">${escapeHtml(c)}</span>`).join("");
 }
 
 // Dringlichkeits-Chip — unbekannt/leer -> nichts (kein Ersatz, nicht dramatisieren).
@@ -4583,7 +4583,9 @@ function renderHstandHeader(state) {
 function renderHstandProposal(state) {
   const rec = hstandText(state.recommendation);
   const urgency = hstandUrgencyChip(state.urgency);
-  const chips = hstandContextChips(state.contextChips);
+  // Ruhiger Kopfbereich: höchstens 3 Chips (Priorität: Dringlichkeit, dann die
+  // wichtigsten Kontext-Labels). Weitere Chips erscheinen weiter unten am Vorgang.
+  const chips = hstandContextChips(state.contextChips, urgency ? 2 : 3);
   const chiprow = (urgency || chips) ? `<div class="hstand-chiprow">${urgency}${chips}</div>` : "";
   return `
     <section class="hstand-card hstand-proposal" aria-label="Mein Vorschlag">
@@ -4639,9 +4641,11 @@ function renderHstandComms(state) {
   const format = HSTAND_FORMAT_LABEL[String(c.recommendedFormat || "")];
   const outputs = (Array.isArray(c.suggestedOutputs) ? c.suggestedOutputs : []).map(hstandText).filter(Boolean);
   if (!line && !channel && !format && !outputs.length) return ""; // zurueckhaltend ausblenden
-  const meta = [];
-  if (format) meta.push(`Format: ${format}`);
-  if (channel) meta.push(`Kanal: ${channel}`);
+  // Schnell verständlich: "Empfohlen: <Format> · <Kanal>" statt getrennter Label-Paare.
+  const rec = [];
+  if (format) rec.push(format);
+  if (channel) rec.push(channel);
+  const meta = rec.length ? [`Empfohlen: ${rec.join(" · ")}`] : [];
   const chips = outputs.slice(0, 5).map((o) => {
     const lbl = HSTAND_OUTPUT_LABEL[String(o)] || o;
     return `<span class="hstand-chip hstand-chip--out">${escapeHtml(lbl)}</span>`;

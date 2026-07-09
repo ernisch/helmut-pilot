@@ -157,6 +157,15 @@ check("Feinschliff: Risiko/Chance-Level sitzt im split-head (unter dem Titel)",
   /hstand-split-head[\s\S]*?hstand-level/.test(html));
 check("Feinschliff: Kommunikation labelt Format-Vorschläge ('Denkbare Formate')",
   html.includes("Denkbare Formate") && html.includes("hstand-comms-formats"));
+check("Feinschliff: Kommunikation zeigt 'Empfohlen: <Format> · <Kanal>'",
+  ((html.match(/hstand-comms[\s\S]*?<\/section>/) || [""])[0]).includes("Empfohlen: Pressemitteilung · Presse"));
+{
+  const prop = (html.match(/hstand-proposal"[\s\S]*?<\/section>/) || [""])[0];
+  // Nur echte Chips zählen (jeder trägt einen --Modifier); NICHT den Container hstand-chiprow.
+  const chipN = (prop.match(/hstand-chip--/g) || []).length;
+  check("Feinschliff: Mein Vorschlag zeigt höchstens 3 Chips (ruhiger Kopf)",
+    chipN <= 3 && prop.includes("Hohe Dringlichkeit") && !prop.includes(">Arbeitszeit<"), `chips=${chipN}`);
+}
 check("Feinschliff: Output-Chips ruhig (keine Accent-Button-Klasse mehr am Chip-Style)",
   html.includes('hstand-chip hstand-chip--out'));
 check("Feinschliff: Mobil-Kurzlabel 'Stand' vorhanden (neben 'Letzte Aktualisierung')",

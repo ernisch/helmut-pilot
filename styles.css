@@ -10731,11 +10731,11 @@ body:has(.lage2) {
    Mobile-first: eine Spalte, klare Reihenfolge. Desktop: etwas luftiger.
    ══════════════════════════════════════════════════════════════════════════ */
 .hstand {
-  max-width: 680px;
+  max-width: 660px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   padding: 2px 0 12px;
 }
 
@@ -10761,29 +10761,29 @@ body:has(.lage2) {
 /* Karte */
 .hstand-card {
   background: var(--card);
-  border: 1px solid var(--hairline);
-  border-radius: 18px;
-  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  padding: 15px 17px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 9px;
 }
 .hstand-kicker {
   display: inline-flex; align-items: center; gap: 8px;
-  font-size: 12px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase;
-  color: var(--muted-2);
+  font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--muted);
 }
-.hstand-kicker svg { width: 16px; height: 16px; }
+.hstand-kicker svg { width: 15px; height: 15px; }
 .hstand-kicker--accent { color: var(--accent); }
 .hstand-kicker--risk { color: var(--danger); }
 .hstand-kicker--chance { color: var(--chance); }
 
-/* Mein Vorschlag — der Fokus (kompakter, aber stark) */
+/* Mein Vorschlag — der Fokus (kompakter, aber stark; ruhiger Accent) */
 .hstand-proposal {
-  background: color-mix(in srgb, var(--accent) 7%, var(--card));
-  border-color: color-mix(in srgb, var(--accent) 26%, var(--hairline));
-  padding: 17px 20px;
-  gap: 12px;
+  background: color-mix(in srgb, var(--accent) 4%, var(--card));
+  border-color: color-mix(in srgb, var(--accent) 18%, var(--line));
+  padding: 16px 19px;
+  gap: 11px;
 }
 .hstand-proposal-text {
   margin: 0; font-size: 21px; font-weight: 600; line-height: 1.28; letter-spacing: -.02em;
@@ -10834,16 +10834,16 @@ body:has(.lage2) {
 .hstand-comms-formats-label { font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted-2); }
 
 /* Nächste Schritte */
-.hstand-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
-.hstand-step { display: flex; gap: 14px; align-items: flex-start; }
+.hstand-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 11px; }
+.hstand-step { display: flex; gap: 12px; align-items: flex-start; }
 .hstand-step-num {
-  flex: none; width: 26px; height: 26px; border-radius: 999px; display: grid; place-items: center;
-  font-size: 13px; font-weight: 600; color: var(--muted);
-  border: 1px solid var(--hairline); background: rgba(255, 255, 255, .02);
+  flex: none; width: 23px; height: 23px; border-radius: 999px; display: grid; place-items: center;
+  font-size: 12.5px; font-weight: 600; color: var(--muted);
+  border: 1px solid var(--line); background: rgba(255, 255, 255, .02);
 }
-.hstand-step-body { display: flex; flex-direction: column; gap: 5px; padding-top: 2px; }
-.hstand-step-title { margin: 0; font-size: 15.5px; font-weight: 550; color: var(--text); line-height: 1.4; }
-.hstand-step-desc { margin: 0; font-size: 14px; color: var(--muted); line-height: 1.5; }
+.hstand-step-body { display: flex; flex-direction: column; gap: 4px; padding-top: 1px; }
+.hstand-step-title { margin: 0; font-size: 14.5px; font-weight: 550; color: var(--text); line-height: 1.35; }
+.hstand-step-desc { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.45; }
 .hstand-step-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 2px; }
 .hstand-step-due { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted-2); }
 .hstand-step-due svg { width: 14px; height: 14px; opacity: .8; }
@@ -10889,25 +10889,31 @@ body:has(.lage2) {
 .hstand-state-card {
   margin: 8px auto; max-width: 420px; text-align: center;
   display: flex; flex-direction: column; align-items: center; gap: 10px;
-  padding: 40px 28px; border: 1px solid var(--hairline); border-radius: 22px; background: var(--card);
+  padding: 40px 28px; border: 1px solid var(--line); border-radius: 15px; background: var(--card);
 }
 .hstand-state-mark {
   width: 52px; height: 52px; border-radius: 999px; display: grid; place-items: center;
-  font-size: 24px; font-weight: 300; color: var(--muted); border: 1px solid var(--hairline);
+  font-size: 24px; font-weight: 300; color: var(--muted); border: 1px solid var(--line);
 }
 .hstand-state-card--error .hstand-state-mark { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 40%, transparent); }
 .hstand-state-title { margin: 6px 0 0; font-size: 17px; font-weight: 600; color: var(--text); }
 .hstand-state-sub { margin: 0; font-size: 14px; line-height: 1.55; color: var(--muted-2); max-width: 34ch; }
 
+/* Bottom-Navigation (fix, ≤920px) darf keinen Inhalt verdecken: großzügiger unterer
+   Innenabstand inkl. iOS Safe-Area, damit jede Karte sauber über der Dock endet. */
+@media (max-width: 920px) {
+  .hstand { padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px)); }
+}
+
 /* Desktop: luftiger, Risiko/Chance nebeneinander */
 @media (min-width: 720px) {
-  .hstand { gap: 15px; padding-top: 6px; }
+  .hstand { gap: 13px; padding-top: 6px; }
   .hstand-duo { grid-template-columns: 1fr 1fr; }
-  .hstand-card { padding: 20px 22px; }
-  .hstand-proposal { padding: 20px 24px; }
-  .hstand-title { font-size: 32px; }
-  .hstand-proposal-text { font-size: 23px; }
-  .hstand-body { font-size: 15.5px; }
+  .hstand-card { padding: 19px 21px; }
+  .hstand-proposal { padding: 19px 22px; }
+  .hstand-title { font-size: 31px; }
+  .hstand-proposal-text { font-size: 22px; }
+  .hstand-body { font-size: 15px; }
 }
 
 /* Mobil: „Aktueller Vorgang"-Metriken als ruhige Zeilen-Liste (kein 3-Spalten-
