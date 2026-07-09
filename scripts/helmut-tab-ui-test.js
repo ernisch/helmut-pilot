@@ -234,5 +234,29 @@ const htmlXss = api.render();
 check("Sicherheit: Motor-Text wird escaped (kein rohes <img> im Markup)",
   !htmlXss.includes("<img src=x") && htmlXss.includes("&lt;img"));
 
+// === 7) Review-Fixture (geschützter Abnahme-Modus) ===
+const reviewFixture = require("../lib/helmut/reviewFixture");
+check("Review: Flag ist per Default AUS (in Produktion inert)",
+  reviewFixture.reviewFixtureEnabled() === false);
+const fx = reviewFixture.buildReviewFixture(new Date());
+const fxBriefing = contract.toBriefingContractV3({ profile: fx.profile, decisions: fx.decisions, kosById: fx.kosById, sourcesByVorgang: fx.sourcesByVorgang, now: new Date() });
+const fxState = fxBriefing.currentHelmutState;
+check("Review: liefert einen VOLLEN currentHelmutState (status fresh, qualityStatus valid)",
+  fxState.status === "fresh" && fxState.qualityStatus === "valid");
+check("Review: alle Abnahme-Felder befüllt",
+  Boolean(fxState.recommendation) && Boolean(fxState.whyItMatters) && Boolean(fxState.riskOfNoAction) &&
+  fxState.riskLevel === "high" && Boolean(fxState.opportunitySummary) && fxState.opportunityLevel === "high" &&
+  Boolean(fxState.recommendedCommunication.communicationLine) && fxState.actionItems.length >= 1 &&
+  fxState.primaryItem && fxState.primaryItem.sourceCount === 18 && fxState.sourceIds.length >= 1 &&
+  Boolean(fxState.sourcesSummary.lastUpdated) && fxState.qualityStatus === "valid");
+api.setBriefing(fxBriefing);
+const fxHtml = api.render();
+check("Review: rendert den vollen Stand (kein Leerzustand)",
+  /class="hstand"/.test(fxHtml) && !/hstand--state/.test(fxHtml) && fxHtml.includes("Für dein Mandat"));
+check("Review: KEINE Kostenwerte im gerenderten Review-Stand",
+  !/cost|estimat|token|pipelineStep|€\s?\d|\$\d/i.test(fxHtml));
+check("Review: keine hartkodierte Partei / keine Cem-Logik im Fixture",
+  !/\bcem\b|ince(?!Last)|\bSPD\b|\bCDU\b|\bAfD\b|\bFDP\b|Gr[üu]ne/i.test(JSON.stringify(fx).replace(/changedSinceLastVisit/g, "")));
+
 console.log(`\n${passed}/${passed + failed} Helmut-Tab-UI-Assertions erfolgreich.`);
 if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exit(1); }
