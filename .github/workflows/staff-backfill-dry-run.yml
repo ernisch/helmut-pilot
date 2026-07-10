@@ -1,0 +1,79 @@
+name: Stabschef-Backfill · Dry-Run
+
+# =============================================================================
+# NUR manueller Dry-Run des Stabschef-Backfills (lib/helmut/staff-backfill.js).
+# =============================================================================
+# Diese Action laeuft NIEMALS automatisch: ausschliesslich workflow_dispatch.
+# Sie unterstuetzt AUSSCHLIESSLICH den Dry-Run:
+#   node scripts/staff-backfill.js --limit=<limit>
+# KEIN echter Lauf: die Execute-/Confirm-Freigabeflags werden bewusst NIE gesetzt. Es wird
+# KEIN KI-Key gesetzt (Dry-Run braucht keinen). Folge: 0 LLM-Calls, 0 Writes, keine
+# Production-Datenaenderung — nur ein lesendes listKnowledgeObjects + Plan-/Kostenschaetzung.
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Ladegrenze fuer den Dry-Run (positive Ganzzahl, 1..2000)"
+        required: false
+        default: "50"
+
+# Minimalrechte: nur lesen. Diese Action schreibt weder ins Repo noch woanders.
+permissions:
+  contents: read
+
+concurrency:
+  group: staff-backfill-dry-run
+  cancel-in-progress: false
+
+jobs:
+  dry-run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Abhaengigkeiten (Projekt hat keine Runtime-Deps; defensiv, kein Lockfile)
+        run: npm install --no-audit --no-fund
+
+      - name: Dry-Run ausfuehren (KEIN echter Lauf moeglich)
+        env:
+          # Store fest an, wie gefordert. KI-Key wird bewusst NICHT gesetzt (Dry-Run braucht keinen).
+          HELMUT_V3_STORE: "1"
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          # Kanonischer Name; das Storage-Modul akzeptiert auch SUPABASE_SERVICE_KEY / SUPABASE_SECRET_KEY.
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          # Eingabe NUR via Env (nie direkt in die Shell interpoliert) -> keine Injection.
+          LIMIT_INPUT: ${{ inputs.limit }}
+        run: |
+          set -euo pipefail
+
+          # 1) Secrets vorhanden?
+          if [ -z "${SUPABASE_URL:-}" ] || [ -z "${SUPABASE_SERVICE_ROLE_KEY:-}" ]; then
+            echo "::error::SUPABASE_URL und/oder SUPABASE_SERVICE_ROLE_KEY sind nicht als GitHub-Secrets gesetzt."
+            exit 1
+          fi
+
+          # 2) Limit strikt validieren (positive Ganzzahl, 1..2000) -> kein Command-Injection.
+          if ! printf '%s' "${LIMIT_INPUT:-50}" | grep -Eq '^[0-9]+$'; then
+            echo "::error::limit muss eine positive Ganzzahl sein (erhalten: '${LIMIT_INPUT:-}')."
+            exit 1
+          fi
+          LIMIT="${LIMIT_INPUT:-50}"
+          if [ "$LIMIT" -lt 1 ] || [ "$LIMIT" -gt 2000 ]; then
+            echo "::error::limit muss zwischen 1 und 2000 liegen (erhalten: ${LIMIT})."
+            exit 1
+          fi
+
+          echo "Starte DRY-RUN (0 LLM-Calls, 0 Writes) mit --limit=${LIMIT} …"
+          echo "Hinweis: Die Execute-/Confirm-Freigabeflags sind in dieser Action nicht erlaubt und werden nicht gesetzt."
+
+          # NUR Dry-Run. Keine Freigabeflags. Der CLI-Default ist ohnehin Dry-Run.
+          node scripts/staff-backfill.js --limit="${LIMIT}"
+
+          echo "Dry-Run abgeschlossen. Der Plan oben zeigt nur Zahlen (keine KO-Rohtexte)."
