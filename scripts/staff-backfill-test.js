@@ -59,12 +59,16 @@ const ALL_KOS = [koFull, koOldPartial, koNoCore, koFailed, koPending, koLegacyPa
 
 // --- Spy-Deps: keine echte Naht wird beruehrt --------------------------------
 function makeDeps(overrides = {}, kos = ALL_KOS) {
-  const calls = { ai: 0, save: 0, sources: 0, patches: [] };
+  const calls = { ai: 0, save: 0, sources: 0, list: 0, byId: 0, byVorgang: 0, patches: [] };
+  const byId = (id) => (kos || []).find((k) => k && k.id === id) || null;
+  const byVorgang = (vid) => (kos || []).find((k) => k && k.vorgang_id === vid) || null;
   const deps = {
     now: () => 1_000_000, // deterministisch (kein Date.now)
     storeReady: () => true,
     aiEnabled: () => true,
-    listKnowledgeObjects: async () => kos,
+    listKnowledgeObjects: async () => { calls.list += 1; return kos; },
+    getKnowledgeObjectById: async (id) => { calls.byId += 1; return byId(id); },
+    getKnowledgeObjectByVorgang: async (vid) => { calls.byVorgang += 1; return byVorgang(vid); },
     getSourcesForVorgang: async () => { calls.sources += 1; return [{ id: "d1", url: "https://example.org/a", published_at: "2026-07-01T00:00:00Z" }]; },
     canSpend: async () => ({ allowed: true, remaining: 100 }),
     requestUnderstanding: async () => { calls.ai += 1; return {}; },
@@ -286,6 +290,81 @@ function makeDeps(overrides = {}, kos = ALL_KOS) {
       /--execute/.test(mb) && /--confirm/.test(mb) && !/--execute/.test(dry) && !/--confirm/.test(dry));
     check("Trennung: KI-Key NUR in der Mini-Batch-Action, NICHT im Dry-Run",
       /OPENAI_API_KEY/.test(mb) && !/OPENAI_API_KEY/.test(dry) && !/AZURE_OPENAI_KEY/.test(dry));
+  }
+
+  // === GEZIELTER Modus (genau 1 Objekt ueber id/vorgang) ===
+  {
+    // Dry-Run, Ziel = ko-old (Kandidat). Nur Einzel-Getter, NICHT listKnowledgeObjects.
+    const { deps, calls } = makeDeps({}, ALL_KOS);
+    const res = await backfill.backfillStaffFields({ targetKoId: "ko-old", limit: 999 }, deps);
+    check("Ziel: Plan im Zielmodus (targeted=true, targetKoId gesetzt)",
+      res.plan.targeted === true && res.plan.targetKoId === "ko-old");
+    check("Ziel: NUR das Zielobjekt geladen (getKnowledgeObjectById), KEIN listKnowledgeObjects",
+      calls.byId === 1 && calls.list === 0);
+    check("Ziel: genau 1 Kandidat (kein anderes KO)", res.plan.toProcess === 1 && res.plan.candidates[0].id === "ko-old");
+    check("Ziel: hartes Limit 1 (auch bei --limit=999)", res.plan.loadLimit === 1 && res.plan.plannedBatchLimit === 1);
+    check("Ziel-Dry-Run: 0 KI-Calls, 0 Writes", calls.ai === 0 && calls.save === 0);
+  }
+  {
+    // Falsche ID -> 0 Kandidaten -> kein Write (auch im echten Lauf).
+    const { deps, calls } = makeDeps({}, ALL_KOS);
+    const res = await backfill.backfillStaffFields({ dryRun: false, targetKoId: "ko-existiert-nicht" }, deps);
+    check("Ziel: falsche ID -> 0 Kandidaten, kein KI-Call, kein Write",
+      res.plan.toProcess === 0 && calls.ai === 0 && calls.save === 0 && calls.list === 0);
+  }
+  {
+    // Ziel ueber VORGANG-ID (Fallback), wenn keine ko-id: nutzt getKnowledgeObjectByVorgang.
+    const { deps, calls } = makeDeps({}, ALL_KOS);
+    const res = await backfill.backfillStaffFields({ targetVorgangId: "vg-old" }, deps);
+    check("Ziel: Auswahl ueber Vorgang-ID (getKnowledgeObjectByVorgang), kein list",
+      res.plan.toProcess === 1 && res.plan.candidates[0].vorgang_id === "vg-old" && calls.byVorgang === 1 && calls.list === 0);
+  }
+  {
+    // Echter (injizierter) Ziel-Lauf: nur fehlende Felder schreiben, kein Ueberschreiben.
+    const aiResult = {
+      was_ist_passiert: "Antrag.", warum_wichtig: "Wichtig.", wer_ist_betroffen: "Betroffene.",
+      handlungsempfehlung: "Abstimmen.", zeitdruck: "mittel",
+      risk_of_no_action: "Risiko ohne Reaktion.", opportunity_summary: "Chance.",
+      risk_level: "high", opportunity_level: "medium",
+      recommended_communication_struct: { communicationLine: "Linie.", recommendedChannel: "press", recommendedFormat: "pressRelease", suggestedOutputs: ["statement"] },
+      action_items_struct: [{ title: "Schritt", description: "", dueHint: "heute", priority: "high", actionType: "alignInternally" }],
+      recommended_communication: "NEU (darf nicht schreiben)", action_items: ["NEU (darf nicht schreiben)"]
+    };
+    const { deps, calls } = makeDeps({}, [koLegacyPartial]);
+    deps.requestUnderstanding = async () => { calls.ai += 1; return aiResult; };
+    const res = await backfill.backfillStaffFields({ dryRun: false, targetKoId: "ko-legacy" }, deps);
+    const patch = calls.patches[0] || {};
+    const patchFields = Object.keys(patch).filter((k) => k !== "id" && k !== "vorgang_id");
+    check("Ziel-Execute: genau 1 verarbeitet, 1 Write", res.processed === 1 && calls.save === 1);
+    check("Ziel-Execute: Kein-Ueberschreiben (Legacy-Felder nicht im Patch)",
+      !patchFields.includes("recommended_communication") && !patchFields.includes("action_items"));
+    check("Ziel-Execute: nur zuvor fehlende Felder geschrieben",
+      patchFields.every((f) => backfill.missingStaffFields(koLegacyPartial).includes(f)) && patchFields.length >= 1);
+  }
+
+  // === Single-Object-Action (staff-backfill-one.yml): Guards ===
+  {
+    const oneP = path.join(__dirname, "..", ".github", "workflows", "staff-backfill-one.yml");
+    check("Single: Workflow-Datei existiert", fs.existsSync(oneP));
+    const one = fs.existsSync(oneP) ? fs.readFileSync(oneP, "utf8") : "";
+    check("Single: nur manuell (workflow_dispatch), NIE automatisch",
+      /workflow_dispatch/.test(one) && !/^\s*schedule\s*:/m.test(one) && !/\bpull_request\b/.test(one) && !/^\s*push\s*:/m.test(one));
+    check("Single: confirm_text Pflicht + exakt BACKFILL_ONE",
+      /confirm_text\s*:[\s\S]*?required:\s*true/.test(one) && /confirm_text\s*==\s*'BACKFILL_ONE'/.test(one) && /!=\s*"BACKFILL_ONE"/.test(one));
+    check("Single: hart genau 1 Ziel-Objekt (--target-ko=ko-vg-destabilisiert --limit=1), kein anderes",
+      /--execute --confirm --target-ko=ko-vg-destabilisiert --limit=1/.test(one)
+      && /--target-ko=ko-vg-destabilisiert --limit=1/.test(one)
+      && !/--limit=[2-9]/.test(one) && !/--limit=1[0-9]/.test(one));
+    check("Single: Dry-Run (Schritt A) ohne KI-Key, nur Store-Env",
+      /node scripts\/staff-backfill\.js --target-ko=ko-vg-destabilisiert --limit=1 \| tee/.test(one));
+    check("Single: KI-Key- und Azure-Deployment-Guard vor Execute",
+      /Kein KI-Key gesetzt/.test(one) && /AZURE_OPENAI_DEPLOYMENT fehlt/.test(one));
+    check("Single: Azure-Deployment durchgereicht (vars || secrets), nie geloggt",
+      /AZURE_OPENAI_DEPLOYMENT:\s*\$\{\{\s*vars\.AZURE_OPENAI_DEPLOYMENT\s*\|\|\s*secrets\.AZURE_OPENAI_DEPLOYMENT\s*\}\}/.test(one)
+      && !/echo[^\n]*\$\{?AZURE_OPENAI_DEPLOYMENT/.test(one));
+    check("Single: minimale Rechte (contents: read)", /permissions:[\s\S]*contents:\s*read/.test(one));
+    check("Single: Execute nur bei confirm_text UND Kandidat > 0",
+      /inputs\.confirm_text == 'BACKFILL_ONE' && steps\.dry\.outputs\.candidates != '0'/.test(one));
   }
 
   console.log(`\n${passed}/${passed + failed} Stabschef-Backfill-Assertions erfolgreich.`);
