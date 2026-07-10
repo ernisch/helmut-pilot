@@ -251,8 +251,17 @@ function makeDeps(overrides = {}, kos = ALL_KOS) {
       /secrets\.OPENAI_API_KEY/.test(mb) && /secrets\.AZURE_OPENAI_KEY/.test(mb) && /secrets\.AZURE_OPENAI_ENDPOINT/.test(mb));
     check("Mini-Batch: Store-Secrets + HELMUT_V3_STORE=1",
       /secrets\.SUPABASE_URL/.test(mb) && /secrets\.SUPABASE_SERVICE_ROLE_KEY/.test(mb) && /HELMUT_V3_STORE:\s*["']?1["']?/.test(mb));
-    check("Mini-Batch: Preflight prueft Store + KI-Key (kein Lauf ohne Keys)",
-      /Preflight/.test(mb) && /Kein KI-Key/.test(mb));
+    // BUGFIX: Dry-Run (Schritt A) MUSS ohne KI-Key laufen -> KI-Key-Check NUR vor Execute (Schritt B).
+    const mbSteps = mb.split(/\n\s{6}- name:/);
+    const mbPreflight = mbSteps.find((b) => /Store-Secrets \(kein KI-Key/.test(b)) || "";
+    const mbDryStep = mbSteps.find((b) => /Dry-Run Plan anzeigen/.test(b)) || "";
+    const mbExecStep = mbSteps.find((b) => /Echter Mini-Batch/.test(b)) || "";
+    check("Mini-Batch: Preflight prueft NUR Store-Secrets (KEIN KI-Key-Check)",
+      /SUPABASE_URL/.test(mbPreflight) && !/OPENAI_API_KEY/.test(mbPreflight) && !/AZURE_OPENAI_KEY/.test(mbPreflight));
+    check("Mini-Batch: Dry-Run (Schritt A) laeuft OHNE KI-Key (nur Store-Env)",
+      !/OPENAI_API_KEY/.test(mbDryStep) && !/AZURE_OPENAI_KEY/.test(mbDryStep) && /--limit=10/.test(mbDryStep));
+    check("Mini-Batch: KI-Key-Check NUR in Schritt B (Execute), vor dem echten Lauf",
+      /OPENAI_API_KEY/.test(mbExecStep) && /AZURE_OPENAI_KEY/.test(mbExecStep) && /Kein KI-Key gesetzt/.test(mbExecStep));
     check("Mini-Batch: erst Dry-Run-Plan, dann Execute (zwei Schritte)",
       /Dry-Run Plan anzeigen/.test(mb) && /Echter Mini-Batch/.test(mb) && mb.indexOf("Dry-Run Plan") < mb.indexOf("Echter Mini-Batch"));
     check("Mini-Batch: Execute nur bei Kandidaten > 0 (0 -> kein Lauf)",
