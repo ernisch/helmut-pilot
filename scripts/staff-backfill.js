@@ -37,9 +37,15 @@ function fmtDur(ms) { return `${(Number(ms) / 1000).toFixed(1)}s`; }
   const wantsExecute = args.includes("--execute");
   const limitArg = args.find((a) => a.startsWith("--limit="));
   const limit = limitArg ? Number(limitArg.split("=")[1]) : undefined;
+  // Gezielter Modus: genau EIN KO ueber Knowledge-Object-ID ODER Vorgang-ID.
+  const targetKoArg = args.find((a) => a.startsWith("--target-ko="));
+  const targetVorgangArg = args.find((a) => a.startsWith("--target-vorgang="));
+  const targetKoId = targetKoArg ? targetKoArg.split("=")[1] : undefined;
+  const targetVorgangId = targetVorgangArg ? targetVorgangArg.split("=")[1] : undefined;
 
   const onPlan = (plan) => {
     console.log("\n── Stabschef-Backfill · Plan ────────────────────────────────");
+    if (plan.targeted) console.log(`  Zielmodus:               genau 1 (ko=${plan.targetKoId || "-"} vorgang=${plan.targetVorgangId || "-"})`);
     console.log(`  Geladen:                 ${plan.loaded}${plan.loadCapReached ? ` (Ladegrenze ${plan.loadLimit} erreicht!)` : ""}`);
     console.log(`  Geprueft (complete):     ${plan.checked}`);
     console.log(`  Uebersprungen (kein Kd.):${plan.skippedNonCandidate}`);
@@ -66,7 +72,7 @@ function fmtDur(ms) { return `${(Number(ms) / 1000).toFixed(1)}s`; }
     }
   };
 
-  const result = await backfillStaffFields({ dryRun: !execute, limit }, { onPlan });
+  const result = await backfillStaffFields({ dryRun: !execute, limit, targetKoId, targetVorgangId }, { onPlan });
 
   if (result && result.skipped) {
     console.log(`Uebersprungen: ${result.reason}`);

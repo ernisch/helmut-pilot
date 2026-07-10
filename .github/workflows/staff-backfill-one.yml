@@ -1,0 +1,116 @@
+name: Stabschef-Backfill · Ein Objekt
+
+# =============================================================================
+# GEZIELTER ECHTER Backfill fuer GENAU EIN Knowledge Object — NUR manuell, harte Bestaetigung.
+# =============================================================================
+# Diese Action laeuft NIEMALS automatisch (ausschliesslich workflow_dispatch) und startet
+# einen ECHTEN Lauf NUR, wenn confirm_text exakt "BACKFILL_ONE" ist. Sie verarbeitet AUSSCHLIESSLICH
+# das fest verdrahtete Ziel-Objekt (kein anderes KO wird geladen oder geschrieben):
+#   ko-vg-destabilisiert   (Vorgang vg-destabilisiert)
+# Befehl fest: --execute --confirm --target-ko=ko-vg-destabilisiert --limit=1 (Limit HART 1).
+# Erst Dry-Run-Plan; echter Lauf nur bei korrektem confirm_text UND wenn das Ziel Kandidat ist.
+# Budget-Gate + Fehlerquoten-Abbruch bleiben im Tool aktiv. Nur Plan-/Statuszahlen, keine Rohtexte.
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_text:
+        description: "Zum Bestaetigen EXAKT eingeben: BACKFILL_ONE (sonst kein echter Lauf)"
+        required: true
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staff-backfill-one
+  cancel-in-progress: false
+
+jobs:
+  one:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Abhaengigkeiten (Projekt hat keine Runtime-Deps; defensiv, kein Lockfile)
+        run: npm install --no-audit --no-fund
+
+      # Preflight prueft NUR die Store-Secrets. KEIN KI-Key-Check hier — der Dry-Run (Schritt A)
+      # braucht keinen KI-Key. Der KI-Key wird erst in Schritt B (Execute) geprueft.
+      - name: Preflight — Store-Secrets (kein KI-Key noetig)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SUPABASE_URL:-}" ] || [ -z "${SUPABASE_SERVICE_ROLE_KEY:-}" ]; then
+            echo "::error::SUPABASE_URL und/oder SUPABASE_SERVICE_ROLE_KEY sind nicht als Secrets gesetzt."
+            exit 1
+          fi
+          echo "Preflight OK (Store-Secrets vorhanden). Dry-Run braucht keinen KI-Key."
+
+      # Schritt A: Dry-Run-Plan (0 KI-Calls, 0 Writes) — genau EIN Ziel-Objekt.
+      - name: Schritt A — Dry-Run Plan anzeigen
+        id: dry
+        env:
+          HELMUT_V3_STORE: "1"
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          node scripts/staff-backfill.js --target-ko=ko-vg-destabilisiert --limit=1 | tee dryrun.log
+          COUNT="$(grep -oE 'Zu verarbeiten:[[:space:]]*[0-9]+' dryrun.log | grep -oE '[0-9]+' | head -1 || true)"
+          echo "candidates=${COUNT:-unknown}" >> "$GITHUB_OUTPUT"
+          echo "Dry-Run zeigt Kandidaten: ${COUNT:-unknown}"
+
+      # Schritt B: ECHTER Lauf fuer GENAU EIN Objekt — NUR bei exaktem confirm_text UND Kandidat > 0.
+      - name: Schritt B — Echter Backfill (genau 1 Objekt)
+        if: ${{ inputs.confirm_text == 'BACKFILL_ONE' && steps.dry.outputs.candidates != '0' }}
+        env:
+          HELMUT_V3_STORE: "1"
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          AZURE_OPENAI_KEY: ${{ secrets.AZURE_OPENAI_KEY }}
+          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+          # Azure-Deployment unveraendert wie Production (bevorzugt Variable, Fallback Secret). Nie geloggt.
+          AZURE_OPENAI_DEPLOYMENT: ${{ vars.AZURE_OPENAI_DEPLOYMENT || secrets.AZURE_OPENAI_DEPLOYMENT }}
+          # Optionaler globaler LLM-Tages-Cap (Default 20, via Repo-Variable ueberschreibbar).
+          HELMUT_MAX_LLM_CALLS_PER_DAY: ${{ vars.HELMUT_MAX_LLM_CALLS_PER_DAY || '20' }}
+          CONFIRM_TEXT: ${{ inputs.confirm_text }}
+        run: |
+          set -euo pipefail
+          # Defense-in-Depth: confirm_text auch zur Laufzeit exakt pruefen.
+          if [ "${CONFIRM_TEXT:-}" != "BACKFILL_ONE" ]; then
+            echo "::error::confirm_text muss exakt BACKFILL_ONE sein."
+            exit 1
+          fi
+          # KI-Key-Check NUR hier vor dem echten Lauf: OpenAI ODER Azure (Key + Endpoint).
+          if [ -z "${OPENAI_API_KEY:-}" ] && { [ -z "${AZURE_OPENAI_KEY:-}" ] || [ -z "${AZURE_OPENAI_ENDPOINT:-}" ]; }; then
+            echo "::error::Kein KI-Key gesetzt. Fuer den echten Lauf: OPENAI_API_KEY ODER (AZURE_OPENAI_KEY + AZURE_OPENAI_ENDPOINT)."
+            exit 1
+          fi
+          # Azure-Guard: Ist Azure aktiv, MUSS der Deployment-Name explizit gesetzt sein (kein stiller Default).
+          if [ -n "${AZURE_OPENAI_KEY:-}" ] && [ -n "${AZURE_OPENAI_ENDPOINT:-}" ] && [ -z "${AZURE_OPENAI_DEPLOYMENT:-}" ]; then
+            echo "::error::Azure ist aktiv, aber AZURE_OPENAI_DEPLOYMENT fehlt. Setze vars.AZURE_OPENAI_DEPLOYMENT (oder das Secret)."
+            exit 1
+          fi
+          echo "Starte ECHTEN Backfill fuer GENAU 1 Objekt (ko-vg-destabilisiert). Budget-Gate + Fehlerquoten-Abbruch aktiv."
+          # Hart verdrahtet: genau EIN Ziel-Objekt, Limit HART 1. Kein anderes KO moeglich.
+          node scripts/staff-backfill.js --execute --confirm --target-ko=ko-vg-destabilisiert --limit=1
+
+      # Hinweis, wenn KEIN echter Lauf stattfand.
+      - name: Hinweis — kein echter Lauf
+        if: ${{ inputs.confirm_text != 'BACKFILL_ONE' || steps.dry.outputs.candidates == '0' }}
+        run: |
+          if [ "${{ inputs.confirm_text }}" != "BACKFILL_ONE" ]; then
+            echo "Kein echter Lauf: confirm_text war nicht exakt BACKFILL_ONE (nur der Dry-Run-Plan wurde gezeigt)."
+          else
+            echo "Kein echter Lauf: Dry-Run meldet 0 Kandidaten (Ziel bereits vollstaendig oder kein Kandidat)."
+          fi
