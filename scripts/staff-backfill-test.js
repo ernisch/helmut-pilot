@@ -233,6 +233,42 @@ function makeDeps(overrides = {}, kos = ALL_KOS) {
       /node scripts\/staff-backfill\.js --limit=/.test(wf));
   }
 
+  // === Mini-Batch-Action: extrem sichere Guards ===
+  {
+    const mbPath = path.join(__dirname, "..", ".github", "workflows", "staff-backfill-mini-batch.yml");
+    check("Mini-Batch: Workflow-Datei existiert", fs.existsSync(mbPath));
+    const mb = fs.existsSync(mbPath) ? fs.readFileSync(mbPath, "utf8") : "";
+    check("Mini-Batch: nur manuell (workflow_dispatch)", /workflow_dispatch/.test(mb));
+    check("Mini-Batch: NIE automatisch (kein schedule/push/pull_request)",
+      !/^\s*schedule\s*:/m.test(mb) && !/\bpull_request\b/.test(mb) && !/^\s*push\s*:/m.test(mb));
+    check("Mini-Batch: confirm_text ist Pflicht-Input", /confirm_text\s*:[\s\S]*?required:\s*true/.test(mb));
+    check("Mini-Batch: verlangt exakt BACKFILL_10", /confirm_text\s*==\s*'BACKFILL_10'/.test(mb) && /!=\s*"BACKFILL_10"/.test(mb));
+    check("Mini-Batch: echter Lauf mit --execute --confirm --limit=10 (hart)",
+      /node scripts\/staff-backfill\.js --execute --confirm --limit=10/.test(mb));
+    check("Mini-Batch: KEIN Limit ueber 10 moeglich (kein dynamisches --limit, kein limit-Input)",
+      !/--limit=\$\{\{/.test(mb) && !/--limit=1[1-9]/.test(mb) && !/--limit=[2-9][0-9]/.test(mb) && !/inputs:[\s\S]*limit\s*:/.test(mb));
+    check("Mini-Batch: braucht KI-Key-Secret (OpenAI ODER Azure)",
+      /secrets\.OPENAI_API_KEY/.test(mb) && /secrets\.AZURE_OPENAI_KEY/.test(mb) && /secrets\.AZURE_OPENAI_ENDPOINT/.test(mb));
+    check("Mini-Batch: Store-Secrets + HELMUT_V3_STORE=1",
+      /secrets\.SUPABASE_URL/.test(mb) && /secrets\.SUPABASE_SERVICE_ROLE_KEY/.test(mb) && /HELMUT_V3_STORE:\s*["']?1["']?/.test(mb));
+    check("Mini-Batch: Preflight prueft Store + KI-Key (kein Lauf ohne Keys)",
+      /Preflight/.test(mb) && /Kein KI-Key/.test(mb));
+    check("Mini-Batch: erst Dry-Run-Plan, dann Execute (zwei Schritte)",
+      /Dry-Run Plan anzeigen/.test(mb) && /Echter Mini-Batch/.test(mb) && mb.indexOf("Dry-Run Plan") < mb.indexOf("Echter Mini-Batch"));
+    check("Mini-Batch: Execute nur bei Kandidaten > 0 (0 -> kein Lauf)",
+      /steps\.dry\.outputs\.candidates\s*!=\s*'0'/.test(mb));
+    check("Mini-Batch: minimale Rechte (contents: read)", /permissions:[\s\S]*contents:\s*read/.test(mb));
+    check("Mini-Batch: HELMUT_MAX_LLM_CALLS_PER_DAY als Cap gesetzt (im Code genutzt)",
+      /HELMUT_MAX_LLM_CALLS_PER_DAY/.test(mb));
+
+    // Dry-Run-Action bleibt UNVERAENDERT sicher: kein --execute/--confirm, kein KI-Key.
+    const dry = fs.readFileSync(path.join(__dirname, "..", ".github", "workflows", "staff-backfill-dry-run.yml"), "utf8");
+    check("Trennung: --execute/--confirm NUR in der Mini-Batch-Action, NICHT im Dry-Run",
+      /--execute/.test(mb) && /--confirm/.test(mb) && !/--execute/.test(dry) && !/--confirm/.test(dry));
+    check("Trennung: KI-Key NUR in der Mini-Batch-Action, NICHT im Dry-Run",
+      /OPENAI_API_KEY/.test(mb) && !/OPENAI_API_KEY/.test(dry) && !/AZURE_OPENAI_KEY/.test(dry));
+  }
+
   console.log(`\n${passed}/${passed + failed} Stabschef-Backfill-Assertions erfolgreich.`);
   if (failed) process.exit(1);
 })().catch((e) => { console.error("Testfehler:", e && e.stack || e); process.exit(1); });

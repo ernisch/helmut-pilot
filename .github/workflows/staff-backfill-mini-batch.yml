@@ -1,0 +1,112 @@
+name: Stabschef-Backfill · Mini-Batch
+
+# =============================================================================
+# ECHTER Mini-Batch-Backfill (max. 10 KOs) — NUR manuell, mit harter Bestaetigung.
+# =============================================================================
+# Diese Action laeuft NIEMALS automatisch (ausschliesslich workflow_dispatch) und startet
+# einen ECHTEN Lauf NUR, wenn confirm_text exakt "BACKFILL_10" ist. Sie verarbeitet HART
+# maximal 10 KOs (Befehl fest verdrahtet: --execute --confirm --limit=10). Erst wird der
+# Dry-Run-Plan gezeigt; der echte Lauf startet nur bei korrektem confirm_text UND wenn es
+# ueberhaupt Kandidaten gibt. Budget-Gate + Fehlerquoten-Abbruch bleiben im Tool aktiv.
+# Es werden nur Plan-/Statuszahlen geloggt, keine KO-Rohtexte.
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_text:
+        description: "Zum Bestaetigen EXAKT eingeben: BACKFILL_10 (sonst kein echter Lauf)"
+        required: true
+        default: ""
+
+# Minimalrechte: nur lesen. Diese Action schreibt nicht ins Repo.
+permissions:
+  contents: read
+
+concurrency:
+  group: staff-backfill-mini-batch
+  cancel-in-progress: false
+
+jobs:
+  mini-batch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Abhaengigkeiten (Projekt hat keine Runtime-Deps; defensiv, kein Lockfile)
+        run: npm install --no-audit --no-fund
+
+      - name: Preflight — Secrets + KI-Key vorhanden
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          AZURE_OPENAI_KEY: ${{ secrets.AZURE_OPENAI_KEY }}
+          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SUPABASE_URL:-}" ] || [ -z "${SUPABASE_SERVICE_ROLE_KEY:-}" ]; then
+            echo "::error::SUPABASE_URL und/oder SUPABASE_SERVICE_ROLE_KEY sind nicht als Secrets gesetzt."
+            exit 1
+          fi
+          # KI-Key: OpenAI ODER Azure (Key + Endpoint). Ohne KI-Key kein echter Lauf.
+          if [ -z "${OPENAI_API_KEY:-}" ] && { [ -z "${AZURE_OPENAI_KEY:-}" ] || [ -z "${AZURE_OPENAI_ENDPOINT:-}" ]; }; then
+            echo "::error::Kein KI-Key gesetzt. Setze OPENAI_API_KEY ODER (AZURE_OPENAI_KEY + AZURE_OPENAI_ENDPOINT)."
+            exit 1
+          fi
+          echo "Preflight OK. confirm_text-Pruefung erfolgt vor dem echten Lauf."
+
+      # Schritt A: Dry-Run-Plan (0 KI-Calls, 0 Writes) — nur Store noetig. Kandidatenzahl merken.
+      - name: Schritt A — Dry-Run Plan anzeigen
+        id: dry
+        env:
+          HELMUT_V3_STORE: "1"
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          node scripts/staff-backfill.js --limit=10 | tee dryrun.log
+          COUNT="$(grep -oE 'Zu verarbeiten:[[:space:]]*[0-9]+' dryrun.log | grep -oE '[0-9]+' | head -1 || true)"
+          echo "candidates=${COUNT:-unknown}" >> "$GITHUB_OUTPUT"
+          echo "Dry-Run zeigt Kandidaten: ${COUNT:-unknown}"
+
+      # Schritt B: ECHTER Mini-Batch — NUR bei exaktem confirm_text UND vorhandenen Kandidaten.
+      - name: Schritt B — Echter Mini-Batch (max 10)
+        if: ${{ inputs.confirm_text == 'BACKFILL_10' && steps.dry.outputs.candidates != '0' }}
+        env:
+          HELMUT_V3_STORE: "1"
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          AZURE_OPENAI_KEY: ${{ secrets.AZURE_OPENAI_KEY }}
+          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+          # Optionaler globaler LLM-Tages-Cap (Default 20, via Repo-Variable ueberschreibbar).
+          # HINWEIS: gilt GLOBAL fuer alle LLM-Calls des Tages; ist das Tagesbudget bereits
+          # ausgeschoepft, ueberspringt der Lauf sicher (0 weitere Calls).
+          HELMUT_MAX_LLM_CALLS_PER_DAY: ${{ vars.HELMUT_MAX_LLM_CALLS_PER_DAY || '20' }}
+          CONFIRM_TEXT: ${{ inputs.confirm_text }}
+        run: |
+          set -euo pipefail
+          # Defense-in-Depth: confirm_text auch zur Laufzeit exakt pruefen.
+          if [ "${CONFIRM_TEXT:-}" != "BACKFILL_10" ]; then
+            echo "::error::confirm_text muss exakt BACKFILL_10 sein."
+            exit 1
+          fi
+          echo "Starte ECHTEN Mini-Batch (max. 10 KOs). Budget-Gate + Fehlerquoten-Abbruch aktiv."
+          # Hart verdrahtet: --limit=10 (nie mehr als 10). Kein dynamisches Limit aus Eingaben.
+          node scripts/staff-backfill.js --execute --confirm --limit=10
+
+      # Hinweis, wenn KEIN echter Lauf stattfand (falsches confirm_text oder 0 Kandidaten).
+      - name: Hinweis — kein echter Lauf
+        if: ${{ inputs.confirm_text != 'BACKFILL_10' || steps.dry.outputs.candidates == '0' }}
+        run: |
+          if [ "${{ inputs.confirm_text }}" != "BACKFILL_10" ]; then
+            echo "Kein echter Lauf: confirm_text war nicht exakt BACKFILL_10 (nur der Dry-Run-Plan wurde gezeigt)."
+          else
+            echo "Kein echter Lauf: Dry-Run meldet 0 Kandidaten."
+          fi
