@@ -157,8 +157,8 @@ check("Zielbild: Risiko/Chance-Level als gefülltes Badge in der jeweiligen Kart
   /hstand-risk[\s\S]*?hstand-level--risk/.test(html) && /hstand-chance[\s\S]*?hstand-level--chance/.test(html));
 check("Zielbild: farbige Sektions-Icon-Badges (hstand-kico) je Überschrift",
   (html.match(/hstand-kico/g) || []).length >= 6);
-check("Feinschliff: Kommunikation labelt Format-Vorschläge ('Denkbare Formate')",
-  html.includes("Denkbare Formate") && html.includes("hstand-comms-formats"));
+check("Feinschliff: Kommunikation labelt Format-Vorschläge ('Formate')",
+  html.includes("hstand-comms-formats-label\">Formate<") && html.includes("hstand-comms-formats"));
 {
   const commsBlock = (html.match(/hstand-comms"[\s\S]*?<\/section>/) || [""])[0];
   check("Feinschliff: Kommunikation zeigt hervorgehobene Empfehlung (Label + Format · Kanal)",
@@ -191,7 +191,7 @@ check("Voll: actionItems strukturiert (Schritte mit Titel + dueHint)",
 const stepCount = (html.match(/class="hstand-step"/g) || []).length;
 check("Voll: wenige Schritte (1..4)", stepCount >= 1 && stepCount <= 4, `n=${stepCount}`);
 check("Voll: Aktueller Vorgang mit Titel + Quellenzahl 18 + Qualitaet",
-  html.includes("Aktueller Vorgang") && html.includes("Arbeitszeit") && html.includes(">18<") && html.includes("Belastbar"));
+  html.includes("Aktueller Vorgang") && html.includes("Arbeitszeit") && html.includes(">18<") && html.includes("Vollständig"));
 const relCount = (html.match(/class="hstand-rel"/g) || []).length;
 check("Voll: weitere relevante Vorgaenge (1..3)", relCount >= 1 && relCount <= 3, `n=${relCount}`);
 check("Voll: Quellen-Fußzeile zeigt '18 Quellen'", html.includes("18 Quellen"));
@@ -249,8 +249,8 @@ check("Prod-Repro: rendert den vollen Stand (.hstand), NICHT den Leerzustand",
   /class="hstand"/.test(htmlOld) && !/hstand--state/.test(htmlOld) && !htmlOld.includes("Heute kein Handlungsbedarf"));
 check("Prod-Repro: Vorschlag sichtbar (hstand-proposal-text mit Motor-Empfehlung)",
   htmlOld.includes("hstand-proposal-text") && htmlOld.includes("Intern kurz abstimmen"));
-check("Prod-Repro: ehrlicher 'teilweise belastbar'-Hinweis im Kopf (keine erfundenen Inhalte)",
-  htmlOld.includes("Nur teilweise belastbar"));
+check("Prod-Repro: ehrlicher 'teilweise vollständig'-Hinweis im Kopf (keine erfundenen Inhalte)",
+  htmlOld.includes("Nur teilweise vollständig"));
 check("Prod-Repro: leere Stabschef-Sektionen entfallen sauber (kein Risiko/Chance/Kommunikation erfunden)",
   !/hstand-risk|hstand-chance|hstand-comms|hstand-actions/.test(htmlOld));
 

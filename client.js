@@ -2529,7 +2529,7 @@ function render() {
   const enterAnim = animateNextRender || currentView !== lastAnimatedView;
   if (app) app.classList.toggle("anim-enter", enterAnim);
   app.innerHTML = `
-    <div class="app-frame">
+    <div class="app-frame view-${escapeAttribute(currentView || "")}">
       ${renderSidebar()}
       <main class="content-shell">
         ${renderTopbar()}
@@ -4486,9 +4486,38 @@ const HELMUT_ICON_TREND = `<svg viewBox="0 0 24 24" width="18" height="18" fill=
 // Reine Label-Zuordnungen (i18n der Enum-Tokens des V3-Motors — KEIN Inhalt).
 const HSTAND_URGENCY_LABEL = { hoch: "Hohe Dringlichkeit", mittel: "Mittlere Dringlichkeit", niedrig: "Niedrige Dringlichkeit", keiner: "Keine akute Dringlichkeit" };
 const HSTAND_LEVEL_LABEL = { low: "Niedrig", medium: "Mittel", high: "Hoch" };
-const HSTAND_CHANNEL_LABEL = { press: "Presse", social: "Social Media", internal: "Intern", parliamentary: "Parlamentarisch" };
-const HSTAND_FORMAT_LABEL = { statement: "Statement", pressRelease: "Pressemitteilung", qa: "Q&A", socialPost: "Social Post", internalLine: "Interne Linie" };
-const HSTAND_OUTPUT_LABEL = { statement: "Statement", qa: "Q&A", pressRelease: "Pressemitteilung", talkingPoints: "Talking Points", socialPost: "Social Post" };
+// EINE zentrale, nachvollziehbare Anzeige-Zuordnung für die technischen
+// Kommunikations-Enum-Tokens des V3-Motors (Kanal, Format, suggestedOutputs).
+// Reine Präsentationslogik — KEINE politische Frontend-Logik, kein Inhalt: der
+// Motor liefert die Tokens, hier bekommen sie nur einen verständlichen Namen,
+// damit nie ein Rohwert wie „internalLine" oder „monitoringNote" sichtbar wird.
+const HSTAND_COMM_LABEL = {
+  // Kanäle
+  press: "Presse", social: "Social Media", internal: "Intern", parliamentary: "Parlamentarisch",
+  // Formate / mögliche Outputs
+  statement: "Statement", pressRelease: "Pressemitteilung", qa: "Q&A", socialPost: "Social Post",
+  internalLine: "Interne Linie", talkingPoints: "Talking Points", briefing: "Briefing",
+  monitoringNote: "Monitoring-Notiz", speech: "Rede", interview: "Interview", newsletter: "Newsletter",
+  // ehrliche Leerwerte -> nicht anzeigen
+  none: "", unknown: ""
+};
+
+// Fallback für unbekannte camelCase-/snake_case-Tokens: nie einen Rohwert zeigen,
+// sondern lesbar aufbrechen (z. B. „monitoringNote" -> „Monitoring Note"). Rein
+// typografisch, erfindet keinen Inhalt.
+function hstandHumanizeToken(tok) {
+  const s = hstandText(tok);
+  if (!s) return "";
+  return s.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ").trim().replace(/^./, (c) => c.toUpperCase());
+}
+
+// Anzeigename für ein Kommunikations-Token: erst zentrale Map, dann Humanize-Fallback.
+function hstandCommLabel(token) {
+  const key = String(token || "");
+  if (Object.prototype.hasOwnProperty.call(HSTAND_COMM_LABEL, key)) return HSTAND_COMM_LABEL[key];
+  return hstandHumanizeToken(key);
+}
 const HSTAND_PRIORITY_LABEL = { low: "Niedrig", medium: "Mittel", high: "Hoch" };
 const HSTAND_STATUS_LABEL = {
   fresh: { label: "Aktuell", tone: "ok" },
@@ -4498,9 +4527,13 @@ const HSTAND_STATUS_LABEL = {
   error: { label: "Stand nicht verfügbar", tone: "danger" }
 };
 const HSTAND_TYPE_LABEL = { daily: "Tagesbriefing", morning: "Morgenbriefing", midday: "Mittagsbriefing", evening: "Abendlage" };
+// qualityStatus ist ehrlich eine VOLLSTÄNDIGKEITS-/FRISCHE-Angabe (alle vier
+// Stabschef-Dimensionen befüllt und aktuell), KEINE Quellen-Belastbarkeit. Darum
+// „Vollständig" statt „Belastbar" — das wäre inhaltlich zu stark (es sagt nichts
+// über die Belastbarkeit der Quellen aus, nur über die Feld-Vollständigkeit).
 const HSTAND_QUALITY = {
-  valid: { tone: "ok", label: "Belastbar" },
-  partial: { tone: "warn", label: "Teilweise belastbar" },
+  valid: { tone: "ok", label: "Vollständig" },
+  partial: { tone: "warn", label: "Teilweise" },
   stale: { tone: "warn", label: "Veraltet" },
   empty: { tone: "muted", label: "Offen" },
   error: { tone: "danger", label: "Fehler" }
@@ -4508,6 +4541,16 @@ const HSTAND_QUALITY = {
 
 function hstandText(v) {
   return String(v == null ? "" : v).replace(/\s+/g, " ").trim();
+}
+
+// Zerlegt eine Empfehlung in einzelne Entscheidungssätze (Satzende + Großbuchstabe/
+// Ziffer als neuer Anfang). REIN typografisch — kein Wort wird verändert oder neu
+// erfunden. Ein einzelner (auch langer) Satz bleibt ein Element.
+function hstandSentences(text, cap = 4) {
+  const s = hstandText(text);
+  if (!s) return [];
+  const parts = s.split(/(?<=[.!?])\s+(?=[A-ZÄÖÜ0-9])/).map((p) => p.trim()).filter(Boolean);
+  return parts.slice(0, cap);
 }
 
 // Echter Zeitstempel -> ruhiges Datum/Uhrzeit (de-DE). Fehlt/ungueltig -> "" (keine Fake-Zeit).
@@ -4602,7 +4645,7 @@ function renderHstandHeader(state) {
         <span class="hstand-status hstand-status--${st.tone}">${escapeHtml(st.label)}</span>
       </div>
       <p class="hstand-meta-line">${HELMUT_ICON_CLOCK}<span>${escapeHtml(type)}${when ? ` · ${escapeHtml(when)}` : ""}</span></p>
-      ${partial ? `<p class="hstand-partial">${HELMUT_ICON_EYE}<span>Nur teilweise belastbar – einige Angaben fehlen noch.</span></p>` : ""}
+      ${partial ? `<p class="hstand-partial">${HELMUT_ICON_EYE}<span>Nur teilweise vollständig – einige Angaben fehlen noch.</span></p>` : ""}
     </header>`;
 }
 
@@ -4614,12 +4657,18 @@ function renderHstandProposal(state) {
   // wichtigsten Kontext-Labels). Weitere Chips erscheinen weiter unten am Vorgang.
   const chips = hstandContextChips(state.contextChips, urgency ? 2 : 3);
   const chiprow = (urgency || chips) ? `<div class="hstand-chiprow">${urgency}${chips}</div>` : "";
+  // Mehrere Entscheidungssätze -> mehrere kurze Zeilen (klare Entscheidungsvorlage).
+  // Ein einzelner Satz bleibt eine Zeile — kein Inhalt wird umgeschrieben.
+  const sentences = hstandSentences(rec);
+  const recBlock = !rec
+    ? `<p class="hstand-empty-line">Für diesen Stand liegt aktuell keine Empfehlung vor.</p>`
+    : (sentences.length > 1
+        ? `<ul class="hstand-proposal-text hstand-proposal-lines">${sentences.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ul>`
+        : `<p class="hstand-proposal-text">${escapeHtml(rec)}</p>`);
   return `
     <section class="hstand-card hstand-proposal" aria-label="Mein Vorschlag">
       ${hstandKicker(HELMUT_ICON_BULB, "Mein Vorschlag", "accent")}
-      ${rec
-        ? `<p class="hstand-proposal-text">${escapeHtml(rec)}</p>`
-        : `<p class="hstand-empty-line">Für diesen Stand liegt aktuell keine Empfehlung vor.</p>`}
+      ${recBlock}
       ${chiprow}
     </section>`;
 }
@@ -4658,10 +4707,10 @@ function renderHstandRiskChance(state) {
 function renderHstandComms(state) {
   const c = (state.recommendedCommunication && typeof state.recommendedCommunication === "object") ? state.recommendedCommunication : {};
   const line = hstandText(c.communicationLine);
-  // recommendedChannel ist kleingeschrieben, recommendedFormat/Outputs sind camelCase
-  // (pressRelease/socialPost/internalLine/talkingPoints) -> exakter Token-Lookup (kein toLowerCase).
-  const channel = HSTAND_CHANNEL_LABEL[String(c.recommendedChannel || "")];
-  const format = HSTAND_FORMAT_LABEL[String(c.recommendedFormat || "")];
+  // Enum-Tokens -> verständliche Anzeigenamen über die EINE zentrale Map (kein
+  // technischer Rohwert wie „internalLine"/„monitoringNote" wird je sichtbar).
+  const channel = hstandCommLabel(c.recommendedChannel);
+  const format = hstandCommLabel(c.recommendedFormat);
   const outputs = (Array.isArray(c.suggestedOutputs) ? c.suggestedOutputs : []).map(hstandText).filter(Boolean);
   if (!line && !channel && !format && !outputs.length) return ""; // zurueckhaltend ausblenden
   // Klare empfohlene Linie: hervorgehobene "Empfohlen: <Format> · <Kanal>"-Zeile.
@@ -4672,7 +4721,7 @@ function renderHstandComms(state) {
     ? `<p class="hstand-comms-rec"><span class="hstand-comms-rec-k">Empfohlen</span><span class="hstand-comms-rec-v">${escapeHtml(recParts.join(" · "))}</span></p>`
     : "";
   const chips = outputs.slice(0, 5).map((o) => {
-    const lbl = HSTAND_OUTPUT_LABEL[String(o)] || o;
+    const lbl = hstandCommLabel(o) || hstandText(o);
     return `<span class="hstand-chip hstand-chip--out">${escapeHtml(lbl)}</span>`;
   }).join("");
   return `
@@ -4680,25 +4729,31 @@ function renderHstandComms(state) {
       ${hstandKicker(HELMUT_ICON_CHAT, "Empfohlene Kommunikation", "comms")}
       ${line ? `<p class="hstand-body">${escapeHtml(line)}</p>` : ""}
       ${recLine}
-      ${chips ? `<div class="hstand-comms-formats"><span class="hstand-comms-formats-label">Denkbare Formate</span><div class="hstand-chiprow hstand-chiprow--sm">${chips}</div></div>` : ""}
+      ${chips ? `<div class="hstand-comms-formats"><span class="hstand-comms-formats-label">Formate</span><div class="hstand-chiprow hstand-chiprow--sm">${chips}</div></div>` : ""}
     </section>`;
 }
 
 function renderHstandActions(state) {
   const items = (Array.isArray(state.actionItems) ? state.actionItems : []).filter((a) => a && hstandText(a.title));
   if (!items.length) return "";
-  const rows = items.slice(0, 4).map((a, i) => {
+  // Übersicht: höchstens DREI klare Aufgaben. Nummer + Handlung + Frist/Priorität
+  // dezent. Lange Beschreibungen werden NICHT gelöscht, sondern per Aufklappen
+  // sekundär zugänglich gemacht (bleiben vollständig in der Datenstruktur).
+  const rows = items.slice(0, 3).map((a, i) => {
     const desc = hstandText(a.description);
     const due = hstandText(a.dueHint);
     const prio = hstandPriorityChip(a.priority);
     const metaRow = (due || prio) ? `<div class="hstand-step-meta">${due ? `<span class="hstand-step-due">${HELMUT_ICON_CLOCK}${escapeHtml(due)}</span>` : ""}${prio}</div>` : "";
+    const detail = desc
+      ? `<details class="hstand-step-more"><summary>Details</summary><p class="hstand-step-desc">${escapeHtml(desc)}</p></details>`
+      : "";
     return `
       <li class="hstand-step">
         <span class="hstand-step-num">${i + 1}</span>
         <div class="hstand-step-body">
           <p class="hstand-step-title">${escapeHtml(hstandText(a.title))}</p>
-          ${desc ? `<p class="hstand-step-desc">${escapeHtml(desc)}</p>` : ""}
           ${metaRow}
+          ${detail}
         </div>
       </li>`;
   }).join("");
@@ -4715,7 +4770,8 @@ function renderHstandPrimary(state) {
   const title = hstandText(p.displayTitle) || hstandText(p.title);
   if (!title) return "";
   const urgency = hstandUrgencyChip(p.urgency);
-  const chips = hstandContextChips(p.contextChips);
+  // Beleg-Karte, kein Hauptscreen: nur die 2–3 wichtigsten Kontext-Chips.
+  const chips = hstandContextChips(p.contextChips, 3);
   const count = Number(p.sourceCount);
   const when = hstandWhen(p.lastUpdated);
   return `
@@ -4734,16 +4790,19 @@ function renderHstandPrimary(state) {
 function renderHstandItems(state) {
   const items = (Array.isArray(state.items) ? state.items : []).filter((i) => i && (hstandText(i.displayTitle) || hstandText(i.title)));
   if (!items.length) return "";
+  // Kompakte Liste: Titel + EIN kurzer Relevanzsatz + Dringlichkeit. Bewusst KEINE
+  // Chipwolke und keine langen Sammeltexte (Beleg, nicht Hauptscreen).
   const rows = items.slice(0, 3).map((i) => {
     const title = hstandText(i.displayTitle) || hstandText(i.title);
     const why = hstandText(i.whyRelevant);
     const urgency = hstandUrgencyChip(i.urgency);
-    const chips = hstandContextChips(i.contextChips);
     return `
       <li class="hstand-rel">
-        <p class="hstand-rel-title">${escapeHtml(title)}</p>
+        <div class="hstand-rel-head">
+          <p class="hstand-rel-title">${escapeHtml(title)}</p>
+          ${urgency}
+        </div>
         ${why ? `<p class="hstand-rel-why">${escapeHtml(why)}</p>` : ""}
-        ${(urgency || chips) ? `<div class="hstand-chiprow hstand-chiprow--sm">${urgency}${chips}</div>` : ""}
       </li>`;
   }).join("");
   return `
