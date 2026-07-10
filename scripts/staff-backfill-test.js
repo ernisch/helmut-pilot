@@ -1,0 +1,216 @@
+"use strict";
+
+// =============================================================================
+// Offline-Test fuer den Stabschef-Backfill (lib/helmut/staff-backfill.js).
+// KEIN Supabase, KEINE echten LLM-Calls: alle Nahtstellen sind injizierte Spies.
+// Prueft: Dry-Run macht 0 KI-Calls / 0 Writes, Kandidaten-Filter, Feld-Erkennung,
+// Kein-Ueberschreiben, Kostenschaetzung, Batch-Limit, Fehlerquoten-Abbruch, callType,
+// keine Kostenwerte/keine UI-Bezuege in den neuen Dateien.
+// =============================================================================
+
+const fs = require("fs");
+const path = require("path");
+const backfill = require("../lib/helmut/staff-backfill");
+const storage = require("../lib/helmut/storage"); // estimateLlmCost ist eine REINE Funktion (kein I/O)
+
+let passed = 0, failed = 0;
+function check(name, cond, detail = "") {
+  if (cond) { passed += 1; console.log(`PASS  ${name}`); }
+  else { failed += 1; console.log(`FAIL  ${name}${detail ? "  — " + detail : ""}`); }
+}
+
+// --- Fixtures (rein fiktiv, keine reale Partei/Person, keine Kostenwerte) ------
+const koFull = {
+  id: "ko-full", vorgang_id: "vg-full", status: "neu", understanding_status: "complete",
+  handlungsempfehlung: "Abstimmen.", warum_wichtig: "Wichtig.",
+  risk_of_no_action: "Risiko.", opportunity_summary: "Chance.",
+  risk_level: "high", opportunity_level: "medium",
+  recommended_communication_struct: { communicationLine: "Linie.", recommendedChannel: "press", recommendedFormat: "pressRelease", suggestedOutputs: ["statement"] },
+  action_items_struct: [{ title: "Schritt 1", description: "", dueHint: "", priority: "high", actionType: "alignInternally" }],
+  recommended_communication: "Linie.", action_items: ["Schritt 1"]
+};
+const koOldPartial = {
+  id: "ko-old", vorgang_id: "vg-old", status: "neu", understanding_status: "complete",
+  handlungsempfehlung: "Intern abstimmen.", warum_wichtig: "Betrifft Ausschuss.",
+  // Echtes Alt-KO: KEINES der 8 Stabschef-Felder befuellt (Level-Spalten NULL, nicht 'unknown').
+  action_items: []
+};
+const koNoCore = {
+  id: "ko-nocore", vorgang_id: "vg-nocore", status: "neu", understanding_status: "complete",
+  was_ist_passiert: "Etwas.", // KEIN recommendation/handlungsempfehlung/why/warum -> kein Kern
+  action_items: []
+};
+const koFailed = {
+  id: "ko-failed", vorgang_id: "vg-failed", status: "neu", understanding_status: "failed",
+  handlungsempfehlung: "X.", warum_wichtig: "Y."
+};
+const koPending = {
+  id: "ko-pending", vorgang_id: "vg-pending", status: "pending", understanding_status: "pending",
+  handlungsempfehlung: "X.", warum_wichtig: "Y."
+};
+const koLegacyPartial = {
+  id: "ko-legacy", vorgang_id: "vg-legacy", status: "neu", understanding_status: "complete",
+  handlungsempfehlung: "Abstimmen.", warum_wichtig: "Wichtig.",
+  // Legacy-Kommunikation + Aktionen vorhanden, aber Prosa/Level/Structs fehlen (Level NULL):
+  recommended_communication: "Ruhige Linie.", action_items: ["Team briefen"]
+};
+
+const ALL_KOS = [koFull, koOldPartial, koNoCore, koFailed, koPending, koLegacyPartial];
+
+// --- Spy-Deps: keine echte Naht wird beruehrt --------------------------------
+function makeDeps(overrides = {}, kos = ALL_KOS) {
+  const calls = { ai: 0, save: 0, sources: 0, patches: [] };
+  const deps = {
+    now: () => 1_000_000, // deterministisch (kein Date.now)
+    storeReady: () => true,
+    aiEnabled: () => true,
+    listKnowledgeObjects: async () => kos,
+    getSourcesForVorgang: async () => { calls.sources += 1; return [{ id: "d1", url: "https://example.org/a", published_at: "2026-07-01T00:00:00Z" }]; },
+    canSpend: async () => ({ allowed: true, remaining: 100 }),
+    requestUnderstanding: async () => { calls.ai += 1; return {}; },
+    save: async (patch) => { calls.save += 1; calls.patches.push(patch); return { saved: true, id: patch.id, vorgangId: patch.vorgang_id }; },
+    modelName: () => "gpt-5-mini",
+    estimateCost: (i, o) => storage.estimateLlmCost("gpt-5-mini", i, o), // ECHTE interne Kostenfunktion
+    sumActualCost: async () => 0,
+    ...overrides
+  };
+  return { deps, calls };
+}
+
+(async () => {
+  // === 1) DRY-RUN: keine KI-Calls, keine Writes ===
+  {
+    const { deps, calls } = makeDeps();
+    const res = await backfill.backfillStaffFields({}, deps); // dryRun default true
+    check("Dry-Run ist Default (res.dryRun === true)", res.dryRun === true);
+    check("Dry-Run macht KEINE LLM-Calls", calls.ai === 0, `ai=${calls.ai}`);
+    check("Dry-Run schreibt KEINE Daten", calls.save === 0, `save=${calls.save}`);
+    check("Dry-Run laedt keine Quellen (kein Verarbeiten)", calls.sources === 0, `sources=${calls.sources}`);
+
+    // === 2) Kandidaten sauber gefiltert ===
+    check("Nur complete KOs mit Kern + fehlendem Feld sind Kandidaten (2: old + legacy)",
+      res.plan.toProcess === 2, `toProcess=${res.plan.toProcess}`);
+    const ids = res.plan.candidates.map((c) => c.id).sort();
+    check("Kandidaten sind genau ko-old und ko-legacy",
+      JSON.stringify(ids) === JSON.stringify(["ko-legacy", "ko-old"]), JSON.stringify(ids));
+    check("KO ohne Kern wird uebersprungen (ko-nocore nicht Kandidat)", !ids.includes("ko-nocore"));
+    check("failed KO wird uebersprungen", !ids.includes("ko-failed"));
+    check("pending KO wird uebersprungen", !ids.includes("ko-pending"));
+    check("KO mit allen Feldern wird uebersprungen (ko-full nicht Kandidat)", !ids.includes("ko-full"));
+
+    // === 3) Fehlende / vorhandene Felder korrekt erkannt ===
+    const cOld = res.plan.candidates.find((c) => c.id === "ko-old");
+    check("ko-old: alle 8 Stabschef-Felder fehlen", cOld.missingFields.length === 8, JSON.stringify(cOld.missingFields));
+    check("ko-old: keine vorhandenen Stabschef-Felder", cOld.presentFields.length === 0);
+    const cLeg = res.plan.candidates.find((c) => c.id === "ko-legacy");
+    check("ko-legacy: Legacy-Felder gelten als VORHANDEN (recommended_communication + action_items)",
+      cLeg.presentFields.includes("recommended_communication") && cLeg.presentFields.includes("action_items"));
+    check("ko-legacy: fehlende Felder enthalten NICHT die vorhandenen Legacy-Felder",
+      !cLeg.missingFields.includes("recommended_communication") && !cLeg.missingFields.includes("action_items"));
+    check("ko-legacy: fehlend = die 6 uebrigen (Prosa/Level/Structs)", cLeg.missingFields.length === 6, JSON.stringify(cLeg.missingFields));
+
+    // === 6) Kostenschaetzung im Dry-Run ===
+    const expectedPerCall = storage.estimateLlmCost("gpt-5-mini", 2500, 800);
+    check("Kostenschaetzung/Call = interne estimateLlmCost(2500,800)",
+      res.plan.estCostPerCallUsd === expectedPerCall && typeof expectedPerCall === "number", `plan=${res.plan.estCostPerCallUsd} exp=${expectedPerCall}`);
+    check("Gesch. Gesamtkosten = perCall * Kandidaten",
+      res.plan.estTotalCostUsd === Math.round(expectedPerCall * 2 * 1e6) / 1e6);
+    check("Token-Annahmen sind die Code-Schaetzwerte (2500/800)",
+      res.plan.estTokensPerCall.input === 2500 && res.plan.estTokensPerCall.output === 800);
+    check("Budget-Gate ist verdrahtet (plan.budgetGateWired)", res.plan.budgetGateWired === true);
+    check("Ziel-Felder = die 8 Stabschef-Felder", res.plan.targetFields.length === 8);
+    check("Histogramm zaehlt fehlende Felder (risk_of_no_action bei beiden Kandidaten)",
+      res.plan.missingFieldHistogram.risk_of_no_action === 2);
+  }
+
+  // === callType korrekt ===
+  check("callType ist 'understanding-staff-backfill'", backfill.BACKFILL_CALLTYPE === "understanding-staff-backfill");
+
+  // === Batch-Limit greift (limit begrenzt Ladung/Warnung) ===
+  {
+    const many = Array.from({ length: 30 }, (_, i) => ({ ...koOldPartial, id: `k${i}`, vorgang_id: `v${i}` }));
+    const { deps } = makeDeps({}, many);
+    const res = await backfill.backfillStaffFields({ limit: 30 }, deps);
+    check("Batch-Limit: loadCapReached bei erreichter Ladegrenze", res.plan.loadCapReached === true);
+    check("Batch-Limit: Warnung zur Ladegrenze vorhanden", res.plan.warnings.some((w) => /Ladegrenze/.test(w)));
+  }
+
+  // === 4) ECHTER (injizierter) Lauf: NUR fehlende Felder schreiben, kein Ueberschreiben ===
+  {
+    // Reales assembleKnowledgeObject laeuft; wir liefern ein schema-valides KI-Ergebnis,
+    // das ALLE Stabschef-Felder + die Legacy-Felder erzeugen wuerde. Der Patch darf trotzdem
+    // NUR die zuvor fehlenden Felder enthalten (Legacy bleibt unangetastet).
+    const aiResult = {
+      was_ist_passiert: "Ein Antrag wurde eingebracht.",
+      warum_wichtig: "Betrifft die Ausschussarbeit.",
+      wer_ist_betroffen: "Beschaeftigte im Zustaendigkeitsbereich.",
+      handlungsempfehlung: "Intern kurz abstimmen.",
+      zeitdruck: "mittel",
+      risk_of_no_action: "Ohne Reaktion droht eine uneinheitliche Aussenwirkung.",
+      opportunity_summary: "Fruehe glaubwuerdige Besetzung des Themas.",
+      risk_level: "high", opportunity_level: "medium",
+      recommended_communication_struct: { communicationLine: "Ruhig und loesungsorientiert.", recommendedChannel: "press", recommendedFormat: "pressRelease", suggestedOutputs: ["statement"] },
+      action_items_struct: [{ title: "Linie festlegen", description: "", dueHint: "heute", priority: "high", actionType: "alignInternally" }],
+      // Wuerde auch die Legacy-Felder fuellen -> darf den vorhandenen Wert NICHT ueberschreiben:
+      recommended_communication: "NEUE LINIE (darf nicht schreiben)", action_items: ["NEU (darf nicht schreiben)"]
+    };
+    const { deps, calls } = makeDeps({}, [koLegacyPartial]);
+    deps.requestUnderstanding = async () => { calls.ai += 1; return aiResult; };
+    const res = await backfill.backfillStaffFields({ dryRun: false, limit: 10 }, deps);
+    check("Echter Lauf: genau 1 KI-Call fuer 1 Kandidat", calls.ai === 1, `ai=${calls.ai}`);
+    check("Echter Lauf: genau 1 Write", calls.save === 1, `save=${calls.save}`);
+    const patch = calls.patches[0] || {};
+    const patchFields = Object.keys(patch).filter((k) => k !== "id" && k !== "vorgang_id");
+    check("Kein-Ueberschreiben: Patch enthaelt NICHT recommended_communication",
+      !patchFields.includes("recommended_communication"), JSON.stringify(patchFields));
+    check("Kein-Ueberschreiben: Patch enthaelt NICHT action_items", !patchFields.includes("action_items"));
+    const missingLeg = backfill.missingStaffFields(koLegacyPartial);
+    check("Nur-fehlende: alle Patch-Felder waren zuvor fehlend", patchFields.every((f) => missingLeg.includes(f)), JSON.stringify(patchFields));
+    check("Nur-fehlende: mindestens ein Stabschef-Feld tatsaechlich geschrieben", patchFields.length >= 1);
+    check("Echter Lauf: als verarbeitet gezaehlt", res.processed === 1 && res.failed === 0);
+  }
+
+  // === Fehlerquoten-Abbruch (> 20%) ===
+  {
+    const many = Array.from({ length: 8 }, (_, i) => ({ ...koOldPartial, id: `f${i}`, vorgang_id: `vf${i}` }));
+    const { deps, calls } = makeDeps({ requestUnderstanding: async () => { calls.ai += 1; throw new Error("boom"); } }, many);
+    const res = await backfill.backfillStaffFields({ dryRun: false, limit: 20 }, deps);
+    check("Fehlerquoten-Abbruch: res.abortedFailureRate === true", res.abortedFailureRate === true);
+    check("Fehlerquoten-Abbruch: stoppt nach Mindest-Stichprobe (failed === 5)", res.failed === 5, `failed=${res.failed}`);
+    check("Fehlerquoten-Abbruch: Rest als skippedBudget markiert", res.skippedBudget === 3, `skipped=${res.skippedBudget}`);
+    check("Fehlerquoten-Abbruch: kein Write trotz Fehlern", calls.save === 0);
+  }
+
+  // === Budget-Gate: erschoepft -> sauberer Stopp ===
+  {
+    const many = Array.from({ length: 4 }, (_, i) => ({ ...koOldPartial, id: `b${i}`, vorgang_id: `vb${i}` }));
+    const { deps, calls } = makeDeps({ canSpend: async () => ({ allowed: false, reason: "daily-llm-budget-reached" }) }, many);
+    const res = await backfill.backfillStaffFields({ dryRun: false, limit: 20 }, deps);
+    check("Budget erschoepft: kein KI-Call, kein Write", calls.ai === 0 && calls.save === 0);
+    check("Budget erschoepft: alle als skippedBudget", res.skippedBudget === 4, `skipped=${res.skippedBudget}`);
+  }
+
+  // === Store nicht bereit -> inert ===
+  {
+    const { deps, calls } = makeDeps({ storeReady: () => false });
+    const res = await backfill.backfillStaffFields({ dryRun: false }, deps);
+    check("Store nicht bereit: skipped, keine Calls/Writes", res.skipped === true && calls.ai === 0 && calls.save === 0);
+  }
+
+  // === Keine Kostenwerte im Client / keine UI-Bezuege in den neuen Dateien ===
+  {
+    const modSrc = fs.readFileSync(path.join(__dirname, "..", "lib", "helmut", "staff-backfill.js"), "utf8");
+    const cliSrc = fs.readFileSync(path.join(__dirname, "staff-backfill.js"), "utf8");
+    check("Modul hat keine UI-Bezuege (kein 'hstand', kein client.js/styles.css)",
+      !/hstand|client\.js|styles\.css/.test(modSrc));
+    check("Modul/CLI importieren client/styles NICHT",
+      !/require\(["'][^"']*client["']\)/.test(modSrc + cliSrc) && !/styles\.css/.test(modSrc + cliSrc));
+    check("Kostenschaetzung bleibt serverseitig (Plan-Objekt, nicht Teil von currentHelmutState)",
+      !/currentHelmutState/.test(modSrc));
+    check("Keine hartkodierte Partei / keine Cem-Logik im Modul",
+      !/\bcem\b|\bince\b|özdemir|\bSPD\b|\bCDU\b|\bCSU\b|\bFDP\b|\bAfD\b|Gr[üu]ne|\bLinke\b/i.test(modSrc));
+  }
+
+  console.log(`\n${passed}/${passed + failed} Stabschef-Backfill-Assertions erfolgreich.`);
+  if (failed) process.exit(1);
+})().catch((e) => { console.error("Testfehler:", e && e.stack || e); process.exit(1); });
