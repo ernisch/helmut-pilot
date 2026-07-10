@@ -10759,7 +10759,7 @@ body:has(.lage2) {
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
   padding: 0 0 12px;
 }
 
@@ -10793,10 +10793,10 @@ body:has(.lage2) {
   background: color-mix(in srgb, var(--accent) 4%, var(--card));
   border: 1px solid color-mix(in srgb, var(--line) 76%, transparent);
   border-radius: 11px;
-  padding: 12px 14px;
+  padding: 11px 13px;
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 6px;
 }
 .hstand-kicker {
   display: inline-flex; align-items: center; gap: 8px;
@@ -10822,32 +10822,34 @@ body:has(.lage2) {
 .hstand-proposal {
   background: color-mix(in srgb, var(--accent) 10%, var(--card));
   border-color: color-mix(in srgb, var(--accent) 24%, var(--line));
-  padding: 13px 15px;
-  gap: 7px;
+  padding: 12px 14px;
+  gap: 6px;
 }
 /* Mehrsatz-Empfehlung als klare, kurze Entscheidungszeilen (Entscheidungsvorlage) */
 .hstand-proposal-lines {
   list-style: none; margin: 0; padding: 0;
-  display: flex; flex-direction: column; gap: 6px;
+  display: flex; flex-direction: column; gap: 5px;
 }
 .hstand-proposal-lines li {
-  position: relative; padding-left: 16px;
-  font-size: 16px; font-weight: 600; line-height: 1.3; letter-spacing: -.015em; color: var(--text);
+  position: relative; padding-left: 15px;
+  font-size: 15px; font-weight: 600; line-height: 1.25; letter-spacing: -.015em; color: var(--text);
   text-wrap: balance;
 }
 .hstand-proposal-lines li::before {
-  content: ""; position: absolute; left: 0; top: .62em;
-  width: 6px; height: 6px; border-radius: 2px; background: var(--accent);
+  content: ""; position: absolute; left: 0; top: .6em;
+  width: 5px; height: 5px; border-radius: 2px; background: var(--accent);
 }
+/* Einzelsatz-Empfehlung: kompakter, ruhiger — nicht wie ein grosser Verwaltungssatz.
+   Nur Darstellung, kein Inhalt wird umgeschrieben. */
 .hstand-proposal-text {
-  margin: 0; font-size: 20px; font-weight: 600; line-height: 1.22; letter-spacing: -.02em;
+  margin: 0; font-size: 18px; font-weight: 600; line-height: 1.28; letter-spacing: -.02em;
   color: var(--text); text-wrap: balance;
 }
 .hstand-empty-line { margin: 0; font-size: 15px; color: var(--muted-2); line-height: 1.45; }
 
 /* Fließtexte — kompakter */
-.hstand-body { margin: 0; font-size: 14.5px; line-height: 1.48; color: color-mix(in srgb, var(--text) 87%, transparent); }
-.hstand-body--tight { font-size: 13px; line-height: 1.42; }
+.hstand-body { margin: 0; font-size: 14px; line-height: 1.45; color: color-mix(in srgb, var(--text) 87%, transparent); }
+.hstand-body--tight { font-size: 12.5px; line-height: 1.36; }
 
 /* Chips — enger */
 .hstand-chiprow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
@@ -10879,7 +10881,7 @@ body:has(.lage2) {
 
 /* Risiko + Chance IMMER nebeneinander (auch mobil), dicht — politische Abwägung. */
 .hstand-duo { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-.hstand-split { height: 100%; gap: 6px; padding: 11px 12px; }
+.hstand-split { height: 100%; gap: 5px; padding: 10px 11px; }
 .hstand-split .hstand-body { flex: 1 1 auto; }
 .hstand-split .hstand-level { margin-top: 1px; align-self: flex-start; }
 
@@ -10937,13 +10939,22 @@ body:has(.lage2) {
 .hstand-mk-short { display: none; }
 
 /* Weitere relevante Vorgänge */
-.hstand-rels { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 11px; }
-.hstand-rel { display: flex; flex-direction: column; gap: 4px; padding-bottom: 11px; border-bottom: 1px solid var(--hairline); }
+.hstand-rels { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
+.hstand-rel { display: flex; flex-direction: column; gap: 3px; padding-bottom: 9px; border-bottom: 1px solid var(--hairline); }
 .hstand-rel:last-child { padding-bottom: 0; border-bottom: none; }
 .hstand-rel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
-.hstand-rel-title { margin: 0; font-size: 14.5px; font-weight: 600; color: var(--text); line-height: 1.36; }
+/* Titel + Relevanz je auf HOECHSTENS 2 Zeilen begrenzt (nur Darstellung im Helmut-
+   Tab — die vollen Daten bleiben in state.items unveraendert). Kein Absatz, keine
+   Textkarte, keine Chipwolke. */
+.hstand-rel-title {
+  margin: 0; min-width: 0; font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.34;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
 .hstand-rel-head .hstand-chip { flex: none; align-self: center; }
-.hstand-rel-why { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.46; }
+.hstand-rel-why {
+  margin: 0; font-size: 12.5px; color: var(--muted); line-height: 1.4;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
 
 /* Quality-Indikator */
 .hstand-q { display: inline-flex; align-items: center; gap: 7px; }
@@ -11022,14 +11033,18 @@ body:has(.lage2) {
   .hstand-metric dd { font-size: 12.5px; }
   .hstand-mk-full { display: none; }
   .hstand-mk-short { display: inline; }
+  /* Vorschlag mobil kompakter -> naeher an einer Entscheidungsvorlage */
+  .hstand-proposal-text { font-size: 16.5px; line-height: 1.3; }
+  .hstand-proposal-lines li { font-size: 14.5px; }
 }
 
 /* Sehr schmal: Vorschlag minimal kleiner, Fußzeile enger */
 @media (max-width: 480px) {
-  .hstand-proposal-text { font-size: 19px; }
+  .hstand-proposal-text { font-size: 15.5px; line-height: 1.34; }
+  .hstand-proposal-lines li { font-size: 14px; }
   .hstand-title { font-size: 25px; }
   .hstand-foot { gap: 12px; }
-  .hstand-split { padding: 12px 12px; }
+  .hstand-split { padding: 9px 10px; }
 }
 /* Nur extrem schmal: Risiko/Chance gestapelt (sonst zu eng) */
 @media (max-width: 344px) {
