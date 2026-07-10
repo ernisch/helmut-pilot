@@ -79,6 +79,10 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           AZURE_OPENAI_KEY: ${{ secrets.AZURE_OPENAI_KEY }}
           AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+          # Azure-Deployment-Name: bevorzugt Repo-Variable, sonst Secret-Fallback. NIE geloggt.
+          # Fuer den echten Azure-Lauf MUSS er gesetzt sein (kein stiller gpt-5-mini-Default) —
+          # siehe Guard unten. Fehlt er, stoppt Schritt B vor jedem LLM-Call/Write.
+          AZURE_OPENAI_DEPLOYMENT: ${{ vars.AZURE_OPENAI_DEPLOYMENT || secrets.AZURE_OPENAI_DEPLOYMENT }}
           # Optionaler globaler LLM-Tages-Cap (Default 20, via Repo-Variable ueberschreibbar).
           # HINWEIS: gilt GLOBAL fuer alle LLM-Calls des Tages; ist das Tagesbudget bereits
           # ausgeschoepft, ueberspringt der Lauf sicher (0 weitere Calls).
@@ -95,6 +99,13 @@ jobs:
           # Ohne KI-Key kein Execute (der Dry-Run in Schritt A lief bereits ohne KI-Key).
           if [ -z "${OPENAI_API_KEY:-}" ] && { [ -z "${AZURE_OPENAI_KEY:-}" ] || [ -z "${AZURE_OPENAI_ENDPOINT:-}" ]; }; then
             echo "::error::Kein KI-Key gesetzt. Fuer den echten Lauf: OPENAI_API_KEY ODER (AZURE_OPENAI_KEY + AZURE_OPENAI_ENDPOINT)."
+            exit 1
+          fi
+          # Azure-Guard: Ist Azure aktiv (Key + Endpoint), MUSS der Deployment-Name explizit
+          # gesetzt sein. Kein stiller gpt-5-mini-Default fuer diesen Production-Backfill.
+          # Stoppt vor jedem LLM-Call/Write. Der Wert selbst wird NICHT ausgegeben.
+          if [ -n "${AZURE_OPENAI_KEY:-}" ] && [ -n "${AZURE_OPENAI_ENDPOINT:-}" ] && [ -z "${AZURE_OPENAI_DEPLOYMENT:-}" ]; then
+            echo "::error::Azure ist aktiv, aber AZURE_OPENAI_DEPLOYMENT fehlt. Setze die Repo-Variable vars.AZURE_OPENAI_DEPLOYMENT (oder das Secret) auf den Azure-Deployment-Namen."
             exit 1
           fi
           echo "Starte ECHTEN Mini-Batch (max. 10 KOs). Budget-Gate + Fehlerquoten-Abbruch aktiv."

@@ -262,6 +262,16 @@ function makeDeps(overrides = {}, kos = ALL_KOS) {
       !/OPENAI_API_KEY/.test(mbDryStep) && !/AZURE_OPENAI_KEY/.test(mbDryStep) && /--limit=10/.test(mbDryStep));
     check("Mini-Batch: KI-Key-Check NUR in Schritt B (Execute), vor dem echten Lauf",
       /OPENAI_API_KEY/.test(mbExecStep) && /AZURE_OPENAI_KEY/.test(mbExecStep) && /Kein KI-Key gesetzt/.test(mbExecStep));
+    // Azure-Deployment: bevorzugt vars, Fallback secrets; in Schritt B durchgereicht.
+    check("Mini-Batch: AZURE_OPENAI_DEPLOYMENT wird in Schritt B durchgereicht (vars || secrets)",
+      /AZURE_OPENAI_DEPLOYMENT:\s*\$\{\{\s*vars\.AZURE_OPENAI_DEPLOYMENT\s*\|\|\s*secrets\.AZURE_OPENAI_DEPLOYMENT\s*\}\}/.test(mbExecStep));
+    // Azure aktiv ohne Deployment -> Stopp vor Execute (kein stiller gpt-5-mini-Default).
+    check("Mini-Batch: Azure ohne Deployment stoppt vor Execute (Guard mit exit 1)",
+      /AZURE_OPENAI_KEY[^\n]*\][^\n]*AZURE_OPENAI_ENDPOINT[^\n]*\][^\n]*-z "\$\{AZURE_OPENAI_DEPLOYMENT/.test(mbExecStep)
+      && /AZURE_OPENAI_DEPLOYMENT fehlt/.test(mbExecStep));
+    // Der Deployment-Wert darf nicht ausgegeben/geloggt werden (kein echo des Wertes).
+    check("Mini-Batch: Deployment-Wert wird nicht geloggt (kein echo von $AZURE_OPENAI_DEPLOYMENT)",
+      !/echo[^\n]*\$\{?AZURE_OPENAI_DEPLOYMENT/.test(mb));
     check("Mini-Batch: erst Dry-Run-Plan, dann Execute (zwei Schritte)",
       /Dry-Run Plan anzeigen/.test(mb) && /Echter Mini-Batch/.test(mb) && mb.indexOf("Dry-Run Plan") < mb.indexOf("Echter Mini-Batch"));
     check("Mini-Batch: Execute nur bei Kandidaten > 0 (0 -> kein Lauf)",
