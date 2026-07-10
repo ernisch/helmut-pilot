@@ -211,6 +211,28 @@ function makeDeps(overrides = {}, kos = ALL_KOS) {
       !/\bcem\b|\bince\b|özdemir|\bSPD\b|\bCDU\b|\bCSU\b|\bFDP\b|\bAfD\b|Gr[üu]ne|\bLinke\b/i.test(modSrc));
   }
 
+  // === GitHub-Action Dry-Run: nie automatisch, nie echter Lauf, kein KI-Key ===
+  {
+    const wfPath = path.join(__dirname, "..", ".github", "workflows", "staff-backfill-dry-run.yml");
+    check("Workflow-Datei existiert", fs.existsSync(wfPath));
+    const wf = fs.existsSync(wfPath) ? fs.readFileSync(wfPath, "utf8") : "";
+    check("Workflow: nur manuell (workflow_dispatch vorhanden)", /workflow_dispatch/.test(wf));
+    check("Workflow: laeuft NIE automatisch (kein schedule/push/pull_request-Trigger)",
+      !/^\s*schedule\s*:/m.test(wf) && !/\bpull_request\b/.test(wf) && !/^\s*push\s*:/m.test(wf));
+    check("Workflow: KEIN echter Lauf moeglich (kein --execute / --confirm)",
+      !/--execute/.test(wf) && !/--confirm/.test(wf));
+    check("Workflow: HELMUT_V3_STORE fest auf '1'", /HELMUT_V3_STORE:\s*["']?1["']?/.test(wf));
+    check("Workflow: KEIN KI-Key gesetzt (kein OPENAI/AZURE-Key)",
+      !/OPENAI_API_KEY/.test(wf) && !/AZURE_OPENAI_KEY/.test(wf));
+    check("Workflow: Store-Secrets referenziert (SUPABASE_URL + SERVICE_ROLE_KEY)",
+      /secrets\.SUPABASE_URL/.test(wf) && /secrets\.SUPABASE_SERVICE_ROLE_KEY/.test(wf));
+    check("Workflow: limit wird validiert (nur Ganzzahl) — keine Command-Injection",
+      /\[0-9\]\+/.test(wf) && /LIMIT_INPUT/.test(wf));
+    check("Workflow: minimale Rechte (contents: read)", /permissions:[\s\S]*contents:\s*read/.test(wf));
+    check("Workflow: startet den Dry-Run-Befehl (scripts/staff-backfill.js --limit=)",
+      /node scripts\/staff-backfill\.js --limit=/.test(wf));
+  }
+
   console.log(`\n${passed}/${passed + failed} Stabschef-Backfill-Assertions erfolgreich.`);
   if (failed) process.exit(1);
 })().catch((e) => { console.error("Testfehler:", e && e.stack || e); process.exit(1); });
