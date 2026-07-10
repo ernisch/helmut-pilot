@@ -191,7 +191,7 @@ check("Voll: actionItems strukturiert (Schritte mit Titel + dueHint)",
 const stepCount = (html.match(/class="hstand-step"/g) || []).length;
 check("Voll: wenige Schritte (1..4)", stepCount >= 1 && stepCount <= 4, `n=${stepCount}`);
 check("Voll: Aktueller Vorgang mit Titel + Quellenzahl 18 + Qualitaet",
-  html.includes("Aktueller Vorgang") && html.includes("Arbeitszeit") && html.includes(">18<") && html.includes("Belastbar"));
+  html.includes("Aktueller Vorgang") && html.includes("Arbeitszeit") && html.includes(">18<") && html.includes("Vollständig"));
 const relCount = (html.match(/class="hstand-rel"/g) || []).length;
 check("Voll: weitere relevante Vorgaenge (1..3)", relCount >= 1 && relCount <= 3, `n=${relCount}`);
 check("Voll: Quellen-Fußzeile zeigt '18 Quellen'", html.includes("18 Quellen"));
@@ -249,8 +249,8 @@ check("Prod-Repro: rendert den vollen Stand (.hstand), NICHT den Leerzustand",
   /class="hstand"/.test(htmlOld) && !/hstand--state/.test(htmlOld) && !htmlOld.includes("Heute kein Handlungsbedarf"));
 check("Prod-Repro: Vorschlag sichtbar (hstand-proposal-text mit Motor-Empfehlung)",
   htmlOld.includes("hstand-proposal-text") && htmlOld.includes("Intern kurz abstimmen"));
-check("Prod-Repro: ehrlicher 'teilweise belastbar'-Hinweis im Kopf (keine erfundenen Inhalte)",
-  htmlOld.includes("Nur teilweise belastbar"));
+check("Prod-Repro: ehrlicher 'teilweise vollständig'-Hinweis im Kopf (keine erfundenen Inhalte)",
+  htmlOld.includes("Nur teilweise vollständig"));
 check("Prod-Repro: leere Stabschef-Sektionen entfallen sauber (kein Risiko/Chance/Kommunikation erfunden)",
   !/hstand-risk|hstand-chance|hstand-comms|hstand-actions/.test(htmlOld));
 
