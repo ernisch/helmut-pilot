@@ -4729,7 +4729,7 @@ function renderHstandComms(state) {
       ${hstandKicker(HELMUT_ICON_CHAT, "Empfohlene Kommunikation", "comms")}
       ${line ? `<p class="hstand-body">${escapeHtml(line)}</p>` : ""}
       ${recLine}
-      ${chips ? `<div class="hstand-comms-formats"><span class="hstand-comms-formats-label">Denkbare Formate</span><div class="hstand-chiprow hstand-chiprow--sm">${chips}</div></div>` : ""}
+      ${chips ? `<div class="hstand-comms-formats"><span class="hstand-comms-formats-label">Formate</span><div class="hstand-chiprow hstand-chiprow--sm">${chips}</div></div>` : ""}
     </section>`;
 }
 

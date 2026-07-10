@@ -10912,17 +10912,23 @@ body:has(.lage2) {
 .hstand-step-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 1px; }
 .hstand-step-due { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted-2); }
 .hstand-step-due svg { width: 13px; height: 13px; opacity: .8; }
-/* Lange Aufgaben-Beschreibung: dezent aufklappbar (bleibt vollständig in den Daten) */
-.hstand-step-more { margin-top: 2px; }
+/* Lange Aufgaben-Beschreibung: sehr dezent aufklappbar (kleiner, grauer, Chevron
+   statt Plus — weniger Admin-Optik). Bleibt vollständig in den Daten, startet
+   geschlossen. */
+.hstand-step-more { margin-top: 1px; }
 .hstand-step-more > summary {
-  list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;
-  font-size: 11.5px; font-weight: 600; letter-spacing: .01em; color: var(--muted-2);
-  padding: 1px 0; user-select: none;
+  list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10.5px; font-weight: 500; letter-spacing: .01em; color: var(--muted-2);
+  padding: 0; user-select: none; opacity: .72;
 }
+.hstand-step-more > summary:hover { opacity: 1; }
 .hstand-step-more > summary::-webkit-details-marker { display: none; }
-.hstand-step-more > summary::before { content: "＋"; font-size: 11px; line-height: 1; opacity: .8; }
-.hstand-step-more[open] > summary::before { content: "－"; }
-.hstand-step-more[open] > summary { margin-bottom: 3px; }
+.hstand-step-more > summary::before {
+  content: "›"; font-size: 12px; line-height: 1; opacity: .9;
+  transition: transform var(--dur-fast, 120ms) var(--ease-out-soft, ease);
+}
+.hstand-step-more[open] > summary::before { transform: rotate(90deg); }
+.hstand-step-more[open] > summary { margin-bottom: 2px; }
 .hstand-step-more .hstand-step-desc { margin: 0; }
 .hstand-prio { padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: .02em; border: 1px solid var(--hairline); color: var(--muted); }
 .hstand-prio--risk { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 32%, transparent); }

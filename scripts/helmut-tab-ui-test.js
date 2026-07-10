@@ -157,8 +157,8 @@ check("Zielbild: Risiko/Chance-Level als gefülltes Badge in der jeweiligen Kart
   /hstand-risk[\s\S]*?hstand-level--risk/.test(html) && /hstand-chance[\s\S]*?hstand-level--chance/.test(html));
 check("Zielbild: farbige Sektions-Icon-Badges (hstand-kico) je Überschrift",
   (html.match(/hstand-kico/g) || []).length >= 6);
-check("Feinschliff: Kommunikation labelt Format-Vorschläge ('Denkbare Formate')",
-  html.includes("Denkbare Formate") && html.includes("hstand-comms-formats"));
+check("Feinschliff: Kommunikation labelt Format-Vorschläge ('Formate')",
+  html.includes("hstand-comms-formats-label\">Formate<") && html.includes("hstand-comms-formats"));
 {
   const commsBlock = (html.match(/hstand-comms"[\s\S]*?<\/section>/) || [""])[0];
   check("Feinschliff: Kommunikation zeigt hervorgehobene Empfehlung (Label + Format · Kanal)",
