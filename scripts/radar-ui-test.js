@@ -19,6 +19,8 @@ function loadClient() {
     setBriefing: (b) => { briefing = b; },
     setArticlesExpanded: (v) => { radarArticlesExpanded = v; },
     setFilter: (v) => { radarFilter = v; },
+    setSegment: (v) => { radarSegment = v; },
+    setEnvExpanded: (v) => { radarEnvExpanded = v; },
     esc: (s) => escapeHtml(s)
   };`;
   const noop = () => {};
@@ -127,6 +129,32 @@ check("Umfeld zeigt dimensionsgenaues Label 'Betrifft deine Partei'", api.render
 const blob = api.render();
 check("Keine Kosten-/Token-/LLM-Felder im Radar-Markup", !/estimatedcost|prompttokens|totaltokens|llm_usage|costestimate/i.test(blob));
 check("Keine Demo-Marker im Radar-Markup", !/demo-artikel|beispielartikel|lorem ipsum/i.test(blob));
+
+// 8) Quellenmarke: Monogramm ohne Bilddaten (kein erfundenes Logo/Bild, kein <img/hotlink).
+const badgeMatch = blob.match(/<span class="radar2-badge[^"]*"[^>]*>[^<]*<\/span>/);
+check("Quelleninitiale ist ein Monogramm (radar2-badge, kein Bild/Hotlink)",
+  Boolean(badgeMatch) && !/<img/i.test(badgeMatch[0]) && !/style="[^"]*--radar-badge/i.test(blob));
+check("Kein bunter Per-Quelle-Avatar mehr (kein --radar-badge Inline-Style)", !/--radar-badge/.test(blob));
+
+// 9) Phase 2: Dein Umfeld zeigt max. 3 pro Segment + echter "Alle ... anzeigen (N)".
+function envItem(i) {
+  return { id: `radar-env-party-vP${i}`, vorgangId: `vP${i}`, title: `Parteisignal-${i}`, sourceName: "Quelle",
+    sourceCategory: "Partei", sourceUrl: `https://q.de/p${i}`, linkType: null, publishedAt: "2026-07-11T05:00:00Z",
+    thumbnailUrl: null, summary: "…", relationType: "party", relationLabel: "Betrifft deine Partei", relevanceEvidence: "CDU" };
+}
+const envState = JSON.parse(JSON.stringify(state));
+envState.environment.party = Array.from({ length: 5 }, (_, i) => envItem(i + 1));
+api.setBriefing({ engine: "v3", currentRadarState: envState });
+api.setSegment("party"); api.setEnvExpanded(false);
+const envHtml = api.render();
+const envShown = [1,2,3,4,5].filter((i) => envHtml.includes(`Parteisignal-${i}`));
+check("Umfeld zeigt standardmäßig max. 3 Einträge pro Segment", envShown.length === 3, `sichtbar=${envShown.join(",")}`);
+check("Umfeld zeigt segmentspezifischen 'Alle Parteisignale anzeigen (5)'", /Alle Parteisignale anzeigen \(5\)/.test(envHtml));
+api.setEnvExpanded(true);
+const envHtmlAll = api.render();
+check("Umfeld aufgeklappt: alle 5 Einträge sichtbar (echte erweiterte Liste)",
+  [1,2,3,4,5].every((i) => envHtmlAll.includes(`Parteisignal-${i}`)));
+api.setEnvExpanded(false);
 
 console.log(`\n${passed}/${passed + failed} Radar-UI-Assertions erfolgreich.`);
 if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exit(1); }

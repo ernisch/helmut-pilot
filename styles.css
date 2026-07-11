@@ -11150,8 +11150,11 @@ body:has(.lage2) {
 .radar2-summary-line { display: block; }
 .radar2-hl { color: var(--accent); font-weight: 620; }
 
-/* Sektionen ----------------------------------------------------------------- */
-.radar2-section { margin-top: 30px; }
+/* Sektionen — mehr Premium-Luft zwischen Hauptbereichen --------------------- */
+.radar2-section { margin-top: 36px; }
+/* "Über dich" folgt direkt auf die Hero-Zusammenfassung: etwas enger, damit die erste
+   Bildschirmhöhe stark beginnt (Titel + Aktualität + Zusammenfassung + Über dich). */
+.radar2-summary + .radar2-section { margin-top: 26px; }
 .radar2-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 .radar2-h2 {
   display: inline-flex; align-items: center; gap: 9px;
@@ -11212,16 +11215,24 @@ body:has(.lage2) {
   margin: 8px 0 0; line-height: 1.4;
 }
 
-/* Quellenzeichen (Monogramm, kein erfundenes Bild) -------------------------- */
+/* Quellenzeichen (Monogramm, kein erfundenes Bild) — ruhige, monochrome Quellenmarke
+   (KEINE bunten Avatar-Farben): dezent, hochwertig, einheitlich, wie Linear/Notion. */
 .radar2-badge {
   flex: 0 0 auto;
-  width: 30px; height: 30px;
+  width: 27px; height: 27px;
   display: grid; place-items: center;
-  border-radius: 9px;
-  background: var(--radar-badge, var(--accent));
-  color: #fff;
-  font-size: 13px; font-weight: 680; line-height: 1;
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.08);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--text) 5%, transparent);
+  color: var(--muted);
+  font-size: 11.5px; font-weight: 600; line-height: 1;
+  letter-spacing: .01em;
+  border: 1px solid var(--hairline);
+}
+/* In dichten Listen (Umfeld / Artikel) noch dezenter als in "Über dich". */
+.radar2-badge--sm {
+  width: 23px; height: 23px; border-radius: 7px;
+  font-size: 10.5px; color: var(--muted-2);
+  background: color-mix(in srgb, var(--text) 4%, transparent);
 }
 
 /* Chevron ------------------------------------------------------------------- */
@@ -11334,6 +11345,27 @@ body:has(.lage2) {
   color: var(--muted-2);
 }
 
+/* Premium-Hierarchie: "Alle relevanten Artikel" ist die leise Recherche-Ebene ---
+   deutlich ruhiger als Über dich / Umfeld / Dynamiken. Kein News-Feed-Eindruck. */
+.radar2-h2--quiet { font-size: 15.5px; font-weight: 600; color: var(--muted); }
+.radar2-h2--quiet .radar2-ico { color: var(--muted-2); width: 17px; height: 17px; }
+.radar2-section--articles { margin-top: 46px; }
+.radar2-section--articles .radar2-row { padding: 10px 2px; gap: 10px; }
+.radar2-section--articles .radar2-row-title {
+  margin: 1px 0 4px;
+  font-size: 13.5px; font-weight: 560; line-height: 1.32; color: var(--text);
+}
+.radar2-section--articles .radar2-source-name { font-size: 11.5px; font-weight: 500; color: var(--muted-2); }
+.radar2-section--articles .radar2-time { font-size: 11px; }
+.radar2-section--articles .radar2-row-meta--top { margin-bottom: 3px; }
+
+/* Kleinere, ruhigere Relation-Chips in der Artikelliste. */
+.radar2-tag--sm { font-size: 10.5px; padding: 3px 7px; border-radius: 6px; font-weight: 560; }
+
+/* Über dich bleibt die visuell stärkste Signalebene: etwas mehr Präsenz in der
+   Kartenüberschrift und ruhigem Rahmen (Karten nur dort, wo sie Wert schaffen). */
+.radar2-cards .radar2-card-title { font-size: 15.5px; }
+
 /* Desktop: ruhige, begrenzte Inhaltsbreite (kein breites Dashboard) --------- */
 @media (min-width: 900px) {
   .radar2 { max-width: 640px; }
@@ -11348,5 +11380,5 @@ body:has(.lage2) {
   box-shadow: 0 1px 2px rgba(15,23,42,.05);
 }
 :root[data-theme="light"] .radar2-card { box-shadow: 0 1px 2px rgba(15,23,42,.04); }
-:root[data-theme="light"] .radar2-badge { box-shadow: inset 0 0 0 1px rgba(0,0,0,.06); }
+:root[data-theme="light"] .radar2-badge { background: rgba(15,23,42,.05); border-color: rgba(15,23,42,.09); color: var(--muted); }
 :root[data-theme="light"] .radar2-tag--neutral { background: rgba(15,23,42,.06); }

@@ -348,5 +348,36 @@ check("Keine technischen Quellen-Enums im sourceCategory-Label (nur Klartext/'')
   check("Dynamik #15 nur alte Aktivität -> dynamics leer (ehrlicher Leerzustand)", onlyOld.dynamics.length === 0);
 }
 
+// --- 14) Phase 3: Frische misst QUELLEN-Datum, nicht Re-Processing (updated_at) ---
+{
+  const pF = { id: "f1", fullName: "Erika Mustermann", party: "CDU" };
+  // Alt-datierte QUELLEN (20 Tage), aber KO wurde HEUTE neu verarbeitet (updated_at frisch).
+  const koReprocessed = { ...base, id: "krp", vorgang_id: "vrp", display_title: "Alt-datierter Vorgang, heute neu verarbeitet",
+    source_document_count: 4, updated_at: iso(1 * 3600e3), created_at: iso(20 * 864e5) };
+  const dec = [{ knowledge_object_id: "krp", vorgang_id: "vrp", score: 60, matched_features: [{ type: "partei", value: "CDU" }] }];
+  const src = { vrp: [
+    { id: "s1", url: "https://media.de/a", source_type: "media", published_at: iso(20 * 864e5) },
+    { id: "s2", url: "https://bmi.de/b", source_type: "ministry", published_at: iso(21 * 864e5) }
+  ] };
+  const st = radarState.buildCurrentRadarState({ profile: pF, decisions: dec, kosById: { krp: koReprocessed }, knowledgeObjects: [koReprocessed], sourcesByVorgang: src, now: nowDate });
+  check("Phase3 #5: frisches updated_at aber ALTE Quelle (20 Tage) -> NICHT in Neue Dynamiken",
+    !st.dynamics.some((d) => d.vorgangId === "vrp"));
+  check("Phase3 #6: derselbe alte Vorgang bleibt in 'Alle Artikel' erlaubt (Recherche-Ebene)",
+    st.articles.some((a) => a.vorgangId === "vrp"));
+  check("Phase3 #6b: derselbe alte Vorgang bleibt im Umfeld erlaubt (echter Profilbezug)",
+    st.environment.party.some((e) => e.vorgangId === "vrp"));
+  // Gegentest: dieselbe Struktur mit FRISCHER Quelle (2 Tage) -> erscheint als Dynamik.
+  const koFreshSrc = { ...koReprocessed, id: "kfs", vorgang_id: "vfs", created_at: iso(2 * 864e5) };
+  const stF = radarState.buildCurrentRadarState({ profile: pF,
+    decisions: [{ knowledge_object_id: "kfs", vorgang_id: "vfs", score: 60, matched_features: [{ type: "partei", value: "CDU" }] }],
+    kosById: { kfs: koFreshSrc }, knowledgeObjects: [koFreshSrc],
+    sourcesByVorgang: { vfs: [ { id: "s3", url: "https://media.de/a", source_type: "media", published_at: iso(2 * 864e5) }, { id: "s4", url: "https://bmi.de/b", source_type: "ministry", published_at: iso(2 * 864e5) } ] },
+    now: nowDate });
+  check("Phase3: frische Quelle (2 Tage) innerhalb 7-Tage-Fenster -> erscheint als Dynamik",
+    stF.dynamics.some((d) => d.vorgangId === "vfs"));
+  check("Phase3: Dynamik zeigt das QUELLEN-Datum (nicht das Re-Processing-Datum)",
+    (stF.dynamics.find((d) => d.vorgangId === "vfs") || {}).lastUpdatedAt === iso(2 * 864e5));
+}
+
 console.log(`\n${passed}/${passed + failed} Radar-State-Assertions erfolgreich.`);
 if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exit(1); }

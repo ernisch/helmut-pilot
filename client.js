@@ -29,6 +29,7 @@ let radarFilter = "all";
 let radarMentionsExpanded = false;
 let radarDynamicsExpanded = false;
 let radarArticlesExpanded = false;
+let radarEnvExpanded = false;
 let radarRefreshing = false;
 let opsStatusLoaded = false;
 let pushConfig = null;
@@ -7267,12 +7268,20 @@ function renderRadarEnvironment(state) {
   }).join("");
   const seg = RADAR_SEGMENTS.find((s) => s.key === active);
   const items = env[active] || [];
-  const list = items.length ? items.map(renderRadarEnvRow).join("") : radarEmptyHint(seg.empty);
+  // Kuratierte Auswahl statt Feed: standardmäßig max. 3 pro Segment; der Rest ist eine
+  // ECHTE erweiterte Liste (Daten liegen vor) hinter einem segmentspezifischen Button.
+  const RADAR_ENV_PREVIEW = 3;
+  const shown = radarEnvExpanded ? items : items.slice(0, RADAR_ENV_PREVIEW);
+  const list = shown.length ? shown.map(renderRadarEnvRow).join("") : radarEmptyHint(seg.empty);
+  const more = items.length > RADAR_ENV_PREVIEW
+    ? `<button class="radar2-more-link radar2-more-link--block" type="button" data-radar-expand="environment">${radarEnvExpanded ? "Weniger anzeigen" : `${escapeHtml(seg.more)} (${items.length})`} <span aria-hidden="true">›</span></button>`
+    : "";
   return `
     <section class="radar2-section">
       <h2 class="radar2-h2">${radarIcon("people")}<span>Dein Umfeld</span></h2>
       <div class="radar2-segments" role="tablist" aria-label="Umfeld-Bereich">${tabs}</div>
       <div class="radar2-list">${list}</div>
+      ${more}
     </section>
   `;
 }
@@ -7280,9 +7289,9 @@ function renderRadarEnvironment(state) {
 function renderRadarEnvRow(e) {
   const href = radarItemHref(e);
   const time = radarTime(e.publishedAt);
-  const rel = e.relationLabel ? `<span class="radar2-tag radar2-tag--neutral">${escapeHtml(e.relationLabel)}</span>` : "";
+  const rel = e.relationLabel ? `<span class="radar2-tag radar2-tag--neutral radar2-tag--sm">${escapeHtml(e.relationLabel)}</span>` : "";
   const inner = `
-    ${radarSourceBadge(e)}
+    ${radarSourceBadge(e, { small: true })}
     <div class="radar2-row-body">
       <h3 class="radar2-row-title">${escapeHtml(e.title || "Vorgang")}</h3>
       <div class="radar2-row-meta">${rel}<span class="radar2-row-sub">${escapeHtml(e.sourceName || "Quelle")}${time ? " · " + escapeHtml(time) : ""}</span></div>
@@ -7343,8 +7352,8 @@ function renderRadarArticles(state) {
     ? `<button class="radar2-more-link radar2-more-link--block" type="button" data-radar-expand="articles">${radarArticlesExpanded ? "Weniger anzeigen" : `Alle anzeigen (${filtered.length})`} <span aria-hidden="true">›</span></button>`
     : "";
   return `
-    <section class="radar2-section">
-      <h2 class="radar2-h2">${radarIcon("doc")}<span>Alle relevanten Artikel</span></h2>
+    <section class="radar2-section radar2-section--articles">
+      <h2 class="radar2-h2 radar2-h2--quiet">${radarIcon("doc")}<span>Alle relevanten Artikel</span></h2>
       <div class="radar2-filters" role="tablist" aria-label="Artikelfilter">${chips}</div>
       <div class="radar2-list">${list}</div>
       ${more}
@@ -7361,9 +7370,9 @@ function renderRadarArticleRow(a) {
   const href = radarItemHref(a);
   const time = radarTime(a.publishedAt);
   const relLabel = radarPrimaryRelationLabel(a.relationTypes);
-  const rel = relLabel ? `<span class="radar2-tag radar2-tag--neutral">${escapeHtml(relLabel)}</span>` : "";
+  const rel = relLabel ? `<span class="radar2-tag radar2-tag--neutral radar2-tag--sm">${escapeHtml(relLabel)}</span>` : "";
   const inner = `
-    ${radarSourceBadge(a)}
+    ${radarSourceBadge(a, { small: true })}
     <div class="radar2-row-body">
       <div class="radar2-row-meta radar2-row-meta--top">
         <span class="radar2-source-name">${escapeHtml(a.sourceName || "Quelle")}</span>
@@ -7430,11 +7439,13 @@ function radarRowWrap(href, inner) {
 
 // Quellenzeichen (Initiale) statt erfundener Vorschaubilder: in V3 existiert KEIN
 // gespeichertes Bildfeld (image_url/og_image). Ehrlich, ohne externen Hotlink.
-function radarSourceBadge(item) {
+// Ruhige, monochrome Quellenmarke (keine bunten Avatar-Farben) — premium/ministeriell.
+// opts.small = noch dezenter in dichten Listen (Umfeld/Artikel).
+function radarSourceBadge(item, opts = {}) {
   const name = String((item && item.sourceName) || "Quelle").trim();
   const initial = escapeHtml((name.charAt(0) || "•").toUpperCase());
-  const color = radarV3AvatarColor(name);
-  return `<span class="radar2-badge" style="--radar-badge:${color}" aria-hidden="true">${initial}</span>`;
+  const cls = opts.small ? "radar2-badge radar2-badge--sm" : "radar2-badge";
+  return `<span class="${cls}" aria-hidden="true">${initial}</span>`;
 }
 
 // Nur echte http(s)-Quellen öffnen (kein toter Link). Server kuratiert canonical/best.
@@ -7488,7 +7499,8 @@ function bindRadarActions() {
   const root = document.getElementById("radar2-root");
   if (!root) return;
   root.querySelectorAll("[data-radar-segment]").forEach((btn) => {
-    btn.addEventListener("click", () => { radarSegment = btn.dataset.radarSegment; rerenderRadar(); });
+    // Segmentwechsel startet wieder kompakt (kuratierte Auswahl, kein langer Rest).
+    btn.addEventListener("click", () => { radarSegment = btn.dataset.radarSegment; radarEnvExpanded = false; rerenderRadar(); });
   });
   root.querySelectorAll("[data-radar-filter]").forEach((btn) => {
     // Filterwechsel setzt die Artikel-Aufklappung zurück (kein verwirrend langer Rest).
@@ -7500,6 +7512,7 @@ function bindRadarActions() {
       if (k === "mentions") radarMentionsExpanded = !radarMentionsExpanded;
       else if (k === "dynamics") radarDynamicsExpanded = !radarDynamicsExpanded;
       else if (k === "articles") radarArticlesExpanded = !radarArticlesExpanded;
+      else if (k === "environment") radarEnvExpanded = !radarEnvExpanded;
       rerenderRadar();
     });
   });
@@ -7525,9 +7538,9 @@ function radarIcon(name) {
 }
 
 const RADAR_SEGMENTS = [
-  { key: "party", label: "Partei", empty: "Keine neuen relevanten Parteisignale." },
-  { key: "constituency", label: "Wahlkreis", empty: "Keine neuen relevanten Entwicklungen aus deinem Wahlkreis." },
-  { key: "committees", label: "Ausschüsse", empty: "Keine neuen relevanten Ausschussentwicklungen." }
+  { key: "party", label: "Partei", empty: "Keine neuen relevanten Parteisignale.", more: "Alle Parteisignale anzeigen" },
+  { key: "constituency", label: "Wahlkreis", empty: "Keine neuen relevanten Entwicklungen aus deinem Wahlkreis.", more: "Alle Wahlkreis-Signale anzeigen" },
+  { key: "committees", label: "Ausschüsse", empty: "Keine neuen relevanten Ausschussentwicklungen.", more: "Alle Ausschuss-Signale anzeigen" }
 ];
 
 const RADAR_FILTERS = [
