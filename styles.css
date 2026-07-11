@@ -11125,11 +11125,12 @@ body:has(.lage2) {
 /* Icons --------------------------------------------------------------------- */
 .radar2-ico { display: block; flex: 0 0 auto; }
 
-/* Persönliche Zusammenfassung (die EINE hervorgehobene Karte) --------------- */
+/* Persönliche Zusammenfassung (die EINE hervorgehobene Karte) — kompakt & edel,
+   kleineres Icon gibt dem Text mehr Breite (keine unschönen Zeilenumbrüche). */
 .radar2-summary {
-  display: flex; align-items: center; gap: 14px;
-  padding: 16px 18px;
-  border-radius: 18px;
+  display: flex; align-items: center; gap: 13px;
+  padding: 15px 16px;
+  border-radius: 17px;
   border: 1px solid var(--accent-soft);
   background:
     linear-gradient(180deg, var(--accent-soft), transparent 130%),
@@ -11139,16 +11140,19 @@ body:has(.lage2) {
 .radar2-summary--empty { color: var(--muted); }
 .radar2-summary-icon {
   flex: 0 0 auto;
-  width: 52px; height: 52px;
+  width: 40px; height: 40px;
   display: grid; place-items: center;
-  border-radius: 14px;
+  border-radius: 12px;
   background: var(--accent-soft);
   color: var(--accent);
 }
-.radar2-summary-icon .radar2-ico { width: 26px; height: 26px; }
-.radar2-summary-text { margin: 0; font-size: 15.5px; line-height: 1.5; color: var(--text); }
-.radar2-summary-line { display: block; }
-.radar2-hl { color: var(--accent); font-weight: 620; }
+.radar2-summary-icon .radar2-ico { width: 21px; height: 21px; }
+/* Jede Aussage ist eine eigene Zeile (Erwähnungen / Umfeld) -> nie mitten im Satz
+   umbrechen; balancierter Umbruch, wenn eine Zeile doch länger ist. */
+.radar2-summary-text { margin: 0; font-size: 15px; line-height: 1.46; color: var(--text); letter-spacing: -.003em; }
+.radar2-summary-line { display: block; text-wrap: pretty; }
+.radar2-summary-line + .radar2-summary-line { margin-top: 2px; color: var(--muted); }
+.radar2-hl { color: var(--accent); font-weight: 650; font-variant-numeric: tabular-nums; }
 
 /* Sektionen — mehr Premium-Luft zwischen Hauptbereichen --------------------- */
 .radar2-section { margin-top: 36px; }
@@ -11219,20 +11223,21 @@ body:has(.lage2) {
    (KEINE bunten Avatar-Farben): dezent, hochwertig, einheitlich, wie Linear/Notion. */
 .radar2-badge {
   flex: 0 0 auto;
-  width: 27px; height: 27px;
+  width: 26px; height: 26px;
   display: grid; place-items: center;
   border-radius: 8px;
-  background: color-mix(in srgb, var(--text) 5%, transparent);
-  color: var(--muted);
-  font-size: 11.5px; font-weight: 600; line-height: 1;
-  letter-spacing: .01em;
-  border: 1px solid var(--hairline);
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+  color: var(--muted-2);
+  font-size: 11px; font-weight: 560; line-height: 1;
+  letter-spacing: .02em;
+  border: 0;
 }
 /* In dichten Listen (Umfeld / Artikel) noch dezenter als in "Über dich". */
 .radar2-badge--sm {
-  width: 23px; height: 23px; border-radius: 7px;
-  font-size: 10.5px; color: var(--muted-2);
-  background: color-mix(in srgb, var(--text) 4%, transparent);
+  width: 22px; height: 22px; border-radius: 7px;
+  font-size: 10px; font-weight: 560;
+  color: color-mix(in srgb, var(--text) 42%, transparent);
+  background: color-mix(in srgb, var(--text) 4.5%, transparent);
 }
 
 /* Chevron ------------------------------------------------------------------- */
@@ -11345,26 +11350,36 @@ body:has(.lage2) {
   color: var(--muted-2);
 }
 
-/* Premium-Hierarchie: "Alle relevanten Artikel" ist die leise Recherche-Ebene ---
-   deutlich ruhiger als Über dich / Umfeld / Dynamiken. Kein News-Feed-Eindruck. */
-.radar2-h2--quiet { font-size: 15.5px; font-weight: 600; color: var(--muted); }
-.radar2-h2--quiet .radar2-ico { color: var(--muted-2); width: 17px; height: 17px; }
-.radar2-section--articles { margin-top: 46px; }
-.radar2-section--articles .radar2-row { padding: 10px 2px; gap: 10px; }
+/* Premium-Hierarchie: "Alle relevanten Artikel" ist die LEISESTE Recherche-Ebene ---
+   klar sekundär zu Über dich / Umfeld / Dynamiken. Kein News-Feed-Eindruck. */
+.radar2-h2--quiet { font-size: 14px; font-weight: 580; color: var(--muted-2); letter-spacing: 0; }
+.radar2-h2--quiet .radar2-ico { color: var(--muted-2); width: 16px; height: 16px; opacity: .75; }
+.radar2-section--articles { margin-top: 52px; }
+.radar2-section--articles .radar2-row { padding: 9px 2px; gap: 10px; }
 .radar2-section--articles .radar2-row-title {
   margin: 1px 0 4px;
-  font-size: 13.5px; font-weight: 560; line-height: 1.32; color: var(--text);
+  font-size: 13px; font-weight: 540; line-height: 1.32;
+  color: color-mix(in srgb, var(--text) 88%, transparent);
 }
-.radar2-section--articles .radar2-source-name { font-size: 11.5px; font-weight: 500; color: var(--muted-2); }
-.radar2-section--articles .radar2-time { font-size: 11px; }
+.radar2-section--articles .radar2-source-name { font-size: 11px; font-weight: 500; color: var(--muted-2); }
+.radar2-section--articles .radar2-time { font-size: 10.5px; }
 .radar2-section--articles .radar2-row-meta--top { margin-bottom: 3px; }
+.radar2-section--articles .radar2-tag { font-size: 10px; padding: 2px 6px; }
+.radar2-section--articles .radar2-more-link--block { color: var(--muted); }
+.radar2-section--articles .radar2-more-link--block:hover { color: var(--accent); }
 
-/* Kleinere, ruhigere Relation-Chips in der Artikelliste. */
-.radar2-tag--sm { font-size: 10.5px; padding: 3px 7px; border-radius: 6px; font-weight: 560; }
+/* Kleinere, ruhigere Relation-Chips (Umfeld/Artikel). */
+.radar2-tag--sm { font-size: 10.5px; padding: 3px 7px; border-radius: 6px; font-weight: 540; }
+/* Umfeld-Bezugschip noch dezenter (das Segment-Tab trägt bereits den Kontext). */
+.radar2-row .radar2-tag--sm { background: color-mix(in srgb, var(--text) 5%, transparent); color: var(--muted-2); }
 
 /* Über dich bleibt die visuell stärkste Signalebene: etwas mehr Präsenz in der
    Kartenüberschrift und ruhigem Rahmen (Karten nur dort, wo sie Wert schaffen). */
 .radar2-cards .radar2-card-title { font-size: 15.5px; }
+
+/* Umfeld-Lesbarkeit: Titel dürfen 2 Zeilen atmen, ruhige Metazeile darunter. */
+.radar2-list .radar2-row-title { line-height: 1.36; }
+.radar2-list .radar2-row-meta { gap: 7px; row-gap: 4px; }
 
 /* Desktop: ruhige, begrenzte Inhaltsbreite (kein breites Dashboard) --------- */
 @media (min-width: 900px) {
@@ -11373,12 +11388,25 @@ body:has(.lage2) {
   .radar2-section { margin-top: 34px; }
 }
 
-/* Light-Theme-Overrides (Tokens tragen das Meiste; hier nur Feinschliff) ---- */
-:root[data-theme="light"] .radar2-summary {
-  border-color: color-mix(in srgb, var(--accent) 24%, transparent);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 9%, #fff), #fff 130%);
-  box-shadow: 0 1px 2px rgba(15,23,42,.05);
+/* Light-Theme: sauberer, hellerer Radar-Hintergrund (weg vom grauen Web-App-Look) --
+   analog zum Helmut-Tab ein view-spezifischer, ruhiger Verlauf; nur Radar, nur Light. */
+:root[data-theme="light"] .app-frame.view-radar {
+  min-height: 100dvh;
+  background:
+    radial-gradient(120% 60% at 50% -8%, rgba(79,111,224,.05), transparent 60%),
+    linear-gradient(180deg, #fcfdff 0%, #f7f9fd 60%, #f2f5fb 100%);
 }
-:root[data-theme="light"] .radar2-card { box-shadow: 0 1px 2px rgba(15,23,42,.04); }
-:root[data-theme="light"] .radar2-badge { background: rgba(15,23,42,.05); border-color: rgba(15,23,42,.09); color: var(--muted); }
-:root[data-theme="light"] .radar2-tag--neutral { background: rgba(15,23,42,.06); }
+:root[data-theme="light"] .radar2-summary {
+  border-color: color-mix(in srgb, var(--accent) 22%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 8%, #fff), #fff 120%);
+  box-shadow: 0 8px 24px rgba(79,111,224,.09), 0 1px 0 rgba(255,255,255,.8);
+}
+/* Karten hochwertiger: reines Weiß + feiner, weicher Schatten statt flachem Grau. */
+:root[data-theme="light"] .radar2-card {
+  background: #fff;
+  border-color: rgba(15,23,42,.06);
+  box-shadow: 0 1px 3px rgba(15,23,42,.05), 0 8px 24px rgba(15,23,42,.03);
+}
+:root[data-theme="light"] .radar2-badge { background: rgba(15,23,42,.045); border-color: transparent; color: var(--muted-2); }
+:root[data-theme="light"] .radar2-tag--neutral { background: rgba(15,23,42,.055); }
+:root[data-theme="light"] .radar2-row { border-bottom-color: rgba(15,23,42,.07); }
