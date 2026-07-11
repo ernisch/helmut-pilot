@@ -13,6 +13,7 @@
     "test:helmut-fields": "node scripts/helmut-fields-test.js",
     "test:helmut-state": "node scripts/current-helmut-state-test.js",
     "test:helmut-ui": "node scripts/helmut-tab-ui-test.js",
+    "test:briefing-language": "node scripts/briefing-language-test.js",
     "test:radar": "node scripts/radar-test.js",
     "test:saas": "node scripts/saas-foundation-test.js",
     "lage:backfill": "node scripts/lage-backfill.js",
