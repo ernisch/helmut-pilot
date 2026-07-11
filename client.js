@@ -10861,13 +10861,19 @@ function priorityClass(priority) {
 }
 
 function formatDueDate(dateString) {
+  // Wie die Schwesterfunktionen (formatBriefingDate/-DeadlineDate): NIE ein rohes
+  // "Invalid Date" ausliefern. Diese Ausgabe landet in kopierbaren Büro-Texten und
+  // E-Mails ("Bitte bis ${formatDueDate(...)} ..."), wo ein fehlendes/ungültiges
+  // Fälligkeitsdatum sonst als "Invalid Date" beim Pilotnutzer sichtbar würde.
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return "zeitnah";
   return new Intl.DateTimeFormat("de-DE", {
     timeZone: "Europe/Berlin",
     hour: "2-digit",
     minute: "2-digit",
     day: "2-digit",
     month: "2-digit"
-  }).format(new Date(dateString));
+  }).format(date);
 }
 
 function formatLastLogin(isoDate) {

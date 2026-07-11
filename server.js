@@ -1979,6 +1979,9 @@ module.exports.__buildAdminDataStatus = buildAdminDataStatus;
 module.exports.__buildPipelineRecoveryStatus = buildPipelineRecoveryStatus;
 // Test-Hook (nur fuer Offline-Tests, wie __build* oben): der slot-aware Read-Pfad.
 module.exports.__buildV3Briefing = buildV3Briefing;
+// Test-Hook (Offline): der oeffentliche Release-Serializer — prueft, dass keine
+// Modell-/Vendor-Details an anonyme Aufrufer durchsickern.
+module.exports.__publicReleasePayload = publicReleasePayload;
 
 if (require.main === module) {
   const server = http.createServer(requestHandler);
@@ -2452,7 +2455,12 @@ function publicReleasePayload(release) {
     checks: (release.checks || []).map((check) => ({
       label: check.label,
       ok: check.ok,
-      detail: check.detail
+      // SICHERHEIT: /api/release/public ist bewusst unauthentifiziert (externes
+      // Monitoring/Smoke). Der OpenAI-Check-Detailtext enthaelt im aktiven Zustand
+      // den konkreten Modellnamen ("Modell <model> aktiv.") — der darf oeffentlich
+      // NICHT sichtbar sein (Modell-/Vendor-Preisgabe an anonyme Aufrufer). Public
+      // erhaelt nur den neutralen Aktiv-Status; alle anderen Checks bleiben unveraendert.
+      detail: check.label === "OpenAI" ? (check.ok ? "aktiv." : "nicht aktiv.") : check.detail
     })),
     liveFlow: {
       ready: release.liveFlow?.ready || false,
