@@ -1038,6 +1038,151 @@ function adminEnvLabel(env) {
   return map[key] || (env ? String(env) : "—");
 }
 
+// Relatives Alter (nur Anzeige): „gerade eben", „vor 12 Min.", „vor 3 Std.", „vor 2 Tagen".
+// Kein Wert -> null (Aufrufer entscheidet, ob die Zeile entfällt). Erfindet nichts.
+function adminRelAge(iso) {
+  if (!iso) return null;
+  const t = new Date(iso).getTime();
+  if (!Number.isFinite(t)) return null;
+  const sec = Math.max(0, Math.floor((Date.now() - t) / 1000));
+  if (sec < 90) return "gerade eben";
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `vor ${min} Min.`;
+  const std = Math.floor(min / 60);
+  if (std < 24) return `vor ${std} Std.`;
+  const tage = Math.floor(std / 24);
+  return tage === 1 ? "vor 1 Tag" : `vor ${tage} Tagen`;
+}
+
+// Eine Statuskachel der Betreiber-Übersicht. cls ∈ {ok, warn, bad, unknown} steuert NUR
+// die semantische Farbe (grün/gelb/rot/grau). Alle Texte werden escaped.
+function opTile(label, cls, statusText, subText, timeText) {
+  return `
+    <div class="op-tile op-tile--${escapeAttribute(cls)}">
+      <div class="op-tile-top"><span class="op-dot" aria-hidden="true"></span><span class="op-tile-label">${escapeHtml(label)}</span></div>
+      <span class="op-tile-status">${escapeHtml(statusText)}</span>
+      ${subText ? `<span class="op-tile-sub">${escapeHtml(subText)}</span>` : ""}
+      ${timeText ? `<span class="op-tile-time">${escapeHtml(timeText)}</span>` : ""}
+    </div>`;
+}
+
+// 30-Sekunden-Betreiber-Übersicht (nur Admin). Leitet AUSSCHLIESSLICH aus bereits
+// geladenen Admin-Daten ab (overview, data-status, recovery-status) — kein neuer
+// Endpoint, kein KI-Call, keine Aktion. Fehlt ein Wert sicher, wird er neutral als
+// „Keine Daten"/„Unbekannt" (grau) gezeigt, niemals erfunden. Farbe nur semantisch.
+function renderAdminOperatorOverview(data, ds, rec) {
+  const g = (ds && ds.global) || null;
+  const koRaw = rec && rec.knowledgeObjects;
+  const ko = (koRaw && koRaw.available !== false) ? koRaw : null;
+  const tiles = [];
+
+  // 1) System — Gesamt-Ampel des Datenmotors (Rollup über Pipeline + Daten + Profil).
+  {
+    const a = g && g.ampel;
+    const map = { gruen: ["ok", "Gesund"], gelb: ["warn", "Prüfen"], rot: ["bad", "Fehler"] };
+    const [cls, label] = map[a] || ["unknown", "Unbekannt"];
+    let sub;
+    if (!a) sub = "Kein Statusobjekt geladen";
+    else if (a === "gruen") sub = "Kernbereiche ok, brauchbarer Stand";
+    else if (a === "rot") sub = (g.letzterFehler && g.letzterFehler.headline) ? g.letzterFehler.headline : "Pipeline-Fehler oder kein aktueller Stand";
+    else sub = "Eingeschränkt — Details unten prüfen";
+    const chk = data && data.generatedAt ? adminRelAge(data.generatedAt) : null;
+    tiles.push(opTile("System", cls, label, sub, chk ? `geprüft ${chk}` : null));
+  }
+
+  // 2) Datenstand — Frische des letzten Laufs. Zeitstempel ist echt; die Alters-Schwelle
+  //    (6 h / 24 h) ist reine Anzeige-Heuristik, kein erfundener Wert.
+  {
+    const iso = g && g.letzterLauf;
+    if (!iso) tiles.push(opTile("Datenstand", "unknown", "Keine Daten", "Kein Lauf-Zeitstempel", null));
+    else {
+      const ageH = (Date.now() - new Date(iso).getTime()) / 3600000;
+      const cls = ageH < 6 ? "ok" : ageH < 24 ? "warn" : "bad";
+      const label = cls === "ok" ? "Aktuell" : cls === "warn" ? "Älter" : "Veraltet";
+      tiles.push(opTile("Datenstand", cls, label, `Letzte Daten ${adminRelAge(iso)}`, null));
+    }
+  }
+
+  // 3) Pipeline — lief der letzte Lauf erfolgreich? (echte Quellen-Zahlen + Modus)
+  {
+    if (!g) tiles.push(opTile("Pipeline", "unknown", "Unbekannt", "Kein Lauf-Status geladen", null));
+    else {
+      const geprueft = dsNum(g.quellen && g.quellen.geprueft);
+      const erfolg = dsNum(g.quellen && g.quellen.erfolgreich);
+      const fehl = dsNum(g.quellen && g.quellen.fehlgeschlagen);
+      const ratio = geprueft > 0 ? fehl / geprueft : 0;
+      let cls, label;
+      if (geprueft === 0 && !g.letzterLauf) { cls = "unknown"; label = "Kein Lauf"; }
+      else if (geprueft > 0 && erfolg === 0) { cls = "bad"; label = "Fehlgeschlagen"; }
+      else if (ratio > 0.1) { cls = "warn"; label = "Mit Fehlern"; }
+      else { cls = "ok"; label = "Erfolgreich"; }
+      const modus = g.modus ? ` · ${g.modus}` : "";
+      const sub = g.letzterLauf ? `Letzter Lauf ${adminRelAge(g.letzterLauf)}${modus}` : "Noch kein Lauf erfasst";
+      tiles.push(opTile("Pipeline", cls, label, sub, null));
+    }
+  }
+
+  // 4) Quellen — wie viele Quellen lieferten Daten? (echte Zähler)
+  {
+    const q = g && g.quellen;
+    const geprueft = dsNum(q && q.geprueft);
+    if (!q || geprueft === 0) tiles.push(opTile("Quellen", "unknown", "Keine Daten", "Ab nächstem Lauf verfügbar", null));
+    else {
+      const erfolg = dsNum(q.erfolgreich);
+      const fehl = dsNum(q.fehlgeschlagen);
+      // Rot nur bei Total-/Mehrheitsausfall; einzelne Fehlquellen sind „prüfen" (gelb).
+      const cls = fehl === 0 ? "ok" : (erfolg === 0 || fehl / geprueft > 0.5 ? "bad" : "warn");
+      const sub = fehl > 0 ? `${fehl} ${fehl === 1 ? "Quelle" : "Quellen"} prüfen` : "Alle Quellen ok";
+      tiles.push(opTile("Quellen", cls, `${erfolg} von ${geprueft} ok`, sub, null));
+    }
+  }
+
+  // 5) Understanding — KO-Zustände + KI-Analysefehler (echte Zähler, kein KI-Call).
+  {
+    const kiFehler = Boolean(g && g.kiAnalyseFehler);
+    if (!ko && !g) tiles.push(opTile("Understanding", "unknown", "Keine Daten", "Kein Status geladen", null));
+    else {
+      const pending = ko ? dsNum(ko.pending) : 0;
+      const failed = ko ? dsNum(ko.failed) : 0;
+      let cls, label, sub;
+      if (failed > 0) { cls = "bad"; label = "Fehler"; sub = `${failed} ${failed === 1 ? "Vorgang" : "Vorgänge"} fehlgeschlagen`; }
+      else if (pending > 0) { cls = "warn"; label = "Wartet"; sub = `${pending} ${pending === 1 ? "Vorgang wartet" : "Vorgänge warten"}`; }
+      else if (kiFehler) { cls = "warn"; label = "Prüfen"; sub = "KI-Analyse heute mit Fehlern"; }
+      else { cls = "ok"; label = "Ok"; sub = "Keine Fehler im letzten Lauf"; }
+      const luf = rec && rec.letzterUnderstandingLauf ? adminRelAge(rec.letzterUnderstandingLauf) : null;
+      tiles.push(opTile("Understanding", cls, label, sub, luf ? `Lauf ${luf}` : null));
+    }
+  }
+
+  // 6) Watchdog — der einzige automatische Readiness-Guard im System ist der Morgen-Check
+  //    7:30 (morgenstatus0730). Ehrlich als solcher benannt; keinen erfundenen „Ping".
+  {
+    const m = g && g.morgenstatus0730;
+    if (!m || typeof m.ok === "undefined") tiles.push(opTile("Watchdog", "unknown", "Keine Daten", "Kein Morgen-Check-Status", null));
+    else if (m.ok) tiles.push(opTile("Watchdog", "ok", "Ok", "Morgen-Check 7:30 bestanden", null));
+    else tiles.push(opTile("Watchdog", "warn", "Prüfen", m.note ? String(m.note) : "Morgen-Check 7:30 nicht bestanden", null));
+  }
+
+  // Ruhige Hinweiszeilen — NUR bei echten, positiven Werten (keine Fake-Hinweise).
+  const warn = [];
+  const q = g && g.quellen;
+  if (q && dsNum(q.fehlgeschlagen) > 0) warn.push(`${dsNum(q.fehlgeschlagen)} von ${dsNum(q.geprueft)} Quellen lieferten im letzten Lauf keine Daten.`);
+  if (ko && dsNum(ko.pending) > 0) warn.push(`${dsNum(ko.pending)} Understanding-Vorgänge warten auf Verarbeitung.`);
+  if (ko && dsNum(ko.failed) > 0) warn.push(`${dsNum(ko.failed)} Understanding-Vorgänge sind fehlgeschlagen.`);
+  if (rec && rec.understandingLock && rec.understandingLock.verdaechtig) warn.push("Understanding-Lock wirkt veraltet (hängt) – im Recovery-Bereich prüfen.");
+  if (g && g.letzterFehler && g.letzterFehler.headline) warn.push(`Letzter Fehler: ${g.letzterFehler.headline}${g.letzterFehler.when ? ` (${dsDateLabel(g.letzterFehler.when)})` : ""}.`);
+
+  const warnHtml = warn.length
+    ? `<div class="op-warnings">${warn.slice(0, 5).map((w) => `<p class="op-warning">${escapeHtml(w)}</p>`).join("")}</div>`
+    : "";
+
+  return `
+    <section class="op-overview" aria-label="Betreiber-Übersicht">
+      <div class="op-tiles">${tiles.join("")}</div>
+      ${warnHtml}
+    </section>`;
+}
+
 function renderAdminView() {
   if (userRole() !== "admin") return `<section class="page-intro"><h1 class="hero-title">Kein Zugriff.</h1></section>`;
   if (!adminData) {
@@ -1144,6 +1289,8 @@ function renderAdminView() {
         <h1 class="admin-title">Admin</h1>
         <p class="admin-subtitle">Betreiber-Übersicht: Systemzustand, Datenmotor, Pipeline, Quellen und Nutzer.${sys.deploy?.commit || sys.deploy?.version ? ` <span class="admin-version-tag" title="Laufende Deploy-Version${sys.deploy?.environment ? ` · ${escapeHtml(adminEnvLabel(sys.deploy.environment))}` : ""}">Version ${escapeHtml(sys.deploy?.commit || sys.deploy?.version)}</span>` : ""}</p>
       </header>
+
+      ${renderAdminOperatorOverview(data, adminDataStatus, adminRecovery)}
 
       <div class="admin-period-toggle">
         <button class="admin-period-btn${adminPeriod === "today" ? " is-active" : ""}" type="button" data-admin-period="today">Heute</button>

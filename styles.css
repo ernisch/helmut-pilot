@@ -7562,6 +7562,53 @@ body {
   white-space: nowrap;
 }
 
+/* 30-Sekunden-Betreiber-Übersicht: kompakte Statuskacheln, ruhig & semantisch.
+   Farbe nur auf Punkt/Status/linkem Rand — keine laute Vollflächen-Alarmoptik. */
+.op-overview { margin: 14px 0 20px; }
+.op-tiles {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+}
+.op-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 11px 12px;
+  border-radius: 12px;
+  background: var(--card, rgba(14, 20, 34, .88));
+  border: 1px solid var(--line, rgba(226, 232, 240, .12));
+  border-left: 3px solid var(--muted-2, rgba(245, 241, 232, .46));
+  min-width: 0;
+}
+.op-tile-top { display: flex; align-items: center; gap: 7px; }
+.op-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted-2); flex: none; }
+.op-tile-label {
+  font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--muted-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.op-tile-status { font-size: 15px; font-weight: 700; color: var(--text); line-height: 1.2; }
+.op-tile-sub { font-size: 12px; color: var(--muted); line-height: 1.35; }
+.op-tile-time { font-size: 11px; color: var(--muted-2); font-variant-numeric: tabular-nums; }
+.op-tile--ok    { border-left-color: #34c759; }
+.op-tile--ok    .op-dot { background: #34c759; }
+.op-tile--ok    .op-tile-status { color: #34c759; }
+.op-tile--warn  { border-left-color: #ff9f0a; }
+.op-tile--warn  .op-dot { background: #ff9f0a; }
+.op-tile--warn  .op-tile-status { color: #ff9f0a; }
+.op-tile--bad   { border-left-color: var(--danger); }
+.op-tile--bad   .op-dot { background: var(--danger); }
+.op-tile--bad   .op-tile-status { color: var(--danger); }
+.op-tile--unknown { border-left-color: var(--muted-2); }
+.op-warnings { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.op-warning {
+  margin: 0; font-size: 12.5px; color: var(--muted); line-height: 1.4;
+  padding: 8px 11px; border-radius: 9px;
+  background: rgba(255, 159, 10, .08); border: 1px solid rgba(255, 159, 10, .18);
+}
+@media (max-width: 1100px) { .op-tiles { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 620px)  { .op-tiles { grid-template-columns: repeat(2, 1fr); } }
+
 /* Stats row */
 .admin-stats-row {
   display: grid;

@@ -19,6 +19,7 @@
     "test:radar-state": "node scripts/radar-state-test.js",
     "test:radar-ui": "node scripts/radar-ui-test.js",
     "test:saas": "node scripts/saas-foundation-test.js",
+    "test:admin": "node scripts/admin-overview-test.js",
     "lage:backfill": "node scripts/lage-backfill.js",
     "backfill:presentation": "node scripts/presentation-backfill.js"
   },
