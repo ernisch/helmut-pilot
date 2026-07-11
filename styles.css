@@ -31,7 +31,7 @@
   --hairline: rgba(226, 232, 240, .08);
   --text: #f5f1e8;
   --muted: rgba(245, 241, 232, .68);
-  --muted-2: rgba(245, 241, 232, .46);
+  --muted-2: rgba(245, 241, 232, .54); /* WCAG-AA-Fix: .46 war 4,25:1 -> jetzt 5,5:1 */
   --danger: #ff5967;
   --watch: #d6a040;
   --chance: #39d18f;
@@ -4409,12 +4409,15 @@ small {
 .toast {
   position: fixed;
   left: 50%;
-  bottom: 26px;
+  /* Safe-Area: nicht in den iOS-Home-Indicator/hinter die Bottom-Nav rutschen. */
+  bottom: calc(26px + env(safe-area-inset-bottom, 0px));
   z-index: 70;
   transform: translateX(-50%) translateY(18px);
   padding: 11px 16px;
-  color: #fff;
-  background: var(--accent-ink);
+  /* Kontrast-Fix: feste dunkle Fläche + Weiß in BEIDEN Themes. Frueher
+     var(--accent-ink) -> im Dark Mode hell (Hell-Lavendel), Weiß darauf 1,3:1. */
+  color: #ffffff;
+  background: #1d3f8f;
   border-radius: 999px;
   opacity: 0;
   pointer-events: none;
@@ -5785,7 +5788,7 @@ small {
   --command-line: rgba(236, 241, 255, .105);
   --command-text: #fbf7ef;
   --command-muted: rgba(251, 247, 239, .66);
-  --command-faint: rgba(251, 247, 239, .42);
+  --command-faint: rgba(251, 247, 239, .55); /* WCAG-AA-Fix: .42 war 3,85:1 (Nav) -> 5,9:1 */
   --command-purple: #8c5cff;
   --command-green: #19e59a;
   --command-red: #ff5b68;
@@ -8927,7 +8930,7 @@ a.ac-item, a.ac-item:visited { text-decoration: none; color: inherit; }
   --hairline: rgba(15, 23, 42, .08);
   --text: #0f1729;
   --muted: rgba(15, 23, 42, .64);
-  --muted-2: rgba(15, 23, 42, .46);
+  --muted-2: rgba(15, 23, 42, .60); /* WCAG-AA-Fix: .46 war 3,03:1 -> jetzt 4,7:1 */
   --danger: #d12b39;
   --watch: #b07414;
   --chance: #1f9d63;
@@ -10228,6 +10231,11 @@ details[open].meeting-detail summary::before { content: '▾ '; }
 .helmut-deck-badge.handeln    { background: rgba(243, 106, 116, .16); color: #ff8a92; }
 .helmut-deck-badge.beobachten { background: rgba(249, 205, 127, .16); color: #f9cd7f; }
 .helmut-deck-badge.ignorieren { background: rgba(245, 241, 232, .08); color: rgba(245, 241, 232, .6); }
+/* Light-Mode-Kontrast: die hellen Dark-Badge-Farben (1,1-1,9:1 auf weißer Karte)
+   waren im Light Mode unlesbar. Auf lesbare Statusfarben umstellen. */
+:root[data-theme="light"] .helmut-deck-badge.handeln    { background: rgba(209, 43, 57, .10); color: var(--danger); }
+:root[data-theme="light"] .helmut-deck-badge.beobachten { background: rgba(143, 93, 13, .12); color: #8f5d0d; }
+:root[data-theme="light"] .helmut-deck-badge.ignorieren { background: rgba(15, 23, 42, .06); color: var(--muted); }
 .helmut-deck-star {
   margin-left: auto; display: inline-flex; align-items: center; justify-content: center;
   width: 34px; height: 34px; border-radius: 999px;
@@ -10334,7 +10342,7 @@ details[open].meeting-detail summary::before { content: '▾ '; }
 }
 .helmut-list-side { display: grid; justify-items: end; gap: 3px; }
 .helmut-list-time { color: rgba(245, 241, 232, .5); font-size: 13px; font-weight: 600; white-space: nowrap; }
-.helmut-list-src { color: rgba(245, 241, 232, .38); font-size: 11px; font-weight: 600; white-space: nowrap; }
+.helmut-list-src { color: rgba(245, 241, 232, .55); font-size: 11px; font-weight: 600; white-space: nowrap; } /* WCAG-AA: .38 war 3,2:1 */
 .helmut-list-chevron { display: inline-flex; color: rgba(245, 241, 232, .38); }
 
 /* ── „So funktioniert Helmut" ── */
@@ -11642,3 +11650,20 @@ body:has(.lage2) {
 :root[data-theme="light"] .radar2-badge { background: rgba(15,23,42,.045); border-color: transparent; color: var(--muted-2); }
 :root[data-theme="light"] .radar2-tag--neutral { background: rgba(15,23,42,.055); }
 :root[data-theme="light"] .radar2-row { border-bottom-color: rgba(15,23,42,.07); }
+
+/* ── A11y: durchgängig sichtbarer Tastatur-Fokus (Pre-Sale-Hardening) ──
+   Vorher hatten die Standard-Buttons/Links/role=button kaum focus-visible-Regeln;
+   Tastaturnutzer verloren die Fokusspur. Eine globale, dezente Regel schließt das,
+   ohne den Maus-Fokus (nicht :focus-visible) zu stören. */
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--accent, #6f8ff7);
+  outline-offset: 2px;
+  border-radius: 6px;
+}

@@ -709,11 +709,25 @@ async function ensureViewData(view) {
 
 async function fetchWithTimeout(url, options = {}, timeoutMs = 12000) {
   const preparedOptions = await prepareRequestOptions(url, options);
-  let timeoutId;
-  const timeout = new Promise((_, reject) => {
-    timeoutId = window.setTimeout(() => reject(new Error(`Zeitüberschreitung beim Laden: ${url}`)), timeoutMs);
-  });
-  return Promise.race([fetch(url, preparedOptions), timeout]).finally(() => window.clearTimeout(timeoutId));
+  const run = (opts) => {
+    let timeoutId;
+    const timeout = new Promise((_, reject) => {
+      timeoutId = window.setTimeout(() => reject(new Error(`Zeitüberschreitung beim Laden: ${url}`)), timeoutMs);
+    });
+    return Promise.race([fetch(url, opts), timeout]).finally(() => window.clearTimeout(timeoutId));
+  };
+  const response = await run(preparedOptions);
+  // CSRF-Selbstheilung: Ein abgelaufener/verworfener Token (12h Serverfrist)
+  // fuehrte zu dauerhaftem 403 auf ALLEN POSTs (u. a. push/subscribe), bis der
+  // Nutzer neu lud. Einmal frischen Token holen und den Request wiederholen.
+  if (response.status === 403 && needsCsrfToken(url, options)) {
+    csrfTokenPromise = null;
+    try {
+      const retryOptions = await prepareRequestOptions(url, options);
+      return await run(retryOptions);
+    } catch (_) { return response; }
+  }
+  return response;
 }
 
 async function prepareRequestOptions(url, options = {}) {
@@ -736,7 +750,14 @@ async function getCsrfToken() {
         if (!response.ok) throw new Error("CSRF token request failed");
         return response.json();
       })
-      .then((payload) => payload.token);
+      .then((payload) => payload.token)
+      .catch((error) => {
+        // Eine abgelehnte Promise NIE cachen — sonst bleibt der Fehlversuch
+        // dauerhaft haengen und jeder Folge-POST scheitert. Beim naechsten
+        // Aufruf frisch versuchen.
+        csrfTokenPromise = null;
+        throw error;
+      });
   }
   return csrfTokenPromise;
 }
@@ -747,7 +768,7 @@ function renderPilotAccess(message = "") {
     <section class="loading-card pilot-access-card">
       <div class="loading-logo"><span>H</span></div>
       <p>Helmut</p>
-      <h1>Pilot-Zugang.</h1>
+      <h1>Zugang.</h1>
       <p class="pilot-access-copy">Gib den Zugangscode ein, um deine politische Lage zu öffnen.</p>
       <form class="pilot-access-form" id="pilotAccessForm">
         <input name="secret" type="password" autocomplete="current-password" placeholder="Zugangscode" aria-label="Zugangscode" />
@@ -848,7 +869,7 @@ function renderLogin(message = "") {
         <div class="loading-logo"><span>H</span></div>
         <p>Helmut</p>
         <h1>Anmeldung</h1>
-        <p class="pilot-access-copy">Melde dich mit deinem Helmut Konto an, um dein persönliches Briefing zu öffnen.</p>
+        <p class="pilot-access-copy">Melde dich mit deinem Helmut-Konto an, um deine persönliche Lage zu öffnen.</p>
         <form class="pilot-access-form" id="loginForm">
           <input name="email" type="email" autocomplete="username" placeholder="E-Mail" aria-label="E-Mail" required />
           <div class="password-field">
@@ -2951,7 +2972,7 @@ function renderSidebar() {
         <div class="brand">
           <b class="brand-mark" aria-hidden="true">H</b>
           <span>HELMUT</span>
-          <small>Politischer Referent</small>
+          <small>Dein politischer Stabschef</small>
         </div>
         <nav class="nav-list" aria-label="Hauptnavigation">
           ${navItems.map(([id, label]) => `<button class="${isMobileNavActive(id) ? "active" : ""}" type="button" data-view="${id}">${label}${id === "helmut" && hasNewHelmutAssessment() ? `<i class="helmut-new-dot"></i>` : ""}</button>`).join("")}
@@ -3019,7 +3040,7 @@ function renderTopbar() {
       </button>
       <span class="topbar-brand">HELMUT</span>
       <div class="topbar-meta">
-        <button class="update-heart ${hasUpdates ? "has-updates" : ""}" type="button" data-updates title="${hasUpdates ? "Updates anzeigen" : "Keine neuen Updates"}" aria-label="${hasUpdates ? "Updates anzeigen" : "Keine neuen Updates"}">
+        <button class="update-heart ${hasUpdates ? "has-updates" : ""}" type="button" data-updates aria-expanded="${updatesOpen ? "true" : "false"}" title="${hasUpdates ? "Mitteilungen anzeigen" : "Keine neuen Mitteilungen"}" aria-label="${hasUpdates ? "Mitteilungen anzeigen" : "Keine neuen Mitteilungen"}">
           <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false">
             <path d="M31.7 54.2 11.9 34.5C4.4 27 4.8 15.4 12.8 9.4c6.1-4.6 14.8-3.4 19.1 2.9 4.4-6.3 13.1-7.5 19.2-2.9 8 6 8.3 17.6.8 25.1L31.7 54.2Z" />
           </svg>
@@ -3042,12 +3063,12 @@ function renderUpdatesPanel() {
         <div class="updates-head">
           <div>
             <span>Benachrichtigungen</span>
-            <h2>Updates</h2>
+            <h2>Mitteilungen</h2>
           </div>
           <button type="button" data-close-updates aria-label="Benachrichtigungen schließen">×</button>
         </div>
         <div class="updates-list">
-          ${updates.length ? updates.map(renderNotificationItem).join("") : `<p class="empty-state">Keine neuen Updates.</p>`}
+          ${updates.length ? updates.map(renderNotificationItem).join("") : `<p class="empty-state">Keine neuen Mitteilungen.</p>`}
         </div>
         <button class="updates-radar-link" type="button" data-view="radar">Alle Erwähnungen ansehen</button>
       </aside>
@@ -4111,21 +4132,18 @@ function renderVorgangDetailView() {
           <h2 class="vdetail-h2">Chronologie</h2>
           <ul class="vdetail-chrono">
             ${chrono.map((c) => `<li><time>${escapeHtml([c.dateLabel, c.timeLabel].filter(Boolean).join(", "))}</time><p>${escapeHtml(c.text)}</p></li>`).join("")}
-          </ul>
-          <button class="vdetail-linkmore" type="button">Alle Ereignisse anzeigen →</button>` : ""}
+          </ul>` : ""}
         </div>
 
         <aside class="vdetail-side">
           <div class="vdetail-box">
             <h3>Quellen (${sources.length})</h3>
             <div class="vdetail-box-list">${sources.map(lageSourceRow).join("")}</div>
-            <button class="vdetail-linkmore" type="button">Alle Quellen anzeigen →</button>
           </div>
           ${docs.length ? `
           <div class="vdetail-box">
             <h3>Dokumente</h3>
             <div class="vdetail-box-list">${docs.map(lageDocRow).join("")}</div>
-            <button class="vdetail-linkmore" type="button">Alle Dokumente anzeigen →</button>
           </div>` : ""}
         </aside>
       </div>
@@ -6909,7 +6927,7 @@ function renderDetailView() {
   const feedbackState = decision.feedback || (decision.status === "ignored" ? "ignored" : decision.status === "snoozed" ? "snoozed" : decision.status === "relevant" ? "marked_relevant" : "");
   return `
     <article class="detail-page">
-      <button class="back-link" type="button" data-view="briefing">Zurück zum Briefing</button>
+      <button class="back-link" type="button" data-view="briefing">Zurück zur Lage</button>
 
       <header class="article-head">
         <span class="${decision.priorityType}">${escapeHtml(decision.priorityLabel)}</span>
@@ -7049,15 +7067,17 @@ function draftReadingTime(text) {
   return min < 1 ? "30 Sek. Lesezeit" : `${min} Min. Lesezeit`;
 }
 
+// Echte Quellenanzahl dieser Entscheidung. KEIN erfundenes Minimum mehr
+// (frueher Math.max(n, 3) -> "Basiert auf 3 Quellen" auch bei 0 echten Quellen).
 function draftSourceCount(decision) {
-  const n = (decision.sources?.length || 0) + (decision.primarySource ? 1 : 0);
-  return Math.max(n, briefing?.sourceStats?.successfulSources ? Math.min(Number(briefing.sourceStats.successfulSources), 8) : 3);
+  return (decision.sources?.length || 0) + (decision.primarySource ? 1 : 0);
 }
 
 function officeBriefingTime() {
   const ts = briefing?.generatedAt || briefing?.date;
   if (!ts) return "";
   const d = new Date(ts);
+  if (Number.isNaN(d.getTime())) return "";
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")} Uhr`;
 }
 
@@ -7065,10 +7085,23 @@ function draftStatus(format) {
   return OFFICE_FORMAT_META[format.id]?.defaultStatus || "Zum Bereithalten";
 }
 
+// Ehrlicher Anzeige-Status EINER Karte: "Entwurf bereit" NUR, wenn wirklich ein
+// gültiger (KI-/regelbasierter) Entwurf vorliegt. Sonst "Wird vorbereitet" bzw.
+// die redaktionelle Vorgabe des Formats — nie "bereit" über einem Platzhalter.
+function officeCardStatus(decision, format) {
+  const editorial = draftStatus(format);
+  const hasValid = isValidDraft(officeDrafts[officeDraftKey(decision, format)]);
+  if (editorial === "Entwurf bereit" && !hasValid) {
+    return officeDraftsGenerating ? "Wird vorbereitet" : "Noch kein Entwurf";
+  }
+  return editorial;
+}
+
 function draftStatusClass(status) {
   if (status === "Entwurf bereit") return "buero-status--publish";
   if (status === "Bei Nachfrage verwenden") return "buero-status--nachfrage";
-  if (status === "Noch nicht belastbar") return "buero-status--unsicher";
+  if (status === "Noch nicht belastbar" || status === "Noch kein Entwurf") return "buero-status--unsicher";
+  if (status === "Wird vorbereitet") return "buero-status--bereit";
   return "buero-status--bereit";
 }
 
@@ -7108,7 +7141,7 @@ function renderOfficeView() {
       + (time ? `<span class="buero-summary-sep">·</span>Vorbereitet um ${escapeHtml(time)}` : "")
     : generating
       ? "Entwürfe werden vorbereitet&hellip;"
-      : "Erscheinen automatisch wenn dein Briefing geladen ist.";
+      : "Deine Entwürfe erscheinen hier automatisch, sobald deine Lage geladen ist.";
 
   const readyFormats = formats.filter((f) => draftStatus(f) === "Entwurf bereit");
   const holdFormats = formats.filter((f) => draftStatus(f) !== "Entwurf bereit");
@@ -7152,9 +7185,10 @@ function renderOfficeDraftCard(decision, format, index = 0) {
   // Text oder ein aus DIESER Entscheidung abgeleiteter Vorschlag. Fehlt beides,
   // liefert channelFallbackStatement die klare Meldung "kein belastbarer
   // Kommunikationsvorschlag vor" (siehe isValidDraft/renderOfficeDraftCard).
-  const text = (isValidDraft(aiText) ? aiText : null) || channelFallbackStatement(decision, format.channel || "press");
+  const hasValid = isValidDraft(aiText);
+  const text = (hasValid ? aiText : null) || channelFallbackStatement(decision, format.channel || "press");
   const readTime = draftReadingTime(text);
-  const status = draftStatus(format);
+  const status = officeCardStatus(decision, format);
   const statusClass = draftStatusClass(status);
   const source = draftSource(format);
   const title = draftTitle(decision);
@@ -7200,13 +7234,15 @@ function renderOfficeDraftDetail() {
   const meta = OFFICE_FORMAT_META[format.id] || { formatLabel: format.label, typeLabel: format.label.toUpperCase(), einordnung: "", defaultStatus: "Zum Bereithalten", lineCheck: "", qualityTone: "Sachlich, klar, politisch anschlussfähig", qualityUsage: "Presse und Medien", iconBg: "#F0F0F0", iconColor: "#555" };
   const time = officeBriefingTime();
   const sources = draftSourceCount(decision);
-  const status = draftStatus(format);
+  const status = officeCardStatus(decision, format);
   const statusClass = draftStatusClass(status);
   const paragraphs = String(text).split(/\n{1,}/).map((p) => p.trim()).filter(Boolean);
   const lageDateStr = (() => {
     const ts = briefing?.generatedAt || briefing?.date;
     if (!ts) return "heute";
-    return new Date(ts).toLocaleDateString("de-DE", { day: "numeric", month: "long" });
+    const d = new Date(ts);
+    if (Number.isNaN(d.getTime())) return "heute";
+    return d.toLocaleDateString("de-DE", { day: "numeric", month: "long" });
   })();
 
   return `
@@ -7225,9 +7261,9 @@ function renderOfficeDraftDetail() {
         <p class="buero-detail-anlass">Anlass: ${escapeHtml(draftTitle(decision))}</p>
         <p class="buero-detail-meta">
           ${time ? `Erstellt heute um ${escapeHtml(time)}` : "Heute erstellt"}
-          &nbsp;·&nbsp; Basiert auf ${sources} Quellen
+          ${sources > 0 ? `&nbsp;·&nbsp; Basiert auf ${sources} ${sources !== 1 ? "Quellen" : "Quelle"}` : ""}
         </p>
-        ${meta.lineCheck ? `<p class="buero-detail-linecheck">${escapeHtml(meta.lineCheck)}</p>` : ""}
+        ${meta.lineCheck && isValidDraft(officeDrafts[officeDraftKey(decision, format)]) ? `<p class="buero-detail-linecheck">${escapeHtml(meta.lineCheck)}</p>` : ""}
       </header>
       <div class="buero-detail-body">
         ${paragraphs.map((p) => `<p>${escapeHtml(p)}</p>`).join("")}
@@ -8351,7 +8387,7 @@ function renderSettingsView() {
       </div>
     </div>` : ""}
 
-    <p class="stg-version">Helmut · Pilotversion</p>
+    <p class="stg-version">Helmut · Version 1.0</p>
   `;
 }
 
@@ -9815,11 +9851,11 @@ function bindActions() {
       try {
         const result = await generateStatementWithBackend(input, selectedDecision(), selectedCommunicationChannel);
         generatedStatement = result.text;
-        showToast(result.aiEnabled ? `${result.channelLabel || "Text"} erstellt` : "Regelbasiert erstellt");
+        showToast(result.aiEnabled ? `${result.channelLabel || "Entwurf"} erstellt` : "Entwurf erstellt");
       } catch (error) {
         console.error(error);
         generatedStatement = generateStatement(input, selectedDecision(), selectedCommunicationChannel);
-        showToast("Fallback erstellt");
+        showToast("Entwurf erstellt");
       }
       render();
     });
@@ -10987,12 +11023,29 @@ function startBerlinClock() {
 }
 
 async function copyText(text, fallbackMessage) {
+  // 1) Moderne Clipboard-API. 2) execCommand-Fallback (ältere/unsichere Kontexte,
+  // abgelehnte Permission). Nur bei WIRKLICHEM Erfolg "Kopiert" melden — sonst
+  // eine ehrliche Fehlermeldung statt eines falschen Erfolgs.
   try {
     await navigator.clipboard.writeText(text);
     showToast("Kopiert");
-  } catch {
-    showToast(fallbackMessage);
-  }
+    return true;
+  } catch (_) { /* Fallback versuchen */ }
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = String(text);
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.top = "-1000px";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand && document.execCommand("copy");
+    document.body.removeChild(ta);
+    if (ok) { showToast("Kopiert"); return true; }
+  } catch (_) { /* endgültig fehlgeschlagen */ }
+  showToast(fallbackMessage || "Kopieren nicht möglich – bitte manuell markieren.");
+  return false;
 }
 
 function showToast(message) {

@@ -177,41 +177,47 @@ async function run() {
     ok("keine Betroffene-Felder -> leere Arrays", Array.isArray(card.parteien) && card.parteien.length === 0 && Array.isArray(card.mentionedPeople) && card.mentionedPeople.length === 0);
   }
 
-  // ── 6b2) Legacy-Fallback-Auswahl (temporaere Kompatibilitaetsschicht) ──
-  // moderne Vorgaenge (alle 5 Presentation-Felder + Quelle) haben Vorrang; nur
-  // wenn KEINER existiert, Legacy-Vorgaenge MIT Quelle. Nie mischen, nie ohne Quelle.
-  console.log("selectLageVorgaenge (Legacy-Fallback)");
+  // ── 6b2) Auswahl der Lage-Karten (modern-first, Legacy beigemischt) ──
+  // Pre-Sale-Fix: FRÜHER Entweder-oder (ein moderner Vorgang -> alle Legacy weg,
+  // Ursache "nur zwei Karten"). JETZT: moderne Vorgaenge zuerst, danach uebrige
+  // BELEGTE Vorgaenge — gemischt. Quelle bleibt in ALLEN Faellen Pflicht.
+  // "modern" verlangt jetzt nur die karten-tragenden Kernfelder (Summary/Why/
+  // Recommendation), NICHT den oft verworfenen display_title.
+  console.log("selectLageVorgaenge (modern-first, Legacy beigemischt)");
   {
     const withSrc = { sources: [{ name: "Tagesschau" }], sourceCount: 1 };
     const noSrc = { sources: [], sourceCount: 0 };
-    const modernFields = { displayTitle: "T", displaySummary: "S", whyRelevant: "W", recommendation: "R", displayCategory: "C" };
-    const modern = (id) => ({ id, ...modernFields, ...withSrc });
+    const coreFields = { displaySummary: "S", whyRelevant: "W", recommendation: "R" };
+    const modern = (id) => ({ id, displayTitle: "T", displayCategory: "C", ...coreFields, ...withSrc });
     const legacy = (id) => ({ id, displayTitle: "", displaySummary: "", whyRelevant: "", recommendation: "", displayCategory: "", ...withSrc });
-    const partial = (id) => ({ id, displayTitle: "T", displaySummary: "S", whyRelevant: "", recommendation: "", displayCategory: "", ...withSrc }); // NICHT modern (nur 2/5)
 
-    // 1) Moderne vorhanden -> nur moderne, Legacy NICHT beigemischt.
+    // 1) Moderne + belegte Legacy vorhanden -> BEIDE erscheinen, moderne zuerst.
     {
       const out = lage.selectLageVorgaenge([legacy("a"), modern("b"), legacy("c"), modern("d")]);
-      ok("modern vorhanden -> nur moderne", out.length === 2 && out.every((v) => lage.isModernVorgang(v)));
-      ok("modern vorhanden -> KEIN Legacy beigemischt", !out.some((v) => v.id === "a" || v.id === "c"));
+      ok("modern-first: alle belegten erscheinen", out.length === 4);
+      ok("modern-first: moderne stehen vorn", lage.isModernVorgang(out[0]) && lage.isModernVorgang(out[1]) && !lage.isModernVorgang(out[2]));
+      ok("modern-first: Legacy mit Quelle NICHT mehr ausgeblendet", out.some((v) => v.id === "a") && out.some((v) => v.id === "c"));
     }
-    // 2) Kein moderner -> Legacy MIT Quelle (Lage nicht leer).
+    // 2) Nur Legacy MIT Quelle -> Lage nicht leer.
     {
       const out = lage.selectLageVorgaenge([legacy("a"), legacy("b")]);
-      ok("kein moderner -> Legacy-Fallback greift (nicht leer)", out.length === 2);
+      ok("nur Legacy mit Quelle -> nicht leer", out.length === 2);
     }
-    // 3) Quelle ist in BEIDEN Stufen Pflicht.
+    // 3) Quelle ist Pflicht (modern UND Legacy ohne Quelle fliegen).
     {
-      const outModern = lage.selectLageVorgaenge([{ id: "m", ...modernFields, ...noSrc }, modern("ok")]);
+      const outModern = lage.selectLageVorgaenge([{ id: "m", ...coreFields, displayTitle: "T", displayCategory: "C", ...noSrc }, modern("ok")]);
       ok("moderner ohne Quelle wird ausgeschlossen", outModern.length === 1 && outModern[0].id === "ok");
-      const outLegacy = lage.selectLageVorgaenge([{ id: "l", displayTitle: "", displaySummary: "", whyRelevant: "", recommendation: "", displayCategory: "", ...noSrc }]);
+      const outLegacy = lage.selectLageVorgaenge([{ id: "l", displaySummary: "", whyRelevant: "", recommendation: "", ...noSrc }]);
       ok("Legacy ohne Quelle -> leer (kein Fake, keine quellenlose Karte)", outLegacy.length === 0);
     }
-    // 4) Teil-Presentation (nicht alle 5 Felder) zaehlt als Legacy, nicht als modern.
+    // 4) Kernfelder-Kriterium: fehlt eines der 3 Kernfelder -> nicht modern (aber
+    //    mit Quelle trotzdem sichtbar, nur nachrangig).
     {
-      ok("nur 2/5 Feldern -> NICHT modern", !lage.isModernVorgang(partial("p")));
-      const out = lage.selectLageVorgaenge([partial("p"), modern("m")]);
-      ok("Teil-Presentation wird nicht als modern gewertet (nur echter moderner bleibt)", out.length === 1 && out[0].id === "m");
+      const partial = { id: "p", displaySummary: "S", whyRelevant: "", recommendation: "", ...withSrc };
+      ok("fehlendes Kernfeld -> NICHT modern", !lage.isModernVorgang(partial));
+      const out = lage.selectLageVorgaenge([partial, modern("m")]);
+      ok("Teil-Presentation bleibt sichtbar, aber nach modern", out.length === 2 && out[0].id === "m" && out[1].id === "p");
+      ok("display_title NICHT erforderlich fuer modern", lage.isModernVorgang({ displayTitle: "", ...coreFields }));
     }
     // 5) Leere/ungueltige Eingabe -> leeres Array, kein Wurf.
     {
