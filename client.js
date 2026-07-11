@@ -86,6 +86,8 @@ let adminRecoveryLastCheck = null;  // HH:MM des letzten read-only Status-Polls
 let adminRecoveryPollTimer = null;  // Intervall-Handle des Status-Pollings
 let adminRecoveryPrevFinishedAt = null; // finishedAt des VORHERIGEN Laufs (Abschluss-Erkennung)
 let adminRecoveryStale = false;     // letzter Status-Reload/Poll schlug fehl -> letzter Stand bleibt sichtbar
+let adminRecoveryDetailsOpen = false; // Offen-Zustand des Recovery-Detailblocks über Re-Renders halten
+                                      // (sonst klappt er bei jeder Aktion zu -> Layout springt, Ergebnis verdeckt)
 let adminPendingDiagnose = null; // Ergebnis der letzten Pending-Diagnose (nur lesen)
 let adminPendingDiagnoseBusy = false;
 let expandedAdminUsers = new Set();
@@ -1502,7 +1504,7 @@ function renderAdminView() {
          ${adminDetails("Crawl-Trichter & Datenstatus anzeigen", `${renderAdminCrawlStats(data.crawlReport)}${renderAdminDataStatus(adminDataStatus, "global")}`)}
          <div class="admin-recovery-wrap" id="admin-recovery">
            <p class="admin-recovery-flag">Interner Recovery-Bereich${adminInfo("Recovery")} — Aktionen laufen nur nach bewusstem Klick und mit Bestätigung.</p>
-           ${adminDetails("Recovery-Aktionen (intern) anzeigen", safeRenderAdminRecovery(adminRecovery, adminRecoveryResult, adminPendingDiagnose))}
+           ${adminDetails("Recovery-Aktionen (intern) anzeigen", safeRenderAdminRecovery(adminRecovery, adminRecoveryResult, adminPendingDiagnose), adminRecoveryDetailsOpen || adminRecoveryBusy || adminPendingDiagnoseBusy)}
          </div>`,
         "admin-datenmotor"
       )}
@@ -2177,9 +2179,9 @@ function renderAdminRecovery(rec, result, diagnose) {
         ${dsRow("Letzter KI-Fehler", kiErr ? `<span class="ds-bad">${escapeHtml(kiErr.grund || "Fehler")}</span>${kiErr.when ? ` <span class="ds-sub">· ${dsDateLabel(kiErr.when)}</span>` : ""}` : `<span class="ds-ok">Keiner</span>`)}
         ${dsRow("Letzter erfolgreicher KI-Call", kiOk && kiOk.when ? dsDateLabel(kiOk.when) : `<span class="ds-sub">–</span>`)}
         <div class="ds-recovery-actions">
-          <button class="ds-recovery-btn" type="button" data-recovery-action="release-lock" ${busy || !lockActionable ? "disabled" : ""}>Lock lösen</button>
+          <button class="ds-recovery-btn" type="button" data-recovery-action="release-lock" title="Gibt einen veralteten Verarbeitungsschutz frei. Startet keinen neuen Lauf." ${busy || !lockActionable ? "disabled" : ""}>Lock lösen</button>
           <button class="ds-recovery-btn ds-recovery-btn--warn" type="button" data-recovery-action="reset-failed" ${busy || !(koAvail && failedN > 0) ? "disabled" : ""}>Failed → Pending zurücksetzen</button>
-          <button class="ds-recovery-btn ds-recovery-btn--primary" type="button" data-recovery-action="run-understanding" ${busy || lockActionable ? "disabled" : ""}>Understanding-Lauf starten</button>
+          <button class="ds-recovery-btn ds-recovery-btn--primary" type="button" data-recovery-action="run-understanding" title="Startet die Verarbeitung wartender Vorgänge. Kann interne KI-Kosten verursachen." ${busy || lockActionable ? "disabled" : ""}>Understanding-Lauf starten</button>
           <button class="ds-recovery-btn" type="button" data-pending-diagnose="1" ${busy || adminPendingDiagnoseBusy ? "disabled" : ""}>Pending-Diagnose starten</button>
         </div>
         ${lockActionable ? `<p class="ds-note ds-note--warn">Ein Understanding-Lauf ist gesperrt oder hängt. „Understanding-Lauf starten" ist deaktiviert. Bitte „Lock lösen", falls kein Lauf mehr aktiv ist.</p>` : ""}
@@ -2428,6 +2430,7 @@ function pendingDiagnoseUrsacheHinweis(u) {
 async function runPendingDiagnose() {
   if (adminPendingDiagnoseBusy || adminRecoveryBusy) return;
   adminPendingDiagnoseBusy = true;
+  adminRecoveryDetailsOpen = true; // Panel offen halten, damit die Diagnose sichtbar bleibt
   adminPendingDiagnose = { pending: true };
   render(); bindActions();
   try {
@@ -2502,6 +2505,7 @@ async function runRecoveryAction(action) {
   const endpoint = endpoints[action];
   if (!endpoint) return;
   adminRecoveryBusy = true;
+  adminRecoveryDetailsOpen = true; // Recovery-Panel offen halten, damit das Ergebnis sichtbar bleibt
   const startedAt = helmutNowHHMM();
   const myStart = Date.now();
   adminRecoveryResult = { action, pending: true, startedAt };
@@ -9100,6 +9104,11 @@ function bindActions() {
   // kein LLM). Das native <a href="#…"> funktioniert auch ohne dieses JS.
   app.querySelectorAll("[data-admin-jump]").forEach((el) => {
     el.addEventListener("click", (event) => {
+      // DEFENSIV: Ein Klick, der aus einem echten Aktions-Control stammt (Recovery-/
+      // Pending-Button), darf NIE als Sprung behandelt werden — die echte Aktion hat
+      // Vorrang. (Buttons liegen ohnehin außerhalb der Sprung-Anker; dies ist ein Riegel
+      // gegen künftige Verschachtelung.)
+      if (event.target.closest && event.target.closest("[data-recovery-action], [data-pending-diagnose]")) return;
       const id = el.getAttribute("data-admin-jump");
       const target = id ? document.getElementById(id) : null;
       if (!target) return; // ohne Ziel: normales Anker-Verhalten
@@ -9107,8 +9116,10 @@ function bindActions() {
       // Nur beim Sprung zum Recovery-Bereich dessen Detailblock aufklappen (reine UI,
       // KEINE Aktion). Andere Ziele zeigen bereits ihren verdichteten Kopf.
       try {
-        if (id === "admin-recovery") target.querySelectorAll("details.admin-details").forEach((d) => { d.open = true; });
-        else if (target.tagName === "DETAILS") target.open = true;
+        if (id === "admin-recovery") {
+          target.querySelectorAll("details.admin-details").forEach((d) => { d.open = true; });
+          adminRecoveryDetailsOpen = true; // über den nächsten Re-Render hinaus offen halten
+        } else if (target.tagName === "DETAILS") target.open = true;
       } catch (_) { /* rein optisch, nie kritisch */ }
       try { target.scrollIntoView({ behavior: "smooth", block: "start" }); }
       catch (_) { try { target.scrollIntoView(); } catch (__) { /* ignore */ } }
@@ -9174,6 +9185,10 @@ function bindActions() {
   app.querySelectorAll("[data-pending-diagnose]").forEach((button) => {
     button.addEventListener("click", () => { runPendingDiagnose(); });
   });
+  // Offen-Zustand des Recovery-Panels an das manuelle Auf-/Zuklappen koppeln, damit er
+  // über Re-Renders erhalten bleibt (verhindert das Zuklappen/„Springen" bei jeder Aktion).
+  const recDetails = app.querySelector("#admin-recovery details.admin-details");
+  if (recDetails) recDetails.addEventListener("toggle", () => { adminRecoveryDetailsOpen = recDetails.open; });
 
   if (isAccountMode()) {
     try {

@@ -21,6 +21,7 @@ function loadClient() {
     view: () => renderAdminView(),
     setUser: (u) => { currentUser = u; },
     setAdmin: (d, ds, rec, period) => { adminData = d; adminDataStatus = ds; adminRecovery = rec; if (period) adminPeriod = period; },
+    setRecoveryUI: (open, result, busy) => { adminRecoveryDetailsOpen = !!open; adminRecoveryResult = result || null; adminRecoveryBusy = !!busy; },
     relAge: (iso) => adminRelAge(iso),
     esc: (s) => escapeHtml(s)
   };`;
@@ -235,6 +236,45 @@ check("Info: keine Secret-Muster in Erklärungen", !/bearer\s|sk-[a-z0-9]{12}|se
 // fuer Nicht-Admin nur "Kein Zugriff" liefert).
 api.setUser({ role: "referent" });
 check("Info: Nicht-Admin sieht keine Begriffs-Hilfen/Glossar", !api.view().includes("data-admin-info") && !api.view().includes("admin-glossary"));
+api.setUser({ role: "admin", name: "Admin Root" });
+
+// ── 8e) HOTFIX: Recovery-Aktionen vs. Sprungmarken (Panel-Kollaps-Regression).
+const clientSrc = fs.readFileSync(path.join(root, "client.js"), "utf8");
+// Recovery-Buttons sind echte Aktions-Buttons: type=button, data-recovery-action,
+// KEIN href-Anker, KEIN data-admin-jump.
+const relLock = (view.match(/<button[^>]*data-recovery-action="release-lock"[^>]*>/) || [])[0] || "";
+const runU = (view.match(/<button[^>]*data-recovery-action="run-understanding"[^>]*>/) || [])[0] || "";
+check("Recovery: Lock-lösen-Button vorhanden", relLock.length > 0);
+check("Recovery: Understanding-Lauf-Button vorhanden", runU.length > 0);
+check("Recovery: Aktions-Buttons sind type=button", /type="button"/.test(relLock) && /type="button"/.test(runU));
+check("Recovery: Aktions-Buttons sind KEINE Anker (kein href)", !/href=/.test(relLock) && !/href=/.test(runU));
+check("Recovery: Aktions-Buttons haben KEIN data-admin-jump", !/data-admin-jump/.test(relLock) && !/data-admin-jump/.test(runU));
+check("Recovery: #admin-recovery ist KEIN Sprung-Anker (kein data-admin-jump am Wrap)", /id="admin-recovery"[^>]*>/.test(view) && !/id="admin-recovery"[^>]*data-admin-jump/.test(view) && !/data-admin-jump[^>]*id="admin-recovery"/.test(view));
+// Jump-Links tragen keine Recovery-Action.
+check("Sprung: kein data-admin-jump-Element hat data-recovery-action", !/data-admin-jump="[^"]*"[^>]*data-recovery-action|data-recovery-action[^>]*data-admin-jump="/.test(view));
+// Phase-3-Erklärungen (Kostenhinweis nur hier im Admin).
+check("Recovery: Lock-lösen erklärt (title: startet keinen neuen Lauf)", /title="Gibt einen veralteten Verarbeitungsschutz frei\. Startet keinen neuen Lauf\."/.test(view));
+check("Recovery: Understanding-Lauf erklärt (title: kann KI-Kosten verursachen)", /title="Startet die Verarbeitung wartender Vorgänge\. Kann interne KI-Kosten verursachen\."/.test(view));
+
+// Regression-Kern: bei aktiver Aktion / vorliegendem Ergebnis bleibt das Recovery-Panel
+// OFFEN (sonst klappt es bei jedem Re-Render zu -> „Seite springt", Ergebnis verdeckt).
+api.setRecoveryUI(true, { action: "release-lock", ok: true, geloest: true, finishedAt: "10:00" }, false);
+const viewOpen = api.view();
+check("Regression: Recovery-Panel bleibt OFFEN, wenn ein Ergebnis vorliegt", /<details class="admin-details" open>\s*<summary[^>]*>Recovery-Aktionen \(intern\) anzeigen/.test(viewOpen));
+api.setRecoveryUI(false, null, false);
+const viewClosed = api.view();
+check("Ruhezustand: Recovery-Panel ist zugeklappt ohne Aktivität", /<details class="admin-details">\s*<summary[^>]*>Recovery-Aktionen \(intern\) anzeigen/.test(viewClosed));
+
+// Bestätigung bleibt erhalten (Quellcode-Invariante — kein echter Lauf im Test).
+check("Recovery: reset-failed braucht window.confirm", /action === "reset-failed"[\s\S]{0,200}window\.confirm/.test(clientSrc));
+check("Recovery: run-understanding braucht window.confirm", /action === "run-understanding"[\s\S]{0,200}window\.confirm/.test(clientSrc));
+// Jump-Handler hat den defensiven Riegel gegen Aktions-Klicks.
+check("Sprung: Jump-Handler ignoriert Klicks aus Recovery-/Pending-Controls", /closest\("\[data-recovery-action\], \[data-pending-diagnose\]"\)/.test(clientSrc));
+// Keine Auto-Auslösung beim Rendern (kein onclick, keine Selbstaufrufe im Markup).
+check("Recovery: keine Auto-Auslösung beim Rendern (kein onclick)", !/onclick=/.test(view));
+// Nicht-Admin sieht keine Recovery-Aktionen.
+api.setUser({ role: "referent" });
+check("Recovery: Nicht-Admin sieht keine Recovery-Aktionen", !api.view().includes("data-recovery-action"));
 api.setUser({ role: "admin", name: "Admin Root" });
 
 // ── 9) Admin-Gating: Nicht-Admin sieht nichts, keine Kosten.
