@@ -202,5 +202,93 @@ check("Vertrag: bestehende Pflichtfelder unveraendert (rueckwaertsverträglich)"
 check("Vertrag: KEINE Kostenwerte im gesamten currentHelmutState-Zweig",
   !/cost|estimat|Tokens|pipelineStep/i.test(JSON.stringify(briefing.currentHelmutState)));
 
+// --- 13) Fresh-aware Primary-Auswahl (LLM-freier Ranking-Fix) ----------------
+// Ein STALE High-Score-Vorgang darf nicht dauerhaft Primary bleiben, wenn heute ein
+// frischer relevanter Vorgang existiert. Reproduziert den Production-Fall: alter
+// Flagship (hoher Score, 08.07.) vs. frischer relevanter Vorgang (11.07.).
+const NOW11 = new Date("2026-07-11T09:00:00Z"); // Europe/Berlin 11:00, 11. Juli
+function mkFullKo(id, vg, updatedAt, title) {
+  return {
+    id, vorgang_id: vg, status: "neu", understanding_status: "complete",
+    display_title: title, was_ist_passiert: "X.", warum_wichtig: "Y.", why_relevant: "Z.", recommendation: "R.",
+    risk_of_no_action: "Ri.", opportunity_summary: "Ch.", risk_level: "high", opportunity_level: "high",
+    recommended_communication_struct: { communicationLine: "L.", recommendedChannel: "press", recommendedFormat: "statement", suggestedOutputs: ["qa"] },
+    action_items_struct: [{ title: "Lege bis uebermorgen vor", description: "", dueHint: "uebermorgen", priority: "high", actionType: "prepareStatement" }],
+    ausschuesse: ["A"], zeitdruck: "hoch", source_document_count: 2, updated_at: updatedAt
+  };
+}
+const koFlagship = mkFullKo("ko-vg-destabilisiert", "vg-destabilisiert", "2026-07-08T04:00:00Z", "Staat prueft Massnahmen gegen Tarifflucht");
+const koFresh = mkFullKo("ko-vg-neu", "vg-neu-11", "2026-07-11T06:00:00Z", "Frischer relevanter Vorgang");
+const decFlag = { knowledge_object_id: "ko-vg-destabilisiert", vorgang_id: "vg-destabilisiert", score: 90, decision: "Sofort reagieren", priority_type: "risk", risk: "r", chance: "", matched_features: [] };
+const decFresh = { knowledge_object_id: "ko-vg-neu", vorgang_id: "vg-neu-11", score: 60, decision: "Sofort reagieren", priority_type: "risk", risk: "r", chance: "", matched_features: [] };
+
+// D1: stale Top (Score 90) + frischer relevanter (Score 60) -> frischer wird Primary.
+const stFreshWins = contract.buildCurrentHelmutState({
+  profile, decisions: [decFlag, decFresh], kosById: { "ko-vg-destabilisiert": koFlagship, "ko-vg-neu": koFresh },
+  sourcesByVorgang: {}, now: NOW11
+});
+check("D1: stale High-Score-Top wird von frischem relevantem Vorgang als Primary verdraengt",
+  stFreshWins.primaryVorgangId === "vg-neu-11", stFreshWins.primaryVorgangId);
+check("D1: Status wird fresh (frischer Primary vom heutigen Tag)", stFreshWins.status === "fresh");
+check("D1: recommendation kommt aus dem NEUEN Primary (echte V3-Daten)", stFreshWins.headline === "Frischer relevanter Vorgang");
+// D4: verdraengter alter Top erscheint VORNE in weiteren Vorgaengen (nicht verloren, kein Duplikat).
+check("D4: verdraengter Flagship erscheint in weiteren relevanten Vorgaengen (zuerst)",
+  stFreshWins.relatedVorgangIds[0] === "vg-destabilisiert" && stFreshWins.items.some((i) => i.id === "vg-destabilisiert"));
+check("D4: Primary nicht in weiteren Vorgaengen dupliziert",
+  !stFreshWins.items.some((i) => i.id === stFreshWins.primaryVorgangId));
+
+// D2: frischer Top -> unveraendert (kein Eingriff).
+const stFreshTop = contract.buildCurrentHelmutState({
+  profile, decisions: [decFresh], kosById: { "ko-vg-neu": koFresh }, sourcesByVorgang: {}, now: NOW11
+});
+check("D2: frischer Top-Vorgang bleibt unveraendert Primary + status fresh",
+  stFreshTop.primaryVorgangId === "vg-neu-11" && stFreshTop.status === "fresh");
+
+// D3: stale Top + KEIN frischer relevanter Ersatz -> alter Top bleibt, status stale.
+const stNoFresh = contract.buildCurrentHelmutState({
+  profile, decisions: [decFlag], kosById: { "ko-vg-destabilisiert": koFlagship }, sourcesByVorgang: {}, now: NOW11
+});
+check("D3: stale Top ohne frischen Ersatz bleibt Primary + status stale (ehrlich Nicht aktuell)",
+  stNoFresh.primaryVorgangId === "vg-destabilisiert" && stNoFresh.status === "stale");
+
+// D3b: frischer Kandidat, aber NICHT relevant genug (Ignorieren) -> kein Ersatz.
+const decFreshIgnore = { ...decFresh, decision: "Ignorieren" };
+const stFreshIgnored = contract.buildCurrentHelmutState({
+  profile, decisions: [decFlag, decFreshIgnore], kosById: { "ko-vg-destabilisiert": koFlagship, "ko-vg-neu": koFresh },
+  sourcesByVorgang: {}, now: NOW11
+});
+check("D3b: frischer aber ignorierter Kandidat verdraengt den stale Top NICHT",
+  stFreshIgnored.primaryVorgangId === "vg-destabilisiert" && stFreshIgnored.status === "stale");
+
+// D3c: frischer Kandidat, aber UNVOLLSTAENDIG (pending -> quality empty) -> kein Ersatz.
+const koFreshPending = { ...koFresh, id: "ko-vg-pend", vorgang_id: "vg-pend-11", status: "pending", understanding_status: "pending" };
+const decFreshPending = { knowledge_object_id: "ko-vg-pend", vorgang_id: "vg-pend-11", score: 60, decision: "Sofort reagieren", priority_type: "risk", risk: "", chance: "", matched_features: [] };
+const stFreshPending = contract.buildCurrentHelmutState({
+  profile, decisions: [decFlag, decFreshPending], kosById: { "ko-vg-destabilisiert": koFlagship, "ko-vg-pend": koFreshPending },
+  sourcesByVorgang: {}, now: NOW11
+});
+check("D3c: frischer aber unvollstaendiger (pending) Kandidat verdraengt den stale Top NICHT",
+  stFreshPending.primaryVorgangId === "vg-destabilisiert");
+
+// Unit-Tests der Hilfsfunktion selectFreshAwarePrimary (deterministisch, erklaerbar).
+const candFlag = { d: decFlag, ko: koFlagship, docs: [], quality: contract.deriveHelmutQualityStatus(koFlagship, NOW11) };
+const candFresh = { d: decFresh, ko: koFresh, docs: [], quality: contract.deriveHelmutQualityStatus(koFresh, NOW11) };
+const selWins = contract.selectFreshAwarePrimary([candFlag, candFresh], NOW11);
+check("selectFreshAwarePrimary: stale Top -> frischer Primary + displaced = alter Top",
+  selWins.primary === candFresh && selWins.displaced === candFlag);
+const selKeep = contract.selectFreshAwarePrimary([candFresh, candFlag], NOW11);
+check("selectFreshAwarePrimary: frischer Top -> unveraendert, kein displaced",
+  selKeep.primary === candFresh && selKeep.displaced === null);
+const selNone = contract.selectFreshAwarePrimary([candFlag], NOW11);
+check("selectFreshAwarePrimary: stale Top ohne Ersatz -> Top bleibt, kein displaced",
+  selNone.primary === candFlag && selNone.displaced === null);
+
+// D5/6/7: kein Frontend-Fallback, kein Client-LLM, nur V3-Daten (Serialisierung pruefen).
+const serFresh = JSON.stringify(stFreshWins);
+check("D5-7: kein Kosten-/Token-/LLM-Feld im fresh-aware State (nur V3-Daten)",
+  !/estimatedCost|promptTokens|totalTokens|pipelineStep|llmUsage/i.test(serFresh));
+check("D5-7: keine hartkodierte Partei/Cem-Logik durch die Auswahl",
+  !/\bcem\b|ince|\bspd\b|\bcdu\b|gruene|grüne|\blinke\b|\bafd\b|\bfdp\b/i.test(serFresh));
+
 console.log(`\n${passed}/${passed + failed} CurrentHelmutState-Assertions erfolgreich.`);
 if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exit(1); }
