@@ -1031,6 +1031,13 @@ function renderDailyInputView() {
 // Admin-Ansicht: Nutzer, Profile, Assignments, System, Fehler, Audit
 // ---------------------------------------------------------------------------
 
+// Deploy-Umgebung -> ruhiger Klartext (keine Secrets). Unbekannt/leer -> „—".
+function adminEnvLabel(env) {
+  const map = { production: "Produktion", preview: "Vorschau", development: "Entwicklung" };
+  const key = String(env || "").toLowerCase();
+  return map[key] || (env ? String(env) : "—");
+}
+
 function renderAdminView() {
   if (userRole() !== "admin") return `<section class="page-intro"><h1 class="hero-title">Kein Zugriff.</h1></section>`;
   if (!adminData) {
@@ -1133,9 +1140,9 @@ function renderAdminView() {
     <div class="admin-page">
 
       <header class="admin-header">
-        <span class="eyebrow-line">Verwaltung</span>
+        <span class="eyebrow-line">Betrieb</span>
         <h1 class="admin-title">Admin</h1>
-        <p class="admin-subtitle">Nutzer, Rollen und Zuweisungen verwalten.</p>
+        <p class="admin-subtitle">Betreiber-Übersicht: Systemzustand, Datenmotor, Pipeline, Quellen und Nutzer.${sys.deploy?.commit || sys.deploy?.version ? ` <span class="admin-version-tag" title="Laufende Deploy-Version${sys.deploy?.environment ? ` · ${escapeHtml(adminEnvLabel(sys.deploy.environment))}` : ""}">Version ${escapeHtml(sys.deploy?.commit || sys.deploy?.version)}</span>` : ""}</p>
       </header>
 
       <div class="admin-period-toggle">
@@ -1337,6 +1344,10 @@ function renderAdminView() {
           <div class="admin-card">
             <h2 class="admin-section-title">System</h2>
             <div class="admin-sys-grid">
+              <div class="admin-sys-item"><span class="admin-sys-key">Version</span><span class="admin-sys-val" title="Laufende Deploy-Version (Commit)">${escapeHtml(sys.deploy?.commit || sys.deploy?.version || "—")}</span></div>
+              <div class="admin-sys-item"><span class="admin-sys-key">Umgebung</span><span class="admin-sys-val">${escapeHtml(adminEnvLabel(sys.deploy?.environment))}</span></div>
+              ${sys.deploy?.branch ? `<div class="admin-sys-item"><span class="admin-sys-key">Branch</span><span class="admin-sys-val">${escapeHtml(sys.deploy.branch)}</span></div>` : ""}
+              <div class="admin-sys-item"><span class="admin-sys-key">Datenstand</span><span class="admin-sys-val" title="Zeitpunkt dieser Admin-Auswertung">${escapeHtml(data.generatedAt ? dsDateLabel(data.generatedAt) : "—")}</span></div>
               <div class="admin-sys-item"><span class="admin-sys-key">Speicher</span><span class="admin-sys-val">${escapeHtml(sys.storage?.backend || "?")}${sys.storage?.supabaseConfigured ? " ✓" : ""}</span></div>
               <div class="admin-sys-item"><span class="admin-sys-key">AI</span><span class="admin-sys-val">${sys.ai?.enabled ? "Aktiv" : "Aus"}</span></div>
               <div class="admin-sys-item"><span class="admin-sys-key">Modell</span><span class="admin-sys-val">${escapeHtml(sys.ai?.model || "—")}</span></div>

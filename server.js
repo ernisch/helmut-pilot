@@ -3047,7 +3047,16 @@ async function buildAdminOverview() {
         model: activeModelName()
       },
       push: pushStatus(),
-      authMode: auth.authMode()
+      authMode: auth.authMode(),
+      // Deploy-Identität (nur Anzeige, keine Secrets): Commit-SHA ist ohnehin öffentlich
+      // in den Asset-URLs (?v=<sha>); Environment/Branch sind Betriebsmetadaten. Beantwortet
+      // die Betreiberfrage „welche Version läuft gerade?" ohne neue Architektur/Endpoint.
+      deploy: {
+        version: ASSET_VERSION,
+        commit: process.env.VERCEL_GIT_COMMIT_SHA ? String(process.env.VERCEL_GIT_COMMIT_SHA).slice(0, 12) : null,
+        branch: process.env.VERCEL_GIT_COMMIT_REF || null,
+        environment: process.env.VERCEL_ENV || (process.env.NODE_ENV === "production" ? "production" : "development")
+      }
     },
     recentErrors: errors,
     auditEvents: audit

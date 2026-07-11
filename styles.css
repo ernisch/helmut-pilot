@@ -7548,6 +7548,20 @@ body {
   color: var(--muted-2);
 }
 
+/* Ruhiger Versions-Stempel im Admin-Header (Deploy-Identität auf einen Blick). */
+.admin-version-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--line, rgba(255, 255, 255, 0.12));
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  color: var(--muted-2);
+  white-space: nowrap;
+}
+
 /* Stats row */
 .admin-stats-row {
   display: grid;
