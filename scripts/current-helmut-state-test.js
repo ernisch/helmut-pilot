@@ -6,6 +6,7 @@
 // Kostenwerte, rueckwaertsverträglich (currentHelmutState ist additiv im /api/app/start-Vertrag).
 
 const contract = require("../lib/helmut/briefingContract");
+const decisionsEngine = require("../lib/helmut/decisions");
 
 let passed = 0, failed = 0;
 function check(name, cond, detail = "") {
@@ -282,6 +283,97 @@ check("selectFreshAwarePrimary: frischer Top -> unveraendert, kein displaced",
 const selNone = contract.selectFreshAwarePrimary([candFlag], NOW11);
 check("selectFreshAwarePrimary: stale Top ohne Ersatz -> Top bleibt, kein displaced",
   selNone.primary === candFlag && selNone.displaced === null);
+
+// --- 14) augmentFreshCandidates: Frische-Auswahl aus VOLLSTAENDIGER Kandidatenliste ---
+// Eigentliche Ursache hinter der Score-Stickiness: der Read-Pfad bewertet nur die TOP-N
+// aehnlichsten Vorgaenge (decideForUser -> matchProfileToKnowledgeObjects, limit). Ein
+// frischer relevanter Vorgang von heute kann so UNTER dem Cut liegen und erreicht die
+// fresh-aware Auswahl nie. augmentFreshCandidates reicht die fehlenden FRISCHEN Vorgaenge
+// nach — deterministisch, 0 KI. Hier mit der ECHTEN Decision-Engine als decide-Callback.
+const profFresh = { id: "u-f", tenantId: "t-1", party: "SPD", committee: "Gesundheit", focusTopics: ["Pflege", "Reform"] };
+function koMatch(id, vg, updatedAt, title, feats = {}) {
+  return {
+    id, vorgang_id: vg, status: "neu", understanding_status: "complete",
+    display_title: title, was_ist_passiert: "Ereignis.", warum_wichtig: "Wichtig.",
+    why_relevant: "Relevanz.", recommendation: "Empfehlung.",
+    risk_of_no_action: "Risiko.", opportunity_summary: "Chance.",
+    risk_level: "high", opportunity_level: "medium",
+    recommended_communication_struct: { communicationLine: "Linie.", recommendedChannel: "internal", recommendedFormat: "internalLine", suggestedOutputs: ["talkingPoints"] },
+    action_items_struct: [{ title: "Heute interne Lagebewertung", description: "", dueHint: "heute", priority: "high", actionType: "alignInternally" }],
+    ausschuesse: feats.ausschuesse || [], parteien: feats.parteien || [], tags: feats.tags || [],
+    policy_field: feats.policy_field || [], zeitdruck: "hoch", source_document_count: 3, confidence_score: 80,
+    updated_at: updatedAt, created_at: updatedAt
+  };
+}
+const decideFor = (kos) => decisionsEngine.decideForUser(profFresh, kos, { userId: "u-f", limit: kos.length });
+
+// Stale Flagship (08.07.) + frischer relevanter Vorgang (11.07.) + Filler.
+const uFlag = koMatch("ko-flag", "vg-destabilisiert", "2026-07-08T04:01:00Z", "Staat prueft Massnahmen gegen Tarifflucht",
+  { ausschuesse: ["Gesundheit"], parteien: ["SPD"], tags: ["Pflege", "Reform"] });
+const uFresh = koMatch("ko-fresh", "vg-fresh-11", "2026-07-11T06:00:00Z", "Frischer relevanter Vorgang",
+  { ausschuesse: ["Gesundheit"], tags: ["Reform"] });
+const uFiller = [];
+for (let i = 1; i <= 6; i++) uFiller.push(koMatch(`ko-zfill-${i}`, `vg-fill-${i}`, "2026-07-05T08:00:00Z", `Kernvorgang ${i}`,
+  { ausschuesse: ["Gesundheit"], parteien: ["SPD"], tags: ["Pflege", "Reform"] }));
+const uUnderstood = [uFlag, uFresh, ...uFiller];
+const uKosById = {}; for (const k of uUnderstood) uKosById[k.id] = k;
+
+// 14a: Beleg, dass der ECHTE Read-Pfad-Cut (decideForUser, kleine Kappung) einen frischen
+// relevanten Vorgang tatsaechlich abschneiden kann (Kern der Ursache).
+const realCut = decisionsEngine.decideForUser(profFresh, uUnderstood, { userId: "u-f", limit: 5 });
+check("14a: echter Read-Pfad-Cut (limit 5) schneidet den frischen relevanten Vorgang ab (Repro der Ursache)",
+  !realCut.some((d) => d.knowledge_object_id === "ko-fresh") && realCut.length === 5);
+
+// Deterministischer Bug-Zustand: der Cut hat den stale Flagship bewertet (hoher Score,
+// bleibt Top), aber den frischen Vorgang NICHT (unter der Aehnlichkeitskappung). So ist
+// die Auswahl reproduzierbar unabhaengig vom Embedding-Tiebreak.
+const flagDec = { knowledge_object_id: "ko-flag", vorgang_id: "vg-destabilisiert", score: 90, decision: "Sofort reagieren", priority_type: "risk", risk: "r", chance: "", matched_features: [{ type: "ausschuss", value: "Gesundheit" }] };
+const cutDecisions = [flagDec]; // frischer Vorgang fehlt (vom Cut abgeschnitten)
+const stCut = contract.buildCurrentHelmutState({ profile: profFresh, decisions: cutDecisions, kosById: uKosById, sourcesByVorgang: {}, now: NOW11 });
+check("14b: OHNE Augmentierung bleibt der stale Flagship Primary (Bug-Zustand)",
+  stCut.primaryVorgangId === "vg-destabilisiert" && stCut.status === "stale");
+
+// Mit Augmentierung: der frische relevante Vorgang wird nachgereicht -> wird Primary.
+const augmented = contract.augmentFreshCandidates(uUnderstood, cutDecisions, decideFor, NOW11);
+check("14c (#5): augmentFreshCandidates reicht den frischen Vorgang aus der VOLLEN Liste nach",
+  augmented.some((d) => d.knowledge_object_id === "ko-fresh") && augmented.length === cutDecisions.length + 1);
+const stAug = contract.buildCurrentHelmutState({ profile: profFresh, decisions: augmented, kosById: uKosById, sourcesByVorgang: {}, now: NOW11 });
+check("14c (#5): frischer relevanter Vorgang wird Primary + status fresh (Auswahl aus voller Liste)",
+  stAug.primaryVorgangId === "vg-fresh-11" && stAug.status === "fresh");
+check("14c (#6): verdraengter stale Flagship erscheint VORNE in weiteren Vorgaengen",
+  stAug.relatedVorgangIds[0] === "vg-destabilisiert");
+
+// #4: status "neu" wird NICHT versehentlich ausgeschlossen (der frische KO traegt status:"neu").
+check("14d (#4): frischer Vorgang mit status 'neu' wird nachgereicht und als Primary gewaehlt",
+  uFresh.status === "neu" && stAug.primaryVorgangId === "vg-fresh-11");
+
+// #7: keine Duplikate — bereits bewertete Vorgaenge werden nicht doppelt angehaengt.
+const augKeys = augmented.map((d) => d.knowledge_object_id);
+check("14e (#7): augmentFreshCandidates erzeugt keine Duplikate",
+  new Set(augKeys).size === augKeys.length && !stAug.relatedVorgangIds.includes(stAug.primaryVorgangId));
+
+// #3-Analog/#9: ein frischer, aber NICHT relevanter (Ignorieren, Score 16) Vorgang wird
+// nachgereicht, aber NICHT Primary (Relevanz-Schranke in selectFreshAwarePrimary bleibt).
+const uFreshIrrelevant = koMatch("ko-fresh-irr", "vg-fresh-irr", "2026-07-11T06:00:00Z", "Fremdes Thema",
+  { tags: ["Verkehr"], policy_field: ["Mobilitaet"] });
+const understood2 = [uFlag, uFreshIrrelevant];
+const kos2 = { "ko-flag": uFlag, "ko-fresh-irr": uFreshIrrelevant };
+const aug2 = contract.augmentFreshCandidates(understood2, cutDecisions, decideFor, NOW11);
+check("14f: irrelevanter frischer Vorgang wird zwar nachgereicht (Kandidat), aber ...",
+  aug2.some((d) => d.knowledge_object_id === "ko-fresh-irr"));
+const stAug2 = contract.buildCurrentHelmutState({ profile: profFresh, decisions: aug2, kosById: kos2, sourcesByVorgang: {}, now: NOW11 });
+check("14f (#9): ... wird NICHT Primary — stale Flagship bleibt, status stale (kein irrelevanter Primary)",
+  stAug2.primaryVorgangId === "vg-destabilisiert" && stAug2.status === "stale");
+
+// Robustheit: keine Augmentierung, wenn keine Frische bestimmbar / nichts fehlt.
+check("14g: augmentFreshCandidates gibt decisions unveraendert zurueck bei ungueltigem now",
+  contract.augmentFreshCandidates(uUnderstood, cutDecisions, decideFor, new Date("nope")) === cutDecisions);
+check("14g: augmentFreshCandidates ohne fehlende frische -> unveraendert",
+  contract.augmentFreshCandidates([uFlag, ...uFiller], cutDecisions, decideFor, NOW11).length === cutDecisions.length);
+check("14g: augmentFreshCandidates ohne decide-Callback -> unveraendert (robust)",
+  contract.augmentFreshCandidates(uUnderstood, cutDecisions, null, NOW11) === cutDecisions);
+check("14g: augmentFreshCandidates loest keinen Doppel-Append aus, wenn frischer schon bewertet ist",
+  contract.augmentFreshCandidates(uUnderstood, augmented, decideFor, NOW11).length === augmented.length);
 
 // D5/6/7: kein Frontend-Fallback, kein Client-LLM, nur V3-Daten (Serialisierung pruefen).
 const serFresh = JSON.stringify(stFreshWins);

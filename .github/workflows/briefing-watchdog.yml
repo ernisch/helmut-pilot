@@ -1,9 +1,16 @@
 name: Briefing Watchdog
 
 # Unabhängiger Backstop + Health-Check für Helmut.
-# - Erzwingt täglich ein frisches Briefing (falls Vercels eigener Cron ausfällt).
-# - Prüft die Antwort und schlägt fehl (-> GitHub schickt dir eine E-Mail),
-#   wenn der Lauf nicht 200 liefert oder das Briefing nicht frisch (< 6h) ist.
+# - Triggert täglich den V3-Pipeline-Lauf (falls Vercels eigener Cron ausfällt).
+# - Prüft die ECHTE Pipeline-Antwort und schlägt fehl (-> GitHub schickt dir eine
+#   E-Mail), wenn der Lauf nicht 200 liefert ODER die Pipeline fachlich fehlschlägt
+#   (Pipeline-/Understanding-Fehler oder keine erfolgreiche Quelle).
+#
+# WICHTIG: Der Endpoint /api/cron/pipeline führt den V3-Crawl aus und liefert BEWUSST
+# KEIN Briefing (kein V2-Briefing-Lauf mehr) — seine Antwort trägt successfulSources /
+# understanding{} / errors[], NICHT briefing.generatedAt. Deshalb wird der Erfolg an
+# genau diesen Feldern gemessen (scripts/watchdog-eval.js). Briefing-Frische ist ein
+# SEPARATER Check gegen einen Briefing-Endpoint und bewusst NICHT Teil dieses Watchdogs.
 
 on:
   schedule:
@@ -19,7 +26,15 @@ jobs:
   refresh-and-check:
     runs-on: ubuntu-latest
     steps:
-      - name: Pipeline triggern und Frische prüfen
+      - name: Repo auschecken (Watchdog-Auswertung)
+        uses: actions/checkout@v4
+
+      - name: Node einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Pipeline triggern und Erfolg prüfen
         env:
           BASE_URL: ${{ vars.HELMUT_PROD_URL || 'https://helmut-pilot.vercel.app' }}
           CRON_SECRET: ${{ secrets.HELMUT_CRON_SECRET }}
@@ -43,33 +58,10 @@ jobs:
           echo ""
 
           if [ "${HTTP_CODE}" != "200" ]; then
-            echo "::error::Pipeline-Aufruf fehlgeschlagen (HTTP ${HTTP_CODE}). Briefing wurde NICHT erneuert."
+            echo "::error::Pipeline-Aufruf fehlgeschlagen (HTTP ${HTTP_CODE}). Pipeline wurde NICHT ausgeführt."
             exit 1
           fi
 
-          GENERATED_AT=$(node -e '
-            const fs = require("fs");
-            let data;
-            try { data = JSON.parse(fs.readFileSync("response.json", "utf8")); }
-            catch (e) { console.error("Antwort ist kein gültiges JSON"); process.exit(2); }
-            const b = data.briefing || (data.result && data.result.briefing) || {};
-            const ts = b.generatedAt || b.date || "";
-            if (!ts) { console.error("Kein generatedAt in der Antwort gefunden"); process.exit(3); }
-            process.stdout.write(ts);
-          ')
-
-          echo "Briefing generatedAt: ${GENERATED_AT}"
-
-          AGE_OK=$(node -e '
-            const ts = process.argv[1];
-            const ageMs = Date.now() - new Date(ts).getTime();
-            const sixHours = 6 * 60 * 60 * 1000;
-            if (Number.isNaN(ageMs)) { console.error("generatedAt nicht parsebar:", ts); process.exit(4); }
-            console.log(Math.round(ageMs / 60000) + " min alt");
-            process.exit(ageMs <= sixHours ? 0 : 5);
-          ' "${GENERATED_AT}") || {
-            echo "::error::Briefing ist nicht frisch (${AGE_OK}). Erwartet < 6h."
-            exit 1
-          }
-
-          echo "::notice::OK — frisches Briefing (${AGE_OK})."
+          # Erfolg an der ECHTEN Pipeline-Antwort messen (successfulSources + 0 Understanding-
+          # Fehler), NICHT an briefing.generatedAt (das dieser Endpoint per Design nicht trägt).
+          node scripts/watchdog-eval.js response.json

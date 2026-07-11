@@ -1299,21 +1299,36 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
   if (!understood.length) return empty("keine-vorgaenge");
 
   // Deterministische Bewertung (0 KI). Nur für die getroffenen Vorgänge Quellen laden.
+  const now = new Date();
   const decisions = decisionsEngine.decideForUser(profile, understood, { userId, limit: 50 });
   if (!decisions.length) return empty("keine-treffer");
+  // Fresh-aware Kandidaten-Vervollstaendigung (on-read, 0 KI, deterministisch):
+  // Der Top-Relevanz-Cut oben (limit 50, Ranking nach PROFIL-AEHNLICHKEIT) kann einen
+  // FRISCHEN, hoch relevanten Vorgang von heute abschneiden — er liegt dann nicht wegen
+  // mangelnder Relevanz unter dem Cut, sondern weil viele etablierte Vorgaenge aehnlicher
+  // sind. Ohne ihn kann die fresh-aware Primary-Auswahl (briefingContract) ihn nie waehlen
+  // und der stale Dauervorgang bleibt Primary. Die wenigen fehlenden FRISCHEN verstandenen
+  // Vorgaenge (heutiger Berliner Kalendertag) mit derselben Engine nachbewerten und als
+  // Kandidaten anhaengen. Kein neuer Motor, keine neue Datenarchitektur, kein LLM-Call;
+  // selectFreshAwarePrimary bleibt die einzige Relevanz-/Renderbarkeits-Schranke.
+  const candidateDecisions = briefingContract.augmentFreshCandidates(
+    understood, decisions,
+    (kos) => decisionsEngine.decideForUser(profile, kos, { userId, limit: kos.length }),
+    now
+  );
   const kosById = {};
   for (const ko of understood) if (ko && ko.id) kosById[ko.id] = ko;
-  const selected = decisions.map((d) => kosById[d.knowledge_object_id]).filter(Boolean);
+  const selected = candidateDecisions.map((d) => kosById[d.knowledge_object_id]).filter(Boolean);
   const sourcesByVorgang = await loadSourcesByVorgang(selected);
   // Source Safety Guard (regelbasiert, 0 KI): kritische, unbestaetigte Claims aus
   // unbekannten/schwachen Quellen NICHT ins Helmut-Briefing. Quarantaene wird verworfen.
-  const safeDecisions = decisions.filter((d) => {
+  const safeDecisions = candidateDecisions.filter((d) => {
     const ko = kosById[d.knowledge_object_id];
     if (!ko) return false;
     return sourceSafety.guardKnowledgeObject(ko, sourcesByVorgang[ko.vorgang_id] || []).status !== "quarantine";
   });
   if (!safeDecisions.length) return empty("keine-treffer");
-  return briefingContract.toBriefingContractV3({ profile, decisions: safeDecisions, kosById, sourcesByVorgang, briefingType });
+  return briefingContract.toBriefingContractV3({ profile, decisions: safeDecisions, kosById, sourcesByVorgang, now, briefingType });
 }
 
 // Quellen aller Vorgänge PARALLEL laden (nicht seriell) — ein hängender Call darf

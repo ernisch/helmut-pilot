@@ -220,6 +220,27 @@ check("Stale: Kopf-Status 'Nicht aktuell' (professionell, klar)",
 check("Stale: Inhalt bleibt sichtbar (Vorschlag rendert weiter)",
   htmlStale.includes("Mein Vorschlag"));
 
+// === 2a) Kopf-Chip: Slot-Name NUR bei frischem Stand, sonst 'Letzter Stand' ===
+// Der Slot-NAME (z. B. „Mittagsbriefing") kommt aus der aktuellen Uhrzeit. Bei einem
+// ALTEN Datenstand darf er nicht mit dem alten Datum vermischt werden — das wirkt falsch.
+// Frisch -> Slot-Name; stale -> „Letzter Stand · <Datum>" (ehrlich, keine Vermischung).
+const freshMidday = contract.buildCurrentHelmutState({ profile, decisions, kosById, sourcesByVorgang: sources, now: NOW, briefingType: "midday" });
+api.setBriefing(briefingWith(freshMidday));
+const htmlFreshMidday = api.render();
+check("Kopf: frischer Stand zeigt den Slot-Namen (Mittagsbriefing)",
+  freshMidday.status === "fresh" && htmlFreshMidday.includes("Mittagsbriefing") && !htmlFreshMidday.includes("Letzter Stand"));
+
+const staleMidday = contract.buildCurrentHelmutState({
+  profile, kosById: { "ko-vg-1": { ...koPrimary, updated_at: "2026-01-01T00:00:00Z" } },
+  decisions: [decisions[0]], sourcesByVorgang: sources, now: NOW, briefingType: "midday"
+});
+api.setBriefing(briefingWith(staleMidday));
+const htmlStaleMidday = api.render();
+check("Kopf: stale Stand zeigt 'Letzter Stand' statt Slot-Name (keine Vermischung)",
+  staleMidday.status === "stale" && htmlStaleMidday.includes("Letzter Stand") && !htmlStaleMidday.includes("Mittagsbriefing"));
+check("Kopf: stale Stand mischt KEINEN aktuellen Slot-Namen mit altem Datum",
+  !/Mittagsbriefing|Morgenbriefing|Abendlage|Tagesbriefing/.test(htmlStaleMidday));
+
 // === 2b) PRODUKTIONS-REPRO: aelteres KO (nur V3-Kern, KEINE neuen Stabschef-Felder) ===
 // Genau der Production-Fall: available=true + primaryItem vorhanden, aber die vier neuen
 // Stabschef-Felder sind leer (KO wurde vor deren Einfuehrung verstanden). Frueher wurde
