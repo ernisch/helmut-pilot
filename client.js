@@ -5752,11 +5752,10 @@ function sortContextPriority(a, b) {
 }
 
 function contextTypeForItem(item = {}) {
-  if (item.contextType) return item.contextType;
-  const sourceText = `${item.sourceName || ""} ${item.sourceType || ""} ${item.title || ""} ${item.summary || ""} ${item.content || ""}`.toLowerCase();
-  if (sourceText.includes("bundesregierung") || sourceText.includes("bundesministerium") || sourceText.includes("bmas") || sourceText.includes("bundeskabinett") || sourceText.includes("ministerium")) return "government";
-  if (sourceText.includes("die linke") || sourceText.includes("linksfraktion") || sourceText.includes("fraktion")) return "party";
-  return "";
+  // Kontext-Klassifikation kommt AUSSCHLIESSLICH aus dem Server-Vertrag (item.contextType).
+  // KEINE Client-seitige politische Ableitung per Textsuche mehr — keine hartkodierte
+  // Partei/Fraktion, kein politischer Frontend-Fallback (SaaS-fest fuer jedes Profil).
+  return item && item.contextType ? item.contextType : "";
 }
 
 function contextItemSummary(item = {}) {
@@ -5975,7 +5974,7 @@ function meetingCriticalQuestions(input) {
   return [
     `Welche Zusage braucht ihr konkret von Politik zu ${topic}?`,
     "Wo ist die Bundesregierung bisher zu unkonkret?",
-    "Welche Zahl oder welches Beispiel sollte Cem öffentlich nutzen?"
+    "Welche Zahl oder welches Beispiel solltest du öffentlich nutzen?"
   ];
 }
 
@@ -6952,7 +6951,7 @@ function isActionableOfficeTask(task) {
 }
 
 function shortTaskDescription(task) {
-  const text = task.description || "Bitte diese Empfehlung für Cem vorbereiten.";
+  const text = task.description || "Bitte diese Empfehlung vorbereiten.";
   return twoSentenceSummary(text);
 }
 
@@ -10182,7 +10181,7 @@ function directArticleHref(source) {
 
 function teamBenefitText(task) {
   const benefit = String(task.politicalBenefit || "").trim();
-  if (!benefit) return "Wir brauchen eine schnelle Einschätzung, ob Cem dazu heute sprechfähig sein sollte.";
+  if (!benefit) return "Wir brauchen eine schnelle Einschätzung, ob du dazu heute sprechfähig sein solltest.";
   return benefit
     .replace(/^Du kannst\b/i, "Wir können")
     .replace(/^Du hältst\b/i, "Wir halten")
@@ -10238,7 +10237,7 @@ function taskBriefQuestions(task) {
   }
   return [
     "Was ist der konkrete politische Anlass?",
-    "Warum betrifft das Cems Ausschuss oder Profil?",
+    "Warum betrifft das deinen Ausschuss oder dein Profil?",
     "Welche Linie sollten wir vorbereiten?",
     "Reaktion heute ja oder nein?"
   ];
