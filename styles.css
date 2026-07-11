@@ -7600,6 +7600,40 @@ body {
 .op-tile--bad   .op-dot { background: var(--danger); }
 .op-tile--bad   .op-tile-status { color: var(--danger); }
 .op-tile--unknown { border-left-color: var(--muted-2); }
+
+/* Klickbare Kacheln = sichere interne Sprungmarken. Ruhig, Apple-like: dezenter
+   Chevron, sanfter Hover/Active/Focus. Kein lauter Button. */
+a.op-tile, a.op-tile:visited { text-decoration: none; color: inherit; }
+.op-tile--link { cursor: pointer; transition: transform .12s ease, border-color .12s ease, background .12s ease; -webkit-tap-highlight-color: transparent; }
+.op-tile--link:hover { background: rgba(255, 255, 255, .04); transform: translateY(-1px); }
+.op-tile--link:active { transform: translateY(0); background: rgba(255, 255, 255, .06); }
+.op-tile--link:focus-visible { outline: 2px solid var(--accent, #6f8ff7); outline-offset: 2px; }
+.op-tile-chevron { margin-left: auto; font-size: 16px; line-height: 1; color: var(--muted-2); transition: transform .12s ease, color .12s ease; }
+.op-tile--link:hover .op-tile-chevron { color: var(--text); transform: translateX(2px); }
+
+/* Klickbare Handlungsbedarf-Hinweise (gleiche ruhige Sprach-Sprache). */
+a.ac-item, a.ac-item:visited { text-decoration: none; color: inherit; }
+.ac-item--link { cursor: pointer; transition: transform .12s ease, background .12s ease; -webkit-tap-highlight-color: transparent; }
+.ac-item--link:hover { background: rgba(255, 255, 255, .035); transform: translateY(-1px); }
+.ac-item--link:active { transform: translateY(0); }
+.ac-item--link:focus-visible { outline: 2px solid var(--accent, #6f8ff7); outline-offset: 2px; }
+.ac-chevron { align-self: center; margin-left: auto; font-size: 17px; line-height: 1; color: var(--muted-2); transition: transform .12s ease, color .12s ease; flex: none; }
+.ac-item--link:hover .ac-chevron { color: var(--text); transform: translateX(2px); }
+
+/* Sanfter Sprung + dezenter Flash am Zielabschnitt (1,6 s, ohne Layout-Shift).
+   scroll-margin haelt das Ziel frei von fixer Topbar / mobiler Bottom-Navigation. */
+html { scroll-behavior: smooth; }
+.op-overview, .admin-sec, #admin-recovery { scroll-margin-top: 76px; scroll-margin-bottom: 92px; }
+@keyframes adminJumpFlash {
+  0%   { box-shadow: 0 0 0 0 rgba(111, 143, 247, 0); }
+  18%  { box-shadow: 0 0 0 3px rgba(111, 143, 247, .30); }
+  100% { box-shadow: 0 0 0 0 rgba(111, 143, 247, 0); }
+}
+.admin-jump-flash { animation: adminJumpFlash 1.6s ease-out; border-radius: 14px; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .admin-jump-flash { animation: none; }
+}
 .op-warnings { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
 .op-warning {
   margin: 0; font-size: 12.5px; color: var(--muted); line-height: 1.4;

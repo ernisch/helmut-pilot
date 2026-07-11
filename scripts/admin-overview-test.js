@@ -194,6 +194,33 @@ check("Secrets: Passwort-Felder tragen keinen Wert", !/type="password"[^>]*\sval
 check("Secrets: keine Klartext-Secret-Muster (bearer/sk-/service_role/apikey=)", !/bearer\s|sk-[a-z0-9]{12}|service_role|apikey=/i.test(view));
 check("Keine Demo-/Platzhalter-Texte", !/lorem|dummy|beispieltext|coming soon|demnaechst|\bTODO\b|\bFIXME\b/i.test(view));
 
+// ── 8b) Sprungmarken: Kacheln & Hinweise sind sichere interne Anker (nur Scrollen).
+const jumpVals = (s) => (s.match(/data-admin-jump="([^"]+)"/g) || []).map((m) => m.replace(/.*"([^"]+)"$/, "$1"));
+// Betrieb gesund: alle 6 Kacheln sind Anker; Ziele wie spezifiziert.
+check("Sprung: alle 6 Kacheln sind Anker (a.op-tile)", (htmlOk.match(/<a class="op-tile /g) || []).length === 6);
+check("Sprung: gesund -> System-Kachel zu System und Sicherheit", htmlOk.includes('href="#admin-system"'));
+check("Sprung: gesund -> Datenstand/Pipeline/Quellen zu Datenmotor", htmlOk.includes('href="#admin-datenmotor"'));
+check("Sprung: gesund -> KEIN Handlungsbedarf-/Recovery-Ziel", !htmlOk.includes('#admin-handlungsbedarf') && !htmlOk.includes('#admin-recovery'));
+check("Sprung: Chevron-Indikator vorhanden", htmlOk.includes("op-tile-chevron"));
+// Betrieb degradiert: System->Handlungsbedarf, Understanding->Recovery.
+const htmlBad2 = api.overview({ generatedAt: nowIso }, dsBad, recBad);
+check("Sprung: System (Fehler) -> Handlungsbedarf", htmlBad2.includes('href="#admin-handlungsbedarf"'));
+check("Sprung: Understanding (failed/pending/lock) -> Recovery", htmlBad2.includes('href="#admin-recovery"'));
+check("Sprung: alle Kachel-Ziele sind bekannte admin-Anker", jumpVals(htmlBad2).every((v) => /^admin-(betrieb|handlungsbedarf|datenmotor|profile|kosten|system|recovery)$/.test(v)));
+// Handlungsbedarf-Hinweise klickbar mit passenden Zielen.
+check("Sprung: Lock-Hinweis -> Recovery", /href="#admin-recovery"[^>]*>[\s\S]*?Understanding-Lock wirkt veraltet/.test(acBad) || acBad.includes('href="#admin-recovery"'));
+check("Sprung: Hinweise sind Anker (a.ac-item--link)", acBad.includes("ac-item--link"));
+check("Sprung: Quellen-/Fehler-Hinweis -> Datenmotor", acBad.includes('href="#admin-datenmotor"'));
+// SICHERHEIT: Sprung-Anker loesen KEINE Aktion aus (kein Recovery-/Pipeline-Trigger).
+check("Sprung: KEIN data-recovery-action in Kacheln/Hinweisen", !/data-admin-jump="[^"]*"[^>]*data-recovery-action|data-recovery-action[^>]*data-admin-jump/.test(htmlBad2 + acBad));
+check("Sprung: Kacheln/Hinweise haben kein onclick/kein fetch", !/onclick=/.test(htmlBad2 + acBad));
+
+// ── 8c) Full-View: alle sieben Abschnittsanker existieren.
+["admin-betrieb", "admin-handlungsbedarf", "admin-datenmotor", "admin-profile", "admin-kosten", "admin-system", "admin-recovery"].forEach((anchor) =>
+  check(`Anker vorhanden: #${anchor}`, view.includes(`id="${anchor}"`)));
+check("Full: Sprung-Anker vorhanden (data-admin-jump)", jumpVals(view).length >= 6);
+check("Full: alle Sprungziele sind bekannte admin-Anker", jumpVals(view).every((v) => /^admin-(betrieb|handlungsbedarf|datenmotor|profile|kosten|system|recovery)$/.test(v)));
+
 // ── 9) Admin-Gating: Nicht-Admin sieht nichts, keine Kosten.
 api.setUser({ role: "referent" });
 const viewRef = api.view();

@@ -1055,15 +1055,19 @@ function adminRelAge(iso) {
 }
 
 // Eine Statuskachel der Betreiber-Übersicht. cls ∈ {ok, warn, bad, unknown} steuert NUR
-// die semantische Farbe (grün/gelb/rot/grau). Alle Texte werden escaped.
-function opTile(label, cls, statusText, subText, timeText) {
-  return `
-    <div class="op-tile op-tile--${escapeAttribute(cls)}">
-      <div class="op-tile-top"><span class="op-dot" aria-hidden="true"></span><span class="op-tile-label">${escapeHtml(label)}</span></div>
+// die semantische Farbe (grün/gelb/rot/grau). Alle Texte werden escaped. Ist `target`
+// (eine interne Abschnitts-id) gesetzt, wird die Kachel zu einem sicheren internen
+// Sprung-Anker (<a href="#…">) — reine Navigation/Scrollen, NIE eine Aktion.
+function opTile(label, cls, statusText, subText, timeText, target) {
+  const inner = `
+      <div class="op-tile-top"><span class="op-dot" aria-hidden="true"></span><span class="op-tile-label">${escapeHtml(label)}</span>${target ? `<span class="op-tile-chevron" aria-hidden="true">›</span>` : ""}</div>
       <span class="op-tile-status">${escapeHtml(statusText)}</span>
       ${subText ? `<span class="op-tile-sub">${escapeHtml(subText)}</span>` : ""}
-      ${timeText ? `<span class="op-tile-time">${escapeHtml(timeText)}</span>` : ""}
-    </div>`;
+      ${timeText ? `<span class="op-tile-time">${escapeHtml(timeText)}</span>` : ""}`;
+  if (target) {
+    return `<a class="op-tile op-tile--${escapeAttribute(cls)} op-tile--link" href="#${escapeAttribute(target)}" data-admin-jump="${escapeAttribute(target)}" title="Zum Bereich springen: ${escapeAttribute(adminJumpLabel(target))}" aria-label="${escapeAttribute(label)}: ${escapeAttribute(statusText)} — zum Bereich ${escapeAttribute(adminJumpLabel(target))} springen">${inner}</a>`;
+  }
+  return `<div class="op-tile op-tile--${escapeAttribute(cls)}">${inner}</div>`;
 }
 
 // 30-Sekunden-Betreiber-Übersicht (nur Admin). Leitet AUSSCHLIESSLICH aus bereits
@@ -1077,6 +1081,7 @@ function renderAdminOperatorOverview(data, ds, rec) {
   const tiles = [];
 
   // 1) System — Gesamt-Ampel des Datenmotors (Rollup über Pipeline + Daten + Profil).
+  //    Sprungziel: bei Warnung/Fehler zum Handlungsbedarf, sonst zu System und Sicherheit.
   {
     const a = g && g.ampel;
     const map = { gruen: ["ok", "Gesund"], gelb: ["warn", "Prüfen"], rot: ["bad", "Fehler"] };
@@ -1087,25 +1092,26 @@ function renderAdminOperatorOverview(data, ds, rec) {
     else if (a === "rot") sub = (g.letzterFehler && g.letzterFehler.headline) ? g.letzterFehler.headline : "Pipeline-Fehler oder kein aktueller Stand";
     else sub = "Eingeschränkt — Details unten prüfen";
     const chk = data && data.generatedAt ? adminRelAge(data.generatedAt) : null;
-    tiles.push(opTile("System", cls, label, sub, chk ? `geprüft ${chk}` : null));
+    const target = (cls === "warn" || cls === "bad") ? "admin-handlungsbedarf" : "admin-system";
+    tiles.push(opTile("System", cls, label, sub, chk ? `geprüft ${chk}` : null, target));
   }
 
   // 2) Datenstand — Frische des letzten Laufs. Zeitstempel ist echt; die Alters-Schwelle
-  //    (6 h / 24 h) ist reine Anzeige-Heuristik, kein erfundener Wert.
+  //    (6 h / 24 h) ist reine Anzeige-Heuristik, kein erfundener Wert. Sprung: Datenmotor.
   {
     const iso = g && g.letzterLauf;
-    if (!iso) tiles.push(opTile("Datenstand", "unknown", "Keine Daten", "Kein Lauf-Zeitstempel", null));
+    if (!iso) tiles.push(opTile("Datenstand", "unknown", "Keine Daten", "Kein Lauf-Zeitstempel", null, "admin-datenmotor"));
     else {
       const ageH = (Date.now() - new Date(iso).getTime()) / 3600000;
       const cls = ageH < 6 ? "ok" : ageH < 24 ? "warn" : "bad";
       const label = cls === "ok" ? "Aktuell" : cls === "warn" ? "Älter" : "Veraltet";
-      tiles.push(opTile("Datenstand", cls, label, `Letzte Daten ${adminRelAge(iso)}`, null));
+      tiles.push(opTile("Datenstand", cls, label, `Letzte Daten ${adminRelAge(iso)}`, null, "admin-datenmotor"));
     }
   }
 
-  // 3) Pipeline — lief der letzte Lauf erfolgreich? (echte Quellen-Zahlen + Modus)
+  // 3) Pipeline — lief der letzte Lauf erfolgreich? (echte Quellen-Zahlen + Modus). Sprung: Datenmotor.
   {
-    if (!g) tiles.push(opTile("Pipeline", "unknown", "Unbekannt", "Kein Lauf-Status geladen", null));
+    if (!g) tiles.push(opTile("Pipeline", "unknown", "Unbekannt", "Kein Lauf-Status geladen", null, "admin-datenmotor"));
     else {
       const geprueft = dsNum(g.quellen && g.quellen.geprueft);
       const erfolg = dsNum(g.quellen && g.quellen.erfolgreich);
@@ -1118,29 +1124,31 @@ function renderAdminOperatorOverview(data, ds, rec) {
       else { cls = "ok"; label = "Erfolgreich"; }
       const modus = g.modus ? ` · ${g.modus}` : "";
       const sub = g.letzterLauf ? `Letzter Lauf ${adminRelAge(g.letzterLauf)}${modus}` : "Noch kein Lauf erfasst";
-      tiles.push(opTile("Pipeline", cls, label, sub, null));
+      tiles.push(opTile("Pipeline", cls, label, sub, null, "admin-datenmotor"));
     }
   }
 
-  // 4) Quellen — wie viele Quellen lieferten Daten? (echte Zähler)
+  // 4) Quellen — wie viele Quellen lieferten Daten? (echte Zähler). Sprung: Datenmotor.
   {
     const q = g && g.quellen;
     const geprueft = dsNum(q && q.geprueft);
-    if (!q || geprueft === 0) tiles.push(opTile("Quellen", "unknown", "Keine Daten", "Ab nächstem Lauf verfügbar", null));
+    if (!q || geprueft === 0) tiles.push(opTile("Quellen", "unknown", "Keine Daten", "Ab nächstem Lauf verfügbar", null, "admin-datenmotor"));
     else {
       const erfolg = dsNum(q.erfolgreich);
       const fehl = dsNum(q.fehlgeschlagen);
       // Rot nur bei Total-/Mehrheitsausfall; einzelne Fehlquellen sind „prüfen" (gelb).
       const cls = fehl === 0 ? "ok" : (erfolg === 0 || fehl / geprueft > 0.5 ? "bad" : "warn");
       const sub = fehl > 0 ? `${fehl} ${fehl === 1 ? "Quelle" : "Quellen"} prüfen` : "Alle Quellen ok";
-      tiles.push(opTile("Quellen", cls, `${erfolg} von ${geprueft} ok`, sub, null));
+      tiles.push(opTile("Quellen", cls, `${erfolg} von ${geprueft} ok`, sub, null, "admin-datenmotor"));
     }
   }
 
   // 5) Understanding — KO-Zustände + KI-Analysefehler (echte Zähler, kein KI-Call).
+  //    Sprung: bei pending/failed/auffälligem Lock zu Recovery, sonst zu Datenmotor.
   {
     const kiFehler = Boolean(g && g.kiAnalyseFehler);
-    if (!ko && !g) tiles.push(opTile("Understanding", "unknown", "Keine Daten", "Kein Status geladen", null));
+    const lockAuff = Boolean(rec && rec.understandingLock && (rec.understandingLock.verdaechtig || rec.understandingLock.aktiv));
+    if (!ko && !g) tiles.push(opTile("Understanding", "unknown", "Keine Daten", "Kein Status geladen", null, "admin-datenmotor"));
     else {
       const pending = ko ? dsNum(ko.pending) : 0;
       const failed = ko ? dsNum(ko.failed) : 0;
@@ -1150,32 +1158,46 @@ function renderAdminOperatorOverview(data, ds, rec) {
       else if (kiFehler) { cls = "warn"; label = "Prüfen"; sub = "KI-Analyse heute mit Fehlern"; }
       else { cls = "ok"; label = "Ok"; sub = "Keine Fehler im letzten Lauf"; }
       const luf = rec && rec.letzterUnderstandingLauf ? adminRelAge(rec.letzterUnderstandingLauf) : null;
-      tiles.push(opTile("Understanding", cls, label, sub, luf ? `Lauf ${luf}` : null));
+      const auffaellig = failed > 0 || pending > 0 || lockAuff;
+      tiles.push(opTile("Understanding", cls, label, sub, luf ? `Lauf ${luf}` : null, auffaellig ? "admin-recovery" : "admin-datenmotor"));
     }
   }
 
   // 6) Watchdog — der einzige automatische Readiness-Guard im System ist der Morgen-Check
-  //    7:30 (morgenstatus0730). Ehrlich als solcher benannt; keinen erfundenen „Ping".
+  //    7:30 (morgenstatus0730). Ehrlich als solcher benannt. Sprung: System und Sicherheit.
   {
     const m = g && g.morgenstatus0730;
-    if (!m || typeof m.ok === "undefined") tiles.push(opTile("Watchdog", "unknown", "Keine Daten", "Kein Morgen-Check-Status", null));
-    else if (m.ok) tiles.push(opTile("Watchdog", "ok", "Ok", "Morgen-Check 7:30 bestanden", null));
-    else tiles.push(opTile("Watchdog", "warn", "Prüfen", m.note ? String(m.note) : "Morgen-Check 7:30 nicht bestanden", null));
+    if (!m || typeof m.ok === "undefined") tiles.push(opTile("Watchdog", "unknown", "Keine Daten", "Kein Morgen-Check-Status", null, "admin-system"));
+    else if (m.ok) tiles.push(opTile("Watchdog", "ok", "Ok", "Morgen-Check 7:30 bestanden", null, "admin-system"));
+    else tiles.push(opTile("Watchdog", "warn", "Prüfen", m.note ? String(m.note) : "Morgen-Check 7:30 nicht bestanden", null, "admin-system"));
   }
 
   // Nur die sechs Kacheln — Handlungsbedarf/Hinweise stehen bewusst im eigenen
   // Bereich direkt darunter (renderAdminActionCenter), damit „Betrieb" ruhig bleibt.
   return `
-    <section class="op-overview" aria-label="Betrieb — Betreiber-Übersicht">
+    <section class="op-overview" id="admin-betrieb" aria-label="Betrieb — Betreiber-Übersicht">
       <div class="op-tiles">${tiles.join("")}</div>
     </section>`;
 }
 
+// Menschlicher Name eines internen Sprungziels (für title/aria-label).
+function adminJumpLabel(id) {
+  return ({
+    "admin-betrieb": "Betrieb",
+    "admin-handlungsbedarf": "Handlungsbedarf",
+    "admin-datenmotor": "Datenmotor",
+    "admin-profile": "Profile",
+    "admin-kosten": "Kosten intern",
+    "admin-system": "System und Sicherheit",
+    "admin-recovery": "Recovery (intern)"
+  })[id] || id;
+}
+
 // ── Struktur-Helfer für das Betreiber-Kontrollzentrum ─────────────────────────
 // Klarer Bereich mit Überschrift. Reine Gliederung, keine neuen Daten.
-function adminSection(title, sub, inner) {
+function adminSection(title, sub, inner, id) {
   return `
-    <section class="admin-sec">
+    <section class="admin-sec"${id ? ` id="${escapeAttribute(id)}"` : ""}>
       <div class="admin-sec-head">
         <h2 class="admin-sec-title">${escapeHtml(title)}</h2>
         ${sub ? `<span class="admin-sec-sub">${escapeHtml(sub)}</span>` : ""}
@@ -1206,12 +1228,13 @@ function adminActionItems(ds, rec) {
   const ko = (koRaw && koRaw.available !== false) ? koRaw : null;
   const q = g && g.quellen;
   const items = [];
-  if (ko && dsNum(ko.failed) > 0) items.push({ level: "bad", title: `${dsNum(ko.failed)} Understanding-Vorgänge fehlgeschlagen`, detail: `Im Datenmotor unter „Recovery (intern)“ prüfen und ggf. „Failed → Pending“ zurücksetzen.` });
-  if (g && g.letzterFehler && g.letzterFehler.headline) items.push({ level: "bad", title: `Letzter Fehler: ${g.letzterFehler.headline}`, detail: `${g.letzterFehler.reason ? g.letzterFehler.reason : "Details unter „System und Sicherheit“."}${g.letzterFehler.when ? ` · ${dsDateLabel(g.letzterFehler.when)}` : ""}` });
-  if (rec && rec.understandingLock && rec.understandingLock.verdaechtig) items.push({ level: "warn", title: "Understanding-Lock wirkt veraltet", detail: `Ein Lock hängt möglicherweise. Im Datenmotor unter „Recovery (intern)“ „Lock lösen“, falls kein Lauf mehr aktiv ist.` });
-  if (ko && dsNum(ko.pending) > 0) items.push({ level: "warn", title: `${dsNum(ko.pending)} Understanding-Vorgänge warten`, detail: "Warten auf Verarbeitung — der nächste Lauf holt sie nach." });
-  if (q && dsNum(q.fehlgeschlagen) > 0) items.push({ level: "warn", title: `${dsNum(q.fehlgeschlagen)} von ${dsNum(q.geprueft)} Quellen mit Fehlern`, detail: "Einzelne Quellen lieferten im letzten Lauf keine Daten. Im Datenmotor prüfen." });
-  if (g && g.kiAnalyseFehler) items.push({ level: "warn", title: "KI-Analyse heute mit Fehlern", detail: "Einzelne KI-Calls sind heute fehlgeschlagen. KI-Status im Datenmotor prüfen." });
+  // target = sicheres internes Sprungziel (nur Scrollen, keine Aktion).
+  if (ko && dsNum(ko.failed) > 0) items.push({ level: "bad", target: "admin-recovery", title: `${dsNum(ko.failed)} Understanding-Vorgänge fehlgeschlagen`, detail: `Im Datenmotor unter „Recovery (intern)“ prüfen und ggf. „Failed → Pending“ zurücksetzen.` });
+  if (g && g.letzterFehler && g.letzterFehler.headline) items.push({ level: "bad", target: "admin-datenmotor", title: `Letzter Fehler: ${g.letzterFehler.headline}`, detail: `${g.letzterFehler.reason ? g.letzterFehler.reason : "Details unter „System und Sicherheit“."}${g.letzterFehler.when ? ` · ${dsDateLabel(g.letzterFehler.when)}` : ""}` });
+  if (rec && rec.understandingLock && rec.understandingLock.verdaechtig) items.push({ level: "warn", target: "admin-recovery", title: "Understanding-Lock wirkt veraltet", detail: `Ein Lock hängt möglicherweise. Im Datenmotor unter „Recovery (intern)“ „Lock lösen“, falls kein Lauf mehr aktiv ist.` });
+  if (ko && dsNum(ko.pending) > 0) items.push({ level: "warn", target: "admin-recovery", title: `${dsNum(ko.pending)} Understanding-Vorgänge warten`, detail: "Warten auf Verarbeitung — der nächste Lauf holt sie nach." });
+  if (q && dsNum(q.fehlgeschlagen) > 0) items.push({ level: "warn", target: "admin-datenmotor", title: `${dsNum(q.fehlgeschlagen)} von ${dsNum(q.geprueft)} Quellen mit Fehlern`, detail: "Einzelne Quellen lieferten im letzten Lauf keine Daten. Im Datenmotor prüfen." });
+  if (g && g.kiAnalyseFehler) items.push({ level: "warn", target: "admin-datenmotor", title: "KI-Analyse heute mit Fehlern", detail: "Einzelne KI-Calls sind heute fehlgeschlagen. KI-Status im Datenmotor prüfen." });
   return items;
 }
 
@@ -1219,17 +1242,24 @@ function adminActionItems(ds, rec) {
 // echte (gefährliche) Aktionen bleiben ausschließlich im markierten Recovery-Bereich.
 function renderAdminActionCenter(ds, rec) {
   const items = adminActionItems(ds, rec);
+  // Jeder Hinweis mit sicherem Ziel wird zu einem internen Sprung-Anker (nur Scrollen).
+  // Ohne Ziel bleibt er nicht klickbar (reiner Text). Keine Aktion, kein Button.
+  const renderItem = (it) => {
+    const body = `
+        <span class="ac-dot" aria-hidden="true"></span>
+        <div class="ac-body">
+          <p class="ac-title">${escapeHtml(it.title)}</p>
+          ${it.detail ? `<p class="ac-detail">${escapeHtml(it.detail)}</p>` : ""}
+        </div>${it.target ? `<span class="ac-chevron" aria-hidden="true">›</span>` : ""}`;
+    if (it.target) {
+      return `<a class="ac-item ac-item--${escapeAttribute(it.level)} ac-item--link" href="#${escapeAttribute(it.target)}" data-admin-jump="${escapeAttribute(it.target)}" title="Zum Bereich springen: ${escapeAttribute(adminJumpLabel(it.target))}" aria-label="${escapeAttribute(it.title)} — zum Bereich ${escapeAttribute(adminJumpLabel(it.target))} springen">${body}</a>`;
+    }
+    return `<div class="ac-item ac-item--${escapeAttribute(it.level)}">${body}</div>`;
+  };
   const inner = items.length
-    ? `<div class="ac-list">${items.map((it) => `
-        <div class="ac-item ac-item--${escapeAttribute(it.level)}">
-          <span class="ac-dot" aria-hidden="true"></span>
-          <div class="ac-body">
-            <p class="ac-title">${escapeHtml(it.title)}</p>
-            ${it.detail ? `<p class="ac-detail">${escapeHtml(it.detail)}</p>` : ""}
-          </div>
-        </div>`).join("")}</div>`
+    ? `<div class="ac-list">${items.map(renderItem).join("")}</div>`
     : `<div class="ac-list"><p class="ac-empty">Alles ruhig. Kein Eingreifen nötig.</p></div>`;
-  return adminSection("Handlungsbedarf", items.length ? `${items.length} ${items.length === 1 ? "Hinweis" : "Hinweise"}` : "", inner);
+  return adminSection("Handlungsbedarf", items.length ? `${items.length} ${items.length === 1 ? "Hinweis" : "Hinweise"}` : "", inner, "admin-handlungsbedarf");
 }
 
 // C. Datenmotor — kompakte Kernzahlen (Rest steckt in „Details anzeigen").
@@ -1280,7 +1310,7 @@ function renderAdminProfilesSection(ds, detailsInner) {
   const list = `<div class="admin-table-wrap"><table class="admin-table admin-table--compact">
     <thead><tr><th>Name</th><th>Status</th><th>Profil</th><th>Briefing</th><th>Punkte</th><th>Kosten heute</th></tr></thead>
     <tbody>${rows}</tbody></table></div>`;
-  return adminSection("Profile", `${accounts.length} ${accounts.length === 1 ? "Account" : "Accounts"}`, `${summary}${list}${detailsInner ? adminDetails("Verwaltung & Detailkarten anzeigen", detailsInner) : ""}`);
+  return adminSection("Profile", `${accounts.length} ${accounts.length === 1 ? "Account" : "Accounts"}`, `${summary}${list}${detailsInner ? adminDetails("Verwaltung & Detailkarten anzeigen", detailsInner) : ""}`, "admin-profile");
 }
 
 // E. Kosten intern — leiser, verdichteter Kopf (Details eingeklappt).
@@ -1412,10 +1442,11 @@ function renderAdminView() {
       ${adminSection("Datenmotor", "Crawl · Verstehen · Recovery",
         `${renderAdminDatenmotorSummary(adminDataStatus, adminRecovery, data.crawlReport)}
          ${adminDetails("Crawl-Trichter & Datenstatus anzeigen", `${renderAdminCrawlStats(data.crawlReport)}${renderAdminDataStatus(adminDataStatus, "global")}`)}
-         <div class="admin-recovery-wrap">
+         <div class="admin-recovery-wrap" id="admin-recovery">
            <p class="admin-recovery-flag">Interner Recovery-Bereich — Aktionen laufen nur nach bewusstem Klick und mit Bestätigung.</p>
            ${adminDetails("Recovery-Aktionen (intern) anzeigen", safeRenderAdminRecovery(adminRecovery, adminRecoveryResult, adminPendingDiagnose))}
-         </div>`
+         </div>`,
+        "admin-datenmotor"
       )}
 
       ${renderAdminProfilesSection(adminDataStatus, renderAdminProfileManagement(adminDataStatus, data, userRows, assignmentRows, referenten, mandateOptions, mandates, feedback))}
@@ -1426,10 +1457,11 @@ function renderAdminView() {
            <button class="admin-period-btn${adminPeriod === "days30" ? " is-active" : ""}" type="button" data-admin-period="days30">30 Tage</button>
          </div>
          ${renderAdminKostenSummary(data.stats?.[adminPeriod], adminPeriod === "today" ? "heute" : "30 Tage")}
-         ${adminDetails("Kosten pro Engine & pro Nutzer anzeigen", `<div class="admin-charts-row">${renderAdminEngineChart(data.stats?.[adminPeriod])}${renderAdminCostsCard(data.stats?.[adminPeriod])}</div>`)}`
+         ${adminDetails("Kosten pro Engine & pro Nutzer anzeigen", `<div class="admin-charts-row">${renderAdminEngineChart(data.stats?.[adminPeriod])}${renderAdminCostsCard(data.stats?.[adminPeriod])}</div>`)}`,
+        "admin-kosten"
       )}
 
-      ${adminSection("System und Sicherheit", "Version · Umgebung · Dienste · Zugriff", renderAdminSystemBody(sys, data, adminDataStatus, errors, audit))}
+      ${adminSection("System und Sicherheit", "Version · Umgebung · Dienste · Zugriff", renderAdminSystemBody(sys, data, adminDataStatus, errors, audit), "admin-system")}
 
     </div>
   `;
@@ -9004,6 +9036,29 @@ function bindAccountActions() {
 }
 
 function bindActions() {
+  // Interne Sprung-Anker (Statuskacheln & Handlungsbedarf-Hinweise): NUR sanftes
+  // Scrollen zum Zielabschnitt + kurzer, dezenter Flash. Es wird NIE eine Aktion
+  // ausgelöst (kein Pipeline-/Understanding-Lauf, kein Lock-Lösen, keine Recovery,
+  // kein LLM). Das native <a href="#…"> funktioniert auch ohne dieses JS.
+  app.querySelectorAll("[data-admin-jump]").forEach((el) => {
+    el.addEventListener("click", (event) => {
+      const id = el.getAttribute("data-admin-jump");
+      const target = id ? document.getElementById(id) : null;
+      if (!target) return; // ohne Ziel: normales Anker-Verhalten
+      event.preventDefault();
+      // Nur beim Sprung zum Recovery-Bereich dessen Detailblock aufklappen (reine UI,
+      // KEINE Aktion). Andere Ziele zeigen bereits ihren verdichteten Kopf.
+      try {
+        if (id === "admin-recovery") target.querySelectorAll("details.admin-details").forEach((d) => { d.open = true; });
+        else if (target.tagName === "DETAILS") target.open = true;
+      } catch (_) { /* rein optisch, nie kritisch */ }
+      try { target.scrollIntoView({ behavior: "smooth", block: "start" }); }
+      catch (_) { try { target.scrollIntoView(); } catch (__) { /* ignore */ } }
+      target.classList.add("admin-jump-flash");
+      window.setTimeout(() => { try { target.classList.remove("admin-jump-flash"); } catch (_) { /* ignore */ } }, 1600);
+    });
+  });
+
   app.querySelectorAll("[data-admin-period]").forEach((button) => {
     button.addEventListener("click", () => {
       adminPeriod = button.dataset.adminPeriod;
