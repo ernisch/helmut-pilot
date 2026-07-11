@@ -9875,6 +9875,28 @@ details[open].meeting-detail summary::before { content: '▾ '; }
   box-shadow: 0 8px 24px rgba(101, 64, 238, .28);
 }
 
+/* Light Mode: Die Login-Karte wird im Light Theme weiß (--card), die obigen
+   Textfarben sind aber auf die dunkle Karte kalibriert (rgba(245,241,232,…)).
+   Ohne diese Overrides sind Untertitel, Disabled-Button-Text und das
+   Passwort-Auge auf Weiß praktisch unsichtbar. */
+:root[data-theme="light"] .pilot-access-card .pilot-access-copy {
+  color: var(--muted);
+}
+/* !important nötig: ":root[data-theme=light] .primary-button" setzt color:#fff !important
+   (für den aktiven violetten Button); im Disabled-Zustand auf der weißen Login-Karte
+   wäre Weiß-auf-Weiß unleserlich. */
+:root[data-theme="light"] .pilot-access-form .primary-button:disabled {
+  color: var(--muted-2) !important;
+  background: rgba(15, 23, 42, .06);
+  border-color: rgba(15, 23, 42, .12);
+}
+:root[data-theme="light"] .password-toggle--icon {
+  color: rgba(15, 23, 42, .38);
+}
+:root[data-theme="light"] .password-toggle--icon:hover {
+  color: rgba(15, 23, 42, .72);
+}
+
 @media (max-width: 480px) {
   .login-screen {
     align-items: start;

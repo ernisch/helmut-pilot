@@ -6724,7 +6724,7 @@ function agentBriefingText() {
     ? `Du wurdest seit dem letzten Quellenlauf ${mentionCount} Mal erwähnt.`
     : "Heute wurde bislang keine neue namentliche Erwähnung gefunden.";
   const riskSentence = riskCount ? `${riskCount} Risiko solltest du im Blick behalten.` : "Aktuell sehe ich kein neues persönliches Risiko.";
-  return `${greeting} Ich habe die politische Lage geprüft. Wichtigstes Thema für dich ist heute ${top.title}. ${mentionSentence} ${riskSentence} ${officeCount ? `${officeCount} Entwurf${officeCount !== 1 ? "e" : ""} liegen im Büro bereit.` : "Im Büro gibt es noch keine Entwürfe für heute."}`;
+  return `${greeting} Ich habe die politische Lage geprüft. Wichtigstes Thema für dich ist heute ${top.title}. ${mentionSentence} ${riskSentence} ${officeCount ? `${officeCount} ${officeCount !== 1 ? "Entwürfe liegen" : "Entwurf liegt"} im Büro bereit.` : "Im Büro gibt es noch keine Entwürfe für heute."}`;
 }
 
 function agentFacts() {
@@ -7099,11 +7099,11 @@ function renderOfficeView() {
 
   const firstTwoFormats = formats.slice(0, 2).map((f) => OFFICE_FORMAT_META[f.id]?.formatLabel || f.label).filter(Boolean);
   const eyebrow = hasBriefing && totalCount
-    ? `Heute vorbereitet: ${totalCount} Entwurf${totalCount !== 1 ? "e" : ""}. Prüfe zuerst ${firstTwoFormats.join(" und ")}.`
+    ? `Heute vorbereitet: ${totalCount} ${totalCount !== 1 ? "Entwürfe" : "Entwurf"}. Prüfe zuerst ${firstTwoFormats.join(" und ")}.`
     : "Heute vorbereitet.";
 
   const summaryText = hasBriefing
-    ? (readyCount ? `${readyCount} Entwurf${readyCount !== 1 ? "e" : ""} bereit` : "")
+    ? (readyCount ? `${readyCount} ${readyCount !== 1 ? "Entwürfe" : "Entwurf"} bereit` : "")
       + (holdCount ? `${readyCount ? `<span class="buero-summary-sep">·</span>` : ""}${holdCount} zum Bereithalten` : "")
       + (time ? `<span class="buero-summary-sep">·</span>Vorbereitet um ${escapeHtml(time)}` : "")
     : generating
