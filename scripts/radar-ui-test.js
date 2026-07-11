@@ -156,5 +156,16 @@ check("Umfeld aufgeklappt: alle 5 Einträge sichtbar (echte erweiterte Liste)",
   [1,2,3,4,5].every((i) => envHtmlAll.includes(`Parteisignal-${i}`)));
 api.setEnvExpanded(false);
 
+// 10) Ehrlicher Leerzustand pro Segment (nach dem Relations-Fix können Segmente leer
+//     sein, ohne dass die UI kaputt/leer wirkt): leeres Partei-Segment -> ehrlicher Hinweis.
+const emptyPartyState = JSON.parse(JSON.stringify(state));
+emptyPartyState.environment.party = [];
+emptyPartyState.environment.constituency = [{ id: "e-c1", vorgangId: "vc1", title: "Konkreter Wahlkreisvorgang", sourceName: "Regionalquelle", sourceCategory: "Regionale Medien", sourceUrl: "https://q.de/c1", linkType: "direct", publishedAt: "2026-07-11T05:00:00Z", thumbnailUrl: null, summary: "…", relationType: "constituency", relationLabel: "Betrifft deinen Wahlkreis", relevanceEvidence: "Salzgitter-Wolfenbüttel" }];
+api.setBriefing({ engine: "v3", currentRadarState: emptyPartyState });
+api.setSegment("party");
+const emptyPartyHtml = api.render();
+check("Leeres Partei-Segment -> ehrlicher Leerzustand statt kaputt/leer",
+  /Keine neuen relevanten Parteisignale/.test(emptyPartyHtml) && emptyPartyHtml.includes("Dein Umfeld"));
+
 console.log(`\n${passed}/${passed + failed} Radar-UI-Assertions erfolgreich.`);
 if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exit(1); }
