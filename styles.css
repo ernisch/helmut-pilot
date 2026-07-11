@@ -11007,6 +11007,14 @@ body:has(.lage2) {
   .app-frame.view-helmut .content-shell {
     padding-top: calc(env(safe-area-inset-top, 0px) + 12px);
   }
+
+  /* Radar-Tab MOBIL: identisch zum Helmut-Tab — die große obere App-Leiste ausblenden,
+     der Inhalt startet direkt mit dem Radar-Kopf (eigener "Radar"-Header + Refresh).
+     Nur der Radar-Tab und nur mobil; Desktop und andere Tabs bleiben unverändert. */
+  .app-frame.view-radar .topbar { display: none; }
+  .app-frame.view-radar .content-shell {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 12px);
+  }
 }
 
 /* Helmut-Tab: ruhigerer, gleichmäßigerer Hintergrund (weniger Violett als der
@@ -11164,6 +11172,11 @@ body:has(.lage2) {
   border-radius: 8px;
 }
 .radar2-more-link:hover { text-decoration: underline; }
+/* Block-Variante unter einer Liste (Artikel-Überblick: "Alle anzeigen"). */
+.radar2-more-link--block {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-top: 10px; padding: 9px 4px;
+}
 
 /* Karten (Über dich / Dynamiken) ------------------------------------------- */
 .radar2-cards { display: flex; flex-direction: column; gap: 10px; }

@@ -28,6 +28,7 @@ let radarSegment = "party";
 let radarFilter = "all";
 let radarMentionsExpanded = false;
 let radarDynamicsExpanded = false;
+let radarArticlesExpanded = false;
 let radarRefreshing = false;
 let opsStatusLoaded = false;
 let pushConfig = null;
@@ -7333,12 +7334,20 @@ function renderRadarArticles(state) {
     `<button class="radar2-filter ${f.key === activeKey ? "is-active" : ""}" type="button" role="tab" aria-selected="${f.key === activeKey}" data-radar-filter="${f.key}">${escapeHtml(f.label)}</button>`
   ).join("");
   const filtered = all.filter((a) => radarArticleMatchesFilter(a, activeKey));
-  const list = filtered.length ? filtered.map(renderRadarArticleRow).join("") : radarEmptyHint("Keine passenden Artikel im gewählten Filter.");
+  // Premium-Überblick statt Medienmonitoring: standardmäßig max. 5 Artikel; der Rest
+  // ist eine ECHTE erweiterte Liste (die Daten liegen vor) hinter "Alle anzeigen".
+  const RADAR_ARTICLE_PREVIEW = 5;
+  const shown = radarArticlesExpanded ? filtered : filtered.slice(0, RADAR_ARTICLE_PREVIEW);
+  const list = shown.length ? shown.map(renderRadarArticleRow).join("") : radarEmptyHint("Keine passenden Artikel im gewählten Filter.");
+  const more = filtered.length > RADAR_ARTICLE_PREVIEW
+    ? `<button class="radar2-more-link radar2-more-link--block" type="button" data-radar-expand="articles">${radarArticlesExpanded ? "Weniger anzeigen" : `Alle anzeigen (${filtered.length})`} <span aria-hidden="true">›</span></button>`
+    : "";
   return `
     <section class="radar2-section">
       <h2 class="radar2-h2">${radarIcon("doc")}<span>Alle relevanten Artikel</span></h2>
       <div class="radar2-filters" role="tablist" aria-label="Artikelfilter">${chips}</div>
       <div class="radar2-list">${list}</div>
+      ${more}
     </section>
   `;
 }
@@ -7482,13 +7491,15 @@ function bindRadarActions() {
     btn.addEventListener("click", () => { radarSegment = btn.dataset.radarSegment; rerenderRadar(); });
   });
   root.querySelectorAll("[data-radar-filter]").forEach((btn) => {
-    btn.addEventListener("click", () => { radarFilter = btn.dataset.radarFilter; rerenderRadar(); });
+    // Filterwechsel setzt die Artikel-Aufklappung zurück (kein verwirrend langer Rest).
+    btn.addEventListener("click", () => { radarFilter = btn.dataset.radarFilter; radarArticlesExpanded = false; rerenderRadar(); });
   });
   root.querySelectorAll("[data-radar-expand]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const k = btn.dataset.radarExpand;
       if (k === "mentions") radarMentionsExpanded = !radarMentionsExpanded;
       else if (k === "dynamics") radarDynamicsExpanded = !radarDynamicsExpanded;
+      else if (k === "articles") radarArticlesExpanded = !radarArticlesExpanded;
       rerenderRadar();
     });
   });

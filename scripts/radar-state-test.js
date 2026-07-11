@@ -128,8 +128,10 @@ check("Ein Dokument kann mehrere echte relationTypes haben (v4 in Partei UND Aus
   envParty.includes("v4") && envCommittees.includes("v4"));
 check("Kein Umfeld-Bezug ohne Profilbezug (v6 in keinem Segment)",
   !envParty.includes("v6") && !envCommittees.includes("v6") && !envRegion.includes("v6"));
-check("relationLabel ist ein neutrales Produktlabel",
-  state.environment.party.every((e) => ["Bezug zu deiner Partei", "Aus deinem Wahlkreis", "Betrifft deinen Ausschuss"].includes(e.relationLabel)));
+check("relationLabel ist ein neutrales, dimensionsgenaues Produktlabel",
+  state.environment.party.every((e) => e.relationLabel === "Betrifft deine Partei") &&
+  state.environment.constituency.every((e) => e.relationLabel === "Betrifft deinen Wahlkreis") &&
+  state.environment.committees.every((e) => e.relationLabel === "Betrifft deinen Ausschuss"));
 check("relevanceEvidence trägt den echten Profil-Treffer (Wert)",
   (state.environment.committees.find((e) => e.vorgangId === "v4") || {}).relevanceEvidence === "Ausschuss für Arbeit und Soziales");
 // Dedup innerhalb eines Bereichs.
@@ -269,6 +271,81 @@ check("Keine technischen Quellen-Enums im sourceCategory-Label (nur Klartext/'')
     Array.isArray(briefing.currentRadarState.mentions) && briefing.currentRadarState.environment && Array.isArray(briefing.currentRadarState.articles));
   check("Bestehende Vertragsfelder unverändert vorhanden (currentHelmutState, items)",
     Boolean(briefing.currentHelmutState) && Array.isArray(briefing.items));
+}
+
+// --- 11) SaaS-strikte Über-dich-Regeln (Blocker-Fix: Vertrauen > Fülle) ------
+// Nur belegte Nennung des VOLLEN Namens zählt. Kein Vorname/Nachname/Namensvetter,
+// kein Profil-/Decision-Match, kein Partei-/Ausschuss-/Wahlkreis-/Themenbezug.
+{
+  const p = { id: "s1", fullName: "Cem İnce", party: "Die Linke", committees: ["Ausschuss für Arbeit und Soziales"], constituency: "Salzgitter-Wolfenbüttel" };
+  const mk = (over) => ({ ...base, best_source_url: "https://q.de/x", updated_at: iso(3600e3), created_at: iso(3600e3), ...over });
+  const one = (ko) => radarState.buildCurrentRadarState({ profile: p, decisions: [], kosById: { [ko.id]: ko }, knowledgeObjects: [ko], sourcesByVorgang: {}, now: nowDate }).mentions.map((m) => m.vorgangId);
+
+  check("Blocker #1 Voller Name (mentioned_mps) -> Über dich",
+    one(mk({ id: "s-full", vorgang_id: "s-full", display_title: "Kommunalfinanzen", mentioned_mps: ["Cem İnce"] })).includes("s-full"));
+  check("Blocker #1b Voller Name in FAKTEN-Prosa (display_title) -> Über dich",
+    one(mk({ id: "s-prose", vorgang_id: "s-prose", display_title: "Cem İnce fordert Reform" })).includes("s-prose"));
+  check("Blocker #1c Umgekehrte Reihenfolge 'İnce, Cem' im Personenfeld -> Über dich",
+    one(mk({ id: "s-rev", vorgang_id: "s-rev", display_title: "Debatte", mentioned_people: ["İnce, Cem"] })).includes("s-rev"));
+  check("Blocker #2 Einzelner VORNAME (Namensvetter) -> KEIN Über dich",
+    one(mk({ id: "s-first", vorgang_id: "s-first", display_title: "Bremen führt Fußfesseln ein", mentioned_people: ["Cem"], risiken: ["Kritik"] })).length === 0);
+  check("Blocker #3 Einzelner NACHNAME (anderer İnce) -> KEIN Über dich",
+    one(mk({ id: "s-last", vorgang_id: "s-last", display_title: "Bremen führt Fußfesseln ein", was_ist_passiert: "Senator Max İnce verteidigt.", mentioned_people: ["Max İnce"], risiken: ["Kritik"] })).length === 0);
+  check("Blocker #9 Name NUR in why_relevant/warum_wichtig (Profil-/Decision-Match) -> KEIN Über dich",
+    one(mk({ id: "s-why", vorgang_id: "s-why", display_title: "Bremen führt Fußfesseln ein", why_relevant: "Für İnce als Ausschussmitglied relevant.", warum_wichtig: "Cem İnce positioniert die Fraktion.", risiken: ["Kritik"] })).length === 0);
+  check("Blocker #4/5 Reiner Partei-/Fraktionsbezug -> KEIN Über dich",
+    one(mk({ id: "s-party", vorgang_id: "s-party", display_title: "Fraktion beschließt Linie", parteien: ["Die Linke"] })).length === 0);
+  check("Blocker #7 Reiner Ausschussbezug -> KEIN Über dich",
+    one(mk({ id: "s-comm", vorgang_id: "s-comm", display_title: "Anhörung im Ausschuss", ausschuesse: ["Ausschuss für Arbeit und Soziales"] })).length === 0);
+  check("Blocker #6 Reiner Wahlkreisbezug -> KEIN Über dich",
+    one(mk({ id: "s-reg", vorgang_id: "s-reg", display_title: "Schulen im Wahlkreis", mentioned_locations: ["Salzgitter-Wolfenbüttel"] })).length === 0);
+  check("Blocker #8 Reine Themenrelevanz -> KEIN Über dich",
+    one(mk({ id: "s-theme", vorgang_id: "s-theme", display_title: "Debatte über Rente und Pflege", tags: ["Rente", "Pflege"] })).length === 0);
+
+  // #11: mentions leer -> Zusammenfassung behauptet KEINE direkte Erwähnung.
+  const emptyMentionState = radarState.buildCurrentRadarState({
+    profile: p,
+    decisions: [{ knowledge_object_id: "s-party", vorgang_id: "s-party", score: 60, matched_features: [{ type: "partei", value: "Die Linke" }] }],
+    kosById: { "s-party": mk({ id: "s-party", vorgang_id: "s-party", display_title: "Fraktion beschließt Linie", parteien: ["Die Linke"] }) },
+    knowledgeObjects: [mk({ id: "s-party", vorgang_id: "s-party", display_title: "Fraktion beschließt Linie", parteien: ["Die Linke"] })],
+    sourcesByVorgang: {}, now: nowDate
+  });
+  check("Blocker #10/11 Leere mentions -> Zusammenfassung behauptet keine direkte Erwähnung",
+    emptyMentionState.mentions.length === 0 && !/direkte Erwähnung/i.test(emptyMentionState.summary.line1) &&
+    /keine.*direkten Erwähnungen/i.test(emptyMentionState.summary.line1));
+}
+
+// --- 12) Phase 4: Umfeld-Labels dimensionsgenau, kein Cross-Leak ------------
+{
+  check("Umfeld #13 Partei-Label ist NICHT am Ausschuss-Bezug (v4 im Ausschuss trägt Ausschuss-Label)",
+    (state.environment.committees.find((e) => e.vorgangId === "v4") || {}).relationLabel === "Betrifft deinen Ausschuss");
+  check("Umfeld #14 Wahlkreis-Label ist NICHT am Partei-Bezug (v3 in Partei trägt Partei-Label)",
+    (state.environment.party.find((e) => e.vorgangId === "v3") || {}).relationLabel === "Betrifft deine Partei");
+  check("Umfeld: kein technischer Enum im relationLabel",
+    ["party", "constituency", "committees"].every((k) => state.environment[k].every((e) => !/^(party|constituency|committee)$/.test(e.relationLabel))));
+}
+
+// --- 13) Phase 5: alte Aktivität wird NICHT als neue Dynamik gezeigt --------
+{
+  const pDyn = { id: "d1", fullName: "Erika Mustermann", party: "CDU" };
+  const oldBroad = { ...base, id: "kold", vorgang_id: "vold", display_title: "Alter Vorgang mit breitem Widerhall",
+    source_document_count: 4, updated_at: iso(9 * 864e5), created_at: iso(12 * 864e5) };
+  const freshBroad = { ...base, id: "knew", vorgang_id: "vnew", display_title: "Frischer Vorgang mit breitem Widerhall",
+    source_document_count: 4, updated_at: iso(6 * 3600e3), created_at: iso(6 * 3600e3) };
+  const dec = (id, vg) => ({ knowledge_object_id: id, vorgang_id: vg, score: 60, matched_features: [{ type: "partei", value: "CDU" }] });
+  const srcOld = { vold: [ { id: "o1", url: "https://media.de/a", source_type: "media", published_at: iso(9 * 864e5) }, { id: "o2", url: "https://bmi.de/b", source_type: "ministry", published_at: iso(10 * 864e5) } ] };
+  const srcNew = { vnew: [ { id: "n1", url: "https://media.de/a", source_type: "media", published_at: iso(6 * 3600e3) }, { id: "n2", url: "https://bmi.de/b", source_type: "ministry", published_at: iso(7 * 3600e3) } ] };
+  const dynState = radarState.buildCurrentRadarState({ profile: pDyn,
+    decisions: [dec("kold", "vold"), dec("knew", "vnew")],
+    kosById: { kold: oldBroad, knew: freshBroad }, knowledgeObjects: [oldBroad, freshBroad],
+    sourcesByVorgang: { ...srcOld, ...srcNew }, now: nowDate });
+  const dynIds = dynState.dynamics.map((d) => d.vorgangId);
+  check("Dynamik #15 alter Vorgang (>4 Tage, keine neue Aktivität) NICHT in 'Neue Dynamiken'", !dynIds.includes("vold"));
+  check("Dynamik #15 frischer Vorgang MIT belegter Aktivität erscheint", dynIds.includes("vnew"));
+  // Nur alte Aktivität -> ehrlich leer (kein 'neu' auf altem Stand).
+  const onlyOld = radarState.buildCurrentRadarState({ profile: pDyn, decisions: [dec("kold", "vold")],
+    kosById: { kold: oldBroad }, knowledgeObjects: [oldBroad], sourcesByVorgang: srcOld, now: nowDate });
+  check("Dynamik #15 nur alte Aktivität -> dynamics leer (ehrlicher Leerzustand)", onlyOld.dynamics.length === 0);
 }
 
 console.log(`\n${passed}/${passed + failed} Radar-State-Assertions erfolgreich.`);
