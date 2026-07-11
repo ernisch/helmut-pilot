@@ -7609,6 +7609,83 @@ body {
 @media (max-width: 1100px) { .op-tiles { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 620px)  { .op-tiles { grid-template-columns: repeat(2, 1fr); } }
 
+/* Betreiber-Kontrollzentrum: klare Abschnitte + einklappbare Details. */
+.admin-sec { margin: 22px 0; }
+.admin-sec-head {
+  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  margin: 0 0 12px; padding-bottom: 8px;
+  border-bottom: 1px solid var(--line, rgba(226, 232, 240, .12));
+}
+.admin-sec-title { margin: 0; font-size: 17px; font-weight: 700; color: var(--text); letter-spacing: -.01em; }
+.admin-sec-sub { font-size: 12.5px; color: var(--muted-2); }
+
+.admin-details { margin: 10px 0 0; border: 1px solid var(--line); border-radius: 12px; background: rgba(255, 255, 255, .015); }
+.admin-details[open] { background: rgba(255, 255, 255, .025); }
+.admin-details-sum {
+  cursor: pointer; list-style: none; padding: 11px 14px;
+  font-size: 13px; font-weight: 600; color: var(--muted); user-select: none;
+  display: flex; align-items: center; gap: 8px;
+}
+.admin-details-sum::-webkit-details-marker { display: none; }
+.admin-details-sum::before { content: "›"; font-size: 16px; color: var(--muted-2); transition: transform .15s ease; }
+.admin-details[open] > .admin-details-sum::before { transform: rotate(90deg); }
+.admin-details-sum:hover { color: var(--text); }
+.admin-details-body { padding: 4px 14px 14px; }
+
+/* Handlungsbedarf */
+.ac-list { display: flex; flex-direction: column; gap: 8px; }
+.ac-item {
+  display: flex; gap: 11px; padding: 11px 13px;
+  border-radius: 11px; background: var(--card); border: 1px solid var(--line);
+  border-left: 3px solid var(--muted-2);
+}
+.ac-item--warn { border-left-color: #ff9f0a; }
+.ac-item--bad  { border-left-color: var(--danger); }
+.ac-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex: none; background: var(--muted-2); }
+.ac-item--warn .ac-dot { background: #ff9f0a; }
+.ac-item--bad  .ac-dot { background: var(--danger); }
+.ac-body { min-width: 0; }
+.ac-title { margin: 0; font-size: 13.5px; font-weight: 600; color: var(--text); }
+.ac-detail { margin: 2px 0 0; font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+.ac-empty {
+  margin: 0; padding: 13px; border-radius: 11px; font-size: 13px; color: var(--muted);
+  background: rgba(52, 199, 89, .06); border: 1px solid rgba(52, 199, 89, .16);
+}
+
+/* Datenmotor-Kompaktkopf */
+.dm-summary {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px;
+}
+.dm-cell {
+  display: flex; flex-direction: column; gap: 3px; min-width: 0;
+  padding: 10px 12px; border-radius: 11px; background: var(--card); border: 1px solid var(--line);
+}
+.dm-k { font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted-2); white-space: nowrap; }
+.dm-v { font-size: 15px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+.dm-v--bad { color: var(--danger); }
+
+/* Recovery klar als interner Bereich markiert */
+.admin-recovery-wrap { margin-top: 12px; border: 1px dashed rgba(255, 159, 10, .3); border-radius: 12px; padding: 10px 12px; }
+.admin-recovery-flag { margin: 0 0 4px; font-size: 12px; color: #ff9f0a; font-weight: 600; }
+
+/* Profil-Ampelpunkt in der kompakten Liste */
+.pf-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 7px; vertical-align: middle; background: var(--muted-2); }
+.pf-dot--ok { background: #34c759; }
+.pf-dot--warn { background: #ff9f0a; }
+.pf-dot--bad { background: var(--danger); }
+.admin-table--compact th, .admin-table--compact td { padding-top: 8px; padding-bottom: 8px; font-size: 13px; }
+
+.admin-stats-row--3 { grid-template-columns: repeat(3, 1fr); }
+.admin-sys-note { margin: 10px 0 0; font-size: 11.5px; color: var(--muted-2); }
+
+@media (max-width: 900px) {
+  .dm-summary { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 560px) {
+  .dm-summary { grid-template-columns: repeat(2, 1fr); }
+  .admin-sec-title { font-size: 16px; }
+}
+
 /* Stats row */
 .admin-stats-row {
   display: grid;

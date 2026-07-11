@@ -1163,24 +1163,139 @@ function renderAdminOperatorOverview(data, ds, rec) {
     else tiles.push(opTile("Watchdog", "warn", "Prüfen", m.note ? String(m.note) : "Morgen-Check 7:30 nicht bestanden", null));
   }
 
-  // Ruhige Hinweiszeilen — NUR bei echten, positiven Werten (keine Fake-Hinweise).
-  const warn = [];
-  const q = g && g.quellen;
-  if (q && dsNum(q.fehlgeschlagen) > 0) warn.push(`${dsNum(q.fehlgeschlagen)} von ${dsNum(q.geprueft)} Quellen lieferten im letzten Lauf keine Daten.`);
-  if (ko && dsNum(ko.pending) > 0) warn.push(`${dsNum(ko.pending)} Understanding-Vorgänge warten auf Verarbeitung.`);
-  if (ko && dsNum(ko.failed) > 0) warn.push(`${dsNum(ko.failed)} Understanding-Vorgänge sind fehlgeschlagen.`);
-  if (rec && rec.understandingLock && rec.understandingLock.verdaechtig) warn.push("Understanding-Lock wirkt veraltet (hängt) – im Recovery-Bereich prüfen.");
-  if (g && g.letzterFehler && g.letzterFehler.headline) warn.push(`Letzter Fehler: ${g.letzterFehler.headline}${g.letzterFehler.when ? ` (${dsDateLabel(g.letzterFehler.when)})` : ""}.`);
-
-  const warnHtml = warn.length
-    ? `<div class="op-warnings">${warn.slice(0, 5).map((w) => `<p class="op-warning">${escapeHtml(w)}</p>`).join("")}</div>`
-    : "";
-
+  // Nur die sechs Kacheln — Handlungsbedarf/Hinweise stehen bewusst im eigenen
+  // Bereich direkt darunter (renderAdminActionCenter), damit „Betrieb" ruhig bleibt.
   return `
-    <section class="op-overview" aria-label="Betreiber-Übersicht">
+    <section class="op-overview" aria-label="Betrieb — Betreiber-Übersicht">
       <div class="op-tiles">${tiles.join("")}</div>
-      ${warnHtml}
     </section>`;
+}
+
+// ── Struktur-Helfer für das Betreiber-Kontrollzentrum ─────────────────────────
+// Klarer Bereich mit Überschrift. Reine Gliederung, keine neuen Daten.
+function adminSection(title, sub, inner) {
+  return `
+    <section class="admin-sec">
+      <div class="admin-sec-head">
+        <h2 class="admin-sec-title">${escapeHtml(title)}</h2>
+        ${sub ? `<span class="admin-sec-sub">${escapeHtml(sub)}</span>` : ""}
+      </div>
+      ${inner}
+    </section>`;
+}
+
+// Aufklappbarer Detailbereich (zugeklappt per Default) — hält technisches Rohmaterial
+// aus der Hauptansicht, ohne es zu entfernen. Rein visuell; Inhalt bleibt im DOM.
+function adminDetails(label, inner, open = false) {
+  return `<details class="admin-details"${open ? " open" : ""}>
+    <summary class="admin-details-sum">${escapeHtml(label)}</summary>
+    <div class="admin-details-body">${inner}</div>
+  </details>`;
+}
+
+// Kompakte Kennzahl-Kachel (wiederverwendet die bestehende admin-stat-Optik).
+function adminStatCell(value, label, tone) {
+  return `<div class="admin-stat-card"><span class="admin-stat-num${tone ? ` admin-stat-num--${escapeAttribute(tone)}` : ""}">${escapeHtml(String(value))}</span><span class="admin-stat-label">${escapeHtml(label)}</span></div>`;
+}
+
+// Echte Handlungsbedarf-Punkte aus bereits geladenen Daten (kein KI-Call, keine
+// Aktion). Leere Liste => „Alles ruhig". Erfindet nichts.
+function adminActionItems(ds, rec) {
+  const g = (ds && ds.global) || null;
+  const koRaw = rec && rec.knowledgeObjects;
+  const ko = (koRaw && koRaw.available !== false) ? koRaw : null;
+  const q = g && g.quellen;
+  const items = [];
+  if (ko && dsNum(ko.failed) > 0) items.push({ level: "bad", title: `${dsNum(ko.failed)} Understanding-Vorgänge fehlgeschlagen`, detail: `Im Datenmotor unter „Recovery (intern)“ prüfen und ggf. „Failed → Pending“ zurücksetzen.` });
+  if (g && g.letzterFehler && g.letzterFehler.headline) items.push({ level: "bad", title: `Letzter Fehler: ${g.letzterFehler.headline}`, detail: `${g.letzterFehler.reason ? g.letzterFehler.reason : "Details unter „System und Sicherheit“."}${g.letzterFehler.when ? ` · ${dsDateLabel(g.letzterFehler.when)}` : ""}` });
+  if (rec && rec.understandingLock && rec.understandingLock.verdaechtig) items.push({ level: "warn", title: "Understanding-Lock wirkt veraltet", detail: `Ein Lock hängt möglicherweise. Im Datenmotor unter „Recovery (intern)“ „Lock lösen“, falls kein Lauf mehr aktiv ist.` });
+  if (ko && dsNum(ko.pending) > 0) items.push({ level: "warn", title: `${dsNum(ko.pending)} Understanding-Vorgänge warten`, detail: "Warten auf Verarbeitung — der nächste Lauf holt sie nach." });
+  if (q && dsNum(q.fehlgeschlagen) > 0) items.push({ level: "warn", title: `${dsNum(q.fehlgeschlagen)} von ${dsNum(q.geprueft)} Quellen mit Fehlern`, detail: "Einzelne Quellen lieferten im letzten Lauf keine Daten. Im Datenmotor prüfen." });
+  if (g && g.kiAnalyseFehler) items.push({ level: "warn", title: "KI-Analyse heute mit Fehlern", detail: "Einzelne KI-Calls sind heute fehlgeschlagen. KI-Status im Datenmotor prüfen." });
+  return items;
+}
+
+// B. Handlungsbedarf — nur echte Hinweise, sonst ruhiger Leerzustand. Keine Buttons:
+// echte (gefährliche) Aktionen bleiben ausschließlich im markierten Recovery-Bereich.
+function renderAdminActionCenter(ds, rec) {
+  const items = adminActionItems(ds, rec);
+  const inner = items.length
+    ? `<div class="ac-list">${items.map((it) => `
+        <div class="ac-item ac-item--${escapeAttribute(it.level)}">
+          <span class="ac-dot" aria-hidden="true"></span>
+          <div class="ac-body">
+            <p class="ac-title">${escapeHtml(it.title)}</p>
+            ${it.detail ? `<p class="ac-detail">${escapeHtml(it.detail)}</p>` : ""}
+          </div>
+        </div>`).join("")}</div>`
+    : `<div class="ac-list"><p class="ac-empty">Alles ruhig. Kein Eingreifen nötig.</p></div>`;
+  return adminSection("Handlungsbedarf", items.length ? `${items.length} ${items.length === 1 ? "Hinweis" : "Hinweise"}` : "", inner);
+}
+
+// C. Datenmotor — kompakte Kernzahlen (Rest steckt in „Details anzeigen").
+function renderAdminDatenmotorSummary(ds, rec, crawlReport) {
+  const g = (ds && ds.global) || {};
+  const ko = (rec && rec.knowledgeObjects && rec.knowledgeObjects.available !== false) ? rec.knowledgeObjects : null;
+  const lock = (rec && rec.understandingLock) || {};
+  const cr = crawlReport && !crawlReport.noData ? crawlReport : null;
+  const cell = (k, v, tone) => `<div class="dm-cell"><span class="dm-k">${escapeHtml(k)}</span><span class="dm-v${tone ? ` dm-v--${tone}` : ""}">${v}</span></div>`;
+  const lockText = lock.aktiv ? `<span class="ds-warn">Aktiv</span>` : lock.verdaechtig ? `<span class="ds-warn">Veraltet</span>` : (rec ? `<span class="ds-ok">Frei</span>` : "—");
+  const failed = ko ? dsNum(ko.failed) : null;
+  return `<div class="dm-summary">
+    ${cell("Letzter Lauf", g.letzterLauf ? escapeHtml(adminRelAge(g.letzterLauf)) : "—")}
+    ${cell("Quellen", g.quellen ? `${dsNum(g.quellen.erfolgreich)}/${dsNum(g.quellen.geprueft)}` : "—")}
+    ${cell("Neue Dokumente", cr && cr.deduplicatedArticles != null ? escapeHtml(String(cr.deduplicatedArticles)) : "—")}
+    ${cell("Knowledge Objects", cr && cr.newKnowledgeObjects != null ? escapeHtml(String(cr.newKnowledgeObjects)) : (ko ? escapeHtml(String(dsNum(ko.complete))) : "—"))}
+    ${cell("Pending", ko ? escapeHtml(String(dsNum(ko.pending))) : "—")}
+    ${cell("Failed", failed == null ? "—" : String(failed), failed > 0 ? "bad" : null)}
+    ${cell("Lock", lockText)}
+  </div>`;
+}
+
+// D. Profile — kompakte Summe + verdichtete Liste (große Karten nur in Details).
+function renderAdminProfilesSection(ds, detailsInner) {
+  const g = (ds && ds.global) || {};
+  const accounts = Array.isArray(ds && ds.perAccount) ? ds.perAccount : [];
+  const complete = accounts.filter((a) => a.profilVollstaendigkeit && a.profilVollstaendigkeit.complete).length;
+  const problems = accounts.filter((a) => a.ampel && a.ampel !== "gruen").length;
+  const profLabel = { full: "Vollständig", restricted: "Eingeschränkt", empty: "Kein Profil" };
+  const dotCls = (a) => a === "gruen" ? "ok" : a === "gelb" ? "warn" : a === "rot" ? "bad" : "unknown";
+  const summary = `<div class="admin-stats-row admin-stats-row--5">
+    ${adminStatCell(g.profile ? dsNum(g.profile.ausgewertet) : accounts.length, "Profile aktiv")}
+    ${adminStatCell(complete, "Vollständig")}
+    ${adminStatCell(g.briefing ? dsNum(g.briefing.sichtbarBeiAccounts) : "—", "Briefings sichtbar")}
+    ${adminStatCell(problems, "Mit Problemen", problems > 0 ? "warn" : null)}
+    ${adminStatCell(g.profile ? dsNum(g.profile.personalisierungEingeschraenkt) : "—", "Eingeschränkt")}
+  </div>`;
+  const rows = accounts.length
+    ? accounts.map((a) => `<tr>
+        <td data-label="Name"><span class="pf-dot pf-dot--${dotCls(a.ampel)}" aria-hidden="true"></span>${escapeHtml(a.name || a.politicianId || "")}</td>
+        <td data-label="Status">${a.ampel === "gruen" ? "In Ordnung" : a.ampel === "gelb" ? "Eingeschränkt" : a.ampel === "rot" ? "Kein Wert" : "—"}</td>
+        <td data-label="Profil">${escapeHtml(profLabel[a.profilVollstaendigkeit && a.profilVollstaendigkeit.level] || "—")}</td>
+        <td data-label="Briefing">${a.briefingSichtbar ? "Ja" : "Nein"}</td>
+        <td data-label="Punkte">${dsFmt(a.briefingPunkte)}</td>
+        <td data-label="Kosten heute">${dsCost(a.kiKosten)}</td>
+      </tr>`).join("")
+    : `<tr><td colspan="6" class="empty-state">Noch keine Accounts zur Auswertung.</td></tr>`;
+  const list = `<div class="admin-table-wrap"><table class="admin-table admin-table--compact">
+    <thead><tr><th>Name</th><th>Status</th><th>Profil</th><th>Briefing</th><th>Punkte</th><th>Kosten heute</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
+  return adminSection("Profile", `${accounts.length} ${accounts.length === 1 ? "Account" : "Accounts"}`, `${summary}${list}${detailsInner ? adminDetails("Verwaltung & Detailkarten anzeigen", detailsInner) : ""}`);
+}
+
+// E. Kosten intern — leiser, verdichteter Kopf (Details eingeklappt).
+function renderAdminKostenSummary(stats, periodLabel) {
+  const cost = stats && typeof stats.totalCostUsd === "number" ? stats.totalCostUsd : null;
+  const calls = stats && stats.totalCalls != null ? stats.totalCalls : null;
+  const perUser = Array.isArray(stats && stats.perUser)
+    ? stats.perUser.slice().sort((a, b) => (b.totalCostUsd || 0) - (a.totalCostUsd || 0))
+    : [];
+  const top = perUser[0];
+  return `<div class="admin-stats-row admin-stats-row--3">
+    ${adminStatCell(cost != null ? `$${cost.toFixed(3)}` : "—", `Kosten ${periodLabel}`, "cost")}
+    ${adminStatCell(calls != null ? String(calls) : "—", "Calls")}
+    ${adminStatCell(top && top.totalCostUsd != null ? `$${fmtCost(top.totalCostUsd)}` : "—", top ? `Top: ${top.name || top.userId}` : "Top Nutzer")}
+  </div>`;
 }
 
 function renderAdminView() {
@@ -1292,226 +1407,227 @@ function renderAdminView() {
 
       ${renderAdminOperatorOverview(data, adminDataStatus, adminRecovery)}
 
-      <div class="admin-period-toggle">
-        <button class="admin-period-btn${adminPeriod === "today" ? " is-active" : ""}" type="button" data-admin-period="today">Heute</button>
-        <button class="admin-period-btn${adminPeriod === "days30" ? " is-active" : ""}" type="button" data-admin-period="days30">30 Tage</button>
-      </div>
+      ${renderAdminActionCenter(adminDataStatus, adminRecovery)}
 
-      <div class="admin-stats-row admin-stats-row--5">
-        <div class="admin-stat-card">
-          <span class="admin-stat-num">${data.counts?.users ?? 0}</span>
-          <span class="admin-stat-label">Nutzer</span>
-        </div>
-        <div class="admin-stat-card">
-          <span class="admin-stat-num">${data.stats?.[adminPeriod]?.articles ?? "—"}</span>
-          <span class="admin-stat-label">Artikel</span>
-        </div>
-        <div class="admin-stat-card">
-          <span class="admin-stat-num">${data.stats?.[adminPeriod]?.kos ?? "—"}</span>
-          <span class="admin-stat-label">KOs</span>
-        </div>
-        <div class="admin-stat-card">
-          <span class="admin-stat-num">${data.stats?.[adminPeriod]?.briefings ?? "—"}</span>
-          <span class="admin-stat-label">Briefings</span>
-        </div>
-        <div class="admin-stat-card">
-          ${(function() {
-            const cost = data.stats?.[adminPeriod]?.totalCostUsd;
-            return typeof cost === "number"
-              ? `<span class="admin-stat-num admin-stat-num--cost">$${cost.toFixed(3)}</span><span class="admin-stat-sub">€${(cost * USD_TO_EUR).toFixed(3)}</span>`
-              : `<span class="admin-stat-num admin-stat-num--cost">—</span>`;
-          })()}
-          <span class="admin-stat-label">KI-Kosten</span>
-        </div>
-      </div>
+      ${adminSection("Datenmotor", "Crawl · Verstehen · Recovery",
+        `${renderAdminDatenmotorSummary(adminDataStatus, adminRecovery, data.crawlReport)}
+         ${adminDetails("Crawl-Trichter & Datenstatus anzeigen", `${renderAdminCrawlStats(data.crawlReport)}${renderAdminDataStatus(adminDataStatus, "global")}`)}
+         <div class="admin-recovery-wrap">
+           <p class="admin-recovery-flag">Interner Recovery-Bereich — Aktionen laufen nur nach bewusstem Klick und mit Bestätigung.</p>
+           ${adminDetails("Recovery-Aktionen (intern) anzeigen", safeRenderAdminRecovery(adminRecovery, adminRecoveryResult, adminPendingDiagnose))}
+         </div>`
+      )}
 
-      <div class="admin-charts-row">
-        ${renderAdminEngineChart(data.stats?.[adminPeriod])}
-        ${renderAdminCostsCard(data.stats?.[adminPeriod])}
-      </div>
+      ${renderAdminProfilesSection(adminDataStatus, renderAdminProfileManagement(adminDataStatus, data, userRows, assignmentRows, referenten, mandateOptions, mandates, feedback))}
 
-      ${renderAdminCrawlStats(data.crawlReport)}
+      ${adminSection("Kosten intern", "Nur im Admin sichtbar",
+        `<div class="admin-period-toggle">
+           <button class="admin-period-btn${adminPeriod === "today" ? " is-active" : ""}" type="button" data-admin-period="today">Heute</button>
+           <button class="admin-period-btn${adminPeriod === "days30" ? " is-active" : ""}" type="button" data-admin-period="days30">30 Tage</button>
+         </div>
+         ${renderAdminKostenSummary(data.stats?.[adminPeriod], adminPeriod === "today" ? "heute" : "30 Tage")}
+         ${adminDetails("Kosten pro Engine & pro Nutzer anzeigen", `<div class="admin-charts-row">${renderAdminEngineChart(data.stats?.[adminPeriod])}${renderAdminCostsCard(data.stats?.[adminPeriod])}</div>`)}`
+      )}
 
-      ${renderAdminDataStatus(adminDataStatus)}
+      ${adminSection("System und Sicherheit", "Version · Umgebung · Dienste · Zugriff", renderAdminSystemBody(sys, data, adminDataStatus, errors, audit))}
 
-      ${safeRenderAdminRecovery(adminRecovery, adminRecoveryResult, adminPendingDiagnose)}
+    </div>
+  `;
+}
 
-      <div class="admin-body">
-        <div class="admin-col-primary">
+// Profile-Detailbereich (in „Verwaltung & Detailkarten anzeigen" eingeklappt): die
+// großen Pro-Account-Karten sowie die vollständige Nutzer-/Zuweisungs-/Anlegen-
+// Verwaltung + Mandate + Feedback. Markup unverändert übernommen — nur verschoben
+// und eingeklappt, damit die Hauptansicht ruhig bleibt.
+function renderAdminProfileManagement(ds, data, userRows, assignmentRows, referenten, mandateOptions, mandates, feedback) {
+  return `
+    ${renderAdminDataStatus(ds, "accounts")}
+    <div class="admin-body">
+      <div class="admin-col-primary">
 
-          <div class="admin-card admin-card-flush">
-            <div class="admin-card-header">
-              <div>
-                <h2 class="admin-section-title">Nutzerverwaltung</h2>
-                <p class="admin-section-sub">Alle Nutzer im System</p>
-              </div>
-            </div>
-            <div class="admin-table-wrap">
-              <table class="admin-table">
-                <thead><tr><th>Name</th><th>Rolle</th><th>Status</th><th>Aktivität</th><th>Bezahlt bis</th><th></th></tr></thead>
-                <tbody>${userRows}</tbody>
-              </table>
-            </div>
-            <div class="admin-subsection">
-              <p class="admin-subsection-label">Passwort zurücksetzen</p>
-              <form class="admin-inline-form" id="resetPasswordForm">
-                <select name="userId" aria-label="Nutzer">
-                  ${(data.users || []).map((user) => `<option value="${escapeAttribute(user.id)}">${escapeHtml(user.name || user.email)}</option>`).join("")}
-                </select>
-                <div class="password-field" style="flex:1; min-width:160px;">
-                  <input name="password" id="resetPasswordInput" type="password" placeholder="Neues Passwort (min. 8)" aria-label="Neues Passwort" autocomplete="new-password" />
-                  <button type="button" class="password-toggle" data-toggle-password="resetPasswordInput" aria-label="Passwort anzeigen">Anzeigen</button>
-                </div>
-                <button class="secondary-button" type="submit">Zurücksetzen</button>
-              </form>
-              <small class="admin-form-error" id="resetPasswordError"></small>
+        <div class="admin-card admin-card-flush">
+          <div class="admin-card-header">
+            <div>
+              <h2 class="admin-section-title">Nutzerverwaltung</h2>
+              <p class="admin-section-sub">Alle Nutzer im System</p>
             </div>
           </div>
-
-          <div class="admin-card admin-card-flush">
-            <div class="admin-card-header">
-              <div>
-                <h2 class="admin-section-title">Zuweisungen</h2>
-                <p class="admin-section-sub">Referent:in → Mandat</p>
-              </div>
-            </div>
-            <div class="admin-table-wrap">
-              <table class="admin-table">
-                <thead><tr><th>Referent:in</th><th>Mandat</th><th></th></tr></thead>
-                <tbody>${assignmentRows}</tbody>
-              </table>
-            </div>
-            <div class="admin-subsection">
-              <p class="admin-subsection-label">Neue Zuweisung</p>
-              <form class="admin-inline-form" id="assignForm">
-                <select name="userId" aria-label="Referent:in">
-                  ${referenten.map((user) => `<option value="${escapeAttribute(user.id)}">${escapeHtml(user.name || user.email)}</option>`).join("") || `<option value="">— keine Referent:innen —</option>`}
-                </select>
-                <select name="politicianId" aria-label="Mandat">
-                  ${mandateOptions.map((entry) => `<option value="${escapeAttribute(entry.id)}">${escapeHtml(entry.name)}</option>`).join("")}
-                </select>
-                <button class="primary-button" type="submit">Zuweisen</button>
-              </form>
-              <small class="admin-form-error" id="assignError"></small>
-            </div>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead><tr><th>Name</th><th>Rolle</th><th>Status</th><th>Aktivität</th><th>Bezahlt bis</th><th></th></tr></thead>
+              <tbody>${userRows}</tbody>
+            </table>
           </div>
-
+          <div class="admin-subsection">
+            <p class="admin-subsection-label">Passwort zurücksetzen</p>
+            <form class="admin-inline-form" id="resetPasswordForm">
+              <select name="userId" aria-label="Nutzer">
+                ${(data.users || []).map((user) => `<option value="${escapeAttribute(user.id)}">${escapeHtml(user.name || user.email)}</option>`).join("")}
+              </select>
+              <div class="password-field" style="flex:1; min-width:160px;">
+                <input name="password" id="resetPasswordInput" type="password" placeholder="Neues Passwort (min. 8)" aria-label="Neues Passwort" autocomplete="new-password" />
+                <button type="button" class="password-toggle" data-toggle-password="resetPasswordInput" aria-label="Passwort anzeigen">Anzeigen</button>
+              </div>
+              <button class="secondary-button" type="submit">Zurücksetzen</button>
+            </form>
+            <small class="admin-form-error" id="resetPasswordError"></small>
+          </div>
         </div>
 
-        <div class="admin-col-secondary">
-
-          <form class="admin-card admin-card-flush admin-create-form" id="createUserForm">
-            <div class="admin-card-header">
-              <div>
-                <h2 class="admin-section-title">Nutzer anlegen</h2>
-                <p class="admin-section-sub">Neuen Nutzer im System erstellen</p>
-              </div>
-            </div>
-            <div class="admin-field-group">
-              <input name="name" type="text" placeholder="Vollständiger Name" aria-label="Name" required />
-              <input name="email" type="email" placeholder="name@bundestag.de" aria-label="E-Mail" required />
-              <select name="role" aria-label="Rolle">
-                <option value="abgeordneter">Abgeordnete:r</option>
-                <option value="referent">Referent:in</option>
-                <option value="demo">Demo</option>
-                <option value="admin">Administrator</option>
-              </select>
-              <div class="password-field">
-                <input name="password" id="createUserPassword" type="password" placeholder="Mind. 8 Zeichen" aria-label="Passwort" autocomplete="new-password" required />
-                <button type="button" class="password-toggle" data-toggle-password="createUserPassword" aria-label="Passwort anzeigen">Anzeigen</button>
-              </div>
-            </div>
-            <div class="admin-quickstart">
-              <p class="admin-quickstart-hint">Schnellstart <span class="admin-quickstart-opt">(optional)</span></p>
-              <select name="party" aria-label="Partei / Fraktion">
-                <option value="">Partei / Fraktion</option>
-                <option>SPD</option>
-                <option>CDU</option>
-                <option>CSU</option>
-                <option>Bündnis 90/Die Grünen</option>
-                <option>FDP</option>
-                <option>AfD</option>
-                <option>BSW</option>
-                <option>Die Linke</option>
-                <option>SSW</option>
-                <option>Fraktionslos</option>
-              </select>
-              <select name="committee" aria-label="Ausschuss">
-                <option value="">Ausschuss wählen</option>
-                <option>Auswärtiger Ausschuss</option>
-                <option>Innenausschuss</option>
-                <option>Rechtsausschuss</option>
-                <option>Finanzausschuss</option>
-                <option>Haushaltsausschuss</option>
-                <option>Wirtschaftsausschuss</option>
-                <option>Arbeit und Soziales</option>
-                <option>Verteidigungsausschuss</option>
-                <option>Ernährung und Landwirtschaft</option>
-                <option>Familienausschuss</option>
-                <option>Gesundheitsausschuss</option>
-                <option>Verkehrsausschuss</option>
-                <option>Umweltausschuss</option>
-                <option>Bildung und Forschung</option>
-                <option>Digitales</option>
-                <option>Wohnungsbau</option>
-                <option>Sportausschuss</option>
-                <option>Tourismus</option>
-                <option>Europaausschuss</option>
-                <option>Wirtschaftliche Zusammenarbeit</option>
-                <option>Petitionsausschuss</option>
-              </select>
-              <input name="constituency" type="text" placeholder="Wahlkreis (z. B. 096 – Köln I)" aria-label="Wahlkreis" />
-              <select name="state" aria-label="Bundesland">
-                <option value="">Bundesland wählen</option>
-                <option>Baden-Württemberg</option>
-                <option>Bayern</option>
-                <option>Berlin</option>
-                <option>Brandenburg</option>
-                <option>Bremen</option>
-                <option>Hamburg</option>
-                <option>Hessen</option>
-                <option>Mecklenburg-Vorpommern</option>
-                <option>Niedersachsen</option>
-                <option>Nordrhein-Westfalen</option>
-                <option>Rheinland-Pfalz</option>
-                <option>Saarland</option>
-                <option>Sachsen</option>
-                <option>Sachsen-Anhalt</option>
-                <option>Schleswig-Holstein</option>
-                <option>Thüringen</option>
-              </select>
-              <input name="focusTopics" type="text" placeholder="Schwerpunktthemen (Komma-getrennt)" aria-label="Schwerpunktthemen" />
-            </div>
-            <div class="admin-form-foot">
-              <button class="primary-button" type="submit">Nutzer erstellen</button>
-              <small class="admin-form-error" id="createUserError"></small>
-            </div>
-          </form>
-
-          <div class="admin-card">
-            <h2 class="admin-section-title">System</h2>
-            <div class="admin-sys-grid">
-              <div class="admin-sys-item"><span class="admin-sys-key">Version</span><span class="admin-sys-val" title="Laufende Deploy-Version (Commit)">${escapeHtml(sys.deploy?.commit || sys.deploy?.version || "—")}</span></div>
-              <div class="admin-sys-item"><span class="admin-sys-key">Umgebung</span><span class="admin-sys-val">${escapeHtml(adminEnvLabel(sys.deploy?.environment))}</span></div>
-              ${sys.deploy?.branch ? `<div class="admin-sys-item"><span class="admin-sys-key">Branch</span><span class="admin-sys-val">${escapeHtml(sys.deploy.branch)}</span></div>` : ""}
-              <div class="admin-sys-item"><span class="admin-sys-key">Datenstand</span><span class="admin-sys-val" title="Zeitpunkt dieser Admin-Auswertung">${escapeHtml(data.generatedAt ? dsDateLabel(data.generatedAt) : "—")}</span></div>
-              <div class="admin-sys-item"><span class="admin-sys-key">Speicher</span><span class="admin-sys-val">${escapeHtml(sys.storage?.backend || "?")}${sys.storage?.supabaseConfigured ? " ✓" : ""}</span></div>
-              <div class="admin-sys-item"><span class="admin-sys-key">AI</span><span class="admin-sys-val">${sys.ai?.enabled ? "Aktiv" : "Aus"}</span></div>
-              <div class="admin-sys-item"><span class="admin-sys-key">Modell</span><span class="admin-sys-val">${escapeHtml(sys.ai?.model || "—")}</span></div>
-              <div class="admin-sys-item"><span class="admin-sys-key">Push</span><span class="admin-sys-val">${sys.push?.enabled ? "Aktiv" : "Aus"}</span></div>
-              <div class="admin-sys-item"><span class="admin-sys-key">Auth</span><span class="admin-sys-val">${sys.authMode ? "Accounts" : "Pilot"}</span></div>
-              <div class="admin-sys-item"><span class="admin-sys-key">Briefings</span><span class="admin-sys-val">${escapeHtml(String(sys.store?.briefings?.total ?? "—"))}</span></div>
+        <div class="admin-card admin-card-flush">
+          <div class="admin-card-header">
+            <div>
+              <h2 class="admin-section-title">Zuweisungen</h2>
+              <p class="admin-section-sub">Referent:in → Mandat</p>
             </div>
           </div>
-
-
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead><tr><th>Referent:in</th><th>Mandat</th><th></th></tr></thead>
+              <tbody>${assignmentRows}</tbody>
+            </table>
+          </div>
+          <div class="admin-subsection">
+            <p class="admin-subsection-label">Neue Zuweisung</p>
+            <form class="admin-inline-form" id="assignForm">
+              <select name="userId" aria-label="Referent:in">
+                ${referenten.map((user) => `<option value="${escapeAttribute(user.id)}">${escapeHtml(user.name || user.email)}</option>`).join("") || `<option value="">— keine Referent:innen —</option>`}
+              </select>
+              <select name="politicianId" aria-label="Mandat">
+                ${mandateOptions.map((entry) => `<option value="${escapeAttribute(entry.id)}">${escapeHtml(entry.name)}</option>`).join("")}
+              </select>
+              <button class="primary-button" type="submit">Zuweisen</button>
+            </form>
+            <small class="admin-form-error" id="assignError"></small>
+          </div>
         </div>
+
       </div>
 
-      ${renderAdminFeedbackSection(feedback)}
+      <div class="admin-col-secondary">
 
-      ${renderAdminMandatesSection(mandates)}
+        <form class="admin-card admin-card-flush admin-create-form" id="createUserForm">
+          <div class="admin-card-header">
+            <div>
+              <h2 class="admin-section-title">Nutzer anlegen</h2>
+              <p class="admin-section-sub">Neuen Nutzer im System erstellen</p>
+            </div>
+          </div>
+          <div class="admin-field-group">
+            <input name="name" type="text" placeholder="Vollständiger Name" aria-label="Name" required />
+            <input name="email" type="email" placeholder="name@bundestag.de" aria-label="E-Mail" required />
+            <select name="role" aria-label="Rolle">
+              <option value="abgeordneter">Abgeordnete:r</option>
+              <option value="referent">Referent:in</option>
+              <option value="demo">Demo</option>
+              <option value="admin">Administrator</option>
+            </select>
+            <div class="password-field">
+              <input name="password" id="createUserPassword" type="password" placeholder="Mind. 8 Zeichen" aria-label="Passwort" autocomplete="new-password" required />
+              <button type="button" class="password-toggle" data-toggle-password="createUserPassword" aria-label="Passwort anzeigen">Anzeigen</button>
+            </div>
+          </div>
+          <div class="admin-quickstart">
+            <p class="admin-quickstart-hint">Schnellstart <span class="admin-quickstart-opt">(optional)</span></p>
+            <select name="party" aria-label="Partei / Fraktion">
+              <option value="">Partei / Fraktion</option>
+              <option>SPD</option>
+              <option>CDU</option>
+              <option>CSU</option>
+              <option>Bündnis 90/Die Grünen</option>
+              <option>FDP</option>
+              <option>AfD</option>
+              <option>BSW</option>
+              <option>Die Linke</option>
+              <option>SSW</option>
+              <option>Fraktionslos</option>
+            </select>
+            <select name="committee" aria-label="Ausschuss">
+              <option value="">Ausschuss wählen</option>
+              <option>Auswärtiger Ausschuss</option>
+              <option>Innenausschuss</option>
+              <option>Rechtsausschuss</option>
+              <option>Finanzausschuss</option>
+              <option>Haushaltsausschuss</option>
+              <option>Wirtschaftsausschuss</option>
+              <option>Arbeit und Soziales</option>
+              <option>Verteidigungsausschuss</option>
+              <option>Ernährung und Landwirtschaft</option>
+              <option>Familienausschuss</option>
+              <option>Gesundheitsausschuss</option>
+              <option>Verkehrsausschuss</option>
+              <option>Umweltausschuss</option>
+              <option>Bildung und Forschung</option>
+              <option>Digitales</option>
+              <option>Wohnungsbau</option>
+              <option>Sportausschuss</option>
+              <option>Tourismus</option>
+              <option>Europaausschuss</option>
+              <option>Wirtschaftliche Zusammenarbeit</option>
+              <option>Petitionsausschuss</option>
+            </select>
+            <input name="constituency" type="text" placeholder="Wahlkreis (z. B. 096 – Köln I)" aria-label="Wahlkreis" />
+            <select name="state" aria-label="Bundesland">
+              <option value="">Bundesland wählen</option>
+              <option>Baden-Württemberg</option>
+              <option>Bayern</option>
+              <option>Berlin</option>
+              <option>Brandenburg</option>
+              <option>Bremen</option>
+              <option>Hamburg</option>
+              <option>Hessen</option>
+              <option>Mecklenburg-Vorpommern</option>
+              <option>Niedersachsen</option>
+              <option>Nordrhein-Westfalen</option>
+              <option>Rheinland-Pfalz</option>
+              <option>Saarland</option>
+              <option>Sachsen</option>
+              <option>Sachsen-Anhalt</option>
+              <option>Schleswig-Holstein</option>
+              <option>Thüringen</option>
+            </select>
+            <input name="focusTopics" type="text" placeholder="Schwerpunktthemen (Komma-getrennt)" aria-label="Schwerpunktthemen" />
+          </div>
+          <div class="admin-form-foot">
+            <button class="primary-button" type="submit">Nutzer erstellen</button>
+            <small class="admin-form-error" id="createUserError"></small>
+          </div>
+        </form>
 
+      </div>
+    </div>
+
+    ${renderAdminMandatesSection(mandates)}
+
+    ${renderAdminFeedbackSection(feedback)}`;
+}
+
+// F. System und Sicherheit: Deploy-Identität, Dienste, Secrets-STATUS (nur ja/nein,
+// keine Werte), Admin-Zugriff — plus Logs (Letzte Fehler & Audit) eingeklappt.
+function renderAdminSystemBody(sys, data, ds, errors, audit) {
+  const ki = ds && ds.global && ds.global.kiStatus && ds.global.kiStatus.available !== false ? ds.global.kiStatus : null;
+  const jaNein = (b) => b ? `<span class="ds-ok">Gesetzt</span>` : `<span class="ds-bad">Fehlt</span>`;
+  const secretsRows = ki ? `
+      <div class="admin-sys-item"><span class="admin-sys-key">KI-Schlüssel</span><span class="admin-sys-val">${jaNein(ki.azureKeyGesetzt)}</span></div>
+      <div class="admin-sys-item"><span class="admin-sys-key">KI-Endpoint</span><span class="admin-sys-val">${jaNein(ki.azureEndpointGesetzt)}</span></div>` : "";
+  return `
+    <div class="admin-card">
+      <div class="admin-sys-grid">
+        <div class="admin-sys-item"><span class="admin-sys-key">Version</span><span class="admin-sys-val" title="Laufende Deploy-Version (Commit)">${escapeHtml(sys.deploy?.commit || sys.deploy?.version || "—")}</span></div>
+        <div class="admin-sys-item"><span class="admin-sys-key">Umgebung</span><span class="admin-sys-val">${escapeHtml(adminEnvLabel(sys.deploy?.environment))}</span></div>
+        ${sys.deploy?.branch ? `<div class="admin-sys-item"><span class="admin-sys-key">Branch</span><span class="admin-sys-val">${escapeHtml(sys.deploy.branch)}</span></div>` : ""}
+        <div class="admin-sys-item"><span class="admin-sys-key">Datenstand</span><span class="admin-sys-val" title="Zeitpunkt dieser Admin-Auswertung">${escapeHtml(data.generatedAt ? dsDateLabel(data.generatedAt) : "—")}</span></div>
+        <div class="admin-sys-item"><span class="admin-sys-key">Speicher</span><span class="admin-sys-val">${escapeHtml(sys.storage?.backend || "?")}${sys.storage?.supabaseConfigured ? " ✓" : ""}</span></div>
+        <div class="admin-sys-item"><span class="admin-sys-key">AI</span><span class="admin-sys-val">${sys.ai?.enabled ? "Aktiv" : "Aus"}</span></div>
+        <div class="admin-sys-item"><span class="admin-sys-key">Modell</span><span class="admin-sys-val">${escapeHtml(sys.ai?.model || "—")}</span></div>
+        <div class="admin-sys-item"><span class="admin-sys-key">Push</span><span class="admin-sys-val">${sys.push?.enabled ? "Aktiv" : "Aus"}</span></div>
+        <div class="admin-sys-item"><span class="admin-sys-key">Admin-Zugriff</span><span class="admin-sys-val">${sys.authMode ? "Rollen-geschützt" : "Pilot-Code"}</span></div>
+        <div class="admin-sys-item"><span class="admin-sys-key">Briefings</span><span class="admin-sys-val">${escapeHtml(String(sys.store?.briefings?.total ?? "—"))}</span></div>
+        ${secretsRows}
+      </div>
+      <p class="admin-sys-note">Secrets werden nur als Status angezeigt (gesetzt/fehlt) — nie im Klartext.</p>
+    </div>
+    ${adminDetails("Logs anzeigen (Letzte Fehler & Audit)", `
       <div class="admin-bottom-row">
         <div class="admin-card">
           <h2 class="admin-section-title">Letzte Fehler</h2>
@@ -1525,10 +1641,7 @@ function renderAdminView() {
             ${audit.length ? audit.map((entry) => `<p class="admin-log-line"><small>${escapeHtml(formatBriefingDate(entry.createdAt))}</small> ${escapeHtml(entry.action || "")}${entry.actorEmail ? ` · ${escapeHtml(entry.actorEmail)}` : ""}${entry.politicianId ? ` · ${escapeHtml(entry.politicianId)}` : ""}</p>`).join("") : `<p class="empty-state">Noch keine Ereignisse.</p>`}
           </div>
         </div>
-      </div>
-
-    </div>
-  `;
+      </div>`)}`;
 }
 
 // Aufklappbares Bearbeiten-Panel je Nutzer: Status + Kundenfelder. Speichert
@@ -1737,7 +1850,10 @@ function dsDateLabel(iso) {
   catch (_) { return escapeHtml(String(iso)); }
 }
 
-function renderAdminDataStatus(ds) {
+// scope: "all" (Default) | "global" (nur Motor-Karte, ohne Pro-Account) | "accounts"
+// (nur die Pro-Account-Detailkarten). Rein zur Gliederung — Pro-Account steckt jetzt
+// verdichtet im Profile-Bereich, die großen Karten nur noch in dessen Detailansicht.
+function renderAdminDataStatus(ds, scope = "all") {
   if (!ds || !ds.global) {
     return `<section class="ds-status"><h2 class="admin-section-title">Datenstatus (intern)</h2>
       <p class="ds-note">Datenstatus derzeit nicht verfügbar.</p></section>`;
@@ -1832,6 +1948,18 @@ function renderAdminDataStatus(ds) {
     ? Object.entries(ds.legende).map(([k, v]) => `<li><strong>${escapeHtml(k)}</strong>: ${escapeHtml(String(v))}</li>`).join("")
     : "";
 
+  // Nur die Pro-Account-Detailkarten (für den Profile-Detailbereich).
+  if (scope === "accounts") {
+    return `
+      <section class="ds-status">
+        ${accountCards ? `<div class="ds-accounts">${accountCards}</div>` : `<p class="ds-note">Noch keine Accounts zur Auswertung.</p>`}
+      </section>`;
+  }
+
+  const accountsBlock = scope === "global" ? "" : `
+      <div class="ds-accounts-title">Pro Account</div>
+      ${accountCards ? `<div class="ds-accounts">${accountCards}</div>` : `<p class="ds-note">Noch keine Accounts zur Auswertung.</p>`}`;
+
   return `
     <section class="ds-status">
       <div class="ds-header">
@@ -1842,8 +1970,7 @@ function renderAdminDataStatus(ds) {
       ${errorCard}
       ${kiCard}
       ${globalCard}
-      <div class="ds-accounts-title">Pro Account</div>
-      ${accountCards ? `<div class="ds-accounts">${accountCards}</div>` : `<p class="ds-note">Noch keine Accounts zur Auswertung.</p>`}
+      ${accountsBlock}
       ${ds.hinweis ? `<p class="ds-note">${escapeHtml(ds.hinweis)}</p>` : ""}
       ${legend ? `<details class="ds-legend"><summary>Bedeutung der Werte</summary><ul>${legend}</ul></details>` : ""}
     </section>`;
