@@ -160,6 +160,9 @@ async function main() {
     `got=${stAuto.currentHelmutState.briefingType} exp=${expectedAuto}`);
   check("Read-Pfad: abgeleiteter Slot ist ein gueltiger Wert",
     ["morning", "midday", "evening", "daily"].includes(stAuto.currentHelmutState.briefingType));
+  // debugPrimary NUR bei ?debugPrimary=1: die normale Antwort wird NICHT erweitert.
+  check("Read-Pfad: normale Antwort traegt KEIN debugPrimary (Gate: keine unnoetige Erweiterung)",
+    !("debugPrimary" in stAuto) && !("debugPrimary" in stMorning));
 
   // --- e) 0-KI-Invariante ---------------------------------------------------
   // Der Slot-aware Read darf keinen LLM-Call anstossen. Wir verproben, dass die

@@ -375,6 +375,56 @@ check("14g: augmentFreshCandidates ohne decide-Callback -> unveraendert (robust)
 check("14g: augmentFreshCandidates loest keinen Doppel-Append aus, wenn frischer schon bewertet ist",
   contract.augmentFreshCandidates(uUnderstood, augmented, decideFor, NOW11).length === augmented.length);
 
+// --- 15) buildPrimarySelectionDebug: read-only Auswahl-Diagnose (debugPrimary=1) --------
+// Erklaert aus denselben Read-Pfad-Daten, warum ein Vorgang Primary wurde und was mit den
+// frischen Vorgaengen passiert ist. KEINE Secrets/Texte/Kosten/PII.
+const dbgBefore = [flagDec];                                   // stale Top, frischer abgeschnitten
+const dbgAfter = contract.augmentFreshCandidates(uUnderstood, dbgBefore, decideFor, NOW11); // + frischer
+const dbgState = contract.buildCurrentHelmutState({ profile: profFresh, decisions: dbgAfter, kosById: uKosById, sourcesByVorgang: {}, now: NOW11 });
+const dbg = contract.buildPrimarySelectionDebug({
+  knowledgeObjectsLoaded: uUnderstood.length, understood: uUnderstood,
+  decisionsBefore: dbgBefore, decisionsAfter: dbgAfter, kosById: uKosById, sourcesByVorgang: {}, now: NOW11, state: dbgState
+});
+check("15a: debug.selectedPrimary = gewaehlter frischer Vorgang (matcht State)",
+  dbg.selectedPrimary && dbg.selectedPrimary.vorgang_id === "vg-fresh-11" && dbg.selectedPrimary.vorgang_id === dbgState.primaryVorgangId);
+check("15a: debug.selectedPrimary.selectedBecause erklaert die Verdraengung",
+  /verdraengt/i.test(dbg.selectedPrimary.selectedBecause));
+check("15b: debug.previousTopCandidate = verdraengter stale Flagship",
+  dbg.previousTopCandidate && dbg.previousTopCandidate.vorgang_id === "vg-destabilisiert" && dbg.previousTopCandidate.freshness === "stale");
+check("15c: candidateStats zaehlt vor/nach Augment korrekt (frischer kam durch Augment rein)",
+  dbg.candidateStats.decisionCountBeforeAugment === 1 && dbg.candidateStats.decisionCountAfterAugment === 2 &&
+  dbg.candidateStats.freshUnderstoodCount === 1 && dbg.candidateStats.freshDecisionCountBeforeAugment === 0 &&
+  dbg.candidateStats.freshDecisionCountAfterAugment === 1 && dbg.candidateStats.freshEligibleCount === 1 &&
+  dbg.candidateStats.freshRejectedCount === 0 && dbg.candidateStats.knowledgeObjectsLoaded === uUnderstood.length);
+const fc = dbg.freshCandidates[0];
+check("15d: freshCandidates[0] traegt alle Diagnose-Felder + eligible true",
+  fc && fc.vorgang_id === "vg-fresh-11" && fc.fresh === true && fc.renderable === true &&
+  fc.inDecisionsBeforeAugment === false && fc.inDecisionsAfterAugment === true &&
+  fc.eligibleForFreshPrimary === true && fc.reasonIfRejected === null &&
+  fc.decision === "Sofort reagieren" && typeof fc.score === "number");
+check("15e: currentHelmutStateStatus + generatedAt gespiegelt", dbg.currentHelmutStateStatus === "fresh" && Boolean(dbg.generatedAt));
+
+// Rejection-Fall (Ignorieren): reasonIfRejected erklaert korrekt, kein erzwungener Primary.
+const dbgAfterIrr = contract.augmentFreshCandidates([uFlag, uFreshIrrelevant], dbgBefore, decideFor, NOW11);
+const dbgStateIrr = contract.buildCurrentHelmutState({ profile: profFresh, decisions: dbgAfterIrr, kosById: { "ko-flag": uFlag, "ko-fresh-irr": uFreshIrrelevant }, sourcesByVorgang: {}, now: NOW11 });
+const dbgIrr = contract.buildPrimarySelectionDebug({
+  knowledgeObjectsLoaded: 2, understood: [uFlag, uFreshIrrelevant],
+  decisionsBefore: dbgBefore, decisionsAfter: dbgAfterIrr, kosById: { "ko-flag": uFlag, "ko-fresh-irr": uFreshIrrelevant }, sourcesByVorgang: {}, now: NOW11, state: dbgStateIrr
+});
+const fcIrr = dbgIrr.freshCandidates.find((x) => x.vorgang_id === "vg-fresh-irr");
+check("15f: rejection reason 'Ignorieren' korrekt, eligible false, Primary bleibt stale Top",
+  fcIrr && fcIrr.eligibleForFreshPrimary === false && /Ignorieren/i.test(fcIrr.reasonIfRejected) &&
+  dbgIrr.selectedPrimary.vorgang_id === "vg-destabilisiert" && dbgIrr.currentHelmutStateStatus === "stale");
+check("15f: selectedBecause erklaert den ehrlichen Stale-Verbleib (Header 'Letzter Stand')",
+  /kein frischer relevanter/i.test(dbgIrr.selectedPrimary.selectedBecause));
+
+// Sicherheit: KEINE Kosten-/Token-/Secret-/Dokumenttext-Felder in der Debug-Ausgabe.
+const serDbg = JSON.stringify(dbg) + JSON.stringify(dbgIrr);
+check("15g: Debug traegt KEINE Kosten-/Token-/LLM-/Secret-Felder",
+  !/estimatedCost|promptTokens|totalTokens|llmUsage|apiKey|secret|password|token/i.test(serDbg));
+check("15h: buildPrimarySelectionDebug crasht nicht bei leerer Eingabe",
+  (() => { try { const e = contract.buildPrimarySelectionDebug({}); return e && e.candidateStats.understoodCount === 0 && e.freshCandidates.length === 0; } catch (_) { return false; } })());
+
 // D5/6/7: kein Frontend-Fallback, kein Client-LLM, nur V3-Daten (Serialisierung pruefen).
 const serFresh = JSON.stringify(stFreshWins);
 check("D5-7: kein Kosten-/Token-/LLM-Feld im fresh-aware State (nur V3-Daten)",

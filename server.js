@@ -1256,7 +1256,15 @@ async function latestBriefingPayload({ politicianId, profile, url, previewMode =
   // spaetere Cron-Nutzung. Ohne Parameter leitet buildV3Briefing den Slot aus der
   // Serverzeit (Europe/Berlin) ab. Ungueltige Werte -> 'daily' (kein Crash).
   const slot = url && url.searchParams ? url.searchParams.get("slot") : null;
-  const briefing = await buildV3Briefing(profile, politicianId, { slot });
+  // Read-only Auswahl-Diagnose NUR bei ?debugPrimary=1 (technische Felder, keine Secrets/
+  // Texte/Kosten/PII). Ohne den Parameter bleibt die Antwort unveraendert.
+  const debug = Boolean(url && url.searchParams && url.searchParams.get("debugPrimary") === "1");
+  const debugMeta = debug ? {
+    commit: process.env.VERCEL_GIT_COMMIT_SHA ? String(process.env.VERCEL_GIT_COMMIT_SHA).slice(0, 12) : null,
+    version: process.env.VERCEL_GIT_COMMIT_SHA ? String(process.env.VERCEL_GIT_COMMIT_SHA).slice(0, 12) : null,
+    apiOrigin: (url && (url.origin || (url.protocol && url.host ? `${url.protocol}//${url.host}` : null))) || null
+  } : null;
+  const briefing = await buildV3Briefing(profile, politicianId, { slot, debug, debugMeta });
   return prepareBriefingResponse(briefing, { previewMode, compact });
 }
 
@@ -1328,7 +1336,29 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
     return sourceSafety.guardKnowledgeObject(ko, sourcesByVorgang[ko.vorgang_id] || []).status !== "quarantine";
   });
   if (!safeDecisions.length) return empty("keine-treffer");
-  return briefingContract.toBriefingContractV3({ profile, decisions: safeDecisions, kosById, sourcesByVorgang, now, briefingType });
+  const briefing = briefingContract.toBriefingContractV3({ profile, decisions: safeDecisions, kosById, sourcesByVorgang, now, briefingType });
+  // Read-only Auswahl-Diagnose (nur bei ?debugPrimary=1 -> opts.debug). Aus dem ECHTEN
+  // Read-Pfad, additiv, ohne die normale Antwort zu veraendern. Fehlerrobust (nie Crash).
+  if (opts && opts.debug) {
+    try {
+      briefing.debugPrimary = {
+        ...(opts.debugMeta || {}),
+        ...briefingContract.buildPrimarySelectionDebug({
+          knowledgeObjectsLoaded: (kos || []).length,
+          understood,
+          decisionsBefore: decisions,
+          decisionsAfter: safeDecisions,
+          kosById,
+          sourcesByVorgang,
+          now,
+          state: briefing.currentHelmutState
+        })
+      };
+    } catch (error) {
+      briefing.debugPrimary = { error: "debug-build-failed", message: error && error.message };
+    }
+  }
+  return briefing;
 }
 
 // Quellen aller Vorgänge PARALLEL laden (nicht seriell) — ein hängender Call darf
