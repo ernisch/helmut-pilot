@@ -89,6 +89,7 @@ let adminRecoveryStale = false;     // letzter Status-Reload/Poll schlug fehl ->
 let adminPendingDiagnose = null; // Ergebnis der letzten Pending-Diagnose (nur lesen)
 let adminPendingDiagnoseBusy = false;
 let expandedAdminUsers = new Set();
+let adminInfoGlobalBound = false; // dokumentweite Info-Popover-Schließer nur einmal binden
 let dailyInputs = [];
 let dailyInputsLoaded = false;
 let parliamentItems = [];
@@ -1122,7 +1123,7 @@ function renderAdminOperatorOverview(data, ds, rec) {
       else if (geprueft > 0 && erfolg === 0) { cls = "bad"; label = "Fehlgeschlagen"; }
       else if (ratio > 0.1) { cls = "warn"; label = "Mit Fehlern"; }
       else { cls = "ok"; label = "Erfolgreich"; }
-      const modus = g.modus ? ` · ${g.modus}` : "";
+      const modus = g.modus ? ` · ${adminModusLabel(g.modus)}` : "";
       const sub = g.letzterLauf ? `Letzter Lauf ${adminRelAge(g.letzterLauf)}${modus}` : "Noch kein Lauf erfasst";
       tiles.push(opTile("Pipeline", cls, label, sub, null, "admin-datenmotor"));
     }
@@ -1177,6 +1178,7 @@ function renderAdminOperatorOverview(data, ds, rec) {
   return `
     <section class="op-overview" id="admin-betrieb" aria-label="Betrieb — Betreiber-Übersicht">
       <div class="op-tiles">${tiles.join("")}</div>
+      ${renderAdminGlossary()}
     </section>`;
 }
 
@@ -1191,6 +1193,62 @@ function adminJumpLabel(id) {
     "admin-system": "System und Sicherheit",
     "admin-recovery": "Recovery (intern)"
   })[id] || id;
+}
+
+// Technischer Lauf-Modus -> menschlicher Klartext (kein roher Enum in der Anzeige).
+function adminModusLabel(m) {
+  return ({ "full": "Vollständiger Lauf", "lage-check": "Lage-Check", "incremental": "Teil-Lauf" })[String(m || "")] || String(m || "");
+}
+
+// ── Erklärungsebene (Phase 2) ────────────────────────────────────────────────
+// Ruhige Begriffs-Erklärungen für Betreiber ohne Entwicklerwissen. Max. zwei kurze
+// Sätze, allgemein (nicht auf ein Mandat zugeschnitten), keine Secrets/Rohsprache.
+const ADMIN_GLOSSARY = {
+  "System": "Gesamtzustand von Helmut auf einen Blick. Grün heißt: Pipeline, Daten und Profile sind in Ordnung.",
+  "Datenstand": "Wie aktuell die Daten sind — gemessen daran, wie lange der letzte erfolgreiche Lauf her ist.",
+  "Pipeline": "Der automatische Ablauf, der Quellen einsammelt und zu politischen Vorgängen verarbeitet.",
+  "Quellen": "Nachrichten- und Amtsquellen, die Helmut regelmäßig abfragt. Zeigt, wie viele davon geliefert haben.",
+  "Understanding": "Wandelt neue politische Vorgänge in strukturierte Einschätzungen für Helmut um.",
+  "Watchdog": "Automatische Prüfung, ob Pipeline und Datenstand regelmäßig funktionieren. Hier: der Morgen-Check um 7:30.",
+  "Morgen-Check": "Prüft, ob Helmut bis 7:30 Uhr einen brauchbaren Tagesstand erreicht hat.",
+  "Pending": "Vorgänge, die noch auf Verarbeitung warten.",
+  "Failed": "Vorgänge, deren Verarbeitung fehlgeschlagen ist und die geprüft werden sollten.",
+  "Complete": "Vorgänge, die vollständig verarbeitet wurden.",
+  "Understanding-Lock": "Schutz gegen doppelte KI-Läufe. Ist er veraltet, kann ein Lauf hängen.",
+  "Recovery": "Interne Werkzeuge, um blockierte oder fehlgeschlagene Verarbeitung bewusst zu reparieren.",
+  "Knowledge Objects": "Strukturierte politische Wissenseinträge, die aus Quellen und Dokumenten entstehen (kurz: KOs).",
+  "Briefing-Punkte": "Konkrete, priorisierte Punkte im täglichen Briefing eines Accounts.",
+  "Lage-Vorgänge": "Politische Vorgänge, die in der aktuellen Lage eines Accounts angezeigt werden.",
+  "Radar-Signale": "Erkannte Chancen und Risiken im politischen Umfeld eines Accounts.",
+  "KI-Kosten": "Interne Betriebskosten durch serverseitige KI-Verarbeitung. Nur im Admin sichtbar.",
+  "Calls": "Anzahl der serverseitigen KI-Aufrufe im gewählten Zeitraum.",
+  "Datenstatus": "Interne Detailsicht auf Datenmotor, Quellen und KI-Status.",
+  "Version": "Der aktuell ausgelieferte Stand (Commit) dieses Deployments."
+};
+
+// Kleines, barrierearmes Info-Symbol mit Popover. Die Erklärung steckt zusätzlich im
+// aria-label (Screenreader lesen sie direkt); das sichtbare Popover ist dekorativ.
+// Desktop: Hover + Fokus. Mobile: Tippen (JS toggelt aria-expanded). Löst NIE eine Aktion aus.
+function adminInfo(term) {
+  const text = ADMIN_GLOSSARY[term];
+  if (!text) return "";
+  return `<span class="admin-info-wrap"><button type="button" class="admin-info-btn" data-admin-info aria-expanded="false" aria-label="Erklärung ${escapeAttribute(term)}: ${escapeAttribute(text)}"><span aria-hidden="true">i</span></button><span class="admin-info-pop" role="tooltip" aria-hidden="true">${escapeHtml(text)}</span></span>`;
+}
+
+// Schließt alle offenen Info-Popover (Außenklick / Esc). Global, einmal gebunden.
+function closeAllAdminInfoGlobal() {
+  app.querySelectorAll('.admin-info-btn[aria-expanded="true"]').forEach((b) => {
+    b.setAttribute("aria-expanded", "false");
+    if (b.nextElementSibling) b.nextElementSibling.classList.remove("admin-info-pop--flip");
+  });
+}
+
+// Ruhige, eingeklappte Begriffs-Legende (kein großer Erklärtext in der Hauptansicht).
+// Erklärt v. a. die Kachel-Begriffe, die nicht direkt am Wert ein Info-Symbol tragen.
+function renderAdminGlossary() {
+  const terms = ["System", "Datenstand", "Pipeline", "Quellen", "Understanding", "Watchdog", "Morgen-Check", "Pending", "Failed", "Complete", "Understanding-Lock", "Recovery", "Knowledge Objects", "Briefing-Punkte", "Lage-Vorgänge", "Radar-Signale", "KI-Kosten", "Calls", "Datenstatus", "Version"];
+  const items = terms.map((t) => `<div class="admin-gl-item"><dt>${escapeHtml(t)}</dt><dd>${escapeHtml(ADMIN_GLOSSARY[t])}</dd></div>`).join("");
+  return `<details class="admin-glossary"><summary class="admin-details-sum">Begriffe erklärt</summary><dl class="admin-gl-list">${items}</dl></details>`;
 }
 
 // ── Struktur-Helfer für das Betreiber-Kontrollzentrum ─────────────────────────
@@ -1216,8 +1274,8 @@ function adminDetails(label, inner, open = false) {
 }
 
 // Kompakte Kennzahl-Kachel (wiederverwendet die bestehende admin-stat-Optik).
-function adminStatCell(value, label, tone) {
-  return `<div class="admin-stat-card"><span class="admin-stat-num${tone ? ` admin-stat-num--${escapeAttribute(tone)}` : ""}">${escapeHtml(String(value))}</span><span class="admin-stat-label">${escapeHtml(label)}</span></div>`;
+function adminStatCell(value, label, tone, info) {
+  return `<div class="admin-stat-card"><span class="admin-stat-num${tone ? ` admin-stat-num--${escapeAttribute(tone)}` : ""}">${escapeHtml(String(value))}</span><span class="admin-stat-label">${escapeHtml(label)}${info ? adminInfo(info) : ""}</span></div>`;
 }
 
 // Echte Handlungsbedarf-Punkte aus bereits geladenen Daten (kein KI-Call, keine
@@ -1268,17 +1326,17 @@ function renderAdminDatenmotorSummary(ds, rec, crawlReport) {
   const ko = (rec && rec.knowledgeObjects && rec.knowledgeObjects.available !== false) ? rec.knowledgeObjects : null;
   const lock = (rec && rec.understandingLock) || {};
   const cr = crawlReport && !crawlReport.noData ? crawlReport : null;
-  const cell = (k, v, tone) => `<div class="dm-cell"><span class="dm-k">${escapeHtml(k)}</span><span class="dm-v${tone ? ` dm-v--${tone}` : ""}">${v}</span></div>`;
+  const cell = (k, v, tone, info) => `<div class="dm-cell"><span class="dm-k">${escapeHtml(k)}${info ? adminInfo(info) : ""}</span><span class="dm-v${tone ? ` dm-v--${tone}` : ""}">${v}</span></div>`;
   const lockText = lock.aktiv ? `<span class="ds-warn">Aktiv</span>` : lock.verdaechtig ? `<span class="ds-warn">Veraltet</span>` : (rec ? `<span class="ds-ok">Frei</span>` : "—");
   const failed = ko ? dsNum(ko.failed) : null;
   return `<div class="dm-summary">
     ${cell("Letzter Lauf", g.letzterLauf ? escapeHtml(adminRelAge(g.letzterLauf)) : "—")}
-    ${cell("Quellen", g.quellen ? `${dsNum(g.quellen.erfolgreich)}/${dsNum(g.quellen.geprueft)}` : "—")}
+    ${cell("Quellen", g.quellen ? `${dsNum(g.quellen.erfolgreich)}/${dsNum(g.quellen.geprueft)}` : "—", null, "Quellen")}
     ${cell("Neue Dokumente", cr && cr.deduplicatedArticles != null ? escapeHtml(String(cr.deduplicatedArticles)) : "—")}
-    ${cell("Knowledge Objects", cr && cr.newKnowledgeObjects != null ? escapeHtml(String(cr.newKnowledgeObjects)) : (ko ? escapeHtml(String(dsNum(ko.complete))) : "—"))}
-    ${cell("Pending", ko ? escapeHtml(String(dsNum(ko.pending))) : "—")}
-    ${cell("Failed", failed == null ? "—" : String(failed), failed > 0 ? "bad" : null)}
-    ${cell("Lock", lockText)}
+    ${cell("Knowledge Objects", cr && cr.newKnowledgeObjects != null ? escapeHtml(String(cr.newKnowledgeObjects)) : (ko ? escapeHtml(String(dsNum(ko.complete))) : "—"), null, "Knowledge Objects")}
+    ${cell("Pending", ko ? escapeHtml(String(dsNum(ko.pending))) : "—", null, "Pending")}
+    ${cell("Failed", failed == null ? "—" : String(failed), failed > 0 ? "bad" : null, "Failed")}
+    ${cell("Lock", lockText, null, "Understanding-Lock")}
   </div>`;
 }
 
@@ -1308,7 +1366,7 @@ function renderAdminProfilesSection(ds, detailsInner) {
       </tr>`).join("")
     : `<tr><td colspan="6" class="empty-state">Noch keine Accounts zur Auswertung.</td></tr>`;
   const list = `<div class="admin-table-wrap"><table class="admin-table admin-table--compact">
-    <thead><tr><th>Name</th><th>Status</th><th>Profil</th><th>Briefing</th><th>Punkte</th><th>Kosten heute</th></tr></thead>
+    <thead><tr><th>Name</th><th>Status</th><th>Profil</th><th>Briefing</th><th>Punkte${adminInfo("Briefing-Punkte")}</th><th>Kosten heute${adminInfo("KI-Kosten")}</th></tr></thead>
     <tbody>${rows}</tbody></table></div>`;
   return adminSection("Profile", `${accounts.length} ${accounts.length === 1 ? "Account" : "Accounts"}`, `${summary}${list}${detailsInner ? adminDetails("Verwaltung & Detailkarten anzeigen", detailsInner) : ""}`, "admin-profile");
 }
@@ -1322,8 +1380,8 @@ function renderAdminKostenSummary(stats, periodLabel) {
     : [];
   const top = perUser[0];
   return `<div class="admin-stats-row admin-stats-row--3">
-    ${adminStatCell(cost != null ? `$${cost.toFixed(3)}` : "—", `Kosten ${periodLabel}`, "cost")}
-    ${adminStatCell(calls != null ? String(calls) : "—", "Calls")}
+    ${adminStatCell(cost != null ? `$${cost.toFixed(3)}` : "—", `Kosten ${periodLabel}`, "cost", "KI-Kosten")}
+    ${adminStatCell(calls != null ? String(calls) : "—", "Calls", null, "Calls")}
     ${adminStatCell(top && top.totalCostUsd != null ? `$${fmtCost(top.totalCostUsd)}` : "—", top ? `Top: ${top.name || top.userId}` : "Top Nutzer")}
   </div>`;
 }
@@ -1443,7 +1501,7 @@ function renderAdminView() {
         `${renderAdminDatenmotorSummary(adminDataStatus, adminRecovery, data.crawlReport)}
          ${adminDetails("Crawl-Trichter & Datenstatus anzeigen", `${renderAdminCrawlStats(data.crawlReport)}${renderAdminDataStatus(adminDataStatus, "global")}`)}
          <div class="admin-recovery-wrap" id="admin-recovery">
-           <p class="admin-recovery-flag">Interner Recovery-Bereich — Aktionen laufen nur nach bewusstem Klick und mit Bestätigung.</p>
+           <p class="admin-recovery-flag">Interner Recovery-Bereich${adminInfo("Recovery")} — Aktionen laufen nur nach bewusstem Klick und mit Bestätigung.</p>
            ${adminDetails("Recovery-Aktionen (intern) anzeigen", safeRenderAdminRecovery(adminRecovery, adminRecoveryResult, adminPendingDiagnose))}
          </div>`,
         "admin-datenmotor"
@@ -1645,7 +1703,7 @@ function renderAdminSystemBody(sys, data, ds, errors, audit) {
   return `
     <div class="admin-card">
       <div class="admin-sys-grid">
-        <div class="admin-sys-item"><span class="admin-sys-key">Version</span><span class="admin-sys-val" title="Laufende Deploy-Version (Commit)">${escapeHtml(sys.deploy?.commit || sys.deploy?.version || "—")}</span></div>
+        <div class="admin-sys-item"><span class="admin-sys-key">Version${adminInfo("Version")}</span><span class="admin-sys-val" title="Laufende Deploy-Version (Commit)">${escapeHtml(sys.deploy?.commit || sys.deploy?.version || "—")}</span></div>
         <div class="admin-sys-item"><span class="admin-sys-key">Umgebung</span><span class="admin-sys-val">${escapeHtml(adminEnvLabel(sys.deploy?.environment))}</span></div>
         ${sys.deploy?.branch ? `<div class="admin-sys-item"><span class="admin-sys-key">Branch</span><span class="admin-sys-val">${escapeHtml(sys.deploy.branch)}</span></div>` : ""}
         <div class="admin-sys-item"><span class="admin-sys-key">Datenstand</span><span class="admin-sys-val" title="Zeitpunkt dieser Admin-Auswertung">${escapeHtml(data.generatedAt ? dsDateLabel(data.generatedAt) : "—")}</span></div>
@@ -2558,7 +2616,7 @@ function renderAdminCrawlStats(crawlReport) {
 
   return `
     <div class="admin-card admin-crawl-card">
-      <h2 class="admin-section-title">Crawl-Trichter <span class="admin-stat-period">${escapeHtml(crawlDate)} · ${escapeHtml(crawlReport.mode || "full")}</span></h2>
+      <h2 class="admin-section-title">Crawl-Trichter <span class="admin-stat-period">${escapeHtml(crawlDate)} · ${escapeHtml(adminModusLabel(crawlReport.mode || "full"))}</span></h2>
       <div class="crawl-funnel">
         ${stage("Source Engine",       "blue",   "Gescannt",           "Alle Artikel aller Quellen",             scanned)}
         ${stage("Deduplizierung",      "gray",   "Duplikate entfernt", "Bereits bekannte Artikel gefiltert",     dupes)}
@@ -9058,6 +9116,38 @@ function bindActions() {
       window.setTimeout(() => { try { target.classList.remove("admin-jump-flash"); } catch (_) { /* ignore */ } }, 1600);
     });
   });
+
+  // Begriffs-Erklärungen: Tippen toggelt das Popover (Desktop zeigt es zusätzlich per
+  // Hover/Fokus via CSS). REINE Anzeige — keine Aktion, kein Netzwerk. Am rechten Rand
+  // klappt das Popover nach links, damit es nicht aus dem Bild läuft.
+  const closeAllAdminInfo = () => app.querySelectorAll('.admin-info-btn[aria-expanded="true"]').forEach((b) => {
+    b.setAttribute("aria-expanded", "false");
+    if (b.nextElementSibling) b.nextElementSibling.classList.remove("admin-info-pop--flip");
+  });
+  app.querySelectorAll("[data-admin-info]").forEach((btn) => {
+    btn.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const wasOpen = btn.getAttribute("aria-expanded") === "true";
+      closeAllAdminInfo();
+      if (!wasOpen) {
+        btn.setAttribute("aria-expanded", "true");
+        const pop = btn.nextElementSibling;
+        if (pop) {
+          try {
+            const r = btn.getBoundingClientRect();
+            const vw = window.innerWidth || document.documentElement.clientWidth || 0;
+            pop.classList.toggle("admin-info-pop--flip", vw > 0 && r.left > vw * 0.5);
+          } catch (_) { /* Positionierung optional */ }
+        }
+      }
+    });
+  });
+  if (!adminInfoGlobalBound) {
+    adminInfoGlobalBound = true;
+    document.addEventListener("click", () => { try { closeAllAdminInfoGlobal(); } catch (_) {} });
+    document.addEventListener("keydown", (event) => { if (event.key === "Escape") { try { closeAllAdminInfoGlobal(); } catch (_) {} } });
+  }
 
   app.querySelectorAll("[data-admin-period]").forEach((button) => {
     button.addEventListener("click", () => {

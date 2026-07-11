@@ -221,6 +221,22 @@ check("Sprung: Kacheln/Hinweise haben kein onclick/kein fetch", !/onclick=/.test
 check("Full: Sprung-Anker vorhanden (data-admin-jump)", jumpVals(view).length >= 6);
 check("Full: alle Sprungziele sind bekannte admin-Anker", jumpVals(view).every((v) => /^admin-(betrieb|handlungsbedarf|datenmotor|profile|kosten|system|recovery)$/.test(v)));
 
+// ── 8d) Erklärungsebene: Info-Symbole + Glossar (Betreiber-Verständlichkeit).
+check("Info: Begriffs-Hilfen vorhanden (data-admin-info)", (view.match(/data-admin-info/g) || []).length >= 6);
+check("Info: Erklärung im aria-label (Screenreader)", /aria-label="Erklärung [^"]+: [^"]+"/.test(view));
+check("Info: Popover als role=tooltip", view.includes('role="tooltip"'));
+check("Info: Info-Buttons sind type=button, keine Aktion", /class="admin-info-btn"/.test(view) && !/data-admin-info[^>]*data-recovery-action/.test(view) && !/data-admin-info[^>]*href=/.test(view));
+check("Glossar: eingeklappte Begriffs-Legende vorhanden", view.includes("admin-glossary") && view.includes("Begriffe erklärt"));
+["Understanding", "Watchdog", "Recovery", "Knowledge Objects", "Understanding-Lock"].forEach((term) =>
+  check(`Glossar erklärt Begriff [${term}]`, view.includes(`<dt>${term}</dt>`)));
+check("Enum: Lauf-Modus menschlich (Vollständiger Lauf, kein rohes '· full')", view.includes("Vollständiger Lauf") && !view.includes("· full"));
+check("Info: keine Secret-Muster in Erklärungen", !/bearer\s|sk-[a-z0-9]{12}|service_role|apikey=/i.test(view));
+// Nicht-Admin darf keinerlei Info-Hilfen / Glossar sehen (kommt aus renderAdminView, das
+// fuer Nicht-Admin nur "Kein Zugriff" liefert).
+api.setUser({ role: "referent" });
+check("Info: Nicht-Admin sieht keine Begriffs-Hilfen/Glossar", !api.view().includes("data-admin-info") && !api.view().includes("admin-glossary"));
+api.setUser({ role: "admin", name: "Admin Root" });
+
 // ── 9) Admin-Gating: Nicht-Admin sieht nichts, keine Kosten.
 api.setUser({ role: "referent" });
 const viewRef = api.view();

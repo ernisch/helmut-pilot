@@ -7620,9 +7620,10 @@ a.ac-item, a.ac-item:visited { text-decoration: none; color: inherit; }
 .ac-chevron { align-self: center; margin-left: auto; font-size: 17px; line-height: 1; color: var(--muted-2); transition: transform .12s ease, color .12s ease; flex: none; }
 .ac-item--link:hover .ac-chevron { color: var(--text); transform: translateX(2px); }
 
-/* Sanfter Sprung + dezenter Flash am Zielabschnitt (1,6 s, ohne Layout-Shift).
-   scroll-margin haelt das Ziel frei von fixer Topbar / mobiler Bottom-Navigation. */
-html { scroll-behavior: smooth; }
+/* Sanfter Sprung + dezenter Flash am Zielabschnitt (1,6 s, ohne Layout-Shift). Das
+   sanfte Scrollen macht der Sprung-Handler selbst (scrollIntoView) — bewusst KEIN
+   globales scroll-behavior, um die uebrige App nicht zu beeinflussen. scroll-margin
+   haelt das Ziel frei von fixer Topbar / mobiler Bottom-Navigation. */
 .op-overview, .admin-sec, #admin-recovery { scroll-margin-top: 76px; scroll-margin-bottom: 92px; }
 @keyframes adminJumpFlash {
   0%   { box-shadow: 0 0 0 0 rgba(111, 143, 247, 0); }
@@ -7631,9 +7632,46 @@ html { scroll-behavior: smooth; }
 }
 .admin-jump-flash { animation: adminJumpFlash 1.6s ease-out; border-radius: 14px; }
 @media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
   .admin-jump-flash { animation: none; }
 }
+
+/* Erklärungsebene: kleines ruhiges Info-Symbol + Popover (Hover/Fokus/Tap). */
+.admin-info-wrap { position: relative; display: inline-flex; vertical-align: middle; margin-left: 5px; }
+.admin-info-btn {
+  width: 15px; height: 15px; padding: 0; border-radius: 50%;
+  border: 1px solid var(--line, rgba(226, 232, 240, .28)); background: transparent;
+  color: var(--muted-2); font-size: 10px; font-weight: 700; line-height: 1; font-style: italic;
+  cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent; transition: color .12s ease, border-color .12s ease;
+}
+.admin-info-btn:hover { color: var(--text); border-color: var(--muted-2); }
+.admin-info-btn:focus-visible { outline: 2px solid var(--accent, #6f8ff7); outline-offset: 2px; }
+.admin-info-pop {
+  position: absolute; top: calc(100% + 7px); left: 0; z-index: 40;
+  width: max-content; max-width: min(260px, calc(100vw - 28px));
+  padding: 9px 11px; border-radius: 10px;
+  background: #10192b; border: 1px solid var(--line, rgba(226, 232, 240, .16));
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .38);
+  font-size: 12.5px; font-weight: 400; line-height: 1.4; color: var(--text); text-align: left;
+  white-space: normal; opacity: 0; visibility: hidden; transform: translateY(-3px);
+  transition: opacity .12s ease, transform .12s ease, visibility .12s;
+  pointer-events: none;
+}
+.admin-info-pop--flip { left: auto; right: 0; }
+.admin-info-wrap:hover .admin-info-pop,
+.admin-info-btn:focus-visible + .admin-info-pop,
+.admin-info-btn[aria-expanded="true"] + .admin-info-pop {
+  opacity: 1; visibility: visible; transform: translateY(0); pointer-events: auto;
+}
+
+/* Eingeklappte Begriffs-Legende (kein grosser Erklärtext in der Hauptansicht). */
+.admin-glossary { margin-top: 12px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255, 255, 255, .015); }
+.admin-glossary[open] { background: rgba(255, 255, 255, .025); }
+.admin-gl-list { margin: 0; padding: 4px 14px 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 22px; }
+.admin-gl-item { display: block; }
+.admin-gl-item dt { font-size: 12.5px; font-weight: 700; color: var(--text); }
+.admin-gl-item dd { margin: 1px 0 0; font-size: 12px; color: var(--muted); line-height: 1.4; }
+@media (max-width: 620px) { .admin-gl-list { grid-template-columns: 1fr; } }
 .op-warnings { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
 .op-warning {
   margin: 0; font-size: 12.5px; color: var(--muted); line-height: 1.4;
