@@ -215,8 +215,8 @@ check("Voll: KEINE Kostenwerte/Token im Markup",
 // === 2) Stale-Zustand ===
 api.setBriefing(briefingWith(staleState));
 const htmlStale = api.render();
-check("Stale: Kopf-Status 'Nicht mehr ganz frisch' (nicht alarmistisch)",
-  htmlStale.includes("Nicht mehr ganz frisch"));
+check("Stale: Kopf-Status 'Nicht aktuell' (professionell, klar)",
+  htmlStale.includes("Nicht aktuell") && !htmlStale.includes("Nicht mehr ganz frisch"));
 check("Stale: Inhalt bleibt sichtbar (Vorschlag rendert weiter)",
   htmlStale.includes("Mein Vorschlag"));
 

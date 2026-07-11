@@ -1252,15 +1252,29 @@ function prepareBriefingResponse(briefing, { previewMode = false, compact = fals
 // Contract-Adapter). KEIN V2-Blob, KEIN Regel-Scoring, KEIN V2-Fallback. Fehlen
 // V3-Daten, liefert der Adapter einen EXPLIZITEN Leerzustand (available:false).
 async function latestBriefingPayload({ politicianId, profile, url, previewMode = false, compact = false }) {
-  const briefing = await buildV3Briefing(profile, politicianId);
+  // Optionaler Slot-Override (?slot=morning|midday|evening|daily) fuer Tests/Admin/
+  // spaetere Cron-Nutzung. Ohne Parameter leitet buildV3Briefing den Slot aus der
+  // Serverzeit (Europe/Berlin) ab. Ungueltige Werte -> 'daily' (kein Crash).
+  const slot = url && url.searchParams ? url.searchParams.get("slot") : null;
+  const briefing = await buildV3Briefing(profile, politicianId, { slot });
   return prepareBriefingResponse(briefing, { previewMode, compact });
 }
 
-async function buildV3Briefing(profile, politicianId) {
+// opts.slot (optional): expliziter Slot-Override (Tests/Admin/spaetere Cron-Nutzung).
+// Fehlt er -> Slot wird aus der Serverzeit in Europe/Berlin abgeleitet. Ungueltig ->
+// 'daily' (normalizeBriefingType). REIN Label/Sprache im Read-Pfad: KEINE neuen Daten,
+// KEIN KI-Call, KEINE Persistenz, KEINE Frische-Aussage (lastUpdated bleibt die Wahrheit).
+async function buildV3Briefing(profile, politicianId, opts = {}) {
   const briefingContract = require("./lib/helmut/briefingContract");
   const decisionsEngine = require("./lib/helmut/decisions");
+  const briefingLanguage = require("./lib/helmut/briefingLanguage");
   const userId = (profile && profile.id) || politicianId;
-  const empty = (reason) => briefingContract.toBriefingContractV3({ profile, decisions: [], kosById: {}, sourcesByVorgang: {}, reason });
+  // Slot bestimmen: expliziter Override hat Vorrang, sonst Zeit-Ableitung (Europe/Berlin).
+  // normalizeBriefingType kappt ungueltige Overrides sicher auf 'daily' (nie Crash).
+  const briefingType = (opts && opts.slot != null && String(opts.slot).trim() !== "")
+    ? briefingLanguage.normalizeBriefingType(opts.slot)
+    : briefingLanguage.deriveBriefingTypeFromDate(new Date(), "Europe/Berlin");
+  const empty = (reason) => briefingContract.toBriefingContractV3({ profile, decisions: [], kosById: {}, sourcesByVorgang: {}, reason, briefingType });
 
   // REVIEW-FIXTURE (nur PR-/Preview-/Lokal-Abnahme): streng hinter HELMUT_REVIEW_FIXTURE
   // (Default AUS). In main/Produktion nicht gesetzt -> dieser Zweig ist inert und der
@@ -1270,7 +1284,7 @@ async function buildV3Briefing(profile, politicianId) {
   if (reviewFixture.reviewFixtureEnabled()) {
     console.warn("[helmut] REVIEW-FIXTURE aktiv (HELMUT_REVIEW_FIXTURE=1) — nur fuer Abnahme, NICHT fuer Produktion.");
     const fx = reviewFixture.buildReviewFixture(new Date());
-    return briefingContract.toBriefingContractV3({ profile: fx.profile, decisions: fx.decisions, kosById: fx.kosById, sourcesByVorgang: fx.sourcesByVorgang, now: new Date(), reason: "review-fixture" });
+    return briefingContract.toBriefingContractV3({ profile: fx.profile, decisions: fx.decisions, kosById: fx.kosById, sourcesByVorgang: fx.sourcesByVorgang, now: new Date(), reason: "review-fixture", briefingType });
   }
 
   // Fail-safe, KEIN V2-Fallback: kein Store -> expliziter Leerzustand.
@@ -1299,7 +1313,7 @@ async function buildV3Briefing(profile, politicianId) {
     return sourceSafety.guardKnowledgeObject(ko, sourcesByVorgang[ko.vorgang_id] || []).status !== "quarantine";
   });
   if (!safeDecisions.length) return empty("keine-treffer");
-  return briefingContract.toBriefingContractV3({ profile, decisions: safeDecisions, kosById, sourcesByVorgang });
+  return briefingContract.toBriefingContractV3({ profile, decisions: safeDecisions, kosById, sourcesByVorgang, briefingType });
 }
 
 // Quellen aller Vorgänge PARALLEL laden (nicht seriell) — ein hängender Call darf
@@ -1897,6 +1911,8 @@ module.exports = requestHandler;
 // direkten, auth-freien Aufruf der internen Datenstatus-Funktion.
 module.exports.__buildAdminDataStatus = buildAdminDataStatus;
 module.exports.__buildPipelineRecoveryStatus = buildPipelineRecoveryStatus;
+// Test-Hook (nur fuer Offline-Tests, wie __build* oben): der slot-aware Read-Pfad.
+module.exports.__buildV3Briefing = buildV3Briefing;
 
 if (require.main === module) {
   const server = http.createServer(requestHandler);
