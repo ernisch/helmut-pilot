@@ -4521,7 +4521,7 @@ function hstandCommLabel(token) {
 const HSTAND_PRIORITY_LABEL = { low: "Niedrig", medium: "Mittel", high: "Hoch" };
 const HSTAND_STATUS_LABEL = {
   fresh: { label: "Aktuell", tone: "ok" },
-  stale: { label: "Nicht mehr ganz frisch", tone: "warn" },
+  stale: { label: "Nicht aktuell", tone: "warn" },
   updating: { label: "Wird aktualisiert", tone: "muted" },
   empty: { label: "Kein aktueller Stand", tone: "muted" },
   error: { label: "Stand nicht verfügbar", tone: "danger" }
