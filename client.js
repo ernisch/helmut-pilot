@@ -22,6 +22,13 @@ let recommendations = [];
 let radarArchive = [];
 let radarBuckets = null;
 let radarArchiveLoaded = false;
+// Radar-UI-Zustand (rein clientseitig, keine Daten): aktives Umfeld-Segment,
+// aktiver Artikelfilter, Aufklapp-Zustände, Refresh-Ladeanzeige.
+let radarSegment = "party";
+let radarFilter = "all";
+let radarMentionsExpanded = false;
+let radarDynamicsExpanded = false;
+let radarRefreshing = false;
 let opsStatusLoaded = false;
 let pushConfig = null;
 let pushAutoSyncStarted = false;
@@ -626,25 +633,9 @@ function appStartCacheKey() {
 }
 
 async function ensureViewData(view) {
-  if (view === "radar" && !radarArchiveLoaded) {
-    radarArchiveLoaded = true; // In-Flight-Guard gegen Doppel-Fetch
-    try {
-      const response = await fetchWithTimeout(`/api/radar/archive?${apiScopeQuery()}&days=365`);
-      const archivePayload = response.ok ? await response.json() : { articles: [], buckets: null };
-      radarArchive = Array.isArray(archivePayload.articles) ? archivePayload.articles : [];
-      // Server liefert die Signale bereits klassifiziert UND gruppiert — diese
-      // Gruppierung ist maßgeblich (kein Client-Re-Scoring nötig).
-      radarBuckets = archivePayload.buckets && typeof archivePayload.buckets === "object" ? archivePayload.buckets : null;
-      // Leeres/fehlgeschlagenes Ergebnis NICHT dauerhaft cachen: beim nächsten
-      // Öffnen erneut laden (verhindert dauerhaft leeres Radar, wenn die KOs beim
-      // ersten Besuch noch nicht verstanden waren).
-      if (!radarArchive.length && !radarBucketsHaveSignals(radarBuckets)) radarArchiveLoaded = false;
-    } catch (error) {
-      radarArchiveLoaded = false;
-      console.warn("Radar archive not loaded", error);
-    }
-    render();
-  }
+  // Radar liest den fertigen Lesevertrag briefing.currentRadarState (beim App-Start
+  // über /api/app/start geladen) — KEIN separater Radar-Request pro Ansicht mehr
+  // (ein Read-State pro Start, keine unnötigen API-Aufrufe).
   if (view === "admin" && !adminDataLoaded) {
     adminDataLoaded = true;
     adminLoadError = false;
@@ -7152,171 +7143,393 @@ function renderNotesSection() {
   `;
 }
 
+// ── Radar — Persönliches politisches Umfeld & Frühwarnsystem ─────────────────
+// Radar liest AUSSCHLIESSLICH den deterministischen V3-Lesevertrag
+// briefing.currentRadarState (0 KI, server-seitig gebaut). KEINE Client-
+// Klassifikation, KEINE politischen Fallbacks, KEINE Handlungsempfehlungen,
+// KEIN Risiko-/Chancen-Frame (das ist Helmut, nicht Radar).
+
 function renderRadarView() {
-  // V3 ist der einzige Radar-Renderer (kein V2-Feature-Flag mehr).
-  return renderRadarV3View();
+  const state = (briefing && briefing.currentRadarState) || null;
+  return `<div class="radar2" id="radar2-root">${renderRadarInner(state)}</div>`;
 }
 
-// ── Radar V3 – Frühwarn- und Entscheidungssystem ─────────────────────────────
-
-function radarBucketsHaveSignals(b) {
-  return Boolean(b) && ["risk", "demand", "chance", "warning", "mention"].some((t) => Array.isArray(b[t]) && b[t].length > 0);
+function renderRadarInner(state) {
+  const body = (!state || !radarStateHasContent(state))
+    ? renderRadarEmpty(state)
+    : `
+        ${renderRadarSummary(state)}
+        ${renderRadarAboutYou(state)}
+        ${renderRadarEnvironment(state)}
+        ${renderRadarDynamics(state)}
+        ${renderRadarArticles(state)}
+      `;
+  return `${renderRadarHeader(state)}${body}`;
 }
 
-function renderRadarV3View() {
-  // V3-Radar: die Signale kommen fertig klassifiziert vom Server (signalType) —
-  // kein Client-Scoring, kein V2-Client-Fallback. Leer -> Leerzustand.
-  const buckets = { risk: [], demand: [], chance: [], warning: [], mention: [] };
-  if (radarBucketsHaveSignals(radarBuckets)) {
-    // Maßgeblich: die bereits vom Server gruppierten Buckets 1:1 übernehmen.
-    for (const t of Object.keys(buckets)) buckets[t] = Array.isArray(radarBuckets[t]) ? radarBuckets[t].slice() : [];
-  } else {
-    // Fallback (Kompat): aus der flachen articles-Liste gruppieren — gleiches
-    // Modell wie der Server: Eigenerwähnung (reason===person) immer unter "mention".
-    (Array.isArray(radarArchive) ? radarArchive : []).forEach((item) => {
-      const type = Object.prototype.hasOwnProperty.call(buckets, item.signalType) ? item.signalType : "mention";
-      if (item.reason === "person") {
-        buckets.mention.push(item);
-        if (type !== "mention") buckets[type].push(item);
-      } else {
-        buckets[type === "mention" ? "warning" : type].push(item);
-      }
-    });
-  }
+function radarStateHasContent(state) {
+  if (!state) return false;
+  const env = state.environment || {};
+  const envCount = (env.party || []).length + (env.constituency || []).length + (env.committees || []).length;
+  return Boolean((state.mentions || []).length || envCount || (state.dynamics || []).length || (state.articles || []).length);
+}
 
-  const CATEGORIES = [
-    {
-      type: "risk",
-      icon: "🚨",
-      label: "Risiko",
-      desc: "Kritische Berichte oder Angriffe, die dir schaden könnten.",
-      actionLabel: "Stellungnahme entwerfen",
-      colorClass: "radar-v3-risk"
-    },
-    {
-      type: "demand",
-      icon: "⚡",
-      label: "Kritische Nachfrage",
-      desc: "Anfragen, Ausschusstermine oder parlamentarische Fragen, die dich betreffen.",
-      actionLabel: "Antwort vorbereiten",
-      colorClass: "radar-v3-demand"
-    },
-    {
-      type: "chance",
-      icon: "📈",
-      label: "Chance",
-      desc: "Themen, bei denen du als Experte punkten oder positiv positionieren kannst.",
-      actionLabel: "Pressemitteilung verfassen",
-      colorClass: "radar-v3-chance"
-    },
-    {
-      type: "warning",
-      icon: "🔍",
-      label: "Frühwarnung",
-      desc: "Neue Themen der letzten 48 Stunden, die relevant werden könnten.",
-      actionLabel: null,
-      colorClass: "radar-v3-warning"
-    },
-    {
-      type: "mention",
-      icon: "🧑‍💼",
-      label: "Eigene Erwähnung",
-      desc: "Alle Erwähnungen deines Namens in den Medien.",
-      actionLabel: null,
-      colorClass: "radar-v3-mention"
-    }
-  ];
-
-  const categoryHtml = CATEGORIES.map((cat) => renderRadarV3Category(cat, buckets[cat.type])).join("");
-
+// --- Kopf -------------------------------------------------------------------
+function renderRadarHeader(state) {
+  const status = (state && state.status) || "empty";
+  const fresh = status === "fresh";
+  const updated = state && state.lastUpdated;
+  const label = !updated
+    ? (previewMode ? "Vorschau" : "Noch keine Radar-Daten")
+    : (fresh ? `Aktualisiert ${radarUpdatedLabel(updated)}` : `Letzter Stand: ${radarUpdatedLabel(updated)}`);
   return `
-    <section class="page-intro compact">
-      <h1 class="${headlineClass("Radar.")}">Radar.</h1>
-      <p>Strategisches Frühwarnsystem: Risiken, Chancen und Nachfragen auf einen Blick.</p>
-    </section>
-    <section class="radar-v3-categories">
-      ${categoryHtml}
+    <header class="radar2-header">
+      <div class="radar2-header-row">
+        <h1 class="radar2-h1">Radar</h1>
+        <button class="radar2-refresh ${radarRefreshing ? "is-loading" : ""}" type="button" data-radar-refresh aria-label="Radar aktualisieren" ${radarRefreshing ? "aria-busy=\"true\"" : ""}>
+          ${radarIcon("refresh")}
+        </button>
+      </div>
+      <p class="radar2-lede">Was bewegt sich rund um dich?</p>
+      <div class="radar2-status radar2-status--${fresh ? "fresh" : "stale"}">
+        <span class="radar2-status-dot" aria-hidden="true"></span>
+        <span>${escapeHtml(label)}</span>
+      </div>
+    </header>
+  `;
+}
+
+// --- Persönliche Zusammenfassung --------------------------------------------
+function renderRadarSummary(state) {
+  const s = state.summary || {};
+  const lines = [s.line1, s.line2].filter(Boolean);
+  if (!lines.length) return "";
+  const html = lines.map((ln) => `<span class="radar2-summary-line">${radarHighlight(ln)}</span>`).join("");
+  return `
+    <section class="radar2-summary" aria-label="Zusammenfassung">
+      <div class="radar2-summary-icon" aria-hidden="true">${radarIcon("radar")}</div>
+      <p class="radar2-summary-text">${html}</p>
     </section>
   `;
 }
 
-function renderRadarV3Category(cat, items) {
-  const visible = items.slice(0, 4);
-  const more = items.length > 4 ? items.slice(4) : [];
-  const count = items.length;
-  const badge = count > 0 ? `<em class="radar-v3-count">${count}</em>` : "";
+// Nur die (deterministischen) Zahlen dezent hervorheben — kein Keyword-Raten.
+function radarHighlight(text) {
+  return escapeHtml(text).replace(/(\d+\s?(?:×|x)?)/g, '<b class="radar2-hl">$1</b>');
+}
 
-  const signalHtml = visible.length
-    ? visible.map((item) => renderRadarV3Signal(item, cat)).join("")
-    : `<p class="radar-v3-empty">Keine Einträge.</p>`;
-
-  const moreHtml = more.length ? `
-    <details class="radar-v3-more">
-      <summary>${more.length} ältere Einträge</summary>
-      ${more.map((item) => renderRadarV3Signal(item, cat)).join("")}
-    </details>
-  ` : "";
-
+// --- Über dich (direkte Erwähnungen) ----------------------------------------
+function renderRadarAboutYou(state) {
+  const all = state.mentions || [];
+  const expanded = radarMentionsExpanded;
+  const shown = expanded ? all : all.slice(0, 3);
+  const body = all.length
+    ? shown.map(renderRadarMentionCard).join("")
+    : radarEmptyHint("Heute wurden keine direkten Erwähnungen gefunden.");
   return `
-    <div class="radar-v3-category ${escapeHtml(cat.colorClass)}">
-      <div class="radar-v3-cat-header">
-        <span class="radar-v3-cat-icon" aria-hidden="true">${cat.icon}</span>
-        <div class="radar-v3-cat-text">
-          <h2>${escapeHtml(cat.label)}${badge}</h2>
-          <p>${escapeHtml(cat.desc)}</p>
-        </div>
+    <section class="radar2-section">
+      ${radarSectionHead("person", "Über dich", "mentions", expanded, all.length > 3)}
+      <div class="radar2-cards">${body}</div>
+    </section>
+  `;
+}
+
+function renderRadarMentionCard(m) {
+  const href = radarItemHref(m);
+  const time = radarTime(m.publishedAt);
+  const tag = m.mentionLabel
+    ? `<span class="radar2-tag radar2-tag--${m.mentionTone === "critical" ? "critical" : "neutral"}">${escapeHtml(m.mentionLabel)}</span>`
+    : "";
+  const inner = `
+    <div class="radar2-card-body">
+      <div class="radar2-meta">
+        ${radarSourceBadge(m)}
+        <span class="radar2-source-name">${escapeHtml(m.sourceName || "Quelle")}</span>
+        ${time ? `<span class="radar2-dot" aria-hidden="true">·</span><span class="radar2-time">${escapeHtml(time)}</span>` : ""}
       </div>
-      <div class="radar-v3-signals">
-        ${signalHtml}
+      <h3 class="radar2-card-title">${escapeHtml(m.title || "Erwähnung")}</h3>
+      ${tag ? `<div class="radar2-card-foot">${tag}</div>` : ""}
+      ${m.evidence ? `<p class="radar2-card-sub radar2-card-sub--block">${escapeHtml(m.evidence)}</p>` : ""}
+    </div>
+    ${href ? `<span class="radar2-chevron" aria-hidden="true">${radarIcon("chevron")}</span>` : ""}
+  `;
+  return radarCardWrap(href, inner, "mention");
+}
+
+// --- Dein Umfeld (Partei / Wahlkreis / Ausschüsse) --------------------------
+function renderRadarEnvironment(state) {
+  const env = state.environment || { party: [], constituency: [], committees: [] };
+  const active = RADAR_SEGMENTS.some((s) => s.key === radarSegment) ? radarSegment : "party";
+  const tabs = RADAR_SEGMENTS.map((s) => {
+    const isActive = s.key === active;
+    return `<button class="radar2-seg ${isActive ? "is-active" : ""}" type="button" role="tab" aria-selected="${isActive}" data-radar-segment="${s.key}">${escapeHtml(s.label)}</button>`;
+  }).join("");
+  const seg = RADAR_SEGMENTS.find((s) => s.key === active);
+  const items = env[active] || [];
+  const list = items.length ? items.map(renderRadarEnvRow).join("") : radarEmptyHint(seg.empty);
+  return `
+    <section class="radar2-section">
+      <h2 class="radar2-h2">${radarIcon("people")}<span>Dein Umfeld</span></h2>
+      <div class="radar2-segments" role="tablist" aria-label="Umfeld-Bereich">${tabs}</div>
+      <div class="radar2-list">${list}</div>
+    </section>
+  `;
+}
+
+function renderRadarEnvRow(e) {
+  const href = radarItemHref(e);
+  const time = radarTime(e.publishedAt);
+  const rel = e.relationLabel ? `<span class="radar2-tag radar2-tag--neutral">${escapeHtml(e.relationLabel)}</span>` : "";
+  const inner = `
+    ${radarSourceBadge(e)}
+    <div class="radar2-row-body">
+      <h3 class="radar2-row-title">${escapeHtml(e.title || "Vorgang")}</h3>
+      <div class="radar2-row-meta">${rel}<span class="radar2-row-sub">${escapeHtml(e.sourceName || "Quelle")}${time ? " · " + escapeHtml(time) : ""}</span></div>
+    </div>
+    ${href ? `<span class="radar2-chevron" aria-hidden="true">${radarIcon("chevron")}</span>` : ""}
+  `;
+  return radarRowWrap(href, inner);
+}
+
+// --- Neue Dynamiken ---------------------------------------------------------
+function renderRadarDynamics(state) {
+  const all = state.dynamics || [];
+  const expanded = radarDynamicsExpanded;
+  const shown = expanded ? all : all.slice(0, 3);
+  const body = all.length
+    ? shown.map(renderRadarDynamicCard).join("")
+    : radarEmptyHint("Aktuell entsteht keine neue belegbare Dynamik.");
+  return `
+    <section class="radar2-section">
+      ${radarSectionHead("activity", "Neue Dynamiken", "dynamics", expanded, all.length > 3)}
+      <div class="radar2-cards">${body}</div>
+    </section>
+  `;
+}
+
+function renderRadarDynamicCard(d) {
+  const href = radarItemHref(d);
+  const time = radarTime(d.lastUpdatedAt);
+  const tag = d.signalLabel ? `<span class="radar2-tag radar2-tag--signal">${escapeHtml(d.signalLabel)}</span>` : "";
+  const inner = `
+    <div class="radar2-dyn-icon" aria-hidden="true">${radarIcon("trend")}</div>
+    <div class="radar2-card-body">
+      <h3 class="radar2-card-title">${escapeHtml(d.title || "Entwicklung")}</h3>
+      ${d.evidence ? `<p class="radar2-dyn-evidence">${escapeHtml(d.evidence)}</p>` : ""}
+      <div class="radar2-card-foot">${tag}${time ? `<span class="radar2-card-sub">${escapeHtml(time)}</span>` : ""}</div>
+    </div>
+    ${href ? `<span class="radar2-chevron" aria-hidden="true">${radarIcon("chevron")}</span>` : ""}
+  `;
+  return radarCardWrap(href, inner, "dynamic");
+}
+
+// --- Alle relevanten Artikel + Filter ---------------------------------------
+function renderRadarArticles(state) {
+  const all = state.articles || [];
+  // Nur Filter mit >=1 Treffer anzeigen (kein toter Filter); "Alle" immer.
+  const available = RADAR_FILTERS.filter((f) => f.key === "all" || all.some((a) => radarArticleMatchesFilter(a, f.key)));
+  const activeKey = available.some((f) => f.key === radarFilter) ? radarFilter : "all";
+  const chips = available.map((f) =>
+    `<button class="radar2-filter ${f.key === activeKey ? "is-active" : ""}" type="button" role="tab" aria-selected="${f.key === activeKey}" data-radar-filter="${f.key}">${escapeHtml(f.label)}</button>`
+  ).join("");
+  const filtered = all.filter((a) => radarArticleMatchesFilter(a, activeKey));
+  const list = filtered.length ? filtered.map(renderRadarArticleRow).join("") : radarEmptyHint("Keine passenden Artikel im gewählten Filter.");
+  return `
+    <section class="radar2-section">
+      <h2 class="radar2-h2">${radarIcon("doc")}<span>Alle relevanten Artikel</span></h2>
+      <div class="radar2-filters" role="tablist" aria-label="Artikelfilter">${chips}</div>
+      <div class="radar2-list">${list}</div>
+    </section>
+  `;
+}
+
+function radarArticleMatchesFilter(a, key) {
+  if (key === "all") return true;
+  return Array.isArray(a.relationTypes) && a.relationTypes.includes(key);
+}
+
+function renderRadarArticleRow(a) {
+  const href = radarItemHref(a);
+  const time = radarTime(a.publishedAt);
+  const relLabel = radarPrimaryRelationLabel(a.relationTypes);
+  const rel = relLabel ? `<span class="radar2-tag radar2-tag--neutral">${escapeHtml(relLabel)}</span>` : "";
+  const inner = `
+    ${radarSourceBadge(a)}
+    <div class="radar2-row-body">
+      <div class="radar2-row-meta radar2-row-meta--top">
+        <span class="radar2-source-name">${escapeHtml(a.sourceName || "Quelle")}</span>
+        ${time ? `<span class="radar2-dot" aria-hidden="true">·</span><span class="radar2-time">${escapeHtml(time)}</span>` : ""}
       </div>
-      ${moreHtml}
+      <h3 class="radar2-row-title">${escapeHtml(a.title || "Artikel")}</h3>
+      ${rel ? `<div class="radar2-row-meta">${rel}</div>` : ""}
+    </div>
+    ${href ? `<span class="radar2-chevron" aria-hidden="true">${radarIcon("chevron")}</span>` : ""}
+  `;
+  return radarRowWrap(href, inner);
+}
+
+function radarPrimaryRelationLabel(types) {
+  if (!Array.isArray(types)) return "";
+  for (const k of ["mention", "committee", "constituency", "party", "official", "media"]) {
+    if (types.includes(k)) return RADAR_RELATION_LABELS[k];
+  }
+  return "";
+}
+
+// --- Leerzustände + gemeinsame Bausteine ------------------------------------
+function renderRadarEmpty(state) {
+  const note = previewMode
+    ? "In der Vorschau liegen keine personalisierten Radar-Daten vor."
+    : "Sobald neue Quellen zu dir, deiner Partei, deinem Wahlkreis oder deinen Ausschüssen vorliegen, erscheinen sie hier.";
+  return `
+    ${renderRadarSummary(state && state.summary ? state : { summary: { line1: "Heute gibt es keine neuen relevanten Signale in deinem politischen Umfeld.", line2: "" } })}
+    <section class="radar2-section">
+      <div class="radar2-empty">${escapeHtml(note)}</div>
+    </section>
+  `;
+}
+
+function radarEmptyHint(text) {
+  return `<div class="radar2-empty">${escapeHtml(text)}</div>`;
+}
+
+function radarSectionHead(icon, title, expandKey, expanded, showExpand) {
+  const btn = showExpand
+    ? `<button class="radar2-more-link" type="button" data-radar-expand="${escapeAttribute(expandKey)}">${expanded ? "Weniger anzeigen" : "Alle anzeigen"} <span aria-hidden="true">›</span></button>`
+    : "";
+  return `
+    <div class="radar2-section-head">
+      <h2 class="radar2-h2">${radarIcon(icon)}<span>${escapeHtml(title)}</span></h2>
+      ${btn}
     </div>
   `;
 }
 
-function radarV3Badge(type) {
-  const MAP = {
-    risk:    ["Risiko",      "radar-v3-badge-risk"],
-    demand:  ["Nachfrage",   "radar-v3-badge-demand"],
-    chance:  ["Chance",      "radar-v3-badge-chance"],
-    warning: ["Frühwarnung", "radar-v3-badge-warning"],
-    mention: ["Neutral",     "radar-v3-badge-neutral"]
+function radarCardWrap(href, inner, kind) {
+  if (href) {
+    return `<a class="radar2-card radar2-card--${escapeAttribute(kind)}" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">${inner}</a>`;
+  }
+  return `<article class="radar2-card radar2-card--${escapeAttribute(kind)} radar2-card--nolink">${inner}</article>`;
+}
+
+function radarRowWrap(href, inner) {
+  if (href) {
+    return `<a class="radar2-row" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">${inner}</a>`;
+  }
+  return `<div class="radar2-row radar2-row--nolink">${inner}</div>`;
+}
+
+// Quellenzeichen (Initiale) statt erfundener Vorschaubilder: in V3 existiert KEIN
+// gespeichertes Bildfeld (image_url/og_image). Ehrlich, ohne externen Hotlink.
+function radarSourceBadge(item) {
+  const name = String((item && item.sourceName) || "Quelle").trim();
+  const initial = escapeHtml((name.charAt(0) || "•").toUpperCase());
+  const color = radarV3AvatarColor(name);
+  return `<span class="radar2-badge" style="--radar-badge:${color}" aria-hidden="true">${initial}</span>`;
+}
+
+// Nur echte http(s)-Quellen öffnen (kein toter Link). Server kuratiert canonical/best.
+function radarItemHref(item) {
+  const url = item && item.sourceUrl;
+  return url && isHttpUrl(url) ? url : "";
+}
+
+function radarUpdatedLabel(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const time = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" }).format(d);
+  if (radarIsToday(d)) return `heute, ${time}`;
+  const day = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "numeric", month: "long" }).format(d);
+  return `${day}, ${time}`;
+}
+
+function radarTime(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return radarIsToday(d)
+    ? new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" }).format(d)
+    : new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "numeric", month: "short" }).format(d);
+}
+
+function radarIsToday(d) {
+  const key = (x) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit" }).format(x);
+  return key(d) === key(new Date());
+}
+
+// Partielle Neu-Darstellung ohne Ganzseiten-Rebuild -> kein Scroll-Sprung beim
+// Segment-/Filter-/Alle-anzeigen-Wechsel (Apple-artig ruhig).
+function rerenderRadar() {
+  const root = document.getElementById("radar2-root");
+  if (!root) { render(); return; }
+  const state = (briefing && briefing.currentRadarState) || null;
+  root.innerHTML = renderRadarInner(state);
+  bindRadarActions();
+}
+
+async function refreshRadar() {
+  if (radarRefreshing) return;
+  radarRefreshing = true;
+  rerenderRadar();
+  try { await loadBriefing(); } catch (_) { /* Anzeige bleibt beim letzten Stand */ }
+  radarRefreshing = false;
+  if (currentView === "radar") rerenderRadar();
+}
+
+function bindRadarActions() {
+  const root = document.getElementById("radar2-root");
+  if (!root) return;
+  root.querySelectorAll("[data-radar-segment]").forEach((btn) => {
+    btn.addEventListener("click", () => { radarSegment = btn.dataset.radarSegment; rerenderRadar(); });
+  });
+  root.querySelectorAll("[data-radar-filter]").forEach((btn) => {
+    btn.addEventListener("click", () => { radarFilter = btn.dataset.radarFilter; rerenderRadar(); });
+  });
+  root.querySelectorAll("[data-radar-expand]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const k = btn.dataset.radarExpand;
+      if (k === "mentions") radarMentionsExpanded = !radarMentionsExpanded;
+      else if (k === "dynamics") radarDynamicsExpanded = !radarDynamicsExpanded;
+      rerenderRadar();
+    });
+  });
+  root.querySelectorAll("[data-radar-refresh]").forEach((btn) => {
+    btn.addEventListener("click", () => refreshRadar());
+  });
+}
+
+// Kompakte, konturlose Line-Icons (kein Emoji) — currentColor, an die Typo angelehnt.
+function radarIcon(name) {
+  const A = 'class="radar2-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
+  const ICONS = {
+    radar: `<svg ${A}><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 12 19 8"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></svg>`,
+    person: `<svg ${A}><circle cx="12" cy="8" r="3.4"/><path d="M5.5 19a6.5 6.5 0 0 1 13 0"/></svg>`,
+    people: `<svg ${A}><circle cx="9" cy="8.5" r="3"/><path d="M3.5 18.5a5.5 5.5 0 0 1 11 0"/><path d="M16 6.2a3 3 0 0 1 0 5.6"/><path d="M17.5 18.5a5.5 5.5 0 0 0-2.2-4.4"/></svg>`,
+    activity: `<svg ${A}><path d="M3 12h3.5l2.5-6 4 12 2.5-6H21"/></svg>`,
+    trend: `<svg ${A}><path d="M4 15l5-5 3.5 3.5L20 6"/><path d="M15 6h5v5"/></svg>`,
+    doc: `<svg ${A}><path d="M6 3h8l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v4h4"/><path d="M8.5 12.5h7"/><path d="M8.5 16h5"/></svg>`,
+    refresh: `<svg ${A}><path d="M20 11a8 8 0 1 0-.6 4"/><path d="M20 5v6h-6"/></svg>`,
+    chevron: `<svg ${A} width="18" height="18"><path d="M9 6l6 6-6 6"/></svg>`
   };
-  const [label, cls] = MAP[type] || MAP.mention;
-  return `<span class="radar-v3-badge ${cls}">${escapeHtml(label)}</span>`;
+  return ICONS[name] || "";
 }
 
-function renderRadarV3Signal(item, cat) {
-  const href = sourceHref(item);
-  const date = escapeHtml(formatBriefingDate(item.publishedAt || item.retrievedAt || ""));
-  const sourceLabel = escapeHtml(item.sourceName || "Quelle");
-  const titleText = escapeHtml(item.title || "Erwähnung gefunden");
-  const iconHtml = radarV3SourceIcon(item);
+const RADAR_SEGMENTS = [
+  { key: "party", label: "Partei", empty: "Keine neuen relevanten Parteisignale." },
+  { key: "constituency", label: "Wahlkreis", empty: "Keine neuen relevanten Entwicklungen aus deinem Wahlkreis." },
+  { key: "committees", label: "Ausschüsse", empty: "Keine neuen relevanten Ausschussentwicklungen." }
+];
 
-  const articleLink = href
-    ? `<a class="radar-v3-article-link" href="${escapeAttribute(href)}" target="_blank" rel="noopener noreferrer">Zum Artikel →</a>`
-    : "";
-  const actionBtn = cat.actionLabel && href
-    ? `<button class="secondary-button radar-v3-act-btn" type="button" data-view="office">${escapeHtml(cat.actionLabel)}</button>`
-    : "";
+const RADAR_FILTERS = [
+  { key: "all", label: "Alle" },
+  { key: "mention", label: "Über dich" },
+  { key: "party", label: "Partei" },
+  { key: "constituency", label: "Wahlkreis" },
+  { key: "committee", label: "Ausschüsse" },
+  { key: "media", label: "Medien" },
+  { key: "official", label: "Offizielle Quellen" }
+];
 
-  return `
-    <article class="radar-v3-card">
-      <div class="radar-v3-card-meta">
-        ${iconHtml}
-        <span class="radar-v3-card-source">${sourceLabel}</span>
-        <span class="radar-v3-card-dot" aria-hidden="true">·</span>
-        <span class="radar-v3-card-date">${date}</span>
-        ${radarV3Badge(cat.type)}
-      </div>
-      <h3 class="radar-v3-card-title">${titleText}</h3>
-      <div class="radar-v3-card-footer">
-        ${articleLink}
-        ${actionBtn}
-      </div>
-    </article>
-  `;
-}
+const RADAR_RELATION_LABELS = { mention: "Über dich", party: "Partei", constituency: "Wahlkreis", committee: "Ausschuss", media: "Medien", official: "Offiziell" };
 
 function profileMentions() {
   const profileTerms = profileNameTerms();
@@ -8531,6 +8744,10 @@ function bindActions() {
       ensureViewData(currentView);
     });
   });
+
+  // Radar-Interaktionen (Segmente, Filter, Alle-anzeigen, Refresh) — scoped auf
+  // #radar2-root, aktualisiert partiell ohne Ganzseiten-Rebuild (kein Scroll-Sprung).
+  bindRadarActions();
 
   app.querySelectorAll("[data-theme-set]").forEach((button) => {
     button.addEventListener("click", () => setThemePref(button.dataset.themeSet));

@@ -11056,3 +11056,284 @@ body:has(.lage2) {
 @media (max-width: 344px) {
   .hstand-duo { grid-template-columns: 1fr; }
 }
+
+/* ============================================================================
+   RADAR — Persönliches politisches Umfeld & Frühwarnsystem
+   Premium, ruhig, ministeriell. Übernimmt Hierarchie/Weißraum/Typografie aus
+   dem Referenzbild in das BESTEHENDE dunkle Helmut-Designsystem (Tokens), mit
+   sauberen Light-Overrides. Keine dicken Rahmen, keine lauten Karten, kein
+   Dashboard. Reduktion = Premium.
+   ========================================================================== */
+.radar2 {
+  --radar-signal: var(--command-purple, #8c5cff);
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Kopf ---------------------------------------------------------------------- */
+.radar2-header { margin-bottom: 20px; }
+.radar2-header-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.radar2-h1 {
+  margin: 0;
+  font-size: clamp(28px, 8.4vw, 32px);
+  font-weight: 720;
+  letter-spacing: -.02em;
+  line-height: 1.04;
+}
+.radar2-lede {
+  margin: 6px 0 0;
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--muted);
+  line-height: 1.35;
+}
+.radar2-status {
+  display: inline-flex; align-items: center; gap: 7px;
+  margin-top: 12px;
+  font-size: 12.5px;
+  color: var(--muted-2);
+}
+.radar2-status-dot { width: 7px; height: 7px; border-radius: 999px; background: var(--muted-2); }
+.radar2-status--fresh .radar2-status-dot { background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.radar2-refresh {
+  flex: 0 0 auto;
+  width: 42px; height: 42px;
+  display: grid; place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--muted);
+  transition: color var(--dur-fast) var(--ease-out-soft), border-color var(--dur-fast) var(--ease-out-soft), transform var(--dur-fast) var(--ease-out-soft);
+}
+.radar2-refresh:hover { color: var(--text); border-color: var(--accent-soft); }
+.radar2-refresh:active { transform: scale(.94); }
+.radar2-refresh.is-loading { color: var(--accent); }
+.radar2-refresh.is-loading .radar2-ico { animation: radar2-spin 900ms linear infinite; }
+@keyframes radar2-spin { to { transform: rotate(360deg); } }
+
+/* Icons --------------------------------------------------------------------- */
+.radar2-ico { display: block; flex: 0 0 auto; }
+
+/* Persönliche Zusammenfassung (die EINE hervorgehobene Karte) --------------- */
+.radar2-summary {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid var(--accent-soft);
+  background:
+    linear-gradient(180deg, var(--accent-soft), transparent 130%),
+    var(--card);
+  box-shadow: 0 1px 0 var(--hairline);
+}
+.radar2-summary--empty { color: var(--muted); }
+.radar2-summary-icon {
+  flex: 0 0 auto;
+  width: 52px; height: 52px;
+  display: grid; place-items: center;
+  border-radius: 14px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.radar2-summary-icon .radar2-ico { width: 26px; height: 26px; }
+.radar2-summary-text { margin: 0; font-size: 15.5px; line-height: 1.5; color: var(--text); }
+.radar2-summary-line { display: block; }
+.radar2-hl { color: var(--accent); font-weight: 620; }
+
+/* Sektionen ----------------------------------------------------------------- */
+.radar2-section { margin-top: 30px; }
+.radar2-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.radar2-h2 {
+  display: inline-flex; align-items: center; gap: 9px;
+  margin: 0 0 12px;
+  font-size: 18px;
+  font-weight: 640;
+  letter-spacing: -.01em;
+  color: var(--text);
+}
+.radar2-section-head .radar2-h2 { margin: 0; }
+.radar2-h2 .radar2-ico { color: var(--muted-2); width: 19px; height: 19px; }
+.radar2-more-link {
+  flex: 0 0 auto;
+  border: 0; background: transparent;
+  color: var(--accent);
+  font-size: 13px; font-weight: 560;
+  padding: 6px 2px;
+  border-radius: 8px;
+}
+.radar2-more-link:hover { text-decoration: underline; }
+
+/* Karten (Über dich / Dynamiken) ------------------------------------------- */
+.radar2-cards { display: flex; flex-direction: column; gap: 10px; }
+.radar2-card {
+  display: flex; align-items: stretch; gap: 12px;
+  padding: 14px 15px;
+  border-radius: 14px;
+  border: 1px solid var(--hairline);
+  background: var(--card);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color var(--dur-fast) var(--ease-out-soft), background var(--dur-fast) var(--ease-out-soft);
+}
+.radar2-card:hover { border-color: var(--line); }
+.radar2-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.radar2-card--nolink { cursor: default; }
+.radar2-card-body { flex: 1 1 auto; min-width: 0; }
+.radar2-meta { display: flex; align-items: center; gap: 7px; margin-bottom: 7px; }
+.radar2-source-name { font-size: 12.5px; font-weight: 560; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 62%; }
+.radar2-dot { color: var(--muted-2); }
+.radar2-time { font-size: 12px; color: var(--muted-2); white-space: nowrap; }
+.radar2-card-title {
+  margin: 0;
+  font-size: 15px; font-weight: 620; line-height: 1.34;
+  letter-spacing: -.005em;
+  color: var(--text);
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.radar2-card-foot { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 9px; }
+.radar2-card-sub { font-size: 12.5px; color: var(--muted); line-height: 1.3; }
+.radar2-card-sub--block {
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  margin: 8px 0 0; line-height: 1.4;
+}
+
+/* Quellenzeichen (Monogramm, kein erfundenes Bild) -------------------------- */
+.radar2-badge {
+  flex: 0 0 auto;
+  width: 30px; height: 30px;
+  display: grid; place-items: center;
+  border-radius: 9px;
+  background: var(--radar-badge, var(--accent));
+  color: #fff;
+  font-size: 13px; font-weight: 680; line-height: 1;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.08);
+}
+
+/* Chevron ------------------------------------------------------------------- */
+.radar2-chevron { flex: 0 0 auto; align-self: center; color: var(--muted-2); display: grid; place-items: center; }
+
+/* Dynamik-Karte: eigenes Signal-Icon (dezent lila) ------------------------- */
+.radar2-card--dynamic { align-items: flex-start; }
+.radar2-dyn-icon {
+  flex: 0 0 auto;
+  width: 40px; height: 40px;
+  display: grid; place-items: center;
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--radar-signal) 15%, transparent);
+  color: var(--radar-signal);
+}
+.radar2-dyn-evidence { margin: 6px 0 0; font-size: 13px; line-height: 1.4; color: var(--muted); }
+
+/* Segmentsteuerung (Partei / Wahlkreis / Ausschüsse) — ruhig, kein Pill ----- */
+.radar2-segments {
+  display: flex; gap: 4px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--hairline);
+}
+.radar2-seg {
+  flex: 1 1 0; min-height: 42px;
+  border: 0; background: transparent;
+  color: var(--muted); font-size: 14px; font-weight: 560;
+  padding: 10px 4px 11px;
+  position: relative;
+  white-space: nowrap;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  transition: color var(--dur-fast) var(--ease-out-soft);
+}
+@media (max-width: 360px) { .radar2-seg { font-size: 13px; } }
+.radar2-seg:hover { color: var(--text); }
+.radar2-seg.is-active { color: var(--accent); font-weight: 620; }
+.radar2-seg.is-active::after {
+  content: ""; position: absolute; left: 12px; right: 12px; bottom: -1px; height: 2px;
+  border-radius: 2px; background: var(--accent);
+}
+.radar2-seg-count {
+  font-style: normal; font-size: 11px; font-weight: 640;
+  min-width: 17px; padding: 1px 5px; border-radius: 999px;
+  background: var(--accent-soft); color: var(--accent);
+}
+
+/* Ruhige Listen (Umfeld / Artikel) mit subtilen Trennlinien ---------------- */
+.radar2-list { display: flex; flex-direction: column; }
+.radar2-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 13px 2px;
+  border-bottom: 1px solid var(--hairline);
+  text-decoration: none; color: inherit;
+  transition: background var(--dur-fast) var(--ease-out-soft);
+}
+.radar2-row:last-child { border-bottom: 0; }
+.radar2-row:hover { background: color-mix(in srgb, var(--text) 3%, transparent); }
+.radar2-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-radius: 8px; }
+.radar2-row--nolink { cursor: default; }
+.radar2-row-body { flex: 1 1 auto; min-width: 0; }
+.radar2-row-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.radar2-row-meta--top { margin-bottom: 5px; }
+.radar2-row-title {
+  margin: 3px 0 5px;
+  font-size: 14.5px; font-weight: 600; line-height: 1.34; color: var(--text);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.radar2-row-sub { font-size: 12px; color: var(--muted-2); }
+
+/* Filter — horizontal scrollbar, nie abgeschnitten -------------------------- */
+.radar2-filters {
+  display: flex; gap: 8px;
+  margin-bottom: 6px;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 2px 2px 8px;
+  scroll-padding: 0 12px;
+}
+.radar2-filters::-webkit-scrollbar { display: none; }
+.radar2-filter {
+  flex: 0 0 auto; min-height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px; font-weight: 540;
+  padding: 8px 15px;
+  white-space: nowrap;
+  transition: color var(--dur-fast) var(--ease-out-soft), background var(--dur-fast) var(--ease-out-soft), border-color var(--dur-fast) var(--ease-out-soft);
+}
+.radar2-filter:hover { color: var(--text); border-color: var(--accent-soft); }
+.radar2-filter.is-active { background: var(--accent); border-color: transparent; color: #fff; font-weight: 600; }
+.radar2-filter:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Tags (Erwähnungsart / Bezug / Signal) — dezent, selten Farbe -------------- */
+.radar2-tag {
+  display: inline-flex; align-items: center;
+  font-size: 11.5px; font-weight: 580; line-height: 1;
+  padding: 4px 9px; border-radius: 7px;
+  letter-spacing: .002em;
+}
+.radar2-tag--neutral { background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--muted); }
+.radar2-tag--critical { background: color-mix(in srgb, var(--danger) 16%, transparent); color: var(--danger); }
+.radar2-tag--signal { background: color-mix(in srgb, var(--radar-signal) 16%, transparent); color: var(--radar-signal); }
+
+/* Leerzustände -------------------------------------------------------------- */
+.radar2-empty {
+  padding: 18px 4px;
+  font-size: 14px; line-height: 1.45;
+  color: var(--muted-2);
+}
+
+/* Desktop: ruhige, begrenzte Inhaltsbreite (kein breites Dashboard) --------- */
+@media (min-width: 900px) {
+  .radar2 { max-width: 640px; }
+  .radar2-header { margin-bottom: 24px; }
+  .radar2-section { margin-top: 34px; }
+}
+
+/* Light-Theme-Overrides (Tokens tragen das Meiste; hier nur Feinschliff) ---- */
+:root[data-theme="light"] .radar2-summary {
+  border-color: color-mix(in srgb, var(--accent) 24%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 9%, #fff), #fff 130%);
+  box-shadow: 0 1px 2px rgba(15,23,42,.05);
+}
+:root[data-theme="light"] .radar2-card { box-shadow: 0 1px 2px rgba(15,23,42,.04); }
+:root[data-theme="light"] .radar2-badge { box-shadow: inset 0 0 0 1px rgba(0,0,0,.06); }
+:root[data-theme="light"] .radar2-tag--neutral { background: rgba(15,23,42,.06); }
