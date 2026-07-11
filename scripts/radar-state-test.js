@@ -51,7 +51,9 @@ const koParty = {
 const koCommittee = {
   ...base, id: "k4", vorgang_id: "v4",
   display_title: "Anhörung im Ausschuss für Arbeit und Soziales",
-  ausschuesse: ["Ausschuss für Arbeit und Soziales"], best_source_url: "https://bundestag.de/artikel-4",
+  // Echter Partei- UND Ausschussvorgang: beide Dimensionen strukturell verankert.
+  ausschuesse: ["Ausschuss für Arbeit und Soziales"], parteien: ["Die Linke"],
+  best_source_url: "https://bundestag.de/artikel-4",
   updated_at: iso(4 * 3600e3), created_at: iso(4 * 3600e3)
 };
 const koRegion = {
@@ -353,6 +355,7 @@ check("Keine technischen Quellen-Enums im sourceCategory-Label (nur Klartext/'')
   const pF = { id: "f1", fullName: "Erika Mustermann", party: "CDU" };
   // Alt-datierte QUELLEN (20 Tage), aber KO wurde HEUTE neu verarbeitet (updated_at frisch).
   const koReprocessed = { ...base, id: "krp", vorgang_id: "vrp", display_title: "Alt-datierter Vorgang, heute neu verarbeitet",
+    parteien: ["CDU"], // echter, strukturell verankerter Parteibezug (bleibt im Umfeld erlaubt)
     source_document_count: 4, updated_at: iso(1 * 3600e3), created_at: iso(20 * 864e5) };
   const dec = [{ knowledge_object_id: "krp", vorgang_id: "vrp", score: 60, matched_features: [{ type: "partei", value: "CDU" }] }];
   const src = { vrp: [
@@ -377,6 +380,76 @@ check("Keine technischen Quellen-Enums im sourceCategory-Label (nur Klartext/'')
     stF.dynamics.some((d) => d.vorgangId === "vfs"));
   check("Phase3: Dynamik zeigt das QUELLEN-Datum (nicht das Re-Processing-Datum)",
     (stF.dynamics.find((d) => d.vorgangId === "vfs") || {}).lastUpdatedAt === iso(2 * 864e5));
+}
+
+// --- 15) STRENGE, belegbare Relationen (WELT-Artikel-Fix, alle Bereiche) -----
+{
+  const p = { id: "s2", fullName: "Erika Mustermann", party: "Die Linke", committees: ["Auswärtiger Ausschuss"], constituency: "Salzgitter-Wolfenbüttel" };
+  const one = (ko, dec, src) => radarState.buildCurrentRadarState({ profile: p, decisions: [dec], kosById: { [ko.id]: ko }, knowledgeObjects: [ko], sourcesByVorgang: src || {}, now: nowDate });
+
+  // WELT-Fall: Außenpolitik-MEDIENartikel, eigene Partei NUR beiläufig erwähnt
+  // (mentioned_parties), NICHT strukturell involviert (parteien leer).
+  const koWelt = { ...base, id: "kw", vorgang_id: "vw",
+    display_title: "Türkei provoziert mit scharfer Israelkritik vor NATO-Gipfel",
+    was_ist_passiert: "Außenpolitische Zuspitzung vor dem Gipfel.",
+    mentioned_parties: ["Die Linke"], parteien: [],
+    best_source_url: "https://welt.de/aussenpolitik", best_link_type: "direct",
+    updated_at: iso(3600e3), created_at: iso(3600e3) };
+  const stWelt = one(koWelt,
+    { knowledge_object_id: "kw", vorgang_id: "vw", score: 55, matched_features: [{ type: "partei", value: "Die Linke" }] },
+    { vw: [{ id: "w1", url: "https://welt.de/x", source_type: "media", published_at: iso(3600e3) }] });
+  check("#8 WELT-Außenpolitikartikel ohne strukturellen Parteibeleg -> NICHT im Umfeld Partei",
+    !stWelt.environment.party.some((e) => e.vorgangId === "vw"));
+  check("#8 WELT-Artikel trägt KEINEN relationType 'party' (nicht im Partei-Filter)",
+    !((stWelt.articles.find((a) => a.vorgangId === "vw") || { relationTypes: [] }).relationTypes.includes("party")));
+  check("#15 WELT-Artikel bleibt in 'Alle relevanten Artikel' (breitere Recherche-Ebene)",
+    stWelt.articles.some((a) => a.vorgangId === "vw"));
+  check("#8 WELT-Artikel trägt 'media' (korrekter Quellenbezug bleibt)",
+    (stWelt.articles.find((a) => a.vorgangId === "vw") || { relationTypes: [] }).relationTypes.includes("media"));
+
+  // #4/#6 echte eigene Partei (strukturell involviert) -> im Partei-Segment.
+  const koRealParty = { ...base, id: "krp2", vorgang_id: "vrp2", display_title: "Die Linke beschließt neue Linie",
+    parteien: ["Die Linke"], best_source_url: "https://x.de/p", updated_at: iso(3600e3), created_at: iso(3600e3) };
+  check("#4 Vorgang mit strukturell involvierter eigener Partei -> im Umfeld Partei",
+    one(koRealParty, { knowledge_object_id: "krp2", vorgang_id: "vrp2", score: 60, matched_features: [{ type: "partei", value: "Die Linke" }] })
+      .environment.party.some((e) => e.vorgangId === "vrp2"));
+  // #12 reiner Parteibezug (kein ko.ausschuesse) -> NICHT unter Ausschüsse.
+  check("#12 Ausschüsse zeigt keinen reinen Parteibezug (kein ausschuesse -> nicht im Ausschuss-Segment)",
+    !one(koRealParty, { knowledge_object_id: "krp2", vorgang_id: "vrp2", score: 60, matched_features: [{ type: "partei", value: "Die Linke" }, { type: "ausschuss", value: "Auswärtiger Ausschuss" }] })
+      .environment.committees.some((e) => e.vorgangId === "vrp2"));
+  // #7 reiner Themen-/Score-Match ohne strukturellen Bezug -> in keinem Umfeld-Segment.
+  const koTheme = { ...base, id: "kt2", vorgang_id: "vt2", display_title: "Allgemeine Rentendebatte",
+    tags: ["Rente"], parteien: [], ausschuesse: [], best_source_url: "https://x.de/t", updated_at: iso(3600e3), created_at: iso(3600e3) };
+  const stTheme = one(koTheme, { knowledge_object_id: "kt2", vorgang_id: "vt2", score: 50, matched_features: [{ type: "partei", value: "Die Linke" }] });
+  check("#7 reiner Themen-/Score-Match ohne Struktur-Beleg -> in KEINEM Umfeld-Segment",
+    !stTheme.environment.party.some((e) => e.vorgangId === "vt2") &&
+    !stTheme.environment.committees.some((e) => e.vorgangId === "vt2") &&
+    !stTheme.environment.constituency.some((e) => e.vorgangId === "vt2"));
+
+  // #10 allgemeines Bundesland ohne konkreten Wahlkreis -> NICHT unter Wahlkreis.
+  const pState = { id: "s3", fullName: "Erika Mustermann", party: "CDU", state: "Niedersachsen", constituency: "Salzgitter-Wolfenbüttel" };
+  const koState = { ...base, id: "kst", vorgang_id: "vst", display_title: "Niedersachsen debattiert Landeshaushalt",
+    mentioned_locations: ["Niedersachsen"], best_source_url: "https://x.de/nds", updated_at: iso(3600e3), created_at: iso(3600e3) };
+  const stState = radarState.buildCurrentRadarState({ profile: pState, decisions: [{ knowledge_object_id: "kst", vorgang_id: "vst", score: 55, matched_features: [{ type: "wahlkreis", value: "Niedersachsen" }] }], kosById: { kst: koState }, knowledgeObjects: [koState], sourcesByVorgang: {}, now: nowDate });
+  check("#10 allgemeines Bundesland (Niedersachsen) ohne konkreten Wahlkreis -> NICHT unter Wahlkreis",
+    !stState.environment.constituency.some((e) => e.vorgangId === "vst"));
+  const koConc = { ...base, id: "kc", vorgang_id: "vc", display_title: "Investitionen in Salzgitter-Wolfenbüttel",
+    mentioned_locations: ["Salzgitter-Wolfenbüttel"], best_source_url: "https://x.de/sz", updated_at: iso(3600e3), created_at: iso(3600e3) };
+  const stConc = radarState.buildCurrentRadarState({ profile: pState, decisions: [{ knowledge_object_id: "kc", vorgang_id: "vc", score: 55, matched_features: [{ type: "wahlkreis", value: "Salzgitter-Wolfenbüttel" }] }], kosById: { kc: koConc }, knowledgeObjects: [koConc], sourcesByVorgang: {}, now: nowDate });
+  check("#9 konkreter Profil-Wahlkreis (Salzgitter-Wolfenbüttel) -> unter Wahlkreis",
+    stConc.environment.constituency.some((e) => e.vorgangId === "vc"));
+
+  // radarRelationBeleg Unit-Tests (nachvollziehbar, ohne Secrets/Kosten/LLM).
+  const terms = radarState.radarProfileTerms(p);
+  check("radarRelationBeleg: party NUR mit struktureller ko.parteien-Involvierung",
+    radarState.radarRelationBeleg("party", "Die Linke", { parteien: ["Die Linke"] }, terms) === true &&
+    radarState.radarRelationBeleg("party", "Die Linke", { parteien: [], mentioned_parties: ["Die Linke"] }, terms) === false);
+  check("radarRelationBeleg: constituency NUR konkreter Wahlkreis, kein Bundesland",
+    radarState.radarRelationBeleg("constituency", "Salzgitter-Wolfenbüttel", { mentioned_locations: ["Salzgitter-Wolfenbüttel"] }, terms) === true &&
+    radarState.radarRelationBeleg("constituency", "Niedersachsen", { mentioned_locations: ["Niedersachsen"] }, terms) === false);
+  check("radarRelationBeleg: committee NUR mit struktureller ko.ausschuesse-Involvierung",
+    radarState.radarRelationBeleg("committee", "Auswärtiger Ausschuss", { ausschuesse: ["Auswärtiger Ausschuss"] }, terms) === true &&
+    radarState.radarRelationBeleg("committee", "Auswärtiger Ausschuss", { ausschuesse: [] }, terms) === false);
 }
 
 console.log(`\n${passed}/${passed + failed} Radar-State-Assertions erfolgreich.`);
