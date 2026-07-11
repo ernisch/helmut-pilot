@@ -160,9 +160,17 @@ async function main() {
     `got=${stAuto.currentHelmutState.briefingType} exp=${expectedAuto}`);
   check("Read-Pfad: abgeleiteter Slot ist ein gueltiger Wert",
     ["morning", "midday", "evening", "daily"].includes(stAuto.currentHelmutState.briefingType));
-  // debugPrimary NUR bei ?debugPrimary=1: die normale Antwort wird NICHT erweitert.
-  check("Read-Pfad: normale Antwort traegt KEIN debugPrimary (Gate: keine unnoetige Erweiterung)",
-    !("debugPrimary" in stAuto) && !("debugPrimary" in stMorning));
+  // debugPrimary/debugRadarRelations NUR bei gesetztem Parameter: die normale Antwort
+  // wird NICHT erweitert (kein Debug-Objekt in Regel-Antworten).
+  check("Read-Pfad: normale Antwort traegt KEIN Debug-Objekt (debugPrimary/debugRadarRelations)",
+    !("debugPrimary" in stAuto) && !("debugPrimary" in stMorning) &&
+    !("debugRadarRelations" in stAuto) && !("debugRadarRelations" in stMorning));
+  // Gesetzte Debug-Parameter duerfen den Read-Pfad nie crashen (fehlerrobust). Im Offline-
+  // Leerzustand bleibt die Antwort ehrlich leer; das Debug-Objekt haengt nur im befuellten
+  // Read-Pfad (positiver Pfad in radar-state-test buildRadarRelationsDebug abgedeckt).
+  const stDbg = await server.__buildV3Briefing(prof, "u-1", { slot: "daily", debug: true, debugRadar: true });
+  check("Read-Pfad: gesetzte Debug-Parameter crashen nicht (fehlerrobust)",
+    Boolean(stDbg && stDbg.currentHelmutState));
 
   // --- e) 0-KI-Invariante ---------------------------------------------------
   // Der Slot-aware Read darf keinen LLM-Call anstossen. Wir verproben, dass die

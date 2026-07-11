@@ -44,14 +44,15 @@ const koCriticism = {
 };
 const koParty = {
   ...base, id: "k3", vorgang_id: "v3",
-  display_title: "Fraktion beschließt neue Linie zur Migrationspolitik",
+  // Partei ist AKTEUR im Titel (nicht nur beilaeufig gelistet) -> belegter Parteibezug.
+  display_title: "Die Linke beschließt neue Linie zur Migrationspolitik",
   parteien: ["Die Linke"], best_source_url: "https://x.de/artikel-3",
   updated_at: iso(3 * 3600e3), created_at: iso(3 * 3600e3)
 };
 const koCommittee = {
   ...base, id: "k4", vorgang_id: "v4",
-  display_title: "Anhörung im Ausschuss für Arbeit und Soziales",
-  // Echter Partei- UND Ausschussvorgang: beide Dimensionen strukturell verankert.
+  // Echter Partei- UND Ausschussvorgang: Partei als Akteur im Titel + Ausschuss strukturell.
+  display_title: "Die Linke fordert Anhörung im Ausschuss für Arbeit und Soziales",
   ausschuesse: ["Ausschuss für Arbeit und Soziales"], parteien: ["Die Linke"],
   best_source_url: "https://bundestag.de/artikel-4",
   updated_at: iso(4 * 3600e3), created_at: iso(4 * 3600e3)
@@ -123,7 +124,10 @@ const envParty = state.environment.party.map((e) => e.vorgangId);
 const envCommittees = state.environment.committees.map((e) => e.vorgangId);
 const envRegion = state.environment.constituency.map((e) => e.vorgangId);
 check("Partei-Bezug (v3) im Segment Partei", envParty.includes("v3"));
-check("Fraktion/Partei-Bezug stammt aus Profil (v1/v3/v4 sind Partei)", envParty.includes("v1") && envParty.includes("v4"));
+// Partei-Umfeld verlangt die Partei als AKTEUR/Quelle: v3/v4 (Partei handelt im Titel)
+// sind Partei; v1 ist reine PERSONEN-Handlung des Profilinhabers -> "Über dich", NICHT Partei.
+check("Partei-Umfeld nur mit Partei als Akteur: v3/v4 Partei, v1 (Personenhandlung) NICHT",
+  envParty.includes("v3") && envParty.includes("v4") && !envParty.includes("v1"));
 check("Ausschuss-Bezug (v4) im Segment Ausschüsse", envCommittees.includes("v4"));
 check("Wahlkreis-Bezug (v5) im Segment Wahlkreis", envRegion.includes("v5"));
 check("Ein Dokument kann mehrere echte relationTypes haben (v4 in Partei UND Ausschuss)",
@@ -296,7 +300,7 @@ check("Keine technischen Quellen-Enums im sourceCategory-Label (nur Klartext/'')
   check("Blocker #9 Name NUR in why_relevant/warum_wichtig (Profil-/Decision-Match) -> KEIN Über dich",
     one(mk({ id: "s-why", vorgang_id: "s-why", display_title: "Bremen führt Fußfesseln ein", why_relevant: "Für İnce als Ausschussmitglied relevant.", warum_wichtig: "Cem İnce positioniert die Fraktion.", risiken: ["Kritik"] })).length === 0);
   check("Blocker #4/5 Reiner Partei-/Fraktionsbezug -> KEIN Über dich",
-    one(mk({ id: "s-party", vorgang_id: "s-party", display_title: "Fraktion beschließt Linie", parteien: ["Die Linke"] })).length === 0);
+    one(mk({ id: "s-party", vorgang_id: "s-party", display_title: "Die Linke beschließt Linie", parteien: ["Die Linke"] })).length === 0);
   check("Blocker #7 Reiner Ausschussbezug -> KEIN Über dich",
     one(mk({ id: "s-comm", vorgang_id: "s-comm", display_title: "Anhörung im Ausschuss", ausschuesse: ["Ausschuss für Arbeit und Soziales"] })).length === 0);
   check("Blocker #6 Reiner Wahlkreisbezug -> KEIN Über dich",
@@ -308,8 +312,8 @@ check("Keine technischen Quellen-Enums im sourceCategory-Label (nur Klartext/'')
   const emptyMentionState = radarState.buildCurrentRadarState({
     profile: p,
     decisions: [{ knowledge_object_id: "s-party", vorgang_id: "s-party", score: 60, matched_features: [{ type: "partei", value: "Die Linke" }] }],
-    kosById: { "s-party": mk({ id: "s-party", vorgang_id: "s-party", display_title: "Fraktion beschließt Linie", parteien: ["Die Linke"] }) },
-    knowledgeObjects: [mk({ id: "s-party", vorgang_id: "s-party", display_title: "Fraktion beschließt Linie", parteien: ["Die Linke"] })],
+    kosById: { "s-party": mk({ id: "s-party", vorgang_id: "s-party", display_title: "Die Linke beschließt Linie", parteien: ["Die Linke"] }) },
+    knowledgeObjects: [mk({ id: "s-party", vorgang_id: "s-party", display_title: "Die Linke beschließt Linie", parteien: ["Die Linke"] })],
     sourcesByVorgang: {}, now: nowDate
   });
   check("Blocker #10/11 Leere mentions -> Zusammenfassung behauptet keine direkte Erwähnung",
@@ -354,8 +358,8 @@ check("Keine technischen Quellen-Enums im sourceCategory-Label (nur Klartext/'')
 {
   const pF = { id: "f1", fullName: "Erika Mustermann", party: "CDU" };
   // Alt-datierte QUELLEN (20 Tage), aber KO wurde HEUTE neu verarbeitet (updated_at frisch).
-  const koReprocessed = { ...base, id: "krp", vorgang_id: "vrp", display_title: "Alt-datierter Vorgang, heute neu verarbeitet",
-    parteien: ["CDU"], // echter, strukturell verankerter Parteibezug (bleibt im Umfeld erlaubt)
+  const koReprocessed = { ...base, id: "krp", vorgang_id: "vrp", display_title: "CDU bekräftigt Kurs trotz alter Quellenlage",
+    parteien: ["CDU"], // Partei als Akteur im Titel + strukturell in parteien (bleibt im Umfeld erlaubt)
     source_document_count: 4, updated_at: iso(1 * 3600e3), created_at: iso(20 * 864e5) };
   const dec = [{ knowledge_object_id: "krp", vorgang_id: "vrp", score: 60, matched_features: [{ type: "partei", value: "CDU" }] }];
   const src = { vrp: [
@@ -441,15 +445,84 @@ check("Keine technischen Quellen-Enums im sourceCategory-Label (nur Klartext/'')
 
   // radarRelationBeleg Unit-Tests (nachvollziehbar, ohne Secrets/Kosten/LLM).
   const terms = radarState.radarProfileTerms(p);
-  check("radarRelationBeleg: party NUR mit struktureller ko.parteien-Involvierung",
-    radarState.radarRelationBeleg("party", "Die Linke", { parteien: ["Die Linke"] }, terms) === true &&
-    radarState.radarRelationBeleg("party", "Die Linke", { parteien: [], mentioned_parties: ["Die Linke"] }, terms) === false);
+  check("radarRelationBeleg: party verlangt ko.parteien UND Akteurs-/Quellenbeleg (Titel ODER Partei-/Fraktionsquelle)",
+    // Partei in parteien + Partei als Akteur im Titel -> belegt.
+    radarState.radarRelationBeleg("party", "Die Linke", { parteien: ["Die Linke"], display_title: "Die Linke beschließt neue Linie" }, terms) === true &&
+    // Partei in parteien + Partei-/Fraktionsquelle -> belegt (auch ohne Partei im Titel).
+    radarState.radarRelationBeleg("party", "Die Linke", { parteien: ["Die Linke"] }, terms, { sourceType: "faction" }) === true &&
+    // Partei NUR beilaeufig erwaehnt (mentioned_parties), nicht in parteien -> NICHT belegt (FALL B).
+    radarState.radarRelationBeleg("party", "Die Linke", { parteien: [], mentioned_parties: ["Die Linke"] }, terms) === false &&
+    // FALL C: Partei in parteien, aber Medienartikel ohne Parteihandlung (Partei nicht im Titel,
+    // Quelle = Medien) -> NICHT belegt. Genau der WELT-Fall aus echten Daten.
+    radarState.radarRelationBeleg("party", "Die Linke", { parteien: ["Die Linke"], display_title: "Türkei provoziert vor NATO-Gipfel" }, terms, { sourceType: "media" }) === false);
   check("radarRelationBeleg: constituency NUR konkreter Wahlkreis, kein Bundesland",
     radarState.radarRelationBeleg("constituency", "Salzgitter-Wolfenbüttel", { mentioned_locations: ["Salzgitter-Wolfenbüttel"] }, terms) === true &&
     radarState.radarRelationBeleg("constituency", "Niedersachsen", { mentioned_locations: ["Niedersachsen"] }, terms) === false);
   check("radarRelationBeleg: committee NUR mit struktureller ko.ausschuesse-Involvierung",
     radarState.radarRelationBeleg("committee", "Auswärtiger Ausschuss", { ausschuesse: ["Auswärtiger Ausschuss"] }, terms) === true &&
     radarState.radarRelationBeleg("committee", "Auswärtiger Ausschuss", { ausschuesse: [] }, terms) === false);
+}
+
+// --- 16) Radar Relation Truth — Partei nur mit Akteurs-/Quellenbeleg ---------
+// Deckt FALL C (Partei faelschlich in ko.parteien bei Medienartikel), echte Partei-/
+// Fraktionsquelle, SaaS-Allgemeingueltigkeit (andere Partei/Profil) und den read-only
+// Debug-Weg ab. KEINE hartkodierte Partei, KEINE WELT-/Themen-Sonderregel.
+{
+  const p = { id: "s4", fullName: "Erika Mustermann", party: "Die Linke", constituency: "Salzgitter-Wolfenbüttel" };
+  const one = (ko, dec, src) => radarState.buildCurrentRadarState({ profile: p, decisions: [dec], kosById: { [ko.id]: ko }, knowledgeObjects: [ko], sourcesByVorgang: src || {}, now: nowDate });
+  const partyFeat = (v) => ({ knowledge_object_id: v.replace("v", "k"), vorgang_id: v, score: 55, matched_features: [{ type: "partei", value: "Die Linke" }] });
+
+  // FALL C: Partei IN ko.parteien, aber Medienartikel ohne Parteihandlung (Partei nicht
+  // im Titel, Quelle = Medien). Darf NICHT unter Partei — bleibt in Artikeln als 'media'.
+  const koFallC = { ...base, id: "kc16", vorgang_id: "vc16",
+    display_title: "Türkei provoziert mit scharfer Israelkritik vor NATO-Gipfel",
+    was_ist_passiert: "Außenpolitische Zuspitzung.", parteien: ["Die Linke"], mentioned_parties: ["Die Linke"],
+    best_source_url: "https://welt.de/x", updated_at: iso(3600e3), created_at: iso(3600e3) };
+  const stC = one(koFallC, { knowledge_object_id: "kc16", vorgang_id: "vc16", score: 55, matched_features: [{ type: "partei", value: "Die Linke" }] },
+    { vc16: [{ id: "c1", url: "https://welt.de/x", source_type: "media", published_at: iso(3600e3) }] });
+  check("FALL C: Partei in ko.parteien, aber Medienartikel ohne Parteihandlung -> NICHT unter Partei",
+    !stC.environment.party.some((e) => e.vorgangId === "vc16") &&
+    !((stC.articles.find((a) => a.vorgangId === "vc16") || { relationTypes: [] }).relationTypes.includes("party")));
+  check("FALL C: Artikel bleibt in 'Alle relevanten Artikel' als 'media'",
+    (stC.articles.find((a) => a.vorgangId === "vc16") || { relationTypes: [] }).relationTypes.includes("media"));
+
+  // Echte Partei-/FraktionsQUELLE (source_type faction) -> unter Partei, auch ohne Partei im Titel.
+  const koSrc = { ...base, id: "ks16", vorgang_id: "vs16", display_title: "Neue Linie zur Sozialpolitik beschlossen",
+    parteien: ["Die Linke"], updated_at: iso(3600e3), created_at: iso(3600e3) };
+  const stSrc = one(koSrc, { knowledge_object_id: "ks16", vorgang_id: "vs16", score: 60, matched_features: [{ type: "partei", value: "Die Linke" }] },
+    { vs16: [{ id: "f1", url: "https://die-linke.de/pm", source_type: "faction", published_at: iso(3600e3) }] });
+  check("Partei als echte Fraktionsquelle (source_type faction) -> unter Partei",
+    stSrc.environment.party.some((e) => e.vorgangId === "vs16"));
+
+  // SaaS-Allgemeingueltigkeit: anderes Profil, andere Partei (SPD) — dieselbe Regel greift.
+  const pSPD = { id: "s5", fullName: "Max Beispiel", party: "SPD", constituency: "Berlin-Mitte" };
+  const koSPD = { ...base, id: "kspd", vorgang_id: "vspd", display_title: "SPD beschließt neues Rentenkonzept",
+    parteien: ["SPD"], best_source_url: "https://x.de/spd", updated_at: iso(3600e3), created_at: iso(3600e3) };
+  const stSPD = radarState.buildCurrentRadarState({ profile: pSPD,
+    decisions: [{ knowledge_object_id: "kspd", vorgang_id: "vspd", score: 60, matched_features: [{ type: "partei", value: "SPD" }] }],
+    kosById: { kspd: koSPD }, knowledgeObjects: [koSPD], sourcesByVorgang: {}, now: nowDate });
+  check("SaaS: andere Partei/Profil (SPD als Akteur im Titel) -> unter Partei (keine hartkodierte Partei)",
+    stSPD.environment.party.some((e) => e.vorgangId === "vspd"));
+  const koSPDmedia = { ...koSPD, id: "kspm", vorgang_id: "vspm", display_title: "Kommentar: Was die Außenpolitik jetzt braucht", parteien: ["SPD"], mentioned_parties: ["SPD"] };
+  const stSPDm = radarState.buildCurrentRadarState({ profile: pSPD,
+    decisions: [{ knowledge_object_id: "kspm", vorgang_id: "vspm", score: 55, matched_features: [{ type: "partei", value: "SPD" }] }],
+    kosById: { kspm: koSPDmedia }, knowledgeObjects: [koSPDmedia],
+    sourcesByVorgang: { vspm: [{ id: "m9", url: "https://welt.de/k", source_type: "media", published_at: iso(3600e3) }] }, now: nowDate });
+  check("SaaS: SPD nur medial kommentiert (kein Akteur) -> NICHT unter Partei",
+    !stSPDm.environment.party.some((e) => e.vorgangId === "vspm"));
+
+  // Read-only Debug-Weg (buildRadarRelationsDebug): nur Partei-relevante Vorgaenge, mit
+  // Begruendung; KEINE Kosten/Secrets. partyGranted spiegelt die echte Regel.
+  const dbg = radarState.buildRadarRelationsDebug({ profile: p, decisions: [
+    { knowledge_object_id: "kc16", vorgang_id: "vc16", score: 55, matched_features: [{ type: "partei", value: "Die Linke" }] }
+  ], kosById: { kc16: koFallC }, sourcesByVorgang: { vc16: [{ id: "c1", url: "https://welt.de/x", source_type: "media", published_at: iso(3600e3) }] }, commit: "abc123def456" });
+  check("Debug: enthält commit + genau den Partei-Vorgang mit Begruendung", dbg.commit === "abc123def456" && dbg.count === 1 && dbg.items[0].vorgangId === "vc16");
+  check("Debug: partyGranted=false fuer FALL C, mit Belegfeldern (parteien/mentionedParties/reason)",
+    dbg.items[0].partyGranted === false && Array.isArray(dbg.items[0].parteien) && Array.isArray(dbg.items[0].mentionedParties) && /Akteurs-\/Quellenbeleg|Medien/.test(dbg.items[0].reason));
+  check("Debug: KEINE Kosten-/Secret-Felder im Debug-Objekt",
+    !JSON.stringify(dbg).match(/kosten|totalcost|\bcost\b|\bsecret\b|\btoken\b|\busd\b|€|api[_-]?key/i));
+  check("Debug: Vorgang OHNE Partei-Match erscheint NICHT im Debug",
+    radarState.buildRadarRelationsDebug({ profile: p, decisions: [{ knowledge_object_id: "kt2", vorgang_id: "vt2", score: 50, matched_features: [{ type: "thema", value: "Rente" }] }], kosById: { kt2: { ...base, id: "kt2", vorgang_id: "vt2", display_title: "Rentendebatte" } }, sourcesByVorgang: {} }).count === 0);
 }
 
 console.log(`\n${passed}/${passed + failed} Radar-State-Assertions erfolgreich.`);

@@ -1259,12 +1259,17 @@ async function latestBriefingPayload({ politicianId, profile, url, previewMode =
   // Read-only Auswahl-Diagnose NUR bei ?debugPrimary=1 (technische Felder, keine Secrets/
   // Texte/Kosten/PII). Ohne den Parameter bleibt die Antwort unveraendert.
   const debug = Boolean(url && url.searchParams && url.searchParams.get("debugPrimary") === "1");
+  // Read-only Radar-Relations-Diagnose NUR bei ?debugRadarRelations=1 (nur Titel/Quelle/
+  // Kategorie + technische Partei-Belege; keine Secrets/Kosten/Admin/Rohtexte). Ohne den
+  // Parameter bleibt die Antwort unveraendert (kein Debug-Objekt).
+  const debugRadar = Boolean(url && url.searchParams && url.searchParams.get("debugRadarRelations") === "1");
+  const commitSha = process.env.VERCEL_GIT_COMMIT_SHA ? String(process.env.VERCEL_GIT_COMMIT_SHA).slice(0, 12) : null;
   const debugMeta = debug ? {
-    commit: process.env.VERCEL_GIT_COMMIT_SHA ? String(process.env.VERCEL_GIT_COMMIT_SHA).slice(0, 12) : null,
-    version: process.env.VERCEL_GIT_COMMIT_SHA ? String(process.env.VERCEL_GIT_COMMIT_SHA).slice(0, 12) : null,
+    commit: commitSha,
+    version: commitSha,
     apiOrigin: (url && (url.origin || (url.protocol && url.host ? `${url.protocol}//${url.host}` : null))) || null
   } : null;
-  const briefing = await buildV3Briefing(profile, politicianId, { slot, debug, debugMeta });
+  const briefing = await buildV3Briefing(profile, politicianId, { slot, debug, debugMeta, debugRadar, commit: commitSha });
   return prepareBriefingResponse(briefing, { previewMode, compact });
 }
 
@@ -1356,6 +1361,22 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
       };
     } catch (error) {
       briefing.debugPrimary = { error: "debug-build-failed", message: error && error.message };
+    }
+  }
+  // Read-only Radar-Relations-Diagnose (nur bei ?debugRadarRelations=1 -> opts.debugRadar).
+  // Aus dem ECHTEN Read-Pfad, additiv, ohne die normale Antwort zu veraendern. Fehlerrobust.
+  if (opts && opts.debugRadar) {
+    try {
+      const radarState = require("./lib/helmut/radarState");
+      briefing.debugRadarRelations = radarState.buildRadarRelationsDebug({
+        profile,
+        decisions: safeDecisions,
+        kosById,
+        sourcesByVorgang,
+        commit: opts.commit || null
+      });
+    } catch (error) {
+      briefing.debugRadarRelations = { error: "debug-build-failed", message: error && error.message };
     }
   }
   return briefing;
