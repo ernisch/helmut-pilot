@@ -4633,7 +4633,13 @@ function renderHelmutStandView() {
 function renderHstandHeader(state) {
   const st = HSTAND_STATUS_LABEL[state.status] || HSTAND_STATUS_LABEL.empty;
   const when = hstandWhen(state.sourcesSummary && state.sourcesSummary.lastUpdated) || hstandWhen(state.generatedAt);
-  const type = HSTAND_TYPE_LABEL[String(state.briefingType || "").toLowerCase()] || "Briefing";
+  // Bei STALE (angezeigter Datenstand nicht von heute) darf NICHT der aktuelle Slot-Name
+  // (z. B. „Mittagsbriefing") mit einem alten Datum vermischt werden — das wirkt falsch.
+  // Dann ehrlich „Letzter Stand · <Datum>" zeigen. Nur bei frischem Stand den Slot-Namen.
+  const isStale = state.status === "stale" || state.staleState === true;
+  const type = isStale
+    ? "Letzter Stand"
+    : (HSTAND_TYPE_LABEL[String(state.briefingType || "").toLowerCase()] || "Briefing");
   const partial = state.qualityStatus === "partial";
   return `
     <header class="hstand-head">
