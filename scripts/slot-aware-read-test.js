@@ -82,6 +82,59 @@ check("buildCurrentHelmutState Default -> daily",
 check("buildCurrentHelmutState normalisiert ungueltig -> daily",
   contract.buildCurrentHelmutState({ profile, decisions: [], kosById: {}, sourcesByVorgang: {}, briefingType: "xyz" }).briefingType === "daily");
 
+// --- c2) Tages-Frische-Guard (ehrlicher Status) -----------------------------
+// Der Slot-NAME kommt aus der Uhrzeit; der STATUS spiegelt die Frische der ANGEZEIGTEN
+// Daten. Aeltere Daten (nicht heute, Europe/Berlin) -> nicht "fresh"/"Aktuell".
+check("dateKeyInTimezone: Berlin-Kalendertag korrekt (Sommer UTC+2)",
+  bl.dateKeyInTimezone("2026-07-08T04:01:00Z", TZ) === "2026-07-08");
+check("dateKeyInTimezone: Mitternachtsgrenze Berlin (00:20 = neuer Tag)",
+  bl.dateKeyInTimezone("2026-07-10T22:20:00Z", TZ) === "2026-07-11");
+check("dateKeyInTimezone: ungueltiges Date -> null (kein Frische-Urteil)",
+  bl.dateKeyInTimezone("nope", TZ) === null);
+
+function stateWith(updatedAtIso, nowIso, briefingType = "morning") {
+  const ko = {
+    id: "ko-f", vorgang_id: "vg-f", status: "neu", understanding_status: "complete",
+    display_title: "Titel", was_ist_passiert: "X.", warum_wichtig: "Y.", why_relevant: "Z.", recommendation: "R.",
+    risk_of_no_action: "Ri.", opportunity_summary: "Ch.", risk_level: "high", opportunity_level: "high",
+    recommended_communication_struct: { communicationLine: "L.", recommendedChannel: "press", recommendedFormat: "statement", suggestedOutputs: ["qa"] },
+    action_items_struct: [{ title: "T", description: "", dueHint: "heute", priority: "high", actionType: "monitor" }],
+    ausschuesse: ["A"], zeitdruck: "hoch", source_document_count: 3, updated_at: updatedAtIso
+  };
+  const dec = [{ knowledge_object_id: "ko-f", vorgang_id: "vg-f", score: 88, decision: "Sofort reagieren", priority_type: "risk", risk: "r", chance: "", matched_features: [] }];
+  return contract.buildCurrentHelmutState({ profile, decisions: dec, kosById: { "ko-f": ko }, sourcesByVorgang: {}, now: new Date(nowIso), briefingType });
+}
+// 1) Daten von heute -> Status bleibt fresh (Aktuell).
+const sToday = stateWith("2026-07-11T05:00:00Z", "2026-07-11T07:29:00Z");
+check("Frische: Datenstand HEUTE (Europe/Berlin) -> status fresh (Aktuell bleibt)",
+  sToday.status === "fresh" && sToday.staleState === false);
+// 2) Daten von vor heute -> Status NICHT fresh (der gemeldete 08.-Juli-Fall).
+const sOld = stateWith("2026-07-08T04:01:00Z", "2026-07-11T07:29:00Z");
+check("Frische: Datenstand vor heute -> status NICHT fresh (kein 'Aktuell' auf altem Stand)",
+  sOld.status !== "fresh");
+check("Frische: alter Stand -> vorhandener 'stale'-Status + staleState true (ehrlich)",
+  sOld.status === "stale" && sOld.staleState === true);
+check("Frische: qualityStatus (Feld-Vollstaendigkeit) bleibt unabhaengig 'valid'",
+  sOld.qualityStatus === "valid");
+// 3) Slot-Name bleibt aus der Uhrzeit — unabhaengig vom Datenstand.
+check("Frische: Slot-Name bleibt aus Uhrzeit (morning), auch wenn Daten alt sind",
+  sOld.briefingType === "morning");
+check("Frische: Slot-Override evening + alte Daten -> briefingType evening, status stale",
+  stateWith("2026-07-08T04:01:00Z", "2026-07-11T07:29:00Z", "evening").status === "stale" &&
+  stateWith("2026-07-08T04:01:00Z", "2026-07-11T07:29:00Z", "evening").briefingType === "evening");
+// 4) Mitternachtsgrenze Berlin: 23:30 (Vortag) ist NICHT heute -> stale.
+check("Frische: Mitternachtsgrenze — Vortag 23:30 Berlin -> stale",
+  stateWith("2026-07-10T21:30:00Z", "2026-07-10T22:20:00Z").status === "stale");
+// 5) daily-Fallback: Guard greift auch ohne expliziten Slot (kein briefingType).
+const sDailyOld = contract.toBriefingContractV3({
+  profile, now: new Date("2026-07-11T07:29:00Z"),
+  decisions: [{ knowledge_object_id: "ko-f", vorgang_id: "vg-f", score: 88, decision: "Sofort reagieren", priority_type: "risk", risk: "r", chance: "", matched_features: [] }],
+  kosById: { "ko-f": { id: "ko-f", vorgang_id: "vg-f", status: "neu", understanding_status: "complete", display_title: "T", was_ist_passiert: "X.", warum_wichtig: "Y.", recommendation: "R.", risk_of_no_action: "Ri.", opportunity_summary: "Ch.", recommended_communication: "L.", action_items: ["A"], ausschuesse: ["A"], zeitdruck: "hoch", source_document_count: 1, updated_at: "2026-07-08T04:01:00Z" } },
+  sourcesByVorgang: {}
+}).currentHelmutState;
+check("Frische: daily-Fallback (kein Slot) + alte Daten -> briefingType daily, status stale",
+  sDailyOld.briefingType === "daily" && sDailyOld.status === "stale");
+
 // --- d) Read-Pfad (__buildV3Briefing) ---------------------------------------
 // server.js laedt offline sauber (listen ist hinter require.main===module). Ohne
 // V3-Store liefert buildV3Briefing den ehrlichen Leerzustand — TRAEGT aber den Slot.
