@@ -16,6 +16,8 @@
     "test:briefing-language": "node scripts/briefing-language-test.js",
     "test:slot-aware": "node scripts/slot-aware-read-test.js",
     "test:radar": "node scripts/radar-test.js",
+    "test:radar-state": "node scripts/radar-state-test.js",
+    "test:radar-ui": "node scripts/radar-ui-test.js",
     "test:saas": "node scripts/saas-foundation-test.js",
     "lage:backfill": "node scripts/lage-backfill.js",
     "backfill:presentation": "node scripts/presentation-backfill.js"
