@@ -2011,6 +2011,84 @@ function dsDateLabel(iso) {
 // scope: "all" (Default) | "global" (nur Motor-Karte, ohne Pro-Account) | "accounts"
 // (nur die Pro-Account-Detailkarten). Rein zur Gliederung — Pro-Account steckt jetzt
 // verdichtet im Profile-Bereich, die großen Karten nur noch in dessen Detailansicht.
+// Mehrmandantenfaehigkeit Phase 4: Profilkarte im Admin-Datenstatus. Zeigt den
+// klaren Validierungszustand (Phase 5), fehlende Pflichtfelder, ob das Profil
+// technisch/fachlich versorgt wird, das KI-Budget — plus Aktionen (Testbriefing,
+// Bearbeiten, Aktiv/Inaktiv). Rein additiv; die Handler sind in bindAdminEvents.
+function dsBudgetLabel(cent) {
+  if (cent == null) return `<span class="ds-sub">Standard</span>`;
+  const eur = (Number(cent) / 100).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return `${eur} €`;
+}
+// Klarer Versorgungs-Satz in einfacher Sprache (Anforderung Phase 4: technisch
+// versorgt? fachlich dünn? leer?). Kein Fachjargon.
+function dsSupplyLabel(a, val) {
+  if (val && val.deaktiviert) return `<span class="ds-bad">Deaktiviert — erhält nichts</span>`;
+  if (val && val.zustand === "fehlerhaft") return `<span class="ds-bad">Fehlerhaft — bitte korrigieren</span>`;
+  if (val && val.zustand === "nicht_bereit") return `<span class="ds-bad">Profil leer — noch nicht nutzbar</span>`;
+  const points = Number(a.briefingPunkte || 0) + Number(a.lageVorgaenge || 0);
+  if (points === 0) return `<span class="ds-warn">Technisch versorgt, aber aktuell ohne passende Vorgänge (dünne Lage)</span>`;
+  if (points < 5) return `<span class="ds-warn">Fachlich dünn versorgt (${points} Vorgänge)</span>`;
+  return `<span class="ds-ok">Gut versorgt (${points} Vorgänge)</span>`;
+}
+function dsStateBadge(val) {
+  const cls = { vollstaendig: "ok", teilweise: "warn", nicht_bereit: "bad", fehlerhaft: "bad", deaktiviert: "bad" }[val && val.zustand] || "sub";
+  return `<span class="ds-state ds-state--${cls}">${escapeHtml((val && val.zustandLabel) || "–")}</span>`;
+}
+function renderAdminProfileCard(a, profilLabel) {
+  const comp = a.profilVollstaendigkeit || {};
+  const val = a.validierung || {};
+  const missing = Array.isArray(val.fehlendePflichtfelder) && val.fehlendePflichtfelder.length
+    ? val.fehlendePflichtfelder
+    : (Array.isArray(comp.fehlendePflichtfelder) ? comp.fehlendePflichtfelder : []);
+  const kontoBadge = a.kontoTyp ? `<span class="ds-badge ds-badge--${escapeHtml(String(a.kontoTyp).toLowerCase())}">${escapeHtml(a.kontoTyp)}</span>` : "";
+  const budget = a.kiBudget || {};
+  const pid = escapeHtml(a.politicianId || "");
+  const aktiv = a.aktiv !== false;
+  return `
+    <div class="ds-account-card" data-profile-card="${pid}">
+      <div class="ds-account-head">
+        <span class="ds-account-name">${escapeHtml(a.name || a.politicianId || "")}</span>
+        ${kontoBadge}
+        ${dsStateBadge(val)}
+      </div>
+      ${dsRow("Versorgung", dsSupplyLabel(a, val))}
+      ${dsRow("Profil", `${escapeHtml(profilLabel[comp.level] || comp.level || "–")}${a.personalisierungEingeschraenkt ? ` <span class="ds-warn">· Personalisierung eingeschränkt</span>` : ""}`)}
+      ${missing.length ? dsRow("Fehlende Pflichtfelder", `<span class="ds-warn">${missing.map(escapeHtml).join(", ")}</span>`) : ""}
+      ${dsRow("Onboarding", escapeHtml({ neu: "Neu", in_bearbeitung: "In Bearbeitung", abgeschlossen: "Abgeschlossen" }[a.onboardingStatus] || a.onboardingStatus || "–"))}
+      ${dsRow("Aktiv", aktiv ? `<span class="ds-ok">Ja</span>` : `<span class="ds-bad">Nein (deaktiviert)</span>`)}
+      ${dsRow("Briefing-Punkte", dsFmt(a.briefingPunkte))}
+      ${dsRow("Lage-Vorgänge", dsFmt(a.lageVorgaenge))}
+      ${dsRow("Radar Chancen", dsFmt(a.radarChancen))}
+      ${dsRow("Radar Risiken", dsFmt(a.radarRisiken))}
+      ${dsRow("KI-Budget/Tag", dsBudgetLabel(budget.taeglichCent))}
+      ${dsRow("KI-Budget/Monat", dsBudgetLabel(budget.monatlichCent))}
+      ${dsRow("KI-Kosten heute", dsCost(a.kiKosten))}
+      <div class="ds-account-actions">
+        <button type="button" class="ghost-button ds-mini-btn" data-profile-test-briefing="${pid}">Testbriefing</button>
+        <button type="button" class="ghost-button ds-mini-btn" data-profile-edit="${pid}">Bearbeiten</button>
+        <button type="button" class="ghost-button ds-mini-btn" data-profile-toggle-active="${pid}" data-active="${aktiv ? "1" : "0"}">${aktiv ? "Deaktivieren" : "Aktivieren"}</button>
+      </div>
+      <div class="ds-profile-editor" data-profile-editor="${pid}" hidden>
+        <div class="ds-editor-grid">
+          <label class="ds-editor-field"><span>KI-Budget/Tag (€, 0 = Standard)</span><input type="number" min="0" step="0.01" data-edit-field="aiBudgetDailyEur" value="${budget.taeglichCent != null ? (Number(budget.taeglichCent) / 100).toFixed(2) : ""}" /></label>
+          <label class="ds-editor-field"><span>KI-Budget/Monat (€, 0 = Standard)</span><input type="number" min="0" step="0.01" data-edit-field="aiBudgetMonthlyEur" value="${budget.monatlichCent != null ? (Number(budget.monatlichCent) / 100).toFixed(2) : ""}" /></label>
+          <label class="ds-editor-field"><span>Onboarding-Status</span>
+            <select data-edit-field="onboardingStatus">
+              <option value="neu"${a.onboardingStatus === "neu" ? " selected" : ""}>Neu</option>
+              <option value="in_bearbeitung"${a.onboardingStatus === "in_bearbeitung" ? " selected" : ""}>In Bearbeitung</option>
+              <option value="abgeschlossen"${a.onboardingStatus === "abgeschlossen" ? " selected" : ""}>Abgeschlossen</option>
+            </select>
+          </label>
+        </div>
+        <div class="ds-editor-foot">
+          <button type="button" class="primary-button ds-mini-btn" data-profile-save="${pid}">Speichern</button>
+          <small class="ds-editor-msg" data-profile-msg="${pid}"></small>
+        </div>
+      </div>
+    </div>`;
+}
+
 function renderAdminDataStatus(ds, scope = "all") {
   if (!ds || !ds.global) {
     return `<section class="ds-status"><h2 class="admin-section-title">Datenstatus (intern)</h2>
@@ -2079,28 +2157,7 @@ function renderAdminDataStatus(ds, scope = "all") {
       <div class="ds-row ds-row--wide"><span class="ds-row-label">Quellen nach Kategorie</span>${dsCategories(g.quellen && g.quellen.nachKategorie)}</div>
     </div>`;
 
-  const accountCards = (Array.isArray(ds.perAccount) ? ds.perAccount : []).map((a) => {
-    const comp = a.profilVollstaendigkeit || {};
-    const missing = Array.isArray(comp.fehlendePflichtfelder) ? comp.fehlendePflichtfelder : [];
-    const kontoBadge = a.kontoTyp ? `<span class="ds-badge ds-badge--${escapeHtml(String(a.kontoTyp).toLowerCase())}">${escapeHtml(a.kontoTyp)}</span>` : "";
-    return `
-    <div class="ds-account-card">
-      <div class="ds-account-head">
-        <span class="ds-account-name">${escapeHtml(a.name || a.politicianId || "")}</span>
-        ${kontoBadge}
-        ${pill(a.ampel)}
-      </div>
-      ${dsRow("Status", a.ampel === "gruen" ? `<span class="ds-ok">In Ordnung</span>` : a.ampel === "gelb" ? `<span class="ds-warn">Eingeschränkt</span>` : `<span class="ds-bad">Kein Wert</span>`)}
-      ${dsRow("Profil", `${escapeHtml(profilLabel[comp.level] || comp.level || "–")}${a.personalisierungEingeschraenkt ? ` <span class="ds-warn">· Personalisierung eingeschränkt</span>` : ""}`)}
-      ${missing.length ? dsRow("Fehlende Pflichtfelder", `<span class="ds-warn">${missing.map(escapeHtml).join(", ")}</span>`) : ""}
-      ${dsRow("Briefing sichtbar", a.briefingSichtbar ? `<span class="ds-ok">Ja</span>` : `<span class="ds-sub">Nein</span>`)}
-      ${dsRow("Briefing-Punkte", dsFmt(a.briefingPunkte))}
-      ${dsRow("Lage-Vorgänge", dsFmt(a.lageVorgaenge))}
-      ${dsRow("Radar Chancen", dsFmt(a.radarChancen))}
-      ${dsRow("Radar Risiken", dsFmt(a.radarRisiken))}
-      ${dsRow("KI-Kosten heute", dsCost(a.kiKosten))}
-    </div>`;
-  }).join("");
+  const accountCards = (Array.isArray(ds.perAccount) ? ds.perAccount : []).map((a) => renderAdminProfileCard(a, profilLabel)).join("");
 
   const legend = ds.legende && typeof ds.legende === "object"
     ? Object.entries(ds.legende).map(([k, v]) => `<li><strong>${escapeHtml(k)}</strong>: ${escapeHtml(String(v))}</li>`).join("")
@@ -9011,6 +9068,81 @@ function bindAccountActions() {
       showToast("Nutzer angelegt");
     });
   }
+
+  // --- Mehrmandantenfaehigkeit Phase 4: Admin-Profilverwaltung (Aktionen) ---
+  // Testbriefing (Trockenrechnung, 0 KI): zeigt, ob das Profil gerade Inhalte bekaeme.
+  app.querySelectorAll("[data-profile-test-briefing]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const pid = button.dataset.profileTestBriefing;
+      button.disabled = true;
+      const prev = button.textContent;
+      button.textContent = "Prüfe …";
+      const res = await apiSend("POST", `/api/admin/profile/${encodeURIComponent(pid)}/test-briefing?${apiScopeQuery()}`, {});
+      button.disabled = false;
+      button.textContent = prev;
+      if (res.ok && res.json) {
+        showToast(`${res.json.zustand}: ${res.json.hinweis}`);
+      } else {
+        showToast("Testbriefing fehlgeschlagen.");
+      }
+    });
+  });
+
+  // Bearbeiten aufklappen.
+  app.querySelectorAll("[data-profile-edit]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const pid = button.dataset.profileEdit;
+      const editor = app.querySelector(`[data-profile-editor="${pid}"]`);
+      if (editor) editor.hidden = !editor.hidden;
+    });
+  });
+
+  // Aktiv/Inaktiv umschalten (Profil-Ebene, unabhaengig vom Login).
+  app.querySelectorAll("[data-profile-toggle-active]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const pid = button.dataset.profileToggleActive;
+      const active = button.dataset.active === "1";
+      const res = await apiSend("POST", `/api/admin/profile/${encodeURIComponent(pid)}?${apiScopeQuery()}`, { profileActive: !active });
+      if (res.ok) {
+        adminDataLoaded = false;
+        await ensureViewData("admin");
+        showToast(active ? "Profil deaktiviert." : "Profil aktiviert.");
+      } else {
+        showToast("Konnte Status nicht ändern.");
+      }
+    });
+  });
+
+  // Speichern (KI-Budget, Onboarding-Status). Euro -> Cent; leer/0 -> Standard.
+  app.querySelectorAll("[data-profile-save]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const pid = button.dataset.profileSave;
+      const card = app.querySelector(`[data-profile-card="${pid}"]`);
+      const msg = card ? card.querySelector(`[data-profile-msg="${pid}"]`) : null;
+      const getField = (name) => card ? card.querySelector(`[data-edit-field="${name}"]`) : null;
+      const eurToCent = (v) => {
+        const s = String(v == null ? "" : v).trim();
+        if (s === "") return 0; // 0 = Standard (Server setzt auf null)
+        const num = Number(s.replace(",", "."));
+        if (!Number.isFinite(num) || num < 0) return null; // ungueltig -> Validierung meldet fehlerhaft
+        return Math.round(num * 100);
+      };
+      const body = {
+        aiBudgetDailyCents: eurToCent(getField("aiBudgetDailyEur") && getField("aiBudgetDailyEur").value),
+        aiBudgetMonthlyCents: eurToCent(getField("aiBudgetMonthlyEur") && getField("aiBudgetMonthlyEur").value),
+        onboardingStatus: getField("onboardingStatus") && getField("onboardingStatus").value
+      };
+      if (msg) msg.textContent = "Speichere …";
+      const res = await apiSend("POST", `/api/admin/profile/${encodeURIComponent(pid)}?${apiScopeQuery()}`, body);
+      if (res.ok) {
+        adminDataLoaded = false;
+        await ensureViewData("admin");
+        showToast("Profil gespeichert.");
+      } else if (msg) {
+        msg.textContent = res.json?.error || "Speichern fehlgeschlagen.";
+      }
+    });
+  });
 
   app.querySelectorAll("[data-toggle-user]").forEach((button) => {
     let confirmTimer = null;
