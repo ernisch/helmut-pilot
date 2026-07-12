@@ -83,10 +83,18 @@ auslösen (kein Key/Secret in seiner Umgebung). Daher wurde die Ausführung als
 - **Evidence-Guard:** nur Tags, die im Vorgangstext belegt sind (keine Halluzination).
 - **Idempotent:** erneuter Lauf überspringt bereits angereicherte KOs.
 
+Zusätzliche Parameter:
+- **`?bypassBudget=1`** — umgeht **nur** das tageweite App-Budget für diesen einen
+  bewussten Lauf (der harte 5-€-Deckel bleibt die echte Grenze). Reiner Query-Param
+  pro Request → **keine persistente Einstellung, nichts zurückzusetzen**.
+- Die Antwort enthält **`aiProvider`** (`azure` / `openai` / `none`) — so ist sichtbar,
+  ob wirklich Azure genutzt wird (nur der Name, **kein Secret**).
+
 **Empfohlener Ablauf für den Betreiber:**
-1. `GET /api/admin/ko-enrichment-backfill` (Dry-Run) → Kandidatenzahl + Kostenschätzung prüfen.
-2. Wenn plausibel: `GET /api/admin/ko-enrichment-backfill?execute=1` → Lauf; Antwort
-   enthält `processed/aiCalls/spentEur/samples/stop`.
+1. `GET /api/admin/ko-enrichment-backfill` (Dry-Run) → `aiProvider` (muss `azure` sein),
+   Kandidatenzahl + Kostenschätzung prüfen.
+2. Wenn plausibel: `GET /api/admin/ko-enrichment-backfill?execute=1&bypassBudget=1`
+   → Lauf; Antwort enthält `aiProvider/processed/aiCalls/failed/spentEur/samples/stop`.
 3. Ergebnis prüfen (`samples` = geschriebene Tags stichprobenartig plausibel/belegt?).
 4. Danach `/api/release/public` (Personalisierung) + Runtime-Logs prüfen.
 
