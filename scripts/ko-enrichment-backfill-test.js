@@ -115,6 +115,21 @@ function makeDeps(cfg = {}) {
     check("5-EUR-Deckel: spentEur <= 5", r.spentEur <= 5);
   }
 
+  // ── 10) bypassBudget: umgeht das Tagesbudget, ABER der harte Cap bleibt ──
+  {
+    // canSpend meldet "nicht erlaubt" -> ohne Bypass Stopp; mit Bypass laeuft es.
+    const { deps, calls } = makeDeps({ kos: [koComplete("a"), koComplete("b")], canSpend: async () => ({ allowed: false }) });
+    const r = await runKoEnrichmentBackfill({ execute: true, bypassBudget: true }, deps);
+    check("bypassBudget: verarbeitet trotz gesperrtem Tagesbudget", r.processed === 2 && calls.ai === 2, JSON.stringify(r));
+  }
+  {
+    // bypassBudget hebelt den HARTEN Euro-Deckel NICHT aus.
+    const kos = Array.from({ length: 100 }, (_, i) => koComplete("k" + i));
+    const { deps } = makeDeps({ kos, canSpend: async () => ({ allowed: false }) });
+    const r = await runKoEnrichmentBackfill({ execute: true, bypassBudget: true, maxEurCents: 6, estPerCallCents: 2 }, deps);
+    check("bypassBudget: harter 6ct-Deckel greift trotzdem (Stopp budget-cap)", r.stop === "budget-cap" && r.spentEur <= 0.06);
+  }
+
   console.log(`\n${passed}/${passed + failed} KO-Backfill-Assertions erfolgreich.`);
   if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exit(1); }
 })().catch((e) => { console.error("Test-Fehler:", e); process.exit(1); });

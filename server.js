@@ -1005,9 +1005,10 @@ async function handleRequest(request, response) {
     if (!requireRoleOr403(response, authUser, "admin")) return undefined;
     return handleAsync(response, async () => {
       const execute = url.searchParams.get("execute") === "1";
+      const bypassBudget = url.searchParams.get("bypassBudget") === "1";
       const wanted = Number(url.searchParams.get("maxCents"));
       const maxEurCents = Math.min(500, Number.isFinite(wanted) && wanted > 0 ? wanted : 500); // HART <= 5 EUR
-      return runKoEnrichmentBackfill({ execute, maxEurCents }, {
+      const result = await runKoEnrichmentBackfill({ execute, bypassBudget, maxEurCents }, {
         listKnowledgeObjects: (o) => listKnowledgeObjects(o),
         canSpend: () => canSpendLlm(null),
         extractTags: (ko) => extractKnowledgeObjectTags(ko, { politicianId: null }),
@@ -1015,6 +1016,8 @@ async function handleRequest(request, response) {
         saveEnrichment: (id, patch) => saveKnowledgeObjectEnrichment(id, patch),
         log: (m) => console.log("[ko-backfill]", m)
       });
+      // aiProvider (nur Name, kein Secret) macht sichtbar, ob Azure genutzt wird.
+      return { aiProvider: require("./lib/helmut/ai").aiProviderName(), budgetBypassed: bypassBudget && execute, ...result };
     });
   }
 
