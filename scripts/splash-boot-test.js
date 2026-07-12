@@ -1,9 +1,12 @@
 "use strict";
 
 // Regressionstest fuer den Splash-/Boot-Hotfix (Android/Brave "haengt im Splash").
-// Prueft: (a) den index.html-Watchdog VERHALTENSBASIERT (Fake-DOM + Fake-Timer),
-// (b) statische Garantien in client.js (Boot-Sicherheitsnetz, Auth-Timeout,
-// hideStartupSplash-Aufrufe) und styles.css (kein Kaesten hinter dem H).
+// Prueft PRIMAER die TATSAECHLICH ausgelieferte Production-Shell aus
+// server.js.__indexHtml() (der Server nutzt ein eigenes Template, NICHT die
+// Datei index.html direkt — siehe Kommentar bei SPLASH_WATCHDOG_SCRIPT in
+// server.js). Zusaetzlich: Konsistenzpruefung index.html <-> server.js (keine
+// unbemerkte Drift), Guard-Variable gegen doppelte Timer, sowie die
+// bestehenden statischen Garantien in client.js/styles.css.
 // KEIN Netz, KEINE KI, KEINE Mutation.
 
 const fs = require("fs");
@@ -14,6 +17,8 @@ const root = path.join(__dirname, "..");
 const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
 const client = fs.readFileSync(path.join(root, "client.js"), "utf8");
 const css = fs.readFileSync(path.join(root, "styles.css"), "utf8");
+const serverModule = require(path.join(root, "server.js"));
+const productionShell = serverModule.__indexHtml();
 
 let passed = 0, failed = 0;
 function check(name, cond, detail = "") {
@@ -48,12 +53,30 @@ function makeEnv({ startsLoading = true } = {}) {
   } };
 }
 
-// Inline-Watchdog-IIFE aus index.html extrahieren (das zweite <script> ohne src).
-const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
-const watchdog = scripts.find((s) => s.includes("__helmutClientLoaded") && s.includes("is-loading"));
-check("index.html: Watchdog-Script vorhanden", Boolean(watchdog));
+// --- Pflichtprüfung: die TATSAECHLICH ausgelieferte Production-Shell -------
+console.log("Production-Shell (server.js __indexHtml())");
+check("Production Shell enthaelt den Watchdog (Guard-Variable vorhanden)",
+  productionShell.includes("__helmutSplashWatchdogInstalled"));
+check("Production Shell: Watchdog steht NACH dem client.js-Script (laedt weiterhin zuerst)",
+  productionShell.indexOf('<script src="client.js') < productionShell.indexOf("__helmutSplashWatchdogInstalled"));
+check("Production Shell: appSplash/loading-screen/app-Grundgeruest unveraendert vorhanden",
+  productionShell.includes('id="appSplash"') && productionShell.includes('id="app"') && productionShell.includes("loading-screen"));
+
+// Watchdog-IIFE aus der ECHTEN Production-Shell extrahieren (nicht aus index.html).
+const shellScripts = [...productionShell.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
+const watchdog = shellScripts.find((s) => s.includes("__helmutClientLoaded") && s.includes("is-loading"));
+check("Production Shell: Watchdog-Script extrahierbar", Boolean(watchdog));
+
+// --- Konsistenz index.html <-> server.js (keine unbemerkte Drift) ----------
+console.log("\nKonsistenz index.html <-> server.js");
+const indexScripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
+const indexWatchdog = indexScripts.find((s) => s.includes("__helmutClientLoaded") && s.includes("is-loading"));
+const normalize = (s) => (s || "").replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s+/g, " ").trim();
+check("index.html-Watchdog UND server.js-Watchdog sind funktional identisch (Kommentare/Whitespace ignoriert)",
+  Boolean(indexWatchdog) && normalize(indexWatchdog) === normalize(watchdog));
 
 // Fall 1: App startet NICHT (bleibt is-loading) -> Watchdog entfernt Splash + zeigt Neu-laden.
+console.log("\nWatchdog-Verhalten (gegen die echte Production-Shell)");
 {
   const env = makeEnv({ startsLoading: true });
   const sandbox = { window: env.win, document: env.document, setTimeout: env.win.setTimeout };
@@ -62,18 +85,22 @@ check("index.html: Watchdog-Script vorhanden", Boolean(watchdog));
   vm.runInContext(watchdog, sandbox);
   // client.js kam nie an -> __helmutClientLoaded bleibt undefined -> Stufe-1 (8s)
   env.runTimersUpTo(8000);
-  check("Watchdog Fall1: Splash-Overlay wird versteckt (display:none)", env.splash.style.display === "none");
+  check("Watchdog Fall1 (Stufe 1): Splash-Overlay wird versteckt (display:none)", env.splash.style.display === "none");
   check("Watchdog Fall1: is-loading entfernt", !env.classes.has("is-loading"));
   check("Watchdog Fall1: splash-gone gesetzt", env.classes.has("splash-gone"));
-  check("Watchdog Fall1: Neu-laden-Ansicht mit Button", /Neu laden/.test(env.app.innerHTML) && /reload\(\)/.test(env.app.innerHTML));
+  check("Watchdog Fall1: Neu-laden-Ansicht mit Button erscheint", /Neu laden/.test(env.app.innerHTML) && /reload\(\)/.test(env.app.innerHTML));
 }
 
-// Fall 2: App startet erfolgreich (is-loading vor Timeout entfernt) -> Watchdog wirkt NICHT.
+// Fall 2: App startet erfolgreich (is-loading vor Timeout entfernt) -> Watchdog wirkt NICHT,
+// normaler Start wird NICHT verzoegert (vor Ablauf der Timer passiert nichts).
 {
   const env = makeEnv({ startsLoading: true });
   const sandbox = { window: env.win, document: env.document, setTimeout: env.win.setTimeout };
   vm.createContext(sandbox);
   vm.runInContext(watchdog, sandbox);
+  // Vor JEDEM Timer-Ablauf darf der Watchdog nichts tun (kein verzoegerter Normalstart).
+  check("Watchdog Fall2: vor Timer-Ablauf unveraendert (kein verzoegerter Normalstart)",
+    env.splash.style.display === "" && env.classes.has("is-loading"));
   env.win.__helmutClientLoaded = true;      // client.js lief
   env.classes.delete("is-loading");         // hideStartupSplash lief (App sichtbar)
   env.app.innerHTML = "<main>echte App</main>";
@@ -91,8 +118,27 @@ check("index.html: Watchdog-Script vorhanden", Boolean(watchdog));
   env.runTimersUpTo(8000);
   check("Watchdog Fall3: Stufe-1 greift nicht, wenn client.js geladen", env.splash.style.display !== "none");
   env.runTimersUpTo(30000);                 // Laufzeit-Hang -> Stufe-2
-  check("Watchdog Fall3: Stufe-2 entfernt Splash nach Hang", env.splash.style.display === "none" && /Neu laden/.test(env.app.innerHTML));
+  check("Watchdog Fall3 (Stufe 2): entfernt Splash nach Boot-Hang + Neu-laden-Ansicht", env.splash.style.display === "none" && /Neu laden/.test(env.app.innerHTML));
 }
+
+// Fall 4: Guard-Variable verhindert doppelte Timer, falls das Skript zweimal
+// im selben Dokument ausgefuehrt wird (Robustheit, kein Doppel-Feuer).
+{
+  const env = makeEnv({ startsLoading: true });
+  const sandbox = { window: env.win, document: env.document, setTimeout: env.win.setTimeout };
+  vm.createContext(sandbox);
+  vm.runInContext(watchdog, sandbox);
+  vm.runInContext(watchdog, sandbox); // zweite Ausfuehrung im selben Kontext
+  check("Watchdog Fall4: Guard-Variable verhindert doppelte Timer-Registrierung",
+    env.timers.length === 2, `${env.timers.length} Timer registriert (erwartet 2, nicht 4)`);
+}
+
+// --- client.js laedt weiterhin korrekt aus der Production-Shell ------------
+console.log("\nclient.js-Ladepfad in der Production-Shell");
+check("Production Shell: client.js-Script-Tag mit Asset-Version vorhanden",
+  /<script src="client\.js\?v=[^"]+"><\/script>/.test(productionShell));
+check("Production Shell: genau EIN client.js-Script-Tag (kein Doppel-Laden)",
+  (productionShell.match(/<script src="client\.js/g) || []).length === 1);
 
 // --- Statische Garantien in client.js --------------------------------------
 check("client.js: setzt __helmutClientLoaded am Anfang", /window\.__helmutClientLoaded\s*=\s*true/.test(client.slice(0, 2000)));

@@ -42,8 +42,15 @@
          wenn client.js gar nicht laeuft (Parse-/Ladefehler) oder ein frueher
          Boot-Await haengt. Zeigt in dem Fall eine sichtbare "Neu laden"-Ansicht.
          Der normale Start entfernt den Splash selbst (client.js hideStartupSplash);
-         dann greift dieser Watchdog nicht (is-loading ist dann bereits weg). */
+         dann greift dieser Watchdog nicht (is-loading ist dann bereits weg).
+         HINWEIS: Production liefert die App-Shell tatsaechlich ueber server.js
+         (indexHtml()) aus, nicht aus dieser Datei — die dortige Kopie
+         (SPLASH_WATCHDOG_SCRIPT) ist die massgebliche, ausgelieferte Quelle.
+         Dieser Block wird per Test auf Konsistenz mit ihr geprueft und muss bei
+         Aenderungen synchron gehalten werden. */
       (function () {
+        if (window.__helmutSplashWatchdogInstalled) return;
+        window.__helmutSplashWatchdogInstalled = true;
         function forceHideSplash() {
           try {
             document.body.classList.remove("is-loading");
