@@ -9,9 +9,11 @@ const { cemInceProfile, profileCompleteness } = require("./lib/helmut/config");
 const sourceSafety = require("./lib/helmut/sourceSafety");
 const { runLageCheck, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState, tenantJwtModeEnabled } = require("./lib/helmut/storage");
+const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState, tenantJwtModeEnabled, saveKnowledgeObjectEnrichment } = require("./lib/helmut/storage");
 const { classifyOperationalState, describeState } = require("./lib/helmut/watchdog-state");
-const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled, activeModelName } = require("./lib/helmut/ai");
+const { runKoEnrichmentBackfill } = require("./lib/helmut/ko-enrichment");
+const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled, activeModelName, extractKnowledgeObjectTags } = require("./lib/helmut/ai");
+const { derivePolicyFields } = require("./lib/helmut/matching");
 const { pushStatus, sendBriefingReadyPush, sendLageChangePush, sendPushToPolitician } = require("./lib/helmut/push");
 const auth = require("./lib/helmut/auth");
 const accounts = require("./lib/helmut/accounts");
@@ -992,6 +994,27 @@ async function handleRequest(request, response) {
         effectiveTransport: jwtEnabled ? "authenticated (per-Mandant-JWT, RLS aktiv)" : "service_role (RLS-Bypass)",
         checkedAt: new Date().toISOString()
       };
+    });
+  }
+
+  // KO-Anreicherung-Backfill (P1-1, NUR Admin). Dry-Run per Default; erst ?execute=1
+  // schreibt + ruft KI. Harter 5-EUR-Deckel (nie hoeher, egal was uebergeben wird),
+  // fail-closed Budget-Gate, Evidence-Guard gegen erfundene Themen, nur tags/policy_field.
+  // Rollback: docs/ko-anreicherung-analyse.md (tags/policy_field wieder leeren).
+  if (url.pathname === "/api/admin/ko-enrichment-backfill") {
+    if (!requireRoleOr403(response, authUser, "admin")) return undefined;
+    return handleAsync(response, async () => {
+      const execute = url.searchParams.get("execute") === "1";
+      const wanted = Number(url.searchParams.get("maxCents"));
+      const maxEurCents = Math.min(500, Number.isFinite(wanted) && wanted > 0 ? wanted : 500); // HART <= 5 EUR
+      return runKoEnrichmentBackfill({ execute, maxEurCents }, {
+        listKnowledgeObjects: (o) => listKnowledgeObjects(o),
+        canSpend: () => canSpendLlm(null),
+        extractTags: (ko) => extractKnowledgeObjectTags(ko, { politicianId: null }),
+        derivePolicyFields,
+        saveEnrichment: (id, patch) => saveKnowledgeObjectEnrichment(id, patch),
+        log: (m) => console.log("[ko-backfill]", m)
+      });
     });
   }
 

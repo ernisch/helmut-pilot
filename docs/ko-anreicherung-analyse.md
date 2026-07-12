@@ -67,6 +67,35 @@ Fehl-Zuordnung).
 | **Testplan** | Dry-Run (Plan ohne Writes) → 5er-Stichprobe verifizieren (Tags plausibel, belegt) → Vollauf → `ko-anreicherung-test` + Golden-Cases + `/api/release/public`-Vorher/Nachher |
 | **Rollback** | idempotent: `UPDATE knowledge_objects SET tags='{}' , policy_field='{}'` (Felder wieder leeren) — die read-time-Ableitung greift dann wieder. Kein Datenverlust an bestehenden Feldern |
 
+## 4b. Ausführung — sicherer Admin-Endpoint (gebaut, wartet auf Betreiber-Klick)
+
+Der Agent hat **keinen OpenAI-Zugang** und kann keine authentifizierten App-KI-Routen
+auslösen (kein Key/Secret in seiner Umgebung). Daher wurde die Ausführung als
+**admin-gesicherter Endpoint** gebaut, den der Betreiber auslöst:
+
+**`GET /api/admin/ko-enrichment-backfill`** (nur Admin-Session):
+- **Ohne Parameter = Dry-Run:** plant nur (Anzahl Kandidaten + Kostenschätzung),
+  **ruft keine KI, schreibt nichts**.
+- **`?execute=1` = echter Lauf:** schreibt `tags` (KI, Evidence-geguarded) + `policy_field`
+  (deterministisch) nur für complete-KOs **ohne** bestehende tags.
+- **Harter Deckel:** `?maxCents=` wird **auf 500 (5 €) geclamped** — nie höher.
+  Fail-closed: bei Budget-Fehler sofort Stopp.
+- **Evidence-Guard:** nur Tags, die im Vorgangstext belegt sind (keine Halluzination).
+- **Idempotent:** erneuter Lauf überspringt bereits angereicherte KOs.
+
+**Empfohlener Ablauf für den Betreiber:**
+1. `GET /api/admin/ko-enrichment-backfill` (Dry-Run) → Kandidatenzahl + Kostenschätzung prüfen.
+2. Wenn plausibel: `GET /api/admin/ko-enrichment-backfill?execute=1` → Lauf; Antwort
+   enthält `processed/aiCalls/spentEur/samples/stop`.
+3. Ergebnis prüfen (`samples` = geschriebene Tags stichprobenartig plausibel/belegt?).
+4. Danach `/api/release/public` (Personalisierung) + Runtime-Logs prüfen.
+
+**Rollback:** `UPDATE public.knowledge_objects SET tags='{}', policy_field='{}'` (idempotent;
+die read-time-Ableitung greift dann wieder). Kein anderes Feld wird je berührt.
+
+**Tests:** `scripts/ko-enrichment-backfill-test.js` **22/22** (Dry-Run, 5-€-Deckel,
+fail-closed, Evidence-Guard, Idempotenz, nur-2-Felder, KI-Fehler→kein-Write).
+
 ## 5. Fazit / benötigte Freigabe
 
 Die **dringendste Lücke** (tote Themen-Dimension) ist **ohne Backfill geschlossen** —
