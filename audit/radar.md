@@ -23,6 +23,8 @@
 
 Beide server-seitig, 0-KI. **Der Radar-Test (`radar-test.js:149`) prüft „lädt ≥200" nur für System B** — System A ist gegen den 200-Cut **ungetestet**.
 
+> **Abschließende Präzisierung (Block-2-Nachprüfung, verifiziert):** Der ausgelieferte Client rendert **ausschließlich System A**. `renderRadarView` (client.js:7613) liest `briefing.currentRadarState` (= System A, aus `/api/app/start`) und rendert daraus alle fünf Abschnitte (Summary, „Über dich", Umfeld, Dynamiken, Artikel). **System B / `/api/radar/archive` wird vom Client NIE abgerufen:** `radarArchive` (client.js:63) wird deklariert und auf `false` zurückgesetzt (client.js:981), aber **nirgends befüllt** — es gibt keinen `fetch` auf `/api/radar/archive` in `client.js`. → Das 500er-Archiv ist ein **vestigiales Server-Endpoint ohne Client-Konsument**. **Folge für die Nutzerwirkung:** Die unten belegten Verluste des 200-Fensters sind **nicht durch ein Archiv abgefedert** — was aus System A herausfällt, ist für den Nutzer **vollständig unsichtbar**.
+
 ---
 
 ## 2. Radar-Kette — wie ein Signal erscheint
@@ -61,7 +63,12 @@ System A wird aus `listKnowledgeObjects({limit:200})` gespeist (server.js:1330),
 | davon Person **+ Beleg-URL** | **2** |
 | jenseits Rang 500 | **0** |
 
-**Konsequenz:** Das App-Radar (System A, Scan 200) **sieht 6 personenbezogene Vorgänge nie**, obwohl `buildMentions` sie inhaltlich als „Über dich" erkennen würde. Das Archiv (System B, Scan 500) erfasst sie. → **„Über dich" im Briefing und im Archiv divergieren.**
+**Konsequenz:** Das App-Radar (System A, Scan 200) **sieht 6 personenbezogene Vorgänge nie**, obwohl `buildMentions` sie inhaltlich als „Über dich" erkennen würde. System B (Scan 500) würde sie erfassen — **aber System B wird vom Client nicht abgerufen** (§1-Präzisierung). → Die 6 Vorgänge (davon 2 mit Beleg-URL) sind für den Nutzer **vollständig unsichtbar**, nicht bloß „ins Archiv verschoben".
+
+### Stelle 1 — Ursache & Nutzerwirkung (präzise)
+- **Ursache (Code):** Das einzige nutzer-sichtbare Radar wird aus `listKnowledgeObjects({limit:200})` gespeist (server.js:1330), sortiert nach `updated_at.desc` (storage.js:746). Der 500er-Scan (radar.js:242) existiert nur im ungenutzten `/api/radar/archive`-Pfad.
+- **Nutzerwirkung:** Ein Abgeordneter mit einer **echten, belegten Erwähnung** in einem der 6 Vorgänge jenseits Rang 200 sieht diese **nicht** in „Über dich" — ein **technisch falscher Leerzustand** für vorhandene historische Evidenz. Es gibt in der UI **keine** größere Fallback-Oberfläche, die den Verlust auffängt. Der Effekt wächst mit dem KO-Bestand (heute 217 > 200; jenseits 500 noch 0).
+- **Klasse:** technisch falscher Leerzustand (vorhandene Information geht verloren) + Zeitfenster/Load-Cap-Verlust.
 
 **Verschärfend — Begrenzung VOR der fachlichen Filterung:** Der 200-Cut passiert beim **Laden** (`updated_at.desc`), also **bevor** `buildMentions`/`detectPersonMention` filtert. Der Cut ist damit nicht „älteste zuerst weg", sondern **„zuletzt reprozessierte gewinnen"** — ein alter, jüngst neu verarbeiteter Vorgang verdrängt einen echt neueren aus dem Fenster. Zusätzlich cappt System A Mentions bei 30 rein nach Recency (`MENTION_CAP`) — eine ältere relevante Erwähnung kann auch unterhalb dieses Anzeige-Cuts verschwinden.
 
@@ -88,10 +95,15 @@ Ausreichend für exakte Namen inkl. Umlaute/türkischer Diakritika; **nicht** f�
 - **`ko_relations`-Tabelle wird vom Radar NICHT gelesen** (grep: nur Schema+Docs, null im Anwendungscode). Relation wird **read-time aus KO-Feldern + decisions** abgeleitet. → `ko_relations=0` ist für den Radar irrelevant, aber die Tabelle ist **totes Schema**.
 - **„Partei nur mit Akteurs-/Quellenbeleg" (commit 8f41f0e) — verifiziert:** `partyRelationBeleg`/`radarPartyActorEvidence` (radarState.js:153-171): Partei im Umfeld nur, wenn **(a)** eigene Partei strukturiert in `ko.parteien` (nicht nur `mentioned_parties`) **UND (b)** Akteursbeleg (Quelle `source_type` party/faction ODER Partei als Ganzwort im Titel). Test `radar-state-test.js:450-457` deckt genau das ab.
 - **Drei Achsen sauber getrennt — bestätigt:** *Direkte Erwähnung* (Person, nur Faktenfelder) · *Relation* (Umfeld, strukturell verankert, Wahlkreis nur konkreter Ort, **kein** Bundesland) · *thematische Nähe* (explizit **kein** Umfeld-Segment; `thema`-count 0 im Test `:525`).
-- **Evidenz/URL-Pflicht INKONSISTENT (Befund):**
-  - „Über dich" (mentions): URL **zwingend** + evidence-Text zwingend.
-  - „Umfeld"/„Alle Artikel": **keine** URL-Pflicht (`baseItemFields` erlaubt leere `sourceUrl`) → ein Umfeld-Item kann **ohne belegte Quelle** erscheinen.
-  - System B (Archiv): **keine** URL-Pflicht (`radar.js:148`, `url:""`, `linkType:"missing"`).
+- **Evidenz/URL-Pflicht INKONSISTENT (Stelle 2, verifiziert):**
+  - „Über dich" (mentions): `pickPrimarySource` → `if(!url) continue` (radarState.js:392) → **URL zwingend** + evidence-Text zwingend.
+  - „Umfeld" (`buildEnvironment`, radarState.js:416) & „Alle Artikel" (`buildArticles`): bauen über `baseItemFields`, das `sourceUrl: (src && src.url) \|\| ""` setzt (radarState.js:362) — **kein `if(!url) continue`-Guard**. Der Dedup-Key fällt bei fehlender URL auf `ko.vorgang_id` zurück (radarState.js:434). → Ein Umfeld-/Artikel-Item kann **ohne klickbare Beleg-Quelle** erscheinen. Die *Relation* selbst ist strukturell evidenz-gegated (Partei zusätzlich mit Akteurs-/Quellenbeleg, radarState.js:429), aber die **Anzeige der belegenden URL ist nicht erzwungen**.
+  - System B (Archiv): `radar.js:148` `url ? "direct" : "missing"` → **keine** URL-Pflicht.
+
+### Stelle 2 — Ursache & Nutzerwirkung (präzise)
+- **Ursache (Code):** Die Beleg-URL-Pflicht ist nur in `buildMentions` verdrahtet (radarState.js:392), nicht im gemeinsamen `baseItemFields` (radarState.js:352-370), das „Umfeld" und „Artikel" nutzen.
+- **Nutzerwirkung:** Im „Umfeld" (z. B. „Dein Ausschuss: Vorgang X") und in „Alle Artikel" kann eine Karte erscheinen, deren **Quelle der Nutzer nicht aufrufen kann** — die politische Aussage bleibt **nicht am Beleg nachprüfbar**. Das widerspricht dem Produktprinzip „nur belegte Inhalte" und dem strengeren Standard, den „Über dich" bereits einhält. **Kein** Fake-Inhalt (die Relation ist strukturell belegt), aber **eine schwächere Evidenz-Garantie** als in „Über dich".
+- **Klasse:** Presentation/Evidenz-Inkonsistenz (kein Datenverlust, aber uneinheitliche Belegpflicht).
 - **Bug — Guard-Input defekt (DB-verifiziert):** `radar.js:175` baut den Guard-Doc mit `source_type: ko.best_source_type` — **diese Spalte existiert nicht** (`has_best_source_type=0`). Wert ist immer `undefined` → Source-Safety-Guard in System B arbeitet **ohne Quellentyp**. (System A zieht `source_type` korrekt aus `raw_documents` via `pickPrimarySource`.)
 - **Toter Feldzugriff (DB-verifiziert):** `radarState.js:190` liest `ko.regions` — **Spalte existiert nicht** (`has_regions_col=0`). Wahlkreisbeleg stützt sich faktisch allein auf `mentioned_locations` (existiert, 86 KOs). Kein Funktionsverlust, aber toter Code / falsche Annahme.
 
@@ -157,7 +169,7 @@ Schema: `mentioned_people/mentioned_mps/mentioned_parties/parteien/mentioned_loc
 
 | # | Risiko | Prio (Vorschlag) | Beleg |
 |---|---|---|---|
-| 1 | App-Radar-Scan 200 vs. Archiv 500 → 6 person-KOs im Briefing-Radar unsichtbar; ungetestet | **P1** (Profil verliert vorhandene Evidenz) | DB rn>200; server.js:1330 vs. radar.js:242 |
+| 1 | App-Radar-Scan 200 = **einzige** nutzer-sichtbare Radar-Quelle; `/api/radar/archive` (500) ist im Client **nicht verdrahtet** → 6 person-KOs (2 mit URL) **vollständig unsichtbar**, kein Fallback; ungetestet | **P1** (Profil verliert vorhandene Evidenz) | DB rn>200; server.js:1330 vs. radar.js:242; client.js:63/981 (radarArchive nie befüllt) |
 | 2 | `updated_at` als Recency-Achse spült reprozessierte Altvorgänge hoch (außer Dynamiken) | **P1/P2** | radar.js:150; alle 217 `updated_at` in 10-Tage-Fenster |
 | 3 | Uneinheitliche URL-/Evidenz-Pflicht (mentions ja, Umfeld/Artikel/Archiv nein) → Treffer ohne Beleg möglich | **P1** (Evidenz-Prinzip) | radarState.js:363; radar.js:148 |
 | 4 | Defekte Feldzugriffe `ko.best_source_type` (Guard-Input B) & `ko.regions` (Wahlkreisbeleg) | **P2** | Spalten existieren nicht (DB) |
