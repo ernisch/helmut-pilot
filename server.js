@@ -1941,6 +1941,49 @@ function sendPrivacyPage(response) {
 </html>`);
 }
 
+// Splash-Watchdog: EINZIGE Quelle fuer den Boot-Sicherheitsnetz-Code, der
+// verhindert, dass der Vollbild-Splash-Overlay (#appSplash) dauerhaft haengen
+// bleibt (Ursache: ungeguardeter erster Boot-Await konnte auf Android/Brave
+// haengen -> hideStartupSplash() in client.js wurde nie erreicht). Diese
+// Konstante wird von indexHtml() (dem TATSAECHLICH ausgelieferten Production-
+// Template) eingebettet UND von scripts/splash-boot-test.js referenziert, damit
+// index.html (statische Repo-Kopie ohne Server-Templating) niemals unbemerkt
+// von der ausgelieferten Logik abweichen kann. Guard-Variable verhindert
+// doppelte Timer, falls der Block je zweimal im selben Dokument landen sollte.
+const SPLASH_WATCHDOG_SCRIPT = `(function () {
+        if (window.__helmutSplashWatchdogInstalled) return;
+        window.__helmutSplashWatchdogInstalled = true;
+        function forceHideSplash() {
+          try {
+            document.body.classList.remove("is-loading");
+            document.body.classList.add("app-ready", "splash-gone");
+            var s = document.getElementById("appSplash");
+            if (s) s.style.display = "none";
+          } catch (e) {}
+        }
+        function showReloadCard(message) {
+          forceHideSplash();
+          var app = document.getElementById("app");
+          if (!app) return;
+          app.innerHTML =
+            '<div style="display:grid;place-items:center;min-height:100dvh;font-family:Inter,ui-sans-serif,system-ui,sans-serif;padding:32px;text-align:center">' +
+            '<div><div style="font:700 52px/1 Inter,sans-serif;letter-spacing:-.04em;margin-bottom:22px;color:#fbf7ef">H</div>' +
+            '<p style="color:rgba(245,241,232,.62);max-width:300px;margin:0 auto 22px;font-size:15px;line-height:1.55">' + message + '</p>' +
+            '<button type="button" onclick="window.location.reload()" style="appearance:none;border:0;cursor:pointer;padding:14px 22px;border-radius:14px;font:600 16px Inter,sans-serif;color:#0b0f1a;background:#f5f1e8">Neu laden</button>' +
+            '</div></div>';
+        }
+        window.setTimeout(function () {
+          if (!window.__helmutClientLoaded) {
+            showReloadCard("Helmut konnte gerade nicht geladen werden.<br>Bitte lade die Seite neu.");
+          }
+        }, 8000);
+        window.setTimeout(function () {
+          if (document.body.classList.contains("is-loading")) {
+            showReloadCard("Helmut braucht gerade ungewoehnlich lange.<br>Bitte lade die Seite neu.");
+          }
+        }, 30000);
+      })();`;
+
 function indexHtml() {
   return `<!doctype html>
 <html lang="de">
@@ -1983,6 +2026,7 @@ function indexHtml() {
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <script src="client.js?v=${ASSET_VERSION}"></script>
+    <script>${SPLASH_WATCHDOG_SCRIPT}</script>
   </body>
 </html>`;
 }
@@ -2017,6 +2061,11 @@ module.exports.__buildV3Briefing = buildV3Briefing;
 // Test-Hook (Offline): der oeffentliche Release-Serializer — prueft, dass keine
 // Modell-/Vendor-Details an anonyme Aufrufer durchsickern.
 module.exports.__publicReleasePayload = publicReleasePayload;
+// Test-Hook (Offline): die tatsaechlich ausgelieferte Production-Shell + die
+// einzige Splash-Watchdog-Quelle — verhindert unbemerktes Auseinanderdriften
+// von index.html und dem Server-Template.
+module.exports.__indexHtml = indexHtml;
+module.exports.__SPLASH_WATCHDOG_SCRIPT = SPLASH_WATCHDOG_SCRIPT;
 
 if (require.main === module) {
   const server = http.createServer(requestHandler);
