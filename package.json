@@ -21,6 +21,7 @@
     "test:saas": "node scripts/saas-foundation-test.js",
     "test:tenant": "node scripts/tenant-guard-test.js",
     "test:rls-policy-sim": "node scripts/rls-policy-simulation-test.js",
+    "test:tenant-jwt": "node scripts/tenant-jwt-test.js",
     "test:admin": "node scripts/admin-overview-test.js",
     "test:qa-stabilization": "node scripts/qa-release-stabilization-test.js",
     "test:presale": "node scripts/presale-hardening-test.js",
