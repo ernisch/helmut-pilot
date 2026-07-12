@@ -2,7 +2,34 @@
 
 **Sprint:** SaaS-Readiness-Audit · **Synthese** · **Stand:** 2026-07-12
 **Branch:** `claude/helmut-saas-readiness-audit-5btd4a` · **Basis-Commit:** `edcebaed864beebc6c7ee74d4025cab82b40d585`
-**Status:** Analyse abgeschlossen. **Nichts umgesetzt.** Dies ist der priorisierte Umsetzungsplan.
+**Status:** Analyse abgeschlossen. **Umsetzungssprint 2026-07-12 durchgeführt** — siehe Umsetzungsstand.
+
+## Umsetzungsstand (2026-07-12)
+
+| Item | Status | PR / Ausführung |
+|---|---|---|
+| **P0-1** `userId` verpflichtend + Tenant-Guard | ✅ **live** | PR #46 (Vorsprint) |
+| **P0-2** RLS-Policies (Design + Test + **Production-Migration**) | ✅ **live** (23 Policies aktiv, JWT-Modus AUS → No-Op) | PR #47/#48 + `apply_migration` (Teil 1) |
+| **P1-2** Label-Normalisierung Ausschuss/Partei | ✅ **live** | PR #51 (Teil 4) |
+| **P1-4** Watchdog toter Pipeline-Marker | ✅ **live** | PR #49 (Teil 2) |
+| **P1-5** Watchdog false-green (Briefing-Frische) | ✅ **live** | PR #49 (Teil 2) |
+| **P1-6** Radar 200er-Scan-Verlust | ✅ **live** (Scan 500) | PR #52 (Teil 5) |
+| **P1-7** Lage-LLM aus App-Start-Kritikpfad | ✅ **live** (cacheOnly) | PR #50 (Teil 3) |
+| Watchdog Zwei-Achsen-Zustandsmodell (§4) | ✅ **live** | PR #49 (Teil 2) |
+| App-Start: `defer`, immutable-Caching, tasks/notes parallel | ✅ **live** | PR #50 (Teil 3) |
+| Radar tote Feldzugriffe (`best_source_type`/`regions`) | ✅ **live** | PR #52 (Teil 5) |
+| **P1-1** KO-Anreicherung (tags/policy_field/embedding) | ⏸️ **gestoppt vor Backfill** (Root-Cause lokalisiert: understanding.js extrahiert sie nicht; Fix = Prompt/Schema + Re-Understanding = KI-Kosten) | Freigabepunkt |
+| **P1-3** Presentation-Backfill | ⏸️ **gestoppt** (Prod-Writes/KI) | Freigabepunkt |
+| **P1-8** Progressive-Shell-Vollumbau (Client) | ⏸️ **zurückgestellt** (braucht Browser-QA; Teil erledigt: defer/parallel) | Folgeschritt |
+| **P1-9** Cron-Reihenfolge | ⏸️ **nicht angefasst** (Cron-Änderung = Stop-Bedingung) | Freigabepunkt |
+| **P2-6** Radar URL-Pflicht Umfeld/Artikel | ⏸️ offen (kann Sections leeren, QA nötig) | Folgeschritt |
+| **P2-8** Radar `published_at` durchgängig | 🟡 teilweise (System A bevorzugt bereits Quellendatum) | Folgeschritt |
+
+**Effekt in Production (live gemessen über `/api/release/public`, das Decisions live rechnet):** sichtbare Entscheidungen des Piloten **1 → 16**, Beleg-Direktlinks **59 → 103**, Beobachtungspunkte **1 → 13** — im Wesentlichen durch die Label-Normalisierung (P1-2) + das erweiterte Scan-Fenster (P1-6). Keine Runtime-Fehler, Score/Struktur-Blocker (Lage-Frische/Live-Flow) unverändert (quellenbasiert, separat).
+
+---
+
+_Ursprünglicher priorisierter Plan (unverändert als Referenz):_
 
 Prioritäten: **P0** kritischer Sicherheits-/Datenisolationsfehler · **P1** Profile verlieren vorhandene relevante Inhalte / Watchdog meldet falsche Zustände / App-Start blockiert · **P2** gezielte Quellen-/Skalierungsverbesserung · **P3** Optimierung ohne unmittelbaren Nutzerschaden.
 
