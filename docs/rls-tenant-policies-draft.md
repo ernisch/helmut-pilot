@@ -14,6 +14,14 @@ Bezug: `audit/saas-risk-matrix.md` #1, `audit/fix-plan.md` P0-2. Baut auf dem in
 Sprint 1 umgesetzten **P0-1** auf (App-seitiger Tenant-Guard,
 `lib/helmut/storage.js` `assertTenant`/`assertTenantRows`).
 
+**Update Sprint 3:** Der in §1 als „separater Folgeschritt" beschriebene
+App-seitige JWT-Umbau ist inzwischen **implementiert** (flag-gated, Default
+AUS) — siehe `docs/auth-service-role-matrix.md` (welche Pfade betroffen sind)
+und `docs/rls-activation-rollout.md` (sichere Aktivierungsreihenfolge über
+beide Sprints hinweg). Diese Migration selbst ist davon **unberührt** und
+gegen den finalen Codezustand erneut verifiziert (kein Schema-Drift, siehe
+Auth-Matrix §7).
+
 **Änderung gegenüber der Sprint-1-Fassung dieses Dokuments:** Der ursprüngliche
 Entwurf (Option A: „SET LOCAL app.user_id") war technisch nicht umsetzbar (siehe
 §1). Sprint 2 hat das vollständig gegen Schema, echte Queries, Auth-Modell und
