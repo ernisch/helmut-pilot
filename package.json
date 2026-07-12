@@ -29,7 +29,8 @@
     "test:pwa-icon": "node scripts/pwa-icon-test.js",
     "lage:backfill": "node scripts/lage-backfill.js",
     "backfill:presentation": "node scripts/presentation-backfill.js",
-    "test:watchdog-state": "node scripts/watchdog-state-test.js"
+    "test:watchdog-state": "node scripts/watchdog-state-test.js",
+    "test:lage-cacheonly": "node scripts/lage-cacheonly-test.js"
   },
   "dependencies": {},
   "devDependencies": {}

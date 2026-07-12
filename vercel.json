@@ -29,14 +29,14 @@
       "src": "/styles.css",
       "dest": "/styles.css",
       "headers": {
-        "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"
+        "Cache-Control": "public, max-age=31536000, immutable"
       }
     },
     {
       "src": "/client.js",
       "dest": "/client.js",
       "headers": {
-        "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"
+        "Cache-Control": "public, max-age=31536000, immutable"
       }
     },
     {
