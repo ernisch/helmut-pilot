@@ -1,7 +1,10 @@
 # RLS-Isolationstest — Ergebnisbericht
 
 **Datum:** 2026-07-12 · **Status:** abgeschlossen, Testressource gelöscht ·
-**Production:** unverändert (kein Eingriff)
+**Production:** RLS-Migration am 2026-07-12 **angewendet** (Nachtrag §7)
+
+> **NACHTRAG (2026-07-12, Production):** Nach erfolgreichem Isolationstest wurde
+> die Migration in Production angewendet — Details in **§7** am Ende dieses Dokuments.
 
 Bezug: `supabase/migrations/20260712_tenant_rls_policies.sql` (getestete Datei,
 **verbatim** angewendet), `docs/rls-tenant-policies-draft.md`,
@@ -123,3 +126,40 @@ auf `ddckuvvpcytqbyfmbvie`). Sie ist laut Test **funktional folgenlos**, solange
 der JWT-Modus aus bleibt (service_role bypassed RLS), und schafft die
 Defense-in-Depth-Grundlage. **Erst danach** — als eigener, letzter Freigabepunkt —
 `HELMUT_TENANT_JWT_MODE=1` (echte Traffic-Umstellung auf die `authenticated`-Rolle).
+
+---
+
+## 7. NACHTRAG — Production-Migration angewendet (2026-07-12)
+
+Nach 19/19 bestandenen Isolationstests wurde die Migration in Production
+ausgeführt (Freigabe erteilt).
+
+**Vorher (Baseline, verifiziert):** 0 Policies · 24 RLS-Tabellen · Helper-Fn
+absent · App gesund (Briefing 1/54/1, Radar 20/10, Datenmotor V3 100 %, 0
+Runtime-Errors).
+
+**Ausführung:** `apply_migration` (Supabase, Projekt `ddckuvvpcytqbyfmbvie`),
+**verbatim** die getestete Datei `20260712_tenant_rls_policies.sql`. Kein
+manueller Deploy, keine Cron-, keine Secret-, keine Datenänderung.
+
+**Nachher (verifiziert, alles grün):**
+- DB: **23 Policies** (17 `tenant_isolation` ALL + 1 `helmut_store` SELECT + 5
+  `shared_read`) · 24 RLS-Tabellen · Helper-Fn **present** — exakt wie getestet.
+- `/api/release/public`: **byte-identisch** zum Baseline (Briefing 1/54/1,
+  Quellenlinks 59/59, Radar 20/10, Datenmotor V3 100 %, Score 75 unverändert).
+- `/api/app/start` → **401** (Auth-Gate intakt) · App-Shell `/` → **200**
+  (Commit 204d5ef9).
+- Pilot `cem-ince`: **52 decisions, 1 briefing, Store-Blob present, 217 KOs** —
+  vollständig intakt (service_role liest alles).
+- Vercel Runtime-Errors (1 h nach Migration): **keine**.
+
+**Bewertung:** Funktional ein **NO-OP** für den laufenden Betrieb (die App nutzt
+service_role, das RLS umgeht), wie entworfen. RLS ist jetzt als **zweite
+Verteidigungslinie** aktiv und greift, sobald `HELMUT_TENANT_JWT_MODE=1` gesetzt
+wird (noch **nicht** aktiviert — eigener Freigabepunkt).
+
+**Rollback (jederzeit, folgenlos):** `20260712_tenant_rls_policies_rollback.sql`
+via `apply_migration` → zurück auf 0 Policies (Ausgangszustand).
+
+**Nächster echter Freigabepunkt:** `HELMUT_TENANT_JWT_MODE=1` (echte
+Traffic-Umstellung auf die `authenticated`-Rolle) — bewusst noch offen.

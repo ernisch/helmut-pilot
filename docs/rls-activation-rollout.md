@@ -1,8 +1,12 @@
 # Sichere Rollout-Reihenfolge — RLS-Aktivierung (P0-2, Sprint 2 + 3)
 
-**Status:** Planungsdokument. **Kein Schritt hierin wurde ausgeführt.**
-Production ist zum Zeitpunkt der Erstellung unverändert (RLS enabled, 0
-Policies; `HELMUT_TENANT_JWT_MODE` nicht gesetzt).
+**Status (2026-07-12):** Schritte 1–4 **ausgeführt**. Production hat jetzt
+**23 aktive RLS-Policies** (Schritt 4 angewendet), `HELMUT_TENANT_JWT_MODE`
+bleibt **weiterhin aus** → die App nutzt weiter service_role (RLS-Bypass), kein
+Nutzer merkt etwas. Schritt 3 wurde als **isolierte lokale Postgres-Verifikation**
+statt kostenpflichtiger Preview-Branch durchgeführt (19/19 Tests, siehe
+`docs/rls-isolation-test-results.md`). **Offen bleibt nur Schritt 5**
+(`HELMUT_TENANT_JWT_MODE=1`) — eigener Freigabepunkt, NICHT ausgeführt.
 
 Dieses Dokument verbindet Sprint 2 (`supabase/migrations/20260712_tenant_rls_policies.sql`,
 Policy-Design) mit Sprint 3 (`lib/helmut/storage.js`, App-seitiger JWT-Umbau,
@@ -66,7 +70,19 @@ sich zu verifizieren, bevor sie mit der jeweils anderen zusammenwirkt.
 - **⚠️ Dies ist ein Freigabepunkt** (kostenpflichtige Supabase-Branch) —
   separat freizugeben.
 
-## Schritt 4 — RLS-Migration auf Production anwenden
+## Schritt 4 — RLS-Migration auf Production anwenden ✅ AUSGEFÜHRT (2026-07-12)
+
+**Ergebnis:** Migration `20260712_tenant_rls_policies.sql` via Supabase
+`apply_migration` auf Production (`ddckuvvpcytqbyfmbvie`) angewendet.
+Vorher: 0 Policies / 24 RLS-Tabellen / Helper-Fn absent. Nachher: **23 Policies /
+24 RLS-Tabellen / Helper-Fn present** (exakt wie im Isolationstest). Verifikation
+nach Anwendung (alles grün): `/api/release/public` byte-identisch zum Baseline
+(Briefing 1/54/1, Radar 20/10, Datenmotor V3 100 %, Quellenlinks 59/59),
+`/api/app/start` → 401 (Auth-Gate intakt), App-Shell → 200 (Commit 204d5ef9),
+Pilot `cem-ince` unverändert (52 decisions, 1 briefing, Store-Blob present, 217
+KOs), Vercel-Runtime-Errors: **keine**. Funktional ein NO-OP (service_role
+bypassed RLS), wie entworfen. **Rollback bereit:**
+`20260712_tenant_rls_policies_rollback.sql`.
 
 - **Erst nachdem Schritt 3 erfolgreich war.**
 - Migration `20260712_tenant_rls_policies.sql` manuell auf Production
