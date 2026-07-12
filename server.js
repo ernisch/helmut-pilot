@@ -6,6 +6,7 @@ const path = require("path");
 loadLocalEnv();
 
 const { cemInceProfile, profileCompleteness } = require("./lib/helmut/config");
+const { validateProfile } = require("./lib/helmut/profile-validation");
 const sourceSafety = require("./lib/helmut/sourceSafety");
 const { runLageCheck, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { buildLearningProfile } = require("./lib/helmut/learning");
@@ -3597,6 +3598,10 @@ async function buildAdminDataStatus({ perAccountLimit = 25 } = {}) {
     const id = u.politicianId;
     const profile = await activeProfile(id).catch(() => null);
     const comp = profile ? profileCompleteness(profile) : { level: "empty", missing: ["profil"], restricted: false, complete: false };
+    // Phase 5: zentrale Validierung (klarer Zustand + Funktionsauswirkung) —
+    // konsumiert von der Admin-Profilverwaltung. Fail-safe: bei fehlendem Profil
+    // ein „nicht bereit"-artiges Ergebnis, nie ein throw.
+    const validierung = profile ? validateProfile(profile) : validateProfile({});
     let briefing = null, lage = null, rad = null;
     try { briefing = await buildV3Briefing(profile, id); } catch (_) {}
     // countOnly: NUR zaehlen, KEIN KI-Narrativ generieren. Sonst wuerde der
@@ -3617,6 +3622,19 @@ async function buildAdminDataStatus({ perAccountLimit = 25 } = {}) {
       politicianId: id,
       name: u.name || u.email || id,
       profilVollstaendigkeit: { level: comp.level, complete: comp.complete, fehlendePflichtfelder: comp.missing },
+      // Phase 5: klarer Zustand (Vollständig/Teilweise/Nicht bereit/Fehlerhaft/
+      // Deaktiviert) + fehlende Pflichtfelder (mit Klartext-Labels) + welche
+      // Funktion betroffen ist.
+      validierung: {
+        zustand: validierung.state,
+        zustandLabel: validierung.stateLabel,
+        grund: validierung.reason,
+        bereit: validierung.ready,
+        nutzbar: validierung.usable,
+        deaktiviert: validierung.disabled,
+        fehlendePflichtfelder: validierung.missingRequiredLabels,
+        funktionsauswirkung: validierung.impact
+      },
       personalisierungEingeschraenkt: Boolean(comp.restricted || comp.empty),
       briefingSichtbar: hasBriefing,
       briefingPunkte: briefingPoints,
