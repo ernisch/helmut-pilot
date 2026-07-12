@@ -56,6 +56,12 @@ const maxLageCheckAgeMs = Number(process.env.HELMUT_MAX_LAGE_CHECK_AGE_MS || 4 *
 // complete-KO trotz laufendem Crawl = echter stiller Ausfall (VERALTET). Bewusst
 // großzügig (36h), damit ruhige Nachrichtentage NICHT fälschlich rot werden.
 const maxOutputFreshnessMs = Number(process.env.HELMUT_MAX_OUTPUT_FRESHNESS_MS || 36 * 60 * 60 * 1000);
+// P1-6/P2-4 (radar.md §3, profile-coverage.md §6): Der App-Radar-Mention-Scan +
+// die Lage speisen sich aus diesem Fenster. Bei 200 fielen belegte Personen-
+// Erwaehnungen jenseits Rang 200 komplett aus (das 500er-Archiv ist im Client
+// nicht verdrahtet). Default 500 deckt den heutigen Bestand (217) voll ab;
+// waechst der Korpus ueber 500, ueber ENV anheben.
+const koScanLimit = Number(process.env.HELMUT_KO_SCAN_LIMIT || 500);
 // Ein OUTPUT gilt als "tot", wenn kein complete-KO bekannt ist ODER es älter als
 // die Schwelle ist. Hilfsprädikat, in den Health-Checks unten wiederverwendet.
 function isOutputStale(completeKoAt) {
@@ -1349,7 +1355,7 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
   let kos = [];
   let storeFailed = false;
   try {
-    const res = await listKnowledgeObjects({ limit: 200, _signalError: true });
+    const res = await listKnowledgeObjects({ limit: koScanLimit, _signalError: true });
     if (res && res.__storeError) storeFailed = true; else kos = res || [];
   } catch (error) {
     console.error("[v3-briefing] listKnowledgeObjects fehlgeschlagen:", error && error.message);
