@@ -3933,10 +3933,13 @@ small {
   width: 58px;
   height: 58px;
   color: #fbf7ef;
-  background: rgba(9, 14, 27, .72);
-  border: 1px solid rgba(251, 247, 239, .12);
-  border-radius: 17px;
-  box-shadow: 0 16px 42px rgba(12, 18, 32, .14);
+  /* Kein Kaesten hinter dem H: das weisse H steht direkt auf dem dunklen
+     Seitenhintergrund (Fuellung/Rahmen/Schatten entfernt). Groesse/Position/
+     Farbe des H und der "Helmut"-Schriftzug bleiben unveraendert. */
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
   animation: loading-logo-breathe 2.8s ease-in-out infinite;
 }
 

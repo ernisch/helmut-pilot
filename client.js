@@ -1,3 +1,44 @@
+// Boot-Sicherheitsnetz (muss ganz am Anfang stehen). Signalisiert dem
+// index.html-Watchdog, dass client.js geladen/geparst wurde, und entfernt den
+// Splash-Overlay + zeigt eine "Neu laden"-Ansicht, falls im Startpfad doch ein
+// unerwarteter Fehler oder eine unbehandelte Rejection auftritt. Ohne dieses Netz
+// bliebe der Splash bei einem frühen Wurf lautlos dauerhaft sichtbar.
+try { window.__helmutClientLoaded = true; } catch (e) {}
+(function installBootSafetyNet() {
+  function forceHideSplash() {
+    try {
+      document.body.classList.remove("is-loading");
+      document.body.classList.add("app-ready", "splash-gone");
+      var s = document.getElementById("appSplash");
+      if (s) s.style.display = "none";
+    } catch (e) {}
+  }
+  function bootFailed() {
+    forceHideSplash();
+    try {
+      var app = document.getElementById("app");
+      if (app && (document.body.classList.contains("is-loading") || app.querySelector(".loading-screen") || !app.children.length)) {
+        app.innerHTML =
+          '<div style="display:grid;place-items:center;min-height:100dvh;font-family:Inter,ui-sans-serif,system-ui,sans-serif;padding:32px;text-align:center">' +
+          '<div><div style="font:700 52px/1 Inter,sans-serif;letter-spacing:-.04em;margin-bottom:22px;color:#fbf7ef">H</div>' +
+          '<p style="color:rgba(245,241,232,.62);max-width:300px;margin:0 auto 22px;font-size:15px;line-height:1.55">Beim Start ist etwas schiefgelaufen.<br>Bitte lade die Seite neu.</p>' +
+          '<button type="button" onclick="window.location.reload()" style="appearance:none;border:0;cursor:pointer;padding:14px 22px;border-radius:14px;font:600 16px Inter,sans-serif;color:#0b0f1a;background:#f5f1e8">Neu laden</button>' +
+          '</div></div>';
+      }
+    } catch (e) {}
+  }
+  try {
+    window.addEventListener("error", function (event) {
+      // NUR echte Script-/Laufzeitfehler als Bootfehler werten. Ressourcen-
+      // Ladefehler (img/font/link) haben ein Element als target -> ignorieren,
+      // damit ein fehlgeschlagenes Bild nicht faelschlich die App ersetzt.
+      if (event && event.target && event.target !== window && event.target.tagName) return;
+      bootFailed();
+    });
+    window.addEventListener("unhandledrejection", bootFailed);
+  } catch (e) {}
+})();
+
 let profile = null;
 let briefing = null;
 let aiStatus = { enabled: false, model: "" };
@@ -840,7 +881,11 @@ function bindPasswordToggles(root) {
 
 async function fetchAuthState() {
   try {
-    const res = await fetch("/api/auth/session", { cache: "no-store" });
+    // HARTER TIMEOUT: /api/auth/session ist der ERSTE Boot-Await. Ohne Timeout
+    // konnte ein haengender Request (langsames Mobilnetz / Brave-Shields) den
+    // gesamten Start blockieren -> Splash blieb dauerhaft haengen. Bei Timeout
+    // faellt der catch unten auf null (Pilot-/Login-Pfad laeuft weiter).
+    const res = await fetchWithTimeout("/api/auth/session", { cache: "no-store" }, 6000);
     if (!res.ok) return null;
     if (!String(res.headers.get("content-type") || "").includes("application/json")) return null;
     const data = await res.json();

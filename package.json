@@ -22,6 +22,7 @@
     "test:admin": "node scripts/admin-overview-test.js",
     "test:qa-stabilization": "node scripts/qa-release-stabilization-test.js",
     "test:presale": "node scripts/presale-hardening-test.js",
+    "test:splash": "node scripts/splash-boot-test.js",
     "lage:backfill": "node scripts/lage-backfill.js",
     "backfill:presentation": "node scripts/presentation-backfill.js"
   },
