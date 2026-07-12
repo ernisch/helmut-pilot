@@ -77,7 +77,9 @@ function check(name, cond) {
   check("Row: onboarding_status", row.onboarding_status === "abgeschlossen");
   check("Row: ki_budget_taeglich_cent numerisch", row.ki_budget_taeglich_cent === 150);
   check("Row: KEINE unbekannte Spalte 'name'", row.name === undefined);
-  check("Row: KEINE unbekannte Spalte 'buero_uebergabe'", row.buero_uebergabe === undefined);
+  // Phase 15: buero_uebergabe hat jetzt eine ECHTE Spalte -> es IST Teil der Row
+  // (officeHandoffMethod -> buero_uebergabe). Zuvor durfte es nicht drin sein.
+  check("Row: buero_uebergabe vorhanden (neue Spalte)", "buero_uebergabe" in row);
 
   const back = storage.fromMandateProfileRow({ id: "test-mdb", name: "Test Abgeordnete" }, row);
   check("Roundtrip: party", back.party === "SPD");
