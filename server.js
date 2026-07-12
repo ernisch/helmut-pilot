@@ -9,7 +9,7 @@ const { cemInceProfile, profileCompleteness } = require("./lib/helmut/config");
 const sourceSafety = require("./lib/helmut/sourceSafety");
 const { runLageCheck, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState } = require("./lib/helmut/storage");
+const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState, tenantJwtModeEnabled } = require("./lib/helmut/storage");
 const { classifyOperationalState, describeState } = require("./lib/helmut/watchdog-state");
 const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled, activeModelName } = require("./lib/helmut/ai");
 const { pushStatus, sendBriefingReadyPush, sendLageChangePush, sendPushToPolitician } = require("./lib/helmut/push");
@@ -972,6 +972,27 @@ async function handleRequest(request, response) {
   if (url.pathname === "/api/admin/data-status") {
     if (!requireRoleOr403(response, authUser, "admin")) return undefined;
     return handleAsync(response, () => buildAdminDataStatus());
+  }
+
+  // Tenant-JWT-Modus-Diagnose (NUR Admin, read-only). Zeigt ausschliesslich die
+  // PRAESENZ der Konfiguration (Boolean), NIE die Werte selbst -> sichere Vor- und
+  // Nach-Pruefung fuer die JWT-Aktivierung (docs/rls-activation-rollout.md Schritt 5).
+  // effectiveTransport verraet, ob die App gerade service_role (RLS-Bypass) oder den
+  // per-Mandant-authenticated-JWT-Pfad (RLS aktiv) nutzt.
+  if (url.pathname === "/api/admin/tenant-mode") {
+    if (!requireRoleOr403(response, authUser, "admin")) return undefined;
+    return handleAsync(response, async () => {
+      const jwtEnabled = tenantJwtModeEnabled();
+      return {
+        flagSet: /^(1|true|on)$/i.test(String(process.env.HELMUT_TENANT_JWT_MODE || "").trim()),
+        jwtSecretPresent: Boolean(process.env.SUPABASE_JWT_SECRET),
+        anonKeyPresent: Boolean(process.env.SUPABASE_ANON_KEY),
+        serviceRolePresent: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
+        tenantJwtModeEnabled: jwtEnabled,
+        effectiveTransport: jwtEnabled ? "authenticated (per-Mandant-JWT, RLS aktiv)" : "service_role (RLS-Bypass)",
+        checkedAt: new Date().toISOString()
+      };
+    });
   }
 
   // Interner Pipeline-Recovery (NUR Admin, ueber die bestehende Admin-SESSION — KEIN
