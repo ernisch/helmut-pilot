@@ -37,12 +37,48 @@
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <script src="client.js?v=20260712-presale1"></script>
     <script>
-      setTimeout(function () {
-        var app = document.getElementById("app");
-        if (app && app.querySelector(".loading-screen")) {
-          app.innerHTML = '<div style="display:grid;place-items:center;min-height:100dvh;font-family:Inter,ui-sans-serif,system-ui,sans-serif;padding:32px;text-align:center"><div><div style="font:700 52px/1 Inter,sans-serif;letter-spacing:-.04em;margin-bottom:28px;color:#fbf7ef">H</div><p style="color:rgba(245,241,232,.55);max-width:280px;margin:0 auto;font-size:15px;line-height:1.55">Helmut wird geladen …<br>Falls die Ansicht nicht erscheint, bitte die Seite neu laden.</p></div></div>';
+      /* Splash-Watchdog (unabhaengig von client.js). Garantiert, dass der
+         Vollbild-Splash-Overlay NIE dauerhaft haengen bleibt — auch dann nicht,
+         wenn client.js gar nicht laeuft (Parse-/Ladefehler) oder ein frueher
+         Boot-Await haengt. Zeigt in dem Fall eine sichtbare "Neu laden"-Ansicht.
+         Der normale Start entfernt den Splash selbst (client.js hideStartupSplash);
+         dann greift dieser Watchdog nicht (is-loading ist dann bereits weg). */
+      (function () {
+        function forceHideSplash() {
+          try {
+            document.body.classList.remove("is-loading");
+            document.body.classList.add("app-ready", "splash-gone");
+            var s = document.getElementById("appSplash");
+            if (s) s.style.display = "none";
+          } catch (e) {}
         }
-      }, 12000);
+        function showReloadCard(message) {
+          forceHideSplash();
+          var app = document.getElementById("app");
+          if (!app) return;
+          app.innerHTML =
+            '<div style="display:grid;place-items:center;min-height:100dvh;font-family:Inter,ui-sans-serif,system-ui,sans-serif;padding:32px;text-align:center">' +
+            '<div><div style="font:700 52px/1 Inter,sans-serif;letter-spacing:-.04em;margin-bottom:22px;color:#fbf7ef">H</div>' +
+            '<p style="color:rgba(245,241,232,.62);max-width:300px;margin:0 auto 22px;font-size:15px;line-height:1.55">' + message + '</p>' +
+            '<button type="button" onclick="window.location.reload()" style="appearance:none;border:0;cursor:pointer;padding:14px 22px;border-radius:14px;font:600 16px Inter,sans-serif;color:#0b0f1a;background:#f5f1e8">Neu laden</button>' +
+            '</div></div>';
+        }
+        /* Stufe 1 — client.js kam nie an (Parse-/Ladefehler): frueh retten. */
+        window.setTimeout(function () {
+          if (!window.__helmutClientLoaded) {
+            showReloadCard("Helmut konnte gerade nicht geladen werden.<br>Bitte lade die Seite neu.");
+          }
+        }, 8000);
+        /* Stufe 2 — client.js laeuft, aber die App wird nie sichtbar (Laufzeit-Hang):
+           Schwelle bewusst > maximaler legitimer Startdauer (Auth-Timeout + app-start
+           bis 25s), damit ein langsamer, aber funktionierender Start nicht faelschlich
+           abgebrochen wird. */
+        window.setTimeout(function () {
+          if (document.body.classList.contains("is-loading")) {
+            showReloadCard("Helmut braucht gerade ungewoehnlich lange.<br>Bitte lade die Seite neu.");
+          }
+        }, 30000);
+      })();
     </script>
   </body>
 </html>
