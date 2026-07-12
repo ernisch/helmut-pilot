@@ -37,6 +37,7 @@
     "test:ko-backfill": "node scripts/ko-enrichment-backfill-test.js",
     "test:profile-validation": "node scripts/profile-validation-test.js",
     "test:admin-profile-fields": "node scripts/admin-profile-fields-test.js",
+    "test:supply-matrix": "node scripts/profile-supply-matrix-test.js",
     "test:profile-db": "node scripts/profile-db-test.js"
   },
   "dependencies": {},

@@ -701,13 +701,25 @@ async function handleRequest(request, response) {
       let profiles = await listProfiles().catch(() => []);
       if (!Array.isArray(profiles) || !profiles.length) profiles = [{ id: politicianId }];
       const results = [];
+      let skipped = 0;
       for (const p of profiles) {
         const profile = await activeProfile(p.id || politicianId);
+        // Mehrmandantenfaehigkeit Phase 8: deaktivierte Profile nehmen an der
+        // Verarbeitung NICHT teil (sie sollen kein Briefing erzeugen). Fehlerhafte/
+        // leere Profile liefern ohnehin natuerlich einen Leerzustand — nur die
+        // bewusst deaktivierten werden aktiv uebersprungen. Ein Fehler/Skip bei
+        // einem Profil betrifft NUR dieses (per-Profil try/catch), nie die anderen.
+        const val = validateProfile(profile);
+        if (val.disabled) {
+          skipped += 1;
+          results.push({ userId: profile.id, available: false, reason: "profil-deaktiviert", vorgaenge: 0 });
+          continue;
+        }
         const res = await buildLageBriefing(profile, { politicianId: profile.id })
           .catch((e) => ({ available: false, reason: "error", error: e && e.message }));
         results.push({ userId: profile.id, available: res.available, fromCache: res.fromCache, reason: res.reason || null, vorgaenge: (res.vorgaenge || []).length });
       }
-      return { prewarmed: results.length, results };
+      return { prewarmed: results.length, uebersprungen: skipped, results };
     });
   }
 
