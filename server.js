@@ -913,6 +913,72 @@ async function handleRequest(request, response) {
     });
   }
 
+  // --- Admin-Profilverwaltung (Phase 4): ein Profil je politicianId lesen/bearbeiten ---
+  // GET liefert das volle Profil + Validierung (Phase 5) + Versorgungsstatus, damit
+  // die Bearbeitungsansicht Vollstaendigkeit, fehlende Pflichtfelder, KI-Budget und
+  // ob das Profil technisch/fachlich versorgt wird auf einen Blick zeigt.
+  if (url.pathname.startsWith("/api/admin/profile/") && url.pathname.endsWith("/test-briefing") && request.method === "POST") {
+    if (!requireRoleOr403(response, authUser, "admin")) return undefined;
+    const pid = accounts.slugify(decodeURIComponent(url.pathname.slice("/api/admin/profile/".length, -"/test-briefing".length)));
+    return handleAsync(response, async () => {
+      const profile = await activeProfile(pid).catch(() => null);
+      if (!profile) return { ok: false, reason: "no-profile" };
+      const validation = validateProfile(profile);
+      // Kein KI-Call: countOnly-Lage + V3-Briefing (beide 0-KI) -> zeigt, ob das
+      // Profil gerade Karten/Punkte bekaeme. Ein „Testbriefing" ist hier bewusst
+      // eine sichere Trockenrechnung, kein teurer Live-Versand.
+      let briefingPoints = 0, lageCount = 0;
+      try { const b = await buildV3Briefing(profile, pid); briefingPoints = b && b.available ? (b.items || []).length : 0; } catch (_) {}
+      try { const l = await buildLageBriefing(profile, { politicianId: pid, countOnly: true }); lageCount = l && l.available ? (l.vorgaenge || []).length : 0; } catch (_) {}
+      await accounts.recordAudit({ action: "admin.profile.test-briefing", userId: authUser.id, actorEmail: authUser.email, politicianId: pid });
+      return {
+        ok: true,
+        politicianId: pid,
+        zustand: validation.stateLabel,
+        bereit: validation.ready,
+        kannBriefingErhalten: validation.impact.kannBriefingErhalten,
+        briefingPunkte: briefingPoints,
+        lageVorgaenge: lageCount,
+        hinweis: briefingPoints === 0 && lageCount === 0
+          ? (validation.ready ? "Profil ist vollständig, aber es liegen aktuell keine passenden Vorgänge vor (dünne Quellenlage)."
+                              : "Profil ist noch nicht vollständig — deshalb keine personalisierten Inhalte.")
+          : "Profil erhält Inhalte."
+      };
+    });
+  }
+
+  if (url.pathname.startsWith("/api/admin/profile/")) {
+    if (!requireRoleOr403(response, authUser, "admin")) return undefined;
+    const pid = accounts.slugify(decodeURIComponent(url.pathname.slice("/api/admin/profile/".length)));
+    if (!pid) return sendNotFound(response);
+    if (request.method === "GET") {
+      return handleAsync(response, async () => {
+        const profile = await activeProfile(pid).catch(() => null);
+        const validation = validateProfile(profile || { id: pid });
+        return { profile: profile || { id: pid }, validierung: {
+          zustand: validation.state,
+          zustandLabel: validation.stateLabel,
+          grund: validation.reason,
+          bereit: validation.ready,
+          nutzbar: validation.usable,
+          deaktiviert: validation.disabled,
+          fehlendePflichtfelder: validation.missingRequiredLabels,
+          budgetProbleme: validation.budgetProblems,
+          funktionsauswirkung: validation.impact
+        } };
+      });
+    }
+    if (request.method === "POST" || request.method === "PATCH") {
+      if (previewMode) return sendPreviewReadOnly(response);
+      return handleJson(request, response, async (body) => {
+        const saved = await saveProfile(await normalizeProfile(body, pid));
+        await accounts.recordAudit({ action: "admin.profile.update", userId: authUser.id, actorEmail: authUser.email, politicianId: pid });
+        const validation = validateProfile(saved);
+        return { profile: saved, validierung: { zustand: validation.state, zustandLabel: validation.stateLabel, bereit: validation.ready, fehlendePflichtfelder: validation.missingRequiredLabels } };
+      });
+    }
+  }
+
   if (url.pathname === "/api/admin/assignments") {
     if (!requireRoleOr403(response, authUser, "admin")) return undefined;
     if (request.method === "GET") return handleAsync(response, () => accounts.listAssignments());
@@ -2142,6 +2208,11 @@ module.exports.__publicReleasePayload = publicReleasePayload;
 // von index.html und dem Server-Template.
 module.exports.__indexHtml = indexHtml;
 module.exports.__SPLASH_WATCHDOG_SCRIPT = SPLASH_WATCHDOG_SCRIPT;
+// Test-Hook (Offline): die Profil-Normalisierung (Mehrmandantenfaehigkeit Phase 4)
+// — prueft, dass die neuen strukturierten Felder (KI-Budget, aktiv, Regierungsrolle,
+// Onboarding, Namensvarianten) korrekt uebernommen/validiert werden und Bearbeiten
+// nie ungewollt Felder loescht.
+module.exports.__normalizeProfile = normalizeProfile;
 
 if (require.main === module) {
   const server = http.createServer(requestHandler);
@@ -3642,6 +3713,13 @@ async function buildAdminDataStatus({ perAccountLimit = 25 } = {}) {
       radarChancen: chance,
       radarRisiken: risk,
       kiKosten: cost,
+      // Phase 4/10: KI-Budget pro Profil (Cent) — null = Systemdefault greift.
+      kiBudget: {
+        taeglichCent: profile && profile.aiBudgetDailyCents != null ? Number(profile.aiBudgetDailyCents) : null,
+        monatlichCent: profile && profile.aiBudgetMonthlyCents != null ? Number(profile.aiBudgetMonthlyCents) : null
+      },
+      onboardingStatus: (profile && profile.onboardingStatus) || "neu",
+      aktiv: !(profile && profile.profileActive === false),
       // Konto-Typ NUR wenn sicher ermittelbar (nicht raten): das Pilot-/Demo-Seed-Mandat
       // cem-ince -> "Pilot"; sonst ein evtl. vorhandenes explizites Flag; sonst null.
       kontoTyp: id === cemInceProfile.id ? "Pilot" : (u.kontoTyp || u.accountKind || u.kind || null),
@@ -3969,7 +4047,56 @@ async function normalizeProfile(profile, politicianId = cemInceProfile.id) {
   next.officeHandoffMethod = officeHandoffMethodValue(profile.officeHandoffMethod, base.officeHandoffMethod);
   next.upcomingAppointments = appointmentValue(profile.upcomingAppointments, base.upcomingAppointments);
   next.committees = next.committee ? [next.committee] : next.committees;
+  // Mehrmandantenfaehigkeit Phase 2/4: neue strukturierte Profilfelder. Nur
+  // uebernehmen, wenn explizit im Body -> sonst Basiswert behalten (Bearbeiten
+  // darf nie ungewollt Felder loeschen). profileActive/onboardingStatus tragen
+  // Defaults (aktiv / neu), damit Bestandsprofile ohne die Felder gueltig bleiben.
+  next.nameVariants = arrayValue(profile.nameVariants, base.nameVariants);
+  next.deputyCommittees = arrayValue(profile.deputyCommittees, base.deputyCommittees);
+  next.regionalTopics = arrayValue(profile.regionalTopics, base.regionalTopics);
+  next.governmentRole = governmentRoleValue(profile.governmentRole, base.governmentRole);
+  next.onboardingStatus = onboardingStatusValue(profile.onboardingStatus, base.onboardingStatus);
+  next.profileActive = profileActiveValue(profile.profileActive, base.profileActive);
+  next.aiBudgetDailyCents = budgetCentValue(profile.aiBudgetDailyCents, base.aiBudgetDailyCents);
+  next.aiBudgetMonthlyCents = budgetCentValue(profile.aiBudgetMonthlyCents, base.aiBudgetMonthlyCents);
   return next;
+}
+
+// Regierungsrolle: nur erlaubte Enum-Werte, sonst Basiswert (nie raten).
+function governmentRoleValue(value, fallback) {
+  const allowed = new Set(["regierung", "opposition", "unbekannt"]);
+  const v = String(value || "").trim().toLowerCase();
+  if (allowed.has(v)) return v;
+  return fallback || null;
+}
+
+function onboardingStatusValue(value, fallback) {
+  const allowed = new Set(["neu", "in_bearbeitung", "abgeschlossen"]);
+  const v = String(value || "").trim().toLowerCase();
+  if (allowed.has(v)) return v;
+  return fallback || "neu";
+}
+
+// aktiv: nur ein echter Boolean/„false"-String deaktiviert; Default aktiv.
+function profileActiveValue(value, fallback) {
+  if (value === true || value === false) return value;
+  const v = String(value == null ? "" : value).trim().toLowerCase();
+  if (v === "false" || v === "0" || v === "nein" || v === "inaktiv") return false;
+  if (v === "true" || v === "1" || v === "ja" || v === "aktiv") return true;
+  return fallback === false ? false : true;
+}
+
+// KI-Budget in Cent: leere Eingabe -> null (Systemdefault greift). Ungueltige
+// Eingabe (<=0/NaN) wird NICHT stillschweigend zu einem Wert gemacht — sie bleibt
+// erhalten, damit die Validierung (Phase 5) sie als „fehlerhaft" melden kann.
+// Genau 0 als Loesch-/Reset-Signal: null (Systemdefault).
+function budgetCentValue(value, fallback) {
+  if (value === undefined) return fallback == null ? null : fallback;
+  if (value === null || String(value).trim() === "") return null;
+  const num = Number(value);
+  if (Number.isFinite(num) && num === 0) return null; // 0 = zuruecksetzen auf Default
+  if (Number.isFinite(num) && Number.isInteger(num) && num > 0) return num;
+  return value; // ungueltig: unveraendert durchreichen -> Validierung meldet „fehlerhaft"
 }
 
 function politicianIdFromUrl(url) {
