@@ -28,7 +28,8 @@
     "test:splash": "node scripts/splash-boot-test.js",
     "test:pwa-icon": "node scripts/pwa-icon-test.js",
     "lage:backfill": "node scripts/lage-backfill.js",
-    "backfill:presentation": "node scripts/presentation-backfill.js"
+    "backfill:presentation": "node scripts/presentation-backfill.js",
+    "test:watchdog-state": "node scripts/watchdog-state-test.js"
   },
   "dependencies": {},
   "devDependencies": {}
