@@ -302,16 +302,24 @@ async function handleRequest(request, response) {
       const profile = await activeProfile(politicianId);
       const briefing = await latestBriefingPayload({ politicianId, profile, url, previewMode, compact: true });
       // Lage = das politische Morgen-Briefing des Referenten (keine Empfehlung/Bewertung).
-      // Additiv: hängt am bestehenden Aggregat, damit die App es ohne Extra-Call rendert.
-      // Hart mit Timeout begrenzt: ein haengender Call darf den App-Start NIE blockieren
-      // (try/catch allein faengt kein Haengenbleiben ab, nur geworfene Fehler).
-      try { briefing.lageBriefing = await withTimeout(buildLageBriefing(profile, { politicianId }), 12000, "lage-briefing"); }
-      catch (error) { console.error("Lage-Briefing fehlgeschlagen", error && error.message); }
+      // P1-7 (app-start-performance.md §1C, lage.md §4): NUR die deterministischen
+      // Karten (+ ggf. gecachtes Narrativ) im Start-Kritikpfad laden — KEIN Live-LLM-
+      // Call. So können die Karten NIE durch ein LLM-Timeout verschwinden. Der Timeout
+      // bleibt als reines Sicherheitsnetz (cacheOnly macht nur DB-Reads, hängt nicht).
+      try { briefing.lageBriefing = await withTimeout(buildLageBriefing(profile, { politicianId, cacheOnly: true }), 8000, "lage-briefing-cards"); }
+      catch (error) { console.error("Lage-Karten fehlgeschlagen", error && error.message); }
+      // Narrativ asynchron nachziehen (fire-and-forget), damit der Cache für den
+      // nächsten Aufruf warm ist. Blockiert den App-Start NICHT.
+      if (briefing.lageBriefing && briefing.lageBriefing.pendingNarrative) {
+        buildLageBriefing(profile, { politicianId }).catch((e) => console.error("Lage-Narrativ (async) fehlgeschlagen", e && e.message));
+      }
+      // P1-8 (Teil): tasks + notes sind unabhängig — parallel statt seriell laden.
+      const [tasks, notes] = await Promise.all([getTasks(profile.id), getUserNotes(profile.id)]);
       return {
         profile,
         briefing,
-        tasks: await getTasks(profile.id),
-        notes: await getUserNotes(profile.id),
+        tasks,
+        notes,
         aiStatus: {
           enabled: isAiEnabled(),
           model: activeModelName()
@@ -2039,7 +2047,7 @@ function indexHtml() {
     </main>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="client.js?v=${ASSET_VERSION}"></script>
+    <script src="client.js?v=${ASSET_VERSION}" defer></script>
     <script>${SPLASH_WATCHDOG_SCRIPT}</script>
   </body>
 </html>`;

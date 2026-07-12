@@ -153,9 +153,9 @@ wc -c /tmp/start.json
 
 ## 7. Priorisierte Ursachen (App-Start)
 
-1. **P1 — Globales Warten statt progressiv:** Splash bis alle Daten; toter Cache-First-Render; zwei serielle Boot-Awaits.
-2. **P1 — Lage-LLM im Start-Kritikpfad** (12s-Timeout kann Lage nullen; koppelt an `lage.md`).
-3. **P2 — Doppelter KO-Load + doppelter N+1-Quellen-Load** pro Start (Serverzeit).
-4. **P3 — Asset-Caching** (`client.js`/`styles.css` `max-age=86400` statt `immutable` trotz `?v=<sha>`); `client.js` ohne `defer`.
+1. **P1 — Globales Warten statt progressiv:** Splash bis alle Daten; toter Cache-First-Render; zwei serielle Boot-Awaits. — **TEILWEISE** (2026-07-12): `tasks`/`notes` laufen jetzt parallel (`Promise.all`) statt seriell; `client.js` `defer` (nicht mehr render-blockierend). **OFFEN (bewusst zurückgestellt):** der vollständige client-seitige Progressive-Shell-Umbau (Navigation vor Daten rendern, Cache-First-Sofortrender reaktivieren) — braucht Browser-QA/Screenshots und ist ohne diese nicht vollständig verifizierbar (Autonomie-Regel „nur wenn vollständig testbar").
+2. **P1 — Lage-LLM im Start-Kritikpfad** (12s-Timeout kann Lage nullen; koppelt an `lage.md`). — ✅ **BEHOBEN** (2026-07-12): `/api/app/start` ruft `buildLageBriefing(..., { cacheOnly:true })` → nur deterministische Karten + gecachtes Narrativ, **kein Live-LLM-Call**. Die Karten können nicht mehr durch ein Timeout verschwinden. Narrativ kommt aus dem 05:45-Cron-Cache; Erzeugung asynchron (fire-and-forget als Fallback). Test: `scripts/lage-cacheonly-test.js` 9/9.
+3. **P2 — Doppelter KO-Load + doppelter N+1-Quellen-Load** pro Start (Serverzeit). — **OFFEN** (P2, geringere Priorität): request-scoped Memoization der doppelten `listKnowledgeObjects(200)` als eigener, gezielter Folgeschritt.
+4. **P3 — Asset-Caching** (`client.js`/`styles.css` `max-age=86400` statt `immutable` trotz `?v=<sha>`); `client.js` ohne `defer`. — ✅ **BEHOBEN** (2026-07-12): beide auf `public, max-age=31536000, immutable` (URLs sind `?v=${VERCEL_GIT_COMMIT_SHA}`-versioniert → pro Deploy neue URL, sicher); `client.js` mit `defer` (server-generiertes HTML, `server.js` `indexHtml()`).
 
 **Grenzen / VERMUTUNG:** Ohne Live-Timing (egress-blockiert) sind absolute Zeit-bis-sichtbar-Werte nicht gemessen; die Rangfolge der Verlustpunkte ist aus dem deterministischen Code-Pfad abgeleitet. Payload-Größe geschätzt (401-Gate).
