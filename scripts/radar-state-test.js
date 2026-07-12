@@ -525,5 +525,39 @@ check("Keine technischen Quellen-Enums im sourceCategory-Label (nur Klartext/'')
     radarState.buildRadarRelationsDebug({ profile: p, decisions: [{ knowledge_object_id: "kt2", vorgang_id: "vt2", score: 50, matched_features: [{ type: "thema", value: "Rente" }] }], kosById: { kt2: { ...base, id: "kt2", vorgang_id: "vt2", display_title: "Rentendebatte" } }, sourcesByVorgang: {} }).count === 0);
 }
 
+// ── Pre-Sale-Fix: historische Erwaehnungen ueberleben den LEER-Pfad ──────────
+// Regression zu RAD-02: Fruehere Early-Returns ("keine-treffer") bauten den
+// Radar OHNE knowledgeObjects -> "Ueber dich" war leer, obwohl belegte (auch
+// alte) Erwaehnungen ueber den Nutzer vorlagen. buildMentions arbeitet
+// unabhaengig von den Decisions; der Leerzustand muss sie erhalten.
+{
+  const oldIso = new Date(NOW - 180 * 864e5).toISOString(); // ~6 Monate alt
+  const pMention = { id: "u-m", fullName: "Cem İnce", party: "Die Linke" };
+  const koOldMention = {
+    ...base, id: "kold", vorgang_id: "vold",
+    display_title: "Alte Berichterstattung über Cem İnce",
+    was_ist_passiert: "Bericht.", mentioned_people: ["Cem İnce"],
+    updated_at: oldIso, created_at: oldIso,
+    best_source_url: "https://tagesschau.de/alt", source_trust: "hoch"
+  };
+  // Exakt der Server-Leerpfad: decisions=[], aber knowledgeObjects mitgegeben.
+  const bEmpty = briefingContract.toBriefingContractV3({
+    profile: pMention, decisions: [], kosById: {}, sourcesByVorgang: {},
+    reason: "keine-treffer", knowledgeObjects: [koOldMention], now: nowDate
+  });
+  const rs = bEmpty.currentRadarState || {};
+  const mentions = rs.mentions || [];
+  check("RAD-02: alte Erwaehnung erscheint trotz leerer Decisions (Leer-Pfad erhaelt Erwaehnungen)",
+    mentions.length === 1 && mentions[0].vorgangId === "vold");
+  check("RAD-02: Beleg-URL der historischen Erwaehnung bleibt erhalten",
+    mentions.length === 1 && /tagesschau\.de/.test(JSON.stringify(mentions[0])));
+  // Gegenprobe: OHNE knowledgeObjects (Alt-Verhalten) bleibt "Ueber dich" leer.
+  const bNoKos = briefingContract.toBriefingContractV3({
+    profile: pMention, decisions: [], kosById: {}, sourcesByVorgang: {}, reason: "keine-treffer", now: nowDate
+  });
+  check("RAD-02: ohne knowledgeObjects keine Erwaehnungen (Kontrolle)",
+    ((bNoKos.currentRadarState || {}).mentions || []).length === 0);
+}
+
 console.log(`\n${passed}/${passed + failed} Radar-State-Assertions erfolgreich.`);
 if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exit(1); }

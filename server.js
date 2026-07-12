@@ -241,10 +241,27 @@ async function handleRequest(request, response) {
     // NIE still auf cem-ince (oder ein fremdes Mandat) fallen. Klarer Zustand statt
     // fremder Daten: API -> 403 (no-mandate); SPA-HTML/Assets fallen durch (Leerzustand).
     if (!politicianId) {
-      if (url.pathname.startsWith("/api/") && !url.pathname.startsWith("/api/cron/")) {
+      // BOOTSTRAP-AUSNAHME: Ein Administrator braucht KEIN Mandat, um das System zu
+      // betreiben (Nutzer/Zuordnungen anlegen). Auf einem frischen System existiert
+      // noch kein Abgeordneter -> defaultPoliticianIdForUser liefert null -> ohne
+      // diese Ausnahme sperrte das no-mandate-Gate /api/admin/* aus und der erste
+      // Nutzer liesse sich nie anlegen (Henne-Ei). Admin-, Auth- und Konto-Endpunkte
+      // sind mandatsunabhaengig und duerfen durch; sie lesen KEINE fremden Mandatsdaten.
+      const isAdminUser = authUser && authUser.role === "admin";
+      const mandateExemptPath =
+        url.pathname.startsWith("/api/admin/") ||
+        url.pathname.startsWith("/api/auth/") ||
+        url.pathname === "/api/user/notification-settings" ||
+        url.pathname === "/api/feedback" ||
+        url.pathname === "/api/security/csrf";
+      const allowThrough =
+        url.pathname.startsWith("/api/cron/") ||
+        (isAdminUser && mandateExemptPath) ||
+        (!url.pathname.startsWith("/api/"));
+      if (!allowThrough) {
         return sendForbidden(response, "Kein Mandat zugewiesen. Bitte an einen Administrator wenden.", "no-mandate");
       }
-      // sonst: statische Auslieferung unten (Login/leerer Zustand), kein Daten-Read.
+      // sonst: statische Auslieferung bzw. mandatsfreier Admin-/Auth-Pfad, kein Fremddaten-Read.
     }
   } else {
     // Legacy-Pilot-Modus: EIN geteiltes Pilotmandat hinter PILOT_SECRET.
@@ -1303,18 +1320,36 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
   // Fail-safe, KEIN V2-Fallback: kein Store -> expliziter Leerzustand.
   if (!v3StoreReady()) return empty("v3-store-disabled");
 
+  // EHRLICHKEIT DES SPEICHERWEGS: Ein Supabase-Ausfall/Timeout darf NICHT wie
+  // "es gibt keine Vorgaenge" aussehen. listKnowledgeObjects faengt intern und
+  // liefert [] — deshalb hier zusaetzlich ueber ein Sentinel-Objekt unterscheiden,
+  // ob der Read wirklich lief (auch 0 Treffer moeglich) oder scharf fehlschlug.
   let kos = [];
-  try { kos = await listKnowledgeObjects({ limit: 200 }); }
-  catch (error) { console.error("[v3-briefing] listKnowledgeObjects fehlgeschlagen:", error && error.message); }
+  let storeFailed = false;
+  try {
+    const res = await listKnowledgeObjects({ limit: 200, _signalError: true });
+    if (res && res.__storeError) storeFailed = true; else kos = res || [];
+  } catch (error) {
+    console.error("[v3-briefing] listKnowledgeObjects fehlgeschlagen:", error && error.message);
+    storeFailed = true;
+  }
+  if (storeFailed) return empty("store-error");
   const understood = (kos || []).filter((k) =>
     k && k.status !== "pending" && k.understanding_status === "complete" && (k.was_ist_passiert || k.warum_wichtig)
   );
   if (!understood.length) return empty("keine-vorgaenge");
+  // Leerzustand, der ERWAEHNUNGEN erhaelt: buildMentions ("Ueber dich") arbeitet
+  // unabhaengig von den Decisions. Fruehere Early-Returns ("keine-treffer") warfen
+  // die verstandenen KOs weg -> Radar zeigte "keine Erwaehnungen", obwohl belegte
+  // (auch aeltere) Erwaehnungen ueber den Nutzer vorlagen. Jetzt: KOs mitreichen.
+  const emptyKeepMentions = (reason) => briefingContract.toBriefingContractV3({
+    profile, decisions: [], kosById: {}, sourcesByVorgang: {}, reason, briefingType, knowledgeObjects: understood, now: new Date()
+  });
 
   // Deterministische Bewertung (0 KI). Nur für die getroffenen Vorgänge Quellen laden.
   const now = new Date();
   const decisions = decisionsEngine.decideForUser(profile, understood, { userId, limit: 50 });
-  if (!decisions.length) return empty("keine-treffer");
+  if (!decisions.length) return emptyKeepMentions("keine-treffer");
   // Fresh-aware Kandidaten-Vervollstaendigung (on-read, 0 KI, deterministisch):
   // Der Top-Relevanz-Cut oben (limit 50, Ranking nach PROFIL-AEHNLICHKEIT) kann einen
   // FRISCHEN, hoch relevanten Vorgang von heute abschneiden — er liegt dann nicht wegen
@@ -1340,7 +1375,7 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
     if (!ko) return false;
     return sourceSafety.guardKnowledgeObject(ko, sourcesByVorgang[ko.vorgang_id] || []).status !== "quarantine";
   });
-  if (!safeDecisions.length) return empty("keine-treffer");
+  if (!safeDecisions.length) return emptyKeepMentions("keine-treffer");
   const briefing = briefingContract.toBriefingContractV3({ profile, decisions: safeDecisions, kosById, sourcesByVorgang, now, briefingType, knowledgeObjects: understood });
   // Read-only Auswahl-Diagnose (nur bei ?debugPrimary=1 -> opts.debug). Aus dem ECHTEN
   // Read-Pfad, additiv, ohne die normale Antwort zu veraendern. Fehlerrobust (nie Crash).
@@ -1731,8 +1766,8 @@ function sendPilotUnlockPage(response, url) {
     <main>
       <div class="mark">H</div>
       <div class="rule"></div>
-      <h1>Pilot-Zugang.</h1>
-      <p>Helmut ist aktuell ein geschützter Pilot. Gib den Zugangscode ein, um die politische Lage zu öffnen.</p>
+      <h1>Zugang.</h1>
+      <p>Helmut ist geschützt. Gib den Zugangscode ein, um die politische Lage zu öffnen.</p>
       <p><a href="/impressum">Impressum</a> · <a href="/datenschutz">Datenschutz</a></p>
       <form id="unlock">
         <input id="secret" name="secret" type="password" autocomplete="current-password" placeholder="Zugangscode" autofocus />
@@ -1979,6 +2014,9 @@ module.exports.__buildAdminDataStatus = buildAdminDataStatus;
 module.exports.__buildPipelineRecoveryStatus = buildPipelineRecoveryStatus;
 // Test-Hook (nur fuer Offline-Tests, wie __build* oben): der slot-aware Read-Pfad.
 module.exports.__buildV3Briefing = buildV3Briefing;
+// Test-Hook (Offline): der oeffentliche Release-Serializer — prueft, dass keine
+// Modell-/Vendor-Details an anonyme Aufrufer durchsickern.
+module.exports.__publicReleasePayload = publicReleasePayload;
 
 if (require.main === module) {
   const server = http.createServer(requestHandler);
@@ -2452,7 +2490,12 @@ function publicReleasePayload(release) {
     checks: (release.checks || []).map((check) => ({
       label: check.label,
       ok: check.ok,
-      detail: check.detail
+      // SICHERHEIT: /api/release/public ist bewusst unauthentifiziert (externes
+      // Monitoring/Smoke). Der OpenAI-Check-Detailtext enthaelt im aktiven Zustand
+      // den konkreten Modellnamen ("Modell <model> aktiv.") — der darf oeffentlich
+      // NICHT sichtbar sein (Modell-/Vendor-Preisgabe an anonyme Aufrufer). Public
+      // erhaelt nur den neutralen Aktiv-Status; alle anderen Checks bleiben unveraendert.
+      detail: check.label === "OpenAI" ? (check.ok ? "aktiv." : "nicht aktiv.") : check.detail
     })),
     liveFlow: {
       ready: release.liveFlow?.ready || false,
