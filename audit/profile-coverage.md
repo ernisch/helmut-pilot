@@ -164,8 +164,8 @@ Ursachenklassen laut Auftrag: **(A)** wirklich keine Infos · **(B)** Quellenabd
 
 ## 10. Priorisierte Ursachen (Profilversorgung)
 
-1. **P1 — KO-Anreicherung fehlt** (`tags`/`policy_field`/`embedding` leer) → Themen-/Ausschuss-/Similarity-Matching tot. **Größter Hebel.**
-2. **P1 — Label-Normalisierung** (Ausschuss/Partei-Varianten) → harte Identitätstreffer gehen verloren.
+1. **P1 — KO-Anreicherung fehlt** (`tags`/`policy_field`/`embedding` leer) → Themen-/Ausschuss-/Similarity-Matching tot. **Größter Hebel.** — **ROOT CAUSE LOKALISIERT** (2026-07-12): `understanding.js` extrahiert `tags`/`policy_field` **überhaupt nicht** (kein Vorkommen im Code); das Schema erlaubt sie nur via `additionalProperties`. Fix = Understanding-Prompt/-Schema um `tags`/`policy_field` erweitern. **Bewusst zurückgestellt**, weil (a) es die LLM-Extraktion ändert (Goldset-Validierung nötig) und (b) erst nach **Re-Understanding** der 217 KOs wirkt = **Production-Backfill/KI-Kosten** → eigener Freigabepunkt (Umfang/Kosten/Dauer melden, bevor ausgeführt).
+2. **P1 — Label-Normalisierung** (Ausschuss/Partei-Varianten) → harte Identitätstreffer gehen verloren. — ✅ **BEHOBEN** (2026-07-12): `normalizeCommittee`/`normalizeParty` in `matching.js` (beidseitig Profil+KO, vor slug). „Ausschuss für Arbeit und Soziales" == „Arbeit und Soziales" == „Sozialausschuss"; „Linke" == „Die Linke"; „Bündnis 90/Die Grünen" == „Grüne". **Wirkt sofort auf den Bestand** (keine Anreicherung/Backfill nötig) und schaltet die 34-P.-Ausschuss- + 22-P.-Partei-Dimension frei. Tests: `scripts/matching-normalization-test.js` 20/20 (inkl. Mehr-Profil-Ranking, Personalisierung, keine Fehl-Zuordnung).
 3. **P1 — Presentation-Backfill nie gelaufen** (106/162 KOs) → Darstellungsverlust.
 4. **P2 — Profildaten nur im Code für 1 Person** → DB-`profiles` befüllen, `neutralProfileDefaults`-Problem lösen, damit Mehr-Mandanten-Versorgung überhaupt möglich wird.
 5. **P2 — 200-Load-Cap < Bestand** → wächst mit dem Korpus.
