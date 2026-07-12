@@ -32,7 +32,8 @@
     "test:watchdog-state": "node scripts/watchdog-state-test.js",
     "test:lage-cacheonly": "node scripts/lage-cacheonly-test.js",
     "test:matching-norm": "node scripts/matching-normalization-test.js",
-    "test:radar-scan-limit": "node scripts/radar-scan-limit-test.js"
+    "test:radar-scan-limit": "node scripts/radar-scan-limit-test.js",
+    "test:ko-anreicherung": "node scripts/ko-anreicherung-test.js"
   },
   "dependencies": {},
   "devDependencies": {}
