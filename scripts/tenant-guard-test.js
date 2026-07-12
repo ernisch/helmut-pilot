@@ -102,6 +102,18 @@ const liveDeps = { ready: () => true, request: fakeRequest };
   await noThrow("saveDecisions([]) (leer) ok", () => storage.saveDecisions([]));
   await noThrow("saveDecisions([{id,user_id}]) (store aus -> skipped) ok", () => storage.saveDecisions([{ id: "dec-y", user_id: "mdb-a", score: 10 }]));
 
+  console.log("== 7) Keyed Reads (getProfileEmbedding/getOfficeOutput/canSpendOfficeOutput) ==");
+  // OHNE userId -> harte Ablehnung (kein stiller null/allowed-Fallback mehr).
+  await throwsTenant("getProfileEmbedding()", () => storage.getProfileEmbedding(undefined));
+  await throwsTenant("getProfileEmbedding('')", () => storage.getProfileEmbedding(""));
+  await throwsTenant("getOfficeOutput(undefined, vg, ch)", () => storage.getOfficeOutput(undefined, "vg1", "rede"));
+  await throwsTenant("canSpendOfficeOutput()", () => storage.canSpendOfficeOutput(null));
+  // MIT userId, Store aus -> sicherer Default OHNE Netzwerk, kein Fehler, kein Leak.
+  check("getProfileEmbedding(A, store aus) -> null", (await storage.getProfileEmbedding("mdb-a")) === null);
+  check("getOfficeOutput(A, store aus) -> null", (await storage.getOfficeOutput("mdb-a", "vg1", "rede")) === null);
+  const spend = await storage.canSpendOfficeOutput("mdb-a");
+  check("canSpendOfficeOutput(A, store aus) -> allowed, used 0", spend && spend.allowed === true && spend.used === 0);
+
   console.log("");
   const total = pass + fail;
   if (fail === 0) { console.log(`${pass}/${total} Tenant-Guard-Assertions erfolgreich.`); process.exit(0); }
