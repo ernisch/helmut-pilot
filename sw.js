@@ -1,9 +1,13 @@
 // Version bei jedem groesseren SW-Update erhoehen -> alte Asset-Caches werden
 // beim activate aufgeraeumt. BADGE_CACHE wird bewusst NICHT geloescht.
-const ASSET_CACHE = "helmut-assets-v1";
+// v2: Icon-Hintergrundfarbe korrigiert (#0f172a -> #050914, sichtbares Kaesten
+// im Android-PWA-Splash behoben) -> neuer Cache-Namespace + versionierte
+// Precache-URLs, damit kein Client alte Icon-Bytes aus dem SW-Cache behaelt.
+const ASSET_CACHE = "helmut-assets-v2";
+const ICON_VERSION = "20260712-iconfix1";
 const PRECACHE_URLS = [
-  "/assets/helmut_appicon_192.png",
-  "/assets/helmut_appicon_512.png"
+  `/assets/helmut_appicon_192.png?v=${ICON_VERSION}`,
+  `/assets/helmut_appicon_512.png?v=${ICON_VERSION}`
 ];
 
 // Elegante Offline-Ansicht im Helmut-Design. Inline im SW, damit sie ohne Netz
@@ -149,8 +153,8 @@ self.addEventListener("push", (event) => {
   const title = payload.title || "Helmut";
   const options = {
     body: payload.body || "Neue Lage verfügbar.",
-    icon: "/assets/helmut_appicon_192.png",
-    badge: "/assets/helmut_appicon_192.png",
+    icon: `/assets/helmut_appicon_192.png?v=${ICON_VERSION}`,
+    badge: `/assets/helmut_appicon_192.png?v=${ICON_VERSION}`,
     tag: payload.tag || payload.type || "helmut-update",
     renotify: true,
     data: {

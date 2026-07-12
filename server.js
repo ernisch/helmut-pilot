@@ -1955,12 +1955,12 @@ function indexHtml() {
     <meta name="application-name" content="Helmut" />
     <title>Helmut</title>
     <link rel="icon" href="assets/favicon.ico" sizes="any" />
-    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=${ASSET_VERSION}" />
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png?v=${ASSET_VERSION}" />
     <link rel="icon" href="assets/helmut_logo.svg" type="image/svg+xml" />
-    <link rel="apple-touch-icon" sizes="180x180" href="assets/helmut_appletouch_180.png" />
-    <link rel="apple-touch-icon" href="assets/helmut_appicon_192.png" />
-    <link rel="manifest" href="site.webmanifest?v=20260701-pwa-installable1" />
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/helmut_appletouch_180.png?v=${ASSET_VERSION}" />
+    <link rel="apple-touch-icon" href="assets/helmut_appicon_192.png?v=${ASSET_VERSION}" />
+    <link rel="manifest" href="site.webmanifest?v=${ASSET_VERSION}" />
     <style>
       :root{color-scheme:dark;background:#050914}html,body{width:100%;min-height:100%;margin:0;background:#050914;color:#f5f1e8}body.is-loading{background:radial-gradient(circle at 50% 42%,rgba(140,92,255,.12),transparent 26%),linear-gradient(180deg,#070b15 0%,#050914 72%,#03050b 100%)}.app-splash{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:radial-gradient(circle at 50% 42%,rgba(140,92,255,.12),transparent 26%),linear-gradient(180deg,#070b15 0%,#050914 72%,#03050b 100%)}.splash-mark,.loading-mark{display:grid;place-items:center;color:#fbf7ef;background:transparent}.splash-mark span,.loading-mark span{font:720 clamp(42px,13vw,72px)/1 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:-.04em;text-shadow:0 20px 70px rgba(140,92,255,.34)}.shell{width:100%;min-height:100dvh}.loading-screen{display:grid;place-items:center;min-height:100dvh;width:100%;background:#050914}
     </style>
