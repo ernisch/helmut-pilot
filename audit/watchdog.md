@@ -132,10 +132,10 @@ Als „Pipeline-durchgelaufen"-Signal **`crawlRuns[0].createdAt` benutzen** (leb
 
 ## 7. Priorisierte Ursachen (Watchdog)
 
-1. **P1 — Toter `pipelineDebugReports`-Marker erzeugt roten Fehlalarm** (Watchdog meldet falschen Systemzustand). Größter Vertrauensschaden.
-2. **P1 — `generatedAt=now` macht Briefing-Frische blind** (false-green) → echter „Crawl-ohne-Briefing"-Ausfall würde als gesund gemeldet.
-3. **P2 — Profil-/Global-Timestamp-Mismatch** im selben Urteil.
-4. **P2 — Zustandsmodell ohne INGEST/OUTPUT-Trennung, ohne Recovery-Hysterese** (Design in §4).
+1. **P1 — Toter `pipelineDebugReports`-Marker erzeugt roten Fehlalarm** (Watchdog meldet falschen Systemzustand). Größter Vertrauensschaden. — ✅ **BEHOBEN** (2026-07-12): `buildHealthReport` nutzt den Marker nicht mehr; „Pipeline durchgelaufen" = lebender `crawlRuns[0].createdAt`. Auch der `backendHealth`-Check „Pipeline-Debug" hängt jetzt am Crawl-Timestamp statt an `debugReport.counts`.
+2. **P1 — `generatedAt=now` macht Briefing-Frische blind** (false-green) → echter „Crawl-ohne-Briefing"-Ausfall würde als gesund gemeldet. — ✅ **BEHOBEN** (2026-07-12): OUTPUT-Frische misst das jüngste `knowledge_objects` mit `understanding_status='complete'` (`getLatestCompleteKnowledgeObjectAt`), verwendet in `buildHealthReport`, `operationalStatus`, `backendHealth`, `pilotReadiness`, `releaseCheck`. Schwelle 36h (ruhige Tage bleiben grün, echter Stau wird rot).
+3. **P2 — Profil-/Global-Timestamp-Mismatch** im selben Urteil. — ✅ **entschärft**: der tote profil-scoped Pipeline-Marker wird nicht mehr gelesen; INGEST kommt aus dem globalen Crawl, OUTPUT aus den globalen KOs (konsistente Quellen).
+4. **P2 — Zustandsmodell ohne INGEST/OUTPUT-Trennung, ohne Recovery-Hysterese** (Design in §4). — ✅ **UMGESETZT** (2026-07-12): `lib/helmut/watchdog-state.js` klassifiziert aus zwei Achsen in sechs Zustände (Gesund/Ruhelage/Teilweise gestört/Veraltet/Kritisch/Erholt) mit Recovery-Hysterese; 43/43 Unit-Tests (`scripts/watchdog-state-test.js`). Jede Meldung erklärt Was funktioniert / Was nicht / Wer betroffen / Was tun.
 
 ---
 

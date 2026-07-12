@@ -9,7 +9,8 @@ const { cemInceProfile, profileCompleteness } = require("./lib/helmut/config");
 const sourceSafety = require("./lib/helmut/sourceSafety");
 const { runLageCheck, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun } = require("./lib/helmut/storage");
+const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState } = require("./lib/helmut/storage");
+const { classifyOperationalState, describeState } = require("./lib/helmut/watchdog-state");
 const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled, activeModelName } = require("./lib/helmut/ai");
 const { pushStatus, sendBriefingReadyPush, sendLageChangePush, sendPushToPolitician } = require("./lib/helmut/push");
 const auth = require("./lib/helmut/auth");
@@ -50,6 +51,18 @@ const minSuccessfulSources = Number(process.env.HELMUT_MIN_SUCCESSFUL_SOURCES ||
 const maxCrawlFailureRatio = Number(process.env.HELMUT_MAX_CRAWL_FAILURE_RATIO || 0.1);
 const maxFullCrawlAgeMs = Number(process.env.HELMUT_MAX_FULL_CRAWL_AGE_MS || 14 * 60 * 60 * 1000);
 const maxLageCheckAgeMs = Number(process.env.HELMUT_MAX_LAGE_CHECK_AGE_MS || 4 * 60 * 60 * 1000);
+// P1-5: OUTPUT-Frische wird am jüngsten VERSTANDENEN Knowledge-Object gemessen
+// (nicht an der build-zeit-blinden Briefing-`generatedAt`). >36h ohne neues
+// complete-KO trotz laufendem Crawl = echter stiller Ausfall (VERALTET). Bewusst
+// großzügig (36h), damit ruhige Nachrichtentage NICHT fälschlich rot werden.
+const maxOutputFreshnessMs = Number(process.env.HELMUT_MAX_OUTPUT_FRESHNESS_MS || 36 * 60 * 60 * 1000);
+// Ein OUTPUT gilt als "tot", wenn kein complete-KO bekannt ist ODER es älter als
+// die Schwelle ist. Hilfsprädikat, in den Health-Checks unten wiederverwendet.
+function isOutputStale(completeKoAt) {
+  if (!completeKoAt) return true;
+  const age = Date.now() - new Date(completeKoAt).getTime();
+  return !(age < maxOutputFreshnessMs);
+}
 
 async function handleRequest(request, response) {
   const url = new URL(request.url || "/", `http://${request.headers.host || "localhost"}`);
@@ -508,15 +521,16 @@ async function handleRequest(request, response) {
       // V3: Ops liest das frisch aus Knowledge Objects erzeugte Briefing (kein V2-Blob).
       const v3Briefing = await buildV3Briefing(profile, politicianId);
       const latestDebug = await getLatestPipelineDebugReport(politicianId);
+      const latestCompleteKoAt = await getLatestCompleteKnowledgeObjectAt();
       const storage = getStorageStatus();
       const storeSummary = await getStoreSummary(politicianId);
       const evidenceQuality = sourceEvidenceQuality(v3Briefing);
       const learning = buildLearningProfile(await getInteractions(politicianId));
       const motorQuality = v3BriefingQuality(v3Briefing, evidenceQuality);
-      const readiness = pilotReadiness(latestCrawl, v3Briefing, storage, evidenceQuality, latestLageCheck);
-      const backend = backendHealth(latestCrawl, v3Briefing, latestDebug, storage, storeSummary, evidenceQuality, motorQuality, learning, latestLageCheck);
+      const readiness = pilotReadiness(latestCrawl, v3Briefing, storage, evidenceQuality, latestLageCheck, latestCompleteKoAt);
+      const backend = backendHealth(latestCrawl, v3Briefing, latestDebug, storage, storeSummary, evidenceQuality, motorQuality, learning, latestLageCheck, latestCompleteKoAt);
       return {
-        status: operationalStatus(latestCrawl, v3Briefing, storage, latestLageCheck),
+        status: operationalStatus(latestCrawl, v3Briefing, storage, latestLageCheck, latestCompleteKoAt),
         backend,
         readiness,
         learning,
@@ -2189,12 +2203,12 @@ function decorateBriefingFreshness(briefing) {
   };
 }
 
-function operationalStatus(crawl, briefing, storage, lageCheck = null) {
-  const briefingDate = briefing?.generatedAt || briefing?.date;
-  const briefingAge = briefingDate ? Date.now() - new Date(briefingDate).getTime() : Infinity;
+function operationalStatus(crawl, briefing, storage, lageCheck = null, completeKoAt = null) {
   const crawlHealthy = isFullCrawlHealthy(crawl);
   const lageHealthy = isLageCheckFresh(lageCheck);
-  const briefingHealthy = briefing && briefingAge < 18 * 60 * 60 * 1000;
+  // P1-5: Briefing "gesund" = verfügbar UND das jüngste verstandene Thema ist nicht
+  // veraltet (echtes Signal statt generatedAt=now). Fällt nur bei echtem Stau (>36h).
+  const briefingHealthy = Boolean(briefing && briefing.available) && !isOutputStale(completeKoAt);
   if (storage.backend !== "supabase") return "Achtung";
   if ((crawlHealthy || lageHealthy) && briefingHealthy) return "Bereit";
   if (crawl || lageCheck || briefing) return "Prüfen";
@@ -2254,7 +2268,7 @@ function v3BriefingQuality(briefing, evidenceQuality) {
   };
 }
 
-function backendHealth(crawl, briefing, debugReport, storage, storeSummary, evidenceQuality, motorQuality = null, learning = null, lageCheck = null) {
+function backendHealth(crawl, briefing, debugReport, storage, storeSummary, evidenceQuality, motorQuality = null, learning = null, lageCheck = null, completeKoAt = null) {
   const checks = [];
   addBackendCheck(checks, "Persistenter Speicher", storage.backend === "supabase", storage.backend === "supabase" ? "Supabase ist aktiv." : "Helmut speichert noch lokal.");
   addBackendCheck(checks, "Quellenbasis", Number(storeSummary.sources?.active || 0) >= minConfiguredSources, `${storeSummary.sources?.active || 0} aktive Quellen konfiguriert.`);
@@ -2266,20 +2280,24 @@ function backendHealth(crawl, briefing, debugReport, storage, storeSummary, evid
   addBackendCheck(checks, "Lage-Frische", isFullCrawlHealthy(crawl) || isLageCheckFresh(lageCheck), latestLageFreshnessDetail(crawl, lageCheck));
   addBackendCheck(checks, "Crawl-Qualität", checkedSources >= minCheckedSources && crawlFailureRatio <= maxCrawlFailureRatio, `${checkedSources} Quellen geprüft, ${failedSources} Fehler.`);
 
-  const briefingDate = briefing?.generatedAt || briefing?.date;
-  const briefingAge = briefingDate ? Date.now() - new Date(briefingDate).getTime() : Infinity;
   const recommendationCount = Number(briefing?.personalizedRecommendations?.length || 0);
   const itemCount = Number(briefing?.items?.length || 0);
   const situationalCount = Number(briefing?.situationalBriefing?.length || 0);
   const calmState = Boolean(motorQuality?.calmState || situationalCount > 0);
   const hasDecisionValue = recommendationCount > 0 && itemCount > 0;
-  addBackendCheck(checks, "Briefing-Frische", Boolean(briefing) && briefingAge < 18 * 60 * 60 * 1000, briefingDate ? `Letztes Briefing: ${briefingDate}.` : "Noch kein Briefing gespeichert.");
+  // P1-5: Frische am jüngsten VERSTANDENEN Knowledge-Object messen, nicht an der
+  // build-zeit-blinden `generatedAt` (die immer "jetzt" war → false-green).
+  addBackendCheck(checks, "Briefing-Frische", Boolean(briefing?.available) && !isOutputStale(completeKoAt), completeKoAt ? `Jüngstes verstandenes Thema: ${completeKoAt}.` : "Noch kein verstandenes Thema gespeichert.");
   addBackendCheck(checks, "Demo-Freiheit", Boolean(briefing) && briefing.status !== "Demo", briefing?.status ? `Status: ${briefing.status}.` : "Kein Briefingstatus vorhanden.");
   addBackendCheck(checks, "Entscheidungswert", hasDecisionValue || calmState, hasDecisionValue ? `${recommendationCount} persönliche Empfehlungen, ${itemCount} sichtbare Entscheidungen.` : `${situationalCount} Beobachtungspunkte, keine neue Reaktion nötig.`);
   addBackendCheck(checks, "Quellenlinks", Number(evidenceQuality?.missingLinks || 0) === 0 && Number(evidenceQuality?.publisherFallbacks || 0) === 0, `${evidenceQuality?.directLinks || 0}/${evidenceQuality?.total || 0} Belege mit Direktlink.`);
   addBackendCheck(checks, "Datenmotor V3", Number(motorQuality?.score || 0) >= 70 || Boolean(motorQuality?.ready) || calmState, motorQuality ? `${motorQuality.status}: ${motorQuality.score}% (${motorQuality.understoodVorgaenge || 0} Vorgänge bewertet).` : "Stabile Lage ohne neue Handlungspflicht.");
   addBackendCheck(checks, "Lernmodus", Number(learning?.eventCount || 0) >= 1, learning?.eventCount ? `${learning.eventCount} Nutzungssignale gespeichert, Vertrauen ${learning.confidence}.` : "Noch keine Nutzungssignale gespeichert.");
-  addBackendCheck(checks, "Pipeline-Debug", Boolean(debugReport?.counts), debugReport?.createdAt ? `Letzter Debug: ${debugReport.createdAt}.` : "Noch kein Debug-Report gespeichert.");
+  // P1-4: "Pipeline durchgelaufen" am LEBENDEN Crawl-Zeitstempel messen, nicht am
+  // toten `pipelineDebugReports`-Marker (savePipelineDebugReport hat null Aufrufer →
+  // alter Report hatte counts → falsch-grün). crawlRuns[0].createdAt lebt.
+  const crawlPipelineAge = crawl?.createdAt ? Date.now() - new Date(crawl.createdAt).getTime() : Infinity;
+  addBackendCheck(checks, "Pipeline-Debug", Boolean(crawl) && crawlPipelineAge < 2 * maxFullCrawlAgeMs, crawl?.createdAt ? `Letzter Pipeline-Lauf (Crawl): ${crawl.createdAt}.` : "Noch kein Pipeline-Lauf.");
 
   const passed = checks.filter((check) => check.ok).length;
   const total = checks.length || 1;
@@ -2339,11 +2357,9 @@ function backendActionFor(checkId) {
   return actions[checkId] || "Backend-Check prüfen.";
 }
 
-function pilotReadiness(crawl, briefing, storage, evidenceQuality = null, lageCheck = null) {
+function pilotReadiness(crawl, briefing, storage, evidenceQuality = null, lageCheck = null, completeKoAt = null) {
   const issues = [];
   const warnings = [];
-  const briefingDate = briefing?.generatedAt || briefing?.date;
-  const briefingAge = briefingDate ? Date.now() - new Date(briefingDate).getTime() : Infinity;
   const checkedSources = Number(crawl?.checkedSources || 0);
   const failedSources = Number(crawl?.failedSources || 0);
   const successfulSources = Number(crawl?.successfulSources || 0);
@@ -2367,7 +2383,9 @@ function pilotReadiness(crawl, briefing, storage, evidenceQuality = null, lageCh
   if (!briefing) {
     issues.push("Es gibt noch kein Briefing.");
   } else {
-    if (briefingAge > 18 * 60 * 60 * 1000) issues.push("Das letzte Briefing ist veraltet.");
+    // P1-5: echter Stau statt build-zeit-blinder generatedAt (>36h ohne neues
+    // verstandenes Thema trotz Crawl). Ruhige Tage bleiben grün.
+    if (isOutputStale(completeKoAt)) issues.push("Das letzte Briefing ist veraltet.");
     if (recommendationCount < 1 && !calmState) issues.push("Das Briefing enthält keine persönliche Empfehlung.");
     if (!quality) warnings.push("Die Briefingqualität wurde noch nicht geprüft.");
     if (quality && qualityScore < 90 && !calmState) issues.push("Die Briefingqualität ist noch nicht pitchbereit.");
@@ -2387,10 +2405,8 @@ function pilotReadiness(crawl, briefing, storage, evidenceQuality = null, lageCh
   };
 }
 
-function releaseCheck({ crawl, briefing, storage, storeSummary, evidenceQuality, backend, readiness, learning, radarArchive, lageCheck }) {
+function releaseCheck({ crawl, briefing, storage, storeSummary, evidenceQuality, backend, readiness, learning, radarArchive, lageCheck, completeKoAt = null }) {
   const checks = [];
-  const briefingDate = briefing?.generatedAt || briefing?.date;
-  const briefingAge = briefingDate ? Date.now() - new Date(briefingDate).getTime() : Infinity;
   const sourceCount = Number(crawl?.checkedSources || storeSummary?.sources?.active || 0);
   const failedSources = Number(crawl?.failedSources || 0);
   const failRatio = sourceCount ? failedSources / sourceCount : 1;
@@ -2404,7 +2420,8 @@ function releaseCheck({ crawl, briefing, storage, storeSummary, evidenceQuality,
   addReleaseCheck(checks, "Lage-Frische", Boolean(crawl) && lageFresh && sourceCount >= minCheckedSources && failRatio <= maxCrawlFailureRatio, crawl ? `${sourceCount} Quellen geprüft, ${failedSources} Fehler. ${latestLageFreshnessDetail(crawl, lageCheck)}.` : "Noch kein Crawl.");
   addReleaseCheck(checks, "Supabase", storage?.backend === "supabase", storage?.backend === "supabase" ? "Persistenter Speicher aktiv." : "Speicher ist lokal.");
   addReleaseCheck(checks, "OpenAI", isAiEnabled(), isAiEnabled() ? `Modell ${activeModelName()} aktiv.` : "OpenAI ist nicht aktiv.");
-  addReleaseCheck(checks, "Briefing", Boolean(briefing) && briefingAge < 18 * 60 * 60 * 1000 && hasDecisionOrCompetentCalm && briefing.status !== "Demo", briefing ? `${visibleDecisionCount} Entscheidungen, ${recommendationCount} Empfehlungen, ${situationalCount} Beobachtungspunkte.` : "Kein Briefing.");
+  // P1-5: Briefing-Frische am jüngsten verstandenen Thema (real), nicht generatedAt.
+  addReleaseCheck(checks, "Briefing", Boolean(briefing) && !isOutputStale(completeKoAt) && hasDecisionOrCompetentCalm && briefing.status !== "Demo", briefing ? `${visibleDecisionCount} Entscheidungen, ${recommendationCount} Empfehlungen, ${situationalCount} Beobachtungspunkte.` : "Kein Briefing.");
   addReleaseCheck(checks, "Quellenlinks", Number(evidenceQuality?.missingLinks || 0) === 0 && Number(evidenceQuality?.publisherFallbacks || 0) === 0, `${evidenceQuality?.directLinks || 0}/${evidenceQuality?.total || 0} sichtbare Belege mit Direktlink.`);
   addReleaseCheck(checks, "Radar", Array.isArray(briefing?.personMentions) && Array.isArray(radarArchive?.articles), `${briefing?.personMentions?.length || 0} neue Personenartikel, ${radarArchive?.total || 0} Archivartikel.`);
   const releaseMotor = v3BriefingQuality(briefing, evidenceQuality);
@@ -2508,18 +2525,20 @@ async function computeReleaseCheck(politicianId = cemInceProfile.id) {
   // V3: Release-Check bewertet das frisch erzeugte V3-Briefing (kein V2-Blob).
   const v3Briefing = await buildV3Briefing(profile, politicianId);
   const latestDebug = await getLatestPipelineDebugReport(politicianId);
+  const latestCompleteKoAt = await getLatestCompleteKnowledgeObjectAt();
   const storage = getStorageStatus();
   const storeSummary = await getStoreSummary(politicianId);
   const evidenceQuality = sourceEvidenceQuality(v3Briefing);
   const radarArchive = await getRadarArchive(profile, 92);
   const learning = buildLearningProfile(await getInteractions(politicianId));
   const motorQuality = v3BriefingQuality(v3Briefing, evidenceQuality);
-  const backend = backendHealth(latestCrawl, v3Briefing, latestDebug, storage, storeSummary, evidenceQuality, motorQuality, learning, latestLageCheck);
-  const readiness = pilotReadiness(latestCrawl, v3Briefing, storage, evidenceQuality, latestLageCheck);
+  const backend = backendHealth(latestCrawl, v3Briefing, latestDebug, storage, storeSummary, evidenceQuality, motorQuality, learning, latestLageCheck, latestCompleteKoAt);
+  const readiness = pilotReadiness(latestCrawl, v3Briefing, storage, evidenceQuality, latestLageCheck, latestCompleteKoAt);
   return releaseCheck({
     crawl: latestCrawl,
     lageCheck: latestLageCheck,
     briefing: v3Briefing,
+    completeKoAt: latestCompleteKoAt,
     storage,
     storeSummary,
     evidenceQuality,
@@ -2565,12 +2584,18 @@ function publicReleasePayload(release) {
 // strengen Pitch-Gates, plus Engagement aus dem Nutzungs-Tracking.
 async function buildHealthReport(politicianId = cemInceProfile.id) {
   // V3: Health-Report bewertet das frisch erzeugte V3-Briefing (kein V2-Blob).
+  // P1-4/P1-5: Betriebszustand kommt jetzt aus dem Zwei-Achsen-Zustandsmodell
+  // (lib/helmut/watchdog-state.js) auf Basis LEBENDER Zeitstempel — NICHT mehr
+  // aus dem toten `pipelineDebugReports`-Marker und NICHT mehr aus der
+  // build-zeit-blinden Briefing-`generatedAt`.
   const profile = await activeProfile(politicianId);
-  const [crawl, lageCheck, briefing, pipeline, errors, users, feedback, pushEvents] = await Promise.all([
+  const [crawl, lageCheck, briefing, completeKoAt, prevState, storeSummary, errors, users, feedback, pushEvents] = await Promise.all([
     getLatestCrawlRun(),
     getLatestLageCheck(politicianId),
     buildV3Briefing(profile, politicianId),
-    getLatestPipelineDebugReport(politicianId),
+    getLatestCompleteKnowledgeObjectAt(), // OUTPUT-Frische: jüngstes verstandenes Thema (real)
+    getLatestWatchdogState(politicianId), // für Recovery-Hysterese (Erholt)
+    getStoreSummary(politicianId),
     accounts.listSystemErrors(100),
     accounts.listUsers(),
     listFeedback(200),
@@ -2578,15 +2603,20 @@ async function buildHealthReport(politicianId = cemInceProfile.id) {
   ]);
   const storage = getStorageStatus();
   const now = Date.now();
-  const hoursSince = (t) => t ? (now - new Date(t).getTime()) / 3600000 : null;
+  const ageMs = (t) => (t ? now - new Date(t).getTime() : null);
+  const hoursSince = (t) => { const a = ageMs(t); return a == null ? null : a / 3600000; };
   const fmtAge = (h) => h == null ? "nie" : h < 1 ? "gerade" : h < 48 ? `vor ${Math.round(h)}h` : `vor ${Math.round(h / 24)}T`;
   const day = 24 * 3600000;
 
+  // INGEST: echter Crawl-Zeitstempel (crawlRuns[0].createdAt lebt).
   const crawlH = hoursSince(crawl?.checkedAt || crawl?.createdAt);
-  const briefingH = hoursSince(briefing?.generatedAt || briefing?.date);
   const lageH = hoursSince(lageCheck?.checkedAt || lageCheck?.createdAt);
-  const pipelineH = hoursSince(pipeline?.createdAt);
+  // OUTPUT: jüngstes complete-KO statt generatedAt=now (schließt false-green).
+  const completeKoH = hoursSince(completeKoAt);
   const briefingItems = Array.isArray(briefing?.items) ? briefing.items.length : 0;
+  const checked = Number(crawl?.checkedSources || 0);
+  const failed = Number(crawl?.failedSources || 0);
+  const successful = Number(crawl?.successfulSources || 0);
   const errors24 = (errors || []).filter((e) => e.createdAt && (now - new Date(e.createdAt).getTime()) < day).length;
   const feedback24 = (feedback || []).filter((f) => f.createdAt && (now - new Date(f.createdAt).getTime()) < day).length;
   const pushSent24 = (pushEvents || []).filter((e) => e.createdAt && (now - new Date(e.createdAt).getTime()) < day && Number(e.delivered) > 0).length;
@@ -2594,40 +2624,63 @@ async function buildHealthReport(politicianId = cemInceProfile.id) {
     const seen = u.lastSeenAt || u.lastLoginAt;
     return seen && (now - new Date(seen).getTime()) < 7 * day;
   }).length;
-  const checked = Number(crawl?.checkedSources || 0);
-  const failed = Number(crawl?.failedSources || 0);
 
-  const problems = [];
-  if (crawlH == null || crawlH > 28) problems.push(`Crawl ${crawlH == null ? "nie gelaufen" : "seit " + Math.round(crawlH) + "h aus"}`);
-  if (briefingH == null || briefingH > 30) problems.push(`Briefing ${briefingH == null ? "fehlt" : "seit " + Math.round(briefingH) + "h alt"}`);
-  // Briefing ist frisch, aber leer -> stiller KI-/Crawl-Ausfall (technisch gruen, inhaltlich tot).
-  if (briefingH != null && briefingH <= 30 && briefingItems === 0) problems.push("Briefing leer (0 Einträge) – KI/Crawl prüfen");
-  // Pipeline-Debug-Report wird am Ende jedes Briefing-Laufs geschrieben (05/16 UTC).
-  // Nur bei vorhandenem, aber veraltetem Marker alarmieren (kein Fehlalarm bei fehlendem Report).
-  if (pipelineH != null && pipelineH > 28) problems.push(`Pipeline seit ${Math.round(pipelineH)}h nicht durchgelaufen`);
-  // Lage-Check laeuft taeglich 10 UTC; nur bei vorhandenem, aber veraltetem Marker alarmieren.
-  if (lageH != null && lageH > 28) problems.push(`Lage-Check seit ${Math.round(lageH)}h aus`);
-  if (storage.backend !== "supabase") problems.push("Speicher: Supabase inaktiv");
-  if (errors24 > 15) problems.push(`${errors24} Systemfehler (24h)`);
-  const ok = problems.length === 0;
+  const classification = classifyOperationalState({
+    storageOk: storage.backend === "supabase",
+    ingest: {
+      crawlAgeMs: ageMs(crawl?.checkedAt || crawl?.createdAt),
+      checkedSources: checked,
+      successfulSources: successful,
+      failureRatio: checked ? failed / checked : 1,
+      rawItems24h: Number(storeSummary?.rawItems?.last24h || 0)
+    },
+    output: {
+      available: Boolean(briefing?.available),
+      newestCompleteKoAgeMs: ageMs(completeKoAt),
+      reactCount: Number(briefing?.decisionMetrics?.react || 0),
+      situationalCount: Array.isArray(briefing?.situationalBriefing) ? briefing.situationalBriefing.length : 0
+    },
+    lageAgeMs: ageMs(lageCheck?.checkedAt || lageCheck?.createdAt),
+    errors24,
+    previousState: prevState?.state || null
+  }, {
+    // Server-Schwellen (ENV-überschreibbar) statt Modul-Defaults → konsistent
+    // mit isFullCrawlHealthy/isLageCheckFresh/Release-Check.
+    crawlFreshMs: maxFullCrawlAgeMs,
+    crawlWarnMs: 2 * maxFullCrawlAgeMs,
+    outputFreshMs: 24 * 60 * 60 * 1000,
+    outputWarnMs: maxOutputFreshnessMs,
+    lageFreshMs: maxLageCheckAgeMs,
+    lageWarnMs: 2 * maxFullCrawlAgeMs,
+    minCheckedSources,
+    minSuccessfulSources,
+    maxFailureRatio: maxCrawlFailureRatio
+  });
+  const ok = classification.ok;
+
+  // Betriebszustand persistieren (fail-safe) — ermöglicht Recovery-Erkennung.
+  await saveWatchdogState(politicianId, classification.state);
 
   const engagement = `👤 ${active7} aktiv (7T) · 💬 ${feedback24} Feedback · 📲 ${pushSent24} Push (24h)`;
-  const text = ok
-    ? [
-        "✅ Helmut läuft.",
-        `Crawl: ${fmtAge(crawlH)} (${checked} Quellen, ${failed} Fehler)`,
-        `Briefing: ${fmtAge(briefingH)} (${briefingItems} Einträge) · Lage: ${fmtAge(lageH)}`,
-        `Pipeline: ${fmtAge(pipelineH)} · Fehler (24h): ${errors24}`,
-        engagement
-      ].join("\n")
-    : [
-        "⚠️ Helmut: Achtung.",
-        ...problems.map((p) => "• " + p),
-        `Crawl ${fmtAge(crawlH)} · Briefing ${fmtAge(briefingH)} (${briefingItems}) · Lage ${fmtAge(lageH)} · Pipeline ${fmtAge(pipelineH)}`,
-        engagement
-      ].join("\n");
+  const text = [
+    describeState(classification),
+    "",
+    `Crawl: ${fmtAge(crawlH)} (${checked} Quellen, ${failed} Fehler) · Lage: ${fmtAge(lageH)}`,
+    `Briefing: ${briefingItems} Einträge · Verstanden zuletzt: ${fmtAge(completeKoH)} · Fehler (24h): ${errors24}`,
+    engagement
+  ].join("\n");
 
-  return { ok, text, active7, feedback24, errors24, briefingItems, pushSent24, pipelineH };
+  return {
+    ok,
+    text,
+    state: classification.state,
+    severity: classification.severity,
+    active7,
+    feedback24,
+    errors24,
+    briefingItems,
+    pushSent24
+  };
 }
 
 // WhatsApp-Versand via CallMeBot (kostenloser Self-Notify-Dienst). Zugangsdaten
