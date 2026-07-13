@@ -1570,7 +1570,7 @@ function renderSaKosten(sa) {
     ? `${dsRow("Gesamt (Zeitfenster)", `<b>${saUsd(c.totalUsd)}</b> · ${c.records} Calls`)}
        <div class="sa-block"><h3 class="sa-h3">Je Pipeline-Schritt</h3>${stepRows || saUnavail("keine")}</div>
        <div class="sa-block"><h3 class="sa-h3">Je Modell</h3>${modelRows || saUnavail("keine")}</div>
-       <p class="sa-note">${c.sourceAttributionAvailable ? "Kosten je Quelle zugeordnet." : "Kosten je Quelle noch nicht zuordenbar — llm_usage trägt noch keine sourceId (freigabepflichtige Verdrahtung)."}</p>`
+       <p class="sa-note">${!c.sourceAttributionAvailable ? "Kosten je Quelle noch nicht zuordenbar — llm_usage trägt noch keine sourceId (freigabepflichtige Verdrahtung)." : (c.unattributedUsd > 0 ? `Kosten teilweise je Quelle zugeordnet; ${saUsd(c.unattributedUsd)} noch nicht zuordenbar.` : "Kosten je Quelle zugeordnet.")}</p>`
     : `<p class="ac-empty">Keine KI-Kosten im Zeitfenster.</p>`;
   const nutzenRows = kn.kostenOhneNutzen.length
     ? kn.kostenOhneNutzen.map((s) => `<div class="sa-item"><div class="sa-item-main"><span class="sa-item-name">${escapeHtml(s.name || s.legacy_source_id)}</span>${saValueBadge(s.value)}</div><span class="sa-sub">${escapeHtml(s.recommendedAction ? s.recommendedAction.text : "")}</span></div>`).join("")

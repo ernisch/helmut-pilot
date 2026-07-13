@@ -18,6 +18,7 @@ function check(name, cond) {
 
 const NOW = Date.parse("2026-07-13T12:00:00Z");
 const H = 3600000;
+const iso = (agoMs) => new Date(NOW - agoMs).toISOString();
 const M = buildFullModel();
 const cem = { id: "cem-ince", fullName: "Cem Ince", party: "Die Linke", politische_ebene: "bundestag", ausschuesse: ["Arbeit und Soziales"], bundesland: "Niedersachsen", profileActive: true };
 const berlin = { id: "be", fullName: "Berlin MdA", party: "SPD", politische_ebene: "landtag", bundesland: "Berlin", ausschuesse: ["Inneres"], profileActive: true };
@@ -111,6 +112,32 @@ try {
 check("kaputte Profil-Elemente (null/undefined/String/Zahl/{}) crashen den Report NICHT", robustOk === true && robustReport !== null);
 check("gültiges Profil (Cem) bleibt trotz kaputter Nachbarn versorgt", robustReport && robustReport.views.profileVersorgung.some((p) => p.profileId === "cem-ince" && p.supply === "versorgt"));
 check("kaputte Elemente werden 'nicht_aktivierbar', nicht fälschlich versorgt", robustReport && robustReport.views.profileVersorgung.filter((p) => p.supply === "versorgt").length === 1);
+
+// D) VERIFY-KORREKTUREN (Ehrlichkeits-/Prioritäts-Review)
+console.log("== Verify-Korrekturen (Ehrlichkeit A/B/C/D) ==");
+// A: partielle Kostenattribution -> nicht attribuierte Quelle 'nicht verfügbar', nicht '$0'.
+const llmPartial = [{ createdAt: iso(1 * H), pipelineStep: "understanding", model: "gpt-5-mini", estimatedCost: 0.5, sourceId: "bmas" }, { createdAt: iso(1 * H), pipelineStep: "lageBriefing", model: "gpt-5-mini", estimatedCost: 0.9 }];
+const qPartial = qw.buildQualityReport({ catalog: { retrievalPaths: M.retrievalPaths, packages: M.packages, packagePaths: M.packagePaths }, activation, rawDocs: [{ source_id: "bmas", retrieved_at: iso(2 * H) }], koSourceLinks: [], dedupDocuments: [], profiles: [cem, berlin], llmUsage: llmPartial, signals: {}, now: NOW });
+const rPartial = ar.buildSourceAdminReport({ catalog: M, activation, qualityReport: qPartial, now: NOW });
+const bmasCost = rPartial.views.quellendetail.paths.find((p) => p.legacy_source_id === "bmas").cost;
+const tsCost = rPartial.views.quellendetail.paths.find((p) => p.legacy_source_id === "tagesschau-politik").cost;
+check("A: attribuierte Quelle (bmas) -> cost available + usd", bmasCost.available === true && bmasCost.usd === 0.5);
+check("A: NICHT attribuierte Quelle -> cost available=false, usd=null (kein erfundenes $0)", tsCost.available === false && tsCost.usd === null);
+check("A: unattributedUsd real (0.9)", rPartial.views.kostenNutzen.costs.unattributedUsd === 0.9);
+// B: ohne Doku-Daten keine 'Keine Dokumente'-Behauptung + keine 'Feed/Endpoint prüfen'-Handlung.
+check("B: ohne Doku-Daten -> productValue 'unbestaetigt' (nicht 'keine_dokumente')", rEmpty.views.quellendetail.paths.every((p) => p.value !== "keine_dokumente"));
+check("B: ohne Doku-Daten -> KEINE erfundene 'Feed/Endpoint prüfen'-Empfehlung", rEmpty.views.quellendetail.paths.every((p) => !/Feed\/Endpoint prüfen/.test(p.recommendedAction.text)));
+// C: unterversorgt durch INAKTIVE Wege -> Text 'inaktiv/reaktivieren', nicht 'defekt'.
+const cPaths = [{ id: "rp-c1", legacy_source_id: "c1", status: "paused", activation_mode: "auto", is_critical: false }, { id: "rp-c2", legacy_source_id: "c2", status: "paused", activation_mode: "auto", is_critical: false }];
+const cQ = qw.buildQualityReport({ catalog: { retrievalPaths: cPaths, packages: [{ id: "pk-c", key: "paket-c", status: "active", is_base: false }], packagePaths: [{ package_id: "pk-c", retrieval_path_id: "rp-c1" }, { package_id: "pk-c", retrieval_path_id: "rp-c2" }] }, activation: { packageStatus: [{ id: "pk-c", activation: "active" }], activePathIds: [] }, rawDocs: [], koSourceLinks: [], dedupDocuments: [], profiles: [], llmUsage: [], signals: {}, now: NOW });
+const cRep = ar.buildSourceAdminReport({ catalog: { publishers: [], retrievalPaths: cPaths, packages: [{ id: "pk-c", key: "paket-c", status: "active", is_base: false }], packagePaths: [{ package_id: "pk-c", retrieval_path_id: "rp-c1" }, { package_id: "pk-c", retrieval_path_id: "rp-c2" }], geographies: [] }, activation: { packageStatus: [{ id: "pk-c", activation: "active" }], activePathIds: [] }, qualityReport: cQ, now: NOW });
+const cAct = cRep.views.pruefbedarf.actions.find((a) => a.ref === "paket-c");
+check("C: unterversorgt durch inaktive Wege -> Text nennt inaktiv/reaktivieren, NICHT 'defekt'", cAct && /inaktiv|reaktivieren/.test(cAct.text) && !/alle 2 Abrufwege defekt/.test(cAct.text));
+// D: broken kritischer Pfad OHNE pathQuality-Eintrag bleibt defekt + im Prüfbedarf (Katalog-Status geehrt).
+const dPaths = [{ id: "rp-d", legacy_source_id: "d", status: "broken", activation_mode: "auto", is_critical: true }];
+const dRep = ar.buildSourceAdminReport({ catalog: { publishers: [], retrievalPaths: dPaths, packages: [], packagePaths: [], geographies: [] }, activation: { packageStatus: [], activePathIds: [] }, qualityReport: { pathQuality: [], packageSupply: [], profileSupply: [], costs: {}, recommendations: [], availability: { documents: false, knowledgeObjects: false, duplicates: false, costAttribution: false, pathTelemetry: false } }, now: NOW });
+check("D: broken kritischer Pfad ohne pathQuality -> health defekt (Katalog-Status geehrt)", dRep.views.quellendetail.paths[0].health === "defekt");
+check("D: broken kritischer Pfad ohne pathQuality -> im Prüfbedarf als hoch", dRep.views.pruefbedarf.actions.some((a) => a.area === "abrufweg" && a.ref === "d" && a.severity === "hoch"));
 
 console.log(`\n== Ergebnis: ${pass} PASS, ${fail} FAIL ==`);
 process.exit(fail > 0 ? 1 : 0);
