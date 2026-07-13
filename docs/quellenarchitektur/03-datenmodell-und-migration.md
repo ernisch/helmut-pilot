@@ -28,14 +28,22 @@ Quellendefinitionen, **keine** mandanten- oder personenbezogenen Daten, daher **
 
 ## Sicherheit & Mandantentrennung (RLS)
 
-Die Migration aktiviert **Row Level Security** für alle 11 Tabellen mit einer klaren Regel:
-- **Lesen** (`select`): für angemeldete Nutzer (`to authenticated using (true)`) — die öffentlichen
-  Kataloge sind global sichtbar.
-- **Schreiben**: keine Policy → ausschließlich über `service_role` (interne Systemjobs/Admin).
+Die Migration aktiviert **Row Level Security** für alle 11 Tabellen — **restriktiv, nur
+`service_role`** (Sprint-2-Verschärfung nach kritischer Prüfung):
 
-Das ist konsistent mit dem bestehenden Muster (alle Tabellen RLS-aktiv, `service_role` verwaltet)
-und ändert **keine bestehende** Policy. Der eigentliche RLS-Scharfschalt-Kontext (echtes
-Supabase-Auth) bleibt ein **separater, freigabepflichtiger** Schritt (siehe `00-…`).
+- **Kritische Prüfung:** Brauchen normale angemeldete Nutzer direkten Lesezugriff? **Nein.** Der
+  gesamte produktive DB-Zugriff läuft über den App-Server mit `service_role`; der
+  `authenticated`/JWT-Pfad ist stillgelegt (`storage.tenantJwtModeEnabled=false`). Die
+  Quellendefinitionen werden nur intern (Crawl/Understanding/Matching) und im Betreiber-Admin
+  gebraucht — **nie** direkt vom Abgeordneten-Frontend über die REST-API.
+- **Folge:** RLS aktiviert + **keine** permissive Policy → `deny` für `anon`/`authenticated`,
+  `service_role` (BYPASSRLS) liest/schreibt. Konsistent mit `public.pipeline_locks`.
+- Der Linter meldet dazu `rls_enabled_no_policy` (INFO) — **bewusst so**: es gibt keinen Grund,
+  öffentliche Quellendefinitionen über die Endnutzer-API zu öffnen.
+
+Sollte später echtes Supabase-Auth eingeführt werden **und** ein Admin über `authenticated` lesen,
+wird gezielt eine **Rollen-Policy** ergänzt — als separater, **freigabepflichtiger** Schritt. Die
+Migration ändert **keine bestehende** Policy.
 
 ## Anwenden & Zurückrollen
 

@@ -180,7 +180,19 @@ begin
   end if;
 end $$;
 
--- 10) RLS: global geteilt — Lesen fuer angemeldete Nutzer, Schreiben nur service_role
+-- 10) RLS: global geteilt, aber REIN INTERN — Zugriff ausschliesslich ueber service_role.
+--     Kritische Pruefung (Sprint 2): Brauchen normale angemeldete Nutzer direkten
+--     Lesezugriff auf diese Tabellen? NEIN. Der gesamte produktive DB-Zugriff laeuft
+--     ueber den App-Server mit service_role; der authenticated/JWT-Pfad ist stillgelegt
+--     (storage.tenantJwtModeEnabled=false). Die Quellendefinitionen werden nur intern
+--     (Crawl/Understanding/Matching) und im Betreiber-Admin gebraucht, NIE direkt vom
+--     Abgeordneten-Frontend ueber die REST-API. Daher die restriktivste sichere Variante:
+--     RLS aktiviert + KEINE permissive Policy => deny fuer anon/authenticated,
+--     service_role (BYPASSRLS) liest/schreibt. Konsistent mit public.pipeline_locks.
+--     (Der Linter meldet dazu 'rls_enabled_no_policy' als INFO — bewusst so gewaehlt:
+--     kein Grund, oeffentliche Quellendefinitionen ueber die Endnutzer-API zu oeffnen.
+--     Sollte spaeter echtes Supabase-Auth eingefuehrt werden UND ein Admin ueber
+--     authenticated lesen, wird gezielt eine Rollen-Policy ergaenzt — separat + freigabepflichtig.)
 do $$
 declare t text;
 begin
@@ -190,8 +202,9 @@ begin
     'path_expected_levels','path_expected_geographies','path_expected_topics','path_expected_entities'
   ] loop
     execute format('alter table public.%I enable row level security', t);
+    -- Fruehere permissive authenticated-Leserichtlinie entfernt (Sprint-2-Verschaerfung):
     execute format('drop policy if exists %I on public.%I', t || '_read', t);
-    execute format('create policy %I on public.%I for select to authenticated using (true)', t || '_read', t);
+    -- BEWUSST KEINE for-select-Policy: interne Tabelle, nur service_role.
   end loop;
 end $$;
 

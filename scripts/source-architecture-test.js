@@ -191,7 +191,10 @@ check("Migration legt 11 Tabellen an", createdTables.length === 11);
 check("Rollback entfernt jede angelegte Tabelle", createdTables.every((t) => droppedTables.has(t)));
 check("Migration ist additiv (kein DROP/ALTER an Bestandstabellen)", !/drop table (?!if exists public\.(geographies|electoral_districts|political_entities|publishers|retrieval_paths|source_packages|package_paths|path_expected))/.test(upSql) && !/alter table public\.(raw_documents|knowledge_objects|sources|profiles|mandate_profiles)/.test(upSql));
 check("begin/commit balanciert (up + down)", (upSql.match(/begin;/g) || []).length === 1 && (upSql.match(/commit;/g) || []).length === 1 && (downSql.match(/begin;/g) || []).length === 1);
-check("RLS fuer alle neuen Tabellen aktiviert", (upSql.match(/enable row level security/g) || []).length >= 1 && /for select to authenticated using \(true\)/.test(upSql));
+check("RLS aktiviert + restriktiv (nur service_role, KEINE authenticated-Leserichtlinie)",
+  (upSql.match(/enable row level security/g) || []).length >= 1
+  && !/for select to authenticated using \(true\)/.test(upSql)
+  && /BEWUSST KEINE for-select-Policy/.test(upSql));
 
 // ============================ SEED-VOLLSTAENDIGKEIT ============================
 console.log("== Seed-Vollstaendigkeit ==");
