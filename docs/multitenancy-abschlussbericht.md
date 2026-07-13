@@ -1,5 +1,12 @@
 # Mehrmandantenfähigkeit — Abschlussbericht (Stand 2026-07-12)
 
+> **⚠️ KORREKTUR (2026-07-13):** Die Aussagen in diesem Bericht zu „JWT scharf / RLS scharf / die
+> Datenbank trennt die Kunden selbst" (u. a. §§ 1, 2, 4) sind **überholt**. Der Selbst-Signier-JWT-
+> Pfad wurde am 2026-07-13 (Commit `f952b69`, #68) **dauerhaft stillgelegt** (Supabase-Umstellung auf
+> asymmetrische Signing-Keys → PGRST301). Production trennt Mandanten heute **app-seitig** über
+> `service_role` + verpflichtendes Tenant-Scoping; **RLS ist inert** (service_role umgeht RLS). Die
+> maßgebliche, verifizierte Beschreibung steht in **`docs/quellenarchitektur/05-sicherheitsmodell-rls.md`**.
+
 Kurz und einfach aus Gründerperspektive. Diese Produktphase hat Helmut vom
 Einzelpiloten in Richtung „mehrere Kunden" gebracht — sicher, reversibel, getestet.
 

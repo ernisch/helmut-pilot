@@ -27,8 +27,12 @@ alter table public.knowledge_objects
 -- Index fuer die haeufige Ebenen-Filterung (Bund vs. Land) im Matching/Admin.
 create index if not exists idx_knowledge_objects_decision_level on public.knowledge_objects(decision_level);
 
-comment on column public.knowledge_objects.decision_level is 'Politische Entscheidungsebene (international/eu/bund/land/kommune). Ab Sprint 2 nie leer (Deriver). Spiegelt sich auf political_level.';
-comment on column public.knowledge_objects.affected_geographies is 'jsonb: [{name, level, geography_id}] — betroffene Geografien (aufgeloest gegen public.geographies).';
-comment on column public.knowledge_objects.decision_entities is 'jsonb: [{name, type, entity_id}] — handelnde Institutionen (aufgeloest gegen public.political_entities).';
+comment on column public.knowledge_objects.decision_level is 'Politische Entscheidungsebene (international/eu/bund/land/kommune ODER unknown bei unsicherem Signal — NICHT automatisch bund). Ab Sprint 2 nie leer (Deriver). Spiegelt sich auf political_level.';
+comment on column public.knowledge_objects.affected_geographies is 'jsonb: [{name, level, geography_id}] — betroffene Geografien (aufgeloest gegen public.geographies; geography_id string ODER null).';
+comment on column public.knowledge_objects.decision_entities is 'jsonb: [{name, type, entity_id}] — handelnde Institutionen (aufgeloest gegen public.political_entities; entity_id string ODER null).';
+-- Klarstellung der Bestandsspalte embedding (Sprint 2): technischer Feature-/Merkmalsvektor,
+-- KEIN semantisches Embedding. Cosine misst Merkmalsueberlappung (Partei/Ausschuss/Thema/
+-- Inhalt), NICHT Bedeutungsaehnlichkeit. Echtes semantisches Matching = freigabepflichtige API.
+comment on column public.knowledge_objects.embedding is 'Technischer Feature-/Merkmalsvektor (256-dim Token-Hash), KEIN semantisches Embedding. Cosine = Merkmalsueberlappung, nicht Bedeutungsaehnlichkeit. Ab Sprint 2 write-time befuellt.';
 
 commit;

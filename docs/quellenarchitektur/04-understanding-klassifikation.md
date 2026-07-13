@@ -44,13 +44,24 @@ Region/Wahlkreis ist bewusst **keine** Ebene (Geografie). `political_level` (Alt
 Zwei subtile Fallen sind behoben: „eu" matcht nicht mehr als Silbe in „D**eu**tschland"
 (Wortgrenzen); „Menschenrechte" wird nicht mehr fälschlich auf den Rechtsausschuss aufgelöst.
 
-## Embedding: einmal erzeugen, dauerhaft speichern
+## Feature-Vektor: einmal erzeugen, dauerhaft speichern (kein semantisches Embedding)
 
-Der deterministische Merkmalsvektor (256-dim, **keine KI**) wird jetzt **write-time** im Assembler
-erzeugt und persistiert — statt bei jeder Anfrage neu gerechnet. Beim **Lesen** wird der Vektor
-bewusst weggelassen (Performance); dafür gibt es eine getrennte Schreib-Whitelist
-(`V3_KO_WRITE_COLUMNS`). Das behebt `matching_results = 0` an der Wurzel und bereitet vorberechnetes,
-günstiges Matching pro Profil vor.
+**Wichtige Klarstellung (Nachschärfung):** Der 256-dim-Vektor ist ein **technischer Feature-/
+Merkmalsvektor** (deterministischer Token-Hash aus Partei/Ausschuss/Region/Thema/Inhalt), **kein
+semantisches Embedding**. Die Kosinus-Ähnlichkeit darauf misst **Merkmalsüberlappung**, nicht
+Bedeutungsähnlichkeit — zwei Vorgänge mit gleicher Bedeutung, aber anderen Wörtern, sind hier **nicht**
+ähnlich. Er ersetzt daher **kein** semantisches Matching und wird nicht als solches ausgegeben.
+
+Echte Bedeutungsähnlichkeit bräuchte eine **Embedding-API** (kostenpflichtig, **freigabepflichtig**) —
+bewusst (noch) nicht umgesetzt.
+
+Der Feature-Vektor wird jetzt **write-time** im Assembler erzeugt (**keine KI**) und persistiert —
+statt bei jeder Anfrage neu gerechnet. Die DB-Spalte heißt aus Legacy-Gründen weiterhin `embedding`
+(ihr Inhalt ist ein Feature-Vektor; ein DB-Kommentar stellt das klar). Beim **Lesen** wird der Vektor
+weggelassen (Performance; getrennte Schreib-Whitelist `V3_KO_WRITE_COLUMNS`). Das behebt
+`matching_results = 0` an der Wurzel und bereitet **merkmalsbasiertes** vorberechnetes Matching vor.
+Der ehrlich benannte Zugang im Code ist `computeFeatureVectorForKnowledgeObject` (Alias von
+`embedKnowledgeObject`).
 
 ## Alt-KOs: kostenneutraler Backfill
 

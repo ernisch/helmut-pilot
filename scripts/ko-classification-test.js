@@ -26,7 +26,13 @@ console.log("== Deriver: Entscheidungsebene ==");
 check("Bundestagsausschuss -> bund/high", (() => { const d = c.deriveDecisionLevel({ ausschuesse: ["Arbeit und Soziales"] }); return d.level === "bund" && d.confidence === "high"; })());
 check("Landtag+Bundesland -> land", c.deriveDecisionLevel({ mentioned_organizations: ["Landtag Brandenburg"], mentioned_locations: ["Brandenburg"] }).level === "land");
 check("EU-Kommission -> eu", c.deriveDecisionLevel({ mentioned_organizations: ["Europäische Kommission"] }).level === "eu");
-check("leeres KO -> bund/low (ehrlicher Default)", (() => { const d = c.deriveDecisionLevel({}); return d.level === "bund" && d.confidence === "low"; })());
+check("leeres KO -> unknown (NICHT automatisch bund)", (() => { const d = c.deriveDecisionLevel({}); return d.level === "unknown" && d.confidence === "unknown"; })());
+check("nur Bundesland-Ort ohne Institution -> unknown (kein Bund)", c.deriveDecisionLevel({ mentioned_locations: ["Bayern"] }).level === "unknown");
+check("unknown-KO erfasst dennoch Land-Bezug (related_levels/affected)", (() => {
+  const r = c.classifyKnowledgeObject({ mentioned_locations: ["Bayern"] });
+  return r.decision_level === "unknown" && r.related_levels.includes("land") && r.affected_geographies.some((g) => g.name === "Bayern");
+})());
+check("classification_confidence.level = unknown bei unknown-Ebene", c.classifyKnowledgeObject({ mentioned_locations: ["Bayern"] }).classification_confidence.level === "unknown");
 check("'eu' matcht NICHT als Substring in 'Deutschland'", c.deriveDecisionLevel({ mentioned_locations: ["Deutschland"], ausschuesse: ["Finanzen"] }).level === "bund");
 check("related_levels leer bei reinem Bund-KO", (() => { const r = c.classifyKnowledgeObject({ ausschuesse: ["Finanzen"], mentioned_locations: ["Deutschland"] }); return r.related_levels.length === 0; })());
 check("Bundesland-Erwaehnung -> related_levels enthaelt land", (() => { const r = c.classifyKnowledgeObject({ ausschuesse: ["Finanzen"], mentioned_locations: ["Bayern"] }); return r.related_levels.includes("land"); })());
@@ -153,6 +159,30 @@ const fakeEmbed = () => new Array(256).fill(0.1);
   const srcMig = fs.readFileSync(path.join(migDir, "20260713_source_architecture.sql"), "utf8");
   check("keine permissive authenticated-Leserichtlinie mehr", !/for select to authenticated using \(true\)/.test(srcMig));
   check("RLS bleibt aktiviert (service_role-only)", /enable row level security/.test(srcMig) && /BEWUSST KEINE for-select-Policy/.test(srcMig));
+
+  // ============================ NACHSCHAERFUNG P2/P4 ============================
+  console.log("== P2: Feature-Vektor ehrlich benannt ==");
+  const matching = require("../lib/helmut/matching");
+  check("computeFeatureVectorForKnowledgeObject exportiert (ehrlicher Alias)", typeof matching.computeFeatureVectorForKnowledgeObject === "function");
+  check("Alias === embedKnowledgeObject (kein neuer Vektor)", matching.computeFeatureVectorForKnowledgeObject === matching.embedKnowledgeObject);
+  const koMig = fs.readFileSync(path.join(migDir, "20260714_ko_classification.sql"), "utf8");
+  check("DB-Kommentar stellt embedding als Feature-Vektor (kein semantisches Embedding) klar", /Feature-\/Merkmalsvektor.*KEIN semantisches Embedding/.test(koMig) || /comment on column public\.knowledge_objects\.embedding is 'Technischer Feature/.test(koMig));
+
+  console.log("== P4: geography_id/entity_id explizit string|null (nullable) ==");
+  const geoItemProps = schema.KNOWLEDGE_OBJECT_SCHEMA.properties.affected_geographies.items.properties;
+  const entItemProps = schema.KNOWLEDGE_OBJECT_SCHEMA.properties.decision_entities.items.properties;
+  check("geography_id im Schema als nullable string deklariert", geoItemProps.geography_id && geoItemProps.geography_id.type === "string" && geoItemProps.geography_id.nullable === true);
+  check("entity_id im Schema als nullable string deklariert", entItemProps.entity_id && entItemProps.entity_id.type === "string" && entItemProps.entity_id.nullable === true);
+  check("null-Referenz ist valide (nullable greift)", schema.validateKnowledgeObject({
+    ...ko, decision_entities: [{ name: "X", type: "party", entity_id: null }]
+  }).valid);
+  check("String-Referenz ist valide", schema.validateKnowledgeObject({
+    ...ko, decision_entities: [{ name: "SPD", type: "party", entity_id: "party-spd" }]
+  }).valid);
+  check("Zahl statt string|null bleibt invalide (nullable erlaubt nur null)", !schema.validateKnowledgeObject({
+    ...ko, decision_entities: [{ name: "X", type: "party", entity_id: 123 }]
+  }).valid);
+  check("null in Pflicht-Prosafeld bleibt invalide", !schema.validateKnowledgeObject({ ...ko, was_ist_passiert: null }).valid);
 
   console.log(`\n== Ergebnis: ${pass} PASS, ${fail} FAIL ==`);
   process.exit(fail > 0 ? 1 : 0);
