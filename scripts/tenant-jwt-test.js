@@ -65,21 +65,21 @@ function withEnv(vars, fn) {
 }
 
 (async () => {
-  console.log("== 1) tenantJwtModeEnabled() — Gate-Logik ==");
+  console.log("== 1) tenantJwtModeEnabled() — STILLGELEGT (immer false) ==");
+  // Seit 2026-07-13 dauerhaft inert: das Supabase-Projekt nutzt asymmetrische
+  // Signing Keys; selbst signierte HS256-Tokens werden von PostgREST abgelehnt
+  // (PGRST301). Der Selbst-Signier-Transport ist retired -> tenantJwtModeEnabled()
+  // gibt IMMER false zurueck, egal welche ENV gesetzt ist. Damit werden nie mehr
+  // selbst gebaute Tokens erzeugt; alle Pfade nutzen service_role + App-seitiges
+  // Tenant-Scoping (id=eq.<tenant> im jeweiligen Endpoint).
   await withEnv({ HELMUT_TENANT_JWT_MODE: undefined }, () => {
-    check("Flag unset -> false (Produktions-/Test-Default)", storage.tenantJwtModeEnabled() === false);
-  });
-  await withEnv({ HELMUT_TENANT_JWT_MODE: "1", SUPABASE_JWT_SECRET: undefined, SUPABASE_ANON_KEY: TEST_ANON_KEY }, () => {
-    check("Flag=1, JWT_SECRET fehlt -> false", storage.tenantJwtModeEnabled() === false);
-  });
-  await withEnv({ HELMUT_TENANT_JWT_MODE: "1", SUPABASE_JWT_SECRET: TEST_SECRET, SUPABASE_ANON_KEY: undefined }, () => {
-    check("Flag=1, ANON_KEY fehlt -> false", storage.tenantJwtModeEnabled() === false);
+    check("Flag unset -> false", storage.tenantJwtModeEnabled() === false);
   });
   await withEnv({ HELMUT_TENANT_JWT_MODE: "1", SUPABASE_JWT_SECRET: TEST_SECRET, SUPABASE_ANON_KEY: TEST_ANON_KEY }, () => {
-    check("Flag=1 + beide Secrets -> true", storage.tenantJwtModeEnabled() === true);
+    check("Flag=1 + beide Secrets -> TROTZDEM false (stillgelegt)", storage.tenantJwtModeEnabled() === false);
   });
-  await withEnv({ HELMUT_TENANT_JWT_MODE: "0", SUPABASE_JWT_SECRET: TEST_SECRET, SUPABASE_ANON_KEY: TEST_ANON_KEY }, () => {
-    check("Flag=0 trotz Secrets -> false", storage.tenantJwtModeEnabled() === false);
+  await withEnv({ HELMUT_TENANT_JWT_MODE: "true", SUPABASE_JWT_SECRET: TEST_SECRET, SUPABASE_ANON_KEY: TEST_ANON_KEY }, () => {
+    check("Flag=true + beide Secrets -> TROTZDEM false (stillgelegt)", storage.tenantJwtModeEnabled() === false);
   });
 
   console.log("== 2) signTenantJWT — Unit ==");
@@ -141,51 +141,37 @@ function withEnv(vars, fn) {
     check("verifyTenantJWT ohne jegliches Secret (env+override leer) -> valid:false, missing-secret", noSecretResult.valid === false && noSecretResult.reason === "missing-secret");
   });
 
-  console.log("== 5) tenantRequest — Transportwahl (Integration, fetch gemockt) ==");
+  console.log("== 5) tenantRequest — nutzt IMMER service_role (Selbst-Signieren retired) ==");
   installFetchMock();
   await withEnv({ HELMUT_TENANT_JWT_MODE: undefined }, async () => {
     await storage.tenantRequest("/rest/v1/decisions?select=*", "mdb-a");
     const req = capturedRequests[capturedRequests.length - 1];
-    check("Modus AUS -> service_role-Header (kein JWT)", req.headers.Authorization === `Bearer ${TEST_SERVICE_ROLE_KEY}`);
-    check("Modus AUS -> apikey === service_role_key", req.headers.apikey === TEST_SERVICE_ROLE_KEY);
+    check("Flag AUS -> service_role-Header (kein JWT)", req.headers.Authorization === `Bearer ${TEST_SERVICE_ROLE_KEY}`);
+    check("Flag AUS -> apikey === service_role_key", req.headers.apikey === TEST_SERVICE_ROLE_KEY);
   });
 
+  // Auch mit vollstaendig gesetzter ENV (Flag=1 + beide Secrets + tenantId) wird
+  // NIE ein selbst signiertes JWT gesendet — stillgelegt, immer service_role.
   await withEnv({ HELMUT_TENANT_JWT_MODE: "1", SUPABASE_JWT_SECRET: TEST_SECRET, SUPABASE_ANON_KEY: TEST_ANON_KEY }, async () => {
     await storage.tenantRequest("/rest/v1/decisions?select=*", "mdb-a");
     const req = capturedRequests[capturedRequests.length - 1];
-    check("Modus AN + tenantId -> Authorization ist ein JWT (3 Teile)", /^Bearer [^.]+\.[^.]+\.[^.]+$/.test(req.headers.Authorization));
-    check("Modus AN + tenantId -> apikey === ANON_KEY (NICHT service_role)", req.headers.apikey === TEST_ANON_KEY);
-    const token = req.headers.Authorization.replace("Bearer ", "");
-    const decoded = decodePayload(token);
-    check("Modus AN -> Claim user_id stimmt mit angefragtem Tenant ueberein", decoded.user_id === "mdb-a");
-    check("Modus AN -> Claim role === 'authenticated'", decoded.role === "authenticated");
+    check("Flag=1 + Secrets + tenantId -> TROTZDEM service_role (kein JWT)", req.headers.Authorization === `Bearer ${TEST_SERVICE_ROLE_KEY}`);
+    check("Flag=1 -> apikey === service_role_key (NICHT anon)", req.headers.apikey === TEST_SERVICE_ROLE_KEY);
+    check("Flag=1 -> Authorization ist KEIN 3-Teile-JWT", !/^Bearer [^.]+\.[^.]+\.[^.]+$/.test(req.headers.Authorization));
   });
 
-  await withEnv({ HELMUT_TENANT_JWT_MODE: "1", SUPABASE_JWT_SECRET: TEST_SECRET, SUPABASE_ANON_KEY: TEST_ANON_KEY }, async () => {
-    await storage.tenantRequest("/rest/v1/decisions?select=*", undefined);
-    const req = capturedRequests[capturedRequests.length - 1];
-    check("Modus AN, aber KEIN tenantId -> Fallback auf service_role", req.headers.Authorization === `Bearer ${TEST_SERVICE_ROLE_KEY}`);
-  });
-
-  await withEnv({ HELMUT_TENANT_JWT_MODE: "1", SUPABASE_JWT_SECRET: undefined, SUPABASE_ANON_KEY: TEST_ANON_KEY }, async () => {
-    await storage.tenantRequest("/rest/v1/decisions?select=*", "mdb-a");
-    const req = capturedRequests[capturedRequests.length - 1];
-    check("Modus AN, aber Secret fehlt -> Fallback auf service_role (fail-safe)", req.headers.Authorization === `Bearer ${TEST_SERVICE_ROLE_KEY}`);
-  });
-
-  console.log("== 6) Cross-Tenant auf Transport-Ebene: kein State-Leck zwischen aufeinanderfolgenden Requests ==");
+  console.log("== 6) Cross-Tenant: jeder Request nutzt service_role, Isolation via Endpoint-Filter ==");
+  // Die Mandantentrennung liegt jetzt im id=eq.<tenant>-Filter des jeweiligen
+  // Endpoints (App-seitiges Scoping) — der Transport ist immer derselbe
+  // service_role. Kein Token-State kann zwischen Requests lecken, weil gar kein
+  // per-Tenant-Token mehr existiert.
   await withEnv({ HELMUT_TENANT_JWT_MODE: "1", SUPABASE_JWT_SECRET: TEST_SECRET, SUPABASE_ANON_KEY: TEST_ANON_KEY }, async () => {
     capturedRequests = [];
     await storage.tenantRequest("/rest/v1/decisions?select=*", "mdb-a");
     await storage.tenantRequest("/rest/v1/decisions?select=*", "mdb-b");
-    await storage.tenantRequest("/rest/v1/decisions?select=*", "mdb-a");
-    const [reqA1, reqB, reqA2] = capturedRequests;
-    const claimA1 = decodePayload(reqA1.headers.Authorization.replace("Bearer ", ""));
-    const claimB = decodePayload(reqB.headers.Authorization.replace("Bearer ", ""));
-    const claimA2 = decodePayload(reqA2.headers.Authorization.replace("Bearer ", ""));
-    check("1. Call (A) -> Claim mdb-a", claimA1.user_id === "mdb-a");
-    check("2. Call (B) -> Claim mdb-b (kein Rest von A)", claimB.user_id === "mdb-b");
-    check("3. Call (A) -> wieder Claim mdb-a (kein Rest von B)", claimA2.user_id === "mdb-a");
+    const auths = capturedRequests.map((r) => r.headers.Authorization);
+    check("alle Requests nutzen denselben service_role-Header (kein per-Tenant-JWT)",
+      auths.every((a) => a === `Bearer ${TEST_SERVICE_ROLE_KEY}`));
   });
   restoreFetch();
 
