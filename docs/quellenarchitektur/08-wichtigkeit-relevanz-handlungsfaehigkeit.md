@@ -104,9 +104,10 @@ neu ist dort der unterscheidbare Leerzustand.
 
 ## Tests (offline, deterministisch)
 
-- `test:scoring` (63) — die drei Dimensionen, ihre Entkopplung, Ranking, Frische, Leerzustände, Flag.
-- `test:scoring-integration` (13) — Flag AUS = unverändert / Flag AN = neues Ranking + Leerzustände
-  über die echten Read-Verträge.
+- `test:scoring` (73) — die drei Dimensionen, ihre Entkopplung, Ranking, Frische, Leerzustände, Flag,
+  Gate-Sicherheit (Ähnlichkeit öffnet das Nähe-Gate nicht), Edge-Cases (kein Zeitstempel).
+- `test:scoring-integration` (21) — Flag AUS = unverändert / Flag AN = neues Ranking + Leerzustände
+  über die echten Read-Verträge, inkl. `buildLageBriefing` end-to-end und Map-`kosById`.
 - `test:scoring-ui` (10) — die drei Client-Renderer zeigen den Leerzustand unterscheidbar an.
 
 ## Freigabepflichtig (vorbereitet, NICHT ausgeführt)

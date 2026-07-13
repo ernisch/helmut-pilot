@@ -39,15 +39,32 @@ UI-seitig den unterscheidbaren Leerzustand. Eingehängt in `lage.js`, `briefingC
 | 3 Leerzustände server- **und** UI-seitig unterscheidbar (Frische-/Qualitätssignal pro Tab) | ✅ `tabEmptyState` (gap/stale/quiet) + `data-empty-kind`/Text im Client |
 
 ## 3. Tests — alle grün
-- **`test:scoring` 63/63** — Dimensionen, Entkopplung, Ranking, Frische, drei Leerzustände, Flag.
-- **`test:scoring-integration` 13/13** — Flag AUS = unverändert, Flag AN = neues Ranking + Leerzustände
-  über die echten Read-Verträge (Lage/Radar/Helmut).
+- **`test:scoring` 73/73** — Dimensionen, Entkopplung, Ranking, Frische, drei Leerzustände, Flag.
+- **`test:scoring-integration` 21/21** — Flag AUS = unverändert, Flag AN = neues Ranking + Leerzustände
+  über die echten Read-Verträge (Lage/Radar/Helmut, inkl. `buildLageBriefing` end-to-end).
 - **`test:scoring-ui` 10/10** — die drei Client-Renderer zeigen den Leerzustand unterscheidbar an;
   ohne `emptyState` unverändert.
 - **Keine Regression:** lage 138, radar 38, radar-state 102, decisions 38, briefing-contract 31,
   helmut-state 79, helmut-fields 65, helmut-ui 50, radar-ui 18, slot-aware 49, p1 322, drei-profile 93,
   source-architecture 88, ko-classification 67, dedup-findings 30, profile-packages 57,
   profile-validation 36, supply-matrix 20, saas 70, tenant 37, contract 17.
+
+### Nachgezogene Verify-Korrekturen (adversarialer Verify-Workflow)
+Der adversariale Verify-Workflow (5 Lenses + Widerlegungs-Panel) fand 9 bestätigte Befunde — alle
+behoben und getestet: **3 echte Code-Probleme** und **6 Test-Härtungen**.
+1. **(hoch) Helmut-Leerzustand meldete frische Daten fälschlich als `gap`.** Im Read-Pfad `keine-treffer`
+   setzt der Server `kosById={}`, die breite verstandene Menge kommt als `knowledgeObjects` — die ging
+   nur an Radar, nicht an Helmut. Jetzt bekommt `buildCurrentHelmutState` `knowledgeObjects` und leitet
+   die Frische daraus ab → korrekt `quiet` (kein-handlungsbedarf) statt `gap`. Konsistent mit Radar.
+2. **(niedrig) Ähnlichkeit konnte das belegbasierte Nähe-Gate allein öffnen.** `proximityScore` ist jetzt
+   **rein belegbasiert**; die matching.js-Ähnlichkeit verstärkt erst **nach** bestandenem Gate den Score.
+3. **(niedrig) Lage-Quarantäne-Leerzustand berechnete Frische aus Roh-KOs.** Jetzt werden die bereits
+   geladenen echten Quellen (`published_at`) angehängt, statt auf den unzuverlässigen `updated_at`-
+   Fallback zu fallen → `stale` wird nicht mehr fälschlich `quiet`.
+4. **(Tests)** tautologische „profilunabhängig"-Assertions durch echte Zwei-Profile-Nachweise ersetzt;
+   Lage-Leerzustand jetzt **end-to-end** über `buildLageBriefing` getestet (gap/stale/quiet); Ranking-
+   Entkopplung über die geteilte Schnittmenge statt Längendifferenz; Edge-Case „kein Zeitstempel → stale";
+   Ganzwort-Fehltreffer echt geprüft (`Cem Ince` in `Cem Incentive`); Map-`kosById` + leeres Profil ergänzt.
 
 ## 4. Sicherheit, Kosten, Performance
 - **Sicherheit/Mandanten:** `globalImportance` ist strikt mandantenlos; `personalRelevance`/

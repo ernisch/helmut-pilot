@@ -44,8 +44,13 @@ console.log("== 1) Globale Wichtigkeit ==");
 const impBund = s.globalImportance(bundGesetz).score;
 const impKomm = s.globalImportance(kommRand).score;
 check("Bundesgesetzentwurf deutlich wichtiger als kommunale Randnotiz", impBund > impKomm + 40);
-check("Wichtigkeit im Bereich 0..100", impBund <= 100 && impKomm >= 0);
-check("Wichtigkeit ist profilUNabhaengig (kein Profil-Argument noetig)", s.globalImportance(bundGesetz).score === impBund);
+check("Wichtigkeit strikt im Bereich 0..100 (beide Grenzen, beide Vorgaenge)", impBund >= 0 && impBund <= 100 && impKomm >= 0 && impKomm <= 100);
+// Echter Profilunabhaengigkeits-Nachweis: ZWEI verschiedene Profile liefern dieselbe
+// Wichtigkeit, und diese entspricht dem profillosen globalImportance (mandantenlos).
+check("Wichtigkeit ist profilUNabhaengig (zwei verschiedene Profile -> gleiche Wichtigkeit)",
+  s.scoreVorgang(bundGesetz, { party: "SPD", committees: ["Gesundheit"] }, { now: NOW }).importance
+  === s.scoreVorgang(bundGesetz, { party: "CDU", constituency: "Passau" }, { now: NOW }).importance
+  && s.scoreVorgang(bundGesetz, {}, { now: NOW }).importance === impBund);
 check("hoehere Ebene => hoehere Ebenen-Faktor (bund > kommune)", s.globalImportance(bundGesetz).factors.level > s.globalImportance(kommRand).factors.level);
 check("Gesetzentwurf gewichtiger als sonstiges", s.globalImportance(bundGesetz).factors.event > s.globalImportance(kommRand).factors.event);
 check("mehr Quellen => hoehere Korroboration", s.globalImportance(bundGesetz).factors.corroboration > s.globalImportance(kommRand).factors.corroboration);
@@ -67,7 +72,15 @@ check("voellig unbezogener Vorgang => Relevanz 0 (Naehe-Gate)", s.personalReleva
 // Person-Erwaehnung ist starke Naehe
 const personKO = { id: "p", status: "neu", mentioned_mps: ["Cem Ince"], source_document_count: 2, sources: [{ published_at: iso(1 * H) }] };
 check("Person-Erwaehnung erzeugt starke Naehe", s.proximityScore(personKO, cem) >= s.PROX.person);
-check("Namensteil-Fehltreffer vermieden (Ganzwort): 'Ince' in 'Princeton' matcht nicht", s.proximityScore({ id: "z", was_ist_passiert: "Studie aus Princeton" }, { fullName: "Ince Ince" }) === 0);
+// Ganzwort-Absicherung: 'Cem Ince' ist Substring von 'Cem Incentive', darf aber NICHT
+// matchen (nachfolgendes 'n' ist keine Wortgrenze) — ein simples includes() wuerde hier
+// faelschlich treffen, also prueft dieser Fall die Wortgrenzen-Logik echt.
+check("Namensteil-Fehltreffer vermieden (Ganzwort): 'Cem Ince' in 'Cem Incentive' matcht nicht", s.proximityScore({ id: "z", was_ist_passiert: "Das Cem Incentive-Programm startet" }, { fullName: "Cem Ince" }) === 0);
+check("echte Namensnennung matcht (Ganzwort-Positivgegentest)", s.proximityScore({ id: "z2", was_ist_passiert: "Rede von Cem Ince heute" }, { fullName: "Cem Ince" }) >= s.PROX.person);
+// Fix (Verify): reine matching.js-Aehnlichkeit darf das belegbasierte Naehe-Gate NICHT allein oeffnen.
+check("reine Aehnlichkeit oeffnet das Naehe-Gate NICHT (belegbasiert)", s.personalRelevance({ id: "sim", status: "neu", source_document_count: 1, sources: [{ published_at: iso(1 * H) }] }, fremd, { now: NOW, match: { similarity: 0.9 } }).score === 0);
+check("Aehnlichkeit verstaerkt NUR nach bestandenem Gate", s.personalRelevance(bundGesetz, cem, { now: NOW, match: { similarity: 0.9 } }).score >= s.personalRelevance(bundGesetz, cem, { now: NOW }).score);
+check("leeres Profil => Relevanz 0 (kein Crash, Naehe-Gate greift)", s.personalRelevance(bundGesetz, {}, { now: NOW }).score === 0);
 // Dynamik: neu+frisch+geclustert > abgeschlossen+alt+einzeln
 const bewegt = { id: "d1", status: "neu", source_document_count: 4, ausschuesse: ["Arbeit und Soziales"], sources: [{ published_at: iso(1 * H) }] };
 const ruht = { id: "d2", status: "abgeschlossen", source_document_count: 1, ausschuesse: ["Arbeit und Soziales"], sources: [{ published_at: iso(12 * D) }] };
@@ -100,6 +113,9 @@ const nahAberPassiv = { id: "np", status: "beobachtung", ausschuesse: ["Arbeit u
 const rnp = s.personalRelevance(nahAberPassiv, cem, { now: NOW }).score;
 const anp = s.actionability(nahAberPassiv, cem).score;
 check("persoenlich relevant, aber wenig handelbar moeglich", rnp > 0 && anp < 35);
+// Dritte Richtung: konkret handelbar, aber global unwichtig (kommunal, wenig belegt).
+const handelbarNurKO = { id: "hn", decision_level: "kommune", event_type: "sonstiges", source_document_count: 1, zeitdruck: "hoch", action_items_struct: [{ actionType: "prepareStatement", dueHint: "heute" }], recommended_communication_struct: { recommendedChannel: "press", recommendedFormat: "statement" }, risk_of_no_action: "x" };
+check("handlungsfaehig hoch, aber global unwichtig moeglich", s.actionability(handelbarNurKO, fremd).score > 40 && s.globalImportance(handelbarNurKO).score < 35);
 check("scoreVorgang liefert alle drei Dimensionen getrennt", (() => {
   const t = s.scoreVorgang(bundGesetz, cem, { now: NOW });
   return typeof t.importance === "number" && typeof t.relevance === "number" && typeof t.actionability === "number" && t.importance !== t.actionability;
@@ -111,15 +127,25 @@ const pool = [kommRand, bundGesetz, euVo, personKO, nahAberPassiv];
 const lage = s.rankForLage(pool, { now: NOW });
 check("Lage: wichtigster Vorgang zuerst (bund)", lage[0].ko.id === "ko-bund");
 check("Lage: nach Wichtigkeit absteigend sortiert", lage.every((x, i) => i === 0 || lage[i - 1].importance >= x.importance));
-check("Lage: profilunabhaengig (kein Profil uebergeben)", s.rankForLage(pool, { now: NOW }).length === lage.length);
+// Echter Profilunabhaengigkeits-Nachweis: ein UEBERGEBENES Profil aendert Reihenfolge UND
+// Scores der Lage NICHT (rankForLage ignoriert es bewusst).
+check("Lage: profilunabhaengig (uebergebenes Profil aendert Reihenfolge/Scores NICHT)",
+  JSON.stringify(s.rankForLage(pool, { now: NOW, profile: cem }).map((x) => [x.ko.id, x.importance]))
+  === JSON.stringify(lage.map((x) => [x.ko.id, x.importance])));
 const radar = s.rankForRadar(pool, cem, { now: NOW });
 check("Radar: nur Vorgaenge mit persoenlicher Naehe (score>0)", radar.every((x) => x.relevance > 0));
 check("Radar: unbezogene kommunale Randnotiz faellt raus", !radar.some((x) => x.ko.id === "ko-komm"));
 check("Radar: nach Relevanz absteigend", radar.every((x, i) => i === 0 || radar[i - 1].relevance >= x.relevance));
+check("Radar: leeres Profil => leere Liste (Naehe-Gate, kein Crash)", s.rankForRadar(pool, {}, { now: NOW }).length === 0);
 const helmut = s.rankForHelmut(pool, cem, { now: NOW, floor: 1 });
 check("Helmut: bestes Handlungssignal zuerst (bund)", helmut[0].ko.id === "ko-bund");
 check("Helmut: nach Handlungsfaehigkeit absteigend", helmut.every((x, i) => i === 0 || helmut[i - 1].actionability >= x.actionability));
-check("Ranking-Verschiedenheit: Lage-Top != Radar-Top ODER Reihenfolgen unterscheiden sich", JSON.stringify(lage.map((x) => x.ko.id)) !== JSON.stringify(radar.map((x) => x.ko.id)));
+// Echte Entkopplung: die GETEILTEN Vorgaenge (Schnittmenge) werden in Lage anders gereiht
+// als im Radar — nicht bloss unterschiedlich lang wegen des Radar-Naehe-Filters.
+const sharedInLageOrder = lage.map((x) => x.ko.id).filter((id) => radar.some((r) => r.ko.id === id));
+const sharedInRadarOrder = radar.map((x) => x.ko.id);
+check("Entkopplung: geteilte Vorgaenge in Lage anders gereiht als im Radar", JSON.stringify(sharedInLageOrder) !== JSON.stringify(sharedInRadarOrder));
+check("Lage-Top (Wichtigkeit) != Radar-Top (Relevanz)", lage[0].ko.id !== radar[0].ko.id);
 
 // --- 6) FRISCHE + DREI LEERZUSTAENDE ---------------------------------------
 console.log("== 6) Drei klar unterscheidbare Leerzustaende ==");
@@ -156,6 +182,14 @@ const frStale = s.assessFreshness([kommRand], { now: NOW });
 check("alte Quelle => isStale=true", frStale.isStale === true);
 check("newestAgeHours wird berechnet", typeof frFresh.newestAgeHours === "number" && frFresh.newestAgeHours >= 0);
 check("keine Daten => hasData=false, isFresh=false", s.assessFreshness([], { now: NOW }).hasData === false);
+// Edge (Verify): Vorgang vorhanden, aber OHNE jeden Zeitstempel -> als stale werten (nicht
+// quiet!), damit ein fehlender Zeitstempel nie als 'frisch/ruhig' durchgeht.
+const noTs = { id: "ko-nots", status: "neu", source_document_count: 1 };
+const frNoTs = s.assessFreshness([noTs], { now: NOW });
+check("kein Zeitstempel: hasData=true, isStale=true, newestAgeHours=null", frNoTs.hasData === true && frNoTs.isStale === true && frNoTs.newestAgeHours === null);
+const esNoTs = s.tabEmptyState("lage", { kos: [noTs], hasRankedItems: false, now: NOW });
+check("kein Zeitstempel: Leerzustand kind=stale (nicht quiet)", esNoTs.kind === "stale");
+check("kein Zeitstempel: Detail nennt 'unbekannt'", /unbekannt/.test(esNoTs.detail));
 
 // --- 8) Determinismus + Flag ------------------------------------------------
 console.log("== 8) Determinismus + Flag ==");

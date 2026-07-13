@@ -100,6 +100,56 @@ async function rankWith(mode) {
   const helmOffEmpty = withFlag(undefined, () => briefingContract.buildCurrentHelmutState({ profile: helmProfile, decisions: [], kosById: {}, sourcesByVorgang: {}, now: NOW }));
   check("Helmut Flag AUS, leer: KEIN emptyState-Feld (rueckwaertskompatibel)", helmOffEmpty.status === "empty" && helmOffEmpty.emptyState === undefined);
 
+  // Fix (Verify #1, HOCH): 'keine-treffer'-Pfad setzt kosById={}, die frische breite Menge
+  // kommt als knowledgeObjects. Helmut MUSS daraus quiet ableiten, NICHT faelschlich gap.
+  const freshKO = { ...koHighAct, updated_at: iso(1 * H), sources: [{ published_at: iso(1 * H) }] };
+  const helmBroad = withFlag("on", () => briefingContract.buildCurrentHelmutState({ profile: helmProfile, decisions: [], kosById: {}, sourcesByVorgang: {}, knowledgeObjects: [freshKO], now: NOW }));
+  check("Fix: leeres kosById aber frische knowledgeObjects => Helmut kind=quiet (NICHT gap)", helmBroad.emptyState && helmBroad.emptyState.kind === "quiet" && helmBroad.emptyState.reason === "kein-handlungsbedarf");
+  // E2E ueber den echten Vertrag: toBriefingContractV3 muss knowledgeObjects an Helmut UND Radar reichen.
+  const contractFresh = withFlag("on", () => briefingContract.toBriefingContractV3({ profile: helmProfile, decisions: [], kosById: {}, sourcesByVorgang: {}, knowledgeObjects: [freshKO], now: NOW, reason: "keine-treffer" }));
+  check("Fix E2E: 'keine-treffer' + frische KOs => Helmut quiet (kein widerspruechliches gap)", contractFresh.currentHelmutState.emptyState && contractFresh.currentHelmutState.emptyState.kind === "quiet");
+  check("Fix E2E: Radar sieht dieselbe Lage konsistent (nicht gap)", !contractFresh.currentRadarState.emptyState || contractFresh.currentRadarState.emptyState.kind !== "gap");
+  // Map als kosById (beide Read-Adapter unterstuetzen den Map-Zweig ausdruecklich).
+  const helmMap = withFlag("on", () => briefingContract.buildCurrentHelmutState({ profile: helmProfile, decisions: [], kosById: new Map([["zzz", freshKO]]), sourcesByVorgang: {}, now: NOW }));
+  check("Map als kosById: Helmut-Frische korrekt aus Map abgeleitet (quiet)", helmMap.emptyState && helmMap.emptyState.kind === "quiet");
+
+  // ============================ LAGE end-to-end (buildLageBriefing) ============================
+  // Fix (Verify #3): der Lage-Leerzustand (gap/stale/quiet) wird durch die ECHTE Build-Funktion
+  // getrieben — analog zu Radar/Helmut. Storage wird per require-cache gestubbt, Source-Safety
+  // fuer den Quarantaene-Fall gepatcht. Kein Netz, keine KI (Rueckkehr vor dem KI-Zweig).
+  console.log("== LAGE end-to-end Leerzustand ==");
+  const sourceSafety = require("../lib/helmut/sourceSafety");
+  const storagePath = require.resolve("../lib/helmut/storage");
+  async function buildLageEmpty(mode, { kos, sourcesByVg = {}, quarantine = false }) {
+    const prevEnv = process.env.HELMUT_SCORING_MODE;
+    const prevCache = require.cache[storagePath];
+    const prevGuard = sourceSafety.guardKnowledgeObject;
+    require.cache[storagePath] = { id: storagePath, filename: storagePath, loaded: true, exports: {
+      v3StoreReady: () => true,
+      listKnowledgeObjects: async () => kos,
+      listMatchingResults: async () => [],
+      getSourcesForVorgang: async (vgId) => sourcesByVg[vgId] || []
+    } };
+    if (quarantine) sourceSafety.guardKnowledgeObject = () => ({ status: "quarantine" });
+    if (mode == null) delete process.env.HELMUT_SCORING_MODE; else process.env.HELMUT_SCORING_MODE = mode;
+    try { return await lage.buildLageBriefing({ id: "u-lage", fullName: "L Age", party: "SPD" }, {}); }
+    finally {
+      if (prevCache) require.cache[storagePath] = prevCache; else delete require.cache[storagePath];
+      sourceSafety.guardKnowledgeObject = prevGuard;
+      if (prevEnv == null) delete process.env.HELMUT_SCORING_MODE; else process.env.HELMUT_SCORING_MODE = prevEnv;
+    }
+  }
+  const understood1 = [{ id: "lf", vorgang_id: "lf", status: "neu", understanding_status: "complete", was_ist_passiert: "x", decision_level: "kommune", updated_at: iso(1 * H) }];
+  const lageGap = await buildLageEmpty("on", { kos: [] });
+  check("Lage E2E Flag AN, keine verstandenen KOs: emptyState.kind=gap", lageGap.emptyState && lageGap.emptyState.kind === "gap");
+  const lageQuietE2E = await buildLageEmpty("on", { kos: understood1, sourcesByVg: { lf: [{ published_at: iso(2 * H) }] }, quarantine: true });
+  check("Lage E2E Flag AN, quarantaeniert+frisch: kind=quiet (nicht gap)", lageQuietE2E.emptyState && lageQuietE2E.emptyState.kind === "quiet");
+  // Fix C: updated_at FRISCH, aber echte Quellen ALT -> muss stale sein (echte Quellenzeit gewinnt).
+  const lageStaleE2E = await buildLageEmpty("on", { kos: understood1, sourcesByVg: { lf: [{ published_at: iso(9 * D) }] }, quarantine: true });
+  check("Lage E2E Fix C: updated_at frisch, echte Quellen alt => kind=stale (nicht quiet)", lageStaleE2E.emptyState && lageStaleE2E.emptyState.kind === "stale");
+  const lageOffE2E = await buildLageEmpty(undefined, { kos: [] });
+  check("Lage E2E Flag AUS: KEIN emptyState (rueckwaertskompatibel)", lageOffE2E.available === false && lageOffE2E.emptyState === undefined);
+
   // ============================ Drei Tabs, DREI reasons ============================
   console.log("== Drei Tabs liefern drei unterscheidbare quiet-reasons ==");
   const lageQuiet = require("../lib/helmut/scoring").tabEmptyState("lage", { kos: [freshUnrelated], hasRankedItems: false, now: NOW.getTime(), staleHours: 24 * 30 });
