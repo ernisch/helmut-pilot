@@ -99,5 +99,18 @@ check("mit KO-Daten: bmas Produktnutzen 'ergiebig'", bmas.value === "ergiebig");
 check("Kosten je Pipeline-Schritt echt sichtbar", rReal.views.kostenNutzen.costs.byPipelineStep.understanding === 0.0012);
 check("availability.documents=true bei echten Dokumenten", rReal.availability.documents === true);
 
+// C) ROBUSTHEIT (Verify B1): kaputte Profil-Elemente dürfen den Report NICHT crashen lassen.
+console.log("== Robustheit: kaputte/leere Profil-Elemente ==");
+const brokenProfiles = [null, undefined, "kaputt", 42, {}, cem];
+const activationBroken = pp.computeGlobalActivation({ packages: M.packages, packagePaths: M.packagePaths, retrievalPaths: M.retrievalPaths, profiles: brokenProfiles });
+let robustOk = true, robustReport = null;
+try {
+  const qb = qw.buildQualityReport({ catalog: { retrievalPaths: M.retrievalPaths, packages: M.packages, packagePaths: M.packagePaths }, activation: activationBroken, rawDocs: [], koSourceLinks: [], dedupDocuments: [], profiles: brokenProfiles, llmUsage: [], signals: {}, now: NOW });
+  robustReport = ar.buildSourceAdminReport({ catalog: M, activation: activationBroken, qualityReport: qb, now: NOW });
+} catch (e) { robustOk = false; }
+check("kaputte Profil-Elemente (null/undefined/String/Zahl/{}) crashen den Report NICHT", robustOk === true && robustReport !== null);
+check("gültiges Profil (Cem) bleibt trotz kaputter Nachbarn versorgt", robustReport && robustReport.views.profileVersorgung.some((p) => p.profileId === "cem-ince" && p.supply === "versorgt"));
+check("kaputte Elemente werden 'nicht_aktivierbar', nicht fälschlich versorgt", robustReport && robustReport.views.profileVersorgung.filter((p) => p.supply === "versorgt").length === 1);
+
 console.log(`\n== Ergebnis: ${pass} PASS, ${fail} FAIL ==`);
 process.exit(fail > 0 ? 1 : 0);

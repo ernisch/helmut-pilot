@@ -3337,10 +3337,11 @@ async function buildSourceArchitectureReport(mandateProfiles = []) {
     const M = buildFullModel();
     const profiles = Array.isArray(mandateProfiles) ? mandateProfiles : [];
     const activation = computeGlobalActivation({ packages: M.packages, packagePaths: M.packagePaths, retrievalPaths: M.retrievalPaths, profiles });
-    let rawDocs = [];
-    try { rawDocs = (await storageMod.listRawDocuments({ days: 30, limit: 800 })) || []; } catch (_) { rawDocs = []; }
-    let llmUsage = [];
-    try { llmUsage = (await storageMod.getLlmUsage(null, 2000)) || []; } catch (_) { llmUsage = []; }
+    // Beide Bestandsdaten-Reads PARALLEL (nicht sequenziell), je defensiv -> [] bei Fehler.
+    const [rawDocs, llmUsage] = await Promise.all([
+      storageMod.listRawDocuments({ days: 30, limit: 800 }).then((r) => r || []).catch(() => []),
+      storageMod.getLlmUsage(null, 2000).then((r) => r || []).catch(() => [])
+    ]);
     const now = Date.now();
     const quality = qw.buildQualityReport({
       catalog: { retrievalPaths: M.retrievalPaths, packages: M.packages, packagePaths: M.packagePaths },
