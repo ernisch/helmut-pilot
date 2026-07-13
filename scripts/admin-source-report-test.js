@@ -43,6 +43,20 @@ const berlinLand = lp.laender.find((l) => l.name === "Berlin");
 check("welche Pflichtklassen fehlen: Berlin 15/15 fehlend (ehrlich, keine Quellen)", berlinLand.pflichtklassen.total === 15 && berlinLand.pflichtklassen.missing.length === 15);
 check("Länder ohne Landesmodul: keine erfundenen Pflichtklassen", lp.laender.find((l) => l.name === "Bayern").pflichtklassen.total === 0);
 check("Pakete: berlin/brandenburg 'vorbereitet'", ["berlin-basis", "brandenburg-basis"].every((k) => lp.pakete.find((p) => p.key === k && p.supply === "vorbereitet")));
+// Ohne candidateReadiness-Rollup: readiness EHRLICH als nicht verfügbar (keine erfundene Abdeckung).
+check("ohne Rollup: Länder readiness.available === false (nicht geraten)", lp.laender.every((l) => l.readiness && l.readiness.available === false));
+
+console.log("== View 1b: Reifegrad (Kandidat != einsatzbereit, Korrektur 2) ==");
+const kand = require("../lib/helmut/quellenarchitektur/seeds/landesmodule-kandidaten");
+const rReadiness = ar.buildSourceAdminReport({ catalog: M, activation, qualityReport: qualityEmpty, now: NOW, candidateReadiness: kand.readinessByGeography() });
+const lpR = rReadiness.views.laenderPakete;
+const beR = lpR.laender.find((l) => l.name === "Berlin").readiness;
+const bbR = lpR.laender.find((l) => l.name === "Brandenburg").readiness;
+check("Berlin readiness verfügbar: 15 Kandidat, 0 einsatzbereit", beR.available && beR.kandidat === 15 && beR.einsatzbereit === 0);
+check("Brandenburg readiness: 13 Kandidat, 2 unbesetzt, 0 einsatzbereit", bbR.available && bbR.kandidat === 13 && bbR.unbesetzt === 2 && bbR.einsatzbereit === 0);
+check("Brandenburg unbesetzte Pilotklassen benannt (fraktion_pilot/person_pilot)", bbR.unbesetzteKlassen.includes("fraktion_pilot") && bbR.unbesetzteKlassen.includes("person_pilot"));
+check("Niedersachsen (aktiv, kein Kandidaten-Rollup): readiness.available === false", lpR.laender.find((l) => l.name === "Niedersachsen").readiness.available === false);
+check("counts: 28 Kandidat-Klassen, 0 einsatzbereit, 2 unbesetzt", rReadiness.counts.kandidatKlassen === 28 && rReadiness.counts.einsatzbereiteKlassen === 0 && rReadiness.counts.unbesetzteKlassen === 2);
 
 console.log("== View 2: Quellen und Abrufwege ==");
 const qa = rEmpty.views.quellenAbrufwege;

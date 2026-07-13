@@ -57,6 +57,17 @@ check("Niedersachsen als 'Aktiv'", /Niedersachsen[\s\S]{0,120}Aktiv/.test(html))
 check("Pflichtklassen: 15 fehlen sichtbar", /15 fehlen|15<\/b> fehlen|>15<\/b>/.test(html));
 check("Pakete berlin-basis 'Vorbereitet'", /Berlin Basis[\s\S]{0,120}Vorbereitet/.test(html));
 
+console.log("== View 1b: Reifegrad-Darstellung (Kandidat != einsatzbereit) ==");
+const kand = require(path.join(root, "lib/helmut/quellenarchitektur/seeds/landesmodule-kandidaten"));
+const reportR = ar.buildSourceAdminReport({ catalog: M, activation, qualityReport: quality, now: NOW, candidateReadiness: kand.readinessByGeography() });
+const htmlR = ui.render(reportR);
+check("Reifegrad: 'Kandidatenabdeckung' sichtbar", /Kandidatenabdeckung/.test(htmlR));
+check("Reifegrad: 'Kandidat'- und 'einsatzbereit'-Badges sichtbar", /Kandidat</.test(htmlR) && /einsatzbereit/.test(htmlR));
+check("Reifegrad: ehrlich 'noch nicht technisch verifiziert'", /noch nicht technisch verifiziert/.test(htmlR));
+check("Brandenburg: unbesetzte Pilotklassen sichtbar (fraktion_pilot/person_pilot)", /fraktion_pilot/.test(htmlR) && /person_pilot/.test(htmlR));
+check("Brandenburg: 'kein Ersatz durch fremde Partei/Person'", /kein Ersatz durch fremde Partei\/Person/.test(htmlR));
+check("ohne Rollup (report): keine erfundene Kandidatenabdeckung", !/Kandidatenabdeckung/.test(html));
+
 console.log("== View 2: Quellen und Abrufwege ==");
 check("Health-Badges gesund/defekt/unbekannt sichtbar", /gesund/.test(html) && /defekt/.test(html) && /unbekannt/.test(html));
 check("defekte Pflichtquelle (Bundestag) im Herausgeber-Prüfbedarf", /Bundestag/.test(html));

@@ -3333,6 +3333,7 @@ async function buildSourceArchitectureReport(mandateProfiles = []) {
     const { computeGlobalActivation } = require("./lib/helmut/quellenarchitektur/profile-packages");
     const qw = require("./lib/helmut/quellenarchitektur/quality-watchdog");
     const ar = require("./lib/helmut/quellenarchitektur/admin-report");
+    const kandidaten = require("./lib/helmut/quellenarchitektur/seeds/landesmodule-kandidaten");
     const storageMod = require("./lib/helmut/storage");
     const M = buildFullModel();
     const profiles = Array.isArray(mandateProfiles) ? mandateProfiles : [];
@@ -3347,7 +3348,7 @@ async function buildSourceArchitectureReport(mandateProfiles = []) {
       catalog: { retrievalPaths: M.retrievalPaths, packages: M.packages, packagePaths: M.packagePaths },
       activation, rawDocs, koSourceLinks: [], dedupDocuments: [], profiles, llmUsage, signals: {}, now
     });
-    return ar.buildSourceAdminReport({ catalog: M, activation, qualityReport: quality, now });
+    return ar.buildSourceAdminReport({ catalog: M, activation, qualityReport: quality, now, candidateReadiness: kandidaten.readinessByGeography() });
   } catch (_) { return null; }
 }
 

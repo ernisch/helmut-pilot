@@ -1474,12 +1474,23 @@ function renderSaLaenderPakete(sa) {
   const withModule = lp.laender.filter((l) => l.status !== "kein_modul");
   const laenderRows = withModule.map((l) => {
     const badge = l.status === "aktiv" ? saBadge("Aktiv", "ok") : saBadge("Vorbereitet", "warn");
-    const klassen = l.pflichtklassen.total > 0
-      ? `<span class="sa-sub">${l.pflichtklassen.total - l.pflichtklassen.missing.length}/${l.pflichtklassen.total} Pflichtklassen — <b>${l.pflichtklassen.missing.length} fehlen</b></span>`
-      : `<span class="sa-sub">keine Pflichtklassen-Vorgabe</span>`;
-    return `<div class="sa-item"><div class="sa-item-main"><span class="sa-item-name">${escapeHtml(l.name)}</span>${badge}</div>${klassen}</div>`;
+    const rd = l.readiness;
+    let body;
+    if (rd && rd.available) {
+      // Kandidaten-Land: Reifegrad EHRLICH — Kandidatenabdeckung ist NICHT Einsatzbereitschaft.
+      const abgedeckt = rd.klassenAbgedeckt != null ? rd.klassenAbgedeckt : rd.besetzt;
+      const abdeckung = `Kandidatenabdeckung ${abgedeckt}/${rd.klassenGesamt}${rd.unbesetzt ? ` · ${rd.unbesetzt} unbesetzt` : ""} — noch nicht technisch verifiziert`;
+      const reifegrad = `<div class="sa-badges">${saBadge(`${rd.kandidat} Kandidat`, "warn")}${rd.verifiziert ? saBadge(`${rd.verifiziert} verifiziert`, "ok") : ""}${saBadge(`${rd.einsatzbereit} einsatzbereit`, rd.einsatzbereit > 0 ? "ok" : "muted")}</div>`;
+      const unbesetztLine = rd.unbesetzt ? `<span class="sa-sub">Pilotklassen offen: <b>${escapeHtml((rd.unbesetzteKlassen || []).join(", "))}</b> — kein Ersatz durch fremde Partei/Person.</span>` : "";
+      body = `<span class="sa-sub">${escapeHtml(abdeckung)}</span>${reifegrad}${unbesetztLine}`;
+    } else {
+      body = l.pflichtklassen.total > 0
+        ? `<span class="sa-sub">${l.pflichtklassen.total - l.pflichtklassen.missing.length}/${l.pflichtklassen.total} Pflichtklassen — <b>${l.pflichtklassen.missing.length} fehlen</b></span>`
+        : `<span class="sa-sub">keine Pflichtklassen-Vorgabe</span>`;
+    }
+    return `<div class="sa-item"><div class="sa-item-main"><span class="sa-item-name">${escapeHtml(l.name)}</span>${badge}</div>${body}</div>`;
   }).join("");
-  const rest = `<p class="sa-note">${sa.counts.laenderKeinModul} weitere Bundesländer haben noch kein Landesmodul (Recherche in Sprint 9).</p>`;
+  const rest = `<p class="sa-note">${sa.counts.laenderKeinModul} weitere Bundesländer haben noch kein Landesmodul. „Vorbereitet" = Quellen als Kandidat recherchiert, aber noch nicht technisch verifiziert und nicht aktiv (0 einsatzbereit).</p>`;
   const paketRows = lp.pakete.map((p) => {
     const tone = p.supply === "vollstaendig" ? "ok" : p.supply === "unterversorgt" ? "bad" : p.supply === "vorbereitet" ? "warn" : "muted";
     const supplyLabel = { vollstaendig: "Vollständig", teilversorgt: "Teilversorgt", unterversorgt: "Unterversorgt", vorbereitet: "Vorbereitet", leer: "Leer", unbekannt: "Unbekannt" }[p.supply] || p.supply;
