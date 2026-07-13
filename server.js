@@ -10,7 +10,7 @@ const { validateProfile } = require("./lib/helmut/profile-validation");
 const sourceSafety = require("./lib/helmut/sourceSafety");
 const { runLageCheck, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState, tenantJwtModeEnabled, saveKnowledgeObjectEnrichment, profileDbModeEnabled, getProfileFromDb } = require("./lib/helmut/storage");
+const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState, tenantJwtModeEnabled, saveKnowledgeObjectEnrichment, profileDbModeEnabled, getProfileFromDb, diagnoseTenantJwt } = require("./lib/helmut/storage");
 const { classifyOperationalState, describeState } = require("./lib/helmut/watchdog-state");
 const { runKoEnrichmentBackfill } = require("./lib/helmut/ko-enrichment");
 const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled, activeModelName, extractKnowledgeObjectTags } = require("./lib/helmut/ai");
@@ -1089,6 +1089,11 @@ async function handleRequest(request, response) {
           tenantReadProbe = "FEHLGESCHLAGEN (Ausnahme) -> Fallback Blob";
         }
       }
+      // PGRST301-Ursachendiagnose (nur Booleans/Algorithmus, NIE Secret-Werte):
+      // secretMatchesLegacy=true => SUPABASE_JWT_SECRET IST das aktive Legacy
+      // JWT Secret (HS256 korrekt, Ursache liegt woanders); =false => Secret-WERT
+      // ist die Ursache des 401; =null => nicht bestimmbar (Secret/anon-Key fehlt).
+      const jwtDiag = diagnoseTenantJwt();
       return {
         flagSet: /^(1|true|on)$/i.test(String(process.env.HELMUT_TENANT_JWT_MODE || "").trim()),
         jwtSecretPresent: Boolean(process.env.SUPABASE_JWT_SECRET),
@@ -1105,6 +1110,9 @@ async function handleRequest(request, response) {
         tenantJwtReadWorks,
         tenantReadProbe,
         profileSource: (profileDbEnabled && tenantJwtReadWorks) ? "mandate_profiles (DB)" : "helmut_store (Blob-Fallback)",
+        // --- PGRST301-Ursachendiagnose (keine Secret-Werte) ---
+        secretMatchesLegacy: jwtDiag.secretMatchesLegacy,
+        jwtAlgorithm: jwtDiag.jwtAlgorithm,
         checkedAt: new Date().toISOString()
       };
     });
