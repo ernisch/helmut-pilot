@@ -22,10 +22,13 @@ Netz, kein Storage), das auf `mandate_profiles` und dem Sprint-1-Fundament aufse
 - **Wiederverwendung statt Doppelmodell:** `parliamentTypeOf`, `validateProfile` (Aktivierungs-
   berechtigung = die 5 bestehenden Zustände), `normalizeParty`/`normalizeCommittee`.
 
-**Klarstellung `always_on` vs. `is_critical` (Sprint-1-Mapper verfeinert):** `always_on` (läuft ohne
-Profil) gilt jetzt **nur** für die neutralen Bund-Basis-Kernquellen (Bundestag/Bundesregierung/
-Tagesschau/Deutschlandfunk/DIP); `is_critical` (nicht still archivieren) bleibt breiter. So laufen
-themen-/parteispezifische Quellen (BMAS/Die Linke/…) **nur** über Referenzzählung.
+**Klarstellung Daueraktivierung (Nachschärfung K1):** Daueraktivierung lebt **ausschließlich auf der
+Abrufweg-Ebene** (`activation_mode = always_on`) — nur die **5 neutralen Bund-Basis-Kernquellen**
+(Bundestag/Bundesregierung/Tagesschau/Deutschlandfunk/DIP). Ein Paket-Feld `always_on` gibt es
+**nicht mehr** (es hätte fälschlich das ganze Bund-Basis-Paket ohne Profil aktiviert). Ohne aktives
+Profil laufen daher **genau 5** Abrufwege; Bund Basis läuft **voll (54)**, sobald ein Profil aktiv
+ist. `is_critical` (nicht still archivieren) ist orthogonal und breiter (auch BMAS/Die Linke), diese
+laufen aber nur über Referenzzählung.
 
 ## 2. Verbindliche Testfälle — alle grün
 | # | Fall | Ergebnis |
@@ -35,7 +38,7 @@ themen-/parteispezifische Quellen (BMAS/Die Linke/…) **nur** über Referenzzä
 | 3 | Partei/Fraktion/Ausschuss/Thema/Region ergänzen Pakete | ✅ Die-Linke, Arbeit&Soziales, Regional |
 | 4 | 100 Profile, ein Paket → eine Aktivierung | ✅ 144 aktive Abrufwege bei 1 **und** 100 Profilen |
 | 5 | pausiertes/gelöschtes Profil reduziert Refcount | ✅ Refcount → 0, Paket nicht mehr aktiv |
-| 6 | kein aktives Profil → kein unnötiger Crawl | ✅ nur 54 Bund-Basis-Abrufwege (always_on) |
+| 6 | kein aktives Profil → kein unnötiger Crawl | ✅ nur **5** Kern-Abrufwege (`activation_mode=always_on`); kein Paket aktiv |
 | 7 | fehlerhafte/unvollständige Profile → keine falsche Aktivierung | ✅ kein falsches Paket, leere Profile inaktiv |
 
 **`test:profile-packages` 36 PASS / 0 FAIL.** Keine Regression: source-architecture 86/86,

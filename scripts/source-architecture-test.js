@@ -205,7 +205,12 @@ check("Berlin+Brandenburg als prepared Basispakete", (() => {
   return b && b.status === "prepared" && b.is_base && bb && bb.status === "prepared" && bb.is_base;
 })());
 check("Landesmodule tragen 15 Pflichtklassen", M.packages.find((p) => p.key === "berlin-basis").required_classes.length === 15);
-check("Bund Basis ist always_on Basispaket", (() => { const b = M.packages.find((p) => p.key === "bund-basis"); return b.is_base && b.always_on; })());
+check("Bund Basis ist Pflicht-Basispaket (is_base)", (() => { const b = M.packages.find((p) => p.key === "bund-basis"); return b.is_base === true; })());
+check("kein Paket traegt mehr ein always_on-Flag (Daueraktivierung lebt auf Abrufweg-Ebene)", M.packages.every((p) => p.always_on === undefined));
+check("nur die 5 neutralen Kern-Abrufwege sind activation_mode=always_on", (() => {
+  const on = M.retrievalPaths.filter((p) => p.activation_mode === "always_on").map((p) => p.legacy_source_id).sort();
+  return JSON.stringify(on) === JSON.stringify(["bundesregierung", "bundestag", "deutschlandfunk-politik", "dip", "tagesschau-politik"]);
+})());
 check("Publisher-Entity-FK gueltig (falls gesetzt)", (() => {
   const eIds = new Set(M.entities.map((e) => e.id));
   return M.publishers.every((p) => !p.entity_id || eIds.has(p.entity_id));

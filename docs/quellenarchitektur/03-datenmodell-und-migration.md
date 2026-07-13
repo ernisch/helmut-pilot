@@ -15,7 +15,7 @@ Quellendefinitionen, **keine** mandanten- oder personenbezogenen Daten, daher **
 | `political_entities` | typisierte Entitätsschicht | `entity_type`, `canonical_key`, `level`, `geography_id`, `aliases[]` |
 | `publishers` | Herausgeber (einmal je Domain) | `canonical_domain` (unique), `publisher_type`, `evidence_role`, `trust`, `entity_id` |
 | `retrieval_paths` | Abrufwege (N je Herausgeber) | `publisher_id`, `method`, `status`, `activation_mode`, `is_critical`, `legacy_source_id` |
-| `source_packages` | Quellenpakete | `key` (unique), `status`, `is_base`, `always_on`, `political_level`, `required_classes[]` |
+| `source_packages` | Quellenpakete | `key` (unique), `status`, `is_base`, `political_level`, `required_classes[]` |
 | `package_paths` | m:n Paket↔Abrufweg | `package_id`, `retrieval_path_id` |
 | `path_expected_levels` | erwartete Ebenen je Abrufweg | `level` |
 | `path_expected_geographies` | erwartete Geografien je Abrufweg | `geography_id` |

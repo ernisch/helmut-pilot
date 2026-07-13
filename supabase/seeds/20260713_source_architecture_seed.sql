@@ -93,7 +93,7 @@ insert into public.political_entities (id, entity_type, name, canonical_key, lev
   ('committee-bt-verkehr', 'committee', 'Ausschuss für Verkehr', 'verkehr', 'bund', 'geo-bund', '{}'),
   ('committee-bt-digitales', 'committee', 'Ausschuss für Digitales', 'digitales', 'bund', 'geo-bund', '{}'),
   ('committee-bt-bau-wohnen', 'committee', 'Ausschuss für Bauen und Wohnen', 'wohnen', 'bund', 'geo-bund', '{}'),
-  ('committee-bt-menschenrechte', 'committee', 'Ausschuss für Menschenrechte und humanitäre Hilfe', 'recht', 'bund', 'geo-bund', '{}'),
+  ('committee-bt-menschenrechte', 'committee', 'Ausschuss für Menschenrechte und humanitäre Hilfe', 'menschenrechte', 'bund', 'geo-bund', '{}'),
   ('committee-bt-kultur-medien', 'committee', 'Ausschuss für Kultur und Medien', 'kultur', 'bund', 'geo-bund', '{}'),
   ('committee-bt-entwicklung', 'committee', 'Ausschuss für Wirtschaftliche Zusammenarbeit und Entwicklung', 'entwicklung', 'bund', 'geo-bund', '{}'),
   ('committee-bt-europa', 'committee', 'Ausschuss für Europäische Union', 'europa', 'bund', 'geo-bund', '{}'),
@@ -189,26 +189,26 @@ on conflict (id) do update set name = excluded.name, evidence_role = excluded.ev
 
 
 -- Quellenpakete
-insert into public.source_packages (id, key, name, purpose, status, is_base, always_on, political_level, geography_id, required_classes) values
-  ('pkg-bund-basis', 'bund-basis', 'Bund Basis', 'Neutrale bundespolitische Grundversorgung fuer JEDES Mandat (Institutionen, alle Ausschuesse, alle Fraktionen, Leitmedien, DIP).', 'active', true, true, 'bund', 'geo-bund', '{}'),
-  ('pkg-arbeit-und-soziales', 'arbeit-und-soziales', 'Arbeit und Soziales', 'Fachthemenpaket Arbeit- und Sozialpolitik (Fachmedien, Verbaende, Gewerkschaften, Prozess-/Radar-Quellen, Themen-Buendel). Fachthema, NICHT Region.', 'active', false, false, 'bund', 'geo-bund', '{}'),
-  ('pkg-die-linke-bund', 'die-linke-bund', 'Die Linke Bund', 'Partei-Direktquellen Die Linke (Bundesebene).', 'active', false, false, 'bund', 'geo-bund', '{}'),
-  ('pkg-regional-niedersachsen', 'regional-niedersachsen', 'Regional Niedersachsen', 'Regionale Beobachtung fuer den Piloten Cem (Salzgitter/Braunschweig/Wolfenbuettel/Niedersachsen).', 'active', false, false, 'land', 'geo-land-niedersachsen', '{}'),
-  ('pkg-profil-cem-ince', 'profil-cem-ince', 'Persoenliche Beobachtung Cem Ince', 'Personenbezogene Nachrichtensuche des Piloten (nur fuer dieses Profil).', 'active', false, false, 'bund', null, '{}'),
-  ('pkg-berlin-basis', 'berlin-basis', 'Berlin Basis', 'Landespaket Berlin (Abgeordnetenhaus, Senat, Senatsverwaltungen, Fraktionen, Regionalmedien, rbb Berlin). Struktur vorbereitet — Quellen folgen nach Pruefung + Freigabe.', 'prepared', true, false, 'land', 'geo-land-berlin', array['landesparlament','plenum','ausschuesse','drucksachen','schriftliche_anfragen','gesetzgebung','landesregierung','staatskanzlei','ministerien','landesfraktionen','regionale_leitmedien','oer_landesberichterstattung','partei_pilot','fraktion_pilot','person_pilot']::text[]),
-  ('pkg-brandenburg-basis', 'brandenburg-basis', 'Brandenburg Basis', 'Landespaket Brandenburg (Landtag, Landesregierung, Staatskanzlei, Ministerien, Fraktionen, Regionalmedien, rbb Brandenburg). Struktur vorbereitet — Quellen folgen nach Pruefung + Freigabe.', 'prepared', true, false, 'land', 'geo-land-brandenburg', array['landesparlament','plenum','ausschuesse','drucksachen','schriftliche_anfragen','gesetzgebung','landesregierung','staatskanzlei','ministerien','landesfraktionen','regionale_leitmedien','oer_landesberichterstattung','partei_pilot','fraktion_pilot','person_pilot']::text[])
+insert into public.source_packages (id, key, name, purpose, status, is_base, political_level, geography_id, required_classes) values
+  ('pkg-bund-basis', 'bund-basis', 'Bund Basis', 'Neutrale bundespolitische Grundversorgung fuer JEDES Mandat (Institutionen, alle Ausschuesse, alle Fraktionen, Leitmedien, DIP).', 'active', true, 'bund', 'geo-bund', '{}'),
+  ('pkg-arbeit-und-soziales', 'arbeit-und-soziales', 'Arbeit und Soziales', 'Fachthemenpaket Arbeit- und Sozialpolitik (Fachmedien, Verbaende, Gewerkschaften, Prozess-/Radar-Quellen, Themen-Buendel). Fachthema, NICHT Region.', 'active', false, 'bund', 'geo-bund', '{}'),
+  ('pkg-die-linke-bund', 'die-linke-bund', 'Die Linke Bund', 'Partei-Direktquellen Die Linke (Bundesebene).', 'active', false, 'bund', 'geo-bund', '{}'),
+  ('pkg-regional-niedersachsen', 'regional-niedersachsen', 'Regional Niedersachsen', 'Regionale Beobachtung fuer den Piloten Cem (Salzgitter/Braunschweig/Wolfenbuettel/Niedersachsen).', 'active', false, 'land', 'geo-land-niedersachsen', '{}'),
+  ('pkg-profil-cem-ince', 'profil-cem-ince', 'Persoenliche Beobachtung Cem Ince', 'Personenbezogene Nachrichtensuche des Piloten (nur fuer dieses Profil).', 'active', false, 'bund', null, '{}'),
+  ('pkg-berlin-basis', 'berlin-basis', 'Berlin Basis', 'Landespaket Berlin (Abgeordnetenhaus, Senat, Senatsverwaltungen, Fraktionen, Regionalmedien, rbb Berlin). Struktur vorbereitet — Quellen folgen nach Pruefung + Freigabe.', 'prepared', true, 'land', 'geo-land-berlin', array['landesparlament','plenum','ausschuesse','drucksachen','schriftliche_anfragen','gesetzgebung','landesregierung','staatskanzlei','ministerien','landesfraktionen','regionale_leitmedien','oer_landesberichterstattung','partei_pilot','fraktion_pilot','person_pilot']::text[]),
+  ('pkg-brandenburg-basis', 'brandenburg-basis', 'Brandenburg Basis', 'Landespaket Brandenburg (Landtag, Landesregierung, Staatskanzlei, Ministerien, Fraktionen, Regionalmedien, rbb Brandenburg). Struktur vorbereitet — Quellen folgen nach Pruefung + Freigabe.', 'prepared', true, 'land', 'geo-land-brandenburg', array['landesparlament','plenum','ausschuesse','drucksachen','schriftliche_anfragen','gesetzgebung','landesregierung','staatskanzlei','ministerien','landesfraktionen','regionale_leitmedien','oer_landesberichterstattung','partei_pilot','fraktion_pilot','person_pilot']::text[])
 on conflict (id) do update set name = excluded.name, purpose = excluded.purpose, status = excluded.status, required_classes = excluded.required_classes;
 
 
 -- Abrufwege
 insert into public.retrieval_paths (id, publisher_id, legacy_source_id, name, method, url, query, parser, priority, status, activation_mode, is_critical, max_items, represents_type) values
   ('rp-cem-ince-news', 'aggregator-google-news', 'cem-ince-news', 'Cem Ince News-Suche', 'googlenews_search', 'https://news.google.com/rss/search?q=%22Cem%20Ince%22&hl=de&gl=DE&ceid=DE:de', '"Cem Ince"', 'googlenews-batchexecute', 100, 'needs_review', 'auto', false, 40, 'person'),
-  ('rp-bmas', 'publisher-bmas.de', 'bmas', 'BMAS', 'rss', 'https://www.bmas.de/SiteGlobals/Functions/RSSFeed/DE/RSSNewsfeed/RSSNewsfeed.xml', null, 'rss-regex', 95, 'healthy', 'always_on', true, 16, null),
+  ('rp-bmas', 'publisher-bmas.de', 'bmas', 'BMAS', 'rss', 'https://www.bmas.de/SiteGlobals/Functions/RSSFeed/DE/RSSNewsfeed/RSSNewsfeed.xml', null, 'rss-regex', 95, 'healthy', 'auto', true, 16, null),
   ('rp-bundesregierung', 'publisher-bundesregierung.de', 'bundesregierung', 'Bundesregierung', 'rss', 'https://www.bundesregierung.de/breg-de/service/rss', null, 'rss-regex', 95, 'broken', 'always_on', true, 16, null),
   ('rp-bundestag', 'publisher-bundestag.de', 'bundestag', 'Bundestag', 'rss', 'https://www.bundestag.de/rss', null, 'rss-regex', 100, 'broken', 'always_on', true, 16, null),
   ('rp-ausschuss-arbeit-soziales', 'publisher-bundestag.de', 'ausschuss-arbeit-soziales', 'Ausschuss Arbeit und Soziales', 'html', 'https://www.bundestag.de/ausschuesse/a11_arbeit_soziales', null, 'html-scrape', 95, 'broken', 'auto', false, 1, null),
-  ('rp-die-linke', 'publisher-die-linke.de', 'die-linke', 'Die Linke', 'rss', 'https://www.die-linke.de/start/presse/rss.xml', null, 'rss-regex', 90, 'broken', 'always_on', true, 16, null),
-  ('rp-linksfraktion', 'publisher-dielinkebt.de', 'linksfraktion', 'Die Linke im Bundestag', 'rss', 'https://www.dielinkebt.de/presse/pressemitteilungen/rss.xml', null, 'rss-regex', 90, 'broken', 'always_on', true, 16, null),
+  ('rp-die-linke', 'publisher-die-linke.de', 'die-linke', 'Die Linke', 'rss', 'https://www.die-linke.de/start/presse/rss.xml', null, 'rss-regex', 90, 'broken', 'auto', true, 16, null),
+  ('rp-linksfraktion', 'publisher-dielinkebt.de', 'linksfraktion', 'Die Linke im Bundestag', 'rss', 'https://www.dielinkebt.de/presse/pressemitteilungen/rss.xml', null, 'rss-regex', 90, 'broken', 'auto', true, 16, null),
   ('rp-tagesschau-politik', 'publisher-tagesschau.de', 'tagesschau-politik', 'Tagesschau Politik', 'rss', 'https://www.tagesschau.de/infoservices/alle-meldungen-100~rss2.xml', null, 'rss-regex', 70, 'healthy', 'always_on', true, 16, null),
   ('rp-deutschlandfunk-politik', 'publisher-deutschlandfunk.de', 'deutschlandfunk-politik', 'Deutschlandfunk Politik', 'rss', 'https://www.deutschlandfunk.de/nachrichten-100.rss', null, 'rss-regex', 70, 'healthy', 'always_on', true, 16, null),
   ('rp-dgb', 'publisher-dgb.de', 'dgb', 'DGB', 'html', 'https://www.dgb.de', null, 'html-scrape', 75, 'broken', 'auto', false, 1, null),

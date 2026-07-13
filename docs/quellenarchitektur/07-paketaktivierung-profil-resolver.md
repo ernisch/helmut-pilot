@@ -41,18 +41,21 @@ Ein Profil ist nur **vollständig aktiviert**, wenn **alle** Pflicht-Basispakete
 - **Aktivierungsberechtigt** ist nur ein Profil, das nicht deaktiviert/gelöscht **und** brauchbar ist
   (`validateProfile().usable`). Fehlerhafte/leere Profile tragen **nicht** zur Aktivierung bei →
   keine falsche Aktivierung.
-- **Paket technisch aktiv**, wenn (≥1 aktives Profil braucht es **oder** `always_on`) **und**
-  Status `active`. `prepared`/`draft`-Pakete werden **nie** technisch aktiviert; angefordert-aber-
-  unversorgt erscheint als `requested_unsupplied`.
-- **Abrufweg aktiv** per Referenzzählung (≥1 aktives Paket via `package_paths`) **oder**
-  `activation_mode = always_on`. `dev_only` löst **nie** einen Crawl aus.
+- **Paket technisch aktiv** **nur**, wenn ≥1 aktives Profil es braucht **und** Status `active`. Es
+  gibt **keine** Paket-Ebene-Daueraktivierung: ohne aktives Profil ist **kein** Paket aktiv.
+  `prepared`/`draft`-Pakete werden **nie** technisch aktiviert; angefordert-aber-unversorgt erscheint
+  als `requested_unsupplied`.
+- **Abrufweg aktiv** per Referenzzählung (≥1 aktives Paket via `package_paths`) **oder** wenn er
+  selbst `activation_mode = always_on` trägt. `dev_only` löst **nie** einen Crawl aus.
 
-### `always_on` vs. `is_critical` (Sprint-4-Klarstellung)
-Getrennt: **`always_on`** = läuft dauerhaft, auch ohne Profil — bewusst **nur** die **neutralen
-Bund-Basis-Kernquellen** (Bundestag, Bundesregierung, Tagesschau, Deutschlandfunk, DIP).
-**`is_critical`** = darf nicht still archiviert werden — gilt breiter (auch BMAS, Die Linke,
-Linksfraktion). Themen-/parteispezifische Quellen laufen daher **nur über Referenzzählung** (nur wenn
-ein passendes Profil ihr Paket braucht), nicht dauerhaft.
+### `always_on` (Abrufweg-Ebene) vs. `is_critical` — Nachschärfung K1
+Daueraktivierung lebt **ausschließlich auf der Abrufweg-Ebene** (`activation_mode = always_on`) —
+bewusst **nur** die **5 neutralen Bund-Basis-Kernquellen** (Bundestag, Bundesregierung, Tagesschau,
+Deutschlandfunk, DIP). Ein Paket-Feld `always_on` existiert **nicht mehr** (es hätte fälschlich das
+ganze Bund-Basis-Paket ohne Profil aktiviert). **Ohne aktives Profil laufen daher genau diese 5
+Abrufwege** — Bund Basis läuft **voll (54)**, sobald **ein** Profil aktiv ist (jedes Profil braucht
+Bund Basis). **`is_critical`** (nicht still archivieren) ist orthogonal und gilt breiter (auch BMAS,
+Die Linke, Linksfraktion) — diese laufen aber **nur über Referenzzählung**, nicht dauerhaft.
 
 ## Verifiziertes Verhalten (Tests, echter Katalog)
 
@@ -60,9 +63,11 @@ ein passendes Profil ihr Paket braucht), nicht dauerhaft.
 |---|---|
 | Bundestagsprofil | → Bund Basis, vollständig aktiviert |
 | Berliner/Brandenburger Landtag | → Bund Basis + Landespaket; **nicht** vollständig (Landespaket prepared) |
-| Cem (Linke/Sozial/NDS) | → Bund Basis + Die-Linke + Arbeit&Soziales + Regional NDS = 144 Abrufwege |
-| 1 vs. 100 identische Profile | **144 aktive Abrufwege** in beiden Fällen (Refcount 1 vs. 100) |
-| kein aktives Profil | **54 aktive Abrufwege** (nur Bund Basis, `always_on`) |
+| **reines** Bundestagsprofil (SPD, Gesundheit) | → **nur** Bund Basis = **54 Abrufwege** (nicht 144) |
+| Cem (Linke/Sozial/NDS) — Spezialfall voll versorgt | → Bund Basis + Die-Linke + Arbeit&Soziales + Regional NDS = **144 Abrufwege** |
+| 1 vs. 100 identische Cem-Profile | **144 aktive Abrufwege** in beiden Fällen (Refcount 1 vs. 100) |
+| Berliner/Brandenburger Landtag | Bund Basis aktiv (54); Landespaket `requested_unsupplied` (prepared) |
+| **kein** aktives Profil | **5 aktive Abrufwege** (nur die neutralen Kern-Systemquellen; **kein** Paket aktiv) |
 | pausiert/gelöscht | Refcount → 0, Paket nicht mehr aktiv |
 | leeres/unvollständiges Profil | keine falsche Aktivierung |
 

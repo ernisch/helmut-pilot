@@ -68,8 +68,8 @@ function build() {
 
   // 4) source_packages
   out.push("-- Quellenpakete");
-  out.push(insert("source_packages", ["id", "key", "name", "purpose", "status", "is_base", "always_on", "political_level", "geography_id", "required_classes"],
-    m.packages.map((p) => [q(p.id), q(p.key), q(p.name), q(p.purpose), q(p.status), qbool(p.is_base), qbool(p.always_on), q(p.political_level), q(p.geography_id), qarr(p.required_classes)]),
+  out.push(insert("source_packages", ["id", "key", "name", "purpose", "status", "is_base", "political_level", "geography_id", "required_classes"],
+    m.packages.map((p) => [q(p.id), q(p.key), q(p.name), q(p.purpose), q(p.status), qbool(p.is_base), q(p.political_level), q(p.geography_id), qarr(p.required_classes)]),
     "id", ["name", "purpose", "status", "required_classes"]));
   out.push("");
 

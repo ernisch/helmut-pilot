@@ -121,7 +121,6 @@ create table if not exists public.source_packages (
   purpose         text,
   status          text not null default 'draft' check (status in ('draft','prepared','active','paused','archived')),
   is_base         boolean not null default false,
-  always_on       boolean not null default false,
   political_level text check (political_level in ('international','eu','bund','land','kommune')),
   geography_id    text references public.geographies(id) on delete set null,
   required_classes text[] not null default '{}',

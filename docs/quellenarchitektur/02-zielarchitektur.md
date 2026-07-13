@@ -38,7 +38,7 @@ direkten RSS-Feed *und* eine Google-News-Suche — zwei Abrufwege, **ein** Herau
 Jeder Abrufweg hat einen **Status** (`healthy`, `degraded`, `broken`, `needs_review`, `paused`,
 `archived`) und einen **Aktivierungsmodus**:
 - `auto` — läuft, wenn ein aktives Paket ihn braucht (Referenzzählung).
-- `always_on` — läuft dauerhaft (Bund Basis, kritische Systemquellen).
+- `always_on` — läuft dauerhaft, auch ohne aktives Profil (bewusst **nur** die 5 neutralen Bund-Basis-Kernquellen).
 - `dev_only` — löst **nie** einen Production-Crawl aus.
 - `manual` — nur manuell.
 
