@@ -48,7 +48,10 @@
     "test:ko-classification": "node scripts/ko-classification-test.js",
     "backfill:ko-classification": "node scripts/ko-classification-backfill.js",
     "test:dedup-findings": "node scripts/dedup-findings-test.js",
-    "test:profile-packages": "node scripts/profile-packages-test.js"
+    "test:profile-packages": "node scripts/profile-packages-test.js",
+    "test:scoring": "node scripts/scoring-test.js",
+    "test:scoring-integration": "node scripts/scoring-integration-test.js",
+    "test:scoring-ui": "node scripts/scoring-ui-test.js"
   },
   "dependencies": {},
   "devDependencies": {}

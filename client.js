@@ -3578,16 +3578,22 @@ function renderVorgangCard(v) {
 }
 
 // Leerer Zustand: keine Fake-/Seed-/Platzhalter-Karten, nur ein ruhiger Hinweis.
-function renderLageEmpty(greeting, dateLabel) {
+function renderLageEmpty(greeting, dateLabel, emptyState) {
+  // Sprint 5 (additiv): liegt ein unterscheidbarer Leerzustand vor (gap/stale/quiet),
+  // wird dessen ehrliche Ueberschrift/Erklaerung gezeigt — Datenluecke nie als ruhiger
+  // Tag. Ohne emptyState (Flag aus) unveraendertes Alt-Verhalten.
+  const es = emptyState && emptyState.kind ? emptyState : null;
+  const title = es && es.headline ? es.headline : "Heute liegen noch keine quellengestützten Vorgänge vor.";
+  const sub = es && es.detail ? es.detail : "Sobald neue geprüfte Quellen verfügbar sind, erscheint hier deine Lage.";
   return `
-    <section class="lage2 lage2-empty-wrap">
+    <section class="lage2 lage2-empty-wrap"${es ? ` data-empty-kind="${escapeAttribute(es.kind)}"` : ""}>
       <header class="lage2-head">
         <span class="lage2-date">${escapeHtml(dateLabel)}</span>
         <h1 class="lage2-greeting">${escapeHtml(greeting)}</h1>
       </header>
       <div class="lage2-empty">
-        <p class="lage2-empty-title">Heute liegen noch keine quellengestützten Vorgänge vor.</p>
-        <p class="lage2-empty-sub">Sobald neue geprüfte Quellen verfügbar sind, erscheint hier deine Lage.</p>
+        <p class="lage2-empty-title">${escapeHtml(title)}</p>
+        <p class="lage2-empty-sub">${escapeHtml(sub)}</p>
       </div>
     </section>`;
 }
@@ -3598,7 +3604,7 @@ function renderLageView() {
   const greeting = (typeof timeGreeting === "function" ? timeGreeting(firstName) : (firstName ? `Guten Morgen, ${firstName}.` : "Guten Morgen."));
   const dateLabel = lageDateLabel();
   const vorgaenge = lageVisibleVorgaenge(data);
-  if (!vorgaenge.length) return renderLageEmpty(greeting, dateLabel);
+  if (!vorgaenge.length) return renderLageEmpty(greeting, dateLabel, data && data.emptyState);
   const count = vorgaenge.length;
   const countWord = count === 1 ? "neuen Vorgang" : "neue Vorgänge";
   return `
@@ -5337,15 +5343,20 @@ function renderHstandUnavailable() {
 
 function renderHstandStateCard(state, kind) {
   const isError = kind === "error";
+  // Sprint 5 (additiv): unterscheidbarer Helmut-Leerzustand (gap/stale/quiet). Nur im
+  // Nicht-Fehler-Fall; ohne emptyState (Flag aus) unveraendertes Alt-Verhalten.
+  const es = !isError && state && state.emptyState && state.emptyState.kind ? state.emptyState : null;
+  const title = isError ? "Stand konnte nicht geladen werden" : (es && es.headline ? es.headline : "Heute kein Handlungsbedarf");
+  const sub = isError
+    ? "Die Auswertung ist derzeit nicht belastbar. Bitte später erneut prüfen."
+    : (es && es.detail ? es.detail : "Für dein Mandat liegen derzeit keine belastbaren Vorgänge vor.");
   return `
     <section class="hstand hstand--state" aria-label="Helmut">
       ${renderHstandHeader(state)}
-      <div class="hstand-state-card${isError ? " hstand-state-card--error" : ""}">
+      <div class="hstand-state-card${isError ? " hstand-state-card--error" : ""}"${es ? ` data-empty-kind="${escapeAttribute(es.kind)}"` : ""}>
         <span class="hstand-state-mark" aria-hidden="true">${isError ? "!" : "H"}</span>
-        <p class="hstand-state-title">${isError ? "Stand konnte nicht geladen werden" : "Heute kein Handlungsbedarf"}</p>
-        <p class="hstand-state-sub">${isError
-          ? "Die Auswertung ist derzeit nicht belastbar. Bitte später erneut prüfen."
-          : "Für dein Mandat liegen derzeit keine belastbaren Vorgänge vor."}</p>
+        <p class="hstand-state-title">${escapeHtml(title)}</p>
+        <p class="hstand-state-sub">${escapeHtml(sub)}</p>
       </div>
     </section>`;
 }
@@ -7912,12 +7923,18 @@ function radarPrimaryRelationLabel(types) {
 
 // --- Leerzustände + gemeinsame Bausteine ------------------------------------
 function renderRadarEmpty(state) {
-  const note = previewMode
+  // Sprint 5 (additiv): unterscheidbarer Radar-Leerzustand (gap/stale/quiet). Der
+  // quiet-Fall (kein-umfeldsignal) beruhigt, gap/stale warnen vor Datenausfall/Frische.
+  const es = state && state.emptyState && state.emptyState.kind ? state.emptyState : null;
+  const note = es && es.detail ? es.detail : (previewMode
     ? "In der Vorschau liegen keine personalisierten Radar-Daten vor."
-    : "Sobald neue Quellen zu dir, deiner Partei, deinem Wahlkreis oder deinen Ausschüssen vorliegen, erscheinen sie hier.";
+    : "Sobald neue Quellen zu dir, deiner Partei, deinem Wahlkreis oder deinen Ausschüssen vorliegen, erscheinen sie hier.");
+  const summaryState = es && es.headline
+    ? { summary: { line1: es.headline, line2: "" } }
+    : (state && state.summary ? state : { summary: { line1: "Heute gibt es keine neuen relevanten Signale in deinem politischen Umfeld.", line2: "" } });
   return `
-    ${renderRadarSummary(state && state.summary ? state : { summary: { line1: "Heute gibt es keine neuen relevanten Signale in deinem politischen Umfeld.", line2: "" } })}
-    <section class="radar2-section">
+    ${renderRadarSummary(summaryState)}
+    <section class="radar2-section"${es ? ` data-empty-kind="${escapeAttribute(es.kind)}"` : ""}>
       <div class="radar2-empty">${escapeHtml(note)}</div>
     </section>
   `;
