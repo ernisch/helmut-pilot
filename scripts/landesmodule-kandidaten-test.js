@@ -46,7 +46,7 @@ check("BB fraktion_pilot/person_pilot recommendation = 'offen'", bbByKlasse.frak
 check("KEIN besetzter BB-Pilot (_pilot) nennt SPD als Ersatz", !bb.some((c) => c.readiness !== "unbesetzt" && c.klasse.endsWith("_pilot") && /\bspd\b/i.test(c.publisher || "")));
 check("KEINE Ersatzperson (Lüttmann/Björn) in einem besetzten BB-Eintrag", bb.every((c) => c.readiness === "unbesetzt" || !/lüttmann|luettmann|björn|bjoern/i.test(c.publisher || "")));
 check("BB partei_pilot = Die Linke Brandenburg (Partei darf beobachtet werden)", bbByKlasse.partei_pilot.readiness === "kandidat" && /die linke/i.test(bbByKlasse.partei_pilot.publisher));
-check("BB landesfraktionen nennt reale Fraktionen SPD/AfD/BSW/CDU (allgemeines Paket)", /SPD\/AfD\/BSW\/CDU/.test(bbByKlasse.landesfraktionen.publisher) && bbByKlasse.landesfraktionen.readiness === "kandidat");
+check("BB landesfraktionen nennt die 4 realen Fraktionen SPD/AfD/CDU/BSW (allgemeines Paket)", ["SPD","AfD","CDU","BSW"].every((f) => bbByKlasse.landesfraktionen.publisher.includes(f)) && bbByKlasse.landesfraktionen.readiness === "kandidat");
 // Berlin behaelt die saubere Die-Linke-Pilotlinie (Linke sitzt im Abgeordnetenhaus)
 check("Berlin partei_pilot = Die Linke Berlin", /die linke/i.test(beByKlasse.partei_pilot.publisher));
 check("Berlin fraktion_pilot = Linksfraktion (besetzt)", /linksfraktion/i.test(beByKlasse.fraktion_pilot.publisher) && beByKlasse.fraktion_pilot.readiness === "kandidat");
@@ -64,7 +64,7 @@ check("nur bekannte Empfehlungswerte (besetzt: empfohlen/mit_einschraenkung; unb
 console.log("== Dedup / Überschneidung ==");
 check("rbb24 ist DERSELBE Feed für Berlin und Brandenburg (dedup)", beByKlasse.oer_landesberichterstattung.url === bbByKlasse.oer_landesberichterstattung.url && /rbb24/.test(beByKlasse.oer_landesberichterstattung.url));
 check("schriftliche_anfragen = dieselbe Rohquelle wie drucksachen (Teilmenge, nicht doppelt)", beByKlasse.schriftliche_anfragen.url === beByKlasse.drucksachen.url && bbByKlasse.schriftliche_anfragen.url === bbByKlasse.drucksachen.url);
-check("schriftliche_anfragen als 'mit_einschraenkung' (Filter, nicht Rohquelle)", beByKlasse.schriftliche_anfragen.recommendation === "mit_einschraenkung" && bbByKlasse.schriftliche_anfragen.recommendation === "mit_einschraenkung");
+check("schriftliche_anfragen ist Filter derselben Rohquelle (hoher duplicateRisk, nicht separat crawlen)", beByKlasse.schriftliche_anfragen.duplicateRisk === "hoch" && bbByKlasse.schriftliche_anfragen.duplicateRisk === "hoch" && /Filter|nicht.*doppelt/i.test(beByKlasse.schriftliche_anfragen.note));
 check("Dedup-Hinweise dokumentiert (rbb, Open-Data-Korpus, Landespressedienst)", k.DEDUP_HINWEISE.length >= 3 && k.DEDUP_HINWEISE.some((h) => /rbb24/.test(h)));
 
 console.log("== Abgelehnte Kandidaten (mit Grund) ==");
@@ -76,9 +76,9 @@ check("SPD-Person (Lüttmann) als BB-Pilot-Ersatz ABGELEHNT (kein Personen-Ersat
 check("linksfraktion-brandenburg als aktive Fraktion abgelehnt (Linke nicht im Landtag 8. WP)", k.ABGELEHNTE_KANDIDATEN.some((a) => /linksfraktion.brandenburg/i.test(a.kandidat) && /8\. WP|nicht.*Landtag/i.test(a.grund)));
 check("GVBl/BRAVORS als eigener Feed abgelehnt (kein RSS)", k.ABGELEHNTE_KANDIDATEN.some((a) => /gvbl|bravors|gesetze\.berlin/i.test(a.kandidat)));
 
-console.log("== Empfehlungslage (nur besetzte) ==");
-check("Berlin: 13 empfohlen + 2 mit_einschraenkung", sum.berlin.empfohlen === 13 && sum.berlin.mitEinschraenkung === 2);
-check("Brandenburg: 11 empfohlen + 2 mit_einschraenkung (SPD-Ausweich entfernt)", sum.brandenburg.empfohlen === 11 && sum.brandenburg.mitEinschraenkung === 2);
+console.log("== Empfehlungslage (technisch geprüft, nur besetzte) ==");
+check("Berlin: 8 empfohlen + 7 mit_einschraenkung (technische Prüfung)", sum.berlin.empfohlen === 8 && sum.berlin.mitEinschraenkung === 7);
+check("Brandenburg: 7 empfohlen + 6 mit_einschraenkung", sum.brandenburg.empfohlen === 7 && sum.brandenburg.mitEinschraenkung === 6);
 check("Brandenburg Kandidatenabdeckung 13/15 (2 Pilotklassen unbesetzt)", sum.brandenburg.klassenAbgedeckt === 13 && sum.brandenburg.unbesetzt === 2);
 check("Brandenburg klassenFehlend = genau die 2 unbesetzten Pilotklassen", sum.brandenburg.klassenFehlend.length === 2 && sum.brandenburg.klassenFehlend.includes("fraktion_pilot") && sum.brandenburg.klassenFehlend.includes("person_pilot"));
 check("Berlin klassenFehlend leer (alle 15 besetzt)", sum.berlin.klassenFehlend.length === 0);
@@ -86,6 +86,37 @@ check("Reifegrad-Rollup: keine 'unknown' (alle readiness-Werte gültig)", sum.be
 check("landReadiness.hoechsteStufe = 'kandidat' (besetzte vorhanden)", k.landReadiness(bb).hoechsteStufe === "kandidat" && k.landReadiness(be).hoechsteStufe === "kandidat");
 check("landReadiness leere Liste -> hoechsteStufe 'unbesetzt' (nicht 'kandidat')", k.landReadiness([]).hoechsteStufe === "unbesetzt");
 check("überwiegend RSS/Open-Data (nicht scrape-lastig)", (sum.berlin.methoden.rss + (sum.berlin.methoden.opendata_xml || 0)) >= 12);
+
+console.log("== Technische Prüfung (Sprint-9-Vertiefung) ==");
+check("jeder besetzte Kandidat trägt evidenceRole + produktnutzen + stabileAdresse", besetzt.every((c) => ["official_primary","direct_interest","journalistic","data_source","aggregator"].includes(c.evidenceRole) && ["hoch","mittel","niedrig"].includes(c.produktnutzen) && typeof c.stabileAdresse === "boolean"));
+check("URL-KORREKTUR Brandenburg: exportWP8.xml (8. WP), NICHT exportWP1.xml", ["plenum","drucksachen","schriftliche_anfragen","gesetzgebung"].every((kl) => /exportWP8\.xml$/.test(bbByKlasse[kl].url)) && !bb.some((c) => /exportWP1\.xml/.test(c.url || "")));
+check("URL-PRÄZISIERUNG Berlin Open-Data: pardok-wp19.xml (Deep-Link, nicht Landingpage)", ["plenum","drucksachen","schriftliche_anfragen","gesetzgebung"].every((kl) => /opendata\/pardok-wp19\.xml$/.test(beByKlasse[kl].url)));
+check("URL-PRÄZISIERUNG Berlin LPD-Feed: index/feed (nicht /presse/ oder /sen/)", /pressemitteilungen\/index\/feed/.test(beByKlasse.landesregierung.url) && !/\/sen\/$/.test(beByKlasse.ministerien.url));
+check("abgelehnt: berlin.de/sen/ + fraktionen-Landing + OParl + exportWP1 dokumentiert", ["/sen/","das-parlament/fraktionen","OParl","exportWP1"].every((n) => k.ABGELEHNTE_KANDIDATEN.some((a) => (a.kandidat + a.grund).includes(n))));
+check("Berlin partei_pilot Domain dielinke.berlin OHNE www", beByKlasse.partei_pilot.domain === "dielinke.berlin");
+
+console.log("== Vorbereitete Struktur (landesmodule-quellen) ==");
+const q = require("../lib/helmut/quellenarchitektur/seeds/landesmodule-quellen");
+const seed = q.buildLandesmodulSeed();
+check("Struktur status 'prepared', 0 aktive Abrufwege", seed.summary.status === "prepared" && seed.summary.aktiveAbrufwege === 0);
+check("ALLE Abrufwege status='needs_review' + activation_mode='manual' (technisch inaktiv)", seed.retrievalPaths.every((p) => p.status === "needs_review" && p.activation_mode === "manual"));
+check("Dedup: weniger Abrufwege (19) als besetzte Kandidaten (28)", seed.retrievalPaths.length === 19 && seed.retrievalPaths.length < 28);
+check("rbb24 GLOBAL dedup: ein Abrufweg, zwei Paketreferenzen (BE+BB)", seed.summary.rbb24GlobalDedup && seed.packagePaths.filter((pp) => pp.retrieval_path_id === "rp-rbb24-politik").length === 2);
+check("Berlin PARDOK-Rohquelle deckt 4 Klassen ab (2/4/5/6)", (() => { const p = seed.retrievalPaths.find((x) => x.url.includes("pardok-wp19")); return p && p.covers.length === 4; })());
+check("Paketzuordnungen nur zu berlin-basis/brandenburg-basis", seed.packagePaths.every((pp) => ["pkg-berlin-basis","pkg-brandenburg-basis"].includes(pp.package_id)));
+check("politische Ebene 'land' + Geografie je Abrufweg gesetzt", seed.pathExpectedLevels.every((l) => l.level === "land") && seed.pathExpectedGeographies.every((g) => ["geo-land-berlin","geo-land-brandenburg"].includes(g.geography_id)));
+check("neue Entitäten Landespartei/Fraktion/Person (nicht Bundes-Duplikate)", seed.entities.some((e) => e.id === "party-linke-berlin") && seed.entities.some((e) => e.id === "person-tobias-schulze") && seed.entities.some((e) => e.id === "party-linke-brandenburg"));
+
+console.log("== Defekte Bundeswege — Reparaturen ==");
+const rep = require("../lib/helmut/quellenarchitektur/seeds/bundeswege-reparaturen");
+const rs = rep.reparaturSummary();
+check("6 defekte Bundeswege dokumentiert", rep.BUNDESWEG_REPARATUREN.length === 6);
+check("5 reparierbar + 1 ersatzweg_noetig, 0 dauerhaft_defekt", rs.reparierbar === 5 && rs.ersatzweg === 1 && rs.dauerhaftDefekt === 0);
+check("ALLE 4 kritischen Wege haben eine Lösung (keine stille Archivierung)", rs.kritischGesamt === 4 && rs.alleKritischGeloest === true);
+check("die-linke rss.xml -> feed.rss repariert", rep.BUNDESWEG_REPARATUREN.some((r) => r.legacy_source_id === "die-linke" && /feed\.rss$/.test(r.reparaturUrl)));
+check("linksfraktion: dielinkebt.de (NICHT veraltete linksfraktion.de)", rep.BUNDESWEG_REPARATUREN.some((r) => r.legacy_source_id === "linksfraktion" && /dielinkebt\.de/.test(r.reparaturUrl) && /linksfraktion\.de/.test(r.diagnose)));
+check("ausschuss-arbeit-soziales -> googlenews_search Ersatz", rep.BUNDESWEG_REPARATUREN.some((r) => r.legacy_source_id === "ausschuss-arbeit-soziales" && r.reparaturMethod === "googlenews_search"));
+check("jede Reparatur: verifyBeforeActivation=true, angewendet=0", rep.BUNDESWEG_REPARATUREN.every((r) => r.verifyBeforeActivation === true) && rs.angewendet === 0);
 
 console.log(`\n== Ergebnis: ${pass} PASS, ${fail} FAIL ==`);
 process.exit(fail > 0 ? 1 : 0);
