@@ -41,7 +41,8 @@
     "test:llm-budget": "node scripts/llm-budget-test.js",
     "test:cache-isolation": "node scripts/cache-isolation-test.js",
     "test:profile-completeness": "node scripts/profile-completeness-test.js",
-    "test:profile-db": "node scripts/profile-db-test.js"
+    "test:profile-db": "node scripts/profile-db-test.js",
+    "test:drei-profile": "node scripts/drei-profile-e2e-test.js"
   },
   "dependencies": {},
   "devDependencies": {}
