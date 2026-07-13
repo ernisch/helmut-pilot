@@ -41,9 +41,25 @@ laufen aber nur über Referenzzählung.
 | 6 | kein aktives Profil → kein unnötiger Crawl | ✅ nur **5** Kern-Abrufwege (`activation_mode=always_on`); kein Paket aktiv |
 | 7 | fehlerhafte/unvollständige Profile → keine falsche Aktivierung | ✅ kein falsches Paket, leere Profile inaktiv |
 
-**`test:profile-packages` 36 PASS / 0 FAIL.** Keine Regression: source-architecture 86/86,
-dedup-findings 30/30, ko-classification 67/67, profile-validation 32/32, profile-db 44/44,
-supply-matrix 20/20, p1 **322/322**.
+**`test:profile-packages` 57 PASS / 0 FAIL.** Keine Regression: source-architecture 88/88,
+dedup-findings 30/30, ko-classification 67/67, profile-validation 36/36, profile-completeness 46/46,
+profile-db 44/44, supply-matrix 20/20, drei-profile 93/93, p1 **322/322**.
+
+### Nachgezogene Verify-Korrekturen (adversarialer Verify-Workflow)
+Nach Sprint 4 fand der adversariale Verify-Workflow vier echte, kleine Befunde — alle behoben und
+getestet:
+1. **Totes Paket `profil-cem-ince`** (mittel): wurde von `resolveProfilePackages` nie erzeugt →
+   unerreichbar. Jetzt **an die Pilot-Profil-ID gebunden** (`PERSONAL_PACKAGE_BY_PROFILE`), damit die
+   Referenzzählung es aktivieren kann. Cems reales Profil (`cem-ince`) hat damit **5 Pakete / 145
+   Abrufwege**; ein gleichnamiges Profil mit anderer ID bekommt es **nicht**.
+2. **`profileCompleteness` (config)** prüfte nur `state`, `validateProfile` aber `state` **oder**
+   `bundesland` → Landtagsprofile aus `mandate_profiles` (Feld `bundesland`) wurden fälschlich als
+   „state fehlt" gemeldet. Jetzt konsistent `state` **oder** `bundesland`.
+3. **`parliamentTypeOf`**: die überbreite `startsWith("land")`/`startsWith("bund")`-Kurzform wurde für
+   das Enum-Feld `politische_ebene` durch **wortgenaue** Erkennung ersetzt (Kurzform bleibt nur dem
+   Legacy-Freitextfeld `politicalLevel` vorbehalten).
+4. **Sozialthema-Erkennung**: von Teilstring auf **Wortanfang** umgestellt — `Denkmalpflege` löst kein
+   Sozialpaket mehr aus, `Pflege`/`Pflegeversicherung`/`Tarifbindung` weiterhin schon.
 
 ## 3. Branch & Commit
 - **Branch:** `claude/helmut-source-architecture-ruhyvb`
