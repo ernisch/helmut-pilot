@@ -47,7 +47,8 @@
     "seed:source-architecture": "node scripts/generate-source-architecture-seed.js",
     "test:ko-classification": "node scripts/ko-classification-test.js",
     "backfill:ko-classification": "node scripts/ko-classification-backfill.js",
-    "test:dedup-findings": "node scripts/dedup-findings-test.js"
+    "test:dedup-findings": "node scripts/dedup-findings-test.js",
+    "test:profile-packages": "node scripts/profile-packages-test.js"
   },
   "dependencies": {},
   "devDependencies": {}
