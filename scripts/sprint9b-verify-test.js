@@ -9,6 +9,7 @@
 const {
   buildWege, probeToVerdict, newestItemDate, countXmlRecords, looksHtml, controlOkFromProbes, applyEgressGate
 } = require("./sprint9b-verify-abrufwege");
+const { buildSummaryMarkdown } = require("./sprint9b-summary");
 
 let fail = 0;
 function check(name, cond) {
@@ -135,6 +136,32 @@ check("Egress offen -> Urteile bleiben unverändert", passed[1].urteil === "geei
 const erlaubt = new Set(["geeignet", "geeignet mit Einschränkung", "ablehnen", "nicht_verifizierbar"]);
 const alle = [vRecent, vStale, vNoDate, vLanding, vXml, vXmlHtml, vAtom, v403, vCf, v404, vErr, vHtml, vRedir];
 check("alle Urteile aus erlaubter Menge", alle.every((v) => erlaubt.has(v.urteil)));
+
+// --- 18. Summary-Generator: gesperrter Report ---
+const blockedReport = {
+  generatedAt: "2026-07-13T00:00:00Z", egressOffen: false, controlStatuses: ["example.com=HTTP 403"],
+  fresh_days: 45, verifiziert: 0, total: 25, zaehl: { nicht_verifizierbar: 25 },
+  rows: [{ id: "be-plenum", gruppe: "BE", method: "opendata_xml", critical: true, urteil: "nicht_verifizierbar", status: null, belege: ["HTTP 403"], note: "Egress gesperrt" }]
+};
+const mdBlocked = buildSummaryMarkdown(blockedReport);
+check("Summary(blocked): meldet GESPERRT", /GESPERRT/.test(mdBlocked));
+check("Summary(blocked): Warnung 'kein Urteil erfunden'", /kein Urteil erfunden/.test(mdBlocked));
+check("Summary(blocked): 25 nicht_verifizierbar", /nicht_verifizierbar \| 25/.test(mdBlocked));
+
+// --- 19. Summary-Generator: offener Report rendert echte Urteile ---
+const openReport = {
+  generatedAt: "2026-07-13T00:00:00Z", egressOffen: true, controlStatuses: ["example.com=HTTP 200"],
+  fresh_days: 45, verifiziert: 2, total: 2, zaehl: { "geeignet": 1, "ablehnen": 1 },
+  rows: [
+    { id: "bundesregierung", gruppe: "BUND", method: "rss", critical: true, urteil: "geeignet", status: 200, angefragteUrl: "https://x/a", finalUrl: "https://x/a", belege: ["HTTP 200", "Parser: 12 Items"], note: "aktueller Feed" },
+    { id: "be-landesparlament", gruppe: "BE", method: "rss", critical: true, urteil: "ablehnen", status: 200, angefragteUrl: "https://x/hub", finalUrl: "https://x/hub", belege: ["HTTP 200"], note: "HTML-Seite statt RSS/Atom" }
+  ]
+};
+const mdOpen = buildSummaryMarkdown(openReport);
+check("Summary(open): meldet OFFEN", /OFFEN/.test(mdOpen));
+check("Summary(open): keine 'kein Urteil erfunden'-Warnung", !/kein Urteil erfunden/.test(mdOpen));
+check("Summary(open): rendert geeignet + ablehnen", /geeignet/.test(mdOpen) && /ablehnen/.test(mdOpen));
+check("Summary(open): Bund-Gruppe vorhanden", /Bund \(Reparaturwege\)/.test(mdOpen));
 
 console.log(`\n${fail === 0 ? "ALLE TESTS GRÜN" : fail + " TEST(S) FEHLGESCHLAGEN"} (Sprint 9B Verifikationslogik)`);
 process.exit(fail > 0 ? 1 : 0);

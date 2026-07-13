@@ -1,0 +1,89 @@
+name: Sprint 9B · Abrufwege-Verifikation
+
+# =============================================================================
+# NUR manuelle, einmalige technische Verifikation der 25 oeffentlichen Abrufwege
+# (19 Berlin/Brandenburg + 6 Bundes-Reparaturwege) gegen die ECHTE Adresse.
+# =============================================================================
+# Diese Action laeuft NIEMALS automatisch: ausschliesslich workflow_dispatch.
+#
+# SICHERHEIT / GRENZEN (bewusst):
+#   - KEINE Secrets, KEINE Supabase-Verbindung, KEINE Production-Daten, KEIN Deployment.
+#   - permissions: contents: read  -> schreibt NICHTS ins Repo, aktiviert KEINE Quelle.
+#   - Prueft nur OEFFENTLICHE Adressen mit dem vorhandenen Produktionsparser
+#     (crawler.parseRssItems). Realistischer User-Agent, aber TLS bleibt an; KEIN
+#     Umgehen technischer Zugriffsbeschraenkungen (kein Captcha-Solving/IP-Rotation).
+#   - Ergebnis je Weg: geeignet / geeignet mit Einschraenkung / ablehnen / nicht_verifizierbar.
+#     Bekannte Landing-/Hub-Seiten gelten NICHT als Feed (Parser fordert echte Items).
+#
+# ARTEFAKTE: vollstaendiger JSON-Bericht + lesbare Markdown-Zusammenfassung.
+
+on:
+  workflow_dispatch:
+    inputs:
+      fresh_days:
+        description: "Aktualitaetsfenster in Tagen (juengstes Item juenger als) — Default 45"
+        required: false
+        default: "45"
+      timeout_ms:
+        description: "HTTP-Timeout je Abruf in ms — Default 12000"
+        required: false
+        default: "12000"
+
+# Minimalrechte: nur lesen. Kein Repo-Write, kein Package-Write, nichts.
+permissions:
+  contents: read
+
+concurrency:
+  group: sprint9b-verify
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Abhaengigkeiten (Projekt hat keine Runtime-Deps; defensiv, kein Lockfile)
+        run: npm install --no-audit --no-fund
+
+      # Offline-Selbsttest der Bewertungslogik (echter Parser + Egress-Schranke) VOR dem Lauf.
+      - name: Verifikationslogik testen (offline)
+        run: node scripts/sprint9b-verify-test.js
+
+      # Echter Abruf aller 25 oeffentlichen Adressen. KEINE Env ausser den beiden Tuning-Werten.
+      # Exit 0 auch bei 'ablehnen'/'nicht_verifizierbar' (gueltige Ergebnisse, kein CI-Fehler).
+      - name: Abrufwege verifizieren (echter Abruf)
+        env:
+          S9B_FRESH_DAYS: ${{ inputs.fresh_days }}
+          S9B_TIMEOUT_MS: ${{ inputs.timeout_ms }}
+        run: node scripts/sprint9b-verify-abrufwege.js --out sprint9b-report.json
+
+      # Lesbare Zusammenfassung erzeugen + in die GitHub-Job-Summary schreiben.
+      - name: Lesbare Zusammenfassung erzeugen
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ -f sprint9b-report.json ]; then
+            node scripts/sprint9b-summary.js sprint9b-report.json --out sprint9b-summary.md
+            cat sprint9b-summary.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Kein Report erzeugt (Abruf-Schritt fehlgeschlagen)." | tee sprint9b-summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # Beide Artefakte hochladen — auch wenn ein Schritt fehlschlug.
+      - name: Artefakte hochladen (JSON + Zusammenfassung)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sprint9b-verifikation
+          path: |
+            sprint9b-report.json
+            sprint9b-summary.md
+          if-no-files-found: warn
+          retention-days: 30

@@ -192,7 +192,9 @@ function probeToVerdict(weg, probe, nowMs) {
     if (items.length > 0) {
       const newest = newestItemDate(items);
       const title = items[0].title;
+      const sampleItemUrl = items[0].url || "";
       belege.push(`Parser: ${items.length} Items`, title ? `Titel[0]: "${title.slice(0, 60)}"` : "kein Titel");
+      if (sampleItemUrl) belege.push(`Item-Originaladresse: ${sampleItemUrl.slice(0, 80)}`);
       if (newest === null) {
         return { urteil: "geeignet mit Einschränkung", status, contentType: ct, note: "Feed parst, aber kein/ungültiges Veröffentlichungsdatum — Aktualität unklar", belege, dupNote, redirects: (probe.redirects || []).length };
       }
@@ -282,7 +284,8 @@ async function run() {
   for (const weg of wege) {
     const probe = await httpProbe(weg.url);
     const v = probeToVerdict(weg, probe);
-    rawRows.push({ ...weg, ...v });
+    // Originaladresse = finale URL nach Weiterleitungen (bei Egress-Fehler null).
+    rawRows.push({ ...weg, ...v, angefragteUrl: weg.url, finalUrl: probe.finalUrl || null });
   }
   const rows = applyEgressGate(rawRows, controlOk, controlStatuses);
   for (const r of rows) {
