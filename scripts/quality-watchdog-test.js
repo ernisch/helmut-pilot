@@ -74,25 +74,45 @@ check("dev_only/inaktiv -> 'inaktiv'", byLegacy.dev.technicalHealth === "inaktiv
 const pqNoDup = q.assessRetrievalPaths({ paths, sourceMetrics: smNoDup, activePathIds, now: NOW });
 check("ohne Dedup-Daten: duponly NICHT 'nur_duplikate' (ehrlich 'ohne_ko_unbestaetigt')", Object.fromEntries(pqNoDup.map((p) => [p.legacy_source_id, p])).duponly.productValue === "ohne_ko_unbestaetigt");
 check("duplicateCount ohne Dedup-Daten = null (nicht 0 erfunden)", byLegacy.gut.duplicateCount !== null && pqNoDup[0].duplicateCount === null);
+check("Dokumente ohne KO (KO-Daten geladen) -> 'ohne_ko'", byLegacy.still.productValue === "ohne_ko");
+// Ehrlichkeit #1 (Verify): fehlen die KO-Daten selbst, darf NICHT 'ohne_ko'/'nur_duplikate'
+// behauptet werden — symmetrisch zum Dedup-Guard.
+const smNoKo = q.computeSourceMetrics({ rawDocs, koSourceLinks: [], dedupDocuments, now: NOW });
+check("koAvailable-Flag spiegelt fehlende KO-Daten", smNoKo.koAvailable === false);
+const pqNoKo = Object.fromEntries(q.assessRetrievalPaths({ paths, sourceMetrics: smNoKo, activePathIds, now: NOW }).map((p) => [p.legacy_source_id, p]));
+check("Ehrlichkeit #1: KO-Daten fehlen -> 'ohne_ko_unbestaetigt' (NICHT 'ohne_ko')", pqNoKo.still.productValue === "ohne_ko_unbestaetigt");
+check("Ehrlichkeit #1: KO-Daten fehlen -> auch keine 'nur_duplikate'-Behauptung", pqNoKo.duponly.productValue === "ohne_ko_unbestaetigt");
+// Flache findings-Liste (normalizeFindings, Fix #4): Gruppierung nach Dokument-Identität.
+const flatFindings = [
+  { raw_document_id: "d1", primary_source_id: "gut", source_id: "gut" }, { raw_document_id: "d1", primary_source_id: "gut", source_id: "duponly" },
+  { raw_document_id: "d2", primary_source_id: "gut", source_id: "gut" }, { raw_document_id: "d2", primary_source_id: "gut", source_id: "duponly" }
+];
+const smFlat = q.computeSourceMetrics({ rawDocs, koSourceLinks, findings: flatFindings, now: NOW });
+check("flache findings: Duplikate korrekt (duponly=2)", smFlat.bySource.duponly.duplicateCount === 2);
+check("flache findings: primaryCount pro DOKUMENT (gut=2, nicht 1)", smFlat.bySource.gut.primaryCount === 2);
+check("flache findings: duplicatesAvailable=true", smFlat.duplicatesAvailable === true);
 
 // ============================ 3) PAKETVERSORGUNG ============================
 console.log("== 3) Paketversorgung ==");
 const packages = [
   { id: "pk-a", key: "paket-a", status: "active", is_base: true },
   { id: "pk-b", key: "paket-b", status: "active", is_base: false },
+  { id: "pk-basis", key: "paket-basis", status: "active", is_base: true }, // Basispaket, unterversorgt
   { id: "pk-prep", key: "paket-prep", status: "prepared", is_base: true }
 ];
 const packagePaths = [
   { package_id: "pk-a", retrieval_path_id: "rp-gut" },       // gesund -> a versorgt
   { package_id: "pk-b", retrieval_path_id: "rp-defekt" },    // defekt -> b unterversorgt
-  { package_id: "pk-a", retrieval_path_id: "rp-still" }      // ruht -> a teilversorgt
+  { package_id: "pk-a", retrieval_path_id: "rp-still" },     // ruht -> a teilversorgt
+  { package_id: "pk-basis", retrieval_path_id: "rp-defekt" } // defekt -> Basispaket unterversorgt
 ];
-const activePackageIds = ["pk-a", "pk-b"];
+const activePackageIds = ["pk-a", "pk-b", "pk-basis"];
 const packageSupply = q.assessPackages({ packages, packagePaths, pathQuality: pq, activePackageIds });
 const pkgBy = Object.fromEntries(packageSupply.map((p) => [p.key, p]));
 check("Paket mit gesundem+ruhendem Weg -> teilversorgt", pkgBy["paket-a"].supply === "teilversorgt");
 check("(6) aktives Paket ohne gesunden Weg -> unterversorgt", pkgBy["paket-b"].supply === "unterversorgt");
-check("(6) unterversorgtes Basispaket -> Handlung 'hoch'", pkgBy["paket-b"].recommendedAction.severity === "mittel" || pkgBy["paket-b"].recommendedAction.severity === "hoch");
+check("(6) unterversorgtes NICHT-Basispaket -> Handlung 'mittel'", pkgBy["paket-b"].recommendedAction.severity === "mittel");
+check("(6) unterversorgtes BASISpaket (is_base) -> Handlung 'hoch'", pkgBy["paket-basis"].supply === "unterversorgt" && pkgBy["paket-basis"].recommendedAction.severity === "hoch");
 check("prepared-Paket -> 'vorbereitet'", pkgBy["paket-prep"].supply === "vorbereitet");
 
 // ============================ 4) PROFILVERSORGUNG ============================
@@ -171,6 +191,12 @@ check("Report enthaelt alle Bausteine", report.sourceMetrics && report.pathQuali
 check("Ehrlichkeit: pathTelemetry=false (last_success_at in Prod leer)", report.availability.pathTelemetry === false);
 check("Ehrlichkeit: duplicates-Flag spiegelt Datenlage", report.availability.duplicates === true);
 check("Ehrlichkeit: documents/knowledgeObjects-Flags real", report.availability.documents === true && report.availability.knowledgeObjects === true);
+// Gegenprobe: leere Eingaben -> ALLE availability-Flags false (kein erfundener Wert) und die
+// Frische-Achsen 'unbekannt' (nicht 'frisch'). Das macht die Flags nicht-tautologisch.
+const emptyReport = q.buildQualityReport({ catalog: { retrievalPaths: M.retrievalPaths, packages: M.packages, packagePaths: M.packagePaths }, activation, rawDocs: [], koSourceLinks: [], dedupDocuments: [], profiles: [], llmUsage: [], signals: {}, now: NOW });
+check("Ehrlichkeit: leere Eingaben -> availability-Flags alle false", emptyReport.availability.documents === false && emptyReport.availability.knowledgeObjects === false && emptyReport.availability.duplicates === false && emptyReport.availability.costAttribution === false);
+check("Ehrlichkeit: leere Dokumentdaten -> contentYield.available=false", emptyReport.pathQuality[0].contentYield.available === false);
+check("Ehrlichkeit: ohne Signale -> Frische-Achsen 'unbekannt' (nicht 'frisch')", emptyReport.watchdog.axes.find((a) => a.key === "crawl").status === "unbekannt");
 check("echter Katalog: jeder Abrufweg bekommt eine Bewertung (keine Luecke)", report.pathQuality.length === M.retrievalPaths.length);
 check("echter Katalog: defekte Pflichtquellen (bundestag/bundesregierung) als defekt erkannt", report.pathQuality.some((p) => p.legacy_source_id === "bundestag" && p.technicalHealth === "defekt"));
 

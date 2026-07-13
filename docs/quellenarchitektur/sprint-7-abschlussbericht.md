@@ -28,11 +28,25 @@ Rollback (additive Spalten/Indizes, **freigabepflichtig**, nicht angewendet).
 - **Bestehender `watchdog-state.js` (WhatsApp-Report) unverändert** — additiv daneben, kein Bruch.
 
 ## 3. Tests — alle grün
-**`test:quality-watchdog` 54/54** — die 10 Auftragspunkte, drei Qualitätsarten, Kosten-Präzision +
-Ausschlüsse, alle 10 Achsen inkl. `unbekannt`/`storageOk`, ranked Empfehlungen, jedes Ehrlichkeits-Flag,
-echter Sprint-1-Katalog (jeder Abrufweg bewertet, defekte Pflichtquellen erkannt).
+**`test:quality-watchdog` 65/65** — die 10 Auftragspunkte, drei Qualitätsarten, Kosten-Präzision +
+Ausschlüsse, alle 10 Achsen inkl. `unbekannt`/`storageOk`, ranked Empfehlungen, jedes Ehrlichkeits-Flag
+(inkl. Gegenprobe: leere Eingaben → alle Flags false), echter Sprint-1-Katalog (jeder Abrufweg bewertet,
+defekte Pflichtquellen erkannt).
 **Keine Regression:** llm-budget 22, profile-db 44, watchdog-state 43, p1 322, source-architecture 88,
 profile-packages 57, supply-matrix 20, contract 17.
+
+### Nachgezogene Verify-Korrekturen (adversarialer Review)
+Ein adversarialer Review fand keine Abstürze/aktiv erfundenen Kennzahlen, aber eine echte Lücke im
+Ehrlichkeitsmodell + kleinere Punkte — alle behoben und getestet:
+1. **KO-Verfügbarkeits-Guard (mittel, latent):** waren KO-Daten gar nicht geladen, konnte fälschlich
+   `productValue='ohne_ko'` behauptet werden. Jetzt symmetrisch zum Dedup-Guard → `ohne_ko_unbestaetigt`
+   (`koAvailable`-Flag). Keine definitive Aussage ohne Datengrundlage.
+2. **Widerspruchsfreier `storageOk`:** `state`/`severity`/`storageOk`-Feld nutzen dieselbe Basis (nur ein
+   ausdrückliches `false` ist kritisch).
+3. **`normalizeFindings` gruppiert nach Dokument-Identität** (`raw_document_id`) statt Primärquelle.
+4. **`contentYield.available` spiegelt** jetzt, ob Dokumentdaten geladen wurden (nicht hart `true`).
+5. **Tests gehärtet:** `is_base:true`→`hoch`-Zweig, flacher findings-Pfad, `ohne_ko`-Fall, Ehrlichkeits-
+   Gegenprobe mit leeren Eingaben (macht die availability-Flags nicht-tautologisch).
 
 ## 4. Sicherheit, Kosten, Performance
 - **Sicherheit/Mandanten:** reine, mandantenlose Mess-Logik über öffentliche Quellendefinitionen +

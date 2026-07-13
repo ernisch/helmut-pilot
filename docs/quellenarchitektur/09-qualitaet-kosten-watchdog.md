@@ -82,10 +82,11 @@ Ist eine Grundlage leer, wird die betroffene Kennzahl als **nicht verfügbar** m
 
 ## Tests
 
-`test:quality-watchdog` (54) — alle 10 Auftragspunkte, die drei Qualitätsarten, Kosten-Sub-Cent-
+`test:quality-watchdog` (65) — alle 10 Auftragspunkte, die drei Qualitätsarten, Kosten-Sub-Cent-
 Präzision, `skipped`/`unknown`/Fenster-Ausschluss, alle 10 Watchdog-Achsen inkl. `unbekannt`/`storageOk`,
-ranked Empfehlungen und **jedes Ehrlichkeits-Flag**. Keine Regression (llm-budget 22, profile-db 44,
-watchdog-state 43, p1 322, source-architecture 88, profile-packages 57).
+ranked Empfehlungen und **jedes Ehrlichkeits-Flag** (inkl. Gegenprobe: leere Eingaben → alle Flags false,
+KO-Verfügbarkeits-Guard). Keine Regression (llm-budget 22, profile-db 44, watchdog-state 43, p1 322,
+source-architecture 88, profile-packages 57).
 
 ## Freigabepflichtig (vorbereitet, NICHT ausgeführt)
 
