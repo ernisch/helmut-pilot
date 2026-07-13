@@ -42,7 +42,9 @@
     "test:cache-isolation": "node scripts/cache-isolation-test.js",
     "test:profile-completeness": "node scripts/profile-completeness-test.js",
     "test:profile-db": "node scripts/profile-db-test.js",
-    "test:drei-profile": "node scripts/drei-profile-e2e-test.js"
+    "test:drei-profile": "node scripts/drei-profile-e2e-test.js",
+    "test:source-architecture": "node scripts/source-architecture-test.js",
+    "seed:source-architecture": "node scripts/generate-source-architecture-seed.js"
   },
   "dependencies": {},
   "devDependencies": {}
