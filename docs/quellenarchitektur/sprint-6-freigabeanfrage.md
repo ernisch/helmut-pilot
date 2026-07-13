@@ -1,5 +1,13 @@
 # Sprint 6 — Production-Freigabeanfrage (Migration bestehender Quellen + Shadow-Betrieb)
 
+> ⚠️ **ÜBERHOLT durch den Sprint-10-Preflight — NICHT in dieser Form ausführen.**
+> Der adversariale Preflight (`sprint-10-preflight-bericht.md`) hat einen **kritischen Fehler**
+> in den Schritten 6–7 dieser Anfrage gefunden: `HELMUT_V3_STORE=shadow` ist **falsch** —
+> das Flag ist kein Schatten-Schalter, sondern das **bereits produktiv aktive** Master-Gate
+> des V3-Live-Reads; `"shadow"` wertet zu `false` und würde Cems Lage/Radar/Helmut **ausschalten**.
+> **Maßgeblich ist ausschließlich `sprint-10-preflight-bericht.md`** (korrigierte Schrittfolge:
+> nur additive Migration, **keine** Flag-Änderung). Die folgenden Schritte 6–8 sind ungültig.
+
 **Stand:** 2026-07-13 · **Branch:** `claude/helmut-source-architecture-ruhyvb` ·
 **Vorbereitet in Stufe 1 (offline/read-only). Nichts davon ist ausgeführt.**
 

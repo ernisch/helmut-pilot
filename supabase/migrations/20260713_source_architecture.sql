@@ -6,9 +6,11 @@
 --
 -- SICHERHEIT / MANDANTEN (Auftrag §38): Alle Tabellen sind GLOBAL GETEILT — sie
 -- enthalten ausschliesslich oeffentliche Quellendefinitionen, KEINE mandanten- oder
--- personenbezogenen Daten, daher KEINE tenant/user_id-Spalte. RLS ist aktiviert mit
--- Lesezugriff fuer angemeldete Nutzer; Schreibzugriff ausschliesslich ueber service_role
--- (interne Systemjobs/Admin) — konsistent mit dem bestehenden Muster.
+-- personenbezogenen Daten, daher KEINE tenant/user_id-Spalte. RLS ist aktiviert, aber
+-- BEWUSST OHNE for-select-Policy (Sprint-2-Verschaerfung, siehe RLS-Block unten): interne
+-- Referenztabellen — NUR service_role liest/schreibt (RLS-Bypass). Konsistent mit dem
+-- Bestandsmuster (z. B. pipeline_locks: RLS an, keine Policy). Bei echtem Supabase-Auth wird
+-- eine gezielte for-select-Rollen-Policy separat + freigabepflichtig ergaenzt.
 --
 -- FREIGABEPFLICHTIG: Diese Migration wird NICHT automatisch auf Production angewendet.
 -- Ausfuehrung erst nach ausdruecklicher Freigabe (Auftrag §4). Rollback:

@@ -60,13 +60,42 @@ check("onlyAlt cem-ince-news-region als orphan_legacy erklärt", cmpClean.onlyAl
 check("onlyNew = dip (Gewinn)", cmpClean.onlyNew.includes("dip"));
 check("kein unerklärter Wegfall -> keine Regression", cmpClean.regression === false && cmpClean.verdict === "erklaerte_konsolidierung");
 
-console.log("== Cem-Vergleich: Prefix-Konsolidierung ohne Orphan-Eintrag ==");
+console.log("== Cem-Vergleich: Personenquellen-Konsolidierung NUR mit expliziter Basis ==");
 const cmpPrefix = cs.compareSupply({
   altSourceIds: ["cem-ince-news", "cem-ince-news-neuer-suffix"],
   newSourceIds: ["cem-ince-news"],
-  orphanClassification: {}
+  orphanClassification: {},
+  consolidationBases: ["cem-ince-news"]
 });
-check("cem-ince-news-neuer-suffix via Basis-Konsolidierung erklärt (kein Orphan nötig)", cmpPrefix.onlyAltExplained.some((e) => e.id === "cem-ince-news-neuer-suffix" && e.reason === "konsolidiert") && cmpPrefix.regression === false);
+check("cem-ince-news-neuer-suffix via DEKLARIERTE Basis-Konsolidierung erklärt", cmpPrefix.onlyAltExplained.some((e) => e.id === "cem-ince-news-neuer-suffix" && e.reason === "konsolidiert") && cmpPrefix.regression === false);
+
+console.log("== Preflight-Fix M2: KEIN blinder Prefix-Match (fremde Quelle X-fake) ==");
+const cmpM2 = cs.compareSupply({
+  altSourceIds: ["bundestag", "bundestag-fake-eigenstaendig"],
+  newSourceIds: ["bundestag"],
+  orphanClassification: {},
+  docsBySource: { "bundestag-fake-eigenstaendig": 99 }
+  // KEINE consolidationBases -> darf NICHT als konsolidiert durchgehen
+});
+check("eigenständige 'bundestag-fake' wird NICHT fälschlich zu 'bundestag' konsolidiert -> regression", cmpM2.regression === true && cmpM2.onlyAltUnexplained.some((e) => e.id === "bundestag-fake-eigenstaendig"));
+const cmpM2b = cs.compareSupply({ altSourceIds: ["bundestag", "bundestag-x"], newSourceIds: ["bundestag"], orphanClassification: {}, consolidationBases: ["cem-ince-news"] });
+check("Prefix-Match nur für DEKLARIERTE Basis (bundestag nicht deklariert -> regression)", cmpM2b.regression === true);
+
+console.log("== Preflight-Fix M3: unbekannte Dokumentzahl konservativ als Risiko ==");
+const cmpM3 = cs.compareSupply({
+  altSourceIds: ["bundestag", "seltene-quelle"],
+  newSourceIds: ["bundestag"],
+  orphanClassification: {},
+  docsBySource: { "bundestag": 100 } // seltene-quelle NICHT im Snapshot -> docs=null (unbekannt)
+});
+check("unerklärter Wegfall mit UNBEKANNTER Dokumentzahl -> regression (nicht struktur_warnung)", cmpM3.regression === true && cmpM3.verdict === "regression");
+const cmpM3b = cs.compareSupply({
+  altSourceIds: ["bundestag", "nachweislich-leer"],
+  newSourceIds: ["bundestag"],
+  orphanClassification: {},
+  docsBySource: { "bundestag": 100, "nachweislich-leer": 0 } // explizit 0 -> struktur_warnung
+});
+check("unerklärter Wegfall mit NACHWEISLICH 0 Dokumenten -> struktur_warnung (keine Regression)", cmpM3b.regression === false && cmpM3b.verdict === "struktur_warnung");
 
 console.log("== Cem-Vergleich: echte Regression (unerklärter Wegfall MIT Dokumenten) ==");
 const cmpReg = cs.compareSupply({
