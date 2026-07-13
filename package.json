@@ -55,7 +55,9 @@
     "test:quality-watchdog": "node scripts/quality-watchdog-test.js",
     "test:admin-source-report": "node scripts/admin-source-report-test.js",
     "test:admin-source-ui": "node scripts/admin-source-ui-test.js",
-    "test:landesmodule-kandidaten": "node scripts/landesmodule-kandidaten-test.js"
+    "test:landesmodule-kandidaten": "node scripts/landesmodule-kandidaten-test.js",
+    "test:sprint6-cem-migration": "node scripts/sprint6-cem-migration-test.js",
+    "sprint6:dryrun": "node scripts/sprint6-migration-dryrun.js"
   },
   "dependencies": {},
   "devDependencies": {}
