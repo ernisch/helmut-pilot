@@ -3322,6 +3322,34 @@ async function defaultPoliticianIdForUser(user, allowed) {
   return null;
 }
 
+// Sprint 8: read-only Zusammenstellung des Quellenarchitektur-Admin-Reports (macht Sprint
+// 4/5/7 sichtbar). Rein LESEND, defensiv: jeder Fehler -> null -> der Client rendert die
+// Sektion einfach nicht (Alt-Admin unveraendert). Struktur aus dem Code-Modell; Metriken aus
+// Bestandsdaten (raw_documents/llm_usage). Fehlen Daten, markiert der Report sie EHRLICH als
+// „nicht verfügbar" — es werden KEINE Zahlen erfunden. Keine DB-Aenderung, kein KI-Call.
+async function buildSourceArchitectureReport(mandateProfiles = []) {
+  try {
+    const { buildFullModel } = require("./lib/helmut/quellenarchitektur");
+    const { computeGlobalActivation } = require("./lib/helmut/quellenarchitektur/profile-packages");
+    const qw = require("./lib/helmut/quellenarchitektur/quality-watchdog");
+    const ar = require("./lib/helmut/quellenarchitektur/admin-report");
+    const storageMod = require("./lib/helmut/storage");
+    const M = buildFullModel();
+    const profiles = Array.isArray(mandateProfiles) ? mandateProfiles : [];
+    const activation = computeGlobalActivation({ packages: M.packages, packagePaths: M.packagePaths, retrievalPaths: M.retrievalPaths, profiles });
+    let rawDocs = [];
+    try { rawDocs = (await storageMod.listRawDocuments({ days: 30, limit: 800 })) || []; } catch (_) { rawDocs = []; }
+    let llmUsage = [];
+    try { llmUsage = (await storageMod.getLlmUsage(null, 2000)) || []; } catch (_) { llmUsage = []; }
+    const now = Date.now();
+    const quality = qw.buildQualityReport({
+      catalog: { retrievalPaths: M.retrievalPaths, packages: M.packages, packagePaths: M.packagePaths },
+      activation, rawDocs, koSourceLinks: [], dedupDocuments: [], profiles, llmUsage, signals: {}, now
+    });
+    return ar.buildSourceAdminReport({ catalog: M, activation, qualityReport: quality, now });
+  } catch (_) { return null; }
+}
+
 async function buildAdminOverview() {
   const [users, profiles, mandates, assignments, errors, audit, feedback, koCountTotal, statsToday, stats30d, crawlReport] = await Promise.all([
     accounts.listUsers(),
@@ -3338,6 +3366,8 @@ async function buildAdminOverview() {
   ]);
   const storage = getStorageStatus();
   const storeSummary = await getStoreSummary();
+  // Read-only, defensiv: der Quellenarchitektur-Report (Sprint 8). Fehler -> null.
+  const sourceArchitecture = await buildSourceArchitectureReport(mandates);
 
   const userById = new Map(users.map((u) => [u.id, u.name || u.email]));
   const userByPoliticianId = new Map(users.filter((u) => u.politicianId).map((u) => [u.politicianId, u.name || u.email]));
@@ -3364,6 +3394,7 @@ async function buildAdminOverview() {
     users,
     profiles,
     mandates: mandates.map(adminMandateSummary),
+    sourceArchitecture,
     assignments,
     feedback,
     stats: {

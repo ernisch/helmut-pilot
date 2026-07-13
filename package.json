@@ -52,7 +52,9 @@
     "test:scoring": "node scripts/scoring-test.js",
     "test:scoring-integration": "node scripts/scoring-integration-test.js",
     "test:scoring-ui": "node scripts/scoring-ui-test.js",
-    "test:quality-watchdog": "node scripts/quality-watchdog-test.js"
+    "test:quality-watchdog": "node scripts/quality-watchdog-test.js",
+    "test:admin-source-report": "node scripts/admin-source-report-test.js",
+    "test:admin-source-ui": "node scripts/admin-source-ui-test.js"
   },
   "dependencies": {},
   "devDependencies": {}

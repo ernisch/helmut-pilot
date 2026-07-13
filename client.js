@@ -1454,6 +1454,154 @@ function renderAdminKostenSummary(stats, periodLabel) {
   </div>`;
 }
 
+// ============================================================================
+// Sprint 8 — Admin: Quellenarchitektur (macht Sprint 4/5/7 sichtbar). Ruhig, hochwertig,
+// wiederverwendete Muster (adminSection/dsRow/ds-unavail/op-tile/ac-item). Rendert NUR
+// bereits geladene Daten (adminData.sourceArchitecture); fehlt sie -> nichts (Alt-Admin
+// unveraendert). Kein KI-Call, keine Aktion, keine erfundenen Zahlen.
+// ============================================================================
+function saBadge(label, tone) { return `<span class="sa-badge sa-badge--${escapeAttribute(tone || "muted")}">${escapeHtml(label)}</span>`; }
+function saUnavail(text) { return `<span class="ds-unavail">${escapeHtml(text || "Noch nicht verfügbar")}</span>`; }
+const SA_HEALTH = { gesund: ["Gesund", "ok"], defekt: ["Defekt", "bad"], unbekannt: ["Unbekannt", "muted"], inaktiv: ["Inaktiv", "muted"] };
+const SA_VALUE = { ergiebig: ["Nutzen", "ok"], nur_duplikate: ["Nur Duplikate", "bad"], ohne_ko: ["Kein KO", "warn"], keine_dokumente: ["Keine Dokumente", "muted"], unbestaetigt: ["Unbestätigt", "muted"] };
+function saHealthBadge(h) { const [l, t] = SA_HEALTH[h] || ["Unbekannt", "muted"]; return saBadge(l, t); }
+function saValueBadge(v) { const [l, t] = SA_VALUE[v] || ["Unbestätigt", "muted"]; return saBadge(l, t); }
+function saUsd(usd) { if (usd == null) return "–"; const n = Number(usd); return n === 0 ? "$0" : `$${n.toFixed(n < 0.01 ? 4 : 2)}`; }
+function saNumOrUnavail(v, unit) { return v == null ? saUnavail("nicht verfügbar") : `${escapeHtml(String(v))}${unit ? " " + escapeHtml(unit) : ""}`; }
+
+function renderSaLaenderPakete(sa) {
+  const lp = sa.views.laenderPakete;
+  const withModule = lp.laender.filter((l) => l.status !== "kein_modul");
+  const laenderRows = withModule.map((l) => {
+    const badge = l.status === "aktiv" ? saBadge("Aktiv", "ok") : saBadge("Vorbereitet", "warn");
+    const klassen = l.pflichtklassen.total > 0
+      ? `<span class="sa-sub">${l.pflichtklassen.total - l.pflichtklassen.missing.length}/${l.pflichtklassen.total} Pflichtklassen — <b>${l.pflichtklassen.missing.length} fehlen</b></span>`
+      : `<span class="sa-sub">keine Pflichtklassen-Vorgabe</span>`;
+    return `<div class="sa-item"><div class="sa-item-main"><span class="sa-item-name">${escapeHtml(l.name)}</span>${badge}</div>${klassen}</div>`;
+  }).join("");
+  const rest = `<p class="sa-note">${sa.counts.laenderKeinModul} weitere Bundesländer haben noch kein Landesmodul (Recherche in Sprint 9).</p>`;
+  const paketRows = lp.pakete.map((p) => {
+    const tone = p.supply === "vollstaendig" ? "ok" : p.supply === "unterversorgt" ? "bad" : p.supply === "vorbereitet" ? "warn" : "muted";
+    const supplyLabel = { vollstaendig: "Vollständig", teilversorgt: "Teilversorgt", unterversorgt: "Unterversorgt", vorbereitet: "Vorbereitet", leer: "Leer", unbekannt: "Unbekannt" }[p.supply] || p.supply;
+    const meta = `${p.pathCount != null ? `${p.pathCount} Abrufwege` : ""}${p.refCount ? ` · ${p.refCount} Profil${p.refCount === 1 ? "" : "e"}` : ""}${p.is_base ? " · Pflicht" : ""}`;
+    return `<div class="sa-item"><div class="sa-item-main"><span class="sa-item-name">${escapeHtml(p.name)}</span>${saBadge(supplyLabel, tone)}</div><span class="sa-sub">${escapeHtml(meta)}</span></div>`;
+  }).join("");
+  const inner = `
+    <div class="sa-block"><h3 class="sa-h3">Bundesländer <span class="sa-count">${sa.counts.laenderAktiv} aktiv · ${sa.counts.laenderVorbereitet} vorbereitet</span></h3>
+      <div class="sa-list">${laenderRows || `<p class="ac-empty">Noch kein Landesmodul.</p>`}</div>${rest}</div>
+    <div class="sa-block"><h3 class="sa-h3">Pakete <span class="sa-count">${lp.pakete.length}</span></h3>
+      <div class="sa-list">${paketRows}</div></div>`;
+  return adminSection("Länder und Pakete", "Welche Länder aktiv oder vorbereitet sind", inner, "admin-sa-laender");
+}
+
+function renderSaQuellen(sa) {
+  const qa = sa.views.quellenAbrufwege;
+  const hc = qa.healthCounts;
+  const summary = `<div class="sa-badges">${saBadge(`${hc.gesund} gesund`, "ok")}${saBadge(`${hc.defekt} defekt`, "bad")}${saBadge(`${hc.unbekannt} unbekannt`, "muted")}${hc.inaktiv ? saBadge(`${hc.inaktiv} inaktiv`, "muted") : ""}</div>`;
+  const note = !sa.availability.documents ? `<p class="sa-note">Health-Signal aus Status + Dokument-Frische. Ohne geladene Dokumentdaten sind funktionierende Wege „Unbekannt" (nicht „gesund" erfunden).</p>` : "";
+  // Herausgeber mit defekten Wegen zuerst; Rest in Details.
+  const withBroken = qa.herausgeber.filter((h) => h.paths.some((p) => p.health === "defekt"));
+  const row = (h) => {
+    const badges = h.paths.map((p) => p.health === "defekt" ? "●" : p.health === "gesund" ? "○" : "·").join("");
+    const worst = h.paths.some((p) => p.health === "defekt") ? saBadge("Defekt", "bad") : h.paths.every((p) => p.health === "gesund") ? saBadge("Gesund", "ok") : saBadge("Unbekannt", "muted");
+    return `<div class="sa-item"><div class="sa-item-main"><span class="sa-item-name">${escapeHtml(h.name)}</span>${worst}</div><span class="sa-sub">${h.paths.length} Abrufweg${h.paths.length === 1 ? "" : "e"}</span></div>`;
+  };
+  const brokenList = withBroken.length ? `<div class="sa-list">${withBroken.map(row).join("")}</div>` : `<p class="ac-empty">Kein Herausgeber mit defektem Abrufweg.</p>`;
+  const fullList = adminDetails(`Alle ${qa.herausgeber.length} Herausgeber anzeigen`, `<div class="sa-list">${qa.herausgeber.map(row).join("")}</div>`);
+  const inner = `${summary}${note}<h3 class="sa-h3">Herausgeber mit Prüfbedarf</h3>${brokenList}${fullList}`;
+  return adminSection("Quellen und Abrufwege", `${qa.pathCount} Abrufwege · ${qa.herausgeber.length} Herausgeber`, inner, "admin-sa-quellen");
+}
+
+function renderSaProfile(sa) {
+  const rows = sa.views.profileVersorgung.map((p) => {
+    const tone = p.supply === "versorgt" ? "ok" : p.supply === "unversorgt" ? "bad" : "muted";
+    const label = { versorgt: "Versorgt", unversorgt: "Unversorgt", nicht_aktivierbar: "Nicht aktivierbar" }[p.supply] || p.supply;
+    const pkgs = (p.requiredPackages || []).map((k) => `<span class="ds-chip">${escapeHtml(k)}</span>`).join("");
+    const missing = (p.missingBasePackages || []).length ? `<span class="sa-sub">fehlt: <b>${escapeHtml(p.missingBasePackages.map((m) => m.key).join(", "))}</b></span>` : "";
+    return `<div class="sa-item"><div class="sa-item-main"><span class="sa-item-name">${escapeHtml(p.profileId)}</span>${saBadge(label, tone)}</div><div class="ds-chips">${pkgs}</div>${missing}</div>`;
+  }).join("");
+  const inner = `<div class="sa-badges">${saBadge(`${sa.counts.profileVersorgt} versorgt`, "ok")}${saBadge(`${sa.counts.profileUnversorgt} unversorgt`, "bad")}</div><div class="sa-list">${rows || `<p class="ac-empty">Keine Profile.</p>`}</div>`;
+  return adminSection("Profile und Paketversorgung", "Welche Profile versorgt oder unversorgt sind", inner, "admin-sa-profile");
+}
+
+function renderSaPruefbedarf(sa) {
+  const pb = sa.views.pruefbedarf;
+  const items = pb.actions.map((a) => {
+    const lvl = a.severity === "hoch" ? "bad" : "warn";
+    return `<div class="ac-item ac-item--${lvl}"><span class="ac-dot" aria-hidden="true"></span><div class="ac-body"><p class="ac-title">${escapeHtml(a.text)}</p><p class="ac-detail">${escapeHtml(a.area)} · ${escapeHtml(String(a.ref))}</p></div></div>`;
+  }).join("");
+  const list = pb.actions.length ? `<div class="ac-list">${items}</div>` : `<div class="ac-list"><p class="ac-empty">Kein konkreter Prüfbedarf. Alles ruhig.</p></div>`;
+  const missing = pb.missingMetrics.length
+    ? `<div class="sa-block"><h3 class="sa-h3">Noch nicht verfügbare Messwerte</h3><ul class="sa-missing">${pb.missingMetrics.map((m) => `<li>${saUnavail(m)}</li>`).join("")}</ul><p class="sa-note">Diese Werte erscheinen nach Migration/Shadow-Ingest — bewusst nicht geschätzt.</p></div>`
+    : "";
+  return adminSection("Prüfbedarf", pb.actions.length ? `${pb.actions.length} ${pb.actions.length === 1 ? "Punkt" : "Punkte"}` : "", `${list}${missing}`, "admin-sa-pruefbedarf");
+}
+
+function renderSaQuellendetail(sa) {
+  const paths = sa.views.quellendetail.paths;
+  const byPub = new Map();
+  for (const p of paths) { const k = p.publisher || "Unbekannt"; if (!byPub.has(k)) byPub.set(k, []); byPub.get(k).push(p); }
+  const groups = [...byPub.entries()].sort((a, b) => String(a[0]).localeCompare(String(b[0]))).map(([pub, list]) => {
+    const rows = list.map((p) => {
+      const detail = [
+        dsRow("Methode", escapeHtml(p.method || "–")),
+        dsRow("Status / Health", `${escapeHtml(p.status)} · ${saHealthBadge(p.health)}${p.is_critical ? " " + saBadge("Pflicht", "warn") : ""}`),
+        dsRow("Dokumente", saNumOrUnavail(p.documentCount)),
+        dsRow("Knowledge Objects", saNumOrUnavail(p.koCount)),
+        dsRow("Duplikate", saNumOrUnavail(p.duplicateCount)),
+        dsRow("Produktnutzen", saValueBadge(p.value)),
+        dsRow("Pakete", p.packages.length ? p.packages.map((k) => `<span class="ds-chip">${escapeHtml(k)}</span>`).join("") : "–"),
+        dsRow("Kosten", p.cost && p.cost.available ? saUsd(p.cost.usd) : saUnavail("noch nicht zuordenbar")),
+        p.recommendedAction && p.recommendedAction.severity !== "keine" ? dsRow("Empfehlung", escapeHtml(p.recommendedAction.text)) : ""
+      ].join("");
+      return `<div class="sa-detail-card"><div class="sa-detail-head"><span class="sa-item-name">${escapeHtml(p.name)}</span>${saHealthBadge(p.health)}</div>${detail}</div>`;
+    }).join("");
+    return adminDetails(`${escapeHtml(pub)} — ${list.length} Abrufweg${list.length === 1 ? "" : "e"}`, rows);
+  }).join("");
+  return adminSection("Quellendetail", "Herausgeber → Abrufwege im Detail", `<p class="sa-note">Aufklappen für Herausgeber-Details. Kennzahlen erscheinen, sobald Bestandsdaten/Migration vorliegen.</p>${groups}`, "admin-sa-detail");
+}
+
+function renderSaKosten(sa) {
+  const kn = sa.views.kostenNutzen;
+  const c = kn.costs;
+  const stepRows = Object.entries(c.byPipelineStep || {}).sort((a, b) => b[1] - a[1]).map(([k, v]) => dsRow(k, saUsd(v))).join("");
+  const modelRows = Object.entries(c.byModel || {}).sort((a, b) => b[1] - a[1]).map(([k, v]) => dsRow(k, saUsd(v))).join("");
+  const kostenBlock = c.records > 0
+    ? `${dsRow("Gesamt (Zeitfenster)", `<b>${saUsd(c.totalUsd)}</b> · ${c.records} Calls`)}
+       <div class="sa-block"><h3 class="sa-h3">Je Pipeline-Schritt</h3>${stepRows || saUnavail("keine")}</div>
+       <div class="sa-block"><h3 class="sa-h3">Je Modell</h3>${modelRows || saUnavail("keine")}</div>
+       <p class="sa-note">${c.sourceAttributionAvailable ? "Kosten je Quelle zugeordnet." : "Kosten je Quelle noch nicht zuordenbar — llm_usage trägt noch keine sourceId (freigabepflichtige Verdrahtung)."}</p>`
+    : `<p class="ac-empty">Keine KI-Kosten im Zeitfenster.</p>`;
+  const nutzenRows = kn.kostenOhneNutzen.length
+    ? kn.kostenOhneNutzen.map((s) => `<div class="sa-item"><div class="sa-item-main"><span class="sa-item-name">${escapeHtml(s.name || s.legacy_source_id)}</span>${saValueBadge(s.value)}</div><span class="sa-sub">${escapeHtml(s.recommendedAction ? s.recommendedAction.text : "")}</span></div>`).join("")
+    : `<p class="ac-empty">${sa.availability.documents ? "Keine Quelle erzeugt aktuell Kosten ohne Nutzen." : "Nutzendaten noch nicht verfügbar — erscheint nach Ingest."}</p>`;
+  const inner = `<div class="sa-block"><h3 class="sa-h3">KI-Kosten</h3>${kostenBlock}</div>
+    <div class="sa-block"><h3 class="sa-h3">Kosten ohne Nutzen</h3><div class="sa-list">${nutzenRows}</div></div>`;
+  return adminSection("Kosten und Produktnutzen", "Was Geld kostet — und was Nutzen bringt", inner, "admin-sa-kosten");
+}
+
+function renderAdminQuellenarchitektur(sa) {
+  if (!sa || !sa.views) return "";
+  const migBanner = !sa.migration.newTablesMigrated
+    ? `<div class="sa-mig-note">${escapeHtml(sa.migration.note)}</div>`
+    : "";
+  const tiles = [
+    opTile("Länder", sa.counts.laenderAktiv ? "ok" : "unknown", `${sa.counts.laenderAktiv} aktiv`, `${sa.counts.laenderVorbereitet} vorbereitet`, null, "admin-sa-laender"),
+    opTile("Abrufwege", sa.counts.abrufwegeDefekt ? "warn" : "unknown", `${sa.counts.abrufwegeDefekt} defekt`, `${sa.counts.abrufwegeGesund} gesund · ${sa.counts.abrufwegeUnbekannt} unbekannt`, null, "admin-sa-quellen"),
+    opTile("Profile", sa.counts.profileUnversorgt ? "warn" : "ok", `${sa.counts.profileVersorgt} versorgt`, `${sa.counts.profileUnversorgt} unversorgt`, null, "admin-sa-profile"),
+    opTile("Prüfbedarf", sa.counts.pruefbedarf ? "bad" : "ok", `${sa.counts.pruefbedarf} ${sa.counts.pruefbedarf === 1 ? "Punkt" : "Punkte"}`, "konkrete Probleme", null, "admin-sa-pruefbedarf")
+  ];
+  return `
+    ${adminSection("Quellenarchitektur", "Länder · Pakete · Quellen · Profile · Kosten (Sprint 4/5/7 sichtbar gemacht)",
+      `${migBanner}<div class="op-tiles">${tiles.join("")}</div>`, "admin-quellenarchitektur")}
+    ${renderSaLaenderPakete(sa)}
+    ${renderSaQuellen(sa)}
+    ${renderSaProfile(sa)}
+    ${renderSaPruefbedarf(sa)}
+    ${renderSaQuellendetail(sa)}
+    ${renderSaKosten(sa)}`;
+}
+
 function renderAdminView() {
   if (userRole() !== "admin") return `<section class="page-intro"><h1 class="hero-title">Kein Zugriff.</h1></section>`;
   if (!adminData) {
@@ -1586,6 +1734,8 @@ function renderAdminView() {
          ${adminDetails("Kosten pro Engine & pro Nutzer anzeigen", `<div class="admin-charts-row">${renderAdminEngineChart(data.stats?.[adminPeriod])}${renderAdminCostsCard(data.stats?.[adminPeriod])}</div>`)}`,
         "admin-kosten"
       )}
+
+      ${data.sourceArchitecture ? renderAdminQuellenarchitektur(data.sourceArchitecture) : ""}
 
       ${adminSection("System und Sicherheit", "Version · Umgebung · Dienste · Zugriff", renderAdminSystemBody(sys, data, adminDataStatus, errors, audit), "admin-system")}
 
