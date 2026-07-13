@@ -10,7 +10,7 @@ const { validateProfile } = require("./lib/helmut/profile-validation");
 const sourceSafety = require("./lib/helmut/sourceSafety");
 const { runLageCheck, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState, tenantJwtModeEnabled, saveKnowledgeObjectEnrichment } = require("./lib/helmut/storage");
+const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState, tenantJwtModeEnabled, saveKnowledgeObjectEnrichment, profileDbModeEnabled } = require("./lib/helmut/storage");
 const { classifyOperationalState, describeState } = require("./lib/helmut/watchdog-state");
 const { runKoEnrichmentBackfill } = require("./lib/helmut/ko-enrichment");
 const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled, activeModelName, extractKnowledgeObjectTags } = require("./lib/helmut/ai");
@@ -1064,6 +1064,12 @@ async function handleRequest(request, response) {
     if (!requireRoleOr403(response, authUser, "admin")) return undefined;
     return handleAsync(response, async () => {
       const jwtEnabled = tenantJwtModeEnabled();
+      const isFlag = (v) => ["1", "true", "on", "yes"].includes(String(v || "").trim().toLowerCase());
+      // Profil-DB-Modus-Diagnose: zeigt EINZELN, welche Bedingung fuer
+      // profileDbModeEnabled() = isFlagOn(HELMUT_PROFILE_DB_MODE) && v3StoreReady()
+      // erfuellt ist. Nur Booleans, KEINE Werte/Secrets. So ist auf einen Blick
+      // sichtbar, ob der Flag in der Laufzeit ankommt und ob der DB-Profilpfad greift.
+      const profileDbEnabled = profileDbModeEnabled();
       return {
         flagSet: /^(1|true|on)$/i.test(String(process.env.HELMUT_TENANT_JWT_MODE || "").trim()),
         jwtSecretPresent: Boolean(process.env.SUPABASE_JWT_SECRET),
@@ -1071,6 +1077,12 @@ async function handleRequest(request, response) {
         serviceRolePresent: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
         tenantJwtModeEnabled: jwtEnabled,
         effectiveTransport: jwtEnabled ? "authenticated (per-Mandant-JWT, RLS aktiv)" : "service_role (RLS-Bypass)",
+        // --- Profil-DB-Modus (Phase 15) ---
+        profileDbModeFlagSet: isFlag(process.env.HELMUT_PROFILE_DB_MODE),
+        v3StoreFlagSet: isFlag(process.env.HELMUT_V3_STORE),
+        v3StoreReady: v3StoreReady(),
+        profileDbModeEnabled: profileDbEnabled,
+        profileSource: profileDbEnabled ? "mandate_profiles (DB)" : "helmut_store (Blob)",
         checkedAt: new Date().toISOString()
       };
     });
