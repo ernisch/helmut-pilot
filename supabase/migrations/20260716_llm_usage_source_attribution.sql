@@ -21,10 +21,13 @@ alter table public.llm_usage add column if not exists package_id text;
 alter table public.llm_usage add column if not exists vorgang_id text;
 alter table public.llm_usage add column if not exists knowledge_object_id text;
 
--- Aggregation "Kosten je Quelle/Paket/Pipeline-Schritt im Zeitfenster" schnell halten.
+-- Aggregation "Kosten je Quelle/Paket im Zeitfenster" schnell halten.
 create index if not exists llm_usage_source_created_idx on public.llm_usage (source_id, created_at);
 create index if not exists llm_usage_package_created_idx on public.llm_usage (package_id, created_at);
-create index if not exists llm_usage_step_created_idx on public.llm_usage (pipeline_step, created_at);
+-- HINWEIS (Sprint-10-Preflight, 2026-07-13): Der frühere Index auf (pipeline_step, created_at)
+-- wurde ENTFERNT — die Spalte pipeline_step existiert im realen llm_usage-Schema NICHT (sie
+-- gehört zu einer separaten, nicht freigegebenen llm_usage-Umstrukturierung). Ohne diese Spalte
+-- schlägt der Index-CREATE fehl. Der Index wird bei Bedarf zusammen mit pipeline_step nachgezogen.
 
 -- PostgREST-Schema-Cache nach additivem DDL neu laden (konsistent mit 20260711).
 notify pgrst, 'reload schema';
