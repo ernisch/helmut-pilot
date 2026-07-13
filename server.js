@@ -10,7 +10,7 @@ const { validateProfile } = require("./lib/helmut/profile-validation");
 const sourceSafety = require("./lib/helmut/sourceSafety");
 const { runLageCheck, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState, tenantJwtModeEnabled, saveKnowledgeObjectEnrichment, profileDbModeEnabled } = require("./lib/helmut/storage");
+const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState, tenantJwtModeEnabled, saveKnowledgeObjectEnrichment, profileDbModeEnabled, getProfileFromDb } = require("./lib/helmut/storage");
 const { classifyOperationalState, describeState } = require("./lib/helmut/watchdog-state");
 const { runKoEnrichmentBackfill } = require("./lib/helmut/ko-enrichment");
 const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled, activeModelName, extractKnowledgeObjectTags } = require("./lib/helmut/ai");
@@ -1070,6 +1070,25 @@ async function handleRequest(request, response) {
       // erfuellt ist. Nur Booleans, KEINE Werte/Secrets. So ist auf einen Blick
       // sichtbar, ob der Flag in der Laufzeit ankommt und ob der DB-Profilpfad greift.
       const profileDbEnabled = profileDbModeEnabled();
+      // Live-Selbsttest des echten JWT-Profil-Lesepfads: versucht den DB-Read von
+      // cem-ince (existiert). Erfolg (Zeile zurueck) => App->PostgREST-JWT wird
+      // akzeptiert (SUPABASE_JWT_SECRET korrekt). Fehlschlag/null bei aktivem Flag
+      // => JWT wird abgewiesen (401 PGRST301, Secret-Mismatch) ODER Zeile fehlt.
+      // Nur ausgefuehrt, wenn der DB-Modus aktiv ist; sonst nicht aussagekraeftig.
+      let tenantJwtReadWorks = null;
+      let tenantReadProbe = "nicht ausgeführt (DB-Modus aus)";
+      if (profileDbEnabled) {
+        try {
+          const probe = await getProfileFromDb(cemInceProfile.id);
+          tenantJwtReadWorks = Boolean(probe && probe.id);
+          tenantReadProbe = tenantJwtReadWorks
+            ? "OK: cem-ince aus mandate_profiles gelesen (JWT akzeptiert)"
+            : "FEHLGESCHLAGEN: kein Profil (JWT abgewiesen/401 oder Zeile fehlt) -> Fallback Blob";
+        } catch (_) {
+          tenantJwtReadWorks = false;
+          tenantReadProbe = "FEHLGESCHLAGEN (Ausnahme) -> Fallback Blob";
+        }
+      }
       return {
         flagSet: /^(1|true|on)$/i.test(String(process.env.HELMUT_TENANT_JWT_MODE || "").trim()),
         jwtSecretPresent: Boolean(process.env.SUPABASE_JWT_SECRET),
@@ -1082,7 +1101,10 @@ async function handleRequest(request, response) {
         v3StoreFlagSet: isFlag(process.env.HELMUT_V3_STORE),
         v3StoreReady: v3StoreReady(),
         profileDbModeEnabled: profileDbEnabled,
-        profileSource: profileDbEnabled ? "mandate_profiles (DB)" : "helmut_store (Blob)",
+        // Live-Selbsttest: liest der DB-Profilpfad wirklich (JWT akzeptiert)?
+        tenantJwtReadWorks,
+        tenantReadProbe,
+        profileSource: (profileDbEnabled && tenantJwtReadWorks) ? "mandate_profiles (DB)" : "helmut_store (Blob-Fallback)",
         checkedAt: new Date().toISOString()
       };
     });
