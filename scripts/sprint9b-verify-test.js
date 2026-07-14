@@ -38,9 +38,9 @@ const atomRecent = `<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Ato
 
 // --- 1. Wege-Liste ---
 const wege = buildWege();
-check("buildWege liefert 25 Wege", wege.length === 25);
+check("buildWege liefert 24 Wege (R2-Dedup)", wege.length === 24);
 check("davon 6 Bundeswege", wege.filter((w) => w.gruppe === "BUND").length === 6);
-check("davon 19 Landeswege (BE/BB/BE+BB)", wege.filter((w) => w.herkunft === "land").length === 19);
+check("davon 18 Landeswege (BE/BB/BE+BB, R2)", wege.filter((w) => w.herkunft === "land").length === 18);
 check("jeder Weg hat url + method", wege.every((w) => w.url && w.method));
 
 // --- 2. RSS: aktuell -> geeignet ---
