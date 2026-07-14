@@ -1,102 +1,109 @@
 # MASTER-STATUS — Helmut Quellenarchitektur-Migration
 
-**Dies ist der einzige aktuelle Gesamtstatus.** Ältere Abschlussberichte (Doku 20-27)
-bleiben als Detailnachweise gültig, sind aber KEINE Statusquelle mehr; bei Widerspruch
-gilt diese Datei. Letzte Aktualisierung: 2026-07-14, Phase 2 (Deployment-Vorprüfung).
+**Dies ist die EINZIGE aktuelle Statuswahrheit.** Alle älteren Status-/Abschlussberichte —
+insbesondere Doku 20–27 (u. a. „27-abschluss-und-production-freigabe.md") und frühere
+Master-Status-Fassungen — sind **ÜBERHOLT** und dürfen nicht mehr als aktueller Stand zitiert
+werden; sie bleiben nur als historische Detailnachweise ihrer jeweiligen Phase gültig.
+Konsolidiert am **2026-07-14 (nach Reiter-Deployment)** aus Repository, Production-DB (read-only),
+Vercel-Deployments und Thread-Verlauf. Keine Migration wurde erneut angewendet.
 
-## Phase-Status
-- **Phase 1 (Preview-Abnahme): BESTANDEN** — Gründer bestätigt „Preview grün"
-  (Partei/Wahlkreis/Ausschüsse leer = fachlich korrekt; Dynamiken/Lage/Helmut/Büro/Admin ok).
-- **Phase 2 (Deployment-Vorprüfung): ABGESCHLOSSEN, 0 Blocker** — 4 parallele Prüfblöcke:
-  (a) git: 61 Commits ahead/0 behind, fast-forward-fähig, keine Konflikte, vercel.json
-  (inkl. Crons) byte-identisch zu main, keine gelöschten Dateien;
-  (b) Testsuite: 57/58 Suiten grün, 2.565 Assertions (nur smoke-test = Live-URL, Sandbox-Netz);
-  (c) Production-DB read-only: Mengen-Snapshot 5140/247/7/86/1, BE/BB-Wege alle
-  needs_review+manual, BE/BB-Pakete prepared, gate_shadow_events=0, decision_level vorhanden;
-  (d) Guard-Disziplin: alle 7 Flags Default off/alt mit Code-Zitat, kein Flag-Setzen im
-  Runtime-Code, keine Cutover-Logik, Crawl nutzt v1Sources.
-- **Phase 3 (Production-Deployment): AUSGEFÜHRT 2026-07-14** — PR
-  [#75](https://github.com/ernisch/helmut-pilot/pull/75) gemerged (Freigabe des Gründers nach
-  fail-closed-Ersatzprüfung der Env-Variablen, da Dashboard-Zugriff nicht verfügbar).
-  Production-Commit: **`9685a0b`** (Merge von `d1dd5a4`), Deployment
-  `dpl_2b83EUNtUhuzvA5pfCLdP6GrUY6K`, Alias `helmut-pilot.vercel.app`.
-  Vorheriger Production-Commit (Rollback-Ziel): `74ae2a6`.
-  Post-Deploy verifiziert: App-Shell 200 mit `client.js?v=9685a0bf`; `/api/app/start`
-  unauthentifiziert sauberes 401 (kein 5xx); 0 Runtime-Fehler seit Deploy; DB-Snapshot
-  byte-identisch vor/nach Merge (5140/247/7/86/1, document_findings=0, gate_shadow_events=0,
-  llm_usage=0); BE/BB-Wege/Pakete unverändert (0 Abweichungen); keine Migration ausgeführt;
-  Env-Variablen (inkl. Tageslimit) durch den Merge strukturell unberührbar.
-- **Phase A (Reiter-Umbenennung): DEPLOYED 2026-07-14** — PR
-  [#76](https://github.com/ernisch/helmut-pilot/pull/76) gemerged nach Gründer-Abnahme
-  („Briefing Preview grün"). Production-Commit: **`6539fbf`**, Deployment
-  `dpl_FSy61yLoLCXhPmEYLoyHToUVMFFV`. Der sichtbare Reiter heißt „Briefing"; Marke/Persona
-  Helmut, interne View-IDs (historisch: "briefing"=Lage, "helmut"=Briefing-Reiter),
-  API-Verträge und gespeicherte Briefings unverändert.
-  Post-Deploy verifiziert (am AUSGELIEFERTEN client.js): Nav Lage·Radar·Briefing·Büro,
-  altes Label/ARIA weg, „Im Briefing öffnen" da, Marke intakt; 0 Runtime-Fehler;
-  KOs/Briefings/Decisions/BE-BB/gate_shadow_events/llm_usage unverändert. Einzige
-  Datenänderung: +102 raw_documents durch den planmäßigen, unveränderten 16:00-UTC-
-  Pipeline-Cron (Alt-Katalog-Crawl; 0 Gate-Telemetrie trotz Pipeline-Lauf = Live-Beweis
-  Gate off). Rollback-Ziel bleibt dokumentiert: `9685a0b`.
-- **Nächstes Gate: „Go Shadow und Tageslimit?"** (Phase 4: HELMUT_UNDERSTANDING_GATE=shadow,
-  HELMUT_PARDOK_DISPATCH=shadow, HELMUT_MAX_LLM_CALLS_PER_DAY→150 — einzeln, mit Smoke-Tests;
-  Hinweis: Env-Variablen sind für mich weiterhin nicht lesbar/setzbar — Phase 4 braucht
-  entweder Dashboard-Zugriff des Gründers oder eine gemeinsame kurze Sitzung.)
+## 1) Deployments & Commits (verifiziert via Vercel-API + git)
+| Was | Wert |
+|---|---|
+| Production-Commit (main) | **`6539fbf`** — Merge PR #76 (Reiter „Helmut"→„Briefing") |
+| Production-Deployment | `dpl_FSy61yLoLCXhPmEYLoyHToUVMFFV`, READY, `helmut-pilot.vercel.app` |
+| Vorheriges Prod-Deployment (Rollback-Kette) | `9685a0b` (PR #75, Quellenarchitektur-Code, Guards off) → davor `74ae2a6` (Alt-Stand) |
+| Feature-Branch | `claude/helmut-source-architecture-ruhyvb` @ `32b1721` (= main + diese Statusdatei) |
+| Crons (vercel.json, unverändert seit Alt-Stand) | crawl 04:00+20:00 · morning-briefing 05:00 · understanding 05:30+21:30 · health 06:00 · lage-check 10:00 · pipeline 16:00 · lage-briefing 05:45 (UTC) |
 
-## Was Production AKTUELL nutzt (main)
-- Alter hartcodierter Quellenkatalog (`v1Sources`) als aktive Quellenwahrheit.
-- Kein Understanding-Gate (Flag nicht gesetzt/off), kein PARDOK-Dispatch, kein neues
-  sichtbares Scoring, keine Landesquellen (Berlin/Brandenburg), keine Cheap-Triage.
-- Understanding-Tagesdeckel `HELMUT_MAX_LLM_CALLS_PER_DAY`: aktiv und endlich
-  (real ~15 Understanding/Tag ausgeführt, ~78/Tag gedeckelt); exakter Wert nur im
-  Vercel-Dashboard lesbar (kein Env-Getter im MCP).
-- Bekannter vorbestehender Prod-Fehler: `parseJsonText` SyntaxError bei rohen
-  Steuerzeichen in LLM-JSON (Büro-Entwurf) — **im Branch behoben** (`14d4e4b`).
+**Bereits deployt und live:** neue Quellenarchitektur-Codebasis (Guards off), korrigierte
+Radar-Beleglogik (Partei/Wahlkreis/Ausschuss evidenzbasiert), domain-basierte „Offizielle
+Quellen", ai.js-Steuerzeichen-Parserfix, sichtbarer Reiter **„Briefing"** (Marke/Persona
+Helmut, interne View-IDs und API-Verträge unverändert).
 
-## In Production bereits ANGEWENDETE Migrationen (funktional verifiziert)
-`20260713_source_architecture` (publishers/retrieval_paths/source_packages/…),
-`20260714_ko_classification` (8 KO-Spalten + Index), `20260715_dedup_findings`
-(document_findings), `20260716_gate_shadow_telemetry` (gate_shadow_events),
-`20260716_llm_usage_source_attribution` — plus die Basis-Migrationen 20260711/12.
-**Registry-Abweichung:** Einträge in `supabase_migrations.schema_migrations` teils
-8-stellig/fehlend (direkt via MCP angewendet). Ungefährlich, da ALLE 9 Migrationen
-idempotent sind und jede eine `*_rollback.sql` besitzt (Preflight 51 PASS). Bereinigung
-= eigene, freigabepflichtige Stufe vor einem künftigen CLI-`db push`.
+## 2) Datenbank-Ist (Production Supabase, read-only 2026-07-14 ~16:30 UTC)
+- Mengen: raw_documents **5242** · knowledge_objects **247** · briefings **7** · decisions **86**
+  · mandate_profiles **1** · ko_document_links **1147**
+- **document_findings: 0 Zeilen** (Tabelle existiert, Dedup/Fundstellen noch nicht befüllt —
+  Schreibpfad ist Teil des späteren Shadow-/Cutover-Betriebs)
+- **gate_shadow_events: 0 Zeilen** (Tabelle existiert, Gate-Shadow NIE gelaufen)
+- **llm_usage (SQL-Attributionstabelle): 0 Zeilen** (existiert; der echte Kostenlog lebt im
+  Blob `helmut_store['main-auth'].llmUsage`)
+- KO-Klassifikationsspalten (decision_level …): **vorhanden, unbefüllt** (Backfill = spätere Stufe)
+- Quellenarchitektur-Tabellen: publishers **64** · retrieval_paths **163** · source_packages **7**
+  · package_paths **164**; **keine** Profil→Paket-Zuordnungstabelle (Aktivierung läuft über
+  source_packages.status; Resolver-Logik liegt im Code)
+- retrieval_paths: Status-Vokabular healthy(4)/broken(6)/needs_review(153); Aktivierung über
+  activation_mode always_on(5)/auto(140)/manual(18)
+- **Berlin/Brandenburg: 19 Wege, ALLE needs_review+manual; Pakete berlin-basis/brandenburg-basis
+  ALLE `prepared`. Keine Landesquelle sichtbar aktiv.**
+- Migration-Registry (`supabase_migrations.schema_migrations`, 12 Einträge): tenant_rls,
+  mandate_profile_fields/completeness, source_architecture (+4 Seeds), llm_usage_attribution,
+  gate_shadow_telemetry (registriert als 20260714105547), ko_classification (20260714111259).
+  Abweichung Dateiname↔Registry ist dokumentiert und ungefährlich (alle 9 Migrationsdateien
+  idempotent, jede mit `*_rollback.sql`; Preflight 51 PASS). **Keine Migration offen.**
 
-## Feature-Branch (Deployment-Kandidat)
-- Branch: `claude/helmut-source-architecture-ruhyvb`
-- Kandidat-Commit: **`14d4e4b`** (Nachfolger des Abschluss-Commits `ae7a5e0`;
-  zusätzlich nur der parseJsonText-Fix + Tests + diese Statusdatei).
-- Alle neuen Funktionen sind hinter Guards mit Default **off**:
-  `HELMUT_UNDERSTANDING_GATE` (off/shadow/on — on nicht scharf),
-  `HELMUT_PARDOK_DISPATCH` (off/shadow — on nicht verdrahtet), Scoring-Leerzustände
-  (`HELMUT_SCORING_MODE`), Profile-DB-Mode. Kein Quellen-Cutover im Branch: der
-  Crawl nutzt weiterhin den Alt-Katalog; die relationale Bibliothek ist Shadow-Struktur.
-- Berlin/Brandenburg: Wege `manual`/`needs_review`, Pakete `prepared`, 0 aktive Landeswege.
+## 3) Aktiver Quellenpfad (Code-verifiziert)
+Der Crawl nutzt **weiterhin ausschließlich den alten hartcodierten Katalog** (`lib/helmut/
+sources.js` → storage.mergeSources, „Code ist die Wahrheit"). Die relationale Bibliothek ist
+Shadow-Struktur + read-only Admin-Report. **Es existiert noch KEIN Quellenmodus-Schalter
+(off/shadow/on) für den relationalen Pfad** — dessen Bau ist Phase 7/8 (nach Shadow-Start).
 
-## Was SHADOW laufen KANN (nach Freigabe, noch nichts aktiv)
-- Gate-Shadow (Telemetrie in `gate_shadow_events`, blockiert nichts).
-- PARDOK-Shadow (isoliert, `items:[]`-Invariante, nichts in raw_documents/KOs).
+## 4) Feature-Guards (Code-Defaults, alle fail-closed; Live-Beweis 16:00-UTC-Pipeline: 0 Gate-Events, 0 PARDOK)
+| Variable | Default ohne/bei unbekanntem Wert | wirksam bei |
+|---|---|---|
+| HELMUT_UNDERSTANDING_GATE | **off** (Gate nie aufgerufen; „on" nicht scharf) | `shadow` |
+| HELMUT_PARDOK_DISPATCH | **off** (items:[]-Invariante; „on" nicht verdrahtet) | `shadow` |
+| HELMUT_SCORING_MODE | **off** (Alt-Ranking byte-identisch) | on/active/live |
+| HELMUT_V3_SHADOW_COMPARE | aus (Modul live nicht verdrahtet) | — |
+| HELMUT_PROFILE_DB_MODE | aus (Blob-only; DB wäre ohnehin feldgleich) | 1/true/on/yes |
+| HELMUT_V3_STORE | aus lt. Code-Default — in Production **faktisch gesetzt/AN** (KOs werden gelesen); wird durch Deployments nicht berührt | 1/true/on/yes |
+| HELMUT_MAX_LLM_CALLS_PER_DAY | Infinity lt. Code — in Production **faktisch endlich gesetzt** (täglich 26–252 geblockte Calls) | Zahl > 0 |
 
-## Was weiterhin AUS ist (verbindlich, bis eigene Freigabe)
-Gate on · Cheap-Triage · sichtbares neues Scoring · Berlin-/Brandenburg-Aktivierung ·
-relationale Quellen-Cutover-Logik · Tageslimit-Änderung · Cron-Änderungen.
+## 5) Environment-Zugriff (Phase 2 — endgültig geklärt, 2026-07-14)
+**Kein verfügbarer Lese- oder Schreibweg aus dieser Umgebung:** Vercel-MCP hat kein
+Env-Tool (erschöpfend geprüft); Vercel-CLI nicht installiert und ohne Login-/Token-Weg;
+keine `VERCEL_*`-Variablen, kein `~/.vercel`, kein `.vercel/`-Projekt-Link, keine `.env`
+im Repo; Vercel-REST-API ohne Token nicht nutzbar. **Exakter Tageslimit-Wert daher nicht
+direkt lesbar** — und aus Verhalten NICHT sicher ableitbar (Tages-Billables an gesättigten
+Tagen schwanken 17–185, u. a. wegen Backfill-Workflows mit eigenem Limit im selben Log).
 
-## Nächste benötigte Freigabe
-**Phase 1:** manuelle Preview-Abnahme (Checkliste unten) → Antwort „Preview grün".
-Danach: „Go Deployment" (Production-Deployment, alle Guards off) → „Go Shadow und
-Tageslimit" → Shadow-Messung → relationaler Quellenvergleich → „Go Cutover".
+**Vorbereiteter Zugriffsweg (kleinste Berechtigung):** Ein Vercel-**Access-Token** (Scope:
+Team „Nohut", reicht als „Member") als Umgebungsvariable `VERCEL_TOKEN` dieser Session.
+Dann (ohne Secrets auszugeben):
+- Lesen: `npx vercel env ls production --token $VERCEL_TOKEN --scope nohut --cwd .` (nach `npx vercel link --yes …`)
+  oder API `GET /v9/projects/prj_xbZ6QzTkr7YoxQI71lW59FT03IR3/env?teamId=team_bTAfzDHwD3mT03r1z7rh1TC3`
+- Setzen: `printf 'shadow' | npx vercel env add HELMUT_UNDERSTANDING_GATE production --token …`
+- Rollback: `npx vercel env rm <NAME> production` bzw. alten Wert erneut setzen
+- Wirksam machen: Redeploy des aktuellen Production-Commits (Dashboard „Redeploy" oder
+  `npx vercel redeploy helmut-pilot.vercel.app --token …`)
+Alternative ohne Token: Gründer im Dashboard `vercel.com/nohut/helmut-pilot/settings/environment-variables`.
 
-## Preview-Checkliste Phase 1 (manuell, wegen Vercel-SSO)
-Stabile Branch-URL: `https://helmut-pilot-git-claude-helmut-source-architecture-ruhyvb-nohut.vercel.app`
-1. Login + Profil Cem wird erkannt.
-2. Lage lädt Inhalte (Briefing-Text, keine Leere-Fehlanzeige).
-3. Radar lädt; „Neue Dynamiken" gefüllt (Anzahl je nach Tagesfenster, aktuell erwartet ~6-7).
-4. Radar „Partei" leer („Keine neuen relevanten Parteisignale") — fachlich korrekt.
-5. Radar „Wahlkreis" leer — Bovenschulte-Vorgang erscheint NICHT mehr.
-6. Radar „Ausschüsse" leer — die früheren 13 BMAS-/Themen-Treffer erscheinen NICHT mehr.
-7. „Alle relevanten Artikel": Filter „Offizielle Quellen" zeigt NUR bundesregierung.de/
-   bmas.de/bundesrat.de o. ä. — KEINE FAZ/Nordkurier/Jüdische Allgemeine/verbaende.com.
-8. Helmut + Büro laden (Einschätzung + Entwurfsfunktion sichtbar).
-9. Admin erreichbar (Watchdog/Quellenarchitektur-Ansicht rendert).
-10. Browser-Konsole ohne neue Fehler (F12 → Console).
+## 6) Tageslimit & Kosten (Phase 3 — Realdaten aus dem Blob-Kostenlog, 14 Tage)
+- Deckel zählt **alle** billable KI-Aufrufe (canSpendLlm global, nicht nur Understanding)
+- Understanding ausgeführt: Ø ~15/Tag · geblockt: **26–252/Tag** (Nachfrage ≫ Deckel)
+- Sonstige billable Aufrufe: Ø ~27/Tag · Kosten/Understanding-Call: **$0,002** (gpt-5-mini)
+- Hochrechnung Understanding/Monat: 50/Tag≈$3 · 100/Tag≈$6 · 150/Tag≈$9
+- **Übergangsziel: Gesamtdeckel 150/Tag** → ~100 Understanding + ~50 Spielraum ≈ **~$8/Monat
+  gesamt**; ausdrücklich NICHT unbegrenzt. Langfristig: Relevanzpriorisierung
+  (`understanding-priority.js`, fertig als Shadow-Logik) + echtes tägliches Kostenlimit.
+
+## 7) Shadow-Start (Phase 4 — vollständig vorbereitet, NICHTS verändert)
+Frisch nachgewiesen (heute): Gate off=byte-identisch & shadow blockiert nichts
+(Integrationstest: off/shadow/on identische Call-Zahlen), Gate schreibt nur Telemetrie;
+PARDOK shadow liefert 0 sichtbare Items und schreibt nicht in raw_documents/KOs
+(Smoke: „kein BE/BB-Leck"); BE/BB unsichtbar; Cem-E2E 93/93 + Gate-E2E grün.
+Geplante Änderung (einzeln, je mit eigenem Smoke): `HELMUT_UNDERSTANDING_GATE=shadow` →
+`HELMUT_PARDOK_DISPATCH=shadow` → `HELMUT_MAX_LLM_CALLS_PER_DAY=150`; Redeploy nötig.
+Rollback je Schritt: Variable entfernen (Gate/PARDOK → off) bzw. alten Limit-Wert
+zurücksetzen (**vor Änderung im Dashboard ablesen und notieren!**) + Redeploy.
+
+## 8) Verbindlich AUS (bis je eigene Freigabe)
+Gate **on** · Cheap-Triage · Scoring **on** · Berlin-/Brandenburg-Aktivierung · relationaler
+Quellen-Cutover (Modus-Schalter existiert noch nicht) · Datenlöschungen · Cron-Änderungen ·
+KO-Klassifikations-Backfill.
+
+## 9) Nächstes Gate
+**„Go Shadow und Tageslimit?"** — danach Phase 5 (setzen+verifizieren, sofern Env-Zugriff
+gemäß §5 hergestellt ist), Phase 6 (Shadow-Messung), Phase 7/8 (relationaler Quellenvergleich
++ Cutover-Vorbereitung, eigenes Gate „Go Quellen Cutover?").
