@@ -1,0 +1,97 @@
+name: Shadow-Pilot · BE/BB (isolierter Beobachtungslauf)
+
+# =============================================================================
+# ENG BEGRENZTER, ISOLIERTER Shadow-Pilot für 6 stabile Berlin/Brandenburg-Abrufwege.
+# =============================================================================
+# Diese Action laeuft NIEMALS automatisch: ausschliesslich workflow_dispatch (manuell).
+# KEIN Cron, KEIN pull_request-Trigger, KEIN Zeitplan.
+#
+# SICHERHEIT / GRENZEN (bewusst, hart):
+#   - KEINE Secrets, KEINE Supabase-Verbindung, KEINE Production-Daten, KEIN Deployment.
+#   - permissions: contents: read  -> schreibt NICHTS ins Repo, aktiviert KEINE Quelle.
+#   - Speicherung AUSSCHLIESSLICH als Workflow-Artefakt (JSON). Es wird NICHTS in
+#     raw_documents / knowledge_objects / briefings / helmut_store geschrieben.
+#   - KEIN LLM-Aufruf (kein Understanding/Matching/Decision) -> keine llm_usage, keine
+#     API-Kosten; nur Runner-Minuten.
+#   - Bot-Sperren werden NICHT umgangen (429/403 -> Weg als bot_gesperrt, 0 Items).
+#   - Die 3 bot-gesperrten Parteiquellen sind per Allowlist vollstaendig ausgeschlossen.
+#
+# ARTEFAKT: JSON-Bericht mit perWeg-Befund, Dokumenten + Fundstellen, Isolationsnachweis.
+#
+# Der Lauf ist NUR das oeffentliche Beobachten der Adressen mit dem Produktionsparser
+# (crawler.parseRssItems) + globalem Dedup/Fundstellen-Modul. Er beruehrt die Live-
+# Oberflaechen Lage/Radar/Helmut/Buero nicht (die lesen knowledge_objects/raw_documents/
+# helmut_store — allesamt hier NICHT beschrieben).
+
+on:
+  workflow_dispatch:
+    inputs:
+      fresh_days:
+        description: "Aktualitaetsfenster in Tagen — Default 45"
+        required: false
+        default: "45"
+      rss_max:
+        description: "Max. Items je RSS-/Google-News-Weg — Default 20"
+        required: false
+        default: "20"
+      opendata_max:
+        description: "Max. Datensaetze je Open-Data-Weg — Default 25"
+        required: false
+        default: "25"
+
+# Minimalrechte: nur lesen. Kein Repo-Write, kein Package-Write, nichts.
+permissions:
+  contents: read
+
+concurrency:
+  group: shadow-pilot-be-bb
+  cancel-in-progress: false
+
+jobs:
+  shadow-pilot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Abhaengigkeiten (Projekt hat keine Runtime-Deps; defensiv, kein Lockfile)
+        run: npm install --no-audit --no-fund
+
+      # HARTE VORBEDINGUNG: Offline-Test der Auswahl-/Isolations-/Dedup-Logik. Bricht der
+      # Test ab (z. B. Isolationsverletzung, Bot-Quelle in Auswahl), laeuft KEIN Crawl.
+      - name: Shadow-Pilot-Logik testen (offline, harte Schranke)
+        run: node scripts/shadow-pilot-test.js
+
+      # Isolierter Beobachtungslauf. Schreibt NUR das JSON-Artefakt. Ohne Egress ->
+      # alle Wege 'nicht_verifizierbar' (kein erfundenes Ergebnis), Exit 0.
+      - name: Shadow-Pilot ausfuehren (isoliert, nur Artefakt)
+        env:
+          SP_FRESH_DAYS: ${{ inputs.fresh_days || '45' }}
+          SP_RSS_MAX: ${{ inputs.rss_max || '20' }}
+          SP_OPENDATA_MAX: ${{ inputs.opendata_max || '25' }}
+        run: node scripts/shadow-pilot-crawl.js --out shadow-pilot-report.json
+
+      # Kurz-Zusammenfassung in die Job-Summary (kein zusaetzliches Skript noetig).
+      - name: Zusammenfassung in Job-Summary
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ -f shadow-pilot-report.json ]; then
+            node -e "const r=require('./shadow-pilot-report.json');const l=[];l.push('## Shadow-Pilot BE/BB');l.push('');l.push('- Egress offen: '+r.egressOffen);l.push('- Modus: '+r.modus);l.push('- Items roh: '+r.itemsRoh+' · nach Dedup L1: '+r.itemsNachDedupL1+' · Dokumente: '+r.dokumente+' · Fundstellen: '+r.fundstellenGesamt);l.push('- Isolation ok: '+r.isolation.ok+' (verbotene Module: '+(r.isolation.verboteneModule.join(', ')||'keine')+')');l.push('- Ausgeschlossene Bot-Quellen: '+r.ausgeschlosseneBotQuellen.join(', '));l.push('');l.push('| Weg | Land | Methode | Befund | Items |');l.push('|---|---|---|---|---|');for(const w of r.perWeg)l.push('| '+w.id+' | '+w.land+' | '+w.method+' | '+w.befund+' | '+w.itemCount+' |');console.log(l.join('\n'));" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Kein Report erzeugt (Lauf fehlgeschlagen)." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Artefakt hochladen (JSON)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shadow-pilot-be-bb
+          path: shadow-pilot-report.json
+          if-no-files-found: warn
+          retention-days: 30
