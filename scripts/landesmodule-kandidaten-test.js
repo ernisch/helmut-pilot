@@ -91,8 +91,11 @@ console.log("== Technische Prüfung (Sprint-9-Vertiefung) ==");
 check("jeder besetzte Kandidat trägt evidenceRole + produktnutzen + stabileAdresse", besetzt.every((c) => ["official_primary","direct_interest","journalistic","data_source","aggregator"].includes(c.evidenceRole) && ["hoch","mittel","niedrig"].includes(c.produktnutzen) && typeof c.stabileAdresse === "boolean"));
 check("URL-KORREKTUR Brandenburg: exportWP8.xml (8. WP), NICHT exportWP1.xml", ["plenum","drucksachen","schriftliche_anfragen","gesetzgebung"].every((kl) => /exportWP8\.xml$/.test(bbByKlasse[kl].url)) && !bb.some((c) => /exportWP1\.xml/.test(c.url || "")));
 check("URL-PRÄZISIERUNG Berlin Open-Data: pardok-wp19.xml (Deep-Link, nicht Landingpage)", ["plenum","drucksachen","schriftliche_anfragen","gesetzgebung"].every((kl) => /opendata\/pardok-wp19\.xml$/.test(beByKlasse[kl].url)));
-check("R2 Berlin Staatskanzlei: echter RBm-Sektionsfeed (rbmskzl/.../index/feed)", /rbmskzl\/aktuelles\/pressemitteilungen\/index\/feed$/.test(beByKlasse.staatskanzlei.url) && beByKlasse.staatskanzlei.method === "rss");
-check("R2 Brandenburg Landesregierung/Ministerien: echte bbo_rss-Feeds", /\/bbo_rss$/.test(bbByKlasse.landesregierung.url) && /mwfk\.brandenburg\.de.*\/bbo_rss$/.test(bbByKlasse.ministerien.url));
+// R3: die geratenen Direktfeeds (RBm-Feed, bbo_rss) waren real defekt (404/HTML) -> klar
+// abgegrenzter googlenews-Ersatz. Kein bbo_rss/rbmskzl mehr in den Wegen.
+check("R3: keine geratenen Direktfeeds mehr (kein bbo_rss/rbmskzl)", !alle.some((c) => /bbo_rss|rbmskzl/.test(c.url || "")));
+check("R3 Berlin Staatskanzlei: googlenews-Ersatz (RBm-Feed war real 404)", /news\.google\.com/.test(beByKlasse.staatskanzlei.url) && beByKlasse.staatskanzlei.method === "googlenews_search");
+check("R3 Brandenburg Landesregierung/Ministerien: googlenews-Ersatz (bbo_rss war real defekt)", /news\.google\.com/.test(bbByKlasse.landesregierung.url) && /news\.google\.com/.test(bbByKlasse.ministerien.url));
 check("abgelehnt: berlin.de/sen/ + fraktionen-Landing + OParl + exportWP1 dokumentiert", ["/sen/","das-parlament/fraktionen","OParl","exportWP1"].every((n) => k.ABGELEHNTE_KANDIDATEN.some((a) => (a.kandidat + a.grund).includes(n))));
 check("Berlin partei_pilot Domain dielinke.berlin OHNE www", beByKlasse.partei_pilot.domain === "dielinke.berlin");
 
@@ -112,12 +115,13 @@ console.log("== Defekte Bundeswege — Reparaturen ==");
 const rep = require("../lib/helmut/quellenarchitektur/seeds/bundeswege-reparaturen");
 const rs = rep.reparaturSummary();
 check("6 defekte Bundeswege dokumentiert", rep.BUNDESWEG_REPARATUREN.length === 6);
-// 9B (echter Abruf): 3 repariert (bundestag/linksfraktion/ausschuss), 2 URL falsch (bundesregierung/dgb), 1 bot-gesperrt (die-linke).
-check("9B: 3 repariert + 2 reparatur_url_falsch + 1 bot_gesperrt, 0 dauerhaft_defekt", rs.repariert === 3 && rs.reparaturUrlFalsch === 2 && rs.botGesperrt === 1 && rs.dauerhaftDefekt === 0);
-check("9B EHRLICH: NICHT alle kritischen Wege gelöst (2/4 repariert, alleKritischGeloest=false)", rs.kritischGesamt === 4 && rs.kritischRepariert === 2 && rs.kritischOffen === 2 && rs.alleKritischGeloest === false);
-check("nur echt getestete (geeignet) Wege sind verifiziert=true", rep.BUNDESWEG_REPARATUREN.filter((r) => r.verifiziert).length === 3 && rep.BUNDESWEG_REPARATUREN.every((r) => (r.verifiziert === true) === (r.bewertung === "repariert")));
-check("bundestag repariert (real geeignet, HTTP 200)", rep.BUNDESWEG_REPARATUREN.some((r) => r.legacy_source_id === "bundestag" && r.bewertung === "repariert" && r.liveHttp === 200));
-check("bundesregierung reparatur_url_falsch (real HTTP 404)", rep.BUNDESWEG_REPARATUREN.some((r) => r.legacy_source_id === "bundesregierung" && r.bewertung === "reparatur_url_falsch" && r.liveHttp === 404));
+// 9B ENDSTAND (R3, echter Abruf): ALLE 6 real geeignet -> repariert. bundestag/linksfraktion als
+// Direktfeed; bundesregierung/die-linke/ausschuss/dgb als googlenews-Ersatz (Direktweg real defekt).
+check("9B R3: alle 6 repariert, 0 reparatur_url_falsch, 0 bot_gesperrt, 0 dauerhaft_defekt", rs.repariert === 6 && rs.reparaturUrlFalsch === 0 && rs.botGesperrt === 0 && rs.dauerhaftDefekt === 0);
+check("9B R3: ALLE 4 kritischen Wege gelöst (4/4 repariert, alleKritischGeloest=true)", rs.kritischGesamt === 4 && rs.kritischRepariert === 4 && rs.kritischOffen === 0 && rs.alleKritischGeloest === true);
+check("alle 6 real getestet: verifiziert=true == bewertung 'repariert'", rep.BUNDESWEG_REPARATUREN.filter((r) => r.verifiziert).length === 6 && rep.BUNDESWEG_REPARATUREN.every((r) => (r.verifiziert === true) === (r.bewertung === "repariert")));
+check("bundestag repariert (Direktfeed, real geeignet HTTP 200)", rep.BUNDESWEG_REPARATUREN.some((r) => r.legacy_source_id === "bundestag" && r.bewertung === "repariert" && r.reparaturMethod === "rss" && r.liveHttp === 200));
+check("bundesregierung repariert via googlenews-Ersatz (Direkt-URL war real 404)", rep.BUNDESWEG_REPARATUREN.some((r) => r.legacy_source_id === "bundesregierung" && r.bewertung === "repariert" && r.reparaturMethod === "googlenews_search"));
 check("linksfraktion: dielinkebt.de repariert (NICHT veraltete linksfraktion.de)", rep.BUNDESWEG_REPARATUREN.some((r) => r.legacy_source_id === "linksfraktion" && /dielinkebt\.de/.test(r.reparaturUrl) && /linksfraktion\.de/.test(r.diagnose) && r.bewertung === "repariert"));
 check("ausschuss-arbeit-soziales -> googlenews_search Ersatz (repariert)", rep.BUNDESWEG_REPARATUREN.some((r) => r.legacy_source_id === "ausschuss-arbeit-soziales" && r.reparaturMethod === "googlenews_search" && r.bewertung === "repariert"));
 check("jede Reparatur: verifyBeforeActivation=true, angewendet=0", rep.BUNDESWEG_REPARATUREN.every((r) => r.verifyBeforeActivation === true) && rs.angewendet === 0);

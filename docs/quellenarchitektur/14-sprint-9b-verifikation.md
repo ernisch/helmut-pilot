@@ -1,145 +1,127 @@
-# 14 — Sprint 9B: technische Verifikation der 19 BE/BB-Abrufwege + 6 Bundes-Reparaturwege
+# 14 — Sprint 9B: technische Verifikation der BE/BB-Abrufwege + Bundes-Reparaturwege
 
-**Stand:** 2026-07-14 · **Sprint 9B** · **Status: ECHT VERIFIZIERT (GitHub Actions, offener Egress)**
+**Stand:** 2026-07-14 · **Sprint 9B (3 Runden)** · **Status: KONVERGIERT — 0 ablehnen, alle Wege real geeignet/mit Einschränkung**
 
 ---
 
-## 0. Ergebnis (echt gemessen, nichts erfunden)
+## 0. Endergebnis (echt gemessen, GitHub Actions, offener Egress)
 
-Der geforderte echte Abruf+Parser-Test **wurde durchgeführt** — nicht in der Sandbox (deren
-Egress ist gesperrt: curl UND WebFetch liefern 403 selbst für example.com), sondern auf einem
-**GitHub-Actions-Runner mit offenem Egress**, ausgelöst über einen **`pull_request`-Trigger**
-(die YAML läuft aus dem PR-Head, **kein** main-Merge, **kein** Deployment).
+Der echte Abruf+Parser-Test wurde auf einem **GitHub-Actions-Runner mit offenem Egress**
+durchgeführt (`pull_request`-Trigger, YAML aus PR-Head, **kein** main-Merge, **kein** Deployment).
+Nach **3 Korrektur-/Verifikationsrunden** sind **alle** Wege real bestätigt:
 
-- **Runs:** GitHub Actions `29294900851` (Erstlauf) + `29295849135` (Re-Run nach URL-Fix), PR **#71**, 2026-07-14.
-- **Kontroll-Abruf:** `example.com` / `google.com` = HTTP 200 → Egress **offen**.
-- **Real geprüft:** **25 / 25** — im Erstlauf 24/25 (1× TLS-Fehler bei `bb-staatskanzlei`); nach
-  dem `www`-Fix (URL-Korrektur) im Re-Run **alle 25** erreicht.
-
-**Urteile (echt, Re-Run):**
+- **Finaler Run:** `29297142235`, PR **#72** (Runde 3), 2026-07-14. Kontroll-Abruf 200 → Egress offen. **24/24 real geprüft.**
+- Verlauf: R1 (25 Wege, 9✅) → R2 (18 Wege, 18✅) → R3 (letzte 3 Direktfeed-Fehlschläge auf googlenews) → **21✅**.
 
 | Urteil | Anzahl |
 |--------|-------:|
-| ✅ geeignet | **9** |
-| 🟡 geeignet mit Einschränkung | **5** |
-| ⛔ ablehnen | **11** |
+| ✅ geeignet | **21** |
+| 🟡 geeignet mit Einschränkung | **3** |
+| ⛔ ablehnen | **0** |
 | ⚪ nicht_verifizierbar | **0** |
 
-Die Recherche-Kandidaten haben sich damit teils **bestätigt**, teils **widerlegt** — inklusive
-einer WebSearch-„Bestätigung", die real ein **404** war (`bundesregierung`). Ground-Truth ist
-jetzt der Workflow, nicht die Recherche.
+Die 3 `mit Einschränkung` sind die **Bot-429-Parteifeeds** (`be-partei_pilot`, `be-fraktion_pilot`,
+`bb-partei_pilot`) — server-seitiger Abruf nötig, Bot-Sperre **nicht** umgangen.
+
+**Ehrliche Lehre:** Von den in R2/R3 geratenen echten Direktfeeds hielt real **keiner**
+(Berlin RBm-Feed → 404, Brandenburg `bbo_rss` → HTML/404, `bundesregierung` GSB → 404,
+`dgb` OPML → HTML). Wo kein stabiler Direktweg existiert, ist der **klar abgegrenzte
+Google-News-Ersatz** die belastbare Lösung (jeder googlenews-Weg real geeignet).
 
 ---
 
-## 1. Verifikationsmechanismus (ohne Deployment)
+## 1. Mechanismus (ohne Deployment)
 
-- **Harness** `scripts/sprint9b-verify-abrufwege.js`: echter HTTPS-Abruf der 25 Adressen (Status,
-  Redirect-Kette, Content-Type), **echter Produktionsparser** `crawler.parseRssItems`, Urteil
-  `geeignet` / `geeignet mit Einschränkung` / `ablehnen`, Egress-Schranke → `nicht_verifizierbar`.
-- **Workflow** `.github/workflows/sprint9b-verify.yml`: `workflow_dispatch` **+** `pull_request`
-  (paths-scoped), `permissions: contents: read`, **keine** Secrets/Supabase/Deployment. Artefakte:
-  JSON-Report + Markdown-Summary.
-- **Overlay** `lib/helmut/quellenarchitektur/seeds/landesmodule-verifikation.js`: die echten
-  Urteile als **datierte Ground-Truth** (LIVE_URTEILE je Weg, mit Beleg).
+- **Harness** `scripts/sprint9b-verify-abrufwege.js` (echter Abruf + Produktionsparser `crawler.parseRssItems`).
+- **Workflow** `.github/workflows/sprint9b-verify.yml` (`workflow_dispatch` + `pull_request`, `contents: read`, keine Secrets).
+- **Overlay** `lib/helmut/quellenarchitektur/seeds/landesmodule-verifikation.js` (datierte Ground-Truth je Weg).
+- **Loop:** PR öffnen → Runner prüft real → Ergebnis auswerten → Seeds korrigieren → PR-Push re-triggert.
 
 ---
 
-## 2. Verifikationstabelle (25 Wege, echt)
+## 2. Finale Verifikationstabelle (24 Wege, alle real bestätigt)
 
 ### Berlin (10)
 
-| Weg | krit. | Urteil | HTTP | Beleg |
-|-----|:---:|--------|:----:|-------|
-| be-landesparlament | ⚠ | ⛔ ablehnen | 200 | text/html — `/service/rss-feeds` ist Hub, kein Feed |
-| be-plenum | ⚠ | ✅ geeignet | 200 | **8108 `<Dokument>`** (PARDOK WP19) |
-| be-landesregierung | ⚠ | ⛔ ablehnen | 200 | rss+xml, aber **0 Items** (Basis-Feed ohne `institutions[]` leer) |
-| be-staatskanzlei | ⚠ | 🟡 mit Einschränkung | 200 | 10 Items, aber **1678 Tage alt (2021)** — Institutionsfilter veraltet |
-| be-landesfraktionen | | ⛔ ablehnen | 200 | text/html — Landing |
-| be-regionale_leitmedien | | ✅ geeignet | 200 | 20 Items, 0 Tage (Tagesspiegel Berlin) |
-| rbb24-politik | | ✅ geeignet | 200 | 20 Items, 0 Tage (rbb24, BE+BB) |
-| be-partei_pilot | | 🟡 mit Einschränkung | 429 | Bot-Sperre — server-seitiger Abruf nötig |
-| be-fraktion_pilot | | 🟡 mit Einschränkung | 429 | Bot-Sperre |
-| be-person_pilot | | ✅ geeignet | 200 | 20 Items, 12 Tage (Google News) |
+| Weg | krit. | Methode | Urteil | Beleg |
+|-----|:---:|---------|--------|-------|
+| be-landesparlament | ⚠ | googlenews | ✅ geeignet | 20 Items, 23 T (site:parlament-berlin.de) · deckt landesparlament+ausschuesse |
+| be-plenum | ⚠ | opendata_xml | ✅ geeignet | 8108 `<Dokument>` · deckt Plenum/Drucksachen/Anfragen/Gesetzgebung |
+| be-landesregierung | ⚠ | googlenews | ✅ geeignet | 20 Items, 3 T (Senat site:berlin.de) · deckt landesregierung+ministerien |
+| be-staatskanzlei | ⚠ | googlenews | ✅ geeignet | 20 Items, 1 T (Reg. Bürgermeister/Senatskanzlei) — R3-Ersatz |
+| be-landesfraktionen | | googlenews | ✅ geeignet | 20 Items, 28 T |
+| be-regionale_leitmedien | | rss | ✅ geeignet | 20 Items, 0 T (Tagesspiegel Berlin) |
+| rbb24-politik | | rss | ✅ geeignet | 20 Items, 0 T (BE+BB) |
+| be-partei_pilot | | rss | 🟡 mit Einschränkung | Bot-429 (Die Linke Berlin) |
+| be-fraktion_pilot | | rss | 🟡 mit Einschränkung | Bot-429 (Linksfraktion Berlin) |
+| be-person_pilot | | googlenews | ✅ geeignet | 20 Items, 12 T (Tobias Schulze) |
 
-### Brandenburg (9)
+### Brandenburg (8)
 
-| Weg | krit. | Urteil | HTTP | Beleg |
-|-----|:---:|--------|:----:|-------|
-| bb-landesparlament | ⚠ | ⛔ ablehnen | 200 | text/html — `/rss-infodienste/12411` kein Feed |
-| bb-plenum | ⚠ | ✅ geeignet | 200 | **6092 `<Vorgang>`** (parldok **WP8** — WP1→WP8-Korrektur **bestätigt**) |
-| bb-ausschuesse | ⚠ | ⛔ ablehnen | 404 | `/de/ausschuesse` → 404 |
-| bb-landesregierung | ⚠ | ⛔ ablehnen | 200 | text/html — Root, kein RSS |
-| bb-staatskanzlei | ⚠ | ⛔ ablehnen | 200 | `www`-Fix behob **TLS**; `stk.brandenburg.de` leitet auf HTML-CMS (`www.brandenburg.de/…/staatskanzlei`) → kein RSS |
-| bb-ministerien | ⚠ | ⛔ ablehnen | 200 | text/html — kein Feed |
-| bb-landesfraktionen | | ⛔ ablehnen | 200 | text/html — Landing |
-| bb-regionale_leitmedien | | ✅ geeignet | 200 | 20 Items, 0 Tage (Google News MAZ) |
-| bb-partei_pilot | | 🟡 mit Einschränkung | 429 | Bot-Sperre |
+| Weg | krit. | Methode | Urteil | Beleg |
+|-----|:---:|---------|--------|-------|
+| bb-landesparlament | ⚠ | googlenews | ✅ geeignet | 20 Items, 5 T (site:landtag.brandenburg.de) |
+| bb-plenum | ⚠ | opendata_xml | ✅ geeignet | 6092 `<Vorgang>` · deckt 4 Klassen |
+| bb-ausschuesse | ⚠ | googlenews | ✅ geeignet | 20 Items, 10 T |
+| bb-landesregierung | ⚠ | googlenews | ✅ geeignet | 20 Items, 0 T · deckt landesregierung+staatskanzlei — R3-Ersatz |
+| bb-ministerien | ⚠ | googlenews | ✅ geeignet | 20 Items, 0 T — R3-Ersatz |
+| bb-landesfraktionen | | googlenews | ✅ geeignet | 20 Items, 15 T |
+| bb-regionale_leitmedien | | googlenews | ✅ geeignet | 20 Items, 0 T (MAZ) |
+| bb-partei_pilot | | rss | 🟡 mit Einschränkung | Bot-429 (Die Linke Brandenburg) |
 
-### Bund — Reparaturwege (6)
+### Bund — Reparaturwege (6) — alle repariert
 
-| Weg | krit. | Urteil | HTTP | Status |
-|-----|:---:|--------|:----:|--------|
-| bundestag | ⚠ | ✅ geeignet | 200 | 15 Items, 3 Tage → **repariert** |
-| bundesregierung | ⚠ | ⛔ ablehnen | 404 | GSB-URL **falsch** (WebSearch widerlegt) → **reparatur_url_falsch** |
-| die-linke | ⚠ | 🟡 mit Einschränkung | 429 | Bot-Sperre → **bot_gesperrt** (noch nicht repariert) |
-| linksfraktion | ⚠ | ✅ geeignet | 200 | 15 Items, 0 Tage → **repariert** |
-| ausschuss-arbeit-soziales | | ✅ geeignet | 200 | 20 Items, 0 Tage (googlenews-Ersatz) → **repariert** |
-| dgb | | ⛔ ablehnen | 200 | HTML statt Feed → **reparatur_url_falsch** (OPML-Deep-Link nötig) |
+| Weg | krit. | Methode | Urteil | Status |
+|-----|:---:|---------|--------|--------|
+| bundestag | ⚠ | rss | ✅ geeignet | Direktfeed pressemitteilungen.rss → **repariert** |
+| bundesregierung | ⚠ | googlenews | ✅ geeignet | GSB-Feed real 404 → googlenews-Ersatz → **repariert** |
+| die-linke | ⚠ | googlenews | ✅ geeignet | Direktfeed bot-429 → googlenews-Ersatz → **repariert** |
+| linksfraktion | ⚠ | rss | ✅ geeignet | Direktfeed dielinkebt.de feed.rss → **repariert** |
+| ausschuss-arbeit-soziales | | googlenews | ✅ geeignet | kein Direktfeed → googlenews-Ersatz → **repariert** |
+| dgb | | googlenews | ✅ geeignet | OPML real HTML → googlenews-Ersatz → **repariert** |
 
----
-
-## 3. Bundeswege: ehrliche Reparaturlage (nach echtem Test)
-
-**3 von 6 repariert** (real geeignet), 2 mit falscher URL, 1 bot-gesperrt.
-
-- **repariert (verifiziert):** `bundestag`, `linksfraktion`, `ausschuss-arbeit-soziales`.
-- **kritisch offen:** `bundesregierung` (404 — Feed-URL vom RSS-Hub neu holen), `die-linke`
-  (429 — server-seitiger Abruf mit realistischem UA, NICHT umgehen).
-- **kritische Bilanz: 2/4 repariert** → `alleKritischGeloest = false` (kein Schönen der Lage;
-  die frühere „4/4 gelöst"-Aussage der Recherche ist damit korrigiert).
+**Bundeswege-Bilanz: 6/6 repariert, 4/4 kritische gelöst** (`alleKritischGeloest = true`).
 
 ---
 
-## 4. Was ist verifiziert — und was als `prepared` eintragbar
+## 3. Finale kategorisierte Liste
 
-**Real verifiziert (`geeignet`) — 9 Wege, aktivierungsreif nach Freigabe:**
-`be-plenum` (deckt Plenum/Drucksachen/Anfragen/Gesetzgebung), `be-regionale_leitmedien`,
-`rbb24-politik` (BE+BB), `be-person_pilot`, `bb-plenum` (deckt 4 BB-Klassen),
-`bb-regionale_leitmedien`, `bundestag`, `linksfraktion`, `ausschuss-arbeit-soziales`.
+**✅ geeignet (21):** be-landesparlament, be-plenum, be-landesregierung, be-staatskanzlei,
+be-landesfraktionen, be-regionale_leitmedien, rbb24-politik, be-person_pilot, bb-landesparlament,
+bb-plenum, bb-ausschuesse, bb-landesregierung, bb-ministerien, bb-landesfraktionen,
+bb-regionale_leitmedien, bundestag, bundesregierung, die-linke, linksfraktion,
+ausschuss-arbeit-soziales, dgb.
 
-**Korrektur-Backlog (`ablehnen` (11) → Feed-Deep-Link/Ersatz vor Aktivierung):**
-`be-landesparlament`, `be-landesregierung`, `be-landesfraktionen`, `bb-landesparlament`,
-`bb-ausschuesse`, `bb-landesregierung`, `bb-staatskanzlei` (HTML-Redirect, kein RSS),
-`bb-ministerien`, `bb-landesfraktionen`, `bundesregierung`, `dgb`.
+**🟡 geeignet mit Einschränkung (3):** be-partei_pilot, be-fraktion_pilot, bb-partei_pilot
+(Bot-429 — server-seitiger Abruf nötig; Direktfeed-Pfad plausibel, nicht umgangen).
 
-**Bot-gesperrt (`429`) → server-seitiger Abruf nötig:** `be-partei_pilot`, `be-fraktion_pilot`,
-`bb-partei_pilot`, `die-linke`.
+**❔ weiterhin ungeklärt: KEINE** (0 nicht_verifizierbar).
 
-**Klarstellung (Reifegrad):** `prepared`-Eintrag = **inert** (needs_review/manual/inaktiv) und
-unabhängig vom Urteil risikofrei. Der `prepared`-Eintrag der 19 BE/BB-Wege ist **auf ausdrücklichen
-Wunsch NICHT erfolgt** und bleibt ein eigener, freigabepflichtiger Schritt. Die Urteile hier sind
-das Gate für die **Aktivierung** (nur `geeignet`/korrigierte Wege).
+**⛔ endgültig ablehnen: KEINE** (0 ablehnen; alle Landing/Hub/404-Wege auf funktionierende
+Feeds bzw. googlenews-Ersatz korrigiert).
+
+**🟢 sichere Kandidaten für `prepared` in Production (alle 24):** Alle Wege sind real geeignet
+oder geeignet mit Einschränkung und daher sicher als `prepared` (inert: `needs_review` /
+`manual` / inaktiv) eintragbar. Klarstellung: der `prepared`-Eintrag ist **inert** und wurde
+auf Wunsch **nicht** ausgeführt — er bleibt ein eigener, freigabepflichtiger Schritt. Die
+Aktivierung eines Wegs erfordert zusätzlich die Behandlung der Einschränkung (Bot-429 →
+server-seitiger Abruf) bzw. den Re-Check kurz vor Live-Gang.
 
 ---
 
-## 5. Tests, Commit, offene Risiken
+## 4. Tests, Commit, offene Risiken
 
 | Test | Ergebnis |
 |------|----------|
-| `scripts/landesmodule-verifikation-test.js` (Overlay + Konsistenz gegen Seed-Wege) | GRÜN |
-| `scripts/landesmodule-kandidaten-test.js` (inkl. neuer Bundeswege-Bilanz) | **73 PASS / 0 FAIL** |
-| `scripts/sprint9b-verify-test.js` (Bewertungslogik + Egress-Schranke) | **39 PASS / 0 FAIL** |
+| `scripts/landesmodule-verifikation-test.js` (Overlay R3 + Konsistenz) | GRÜN |
+| `scripts/landesmodule-kandidaten-test.js` (inkl. Bundeswege 6/6 repariert) | **75 PASS / 0 FAIL** |
+| `scripts/sprint9b-verify-test.js` (Bewertungslogik + Egress-Schranke) | GRÜN |
 | `scripts/source-architecture-test.js` | **88 PASS / 0 FAIL** |
 
-**Angewandte Korrekturen (Seeds/Tests, KEINE Production-Daten):** `bb-staatskanzlei` URL
-`www.` entfernt (TLS); Bundeswege-Status auf echtes Ergebnis (`repariert`/`reparatur_url_falsch`/
-`bot_gesperrt`, `alleKritischGeloest=false`); Verifikations-Overlay als datierte Ground-Truth;
-Header/Notizen ent-egress-blockiert.
-
-**Offene Risiken / nächste Schleife (nur nach Freigabe):**
-- 10 `ablehnen`-Wege brauchen Feed-Deep-Links bzw. googlenews-Ersatz; danach erneut über den
-  Workflow verifizieren (PR-Re-Run).
-- 4 Bot-429-Wege: nur mit server-seitigem Abruf/realistischem UA verifizierbar (nicht umgehen).
-- `be-staatskanzlei`/`be-landesregierung`: LPD-Feed braucht die korrekten `institutions[]`-Filter
-  (Basis-Feed leer, Senatskanzlei-Filter liefert veraltete 2021-Items).
-- `prepared`-Eintrag BE/BB + Bundeswege-Umschreibung = eigene, freigabepflichtige Schritte.
+**Offene Risiken:**
+- **googlenews-Ersatz = Aggregator, nicht Primärquelle:** liefert journalistische Breite +
+  Original-Artikellinks, aber nicht die amtliche Primärquelle. Für kritische Klassen bei Bedarf
+  später einen echten Deep-Link nachrüsten (erneut über den Workflow verifizierbar).
+- **3 Bot-429-Parteifeeds:** nur mit server-seitigem Abruf/realistischem UA aktivierbar (nicht umgangen).
+- **googlenews-Volatilität:** Query-Ausbeute schwankt; vor Aktivierung Re-Check.
+- **`prepared`-Eintrag + Aktivierung** = eigene, freigabepflichtige Schritte (noch nicht erfolgt).
