@@ -181,12 +181,13 @@ check("6c Nur beiläufige Erwähnung (mentioned_parties) -> KEIN Partei-Reiter",
 // =============================================================================
 {
   const profile = { id: "p", fullName: "Test Person", party: "Die Linke", committees: ["Ausschuss für Arbeit und Soziales"], constituency: "Salzgitter-Wolfenbüttel" };
-  const ko = { ...KOBASE, id: "k", vorgang_id: "v", display_title: "Anhörung im Ausschuss",
+  // Ausschuss jetzt WÖRTLICH im Inhalt (Beleg-Nachschaerfung Phase A/B: ko.ausschuesse allein genuegt nicht).
+  const ko = { ...KOBASE, id: "k", vorgang_id: "v", display_title: "Anhörung im Ausschuss für Arbeit und Soziales",
     ausschuesse: ["Ausschuss für Arbeit und Soziales"], mentioned_locations: ["Salzgitter-Wolfenbüttel"],
     created_at: iso(24 * 3600e3), best_source_url: "https://example.org/d" };
   const mf = [{ type: "ausschuss", value: "Ausschuss für Arbeit und Soziales" }, { type: "wahlkreis", value: "Salzgitter-Wolfenbüttel" }];
   const st = radarState.buildCurrentRadarState({ profile, decisions: [{ knowledge_object_id: "k", vorgang_id: "v", score: 60, matched_features: mf }], kosById: { k: ko }, knowledgeObjects: [ko], sourcesByVorgang: {}, now: nowDate });
-  check("8 Ausschuss-Beleg unveraendert (exakter Ausschuss-Match -> im Ausschüsse-Reiter)", st.environment.committees.some((e) => e.vorgangId === "v"));
+  check("8 Ausschuss-Beleg (Ausschussname im Inhalt) -> im Ausschüsse-Reiter", st.environment.committees.some((e) => e.vorgangId === "v"));
   check("8b Wahlkreis-Beleg unveraendert (konkreter Ort -> im Wahlkreis-Reiter)", st.environment.constituency.some((e) => e.vorgangId === "v"));
 }
 

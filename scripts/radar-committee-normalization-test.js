@@ -107,28 +107,30 @@ check("2b Kleinschreibung: 'ausschuss für gesundheit' == 'Gesundheit'",
 // =============================================================================
 // 4) B-Fix (radarState nutzt zentrale Normalisierung): echte Kette Matching -> Radar
 // =============================================================================
-check("4 Profil 'Arbeit und Soziales' + KO ['Ausschuss für Arbeit und Soziales'] -> Ausschuss-Reiter",
-  runCommittee({ profileFields: { committee: "Arbeit und Soziales" }, ausschuesse: ["Ausschuss für Arbeit und Soziales"] }).granted);
-check("4b Profil 'Arbeit und Soziales' + KO ['Bundestagsausschuss für Arbeit und Soziales'] -> erkannt",
-  runCommittee({ profileFields: { committee: "Arbeit und Soziales" }, ausschuesse: ["Bundestagsausschuss für Arbeit und Soziales"] }).granted);
-check("4c Profil 'Ausschuss für Gesundheit' + KO ['Ausschuss für Gesundheit'] (volle amtliche Form) -> erkannt",
-  runCommittee({ profileFields: { committee: "Ausschuss für Gesundheit" }, ausschuesse: ["Ausschuss für Gesundheit"] }).granted);
+// Beleg-Nachschaerfung Phase A/B: der volle Ausschussname muss WÖRTLICH im Inhalt stehen
+// (ko.ausschuesse allein genuegt nicht) — daher tragen die "granted"-Faelle den Namen im Titel.
+check("4 Profil 'Arbeit und Soziales' + Ausschussname im Inhalt -> Ausschuss-Reiter",
+  runCommittee({ profileFields: { committee: "Arbeit und Soziales" }, ausschuesse: ["Ausschuss für Arbeit und Soziales"], title: "Anhörung im Ausschuss für Arbeit und Soziales" }).granted);
+check("4b Profil 'Arbeit und Soziales' + KO ['Bundestagsausschuss für Arbeit und Soziales'] + Name im Inhalt -> erkannt",
+  runCommittee({ profileFields: { committee: "Arbeit und Soziales" }, ausschuesse: ["Bundestagsausschuss für Arbeit und Soziales"], title: "Sitzung im Ausschuss für Arbeit und Soziales" }).granted);
+check("4c Profil 'Ausschuss für Gesundheit' + Name im Inhalt -> erkannt",
+  runCommittee({ profileFields: { committee: "Ausschuss für Gesundheit" }, ausschuesse: ["Ausschuss für Gesundheit"], title: "Sitzung im Ausschuss für Gesundheit" }).granted);
 check("4c-2 Profil 'Ausschuss für Gesundheit' + KO ['Gesundheitsausschuss'] (bloße Kurzform, kein Beleg) -> NICHT erkannt (siehe radar-committee-evidence-test.js fuer die Beleg-Verschaerfung)",
   !runCommittee({ profileFields: { committee: "Ausschuss für Gesundheit" }, ausschuesse: ["Gesundheitsausschuss"] }).granted);
 check("4d Profil 'Menschenrechte und humanitäre Hilfe' + KO ['Recht und Verbraucherschutz'] -> NICHT erkannt (keine Kollision)",
   !runCommittee({ profileFields: { committee: "Menschenrechte und humanitäre Hilfe" }, ausschuesse: ["Recht und Verbraucherschutz"] }).granted);
 check("4e Profil 'Recht und Verbraucherschutz' + KO ['Ausschuss für Menschenrechte und humanitäre Hilfe'] -> NICHT erkannt (umgekehrt)",
   !runCommittee({ profileFields: { committee: "Recht und Verbraucherschutz" }, ausschuesse: ["Ausschuss für Menschenrechte und humanitäre Hilfe"] }).granted);
-check("4f Profil 'Menschenrechte und humanitäre Hilfe' + KO ['Ausschuss für Menschenrechte und humanitäre Hilfe'] -> erkannt (eigener Ausschuss funktioniert)",
-  runCommittee({ profileFields: { committee: "Menschenrechte und humanitäre Hilfe" }, ausschuesse: ["Ausschuss für Menschenrechte und humanitäre Hilfe"] }).granted);
+check("4f Profil 'Menschenrechte und humanitäre Hilfe' + Name im Inhalt -> erkannt (eigener Ausschuss funktioniert)",
+  runCommittee({ profileFields: { committee: "Menschenrechte und humanitäre Hilfe" }, ausschuesse: ["Ausschuss für Menschenrechte und humanitäre Hilfe"], title: "Sitzung im Ausschuss für Menschenrechte und humanitäre Hilfe" }).granted);
 
 // =============================================================================
 // 5) Aehnliche Ausschussnamen — keine Verwechslung (Arbeit/Soziales vs. Gesundheit)
 // =============================================================================
 check("5 Fremder Ausschuss: Gesundheit-Profil am reinen Arbeit-und-Soziales-KO -> KEIN Treffer",
   !runCommittee({ profileFields: { committee: "Gesundheit" }, ausschuesse: ["Ausschuss für Arbeit und Soziales"] }).granted);
-check("5b Aehnlicher Klang, anderer Ausschuss: 'Recht' vs. 'Ausschuss für Recht und Verbraucherschutz' (volle Form) greift korrekt",
-  runCommittee({ profileFields: { committee: "Recht und Verbraucherschutz" }, ausschuesse: ["Ausschuss für Recht und Verbraucherschutz"] }).granted);
+check("5b Aehnlicher Klang, anderer Ausschuss: 'Recht' + 'Ausschuss für Recht und Verbraucherschutz' im Inhalt greift korrekt",
+  runCommittee({ profileFields: { committee: "Recht und Verbraucherschutz" }, ausschuesse: ["Ausschuss für Recht und Verbraucherschutz"], title: "Sitzung im Ausschuss für Recht und Verbraucherschutz" }).granted);
 check("5b-2 'Rechtsausschuss' (bloße Kurzform, kein Beleg) allein genuegt NICHT mehr (siehe radar-committee-evidence-test.js)",
   !runCommittee({ profileFields: { committee: "Recht und Verbraucherschutz" }, ausschuesse: ["Rechtsausschuss"] }).granted);
 
@@ -156,12 +158,12 @@ check("6 Nur mentioned_committees (bloße Erwähnung), NICHT in ausschuesse -> K
 // 8) Konsistenz: Dedup + sichtbare Zahl == belegte Liste
 // =============================================================================
 {
-  const r = runCommittee({ profileFields: { committee: "Arbeit und Soziales" }, ausschuesse: ["Ausschuss für Arbeit und Soziales"] });
+  const r = runCommittee({ profileFields: { committee: "Arbeit und Soziales" }, ausschuesse: ["Ausschuss für Arbeit und Soziales"], title: "Sitzung im Ausschuss für Arbeit und Soziales" });
   check("8 Genau ein belegter Ausschuss-Treffer -> environment.committees.length === 1", r.committeeCount === 1);
 }
 {
   const profile = { id: "p", fullName: "Test Person", committee: "Arbeit und Soziales" };
-  const ko = { ...KOBASE, id: "k", vorgang_id: "v", ausschuesse: ["Ausschuss für Arbeit und Soziales"], created_at: iso(24 * 3600e3), best_source_url: "https://example.org/d" };
+  const ko = { ...KOBASE, id: "k", vorgang_id: "v", display_title: "Sitzung im Ausschuss für Arbeit und Soziales", ausschuesse: ["Ausschuss für Arbeit und Soziales"], created_at: iso(24 * 3600e3), best_source_url: "https://example.org/d" };
   const mf = matching.matchedFeatures(matching.profileFeatures(profile), matching.knowledgeObjectFeatures(ko));
   const decisions = [
     { knowledge_object_id: "k", vorgang_id: "v", score: 60, matched_features: mf },
