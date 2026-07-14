@@ -151,7 +151,13 @@ check("144 kuratierte Quellen im Katalog", v1Sources.length === 144);
 check("alle 144 + DIP als Abrufwege abgebildet", M.retrievalPaths.length === 145);
 check("keine unzugeordnete Quelle (unmapped=0)", M.unmapped.length === 0);
 check("jeder Abrufweg traegt legacy_source_id (ID-Kompatibilitaet)", M.retrievalPaths.every((p) => !!p.legacy_source_id));
-check("jede Katalog-Quelle genau einem Paket zugeordnet (Ist-Zustand)", M.packagePaths.length === 145);
+// Ist-Zustand seit dem P8-Paketfix: fraction-linke gehoert BEWUSST zu ZWEI Paketen
+// (bund-basis als neutraler Fraktions-Suchweg + die-linke-bund als funktionierender
+// Ersatz fuer die zwei defekten Original-RSS-Wege der Partei) -> 146 Zuordnungen.
+check("jede Katalog-Quelle mind. einem Paket zugeordnet; fraction-linke bewusst in zweien (145+1)", M.packagePaths.length === 146);
+check("fraction-linke in bund-basis UND die-linke-bund",
+  M.packagePaths.some((pp) => pp.package_id === "pkg-die-linke-bund" && pp.retrieval_path_id === "rp-fraction-linke") &&
+  M.packagePaths.some((pp) => pp.package_id === "pkg-bund-basis" && pp.retrieval_path_id === "rp-fraction-linke"));
 
 console.log("== Migration: Bundesbasis nicht verloren (Cem-Schutz) ==");
 const legacyIds = new Set(M.retrievalPaths.map((p) => p.legacy_source_id));

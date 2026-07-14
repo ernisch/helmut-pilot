@@ -87,6 +87,35 @@ check("Fundstellen-Dedup: gleiche source+URL nur einmal", (() => {
   return dup.length === 1 && dup[0].finding_count === 1;
 })());
 
+// ============================ SCHREIBPLAN (Cutover, planDedupWrites) ============================
+console.log("== planDedupWrites: Batch + Bestand -> Persists/Fundstellen/Zaehler ==");
+{
+  // 1) Artikel ueber ZWEI Wege im selben Batch -> 1 Persist + 2 Fundstellen.
+  const batch = [
+    { id: "r1", sourceId: "google-news-suche", url: "https://zeitung.de/artikel-1", originalUrl: "https://news.google.com/rss/articles/abc", linkType: "publisher", title: "Bundestag beschliesst Rentenreform 2026", publishedAt: "2026-07-13" },
+    { id: "r2", sourceId: "zeitung-direkt", url: "https://zeitung.de/artikel-1", originalUrl: "https://zeitung.de/artikel-1", linkType: "direct", title: "Bundestag beschliesst Rentenreform 2026", publishedAt: "2026-07-13" },
+    { id: "r3", sourceId: "andere-quelle", url: "https://andere.de/story-x", originalUrl: "https://andere.de/story-x", linkType: "direct", title: "Voellig anderes Thema im Landtag Bayern", publishedAt: "2026-07-13" }
+  ];
+  const plan = d.planDedupWrites(batch, []);
+  check("Schreibplan: 2 Persists (1 zusammengefuehrt + 1 separat)", plan.persists.length === 2);
+  const merged = plan.persists.find((p) => p.finding_count === 2);
+  check("zusammengefuehrtes Dokument traegt 2 Fundstellen + fingerprint", Boolean(merged) && Boolean(merged.content_fingerprint));
+  check("Fundstellen zeigen auf die Dokument-IDs des Plans", plan.findings.length === 3 && plan.findings.every((f) => f.raw_document_id));
+  check("Google-Proxy-Fund-URL bleibt als Fundstelle erhalten", plan.findings.some((f) => /news\.google\.com/.test(f.original_url)));
+  check("kein Bestands-Treffer -> keine Zaehler-Erhoehung", Object.keys(plan.countIncrements).length === 0);
+
+  // 2) Bestands-Treffer via fingerprint: KEIN neues Dokument, Fundstelle auf Bestands-ID.
+  const fp = merged.content_fingerprint;
+  const plan2 = d.planDedupWrites([batch[0]], [{ id: "rd-bestand", content_fingerprint: fp, canonical_target_url: "https://zeitung.de/artikel-1" }]);
+  check("Bestands-Treffer: 0 Persists", plan2.persists.length === 0);
+  check("Fundstelle haengt am BESTANDS-Dokument", plan2.findings.every((f) => f.raw_document_id === "rd-bestand"));
+  check("finding_count-Erhoehung fuer Bestands-Dokument", plan2.countIncrements["rd-bestand"] === 1);
+
+  // 3) Unterschiedliche Vorgaenge werden NIE zusammengelegt (kein Bestands-Match).
+  const plan3 = d.planDedupWrites([batch[2]], [{ id: "rd-bestand", content_fingerprint: fp, canonical_target_url: "https://zeitung.de/artikel-1" }]);
+  check("anderes Thema bleibt eigenes Dokument", plan3.persists.length === 1 && Object.keys(plan3.countIncrements).length === 0);
+}
+
 // ============================ MIGRATIONS-KONSISTENZ ============================
 console.log("== Migration: additiv + Rollback + Fundstellen-Tabelle ==");
 const migDir = path.join(__dirname, "..", "supabase", "migrations");

@@ -3350,7 +3350,49 @@ async function buildSourceArchitectureReport(mandateProfiles = []) {
       catalog: { retrievalPaths: M.retrievalPaths, packages: M.packages, packagePaths: M.packagePaths },
       activation, rawDocs, koSourceLinks: [], dedupDocuments: [], profiles, llmUsage, signals: {}, now
     });
-    return ar.buildSourceAdminReport({ catalog: M, activation, qualityReport: quality, now, candidateReadiness: kandidaten.readinessByGeography() });
+    const report = ar.buildSourceAdminReport({ catalog: M, activation, qualityReport: quality, now, candidateReadiness: kandidaten.readinessByGeography() });
+
+    // Quellenmodus (off/shadow/on) + relationaler Plan-Vergleich. EHRLICH: ohne erreichbare
+    // relationale Tabellen wird das als nicht verfügbar markiert (keine erfundenen Zahlen).
+    try {
+      const sm = require("./lib/helmut/quellenarchitektur/source-mode");
+      const modus = sm.sourceMode();
+      const [rows, legacySources] = await Promise.all([
+        storageMod.listSourceArchitectureRows().catch(() => null),
+        storageMod.getSources().catch(() => [])
+      ]);
+      if (rows && Array.isArray(rows.retrievalPaths) && rows.retrievalPaths.length) {
+        const plan = sm.buildRelationalCrawlPlan({
+          retrievalPaths: rows.retrievalPaths, packages: rows.packages,
+          packagePaths: rows.packagePaths, profiles, legacySources
+        });
+        const vergleich = sm.comparePlans({ legacySources, relationalPlan: plan });
+        report.quellenmodus = {
+          modus,
+          datenquelle: "relationale Production-Tabellen",
+          alterPlan: { quellen: vergleich.quellenzahl.alt },
+          relationalerPlan: plan.stats,
+          aktivierung: plan.aktivierung,
+          abweichungen: {
+            fehlendImRelationalen: vergleich.fehlendImRelationalen,
+            zusaetzlichImRelationalen: vergleich.zusaetzlichImRelationalen,
+            doppelteImAltkatalog: vergleich.doppelteImLegacy.length
+          },
+          defekteWege: plan.defekt.map((d) => d.id),
+          landesmodulGesperrt: plan.ausgeschlossen.filter((a) => /landesmodul/.test(a.grund)).length,
+          hinweis: modus === "off"
+            ? "Modus off: alter Katalog ist aktive Quellenwahrheit; relationaler Plan nur Vorschau/Vergleich."
+            : modus === "shadow"
+              ? "Modus shadow: alter Katalog aktiv; relationaler Plan wird parallel verglichen, nichts davon sichtbar."
+              : "Modus on (CUTOVER): relationale DB ist aktive Quellenwahrheit, alter Katalog ist Fallback."
+        };
+      } else {
+        report.quellenmodus = { modus, datenquelle: null, hinweis: "Relationale Tabellen nicht erreichbar/konfiguriert — Plan-Vergleich nicht verfügbar (keine erfundenen Kennzahlen)." };
+      }
+    } catch (error) {
+      report.quellenmodus = { modus: null, datenquelle: null, hinweis: `Quellenmodus-Report fehlgeschlagen: ${String(error && error.message || "").slice(0, 120)}` };
+    }
+    return report;
   } catch (_) { return null; }
 }
 
