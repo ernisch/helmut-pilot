@@ -14,8 +14,8 @@ function check(name, cond) { console.log(`${cond ? "PASS" : "FAIL"}  ${name}`); 
 const ERLAUBT = new Set(["geeignet", "geeignet mit Einschränkung", "ablehnen", "nicht_verifizierbar"]);
 
 // --- 1. Meta ---
-check("Meta: Egress offen, 24/25 real geprüft (GitHub-Runner)", V.LIVE_META.egressOffen === true && V.LIVE_META.realGeprueft === 24 && V.LIVE_META.gesamt === 25);
-check("Meta: Run + PR dokumentiert", V.LIVE_META.run === "29294900851" && V.LIVE_META.pr === 71 && V.LIVE_META.datum === "2026-07-14");
+check("Meta: Egress offen, 25/25 real geprüft (nach www-Fix)", V.LIVE_META.egressOffen === true && V.LIVE_META.realGeprueft === 25 && V.LIVE_META.gesamt === 25);
+check("Meta: Run + PR dokumentiert", V.LIVE_META.run === "29295849135" && V.LIVE_META.pr === 71 && V.LIVE_META.datum === "2026-07-14");
 
 // --- 2. Vollständigkeit + gültige Urteile ---
 check("19 Land-Wege mit Urteil", Object.keys(V.LIVE_URTEILE).length === 19);
@@ -26,12 +26,12 @@ check("jeder Weg trägt einen Beleg", [...Object.values(V.LIVE_URTEILE), ...Obje
 
 // --- 3. Zählung deckungsgleich mit dem Workflow-Ergebnis (9/5/10/1) ---
 const s = V.verifikationSummary();
-check("Land-Zählung: 6 geeignet / 4 mit Einschränkung / 8 ablehnen / 1 nicht_verifizierbar",
-  s.zaehlungLand["geeignet"] === 6 && s.zaehlungLand["geeignet mit Einschränkung"] === 4 && s.zaehlungLand["ablehnen"] === 8 && s.zaehlungLand["nicht_verifizierbar"] === 1);
+check("Land-Zählung: 6 geeignet / 4 mit Einschränkung / 9 ablehnen / 0 nicht_verifizierbar",
+  s.zaehlungLand["geeignet"] === 6 && s.zaehlungLand["geeignet mit Einschränkung"] === 4 && s.zaehlungLand["ablehnen"] === 9 && s.zaehlungLand["nicht_verifizierbar"] === 0);
 check("Bund-Zählung: 3 geeignet / 1 mit Einschränkung / 2 ablehnen",
   s.zaehlungBund["geeignet"] === 3 && s.zaehlungBund["geeignet mit Einschränkung"] === 1 && s.zaehlungBund["ablehnen"] === 2);
-check("Gesamt-Zählung: 9 / 5 / 10 / 1 (= Workflow-Summary)",
-  s.zaehlungGesamt["geeignet"] === 9 && s.zaehlungGesamt["geeignet mit Einschränkung"] === 5 && s.zaehlungGesamt["ablehnen"] === 10 && s.zaehlungGesamt["nicht_verifizierbar"] === 1);
+check("Gesamt-Zählung: 9 / 5 / 11 / 0 (= Workflow-Summary Re-Run)",
+  s.zaehlungGesamt["geeignet"] === 9 && s.zaehlungGesamt["geeignet mit Einschränkung"] === 5 && s.zaehlungGesamt["ablehnen"] === 11 && s.zaehlungGesamt["nicht_verifizierbar"] === 0);
 
 // --- 4. Konsistenz gegen die tatsächlichen Seed-Wege ---
 const wege = buildLandesmodulSeed().retrievalPaths.map((p) => p.legacy_source_id);
@@ -43,7 +43,7 @@ check("keine verwaisten Live-Urteile (Land)", Object.keys(V.LIVE_URTEILE).every(
 check("BE plenum -> geeignet", V.klasseLiveVerdict("berlin", "plenum").urteil === "geeignet");
 check("BE landesparlament -> ablehnen (Hub-HTML)", V.klasseLiveVerdict("berlin", "landesparlament").urteil === "ablehnen");
 check("BB plenum -> geeignet (parldok WP8)", V.klasseLiveVerdict("brandenburg", "plenum").urteil === "geeignet");
-check("BB staatskanzlei -> nicht_verifizierbar (TLS)", V.klasseLiveVerdict("brandenburg", "staatskanzlei").urteil === "nicht_verifizierbar");
+check("BB staatskanzlei -> ablehnen (www-Fix behob TLS, HTML-Redirect)", V.klasseLiveVerdict("brandenburg", "staatskanzlei").urteil === "ablehnen");
 check("oer_landesberichterstattung (rbb24) für BEIDE Länder geeignet",
   V.klasseLiveVerdict("berlin", "oer_landesberichterstattung").urteil === "geeignet" && V.klasseLiveVerdict("brandenburg", "oer_landesberichterstattung").urteil === "geeignet");
 

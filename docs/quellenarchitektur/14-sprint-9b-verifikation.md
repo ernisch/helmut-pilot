@@ -11,18 +11,19 @@ Egress ist gesperrt: curl UND WebFetch liefern 403 selbst für example.com), son
 **GitHub-Actions-Runner mit offenem Egress**, ausgelöst über einen **`pull_request`-Trigger**
 (die YAML läuft aus dem PR-Head, **kein** main-Merge, **kein** Deployment).
 
-- **Run:** GitHub Actions `29294900851`, PR **#71**, 2026-07-14.
+- **Runs:** GitHub Actions `29294900851` (Erstlauf) + `29295849135` (Re-Run nach URL-Fix), PR **#71**, 2026-07-14.
 - **Kontroll-Abruf:** `example.com` / `google.com` = HTTP 200 → Egress **offen**.
-- **Real geprüft:** **24 / 25** (1× TLS-Fehler, ehrlich `nicht_verifizierbar`).
+- **Real geprüft:** **25 / 25** — im Erstlauf 24/25 (1× TLS-Fehler bei `bb-staatskanzlei`); nach
+  dem `www`-Fix (URL-Korrektur) im Re-Run **alle 25** erreicht.
 
-**Urteile (echt):**
+**Urteile (echt, Re-Run):**
 
 | Urteil | Anzahl |
 |--------|-------:|
 | ✅ geeignet | **9** |
 | 🟡 geeignet mit Einschränkung | **5** |
-| ⛔ ablehnen | **10** |
-| ⚪ nicht_verifizierbar | **1** |
+| ⛔ ablehnen | **11** |
+| ⚪ nicht_verifizierbar | **0** |
 
 Die Recherche-Kandidaten haben sich damit teils **bestätigt**, teils **widerlegt** — inklusive
 einer WebSearch-„Bestätigung", die real ein **404** war (`bundesregierung`). Ground-Truth ist
@@ -68,7 +69,7 @@ jetzt der Workflow, nicht die Recherche.
 | bb-plenum | ⚠ | ✅ geeignet | 200 | **6092 `<Vorgang>`** (parldok **WP8** — WP1→WP8-Korrektur **bestätigt**) |
 | bb-ausschuesse | ⚠ | ⛔ ablehnen | 404 | `/de/ausschuesse` → 404 |
 | bb-landesregierung | ⚠ | ⛔ ablehnen | 200 | text/html — Root, kein RSS |
-| bb-staatskanzlei | ⚠ | ⚪ nicht_verifizierbar | — | **TLS**: `www.stk.brandenburg.de` nicht im Zertifikat → `www` entfernt (Korrektur) |
+| bb-staatskanzlei | ⚠ | ⛔ ablehnen | 200 | `www`-Fix behob **TLS**; `stk.brandenburg.de` leitet auf HTML-CMS (`www.brandenburg.de/…/staatskanzlei`) → kein RSS |
 | bb-ministerien | ⚠ | ⛔ ablehnen | 200 | text/html — kein Feed |
 | bb-landesfraktionen | | ⛔ ablehnen | 200 | text/html — Landing |
 | bb-regionale_leitmedien | | ✅ geeignet | 200 | 20 Items, 0 Tage (Google News MAZ) |
@@ -106,9 +107,10 @@ jetzt der Workflow, nicht die Recherche.
 `rbb24-politik` (BE+BB), `be-person_pilot`, `bb-plenum` (deckt 4 BB-Klassen),
 `bb-regionale_leitmedien`, `bundestag`, `linksfraktion`, `ausschuss-arbeit-soziales`.
 
-**Korrektur-Backlog (`ablehnen` → Feed-Deep-Link/Ersatz vor Aktivierung):**
+**Korrektur-Backlog (`ablehnen` (11) → Feed-Deep-Link/Ersatz vor Aktivierung):**
 `be-landesparlament`, `be-landesregierung`, `be-landesfraktionen`, `bb-landesparlament`,
-`bb-ausschuesse`, `bb-landesregierung`, `bb-ministerien`, `bb-landesfraktionen`, `bundesregierung`, `dgb`.
+`bb-ausschuesse`, `bb-landesregierung`, `bb-staatskanzlei` (HTML-Redirect, kein RSS),
+`bb-ministerien`, `bb-landesfraktionen`, `bundesregierung`, `dgb`.
 
 **Bot-gesperrt (`429`) → server-seitiger Abruf nötig:** `be-partei_pilot`, `be-fraktion_pilot`,
 `bb-partei_pilot`, `die-linke`.
