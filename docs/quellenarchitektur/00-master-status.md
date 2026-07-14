@@ -53,6 +53,20 @@ Grenzen: ~100 Understanding + Spielraum, ~$8–10/Monat, Stop >$0,50/Tag, NIE un
   Selbst-Check-ins sind für 20:12 und 21:45 UTC geplant; Ergebnisse werden hier ergänzt.
 - Offline-Messung (bereits erbracht, Doku 21): Gate-Kalibrierung gegen echte Produktionsdaten,
   107→0 kritische Fehlentscheidungen, amtliche Dokumente nie geparkt, kuratierte Feeds nie geparkt.
+- **Historischer Replay (P6, 2026-07-14 ~18:50 UTC, `scripts/gate-shadow-replay.js`):** exakter
+  Production-Shadow-Pfad über 2064 echte Dokumente (7 Tage) → 206 Cluster: 31 verstehen /
+  88 zurückstellen / 87 parken (Dok-Ebene: 948/652/464). ALLE Prüfpunkte grün: nichts
+  blockiert, keine amtliche Quelle geparkt, kuratierte nie geparkt, regionale Quellen nicht
+  benachteiligt (Park-Rate 0% vs. 40,9% überregionale Medien; n regional=1 — Regionalwege
+  liefern derzeit wenig), keine BE/BB-Dokumente im Bestand, Telemetrie wohlgeformt ohne
+  Volltext, 0 LLM-Kosten. Ersparnispotenzial bei späterem Gate-on: ~54% der Dokumente.
+- **Isolierter PARDOK-Shadow-Lauf (P6):** Parser über Gold-Fixtures im Shadow-Modus —
+  be-plenum 8/8 geparst (8 externe IDs), bb-plenum 6/7 (1 bewusst defekter Datensatz),
+  0 Pipeline-Items, keine Fehlerseite, 6–10 ms, ~5 MB Heap, isolierte Ablage ok.
+- **gate_shadow_events = 0 (Stand 18:31 UTC) — Ursache eindeutig:** der Understanding-Cron
+  ist seit der Shadow-Aktivierung (17:57 UTC) schlicht noch nicht gelaufen (nächster Lauf
+  21:30 UTC). Kosten heute $0,07 / 36 billable Calls (Limit-fern); Understanding heute 15
+  (Normalbereich). Live-Bestätigung der Event-Schreibung: Wake-up 21:45 UTC.
 - **Rollback:** `helmut-flags.json` auf `off` + Deploy, ODER Vercel-Env `off` + Redeploy
   (überstimmt sofort), ODER Instant Rollback auf `7a27f5b`.
 
