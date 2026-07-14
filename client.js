@@ -1609,12 +1609,43 @@ function renderAdminQuellenarchitektur(sa) {
   return `
     ${adminSection("Quellenarchitektur", "Länder · Pakete · Quellen · Profile · Kosten (Sprint 4/5/7 sichtbar gemacht)",
       `${migBanner}<div class="op-tiles">${tiles.join("")}</div>`, "admin-quellenarchitektur")}
+    ${renderSaQuellenmodus(sa)}
     ${renderSaLaenderPakete(sa)}
     ${renderSaQuellen(sa)}
     ${renderSaProfile(sa)}
     ${renderSaPruefbedarf(sa)}
     ${renderSaQuellendetail(sa)}
     ${renderSaKosten(sa)}`;
+}
+
+// Quellenmodus (off/shadow/on) + Vergleich alter Katalog vs. relationaler Plan.
+// EHRLICH: ohne erreichbare relationale Tabellen nur der Hinweis, keine erfundenen Zahlen.
+function renderSaQuellenmodus(sa) {
+  const qm = sa.quellenmodus;
+  if (!qm) return "";
+  const modusBadge = qm.modus === "on" ? saBadge("ON — Cutover", "bad")
+    : qm.modus === "shadow" ? saBadge("Shadow — Vergleich", "warn")
+    : qm.modus === "off" ? saBadge("Off — alter Katalog aktiv", "ok")
+    : saBadge("Unbekannt", "muted");
+  if (!qm.datenquelle) {
+    return `<div class="admin-card"><div class="sa-item-main"><span class="sa-item-name">Quellenmodus</span>${modusBadge}</div><p class="sa-note">${escapeHtml(qm.hinweis || "")}</p></div>`;
+  }
+  const abw = qm.abweichungen || {};
+  const fehlend = abw.fehlendImRelationalen || [];
+  const zusaetzlich = abw.zusaetzlichImRelationalen || [];
+  return `
+    <div class="admin-card">
+      <div class="sa-item-main"><span class="sa-item-name">Quellenmodus</span>${modusBadge}</div>
+      <div class="admin-sys-grid">
+        <div class="admin-sys-item"><span class="admin-sys-key">Alter Plan (aktiver Katalog)</span><span class="admin-sys-val">${escapeHtml(String(qm.alterPlan.quellen))} geteilte Quellen</span></div>
+        <div class="admin-sys-item"><span class="admin-sys-key">Relationaler Plan</span><span class="admin-sys-val">${escapeHtml(String(qm.relationalerPlan.aktiv))} aktiv · ${escapeHtml(String(qm.relationalerPlan.defekt))} defekt · ${escapeHtml(String(qm.relationalerPlan.ausgeschlossen))} ausgeschlossen</span></div>
+        <div class="admin-sys-item"><span class="admin-sys-key">Aktivierung</span><span class="admin-sys-val">${escapeHtml(String(qm.aktivierung.aktiveProfile))} Profile → ${escapeHtml(String(qm.aktivierung.aktivePakete))} Pakete</span></div>
+        <div class="admin-sys-item"><span class="admin-sys-key">Abweichungen</span><span class="admin-sys-val">${fehlend.length ? `${fehlend.length} fehlend (${escapeHtml(fehlend.slice(0, 4).join(", "))}${fehlend.length > 4 ? "…" : ""})` : "0 fehlend"} · ${zusaetzlich.length} zusätzlich</span></div>
+        <div class="admin-sys-item"><span class="admin-sys-key">Defekte Wege (kein Abruf)</span><span class="admin-sys-val">${(qm.defekteWege || []).length ? escapeHtml(qm.defekteWege.join(", ")) : "–"}</span></div>
+        <div class="admin-sys-item"><span class="admin-sys-key">Berlin/Brandenburg</span><span class="admin-sys-val">${escapeHtml(String(qm.landesmodulGesperrt))} Wege vorbereitet und GESPERRT (inaktiv)</span></div>
+      </div>
+      <p class="sa-note">${escapeHtml(qm.hinweis || "")}</p>
+    </div>`;
 }
 
 function renderAdminView() {

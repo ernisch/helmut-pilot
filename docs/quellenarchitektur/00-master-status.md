@@ -1,158 +1,143 @@
 # MASTER-STATUS — Helmut Quellenarchitektur-Migration
 
 **Dies ist die EINZIGE aktuelle Statuswahrheit.** Alle älteren Status-/Abschlussberichte —
-insbesondere Doku 20–27 (u. a. „27-abschluss-und-production-freigabe.md") und frühere
-Master-Status-Fassungen — sind **ÜBERHOLT** und dürfen nicht mehr als aktueller Stand zitiert
-werden; sie bleiben nur als historische Detailnachweise ihrer jeweiligen Phase gültig.
-Konsolidiert am **2026-07-14 (nach Reiter-Deployment)** aus Repository, Production-DB (read-only),
-Vercel-Deployments und Thread-Verlauf. Keine Migration wurde erneut angewendet.
+insbesondere Doku 20–27 und frühere Master-Status-Fassungen — sind **ÜBERHOLT** und dürfen
+nicht mehr als aktueller Stand zitiert werden; sie bleiben historische Detailnachweise.
+Konsolidiert am **2026-07-14 (abends, nach Diagnose- und Shadow-Deployment + Quellenmodus-Bau)**
+aus Repository, Production-DB (read-only), Vercel-API und Thread-Verlauf.
 
 ## 1) Deployments & Commits (verifiziert via Vercel-API + git)
 | Was | Wert |
 |---|---|
-| Production-Commit (main) | **`6539fbf`** — Merge PR #76 (Reiter „Helmut"→„Briefing") |
-| Production-Deployment | `dpl_FSy61yLoLCXhPmEYLoyHToUVMFFV`, READY, `helmut-pilot.vercel.app` |
-| Vorheriges Prod-Deployment (Rollback-Kette) | `9685a0b` (PR #75, Quellenarchitektur-Code, Guards off) → davor `74ae2a6` (Alt-Stand) |
-| Feature-Branch | `claude/helmut-source-architecture-ruhyvb` @ `68eacba` (= main + diese Statusdatei + Admin-Konfigurations-Diagnose) |
-| Crons (vercel.json, unverändert seit Alt-Stand) | crawl 04:00+20:00 · morning-briefing 05:00 · understanding 05:30+21:30 · health 06:00 · lage-check 10:00 · pipeline 16:00 · lage-briefing 05:45 (UTC) |
+| Production-Commit (main) | **`35384f5`** — Merge PR #78 (Gate-Shadow + PARDOK-Shadow per Datei-Flag) |
+| Production-Deployment | `dpl_5FTcCGDQbxNb4yKhB8X55hT9rRNq`, READY, `helmut-pilot.vercel.app` |
+| Rollback-Kette | `7a27f5b` (PR #77 Admin-Diagnose, `dpl_3wuS8ivWMrTHpEg4npZZChZsauRx`) → `6539fbf` (PR #76 Briefing-Reiter) → `9685a0b` (PR #75 Quellenarchitektur, Guards off) → `74ae2a6` (Alt-Stand) |
+| Feature-Branch | `claude/helmut-source-architecture-ruhyvb` (main + Quellenmodus/Cutover-Bau, ungemergt) |
+| Crons (vercel.json, unverändert) | crawl 04:00+20:00 · morning-briefing 05:00 · understanding 05:30+21:30 · health 06:00 · lage-check 10:00 · pipeline 16:00 · lage-briefing 05:45 (UTC) |
 
-**Bereits deployt und live:** neue Quellenarchitektur-Codebasis (Guards off), korrigierte
-Radar-Beleglogik (Partei/Wahlkreis/Ausschuss evidenzbasiert), domain-basierte „Offizielle
-Quellen", ai.js-Steuerzeichen-Parserfix, sichtbarer Reiter **„Briefing"** (Marke/Persona
-Helmut, interne View-IDs und API-Verträge unverändert).
+**Live in Production:** Quellenarchitektur-Codebasis (Quellen-Guards off), evidenzbasierte
+Radar-Beleglogik, ai.js-Parserfix, Reiter „Briefing", **Admin-Konfigurations-Diagnose**
+(System & Sicherheit, 7 Variablen mit Quelle Env/Datei/Default), **Gate-Shadow + PARDOK-Shadow**
+(seit `35384f5`, ~17:57 UTC, per `helmut-flags.json`).
 
-## 2) Datenbank-Ist (Production Supabase, read-only 2026-07-14 ~16:30 UTC)
-- Mengen: raw_documents **5242** · knowledge_objects **247** · briefings **7** · decisions **86**
-  · mandate_profiles **1** · ko_document_links **1147**
-- **document_findings: 0 Zeilen** (Tabelle existiert, Dedup/Fundstellen noch nicht befüllt —
-  Schreibpfad ist Teil des späteren Shadow-/Cutover-Betriebs)
-- **gate_shadow_events: 0 Zeilen** (Tabelle existiert, Gate-Shadow NIE gelaufen)
-- **llm_usage (SQL-Attributionstabelle): 0 Zeilen** (existiert; der echte Kostenlog lebt im
-  Blob `helmut_store['main-auth'].llmUsage`)
-- KO-Klassifikationsspalten (decision_level …): **vorhanden, unbefüllt** (Backfill = spätere Stufe)
-- Quellenarchitektur-Tabellen: publishers **64** · retrieval_paths **163** · source_packages **7**
-  · package_paths **164**; **keine** Profil→Paket-Zuordnungstabelle (Aktivierung läuft über
-  source_packages.status; Resolver-Logik liegt im Code)
-- retrieval_paths: Status-Vokabular healthy(4)/broken(6)/needs_review(153); Aktivierung über
-  activation_mode always_on(5)/auto(140)/manual(18)
-- **Berlin/Brandenburg: 19 Wege, ALLE needs_review+manual; Pakete berlin-basis/brandenburg-basis
-  ALLE `prepared`. Keine Landesquelle sichtbar aktiv.**
-- Migration-Registry (`supabase_migrations.schema_migrations`, 12 Einträge): tenant_rls,
-  mandate_profile_fields/completeness, source_architecture (+4 Seeds), llm_usage_attribution,
-  gate_shadow_telemetry (registriert als 20260714105547), ko_classification (20260714111259).
-  Abweichung Dateiname↔Registry ist dokumentiert und ungefährlich (alle 9 Migrationsdateien
-  idempotent, jede mit `*_rollback.sql`; Preflight 51 PASS). **Keine Migration offen.**
+## 2) Die 7 Helmut-Konfigurationen (Stand nach PR #78)
+Präzedenz: **Vercel-Env > helmut-flags.json (Datei-Flag) > Code-Default.** Eine gesetzte
+Env-Variable überstimmt die Datei immer (Betreiber-Kontrolle; Rollback ohne Deployment möglich).
 
-## 3) Aktiver Quellenpfad (Code-verifiziert)
-Der Crawl nutzt **weiterhin ausschließlich den alten hartcodierten Katalog** (`lib/helmut/
-sources.js` → storage.mergeSources, „Code ist die Wahrheit"). Die relationale Bibliothek ist
-Shadow-Struktur + read-only Admin-Report. **Es existiert noch KEIN Quellenmodus-Schalter
-(off/shadow/on) für den relationalen Pfad** — dessen Bau ist Phase 7/8 (nach Shadow-Start).
+| Variable | Env (Production) | Datei-Flag | wirksam |
+|---|---|---|---|
+| HELMUT_UNDERSTANDING_GATE | nicht gesetzt (erwartet, Prüfung via Live-Diagnose) | **shadow** | **shadow** — blockiert NICHTS, schreibt nur Telemetrie |
+| HELMUT_PARDOK_DISPATCH | nicht gesetzt (erwartet) | **shadow** | **shadow** — konstruktionsbedingt wirkungslos (0 structured_download-Quellen im Live-Katalog) |
+| HELMUT_MAX_LLM_CALLS_PER_DAY | **gesetzt** (Preview zeigte 20; Prod-Wert via Live-Diagnose ablesen) | bewusst NICHT dateisteuerbar | endlicher Deckel aktiv, **unverändert** |
+| HELMUT_V3_STORE | gesetzt = 1 (Verhalten + Preview) | — | an (bleibt an) |
+| HELMUT_SCORING_MODE | nicht gesetzt | — | off (Alt-Ranking byte-identisch) |
+| HELMUT_V3_SHADOW_COMPARE | nicht gesetzt | — | aus |
+| HELMUT_PROFILE_DB_MODE | nicht gesetzt | — | aus (Blob-only) |
+| (neu) HELMUT_SOURCE_MODE | nicht gesetzt | **nicht gesetzt** | **off** — alter Katalog ist aktive Quellenwahrheit |
 
-## 4) Feature-Guards (Code-Defaults, alle fail-closed; Live-Beweis 16:00-UTC-Pipeline: 0 Gate-Events, 0 PARDOK)
-| Variable | Default ohne/bei unbekanntem Wert | wirksam bei |
-|---|---|---|
-| HELMUT_UNDERSTANDING_GATE | **off** (Gate nie aufgerufen; „on" nicht scharf) | `shadow` |
-| HELMUT_PARDOK_DISPATCH | **off** (items:[]-Invariante; „on" nicht verdrahtet) | `shadow` |
-| HELMUT_SCORING_MODE | **off** (Alt-Ranking byte-identisch) | on/active/live |
-| HELMUT_V3_SHADOW_COMPARE | aus (Modul live nicht verdrahtet) | — |
-| HELMUT_PROFILE_DB_MODE | aus (Blob-only; DB wäre ohnehin feldgleich) | 1/true/on/yes |
-| HELMUT_V3_STORE | aus lt. Code-Default — in Production **faktisch gesetzt/AN** (KOs werden gelesen); wird durch Deployments nicht berührt | 1/true/on/yes |
-| HELMUT_MAX_LLM_CALLS_PER_DAY | Infinity lt. Code — in Production **faktisch endlich gesetzt** (täglich 26–252 geblockte Calls) | Zahl > 0 |
+**Einziger offener Konfigurationspunkt:** exakter Production-Wert des Tageslimits. Er ist
+jetzt direkt in der Live-Diagnose ablesbar (Admin → System & Sicherheit). Erst nach dieser
+Ablesung + Dokumentation als Rollback-Wert darf auf 150 erhöht werden (Vercel-Dashboard;
+Grenzen: ~100 Understanding + Spielraum, ~$8–10/Monat, Stop >$0,50/Tag, NIE unbegrenzt).
 
-## 5) Environment-Zugriff (Phase 2 — endgültig geklärt, 2026-07-14)
-**Kein verfügbarer Lese- oder Schreibweg aus dieser Umgebung:** Vercel-MCP hat kein
-Env-Tool (erschöpfend geprüft); Vercel-CLI nicht installiert und ohne Login-/Token-Weg;
-keine `VERCEL_*`-Variablen, kein `~/.vercel`, kein `.vercel/`-Projekt-Link, keine `.env`
-im Repo; Vercel-REST-API ohne Token nicht nutzbar. **Exakter Tageslimit-Wert daher nicht
-direkt lesbar** — und aus Verhalten NICHT sicher ableitbar (Tages-Billables an gesättigten
-Tagen schwanken 17–185, u. a. wegen Backfill-Workflows mit eigenem Limit im selben Log).
+## 3) Gate-Shadow + PARDOK-Shadow (Phase 4 — AKTIV seit 35384f5)
+- Gate-Shadow: berechnet je Understanding-Cluster die Entscheidung, **blockiert nichts**
+  (Integrationstest: off/shadow/on identische Call-Zahlen) und schreibt je Dokument eine
+  Zeile nach `gate_shadow_events` (nur Signale/IDs, kein Volltext; doppelt fail-safe).
+- PARDOK-Shadow: nur relevant für `structured_download`-Quellen — davon sind **0** im
+  aktiven Katalog. Kein Fetch, kein Write, kein sichtbares Item, bis BE/BB (eigene
+  Freigabe) Wege in den Plan brächte. Shadow-Datei-Ablage zusätzlich gegen read-only-FS
+  gehärtet (Fehler brechen den Crawl nie).
+- **Messfenster:** Crawl-Cron 20:00 UTC (PARDOK-Negativ- und Fehlerprüfung), Understanding-Cron
+  21:30 UTC (`gate_shadow_events` muss wachsen, Understanding-Zahl darf nicht sinken).
+  Selbst-Check-ins sind für 20:12 und 21:45 UTC geplant; Ergebnisse werden hier ergänzt.
+- Offline-Messung (bereits erbracht, Doku 21): Gate-Kalibrierung gegen echte Produktionsdaten,
+  107→0 kritische Fehlentscheidungen, amtliche Dokumente nie geparkt, kuratierte Feeds nie geparkt.
+- **Rollback:** `helmut-flags.json` auf `off` + Deploy, ODER Vercel-Env `off` + Redeploy
+  (überstimmt sofort), ODER Instant Rollback auf `7a27f5b`.
 
-**Vorbereiteter Zugriffsweg (kleinste Berechtigung):** Ein Vercel-**Access-Token** (Scope:
-Team „Nohut", reicht als „Member") als Umgebungsvariable `VERCEL_TOKEN` dieser Session.
-Dann (ohne Secrets auszugeben):
-- Lesen: `npx vercel env ls production --token $VERCEL_TOKEN --scope nohut --cwd .` (nach `npx vercel link --yes …`)
-  oder API `GET /v9/projects/prj_xbZ6QzTkr7YoxQI71lW59FT03IR3/env?teamId=team_bTAfzDHwD3mT03r1z7rh1TC3`
-- Setzen: `printf 'shadow' | npx vercel env add HELMUT_UNDERSTANDING_GATE production --token …`
-- Rollback: `npx vercel env rm <NAME> production` bzw. alten Wert erneut setzen
-- Wirksam machen: Redeploy des aktuellen Production-Commits (Dashboard „Redeploy" oder
-  `npx vercel redeploy helmut-pilot.vercel.app --token …`)
-Alternative ohne Token: Gründer im Dashboard `vercel.com/nohut/helmut-pilot/settings/environment-variables`.
+## 4) Quellenmodus (P7 — GEBAUT, Default off)
+`HELMUT_SOURCE_MODE` (off/shadow/on, via Flag-Resolver; `source-mode.js`):
+- **off (aktiv):** alter hartcodierter Katalog = Quellenwahrheit, byte-identisch (Test 9b/9c).
+- **shadow:** alter Katalog bleibt aktiv; relationaler Plan wird parallel erzeugt und NUR
+  verglichen (Admin-Report + isolierte Läufe); nichts erreicht die sichtbare Pipeline.
+- **on (= QUELLEN-CUTOVER, nicht aktiviert):** relationale DB (publishers/retrieval_paths/
+  source_packages/package_paths) wird aktive Quellenwahrheit; alter Katalog bleibt Fallback
+  (Ladefehler/leerer Plan). Profile werden über Pakete versorgt (Resolver + Referenzzählung);
+  jeder Abrufweg läuft global genau EINMAL; ohne aktivierungsberechtigte Profile nur
+  always_on-Kernwege; BE/BB hart gesperrt; dev_only/pausierte/Orphans nie; defekte Wege ohne
+  Abruf; DIP unverändert eigener API-Pfad; Dedup-Schreibpfad (unten) aktiv.
 
-**NEU (2026-07-14, Gründer-Entscheid): Leseweg über Admin-Konfigurations-Diagnose.** Da die
-Production-Env-Werte in Vercel als „sensitive" gespeichert und im Dashboard NICHT ablesbar
-sind, wurde eine streng geschützte Admin-Diagnose gebaut (Commit `68eacba`): feste Whitelist
-von exakt 7 nicht geheimen Modus-/Limit-Variablen, angezeigt unter Admin → System & Sicherheit
-(gleiche Route/Auth wie der gesamte Admin, keine Parametereingabe, Secrets strukturell
-unerreichbar, Werte nie in Logs; Test `test:admin-config-diagnose` 24/24). **Preview vom
-Gründer abgenommen („Admin Konfigurations Preview grün", 2026-07-14)** — dort gelesene
-**PREVIEW-Werte** (NICHT als Production bestätigt; Rollback-Wert für 4B bleibt offen, bis
-die Diagnose in Production läuft):
-`HELMUT_MAX_LLM_CALLS_PER_DAY=20` · `HELMUT_V3_STORE=1` · übrige 5 (GATE, PARDOK, SCORING,
-SHADOW_COMPARE, PROFILE_DB_MODE) nicht gesetzt → Code-Default off/aus. Die Preview-Werte
-sind konsistent mit dem aus Verhalten abgeleiteten Production-Bild in §4 (V3_STORE an,
-Tageslimit endlich).
+## 5) Alter vs. relationaler Plan (P8 — realer Vergleich, Production-Snapshot 2026-07-14)
+- Wege gesamt 163 · **relational aktiv 138** · defekt 6 · ausgeschlossen 19 (18 BE/BB + DIP separat)
+- Alt-Plan 143 geteilte Quellen; **Ertragsabdeckung 100%**: alle Altquellen mit realem
+  30-Tage-Ertrag (4736 Dokumente, 866 KO-Kandidaten) sind im relationalen Plan abgedeckt;
+  **0 fehlende Wege mit Ertrag.** Die 6 „fehlenden" Altquellen sind exakt die 6 defekten
+  (bot-gesperrten) Wege mit 0 Ertrag (bundestag/bundesregierung/die-linke/linksfraktion/
+  ausschuss-arbeit-soziales/dgb) — Ersatz über Google-News-Wege vorhanden und aktiv.
+- Cem-Pakete: bund-basis 51 aktiv · arbeit-und-soziales 82 · regional-niedersachsen 4 ·
+  profil-cem-ince 1 · die-linke-bund 1 (nach Paketfix, s. u.). Aktive Profile: 3
+  (cem-ince + 2 Testprofile james-brown/angela-merkel), aktive Pakete: 5.
+- **Behobener Paketfehler (sicher, additiv):** die-linke-bund enthielt nur die 2 defekten
+  Original-RSS-Wege → `rp-fraction-linke` (funktionierender Fraktions-Suchweg) zusätzlich
+  zugeordnet (Seed-Regel + 1 additiver `package_paths`-Link in Production;
+  Rollback: `DELETE FROM package_paths WHERE package_id='pkg-die-linke-bund' AND retrieval_path_id='rp-fraction-linke'`).
+- Live-Fetch aus der Arbeitsumgebung ist netzwerkseitig gesperrt; der Ausführungsnachweis
+  läuft ehrlich über die echten 30-Tage-Erträge (identische Abruf-URLs via legacy_source_id).
 
-## 6) Tageslimit & Kosten (Phase 3 — Realdaten aus dem Blob-Kostenlog, 14 Tage)
-- Deckel zählt **alle** billable KI-Aufrufe (canSpendLlm global, nicht nur Understanding)
-- Understanding ausgeführt: Ø ~15/Tag · geblockt: **26–252/Tag** (Nachfrage ≫ Deckel)
-- Sonstige billable Aufrufe: Ø ~27/Tag · Kosten/Understanding-Call: **$0,002** (gpt-5-mini)
-- Hochrechnung Understanding/Monat: 50/Tag≈$3 · 100/Tag≈$6 · 150/Tag≈$9
-- **Übergangsziel: Gesamtdeckel 150/Tag** → ~100 Understanding + ~50 Spielraum ≈ **~$8/Monat
-  gesamt**; ausdrücklich NICHT unbegrenzt. Langfristig: Relevanzpriorisierung
-  (`understanding-priority.js`, fertig als Shadow-Logik) + echtes tägliches Kostenlimit.
+## 6) Dedup + Fundstellen (P9 — Schreibpfad gebaut, Cutover-only; Messung real)
+- Reale 14-Tage-Messung (5242 Docs): URL-Duplikate ≈ 0 (content_hash-Dedup wirkt);
+  **191 Titel-Duplikatgruppen (308 Überschuss-Docs ≈ 5,9%)**, 21 Gruppen über mehrere
+  Abrufwege; nur **4 Gruppen** erzeugten doppelte KOs (vorgang-Dedup fängt das meiste).
+- Cutover-Schreibpfad `persistRawDocumentsDeduped` (NUR Modus on): 1 Artikel über n Wege →
+  1 raw_document + n `document_findings`; Bestands-Match über content_fingerprint/
+  canonical_target_url; finding_count-Pflege; Google News bleibt Suchweg (Herausgeber-
+  Domain trägt Identität, Proxy-URL bleibt Fundstelle); unterschiedliche Vorgänge werden
+  nie zusammengelegt (Titel-Ähnlichkeit nur je Herausgeber + Datumsfenster).
+- In Production heute: `document_findings` 0 Zeilen, Fingerprint-Spalten unbefüllt — Befüllung
+  beginnt erst mit dem Cutover.
 
-## 7) Shadow-Start — GETEILT in Phase 4A und 4B (Gründer-Entscheid 2026-07-14; NICHTS verändert)
-Inertheit frisch nachgewiesen: Gate off=byte-identisch & shadow blockiert nichts
-(Integrationstest: off/shadow/on identische Call-Zahlen), Gate schreibt nur Telemetrie;
-PARDOK shadow liefert 0 sichtbare Items, kein Write in raw_documents/KOs, kein BE/BB-Leck;
-Cem-E2E 93/93 + Gate-E2E grün. Vorbedingung beider Phasen: die 7 **Production**-Laufzeitwerte
-(GATE, PARDOK, MAX_LLM, V3_STORE, SCORING, SHADOW_COMPARE, PROFILE_DB_MODE) liegen vor.
-**Beschlossener Leseweg:** Admin-Konfigurations-Diagnose (§5) in Production deployen und die
-Werte dort ablesen — **es wartet: das Diagnose-Deployment (Gate „Go Admin Diagnose
-Deployment?"), danach das Ablesen + Dokumentieren des 4B-Rollback-Werts.**
-
-### Phase 4A — Gate-Shadow + PARDOK-Shadow (eigene Freigabe)
-- **Änderung:** `HELMUT_UNDERSTANDING_GATE=shadow` und `HELMUT_PARDOK_DISPATCH=shadow`
-  (Production), danach EIN Redeploy des aktuellen Production-Commits.
-- **Kosten:** $0 (Shadow rechnet nur mit; kein zusätzlicher LLM-Call).
-- **Smoke (nach Redeploy, dann nach dem nächsten Crawl-/Understanding-Cron):**
-  App-Start/Lage/Radar/Briefing/Büro/Admin unverändert · 0 neue Runtime-Fehler ·
-  Understanding-Call-Zahl NICHT gesunken (Gate blockiert nichts) · `gate_shadow_events`
-  beginnt NACH dem nächsten Understanding-Cron (05:30/21:30 UTC) zu wachsen ·
-  raw_documents/KOs bekommen KEINE PARDOK-/BE-/BB-Einträge · Cem-Ausgaben unverändert.
-- **Stop-Bedingungen:** Understanding-Zahl sinkt · sichtbare PARDOK-/Landesinhalte ·
-  neue Fehlerrate · leere Briefings · Nutzeroberfläche verändert.
-- **Rollback:** beide Variablen löschen (Default off) + Redeploy; `gate_shadow_events`
-  bleibt als harmlose Telemetrie stehen (kein Nutzerpfad liest sie).
-
-### Phase 4B — Tageslimit (eigene Freigabe, NUR nach direktem Lesen des Ist-Werts)
-- **Vorbedingung (hart):** aktueller Production-Wert von `HELMUT_MAX_LLM_CALLS_PER_DAY`
-  DIREKT gelesen (lokale Vercel-Session des Gründers) und hier als Rollback-Wert
-  dokumentiert. Ohne dokumentierten Ist-Wert keine Änderung.
-- **Änderung:** `HELMUT_MAX_LLM_CALLS_PER_DAY=150` + Redeploy.
-- **Kosten:** ~100 Understanding + ~50 übrige Calls/Tag ≈ ~$8/Monat (statt heute ~$1).
-- **Smoke (nach dem nächsten Understanding-Cron):** ausgeführte Understanding-Calls
-  steigen Richtung Nachfrage (~80-100/Tag), geblockte sinken deutlich · Gesamt-Billable
-  ≤150/Tag · Tageskosten ≤ $0,50 · keine neue LLM-Fehlerrate · Briefings gefüllt ·
-  Cem-Qualität unverändert oder besser (mehr verstandene Vorgänge).
-- **Stop-Bedingungen:** >150 Calls/Tag (Deckel greift nicht) · Tageskosten > $1 ·
-  LLM-Fehlerrate steigt · leere/degradierte Briefings.
-- **Rollback:** dokumentierten Alt-Wert zurücksetzen + Redeploy.
+## 7) Datenbank-Ist (Production, read-only 2026-07-14 ~17:35 UTC)
+raw_documents **5242** · knowledge_objects **247** · briefings **7** · decisions **86** ·
+mandate_profiles **1** · ko_document_links **1147** · gate_shadow_events **0** (Wachstum ab
+21:30-Cron erwartet) · document_findings **0** · BE/BB-Pakete **prepared**, 19 Wege
+needs_review+manual · Migration-Registry 12 Einträge, **keine Migration offen**; einzige
+Datenänderung seit letzter Konsolidierung: der additive package_paths-Link (§5).
 
 ## 8) Verbindlich AUS (bis je eigene Freigabe)
-Gate **on** · Cheap-Triage · Scoring **on** · Berlin-/Brandenburg-Aktivierung · relationaler
-Quellen-Cutover (Modus-Schalter existiert noch nicht) · Datenlöschungen · Cron-Änderungen ·
-KO-Klassifikations-Backfill.
+Quellenmodus **on** (= Cutover, einzige noch offene Freigabe) · Gate **on** · Cheap-Triage ·
+Scoring **on** · Berlin-/Brandenburg-Aktivierung · Bot-Quellen · Datenlöschungen ·
+Cron-Änderungen · KO-Klassifikations-Backfill.
 
-## 9) Nächstes Gate
-**„Go Admin Diagnose Deployment?"** — eng begrenztes Production-Deployment NUR der
-Admin-Konfigurations-Diagnose (PR Feature-Branch `68eacba` → main; Runtime-Diff ausschließlich
-server.js/client.js/package.json/Test; vercel.json/Migrationen/Crons byte-identisch; keine
-Env-Änderung, kein Shadow, kein Tageslimit, keine Quellenaktivierung, kein Cutover).
-Rollback: Vercel Instant Rollback auf `dpl_FSy61yLoLCXhPmEYLoyHToUVMFFV` (`6539fbf`) bzw.
-`git revert -m 1` des Merge-Commits.
-Danach: Production-Wert von `HELMUT_MAX_LLM_CALLS_PER_DAY` in der laufenden Runtime ablesen
-und hier als 4B-Rollback-Wert dokumentieren → dann getrennte Gates **Phase 4A** (Gate+PARDOK
-shadow) und **Phase 4B** (Tageslimit 150), anschließend Phase 5/6 (Shadow-Messung), Phase 7/8
-(relationaler Quellenvergleich + Cutover-Vorbereitung, eigenes Gate „Go Quellen Cutover?").
+## 9) CUTOVER-PAKET (P14 — vorbereitet, NICHT ausgeführt)
+**Nächstes und einziges offenes Gate: „Go Quellen Cutover?"**
+1. **Exakte Änderung:** in `helmut-flags.json` eine Zeile ergänzen: `"HELMUT_SOURCE_MODE": "on"`
+   → PR → Merge → Production-Deployment. (Env-Alternative: Vercel-Env `HELMUT_SOURCE_MODE=on`
+   + Redeploy — überstimmt die Datei.) Der Feature-Branch enthält den kompletten Code bereits.
+2. **Wirkung:** relationale DB = aktive Quellenwahrheit (138 Wege, global je einmal),
+   alter Katalog = Fallback; Profile über Pakete; globale Dedup + Fundstellen aktiv;
+   BE/BB bleiben gesperrt; Gate bleibt shadow; Scoring bleibt off.
+3. **Production-Snapshot davor:** DB-Zählerstand (§7) + `git tag` des Prod-Commits +
+   Vercel-Deployment-ID notieren (Instant-Rollback-Ziel).
+4. **Erster begrenzter Lauf:** nächster 20:00/04:00-Crawl-Cron beobachten (kein manueller
+   Massen-Crawl); Vergleich Dokumentzahl/Quellenabdeckung gegen Vortag.
+5. **Smoke:** App-Start/Lage/Radar/Briefing/Büro/Admin unverändert · 0 neue Runtime-Fehler ·
+   Admin-Quellenmodus-Panel zeigt on + Plan · raw_documents wachsen weiter (±Normalbereich) ·
+   document_findings beginnen zu wachsen · KEINE BE/BB-Inhalte · Cem-Briefing gefüllt.
+6. **Cem-Vergleich:** Briefing/Radar vor/nach Cutover — mindestens gleiche Versorgung
+   (Referenz: 100% Ertragsabdeckung, §5).
+7. **Kostenlimit:** unverändert (Tagesdeckel bleibt; Dedup REDUZIERT Understanding-Nachfrage).
+8. **Stop-Bedingungen:** Dokumentzufluss bricht ein (> −50% vs. Vortag) · leere Briefings ·
+   BE/BB-Inhalt sichtbar · neue Fehlerrate · Admin zeigt Fallback-Warnung dauerhaft.
+9. **Rollback:** `HELMUT_SOURCE_MODE` löschen/`off` (Datei-Deploy oder Env+Redeploy) ODER
+   Vercel Instant Rollback aufs Snapshot-Deployment; Daten: neue document_findings sind
+   additiv und harmlos (kein Nutzerpfad liest sie vor dem Cutover).
+
+## 10) Testabdeckung
+62 Offline-Suiten grün (inkl. neu: flags 26 · source-mode 38 · gate-integration 14 ·
+pardok-dispatch/smoke · dedup-findings 39 · admin-config-diagnose 27; ausgenommen wie immer
+nur die 2 Live-LLM-Suiten). Adversariale Pflichtfälle abgedeckt: Profil ohne Pflichtpaket,
+kein aktives Profil, 100 gleiche Profile, doppelte Wege/URLs, Google-News-Mehrfachfund,
+defekte Pflichtquelle, Orphan, Testquelle, Paket pausiert, Profil deaktiviert, BE/BB
+versehentlich aktiv (hartes Gate), Gate blockiert im Shadow (nie), PARDOK sichtbar (nie),
+Fallback-Versagen (alter Katalog), Tenant-Isolation (322+104+37+70+28+30 Assertions).
