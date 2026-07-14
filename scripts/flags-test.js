@@ -89,8 +89,9 @@ function tmpJson(content) {
   const checked = flags.loadFileFlags(path.join(__dirname, "..", "helmut-flags.json"));
   check("5a GATE=shadow eingecheckt", checked.HELMUT_UNDERSTANDING_GATE === "shadow");
   check("5b PARDOK=shadow eingecheckt", checked.HELMUT_PARDOK_DISPATCH === "shadow");
-  check("5c KEIN Quellenmodus gesetzt (Default off, Cutover freigabepflichtig)", checked.HELMUT_SOURCE_MODE === undefined);
-  check("5d nichts Weiteres wirkt", Object.keys(checked).length === 2, JSON.stringify(Object.keys(checked)));
+  check("5c Quellenmodus=shadow (freigegeben) — und ausdrücklich NICHT 'on' (Cutover freigabepflichtig)",
+    checked.HELMUT_SOURCE_MODE === "shadow");
+  check("5d nichts Weiteres wirkt", Object.keys(checked).length === 3, JSON.stringify(Object.keys(checked)));
 }
 
 // --- 6) Guards folgen der Präzedenz ---------------------------------------------------------

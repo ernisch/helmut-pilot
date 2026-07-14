@@ -3367,8 +3367,10 @@ async function buildSourceArchitectureReport(mandateProfiles = []) {
           packagePaths: rows.packagePaths, profiles, legacySources
         });
         const vergleich = sm.comparePlans({ legacySources, relationalPlan: plan });
+        const letzterShadowLauf = await storageMod.getSourceModeShadowLastRun().catch(() => null);
         report.quellenmodus = {
           modus,
+          letzterShadowLauf,
           datenquelle: "relationale Production-Tabellen",
           alterPlan: { quellen: vergleich.quellenzahl.alt },
           relationalerPlan: plan.stats,

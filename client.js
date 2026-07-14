@@ -1643,6 +1643,9 @@ function renderSaQuellenmodus(sa) {
         <div class="admin-sys-item"><span class="admin-sys-key">Abweichungen</span><span class="admin-sys-val">${fehlend.length ? `${fehlend.length} fehlend (${escapeHtml(fehlend.slice(0, 4).join(", "))}${fehlend.length > 4 ? "…" : ""})` : "0 fehlend"} · ${zusaetzlich.length} zusätzlich</span></div>
         <div class="admin-sys-item"><span class="admin-sys-key">Defekte Wege (kein Abruf)</span><span class="admin-sys-val">${(qm.defekteWege || []).length ? escapeHtml(qm.defekteWege.join(", ")) : "–"}</span></div>
         <div class="admin-sys-item"><span class="admin-sys-key">Berlin/Brandenburg</span><span class="admin-sys-val">${escapeHtml(String(qm.landesmodulGesperrt))} Wege vorbereitet und GESPERRT (inaktiv)</span></div>
+        ${qm.letzterShadowLauf ? `
+        <div class="admin-sys-item"><span class="admin-sys-key">Letzter Shadow-Messlauf</span><span class="admin-sys-val">${escapeHtml(formatBriefingDate(qm.letzterShadowLauf.savedAt))} · relational ${escapeHtml(String(qm.letzterShadowLauf.relational?.dokumente ?? "–"))}/${escapeHtml(String(qm.letzterShadowLauf.alt?.dokumente ?? "–"))} Docs (${escapeHtml(String(qm.letzterShadowLauf.vergleich?.abdeckungDokumenteProzent ?? "–"))}%) · Dedup: ${escapeHtml(String(qm.letzterShadowLauf.dedupDryRun?.eindeutigeDokumente ?? "–"))} eindeutig / ${escapeHtml(String(qm.letzterShadowLauf.dedupDryRun?.fundstellen ?? "–"))} Fundstellen · +$0</span></div>` : `
+        <div class="admin-sys-item"><span class="admin-sys-key">Letzter Shadow-Messlauf</span><span class="admin-sys-val"><span class="ds-unavail">noch kein Lauf (erst ab Modus shadow + nächstem Crawl)</span></span></div>`}
       </div>
       <p class="sa-note">${escapeHtml(qm.hinweis || "")}</p>
     </div>`;

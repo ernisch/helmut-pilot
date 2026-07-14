@@ -13,7 +13,8 @@
 //   - doppelte URLs laufen genau einmal (auch profilgenerierte vs. Plan)
 //   - ON-Modus: Fallback auf alten Katalog bei fehlender DB / leerem Plan
 
-const { sourceMode, buildRelationalCrawlPlan, comparePlans, mergeProfileAndPlanSources, isLandesmodulPath } = require("../lib/helmut/quellenarchitektur/source-mode");
+const { sourceMode, buildRelationalCrawlPlan, comparePlans, mergeProfileAndPlanSources, isLandesmodulPath, buildShadowRunReport } = require("../lib/helmut/quellenarchitektur/source-mode");
+const { planDedupWrites } = require("../lib/helmut/quellenarchitektur/dedup-global");
 const flags = require("../lib/helmut/flags");
 const path = require("path");
 
@@ -29,7 +30,8 @@ check("1b shadow erkannt", sourceMode({ HELMUT_SOURCE_MODE: "shadow" }) === "sha
 check("1c on erkannt (gebaut, aber nicht aktiviert)", sourceMode({ HELMUT_SOURCE_MODE: "on" }) === "on");
 check("1d Unsinn -> off", sourceMode({ HELMUT_SOURCE_MODE: "1" }) === "off" && sourceMode({ HELMUT_SOURCE_MODE: "true" }) === "off");
 const checkedIn = flags.loadFileFlags(path.join(__dirname, "..", "helmut-flags.json"));
-check("1e eingecheckte Flags-Datei setzt KEINEN Quellenmodus (Cutover freigabepflichtig)", checkedIn.HELMUT_SOURCE_MODE === undefined);
+check("1e eingecheckte Flags-Datei: Quellenmodus 'shadow' (freigegeben), NIE 'on' (Cutover freigabepflichtig)",
+  checkedIn.HELMUT_SOURCE_MODE === "shadow");
 
 // --- Fixtures ---------------------------------------------------------------------------
 const PACKAGES = [
@@ -138,6 +140,41 @@ check("8d Bundesweg nicht betroffen", isLandesmodulPath({ id: "rp-bundestag", le
   check("8g deaktiviertes Profil zählt nicht (nur always_on)", deaktiviert.aktiv.length === 1 && deaktiviert.aktiv[0].id === "rp-bundestag");
 }
 
+// --- 8c) Shadow-Messbericht (buildShadowRunReport): echter Lauf, keine Extra-Fetches --------
+{
+  const selected = [
+    { id: "bundestag", active: true }, { id: "bmas", active: true },
+    { id: "nur-alt", active: true }, { id: "person-x", active: true }
+  ];
+  const crawlResults = [
+    { sourceId: "bundestag", ok: true, itemCount: 2, items: [
+      { id: "i1", sourceId: "bundestag", url: "https://z.de/a", originalUrl: "https://z.de/a", title: "Bundestag beschliesst Rentenreform jetzt", publishedAt: "2026-07-14", linkType: "direct" },
+      { id: "i2", sourceId: "bundestag", url: "https://z.de/b", originalUrl: "https://z.de/b", title: "Voellig anderes Thema heute im Plenum", publishedAt: "2026-07-14", linkType: "direct" }
+    ] },
+    { sourceId: "bmas", ok: true, itemCount: 1, items: [
+      { id: "i3", sourceId: "bmas", url: "https://z.de/a", originalUrl: "https://news.google.com/x", title: "Bundestag beschliesst Rentenreform jetzt", publishedAt: "2026-07-14", linkType: "publisher" }
+    ] },
+    { sourceId: "nur-alt", ok: false, itemCount: 0, items: [], error: "timeout" },
+    { sourceId: "person-x", ok: true, itemCount: 1, items: [{ id: "i4", sourceId: "person-x", url: "https://p.de/1", title: "Persoenliche Meldung ueber den Abgeordneten", publishedAt: "2026-07-14" }] }
+  ];
+  const miniPlan = {
+    aktiv: [
+      { id: "rp-bundestag", source: { id: "bundestag" } },
+      { id: "rp-bmas", source: { id: "bmas" } }
+    ],
+    defekt: [], ausgeschlossen: [], stats: { aktiv: 2 }, aktivierung: { aktiveProfile: 1, aktivePakete: 2 }
+  };
+  const rep = buildShadowRunReport({ selectedSources: selected, crawlResults, plan: miniPlan, dedupPlanner: (items) => planDedupWrites(items, []) });
+  check("8h Shadow-Bericht: alter Plan real gemessen (4 Wege, 1 Fehler, 4 Docs)",
+    rep.alt.wege === 4 && rep.alt.fehler === 1 && rep.alt.dokumente === 4);
+  check("8i relationaler Plan aus demselben Lauf (2 Wege, 3 Docs, 0 Fehler)",
+    rep.relational.wege === 2 && rep.relational.dokumente === 3 && rep.relational.fehler === 0);
+  check("8j nurAlt/nurRelational korrekt", rep.vergleich.nurAlt.includes("nur-alt") && rep.vergleich.nurRelational.length === 0);
+  check("8k Dedup-Dry-Run: 1 Artikel ueber 2 Wege -> 2 eindeutige Dokumente aus 3 Kandidaten + 3 Fundstellen",
+    rep.dedupDryRun.kandidaten === 3 && rep.dedupDryRun.eindeutigeDokumente === 2 && rep.dedupDryRun.duplikate === 1 && rep.dedupDryRun.fundstellen === 3);
+  check("8l Shadow kostet nichts zusaetzlich", rep.kostenZusatz === 0);
+}
+
 // --- 9) Scheduler-Integration: off byte-identisch, on ohne DB -> Fallback ------------------
 (async () => {
   process.env.HELMUT_STORAGE_BACKEND = "local"; // keine Supabase-Konfiguration -> Loader liefert null
@@ -154,7 +191,7 @@ check("8d Bundesweg nicht betroffen", isLandesmodulPath({ id: "rp-bundestag", le
       JSON.stringify(onSources.map((s) => s.id)) === JSON.stringify(offSources.map((s) => s.id)));
     process.env.HELMUT_SOURCE_MODE = "shadow";
     const shadowSources = await getSourcesForProfile(cemInceProfile);
-    check("9c shadow: byte-identisch zum alten Katalog (Vergleich läuft NIE im Crawl-Pfad)",
+    check("9c shadow: Quellenliste byte-identisch zum alten Katalog (der Messblock verändert Quellen/Ergebnisse nie)",
       JSON.stringify(shadowSources.map((s) => s.id)) === JSON.stringify(offSources.map((s) => s.id)));
   } finally {
     if (prevMode === undefined) delete process.env.HELMUT_SOURCE_MODE; else process.env.HELMUT_SOURCE_MODE = prevMode;
