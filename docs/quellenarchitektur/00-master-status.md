@@ -88,15 +88,41 @@ Alternative ohne Token: Gründer im Dashboard `vercel.com/nohut/helmut-pilot/set
   gesamt**; ausdrücklich NICHT unbegrenzt. Langfristig: Relevanzpriorisierung
   (`understanding-priority.js`, fertig als Shadow-Logik) + echtes tägliches Kostenlimit.
 
-## 7) Shadow-Start (Phase 4 — vollständig vorbereitet, NICHTS verändert)
-Frisch nachgewiesen (heute): Gate off=byte-identisch & shadow blockiert nichts
+## 7) Shadow-Start — GETEILT in Phase 4A und 4B (Gründer-Entscheid 2026-07-14; NICHTS verändert)
+Inertheit frisch nachgewiesen: Gate off=byte-identisch & shadow blockiert nichts
 (Integrationstest: off/shadow/on identische Call-Zahlen), Gate schreibt nur Telemetrie;
-PARDOK shadow liefert 0 sichtbare Items und schreibt nicht in raw_documents/KOs
-(Smoke: „kein BE/BB-Leck"); BE/BB unsichtbar; Cem-E2E 93/93 + Gate-E2E grün.
-Geplante Änderung (einzeln, je mit eigenem Smoke): `HELMUT_UNDERSTANDING_GATE=shadow` →
-`HELMUT_PARDOK_DISPATCH=shadow` → `HELMUT_MAX_LLM_CALLS_PER_DAY=150`; Redeploy nötig.
-Rollback je Schritt: Variable entfernen (Gate/PARDOK → off) bzw. alten Limit-Wert
-zurücksetzen (**vor Änderung im Dashboard ablesen und notieren!**) + Redeploy.
+PARDOK shadow liefert 0 sichtbare Items, kein Write in raw_documents/KOs, kein BE/BB-Leck;
+Cem-E2E 93/93 + Gate-E2E grün. Vorbedingung beider Phasen: die 7 lokal vom Gründer
+ausgelesenen Production-Werte (GATE, PARDOK, MAX_LLM, V3_STORE, SCORING, SHADOW_COMPARE,
+PROFILE_DB_MODE) liegen vor. **Es wartet: die 7 Werte.**
+
+### Phase 4A — Gate-Shadow + PARDOK-Shadow (eigene Freigabe)
+- **Änderung:** `HELMUT_UNDERSTANDING_GATE=shadow` und `HELMUT_PARDOK_DISPATCH=shadow`
+  (Production), danach EIN Redeploy des aktuellen Production-Commits.
+- **Kosten:** $0 (Shadow rechnet nur mit; kein zusätzlicher LLM-Call).
+- **Smoke (nach Redeploy, dann nach dem nächsten Crawl-/Understanding-Cron):**
+  App-Start/Lage/Radar/Briefing/Büro/Admin unverändert · 0 neue Runtime-Fehler ·
+  Understanding-Call-Zahl NICHT gesunken (Gate blockiert nichts) · `gate_shadow_events`
+  beginnt NACH dem nächsten Understanding-Cron (05:30/21:30 UTC) zu wachsen ·
+  raw_documents/KOs bekommen KEINE PARDOK-/BE-/BB-Einträge · Cem-Ausgaben unverändert.
+- **Stop-Bedingungen:** Understanding-Zahl sinkt · sichtbare PARDOK-/Landesinhalte ·
+  neue Fehlerrate · leere Briefings · Nutzeroberfläche verändert.
+- **Rollback:** beide Variablen löschen (Default off) + Redeploy; `gate_shadow_events`
+  bleibt als harmlose Telemetrie stehen (kein Nutzerpfad liest sie).
+
+### Phase 4B — Tageslimit (eigene Freigabe, NUR nach direktem Lesen des Ist-Werts)
+- **Vorbedingung (hart):** aktueller Production-Wert von `HELMUT_MAX_LLM_CALLS_PER_DAY`
+  DIREKT gelesen (lokale Vercel-Session des Gründers) und hier als Rollback-Wert
+  dokumentiert. Ohne dokumentierten Ist-Wert keine Änderung.
+- **Änderung:** `HELMUT_MAX_LLM_CALLS_PER_DAY=150` + Redeploy.
+- **Kosten:** ~100 Understanding + ~50 übrige Calls/Tag ≈ ~$8/Monat (statt heute ~$1).
+- **Smoke (nach dem nächsten Understanding-Cron):** ausgeführte Understanding-Calls
+  steigen Richtung Nachfrage (~80-100/Tag), geblockte sinken deutlich · Gesamt-Billable
+  ≤150/Tag · Tageskosten ≤ $0,50 · keine neue LLM-Fehlerrate · Briefings gefüllt ·
+  Cem-Qualität unverändert oder besser (mehr verstandene Vorgänge).
+- **Stop-Bedingungen:** >150 Calls/Tag (Deckel greift nicht) · Tageskosten > $1 ·
+  LLM-Fehlerrate steigt · leere/degradierte Briefings.
+- **Rollback:** dokumentierten Alt-Wert zurücksetzen + Redeploy.
 
 ## 8) Verbindlich AUS (bis je eigene Freigabe)
 Gate **on** · Cheap-Triage · Scoring **on** · Berlin-/Brandenburg-Aktivierung · relationaler
