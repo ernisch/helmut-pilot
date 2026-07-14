@@ -79,7 +79,13 @@ Berlin-PARDOK = **ein** Abrufweg, der 4 Klassen abdeckt (`covers`).
 
 ## 3. Reparatur der 6 defekten Bundes-Abrufwege (`seeds/bundeswege-reparaturen.js`)
 
-**5 reparierbar, 1 Ersatzweg, 0 dauerhaft defekt — alle 4 kritischen Wege gelöst** (keine stille
+> **Überholt durch Sprint 9B (echter Test, siehe Doc 14):** Nach dem echten Abruf sind **3/6
+> repariert** (`bundestag`, `linksfraktion`, `ausschuss-arbeit-soziales`), **2 URL falsch**
+> (`bundesregierung` 404, `dgb` HTML), **1 bot-gesperrt** (`die-linke` 429). Kritische Bilanz:
+> **2/4 repariert** (`alleKritischGeloest = false`). Die untenstehende Recherche-Tabelle bleibt
+> als Ausgangslage stehen.
+
+**Recherche-Ausgangslage (vor 9B-Realtest): 5 reparierbar, 1 Ersatzweg, 0 dauerhaft defekt** (keine stille
 Archivierung, Auftrag §30):
 
 | Weg (kritisch?) | Ist-Diagnose | Reparatur / Ersatz | Methode | Bewertung |

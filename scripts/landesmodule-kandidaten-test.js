@@ -111,11 +111,14 @@ console.log("== Defekte Bundeswege — Reparaturen ==");
 const rep = require("../lib/helmut/quellenarchitektur/seeds/bundeswege-reparaturen");
 const rs = rep.reparaturSummary();
 check("6 defekte Bundeswege dokumentiert", rep.BUNDESWEG_REPARATUREN.length === 6);
-check("5 reparierbar + 1 ersatzweg_noetig, 0 dauerhaft_defekt", rs.reparierbar === 5 && rs.ersatzweg === 1 && rs.dauerhaftDefekt === 0);
-check("ALLE 4 kritischen Wege haben eine Lösung (keine stille Archivierung)", rs.kritischGesamt === 4 && rs.alleKritischGeloest === true);
-check("die-linke rss.xml -> feed.rss repariert", rep.BUNDESWEG_REPARATUREN.some((r) => r.legacy_source_id === "die-linke" && /feed\.rss$/.test(r.reparaturUrl)));
-check("linksfraktion: dielinkebt.de (NICHT veraltete linksfraktion.de)", rep.BUNDESWEG_REPARATUREN.some((r) => r.legacy_source_id === "linksfraktion" && /dielinkebt\.de/.test(r.reparaturUrl) && /linksfraktion\.de/.test(r.diagnose)));
-check("ausschuss-arbeit-soziales -> googlenews_search Ersatz", rep.BUNDESWEG_REPARATUREN.some((r) => r.legacy_source_id === "ausschuss-arbeit-soziales" && r.reparaturMethod === "googlenews_search"));
+// 9B (echter Abruf): 3 repariert (bundestag/linksfraktion/ausschuss), 2 URL falsch (bundesregierung/dgb), 1 bot-gesperrt (die-linke).
+check("9B: 3 repariert + 2 reparatur_url_falsch + 1 bot_gesperrt, 0 dauerhaft_defekt", rs.repariert === 3 && rs.reparaturUrlFalsch === 2 && rs.botGesperrt === 1 && rs.dauerhaftDefekt === 0);
+check("9B EHRLICH: NICHT alle kritischen Wege gelöst (2/4 repariert, alleKritischGeloest=false)", rs.kritischGesamt === 4 && rs.kritischRepariert === 2 && rs.kritischOffen === 2 && rs.alleKritischGeloest === false);
+check("nur echt getestete (geeignet) Wege sind verifiziert=true", rep.BUNDESWEG_REPARATUREN.filter((r) => r.verifiziert).length === 3 && rep.BUNDESWEG_REPARATUREN.every((r) => (r.verifiziert === true) === (r.bewertung === "repariert")));
+check("bundestag repariert (real geeignet, HTTP 200)", rep.BUNDESWEG_REPARATUREN.some((r) => r.legacy_source_id === "bundestag" && r.bewertung === "repariert" && r.liveHttp === 200));
+check("bundesregierung reparatur_url_falsch (real HTTP 404)", rep.BUNDESWEG_REPARATUREN.some((r) => r.legacy_source_id === "bundesregierung" && r.bewertung === "reparatur_url_falsch" && r.liveHttp === 404));
+check("linksfraktion: dielinkebt.de repariert (NICHT veraltete linksfraktion.de)", rep.BUNDESWEG_REPARATUREN.some((r) => r.legacy_source_id === "linksfraktion" && /dielinkebt\.de/.test(r.reparaturUrl) && /linksfraktion\.de/.test(r.diagnose) && r.bewertung === "repariert"));
+check("ausschuss-arbeit-soziales -> googlenews_search Ersatz (repariert)", rep.BUNDESWEG_REPARATUREN.some((r) => r.legacy_source_id === "ausschuss-arbeit-soziales" && r.reparaturMethod === "googlenews_search" && r.bewertung === "repariert"));
 check("jede Reparatur: verifyBeforeActivation=true, angewendet=0", rep.BUNDESWEG_REPARATUREN.every((r) => r.verifyBeforeActivation === true) && rs.angewendet === 0);
 
 console.log(`\n== Ergebnis: ${pass} PASS, ${fail} FAIL ==`);
