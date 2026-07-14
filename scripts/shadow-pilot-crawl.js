@@ -203,19 +203,34 @@ async function run() {
         gestoppt = `Gesamt-Cap ${TOTAL_HARD_CAP} erreicht bei ${weg.id}`;
       }
       allItems = allItems.concat(items);
-      perWeg.push({ id: weg.id, land: weg.land, method: weg.method, critical: weg.critical, status: r.status, befund: r.befund, itemCount: items.length, note: r.note, finalUrl: probe.finalUrl || null });
-      console.log(`[${String(weg.land).padEnd(16)}] ${weg.id.padEnd(24)} ${String(r.befund).padEnd(18)} ${items.length} Items — ${r.note}`);
+      const redirects = (probe.redirects || []).length;
+      const recencyDays = newestAgeDays(items, Date.now());
+      perWeg.push({
+        id: weg.id, land: weg.land, method: weg.method, critical: weg.critical, status: r.status,
+        befund: r.befund, itemCount: items.length, note: r.note,
+        redirects, angefragteUrl: weg.url, finalUrl: probe.finalUrl || null,
+        recencyDays, ms: probe.ms || null
+      });
+      const rec = recencyDays === null ? "kein Datum" : `jüngstes Item ${recencyDays} T`;
+      console.log(`[${String(weg.land).padEnd(16)}] ${weg.id.padEnd(24)} ${String(r.befund).padEnd(14)} HTTP ${r.status} · ${redirects} Weiterleitung(en) · ${items.length} Items · ${rec} — ${r.note}`);
+      if (probe.finalUrl && probe.finalUrl !== weg.url) console.log(`     final: ${probe.finalUrl.slice(0, 100)}`);
       if (gestoppt) { console.log(`  ⛔ ${gestoppt}`); break; }
     }
   } else {
-    for (const weg of wege) perWeg.push({ id: weg.id, land: weg.land, method: weg.method, critical: weg.critical, status: null, befund: "nicht_verifizierbar", itemCount: 0, note: "Egress gesperrt — keine echte Prüfung, kein erfundenes Ergebnis" });
+    for (const weg of wege) perWeg.push({ id: weg.id, land: weg.land, method: weg.method, critical: weg.critical, status: null, befund: "nicht_verifizierbar", itemCount: 0, note: "Egress gesperrt — keine echte Prüfung, kein erfundenes Ergebnis", redirects: 0, recencyDays: null });
   }
 
   // 2) Dedup Ebene 1 (In-Lauf) + Ebene 3 (global -> Dokumente + Fundstellen)
   const dedupL1 = deduplicateRawItems(allItems);
   const documents = mergeIntoDocuments(dedupL1);
   const findingsGesamt = documents.reduce((a, d) => a + (d.finding_count || 0), 0);
-  const mehrfachFundstellen = documents.filter((d) => (d.finding_count || 0) > 1).length;
+  const mehrfachDocs = documents.filter((d) => (d.finding_count || 0) > 1);
+  const mehrfachFundstellen = mehrfachDocs.length;
+  // Fundstellen-Verteilung (wie viele Dokumente je Anzahl Fundstellen) + Beispiel-Titel der
+  // Mehrfach-Dokumente (ehrliche Sichtbarmachung von Cluster-Effekten des Shadow-Extraktors).
+  const findingDistribution = documents.reduce((m, d) => { const k = d.finding_count || 0; m[k] = (m[k] || 0) + 1; return m; }, {});
+  const mehrfachBeispiele = mehrfachDocs.slice().sort((a, b) => (b.finding_count || 0) - (a.finding_count || 0)).slice(0, 5)
+    .map((d) => ({ title: (d.title || "").slice(0, 80), finding_count: d.finding_count, quellen: [...new Set(d.findings.map((f) => f.source_id))] }));
 
   const report = {
     generatedAt: new Date().toISOString(),
@@ -230,6 +245,8 @@ async function run() {
     dokumente: documents.length,
     fundstellenGesamt: findingsGesamt,
     dokumenteMitMehrfachFundstellen: mehrfachFundstellen,
+    findingDistribution,
+    mehrfachBeispiele,
     neuesteAlterTage: newestAgeDays(allItems, Date.now()),
     gestoppt,
     documents
@@ -239,6 +256,12 @@ async function run() {
   fs.writeFileSync(outPath, JSON.stringify(report, null, 2));
   console.log("\n--- Zusammenfassung ---");
   console.log(`  Items roh: ${allItems.length} · nach Dedup L1: ${dedupL1.length} · Dokumente: ${documents.length} · Fundstellen: ${findingsGesamt} (mehrfach: ${mehrfachFundstellen})`);
+  console.log(`  Aktualität gesamt: jüngstes Item vor ${report.neuesteAlterTage === null ? "?" : report.neuesteAlterTage} Tagen`);
+  console.log(`  Fundstellen-Verteilung (Fundstellen->Dokumente): ${JSON.stringify(findingDistribution)}`);
+  if (mehrfachBeispiele.length) {
+    console.log("  Mehrfach-Fundstellen-Dokumente (Top):");
+    for (const b of mehrfachBeispiele) console.log(`    - [${b.finding_count} Fundstellen | ${b.quellen.join(",")}] ${b.title}`);
+  }
   console.log(`  Artefakt (SHADOW): ${outPath}`);
   if (!egressOffen) console.log("  -> Egress gesperrt: KEIN Weg real geprüft, KEIN Ergebnis erfunden.");
   return report;
