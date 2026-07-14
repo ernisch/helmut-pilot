@@ -1,6 +1,19 @@
 # 15 — Production-Freigabeanfrage: prepared-Eintragung der verifizierten BE/BB-Abrufwege
 
-**Stand:** 2026-07-14 · **Sprint 9B → Production** · **Status: VORBEREITET, wartet auf ausdrückliches „Go"**
+**Stand:** 2026-07-14 · **Sprint 9B → Production** · **Status: ANGEWENDET (nach Go + grünem Dry-Run) — 18 BE/BB-Wege prepared eingetragen**
+
+> **Ausführungsprotokoll (2026-07-14):**
+> 1. **Dry-Run** `begin; <seed>; <Prüfungen A–H>; rollback;` → **vollständig grün**, keine Netto-Änderung.
+> 2. **4-vs-5 geklärt:** 5 `always_on`-Kernwege alle vorhanden (deutschlandfunk-politik, dip, tagesschau-politik,
+>    bundestag, bundesregierung); die §2-Kennzahl „4" ist gesund-crawlend (`healthy/degraded`) — bundestag +
+>    bundesregierung sind vorbestehend `broken` (in 9B repariert, aber Reparatur bewusst nicht angewandt). **Keine
+>    funktionierende Bundesquelle deaktiviert/un-migriert.**
+> 3. **Echte Eintragung** `begin; <seed>; commit;` erfolgreich. **Post-Commit-Prüfung A–H grün:**
+>    political_entities 69→**73**, publishers 51→**64**, retrieval_paths 145→**163**, package_paths 145→**164**,
+>    path_expected_levels 0→**18**, path_expected_geographies 0→**18**; 18 BE/BB-Wege eingetragen, davon 0 abweichend
+>    von needs_review/manual; beide Pakete `prepared`; aktiv-gesund **4** (unverändert), always_on-Kernset **5**
+>    (unverändert); 0 FK-Waisen; 145 Bundeswege unverändert; 3 Bot-Wege needs_review/manual.
+> 4. **Rollback:** nicht nötig (alles grün); `..._rollback.sql` bleibt verfügbar.
 
 Diese Anfrage beschreibt die **sichere, technisch inaktive** Eintragung der in Sprint 9B real
 verifizierten **18 Berlin/Brandenburg-Abrufwege** (+ Herausgeber/Entitäten/Zuordnungen) als
