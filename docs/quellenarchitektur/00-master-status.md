@@ -63,10 +63,27 @@ Grenzen: ~100 Understanding + Spielraum, ~$8–10/Monat, Stop >$0,50/Tag, NIE un
 - **Isolierter PARDOK-Shadow-Lauf (P6):** Parser über Gold-Fixtures im Shadow-Modus —
   be-plenum 8/8 geparst (8 externe IDs), bb-plenum 6/7 (1 bewusst defekter Datensatz),
   0 Pipeline-Items, keine Fehlerseite, 6–10 ms, ~5 MB Heap, isolierte Ablage ok.
-- **gate_shadow_events = 0 (Stand 18:31 UTC) — Ursache eindeutig:** der Understanding-Cron
-  ist seit der Shadow-Aktivierung (17:57 UTC) schlicht noch nicht gelaufen (nächster Lauf
-  21:30 UTC). Kosten heute $0,07 / 36 billable Calls (Limit-fern); Understanding heute 15
-  (Normalbereich). Live-Bestätigung der Event-Schreibung: Wake-up 21:45 UTC.
+- **ERSTER ECHTER PRODUCTION-SHADOW-MESSLAUF (20:00-UTC-Crawl, Bericht 20:01:45, 1353 ms, +$0):**
+  Alt-Plan real: 149 Wege, 149 erfolgreich, 0 Fehler, 1745 Dokument-Kandidaten. Relational
+  zugerechnet: 138 Wege (137 im Lauf), 0 Fehler, 1601 Kandidaten = **91,7 % Abdeckung**;
+  die Differenz sind exakt die 6 profilgenerierten Cem-Personensuchen (bleiben im ON-Modus
+  erhalten — mergeProfileAndPlanSources) + die 6 defekten Wege (heute 0 persistierte neue
+  Docs — kein Ertragsverlust). nurRelational: +1 funktionierender Weg
+  (region-braunschweig-arbeit-soziales). Dedup-Dry-Run: 1601 Kandidaten → 1465 eindeutig,
+  136 Duplikate (8,5 %), 1601 Fundstellen. Aktivierung: 3 Profile → 5 Pakete
+  (inkl. die-linke-bund refCount 1); BE/BB prepared/inactive. Kein Nutzerpfad-Write
+  (document_findings weiter 0), +62 normale neue raw_documents, 0 BE/BB/PARDOK,
+  0 Runtime-Fehler.
+- **gate_shadow_events LIVE: 500 Zeilen ab 20:02:58 UTC** (Crawl-eager-Pfad): 352 verstehen /
+  147 zurückstellen / **1 parken** (fraction-fdp, „kein-politisches-signal") über 500
+  distinct Dokumente; **0 amtliche geparkt, 0 kuratierte geparkt**; Tiers 441 kuratiert /
+  49 medien / 10 amtlich. **Befund (Bestandsverhalten, kein neuer Fehler):** der
+  eager-Crawl-Pfad clustert den Tagesbatch per Anker-Schneeball zu EINEM Riesen-Cluster →
+  alle Zeilen tragen vorgang_id „vg-bundestag", und die 500-Zeilen-Leitplanke griff
+  (Stichprobe statt Vollerhebung). Per-Dokument-Entscheidungen bleiben valide (dokumentweise
+  berechnet). Der dedizierte 21:30-Cron (runPendingUnderstandingShadow) arbeitet
+  vorgangsweise — saubere vorgang_ids dort werden um 21:45 UTC verifiziert.
+- Kosten heute (Stand 20:15): $0,07 zzgl. $0 durch Shadow; Understanding 15 (Normalbereich).
 - **Rollback:** `helmut-flags.json` auf `off` + Deploy, ODER Vercel-Env `off` + Redeploy
   (überstimmt sofort), ODER Instant Rollback auf `7a27f5b`.
 
