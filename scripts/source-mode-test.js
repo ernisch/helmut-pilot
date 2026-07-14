@@ -126,6 +126,18 @@ check("8b legacy be-Präfix", isLandesmodulPath({ id: "rp-x", legacy_source_id: 
 check("8c Paket-Zugehörigkeit", isLandesmodulPath({ id: "rp-x" }, ["berlin-basis"]) === true);
 check("8d Bundesweg nicht betroffen", isLandesmodulPath({ id: "rp-bundestag", legacy_source_id: "bundestag" }, ["bund-basis"]) === false);
 
+// --- 8b) Adversarial: pausiertes Paket + deaktiviertes Profil ------------------------------
+{
+  // Paket pausiert -> seine Wege verlieren die Referenz (nur always_on bleibt).
+  const pausiert = PACKAGES.map((p) => p.key === "arbeit-und-soziales" ? { ...p, status: "paused" } : p);
+  const plan = buildRelationalCrawlPlan({ retrievalPaths: PATHS, packages: pausiert, packagePaths: LINKS, profiles: [CEM], legacySources: LEGACY });
+  check("8e pausiertes Paket: Fachwege fallen aus dem Plan", !plan.aktiv.some((p) => p.id === "rp-sozial-news"));
+  check("8f always_on-Kern bleibt trotz pausiertem Paket", plan.aktiv.some((p) => p.id === "rp-bundestag"));
+  // Deaktiviertes Profil (profileActive=false) aktiviert nichts.
+  const deaktiviert = buildRelationalCrawlPlan({ retrievalPaths: PATHS, packages: PACKAGES, packagePaths: LINKS, profiles: [{ ...CEM, profileActive: false }], legacySources: LEGACY });
+  check("8g deaktiviertes Profil zählt nicht (nur always_on)", deaktiviert.aktiv.length === 1 && deaktiviert.aktiv[0].id === "rp-bundestag");
+}
+
 // --- 9) Scheduler-Integration: off byte-identisch, on ohne DB -> Fallback ------------------
 (async () => {
   process.env.HELMUT_STORAGE_BACKEND = "local"; // keine Supabase-Konfiguration -> Loader liefert null
