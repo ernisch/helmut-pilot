@@ -68,11 +68,20 @@ function fetcherOf(xml) { let calls = 0; const f = async () => { calls += 1; ret
   // --- 7. crawlSource-Anbindung: structured_download nur mit Guard shadow aktiv ---------------
   const savedFlag = process.env.HELMUT_PARDOK_DISPATCH;
   try {
-    // 7a: Guard AUS (Default) -> crawlSource(structured_download) liefert [] OHNE Fetch.
-    delete process.env.HELMUT_PARDOK_DISPATCH;
+    // 7a: Guard explizit AUS (Env ueberstimmt das eingecheckte Datei-Flag shadow) ->
+    // crawlSource(structured_download) liefert [] OHNE Fetch. Der Betreiber kann den
+    // Shadow-Modus also jederzeit per Env-Variable stoppen, ohne Code-Aenderung.
+    process.env.HELMUT_PARDOK_DISPATCH = "off";
     const spyCsOff = fetcherOf(beXml);
     const csOff = await crawlSource({ id: "be-plenum", crawlMethod: "structured_download", url: "https://x/be.xml" }, { fetchText: spyCsOff });
-    check("7a crawlSource structured_download + Guard AUS -> [] ohne Fetch", Array.isArray(csOff) && csOff.length === 0 && spyCsOff.calls() === 0);
+    check("7a crawlSource structured_download + Env off (ueberstimmt Datei-Flag) -> [] ohne Fetch", Array.isArray(csOff) && csOff.length === 0 && spyCsOff.calls() === 0);
+
+    // 7a2: Env NICHT gesetzt -> das eingecheckte Datei-Flag (helmut-flags.json) schaltet
+    // shadow: Fetch+Parse laufen, aber weiterhin 0 Items in der sichtbaren Pipeline.
+    delete process.env.HELMUT_PARDOK_DISPATCH;
+    const spyCsFile = fetcherOf(beXml);
+    const csFile = await crawlSource({ id: "be-plenum", crawlMethod: "structured_download", url: "https://x/be.xml" }, { fetchText: spyCsFile });
+    check("7a2 Env unset -> Datei-Flag shadow greift (Fetch 1x), Pipeline bleibt leer", Array.isArray(csFile) && csFile.length === 0 && spyCsFile.calls() === 1);
 
     // 7b: Guard shadow -> crawlSource parst (injizierter Fetcher), liefert aber weiterhin [].
     process.env.HELMUT_PARDOK_DISPATCH = "shadow";

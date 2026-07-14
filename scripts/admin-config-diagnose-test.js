@@ -61,8 +61,18 @@ const EXPECTED_NAMES = [
   const scoring = rows.find((r) => r.name === "HELMUT_SCORING_MODE");
   check("A3 gesetzte Variable zeigt den aktuellen Wert", scoring.gesetzt === true && scoring.wert === WHITELIST_SENTINEL);
   const gate = rows.find((r) => r.name === "HELMUT_UNDERSTANDING_GATE");
-  check("A4 fehlende Variable: gesetzt=false, wert=null, Code-Default sichtbar",
+  check("A4 fehlende Env-Variable: gesetzt=false, wert=null, Code-Default sichtbar",
     gate.gesetzt === false && gate.wert === null && /off/.test(gate.codeDefault));
+  // Deployment-Flag-Ebene (helmut-flags.json): GATE ist per Datei auf shadow — die Diagnose
+  // zeigt Quelle 'datei' + wirksamen Wert, waehrend gesetzt/wert (Env) unveraendert leer sind.
+  check("A4b Datei-Flag sichtbar: GATE wirksam=shadow, quelle=datei",
+    gate.quelle === "datei" && gate.wirksam === "shadow" && gate.dateiWert === "shadow");
+  const scoringInfo = rows.find((r) => r.name === "HELMUT_SCORING_MODE");
+  check("A4c Env-Wert hat quelle=env und wirksam=Env-Wert",
+    scoringInfo.quelle === "env" && scoringInfo.wirksam === WHITELIST_SENTINEL);
+  const maxLlm = rows.find((r) => r.name === "HELMUT_MAX_LLM_CALLS_PER_DAY");
+  check("A4d Kostenschalter ist NICHT dateisteuerbar (quelle=default ohne Env)",
+    maxLlm.quelle === "default" && maxLlm.dateiWert === null);
   const json = JSON.stringify(rows);
   check("A5 KEIN Secret-Sentinel im Builder-Ergebnis", !json.includes(SECRET_SENTINEL));
   // Fremdnamen strukturell unmoeglich: env mit Secret-Keys liefert trotzdem nur die 7.
