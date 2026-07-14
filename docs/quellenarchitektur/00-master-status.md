@@ -70,11 +70,16 @@ Grenzen: ~100 Understanding + Spielraum, ~$8–10/Monat, Stop >$0,50/Tag, NIE un
 - **Rollback:** `helmut-flags.json` auf `off` + Deploy, ODER Vercel-Env `off` + Redeploy
   (überstimmt sofort), ODER Instant Rollback auf `7a27f5b`.
 
-## 4) Quellenmodus (P7 — GEBAUT, Default off)
+## 4) Quellenmodus (P7 — gebaut; **shadow AKTIV seit `0159ae6`**, 2026-07-14 ~19:09 UTC)
 `HELMUT_SOURCE_MODE` (off/shadow/on, via Flag-Resolver; `source-mode.js`):
-- **off (aktiv):** alter hartcodierter Katalog = Quellenwahrheit, byte-identisch (Test 9b/9c).
-- **shadow:** alter Katalog bleibt aktiv; relationaler Plan wird parallel erzeugt und NUR
-  verglichen (Admin-Report + isolierte Läufe); nichts erreicht die sichtbare Pipeline.
+- Ausgangswert (dokumentierter Rollback): **nicht gesetzt = off** (weder Vercel-Env noch
+  Datei). Rollback: Flag-Zeile entfernen/`off` + Deploy oder Vercel-Env `off` + Redeploy.
+- **shadow (AKTIV, Gründer-Freigabe):** alter Katalog bleibt die sichtbare Quellenwahrheit
+  (Quellenliste byte-identisch); nach jedem echten Crawl misst ein fail-safe Block den
+  relationalen Plan gegen die REALEN Ergebnisse desselben Laufs (keine Extra-Fetches,
+  kein LLM, $0, kein Nutzerpfad-Write) → Console-Log `[source-mode:shadow]` + kompakter
+  Auth-Store-Eintrag `sourceModeShadowLastRun` (Admin-Panel). Erster Messlauf: Crawl-Cron
+  20:00 UTC; Auswertung per Wake-up 20:12 UTC.
 - **on (= QUELLEN-CUTOVER, nicht aktiviert):** relationale DB (publishers/retrieval_paths/
   source_packages/package_paths) wird aktive Quellenwahrheit; alter Katalog bleibt Fallback
   (Ladefehler/leerer Plan). Profile werden über Pakete versorgt (Resolver + Referenzzählung);
