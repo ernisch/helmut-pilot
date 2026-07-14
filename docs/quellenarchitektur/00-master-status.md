@@ -26,13 +26,22 @@ gilt diese Datei. Letzte Aktualisierung: 2026-07-14, Phase 2 (Deployment-Vorprü
   byte-identisch vor/nach Merge (5140/247/7/86/1, document_findings=0, gate_shadow_events=0,
   llm_usage=0); BE/BB-Wege/Pakete unverändert (0 Abweichungen); keine Migration ausgeführt;
   Env-Variablen (inkl. Tageslimit) durch den Merge strukturell unberührbar.
-- **Phase A (Reiter-Umbenennung): IM PREVIEW** — der sichtbare Produktreiter „Helmut" heißt
-  jetzt „Briefing" (nur Labels: Haupt-/Mobilnavigation, Sprungbutton „Im Briefing öffnen",
-  Bereichs-ARIA). Marke/Persona bleiben Helmut; interne View-IDs (historisch: "briefing"=Lage,
-  "helmut"=Briefing-Reiter), API-Verträge, gespeicherte Briefings unverändert.
-  Test: briefing-tab-rename (20 Assertions) + Gesamtsuite 58/58 grün.
-- **Nächstes Gate: „Briefing Preview prüfen"** — danach gemäß Megaprompt weiter
-  (Shadow-Flags + Tageslimit erst nach separatem Go).
+- **Phase A (Reiter-Umbenennung): DEPLOYED 2026-07-14** — PR
+  [#76](https://github.com/ernisch/helmut-pilot/pull/76) gemerged nach Gründer-Abnahme
+  („Briefing Preview grün"). Production-Commit: **`6539fbf`**, Deployment
+  `dpl_FSy61yLoLCXhPmEYLoyHToUVMFFV`. Der sichtbare Reiter heißt „Briefing"; Marke/Persona
+  Helmut, interne View-IDs (historisch: "briefing"=Lage, "helmut"=Briefing-Reiter),
+  API-Verträge und gespeicherte Briefings unverändert.
+  Post-Deploy verifiziert (am AUSGELIEFERTEN client.js): Nav Lage·Radar·Briefing·Büro,
+  altes Label/ARIA weg, „Im Briefing öffnen" da, Marke intakt; 0 Runtime-Fehler;
+  KOs/Briefings/Decisions/BE-BB/gate_shadow_events/llm_usage unverändert. Einzige
+  Datenänderung: +102 raw_documents durch den planmäßigen, unveränderten 16:00-UTC-
+  Pipeline-Cron (Alt-Katalog-Crawl; 0 Gate-Telemetrie trotz Pipeline-Lauf = Live-Beweis
+  Gate off). Rollback-Ziel bleibt dokumentiert: `9685a0b`.
+- **Nächstes Gate: „Go Shadow und Tageslimit?"** (Phase 4: HELMUT_UNDERSTANDING_GATE=shadow,
+  HELMUT_PARDOK_DISPATCH=shadow, HELMUT_MAX_LLM_CALLS_PER_DAY→150 — einzeln, mit Smoke-Tests;
+  Hinweis: Env-Variablen sind für mich weiterhin nicht lesbar/setzbar — Phase 4 braucht
+  entweder Dashboard-Zugriff des Gründers oder eine gemeinsame kurze Sitzung.)
 
 ## Was Production AKTUELL nutzt (main)
 - Alter hartcodierter Quellenkatalog (`v1Sources`) als aktive Quellenwahrheit.
