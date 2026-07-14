@@ -13,7 +13,7 @@ Vercel-Deployments und Thread-Verlauf. Keine Migration wurde erneut angewendet.
 | Production-Commit (main) | **`6539fbf`** — Merge PR #76 (Reiter „Helmut"→„Briefing") |
 | Production-Deployment | `dpl_FSy61yLoLCXhPmEYLoyHToUVMFFV`, READY, `helmut-pilot.vercel.app` |
 | Vorheriges Prod-Deployment (Rollback-Kette) | `9685a0b` (PR #75, Quellenarchitektur-Code, Guards off) → davor `74ae2a6` (Alt-Stand) |
-| Feature-Branch | `claude/helmut-source-architecture-ruhyvb` @ `32b1721` (= main + diese Statusdatei) |
+| Feature-Branch | `claude/helmut-source-architecture-ruhyvb` @ `68eacba` (= main + diese Statusdatei + Admin-Konfigurations-Diagnose) |
 | Crons (vercel.json, unverändert seit Alt-Stand) | crawl 04:00+20:00 · morning-briefing 05:00 · understanding 05:30+21:30 · health 06:00 · lage-check 10:00 · pipeline 16:00 · lage-briefing 05:45 (UTC) |
 
 **Bereits deployt und live:** neue Quellenarchitektur-Codebasis (Guards off), korrigierte
@@ -79,6 +79,20 @@ Dann (ohne Secrets auszugeben):
   `npx vercel redeploy helmut-pilot.vercel.app --token …`)
 Alternative ohne Token: Gründer im Dashboard `vercel.com/nohut/helmut-pilot/settings/environment-variables`.
 
+**NEU (2026-07-14, Gründer-Entscheid): Leseweg über Admin-Konfigurations-Diagnose.** Da die
+Production-Env-Werte in Vercel als „sensitive" gespeichert und im Dashboard NICHT ablesbar
+sind, wurde eine streng geschützte Admin-Diagnose gebaut (Commit `68eacba`): feste Whitelist
+von exakt 7 nicht geheimen Modus-/Limit-Variablen, angezeigt unter Admin → System & Sicherheit
+(gleiche Route/Auth wie der gesamte Admin, keine Parametereingabe, Secrets strukturell
+unerreichbar, Werte nie in Logs; Test `test:admin-config-diagnose` 24/24). **Preview vom
+Gründer abgenommen („Admin Konfigurations Preview grün", 2026-07-14)** — dort gelesene
+**PREVIEW-Werte** (NICHT als Production bestätigt; Rollback-Wert für 4B bleibt offen, bis
+die Diagnose in Production läuft):
+`HELMUT_MAX_LLM_CALLS_PER_DAY=20` · `HELMUT_V3_STORE=1` · übrige 5 (GATE, PARDOK, SCORING,
+SHADOW_COMPARE, PROFILE_DB_MODE) nicht gesetzt → Code-Default off/aus. Die Preview-Werte
+sind konsistent mit dem aus Verhalten abgeleiteten Production-Bild in §4 (V3_STORE an,
+Tageslimit endlich).
+
 ## 6) Tageslimit & Kosten (Phase 3 — Realdaten aus dem Blob-Kostenlog, 14 Tage)
 - Deckel zählt **alle** billable KI-Aufrufe (canSpendLlm global, nicht nur Understanding)
 - Understanding ausgeführt: Ø ~15/Tag · geblockt: **26–252/Tag** (Nachfrage ≫ Deckel)
@@ -92,9 +106,11 @@ Alternative ohne Token: Gründer im Dashboard `vercel.com/nohut/helmut-pilot/set
 Inertheit frisch nachgewiesen: Gate off=byte-identisch & shadow blockiert nichts
 (Integrationstest: off/shadow/on identische Call-Zahlen), Gate schreibt nur Telemetrie;
 PARDOK shadow liefert 0 sichtbare Items, kein Write in raw_documents/KOs, kein BE/BB-Leck;
-Cem-E2E 93/93 + Gate-E2E grün. Vorbedingung beider Phasen: die 7 lokal vom Gründer
-ausgelesenen Production-Werte (GATE, PARDOK, MAX_LLM, V3_STORE, SCORING, SHADOW_COMPARE,
-PROFILE_DB_MODE) liegen vor. **Es wartet: die 7 Werte.**
+Cem-E2E 93/93 + Gate-E2E grün. Vorbedingung beider Phasen: die 7 **Production**-Laufzeitwerte
+(GATE, PARDOK, MAX_LLM, V3_STORE, SCORING, SHADOW_COMPARE, PROFILE_DB_MODE) liegen vor.
+**Beschlossener Leseweg:** Admin-Konfigurations-Diagnose (§5) in Production deployen und die
+Werte dort ablesen — **es wartet: das Diagnose-Deployment (Gate „Go Admin Diagnose
+Deployment?"), danach das Ablesen + Dokumentieren des 4B-Rollback-Werts.**
 
 ### Phase 4A — Gate-Shadow + PARDOK-Shadow (eigene Freigabe)
 - **Änderung:** `HELMUT_UNDERSTANDING_GATE=shadow` und `HELMUT_PARDOK_DISPATCH=shadow`
@@ -130,6 +146,13 @@ Quellen-Cutover (Modus-Schalter existiert noch nicht) · Datenlöschungen · Cro
 KO-Klassifikations-Backfill.
 
 ## 9) Nächstes Gate
-**„Go Shadow und Tageslimit?"** — danach Phase 5 (setzen+verifizieren, sofern Env-Zugriff
-gemäß §5 hergestellt ist), Phase 6 (Shadow-Messung), Phase 7/8 (relationaler Quellenvergleich
-+ Cutover-Vorbereitung, eigenes Gate „Go Quellen Cutover?").
+**„Go Admin Diagnose Deployment?"** — eng begrenztes Production-Deployment NUR der
+Admin-Konfigurations-Diagnose (PR Feature-Branch `68eacba` → main; Runtime-Diff ausschließlich
+server.js/client.js/package.json/Test; vercel.json/Migrationen/Crons byte-identisch; keine
+Env-Änderung, kein Shadow, kein Tageslimit, keine Quellenaktivierung, kein Cutover).
+Rollback: Vercel Instant Rollback auf `dpl_FSy61yLoLCXhPmEYLoyHToUVMFFV` (`6539fbf`) bzw.
+`git revert -m 1` des Merge-Commits.
+Danach: Production-Wert von `HELMUT_MAX_LLM_CALLS_PER_DAY` in der laufenden Runtime ablesen
+und hier als 4B-Rollback-Wert dokumentieren → dann getrennte Gates **Phase 4A** (Gate+PARDOK
+shadow) und **Phase 4B** (Tageslimit 150), anschließend Phase 5/6 (Shadow-Messung), Phase 7/8
+(relationaler Quellenvergleich + Cutover-Vorbereitung, eigenes Gate „Go Quellen Cutover?").
