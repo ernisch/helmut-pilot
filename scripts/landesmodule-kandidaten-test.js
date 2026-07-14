@@ -85,13 +85,14 @@ check("Berlin klassenFehlend leer (alle 15 besetzt)", sum.berlin.klassenFehlend.
 check("Reifegrad-Rollup: keine 'unknown' (alle readiness-Werte gültig)", sum.berlin.readiness.unknown === 0 && sum.brandenburg.readiness.unknown === 0);
 check("landReadiness.hoechsteStufe = 'kandidat' (besetzte vorhanden)", k.landReadiness(bb).hoechsteStufe === "kandidat" && k.landReadiness(be).hoechsteStufe === "kandidat");
 check("landReadiness leere Liste -> hoechsteStufe 'unbesetzt' (nicht 'kandidat')", k.landReadiness([]).hoechsteStufe === "unbesetzt");
-check("überwiegend RSS/Open-Data (nicht scrape-lastig)", (sum.berlin.methoden.rss + (sum.berlin.methoden.opendata_xml || 0)) >= 12);
+check("Open-Data-Rückgrat intakt (4 Klassen) + kein HTML-Scrape-Weg (R2)", sum.berlin.methoden.opendata_xml === 4 && !sum.berlin.methoden.html && !sum.brandenburg.methoden.html);
 
 console.log("== Technische Prüfung (Sprint-9-Vertiefung) ==");
 check("jeder besetzte Kandidat trägt evidenceRole + produktnutzen + stabileAdresse", besetzt.every((c) => ["official_primary","direct_interest","journalistic","data_source","aggregator"].includes(c.evidenceRole) && ["hoch","mittel","niedrig"].includes(c.produktnutzen) && typeof c.stabileAdresse === "boolean"));
 check("URL-KORREKTUR Brandenburg: exportWP8.xml (8. WP), NICHT exportWP1.xml", ["plenum","drucksachen","schriftliche_anfragen","gesetzgebung"].every((kl) => /exportWP8\.xml$/.test(bbByKlasse[kl].url)) && !bb.some((c) => /exportWP1\.xml/.test(c.url || "")));
 check("URL-PRÄZISIERUNG Berlin Open-Data: pardok-wp19.xml (Deep-Link, nicht Landingpage)", ["plenum","drucksachen","schriftliche_anfragen","gesetzgebung"].every((kl) => /opendata\/pardok-wp19\.xml$/.test(beByKlasse[kl].url)));
-check("URL-PRÄZISIERUNG Berlin LPD-Feed: index/feed (nicht /presse/ oder /sen/)", /pressemitteilungen\/index\/feed/.test(beByKlasse.landesregierung.url) && !/\/sen\/$/.test(beByKlasse.ministerien.url));
+check("R2 Berlin Staatskanzlei: echter RBm-Sektionsfeed (rbmskzl/.../index/feed)", /rbmskzl\/aktuelles\/pressemitteilungen\/index\/feed$/.test(beByKlasse.staatskanzlei.url) && beByKlasse.staatskanzlei.method === "rss");
+check("R2 Brandenburg Landesregierung/Ministerien: echte bbo_rss-Feeds", /\/bbo_rss$/.test(bbByKlasse.landesregierung.url) && /mwfk\.brandenburg\.de.*\/bbo_rss$/.test(bbByKlasse.ministerien.url));
 check("abgelehnt: berlin.de/sen/ + fraktionen-Landing + OParl + exportWP1 dokumentiert", ["/sen/","das-parlament/fraktionen","OParl","exportWP1"].every((n) => k.ABGELEHNTE_KANDIDATEN.some((a) => (a.kandidat + a.grund).includes(n))));
 check("Berlin partei_pilot Domain dielinke.berlin OHNE www", beByKlasse.partei_pilot.domain === "dielinke.berlin");
 
@@ -100,7 +101,7 @@ const q = require("../lib/helmut/quellenarchitektur/seeds/landesmodule-quellen")
 const seed = q.buildLandesmodulSeed();
 check("Struktur status 'prepared', 0 aktive Abrufwege", seed.summary.status === "prepared" && seed.summary.aktiveAbrufwege === 0);
 check("ALLE Abrufwege status='needs_review' + activation_mode='manual' (technisch inaktiv)", seed.retrievalPaths.every((p) => p.status === "needs_review" && p.activation_mode === "manual"));
-check("Dedup: weniger Abrufwege (19) als besetzte Kandidaten (28)", seed.retrievalPaths.length === 19 && seed.retrievalPaths.length < 28);
+check("Dedup (R2): 18 Abrufwege (bb-staatskanzlei dedupt in bb-landesregierung via zentralem bbo_rss)", seed.retrievalPaths.length === 18 && seed.retrievalPaths.length < 28);
 check("rbb24 GLOBAL dedup: ein Abrufweg, zwei Paketreferenzen (BE+BB)", seed.summary.rbb24GlobalDedup && seed.packagePaths.filter((pp) => pp.retrieval_path_id === "rp-rbb24-politik").length === 2);
 check("Berlin PARDOK-Rohquelle deckt 4 Klassen ab (2/4/5/6)", (() => { const p = seed.retrievalPaths.find((x) => x.url.includes("pardok-wp19")); return p && p.covers.length === 4; })());
 check("Paketzuordnungen nur zu berlin-basis/brandenburg-basis", seed.packagePaths.every((pp) => ["pkg-berlin-basis","pkg-brandenburg-basis"].includes(pp.package_id)));
