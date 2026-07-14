@@ -121,6 +121,7 @@ async function run() {
         quoteTitel: q(s.mitTitel, s.geparst), quoteDatum: q(s.mitDatum, s.geparst), quoteExterneId: q(s.mitExterneId, s.geparst),
         formatTitelVorhanden: s.formatTitelVorhanden, formatTitelErkannt: s.formatTitelErkannt, quoteFormatTitel: q(s.formatTitelErkannt, s.formatTitelVorhanden),
         dokumente: dd.anzahl, fundstellen: dd.dokumente.reduce((a, d) => a + d.fundstellen_anzahl, 0), mehrfachFundstellen: dd.mehrfach,
+        mehrfachBeispiele: dd.dokumente.filter((d) => d.fundstellen_anzahl > 1).slice(0, 10).map((d) => ({ titel: d.titel, externe_ids: d.fundstellen.map((f) => f.externe_id), identisch: new Set(d.fundstellen.map((f) => f.externe_id)).size === 1 })),
         keinSammelcluster,
         laufzeitMs: r.ms, peakBufferKB: Math.round(r.peakBufferBytes / 1024), gelesenKB: Math.round(r.bytes / 1024),
         beispiele: r.documents.slice(0, 3).map((d) => ({ externe_id: d.externe_id, titel: d.titel, datum: d.veroeffentlichungsdatum, dokumentart: d.dokumentart, wahlperiode: d.wahlperiode, url: d.originaladresse }))
@@ -133,6 +134,7 @@ async function run() {
       console.log(`  Dokumente nach Dedup ${land.dokumente} · Fundstellen ${land.fundstellen} (mehrfach ${land.mehrfachFundstellen}) · Platzhalter ${land.platzhalter} · kein Sammelcluster: ${land.keinSammelcluster}`);
       console.log(`  Laufzeit ${land.laufzeitMs} ms · Puffer-Spitze ${land.peakBufferKB} KB`);
       for (const b of land.beispiele) console.log(`    · [${b.externe_id}] WP${b.wahlperiode} ${b.dokumentart} ${b.datum || "(o.Datum)"} — ${b.titel ? '"' + b.titel.slice(0, 70) + '"' : "(titellos)"}`);
+      if (land.mehrfachBeispiele.length) { console.log("  Zusammengefuehrte Dokumente (Diagnose):"); for (const m of land.mehrfachBeispiele) console.log(`    · ${m.identisch ? "IDENTISCHE ID (echtes Duplikat)" : "VERSCHIEDENE IDs (Kollision!)"}: ${m.externe_ids.join(", ")} — ${m.titel ? '"' + m.titel.slice(0, 50) + '"' : "(titellos)"}`); }
     }
   } else {
     for (const t of targets()) lands.push({ id: t.id, land: t.land, url: t.url, status: null, hinweis: "Egress gesperrt — kein Ergebnis erfunden" });

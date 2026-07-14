@@ -42,22 +42,24 @@ const cd = bb.documents;
 check("BB: 7 Roh-Vorgaenge, 1 delete-Stub, 1 ohne Dokument", bb.stats.rohRecords === 7 && bb.stats.deleteStubs === 1 && bb.stats.ohneDokument === 1);
 check("BB: 6 Dokumente geparst (inkl. Multi-Dok-Vorgang)", cd.length === 6 && bb.stats.geparst === 6);
 check("BB: delete-Stub erzeugt KEIN Dokument", !cd.some((d) => d.vorgangsnummer === "V-369325"));
-check("BB: jedes Dokument hat externe_id (VNr:...)", cd.every((d) => /^V-\d+:/.test(d.externe_id)) && bb.stats.mitExterneId === 6);
+check("BB: jedes Dokument hat externe_id (VNr#ReihNr)", cd.every((d) => /^V-\d+#/.test(d.externe_id)) && bb.stats.mitExterneId === 6);
 check("BB: 0 Platzhalter", bb.stats.platzhalter === 0);
+check("BB: externe_id eindeutig (kein Kollisions-Sammelcluster)", new Set(cd.map((d) => d.externe_id)).size === 6 && new Set(cd.map((d) => d.inhaltsfingerabdruck)).size === 6);
 check("BB: 4 Dokumente mit Titel", bb.stats.mitTitel === 4 && bb.stats.formatTitelErkannt === 4 && bb.stats.formatTitelVorhanden === 4);
 const bbById = Object.fromEntries(cd.map((d) => [d.externe_id, d]));
-check("BB: Multi-Dok-Vorgang V-370081 -> 2 unterscheidbare Dokumente", !!bbById["V-370081:08/700"] && !!bbById["V-370081:08/5"] &&
-  bbById["V-370081:08/700"].inhaltsfingerabdruck !== bbById["V-370081:08/5"].inhaltsfingerabdruck);
-check("BB: mehrere Urheber als Array", Array.isArray(bbById["V-369657:08/30"].urheber) && bbById["V-369657:08/30"].urheber.length === 2);
-check("BB: Vorgangs-Stichworte (Desk) uebernommen", (bbById["V-369657:08/30"].stichworte || []).includes("Extremismus"));
-check("BB: Vorgangstyp aus <VTypL>", bbById["V-369657:08/30"].vorgangstyp === "Anfrage");
-check("BB: fehlendes Datum bleibt null", bbById["V-380500:08/900"].veroeffentlichungsdatum === null);
+check("BB: Multi-Dok-Vorgang V-370081 -> 2 unterscheidbare Dokumente (ReihNr)", !!bbById["V-370081#r0001"] && !!bbById["V-370081#r0002"] &&
+  bbById["V-370081#r0001"].inhaltsfingerabdruck !== bbById["V-370081#r0002"].inhaltsfingerabdruck);
+check("BB: mehrere Urheber als Array", Array.isArray(bbById["V-369657#r0001"].urheber) && bbById["V-369657#r0001"].urheber.length === 2);
+check("BB: Vorgangs-Stichworte (Desk) uebernommen", (bbById["V-369657#r0001"].stichworte || []).includes("Extremismus"));
+check("BB: Vorgangstyp aus <VTypL>", bbById["V-369657#r0001"].vorgangstyp === "Anfrage");
+check("BB: fehlendes Datum bleibt null", bbById["V-380500#r0001"].veroeffentlichungsdatum === null);
 check("BB: Geografie = geo-land-brandenburg", cd.every((d) => d.geografie === "geo-land-brandenburg"));
-// Adversarial: identische Drucksachennummer (08/30) aus unterschiedlichen Wahlperioden
+// Adversarial: identische Drucksachennummer (08/30) aus unterschiedlichen Wahlperioden/Vorgaengen
 check("BB-adv: DokNr 08/30 in WP8 und WP7 -> getrennte Dokumente, andere Fingerabdruecke",
-  bbById["V-369657:08/30"].wahlperiode === 8 && bbById["V-250100:08/30"].wahlperiode === 7 &&
-  bbById["V-369657:08/30"].inhaltsfingerabdruck !== bbById["V-250100:08/30"].inhaltsfingerabdruck);
-check("BB-adv: <Wp>-Feld hat Vorrang vor DokNr-Praefix (08/30 -> WP7, nicht 8)", bbById["V-250100:08/30"].wahlperiode === 7);
+  bbById["V-369657#r0001"].drucksachennummer === "08/30" && bbById["V-250100#r0001"].drucksachennummer === "08/30" &&
+  bbById["V-369657#r0001"].wahlperiode === 8 && bbById["V-250100#r0001"].wahlperiode === 7 &&
+  bbById["V-369657#r0001"].inhaltsfingerabdruck !== bbById["V-250100#r0001"].inhaltsfingerabdruck);
+check("BB-adv: <Wp>-Feld hat Vorrang vor DokNr-Praefix (08/30 -> WP7, nicht 8)", bbById["V-250100#r0001"].wahlperiode === 7);
 
 // ============================ Dedup + Fundstellen ============================
 const dd = P.dedupToDocuments([...bd, ...cd], "pardok-test");
