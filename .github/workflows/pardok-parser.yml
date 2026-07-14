@@ -1,0 +1,107 @@
+name: PARDOK-Parser · BE/BB (Struktur + Shadow-Test, DB-frei)
+
+# =============================================================================
+# Abgegrenzter PARDOK/parldok-Parser-Sprint fuer be-plenum (Berlin) + bb-plenum (Brandenburg).
+# =============================================================================
+# NIE automatisch ausser bei pull_request auf die PARDOK-Dateien; zusaetzlich manuell.
+# GRENZEN (hart): KEINE Secrets, KEINE Supabase-Verbindung, KEIN LLM, KEIN Deployment,
+# permissions: contents: read. Speicherung ausschliesslich als Workflow-Artefakt.
+# Der Parser wird NICHT in den Production-Crawl verdrahtet. Nur lesende XML-Abrufe.
+
+on:
+  workflow_dispatch:
+    inputs:
+      max_records:
+        description: "Max. zu parsende Records je Quelle im Shadow-Test — Default 800"
+        required: false
+        default: "800"
+  pull_request:
+    paths:
+      - ".github/workflows/pardok-parser.yml"
+      - "scripts/pardok-structure-probe.js"
+      - "scripts/pardok-parser-test.js"
+      - "scripts/pardok-shadow-test.js"
+      - "lib/helmut/quellenarchitektur/pardok-parser.js"
+      - "lib/helmut/quellenarchitektur/dedup-global.js"
+      - "scripts/sprint9b-verify-abrufwege.js"
+      - "test/fixtures/pardok/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pardok-parser
+  cancel-in-progress: false
+
+jobs:
+  pardok:
+    runs-on: ubuntu-latest
+    env:
+      # Grosse XML-Dateien nicht abschneiden; laengeres Timeout fuer den Download.
+      S9B_MAX_BYTES: "50331648"   # 48 MiB
+      S9B_TIMEOUT_MS: "25000"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Abhaengigkeiten (Projekt hat keine Runtime-Deps; defensiv, kein Lockfile)
+        run: npm install --no-audit --no-fund
+
+      # Offline-Parser-Tests (Gold-Fixtures + adversariale Faelle) als HARTE Schranke —
+      # nur wenn die Testdatei existiert (Commit 2). Sonst uebersprungen.
+      - name: Parser-Tests (offline, Gold-Fixtures + adversarial)
+        run: |
+          set -euo pipefail
+          if [ -f scripts/pardok-parser-test.js ]; then
+            node scripts/pardok-parser-test.js
+          else
+            echo "pardok-parser-test.js noch nicht vorhanden — uebersprungen (Struktur-Sonden-Lauf)."
+          fi
+
+      # Struktur-Sonde: reale XML-Struktur beider Quellen ins Log + Artefakt.
+      - name: Struktur-Sonde (be-plenum + bb-plenum)
+        run: node scripts/pardok-structure-probe.js --out pardok-structure.json
+
+      # Shadow-Parser-Test: echter Parser gegen echte XML, Metriken. Nur wenn vorhanden (Commit 2).
+      - name: Shadow-Parser-Test (echte XML, DB-frei)
+        env:
+          PARDOK_MAX_RECORDS: ${{ inputs.max_records || '800' }}
+          PARDOK_REPEAT: "5"
+        run: |
+          set -euo pipefail
+          if [ -f scripts/pardok-shadow-test.js ]; then
+            node scripts/pardok-shadow-test.js --out pardok-shadow.json
+          else
+            echo "pardok-shadow-test.js noch nicht vorhanden — uebersprungen (Struktur-Sonden-Lauf)."
+          fi
+
+      - name: Zusammenfassung in Job-Summary
+        if: always()
+        run: |
+          set -euo pipefail
+          {
+            echo "## PARDOK-Parser BE/BB"
+            if [ -f pardok-shadow.json ]; then
+              node -e "const r=require('./pardok-shadow.json');for(const l of r.lands){console.log('### '+l.id+' ('+l.land+')');console.log('- Rohdatensaetze: '+l.rohdatensaetze+' · geparst: '+l.geparst+' · Platzhalter: '+l.platzhalter);console.log('- Titel: '+l.quoteTitel+'% · Datum: '+l.quoteDatum+'% · externe ID: '+l.quoteExterneId+'%');console.log('- Dokumente nach Dedup: '+l.dokumente+' · Fundstellen: '+l.fundstellen+' · Fehler: '+l.fehler);}"
+            elif [ -f pardok-structure.json ]; then
+              echo "Struktur-Sonden-Lauf abgeschlossen (siehe Job-Log + Artefakt pardok-structure.json)."
+            else
+              echo "Kein Report erzeugt."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Artefakte hochladen
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pardok-parser-be-bb
+          path: |
+            pardok-structure.json
+            pardok-shadow.json
+          if-no-files-found: warn
+          retention-days: 30

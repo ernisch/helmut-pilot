@@ -136,7 +136,9 @@ console.log("\nWatchdog-Verhalten (gegen die echte Production-Shell)");
 // --- client.js laedt weiterhin korrekt aus der Production-Shell ------------
 console.log("\nclient.js-Ladepfad in der Production-Shell");
 check("Production Shell: client.js-Script-Tag mit Asset-Version vorhanden",
-  /<script src="client\.js\?v=[^"]+"><\/script>/.test(productionShell));
+  // Toleriert zusaetzliche Attribute (z. B. `defer`) — die Asset-Version muss vorhanden sein,
+  // die exakte Attribut-Reihenfolge/-menge ist nicht Teil der Garantie.
+  /<script src="client\.js\?v=[^"]+"[^>]*><\/script>/.test(productionShell));
 check("Production Shell: genau EIN client.js-Script-Tag (kein Doppel-Laden)",
   (productionShell.match(/<script src="client\.js/g) || []).length === 1);
 

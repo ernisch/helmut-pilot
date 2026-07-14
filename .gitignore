@@ -4,3 +4,5 @@ env.local
 env.local.html
 .helmut-data/
 .vercel
+# Isolierte Shadow-Ablage (Quellenarchitektur): ephemere, DB-freie Artefakte — NIE ins Git.
+shadow-store/

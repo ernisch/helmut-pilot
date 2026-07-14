@@ -5,7 +5,7 @@
 // und dass Cems reales Profil als "vollstaendig" gilt.
 
 const { validateProfile, STATES } = require("../lib/helmut/profile-validation");
-const { cemInceProfile } = require("../lib/helmut/config");
+const { cemInceProfile, profileCompleteness } = require("../lib/helmut/config");
 
 let pass = 0, fail = 0;
 function check(name, cond) {
@@ -79,6 +79,21 @@ check("Landtag ohne Bundesland -> teilweise", rLtg.state === STATES.PARTIAL);
 check("Bundesland fehlt gemeldet", rLtg.missingRequired.includes("bundesland"));
 const landtagMitLand = { ...landtagOhneLand, state: "Bayern" };
 check("Landtag mit Bundesland -> vollständig", validateProfile(landtagMitLand).state === STATES.COMPLETE);
+
+// Fix 2: profileCompleteness (config) muss — wie validateProfile — state ODER bundesland
+// akzeptieren. Sonst meldet es bei mandate_profiles-Profilen (Feld 'bundesland') faelschlich
+// "state fehlt", obwohl das Bundesland gesetzt ist.
+console.log("== Landtag: profileCompleteness akzeptiert bundesland ==");
+const ltEbeneBundesland = { fullName: "L T", party: "Grüne", politische_ebene: "landtag", constituency: "WK 5", committees: ["Umwelt"], bundesland: "Sachsen" };
+check("Landtag mit 'bundesland' (ohne 'state') -> profileCompleteness meldet NICHT state fehlt",
+  !profileCompleteness(ltEbeneBundesland).missing.includes("state"));
+check("Landtag mit 'bundesland' (ohne 'state') -> profileCompleteness complete=true",
+  profileCompleteness(ltEbeneBundesland).complete === true);
+const ltOhneBeides = { fullName: "L T", party: "Grüne", politische_ebene: "landtag", constituency: "WK 5", committees: ["Umwelt"] };
+check("Landtag ohne state UND ohne bundesland -> profileCompleteness meldet state fehlt",
+  profileCompleteness(ltOhneBeides).missing.includes("state"));
+check("Bundestag -> profileCompleteness meldet nie state fehlt",
+  !profileCompleteness({ fullName: "B T", party: "SPD", politische_ebene: "bundestag", constituency: "WK 1", committees: ["Gesundheit"] }).missing.includes("state"));
 
 // --- Fraktionslos zählt als Partei-Angabe ---
 console.log("== Fraktionslos ==");
