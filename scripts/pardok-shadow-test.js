@@ -114,6 +114,10 @@ async function run() {
       const titelloseFps = new Set(r.documents.filter((d) => d.titel === null).map((d) => d.inhaltsfingerabdruck));
       const titellose = r.documents.filter((d) => d.titel === null).length;
       const keinSammelcluster = s.platzhalter === 0 && titelloseFps.size === titellose; // titellose Docs alle eindeutig
+      // Cross-Run-Vergleich: stabiler Hash der externe-ID-Menge + Dokumentart-Verteilung.
+      const sortedIds = r.documents.map((d) => d.externe_id).sort();
+      const docSetHash = P.sha256(sortedIds.join("|")).slice(0, 16);
+      const dokTypVerteilung = r.documents.reduce((m, d) => { const k = d.dokumentart || "(o.Art)"; m[k] = (m[k] || 0) + 1; return m; }, {});
       const land = {
         id: t.id, land: t.land, url: t.url, status: r.status, redirects: r.redirects, htmlFehlerseite: r.htmlFehlerseite, truncated: r.truncated,
         rohdatensaetze: s.rohRecords, deleteStubs: s.deleteStubs, ohneDokument: s.ohneDokument, geparst: s.geparst, fehler: r.fehler,
@@ -122,7 +126,7 @@ async function run() {
         formatTitelVorhanden: s.formatTitelVorhanden, formatTitelErkannt: s.formatTitelErkannt, quoteFormatTitel: q(s.formatTitelErkannt, s.formatTitelVorhanden),
         dokumente: dd.anzahl, fundstellen: dd.dokumente.reduce((a, d) => a + d.fundstellen_anzahl, 0), mehrfachFundstellen: dd.mehrfach,
         mehrfachBeispiele: dd.dokumente.filter((d) => d.fundstellen_anzahl > 1).slice(0, 10).map((d) => ({ titel: d.titel, externe_ids: d.fundstellen.map((f) => f.externe_id), identisch: new Set(d.fundstellen.map((f) => f.externe_id)).size === 1 })),
-        keinSammelcluster,
+        keinSammelcluster, docSetHash, dokTypVerteilung, externeIdBeispiele: sortedIds.slice(0, 5),
         laufzeitMs: r.ms, peakBufferKB: Math.round(r.peakBufferBytes / 1024), gelesenKB: Math.round(r.bytes / 1024),
         beispiele: r.documents.slice(0, 3).map((d) => ({ externe_id: d.externe_id, titel: d.titel, datum: d.veroeffentlichungsdatum, dokumentart: d.dokumentart, wahlperiode: d.wahlperiode, url: d.originaladresse }))
       };
@@ -133,6 +137,7 @@ async function run() {
       console.log(`  Titel ${land.quoteTitel}% · Datum ${land.quoteDatum}% · externe ID ${land.quoteExterneId}% · Format-Titel erkannt ${land.quoteFormatTitel}% (${land.formatTitelErkannt}/${land.formatTitelVorhanden})`);
       console.log(`  Dokumente nach Dedup ${land.dokumente} · Fundstellen ${land.fundstellen} (mehrfach ${land.mehrfachFundstellen}) · Platzhalter ${land.platzhalter} · kein Sammelcluster: ${land.keinSammelcluster}`);
       console.log(`  Laufzeit ${land.laufzeitMs} ms · Puffer-Spitze ${land.peakBufferKB} KB`);
+      console.log(`  docSetHash ${land.docSetHash} · Dokumentarten ${JSON.stringify(land.dokTypVerteilung)}`);
       for (const b of land.beispiele) console.log(`    · [${b.externe_id}] WP${b.wahlperiode} ${b.dokumentart} ${b.datum || "(o.Datum)"} — ${b.titel ? '"' + b.titel.slice(0, 70) + '"' : "(titellos)"}`);
       if (land.mehrfachBeispiele.length) { console.log("  Zusammengefuehrte Dokumente (Diagnose):"); for (const m of land.mehrfachBeispiele) console.log(`    · ${m.identisch ? "IDENTISCHE ID (echtes Duplikat)" : "VERSCHIEDENE IDs (Kollision!)"}: ${m.externe_ids.join(", ")} — ${m.titel ? '"' + m.titel.slice(0, 50) + '"' : "(titellos)"}`); }
     }
