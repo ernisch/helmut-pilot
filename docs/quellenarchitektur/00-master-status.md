@@ -2,7 +2,22 @@
 
 **Dies ist der einzige aktuelle Gesamtstatus.** Ältere Abschlussberichte (Doku 20-27)
 bleiben als Detailnachweise gültig, sind aber KEINE Statusquelle mehr; bei Widerspruch
-gilt diese Datei. Letzte Aktualisierung: 2026-07-14, Phase 1 (letzte Preview-Abnahme).
+gilt diese Datei. Letzte Aktualisierung: 2026-07-14, Phase 2 (Deployment-Vorprüfung).
+
+## Phase-Status
+- **Phase 1 (Preview-Abnahme): BESTANDEN** — Gründer bestätigt „Preview grün"
+  (Partei/Wahlkreis/Ausschüsse leer = fachlich korrekt; Dynamiken/Lage/Helmut/Büro/Admin ok).
+- **Phase 2 (Deployment-Vorprüfung): ABGESCHLOSSEN, 0 Blocker** — 4 parallele Prüfblöcke:
+  (a) git: 61 Commits ahead/0 behind, fast-forward-fähig, keine Konflikte, vercel.json
+  (inkl. Crons) byte-identisch zu main, keine gelöschten Dateien;
+  (b) Testsuite: 57/58 Suiten grün, 2.565 Assertions (nur smoke-test = Live-URL, Sandbox-Netz);
+  (c) Production-DB read-only: Mengen-Snapshot 5140/247/7/86/1, BE/BB-Wege alle
+  needs_review+manual, BE/BB-Pakete prepared, gate_shadow_events=0, decision_level vorhanden;
+  (d) Guard-Disziplin: alle 7 Flags Default off/alt mit Code-Zitat, kein Flag-Setzen im
+  Runtime-Code, keine Cutover-Logik, Crawl nutzt v1Sources.
+- **Deployment-PR: [#75](https://github.com/ernisch/helmut-pilot/pull/75)** (Merge = Deployment;
+  erst nach „Go Deployment").
+- **Nächstes Gate: „Go Deployment?"**
 
 ## Was Production AKTUELL nutzt (main)
 - Alter hartcodierter Quellenkatalog (`v1Sources`) als aktive Quellenwahrheit.
