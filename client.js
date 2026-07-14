@@ -229,17 +229,21 @@ const pipelineCooldownKey = "helmut:lastPipelineRun:v1";
 const pipelineCooldownMs = 10 * 60 * 1000;
 let csrfTokenPromise = null;
 
+// SICHTBARE Reiter-Labels. Achtung Historie: die interne View-ID "briefing" gehoert zum
+// LAGE-Reiter, die ID "helmut" zum sichtbaren Reiter "Briefing" (frueher "Helmut").
+// Die IDs sind interner Zustand/Vertrag (data-view, Router, Tests) und bleiben bewusst
+// unveraendert — nur das sichtbare Label wurde umbenannt. Marke/Produkt heisst weiter Helmut.
 const navItems = [
   ["briefing", "Lage"],
   ["radar", "Radar"],
-  ["helmut", "Helmut"],
+  ["helmut", "Briefing"],
   ["office", "Büro"]
 ];
 
 const mobileNavItems = [
   ["briefing", "Lage"],
   ["radar", "Radar"],
-  ["helmut", "Helmut"],
+  ["helmut", "Briefing"],
   ["office", "Büro"]
 ];
 
@@ -4386,7 +4390,7 @@ function renderVorgangDetailView() {
               <span class="lage2-vtag">${escapeHtml(lageCardCategory(v))}</span>
               <h1 class="vdetail-title">${escapeHtml(v.title || "")} <span class="vdetail-star" aria-hidden="true">${lageStarIcon()}</span></h1>
             </div>
-            <button class="vdetail-helmut" type="button" data-view="helmut">${lageStarIcon()} In Helmut öffnen</button>
+            <button class="vdetail-helmut" type="button" data-view="helmut">${lageStarIcon()} Im Briefing öffnen</button>
           </div>
           ${meta ? `<div class="vdetail-meta">${meta}</div>` : ""}
 
@@ -5276,7 +5280,7 @@ function renderHelmutStandView() {
   if (state.status === "error" || state.errorState) return renderHstandStateCard(state, "error");
   if (state.status === "empty" || !state.primaryItem) return renderHstandStateCard(state, "empty");
   return `
-    <section class="hstand" aria-label="Helmut – aktueller Stabschefstand">
+    <section class="hstand" aria-label="Briefing – aktueller Stabschefstand">
       ${renderHstandHeader(state)}
       ${renderHstandProposal(state)}
       ${renderHstandWhy(state)}
@@ -5493,7 +5497,7 @@ function renderHstandSources(state) {
 // Neutraler technischer Zustand (kein politischer Ersatzinhalt).
 function renderHstandUnavailable() {
   return `
-    <section class="hstand hstand--state" aria-label="Helmut">
+    <section class="hstand hstand--state" aria-label="Briefing">
       <div class="hstand-state-card">
         <span class="hstand-state-mark" aria-hidden="true">H</span>
         <p class="hstand-state-title">Kein aktueller Stand verfügbar</p>
@@ -5512,7 +5516,7 @@ function renderHstandStateCard(state, kind) {
     ? "Die Auswertung ist derzeit nicht belastbar. Bitte später erneut prüfen."
     : (es && es.detail ? es.detail : "Für dein Mandat liegen derzeit keine belastbaren Vorgänge vor.");
   return `
-    <section class="hstand hstand--state" aria-label="Helmut">
+    <section class="hstand hstand--state" aria-label="Briefing">
       ${renderHstandHeader(state)}
       <div class="hstand-state-card${isError ? " hstand-state-card--error" : ""}"${es ? ` data-empty-kind="${escapeAttribute(es.kind)}"` : ""}>
         <span class="hstand-state-mark" aria-hidden="true">${isError ? "!" : "H"}</span>

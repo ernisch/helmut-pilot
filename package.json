@@ -22,6 +22,7 @@
     "test:radar-committee-norm": "node scripts/radar-committee-normalization-test.js",
     "test:radar-committee-evidence": "node scripts/radar-committee-evidence-test.js",
     "test:ai-json-parse": "node scripts/ai-json-parse-test.js",
+    "test:briefing-tab-rename": "node scripts/briefing-tab-rename-test.js",
     "test:radar-source-label": "node scripts/radar-source-label-test.js",
     "test:saas": "node scripts/saas-foundation-test.js",
     "test:tenant": "node scripts/tenant-guard-test.js",
