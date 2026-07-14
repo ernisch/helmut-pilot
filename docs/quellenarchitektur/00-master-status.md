@@ -15,9 +15,19 @@ gilt diese Datei. Letzte Aktualisierung: 2026-07-14, Phase 2 (Deployment-Vorprü
   needs_review+manual, BE/BB-Pakete prepared, gate_shadow_events=0, decision_level vorhanden;
   (d) Guard-Disziplin: alle 7 Flags Default off/alt mit Code-Zitat, kein Flag-Setzen im
   Runtime-Code, keine Cutover-Logik, Crawl nutzt v1Sources.
-- **Deployment-PR: [#75](https://github.com/ernisch/helmut-pilot/pull/75)** (Merge = Deployment;
-  erst nach „Go Deployment").
-- **Nächstes Gate: „Go Deployment?"**
+- **Phase 3 (Production-Deployment): AUSGEFÜHRT 2026-07-14** — PR
+  [#75](https://github.com/ernisch/helmut-pilot/pull/75) gemerged (Freigabe des Gründers nach
+  fail-closed-Ersatzprüfung der Env-Variablen, da Dashboard-Zugriff nicht verfügbar).
+  Production-Commit: **`9685a0b`** (Merge von `d1dd5a4`), Deployment
+  `dpl_2b83EUNtUhuzvA5pfCLdP6GrUY6K`, Alias `helmut-pilot.vercel.app`.
+  Vorheriger Production-Commit (Rollback-Ziel): `74ae2a6`.
+  Post-Deploy verifiziert: App-Shell 200 mit `client.js?v=9685a0bf`; `/api/app/start`
+  unauthentifiziert sauberes 401 (kein 5xx); 0 Runtime-Fehler seit Deploy; DB-Snapshot
+  byte-identisch vor/nach Merge (5140/247/7/86/1, document_findings=0, gate_shadow_events=0,
+  llm_usage=0); BE/BB-Wege/Pakete unverändert (0 Abweichungen); keine Migration ausgeführt;
+  Env-Variablen (inkl. Tageslimit) durch den Merge strukturell unberührbar.
+- **Nächstes Gate: „Go Shadow und Tageslimit?"** (Phase 4: HELMUT_UNDERSTANDING_GATE=shadow,
+  HELMUT_PARDOK_DISPATCH=shadow, HELMUT_MAX_LLM_CALLS_PER_DAY→150 — einzeln, mit Smoke-Tests)
 
 ## Was Production AKTUELL nutzt (main)
 - Alter hartcodierter Quellenkatalog (`v1Sources`) als aktive Quellenwahrheit.
