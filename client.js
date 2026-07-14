@@ -1927,6 +1927,29 @@ function renderAdminProfileManagement(ds, data, userRows, assignmentRows, refere
 
 // F. System und Sicherheit: Deploy-Identität, Dienste, Secrets-STATUS (nur ja/nein,
 // keine Werte), Admin-Zugriff — plus Logs (Letzte Fehler & Audit) eingeklappt.
+// Konfigurations-Diagnose (System & Sicherheit): zeigt AUSSCHLIESSLICH die vom Server
+// gelieferte feste 7er-Whitelist nicht geheimer Helmut-Modus-/Limit-Variablen
+// (sys.helmutConfig aus /api/admin/overview, admin-gegatet). Keine Schluessel/Tokens —
+// der Server liefert strukturell nichts anderes. Ruhig und kompakt, kein Aktions-Button.
+function renderAdminConfigDiagnose(sys) {
+  const rows = Array.isArray(sys && sys.helmutConfig) ? sys.helmutConfig : [];
+  if (!rows.length) return "";
+  return `
+    <div class="admin-card">
+      <div class="admin-sys-grid">
+        <div class="admin-sys-item"><span class="admin-sys-key">Helmut-Konfiguration${adminInfo("Diagnose der sieben nicht geheimen Modus-/Limit-Variablen — z. B. um vor einer Änderung des Tageslimits den bisherigen Wert (Rollback) abzulesen. Schlüssel/Tokens erscheinen hier nie.")}</span><span class="admin-sys-val">Umgebung: ${escapeHtml(adminEnvLabel(sys.deploy?.environment))}</span></div>
+        ${rows.map((r) => `
+        <div class="admin-sys-item">
+          <span class="admin-sys-key">${escapeHtml(r.name)}</span>
+          <span class="admin-sys-val" title="Code-Default: ${escapeAttribute(r.codeDefault || "")}">${r.gesetzt
+            ? `${escapeHtml(r.wert)}`
+            : `<span class="ds-unavail">nicht gesetzt → wirksam: ${escapeHtml(r.codeDefault || "")}</span>`}</span>
+        </div>`).join("")}
+      </div>
+      <p class="admin-sys-note">Feste Whitelist — andere Umgebungsvariablen sind hier grundsätzlich nicht abrufbar.</p>
+    </div>`;
+}
+
 function renderAdminSystemBody(sys, data, ds, errors, audit) {
   const ki = ds && ds.global && ds.global.kiStatus && ds.global.kiStatus.available !== false ? ds.global.kiStatus : null;
   const jaNein = (b) => b ? `<span class="ds-ok">Gesetzt</span>` : `<span class="ds-bad">Fehlt</span>`;
@@ -1950,6 +1973,7 @@ function renderAdminSystemBody(sys, data, ds, errors, audit) {
       </div>
       <p class="admin-sys-note">Secrets werden nur als Status angezeigt (gesetzt/fehlt) — nie im Klartext.</p>
     </div>
+    ${renderAdminConfigDiagnose(sys)}
     ${adminDetails("Logs anzeigen (Letzte Fehler & Audit)", `
       <div class="admin-bottom-row">
         <div class="admin-card">

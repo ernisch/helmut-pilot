@@ -2251,6 +2251,7 @@ module.exports = requestHandler;
 // Test-Hook (nur fuer Offline-Tests; veraendert den HTTP-Pfad nicht): erlaubt den
 // direkten, auth-freien Aufruf der internen Datenstatus-Funktion.
 module.exports.__buildAdminDataStatus = buildAdminDataStatus;
+module.exports.__buildHelmutConfigDiagnose = buildHelmutConfigDiagnose;
 module.exports.__buildPipelineRecoveryStatus = buildPipelineRecoveryStatus;
 // Test-Hook (nur fuer Offline-Tests, wie __build* oben): der slot-aware Read-Pfad.
 module.exports.__buildV3Briefing = buildV3Briefing;
@@ -3352,6 +3353,42 @@ async function buildSourceArchitectureReport(mandateProfiles = []) {
   } catch (_) { return null; }
 }
 
+// --- Admin-Konfigurations-Diagnose (System & Sicherheit) ---------------------
+// FESTE Whitelist von GENAU sieben nicht geheimen Helmut-Modus-/Limit-Variablen.
+// Zweck: Vercel speichert Production-Env-Werte als "sensitive" (im Dashboard nicht
+// ablesbar); der Betreiber braucht die WIRKSAMEN Werte aber z. B., um vor einer
+// Tageslimit-Aenderung den Rollback-Wert zu dokumentieren. Sicherheitsmodell:
+//  - KEINE Parameter von aussen (kein Variablenname aus Request/Query -> keine
+//    beliebige Env-Abfrage moeglich; die Whitelist ist eingefroren),
+//  - niemals Schluessel/Tokens/URLs (die 7 Namen sind reine Modus-/Zahlwerte),
+//  - Werte werden NIE geloggt — sie erscheinen ausschliesslich im Payload von
+//    /api/admin/overview (requireRoleOr403 "admin" + Tenant-Gate wie die gesamte
+//    Admin-Oberflaeche; keine neue/oeffentliche Route),
+//  - Wert-Anzeige auf 40 Zeichen gekappt (zusaetzliche Leitplanke, falls jemand
+//    versehentlich einen langen Wert in eine dieser Variablen legt).
+const HELMUT_CONFIG_DIAGNOSE_WHITELIST = Object.freeze([
+  Object.freeze({ name: "HELMUT_UNDERSTANDING_GATE", codeDefault: "off — Gate wird nie aufgerufen" }),
+  Object.freeze({ name: "HELMUT_PARDOK_DISPATCH", codeDefault: "off — 0 Items (inert)" }),
+  Object.freeze({ name: "HELMUT_MAX_LLM_CALLS_PER_DAY", codeDefault: "unbegrenzt (Infinity)" }),
+  Object.freeze({ name: "HELMUT_V3_STORE", codeDefault: "aus — V3-Read/Understanding inaktiv" }),
+  Object.freeze({ name: "HELMUT_SCORING_MODE", codeDefault: "off — Alt-Ranking byte-identisch" }),
+  Object.freeze({ name: "HELMUT_V3_SHADOW_COMPARE", codeDefault: "aus — live nicht verdrahtet" }),
+  Object.freeze({ name: "HELMUT_PROFILE_DB_MODE", codeDefault: "aus — Profile Blob-only" })
+]);
+
+function buildHelmutConfigDiagnose(env = process.env) {
+  return HELMUT_CONFIG_DIAGNOSE_WHITELIST.map(({ name, codeDefault }) => {
+    const raw = env ? env[name] : undefined;
+    const gesetzt = raw != null && String(raw).trim() !== "";
+    return {
+      name,
+      gesetzt,
+      wert: gesetzt ? String(raw).trim().slice(0, 40) : null,
+      codeDefault
+    };
+  });
+}
+
 async function buildAdminOverview() {
   const [users, profiles, mandates, assignments, errors, audit, feedback, koCountTotal, statsToday, stats30d, crawlReport] = await Promise.all([
     accounts.listUsers(),
@@ -3421,7 +3458,9 @@ async function buildAdminOverview() {
         commit: process.env.VERCEL_GIT_COMMIT_SHA ? String(process.env.VERCEL_GIT_COMMIT_SHA).slice(0, 12) : null,
         branch: process.env.VERCEL_GIT_COMMIT_REF || null,
         environment: process.env.VERCEL_ENV || (process.env.NODE_ENV === "production" ? "production" : "development")
-      }
+      },
+      // Konfigurations-Diagnose (feste 7er-Whitelist, siehe buildHelmutConfigDiagnose).
+      helmutConfig: buildHelmutConfigDiagnose()
     },
     recentErrors: errors,
     auditEvents: audit
