@@ -38,6 +38,22 @@ on:
         description: "Max. Datensaetze je Open-Data-Weg — Default 25"
         required: false
         default: "25"
+  # Zusaetzlich bei einem Pull Request, der die Shadow-Pilot-Dateien betrifft: GitHub fuehrt
+  # dann die YAML AUS DEM PR-HEAD aus (kein main-Merge, kein Deployment) — auf einem Runner mit
+  # offenem Egress, sodass die 6 freigegebenen Adressen tatsaechlich einmalig geprueft werden.
+  # KEINE Secrets, KEINE Supabase-Verbindung, KEINE Production-Aenderung (permissions: read),
+  # Speicherung ausschliesslich als Artefakt. Dies ist der einzige main-freie Weg, den Workflow
+  # aus dem Feature-Branch (mit den R3-verifizierten URLs) auf einem Egress-Runner zu starten.
+  pull_request:
+    paths:
+      - ".github/workflows/shadow-pilot.yml"
+      - "scripts/shadow-pilot-crawl.js"
+      - "scripts/shadow-pilot-test.js"
+      - "scripts/sprint9b-verify-abrufwege.js"
+      - "lib/helmut/crawler.js"
+      - "lib/helmut/quellenarchitektur/dedup-global.js"
+      - "lib/helmut/quellenarchitektur/seeds/landesmodule-quellen.js"
+      - "lib/helmut/quellenarchitektur/seeds/landesmodule-kandidaten.js"
 
 # Minimalrechte: nur lesen. Kein Repo-Write, kein Package-Write, nichts.
 permissions:
