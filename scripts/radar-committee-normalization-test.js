@@ -111,8 +111,10 @@ check("4 Profil 'Arbeit und Soziales' + KO ['Ausschuss für Arbeit und Soziales'
   runCommittee({ profileFields: { committee: "Arbeit und Soziales" }, ausschuesse: ["Ausschuss für Arbeit und Soziales"] }).granted);
 check("4b Profil 'Arbeit und Soziales' + KO ['Bundestagsausschuss für Arbeit und Soziales'] -> erkannt",
   runCommittee({ profileFields: { committee: "Arbeit und Soziales" }, ausschuesse: ["Bundestagsausschuss für Arbeit und Soziales"] }).granted);
-check("4c Profil 'Ausschuss für Gesundheit' + KO ['Gesundheitsausschuss'] -> erkannt",
-  runCommittee({ profileFields: { committee: "Ausschuss für Gesundheit" }, ausschuesse: ["Gesundheitsausschuss"] }).granted);
+check("4c Profil 'Ausschuss für Gesundheit' + KO ['Ausschuss für Gesundheit'] (volle amtliche Form) -> erkannt",
+  runCommittee({ profileFields: { committee: "Ausschuss für Gesundheit" }, ausschuesse: ["Ausschuss für Gesundheit"] }).granted);
+check("4c-2 Profil 'Ausschuss für Gesundheit' + KO ['Gesundheitsausschuss'] (bloße Kurzform, kein Beleg) -> NICHT erkannt (siehe radar-committee-evidence-test.js fuer die Beleg-Verschaerfung)",
+  !runCommittee({ profileFields: { committee: "Ausschuss für Gesundheit" }, ausschuesse: ["Gesundheitsausschuss"] }).granted);
 check("4d Profil 'Menschenrechte und humanitäre Hilfe' + KO ['Recht und Verbraucherschutz'] -> NICHT erkannt (keine Kollision)",
   !runCommittee({ profileFields: { committee: "Menschenrechte und humanitäre Hilfe" }, ausschuesse: ["Recht und Verbraucherschutz"] }).granted);
 check("4e Profil 'Recht und Verbraucherschutz' + KO ['Ausschuss für Menschenrechte und humanitäre Hilfe'] -> NICHT erkannt (umgekehrt)",
@@ -125,8 +127,10 @@ check("4f Profil 'Menschenrechte und humanitäre Hilfe' + KO ['Ausschuss für Me
 // =============================================================================
 check("5 Fremder Ausschuss: Gesundheit-Profil am reinen Arbeit-und-Soziales-KO -> KEIN Treffer",
   !runCommittee({ profileFields: { committee: "Gesundheit" }, ausschuesse: ["Ausschuss für Arbeit und Soziales"] }).granted);
-check("5b Aehnlicher Klang, anderer Ausschuss: 'Recht' vs. 'Rechtsausschuss für X' greift trotzdem korrekt (gleicher Ausschuss)",
-  runCommittee({ profileFields: { committee: "Recht und Verbraucherschutz" }, ausschuesse: ["Rechtsausschuss"] }).granted);
+check("5b Aehnlicher Klang, anderer Ausschuss: 'Recht' vs. 'Ausschuss für Recht und Verbraucherschutz' (volle Form) greift korrekt",
+  runCommittee({ profileFields: { committee: "Recht und Verbraucherschutz" }, ausschuesse: ["Ausschuss für Recht und Verbraucherschutz"] }).granted);
+check("5b-2 'Rechtsausschuss' (bloße Kurzform, kein Beleg) allein genuegt NICHT mehr (siehe radar-committee-evidence-test.js)",
+  !runCommittee({ profileFields: { committee: "Recht und Verbraucherschutz" }, ausschuesse: ["Rechtsausschuss"] }).granted);
 
 // =============================================================================
 // 6) Bloße Ausschusserwähnung vs. strukturelle Verankerung

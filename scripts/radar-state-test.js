@@ -458,9 +458,14 @@ check("Keine technischen Quellen-Enums im sourceCategory-Label (nur Klartext/'')
   check("radarRelationBeleg: constituency NUR konkreter Wahlkreis, kein Bundesland",
     radarState.radarRelationBeleg("constituency", "Salzgitter-Wolfenbüttel", { mentioned_locations: ["Salzgitter-Wolfenbüttel"] }, terms) === true &&
     radarState.radarRelationBeleg("constituency", "Niedersachsen", { mentioned_locations: ["Niedersachsen"] }, terms) === false);
-  check("radarRelationBeleg: committee NUR mit struktureller ko.ausschuesse-Involvierung",
-    radarState.radarRelationBeleg("committee", "Auswärtiger Ausschuss", { ausschuesse: ["Auswärtiger Ausschuss"] }, terms) === true &&
-    radarState.radarRelationBeleg("committee", "Auswärtiger Ausschuss", { ausschuesse: [] }, terms) === false);
+  check("radarRelationBeleg: committee verlangt strukturelle ko.ausschuesse-Involvierung UND (nachgeschaerft) die volle amtliche Form — eine kurze, mehrdeutige Kurzform allein genuegt NICHT mehr (gilt fuer JEDEN Ausschuss, keine Sonderregel)",
+    // Volle amtliche Form ("Ausschuss für X") + strukturell involviert -> belegt.
+    radarState.radarRelationBeleg("committee", "Auswärtiger Ausschuss", { ausschuesse: ["Ausschuss für Auswärtiges"] }, terms) === true &&
+    // Keine strukturelle Involvierung -> nicht belegt.
+    radarState.radarRelationBeleg("committee", "Auswärtiger Ausschuss", { ausschuesse: [] }, terms) === false &&
+    // Kurze, mehrdeutige Kompositum-Kurzform ("Auswärtiger Ausschuss" statt "Ausschuss für
+    // Auswärtiges") allein, ohne Beleg im Inhalt oder amtliche Quelle -> NICHT belegt.
+    radarState.radarRelationBeleg("committee", "Auswärtiger Ausschuss", { ausschuesse: ["Auswärtiger Ausschuss"] }, terms) === false);
 }
 
 // --- 16) Radar Relation Truth — Partei nur mit Akteurs-/Quellenbeleg ---------
