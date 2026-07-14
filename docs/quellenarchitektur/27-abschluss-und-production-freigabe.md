@@ -1,5 +1,9 @@
 # Quellenarchitektur-Migration — Abschlussreife + Production-Freigabepaket
 
+> **ÜBERHOLT (2026-07-14):** Dieser Bericht beschreibt den Stand VOR dem Production-
+> Deployment. Das Deployment (PR #75 → `9685a0b`) und die Reiter-Umbenennung (PR #76 →
+> `6539fbf`) sind inzwischen AUSGEFÜHRT. Aktuelle Wahrheit: **00-master-status.md**.
+
 Stand: read-only aus Production verifiziert, Feature-Branch vollständig vorbereitet. **Keine**
 Production-Änderung/Deployment/Migration/Flag/Cron ausgeführt. Branch:
 `claude/helmut-source-architecture-ruhyvb`, Commit `c58ada2` (57 Commits vor `main`).
