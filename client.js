@@ -1938,13 +1938,17 @@ function renderAdminConfigDiagnose(sys) {
     <div class="admin-card">
       <div class="admin-sys-grid">
         <div class="admin-sys-item"><span class="admin-sys-key">Helmut-Konfiguration${adminInfo("Diagnose der sieben nicht geheimen Modus-/Limit-Variablen — z. B. um vor einer Änderung des Tageslimits den bisherigen Wert (Rollback) abzulesen. Schlüssel/Tokens erscheinen hier nie.")}</span><span class="admin-sys-val">Umgebung: ${escapeHtml(adminEnvLabel(sys.deploy?.environment))}</span></div>
-        ${rows.map((r) => `
+        ${rows.map((r) => {
+          const quelle = r.quelle === "env" ? "Env" : r.quelle === "datei" ? "Datei-Flag" : "Default";
+          const wirksam = r.wirksam != null ? r.wirksam : null;
+          return `
         <div class="admin-sys-item">
           <span class="admin-sys-key">${escapeHtml(r.name)}</span>
-          <span class="admin-sys-val" title="Code-Default: ${escapeAttribute(r.codeDefault || "")}">${r.gesetzt
-            ? `${escapeHtml(r.wert)}`
+          <span class="admin-sys-val" title="Quelle: ${escapeAttribute(quelle)} · Code-Default: ${escapeAttribute(r.codeDefault || "")}">${wirksam != null
+            ? `${escapeHtml(wirksam)} <small>(${escapeHtml(quelle)})</small>`
             : `<span class="ds-unavail">nicht gesetzt → wirksam: ${escapeHtml(r.codeDefault || "")}</span>`}</span>
-        </div>`).join("")}
+        </div>`;
+        }).join("")}
       </div>
       <p class="admin-sys-note">Feste Whitelist — andere Umgebungsvariablen sind hier grundsätzlich nicht abrufbar.</p>
     </div>`;

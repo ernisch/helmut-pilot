@@ -18,6 +18,7 @@ const { derivePolicyFields } = require("./lib/helmut/matching");
 const { pushStatus, sendBriefingReadyPush, sendLageChangePush, sendPushToPolitician } = require("./lib/helmut/push");
 const auth = require("./lib/helmut/auth");
 const accounts = require("./lib/helmut/accounts");
+const helmutFlags = require("./lib/helmut/flags");
 const { getRelevantParliamentaryItems } = require("./lib/helmut/dip");
 const { runPendingUnderstandingShadow, clusterRawDocuments, deriveVorgangId, diagnosePendingUnderstanding } = require("./lib/helmut/understanding");
 const { generateOfficeOutput, isValidChannel } = require("./lib/helmut/office");
@@ -3380,10 +3381,17 @@ function buildHelmutConfigDiagnose(env = process.env) {
   return HELMUT_CONFIG_DIAGNOSE_WHITELIST.map(({ name, codeDefault }) => {
     const raw = env ? env[name] : undefined;
     const gesetzt = raw != null && String(raw).trim() !== "";
+    // Deployment-Flag-Ebene (helmut-flags.json, Präzedenz env > Datei > Default) sichtbar
+    // machen: quelle sagt, WOHER der wirksame Wert kommt. Datei-Flags wirken nur auf die
+    // echte Prozessumgebung — für injizierte Test-Envs bleibt die Datei-Ebene leer.
+    const info = helmutFlags.flagInfo(name, env);
     return {
       name,
       gesetzt,
       wert: gesetzt ? String(raw).trim().slice(0, 40) : null,
+      dateiWert: info.quelle === "datei" ? String(info.wert).slice(0, 40) : null,
+      wirksam: info.wert != null ? String(info.wert).slice(0, 40) : null,
+      quelle: info.quelle,
       codeDefault
     };
   });
