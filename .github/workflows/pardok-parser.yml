@@ -12,9 +12,9 @@ on:
   workflow_dispatch:
     inputs:
       max_records:
-        description: "Max. zu parsende Records je Quelle im Shadow-Test — Default 400"
+        description: "Max. zu parsende Records je Quelle im Shadow-Test — Default 800"
         required: false
-        default: "400"
+        default: "800"
   pull_request:
     paths:
       - ".github/workflows/pardok-parser.yml"
@@ -70,7 +70,7 @@ jobs:
       # Shadow-Parser-Test: echter Parser gegen echte XML, Metriken. Nur wenn vorhanden (Commit 2).
       - name: Shadow-Parser-Test (echte XML, DB-frei)
         env:
-          PARDOK_MAX_RECORDS: ${{ inputs.max_records || '400' }}
+          PARDOK_MAX_RECORDS: ${{ inputs.max_records || '800' }}
         run: |
           set -euo pipefail
           if [ -f scripts/pardok-shadow-test.js ]; then

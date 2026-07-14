@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Export aktualisiert="2026-07-13T22:03:08">
+  <!-- 1: Drucksache/Schriftliche Anfrage MIT Titel -->
+  <Dokument>
+    <DBID>D-351758</DBID>
+    <ReihNr>0001</ReihNr>
+    <DHerk>BLN</DHerk><DHerkL>Berlin</DHerkL>
+    <Wp>19</Wp>
+    <DokArt>Drs</DokArt><DokArtL>Drucksache</DokArtL>
+    <DokTyp>SchrAnfr</DokTyp><DokTypL>Schriftliche Anfrage</DokTypL>
+    <NrInTyp>19/10058</NrInTyp>
+    <Desk>Flughafen Berlin Brandenburg</Desk>
+    <Titel>Chaos am BER. Wann wird der Flughafen voll funktionsf&#xE4;hig?</Titel>
+    <DokNr>19/10058</DokNr>
+    <DokDat>09.11.2021</DokDat>
+    <Urheber>Brinker, Dr. Kristin (AfD)</Urheber>
+    <LokURL>https://pardok.parlament-berlin.de/starweb/adis/citat/VT/19/SchrAnfr/S19-10058.pdf</LokURL>
+  </Dokument>
+  <!-- 2: Plenarprotokoll OHNE Titel (formatbedingt titellos) -->
+  <Dokument>
+    <DBID>D-351042</DBID>
+    <ReihNr>0002</ReihNr>
+    <DHerk>BLN</DHerk><DHerkL>Berlin</DHerkL>
+    <Wp>19</Wp>
+    <DokArt>PlPr</DokArt><DokArtL>Plenarprotokoll</DokArtL>
+    <DokTyp>Behandlung im Plenum</DokTyp><DokTypL>Behandlung im Plenum</DokTypL>
+    <DokNr>19/2</DokNr>
+    <DokDat>18.11.2021</DokDat>
+    <Sb>83</Sb>
+    <LokURL>https://pardok.parlament-berlin.de/starweb/adis/citat/VT/19/PlenarPr/p19-002-wp.pdf</LokURL>
+  </Dokument>
+  <!-- 3: GVBl OHNE Titel und OHNE DokNr, mit Datum -->
+  <Dokument>
+    <DBID>D-351046</DBID>
+    <DHerk>BLN</DHerk><DHerkL>Berlin</DHerkL>
+    <Wp>19</Wp>
+    <DokArt>GVBl</DokArt><DokArtL>Gesetz- und Verordnungsblatt</DokArtL>
+    <DokTyp>GVBl</DokTyp><DokTypL>Gesetz- und Verordnungsblatt</DokTypL>
+    <DokDat>14.09.2021</DokDat>
+    <VkDat>24.09.2021</VkDat>
+    <LokURL>https://pardok.parlament-berlin.de/starweb/adis/citat/VT/18/gvbl/g21701085.pdf</LokURL>
+  </Dokument>
+  <!-- 4: Ausschussprotokoll, Urheber = Ausschuss (Ausschuss-Erkennung) -->
+  <Dokument>
+    <DBID>D-354521</DBID>
+    <DHerk>BLN</DHerk><DHerkL>Berlin</DHerkL>
+    <Wp>19</Wp>
+    <DokArt>APr</DokArt><DokArtL>Ausschussprotokoll</DokArtL>
+    <DokTyp>Ausschussberatung</DokTyp><DokTypL>Ausschussberatung</DokTypL>
+    <DokNr>19/2</DokNr>
+    <DokDat>14.02.2022</DokDat>
+    <Urheber>Ausschuss f&#xFC;r Stadtentwicklung, Bauen und Wohnen</Urheber>
+    <LokURL>https://pardok.parlament-berlin.de/starweb/adis/citat/VT/19/AusschussPr/sw/sw19-002-ip.pdf</LokURL>
+  </Dokument>
+  <!-- 5: Verordnung MIT Titel -->
+  <Dokument>
+    <DBID>D-351040</DBID>
+    <DHerk>BLN</DHerk><DHerkL>Berlin</DHerkL>
+    <Wp>19</Wp>
+    <DokArt>Drs</DokArt><DokArtL>Drucksache</DokArtL>
+    <DokTyp>VO</DokTyp><DokTypL>Verordnung</DokTypL>
+    <NrInTyp>19/001</NrInTyp>
+    <Titel>Verordnung &#xFC;ber die Erhebung von Geb&#xFC;hren im Waffenrecht (Waffengeb&#xFC;hrenordnung &#x2013; WaffGebO)</Titel>
+    <DokNr>19/0019</DokNr>
+    <DokDat>14.09.2021</DokDat>
+    <LokURL>https://pardok.parlament-berlin.de/starweb/adis/citat/VT/19/vo/vo19-001.pdf</LokURL>
+  </Dokument>
+  <!-- 6a + 6b: GLEICHER Titel, unterschiedliche DBID/DokNr (adversarial: gleiche Titel, andere Vorgaenge) -->
+  <Dokument>
+    <DBID>D-360001</DBID>
+    <DHerk>BLN</DHerk><DHerkL>Berlin</DHerkL>
+    <Wp>19</Wp>
+    <DokArt>Drs</DokArt><DokArtL>Drucksache</DokArtL>
+    <DokTyp>Antr</DokTyp><DokTypL>Antrag</DokTypL>
+    <Titel>Haushaltsplan 2024/2025</Titel>
+    <DokNr>19/2000</DokNr>
+    <DokDat>10.01.2024</DokDat>
+  </Dokument>
+  <Dokument>
+    <DBID>D-360002</DBID>
+    <DHerk>BLN</DHerk><DHerkL>Berlin</DHerkL>
+    <Wp>19</Wp>
+    <DokArt>Drs</DokArt><DokArtL>Drucksache</DokArtL>
+    <DokTyp>Antr</DokTyp><DokTypL>Antrag</DokTypL>
+    <Titel>Haushaltsplan 2024/2025</Titel>
+    <DokNr>19/2001</DokNr>
+    <DokDat>11.01.2024</DokDat>
+  </Dokument>
+  <!-- 7: fehlendes Datum -->
+  <Dokument>
+    <DBID>D-360003</DBID>
+    <DHerk>BLN</DHerk><DHerkL>Berlin</DHerkL>
+    <Wp>19</Wp>
+    <DokArt>Drs</DokArt><DokArtL>Drucksache</DokArtL>
+    <DokTyp>KlAnfr</DokTyp><DokTypL>Kleine Anfrage</DokTypL>
+    <Titel>Kleine Anfrage ohne Datum</Titel>
+    <DokNr>19/3000</DokNr>
+  </Dokument>
+</Export>

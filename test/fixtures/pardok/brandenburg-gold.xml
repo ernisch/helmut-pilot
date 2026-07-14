@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Export aktualisiert="2026-07-14T02:24:12">
+  <!-- A: delete-Stub (Tombstone) -> UEBERSPRINGEN -->
+  <Vorgang>
+    <VNr>V-369325</VNr>
+    <VFunktion>delete</VFunktion>
+  </Vorgang>
+  <!-- B: Vorgang mit Dokument OHNE Titel (Plenarprotokoll), zwei LokURL (pdf+docx) -->
+  <Vorgang>
+    <VNr>V-369400</VNr>
+    <ReihNr>0000</ReihNr>
+    <VTyp>Sonstiges</VTyp><VTypL>Sonstiges</VTypL>
+    <Nebeneintrag><ReihNr>558088</ReihNr><Desk>Plenarsitzung</Desk></Nebeneintrag>
+    <Dokument>
+      <ReihNr>0001</ReihNr>
+      <DHerk>BRA</DHerk><DHerkL>Brandenburg</DHerkL>
+      <Wp>8</Wp>
+      <DokArt>PlPr</DokArt><DokArtL>Plenarprotokoll</DokArtL>
+      <DokNr>08/1</DokNr>
+      <DokDat>17.10.2024</DokDat>
+      <Urheber>Landtag</Urheber>
+      <LokURL>https://www.parlamentsdokumentation.brandenburg.de/starweb/LBB/ELVIS/parladoku/w8/plpr/1.pdf</LokURL>
+      <LokURL>https://www.parlamentsdokumentation.brandenburg.de/starweb/LBB/ELVIS/parladoku/w8/plpr/1.docx</LokURL>
+      <FundSt>Brandenburg - Plenarprotokoll 8/1</FundSt>
+    </Dokument>
+  </Vorgang>
+  <!-- C: Vorgang mit Dokument MIT Titel (Kleine Anfrage), mehrere Urheber, Stichworte -->
+  <Vorgang>
+    <VNr>V-369657</VNr>
+    <VTyp>Anfrage</VTyp><VTypL>Anfrage</VTypL>
+    <Nebeneintrag><ReihNr>559005</ReihNr><Desk>Extremismus</Desk></Nebeneintrag>
+    <Nebeneintrag><ReihNr>559008</ReihNr><Desk>Kriminalstatistik</Desk></Nebeneintrag>
+    <Dokument>
+      <ReihNr>0001</ReihNr>
+      <DHerk>BRA</DHerk><DHerkL>Brandenburg</DHerkL>
+      <Wp>8</Wp>
+      <DokArt>Drs</DokArt><DokArtL>Drucksache</DokArtL>
+      <DokTyp>KlAnfr</DokTyp><DokTypL>Kleine Anfrage</DokTypL>
+      <Titel>Straf- und Gewalttaten in Brandenburg von Juli bis September 2024</Titel>
+      <DokNr>08/30</DokNr>
+      <NrInTyp>18</NrInTyp>
+      <DokDat>25.10.2024</DokDat>
+      <Urheber>Kotr&#xE9;, Lena (AfD)</Urheber>
+      <Urheber>L&#xFC;tzow, Daniel Freiherr von (AfD)</Urheber>
+      <LokURL>https://www.parlamentsdokumentation.brandenburg.de/starweb/LBB/ELVIS/parladoku/w8/drs/ab_1/30.pdf</LokURL>
+    </Dokument>
+  </Vorgang>
+  <!-- D: Vorgang OHNE Dokument -> UEBERSPRINGEN (kein_dokument) -->
+  <Vorgang>
+    <VNr>V-369999</VNr>
+    <VTyp>Sonstiges</VTyp><VTypL>Sonstiges</VTypL>
+    <Nebeneintrag><ReihNr>560000</ReihNr><Desk>Verfahren</Desk></Nebeneintrag>
+  </Vorgang>
+  <!-- E: Vorgang mit ZWEI Dokumenten (multi-doc: Gesetzentwurf + Plenarprotokoll) -->
+  <Vorgang>
+    <VNr>V-370081</VNr>
+    <VTyp>Gesetz</VTyp><VTypL>Gesetzgebung</VTypL>
+    <Nebeneintrag><ReihNr>560519</ReihNr><Desk>Kommunalverfassung</Desk></Nebeneintrag>
+    <Dokument>
+      <ReihNr>0001</ReihNr>
+      <DHerk>BRA</DHerk><DHerkL>Brandenburg</DHerkL>
+      <Wp>8</Wp>
+      <DokArt>Drs</DokArt><DokArtL>Drucksache</DokArtL>
+      <DokTyp>GEnt</DokTyp><DokTypL>Gesetzentwurf</DokTypL>
+      <Titel>Gesetz zur &#xC4;nderung der Kommunalverfassung des Landes Brandenburg</Titel>
+      <DokNr>08/700</DokNr>
+      <DokDat>01.11.2024</DokDat>
+      <LokURL>https://www.parlamentsdokumentation.brandenburg.de/starweb/LBB/ELVIS/parladoku/w8/drs/ab_7/700.pdf</LokURL>
+    </Dokument>
+    <Dokument>
+      <ReihNr>0002</ReihNr>
+      <DHerk>BRA</DHerk><DHerkL>Brandenburg</DHerkL>
+      <Wp>8</Wp>
+      <DokArt>PlPr</DokArt><DokArtL>Plenarprotokoll</DokArtL>
+      <DokNr>08/5</DokNr>
+      <DokDat>15.11.2024</DokDat>
+      <LokURL>https://www.parlamentsdokumentation.brandenburg.de/starweb/LBB/ELVIS/parladoku/w8/plpr/5.pdf</LokURL>
+    </Dokument>
+  </Vorgang>
+  <!-- F: gleiche DokNr wie C (08/30), aber ANDERE Wahlperiode (7) und anderer VNr (adversarial) -->
+  <Vorgang>
+    <VNr>V-250100</VNr>
+    <VTyp>Anfrage</VTyp><VTypL>Anfrage</VTypL>
+    <Dokument>
+      <ReihNr>0001</ReihNr>
+      <DHerk>BRA</DHerk><DHerkL>Brandenburg</DHerkL>
+      <Wp>7</Wp>
+      <DokArt>Drs</DokArt><DokArtL>Drucksache</DokArtL>
+      <DokTyp>KlAnfr</DokTyp><DokTypL>Kleine Anfrage</DokTypL>
+      <Titel>Kleine Anfrage aus Wahlperiode 7</Titel>
+      <DokNr>08/30</DokNr>
+      <DokDat>01.03.2019</DokDat>
+    </Dokument>
+  </Vorgang>
+  <!-- G: Dokument ohne Datum (missing date) -->
+  <Vorgang>
+    <VNr>V-380500</VNr>
+    <VTyp>Antrag</VTyp><VTypL>Antrag</VTypL>
+    <Dokument>
+      <ReihNr>0001</ReihNr>
+      <DHerk>BRA</DHerk><DHerkL>Brandenburg</DHerkL>
+      <Wp>8</Wp>
+      <DokArt>Drs</DokArt><DokArtL>Drucksache</DokArtL>
+      <Titel>Antrag ohne Datum</Titel>
+      <DokNr>08/900</DokNr>
+    </Dokument>
+  </Vorgang>
+</Export>
