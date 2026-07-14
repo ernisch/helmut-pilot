@@ -26,8 +26,13 @@ gilt diese Datei. Letzte Aktualisierung: 2026-07-14, Phase 2 (Deployment-Vorprü
   byte-identisch vor/nach Merge (5140/247/7/86/1, document_findings=0, gate_shadow_events=0,
   llm_usage=0); BE/BB-Wege/Pakete unverändert (0 Abweichungen); keine Migration ausgeführt;
   Env-Variablen (inkl. Tageslimit) durch den Merge strukturell unberührbar.
-- **Nächstes Gate: „Go Shadow und Tageslimit?"** (Phase 4: HELMUT_UNDERSTANDING_GATE=shadow,
-  HELMUT_PARDOK_DISPATCH=shadow, HELMUT_MAX_LLM_CALLS_PER_DAY→150 — einzeln, mit Smoke-Tests)
+- **Phase A (Reiter-Umbenennung): IM PREVIEW** — der sichtbare Produktreiter „Helmut" heißt
+  jetzt „Briefing" (nur Labels: Haupt-/Mobilnavigation, Sprungbutton „Im Briefing öffnen",
+  Bereichs-ARIA). Marke/Persona bleiben Helmut; interne View-IDs (historisch: "briefing"=Lage,
+  "helmut"=Briefing-Reiter), API-Verträge, gespeicherte Briefings unverändert.
+  Test: briefing-tab-rename (20 Assertions) + Gesamtsuite 58/58 grün.
+- **Nächstes Gate: „Briefing Preview prüfen"** — danach gemäß Megaprompt weiter
+  (Shadow-Flags + Tageslimit erst nach separatem Go).
 
 ## Was Production AKTUELL nutzt (main)
 - Alter hartcodierter Quellenkatalog (`v1Sources`) als aktive Quellenwahrheit.
