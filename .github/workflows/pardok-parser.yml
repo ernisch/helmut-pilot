@@ -71,6 +71,7 @@ jobs:
       - name: Shadow-Parser-Test (echte XML, DB-frei)
         env:
           PARDOK_MAX_RECORDS: ${{ inputs.max_records || '800' }}
+          PARDOK_REPEAT: "5"
         run: |
           set -euo pipefail
           if [ -f scripts/pardok-shadow-test.js ]; then

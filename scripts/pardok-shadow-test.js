@@ -106,19 +106,34 @@ async function run() {
 
   const rssStart = process.memoryUsage().rss;
   const lands = [];
+  const REPEAT = Number(process.env.PARDOK_REPEAT || 1);
   if (egressOffen) {
     for (const t of targets()) {
-      const r = await streamAndParse(t.url, t.land);
-      const s = r.stats;
-      const dd = P.dedupToDocuments(r.documents, t.id);
+      // Phase 1: REPEAT echte, DB-freie Laeufe je Quelle -> Cross-Run-Stabilitaet.
+      const iters = [];
+      for (let k = 0; k < REPEAT; k++) {
+        const rr = await streamAndParse(t.url, t.land);
+        const sids = rr.documents.map((d) => d.externe_id).sort();
+        iters.push({ r: rr, dd: P.dedupToDocuments(rr.documents, t.id), sortedIds: sids, docSetHash: P.sha256(sids.join("|")).slice(0, 16),
+          dokTypVerteilung: rr.documents.reduce((m, d) => { const kk = d.dokumentart || "(o.Art)"; m[kk] = (m[kk] || 0) + 1; return m; }, {}) });
+      }
+      const it0 = iters[0];
+      const r = it0.r, s = r.stats, dd = it0.dd, sortedIds = it0.sortedIds, docSetHash = it0.docSetHash, dokTypVerteilung = it0.dokTypVerteilung;
       const titelloseFps = new Set(r.documents.filter((d) => d.titel === null).map((d) => d.inhaltsfingerabdruck));
       const titellose = r.documents.filter((d) => d.titel === null).length;
       const keinSammelcluster = s.platzhalter === 0 && titelloseFps.size === titellose; // titellose Docs alle eindeutig
-      // Cross-Run-Vergleich: stabiler Hash der externe-ID-Menge + Dokumentart-Verteilung.
-      const sortedIds = r.documents.map((d) => d.externe_id).sort();
-      const docSetHash = P.sha256(sortedIds.join("|")).slice(0, 16);
-      const dokTypVerteilung = r.documents.reduce((m, d) => { const k = d.dokumentart || "(o.Art)"; m[k] = (m[k] || 0) + 1; return m; }, {});
+      // Cross-Run-Stabilitaet ueber REPEAT Laeufe (neue/verschwundene IDs, Quoten, Laufzeit).
+      const hashes = iters.map((i) => i.docSetHash);
+      const set0 = new Set(iters[0].sortedIds), setN = new Set(iters[iters.length - 1].sortedIds);
+      const stabilitaet = {
+        laeufe: REPEAT, docSetHashes: hashes, alleIdentisch: new Set(hashes).size === 1,
+        neueIds: [...setN].filter((x) => !set0.has(x)).length, verschwundeneIds: [...set0].filter((x) => !setN.has(x)).length,
+        geparstProLauf: iters.map((i) => i.r.stats.geparst), fehlerGesamt: iters.reduce((a, i) => a + i.r.fehler, 0),
+        titelQuoten: iters.map((i) => q(i.r.stats.mitTitel, i.r.stats.geparst)), datumQuoten: iters.map((i) => q(i.r.stats.mitDatum, i.r.stats.geparst)),
+        laufzeitenMs: iters.map((i) => i.r.ms), dokTypStabil: iters.every((i) => JSON.stringify(i.dokTypVerteilung) === JSON.stringify(it0.dokTypVerteilung))
+      };
       const land = {
+        stabilitaet,
         id: t.id, land: t.land, url: t.url, status: r.status, redirects: r.redirects, htmlFehlerseite: r.htmlFehlerseite, truncated: r.truncated,
         rohdatensaetze: s.rohRecords, deleteStubs: s.deleteStubs, ohneDokument: s.ohneDokument, geparst: s.geparst, fehler: r.fehler,
         platzhalter: s.platzhalter,
@@ -138,6 +153,7 @@ async function run() {
       console.log(`  Dokumente nach Dedup ${land.dokumente} · Fundstellen ${land.fundstellen} (mehrfach ${land.mehrfachFundstellen}) · Platzhalter ${land.platzhalter} · kein Sammelcluster: ${land.keinSammelcluster}`);
       console.log(`  Laufzeit ${land.laufzeitMs} ms · Puffer-Spitze ${land.peakBufferKB} KB`);
       console.log(`  docSetHash ${land.docSetHash} · Dokumentarten ${JSON.stringify(land.dokTypVerteilung)}`);
+      if (REPEAT > 1) console.log(`  STABILITAET ${REPEAT} Laeufe: identisch=${stabilitaet.alleIdentisch} · neue IDs=${stabilitaet.neueIds} · verschwundene IDs=${stabilitaet.verschwundeneIds} · Dok-Art stabil=${stabilitaet.dokTypStabil} · Fehler ges=${stabilitaet.fehlerGesamt} · geparst/Lauf=${JSON.stringify(stabilitaet.geparstProLauf)} · Laufzeiten=${JSON.stringify(stabilitaet.laufzeitenMs)}`);
       for (const b of land.beispiele) console.log(`    · [${b.externe_id}] WP${b.wahlperiode} ${b.dokumentart} ${b.datum || "(o.Datum)"} — ${b.titel ? '"' + b.titel.slice(0, 70) + '"' : "(titellos)"}`);
       if (land.mehrfachBeispiele.length) { console.log("  Zusammengefuehrte Dokumente (Diagnose):"); for (const m of land.mehrfachBeispiele) console.log(`    · ${m.identisch ? "IDENTISCHE ID (echtes Duplikat)" : "VERSCHIEDENE IDs (Kollision!)"}: ${m.externe_ids.join(", ")} — ${m.titel ? '"' + m.titel.slice(0, 50) + '"' : "(titellos)"}`); }
     }
