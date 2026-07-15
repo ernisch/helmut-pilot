@@ -70,6 +70,12 @@ check("ko-enrichment-backfill: execute/bypassBudget nur bei POST wirksam",
     /Promise\.all\(\[\s*\n\s*sendCallMeBotMessage\(report\.text\),\s*\n\s*sendMonitoringWebhook\(report\)/.test(serverSource));
   check("health-report loggt Systemfehler, wenn Report nicht grün UND kein Kanal konfiguriert",
     /KEIN Alarmkanal konfiguriert/.test(serverSource));
+  // Phase 11: Dry-Run — Report bauen + Kanalstatus zeigen, ohne irgendetwas zu
+  // versenden (Versand-Aufrufe liegen NACH dem dryRun-Return).
+  check("health-report ?dryRun=1: baut Report ohne Versand (Return VOR den Versand-Aufrufen)",
+    /dryRun.*=== "1"/.test(serverSource) &&
+    serverSource.indexOf('url.searchParams.get("dryRun")') < serverSource.indexOf("sendCallMeBotMessage(report.text)") &&
+    /kanaele:\s*\{/.test(serverSource));
 
   // ── 4) Cron-Vollständigkeit + Google-News-Quote im Health-Report ──────────
   check("Health-Report prüft Infrastruktur-Cron-Überfälligkeit (Crawl/Lage)",

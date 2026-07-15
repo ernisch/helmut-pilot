@@ -755,6 +755,23 @@ async function handleRequest(request, response) {
     if (!authorizeCron(request, url, response)) return;
     return handleAsync(response, async () => {
       const report = await buildHealthReport(politicianId);
+      // DRY-RUN (Phase 11): ?dryRun=1 baut den kompletten Report und zeigt die
+      // Kanal-Konfiguration, versendet aber NICHTS und schreibt keinen
+      // Systemfehler. Damit lässt sich der Alarmweg (auch im Preview) gefahrlos
+      // prüfen, ohne eine echte Nachricht auszulösen.
+      if (url.searchParams.get("dryRun") === "1") {
+        return {
+          dryRun: true,
+          ok: report.ok,
+          text: report.text,
+          kanaele: {
+            whatsapp: { konfiguriert: Boolean(String(process.env.CALLMEBOT_PHONE || "").trim() && String(process.env.CALLMEBOT_APIKEY || "").trim()) },
+            webhook: { konfiguriert: Boolean(String(process.env.HELMUT_MONITORING_WEBHOOK_URL || "").trim()) }
+          },
+          overdueCrons: report.overdueCrons,
+          googleUrlResolutionRate: report.googleUrlResolutionRate
+        };
+      }
       // ZWEITKANAL (Audit-Folgebranch): der Report ging bisher NUR über CallMeBot-
       // WhatsApp — fehlten dessen Keys, wurde er still übersprungen (einziger
       // Alarmweg tot). Jetzt zusätzlich ein generischer Webhook-Kanal
