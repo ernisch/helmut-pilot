@@ -2543,6 +2543,12 @@ module.exports.__ASSET_VERSION = () => ASSET_VERSION;
 // Briefing-Status aus der EINEN Frische-Wahrheit (currentHelmutState) stammt und
 // ein alter/fehlgeschlagener Lauf nie "Aktuell" ergibt (Konsistenz Kopf ↔ Karte).
 module.exports.__decorateBriefingFreshness = decorateBriefingFreshness;
+// Test-Hook (Offline, P2-5): die Quellenabdeckungs-Prüfungen an ihrem ECHTEN Aufrufort —
+// backendHealth "Quellenbasis" + pilotReadiness "zu wenige Quellen". Sichert, dass ein
+// Regress am Aufrufort (Schwelle zurückgedreht ODER wieder der tote Blob gezählt) auffällt,
+// nicht nur in der reinen source-coverage-Logik.
+module.exports.__backendHealth = backendHealth;
+module.exports.__pilotReadiness = pilotReadiness;
 
 if (require.main === module) {
   const server = http.createServer(requestHandler);
@@ -2752,12 +2758,16 @@ function backendHealth(crawl, briefing, debugReport, storage, storeSummary, evid
   // P2-5: aktive Quellenbasis = relationale Quellenwahrheit (crawl.checkedSources), NICHT
   // der eingefrorene store.sources-Blob. Nach dem Cutover ist der Blob nur noch Fallback-
   // Katalog und wächst/schrumpft nicht mit Paketen/Wegen — er als Basiszahl wäre irreführend.
+  const backendSourceMode = sourceMode();
   const activeSourceBase = effectiveActiveSourceCount({
     storeSourcesActive: storeSummary.sources?.active,
     crawlCheckedSources: crawl?.checkedSources,
-    mode: sourceMode()
+    mode: backendSourceMode
   });
-  addBackendCheck(checks, "Quellenbasis", activeSourceBase >= minConfiguredSources, `${activeSourceBase} aktive Quellen (relationaler Plan).`);
+  // Ehrliches Label je Quelle der Zahl: im Cutover-Modus zählt der relationale Plan
+  // (crawl.checkedSources), sonst der alte Katalog-Blob. Kein pauschales "(relationaler Plan)".
+  const sourceBaseLabel = backendSourceMode === "on" && Number(crawl?.checkedSources || 0) > 0 ? "relationaler Plan" : "Katalog-Basis";
+  addBackendCheck(checks, "Quellenbasis", activeSourceBase >= minConfiguredSources, `${activeSourceBase} aktive Quellen (${sourceBaseLabel}).`);
   addBackendCheck(checks, "Raw Items", Number(storeSummary.rawItems?.total || 0) > 0, `${storeSummary.rawItems?.total || 0} Artikel gespeichert, ${storeSummary.rawItems?.last24h || 0} in den letzten 24 Stunden.`);
 
   const checkedSources = Number(crawl?.checkedSources || 0);
@@ -2893,7 +2903,10 @@ function pilotReadiness(crawl, briefing, storage, evidenceQuality = null, lageCh
 
 function releaseCheck({ crawl, briefing, storage, storeSummary, evidenceQuality, backend, readiness, learning, radarArchive, lageCheck, completeKoAt = null }) {
   const checks = [];
-  const sourceCount = Number(crawl?.checkedSources || storeSummary?.sources?.active || 0);
+  // P2-5: Lage-Frische misst die CRAWL-Breite (geprüfte Quellen), nicht den eingefrorenen
+  // store.sources-Blob. Kein Blob-Fallback mehr: ohne Crawl ist die Breite 0 (fällt ehrlich
+  // durch), statt einen alten Katalog-Zählwert als Frische auszugeben.
+  const sourceCount = Number(crawl?.checkedSources || 0);
   const failedSources = Number(crawl?.failedSources || 0);
   const failRatio = sourceCount ? failedSources / sourceCount : 1;
   const visibleDecisionCount = Number((briefing?.items || []).filter((item) => item.decision !== "Ignorieren").length);

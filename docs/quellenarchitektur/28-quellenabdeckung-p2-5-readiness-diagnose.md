@@ -69,10 +69,11 @@ Die aktive relationale Struktur (Production):
    mit Paketen/Wegen ändert. Die echte aktive Quellenbasis ist der relationale Plan.
 
 **Belastbarkeit der 145 (kein Grün-Trimmen):** raw_documents tagesfrisch — **915 Dok./24h**,
-2.983/7d, 105 distinct Quellen/7d, jüngstes 2026-07-15 20:00. Abgedeckt: alle Ausschüsse
-(committee-*), alle Fraktionen (fraction-*), Leitmedien (Deutschlandfunk/Tagesschau),
-Ministerien, Bundestag (general-hib, general-bundestag-plenum) + **DIP** (amtliche
-Drucksachen, direkt). Die 145 sind eine **ausreichende, belastbare** Basis für den Piloten.
+2.983/7d, 105 distinct Quellen/7d, jüngstes 2026-07-15 20:00 (Momentaufnahme 2026-07-15;
+Zahlen bewegen sich pro Crawl). Abgedeckt: alle Ausschüsse (committee-*), alle Fraktionen
+(fraction-*), Leitmedien (Deutschlandfunk/Tagesschau), Ministerien, Bundestag (general-hib,
+general-bundestag-plenum) + **DIP** (amtliche Drucksachen, direkt). Die 145 sind eine
+**ausreichende, belastbare** Basis für den Piloten (kritische Nachprüfung s. u.).
 
 ### 4. Welche Quellen/Abrufwege/Pakete fehlen konkret?
 
@@ -122,6 +123,43 @@ Behebung. Siehe „Nächste Schritte".
 
 ---
 
+## Kritische Nachprüfung: Sind die 6 defekten Primärquellen für den Cem-Pilot verzichtbar?
+
+Auftragsgemäß nochmals hart gegen Production geprüft (Momentaufnahme 2026-07-15). **Belege
+je Cem-Kern-Dimension (7 Tage):** Arbeit & Soziales **700 Dok.** · Die Linke **101 Dok.** ·
+Bundestag **499 Dok.** — jeweils aus *funktionierenden* Quellen, unabhängig von den 6 defekten.
+
+Und die *funktionierende* Ersatzdeckung je defekte Quelle (aus den aktiven Paketen):
+
+| Defekte Quelle | Cem-Bezug | Funktionierender Ersatz (aktiv/needs_review, läuft) | Verzichtbar? |
+|---|---|---|---|
+| `rp-ausschuss-arbeit-soziales` (HTML-Seite) | **sein Ausschuss** | **25+ googlenews-Wege** auf `"Ausschuss für Arbeit und Soziales"` (Bürgergeld/Rente/Mindestlohn/Pflege/Tarif/… je eigener Weg) + hib-Ausschuss + Prozess-Radare | **Ja — sogar übertroffen** (die eine HTML-Seite liefert weniger als die 25er-Themenmatrix) |
+| `rp-bundesregierung` (RSS) | Regierung | `general-bundesregierung-vorhaben` + `process-eckpunkte/-bundeskabinett` | **Ja** — Reparatur wäre ohnehin googlenews (Direktfeed real 404); überlappt |
+| `rp-dgb` (HTML) | Gewerkschaften | `news-verdi`, `news-ig-metall` (die großen DGB-Gewerkschaften, direkt), `signal-tarifflucht`, `institution-boeckler` | **Ja** — Reparatur wäre googlenews; Mitgliedsgewerkschaften gedeckt |
+| `rp-die-linke` (Partei-RSS) | **seine Partei** | `fraction-linke` (deckt „Die Linke" breit) + Leitmedien | **Weitgehend** — Reparatur wäre googlenews site-search (Direktfeed bot-gesperrt); überlappt mit fraction-linke |
+| `rp-bundestag` (RSS) | Parlament | `general-hib` (amtlicher Bundestags-Pressedienst), `general-bundestag-plenum`, **DIP** (amtliche Drucksachen, direkt) | Für **Breite ja**; **aber** verifizierter **echter Direktfeed** (`…/pressemitteilungen.rss`) → **Beleg-Qualität** |
+| `rp-linksfraktion` (Fraktions-RSS) | **seine Fraktion** | `fraction-linke` deckt *Erwähnungen* (journalistisch), **nicht** die *amtlichen Pressemitteilungen* der eigenen Fraktion | Für **Breite ja**; **aber** verifizierter **echter Direktfeed** (`dielinkebt.de/…/feed.rss`) = eigene Fraktions-Primärstimme → **Beleg-Qualität** |
+
+**Ehrliches Fazit der Nachprüfung — zwei getrennte Fragen:**
+
+1. **Breite/Abdeckung:** Alle 6 sind für den Piloten **verzichtbar**. Cems Ausschuss (700),
+   Partei/Fraktion (101) und der Bundestag (499) sind über funktionierende Wege dicht
+   gedeckt; die A&S-Themenmatrix übertrifft die einzelne defekte Ausschuss-Seite sogar.
+   Es entsteht **keine Themenlücke**, wenn die 6 fehlen.
+2. **Beleg-Qualität:** **2 der 6 sind nicht gleichwertig ersetzt** — `rp-bundestag` und
+   `rp-linksfraktion`. Beide haben **verifizierte echte Direktfeeds** (kein googlenews-Umweg)
+   und liefern *official_primary*-Belege für das Parlament bzw. die **eigene Fraktion** des
+   Piloten; die Proxys liefern nur journalistische/aggregierte Belege. Die anderen 4 werden
+   ohnehin nur zu googlenews repariert und sind faktisch redundant.
+
+**→ Empfehlung:** Die Schwellen-/Zähl-Korrektur ist unabhängig davon vollständig richtig
+(kein Breiten-Gap). Für die **Beleg-Qualität** sollten — founder-gated, als eigener
+Prod-Write + Code-Change — **priorisiert `rp-bundestag` und `rp-linksfraktion`** (echte
+Direktfeeds) repariert werden; die übrigen 4 sind optional/redundant. Das ist eine
+**Qualitäts-**, keine **Abdeckungsmaßnahme** — der Pilot ist ohne sie ausreichend versorgt.
+
+---
+
 ## Behebung (dieser Branch, rein Code — kein Prod-Write, keine Migration, kein Flag)
 
 1. **Neues Modul `lib/helmut/source-coverage.js`** — zentrale, reine Schwellen-/Zähllogik
@@ -131,26 +169,59 @@ Behebung. Siehe „Nächste Schritte".
    Massenausfall). Nicht auf Grün getrimmt — 145 hat >20 % Luft nach unten.
 2. **`server.js`** — Schwellen aus dem Modul; „Quellenbasis" zählt via
    `effectiveActiveSourceCount` die **relationale** aktive Basis (`crawl.checkedSources`)
-   statt des toten Blobs.
+   statt des toten Blobs; ehrliches Label je Zählquelle (`relationaler Plan` vs.
+   `Katalog-Basis`); `releaseCheck` misst die Crawl-Breite ohne Blob-Fallback.
 3. **`lib/helmut/watchdog-state.js`** — `DEFAULT_THRESHOLDS` 450/405 → 120/110 (Server
    übersteuert ohnehin mit denselben Werten; Konsistenz für Modul-/Test-Nutzung).
 4. **`scripts/smoke-test.js`** — Default 450 → 120.
-5. **Tests:** neues `scripts/source-coverage-test.js` (21 Assertions: Kalibrierung,
-   Einbruch-Erkennung, Zähl-Bug-Fix, ENV-Override) + zwei neue Watchdog-Fälle
-   (145/145 → fresh; 40 → warn). Volle Offline-Suite grün (die 2 verbleibenden Fails —
-   `helmut-tab-ui`, `stoerungswahrheit` — sind **datum-abhängig und pre-existing**,
-   unabhängig von dieser Änderung; auf dem sauberen Baum identisch).
+5. **Tests:** neues `scripts/source-coverage-test.js` (33 Assertions: Kalibrierung,
+   Einbruch-Erkennung, Zähl-Bug-Fix, ENV-Override, **Grenzwerte 120/110**,
+   **Watchdog-Sync**, **echter Aufrufort** `__backendHealth`/`__pilotReadiness` inkl.
+   mode on/off) + zwei Watchdog-Fälle (145/145 → fresh; 40 → warn).
+6. **Zwei datum-abhängige Alt-Tests sauber deterministisch gemacht** (auftragsgemäß):
+   `stoerungswahrheit` (Frische-Quelle = jetzt statt lokaler 08:30-Teile) und
+   `helmut-tab-ui` (feste Mittags-Referenz statt Wall-Clock). Ursache war der
+   Europe/Berlin-Tages-Frische-Guard des **Produktcodes** (korrekt) gegen now-relative
+   Fixtures, die kurz nach Berlin-Mitternacht auf den Vortag kippten. **Volle Offline-Suite
+   jetzt 98/98 grün.**
 
 **Wirkung:** Der gesunde 145-Quellen-Crawl besteht jetzt Backend-Health („Quellenbasis"),
 Crawl-Qualität, pilotReadiness, Release-Check und Watchdog-INGEST — ohne eine einzige
 zusätzliche Quelle. Ein echter Einbruch (Paket-Deaktivierung, Massenausfall) schlägt weiter
 an.
 
+## Gegenprüfung (adversariale Review, 2026-07-15)
+
+Der Fix wurde durch eine mehrperspektivische adversariale Review (Korrektheit ·
+übersehene Konsumenten · Masking-Risiko · Test-/Doku-Güte) geprüft. **Masking-Verdikt:**
+die Kalibrierung **verdeckt keinen Quellen-Kollaps**; die Floors (120/110 ≈ 82 %/76 % des
+verifiziert gesunden 145) sind belastbar platziert — *jeder* durchgespielte Einbruch löst
+aus. Behandelte Befunde:
+
+- **Behoben:** irreführendes `(relationaler Plan)`-Label im mode off/shadow → jetzt
+  mode-ehrlich; `releaseCheck`-Blob-Fallback entfernt; **Aufrufort-Test** ergänzt (fängt
+  Regress an der Schwelle *oder* an der Zählquelle direkt in `server.js`); Grenzwert- und
+  Watchdog-Sync-Tests ergänzt.
+- **Bewusst so gelassen (dokumentiert, außerhalb dieses Auftrags):**
+  - *Content-leere Degradation* (ein erreichbarer Weg mit 0 Artikeln zählt als „erfolgreich"):
+    vorbestehende Crawl-Semantik, keine Schwellen-Frage.
+  - *Live-Ausfall < 10 %* schlägt nicht an: gewollte Toleranz; echter Massenausfall (z. B.
+    Google-News-Decoder bricht → alle ~135 Wege fehlerhaft) hebt `failureRatio`/senkt
+    `successfulSources` und schlägt sicher an.
+  - *Dünne-alleine paged nicht* (frisch-aber-dünn → INGEST „warn" → TEILWEISE, kein
+    WhatsApp-Alarm): vorbestehendes Zwei-Achsen-Design; die Änderung **verbessert** es
+    (vorher war 450 nie erfüllbar → Dauer-„warn"/keine Trennschärfe).
+  - *Relationaler-Plan-Ladefehler* fällt still auf den Alt-Katalog (~149) zurück (nur
+    `console.warn`): bewusste Resilienz für den laufenden Piloten.
+  - *Drei Prüfungen korrelieren jetzt* (Quellenbasis ≈ Crawl-Qualität ≈ „zu wenige"):
+    akzeptierter Trade-off — die frühere „unabhängige" Blob-Zahl war tot/aussagelos.
+
 ## Nächste Schritte (founder-gated, NICHT in diesem Branch)
 
-- **Direktfeed-Reparaturen anwenden** (6 Wege): Prod-Write auf `retrieval_paths` **plus**
-  Legacy-Katalog/`toCrawlerSource`-Abstimmung, damit die verifizierten URLs (9B) real
-  greifen. Verifizierte Daten liegen in `lib/helmut/quellenarchitektur/seeds/bundeswege-reparaturen.js`.
-  Erwarteter Effekt: +6 direkte Primärquellen, bessere Direktlink-Belegqualität; Menge
-  bleibt ~belanglos für die Readiness (jetzt korrekt kalibriert).
+- **Direktfeed-Reparaturen anwenden — priorisiert `rp-bundestag` + `rp-linksfraktion`**
+  (echte Direktfeeds, Primär-Beleg-Qualität; s. „Kritische Nachprüfung"). Die übrigen 4
+  reparieren nur zu googlenews und sind redundant. Anwendung = Prod-Write auf
+  `retrieval_paths` **plus** Legacy-Katalog/`toCrawlerSource`-Abstimmung, damit die
+  verifizierten URLs (9B, `bundeswege-reparaturen.js`) real greifen. Reine **Qualitäts-**,
+  keine Abdeckungsmaßnahme — der Pilot ist ohne sie ausreichend versorgt.
 - Optional: die Schwellen per Vercel-ENV feiner justieren (nicht nötig — Default greift).

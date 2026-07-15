@@ -67,5 +67,50 @@ check("ENV übersteuert minConfigured", tEnv.minConfigured === 210);
 check("ENV leer/ungültig -> Default", sourceCoverageThresholds({ HELMUT_MIN_CHECKED_SOURCES: "" }).minChecked === d.minChecked
   && sourceCoverageThresholds({ HELMUT_MIN_CHECKED_SOURCES: "abc" }).minChecked === d.minChecked);
 
+// ── 5. Grenzwerte exakt an der Schwelle (>=-Semantik der Prüfungen) ──
+check("Grenzwert: checked == minChecked besteht (>=)", 120 >= d.minChecked && d.minChecked === 120);
+check("Grenzwert: checked == minChecked-1 fällt durch", !((d.minChecked - 1) >= d.minChecked));
+check("Grenzwert: successful == minSuccessful besteht", 110 >= d.minSuccessful && d.minSuccessful === 110);
+check("Grenzwert: successful == minSuccessful-1 fällt durch", !((d.minSuccessful - 1) >= d.minSuccessful));
+
+// ── 6. Watchdog-Defaults dürfen nicht von der zentralen Kalibrierung driften ──
+const WD = require("../lib/helmut/watchdog-state").DEFAULT_THRESHOLDS;
+check("Sync: Watchdog minCheckedSources == source-coverage minChecked", WD.minCheckedSources === d.minChecked);
+check("Sync: Watchdog minSuccessfulSources == source-coverage minSuccessful", WD.minSuccessfulSources === d.minSuccessful);
+
+// ── 7. ECHTER Aufrufort in server.js (backendHealth/pilotReadiness) ──
+// Deckt Regress AM AUFRUFORT ab (Schwelle zurückgedreht ODER wieder der tote Blob gezählt) —
+// die reine Modul-Logik oben würde das nicht bemerken. server.js startet ohne require.main
+// keinen Server. sourceMode() respektiert process.env > helmut-flags.json (Datei = "on").
+const server = require("../server.js");
+const freshCrawl = (checked, successful = checked) => ({ checkedSources: checked, successfulSources: successful, failedSources: 0, createdAt: new Date().toISOString() });
+const briefing = { available: true, status: "Live", items: [{ decision: "Beobachten" }], personalizedRecommendations: [{}], situationalBriefing: [{}], decisionMetrics: { total: 1, react: 0 } };
+const storage = { backend: "supabase" };
+const summary = { sources: { active: 144 }, rawItems: { total: 5000, last24h: 900 } };
+const evidence = { missingLinks: 0, publisherFallbacks: 0, directLinks: 5, total: 5 };
+const qbOf = (bh) => (bh.checks || []).find((c) => c.id === "quellenbasis");
+const ZU_WENIGE = "Es werden zu wenige Quellen geprüft.";
+
+const prevMode = process.env.HELMUT_SOURCE_MODE;
+delete process.env.HELMUT_SOURCE_MODE; // Flag-Datei (=on) greift -> Cutover-Modus
+
+let qb = qbOf(server.__backendHealth(freshCrawl(145), briefing, null, storage, summary, evidence));
+check("Aufrufort mode on: gesunder 145er-Crawl -> Quellenbasis grün", qb && qb.ok === true, qb && qb.detail);
+check("Aufrufort mode on: zählt 145 (relationaler Plan), NICHT Blob 144", qb && /145/.test(qb.detail) && /relationaler Plan/.test(qb.detail), qb && qb.detail);
+
+qb = qbOf(server.__backendHealth(freshCrawl(40), briefing, null, storage, summary, evidence));
+check("Aufrufort mode on: Kollaps 40 -> Quellenbasis rot (Blob 144 rettet NICHT)", qb && qb.ok === false, qb && qb.detail);
+
+check("Aufrufort: pilotReadiness 145 -> kein 'zu wenige Quellen'",
+  !server.__pilotReadiness(freshCrawl(145), briefing, storage, evidence).issues.includes(ZU_WENIGE));
+check("Aufrufort: pilotReadiness 40 -> 'zu wenige Quellen' Issue",
+  server.__pilotReadiness(freshCrawl(40), briefing, storage, evidence).issues.includes(ZU_WENIGE));
+
+process.env.HELMUT_SOURCE_MODE = "off"; // alter Katalog aktiv -> Blob ist die Wahrheit
+qb = qbOf(server.__backendHealth(freshCrawl(145), briefing, null, storage, summary, evidence));
+check("Aufrufort mode off: zählt Blob 144 mit ehrlichem Label 'Katalog-Basis'",
+  qb && /144/.test(qb.detail) && /Katalog-Basis/.test(qb.detail), qb && qb.detail);
+if (prevMode === undefined) delete process.env.HELMUT_SOURCE_MODE; else process.env.HELMUT_SOURCE_MODE = prevMode;
+
 console.log(`\n${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);
