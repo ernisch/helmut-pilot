@@ -17,7 +17,8 @@ function loadClient() {
   code = code.replace(/^\s*loadBriefing\(\)[\s\S]*$/m, "");
   code += `\n;globalThis.__adminTest = {
     overview: (data, ds, rec) => renderAdminOperatorOverview(data, ds, rec),
-    actionCenter: (ds, rec) => renderAdminActionCenter(ds, rec),
+    actionCenter: (ds, rec, budget) => renderAdminActionCenter(ds, rec, budget),
+    budgetHeute: (b) => renderAdminBudgetHeute(b),
     view: () => renderAdminView(),
     setUser: (u) => { currentUser = u; },
     setAdmin: (d, ds, rec, period) => { adminData = d; adminDataStatus = ds; adminRecovery = rec; if (period) adminPeriod = period; },
@@ -114,7 +115,19 @@ const adminDataFull = {
     days30: { articles: 3000, kos: 200, briefings: 40, totalCostUsd: 5.6, totalCalls: 900, perUser: [], perCategory: {} }
   },
   crawlReport: { lastCrawlAt: minsAgo(18), mode: "full", scannedArticles: 500, deduplicatedArticles: 60, newVorgaenge: 12, newKnowledgeObjects: 8, checkedSources: 21, failedSources: 0, errorCount: 0, durationSec: 42 },
-  system: { storage: { backend: "supabase", supabaseConfigured: true }, store: { briefings: { total: 12 } }, ai: { enabled: true, model: "gpt-4o" }, push: { enabled: false }, authMode: true, deploy: { version: "abc12345", commit: "abc123456789", branch: "main", environment: "production" } },
+  system: {
+    storage: { backend: "supabase", supabaseConfigured: true }, store: { briefings: { total: 12 } }, ai: { enabled: true, model: "gpt-4o" }, push: { enabled: false }, authMode: true, deploy: { version: "abc12345", commit: "abc123456789", branch: "main", environment: "production" },
+    // Budget-Tagessicht (Gate-Fenster) — echte Feld-Shape von getLlmUsageBreakdownToday.
+    llmBudget: {
+      day: nowIso.slice(0, 10),
+      timezone: "UTC-Kalendertag (identisch zum Budget-Gate; Reset 00:00 UTC = 02:00 Berlin Sommer / 01:00 Winter)",
+      limit: 100, reserveUnderstanding: 30, failClosed: true,
+      calls: 42, errors: 1, skips: 3, remaining: 58, estimatedCostUsd: 0.1234,
+      byCallType: { understanding: { calls: 30, errors: 1, estimatedCostUsd: 0.09 }, communicationDraft: { calls: 12, errors: 0, estimatedCostUsd: 0.0334 } },
+      byTenant: { "max-mandat": { calls: 42, estimatedCostUsd: 0.1234 } },
+      skipsByReason: { "daily-llm-budget-reached": 3 }
+    }
+  },
   recentErrors: [], auditEvents: [{ createdAt: nowIso, action: "admin.user.update", actorEmail: "admin@bt.de" }]
 };
 
@@ -181,6 +194,40 @@ check("Full: Recovery-Buttons existieren (im DOM, eingeklappt)", view.includes("
 check("Kosten: 'Kosten heute' im verdichteten Kopf", view.includes("Kosten heute"));
 check("Kosten: Tageswert sichtbar ($0.234)", view.includes("$0.234"));
 check("Kosten: Engine-/Nutzer-Details eingeklappt", view.includes("Kosten pro Engine"));
+
+// ── 6b) Budget heute (Gate-Fenster): Normalfall, remaining=0, b=null/nicht ladbar.
+const budgetFix = adminDataFull.system.llmBudget;
+// Normalfall (über die volle Admin-Ansicht — beweist auch den Datenfluss
+// system.llmBudget -> renderAdminBudgetHeute).
+check("Budget: Kachel 'Budget heute (Gate-Fenster)' mit X/Limit", view.includes("Budget heute (Gate-Fenster)") && view.includes("42/100"));
+check("Budget: 'Verbleibend heute' = 58", view.includes("Verbleibend heute") && view.includes(">58<"));
+check("Budget: 'Skips / Fehler heute' = 3 / 1", view.includes("Skips / Fehler heute") && view.includes("3 / 1"));
+check("Budget: Zeitzonen-/fail-closed-/Reserve-Hinweis im Aufklapper", view.includes("Fail-closed: AN") && view.includes("Understanding-Reserve: 30 Calls") && view.includes("UTC-Kalendertag"));
+check("Budget: Pfad-Tabelle (understanding/communicationDraft)", view.includes("Calls & Kosten pro Pfad (heute)") && view.includes("understanding") && view.includes("communicationDraft"));
+check("Budget: Mandanten-Tabelle", view.includes("Calls pro Mandant (heute)") && view.includes("max-mandat"));
+check("Budget: Skip-Gruende-Tabelle", view.includes("daily-llm-budget-reached"));
+// remaining=0-Variante: bad-Ton + Zahlen.
+const budgetZero = api.budgetHeute({ ...budgetFix, calls: 100, remaining: 0 });
+check("Budget remaining=0: bad-Ton auf der Kennzahl", /admin-stat-num--bad[^>]*>100\/100/.test(budgetZero));
+check("Budget remaining=0: Rest 0 sichtbar", budgetZero.includes(">0<"));
+// Warnschwelle (<=20 %): warn-Ton.
+const budgetWarn = api.budgetHeute({ ...budgetFix, calls: 85, remaining: 15 });
+check("Budget <=20% Rest: warn-Ton", /admin-stat-num--warn[^>]*>85\/100/.test(budgetWarn));
+// b=null / nicht ladbar: EHRLICHE Zeile statt leerem String (Befund).
+const budgetNull = api.budgetHeute(null);
+check("Budget b=null: KEIN leerer String mehr", budgetNull.length > 0);
+check("Budget b=null: ehrliche 'nicht ladbar'-Zeile", budgetNull.includes("Budget-Anzeige nicht ladbar"));
+const budgetFail = api.budgetHeute({ available: false, failClosed: true });
+check("Budget nicht ladbar + fail-closed: Warnung nennt fail-closed AKTIV", budgetFail.includes("fail-closed ist AKTIV"));
+// Handlungsbedarf: Budget-Punkte (7a).
+const acBudgetBad = api.actionCenter(dsHealthy, recHealthy, { ...budgetFix, calls: 100, remaining: 0 });
+check("Handlungsbedarf: remaining=0 -> bad 'KI-Tagesbudget aufgebraucht'", acBudgetBad.includes("KI-Tagesbudget aufgebraucht (100/100)") && /ac-item--bad/.test(acBudgetBad));
+const acBudgetLost = api.actionCenter(dsHealthy, recHealthy, { available: false, failClosed: true });
+check("Handlungsbedarf: Breakdown nicht ladbar + fail-closed -> bad", acBudgetLost.includes("Budget-Anzeige nicht ladbar bei aktivem fail-closed") && /ac-item--bad/.test(acBudgetLost));
+const acBudgetOk = api.actionCenter(dsHealthy, recHealthy, budgetFix);
+check("Handlungsbedarf: gesundes Budget -> KEIN Budget-Hinweis", !acBudgetOk.includes("KI-Tagesbudget aufgebraucht") && !acBudgetOk.includes("Budget-Anzeige nicht ladbar"));
+const acBudgetLoadFailOpen = api.actionCenter(dsHealthy, recHealthy, { available: false, failClosed: false });
+check("Handlungsbedarf: Breakdown nicht ladbar OHNE fail-closed -> kein bad-Punkt", !acBudgetLoadFailOpen.includes("Budget-Anzeige nicht ladbar"));
 
 // ── 7) System und Sicherheit: Version + Secrets-STATUS (kein Wert) + Admin-Zugriff.
 check("System: Commit sichtbar", view.includes("abc123456789"));

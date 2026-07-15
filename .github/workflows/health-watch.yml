@@ -1,0 +1,91 @@
+name: Health Watch
+
+# "Wächter-Wächter": unabhängiger E-Mail-Alarmkanal ohne neuen Dienst.
+# Niemand überwachte bisher, ob der Morgen-Health-Report (Vercel-Cron 06:00 UTC)
+# überhaupt läuft — Ausfallpfade ohne jedes Signal: Vercel-Cron-Eintrag
+# verloren/deaktiviert, CRON_SECRET-Rotation, buildHealthReport wirft (500,
+# NICHTS wird versendet). Dieser Workflow prüft täglich um 06:30 UTC, ob der
+# Report BAUBAR und GRÜN ist; schlägt er fehl, schickt GitHub eine Failure-Mail.
+#
+# WICHTIG — dryRun versendet NICHTS: ?dryRun=1 baut den kompletten Report,
+# versendet aber keine WhatsApp-/Webhook-Nachricht und persistiert keinen
+# Watchdog-State (nebenwirkungsfrei). Der ECHTE Versand liegt beim Vercel-Cron
+# 06:00 UTC (/api/cron/health-report ohne dryRun). Dieser Check ist nur die
+# unabhängige Bestätigung, dass der Wächter selbst funktioniert.
+#
+# Fehlerfälle werden EHRLICH unterschieden (klare ::error-Meldung je Ursache):
+#   1. Timeout/Netzfehler (curl scheitert) — Endpoint nicht erreichbar.
+#   2. HTTP != 200 — Report nicht baubar (z. B. Secret falsch, Build-Fehler).
+#   3. HTTP 200, aber response.ok !== true — Report baubar, Zustand NICHT grün.
+# Keine Secrets im Log: das Secret geht ausschließlich in den Auth-Header.
+
+on:
+  schedule:
+    # 06:30 UTC = 30 Minuten NACH dem echten Report-Versand (Vercel-Cron 06:00 UTC).
+    - cron: "30 6 * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: health-watch
+  cancel-in-progress: false
+
+jobs:
+  check-health-report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Health-Report (dryRun) bauen und prüfen
+        env:
+          BASE_URL: ${{ vars.HELMUT_PROD_URL || 'https://helmut-pilot.vercel.app' }}
+          CRON_SECRET: ${{ secrets.HELMUT_CRON_SECRET }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${CRON_SECRET:-}" ]; then
+            echo "::error::HELMUT_CRON_SECRET ist nicht gesetzt."
+            exit 1
+          fi
+
+          echo "Rufe Health-Report (dryRun) auf: ${BASE_URL}/api/cron/health-report?dryRun=1"
+          # --max-time 120 reicht: der Report baut in Sekunden (kein Crawl, kein KI-Call).
+          set +e
+          HTTP_CODE=$(curl -sS --max-time 120 \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -o response.json -w "%{http_code}" \
+            "${BASE_URL}/api/cron/health-report?dryRun=1")
+          CURL_EXIT=$?
+          set -e
+
+          if [ "${CURL_EXIT}" -ne 0 ]; then
+            # curl-Exit 28 = --max-time überschritten; alles andere = Netz-/TLS-Fehler.
+            if [ "${CURL_EXIT}" -eq 28 ]; then
+              echo "::error::TIMEOUT: Health-Report antwortete nicht binnen 120s — Endpoint hängt oder ist nicht erreichbar. Der echte 06:00-Versand ist damit vermutlich auch betroffen."
+            else
+              echo "::error::NETZFEHLER: Health-Report nicht erreichbar (curl exit ${CURL_EXIT}). Deployment/DNS prüfen."
+            fi
+            exit 1
+          fi
+
+          echo "HTTP-Status: ${HTTP_CODE}"
+          echo "--- Antwort (gekürzt) ---"
+          head -c 1200 response.json || true
+          echo ""
+
+          if [ "${HTTP_CODE}" != "200" ]; then
+            echo "::error::HTTP-FEHLER: Health-Report lieferte HTTP ${HTTP_CODE} statt 200 — Report ist NICHT baubar (Secret falsch/rotiert oder buildHealthReport wirft). Der echte 06:00-Versand versendet in diesem Zustand NICHTS."
+            exit 1
+          fi
+
+          # HTTP 200: jetzt fachlich prüfen — ok !== true heißt "Report baubar,
+          # aber Helmut ist NICHT grün" (das ist ein echter Betriebsalarm, kein
+          # Fehler dieses Checks).
+          node -e '
+            const fs = require("fs");
+            let body;
+            try { body = JSON.parse(fs.readFileSync("response.json", "utf8")); }
+            catch (e) { console.error("::error::Antwort ist kein valides JSON — Endpoint liefert Unerwartetes."); process.exit(1); }
+            if (body.ok !== true) {
+              console.error(`::error::REPORT NICHT GRUEN: response.ok=${JSON.stringify(body.ok)} — Helmut meldet einen gestörten Betriebszustand. Report-Text siehe Log oben; der echte 06:00-Lauf hat (falls Kanäle konfiguriert) bereits alarmiert.`);
+              process.exit(1);
+            }
+            console.log("Health-Report baubar und grün (ok=true).");
+          '

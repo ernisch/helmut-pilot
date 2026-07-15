@@ -1358,7 +1358,9 @@ function adminStatCell(value, label, tone, info) {
 
 // Echte Handlungsbedarf-Punkte aus bereits geladenen Daten (kein KI-Call, keine
 // Aktion). Leere Liste => „Alles ruhig". Erfindet nichts.
-function adminActionItems(ds, rec) {
+// budget = system.llmBudget (Gate-Fenster-Breakdown) — Budget-Erschöpfung und ein
+// nicht ladbarer Budget-Stand bei aktivem fail-closed sind echte Handlungsfälle.
+function adminActionItems(ds, rec, budget) {
   const g = (ds && ds.global) || null;
   const koRaw = rec && rec.knowledgeObjects;
   const ko = (koRaw && koRaw.available !== false) ? koRaw : null;
@@ -1366,6 +1368,16 @@ function adminActionItems(ds, rec) {
   const items = [];
   // target = sicheres internes Sprungziel (nur Scrollen, keine Aktion).
   if (ko && dsNum(ko.failed) > 0) items.push({ level: "bad", target: "admin-recovery", title: `${dsNum(ko.failed)} Understanding-Vorgänge fehlgeschlagen`, detail: `Im Datenmotor unter „Recovery (intern)“ prüfen und ggf. „Failed → Pending“ zurücksetzen.` });
+  // Budget-Wahrheit im Handlungsbedarf: remaining=0 heißt, JEDER weitere KI-Aufruf
+  // (Büro, Kommunikation, Lage, Understanding) wird heute abgelehnt.
+  if (budget && budget.available !== false && budget.limit != null && budget.remaining === 0) {
+    items.push({ level: "bad", target: "admin-kosten", title: `KI-Tagesbudget aufgebraucht (${dsNum(budget.calls)}/${dsNum(budget.limit)})`, detail: "Alle weiteren KI-Aufrufe werden heute abgelehnt (Reset 00:00 UTC). Bei echtem Bedarf HELMUT_MAX_LLM_CALLS_PER_DAY erhöhen, sonst bis zum Reset warten." });
+  }
+  // Breakdown nicht ladbar bei aktivem fail-closed: das Gate verweigert im
+  // Zweifel, aber niemand sieht den Budgetstand — blinder Fleck, kein Leerlauf.
+  if (budget && budget.available === false && budget.failClosed) {
+    items.push({ level: "bad", target: "admin-kosten", title: "Budget-Anzeige nicht ladbar bei aktivem fail-closed", detail: "Die Budget-Prüfung verweigert im Fehlerfall KI-Aufrufe (fail-closed aktiv), der Budgetstand ist aber nicht abrufbar. Storage/Supabase prüfen." });
+  }
   if (g && g.letzterFehler && g.letzterFehler.headline) items.push({ level: "bad", target: "admin-datenmotor", title: `Letzter Fehler: ${g.letzterFehler.headline}`, detail: `${g.letzterFehler.reason ? g.letzterFehler.reason : "Details unter „System und Sicherheit“."}${g.letzterFehler.when ? ` · ${dsDateLabel(g.letzterFehler.when)}` : ""}` });
   if (rec && rec.understandingLock && rec.understandingLock.verdaechtig) items.push({ level: "warn", target: "admin-recovery", title: "Understanding-Lock wirkt veraltet", detail: `Ein Lock hängt möglicherweise. Im Datenmotor unter „Recovery (intern)“ „Lock lösen“, falls kein Lauf mehr aktiv ist.` });
   if (ko && dsNum(ko.pending) > 0) items.push({ level: "warn", target: "admin-recovery", title: `${dsNum(ko.pending)} Understanding-Vorgänge warten`, detail: "Warten auf Verarbeitung — der nächste Lauf holt sie nach." });
@@ -1376,8 +1388,8 @@ function adminActionItems(ds, rec) {
 
 // B. Handlungsbedarf — nur echte Hinweise, sonst ruhiger Leerzustand. Keine Buttons:
 // echte (gefährliche) Aktionen bleiben ausschließlich im markierten Recovery-Bereich.
-function renderAdminActionCenter(ds, rec) {
-  const items = adminActionItems(ds, rec);
+function renderAdminActionCenter(ds, rec, budget) {
+  const items = adminActionItems(ds, rec, budget);
   // Jeder Hinweis mit sicherem Ziel wird zu einem internen Sprung-Anker (nur Scrollen).
   // Ohne Ziel bleibt er nicht klickbar (reiner Text). Keine Aktion, kein Button.
   const renderItem = (it) => {
@@ -1468,7 +1480,17 @@ function renderAdminKostenSummary(stats, periodLabel) {
 // (UTC-Kalendertag) — nicht das rollierende 24h-Fenster der Kostentrends. Skips und
 // Fehler getrennt; pro Pfad einsehbar. Ruhig gehalten: eine Zeile + Aufklapper.
 function renderAdminBudgetHeute(b) {
-  if (!b) return "";
+  // EHRLICHKEIT (Monitoring-Haertung): fehlender/nicht ladbarer Budget-Stand wird
+  // ANGEZEIGT statt stumm ausgeblendet — genau im Fehlerfall (fail-closed aktiv)
+  // verweigert das Gate, während der Admin sonst nichts sähe.
+  if (!b || b.available === false) {
+    return `<div class="admin-stats-row admin-stats-row--3">
+    ${adminStatCell("—", "Budget heute (Gate-Fenster)", "bad", "KI-Kosten")}
+    ${adminStatCell("—", "Verbleibend heute")}
+    ${adminStatCell("—", "Skips / Fehler heute")}
+  </div>
+  <p class="sa-note">Budget-Anzeige nicht ladbar${b && b.failClosed ? " — fail-closed ist AKTIV: die Budget-Prüfung verweigert KI-Aufrufe im Zweifel, ohne dass der Stand hier sichtbar ist" : ""}. Storage/Supabase prüfen.</p>`;
+  }
   const limitText = b.limit != null ? `${b.calls}/${b.limit}` : `${b.calls} (kein Limit)`;
   const restText = b.remaining != null ? String(b.remaining) : "—";
   const tone = b.limit != null && b.remaining === 0 ? "bad" : (b.limit != null && b.remaining <= Math.ceil(b.limit * 0.2) ? "warn" : null);
@@ -1802,7 +1824,7 @@ function renderAdminView() {
 
       ${renderAdminOperatorOverview(data, adminDataStatus, adminRecovery)}
 
-      ${renderAdminActionCenter(adminDataStatus, adminRecovery)}
+      ${renderAdminActionCenter(adminDataStatus, adminRecovery, sys?.llmBudget)}
 
       ${adminSection("Datenmotor", "Crawl · Verstehen · Recovery",
         `${renderAdminDatenmotorSummary(adminDataStatus, adminRecovery, data.crawlReport)}

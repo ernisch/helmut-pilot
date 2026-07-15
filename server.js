@@ -770,12 +770,13 @@ async function handleRequest(request, response) {
   if (url.pathname === "/api/cron/health-report") {
     if (!authorizeCron(request, url, response)) return;
     return handleAsync(response, async () => {
-      const report = await buildHealthReport(politicianId);
       // DRY-RUN (Phase 11): ?dryRun=1 baut den kompletten Report und zeigt die
-      // Kanal-Konfiguration, versendet aber NICHTS und schreibt keinen
-      // Systemfehler. Damit lässt sich der Alarmweg (auch im Preview) gefahrlos
-      // prüfen, ohne eine echte Nachricht auszulösen.
-      if (url.searchParams.get("dryRun") === "1") {
+      // Kanal-Konfiguration, versendet aber NICHTS, schreibt keinen Systemfehler
+      // und (Monitoring-Haertung) persistiert KEINEN Watchdog-State — sonst
+      // konsumierte die Probe die BAD->ERHOLT-Transition des echten 06:00-Laufs.
+      const isDryRun = url.searchParams.get("dryRun") === "1";
+      const report = await buildHealthReport(politicianId, { persistState: !isDryRun });
+      if (isDryRun) {
         return {
           dryRun: true,
           ok: report.ok,
@@ -870,7 +871,9 @@ async function handleRequest(request, response) {
   }
 
   // Provenienz-Backfill fuer BESTEHENDE Vorgaenge (kein KI-Call). ?secret=CRON_SECRET.
-  // ?dryRun=1 zeigt nur, was verlinkt wuerde; ?days= / ?limit= steuern das Zeitfenster.
+  // SICHER PER DEFAULT (Konsistenz mit presentation-backfill): ohne ?execute=1 nur
+  // DRY-RUN (Vorschau, KEINE Writes); ?dryRun=1 erzwingt die Vorschau zusaetzlich
+  // explizit. ?days= / ?limit= steuern das Zeitfenster. Der Backfill ist idempotent.
   if (url.pathname === "/api/debug/lage-backfill") {
     if (!authorizeCron(request, url, response)) return;
     // Review-Fix (Phase 9): Default war ein SCHREIBLAUF per GET (dryRun nur mit
@@ -880,6 +883,15 @@ async function handleRequest(request, response) {
       const days = Number(url.searchParams.get("days")) || undefined;
       const limit = Number(url.searchParams.get("limit")) || undefined;
       const dryRun = request.method !== "POST" || url.searchParams.get("dryRun") === "1";
+      // AUDIT (Monitoring-Haertung): nur echte Laeufe (Writes) protokollieren;
+      // Metadaten, fail-safe — Audit-Fehler brechen den Lauf nie.
+      if (!dryRun) {
+        await accounts.recordAudit({
+          action: "maintenance.lage-backfill",
+          actorEmail: "cron-secret",
+          detail: `days=${days || "default"} limit=${limit || "default"}`
+        }).catch(() => {});
+      }
       return { mode: dryRun ? "dry-run (Schreiblauf nur per POST)" : "execute", ...(await backfillProvenance({ days, limit, dryRun })) };
     });
   }
@@ -906,6 +918,14 @@ async function handleRequest(request, response) {
     return handleAsync(response, async () => {
       const limit = Number(url.searchParams.get("limit")) || undefined;
       const dryRun = !(request.method === "POST" && url.searchParams.get("execute") === "1"); // Default DRY-RUN
+      // AUDIT (Monitoring-Haertung): nur echte Laeufe (KI + Writes) protokollieren.
+      if (!dryRun) {
+        await accounts.recordAudit({
+          action: "maintenance.presentation-backfill",
+          actorEmail: "cron-secret",
+          detail: `limit=${limit || "alle"}`
+        }).catch(() => {});
+      }
       const result = await backfillPresentationFields({ dryRun, limit });
       return { ok: !(result && result.skipped), mode: dryRun ? "dry-run" : "execute", result };
     });
@@ -1278,6 +1298,9 @@ async function handleRequest(request, response) {
   // KO-Anreicherung-Backfill (P1-1, NUR Admin). Dry-Run per Default; erst ?execute=1
   // schreibt + ruft KI. Harter 5-EUR-Deckel (nie hoeher, egal was uebergeben wird),
   // fail-closed Budget-Gate, Evidence-Guard gegen erfundene Themen, nur tags/policy_field.
+  // bypassBudget=1 umgeht NUR das per-Call-Pre-Gate des Backfills — das globale
+  // LLM-Tageslimit (atomare Reservierung am Choke-Point) gilt IMMER; bei
+  // Erschoepfung stoppt der Lauf kontrolliert (stop=daily-llm-budget).
   // Rollback: docs/ko-anreicherung-analyse.md (tags/policy_field wieder leeren).
   if (url.pathname === "/api/admin/ko-enrichment-backfill") {
     if (!requireRoleOr403(response, authUser, "admin")) return undefined;
@@ -1311,8 +1334,27 @@ async function handleRequest(request, response) {
         saveEnrichment: (id, patch) => saveKnowledgeObjectEnrichment(id, patch),
         log: (m) => console.log("[ko-backfill]", m)
       });
+      // AUDIT (Monitoring-Haertung): kostenausloesende Admin-Aktion dauerhaft
+      // nachvollziehbar machen — nur Metadaten (Parameter + Zaehler), keine Inhalte.
+      // Fail-safe: ein Audit-Fehler darf den Lauf nie brechen.
+      if (execute) {
+        await accounts.recordAudit({
+          action: "admin.ko-enrichment-backfill",
+          userId: authUser?.id, actorEmail: authUser?.email,
+          detail: `execute=${execute} bypassBudget=${bypassBudget} maxCents=${maxEurCents} aiCalls=${result.aiCalls || 0} stop=${result.stop || "-"}`
+        }).catch(() => {});
+      }
       // aiProvider (nur Name, kein Secret) macht sichtbar, ob Azure genutzt wird.
-      return { aiProvider: require("./lib/helmut/ai").aiProviderName(), budgetBypassed: bypassBudget && execute, ...result };
+      // EHRLICHKEIT: bypassBudget umgeht nur das per-Call-Pre-Gate des Backfills —
+      // das globale Tageslimit (atomare Reservierung in requestOpenAI) gilt trotzdem;
+      // die Antwort sagt das explizit, damit ein bewusster Bypass-Lauf bei
+      // erschoepftem Budget nicht wie ein KI-Defekt aussieht.
+      return {
+        aiProvider: require("./lib/helmut/ai").aiProviderName(),
+        budgetBypassed: bypassBudget && execute,
+        ...(bypassBudget && execute ? { budgetBypassHinweis: "bypassBudget umgeht nur das Pre-Gate dieses Backfills. Das globale LLM-Tageslimit gilt weiterhin; bei Erschoepfung stoppt der Lauf mit stop=daily-llm-budget." } : {}),
+        ...result
+      };
     });
   }
 
@@ -1331,6 +1373,13 @@ async function handleRequest(request, response) {
       const before = await readLock();
       await releasePipelineLock("global-understanding").catch(() => {});
       const after = await readLock();
+      // AUDIT (Monitoring-Haertung): zustandsaendernde Recovery-Aktion dauerhaft
+      // nachvollziehbar (nur Metadaten). Fail-safe — bricht die Aktion nie.
+      await accounts.recordAudit({
+        action: "admin.recovery.release-lock",
+        userId: authUser?.id, actorEmail: authUser?.email,
+        detail: `lockVorher=${Boolean(before)} geloest=${Boolean(before) && !after}`
+      }).catch(() => {});
       return { ok: true, lockVorher: Boolean(before), lockNachher: Boolean(after), geloest: Boolean(before) && !after };
     });
   }
@@ -1346,6 +1395,13 @@ async function handleRequest(request, response) {
         return { ok: false, bestaetigungErforderlich: true, failedBetroffen, zurueckgesetzt: 0 };
       }
       const reset = await bulkResetUnderstandingFailed().catch((e) => ({ skipped: true, reason: e && e.message }));
+      // AUDIT: Bulk-Statuswechsel (failed -> pending) nur bei bestaetigter
+      // Ausfuehrung protokollieren; nur Metadaten, fail-safe.
+      await accounts.recordAudit({
+        action: "admin.recovery.reset-failed",
+        userId: authUser?.id, actorEmail: authUser?.email,
+        detail: `failedBetroffen=${failedBetroffen}`
+      }).catch(() => {});
       return { ok: true, failedBetroffen, zurueckgesetzt: failedBetroffen, reset };
     });
   }
@@ -1469,6 +1525,14 @@ async function handleRequest(request, response) {
         ohneRohdokumente: diagnoseFelder ? diagnoseFelder.ohneRohdokumente : null,
         pendingVorher: vorher.pending, pendingNachher: nachher.pending,
         completeVorher: vorher.complete, completeNachher: nachher.complete
+      }).catch(() => {});
+      // AUDIT (Monitoring-Haertung): kostenausloesende Recovery-Aktion
+      // (KI-Understanding-Lauf) dauerhaft nachvollziehbar; nur Metadaten,
+      // fail-safe — ein Audit-Fehler bricht die Antwort nie.
+      await accounts.recordAudit({
+        action: "admin.recovery.run-understanding",
+        userId: authUser?.id, actorEmail: authUser?.email,
+        detail: `ergebnis=${ergebnis} verarbeitet=${verarbeitet} pendingVorher=${vorher.pending}`
       }).catch(() => {});
       return {
         ok: true,
@@ -2491,6 +2555,10 @@ module.exports.__normalizeProfile = normalizeProfile;
 // Test-Hooks (Offline, Audit-Folgebranch): Monitoring-Zweitkanal + Asset-Version.
 module.exports.__sendMonitoringWebhook = sendMonitoringWebhook;
 module.exports.__ASSET_VERSION = () => ASSET_VERSION;
+// Test-Hook (Offline, Monitoring-Haertung): der Health-Report-Builder — prueft
+// Budget-Zeile, Fehler-Spike-Gate, Zu-tun-Empfehlungen und die dryRun-Option
+// (persistState=false), ohne den HTTP-/Cron-Pfad zu veraendern.
+module.exports.__buildHealthReport = buildHealthReport;
 
 if (require.main === module) {
   const server = http.createServer(requestHandler);
@@ -2993,7 +3061,12 @@ function publicReleasePayload(release) {
 // Operativer Morgen-Health-Report (fuer WhatsApp). Bewusst pragmatisch: prueft echte
 // Betriebssignale (Crawl/Briefing frisch, Speicher aktiv, Fehler-Spike) statt des
 // strengen Pitch-Gates, plus Engagement aus dem Nutzungs-Tracking.
-async function buildHealthReport(politicianId = cemInceProfile.id) {
+// options.persistState=false (dryRun-Pfad): buildHealthReport schreibt dann KEINEN
+// Watchdog-State. Vorher konsumierte ein dryRun waehrend einer Erholung die
+// BAD->ERHOLT-Transition (applyRecovery) — der echte 06:00-Lauf meldete danach
+// GESUND statt ERHOLT und der "Alarm aufloesen"-Hinweis entfiel. Der dryRun ist
+// damit vollstaendig nebenwirkungsfrei und als externer Waechter-Check nutzbar.
+async function buildHealthReport(politicianId = cemInceProfile.id, { persistState = true } = {}) {
   // V3: Health-Report bewertet das frisch erzeugte V3-Briefing (kein V2-Blob).
   // P1-4/P1-5: Betriebszustand kommt jetzt aus dem Zwei-Achsen-Zustandsmodell
   // (lib/helmut/watchdog-state.js) auf Basis LEBENDER Zeitstempel — NICHT mehr
@@ -3070,7 +3143,9 @@ async function buildHealthReport(politicianId = cemInceProfile.id) {
   const ok = classification.ok;
 
   // Betriebszustand persistieren (fail-safe) — ermöglicht Recovery-Erkennung.
-  await saveWatchdogState(politicianId, classification.state);
+  // Im dryRun (persistState=false) BEWUSST übersprungen, damit die Probe die
+  // Recovery-Hysterese des echten Laufs nicht konsumiert (siehe Funktionskopf).
+  if (persistState) await saveWatchdogState(politicianId, classification.state);
 
   const engagement = `👤 ${active7} aktiv (7T) · 💬 ${feedback24} Feedback · 📲 ${pushSent24} Push (24h)`;
 
@@ -3103,24 +3178,80 @@ async function buildHealthReport(politicianId = cemInceProfile.id) {
     : null;
   const gnrDegraded = gnrRate != null && gnrRate < 0.5 && gnr.attempted >= 10;
 
+  // Budget-/Kosten-Zeile (Monitoring-Haertung): Budget-Erschoepfung war im Report
+  // unsichtbar — bei fail-closed zeigte sie sich erst am Folgetag indirekt als
+  // stale Output. Reiner Lesezugriff, fail-safe: ein Breakdown-Fehler wird als
+  // "nicht ladbar" ausgewiesen (bei aktivem fail-closed genau der blinde Fleck).
+  let llmBudget = null;
+  try { llmBudget = await getLlmUsageBreakdownToday(); } catch (_) { llmBudget = null; }
+  const budgetExhausted = Boolean(llmBudget && llmBudget.limit != null && llmBudget.remaining === 0);
+  const budgetLine = llmBudget
+    ? `💰 KI-Budget: ${llmBudget.calls}/${llmBudget.limit != null ? llmBudget.limit : "—"} Calls · Rest ${llmBudget.remaining != null ? llmBudget.remaining : "—"}${budgetExhausted ? " ⚠️ erschöpft" : ""} · $${Number(llmBudget.estimatedCostUsd || 0).toFixed(2)} heute · ${llmBudget.skips} Skips`
+    : "💰 KI-Budget: Stand nicht ladbar (Breakdown-Fehler)";
+
+  // Fehler-Spike (Monitoring-Haertung): errors24 hob bisher weder ok noch severity
+  // an — ein Fehlersturm bei sonst frischen Daten blieb "gruen". Schwelle bewusst
+  // unter dem reinen Text-Hinweis in watchdog-state (15).
+  const ERROR_SPIKE_ALARM_THRESHOLD = 10;
+  const errorSpike = errors24 >= ERROR_SPIKE_ALARM_THRESHOLD;
+  const errorSpikeLine = errorSpike
+    ? `🚨 Fehler-Spike: ${errors24} Systemfehler in 24h (Schwelle ${ERROR_SPIKE_ALARM_THRESHOLD})`
+    : null;
+
+  // Pipeline-Laufzeit (Monitoring-Haertung): runSourceCrawl persistiert durationMs
+  // im Crawl-Lauf; fail-safe fuer Alt-Laeufe ohne das Feld.
+  const crawlDurationMs = Number(crawl?.durationMs);
+  const durationLine = Number.isFinite(crawlDurationMs) && crawlDurationMs >= 0
+    ? `⏱ Crawl-Laufzeit: ${Math.round(crawlDurationMs / 1000)}s`
+    : null;
+
+  // Zu-tun-Zeile ehrlich machen: die harten Zusatz-Gates (Cron überfällig, GNR
+  // degradiert, Fehler-Spike) kippten bisher NUR report.ok — der Text meldete
+  // gleichzeitig "Zu tun: Keine." und severity blieb "ok" (ein auf severity
+  // alarmierender Empfänger verpasste den Fall). Jetzt: severity mindestens
+  // "watch" + konkrete Empfehlung in der Zu-tun-Zeile.
+  const extraActions = [];
+  if (overdueCrons.length) extraActions.push(`Vercel-Cron prüfen (${overdueCrons.map((c) => c.name).join("/")} überfällig): vercel.json-Eintrag, CRON_SECRET und Deployment-Logs.`);
+  if (gnrDegraded) extraActions.push("Google-News-Resolver prüfen (URL-Auflösung <50% — Links kippen still zu Proxy/leer).");
+  if (errorSpike) extraActions.push(`Fehler-Spike untersuchen: ${errors24} Systemfehler in 24h — /api/debug/system-errors.`);
+  if (budgetExhausted) extraActions.push("KI-Tagesbudget aufgebraucht — Reset 00:00 UTC abwarten oder HELMUT_MAX_LLM_CALLS_PER_DAY prüfen.");
+
+  let stateText = describeState(classification);
+  if (extraActions.length) {
+    const zusatz = extraActions.join(" ");
+    // "Zu tun: Keine..." (Gesund/Ruhelage/Erholt) durch die konkrete Empfehlung
+    // ersetzen; bei bereits vorhandener Empfehlung additiv anhängen.
+    const replaced = stateText.replace(/^Zu tun: Keine[^\n]*$/m, `Zu tun: ${zusatz}`);
+    stateText = replaced.includes(zusatz) ? replaced : `${stateText}\nZu tun (zusätzlich): ${zusatz}`;
+  }
+  const severityRank = { ok: 0, watch: 1, alarm: 2 };
+  const severity = (overdueCrons.length || gnrDegraded || errorSpike || budgetExhausted) && severityRank[classification.severity] < severityRank.watch
+    ? "watch"
+    : classification.severity;
+
   const text = [
-    describeState(classification),
+    stateText,
     "",
     `Crawl: ${fmtAge(crawlH)} (${checked} Quellen, ${failed} Fehler) · Lage: ${fmtAge(lageH)}`,
     `Briefing: ${briefingItems} Einträge · Verstanden zuletzt: ${fmtAge(completeKoH)} · Fehler (24h): ${errors24}`,
     cronLine,
+    budgetLine,
+    ...(durationLine ? [durationLine] : []),
+    ...(errorSpikeLine ? [errorSpikeLine] : []),
     ...(gnrLine ? [gnrLine] : []),
     engagement
   ].join("\n");
 
   return {
-    ok: ok && overdueCrons.length === 0 && !gnrDegraded,
+    ok: ok && overdueCrons.length === 0 && !gnrDegraded && !errorSpike,
     text,
     state: classification.state,
-    severity: classification.severity,
+    severity,
     overdueCrons: overdueCrons.map((c) => c.name),
     googleUrlResolution: gnr,
     googleUrlResolutionRate: gnrRate,
+    llmBudget: llmBudget ? { calls: llmBudget.calls, limit: llmBudget.limit, remaining: llmBudget.remaining, skips: llmBudget.skips, estimatedCostUsd: llmBudget.estimatedCostUsd } : null,
+    errorSpike,
     active7,
     feedback24,
     errors24,
@@ -3702,7 +3833,9 @@ async function buildSourceArchitectureReport(mandateProfiles = []) {
 const HELMUT_CONFIG_DIAGNOSE_WHITELIST = Object.freeze([
   Object.freeze({ name: "HELMUT_UNDERSTANDING_GATE", codeDefault: "off — Gate wird nie aufgerufen" }),
   Object.freeze({ name: "HELMUT_PARDOK_DISPATCH", codeDefault: "off — 0 Items (inert)" }),
-  Object.freeze({ name: "HELMUT_MAX_LLM_CALLS_PER_DAY", codeDefault: "unbegrenzt (Infinity)" }),
+  // Seit dem Budget-Rollout gibt es KEINEN Infinity-Pfad mehr: fehlend/leer/0/
+  // ungueltig aktiviert das konservative Schutzlimit 50 (storage.llmDailyCallLimit).
+  Object.freeze({ name: "HELMUT_MAX_LLM_CALLS_PER_DAY", codeDefault: "Schutzlimit 50 (fail-closed)" }),
   Object.freeze({ name: "HELMUT_V3_STORE", codeDefault: "aus — V3-Read/Understanding inaktiv" }),
   Object.freeze({ name: "HELMUT_SCORING_MODE", codeDefault: "off — Alt-Ranking byte-identisch" }),
   Object.freeze({ name: "HELMUT_V3_SHADOW_COMPARE", codeDefault: "aus — live nicht verdrahtet" }),
@@ -3750,7 +3883,14 @@ async function buildAdminOverview() {
   // Budget-Wahrheit (Phase 8): heutiger Stand im EXAKTEN Fenster des Budget-Gates
   // (UTC-Kalendertag) — Skips/Fehler getrennt, pro Pfad, pro Mandant, Limit/Rest.
   // Die 24h-Rolling-Statistik (stats.today) bleibt fuer Kostentrends bestehen.
-  const llmBudget = await getLlmUsageBreakdownToday().catch(() => null);
+  // FEHLERFALL (Monitoring-Haertung): statt null ein ehrliches Minimal-Objekt —
+  // der Client zeigt "Budget-Anzeige nicht ladbar" statt die Zeile stumm
+  // auszublenden, und der Handlungsbedarf kann bei aktivem fail-closed warnen
+  // (genau dann verweigert das Gate im Zweifel, waehrend der Admin blind waere).
+  const llmBudget = await getLlmUsageBreakdownToday().catch(() => ({
+    available: false,
+    failClosed: ["1", "true", "on", "yes"].includes(String(process.env.HELMUT_LLM_BUDGET_FAIL_CLOSED || "").trim().toLowerCase())
+  }));
 
   const userById = new Map(users.map((u) => [u.id, u.name || u.email]));
   const userByPoliticianId = new Map(users.filter((u) => u.politicianId).map((u) => [u.politicianId, u.name || u.email]));
@@ -4807,6 +4947,9 @@ async function handleDebugRequest(request, response, url) {
   // GET /api/debug/crawl?politicianId=test-mdb&secret=... — Crawl ausfuehren
   if (url.pathname === "/api/debug/crawl") {
     return handleAsync(response, async () => {
+      // AUDIT (Monitoring-Haertung): kostenausloesende Debug-Aktion (Crawl +
+      // Understanding/KI) dauerhaft nachvollziehbar; Metadaten, fail-safe.
+      await accounts.recordAudit({ action: "debug.crawl", actorEmail: "debug-secret", politicianId }).catch(() => {});
       const result = await runSourceCrawl(politicianId);
       return { debug: true, politicianId, result };
     });
@@ -4840,6 +4983,8 @@ async function handleDebugRequest(request, response, url) {
   // POST /api/debug/seed-ko?secret=... — legt Test-KnowledgeObject an
   if (url.pathname === "/api/debug/seed-ko" && request.method === "POST") {
     return handleAsync(response, async () => {
+      // AUDIT: zustandsaendernde Debug-Aktion (schreibt Test-KO); fail-safe.
+      await accounts.recordAudit({ action: "debug.seed-ko", actorEmail: "debug-secret" }).catch(() => {});
       const now = new Date().toISOString();
       const testKo = {
         id: "test-ko-seed-001",
@@ -4900,6 +5045,8 @@ async function handleDebugRequest(request, response, url) {
   // runPendingUnderstandingShadow auf. Zeigt Anzahl verarbeiteter Vorgaenge.
   if (url.pathname === "/api/debug/run-understanding") {
     return handleAsync(response, async () => {
+      // AUDIT: kostenausloesende Debug-Aktion (KI-Understanding); fail-safe.
+      await accounts.recordAudit({ action: "debug.run-understanding", actorEmail: "debug-secret" }).catch(() => {});
       const rawDocs = await listRecentRawDocuments(500);
       const result = await runPendingUnderstandingShadow(rawDocs);
       const processed = (result && result.results && result.results.filter((r) => r && r.status === "saved").length) || 0;
@@ -4921,6 +5068,8 @@ async function handleDebugRequest(request, response, url) {
   // TEMP: nach erstem erfolgreichen Lauf entfernen.
   if (url.pathname === "/api/debug/create-test-vorgang") {
     return handleAsync(response, async () => {
+      // AUDIT: zustandsaendernde Debug-Aktion (legt pending-KOs an); fail-safe.
+      await accounts.recordAudit({ action: "debug.create-test-vorgang", actorEmail: "debug-secret" }).catch(() => {});
       const { toRawDocumentRow, dedupeRawDocuments } = require("./lib/helmut/dedup");
       const flags = {
         HELMUT_V3_STORE: process.env.HELMUT_V3_STORE || "(nicht gesetzt — Understanding AUS)",
@@ -4966,7 +5115,13 @@ async function handleDebugRequest(request, response, url) {
   }
 
   // GET /api/debug/reset-llm-budget?secret=... — heutige LLM-Usage-Eintraege loeschen.
-  // Setzt den Tages-Zaehler fuer canSpendLlm() auf 0, ohne das Limit-Flag zu aendern.
+  // EHRLICHKEIT (Monitoring-Haertung): Das durchgesetzte Gate ist seit dem
+  // Budget-Rollout die ATOMARE Reservierung am Modell-Choke-Point
+  // (storage.reserveLlmCall) — dieser Endpoint setzt nur das llmUsage-KOSTEN-LOG
+  // zurueck. Im lokalen Datei-Modus wird zusaetzlich der In-Prozess-
+  // Reservierungszaehler zurueckgesetzt (sonst lehnt das Gate trotz geleertem Log
+  // weiter ab). Im Supabase-Modus bleibt die heutige llm_budget_counters-Zeile
+  // UNangetastet (bewusst kein DB-Write hier) — die Antwort sagt das explizit.
   // TEMP: nur fuer Debugging-Sessions — danach entfernen.
   if (url.pathname === "/api/debug/reset-llm-budget") {
     // Review-Fix: dieser Endpunkt hebt genau die Kostenbremse auf, um die es im
@@ -4990,15 +5145,35 @@ async function handleDebugRequest(request, response, url) {
       });
       const removed = all.length - kept.length;
       await writeAuthStore({ ...store, llmUsage: kept });
-      console.log(`[debug/reset-llm-budget] removed=${removed} today=${today}`);
+      // Lokaler Datei-Modus: In-Prozess-Reservierungszaehler mitziehen (Supabase-
+      // Modus zaehlt in llm_budget_counters — die wird hier NICHT angefasst).
+      const supabaseMode = getStorageStatus().backend === "supabase";
+      let reservationCounterReset = false;
+      if (!supabaseMode) {
+        try {
+          require("./lib/helmut/storage").__resetLlmReservationForTests();
+          reservationCounterReset = true;
+        } catch (_) { /* fail-safe: der Log-Reset bleibt gueltig */ }
+      }
+      // AUDIT: Budget-Log-Reset dauerhaft nachvollziehbar (Debug-Route ohne
+      // Session -> Actor "debug-secret"); nur Metadaten, fail-safe.
+      await accounts.recordAudit({
+        action: "debug.reset-llm-budget",
+        actorEmail: "debug-secret",
+        detail: `removed=${removed} reservationCounterReset=${reservationCounterReset}`
+      }).catch(() => {});
+      console.log(`[debug/reset-llm-budget] removed=${removed} today=${today} reservationCounterReset=${reservationCounterReset}`);
       return {
         debug: true,
         today,
         removedEntries: removed,
         remainingTotal: kept.length,
-        message: removed > 0
-          ? `${removed} heutige LLM-Eintraege entfernt (llmUsage-Log). Die Pre-Gates sind wieder frei; der atomare Reservierungszaehler (llm_budget_counters, nach Migration 20260717) bleibt davon UNBERUEHRT — der harte Tagesdeckel gilt weiter.`
-          : "Keine heutigen Eintraege gefunden — Log war bereits leer."
+        reservationCounterReset,
+        message: supabaseMode
+          ? `${removed} heutige llmUsage-Eintraege entfernt. ACHTUNG: Nur das Kosten-Log wurde zurueckgesetzt — der atomare Reservierungszaehler (heutige llm_budget_counters-Zeile, nach Migration 20260717) bleibt unveraendert, das Budget-Gate kann weiter ablehnen.`
+          : (removed > 0 || reservationCounterReset
+            ? `${removed} heutige llmUsage-Eintraege entfernt und In-Prozess-Reservierungszaehler zurueckgesetzt. Budget ist wieder frei.`
+            : "Keine heutigen Eintraege gefunden — Budget war bereits bei 0.")
       };
     });
   }
@@ -5316,7 +5491,10 @@ async function handleDebugRequest(request, response, url) {
         fix = "Vercel: HELMUT_V3_LAZY_UNDERSTANDING=1 setzen. Sofort-Test ohne Cron: /api/debug/create-test-vorgang dann /api/debug/run-understanding.";
       } else if (budget && budget.allowed === false) {
         verdict = `BLOCKIERT: LLM-Tagesbudget erreicht (${budget.reason || "daily-llm-budget-reached"}) — jeder Cluster wird als 'skipped-budget' uebersprungen.`;
-        fix = "/api/debug/reset-llm-budget aufrufen oder HELMUT_MAX_LLM_CALLS_PER_DAY erhoehen.";
+        // EHRLICHER Fix-Hinweis: reset-llm-budget setzt nur das Kosten-Log zurueck,
+        // NICHT den atomaren Reservierungszaehler (llm_budget_counters) — nach der
+        // Migration bleibt das Gate trotz "Reset" zu.
+        fix = "HELMUT_MAX_LLM_CALLS_PER_DAY erhoehen oder bis zum UTC-Tageswechsel warten. /api/debug/reset-llm-budget leert NUR das Kosten-Log, nicht den atomaren Reservierungszaehler (llm_budget_counters).";
       } else if (failedKos > 0) {
         verdict = `TEILWEISE: ${failedKos} pending KO(s) stehen auf understanding_status='failed' (fruehere Azure-Fehler) und werden nie erneut versucht.`;
         fix = "/api/debug/reset-failed-kos aufrufen, dann /api/debug/run-understanding. Vorher Azure mit /api/debug/azure-ping fixen.";
@@ -5364,6 +5542,8 @@ async function handleDebugRequest(request, response, url) {
   // Rein lesend fuer Supabase; genau EIN minimaler Azure-Call (max 16 Output-Tokens). Kein Write.
   if (url.pathname === "/api/debug/pipeline-probe") {
     return handleAsync(response, async () => {
+      // AUDIT: kostenausloesende Debug-Aktion (1 echter Azure-Call); fail-safe.
+      await accounts.recordAudit({ action: "debug.pipeline-probe", actorEmail: "debug-secret" }).catch(() => {});
       const out = { debug: true, supabase: {}, azure: {} };
 
       // --- 1. Supabase direkt: surfacet echte Fehler (fehlende Tabelle/RLS) statt sie zu verschlucken ---
@@ -5455,6 +5635,8 @@ async function handleDebugRequest(request, response, url) {
       // Vor dem Reset: wie viele KOs waren failed?
       const allKosBefore = await listKnowledgeObjects({ limit: 500 }).catch(() => []);
       const failedCount = allKosBefore.filter((k) => k && k.understanding_status === "failed").length;
+      // AUDIT: Bulk-Statuswechsel + anschliessender KI-Lauf; Metadaten, fail-safe.
+      await accounts.recordAudit({ action: "debug.reset-failed-kos", actorEmail: "debug-secret", detail: `failedBefore=${failedCount}` }).catch(() => {});
 
       // Bulk-PATCH: alle failed KOs auf pending (ohne Row-Limit, SQL-Äquivalent)
       const resetResult = await bulkResetUnderstandingFailed().catch((e) => ({ skipped: true, reason: e.message }));
@@ -5486,6 +5668,8 @@ async function handleDebugRequest(request, response, url) {
       const store = await readAuthStore().catch(() => ({}));
       const locks = store.pipelineLocks || {};
       const lockBefore = locks["global-understanding"] || null;
+      // AUDIT: zustandsaendernde Debug-Aktion (Lock-Write); Metadaten, fail-safe.
+      await accounts.recordAudit({ action: "debug.release-understanding-lock", actorEmail: "debug-secret", detail: `lockVorher=${Boolean(lockBefore)}` }).catch(() => {});
 
       await releasePipelineLock("global-understanding").catch((e) =>
         console.error("[debug/release-understanding-lock] release fehlgeschlagen:", e.message)

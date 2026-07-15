@@ -133,6 +133,45 @@ function entry(createdAt, callType, opts = {}) {
     check("gestrige 50 nicht enthalten", b.byCallType.understanding.calls === 600);
   }
 
+  console.log("== 9) Berliner WINTERZEIT-Kante: 23:30Z im Januar = 00:30 Berlin (CET) des Folgetags -> zaehlt zum UTC-Tag ==");
+  {
+    // Winter-Pendant zu §2: Im Januar (CET, UTC+1) ist 23:30Z bereits der
+    // Folgetag in Berlin — das Gate rechnet in UTC, die Anzeige MUSS mitziehen.
+    const REF_WINTER = "2026-01-15T12:00:00.000Z";
+    const log = [
+      entry("2026-01-15T23:30:00.000Z", "understanding"), // 00:30 Berlin am 16.1., UTC noch 15.1.
+      entry("2026-01-16T00:30:00.000Z", "understanding")  // UTC bereits 16.1. -> zaehlt NICHT
+    ];
+    const b = await storage.getLlmUsageBreakdownToday(REF_WINTER, deps(log));
+    check("Winter: 23:30Z zaehlt zum UTC-Tag 15.1. (Gate-Fenster), 00:30Z-Folgetag nicht", b.calls === 1 && b.day === "2026-01-15", `calls=${b.calls} day=${b.day}`);
+  }
+
+  console.log("== 10) Unbekannter/leerer callType: eigener 'unbekannt'-Bucket statt Crash/Verschlucken ==");
+  {
+    const log = [
+      entry("2026-07-16T08:00:00.000Z", ""),        // leerer callType (Legacy-Eintrag)
+      entry("2026-07-16T08:01:00.000Z", undefined), // fehlender callType
+      entry("2026-07-16T08:02:00.000Z", "understanding")
+    ];
+    const b = await storage.getLlmUsageBreakdownToday(REF, deps(log));
+    check("leer/fehlend -> Bucket 'unbekannt' mit 2 Calls", b.byCallType["unbekannt"] && b.byCallType["unbekannt"].calls === 2, JSON.stringify(b.byCallType));
+    check("alle 3 zaehlen als billable (kein Verschlucken)", b.calls === 3);
+  }
+
+  console.log("== 11) estimatedCost='unknown' (String) wird NICHT summiert ==");
+  {
+    // Entsteht bei fehlendem Preis/Token (buildLlmUsageRecord). Die Summierung
+    // darf den String weder addieren noch zu NaN machen.
+    const log = [
+      entry("2026-07-16T08:00:00.000Z", "understanding", { cost: "unknown" }),
+      entry("2026-07-16T08:01:00.000Z", "understanding", { cost: 0.01 })
+    ];
+    const b = await storage.getLlmUsageBreakdownToday(REF, deps(log));
+    check("Gesamtkosten = 0.01 (String ignoriert, kein NaN)", Math.abs(b.estimatedCostUsd - 0.01) < 1e-9, `cost=${b.estimatedCostUsd}`);
+    check("Pfad-Kosten = 0.01, aber beide Calls gezaehlt", Math.abs(b.byCallType.understanding.estimatedCostUsd - 0.01) < 1e-9 && b.byCallType.understanding.calls === 2);
+    check("Mandanten-Kosten ebenfalls ohne NaN", Number.isFinite(b.byTenant["(mandantenlos)"].estimatedCostUsd));
+  }
+
   // Env wiederherstellen
   if (origLimit === undefined) delete process.env.HELMUT_MAX_LLM_CALLS_PER_DAY; else process.env.HELMUT_MAX_LLM_CALLS_PER_DAY = origLimit;
   if (origReserve === undefined) delete process.env.HELMUT_LLM_RESERVE_UNDERSTANDING; else process.env.HELMUT_LLM_RESERVE_UNDERSTANDING = origReserve;
