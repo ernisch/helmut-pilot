@@ -105,7 +105,11 @@ const DENYLIST = new Set([
   "understanding-gate-cost-sim.js", // Simulation/Reporting
   "watchdog-eval.js", // Werkzeug (die Test-Variante ist watchdog-eval-test.js)
   "jwt-diagnose.js", // Live-Diagnose-Werkzeug
-  "jwt-endpoint-diagnose-test.js", // ruft Live-Endpunkte auf
+  // Browser-Smoke braucht ein installiertes Chromium und hat seinen EIGENEN
+  // CI-Job (ci.yml "Browser-/Mobile-Smoke"), der Playwright installiert und
+  // fail-closed ist. Im Offline-Job liefe er nur als stiller SKIP mit — das
+  // täuschte eine Abdeckung vor, die der andere Job wirklich erbringt.
+  "browser-smoke-test.js",
   "lage-backfill.js",
   "presentation-backfill.js",
   "staff-backfill.js",
@@ -121,7 +125,9 @@ function collectSuites() {
     .readdirSync(path.join(ROOT, "scripts"))
     .filter((f) => f.endsWith(".js"))
     .filter((f) => !DENYLIST.has(f))
-    .filter((f) => f.endsWith("-test.js") || f === "p1-security-check.js")
+    // Review-Fix: adversarial-gesamttest.js endet nicht auf "-test.js" und lief
+    // dadurch in KEINEM CI-Pfad — der Namensfilter kennt das Muster jetzt explizit.
+    .filter((f) => f.endsWith("-test.js") || f.endsWith("gesamttest.js") || f === "p1-security-check.js")
     .sort();
 }
 

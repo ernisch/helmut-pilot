@@ -6094,8 +6094,11 @@ function patchCarousel() {
   // Teil-Patch würde allen NICHT ersetzten Elementen (Burger-Menü, Navigation,
   // Aufklapper, Feedback) bei jeder Karussell-Interaktion einen weiteren
   // Listener anhängen — Aktionen feuerten dann doppelt/n-fach (Audit-Fix 2026-07).
+  // bindDeckDecide gehört dazu: die drei Entscheidungs-Buttons liegen IM
+  // ersetzten Teilbaum und wären sonst nach der ersten Interaktion tot.
   bindCarousel(wrap);
   bindDetailOpen(wrap);
+  bindDeckDecide(wrap);
 }
 
 // Öffnet die Detailansicht einer Entscheidung. Gescopt bindbar, damit Teil-Patches
@@ -6112,6 +6115,49 @@ function bindDetailOpen(root) {
       const decision = selectedDecision();
       logDecisionInteraction("detail_opened", decision);
       render();
+    });
+  });
+}
+
+// Gescopt bindbar (wie bindDetailOpen): patchCarousel ersetzt den Karussell-
+// Teilbaum INKLUSIVE der drei Entscheidungs-Buttons — ohne Re-Bind im neuen
+// Teilbaum wären die Buttons nach der ersten Filter-/Pfeil-/Swipe-Interaktion
+// tot (Review-Befund zur Doppelbindungs-Härtung aus Sprint 1).
+function bindDeckDecide(root) {
+  (root || app).querySelectorAll("[data-deck-decide]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const id = button.dataset.deckDecide;
+      const action = button.dataset.deckAction || "watch";
+      const card = helmutDeck.find((entry) => entry.id === id);
+      if (!card || helmutDeckLeavingId) return;
+      const labelMap = { ignore: "Ignoriert", draft: "Entwurf erstellen", watch: "Beobachten" };
+      const logMap = { ignore: "ignored", draft: "draft", watch: "watch" };
+      if (action === "draft" && !previewMode) {
+        fetchWithTimeout(`/api/tasks?${apiScopeQuery()}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: card.title,
+            description: compactText(chiefRecommendationText(card), 220),
+            priority: "high",
+            assignee: "Büro",
+            status: "open"
+          })
+        }).then((res) => (res && res.ok ? res.json() : null))
+          .then((data) => { if (data && data.task) tasks = [data.task, ...tasks]; })
+          .catch(() => {});
+      }
+      card.status = action === "ignore" ? "ignored" : action === "draft" ? "drafting" : "watching";
+      if (!helmutDecidedIds.has(id)) { helmutDecidedIds.add(id); helmutDecisionsMade += 1; }
+      helmutLastDecision = { title: card.title, actionLabel: labelMap[action] || "Beobachten", time: helmutNowHHMM() };
+      logDecisionInteraction(logMap[action] || "watch", card);
+      helmutDeckLeavingId = id;
+      patchCarousel();
+      window.setTimeout(() => {
+        helmutDeckLeavingId = "";
+        helmutCarouselIndex = Math.min(Math.max(0, helmutDeck.length - 1), helmutCarouselIndex + 1);
+        render();
+      }, 280);
     });
   });
 }
@@ -9954,42 +10000,7 @@ function bindActions() {
   // Deck-Entscheidung: ausschließlich über die drei runden Buttons. Swipe entscheidet
   // NIE (keine versehentlichen Entscheidungen). Ruhige Erledigen-Geste + Auto-Advance
   // via patchCarousel (kein globales render bis zum State-Wechsel).
-  app.querySelectorAll("[data-deck-decide]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const id = button.dataset.deckDecide;
-      const action = button.dataset.deckAction || "watch";
-      const card = helmutDeck.find((entry) => entry.id === id);
-      if (!card || helmutDeckLeavingId) return;
-      const labelMap = { ignore: "Ignoriert", draft: "Entwurf erstellen", watch: "Beobachten" };
-      const logMap = { ignore: "ignored", draft: "draft", watch: "watch" };
-      if (action === "draft" && !previewMode) {
-        fetchWithTimeout(`/api/tasks?${apiScopeQuery()}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            title: card.title,
-            description: compactText(chiefRecommendationText(card), 220),
-            priority: "high",
-            assignee: "Büro",
-            status: "open"
-          })
-        }).then((res) => (res && res.ok ? res.json() : null))
-          .then((data) => { if (data && data.task) tasks = [data.task, ...tasks]; })
-          .catch(() => {});
-      }
-      card.status = action === "ignore" ? "ignored" : action === "draft" ? "drafting" : "watching";
-      if (!helmutDecidedIds.has(id)) { helmutDecidedIds.add(id); helmutDecisionsMade += 1; }
-      helmutLastDecision = { title: card.title, actionLabel: labelMap[action] || "Beobachten", time: helmutNowHHMM() };
-      logDecisionInteraction(logMap[action] || "watch", card);
-      helmutDeckLeavingId = id;
-      patchCarousel();
-      window.setTimeout(() => {
-        helmutDeckLeavingId = "";
-        helmutCarouselIndex = Math.min(Math.max(0, helmutDeck.length - 1), helmutCarouselIndex + 1);
-        render();
-      }, 280);
-    });
-  });
+  bindDeckDecide(app);
 
   app.querySelectorAll("[data-helmut-howto-dismiss]").forEach((button) => {
     button.addEventListener("click", () => {
