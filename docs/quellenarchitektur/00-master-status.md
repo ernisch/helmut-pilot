@@ -1,6 +1,23 @@
 # MASTER-STATUS — Helmut Quellenarchitektur-Migration
 
-## NACHTRAG 2026-07-15 (Schritt B: PR 86 live) — aktuellster verifizierter Stand
+## NACHTRAG 2026-07-15 (F12: Migration atomare LLM-Budget-Reservierung LIVE) — aktuellster verifizierter Stand
+
+| Was | Wert (live verifiziert via Supabase + Vercel-API, read-only) |
+|---|---|
+| Migration F12 | `20260717_llm_budget_reservation.sql` in Production eingespielt (Registry-Version `20260715123216`, **genau einmal**). Tabelle `llm_budget_counters` (PK day,scope) + Funktion `helmut_reserve_llm_call(text,text,integer)` **INVOKER**, EXECUTE für public/anon/authenticated **entzogen**, RLS **an**, 0 Policies (service_role-only) — alles per Nachprüfung bestätigt. |
+| Atomik **LIVE** | Belegt durch **realen** Production-Call um 12:37:14 UTC → `llm_budget_counters(2026-07-15, global) used=1`; kein „RPC fehlt"-Fallback-Log mehr, kein Fehler. Der 100er-Deckel ist ab jetzt **hart + parallelsicher** (Row-Lock; Burst-Test 10 parallel bei Deckel 5 → exakt 5, nie 6). |
+| Kontroll-Test (0 bezahlte Calls) | Wegwerf-Scopes (Tag 2000-01-01): cap2 (t,1)(t,2)(f,2) · cap0 (f,0) · cap1 (t,1)(f,1) · no-limit immer erlaubt; alle Testzeilen wieder gelöscht. Lokale Suite `test:llm-reservation` 38/38. |
+| Budget-Env | `HELMUT_MAX_LLM_CALLS_PER_DAY=100` + `HELMUT_LLM_BUDGET_FAIL_CLOSED=1` weiter live. **NOCH OFFEN (Gründer-Dashboard-Schritt, Vercel):** `HELMUT_LLM_RESERVE_UNDERSTANDING=30` + `HELMUT_UNDERSTANDING_LOCK=1` + Redeploy → erst danach greifen Understanding-Reserve (Büro/Lage/App-Start max. 70) und der Doppel-Call-Lock. Solange Reserve=0 (Default): globaler harter 100-Deckel für ALLE Pfade, ohne Understanding-Vorrang. |
+| Prod-Smoke nach F12 | Shell 200 + Asset `e9150801` **unverändert** (Build unberührt — Migration ist DB-only), Auth-Gate aktiv (403 unauth), **0 Systemfehler heute**, **0 neue Runtime-Fehlercluster ab 12:32** (alle 50 Cluster = bekannte Google-News-429/503 aus dem 10:00-Crawl, extern/fail-safe). |
+| Admin-Kostenwahrheit | Audit-Log (`llmUsage`) heute: **33 billable / 1 skipped / $0,0838** — unverändert korrekt als Tages-Kostenanzeige. Der atomare Zähler zählt bewusst **getrennt vorwärts ab Aktivierung** (Design: Supabase-Zähler wird nicht rückwirkend geseedet) → voller UTC-Tagesdeckel greift ab **morgen 00:00 UTC**; heute Restrisiko praktisch null (Morgen-Crons bereits gelaufen, Zähler bei 1). |
+| Rollback | `20260717_llm_budget_reservation_rollback.sql` (drop function+table; App fällt **geloggt** aufs Altverhalten zurück, **kein Deploy nötig**). Env-Rollback: die zwei neuen Variablen entfernen + Redeploy. |
+| Nächste Freigabe | Gründer setzt die 2 Env-Variablen + Redeploy (2-Minuten-Dashboard-Schritt; ich habe keine Vercel-Env-Schreibfähigkeit in dieser Umgebung) → dann verifiziere ich die Understanding-Reserve live. Danach **Go PR 84** (migrationsfreie Code-Ehrlichkeits-Fixes). |
+
+Der Schritt-B-Abschnitt unten ist damit historisch (seine Budget-Zeile „inert bis Migration F12" ist durch diesen F12-Nachtrag überholt).
+
+---
+
+## NACHTRAG 2026-07-15 (Schritt B: PR 86 live) — vorheriger Stand (Budget-Zeile durch F12 oben überholt)
 
 | Was | Wert (live verifiziert via Vercel-API, GitHub-API, Supabase read-only) |
 |---|---|

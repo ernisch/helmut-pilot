@@ -78,7 +78,8 @@ in Vercel setzen + Redeploy → der 05:00-Cron bedient alle aktiven Profile
 (live verifiziert: 33 echte Calls am 15.07. > altes Limit 20; Understanding
 lief 23×). Rollback-Referenz: alter Ist-Wert war `20`.
 
-**NOCH OFFEN (im Schritt mit Migration F12):**
+**NOCH OFFEN — Migration F12 ist seit 2026-07-15 eingespielt, es fehlen NUR
+noch diese zwei Vercel-Env-Werte + ein Redeploy (Gründer-Dashboard-Schritt):**
 - `HELMUT_LLM_RESERVE_UNDERSTANDING=30` — Understanding kann nie unter
   30 Calls/Tag gedrückt werden; Büro/Lage/App-Start teilen sich max. 70
   (behebt das belegte Aushungern strukturell; der Code dafür liegt im
@@ -115,9 +116,25 @@ Fragenkatalog). JEDE verbindliche Festlegung (Art.-9-Grundlage, DSFA,
 AVV-Abschluss, Pilotvereinbarung unterschreiben) braucht Anwalt/DSB — keine
 Rechtsbewertung durch dieses Audit.
 
-## F12 — Migration: atomare LLM-Budget-Reservierung einspielen (vor F5/F6)
+## F12 — Migration: atomare LLM-Budget-Reservierung ✅ AUSGEFÜHRT (2026-07-15)
 
-**Warum:** Der belegte Budget-Race (Read-then-Decide; Limit 20, real bis 185
+**AUSGEFÜHRT mit Gründer-Freigabe „Go für Migration F12"
+(Registry-Version `20260715123216`, genau einmal):**
+`supabase/migrations/20260717_llm_budget_reservation.sql` ist in Production
+eingespielt. Nachprüfung grün — Tabelle `llm_budget_counters` (PK day,scope),
+Funktion `helmut_reserve_llm_call` INVOKER, EXECUTE für public/anon/authenticated
+entzogen, RLS an, 0 Policies. **Atomik live belegt:** realer Production-Call
+12:37:14 UTC → `used=1`; Burst-Test 10 parallel bei Deckel 5 → exakt 5. Kein
+Fehler, 0 neue Systemfehler. **Rückweg:**
+`20260717_llm_budget_reservation_rollback.sql` (App fällt automatisch aufs
+Altverhalten zurück, kein Deploy nötig).
+
+**NOCH OFFEN im selben Schritt (Gründer-Dashboard, Vercel — siehe F5-Rest):**
+`HELMUT_LLM_RESERVE_UNDERSTANDING=30` + `HELMUT_UNDERSTANDING_LOCK=1` + Redeploy.
+
+---
+
+**Ursprüngliche Begründung (historisch):** Der belegte Budget-Race (Read-then-Decide; Limit 20, real bis 185
 Calls/Tag) ist im Code behoben — die Atomik über mehrere Server-Instanzen
 braucht aber die SQL-Funktion `helmut_reserve_llm_call` in Supabase. Bis zur
 Migration läuft das Gate erkennbar+geloggt im Altverhalten weiter (deploybar,
