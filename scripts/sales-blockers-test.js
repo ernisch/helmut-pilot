@@ -7,7 +7,10 @@
 //  3. Monitoring-Zweitkanal (Webhook) neben CallMeBot.
 //  4. Cron-Vollständigkeit + Google-News-Auflösungsquote im Health-Report.
 //  5. Radar-Mention-Quellen werden für nicht-Decision-KOs nachgeladen.
-//  6. Asset-Version fällt auf HELMUT_ASSET_VERSION zurück (CLI-Deploy-Weg).
+//  6. Asset-Versionierung: CLI-Deploy-Fallback, Shell referenziert styles.css/
+//     client.js nur MIT ?v=, Kopplung vercel.json-immutable ↔ ?v=-Referenz,
+//     ASSET_VERSION-Präzedenz FUNKTIONAL via __ASSET_VERSION-Hook (frischer
+//     Modul-Load pro Env-Fall, weil ASSET_VERSION beim Load eingefroren wird).
 
 const fs = require("fs");
 const path = require("path");
@@ -119,12 +122,80 @@ check("ko-enrichment-backfill: execute/bypassBudget nur bei POST wirksam",
   check("Mention MIT nachgeladener Quelle erscheint (Fix ist load-bearing)",
     mitQuelle.length === 1 && /tagesschau/.test(mitQuelle[0].sourceUrl || ""));
 
-  // ── 6) Asset-Version: CLI-Deploy-Fallback ─────────────────────────────────
-  check("ASSET_VERSION-Präzedenz: SHA > HELMUT_ASSET_VERSION > Konstante",
+  // ── 6) Asset-Versionierung (CLI-Deploy-Fallback + immutable-Kopplung) ──────
+  check("ASSET_VERSION-Präzedenz: SHA > HELMUT_ASSET_VERSION > Konstante (Quelltext)",
     /VERCEL_GIT_COMMIT_SHA[\s\S]{0,120}HELMUT_ASSET_VERSION[\s\S]{0,80}"20260701-adminfix1"/.test(serverSource));
   const deploy = fs.readFileSync(path.join(root, "scripts/vercel-deploy.sh"), "utf8");
   check("Deploy-Skript setzt HELMUT_ASSET_VERSION aus Git-SHA+Zeit",
     /HELMUT_ASSET_VERSION=\$ASSET_VER/.test(deploy) && /git rev-parse --short=8 HEAD/.test(deploy));
+
+  // 6a) Die ECHTE Production-Shell (Test-Hook __indexHtml, server.js) muss beide
+  // immutable gecachten Kern-Assets versioniert referenzieren — und zwar NUR
+  // versioniert (jede unversionierte Referenz wäre die Stale-Asset-Falle).
+  const shell = server.__indexHtml();
+  check("Shell (__indexHtml): styles.css nur MIT ?v= referenziert",
+    /styles\.css\?v=/.test(shell) && !/styles\.css(?!\?v=)/.test(shell));
+  check("Shell (__indexHtml): client.js nur MIT ?v= referenziert",
+    /client\.js\?v=/.test(shell) && !/client\.js(?!\?v=)/.test(shell));
+
+  // 6b) Kopplung vercel.json ↔ Shell: JEDE Route mit immutable-Cache-Header darf
+  // in der Shell nur MIT ?v= vorkommen. Damit kann niemand eine neue immutable-
+  // Route ergänzen (oder eine ?v=-Referenz entfernen), ohne dass dieser Test
+  // rot wird.
+  const vercelConfig = JSON.parse(fs.readFileSync(path.join(root, "vercel.json"), "utf8"));
+  const immutableRoutes = (vercelConfig.routes || []).filter((r) =>
+    r.headers && /immutable/i.test(String(r.headers["Cache-Control"] || "")));
+  check("vercel.json: immutable-Routen gefunden (mind. /assets, /styles.css, /client.js)",
+    immutableRoutes.length >= 3);
+  for (const route of immutableRoutes) {
+    if (/\(\.\*\)/.test(route.src)) {
+      // BEWUSSTE AUSNAHME: Muster-Routen wie /assets/(.*) — darunter liegen
+      // favicon.ico und helmut_logo.svg, die absichtlich OHNE ?v= referenziert
+      // werden (stabile Dateien; bei Byteänderung ist Umbenennung oder ?v=
+      // Pflicht, siehe Audit-Befund "Unversionierte Referenzen unter
+      // /assets-immutable"). Die versionierten /assets-Referenzen (Icons,
+      // Manifest) deckt scripts/pwa-icon-test.js ab.
+      continue;
+    }
+    const file = route.src.replace(/^\//, "");
+    const esc = file.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    check(`immutable-Route ${route.src}: Shell referenziert Pfad nur MIT ?v=`,
+      new RegExp(esc + "\\?v=").test(shell) && !new RegExp(esc + "(?!\\?v=)").test(shell));
+  }
+
+  // 6c) Präzedenz FUNKTIONAL über den Test-Hook __ASSET_VERSION (server.js).
+  // ASSET_VERSION wird beim Modul-Load eingefroren — deshalb wird server.js pro
+  // Env-Fall frisch geladen (require.cache löschen) und die Env danach exakt
+  // wiederhergestellt. Die lib-Module bleiben gecacht; der Original-Modul-Cache
+  // wird am Ende zurückgesetzt, damit spätere requires die Erst-Instanz sehen.
+  const serverPath = require.resolve("../server.js");
+  const originalServerModule = require.cache[serverPath];
+  function assetVersionWithEnv(env) {
+    const keys = ["VERCEL_GIT_COMMIT_SHA", "HELMUT_ASSET_VERSION"];
+    const saved = {};
+    for (const k of keys) { saved[k] = process.env[k]; delete process.env[k]; }
+    Object.assign(process.env, env);
+    try {
+      delete require.cache[serverPath];
+      return require(serverPath).__ASSET_VERSION();
+    } finally {
+      delete require.cache[serverPath];
+      for (const k of keys) {
+        if (saved[k] === undefined) delete process.env[k];
+        else process.env[k] = saved[k];
+      }
+    }
+  }
+  try {
+    check("funktional: VERCEL_GIT_COMMIT_SHA gewinnt (auf 8 Zeichen gekürzt)",
+      assetVersionWithEnv({ VERCEL_GIT_COMMIT_SHA: "abcdef1234567890", HELMUT_ASSET_VERSION: "cli-fallback-1" }) === "abcdef12");
+    check("funktional: ohne SHA greift HELMUT_ASSET_VERSION (CLI-Deploy-Weg)",
+      assetVersionWithEnv({ HELMUT_ASSET_VERSION: "cli-fallback-1" }) === "cli-fallback-1");
+    check("funktional: ohne beide Envs greift die Konstante (nur lokal)",
+      assetVersionWithEnv({}) === "20260701-adminfix1");
+  } finally {
+    require.cache[serverPath] = originalServerModule;
+  }
 
   console.log(`\n${passed} PASS, ${failed} FAIL`);
   process.exit(failed ? 1 : 0);

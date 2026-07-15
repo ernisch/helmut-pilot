@@ -10,12 +10,81 @@
 //
 // Aufruf:  node scripts/run-offline-tests.js [--list] [--only <substring>]
 // Exit-Code 0 nur, wenn jede Suite mit Exit-Code 0 endet.
+//
+// NETZ-GUARD (Audit-Folgebranch 2026-07): collectSuites() sammelt JEDE künftige
+// *-test.js automatisch ein — der Schutz vor Netz-/Production-Zugriff bestand
+// nur aus der manuell gepflegten DENYLIST oben (HELMUT_OFFLINE_TEST=1 wurde von
+// keinem Modul konsumiert). Deshalb erzwingt der Runner Offline jetzt TECHNISCH:
+// jede Suite läuft mit NO_NETWORK_TESTS=1 und `--require` DIESER Datei als
+// Preload; der Preload patcht http/https.request/.get und global.fetch und
+// BLOCKT Verbindungen zu Nicht-Localhost-Hosts mit einer klaren Fehlermeldung
+// (Hard-Fail — alle bestehenden Suiten bleiben damit grün, empirisch geprüft).
+// Grenzen: rohe net/tls-Sockets und Kindprozesse der Suiten werden nicht
+// abgefangen; der Guard ist ein Sicherheitsnetz gegen vergessene
+// DENYLIST-Einträge, kein vollständiger Egress-Filter.
 
 const { spawnSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 
 const ROOT = path.join(__dirname, "..");
+
+// ── Netz-Guard (Preload-Modus) ───────────────────────────────────────────────
+// Diese Datei dient doppelt: als Runner (require.main === module) und — via
+// `node --require scripts/run-offline-tests.js <suite>` — als Offline-Guard im
+// Testprozess. So braucht der Zwang keine zweite Datei und gilt automatisch
+// für jede eingesammelte Suite.
+const NET_GUARD_LOCAL_HOSTS = /^(localhost|127(?:\.\d{1,3}){3}|\[?::1\]?|0\.0\.0\.0)$/i;
+const NET_GUARD_MARKER = "[NETZ-GUARD]";
+
+function netGuardHostOf(firstArg) {
+  try {
+    if (typeof firstArg === "string") return new URL(firstArg).hostname;
+    if (firstArg instanceof URL) return firstArg.hostname;
+    if (firstArg && typeof firstArg === "object") {
+      // http.request(options): host darf "host:port" enthalten, hostname nicht.
+      const raw = firstArg.hostname || firstArg.host || "localhost";
+      return String(raw).replace(/:\d+$/, "").replace(/^\[|\]$/g, "");
+    }
+  } catch { /* nicht parsebar -> nicht blocken (kein False-Positive) */ }
+  return null;
+}
+
+function installNetGuard() {
+  const suite = path.basename(process.argv[1] || "unbekannter-prozess");
+  const deny = (host, via) => {
+    const msg = `${NET_GUARD_MARKER} ${suite}: Nicht-Localhost-Verbindung blockiert (${via} -> ${host}). ` +
+      "Offline-Suiten dürfen kein externes Netz nutzen — Suite in die DENYLIST von scripts/run-offline-tests.js " +
+      "aufnehmen, falls sie bewusst Netz braucht (dann läuft sie NICHT im CI-Gate).";
+    // Marker auch auf stderr, damit der Runner Versuche selbst dann meldet,
+    // wenn eine Suite den Fehler fängt und trotzdem grün endet.
+    process.stderr.write(msg + "\n");
+    return new Error(msg);
+  };
+  for (const modName of ["http", "https"]) {
+    const mod = require(modName);
+    for (const fn of ["request", "get"]) {
+      const orig = mod[fn];
+      mod[fn] = function (...args) {
+        const host = netGuardHostOf(args[0]);
+        if (host && !NET_GUARD_LOCAL_HOSTS.test(host)) throw deny(host, `${modName}.${fn}`);
+        return orig.apply(this, args);
+      };
+    }
+  }
+  if (typeof globalThis.fetch === "function") {
+    const origFetch = globalThis.fetch;
+    globalThis.fetch = function (input, init) {
+      let host = null;
+      try {
+        const raw = (input && typeof input === "object" && !(input instanceof URL) && input.url) ? input.url : input;
+        host = new URL(String(raw), "http://localhost").hostname;
+      } catch { host = null; }
+      if (host && !NET_GUARD_LOCAL_HOSTS.test(host)) return Promise.reject(deny(host, "fetch"));
+      return origFetch.call(this, input, init);
+    };
+  }
+}
 
 // Suiten, die NICHT offline lauffähig sind (Netz, Production-URL, Live-LLM, echte DB)
 // oder die keine Tests, sondern Werkzeuge/Backfills sind.
@@ -72,16 +141,25 @@ function main() {
   }
 
   const failed = [];
+  const netAttempts = [];
   const started = Date.now();
   for (const suite of suites) {
     const t0 = Date.now();
-    const res = spawnSync(process.execPath, [path.join("scripts", suite)], {
+    // --require dieser Datei = technischer Offline-Zwang (siehe Kopfkommentar);
+    // NO_NETWORK_TESTS=1 aktiviert den Guard und steht künftig auch lib-Code
+    // (z. B. ai.js/crawler.js) als Fetch-Guard-Signal zur Verfügung.
+    const res = spawnSync(process.execPath, ["--require", __filename, path.join("scripts", suite)], {
       cwd: ROOT,
       encoding: "utf8",
       timeout: 180000,
-      env: { ...process.env, HELMUT_OFFLINE_TEST: "1" }
+      env: { ...process.env, HELMUT_OFFLINE_TEST: "1", NO_NETWORK_TESTS: "1" }
     });
     const ms = Date.now() - t0;
+    // Blockierte Netz-Versuche einsammeln — auch wenn die Suite den Fehler
+    // fängt und grün endet, soll der Versuch am Ende sichtbar sein.
+    for (const line of `${res.stdout || ""}\n${res.stderr || ""}`.split("\n")) {
+      if (line.includes(NET_GUARD_MARKER) && !netAttempts.includes(suite)) netAttempts.push(suite);
+    }
     const ok = res.status === 0;
     if (!ok) {
       failed.push(suite);
@@ -95,6 +173,9 @@ function main() {
 
   const secs = Math.round((Date.now() - started) / 1000);
   console.log(`\n${suites.length - failed.length}/${suites.length} Suiten grün in ${secs}s`);
+  if (netAttempts.length) {
+    console.log(`${NET_GUARD_MARKER} Suiten mit blockierten Nicht-Localhost-Verbindungen: ${netAttempts.join(", ")}`);
+  }
   if (failed.length) {
     console.log(`Fehlgeschlagen: ${failed.join(", ")}`);
     return 1;
@@ -102,4 +183,9 @@ function main() {
   return 0;
 }
 
-process.exit(main());
+if (require.main === module) {
+  process.exit(main());
+} else if (process.env.NO_NETWORK_TESTS === "1") {
+  // Als --require-Preload in einem Testprozess geladen -> Offline-Zwang aktiv.
+  installNetGuard();
+}

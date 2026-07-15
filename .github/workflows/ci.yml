@@ -47,6 +47,11 @@ jobs:
           done
           echo "Syntax OK"
       - name: Offline-Testsuiten (ohne Netz/DB/LLM/Secrets)
+        # Der Runner erzwingt Offline technisch: jede Suite läuft mit einem
+        # --require-Netz-Guard (blockt http/https/fetch auf Nicht-Localhost)
+        # und NO_NETWORK_TESTS=1. browser-smoke-test.js darf hier mangels
+        # Playwright SKIPpen (HELMUT_OFFLINE_TEST=1) — die Browser-Pflicht
+        # liegt beim browser-smoke-Job unten (dort fail-closed).
         run: node scripts/run-offline-tests.js
 
   browser-smoke:
@@ -67,4 +72,10 @@ jobs:
           npm i --no-save playwright@1.56.1
           npx playwright install --with-deps chromium
       - name: Browser-Smoke (Desktop + Mobil, lokaler In-Process-Server)
+        # Fail-closed (Audit-Folgebranch): GitHub setzt CI=true automatisch,
+        # womit browser-smoke-test.js bei fehlendem Playwright bereits mit
+        # Exit 1 abbricht statt still zu SKIPpen. Das Flag macht die Pflicht
+        # zusätzlich explizit und unabhängig vom CI-Env-Verhalten.
+        env:
+          HELMUT_REQUIRE_BROWSER: "1"
         run: node scripts/browser-smoke-test.js
