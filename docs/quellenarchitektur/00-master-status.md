@@ -1,5 +1,22 @@
 # MASTER-STATUS — Helmut Quellenarchitektur-Migration
 
+## NACHTRAG 2026-07-15 (Schritt B: PR 86 live) — aktuellster verifizierter Stand
+
+| Was | Wert (live verifiziert via Vercel-API, GitHub-API, Supabase read-only) |
+|---|---|
+| Production-Commit (main) | **`e915080`** — Squash-Merge PR #86 (Budget-Race atomar + Härtung) auf `3875674` (PR #85) auf `170d310` (PR #82 + Budget-Rollout) |
+| Production-Deployment | `dpl_715BHZo25DXQ3sZ9HAuJvmQ593aD`, READY, Asset-Version `e9150801` live bestätigt |
+| Rollback | Vercel Instant Rollback auf `dpl_9NaaV71MBFaJV9BHiMye4AU43kQN` (`3875674`, Stand nach PR 85) bzw. Revert des Squash-Commits |
+| Quellenmodus | **on** (relational aktiv, Alt-Katalog Fallback) · Gate **shadow** · PARDOK **shadow** · Scoring **off** · BE/BB **inaktiv** (0 Dokumente, verifiziert) |
+| Budget | `HELMUT_MAX_LLM_CALLS_PER_DAY=100` + `HELMUT_LLM_BUDGET_FAIL_CLOSED=1` wirksam. Atomare Reservierung deployt, aber **inert bis Migration F12** — RPC/Tabelle fehlen (verifiziert), Code fällt sicher aufs bisherige Read-then-Decide-Gate zurück (fehlende Migration löst NICHT fail-closed aus). Reserve 30 + Understanding-Lock noch NICHT gesetzt. |
+| Merge-/Prod-Smoke | Suite 91/91 + Browser 21/21 auf `b28d0c2`, CI grün; adversariale Deckel-Prüfung 38/38 (Stand 99/Limit 100, 50 parallel, Reserve 30). Nach Deploy: Shell 200 + Asset-Version `e9150801`, Auth-Gate 401, 0 neue Systemfehler, Datenstand unverändert (5462/274/990/2043), Cem-Profil + 4 Briefings vorhanden, BE/BB/PARDOK 0 |
+| Offene PRs | **PR 84** (Rest-Fixes der Tiefenprüfung: Parlaments-Gate, tote Deck-Buttons, Privacy-Ehrlichkeit, Debug-POST, Mandatsebene, SW-Update — auf `e915080` rebased, Duplikate entfernt, 92/92, **mergebereit, NICHT gemergt**) · **PR 87** (Watchdog, unabhängig, ungeprüft in diesem Auftrag) |
+| Nächste Freigabe | **Migration F12** (`supabase/migrations/20260717_llm_budget_reservation.sql` einspielen → dann `HELMUT_LLM_RESERVE_UNDERSTANDING=30` + `HELMUT_UNDERSTANDING_LOCK=1`) ODER **Go PR 84** (reine Code-Ehrlichkeits-Fixes, migrationsfrei) — Reihenfolge nach Gründer-Wahl |
+
+Der Abschnitt unten (Stand 2026-07-14) bleibt als historischer Detailnachweis.
+
+---
+
 **Dies ist die EINZIGE aktuelle Statuswahrheit.** Alle älteren Status-/Abschlussberichte —
 insbesondere Doku 20–27 und frühere Master-Status-Fassungen — sind **ÜBERHOLT** und dürfen
 nicht mehr als aktueller Stand zitiert werden; sie bleiben historische Detailnachweise.
