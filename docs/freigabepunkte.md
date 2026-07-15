@@ -70,36 +70,27 @@ in Vercel setzen + Redeploy → der 05:00-Cron bedient alle aktiven Profile
 (deaktivierte übersprungen, per-Profil try/catch, 240s-Budget, 0 KI).
 **Rückweg:** Variable entfernen/0 + Redeploy.
 
-## F5 — LLM-Tageslimit auf 100 + Understanding-Reserve (EIN kontrollierter Schritt mit F6/F12)
+## F5 — LLM-Tageslimit ✅ TEILWEISE AUSGEFÜHRT (2026-07-15) — Rest: Reserve + Lock
 
-**Ist-Wert (verifiziert aus 13 Tagen Laufzeitverhalten + Preview-Diagnose):**
-`HELMUT_MAX_LLM_CALLS_PER_DAY=20` — als Rollback-Referenz dokumentiert.
-**Entschiedener Zielwert:** `100` (bewusste Gründer-Entscheidung, statt der
-früher erwogenen 150).
-**Schritt (nach Merge + Migration F12, im SELBEN Schritt wie F6):** Vercel-Env
-`HELMUT_MAX_LLM_CALLS_PER_DAY=100` + `HELMUT_LLM_RESERVE_UNDERSTANDING=30`
-(Understanding kann nie unter 30 Calls/Tag gedrückt werden; Büro/Lage/App-Start
-teilen sich max. 70 — behebt das belegte Aushungern: am 11.07. liefen 38
-Büro-Calls, während Understanding 67× geblockt wurde) +
-`HELMUT_UNDERSTANDING_LOCK=1` (verhindert Doppel-Calls pro Vorgang bei
-überlappenden Cron-Läufen — der Exists-Check ist sonst Read-then-Decide) +
-Redeploy.
-**Neu seit Sprint 2:** Ein Tippfehler im Wert fällt nicht mehr auf „unbegrenzt",
-sondern auf ein Schutzlimit von 50 Calls/Tag (Log-Warnung). **Neu seit dem
-Race-Fix:** Nach Migration F12 ist der Deckel ATOMAR durchgesetzt (parallele
-Calls können ihn nicht mehr überholen) und gilt am einzigen Modell-Callsite —
-kein Pfad (auch Büro/Backfill) kann ihn umgehen. Details:
-`docs/betrieb/llm-budget-reservierung.md`.
-**Rückweg:** dokumentierten Ist-Wert 20 wieder setzen; Reserve-Variable entfernen.
+**AUSGEFÜHRT mit Gründer-Freigabe „Go kontrollierter LLM Budget Rollout"
+(Merge `170d310` + Vercel-Env):** `HELMUT_MAX_LLM_CALLS_PER_DAY=100` und
+`HELMUT_LLM_BUDGET_FAIL_CLOSED=1` sind in Production gesetzt und wirksam
+(live verifiziert: 33 echte Calls am 15.07. > altes Limit 20; Understanding
+lief 23×). Rollback-Referenz: alter Ist-Wert war `20`.
 
-## F6 — Fail-closed für Budget-Prüffehler aktivieren (im SELBEN Schritt wie F5)
+**NOCH OFFEN (im Schritt mit Migration F12):**
+- `HELMUT_LLM_RESERVE_UNDERSTANDING=30` — Understanding kann nie unter
+  30 Calls/Tag gedrückt werden; Büro/Lage/App-Start teilen sich max. 70
+  (behebt das belegte Aushungern strukturell; der Code dafür liegt im
+  Budget-Race-PR und ist mit Default 0 verhaltensneutral).
+- `HELMUT_UNDERSTANDING_LOCK=1` — verhindert Doppel-Calls pro Vorgang bei
+  überlappenden Cron-Läufen (Exists-Check ist sonst Read-then-Decide).
+**Rückweg:** Variablen entfernen + Redeploy.
 
-**Schritt:** Vercel-Env `HELMUT_LLM_BUDGET_FAIL_CLOSED=1` + Redeploy.
-**Wirkung:** Schlägt die Budget-ABFRAGE fehl (Storage-Störung), wird der
-KI-Call verweigert statt erlaubt (lieber ein übersprungenes Briefing als eine
-unkontrollierte Rechnung). **Risiko:** Bei Supabase-Störung entfallen KI-Texte
-(Regel-Fallbacks greifen, seit Sprint 1 ehrlich gekennzeichnet).
-**Rückweg:** Variable entfernen + Redeploy.
+## F6 — Fail-closed ✅ AUSGEFÜHRT (2026-07-15)
+
+`HELMUT_LLM_BUDGET_FAIL_CLOSED=1` ist in Vercel gesetzt und seit Deployment
+`170d310` wirksam. **Rückweg:** Variable entfernen + Redeploy.
 
 ## F7 — Supabase Pro + PITR (Betriebsrisiko, DRINGEND)
 
@@ -137,7 +128,10 @@ Supabase-SQL-Editor ausführen (idempotent, < 1 s, keine Sperren auf
 App-Tabellen, keine Nutzerwirkung). Vorprüfung/Nachprüfung/Rollback exakt in
 `docs/betrieb/llm-budget-reservierung.md`.
 
-**Reihenfolge:** Merge (F10) → diese Migration → F5+F6 (Env-Werte) → Redeploy.
+**Reihenfolge (aktualisiert 2026-07-15, nach Merge von PR 82/`170d310`):**
+Merge der PR-Kette 85 → 86 → 88(Rest-Fixes) → diese Migration →
+F5-Rest (`HELMUT_LLM_RESERVE_UNDERSTANDING=30` + `HELMUT_UNDERSTANDING_LOCK=1`)
+→ Redeploy. Die Env-Werte 100/fail-closed sind bereits live (F5/F6 ✅).
 **Rückweg:** `20260717_llm_budget_reservation_rollback.sql` (App fällt
 automatisch auf Altverhalten zurück, kein Deploy nötig).
 

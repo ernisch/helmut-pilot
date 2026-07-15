@@ -55,6 +55,16 @@ Geprüft wurde der aktuelle Arbeitsbaum (HEAD 844c443 = PR 83 + 3 Folge-Commits,
 | 16 | Latente Alt-Pfade | ai.js:33 enrichBriefingWithAI (1 Call PRO Briefing-Item), ai.js:307 generateHelmutAssessment | modelName() | derzeit 0 (kein produktiver Aufrufer) | KEIN Pre-Gate (nur Choke-Point) | pro Mandant (meta) | ja: refineBriefingItem/helmutAssessment | Fallback je Item bzw. regelbasiert | Reaktivierung = ungegatete Serien-Calls |
 | 17 | Sonstige (manuell) | scripts/understanding-live-smoke.js, scripts/understanding-eval.js (echte Calls möglich, manuell); /api/debug/reset-llm-budget (server.js:4879) resettet NUR das Log, nicht den Reservierungszähler | divers | manuell | Choke-Point greift auch hier (gleicher ai.js-Pfad) | global | ja | – | Debug-Reset: Gate/Anzeige divergieren |
 
-**Gate-Konfiguration global:** HELMUT_MAX_LLM_CALLS_PER_DAY (leer/0 = bewusst kein Limit → dann auch KEINE Reservierung, storage.js:945-948; ungültig = Schutzlimit 50 statt Infinity — PR-82-Fix wirksam); HELMUT_LLM_BUDGET_FAIL_CLOSED Default AUS (Storage-/RPC-Fehler = fail-open); HELMUT_LLM_RESERVE_UNDERSTANDING Default 0 (Aushungerungsschutz inaktiv, Zielwerte 100/30 laut docs/freigabepunkte.md:80 noch offen); Migration 20260717 (atomare Reservierung) laut docs/freigabepunkte.md:132 noch Freigabepunkt — bis dahin läuft das Gate in Production NICHT-atomar im Altverhalten.
+**Gate-Konfiguration global (Stand nach Main-Budget-Rollout `170d310`):**
+HELMUT_MAX_LLM_CALLS_PER_DAY — es gibt KEINEN „kein Limit"-Wert mehr: nur eine
+positive ganze Zahl setzt das Limit; fehlend/leer/0/negativ/unparsebar =
+Schutzlimit 50 (die Reservierung läuft also IMMER; der frühere
+Infinity-Kurzschluss in reserveLlmCall ist toter Code). canSpendLlmForTenant
+zählt seit dem Rollout GLOBAL (echter gemeinsamer Topf aller Pfade/Mandanten).
+HELMUT_LLM_BUDGET_FAIL_CLOSED Default AUS (in Production laut Betreiber manuell
+auf 1 gesetzt — live verifizieren); HELMUT_LLM_RESERVE_UNDERSTANDING Default 0
+(Aushungerungsschutz inaktiv, Zielwert 30 laut docs/freigabepunkte.md offen);
+Migration 20260717 (atomare Reservierung) weiterhin Freigabepunkt — bis dahin
+läuft das Gate in Production NICHT-atomar im Altverhalten.
 
 **Kernbefunde:** (a) Nach PR 82/83 noch ungegatet ggü. Budget-Pre-Gates/Tenant-Budget: Parlaments-Einordnung (server.js:938) und Büro-Engine V3 (office.js:88/104, zusätzlich ohne Mandanten-Kostenzuordnung). (b) Races zwischen Gate-Check und recordLlmUsage bestehen weiter bei: Tenant-EUR-Budget (storage.js:783), Reservierungs-Fallback ohne Migration (storage.js:977), llmUsage-Log-Voll-Upsert (storage.js:567), Office-Zähler/Cache (storage.js:1749, office.js:84), Understanding-Exists-Check ohne aktiven Lock (understanding.js:582), Lage-Lock (lage.js:503). Der globale Call-Count-Race ist am Choke-Point (ai.js:452) korrekt gefixt (offline verifiziert: scripts/llm-reservation-test.js 30 PASS, scripts/kosten-limits-test.js 17 PASS), aber erst nach Migrations- und Env-Freigabe in Production wirksam.
