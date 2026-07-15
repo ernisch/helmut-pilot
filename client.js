@@ -11040,10 +11040,17 @@ async function generateOfficeDraftsInBackground() {
   }
   if (!missing.length) { render(); return; }
 
+  // KOSTENSCHUTZ (Audit-Fix 2026-07): harte Obergrenze pro App-Start. Früher
+  // konnten 2 Anlässe × 8 Formate = 16 LLM-Calls pro Gerät und Öffnen anfallen.
+  // Jetzt maximal 6 pro Lauf — der Rest wird beim nächsten App-Start nachgeholt
+  // (serverseitig deckelt zusätzlich das Tages-/Mandanten-Budget in ai.js).
+  const OFFICE_DRAFTS_MAX_CALLS_PER_RUN = 6;
+  const batch = missing.slice(0, OFFICE_DRAFTS_MAX_CALLS_PER_RUN);
+
   officeDraftsGenerating = true;
   render();
 
-  for (const { decision, format, key } of missing) {
+  for (const { decision, format, key } of batch) {
     try {
       const result = await generateStatementWithBackend(
         `Bereite einen ${format.label}-Entwurf vor zum Thema: ${decision.title}`,
