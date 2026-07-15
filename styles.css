@@ -9745,6 +9745,14 @@ details[open].meeting-detail summary::before { content: '▾ '; }
   opacity: .75;
   margin-top: 2px;
 }
+/* Block 5: getrennte, dezentere Quellen-Aktualität unter der primären Frische-Zeile */
+.lage2-source-recency {
+  display: block;
+  font-size: 11.5px;
+  color: var(--muted-2);
+  opacity: .55;
+  margin-top: 1px;
+}
 /* Ehrliche Herkunftszeile auf Büro-Karten (KI-Entwurf / Regel-Fallback / Fehler) */
 .buero-card-provenance {
   font-size: 11px;
@@ -11075,6 +11083,8 @@ body:has(.lage2) {
 /* Kopf — kompakter (weniger Höhe bis zur Vorschlagskarte) */
 .hstand-head { display: flex; flex-direction: column; gap: 5px; padding: 0 2px 2px; }
 .hstand-head-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+/* Block 5: Status-Badge + manueller ↻-Refresh gruppiert rechts im Kopf */
+.hstand-head-actions { flex: none; display: inline-flex; align-items: center; gap: 8px; }
 .hstand-title { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -.03em; color: var(--text); line-height: 1.05; }
 .hstand-subtitle { margin: 2px 0 0; font-size: 14px; color: var(--muted-2); letter-spacing: -.01em; }
 /* Meta als dezente Pille (Zielbild): Uhr + Briefingtyp · Zeit */

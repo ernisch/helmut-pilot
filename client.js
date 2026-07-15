@@ -87,6 +87,11 @@ let updatesOpen = false;
 let helmutThinking = false;
 let helmutThinkingTimer = null;
 let pipelineRunning = false;
+// Live-Flow (Pilot-Readiness Block 5): Re-Entrancy-Guard + Drossel für den
+// Foreground-Refresh, und Tageswechsel-Erkennung für die relativen Frische-Labels.
+let briefingRefreshing = false;
+let lastBriefingLoadAt = 0;
+let lastRenderedBerlinDay = null;
 let pipelineRunStep = 0;
 let pipelinePhase = null;          // null | "running" | "skipped" | "done" (ehrlicher Abschluss)
 let pipelineCompletionTimer = null;
@@ -236,6 +241,9 @@ const helmutFlowCooldownPrefix = "helmut:lastAssessmentFlow:v1";
 const helmutFlowCooldownMs = 4 * 60 * 60 * 1000;
 const pipelineCooldownKey = "helmut:lastPipelineRun:v1";
 const pipelineCooldownMs = 10 * 60 * 1000;
+// Live-Flow (Block 5): Mindestabstand zwischen zwei Foreground-Auffrischungen —
+// verhindert Refresh-Stürme, wenn visibilitychange bei Tab-/OS-Wechseln rasch feuert.
+const foregroundRefreshMinMs = 60 * 1000;
 let csrfTokenPromise = null;
 
 // SICHTBARE Reiter-Labels. Achtung Historie: die interne View-ID "briefing" gehoert zum
@@ -381,6 +389,11 @@ const priorityTopics = [
 const communicationStyles = ["Sachlich", "Lösungsorientiert", "Angriffslustig", "Vermittelnd", "Aktivistisch"];
 
 async function loadBriefing() {
+  // Block 5 (Live-Flow): Re-Entrancy-Guard + Drossel-Stempel für ALLE Aufrufer
+  // (Boot, manuelles ↻, Foreground-Refresh) in einem try/finally — so stößt der
+  // Foreground-Handler nie einen bereits laufenden Ladevorgang doppelt an.
+  briefingRefreshing = true;
+  try {
   const params = new URLSearchParams(window.location.search);
   activePoliticianId = sanitizePoliticianId(params.get("politicianId") || params.get("profileId") || "cem-ince");
   previewMode = isPreviewModeParam(params);
@@ -441,6 +454,10 @@ async function loadBriefing() {
       return;
     }
     throw error;
+  }
+  } finally {
+    briefingRefreshing = false;
+    lastBriefingLoadAt = Date.now();
   }
 }
 
@@ -3866,6 +3883,28 @@ function lageFreshnessLabel(vorgaenge) {
   return `Neueste Quelle vom ${datum}.`;
 }
 
+// EHRLICHE LAGE-FRISCHE (Pilot-Readiness Block 5): "Zuletzt aktualisiert: heute, HH:MM"
+// aus dem ECHTEN Analyse-Zeitstempel (jüngstes verstandenes knowledge_object; Server:
+// getLatestCompleteKnowledgeObjectAt -> lageBriefing.latestUpdatedAt). Das ist die
+// PRIMÄRE Frische-Wahrheit der Lage und deckungsgleich mit dem Kopf-"Aktuell".
+// Bewusst NICHT aus generatedAt (build-zeit-blind, immer "jetzt") und NICHT aus dem
+// Artikel-Publikationsdatum (lageFreshnessLabel): ein wochenaltes Publikationsdatum
+// würde die frisch geprüfte Lage fälschlich alt aussehen lassen und dem Kopf
+// widersprechen. Der Berliner Kalendertag wird zur Render-Zeit ausgewertet (wie
+// lageFreshnessLabel) — der Tageswechsel-Rerender (updateBerlinClock) hält "heute" ehrlich.
+function lageCheckedLabel(iso) {
+  const t = Date.parse(iso || "");
+  if (!Number.isFinite(t)) return "";
+  const d = new Date(t);
+  const berlinDay = (x) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit" }).format(x);
+  const uhr = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" }).format(d);
+  const dayKey = berlinDay(d);
+  if (dayKey === berlinDay(new Date())) return `Zuletzt aktualisiert: heute, ${uhr} Uhr.`;
+  if (dayKey === berlinDay(new Date(Date.now() - 24 * 3600 * 1000))) return `Zuletzt aktualisiert: gestern, ${uhr} Uhr.`;
+  const datum = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "numeric", month: "long" }).format(d);
+  return `Zuletzt aktualisiert: ${datum}, ${uhr} Uhr.`;
+}
+
 // STOERUNGSWAHRHEIT (Audit-Fix 2026-07): Lage-Ausfallgründe (Server: available:false
 // + reason) auf ehrliche Zustände mappen — Datenausfall/Budget nie als ruhiger Tag.
 function lageDisruption(data) {
@@ -3936,13 +3975,23 @@ function renderLageView() {
   // Zählung + sichtbare Frische der neuesten Quelle (macht veraltete Daten ruhig
   // und ohne Alarmismus erkennbar).
   const countWord = count === 1 ? "relevanter Vorgang" : "relevante Vorgänge";
-  const fresh = lageFreshnessLabel(vorgaenge);
+  // Block 5 (Lage-Frische): PRIMÄRE Frische = echte Analysezeit ("Zuletzt aktualisiert:
+  // heute, HH:MM"), deckungsgleich mit dem Kopf-"Aktuell". Die Quellen-Aktualität
+  // ("Neueste Quelle vom …") bleibt eine GETRENNT beschriftete Zeile: ein wochenaltes
+  // Artikeldatum darf die frisch geprüfte Lage nicht fälschlich alt aussehen lassen.
+  // Fehlt die Analysezeit ausnahmsweise, tritt die Quellen-Aktualität an ihre Stelle
+  // (die Frische verschwindet nie mehr komplett still).
+  const sourceRecency = lageFreshnessLabel(vorgaenge);
+  const checked = lageCheckedLabel(data && data.latestUpdatedAt);
+  const standLine = checked || sourceRecency;
+  const secondRecency = checked ? sourceRecency : "";
   return `
     <section class="lage2">
       <header class="lage2-head">
         <span class="lage2-date">${escapeHtml(dateLabel)}</span>
         <h1 class="lage2-greeting">${escapeHtml(greeting)}</h1>
-        <p class="lage2-count"><b>${count}</b> ${countWord} in deiner Lage.${fresh ? ` <span class="lage2-stand">${escapeHtml(fresh)}</span>` : ""}</p>
+        <p class="lage2-count"><b>${count}</b> ${countWord} in deiner Lage.${standLine ? ` <span class="lage2-stand">${escapeHtml(standLine)}</span>` : ""}</p>
+        ${secondRecency ? `<p class="lage2-source-recency">${escapeHtml(secondRecency)}</p>` : ""}
       </header>
       ${data.demo ? `<span class="lage2-demo">Beispiel-Briefing · Demodaten</span>` : ""}
 
@@ -5490,7 +5539,10 @@ function renderHstandHeader(state) {
           <h1 class="hstand-title">Helmut</h1>
           <p class="hstand-subtitle">Dein politischer Stabschef</p>
         </div>
-        <span class="hstand-status hstand-status--${st.tone}">${escapeHtml(st.label)}</span>
+        <div class="hstand-head-actions">
+          <span class="hstand-status hstand-status--${st.tone}">${escapeHtml(st.label)}</span>
+          ${renderRefreshButton()}
+        </div>
       </div>
       <p class="hstand-meta-line">${HELMUT_ICON_CLOCK}<span>${escapeHtml(type)}${when ? ` · ${escapeHtml(when)}` : ""}</span></p>
       ${partial ? `<p class="hstand-partial">${HELMUT_ICON_EYE}<span>Nur teilweise vollständig – einige Angaben fehlen noch.</span></p>` : ""}
@@ -11837,6 +11889,17 @@ function updateBerlinClock() {
   document.querySelectorAll("[data-berlin-clock]").forEach((element) => {
     element.textContent = `${displayStatusLabel()} · ${formatBerlinNow()}`;
   });
+  // Live-Flow (Block 5): Rollt der Berliner Kalendertag um, während die App
+  // durchgehend sichtbar bleibt (kein visibilitychange), würde die relative
+  // Frische ("Zuletzt aktualisiert: heute" / "Neueste Quelle heute") fälschlich
+  // weiter "heute" behaupten. Genau EINMAL neu rendern, wenn der Tag wechselt —
+  // die Zeitstempel bleiben unangetastet, nur ihr relatives Label wird neu berechnet.
+  const berlinDay = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+  if (lastRenderedBerlinDay === null) { lastRenderedBerlinDay = berlinDay; return; }
+  if (berlinDay !== lastRenderedBerlinDay && !pipelineRunning && !briefingRefreshing) {
+    lastRenderedBerlinDay = berlinDay; // VOR render() setzen -> render() ruft updateBerlinClock erneut, kein Loop
+    render();
+  }
 }
 
 function startBerlinClock() {
@@ -12104,6 +12167,26 @@ function clearAppIconBadge() {
 if (typeof document !== "undefined") {
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") clearAppIconBadge();
+  });
+}
+
+// Live-Flow (Block 5): Bei RÜCKKEHR in die (installierte) App die Lage/Briefing
+// still auffrischen. Ohne das blieb ein zurückkehrender Nutzer unbegrenzt auf dem
+// boot-alten Stand hängen und die Frische-Zeile fror am Boot ein (behauptete nach
+// Mitternacht fälschlich "heute"). /api/app/start ist der günstige Read-Pfad
+// (P1-7 cacheOnly: DB-Reads, kein Live-LLM, keine Writes). Guards gegen Refresh-
+// Stürme: nichts während previewMode / laufender Pipeline / laufendem Refresh, und
+// höchstens ein Auffrischen pro foregroundRefreshMinMs. Ein Fehlschlag bleibt still
+// (der zuletzt geladene Stand bleibt sichtbar) — kein Boot-Fehlerdialog.
+if (typeof document !== "undefined") {
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState !== "visible") return;
+    if (previewMode || pipelineRunning || briefingRefreshing) return;
+    if (Date.now() - lastBriefingLoadAt < foregroundRefreshMinMs) return;
+    // void: hält die Zeile davon ab, mit "loadBriefing()" zu beginnen (die Test-Boot-
+    // Erkennung strippt sonst hier statt am echten Boot-Aufruf) — und macht das
+    // Fire-and-forget explizit; Fehler bleiben still (siehe .catch).
+    void loadBriefing().catch((error) => console.warn("Foreground-Refresh fehlgeschlagen", error && error.message));
   });
 }
 
