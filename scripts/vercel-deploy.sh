@@ -55,15 +55,29 @@ while IFS= read -r line || [[ -n "$line" ]]; do
 done < "$ENV_FILE"
 
 echo ""
+# Sauberer Arbeitsbaum (Review-Fix): `vercel --prod` deployt den ARBEITSBAUM,
+# die Asset-Version wird aber aus dem HEAD-SHA gebaut — mit uncommitteten
+# Aenderungen wuerde die Version luegen (SHA != deployter Code) und ein
+# CLI-Deploy koennte ungeprueften Stand nach Production schieben.
+# Bewusster Override nur per HELMUT_DEPLOY_ALLOW_DIRTY=1.
+if [[ -n "$(git status --porcelain 2>/dev/null)" && "${HELMUT_DEPLOY_ALLOW_DIRTY:-}" != "1" ]]; then
+  echo "FEHLER: Arbeitsbaum ist nicht sauber (git status). Erst committen/stashen."
+  echo "        Bewusster Override: HELMUT_DEPLOY_ALLOW_DIRTY=1 bash scripts/vercel-deploy.sh"
+  exit 1
+fi
 # Asset-Versionierung für den CLI-Deploy-Weg (Audit-Folgebranch): Vercel setzt
 # VERCEL_GIT_COMMIT_SHA nur bei Git-Integration-Deploys, NICHT bei `vercel --prod`.
 # Ohne eine deploy-eindeutige Version blieben client.js/styles.css wegen des
 # immutable-Cachings über CLI-Deploys hinweg unter derselben URL — Bestandsnutzer
 # bekämen dauerhaft alte Assets. Darum eine frische Version aus Git-SHA + Zeit
-# als HELMUT_ASSET_VERSION mitgeben (server.js nutzt sie als Fallback).
+# als HELMUT_ASSET_VERSION mitgeben (server.js nutzt sie als Fallback; setzt
+# Vercel wider Erwarten doch einen Commit-SHA, hat der ohnehin Vorrang und die
+# Version bleibt deploy-eindeutig — beide Wege sind versioniert).
 ASSET_VER="$(git rev-parse --short=8 HEAD 2>/dev/null || echo cli)-$(date -u +%Y%m%d%H%M%S)"
 echo "==> Starte Production-Deployment (HELMUT_ASSET_VERSION=$ASSET_VER)..."
 vercel --prod -e "HELMUT_ASSET_VERSION=$ASSET_VER"
 echo ""
-echo "==> Fertig. Pruefe jetzt:"
-echo "    https://helmut-pilot.vercel.app/api/debug/public/status"
+echo "==> Fertig. Nachpruefung (Post-Deploy-Verifikation):"
+echo "    1. https://helmut-pilot.vercel.app/api/debug/public/status"
+echo "    2. Admin -> System: deploy.version muss '$ASSET_VER' (oder den Git-SHA) zeigen —"
+echo "       bleibt die alte Version stehen, wurde der Asset-Cache NICHT rotiert."

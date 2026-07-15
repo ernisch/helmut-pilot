@@ -57,6 +57,16 @@ for (const file of productiveFiles) {
   }
 }
 
+// DYNAMISCHE Lesarten (Review-Fix): der Regex oben sieht nur woertliche
+// process.env.NAME-Zugriffe. Diese Namen werden ueber process.env[name] bzw.
+// den Flag-Resolver (lib/helmut/flags.js flagValue) gelesen und muessen
+// trotzdem im Inventar stehen — die Liste hier haelt den Scanner ehrlich.
+const DYNAMIC_ENV_READS = [
+  "HELMUT_SOURCE_BLOCKLIST", "HELMUT_SOURCE_ALLOWLIST",          // sourceSafety.js process.env[name]
+  "HELMUT_SOURCE_MODE", "HELMUT_UNDERSTANDING_GATE", "HELMUT_PARDOK_DISPATCH" // flags.js flagValue(name)
+];
+for (const name of DYNAMIC_ENV_READS) envNames.add(name);
+
 const inventory = fs.readFileSync(path.join(root, "docs/betrieb/env-inventar.md"), "utf8");
 
 // Plattform-/Laufzeit-Variablen, die Vercel/Node selbst setzen — im Inventar

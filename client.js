@@ -11840,11 +11840,43 @@ function escapeRegExp(value) {
 // Service Worker bei jedem Laden registrieren (unabhaengig von Push). Ohne
 // registrierten SW mit fetch-Handler bietet Chrome/Brave keinen Installieren-Dialog
 // an. Die spaetere Push-Registrierung nutzt dieselbe Registrierung weiter.
+// UPDATE-ERKENNUNG (Review-Fix): Installierte PWAs/offene Tabs blieben nach
+// einem Deploy unbegrenzt auf der alten client.js — es gab keinerlei
+// Update-Pruefung. Jetzt: registration.update() beim Sichtbarwerden der App
+// (Standard-Muster; laedt die neue sw.js-Version, deren Precache-Rotation die
+// frischen Assets zieht) + einmaliger stiller Reload bei SW-Wechsel, damit die
+// neue Version ohne Nutzeraktion aktiv wird. Reload nur bei verstecktem oder
+// frisch sichtbarem Dokument-Zustand und nur EINMAL (Schutz vor Reload-Schleife).
+let swReloadedOnce = false;
 function registerServiceWorker() {
   if (!("serviceWorker" in navigator)) return;
   const doRegister = () => {
-    navigator.serviceWorker.register("/sw.js").catch((error) => {
+    navigator.serviceWorker.register("/sw.js").then((registration) => {
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+          registration.update().catch(() => { /* offline etc. — naechstes Mal */ });
+        }
+      });
+    }).catch((error) => {
       console.warn("Service-Worker-Registrierung fehlgeschlagen", error);
+    });
+    // sw.js nutzt skipWaiting+clients.claim -> controllerchange feuert sofort.
+    // NIE mitten in der Nutzung neu laden (koennte eine Eingabe zerstoeren):
+    // sofortiger Reload nur bei verstecktem Tab; sonst beim naechsten
+    // Verstecken. Ohne Verstecken greift die neue Version beim naechsten
+    // regulaeren Laden — der Precache ist dann bereits frisch.
+    let swUpdatePending = false;
+    const reloadForNewSw = () => {
+      if (swReloadedOnce) return;
+      swReloadedOnce = true;
+      window.location.reload();
+    };
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (document.visibilityState === "hidden") reloadForNewSw();
+      else swUpdatePending = true;
+    });
+    document.addEventListener("visibilitychange", () => {
+      if (swUpdatePending && document.visibilityState === "hidden") reloadForNewSw();
     });
   };
   if (document.readyState === "complete") doRegister();
