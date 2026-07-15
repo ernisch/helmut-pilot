@@ -54,7 +54,7 @@
 | Supabase, Migration **noch nicht** eingespielt | Erkennung über PostgREST 404/PGRST202 → Altverhalten (Read-then-Decide, `atomic: false`) + **einmalige Log-Warnung**. Der Merge ist dadurch unabhängig von der Migrations-Freigabe deploybar; der bekannte Race bleibt bis zur Migration bestehen. |
 | Lokaler Datei-Modus (Dev/Tests) | In-Prozess-serialisierter Zähler (ein Prozess — korrekt ohne DB). |
 | Reservierungs-Infrastrukturfehler (z. B. Supabase 500) | Wie bisher zentral: fail-open ohne Flag, fail-closed mit `HELMUT_LLM_BUDGET_FAIL_CLOSED=1`. |
-| Kein Limit gesetzt (leer/`0`) | Keine Reservierung, kein zusätzlicher DB-Roundtrip (dokumentiert: bewusst kein Limit). |
+| Limit fehlt / leer / `0` / ungültig | **Schutzlimit 50, fail-closed:** `llmDailyCallLimit()` liefert IMMER eine endliche Zahl (fehlend, leer, `0`, negativ, unparsebar → 50, einmalige Log-Warnung). Die Reservierung läuft dann ganz normal gegen 50. Einen „kein Limit"-Zustand gibt es seit dem Budget-Rollout NICHT mehr; der entsprechende Zweig in `reserveLlmCall` ist ein dokumentierter toter Sicherheitszweig. Wer bewusst mehr will, setzt explizit eine hohe Zahl. |
 
 Anmerkung zur Frage „Ist 100 danach ein echter Gesamtdeckel?": **Ja, global.** Der
 Reservierungs-Scope ist `global` — er zählt alle Mandanten zusammen (das per-Mandant-

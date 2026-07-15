@@ -16,6 +16,15 @@ Der Check „Vercel Preview Comments" gehört Vercel, ist **nicht** Teil des Gat
 und darf NICHT als Pflicht-Check gesetzt werden (er wäre bei deaktivierten
 Preview-Kommentaren dauerhaft ausstehend).
 
+**WARNUNG — pfadgefilterte Workflows NIEMALS als Pflicht-Check setzen:** Neben
+ci.yml laufen drei weitere Workflows auf `pull_request`, aber nur bei Treffern
+ihres Pfadfilters: `verify` (sprint9b-verify.yml), `shadow-pilot`
+(shadow-pilot.yml) und `pardok` (pardok-parser.yml). Als Required Check gesetzt
+bliebe jeder PR ohne Pfad-Treffer dauerhaft auf „Expected" stehen und wäre
+unmergebar. Gleiches gilt für sämtliche Vercel-Checks. Pflicht-Checks sind
+ausschließlich die beiden oben genannten: `Syntax + Offline-Suiten` und
+`Browser-/Mobile-Smoke (Chromium)`.
+
 ## Einrichtung
 
 GitHub → Repo `ernisch/helmut-pilot` → **Settings → Branches → Add branch
@@ -36,6 +45,8 @@ protection rule**:
    Begründung: Der einzige Admin ist zugleich der einzige Entwickler — genau
    dann schützt die Regel vor dem eigenen Versehen. Der Not-Bypass bleibt
    trotzdem möglich (siehe Hotfix-Weg), er ist nur ein bewusster Extra-Schritt.
+5. „Allow force pushes" und „Allow deletions" **NICHT** ankreuzen — die Regel
+   unterbindet damit auch Force-Pushes auf und das Löschen von `main`.
 
 ## Dringende Hotfixes
 
@@ -45,6 +56,21 @@ Zeitverlust. Wenn GitHub Actions selbst ausgefallen ist (der einzige legitime
 Bypass-Fall): Settings → Branches → Regel temporär bearbeiten („Include
 administrators" abwählen) → Merge → Einstellung SOFORT wiederherstellen →
 Vorfall im Betriebs-Log notieren.
+
+## Rollback nach fehlerhaftem Merge
+
+Ist ein fehlerhafter Stand bereits auf `main` gemergt, gibt es zwei Wege — in
+dieser Reihenfolge:
+
+1. **Sofortmaßnahme (Minuten): Vercel Instant Rollback.** Stellt das letzte
+   grüne Production-Deployment wieder her, ohne Git anzufassen — Klickweg und
+   Verifikation in `docs/betrieb/deploy-rollback.md`. `main` bleibt dabei
+   fehlerhaft; der nächste Push würde den Fehler erneut deployen.
+2. **Aufräumen in Git: Revert-PR.** `git revert <merge-sha> -m 1` auf einem
+   Branch, dann normaler PR. Auch der Revert-PR muss durch die Pflicht-Checks —
+   das ist gewollt (ein Revert kann selbst brechen) und dank ~2-Minuten-Suite
+   kein echter Zeitverlust. Kein Force-Push auf `main` zum „Zurückdrehen" —
+   die Regel verbietet ihn ohnehin (siehe Punkt 5 der Einrichtung).
 
 ## Rückweg
 
