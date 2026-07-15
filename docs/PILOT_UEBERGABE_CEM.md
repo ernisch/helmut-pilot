@@ -9,10 +9,12 @@ https://helmut-pilot.vercel.app
 Pilot-Passwort: `<WIRD SICHER UEBERGEBEN — NIE IM REPO SPEICHERN>`
 
 > Sicherheitshinweis (Audit 2026-07): Der fruehere Klartext-Zugangscode wurde aus
-> dieser Datei entfernt. Er stand in der Git-Historie und MUSS rotiert werden
-> (Freigabepunkt: PILOT_SECRET in Vercel neu setzen + Redeploy), bevor das
-> Repository geteilt wird. Zugangsdaten werden nur noch ueber einen sicheren
-> Kanal (Signal/persoenlich) uebergeben.
+> dieser Datei entfernt. Er stand in der Git-Historie; PILOT_SECRET wurde am
+> 2026-07-15 in Vercel rotiert (Redeploy erfolgt; Zugang via POST /api/pilot/unlock
+> -> HTTP 200, Body {"ok":true} verifiziert) — der alte Code ist damit ungueltig.
+> Offen bleibt nur die optionale Git-Historien-Bereinigung (Freigabepunkt F2).
+> Zugangsdaten werden nur noch ueber einen sicheren Kanal (Signal/persoenlich)
+> uebergeben.
 
 ## Wofuer Helmut gedacht ist
 

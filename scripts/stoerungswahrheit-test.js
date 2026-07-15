@@ -70,6 +70,7 @@ function check(name, cond, detail = "") {
     setBriefing: (b) => { briefing = b; },
     briefingDisruption: () => briefingDisruption(),
     lageDisruption: (d) => lageDisruption(d),
+    radarDisruption: (s) => radarDisruption(s),
     renderLageEmpty: (d) => renderLageEmpty("Guten Morgen.", "Heute", d && d.emptyState, d),
     fresh: (v) => lageFreshnessLabel(v)
   };`;
@@ -124,6 +125,16 @@ function check(name, cond, detail = "") {
   const l3 = st.lageDisruption({ available: false, reason: "budget" });
   check("Lage-Gründe werden unterschieden (Störung/Datenlücke/Budget)",
     l1 && l1.kind === "stoerung" && l2 && l2.kind === "datenluecke" && l3 && l3.kind === "budget");
+
+  // Teil 5 (2026-07): Radar unterscheidet das KI-Tageslimit ("budget") ebenfalls vom
+  // Datenlücken-Zustand — gleiche zentrale Kennung, gleicher Wortlaut wie briefing/lage.
+  const r1 = st.radarDisruption({ quality: { reason: "budget" } });
+  const r2 = st.radarDisruption({ quality: { reason: "keine-vorgaenge" } });
+  const r3 = st.radarDisruption({ quality: { reason: "store-error" } });
+  check("Radar budget -> eigener Kontingent-Zustand 'KI-Tageskontingent erreicht' (nicht Datenlücke)",
+    r1 && r1.kind === "budget" && r1.title.includes("Tageskontingent"));
+  check("Radar keine-vorgaenge -> Datenlücke (getrennt vom Budget)", r2 && r2.kind === "datenluecke");
+  check("Radar store-error -> Störung", r3 && r3.kind === "stoerung");
 
   const htmlStoerung = st.renderLageEmpty({ available: false, reason: "store-error" });
   check("Lage-Leerzustand bei Störung zeigt Störungstext + data-empty-kind",

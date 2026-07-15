@@ -431,8 +431,13 @@ async function loadBriefing() {
     generateOfficeDraftsInBackground();
   } catch (error) {
     if (renderedFromCache) {
+      // Der Live-Refresh nach dem Cache-Render ist DEFINITIV fehlgeschlagen (fetch-
+      // Reject/Timeout/Abbruch, HTTP-Fehler oder JSON-Parse-Fehler). Es laeuft/plant
+      // nichts mehr im Hintergrund — daher KEIN "aktualisiert im Hintergrund" (unwahr),
+      // sondern eine ehrliche Meldung: der zuletzt bekannte Stand bleibt sichtbar.
+      // Retry-Moeglichkeit besteht ueber den Refresh-Button (↻) im Helmut-Kopf.
       console.warn("Live update after cached start failed", error);
-      showToast("Helmut aktualisiert im Hintergrund");
+      showToast("Aktualisierung fehlgeschlagen – letzter Stand bleibt sichtbar");
       return;
     }
     throw error;
@@ -5255,6 +5260,20 @@ function renderHelmutThinkingView() {
       </section>
     `;
   }
+  // Ehrlicher Fehlerabschluss: der Lauf ist fehlgeschlagen (HTTP-/Netz-/Parse-Fehler
+  // oder {ok:false}). KEINE Erfolgsmeldung, kein technischer Fehlertext — nur eine
+  // ruhige Meldung, dass der zuletzt bekannte Stand sichtbar bleibt, plus Retry-Hinweis
+  // (Refresh-Button ↻ im Kopf). Statisches "H" ohne rotierenden Ring -> kein
+  // vorgetaeuschter weiterlaufender Ladezustand.
+  if (pipelinePhase === "error") {
+    return `
+      <section class="helmut-refresh helmut-refresh--error" aria-live="polite">
+        <div class="helmut-refresh-core" aria-hidden="true"><span class="helmut-refresh-mark">H</span></div>
+        <p class="helmut-refresh-title">Aktualisierung gerade nicht möglich</p>
+        <p class="helmut-refresh-sub">Helmut konnte den Stand gerade nicht neu prüfen. Der zuletzt bekannte Stand bleibt sichtbar. Bitte in einem Moment erneut auf „neu prüfen" tippen.</p>
+      </section>
+    `;
+  }
   // Ehrlicher Abschluss: "done" = echter Lauf, "skipped" = Server hat den Lauf
   // uebersprungen (Throttle/Lock) -> KEIN "gecrawlt/analysiert" vortaeuschen.
   if (pipelinePhase === "skipped" || pipelinePhase === "done") {
@@ -7672,8 +7691,14 @@ function renderOfficeView() {
   const hasBriefing = topDecisions.length > 0;
   const generating = officeDraftsGenerating;
 
-  const readyCount = allCards.filter(({ format }) => draftStatus(format) === "Entwurf bereit").length;
-  const holdCount = totalCount - readyCount;
+  // "Bereit" zaehlt AUSSCHLIESSLICH echte, nutzbare Entwuerfe: officeCardStatus prueft
+  // isValidDraft und liefert "Entwurf bereit" nur bei tatsaechlich vorliegendem Entwurf —
+  // NICHT die rein editorische Format-Vorgabe (draftStatus). So werden "Wird vorbereitet",
+  // "Erstellung fehlgeschlagen" und "Noch kein Entwurf" nie als bereit gezaehlt. holdCount
+  // zaehlt nur die echten Bereithalten-Formate, damit laufende/fehlgeschlagene Karten
+  // weder als bereit noch als "zum Bereithalten" verbucht werden (kein Umdeuten).
+  const readyCount = allCards.filter(({ decision, format }) => officeCardStatus(decision, format) === "Entwurf bereit").length;
+  const holdCount = allCards.filter(({ format }) => draftStatus(format) !== "Entwurf bereit").length;
 
   const firstTwoFormats = formats.slice(0, 2).map((f) => OFFICE_FORMAT_META[f.id]?.formatLabel || f.label).filter(Boolean);
   const eyebrow = hasBriefing && totalCount
@@ -7688,8 +7713,12 @@ function renderOfficeView() {
       ? "Entwürfe werden vorbereitet&hellip;"
       : "Deine Entwürfe erscheinen hier automatisch, sobald deine Lage geladen ist.";
 
-  const readyFormats = formats.filter((f) => draftStatus(f) === "Entwurf bereit");
-  const holdFormats = formats.filter((f) => draftStatus(f) !== "Entwurf bereit");
+  // Konsistent zur ehrlichen Zaehlung: ein Format gilt nur als "bereit", wenn fuer
+  // mindestens einen der Top-Vorgaenge ein echter Entwurf vorliegt (officeCardStatus) —
+  // nie "Zuerst pruefen" ueber einem fehlgeschlagenen/laufenden Entwurf. Sonst
+  // Bereithalten/Optional. Verhindert den Widerspruch Summary ("0 bereit") ↔ Priority-Hinweis.
+  const readyFormats = formats.filter((f) => allCards.some(({ decision, format }) => format.id === f.id && officeCardStatus(decision, format) === "Entwurf bereit"));
+  const holdFormats = formats.filter((f) => !readyFormats.some((rf) => rf.id === f.id));
   const priorityHint = hasBriefing && readyFormats.length ? `
     <div class="buero-priority-hint">
       ${readyFormats.slice(0, 1).map((f) => `<span class="buero-priority-label">Zuerst prüfen:</span><span class="buero-priority-value">${escapeHtml(OFFICE_FORMAT_META[f.id]?.formatLabel || f.label)}</span>`).join("")}
@@ -8380,6 +8409,16 @@ function radarDisruption(state) {
       kind: "stoerung",
       title: "Radar derzeit nicht ladbar",
       sub: "Technische Störung beim Laden der Datenbasis — das ist kein ruhiger Tag. Bitte in einigen Minuten erneut öffnen."
+    };
+  }
+  // Konsistenz mit briefingDisruption()/lageDisruption(): erreicht das KI-Tageslimit
+  // (zentraler reason-Code "budget") jemals den Radar-Lesepfad, wird es ehrlich als
+  // Budget-Zustand gezeigt — nie als Datenlücke. Gleiche Kennung, gleicher Wortlaut.
+  if (reason === "budget") {
+    return {
+      kind: "budget",
+      title: "KI-Tageskontingent erreicht",
+      sub: "Neue Auswertungen pausieren bis morgen früh. Bereits ausgewertete Vorgänge bleiben gültig."
     };
   }
   if (reason === "keine-vorgaenge") {
@@ -10725,12 +10764,26 @@ function updatePipelineProgress() {
 async function executePipelineRun() {
   try {
     const response = await fetchWithTimeout(`/api/pipeline/run?${apiScopeQuery()}`, {}, 90000);
-    const result = response.ok ? await response.json() : null;
+    // Erfolg NUR bei echtem, erfolgreichem Serverergebnis. HTTP-Fehler (response.ok
+    // false), nicht parsebare Antwort oder ein explizites {ok:false} duerfen NIE als
+    // Erfolg ("done") gemeldet werden — sonst sieht der Nutzer "Aktueller Stand
+    // geladen", obwohl der Lauf fehlschlug. Der Erfolgsbody traegt kein ok:true (rohes
+    // Crawl-Ergebnis bzw. {..., skippedReason}); daher ist `result.ok === false` nur
+    // ein defensiver Fehler-Guard, der echten Erfolg NICHT blockiert.
+    let result = null;
+    if (response.ok) { try { result = await response.json(); } catch (_) { result = null; } }
+    if (!response.ok || !result || result.ok === false) {
+      await finishPipelineRun("error");
+      return;
+    }
     // Ehrlich: hat der Server den Lauf übersprungen (Throttle/Lock), NICHT so tun,
     // als wären Quellen gecrawlt und KI-Analyse gelaufen -> ruhige "Stand ist aktuell"-Meldung.
-    await finishPipelineRun(result && result.skippedReason ? "skipped" : "done");
+    await finishPipelineRun(result.skippedReason ? "skipped" : "done");
   } catch {
-    await finishPipelineRun("done", { reload: true });
+    // Netzwerkfehler/Timeout/Abbruch: ehrlicher Fehlerabschluss (kein Erfolg). Der
+    // zuletzt bekannte Stand bleibt sichtbar; der Serverlauf kann nachlaufen -> spaeter
+    // ruhig frisch nachladen (reload).
+    await finishPipelineRun("error", { reload: true });
   }
 }
 
@@ -10738,7 +10791,13 @@ async function finishPipelineRun(phase, opts = {}) {
   pipelineRunning = false;
   pipelineRunStep = 0;
   if (pipelineStepTimer) { window.clearTimeout(pipelineStepTimer); pipelineStepTimer = null; }
-  pipelinePhase = phase === "skipped" ? "skipped" : "done";
+  // Drei ehrliche Endzustaende: "skipped" (Server hat den Lauf uebersprungen),
+  // "error" (Lauf fehlgeschlagen — HTTP-/Netz-/Parse-Fehler oder {ok:false}) und
+  // "done" (echter Erfolg). Nur "done" darf eine Erfolgsmeldung zeigen.
+  pipelinePhase = phase === "skipped" ? "skipped" : phase === "error" ? "error" : "done";
+  // Nach einem Fehler den Refresh-Cooldown zuruecksetzen (er wurde beim Start gesetzt),
+  // damit "erneut versuchen" sofort moeglich ist — der Lauf hat ja nichts geliefert.
+  if (pipelinePhase === "error") { try { window.localStorage.removeItem(pipelineCooldownKey); } catch (_) {} }
   animateNextRender = true;   // Abschlusskarte EINMAL sanft einblenden
   render(); // ruhige Abschlussmeldung anzeigen (kein Toast, keine Debug-Liste)
   // loadBriefing kann mehrfach rendern (Cache + Netz) — während der Abschluss sichtbar
@@ -10747,7 +10806,9 @@ async function finishPipelineRun(phase, opts = {}) {
   // Bei Netzfehler kann der Serverlauf noch nachlaufen -> spät nochmal frisch rendern (ruhig).
   if (opts.reload) window.setTimeout(async () => { try { await loadBriefing(); } catch (_) {} if (currentView === "helmut") render(); }, 20000);
   if (pipelineCompletionTimer) window.clearTimeout(pipelineCompletionTimer);
-  const holdMs = pipelinePhase === "skipped" ? 1400 : 1700;
+  // "error" haelt etwas laenger, damit die ruhige Fehlermeldung lesbar bleibt, bevor
+  // wieder der (ehrlich als "Nicht aktuell" gekennzeichnete) letzte Stand erscheint.
+  const holdMs = pipelinePhase === "skipped" ? 1400 : pipelinePhase === "error" ? 2600 : 1700;
   pipelineCompletionTimer = window.setTimeout(() => {
     pipelinePhase = null;
     helmutThinking = false;
@@ -11871,7 +11932,10 @@ function apiScopeQuery(extra = {}) {
 }
 
 function displayStatusLabel() {
-  return previewMode ? "Vorschau" : (briefing?.status || "Aktuell");
+  // Ohne geladenes Briefing NIE "Aktuell" behaupten (das war ein latenter unehrlicher
+  // Default). Der Kopf-Status kommt sonst aus briefing.status, das serverseitig aus der
+  // echten Frische (currentHelmutState) abgeleitet wird — siehe decorateBriefingFreshness.
+  return previewMode ? "Vorschau" : (briefing?.status || "Wird geladen");
 }
 
 function escapeHtml(value) {

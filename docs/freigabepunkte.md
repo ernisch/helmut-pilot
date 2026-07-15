@@ -8,29 +8,38 @@ Audit-Fixes; alles Übrige ist bereits im Code umgesetzt und getestet.
 
 ---
 
-## F1 — PILOT_SECRET rotieren (Sicherheit, DRINGEND)
+## F1 — PILOT_SECRET rotieren ✅ AUSGEFÜHRT (2026-07-15)
 
-**Warum:** Der geteilte Pilot-Zugangscode stand bis Sprint 1 im Klartext in
-`docs/PILOT_UEBERGABE_CEM.md` und steht weiterhin in der Git-Historie
-(2 Commits). Jeder mit (auch historischem) Repo-Zugriff kennt ihn.
+**AUSGEFÜHRT (2026-07-15):** Neuer, langer PILOT_SECRET in Vercel (Project
+`helmut-pilot`, Production) gesetzt + Redeploy. Zugang anschließend verifiziert:
+`POST /api/pilot/unlock` → **HTTP 200**, Body `{"ok":true}`. Der alte Code ist
+damit sofort ungültig; **F1 ist technisch abgeschlossen.** Der neue Wert wurde
+ausschließlich über einen sicheren Kanal an Cem übergeben — nie im Repo, kein
+Wert/Fragment in dieser oder einer anderen Datei. Offen bleibt nur die optionale
+Git-Historien-Bereinigung (siehe F2).
 
-**Schritt (Vercel-Dashboard):** Project `helmut-pilot` → Settings → Environment
-Variables → `PILOT_SECRET` → neuen, langen Zufallswert setzen → Redeploy
-(Deployments → aktuelles → Redeploy). Neuen Wert NUR über sicheren Kanal
-(Signal/persönlich) an Cem geben.
+**Warum (Historie, war der Auslöser):** Der geteilte Pilot-Zugangscode stand bis
+Sprint 1 im Klartext in `docs/PILOT_UEBERGABE_CEM.md` und steht weiterhin in der
+Git-Historie (2 Commits). Jeder mit (auch historischem) Repo-Zugriff kannte ihn —
+nach der Rotation ist dieser Alt-Code wertlos.
 
-**Wirkung:** Alter Code sofort ungültig; laufende Pilot-Cookies (helmut_pilot)
-verfallen — Cem muss den neuen Code einmal eingeben. Account-Logins
+**Durchgeführte Schritte (Vercel-Dashboard):** Project `helmut-pilot` → Settings →
+Environment Variables → `PILOT_SECRET` → neuen, langen Zufallswert gesetzt →
+Redeploy (Deployments → aktuelles → Redeploy). Neuer Wert NUR über sicheren Kanal
+(Signal/persönlich) an Cem gegeben.
+
+**Wirkung (eingetreten):** Alter Code sofort ungültig; laufende Pilot-Cookies
+(helmut_pilot) verfallen — Cem gibt den neuen Code einmal ein. Account-Logins
 (helmut_session) sind NICHT betroffen.
 
-**Risiko:** Kurzer Login-Moment für Pilotnutzer. **Rückweg:** alten Wert wieder
-setzen (nicht empfohlen).
+**Rückweg (nicht nötig):** alten Wert wieder setzen (nicht empfohlen).
 
 ## F2 — Git-Historie bereinigen (optional, vor Repo-Weitergabe)
 
 **Warum:** Der alte Pilot-Code bleibt in der Historie lesbar, bis diese
-umgeschrieben wird. Nach F1 ist er wertlos — die Bereinigung ist nur nötig,
-bevor das Repo an Dritte (Dienstleister, Due Diligence) geht.
+umgeschrieben wird. F1 ist ausgeführt (2026-07-15), der alte Code ist damit bereits
+wertlos — die Bereinigung ist nur noch nötig, bevor das Repo an Dritte
+(Dienstleister, Due Diligence) geht.
 
 **Schritt:** `git filter-repo --replace-text <(echo 'ALTER_CODE==>ENTFERNT')`
 auf einem frischen Klon, dann Force-Push von `main` (koordinieren: alle offenen

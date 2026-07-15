@@ -2522,6 +2522,10 @@ module.exports.__normalizeProfile = normalizeProfile;
 // Test-Hooks (Offline, Audit-Folgebranch): Monitoring-Zweitkanal + Asset-Version.
 module.exports.__sendMonitoringWebhook = sendMonitoringWebhook;
 module.exports.__ASSET_VERSION = () => ASSET_VERSION;
+// Test-Hook (Offline): der Kopf-Frische-Decorator — prueft, dass der oeffentliche
+// Briefing-Status aus der EINEN Frische-Wahrheit (currentHelmutState) stammt und
+// ein alter/fehlgeschlagener Lauf nie "Aktuell" ergibt (Konsistenz Kopf ↔ Karte).
+module.exports.__decorateBriefingFreshness = decorateBriefingFreshness;
 
 if (require.main === module) {
   const server = http.createServer(requestHandler);
@@ -2622,10 +2626,25 @@ function shouldRefreshLatestBriefing(briefing, url) {
 
 function decorateBriefingFreshness(briefing) {
   if (!briefing || briefing.status === "Demo") return briefing;
-  const stale = isBriefingStaleForBerlin(briefing);
+  // EINE Wahrheit fuer die Aktualitaet: der Kopf-Status folgt der Frische der
+  // TATSAECHLICH angezeigten Daten (briefing.currentHelmutState — echte
+  // Datenzeitstempel + Tages-Guard aus buildCurrentHelmutState), NICHT dem
+  // generatedAt-Feld. Das wird im V3-Read-Pfad bei JEDEM Request auf now gesetzt,
+  // wodurch isBriefingStaleForBerlin nie "stale" meldete und der Kopf faelschlich
+  // "Aktuell" zeigte, waehrend die Karte (HSTAND_STATUS_LABEL[currentHelmutState.status])
+  // ehrlich "Nicht aktuell" meldete. Fehlt der State (Alt-/Nicht-V3-Pfad) -> bisheriger
+  // generatedAt-Guard als Rueckfall (rueckwaertsverträglich).
+  const state = briefing.currentHelmutState;
+  const hasState = state && typeof state === "object" && typeof state.status === "string";
+  const stale = hasState
+    ? (state.staleState === true || state.status === "stale" || state.errorState === true || state.status === "error")
+    : isBriefingStaleForBerlin(briefing);
   const hasDecisionItems = Number(briefing.items?.filter((item) => item.decision !== "Ignorieren").length || 0) > 0;
   const hasSituationalItems = Number(briefing.situationalBriefing?.length || 0) > 0;
-  const status = stale ? "Veraltet" : hasDecisionItems || hasSituationalItems ? "Aktuell" : "Keine neue Entscheidung";
+  // "Aktuell" nur bei WIRKLICH frischem Stand — ein leerer/unvollstaendiger State
+  // (empty) darf nie "Aktuell" ergeben (sonst Widerspruch zur Karte "Kein aktueller Stand").
+  const fresh = hasState ? state.status === "fresh" : (hasDecisionItems || hasSituationalItems);
+  const status = stale ? "Veraltet" : fresh ? "Aktuell" : "Keine neue Entscheidung";
   return {
     ...briefing,
     status,
