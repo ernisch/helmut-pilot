@@ -96,7 +96,7 @@ delete process.env.HELMUT_SOURCE_MODE; // Flag-Datei (=on) greift -> Cutover-Mod
 
 let qb = qbOf(server.__backendHealth(freshCrawl(145), briefing, null, storage, summary, evidence));
 check("Aufrufort mode on: gesunder 145er-Crawl -> Quellenbasis grün", qb && qb.ok === true, qb && qb.detail);
-check("Aufrufort mode on: zählt 145 (relationaler Plan), NICHT Blob 144", qb && /145/.test(qb.detail) && /relationaler Plan/.test(qb.detail), qb && qb.detail);
+check("Aufrufort mode on: zählt 145 (geprüfter Crawl), NICHT Blob 144", qb && /145/.test(qb.detail) && /geprüfter Crawl/.test(qb.detail), qb && qb.detail);
 
 qb = qbOf(server.__backendHealth(freshCrawl(40), briefing, null, storage, summary, evidence));
 check("Aufrufort mode on: Kollaps 40 -> Quellenbasis rot (Blob 144 rettet NICHT)", qb && qb.ok === false, qb && qb.detail);

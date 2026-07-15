@@ -2764,9 +2764,12 @@ function backendHealth(crawl, briefing, debugReport, storage, storeSummary, evid
     crawlCheckedSources: crawl?.checkedSources,
     mode: backendSourceMode
   });
-  // Ehrliches Label je Quelle der Zahl: im Cutover-Modus zählt der relationale Plan
-  // (crawl.checkedSources), sonst der alte Katalog-Blob. Kein pauschales "(relationaler Plan)".
-  const sourceBaseLabel = backendSourceMode === "on" && Number(crawl?.checkedSources || 0) > 0 ? "relationaler Plan" : "Katalog-Basis";
+  // Ehrliches Label je Quelle der Zahl: im Cutover-Modus zählt der aktive Crawl
+  // (crawl.checkedSources) — normalerweise der relationale Plan, bei Plan-Ladefehler aber
+  // der Alt-Katalog-Fallback (scheduler.getSourcesForProfile). backendHealth kann die beiden
+  // nicht unterscheiden, DARF also nicht "relationaler Plan" behaupten; "geprüfter Crawl" ist
+  // die belegbare Wahrheit. Ohne Cutover zählt der alte Katalog-Blob ("Katalog-Basis").
+  const sourceBaseLabel = backendSourceMode === "on" && Number(crawl?.checkedSources || 0) > 0 ? "geprüfter Crawl" : "Katalog-Basis";
   addBackendCheck(checks, "Quellenbasis", activeSourceBase >= minConfiguredSources, `${activeSourceBase} aktive Quellen (${sourceBaseLabel}).`);
   addBackendCheck(checks, "Raw Items", Number(storeSummary.rawItems?.total || 0) > 0, `${storeSummary.rawItems?.total || 0} Artikel gespeichert, ${storeSummary.rawItems?.last24h || 0} in den letzten 24 Stunden.`);
 

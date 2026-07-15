@@ -169,8 +169,10 @@ Direktfeeds) repariert werden; die übrigen 4 sind optional/redundant. Das ist e
    Massenausfall). Nicht auf Grün getrimmt — 145 hat >20 % Luft nach unten.
 2. **`server.js`** — Schwellen aus dem Modul; „Quellenbasis" zählt via
    `effectiveActiveSourceCount` die **relationale** aktive Basis (`crawl.checkedSources`)
-   statt des toten Blobs; ehrliches Label je Zählquelle (`relationaler Plan` vs.
-   `Katalog-Basis`); `releaseCheck` misst die Crawl-Breite ohne Blob-Fallback.
+   statt des toten Blobs; ehrliches Label je Zählquelle (`geprüfter Crawl` vs.
+   `Katalog-Basis` — bewusst NICHT „relationaler Plan", weil ein Plan-Ladefehler still auf
+   den Alt-Katalog zurückfällt, s. Gegenprüfung); `releaseCheck` misst die Crawl-Breite ohne
+   Blob-Fallback.
 3. **`lib/helmut/watchdog-state.js`** — `DEFAULT_THRESHOLDS` 450/405 → 120/110 (Server
    übersteuert ohnehin mit denselben Werten; Konsistenz für Modul-/Test-Nutzung).
 4. **`scripts/smoke-test.js`** — Default 450 → 120.
@@ -192,17 +194,25 @@ an.
 
 ## Gegenprüfung (adversariale Review, 2026-07-15)
 
-Der Fix wurde durch eine mehrperspektivische adversariale Review (Korrektheit ·
-übersehene Konsumenten · Masking-Risiko · Test-/Doku-Güte) geprüft. **Masking-Verdikt:**
-die Kalibrierung **verdeckt keinen Quellen-Kollaps**; die Floors (120/110 ≈ 82 %/76 % des
-verifiziert gesunden 145) sind belastbar platziert — *jeder* durchgespielte Einbruch löst
-aus. Behandelte Befunde:
+Der Fix wurde durch eine mehrperspektivische adversariale Review (18 Agenten: Korrektheit ·
+übersehene Konsumenten · Masking-Risiko · Test-/Doku-Güte, mit adversarialer Verifikation
+jedes Befunds) geprüft. **Ergebnis: 13 von 14 Rohbefunden widerlegt, 1 bestätigt (low).**
+**Masking-Verdikt:** die Kalibrierung **verdeckt keinen Quellen-Kollaps**; die Floors
+(120/110 ≈ 82 %/76 % des verifiziert gesunden 145) sind belastbar platziert — *jeder*
+durchgespielte Einbruch löst aus.
 
-- **Behoben:** irreführendes `(relationaler Plan)`-Label im mode off/shadow → jetzt
-  mode-ehrlich; `releaseCheck`-Blob-Fallback entfernt; **Aufrufort-Test** ergänzt (fängt
-  Regress an der Schwelle *oder* an der Zählquelle direkt in `server.js`); Grenzwert- und
-  Watchdog-Sync-Tests ergänzt.
-- **Bewusst so gelassen (dokumentiert, außerhalb dieses Auftrags):**
+- **Bestätigt (low) → behoben:** Das anfängliche Label `(relationaler Plan)` **log** bei
+  einem Plan-Ladefehler: `getSourcesForProfile` fällt dann still auf den Alt-Katalog (~149)
+  zurück, der Crawl ist nominal (~149 ≥ 120, grün), aber die Zahl kommt NICHT vom
+  relationalen Plan. backendHealth kann relational vs. Fallback nicht unterscheiden →
+  Label auf **`geprüfter Crawl`** entschärft (belegbare Wahrheit, keine Plan-Behauptung).
+  Kein Abdeckungs-Masking (Breite ist echt ~149); die **Sichtbarmachung** der aktiven
+  Quellenwahrheit (relational vs. Fallback statt nur `console.warn`) bleibt ein empfohlener
+  Folgeschritt (eigener Ops-Signalweg, außerhalb dieses Auftrags).
+- **Weiter behoben:** `releaseCheck`-Blob-Fallback entfernt; **Aufrufort-Test** ergänzt
+  (fängt Regress an der Schwelle *oder* an der Zählquelle direkt in `server.js`); Grenzwert-
+  und Watchdog-Sync-Tests ergänzt.
+- **Widerlegt/bewusst so gelassen (dokumentiert, außerhalb dieses Auftrags):**
   - *Content-leere Degradation* (ein erreichbarer Weg mit 0 Artikeln zählt als „erfolgreich"):
     vorbestehende Crawl-Semantik, keine Schwellen-Frage.
   - *Live-Ausfall < 10 %* schlägt nicht an: gewollte Toleranz; echter Massenausfall (z. B.
@@ -211,8 +221,6 @@ aus. Behandelte Befunde:
   - *Dünne-alleine paged nicht* (frisch-aber-dünn → INGEST „warn" → TEILWEISE, kein
     WhatsApp-Alarm): vorbestehendes Zwei-Achsen-Design; die Änderung **verbessert** es
     (vorher war 450 nie erfüllbar → Dauer-„warn"/keine Trennschärfe).
-  - *Relationaler-Plan-Ladefehler* fällt still auf den Alt-Katalog (~149) zurück (nur
-    `console.warn`): bewusste Resilienz für den laufenden Piloten.
   - *Drei Prüfungen korrelieren jetzt* (Quellenbasis ≈ Crawl-Qualität ≈ „zu wenige"):
     akzeptierter Trade-off — die frühere „unabhängige" Blob-Zahl war tot/aussagelos.
 
