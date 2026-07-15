@@ -58,8 +58,12 @@ console.log("== 7) storage.canSpendLlmForTenant: kombiniert global + tenant (dep
     "mdb-a": { today: 2.50, month: 30.00 },
     "mdb-b": { today: 0.05, month: 0.10 }
   };
+  const countGateScopes = [];
   const depsFor = (pid) => ({
-    canSpend: async () => ({ allowed: true, used: 0, limit: null, remaining: null, reason: null }), // globaler Deckel: erlaubt
+    // GESAMTDECKEL-Nachweis (Budget-Rollout 2026-07): der Count-Deckel muss
+    // GLOBAL zaehlen — canSpend bekommt null, NICHT die Mandanten-ID. Sonst
+    // teilen Buero/Lage und Understanding keinen gemeinsamen Topf.
+    canSpend: async (scopeId) => { countGateScopes.push(scopeId); return { allowed: true, used: 0, limit: null, remaining: null, reason: null }; },
     usageToday: async () => ({ estimatedCostUsd: (usage[pid] || {}).today || 0 }),
     costSince: async () => ({ estimatedCostUsd: (usage[pid] || {}).month || 0 })
   });
@@ -90,6 +94,12 @@ console.log("== 7) storage.canSpendLlmForTenant: kombiniert global + tenant (dep
     canSpend: async () => ({ allowed: false, reason: "daily-llm-budget-reached" })
   });
   check("globaler Deckel erschöpft -> allowed=false", globalStop.allowed === false && globalStop.reason === "daily-llm-budget-reached");
+
+  // Gesamtdeckel-Scope: JEDER Count-Gate-Aufruf oben lief global (null), obwohl
+  // eine Mandanten-ID uebergeben wurde — kein Tenant kann das globale Budget umgehen.
+  check("Count-Gate zaehlt GLOBAL (canSpend erhaelt null, nie die Mandanten-ID)",
+    countGateScopes.length >= 5 && countGateScopes.every((s) => s === null),
+    JSON.stringify(countGateScopes));
 
   console.log("");
   const total = pass + fail;

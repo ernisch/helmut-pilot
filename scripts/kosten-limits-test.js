@@ -2,10 +2,11 @@
 
 // Kosten- und Limit-Schutz (Audit-Fix 2026-07, Sprint 2). KEIN Netz, KEINE KI.
 // Prueft drei Schutzschichten:
-//   1. llmDailyCallLimit: GESETZTER, aber UNGUELTIGER Wert faellt fail-closed auf
-//      ein Schutzlimit (50) statt still auf "unbegrenzt" (frueher: Number("2Oo")
-//      -> NaN -> Infinity — ein Tippfehler hob den Kostendeckel auf).
-//      Dokumentiertes Verhalten bleibt: leer/0 = bewusst kein Limit.
+//   1. llmDailyCallLimit: NUR eine positive ganze Zahl setzt das Limit. ALLES
+//      andere (fehlend, leer, 0, negativ, unparsebar) faellt fail-closed auf das
+//      Schutzlimit 50 — es gibt KEINEN Infinity-Pfad mehr (Budget-Rollout 2026-07:
+//      auch das versehentliche LOESCHEN der Vercel-Variable hebt den Deckel nicht
+//      mehr still auf).
 //   2. generateCommunicationDraft respektiert das Budget-Gate: bei erschoepftem
 //      Budget KEIN LLM-Call, ehrlicher Regel-Fallback (fallbackReason
 //      'budget-erschoepft'), Skip als Info-Eintrag protokolliert.
@@ -28,14 +29,17 @@ function check(name, cond, detail = "") {
 
   // ── 1) llmDailyCallLimit ──────────────────────────────────────────────────
   const cases = [
-    ["", Infinity, "leer = dokumentiert kein Limit"],
-    ["0", Infinity, "0 = dokumentiert kein Limit"],
+    ["", 50, "fehlend/geloescht -> Schutzlimit 50 (kein stilles 'unbegrenzt')"],
+    ["0", 50, "0 -> Schutzlimit 50 (kein Opt-out-Wert mehr)"],
+    ["1", 1, "Limit 1 wirkt exakt (Minimalwert)"],
+    ["20", 20, "bisheriger Production-Wert wirkt exakt"],
+    ["100", 100, "Rollout-Zielwert wirkt exakt"],
     ["150", 150, "gueltiger Wert wirkt exakt"],
     ["150.9", 150, "Dezimalwert wird abgerundet"],
     [" 25 ", 25, "Whitespace wird toleriert"],
     ["2Oo", 50, "Tippfehler -> Schutzlimit 50 (fail-closed, NICHT unbegrenzt)"],
     ["abc", 50, "Unsinn -> Schutzlimit 50"],
-    ["-5", 50, "negativ (undokumentiert) -> Schutzlimit 50"]
+    ["-5", 50, "negativ -> Schutzlimit 50"]
   ];
   for (const [value, expected, label] of cases) {
     if (value === "") delete process.env.HELMUT_MAX_LLM_CALLS_PER_DAY;

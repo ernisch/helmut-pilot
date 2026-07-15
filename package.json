@@ -7,6 +7,7 @@
     "test:event-binding": "node scripts/event-binding-test.js",
     "test:buero-ehrlichkeit": "node scripts/buero-ehrlichkeit-test.js",
     "test:kosten-limits": "node scripts/kosten-limits-test.js",
+    "test:budget-rollout": "node scripts/budget-rollout-test.js",
     "test:stoerungswahrheit": "node scripts/stoerungswahrheit-test.js",
     "test:privacy-vollstaendigkeit": "node scripts/privacy-vollstaendigkeit-test.js",
     "test:privacy-authz": "node scripts/privacy-authz-test.js",
