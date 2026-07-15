@@ -14,7 +14,8 @@ const adminSecret = process.env.HELMUT_ADMIN_SECRET || process.env.CRON_SECRET |
 const runCrawl = args.has("--run-crawl") || args.has("--full");
 const runFullFlow = args.has("--full");
 const checkExternalLinks = !args.has("--no-links");
-const minCheckedSources = Number(process.env.HELMUT_MIN_CHECKED_SOURCES || 450);
+// P2-5: relationale Quellenarchitektur — gesunder Ist-Crawl ~145 (nicht der alte 450-Rohwert).
+const minCheckedSources = Number(process.env.HELMUT_MIN_CHECKED_SOURCES || 120);
 
 const results = [];
 const warnings = [];

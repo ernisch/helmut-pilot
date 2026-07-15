@@ -101,7 +101,7 @@ weg, App läuft; fail-closed = Zugriff/Aktion wird verweigert) · Rotationsbedar
 
 | Variable | P/O | Zweck / Default | Merkmale |
 |---|---|---|---|
-| `HELMUT_MIN_CHECKED_SOURCES` · `HELMUT_MIN_SUCCESSFUL_SOURCES` · `HELMUT_MIN_CONFIGURED_SOURCES` · `HELMUT_MIN_LAGE_CHECK_SOURCES` | O | Watchdog-Schwellen. | server.js · alle · Default greift · — |
+| `HELMUT_MIN_CHECKED_SOURCES` · `HELMUT_MIN_SUCCESSFUL_SOURCES` · `HELMUT_MIN_CONFIGURED_SOURCES` · `HELMUT_MIN_LAGE_CHECK_SOURCES` | O | Quellenabdeckung-/Watchdog-Schwellen. **P2-5:** Defaults auf die relationale Architektur kalibriert (120/110/120/75; gesunder Ist-Crawl ~145), zentral in `lib/helmut/source-coverage.js`. | server.js · alle · Default greift · — |
 | `HELMUT_MAX_CRAWL_FAILURE_RATIO` · `HELMUT_MAX_FULL_CRAWL_AGE_MS` · `HELMUT_MAX_LAGE_CHECK_AGE_MS` · `HELMUT_MAX_OUTPUT_FRESHNESS_MS` | O | Frische-/Fehler-Grenzen des Watchdogs. | server.js · alle · Default greift · — |
 | `HELMUT_STORAGE_BACKEND` · `HELMUT_SUPABASE_STORE_ID` (Default `main`) · `HELMUT_SUPABASE_AUTH_STORE_ID` · `HELMUT_STORE_CACHE_MS` · `HELMUT_SUPABASE_TIMEOUT_MS` | O | Store-Backend/Caching. | storage.js · alle · Default greift · — |
 | `HELMUT_MONITORING_WEBHOOK_URL` | O | **Zweiter Alarmkanal** (Audit-Folgebranch): Health-Report wird zusätzlich zu CallMeBot als JSON-POST hierher geschickt (Slack/Discord/Zapier/E-Mail-Relais). Ohne: nur WhatsApp. | server.js · Prod empfohlen · fail-open (Kanal still aus) · Rot: bei Webhook-Leak |
