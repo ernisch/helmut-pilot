@@ -84,6 +84,11 @@ function check(name, cond, detail = "") {
   check("app/start-Profil trägt profilValidierung",
     serverSource.includes("profile: { ...profile, profilValidierung: validateProfile(profile) }"));
 
+  // Review-Fix N1: das abgeleitete Feld profilValidierung wird beim Speichern
+  // gestrippt, damit ein Client-Round-Trip es nicht dauerhaft im Blob persistiert.
+  check("normalizeProfile strippt profilValidierung (kein Persistieren des Anzeigefelds)",
+    /"profilValidierung" in profile\)[\s\S]{0,140}delete profile\.profilValidierung/.test(serverSource));
+
   // Echte Validierungslogik: Landtag ohne Bundesland => bundesland fehlt.
   const mdl = validateProfile({ id: "x", fullName: "Test MdL", party: "SPD", parliamentType: "Landtag", constituency: "Mitte", committees: ["Hauptausschuss"] });
   check("validateProfile: Landtag ohne Bundesland meldet 'bundesland'",

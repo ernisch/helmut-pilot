@@ -89,6 +89,39 @@ function record(i) {
   check("PARDOK-Budget ist konfigurierbar dokumentiert (HELMUT_PARDOK_MAX_RESPONSE_BYTES/MAX_RECORDS)",
     crawlerSource.includes("HELMUT_PARDOK_MAX_RESPONSE_BYTES") && crawlerSource.includes("HELMUT_PARDOK_MAX_RECORDS"));
 
+  // 6) Env fail-closed (Review-Fix M1): ein GESETZTER ungültiger Wert deaktiviert
+  //    NICHT still die Schutzgrenzen. Über opts (gleiche Validierung wie Env).
+  const badBytes = await fetchPardokText(`${base}/export.xml`, { maxBytes: "64MB", maxRecords: 50 }).catch(() => null);
+  check("Ungültiges maxBytes ('64MB') deaktiviert das Byte-Limit NICHT (Default greift)",
+    badBytes && badBytes.body && (badBytes.body.match(/<\/Dokument>/g) || []).length >= 50);
+  const zeroRecords = await fetchPardokText(`${base}/export.xml`, { maxRecords: "0" });
+  check("maxRecords '0' fällt auf Default zurück (kein Sofort-0-Abbruch)",
+    (zeroRecords.body.match(/<\/Dokument>/g) || []).length > 0);
+
+  // 7) Inkrementeller Zähler (Review-Fix M2): korrekt UND ohne Doppelzählung über
+  //    Chunk-Grenzen — inkl. eines an der Grenze gespaltenen Schließ-Tags.
+  const crawler = require("../lib/helmut/crawler");
+  // (Der Zähler ist intern; wir prüfen das beobachtbare Verhalten: exakt maxRecords
+  //  Records werden geschnitten, nie zu früh/zu spät — auch bei winzigen Chunks.)
+  const tinyChunkSrv = http.createServer((req, res) => {
+    res.writeHead(200, { "content-type": "application/xml" });
+    res.write("<Export>");
+    const full = Array.from({ length: 300 }, (_, i) => record(i)).join("");
+    // In 3-Byte-Häppchen schreiben, damit Tags garantiert über Chunk-Grenzen brechen.
+    let i = 0;
+    const step = () => {
+      if (i >= full.length) { res.end("</Export>"); return; }
+      res.write(full.slice(i, i + 3), () => { i += 3; setImmediate(step); });
+    };
+    step();
+  });
+  await new Promise((r) => tinyChunkSrv.listen(0, "127.0.0.1", r));
+  const tiny = await fetchPardokText(`http://127.0.0.1:${tinyChunkSrv.address().port}/x.xml`, { maxRecords: 120 });
+  const tinyCount = (tiny.body.match(/<\/Dokument>/g) || []).length;
+  check("Inkrementeller Zähler exakt über Mini-Chunk-Grenzen (kein Doppel-/Fehlzählen)",
+    tinyCount >= 120 && tinyCount <= 121, `count=${tinyCount}`);
+  tinyChunkSrv.close();
+
   server.close();
   console.log(`\n${passed} PASS, ${failed} FAIL`);
   process.exit(failed ? 1 : 0);

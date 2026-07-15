@@ -154,6 +154,12 @@ function check(name, cond, detail = "") {
   check("Multi-Profil-Loop überspringt deaktivierte Profile und hat Zeitbudget",
     /HELMUT_MORNING_PUSH_ALL_PROFILES[\s\S]{0,1600}val\.disabled/.test(serverSource)
     && /HELMUT_MORNING_PUSH_ALL_PROFILES[\s\S]{0,1600}deadline/.test(serverSource));
+  // Review-Fix M4: jeder Profil-Iterationsschritt ist vollständig in try/catch
+  // (früher nur Build/Push; ein activeProfile-Fehler brach die ganze Schleife).
+  check("Multi-Profil-Loop kapselt JEDES Profil in try/catch (kein Schleifenabbruch bei einem Fehler)",
+    /Per-Profil try\/catch \(Review-Fix\)/.test(serverSource) &&
+    /try \{\s*\n\s*const profile = await activeProfile\(p\.id \|\| politicianId\);/.test(serverSource) &&
+    /catch \(error\) \{\s*\n\s*results\.push\(\{ userId: p\.id, skipped: true, reason: "profil-fehler"/.test(serverSource));
   const envExample = fs.readFileSync(path.join(root, ".env.example"), "utf8");
   check("Neues Flag ist in .env.example dokumentiert", envExample.includes("HELMUT_MORNING_PUSH_ALL_PROFILES"));
   check("Cron-Zieländerung ist als Freigabepunkt dokumentiert (keine vercel.json-Änderung)",

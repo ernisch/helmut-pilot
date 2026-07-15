@@ -530,6 +530,18 @@ async function handleRequest(request, response) {
   }
 
   if (url.pathname === "/api/privacy/export" && request.method === "GET") {
+    // SICHERHEIT (Review-Fix): Der Art.-15/20-Export umfasst Konto-, Sitzungs-,
+    // Zuweisungs- und Audit-Metadaten (inkl. IPs) des Mandats — also auch Daten
+    // Dritter (Admin/Referent). Betroffener ist der Mandatsträger. Im Account-Modus
+    // darf daher nur der Inhaber (abgeordneter mit diesem politicianId) oder ein
+    // Admin exportieren; im Legacy-Pilotmodus unverändert.
+    if (accountAuth) {
+      const isOwner = authUser && authUser.role === "abgeordneter" && authUser.politicianId === politicianId;
+      const isAdmin = authUser && authUser.role === "admin";
+      if (!isOwner && !isAdmin) {
+        return sendForbidden(response, "Nur der Mandatsinhaber oder ein Administrator darf die Mandatsdaten exportieren.", "privacy-export-forbidden");
+      }
+    }
     return handleAsync(response, async () => {
       const result = await exportProfileData(politicianId);
       // DSGVO-Audit-Trail (Audit-Fix 2026-07): Export/Loeschung werden mit
@@ -541,6 +553,20 @@ async function handleRequest(request, response) {
 
   if (url.pathname === "/api/privacy/delete" && request.method === "POST") {
     if (previewMode) return sendPreviewReadOnly(response);
+    // SICHERHEIT (Review-Fix): Die Löschung entfernt seit der Auth-Kaskade auch
+    // das KONTO des Mandatsträgers (deleteAuthDataForPolitician: Konto/Sessions/
+    // Zuweisungen des politicianId). Ein zugewiesener REFERENT darf das Mandat
+    // NICHT löschen — sonst könnte er den MdB aussperren. Im Account-Modus nur
+    // der Mandatsinhaber (abgeordneter mit genau diesem politicianId) oder ein
+    // Admin. Im Legacy-Pilotmodus (keine Rollen) bleibt das bisherige
+    // Ein-Mandats-Verhalten (der Pilotcode = Vollzugriff auf das eine Mandat).
+    if (accountAuth) {
+      const isOwner = authUser && authUser.role === "abgeordneter" && authUser.politicianId === politicianId;
+      const isAdmin = authUser && authUser.role === "admin";
+      if (!isOwner && !isAdmin) {
+        return sendForbidden(response, "Nur der Mandatsinhaber oder ein Administrator darf die Mandatsdaten löschen.", "privacy-delete-forbidden");
+      }
+    }
     return handleJson(request, response, async (body) => {
       if (String(body.confirm || "").trim() !== "DELETE") {
         response.writeHead(400, jsonHeaders());
@@ -668,14 +694,22 @@ async function handleRequest(request, response) {
         let skipped = 0;
         for (const p of profiles) {
           if (Date.now() > deadline) { results.push({ userId: p.id, skipped: true, reason: "zeitbudget" }); continue; }
-          const profile = await activeProfile(p.id || politicianId);
-          const val = validateProfile(profile);
-          if (val.disabled) { skipped += 1; results.push({ userId: profile.id, skipped: true, reason: "profil-deaktiviert" }); continue; }
-          const briefing = await withTimeout(buildV3Briefing(profile, profile.id), 60000, "cron-briefing-build")
-            .catch((error) => ({ available: false, reason: "build-timeout", error: error && error.message, items: [], personalizedRecommendations: [], personMentions: [] }));
-          const push = await withTimeout(sendBriefingReadyPush(briefing, profile), 30000, "cron-briefing-push")
-            .catch((error) => ({ ok: false, reason: "push-timeout", error: error && error.message }));
-          results.push({ userId: profile.id, available: Boolean(briefing && briefing.available), pushSkipped: Boolean(push && push.skipped), pushReason: (push && push.reason) || null });
+          // Per-Profil try/catch (Review-Fix): früher waren nur Build/Push gefangen,
+          // NICHT activeProfile/validateProfile — ein Storage-Fehler bei EINEM Profil
+          // brach die gesamte Schleife (500, alle übrigen ohne Push). Jetzt isoliert
+          // jedes Profil vollständig; ein Fehler wird als Ergebniszeile vermerkt.
+          try {
+            const profile = await activeProfile(p.id || politicianId);
+            const val = validateProfile(profile);
+            if (val.disabled) { skipped += 1; results.push({ userId: profile.id, skipped: true, reason: "profil-deaktiviert" }); continue; }
+            const briefing = await withTimeout(buildV3Briefing(profile, profile.id), 60000, "cron-briefing-build")
+              .catch((error) => ({ available: false, reason: "build-timeout", error: error && error.message, items: [], personalizedRecommendations: [], personMentions: [] }));
+            const push = await withTimeout(sendBriefingReadyPush(briefing, profile), 30000, "cron-briefing-push")
+              .catch((error) => ({ ok: false, reason: "push-timeout", error: error && error.message }));
+            results.push({ userId: profile.id, available: Boolean(briefing && briefing.available), pushSkipped: Boolean(push && push.skipped), pushReason: (push && push.reason) || null });
+          } catch (error) {
+            results.push({ userId: p.id, skipped: true, reason: "profil-fehler", error: error && error.message });
+          }
         }
         console.log(`[cron/morning-briefing] multi-profil: ${results.length} Profile, ${skipped} uebersprungen, ${Date.now() - t0}ms`);
         return { multiProfile: true, profile: results.length, uebersprungen: skipped, results };
@@ -4239,6 +4273,15 @@ function mergeProfileDefaults(profile) {
 
 async function normalizeProfile(profile, politicianId = cemInceProfile.id) {
   const base = await activeProfile(politicianId);
+  // Abgeleitete Nur-Anzeige-Felder NIE persistieren (Review-Fix): GET/app-start
+  // hängen profilValidierung an das zurückgegebene Profil; sendet ein Client das
+  // Objekt roh zurück, würde der veraltete Validierungsstand sonst über `...profile`
+  // dauerhaft im Blob (und im Privacy-Export) landen. Er wird ohnehin bei jedem
+  // Read neu berechnet.
+  if (profile && typeof profile === "object" && "profilValidierung" in profile) {
+    profile = { ...profile };
+    delete profile.profilValidierung;
+  }
   const next = {
     ...base,
     ...profile,

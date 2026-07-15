@@ -19,7 +19,7 @@ delete process.env.SUPABASE_URL;
 delete process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const dataDir = path.join(__dirname, "..", ".helmut-data");
-const GUARDED_FILES = ["auth.json", "store.json", "p-mdb-x.json", "p-mdb-y.json"];
+const GUARDED_FILES = ["auth.json", "store.json", "p-mdb-x.json", "p-mdb-y.json", "p-mdb-red.json"];
 const snapshots = new Map();
 for (const name of GUARDED_FILES) {
   const file = path.join(dataDir, name);
@@ -92,6 +92,41 @@ const PFLICHT_TABELLEN = [
     calls.filter((c) => c.method === "DELETE").slice(-1)[0].endpoint.startsWith("/rest/v1/profiles?"));
   check("V3-Loeschung zaehlt geloeschte Zeilen", del.ok === true && del.geloescht.decisions === 2 && del.geloescht.briefings === 1);
 
+  // Export-Pagination (Review-Fix M3): >2000 Zeilen dürfen nicht still
+  // abgeschnitten werden. Fake respektiert offset und liefert 2500 briefings.
+  const many = Array.from({ length: 2500 }, (_, i) => ({ id: "bf-" + i, user_id: "mdb-x" }));
+  const pagedRequest = async (endpoint, options = {}) => {
+    if ((options.method || "GET").toUpperCase() !== "GET") return [];
+    const table = endpoint.replace("/rest/v1/", "").split("?")[0];
+    if (table !== "briefings") return [];
+    const off = Number((endpoint.match(/offset=(\d+)/) || [])[1] || 0);
+    const lim = Number((endpoint.match(/limit=(\d+)/) || [])[1] || 1000);
+    return many.slice(off, off + lim);
+  };
+  const expPaged = await storage.exportProfileDataV3("mdb-x", { ready: true, request: pagedRequest });
+  check("V3-Export paginiert vollständig (>2000 Zeilen, keine stille Truncation)",
+    Array.isArray(expPaged.tabellen.briefings) && expPaged.tabellen.briefings.length === 2500 && expPaged.vollstaendig === true,
+    `briefings=${expPaged.tabellen.briefings && expPaged.tabellen.briefings.length}`);
+
+  // Auth-Export-Redaktion (Review-Fix N3): Fremd-Identifikatoren (Dritte) werden
+  // pseudonymisiert. Direkt gegen accounts (lokaler Store).
+  const accounts = require("../lib/helmut/accounts");
+  await accounts.deleteAuthDataForPolitician("mdb-red").catch(() => {});
+  await accounts.createUser({ email: "mdb-red@test.local", name: "MdB Red", role: "abgeordneter", password: "p".repeat(10), politicianId: "mdb-red" });
+  const mdbRed = await accounts.getUserByEmailRaw("mdb-red@test.local");
+  const adminRed = await accounts.createUser({ email: "admin-red@test.local", name: "Admin Red", role: "admin", password: "p".repeat(10) }).catch(async () => accounts.getUserByEmailRaw("admin-red@test.local"));
+  await accounts.recordAudit({ action: "profile.update", userId: mdbRed.id, politicianId: "mdb-red", ip: "1.2.3.4" });        // eigene Aktion
+  await accounts.recordAudit({ action: "admin.change", userId: (await accounts.getUserByEmailRaw("admin-red@test.local")).id, actorEmail: "admin-red@test.local", politicianId: "mdb-red", ip: "9.9.9.9" }); // Dritt-Aktion
+  const authExpRed = await accounts.exportAuthDataForPolitician("mdb-red");
+  const dritte = authExpRed.auditEreignisse.find((e) => e.action === "admin.change");
+  const eigene = authExpRed.auditEreignisse.find((e) => e.action === "profile.update");
+  check("Auth-Export: Dritt-Aktion pseudonymisiert (keine Fremd-Email/IP/userId)",
+    dritte && dritte.akteur === "[dritte Person – redigiert]" && !JSON.stringify(dritte).includes("9.9.9.9") && !JSON.stringify(dritte).includes("admin-red@test.local"));
+  check("Auth-Export: eigene Aktion des Mandatsträgers bleibt vollständig",
+    eigene && eigene.ip === "1.2.3.4" && eigene.userId === mdbRed.id);
+  await accounts.deleteAuthDataForPolitician("mdb-red").catch(() => {});
+  try { const s = await storage.readAuthStore(); s.users = (s.users || []).filter((u) => u.email !== "admin-red@test.local"); await storage.writeAuthStore(s); } catch (_) {}
+
   // Teilfehler => ok:false (keine falsche Erfolgsmeldung mehr).
   const failingRequest = async (endpoint, options = {}) => {
     if ((options.method || "GET").toUpperCase() === "DELETE" && endpoint.includes("briefings")) throw new Error("kaputt");
@@ -151,7 +186,7 @@ const PFLICHT_TABELLEN = [
   // ── 4) Endpunkte protokollieren Export/Loeschung im Audit-Log ───────────────
   const serverSource = fs.readFileSync(path.join(__dirname, "..", "server.js"), "utf8");
   check("privacy/export schreibt Audit-Eintrag (privacy.export)",
-    /privacy\.export/.test(serverSource) && /privacy\/export[\s\S]{0,600}recordAudit/.test(serverSource));
+    /privacy\.export/.test(serverSource) && /privacy\/export[\s\S]{0,1400}recordAudit/.test(serverSource));
   check("privacy/delete schreibt Audit-Eintrag inkl. Teilfehler-Hinweis",
     /privacy\.delete/.test(serverSource) && /TEILWEISE FEHLGESCHLAGEN/.test(serverSource));
 

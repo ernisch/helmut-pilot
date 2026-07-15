@@ -60,7 +60,11 @@ jobs:
           node-version: 22
       - name: Playwright + Chromium installieren
         run: |
-          npm i --no-save playwright
+          # Version gepinnt (Review-Fix): ohne Pin zöge jeder CI-Lauf die neueste
+          # Playwright/Chromium-Version — ein Release könnte das Merge-Gate ohne
+          # Codeänderung rot/fälschlich grün machen. Bei Playwright-Update hier
+          # bewusst anheben.
+          npm i --no-save playwright@1.56.1
           npx playwright install --with-deps chromium
       - name: Browser-Smoke (Desktop + Mobil, lokaler In-Process-Server)
         run: node scripts/browser-smoke-test.js

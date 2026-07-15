@@ -3809,11 +3809,16 @@ function lageFreshnessLabel(vorgaenge) {
   }
   if (!newest) return "";
   const d = new Date(newest);
-  const now = new Date();
-  if (d.toDateString() === now.toDateString()) {
-    return `Neueste Quelle heute, ${d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} Uhr.`;
+  // Zeitzone auf Europe/Berlin pinnen (Review-Fix): konsistent mit lageDateLabel/
+  // radarTime; sonst weichen "heute"-Einstufung und Uhrzeit für Nutzer außerhalb
+  // DE vom Rest der App ab. Tagesvergleich über den Berlin-Kalendertag.
+  const berlinDay = (t) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit" }).format(t);
+  if (berlinDay(d) === berlinDay(new Date())) {
+    const uhr = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" }).format(d);
+    return `Neueste Quelle heute, ${uhr} Uhr.`;
   }
-  return `Neueste Quelle vom ${d.toLocaleDateString("de-DE", { day: "numeric", month: "long" })}.`;
+  const datum = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "numeric", month: "long" }).format(d);
+  return `Neueste Quelle vom ${datum}.`;
 }
 
 // STOERUNGSWAHRHEIT (Audit-Fix 2026-07): Lage-Ausfallgründe (Server: available:false
