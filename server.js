@@ -1289,7 +1289,13 @@ async function handleRequest(request, response) {
       const result = await runKoEnrichmentBackfill({ execute, bypassBudget, maxEurCents }, {
         listKnowledgeObjects: (o) => listKnowledgeObjects(o),
         canSpend: () => canSpendLlm(null),
-        extractTags: (ko) => extractKnowledgeObjectTags(ko, { politicianId: null }),
+        // budgetExempt NUR bei explizitem bypassBudget (POST + CSRF + Admin-Rolle
+        // + harter 5-EUR-Deckel): seit der atomaren Reservierung am Choke-Point
+        // wuerde bypassBudget sonst nur das Pre-Gate umgehen und trotzdem an der
+        // Reservierung scheitern — der Parameter waere funktionslos und die
+        // Antwort (budgetBypassed:true) eine Luege. Exempt-Calls stehen weiterhin
+        // vollstaendig im Kostenlog.
+        extractTags: (ko) => extractKnowledgeObjectTags(ko, { politicianId: null, budgetExempt: bypassBudget }),
         derivePolicyFields,
         saveEnrichment: (id, patch) => saveKnowledgeObjectEnrichment(id, patch),
         log: (m) => console.log("[ko-backfill]", m)
