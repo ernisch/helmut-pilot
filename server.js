@@ -346,7 +346,19 @@ async function handleRequest(request, response) {
         buildLageBriefing(profile, { politicianId }).catch((e) => console.error("Lage-Narrativ (async) fehlgeschlagen", e && e.message));
       }
       // P1-8 (Teil): tasks + notes sind unabhängig — parallel statt seriell laden.
-      const [tasks, notes] = await Promise.all([getTasks(profile.id), getUserNotes(profile.id)]);
+      // Block 5 (Lage-Frische): zusätzlich die ECHTE Ausgabe-Frische mitladen.
+      // getLatestCompleteKnowledgeObjectAt = created_at des jüngsten verstandenen
+      // Vorgangs — dieselbe OUTPUT-Frische, die Health/Readiness bereits als Wahrheit
+      // nutzen (server.js:617). Read-only SELECT, parallel (keine Zusatzlatenz),
+      // fail-safe null. So bekommt die Lage einen EHRLICHEN "Zuletzt aktualisiert"-
+      // Zeitstempel (Analysezeit) — NICHT das build-zeit-blinde generatedAt und NICHT
+      // das Artikel-Publikationsdatum (das kann Wochen zurückliegen).
+      const [tasks, notes, latestUpdatedAt] = await Promise.all([
+        getTasks(profile.id), getUserNotes(profile.id), getLatestCompleteKnowledgeObjectAt()
+      ]);
+      if (briefing.lageBriefing && typeof briefing.lageBriefing === "object") {
+        briefing.lageBriefing.latestUpdatedAt = latestUpdatedAt || null;
+      }
       return {
         // Onboarding-Freigabe (Audit-Fix 2026-07): das Profil traegt seinen
         // Pflichtfeld-/Freigabestatus (additiv; wird beim Speichern ignoriert).
