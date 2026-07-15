@@ -9223,7 +9223,12 @@ function urlBase64ToUint8Array(value) {
 
 
 // Mandatsebene fuer das Formular (Spiegel von config.parliamentTypeOf, nur Anzeige):
-// explizites parliamentType -> politische_ebene -> legacy politicalLevel -> Default Bundestag.
+// explizites parliamentType -> politische_ebene -> legacy politicalLevel.
+// Review-Fix: KEIN stiller Bundestag-Default mehr — bei unbekannter Ebene ""
+// (das Formular zeigt dann "Bitte wählen" und persistiert erst eine BEWUSSTE
+// Auswahl; vorher wurde 'Bundestag' beim ersten Speichern dauerhaft geraten,
+// fuer kuenftige Landtags-Profile falsch). Spiegelbildlich zum Server
+// (config.parliamentTypeOf liefert ebenfalls ehrlich "").
 function profileParliamentType() {
   const explicit = String(profile && profile.parliamentType || "").toLowerCase();
   if (explicit.includes("landtag")) return "Landtag";
@@ -9233,7 +9238,8 @@ function profileParliamentType() {
   if (ebene.includes("bundestag")) return "Bundestag";
   const level = String(profile && profile.politicalLevel || "").toLowerCase();
   if (level.startsWith("land")) return "Landtag";
-  return "Bundestag";
+  if (level.startsWith("bund")) return "Bundestag";
+  return "";
 }
 
 // Profil-Freigabestatus (Onboarding, Audit-Fix 2026-07): macht sichtbar, ob das
@@ -9278,7 +9284,10 @@ function renderProfileSettingsView() {
           ${profileField("party", "Partei", profile.party)}
           ${profileField("faction", "Fraktion", profile.faction)}
           ${profileSelect("function", "Funktion", profile.function || "Bundestagsabgeordneter", mandateFunctions)}
-          ${profileSelect("parliamentType", "Mandatsebene", profileParliamentType(), ["Bundestag", "Landtag"])}
+          ${profileValueSelect("parliamentType", "Mandatsebene", profileParliamentType(),
+            profileParliamentType()
+              ? [["Bundestag", "Bundestag"], ["Landtag", "Landtag"]]
+              : [["", "Bitte wählen"], ["Bundestag", "Bundestag"], ["Landtag", "Landtag"]])}
         </div>
       </section>
 
