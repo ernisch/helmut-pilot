@@ -1,6 +1,26 @@
 # Runbook — Tenant-JWT-Modus aktivieren (RLS scharf schalten)
 
-**Stand:** 2026-07-12 · **Status:** Vorprüfungen ✅, Aktivierung wartet auf **einen Betreiber-Handgriff**.
+> # ⛔ ÜBERHOLT — DIESES RUNBOOK NICHT BEFOLGEN (Stand 2026-07-15, Audit-Korrektur)
+>
+> **Der hier beschriebene Schalter ist tot.** `tenantJwtModeEnabled()` ist seit
+> dem 2026-07-13 **hart auf `false` stillgelegt** (lib/helmut/storage.js,
+> Commit f952b69 / PR #68): Supabase hat das Projekt auf **asymmetrische
+> JWT-Signing-Keys** umgestellt — die App kann mit `SUPABASE_JWT_SECRET` kein
+> von PostgREST akzeptiertes Token mehr selbst signieren (Fehlerbild PGRST301
+> „No suitable key or wrong key type", in Production-Logs vom 12./13.07. belegt).
+>
+> **Folge:** `HELMUT_TENANT_JWT_MODE=1` zu setzen bewirkt NICHTS. Wer diesem
+> Runbook folgt, wähnt sich fälschlich DB-seitig geschützt. Die 23 RLS-Policies
+> liegen weiterhin inert in der DB (service_role umgeht sie, BYPASSRLS).
+>
+> **Aktueller Stand der Mandantentrennung:** ausschließlich App-seitig
+> (Tenant-Guards, adversarial getestet). Die bewerteten Wege zu einer echten
+> DB-seitigen Trennung stehen in **`docs/mandantentrennung-architektur.md`**
+> (Entscheidung vor Mandant 2 nötig — Freigabepunkt).
+>
+> Der Rest dieses Dokuments bleibt nur als historischer Nachweis erhalten.
+
+**Stand:** 2026-07-12 · **Status:** ~~Vorprüfungen ✅, Aktivierung wartet auf **einen Betreiber-Handgriff**~~ **ÜBERHOLT, siehe Banner oben.**
 
 *Was passiert hier:* Heute spricht die App die Datenbank mit einem „Generalschlüssel"
 (service_role) an, der die RLS-Regeln umgeht. Mit `HELMUT_TENANT_JWT_MODE=1` stellt

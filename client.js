@@ -9133,12 +9133,51 @@ function urlBase64ToUint8Array(value) {
   return output;
 }
 
+
+// Mandatsebene fuer das Formular (Spiegel von config.parliamentTypeOf, nur Anzeige):
+// explizites parliamentType -> politische_ebene -> legacy politicalLevel -> Default Bundestag.
+function profileParliamentType() {
+  const explicit = String(profile && profile.parliamentType || "").toLowerCase();
+  if (explicit.includes("landtag")) return "Landtag";
+  if (explicit.includes("bundestag")) return "Bundestag";
+  const ebene = String(profile && profile.politische_ebene || "").toLowerCase();
+  if (ebene.includes("landtag")) return "Landtag";
+  if (ebene.includes("bundestag")) return "Bundestag";
+  const level = String(profile && profile.politicalLevel || "").toLowerCase();
+  if (level.startsWith("land")) return "Landtag";
+  return "Bundestag";
+}
+
+// Profil-Freigabestatus (Onboarding, Audit-Fix 2026-07): macht sichtbar, ob das
+// Profil vollstaendig/einsatzbereit ist oder welche Pflichtangaben fehlen —
+// fehlende Angaben duerfen nicht still zu schlechten Ergebnissen fuehren.
+// Datenquelle: profil.profilValidierung (Server, validateProfile) — keine
+// Client-Doppellogik.
+function renderProfileReleaseStatus() {
+  const val = profile && profile.profilValidierung;
+  if (!val || !val.state) return "";
+  const ready = val.state === "vollstaendig";
+  const label = ready ? "Vollständig und einsatzbereit" : "Unvollständig — noch nicht freigegeben";
+  const detail = ready
+    ? "Alle Pflichtangaben vorhanden. Helmut kann dieses Mandat voll versorgen."
+    : (Array.isArray(val.missingRequiredLabels) && val.missingRequiredLabels.length
+        ? `Es fehlen: ${val.missingRequiredLabels.join(", ")}.`
+        : String(val.reason || ""));
+  return `
+    <section class="profile-release ${ready ? "profile-release--ready" : "profile-release--open"}" aria-live="polite">
+      <b>${escapeHtml(label)}</b>
+      <p>${escapeHtml(detail)}</p>
+    </section>`;
+}
+
 function renderProfileSettingsView() {
   return `
     <section class="page-intro compact">
       <h1 class="${headlineClass("Mandatsprofil.")}">Mandatsprofil.</h1>
       <p>Diese Angaben entscheiden, warum Helmut ein Thema genau für dich priorisiert.</p>
     </section>
+
+    ${renderProfileReleaseStatus()}
 
     <form class="profile-form" id="profileForm">
       <section class="profile-section">
@@ -9151,6 +9190,7 @@ function renderProfileSettingsView() {
           ${profileField("party", "Partei", profile.party)}
           ${profileField("faction", "Fraktion", profile.faction)}
           ${profileSelect("function", "Funktion", profile.function || "Bundestagsabgeordneter", mandateFunctions)}
+          ${profileSelect("parliamentType", "Mandatsebene", profileParliamentType(), ["Bundestag", "Landtag"])}
         </div>
       </section>
 
@@ -10670,6 +10710,7 @@ async function saveProfileFromForm(form) {
     party: data.get("party"),
     faction: data.get("faction"),
     function: data.get("function"),
+    parliamentType: data.get("parliamentType"),
     committee: selectedCommittees[0] || profile.committee,
     committees: selectedCommittees.length ? selectedCommittees : profile.committees,
     constituency: data.get("constituency"),
@@ -10702,7 +10743,16 @@ async function saveProfileFromForm(form) {
     if (!response.ok) throw new Error("Profile save failed");
     profile = await response.json();
     currentView = "settings";
-    showToast("Profil gespeichert");
+    // Onboarding-Freigabe (Audit-Fix 2026-07): fehlende Pflichtangaben werden
+    // beim Speichern MITGETEILT statt still ignoriert.
+    const val = profile && profile.profilValidierung;
+    if (val && val.state === "vollstaendig") {
+      showToast("Profil gespeichert — vollständig und einsatzbereit");
+    } else if (val && Array.isArray(val.missingRequiredLabels) && val.missingRequiredLabels.length) {
+      showToast(`Gespeichert — noch offen: ${val.missingRequiredLabels.slice(0, 3).join(", ")}`);
+    } else {
+      showToast("Profil gespeichert");
+    }
     render();
   } catch (error) {
     console.error(error);

@@ -326,7 +326,9 @@ async function handleRequest(request, response) {
       // P1-8 (Teil): tasks + notes sind unabhängig — parallel statt seriell laden.
       const [tasks, notes] = await Promise.all([getTasks(profile.id), getUserNotes(profile.id)]);
       return {
-        profile,
+        // Onboarding-Freigabe (Audit-Fix 2026-07): das Profil traegt seinen
+        // Pflichtfeld-/Freigabestatus (additiv; wird beim Speichern ignoriert).
+        profile: { ...profile, profilValidierung: validateProfile(profile) },
         briefing,
         tasks,
         notes,
@@ -339,10 +341,22 @@ async function handleRequest(request, response) {
   }
 
   if (url.pathname === "/api/profile/current") {
-    if (request.method === "GET") return handleAsync(response, () => activeProfile(politicianId));
+    if (request.method === "GET") {
+      return handleAsync(response, async () => {
+        const p = await activeProfile(politicianId);
+        return { ...p, profilValidierung: validateProfile(p) };
+      });
+    }
     if (request.method === "POST" || request.method === "PATCH") {
       if (previewMode) return sendPreviewReadOnly(response);
-      return handleJson(request, response, async (body) => saveProfile(await normalizeProfile(body, politicianId)));
+      // Onboarding-Freigabe (Audit-Fix 2026-07): Speichern bleibt tolerant
+      // (kein hartes Abweisen), aber fehlende Pflichtangaben werden dem Nutzer
+      // MITGETEILT statt still ignoriert — die Antwort traegt den vollstaendigen
+      // Validierungsstatus (state/fehlende Felder/Erklaerung).
+      return handleJson(request, response, async (body) => {
+        const saved = await saveProfile(await normalizeProfile(body, politicianId));
+        return { ...saved, profilValidierung: validateProfile(saved) };
+      });
     }
   }
 
