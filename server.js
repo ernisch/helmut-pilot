@@ -323,7 +323,23 @@ async function handleRequest(request, response) {
       // Call. So können die Karten NIE durch ein LLM-Timeout verschwinden. Der Timeout
       // bleibt als reines Sicherheitsnetz (cacheOnly macht nur DB-Reads, hängt nicht).
       try { briefing.lageBriefing = await withTimeout(buildLageBriefing(profile, { politicianId, cacheOnly: true }), 8000, "lage-briefing-cards"); }
-      catch (error) { console.error("Lage-Karten fehlgeschlagen", error && error.message); }
+      catch (error) {
+        console.error("Lage-Karten fehlgeschlagen", error && error.message);
+        // STOERUNGSWAHRHEIT (Review-Fix): Ohne diesen Sentinel bliebe
+        // briefing.lageBriefing undefined und der Client zeigte den GENERISCHEN
+        // ruhigen Leerzustand ("keine relevanten Vorgänge") — ein Timeout/Fehler
+        // sah damit aus wie ein ruhiger Tag. Form exakt wie lage.js unavailable():
+        // reason "error" mappt der Client (lageDisruption) auf den ehrlichen
+        // Störungszustand.
+        briefing.lageBriefing = {
+          available: false,
+          demo: false,
+          reason: "error",
+          generatedAt: new Date().toISOString(),
+          paragraphs: [],
+          vorgaenge: []
+        };
+      }
       // Narrativ asynchron nachziehen (fire-and-forget), damit der Cache für den
       // nächsten Aufruf warm ist. Blockiert den App-Start NICHT.
       if (briefing.lageBriefing && briefing.lageBriefing.pendingNarrative) {
@@ -857,11 +873,14 @@ async function handleRequest(request, response) {
   // ?dryRun=1 zeigt nur, was verlinkt wuerde; ?days= / ?limit= steuern das Zeitfenster.
   if (url.pathname === "/api/debug/lage-backfill") {
     if (!authorizeCron(request, url, response)) return;
+    // Review-Fix (Phase 9): Default war ein SCHREIBLAUF per GET (dryRun nur mit
+    // ?dryRun=1). Jetzt wie ko-enrichment/presentation: GET = immer Dry-Run,
+    // echter Lauf nur per POST (+ Bearer-Secret; hasAdminBypass befreit vom CSRF).
     return handleAsync(response, async () => {
       const days = Number(url.searchParams.get("days")) || undefined;
       const limit = Number(url.searchParams.get("limit")) || undefined;
-      const dryRun = url.searchParams.get("dryRun") === "1";
-      return backfillProvenance({ days, limit, dryRun });
+      const dryRun = request.method !== "POST" || url.searchParams.get("dryRun") === "1";
+      return { mode: dryRun ? "dry-run (Schreiblauf nur per POST)" : "execute", ...(await backfillProvenance({ days, limit, dryRun })) };
     });
   }
 
@@ -876,9 +895,17 @@ async function handleRequest(request, response) {
   // ?limit= begrenzt optional die Menge. Der Backfill selbst ist idempotent.
   if (url.pathname === "/api/admin/presentation-backfill") {
     if (!authorizeCron(request, url, response)) return;
+    // Review-Fix (Phase 9): echter Lauf (execute=1, KI-Calls + KO-Writes) nur per
+    // POST — wie ko-enrichment-backfill. GET bleibt Dry-Run (Plan + Kosten).
+    // POST mit Bearer-Secret passiert den CSRF-Guard via hasAdminBypass.
+    if (url.searchParams.get("execute") === "1" && request.method !== "POST") {
+      response.writeHead(405, jsonHeaders());
+      response.end(JSON.stringify({ error: "Ausführung nur per POST. GET liefert ausschließlich die Dry-Run-Vorschau." }, null, 2));
+      return undefined;
+    }
     return handleAsync(response, async () => {
       const limit = Number(url.searchParams.get("limit")) || undefined;
-      const dryRun = url.searchParams.get("execute") !== "1"; // Default DRY-RUN; echter Lauf nur mit execute=1
+      const dryRun = !(request.method === "POST" && url.searchParams.get("execute") === "1"); // Default DRY-RUN
       const result = await backfillPresentationFields({ dryRun, limit });
       return { ok: !(result && result.skipped), mode: dryRun ? "dry-run" : "execute", result };
     });
@@ -1273,7 +1300,13 @@ async function handleRequest(request, response) {
       const result = await runKoEnrichmentBackfill({ execute, bypassBudget, maxEurCents }, {
         listKnowledgeObjects: (o) => listKnowledgeObjects(o),
         canSpend: () => canSpendLlm(null),
-        extractTags: (ko) => extractKnowledgeObjectTags(ko, { politicianId: null }),
+        // budgetExempt NUR bei explizitem bypassBudget (POST + CSRF + Admin-Rolle
+        // + harter 5-EUR-Deckel): seit der atomaren Reservierung am Choke-Point
+        // wuerde bypassBudget sonst nur das Pre-Gate umgehen und trotzdem an der
+        // Reservierung scheitern — der Parameter waere funktionslos und die
+        // Antwort (budgetBypassed:true) eine Luege. Exempt-Calls stehen weiterhin
+        // vollstaendig im Kostenlog.
+        extractTags: (ko) => extractKnowledgeObjectTags(ko, { politicianId: null, budgetExempt: bypassBudget }),
         derivePolicyFields,
         saveEnrichment: (id, patch) => saveKnowledgeObjectEnrichment(id, patch),
         log: (m) => console.log("[ko-backfill]", m)
@@ -1631,6 +1664,37 @@ async function latestBriefingPayload({ politicianId, profile, url, previewMode =
 // Fehlt er -> Slot wird aus der Serverzeit in Europe/Berlin abgeleitet. Ungueltig ->
 // 'daily' (normalizeBriefingType). REIN Label/Sprache im Read-Pfad: KEINE neuen Daten,
 // KEIN KI-Call, KEINE Persistenz, KEINE Frische-Aussage (lastUpdated bleibt die Wahrheit).
+// Erwaehnungs-Quellen gezielt nachladen (deterministisch, 0 KI, hart gedeckelt,
+// rein additiv in das uebergebene sourcesByVorgang-Objekt). Gemeinsamer Helfer
+// fuer den Hauptpfad UND die keine-treffer-Leerpfade von buildV3Briefing
+// (Review-Fix: die Leerpfade uebergaben hart {} — belegte Eigenerwaehnungen ohne
+// best_source_url verschwanden dort weiterhin still). Fail-safe: Fehler loggen,
+// nie werfen.
+async function loadMentionSourcesInto(profile, understood, sourcesByVorgang) {
+  try {
+    const radarStateMod = require("./lib/helmut/radarState");
+    const terms = radarStateMod.profileTerms(profile);
+    if (!terms || !terms.fullName) return;
+    const MENTION_SOURCE_LOAD_CAP = 25; // Schutz gegen O(n) DB-Reads
+    const mentionNeedsSources = [];
+    for (const ko of understood) {
+      if (!ko || !ko.vorgang_id) continue;
+      if (sourcesByVorgang[ko.vorgang_id]) continue; // schon geladen
+      if (!radarStateMod.detectPersonMention(ko, terms)) continue;
+      mentionNeedsSources.push(ko);
+      if (mentionNeedsSources.length >= MENTION_SOURCE_LOAD_CAP) break;
+    }
+    if (mentionNeedsSources.length) {
+      const extra = await loadSourcesByVorgang(mentionNeedsSources);
+      for (const [vid, docs] of Object.entries(extra)) {
+        if (!sourcesByVorgang[vid]) sourcesByVorgang[vid] = docs;
+      }
+    }
+  } catch (error) {
+    console.error("[v3-briefing] Mention-Quellen-Nachladen fehlgeschlagen (nicht kritisch):", error && error.message);
+  }
+}
+
 async function buildV3Briefing(profile, politicianId, opts = {}) {
   const briefingContract = require("./lib/helmut/briefingContract");
   const decisionsEngine = require("./lib/helmut/decisions");
@@ -1678,10 +1742,17 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
   // Leerzustand, der ERWAEHNUNGEN erhaelt: buildMentions ("Ueber dich") arbeitet
   // unabhaengig von den Decisions. Fruehere Early-Returns ("keine-treffer") warfen
   // die verstandenen KOs weg -> Radar zeigte "keine Erwaehnungen", obwohl belegte
-  // (auch aeltere) Erwaehnungen ueber den Nutzer vorlagen. Jetzt: KOs mitreichen.
-  const emptyKeepMentions = (reason) => briefingContract.toBriefingContractV3({
-    profile, decisions: [], kosById: {}, sourcesByVorgang: {}, reason, briefingType, knowledgeObjects: understood, now: new Date()
-  });
+  // (auch aeltere) Erwaehnungen ueber den Nutzer vorlagen. Jetzt: KOs mitreichen —
+  // UND (Review-Fix) die Erwaehnungs-Quellen nachladen: mit hartem
+  // sourcesByVorgang:{} verschwanden belegte Eigenerwaehnungen ohne
+  // best_source_url auf genau diesen Leerpfaden weiterhin still.
+  const emptyKeepMentions = async (reason) => {
+    const mentionSources = {};
+    await loadMentionSourcesInto(profile, understood, mentionSources);
+    return briefingContract.toBriefingContractV3({
+      profile, decisions: [], kosById: {}, sourcesByVorgang: mentionSources, reason, briefingType, knowledgeObjects: understood, now: new Date()
+    });
+  };
 
   // Deterministische Bewertung (0 KI). Nur für die getroffenen Vorgänge Quellen laden.
   const now = new Date();
@@ -1712,29 +1783,7 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
   // belegte Erwähnung STILL, obwohl echte URLs in raw_documents liegen. Fix:
   // für die wenigen Erwähnungs-KOs ohne geladene Quelle diese gezielt nachladen
   // (deterministisch, 0 KI, hart gedeckelt). Nur ADDITIV — keine Decision entsteht.
-  try {
-    const radarStateMod = require("./lib/helmut/radarState");
-    const terms = radarStateMod.profileTerms(profile);
-    if (terms && terms.fullName) {
-      const MENTION_SOURCE_LOAD_CAP = 25; // Schutz gegen O(n) DB-Reads
-      const mentionNeedsSources = [];
-      for (const ko of understood) {
-        if (!ko || !ko.vorgang_id) continue;
-        if (sourcesByVorgang[ko.vorgang_id]) continue; // schon geladen
-        if (!radarStateMod.detectPersonMention(ko, terms)) continue;
-        mentionNeedsSources.push(ko);
-        if (mentionNeedsSources.length >= MENTION_SOURCE_LOAD_CAP) break;
-      }
-      if (mentionNeedsSources.length) {
-        const extra = await loadSourcesByVorgang(mentionNeedsSources);
-        for (const [vid, docs] of Object.entries(extra)) {
-          if (!sourcesByVorgang[vid]) sourcesByVorgang[vid] = docs;
-        }
-      }
-    }
-  } catch (error) {
-    console.error("[v3-briefing] Mention-Quellen-Nachladen fehlgeschlagen (nicht kritisch):", error && error.message);
-  }
+  await loadMentionSourcesInto(profile, understood, sourcesByVorgang);
   // Source Safety Guard (regelbasiert, 0 KI): kritische, unbestaetigte Claims aus
   // unbekannten/schwachen Quellen NICHT ins Helmut-Briefing. Quarantaene wird verworfen.
   const safeDecisions = candidateDecisions.filter((d) => {
@@ -3093,6 +3142,9 @@ async function sendMonitoringWebhook(report) {
     const res = await fetch(targetUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      // Timeout (Review-Fix): "fail-safe" muss auch HAENGER abdecken, nicht nur
+      // Fehler — ein haengender Webhook wuerde sonst den Health-Cron blockieren.
+      signal: AbortSignal.timeout(8000),
       // "text" = Slack/Discord-kompatibel; Zusatzfelder für strukturierte Empfänger.
       body: JSON.stringify({
         text: report.text,
@@ -4680,6 +4732,29 @@ function isDebugSecretOk(request, url) {
 async function handleDebugRequest(request, response, url) {
   const politicianId = politicianIdFromUrl(url);
 
+  // ZUSTANDSAENDERNDE Debug-Endpunkte nur per POST (Review-Fix, Phase 9):
+  // Sie schreiben in Store/DB, stossen Crawls/KI-Laeufe an oder heben Sperren/
+  // Kostenbremsen auf. GET bleibt fuer alle rein lesenden Diagnosen. POST mit
+  // Bearer-Secret passiert den globalen CSRF-Guard via hasAdminBypass — die
+  // Operator-Aufrufe brauchen nur -X POST zusaetzlich. Kein Link/Prefetch/
+  // Verlauf-Klick kann so je einen Schreiblauf ausloesen.
+  const DEBUG_WRITE_PATHS = new Set([
+    "/api/debug/crawl",
+    "/api/debug/run-understanding",
+    "/api/debug/create-test-vorgang",
+    "/api/debug/reset-failed-kos",
+    "/api/debug/release-understanding-lock"
+    // reset-llm-budget hat einen eigenen POST-Guard mit Budget-spezifischem Hinweis.
+  ]);
+  if (DEBUG_WRITE_PATHS.has(url.pathname) && request.method !== "POST") {
+    response.writeHead(405, jsonHeaders());
+    response.end(JSON.stringify({
+      error: "Dieser Debug-Endpunkt aendert Zustand und verlangt POST.",
+      aufruf: `curl -X POST -H "Authorization: Bearer $CRON_SECRET" <url>`
+    }, null, 2));
+    return undefined;
+  }
+
   // GET /api/debug/status — Env-Flags + Storage, KEINE Secrets
   if (url.pathname === "/api/debug/status") {
     const storage = getStorageStatus();
@@ -4894,6 +4969,17 @@ async function handleDebugRequest(request, response, url) {
   // Setzt den Tages-Zaehler fuer canSpendLlm() auf 0, ohne das Limit-Flag zu aendern.
   // TEMP: nur fuer Debugging-Sessions — danach entfernen.
   if (url.pathname === "/api/debug/reset-llm-budget") {
+    // Review-Fix: dieser Endpunkt hebt genau die Kostenbremse auf, um die es im
+    // Audit ging — Zustandsaenderung deshalb NUR per POST (CSRF-Guard greift),
+    // wie beim ko-enrichment-backfill. GET liefert nur den Hinweis.
+    if (request.method !== "POST") {
+      response.writeHead(405, jsonHeaders());
+      response.end(JSON.stringify({
+        error: "Budget-Reset nur per POST (CSRF-geschützt).",
+        hinweis: "Seit dem Race-Fix zählt zusätzlich der atomare Reservierungszähler (llm_budget_counters) — dieser Reset leert NUR das llmUsage-Log; nach eingespielter Migration 20260717 bleibt der harte Tagesdeckel davon unberührt."
+      }, null, 2));
+      return undefined;
+    }
     return handleAsync(response, async () => {
       const today = new Date().toISOString().slice(0, 10);
       const store = await readAuthStore();
@@ -4911,8 +4997,8 @@ async function handleDebugRequest(request, response, url) {
         removedEntries: removed,
         remainingTotal: kept.length,
         message: removed > 0
-          ? `${removed} heutige LLM-Eintraege entfernt. Budget ist wieder frei.`
-          : "Keine heutigen Eintraege gefunden — Budget war bereits bei 0."
+          ? `${removed} heutige LLM-Eintraege entfernt (llmUsage-Log). Die Pre-Gates sind wieder frei; der atomare Reservierungszaehler (llm_budget_counters, nach Migration 20260717) bleibt davon UNBERUEHRT — der harte Tagesdeckel gilt weiter.`
+          : "Keine heutigen Eintraege gefunden — Log war bereits leer."
       };
     });
   }

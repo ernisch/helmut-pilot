@@ -6094,8 +6094,11 @@ function patchCarousel() {
   // Teil-Patch würde allen NICHT ersetzten Elementen (Burger-Menü, Navigation,
   // Aufklapper, Feedback) bei jeder Karussell-Interaktion einen weiteren
   // Listener anhängen — Aktionen feuerten dann doppelt/n-fach (Audit-Fix 2026-07).
+  // bindDeckDecide gehört dazu: die drei Entscheidungs-Buttons liegen IM
+  // ersetzten Teilbaum und wären sonst nach der ersten Interaktion tot.
   bindCarousel(wrap);
   bindDetailOpen(wrap);
+  bindDeckDecide(wrap);
 }
 
 // Öffnet die Detailansicht einer Entscheidung. Gescopt bindbar, damit Teil-Patches
@@ -6112,6 +6115,49 @@ function bindDetailOpen(root) {
       const decision = selectedDecision();
       logDecisionInteraction("detail_opened", decision);
       render();
+    });
+  });
+}
+
+// Gescopt bindbar (wie bindDetailOpen): patchCarousel ersetzt den Karussell-
+// Teilbaum INKLUSIVE der drei Entscheidungs-Buttons — ohne Re-Bind im neuen
+// Teilbaum wären die Buttons nach der ersten Filter-/Pfeil-/Swipe-Interaktion
+// tot (Review-Befund zur Doppelbindungs-Härtung aus Sprint 1).
+function bindDeckDecide(root) {
+  (root || app).querySelectorAll("[data-deck-decide]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const id = button.dataset.deckDecide;
+      const action = button.dataset.deckAction || "watch";
+      const card = helmutDeck.find((entry) => entry.id === id);
+      if (!card || helmutDeckLeavingId) return;
+      const labelMap = { ignore: "Ignoriert", draft: "Entwurf erstellen", watch: "Beobachten" };
+      const logMap = { ignore: "ignored", draft: "draft", watch: "watch" };
+      if (action === "draft" && !previewMode) {
+        fetchWithTimeout(`/api/tasks?${apiScopeQuery()}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: card.title,
+            description: compactText(chiefRecommendationText(card), 220),
+            priority: "high",
+            assignee: "Büro",
+            status: "open"
+          })
+        }).then((res) => (res && res.ok ? res.json() : null))
+          .then((data) => { if (data && data.task) tasks = [data.task, ...tasks]; })
+          .catch(() => {});
+      }
+      card.status = action === "ignore" ? "ignored" : action === "draft" ? "drafting" : "watching";
+      if (!helmutDecidedIds.has(id)) { helmutDecidedIds.add(id); helmutDecisionsMade += 1; }
+      helmutLastDecision = { title: card.title, actionLabel: labelMap[action] || "Beobachten", time: helmutNowHHMM() };
+      logDecisionInteraction(logMap[action] || "watch", card);
+      helmutDeckLeavingId = id;
+      patchCarousel();
+      window.setTimeout(() => {
+        helmutDeckLeavingId = "";
+        helmutCarouselIndex = Math.min(Math.max(0, helmutDeck.length - 1), helmutCarouselIndex + 1);
+        render();
+      }, 280);
     });
   });
 }
@@ -9177,7 +9223,12 @@ function urlBase64ToUint8Array(value) {
 
 
 // Mandatsebene fuer das Formular (Spiegel von config.parliamentTypeOf, nur Anzeige):
-// explizites parliamentType -> politische_ebene -> legacy politicalLevel -> Default Bundestag.
+// explizites parliamentType -> politische_ebene -> legacy politicalLevel.
+// Review-Fix: KEIN stiller Bundestag-Default mehr — bei unbekannter Ebene ""
+// (das Formular zeigt dann "Bitte wählen" und persistiert erst eine BEWUSSTE
+// Auswahl; vorher wurde 'Bundestag' beim ersten Speichern dauerhaft geraten,
+// fuer kuenftige Landtags-Profile falsch). Spiegelbildlich zum Server
+// (config.parliamentTypeOf liefert ebenfalls ehrlich "").
 function profileParliamentType() {
   const explicit = String(profile && profile.parliamentType || "").toLowerCase();
   if (explicit.includes("landtag")) return "Landtag";
@@ -9187,7 +9238,8 @@ function profileParliamentType() {
   if (ebene.includes("bundestag")) return "Bundestag";
   const level = String(profile && profile.politicalLevel || "").toLowerCase();
   if (level.startsWith("land")) return "Landtag";
-  return "Bundestag";
+  if (level.startsWith("bund")) return "Bundestag";
+  return "";
 }
 
 // Profil-Freigabestatus (Onboarding, Audit-Fix 2026-07): macht sichtbar, ob das
@@ -9232,7 +9284,10 @@ function renderProfileSettingsView() {
           ${profileField("party", "Partei", profile.party)}
           ${profileField("faction", "Fraktion", profile.faction)}
           ${profileSelect("function", "Funktion", profile.function || "Bundestagsabgeordneter", mandateFunctions)}
-          ${profileSelect("parliamentType", "Mandatsebene", profileParliamentType(), ["Bundestag", "Landtag"])}
+          ${profileValueSelect("parliamentType", "Mandatsebene", profileParliamentType(),
+            profileParliamentType()
+              ? [["Bundestag", "Bundestag"], ["Landtag", "Landtag"]]
+              : [["", "Bitte wählen"], ["Bundestag", "Bundestag"], ["Landtag", "Landtag"]])}
         </div>
       </section>
 
@@ -9954,42 +10009,7 @@ function bindActions() {
   // Deck-Entscheidung: ausschließlich über die drei runden Buttons. Swipe entscheidet
   // NIE (keine versehentlichen Entscheidungen). Ruhige Erledigen-Geste + Auto-Advance
   // via patchCarousel (kein globales render bis zum State-Wechsel).
-  app.querySelectorAll("[data-deck-decide]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const id = button.dataset.deckDecide;
-      const action = button.dataset.deckAction || "watch";
-      const card = helmutDeck.find((entry) => entry.id === id);
-      if (!card || helmutDeckLeavingId) return;
-      const labelMap = { ignore: "Ignoriert", draft: "Entwurf erstellen", watch: "Beobachten" };
-      const logMap = { ignore: "ignored", draft: "draft", watch: "watch" };
-      if (action === "draft" && !previewMode) {
-        fetchWithTimeout(`/api/tasks?${apiScopeQuery()}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            title: card.title,
-            description: compactText(chiefRecommendationText(card), 220),
-            priority: "high",
-            assignee: "Büro",
-            status: "open"
-          })
-        }).then((res) => (res && res.ok ? res.json() : null))
-          .then((data) => { if (data && data.task) tasks = [data.task, ...tasks]; })
-          .catch(() => {});
-      }
-      card.status = action === "ignore" ? "ignored" : action === "draft" ? "drafting" : "watching";
-      if (!helmutDecidedIds.has(id)) { helmutDecidedIds.add(id); helmutDecisionsMade += 1; }
-      helmutLastDecision = { title: card.title, actionLabel: labelMap[action] || "Beobachten", time: helmutNowHHMM() };
-      logDecisionInteraction(logMap[action] || "watch", card);
-      helmutDeckLeavingId = id;
-      patchCarousel();
-      window.setTimeout(() => {
-        helmutDeckLeavingId = "";
-        helmutCarouselIndex = Math.min(Math.max(0, helmutDeck.length - 1), helmutCarouselIndex + 1);
-        render();
-      }, 280);
-    });
-  });
+  bindDeckDecide(app);
 
   app.querySelectorAll("[data-helmut-howto-dismiss]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -10396,7 +10416,17 @@ function bindActions() {
       const originalText = button.textContent;
       button.textContent = "Löscht...";
       try {
-        await deletePrivacyData();
+        const result = await deletePrivacyData();
+        // EHRLICHKEIT (Review-Fix): Der Server meldet Teilfehler über ok:false
+        // (z. B. V3-Tabellen oder Konto-Daten nicht gelöscht). Das darf NICHT
+        // als Erfolg angezeigt werden — sonst glaubt der Nutzer an eine
+        // vollständige Löschung, während Daten zurückbleiben (Art. 17).
+        if (result && result.ok === false) {
+          showToast("Löschung nur TEILWEISE erfolgreich — es sind noch Daten vorhanden. Bitte den Administrator informieren.");
+          button.disabled = false;
+          button.textContent = "Löschung wiederholen";
+          return;
+        }
         showToast("Daten gelöscht");
         window.location.reload();
       } catch (error) {
@@ -11819,11 +11849,43 @@ function escapeRegExp(value) {
 // Service Worker bei jedem Laden registrieren (unabhaengig von Push). Ohne
 // registrierten SW mit fetch-Handler bietet Chrome/Brave keinen Installieren-Dialog
 // an. Die spaetere Push-Registrierung nutzt dieselbe Registrierung weiter.
+// UPDATE-ERKENNUNG (Review-Fix): Installierte PWAs/offene Tabs blieben nach
+// einem Deploy unbegrenzt auf der alten client.js — es gab keinerlei
+// Update-Pruefung. Jetzt: registration.update() beim Sichtbarwerden der App
+// (Standard-Muster; laedt die neue sw.js-Version, deren Precache-Rotation die
+// frischen Assets zieht) + einmaliger stiller Reload bei SW-Wechsel, damit die
+// neue Version ohne Nutzeraktion aktiv wird. Reload nur bei verstecktem oder
+// frisch sichtbarem Dokument-Zustand und nur EINMAL (Schutz vor Reload-Schleife).
+let swReloadedOnce = false;
 function registerServiceWorker() {
   if (!("serviceWorker" in navigator)) return;
   const doRegister = () => {
-    navigator.serviceWorker.register("/sw.js").catch((error) => {
+    navigator.serviceWorker.register("/sw.js").then((registration) => {
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+          registration.update().catch(() => { /* offline etc. — naechstes Mal */ });
+        }
+      });
+    }).catch((error) => {
       console.warn("Service-Worker-Registrierung fehlgeschlagen", error);
+    });
+    // sw.js nutzt skipWaiting+clients.claim -> controllerchange feuert sofort.
+    // NIE mitten in der Nutzung neu laden (koennte eine Eingabe zerstoeren):
+    // sofortiger Reload nur bei verstecktem Tab; sonst beim naechsten
+    // Verstecken. Ohne Verstecken greift die neue Version beim naechsten
+    // regulaeren Laden — der Precache ist dann bereits frisch.
+    let swUpdatePending = false;
+    const reloadForNewSw = () => {
+      if (swReloadedOnce) return;
+      swReloadedOnce = true;
+      window.location.reload();
+    };
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (document.visibilityState === "hidden") reloadForNewSw();
+      else swUpdatePending = true;
+    });
+    document.addEventListener("visibilitychange", () => {
+      if (swUpdatePending && document.visibilityState === "hidden") reloadForNewSw();
     });
   };
   if (document.readyState === "complete") doRegister();

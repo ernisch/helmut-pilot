@@ -160,11 +160,20 @@ function check(name, cond, detail = "") {
       check(`${label}: Navigation zu den vier Bereichen vorhanden`, navCount === 4, `gefunden=${navCount}/4`);
 
       if (navCount === 4) {
-        for (const [view, marker] of [["radar", "radar"], ["helmut", "hstand|helmut"], ["office", "buero|office"], ["briefing", "lage"]]) {
+        // NICHT-tautologisch (Review-Fix): Die frueheren Marker-Regexe (radar,
+        // hstand|helmut, ...) liefen gegen das KOMPLETTE page.content() — die
+        // Begriffe stehen aber immer in der Navigation selbst, die Assertion
+        // konnte also nie fehlschlagen. Jetzt wird der ECHTE View-Wechsel
+        // geprueft: render() markiert nach dem Klick genau den Nav-Button des
+        // aktiven Views mit der Klasse "active" (client.js isMobileNavActive).
+        for (const view of ["radar", "helmut", "office", "briefing"]) {
           await page.evaluate(`document.querySelector('[data-view="${view}"]').click()`);
           await page.waitForTimeout(250);
-          const bodyHtml = await page.content();
-          check(`${label}: Bereich '${view}' rendert`, new RegExp(marker, "i").test(bodyHtml));
+          const activeIsView = await page.evaluate(`Boolean(document.querySelector('[data-view="${view}"].active'))`).catch(() => false);
+          const othersActive = await page.evaluate(`
+            ["radar", "helmut", "office", "briefing"].filter((v) => v !== "${view}" && document.querySelector('[data-view="' + v + '"].active')).length
+          `).catch(() => -1);
+          check(`${label}: Bereich '${view}' rendert (Nav aktiv, andere inaktiv)`, activeIsView && othersActive === 0, `active=${activeIsView} andere=${othersActive}`);
         }
         check(`${label}: keine neuen JS-Fehler bei Tab-Wechseln`, pageErrors.length === 0, pageErrors.slice(0, 2).join(" | "));
       }

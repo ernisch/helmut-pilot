@@ -1,5 +1,64 @@
 # MASTER-STATUS — Helmut Quellenarchitektur-Migration
 
+## NACHTRAG 2026-07-15 (F12 FINAL: Understanding-Reserve + Lock live verifiziert) — aktuellster verifizierter Stand
+
+Gründer hat `HELMUT_LLM_RESERVE_UNDERSTANDING=30` + `HELMUT_UNDERSTANDING_LOCK=1`
+manuell in Vercel gesetzt und das Production-Deployment neu deployt. Finale
+Verifikation durchgeführt — **alles grün, keine Abweichung**.
+
+| Was | Wert (live verifiziert) |
+|---|---|
+| Production-Commit | **`e915080`** (unverändert; die Env-Werte brauchten keinen Code-Change) |
+| Production-Deployment | **`dpl_ruEJ3xPBf2iWiFGygR96Lmb93uEk`** — READY, `target=production`, `action=redeploy` von `dpl_715BHZo25DXQ3sZ9HAuJvmQ593aD` |
+| Effektive Werte | Deckel **100** · Reserve **30** · Nicht-Understanding-Deckel **70** · Understanding-Deckel **100** · Fail-closed **1** · Understanding-Lock **an** |
+| Grenzfall isoliert (Wegwerf-Scope, 0 bezahlte Calls) | Nicht-Understanding (Deckel 70): **exakt 70 erlaubt, 71. blockiert**. Danach Understanding (Deckel 100): **exakt 30 weitere (70→100)**, 101. blockiert. **max used = 100, Zähler endet exakt bei 100, nie 101.** |
+| Understanding-Lock | Code erzwingt `granted=false → skip` (understanding.js:664/753, beide Batch-Pfade); lokaler Determinismus-Test: 2. überlappender Lauf `granted:false` (mit Flag), No-op ohne Flag. |
+| RPC-Nutzung / kein Fallback | Realer Production-Call **12:37:14 UTC → `global used=1`** (atomar). Kein „RPC fehlt"-Log, **kein PGRST202/404**, 0 error/warning-Logs in 25 min (Redeploy-Fenster). Redeploy fährt denselben RPC-aufrufenden Code — Atomik bleibt aktiv. |
+| Keine Überbuchung | Row-Lock serialisiert (früher: Burst 10 parallel @ Deckel 5 → exakt 5). Isolierter 100er-Deckel nie überschritten. |
+| Betrieb | 0 Systemfehler heute, 0 neue Runtime-Fehlercluster ab 12:32; Shell 200 + Asset `e9150801`; Daten unverändert (findings 990 / KO 274 / raw 5462 / gate_shadow 2043). |
+| Cem / Quellen | Cem-Store present, **4 Briefings**; Quellenmodus **on**, Gate **shadow**, PARDOK **shadow** (helmut-flags.json byte-identisch), Scoring **off**, BE/BB **inaktiv**. |
+| Kosten heute | **33 billable Calls / $0,0838** — deutlich < $0,50/Tag. |
+| Methoden-Hinweis (ehrlich) | Vercel-Env-Werte selbst nicht separat rückgelesen (in dieser Umgebung keine Env-Lesefähigkeit) — Wirksamkeit ist durch Redeploy-READY + exakte Wirkungstests (Reserve 70/30/100, Lock granted:false) belegt. Tab-Funktionen (Lage/Radar/Briefing/Büro/Admin) sind auth-gebunden nicht eingeloggt durchklickbar — bestätigt über Datenintegrität, App-200, 0 Fehler und die additive DB-only-Natur der Migration (keine Regressionsfläche). |
+
+Der volle „≤100 pro UTC-Tag"-Deckel greift kalendertagsgenau ab **morgen 00:00 UTC**
+(Zähler zählt vorwärts ab Aktivierung; heute steht er bei 1). **Nächster Schritt: Go PR 84.**
+
+---
+
+## NACHTRAG 2026-07-15 (F12: Migration atomare LLM-Budget-Reservierung LIVE) — Migrationsschritt (durch F12-FINAL oben ergänzt)
+
+| Was | Wert (live verifiziert via Supabase + Vercel-API, read-only) |
+|---|---|
+| Migration F12 | `20260717_llm_budget_reservation.sql` in Production eingespielt (Registry-Version `20260715123216`, **genau einmal**). Tabelle `llm_budget_counters` (PK day,scope) + Funktion `helmut_reserve_llm_call(text,text,integer)` **INVOKER**, EXECUTE für public/anon/authenticated **entzogen**, RLS **an**, 0 Policies (service_role-only) — alles per Nachprüfung bestätigt. |
+| Atomik **LIVE** | Belegt durch **realen** Production-Call um 12:37:14 UTC → `llm_budget_counters(2026-07-15, global) used=1`; kein „RPC fehlt"-Fallback-Log mehr, kein Fehler. Der 100er-Deckel ist ab jetzt **hart + parallelsicher** (Row-Lock; Burst-Test 10 parallel bei Deckel 5 → exakt 5, nie 6). |
+| Kontroll-Test (0 bezahlte Calls) | Wegwerf-Scopes (Tag 2000-01-01): cap2 (t,1)(t,2)(f,2) · cap0 (f,0) · cap1 (t,1)(f,1) · no-limit immer erlaubt; alle Testzeilen wieder gelöscht. Lokale Suite `test:llm-reservation` 38/38. |
+| Budget-Env | `HELMUT_MAX_LLM_CALLS_PER_DAY=100` + `HELMUT_LLM_BUDGET_FAIL_CLOSED=1` weiter live. **NOCH OFFEN (Gründer-Dashboard-Schritt, Vercel):** `HELMUT_LLM_RESERVE_UNDERSTANDING=30` + `HELMUT_UNDERSTANDING_LOCK=1` + Redeploy → erst danach greifen Understanding-Reserve (Büro/Lage/App-Start max. 70) und der Doppel-Call-Lock. Solange Reserve=0 (Default): globaler harter 100-Deckel für ALLE Pfade, ohne Understanding-Vorrang. |
+| Prod-Smoke nach F12 | Shell 200 + Asset `e9150801` **unverändert** (Build unberührt — Migration ist DB-only), Auth-Gate aktiv (403 unauth), **0 Systemfehler heute**, **0 neue Runtime-Fehlercluster ab 12:32** (alle 50 Cluster = bekannte Google-News-429/503 aus dem 10:00-Crawl, extern/fail-safe). |
+| Admin-Kostenwahrheit | Audit-Log (`llmUsage`) heute: **33 billable / 1 skipped / $0,0838** — unverändert korrekt als Tages-Kostenanzeige. Der atomare Zähler zählt bewusst **getrennt vorwärts ab Aktivierung** (Design: Supabase-Zähler wird nicht rückwirkend geseedet) → voller UTC-Tagesdeckel greift ab **morgen 00:00 UTC**; heute Restrisiko praktisch null (Morgen-Crons bereits gelaufen, Zähler bei 1). |
+| Rollback | `20260717_llm_budget_reservation_rollback.sql` (drop function+table; App fällt **geloggt** aufs Altverhalten zurück, **kein Deploy nötig**). Env-Rollback: die zwei neuen Variablen entfernen + Redeploy. |
+| Nächste Freigabe | Gründer setzt die 2 Env-Variablen + Redeploy (2-Minuten-Dashboard-Schritt; ich habe keine Vercel-Env-Schreibfähigkeit in dieser Umgebung) → dann verifiziere ich die Understanding-Reserve live. Danach **Go PR 84** (migrationsfreie Code-Ehrlichkeits-Fixes). |
+
+Der Schritt-B-Abschnitt unten ist damit historisch (seine Budget-Zeile „inert bis Migration F12" ist durch diesen F12-Nachtrag überholt).
+
+---
+
+## NACHTRAG 2026-07-15 (Schritt B: PR 86 live) — vorheriger Stand (Budget-Zeile durch F12 oben überholt)
+
+| Was | Wert (live verifiziert via Vercel-API, GitHub-API, Supabase read-only) |
+|---|---|
+| Production-Commit (main) | **`e915080`** — Squash-Merge PR #86 (Budget-Race atomar + Härtung) auf `3875674` (PR #85) auf `170d310` (PR #82 + Budget-Rollout) |
+| Production-Deployment | `dpl_715BHZo25DXQ3sZ9HAuJvmQ593aD`, READY, Asset-Version `e9150801` live bestätigt |
+| Rollback | Vercel Instant Rollback auf `dpl_9NaaV71MBFaJV9BHiMye4AU43kQN` (`3875674`, Stand nach PR 85) bzw. Revert des Squash-Commits |
+| Quellenmodus | **on** (relational aktiv, Alt-Katalog Fallback) · Gate **shadow** · PARDOK **shadow** · Scoring **off** · BE/BB **inaktiv** (0 Dokumente, verifiziert) |
+| Budget | `HELMUT_MAX_LLM_CALLS_PER_DAY=100` + `HELMUT_LLM_BUDGET_FAIL_CLOSED=1` wirksam. Atomare Reservierung deployt, aber **inert bis Migration F12** — RPC/Tabelle fehlen (verifiziert), Code fällt sicher aufs bisherige Read-then-Decide-Gate zurück (fehlende Migration löst NICHT fail-closed aus). Reserve 30 + Understanding-Lock noch NICHT gesetzt. |
+| Merge-/Prod-Smoke | Suite 91/91 + Browser 21/21 auf `b28d0c2`, CI grün; adversariale Deckel-Prüfung 38/38 (Stand 99/Limit 100, 50 parallel, Reserve 30). Nach Deploy: Shell 200 + Asset-Version `e9150801`, Auth-Gate 401, 0 neue Systemfehler, Datenstand unverändert (5462/274/990/2043), Cem-Profil + 4 Briefings vorhanden, BE/BB/PARDOK 0 |
+| Offene PRs | **PR 84** (Rest-Fixes der Tiefenprüfung: Parlaments-Gate, tote Deck-Buttons, Privacy-Ehrlichkeit, Debug-POST, Mandatsebene, SW-Update — auf `e915080` rebased, Duplikate entfernt, 92/92, **mergebereit, NICHT gemergt**) · **PR 87** (Watchdog, unabhängig, ungeprüft in diesem Auftrag) |
+| Nächste Freigabe | **Migration F12** (`supabase/migrations/20260717_llm_budget_reservation.sql` einspielen → dann `HELMUT_LLM_RESERVE_UNDERSTANDING=30` + `HELMUT_UNDERSTANDING_LOCK=1`) ODER **Go PR 84** (reine Code-Ehrlichkeits-Fixes, migrationsfrei) — Reihenfolge nach Gründer-Wahl |
+
+Der Abschnitt unten (Stand 2026-07-14) bleibt als historischer Detailnachweis.
+
+---
+
 **Dies ist die EINZIGE aktuelle Statuswahrheit.** Alle älteren Status-/Abschlussberichte —
 insbesondere Doku 20–27 und frühere Master-Status-Fassungen — sind **ÜBERHOLT** und dürfen
 nicht mehr als aktueller Stand zitiert werden; sie bleiben historische Detailnachweise.

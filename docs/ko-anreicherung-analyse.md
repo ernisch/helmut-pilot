@@ -90,11 +90,14 @@ Zusätzliche Parameter:
 - Die Antwort enthält **`aiProvider`** (`azure` / `openai` / `none`) — so ist sichtbar,
   ob wirklich Azure genutzt wird (nur der Name, **kein Secret**).
 
-**Empfohlener Ablauf für den Betreiber:**
+**Empfohlener Ablauf für den Betreiber** (seit dem CSRF-Fix: Ausführung nur per POST):
 1. `GET /api/admin/ko-enrichment-backfill` (Dry-Run) → `aiProvider` (muss `azure` sein),
    Kandidatenzahl + Kostenschätzung prüfen.
-2. Wenn plausibel: `GET /api/admin/ko-enrichment-backfill?execute=1&bypassBudget=1`
-   → Lauf; Antwort enthält `aiProvider/processed/aiCalls/failed/spentEur/samples/stop`.
+2. Wenn plausibel: `curl -X POST "/api/admin/ko-enrichment-backfill?execute=1&bypassBudget=1"`
+   (GET mit execute/bypassBudget antwortet 405) → Lauf; Antwort enthält
+   `aiProvider/processed/aiCalls/failed/spentEur/samples/stop`. `bypassBudget`
+   umgeht seit dem Reservierungs-Fix auch die atomare Reservierung (budgetExempt)
+   — der harte 5-€-Deckel des Backfills bleibt immer aktiv.
 3. Ergebnis prüfen (`samples` = geschriebene Tags stichprobenartig plausibel/belegt?).
 4. Danach `/api/release/public` (Personalisierung) + Runtime-Logs prüfen.
 

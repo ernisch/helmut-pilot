@@ -30,8 +30,13 @@ check("Kein 'render(); bindActions();' mehr (render bindet selbst)",
   !/render\(\);\s*bindActions\(\);/.test(source));
 check("Kein globales bindActions() direkt nach patchCarousel()",
   !/patchCarousel\(\);\s*\n\s*bindActions\(\);/.test(source));
-check("patchCarousel bindet seinen Teilbaum (bindCarousel + bindDetailOpen)",
-  /function patchCarousel\(\)[\s\S]{0,900}?bindCarousel\(wrap\);[\s\S]{0,200}?bindDetailOpen\(wrap\);/.test(source));
+check("patchCarousel bindet seinen Teilbaum (bindCarousel + bindDetailOpen + bindDeckDecide)",
+  /function patchCarousel\(\)[\s\S]{0,900}?bindCarousel\(wrap\);[\s\S]{0,200}?bindDetailOpen\(wrap\);[\s\S]{0,100}?bindDeckDecide\(wrap\);/.test(source));
+check("bindDeckDecide existiert genau einmal als gescopte Funktion",
+  (source.match(/function bindDeckDecide\(/g) || []).length === 1);
+check("bindActions nutzt bindDeckDecide(app) statt eigener data-deck-decide-Schleife",
+  source.includes("bindDeckDecide(app);") &&
+  !/app\.querySelectorAll\("\[data-deck-decide\]"\)/.test(source));
 check("bindDetailOpen existiert genau einmal als gescopte Funktion",
   (source.match(/function bindDetailOpen\(/g) || []).length === 1);
 check("bindActions nutzt bindDetailOpen(app) statt eigener data-detail-Schleife",
@@ -160,6 +165,15 @@ for (const [sel, nodes] of dom.wrapNodes().entries()) {
   }
 }
 check("Neue Karussell-Knoten sind nach einem Patch höchstens 1x je Ereignistyp gebunden", freshOk, freshDetail);
+
+// Review-Befund (0-Listener-Fall): die drei Entscheidungs-Buttons liegen IM
+// ersetzten Teilbaum. "Höchstens 1x" allein hätte auch 0 Listener durchgelassen —
+// hier der Positivnachweis: nach einem Patch ist [data-deck-decide] im frischen
+// Teilbaum GENAU 1x auf click gebunden (vorher: 0 -> Buttons tot).
+const deckNodes = dom.wrapNodes().get("[data-deck-decide]") || [];
+const deckClicks = deckNodes.reduce((s, n) => s + (n.__listenerCounts.click || 0), 0);
+check("Entscheidungs-Buttons sind nach patchCarousel wieder gebunden (genau 1x click)",
+  deckNodes.length > 0 && deckClicks === deckNodes.length, `nodes=${deckNodes.length} clicks=${deckClicks}`);
 
 console.log(`\n${passed} PASS, ${failed} FAIL`);
 process.exit(failed ? 1 : 0);

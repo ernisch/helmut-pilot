@@ -104,10 +104,15 @@ async function presentationBackfillEndpointChecks() {
     const dj = parse(d);
     check("Presentation-Backfill: ohne execute -> mode=dry-run (sicherer Default)", d.status === 200 && dj.mode === "dry-run", `status=${d.status} mode=${dj.mode}`);
 
-    // 4) execute=1 -> mode=execute (Flag-Logik; ohne Store trotzdem kein Schreibvorgang)
-    const e = await request(server, { pathname: `${p}?execute=1`, headers: { Authorization: "Bearer p1-test-secret" } });
+    // 4a) execute=1 per GET -> 405 (Review-Fix Phase 9: Schreiblauf nur per POST,
+    //     damit kein Link/Prefetch/Verlauf-Klick je einen KI-Lauf ausloest)
+    const eGet = await request(server, { pathname: `${p}?execute=1`, headers: { Authorization: "Bearer p1-test-secret" } });
+    check("Presentation-Backfill: execute=1 per GET -> 405 (Schreiblauf nur POST)", eGet.status === 405, `status=${eGet.status}`);
+
+    // 4b) execute=1 per POST -> mode=execute (Flag-Logik; ohne Store trotzdem kein Schreibvorgang)
+    const e = await request(server, { method: "POST", pathname: `${p}?execute=1`, headers: { Authorization: "Bearer p1-test-secret" } });
     const ej = parse(e);
-    check("Presentation-Backfill: execute=1 -> mode=execute", e.status === 200 && ej.mode === "execute", `status=${e.status} mode=${ej.mode}`);
+    check("Presentation-Backfill: execute=1 per POST -> mode=execute", e.status === 200 && ej.mode === "execute", `status=${e.status} mode=${ej.mode}`);
 
     // 5) ganz ohne Authorization (Secret ist gesetzt) -> 403: die Route ist nie offen
     const noauth = await request(server, { pathname: p });
