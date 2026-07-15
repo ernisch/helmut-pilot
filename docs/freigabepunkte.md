@@ -70,7 +70,7 @@ in Vercel setzen + Redeploy → der 05:00-Cron bedient alle aktiven Profile
 (deaktivierte übersprungen, per-Profil try/catch, 240s-Budget, 0 KI).
 **Rückweg:** Variable entfernen/0 + Redeploy.
 
-## F5 — LLM-Tageslimit ✅ TEILWEISE AUSGEFÜHRT (2026-07-15) — Rest: Reserve + Lock
+## F5 — LLM-Tageslimit ✅ VOLLSTÄNDIG AUSGEFÜHRT (2026-07-15)
 
 **AUSGEFÜHRT mit Gründer-Freigabe „Go kontrollierter LLM Budget Rollout"
 (Merge `170d310` + Vercel-Env):** `HELMUT_MAX_LLM_CALLS_PER_DAY=100` und

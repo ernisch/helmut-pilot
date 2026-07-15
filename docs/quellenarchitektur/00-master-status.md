@@ -1,6 +1,31 @@
 # MASTER-STATUS — Helmut Quellenarchitektur-Migration
 
-## NACHTRAG 2026-07-15 (F12: Migration atomare LLM-Budget-Reservierung LIVE) — aktuellster verifizierter Stand
+## NACHTRAG 2026-07-15 (F12 FINAL: Understanding-Reserve + Lock live verifiziert) — aktuellster verifizierter Stand
+
+Gründer hat `HELMUT_LLM_RESERVE_UNDERSTANDING=30` + `HELMUT_UNDERSTANDING_LOCK=1`
+manuell in Vercel gesetzt und das Production-Deployment neu deployt. Finale
+Verifikation durchgeführt — **alles grün, keine Abweichung**.
+
+| Was | Wert (live verifiziert) |
+|---|---|
+| Production-Commit | **`e915080`** (unverändert; die Env-Werte brauchten keinen Code-Change) |
+| Production-Deployment | **`dpl_ruEJ3xPBf2iWiFGygR96Lmb93uEk`** — READY, `target=production`, `action=redeploy` von `dpl_715BHZo25DXQ3sZ9HAuJvmQ593aD` |
+| Effektive Werte | Deckel **100** · Reserve **30** · Nicht-Understanding-Deckel **70** · Understanding-Deckel **100** · Fail-closed **1** · Understanding-Lock **an** |
+| Grenzfall isoliert (Wegwerf-Scope, 0 bezahlte Calls) | Nicht-Understanding (Deckel 70): **exakt 70 erlaubt, 71. blockiert**. Danach Understanding (Deckel 100): **exakt 30 weitere (70→100)**, 101. blockiert. **max used = 100, Zähler endet exakt bei 100, nie 101.** |
+| Understanding-Lock | Code erzwingt `granted=false → skip` (understanding.js:664/753, beide Batch-Pfade); lokaler Determinismus-Test: 2. überlappender Lauf `granted:false` (mit Flag), No-op ohne Flag. |
+| RPC-Nutzung / kein Fallback | Realer Production-Call **12:37:14 UTC → `global used=1`** (atomar). Kein „RPC fehlt"-Log, **kein PGRST202/404**, 0 error/warning-Logs in 25 min (Redeploy-Fenster). Redeploy fährt denselben RPC-aufrufenden Code — Atomik bleibt aktiv. |
+| Keine Überbuchung | Row-Lock serialisiert (früher: Burst 10 parallel @ Deckel 5 → exakt 5). Isolierter 100er-Deckel nie überschritten. |
+| Betrieb | 0 Systemfehler heute, 0 neue Runtime-Fehlercluster ab 12:32; Shell 200 + Asset `e9150801`; Daten unverändert (findings 990 / KO 274 / raw 5462 / gate_shadow 2043). |
+| Cem / Quellen | Cem-Store present, **4 Briefings**; Quellenmodus **on**, Gate **shadow**, PARDOK **shadow** (helmut-flags.json byte-identisch), Scoring **off**, BE/BB **inaktiv**. |
+| Kosten heute | **33 billable Calls / $0,0838** — deutlich < $0,50/Tag. |
+| Methoden-Hinweis (ehrlich) | Vercel-Env-Werte selbst nicht separat rückgelesen (in dieser Umgebung keine Env-Lesefähigkeit) — Wirksamkeit ist durch Redeploy-READY + exakte Wirkungstests (Reserve 70/30/100, Lock granted:false) belegt. Tab-Funktionen (Lage/Radar/Briefing/Büro/Admin) sind auth-gebunden nicht eingeloggt durchklickbar — bestätigt über Datenintegrität, App-200, 0 Fehler und die additive DB-only-Natur der Migration (keine Regressionsfläche). |
+
+Der volle „≤100 pro UTC-Tag"-Deckel greift kalendertagsgenau ab **morgen 00:00 UTC**
+(Zähler zählt vorwärts ab Aktivierung; heute steht er bei 1). **Nächster Schritt: Go PR 84.**
+
+---
+
+## NACHTRAG 2026-07-15 (F12: Migration atomare LLM-Budget-Reservierung LIVE) — Migrationsschritt (durch F12-FINAL oben ergänzt)
 
 | Was | Wert (live verifiziert via Supabase + Vercel-API, read-only) |
 |---|---|
