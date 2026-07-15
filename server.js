@@ -765,6 +765,33 @@ async function handleRequest(request, response) {
     });
   }
 
+  // Rein LESENDER Status des letzten Pipeline-Laufs — fuer den GitHub-Actions-
+  // Watchdog (Fix des falschen Timeout-Alarms 2026-07-15): Nach einem Client-
+  // Timeout arbeitet die Vercel-Function weiter; dieser Pfad beantwortet die
+  // Frage "wurde der Lauf serverseitig abgeschlossen?" OHNE die Pipeline erneut
+  // anzustossen. 0 Writes, 0 KI; nur whitelisted Zaehlerfelder (keine Rohdaten).
+  // Autorisierung: dasselbe CRON_SECRET, das der Watchdog bereits besitzt.
+  if (url.pathname === "/api/cron/pipeline-status") {
+    if (!authorizeCron(request, url, response)) return;
+    return handleAsync(response, async () => {
+      const latest = await getLatestCrawlRun();
+      return {
+        ok: true,
+        latestRun: latest ? {
+          createdAt: latest.createdAt || null,
+          checkedSources: latest.checkedSources ?? null,
+          successfulSources: latest.successfulSources ?? null,
+          failedSources: latest.failedSources ?? null,
+          savedItems: latest.savedItems ?? null,
+          // Laufzeit des Laufs (ms) — wird erst persistiert, sobald der
+          // Monitoring-Stapel gemergt ist (scheduler speichert durationMs);
+          // bis dahin ehrlich null. Forward-kompatibel gewhitelistet.
+          durationMs: latest.durationMs ?? null
+        } : null
+      };
+    });
+  }
+
   // Morgen-Health-Report per WhatsApp (CallMeBot). Antwort enthaelt den Text +
   // Zustellstatus, damit man ihn manuell testen kann (?secret=CRON_SECRET).
   if (url.pathname === "/api/cron/health-report") {
