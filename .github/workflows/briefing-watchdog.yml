@@ -9,8 +9,19 @@ name: Briefing Watchdog
 # WICHTIG: Der Endpoint /api/cron/pipeline führt den V3-Crawl aus und liefert BEWUSST
 # KEIN Briefing (kein V2-Briefing-Lauf mehr) — seine Antwort trägt successfulSources /
 # understanding{} / errors[], NICHT briefing.generatedAt. Deshalb wird der Erfolg an
-# genau diesen Feldern gemessen (scripts/watchdog-eval.js). Briefing-Frische ist ein
-# SEPARATER Check gegen einen Briefing-Endpoint und bewusst NICHT Teil dieses Watchdogs.
+# genau diesen Feldern gemessen (scripts/watchdog-eval.js).
+#
+# TIMEOUT-FIX (2026-07-15): Früher brach `curl --max-time 120` nach 120 s ab und
+# der Workflow behauptete "Pipeline wurde NICHT ausgeführt" — obwohl die Pipeline
+# serverseitig nach ~193 s erfolgreich mit HTTP 200 abschloss (Vercel erlaubt
+# maxDuration=300 s; der Endpoint begrenzt sich intern auf 280 s). Die gesamte
+# Aufruf- und Auswertungslogik liegt jetzt in scripts/watchdog-pipeline-check.js
+# (lokal testbar: scripts/watchdog-pipeline-check-test.js):
+#   - Client-Timeout 330 s (> Server-Maximum: der Server antwortet immer vorher).
+#   - Nach einem Client-Timeout wird der Abschluss über den rein lesenden
+#     Statuspfad /api/cron/pipeline-status verifiziert (KEIN zweiter Trigger).
+#   - Vier ehrliche Endzustände: Erfolg / Erfolg-nach-Timeout / Fehler /
+#     Unbekannt-oder-läuft-noch. Nie wieder "nicht ausgeführt" ohne Beleg.
 
 on:
   schedule:
@@ -25,6 +36,8 @@ concurrency:
 jobs:
   refresh-and-check:
     runs-on: ubuntu-latest
+    # Obergrenze: 330 s Pipeline-Call + 6×30 s Status-Polls + Puffer.
+    timeout-minutes: 15
     steps:
       - name: Repo auschecken (Watchdog-Auswertung)
         uses: actions/checkout@v4
@@ -34,34 +47,14 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Pipeline triggern und Erfolg prüfen
+      - name: Pipeline triggern und Erfolg prüfen (testbare Logik, kein Inline-Bash)
         env:
           BASE_URL: ${{ vars.HELMUT_PROD_URL || 'https://helmut-pilot.vercel.app' }}
           CRON_SECRET: ${{ secrets.HELMUT_CRON_SECRET }}
         run: |
           set -euo pipefail
-
           if [ -z "${CRON_SECRET:-}" ]; then
             echo "::error::HELMUT_CRON_SECRET ist nicht gesetzt."
             exit 1
           fi
-
-          echo "Rufe Pipeline auf: ${BASE_URL}/api/cron/pipeline"
-          HTTP_CODE=$(curl -sS --max-time 120 \
-            -H "Authorization: Bearer ${CRON_SECRET}" \
-            -o response.json -w "%{http_code}" \
-            "${BASE_URL}/api/cron/pipeline" || echo "000")
-
-          echo "HTTP-Status: ${HTTP_CODE}"
-          echo "--- Antwort (gekürzt) ---"
-          head -c 1200 response.json || true
-          echo ""
-
-          if [ "${HTTP_CODE}" != "200" ]; then
-            echo "::error::Pipeline-Aufruf fehlgeschlagen (HTTP ${HTTP_CODE}). Pipeline wurde NICHT ausgeführt."
-            exit 1
-          fi
-
-          # Erfolg an der ECHTEN Pipeline-Antwort messen (successfulSources + 0 Understanding-
-          # Fehler), NICHT an briefing.generatedAt (das dieser Endpoint per Design nicht trägt).
-          node scripts/watchdog-eval.js response.json
+          node scripts/watchdog-pipeline-check.js
