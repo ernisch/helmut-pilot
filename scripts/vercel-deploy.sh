@@ -55,8 +55,15 @@ while IFS= read -r line || [[ -n "$line" ]]; do
 done < "$ENV_FILE"
 
 echo ""
-echo "==> Starte Production-Deployment..."
-vercel --prod
+# Asset-Versionierung für den CLI-Deploy-Weg (Audit-Folgebranch): Vercel setzt
+# VERCEL_GIT_COMMIT_SHA nur bei Git-Integration-Deploys, NICHT bei `vercel --prod`.
+# Ohne eine deploy-eindeutige Version blieben client.js/styles.css wegen des
+# immutable-Cachings über CLI-Deploys hinweg unter derselben URL — Bestandsnutzer
+# bekämen dauerhaft alte Assets. Darum eine frische Version aus Git-SHA + Zeit
+# als HELMUT_ASSET_VERSION mitgeben (server.js nutzt sie als Fallback).
+ASSET_VER="$(git rev-parse --short=8 HEAD 2>/dev/null || echo cli)-$(date -u +%Y%m%d%H%M%S)"
+echo "==> Starte Production-Deployment (HELMUT_ASSET_VERSION=$ASSET_VER)..."
+vercel --prod -e "HELMUT_ASSET_VERSION=$ASSET_VER"
 echo ""
 echo "==> Fertig. Pruefe jetzt:"
 echo "    https://helmut-pilot.vercel.app/api/debug/public/status"
