@@ -83,7 +83,20 @@ Grenzen: ~100 Understanding + Spielraum, ~$8–10/Monat, Stop >$0,50/Tag, NIE un
   (Stichprobe statt Vollerhebung). Per-Dokument-Entscheidungen bleiben valide (dokumentweise
   berechnet). Der dedizierte 21:30-Cron (runPendingUnderstandingShadow) arbeitet
   vorgangsweise — saubere vorgang_ids dort werden um 21:45 UTC verifiziert.
-- Kosten heute (Stand 20:15): $0,07 zzgl. $0 durch Shadow; Understanding 15 (Normalbereich).
+- **21:30-UTC-Understanding-Cron (Auswertung 21:45):** gate_shadow_events **+500 → 1000 gesamt**
+  (Verteilung des Laufs: 345 verstehen / 153 zurückstellen / 2 parken); **0 amtliche
+  Dokumente falsch behandelt** (über alle 1000 Events). Understanding heute 15 = exakt
+  Ø-Normalbereich (NICHT gesunken); 9 neue KO-Vormerkungen ohne KI-Call; 41×
+  skipped-understanding-budget stammen vom BESTEHENDEN Tagesdeckel (Bestandsverhalten,
+  Begründung für Phase 4B) — das Gate blockierte nichts. Cem: Lesepfad unverändert,
+  Briefing 05:45 erzeugt, 0 sichtbare Abweichung. 0 Runtime-Fehler (4-h-Fenster über
+  beide Crons). document_findings weiter 0, BE/BB/PARDOK weiter 0.
+- **Telemetrie-Qualitätsbefund (Folgearbeit, KEIN Cutover-Blocker):** auch der 21:30-Pfad
+  clustert den Batch per Anker-Schneeball zu EINEM Riesen-Cluster (alle 500 Zeilen eine
+  vorgang_id, 500er-Kappung = Stichprobe). Per-Dokument-Entscheidungen bleiben valide;
+  der Quellen-Cutover berührt das Gate nicht. Empfohlene Folgearbeit: vorgang_id je
+  Dokument aus dessen Einzel-Anker ableiten + Kappung dokumentierend loggen.
+- Kosten heute (Endstand): **$0,0654** / 36 billable Calls; Shadow-Zusatzkosten $0.
 - **Rollback:** `helmut-flags.json` auf `off` + Deploy, ODER Vercel-Env `off` + Redeploy
   (überstimmt sofort), ODER Instant Rollback auf `7a27f5b`.
 
