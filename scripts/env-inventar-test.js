@@ -4,6 +4,13 @@
 // (Audit-Folgebranch). Scannt ALLE process.env.<NAME>-Zugriffe im produktiven
 // Code und stellt sicher, dass jede Variable im Inventar dokumentiert ist —
 // sonst driftet das Wiederaufbau-Dokument still (Bus-Faktor). KEIN Netz.
+//
+// Zusätzlich (Prüfungs-Folgefix): auch DYNAMISCH gelesene Variablen werden
+// erkannt — das wörtliche process.env.NAME-Muster war blind für
+//   (a) envList("NAME")            (lib/helmut/sourceSafety.js: SOURCE_BLOCK-/ALLOWLIST),
+//   (b) flagValue("NAME")/flagInfo (lib/helmut/flags.js: SOURCE_MODE, GATE, DISPATCH),
+//   (c) env.NAME auf injizierten env-Parametern (scoring.js, cem-shadow-compare.js).
+// Genau so konnte HELMUT_SOURCE_BLOCKLIST/ALLOWLIST unbemerkt im Inventar fehlen.
 
 const fs = require("fs");
 const path = require("path");
@@ -31,9 +38,23 @@ const productiveFiles = [
 ];
 
 const envNames = new Set();
+const dynamicNames = new Set();
 for (const file of productiveFiles) {
   const src = fs.readFileSync(file, "utf8");
+  // (1) Wörtlicher Zugriff: process.env.NAME
   for (const m of src.matchAll(/process\.env\.([A-Z_][A-Z0-9_]*)/g)) envNames.add(m[1]);
+  // (2) Dynamischer Zugriff über Helfer mit String-Literal: envList("NAME"),
+  //     flagValue("NAME"), flagInfo("NAME") — die Helfer lesen intern
+  //     process.env[name] und sind für Muster (1) unsichtbar.
+  for (const m of src.matchAll(/\b(?:envList|flagValue|flagInfo)\(\s*["']([A-Z_][A-Z0-9_]*)["']/g)) {
+    envNames.add(m[1]); dynamicNames.add(m[1]);
+  }
+  // (3) Property-Zugriff auf injizierte env-Parameter: env.NAME (Default-Wert
+  //     process.env), z. B. scoring.js env.HELMUT_SCORING_MODE. Der Lookbehind
+  //     schließt das bereits von (1) erfasste process.env.NAME aus.
+  for (const m of src.matchAll(/(?<!process\.)\benv\.([A-Z_][A-Z0-9_]*)/g)) {
+    envNames.add(m[1]); dynamicNames.add(m[1]);
+  }
 }
 
 const inventory = fs.readFileSync(path.join(root, "docs/betrieb/env-inventar.md"), "utf8");
@@ -57,6 +78,45 @@ for (const critical of ["SUPABASE_SERVICE_ROLE_KEY", "PILOT_SECRET", "CRON_SECRE
 }
 check("Inventar warnt vor HELMUT_REVIEW_FIXTURE in Production", inventory.includes("HELMUT_REVIEW_FIXTURE"));
 check("Pflicht-Mindestset ist benannt", /Pflicht-Mindestset/i.test(inventory));
+
+// Dynamisch gelesene Betreiber-Schalter: Muster (2)/(3) MÜSSEN sie finden UND
+// das Inventar MUSS sie dokumentieren. Schutz gegen künftige Drift, falls die
+// Lesestellen umgebaut werden (dann schlägt dieser explizite Check an).
+for (const dyn of ["HELMUT_SOURCE_BLOCKLIST", "HELMUT_SOURCE_ALLOWLIST", "HELMUT_SOURCE_MODE", "HELMUT_SCORING_MODE"]) {
+  check(`Dynamisch gelesene Variable vom Scan erfasst: ${dyn}`, dynamicNames.has(dyn) || envNames.has(dyn));
+  check(`Dynamisch gelesene Variable dokumentiert: ${dyn}`, inventory.includes(dyn));
+}
+
+// Struktur-Checks der Prüfungs-Folgeabschnitte (Rekonstruktions-/Betriebslisten).
+check("Abschnitt 'Werkzeug-/Script-Variablen' existiert", /Werkzeug-\/Script-Variablen/.test(inventory));
+check("Abschnitt 'Veraltete Variablen' existiert", /## .*Veraltete Variablen/.test(inventory));
+check("Abschnitt 'Kritische Production-Variablen' existiert", /## .*Kritische Production-Variablen/.test(inventory));
+check("Werkzeug-Abschnitt nennt TARGET_SUPABASE_SERVICE_ROLE_KEY", inventory.includes("TARGET_SUPABASE_SERVICE_ROLE_KEY"));
+check("Werkzeug-Abschnitt nennt VERCEL_TOKEN", inventory.includes("VERCEL_TOKEN"));
+check("Werkzeug-Abschnitt nennt HELMUT_PROD_URL (GitHub-Variable)", inventory.includes("HELMUT_PROD_URL"));
+check("CRON_SECRET-Doppelpflege (GitHub HELMUT_CRON_SECRET) ist dokumentiert", inventory.includes("HELMUT_CRON_SECRET"));
+
+// Phantom-Regression: HELMUT_MONITORING_EMAIL existiert im Code nicht — im
+// Inventar darf sie nur noch als Veraltet-/Phantom-Hinweis auftauchen, nie im
+// Pflicht-Mindestset (dort gehört HELMUT_MONITORING_WEBHOOK_URL hin).
+const mindestset = inventory.split(/## .*Pflicht-Mindestset/)[1]?.split(/\n## /)[0] || "";
+check("Pflicht-Mindestset nennt HELMUT_MONITORING_WEBHOOK_URL statt Phantom-Variable",
+  mindestset.includes("HELMUT_MONITORING_WEBHOOK_URL") && !mindestset.includes("HELMUT_MONITORING_EMAIL"));
+
+// Budget-Semantik: das Inventar darf den abgeschafften "kein Limit"-Zustand
+// nicht mehr behaupten (real: fehlend/leer/0/ungültig => Schutzlimit 50).
+check("Inventar dokumentiert Schutzlimit 50 (fail-closed) fuer HELMUT_MAX_LLM_CALLS_PER_DAY",
+  /Schutzlimit 50/.test(inventory) && !/Leer\/0 = kein Limit/.test(inventory));
+
+// Rotations-Runbook existiert und deckt die Kern-Secrets ab.
+const rotationPath = path.join(root, "docs/betrieb/secret-rotation.md");
+check("docs/betrieb/secret-rotation.md existiert", fs.existsSync(rotationPath));
+if (fs.existsSync(rotationPath)) {
+  const rotation = fs.readFileSync(rotationPath, "utf8");
+  for (const secret of ["PILOT_SECRET", "CRON_SECRET", "HELMUT_ADMIN_SECRET", "SUPABASE_SERVICE_ROLE_KEY", "OPENAI_API_KEY", "CALLMEBOT_APIKEY", "VAPID_PRIVATE_KEY", "DIP_API_KEY", "VERCEL_TOKEN", "TARGET_SUPABASE_SERVICE_ROLE_KEY"]) {
+    check(`Rotations-Runbook behandelt ${secret}`, rotation.includes(secret));
+  }
+}
 
 console.log(`\n${passed} PASS, ${failed} FAIL`);
 process.exit(failed ? 1 : 0);

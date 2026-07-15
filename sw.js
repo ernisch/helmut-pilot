@@ -44,6 +44,30 @@ self.addEventListener("activate", (event) => {
   })());
 });
 
+// Pruning alter ?v-Eintraege (Audit-Folgebranch 2026-07): stale-while-revalidate
+// legt pro Deploy neue Eintraege fuer styles.css?v=NEU, client.js?v=NEU und alle
+// per ?v= referenzierten Icons an — die alten ?v-Staende blieben bislang bis zum
+// naechsten ASSET_CACHE-Namespace-Bump liegen (monoton wachsender Cache).
+// Rein additiv: geloescht wird NUR derselbe Pfad mit ABWEICHENDEM ?v=-Parameter.
+// Unversionierte Eintraege (ohne ?v=), andere Pfade und der BADGE_CACHE bleiben
+// unberuehrt; Fehler sind best effort und aendern das Cache-Verhalten nicht.
+async function pruneOldVersions(cache, req) {
+  try {
+    const reqUrl = new URL(req.url);
+    const reqVersion = reqUrl.searchParams.get("v");
+    if (!reqVersion) return;
+    const keys = await cache.keys();
+    await Promise.all(keys.map((key) => {
+      let keyUrl;
+      try { keyUrl = new URL(key.url); } catch { return null; }
+      if (keyUrl.pathname !== reqUrl.pathname) return null;
+      const keyVersion = keyUrl.searchParams.get("v");
+      if (!keyVersion || keyVersion === reqVersion) return null;
+      return cache.delete(key);
+    }));
+  } catch { /* Pruning best effort — Cache-Hygiene, nie Funktionalitaet */ }
+}
+
 // Fetch-Strategie:
 //  - Navigationen: erst Netz, bei Fehler elegante Offline-Seite (nie Browser-Fehler).
 //  - Statische Assets (css/js/bilder/fonts): stale-while-revalidate -> schneller Start
@@ -76,7 +100,12 @@ self.addEventListener("fetch", (event) => {
       const cached = await cache.match(req);
       const network = fetch(req)
         .then((res) => {
-          if (res && res.ok) cache.put(req, res.clone()).catch(() => {});
+          if (res && res.ok) {
+            cache.put(req, res.clone())
+              // Nach erfolgreichem put: alte ?v-Staende desselben Pfads entsorgen.
+              .then(() => pruneOldVersions(cache, req))
+              .catch(() => {});
+          }
           return res;
         })
         .catch(() => null);

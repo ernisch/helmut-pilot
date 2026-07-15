@@ -1464,6 +1464,42 @@ function renderAdminKostenSummary(stats, periodLabel) {
   </div>`;
 }
 
+// Budget-Wahrheit (Phase 8): der heutige Stand im EXAKTEN Fenster des Budget-Gates
+// (UTC-Kalendertag) — nicht das rollierende 24h-Fenster der Kostentrends. Skips und
+// Fehler getrennt; pro Pfad einsehbar. Ruhig gehalten: eine Zeile + Aufklapper.
+function renderAdminBudgetHeute(b) {
+  if (!b) return "";
+  const limitText = b.limit != null ? `${b.calls}/${b.limit}` : `${b.calls} (kein Limit)`;
+  const restText = b.remaining != null ? String(b.remaining) : "—";
+  const tone = b.limit != null && b.remaining === 0 ? "bad" : (b.limit != null && b.remaining <= Math.ceil(b.limit * 0.2) ? "warn" : null);
+  const pfade = Object.entries(b.byCallType || {})
+    .sort((a, z) => (z[1].calls || 0) - (a[1].calls || 0))
+    .map(([ct, v]) => `<tr><td>${escapeHtml(ct)}</td><td>${v.calls}</td><td>${v.errors || 0}</td><td>$${Number(v.estimatedCostUsd || 0).toFixed(4)}</td></tr>`)
+    .join("");
+  const mandanten = Object.entries(b.byTenant || {})
+    .sort((a, z) => (z[1].calls || 0) - (a[1].calls || 0))
+    .map(([tid, v]) => `<tr><td>${escapeHtml(tid)}</td><td>${v.calls}</td><td>$${Number(v.estimatedCostUsd || 0).toFixed(4)}</td></tr>`)
+    .join("");
+  const skipReasons = Object.entries(b.skipsByReason || {})
+    .map(([reason, n]) => `<tr><td>${escapeHtml(reason)}</td><td>${n}</td></tr>`)
+    .join("");
+  const detail = `
+    <p class="sa-note">Tagesgrenze: ${escapeHtml(b.timezone)}. Fail-closed: ${b.failClosed ? "AN" : "aus"}${b.reserveUnderstanding ? ` · Understanding-Reserve: ${b.reserveUnderstanding} Calls` : ""}.</p>
+    <div class="admin-charts-row">
+      <div class="sa-block"><h3 class="sa-h3">Calls & Kosten pro Pfad (heute)</h3>
+        ${pfade ? `<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Pfad</th><th>Calls</th><th>Fehler</th><th>Kosten</th></tr></thead><tbody>${pfade}</tbody></table></div>` : `<p class="ac-empty">Heute noch keine KI-Calls.</p>`}</div>
+      <div class="sa-block"><h3 class="sa-h3">Calls pro Mandant (heute)</h3>
+        ${mandanten ? `<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Mandant</th><th>Calls</th><th>Kosten</th></tr></thead><tbody>${mandanten}</tbody></table></div>` : `<p class="ac-empty">Keine Mandanten-Calls.</p>`}</div>
+    </div>
+    ${skipReasons ? `<div class="sa-block"><h3 class="sa-h3">Übersprungene Anfragen (zählen nicht gegen das Budget)</h3><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Grund</th><th>Anzahl</th></tr></thead><tbody>${skipReasons}</tbody></table></div></div>` : ""}`;
+  return `<div class="admin-stats-row admin-stats-row--3">
+    ${adminStatCell(limitText, "Budget heute (Gate-Fenster)", tone, "KI-Kosten")}
+    ${adminStatCell(restText, "Verbleibend heute")}
+    ${adminStatCell(`${b.skips} / ${b.errors}`, "Skips / Fehler heute")}
+  </div>
+  ${adminDetails("Budget-Details (Pfade, Mandanten, Skips) anzeigen", detail)}`;
+}
+
 // ============================================================================
 // Sprint 8 — Admin: Quellenarchitektur (macht Sprint 4/5/7 sichtbar). Ruhig, hochwertig,
 // wiederverwendete Muster (adminSection/dsRow/ds-unavail/op-tile/ac-item). Rendert NUR
@@ -1786,6 +1822,7 @@ function renderAdminView() {
            <button class="admin-period-btn${adminPeriod === "days30" ? " is-active" : ""}" type="button" data-admin-period="days30">30 Tage</button>
          </div>
          ${renderAdminKostenSummary(data.stats?.[adminPeriod], adminPeriod === "today" ? "heute" : "30 Tage")}
+         ${renderAdminBudgetHeute(sys?.llmBudget)}
          ${adminDetails("Kosten pro Engine & pro Nutzer anzeigen", `<div class="admin-charts-row">${renderAdminEngineChart(data.stats?.[adminPeriod])}${renderAdminCostsCard(data.stats?.[adminPeriod])}</div>`)}`,
         "admin-kosten"
       )}

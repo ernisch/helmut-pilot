@@ -11,8 +11,20 @@
 // Bereiche Lage/Radar/Briefing/Büro sind erreichbar, mobile Navigation existiert.
 //
 // Voraussetzung: Playwright (in CI: npx playwright install chromium). Ohne
-// Playwright wird der Test mit klarer Meldung ÜBERSPRUNGEN (Exit 0) — die
+// Playwright wird der Test LOKAL mit klarer Meldung ÜBERSPRUNGEN (Exit 0) — die
 // Offline-Suite bleibt dependency-frei lauffähig.
+//
+// FAIL-CLOSED in CI (Audit-Folgebranch 2026-07): Der SKIP-Pfad war fail-open —
+// ein kaputt installiertes Playwright hätte das Merge-Gate grün gemacht, ohne
+// irgendetwas zu testen. Deshalb bricht der Test mit Exit 1 ab, wenn Playwright
+// fehlt UND CI=true (GitHub Actions setzt CI=true automatisch in ALLEN Jobs)
+// oder HELMUT_REQUIRE_BROWSER=1 gesetzt ist (der browser-smoke-Job in
+// .github/workflows/ci.yml installiert Playwright+Chromium selbst und setzt das
+// Flag zusätzlich explizit). EINZIGE Ausnahme: unter run-offline-tests.js
+// (HELMUT_OFFLINE_TEST=1) bleibt SKIP auch in CI erlaubt, denn der
+// offline-suite-Job ist bewusst dependency-frei — die Browser-Pflicht liegt
+// beim dedizierten browser-smoke-Job. HELMUT_REQUIRE_BROWSER=1 überstimmt
+// diese Ausnahme.
 
 const http = require("http");
 const path = require("path");
@@ -40,7 +52,18 @@ function check(name, cond, detail = "") {
 (async () => {
   const playwright = loadPlaywright();
   if (!playwright) {
-    console.log("SKIP  Playwright nicht installiert — Browser-Smoke übersprungen.");
+    // Fail-closed-Regel siehe Kopfkommentar: in CI (bzw. mit
+    // HELMUT_REQUIRE_BROWSER=1) darf fehlendes Playwright NICHT still grün sein.
+    const requireBrowser = process.env.HELMUT_REQUIRE_BROWSER === "1"
+      || (process.env.CI === "true" && process.env.HELMUT_OFFLINE_TEST !== "1");
+    if (requireBrowser) {
+      console.error("FAIL  Playwright/Chromium fehlt, aber der Browser-Smoke ist hier verpflichtend");
+      console.error("      (CI=true bzw. HELMUT_REQUIRE_BROWSER=1). Ein SKIP wäre fail-open:");
+      console.error("      das Merge-Gate würde grün, ohne dass die App je in einem Browser lief.");
+      console.error("      Fix: npm i --no-save playwright && npx playwright install --with-deps chromium");
+      process.exit(1);
+    }
+    console.log("SKIP  Playwright nicht installiert — Browser-Smoke übersprungen (nur lokal/offline-suite zulässig).");
     console.log("      In CI: npx playwright install chromium && node scripts/browser-smoke-test.js");
     process.exit(0);
   }

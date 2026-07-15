@@ -91,6 +91,11 @@ async function resetUsage() {
   const store = await storage.readAuthStore();
   store.llmUsage = [];
   await storage.writeAuthStore(store);
+  // Der atomare Reservierungszaehler (Race-Fix) ist eine EIGENE, konservative
+  // Wahrheitsquelle neben dem Usage-Log — ein geleertes Log setzt ihn bewusst
+  // NICHT zurueck. Fuer den Testphasen-Wechsel simulieren wir deshalb einen
+  // Prozessneustart, wie ihn Production bei jeder neuen Instanz hat.
+  if (typeof storage.__resetLlmReservationForTests === "function") storage.__resetLlmReservationForTests();
 }
 async function billableCount() {
   const usage = await storage.getLlmUsageToday(null);
@@ -173,9 +178,14 @@ const cluster = { documents: [{ title: "Testdokument", url: "https://example.org
   const burst = await Promise.all(Array.from({ length: 6 }, () => commDraft()));
   await settle(250);
   const allowedInBurst = burst.filter((r) => r.aiEnabled === true).length;
-  check("C1 Parallel-Burst (6 Calls, Limit 3): mindestens das Limit laeuft, Abweichung bleibt auf Burst begrenzt",
-    allowedInBurst >= 3 && allowedInBurst <= 6, `erlaubt=${allowedInBurst}`);
-  console.log(`      (dokumentierte Race-Abweichung in diesem Lauf: ${Math.max(0, allowedInBurst - 3)} Call(s) ueber Limit)`);
+  // Seit dem Race-Fix (atomare Reservierung am Choke-Point) darf ein Parallel-
+  // Burst das Limit NICHT mehr ueberschreiten: exakt limit Calls laufen, der
+  // Rest faellt kontrolliert auf den Budget-Fallback zurueck.
+  check("C1 Parallel-Burst (6 Calls, Limit 3): EXAKT das Limit laeuft (atomare Reservierung, keine Race-Abweichung mehr)",
+    allowedInBurst === 3, `erlaubt=${allowedInBurst}`);
+  const burstDenied = burst.filter((r) => r.aiEnabled === false && r.fallbackReason === "budget-erschoepft").length;
+  check("C1b abgelehnte Burst-Calls: ehrlicher Budget-Fallback (kein 'ki-fehler')",
+    burstDenied === 3, `budget-fallbacks=${burstDenied} von ${6 - allowedInBurst} abgelehnten`);
   // Konvergenz: sequentielle Folge-Calls lesen den ECHTEN Store-Zaehler und
   // muessen binnen weniger Schritte hart auf "gesperrt" laufen.
   let denied = false;
@@ -185,7 +195,7 @@ const cluster = { documents: [{ title: "Testdokument", url: "https://example.org
     denied = r.aiEnabled === false && r.fallbackReason === "budget-erschoepft";
   }
   const afterBurst = await storage.canSpendLlm(null);
-  check("C2 Zaehler konvergiert (store-basiert, kein Prozess-Gedaechtnis): sequentiell wird hart gesperrt",
+  check("C2 Zaehler konvergiert: Pre-Gate liest den Store und sperrt sequentiell hart",
     denied === true && afterBurst.allowed === false && afterBurst.used >= 3, JSON.stringify({ extra, afterBurst }));
   const storeEntries = (await storage.getLlmUsage(null, 100)).filter((e) => !String(e.callType || "").startsWith("skipped-")).length;
   check("C3 Ein-Quellen-Wahrheit: canSpendLlm.used == billable Eintraege im Store",

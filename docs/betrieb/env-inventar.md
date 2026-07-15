@@ -5,101 +5,110 @@ Konfigurationsebene — `.env.example` deckte nur ~35 von ~100 im Code gelesenen
 Variablen ab. Diese Datei listet **alle** aus dem Code (`server.js`, `api/`,
 `lib/helmut/**`, `sw.js`) tatsächlich gelesenen Variablen mit Zweck, Default,
 Secret-Status und Pflicht/optional. Automatisch gegen den Code abgeglichen; ein
-Regressionstest (`scripts/env-inventar-test.js`) hält die Liste synchron.
+Regressionstest (`scripts/env-inventar-test.js`) hält die Liste synchron —
+inklusive der dynamisch gelesenen Variablen (`envList("…")`, `flagValue("…")`,
+`env.NAME`-Parameter).
 
 **Bedienung:** Secrets stehen NUR in Vercel (Project → Settings → Environment
 Variables), niemals im Repo. Bei jeder Änderung: hier Ist-Wert des Betreibers
 NICHT eintragen (nur Zweck/Default), sondern in den Passwort-Manager. Nach
 Neuaufbau des Systems ist diese Liste die Rekonstruktionsgrundlage.
+Rotationsdetails je Secret: `docs/betrieb/secret-rotation.md`.
 
 Legende: **S** = Secret (nie loggen/committen) · **P** = Pflicht in Production ·
-**O** = optional (Default greift).
+**O** = optional (Default greift). **Merkmale** (kompakt, wo sinnvoll):
+Lesestelle · Umgebung (Prod = nur Vercel Production nötig; alle = Dev/Preview/Prod
+gleichbedeutsam) · Fail-Verhalten bei Fehlen/Fehlwert (fail-open = Feature fällt
+weg, App läuft; fail-closed = Zugriff/Aktion wird verweigert) · Rotationsbedarf.
 
 ## 1. Secrets / Zugang (S)
 
-| Variable | P/O | Zweck / Default |
-|---|---|---|
-| `SUPABASE_URL` | P | Supabase-Projekt-URL. Ohne: V3-Store inert, App läuft Blob-los/lokal. |
-| `SUPABASE_SERVICE_ROLE_KEY` (auch `SUPABASE_SERVICE_KEY`, `SUPABASE_SECRET_KEY`) | P·S | Service-Role-Key (RLS-Bypass) — der reale DB-Zugang. |
-| `SUPABASE_JWT_SECRET` | O·S | Nur für den (stillgelegten) Tenant-JWT-Modus. Aktuell wirkungslos. |
-| `SUPABASE_ANON_KEY` | O·S | Anon-Key für authenticated-Requests (nur JWT-Modus). |
-| `PILOT_SECRET` (auch `HELMUT_PILOT_SECRET`) | P·S | Geteilter Pilot-Zugangscode. **Fail-closed:** auf Vercel ohne diesen Wert kein Zugang. Rotation = Freigabepunkt F1. |
-| `HELMUT_ADMIN_SECRET` | O·S | Admin-/Debug-Bypass für einzelne Endpunkte; Default = `CRON_SECRET`. |
-| `CRON_SECRET` (GitHub-Secret: `HELMUT_CRON_SECRET`) | P·S | Bearer für alle `/api/cron/*`. **Fail-closed:** ohne → 503. |
-| `OPENAI_API_KEY` | P*·S | OpenAI-Key. *Pflicht nur, wenn Azure NICHT gesetzt. Ohne KI: Regel-Fallbacks. |
-| `AZURE_OPENAI_ENDPOINT` / `AZURE_OPENAI_KEY` | P*·S | Azure OpenAI (EU) — hat Vorrang vor OpenAI. Empfohlener Produktionspfad. |
-| `AZURE_OPENAI_DEPLOYMENT` | O | Deployment-Name. Default `gpt-5-mini`. |
-| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` (auch `HELMUT_VAPID_PUBLIC_KEY` / `HELMUT_VAPID_PRIVATE_KEY` / `HELMUT_VAPID_SUBJECT`) | O·S | Web-Push-Schlüssel. Ohne: Push deaktiviert (App läuft). Erzeugung: `scripts/generate-vapid-keys.js`. |
-| `CALLMEBOT_PHONE` / `CALLMEBOT_APIKEY` | O·S | WhatsApp-Health-Report an den Betreiber. **Ohne → dieser Kanal wird STILL übersprungen** (siehe Zweitkanal `HELMUT_MONITORING_WEBHOOK_URL`). |
-| `DIP_API_KEY` | O·S | Bundestag-DIP-API (Drucksachen). Ohne: DIP-Feature inaktiv. |
-| `OPENAI_MODEL` | O | Modellname für den direkten OpenAI-Pfad. Default gpt-4.1. |
+| Variable | P/O | Zweck / Default | Merkmale |
+|---|---|---|---|
+| `SUPABASE_URL` | P | Supabase-Projekt-URL. Ohne: V3-Store inert, App läuft Blob-los/lokal. | storage.js · alle · fail-open (Prod faktisch datenlos) · Rot: nur bei Projektwechsel |
+| `SUPABASE_SERVICE_ROLE_KEY` (auch `SUPABASE_SERVICE_KEY`, `SUPABASE_SECRET_KEY`) | P·S | Service-Role-Key (RLS-Bypass) — der reale DB-Zugang. | storage.js · alle · fail-open (Store inert) · Rot: bei Verdacht, siehe secret-rotation.md |
+| `SUPABASE_JWT_SECRET` | O·S | Nur für den (stillgelegten) Tenant-JWT-Modus. Aktuell wirkungslos. → Abschnitt 9 | storage.js · — · wirkungslos · Rot: entfällt (veraltet) |
+| `SUPABASE_ANON_KEY` | O·S | Anon-Key für authenticated-Requests (nur JWT-Modus). | storage.js · — · wirkungslos (JWT-Modus aus) · Rot: entfällt |
+| `PILOT_SECRET` (auch `HELMUT_PILOT_SECRET`) | P·S | Geteilter Pilot-Zugangscode. **Fail-closed:** auf Vercel ohne diesen Wert kein Zugang. Rotation = Freigabepunkt F1. | server.js · Prod · fail-closed · Rot: F1 / bei Verdacht |
+| `HELMUT_ADMIN_SECRET` | O·S | Admin-/Debug-Bypass für einzelne Endpunkte; Default = `CRON_SECRET` (empfohlen: SEPARAT setzen, sonst gewährt das Cron-Secret Debug-Vollzugriff). | server.js · Prod · fail-closed (404 ohne Secret) · Rot: bei Verdacht |
+| `CRON_SECRET` (GitHub-Secret: `HELMUT_CRON_SECRET`) | P·S | Bearer für alle `/api/cron/*`. **Fail-closed:** ohne → 503. **Doppelpflege:** identischer Wert in Vercel UND als GitHub-Secret `HELMUT_CRON_SECRET` (briefing-watchdog). | server.js · Prod+GitHub · fail-closed · Rot: beide Orte gleichzeitig |
+| `OPENAI_API_KEY` | P*·S | OpenAI-Key. *Pflicht nur, wenn Azure NICHT gesetzt. Ohne KI: Regel-Fallbacks. | ai.js · Prod (+GitHub staff-backfill) · fail-open (Regelmotor) · Rot: Provider-Konsole |
+| `AZURE_OPENAI_ENDPOINT` / `AZURE_OPENAI_KEY` | P*·S | Azure OpenAI (EU) — hat Vorrang vor OpenAI. Empfohlener Produktionspfad. | ai.js · Prod (+GitHub staff-backfill) · fail-open (Fallback OpenAI/Regeln) · Rot: Azure-Portal |
+| `AZURE_OPENAI_DEPLOYMENT` | O | Deployment-Name. Default `gpt-5-mini`. | ai.js · Prod · Default greift · — |
+| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` (auch `HELMUT_VAPID_PUBLIC_KEY` / `HELMUT_VAPID_PRIVATE_KEY` / `HELMUT_VAPID_SUBJECT`) | O·S | Web-Push-Schlüssel. Ohne: Push deaktiviert (App läuft). Erzeugung: `scripts/generate-vapid-keys.js`. | push.js · Prod · fail-open (Push aus) · Rot: nur bei Kompromittierung (invalidiert ALLE Push-Abos) |
+| `CALLMEBOT_PHONE` / `CALLMEBOT_APIKEY` | O·S | WhatsApp-Health-Report an den Betreiber. **Ohne → dieser Kanal wird STILL übersprungen** (siehe Zweitkanal `HELMUT_MONITORING_WEBHOOK_URL`). | server.js · Prod · fail-open (still!) · Rot: CallMeBot-Neuregistrierung |
+| `DIP_API_KEY` | O·S | Bundestag-DIP-API (Drucksachen). Ohne: DIP-Feature inaktiv. | dip.js · Prod · fail-open (DIP aus) · Rot: bei Ablauf/Leak |
+| `OPENAI_MODEL` | O | Modellname für den direkten OpenAI-Pfad. Default gpt-4.1. | ai.js · alle · Default greift · — |
 
 ## 2. Betriebsmodus / Auth (nicht geheim)
 
-| Variable | P/O | Zweck / Default |
-|---|---|---|
-| `HELMUT_AUTH_MODE` | O | `accounts` = Konten-Login; sonst Legacy-Pilotgate. |
-| `HELMUT_TENANT_MODE` | O | Default `pilot`. |
-| `HELMUT_TENANT_JWT_MODE` | O | **Stillgelegt** (tenantJwtModeEnabled()=false). Ohne Wirkung. |
-| `HELMUT_PROFILE_DB_MODE` | O | Profile aus mandate_profiles statt Blob. Default aus. |
-| `HELMUT_V3_STORE` | O | V3-Relationstabellen nutzen. In Prod = 1. |
-| `HELMUT_ADMIN_EMAIL` / `HELMUT_ADMIN_PASSWORD` / `HELMUT_ADMIN_NAME` / `HELMUT_ADMIN_RESET` | O·(S bei Passwort) | Erst-Admin-Seed (nach erstem Start entfernbar). |
-| `HELMUT_ALLOW_QUERY_SECRETS` | O | Query-Secret-Login erlauben. Default false. |
-| `HELMUT_SESSION_TTL_MS` | O | Session-Laufzeit. Default 30 Tage. |
-| `HELMUT_CANONICAL_HOST` | O | Default `helmut-pilot.vercel.app`. |
-| `NODE_ENV` / `PORT` / `VERCEL` / `VERCEL_ENV` / `VERCEL_GIT_COMMIT_SHA` / `VERCEL_GIT_COMMIT_REF` | (Plattform) | Von Vercel/Node gesetzt. `VERCEL_GIT_COMMIT_SHA` speist die Asset-Versionierung (ASSET_VERSION). |
+| Variable | P/O | Zweck / Default | Merkmale |
+|---|---|---|---|
+| `HELMUT_AUTH_MODE` | O | `accounts` = Konten-Login; sonst Legacy-Pilotgate. | server.js/auth.js · Prod · Default Legacy-Gate · — |
+| `HELMUT_TENANT_MODE` | O | Default `pilot`. | server.js · alle · Default greift · — |
+| `HELMUT_TENANT_JWT_MODE` | O | **Stillgelegt** (tenantJwtModeEnabled()=false). Ohne Wirkung. → Abschnitt 9 | storage.js · — · wirkungslos · — |
+| `HELMUT_PROFILE_DB_MODE` | O | Profile aus mandate_profiles statt Blob. Default aus. | storage.js · alle · Default aus · — |
+| `HELMUT_V3_STORE` | O | V3-Relationstabellen nutzen. In Prod = 1. | storage.js · Prod=1 · ohne: V3 inert (fail-open) · — |
+| `HELMUT_ADMIN_EMAIL` / `HELMUT_ADMIN_PASSWORD` / `HELMUT_ADMIN_NAME` / `HELMUT_ADMIN_RESET` | O·(S bei Passwort) | Erst-Admin-Seed (nach erstem Start entfernbar). | server.js · Prod (einmalig) · nur beim Seed relevant · nach Nutzung entfernen |
+| `HELMUT_ALLOW_QUERY_SECRETS` | O | Query-Secret-Login erlauben. Default false. **In Prod ungesetzt lassen.** | server.js · alle · Default sicher (aus) · — |
+| `HELMUT_SESSION_TTL_MS` | O | Session-Laufzeit. Default 30 Tage. | accounts.js · alle · Default greift · — |
+| `HELMUT_CANONICAL_HOST` | O | Default `helmut-pilot.vercel.app`. | server.js · Prod · Default greift · — |
+| `NODE_ENV` / `PORT` / `VERCEL` / `VERCEL_ENV` / `VERCEL_GIT_COMMIT_SHA` / `VERCEL_GIT_COMMIT_REF` | (Plattform) | Von Vercel/Node gesetzt. `VERCEL_GIT_COMMIT_SHA` speist die Asset-Versionierung (ASSET_VERSION). | Plattform · automatisch · — · — |
 
 ## 3. Kosten / KI-Budget
 
-| Variable | P/O | Zweck / Default |
-|---|---|---|
-| `HELMUT_MAX_LLM_CALLS_PER_DAY` | P (empfohlen) | Globales Tageslimit. **Leer/0 = kein Limit** (dokumentiert); gesetzter Ungültigwert → Schutzlimit 50 (Audit-Fix). Übergangsempfehlung: erst Ist-Wert in Admin-Diagnose ablesen, dann Richtwert ~100 Understanding-Calls/Tag. |
-| `HELMUT_LLM_BUDGET_FAIL_CLOSED` | O | Bei Budget-Prüffehler KI verweigern statt erlauben. Default aus (Freigabepunkt F6). |
-| `HELMUT_UNDERSTANDING_LOCK` | O | Globaler Understanding-Lock gegen Doppelläufe. Default aus. |
-| `HELMUT_LLM_PRICE_JSON` | O | Preis-Override für Kostenschätzung. |
-| `HELMUT_UNDERSTANDING_MODEL` / `HELMUT_TEXT_MODEL` | O | Modell-Override (nur OpenAI-Pfad). Default gpt-5-mini. |
-| `HELMUT_OFFICE_DAILY_LIMIT` | O | Büro-Outputs/Tag (V3-Engine). Default 10. |
-| `HELMUT_MAX_DAILY_INPUTS` | O | Tagesinputs/Mandat. Default 3. |
+| Variable | P/O | Zweck / Default | Merkmale |
+|---|---|---|---|
+| `HELMUT_MAX_LLM_CALLS_PER_DAY` | P (empfohlen) | Globales Tageslimit. **Fail-closed:** NUR eine positive ganze Zahl setzt das Limit; fehlend, leer, `0`, negativ oder unparsebar → **Schutzlimit 50 Calls/Tag** (einmalige Log-Warnung). Einen „kein Limit"-Zustand gibt es seit dem Budget-Rollout NICHT mehr — wer mehr braucht, setzt explizit eine hohe Zahl. Production: 100. | storage.js (`llmDailyCallLimit`) · Prod · fail-closed (Schutzlimit 50) · — |
+| `HELMUT_LLM_BUDGET_FAIL_CLOSED` | O | Bei Budget-Prüffehler KI verweigern statt erlauben. Default aus (Freigabepunkt F6). Production: 1. | storage.js · Prod=1 · Default fail-open, mit Flag fail-closed · — |
+| `HELMUT_LLM_RESERVE_UNDERSTANDING` | O | Reservierter Understanding-Mindestanteil am Tageslimit (Anzahl Calls). Nicht-Understanding-Pfade reservieren nur bis (Limit − Reserve). Leer/0 = aus; ungültig → 0. Production-Empfehlung: 30 (mit Limit 100, Runbook `llm-budget-reservierung.md`). | storage.js · Prod=30 empfohlen · Leer = Reserve aus (fail-open Richtung Verdrängung) · — |
+| `HELMUT_UNDERSTANDING_LOCK` | O | Globaler Understanding-Lock gegen Doppelläufe. Default aus. | storage.js · Prod=1 empfohlen · Default aus · — |
+| `HELMUT_LLM_PRICE_JSON` | O | Preis-Override für Kostenschätzung. | storage.js · alle · Default-Preise greifen · — |
+| `HELMUT_UNDERSTANDING_MODEL` / `HELMUT_TEXT_MODEL` | O | Modell-Override (nur OpenAI-Pfad). Default gpt-5-mini. | ai.js · alle · Default greift · — |
+| `HELMUT_OFFICE_DAILY_LIMIT` | O | Büro-Outputs/Tag (V3-Engine). Default 10. | office.js · alle · Default greift · — |
+| `HELMUT_MAX_DAILY_INPUTS` | O | Tagesinputs/Mandat. Default 3. | server.js · alle · Default greift · — |
 
 ## 4. Quellen / Crawl / PARDOK
 
-| Variable | P/O | Zweck / Default |
-|---|---|---|
-| `HELMUT_SOURCE_MODE` | P | off/shadow/**on** (Cutover aktiv). Via helmut-flags.json/Env. |
-| `HELMUT_UNDERSTANDING_GATE` / `HELMUT_PARDOK_DISPATCH` | O | Gate/Dispatch off/shadow/on. Beide shadow. |
-| `CRAWLER_TIMEOUT_MS` (Default 7000) · `CRAWLER_CONCURRENCY` | O | Crawl-Netzverhalten. |
-| `HELMUT_CRAWL_MAX_RESPONSE_BYTES` | O | Standard-Crawl-Bytelimit. Default 10 MiB. |
-| `HELMUT_PARDOK_MAX_RESPONSE_BYTES` (Default 64 MiB) · `HELMUT_PARDOK_MAX_RECORDS` (Default 800) | O | PARDOK-Streaming-Budget (Audit-Fix Sprint 7). |
-| `HELMUT_SOURCE_TARGET` / `HELMUT_SOURCE_CURATION` | O | Katalog-Kuratierung (Alt-Katalog-Pfad). |
-| `HELMUT_GOOGLE_NEWS_MAX_ITEMS` · `HELMUT_DIRECT_RSS_MAX_ITEMS` · `HELMUT_PERSON_NEWS_MAX_ITEMS` · `HELMUT_PROFILE_NEWS_MAX_ITEMS` · `HELMUT_TOPIC_RADAR_MAX_ITEMS` | O | Item-Caps je Quellart. |
-| `HELMUT_CRAWL_MAX_CANDIDATES` · `HELMUT_CRAWL_LAZY_BUDGET_MS` · `HELMUT_CRAWL_UNDERSTAND_BUDGET_MS` · `HELMUT_UNDERSTAND_BUDGET_MS` · `HELMUT_LAGE_UNDERSTAND_BUDGET_MS` | O | Zeit-/Mengenbudgets der Pipeline. |
-| `DIP_WAHLPERIODE` (Default 21) · `HELMUT_DIP_PRIMARY` · `DIP_CACHE_MS` | O | DIP-Verhalten. |
-| `AUTO_REFRESH_ON_READ` | O | Lazy-Refresh beim Lesen. |
-| `HELMUT_MANUAL_RUN_MIN_INTERVAL_MS` | O | Drossel für manuelle Läufe. |
+| Variable | P/O | Zweck / Default | Merkmale |
+|---|---|---|---|
+| `HELMUT_SOURCE_MODE` | P | off/shadow/**on** (Cutover aktiv). Via helmut-flags.json/Env (dynamisch gelesen über `flagValue`). | flags.js/source-mode.js · Prod=on · Default off (kein Crawl-Cutover!) · — |
+| `HELMUT_UNDERSTANDING_GATE` / `HELMUT_PARDOK_DISPATCH` | O | Gate/Dispatch off/shadow/on. Beide shadow. Dynamisch über `flagValue`/helmut-flags.json. | flags.js · alle · Default off · — |
+| `HELMUT_SOURCE_BLOCKLIST` | O | Kommagetrennte Domains, die als Quelle GESPERRT werden — Betreiber-Schalter, wirkt sofort ohne Deploy (dynamisch gelesen: `envList("HELMUT_SOURCE_BLOCKLIST")`). Leer = keine Zusatzsperren. | sourceSafety.js · Prod (Notfallschalter) · Leer = aus · — |
+| `HELMUT_SOURCE_ALLOWLIST` | O | Kommagetrennte Domains, die ZUSÄTZLICH als vertrauenswürdige Quelle erlaubt werden — Betreiber-Schalter ohne Deploy (`envList("HELMUT_SOURCE_ALLOWLIST")`). Leer = nur eingebaute Liste. | sourceSafety.js · Prod (bei Bedarf) · Leer = aus · — |
+| `CRAWLER_TIMEOUT_MS` (Default 7000) · `CRAWLER_CONCURRENCY` | O | Crawl-Netzverhalten. | crawler.js · alle · Default greift · — |
+| `HELMUT_CRAWL_MAX_RESPONSE_BYTES` | O | Standard-Crawl-Bytelimit. Default 10 MiB. | crawler.js · alle · Default greift · — |
+| `HELMUT_PARDOK_MAX_RESPONSE_BYTES` (Default 64 MiB) · `HELMUT_PARDOK_MAX_RECORDS` (Default 800) | O | PARDOK-Streaming-Budget (Audit-Fix Sprint 7). | pardok-parser.js · alle · Default greift · — |
+| `HELMUT_SOURCE_TARGET` / `HELMUT_SOURCE_CURATION` | O | Katalog-Kuratierung (Alt-Katalog-Pfad). | crawler.js · alle · Default greift · — |
+| `HELMUT_GOOGLE_NEWS_MAX_ITEMS` · `HELMUT_DIRECT_RSS_MAX_ITEMS` · `HELMUT_PERSON_NEWS_MAX_ITEMS` · `HELMUT_PROFILE_NEWS_MAX_ITEMS` · `HELMUT_TOPIC_RADAR_MAX_ITEMS` | O | Item-Caps je Quellart. | crawler.js · alle · Default greift · — |
+| `HELMUT_CRAWL_MAX_CANDIDATES` · `HELMUT_CRAWL_LAZY_BUDGET_MS` · `HELMUT_CRAWL_UNDERSTAND_BUDGET_MS` · `HELMUT_UNDERSTAND_BUDGET_MS` · `HELMUT_LAGE_UNDERSTAND_BUDGET_MS` | O | Zeit-/Mengenbudgets der Pipeline. | scheduler.js/understanding.js · alle · Default greift · — |
+| `DIP_WAHLPERIODE` (Default 21) · `HELMUT_DIP_PRIMARY` · `DIP_CACHE_MS` | O | DIP-Verhalten. | dip.js · alle · Default greift · — |
+| `AUTO_REFRESH_ON_READ` | O | Lazy-Refresh beim Lesen. | server.js · alle · Default greift · — |
+| `HELMUT_MANUAL_RUN_MIN_INTERVAL_MS` | O | Drossel für manuelle Läufe. | server.js · alle · Default greift · — |
 
 ## 5. Lage / Radar / Darstellung
 
-| Variable | P/O | Zweck / Default |
-|---|---|---|
-| `HELMUT_KO_SCAN_LIMIT` | O | KO-Scan-Fenster. Default 500. |
-| `HELMUT_LAGE_MAX_VORGAENGE` · `HELMUT_LAGE_DEMO` · `HELMUT_LAGE_CHECK_*` · `HELMUT_LAGE_CHECK_SOURCE_LIMIT` | O | Lage-/Lage-Check-Verhalten (Demo default aus). |
-| `HELMUT_SCORING_MODE` | O | Ebenen-bewusstes Ranking + gap/stale/quiet. Default off. |
-| `HELMUT_V3_MATCHING` / `HELMUT_MATCHING_DIM` / `HELMUT_V3_LAZY_UNDERSTANDING` / `HELMUT_V3_OFFICE` / `HELMUT_V3_SHADOW_COMPARE` | O | V3-Subsysteme, Default aus. |
-| `HELMUT_FRESH_STALE_HOURS` · `RADAR_DYNAMICS_FRESH_DAYS` · `HELMUT_TOP_TOPIC_COOLDOWN_HOURS` · `HELMUT_DECISION_LABEL_MAX` · `HELMUT_RAWDOC_SUMMARY_MAX` (Default 240) | O | Frische-/Anzeigeparameter. |
-| `HELMUT_REVIEW_FIXTURE` | O | **Gefährlich in Prod:** liefert fiktive Abnahmedaten. MUSS in Production ungesetzt sein. |
+| Variable | P/O | Zweck / Default | Merkmale |
+|---|---|---|---|
+| `HELMUT_KO_SCAN_LIMIT` | O | KO-Scan-Fenster. Default 500. | storage.js · alle · Default greift · — |
+| `HELMUT_LAGE_MAX_VORGAENGE` · `HELMUT_LAGE_DEMO` · `HELMUT_LAGE_CHECK_*` · `HELMUT_LAGE_CHECK_SOURCE_LIMIT` | O | Lage-/Lage-Check-Verhalten (Demo default aus). | lage.js · alle · Default greift · — |
+| `HELMUT_SCORING_MODE` | O | Ebenen-bewusstes Ranking + gap/stale/quiet. Default off. Dynamisch gelesen (`env.HELMUT_SCORING_MODE`). | scoring.js · alle · Default off · — |
+| `HELMUT_V3_MATCHING` / `HELMUT_MATCHING_DIM` / `HELMUT_V3_LAZY_UNDERSTANDING` / `HELMUT_V3_OFFICE` / `HELMUT_V3_SHADOW_COMPARE` | O | V3-Subsysteme, Default aus (`HELMUT_V3_SHADOW_COMPARE` dynamisch gelesen). | storage.js/office.js/cem-shadow-compare.js · alle · Default aus · — |
+| `HELMUT_FRESH_STALE_HOURS` · `RADAR_DYNAMICS_FRESH_DAYS` · `HELMUT_TOP_TOPIC_COOLDOWN_HOURS` · `HELMUT_DECISION_LABEL_MAX` · `HELMUT_RAWDOC_SUMMARY_MAX` (Default 240) | O | Frische-/Anzeigeparameter. | radarState.js/storage.js · alle · Default greift · — |
+| `HELMUT_REVIEW_FIXTURE` | O | **Gefährlich in Prod:** liefert fiktive Abnahmedaten. MUSS in Production ungesetzt sein. | reviewFixture.js · nur Dev · Default sicher (aus) · — |
 
 ## 6. Watchdog / Betrieb / Store
 
-| Variable | P/O | Zweck / Default |
-|---|---|---|
-| `HELMUT_MIN_CHECKED_SOURCES` · `HELMUT_MIN_SUCCESSFUL_SOURCES` · `HELMUT_MIN_CONFIGURED_SOURCES` · `HELMUT_MIN_LAGE_CHECK_SOURCES` | O | Watchdog-Schwellen. |
-| `HELMUT_MAX_CRAWL_FAILURE_RATIO` · `HELMUT_MAX_FULL_CRAWL_AGE_MS` · `HELMUT_MAX_LAGE_CHECK_AGE_MS` · `HELMUT_MAX_OUTPUT_FRESHNESS_MS` · `HELMUT_MAX_LAGE_CHECK_AGE_MS` | O | Frische-/Fehler-Grenzen des Watchdogs. |
-| `HELMUT_STORAGE_BACKEND` · `HELMUT_SUPABASE_STORE_ID` (Default `main`) · `HELMUT_SUPABASE_AUTH_STORE_ID` · `HELMUT_STORE_CACHE_MS` · `HELMUT_SUPABASE_TIMEOUT_MS` | O | Store-Backend/Caching. |
-| `HELMUT_MONITORING_WEBHOOK_URL` | O | **Zweiter Alarmkanal** (Audit-Folgebranch): Health-Report wird zusätzlich zu CallMeBot als JSON-POST hierher geschickt (Slack/Discord/Zapier/E-Mail-Relais). Ohne: nur WhatsApp. |
-| `HELMUT_ASSET_VERSION` | O | Cache-Busting-Version für den CLI-Deploy-Weg (setzt `scripts/vercel-deploy.sh` aus Git-SHA+Zeit). Git-Integration-Deploys nutzen stattdessen `VERCEL_GIT_COMMIT_SHA`. |
-| `HELMUT_LAGE_CHECK_RECENT_HOURS` · `HELMUT_LAGE_CHECK_REGENERATE_THRESHOLD` | O | Lage-Check-Feinsteuerung. |
-| `HELMUT_MORNING_PUSH_ALL_PROFILES` | O | Morgen-Push für alle Profile (Multi-Mandant). Default aus (Freigabepunkt F4). |
-| `HELMUT_STAFF_STALE_DAYS` | O | Staff-Backfill-Frische. |
+| Variable | P/O | Zweck / Default | Merkmale |
+|---|---|---|---|
+| `HELMUT_MIN_CHECKED_SOURCES` · `HELMUT_MIN_SUCCESSFUL_SOURCES` · `HELMUT_MIN_CONFIGURED_SOURCES` · `HELMUT_MIN_LAGE_CHECK_SOURCES` | O | Watchdog-Schwellen. | server.js · alle · Default greift · — |
+| `HELMUT_MAX_CRAWL_FAILURE_RATIO` · `HELMUT_MAX_FULL_CRAWL_AGE_MS` · `HELMUT_MAX_LAGE_CHECK_AGE_MS` · `HELMUT_MAX_OUTPUT_FRESHNESS_MS` | O | Frische-/Fehler-Grenzen des Watchdogs. | server.js · alle · Default greift · — |
+| `HELMUT_STORAGE_BACKEND` · `HELMUT_SUPABASE_STORE_ID` (Default `main`) · `HELMUT_SUPABASE_AUTH_STORE_ID` · `HELMUT_STORE_CACHE_MS` · `HELMUT_SUPABASE_TIMEOUT_MS` | O | Store-Backend/Caching. | storage.js · alle · Default greift · — |
+| `HELMUT_MONITORING_WEBHOOK_URL` | O | **Zweiter Alarmkanal** (Audit-Folgebranch): Health-Report wird zusätzlich zu CallMeBot als JSON-POST hierher geschickt (Slack/Discord/Zapier/E-Mail-Relais). Ohne: nur WhatsApp. | server.js · Prod empfohlen · fail-open (Kanal still aus) · Rot: bei Webhook-Leak |
+| `HELMUT_ASSET_VERSION` | O | Cache-Busting-Version für den CLI-Deploy-Weg (setzt `scripts/vercel-deploy.sh` aus Git-SHA+Zeit). Git-Integration-Deploys nutzen stattdessen `VERCEL_GIT_COMMIT_SHA`. **CLI-Deploys IMMER über das Skript** (siehe `deploy-rollback.md`). | server.js · nur CLI-Deploy · ohne: Konstante (Stale-Asset-Falle) · — |
+| `HELMUT_LAGE_CHECK_RECENT_HOURS` · `HELMUT_LAGE_CHECK_REGENERATE_THRESHOLD` | O | Lage-Check-Feinsteuerung. | lage.js · alle · Default greift · — |
+| `HELMUT_MORNING_PUSH_ALL_PROFILES` | O | Morgen-Push für alle Profile (Multi-Mandant). Default aus (Freigabepunkt F4). | server.js · alle · Default aus · — |
+| `HELMUT_STAFF_STALE_DAYS` | O | Staff-Backfill-Frische. | staff.js · alle · Default greift · — |
 
 ## 7. Pflicht-Mindestset für einen funktionierenden Production-Neuaufbau
 
@@ -107,6 +116,58 @@ Legende: **S** = Secret (nie loggen/committen) · **P** = Pflicht in Production 
 `HELMUT_AUTH_MODE=accounts` + Admin-Seed), `AZURE_OPENAI_ENDPOINT`+`AZURE_OPENAI_KEY`
 (oder `OPENAI_API_KEY`), `HELMUT_V3_STORE=1`, `HELMUT_SOURCE_MODE=on`,
 `HELMUT_MAX_LLM_CALLS_PER_DAY`. Für Push zusätzlich die VAPID-Trias, für
-Alarmierung `CALLMEBOT_*` (bzw. `HELMUT_MONITORING_EMAIL`, Zweitkanal).
+Alarmierung `CALLMEBOT_*` (bzw. `HELMUT_MONITORING_WEBHOOK_URL`, Zweitkanal).
 Ein Startup-Warnhinweis bei fehlenden Pflichtvariablen ist als spätere
 Ergänzung sinnvoll (Roadmap), aber kein Blocker.
+
+## 8. Werkzeug-/Script-Variablen (nicht Laufzeit)
+
+Diese Variablen liest NICHT der Server, sondern Betriebs-Skripte bzw.
+GitHub-Actions-Workflows. Sie gehören nicht nach Vercel (Ausnahmen vermerkt),
+sondern in die Shell des Betreibers, `.env.local` oder GitHub Secrets/Variables.
+
+| Variable | Ort (Lesestelle) | Zweck / Hinweise |
+|---|---|---|
+| `TARGET_SUPABASE_SERVICE_ROLE_KEY` (S) | `scripts/restore-drill.js` | Service-Role-Key des ZIEL-Testprojekts für die Restore-Übung (die Ziel-URL kommt als CLI-Argument `--target-url`, nicht als Env). Nur ad hoc in der Shell setzen, nie persistieren. Darf NIE der Production-Key sein. |
+| `VERCEL_TOKEN` (S) | vercel-CLI (`scripts/vercel-deploy.sh` setzt Login via `vercel whoami` voraus) | CLI-/CI-Zugang zum Vercel-Account. Wird von keinem Repo-Code direkt gelesen; Erzeugung/Widerruf unter vercel.com → Account → Tokens. Rotationspflichtig (secret-rotation.md). |
+| `HELMUT_CRON_SECRET` (S, GitHub-Secret) | `.github/workflows/briefing-watchdog.yml` | GitHub-Seite der `CRON_SECRET`-Doppelpflege — MUSS wertgleich mit `CRON_SECRET` in Vercel sein, sonst schlägt der Watchdog fehl. |
+| `HELMUT_PROD_URL` (GitHub-Variable, `vars.`) | `.github/workflows/briefing-watchdog.yml` | Basis-URL für den Watchdog-Aufruf. Default `https://helmut-pilot.vercel.app`. |
+| `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` / `OPENAI_API_KEY` / `AZURE_OPENAI_KEY` / `AZURE_OPENAI_ENDPOINT` / `AZURE_OPENAI_DEPLOYMENT` (S, GitHub-Secrets/Vars) | `.github/workflows/staff-backfill-*.yml` | GitHub-Spiegel der Vercel-Werte für die manuellen Staff-Backfill-Workflows. Bei Rotation der Vercel-Werte MITROTIEREN. |
+| `HELMUT_BASE_URL` | `scripts/smoke-test.js` | Ziel-URL des Smoke-Tests (Default lokal). |
+| `HELMUT_SMOKE_AUTH` | `scripts/smoke-test.js` | `1` = Account-Modus-Smoke (Login/RBAC/Mandantentrennung) statt Pilot-Smoke. |
+| `HELMUT_SMOKE_ADMIN_EMAIL` / `HELMUT_SMOKE_ADMIN_PASSWORD` (S bei Passwort) | `scripts/smoke-test.js` | Admin-Zugang für den Account-Modus-Smoke (Fallback: `HELMUT_ADMIN_EMAIL`/`HELMUT_ADMIN_PASSWORD`). |
+| `HELMUT_UNDERSTANDING_EVAL_LIVE` | `scripts/understanding-eval.js` | `1` = Goldset-Eval mit ECHTEN KI-Calls (Kosten!). Default offline. Steht auch in `.env.example`. |
+
+Bewusst NICHT inventarisiert (reine Test-/Probe-Knöpfe ohne Betriebsrelevanz):
+`PARDOK_*` (pardok-shadow-test), `PP_*` (pardok-structure-probe), `S9B_*`
+(sprint9b-verify), `SP_*` (shadow-pilot-crawl), `TMPDIR`.
+
+## 9. Veraltete Variablen
+
+Diese Variablen existieren noch als Lesestellen bzw. historische Referenzen,
+haben aber keine Wirkung mehr. NICHT neu setzen; bei Gelegenheit aus Vercel
+entfernen.
+
+| Variable | Status |
+|---|---|
+| `HELMUT_TENANT_JWT_MODE` | Stillgelegt: `tenantJwtModeEnabled()` liefert hart `false`. Setzen ändert nichts. |
+| `SUPABASE_JWT_SECRET` | Nur vom stillgelegten Tenant-JWT-Modus konsumiert — aktuell wirkungslos. |
+| `SUPABASE_ANON_KEY` | Nur vom stillgelegten Tenant-JWT-Modus konsumiert — aktuell wirkungslos. |
+| `HELMUT_MONITORING_EMAIL` | Hat NIE existiert (Doku-Phantom bis 2026-07). Der Zweitkanal heißt `HELMUT_MONITORING_WEBHOOK_URL`. |
+
+## 10. Kritische Production-Variablen
+
+Kritisch = Fehlen oder Fehlwert bricht Production sofort sichtbar ODER
+entfesselt Kosten. Diese Werte bei JEDER Env-Änderung gegenprüfen:
+
+| Variable | Warum kritisch |
+|---|---|
+| `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` | Ohne beide: kein Store — App startet, zeigt aber keine Daten; Crons schreiben ins Leere. |
+| `CRON_SECRET` | Ohne: alle `/api/cron/*` antworten 503 → kein Crawl, kein Briefing, kein Health-Report (fail-closed). Falscher Wert nur in GitHub (`HELMUT_CRON_SECRET`): Watchdog schlägt dauerhaft fehl. |
+| `PILOT_SECRET` (Legacy-Modus) | Ohne: niemand kommt in die App (fail-closed). |
+| `HELMUT_MAX_LLM_CALLS_PER_DAY` | Falsch hoch gesetzt = Kostenrisiko. Fehlend/ungültig = Schutzlimit 50 → Understanding-Läufe werden gedrosselt (fail-closed, kein Kostenrisiko, aber Funktionseinbuße). |
+| `HELMUT_LLM_BUDGET_FAIL_CLOSED` | In Prod = 1. Ohne: bei Budget-Prüffehlern werden KI-Calls ERLAUBT (fail-open → Kostenrisiko bei Störung). |
+| `HELMUT_SOURCE_MODE` | Ohne/off: kein Quellen-Cutover — Crawl liefert keinen neuen Stoff, App veraltet still. |
+| `AZURE_OPENAI_ENDPOINT`+`AZURE_OPENAI_KEY` (oder `OPENAI_API_KEY`) | Ohne: nur Regel-Fallbacks, keine KI-Ausgaben (App läuft, Kernnutzen fehlt). |
+| `HELMUT_V3_STORE` | Ohne `=1`: V3-Pfade inert — Understanding/Büro/Radar-Datenfluss steht. |
+| `HELMUT_REVIEW_FIXTURE` | MUSS ungesetzt sein — gesetzt liefert es fiktive Daten an echte Nutzer. |
