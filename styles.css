@@ -9725,6 +9725,14 @@ details[open].meeting-detail summary::before { content: '▾ '; }
   opacity: .7;
   font-style: italic;
 }
+/* Ehrliche Herkunftszeile auf Büro-Karten (KI-Entwurf / Regel-Fallback / Fehler) */
+.buero-card-provenance {
+  font-size: 11px;
+  color: var(--muted-2);
+  margin: 6px 0 0;
+  opacity: .7;
+  font-style: italic;
+}
 
 .buero-detail-body {
   padding-top: 28px;
