@@ -44,15 +44,19 @@ function makeFakeRpc(state = { rows: new Map() }, opts = {}) {
   const origReserve = process.env.HELMUT_LLM_RESERVE_UNDERSTANDING;
   const origFailClosed = process.env.HELMUT_LLM_BUDGET_FAIL_CLOSED;
 
-  console.log("== 1) Kein Limit gesetzt -> keine Reservierung, immer erlaubt ==");
+  console.log("== 1) Kein Limit gesetzt -> FAIL-CLOSED Schutzlimit 50 (Budget-Rollout), Reservierung findet statt ==");
+  // Seit dem Budget-Rollout gibt es KEINEN "kein Limit"-Wert mehr: fehlend/leer/
+  // ungueltig aktiviert das Schutzlimit 50 (fail-closed statt unbegrenzt). Die
+  // Reservierung muss dann normal greifen — mit Limit 50 statt Infinity.
   delete process.env.HELMUT_MAX_LLM_CALLS_PER_DAY;
   delete process.env.HELMUT_LLM_RESERVE_UNDERSTANDING;
   delete process.env.HELMUT_LLM_BUDGET_FAIL_CLOSED;
   {
     let rpcCalled = 0;
-    const r = await storage.reserveLlmCall({ callType: "office-output", referenceIso: REF, deps: { rpc: async () => { rpcCalled += 1; return { allowed: true, used: 1 }; } } });
-    check("ohne Limit erlaubt", r.allowed === true && r.limit === null);
-    check("ohne Limit kein RPC-Aufruf (keine Latenz/Schreiblast)", rpcCalled === 0);
+    let seenMax = null;
+    const r = await storage.reserveLlmCall({ callType: "office-output", referenceIso: REF, deps: { rpc: async (params) => { rpcCalled += 1; seenMax = params.p_max; return { allowed: true, used: 1 }; } } });
+    check("ohne gesetzte Variable: Schutzlimit 50 aktiv (limit=50, erlaubt)", r.allowed === true && r.limit === 50);
+    check("Reservierung findet statt (RPC 1x, p_max=50)", rpcCalled === 1 && seenMax === 50);
   }
 
   console.log("== 2) RPC-Modus: Grenzwert exakt (Limit 3 -> genau 3 erlaubt) ==");

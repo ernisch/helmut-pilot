@@ -104,11 +104,14 @@ function entry(createdAt, callType, opts = {}) {
     delete process.env.HELMUT_LLM_BUDGET_FAIL_CLOSED;
   }
 
-  console.log("== 6) Kein Limit gesetzt -> limit/remaining ehrlich null ==");
+  console.log("== 6) Kein Limit gesetzt -> Schutzlimit 50 wird ehrlich angezeigt (fail-closed) ==");
+  // Seit dem Budget-Rollout faellt ein fehlender/ungueltiger Wert auf das
+  // Schutzlimit 50 zurueck — die Admin-Anzeige muss GENAU das Gate-Verhalten
+  // zeigen (nicht null), sonst luegt sie ueber den wirksamen Deckel.
   {
     delete process.env.HELMUT_MAX_LLM_CALLS_PER_DAY;
     const b = await storage.getLlmUsageBreakdownToday(REF, deps([entry("2026-07-16T08:00:00.000Z", "understanding")]));
-    check("limit=null, remaining=null", b.limit === null && b.remaining === null);
+    check("limit=50 (Schutzlimit), remaining=49", b.limit === 50 && b.remaining === 49);
     process.env.HELMUT_MAX_LLM_CALLS_PER_DAY = "10";
   }
 
