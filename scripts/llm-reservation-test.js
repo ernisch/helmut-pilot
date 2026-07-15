@@ -243,6 +243,41 @@ function makeFakeRpc(state = { rows: new Map() }, opts = {}) {
     check("Fehler ist der Netzfehler, KEIN Budget-Fehler", thrown && thrown.code === "ETESTOFFLINE", String(thrown && thrown.code));
   }
 
+  console.log("== 13) Extremszenario: Stand 99 bei Limit 100 — genau EIN weiterer Call ==");
+  {
+    process.env.HELMUT_MAX_LLM_CALLS_PER_DAY = "100";
+    delete process.env.HELMUT_LLM_RESERVE_UNDERSTANDING;
+    const rpc = makeFakeRpc({ rows: new Map([["2026-07-17|global", { used: 99 }]]) });
+    const results = await Promise.all(Array.from({ length: 10 }, () => storage.reserveLlmCall({ callType: "communicationDraft", referenceIso: REF, deps: { rpc } })));
+    check("Stand 99, Limit 100: exakt 1 von 10 parallelen erlaubt", results.filter((r) => r.allowed).length === 1);
+    check("Zaehler exakt 100, nie darueber", rpc.state.rows.get("2026-07-17|global").used === 100);
+  }
+
+  console.log("== 14) Extremszenario: 50 parallele Calls bei Limit 100 — alle laufen, Zaehler exakt ==");
+  {
+    process.env.HELMUT_MAX_LLM_CALLS_PER_DAY = "100";
+    const rpc = makeFakeRpc(undefined, { beforeEach: () => new Promise((res) => setTimeout(res, Math.floor(Math.random() * 5))) });
+    const results = await Promise.all(Array.from({ length: 50 }, () => storage.reserveLlmCall({ callType: "office-output", referenceIso: REF, deps: { rpc } })));
+    check("50 parallel unter Limit 100: alle 50 erlaubt", results.filter((r) => r.allowed).length === 50);
+    check("Zaehler exakt 50", rpc.state.rows.get("2026-07-17|global").used === 50);
+  }
+
+  console.log("== 15) Extremszenario: Reserve 30 bei Limit 100 — Buero stoppt bei 70, Understanding bucht nie ueber ==");
+  {
+    process.env.HELMUT_MAX_LLM_CALLS_PER_DAY = "100";
+    process.env.HELMUT_LLM_RESERVE_UNDERSTANDING = "30";
+    // Stand 69: EIN Buero-Call passt noch (bis 70), dann nur noch Understanding.
+    const rpc = makeFakeRpc({ rows: new Map([["2026-07-17|global", { used: 69 }]]) });
+    const bueroBurst = await Promise.all(Array.from({ length: 10 }, () => storage.reserveLlmCall({ callType: "office-output", referenceIso: REF, deps: { rpc } })));
+    check("Buero bei Stand 69: exakt 1 von 10 erlaubt (Deckel 70 = Limit - Reserve)", bueroBurst.filter((r) => r.allowed).length === 1);
+    check("Buero-Ablehnung nennt die Reserve", bueroBurst.find((r) => !r.allowed).reason === "daily-llm-budget-reserved-for-understanding");
+    // Understanding darf die vollen 100 nutzen — aber KEINE Ueberbuchung darueber:
+    const undBurst = await Promise.all(Array.from({ length: 40 }, () => storage.reserveLlmCall({ callType: "understanding", referenceIso: REF, deps: { rpc } })));
+    check("Understanding: exakt 30 weitere (70 -> 100), keine Ueberbuchung", undBurst.filter((r) => r.allowed).length === 30);
+    check("Zaehler exakt 100", rpc.state.rows.get("2026-07-17|global").used === 100);
+    delete process.env.HELMUT_LLM_RESERVE_UNDERSTANDING;
+  }
+
   // Env wiederherstellen
   if (origLimit === undefined) delete process.env.HELMUT_MAX_LLM_CALLS_PER_DAY; else process.env.HELMUT_MAX_LLM_CALLS_PER_DAY = origLimit;
   if (origReserve === undefined) delete process.env.HELMUT_LLM_RESERVE_UNDERSTANDING; else process.env.HELMUT_LLM_RESERVE_UNDERSTANDING = origReserve;
