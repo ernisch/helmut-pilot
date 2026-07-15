@@ -53,6 +53,41 @@ neuere). Vorgehen:
   Testprojekt, App dagegen booten, Stichproben — ein ungeübter Restore ist
   kein Restore.
 
+## 3b. Restore-ÜBUNG (vorbereitet, jederzeit gefahrlos ausführbar)
+
+Werkzeug: `scripts/restore-drill.js` (getestet durch `restore-drill-test.js`).
+Es stellt ein Backup **ausschließlich in eine isolierte Zielumgebung** wieder
+her und **verweigert hart** jeden Restore in die Backup-Quelle oder in
+`SUPABASE_URL` (Production) — die Übung kann Production konstruktionsbedingt
+nicht berühren.
+
+**Ablauf der Übung (Soll-Dauer < 30 Min):**
+
+1. Export: `node scripts/backup-export.js` (read-only, gegen Production erlaubt).
+2. Wiederherstellung, wahlweise:
+   - Strukturübung ohne Netz: `node scripts/restore-drill.js --backup backups/<stamp> --local /tmp/helmut-drill`
+   - Echte DB-Übung (erst nach F7 bzw. mit kostenlosem separatem Testprojekt):
+     `TARGET_SUPABASE_SERVICE_ROLE_KEY=<ziel-key> node scripts/restore-drill.js --backup backups/<stamp> --target-url https://<testprojekt>.supabase.co`
+     (Ziel-Schema vorher mit `supabase/schema.sql` + Migrationen anlegen.)
+3. Validierung: Skript prüft jede Tabelle gegen das Manifest (Zeilenzahlen)
+   und schreibt `drill-protokoll.json` + `.md` mit Zeitmessung pro Tabelle.
+4. Erfolgskriterien: Exit-Code 0, `erfolg: true`, 0 Fehler, Zeilenzahlen =
+   Manifest, Gesamtdauer notiert (Referenz für die echte Wiederherstellungszeit).
+5. Fehlerprotokoll: jeder Fehlschlag steht mit Tabelle + Ursache im Protokoll —
+   ins Betriebs-Log übernehmen (nur Kennzahlen, keine Rohdaten).
+6. Testdaten löschen: lokales Zielverzeichnis entfernen bzw. Testprojekt
+   zurücksetzen/löschen. Die Rohdateien enthalten personenbezogene Daten —
+   nie liegen lassen, nie committen.
+
+**Wiederherstellungsreihenfolge** (im Skript verankert, FK-sicher): Blob-Store →
+profiles/mandate_profiles → Quellenarchitektur (publishers → retrieval_paths →
+source_packages → package_paths) → Stammdaten → raw_documents →
+knowledge_objects → Verknüpfungen → decisions/briefings → Rest.
+**Realistische Wiederherstellungszeit:** Blob-Only-Restore < 5 Min; Voll-Restore
+(~40 Tabellen, aktuelle Datenmenge) 15–30 Min inkl. Validierung.
+**Datenverlustfenster:** Zeit seit letztem Export (bis F7: bis zu 24 h beim
+empfohlenen Tagesrhythmus; nach F7/PITR: Minuten).
+
 ## 4. Was NICHT gesichert wird (bewusst)
 
 - Vercel-Env-Variablen: stehen nicht in der DB. Bis das Env-Inventar

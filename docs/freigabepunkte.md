@@ -70,18 +70,26 @@ in Vercel setzen + Redeploy → der 05:00-Cron bedient alle aktiven Profile
 (deaktivierte übersprungen, per-Profil try/catch, 240s-Budget, 0 KI).
 **Rückweg:** Variable entfernen/0 + Redeploy.
 
-## F5 — LLM-Tageslimit: Ist-Wert dokumentieren, dann ggf. auf 150 erhöhen
+## F5 — LLM-Tageslimit auf 100 + Understanding-Reserve (EIN kontrollierter Schritt mit F6/F12)
 
-**Schritt 1 (nur Lesen):** Admin → System & Sicherheit → Live-Diagnose: Wert
-von `HELMUT_MAX_LLM_CALLS_PER_DAY` ablesen und hier als Rollback-Referenz
-notieren: `Ist-Wert Production am ____: ____`.
-**Schritt 2 (nach Freigabe):** Vercel-Env auf `150` + Redeploy.
-Grenzen laut Master-Status: ~$8–10/Monat, Stop >$0,50/Tag, NIE unbegrenzt.
+**Ist-Wert (verifiziert aus 13 Tagen Laufzeitverhalten + Preview-Diagnose):**
+`HELMUT_MAX_LLM_CALLS_PER_DAY=20` — als Rollback-Referenz dokumentiert.
+**Entschiedener Zielwert:** `100` (bewusste Gründer-Entscheidung, statt der
+früher erwogenen 150).
+**Schritt (nach Merge + Migration F12, im SELBEN Schritt wie F6):** Vercel-Env
+`HELMUT_MAX_LLM_CALLS_PER_DAY=100` + `HELMUT_LLM_RESERVE_UNDERSTANDING=30`
+(Understanding kann nie unter 30 Calls/Tag gedrückt werden; Büro/Lage/App-Start
+teilen sich max. 70 — behebt das belegte Aushungern: am 11.07. liefen 38
+Büro-Calls, während Understanding 67× geblockt wurde) + Redeploy.
 **Neu seit Sprint 2:** Ein Tippfehler im Wert fällt nicht mehr auf „unbegrenzt",
-sondern auf ein Schutzlimit von 50 Calls/Tag (Log-Warnung).
-**Rückweg:** dokumentierten Ist-Wert wieder setzen.
+sondern auf ein Schutzlimit von 50 Calls/Tag (Log-Warnung). **Neu seit dem
+Race-Fix:** Nach Migration F12 ist der Deckel ATOMAR durchgesetzt (parallele
+Calls können ihn nicht mehr überholen) und gilt am einzigen Modell-Callsite —
+kein Pfad (auch Büro/Backfill) kann ihn umgehen. Details:
+`docs/betrieb/llm-budget-reservierung.md`.
+**Rückweg:** dokumentierten Ist-Wert 20 wieder setzen; Reserve-Variable entfernen.
 
-## F6 — Fail-closed für Budget-Prüffehler aktivieren (vor zahlendem Kunden)
+## F6 — Fail-closed für Budget-Prüffehler aktivieren (im SELBEN Schritt wie F5)
 
 **Schritt:** Vercel-Env `HELMUT_LLM_BUDGET_FAIL_CLOSED=1` + Redeploy.
 **Wirkung:** Schlägt die Budget-ABFRAGE fehl (Storage-Störung), wird der
@@ -112,6 +120,23 @@ TOMs, Löschkonzept, VVT, AVV-Liste, Pilotvereinbarung als ARBEITSENTWURF,
 Fragenkatalog). JEDE verbindliche Festlegung (Art.-9-Grundlage, DSFA,
 AVV-Abschluss, Pilotvereinbarung unterschreiben) braucht Anwalt/DSB — keine
 Rechtsbewertung durch dieses Audit.
+
+## F12 — Migration: atomare LLM-Budget-Reservierung einspielen (vor F5/F6)
+
+**Warum:** Der belegte Budget-Race (Read-then-Decide; Limit 20, real bis 185
+Calls/Tag) ist im Code behoben — die Atomik über mehrere Server-Instanzen
+braucht aber die SQL-Funktion `helmut_reserve_llm_call` in Supabase. Bis zur
+Migration läuft das Gate erkennbar+geloggt im Altverhalten weiter (deploybar,
+aber nicht atomar).
+
+**Schritt:** `supabase/migrations/20260717_llm_budget_reservation.sql` im
+Supabase-SQL-Editor ausführen (idempotent, < 1 s, keine Sperren auf
+App-Tabellen, keine Nutzerwirkung). Vorprüfung/Nachprüfung/Rollback exakt in
+`docs/betrieb/llm-budget-reservierung.md`.
+
+**Reihenfolge:** Merge (F10) → diese Migration → F5+F6 (Env-Werte) → Redeploy.
+**Rückweg:** `20260717_llm_budget_reservation_rollback.sql` (App fällt
+automatisch auf Altverhalten zurück, kein Deploy nötig).
 
 ## F11 — Branch Protection aktivieren (einmalig, 2 Minuten)
 
