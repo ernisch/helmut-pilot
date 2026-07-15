@@ -1,6 +1,46 @@
 # MASTER-STATUS — Helmut Quellenarchitektur-Migration
 
-## NACHTRAG 2026-07-15 (F12 FINAL: Understanding-Reserve + Lock live verifiziert) — aktuellster verifizierter Stand
+## NACHTRAG 2026-07-15 (Technische Rest-PRs: Watchdog-Timeout + Radar-Störungswahrheit live) — aktuellster verifizierter Stand
+
+| Was | Wert (live verifiziert) |
+|---|---|
+| Production-Commit | **`b9e9816`** |
+| Production-Deployment | **`dpl_EwJTdX3oVTsUmX1jfQ4wKMpijDKQ`** (READY, target=production) |
+| Rollback-Referenz | `dpl_4ykmhzT5ywpUnFjMC5YEm2VzMSxC` (15b3303, vor Radar) · `dpl_FHhkVVPtr7y6GrcU8uGHoUwF9dTE` (fe7078c, vor Watchdog) |
+
+**PR 87 (Watchdog-Timeout) ✅ gemerged + live (`15b3303`).** Client-Timeout 120→330 s,
+neuer rein lesender `/api/cron/pipeline-status` (auth-gated 403 ohne Secret), vier
+ehrliche Endzustände, Doppel-Trigger-Schutz. Cron-Schedule unverändert (`30 5 * * *`).
+Nachweis: kontrollierter Workflow-Lauf **#19 grün** — realer ~200-s-Pipeline-Lauf →
+`Watchdog OK — Pipeline ok (successfulSources=145, understanding.processed=43)` (der
+alte 120-s-curl hätte hier falsch „nicht ausgeführt" gemeldet; Läufe #18/#13 mit
+Altcode schlugen fehl). Tests: watchdog 17/17 + Offline 93/93.
+
+**PR 88 — nur der Radar-Teil isoliert gemerged (PR 89, `b9e9816`); Monitoring-Teil bleibt OFFEN.**
+PR 88 war breiter als „Radar-Störungswahrheit" (15 Dateien, u. a. NEUER 06:30-UTC-Cron
+`health-watch.yml`, Audit-Log, Health-Report-Ausbau, 2 Persistenz-Bugfixes). Auf
+Gründer-Entscheid wurde **ausschließlich** der Radar-Commit `3c0e882` per Cherry-Pick
+auf Main gebracht (client.js `radarDisruption()`, radarState `pickPrimarySource`-Fallback,
+server.js `MENTION_CAP`-Kopplung, styles.css, Radar-Tests). Der **Monitoring-Commit
+`fa7d528` bleibt in PR 88 offen** (kein neuer Cron, kein Audit-Log in Production).
+Radar-Verhalten: `store-error/v3-store-disabled` → ehrliche Störung, `keine-vorgaenge` →
+„Noch keine Datengrundlage", `keine-treffer` = ruhiger Tag; Refresh-Fehlschlag zeigt
+ruhige Hinweiszeile mit letztem Stand. Tests: radar-state 113/113, radar-ui 26/26,
+Browser-Smoke 21/21.
+
+**Betrieb (nach beiden Merges):** 0 neue 5xx/Runtime-Fehler, 0 Systemfehler heute.
+Budget **100 / Reserve 30 / fail-closed / Lock** unverändert wirksam; Zähler **8/100**,
+Kosten **$0,1037** (< $0,50/Tag). Quellen **on** / Gate **shadow** / PARDOK **shadow** /
+Scoring **off** / BE+BB **inaktiv** — unverändert. Cem: Store present, **10 Briefings**.
+
+**Offen bleibt (Freigabepunkt):** der Monitoring-Härtungs-Teil aus PR 88 (`fa7d528`):
+Wächter-Wächter-Cron `health-watch.yml` (06:30 UTC), Audit-Log an Admin-/Debug-Routen,
+Health-Report-Ausbau, `compactStore`/`normalizePoliticianStore`-Persistenz-Bugfixes,
+`reset-llm-budget`-Ehrlichkeit. Braucht eine eigene Cron-Freigabe.
+
+---
+
+## NACHTRAG 2026-07-15 (F12 FINAL: Understanding-Reserve + Lock live verifiziert)
 
 Gründer hat `HELMUT_LLM_RESERVE_UNDERSTANDING=30` + `HELMUT_UNDERSTANDING_LOCK=1`
 manuell in Vercel gesetzt und das Production-Deployment neu deployt. Finale
