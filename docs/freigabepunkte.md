@@ -80,7 +80,10 @@ früher erwogenen 150).
 `HELMUT_MAX_LLM_CALLS_PER_DAY=100` + `HELMUT_LLM_RESERVE_UNDERSTANDING=30`
 (Understanding kann nie unter 30 Calls/Tag gedrückt werden; Büro/Lage/App-Start
 teilen sich max. 70 — behebt das belegte Aushungern: am 11.07. liefen 38
-Büro-Calls, während Understanding 67× geblockt wurde) + Redeploy.
+Büro-Calls, während Understanding 67× geblockt wurde) +
+`HELMUT_UNDERSTANDING_LOCK=1` (verhindert Doppel-Calls pro Vorgang bei
+überlappenden Cron-Läufen — der Exists-Check ist sonst Read-then-Decide) +
+Redeploy.
 **Neu seit Sprint 2:** Ein Tippfehler im Wert fällt nicht mehr auf „unbegrenzt",
 sondern auf ein Schutzlimit von 50 Calls/Tag (Log-Warnung). **Neu seit dem
 Race-Fix:** Nach Migration F12 ist der Deckel ATOMAR durchgesetzt (parallele
