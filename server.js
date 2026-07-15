@@ -323,7 +323,23 @@ async function handleRequest(request, response) {
       // Call. So können die Karten NIE durch ein LLM-Timeout verschwinden. Der Timeout
       // bleibt als reines Sicherheitsnetz (cacheOnly macht nur DB-Reads, hängt nicht).
       try { briefing.lageBriefing = await withTimeout(buildLageBriefing(profile, { politicianId, cacheOnly: true }), 8000, "lage-briefing-cards"); }
-      catch (error) { console.error("Lage-Karten fehlgeschlagen", error && error.message); }
+      catch (error) {
+        console.error("Lage-Karten fehlgeschlagen", error && error.message);
+        // STOERUNGSWAHRHEIT (Review-Fix): Ohne diesen Sentinel bliebe
+        // briefing.lageBriefing undefined und der Client zeigte den GENERISCHEN
+        // ruhigen Leerzustand ("keine relevanten Vorgänge") — ein Timeout/Fehler
+        // sah damit aus wie ein ruhiger Tag. Form exakt wie lage.js unavailable():
+        // reason "error" mappt der Client (lageDisruption) auf den ehrlichen
+        // Störungszustand.
+        briefing.lageBriefing = {
+          available: false,
+          demo: false,
+          reason: "error",
+          generatedAt: new Date().toISOString(),
+          paragraphs: [],
+          vorgaenge: []
+        };
+      }
       // Narrativ asynchron nachziehen (fire-and-forget), damit der Cache für den
       // nächsten Aufruf warm ist. Blockiert den App-Start NICHT.
       if (briefing.lageBriefing && briefing.lageBriefing.pendingNarrative) {

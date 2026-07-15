@@ -10407,7 +10407,17 @@ function bindActions() {
       const originalText = button.textContent;
       button.textContent = "Löscht...";
       try {
-        await deletePrivacyData();
+        const result = await deletePrivacyData();
+        // EHRLICHKEIT (Review-Fix): Der Server meldet Teilfehler über ok:false
+        // (z. B. V3-Tabellen oder Konto-Daten nicht gelöscht). Das darf NICHT
+        // als Erfolg angezeigt werden — sonst glaubt der Nutzer an eine
+        // vollständige Löschung, während Daten zurückbleiben (Art. 17).
+        if (result && result.ok === false) {
+          showToast("Löschung nur TEILWEISE erfolgreich — es sind noch Daten vorhanden. Bitte den Administrator informieren.");
+          button.disabled = false;
+          button.textContent = "Löschung wiederholen";
+          return;
+        }
         showToast("Daten gelöscht");
         window.location.reload();
       } catch (error) {
