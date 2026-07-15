@@ -14,6 +14,8 @@
     "test:browser-smoke": "node scripts/browser-smoke-test.js",
     "test:onboarding-tenant": "node scripts/onboarding-tenant-test.js",
     "test:pardok-fetch": "node scripts/pardok-fetch-test.js",
+    "test:env-inventar": "node scripts/env-inventar-test.js",
+    "test:sales-blockers": "node scripts/sales-blockers-test.js",
     "backup:export": "node scripts/backup-export.js",
     "test:p1": "node scripts/p1-security-check.js",
     "test:contract": "node scripts/contract-snapshot-test.js",
