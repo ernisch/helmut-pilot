@@ -30,10 +30,16 @@ const root = __dirname;
 const port = Number(process.env.PORT || 3000);
 // Erlaubte Feedback-Typen (Admin-Inbox). Bewusst schlank, kein freier Text-Typ.
 const FEEDBACK_TYPES = ["relevant", "nicht_relevant", "falsch", "mehr_davon", "weniger_davon", "unklar"];
-// Cache-Busting fuer styles.css/client.js. Leitet sich automatisch vom Deploy ab
-// (Vercel setzt VERCEL_GIT_COMMIT_SHA pro Deploy), damit ein neues Release nie mit
-// veralteten, gecachten Assets ausgeliefert wird. Fallback fuer lokal/ohne Vercel.
-const ASSET_VERSION = String(process.env.VERCEL_GIT_COMMIT_SHA || "").slice(0, 8) || "20260701-adminfix1";
+// Cache-Busting fuer styles.css/client.js. Leitet sich automatisch vom Deploy ab.
+// Präzedenz (Audit-Folgebranch): VERCEL_GIT_COMMIT_SHA (Git-Integration-Deploy)
+// > HELMUT_ASSET_VERSION (wird von scripts/vercel-deploy.sh beim CLI-Deploy aus
+// dem Git-SHA gesetzt) > Konstante (nur lokal). WICHTIG: Auf dem CLI-Deploy-Weg
+// setzt Vercel VERCEL_GIT_COMMIT_SHA NICHT — ohne den mittleren Fallback bliebe
+// die Asset-URL über Deploys konstant und Bestandsnutzer bekämen wegen des
+// immutable-Cachings dauerhaft alte client.js/styles.css (gefixte Bugs nie).
+const ASSET_VERSION = String(process.env.VERCEL_GIT_COMMIT_SHA || "").slice(0, 8)
+  || String(process.env.HELMUT_ASSET_VERSION || "").slice(0, 40)
+  || "20260701-adminfix1";
 const contentTypes = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
@@ -749,18 +755,35 @@ async function handleRequest(request, response) {
     if (!authorizeCron(request, url, response)) return;
     return handleAsync(response, async () => {
       const report = await buildHealthReport(politicianId);
-      const delivery = await sendCallMeBotMessage(report.text);
-      // Echten Zustellfehler (nicht: Keys fehlen) protokollieren, damit er in der
-      // Admin-Fehlerliste auftaucht und morgen in errors24 zaehlt. Sonst waere ein
-      // stiller WhatsApp-Ausfall unsichtbar.
-      if (delivery && delivery.sent === false && !delivery.skipped) {
+      // ZWEITKANAL (Audit-Folgebranch): der Report ging bisher NUR über CallMeBot-
+      // WhatsApp — fehlten dessen Keys, wurde er still übersprungen (einziger
+      // Alarmweg tot). Jetzt zusätzlich ein generischer Webhook-Kanal
+      // (HELMUT_MONITORING_WEBHOOK_URL: Slack/Discord/Zapier/E-Mail-Relay).
+      // Beide Kanäle fail-safe und unabhängig; ein Kanal-Fehler kippt den anderen
+      // nicht. Kein neuer Dienst/kein SMTP-Secret nötig.
+      const [delivery, webhook] = await Promise.all([
+        sendCallMeBotMessage(report.text),
+        sendMonitoringWebhook(report)
+      ]);
+      const whatsappBroken = delivery && delivery.sent === false && !delivery.skipped;
+      const webhookBroken = webhook && webhook.sent === false && !webhook.skipped;
+      // Echten Zustellfehler protokollieren (nicht: Keys fehlen). Beide Kanäle
+      // still tot (skipped) bei einem NICHT-grünen Report ist selbst ein Alarm.
+      if (whatsappBroken || webhookBroken) {
         await accounts.recordSystemError({
           scope: "health-report",
-          message: `WhatsApp-Zustellung fehlgeschlagen: ${delivery.reason || ("HTTP " + (delivery.status || "?"))}`,
+          message: `Alarm-Zustellung fehlgeschlagen: ${whatsappBroken ? "WhatsApp " + (delivery.reason || "HTTP " + (delivery.status || "?")) : ""} ${webhookBroken ? "Webhook " + (webhook.reason || "HTTP " + (webhook.status || "?")) : ""}`.trim(),
           path: "/api/cron/health-report"
         }).catch(() => {});
       }
-      return { ok: report.ok, text: report.text, delivery };
+      if (!report.ok && delivery && delivery.skipped && webhook && webhook.skipped) {
+        await accounts.recordSystemError({
+          scope: "health-report",
+          message: "Nicht-grüner Health-Report, aber KEIN Alarmkanal konfiguriert (CALLMEBOT_* und HELMUT_MONITORING_WEBHOOK_URL fehlen).",
+          path: "/api/cron/health-report"
+        }).catch(() => {});
+      }
+      return { ok: report.ok, text: report.text, delivery, webhook, overdueCrons: report.overdueCrons, googleUrlResolutionRate: report.googleUrlResolutionRate };
     });
   }
 
@@ -1214,9 +1237,20 @@ async function handleRequest(request, response) {
   // Rollback: docs/ko-anreicherung-analyse.md (tags/policy_field wieder leeren).
   if (url.pathname === "/api/admin/ko-enrichment-backfill") {
     if (!requireRoleOr403(response, authUser, "admin")) return undefined;
+    // Audit-Fix (Folgebranch): Dieser Endpunkt ist ZUSTANDSÄNDERND (KI-Ausgaben
+    // bis 5 €/Aufruf, KO-Writes) und lief früher über GET — damit griff der
+    // globale CSRF-Guard nicht und ein präparierter Link konnte im Admin-Browser
+    // fremdausgelöste Kosten erzeugen. Lesen (Dry-Run-Vorschau) bleibt per GET
+    // erlaubt; JEDE Ausführung (execute/bypassBudget) verlangt POST (=CSRF-Guard).
+    const wantsExecution = url.searchParams.get("execute") === "1" || url.searchParams.get("bypassBudget") === "1";
+    if (wantsExecution && request.method !== "POST") {
+      response.writeHead(405, jsonHeaders());
+      response.end(JSON.stringify({ error: "Ausführung nur per POST (CSRF-geschützt). GET liefert ausschließlich die Dry-Run-Vorschau." }, null, 2));
+      return undefined;
+    }
     return handleAsync(response, async () => {
-      const execute = url.searchParams.get("execute") === "1";
-      const bypassBudget = url.searchParams.get("bypassBudget") === "1";
+      const execute = request.method === "POST" && url.searchParams.get("execute") === "1";
+      const bypassBudget = request.method === "POST" && url.searchParams.get("bypassBudget") === "1";
       const wanted = Number(url.searchParams.get("maxCents"));
       const maxEurCents = Math.min(500, Number.isFinite(wanted) && wanted > 0 ? wanted : 500); // HART <= 5 EUR
       const result = await runKoEnrichmentBackfill({ execute, bypassBudget, maxEurCents }, {
@@ -1654,6 +1688,36 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
   for (const ko of understood) if (ko && ko.id) kosById[ko.id] = ko;
   const selected = candidateDecisions.map((d) => kosById[d.knowledge_object_id]).filter(Boolean);
   const sourcesByVorgang = await loadSourcesByVorgang(selected);
+  // Radar-Erwähnungen belegen (Audit-Folgebranch): "Über dich" zeigt eine
+  // Eigenerwähnung nur mit echter Quellen-URL. Quellen wurden aber bisher NUR für
+  // die Top-50-Decisions geladen; eine Erwähnung außerhalb davon fiel auf
+  // ko.best_source_url zurück — fehlt das Feld (~37 % der KOs), verschwand die
+  // belegte Erwähnung STILL, obwohl echte URLs in raw_documents liegen. Fix:
+  // für die wenigen Erwähnungs-KOs ohne geladene Quelle diese gezielt nachladen
+  // (deterministisch, 0 KI, hart gedeckelt). Nur ADDITIV — keine Decision entsteht.
+  try {
+    const radarStateMod = require("./lib/helmut/radarState");
+    const terms = radarStateMod.profileTerms(profile);
+    if (terms && terms.fullName) {
+      const MENTION_SOURCE_LOAD_CAP = 25; // Schutz gegen O(n) DB-Reads
+      const mentionNeedsSources = [];
+      for (const ko of understood) {
+        if (!ko || !ko.vorgang_id) continue;
+        if (sourcesByVorgang[ko.vorgang_id]) continue; // schon geladen
+        if (!radarStateMod.detectPersonMention(ko, terms)) continue;
+        mentionNeedsSources.push(ko);
+        if (mentionNeedsSources.length >= MENTION_SOURCE_LOAD_CAP) break;
+      }
+      if (mentionNeedsSources.length) {
+        const extra = await loadSourcesByVorgang(mentionNeedsSources);
+        for (const [vid, docs] of Object.entries(extra)) {
+          if (!sourcesByVorgang[vid]) sourcesByVorgang[vid] = docs;
+        }
+      }
+    }
+  } catch (error) {
+    console.error("[v3-briefing] Mention-Quellen-Nachladen fehlgeschlagen (nicht kritisch):", error && error.message);
+  }
   // Source Safety Guard (regelbasiert, 0 KI): kritische, unbestaetigte Claims aus
   // unbekannten/schwachen Quellen NICHT ins Helmut-Briefing. Quarantaene wird verworfen.
   const safeDecisions = candidateDecisions.filter((d) => {
@@ -2358,6 +2422,9 @@ module.exports.__SPLASH_WATCHDOG_SCRIPT = SPLASH_WATCHDOG_SCRIPT;
 // Onboarding, Namensvarianten) korrekt uebernommen/validiert werden und Bearbeiten
 // nie ungewollt Felder loescht.
 module.exports.__normalizeProfile = normalizeProfile;
+// Test-Hooks (Offline, Audit-Folgebranch): Monitoring-Zweitkanal + Asset-Version.
+module.exports.__sendMonitoringWebhook = sendMonitoringWebhook;
+module.exports.__ASSET_VERSION = () => ASSET_VERSION;
 
 if (require.main === module) {
   const server = http.createServer(requestHandler);
@@ -2940,19 +3007,54 @@ async function buildHealthReport(politicianId = cemInceProfile.id) {
   await saveWatchdogState(politicianId, classification.state);
 
   const engagement = `👤 ${active7} aktiv (7T) · 💬 ${feedback24} Feedback · 📲 ${pushSent24} Push (24h)`;
+
+  // Cron-Vollständigkeit (Audit-Folgebranch): macht sichtbar, wenn eine
+  // INFRASTRUKTUR-Cron ausgefallen ist. Nutzt die bereits geladenen LEBENDEN
+  // Frische-Zeitstempel — keine neue Speicherarchitektur.
+  // WICHTIG: nur Crons prüfen, die UNABHÄNGIG vom Nachrichtenaufkommen laufen
+  // müssen — Crawl (2×/Tag, prüft immer Quellen) und Lage-Check (1×/Tag). Die
+  // Understanding-OUTPUT-Frische (jüngstes complete-KO) wird BEWUSST NICHT hart
+  // gegatet: an einem ruhigen Nachrichtentag entsteht legitim kein neues
+  // verstandenes KO — das wäre ein Fehlalarm. Die Output-Frische bewertet ohnehin
+  // classifyOperationalState (warn/stale, nicht hart). Understanding erscheint nur
+  // informativ in der Zeile.
+  const cronChecks = [
+    { name: "Crawl", h: crawlH, maxH: 28, hardGate: true },
+    { name: "Lage-Check", h: lageH, maxH: 28, hardGate: true }
+  ];
+  const overdueCrons = cronChecks.filter((c) => c.h == null || c.h > c.maxH);
+  const cronLine = overdueCrons.length
+    ? `⏰ Cron überfällig: ${overdueCrons.map((c) => `${c.name} (${fmtAge(c.h)})`).join(", ")} · Verstanden zuletzt: ${fmtAge(completeKoH)}`
+    : `⏰ Crawl/Lage-Cron aktuell · Verstanden zuletzt: ${fmtAge(completeKoH)}`;
+
+  // Google-News-Auflösungsquote (Audit-Folgebranch): SPOF-Frühwarnung. Bricht
+  // Googles URL-Auflösung ein, "gelingt" der Crawl weiter, aber Links kippen
+  // still zu Proxy/leer. <50% aufgelöst bei nennenswertem Volumen = Warnsignal.
+  const gnr = crawl?.googleUrlResolution || null;
+  const gnrRate = gnr && gnr.attempted > 0 ? gnr.resolved / gnr.attempted : null;
+  const gnrLine = gnr && gnr.attempted > 0
+    ? `🔗 Google-News-Links: ${Math.round(gnrRate * 100)}% aufgelöst (${gnr.resolved}/${gnr.attempted})${gnrRate < 0.5 ? " ⚠️ niedrig" : ""}`
+    : null;
+  const gnrDegraded = gnrRate != null && gnrRate < 0.5 && gnr.attempted >= 10;
+
   const text = [
     describeState(classification),
     "",
     `Crawl: ${fmtAge(crawlH)} (${checked} Quellen, ${failed} Fehler) · Lage: ${fmtAge(lageH)}`,
     `Briefing: ${briefingItems} Einträge · Verstanden zuletzt: ${fmtAge(completeKoH)} · Fehler (24h): ${errors24}`,
+    cronLine,
+    ...(gnrLine ? [gnrLine] : []),
     engagement
   ].join("\n");
 
   return {
-    ok,
+    ok: ok && overdueCrons.length === 0 && !gnrDegraded,
     text,
     state: classification.state,
     severity: classification.severity,
+    overdueCrons: overdueCrons.map((c) => c.name),
+    googleUrlResolution: gnr,
+    googleUrlResolutionRate: gnrRate,
     active7,
     feedback24,
     errors24,
@@ -2963,6 +3065,34 @@ async function buildHealthReport(politicianId = cemInceProfile.id) {
 
 // WhatsApp-Versand via CallMeBot (kostenloser Self-Notify-Dienst). Zugangsdaten
 // kommen ausschliesslich aus Env-Variablen (CALLMEBOT_PHONE, CALLMEBOT_APIKEY).
+// Zweiter, unabhängiger Alarmkanal (Audit-Folgebranch): POST des Health-Reports
+// an einen generischen Webhook (HELMUT_MONITORING_WEBHOOK_URL). Kompatibel mit
+// Slack/Discord/Zapier/E-Mail-Relais (Feld "text" + strukturierte Zusatzfelder).
+// Fail-safe: fehlt die URL → sauber übersprungen; Netzfehler brechen den Cron nie.
+async function sendMonitoringWebhook(report) {
+  const targetUrl = String(process.env.HELMUT_MONITORING_WEBHOOK_URL || "").trim();
+  if (!targetUrl) return { sent: false, skipped: true, reason: "HELMUT_MONITORING_WEBHOOK_URL nicht gesetzt." };
+  try {
+    const res = await fetch(targetUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      // "text" = Slack/Discord-kompatibel; Zusatzfelder für strukturierte Empfänger.
+      body: JSON.stringify({
+        text: report.text,
+        ok: report.ok,
+        state: report.state,
+        severity: report.severity,
+        overdueCrons: report.overdueCrons || [],
+        googleUrlResolutionRate: report.googleUrlResolutionRate,
+        source: "helmut-health-report"
+      })
+    });
+    return { sent: res.ok, status: res.status };
+  } catch (error) {
+    return { sent: false, reason: error && error.message };
+  }
+}
+
 async function sendCallMeBotMessage(text) {
   const phone = String(process.env.CALLMEBOT_PHONE || "").replace(/[^\d]/g, "");
   const apikey = String(process.env.CALLMEBOT_APIKEY || "").trim();
@@ -3678,12 +3808,6 @@ function dsMorningStatus(runs) {
   };
 }
 
-function dsAccountCost(records) {
-  let cost = 0, calls = 0, known = false;
-  for (const r of records || []) { calls += 1; if (typeof r.estimatedCost === "number") { cost += r.estimatedCost; known = true; } }
-  return { calls, estimatedUsd: known ? Number(cost.toFixed(4)) : null, note: known ? undefined : "keine Kosten-Schaetzung verfuegbar" };
-}
-
 function dsAccountAmpel({ level, restricted, hasBriefing }) {
   if (!level || level === "empty") return "rot";       // kein verwertbares Profil
   if (restricted || !hasBriefing) return "gelb";       // eingeschraenkt oder heute kein Briefing
@@ -3955,7 +4079,13 @@ async function buildAdminDataStatus({ perAccountLimit = 25 } = {}) {
     if (hasBriefing) shown += 1; else noBriefing += 1;
     if (comp.restricted || comp.empty) restrictedCount += 1;
     sumLage += lageCount; sumChance += chance; sumRisk += risk; sumBriefing += briefingPoints;
-    const cost = dsAccountCost(await getLlmUsage(id, 500).catch(() => []));
+    // Audit-Fix (Folgebranch): Die Karte heißt "KI-Kosten heute" — früher wurde
+    // aber die Summe der letzten 500 Log-Einträge OHNE Datumsfilter angezeigt
+    // (also Tage bis Wochen vermischt). Jetzt echte Tagesaggregation.
+    const usageToday = await getLlmUsageToday(id).catch(() => null);
+    const cost = usageToday
+      ? { calls: usageToday.calls, estimatedUsd: Number((usageToday.estimatedCostUsd || 0).toFixed(4)) }
+      : { calls: null, estimatedUsd: null, note: "Kostenlog nicht lesbar" };
     perAccount.push({
       politicianId: id,
       name: u.name || u.email || id,
