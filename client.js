@@ -3797,16 +3797,71 @@ function renderVorgangCard(v) {
     </article>`;
 }
 
+// Frische der Lage aus den ECHTEN Quellendaten der sichtbaren Karten (kein neues
+// Serverfeld, keine Behauptung): Zeitpunkt der neuesten Quelle, heute mit Uhrzeit.
+function lageFreshnessLabel(vorgaenge) {
+  let newest = 0;
+  for (const v of vorgaenge || []) {
+    for (const s of (v && Array.isArray(v.sources) ? v.sources : [])) {
+      const t = Date.parse(s && s.publishedAt ? s.publishedAt : "");
+      if (Number.isFinite(t) && t > newest) newest = t;
+    }
+  }
+  if (!newest) return "";
+  const d = new Date(newest);
+  const now = new Date();
+  if (d.toDateString() === now.toDateString()) {
+    return `Neueste Quelle heute, ${d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} Uhr.`;
+  }
+  return `Neueste Quelle vom ${d.toLocaleDateString("de-DE", { day: "numeric", month: "long" })}.`;
+}
+
+// STOERUNGSWAHRHEIT (Audit-Fix 2026-07): Lage-Ausfallgründe (Server: available:false
+// + reason) auf ehrliche Zustände mappen — Datenausfall/Budget nie als ruhiger Tag.
+function lageDisruption(data) {
+  if (!data || data.available !== false) return null;
+  const reason = String(data.reason || "");
+  if (reason === "store-error" || reason === "v3-disabled" || reason === "error") {
+    return {
+      kind: "stoerung",
+      title: "Daten derzeit nicht verfügbar",
+      sub: "Technische Störung beim Laden der Datenbasis — das ist kein ruhiger Tag. Bitte in einigen Minuten erneut öffnen."
+    };
+  }
+  if (reason === "budget") {
+    return {
+      kind: "budget",
+      title: "KI-Tageskontingent erreicht",
+      sub: "Neue Auswertungen pausieren bis morgen früh. Bereits ausgewertete Vorgänge bleiben gültig."
+    };
+  }
+  if (reason === "no-vorgaenge") {
+    return {
+      kind: "datenluecke",
+      title: "Keine ausgewerteten Vorgänge verfügbar",
+      sub: "Die Datenbasis liefert gerade keine analysierten Vorgänge — vermutlich eine Datenlücke, kein ruhiger Nachrichtentag."
+    };
+  }
+  return null;
+}
+
 // Leerer Zustand: keine Fake-/Seed-/Platzhalter-Karten, nur ein ruhiger Hinweis.
-function renderLageEmpty(greeting, dateLabel, emptyState) {
+function renderLageEmpty(greeting, dateLabel, emptyState, data) {
   // Sprint 5 (additiv): liegt ein unterscheidbarer Leerzustand vor (gap/stale/quiet),
   // wird dessen ehrliche Ueberschrift/Erklaerung gezeigt — Datenluecke nie als ruhiger
-  // Tag. Ohne emptyState (Flag aus) unveraendertes Alt-Verhalten.
+  // Tag. Ohne emptyState (Scoring-Flag aus) greift die Stoerungswahrheit über
+  // data.reason; erst danach der neutrale Alt-Leertext.
   const es = emptyState && emptyState.kind ? emptyState : null;
-  const title = es && es.headline ? es.headline : "Heute liegen noch keine quellengestützten Vorgänge vor.";
-  const sub = es && es.detail ? es.detail : "Sobald neue geprüfte Quellen verfügbar sind, erscheint hier deine Lage.";
+  const disruption = es ? null : lageDisruption(data);
+  const title = es && es.headline ? es.headline
+    : disruption ? disruption.title
+    : "Heute liegen noch keine quellengestützten Vorgänge vor.";
+  const sub = es && es.detail ? es.detail
+    : disruption ? disruption.sub
+    : "Sobald neue geprüfte Quellen verfügbar sind, erscheint hier deine Lage.";
+  const emptyKind = es ? es.kind : (disruption ? disruption.kind : "");
   return `
-    <section class="lage2 lage2-empty-wrap"${es ? ` data-empty-kind="${escapeAttribute(es.kind)}"` : ""}>
+    <section class="lage2 lage2-empty-wrap"${emptyKind ? ` data-empty-kind="${escapeAttribute(emptyKind)}"` : ""}>
       <header class="lage2-head">
         <span class="lage2-date">${escapeHtml(dateLabel)}</span>
         <h1 class="lage2-greeting">${escapeHtml(greeting)}</h1>
@@ -3824,15 +3879,20 @@ function renderLageView() {
   const greeting = (typeof timeGreeting === "function" ? timeGreeting(firstName) : (firstName ? `Guten Morgen, ${firstName}.` : "Guten Morgen."));
   const dateLabel = lageDateLabel();
   const vorgaenge = lageVisibleVorgaenge(data);
-  if (!vorgaenge.length) return renderLageEmpty(greeting, dateLabel, data && data.emptyState);
+  if (!vorgaenge.length) return renderLageEmpty(greeting, dateLabel, data && data.emptyState, data);
   const count = vorgaenge.length;
-  const countWord = count === 1 ? "neuen Vorgang" : "neue Vorgänge";
+  // EHRLICHE KOPFZEILE (Audit-Fix 2026-07): "Heute gibt es N NEUE Vorgänge"
+  // etikettierte beliebig alte Vorgänge als heutige Neuigkeiten. Jetzt: neutrale
+  // Zählung + sichtbare Frische der neuesten Quelle (macht veraltete Daten ruhig
+  // und ohne Alarmismus erkennbar).
+  const countWord = count === 1 ? "relevanter Vorgang" : "relevante Vorgänge";
+  const fresh = lageFreshnessLabel(vorgaenge);
   return `
     <section class="lage2">
       <header class="lage2-head">
         <span class="lage2-date">${escapeHtml(dateLabel)}</span>
         <h1 class="lage2-greeting">${escapeHtml(greeting)}</h1>
-        <p class="lage2-count">Heute gibt es <b>${count}</b> ${countWord}.</p>
+        <p class="lage2-count"><b>${count}</b> ${countWord} in deiner Lage.${fresh ? ` <span class="lage2-stand">${escapeHtml(fresh)}</span>` : ""}</p>
       </header>
       ${data.demo ? `<span class="lage2-demo">Beispiel-Briefing · Demodaten</span>` : ""}
 
@@ -5561,19 +5621,57 @@ function renderHstandUnavailable() {
     </section>`;
 }
 
+// STOERUNGSWAHRHEIT (Audit-Fix 2026-07): technische Ausfälle, Budget-Stopp und
+// Datenlücken dürfen NIE wie ein ruhiger Tag aussehen. Mappt den expliziten
+// Leer-Grund des Briefing-Vertrags (briefing.reason) auf einen ehrlichen Zustand.
+// "keine-treffer" bleibt bewusst unbehandelt — das IST der echte ruhige Tag.
+function briefingDisruption() {
+  if (!briefing || briefing.available !== false) return null;
+  const reason = String(briefing.reason || "");
+  if (reason === "store-error" || reason === "v3-store-disabled" || reason === "build-timeout") {
+    return {
+      kind: "stoerung", error: true,
+      title: "Daten derzeit nicht verfügbar",
+      sub: "Technische Störung beim Laden der Datenbasis — das ist kein ruhiger Tag. Bitte in einigen Minuten erneut öffnen."
+    };
+  }
+  if (reason === "budget") {
+    return {
+      kind: "budget", error: false,
+      title: "KI-Tageskontingent erreicht",
+      sub: "Neue Auswertungen pausieren bis morgen früh. Bereits ausgewertete Vorgänge bleiben gültig."
+    };
+  }
+  if (reason === "keine-vorgaenge") {
+    return {
+      kind: "datenluecke", error: true,
+      title: "Keine ausgewerteten Vorgänge verfügbar",
+      sub: "Die Datenbasis liefert gerade keine analysierten Vorgänge — vermutlich eine Datenlücke, kein ruhiger Nachrichtentag."
+    };
+  }
+  return null;
+}
+
 function renderHstandStateCard(state, kind) {
-  const isError = kind === "error";
+  let isError = kind === "error";
   // Sprint 5 (additiv): unterscheidbarer Helmut-Leerzustand (gap/stale/quiet). Nur im
   // Nicht-Fehler-Fall; ohne emptyState (Flag aus) unveraendertes Alt-Verhalten.
   const es = !isError && state && state.emptyState && state.emptyState.kind ? state.emptyState : null;
-  const title = isError ? "Stand konnte nicht geladen werden" : (es && es.headline ? es.headline : "Heute kein Handlungsbedarf");
-  const sub = isError
-    ? "Die Auswertung ist derzeit nicht belastbar. Bitte später erneut prüfen."
-    : (es && es.detail ? es.detail : "Für dein Mandat liegen derzeit keine belastbaren Vorgänge vor.");
+  // Stoerungswahrheit: expliziter Ausfall-Grund schlaegt den generischen Leertext.
+  const disruption = !isError && !es ? briefingDisruption() : null;
+  if (disruption && disruption.error) isError = true;
+  const title = disruption ? disruption.title
+    : isError ? "Stand konnte nicht geladen werden"
+    : (es && es.headline ? es.headline : "Heute kein Handlungsbedarf");
+  const sub = disruption ? disruption.sub
+    : isError
+      ? "Die Auswertung ist derzeit nicht belastbar. Bitte später erneut prüfen."
+      : (es && es.detail ? es.detail : "Für dein Mandat liegen derzeit keine belastbaren Vorgänge vor.");
+  const emptyKind = disruption ? disruption.kind : (es ? es.kind : "");
   return `
     <section class="hstand hstand--state" aria-label="Briefing">
       ${renderHstandHeader(state)}
-      <div class="hstand-state-card${isError ? " hstand-state-card--error" : ""}"${es ? ` data-empty-kind="${escapeAttribute(es.kind)}"` : ""}>
+      <div class="hstand-state-card${isError ? " hstand-state-card--error" : ""}"${emptyKind ? ` data-empty-kind="${escapeAttribute(emptyKind)}"` : ""}>
         <span class="hstand-state-mark" aria-hidden="true">${isError ? "!" : "H"}</span>
         <p class="hstand-state-title">${escapeHtml(title)}</p>
         <p class="hstand-state-sub">${escapeHtml(sub)}</p>
@@ -5646,7 +5744,8 @@ function renderHelmutHeader() {
   helmutBriefings.forEach((d) => { introCounts[helmutStatusBucket(d.priorityType || "watch")] += 1; });
   const actN = introCounts.handeln;
   const watchN = introCounts.beobachten;
-  const totalLine = `Heute gibt es ${total} ${total === 1 ? "relevanten Vorgang" : "relevante Vorgänge"}.`;
+  // Ehrlich: keine "heute"-Behauptung über potenziell ältere Vorgänge.
+  const totalLine = `Es ${total === 1 ? "liegt" : "liegen"} ${total} ${total === 1 ? "relevanter Vorgang" : "relevante Vorgänge"} vor.`;
   let actionLine;
   if (actN > 0) {
     actionLine = `Davon solltest du dich heute um ${actN} ${actN === 1 ? "Vorgang" : "Vorgänge"} kümmern${watchN ? ` und ${watchN} beobachten` : ""}.`;

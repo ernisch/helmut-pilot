@@ -9725,6 +9725,14 @@ details[open].meeting-detail summary::before { content: '▾ '; }
   opacity: .7;
   font-style: italic;
 }
+/* Ruhige Frische-Anzeige in der Lage-Kopfzeile (Störungswahrheit) */
+.lage2-stand {
+  display: block;
+  font-size: 12px;
+  color: var(--muted-2);
+  opacity: .75;
+  margin-top: 2px;
+}
 /* Ehrliche Herkunftszeile auf Büro-Karten (KI-Entwurf / Regel-Fallback / Fehler) */
 .buero-card-provenance {
   font-size: 11px;

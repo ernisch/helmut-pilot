@@ -7,6 +7,7 @@
     "test:event-binding": "node scripts/event-binding-test.js",
     "test:buero-ehrlichkeit": "node scripts/buero-ehrlichkeit-test.js",
     "test:kosten-limits": "node scripts/kosten-limits-test.js",
+    "test:stoerungswahrheit": "node scripts/stoerungswahrheit-test.js",
     "test:p1": "node scripts/p1-security-check.js",
     "test:contract": "node scripts/contract-snapshot-test.js",
     "test:goldset": "node scripts/goldset-test.js",

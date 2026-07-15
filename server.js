@@ -625,6 +625,34 @@ async function handleRequest(request, response) {
     if (!authorizeCron(request, url, response)) return;
     return handleAsync(response, async () => {
       const t0 = Date.now();
+      // Mehrmandantenfaehigkeit (Audit-Fix 2026-07, Default AUS): Der Cron bediente
+      // fest EIN Profil (Default-politicianId) — weitere Mandate erhielten nie einen
+      // Morgen-Push. Mit HELMUT_MORNING_PUSH_ALL_PROFILES=1 loopt er wie der
+      // lage-briefing-Cron ueber alle Profile (deaktivierte werden uebersprungen,
+      // per-Profil try/catch, hartes Zeitbudget). Aktivierung = bewusste
+      // Betreiber-Entscheidung (zusaetzliche Build-Laeufe, 0 KI — der Briefing-Build
+      // ist eine reine Lese-Transformation; Push nur bei echtem Inhalt).
+      const flagOn = (v) => ["1", "true", "on", "yes"].includes(String(v || "").trim().toLowerCase());
+      if (flagOn(process.env.HELMUT_MORNING_PUSH_ALL_PROFILES)) {
+        const deadline = t0 + 240000; // 240s < maxDuration 300s: Cron antwortet IMMER
+        let profiles = await listProfiles().catch(() => []);
+        if (!Array.isArray(profiles) || !profiles.length) profiles = [{ id: politicianId }];
+        const results = [];
+        let skipped = 0;
+        for (const p of profiles) {
+          if (Date.now() > deadline) { results.push({ userId: p.id, skipped: true, reason: "zeitbudget" }); continue; }
+          const profile = await activeProfile(p.id || politicianId);
+          const val = validateProfile(profile);
+          if (val.disabled) { skipped += 1; results.push({ userId: profile.id, skipped: true, reason: "profil-deaktiviert" }); continue; }
+          const briefing = await withTimeout(buildV3Briefing(profile, profile.id), 60000, "cron-briefing-build")
+            .catch((error) => ({ available: false, reason: "build-timeout", error: error && error.message, items: [], personalizedRecommendations: [], personMentions: [] }));
+          const push = await withTimeout(sendBriefingReadyPush(briefing, profile), 30000, "cron-briefing-push")
+            .catch((error) => ({ ok: false, reason: "push-timeout", error: error && error.message }));
+          results.push({ userId: profile.id, available: Boolean(briefing && briefing.available), pushSkipped: Boolean(push && push.skipped), pushReason: (push && push.reason) || null });
+        }
+        console.log(`[cron/morning-briefing] multi-profil: ${results.length} Profile, ${skipped} uebersprungen, ${Date.now() - t0}ms`);
+        return { multiProfile: true, profile: results.length, uebersprungen: skipped, results };
+      }
       const profile = await activeProfile(politicianId);
       // V3: das Briefing entsteht frisch aus den aktuellen Knowledge Objects (0 KI) —
       // kein V2-runMorningBriefing mehr. Beide Schritte (Build + Push) hart begrenzt,
