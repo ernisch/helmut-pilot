@@ -563,5 +563,153 @@ check("Keine technischen Quellen-Enums im sourceCategory-Label (nur Klartext/'')
     ((bNoKos.currentRadarState || {}).mentions || []).length === 0);
 }
 
-console.log(`\n${passed}/${passed + failed} Radar-State-Assertions erfolgreich.`);
-if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exit(1); }
+// ── 17) pickPrimarySource: Durchbruch auf Zweitdokument/best_source_url ──────
+// Audit-Folgebranch: das ranghoechste Dokument wurde auch mit unbrauchbarer URL
+// (safeUrl leer) zurueckgegeben — weder das naechste Dokument noch best_source_url
+// wurden probiert. Jetzt: nur safeUrl-gueltige Dokumente in der Auswahl; ohne
+// brauchbares Dokument der best_source_url-Fallback; nie eine erfundene URL.
+{
+  const koPP = { vorgang_id: "vpp", best_source_url: "https://fallback.de/artikel", display_title: "Titel" };
+  // Top-Dokument (link_type direct = ranghoechst) ohne brauchbare URL -> Zweitdokument.
+  const srcNext = radarState.pickPrimarySource(koPP, [
+    { id: "d-top", url: "kein-link", link_type: "direct", published_at: iso(1 * 3600e3) },
+    { id: "d-second", url: "https://zweit.de/artikel", published_at: iso(2 * 3600e3) }
+  ]);
+  check("pickPrimarySource: Top-Dokument ohne brauchbare URL -> naechstes Dokument mit gueltiger URL",
+    Boolean(srcNext) && srcNext.documentId === "d-second" && srcNext.url === "https://zweit.de/artikel");
+  // Alle Dokumente unbrauchbar -> best_source_url-Fallback (wie bisher ohne Docs).
+  const srcFallback = radarState.pickPrimarySource(koPP, [
+    { id: "d1", url: "javascript:alert(1)", link_type: "direct" },
+    { id: "d2", url: "" }
+  ]);
+  check("pickPrimarySource: alle Dokumente ohne brauchbare URL -> best_source_url-Fallback",
+    Boolean(srcFallback) && srcFallback.documentId === null && srcFallback.url === "https://fallback.de/artikel");
+  // Gar nichts Brauchbares -> null (keine URL wird erfunden).
+  check("pickPrimarySource: keine brauchbare Quelle UND kein best_source_url -> null (nichts erfinden)",
+    radarState.pickPrimarySource({ vorgang_id: "vpp" }, [{ id: "d1", url: "javascript:alert(1)" }]) === null);
+
+  // Erwaehnungs-Ebene: eine belegte Eigenerwaehnung OHNE best_source_url wird NICHT
+  // gedroppt, wenn ein gueltiges Zweitdokument existiert.
+  const koMentionSecond = {
+    ...base, id: "kmx", vorgang_id: "vmx",
+    display_title: "Cem İnce im Gespräch zur Kommunalfinanzierung",
+    was_ist_passiert: "Bericht.", mentioned_people: ["Cem İnce"],
+    updated_at: iso(3600e3), created_at: iso(3600e3)
+  };
+  const stSecond = radarState.buildCurrentRadarState({
+    profile, decisions: [], kosById: {}, knowledgeObjects: [koMentionSecond],
+    sourcesByVorgang: { vmx: [
+      { id: "b1", url: "kein-link", link_type: "direct", published_at: iso(3600e3) },
+      { id: "b2", url: "https://tagesschau.de/zweitquelle", published_at: iso(3600e3) }
+    ] },
+    now: nowDate
+  });
+  check("Erwaehnung bleibt sichtbar, wenn IRGENDEINE gueltige Quelle existiert (Zweitdokument)",
+    stSecond.mentions.some((m) => m.vorgangId === "vmx" && m.sourceUrl === "https://tagesschau.de/zweitquelle"));
+}
+
+// ── 18) Nachladedeckel: server.js haengt am exportierten MENTION_CAP ─────────
+// Frueher MENTION_SOURCE_LOAD_CAP=25 < MENTION_CAP=30: ab dem 26. Erwaehnungs-KO
+// ohne geladene Quelle griff der Nachladen-Fix nicht mehr.
+{
+  const fs = require("fs");
+  const path = require("path");
+  const serverSource = fs.readFileSync(path.join(__dirname, "..", "server.js"), "utf8");
+  check("Nachladedeckel = radarState.MENTION_CAP (keine eigene, niedrigere Konstante in server.js)",
+    /MENTION_SOURCE_LOAD_CAP = radarStateMod\.MENTION_CAP/.test(serverSource));
+  check("MENTION_CAP ist exportiert und traegt die Erwaehnungs-Obergrenze (30)",
+    radarState.MENTION_CAP === 30);
+}
+
+// ── 19) Server-Leerpfade (RAD-02-Regression OHNE best_source_url) ────────────
+// Belegte Eigenerwaehnung OHNE best_source_url, deren Quellen NUR ueber das
+// Nachladen (loadMentionSourcesInto -> getSourcesForVorgang) kommen, bleibt in
+// BEIDEN Leer-Pfaden von buildV3Briefing sichtbar:
+//   Pfad A: decisions leer -> emptyKeepMentions("keine-treffer") VOR dem Hauptpfad,
+//   Pfad B: alle Decisions in Quarantaene -> emptyKeepMentions("keine-treffer") danach.
+// Simulation wie slot-aware-read-test: storage-Stubs VOR require(server.js) setzen
+// (server.js destrukturiert beim Laden), decideForUser am Modul patchen (Aufruf
+// erfolgt zur Laufzeit ueber das Modulobjekt). KEIN Netz, KEINE KI.
+(async () => {
+  const storage = require("../lib/helmut/storage");
+  const decisionsEngine = require("../lib/helmut/decisions");
+  const origReady = storage.v3StoreReady;
+  const origList = storage.listKnowledgeObjects;
+  const origGet = storage.getSourcesForVorgang;
+  const origDecide = decisionsEngine.decideForUser;
+
+  const oldIso = new Date(NOW - 200 * 864e5).toISOString(); // bewusst alt (kein Augment-Frischepfad)
+  const pServer = { id: "u-lp", fullName: "Cem İnce", party: "Die Linke" };
+  // Erwaehnungs-KO OHNE best_source_url — die echte URL liegt NUR in raw_documents.
+  const koMentionNoBest = {
+    ...base, id: "knb", vorgang_id: "vnb",
+    display_title: "Cem İnce fordert Reform der Kommunalfinanzen",
+    was_ist_passiert: "Bericht.", mentioned_people: ["Cem İnce"],
+    updated_at: oldIso, created_at: oldIso
+  };
+  // Quarantaene-KO (Pfad B): kritischer Claim (Ruecktritt), nur unbekannte Quelle.
+  const koQuarantine = {
+    ...base, id: "kq", vorgang_id: "vq",
+    display_title: "Rücktritt: Minister soll zurückgetreten sein",
+    was_ist_passiert: "Unbestätigte Meldung.", parteien: ["Die Linke"],
+    updated_at: oldIso, created_at: oldIso
+  };
+
+  let kosInStore = [];
+  let docsByVorgang = {};
+  try {
+    storage.v3StoreReady = () => true;
+    storage.listKnowledgeObjects = async () => kosInStore;
+    storage.getSourcesForVorgang = async (vid) => docsByVorgang[vid] || [];
+    const server = require("../server.js");
+
+    // Pfad A: keine Decisions ('keine-treffer' VOR dem Hauptpfad).
+    kosInStore = [koMentionNoBest];
+    docsByVorgang = { vnb: [{ id: "dnb", url: "https://tagesschau.de/nachgeladen", source_type: "media", published_at: oldIso }] };
+    decisionsEngine.decideForUser = () => [];
+    const bA = await server.__buildV3Briefing(pServer, "u-lp", { slot: "daily" });
+    const mA = ((bA.currentRadarState || {}).mentions || []);
+    check("Leerpfad A (keine-treffer): Erwaehnung OHNE best_source_url bleibt via Nachladen sichtbar",
+      bA.reason === "keine-treffer" && mA.length === 1 && mA[0].vorgangId === "vnb",
+      JSON.stringify({ reason: bA.reason, mentions: mA.map((m) => m.vorgangId) }));
+    check("Leerpfad A: Beleg-URL stammt aus den nachgeladenen raw_documents",
+      mA.length === 1 && mA[0].sourceUrl === "https://tagesschau.de/nachgeladen");
+
+    // Pfad B: Decisions vorhanden, aber ALLE in Quarantaene ('keine-treffer' NACH dem Hauptpfad).
+    kosInStore = [koQuarantine, koMentionNoBest];
+    docsByVorgang = {
+      vnb: [{ id: "dnb", url: "https://tagesschau.de/nachgeladen", source_type: "media", published_at: oldIso }],
+      vq: [{ id: "dq", url: "https://unbekanntes-portal.example/x", source_type: "media", published_at: oldIso }]
+    };
+    decisionsEngine.decideForUser = () => [{
+      id: "dec-u-lp-kq", user_id: "u-lp", knowledge_object_id: "kq", vorgang_id: "vq",
+      score: 60, decision: "Sofort reagieren", priority_type: "risk",
+      matched_features: [{ type: "partei", value: "Die Linke" }], chance: "", risk: "", deadline: null, status: "new"
+    }];
+    const bB = await server.__buildV3Briefing(pServer, "u-lp", { slot: "daily" });
+    const mB = ((bB.currentRadarState || {}).mentions || []);
+    check("Leerpfad B (alle Quarantaene): Erwaehnung OHNE best_source_url bleibt via Nachladen sichtbar",
+      bB.reason === "keine-treffer" && mB.length === 1 && mB[0].vorgangId === "vnb" &&
+      mB[0].sourceUrl === "https://tagesschau.de/nachgeladen",
+      JSON.stringify({ reason: bB.reason, mentions: mB.map((m) => m.vorgangId) }));
+    check("Leerpfad B: der quarantaenierte Vorgang erscheint NIRGENDS im Radar",
+      !JSON.stringify(bB.currentRadarState || {}).includes("vq"));
+
+    // Kontrolle: ohne nachladbare Quellen (und ohne best_source_url) verschwindet die
+    // Erwaehnung — der Test ist also wirklich sensitiv fuer das Nachladen.
+    kosInStore = [koMentionNoBest];
+    docsByVorgang = {};
+    decisionsEngine.decideForUser = () => [];
+    const bC = await server.__buildV3Briefing(pServer, "u-lp", { slot: "daily" });
+    check("Kontrolle: ohne nachladbare Quelle UND ohne best_source_url keine Erwaehnung (nichts erfinden)",
+      (((bC.currentRadarState || {}).mentions) || []).length === 0);
+  } finally {
+    storage.v3StoreReady = origReady;
+    storage.listKnowledgeObjects = origList;
+    storage.getSourcesForVorgang = origGet;
+    decisionsEngine.decideForUser = origDecide;
+  }
+
+  console.log(`\n${passed}/${passed + failed} Radar-State-Assertions erfolgreich.`);
+  if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exit(1); }
+})().catch((e) => { console.error("TESTFEHLER", e); process.exit(1); });

@@ -1739,7 +1739,11 @@ async function loadMentionSourcesInto(profile, understood, sourcesByVorgang) {
     const radarStateMod = require("./lib/helmut/radarState");
     const terms = radarStateMod.profileTerms(profile);
     if (!terms || !terms.fullName) return;
-    const MENTION_SOURCE_LOAD_CAP = 25; // Schutz gegen O(n) DB-Reads
+    // Deckel = MENTION_CAP aus radarState (einzige Quelle der Erwaehnungs-Obergrenze,
+    // dort exportiert): ein eigener, niedrigerer Wert (frueher 25 < MENTION_CAP 30)
+    // liess ab dem 26. Erwaehnungs-KO ohne geladene Quelle den Fix wieder ins Leere
+    // laufen. Bleibt zugleich der harte O(n)-Schutz gegen unbegrenzte DB-Reads.
+    const MENTION_SOURCE_LOAD_CAP = radarStateMod.MENTION_CAP;
     const mentionNeedsSources = [];
     for (const ko of understood) {
       if (!ko || !ko.vorgang_id) continue;

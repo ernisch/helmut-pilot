@@ -21,6 +21,7 @@ function loadClient() {
     setFilter: (v) => { radarFilter = v; },
     setSegment: (v) => { radarSegment = v; },
     setEnvExpanded: (v) => { radarEnvExpanded = v; },
+    setRefreshFailed: (v) => { radarRefreshFailedAt = v; },
     esc: (s) => escapeHtml(s)
   };`;
   const noop = () => {};
@@ -166,6 +167,60 @@ api.setSegment("party");
 const emptyPartyHtml = api.render();
 check("Leeres Partei-Segment -> ehrlicher Leerzustand statt kaputt/leer",
   /Keine neuen relevanten Parteisignale/.test(emptyPartyHtml) && emptyPartyHtml.includes("Dein Umfeld"));
+
+// 11) Stoerungswahrheit im Radar-Leerzustand (Audit-Folgebranch): store-error/
+//     keine-vorgaenge duerfen NICHT wie ein ruhiger Tag aussehen; "keine-treffer"
+//     bleibt der echte ruhige Tag. Der Grund kommt aus quality.reason (Server-Sentinel).
+function emptyStateWith(reason) {
+  return {
+    generatedAt: "2026-07-11T09:32:00Z", lastUpdated: null, status: "empty", profileId: "u1",
+    summary: { line1: "Heute gibt es keine neuen relevanten Signale in deinem politischen Umfeld.", line2: "", text: "…" },
+    mentions: [], environment: { party: [], constituency: [], committees: [] }, dynamics: [], articles: [],
+    quality: { status: "empty", reason, lastUpdated: null, mentionsFound: 0, environmentMatched: 0,
+      dynamicsDetected: 0, articleCount: 0, sourcesLoaded: false, hasThumbnails: false, thumbnailsAvailable: false }
+  };
+}
+api.setBriefing({ engine: "v3", currentRadarState: emptyStateWith("store-error") });
+const htmlStoerung = api.render();
+check("Störung: store-error -> ehrliche Störungsmeldung statt Ruhige-Lage-Text",
+  htmlStoerung.includes("Radar derzeit nicht ladbar") && htmlStoerung.includes("kein ruhiger Tag")
+  && htmlStoerung.includes('data-empty-kind="stoerung"')
+  && !htmlStoerung.includes("keine neuen relevanten Signale"));
+api.setBriefing({ engine: "v3", currentRadarState: emptyStateWith("v3-store-disabled") });
+check("Störung: v3-store-disabled wird ebenfalls als Störung gezeigt",
+  api.render().includes('data-empty-kind="stoerung"'));
+
+api.setBriefing({ engine: "v3", currentRadarState: emptyStateWith("keine-vorgaenge") });
+const htmlGap = api.render();
+check("Keine Daten: keine-vorgaenge -> 'Noch keine Datengrundlage' (Datenlücke, kein ruhiger Tag)",
+  htmlGap.includes("Noch keine Datengrundlage") && htmlGap.includes('data-empty-kind="datenluecke"')
+  && !htmlGap.includes("keine neuen relevanten Signale"));
+
+api.setBriefing({ engine: "v3", currentRadarState: emptyStateWith("keine-treffer") });
+const htmlQuiet = api.render();
+check("Ruhig: keine-treffer bleibt der beruhigende Leertext (echter ruhiger Tag, keine Störung)",
+  htmlQuiet.includes("keine neuen relevanten Signale")
+  && !htmlQuiet.includes("Störung") && !/data-empty-kind/.test(htmlQuiet));
+
+// Sprint-5-emptyState (Scoring-Flag) behaelt Vorrang vor der Störungslogik (additiv).
+const esState = emptyStateWith("store-error");
+esState.emptyState = { kind: "gap", headline: "Scoring-Headline", detail: "Scoring-Detail" };
+api.setBriefing({ engine: "v3", currentRadarState: esState });
+const htmlEs = api.render();
+check("emptyState (Flag an) hat Vorrang vor der Störungslogik (unverändertes Sprint-5-Verhalten)",
+  htmlEs.includes("Scoring-Headline") && htmlEs.includes('data-empty-kind="gap"')
+  && !htmlEs.includes("Radar derzeit nicht ladbar"));
+
+// 12) Fehlgeschlagener Refresh: ruhige Hinweiszeile mit letztem gutem Stand (kein Alarm).
+api.setBriefing({ engine: "v3", currentRadarState: state });
+api.setRefreshFailed(Date.parse("2026-07-11T10:00:00Z"));
+const htmlFail = api.render();
+check("Refresh-Fehlschlag -> sichtbare, ruhige Hinweiszeile (Anzeige bleibt letzter Stand)",
+  htmlFail.includes("radar2-refresh-note") && htmlFail.includes("Aktualisierung fehlgeschlagen"));
+check("Refresh-Hinweis nennt den Zeitstempel des letzten erfolgreichen Stands",
+  /Anzeige zeigt den letzten Stand \([^)]+\)\./.test(htmlFail));
+api.setRefreshFailed(0);
+check("Ohne Fehlschlag erscheint KEINE Hinweiszeile", !api.render().includes("radar2-refresh-note"));
 
 console.log(`\n${passed}/${passed + failed} Radar-UI-Assertions erfolgreich.`);
 if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exit(1); }

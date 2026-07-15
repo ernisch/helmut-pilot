@@ -94,8 +94,12 @@ check("ko-enrichment-backfill: execute/bypassBudget nur bei POST wirksam",
     /googleUrlResolution: crawl\.googleUrlResolution/.test(schedulerSource));
 
   // ── 5) Radar-Mention-Quellen-Nachladen (Struktur + Deckel) ────────────────
-  check("Mention-KOs ohne geladene Quelle werden gezielt nachgeladen",
-    serverSource.includes("mentionNeedsSources") && serverSource.includes("MENTION_SOURCE_LOAD_CAP = 25"));
+  // Deckel haengt an radarState.MENTION_CAP (Audit-Folgebranch): ein eigener,
+  // niedrigerer Wert (frueher 25 < 30) liess Erwaehnungs-KOs ab dem 26. ohne
+  // nachgeladene Quelle wieder still verschwinden.
+  check("Mention-KOs ohne geladene Quelle werden gezielt nachgeladen (Deckel = MENTION_CAP)",
+    serverSource.includes("mentionNeedsSources") &&
+    serverSource.includes("MENTION_SOURCE_LOAD_CAP = radarStateMod.MENTION_CAP"));
   check("Nachladen ist rein additiv (überschreibt keine geladene Quelle)",
     /if \(!sourcesByVorgang\[vid\]\) sourcesByVorgang\[vid\] = docs;/.test(serverSource));
 
