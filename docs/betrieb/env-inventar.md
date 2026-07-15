@@ -55,6 +55,7 @@ Legende: **S** = Secret (nie loggen/committen) · **P** = Pflicht in Production 
 |---|---|---|
 | `HELMUT_MAX_LLM_CALLS_PER_DAY` | P (empfohlen) | Globales Tageslimit. **Leer/0 = kein Limit** (dokumentiert); gesetzter Ungültigwert → Schutzlimit 50 (Audit-Fix). Übergangsempfehlung: erst Ist-Wert in Admin-Diagnose ablesen, dann Richtwert ~100 Understanding-Calls/Tag. |
 | `HELMUT_LLM_BUDGET_FAIL_CLOSED` | O | Bei Budget-Prüffehler KI verweigern statt erlauben. Default aus (Freigabepunkt F6). |
+| `HELMUT_LLM_RESERVE_UNDERSTANDING` | O | Reservierter Understanding-Mindestanteil am Tageslimit (Anzahl Calls). Nicht-Understanding-Pfade reservieren nur bis (Limit − Reserve). Leer/0 = aus; ungültig → 0. Production-Empfehlung: 30 (mit Limit 100, Runbook `llm-budget-reservierung.md`). |
 | `HELMUT_UNDERSTANDING_LOCK` | O | Globaler Understanding-Lock gegen Doppelläufe. Default aus. |
 | `HELMUT_LLM_PRICE_JSON` | O | Preis-Override für Kostenschätzung. |
 | `HELMUT_UNDERSTANDING_MODEL` / `HELMUT_TEXT_MODEL` | O | Modell-Override (nur OpenAI-Pfad). Default gpt-5-mini. |
