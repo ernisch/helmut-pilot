@@ -15,7 +15,8 @@ des Tokens gespeichert), HttpOnly/SameSite/Secure-Cookies; Rate-Limit auf
 Login (10/15 Min pro IP, in-memory); Admin-Endpunkte rollengeprüft; CSRF-Schutz
 auf schreibenden Routen. — **Lücken (ehrlich):** kein 2FA, Passwort-Policy nur
 Länge ≥ 8, Rate-Limit nicht instanzübergreifend, geteilter Legacy-Pilotcode
-noch als Modus vorhanden (Rotation = Freigabepunkt F1).
+noch als Modus vorhanden (Secret-Rotation = Freigabepunkt F1, am 2026-07-15
+ausgeführt).
 
 **Mandantentrennung:** App-seitige Guards auf allen Nutzerpfaden (assertTenant,
 seit Audit-Sprint 6 auch auf den letzten vier Blob-Lesern, adversarial
@@ -27,7 +28,7 @@ DB-seitige Trennung ist ein offener Architektur-Freigabepunkt
 **Übertragung/Verschlüsselung:** TLS überall (Crawler validiert Zertifikate);
 HSTS, CSP, X-Frame-Options DENY; Secrets nur in Vercel-Env, nie im Repo
 (Secret-Scan über Historie durchgeführt; einziger Fund — Pilot-Code — entfernt,
-Rotation offen).
+Secret am 2026-07-15 rotiert (F1); optionale Historien-Bereinigung = F2, offen).
 
 **Datenminimierung:** V3 speichert keine Artikel-Volltexte (summary ≤ 240
 Zeichen), Kostenlog ohne Prompt-/Antwortinhalte, Fehlertexte werden zentral

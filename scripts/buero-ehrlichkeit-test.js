@@ -68,9 +68,24 @@ function check(name, cond, detail = "") {
   check("Kommunikations-View kennzeichnet Herkunft statt pauschal 'Generierter Entwurf'",
     clientSource.includes('"KI-Entwurf · vor Veröffentlichung prüfen"'));
 
+  // ── Teil 3 (2026-07): Büro-Header zählt "bereit" ehrlich ───────────────────
+  // FRÜHERER FEHLER: readyCount zählte über draftStatus(format) — die STATISCHE
+  // editorische Format-Vorgabe ("Entwurf bereit") — und meldete "N Entwürfe bereit",
+  // obwohl noch KEIN gültiger Entwurf vorlag (Karten: "Wird vorbereitet"/"Erstellung
+  // fehlgeschlagen"). FIX: über officeCardStatus(decision, format) zählen (prüft isValidDraft).
+  check("Header zählt readyCount über officeCardStatus (echter Entwurfsstand, nicht Format-Vorgabe)",
+    /const readyCount = allCards\.filter\(\(\{ decision, format \}\) => officeCardStatus\(decision, format\) === "Entwurf bereit"\)/.test(clientSource));
+  check("Alte editorische readyCount-Zählung (draftStatus) ist entfernt",
+    !/const readyCount = allCards\.filter\(\(\{ format \}\) => draftStatus\(format\) === "Entwurf bereit"\)/.test(clientSource));
+  check("Priority-Hinweis (readyFormats) nutzt ebenfalls officeCardStatus (kein Widerspruch zur Summary)",
+    /const readyFormats = formats\.filter\(\(f\) => allCards\.some\(\(\{ decision, format \}\) => format\.id === f\.id && officeCardStatus\(decision, format\) === "Entwurf bereit"\)\)/.test(clientSource));
+
   // ── Client: Funktion (vm) — Herkunfts-Helfer inkl. Legacy-Cache ────────────
   let code = clientSource.replace(/^\s*loadBriefing\(\)[\s\S]*$/m, "");
-  code += `\n;globalThis.__bt = { text: officeDraftText, prov: officeDraftProvenance, label: draftProvenanceLabel };`;
+  code += `\n;globalThis.__bt = { text: officeDraftText, prov: officeDraftProvenance, label: draftProvenanceLabel,
+    cardStatus: (d, f) => officeCardStatus(d, f), draftStatus: (f) => draftStatus(f), formats: () => activeOfficeFormats(),
+    keyFor: (d, f) => officeDraftKey(d, f),
+    setDrafts: (o) => { officeDrafts = o; }, setErrors: (o) => { officeDraftErrors = o; }, setGenerating: (b) => { officeDraftsGenerating = b; } };`;
   const noop = () => {};
   const fakeNode = () => ({ classList: { toggle: noop, add: noop, remove: noop, contains: () => false }, style: {}, dataset: {},
     addEventListener: noop, removeEventListener: noop, querySelector: () => null, querySelectorAll: () => [], appendChild: noop,
@@ -109,6 +124,30 @@ function check(name, cond, detail = "") {
     bt.label("ki", true).startsWith("KI-Entwurf") &&
     bt.label("regel", true).includes("Regelbasiert") &&
     bt.label("", false).includes("kein KI-Entwurf"));
+
+  // ── Teil 3 (vm): officeCardStatus wertet laufende/fehlgeschlagene/leere Karten NIE als bereit ──
+  const bformats = bt.formats();
+  const readyFmt = bformats.find((f) => bt.draftStatus(f) === "Entwurf bereit");
+  check("Fixture: ein Format mit editorischer Vorgabe 'Entwurf bereit' existiert", Boolean(readyFmt));
+  if (readyFmt) {
+    const decision = { id: "vg-1", title: "Testvorgang" };
+    const key = bt.keyFor(decision, readyFmt);
+    // (a) gültiger Entwurf -> bereit
+    bt.setGenerating(false); bt.setErrors({}); bt.setDrafts({ [key]: { text: "Fertiger, belastbarer Entwurf.", source: "ki" } });
+    check("bereit: gültiger Entwurf -> officeCardStatus 'Entwurf bereit'", bt.cardStatus(decision, readyFmt) === "Entwurf bereit");
+    // (b) wird gerade generiert, kein Entwurf -> NICHT bereit
+    bt.setDrafts({}); bt.setGenerating(true);
+    check("wird vorbereitet: kein Entwurf + generating -> 'Wird vorbereitet' (nicht bereit)", bt.cardStatus(decision, readyFmt) === "Wird vorbereitet");
+    // (c) fehlgeschlagen -> NICHT bereit
+    bt.setGenerating(false); bt.setErrors({ [key]: true });
+    check("fehlgeschlagen: officeDraftErrors -> 'Erstellung fehlgeschlagen' (nicht bereit)", bt.cardStatus(decision, readyFmt) === "Erstellung fehlgeschlagen");
+    // (d) leer (kein Entwurf, nicht generierend, kein Fehler) -> NICHT bereit
+    bt.setErrors({});
+    check("leer: kein Entwurf -> 'Noch kein Entwurf' (nicht bereit)", bt.cardStatus(decision, readyFmt) === "Noch kein Entwurf");
+    // (e) Nur (a) trägt "Entwurf bereit" — die readyCount-Zählung darf (b)/(c)/(d) nie mitzählen.
+    check("gemischt: kein unfertiger Zustand ist 'Entwurf bereit'",
+      ["Wird vorbereitet", "Erstellung fehlgeschlagen", "Noch kein Entwurf"].every((s) => s !== "Entwurf bereit"));
+  }
 
   console.log(`\n${passed} PASS, ${failed} FAIL`);
   process.exit(failed ? 1 : 0);

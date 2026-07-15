@@ -20,8 +20,9 @@ Allgemeine Regeln:
 
 - **Ablageort:** Vercel (Production) + Passwort-Manager. Wird an die
   Pilot-Nutzer als geteilter Zugangscode ausgegeben.
-- **Anlass/Intervall:** Freigabepunkt F1 (vor Pilotstart), danach bei Verdacht
-  oder wenn ein Pilot-Teilnehmer ausscheidet. Kein fester Turnus.
+- **Anlass/Intervall:** Freigabepunkt F1 — **am 2026-07-15 ausgeführt** (in Vercel
+  rotiert + Redeploy; `POST /api/pilot/unlock` → HTTP 200 `{"ok":true}` verifiziert).
+  Danach bei Verdacht oder wenn ein Pilot-Teilnehmer ausscheidet. Kein fester Turnus.
 - **Schritte:**
   1. Neuen zufälligen Wert erzeugen (z. B. `openssl rand -base64 24`).
   2. Vercel → Settings → Environment Variables → `PILOT_SECRET` ersetzen.
