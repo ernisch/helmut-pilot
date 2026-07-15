@@ -72,6 +72,9 @@ let radarDynamicsExpanded = false;
 let radarArticlesExpanded = false;
 let radarEnvExpanded = false;
 let radarRefreshing = false;
+// Stoerungswahrheit: Zeitstempel des letzten FEHLGESCHLAGENEN Radar-Refreshs (0 = ok).
+// Ein stiller Fehlschlag sah bisher exakt wie ein erfolgreicher Refresh aus.
+let radarRefreshFailedAt = 0;
 let opsStatusLoaded = false;
 let pushConfig = null;
 let pushAutoSyncStarted = false;
@@ -8145,6 +8148,12 @@ function renderRadarHeader(state) {
   const label = !updated
     ? (previewMode ? "Vorschau" : "Noch keine Radar-Daten")
     : (fresh ? `Aktualisiert ${radarUpdatedLabel(updated)}` : `Letzter Stand: ${radarUpdatedLabel(updated)}`);
+  // Stoerungswahrheit: ein fehlgeschlagener Refresh bleibt nicht mehr stumm —
+  // ruhige Hinweiszeile mit dem Zeitstempel des letzten erfolgreichen Stands
+  // (kein Alarm-Design, die Anzeige selbst bleibt der letzte gute Stand).
+  const failNote = radarRefreshFailedAt && !radarRefreshing
+    ? `<p class="radar2-refresh-note">Aktualisierung fehlgeschlagen — Anzeige zeigt den letzten Stand${updated ? ` (${escapeHtml(radarUpdatedLabel(updated))})` : ""}.</p>`
+    : "";
   return `
     <header class="radar2-header">
       <div class="radar2-header-row">
@@ -8154,6 +8163,7 @@ function renderRadarHeader(state) {
         </button>
       </div>
       <p class="radar2-lede">Was bewegt sich rund um dich?</p>
+      ${failNote}
       <div class="radar2-status radar2-status--${fresh ? "fresh" : "stale"}">
         <span class="radar2-status-dot" aria-hidden="true"></span>
         <span>${escapeHtml(label)}</span>
@@ -8356,19 +8366,52 @@ function radarPrimaryRelationLabel(types) {
 }
 
 // --- Leerzustände + gemeinsame Bausteine ------------------------------------
+
+// STOERUNGSWAHRHEIT (Audit-Folgebranch): der Radar-Leerzustand zeigte bei einem
+// store-error dieselbe beruhigende Botschaft wie an einem echten ruhigen Tag.
+// Mappt den expliziten Leer-Grund des Server-Adapters (quality.reason, Sentinel
+// in buildV3Briefing) auf einen ehrlichen Zustand — analog briefingDisruption()
+// und lageDisruption(). "keine-treffer" bleibt bewusst unbehandelt — das IST der
+// echte ruhige Tag.
+function radarDisruption(state) {
+  const reason = String((state && state.quality && state.quality.reason) || "");
+  if (reason === "store-error" || reason === "v3-store-disabled") {
+    return {
+      kind: "stoerung",
+      title: "Radar derzeit nicht ladbar",
+      sub: "Technische Störung beim Laden der Datenbasis — das ist kein ruhiger Tag. Bitte in einigen Minuten erneut öffnen."
+    };
+  }
+  if (reason === "keine-vorgaenge") {
+    return {
+      kind: "datenluecke",
+      title: "Noch keine Datengrundlage",
+      sub: "Die Datenbasis liefert gerade keine ausgewerteten Vorgänge — vermutlich eine Datenlücke, kein ruhiger Nachrichtentag."
+    };
+  }
+  return null;
+}
+
 function renderRadarEmpty(state) {
   // Sprint 5 (additiv): unterscheidbarer Radar-Leerzustand (gap/stale/quiet). Der
   // quiet-Fall (kein-umfeldsignal) beruhigt, gap/stale warnen vor Datenausfall/Frische.
   const es = state && state.emptyState && state.emptyState.kind ? state.emptyState : null;
-  const note = es && es.detail ? es.detail : (previewMode
-    ? "In der Vorschau liegen keine personalisierten Radar-Daten vor."
-    : "Sobald neue Quellen zu dir, deiner Partei, deinem Wahlkreis oder deinen Ausschüssen vorliegen, erscheinen sie hier.");
+  // Stoerungswahrheit: expliziter Ausfall-Grund schlaegt den beruhigenden Leertext
+  // (ohne emptyState — Scoring-Flag in Produktion aus — war das bisher unsichtbar).
+  const disruption = es ? null : radarDisruption(state);
+  const note = es && es.detail ? es.detail
+    : disruption ? disruption.sub
+    : (previewMode
+      ? "In der Vorschau liegen keine personalisierten Radar-Daten vor."
+      : "Sobald neue Quellen zu dir, deiner Partei, deinem Wahlkreis oder deinen Ausschüssen vorliegen, erscheinen sie hier.");
   const summaryState = es && es.headline
     ? { summary: { line1: es.headline, line2: "" } }
+    : disruption ? { summary: { line1: disruption.title, line2: "" } }
     : (state && state.summary ? state : { summary: { line1: "Heute gibt es keine neuen relevanten Signale in deinem politischen Umfeld.", line2: "" } });
+  const emptyKind = es ? es.kind : (disruption ? disruption.kind : "");
   return `
     ${renderRadarSummary(summaryState)}
-    <section class="radar2-section"${es ? ` data-empty-kind="${escapeAttribute(es.kind)}"` : ""}>
+    <section class="radar2-section"${emptyKind ? ` data-empty-kind="${escapeAttribute(emptyKind)}"` : ""}>
       <div class="radar2-empty">${escapeHtml(note)}</div>
     </section>
   `;
@@ -8457,7 +8500,15 @@ async function refreshRadar() {
   if (radarRefreshing) return;
   radarRefreshing = true;
   rerenderRadar();
-  try { await loadBriefing(); } catch (_) { /* Anzeige bleibt beim letzten Stand */ }
+  // Stoerungswahrheit: der Fehlschlag wird nicht mehr still geschluckt — die
+  // Anzeige bleibt beim letzten Stand, aber die Kopfzeile sagt das ehrlich
+  // (radarRefreshFailedAt -> ruhige Hinweiszeile in renderRadarHeader).
+  try {
+    await loadBriefing();
+    radarRefreshFailedAt = 0;
+  } catch (_) {
+    radarRefreshFailedAt = Date.now();
+  }
   radarRefreshing = false;
   if (currentView === "radar") rerenderRadar();
 }
