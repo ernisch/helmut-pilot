@@ -516,7 +516,13 @@ async function handleRequest(request, response) {
   }
 
   if (url.pathname === "/api/privacy/export" && request.method === "GET") {
-    return handleAsync(response, () => exportProfileData(politicianId));
+    return handleAsync(response, async () => {
+      const result = await exportProfileData(politicianId);
+      // DSGVO-Audit-Trail (Audit-Fix 2026-07): Export/Loeschung werden mit
+      // minimalen Metadaten protokolliert (keine Inhalte).
+      await accounts.recordAudit({ action: "privacy.export", politicianId, ip: auth.clientIp(request) }).catch(() => {});
+      return result;
+    });
   }
 
   if (url.pathname === "/api/privacy/delete" && request.method === "POST") {
@@ -527,7 +533,14 @@ async function handleRequest(request, response) {
         response.end(JSON.stringify({ error: "Deletion requires confirm: DELETE" }, null, 2));
         return null;
       }
-      return deleteProfileData(politicianId);
+      const result = await deleteProfileData(politicianId);
+      await accounts.recordAudit({
+        action: "privacy.delete",
+        politicianId,
+        ip: auth.clientIp(request),
+        detail: result && result.ok ? "vollstaendig" : "TEILWEISE FEHLGESCHLAGEN — Nacharbeit noetig"
+      }).catch(() => {});
+      return result;
     });
   }
 
