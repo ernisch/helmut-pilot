@@ -1,0 +1,66 @@
+name: CI — Offline-Suite + Browser-Smoke
+
+# =============================================================================
+# Blockierendes CI-Gate für den KERN (Audit-Fix 2026-07, Sprint 5).
+# Vorher führte KEIN Workflow die Offline-Testsuiten bei PR/Push aus — eine
+# Regression in server.js/client.js/lib erreichte ungeprüft main und Production.
+#
+# GRENZEN (hart): KEINE Secrets, KEINE Supabase-Verbindung, KEIN LLM, KEIN
+# Deployment. Alle Suiten laufen offline (DB/fetch gemockt bzw. lokaler Server).
+#
+# DAMIT DAS GATE BLOCKIERT, muss der Betreiber EINMALIG Branch Protection
+# aktivieren (GitHub → Settings → Branches → Add branch protection rule):
+#   Branch: main
+#   [x] Require status checks to pass before merging
+#       -> "Syntax + Offline-Suiten" und "Browser-/Mobile-Smoke (Chromium)"
+#   [x] Require branches to be up to date before merging
+# =============================================================================
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  offline-suite:
+    name: Syntax + Offline-Suiten
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Syntax-Check aller JS-Dateien
+        run: |
+          set -e
+          for f in server.js client.js sw.js api/index.js lib/helmut/*.js lib/helmut/quellenarchitektur/*.js scripts/*.js; do
+            node --check "$f"
+          done
+          echo "Syntax OK"
+      - name: Offline-Testsuiten (ohne Netz/DB/LLM/Secrets)
+        run: node scripts/run-offline-tests.js
+
+  browser-smoke:
+    name: Browser-/Mobile-Smoke (Chromium)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Playwright + Chromium installieren
+        run: |
+          npm i --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Browser-Smoke (Desktop + Mobil, lokaler In-Process-Server)
+        run: node scripts/browser-smoke-test.js

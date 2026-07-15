@@ -113,6 +113,14 @@ Fragenkatalog). JEDE verbindliche Festlegung (Art.-9-Grundlage, DSFA,
 AVV-Abschluss, Pilotvereinbarung unterschreiben) braucht Anwalt/DSB — keine
 Rechtsbewertung durch dieses Audit.
 
+## F11 — Branch Protection aktivieren (einmalig, 2 Minuten)
+
+Das neue CI-Gate (.github/workflows/ci.yml) läuft bei jedem PR, blockiert den
+Merge aber erst mit Branch Protection: GitHub → Settings → Branches → Add rule
+→ Branch `main` → „Require status checks to pass before merging" → Checks
+„Syntax + Offline-Suiten" und „Browser-/Mobile-Smoke (Chromium)" auswählen.
+**Rückweg:** Regel deaktivieren.
+
 ## F10 — Merge dieses Branches nach main (= Production-Deployment)
 
 Der Branch `claude/helmut-audit-readiness-boirkf` enthält ausschließlich
