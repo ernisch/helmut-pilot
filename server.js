@@ -766,7 +766,11 @@ async function handleRequest(request, response) {
           checkedSources: latest.checkedSources ?? null,
           successfulSources: latest.successfulSources ?? null,
           failedSources: latest.failedSources ?? null,
-          savedItems: latest.savedItems ?? null
+          savedItems: latest.savedItems ?? null,
+          // Laufzeit des Laufs (ms) — wird erst persistiert, sobald der
+          // Monitoring-Stapel gemergt ist (scheduler speichert durationMs);
+          // bis dahin ehrlich null. Forward-kompatibel gewhitelistet.
+          durationMs: latest.durationMs ?? null
         } : null
       };
     });
