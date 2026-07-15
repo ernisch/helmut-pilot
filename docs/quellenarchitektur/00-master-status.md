@@ -12,6 +12,11 @@
 - **Beobachtungspunkt (kein Stop):** Google-News-Rate-Limit-Burst (429/503) traf den
   10:00-lage-check (48 Quellen, transient, fail-safe je Quelle; Muster vorbestehend,
   Voll-Crawl unter ON war fehlerfrei). Nachkontrolle im 20:00-Vollcrawl.
+- **Nachkontrolle 20:00-Vollcrawl (2026-07-15, grün):** +59 Docs (Vortag 20:00 = 62 →
+  −4,8 %, weit über der −50-%-Stop-Schwelle), alle 59 mit content_fingerprint;
+  document_findings 990 → **1280** über 99 Quellen (relationaler Pfad aktiv, KEIN
+  Fallback); KOs 274 → 297; Kosten heute $0,16 (< $0,50); 0 BE/BB/PARDOK;
+  **0 Runtime-Fehler — der 429-Burst wiederholte sich NICHT** (als transient bestätigt).
 - Gate bleibt shadow · PARDOK shadow · Scoring off · BE/BB prepared+inaktiv ·
   Tageslimit unverändert (einziger offener Konfigurationspunkt, Phase 4B).
 - **Rollback jederzeit:** `HELMUT_SOURCE_MODE` auf `shadow` + Deploy (oder Vercel-Env,
