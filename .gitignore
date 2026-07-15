@@ -6,3 +6,6 @@ env.local.html
 .vercel
 # Isolierte Shadow-Ablage (Quellenarchitektur): ephemere, DB-freie Artefakte — NIE ins Git.
 shadow-store/
+# Betreiber-Backups (scripts/backup-export.js): enthalten personenbezogene/
+# politische Daten (Art. 9 DSGVO) — NIE committen.
+backups/

@@ -970,11 +970,12 @@ async function llmBudgetChecks() {
       today.calls === 2 && Math.abs(today.estimatedCostUsd - 0.003) < 1e-9,
       `calls=${today.calls} cost=${today.estimatedCostUsd}`);
 
-    // Kein Limit gesetzt -> immer erlaubt.
+    // Kein Limit gesetzt -> Schutzlimit 50 (Budget-Rollout 2026-07: es gibt
+    // KEINEN Infinity-Pfad mehr; ein geloeschter Env-Wert hebt den Deckel nicht auf).
     delete process.env.HELMUT_MAX_LLM_CALLS_PER_DAY;
     const noLimit = await storage.canSpendLlm(mp, ref);
-    check("Budget: ohne Limit erlaubt canSpendLlm (allowed=true, limit=null)",
-      noLimit.allowed === true && noLimit.limit === null, `allowed=${noLimit.allowed}`);
+    check("Budget: ohne Env-Wert greift Schutzlimit 50 (fail-closed, unter Limit erlaubt)",
+      noLimit.allowed === true && noLimit.limit === 50, `allowed=${noLimit.allowed} limit=${noLimit.limit}`);
 
     // Limit 5, erst 2 verbraucht -> erlaubt, 3 Rest.
     process.env.HELMUT_MAX_LLM_CALLS_PER_DAY = "5";

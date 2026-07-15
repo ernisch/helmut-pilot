@@ -1,0 +1,162 @@
+"use strict";
+
+// Browser-/Mobile-Smoke (Audit-Fix 2026-07, Sprint 5): Die 564-KB-SPA wurde von
+// keinem Test je in einem echten Browser geladen — Boot-Fehler auf dem Handy des
+// Nutzers blieben bis zur Nutzerbeschwerde unentdeckt (Splash-Hänger-Klasse).
+// Dieser Smoke bootet den ECHTEN server.js-Handler lokal (Pilot-Modus, lokaler
+// Datei-Store, kein Supabase, kein LLM, kein externes Netz) und lädt die App in
+// Chromium — Desktop (1280x800) und Mobil (390x844, iPhone-artig, Touch).
+//
+// Geprüft: App bootet (kein Splash-Hänger), keine fatalen JS-Fehler, die vier
+// Bereiche Lage/Radar/Briefing/Büro sind erreichbar, mobile Navigation existiert.
+//
+// Voraussetzung: Playwright (in CI: npx playwright install chromium). Ohne
+// Playwright wird der Test mit klarer Meldung ÜBERSPRUNGEN (Exit 0) — die
+// Offline-Suite bleibt dependency-frei lauffähig.
+
+const http = require("http");
+const path = require("path");
+const fs = require("fs");
+const root = path.join(__dirname, "..");
+
+function loadPlaywright() {
+  const candidates = [
+    "playwright",
+    // global installiertes Playwright (z. B. /opt/node22/lib/node_modules)
+    path.join(path.dirname(process.execPath), "..", "lib", "node_modules", "playwright")
+  ];
+  for (const candidate of candidates) {
+    try { return require(candidate); } catch (_) { /* nächster Kandidat */ }
+  }
+  return null;
+}
+
+let passed = 0, failed = 0;
+function check(name, cond, detail = "") {
+  if (cond) { passed += 1; console.log(`PASS  ${name}`); }
+  else { failed += 1; console.log(`FAIL  ${name}${detail ? "  — " + detail : ""}`); }
+}
+
+(async () => {
+  const playwright = loadPlaywright();
+  if (!playwright) {
+    console.log("SKIP  Playwright nicht installiert — Browser-Smoke übersprungen.");
+    console.log("      In CI: npx playwright install chromium && node scripts/browser-smoke-test.js");
+    process.exit(0);
+  }
+
+  // Lokaler Pilot-Modus ohne externe Dienste; Store-Dateien werden gesichert.
+  delete process.env.SUPABASE_URL;
+  delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+  delete process.env.HELMUT_AUTH_MODE;
+  delete process.env.OPENAI_API_KEY;
+  delete process.env.AZURE_OPENAI_KEY;
+  const dataDir = path.join(root, ".helmut-data");
+  const guarded = ["auth.json", "store.json", "p-cem-ince.json"].map((name) => {
+    const file = path.join(dataDir, name);
+    return { file, content: fs.existsSync(file) ? fs.readFileSync(file) : null };
+  });
+  const restore = () => {
+    for (const { file, content } of guarded) {
+      try {
+        if (content === null) { if (fs.existsSync(file)) fs.rmSync(file); }
+        else fs.writeFileSync(file, content);
+      } catch (_) { /* Hygiene */ }
+    }
+  };
+  process.on("exit", restore);
+
+  const handler = require(path.join(root, "server.js"));
+  const server = http.createServer(handler);
+  await new Promise((r) => server.listen(0, "127.0.0.1", r));
+  const { port } = server.address();
+  const baseUrl = `http://127.0.0.1:${port}`;
+
+  // Container-taugliche Flags: ohne --no-sandbox/--disable-dev-shm-usage stürzt
+  // Chromium in CI-/Sandbox-Umgebungen ab ("Target crashed").
+  const browser = await playwright.chromium.launch({
+    headless: true,
+    args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--disable-gpu"]
+  });
+  try {
+    for (const [label, viewport, isMobile] of [
+      ["Desktop 1280x800", { width: 1280, height: 800 }, false],
+      ["Mobil 390x844", { width: 390, height: 844 }, true]
+    ]) {
+      const context = await browser.newContext({
+        viewport,
+        isMobile,
+        hasTouch: isMobile,
+        // Service Worker BLOCKIEREN: in Sandbox-/Container-Chromium crasht die
+        // SW-Registrierung den Renderer ("Target crashed") — reproduziert auch am
+        // unveraenderten Basisstand, keine App-Regression. Der Smoke prueft den
+        // App-Boot deterministisch OHNE SW; das SW-Verhalten selbst (sw.js) ist
+        // damit bewusst NICHT abgedeckt (bekannte Luecke, nur am echten Geraet
+        // pruefbar).
+        serviceWorkers: "block",
+        // CSP der App erlaubt kein 'unsafe-eval' — Playwrights String-Evaluate
+        // wuerde sonst als Pageerror auftauchen und die Fehlerpruefung verfaelschen.
+        bypassCSP: true,
+        userAgent: isMobile
+          ? "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
+          : undefined
+      });
+      const page = await context.newPage();
+      const pageErrors = [];
+      const consoleErrors = [];
+      page.on("pageerror", (err) => pageErrors.push(String(err && err.message || err)));
+      page.on("console", (msg) => { if (msg.type() === "error") consoleErrors.push(msg.text()); });
+
+      await page.goto(baseUrl + "/", { waitUntil: "domcontentloaded", timeout: 30000 });
+      // Client geladen + Splash weg (der 8s-Watchdog in index.html würde sonst
+      // die Neu-laden-Karte zeigen — genau der Fehlerfall, den wir abfangen).
+      await page.waitForFunction("window.__helmutClientLoaded === true", null, { timeout: 15000 })
+        .catch(() => {});
+      const clientLoaded = await page.evaluate("window.__helmutClientLoaded === true").catch(() => false);
+      check(`${label}: client.js bootet (__helmutClientLoaded)`, clientLoaded);
+
+      await page.waitForFunction("!document.body.classList.contains('is-loading')", null, { timeout: 20000 }).catch(() => {});
+      const splashGone = await page.evaluate("!document.body.classList.contains('is-loading')").catch(() => false);
+      check(`${label}: Splash verschwindet (kein Boot-Hänger)`, splashGone);
+
+      check(`${label}: keine unbehandelten JS-Fehler beim Boot`, pageErrors.length === 0, pageErrors.slice(0, 2).join(" | "));
+
+      const html = await page.content();
+      check(`${label}: App-Shell gerendert (app-frame vorhanden)`, html.includes("app-frame") || html.includes("pilot"),
+        html.slice(0, 120));
+
+      // Die vier Bereiche: im Pilot-Modus ohne Code ist ggf. das Pilot-Gate zu sehen —
+      // lokal (nicht production-like) ist die App offen. Navigation prüfen, wenn da.
+      // Historische View-IDs (siehe Briefing-Reiter-Umbenennung): "briefing" =
+      // Lage-Reiter, "helmut" = Briefing-Reiter, "office" = Buero.
+      const navCount = await page.evaluate(`
+        ["briefing", "radar", "helmut", "office"].filter((v) =>
+          document.querySelector('[data-view="' + v + '"]')
+        ).length
+      `).catch(() => 0);
+      check(`${label}: Navigation zu den vier Bereichen vorhanden`, navCount === 4, `gefunden=${navCount}/4`);
+
+      if (navCount === 4) {
+        for (const [view, marker] of [["radar", "radar"], ["helmut", "hstand|helmut"], ["office", "buero|office"], ["briefing", "lage"]]) {
+          await page.evaluate(`document.querySelector('[data-view="${view}"]').click()`);
+          await page.waitForTimeout(250);
+          const bodyHtml = await page.content();
+          check(`${label}: Bereich '${view}' rendert`, new RegExp(marker, "i").test(bodyHtml));
+        }
+        check(`${label}: keine neuen JS-Fehler bei Tab-Wechseln`, pageErrors.length === 0, pageErrors.slice(0, 2).join(" | "));
+      }
+
+      if (isMobile) {
+        const dock = await page.evaluate(`Boolean(document.querySelector(".mobile-dock"))`).catch(() => false);
+        check(`${label}: mobile Dock-Navigation vorhanden`, dock);
+      }
+      await context.close();
+    }
+  } finally {
+    await browser.close();
+    await new Promise((r) => server.close(r));
+  }
+
+  console.log(`\n${passed} PASS, ${failed} FAIL`);
+  process.exit(failed ? 1 : 0);
+})().catch((e) => { console.error("TESTFEHLER", e); process.exit(1); });

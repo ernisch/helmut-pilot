@@ -326,7 +326,9 @@ async function handleRequest(request, response) {
       // P1-8 (Teil): tasks + notes sind unabhängig — parallel statt seriell laden.
       const [tasks, notes] = await Promise.all([getTasks(profile.id), getUserNotes(profile.id)]);
       return {
-        profile,
+        // Onboarding-Freigabe (Audit-Fix 2026-07): das Profil traegt seinen
+        // Pflichtfeld-/Freigabestatus (additiv; wird beim Speichern ignoriert).
+        profile: { ...profile, profilValidierung: validateProfile(profile) },
         briefing,
         tasks,
         notes,
@@ -339,10 +341,22 @@ async function handleRequest(request, response) {
   }
 
   if (url.pathname === "/api/profile/current") {
-    if (request.method === "GET") return handleAsync(response, () => activeProfile(politicianId));
+    if (request.method === "GET") {
+      return handleAsync(response, async () => {
+        const p = await activeProfile(politicianId);
+        return { ...p, profilValidierung: validateProfile(p) };
+      });
+    }
     if (request.method === "POST" || request.method === "PATCH") {
       if (previewMode) return sendPreviewReadOnly(response);
-      return handleJson(request, response, async (body) => saveProfile(await normalizeProfile(body, politicianId)));
+      // Onboarding-Freigabe (Audit-Fix 2026-07): Speichern bleibt tolerant
+      // (kein hartes Abweisen), aber fehlende Pflichtangaben werden dem Nutzer
+      // MITGETEILT statt still ignoriert — die Antwort traegt den vollstaendigen
+      // Validierungsstatus (state/fehlende Felder/Erklaerung).
+      return handleJson(request, response, async (body) => {
+        const saved = await saveProfile(await normalizeProfile(body, politicianId));
+        return { ...saved, profilValidierung: validateProfile(saved) };
+      });
     }
   }
 
@@ -516,18 +530,57 @@ async function handleRequest(request, response) {
   }
 
   if (url.pathname === "/api/privacy/export" && request.method === "GET") {
-    return handleAsync(response, () => exportProfileData(politicianId));
+    // SICHERHEIT (Review-Fix): Der Art.-15/20-Export umfasst Konto-, Sitzungs-,
+    // Zuweisungs- und Audit-Metadaten (inkl. IPs) des Mandats — also auch Daten
+    // Dritter (Admin/Referent). Betroffener ist der Mandatsträger. Im Account-Modus
+    // darf daher nur der Inhaber (abgeordneter mit diesem politicianId) oder ein
+    // Admin exportieren; im Legacy-Pilotmodus unverändert.
+    if (accountAuth) {
+      const isOwner = authUser && authUser.role === "abgeordneter" && authUser.politicianId === politicianId;
+      const isAdmin = authUser && authUser.role === "admin";
+      if (!isOwner && !isAdmin) {
+        return sendForbidden(response, "Nur der Mandatsinhaber oder ein Administrator darf die Mandatsdaten exportieren.", "privacy-export-forbidden");
+      }
+    }
+    return handleAsync(response, async () => {
+      const result = await exportProfileData(politicianId);
+      // DSGVO-Audit-Trail (Audit-Fix 2026-07): Export/Loeschung werden mit
+      // minimalen Metadaten protokolliert (keine Inhalte).
+      await accounts.recordAudit({ action: "privacy.export", politicianId, ip: auth.clientIp(request) }).catch(() => {});
+      return result;
+    });
   }
 
   if (url.pathname === "/api/privacy/delete" && request.method === "POST") {
     if (previewMode) return sendPreviewReadOnly(response);
+    // SICHERHEIT (Review-Fix): Die Löschung entfernt seit der Auth-Kaskade auch
+    // das KONTO des Mandatsträgers (deleteAuthDataForPolitician: Konto/Sessions/
+    // Zuweisungen des politicianId). Ein zugewiesener REFERENT darf das Mandat
+    // NICHT löschen — sonst könnte er den MdB aussperren. Im Account-Modus nur
+    // der Mandatsinhaber (abgeordneter mit genau diesem politicianId) oder ein
+    // Admin. Im Legacy-Pilotmodus (keine Rollen) bleibt das bisherige
+    // Ein-Mandats-Verhalten (der Pilotcode = Vollzugriff auf das eine Mandat).
+    if (accountAuth) {
+      const isOwner = authUser && authUser.role === "abgeordneter" && authUser.politicianId === politicianId;
+      const isAdmin = authUser && authUser.role === "admin";
+      if (!isOwner && !isAdmin) {
+        return sendForbidden(response, "Nur der Mandatsinhaber oder ein Administrator darf die Mandatsdaten löschen.", "privacy-delete-forbidden");
+      }
+    }
     return handleJson(request, response, async (body) => {
       if (String(body.confirm || "").trim() !== "DELETE") {
         response.writeHead(400, jsonHeaders());
         response.end(JSON.stringify({ error: "Deletion requires confirm: DELETE" }, null, 2));
         return null;
       }
-      return deleteProfileData(politicianId);
+      const result = await deleteProfileData(politicianId);
+      await accounts.recordAudit({
+        action: "privacy.delete",
+        politicianId,
+        ip: auth.clientIp(request),
+        detail: result && result.ok ? "vollstaendig" : "TEILWEISE FEHLGESCHLAGEN — Nacharbeit noetig"
+      }).catch(() => {});
+      return result;
     });
   }
 
@@ -625,6 +678,42 @@ async function handleRequest(request, response) {
     if (!authorizeCron(request, url, response)) return;
     return handleAsync(response, async () => {
       const t0 = Date.now();
+      // Mehrmandantenfaehigkeit (Audit-Fix 2026-07, Default AUS): Der Cron bediente
+      // fest EIN Profil (Default-politicianId) — weitere Mandate erhielten nie einen
+      // Morgen-Push. Mit HELMUT_MORNING_PUSH_ALL_PROFILES=1 loopt er wie der
+      // lage-briefing-Cron ueber alle Profile (deaktivierte werden uebersprungen,
+      // per-Profil try/catch, hartes Zeitbudget). Aktivierung = bewusste
+      // Betreiber-Entscheidung (zusaetzliche Build-Laeufe, 0 KI — der Briefing-Build
+      // ist eine reine Lese-Transformation; Push nur bei echtem Inhalt).
+      const flagOn = (v) => ["1", "true", "on", "yes"].includes(String(v || "").trim().toLowerCase());
+      if (flagOn(process.env.HELMUT_MORNING_PUSH_ALL_PROFILES)) {
+        const deadline = t0 + 240000; // 240s < maxDuration 300s: Cron antwortet IMMER
+        let profiles = await listProfiles().catch(() => []);
+        if (!Array.isArray(profiles) || !profiles.length) profiles = [{ id: politicianId }];
+        const results = [];
+        let skipped = 0;
+        for (const p of profiles) {
+          if (Date.now() > deadline) { results.push({ userId: p.id, skipped: true, reason: "zeitbudget" }); continue; }
+          // Per-Profil try/catch (Review-Fix): früher waren nur Build/Push gefangen,
+          // NICHT activeProfile/validateProfile — ein Storage-Fehler bei EINEM Profil
+          // brach die gesamte Schleife (500, alle übrigen ohne Push). Jetzt isoliert
+          // jedes Profil vollständig; ein Fehler wird als Ergebniszeile vermerkt.
+          try {
+            const profile = await activeProfile(p.id || politicianId);
+            const val = validateProfile(profile);
+            if (val.disabled) { skipped += 1; results.push({ userId: profile.id, skipped: true, reason: "profil-deaktiviert" }); continue; }
+            const briefing = await withTimeout(buildV3Briefing(profile, profile.id), 60000, "cron-briefing-build")
+              .catch((error) => ({ available: false, reason: "build-timeout", error: error && error.message, items: [], personalizedRecommendations: [], personMentions: [] }));
+            const push = await withTimeout(sendBriefingReadyPush(briefing, profile), 30000, "cron-briefing-push")
+              .catch((error) => ({ ok: false, reason: "push-timeout", error: error && error.message }));
+            results.push({ userId: profile.id, available: Boolean(briefing && briefing.available), pushSkipped: Boolean(push && push.skipped), pushReason: (push && push.reason) || null });
+          } catch (error) {
+            results.push({ userId: p.id, skipped: true, reason: "profil-fehler", error: error && error.message });
+          }
+        }
+        console.log(`[cron/morning-briefing] multi-profil: ${results.length} Profile, ${skipped} uebersprungen, ${Date.now() - t0}ms`);
+        return { multiProfile: true, profile: results.length, uebersprungen: skipped, results };
+      }
       const profile = await activeProfile(politicianId);
       // V3: das Briefing entsteht frisch aus den aktuellen Knowledge Objects (0 KI) —
       // kein V2-runMorningBriefing mehr. Beide Schritte (Build + Push) hart begrenzt,
@@ -4184,6 +4273,15 @@ function mergeProfileDefaults(profile) {
 
 async function normalizeProfile(profile, politicianId = cemInceProfile.id) {
   const base = await activeProfile(politicianId);
+  // Abgeleitete Nur-Anzeige-Felder NIE persistieren (Review-Fix): GET/app-start
+  // hängen profilValidierung an das zurückgegebene Profil; sendet ein Client das
+  // Objekt roh zurück, würde der veraltete Validierungsstand sonst über `...profile`
+  // dauerhaft im Blob (und im Privacy-Export) landen. Er wird ohnehin bei jedem
+  // Read neu berechnet.
+  if (profile && typeof profile === "object" && "profilValidierung" in profile) {
+    profile = { ...profile };
+    delete profile.profilValidierung;
+  }
   const next = {
     ...base,
     ...profile,

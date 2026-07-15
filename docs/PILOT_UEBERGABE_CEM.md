@@ -6,7 +6,13 @@ Stand: 23. Juni 2026
 
 https://helmut-pilot.vercel.app
 
-Pilot-Passwort: `nohut`
+Pilot-Passwort: `<WIRD SICHER UEBERGEBEN — NIE IM REPO SPEICHERN>`
+
+> Sicherheitshinweis (Audit 2026-07): Der fruehere Klartext-Zugangscode wurde aus
+> dieser Datei entfernt. Er stand in der Git-Historie und MUSS rotiert werden
+> (Freigabepunkt: PILOT_SECRET in Vercel neu setzen + Redeploy), bevor das
+> Repository geteilt wird. Zugangsdaten werden nur noch ueber einen sicheren
+> Kanal (Signal/persoenlich) uebergeben.
 
 ## Wofuer Helmut gedacht ist
 

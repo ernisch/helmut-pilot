@@ -96,8 +96,14 @@ let helmutTypingFullText = "";
 let helmutTypingTimer = null;
 let selectedTaskHandoffId = "";
 let generatedStatement = "";
+// Herkunft des aktuell angezeigten Kommunikationstexts: "" (aus der belegten
+// Entscheidung), "ki", "regel" oder "fehler" — für die ehrliche Kennzeichnung.
+let generatedStatementSource = "";
 let communicationContextTitle = "";
 let officeDrafts = {};
+// Fehlgeschlagene Entwurfs-Erzeugungen je Draft-Key (nur Laufzeit, kein Cache):
+// unterscheidet "Erstellung fehlgeschlagen" vom bloßen "Noch kein Entwurf".
+let officeDraftErrors = {};
 let officeDraftsGenerating = false;
 let selectedOfficeDraft = null;
 let selectedCommunicationChannel = "press";
@@ -2782,7 +2788,7 @@ async function runPendingDiagnose() {
   adminPendingDiagnoseBusy = true;
   adminRecoveryDetailsOpen = true; // Panel offen halten, damit die Diagnose sichtbar bleibt
   adminPendingDiagnose = { pending: true };
-  render(); bindActions();
+  render(); // render() bindet selbst — ein zweites bindActions() würde Listener doppeln
   try {
     const resp = await fetchWithTimeout(`/api/admin/recovery/pending-diagnose?${apiScopeQuery()}`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: "{}"
@@ -2794,7 +2800,7 @@ async function runPendingDiagnose() {
     adminPendingDiagnose = { ok: false, fehler: "Zeitüberschreitung oder Netzwerkfehler" };
   } finally {
     adminPendingDiagnoseBusy = false;
-    render(); bindActions();
+    render(); // render() bindet selbst — ein zweites bindActions() würde Listener doppeln
   }
 }
 
@@ -2833,7 +2839,7 @@ function startRecoveryPolling() {
         adminRecoveryStale = true;       // letzten Stand behalten, ruhige Notiz anzeigen
       }
     } catch (_) { adminRecoveryStale = true; /* Poll optional – niemals einen zweiten Lauf starten */ }
-    render(); bindActions();
+    render(); // render() bindet selbst — ein zweites bindActions() würde Listener doppeln
   }, 7000);
 }
 
@@ -2867,7 +2873,7 @@ async function runRecoveryAction(action) {
     adminRecoveryPrevFinishedAt = (adminRecovery && adminRecovery.letzterRecoveryLauf && adminRecovery.letzterRecoveryLauf.finishedAt) || null;
     startRecoveryPolling();
   }
-  render(); bindActions();
+  render(); // render() bindet selbst — ein zweites bindActions() würde Listener doppeln
   try {
     const body = action === "reset-failed" ? { confirm: true } : {};
     const resp = await fetchWithTimeout(`${endpoint}?${apiScopeQuery()}`, {
@@ -2902,7 +2908,7 @@ async function runRecoveryAction(action) {
   } finally {
     stopRecoveryPolling();
     adminRecoveryBusy = false;
-    render(); bindActions();
+    render(); // render() bindet selbst — ein zweites bindActions() würde Listener doppeln
   }
 }
 
@@ -3479,31 +3485,18 @@ function lageHasSource(v) {
   return Number(v.sourceCount) > 0;
 }
 
-// ── Legacy-Fallback (TEMPORÄR) — SPIEGELT lib/helmut/lage.js selectLageVorgaenge ──
-// Zweistufige Auswahl über bereits vorhandene Daten (kein KI-Call, kein Backfill):
-//   1) Gibt es mind. EINEN modernen Vorgang (alle fünf Presentation-Felder),
-//      werden AUSSCHLIESSLICH moderne Vorgänge gezeigt (Legacy NICHT beigemischt).
-//   2) Gibt es KEINEN modernen Vorgang, werden Legacy-Vorgänge mit echter Quelle
-//      gezeigt, damit die Lage für den Piloten nicht leer bleibt.
-// In beiden Stufen nur Vorgänge mit echter Quelle. Der Server wählt bereits
-// zentral so aus; diese Spiegelung garantiert dieselbe Regel zur Anzeigezeit
-// (Kopfzahl UND Karussell stammen aus DERSELBEN Menge, nie gemischt). Bei
-// Regeländerung BEIDE Stellen anpassen. Sobald Backfill/neue Understanding-Läufe
-// moderne Vorgänge liefern, greift automatisch wieder Stufe 1 — der Fallback
-// verschwindet dann von selbst.
-const LAGE_PRESENTATION_FIELDS = ["displayTitle", "displaySummary", "whyRelevant", "recommendation", "displayCategory"];
-function lageVorgangModern(v) {
-  return LAGE_PRESENTATION_FIELDS.every((f) => lageField(v[f]) !== "");
-}
-
-// Die tatsächlich sichtbare Menge — Kopfzahl ("Heute gibt es N neue Vorgänge")
-// und Karussell leiten sich BEIDE hieraus ab, damit sie nie auseinanderlaufen.
+// ── Sichtbare Lage-Menge — der SERVER wählt zentral aus (lib/helmut/lage.js
+// selectLageVorgaenge: moderne Vorgänge zuerst, danach die übrigen belegten,
+// gemischt). Der Client übernimmt diese Auswahl 1:1 und filtert nur defensiv
+// auf echte Quellen. FRÜHER stand hier eine Entweder-oder-Spiegelung mit
+// strengerer 5-Feld-Definition: sobald EINE vollständige Karte existierte,
+// verschwanden alle übrigen belegten, vom Server gelieferten Karten — das
+// machte den Server-Fix wirkungslos ("nur zwei Karten"-Klasse). Keine
+// Auswahlregel mehr im Client doppeln: Kopfzahl und Karussell stammen beide
+// aus DERSELBEN Server-Menge.
 function lageVisibleVorgaenge(data) {
   const list = (data && Array.isArray(data.vorgaenge)) ? data.vorgaenge : [];
-  const withSource = list.filter(lageHasSource);
-  const modern = withSource.filter(lageVorgangModern);
-  // Vorrang moderne Vorgänge; nur wenn KEINER existiert -> Legacy (mit Quelle).
-  return modern.length ? modern : withSource;
+  return list.filter(lageHasSource);
 }
 
 // Fallback-Kategorie für Vorgänge ohne v.displayCategory (ältere Vorgänge):
@@ -3804,16 +3797,76 @@ function renderVorgangCard(v) {
     </article>`;
 }
 
+// Frische der Lage aus den ECHTEN Quellendaten der sichtbaren Karten (kein neues
+// Serverfeld, keine Behauptung): Zeitpunkt der neuesten Quelle, heute mit Uhrzeit.
+function lageFreshnessLabel(vorgaenge) {
+  let newest = 0;
+  for (const v of vorgaenge || []) {
+    for (const s of (v && Array.isArray(v.sources) ? v.sources : [])) {
+      const t = Date.parse(s && s.publishedAt ? s.publishedAt : "");
+      if (Number.isFinite(t) && t > newest) newest = t;
+    }
+  }
+  if (!newest) return "";
+  const d = new Date(newest);
+  // Zeitzone auf Europe/Berlin pinnen (Review-Fix): konsistent mit lageDateLabel/
+  // radarTime; sonst weichen "heute"-Einstufung und Uhrzeit für Nutzer außerhalb
+  // DE vom Rest der App ab. Tagesvergleich über den Berlin-Kalendertag.
+  const berlinDay = (t) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit" }).format(t);
+  if (berlinDay(d) === berlinDay(new Date())) {
+    const uhr = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" }).format(d);
+    return `Neueste Quelle heute, ${uhr} Uhr.`;
+  }
+  const datum = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "numeric", month: "long" }).format(d);
+  return `Neueste Quelle vom ${datum}.`;
+}
+
+// STOERUNGSWAHRHEIT (Audit-Fix 2026-07): Lage-Ausfallgründe (Server: available:false
+// + reason) auf ehrliche Zustände mappen — Datenausfall/Budget nie als ruhiger Tag.
+function lageDisruption(data) {
+  if (!data || data.available !== false) return null;
+  const reason = String(data.reason || "");
+  if (reason === "store-error" || reason === "v3-disabled" || reason === "error") {
+    return {
+      kind: "stoerung",
+      title: "Daten derzeit nicht verfügbar",
+      sub: "Technische Störung beim Laden der Datenbasis — das ist kein ruhiger Tag. Bitte in einigen Minuten erneut öffnen."
+    };
+  }
+  if (reason === "budget") {
+    return {
+      kind: "budget",
+      title: "KI-Tageskontingent erreicht",
+      sub: "Neue Auswertungen pausieren bis morgen früh. Bereits ausgewertete Vorgänge bleiben gültig."
+    };
+  }
+  if (reason === "no-vorgaenge") {
+    return {
+      kind: "datenluecke",
+      title: "Keine ausgewerteten Vorgänge verfügbar",
+      sub: "Die Datenbasis liefert gerade keine analysierten Vorgänge — vermutlich eine Datenlücke, kein ruhiger Nachrichtentag."
+    };
+  }
+  return null;
+}
+
 // Leerer Zustand: keine Fake-/Seed-/Platzhalter-Karten, nur ein ruhiger Hinweis.
-function renderLageEmpty(greeting, dateLabel, emptyState) {
+function renderLageEmpty(greeting, dateLabel, emptyState, data) {
   // Sprint 5 (additiv): liegt ein unterscheidbarer Leerzustand vor (gap/stale/quiet),
   // wird dessen ehrliche Ueberschrift/Erklaerung gezeigt — Datenluecke nie als ruhiger
-  // Tag. Ohne emptyState (Flag aus) unveraendertes Alt-Verhalten.
+  // Tag. Ohne emptyState (Scoring-Flag aus) greift die Stoerungswahrheit über
+  // data.reason; erst danach der neutrale Alt-Leertext.
   const es = emptyState && emptyState.kind ? emptyState : null;
-  const title = es && es.headline ? es.headline : "Heute liegen noch keine quellengestützten Vorgänge vor.";
-  const sub = es && es.detail ? es.detail : "Sobald neue geprüfte Quellen verfügbar sind, erscheint hier deine Lage.";
+  const disruption = es ? null : lageDisruption(data);
+  const title = es && es.headline ? es.headline
+    : disruption ? disruption.title
+    : "Heute liegen noch keine quellengestützten Vorgänge vor.";
+  const sub = es && es.detail ? es.detail
+    : disruption ? disruption.sub
+    : "Sobald neue geprüfte Quellen verfügbar sind, erscheint hier deine Lage.";
+  const emptyKind = es ? es.kind : (disruption ? disruption.kind : "");
   return `
-    <section class="lage2 lage2-empty-wrap"${es ? ` data-empty-kind="${escapeAttribute(es.kind)}"` : ""}>
+    <section class="lage2 lage2-empty-wrap"${emptyKind ? ` data-empty-kind="${escapeAttribute(emptyKind)}"` : ""}>
       <header class="lage2-head">
         <span class="lage2-date">${escapeHtml(dateLabel)}</span>
         <h1 class="lage2-greeting">${escapeHtml(greeting)}</h1>
@@ -3831,15 +3884,20 @@ function renderLageView() {
   const greeting = (typeof timeGreeting === "function" ? timeGreeting(firstName) : (firstName ? `Guten Morgen, ${firstName}.` : "Guten Morgen."));
   const dateLabel = lageDateLabel();
   const vorgaenge = lageVisibleVorgaenge(data);
-  if (!vorgaenge.length) return renderLageEmpty(greeting, dateLabel, data && data.emptyState);
+  if (!vorgaenge.length) return renderLageEmpty(greeting, dateLabel, data && data.emptyState, data);
   const count = vorgaenge.length;
-  const countWord = count === 1 ? "neuen Vorgang" : "neue Vorgänge";
+  // EHRLICHE KOPFZEILE (Audit-Fix 2026-07): "Heute gibt es N NEUE Vorgänge"
+  // etikettierte beliebig alte Vorgänge als heutige Neuigkeiten. Jetzt: neutrale
+  // Zählung + sichtbare Frische der neuesten Quelle (macht veraltete Daten ruhig
+  // und ohne Alarmismus erkennbar).
+  const countWord = count === 1 ? "relevanter Vorgang" : "relevante Vorgänge";
+  const fresh = lageFreshnessLabel(vorgaenge);
   return `
     <section class="lage2">
       <header class="lage2-head">
         <span class="lage2-date">${escapeHtml(dateLabel)}</span>
         <h1 class="lage2-greeting">${escapeHtml(greeting)}</h1>
-        <p class="lage2-count">Heute gibt es <b>${count}</b> ${countWord}.</p>
+        <p class="lage2-count"><b>${count}</b> ${countWord} in deiner Lage.${fresh ? ` <span class="lage2-stand">${escapeHtml(fresh)}</span>` : ""}</p>
       </header>
       ${data.demo ? `<span class="lage2-demo">Beispiel-Briefing · Demodaten</span>` : ""}
 
@@ -4647,7 +4705,7 @@ function renderLageFocus() {
   }
   const top = active[0];
   const warumBullets = generateWarumBullets(top);
-  const readyFormats = activeOfficeFormats().filter((f) => officeDrafts[officeDraftKey(top, f)]);
+  const readyFormats = activeOfficeFormats().filter((f) => isValidDraft(officeDraftText(officeDrafts[officeDraftKey(top, f)])));
   const bueroLine = readyFormats.length
     ? `<button class="lage-buero-ready" type="button" data-view="office">Helmut hat ${escapeHtml(readyFormats.map((f) => f.label).join(" · "))} vorbereitet</button>`
     : "";
@@ -5568,19 +5626,57 @@ function renderHstandUnavailable() {
     </section>`;
 }
 
+// STOERUNGSWAHRHEIT (Audit-Fix 2026-07): technische Ausfälle, Budget-Stopp und
+// Datenlücken dürfen NIE wie ein ruhiger Tag aussehen. Mappt den expliziten
+// Leer-Grund des Briefing-Vertrags (briefing.reason) auf einen ehrlichen Zustand.
+// "keine-treffer" bleibt bewusst unbehandelt — das IST der echte ruhige Tag.
+function briefingDisruption() {
+  if (!briefing || briefing.available !== false) return null;
+  const reason = String(briefing.reason || "");
+  if (reason === "store-error" || reason === "v3-store-disabled" || reason === "build-timeout") {
+    return {
+      kind: "stoerung", error: true,
+      title: "Daten derzeit nicht verfügbar",
+      sub: "Technische Störung beim Laden der Datenbasis — das ist kein ruhiger Tag. Bitte in einigen Minuten erneut öffnen."
+    };
+  }
+  if (reason === "budget") {
+    return {
+      kind: "budget", error: false,
+      title: "KI-Tageskontingent erreicht",
+      sub: "Neue Auswertungen pausieren bis morgen früh. Bereits ausgewertete Vorgänge bleiben gültig."
+    };
+  }
+  if (reason === "keine-vorgaenge") {
+    return {
+      kind: "datenluecke", error: true,
+      title: "Keine ausgewerteten Vorgänge verfügbar",
+      sub: "Die Datenbasis liefert gerade keine analysierten Vorgänge — vermutlich eine Datenlücke, kein ruhiger Nachrichtentag."
+    };
+  }
+  return null;
+}
+
 function renderHstandStateCard(state, kind) {
-  const isError = kind === "error";
+  let isError = kind === "error";
   // Sprint 5 (additiv): unterscheidbarer Helmut-Leerzustand (gap/stale/quiet). Nur im
   // Nicht-Fehler-Fall; ohne emptyState (Flag aus) unveraendertes Alt-Verhalten.
   const es = !isError && state && state.emptyState && state.emptyState.kind ? state.emptyState : null;
-  const title = isError ? "Stand konnte nicht geladen werden" : (es && es.headline ? es.headline : "Heute kein Handlungsbedarf");
-  const sub = isError
-    ? "Die Auswertung ist derzeit nicht belastbar. Bitte später erneut prüfen."
-    : (es && es.detail ? es.detail : "Für dein Mandat liegen derzeit keine belastbaren Vorgänge vor.");
+  // Stoerungswahrheit: expliziter Ausfall-Grund schlaegt den generischen Leertext.
+  const disruption = !isError && !es ? briefingDisruption() : null;
+  if (disruption && disruption.error) isError = true;
+  const title = disruption ? disruption.title
+    : isError ? "Stand konnte nicht geladen werden"
+    : (es && es.headline ? es.headline : "Heute kein Handlungsbedarf");
+  const sub = disruption ? disruption.sub
+    : isError
+      ? "Die Auswertung ist derzeit nicht belastbar. Bitte später erneut prüfen."
+      : (es && es.detail ? es.detail : "Für dein Mandat liegen derzeit keine belastbaren Vorgänge vor.");
+  const emptyKind = disruption ? disruption.kind : (es ? es.kind : "");
   return `
     <section class="hstand hstand--state" aria-label="Briefing">
       ${renderHstandHeader(state)}
-      <div class="hstand-state-card${isError ? " hstand-state-card--error" : ""}"${es ? ` data-empty-kind="${escapeAttribute(es.kind)}"` : ""}>
+      <div class="hstand-state-card${isError ? " hstand-state-card--error" : ""}"${emptyKind ? ` data-empty-kind="${escapeAttribute(emptyKind)}"` : ""}>
         <span class="hstand-state-mark" aria-hidden="true">${isError ? "!" : "H"}</span>
         <p class="hstand-state-title">${escapeHtml(title)}</p>
         <p class="hstand-state-sub">${escapeHtml(sub)}</p>
@@ -5653,7 +5749,8 @@ function renderHelmutHeader() {
   helmutBriefings.forEach((d) => { introCounts[helmutStatusBucket(d.priorityType || "watch")] += 1; });
   const actN = introCounts.handeln;
   const watchN = introCounts.beobachten;
-  const totalLine = `Heute gibt es ${total} ${total === 1 ? "relevanten Vorgang" : "relevante Vorgänge"}.`;
+  // Ehrlich: keine "heute"-Behauptung über potenziell ältere Vorgänge.
+  const totalLine = `Es ${total === 1 ? "liegt" : "liegen"} ${total} ${total === 1 ? "relevanter Vorgang" : "relevante Vorgänge"} vor.`;
   let actionLine;
   if (actN > 0) {
     actionLine = `Davon solltest du dich heute um ${actN} ${actN === 1 ? "Vorgang" : "Vorgänge"} kümmern${watchN ? ` und ${watchN} beobachten` : ""}.`;
@@ -5773,8 +5870,7 @@ function helmutJumpToBucket(bucket) {
   const deckIdx = helmutDeck.findIndex((d) => helmutStatusBucket(d.priorityType || "watch") === bucket);
   if (deckIdx >= 0) {
     helmutCarouselIndex = deckIdx;
-    patchCarousel();
-    bindActions();
+    patchCarousel(); // bindet den Teilbaum selbst — kein globales Re-Bind
     window.requestAnimationFrame(() => {
       const wrap = app.querySelector("#helmutCarousel");
       helmutScrollHighlight((wrap && wrap.querySelector(".helmut-deck-card")) || wrap);
@@ -5957,7 +6053,30 @@ function patchCarousel() {
   const wrap = app.querySelector("#helmutCarousel");
   if (!wrap) return;
   wrap.innerHTML = renderCarouselInner();
+  // NUR den ersetzten Teilbaum binden. Ein globales bindActions() nach einem
+  // Teil-Patch würde allen NICHT ersetzten Elementen (Burger-Menü, Navigation,
+  // Aufklapper, Feedback) bei jeder Karussell-Interaktion einen weiteren
+  // Listener anhängen — Aktionen feuerten dann doppelt/n-fach (Audit-Fix 2026-07).
   bindCarousel(wrap);
+  bindDetailOpen(wrap);
+}
+
+// Öffnet die Detailansicht einer Entscheidung. Gescopt bindbar, damit Teil-Patches
+// (patchCarousel) nur ihre eigenen neuen Knoten binden und render()/bindActions()
+// weiterhin den Gesamtbaum abdeckt.
+function bindDetailOpen(root) {
+  (root || app).querySelectorAll("[data-detail]").forEach((button) => {
+    button.addEventListener("click", () => {
+      selectedDecisionId = button.dataset.detail;
+      detailOriginView = currentView === "detail" ? detailOriginView : currentView;
+      currentView = "detail";
+      navOpen = false;
+      updatesOpen = false;
+      const decision = selectedDecision();
+      logDecisionInteraction("detail_opened", decision);
+      render();
+    });
+  });
 }
 
 function bindCarousel(root) {
@@ -5968,8 +6087,7 @@ function bindCarousel(root) {
     btn.addEventListener("click", () => {
       helmutCarouselFilter = btn.dataset.carouselFilter;
       helmutCarouselIndex = 0;
-      patchCarousel();
-      bindActions();
+      patchCarousel(); // bindet den Teilbaum selbst — kein globales Re-Bind
     });
   });
 
@@ -5980,15 +6098,13 @@ function bindCarousel(root) {
   if (prevBtn) {
     prevBtn.addEventListener("click", () => {
       helmutCarouselIndex = Math.max(0, helmutCarouselIndex - 1);
-      patchCarousel();
-      bindActions();
+      patchCarousel(); // bindet den Teilbaum selbst — kein globales Re-Bind
     });
   }
   if (nextBtn) {
     nextBtn.addEventListener("click", () => {
       helmutCarouselIndex = Math.min(items.length - 1, helmutCarouselIndex + 1);
-      patchCarousel();
-      bindActions();
+      patchCarousel(); // bindet den Teilbaum selbst — kein globales Re-Bind
     });
   }
 
@@ -6002,8 +6118,7 @@ function bindCarousel(root) {
       const count = filteredCarouselItems().length;
       if (dx < 0) helmutCarouselIndex = Math.min(count - 1, helmutCarouselIndex + 1);
       else helmutCarouselIndex = Math.max(0, helmutCarouselIndex - 1);
-      patchCarousel();
-      bindActions();
+      patchCarousel(); // bindet den Teilbaum selbst — kein globales Re-Bind
     }, { passive: true });
   }
 }
@@ -7345,49 +7460,49 @@ function renderMemorySection(decision) {
 const OFFICE_FORMAT_META = {
   presse: {
     formatLabel: "Pressemitteilung", typeLabel: "PRESSEMITTEILUNG", einordnung: "Offizielle Linie für Medien.",
-    defaultStatus: "Entwurf bereit", fromSource: "Aus Lage empfohlen", lineCheck: "Linie geprüft. Sachlicher Ton empfohlen.",
+    defaultStatus: "Entwurf bereit", fromSource: "Aus Lage empfohlen", lineCheck: "Vor Veröffentlichung prüfen. Sachlicher Ton empfohlen.",
     qualityTone: "Sachlich, klar, politisch anschlussfähig", qualityUsage: "Presse und Medien",
     fallbackDraft: "",
     iconBg: "var(--paper)", iconColor: "var(--muted)",
   },
   linkedin: {
     formatLabel: "LinkedIn Beitrag", typeLabel: "LINKEDIN", einordnung: "Persönlich, kurz, anschlussfähig.",
-    defaultStatus: "Entwurf bereit", fromSource: "Aus Lage empfohlen", lineCheck: "Linie geprüft. Persönliche Sprache erwünscht.",
+    defaultStatus: "Entwurf bereit", fromSource: "Aus Lage empfohlen", lineCheck: "Vor Veröffentlichung prüfen. Persönliche Sprache erwünscht.",
     qualityTone: "Persönlich, direkt, nahbar", qualityUsage: "LinkedIn",
     fallbackDraft: "",
     iconBg: "var(--paper)", iconColor: "var(--muted)",
   },
   x: {
     formatLabel: "X Beitrag", typeLabel: "X / TWITTER", einordnung: "Kurz, pointiert, öffentlich.",
-    defaultStatus: "Entwurf bereit", fromSource: "Aus Lage empfohlen", lineCheck: "Linie geprüft. Kurz halten.",
+    defaultStatus: "Entwurf bereit", fromSource: "Aus Lage empfohlen", lineCheck: "Vor Veröffentlichung prüfen. Kurz halten.",
     qualityTone: "Direkt, knapp, pointiert", qualityUsage: "X / Twitter",
     fallbackDraft: "",
     iconBg: "var(--paper)", iconColor: "var(--muted)",
   },
   instagram: {
     formatLabel: "Instagram Beitrag", typeLabel: "INSTAGRAM", einordnung: "Kurz, klar, mobil lesbar.",
-    defaultStatus: "Entwurf bereit", fromSource: "Aus Lage empfohlen", lineCheck: "Linie geprüft. Persönliche Sprache erwünscht.",
+    defaultStatus: "Entwurf bereit", fromSource: "Aus Lage empfohlen", lineCheck: "Vor Veröffentlichung prüfen. Persönliche Sprache erwünscht.",
     qualityTone: "Menschlich, authentisch, kurz", qualityUsage: "Instagram",
     fallbackDraft: "",
     iconBg: "var(--paper)", iconColor: "var(--muted)",
   },
   anfrage: {
     formatLabel: "Parlamentarische Anfrage", typeLabel: "PARLAMENTARISCHE ANFRAGE", einordnung: "Für Ausschuss und parlamentarische Kontrolle.",
-    defaultStatus: "Zum Bereithalten", fromSource: "Aus Radar vorbereitet", lineCheck: "Linie geprüft. Formale Sprache erforderlich.",
+    defaultStatus: "Zum Bereithalten", fromSource: "Aus Radar vorbereitet", lineCheck: "Vor Einreichung prüfen. Formale Sprache erforderlich.",
     qualityTone: "Formal, sachlich, präzise", qualityUsage: "Parlamentarische Arbeit",
     fallbackDraft: "",
     iconBg: "var(--paper)", iconColor: "var(--muted)",
   },
   rede: {
     formatLabel: "Redebaustein", typeLabel: "REDEBAUSTEIN", einordnung: "Für Termine, Interviews und kurze Statements.",
-    defaultStatus: "Zum Bereithalten", fromSource: "Aus Radar vorbereitet", lineCheck: "Linie geprüft. Kernbotschaft klar halten.",
+    defaultStatus: "Zum Bereithalten", fromSource: "Aus Radar vorbereitet", lineCheck: "Vor Verwendung prüfen. Kernbotschaft klar halten.",
     qualityTone: "Klar, überzeugend, politisch", qualityUsage: "Termine und Interviews",
     fallbackDraft: "",
     iconBg: "var(--paper)", iconColor: "var(--muted)",
   },
   buergerbrief: {
     formatLabel: "Bürgerbrief", typeLabel: "BÜRGERBRIEF", einordnung: "Verständliche Antwort für Bürgeranfragen.",
-    defaultStatus: "Entwurf bereit", fromSource: "Aus Lage empfohlen", lineCheck: "Linie geprüft. Verständliche Sprache.",
+    defaultStatus: "Entwurf bereit", fromSource: "Aus Lage empfohlen", lineCheck: "Vor Versand prüfen. Verständliche Sprache.",
     qualityTone: "Zugänglich, klar, persönlich", qualityUsage: "Bürgeranfragen",
     fallbackDraft: "",
     iconBg: "var(--paper)", iconColor: "var(--muted)",
@@ -7430,9 +7545,13 @@ function draftStatus(format) {
 // die redaktionelle Vorgabe des Formats — nie "bereit" über einem Platzhalter.
 function officeCardStatus(decision, format) {
   const editorial = draftStatus(format);
-  const hasValid = isValidDraft(officeDrafts[officeDraftKey(decision, format)]);
+  const key = officeDraftKey(decision, format);
+  const hasValid = isValidDraft(officeDraftText(officeDrafts[key]));
   if (editorial === "Entwurf bereit" && !hasValid) {
-    return officeDraftsGenerating ? "Wird vorbereitet" : "Noch kein Entwurf";
+    if (officeDraftsGenerating) return "Wird vorbereitet";
+    // Ehrlicher Fehlerzustand statt "Noch kein Entwurf": die Erzeugung ist
+    // real fehlgeschlagen (Timeout/Limit/KI-Fehler), nicht bloß ausstehend.
+    return officeDraftErrors[key] ? "Erstellung fehlgeschlagen" : "Noch kein Entwurf";
   }
   return editorial;
 }
@@ -7440,7 +7559,7 @@ function officeCardStatus(decision, format) {
 function draftStatusClass(status) {
   if (status === "Entwurf bereit") return "buero-status--publish";
   if (status === "Bei Nachfrage verwenden") return "buero-status--nachfrage";
-  if (status === "Noch nicht belastbar" || status === "Noch kein Entwurf") return "buero-status--unsicher";
+  if (status === "Noch nicht belastbar" || status === "Noch kein Entwurf" || status === "Erstellung fehlgeschlagen") return "buero-status--unsicher";
   if (status === "Wird vorbereitet") return "buero-status--bereit";
   return "buero-status--bereit";
 }
@@ -7518,7 +7637,8 @@ function renderOfficeView() {
 
 function renderOfficeDraftCard(decision, format, index = 0) {
   const key = officeDraftKey(decision, format);
-  const aiText = officeDrafts[key];
+  const draftValue = officeDrafts[key];
+  const aiText = officeDraftText(draftValue);
   const isLoading = officeDraftsGenerating && !aiText;
   const meta = OFFICE_FORMAT_META[format.id] || { typeLabel: format.label.toUpperCase(), einordnung: "", defaultStatus: "Zum Bereithalten", lineCheck: "", iconBg: "#F0F0F0", iconColor: "#555" };
   // Kein erfundener Muster-Entwurf mehr: entweder gültiger (KI-/regelbasierter)
@@ -7564,6 +7684,7 @@ function renderOfficeDraftCard(decision, format, index = 0) {
           Entwurf prüfen
         </button>
       </div>
+      ${isLoading ? "" : `<p class="buero-card-provenance">${escapeHtml(draftProvenanceLabel(officeDraftProvenance(draftValue), hasValid))}</p>`}
     </article>
   `;
 }
@@ -7603,7 +7724,7 @@ function renderOfficeDraftDetail() {
           ${time ? `Erstellt heute um ${escapeHtml(time)}` : "Heute erstellt"}
           ${sources > 0 ? `&nbsp;·&nbsp; Basiert auf ${sources} ${sources !== 1 ? "Quellen" : "Quelle"}` : ""}
         </p>
-        ${meta.lineCheck && isValidDraft(officeDrafts[officeDraftKey(decision, format)]) ? `<p class="buero-detail-linecheck">${escapeHtml(meta.lineCheck)}</p>` : ""}
+        <p class="buero-detail-linecheck">${escapeHtml(selectedOfficeDraft.provenance || draftProvenanceLabel("", isValidDraft(officeDraftText(officeDrafts[officeDraftKey(decision, format)]))))}${meta.lineCheck ? escapeHtml(" · " + meta.lineCheck) : ""}</p>
       </header>
       <div class="buero-detail-body">
         ${paragraphs.map((p) => `<p>${escapeHtml(p)}</p>`).join("")}
@@ -7838,7 +7959,10 @@ function renderCommunicationSection() {
           `).join("")}
         </div>
         <div class="draft-meta">
-          <span>Generierter Entwurf</span>
+          <span>${escapeHtml(generatedStatementSource === "ki" ? "KI-Entwurf · vor Veröffentlichung prüfen"
+            : generatedStatementSource === "fehler" ? "KI nicht erreichbar · regelbasierter Entwurf"
+            : generatedStatementSource === "regel" ? "Regelbasierter Entwurf · noch kein KI-Text"
+            : "Aus der belegten Entscheidung abgeleitet")}</span>
           <b>${escapeHtml(communicationContextTitle || decision.title)} · ${escapeHtml(channelLabel)} · ${escapeHtml(communicationChannelHint(selectedCommunicationChannel))}</b>
         </div>
         <div class="generated-copy" data-copy-source="generated-statement">
@@ -9014,12 +9138,51 @@ function urlBase64ToUint8Array(value) {
   return output;
 }
 
+
+// Mandatsebene fuer das Formular (Spiegel von config.parliamentTypeOf, nur Anzeige):
+// explizites parliamentType -> politische_ebene -> legacy politicalLevel -> Default Bundestag.
+function profileParliamentType() {
+  const explicit = String(profile && profile.parliamentType || "").toLowerCase();
+  if (explicit.includes("landtag")) return "Landtag";
+  if (explicit.includes("bundestag")) return "Bundestag";
+  const ebene = String(profile && profile.politische_ebene || "").toLowerCase();
+  if (ebene.includes("landtag")) return "Landtag";
+  if (ebene.includes("bundestag")) return "Bundestag";
+  const level = String(profile && profile.politicalLevel || "").toLowerCase();
+  if (level.startsWith("land")) return "Landtag";
+  return "Bundestag";
+}
+
+// Profil-Freigabestatus (Onboarding, Audit-Fix 2026-07): macht sichtbar, ob das
+// Profil vollstaendig/einsatzbereit ist oder welche Pflichtangaben fehlen —
+// fehlende Angaben duerfen nicht still zu schlechten Ergebnissen fuehren.
+// Datenquelle: profil.profilValidierung (Server, validateProfile) — keine
+// Client-Doppellogik.
+function renderProfileReleaseStatus() {
+  const val = profile && profile.profilValidierung;
+  if (!val || !val.state) return "";
+  const ready = val.state === "vollstaendig";
+  const label = ready ? "Vollständig und einsatzbereit" : "Unvollständig — noch nicht freigegeben";
+  const detail = ready
+    ? "Alle Pflichtangaben vorhanden. Helmut kann dieses Mandat voll versorgen."
+    : (Array.isArray(val.missingRequiredLabels) && val.missingRequiredLabels.length
+        ? `Es fehlen: ${val.missingRequiredLabels.join(", ")}.`
+        : String(val.reason || ""));
+  return `
+    <section class="profile-release ${ready ? "profile-release--ready" : "profile-release--open"}" aria-live="polite">
+      <b>${escapeHtml(label)}</b>
+      <p>${escapeHtml(detail)}</p>
+    </section>`;
+}
+
 function renderProfileSettingsView() {
   return `
     <section class="page-intro compact">
       <h1 class="${headlineClass("Mandatsprofil.")}">Mandatsprofil.</h1>
       <p>Diese Angaben entscheiden, warum Helmut ein Thema genau für dich priorisiert.</p>
     </section>
+
+    ${renderProfileReleaseStatus()}
 
     <form class="profile-form" id="profileForm">
       <section class="profile-section">
@@ -9032,6 +9195,7 @@ function renderProfileSettingsView() {
           ${profileField("party", "Partei", profile.party)}
           ${profileField("faction", "Fraktion", profile.faction)}
           ${profileSelect("function", "Funktion", profile.function || "Bundestagsabgeordneter", mandateFunctions)}
+          ${profileSelect("parliamentType", "Mandatsebene", profileParliamentType(), ["Bundestag", "Landtag"])}
         </div>
       </section>
 
@@ -9620,8 +9784,7 @@ function bindActions() {
   app.querySelectorAll("[data-admin-period]").forEach((button) => {
     button.addEventListener("click", () => {
       adminPeriod = button.dataset.adminPeriod;
-      render();
-      bindActions();
+      render(); // render() bindet selbst
     });
   });
 
@@ -9855,12 +10018,18 @@ function bindActions() {
       try { decision = JSON.parse(card.dataset.officeDecision || "{}"); } catch (_) { decision = {}; }
       const resolvedFormat = format || { id: formatId, label: formatId, icon: "ti-file", channel: "press" };
       const resolvedMeta = OFFICE_FORMAT_META[formatId] || {};
-      const cachedText = officeDrafts[key];
-      const text = (isValidDraft(cachedText) ? cachedText : null) || channelFallbackStatement(
+      const cachedValue = officeDrafts[key];
+      const cachedText = officeDraftText(cachedValue);
+      const hasValidCached = isValidDraft(cachedText);
+      const text = (hasValidCached ? cachedText : null) || channelFallbackStatement(
         decisions.find((d) => d.id === decision.id || d.signalId === decision.signalId) || decision,
         resolvedFormat.channel || "press"
       );
-      selectedOfficeDraft = { decision, format: resolvedFormat, text };
+      // Herkunft mitgeben, damit die Detailansicht ehrlich kennzeichnet.
+      selectedOfficeDraft = {
+        decision, format: resolvedFormat, text,
+        provenance: draftProvenanceLabel(officeDraftProvenance(cachedValue), hasValidCached)
+      };
       currentView = "office-detail";
       render();
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -9940,18 +10109,7 @@ function bindActions() {
     });
   });
 
-  app.querySelectorAll("[data-detail]").forEach((button) => {
-    button.addEventListener("click", () => {
-      selectedDecisionId = button.dataset.detail;
-      detailOriginView = currentView === "detail" ? detailOriginView : currentView;
-      currentView = "detail";
-      navOpen = false;
-      updatesOpen = false;
-      const decision = selectedDecision();
-      logDecisionInteraction("detail_opened", decision);
-      render();
-    });
-  });
+  bindDetailOpen(app);
 
   app.querySelectorAll("[data-vorgang]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -9974,6 +10132,7 @@ function bindActions() {
       selectedCommunicationChannel = recommendedInitialChannel(selectedDecision());
       communicationContextTitle = "";
       generatedStatement = selectedDecision().statement;
+      generatedStatementSource = "";
       currentView = "communication";
       render();
     });
@@ -9985,6 +10144,7 @@ function bindActions() {
       selectedCommunicationChannel = button.dataset.quickChannel || recommendedInitialChannel(selectedDecision());
       communicationContextTitle = "";
       generatedStatement = channelFallbackStatement(selectedDecision(), selectedCommunicationChannel);
+      generatedStatementSource = "regel";
       currentView = "communication";
       render();
     });
@@ -9994,6 +10154,7 @@ function bindActions() {
     button.addEventListener("click", () => {
       selectedCommunicationChannel = button.dataset.channel || "press";
       generatedStatement = channelFallbackStatement(selectedDecision(), selectedCommunicationChannel);
+      generatedStatementSource = "regel";
       render();
     });
   });
@@ -10001,6 +10162,7 @@ function bindActions() {
   app.querySelectorAll("[data-use-variant]").forEach((button) => {
     button.addEventListener("click", () => {
       generatedStatement = button.dataset.variantText || generatedStatement;
+      generatedStatementSource = "regel";
       showToast(`${button.dataset.useVariant || "Variante"} übernommen`);
       render();
     });
@@ -10272,11 +10434,18 @@ function bindActions() {
       try {
         const result = await generateStatementWithBackend(input, selectedDecision(), selectedCommunicationChannel);
         generatedStatement = result.text;
-        showToast(result.aiEnabled ? `${result.channelLabel || "Entwurf"} erstellt` : "Entwurf erstellt");
+        // PRODUKTWAHRHEIT (Audit-Fix 2026-07): regelbasierte Fallbacks nie als
+        // erfolgreichen KI-Entwurf melden — der Nutzer könnte einen generischen
+        // Platzhaltertext sonst ungeprüft veröffentlichen.
+        generatedStatementSource = result.aiEnabled ? "ki" : "regel";
+        showToast(result.aiEnabled
+          ? `KI-Entwurf erstellt: ${result.channelLabel || "Text"}`
+          : "KI nicht verfügbar — regelbasierter Entwurf eingesetzt");
       } catch (error) {
         console.error(error);
         generatedStatement = generateStatement(input, selectedDecision(), selectedCommunicationChannel);
-        showToast("Entwurf erstellt");
+        generatedStatementSource = "fehler";
+        showToast("KI nicht erreichbar — regelbasierter Entwurf eingesetzt");
       }
       render();
     });
@@ -10546,6 +10715,7 @@ async function saveProfileFromForm(form) {
     party: data.get("party"),
     faction: data.get("faction"),
     function: data.get("function"),
+    parliamentType: data.get("parliamentType"),
     committee: selectedCommittees[0] || profile.committee,
     committees: selectedCommittees.length ? selectedCommittees : profile.committees,
     constituency: data.get("constituency"),
@@ -10578,7 +10748,16 @@ async function saveProfileFromForm(form) {
     if (!response.ok) throw new Error("Profile save failed");
     profile = await response.json();
     currentView = "settings";
-    showToast("Profil gespeichert");
+    // Onboarding-Freigabe (Audit-Fix 2026-07): fehlende Pflichtangaben werden
+    // beim Speichern MITGETEILT statt still ignoriert.
+    const val = profile && profile.profilValidierung;
+    if (val && val.state === "vollstaendig") {
+      showToast("Profil gespeichert — vollständig und einsatzbereit");
+    } else if (val && Array.isArray(val.missingRequiredLabels) && val.missingRequiredLabels.length) {
+      showToast(`Gespeichert — noch offen: ${val.missingRequiredLabels.slice(0, 3).join(", ")}`);
+    } else {
+      showToast("Profil gespeichert");
+    }
     render();
   } catch (error) {
     console.error(error);
@@ -10659,7 +10838,7 @@ function communicationChannelLabel(channel) {
 
 function communicationChannelHint(channel) {
   return ({
-    press: "Zitierfähig, länger, für Presse oder Website.",
+    press: "Länger, für Presse oder Website. Vor Veröffentlichung prüfen.",
     linkedin: "Fachlich, sichtbar, mit politischem Gewinn.",
     x: "Kurz, pointiert, ohne Thread.",
     instagram: "Nahbarer, weniger Fachsprache.",
@@ -10968,6 +11147,26 @@ function officeDraftKey(decision, format) {
   return `${decision.id || decision.signalId || "0"}-${format.id}`;
 }
 
+// Entwürfe tragen ihre Herkunft (Audit-Fix 2026-07, Produktwahrheit): "ki" =
+// echter KI-Entwurf, "regel" = regelbasierter Fallback (KI nicht verfügbar/
+// unbrauchbar). Ältere Tagescaches enthalten nackte Strings ohne Herkunft —
+// beide Formen werden gelesen, geschrieben wird nur noch das Objektformat.
+function officeDraftText(value) {
+  if (typeof value === "string") return value;
+  return String((value && value.text) || "");
+}
+function officeDraftProvenance(value) {
+  if (value && typeof value === "object" && (value.source === "ki" || value.source === "regel")) return value.source;
+  return ""; // Legacy-Cache oder unbekannt: nichts behaupten
+}
+// Einheitliche, ehrliche Herkunftszeile für Karten, Detail und Kommunikations-View.
+function draftProvenanceLabel(source, hasValidDraft) {
+  if (!hasValidDraft) return "Regelbasierter Vorschlag · kein KI-Entwurf";
+  if (source === "ki") return "KI-Entwurf · vor Veröffentlichung prüfen";
+  if (source === "regel") return "Regelbasierter Entwurf · KI war nicht verfügbar";
+  return "Entwurf · vor Veröffentlichung prüfen";
+}
+
 async function generateOfficeDraftsInBackground() {
   if (officeDraftsGenerating) return;
   const formats = activeOfficeFormats();
@@ -10977,34 +11176,57 @@ async function generateOfficeDraftsInBackground() {
   const cacheKey = officeDraftCacheKey();
   try {
     const cached = JSON.parse(localStorage.getItem(cacheKey) || "null");
-    if (cached && typeof cached === "object" && Object.keys(cached).length > 0) {
-      officeDrafts = cached;
-      render();
-      return;
-    }
+    // Cache übernehmen, aber NICHT früh zurückkehren (Audit-Fix 2026-07):
+    // Ein Teilerfolg (einzelne Calls fehlgeschlagen) fror früher den ganzen Tag
+    // ein — fehlende Entwürfe wurden bis zum nächsten Tag NIE nachgeneriert.
+    // Jetzt werden nur die noch fehlenden Keys erzeugt (unten: continue bei
+    // vorhandenem gültigem Entwurf) — auch neu aktivierte Formate erscheinen so.
+    if (cached && typeof cached === "object") officeDrafts = { ...cached, ...officeDrafts };
   } catch (_) { /* ignore parse error */ }
+
+  const missing = [];
+  for (const decision of topDecisions) {
+    for (const format of formats) {
+      const key = officeDraftKey(decision, format);
+      if (isValidDraft(officeDraftText(officeDrafts[key]))) continue;
+      missing.push({ decision, format, key });
+    }
+  }
+  if (!missing.length) { render(); return; }
+
+  // KOSTENSCHUTZ (Audit-Fix 2026-07): harte Obergrenze pro App-Start. Früher
+  // konnten 2 Anlässe × 8 Formate = 16 LLM-Calls pro Gerät und Öffnen anfallen.
+  // Jetzt maximal 6 pro Lauf — der Rest wird beim nächsten App-Start nachgeholt
+  // (serverseitig deckelt zusätzlich das Tages-/Mandanten-Budget in ai.js).
+  const OFFICE_DRAFTS_MAX_CALLS_PER_RUN = 6;
+  const batch = missing.slice(0, OFFICE_DRAFTS_MAX_CALLS_PER_RUN);
 
   officeDraftsGenerating = true;
   render();
 
-  for (const decision of topDecisions) {
-    for (const format of formats) {
-      const key = officeDraftKey(decision, format);
-      if (officeDrafts[key]) continue;
-      try {
-        const result = await generateStatementWithBackend(
-          `Bereite einen ${format.label}-Entwurf vor zum Thema: ${decision.title}`,
-          decision,
-          format.channel || "press"
-        );
-        officeDrafts[key] = result.text;
-        render();
-      } catch (_) { /* keep fallback — no error shown */ }
+  for (const { decision, format, key } of batch) {
+    try {
+      const result = await generateStatementWithBackend(
+        `Bereite einen ${format.label}-Entwurf vor zum Thema: ${decision.title}`,
+        decision,
+        format.channel || "press"
+      );
+      // Herkunft speichern: der Server kennzeichnet regelbasierte Fallbacks
+      // ehrlich (aiEnabled=false) — das darf im UI nie als KI-Entwurf erscheinen.
+      officeDrafts[key] = { text: result.text, source: result.aiEnabled ? "ki" : "regel" };
+      delete officeDraftErrors[key];
+      render();
+    } catch (_) {
+      // Ehrlicher Fehlerzustand statt stillem Fallback (Status "Erstellung
+      // fehlgeschlagen"); beim nächsten App-Start wird erneut versucht.
+      officeDraftErrors[key] = true;
     }
   }
 
   officeDraftsGenerating = false;
   render();
+  // Nur erfolgreiche Entwürfe cachen — fehlende Keys bleiben offen und werden
+  // beim nächsten Lauf nachgeneriert (kein eingefrorener Teilerfolg mehr).
   try { localStorage.setItem(cacheKey, JSON.stringify(officeDrafts)); } catch (_) {}
 }
 
