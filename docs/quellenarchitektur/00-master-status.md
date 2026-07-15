@@ -1,5 +1,23 @@
 # MASTER-STATUS — Helmut Quellenarchitektur-Migration
 
+## ✅ QUELLEN-CUTOVER AUSGEFÜHRT (2026-07-15, Gründer-Freigabe „Go Quellen Cutover")
+- **Production: `1c1d78c`** (Merge PR #81), Deployment `dpl_AGkLt7v2ZNw4oVSKx46sNy3faYHr`, READY 05:25 UTC.
+- `HELMUT_SOURCE_MODE=on`: die relationale DB ist die aktive Quellenwahrheit (138 Wege,
+  global je einmal, Profile über Pakete/Referenzzählung); alter Katalog bleibt Fallback.
+- **Erste Läufe unter ON (alle grün):** 05:45-Lage-Briefing erzeugt (nicht leer) ·
+  Voll-Crawl ~05:30 fehlerfrei (+84 Docs) · 10:00-lage-check +11 Docs ·
+  **document_findings 0 → 990 über 96 Quellen** (Dedup-Schreibpfad aktiv, 957 Docs mit
+  content_fingerprint) · KOs 256 → 274 · Kosten $0,08 · 0 BE/BB/PARDOK · kein 5xx ·
+  keine Fallback-Warnung (Fundstellen beweisen den relationalen Pfad).
+- **Beobachtungspunkt (kein Stop):** Google-News-Rate-Limit-Burst (429/503) traf den
+  10:00-lage-check (48 Quellen, transient, fail-safe je Quelle; Muster vorbestehend,
+  Voll-Crawl unter ON war fehlerfrei). Nachkontrolle im 20:00-Vollcrawl.
+- Gate bleibt shadow · PARDOK shadow · Scoring off · BE/BB prepared+inaktiv ·
+  Tageslimit unverändert (einziger offener Konfigurationspunkt, Phase 4B).
+- **Rollback jederzeit:** `HELMUT_SOURCE_MODE` auf `shadow` + Deploy (oder Vercel-Env,
+  überstimmt sofort) bzw. Instant Rollback auf `dpl_ghBpzQ57r6j49VJyL7FhV9HztbH1`
+  (Snapshot 04:37 UTC: 5367/256/7/89/0 findings/1000 gate-events).
+
 **Dies ist die EINZIGE aktuelle Statuswahrheit.** Alle älteren Status-/Abschlussberichte —
 insbesondere Doku 20–27 und frühere Master-Status-Fassungen — sind **ÜBERHOLT** und dürfen
 nicht mehr als aktueller Stand zitiert werden; sie bleiben historische Detailnachweise.
