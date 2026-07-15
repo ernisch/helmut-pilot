@@ -1,7 +1,7 @@
 {
   "_hinweis": "Deployment-Flags (lib/helmut/flags.js). Präzedenz: Vercel-Env > diese Datei > Code-Default — eine in Vercel gesetzte Variable überstimmt diese Datei IMMER. Nur Allowlist-Schlüssel wirken (HELMUT_UNDERSTANDING_GATE, HELMUT_PARDOK_DISPATCH, HELMUT_SOURCE_MODE); keine Secrets. Rollback: Wert hier auf 'off' setzen (oder Zeile löschen) und deployen — oder in Vercel die Env-Variable auf 'off' setzen (wirkt nach Redeploy sofort, ohne Code-Änderung).",
-  "_freigabe": "Gründer-Freigaben 2026-07-14: (1) Gate-Shadow + PARDOK-Shadow (Phase 4) — blockieren nichts, 0 sichtbare Items, nur Telemetrie. (2) HELMUT_SOURCE_MODE=shadow — alter Katalog bleibt aktiver sichtbarer Pfad; der relationale Plan wird je Crawl-Lauf nur GEMESSEN (keine zusätzlichen Fetches, kein Write in den Nutzerpfad). Vorheriger Wert/Rollback: Schlüssel entfernen oder 'off' (= Code-Default off). Modus 'on' (Cutover) NUR mit Freigabe 'Go Quellen Cutover'.",
+  "_freigabe": "Gründer-Freigaben: (1) 2026-07-14 Gate-Shadow + PARDOK-Shadow (Phase 4) — blockieren nichts, 0 sichtbare Items, nur Telemetrie. (2) 2026-07-15 'Go Quellen Cutover': HELMUT_SOURCE_MODE=on — die relationale Datenbank ist die aktive Quellenwahrheit; der alte hartcodierte Katalog bleibt FALLBACK (Ladefehler/leerer Plan). Rollback: Wert zurück auf 'shadow' (Messbetrieb) oder 'off'/Schlüssel entfernen (Alt-Zustand) + Deploy — oder Vercel-Env, die diese Datei sofort überstimmt. Vorheriger Wert (Rollback-Referenz): 'shadow' seit 2026-07-14 (davor: nicht gesetzt = off).",
   "HELMUT_UNDERSTANDING_GATE": "shadow",
   "HELMUT_PARDOK_DISPATCH": "shadow",
-  "HELMUT_SOURCE_MODE": "shadow"
+  "HELMUT_SOURCE_MODE": "on"
 }

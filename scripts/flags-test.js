@@ -89,8 +89,8 @@ function tmpJson(content) {
   const checked = flags.loadFileFlags(path.join(__dirname, "..", "helmut-flags.json"));
   check("5a GATE=shadow eingecheckt", checked.HELMUT_UNDERSTANDING_GATE === "shadow");
   check("5b PARDOK=shadow eingecheckt", checked.HELMUT_PARDOK_DISPATCH === "shadow");
-  check("5c Quellenmodus=shadow (freigegeben) — und ausdrücklich NICHT 'on' (Cutover freigabepflichtig)",
-    checked.HELMUT_SOURCE_MODE === "shadow");
+  check("5c Quellenmodus=on (Gründer-Freigabe 'Go Quellen Cutover' 2026-07-15; relationale DB aktiv, Alt-Katalog Fallback)",
+    checked.HELMUT_SOURCE_MODE === "on");
   check("5d nichts Weiteres wirkt", Object.keys(checked).length === 3, JSON.stringify(Object.keys(checked)));
 }
 

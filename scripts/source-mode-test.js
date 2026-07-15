@@ -30,8 +30,8 @@ check("1b shadow erkannt", sourceMode({ HELMUT_SOURCE_MODE: "shadow" }) === "sha
 check("1c on erkannt (gebaut, aber nicht aktiviert)", sourceMode({ HELMUT_SOURCE_MODE: "on" }) === "on");
 check("1d Unsinn -> off", sourceMode({ HELMUT_SOURCE_MODE: "1" }) === "off" && sourceMode({ HELMUT_SOURCE_MODE: "true" }) === "off");
 const checkedIn = flags.loadFileFlags(path.join(__dirname, "..", "helmut-flags.json"));
-check("1e eingecheckte Flags-Datei: Quellenmodus 'shadow' (freigegeben), NIE 'on' (Cutover freigabepflichtig)",
-  checkedIn.HELMUT_SOURCE_MODE === "shadow");
+check("1e eingecheckte Flags-Datei: Quellenmodus 'on' (Gründer-Freigabe 'Go Quellen Cutover' 2026-07-15)",
+  checkedIn.HELMUT_SOURCE_MODE === "on");
 
 // --- Fixtures ---------------------------------------------------------------------------
 const PACKAGES = [
