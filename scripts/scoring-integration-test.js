@@ -139,13 +139,18 @@ async function rankWith(mode) {
       if (prevEnv == null) delete process.env.HELMUT_SCORING_MODE; else process.env.HELMUT_SCORING_MODE = prevEnv;
     }
   }
-  const understood1 = [{ id: "lf", vorgang_id: "lf", status: "neu", understanding_status: "complete", was_ist_passiert: "x", decision_level: "kommune", updated_at: iso(1 * H) }];
+  // WICHTIG: buildLageBriefing nutzt intern die ECHTE Uhr (kein injizierbares now) —
+  // die Frische-Zeitstempel hier MÜSSEN relativ zu Date.now() sein, nicht zum fixen NOW
+  // (sonst kippt der quiet-Fall zeitbombenartig auf stale, sobald der Testlauf >~1 Tag
+  // nach dem NOW-Datum liegt; real passiert am 2026-07-15).
+  const isoReal = (agoMs) => new Date(Date.now() - agoMs).toISOString();
+  const understood1 = [{ id: "lf", vorgang_id: "lf", status: "neu", understanding_status: "complete", was_ist_passiert: "x", decision_level: "kommune", updated_at: isoReal(1 * H) }];
   const lageGap = await buildLageEmpty("on", { kos: [] });
   check("Lage E2E Flag AN, keine verstandenen KOs: emptyState.kind=gap", lageGap.emptyState && lageGap.emptyState.kind === "gap");
-  const lageQuietE2E = await buildLageEmpty("on", { kos: understood1, sourcesByVg: { lf: [{ published_at: iso(2 * H) }] }, quarantine: true });
+  const lageQuietE2E = await buildLageEmpty("on", { kos: understood1, sourcesByVg: { lf: [{ published_at: isoReal(2 * H) }] }, quarantine: true });
   check("Lage E2E Flag AN, quarantaeniert+frisch: kind=quiet (nicht gap)", lageQuietE2E.emptyState && lageQuietE2E.emptyState.kind === "quiet");
   // Fix C: updated_at FRISCH, aber echte Quellen ALT -> muss stale sein (echte Quellenzeit gewinnt).
-  const lageStaleE2E = await buildLageEmpty("on", { kos: understood1, sourcesByVg: { lf: [{ published_at: iso(9 * D) }] }, quarantine: true });
+  const lageStaleE2E = await buildLageEmpty("on", { kos: understood1, sourcesByVg: { lf: [{ published_at: isoReal(9 * D) }] }, quarantine: true });
   check("Lage E2E Fix C: updated_at frisch, echte Quellen alt => kind=stale (nicht quiet)", lageStaleE2E.emptyState && lageStaleE2E.emptyState.kind === "stale");
   const lageOffE2E = await buildLageEmpty(undefined, { kos: [] });
   check("Lage E2E Flag AUS: KEIN emptyState (rueckwaertskompatibel)", lageOffE2E.available === false && lageOffE2E.emptyState === undefined);

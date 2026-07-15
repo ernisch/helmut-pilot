@@ -63,18 +63,53 @@ Grenzen: ~100 Understanding + Spielraum, ~$8–10/Monat, Stop >$0,50/Tag, NIE un
 - **Isolierter PARDOK-Shadow-Lauf (P6):** Parser über Gold-Fixtures im Shadow-Modus —
   be-plenum 8/8 geparst (8 externe IDs), bb-plenum 6/7 (1 bewusst defekter Datensatz),
   0 Pipeline-Items, keine Fehlerseite, 6–10 ms, ~5 MB Heap, isolierte Ablage ok.
-- **gate_shadow_events = 0 (Stand 18:31 UTC) — Ursache eindeutig:** der Understanding-Cron
-  ist seit der Shadow-Aktivierung (17:57 UTC) schlicht noch nicht gelaufen (nächster Lauf
-  21:30 UTC). Kosten heute $0,07 / 36 billable Calls (Limit-fern); Understanding heute 15
-  (Normalbereich). Live-Bestätigung der Event-Schreibung: Wake-up 21:45 UTC.
+- **ERSTER ECHTER PRODUCTION-SHADOW-MESSLAUF (20:00-UTC-Crawl, Bericht 20:01:45, 1353 ms, +$0):**
+  Alt-Plan real: 149 Wege, 149 erfolgreich, 0 Fehler, 1745 Dokument-Kandidaten. Relational
+  zugerechnet: 138 Wege (137 im Lauf), 0 Fehler, 1601 Kandidaten = **91,7 % Abdeckung**;
+  die Differenz sind exakt die 6 profilgenerierten Cem-Personensuchen (bleiben im ON-Modus
+  erhalten — mergeProfileAndPlanSources) + die 6 defekten Wege (heute 0 persistierte neue
+  Docs — kein Ertragsverlust). nurRelational: +1 funktionierender Weg
+  (region-braunschweig-arbeit-soziales). Dedup-Dry-Run: 1601 Kandidaten → 1465 eindeutig,
+  136 Duplikate (8,5 %), 1601 Fundstellen. Aktivierung: 3 Profile → 5 Pakete
+  (inkl. die-linke-bund refCount 1); BE/BB prepared/inactive. Kein Nutzerpfad-Write
+  (document_findings weiter 0), +62 normale neue raw_documents, 0 BE/BB/PARDOK,
+  0 Runtime-Fehler.
+- **gate_shadow_events LIVE: 500 Zeilen ab 20:02:58 UTC** (Crawl-eager-Pfad): 352 verstehen /
+  147 zurückstellen / **1 parken** (fraction-fdp, „kein-politisches-signal") über 500
+  distinct Dokumente; **0 amtliche geparkt, 0 kuratierte geparkt**; Tiers 441 kuratiert /
+  49 medien / 10 amtlich. **Befund (Bestandsverhalten, kein neuer Fehler):** der
+  eager-Crawl-Pfad clustert den Tagesbatch per Anker-Schneeball zu EINEM Riesen-Cluster →
+  alle Zeilen tragen vorgang_id „vg-bundestag", und die 500-Zeilen-Leitplanke griff
+  (Stichprobe statt Vollerhebung). Per-Dokument-Entscheidungen bleiben valide (dokumentweise
+  berechnet). Der dedizierte 21:30-Cron (runPendingUnderstandingShadow) arbeitet
+  vorgangsweise — saubere vorgang_ids dort werden um 21:45 UTC verifiziert.
+- **21:30-UTC-Understanding-Cron (Auswertung 21:45):** gate_shadow_events **+500 → 1000 gesamt**
+  (Verteilung des Laufs: 345 verstehen / 153 zurückstellen / 2 parken); **0 amtliche
+  Dokumente falsch behandelt** (über alle 1000 Events). Understanding heute 15 = exakt
+  Ø-Normalbereich (NICHT gesunken); 9 neue KO-Vormerkungen ohne KI-Call; 41×
+  skipped-understanding-budget stammen vom BESTEHENDEN Tagesdeckel (Bestandsverhalten,
+  Begründung für Phase 4B) — das Gate blockierte nichts. Cem: Lesepfad unverändert,
+  Briefing 05:45 erzeugt, 0 sichtbare Abweichung. 0 Runtime-Fehler (4-h-Fenster über
+  beide Crons). document_findings weiter 0, BE/BB/PARDOK weiter 0.
+- **Telemetrie-Qualitätsbefund (Folgearbeit, KEIN Cutover-Blocker):** auch der 21:30-Pfad
+  clustert den Batch per Anker-Schneeball zu EINEM Riesen-Cluster (alle 500 Zeilen eine
+  vorgang_id, 500er-Kappung = Stichprobe). Per-Dokument-Entscheidungen bleiben valide;
+  der Quellen-Cutover berührt das Gate nicht. Empfohlene Folgearbeit: vorgang_id je
+  Dokument aus dessen Einzel-Anker ableiten + Kappung dokumentierend loggen.
+- Kosten heute (Endstand): **$0,0654** / 36 billable Calls; Shadow-Zusatzkosten $0.
 - **Rollback:** `helmut-flags.json` auf `off` + Deploy, ODER Vercel-Env `off` + Redeploy
   (überstimmt sofort), ODER Instant Rollback auf `7a27f5b`.
 
-## 4) Quellenmodus (P7 — GEBAUT, Default off)
+## 4) Quellenmodus (P7 — gebaut; **shadow AKTIV seit `0159ae6`**, 2026-07-14 ~19:09 UTC)
 `HELMUT_SOURCE_MODE` (off/shadow/on, via Flag-Resolver; `source-mode.js`):
-- **off (aktiv):** alter hartcodierter Katalog = Quellenwahrheit, byte-identisch (Test 9b/9c).
-- **shadow:** alter Katalog bleibt aktiv; relationaler Plan wird parallel erzeugt und NUR
-  verglichen (Admin-Report + isolierte Läufe); nichts erreicht die sichtbare Pipeline.
+- Ausgangswert (dokumentierter Rollback): **nicht gesetzt = off** (weder Vercel-Env noch
+  Datei). Rollback: Flag-Zeile entfernen/`off` + Deploy oder Vercel-Env `off` + Redeploy.
+- **shadow (AKTIV, Gründer-Freigabe):** alter Katalog bleibt die sichtbare Quellenwahrheit
+  (Quellenliste byte-identisch); nach jedem echten Crawl misst ein fail-safe Block den
+  relationalen Plan gegen die REALEN Ergebnisse desselben Laufs (keine Extra-Fetches,
+  kein LLM, $0, kein Nutzerpfad-Write) → Console-Log `[source-mode:shadow]` + kompakter
+  Auth-Store-Eintrag `sourceModeShadowLastRun` (Admin-Panel). Erster Messlauf: Crawl-Cron
+  20:00 UTC; Auswertung per Wake-up 20:12 UTC.
 - **on (= QUELLEN-CUTOVER, nicht aktiviert):** relationale DB (publishers/retrieval_paths/
   source_packages/package_paths) wird aktive Quellenwahrheit; alter Katalog bleibt Fallback
   (Ladefehler/leerer Plan). Profile werden über Pakete versorgt (Resolver + Referenzzählung);
