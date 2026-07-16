@@ -41,7 +41,7 @@ const syntheticRun = {
   newCandidateItems: 1012,
   savedItems: 55,
   createdAt: "2026-07-16T04:03:00.000Z",
-  errors: [{ sourceName: "Testquelle", error: "HTTP 503" }],
+  errors: [{ sourceName: "Testquelle", error: "HTTP 503 for https://publisher.example/geheim/artikel-slug" }],
   // --- die fuenf Pflicht-Diagnosefelder (P0-2) ---
   durationMs: 48231,
   runId: "run-20260716-0403-synthetic",
@@ -70,6 +70,10 @@ check("mode/checkedSources/savedItems unveraendert",
   compacted.mode === "full" && compacted.checkedSources === 145 && compacted.savedItems === 55);
 check("createdAt unveraendert", compacted.createdAt === "2026-07-16T04:03:00.000Z");
 check("errors bleibt (max 20)", Array.isArray(compacted.errors) && compacted.errors.length === 1);
+// DSGVO: der rohe Fehlertext (mit aufgelöster URL) wird zu einem inhaltsfreien Code verdichtet.
+check("errors: Fehlertext klassifiziert (kein Rohtext/keine URL)",
+  compacted.errors[0].error === "http-5xx" && !JSON.stringify(compacted.errors).includes("publisher.example") && !JSON.stringify(compacted.errors).includes("geheim"));
+check("errors: sourceName (öffentlicher Name) bleibt", compacted.errors[0].sourceName === "Testquelle");
 
 // ── (2) Datensparsamkeit: KEINE Fremd-/PII-Felder in der persistierten Form ────
 const leakedKeys = Object.keys(compacted).filter((k) => ["briefingText", "userEmail", "vollerDokumentInhalt", "promptRaw"].includes(k));
