@@ -66,6 +66,7 @@
     "test:secret-redaction": "node scripts/secret-redaction-test.js",
     "test:pipeline-error-collector": "node scripts/pipeline-error-collector-test.js",
     "test:pipeline-lock-atomic": "node scripts/pipeline-lock-atomic-test.js",
+    "test:blob-retry": "node scripts/blob-retry-test.js",
     "test:lage-cacheonly": "node scripts/lage-cacheonly-test.js",
     "test:matching-norm": "node scripts/matching-normalization-test.js",
     "test:radar-scan-limit": "node scripts/radar-scan-limit-test.js",
