@@ -10,7 +10,17 @@ const { validateProfile } = require("./lib/helmut/profile-validation");
 const sourceSafety = require("./lib/helmut/sourceSafety");
 const { runLageCheck, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, getLlmUsageBreakdownToday, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState, tenantJwtModeEnabled, saveKnowledgeObjectEnrichment, profileDbModeEnabled, getProfileFromDb, diagnoseTenantJwt } = require("./lib/helmut/storage");
+const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, getLlmUsageBreakdownToday, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState, tenantJwtModeEnabled, saveKnowledgeObjectEnrichment, profileDbModeEnabled, getProfileFromDb, diagnoseTenantJwt, recordProcessRun, listProcessRuns } = require("./lib/helmut/storage");
+
+// P0-1: technischer Ausfuehrungsort + Laufkennung fuer Prozess-Laufzeit-Telemetrie
+// (Cron-Understanding, Briefing-Aufbau). Reine technische Metadaten, nie PII.
+function helmutExecLocation() {
+  return String(process.env.VERCEL_REGION || process.env.HELMUT_EXEC_LOCATION || "local").slice(0, 40);
+}
+function helmutRunId(prefix = "run", atMs = Date.now()) {
+  const stamp = new Date(atMs).toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
+  return `${String(prefix).slice(0, 24)}-${stamp}-${Math.random().toString(36).slice(2, 7)}`;
+}
 const { classifyOperationalState, describeState } = require("./lib/helmut/watchdog-state");
 const { sourceMode } = require("./lib/helmut/quellenarchitektur/source-mode");
 const { sourceCoverageThresholds, effectiveActiveSourceCount } = require("./lib/helmut/source-coverage");
@@ -763,6 +773,16 @@ async function handleRequest(request, response) {
       const push = await withTimeout(sendBriefingReadyPush(briefing, profile), 30000, "cron-briefing-push")
         .catch((error) => ({ ok: false, reason: "push-timeout", error: error && error.message }));
       console.log(`[cron/morning-briefing] build=${tBuild - t0}ms push=${Date.now() - tBuild}ms available=${briefing && briefing.available} items=${((briefing && briefing.items) || []).length}`);
+      // P0-1: echte Briefing-Aufbau-Dauer persistieren (0 KI, reine Lese-Transformation).
+      // Nur Zaehler/Status — KEIN Briefingtext (DSGVO-Datensparsamkeit).
+      await recordProcessRun({
+        process: "briefing-morning", runId: helmutRunId("briefing-morning", t0), mode: "cron", location: helmutExecLocation(),
+        startedAt: new Date(t0).toISOString(), finishedAt: new Date(tBuild).toISOString(),
+        durationMs: tBuild - t0,
+        processed: ((briefing && briefing.items) || []).length,
+        reason: briefing && briefing.available ? null : (briefing && briefing.reason) || null,
+        status: briefing && briefing.available ? "ok" : "empty"
+      }).catch(() => {});
       return { briefing, push };
     });
   }
@@ -800,10 +820,14 @@ async function handleRequest(request, response) {
           successfulSources: latest.successfulSources ?? null,
           failedSources: latest.failedSources ?? null,
           savedItems: latest.savedItems ?? null,
-          // Laufzeit des Laufs (ms) — wird erst persistiert, sobald der
-          // Monitoring-Stapel gemergt ist (scheduler speichert durationMs);
-          // bis dahin ehrlich null. Forward-kompatibel gewhitelistet.
-          durationMs: latest.durationMs ?? null
+          // P0-1/P0-2: Laufzeit wird jetzt real gemessen (scheduler runSourceCrawl:
+          // Date.now()-runStartedMs) UND von compactStore erhalten -> nach einem
+          // echten Crawl ist durationMs != null. Laufkennung/Quellenmodus zur
+          // Korrelation mitgeliefert (technische Metadaten).
+          durationMs: latest.durationMs ?? null,
+          runId: latest.runId ?? null,
+          sourceMode: latest.sourceMode ?? null,
+          understanding: latest.understanding ?? null
         } : null
       };
     });
@@ -888,6 +912,8 @@ async function handleRequest(request, response) {
   if (url.pathname === "/api/cron/lage-briefing") {
     if (!authorizeCron(request, url, response)) return;
     return handleAsync(response, async () => {
+      const lageBriefingStartMs = Date.now();
+      const lageBriefingRunId = helmutRunId("briefing-lage", lageBriefingStartMs);
       let profiles = await listProfiles().catch(() => []);
       if (!Array.isArray(profiles) || !profiles.length) profiles = [{ id: politicianId }];
       const results = [];
@@ -909,6 +935,14 @@ async function handleRequest(request, response) {
           .catch((e) => ({ available: false, reason: "error", error: e && e.message }));
         results.push({ userId: profile.id, available: res.available, fromCache: res.fromCache, reason: res.reason || null, vorgaenge: (res.vorgaenge || []).length });
       }
+      // P0-1: echte Lage-Briefing-Vorwaerm-Laufzeit persistieren (Zaehler/Status, kein Text).
+      await recordProcessRun({
+        process: "briefing-lage", runId: lageBriefingRunId, mode: "cron", location: helmutExecLocation(),
+        startedAt: new Date(lageBriefingStartMs).toISOString(), finishedAt: new Date().toISOString(),
+        durationMs: Date.now() - lageBriefingStartMs,
+        processed: results.length, deferred: skipped,
+        status: "ok"
+      }).catch(() => {});
       return { prewarmed: results.length, uebersprungen: skipped, results };
     });
   }
@@ -961,6 +995,9 @@ async function handleRequest(request, response) {
   if (url.pathname === "/api/cron/understanding") {
     if (!authorizeCron(request, url, response)) return;
     return handleAsync(response, async () => {
+      // P0-1: echte Wall-Clock-Messung des dedizierten Understanding-Cron-Laufs.
+      const understandingStartMs = Date.now();
+      const runId = helmutRunId("understanding-cron", understandingStartMs);
       const rawDocs = await listRecentRawDocuments(500);
       // ZEITBUDGET (Default 240s): der serielle KI-Understanding-Loop darf die
       // Serverless-Funktion nicht über ihr Limit (300s) treiben. Rest bleibt pending
@@ -968,6 +1005,17 @@ async function handleRequest(request, response) {
       const result = await runPendingUnderstandingShadow(rawDocs, { budgetMs: Number(process.env.HELMUT_UNDERSTAND_BUDGET_MS || 240000) });
       const processed = (result && result.results && result.results.filter((r) => r && r.status === "saved").length) || 0;
       console.log(`[cron/understanding] rawDocs=${rawDocs.length} Ergebnis: ${JSON.stringify({ processed, result })}`);
+      // P0-1: Understanding-Batch-Laufzeit persistieren (Auth-Store, scalar-only, PII-frei).
+      await recordProcessRun({
+        process: "understanding-cron", runId, mode: "cron", location: helmutExecLocation(),
+        startedAt: new Date(understandingStartMs).toISOString(), finishedAt: new Date().toISOString(),
+        durationMs: Date.now() - understandingStartMs,
+        processed,
+        deferred: result && result.deferred,
+        skippedStore: result && result.counts && result.counts["skipped-store"],
+        reason: result && result.reason,
+        status: result && result.skipped ? "skipped" : "ok"
+      }).catch(() => {});
       return { ok: true, rawDocsLoaded: rawDocs.length, processed, result };
     });
   }
