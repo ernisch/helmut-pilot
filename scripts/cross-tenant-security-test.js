@@ -128,6 +128,20 @@ async function throwsTenant(fn) {
     const bTasksAfter = await storage.getTasks(B);
     check("B-Daten nach allen Angriffsversuchen unveraendert (task-b vorhanden)",
       bTasksAfter.some((t) => t.id === "task-b"));
+
+    // ── 6) LIVE-Grenze (Testluecke d): manipulierte politicianId wird gegen die
+    //      Session validiert, NICHT uebernommen (server.js:285 nutzt pickPoliticianId).
+    const auth = require("../lib/helmut/auth");
+    check("Abgeordneter A fordert B an -> bekommt A (hart gebunden, requested ignoriert)",
+      auth.pickPoliticianId({ role: "abgeordneter", politicianId: A }, B, [A]) === A);
+    check("Referent mit Zuweisung nur A fordert B an -> Fallback A (nie die Fremd-ID)",
+      auth.pickPoliticianId({ role: "referent" }, B, [A]) === A);
+    check("Referent ohne Zuweisung -> null (kein Mandat)",
+      auth.pickPoliticianId({ role: "referent" }, B, []) === null);
+    check("getAllowedPoliticianIds: Abgeordneter nur eigenes Mandat",
+      JSON.stringify(await auth.getAllowedPoliticianIds({ role: "abgeordneter", politicianId: A, id: "u-a" })) === JSON.stringify([A]));
+    check("getAllowedPoliticianIds: unbekannte Rolle -> [] (kein Mandat)",
+      JSON.stringify(await auth.getAllowedPoliticianIds({ role: "unbekannt", id: "u-x" })) === "[]");
   } finally {
     files.forEach((f, i) => {
       if (backups[i] != null) fs.writeFileSync(f, backups[i]);
