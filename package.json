@@ -78,6 +78,7 @@
     "test:retention": "node scripts/retention-test.js",
     "test:mandantentrennung": "node scripts/mandantentrennung-test.js",
     "test:cross-tenant-security": "node scripts/cross-tenant-security-test.js",
+    "test:security-hardening-sql": "node scripts/security-hardening-sql-test.js",
     "retention:dryrun": "node scripts/retention-dryrun.js",
     "test:lage-cacheonly": "node scripts/lage-cacheonly-test.js",
     "test:matching-norm": "node scripts/matching-normalization-test.js",
