@@ -35,7 +35,7 @@ const specB = {
 };
 
 const dataDir = path.join(__dirname, "..", ".helmut-data");
-const guarded = ["store.json", "auth.json", `p-${A}.json`, `p-${B}.json`, "p-raw-test-synthetic.json"].map((f) => path.join(dataDir, f));
+const guarded = ["store.json", "auth.json", `p-${A}.json`, `p-${B}.json`, "p-raw-test-synthetic.json", "p-prot-mail-synthetic.json"].map((f) => path.join(dataDir, f));
 const backups = guarded.map((f) => (fs.existsSync(f) ? fs.readFileSync(f, "utf8") : null));
 
 async function countUsers(politicianId) {
@@ -136,6 +136,15 @@ async function countProfiles(id) {
     check("Teardown erhält FREMDES Personen-Rohitem (kein Kollateralschaden an cem/anderen)",
       rawIds.includes("raw-person-foreign"), JSON.stringify(rawIds));
     check("Teardown entfernt das EIGENE Rohitem des Mandanten", !rawIds.includes("raw-own"));
+
+    // ── 11) DSGVO: Ergebnisprotokoll enthält KEINE Klartext-E-Mail (nur maskiert) ─
+    check("maskEmail maskiert lokalen Teil, behält Domain",
+      provisioning.maskEmail("admin-collide@synthetic.test") === "a************@synthetic.test");
+    const rProtokoll = await provisioning.provisionTenant({ ...specA, id: "prot-mail-synthetic", email: "geheim.person@synthetic.test" });
+    const protokollText = provisioning.formatProtocol(rProtokoll) + JSON.stringify(rProtokoll.log);
+    check("Provisionierungs-Protokoll enthält KEINE volle E-Mail (nur maskiert)",
+      !protokollText.includes("geheim.person@synthetic.test") && protokollText.includes("@synthetic.test"));
+    await provisioning.teardownTenant("prot-mail-synthetic");
   } finally {
     guarded.forEach((f, i) => {
       if (backups[i] != null) fs.writeFileSync(f, backups[i]);

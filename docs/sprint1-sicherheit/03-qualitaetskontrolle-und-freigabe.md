@@ -59,6 +59,20 @@ der Guard-Härtung und folgende echte Bugs, die **alle behoben + negativ geteste
 | Lokaler Mandanten-Zähler verdrängte einen HEUTE aktiven, ausgeschöpften Mandanten (Cap-Umgehung im Datei-Modus) | mittel | Eviction nur für Zähler **früherer Tage**. Test: ausgeschöpfter Mandant bleibt gedeckelt trotz 9 weiterer. |
 | Rollback entfernt dangling Fremd-Zuweisungen zur id | niedrig | dokumentiert (akzeptierter Randfall: Verweis auf ein Mandat, dessen Anlage scheiterte). |
 
+## Zweite adversariale Gegenprüfung (Rollout-Vorbereitung)
+
+Eine unabhängige zweite Gegenprüfung (Fix-Verifikation + 14 Sicherheitsfragen) bestätigte:
+die drei Review-Fixes sind **korrekt und ohne neue Fehler**; keine konkrete Cross-Tenant-
+Lücke. Daraus behoben/dokumentiert:
+
+| Fund | Status |
+|---|---|
+| E-Mails im Provisionierungs-Protokoll (PII in stdout/log) | **behoben** — `maskEmail` maskiert den lokalen Teil (Domain + 1 Zeichen bleiben); Passwörter waren nie im Log. Test in `provision-tenant-test`. |
+| Teardown-Main-Store-Write ohne Verifikations-/Retry-Pass (last-write-wins-Race) | **dokumentiert, vorbestehend** — identisches Muster wie `deleteProfileData` und jeder Main-Store-Write; für per `provisionTenant` angelegte Mandanten nicht erreichbar (Laufzeit-Writes gehen in den `p-<id>`-Store). Nicht Fix-induziert. |
+| „Profil ohne Konto"-Lücke der Konfliktprüfung | **dokumentiert, vorbestehend** — nur über das Admin-CLI erreichbar (kein HTTP), Bedienfehler-Risiko, keine Remote-Übernahme. |
+| Budget-Telemetrie-Leser (`getLlmUsage`/`…Today`/`canSpendLlm`) aggregieren bei `null` global | **dokumentiert** — Bestandscode, Admin-Aggregation (keine Fremd-Inhalte), gleiche Kategorie wie `getStoreSummary`-Ausnahme. |
+| Blob-`save*`-Pfade vertrauen dem session-aufgelösten Aufrufer | **dokumentiert, vorbestehend** — Server löst den Mandanten immer serverseitig auf; interne/Cron-Aufrufer übergeben eine aufgelöste id. |
+
 ## Verbleibende Freigabeschritte (Production) — je Schritt: Zweck · Risiko · Rollback · Freigabe
 
 ### F1 — Per-Mandant-Kostendeckel scharf schalten
