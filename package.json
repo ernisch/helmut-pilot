@@ -88,6 +88,7 @@
     "test:supply-matrix": "node scripts/profile-supply-matrix-test.js",
     "test:llm-budget": "node scripts/llm-budget-test.js",
     "test:llm-reservation": "node scripts/llm-reservation-test.js",
+    "test:tenant-llm-cap": "node scripts/tenant-llm-cap-test.js",
     "test:llm-breakdown": "node scripts/llm-usage-breakdown-test.js",
     "test:restore-drill": "node scripts/restore-drill-test.js",
     "restore:drill": "node scripts/restore-drill.js",
