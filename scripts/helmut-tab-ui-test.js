@@ -197,15 +197,17 @@ check("Voll: weitere relevante Vorgaenge (1..3)", relCount >= 1 && relCount <= 3
 check("Voll: Quellen-Fußzeile zeigt '18 Quellen'", html.includes("18 Quellen"));
 check("Voll: Kopf-Status 'Aktuell' (fresh)", html.includes(">Aktuell<"));
 
-// Mobil-Reihenfolge = DOM-Reihenfolge (Flex-Column): Vorschlag -> Warum -> Risiko/Chance -> ... -> Quellen.
+// Mobil-Reihenfolge = DOM-Reihenfolge (Flex-Column): Aktueller Vorgang zuerst
+// (der aktuelle Vorgang/Thema muss ganz oben stehen), danach Vorschlag ->
+// Warum -> Risiko/Chance -> ... -> Quellen.
 const idx = (s) => html.indexOf(s);
-check("Mobil-Reihenfolge: Vorschlag zuerst, Quellen zuletzt",
+check("Mobil-Reihenfolge: Aktueller Vorgang zuerst, dann Vorschlag, Quellen zuletzt",
+  idx("Aktueller Vorgang") < idx("Mein Vorschlag") &&
   idx("Mein Vorschlag") < idx("Warum ist das wichtig") &&
   idx("Warum ist das wichtig") < idx("Risiko bei Nichtreaktion") &&
   idx("Risiko bei Nichtreaktion") < idx("Empfohlene Kommunikation") &&
   idx("Empfohlene Kommunikation") < idx("Was du jetzt tun solltest") &&
-  idx("Was du jetzt tun solltest") < idx("Aktueller Vorgang") &&
-  idx("Aktueller Vorgang") < idx("18 Quellen"));
+  idx("Was du jetzt tun solltest") < idx("18 Quellen"));
 
 // KEINE Kostenwerte im Markup.
 check("Voll: KEINE Kostenwerte/Token im Markup",
