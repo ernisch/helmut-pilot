@@ -10,7 +10,7 @@ const { validateProfile } = require("./lib/helmut/profile-validation");
 const sourceSafety = require("./lib/helmut/sourceSafety");
 const { runLageCheck, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, getLlmUsageBreakdownToday, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState, tenantJwtModeEnabled, saveKnowledgeObjectEnrichment, profileDbModeEnabled, getProfileFromDb, diagnoseTenantJwt, recordProcessRun, listProcessRuns } = require("./lib/helmut/storage");
+const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, getLlmUsageBreakdownToday, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getClassificationCoverage, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState, tenantJwtModeEnabled, saveKnowledgeObjectEnrichment, profileDbModeEnabled, getProfileFromDb, diagnoseTenantJwt, recordProcessRun, listProcessRuns } = require("./lib/helmut/storage");
 
 // P0-1: technischer Ausfuehrungsort + Laufkennung fuer Prozess-Laufzeit-Telemetrie
 // (Cron-Understanding, Briefing-Aufbau). Reine technische Metadaten, nie PII.
@@ -22,6 +22,7 @@ function helmutRunId(prefix = "run", atMs = Date.now()) {
   return `${String(prefix).slice(0, 24)}-${stamp}-${Math.random().toString(36).slice(2, 7)}`;
 }
 const { classifyOperationalState, describeState } = require("./lib/helmut/watchdog-state");
+const healthAxes = require("./lib/helmut/health-axes");
 const { sourceMode } = require("./lib/helmut/quellenarchitektur/source-mode");
 const { sourceCoverageThresholds, effectiveActiveSourceCount } = require("./lib/helmut/source-coverage");
 const { runKoEnrichmentBackfill } = require("./lib/helmut/ko-enrichment");
@@ -3150,7 +3151,7 @@ async function buildHealthReport(politicianId = cemInceProfile.id) {
   // aus dem toten `pipelineDebugReports`-Marker und NICHT mehr aus der
   // build-zeit-blinden Briefing-`generatedAt`.
   const profile = await activeProfile(politicianId);
-  const [crawl, lageCheck, briefing, completeKoAt, prevState, storeSummary, errors, users, feedback, pushEvents] = await Promise.all([
+  const [crawl, lageCheck, briefing, completeKoAt, prevState, storeSummary, errors, users, feedback, pushEvents, llmBreakdown, classificationCoverage] = await Promise.all([
     getLatestCrawlRun(),
     getLatestLageCheck(politicianId),
     buildV3Briefing(profile, politicianId),
@@ -3160,7 +3161,10 @@ async function buildHealthReport(politicianId = cemInceProfile.id) {
     accounts.listSystemErrors(100),
     accounts.listUsers(),
     listFeedback(200),
-    listPushEvents(politicianId, 200)
+    listPushEvents(politicianId, 200),
+    // P1-6: KI-Budget-Ausschöpfung + Klassifikationsabdeckung (fail-safe).
+    getLlmUsageBreakdownToday().catch(() => null),
+    getClassificationCoverage().catch(() => null)
   ]);
   const storage = getStorageStatus();
   const now = Date.now();
@@ -3219,6 +3223,20 @@ async function buildHealthReport(politicianId = cemInceProfile.id) {
   });
   const ok = classification.ok;
 
+  // P1-6: KI-Budget-, Leerlauf-, Quellenfrische- und Klassifikationsabdeckungs-Achse.
+  const budget = healthAxes.budgetAxis(llmBreakdown || {});
+  const idle = healthAxes.idleAxis({
+    analyzed: crawl?.understanding?.processed,
+    newRawDocuments: crawl?.newRawDocuments,
+    skips: budget.skips
+  });
+  const coverage = healthAxes.coverageAxis(classificationCoverage);
+  const freshness = healthAxes.sourceFreshnessAxis({
+    crawlAgeMs: ageMs(crawl?.checkedAt || crawl?.createdAt),
+    checked, failed, maxAgeMs: 28 * 3600000, maxFailureRatio: maxCrawlFailureRatio
+  });
+  const axes = healthAxes.combineHealthAxes({ budget, idle, coverage, freshness });
+
   // Betriebszustand persistieren (fail-safe) — ermöglicht Recovery-Erkennung.
   await saveWatchdogState(politicianId, classification.state);
 
@@ -3260,17 +3278,33 @@ async function buildHealthReport(politicianId = cemInceProfile.id) {
     `Briefing: ${briefingItems} Einträge · Verstanden zuletzt: ${fmtAge(completeKoH)} · Fehler (24h): ${errors24}`,
     cronLine,
     ...(gnrLine ? [gnrLine] : []),
+    // P1-6: KI-Budget-Ausschöpfung (Calls/Limit/Rest/Skips) + Leerlauf-Warnung.
+    budget.limit != null
+      ? `🧮 KI-Budget: ${budget.calls}/${budget.limit} genutzt · Rest ${budget.remaining} · Skips ${budget.skips}${budget.exhausted ? " ⚠️ erschöpft" : (budget.status === "knapp" ? " ⚠️ knapp" : "")}`
+      : `🧮 KI-Budget: ${budget.calls} Calls · Skips ${budget.skips} (kein Limit gesetzt)`,
+    ...(idle.idle ? [`🕳️ Leerlauf: neue Dokumente, aber 0 verstanden (Budget übersprang Arbeit) ⚠️`] : []),
+    // P1-6: Klassifikationsabdeckung (WARN-only, steigt mit dem Backfill P1-1).
+    ...(coverage.available ? [`🏷️ Klassifikationsabdeckung: ${Math.round((coverage.levelCoverage || 0) * 100)}% mit Ebene (${coverage.withLevel}/${coverage.total})${coverage.warn ? " ⚠️ niedrig" : ""}`] : []),
     engagement
   ].join("\n");
 
   return {
-    ok: ok && overdueCrons.length === 0 && !gnrDegraded,
+    // P1-6: Budget-Erschöpfung ODER Leerlauf kippen ok (harte Alarm-Gründe);
+    // Abdeckung/Quellenfrische sind WARN-Signale (kippen ok nicht).
+    ok: ok && overdueCrons.length === 0 && !gnrDegraded && axes.ok,
     text,
     state: classification.state,
     severity: classification.severity,
     overdueCrons: overdueCrons.map((c) => c.name),
     googleUrlResolution: gnr,
     googleUrlResolutionRate: gnrRate,
+    // P1-6: strukturierte Achsen für Watchdog/Admin (nur technische Zähler).
+    budget,
+    idle,
+    classificationCoverage: coverage,
+    sourceFreshness: freshness,
+    healthBlockers: axes.blockers,
+    healthWarnings: axes.warnings,
     active7,
     feedback24,
     errors24,
