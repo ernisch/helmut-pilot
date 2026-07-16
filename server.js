@@ -3242,10 +3242,14 @@ async function buildHealthReport(politicianId = cemInceProfile.id) {
 
   // P1-6: KI-Budget-, Leerlauf-, Quellenfrische- und Klassifikationsabdeckungs-Achse.
   const budget = healthAxes.budgetAxis(llmBreakdown || {});
+  // Review-Fix: der Leerlauf-Alarm nutzt die DEFERRED-Zahl DESSELBEN Crawls
+  // (budget-verdrängte Cluster in genau diesem Lauf), NICHT den globalen Tages-Skip-
+  // Zähler — sonst kippt der (immer-aktive) Health-Report an gewöhnlichen Tagen auf
+  // ok=false (processed=0 im Eager-Pfad + irgendwelche Tages-Skips = Fehlalarm).
   const idle = healthAxes.idleAxis({
     analyzed: crawl?.understanding?.processed,
     newRawDocuments: crawl?.newRawDocuments,
-    skips: budget.skips
+    skips: crawl?.understanding?.deferred
   });
   const coverage = healthAxes.coverageAxis(classificationCoverage);
   const freshness = healthAxes.sourceFreshnessAxis({
