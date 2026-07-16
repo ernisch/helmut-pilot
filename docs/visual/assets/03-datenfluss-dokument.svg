@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 420" font-family="Segoe UI, Helvetica, Arial, sans-serif" role="img" aria-label="Datenfluss eines Dokuments von der Quelle zum Briefing">
+  <defs>
+    <marker id="a2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#5b6b7f"/></marker>
+    <style>
+      .t{fill:#1a2b42;font-size:15px;font-weight:600}
+      .s{fill:#5b6b7f;font-size:11px}
+      .step{fill:#eef3f8;stroke:#c9d4e0;stroke-width:1.3}
+      .lbl{fill:#1a2b42;font-size:12.5px;font-weight:600}
+      .cap{fill:#8a97a8;font-size:9.5px}
+      .err{fill:#b3453a;font-size:9.5px}
+    </style>
+  </defs>
+  <rect x="0" y="0" width="960" height="420" fill="#ffffff"/>
+  <text x="30" y="34" class="t">Der Weg eines Dokuments — von der Quelle bis ins Briefing</text>
+  <text x="30" y="54" class="s">Jede Kante ist rückwärts nachvollziehbar (Quelle→Dokument→Fundstelle→Wissensobjekt→Entscheidung). Bruch: Briefing→Entscheidung nur im payload-JSON.</text>
+
+  <!-- row 1 -->
+  <g>
+    <rect x="30" y="80" width="130" height="70" rx="8" class="step"/>
+    <text x="95" y="108" class="lbl" text-anchor="middle">1 · Quelle</text>
+    <text x="95" y="126" class="cap" text-anchor="middle">relationaler Plan</text>
+    <text x="95" y="140" class="err" text-anchor="middle">leer → Fallback</text>
+
+    <rect x="200" y="80" width="130" height="70" rx="8" class="step"/>
+    <text x="265" y="108" class="lbl" text-anchor="middle">2 · Abruf</text>
+    <text x="265" y="126" class="cap" text-anchor="middle">crawler.js</text>
+    <text x="265" y="140" class="err" text-anchor="middle">ok:false → errors[]</text>
+
+    <rect x="370" y="80" width="130" height="70" rx="8" class="step"/>
+    <text x="435" y="104" class="lbl" text-anchor="middle">3 · Rohdokument</text>
+    <text x="435" y="122" class="cap" text-anchor="middle">summary ≤ 240 Z.</text>
+    <text x="435" y="138" class="cap" text-anchor="middle">Upsert rd-&lt;hash&gt;</text>
+
+    <rect x="540" y="80" width="130" height="70" rx="8" class="step"/>
+    <text x="605" y="104" class="lbl" text-anchor="middle">4 · Dedup</text>
+    <text x="605" y="122" class="cap" text-anchor="middle">3 Stufen</text>
+    <text x="605" y="138" class="cap" text-anchor="middle">→ document_findings</text>
+
+    <rect x="710" y="80" width="130" height="70" rx="8" fill="#e3edf6" stroke="#b7c9db" stroke-width="1.3"/>
+    <text x="775" y="104" class="lbl" text-anchor="middle">5 · Wissensobjekt</text>
+    <text x="775" y="122" class="cap" text-anchor="middle">KI gpt-5-mini</text>
+    <text x="775" y="138" class="err" text-anchor="middle">Save-Fehler → skipped</text>
+  </g>
+  <line x1="160" y1="115" x2="196" y2="115" stroke="#5b6b7f" marker-end="url(#a2)"/>
+  <line x1="330" y1="115" x2="366" y2="115" stroke="#5b6b7f" marker-end="url(#a2)"/>
+  <line x1="500" y1="115" x2="536" y2="115" stroke="#5b6b7f" marker-end="url(#a2)"/>
+  <line x1="670" y1="115" x2="706" y2="115" stroke="#5b6b7f" marker-end="url(#a2)"/>
+  <line x1="775" y1="150" x2="775" y2="185" stroke="#5b6b7f" marker-end="url(#a2)"/>
+
+  <!-- row 2 -->
+  <g>
+    <rect x="710" y="188" width="130" height="70" rx="8" fill="#e3edf6" stroke="#b7c9db" stroke-width="1.3"/>
+    <text x="775" y="212" class="lbl" text-anchor="middle">6 · Klassifikation</text>
+    <text x="775" y="230" class="cap" text-anchor="middle">Ebene + Feature-Vektor</text>
+    <text x="775" y="246" class="err" text-anchor="middle">247/314 fehlen (R5)</text>
+
+    <rect x="540" y="188" width="130" height="70" rx="8" class="step"/>
+    <text x="605" y="212" class="lbl" text-anchor="middle">7 · Relevanz</text>
+    <text x="605" y="230" class="cap" text-anchor="middle">Matching 0 KI</text>
+    <text x="605" y="246" class="cap" text-anchor="middle">je Mandatsprofil</text>
+
+    <rect x="370" y="188" width="130" height="70" rx="8" class="step"/>
+    <text x="435" y="212" class="lbl" text-anchor="middle">8 · Empfehlung</text>
+    <text x="435" y="230" class="cap" text-anchor="middle">Handlungsvorschlag</text>
+    <text x="435" y="246" class="cap" text-anchor="middle">aus KO-Feld</text>
+
+    <rect x="200" y="188" width="130" height="70" rx="8" fill="#e8f1ea" stroke="#b6d0bf" stroke-width="1.3"/>
+    <text x="265" y="212" class="lbl" text-anchor="middle">9 · Briefing</text>
+    <text x="265" y="230" class="cap" text-anchor="middle">buildV3Briefing 0 KI</text>
+    <text x="265" y="246" class="err" text-anchor="middle">Store-Fehler → empty()</text>
+
+    <rect x="30" y="188" width="130" height="70" rx="8" fill="#e8f1ea" stroke="#b6d0bf" stroke-width="1.3"/>
+    <text x="95" y="216" class="lbl" text-anchor="middle">10 · Nutzer</text>
+    <text x="95" y="234" class="cap" text-anchor="middle">Lage · Radar · Push</text>
+  </g>
+  <line x1="710" y1="223" x2="674" y2="223" stroke="#5b6b7f" marker-end="url(#a2)"/>
+  <line x1="540" y1="223" x2="504" y2="223" stroke="#5b6b7f" marker-end="url(#a2)"/>
+  <line x1="370" y1="223" x2="334" y2="223" stroke="#5b6b7f" marker-end="url(#a2)"/>
+  <line x1="200" y1="223" x2="164" y2="223" stroke="#5b6b7f" marker-end="url(#a2)"/>
+
+  <!-- error path box -->
+  <rect x="30" y="300" width="810" height="70" rx="8" fill="#f7ece9" stroke="#e0bcb4" stroke-width="1.3"/>
+  <text x="45" y="322" class="lbl" fill="#b3453a">Fehlerweg heute (Kernbefund §9):</text>
+  <text x="45" y="342" class="s">KI-Fehler → KO „failed", kein Auto-Retry (P1-4) · Blob-Timeout 10 s → ganzer Lauf verloren (P0-5) · Lock fail-open → Doppelverarbeitung (P0-4)</text>
+  <text x="45" y="360" class="s">Kein Pipeline-Fehler landet in systemErrors (P0-3) · Erfolg ohne Ertrag bleibt unbemerkt (P1-6). „Fail-safe" heißt heute: console.error + weiter.</text>
+
+  <rect x="30" y="392" width="14" height="14" rx="3" fill="#e8f1ea" stroke="#b6d0bf"/><text x="50" y="404" class="cap">Ausgabe an Nutzer</text>
+  <rect x="220" y="392" width="14" height="14" rx="3" fill="#e3edf6" stroke="#b7c9db"/><text x="240" y="404" class="cap">KI-Schritt</text>
+  <rect x="360" y="392" width="14" height="14" rx="3" fill="#f7ece9" stroke="#e0bcb4"/><text x="380" y="404" class="cap">Fehler-/Härtungspunkt</text>
+  <text x="620" y="404" class="cap">Rot = stiller Fehler, den Thread 2 sichtbar macht.</text>
+</svg>

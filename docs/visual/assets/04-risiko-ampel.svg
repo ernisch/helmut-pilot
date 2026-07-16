@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" font-family="Segoe UI, Helvetica, Arial, sans-serif" role="img" aria-label="Risiko-Ampel R1 bis R15 nach Schwere">
+  <style>
+    .t{fill:#1a2b42;font-size:15px;font-weight:600}
+    .s{fill:#5b6b7f;font-size:11.5px}
+    .cap{fill:#8a97a8;font-size:10px}
+    .hd{fill:#ffffff;font-size:13px;font-weight:700}
+    .ri{fill:#1a2b42;font-size:11px}
+    .id{font-size:11px;font-weight:700}
+  </style>
+  <rect x="0" y="0" width="960" height="440" fill="#ffffff"/>
+  <text x="30" y="34" class="t">Risiko-Übersicht — 15 belegte Risiken nach Schwere</text>
+  <text x="30" y="54" class="s">Jedes Risiko ist mit Datei:Zeile / DB-Abfrage belegt (Audit §13). Kritische Risiken sind die P0-Aufgaben.</text>
+
+  <!-- kritisch -->
+  <rect x="30" y="80" width="290" height="34" rx="6" fill="#b3453a"/>
+  <text x="45" y="103" class="hd">KRITISCH — sofort (P0)</text>
+  <g>
+    <rect x="30" y="122" width="290" height="60" rx="6" fill="#f7ece9" stroke="#e0bcb4"/>
+    <text x="42" y="140" class="id" fill="#b3453a">R1</text><text x="66" y="140" class="ri">1,24-MB-Blob → 10-s-Timeout, Lauf verlierbar</text>
+    <text x="66" y="156" class="cap">→ P0-5 Blob-Robustheit</text>
+    <text x="42" y="176" class="id" fill="#b3453a">R2</text><text x="66" y="176" class="ri">Lock fail-open → Doppelverarbeitung/Doppel-KI</text>
+  </g>
+  <g>
+    <rect x="30" y="188" width="290" height="44" rx="6" fill="#f7ece9" stroke="#e0bcb4"/>
+    <text x="42" y="206" class="id" fill="#b3453a">R3</text><text x="66" y="206" class="ri">Kein Pipeline-Fehler in systemErrors</text>
+    <text x="66" y="222" class="cap">→ P0-3 · Motor im Fehlerlog unsichtbar</text>
+  </g>
+
+  <!-- hoch -->
+  <rect x="340" y="80" width="290" height="34" rx="6" fill="#cc7a33"/>
+  <text x="355" y="103" class="hd">HOCH — vor Bundestagspilot</text>
+  <g>
+    <rect x="340" y="122" width="290" height="110" rx="6" fill="#fbf1e6" stroke="#e6cba0"/>
+    <text x="352" y="140" class="id" fill="#cc7a33">R4</text><text x="376" y="140" class="ri">Toter Google-News-Monitor → P0-2</text>
+    <text x="352" y="162" class="id" fill="#cc7a33">R5</text><text x="376" y="162" class="ri">247/314 KO ohne Ebene/Vektor → P1-1</text>
+    <text x="352" y="184" class="id" fill="#cc7a33">R6</text><text x="376" y="184" class="ri">failed-KO nie Auto-Retry → P1-4</text>
+    <text x="352" y="206" class="id" fill="#cc7a33">R7</text><text x="376" y="206" class="ri">Keine persistierte Laufzeit → P0-1</text>
+    <text x="352" y="224" class="cap">Beobachtbarkeit fehlt dem überwachten Pilot</text>
+  </g>
+
+  <!-- mittel -->
+  <rect x="650" y="80" width="290" height="34" rx="6" fill="#d4a63c"/>
+  <text x="665" y="103" class="hd">MITTEL — Ehrlichkeit / später</text>
+  <g>
+    <rect x="650" y="122" width="290" height="220" rx="6" fill="#fbf7ea" stroke="#e6dcb0"/>
+    <text x="662" y="140" class="id" fill="#a8842a">R8</text><text x="686" y="140" class="ri">savedItems ~15× überzeichnet → P1-5</text>
+    <text x="662" y="160" class="id" fill="#a8842a">R9</text><text x="686" y="160" class="ri">Ebenen-Casing bund/Bund → P1-2</text>
+    <text x="662" y="180" class="id" fill="#a8842a">R10</text><text x="686" y="180" class="ri">Alarm nur CallMeBot, kein Ack → P1-7</text>
+    <text x="662" y="200" class="id" fill="#a8842a">R11</text><text x="686" y="200" class="ri">Keine Retention → P3-1</text>
+    <text x="662" y="220" class="id" fill="#a8842a">R12</text><text x="686" y="220" class="ri">Briefing→Decision nicht verlinkt → P3-2</text>
+    <text x="662" y="240" class="id" fill="#a8842a">R13</text><text x="686" y="240" class="ri">GATE=on schaltet still nichts scharf</text>
+    <text x="662" y="260" class="id" fill="#a8842a">R14</text><text x="686" y="260" class="ri">05:30-Überlappung ohne Lock → P0-4</text>
+    <text x="662" y="280" class="id" fill="#a8842a">R15</text><text x="686" y="280" class="ri">MAX_LLM leer → 50 statt 100/Tag → E1</text>
+    <text x="662" y="316" class="cap">Diese Punkte sind P1/P3 bzw. Gründer-</text>
+    <text x="662" y="330" class="cap">entscheidungen (siehe Umsetzungsplan).</text>
+  </g>
+
+  <text x="30" y="262" class="s" font-weight="600">Verknüpfung Risiko → Aufgabe:</text>
+  <text x="30" y="282" class="cap">R1→P0-5 · R2→P0-4 · R3→P0-3 · R4→P0-2 · R5→P1-1 · R6→P1-4 · R7→P0-1</text>
+  <text x="30" y="300" class="cap">Alle drei kritischen Risiken werden durch die</text>
+  <text x="30" y="316" class="cap">P0-Härtungen adressiert — additiv und reversibel,</text>
+  <text x="30" y="332" class="cap">ohne Produktdesign-Eingriff.</text>
+
+  <text x="30" y="420" class="cap">Statuslegende: Rot = kritisch (Betrieb blind/verlustanfällig) · Orange = hoch (vor Bundestagspilot) · Gelb = mittel (Ehrlichkeit/Hygiene). Prüfdatum 2026-07-16 · Commit 427295c.</text>
+</svg>
