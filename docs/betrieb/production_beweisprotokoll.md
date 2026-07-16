@@ -96,8 +96,36 @@ Fehlerklassifikation aller 129 Ausfälle**, saubere Lock-Freigabe. Das **Crawl-E
 jedoch schwer degradiert** (nur 16/145 Quellen erfolgreich) — externe Google-News-Drosselung,
 kein Flag-/Lock-/Telemetrie-Fehler. Details + ehrlicher Ursachen-Caveat: Betriebsbefund B1.
 
-<!-- LAUF-PLATZHALTER: Lauf 3 (Understanding-Cron 21:30 UTC), Lauf 4 (Crawl 04:00 UTC),
-     Morgenzyklus (05:00–06:00 UTC), Überschneidungsfenster. -->
+### Lauf 3 — Dedizierter Understanding-Cron (natürlicher 21:30-UTC-Cron)
+
+| Feld | Gemessener Wert |
+|---|---|
+| runId | `understanding-cron-20260716213006-n3frt` |
+| Startzeit (UTC) | 2026-07-16 21:30:06.290 |
+| Endzeit (UTC) | 2026-07-16 21:30:07.364 |
+| **Gesamtdauer** | **1 074 ms**, `mode=cron`, `status=ok`, `location=fra1` |
+| Understanding verarbeitet | **0** |
+| Understanding zurückgestellt | **0** |
+| **Lock-Nutzung** | Understanding-Cron zieht `global-understanding` (atomar, da beide Flags on). Wegen ~1 s Laufzeit **nicht** live nachgefangen; der atomare `global-understanding`-Lock ist in Lauf 1 UND Lauf 2 live belegt (unveränderte Flags/Codepfad). |
+| Fehler in systemErrors | **0 neue** (59 → 59) |
+| Neue KOs | 0 (ko_total 337 → 337) |
+| Quellenfelder | n/a (kein Crawl → keine `source_crawl_telemetry`, kein `crawl-cem-ince`-Lock) |
+
+**Bewertung Lauf 3 (ehrlich):** Ein **legitim leerer** Lauf — es gab nichts zu verstehen, weil
+das **eager**-Understanding des 20:00-Crawls die Warteschlange bereits geleert hatte. Das ist
+korrektes idempotentes Verhalten (Cron feuert, findet 0 pending, sauberer processRun), **kein**
+Fehler. Die **substanzielle** Understanding-Laufzeit steckt in den eager-Batches:
+- Lauf 1 (eager): 57 verarbeitet, innerhalb der 196 645 ms Crawldauer.
+- Lauf 2 (eager, `understanding-eager` runId `v268f`): **18 verarbeitet / 20 zurückgestellt in
+  92 988 ms** (20:02:29 → 20:04:02; `startedAt` deckt sich exakt mit dem
+  `global-understanding`-Lock-`locked_at` 20:02:29 — dieselbe Sperre, die ich in Lauf 2 live gefangen habe).
+
+**Offener Prüfpunkt:** Ob die **20 zurückgestellten** Dokumente aus Lauf 2 von einem späteren
+Cron (nächste Chance: 05:30-Understanding-Cron) nachgeholt werden — Test der Zusicherung
+„zurückgestellt = idempotent beim nächsten Lauf nachgeholt". Wird im Morgenzyklus geprüft.
+
+<!-- LAUF-PLATZHALTER: Lauf 4 (Crawl 04:00 UTC), Morgenzyklus (05:00–06:00 UTC),
+     Überschneidungsfenster, 05:30-Understanding (Nachholung der 20 deferred). -->
 
 ---
 
@@ -243,4 +271,4 @@ geprüftem Überschneidungsfenster)._
 
 ---
 
-_Letzte Aktualisierung: 2026-07-16 (nach Lauf 2, inkl. Betriebsbefund B1). Fortschreibung erfolgt fortlaufend._
+_Letzte Aktualisierung: 2026-07-16 (nach Lauf 3, Understanding-Cron). Fortschreibung erfolgt fortlaufend._
