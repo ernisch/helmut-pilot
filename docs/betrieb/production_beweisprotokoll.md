@@ -196,11 +196,31 @@ fail-safe, Allowlist+Redaction), exaktes Payload-Schema, gefahrloser Prüfweg
 Aktivierung = F5 (Env-Wert setzen) — **verboten ohne Freigabe** und ohne geprüfte
 Webhook-URL. Hier nichts aktiviert, Code unverändert.
 
-### 4.3 · Berlin/Brandenburg — strukturelle Vorbereitung (nicht aktiviert)
-_Status: in Arbeit (dokumentarisch, rein strukturell)._ Keine Aktivierung.
+### 4.3 · Berlin/Brandenburg — strukturelle Vorbereitung (nicht aktiviert) ✔ vorhanden & inert bestätigt
+**Befund (rein lesend):** Die strukturelle BE/BB-Vorbereitung existiert bereits als eigene,
+ausdrücklich **inerte** Schicht — nichts davon ist verdrahtet oder aktiv:
+- `lib/helmut/quellenarchitektur/seeds/landesmodule-kandidaten.js` — Quellenkandidaten je
+  Pflichtklasse, **nur `prepared`**, „es wird NICHTS aktiviert, kein Abrufweg erzeugt, kein
+  Crawl verdrahtet"; geordnete Reifegrad-Skala (`unbesetzt → kandidat → verifiziert → bereit →
+  aktiv`). BE/BB stehen auf **`kandidat`**, „NICHT einsatzbereit (kein prepared-Eintrag in Production)".
+- `…/seeds/landesmodule-quellen.js`, `…/seeds/landesmodule-verifikation.js` (Sprint-9B-
+  Byte-Verifikation), `…/seeds/packages.js` (15 Pflichtklassen).
+- Docs: `docs/quellenarchitektur/11-landesmodule-berlin-brandenburg.md`,
+  `13-landesmodule-technische-pruefung-und-bundeswege.md`.
+
+**Live-Gegenprobe:** In Lauf 1 und 2 trugen alle 145 Quellen ausschließlich Bundestags-Kategorien
+(offiziell/medien/partei_fraktion/regional/profil des `cem-ince`-Profils) — **kein Landtags-/BE/BB-
+Abruf aktiv**. Aktivierung wäre freigabepflichtig (nach Bundestagspilot). **Hier nichts verändert.**
 
 ### 4.4 · Datenschutz / Aufbewahrung / Löschung — dokumentarische Weiterarbeit
-_Status: in Arbeit._ Keine echte Löschung, kein `HELMUT_RETENTION_EXECUTE`.
+**Gemessener Beleg für den Aufbewahrungsdruck (Audit R11: unbegrenztes Wachstum):** In diesem
+Sprint bestätigt durch echte Deltas — `raw_documents` 5948 → 6008 (Lauf 1 +29 netto, Lauf 2 +31
+netto) und `knowledge_objects` 323 → 337 über wenige Stunden, ohne jede Löschung. Das untermauert
+das bestehende Retention-Konzept (`docs/betrieb/aufbewahrung-loeschung.md`, Datenklassen-Matrix mit
+`knowledge_objects` als Art. 9) und die DSFA-Vorprüfung (`docs/recht/datenschutz-folgenabschaetzung-vorpruefung.md`).
+**Keine echte Löschung**, `HELMUT_RETENTION_EXECUTE` bleibt aus (nur Trockenlauf möglich); Fristen
+weiter gründer-/rechtsfreigabepflichtig. Politische Daten fließen weiterhin nicht in Telemetrie/
+Alarmkanäle (Allowlist + Redaction, in Lauf 1/2 real ohne Inhalt/PII).
 
 ---
 
