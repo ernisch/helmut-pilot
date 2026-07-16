@@ -69,6 +69,7 @@
     "test:blob-retry": "node scripts/blob-retry-test.js",
     "test:crawl-run-projection": "node scripts/crawl-run-relational-projection-test.js",
     "test:ebenen-casing": "node scripts/ebenen-casing-test.js",
+    "test:durchsatz-ehrlich": "node scripts/durchsatz-ehrlich-test.js",
     "test:lage-cacheonly": "node scripts/lage-cacheonly-test.js",
     "test:matching-norm": "node scripts/matching-normalization-test.js",
     "test:radar-scan-limit": "node scripts/radar-scan-limit-test.js",

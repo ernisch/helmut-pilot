@@ -4374,7 +4374,12 @@ async function buildAdminDataStatus({ perAccountLimit = 25 } = {}) {
     },
     dokumente: {
       geladen: dsNumOrNull(cr.loadedItems) ?? naLive({ note: "ab dem naechsten Crawl-Lauf verfuegbar" }),
-      neu: dsNum(cr.savedItems),
+      // P1-5: EHRLICHER Durchsatz = echte neue raw_documents (relationaler Delta).
+      // Der frühere Blob-savedItems-Zähler überzeichnete ~15x (Cap-Artefakt, Audit R8).
+      // Fällt der relationale Delta aus (unbekannt), wird der Blob-Wert transparent
+      // markiert statt still überzeichnet.
+      neu: dsNumOrNull(cr.newRawDocuments) ?? naLive({ note: "relationaler Delta ab naechstem Crawl-Lauf; blob-Wert cap-verzerrt" }),
+      neuBlobRoh: dsNum(cr.savedItems),
       verworfen: dsNumOrNull(cr.discardedItems) ?? naLive({ note: "ab dem naechsten Crawl-Lauf verfuegbar" }),
       duplikate: dsNumOrNull(cr.duplicates) ?? naLive({ note: "ab dem naechsten Crawl-Lauf verfuegbar" }),
       // Ehrlich gezaehlt: Vorgaenge, die der Source-Safety-Guard aktuell aus dem
