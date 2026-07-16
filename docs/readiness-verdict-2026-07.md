@@ -28,8 +28,14 @@ Begriffe in einem Satz:
   Fehlalarm „Pipeline aus" mehr, kein falsches Grün); die Lage-Karten verschwinden
   nicht mehr durch ein KI-Timeout beim App-Start.
 - **Rest (kein Blocker für den Piloten):** die Themen-Dimension ist erst voll
-  wirksam nach KO-Anreicherung (Backfill, Freigabepunkt); die Quellenbasis ist
-  noch dünn (strukturell, P2-5).
+  wirksam nach KO-Anreicherung (Backfill, Freigabepunkt). Die „Quellenbasis zu
+  dünn"-Meldung (P2-5) war ein **Fehlbefund**: der gesunde relationale Crawl (~145
+  Quellen, 0 Fehler, tagesfrisch) wurde gegen nie-erfüllbare Schwellen (495/450/405)
+  gestellt und die „Quellenbasis" zählte den toten `store.sources`-Blob. Schwellen +
+  Zählung sind korrigiert (Code, wirkt nach nächstem Deploy) — es fehlen **keine**
+  Quellen für den Piloten. Offener, founder-gated Rest: 6 verifizierte
+  Direktfeed-Reparaturen (Beleg-Qualität, kein Breiten-Blocker). Details:
+  `docs/quellenarchitektur/28-quellenabdeckung-p2-5-readiness-diagnose.md`.
 
 **Fazit:** Der Pilot kann sicher und mit spürbar besserem Ergebnis weiterlaufen.
 

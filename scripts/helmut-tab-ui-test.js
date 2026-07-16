@@ -321,8 +321,14 @@ check("Review: Flag ist per Default AUS (in Produktion inert)",
   if (save.e === undefined) delete process.env.VERCEL_ENV; else process.env.VERCEL_ENV = save.e;
   if (save.r === undefined) delete process.env.VERCEL_GIT_COMMIT_REF; else process.env.VERCEL_GIT_COMMIT_REF = save.r;
 }
-const fx = reviewFixture.buildReviewFixture(new Date());
-const fxBriefing = contract.toBriefingContractV3({ profile: fx.profile, decisions: fx.decisions, kosById: fx.kosById, sourcesByVorgang: fx.sourcesByVorgang, now: new Date() });
+// Feste Mittags-Referenz (Europe/Berlin) statt Wall-Clock: buildReviewFixture setzt
+// now-relative Zeitstempel (Primär-KO updated_at = now-45min). Der Tages-Frische-Guard
+// (toBriefingContractV3) vergleicht deren Berlin-Kalendertag gegen `now` — bei einem
+// Suite-Lauf kurz nach Berlin-Mitternacht kippt "now-45min" auf den Vortag und der
+// Status würde fälschlich "stale". Mittags 12:00 Berlin hält Primär-KO und now am selben Tag.
+const REVIEW_NOW = new Date("2026-07-15T10:00:00Z"); // 12:00 Europe/Berlin
+const fx = reviewFixture.buildReviewFixture(REVIEW_NOW);
+const fxBriefing = contract.toBriefingContractV3({ profile: fx.profile, decisions: fx.decisions, kosById: fx.kosById, sourcesByVorgang: fx.sourcesByVorgang, now: REVIEW_NOW });
 const fxState = fxBriefing.currentHelmutState;
 check("Review: liefert einen VOLLEN currentHelmutState (status fresh, qualityStatus valid)",
   fxState.status === "fresh" && fxState.qualityStatus === "valid");

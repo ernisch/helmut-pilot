@@ -1,0 +1,116 @@
+"use strict";
+
+// Tests für die Quellenabdeckung-Schwellen/Zähllogik (lib/helmut/source-coverage.js).
+// KEIN Netz, KEINE KI, rein funktional. Sichert die P2-5-Ursachenbehebung ab:
+//   1. Der gesunde relationale Ist-Crawl (~145) MUSS die Schwellen bestehen.
+//   2. Ein echter Einbruch MUSS weiter durchfallen (nicht blind auf Grün gesenkt).
+//   3. Die "Quellenbasis" zählt post-cutover den relationalen Plan (checkedSources),
+//      NICHT den eingefrorenen store.sources-Blob.
+//   4. ENV übersteuert die Defaults (Betriebs-Tuning ohne Redeploy).
+
+const {
+  SOURCE_COVERAGE_DEFAULTS,
+  sourceCoverageThresholds,
+  effectiveActiveSourceCount
+} = require("../lib/helmut/source-coverage");
+
+let passed = 0, failed = 0;
+function check(name, cond, detail = "") {
+  if (cond) { passed += 1; console.log(`PASS  ${name}`); }
+  else { failed += 1; console.log(`FAIL  ${name}${detail ? "  — " + detail : ""}`); }
+}
+
+// ── 1. Defaults sind auf die relationale Architektur kalibriert (nicht 450/495/405) ──
+const d = SOURCE_COVERAGE_DEFAULTS;
+check("Defaults: minChecked < 200 (nicht mehr 450)", d.minChecked < 200 && d.minChecked === 120);
+check("Defaults: minConfigured < 200 (nicht mehr 495)", d.minConfigured < 200 && d.minConfigured === 120);
+check("Defaults: minSuccessful < 200 (nicht mehr 405)", d.minSuccessful < 200 && d.minSuccessful === 110);
+check("Defaults: Leiter erfolgreich <= geprüft", d.minSuccessful <= d.minChecked);
+
+// ── 2. Schwellen bestehen den gesunden Ist-Crawl, schlagen bei echter Dünne an ──
+const t = sourceCoverageThresholds({}); // leeres ENV -> Defaults
+const HEALTHY = 145; // realer Prod-Ist-Stand (145 geprüft/145 erfolgreich/0 Fehler)
+check("Gesund 145 geprüft besteht minChecked", HEALTHY >= t.minChecked);
+check("Gesund 145 erfolgreich besteht minSuccessful", HEALTHY >= t.minSuccessful);
+check("Gesund 145 Basis besteht minConfigured", HEALTHY >= t.minConfigured);
+// Pre-cutover-Stand (149) besteht ebenfalls — die Schwelle war schon immer erfüllbar zu setzen.
+check("Pre-cutover 149 besteht", 149 >= t.minChecked);
+// Echter Einbruch (Neutralbasis ~54, Plan-Ladefehler, Massenausfall) fällt durch.
+check("Einbruch 54 (nur Neutralbasis) fällt durch minChecked", !(54 >= t.minChecked));
+check("Einbruch 2 (nur always_on) fällt durch", !(2 >= t.minChecked));
+// Aber die Schwelle ist nicht künstlich knapp: gesunder Stand hat Luft nach unten.
+check("Headroom: gesund 145 liegt >= 20% über minChecked", HEALTHY >= t.minChecked * 1.2);
+
+// ── 3. effectiveActiveSourceCount: relationaler Plan statt Blob ──
+// mode "on": zählt checkedSources (realisierter aktiver Plan), NICHT den Blob.
+check("mode on: nimmt checkedSources (145), nicht Blob (144)",
+  effectiveActiveSourceCount({ storeSourcesActive: 144, crawlCheckedSources: 145, mode: "on" }) === 145);
+// mode on ohne Crawl (Kaltstart): fällt sauber auf Blob zurück.
+check("mode on ohne Crawl: Fallback auf Blob",
+  effectiveActiveSourceCount({ storeSourcesActive: 144, crawlCheckedSources: 0, mode: "on" }) === 144);
+// Blob eingefroren/leer, relationaler Crawl gesund: Basis bleibt gesund (der Bug-Fix).
+check("mode on: leerer Blob, gesunder Crawl -> gesunde Basis (Zähl-Bug behoben)",
+  effectiveActiveSourceCount({ storeSourcesActive: 0, crawlCheckedSources: 145, mode: "on" }) === 145);
+// mode off/shadow: alter Katalog (Blob) bleibt die aktive Wahrheit.
+check("mode off: nimmt Blob (alter Katalog aktiv)",
+  effectiveActiveSourceCount({ storeSourcesActive: 144, crawlCheckedSources: 999, mode: "off" }) === 144);
+check("mode shadow: nimmt Blob (Katalog aktiv, relational nur Messbetrieb)",
+  effectiveActiveSourceCount({ storeSourcesActive: 144, crawlCheckedSources: 999, mode: "shadow" }) === 144);
+// Robust gegen fehlende/ungültige Eingaben.
+check("robust: fehlende Eingaben -> 0", effectiveActiveSourceCount({}) === 0);
+
+// ── 4. ENV übersteuert Defaults ──
+const tEnv = sourceCoverageThresholds({ HELMUT_MIN_CHECKED_SOURCES: "200", HELMUT_MIN_SUCCESSFUL_SOURCES: "180", HELMUT_MIN_CONFIGURED_SOURCES: "210" });
+check("ENV übersteuert minChecked", tEnv.minChecked === 200);
+check("ENV übersteuert minSuccessful", tEnv.minSuccessful === 180);
+check("ENV übersteuert minConfigured", tEnv.minConfigured === 210);
+check("ENV leer/ungültig -> Default", sourceCoverageThresholds({ HELMUT_MIN_CHECKED_SOURCES: "" }).minChecked === d.minChecked
+  && sourceCoverageThresholds({ HELMUT_MIN_CHECKED_SOURCES: "abc" }).minChecked === d.minChecked);
+
+// ── 5. Grenzwerte exakt an der Schwelle (>=-Semantik der Prüfungen) ──
+check("Grenzwert: checked == minChecked besteht (>=)", 120 >= d.minChecked && d.minChecked === 120);
+check("Grenzwert: checked == minChecked-1 fällt durch", !((d.minChecked - 1) >= d.minChecked));
+check("Grenzwert: successful == minSuccessful besteht", 110 >= d.minSuccessful && d.minSuccessful === 110);
+check("Grenzwert: successful == minSuccessful-1 fällt durch", !((d.minSuccessful - 1) >= d.minSuccessful));
+
+// ── 6. Watchdog-Defaults dürfen nicht von der zentralen Kalibrierung driften ──
+const WD = require("../lib/helmut/watchdog-state").DEFAULT_THRESHOLDS;
+check("Sync: Watchdog minCheckedSources == source-coverage minChecked", WD.minCheckedSources === d.minChecked);
+check("Sync: Watchdog minSuccessfulSources == source-coverage minSuccessful", WD.minSuccessfulSources === d.minSuccessful);
+
+// ── 7. ECHTER Aufrufort in server.js (backendHealth/pilotReadiness) ──
+// Deckt Regress AM AUFRUFORT ab (Schwelle zurückgedreht ODER wieder der tote Blob gezählt) —
+// die reine Modul-Logik oben würde das nicht bemerken. server.js startet ohne require.main
+// keinen Server. sourceMode() respektiert process.env > helmut-flags.json (Datei = "on").
+const server = require("../server.js");
+const freshCrawl = (checked, successful = checked) => ({ checkedSources: checked, successfulSources: successful, failedSources: 0, createdAt: new Date().toISOString() });
+const briefing = { available: true, status: "Live", items: [{ decision: "Beobachten" }], personalizedRecommendations: [{}], situationalBriefing: [{}], decisionMetrics: { total: 1, react: 0 } };
+const storage = { backend: "supabase" };
+const summary = { sources: { active: 144 }, rawItems: { total: 5000, last24h: 900 } };
+const evidence = { missingLinks: 0, publisherFallbacks: 0, directLinks: 5, total: 5 };
+const qbOf = (bh) => (bh.checks || []).find((c) => c.id === "quellenbasis");
+const ZU_WENIGE = "Es werden zu wenige Quellen geprüft.";
+
+const prevMode = process.env.HELMUT_SOURCE_MODE;
+delete process.env.HELMUT_SOURCE_MODE; // Flag-Datei (=on) greift -> Cutover-Modus
+
+let qb = qbOf(server.__backendHealth(freshCrawl(145), briefing, null, storage, summary, evidence));
+check("Aufrufort mode on: gesunder 145er-Crawl -> Quellenbasis grün", qb && qb.ok === true, qb && qb.detail);
+check("Aufrufort mode on: zählt 145 (geprüfter Crawl), NICHT Blob 144", qb && /145/.test(qb.detail) && /geprüfter Crawl/.test(qb.detail), qb && qb.detail);
+
+qb = qbOf(server.__backendHealth(freshCrawl(40), briefing, null, storage, summary, evidence));
+check("Aufrufort mode on: Kollaps 40 -> Quellenbasis rot (Blob 144 rettet NICHT)", qb && qb.ok === false, qb && qb.detail);
+
+check("Aufrufort: pilotReadiness 145 -> kein 'zu wenige Quellen'",
+  !server.__pilotReadiness(freshCrawl(145), briefing, storage, evidence).issues.includes(ZU_WENIGE));
+check("Aufrufort: pilotReadiness 40 -> 'zu wenige Quellen' Issue",
+  server.__pilotReadiness(freshCrawl(40), briefing, storage, evidence).issues.includes(ZU_WENIGE));
+
+process.env.HELMUT_SOURCE_MODE = "off"; // alter Katalog aktiv -> Blob ist die Wahrheit
+qb = qbOf(server.__backendHealth(freshCrawl(145), briefing, null, storage, summary, evidence));
+check("Aufrufort mode off: zählt Blob 144 mit ehrlichem Label 'Katalog-Basis'",
+  qb && /144/.test(qb.detail) && /Katalog-Basis/.test(qb.detail), qb && qb.detail);
+if (prevMode === undefined) delete process.env.HELMUT_SOURCE_MODE; else process.env.HELMUT_SOURCE_MODE = prevMode;
+
+console.log(`\n${passed} passed, ${failed} failed`);
+process.exit(failed ? 1 : 0);

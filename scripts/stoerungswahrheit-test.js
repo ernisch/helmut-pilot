@@ -143,8 +143,12 @@ function check(name, cond, detail = "") {
   check("Neutraler Leerzustand bleibt der ruhige Alt-Text",
     htmlNeutral.includes("keine quellengestützten Vorgänge"));
 
-  const today = new Date();
-  const todayIso = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 8, 30).toISOString();
+  // Quelle auf JETZT (aktuellen Zeitpunkt) setzen, NICHT auf lokale Datumsteile + 08:30:
+  // lageFreshnessLabel vergleicht den Europe/Berlin-Kalendertag der Quelle gegen new Date().
+  // Eine aus lokalen Teilen gebaute "heute 08:30"-Quelle kippt nahe der UTC/Berlin-
+  // Tagesgrenze (Suite-Lauf zwischen Berlin-Mitternacht und ~00:45) fälschlich auf
+  // "vom <gestern>". Der aktuelle Zeitpunkt liegt immer auf demselben Berlin-Tag wie now.
+  const todayIso = new Date().toISOString();
   const freshToday = st.fresh([{ sources: [{ publishedAt: "2026-01-01T10:00:00Z" }, { publishedAt: todayIso }] }]);
   check("Frische-Anzeige: heutige Quelle mit Uhrzeit", /Neueste Quelle heute, \d{2}:\d{2} Uhr\./.test(freshToday), freshToday);
   const freshOld = st.fresh([{ sources: [{ publishedAt: "2026-01-05T10:00:00Z" }] }]);

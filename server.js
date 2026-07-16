@@ -12,6 +12,8 @@ const { runLageCheck, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { buildLearningProfile } = require("./lib/helmut/learning");
 const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, getLlmUsageBreakdownToday, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState, tenantJwtModeEnabled, saveKnowledgeObjectEnrichment, profileDbModeEnabled, getProfileFromDb, diagnoseTenantJwt } = require("./lib/helmut/storage");
 const { classifyOperationalState, describeState } = require("./lib/helmut/watchdog-state");
+const { sourceMode } = require("./lib/helmut/quellenarchitektur/source-mode");
+const { sourceCoverageThresholds, effectiveActiveSourceCount } = require("./lib/helmut/source-coverage");
 const { runKoEnrichmentBackfill } = require("./lib/helmut/ko-enrichment");
 const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled, activeModelName, extractKnowledgeObjectTags } = require("./lib/helmut/ai");
 const { derivePolicyFields } = require("./lib/helmut/matching");
@@ -54,10 +56,13 @@ const contentTypes = {
 const canonicalHost = process.env.HELMUT_CANONICAL_HOST || "helmut-pilot.vercel.app";
 const rateBuckets = new Map();
 const manualRunMinIntervalMs = Number(process.env.HELMUT_MANUAL_RUN_MIN_INTERVAL_MS || 10 * 60 * 1000);
-const minConfiguredSources = Number(process.env.HELMUT_MIN_CONFIGURED_SOURCES || 495);
-const minCheckedSources = Number(process.env.HELMUT_MIN_CHECKED_SOURCES || 450);
+// Quellenabdeckung P2-5: Schwellen aus lib/helmut/source-coverage.js (ENV-überschreibbar).
+// Kalibriert auf die relationale Quellenarchitektur (gesunder Ist-Crawl ~145 geprüft/
+// erfolgreich, 0 Fehler) — NICHT auf den rohen Katalogumfang. Die alten Defaults
+// (495/450/405) waren ~3× zu hoch und seit 2026-07-11 nie erfüllbar. Begründung + Belege
+// im Modulkopf source-coverage.js.
+const { minConfigured: minConfiguredSources, minChecked: minCheckedSources, minSuccessful: minSuccessfulSources } = sourceCoverageThresholds();
 const minLageCheckSources = Number(process.env.HELMUT_MIN_LAGE_CHECK_SOURCES || 75);
-const minSuccessfulSources = Number(process.env.HELMUT_MIN_SUCCESSFUL_SOURCES || 405);
 const maxCrawlFailureRatio = Number(process.env.HELMUT_MAX_CRAWL_FAILURE_RATIO || 0.1);
 const maxFullCrawlAgeMs = Number(process.env.HELMUT_MAX_FULL_CRAWL_AGE_MS || 14 * 60 * 60 * 1000);
 const maxLageCheckAgeMs = Number(process.env.HELMUT_MAX_LAGE_CHECK_AGE_MS || 4 * 60 * 60 * 1000);
@@ -2538,6 +2543,12 @@ module.exports.__ASSET_VERSION = () => ASSET_VERSION;
 // Briefing-Status aus der EINEN Frische-Wahrheit (currentHelmutState) stammt und
 // ein alter/fehlgeschlagener Lauf nie "Aktuell" ergibt (Konsistenz Kopf ↔ Karte).
 module.exports.__decorateBriefingFreshness = decorateBriefingFreshness;
+// Test-Hook (Offline, P2-5): die Quellenabdeckungs-Prüfungen an ihrem ECHTEN Aufrufort —
+// backendHealth "Quellenbasis" + pilotReadiness "zu wenige Quellen". Sichert, dass ein
+// Regress am Aufrufort (Schwelle zurückgedreht ODER wieder der tote Blob gezählt) auffällt,
+// nicht nur in der reinen source-coverage-Logik.
+module.exports.__backendHealth = backendHealth;
+module.exports.__pilotReadiness = pilotReadiness;
 
 if (require.main === module) {
   const server = http.createServer(requestHandler);
@@ -2744,7 +2755,22 @@ function v3BriefingQuality(briefing, evidenceQuality) {
 function backendHealth(crawl, briefing, debugReport, storage, storeSummary, evidenceQuality, motorQuality = null, learning = null, lageCheck = null, completeKoAt = null) {
   const checks = [];
   addBackendCheck(checks, "Persistenter Speicher", storage.backend === "supabase", storage.backend === "supabase" ? "Supabase ist aktiv." : "Helmut speichert noch lokal.");
-  addBackendCheck(checks, "Quellenbasis", Number(storeSummary.sources?.active || 0) >= minConfiguredSources, `${storeSummary.sources?.active || 0} aktive Quellen konfiguriert.`);
+  // P2-5: aktive Quellenbasis = relationale Quellenwahrheit (crawl.checkedSources), NICHT
+  // der eingefrorene store.sources-Blob. Nach dem Cutover ist der Blob nur noch Fallback-
+  // Katalog und wächst/schrumpft nicht mit Paketen/Wegen — er als Basiszahl wäre irreführend.
+  const backendSourceMode = sourceMode();
+  const activeSourceBase = effectiveActiveSourceCount({
+    storeSourcesActive: storeSummary.sources?.active,
+    crawlCheckedSources: crawl?.checkedSources,
+    mode: backendSourceMode
+  });
+  // Ehrliches Label je Quelle der Zahl: im Cutover-Modus zählt der aktive Crawl
+  // (crawl.checkedSources) — normalerweise der relationale Plan, bei Plan-Ladefehler aber
+  // der Alt-Katalog-Fallback (scheduler.getSourcesForProfile). backendHealth kann die beiden
+  // nicht unterscheiden, DARF also nicht "relationaler Plan" behaupten; "geprüfter Crawl" ist
+  // die belegbare Wahrheit. Ohne Cutover zählt der alte Katalog-Blob ("Katalog-Basis").
+  const sourceBaseLabel = backendSourceMode === "on" && Number(crawl?.checkedSources || 0) > 0 ? "geprüfter Crawl" : "Katalog-Basis";
+  addBackendCheck(checks, "Quellenbasis", activeSourceBase >= minConfiguredSources, `${activeSourceBase} aktive Quellen (${sourceBaseLabel}).`);
   addBackendCheck(checks, "Raw Items", Number(storeSummary.rawItems?.total || 0) > 0, `${storeSummary.rawItems?.total || 0} Artikel gespeichert, ${storeSummary.rawItems?.last24h || 0} in den letzten 24 Stunden.`);
 
   const checkedSources = Number(crawl?.checkedSources || 0);
@@ -2880,7 +2906,10 @@ function pilotReadiness(crawl, briefing, storage, evidenceQuality = null, lageCh
 
 function releaseCheck({ crawl, briefing, storage, storeSummary, evidenceQuality, backend, readiness, learning, radarArchive, lageCheck, completeKoAt = null }) {
   const checks = [];
-  const sourceCount = Number(crawl?.checkedSources || storeSummary?.sources?.active || 0);
+  // P2-5: Lage-Frische misst die CRAWL-Breite (geprüfte Quellen), nicht den eingefrorenen
+  // store.sources-Blob. Kein Blob-Fallback mehr: ohne Crawl ist die Breite 0 (fällt ehrlich
+  // durch), statt einen alten Katalog-Zählwert als Frische auszugeben.
+  const sourceCount = Number(crawl?.checkedSources || 0);
   const failedSources = Number(crawl?.failedSources || 0);
   const failRatio = sourceCount ? failedSources / sourceCount : 1;
   const visibleDecisionCount = Number((briefing?.items || []).filter((item) => item.decision !== "Ignorieren").length);

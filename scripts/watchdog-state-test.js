@@ -38,6 +38,12 @@ check("Axis INGEST: 20h alt -> warn", _ingestAxis({ ...healthy.ingest, crawlAgeM
 check("Axis INGEST: 30h alt -> dead", _ingestAxis({ ...healthy.ingest, crawlAgeMs: 30 * H }, T) === "dead");
 check("Axis INGEST: kein Crawl -> dead", _ingestAxis({ crawlAgeMs: null }, T) === "dead");
 check("Axis INGEST: frisch aber zu wenige Quellen -> warn", _ingestAxis({ ...healthy.ingest, checkedSources: 100 }, T) === "warn");
+// P2-5: relationaler Ist-Crawl (~145/145, 0 Fehler) MUSS fresh sein — unter den alten
+// Schwellen (450/405) galt er fälschlich als "zu dünn"/warn (Kern des Fehlbefunds).
+check("Axis INGEST: relationaler Ist-Crawl 145/145 -> fresh", _ingestAxis({ crawlAgeMs: 2 * H, checkedSources: 145, successfulSources: 145, failureRatio: 0 }, T) === "fresh");
+// Echter Einbruch (Plan-Ladefehler/Massenausfall → ~40 Quellen) bleibt warn — die
+// Kalibrierung senkt NICHT blind, sie schlägt bei echter Dünne weiter an.
+check("Axis INGEST: echter Einbruch 40 Quellen -> warn", _ingestAxis({ crawlAgeMs: 2 * H, checkedSources: 40, successfulSources: 40, failureRatio: 0 }, T) === "warn");
 check("Axis OUTPUT: available + 3h -> fresh", _outputAxis(healthy.output, T) === "fresh");
 check("Axis OUTPUT: available + 30h -> warn", _outputAxis({ available: true, newestCompleteKoAgeMs: 30 * H }, T) === "warn");
 check("Axis OUTPUT: available + 40h -> dead", _outputAxis({ available: true, newestCompleteKoAgeMs: 40 * H }, T) === "dead");
