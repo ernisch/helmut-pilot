@@ -5017,7 +5017,10 @@ async function handleDebugRequest(request, response, url) {
         mentioned_locations: ["Berlin"],
         mentioned_organizations: ["Deutsche Rentenversicherung"],
         policy_field: "Sozialpolitik",
-        political_level: "Bund",
+        // P1-2 Ebenen-Kanon: klein ('bund'), damit der Debug-Seed nicht gegen echte
+        // (klein geschriebene) Klassifikationsdaten auseinanderlaeuft.
+        political_level: "bund",
+        decision_level: "bund",
         instrument: "Gesetz",
         stage: "Beratung",
         tags: ["Rente", "Sozialpolitik", "2026"],
