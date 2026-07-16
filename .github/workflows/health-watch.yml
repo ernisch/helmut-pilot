@@ -1,0 +1,47 @@
+name: Health Watch (Meta-Heartbeat)
+
+# P1-7 — Zweiter, UNABHÄNGIGER Kontrollpfad (Meta-Heartbeat).
+# Prüft /api/cron/health-report?dryRun=1 (baut den Report, versendet NICHTS) und
+# schlägt fehl (-> GitHub-Failure-Mail), wenn der Report-Cron ausfällt oder einen
+# nicht-grünen Zustand meldet. Ergänzt den briefing-watchdog (der nur die Pipeline
+# prüft) um die Alarm-/Health-Achse.
+#
+# ⚠️ VORBEREITET, NICHT AKTIVIERT (freigabepflichtig): Es gibt BEWUSST KEINEN
+# `schedule:`-Trigger — der Workflow läuft nur manuell (workflow_dispatch). Die
+# Aktivierung (Ergänzen eines `schedule:`-Cron) ist ein Gründer-Freigabepunkt
+# (neuer Alarmkanal, Audit R10). Bis dahin lässt er sich gefahrlos manuell testen.
+
+on:
+  workflow_dispatch: {}
+  # SCHEDULE BEWUSST DEAKTIVIERT — Aktivierung = Freigabe (dann hier ergänzen):
+  # schedule:
+  #   - cron: "15 6 * * *"   # 06:15 UTC = 08:15 Berlin (Sommer), kurz nach health-report (06:00 UTC)
+
+concurrency:
+  group: health-watch
+  cancel-in-progress: false
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Repo auschecken
+        uses: actions/checkout@v4
+
+      - name: Node einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Health-Report Dry-Run prüfen (testbare Logik, kein Inline-Bash)
+        env:
+          BASE_URL: ${{ vars.HELMUT_PROD_URL || 'https://helmut-pilot.vercel.app' }}
+          CRON_SECRET: ${{ secrets.HELMUT_CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "${CRON_SECRET:-}" ]; then
+            echo "::error::HELMUT_CRON_SECRET ist nicht gesetzt."
+            exit 1
+          fi
+          node scripts/health-watch-check.js

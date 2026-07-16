@@ -24,6 +24,7 @@ function helmutRunId(prefix = "run", atMs = Date.now()) {
 const { classifyOperationalState, describeState } = require("./lib/helmut/watchdog-state");
 const healthAxes = require("./lib/helmut/health-axes");
 const { recoverFailedUnderstanding } = require("./lib/helmut/ko-recovery");
+const { buildAlarmPayload, buildAlarmText } = require("./lib/helmut/alarm-payload");
 const { sourceMode } = require("./lib/helmut/quellenarchitektur/source-mode");
 const { sourceCoverageThresholds, effectiveActiveSourceCount } = require("./lib/helmut/source-coverage");
 const { runKoEnrichmentBackfill } = require("./lib/helmut/ko-enrichment");
@@ -864,8 +865,10 @@ async function handleRequest(request, response) {
       // (HELMUT_MONITORING_WEBHOOK_URL: Slack/Discord/Zapier/E-Mail-Relay).
       // Beide Kanäle fail-safe und unabhängig; ein Kanal-Fehler kippt den anderen
       // nicht. Kein neuer Dienst/kein SMTP-Secret nötig.
+      // P1-7 Datenschutz: auch der Text-only-Kanal (WhatsApp) erhält den über
+      // buildAlarmText redigierten Statustext (doppelter Boden gegen Inhalte/Secrets).
       const [delivery, webhook] = await Promise.all([
-        sendCallMeBotMessage(report.text),
+        sendCallMeBotMessage(buildAlarmText(report)),
         sendMonitoringWebhook(report)
       ]);
       const whatsappBroken = delivery && delivery.sent === false && !delivery.skipped;
@@ -3343,16 +3346,10 @@ async function sendMonitoringWebhook(report) {
       // Timeout (Review-Fix): "fail-safe" muss auch HAENGER abdecken, nicht nur
       // Fehler — ein haengender Webhook wuerde sonst den Health-Cron blockieren.
       signal: AbortSignal.timeout(8000),
-      // "text" = Slack/Discord-kompatibel; Zusatzfelder für strukturierte Empfänger.
-      body: JSON.stringify({
-        text: report.text,
-        ok: report.ok,
-        state: report.state,
-        severity: report.severity,
-        overdueCrons: report.overdueCrons || [],
-        googleUrlResolutionRate: report.googleUrlResolutionRate,
-        source: "helmut-health-report"
-      })
+      // P1-7 Datenschutz-Leitplanke: der Payload wird über buildAlarmPayload
+      // gebaut — ALLOWLIST technischer Felder + Redaction des Statustextes. Es
+      // verlassen NIE Nutzerinhalte/Briefingtexte/Secrets den Alarmkanal.
+      body: JSON.stringify(buildAlarmPayload(report))
     });
     return { sent: res.ok, status: res.status };
   } catch (error) {
