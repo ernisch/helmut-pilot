@@ -155,6 +155,18 @@ check("Signal trägt title + signalType + url + reason", sig && sig.title && sig
   });
   check("buildRadarForUser: Fehler -> skipped (radar-error), kein Crash", errSafe.skipped && errSafe.reason === "radar-error");
 
+  // P1-8 Störungswahrheit: ein harter Store-Ausfall (__storeError-Sentinel) muss als
+  // eigener Grund 'store-error' nach oben gereicht werden — NICHT als leeres/ruhiges
+  // Ergebnis getarnt. Der Radar-Build fragt jetzt mit _signalError:true an.
+  let radarSignalErrorSeen = false;
+  const storeErr = await radar.buildRadarForUser({ profile, now: NOW }, {
+    enabled: () => true,
+    listKnowledgeObjects: (opts) => { if (opts && opts._signalError) radarSignalErrorSeen = true; return opts && opts._signalError ? { __storeError: true } : []; }
+  });
+  check("buildRadarForUser: fragt mit _signalError an (Störungswahrheit)", radarSignalErrorSeen === true);
+  check("buildRadarForUser: Store-Ausfall -> reason 'store-error' (nicht ruhig)", storeErr.skipped && storeErr.reason === "store-error" && storeErr.error === true);
+  check("buildRadarForUser: Store-Ausfall -> leere Buckets (keine getarnten Signale)", storeErr.signals.length === 0);
+
   console.log(`\n${passed}/${passed + failed} Radar-Assertions erfolgreich.`);
   if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exit(1); }
 })();
