@@ -10,7 +10,7 @@ const { validateProfile } = require("./lib/helmut/profile-validation");
 const sourceSafety = require("./lib/helmut/sourceSafety");
 const { runLageCheck, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, getLlmUsageBreakdownToday, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getClassificationCoverage, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState, tenantJwtModeEnabled, saveKnowledgeObjectEnrichment, profileDbModeEnabled, getProfileFromDb, diagnoseTenantJwt, recordProcessRun, listProcessRuns } = require("./lib/helmut/storage");
+const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, listFailedKnowledgeObjects, resetUnderstandingToPending, markUnderstandingTerminal, getUnderstandingRetries, saveUnderstandingRetries, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, getLlmUsageBreakdownToday, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getClassificationCoverage, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState, tenantJwtModeEnabled, saveKnowledgeObjectEnrichment, profileDbModeEnabled, getProfileFromDb, diagnoseTenantJwt, recordProcessRun, listProcessRuns } = require("./lib/helmut/storage");
 
 // P0-1: technischer Ausfuehrungsort + Laufkennung fuer Prozess-Laufzeit-Telemetrie
 // (Cron-Understanding, Briefing-Aufbau). Reine technische Metadaten, nie PII.
@@ -23,6 +23,7 @@ function helmutRunId(prefix = "run", atMs = Date.now()) {
 }
 const { classifyOperationalState, describeState } = require("./lib/helmut/watchdog-state");
 const healthAxes = require("./lib/helmut/health-axes");
+const { recoverFailedUnderstanding } = require("./lib/helmut/ko-recovery");
 const { sourceMode } = require("./lib/helmut/quellenarchitektur/source-mode");
 const { sourceCoverageThresholds, effectiveActiveSourceCount } = require("./lib/helmut/source-coverage");
 const { runKoEnrichmentBackfill } = require("./lib/helmut/ko-enrichment");
@@ -999,6 +1000,19 @@ async function handleRequest(request, response) {
       // P0-1: echte Wall-Clock-Messung des dedizierten Understanding-Cron-Laufs.
       const understandingStartMs = Date.now();
       const runId = helmutRunId("understanding-cron", understandingStartMs);
+      // P1-4 (freigabepflichtig, Default AUS): begrenzte Recovery fehlgeschlagener
+      // Wissensobjekte VOR dem Lauf — sie werden bounded auf 'pending' zurückgesetzt
+      // und in DIESEM Lauf gleich mitverstanden. Ohne Flag ein No-Op (kein Prod-Write).
+      const recovery = await recoverFailedUnderstanding({
+        listFailed: (limit) => listFailedKnowledgeObjects({ limit }),
+        resetToPending: (vid) => resetUnderstandingToPending(vid),
+        markTerminal: (vid) => markUnderstandingTerminal(vid),
+        readRetries: () => getUnderstandingRetries(),
+        writeRetries: (map) => saveUnderstandingRetries(map)
+      }).catch((e) => ({ skipped: true, reason: "recovery-error", error: e && e.message }));
+      if (recovery && (recovery.retried || recovery.terminal)) {
+        console.log(`[cron/understanding] recovery: ${JSON.stringify({ retried: recovery.retried, terminal: recovery.terminal })}`);
+      }
       const rawDocs = await listRecentRawDocuments(500);
       // ZEITBUDGET (Default 240s): der serielle KI-Understanding-Loop darf die
       // Serverless-Funktion nicht über ihr Limit (300s) treiben. Rest bleibt pending
@@ -1017,7 +1031,7 @@ async function handleRequest(request, response) {
         reason: result && result.reason,
         status: result && result.skipped ? "skipped" : "ok"
       }).catch(() => {});
-      return { ok: true, rawDocsLoaded: rawDocs.length, processed, result };
+      return { ok: true, rawDocsLoaded: rawDocs.length, processed, result, recovery };
     });
   }
 
