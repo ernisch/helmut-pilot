@@ -69,18 +69,77 @@ harten Spuren belegt (relationale Lock-Zeilen mit Token; 145 Telemetrie-Zeilen g
 keine Doppelverarbeitung (ein Lock-Halter, ein crawlRun, eine Telemetrie-Run-Gruppe,
 `processRuns` +1).
 
-<!-- LAUF-PLATZHALTER: Lauf 2 (Crawl 20:00 UTC), Lauf 3 (Understanding-Cron 21:30 UTC),
-     Lauf 4 (Crawl 04:00 UTC), Morgenzyklus (05:00–06:00 UTC), Überschneidungsfenster. -->
+### Lauf 2 — Crawl (natürlicher 20:00-UTC-Cron)
+
+| Feld | Gemessener Wert |
+|---|---|
+| runId | `crawl-20260716200114-v268f` |
+| Startzeit (UTC) | 2026-07-16 20:01:14 (Crawl-Lock `locked_at`; Cron feuerte 20:00, Lock-Acquire nach ~74 s Kaltstart/Jitter) |
+| Endzeit (UTC) | 2026-07-16 20:04:04 (crawlRun gespeichert; Telemetrie bis 20:04:09) |
+| **Gesamtdauer** | **169 572 ms (~2 min 50 s)**, `sourceMode=on` |
+| Quellenzahl (geprüft) | **145** |
+| Erfolgreiche Quellen | **16** ⚠ |
+| Fehlgeschlagene Quellen | **129** ⚠ (siehe Betriebsbefund B1) |
+| Neue Dokumente | `newRawDocuments=61`, `savedItems=68`; **Netto `raw_documents` = +31** (5977→6008) |
+| Duplikate | 5 (`crawlRun.duplicates`); `loadedItems=73`, `discardedItems=0`, Telemetrie `sum(new_documents)=56` |
+| Understanding verarbeitet | **18** |
+| Understanding zurückgestellt | **20** |
+| **Lock-Nutzung** | **ATOMISCH (relational), beide live gefangen.** `crawl-cem-ince` token `bacc4f5b-61f6-4a1b-8fe2-0ecf53283a79` (20:01:14 → 20:16:14); `global-understanding` token `30864d16-c692-48d8-a08b-aa3e5cbac212` (20:02:29 → 20:12:29). **Um 20:03:28 UTC beide gleichzeitig gehalten** (in-run Pipeline↔Understanding-Überlappung, zwei getrennte atomare Locks). Blob nicht genutzt; nach Abschluss `pipeline_locks`=0 → saubere Freigabe. |
+| Fehler in systemErrors | **0 neue** (59 → 59) — trotz 129 fehlgeschlagener Quellen (Einordnung: B1) |
+| Telemetrie-Zeilen | **145** (`run_id=v268f`), `status ok=16 / not_ok=129`. **Fehlerklassifikation: `http-429` ×47, `timeout` ×81, `http-4xx` ×1, ok(kein Code) ×16.** |
+| Quellenlaufzeiten `duration_ms` | Min 24 · Median 7294 · Ø 6803 · Max 14189 ms — **timeoutgetrieben (degradierter Lauf)**; gesunder Pro-Quellen-Baseline bleibt Lauf 1. Fetch-Fenster 20:01:15.534–20:02:17.499 (~62 s). |
+| Kategorien (ok/failed) | medien 15/33 · offiziell 1/77 · partei_fraktion 0/12 · regional 0/5 · profil 0/2 |
+
+**Bewertung Lauf 2:** Die **Beobachtbarkeit funktionierte einwandfrei** — atomarer Lock und
+Understanding-Lock live gefangen (sogar zeitgleich), 145 Telemetrie-Zeilen inkl. **präziser
+Fehlerklassifikation aller 129 Ausfälle**, saubere Lock-Freigabe. Das **Crawl-Ergebnis war
+jedoch schwer degradiert** (nur 16/145 Quellen erfolgreich) — externe Google-News-Drosselung,
+kein Flag-/Lock-/Telemetrie-Fehler. Details + ehrlicher Ursachen-Caveat: Betriebsbefund B1.
+
+<!-- LAUF-PLATZHALTER: Lauf 3 (Understanding-Cron 21:30 UTC), Lauf 4 (Crawl 04:00 UTC),
+     Morgenzyklus (05:00–06:00 UTC), Überschneidungsfenster. -->
+
+---
+
+## 1a · Betriebsbefunde (echte Production-Ereignisse, ehrlich dokumentiert)
+
+### B1 · Google-News-Rate-Limiting degradiert den 20:00-Crawl (129/145 Quellen ausgefallen)
+
+**Messung (Lauf 2, `v268f`):** 129 von 145 Quellen fehlgeschlagen. Telemetrie-Fehlercodes:
+**47× `http-429`** (explizites Rate-Limit), **81× `timeout`** (Google-News antwortete nicht
+mehr), **1× `http-4xx`**. `googleUrlResolution` = 0/0 (die Abrufe scheiterten schon an der
+RSS-Stufe, vor der URL-Auflösung). Nur 16 Quellen lieferten (medien 15, offiziell 1).
+
+**Ehrlicher Ursachen-Caveat (kein Beweis, aber plausibel und relevant):** Heute liefen **drei
+Vollcrawls in ~4 Stunden** — 16:00 Pipeline-Cron, 18:24 **manuell** ausgelöst (Lauf 1), 20:00
+Cron (Lauf 2). Der Normalplan sieht ~2 Crawls/Tag vor (04:00/20:00). Das verdreifachte
+Google-News-Anfragevolumen in diesem Fenster hat die Drosselung sehr wahrscheinlich
+mitausgelöst. Der 04:00-Crawl (Lauf 4) — nach langer Google-News-Pause — ist der ehrliche
+Test, ob dies ein volumeninduzierter Einmaleffekt oder ein Dauerproblem ist.
+
+**Warum 0 neue `systemErrors`:** Per-Quelle-Fetchfehler (Rate-Limit/Timeout) landen bewusst in
+`crawlRun.errors[]` (inhaltsfrei klassifiziert) **und** in `source_crawl_telemetry` (mit
+`error_code`) — **nicht** im `systemErrors`-Ring. Dieser Ring ist für Pipeline-/Technikfehler
+(`recordPipelineError`), nicht für routinemäßige Einzelquell-Ausfälle; 129 Einträge würden ihn
+fluten. Der **Eskalationspfad** für eine solche Crawl-Degradation ist der Health-Report-Watchdog
+(Crawl-Failure-Ratio, `HELMUT_MAX_CRAWL_FAILURE_RATIO`) — er sollte beim **06:00-UTC-Health-Report**
+anschlagen. **Das wird im Morgenzyklus beobachtet** (offener Prüfpunkt).
+
+**Kein Eingriff:** Regelkonform NICHT verändert (kein Crawl-/Retry-/Zeitplan-Eingriff während der
+Beweisläufe). Bekannte Minderungsoption (bereits im Audit): Direkt-RSS-Feeds statt
+Google-News-Suchen (`audit/source-coverage.md` — „Google-News-Klumpenrisiko senken").
 
 ---
 
 ## 2 · Aggregierte Quellenlaufzeiten (über alle dokumentierten Crawls)
 
-_Wird gefüllt, sobald ≥2 weitere Crawls vorliegen (Ziel: Ø/Median/Min/Max über mehrere Läufe)._
+Getrennt nach gesunden (`status=ok`) und degradierten Läufen — Timeouts würden gesunde
+Kennwerte sonst verzerren.
 
-| Crawl (runId) | Quellen | Ø ms | Median ms | Min ms | Max ms |
-|---|---|---|---|---|---|
-| `crawl-20260716182458-il02g` | 145 | 2433 | 2375 | 191 | 7048 |
+| Crawl (runId) | geprüft | ok | failed | Ø ms | Median ms | Min ms | Max ms | Anmerkung |
+|---|---|---|---|---|---|---|---|---|
+| `crawl-20260716182458-il02g` (Lauf 1) | 145 | 145 | 0 | 2433 | 2375 | 191 | 7048 | gesund |
+| `crawl-20260716200114-v268f` (Lauf 2) | 145 | 16 | 129 | 6803 | 7294 | 24 | 14189 | degradiert (Rate-Limit, B1) |
 
 ---
 
@@ -90,9 +149,15 @@ _Wird gefüllt, sobald ≥2 weitere Crawls vorliegen (Ziel: Ø/Median/Min/Max ü
   gefangen (`crawl-cem-ince`, mit `token`), Blob-Pfad nicht genutzt, saubere Freigabe. **Bewiesen.**
 - **Understanding-Lock (`HELMUT_UNDERSTANDING_LOCK`):** in Lauf 1 live gefangen
   (`global-understanding`, mit `token`). **Bewiesen.**
-- **Deny-/Überlappungspfad** (zwei gleichzeitige Läufe → einer abgewiesen): in Lauf 1
-  **nicht** ausgeübt (kein konkurrierender Zweitlauf). **Offen** — natürlicher Kandidat
-  ist das 05:30-Fenster; kein bewusster Doppelstart (verboten).
+- **Pipeline↔Understanding-Überlappung (in-run):** in Lauf 1 UND Lauf 2 **beobachtet** —
+  `crawl-cem-ince` und `global-understanding` wurden **gleichzeitig** gehalten (Lauf 2:
+  20:03:28 UTC, zwei getrennte atomare Locks mit je eigenem Token). Das belegt: die atomaren
+  Locks koexistieren korrekt für unterschiedliche Jobs im selben Lauf. **Beobachtet.**
+- **Deny-Pfad (Doppelstart-Abweisung):** ein zweiter Versuch auf **denselben** `job_name`
+  während der Haltezeit liefert `acquired=false` (Job übersprungen). Mangels echtem
+  konkurrierendem Zweitlauf **noch nicht** ausgeübt. **Offen** — natürlicher Kandidat ist ein
+  Cron-Überschneidungsfenster (z. B. wenn der 05:30-Understanding-Cron einen noch laufenden
+  Crawl trifft); kein bewusster Doppelstart (verboten).
 
 ---
 
@@ -148,12 +213,14 @@ geprüftem Überschneidungsfenster)._
 
 ## 6 · Offen / nächste Freigaben
 
-- **Offen (Beweis):** Deny-/Überlappungsnachweis; dedizierter Understanding-Cron;
-  ≥2 weitere Crawls; vollständiger Morgenzyklus; Fehlerfall→`systemErrors` (nur ohne
-  künstliche Injektion beobachtbar); Zweitkanal-Alarmtest (braucht F5-Webhook-URL).
+- **Offen (Beweis):** Deny-Pfad (Doppelstart-Abweisung) unter echter Konkurrenz;
+  dedizierter Understanding-Cron (21:30); ≥1 weiterer Crawl (04:00 → Lauf 4, zugleich
+  B1-Gegenprobe); vollständiger Morgenzyklus; **ob der 06:00-Health-Report die 20:00-Crawl-
+  Degradation (B1) als Crawl-Failure-Ratio-Alarm eskaliert**; Fehlerfall→`systemErrors` (nur
+  ohne künstliche Injektion beobachtbar); Zweitkanal-Alarmtest (braucht F5-Webhook-URL).
 - **Nächste Freigaben (Kandidaten):** F5 (Webhook-URL liefern → Zweitkanal);
   danach — nach ≥1 sauberem Beweistag — F6/F7; F8 später.
 
 ---
 
-_Letzte Aktualisierung: 2026-07-16 (nach Lauf 1). Fortschreibung erfolgt fortlaufend._
+_Letzte Aktualisierung: 2026-07-16 (nach Lauf 2, inkl. Betriebsbefund B1). Fortschreibung erfolgt fortlaufend._
