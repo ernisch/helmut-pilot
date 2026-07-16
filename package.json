@@ -13,6 +13,8 @@
     "test:privacy-authz": "node scripts/privacy-authz-test.js",
     "test:browser-smoke": "node scripts/browser-smoke-test.js",
     "test:onboarding-tenant": "node scripts/onboarding-tenant-test.js",
+    "test:provision-tenant": "node scripts/provision-tenant-test.js",
+    "provision:tenant": "node scripts/provision-tenant.js",
     "test:pardok-fetch": "node scripts/pardok-fetch-test.js",
     "test:env-inventar": "node scripts/env-inventar-test.js",
     "test:sales-blockers": "node scripts/sales-blockers-test.js",
