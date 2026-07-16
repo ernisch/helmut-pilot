@@ -1,5 +1,12 @@
 # Helmut – Technisches Audit des Datenmotors
 
+> **⚠️ ÜBERHOLT (Stand 2026-07-16).** Dieser Bericht vom 2026-07-01 beschreibt einen
+> Vor-V3-/Single-Tenant-Zustand und referenziert Dateien, die es heute nicht mehr gibt
+> (`personalization.js`/`runtime.js`/`briefing.js`). Er ist **nur noch historischer
+> Kontext**. Der verbindliche, gegen Code + Production-DB geprüfte Auditstand ist
+> `docs/helmut_datenmotor_audit.md` (+ `…_umsetzungsplan.md`, `…_thread2_handoff.md`).
+> Nicht mehr für Betrieb/Due-Diligence heranziehen.
+
 **Rolle:** Externer CTO / Due-Diligence vor Investment
 **Datum:** 2026-07-01
 **Scope:** Datenmotor (Quellen → Crawl → Speicherung → KI → Priorisierung → Lage/Radar/Helmut → Frontend)
