@@ -60,6 +60,7 @@
     "lage:backfill": "node scripts/lage-backfill.js",
     "backfill:presentation": "node scripts/presentation-backfill.js",
     "test:watchdog-state": "node scripts/watchdog-state-test.js",
+    "test:compact-roundtrip": "node scripts/compact-store-roundtrip-test.js",
     "test:lage-cacheonly": "node scripts/lage-cacheonly-test.js",
     "test:matching-norm": "node scripts/matching-normalization-test.js",
     "test:radar-scan-limit": "node scripts/radar-scan-limit-test.js",
