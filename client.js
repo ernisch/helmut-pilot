@@ -5510,12 +5510,12 @@ function renderHelmutStandView() {
   return `
     <section class="hstand" aria-label="Briefing – aktueller Stabschefstand">
       ${renderHstandHeader(state)}
+      ${renderHstandPrimary(state)}
       ${renderHstandProposal(state)}
       ${renderHstandWhy(state)}
       ${renderHstandRiskChance(state)}
       ${renderHstandComms(state)}
       ${renderHstandActions(state)}
-      ${renderHstandPrimary(state)}
       ${renderHstandItems(state)}
       ${renderHstandSources(state)}
     </section>`;

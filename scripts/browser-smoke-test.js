@@ -184,6 +184,61 @@ function check(name, cond, detail = "") {
       }
       await context.close();
     }
+
+    // ── Querformat-Sperre (Smartphone-only) ─────────────────────────────────
+    // Reale Viewport-/Touch-Emulation statt Annahmen: prueft, dass die Sperre
+    // NUR bei Smartphone+Querformat sichtbar UND blockierend ist, waehrend
+    // Hochformat, Tablet (beide Ausrichtungen) und Desktop (auch schmal/kurz)
+    // unberuehrt bleiben — genau die im Auftrag geforderten vier Faelle plus
+    // ein Desktop-Stresstest.
+    for (const device of [
+      { label: "Smartphone Hochformat 390x844", viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, expectLocked: false },
+      { label: "Smartphone Querformat 844x390", viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true, expectLocked: true },
+      { label: "Tablet Hochformat 768x1024", viewport: { width: 768, height: 1024 }, isMobile: false, hasTouch: true, expectLocked: false },
+      { label: "Tablet Querformat 1024x768", viewport: { width: 1024, height: 768 }, isMobile: false, hasTouch: true, expectLocked: false },
+      { label: "Desktop schmal/kurz 400x480 (Maus)", viewport: { width: 400, height: 480 }, isMobile: false, hasTouch: false, expectLocked: false }
+    ]) {
+      const context = await browser.newContext({
+        viewport: device.viewport,
+        isMobile: device.isMobile,
+        hasTouch: device.hasTouch,
+        serviceWorkers: "block",
+        bypassCSP: true,
+        userAgent: device.isMobile
+          ? "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
+          : (device.hasTouch
+              ? "Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
+              : undefined)
+      });
+      const page = await context.newPage();
+      await page.goto(baseUrl + "/", { waitUntil: "domcontentloaded", timeout: 30000 });
+      await page.waitForFunction("window.__helmutClientLoaded === true", null, { timeout: 15000 }).catch(() => {});
+      await page.waitForFunction("!document.body.classList.contains('is-loading')", null, { timeout: 20000 }).catch(() => {});
+
+      const display = await page.evaluate(`getComputedStyle(document.getElementById("orientationLock")).display`).catch(() => "FEHLER");
+      const isLocked = display !== "none";
+      check(`${device.label}: Sperr-Overlay ${device.expectLocked ? "sichtbar" : "verborgen"} (display=${display})`,
+        isLocked === device.expectLocked, `erwartet expectLocked=${device.expectLocked}`);
+
+      // Hit-Test in der Bildschirmmitte: beweist, dass die Sperre bei Sichtbarkeit
+      // die App wirklich BLOCKIERT (nicht nur optisch ueberdeckt, sondern auch das
+      // dahinterliegende #app fuer Zeigereingaben unerreichbar macht) bzw. dass die
+      // App in allen anderen Faellen normal bedienbar bleibt.
+      const w = device.viewport.width, h = device.viewport.height;
+      const hitsLock = await page.evaluate(
+        `Boolean(document.elementFromPoint(${Math.floor(w / 2)}, ${Math.floor(h / 2)})?.closest(".orientation-lock"))`
+      ).catch(() => false);
+      check(`${device.label}: Bildschirmmitte ${device.expectLocked ? "von der Sperre eingenommen (App nicht bedienbar)" : "erreicht die App (nicht blockiert)"}`,
+        hitsLock === device.expectLocked);
+
+      if (device.expectLocked) {
+        const text = await page.evaluate(`document.getElementById("orientationLock").textContent`).catch(() => "");
+        check(`${device.label}: Sperrtext enthaelt die geforderte Aufforderung`,
+          text.includes("Bitte drehe dein Smartphone ins Hochformat, um Helmut zu verwenden."));
+      }
+
+      await context.close();
+    }
   } finally {
     await browser.close();
     await new Promise((r) => server.close(r));

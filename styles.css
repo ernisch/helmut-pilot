@@ -3993,6 +3993,55 @@ small {
   }
 }
 
+/* Querformat-Sperre (nur Smartphones): Helmut ist fuer Hochformat konzipiert.
+   Reines CSS, keine experimentelle Orientation-Lock-API. Die Erkennung
+   kombiniert Ausrichtung + Bildschirmgroesse + Touch-Eingabe (kein Hover,
+   grober Zeiger), damit Desktop- und Tablet-Nutzung (auch bei schmalem
+   Browserfenster bzw. Tablet-Querformat) unberuehrt bleiben — siehe
+   Media-Query unten. Standardmaessig unsichtbar; #app bleibt im Hintergrund
+   unveraendert, wird aber vollflaechig ueberdeckt und ist damit weder
+   sichtbar noch bedienbar. */
+.orientation-lock {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  place-items: center;
+  padding: 32px;
+  text-align: center;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(140, 92, 255, .12), transparent 26%),
+    linear-gradient(180deg, #070b15 0%, #050914 72%, #03050b 100%);
+}
+
+.orientation-lock-card {
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+  max-width: 300px;
+}
+
+.orientation-lock-icon {
+  width: 48px;
+  height: 48px;
+  color: #8c5cff;
+}
+
+.orientation-lock-text {
+  margin: 0;
+  color: #fbf7ef;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.6;
+  letter-spacing: -.01em;
+}
+
+@media (orientation: landscape) and (max-height: 500px) and (max-width: 950px) and (hover: none) and (pointer: coarse) {
+  .orientation-lock {
+    display: grid;
+  }
+}
+
 .executive-intro,
 .page-intro,
 .article-head,
