@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Helmut Datenmotor — Auditbericht &amp; Umsetzungsplan (visuelle Fassung)</title>
+<style>
+  :root{
+    --bg:#f6f4ee; --panel:#ffffff; --ink:#1c2a3f; --ink2:#54637a; --ink3:#8593a5;
+    --line:#e0dccf; --line2:#d3dae3; --gold:#b07d33; --gold-bg:#faf3e6;
+    --crit:#b3453a; --high:#cc7a33; --mid:#c99f33; --ok:#3f7d5a; --prep:#5f6f8c;
+    --shadow:0 1px 3px rgba(28,42,63,.07),0 6px 22px rgba(28,42,63,.05);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#161a21; --panel:#1e242e; --ink:#e7ecf3; --ink2:#a9b6c6; --ink3:#7d8a9c;
+      --line:#2c3542; --line2:#313b49; --gold:#d0a24e; --gold-bg:#262019;
+      --crit:#d0705f; --high:#d99a52; --mid:#d8b74f; --ok:#5aa17c; --prep:#8798b5;}
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+    line-height:1.62;font-size:17px}
+  .wrap{max-width:960px;margin:0 auto;padding:0 22px 80px}
+  header.cover{padding:70px 22px 46px;text-align:left;border-bottom:1px solid var(--line)}
+  .kicker{font-family:ui-sans-serif,"Segoe UI",Helvetica,Arial,sans-serif;
+    letter-spacing:.28em;text-transform:uppercase;font-size:11px;color:var(--gold);font-weight:700}
+  h1{font-size:40px;line-height:1.12;margin:.35em 0 .2em;font-weight:700;letter-spacing:-.01em}
+  .sub{color:var(--ink2);font-size:19px;max-width:60ch}
+  .banner{margin:26px 0 0;padding:14px 18px;border-left:4px solid var(--crit);
+    background:linear-gradient(0deg,var(--gold-bg),var(--gold-bg));border-radius:6px;
+    font-family:ui-sans-serif,"Segoe UI",Helvetica,Arial,sans-serif;font-size:14.5px;color:var(--ink)}
+  .banner b{color:var(--crit)}
+  .meta{display:flex;flex-wrap:wrap;gap:10px 30px;margin-top:26px;
+    font-family:ui-sans-serif,"Segoe UI",Helvetica,Arial,sans-serif;font-size:13px}
+  .meta div{min-width:130px}
+  .meta .k{color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;font-size:10.5px;font-weight:700}
+  .meta .v{color:var(--ink);font-weight:600;font-size:14px}
+  h2{font-family:ui-sans-serif,"Segoe UI",Helvetica,Arial,sans-serif;font-size:15px;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin:56px 0 6px;font-weight:700}
+  h3{font-size:24px;margin:.2em 0 .3em;font-weight:700;letter-spacing:-.01em}
+  p{margin:.5em 0}
+  .lead{font-size:18px;color:var(--ink2)}
+  section{border-top:1px solid var(--line);padding-top:6px}
+  .fig{background:var(--panel);border:1px solid var(--line2);border-radius:12px;
+    box-shadow:var(--shadow);padding:20px 20px 16px;margin:22px 0}
+  .fig img{width:100%;height:auto;display:block;border-radius:6px}
+  .fig .cap{font-family:ui-sans-serif,"Segoe UI",Helvetica,Arial,sans-serif;
+    font-size:13px;color:var(--ink2);margin-top:12px}
+  .fig .cap b{color:var(--ink)}
+  .stamp{font-family:ui-sans-serif,"Segoe UI",Helvetica,Arial,sans-serif;
+    font-size:11px;color:var(--ink3);margin-top:8px;display:flex;gap:16px;flex-wrap:wrap;
+    border-top:1px dashed var(--line2);padding-top:8px}
+  .pill{display:inline-block;font-family:ui-sans-serif,"Segoe UI",Helvetica,Arial,sans-serif;
+    font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;color:#fff}
+  .p-mess{background:var(--ok)} .p-ann{background:var(--prep)}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:16px 0}
+  .card{background:var(--panel);border:1px solid var(--line2);border-radius:10px;padding:16px 18px;
+    font-family:ui-sans-serif,"Segoe UI",Helvetica,Arial,sans-serif}
+  .card h4{margin:0 0 6px;font-size:15px}
+  .card p{font-size:13.5px;color:var(--ink2);margin:.2em 0}
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.5px;
+    font-family:ui-sans-serif,"Segoe UI",Helvetica,Arial,sans-serif}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line2);vertical-align:top}
+  th{color:var(--ink3);text-transform:uppercase;letter-spacing:.05em;font-size:10.5px;font-weight:700}
+  td b{color:var(--ink)}
+  .tag{font-weight:700;font-size:12px}
+  .t-crit{color:var(--crit)} .t-high{color:var(--high)} .t-mid{color:var(--mid)} .t-ok{color:var(--ok)}
+  .legend{columns:2;column-gap:34px;font-family:ui-sans-serif,"Segoe UI",Helvetica,Arial,sans-serif;font-size:13.5px}
+  .legend dt{font-weight:700;color:var(--ink);margin-top:10px}
+  .legend dd{margin:0 0 2px;color:var(--ink2)}
+  a{color:var(--gold)}
+  footer{margin-top:60px;padding-top:20px;border-top:1px solid var(--line);
+    font-family:ui-sans-serif,"Segoe UI",Helvetica,Arial,sans-serif;font-size:12.5px;color:var(--ink3)}
+  @media (max-width:680px){ .grid{grid-template-columns:1fr} .legend{columns:1} h1{font-size:30px} }
+  @media print{
+    body{background:#fff;color:#000;font-size:12pt}
+    .fig,.card{box-shadow:none;break-inside:avoid}
+    section{break-before:auto}
+    .fig{break-inside:avoid}
+    header.cover{padding-top:20px}
+    a{color:#000}
+  }
+</style>
+</head>
+<body>
+<header class="cover">
+  <div class="wrap" style="padding:0">
+    <div class="kicker">Interner Betriebsbericht · Datenmotor · Vertraulich</div>
+    <h1>Helmut Datenmotor —<br>Auditbericht &amp; Umsetzungsplan</h1>
+    <p class="sub">Belastbare technische Wahrheit des Helmut-Datenmotors — geprüft gegen echten Code, Production-Datenbank und Deployment-Stand. Diese Seite ist die <b>visuelle Fassung</b>; die maßgebliche Textfassung sind die PDF- und Markdown-Dokumente.</p>
+
+    <div class="banner">
+      <b>Statushinweis:</b> Dies ist ein <b>AUDITBERICHT und Umsetzungsplan</b> — die Bestandsaufnahme und der Plan.
+      Es ist <b>ausdrücklich noch nicht das endgültige Betriebsdokument.</b>
+      Das endgültige Betriebsdokument entsteht erst nach Umsetzung und Production-Nachweis der P0/P1-Härtungen.
+    </div>
+
+    <div class="meta">
+      <div><div class="k">Stand</div><div class="v">2026-07-16</div></div>
+      <div><div class="k">Geprüfter Commit</div><div class="v">427295c = Production</div></div>
+      <div><div class="k">Umgebung</div><div class="v">Vercel fra1 · Supabase eu-west-1</div></div>
+      <div><div class="k">KI-Modell</div><div class="v">Azure OpenAI gpt-5-mini</div></div>
+      <div><div class="k">Auditstand</div><div class="v">bestätigt aktuell</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <section>
+    <h2>Kurzfassung</h2>
+    <h3>Was nachgewiesen funktioniert — und was nicht</h3>
+    <p class="lead">Der fachliche Kern erzeugt nachweislich Vorgänge und Briefings. Für einen <em>überwachten</em> Pilotbetrieb fehlen aber Beobachtbarkeit (Prozesslaufzeiten, Fehler-Persistenz) und zwei Härtungen (Speicher-Robustheit, atomare Sperre). Diese Lücken sind klein, additiv und reversibel — sie bilden die Aufgaben P0 und P1.</p>
+    <div class="grid">
+      <div class="card">
+        <h4 style="color:var(--ok)">✓ Nachgewiesen (echte Messwerte)</h4>
+        <p>Crawl stabil: 145 Quellen, 100 % Erfolg über 20 Läufe, 0 Laufzeitfehler.</p>
+        <p>KI-Verständnis: Ø 7,9 s/Call, 236/256 erfolgreich, 314 Wissensobjekte.</p>
+        <p>Briefing deterministisch (0 KI), funktioniert für alle 3 Testprofile.</p>
+        <p>Kostenkontrolle aktiv; KI-Kosten seit 01.07. ≈ $0,92.</p>
+      </div>
+      <div class="card">
+        <h4 style="color:var(--crit)">✗ Noch nicht nachgewiesen</h4>
+        <p>Keine persistierte Laufzeit für Crawl/Pipeline/Lage/Understanding/Briefing.</p>
+        <p>Kein Pipeline-Fehler landet in <code>systemErrors</code> — Motor im Fehlerlog blind.</p>
+        <p>Zentrale Production-Env-Werte sind „sensitive" und nicht lesbar (Annahmen).</p>
+        <p>Einfrier-Status der alten Blob-Kataloge nur datenseitig klärbar.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Bild 1</h2>
+    <h3>Gesamtübersicht des Systems</h3>
+    <p>Der Weg von den Quellen bis zum Nutzer in einem Bild: 145 Quellen werden gecrawlt, roh gespeichert (in zwei Speicherwelten), von der KI zu Wissensobjekten verdichtet, je Mandatsprofil auf Relevanz geprüft und schließlich als Briefing, Lage und Radar ausgegeben. Grün = nachgewiesen funktionierend, sandfarben = Härtung nötig, rosa = Beobachtbarkeitslücke.</p>
+    <div class="fig">
+      <img src="assets/01-systemuebersicht.svg" alt="Gesamtübersicht des Systems">
+      <div class="cap"><b>So liest man es:</b> Pfeile zeigen die Richtung, in die Daten fließen. Der „duale Speicher" in der Mitte ist der Kern vieler Befunde — Betriebsdaten liegen im alten Blob, Inhalte relational.</div>
+      <div class="stamp"><span><span class="pill p-mess">Messwert</span> 145 / 100 % / 7,9 s / 314 / 5733 (DB-belegt)</span><span><span class="pill p-ann">Annahme</span> keine Prozessdauer, Env „sensitive"</span><span>Prüfdatum 2026-07-16 · Commit 427295c</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Bild 2</h2>
+    <h3>Tagesablauf — der Zeitstrahl</h3>
+    <p>Neun geplante Prozesse laufen über den Tag verteilt, alle fest in UTC (Weltzeit); Berlin liegt im Sommer zwei Stunden davor. Wichtigster Befund: Um 07:30 (CEST) überlappen der Understanding-Lauf und der vom GitHub-Watchdog ausgelöste Pipeline-Lauf, ohne dass eine gemeinsame Sperre sie trennt (Risiko R14 → Aufgabe P0-4).</p>
+    <div class="fig">
+      <img src="assets/02-tageszeitstrahl.svg" alt="Tageszeitstrahl der Prozesse">
+      <div class="cap"><b>So liest man es:</b> Punkte auf der Achse sind Startzeiten. Der rote Punkt markiert das Kollisionsfenster.</div>
+      <div class="stamp"><span><span class="pill p-mess">Messwert</span> Cron-Zeiten aus vercel.json belegt</span><span><span class="pill p-ann">Annahme</span> —</span><span>Prüfdatum 2026-07-16 · Commit 427295c</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Bild 3</h2>
+    <h3>Der Weg eines Dokuments — und der Fehlerweg</h3>
+    <p>Von der Quelle über Rohdokument, Dedup, Wissensobjekt, Klassifikation und Relevanz bis ins Briefing. Jede Kante ist rückwärts nachvollziehbar — mit einer Bruchstelle: Vom Briefing zurück zur Entscheidung gibt es keine relationale Verknüpfung (nur ein undurchsichtiges JSON-Feld). Der rote Balken unten fasst die stillen Fehler zusammen, die Thread 2 sichtbar macht.</p>
+    <div class="fig">
+      <img src="assets/03-datenfluss-dokument.svg" alt="Datenfluss eines Dokuments">
+      <div class="cap"><b>So liest man es:</b> Blaue Kästen sind KI-Schritte, grüne die Ausgabe an den Nutzer, rote Zeilen sind Fehler- bzw. Härtungspunkte.</div>
+      <div class="stamp"><span><span class="pill p-mess">Messwert</span> 247/314 KO ohne Ebene (DB)</span><span><span class="pill p-ann">Annahme</span> —</span><span>Prüfdatum 2026-07-16 · Commit 427295c</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Bild 4</h2>
+    <h3>Risiko-Übersicht — Statusampel</h3>
+    <p>Fünfzehn belegte Risiken, sortiert nach Schwere. Die drei kritischen (rot) werden durch die P0-Härtungen adressiert, die hohen (orange) sind vor dem Bundestagspilot fällig, die mittleren (gelb) betreffen Ehrlichkeit und Hygiene.</p>
+    <div class="fig">
+      <img src="assets/04-risiko-ampel.svg" alt="Risiko-Ampel R1 bis R15">
+      <div class="cap"><b>So liest man es:</b> Jede Zeile nennt Risiko und die zugeordnete Aufgabe (z. B. R1 → P0-5).</div>
+      <div class="stamp"><span><span class="pill p-mess">Messwert</span> jedes Risiko mit Datei:Zeile / DB belegt</span><span><span class="pill p-ann">Annahme</span> —</span><span>Prüfdatum 2026-07-16 · Commit 427295c</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Bild 5</h2>
+    <h3>Verbindliche Reihenfolge der P0/P1-Aufgaben</h3>
+    <p>Die Aufgaben werden nicht nach Nummer, sondern nach ihren Abhängigkeiten abgearbeitet (1 bis 14). Das Schloss-Symbol markiert Aufgaben, die eine ausdrückliche Gründer-Freigabe brauchen. Jeder Weg nach Production (Deployment) ist ohnehin freigabepflichtig.</p>
+    <div class="fig">
+      <img src="assets/05-p0-p1-reihenfolge.svg" alt="Reihenfolge und Abhängigkeiten P0/P1">
+      <div class="cap"><b>So liest man es:</b> Nummerierte Kreise = Arbeitsreihenfolge; Pfeile = „muss zuerst". 🔒 = Freigabe nötig.</div>
+      <div class="stamp"><span><span class="pill p-mess">Messwert</span> —</span><span><span class="pill p-ann">Plan</span> Reihenfolge aus Umsetzungsplan/Handoff</span><span>Prüfdatum 2026-07-16 · Commit 427295c</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Bild 6</h2>
+    <h3>Erweiterung: Bundestag → Berlin &amp; Brandenburg</h3>
+    <p>Der Kern ist strukturell mehr-ebenen-fähig, aber Berlin und Brandenburg sind heute dreifach gesperrt und liefern noch keine Inhalte. Vieles lässt sich per Konfiguration ergänzen (grün); zwei echte Code-Änderungen und der Ebenen-Default bleiben aber nötig (sandfarben). <b>In diesem Thread wird BE/BB nur strukturell vorbereitet, nicht aktiviert.</b></p>
+    <div class="fig">
+      <img src="assets/06-landtag-erweiterung.svg" alt="Erweiterung Bundestag zu Berlin und Brandenburg">
+      <div class="cap"><b>So liest man es:</b> Links der aktive Bundestag, in der Mitte die vorbereiteten Länder, rechts die drei Sperren. Unten: was Daten sind (frei ergänzbar) und was Code (freigabepflichtig).</div>
+      <div class="stamp"><span><span class="pill p-mess">Messwert</span> Seed 20260717 in DB (4 Entitäten, 18 Wege)</span><span><span class="pill p-ann">Annahme</span> —</span><span>Prüfdatum 2026-07-16 · Commit 427295c</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Übersicht</h2>
+    <h3>Status aller Systembestandteile</h3>
+    <table>
+      <thead><tr><th>Bestandteil</th><th>Status</th><th>Beleg / Kennzahl</th></tr></thead>
+      <tbody>
+        <tr><td><b>Crawl (145 Quellen)</b></td><td class="tag t-ok">aktiv, nachgewiesen</td><td>100 % Erfolg, 20 Läufe, 0 Fehler</td></tr>
+        <tr><td><b>KI-Verständnis</b></td><td class="tag t-ok">aktiv, nachgewiesen</td><td>Ø 7,9 s, 236/256 ok</td></tr>
+        <tr><td><b>Briefing / Lage / Radar</b></td><td class="tag t-ok">aktiv, nachgewiesen</td><td>0 KI, 3 Testprofile</td></tr>
+        <tr><td><b>Relationale Quellenschicht</b></td><td class="tag t-ok">aktiv (Cutover live)</td><td>raw_documents 5733, KO 314</td></tr>
+        <tr><td><b>Laufzeitmessung</b></td><td class="tag t-crit">fehlt (P0-1)</td><td>durationMs immer null</td></tr>
+        <tr><td><b>Fehler-Persistenz</b></td><td class="tag t-crit">fehlt (P0-3)</td><td>recordSystemError nie im Motor</td></tr>
+        <tr><td><b>Pipeline-Sperre</b></td><td class="tag t-crit">fail-open (P0-4)</td><td>nicht-atomar, TOCTOU</td></tr>
+        <tr><td><b>Zentraler Speicher (Blob)</b></td><td class="tag t-high">timeout-anfällig (P0-5)</td><td>1,24 MB, 10-s-Timeouts belegt</td></tr>
+        <tr><td><b>KO-Anreicherung</b></td><td class="tag t-high">247/314 offen (P1-1)</td><td>Altbestand nie gebackfillt</td></tr>
+        <tr><td><b>Google-News-Monitor</b></td><td class="tag t-high">tot (P0-2)</td><td>liest gestripptes Feld</td></tr>
+        <tr><td><b>Berlin / Brandenburg</b></td><td class="tag" style="color:var(--prep)">vorbereitet, inaktiv (P2)</td><td>Seed live, dreifach gesperrt</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Fachbegriffe</h2>
+    <h3>Legende — jeder Begriff einfach erklärt</h3>
+    <dl class="legend">
+      <dt>Crawler</dt><dd>Programm, das automatisch Webseiten und Feeds abruft und die Inhalte einsammelt.</dd>
+      <dt>Geplanter Prozess (Cron)</dt><dd>Aufgabe, die zu festen Uhrzeiten automatisch startet (z. B. „jeden Tag 06:00").</dd>
+      <dt>Rohdokument</dt><dd>Ein eingesammeltes Dokument im Ausgangszustand — nur Kurzfassung (≤ 240 Zeichen), noch nicht durch die KI verstanden.</dd>
+      <dt>Wissensobjekt (KO)</dt><dd>Ein von der KI verdichteter „Vorgang": zusammengefasst, mit Personen, Themen und politischer Ebene.</dd>
+      <dt>Mandatsprofil</dt><dd>Die Einstellungen eines Nutzers (Partei, Ebene, Ausschüsse), nach denen Relevanz bestimmt wird.</dd>
+      <dt>Relevanzbewertung</dt><dd>Der Abgleich, wie wichtig ein Wissensobjekt für ein bestimmtes Mandatsprofil ist — deterministisch, ohne KI.</dd>
+      <dt>Tenant (Mandant)</dt><dd>Ein abgegrenzter Nutzer-/Kundenbereich; Daten verschiedener Tenants dürfen sich nicht vermischen.</dd>
+      <dt>Zeitüberschreitung (Timeout)</dt><dd>Abbruch, wenn ein Vorgang zu lange dauert (hier: 10 Sekunden beim Speichern) — kann Daten kosten.</dd>
+      <dt>Wiederholungslogik (Retry)</dt><dd>Automatischer erneuter Versuch nach einem Fehler — begrenzt, damit keine Endlosschleife entsteht.</dd>
+      <dt>Regressionstest</dt><dd>Automatischer Test, der prüft, dass Bewährtes nach einer Änderung noch funktioniert.</dd>
+      <dt>Production</dt><dd>Das echte Live-System, das die Nutzer verwenden (im Gegensatz zur Testumgebung).</dd>
+      <dt>Migration</dt><dd>Geplante Änderung an der Datenbankstruktur oder ein einmaliges Umschreiben von Daten.</dd>
+      <dt>Protokoll (Log)</dt><dd>Fortlaufende Aufzeichnung dessen, was das System tut — für Fehlersuche und Nachweis.</dd>
+      <dt>API</dt><dd>Definierte Schnittstelle, über die Programme miteinander sprechen (z. B. die Bundestag-DIP-API).</dd>
+      <dt>Modellversion</dt><dd>Die konkrete Version des verwendeten KI-Modells (hier: Azure OpenAI gpt-5-mini).</dd>
+    </dl>
+  </section>
+
+  <footer>
+    <p><b>Maßgebliche Textfassung:</b> <code>docs/helmut_datenmotor_audit.md</code> (Auditbericht) und <code>docs/helmut_datenmotor_umsetzungsplan.md</code> (Umsetzungsplan). Verbindliche Übergabe: <code>docs/helmut_datenmotor_thread2_handoff.md</code>.</p>
+    <p><b>PDF-Fassungen:</b> <code>helmut_datenmotor_audit.pdf</code>, <code>helmut_datenmotor_umsetzungsplan.pdf</code>, <code>helmut_datenmotor_audit_und_umsetzungsplan.pdf</code> (Gesamtfassung).</p>
+    <p><b>Diagramm-Quellen:</b> <code>docs/visual/sources/*.svg</code> (bearbeitbar) · <b>Exporte:</b> <code>docs/visual/assets/*.svg</code> und <code>*.png</code>.</p>
+    <p>Alle Werte stammen aus dem Audit gegen Commit 427295c (= Production). Keine geschätzten Laufzeitwerte; fehlende Messungen sind als solche gekennzeichnet. Prüfdatum 2026-07-16. Vertraulich · Helmut · Nohut.</p>
+  </footer>
+
+</div>
+</body>
+</html>

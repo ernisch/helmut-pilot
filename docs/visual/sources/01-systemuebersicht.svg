@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 460" font-family="Segoe UI, Helvetica, Arial, sans-serif" role="img" aria-label="Gesamtübersicht des Helmut-Datenmotors">
+  <defs>
+    <marker id="arw" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#5b6b7f"/></marker>
+    <style>
+      .t{fill:#1a2b42;font-size:15px;font-weight:600}
+      .s{fill:#5b6b7f;font-size:11.5px}
+      .box{fill:#eef3f8;stroke:#c9d4e0;stroke-width:1.4;rx:8}
+      .lbl{fill:#1a2b42;font-size:13px;font-weight:600}
+      .cap{fill:#8a97a8;font-size:10.5px}
+    </style>
+  </defs>
+  <rect x="0" y="0" width="960" height="460" fill="#ffffff"/>
+  <text x="30" y="34" class="t">Gesamtübersicht des Systems — der Weg von den Quellen zum Nutzer</text>
+  <text x="30" y="54" class="s">Geprüfter Stand 2026-07-16 · Commit 427295c = Production · echte Messwerte, wo vorhanden</text>
+
+  <!-- Quellen -->
+  <rect x="30" y="90" width="150" height="90" rx="8" class="box"/>
+  <text x="105" y="120" class="lbl" text-anchor="middle">145 Quellen</text>
+  <text x="105" y="140" class="s" text-anchor="middle">RSS · HTML · Google</text>
+  <text x="105" y="156" class="s" text-anchor="middle">News · DIP (Bund)</text>
+  <text x="105" y="172" class="cap" text-anchor="middle">100 % Erfolg (20 Läufe)</text>
+
+  <!-- Crawl -->
+  <rect x="220" y="90" width="150" height="90" rx="8" fill="#e3edf6" stroke="#b7c9db" stroke-width="1.4"/>
+  <text x="295" y="120" class="lbl" text-anchor="middle">Crawl</text>
+  <text x="295" y="140" class="s" text-anchor="middle">2×/Tag + Pipeline</text>
+  <text x="295" y="156" class="s" text-anchor="middle">Abruf, Dedup</text>
+  <text x="295" y="172" class="cap" text-anchor="middle">Dauer NICHT gemessen</text>
+
+  <!-- Speicher dual -->
+  <rect x="410" y="72" width="170" height="126" rx="8" fill="#fbf5ea" stroke="#e6d3b0" stroke-width="1.4"/>
+  <text x="495" y="96" class="lbl" text-anchor="middle">Dualer Speicher</text>
+  <rect x="424" y="108" width="142" height="36" rx="5" fill="#ffffff" stroke="#e0cba0"/>
+  <text x="495" y="124" class="s" text-anchor="middle" font-weight="600">Blob helmut_store</text>
+  <text x="495" y="138" class="cap" text-anchor="middle">1,24 MB · Läufe/Fehler/Locks</text>
+  <rect x="424" y="150" width="142" height="36" rx="5" fill="#ffffff" stroke="#b7c9db"/>
+  <text x="495" y="166" class="s" text-anchor="middle" font-weight="600">Relational (aktiv)</text>
+  <text x="495" y="180" class="cap" text-anchor="middle">raw_documents 5733 · KO 314</text>
+
+  <!-- Understanding KI -->
+  <rect x="620" y="90" width="150" height="90" rx="8" fill="#e3edf6" stroke="#b7c9db" stroke-width="1.4"/>
+  <text x="695" y="118" class="lbl" text-anchor="middle">Understanding</text>
+  <text x="695" y="136" class="s" text-anchor="middle">KI gpt-5-mini</text>
+  <text x="695" y="152" class="s" text-anchor="middle">Ø 7,9 s · 236/256 ok</text>
+  <text x="695" y="170" class="cap" text-anchor="middle">Wissensobjekte</text>
+
+  <!-- Matching/Relevanz -->
+  <rect x="620" y="230" width="150" height="86" rx="8" class="box"/>
+  <text x="695" y="258" class="lbl" text-anchor="middle">Relevanz</text>
+  <text x="695" y="278" class="s" text-anchor="middle">Matching (0 KI)</text>
+  <text x="695" y="294" class="s" text-anchor="middle">deterministisch</text>
+  <text x="695" y="310" class="cap" text-anchor="middle">on-read je Profil</text>
+
+  <!-- Ausgabe -->
+  <rect x="410" y="230" width="170" height="86" rx="8" fill="#e8f1ea" stroke="#b6d0bf" stroke-width="1.4"/>
+  <text x="495" y="258" class="lbl" text-anchor="middle">Briefing · Lage · Radar</text>
+  <text x="495" y="278" class="s" text-anchor="middle">Briefing 0 KI (on-read)</text>
+  <text x="495" y="294" class="s" text-anchor="middle">Lage-Narrativ 1 KI-Call</text>
+  <text x="495" y="310" class="cap" text-anchor="middle">3 Testprofile ok</text>
+
+  <!-- Nutzer -->
+  <rect x="220" y="230" width="150" height="86" rx="8" class="box"/>
+  <text x="295" y="262" class="lbl" text-anchor="middle">Nutzer</text>
+  <text x="295" y="282" class="s" text-anchor="middle">cem-ince (Pilot)</text>
+  <text x="295" y="298" class="cap" text-anchor="middle">+ 2 Testpersonen</text>
+
+  <!-- Überwachung -->
+  <rect x="30" y="230" width="150" height="86" rx="8" fill="#f7ece9" stroke="#e0bcb4" stroke-width="1.4"/>
+  <text x="105" y="258" class="lbl" text-anchor="middle">Überwachung</text>
+  <text x="105" y="278" class="s" text-anchor="middle">Health-Report 08:00</text>
+  <text x="105" y="294" class="s" text-anchor="middle">GitHub-Watchdog</text>
+  <text x="105" y="310" class="cap" text-anchor="middle">Fehler bislang blind</text>
+
+  <!-- arrows -->
+  <line x1="180" y1="135" x2="216" y2="135" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#arw)"/>
+  <line x1="370" y1="135" x2="406" y2="135" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#arw)"/>
+  <line x1="580" y1="135" x2="616" y2="135" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#arw)"/>
+  <line x1="695" y1="180" x2="695" y2="226" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#arw)"/>
+  <line x1="620" y1="273" x2="582" y2="273" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#arw)"/>
+  <line x1="410" y1="273" x2="372" y2="273" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#arw)"/>
+
+  <text x="30" y="360" class="s" font-weight="600">Legende der Statusfarben:</text>
+  <rect x="30" y="372" width="14" height="14" rx="3" fill="#e8f1ea" stroke="#b6d0bf"/><text x="50" y="384" class="cap">nachgewiesen funktionierend</text>
+  <rect x="230" y="372" width="14" height="14" rx="3" fill="#fbf5ea" stroke="#e6d3b0"/><text x="250" y="384" class="cap">Härtung nötig (P0/P1)</text>
+  <rect x="410" y="372" width="14" height="14" rx="3" fill="#f7ece9" stroke="#e0bcb4"/><text x="430" y="384" class="cap">Beobachtbarkeitslücke</text>
+  <text x="30" y="418" class="cap">Echte Messwerte: 145 Quellen, 100 % Erfolg, KI Ø 7,9 s, 236/256 ok, KO 314, raw_documents 5733 (DB-belegt).</text>
+  <text x="30" y="434" class="cap">Annahme/offen: keine persistierte Prozessdauer (P0-1), Prod-Env-Werte „sensitive" (E1). Kein Fantasiewert.</text>
+</svg>

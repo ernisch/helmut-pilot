@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Helmut Datenmotor — Thread 2 · Freigabe &amp; Werte</title>
+<style>
+  @page { size: A4; margin: 16mm 14mm 16mm 14mm; }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    font-family: "Helvetica Neue", Arial, "Segoe UI", sans-serif;
+    color: #1a1f2b; font-size: 10.2px; line-height: 1.42; margin: 0;
+  }
+  h1 { font-size: 20px; margin: 0 0 2px; color: #0b1f3a; letter-spacing: .2px; }
+  h2 { font-size: 13px; margin: 16px 0 6px; color: #0b1f3a; border-bottom: 2px solid #0b1f3a; padding-bottom: 3px; }
+  h3 { font-size: 11px; margin: 10px 0 3px; color: #0b3a2a; }
+  .sub { color: #5a6478; font-size: 9.5px; margin: 0 0 2px; }
+  .meta { background: #f2f5fa; border: 1px solid #d5deeb; border-radius: 6px; padding: 8px 10px; margin: 8px 0 4px; font-size: 9.5px; }
+  .meta b { color: #0b1f3a; }
+  table { width: 100%; border-collapse: collapse; margin: 5px 0 8px; }
+  th, td { border: 1px solid #cdd6e4; padding: 4px 6px; text-align: left; vertical-align: top; }
+  th { background: #0b1f3a; color: #fff; font-weight: 600; font-size: 9.3px; }
+  td { font-size: 9.4px; }
+  tr:nth-child(even) td { background: #f6f8fc; }
+  .tag { display: inline-block; padding: 1px 6px; border-radius: 10px; font-size: 8.4px; font-weight: 700; white-space: nowrap; }
+  .t-active { background: #d8f3e0; color: #0a5a2c; }
+  .t-gate { background: #fde7cf; color: #8a4b00; }
+  .t-doc { background: #e2e8f5; color: #2a3a66; }
+  .decision { border: 1px solid #cdd6e4; border-radius: 6px; padding: 7px 9px; margin: 6px 0; break-inside: avoid; }
+  .decision .d-head { font-weight: 700; color: #0b1f3a; font-size: 10.6px; margin-bottom: 3px; }
+  .decision .rec { color: #0a5a2c; font-weight: 700; }
+  .decision dl { display: grid; grid-template-columns: 92px 1fr; gap: 1px 8px; margin: 3px 0 0; }
+  .decision dt { color: #5a6478; font-weight: 600; }
+  .decision dd { margin: 0; }
+  .choose { margin-top: 4px; font-size: 9.6px; }
+  .box { display: inline-block; width: 11px; height: 11px; border: 1.4px solid #0b1f3a; border-radius: 2px; vertical-align: -1px; margin: 0 3px 0 10px; }
+  .box:first-child { margin-left: 0; }
+  .fill { border-bottom: 1px solid #9aa6bd; display: inline-block; min-width: 120px; height: 11px; }
+  .note { color: #8a4b00; font-size: 9px; }
+  .foot { margin-top: 14px; padding-top: 6px; border-top: 1px solid #cdd6e4; color: #5a6478; font-size: 8.8px; }
+  .warn { background: #fff6e8; border: 1px solid #f0c98a; border-radius: 6px; padding: 6px 9px; margin: 6px 0; font-size: 9.3px; color: #6b3d00; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+  code { background: #eef2f8; padding: 0 3px; border-radius: 3px; font-size: 9px; }
+</style>
+</head>
+<body>
+
+<h1>Helmut Datenmotor — Thread 2</h1>
+<p class="sub">Gründer-Freigabe &amp; Werte-Übersicht · Entscheidungsvorlage vor dem kontrollierten Production-Teil</p>
+
+<div class="meta">
+  <b>Ausgangs-Commit:</b> origin/main = <code>427295c</code> (PR #94) &nbsp;·&nbsp;
+  <b>Branch:</b> <code>claude/helmut-datenmotor-impl-2-kd1jl9</code> (gepusht) &nbsp;·&nbsp;
+  <b>HEAD:</b> <code>9b13ad3</code> &nbsp;·&nbsp; <b>Prüfdatum:</b> 2026-07-16<br>
+  <b>Tests:</b> Offline 116/116 grün · Browser-/Mobil-Smoke 32/32 grün · adversariale Diff-Review: 5 Punkte gefunden &amp; behoben<br>
+  <b>Stand:</b> alle verhaltensändernden Neuerungen sind <b>default AUS</b>. Kein Merge, kein Deploy, keine Migration, kein Prod-Write erfolgt. PR #88 NICHT übernommen.
+</div>
+
+<div class="warn"><b>Kein Betriebsreife-Nachweis, keine DSGVO-Konformitätsaussage.</b> Es gibt <b>null</b> gemessene Production-Laufzeiten — die Messung ist Teil der Beweisläufe <i>nach</i> Freigabe. Die endgültigen Betriebsdokumente entstehen erst danach.</div>
+
+<h2>1 · Was umgesetzt wurde (alle P0 + alle P1)</h2>
+<table>
+  <tr><th style="width:52px">ID</th><th>Umsetzung</th><th style="width:130px">Aktiv?</th></tr>
+  <tr><td>P0-2</td><td>compactStore-Allowlist erhält durationMs/understanding/googleUrlResolution/sourceMode/runId</td><td><span class="tag t-active">aktiv (additiv)</span></td></tr>
+  <tr><td>P0-1</td><td>Echte Wall-Clock-Messung: Crawl, Pipeline, Lage, Understanding-Batch, Briefing-Aufbau + <b>jeder einzelne Quellenabruf</b> (18 techn. Felder → neue relationale Tabelle)</td><td><span class="tag t-active">Prozess aktiv</span> <span class="tag t-gate">Pro-Quelle: Gate</span></td></tr>
+  <tr><td>P0-3</td><td>Zentraler, datenschutzsicherer Pipeline-Fehler-Sammler → systemErrors (Dedup, nur Metadaten)</td><td><span class="tag t-active">aktiv (additiv)</span></td></tr>
+  <tr><td>P0-4</td><td>Atomarer, <b>fail-closed</b> Pipeline-Lock (Postgres-Funktion) + 05:30-Überlappungs-Koordination</td><td><span class="tag t-gate">freigabepflichtig</span></td></tr>
+  <tr><td>P0-5</td><td>Stufe 1: Blob-Retry+Backoff, systemError statt stiller Lauf-Verlust, non-lossy Retention · Stufe 2: Crawl-Läufe→relational vorbereitet</td><td><span class="tag t-active">Stufe 1 aktiv</span> <span class="tag t-gate">Stufe 2 Gate</span></td></tr>
+  <tr><td>P1-9/2/5/6/8</td><td>Stale-Kommentare · Ebenen-Casing klein · ehrlicher Durchsatz (relationale Deltas) · Health-Achsen (Budget/Leerlauf/Frische/Abdeckung) · Radar-Störungswahrheit</td><td><span class="tag t-active">additiv aktiv</span></td></tr>
+  <tr><td>P1-4</td><td>Begrenzter Auto-Retry fehlgeschlagener Wissensobjekte (bounded, terminal nach 2)</td><td><span class="tag t-gate">freigabepflichtig</span></td></tr>
+  <tr><td>P1-7</td><td>Alarm-Payload-Datenschutz-Leitplanke + Meta-Heartbeat (health-watch.yml, nur manuell)</td><td><span class="tag t-active">Härtung aktiv</span> <span class="tag t-gate">Kanal Gate</span></td></tr>
+  <tr><td>P1-1</td><td>KO-Klassifikations-Backfill vollständig geprüft, Trockenlauf-Nachweis (247 KOs)</td><td><span class="tag t-gate">freigabepflichtig</span></td></tr>
+  <tr><td>P1-3</td><td>Understanding-Priorisierung scharf-schaltbar (amtlich zuerst)</td><td><span class="tag t-gate">freigabepflichtig</span></td></tr>
+</table>
+
+<h2>2 · Gründer-Entscheidungen F1–F8 — bitte einzeln freigeben</h2>
+
+<div class="decision">
+  <div class="d-head">F1 · Deploy des Feature-Branches nach <code>main</code> (Vercel Production) &nbsp;— <span class="rec">Empfehlung: JA</span></div>
+  <dl>
+    <dt>Erklärung</dt><dd>Alle additiven Beobachtbarkeits-/Härtungs-Änderungen live schalten (P0-1/2/3, P0-5 Stufe 1, P1-2/5/6/8/9, Datenschutz-Härtung).</dd>
+    <dt>Vorteil</dt><dd>Laufzeiten/Fehler werden sichtbar; ehrlicher Durchsatz; Retry gegen Blob-Timeouts.</dd>
+    <dt>Risiko</dt><dd>gering — additiv, alles Verhaltensändernde default-aus, 116/116 grün.</dd>
+    <dt>Ohne Freigabe</dt><dd>Motor bleibt blind (keine persistierten Laufzeiten/Fehler).</dd>
+    <dt>Rollback</dt><dd>Revert des Merges / vorheriger Vercel-Deploy.</dd>
+  </dl>
+  <div class="choose"><b>Entscheidung:</b><span class="box"></span>JA<span class="box"></span>NEIN<span class="box"></span>SPÄTER &nbsp;&nbsp; Datum: <span class="fill"></span></div>
+</div>
+
+<div class="decision">
+  <div class="d-head">F2 · Migration <code>20260719</code> + <code>HELMUT_ATOMIC_LOCK=on</code> (+ <code>HELMUT_UNDERSTANDING_LOCK=on</code>) &nbsp;— <span class="rec">Empfehlung: JA (nach F1)</span></div>
+  <dl>
+    <dt>Erklärung</dt><dd>Atomaren, fail-closed Pipeline-Lock scharfschalten.</dd>
+    <dt>Vorteil</dt><dd>schließt Doppelverarbeitung/Doppel-KI-Kosten (R2) + 05:30-Überlappung (R14).</dd>
+    <dt>Risiko</dt><dd>Verhaltensänderung — fail-closed verweigert bei DB-Fehler (gewollt); vor Aktivierung Beweislauf im Überlappungsfenster.</dd>
+    <dt>Ohne Freigabe</dt><dd>Doppelverarbeitung bei Blob-Instabilität möglich.</dd>
+    <dt>Rollback</dt><dd>Flag <code>off</code> (Blob-Lock) + Migrations-Rollback.</dd>
+  </dl>
+  <div class="choose"><b>Entscheidung:</b><span class="box"></span>JA<span class="box"></span>NEIN<span class="box"></span>SPÄTER &nbsp;&nbsp; Datum: <span class="fill"></span></div>
+</div>
+
+<div class="decision">
+  <div class="d-head">F3 · Migration <code>20260718</code> + <code>HELMUT_SOURCE_TELEMETRY=on</code> &nbsp;— <span class="rec">Empfehlung: JA</span></div>
+  <dl>
+    <dt>Erklärung</dt><dd>Pro-Quellenabruf-Telemetrie (18 technische Felder) relational schreiben.</dd>
+    <dt>Vorteil</dt><dd>echte Pro-Quelle-Laufzeit/Erfolg — der größte Beobachtbarkeits-Mangel.</dd>
+    <dt>Risiko</dt><dd>gering — nur technische Metadaten, fail-safe.</dd>
+    <dt>Ohne Freigabe</dt><dd>Pro-Quelle-Ebene bleibt aggregiert.</dd>
+    <dt>Rollback</dt><dd>Flag <code>off</code> + Migrations-Rollback.</dd>
+  </dl>
+  <div class="choose"><b>Entscheidung:</b><span class="box"></span>JA<span class="box"></span>NEIN<span class="box"></span>SPÄTER &nbsp;&nbsp; Datum: <span class="fill"></span></div>
+</div>
+
+<div class="decision">
+  <div class="d-head">F4 · KO-Klassifikations-Backfill ausführen (247 Alt-KOs) &nbsp;— <span class="rec">Empfehlung: JA (kostenneutral, 0 KI)</span></div>
+  <dl>
+    <dt>Erklärung</dt><dd><code>ko-classification-backfill.js --execute</code> auf Prod; idempotent, deterministisch.</dd>
+    <dt>Vorteil</dt><dd>~3× größerer nutzbarer KO-Bestand (Ebene + Feature-Vektor).</dd>
+    <dt>Risiko</dt><dd>sehr gering — additiv, Trockenlauf belegt.</dd>
+    <dt>Ohne Freigabe</dt><dd>Matching wirkt nur auf ~21 % des Bestands.</dd>
+    <dt>Rollback</dt><dd>beide Felder wieder auf null (Idempotenz).</dd>
+  </dl>
+  <div class="choose"><b>Entscheidung:</b><span class="box"></span>JA<span class="box"></span>NEIN<span class="box"></span>SPÄTER &nbsp;&nbsp; Datum: <span class="fill"></span></div>
+</div>
+
+<div class="decision">
+  <div class="d-head">F5 · <code>HELMUT_MONITORING_WEBHOOK_URL</code> setzen + <code>health-watch.yml</code>-Schedule aktivieren &nbsp;— <span class="rec">Empfehlung: JA</span></div>
+  <dl>
+    <dt>Erklärung</dt><dd>Zweiter, unabhängiger Alarmkanal + Meta-Heartbeat.</dd>
+    <dt>Vorteil</dt><dd>unabhängiger Alarm, wenn CallMeBot/Report-Cron ausfällt.</dd>
+    <dt>Risiko</dt><dd>gering — Payload datenschutzgehärtet (nur technischer Status).</dd>
+    <dt>Ohne Freigabe</dt><dd>einziger Alarmweg bleibt CallMeBot (fail-open/still).</dd>
+    <dt>Rollback</dt><dd>URL entfernen / Schedule auskommentieren.</dd>
+  </dl>
+  <div class="choose"><b>Entscheidung:</b><span class="box"></span>JA<span class="box"></span>NEIN<span class="box"></span>SPÄTER &nbsp;&nbsp; Webhook-URL bereitstellen: <span class="fill"></span></div>
+</div>
+
+<div class="decision">
+  <div class="d-head">F6 · <code>HELMUT_FAILED_KO_RECOVERY=on</code> (P1-4) — optional &nbsp;— <span class="rec">Empfehlung: JA, erst NACH einem Beweistag</span></div>
+  <dl>
+    <dt>Erklärung</dt><dd>Begrenzter Auto-Retry fehlgeschlagener Wissensobjekte.</dd>
+    <dt>Vorteil</dt><dd>verlorene Vorgänge werden wieder sichtbar (R6).</dd>
+    <dt>Risiko</dt><dd>schreibt Prod-KOs — bounded, terminal nach 2 Retries.</dd>
+    <dt>Ohne Freigabe</dt><dd>failed-KOs bleiben dauerhaft unsichtbar.</dd>
+    <dt>Rollback</dt><dd>Flag <code>off</code>.</dd>
+  </dl>
+  <div class="choose"><b>Entscheidung:</b><span class="box"></span>JA<span class="box"></span>NEIN<span class="box"></span>SPÄTER &nbsp;&nbsp; Datum: <span class="fill"></span></div>
+</div>
+
+<div class="decision">
+  <div class="d-head">F7 · <code>HELMUT_UNDERSTANDING_PRIORITY=on</code> (P1-3) — optional &nbsp;— <span class="rec">Empfehlung: JA für Bundestag, nach Beobachtung</span></div>
+  <dl>
+    <dt>Erklärung</dt><dd>Priorisierung scharfschalten (amtlich > hohe Relevanz > Frist > Wichtigkeit > regional > Grenzfall).</dd>
+    <dt>Vorteil</dt><dd>amtliche Vorgänge zuerst statt Ankunftsreihenfolge.</dd>
+    <dt>Risiko</dt><dd>sichtbare Reihenfolgeänderung — vor Aktivierung an Realdaten prüfen.</dd>
+    <dt>Ohne Freigabe</dt><dd>späte amtliche Vorgänge hungern bei Budgetdeckel aus.</dd>
+    <dt>Rollback</dt><dd>Flag <code>off</code> (byte-identische Ankunftsreihenfolge).</dd>
+  </dl>
+  <div class="choose"><b>Entscheidung:</b><span class="box"></span>JA<span class="box"></span>NEIN<span class="box"></span>SPÄTER &nbsp;&nbsp; Datum: <span class="fill"></span></div>
+</div>
+
+<div class="decision">
+  <div class="d-head">F8 · Blob→relational Crawl-Läufe (P0-5 Stufe 2) + Retention-Fristen — später &nbsp;— <span class="rec">Empfehlung: nach Bundestagspilot-Härtung, Fristen mit Rechtsprüfung</span></div>
+  <dl>
+    <dt>Erklärung</dt><dd>Migration <code>20260720</code> + <code>HELMUT_CRAWL_RUNS_RELATIONAL=on</code> (Dual-Write); Retention-Fristen (s. §5) + <code>HELMUT_RETENTION_EXECUTE</code>.</dd>
+    <dt>Vorteil</dt><dd>Blob-Entlastung; Speicherbegrenzung (Art. 5 DSGVO).</dd>
+    <dt>Risiko</dt><dd>mittel — zentraler Speicherpfad / echte Löschung.</dd>
+    <dt>Ohne Freigabe</dt><dd>Blob wächst weiter; keine Löschung.</dd>
+    <dt>Rollback</dt><dd>Flags <code>off</code> + Migrations-/Löschkonzept-Rollback.</dd>
+  </dl>
+  <div class="choose"><b>Entscheidung:</b><span class="box"></span>JA<span class="box"></span>NEIN<span class="box"></span>SPÄTER &nbsp;&nbsp; Datum: <span class="fill"></span></div>
+</div>
+
+<h2>3 · E1 — Prod-Env-Werte bestätigen (nur „gesetzt/Kategorie" — KEINE Secrets eintragen)</h2>
+<p class="sub">Diese Werte sind aus der Arbeitsumgebung nicht lesbar. Bitte je Variable nur die Kategorie/den Boolean bestätigen.</p>
+<table>
+  <tr><th style="width:250px">Env-Variable</th><th>Frage</th><th style="width:120px">Ist-Wert (eintragen)</th></tr>
+  <tr><td><code>HELMUT_MAX_LLM_CALLS_PER_DAY</code></td><td>50 oder 100?</td><td><span class="fill"></span></td></tr>
+  <tr><td><code>HELMUT_UNDERSTANDING_LOCK</code></td><td>an / aus?</td><td><span class="fill"></span></td></tr>
+  <tr><td><code>HELMUT_LLM_BUDGET_FAIL_CLOSED</code></td><td>an / aus?</td><td><span class="fill"></span></td></tr>
+  <tr><td><code>HELMUT_LLM_RESERVE_UNDERSTANDING</code></td><td>Wert (z. B. 30) / leer?</td><td><span class="fill"></span></td></tr>
+  <tr><td><code>HELMUT_V3_MATCHING</code></td><td>an / aus?</td><td><span class="fill"></span></td></tr>
+  <tr><td><code>HELMUT_V3_LAZY_UNDERSTANDING</code></td><td>an / aus?</td><td><span class="fill"></span></td></tr>
+  <tr><td><code>HELMUT_AUTH_MODE</code></td><td>single / accounts?</td><td><span class="fill"></span></td></tr>
+  <tr><td><code>HELMUT_DIP_PRIMARY</code></td><td>an / aus?</td><td><span class="fill"></span></td></tr>
+  <tr><td><code>HELMUT_MORNING_PUSH_ALL_PROFILES</code></td><td>an / aus?</td><td><span class="fill"></span></td></tr>
+  <tr><td><code>HELMUT_MONITORING_WEBHOOK_URL</code></td><td>gesetzt? (nur ja/nein)</td><td><span class="fill"></span></td></tr>
+</table>
+
+<h2>4 · Vorbereitete Migrationen (NICHT auf Production angewendet)</h2>
+<table>
+  <tr><th style="width:280px">Migration</th><th>Zweck</th><th style="width:80px">Rollback</th></tr>
+  <tr><td><code>20260718_source_crawl_telemetry.sql</code></td><td>Pro-Quellenabruf-Telemetrie (P0-1)</td><td>vorhanden</td></tr>
+  <tr><td><code>20260719_pipeline_lock_atomic.sql</code></td><td>Atomarer fail-closed Lock (P0-4)</td><td>vorhanden</td></tr>
+  <tr><td><code>20260720_crawl_runs_relational.sql</code></td><td>Crawl-Läufe relational, Dual-Write (P0-5 Stufe 2)</td><td>vorhanden</td></tr>
+</table>
+<p class="sub">Alle: RLS service-role-only, idempotent, mit Rollback-Datei. Anwendung = Freigabepunkt (F2/F3/F8).</p>
+
+<h2>5 · Retention-Empfehlung — Datenklassen-Matrix (Fristen = Gründer + Rechtsprüfung)</h2>
+<table>
+  <tr><th>Datenklasse</th><th>Tabelle</th><th style="width:70px">Art. 9?</th><th style="width:120px">Empf. Aufbewahrung</th></tr>
+  <tr><td>Quellen-Inhalt (minimiert)</td><td>raw_documents</td><td>nein</td><td><b>180 Tage</b></td></tr>
+  <tr><td>Politische Analyse</td><td>knowledge_objects</td><td><b>JA</b></td><td><b>365 Tage</b></td></tr>
+  <tr><td>Provenienz</td><td>ko_document_links / document_findings</td><td>nein</td><td>folgt Parent (Kaskade)</td></tr>
+  <tr><td>Technische Telemetrie</td><td>source_crawl_telemetry / gate_shadow_events</td><td>nein</td><td><b>90 Tage</b></td></tr>
+  <tr><td>Fehler / Prozess-Laufzeit</td><td>systemErrors / processRuns</td><td>nein</td><td><b>90 Tage</b> (Ring)</td></tr>
+  <tr><td>Nutzer-Ausgabe</td><td>briefings</td><td><b>JA</b></td><td><b>90 Tage</b></td></tr>
+</table>
+<div class="choose"><b>Fristen bestätigt?</b><span class="box"></span>JA<span class="box"></span>ANPASSEN &nbsp;&nbsp; Rechtsprüfung erfolgt am: <span class="fill"></span></div>
+
+<h2>6 · DSFA-Vorprüfung — Ergebnis</h2>
+<p><b>Technisch angezeigt: JA.</b> Mehrere Art.-35-Kriterien erfüllt: systematisches Scoring von Personen · Art.-9-Daten (politische Meinung/Partei) · umfangreiche Verarbeitung · externe KI (Azure OpenAI, EU). <b>Die verbindliche Feststellung + Durchführung der DSFA ist eine juristische Entscheidung.</b></p>
+<p class="note">Offen (juristisch): Rechtsgrundlage (Art. 6/9) · Aufbewahrungsfristen · AVV Azure · Betroffenenrechte-Prozess · Wirkung von Scoring/Priorisierung. Details: <code>docs/recht/datenschutz-folgenabschaetzung-vorpruefung.md</code>.</p>
+
+<h2>7 · Bereitschaftsurteil (ehrlich)</h2>
+<p>Code + Offline-Logik sind belastbar und getestet (116/116). <b>Betriebsreife im Sinne des überwachten Piloten ist NOCH NICHT nachgewiesen</b> — dafür fehlen die echten Production-Beweisläufe. <b>Keine DSGVO-Konformitätsaussage</b> ohne dokumentierte juristische Prüfung.</p>
+
+<div class="foot">
+  <b>Nach Freigabe (im selben Thread):</b> Deploy → Migrationen → Backfill → mind. 3 echte Crawl-Läufe + 1 Morgenzyklus → Überlappungsfenster prüfen → Fehlerfall simulieren + Wiederherstellung → Zweitkanal testen → Backfill-Idempotenz belegen → <b>echte</b> Pro-Quelle-Laufzeiten (Ø/Median/Min/Max je Prozess &amp; Quelle) erfassen → erst dann endgültige Betriebsdokumente.<br>
+  <b>Dokumente:</b> docs/betrieb/aufbewahrung-loeschung.md · docs/recht/datenschutz-folgenabschaetzung-vorpruefung.md · docs/betrieb/blob-relational-migration-plan.md · docs/betrieb/env-inventar.md &nbsp;·&nbsp; <b>Commits:</b> 20 auf claude/helmut-datenmotor-impl-2-kd1jl9 (HEAD 9b13ad3).
+</div>
+
+</body>
+</html>

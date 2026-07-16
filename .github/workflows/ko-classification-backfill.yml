@@ -1,0 +1,100 @@
+name: KO-Klassifikations-Backfill (P1-1)
+
+# =============================================================================
+# ECHTER KO-Klassifikations-Backfill (P1-1) — NUR manuell, harte Bestaetigung.
+# =============================================================================
+# Fuellt decision_level/political_level/related_levels/event_type/Geografien/
+# Entitaeten/classification_confidence + embedding fuer bestehende, verstandene
+# Knowledge Objects OHNE politische Ebene. KOSTENNEUTRAL: rein deterministisch,
+# 0 KI-Calls, 0 Netz (nur Supabase-Store). Idempotent (nur complete-KOs ohne
+# decision_level). Nutzt die EXAKT getestete Logik (scripts/ko-classification-backfill.js).
+#
+# Diese Action laeuft NIEMALS automatisch (ausschliesslich workflow_dispatch) und startet
+# einen ECHTEN Lauf NUR, wenn confirm_text exakt "BACKFILL_KO_CLASSIFICATION" ist.
+# Erst Dry-Run-Plan (Schritt A, 0 Writes); echter Lauf (Schritt B) nur bei korrektem
+# confirm_text UND wenn der Dry-Run > 0 Kandidaten meldet. Nur Plan-/Statuszahlen,
+# keine Rohtexte/keine Inhalte.
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_text:
+        description: "Zum Bestaetigen EXAKT eingeben: BACKFILL_KO_CLASSIFICATION (sonst nur Dry-Run)"
+        required: true
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ko-classification-backfill
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Abhaengigkeiten (Projekt hat keine Runtime-Deps; defensiv, kein Lockfile)
+        run: npm install --no-audit --no-fund
+
+      # Preflight prueft NUR die Store-Secrets. KEIN KI-Key noetig (Backfill ist 0-KI).
+      - name: Preflight — Store-Secrets (kein KI-Key noetig, deterministisch)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SUPABASE_URL:-}" ] || [ -z "${SUPABASE_SERVICE_ROLE_KEY:-}" ]; then
+            echo "::error::SUPABASE_URL und/oder SUPABASE_SERVICE_ROLE_KEY sind nicht als Secrets gesetzt."
+            exit 1
+          fi
+          echo "Preflight OK (Store-Secrets vorhanden). Backfill ist 0-KI/deterministisch."
+
+      # Schritt A: Dry-Run-Plan (0 KI, 0 Writes) — meldet die Kandidatenzahl.
+      - name: Schritt A — Dry-Run Plan anzeigen
+        id: dry
+        env:
+          HELMUT_V3_STORE: "1"
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          node scripts/ko-classification-backfill.js | tee dryrun.log
+          COUNT="$(grep -oE '"candidates":[[:space:]]*[0-9]+' dryrun.log | grep -oE '[0-9]+' | head -1 || true)"
+          echo "candidates=${COUNT:-unknown}" >> "$GITHUB_OUTPUT"
+          echo "Dry-Run zeigt Kandidaten: ${COUNT:-unknown}"
+
+      # Schritt B: ECHTER Lauf — NUR bei exaktem confirm_text UND Kandidat > 0.
+      - name: Schritt B — Echter Backfill (--execute)
+        if: ${{ inputs.confirm_text == 'BACKFILL_KO_CLASSIFICATION' && steps.dry.outputs.candidates != '0' && steps.dry.outputs.candidates != 'unknown' }}
+        env:
+          HELMUT_V3_STORE: "1"
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          CONFIRM_TEXT: ${{ inputs.confirm_text }}
+        run: |
+          set -euo pipefail
+          if [ "${CONFIRM_TEXT:-}" != "BACKFILL_KO_CLASSIFICATION" ]; then
+            echo "::error::confirm_text muss exakt BACKFILL_KO_CLASSIFICATION sein."
+            exit 1
+          fi
+          echo "Starte ECHTEN KO-Klassifikations-Backfill (deterministisch, 0 KI, idempotent)."
+          node scripts/ko-classification-backfill.js --execute
+
+      # Hinweis, wenn KEIN echter Lauf stattfand.
+      - name: Hinweis — kein echter Lauf
+        if: ${{ inputs.confirm_text != 'BACKFILL_KO_CLASSIFICATION' || steps.dry.outputs.candidates == '0' }}
+        run: |
+          if [ "${{ inputs.confirm_text }}" != "BACKFILL_KO_CLASSIFICATION" ]; then
+            echo "Kein echter Lauf: confirm_text war nicht exakt BACKFILL_KO_CLASSIFICATION (nur Dry-Run-Plan)."
+          else
+            echo "Kein echter Lauf: Dry-Run meldet 0 Kandidaten (Bestand bereits vollstaendig klassifiziert)."
+          fi

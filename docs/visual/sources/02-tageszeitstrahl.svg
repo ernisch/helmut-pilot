@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 380" font-family="Segoe UI, Helvetica, Arial, sans-serif" role="img" aria-label="Tageszeitstrahl der geplanten Prozesse">
+  <style>
+    .t{fill:#1a2b42;font-size:15px;font-weight:600}
+    .s{fill:#5b6b7f;font-size:11.5px}
+    .cap{fill:#8a97a8;font-size:10px}
+    .tick{fill:#8a97a8;font-size:11px}
+    .proc{fill:#1a2b42;font-size:11.5px;font-weight:600}
+  </style>
+  <rect x="0" y="0" width="960" height="380" fill="#ffffff"/>
+  <text x="30" y="34" class="t">Tageszeitstrahl — ein Sommertag (Zeiten fix in UTC, Berlin = UTC+2 / CEST)</text>
+  <text x="30" y="54" class="s">9 Vercel-Crons + 1 GitHub-Action. Belegt aus vercel.json und .github/workflows.</text>
+
+  <!-- axis -->
+  <line x1="60" y1="210" x2="920" y2="210" stroke="#c9d4e0" stroke-width="2"/>
+  <!-- ticks 04..22 -->
+  <g class="tick" text-anchor="middle">
+    <!-- map 04..22 UTC to x 70..910 -->
+    <line x1="70" y1="205" x2="70" y2="215" stroke="#c9d4e0"/><text x="70" y="232">04</text>
+    <line x1="117" y1="205" x2="117" y2="215" stroke="#c9d4e0"/><text x="117" y="232">05</text>
+    <line x1="163" y1="205" x2="163" y2="215" stroke="#c9d4e0"/><text x="163" y="232">06</text>
+    <line x1="257" y1="205" x2="257" y2="215" stroke="#c9d4e0"/><text x="257" y="232">08</text>
+    <line x1="443" y1="205" x2="443" y2="215" stroke="#c9d4e0"/><text x="443" y="232">10</text>
+    <line x1="723" y1="205" x2="723" y2="215" stroke="#c9d4e0"/><text x="723" y="232">16</text>
+    <line x1="817" y1="205" x2="817" y2="215" stroke="#c9d4e0"/><text x="817" y="232">18</text>
+    <line x1="910" y1="205" x2="910" y2="215" stroke="#c9d4e0"/><text x="910" y="232">20</text>
+    <text x="490" y="256" class="cap">Uhrzeit UTC  ·  +2 h = Berliner Ortszeit (CEST)</text>
+  </g>
+
+  <!-- events above/below. x for UTC time: x=70 + (utc-4)*46.7 -->
+  <!-- 04:00 crawl -->
+  <circle cx="70" cy="210" r="6" fill="#3f7d5a"/>
+  <line x1="70" y1="204" x2="70" y2="120" stroke="#c9d4e0"/>
+  <text x="70" y="112" class="proc" text-anchor="middle">crawl 06:00</text>
+  <text x="70" y="98" class="cap" text-anchor="middle">Crawl+KI</text>
+  <!-- 05:00 morning-briefing -->
+  <circle cx="117" cy="210" r="6" fill="#3f7d5a"/>
+  <line x1="117" y1="216" x2="117" y2="300" stroke="#c9d4e0"/>
+  <text x="117" y="316" class="proc" text-anchor="middle">morning 07:00</text>
+  <text x="117" y="330" class="cap" text-anchor="middle">Push 0 KI</text>
+  <!-- 05:30 understanding + watchdog (overlap!) -->
+  <circle cx="140" cy="210" r="7" fill="#b3453a"/>
+  <line x1="140" y1="204" x2="140" y2="140" stroke="#e0bcb4"/>
+  <text x="140" y="132" class="proc" text-anchor="middle" fill="#b3453a">07:30 ⚠ Überlappung</text>
+  <text x="140" y="118" class="cap" text-anchor="middle" fill="#b3453a">understanding + watchdog→pipeline (R14)</text>
+  <!-- 05:45 lage-briefing -->
+  <circle cx="152" cy="210" r="6" fill="#3f7d5a"/>
+  <line x1="152" y1="216" x2="152" y2="340" stroke="#c9d4e0"/>
+  <text x="152" y="356" class="proc" text-anchor="middle">lage-briefing 07:45</text>
+  <!-- 06:00 health-report -->
+  <circle cx="163" cy="210" r="6" fill="#cc7a33"/>
+  <line x1="163" y1="204" x2="163" y2="170" stroke="#e0cba0"/>
+  <text x="205" y="164" class="proc" text-anchor="middle">health-report 08:00</text>
+  <text x="205" y="150" class="cap" text-anchor="middle">Alarm/WhatsApp</text>
+  <!-- 10:00 lage-check -->
+  <circle cx="443" cy="210" r="6" fill="#3f7d5a"/>
+  <line x1="443" y1="204" x2="443" y2="130" stroke="#c9d4e0"/>
+  <text x="443" y="122" class="proc" text-anchor="middle">lage-check 12:00</text>
+  <text x="443" y="108" class="cap" text-anchor="middle">ohne Lock</text>
+  <!-- 16:00 pipeline -->
+  <circle cx="723" cy="210" r="6" fill="#3f7d5a"/>
+  <line x1="723" y1="216" x2="723" y2="300" stroke="#c9d4e0"/>
+  <text x="723" y="316" class="proc" text-anchor="middle">pipeline 18:00</text>
+  <text x="723" y="330" class="cap" text-anchor="middle">Crawl (280 s)</text>
+  <!-- 20:00 crawl -->
+  <circle cx="910" cy="210" r="6" fill="#3f7d5a"/>
+  <line x1="910" y1="204" x2="910" y2="130" stroke="#c9d4e0"/>
+  <text x="905" y="122" class="proc" text-anchor="end">crawl 22:00</text>
+  <text x="905" y="108" class="cap" text-anchor="end">Crawl+KI</text>
+  <!-- 21:30 understanding (off axis right) -->
+  <text x="905" y="342" class="proc" text-anchor="end">+ understanding 23:30</text>
+
+  <!-- legend -->
+  <circle cx="70" cy="372" r="6" fill="#3f7d5a"/><text x="82" y="376" class="cap">Kernprozess (aktiv)</text>
+  <circle cx="240" cy="372" r="6" fill="#cc7a33"/><text x="252" y="376" class="cap">Überwachung</text>
+  <circle cx="380" cy="372" r="6" fill="#b3453a"/><text x="392" y="376" class="cap">Kollisionsrisiko (R14) — kein gemeinsamer Lock</text>
+</svg>

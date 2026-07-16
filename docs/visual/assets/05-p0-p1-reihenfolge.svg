@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 470" font-family="Segoe UI, Helvetica, Arial, sans-serif" role="img" aria-label="Verbindliche Reihenfolge und Abhängigkeiten der P0- und P1-Aufgaben">
+  <defs>
+    <marker id="a3" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#5b6b7f"/></marker>
+    <style>
+      .t{fill:#1a2b42;font-size:15px;font-weight:600}
+      .s{fill:#5b6b7f;font-size:11.5px}
+      .cap{fill:#8a97a8;font-size:10px}
+      .id{fill:#1a2b42;font-size:12.5px;font-weight:700}
+      .d{fill:#5b6b7f;font-size:9.5px}
+      .n{fill:#ffffff;font-size:11px;font-weight:700}
+    </style>
+  </defs>
+  <rect x="0" y="0" width="960" height="470" fill="#ffffff"/>
+  <text x="30" y="34" class="t">Verbindliche Reihenfolge der P0- und P1-Aufgaben (mit Abhängigkeiten)</text>
+  <text x="30" y="54" class="s">Innerhalb einer Stufe von 1→14 abarbeiten. 🔒 = braucht Gründer-Freigabe. Deploy nach Production ist immer freigabepflichtig.</text>
+
+  <!-- P0 row -->
+  <text x="30" y="86" class="id" fill="#b3453a">Stufe A · P0 (kritisch)</text>
+  <g>
+    <!-- P0-2 -->
+    <rect x="30" y="98" width="160" height="66" rx="8" fill="#f7ece9" stroke="#e0bcb4" stroke-width="1.4"/>
+    <circle cx="48" cy="116" r="10" fill="#b3453a"/><text x="48" y="120" class="n" text-anchor="middle">1</text>
+    <text x="66" y="120" class="id">P0-2</text>
+    <text x="42" y="140" class="d">compactStore-Whitelist</text>
+    <text x="42" y="154" class="d">(Voraussetzung für 2)</text>
+    <!-- P0-1 -->
+    <rect x="210" y="98" width="160" height="66" rx="8" fill="#f7ece9" stroke="#e0bcb4" stroke-width="1.4"/>
+    <circle cx="228" cy="116" r="10" fill="#b3453a"/><text x="228" y="120" class="n" text-anchor="middle">2</text>
+    <text x="246" y="120" class="id">P0-1</text>
+    <text x="222" y="140" class="d">Laufzeit persistieren</text>
+    <text x="222" y="154" class="d">durationMs ≠ null</text>
+    <!-- P0-3 -->
+    <rect x="390" y="98" width="160" height="66" rx="8" fill="#f7ece9" stroke="#e0bcb4" stroke-width="1.4"/>
+    <circle cx="408" cy="116" r="10" fill="#b3453a"/><text x="408" y="120" class="n" text-anchor="middle">3</text>
+    <text x="426" y="120" class="id">P0-3</text>
+    <text x="402" y="140" class="d">Fehler → systemErrors</text>
+    <text x="402" y="154" class="d">additives Logging</text>
+    <!-- P0-4 -->
+    <rect x="570" y="98" width="160" height="66" rx="8" fill="#f7ece9" stroke="#e0bcb4" stroke-width="1.4"/>
+    <circle cx="588" cy="116" r="10" fill="#b3453a"/><text x="588" y="120" class="n" text-anchor="middle">4</text>
+    <text x="606" y="120" class="id">P0-4</text>
+    <text x="582" y="140" class="d">Atomarer Lock</text>
+    <text x="582" y="154" class="d">fail-open→fail-closed</text>
+    <!-- P0-5 -->
+    <rect x="750" y="98" width="180" height="66" rx="8" fill="#f7ece9" stroke="#e0bcb4" stroke-width="1.4"/>
+    <circle cx="768" cy="116" r="10" fill="#b3453a"/><text x="768" y="120" class="n" text-anchor="middle">5</text>
+    <text x="786" y="120" class="id">P0-5 🔒</text>
+    <text x="762" y="140" class="d">Blob-Timeout-Robustheit</text>
+    <text x="762" y="154" class="d">volle Migration = Freigabe</text>
+  </g>
+  <line x1="190" y1="131" x2="206" y2="131" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#a3)"/>
+  <line x1="370" y1="131" x2="386" y2="131" stroke="#c9d4e0" stroke-width="1.4" marker-end="url(#a3)"/>
+  <line x1="550" y1="131" x2="566" y2="131" stroke="#c9d4e0" stroke-width="1.4" marker-end="url(#a3)"/>
+  <line x1="730" y1="131" x2="746" y2="131" stroke="#c9d4e0" stroke-width="1.4" marker-end="url(#a3)"/>
+
+  <!-- P1 rows -->
+  <text x="30" y="200" class="id" fill="#cc7a33">Stufe B · P1 (vor Bundestagspilot)</text>
+  <g>
+    <!-- 6 P1-9 -->
+    <rect x="30" y="212" width="145" height="60" rx="8" fill="#fbf1e6" stroke="#e6cba0" stroke-width="1.4"/>
+    <circle cx="48" cy="230" r="10" fill="#cc7a33"/><text x="48" y="234" class="n" text-anchor="middle">6</text>
+    <text x="66" y="234" class="id">P1-9</text><text x="42" y="256" class="d">Stale-Kommentare</text>
+    <!-- 7 P1-2 -->
+    <rect x="190" y="212" width="145" height="60" rx="8" fill="#fbf1e6" stroke="#e6cba0" stroke-width="1.4"/>
+    <circle cx="208" cy="230" r="10" fill="#cc7a33"/><text x="208" y="234" class="n" text-anchor="middle">7</text>
+    <text x="226" y="234" class="id">P1-2</text><text x="202" y="256" class="d">Ebenen-Casing</text>
+    <!-- 8 P1-1 -->
+    <rect x="350" y="212" width="145" height="60" rx="8" fill="#fbf1e6" stroke="#e6cba0" stroke-width="1.4"/>
+    <circle cx="368" cy="230" r="10" fill="#cc7a33"/><text x="368" y="234" class="n" text-anchor="middle">8</text>
+    <text x="386" y="234" class="id">P1-1 🔒</text><text x="362" y="256" class="d">KO-Backfill (Prod)</text>
+    <!-- 9 P1-5 -->
+    <rect x="510" y="212" width="145" height="60" rx="8" fill="#fbf1e6" stroke="#e6cba0" stroke-width="1.4"/>
+    <circle cx="528" cy="230" r="10" fill="#cc7a33"/><text x="528" y="234" class="n" text-anchor="middle">9</text>
+    <text x="546" y="234" class="id">P1-5</text><text x="522" y="256" class="d">Durchsatz ehrlich</text>
+    <!-- 10 P1-6 -->
+    <rect x="670" y="212" width="145" height="60" rx="8" fill="#fbf1e6" stroke="#e6cba0" stroke-width="1.4"/>
+    <circle cx="688" cy="230" r="10" fill="#cc7a33"/><text x="688" y="234" class="n" text-anchor="middle">10</text>
+    <text x="710" y="234" class="id">P1-6</text><text x="682" y="256" class="d">Health-Report-Achse</text>
+  </g>
+  <line x1="335" y1="242" x2="346" y2="242" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#a3)"/>
+  <g>
+    <!-- 11 P1-7 -->
+    <rect x="30" y="300" width="145" height="60" rx="8" fill="#fbf1e6" stroke="#e6cba0" stroke-width="1.4"/>
+    <circle cx="48" cy="318" r="10" fill="#cc7a33"/><text x="48" y="322" class="n" text-anchor="middle">11</text>
+    <text x="66" y="322" class="id">P1-7 🔒</text><text x="42" y="344" class="d">Monitoring-Zweitkanal</text>
+    <!-- 12 P1-4 -->
+    <rect x="190" y="300" width="145" height="60" rx="8" fill="#fbf1e6" stroke="#e6cba0" stroke-width="1.4"/>
+    <circle cx="208" cy="318" r="10" fill="#cc7a33"/><text x="208" y="322" class="n" text-anchor="middle">12</text>
+    <text x="226" y="322" class="id">P1-4</text><text x="202" y="344" class="d">failed-KO-Recovery</text>
+    <!-- 13 P1-8 -->
+    <rect x="350" y="300" width="145" height="60" rx="8" fill="#fbf1e6" stroke="#e6cba0" stroke-width="1.4"/>
+    <circle cx="368" cy="318" r="10" fill="#cc7a33"/><text x="368" y="322" class="n" text-anchor="middle">13</text>
+    <text x="386" y="322" class="id">P1-8</text><text x="362" y="344" class="d">Radar-Störung ⚠PR#89</text>
+    <!-- 14 P1-3 -->
+    <rect x="510" y="300" width="145" height="60" rx="8" fill="#fbf1e6" stroke="#e6cba0" stroke-width="1.4"/>
+    <circle cx="528" cy="318" r="10" fill="#cc7a33"/><text x="528" y="322" class="n" text-anchor="middle">14</text>
+    <text x="546" y="322" class="id">P1-3 🔒</text><text x="522" y="344" class="d">Priorisierung scharf</text>
+  </g>
+  <!-- dependency arrows P0-2->P1-6, P0-1->P1-6, P1-6->P1-7, P1-1->P1-3 -->
+  <path d="M742,255 C755,270 780,285 815,300" fill="none" stroke="#c9d4e0" stroke-width="1.3" marker-end="url(#a3)" opacity="0"/>
+  <line x1="670" y1="255" x2="180" y2="300" stroke="#dfe6ee" stroke-width="1.2" marker-end="url(#a3)"/>
+  <text x="360" y="286" class="cap">P1-6 → P1-7</text>
+  <line x1="422" y1="272" x2="560" y2="300" stroke="#dfe6ee" stroke-width="1.2" marker-end="url(#a3)"/>
+  <text x="470" y="290" class="cap">P1-1 → P1-3</text>
+
+  <!-- legend -->
+  <rect x="30" y="392" width="900" height="60" rx="8" fill="#f4f7fa" stroke="#dfe6ee"/>
+  <text x="45" y="414" class="s" font-weight="600">Freigabe-Matrix:</text>
+  <text x="45" y="432" class="cap">🔒 P1-1 (Prod-Backfill), P1-3 (scharfschalten), P1-7 (Alarmkanal aktivieren), P0-5 (volle Migration) = Gründer-Freigabe.</text>
+  <text x="45" y="448" class="cap">Ohne Freigabe erlaubt: Code schreiben + testen + committen. Nicht erlaubt ohne Freigabe: Merge nach main / Deploy / Migration / Zeitplan / Secret.</text>
+</svg>

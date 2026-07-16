@@ -10,8 +10,21 @@ const { validateProfile } = require("./lib/helmut/profile-validation");
 const sourceSafety = require("./lib/helmut/sourceSafety");
 const { runLageCheck, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, getLlmUsageBreakdownToday, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState, tenantJwtModeEnabled, saveKnowledgeObjectEnrichment, profileDbModeEnabled, getProfileFromDb, diagnoseTenantJwt } = require("./lib/helmut/storage");
+const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, listFailedKnowledgeObjects, resetUnderstandingToPending, markUnderstandingTerminal, getUnderstandingRetries, saveUnderstandingRetries, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, getLlmUsageBreakdownToday, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getClassificationCoverage, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState, tenantJwtModeEnabled, saveKnowledgeObjectEnrichment, profileDbModeEnabled, getProfileFromDb, diagnoseTenantJwt, recordProcessRun, listProcessRuns } = require("./lib/helmut/storage");
+
+// P0-1: technischer Ausfuehrungsort + Laufkennung fuer Prozess-Laufzeit-Telemetrie
+// (Cron-Understanding, Briefing-Aufbau). Reine technische Metadaten, nie PII.
+function helmutExecLocation() {
+  return String(process.env.VERCEL_REGION || process.env.HELMUT_EXEC_LOCATION || "local").slice(0, 40);
+}
+function helmutRunId(prefix = "run", atMs = Date.now()) {
+  const stamp = new Date(atMs).toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
+  return `${String(prefix).slice(0, 24)}-${stamp}-${Math.random().toString(36).slice(2, 7)}`;
+}
 const { classifyOperationalState, describeState } = require("./lib/helmut/watchdog-state");
+const healthAxes = require("./lib/helmut/health-axes");
+const { recoverFailedUnderstanding } = require("./lib/helmut/ko-recovery");
+const { buildAlarmPayload, buildAlarmText } = require("./lib/helmut/alarm-payload");
 const { sourceMode } = require("./lib/helmut/quellenarchitektur/source-mode");
 const { sourceCoverageThresholds, effectiveActiveSourceCount } = require("./lib/helmut/source-coverage");
 const { runKoEnrichmentBackfill } = require("./lib/helmut/ko-enrichment");
@@ -763,6 +776,16 @@ async function handleRequest(request, response) {
       const push = await withTimeout(sendBriefingReadyPush(briefing, profile), 30000, "cron-briefing-push")
         .catch((error) => ({ ok: false, reason: "push-timeout", error: error && error.message }));
       console.log(`[cron/morning-briefing] build=${tBuild - t0}ms push=${Date.now() - tBuild}ms available=${briefing && briefing.available} items=${((briefing && briefing.items) || []).length}`);
+      // P0-1: echte Briefing-Aufbau-Dauer persistieren (0 KI, reine Lese-Transformation).
+      // Nur Zaehler/Status — KEIN Briefingtext (DSGVO-Datensparsamkeit).
+      await recordProcessRun({
+        process: "briefing-morning", runId: helmutRunId("briefing-morning", t0), mode: "cron", location: helmutExecLocation(),
+        startedAt: new Date(t0).toISOString(), finishedAt: new Date(tBuild).toISOString(),
+        durationMs: tBuild - t0,
+        processed: ((briefing && briefing.items) || []).length,
+        reason: briefing && briefing.available ? null : (briefing && briefing.reason) || null,
+        status: briefing && briefing.available ? "ok" : "empty"
+      }).catch(() => {});
       return { briefing, push };
     });
   }
@@ -800,10 +823,14 @@ async function handleRequest(request, response) {
           successfulSources: latest.successfulSources ?? null,
           failedSources: latest.failedSources ?? null,
           savedItems: latest.savedItems ?? null,
-          // Laufzeit des Laufs (ms) — wird erst persistiert, sobald der
-          // Monitoring-Stapel gemergt ist (scheduler speichert durationMs);
-          // bis dahin ehrlich null. Forward-kompatibel gewhitelistet.
-          durationMs: latest.durationMs ?? null
+          // P0-1/P0-2: Laufzeit wird jetzt real gemessen (scheduler runSourceCrawl:
+          // Date.now()-runStartedMs) UND von compactStore erhalten -> nach einem
+          // echten Crawl ist durationMs != null. Laufkennung/Quellenmodus zur
+          // Korrelation mitgeliefert (technische Metadaten).
+          durationMs: latest.durationMs ?? null,
+          runId: latest.runId ?? null,
+          sourceMode: latest.sourceMode ?? null,
+          understanding: latest.understanding ?? null
         } : null
       };
     });
@@ -838,8 +865,10 @@ async function handleRequest(request, response) {
       // (HELMUT_MONITORING_WEBHOOK_URL: Slack/Discord/Zapier/E-Mail-Relay).
       // Beide Kanäle fail-safe und unabhängig; ein Kanal-Fehler kippt den anderen
       // nicht. Kein neuer Dienst/kein SMTP-Secret nötig.
+      // P1-7 Datenschutz: auch der Text-only-Kanal (WhatsApp) erhält den über
+      // buildAlarmText redigierten Statustext (doppelter Boden gegen Inhalte/Secrets).
       const [delivery, webhook] = await Promise.all([
-        sendCallMeBotMessage(report.text),
+        sendCallMeBotMessage(buildAlarmText(report)),
         sendMonitoringWebhook(report)
       ]);
       const whatsappBroken = delivery && delivery.sent === false && !delivery.skipped;
@@ -888,6 +917,8 @@ async function handleRequest(request, response) {
   if (url.pathname === "/api/cron/lage-briefing") {
     if (!authorizeCron(request, url, response)) return;
     return handleAsync(response, async () => {
+      const lageBriefingStartMs = Date.now();
+      const lageBriefingRunId = helmutRunId("briefing-lage", lageBriefingStartMs);
       let profiles = await listProfiles().catch(() => []);
       if (!Array.isArray(profiles) || !profiles.length) profiles = [{ id: politicianId }];
       const results = [];
@@ -909,6 +940,14 @@ async function handleRequest(request, response) {
           .catch((e) => ({ available: false, reason: "error", error: e && e.message }));
         results.push({ userId: profile.id, available: res.available, fromCache: res.fromCache, reason: res.reason || null, vorgaenge: (res.vorgaenge || []).length });
       }
+      // P0-1: echte Lage-Briefing-Vorwaerm-Laufzeit persistieren (Zaehler/Status, kein Text).
+      await recordProcessRun({
+        process: "briefing-lage", runId: lageBriefingRunId, mode: "cron", location: helmutExecLocation(),
+        startedAt: new Date(lageBriefingStartMs).toISOString(), finishedAt: new Date().toISOString(),
+        durationMs: Date.now() - lageBriefingStartMs,
+        processed: results.length, deferred: skipped,
+        status: "ok"
+      }).catch(() => {});
       return { prewarmed: results.length, uebersprungen: skipped, results };
     });
   }
@@ -961,6 +1000,22 @@ async function handleRequest(request, response) {
   if (url.pathname === "/api/cron/understanding") {
     if (!authorizeCron(request, url, response)) return;
     return handleAsync(response, async () => {
+      // P0-1: echte Wall-Clock-Messung des dedizierten Understanding-Cron-Laufs.
+      const understandingStartMs = Date.now();
+      const runId = helmutRunId("understanding-cron", understandingStartMs);
+      // P1-4 (freigabepflichtig, Default AUS): begrenzte Recovery fehlgeschlagener
+      // Wissensobjekte VOR dem Lauf — sie werden bounded auf 'pending' zurückgesetzt
+      // und in DIESEM Lauf gleich mitverstanden. Ohne Flag ein No-Op (kein Prod-Write).
+      const recovery = await recoverFailedUnderstanding({
+        listFailed: (limit) => listFailedKnowledgeObjects({ limit }),
+        resetToPending: (vid) => resetUnderstandingToPending(vid),
+        markTerminal: (vid) => markUnderstandingTerminal(vid),
+        readRetries: () => getUnderstandingRetries(),
+        writeRetries: (map) => saveUnderstandingRetries(map)
+      }).catch((e) => ({ skipped: true, reason: "recovery-error", error: e && e.message }));
+      if (recovery && (recovery.retried || recovery.terminal)) {
+        console.log(`[cron/understanding] recovery: ${JSON.stringify({ retried: recovery.retried, terminal: recovery.terminal })}`);
+      }
       const rawDocs = await listRecentRawDocuments(500);
       // ZEITBUDGET (Default 240s): der serielle KI-Understanding-Loop darf die
       // Serverless-Funktion nicht über ihr Limit (300s) treiben. Rest bleibt pending
@@ -968,7 +1023,18 @@ async function handleRequest(request, response) {
       const result = await runPendingUnderstandingShadow(rawDocs, { budgetMs: Number(process.env.HELMUT_UNDERSTAND_BUDGET_MS || 240000) });
       const processed = (result && result.results && result.results.filter((r) => r && r.status === "saved").length) || 0;
       console.log(`[cron/understanding] rawDocs=${rawDocs.length} Ergebnis: ${JSON.stringify({ processed, result })}`);
-      return { ok: true, rawDocsLoaded: rawDocs.length, processed, result };
+      // P0-1: Understanding-Batch-Laufzeit persistieren (Auth-Store, scalar-only, PII-frei).
+      await recordProcessRun({
+        process: "understanding-cron", runId, mode: "cron", location: helmutExecLocation(),
+        startedAt: new Date(understandingStartMs).toISOString(), finishedAt: new Date().toISOString(),
+        durationMs: Date.now() - understandingStartMs,
+        processed,
+        deferred: result && result.deferred,
+        skippedStore: result && result.counts && result.counts["skipped-store"],
+        reason: result && result.reason,
+        status: result && result.skipped ? "skipped" : "ok"
+      }).catch(() => {});
+      return { ok: true, rawDocsLoaded: rawDocs.length, processed, result, recovery };
     });
   }
 
@@ -3102,7 +3168,7 @@ async function buildHealthReport(politicianId = cemInceProfile.id) {
   // aus dem toten `pipelineDebugReports`-Marker und NICHT mehr aus der
   // build-zeit-blinden Briefing-`generatedAt`.
   const profile = await activeProfile(politicianId);
-  const [crawl, lageCheck, briefing, completeKoAt, prevState, storeSummary, errors, users, feedback, pushEvents] = await Promise.all([
+  const [crawl, lageCheck, briefing, completeKoAt, prevState, storeSummary, errors, users, feedback, pushEvents, llmBreakdown, classificationCoverage] = await Promise.all([
     getLatestCrawlRun(),
     getLatestLageCheck(politicianId),
     buildV3Briefing(profile, politicianId),
@@ -3112,7 +3178,10 @@ async function buildHealthReport(politicianId = cemInceProfile.id) {
     accounts.listSystemErrors(100),
     accounts.listUsers(),
     listFeedback(200),
-    listPushEvents(politicianId, 200)
+    listPushEvents(politicianId, 200),
+    // P1-6: KI-Budget-Ausschöpfung + Klassifikationsabdeckung (fail-safe).
+    getLlmUsageBreakdownToday().catch(() => null),
+    getClassificationCoverage().catch(() => null)
   ]);
   const storage = getStorageStatus();
   const now = Date.now();
@@ -3171,6 +3240,24 @@ async function buildHealthReport(politicianId = cemInceProfile.id) {
   });
   const ok = classification.ok;
 
+  // P1-6: KI-Budget-, Leerlauf-, Quellenfrische- und Klassifikationsabdeckungs-Achse.
+  const budget = healthAxes.budgetAxis(llmBreakdown || {});
+  // Review-Fix: der Leerlauf-Alarm nutzt die DEFERRED-Zahl DESSELBEN Crawls
+  // (budget-verdrängte Cluster in genau diesem Lauf), NICHT den globalen Tages-Skip-
+  // Zähler — sonst kippt der (immer-aktive) Health-Report an gewöhnlichen Tagen auf
+  // ok=false (processed=0 im Eager-Pfad + irgendwelche Tages-Skips = Fehlalarm).
+  const idle = healthAxes.idleAxis({
+    analyzed: crawl?.understanding?.processed,
+    newRawDocuments: crawl?.newRawDocuments,
+    skips: crawl?.understanding?.deferred
+  });
+  const coverage = healthAxes.coverageAxis(classificationCoverage);
+  const freshness = healthAxes.sourceFreshnessAxis({
+    crawlAgeMs: ageMs(crawl?.checkedAt || crawl?.createdAt),
+    checked, failed, maxAgeMs: 28 * 3600000, maxFailureRatio: maxCrawlFailureRatio
+  });
+  const axes = healthAxes.combineHealthAxes({ budget, idle, coverage, freshness });
+
   // Betriebszustand persistieren (fail-safe) — ermöglicht Recovery-Erkennung.
   await saveWatchdogState(politicianId, classification.state);
 
@@ -3212,17 +3299,33 @@ async function buildHealthReport(politicianId = cemInceProfile.id) {
     `Briefing: ${briefingItems} Einträge · Verstanden zuletzt: ${fmtAge(completeKoH)} · Fehler (24h): ${errors24}`,
     cronLine,
     ...(gnrLine ? [gnrLine] : []),
+    // P1-6: KI-Budget-Ausschöpfung (Calls/Limit/Rest/Skips) + Leerlauf-Warnung.
+    budget.limit != null
+      ? `🧮 KI-Budget: ${budget.calls}/${budget.limit} genutzt · Rest ${budget.remaining} · Skips ${budget.skips}${budget.exhausted ? " ⚠️ erschöpft" : (budget.status === "knapp" ? " ⚠️ knapp" : "")}`
+      : `🧮 KI-Budget: ${budget.calls} Calls · Skips ${budget.skips} (kein Limit gesetzt)`,
+    ...(idle.idle ? [`🕳️ Leerlauf: neue Dokumente, aber 0 verstanden (Budget übersprang Arbeit) ⚠️`] : []),
+    // P1-6: Klassifikationsabdeckung (WARN-only, steigt mit dem Backfill P1-1).
+    ...(coverage.available ? [`🏷️ Klassifikationsabdeckung: ${Math.round((coverage.levelCoverage || 0) * 100)}% mit Ebene (${coverage.withLevel}/${coverage.total})${coverage.warn ? " ⚠️ niedrig" : ""}`] : []),
     engagement
   ].join("\n");
 
   return {
-    ok: ok && overdueCrons.length === 0 && !gnrDegraded,
+    // P1-6: Budget-Erschöpfung ODER Leerlauf kippen ok (harte Alarm-Gründe);
+    // Abdeckung/Quellenfrische sind WARN-Signale (kippen ok nicht).
+    ok: ok && overdueCrons.length === 0 && !gnrDegraded && axes.ok,
     text,
     state: classification.state,
     severity: classification.severity,
     overdueCrons: overdueCrons.map((c) => c.name),
     googleUrlResolution: gnr,
     googleUrlResolutionRate: gnrRate,
+    // P1-6: strukturierte Achsen für Watchdog/Admin (nur technische Zähler).
+    budget,
+    idle,
+    classificationCoverage: coverage,
+    sourceFreshness: freshness,
+    healthBlockers: axes.blockers,
+    healthWarnings: axes.warnings,
     active7,
     feedback24,
     errors24,
@@ -3247,16 +3350,10 @@ async function sendMonitoringWebhook(report) {
       // Timeout (Review-Fix): "fail-safe" muss auch HAENGER abdecken, nicht nur
       // Fehler — ein haengender Webhook wuerde sonst den Health-Cron blockieren.
       signal: AbortSignal.timeout(8000),
-      // "text" = Slack/Discord-kompatibel; Zusatzfelder für strukturierte Empfänger.
-      body: JSON.stringify({
-        text: report.text,
-        ok: report.ok,
-        state: report.state,
-        severity: report.severity,
-        overdueCrons: report.overdueCrons || [],
-        googleUrlResolutionRate: report.googleUrlResolutionRate,
-        source: "helmut-health-report"
-      })
+      // P1-7 Datenschutz-Leitplanke: der Payload wird über buildAlarmPayload
+      // gebaut — ALLOWLIST technischer Felder + Redaction des Statustextes. Es
+      // verlassen NIE Nutzerinhalte/Briefingtexte/Secrets den Alarmkanal.
+      body: JSON.stringify(buildAlarmPayload(report))
     });
     return { sent: res.ok, status: res.status };
   } catch (error) {
@@ -4326,7 +4423,16 @@ async function buildAdminDataStatus({ perAccountLimit = 25 } = {}) {
     },
     dokumente: {
       geladen: dsNumOrNull(cr.loadedItems) ?? naLive({ note: "ab dem naechsten Crawl-Lauf verfuegbar" }),
-      neu: dsNum(cr.savedItems),
+      // P1-5: EHRLICHER Durchsatz = echte neue raw_documents (relationaler Delta).
+      // Der frühere Blob-savedItems-Zähler überzeichnete ~15x (Cap-Artefakt, Audit R8).
+      // Review-Fix: NICHT dsNumOrNull benutzen — Number(null)===0 (finite) würde ein
+      // ehrliches null ("unbekannt", relationaler Pfad aus/fehlgeschlagen) still zu 0
+      // machen und den naLive-Marker unterdrücken. Deshalb explizite null-Prüfung:
+      // null/undefined -> "unbekannt"-Marker, sonst der echte relationale Delta.
+      neu: (cr.newRawDocuments == null)
+        ? naLive({ note: "relationaler Delta ab naechstem Crawl-Lauf; blob-Wert cap-verzerrt" })
+        : dsNum(cr.newRawDocuments),
+      neuBlobRoh: dsNum(cr.savedItems),
       verworfen: dsNumOrNull(cr.discardedItems) ?? naLive({ note: "ab dem naechsten Crawl-Lauf verfuegbar" }),
       duplikate: dsNumOrNull(cr.duplicates) ?? naLive({ note: "ab dem naechsten Crawl-Lauf verfuegbar" }),
       // Ehrlich gezaehlt: Vorgaenge, die der Source-Safety-Guard aktuell aus dem
@@ -4969,7 +5075,10 @@ async function handleDebugRequest(request, response, url) {
         mentioned_locations: ["Berlin"],
         mentioned_organizations: ["Deutsche Rentenversicherung"],
         policy_field: "Sozialpolitik",
-        political_level: "Bund",
+        // P1-2 Ebenen-Kanon: klein ('bund'), damit der Debug-Seed nicht gegen echte
+        // (klein geschriebene) Klassifikationsdaten auseinanderlaeuft.
+        political_level: "bund",
+        decision_level: "bund",
         instrument: "Gesetz",
         stage: "Beratung",
         tags: ["Rente", "Sozialpolitik", "2026"],
