@@ -73,6 +73,7 @@
     "test:health-axes": "node scripts/health-axes-test.js",
     "test:ko-recovery": "node scripts/ko-recovery-test.js",
     "test:alarm-payload": "node scripts/alarm-payload-test.js",
+    "test:ko-backfill-dryrun": "node scripts/ko-backfill-dryrun-test.js",
     "test:lage-cacheonly": "node scripts/lage-cacheonly-test.js",
     "test:matching-norm": "node scripts/matching-normalization-test.js",
     "test:radar-scan-limit": "node scripts/radar-scan-limit-test.js",
