@@ -35,7 +35,7 @@ const specB = {
 };
 
 const dataDir = path.join(__dirname, "..", ".helmut-data");
-const guarded = ["store.json", "auth.json", `p-${A}.json`, `p-${B}.json`].map((f) => path.join(dataDir, f));
+const guarded = ["store.json", "auth.json", `p-${A}.json`, `p-${B}.json`, "p-raw-test-synthetic.json"].map((f) => path.join(dataDir, f));
 const backups = guarded.map((f) => (fs.existsSync(f) ? fs.readFileSync(f, "utf8") : null));
 
 async function countUsers(politicianId) {
@@ -111,6 +111,31 @@ async function countProfiles(id) {
     await provisioning.teardownTenant(A);
     check("A vollständig entfernt (0 Nutzer, 0 Profil)", (await countUsers(A)) === 0 && (await countProfiles(A)) === 0);
     check("B nach A-Teardown weiterhin vorhanden", (await countUsers(B)) === 1 && (await countProfiles(B)) === 1);
+
+    // ── 9) KEINE Kontoübernahme: fremde E-Mail (Admin) wird NICHT degradiert ────
+    await accounts.createUser({ email: "admin-collide@synthetic.test", name: "Admin", role: "admin", password: "test-pass-999" });
+    const rHijack = await provisioning.provisionTenant({ ...specB, id: "hijack-target-synthetic", email: "admin-collide@synthetic.test" });
+    check("Provisionierung mit fremder (Admin-)E-Mail -> Abbruch (email-belongs-to-other-account)",
+      rHijack.ok === false && rHijack.reason === "email-belongs-to-other-account");
+    const adminAfter = (await accounts.listUsers()).find((u) => u.email === "admin-collide@synthetic.test");
+    check("Admin-Konto NICHT zum Abgeordneten degradiert/umgebunden",
+      adminAfter && adminAfter.role === "admin" && (adminAfter.politicianId == null));
+    check("Kein Konto für hijack-target-synthetic angelegt", (await countUsers("hijack-target-synthetic")) === 0);
+
+    // ── 10) TEARDOWN löscht KEINE geteilten Personen-/News-Rohdaten Fremder ─────
+    const mainSeed = await storage.readStore("main");
+    mainSeed.rawItems = [
+      { id: "raw-person-foreign", sourceType: "person", politicianId: "anderer-mandant-synthetic", title: "Fremd-Person" },
+      { id: "raw-own", sourceType: "news", politicianId: "raw-test-synthetic", title: "Eigenes" }
+    ];
+    await storage.writeStore(mainSeed, "main");
+    await provisioning.provisionTenant({ ...specA, id: "raw-test-synthetic", email: "rawtest@synthetic.test" });
+    await provisioning.teardownTenant("raw-test-synthetic");
+    const mainAfter = await storage.readStore("main");
+    const rawIds = (mainAfter.rawItems || []).map((r) => r.id);
+    check("Teardown erhält FREMDES Personen-Rohitem (kein Kollateralschaden an cem/anderen)",
+      rawIds.includes("raw-person-foreign"), JSON.stringify(rawIds));
+    check("Teardown entfernt das EIGENE Rohitem des Mandanten", !rawIds.includes("raw-own"));
   } finally {
     guarded.forEach((f, i) => {
       if (backups[i] != null) fs.writeFileSync(f, backups[i]);

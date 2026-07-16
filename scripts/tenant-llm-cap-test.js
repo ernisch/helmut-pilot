@@ -204,6 +204,29 @@ function makeFakeRpc(state = { rows: new Map() }, opts = {}) {
     check("Mandanten-Ablehnung traegt priority:false + atomic:true", denied.allowed === false && denied.priority === false && denied.atomic === true);
   }
 
+  // ── 11) Lokaler Modus: ein ausgeschoepfter Mandant bleibt gedeckelt, auch wenn
+  //        viele weitere Mandanten am selben Tag hinzukommen (Eviction-Regression) ─
+  reset();
+  process.env.HELMUT_TENANT_LLM_CAP = "1";
+  process.env.HELMUT_MAX_LLM_CALLS_PER_DAY = "1000";
+  process.env.HELMUT_MAX_LLM_CALLS_PER_TENANT_PER_DAY = "2";
+  {
+    const usageToday = async () => ({ calls: 0 });
+    // tenant-01 schoepft sein Limit aus (2 erlaubt, 3. abgelehnt).
+    await storage.reserveLlmCall({ politicianId: "tenant-01", callType: "office-output", referenceIso: REF, deps: { usageToday } });
+    await storage.reserveLlmCall({ politicianId: "tenant-01", callType: "office-output", referenceIso: REF, deps: { usageToday } });
+    const exhausted = await storage.reserveLlmCall({ politicianId: "tenant-01", callType: "office-output", referenceIso: REF, deps: { usageToday } });
+    check("lokal: tenant-01 nach 2 erschoepft (3. abgelehnt)", exhausted.allowed === false);
+    // 9 weitere Mandanten am selben Tag -> Map-Eviktion wird ausgeloest.
+    for (let i = 2; i <= 10; i++) {
+      await storage.reserveLlmCall({ politicianId: `tenant-${String(i).padStart(2, "0")}`, callType: "office-output", referenceIso: REF, deps: { usageToday } });
+    }
+    // tenant-01 darf NICHT wieder freigegeben werden (Zaehler des laufenden Tages
+    // wurde nicht verdraengt und nicht unter das Limit re-seedet).
+    const again = await storage.reserveLlmCall({ politicianId: "tenant-01", callType: "office-output", referenceIso: REF, deps: { usageToday } });
+    check("lokal: ausgeschoepfter tenant-01 bleibt gedeckelt trotz 9 weiterer Mandanten (kein Eviction-Bypass)", again.allowed === false, JSON.stringify(again));
+  }
+
   // Env wiederherstellen
   reset();
   for (const [k, v] of Object.entries(env)) if (v !== undefined) process.env[k] = v;

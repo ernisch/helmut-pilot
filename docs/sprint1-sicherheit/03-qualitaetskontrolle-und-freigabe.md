@@ -47,6 +47,18 @@ Bestehende Deckung (unverändert grün): `llm-budget` (l/n/o), `llm-reservation`
 Cem intakt), `mandantentrennung`/`tenant-guard` (a/b/e), `cache-isolation` (b),
 `p1-security-check` (d live).
 
+## Adversariale Review (durchgeführt) — gefunden & behoben
+
+Eine adversariale Mehr-Linsen-Review der Kernänderungen fand **0** Regressionen in
+der Guard-Härtung und folgende echte Bugs, die **alle behoben + negativ getestet** sind:
+
+| Fund | Schwere | Behebung |
+|---|---|---|
+| `provisionTenant` übernahm/degradierte ein bestehendes Admin-/Referent-Konto mit gleicher E-Mail (politicianId=null → Konfliktprüfung verfehlt) | **hoch** | Konfliktprüfung: E-Mail nur bei exakt gleicher (E-Mail, id)-Paarung übernehmen; sonst Abbruch `email-belongs-to-other-account`. Test: Admin bleibt Admin. |
+| `teardownTenant` löschte über `deleteProfileData` geteilte Personen-/News-Rohdaten **fremder** Mandanten (inkl. cem-ince) mit | **hoch** | Neue, strikt gescopte `storage.deleteTenantScopedData` (nur explizit eigene rawItems, kein person/news/term-Match). Test: fremdes Personen-Rohitem überlebt. |
+| Lokaler Mandanten-Zähler verdrängte einen HEUTE aktiven, ausgeschöpften Mandanten (Cap-Umgehung im Datei-Modus) | mittel | Eviction nur für Zähler **früherer Tage**. Test: ausgeschöpfter Mandant bleibt gedeckelt trotz 9 weiterer. |
+| Rollback entfernt dangling Fremd-Zuweisungen zur id | niedrig | dokumentiert (akzeptierter Randfall: Verweis auf ein Mandat, dessen Anlage scheiterte). |
+
 ## Verbleibende Freigabeschritte (Production) — je Schritt: Zweck · Risiko · Rollback · Freigabe
 
 ### F1 — Per-Mandant-Kostendeckel scharf schalten
