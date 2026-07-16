@@ -123,10 +123,13 @@ Empfohlener Eingriffsort nach dem Sprint (mit Freigabe): De-Dup nach `source_id`
 Quellenlisten-Zusammenstellung, ODER den statischen `cem-ince-news`-Katalogeintrag
 weglassen, wenn `personNewsSource` dieselbe `id` erzeugt.
 
-### 4.2 · Zweiter Alarmkanal — technische Vorbereitung (nicht aktiviert)
-_Status: in Arbeit (dokumentarisch)._ Der Code-Pfad (`buildAlarmPayload`/`buildAlarmText`,
-POST an `HELMUT_MONITORING_WEBHOOK_URL`) existiert und ist default-inaktiv. Aktivierung =
-F5 (Env-Wert setzen) — **verboten ohne Freigabe** und ohne geprüfte Webhook-URL.
+### 4.2 · Zweiter Alarmkanal — technische Vorbereitung (nicht aktiviert) ✔ dokumentiert
+Vollständige technische Vorbereitung in **`docs/betrieb/zweitkanal-alarm-vorbereitung.md`**:
+verifizierter Code-Pfad (`sendMonitoringWebhook` → `buildAlarmPayload`, 8-s-Timeout,
+fail-safe, Allowlist+Redaction), exaktes Payload-Schema, gefahrloser Prüfweg
+(`GET /api/cron/health-report?dryRun=1`, kein Versand) und die Aktivierungsschritte.
+Aktivierung = F5 (Env-Wert setzen) — **verboten ohne Freigabe** und ohne geprüfte
+Webhook-URL. Hier nichts aktiviert, Code unverändert.
 
 ### 4.3 · Berlin/Brandenburg — strukturelle Vorbereitung (nicht aktiviert)
 _Status: in Arbeit (dokumentarisch, rein strukturell)._ Keine Aktivierung.
