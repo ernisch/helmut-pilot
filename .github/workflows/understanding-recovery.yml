@@ -1,20 +1,20 @@
-name: "Understanding-Recovery (1 freigegebener Fall — vg-sozialwohnungen)"
+name: "Understanding-Recovery Einzel-Dokument (vg-sozialwohnungen)"
 
 on:
   workflow_dispatch:
     inputs:
       confirm_text:
-        description: "Fuer den ECHTEN Lauf EXAKT eingeben: RECOVER_SOZIALWOHNUNGEN_CONFIRMED (sonst nur Plan+Snapshot, read-only)"
+        description: "Fuer den ECHTEN Lauf EXAKT eingeben RECOVER_SOZIALWOHNUNGEN_SINGLEDOC (sonst nur read-only Vorschau)"
         required: true
         default: ""
 
-# ECHTE Recovery des EINEN freigegebenen Vorgangs vg-sozialwohnungen (2026-07-17).
-# NUR manuell (workflow_dispatch), harte Bestaetigung. Eng begrenzt auf die
-# Allowlist in lib/helmut/understanding-recovery.js (GENAU 1 vorgang_id).
-# Schritt A (IMMER, read-only): Plan + Pre-Snapshot. Kein Write, kein KI.
-# Schritt B (NUR bei confirm_text == "RECOVER_SOZIALWOHNUNGEN_CONFIRMED"): understanding.understandOneCluster
-#   fuer den EINEN Fall — genau 1 KI-Call, genau 1 neues complete-KO (+ Links),
-#   Rollback-Kennung "recovery:rec-<run_id>" im Feld understanding_model, idempotent.
+# ECHTE Einzel-Dokument-Recovery des EINEN freigegebenen Vorgangs vg-sozialwohnungen.
+# Rekonstruiert GENAU 1 Wissensobjekt aus GENAU 1 per exakter raw_document_id fest
+# verdrahtetem Seed-Dokument (lib/helmut/single-doc-recovery.js). KEINE Anker-/
+# Teilstring-/Themen-/Pool-Suche. Nur manuell (workflow_dispatch), harte Bestaetigung.
+# Schritt A (IMMER, read-only): Plan-Vorschau. Kein Write, kein KI.
+# Schritt B (NUR bei confirm_text == "RECOVER_SOZIALWOHNUNGEN_SINGLEDOC"): max 1 KI-Call,
+#   max 1 neues complete-KO (+ 1 Link), Rollback-Kennung "recovery:singledoc-<run_id>".
 
 permissions:
   contents: read
@@ -49,15 +49,15 @@ jobs:
           fi
           echo "Preflight Store OK."
 
-      - name: Schritt A Plan und Pre-Snapshot (read-only)
+      - name: Schritt A read-only Vorschau (kein Flag/Token)
         env:
           HELMUT_V3_STORE: "1"
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: node scripts/understanding-recovery-execute.js
+        run: node scripts/understanding-single-doc-recovery.js
 
       - name: Preflight KI-Key (nur fuer echten Lauf)
-        if: ${{ inputs.confirm_text == 'RECOVER_SOZIALWOHNUNGEN_CONFIRMED' }}
+        if: ${{ inputs.confirm_text == 'RECOVER_SOZIALWOHNUNGEN_SINGLEDOC' }}
         env:
           AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
           AZURE_OPENAI_KEY: ${{ secrets.AZURE_OPENAI_KEY }}
@@ -69,8 +69,8 @@ jobs:
           fi
           echo "Preflight KI OK."
 
-      - name: Schritt B Echter Recovery-Lauf (max 6 KI + Writes)
-        if: ${{ inputs.confirm_text == 'RECOVER_SOZIALWOHNUNGEN_CONFIRMED' }}
+      - name: Schritt B Echter Einzel-Dokument-Lauf (max 1 KI + 1 Write)
+        if: ${{ inputs.confirm_text == 'RECOVER_SOZIALWOHNUNGEN_SINGLEDOC' }}
         env:
           HELMUT_V3_STORE: "1"
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -80,15 +80,15 @@ jobs:
           AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           HELMUT_MAX_LLM_CALLS_PER_DAY: "150"
-          HELMUT_RECOVERY_EXECUTE: "1"
-          HELMUT_RECOVERY_CONFIRM: "RECOVER_SOZIALWOHNUNGEN_CONFIRMED"
-          HELMUT_RECOVERY_RUNID: "rec-${{ github.run_id }}"
+          HELMUT_SINGLEDOC_RECOVERY_EXECUTE: "1"
+          HELMUT_SINGLEDOC_RECOVERY_CONFIRM: "RECOVER_SOZIALWOHNUNGEN_SINGLEDOC"
+          HELMUT_SINGLEDOC_RECOVERY_RUNID: "singledoc-${{ github.run_id }}"
         run: |
           set -euo pipefail
-          echo "Starte ECHTEN Recovery-Lauf (Runkennung rec-${{ github.run_id }})."
-          node scripts/understanding-recovery-execute.js
+          echo "Starte ECHTEN Einzel-Dokument-Recovery-Lauf (Kennung singledoc-${{ github.run_id }})."
+          node scripts/understanding-single-doc-recovery.js
 
       - name: Hinweis kein echter Lauf
-        if: ${{ inputs.confirm_text != 'RECOVER_SOZIALWOHNUNGEN_CONFIRMED' }}
+        if: ${{ inputs.confirm_text != 'RECOVER_SOZIALWOHNUNGEN_SINGLEDOC' }}
         run: |
-          echo "Kein echter Lauf (nur Plan/Snapshot, read-only) - confirm_text war nicht exakt RECOVER_SOZIALWOHNUNGEN_CONFIRMED."
+          echo "Kein echter Lauf (nur read-only Vorschau) - confirm_text war nicht exakt RECOVER_SOZIALWOHNUNGEN_SINGLEDOC."
