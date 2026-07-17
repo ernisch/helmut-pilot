@@ -61,7 +61,7 @@
   <!-- Nutzer -->
   <rect x="220" y="230" width="150" height="86" rx="8" class="box"/>
   <text x="295" y="262" class="lbl" text-anchor="middle">Nutzer</text>
-  <text x="295" y="282" class="s" text-anchor="middle">cem-ince (Pilot)</text>
+  <text x="295" y="282" class="s" text-anchor="middle">Pilotmandant</text>
   <text x="295" y="298" class="cap" text-anchor="middle">+ 2 Testpersonen</text>
 
   <!-- Überwachung -->
