@@ -70,5 +70,5 @@ nichts ausgeführt.**
 ## 7. Nächster Sprint
 **Sprint 8** (Admin-Oberfläche) macht `quality-watchdog` + `profileSupplyStatus`/`computeGlobalActivation`
 (S4) + die S5-Scores/Leerzustände sichtbar — **ohne** etwas scharfzuschalten (sicher vorziehbar). **Oder**
-Sprint 6 (Migration + Shadow-Betrieb, Cem-Schutz; freigabepflichtig), der die heute „nicht verfügbaren"
+Sprint 6 (Migration + Shadow-Betrieb, Pilot-Schutz; freigabepflichtig), der die heute „nicht verfügbaren"
 Kennzahlen (Duplikate/Telemetrie) mit echten Daten füllt.

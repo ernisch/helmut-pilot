@@ -21,7 +21,7 @@ const NOW = new Date("2026-07-14T09:00:00Z").getTime();
 const nowDate = new Date(NOW);
 const iso = (msAgo) => new Date(NOW - msAgo).toISOString();
 const KOBASE = { status: "neu", understanding_status: "complete" };
-const profile = { id: "p", fullName: "Cem Ince", party: "Die Linke", committee: "Arbeit und Soziales" };
+const profile = { id: "p", fullName: "Test Politician One", party: "Testpartei Alpha", committee: "Arbeit und Soziales" };
 
 // Baut EINEN Vorgang mit gegebenen Quellen und liefert die relationTypes des Radar-Artikels.
 function relationTypesFor(sources) {

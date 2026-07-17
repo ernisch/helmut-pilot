@@ -36,10 +36,10 @@ function loadClient() {
 // --- Report bauen (echter Katalog, leere Metriken = Migrations-Leerzustand) ---
 const NOW = Date.parse("2026-07-13T12:00:00Z");
 const M = buildFullModel();
-const cem = { id: "cem-ince", fullName: "Cem Ince", party: "Die Linke", politische_ebene: "bundestag", ausschuesse: ["Arbeit und Soziales"], bundesland: "Niedersachsen", profileActive: true };
+const bund = { id: "test-politician-one", fullName: "Test Politician One", party: "Testpartei Alpha", politische_ebene: "bundestag", ausschuesse: ["Arbeit und Soziales"], bundesland: "Niedersachsen", profileActive: true };
 const berlin = { id: "be", fullName: "Berlin MdA", party: "SPD", politische_ebene: "landtag", bundesland: "Berlin", ausschuesse: ["Inneres"], profileActive: true };
-const activation = pp.computeGlobalActivation({ packages: M.packages, packagePaths: M.packagePaths, retrievalPaths: M.retrievalPaths, profiles: [cem, berlin] });
-const quality = qw.buildQualityReport({ catalog: { retrievalPaths: M.retrievalPaths, packages: M.packages, packagePaths: M.packagePaths }, activation, rawDocs: [], koSourceLinks: [], dedupDocuments: [], profiles: [cem, berlin], llmUsage: [], signals: {}, now: NOW });
+const activation = pp.computeGlobalActivation({ packages: M.packages, packagePaths: M.packagePaths, retrievalPaths: M.retrievalPaths, profiles: [bund, berlin] });
+const quality = qw.buildQualityReport({ catalog: { retrievalPaths: M.retrievalPaths, packages: M.packages, packagePaths: M.packagePaths }, activation, rawDocs: [], koSourceLinks: [], dedupDocuments: [], profiles: [bund, berlin], llmUsage: [], signals: {}, now: NOW });
 const report = ar.buildSourceAdminReport({ catalog: M, activation, qualityReport: quality, now: NOW });
 
 const ui = loadClient();
@@ -74,7 +74,7 @@ check("defekte Pflichtquelle (Bundestag) im Herausgeber-Prüfbedarf", /Bundestag
 check("Hinweis: ohne Dokumentdaten 'Unbekannt' statt erfundenem 'gesund'", /nicht „gesund" erfunden|Unbekannt/.test(html));
 
 console.log("== View 3: Profile ==");
-check("Cem 'Versorgt'", /cem-ince[\s\S]{0,140}Versorgt/.test(html));
+check("Bundestagsprofil 'Versorgt'", /test-politician-one[\s\S]{0,140}Versorgt/.test(html));
 check("Berlin-MdA 'Unversorgt'", /be[\s\S]{0,200}Unversorgt/.test(html) || /Unversorgt/.test(html));
 
 console.log("== View 4: Prüfbedarf ==");

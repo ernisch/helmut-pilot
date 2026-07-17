@@ -1,4 +1,4 @@
-# Helmut Pilot-Uebergabe fuer Cem
+# Helmut Pilot-Uebergabe fuer den Pilotmandanten
 
 Stand: 23. Juni 2026
 
@@ -39,7 +39,7 @@ Helmut beantwortet morgens und im Tagesverlauf:
 6. Unter `Radar` pruefen, ob es neue namentliche Erwaehnungen gibt.
 7. Unter `Profil` Mandatsprofil, Ausschuesse, Themen und Termine aktuell halten.
 
-## Was Cem testen sollte
+## Was der Pilotmandant testen sollte
 
 - Versteht er in 30 Sekunden, was politisch ansteht?
 - Sind die Empfehlungen konkret genug?
@@ -84,7 +84,7 @@ Live-Check am 23. Juni 2026:
 
 Diese Punkte sind fuer den Pilot nicht zwingend. Sie werden wichtig, sobald mehrere Abgeordnete dauerhaft zahlen und eigene Accounts bekommen.
 
-## Feedback-Fragen fuer Cem nach 7 bis 14 Tagen
+## Feedback-Fragen fuer den Pilotmandanten nach 7 bis 14 Tagen
 
 1. Hast du Helmut morgens wirklich geoeffnet?
 2. Was war einmal konkret nuetzlich?

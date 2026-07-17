@@ -5,7 +5,7 @@
 // Prueft: personenscharfe Erwaehnungen, Umfeld-Segmente aus matched_features,
 // belegte Dynamiken, deterministische Zusammenfassung, Dedup, Enum-Humanisierung,
 // Leerzustaende und die harten Verbote (keine hartkodierte Partei/Wahlkreis/Ausschuss,
-// keine Demo, keine Cem-Sonderlogik, keine Kosten/Secrets, keine unsicheren URLs).
+// keine Demo, keine personenspezifische Sonderlogik, keine Kosten/Secrets, keine unsicheren URLs).
 
 const radarState = require("../lib/helmut/radarState");
 const briefingContract = require("../lib/helmut/briefingContract");
@@ -23,22 +23,22 @@ const base = { status: "neu", understanding_status: "complete" };
 
 // --- Profil (ausschliesslich Profilfelder — KEINE Hardcodes im Adapter) -----
 const profile = {
-  id: "u-test", fullName: "Cem İnce", party: "Die Linke",
+  id: "u-test", fullName: "Deniz İnal", party: "Die Linke",
   committees: ["Ausschuss für Arbeit und Soziales"], constituency: "Salzgitter-Wolfenbüttel"
 };
 
 // --- Vorgaenge --------------------------------------------------------------
 const koMentionName = {
   ...base, id: "k1", vorgang_id: "v1",
-  display_title: "İnce fordert bessere Finanzierung der Kommunen",
-  mentioned_mps: ["Cem İnce"], parteien: ["Die Linke"],
+  display_title: "İnal fordert bessere Finanzierung der Kommunen",
+  mentioned_mps: ["Deniz İnal"], parteien: ["Die Linke"],
   best_source_url: "https://tagesspiegel.de/artikel-1", best_link_type: "direct",
   updated_at: iso(1 * 3600e3), created_at: iso(1 * 3600e3)
 };
 const koCriticism = {
   ...base, id: "k2", vorgang_id: "v2",
-  display_title: "Kritik an İnce nach Gesundheitsreform-Vorschlag",
-  mentioned_people: ["Cem Ince"], risiken: ["Scharfe Kritik aus der Opposition"],
+  display_title: "Kritik an İnal nach Gesundheitsreform-Vorschlag",
+  mentioned_people: ["Deniz Inal"], risiken: ["Scharfe Kritik aus der Opposition"],
   best_source_url: "https://ard.de/artikel-2", best_link_type: "direct",
   updated_at: iso(2 * 3600e3), created_at: iso(2 * 3600e3)
 };
@@ -93,8 +93,8 @@ check("environment hat party/constituency/committees", state.environment && stat
 
 // --- 2) Über dich — direkte, belegte Erwaehnungen ---------------------------
 const mv = state.mentions.map((m) => m.vorgangId);
-check("Voller Name (İnce) -> Über dich (v1)", mv.includes("v1"));
-check("Namensvariante 'Cem Ince' -> Über dich (v2)", mv.includes("v2"));
+check("Voller Name (İnal) -> Über dich (v1)", mv.includes("v1"));
+check("Namensvariante 'Deniz Inal' -> Über dich (v2)", mv.includes("v2"));
 check("Reine Partei-Erwähnung ist KEINE persönliche Erwähnung (v3 nicht in mentions)", !mv.includes("v3"));
 check("Fremder Politiker/Partei -> keine Erwähnung (v6 nicht in mentions)", !mv.includes("v6"));
 check("Jede Erwähnung trägt Quelle + echte URL + Zeit + mentionType",
@@ -111,7 +111,7 @@ check("Strukturierte Namensnennung -> confidence 'high'",
 // Einzelner haeufiger Teilname darf NICHT als direkte Erwaehnung gelten.
 {
   const onlyLast = radarState.buildCurrentRadarState({
-    profile: { id: "u2", fullName: "Cem İnce", party: "SPD" },
+    profile: { id: "u2", fullName: "Deniz İnal", party: "SPD" },
     decisions: [], kosById: {}, sourcesByVorgang: {},
     knowledgeObjects: [{ ...base, id: "kx", vorgang_id: "vx", display_title: "Debatte über Provinces und Finanzen", best_source_url: "https://x.de/y", updated_at: iso(3600e3) }],
     now: nowDate
@@ -248,7 +248,7 @@ check("Alle URLs sind sichere http(s)-URLs",
 check("Keine technischen Quellen-Enums im sourceCategory-Label (nur Klartext/'')",
   state.articles.every((a) => !/^(media|ministry|bundestag|committee|party|official|agency)$/.test(a.sourceCategory)));
 
-// Keine hartkodierte Partei/Wahlkreis/Ausschuss/Cem-Sonderlogik: ein voellig
+// Keine hartkodierte Partei/Wahlkreis/Ausschuss/Personen-Sonderlogik: ein voellig
 // anderes Profil erzeugt ausschliesslich zu DIESEM Profil passende Bezuege.
 {
   const other = {
@@ -266,7 +266,7 @@ check("Keine technischen Quellen-Enums im sourceCategory-Label (nur Klartext/'')
   const oState = radarState.buildCurrentRadarState({ profile: other, decisions: oDecisions, kosById: Object.fromEntries(otherKos.map((k) => [k.id, k])), knowledgeObjects: otherKos, sourcesByVorgang: {}, now: nowDate });
   const oBlob = JSON.stringify(oState).toLowerCase();
   check("Keine hartkodierte Partei: fremdes Profil (CDU) -> nur CDU-Bezug, kein 'die linke'", !oBlob.includes("die linke"));
-  check("Keine Cem-Sonderlogik: fremdes Profil erkennt eigene Erwähnung (Mustermann)", oState.mentions.some((m) => m.vorgangId === "ov1"));
+  check("Keine Personen-Sonderlogik: fremdes Profil erkennt eigene Erwähnung (Mustermann)", oState.mentions.some((m) => m.vorgangId === "ov1"));
 }
 
 // --- 10) Verankerung in toBriefingContractV3 --------------------------------
@@ -283,22 +283,22 @@ check("Keine technischen Quellen-Enums im sourceCategory-Label (nur Klartext/'')
 // Nur belegte Nennung des VOLLEN Namens zählt. Kein Vorname/Nachname/Namensvetter,
 // kein Profil-/Decision-Match, kein Partei-/Ausschuss-/Wahlkreis-/Themenbezug.
 {
-  const p = { id: "s1", fullName: "Cem İnce", party: "Die Linke", committees: ["Ausschuss für Arbeit und Soziales"], constituency: "Salzgitter-Wolfenbüttel" };
+  const p = { id: "s1", fullName: "Deniz İnal", party: "Die Linke", committees: ["Ausschuss für Arbeit und Soziales"], constituency: "Salzgitter-Wolfenbüttel" };
   const mk = (over) => ({ ...base, best_source_url: "https://q.de/x", updated_at: iso(3600e3), created_at: iso(3600e3), ...over });
   const one = (ko) => radarState.buildCurrentRadarState({ profile: p, decisions: [], kosById: { [ko.id]: ko }, knowledgeObjects: [ko], sourcesByVorgang: {}, now: nowDate }).mentions.map((m) => m.vorgangId);
 
   check("Blocker #1 Voller Name (mentioned_mps) -> Über dich",
-    one(mk({ id: "s-full", vorgang_id: "s-full", display_title: "Kommunalfinanzen", mentioned_mps: ["Cem İnce"] })).includes("s-full"));
+    one(mk({ id: "s-full", vorgang_id: "s-full", display_title: "Kommunalfinanzen", mentioned_mps: ["Deniz İnal"] })).includes("s-full"));
   check("Blocker #1b Voller Name in FAKTEN-Prosa (display_title) -> Über dich",
-    one(mk({ id: "s-prose", vorgang_id: "s-prose", display_title: "Cem İnce fordert Reform" })).includes("s-prose"));
-  check("Blocker #1c Umgekehrte Reihenfolge 'İnce, Cem' im Personenfeld -> Über dich",
-    one(mk({ id: "s-rev", vorgang_id: "s-rev", display_title: "Debatte", mentioned_people: ["İnce, Cem"] })).includes("s-rev"));
+    one(mk({ id: "s-prose", vorgang_id: "s-prose", display_title: "Deniz İnal fordert Reform" })).includes("s-prose"));
+  check("Blocker #1c Umgekehrte Reihenfolge 'İnal, Deniz' im Personenfeld -> Über dich",
+    one(mk({ id: "s-rev", vorgang_id: "s-rev", display_title: "Debatte", mentioned_people: ["İnal, Deniz"] })).includes("s-rev"));
   check("Blocker #2 Einzelner VORNAME (Namensvetter) -> KEIN Über dich",
-    one(mk({ id: "s-first", vorgang_id: "s-first", display_title: "Bremen führt Fußfesseln ein", mentioned_people: ["Cem"], risiken: ["Kritik"] })).length === 0);
-  check("Blocker #3 Einzelner NACHNAME (anderer İnce) -> KEIN Über dich",
-    one(mk({ id: "s-last", vorgang_id: "s-last", display_title: "Bremen führt Fußfesseln ein", was_ist_passiert: "Senator Max İnce verteidigt.", mentioned_people: ["Max İnce"], risiken: ["Kritik"] })).length === 0);
+    one(mk({ id: "s-first", vorgang_id: "s-first", display_title: "Bremen führt Fußfesseln ein", mentioned_people: ["Deniz"], risiken: ["Kritik"] })).length === 0);
+  check("Blocker #3 Einzelner NACHNAME (anderer İnal) -> KEIN Über dich",
+    one(mk({ id: "s-last", vorgang_id: "s-last", display_title: "Bremen führt Fußfesseln ein", was_ist_passiert: "Senator Max İnal verteidigt.", mentioned_people: ["Max İnal"], risiken: ["Kritik"] })).length === 0);
   check("Blocker #9 Name NUR in why_relevant/warum_wichtig (Profil-/Decision-Match) -> KEIN Über dich",
-    one(mk({ id: "s-why", vorgang_id: "s-why", display_title: "Bremen führt Fußfesseln ein", why_relevant: "Für İnce als Ausschussmitglied relevant.", warum_wichtig: "Cem İnce positioniert die Fraktion.", risiken: ["Kritik"] })).length === 0);
+    one(mk({ id: "s-why", vorgang_id: "s-why", display_title: "Bremen führt Fußfesseln ein", why_relevant: "Für İnal als Ausschussmitglied relevant.", warum_wichtig: "Deniz İnal positioniert die Fraktion.", risiken: ["Kritik"] })).length === 0);
   check("Blocker #4/5 Reiner Partei-/Fraktionsbezug -> KEIN Über dich",
     one(mk({ id: "s-party", vorgang_id: "s-party", display_title: "Die Linke beschließt Linie", parteien: ["Die Linke"] })).length === 0);
   check("Blocker #7 Reiner Ausschussbezug -> KEIN Über dich",
@@ -536,11 +536,11 @@ check("Keine technischen Quellen-Enums im sourceCategory-Label (nur Klartext/'')
 // unabhaengig von den Decisions; der Leerzustand muss sie erhalten.
 {
   const oldIso = new Date(NOW - 180 * 864e5).toISOString(); // ~6 Monate alt
-  const pMention = { id: "u-m", fullName: "Cem İnce", party: "Die Linke" };
+  const pMention = { id: "u-m", fullName: "Deniz İnal", party: "Die Linke" };
   const koOldMention = {
     ...base, id: "kold", vorgang_id: "vold",
-    display_title: "Alte Berichterstattung über Cem İnce",
-    was_ist_passiert: "Bericht.", mentioned_people: ["Cem İnce"],
+    display_title: "Alte Berichterstattung über Deniz İnal",
+    was_ist_passiert: "Bericht.", mentioned_people: ["Deniz İnal"],
     updated_at: oldIso, created_at: oldIso,
     best_source_url: "https://tagesschau.de/alt", source_trust: "hoch"
   };
@@ -592,8 +592,8 @@ check("Keine technischen Quellen-Enums im sourceCategory-Label (nur Klartext/'')
   // gedroppt, wenn ein gueltiges Zweitdokument existiert.
   const koMentionSecond = {
     ...base, id: "kmx", vorgang_id: "vmx",
-    display_title: "Cem İnce im Gespräch zur Kommunalfinanzierung",
-    was_ist_passiert: "Bericht.", mentioned_people: ["Cem İnce"],
+    display_title: "Deniz İnal im Gespräch zur Kommunalfinanzierung",
+    was_ist_passiert: "Bericht.", mentioned_people: ["Deniz İnal"],
     updated_at: iso(3600e3), created_at: iso(3600e3)
   };
   const stSecond = radarState.buildCurrentRadarState({
@@ -639,12 +639,12 @@ check("Keine technischen Quellen-Enums im sourceCategory-Label (nur Klartext/'')
   const origDecide = decisionsEngine.decideForUser;
 
   const oldIso = new Date(NOW - 200 * 864e5).toISOString(); // bewusst alt (kein Augment-Frischepfad)
-  const pServer = { id: "u-lp", fullName: "Cem İnce", party: "Die Linke" };
+  const pServer = { id: "u-lp", fullName: "Deniz İnal", party: "Die Linke" };
   // Erwaehnungs-KO OHNE best_source_url — die echte URL liegt NUR in raw_documents.
   const koMentionNoBest = {
     ...base, id: "knb", vorgang_id: "vnb",
-    display_title: "Cem İnce fordert Reform der Kommunalfinanzen",
-    was_ist_passiert: "Bericht.", mentioned_people: ["Cem İnce"],
+    display_title: "Deniz İnal fordert Reform der Kommunalfinanzen",
+    was_ist_passiert: "Bericht.", mentioned_people: ["Deniz İnal"],
     updated_at: oldIso, created_at: oldIso
   };
   // Quarantaene-KO (Pfad B): kritischer Claim (Ruecktritt), nur unbekannte Quelle.

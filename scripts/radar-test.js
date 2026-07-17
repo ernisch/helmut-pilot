@@ -73,60 +73,60 @@ check("Signal trägt title + signalType + url + reason", sig && sig.title && sig
 // Radar muss Eigenerwähnungen finden — auch wenn der Name NICHT als strukturierte
 // mentioned_*-Erwähnung extrahiert wurde, sondern nur im öffentlichen KO-Analysetext steht.
 {
-  const mdb = { id: "u-mdb", fullName: "Cem Özdemir", party: "Grüne" };
+  const mdb = { id: "u-mdb", fullName: "Aylin Özdemir", party: "Grüne" };
   const one = (ko) => radar.buildRadarSignals(mdb, [{ ...base, id: "ko-x", vorgang_id: "vg-x", updated_at: iso(3600e3), ...ko }], { now: NOW });
   check("Eigenerwähnung: voller Name in mentioned_mps -> reason=person",
-    one({ mentioned_mps: ["Cem Özdemir"] }).signals[0] && one({ mentioned_mps: ["Cem Özdemir"] }).signals[0].reason === "person");
+    one({ mentioned_mps: ["Aylin Özdemir"] }).signals[0] && one({ mentioned_mps: ["Aylin Özdemir"] }).signals[0].reason === "person");
   check("Eigenerwähnung: Nachname allein in mentioned_people -> reason=person",
     (one({ mentioned_people: ["Özdemir"] }).signals[0] || {}).reason === "person");
   check("Eigenerwähnung PROSE-Fallback: voller Name im display_title (nicht extrahiert) -> person",
-    (one({ display_title: "Cem Özdemir fordert schnellere Agrarwende" }).signals[0] || {}).reason === "person");
+    (one({ display_title: "Aylin Özdemir fordert schnellere Agrarwende" }).signals[0] || {}).reason === "person");
   check("Eigenerwähnung PROSE-Fallback: distinktiver Nachname als Wort im was_ist_passiert -> person",
     (one({ was_ist_passiert: "Im Ausschuss kritisierte Özdemir die Verzögerung." }).signals[0] || {}).reason === "person");
   check("Kein Fehltreffer: anderer Politiker + fremde Partei -> kein Signal",
     one({ mentioned_people: ["Robert Habeck"], mentioned_parties: ["SPD"], display_title: "Habeck stellt Plan vor" }).total === 0);
-  // Whole-word-Guard: Nachname darf NICHT als Teilwort matchen ('ince' in 'provinces').
-  check("Kein Teilwort-Fehltreffer: 'ince' in 'Provinces' matcht nicht",
-    radar.buildRadarSignals({ id: "u-ince", fullName: "Cem Ince", party: "Die Linke" },
+  // Whole-word-Guard: Nachname darf NICHT als Teilwort matchen ('inal' in 'provinces').
+  check("Kein Teilwort-Fehltreffer: 'inal' in 'Provinces' matcht nicht",
+    radar.buildRadarSignals({ id: "u-inal", fullName: "Deniz Inal", party: "Die Linke" },
       [{ ...base, id: "ko-y", vorgang_id: "vg-y", updated_at: iso(3600e3), display_title: "Debatte über Provinces und Finanzen" }], { now: NOW }).total === 0);
 }
 
-// --- 8) Cem İnce: Schreibweisen + "Eigene Erwähnung"-Bucket (Produktanforderung)
+// --- 8) Deniz İnal (tuerkisches İ): Schreibweisen + "Eigene Erwähnung"-Bucket (Produktanforderung)
 {
-  // Aktives Profil ist Cem İnce (türkisches İ). Alle Schreibweisen müssen greifen.
-  const ince = { id: "u-ci", fullName: "Cem İnce", party: "Die Linke" };
-  const koWith = (extra) => radar.buildRadarSignals(ince, [{ ...base, id: "ko-i", vorgang_id: "vg-i", updated_at: iso(3600e3), ...extra }], { now: NOW });
-  check("İnce: Schreibweise 'Cem İnce' (türkisches İ) wird erkannt",
-    (koWith({ mentioned_mps: ["Cem İnce"] }).signals[0] || {}).reason === "person");
-  check("İnce: Schreibweise 'Cem Ince' (ohne Punkt) wird erkannt",
-    (koWith({ mentioned_people: ["Cem Ince"] }).signals[0] || {}).reason === "person");
-  check("İnce: Nachname 'İnce' im Titel wird erkannt (Prosa-Fallback)",
-    (koWith({ display_title: "İnce kritisiert Sozialkürzungen" }).signals[0] || {}).reason === "person");
-  check("İnce: Nachname 'Ince' im Titel wird erkannt (Prosa-Fallback)",
-    (koWith({ display_title: "Ince fordert Nachbesserung" }).signals[0] || {}).reason === "person");
+  // Aktives Profil ist Deniz İnal (türkisches İ). Alle Schreibweisen müssen greifen.
+  const inal = { id: "u-ci", fullName: "Deniz İnal", party: "Die Linke" };
+  const koWith = (extra) => radar.buildRadarSignals(inal, [{ ...base, id: "ko-i", vorgang_id: "vg-i", updated_at: iso(3600e3), ...extra }], { now: NOW });
+  check("İnal: Schreibweise 'Deniz İnal' (türkisches İ) wird erkannt",
+    (koWith({ mentioned_mps: ["Deniz İnal"] }).signals[0] || {}).reason === "person");
+  check("İnal: Schreibweise 'Deniz Inal' (ohne Punkt) wird erkannt",
+    (koWith({ mentioned_people: ["Deniz Inal"] }).signals[0] || {}).reason === "person");
+  check("İnal: Nachname 'İnal' im Titel wird erkannt (Prosa-Fallback)",
+    (koWith({ display_title: "İnal kritisiert Sozialkürzungen" }).signals[0] || {}).reason === "person");
+  check("İnal: Nachname 'Inal' im Titel wird erkannt (Prosa-Fallback)",
+    (koWith({ display_title: "Inal fordert Nachbesserung" }).signals[0] || {}).reason === "person");
   // Produktanforderung 11: reine Parteierwähnung ohne Namensnennung ist KEINE Eigenerwähnung.
-  const partyOnly = radar.buildRadarSignals(ince, [{ ...base, id: "ko-po", vorgang_id: "vg-po", updated_at: iso(3600e3), mentioned_parties: ["Die Linke"], display_title: "Die Linke legt Rentenkonzept vor" }], { now: NOW });
-  check("İnce: nur 'Die Linke' ohne Namen -> reason=partei, NICHT im mention-Bucket",
+  const partyOnly = radar.buildRadarSignals(inal, [{ ...base, id: "ko-po", vorgang_id: "vg-po", updated_at: iso(3600e3), mentioned_parties: ["Die Linke"], display_title: "Die Linke legt Rentenkonzept vor" }], { now: NOW });
+  check("İnal: nur 'Die Linke' ohne Namen -> reason=partei, NICHT im mention-Bucket",
     (partyOnly.signals[0] || {}).reason === "partei" && partyOnly.buckets.mention.length === 0);
   // Produktanforderung 4-6: Eigenerwähnung landet IMMER im mention-Bucket — auch wenn zusätzlich Risiko.
-  const ownMention = radar.buildRadarSignals(ince, [{ ...base, id: "ko-om", vorgang_id: "vg-om", updated_at: iso(3600e3), mentioned_mps: ["Cem İnce"] }], { now: NOW });
-  check("İnce: Eigenerwähnung landet im Bucket 'mention'", ownMention.buckets.mention.length === 1);
-  const ownRisk = radar.buildRadarSignals(ince, [{ ...base, id: "ko-or", vorgang_id: "vg-or", updated_at: iso(3600e3), mentioned_mps: ["Cem İnce"], risiken: ["Scharfe Kritik"], best_source_url: "https://a.de/x" }], { now: NOW });
-  check("İnce: Eigenerwähnung MIT Risiko -> in mention UND risk sichtbar",
+  const ownMention = radar.buildRadarSignals(inal, [{ ...base, id: "ko-om", vorgang_id: "vg-om", updated_at: iso(3600e3), mentioned_mps: ["Deniz İnal"] }], { now: NOW });
+  check("İnal: Eigenerwähnung landet im Bucket 'mention'", ownMention.buckets.mention.length === 1);
+  const ownRisk = radar.buildRadarSignals(inal, [{ ...base, id: "ko-or", vorgang_id: "vg-or", updated_at: iso(3600e3), mentioned_mps: ["Deniz İnal"], risiken: ["Scharfe Kritik"], best_source_url: "https://a.de/x" }], { now: NOW });
+  check("İnal: Eigenerwähnung MIT Risiko -> in mention UND risk sichtbar",
     ownRisk.buckets.mention.some((s) => s.vorgangId === "vg-or") && ownRisk.buckets.risk.some((s) => s.vorgangId === "vg-or"));
 }
 
 // --- 9) Scan-Umfang: Eigenerwähnung unabhängig von Top-Risk/Party-Signalen ---
 {
-  const ince = { id: "u-ci2", fullName: "Cem İnce", party: "Die Linke" };
+  const inal = { id: "u-ci2", fullName: "Deniz İnal", party: "Die Linke" };
   // 80 aktuelle Partei-Signale + 1 SEHR ALTE Eigenerwähnung: Anzeige-Cap darf die
   // Eigenerwähnung nicht wegkappen (Produktanforderung 4).
   const many = [];
   for (let i = 0; i < 80; i++) many.push({ ...base, id: "kp" + i, vorgang_id: "vp" + i, mentioned_parties: ["Die Linke"], updated_at: iso(i * 3600e3) });
-  many.push({ ...base, id: "kp-ince", vorgang_id: "vp-ince", mentioned_mps: ["Cem İnce"], updated_at: new Date(0).toISOString() });
-  const res = radar.buildRadarSignals(ince, many, { now: NOW, limit: 60 });
+  many.push({ ...base, id: "kp-inal", vorgang_id: "vp-inal", mentioned_mps: ["Deniz İnal"], updated_at: new Date(0).toISOString() });
+  const res = radar.buildRadarSignals(inal, many, { now: NOW, limit: 60 });
   check("Anzeige-Cap: alte Eigenerwähnung wird NICHT weggekappt (bleibt im mention-Bucket)",
-    res.buckets.mention.some((s) => s.vorgangId === "vp-ince"));
+    res.buckets.mention.some((s) => s.vorgangId === "vp-inal"));
 }
 
 // --- 6) Shadow-Runner: Fail-safe + Happy-Path (injizierte Deps) -------------

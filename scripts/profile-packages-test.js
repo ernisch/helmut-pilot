@@ -16,9 +16,10 @@ function check(name, cond) {
 const M = buildFullModel();
 const base = { packages: M.packages, packagePaths: M.packagePaths, retrievalPaths: M.retrievalPaths };
 
-// Profil-Fixtures (verbindlich mandate_profiles: politische_ebene 'bundestag'/'landtag')
+// Profil-Fixtures (verbindlich mandate_profiles: politische_ebene 'bundestag'/'landtag').
+// Alle Identitaeten sind KLAR KUENSTLICH (kein realer Mandant im Test).
 const bundestag = { id: "mdb", fullName: "MdB Test", party: "SPD", politische_ebene: "bundestag", committees: ["Gesundheit"], state: "NRW", profileActive: true };
-const cem = { id: "cem", fullName: "Cem Ince", party: "Die Linke", politische_ebene: "bundestag", ausschuesse: ["Arbeit und Soziales"], bundesland: "Niedersachsen", fachpolitische_schwerpunkte: ["Rente"], profileActive: true };
+const vollprofil = { id: "tenant-alpha", fullName: "Test Politician One", party: "Die Linke", politische_ebene: "bundestag", ausschuesse: ["Arbeit und Soziales"], bundesland: "Niedersachsen", fachpolitische_schwerpunkte: ["Rente"], profileActive: true };
 const berlin = { id: "berlinMdA", fullName: "Berlin MdA", party: "SPD", politische_ebene: "landtag", bundesland: "Berlin", ausschuesse: ["Inneres"], profileActive: true };
 const brandenburg = { id: "bbMdL", fullName: "BB MdL", party: "CDU", politische_ebene: "landtag", bundesland: "Brandenburg", ausschuesse: ["Wirtschaft"], profileActive: true };
 
@@ -41,7 +42,7 @@ check("... Grund = pflichtpaket-unversorgt", s2.reason === "pflichtpaket-unverso
 
 // ============================ PFLICHTFALL 3 ============================
 console.log("== 3) Partei/Fraktion/Ausschuss/Thema/Region ergaenzen Pakete ==");
-const rc = pp.resolveProfilePackages(cem);
+const rc = pp.resolveProfilePackages(vollprofil);
 check("Die Linke -> die-linke-bund", rc.optional.includes("die-linke-bund"));
 check("Ausschuss Arbeit und Soziales -> arbeit-und-soziales", rc.optional.includes("arbeit-und-soziales"));
 check("Region Niedersachsen -> regional-niedersachsen", rc.optional.includes("regional-niedersachsen"));
@@ -50,17 +51,17 @@ check("Nicht-Sozial-Ausschuss -> KEIN Sozialpaket", !pp.resolveProfilePackages(b
 
 // ============================ PFLICHTFALL 4 ============================
 console.log("== 4) 100 Profile mit demselben Paket -> nur EINE technische Aktivierung ==");
-const one = pp.computeGlobalActivation({ ...base, profiles: [cem] });
-const hundred = pp.computeGlobalActivation({ ...base, profiles: Array.from({ length: 100 }, (_, i) => ({ ...cem, id: "cem" + i })) });
+const one = pp.computeGlobalActivation({ ...base, profiles: [vollprofil] });
+const hundred = pp.computeGlobalActivation({ ...base, profiles: Array.from({ length: 100 }, (_, i) => ({ ...vollprofil, id: "tenant-" + i })) });
 check("aktive Abrufwege 1 Profil == 100 Profile (keine Verdopplung)", one.activePathCount === hundred.activePathCount);
 check("Referenzzaehlung bund-basis = 100 (korrekt gezaehlt)", hundred.packageStatus.find((p) => p.key === "bund-basis").refCount === 100);
 check("aber activePackageCount identisch", one.activePackageCount === hundred.activePackageCount);
 
 // ============================ PFLICHTFALL 5 ============================
 console.log("== 5) Pausiertes/geloeschtes Profil reduziert Referenzzaehlung ==");
-const active = pp.computeGlobalActivation({ ...base, profiles: [cem] });
-const paused = pp.computeGlobalActivation({ ...base, profiles: [{ ...cem, profileActive: false }] });
-const deleted = pp.computeGlobalActivation({ ...base, profiles: [{ ...cem, geloescht_at: "2026-07-13T00:00:00Z" }] });
+const active = pp.computeGlobalActivation({ ...base, profiles: [vollprofil] });
+const paused = pp.computeGlobalActivation({ ...base, profiles: [{ ...vollprofil, profileActive: false }] });
+const deleted = pp.computeGlobalActivation({ ...base, profiles: [{ ...vollprofil, geloescht_at: "2026-07-13T00:00:00Z" }] });
 check("aktiv: die-linke-bund refCount 1", active.packageStatus.find((p) => p.key === "die-linke-bund").refCount === 1);
 check("pausiert: refCount 0 (Profil zaehlt nicht)", paused.packageStatus.find((p) => p.key === "die-linke-bund").refCount === 0);
 check("geloescht: refCount 0", deleted.packageStatus.find((p) => p.key === "die-linke-bund").refCount === 0);
@@ -89,40 +90,56 @@ check("Landtag ohne Bundesland: nicht vollstaendig aktiviert", s7.fullyActivated
 check("falsche Partei erzeugt kein Partei-Paket", !pp.resolveProfilePackages({ fullName: "x", party: "Fantasiepartei", politische_ebene: "bundestag", profileActive: true }).optional.includes("die-linke-bund"));
 
 // ============================ K3: GETRENNTE PROFILE ============================
-// Klaerung: warum aktiviert EIN Cem-Profil 144 Abrufwege? Weil Cem der Spezialfall ist
-// (voll versorgt: Bund Basis + Arbeit&Soziales + Die Linke + Regional NDS). Ein reines
-// Bundestagsprofil aktiviert NUR das, was es braucht.
+// Klaerung: warum aktiviert EIN voll versorgtes Profil 144 Abrufwege? Weil es alle
+// belegten Dimensionen zieht (Bund Basis + Arbeit&Soziales + Die Linke + Regional NDS).
+// Ein reines Bundestagsprofil aktiviert NUR das, was es braucht.
 console.log("== K3) Getrennte Profile: nur benoetigte Pakete/Abrufwege ==");
 const reinBT = { id: "rein-bt", fullName: "Rein Bundestag", party: "SPD", politische_ebene: "bundestag", committees: ["Gesundheit"], profileActive: true };
-// Cems REALE Pilot-ID ("cem-ince") -> zusaetzlich das personenbezogene Paket profil-cem-ince.
-const cemP = { id: "cem-ince", fullName: "Cem Ince", party: "Die Linke", politische_ebene: "bundestag", ausschuesse: ["Arbeit und Soziales"], bundesland: "Niedersachsen", fachpolitische_schwerpunkte: ["Rente"], profileActive: true };
 const berlinP = { id: "be", fullName: "Berlin MdA", party: "SPD", politische_ebene: "landtag", bundesland: "Berlin", ausschuesse: ["Inneres"], profileActive: true };
 const bbP = { id: "bb", fullName: "BB MdL", party: "CDU", politische_ebene: "landtag", bundesland: "Brandenburg", ausschuesse: ["Wirtschaft"], profileActive: true };
 const aReinBT = pp.computeGlobalActivation({ ...base, profiles: [reinBT] });
-const aCem = pp.computeGlobalActivation({ ...base, profiles: [cemP] });
+const aVoll = pp.computeGlobalActivation({ ...base, profiles: [vollprofil] });
 const aBerlin = pp.computeGlobalActivation({ ...base, profiles: [berlinP] });
 const aBB = pp.computeGlobalActivation({ ...base, profiles: [bbP] });
 check("reines Bundestagsprofil: nur bund-basis aktiv", JSON.stringify(aReinBT.packageStatus.filter((p) => p.activation === "active").map((p) => p.key)) === JSON.stringify(["bund-basis"]));
 check("reines Bundestagsprofil: 54 Abrufwege (NICHT 144)", aReinBT.activePathCount === 54);
-check("Cem (Pilot cem-ince): 5 Pakete aktiv (voll versorgt + persoenliches Paket)", aCem.packageStatus.filter((p) => p.activation === "active").length === 5);
-check("Cem: persoenliches Paket profil-cem-ince ist aktiv", aCem.packageStatus.find((p) => p.key === "profil-cem-ince").activation === "active");
-check("Cem: 145 Abrufwege (144 Sach- + 1 personenbezogener demoOnly-Weg)", aCem.activePathCount === 145);
-check("Cem > reines Bundestagsprofil (Cem hat mehr belegte Dimensionen)", aCem.activePathCount > aReinBT.activePathCount);
+check("voll versorgtes Profil: 4 Sachpakete aktiv (KEIN Personenpaket im Code-Seed)", aVoll.packageStatus.filter((p) => p.activation === "active").length === 4);
+check("voll versorgtes Profil: kein 'profil-*'-Paket im Katalog-Seed vorhanden", aVoll.packageStatus.every((p) => !p.key.startsWith("profil-")));
+check("voll versorgtes Profil: 144 Abrufwege (alle Sachquellen, KEINE Personenquelle im Katalog)", aVoll.activePathCount === 144);
+check("voll versorgt > reines Bundestagsprofil (mehr belegte Dimensionen)", aVoll.activePathCount > aReinBT.activePathCount);
 check("Berliner Landtag: bund-basis aktiv (54), berlin-basis requested_unsupplied", aBerlin.activePathCount === 54 && aBerlin.packageStatus.find((p) => p.key === "berlin-basis").activation === "requested_unsupplied");
 check("Brandenburger Landtag: bund-basis aktiv (54), brandenburg-basis requested_unsupplied", aBB.activePathCount === 54 && aBB.packageStatus.find((p) => p.key === "brandenburg-basis").activation === "requested_unsupplied");
 check("reines Bundestagsprofil aktiviert KEINE Sozial-/Linke-/Regionalquellen", ["arbeit-und-soziales", "die-linke-bund", "regional-niedersachsen"].every((k) => aReinBT.packageStatus.find((p) => p.key === k).activation !== "active"));
 
-// ============================ VERIFY-FIXES ============================
-console.log("== Verify-Fixes: personenbezogenes Paket + Wortanfang-Matching ==");
-// Fix 1: profil-cem-ince war unerreichbar (resolveProfilePackages erzeugte es nie).
-check("Pilot cem-ince erhaelt personenbezogenes Paket profil-cem-ince",
-  pp.resolveProfilePackages({ id: "cem-ince", fullName: "Cem Ince", party: "Die Linke", politische_ebene: "bundestag", profileActive: true }).optional.includes("profil-cem-ince"));
-check("gleiche Person, aber ANDERE Profil-ID -> KEIN personenbezogenes Paket (an ID gebunden, nicht Name)",
-  !pp.resolveProfilePackages({ id: "cem", fullName: "Cem Ince", party: "Die Linke", politische_ebene: "bundestag", profileActive: true }).optional.includes("profil-cem-ince"));
+// ============================ PERSONENPAKET-KONVENTION ============================
+console.log("== Personenpaket-Konvention (profil-<mandats-id>) + Wortanfang-Matching ==");
+// Konvention statt Hardcode: JEDES Profil referenziert sein persoenliches Paket
+// "profil-<id>" optional; WIRKSAM wird das nur, wenn das Paket (DB-Zeile) existiert.
+check("personalPackageKeyFor bildet 'profil-<id>' (kleingeschrieben)",
+  pp.personalPackageKeyFor("Tenant-Alpha") === "profil-tenant-alpha");
+check("personalPackageKeyFor ohne ID -> leer", pp.personalPackageKeyFor("") === "" && pp.personalPackageKeyFor(null) === "");
+check("JEDES Profil referenziert sein Personenpaket 'profil-<id>' optional",
+  pp.resolveProfilePackages({ id: "tenant-alpha", fullName: "Test Politician One", party: "SPD", politische_ebene: "bundestag", profileActive: true }).optional.includes("profil-tenant-alpha"));
+check("andere Profil-ID -> anderes Personenpaket (an ID gebunden, nicht Name)", (() => {
+  const r = pp.resolveProfilePackages({ id: "tenant-beta", fullName: "Test Politician One", party: "SPD", politische_ebene: "bundestag", profileActive: true });
+  return r.optional.includes("profil-tenant-beta") && !r.optional.includes("profil-tenant-alpha");
+})());
 check("user_id-Feld (mandate_profiles) bindet ebenfalls das personenbezogene Paket",
-  pp.resolveProfilePackages({ user_id: "cem-ince", fullName: "Cem Ince", party: "Die Linke", politische_ebene: "bundestag", profileActive: true }).optional.includes("profil-cem-ince"));
-check("kein personenbezogenes Paket ohne passende Profil-ID (Standardprofil)",
-  !pp.resolveProfilePackages(bundestag).optional.includes("profil-cem-ince"));
+  pp.resolveProfilePackages({ user_id: "tenant-alpha", fullName: "Test Politician One", party: "SPD", politische_ebene: "bundestag", profileActive: true }).optional.includes("profil-tenant-alpha"));
+check("nicht existierendes Personenpaket wird NICHT technisch aktiv (nur Referenz)",
+  aVoll.packageStatus.every((p) => p.key !== "profil-tenant-alpha"));
+// Existiert das Paket als (DB-)Zeile, aktiviert die Konvention es fuer genau dieses Mandat.
+const synthPkgs = [...M.packages, { id: "pkg-profil-tenant-alpha", key: "profil-tenant-alpha", status: "active" }];
+const synthPaths = [...M.retrievalPaths, { id: "rp-tenant-alpha-news", legacy_source_id: "tenant-alpha-news", status: "needs_review", activation_mode: "auto" }];
+const synthLinks = [...M.packagePaths, { package_id: "pkg-profil-tenant-alpha", retrieval_path_id: "rp-tenant-alpha-news" }];
+const aSynth = pp.computeGlobalActivation({ packages: synthPkgs, packagePaths: synthLinks, retrievalPaths: synthPaths, profiles: [vollprofil] });
+check("existierendes DB-Personenpaket 'profil-tenant-alpha' wird fuer das Mandat aktiv",
+  aSynth.packageStatus.find((p) => p.key === "profil-tenant-alpha").activation === "active");
+check("... und traegt den Personen-Abrufweg (145 = 144 Sachwege + 1 Personenweg)", aSynth.activePathCount === 145);
+check("fremdes Mandat aktiviert das Personenpaket NICHT", (() => {
+  const aFremd = pp.computeGlobalActivation({ packages: synthPkgs, packagePaths: synthLinks, retrievalPaths: synthPaths, profiles: [reinBT] });
+  return aFremd.packageStatus.find((p) => p.key === "profil-tenant-alpha").activation !== "active";
+})());
 // Fix 4: Sozial-Begriffe am Wortanfang statt als blosser Teilstring.
 const soc = (topic) => pp.resolveProfilePackages({ fullName: "x", party: "SPD", politische_ebene: "bundestag", fachpolitische_schwerpunkte: [topic], profileActive: true }).optional.includes("arbeit-und-soziales");
 check("Fehltreffer behoben: 'Denkmalpflege' allein -> KEIN arbeit-und-soziales", soc("Denkmalpflege") === false);

@@ -11,7 +11,7 @@
 | 2 | service_role-Zugriffe ohne ausdrückliche Validierung? | **Nur bewusst mandantenlose** (Korpus/Konfig/Telemetrie/Locks/Budget). Tenant-Pfade validieren app-seitig vor dem Bypass. `main-auth`-Blob bleibt dokumentierte Restlücke (Folgeschritt). |
 | 3 | Endpunkte mit frei übergebbarer user_id? | **Nein** für reguläre Nutzer (`pickPoliticianId` validiert gegen Session). Admin/Cron/Debug nur secret-/rollen-gated (Betreiber, by design). |
 | 4 | Globale Cache-Schlüssel für nutzerbezogene Inhalte? | **Nein** (verifiziert durch `cache-isolation-test`: `bf-<userId>-…`, `office-<user>-…` tragen die Mandanten-ID). |
-| 5 | Können Cron-Prozesse versehentlich nur Cem bedienen? | **Ja, per Default** (session-loser Fallback `cemInceProfile.id`; Matching/Decisions nur cem). **Dokumentiert als Freigabepunkt** (Cron-Umbau, nicht in Sprint 1 — kein Cron-/Zeit-Eingriff ohne Freigabe). |
+| 5 | Können Cron-Prozesse versehentlich nur den Pilotmandanten bedienen? | **Ja, per Default** (session-loser Fallback auf das damals hartkodierte Pilotprofil; Matching/Decisions nur für den Pilotmandanten). **Dokumentiert als Freigabepunkt** (Cron-Umbau, nicht in Sprint 1 — kein Cron-/Zeit-Eingriff ohne Freigabe; inzwischen umgesetzt: Mandate aus der DB, siehe `docs/multitenancy-pilot-neutralisierung.md`). |
 | 6 | Können Briefings/Decisions/Matchings überschrieben werden? | Schreibpfade sind per-Mandant-gescoped; Cross-Tenant-Batch jetzt blockiert. Blob-Last-Write-Wins bleibt ein bekanntes, separat adressiertes Thema (atomare Locks vorhanden, Flag AUS). |
 | 7 | Sind alle Migrationen rückrollbar? | **Ja.** Die neue Härtungs-Migration (20260721) hat Rollback + Runbook + statischen Symmetrie-Test. |
 | 8 | Sensible Werte aus Logs/Fehlermeldungen entfernt? | Kostenlog trägt keine PII/Inhalte; per-Mandant-Limits (JSON) enthalten nur IDs+Zahlen; `redactSensitive` auf systemErrors (vorbestehend, geprüft). |
@@ -31,7 +31,7 @@
 | 7 | Kostendeckel je Mandant atomar | ✅ `tenant-llm-cap-test` (31 Checks) |
 | 8 | Alle Tests grün | ✅ 120/120 Offline-Suiten |
 | 9 | Keine bekannte kritische Cross-Tenant-Lücke verbleibt | ✅ negativer Sicherheitstest grün; offene Punkte sind dokumentierte Freigabeschritte |
-| 10 | Cem nicht beeinträchtigt | ✅ Default-AUS/additiv; cem-Pfade grün; james-brown/cem-ince hart geschützt |
+| 10 | Pilotmandant nicht beeinträchtigt | ✅ Default-AUS/additiv; Pilot-Pfade grün; bestehende Mandanten (Pilot + Demo) über den datengetriebenen Provisionierungs-Schutz (`provisionedBy`-Marker) hart geschützt |
 
 ## Neue/erweiterte Tests
 
@@ -44,7 +44,7 @@
 
 Bestehende Deckung (unverändert grün): `llm-budget` (l/n/o), `llm-reservation`/
 `budget-rollout` (m global), `drei-profile-e2e` (getrennte Decisions/Matching/Lage,
-Cem intakt), `mandantentrennung`/`tenant-guard` (a/b/e), `cache-isolation` (b),
+Pilotprofil intakt), `mandantentrennung`/`tenant-guard` (a/b/e), `cache-isolation` (b),
 `p1-security-check` (d live).
 
 ## Adversariale Review (durchgeführt) — gefunden & behoben
@@ -55,7 +55,7 @@ der Guard-Härtung und folgende echte Bugs, die **alle behoben + negativ geteste
 | Fund | Schwere | Behebung |
 |---|---|---|
 | `provisionTenant` übernahm/degradierte ein bestehendes Admin-/Referent-Konto mit gleicher E-Mail (politicianId=null → Konfliktprüfung verfehlt) | **hoch** | Konfliktprüfung: E-Mail nur bei exakt gleicher (E-Mail, id)-Paarung übernehmen; sonst Abbruch `email-belongs-to-other-account`. Test: Admin bleibt Admin. |
-| `teardownTenant` löschte über `deleteProfileData` geteilte Personen-/News-Rohdaten **fremder** Mandanten (inkl. cem-ince) mit | **hoch** | Neue, strikt gescopte `storage.deleteTenantScopedData` (nur explizit eigene rawItems, kein person/news/term-Match). Test: fremdes Personen-Rohitem überlebt. |
+| `teardownTenant` löschte über `deleteProfileData` geteilte Personen-/News-Rohdaten **fremder** Mandanten (inkl. des Pilotmandanten) mit | **hoch** | Neue, strikt gescopte `storage.deleteTenantScopedData` (nur explizit eigene rawItems, kein person/news/term-Match). Test: fremdes Personen-Rohitem überlebt. |
 | Lokaler Mandanten-Zähler verdrängte einen HEUTE aktiven, ausgeschöpften Mandanten (Cap-Umgehung im Datei-Modus) | mittel | Eviction nur für Zähler **früherer Tage**. Test: ausgeschöpfter Mandant bleibt gedeckelt trotz 9 weiterer. |
 | Rollback entfernt dangling Fremd-Zuweisungen zur id | niedrig | dokumentiert (akzeptierter Randfall: Verweis auf ein Mandat, dessen Anlage scheiterte). |
 
@@ -79,8 +79,9 @@ Lücke. Daraus behoben/dokumentiert:
 - **Zweck:** atomaren Tagesdeckel je Mandant aktiv durchsetzen.
 - **Schritt:** `HELMUT_TENANT_LLM_CAP=1` (+ optional `HELMUT_MAX_LLM_CALLS_PER_TENANT_PER_DAY`
   / `HELMUT_TENANT_LLM_LIMITS`). Nutzt die bereits eingespielte SQL-Funktion.
-- **Risiko:** ein zu niedriges Limit drosselt echte Mandanten (cem-ince). Empfehlung:
-  cem-ince-Limit hoch/uneingeschränkt setzen, ehe scharf geschaltet wird.
+- **Risiko:** ein zu niedriges Limit drosselt echte Mandanten (den Pilotmandanten).
+  Empfehlung: das Limit des Pilotmandanten hoch/uneingeschränkt setzen, ehe scharf
+  geschaltet wird.
 - **Rollback:** `HELMUT_TENANT_LLM_CAP` leeren → sofort byte-identisches Altverhalten.
 - **Benötigte Freigabe:** Env-/Flag-Änderung in Production.
 
@@ -96,18 +97,22 @@ Lücke. Daraus behoben/dokumentiert:
 - **Zweck:** einen kontrollierten zweiten Abgeordneten anlegen.
 - **Schritt:** `provision-tenant.js --allow-production --spec …` (nach Vorab-`--validate`).
 - **Risiko:** Production-Write (neuer Auth-Nutzer + Profil). Idempotent, mit Rollback bei
-  Teilfehler; berührt keine anderen Mandanten. **cem-ince/james-brown hart geschützt.**
+  Teilfehler; berührt keine anderen Mandanten. **Bestehende Mandanten (Pilot + Demo) sind
+  datengetrieben hart geschützt (`provisionedBy`-Marker + optional
+  `HELMUT_PROTECTED_TENANT_IDS`).**
 - **Rollback:** `--teardown <id>` (strikt gescoped).
 - **Benötigte Freigabe:** Production-Nutzer/Profil anlegen.
 
 ### F4 — Cron-Versorgung für mehrere Mandanten
 - **Zweck:** Matching/Decisions/Pushes auch für den zweiten Mandanten erzeugen.
-- **Schritt:** Cron-Handler auf `listProfiles()`-Loop umstellen (Muster existiert im
-  `lage-briefing`-Cron), ggf. `HELMUT_MORNING_PUSH_ALL_PROFILES=1`.
-- **Risiko:** höhere KI-Kosten (mehr Profile × Läufe) — hier greift F1 als Schutz;
-  Cron-Laufzeit/Zeitbudget beachten.
-- **Rollback:** Loop wieder auf Single-Tenant; Flag leeren.
-- **Benötigte Freigabe:** Code-Änderung + Cron-/Kosten-Entscheidung (eigener Sprint).
+- **Schritt:** Umgesetzt — Crons laden ihre Mandate aus der DB und verarbeiten
+  **alle aktiven Mandate isoliert** (siehe `docs/multitenancy-pilot-neutralisierung.md`).
+  Keine Env-/Flag-Aktivierung nötig, kein bevorzugtes Mandat.
+- **Risiko:** höhere KI-Kosten skalieren mit der Zahl aktiver Mandate — hier
+  greift F1 (globaler Tagesdeckel) als Schutz; Cron-Laufzeit/Zeitbudget beachten.
+  Optionaler per-Mandant-Deckel: `HELMUT_TENANT_LLM_CAP` (eigener Freigabepunkt).
+- **Rollback:** kein Flag-Rückweg nötig; ein Mandat lässt sich über das Admin-/
+  Provisionierungswerkzeug deaktivieren (nimmt dann nicht mehr an Crons teil).
 
 ### F5 — (Später) Echte DB-seitige Trennung (GoTrue, Option B)
 - **Zweck:** RLS wirksam machen (Defense-in-Depth statt nur App-Guard).

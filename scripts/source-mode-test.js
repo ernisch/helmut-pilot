@@ -38,7 +38,7 @@ const PACKAGES = [
   { id: "pk-bund", key: "bund-basis", status: "active" },
   { id: "pk-aus", key: "arbeit-und-soziales", status: "active" },
   { id: "pk-be", key: "berlin-basis", status: "active" }, // ABSICHTLICH aktiv: hartes Gate muss trotzdem sperren
-  { id: "pk-cem", key: "cem-ince-persoenlich", status: "active" }
+  { id: "pk-person", key: "profil-tenant-alpha", status: "active" } // Personenpaket-Konvention "profil-<id>"
 ];
 const PATHS = [
   { id: "rp-bundestag", legacy_source_id: "bundestag", name: "Bundestag", method: "rss", url: "https://www.bundestag.de/rss", status: "healthy", activation_mode: "always_on", priority: 100, is_critical: true },
@@ -63,18 +63,19 @@ const LINKS = [
   { package_id: "pk-bund", retrieval_path_id: "rp-test" },
   { package_id: "pk-bund", retrieval_path_id: "rp-orphan" }
 ];
-// Aktivierungsberechtigtes Bundestagsprofil mit Sozial-Ausschuss (zieht bund-basis + arbeit-und-soziales).
-const CEM = { id: "cem-ince", fullName: "Cem Ince", party: "Die Linke", parliament: "Bundestag", committees: ["Arbeit und Soziales"], focusTopics: ["Rente"] };
+// Aktivierungsberechtigtes KUENSTLICHES Bundestagsprofil mit Sozial-Ausschuss
+// (zieht bund-basis + arbeit-und-soziales; kein realer Mandant im Test).
+const PROFIL = { id: "tenant-alpha", fullName: "Test Politician One", party: "Testpartei Alpha", parliament: "Bundestag", committees: ["Arbeit und Soziales"], focusTopics: ["Rente"] };
 const LEGACY = [
   { id: "bundestag", name: "Bundestag (Legacy)", type: "institution", url: "https://www.bundestag.de", rssUrl: "https://www.bundestag.de/rss", crawlMethod: "rss", priority: 100, active: true },
   { id: "bmas", name: "BMAS", type: "ministry", url: "https://bmas.de", rssUrl: "https://bmas.de/rss.xml", crawlMethod: "rss", priority: 95, active: true },
   { id: "nur-alt", name: "Nur im Altkatalog", type: "media", url: "https://alt.example", rssUrl: "https://alt.example/rss", crawlMethod: "rss", priority: 40, active: true },
   { id: "alt-dup", name: "Alt-Duplikat", type: "media", url: "https://alt.example", rssUrl: "https://alt.example/rss", crawlMethod: "rss", priority: 30, active: true },
-  { id: "cem-person", name: "Cem Suche", type: "person", url: "", rssUrl: "https://news.google.com/rss/search?q=%22Cem%20Ince%22", crawlMethod: "rss", priority: 100, active: true }
+  { id: "person-suche", name: "Personensuche", type: "person", url: "", rssUrl: "https://news.google.com/rss/search?q=%22Test%20Politician%20One%22", crawlMethod: "rss", priority: 100, active: true }
 ];
 
 // --- 2) Plan mit einem aktiven Profil -----------------------------------------------------
-const plan = buildRelationalCrawlPlan({ retrievalPaths: PATHS, packages: PACKAGES, packagePaths: LINKS, profiles: [CEM], legacySources: LEGACY });
+const plan = buildRelationalCrawlPlan({ retrievalPaths: PATHS, packages: PACKAGES, packagePaths: LINKS, profiles: [PROFIL], legacySources: LEGACY });
 const aktivIds = plan.aktiv.map((p) => p.id);
 check("2a Bundestag (always_on) im Plan", aktivIds.includes("rp-bundestag"));
 check("2b BMAS (bund-basis referenziert) im Plan", aktivIds.includes("rp-bmas"));
@@ -98,7 +99,7 @@ check("3a ohne Profile: nur always_on (rp-bundestag)", leer.aktiv.length === 1 &
 check("3b BMAS ohne Profil inaktiv (kein-aktives-paket)", leer.ausgeschlossen.some((a) => a.id === "rp-bmas" && /kein-aktives-paket/.test(a.grund)));
 
 // --- 4) 100 identische Profile: EXAKT derselbe Plan (kein doppelter Crawl) ----------------
-const hundert = buildRelationalCrawlPlan({ retrievalPaths: PATHS, packages: PACKAGES, packagePaths: LINKS, profiles: Array.from({ length: 100 }, (_, i) => ({ ...CEM, id: `p-${i}` })), legacySources: LEGACY });
+const hundert = buildRelationalCrawlPlan({ retrievalPaths: PATHS, packages: PACKAGES, packagePaths: LINKS, profiles: Array.from({ length: 100 }, (_, i) => ({ ...PROFIL, id: `p-${i}` })), legacySources: LEGACY });
 check("4a 100 gleiche Profile -> identische aktive Weg-Menge wie 1 Profil",
   JSON.stringify(hundert.aktiv.map((p) => p.id).sort()) === JSON.stringify(plan.aktiv.map((p) => p.id).sort()));
 check("4b jeder Weg genau einmal (keine Duplikate im Plan)", new Set(hundert.aktiv.map((p) => p.id)).size === hundert.aktiv.length);
@@ -110,16 +111,16 @@ check("5a leeres/unbrauchbares Profil aktiviert nichts (nur always_on)", kaputtP
 // --- 6) Vergleich alter vs. relationaler Plan ----------------------------------------------
 const cmp = comparePlans({ legacySources: LEGACY, relationalPlan: plan });
 check("6a fehlend im Relationalen erkannt (nur-alt/alt-dup/kaputt)", cmp.fehlendImRelationalen.includes("nur-alt"));
-check("6b person-Quelle zählt nicht als fehlend (kein shared-Katalog-Weg)", !cmp.fehlendImRelationalen.includes("cem-person"));
+check("6b person-Quelle zählt nicht als fehlend (kein shared-Katalog-Weg)", !cmp.fehlendImRelationalen.includes("person-suche"));
 check("6c doppelte URLs im Altkatalog erkannt", cmp.doppelteImLegacy.some((d) => d.id === "alt-dup" && d.wie === "nur-alt"));
 check("6d Zahlen konsistent", cmp.quellenzahl.relationalAktiv === plan.aktiv.length && cmp.quellenzahl.alt === LEGACY.filter((s) => s.type !== "person").length);
 
 // --- 7) mergeProfileAndPlanSources: profilgenerierte Personensuche + Plan ohne Doppel-Crawl -
-const personSrc = { id: "person-cem", type: "person", rssUrl: "https://news.google.com/rss/search?q=%22Cem%20Ince%22", crawlMethod: "rss" };
-const planPersonSrc = { id: "cem-ince-news", type: "person", rssUrl: "https://news.google.com/rss/search?q=%22Cem+Ince%22", crawlMethod: "rss" };
+const personSrc = { id: "person-alpha", type: "person", rssUrl: "https://news.google.com/rss/search?q=%22Test%20Politician%20One%22", crawlMethod: "rss" };
+const planPersonSrc = { id: "tenant-alpha-news", type: "person", rssUrl: "https://news.google.com/rss/search?q=%22Test+Politician+One%22", crawlMethod: "rss" };
 const merged = mergeProfileAndPlanSources([personSrc], [planPersonSrc, { id: "bundestag", rssUrl: "https://www.bundestag.de/rss" }]);
 check("7a dieselbe (normalisierte) Such-URL läuft genau einmal — Profilquelle gewinnt",
-  merged.filter((s) => /Cem/.test(s.rssUrl || "")).length === 1 && merged[0].id === "person-cem");
+  merged.filter((s) => /Politician/.test(s.rssUrl || "")).length === 1 && merged[0].id === "person-alpha");
 check("7b andere Quellen bleiben erhalten", merged.some((s) => s.id === "bundestag"));
 
 // --- 8) isLandesmodulPath: alle Erkennungswege ---------------------------------------------
@@ -132,11 +133,11 @@ check("8d Bundesweg nicht betroffen", isLandesmodulPath({ id: "rp-bundestag", le
 {
   // Paket pausiert -> seine Wege verlieren die Referenz (nur always_on bleibt).
   const pausiert = PACKAGES.map((p) => p.key === "arbeit-und-soziales" ? { ...p, status: "paused" } : p);
-  const plan = buildRelationalCrawlPlan({ retrievalPaths: PATHS, packages: pausiert, packagePaths: LINKS, profiles: [CEM], legacySources: LEGACY });
+  const plan = buildRelationalCrawlPlan({ retrievalPaths: PATHS, packages: pausiert, packagePaths: LINKS, profiles: [PROFIL], legacySources: LEGACY });
   check("8e pausiertes Paket: Fachwege fallen aus dem Plan", !plan.aktiv.some((p) => p.id === "rp-sozial-news"));
   check("8f always_on-Kern bleibt trotz pausiertem Paket", plan.aktiv.some((p) => p.id === "rp-bundestag"));
   // Deaktiviertes Profil (profileActive=false) aktiviert nichts.
-  const deaktiviert = buildRelationalCrawlPlan({ retrievalPaths: PATHS, packages: PACKAGES, packagePaths: LINKS, profiles: [{ ...CEM, profileActive: false }], legacySources: LEGACY });
+  const deaktiviert = buildRelationalCrawlPlan({ retrievalPaths: PATHS, packages: PACKAGES, packagePaths: LINKS, profiles: [{ ...PROFIL, profileActive: false }], legacySources: LEGACY });
   check("8g deaktiviertes Profil zählt nicht (nur always_on)", deaktiviert.aktiv.length === 1 && deaktiviert.aktiv[0].id === "rp-bundestag");
 }
 
@@ -180,17 +181,18 @@ check("8d Bundesweg nicht betroffen", isLandesmodulPath({ id: "rp-bundestag", le
   process.env.HELMUT_STORAGE_BACKEND = "local"; // keine Supabase-Konfiguration -> Loader liefert null
   const prevMode = process.env.HELMUT_SOURCE_MODE;
   const { getSourcesForProfile } = require("../lib/helmut/scheduler");
-  const { cemInceProfile } = require("../lib/helmut/config");
+  // Volles KUENSTLICHES Fixture-Profil (kein Code-Seed-Profil mehr in config).
+  const { testPoliticianOne } = require("./fixtures/test-profiles");
   try {
     process.env.HELMUT_SOURCE_MODE = "off";
-    const offSources = await getSourcesForProfile(cemInceProfile);
+    const offSources = await getSourcesForProfile(testPoliticianOne);
     process.env.HELMUT_SOURCE_MODE = "on";
-    const onSources = await getSourcesForProfile(cemInceProfile);
+    const onSources = await getSourcesForProfile(testPoliticianOne);
     check("9a off: alter Katalog liefert Quellen", Array.isArray(offSources) && offSources.length > 0);
     check("9b on OHNE erreichbare relationale DB: Fallback = byte-identisch zum alten Katalog",
       JSON.stringify(onSources.map((s) => s.id)) === JSON.stringify(offSources.map((s) => s.id)));
     process.env.HELMUT_SOURCE_MODE = "shadow";
-    const shadowSources = await getSourcesForProfile(cemInceProfile);
+    const shadowSources = await getSourcesForProfile(testPoliticianOne);
     check("9c shadow: Quellenliste byte-identisch zum alten Katalog (der Messblock verändert Quellen/Ergebnisse nie)",
       JSON.stringify(shadowSources.map((s) => s.id)) === JSON.stringify(offSources.map((s) => s.id)));
   } finally {

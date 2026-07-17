@@ -1,15 +1,18 @@
 "use strict";
 
-// CLI für die Zweitmandanten-Provisionierung (Sprint 1). Admin-Werkzeug, KEIN
+// CLI für die Mandanten-Provisionierung (Sprint 1). Admin-Werkzeug, KEIN
 // Self-Service. Sicher per Default: schreibt nur in den LOKALEN Dateimodus. Ein
 // Production-Backend (Supabase) wird HART verweigert — Production-Provisionierung
 // ist freigabepflichtig (siehe docs/betrieb/zweitmandant-provisionierung-runbook.md).
+// Bestehende Mandanten sind DATENGETRIEBEN geschützt (Profil ohne
+// provisionedBy-Marker bzw. HELMUT_PROTECTED_TENANT_IDS) — dieses Werkzeug
+// verändert nur Mandanten, die es selbst angelegt hat.
 //
-// Nutzung:
+// Nutzung (IDs in den Beispielen sind rein synthetisch):
 //   node scripts/provision-tenant.js --spec pfad/zur/spec.json
-//   node scripts/provision-tenant.js --spec-inline '{"id":"...","email":"..."}'
-//   node scripts/provision-tenant.js --deactivate <mandant-id>
-//   node scripts/provision-tenant.js --teardown  <mandant-id>   (Vollentfernung)
+//   node scripts/provision-tenant.js --spec-inline '{"id":"tenant-alpha","email":"alpha@example.test",...}'
+//   node scripts/provision-tenant.js --deactivate tenant-alpha
+//   node scripts/provision-tenant.js --teardown  tenant-alpha   (Vollentfernung)
 //   node scripts/provision-tenant.js --validate --spec spec.json (nur prüfen, kein Write)
 //
 // Spec-Pflichtfelder: id, email, name, password, party|faction, parliamentType,

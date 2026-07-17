@@ -11,7 +11,7 @@ ausgeführt.** Prüfung durch 4 unabhängige adversariale Agenten + deterministi
 | Block | Empfehlung | Begründung |
 |-------|-----------|------------|
 | **Additive Migration** (`20260713` Struktur + Seed, `20260716` llm_usage) | **✅ GO** | Idempotent, additiv, rollback-symmetrisch, **dormant** (kein Live-Pfad liest die Tabellen). |
-| **Flag-Schritte der alten Sprint-6-Anfrage** (`HELMUT_V3_STORE=shadow`, `HELMUT_V3_SHADOW_COMPARE=shadow`) | **⛔ NO-GO (STOP)** | **Kritischer Befund P0:** `HELMUT_V3_STORE` ist kein Schatten-Schalter, sondern das **bereits produktiv aktive** Master-Gate des Live-Reads. `"shadow"` ist kein gültiger Flag-Wert (→ `false`) und würde den V3-Read **ausschalten** → Cem-Blackout. |
+| **Flag-Schritte der alten Sprint-6-Anfrage** (`HELMUT_V3_STORE=shadow`, `HELMUT_V3_SHADOW_COMPARE=shadow`) | **⛔ NO-GO (STOP)** | **Kritischer Befund P0:** `HELMUT_V3_STORE` ist kein Schatten-Schalter, sondern das **bereits produktiv aktive** Master-Gate des Live-Reads. `"shadow"` ist kein gültiger Flag-Wert (→ `false`) und würde den V3-Read **ausschalten** → Blackout für den Pilotmandanten. |
 | **Cutover** (Read-Umschaltung, `HELMUT_PROFILE_DB_MODE`, Cron, BE/BB) | **⛔ NICHT Teil dieser Freigabe** | Bewusst ausgeschlossen; kein automatischer Trigger vorhanden (verifiziert). |
 
 **Netto:** **GO für die reine additive Migration** (Schritte M1–M5 unten), **STOP für jede
@@ -38,7 +38,7 @@ Shadow-Vergleich läuft **manuell** (`npm run sprint6:dryrun`), nicht über ein 
 | 8 | App-Start + Admin-Ladezeit | ✅ | kein Live-LLM; Admin-Report try/catch→null, +2 parallele Reads; neue Tabellen werden **nicht** gelesen |
 | 9 | Scheduler/Crawl/Watchdog | ✅ | Crawl nutzt v1Sources (nicht buildFullModel); Shadow doppelt fail-safe; Watchdog read-only |
 | 10 | Zusätzliche Crawl-/KI-Kosten | ✅ | Migration + Shadow-Compare-Flag erzeugen **0** KI-Calls; kein zweiter Understanding-Pfad |
-| 11 | Cem Alt-vs-Neu | ✅ (nach Fix) | 143/149 erhalten, 6 erklärt (orphan_legacy), 2 Gewinn, 0 Regression; **Schutznetz-Bugs M2/M3 behoben** |
+| 11 | Pilot Alt-vs-Neu | ✅ (nach Fix) | 143/149 erhalten, 6 erklärt (orphan_legacy), 2 Gewinn, 0 Regression; **Schutznetz-Bugs M2/M3 behoben** |
 | 12 | Teilweise Migration | ✅ | additiv, dormant; **einzige Kopplung HOCH-1**: `decision_level`-Code braucht `20260714` zuerst |
 | 13 | Abgebrochener Seed | ✅ | transaktional (begin/commit) + idempotent (on conflict); Parser-geprüft (keine Dup-PK/UNIQUE, FKs auflösbar) |
 | 14 | Shadow-Fehler | ✅ | `persistRawDocumentsShadow` try/catch + `.catch(()=>{})`; Live-Blob zuerst; kein throw |
@@ -47,9 +47,9 @@ Shadow-Vergleich läuft **manuell** (`npm run sprint6:dryrun`), nicht über ein 
 | 17 | Kein stiller/automatischer Cutover | ✅ | `buildFullModel` nur read-only Admin; alle Cutover-Flags default AUS; Module nur in `scripts/` |
 
 **Behobene echte Befunde (in diesem Preflight):**
-- **M2** (`cem-shadow-compare.js`): blinder Prefix-Match hätte `X-fake` fälschlich zu `X`
+- **M2** (`supply-shadow-compare.js`): blinder Prefix-Match hätte `X-fake` fälschlich zu `X`
   konsolidiert → Konsolidierung jetzt nur für **explizit deklarierte** Basis-IDs.
-- **M3** (`cem-shadow-compare.js`): fehlende Dokumentzahl galt als „0" → jetzt `null` (unbekannt),
+- **M3** (`supply-shadow-compare.js`): fehlende Dokumentzahl galt als „0" → jetzt `null` (unbekannt),
   unerklärter Wegfall mit unbekannter Zahl → **konservativ Regression**.
 - **N1** (`20260713`): widersprüchlicher Kopfkommentar („Lesezugriff für angemeldete Nutzer")
   an Ist-Zustand angeglichen (RLS ohne Policy, nur service_role).
@@ -145,9 +145,9 @@ Reihenfolge bei Vollrücknahme: `20260716`-Rollback → `20260713`-Rollback.
   status='active' and key in ('berlin-basis','brandenburg-basis')` = 0** (BE/BB inaktiv).
 - **Nach M3:** `llm_usage` hat Spalten `source_id/package_id/vorgang_id/knowledge_object_id`,
   ältere Zeilen NULL.
-- **Nach M4/M5:** `/api/app/start` liefert **unverändert** Cems Lage/Radar/Helmut (Vorher/Nachher
+- **Nach M4/M5:** `/api/app/start` liefert **unverändert** Lage/Radar/Helmut des Pilotmandanten (Vorher/Nachher
   vergleichen — MUSS identisch sein); Admin-Quellenarchitektur lädt ohne Fehler;
-  `npm run sprint6:dryrun` → Exit 0, Cem-Verdict `keine_verschlechterung`/`erklaerte_konsolidierung`.
+  `npm run sprint6:dryrun` → Exit 0, Pilot-Verdict `keine_verschlechterung`/`erklaerte_konsolidierung`.
 
 ---
 

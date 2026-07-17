@@ -2,8 +2,9 @@
 "use strict";
 
 // SaaS Data Trust Foundation — Offline-Checks fuer den Sprint:
-//   1) Stille Personen-Fallbacks im Schreibpfad geschlossen (Account-Modus).
-//   2) Ingestion profilbasiert (keine harten Cem-/Die-Linke-/BMAS-Standards).
+//   1) KEINE Personen-Fallbacks mehr: mergeProfileDefaults ist fuer JEDE ID
+//      neutral (kein Demo-/Pilotprofil), fehlender Mandantenkontext blockiert.
+//   2) Ingestion profilbasiert (keine harten Personen-/Partei-/Ministeriums-Standards).
 //   3) Bundestag/Landtag als Ebenen + Profil-Vollstaendigkeit.
 //   4) Quellen-Kategorien inkl. Medien.
 //   6) Source Safety Guard (kritische Claims, Whitelist, Link-Sicherheit).
@@ -24,30 +25,50 @@ function contains(hay, needle) { return String(hay).includes(needle); }
 const safety = require("../lib/helmut/sourceSafety");
 const config = require("../lib/helmut/config");
 const scheduler = require("../lib/helmut/scheduler");
-const { cemInceProfile } = config;
+const { testPoliticianOne } = require("./fixtures/test-profiles");
 
-// ============================ 1) Schreibpfad-Gating ============================
+// ===================== 1) Schreibpfad: neutrale Defaults =====================
+// INVERTIERT gegenueber dem alten Pilot-Verhalten: NIEMAND erbt mehr reiche
+// Demo-Defaults. mergeProfileDefaults liefert fuer JEDE ID dasselbe neutrale
+// Geruest — unabhaengig vom Auth-Modus. Eine fehlende id wird NIE erfunden.
 (function gating() {
-  // Pilot-Modus (kein Account-Modus): cem-ince erbt seine reichen Demo-Defaults.
   delete process.env.HELMUT_AUTH_MODE;
-  const pilotCem = scheduler.mergeProfileDefaults({ id: "cem-ince" });
-  check("Pilot: cem-ince erbt Demo-Defaults (committee=Arbeit und Soziales)", pilotCem.committee === "Arbeit und Soziales", pilotCem.committee);
-  check("Pilot: cem-ince bleibt als Account moeglich (id erhalten)", pilotCem.id === "cem-ince");
+  const anyTenant = scheduler.mergeProfileDefaults({ id: "test-politician-one" });
+  check("Neutral: KEINE Sonder-Defaults fuer irgendeine ID (committee leer)", !anyTenant.committee, JSON.stringify(anyTenant.committee));
+  check("Neutral: KEINE geerbten Themen (focusTopics leer)", (anyTenant.focusTopics || []).length === 0);
+  check("Neutral: id bleibt erhalten", anyTenant.id === "test-politician-one");
 
-  // Account-Modus: KEIN stiller Personen-Fallback.
+  // Auch im Account-Modus: identisch neutral (kein Modus-Sonderfall mehr).
   process.env.HELMUT_AUTH_MODE = "accounts";
-  const acctCem = scheduler.mergeProfileDefaults({ id: "cem-ince" });
-  check("Account: cem-ince erbt KEINE Cem-Defaults (committee leer)", !acctCem.committee, JSON.stringify(acctCem.committee));
-  check("Account: cem-ince erbt KEINE Cem-Themen (focusTopics leer)", (acctCem.focusTopics || []).length === 0);
+  const acct = scheduler.mergeProfileDefaults({ id: "test-politician-one" });
+  check("Account-Modus: identisch neutral (committee leer)", !acct.committee, JSON.stringify(acct.committee));
+  check("Account-Modus: identisch neutral (focusTopics leer)", (acct.focusTopics || []).length === 0);
 
   const acctIdless = scheduler.mergeProfileDefaults({ fullName: "Neu Ohne Id" });
-  check("Account: id-loses Profil gilt NICHT als Demo (keine Cem-Defaults)", !acctIdless.committee && (acctIdless.focusTopics || []).length === 0);
-  check("Account: id-loses Profil erfindet KEINE cem-ince id", acctIdless.id !== "cem-ince");
+  check("id-loses Profil: keine Sonder-Defaults", !acctIdless.committee && (acctIdless.focusTopics || []).length === 0);
+  check("id-loses Profil: id wird NIE erfunden (bleibt leer)", acctIdless.id === "");
 
   const gruene = scheduler.mergeProfileDefaults({ id: "gruene-mdb", fullName: "Anna Muster", party: "Grüne", committee: "Umweltausschuss", focusTopics: ["Klimaschutz"] });
-  check("Account: fremdes Profil behaelt eigene Werte, keine Cem-Themen", gruene.committee === "Umweltausschuss" && !contains(JSON.stringify(gruene.focusTopics), "Bürgergeld"));
+  check("Profil behaelt eigene Werte, erbt keine fremden Themen", gruene.committee === "Umweltausschuss" && !contains(JSON.stringify(gruene.focusTopics), "Bürgergeld"));
   delete process.env.HELMUT_AUTH_MODE;
 })();
+
+// ================ 1b) Fehlender Mandantenkontext blockiert hart ==============
+// Es gibt keinen Standardmandanten mehr: mandantsbezogene Pfade brechen ohne
+// explizite politicianId mit TenantContextError ab, statt still zu raten.
+async function tenantContextGuard() {
+  const expectTenantError = async (name, fn) => {
+    try {
+      await fn();
+      check(name, false, "kein Fehler geworfen");
+    } catch (err) {
+      check(name, err && err.name === "TenantContextError", err && `${err.name}: ${err.message}`);
+    }
+  };
+  await expectTenantError("Kontext: getActiveProfile ohne id -> TenantContextError", () => scheduler.getActiveProfile(""));
+  await expectTenantError("Kontext: runSourceCrawl ohne id -> TenantContextError", () => scheduler.runSourceCrawl());
+  await expectTenantError("Kontext: runLageCheck ohne id -> TenantContextError", () => scheduler.runLageCheck());
+}
 
 // ======================= 2)+3) Profilbasierte Ingestion =======================
 (function ingestion() {
@@ -58,9 +79,11 @@ const { cemInceProfile } = config;
   };
   const sources = scheduler.mandateNewsSources(gruene);
   const blob = JSON.stringify(sources);
-  const cemTerms = ["Die Linke", "BMAS", "Arbeit und Soziales", "Bürgergeld", "Mindestlohn", "Tarifbindung"];
-  const leaked = cemTerms.filter((t) => contains(blob, t));
-  check("Ingestion: KEINE harten Cem-/Die-Linke-/BMAS-Begriffe fuer fremdes Profil", leaked.length === 0, leaked.join(", "));
+  // Begriffe des frueheren, hartkodierten Sozial-Seed-Profils: duerfen fuer ein
+  // fremdes Profil NIRGENDS auftauchen (kein Produktstandard mehr).
+  const fremdTerms = ["Die Linke", "BMAS", "Arbeit und Soziales", "Bürgergeld", "Mindestlohn", "Tarifbindung"];
+  const leaked = fremdTerms.filter((t) => contains(blob, t));
+  check("Ingestion: KEINE harten Sozial-/Partei-/Ministeriums-Begriffe fuer fremdes Profil", leaked.length === 0, leaked.join(", "));
   check("Ingestion: Partei aus Profil (Grüne)", contains(blob, "Grüne"));
   check("Ingestion: Ministerium aus Profil (BMUV)", contains(blob, "BMUV"));
   check("Ingestion: Ausschuss aus Profil (Umweltausschuss)", contains(blob, "Umweltausschuss"));
@@ -74,17 +97,20 @@ const { cemInceProfile } = config;
   const bund = { id: "b-mdb", fullName: "B", party: "SPD", parliamentType: "Bundestag", focusTopics: ["Digitales"] };
   check("Ingestion: Bundestag-Profil OHNE Landtag-Quelle", !scheduler.mandateNewsSources(bund).some((s) => contains(s.name, "Landtag")));
 
-  // topProfileTopics: Cem-Standardthemen NUR im Demo (Pilot), sonst nie.
+  // topProfileTopics: es gibt KEINE Standardthemen mehr — fuer keine ID, in
+  // keinem Modus. Themen kommen ausschliesslich aus dem eigenen Profil.
   delete process.env.HELMUT_AUTH_MODE;
-  const demoTopics = scheduler.topProfileTopics({ id: "cem-ince" }, 5);
-  check("Themen: Demo-Profil (Pilot) erhaelt Cem-Standardthemen", demoTopics.includes("Bürgergeld"), demoTopics.join(","));
+  const idOnlyTopics = scheduler.topProfileTopics({ id: "test-politician-one" }, 5);
+  check("Themen: nackte ID erhaelt KEINE Standardthemen (Pilot-Sonderfall entfernt)", idOnlyTopics.length === 0, idOnlyTopics.join(","));
   process.env.HELMUT_AUTH_MODE = "accounts";
-  const acctDemoTopics = scheduler.topProfileTopics({ id: "cem-ince" }, 5);
-  check("Themen: cem-ince im Account-Modus erhaelt KEINE Standardthemen", acctDemoTopics.length === 0, acctDemoTopics.join(","));
+  const acctIdOnlyTopics = scheduler.topProfileTopics({ id: "test-politician-one" }, 5);
+  check("Themen: auch im Account-Modus KEINE Standardthemen", acctIdOnlyTopics.length === 0, acctIdOnlyTopics.join(","));
+  const ownTopics = scheduler.topProfileTopics(testPoliticianOne, 5);
+  check("Themen: volles Profil bekommt NUR seine eigenen Themen", ownTopics.length === 5 && ownTopics.every((t) => testPoliticianOne.focusTopics.includes(t) || t in testPoliticianOne.topicPriorities), ownTopics.join(","));
   const foreignTopics = scheduler.topProfileTopics({ id: "gruene-mdb", focusTopics: ["Klima"] }, 5);
   check("Themen: fremdes Profil bekommt NUR eigene Themen", foreignTopics.length === 1 && foreignTopics[0] === "Klima");
   const emptyTopics = scheduler.topProfileTopics({ id: "leer-mdb" }, 5);
-  check("Themen: Profil ohne Themen -> leer (kein Cem-Fallback)", emptyTopics.length === 0);
+  check("Themen: Profil ohne Themen -> leer (KEIN Fallback)", emptyTopics.length === 0);
   delete process.env.HELMUT_AUTH_MODE;
 })();
 
@@ -186,14 +212,20 @@ async function catalogDecoupling() {
   check("Katalog: neutrale Basis vorhanden (Bundestag + Verteidigungsausschuss)", dIds.has("bundestag") && dSrc.some((s) => s.type === "committee"));
   check("Katalog: Medien bleibt eigene Quellen-Kategorie (neben offiziell)", dSrc.some((s) => s.category === "medien") && dSrc.some((s) => s.category === "offiziell"));
 
-  // (b) Cem als normaler Account mit Sozialprofil: bekommt Sozialthemen WEITERHIN.
+  // (b) Sozialprofil (zentrale Fixture, als GESPEICHERTES Profil uebergeben):
+  //     bekommt Sozialthemen WEITERHIN — aus dem eigenen Profil, nicht als Default.
   delete process.env.HELMUT_AUTH_MODE;
-  const cem = scheduler.mergeProfileDefaults({ id: "cem-ince" });
-  const cSrc = await scheduler.getSourcesForProfile(cem);
+  const social = scheduler.mergeProfileDefaults(testPoliticianOne);
+  const cSrc = await scheduler.getSourcesForProfile(social);
   const cIds = idset(cSrc);
-  check("Katalog: Cem (Sozialprofil) bekommt sozial-thematische Quellen", socialThemed(cSrc).length > 0);
-  check("Katalog: Cem bekommt BMAS + DGB (Profil traegt Arbeit und Soziales)", cIds.has("bmas") && cIds.has("dgb"));
-  check("Katalog: Cem bekommt regionale Quellen (Niedersachsen/Salzgitter)", themed(cSrc).some((s) => s.regional && /niedersachsen|salzgitter|wolfenb/i.test(s.name)));
+  check("Katalog: Sozialprofil bekommt sozial-thematische Quellen", socialThemed(cSrc).length > 0);
+  check("Katalog: Sozialprofil bekommt BMAS + DGB (Profil traegt Arbeit und Soziales)", cIds.has("bmas") && cIds.has("dgb"));
+  check("Katalog: Sozialprofil bekommt regionale Quellen (Niedersachsen aus Profil)", themed(cSrc).some((s) => s.regional && /niedersachsen/i.test(s.name)));
+  // Gegenprobe: die NACKTE ID des Fixtures (ohne gespeichertes Profil) bekommt
+  // NICHTS davon — beweist, dass die Quellen aus dem Profil kommen, nicht aus der ID.
+  const bareId = scheduler.mergeProfileDefaults({ id: testPoliticianOne.id });
+  const bareSrc = await scheduler.getSourcesForProfile(bareId);
+  check("Katalog: nackte ID ohne Profildaten -> KEINE Sozial-/Regionalquellen", themed(bareSrc).length === 0, `themed=${themed(bareSrc).length}`);
 
   // (c) Landtag Bayern: nutzt state/Region, KEINE Sozialquellen als Standard.
   const landtag = {
@@ -206,14 +238,13 @@ async function catalogDecoupling() {
   check("Katalog: Landtag Bayern ohne Sozialquellen als Standard", socialThemed(lSrc).length === 0);
   check("Katalog: Landtag Bayern erbt KEINE Fremd-Region (Salzgitter/Braunschweig)", !themed(lSrc).some((s) => /salzgitter|braunschweig|wolfenb/i.test(s.name)));
 
-  // (d) Unvollstaendiges Profil (Account-Modus): NUR neutrale Basis, kein fremder Fallback.
-  process.env.HELMUT_AUTH_MODE = "accounts";
+  // (d) Unvollstaendiges Profil: NUR neutrale Basis, kein fremder Fallback —
+  //     modusunabhaengig (der fruehere Modus-Sonderfall existiert nicht mehr).
   const empty = scheduler.mergeProfileDefaults({ id: "leer-mdb" });
   const eSrc = await scheduler.getSourcesForProfile(empty);
   check("Katalog: unvollstaendiges Profil -> nur neutrale Basis (0 thematisch)", themed(eSrc).length === 0);
   check("Katalog: unvollstaendiges Profil -> KEINE Personenquelle als Standard", !eSrc.some((s) => s.type === "person"));
   check("Katalog: unvollstaendiges Profil -> trotzdem neutrale Institutionen", eSrc.some((s) => s.category === "offiziell"));
-  delete process.env.HELMUT_AUTH_MODE;
 
   // (e) Die-Linke-Profil bekommt seine Fraktionsquellen (Partei-Gating funktioniert).
   const linke = { id: "linke-mdb", fullName: "L Inke", party: "Die Linke", faction: "Die Linke", parliamentType: "Bundestag", focusTopics: ["Frieden"] };
@@ -248,12 +279,12 @@ async function catalogDecoupling() {
   check("Wortgrenze: Haushaltspolitiker -> weiterhin 0 Sozialquellen", !hasAnySocial(haushalt), `soz=${socialThemed(haushalt).length}`);
   // Verteidigung (aus (a)) bleibt sauber:
   check("Wortgrenze: Verteidigungsprofil -> weiterhin 0 Sozialquellen", !hasAnySocial(dSrc));
-  // Cem (aus (b)) bleibt funktionsfaehig:
-  check("Wortgrenze: Cem bekommt weiterhin passende Sozialquellen aus Profil", socialThemed(cSrc).length > 0 && cIds.has("bmas"));
+  // Sozialprofil (aus (b)) bleibt funktionsfaehig:
+  check("Wortgrenze: Sozialprofil bekommt weiterhin passende Sozialquellen aus Profil", socialThemed(cSrc).length > 0 && cIds.has("bmas"));
 }
 
 // ================================ Zusammenfassung ============================
-catalogDecoupling().then(() => {
+tenantContextGuard().then(catalogDecoupling).then(() => {
   const failed = results.filter((r) => !r.ok);
   console.log(`\n${results.length - failed.length}/${results.length} SaaS-Foundation-Checks bestanden.`);
   if (failed.length) { console.error("FEHLGESCHLAGEN:\n" + failed.map((f) => " - " + f.name).join("\n")); process.exit(1); }

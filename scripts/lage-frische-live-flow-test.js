@@ -138,7 +138,7 @@ const OLD_ISO = "2025-06-22T07:00:00Z";
 }
 
 // 1b) renderLageView-Komposition
-t.setProfile({ id: "cem-ince", fullName: "Cem Ince" });
+t.setProfile({ id: "test-politician-one", fullName: "Test Politician One" });
 t.setView("briefing");
 t.stubLageDeps();
 

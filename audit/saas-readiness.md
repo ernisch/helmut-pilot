@@ -63,7 +63,7 @@ Die vollständige Matrix steht in `saas-risk-matrix.md`; dieses Dokument ordnet 
 
 ## 6. Demo-Daten, PII, Provisioning
 
-- **Demo-Profile in Produktion:** `cem-ince` (echter Pilot), **`james-brown`, `angela-merkel`** (Test/Demo). Vor Vertrieb entfernen (Datenhygiene, kein Sicherheitsproblem).
+- **Demo-Profile in Produktion:** `<pilot-mandats-id>` (echter Pilot), **`<demo-mandant-b>`, `<demo-mandant-c>`** (Test/Demo). Vor Vertrieb entfernen (Datenhygiene, kein Sicherheitsproblem).
 - **Modellname-Leak: bereits behoben** (Commit `8791b8a` — `/api/release/public` gibt nur neutralen Aktiv-Status).
 - **Secrets im Log:** Debug-Endpunkte geben nur Boolean-`_set`-Flags aus, keine Werte. Timing-safe Secret-Vergleiche durchgängig. PII: Audit-Log speichert `ip`/`actorEmail`/`politicianId` (intern, akzeptabel); LLM-Log bewusst ohne PII.
 - **Admin-Provisioning:** vollständig **manuell, admin-only** (`createUser`, accounts.js:154-197). Kein Self-Service-Signup. Für wenige Mandate ok; für skalierten Vertrieb Produktlücke (kein Sicherheitsproblem).

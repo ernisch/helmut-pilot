@@ -17,7 +17,7 @@
 // Verhalten explizit, damit ein spaeteres "Aufraeumen" (Zusammenlegen beider Funktionen) die
 // Ranking-Neutralitaet nicht versehentlich wieder bricht.
 //
-// KEINE Cem-Sonderregel: die Kette wird ueber mehrere Ausschuesse + Schreibweisen + Gross-/
+// KEINE Personen-Sonderregel: die Kette wird ueber mehrere Ausschuesse + Schreibweisen + Gross-/
 // Kleinschreibung + Profilfeldvarianten getestet. matched_features werden mit der ECHTEN
 // Matching-Engine erzeugt (matching.matchedFeatures) — kein hand-authored Feature.
 

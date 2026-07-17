@@ -7,18 +7,18 @@
 
 ---
 
-## 1. Wo liegen Cems Profildaten heute wirklich?
+## 1. Wo liegen die Profildaten des Pilotmandanten heute wirklich?
 
 **Drei Speicherorte, nur einer ist live:**
 
 | Ort | Was steht drin | Live genutzt? |
 |---|---|---|
-| `lib/helmut/config.js` (`cemInceProfile`, 133 Zeilen) | Vollständiges, handgepflegtes Profil (Partei, Ausschuss, 16 Fokusthemen, Themen-Prioritäten, Wahlkreis, Kampagnen, Termine, Risiko-/Chancenthemen …) | Nur als **Fallback**, wenn kein Blob-Profil existiert UND `HELMUT_AUTH_MODE != accounts` |
-| `helmut_store.data.profiles['cem-ince']` (JSON-Blob, Supabase-Zeile `id='main'`) | Kopie/Erweiterung von `cemInceProfile`, geschrieben via `saveProfile()` | **JA — das ist die tatsächliche Quelle**, gelesen von `storage.getProfile()` → `getActiveProfile()`/`activeProfile()` |
-| SQL-Tabelle `public.profiles` (3 Zeilen: `cem-ince`, `james-brown`, `angela-merkel`) | Nur `id`/`email`/`name` gepflegt — `party`, `committee`, `focustopics`, `embedding` bei **allen 3** NULL | **NEIN** — wird von keinem Read-Pfad für Personalisierung genutzt |
+| `lib/helmut/config.js` (Code-Vollprofil des Pilotmandanten, damals hartkodiert, 133 Zeilen) | Vollständiges, handgepflegtes Profil (Partei, Ausschuss, 16 Fokusthemen, Themen-Prioritäten, Wahlkreis, Kampagnen, Termine, Risiko-/Chancenthemen …) | Nur als **Fallback**, wenn kein Blob-Profil existiert UND `HELMUT_AUTH_MODE != accounts` |
+| `helmut_store.data.profiles['<pilot-mandats-id>']` (JSON-Blob, Supabase-Zeile `id='main'`) | Kopie/Erweiterung des Code-Vollprofils, geschrieben via `saveProfile()` | **JA — das ist die tatsächliche Quelle**, gelesen von `storage.getProfile()` → `getActiveProfile()`/`activeProfile()` |
+| SQL-Tabelle `public.profiles` (3 Zeilen: `<pilot-mandats-id>`, `<demo-mandant-b>`, `<demo-mandant-c>`) | Nur `id`/`email`/`name` gepflegt — `party`, `committee`, `focustopics`, `embedding` bei **allen 3** NULL | **NEIN** — wird von keinem Read-Pfad für Personalisierung genutzt |
 | SQL-Tabelle `public.mandate_profiles` (0 Zeilen) | Existiert mit **fast genau den Feldern**, die `toMandateProfile()` (storage.js:2469) aus dem Blob-Profil ableitet (`partei`, `fraktion`, `rolle`, `politische_ebene`, `wahlkreis`, `bundesland`, `ausschuesse`, `fachpolitische_schwerpunkte`, `aktuelle_kampagnen`, `risiko_themen`, `chancen_themen`, `bevorzugte_kanaele`, `naechste_termine`, …) | **NEIN** — die Blob-eigene `store.mandateProfiles[id]`-Kopie wird gepflegt, aber **nie in diese SQL-Tabelle geschrieben**. Toter, aber strukturell fertiger Zielort. |
 
-**Kernbefund:** Der produktive Lesepfad für JEDES Profil (Cem eingeschlossen) ist der JSON-Blob
+**Kernbefund:** Der produktive Lesepfad für JEDES Profil (den Pilotmandanten eingeschlossen) ist der JSON-Blob
 (`helmut_store` → `data.profiles[id]`), nicht die relationalen Tabellen. Die relationale Struktur
 (`mandate_profiles`) existiert bereits vollständig im Schema, ist aber **nicht verdrahtet** —
 das ist die kürzeste Brücke zu Phase 2/3, kein Neubau.
@@ -67,7 +67,7 @@ Büro-Textqualität wertvoll, aber **kein Pflichtfeld** für ein funktionierende
 
 - SQL `profiles`: **alle Inhaltsfelder NULL** bei allen 3 Zeilen (siehe §1).
 - SQL `mandate_profiles`: **0 Zeilen** — komplett ungenutzt trotz fertigem Schema.
-- Blob `store.profiles['james-brown']`/`['angela-merkel']`: **Demo-/Test-Platzhalter**, 0
+- Blob `store.profiles['<demo-mandant-b>']`/`['<demo-mandant-c>']`: **Demo-/Test-Platzhalter**, 0
   decisions, 0 embedding, keine Fachfelder gefüllt (`audit/profile-coverage.md` §3).
 - `knowledge_objects.tags`/`policy_field`: **jetzt teilweise gefüllt** (161/217 bzw. 61/217,
   nach dem am 2026-07-12 gelaufenen KO-Backfill — siehe §7).
@@ -76,16 +76,16 @@ Büro-Textqualität wertvoll, aber **kein Pflichtfeld** für ein funktionierende
 
 | id | Rolle | Zustand | Empfehlung |
 |---|---|---|---|
-| `cem-ince` | echter Pilot | vollständig (Blob), aktiv | bleibt |
-| `james-brown` | Demo/Test-Platzhalter | leer, 0 Nutzung | **vor echtem Zweitmandanten löschen** (P2-10, eigener Freigabepunkt — Datenlöschung) |
-| `angela-merkel` | Demo/Test-Platzhalter | leer, 0 Nutzung | dito |
+| `<pilot-mandats-id>` | echter Pilot | vollständig (Blob), aktiv | bleibt |
+| `<demo-mandant-b>` | Demo/Test-Platzhalter | leer, 0 Nutzung | **vor echtem Zweitmandanten löschen** (P2-10, eigener Freigabepunkt — Datenlöschung) |
+| `<demo-mandant-c>` | Demo/Test-Platzhalter | leer, 0 Nutzung | dito |
 
 Beide sind bereits im vorherigen Audit als Löschkandidaten (P2-10) identifiziert; hier nur
 bestätigt, nicht ausgeführt (Datenlöschung braucht explizite Freigabe laut Auftrag).
 
 ## 6. Aktive Production-Profile
 
-Nur `cem-ince` hat reale Nutzung (73 decisions, 3 briefings, 217 KOs Gesamtkorpus, Radar/Lage
+Nur `<pilot-mandats-id>` hat reale Nutzung (73 decisions, 3 briefings, 217 KOs Gesamtkorpus, Radar/Lage
 aktiv). Kein zweites reales Mandat aktiv.
 
 ## 7. Fehlende Daten für Bundestag/Landtag
@@ -104,20 +104,20 @@ aktiv). Kein zweites reales Mandat aktiv.
 
 Legende Nutzerwirkung: **P**=Personalisierung/Matching, **A**=Anzeige/Kontext, **T**=Tenant/Technik.
 
-| Feld | Quelle heute | Zielquelle | Pflicht? | Nutzerwirkung | Fallback | Validierung | Mandantenbezug | Beispiel Cem | Beispiel neues Profil |
+| Feld | Quelle heute | Zielquelle | Pflicht? | Nutzerwirkung | Fallback | Validierung | Mandantenbezug | Beispiel Pilotmandant | Beispiel neues Profil |
 |---|---|---|---|---|---|---|---|---|---|
-| `id` (politicianId) | Blob-Key, von `accounts.createUser` erzeugt | `mandate_profiles.user_id` = `profiles.id` | **Pflicht** | T | keiner — harter Fehler ohne id | eindeutig, slug-Format | ist der Mandantenschlüssel | `cem-ince` | `anna-beispiel` |
-| `fullName`/`name` | Blob | `profiles.name` | **Pflicht** | A, Radar-Personentreffer | keiner | nicht leer | pro Mandant | „Cem Ince" | „Anna Beispiel" |
-| Namensvarianten | **fehlt** | neu: `mandate_profiles.namensvarianten text[]` | optional | Radar-Personentreffer bei Kurz-/Titelformen | leeres Array | — | pro Mandant | `["Ince"]` | `[]` |
-| `party`/`partei` | Blob (`party`), Zielspalte existiert bereits | `mandate_profiles.partei` | **Pflicht** (oder „fraktionslos") | P (22 Pkt.) | „fraktionslos" statt Rateversuch | Freitext, gegen Synonymliste normalisiert | pro Mandant | „Die Linke" | „SPD" |
-| `faction`/`fraktion` | Blob | `mandate_profiles.fraktion` | optional (fällt sonst auf `partei` zurück) | P | = `party` | — | pro Mandant | „Die Linke" | „SPD" |
+| `id` (politicianId) | Blob-Key, von `accounts.createUser` erzeugt | `mandate_profiles.user_id` = `profiles.id` | **Pflicht** | T | keiner — harter Fehler ohne id | eindeutig, slug-Format | ist der Mandantenschlüssel | `<pilot-mandats-id>` | `anna-beispiel` |
+| `fullName`/`name` | Blob | `profiles.name` | **Pflicht** | A, Radar-Personentreffer | keiner | nicht leer | pro Mandant | (voller Name des Pilotmandanten) | „Anna Beispiel" |
+| Namensvarianten | **fehlt** | neu: `mandate_profiles.namensvarianten text[]` | optional | Radar-Personentreffer bei Kurz-/Titelformen | leeres Array | — | pro Mandant | (Kurzform des Nachnamens) | `[]` |
+| `party`/`partei` | Blob (`party`), Zielspalte existiert bereits | `mandate_profiles.partei` | **Pflicht** (oder „fraktionslos") | P (22 Pkt.) | „fraktionslos" statt Rateversuch | Freitext, gegen Synonymliste normalisiert | pro Mandant | (Partei des Pilotmandanten) | „SPD" |
+| `faction`/`fraktion` | Blob | `mandate_profiles.fraktion` | optional (fällt sonst auf `partei` zurück) | P | = `party` | — | pro Mandant | (Fraktion des Pilotmandanten) | „SPD" |
 | Mandatsebene (Bundestag/Landtag) | `politicalLevel` (Blob, Freitext „Bund") | neu: `mandate_profiles.politische_ebene` als **Enum** (`bundestag`/`landtag`) statt Freitext | **Pflicht** | P, T (Quellen-Routing) | keiner | Enum-Check | pro Mandant | „Bundestag" | „Landtag" |
-| Bundesland (bei Landtag) | `state` (Blob) | `mandate_profiles.bundesland` | **Pflicht wenn Landtag** | P (Region) | — | Pflicht nur bei `politische_ebene=landtag` | pro Mandant | „Niedersachsen" (Wohnsitz, nicht Mandat) | „Nordrhein-Westfalen" |
-| Wahlkreis/Region | `constituency`/`location` | `mandate_profiles.wahlkreis` | **Pflicht** (oder „landesweite Liste") | P (20 Pkt.) | „ohne Wahlkreis (Liste)" | — | pro Mandant | „Salzgitter-Wolfenbüttel" | „Köln I" |
+| Bundesland (bei Landtag) | `state` (Blob) | `mandate_profiles.bundesland` | **Pflicht wenn Landtag** | P (Region) | — | Pflicht nur bei `politische_ebene=landtag` | pro Mandant | (Bundesland des Pilotmandanten; Wohnsitz, nicht Mandat) | „Nordrhein-Westfalen" |
+| Wahlkreis/Region | `constituency`/`location` | `mandate_profiles.wahlkreis` | **Pflicht** (oder „landesweite Liste") | P (20 Pkt.) | „ohne Wahlkreis (Liste)" | — | pro Mandant | (Wahlkreis des Pilotmandanten) | „Köln I" |
 | Ausschüsse | `committee`/`committees` | `mandate_profiles.ausschuesse` (Array, existiert) | **Pflicht** (oder Fachthemen als Ersatz) | P (34 Pkt., höchstes Gewicht) | leeres Array → nur Themen zählen | Label-Normalisierung greift bereits (P1-2) | pro Mandant | „Arbeit und Soziales" | „Gesundheit" |
 | stellv. Ausschüsse | **fehlt** | neu: `mandate_profiles.stellvertretende_ausschuesse text[]` | optional | P (kleiner Bonus, noch nicht verdrahtet) | leeres Array | — | pro Mandant | `[]` | `["Digitales"]` |
 | Fachthemen/Schwerpunkte | `focusTopics` | `mandate_profiles.fachpolitische_schwerpunkte` (existiert) | **Pflicht** wenn kein Ausschuss | P (12 + Similarity) | leeres Array | mind. 1 Eintrag falls kein Ausschuss | pro Mandant | 16 Themen | `["Pflege", "Digitalisierung"]` |
-| regionale Themen | `regionalInterests` | neu: `mandate_profiles.regionale_themen text[]` | optional | P/A (Entity-Erkennung) | leeres Array | — | pro Mandant | „VW-Beschäftigte" | — |
+| regionale Themen | `regionalInterests` | neu: `mandate_profiles.regionale_themen text[]` | optional | P/A (Entity-Erkennung) | leeres Array | — | pro Mandant | (regionales Thema des Pilotmandanten) | — |
 | Regierungsrolle/Opposition | **fehlt strukturiert** | neu: `mandate_profiles.regierungsrolle` (Enum `regierung`/`opposition`/`unbekannt`) | optional (Anzeige) | A | „unbekannt" | Enum | pro Mandant | „Opposition" | — |
 | Amt/Funktion | `function`/`role` | `mandate_profiles.rolle` (existiert) | optional | A | „Abgeordnete:r" | — | pro Mandant | „Bundestagsabgeordneter" | „Landtagsabgeordnete" |
 | aktiv/inaktiv | `users[].active` (Account-Ebene, existiert) | neu: `mandate_profiles.aktiv boolean default true` (Profil-Ebene, unabhängig vom Login) | **Pflicht** | T (steuert Job-Teilnahme) | `true` | boolean | pro Mandant | `true` | `true` |

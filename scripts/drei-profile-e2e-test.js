@@ -2,9 +2,10 @@
 
 // Drei-Profile-End-to-End-Test (Mehrmandantenfaehigkeit — Zweitkunden-Beweis).
 //
-// Legt DREI politische Testprofile mit ECHTEN oeffentlichen Mandatsdaten an
-// (Quelle: bundestag.de / abgeordnetenwatch.de, 21. Wahlperiode) und laesst sie
-// durch die vier ECHTEN Produktflaechen laufen:
+// Legt DREI rein KUENSTLICHE politische Testprofile an (zentrale Fixture
+// scripts/fixtures/test-profiles.js + ein drittes Inline-Profil — KEINE echten
+// Personen, keine echten Mandats-IDs) und laesst sie durch die vier ECHTEN
+// Produktflaechen laufen:
 //   - LAGE   (lib/helmut/lage.js: matching -> koToVorgangCard -> selectLageVorgaenge)
 //   - RADAR  (lib/helmut/radar.js: buildRadarSignals)
 //   - HELMUT (lib/helmut/decisions.js: decideForUser)
@@ -18,7 +19,8 @@
 //   5) eigene Helmut-Empfehlungen (Top-Entscheidung = eigenes Fachfeld)
 //   6) Buero-Verhalten + Cache-Trennung (pro Mandant getrennter Cache-Key)
 //   7) Kostenlimit (per-Mandant-Budget: Stopp/Warnung/fail-closed)
-//   8) KEINE Inhalte von Cem (kein Profil bekommt Cems Fachfeld/Person als Top)
+//   8) KEINE Fremdinhalte (kein Profil bekommt das Fachfeld/die Person eines
+//      ANDEREN Mandats als Top — es gibt kein bevorzugtes Pilotprofil mehr)
 //   9) KEINE erfundenen Inhalte (leeres Profil bekommt nichts; alles hat Quelle)
 //  10) KEINE Production-Gefahr (rein in-memory: KEIN Netz, KEINE DB, KEIN Secret)
 //
@@ -30,7 +32,7 @@
 // liest isOfficeEnabled() aus process.env — hier lokal aktiviert.
 process.env.HELMUT_V3_OFFICE = "1";
 
-const { cemInceProfile } = require("../lib/helmut/config");
+const { testPoliticianOne, testPoliticianTwo } = require("./fixtures/test-profiles");
 const { validateProfile } = require("../lib/helmut/profile-validation");
 const matching = require("../lib/helmut/matching");
 const radar = require("../lib/helmut/radar");
@@ -49,61 +51,40 @@ function check(name, cond, detail = "") {
 function section(title) { console.log(`\n== ${title} ==`); }
 
 // ---------------------------------------------------------------------------
-// DREI Testprofile — echte oeffentliche Mandatsdaten (21. Wahlperiode, 2025).
-// Angelegt in derselben Form, die der Admin-Schnellstart (normalizeProfile)
-// erzeugt: berufliche Pflichtfelder (Partei, Wahlkreis/Land, Ausschuss, Themen).
-// Bewusst VERSCHIEDENE Parteien + Fachfelder; Achelwilm teilt Cems Partei
-// (Die Linke), aber NICHT dessen Ausschuss/Region — das ist der schaerfste
-// Mandantentrennungs-Beweis (gleiche Partei darf nicht gleiche Inhalte heissen).
+// DREI kuenstliche Testprofile. Angelegt in derselben Form, die der Admin-
+// Schnellstart (normalizeProfile) erzeugt: berufliche Pflichtfelder (Partei,
+// Wahlkreis/Land, Ausschuss, Themen). Bewusst VERSCHIEDENE Fachfelder;
+// "three" teilt die Partei von "one" (Testpartei Alpha), aber NICHT dessen
+// Ausschuss/Region — das ist der schaerfste Mandantentrennungs-Beweis
+// (gleiche Partei darf nicht gleiche Inhalte heissen).
 // ---------------------------------------------------------------------------
 const PROFILES = {
-  abdi: {
-    id: "test-sanae-abdi",
-    fullName: "Sanae Abdi",
-    party: "SPD",
-    faction: "SPD",
-    parliamentType: "Bundestag",
-    politicalLevel: "Bund",
-    constituency: "Köln I",
-    state: "Nordrhein-Westfalen",
-    location: "Köln",
-    committee: "Ausschuss für wirtschaftliche Zusammenarbeit und Entwicklung",
-    focusTopics: ["Entwicklungspolitik", "Nachhaltige Lieferketten", "Wirtschaftliche Zusammenarbeit", "Globaler Süden"],
+  one: {
+    ...testPoliticianOne,
     profileActive: true,
     aiBudgetDailyCents: 500,
     aiBudgetMonthlyCents: 10000,
-    expectField: "ko-entwicklung"
+    expectField: "ko-arbeit"
   },
-  abraham: {
-    id: "test-knut-abraham",
-    fullName: "Knut Abraham",
-    party: "CDU/CSU",
-    faction: "CDU/CSU",
-    parliamentType: "Bundestag",
-    politicalLevel: "Bund",
-    constituency: "Elbe-Elster – Oberspreewald-Lausitz II",
-    state: "Brandenburg",
-    location: "Senftenberg",
-    committee: "Auswärtiger Ausschuss",
-    committees: ["Auswärtiger Ausschuss", "Ausschuss für Menschenrechte und humanitäre Hilfe"],
-    focusTopics: ["Außenpolitik", "Menschenrechte", "Deutsch-polnische Beziehungen", "Europa"],
+  two: {
+    ...testPoliticianTwo,
     profileActive: true,
     aiBudgetDailyCents: 500,
     aiBudgetMonthlyCents: 10000,
-    expectField: "ko-auswaertiges"
+    expectField: "ko-gesundheit"
   },
-  achelwilm: {
-    id: "test-doris-achelwilm",
-    fullName: "Doris Achelwilm",
-    party: "Die Linke",
-    faction: "Die Linke",
+  three: {
+    id: "test-politician-three",
+    fullName: "Test Politician Three",
+    party: "Testpartei Alpha", // teilt die Partei von "one" — Trennung MUSS aus Ausschuss/Thema kommen
+    faction: "Testpartei Alpha",
     parliamentType: "Bundestag",
     politicalLevel: "Bund",
-    // Bremen: ueber Landesliste, kein Direktwahlkreis -> Bundesland deckt die Region.
+    // Landesliste, kein Direktwahlkreis -> Bundesland deckt die Region.
     state: "Bremen",
-    location: "Bremen",
+    location: "Testhafen",
     committee: "Ausschuss für Digitales und Staatsmodernisierung",
-    focusTopics: ["Steuerpolitik", "Gleichstellung", "Medienpolitik", "Queerpolitik", "Digitalisierung"],
+    focusTopics: ["Steuerpolitik", "Gleichstellung", "Medienpolitik", "Digitalisierung"],
     profileActive: true,
     aiBudgetDailyCents: 500,
     aiBudgetMonthlyCents: 10000,
@@ -111,14 +92,12 @@ const PROFILES = {
   }
 };
 
-// Cem als Referenz (der bestehende Pilot). Sein Fachfeld = Arbeit und Soziales.
-const CEM = { ...cemInceProfile, expectField: "ko-arbeit" };
-
 // ---------------------------------------------------------------------------
-// Repraesentativer, mandantenloser KO-Korpus. Jeder Vorgang traegt echte
-// oeffentliche Analysefelder + eine reale, vertrauenswuerdige Quelle (offizielle
-// oder Leitmedien-Domain), damit der Source-Safety-Guard sie nicht quarantaeniert.
-// KEIN kritischer/sensibler Claim-Wortschatz (sonst Quarantaene ohne Bestaetigung).
+// Repraesentativer, mandantenloser KO-Korpus (rein fiktive Inhalte). Jeder
+// Vorgang traegt vollstaendige Analysefelder + eine vertrauenswuerdige Quelle
+// (offizielle oder Leitmedien-Domain), damit der Source-Safety-Guard sie nicht
+// quarantaeniert. KEIN kritischer/sensibler Claim-Wortschatz (sonst Quarantaene
+// ohne Bestaetigung).
 // ---------------------------------------------------------------------------
 function ko(overrides) {
   return {
@@ -135,61 +114,7 @@ function ko(overrides) {
 }
 
 const KOS = [
-  // --- Abdi: Entwicklung / wirtschaftliche Zusammenarbeit (SPD) ---
-  ko({
-    id: "ko-entwicklung", vorgang_id: "vg-entwicklung",
-    headline: "Lieferkettengesetz: Reform im Entwicklungsausschuss",
-    display_title: "Lieferkettengesetz: Reform beraten",
-    was_ist_passiert: "Der Ausschuss für wirtschaftliche Zusammenarbeit und Entwicklung berät die Reform des Lieferkettengesetzes.",
-    display_summary: "Der Entwicklungsausschuss berät die Reform des Lieferkettengesetzes und die Zukunft nachhaltiger Lieferketten in der Textilindustrie.",
-    warum_wichtig: "Betrifft nachhaltige Lieferketten und die Entwicklungspolitik unmittelbar.",
-    why_relevant: "Betrifft die Entwicklungspolitik und nachhaltige Lieferketten direkt.",
-    recommendation: "Position zur Lieferkettenreform vorbereiten.",
-    handlungsempfehlung: "Position zur Lieferkettenreform vorbereiten.",
-    display_category: "BMZ",
-    parteien: ["SPD"], ausschuesse: ["Ausschuss für wirtschaftliche Zusammenarbeit und Entwicklung"],
-    mentioned_parties: ["SPD"], mentioned_people: ["Abdi"], mentioned_locations: ["Köln"],
-    tags: ["Entwicklungspolitik", "Nachhaltige Lieferketten"],
-    risiken: ["Abschwächung der Sorgfaltspflichten"], chancen: ["Stärkung nachhaltiger Lieferketten"],
-    best_source_url: "https://www.bundestag.de/ausschuesse/entwicklung"
-  }),
-  // --- Abraham: Auswaertiges / Menschenrechte (CDU/CSU) ---
-  ko({
-    id: "ko-auswaertiges", vorgang_id: "vg-auswaertiges", status: "neu",
-    headline: "Auswärtiger Ausschuss berät Menschenrechtslage",
-    display_title: "Menschenrechtslage im Auswärtigen Ausschuss",
-    was_ist_passiert: "Der Auswärtige Ausschuss berät die deutsch-polnische Zusammenarbeit und die Menschenrechtslage in Osteuropa.",
-    display_summary: "Der Auswärtige Ausschuss berät die deutsch-polnische Zusammenarbeit sowie die Menschenrechtslage in mehreren osteuropäischen Ländern.",
-    warum_wichtig: "Betrifft die Außenpolitik und die Menschenrechtsarbeit des Bundestages.",
-    why_relevant: "Betrifft die Außenpolitik und Menschenrechte direkt.",
-    recommendation: "Redebeitrag zur Menschenrechtslage vorbereiten.",
-    handlungsempfehlung: "Redebeitrag zur Menschenrechtslage vorbereiten.",
-    display_category: "Auswärtiges Amt",
-    parteien: ["CDU/CSU"], ausschuesse: ["Auswärtiger Ausschuss", "Ausschuss für Menschenrechte und humanitäre Hilfe"],
-    mentioned_parties: ["CDU/CSU"], mentioned_people: ["Abraham"], mentioned_locations: ["Brandenburg"],
-    tags: ["Außenpolitik", "Menschenrechte", "Europa"],
-    risiken: ["Verschärfung der Lage in Osteuropa"], chancen: ["Stärkung der deutsch-polnischen Zusammenarbeit"],
-    best_source_url: "https://www.auswaertiges-amt.de/de/aussenpolitik"
-  }),
-  // --- Achelwilm: Digitales / Steuerpolitik (Die Linke) ---
-  ko({
-    id: "ko-digitales", vorgang_id: "vg-digitales", status: "neu",
-    headline: "Digitalausschuss berät Plattformbesteuerung",
-    display_title: "Plattformbesteuerung im Digitalausschuss",
-    was_ist_passiert: "Der Ausschuss für Digitales und Staatsmodernisierung berät die Besteuerung großer Digitalplattformen.",
-    display_summary: "Der Ausschuss für Digitales und Staatsmodernisierung berät die faire Besteuerung großer Digitalplattformen und Fragen der digitalen Gleichstellung.",
-    warum_wichtig: "Betrifft die Steuerpolitik und die Digitalisierung des Staates.",
-    why_relevant: "Betrifft die Steuerpolitik und Digitalisierung direkt.",
-    recommendation: "Position zur Plattformbesteuerung vorbereiten.",
-    handlungsempfehlung: "Position zur Plattformbesteuerung vorbereiten.",
-    display_category: "Digitalausschuss",
-    parteien: ["Die Linke"], ausschuesse: ["Ausschuss für Digitales und Staatsmodernisierung"],
-    mentioned_parties: ["Die Linke"], mentioned_people: ["Achelwilm"], mentioned_locations: ["Bremen"],
-    tags: ["Steuerpolitik", "Digitalisierung"],
-    risiken: ["Steuerausfälle bei Digitalkonzernen"], chancen: ["Gerechtere Besteuerung großer Plattformen"],
-    best_source_url: "https://www.bundestag.de/ausschuesse/digitales"
-  }),
-  // --- Cem: Arbeit und Soziales (Die Linke) — der "darf NICHT lecken"-Vorgang ---
+  // --- one: Arbeit und Soziales (Testpartei Alpha) ---
   ko({
     id: "ko-arbeit", vorgang_id: "vg-arbeit",
     headline: "Tariftreuegesetz im Ausschuss für Arbeit und Soziales",
@@ -201,41 +126,74 @@ const KOS = [
     recommendation: "Linie zur Tarifbindung vorbereiten.",
     handlungsempfehlung: "Linie zur Tarifbindung vorbereiten.",
     display_category: "BMAS",
-    parteien: ["Die Linke"], ausschuesse: ["Ausschuss für Arbeit und Soziales"],
-    mentioned_parties: ["Die Linke"], mentioned_people: ["Ince"], mentioned_locations: ["Salzgitter"],
+    parteien: ["Testpartei Alpha"], ausschuesse: ["Ausschuss für Arbeit und Soziales"],
+    mentioned_parties: ["Testpartei Alpha"], mentioned_people: ["Test Politician One"], mentioned_locations: ["Teststadt"],
     tags: ["Tarifbindung", "Mindestlohn"],
     risiken: ["Aufweichung der Tarifbindung"], chancen: ["Stärkung der Tariftreue"],
-    best_source_url: "https://www.bmas.de/tariftreue"
+    best_source_url: "https://www.bmas.de/beispiel-tariftreue"
+  }),
+  // --- two: Gesundheit / Pflegeversicherung (Testpartei Beta) ---
+  ko({
+    id: "ko-gesundheit", vorgang_id: "vg-gesundheit", status: "neu",
+    headline: "Gesundheitsausschuss berät Reform der Pflegeversicherung",
+    display_title: "Reform der Pflegeversicherung im Gesundheitsausschuss",
+    was_ist_passiert: "Der Ausschuss für Gesundheit berät die Reform der Pflegeversicherung.",
+    display_summary: "Der Ausschuss für Gesundheit berät die Reform der Pflegeversicherung und die Finanzierung der Versorgung.",
+    warum_wichtig: "Betrifft die Gesundheitspolitik und die Pflegeversicherung unmittelbar.",
+    why_relevant: "Betrifft Gesundheit und Pflegeversicherung direkt.",
+    recommendation: "Position zur Pflegereform vorbereiten.",
+    handlungsempfehlung: "Position zur Pflegereform vorbereiten.",
+    display_category: "BMG",
+    parteien: ["Testpartei Beta"], ausschuesse: ["Ausschuss für Gesundheit"],
+    mentioned_parties: ["Testpartei Beta"], mentioned_people: ["Test Politician Two"], mentioned_locations: ["Testdorf"],
+    tags: ["Gesundheit", "Pflegeversicherung"],
+    risiken: ["Finanzierungslücke in der Pflegeversicherung"], chancen: ["Verlässliche Pflegeversorgung"],
+    best_source_url: "https://www.bundestag.de/beispiel-gesundheit"
+  }),
+  // --- three: Digitales / Steuerpolitik (Testpartei Alpha) ---
+  ko({
+    id: "ko-digitales", vorgang_id: "vg-digitales", status: "neu",
+    headline: "Digitalausschuss berät Plattformbesteuerung",
+    display_title: "Plattformbesteuerung im Digitalausschuss",
+    was_ist_passiert: "Der Ausschuss für Digitales und Staatsmodernisierung berät die Besteuerung großer Digitalplattformen.",
+    display_summary: "Der Ausschuss für Digitales und Staatsmodernisierung berät die faire Besteuerung großer Digitalplattformen und Fragen der digitalen Gleichstellung.",
+    warum_wichtig: "Betrifft die Steuerpolitik und die Digitalisierung des Staates.",
+    why_relevant: "Betrifft die Steuerpolitik und Digitalisierung direkt.",
+    recommendation: "Position zur Plattformbesteuerung vorbereiten.",
+    handlungsempfehlung: "Position zur Plattformbesteuerung vorbereiten.",
+    display_category: "Digitalausschuss",
+    parteien: ["Testpartei Alpha"], ausschuesse: ["Ausschuss für Digitales und Staatsmodernisierung"],
+    mentioned_parties: ["Testpartei Alpha"], mentioned_people: ["Test Politician Three"], mentioned_locations: ["Testhafen"],
+    tags: ["Steuerpolitik", "Digitalisierung"],
+    risiken: ["Steuerausfälle bei Digitalkonzernen"], chancen: ["Gerechtere Besteuerung großer Plattformen"],
+    best_source_url: "https://www.bundestag.de/beispiel-digitales"
   })
 ];
 
-// Quellen je Vorgang (echte oeffentliche Belege: offiziell + Leitmedium).
+// Quellen je Vorgang (vertrauenswuerdige Belege: offiziell + Leitmedium;
+// Beispiel-Pfade, keine echten Artikel).
 const DOCS_BY_VG = {
-  "vg-entwicklung": [
-    { url: "https://www.bundestag.de/ausschuesse/entwicklung", source_name: "Deutscher Bundestag", source_type: "bundestag", published_at: "2026-07-13T07:30:00Z", title: "Entwicklungsausschuss" },
-    { url: "https://www.tagesschau.de/inland/lieferkettengesetz", source_name: "tagesschau", source_type: "media", published_at: "2026-07-13T06:00:00Z", title: "Reform des Lieferkettengesetzes" }
+  "vg-arbeit": [
+    { url: "https://www.bmas.de/beispiel-tariftreue", source_name: "BMAS", source_type: "ministry", published_at: "2026-07-13T07:00:00Z", title: "Bundestariftreuegesetz" },
+    { url: "https://www.tagesschau.de/beispiel-tariftreue", source_name: "tagesschau", source_type: "media", published_at: "2026-07-13T06:30:00Z", title: "Tariftreuegesetz" }
   ],
-  "vg-auswaertiges": [
-    { url: "https://www.auswaertiges-amt.de/de/aussenpolitik", source_name: "Auswärtiges Amt", source_type: "ministry", published_at: "2026-07-13T07:15:00Z", title: "Menschenrechtslage" },
-    { url: "https://www.zeit.de/politik/ausland/menschenrechte", source_name: "Zeit", source_type: "media", published_at: "2026-07-13T05:40:00Z", title: "Menschenrechte in Osteuropa" }
+  "vg-gesundheit": [
+    { url: "https://www.bundestag.de/beispiel-gesundheit", source_name: "Deutscher Bundestag", source_type: "bundestag", published_at: "2026-07-13T07:15:00Z", title: "Gesundheitsausschuss" },
+    { url: "https://www.zeit.de/beispiel-pflegeversicherung", source_name: "Zeit", source_type: "media", published_at: "2026-07-13T05:40:00Z", title: "Reform der Pflegeversicherung" }
   ],
   "vg-digitales": [
-    { url: "https://www.bundestag.de/ausschuesse/digitales", source_name: "Deutscher Bundestag", source_type: "bundestag", published_at: "2026-07-13T07:20:00Z", title: "Digitalausschuss" },
-    { url: "https://www.spiegel.de/netzwelt/plattformbesteuerung", source_name: "Spiegel", source_type: "media", published_at: "2026-07-13T05:10:00Z", title: "Besteuerung von Digitalplattformen" }
-  ],
-  "vg-arbeit": [
-    { url: "https://www.bmas.de/tariftreue", source_name: "BMAS", source_type: "ministry", published_at: "2026-07-13T07:00:00Z", title: "Bundestariftreuegesetz" },
-    { url: "https://www.tagesschau.de/inland/tariftreue", source_name: "tagesschau", source_type: "media", published_at: "2026-07-13T06:30:00Z", title: "Tariftreuegesetz" }
+    { url: "https://www.bundestag.de/beispiel-digitales", source_name: "Deutscher Bundestag", source_type: "bundestag", published_at: "2026-07-13T07:20:00Z", title: "Digitalausschuss" },
+    { url: "https://www.spiegel.de/beispiel-plattformbesteuerung", source_name: "Spiegel", source_type: "media", published_at: "2026-07-13T05:10:00Z", title: "Besteuerung von Digitalplattformen" }
   ]
 };
 
-const ALL = [PROFILES.abdi, PROFILES.abraham, PROFILES.achelwilm, CEM];
+const ALL = [PROFILES.one, PROFILES.two, PROFILES.three];
 
 // ===========================================================================
 // 1) PROFILANLAGE + PFLICHTFELDER
 // ===========================================================================
 section("1) Profilanlage im Admin + Pflichtfelder (validateProfile)");
-for (const p of [PROFILES.abdi, PROFILES.abraham, PROFILES.achelwilm]) {
+for (const p of ALL) {
   const v = validateProfile(p);
   check(`${p.fullName}: Zustand „Vollständig"`, v.state === "vollstaendig", `${v.state} — fehlt: ${v.missingRequiredLabels.join(", ")}`);
   check(`${p.fullName}: keine fehlenden Pflichtfelder`, v.missingRequired.length === 0, v.missingRequiredLabels.join(", "));
@@ -259,29 +217,29 @@ for (const p of ALL) {
   check(`${p.fullName}: Top-Fachtreffer = ${p.expectField}`, top && top.knowledge_object_id === p.expectField,
     JSON.stringify(withFeat.map((r) => [r.knowledge_object_id, r.matched_features.map((f) => f.type)])));
 }
-// Vier verschiedene Fachprofile -> vier verschiedene Top-Fachtreffer (Kunde A != B).
+// Drei verschiedene Fachprofile -> drei verschiedene Top-Fachtreffer (Kunde A != B).
 const tops = ALL.map((p) => (rankByProfile[p.id].filter((r) => r.matched_features.length)[0] || {}).knowledge_object_id);
-check("Vier Profile -> vier UNTERSCHIEDLICHE Top-Fachtreffer", new Set(tops).size === 4, JSON.stringify(tops));
+check("Drei Profile -> drei UNTERSCHIEDLICHE Top-Fachtreffer", new Set(tops).size === 3, JSON.stringify(tops));
 
 section("2b) Keine Cross-Contamination (fremde Partei/Ausschuss feuert nicht)");
 function feat(profileId, koId, type) {
   const r = (rankByProfile[profileId] || []).find((x) => x.knowledge_object_id === koId);
   return (r && r.matched_features || []).some((f) => f.type === type);
 }
-// SPD-Profil (Abdi) bekommt an keinem Die-Linke/Union-KO einen Partei-Treffer.
-check("Abdi (SPD): kein Partei-Treffer am Arbeit-KO (Die Linke)", !feat("test-sanae-abdi", "ko-arbeit", "partei"));
-check("Abdi (SPD): kein Partei-Treffer am Auswärtiges-KO (Union)", !feat("test-sanae-abdi", "ko-auswaertiges", "partei"));
-// Abraham (Union) bekommt keinen Ausschuss-Treffer am Digitales/Arbeit-KO.
-check("Abraham (Union): kein Ausschuss-Treffer am Digitales-KO", !feat("test-knut-abraham", "ko-digitales", "ausschuss"));
-check("Abraham (Union): kein Partei-Treffer am Digitales-KO (Die Linke)", !feat("test-knut-abraham", "ko-digitales", "partei"));
+// Beta-Profil (two) bekommt an keinem Alpha-KO einen Partei-Treffer.
+check("Two (Beta): kein Partei-Treffer am Arbeit-KO (Alpha)", !feat("test-politician-two", "ko-arbeit", "partei"));
+check("Two (Beta): kein Partei-Treffer am Digitales-KO (Alpha)", !feat("test-politician-two", "ko-digitales", "partei"));
+// one bekommt keinen Ausschuss-Treffer am Gesundheits-/Digitales-KO.
+check("One: kein Ausschuss-Treffer am Gesundheits-KO", !feat("test-politician-one", "ko-gesundheit", "ausschuss"));
+check("One: kein Ausschuss-Treffer am Digitales-KO", !feat("test-politician-one", "ko-digitales", "ausschuss"));
 
-section("2c) Gleiche Partei, andere Zustaendigkeit (Achelwilm vs. Cem, beide Die Linke)");
-// Beide sind Die Linke -> BEIDE bekommen an beiden Die-Linke-KOs einen Partei-Treffer
-// (Partei ist oeffentlich, gemeinsam). Die TRENNUNG kommt aus Ausschuss/Thema:
-check("Achelwilm: Ausschuss-Treffer am EIGENEN Digitales-KO", feat("test-doris-achelwilm", "ko-digitales", "ausschuss"));
-check("Achelwilm: KEIN Ausschuss-Treffer an Cems Arbeit-KO", !feat("test-doris-achelwilm", "ko-arbeit", "ausschuss"));
-check("Cem: Ausschuss-Treffer am EIGENEN Arbeit-KO", feat("cem-ince", "ko-arbeit", "ausschuss"));
-check("Cem: KEIN Ausschuss-Treffer an Achelwilms Digitales-KO", !feat("cem-ince", "ko-digitales", "ausschuss"));
+section("2c) Gleiche Partei, andere Zustaendigkeit (one vs. three, beide Testpartei Alpha)");
+// Beide sind Testpartei Alpha -> BEIDE bekommen an beiden Alpha-KOs einen Partei-
+// Treffer (Partei ist oeffentlich, gemeinsam). Die TRENNUNG kommt aus Ausschuss/Thema:
+check("Three: Ausschuss-Treffer am EIGENEN Digitales-KO", feat("test-politician-three", "ko-digitales", "ausschuss"));
+check("Three: KEIN Ausschuss-Treffer am Arbeit-KO von one", !feat("test-politician-three", "ko-arbeit", "ausschuss"));
+check("One: Ausschuss-Treffer am EIGENEN Arbeit-KO", feat("test-politician-one", "ko-arbeit", "ausschuss"));
+check("One: KEIN Ausschuss-Treffer am Digitales-KO von three", !feat("test-politician-one", "ko-digitales", "ausschuss"));
 
 // ===========================================================================
 // 3) EIGENE LAGE-INHALTE + QUELLENBELEGE
@@ -301,7 +259,7 @@ for (const p of ALL) {
 }
 // Verschiedene Profile -> verschiedene oberste Lage-Karten.
 const lageTops = ALL.map((p) => lageTopByProfile[p.id].vorgangId);
-check("Vier Profile -> vier verschiedene oberste Lage-Karten", new Set(lageTops).size === 4, JSON.stringify(lageTops));
+check("Drei Profile -> drei verschiedene oberste Lage-Karten", new Set(lageTops).size === 3, JSON.stringify(lageTops));
 
 // ===========================================================================
 // 4) EIGENE RADAR-INHALTE (personen-/parteischarf)
@@ -315,12 +273,17 @@ for (const p of ALL) {
   const expectKO = p.expectField;
   check(`${p.fullName}: eigene Erwähnung erkannt (${expectKO})`, personKOs.includes(expectKO), JSON.stringify(personKOs));
 }
-// Abdi (Name „Abdi") darf NICHT Cems Person-KO (Ince) als Eigenerwähnung haben.
-check("Abdi: KEINE Eigenerwähnung an Cems Person-KO (Ince)", !radarByProfile["test-sanae-abdi"].buckets.mention.some((s) => s.knowledgeObjectId === "ko-arbeit"));
-check("Achelwilm: KEINE Eigenerwähnung an Cems Person-KO (Ince)", !radarByProfile["test-doris-achelwilm"].buckets.mention.some((s) => s.knowledgeObjectId === "ko-arbeit"));
-check("Cem: KEINE Eigenerwähnung an Abrahams Person-KO", !radarByProfile["cem-ince"].buckets.mention.some((s) => s.knowledgeObjectId === "ko-auswaertiges"));
-// Abraham (Union) sieht das Digitales-KO (Die Linke) NICHT im Radar (keine Erwähnung seiner Partei/Person).
-check("Abraham: Digitales-KO (Die Linke) erscheint NICHT im Radar", !radarByProfile["test-knut-abraham"].signals.some((s) => s.knowledgeObjectId === "ko-digitales"));
+// Kein Profil hat eine EIGENERWÄHNUNG am Person-KO eines anderen Mandats.
+check("One: KEINE Eigenerwähnung am Person-KO von three", !radarByProfile["test-politician-one"].buckets.mention.some((s) => s.knowledgeObjectId === "ko-digitales"));
+check("Three: KEINE Eigenerwähnung am Person-KO von one", !radarByProfile["test-politician-three"].buckets.mention.some((s) => s.knowledgeObjectId === "ko-arbeit"));
+check("Two: KEINE Eigenerwähnung am Person-KO von one", !radarByProfile["test-politician-two"].buckets.mention.some((s) => s.knowledgeObjectId === "ko-arbeit"));
+// Gleiche Partei (one/three, Alpha): das fremde Alpha-KO darf als PARTEI-Signal
+// erscheinen (Partei ist oeffentlich), aber NIE als Eigenerwähnung.
+check("One (gleiche Partei): Digitales-KO nur als Partei-Signal, nicht als Eigenerwähnung",
+  radarByProfile["test-politician-one"].signals.some((s) => s.knowledgeObjectId === "ko-digitales" && s.reason === "partei")
+  && !radarByProfile["test-politician-one"].buckets.mention.some((s) => s.knowledgeObjectId === "ko-digitales"));
+// Two (Testpartei Beta) sieht das Digitales-KO (Alpha) GAR NICHT im Radar.
+check("Two: Digitales-KO (Testpartei Alpha) erscheint NICHT im Radar", !radarByProfile["test-politician-two"].signals.some((s) => s.knowledgeObjectId === "ko-digitales"));
 // Jedes Radar-Signal traegt eine Quelle (Beleg).
 const allRadarSignals = ALL.flatMap((p) => radarByProfile[p.id].signals);
 check("Jedes Radar-Signal traegt eine Quell-URL", allRadarSignals.length > 0 && allRadarSignals.every((s) => /^https:\/\//.test(s.url)));
@@ -338,13 +301,13 @@ for (const p of ALL) {
   check(`${p.fullName}: Top-Empfehlung ist „Sofort reagieren"`, top && top.decision === "Sofort reagieren", top && `${top.score}/${top.decision}`);
   check(`${p.fullName}: Entscheidungs-ID traegt die Mandanten-ID`, decs.every((d) => d.id.startsWith(`dec-${p.id}-`)));
 }
-// Achelwilm vs. Cem (gleiche Partei): unterschiedliche Top-Empfehlung.
-const achTop = decByProfile["test-doris-achelwilm"].slice().sort((a, b) => b.score - a.score)[0];
-const cemTop = decByProfile["cem-ince"].slice().sort((a, b) => b.score - a.score)[0];
-check("Achelwilm-Top != Cem-Top (trotz gleicher Partei)", achTop.knowledge_object_id !== cemTop.knowledge_object_id, `${achTop.knowledge_object_id} vs ${cemTop.knowledge_object_id}`);
-// Achelwilms Cem-Fachfeld-Bewertung (falls vorhanden) liegt UNTER ihrer eigenen.
-const achArbeit = decByProfile["test-doris-achelwilm"].find((d) => d.knowledge_object_id === "ko-arbeit");
-check("Achelwilm: Cems Arbeit-KO bewertet niedriger als eigenes Digitales-KO", !achArbeit || achArbeit.score < achTop.score, achArbeit && `${achArbeit.score} vs ${achTop.score}`);
+// one vs. three (gleiche Partei): unterschiedliche Top-Empfehlung.
+const oneTop = decByProfile["test-politician-one"].slice().sort((a, b) => b.score - a.score)[0];
+const threeTop = decByProfile["test-politician-three"].slice().sort((a, b) => b.score - a.score)[0];
+check("One-Top != Three-Top (trotz gleicher Partei)", oneTop.knowledge_object_id !== threeTop.knowledge_object_id, `${oneTop.knowledge_object_id} vs ${threeTop.knowledge_object_id}`);
+// Three bewertet das fremde Arbeit-KO (falls vorhanden) UNTER dem eigenen.
+const threeArbeit = decByProfile["test-politician-three"].find((d) => d.knowledge_object_id === "ko-arbeit");
+check("Three: fremdes Arbeit-KO bewertet niedriger als eigenes Digitales-KO", !threeArbeit || threeArbeit.score < threeTop.score, threeArbeit && `${threeArbeit.score} vs ${threeTop.score}`);
 
 // ===========================================================================
 // 6) BUERO-VERHALTEN + CACHE-TRENNUNG (echte office.generateOfficeOutput)
@@ -367,31 +330,31 @@ const deps = { storage: mockStorage, ai: mockAi, template };
 
 (async () => {
   const koDigital = KOS.find((k) => k.id === "ko-digitales");
-  // Achelwilm generiert einen Buero-Entwurf (Pressemitteilung) zu ihrem Fachvorgang.
-  const g1 = await office.generateOfficeOutput("test-doris-achelwilm", "vg-digitales", "pressemitteilung", koDigital, deps);
-  check("Achelwilm: Büro-Entwurf generiert", g1.status === "generated" && /Pressemitteilung/.test(g1.content), g1.reason || g1.status);
+  // three generiert einen Buero-Entwurf (Pressemitteilung) zu seinem Fachvorgang.
+  const g1 = await office.generateOfficeOutput("test-politician-three", "vg-digitales", "pressemitteilung", koDigital, deps);
+  check("Three: Büro-Entwurf generiert", g1.status === "generated" && /Pressemitteilung/.test(g1.content), g1.reason || g1.status);
   // Zweiter Aufruf, gleicher Mandant/Vorgang/Kanal -> Cache-Hit (KEIN zweiter KI-Call).
-  const g2 = await office.generateOfficeOutput("test-doris-achelwilm", "vg-digitales", "pressemitteilung", koDigital, deps);
-  check("Achelwilm: zweiter Aufruf = Cache-Hit (kein neuer KI-Call)", g2.status === "cache-hit", g2.status);
-  // Abdi generiert zum GLEICHEN Vorgang/Kanal -> eigener Cache-Namespace, eigener Entwurf.
-  const g3 = await office.generateOfficeOutput("test-sanae-abdi", "vg-digitales", "pressemitteilung", koDigital, deps);
-  check("Abdi: eigener Büro-Entwurf trotz gleichem Vorgang/Kanal (Cache getrennt)", g3.status === "generated", g3.status);
+  const g2 = await office.generateOfficeOutput("test-politician-three", "vg-digitales", "pressemitteilung", koDigital, deps);
+  check("Three: zweiter Aufruf = Cache-Hit (kein neuer KI-Call)", g2.status === "cache-hit", g2.status);
+  // one generiert zum GLEICHEN Vorgang/Kanal -> eigener Cache-Namespace, eigener Entwurf.
+  const g3 = await office.generateOfficeOutput("test-politician-one", "vg-digitales", "pressemitteilung", koDigital, deps);
+  check("One: eigener Büro-Entwurf trotz gleichem Vorgang/Kanal (Cache getrennt)", g3.status === "generated", g3.status);
   // Cache-Schluessel tragen die Mandanten-ID und kollidieren nicht.
-  const kAch = storage.officeOutputId("test-doris-achelwilm", "vg-digitales", "pressemitteilung");
-  const kAbdi = storage.officeOutputId("test-sanae-abdi", "vg-digitales", "pressemitteilung");
-  check("Büro-Cache-Key trägt Mandanten-ID (Achelwilm)", kAch.includes("test-doris-achelwilm"));
-  check("Büro-Cache-Key Abdi != Achelwilm (keine Kollision)", kAch !== kAbdi && !kAbdi.includes("test-doris-achelwilm"));
-  check("Genau zwei KI-Calls (Achelwilm einmal, Abdi einmal — Cache-Hit spart den dritten)", aiCalls.length === 2, `calls=${aiCalls.length}`);
+  const kThree = storage.officeOutputId("test-politician-three", "vg-digitales", "pressemitteilung");
+  const kOne = storage.officeOutputId("test-politician-one", "vg-digitales", "pressemitteilung");
+  check("Büro-Cache-Key trägt Mandanten-ID (three)", kThree.includes("test-politician-three"));
+  check("Büro-Cache-Key one != three (keine Kollision)", kThree !== kOne && !kOne.includes("test-politician-three"));
+  check("Genau zwei KI-Calls (three einmal, one einmal — Cache-Hit spart den dritten)", aiCalls.length === 2, `calls=${aiCalls.length}`);
   // DSGVO-Check: KI-Meta traegt nur callType + vorgangId, KEINE userId.
   check("Büro-KI-Meta enthält KEINE userId (DSGVO)", aiCalls.every((m) => !("userId" in m) && m.vorgangId && m.callType === "office-output"));
 
-  runBudgetAndCemChecks();
+  runBudgetAndIsolationChecks();
 })();
 
 // ===========================================================================
-// 7) KOSTENLIMIT (per-Mandant-Budget)  +  8) KEINE INHALTE VON CEM
+// 7) KOSTENLIMIT (per-Mandant-Budget)  +  8) KEINE FREMDINHALTE
 // ===========================================================================
-function runBudgetAndCemChecks() {
+function runBudgetAndIsolationChecks() {
   section("7) Kostenlimit (per-Mandant-KI-Budget)");
   // Tagesbudget 5,00 € (500 Cent). Innerhalb -> erlaubt; ueber -> harter Stopp.
   const within = evaluateTenantBudget({ dailyBudgetCent: 500, monthlyBudgetCent: 10000, spentTodayUsd: 1.0, spentMonthUsd: 5.0 });
@@ -405,20 +368,24 @@ function runBudgetAndCemChecks() {
   const noCap = evaluateTenantBudget({ dailyBudgetCent: null, monthlyBudgetCent: null, spentTodayUsd: 99 });
   check("Ohne per-Mandant-Budget -> Deckel inert (globaler Deckel greift separat)", noCap.allowed && noCap.applied === false);
   // Jedes der drei Testprofile hat ein eigenes, getrenntes Budget hinterlegt.
-  for (const p of [PROFILES.abdi, PROFILES.abraham, PROFILES.achelwilm]) {
+  for (const p of ALL) {
     check(`${p.fullName}: eigenes KI-Budget gesetzt (Tag/Monat)`, p.aiBudgetDailyCents > 0 && p.aiBudgetMonthlyCents > 0);
   }
 
-  section("8) KEINE Inhalte von Cem bei den neuen Profilen");
-  for (const p of [PROFILES.abdi, PROFILES.abraham, PROFILES.achelwilm]) {
-    // Oberste Lage-Karte, Top-Empfehlung, Radar-Eigenerwähnungen: NIE Cems Arbeit-KO.
-    check(`${p.fullName}: oberste Lage-Karte ist NICHT Cems Arbeit-Vorgang`, lageTopByProfile[p.id].vorgangId !== "vg-arbeit");
-    const top = decByProfile[p.id].slice().sort((a, b) => b.score - a.score)[0];
-    check(`${p.fullName}: Top-Empfehlung ist NICHT Cems Arbeit-KO`, top.knowledge_object_id !== "ko-arbeit");
-    check(`${p.fullName}: keine Eigenerwähnung an Cems Person-KO`, !radarByProfile[p.id].buckets.mention.some((s) => s.knowledgeObjectId === "ko-arbeit"));
+  section("8) KEIN Profil erhaelt die Inhalte eines ANDEREN Mandats als Top");
+  // Es gibt kein bevorzugtes Pilotprofil mehr: fuer JEDES Paar (p, q) gilt —
+  // p bekommt NIE q's Fachvorgang als oberste Karte/Top-Empfehlung und NIE
+  // q's Person-KO als Eigenerwähnung.
+  for (const p of ALL) {
+    for (const q of ALL) {
+      if (q.id === p.id) continue;
+      const qVg = "vg-" + q.expectField.slice(3);
+      check(`${p.fullName}: oberste Lage-Karte ist NICHT das Fachfeld von ${q.fullName}`, lageTopByProfile[p.id].vorgangId !== qVg);
+      const top = decByProfile[p.id].slice().sort((a, b) => b.score - a.score)[0];
+      check(`${p.fullName}: Top-Empfehlung ist NICHT das Fach-KO von ${q.fullName}`, top.knowledge_object_id !== q.expectField);
+      check(`${p.fullName}: keine Eigenerwähnung am Person-KO von ${q.fullName}`, !radarByProfile[p.id].buckets.mention.some((s) => s.knowledgeObjectId === q.expectField));
+    }
   }
-  // Umgekehrt: Cems oberste Karte/Top-Empfehlung ist SEIN Arbeit-Vorgang (unveraendert).
-  check("Cem behält sein eigenes Fachfeld (Arbeit) als Top — unverändert", lageTopByProfile["cem-ince"].vorgangId === "vg-arbeit");
 
   section("9) KEINE erfundenen Inhalte");
   // Ein leeres Profil bekommt in ALLEN Flaechen nichts (kein geratener Treffer).

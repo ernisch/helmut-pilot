@@ -16,8 +16,8 @@
 | Server-Cache | keine geteilte In-Memory-Profil-Cache-Schicht über Requests | ✅ jeder Request löst frisch auf |
 
 **Bewiesen (Test):**
-- Cem und ein zweiter Mandant haben am selben Tag **verschiedene** Cache-Keys.
-- Ein neuer Kunde startet mit einem **eigenen, leeren** Namespace — **nicht** mit Cems Cache.
+- Der Pilotmandant und ein zweiter Mandant haben am selben Tag **verschiedene** Cache-Keys.
+- Ein neuer Kunde startet mit einem **eigenen, leeren** Namespace — **nicht** mit dem Cache des Pilotmandanten.
 - Ein leerer/vergessener `userId` erzeugt keinen Schlüssel, der einen echten Mandanten trifft.
 - Der Büro-Cache trennt zusätzlich nach Vorgang + Kanal (keine Kollision innerhalb eines Mandanten).
 

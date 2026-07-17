@@ -20,12 +20,13 @@ const NOW = Date.parse("2026-07-13T12:00:00Z");
 const H = 3600000;
 const iso = (agoMs) => new Date(NOW - agoMs).toISOString();
 const M = buildFullModel();
-const cem = { id: "cem-ince", fullName: "Cem Ince", party: "Die Linke", politische_ebene: "bundestag", ausschuesse: ["Arbeit und Soziales"], bundesland: "Niedersachsen", profileActive: true };
+// KLAR KUENSTLICHES, voll versorgtes Bundestagsmandat (kein realer Mandant im Test).
+const mandat = { id: "tenant-alpha", fullName: "Test Politician One", party: "Die Linke", politische_ebene: "bundestag", ausschuesse: ["Arbeit und Soziales"], bundesland: "Niedersachsen", profileActive: true };
 const berlin = { id: "be", fullName: "Berlin MdA", party: "SPD", politische_ebene: "landtag", bundesland: "Berlin", ausschuesse: ["Inneres"], profileActive: true };
-const activation = pp.computeGlobalActivation({ packages: M.packages, packagePaths: M.packagePaths, retrievalPaths: M.retrievalPaths, profiles: [cem, berlin] });
+const activation = pp.computeGlobalActivation({ packages: M.packages, packagePaths: M.packagePaths, retrievalPaths: M.retrievalPaths, profiles: [mandat, berlin] });
 
 // A) LEERE Metriken = neue Tabellen nicht migriert (Ehrlichkeits-Leerzustand)
-const qualityEmpty = qw.buildQualityReport({ catalog: { retrievalPaths: M.retrievalPaths, packages: M.packages, packagePaths: M.packagePaths }, activation, rawDocs: [], koSourceLinks: [], dedupDocuments: [], profiles: [cem, berlin], llmUsage: [], signals: {}, now: NOW });
+const qualityEmpty = qw.buildQualityReport({ catalog: { retrievalPaths: M.retrievalPaths, packages: M.packages, packagePaths: M.packagePaths }, activation, rawDocs: [], koSourceLinks: [], dedupDocuments: [], profiles: [mandat, berlin], llmUsage: [], signals: {}, now: NOW });
 const rEmpty = ar.buildSourceAdminReport({ catalog: M, activation, qualityReport: qualityEmpty, now: NOW });
 
 console.log("== Migrations-/Leerzustand ==");
@@ -60,7 +61,7 @@ check("counts: 28 Kandidat-Klassen, 0 einsatzbereit, 2 unbesetzt", rReadiness.co
 
 console.log("== View 2: Quellen und Abrufwege ==");
 const qa = rEmpty.views.quellenAbrufwege;
-check("alle 145 Abrufwege bewertet (keine Lücke)", qa.pathCount === 145);
+check("alle 144 Abrufwege bewertet (keine Lücke)", qa.pathCount === 144);
 check("nach Herausgeber gruppiert (51 Herausgeber)", qa.herausgeber.length === 51);
 check("welche Abrufwege gesund/defekt/unbekannt (drei Kübel)", typeof qa.healthCounts.gesund === "number" && typeof qa.healthCounts.defekt === "number" && typeof qa.healthCounts.unbekannt === "number");
 check("defekte Abrufwege erkannt (>=6 broken aus Sprint 1)", qa.healthCounts.defekt >= 6);
@@ -70,7 +71,7 @@ check("defekte Pflichtquelle (bundestag) -> health defekt", bundestagPath.health
 
 console.log("== View 3: Profile und Paketversorgung ==");
 const prof = rEmpty.views.profileVersorgung;
-check("welche Profile versorgt: Cem versorgt", prof.find((p) => p.profileId === "cem-ince").supply === "versorgt");
+check("welche Profile versorgt: tenant-alpha versorgt", prof.find((p) => p.profileId === "tenant-alpha").supply === "versorgt");
 check("welche Profile unversorgt: Berlin-MdA unversorgt (Landespaket prepared)", prof.find((p) => p.profileId === "be").supply === "unversorgt");
 check("unversorgtes Profil trägt konkrete Handlung", prof.find((p) => p.profileId === "be").recommendedAction.severity !== "keine");
 
@@ -85,11 +86,11 @@ check("welche Messwerte noch nicht verfügbar: als Hinweise gelistet", pb.missin
 
 console.log("== View 5: Quellendetail ==");
 const detail = rEmpty.views.quellendetail.paths;
-check("Quellendetail je Abrufweg vorhanden (145)", detail.length === 145);
-const cemNews = detail.find((p) => p.legacy_source_id === "cem-ince-news");
-check("Detail trägt Herausgeber/Methode/Pakete", cemNews.publisher && cemNews.method && Array.isArray(cemNews.packages));
-check("ohne Metriken: documentCount/koCount = null (nicht 0 erfunden)", cemNews.documentCount === null && cemNews.koCount === null);
-check("ohne Dedup: duplicateCount = null", cemNews.duplicateCount === null);
+check("Quellendetail je Abrufweg vorhanden (144) — KEINE Personenquelle im Katalog", detail.length === 144 && !detail.some((p) => /-news$/.test(String(p.legacy_source_id))));
+const detailPath = detail.find((p) => p.legacy_source_id === "tagesschau-politik");
+check("Detail trägt Herausgeber/Methode/Pakete", detailPath.publisher && detailPath.method && Array.isArray(detailPath.packages));
+check("ohne Metriken: documentCount/koCount = null (nicht 0 erfunden)", detailPath.documentCount === null && detailPath.koCount === null);
+check("ohne Dedup: duplicateCount = null", detailPath.duplicateCount === null);
 
 console.log("== View 6: Kosten und Produktnutzen ==");
 const kn = rEmpty.views.kostenNutzen;
@@ -105,7 +106,7 @@ const rawDocs = [
 ];
 const koSourceLinks = [{ knowledge_object_id: "ko-1", source_ids: ["bmas", "tagesschau-politik"] }];
 const llmUsage = [{ createdAt: new Date(NOW - 1 * H).toISOString(), pipelineStep: "understanding", model: "gpt-5-mini", estimatedCost: 0.0012 }];
-const qualityReal = qw.buildQualityReport({ catalog: { retrievalPaths: M.retrievalPaths, packages: M.packages, packagePaths: M.packagePaths }, activation, rawDocs, koSourceLinks, dedupDocuments: [], profiles: [cem, berlin], llmUsage, signals: { storageOk: true, crawlAt: new Date(NOW - 2 * H).toISOString() }, now: NOW });
+const qualityReal = qw.buildQualityReport({ catalog: { retrievalPaths: M.retrievalPaths, packages: M.packages, packagePaths: M.packagePaths }, activation, rawDocs, koSourceLinks, dedupDocuments: [], profiles: [mandat, berlin], llmUsage, signals: { storageOk: true, crawlAt: new Date(NOW - 2 * H).toISOString() }, now: NOW });
 const rReal = ar.buildSourceAdminReport({ catalog: M, activation, qualityReport: qualityReal, now: NOW });
 const bmas = rReal.views.quellendetail.paths.find((p) => p.legacy_source_id === "bmas");
 check("mit Doku-Daten: bmas gesund", bmas.health === "gesund");
@@ -116,7 +117,7 @@ check("availability.documents=true bei echten Dokumenten", rReal.availability.do
 
 // C) ROBUSTHEIT (Verify B1): kaputte Profil-Elemente dürfen den Report NICHT crashen lassen.
 console.log("== Robustheit: kaputte/leere Profil-Elemente ==");
-const brokenProfiles = [null, undefined, "kaputt", 42, {}, cem];
+const brokenProfiles = [null, undefined, "kaputt", 42, {}, mandat];
 const activationBroken = pp.computeGlobalActivation({ packages: M.packages, packagePaths: M.packagePaths, retrievalPaths: M.retrievalPaths, profiles: brokenProfiles });
 let robustOk = true, robustReport = null;
 try {
@@ -124,14 +125,14 @@ try {
   robustReport = ar.buildSourceAdminReport({ catalog: M, activation: activationBroken, qualityReport: qb, now: NOW });
 } catch (e) { robustOk = false; }
 check("kaputte Profil-Elemente (null/undefined/String/Zahl/{}) crashen den Report NICHT", robustOk === true && robustReport !== null);
-check("gültiges Profil (Cem) bleibt trotz kaputter Nachbarn versorgt", robustReport && robustReport.views.profileVersorgung.some((p) => p.profileId === "cem-ince" && p.supply === "versorgt"));
+check("gültiges Profil (tenant-alpha) bleibt trotz kaputter Nachbarn versorgt", robustReport && robustReport.views.profileVersorgung.some((p) => p.profileId === "tenant-alpha" && p.supply === "versorgt"));
 check("kaputte Elemente werden 'nicht_aktivierbar', nicht fälschlich versorgt", robustReport && robustReport.views.profileVersorgung.filter((p) => p.supply === "versorgt").length === 1);
 
 // D) VERIFY-KORREKTUREN (Ehrlichkeits-/Prioritäts-Review)
 console.log("== Verify-Korrekturen (Ehrlichkeit A/B/C/D) ==");
 // A: partielle Kostenattribution -> nicht attribuierte Quelle 'nicht verfügbar', nicht '$0'.
 const llmPartial = [{ createdAt: iso(1 * H), pipelineStep: "understanding", model: "gpt-5-mini", estimatedCost: 0.5, sourceId: "bmas" }, { createdAt: iso(1 * H), pipelineStep: "lageBriefing", model: "gpt-5-mini", estimatedCost: 0.9 }];
-const qPartial = qw.buildQualityReport({ catalog: { retrievalPaths: M.retrievalPaths, packages: M.packages, packagePaths: M.packagePaths }, activation, rawDocs: [{ source_id: "bmas", retrieved_at: iso(2 * H) }], koSourceLinks: [], dedupDocuments: [], profiles: [cem, berlin], llmUsage: llmPartial, signals: {}, now: NOW });
+const qPartial = qw.buildQualityReport({ catalog: { retrievalPaths: M.retrievalPaths, packages: M.packages, packagePaths: M.packagePaths }, activation, rawDocs: [{ source_id: "bmas", retrieved_at: iso(2 * H) }], koSourceLinks: [], dedupDocuments: [], profiles: [mandat, berlin], llmUsage: llmPartial, signals: {}, now: NOW });
 const rPartial = ar.buildSourceAdminReport({ catalog: M, activation, qualityReport: qPartial, now: NOW });
 const bmasCost = rPartial.views.quellendetail.paths.find((p) => p.legacy_source_id === "bmas").cost;
 const tsCost = rPartial.views.quellendetail.paths.find((p) => p.legacy_source_id === "tagesschau-politik").cost;

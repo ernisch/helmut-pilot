@@ -10,6 +10,13 @@
 // keine KI) — dasselbe Muster wie scripts/p1-security-check.js. Es wird KEIN
 // Produktverhalten geändert; der Test liest nur /api/app/start.
 //
+// Mandanten-Setup: Es gibt keinen im Code definierten Standardmandanten mehr.
+// Der Test macht das kuenstliche Test-Mandat zum EINZIGEN aktiven Datenbank-Mandat
+// (VOR dem require des Servers) und schreibt dessen Fixture-Profil
+// (scripts/fixtures/test-profiles.js) vor dem Request per storage.saveProfile
+// in den lokalen Store. Unkonfiguriert antwortet das Gate mit 503 — auch das
+// wird hier verankert.
+//
 // Der Test sichert ab:
 //   1) Feldnamen der /api/app/start-Antwort   (Struktur-Snapshot)
 //   2) relevante Enums                         (decision/priorityType/linkType)
@@ -65,11 +72,26 @@ function warn(message) {
 // --- Offline, deterministisch: bekannte NICHT-leere Werte VOR dem require, damit
 //     loadLocalEnv() (setzt nur ungesetzte Keys) sie nicht aus .env.local kippt.
 const TEST_PILOT_SECRET = "contract-test-secret";
+// Kuenstliches Test-Mandat (zentrale Fixture) — es gibt KEINEN Code-Default
+// mehr: das Legacy-Pilotgate bedient ausschliesslich das per Env konfigurierte
+// Mandat, und dessen Profildaten sind reine Store-Datensaetze (saveProfile).
+const TEST_TENANT_ID = "test-politician-one";
 process.env.HELMUT_AUTH_MODE = "pilot";        // nicht "accounts" -> Legacy-Pilotgate
 process.env.PILOT_SECRET = TEST_PILOT_SECRET;   // bekannt -> Bearer-Auth im Test
 process.env.HELMUT_STORAGE_BACKEND = "local";   // nicht "supabase" -> lokaler Datei-Store
 
 const handler = require(path.join(root, "server.js"));
+const storage = require(path.join(root, "lib", "helmut", "storage.js"));
+const { testPoliticianOne } = require(path.join(__dirname, "fixtures", "test-profiles.js"));
+
+async function setActiveMandates(profiles) {
+  const store = await storage.readStore("main");
+  store.profiles = {};
+  store.mandateProfiles = {};
+  await storage.writeStore(store, "main");
+  // saveProfile -> setzt updatedAt + mandateProfiles (Vertragsform bleibt stabil).
+  for (const p of profiles) await storage.saveProfile({ ...p });
+}
 
 function request(server, pathname) {
   const { port } = server.address();
@@ -187,6 +209,20 @@ async function main() {
 
   let json;
   try {
+    // --- (0) NEUE Mandanten-Semantik (mandantenneutral): OHNE aktives Mandat gibt
+    //     es kein geratenes Profil — /api/app/start liefert einen Leerzustand
+    //     (kein 503-Pilotfehler, kein Code-Seed).
+    await setActiveMandates([]);
+    const unconfigured = await request(server, "/api/app/start");
+    let unconfiguredPayload = {};
+    try { unconfiguredPayload = JSON.parse(unconfigured.body); } catch { /* kein JSON -> Check unten */ }
+    check("(0) Ohne aktives Mandat: 200 Leerzustand (kein geratenes Profil, kein 503)",
+      unconfigured.status === 200 && unconfiguredPayload.empty === true && !unconfiguredPayload.profile,
+      `status=${unconfigured.status}`);
+
+    // Fixture-Profil ist das EINZIGE aktive Mandat -> wird ohne Env/Auswahl serviert.
+    await setActiveMandates([testPoliticianOne]);
+
     const res = await request(server, "/api/app/start");
     check("Antwort ist HTTP 200 (Vertrag erreichbar, Auth ok)", res.status === 200, `status=${res.status}`);
     if (res.status !== 200) { await new Promise((r) => server.close(r)); return finish(); }
@@ -214,6 +250,9 @@ async function main() {
   check("(1) aiStatus trägt {enabled:boolean, model:string}",
     json.aiStatus && typeof json.aiStatus.enabled === "boolean" && typeof json.aiStatus.model === "string",
     `aiStatus=${JSON.stringify(json.aiStatus)}`);
+  check("(0) Ausgeliefertes Profil == konfiguriertes Test-Mandat aus dem Store (kein Code-Seed)",
+    json.profile && json.profile.id === TEST_TENANT_ID && json.profile.fullName === testPoliticianOne.fullName,
+    `profile.id=${JSON.stringify(json.profile && json.profile.id)} fullName=${JSON.stringify(json.profile && json.profile.fullName)}`);
 
   const briefing = json.briefing || {};
   const missingBriefingKeys = BRIEFING_REQUIRED_KEYS.filter((k) => !(k in briefing));

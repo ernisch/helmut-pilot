@@ -51,19 +51,20 @@ Quellen-Frage.
 | **crawl / pipeline** (`runSourceCrawl`) | global | Sammelt öffentliche `raw_documents` — **mandantenlos**, korrekt (ein Lauf für alle) |
 | **understanding** (eager + cron) | global | Erzeugt `knowledge_objects` (öffentliche Vorgänge) — **mandantenlos**, 1 KI-Call pro Vorgang für alle |
 | **matching / decisions** | pro Profil | Rechnet pro `userId` (In-Memory-Ranker) — **mandantengetrennt** |
-| **morning-briefing** (`buildV3Briefing`) | pro Profil, aber **heute nur 1** | Cron nutzt eine einzelne `politicianId` (Default cem-ince) |
+| **morning-briefing** (`buildV3Briefing`) | pro Profil, aber **heute nur 1** | Cron nutzt eine einzelne `politicianId` (Default `<pilot-mandats-id>`) |
 | **lage-briefing** (Cron-Prewarm) | **pro Profil (Loop)** | Iteriert `listProfiles()`, per-Profil try/catch, eigener Cache je `bf-<user>-<slot>-<tag>` |
 | **lage-check** | pro Profil, aber **heute nur 1** | Cron nutzt eine einzelne `politicianId` |
 | **health-report** | global (Betreiber) | Operator-Diagnose, kein Kundeninhalt |
 
-### Welche Jobs zeigen heute noch fest auf Cem?
+### Welche Jobs zeigen heute noch fest auf den Pilotmandanten?
 
 - `runSourceCrawl`, `runLageCheck`, `buildV3Briefing` (morning-briefing), `buildHealthReport`
-  haben **Default `politicianId = cemInceProfile.id`** (scheduler.js:155/288, server.js).
+  haben **Default `politicianId = <pilot-mandats-id>`** (damals hartkodiertes
+  Pilot-Default-Profil; scheduler.js:155/288, server.js).
   Für crawl/understanding ist das **egal** (mandantenlos — der Default steuert nur,
   welches Profil den Lauf „besitzt", die Daten sind geteilt).
   Für morning-briefing/lage-check bedeutet es: **diese Crons versorgen heute nur EIN
-  Profil** (cem-ince). Für echten Mehrmandantenbetrieb müssten sie — wie lage-briefing
+  Profil** (`<pilot-mandats-id>`). Für echten Mehrmandantenbetrieb müssten sie — wie lage-briefing
   bereits — über `listProfiles()` loopen. **Das ist eine bewusste offene Aufgabe**, weil
   ein Loop die Cron-Laufzeit/-Kosten erhöht (mehr Profile = mehr Arbeit pro Lauf) und in
   die Nähe einer Cron-/Kosten-Entscheidung rückt → Freigabepunkt, hier NICHT umgesetzt.

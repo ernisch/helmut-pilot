@@ -172,7 +172,7 @@ Identitäten für dieselbe Tabelle).
 
 ## 8. Risiken & Grenzen dieses Sprints
 
-- **Kein funktionales Risiko für cem-ince heute:** `HELMUT_TENANT_JWT_MODE`
+- **Kein funktionales Risiko für den Pilotmandanten (`<pilot-mandats-id>`) heute:** `HELMUT_TENANT_JWT_MODE`
   ist in Production nicht gesetzt → jeder der acht Pfade verhält sich exakt
   wie vor diesem Sprint.
 - **Aktivierungsvoraussetzung, die NICHT Teil dieses Sprints ist:**

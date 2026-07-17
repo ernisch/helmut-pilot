@@ -4,7 +4,7 @@
 > Der adversariale Preflight (`sprint-10-preflight-bericht.md`) hat einen **kritischen Fehler**
 > in den Schritten 6–7 dieser Anfrage gefunden: `HELMUT_V3_STORE=shadow` ist **falsch** —
 > das Flag ist kein Schatten-Schalter, sondern das **bereits produktiv aktive** Master-Gate
-> des V3-Live-Reads; `"shadow"` wertet zu `false` und würde Cems Lage/Radar/Helmut **ausschalten**.
+> des V3-Live-Reads; `"shadow"` wertet zu `false` und würde Lage/Radar/Helmut des Pilotmandanten **ausschalten**.
 > **Maßgeblich ist ausschließlich `sprint-10-preflight-bericht.md`** (korrigierte Schrittfolge:
 > nur additive Migration, **keine** Flag-Änderung). Die folgenden Schritte 6–8 sind ungültig.
 
@@ -23,7 +23,7 @@ erst nachdem der Shadow-Vergleich gegen echte Produktionsdaten grün ist.
 
 ## 1. Exakt auszuführende Schritte (in dieser Reihenfolge)
 
-Alle Migrationen sind **additiv und idempotent** (offline geprüft: `test:sprint6-cem-migration`).
+Alle Migrationen sind **additiv und idempotent** (offline geprüft: `test:sprint6-migration`).
 
 | # | Schritt | Befehl / Aktion | Art |
 |---|---------|-----------------|-----|
@@ -35,8 +35,8 @@ Alle Migrationen sind **additiv und idempotent** (offline geprüft: `test:sprint
 | 6 | Schatten-Persistenz an | Env `HELMUT_V3_STORE=shadow` setzen (kein Cutover) | Flag (reversibel) |
 | 7 | Shadow-Vergleich an | Env `HELMUT_V3_SHADOW_COMPARE=shadow` setzen | Flag (reversibel) |
 | 8 | 1–2 Crawl-Zyklen abwarten | regulärer Crawl schreibt zusätzlich `raw_documents` (Schatten) | Beobachtung |
-| 9 | **Cem-Dryrun gegen echte Daten** | `npm run sprint6:dryrun` (read-only) | Prüfung (Gate) |
-| 10 | Ergebnis dokumentieren | Cem-Vergleich + Mapper-Verdict festhalten | Bericht |
+| 9 | **Pilot-Dryrun gegen echte Daten** | `npm run sprint6:dryrun` (read-only) | Prüfung (Gate) |
+| 10 | Ergebnis dokumentieren | Pilot-Vergleich + Mapper-Verdict festhalten | Bericht |
 
 **Cutover (führender Pfad, Cron-Umstellung, `HELMUT_PROFILE_DB_MODE` scharf, Berlin/BB-Aktivierung)
 ist bewusst NICHT enthalten** — separate Freigabe nach grünem Schritt 9.
@@ -50,7 +50,7 @@ ist bewusst NICHT enthalten** — separate Freigabe nach grünem Schritt 9.
 | Schema-Migration kollidiert mit Bestand | sehr gering (rein additiv, `if not exists`) | niedrig | Idempotenz offline geprüft; Rollback vorhanden |
 | Seed dupliziert Zeilen | sehr gering (`on conflict`) | niedrig | Idempotent; wiederholbar |
 | Schatten-Ingest erhöht DB-Last/Kosten | gering | mittel | nur `raw_documents`-Writes; kein zusätzlicher KI-Call; Flag sofort abschaltbar |
-| Cem-Versorgung verschlechtert sich | **offline widerlegt** (0 Regression) | hoch (falls doch) | Schritt 9 ist Gate; bei Regression → Flags aus, kein Cutover |
+| Pilot-Versorgung verschlechtert sich | **offline widerlegt** (0 Regression) | hoch (falls doch) | Schritt 9 ist Gate; bei Regression → Flags aus, kein Cutover |
 | `llm_usage`-Spalten stören Bestandsschreiber | keiner (ältere Zeilen bleiben NULL) | niedrig | additiv; `buildLlmUsageRecord` bereits kompatibel |
 | RLS lässt neue Tabellen offen | gering | mittel | Migration setzt RLS + service_role-Write (Bestandmuster); in §5 verifizieren |
 
@@ -105,12 +105,12 @@ bestehende Tabelle/Spalte/Zeile wird berührt. Reihenfolge: Flags → llm_usage 
 **Nach Schatten-Ingest (Schritt 9, das eigentliche Gate):**
 - `npm run sprint6:dryrun` → **Mapper-Verdict `OK`** (keine `kritisch`-Quelle: keine beobachtete
   `source_id` mit Dokumenten ohne Abrufweg/Orphan-Klassifikation).
-- **Cem-Vergleich `keine_verschlechterung`/`erklaerte_konsolidierung`**, `regression=false`,
-  `docsAtRisk=0`. Erwartet: die 6 `cem-ince-news-*`-Konsolidierungen tragen **keine exklusiven**
+- **Pilot-Vergleich `keine_verschlechterung`/`erklaerte_konsolidierung`**, `regression=false`,
+  `docsAtRisk=0`. Erwartet: die 6 `<pilot-mandats-id>-news-*`-Konsolidierungen tragen **keine exklusiven**
   Dokumente (sonst Prüfbedarf statt Cutover).
 - Admin-Quellenarchitektur (Sprint 8) lädt stabil; Kosten je Quelle beginnen sich zu füllen.
 
-**Abbruchkriterium:** Mapper `kritisch` **oder** Cem `regression` → Flags aus, kein Cutover,
+**Abbruchkriterium:** Mapper `kritisch` **oder** Pilot-Vergleich `regression` → Flags aus, kein Cutover,
 Ursache analysieren.
 
 ---
@@ -147,7 +147,7 @@ erfordert eine **eigene** Anfrage nach abgeschlossener technischer Verifikation.
 ## 7. Zusammenfassung
 
 - **Additiv, idempotent, reversibel.** Bis Schritt 10 bleibt der Live-Pfad unverändert führend.
-- **Cem-Schutz offline nachgewiesen:** 143/149 Quellen 1:1 erhalten, 6 erklärte Konsolidierungen,
+- **Pilot-Schutz offline nachgewiesen:** 143/149 Quellen 1:1 erhalten, 6 erklärte Konsolidierungen,
   2 Gewinn, **0 Regression** — der echte-Daten-Abgleich (Schritt 9) ist das verbindliche Gate.
 - **Kein Cutover, keine Cron-Änderung, keine Berlin/BB-Aktivierung** in dieser Anfrage.
 - **Benötigt:** ausdrückliche Freigabe für Schritte 1–10.

@@ -21,7 +21,7 @@ function check(name, cond) { console.log(`${cond ? "PASS" : "FAIL"}  ${name}`); 
 
 const M = buildFullModel();
 const base = { packages: M.packages, packagePaths: M.packagePaths, retrievalPaths: M.retrievalPaths };
-const cem = { id: "cem-ince", fullName: "Cem Ince", party: "Die Linke", politische_ebene: "bundestag", ausschuesse: ["Arbeit und Soziales"], bundesland: "Niedersachsen", profileActive: true };
+const bund = { id: "test-politician-one", fullName: "Test Politician One", party: "Testpartei Alpha", politische_ebene: "bundestag", ausschuesse: ["Arbeit und Soziales"], bundesland: "Niedersachsen", profileActive: true };
 
 // 1) DOPPELTE CRAWLS -> idempotent (zwei identische Laeufe -> identisches Ergebnis)
 const src = [{ sourceId: "be-plenum", retrievalPathId: "rp-be-plenum", kind: "pardok", items: P.parsePardokDocumentsFromString(fs.readFileSync(path.join(__dirname, "..", "test", "fixtures", "pardok", "berlin-gold.xml"), "utf8"), { land: "berlin" }).documents }];

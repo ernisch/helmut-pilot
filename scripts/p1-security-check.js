@@ -17,6 +17,8 @@ const path = require("path");
 const vm = require("vm");
 
 const root = path.join(__dirname, "..");
+// Zentrale, KLAR KUENSTLICHE Test-Identitaeten (keine echten Personen/Mandate).
+const { testPoliticianOne, testPoliticianTwo, TENANT_ALPHA, TENANT_BETA } = require(path.join(__dirname, "fixtures", "test-profiles.js"));
 const results = [];
 function check(name, ok, detail = "") {
   results.push({ name, ok: Boolean(ok), detail });
@@ -29,6 +31,8 @@ delete process.env.HELMUT_AUTH_MODE;
 delete process.env.PILOT_SECRET;
 delete process.env.HELMUT_ADMIN_SECRET;
 delete process.env.CRON_SECRET;
+// KEIN konfiguriertes Pilotmandat als Ausgangszustand: es gibt keinen Code-Default,
+// Mandantenneutral: Testbloecke stellen das aktive Test-Mandat im Store bereit.
 // Backend hart auf "local" zwingen. loadLocalEnv() (im Server) ueberschreibt nur
 // UNGESETZTE Keys — ein definierter Wert bleibt also erhalten und useSupabase()
 // bleibt false (kein Netzwerk/Node-fetch noetig).
@@ -88,34 +92,36 @@ async function presentationBackfillEndpointChecks() {
   await new Promise((r) => server.listen(0, "127.0.0.1", r));
   const p = "/api/admin/presentation-backfill";
   const parse = (r) => { try { return JSON.parse(r.body); } catch (_) { return {}; } };
+  // Admin-Bypass mit explizitem ?politicianId (secret-geschuetzt) — mandatsneutral,
+  // keine Tenant-Env noetig. Hier wird die Secret-Absicherung selbst getestet.
+  const pid = `politicianId=${testPoliticianOne.id}`;
   try {
     // 1) kein Secret -> 503 (fail closed)
     delete process.env.CRON_SECRET;
-    const a = await request(server, { pathname: p, headers: { Authorization: "Bearer irgendwas" } });
+    const a = await request(server, { pathname: `${p}?${pid}`, headers: { Authorization: "Bearer irgendwas" } });
     check("Presentation-Backfill ohne CRON_SECRET blockiert (503, fail closed)", a.status === 503, `status=${a.status}`);
 
     process.env.CRON_SECRET = "p1-test-secret";
     // 2) falsches Secret -> 403
-    const b = await request(server, { pathname: p, headers: { Authorization: "Bearer falsch" } });
+    const b = await request(server, { pathname: `${p}?${pid}`, headers: { Authorization: "Bearer falsch" } });
     check("Presentation-Backfill mit falschem Secret blockiert (403)", b.status === 403, `status=${b.status}`);
 
     // 3) richtiges Secret, ohne execute -> Default DRY-RUN (sicher)
-    const d = await request(server, { pathname: p, headers: { Authorization: "Bearer p1-test-secret" } });
+    const d = await request(server, { pathname: `${p}?${pid}`, headers: { Authorization: "Bearer p1-test-secret" } });
     const dj = parse(d);
     check("Presentation-Backfill: ohne execute -> mode=dry-run (sicherer Default)", d.status === 200 && dj.mode === "dry-run", `status=${d.status} mode=${dj.mode}`);
 
-    // 4a) execute=1 per GET -> 405 (Review-Fix Phase 9: Schreiblauf nur per POST,
-    //     damit kein Link/Prefetch/Verlauf-Klick je einen KI-Lauf ausloest)
-    const eGet = await request(server, { pathname: `${p}?execute=1`, headers: { Authorization: "Bearer p1-test-secret" } });
+    // 4a) execute=1 per GET -> 405 (Review-Fix Phase 9: Schreiblauf nur per POST)
+    const eGet = await request(server, { pathname: `${p}?${pid}&execute=1`, headers: { Authorization: "Bearer p1-test-secret" } });
     check("Presentation-Backfill: execute=1 per GET -> 405 (Schreiblauf nur POST)", eGet.status === 405, `status=${eGet.status}`);
 
     // 4b) execute=1 per POST -> mode=execute (Flag-Logik; ohne Store trotzdem kein Schreibvorgang)
-    const e = await request(server, { method: "POST", pathname: `${p}?execute=1`, headers: { Authorization: "Bearer p1-test-secret" } });
+    const e = await request(server, { method: "POST", pathname: `${p}?${pid}&execute=1`, headers: { Authorization: "Bearer p1-test-secret" } });
     const ej = parse(e);
     check("Presentation-Backfill: execute=1 per POST -> mode=execute", e.status === 200 && ej.mode === "execute", `status=${e.status} mode=${ej.mode}`);
 
     // 5) ganz ohne Authorization (Secret ist gesetzt) -> 403: die Route ist nie offen
-    const noauth = await request(server, { pathname: p });
+    const noauth = await request(server, { pathname: `${p}?${pid}` });
     check("Presentation-Backfill ohne Authorization blockiert (403, nie offen)", noauth.status === 403, `status=${noauth.status}`);
   } finally {
     delete process.env.CRON_SECRET;
@@ -123,10 +129,14 @@ async function presentationBackfillEndpointChecks() {
   }
 }
 
-// SaaS-Hardening Step 1: kein stiller cem-ince-/Fremd-Mandats-Fallback.
+// SaaS-Hardening: KEIN im Code definierter Standardmandant, kein stiller
+// Fremd-Mandats-Fallback.
 // - Isolations-Kern (auth.pickPoliticianId) direkt geprüft.
+// - Legacy-Zugang ohne aktives Mandat -> ehrlicher Leerzustand (kein geratener Mandant).
+// - MIT konfiguriertem Mandat kommen Profildaten AUSSCHLIESSLICH aus dem Store
+//   (blankProfile als Basis, kein Seed-Profil fuer irgendwen).
 // - E2E im Account-Modus: eingeloggter Nutzer OHNE Mandat -> 403 no-mandate,
-//   NIEMALS cem-ince-Daten.
+//   NIEMALS Daten eines fremden Mandats.
 async function saasMandateHardeningChecks() {
   const auth = require(path.join(root, "lib/helmut/auth.js"));
   // Unit: Isolation
@@ -155,9 +165,9 @@ async function saasMandateHardeningChecks() {
   const storage = require(path.join(root, "lib/helmut/storage.js"));
   const parse = (r) => { try { return JSON.parse(r.body); } catch (_) { return {}; } };
 
-  // Deterministischer Datei-Store: sicherstellen, dass cem-ince im Ausgangszustand
-  // KEIN gespeichertes Profil hat; Zustand am Ende exakt wiederherstellen.
-  // (Store-Cache ist im Harness aus -> die Datei ist die Wahrheit.)
+  // Deterministischer Datei-Store: sicherstellen, dass das Test-Mandat im
+  // Ausgangszustand KEIN gespeichertes Profil hat; Zustand am Ende exakt
+  // wiederherstellen. (Store-Cache ist im Harness aus -> die Datei ist die Wahrheit.)
   const dataDir = path.join(root, ".helmut-data");
   const storeFile = path.join(dataDir, "store.json");
   const storeExisted = fs.existsSync(storeFile);
@@ -172,19 +182,43 @@ async function saasMandateHardeningChecks() {
   try {
     clearStore();
 
-    // A) PILOT-Modus: cem-ince behaelt seine reichen Seed-Defaults, solange kein
-    //    Profil gespeichert ist. Der Pilot bleibt unveraendert funktionsfaehig.
+    // A) MANDANTENNEUTRAL: kein Pilot-/Default-/Fallback-Mandat. Das Mandat ergibt
+    //    sich ausschliesslich aus den AKTIVEN Datenbankmandaten — keine Env-Variable.
     delete process.env.HELMUT_AUTH_MODE;
     const pilot = http.createServer(handler);
     await new Promise((r) => pilot.listen(0, "127.0.0.1", r));
     try {
+      // A1) KEIN aktives Mandat -> ehrlicher Leerzustand (kein 503, kein geratener Mandant).
+      clearStore();
       const res = await requestFull(pilot, { pathname: "/api/profile/current" });
       const p = parse(res);
-      check("SaaS: Pilot-Modus — cem-ince ohne gespeichertes Profil erhaelt Seed-Defaults (Pilot funktioniert)",
-        res.status === 200 && p.id === "cem-ince" && p.party === "Die Linke" &&
-        Array.isArray(p.committees) && p.committees.includes("Arbeit und Soziales"),
-        `status=${res.status} party=${p.party}`);
-    } finally { await new Promise((r) => pilot.close(r)); }
+      check("SaaS: KEIN aktives Mandat -> Leerzustand statt geratenem Profil (kein 503 pilot-tenant-*)",
+        (res.status === 200 || res.status === 409) && p.empty === true && !p.party && !p.id,
+        `status=${res.status} reason=${p.reason}`);
+
+      // A2) GENAU EIN aktives Mandat (im Store) -> ohne Env/Auswahl serviert; Daten AUS DEM STORE.
+      await storage.saveProfile({ ...testPoliticianOne });
+      const okRes = await requestFull(pilot, { pathname: "/api/profile/current" });
+      const op = parse(okRes);
+      check("SaaS: EIN aktives Mandat -> 200, Profildaten aus dem Store (kein Code-Seed, keine Env)",
+        okRes.status === 200 && op.id === testPoliticianOne.id && op.party === testPoliticianOne.party &&
+        Array.isArray(op.committees) && op.committees.includes("Arbeit und Soziales"),
+        `status=${okRes.status} id=${op.id} party=${op.party}`);
+
+      // A3) Minimal gefuelltes (aber aktives) Mandat -> neutrales blankProfile
+      //     (KEIN reiches Seed-Profil fuer irgendwen).
+      clearStore();
+      await storage.saveProfile({ id: testPoliticianOne.id, fullName: testPoliticianOne.fullName });
+      const blankRes = await requestFull(pilot, { pathname: "/api/profile/current" });
+      const bpRes = parse(blankRes);
+      check("SaaS: minimal gefuelltes Mandat -> neutrales blankProfile (keine Partei/Ausschuesse/Themen)",
+        blankRes.status === 200 && bpRes.id === testPoliticianOne.id && bpRes.party === "" &&
+        Array.isArray(bpRes.committees) && bpRes.committees.length === 0 &&
+        !JSON.stringify(bpRes).includes("Testpartei") && !JSON.stringify(bpRes).includes("Bürgergeld"),
+        `status=${blankRes.status} party="${bpRes.party}" committees=${JSON.stringify(bpRes.committees)}`);
+    } finally {
+      await new Promise((r) => pilot.close(r));
+    }
 
     // Account-Modus vorbereiten (Admin-Seed via Env).
     process.env.HELMUT_AUTH_MODE = "accounts";
@@ -204,27 +238,27 @@ async function saasMandateHardeningChecks() {
       const j = parse(start);
       check("SaaS: Account-Nutzer OHNE Mandat -> 403 no-mandate (kein stiller Fallback)",
         start.status === 403 && j.reason === "no-mandate", `status=${start.status} reason=${j.reason}`);
-      check("SaaS: Antwort für nicht-mandatierten Account enthält KEINE cem-ince-Daten",
-        !String(start.body).toLowerCase().includes("cem-ince") && !String(start.body).includes("Cem Ince"), start.body.slice(0, 80));
+      check("SaaS: Antwort für nicht-mandatierten Account enthält KEINE fremden Mandatsdaten",
+        !String(start.body).includes(testPoliticianOne.id) && !String(start.body).includes(testPoliticianOne.fullName), start.body.slice(0, 80));
 
-      // C) De-Privilegierung: Admin waehlt explizit cem-ince, ABER es gibt kein
-      //    gespeichertes Profil -> leeres blankProfile. KEIN stiller cem-ince-Seed
-      //    im Account-Modus (party leer, keine Ausschuesse, keine cem-ince-Themen).
+      // C) Kein Seed fuer NIEMANDEN: Admin waehlt explizit ein Mandat, ABER es
+      //    gibt kein gespeichertes Profil -> leeres blankProfile (party leer,
+      //    keine Ausschuesse, keine vorbelegten Themen).
       clearStore();
-      const blank = await requestFull(server, { pathname: "/api/profile/current?politicianId=cem-ince", headers: { Cookie: cookie } });
+      const blank = await requestFull(server, { pathname: `/api/profile/current?politicianId=${testPoliticianOne.id}`, headers: { Cookie: cookie } });
       const bp = parse(blank);
-      check("SaaS: Account-Modus — cem-ince ohne gespeichertes Profil -> leeres blankProfile (kein Seed-Fallback)",
-        blank.status === 200 && bp.id === "cem-ince" && bp.party === "" &&
+      check("SaaS: Account-Modus — Mandat ohne gespeichertes Profil -> leeres blankProfile (kein Seed-Fallback)",
+        blank.status === 200 && bp.id === testPoliticianOne.id && bp.party === "" &&
         Array.isArray(bp.committees) && bp.committees.length === 0 &&
         !JSON.stringify(bp).includes("Bürgergeld"),
         `status=${blank.status} party="${bp.party}" committees=${JSON.stringify(bp.committees)}`);
 
-      // D) Gespeichertes Profil hat Vorrang und wird NICHT von hardcodierten
-      //    cem-ince Defaults ueberschrieben (activeProfile laedt zuerst den Store).
-      await storage.saveProfile({ id: "cem-ince", fullName: "Cem Ince", party: "STORED-MARKER-Partei", committees: ["Stored-Testausschuss"], focusTopics: ["Stored-Thema"] });
-      const stored = await requestFull(server, { pathname: "/api/profile/current?politicianId=cem-ince", headers: { Cookie: cookie } });
+      // D) Gespeichertes Profil hat Vorrang und wird NICHT von irgendwelchen
+      //    Code-Defaults ueberschrieben (activeProfile laedt zuerst den Store).
+      await storage.saveProfile({ id: testPoliticianOne.id, fullName: testPoliticianOne.fullName, party: "STORED-MARKER-Partei", committees: ["Stored-Testausschuss"], focusTopics: ["Stored-Thema"] });
+      const stored = await requestFull(server, { pathname: `/api/profile/current?politicianId=${testPoliticianOne.id}`, headers: { Cookie: cookie } });
       const sp = parse(stored);
-      check("SaaS: gespeichertes cem-ince Profil hat Vorrang — hardcodierte Defaults ueberschreiben es NICHT",
+      check("SaaS: gespeichertes Profil hat Vorrang — Code-Defaults ueberschreiben es NICHT",
         stored.status === 200 && sp.party === "STORED-MARKER-Partei" &&
         Array.isArray(sp.committees) && sp.committees.includes("Stored-Testausschuss") &&
         !sp.committees.includes("Arbeit und Soziales") && !JSON.stringify(sp).includes("Bürgergeld"),
@@ -247,23 +281,25 @@ async function debugBriefingEndpointChecks() {
   const p = "/api/debug/briefing";
   const parse = (r) => { try { return JSON.parse(r.body); } catch (_) { return {}; } };
   const prevAdmin = process.env.HELMUT_ADMIN_SECRET, prevCron = process.env.CRON_SECRET, prevQ = process.env.HELMUT_ALLOW_QUERY_SECRETS;
+  // Mandatsneutral: Admin-Bypass mit explizitem ?politicianId (secret-geschuetzt).
+  const pid = `politicianId=${testPoliticianOne.id}`;
   try {
     delete process.env.HELMUT_ALLOW_QUERY_SECRETS; // wie Production: nur Bearer, kein ?secret=
     // A) HELMUT_ADMIN_SECRET gesetzt
     process.env.HELMUT_ADMIN_SECRET = "p1-admin-secret";
     delete process.env.CRON_SECRET;
-    const noAuth = await request(server, { pathname: p });
+    const noAuth = await request(server, { pathname: `${p}?${pid}` });
     check("Debug-Briefing ohne Secret -> 404 (fail closed)", noAuth.status === 404, `status=${noAuth.status}`);
-    const wrong = await request(server, { pathname: p, headers: { Authorization: "Bearer falsch" } });
+    const wrong = await request(server, { pathname: `${p}?${pid}`, headers: { Authorization: "Bearer falsch" } });
     check("Debug-Briefing mit falschem Secret -> 404", wrong.status === 404, `status=${wrong.status}`);
-    const ok = await request(server, { pathname: p, headers: { Authorization: "Bearer p1-admin-secret" } });
+    const ok = await request(server, { pathname: `${p}?${pid}`, headers: { Authorization: "Bearer p1-admin-secret" } });
     const okj = parse(ok);
     check("Debug-Briefing mit Bearer HELMUT_ADMIN_SECRET -> 200 + engine v3",
       ok.status === 200 && okj.engine === "v3" && okj.briefing && okj.briefing.engine === "v3", `status=${ok.status} engine=${okj.engine}`);
     // B) HELMUT_ADMIN_SECRET NICHT gesetzt -> CRON_SECRET ist der Fallback (konsistent zu hasAdminBypass)
     delete process.env.HELMUT_ADMIN_SECRET;
     process.env.CRON_SECRET = "p1-cron-secret";
-    const cronOk = await request(server, { pathname: p, headers: { Authorization: "Bearer p1-cron-secret" } });
+    const cronOk = await request(server, { pathname: `${p}?${pid}`, headers: { Authorization: "Bearer p1-cron-secret" } });
     check("Debug-Briefing: ohne ADMIN_SECRET akzeptiert Bearer CRON_SECRET (Fallback) -> 200 + engine v3",
       cronOk.status === 200 && parse(cronOk).engine === "v3", `status=${cronOk.status}`);
   } finally {
@@ -311,8 +347,8 @@ function staticChecks() {
     check("lageDisplayHeadline: sauberer Klausel-Schluss bleibt erhalten (kündigt an -> nicht 'kündigt')",
       /kündigt an$/.test(clause), clause);
     check("lageDisplayHeadline: erfindet nichts / verzerrt Person(Partei) nicht (Name bleibt, keine Partei-Ersetzung)",
-      /Heil/.test(headline("Minister Hubertus Heil (SPD) fordert höhere Löhne im Pflegebereich und mehr Tarifbindung"))
-      && !/^SPD\b/.test(headline("Minister Hubertus Heil (SPD) fordert höhere Löhne")));
+      /Mustermann/.test(headline("Minister Max Mustermann (SPD) fordert höhere Löhne im Pflegebereich und mehr Tarifbindung"))
+      && !/^SPD\b/.test(headline("Minister Max Mustermann (SPD) fordert höhere Löhne")));
     check("lageDisplayHeadline: kurzer, guter Titel bleibt unverändert",
       headline("Bürgergeld-Reform passiert den Bundesrat") === "Bürgergeld-Reform passiert den Bundesrat");
     check("lageDisplayHeadline: Roh-Ellipse der Quelle wird entfernt (kein '…')",
@@ -325,12 +361,14 @@ function staticChecks() {
   check("Cron fail-open Helper entfernt (kein isAuthorizedCron)", !server.includes("isAuthorizedCron"));
   check("Cron fail-closed Helper vorhanden (authorizeCron)", server.includes("function authorizeCron"));
 
-  // Datenmotor V2, Commit 3: keine hardcodierten Cem-Namen mehr im KI-/Entity-Pfad.
+  // Mandantenneutralisierung: der KI-/Entity-Pfad kennt KEINE hartkodierte Person.
   const ai = fs.readFileSync(path.join(root, "lib/helmut/ai.js"), "utf8");
-  check("KI: kein hardcodiertes 'Guten Abend, Cem.'", !ai.includes("Guten Abend, Cem."));
-  check("KI: kein 'Cem'-Fallbackname mehr", !ai.includes('|| "Cem"'));
-  const configSrc = fs.readFileSync(path.join(root, "lib/helmut/config.js"), "utf8");
-  check("Entity-Erkennung: kein hardcodiertes 'Cem Ince' in inferEntities-Liste", !/const entities = \[.*Cem Ince/.test(configSrc));
+  check("KI: Anrede wird aus dem Profil abgeleitet (kein hartkodierter Personen-Fallbackname)",
+    ai.includes('firstName ? `Guten Abend, ${firstName}.` : "Guten Abend."'));
+  const configExports = Object.keys(require(path.join(root, "lib/helmut/config.js"))).sort();
+  check("Config: exportiert NUR neutrale Helfer, KEIN Code-Seed-/Personenprofil",
+    JSON.stringify(configExports) === JSON.stringify(["accountTypeOf", "inferEntities", "parliamentTypeOf", "profileCompleteness"]),
+    `exports=${configExports.join(",")}`);
 }
 
 // Datenmotor V2, Commit 3: inferEntities leitet Personen/Partei aus dem Profil ab.
@@ -341,8 +379,8 @@ function entityChecks() {
   const forMuster = inferEntities(item, { fullName: "Erika Muster", party: "Grüne", faction: "Bündnis 90/Die Grünen", committees: [], relevantMinistries: [], opponents: [] });
   check("Entity: Mandats-Person/Partei aus Profil erkannt (Muster/Grüne)",
     forMuster.includes("Erika Muster") && forMuster.includes("Bundestag"), `entities=${JSON.stringify(forMuster)}`);
-  check("Entity: KEIN fremder 'Cem Ince' bei Fremd-Mandat",
-    !forMuster.includes("Cem Ince") && !forMuster.includes("Die Linke"), `entities=${JSON.stringify(forMuster)}`);
+  check("Entity: KEINE fremden Personen-/Partei-Entitaeten bei fremdem Mandat (nur profilgebunden)",
+    !forMuster.includes(testPoliticianOne.fullName) && !forMuster.includes(testPoliticianOne.party), `entities=${JSON.stringify(forMuster)}`);
 
   const noProfile = inferEntities(item, null);
   check("Entity: ohne Profil nur generische Institutionen (kein Personenname)",
@@ -1771,37 +1809,54 @@ async function c8UnderstandingChecks() {
     /requestUnderstanding/.test(src) && /markFailed/.test(src) && /understanding_status/.test(src));
 }
 
-// Datenmotor V2 — Commit 2: echte Personalisierung / Cem-Entkopplung.
-// Deterministischer Unit-Test der reinen Merge-Funktion (kein Store noetig).
-function personalizationChecks() {
+// Mandantenneutralisierung: mergeProfileDefaults liefert fuer JEDE ID dieselben
+// NEUTRALEN Defaults (keine Partei, keine Themen, keine Ausschuesse) — es gibt
+// KEIN Demo-/Seed-Profil und keinen Personen-Fallback mehr. Deterministischer
+// Test der reinen Merge-Funktion + der Mandantenkontext-Pflicht in getActiveProfile.
+async function personalizationChecks() {
   const scheduler = require(path.join(root, "lib/helmut/scheduler.js"));
+  const { TenantContextError } = require(path.join(root, "lib/helmut/tenant-context.js"));
 
-  // Demo-Profil cem-ince behaelt seine reichhaltigen Defaults (kein Regress).
-  const cem = scheduler.mergeProfileDefaults({ id: "cem-ince" });
-  check("Personalisierung: cem-ince behaelt Ausschuss 'Arbeit und Soziales'",
-    Array.isArray(cem.committees) && cem.committees.includes("Arbeit und Soziales"),
-    `committees=${JSON.stringify(cem.committees)}`);
-  check("Personalisierung: cem-ince behaelt Fokusthemen (z. B. Bürgergeld)",
-    Array.isArray(cem.focusTopics) && cem.focusTopics.includes("Bürgergeld"));
+  // Beliebige IDs -> identische, neutrale Defaults.
+  const a = scheduler.mergeProfileDefaults({ id: TENANT_ALPHA });
+  const b = scheduler.mergeProfileDefaults({ id: TENANT_BETA });
+  check("Neutralitaet: mergeProfileDefaults setzt KEINE Partei/Fraktion/Ausschuesse fuer beliebige IDs",
+    !a.party && !a.faction && Array.isArray(a.committees) && a.committees.length === 0,
+    `party=${JSON.stringify(a.party)} committees=${JSON.stringify(a.committees)}`);
+  check("Neutralitaet: KEINE vorbelegten Fokusthemen/Prioritaeten (kein 'Bürgergeld'/'Mindestlohn')",
+    Array.isArray(a.focusTopics) && a.focusTopics.length === 0 && Object.keys(a.topicPriorities || {}).length === 0,
+    `focusTopics=${JSON.stringify(a.focusTopics)}`);
+  check("Neutralitaet: KEINE vorbelegten Gegner/Regionalbezuege/Termine",
+    (a.opponents || []).length === 0 && (a.regionalInterests || []).length === 0 && (a.upcomingAppointments || []).length === 0);
+  const stripId = (p) => JSON.stringify({ ...p, id: "" });
+  check("Neutralitaet: zwei verschiedene Mandate erhalten IDENTISCHE neutrale Defaults",
+    stripId(a) === stripId(b));
+  check("Neutralitaet: fehlende id wird NIE erfunden (bleibt leer)",
+    scheduler.mergeProfileDefaults({}).id === "");
 
-  // Fremdes Mandat erbt KEINE Cem-Inhalte mehr.
-  const other = scheduler.mergeProfileDefaults({
-    id: "erika-muster", fullName: "Erika Muster", party: "CDU", faction: "CDU/CSU",
-    committees: ["Umwelt"], focusTopics: ["Klima"], topicPriorities: { Klima: 5 }
-  });
-  check("Personalisierung: Fremd-Mandat hat NUR eigene Ausschuesse (kein Cem-Leak)",
-    JSON.stringify(other.committees) === JSON.stringify(["Umwelt"]),
-    `committees=${JSON.stringify(other.committees)}`);
-  check("Personalisierung: Fremd-Mandat erbt KEINE Cem-Themen (kein 'Bürgergeld'/'Mindestlohn')",
-    !other.focusTopics.includes("Bürgergeld") && !other.focusTopics.includes("Mindestlohn") && other.focusTopics.includes("Klima"),
-    `focusTopics=${JSON.stringify(other.focusTopics)}`);
-  check("Personalisierung: Fremd-Mandat erbt KEINE Cem-Topicprioritaeten (nur eigene)",
-    JSON.stringify(other.topicPriorities) === JSON.stringify({ Klima: 5 }),
-    `topicPriorities=${JSON.stringify(other.topicPriorities)}`);
-  check("Personalisierung: Fremd-Mandat erbt KEINE Cem-Gegner/Regionalbezuege",
-    (other.opponents || []).length === 0 && (other.regionalInterests || []).length === 0 && (other.upcomingAppointments || []).length === 0);
-  check("Personalisierung: Fremd-Mandat behaelt eigene Partei/Fraktion",
-    other.party === "CDU" && other.faction === "CDU/CSU");
+  // Eigene Profildaten bleiben vollstaendig erhalten; nichts Fremdes wird dazugemischt.
+  const own = scheduler.mergeProfileDefaults({ ...testPoliticianTwo });
+  check("Personalisierung: eigenes Profil bleibt erhalten (Partei/Ausschuss/Themen)",
+    own.party === testPoliticianTwo.party && JSON.stringify(own.committees) === JSON.stringify(["Gesundheit"])
+      && own.focusTopics.includes("Gesundheit"),
+    `committees=${JSON.stringify(own.committees)}`);
+  check("Personalisierung: KEINE fremden Themen/Prioritaeten dazugemischt",
+    !own.focusTopics.includes("Bürgergeld") && !own.focusTopics.includes("Mindestlohn")
+      && own.topicPriorities.Gesundheit === 5 && !("Bürgergeld" in own.topicPriorities),
+    `topicPriorities=${JSON.stringify(own.topicPriorities)}`);
+
+  // getActiveProfile: ohne gespeichertes Profil -> neutrales Geruest mit lesbarem
+  // Namen aus der ID; ohne ID -> harter Abbruch (kein Standardmandant).
+  const skeleton = await scheduler.getActiveProfile("p1-unbekanntes-mandat");
+  check("getActiveProfile: unbekanntes Mandat -> neutrales Geruest (lesbarer Name, keine Partei/Themen)",
+    skeleton.id === "p1-unbekanntes-mandat" && skeleton.fullName === "P1 Unbekanntes Mandat"
+      && skeleton.party === "" && skeleton.committees.length === 0 && skeleton.focusTopics.length === 0,
+    `id=${skeleton.id} party="${skeleton.party}"`);
+  let thrown = null;
+  try { await scheduler.getActiveProfile(); } catch (error) { thrown = error; }
+  check("getActiveProfile: ohne politicianId -> TenantContextError (kein Standardmandant)",
+    thrown instanceof TenantContextError && thrown.code === "tenant-context-missing",
+    `name=${thrown && thrown.name}`);
 }
 
 
@@ -1818,7 +1873,7 @@ function debugReportChecks() {
     ]
   };
   const report = scheduler.buildPipelineDebugReport({
-    profile: { id: "cem-ince", fullName: "Cem Ince", party: "Die Linke", committees: ["Arbeit und Soziales"], focusTopics: [] },
+    profile: { id: testPoliticianOne.id, fullName: testPoliticianOne.fullName, party: testPoliticianOne.party, committees: ["Arbeit und Soziales"], focusTopics: [] },
     latestCrawl: null, recentItems: [], situationalRecentItems: [], mentionItems: [],
     relevanceDiagnostics: [], relevantItems: [], situationalItems: [],
     promotedSituationalItems: [], briefingInputItems: [],
@@ -2068,7 +2123,7 @@ async function legalPagesChecks() {
 async function main() {
   console.log("== Helmut P1 Security & Trust Checks ==\n");
   staticChecks();
-  personalizationChecks();
+  await personalizationChecks();
   entityChecks();
   debugReportChecks();
   await cronChecks();

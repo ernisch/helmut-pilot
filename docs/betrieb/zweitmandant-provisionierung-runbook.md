@@ -24,8 +24,13 @@ Admin-Prozess, **kein** Self-Service, **kein** Referentenzugang.
 - **Verständliches Ergebnisprotokoll** (`formatProtocol`).
 - **Deaktivierung** (`--deactivate`) sperrt Login + nimmt das Profil aus Jobs/Cron —
   strikt auf die id gescoped, **berührt keine Fremddaten**, reversibel.
-- **Schutz echter Mandanten**: `cem-ince`, `james-brown`, `angela-merkel` sind hart
-  gesperrt (kein Anlegen/Deaktivieren/Löschen über dieses Werkzeug).
+- **Schutz bestehender Mandanten (DATENGETRIEBEN, keine Namensliste im Code)**:
+  Das Werkzeug darf nur Profile ändern/deaktivieren/löschen, die es selbst
+  angelegt hat (`provisionedBy`-Marker `helmut-provisioning`). Hart gesperrt
+  sind: Profile OHNE diesen Marker (z. B. die bestehenden Production-Mandanten
+  — Pilot wie Demo), IDs, zu denen nur ein Auth-Konto existiert, sowie alle IDs
+  aus der optionalen Env `HELMUT_PROTECTED_TENANT_IDS` (Komma-Liste). Der
+  Marker-Schutz greift auch ohne gesetzte Env.
 
 ## Spec (Pflichtfelder)
 ```json
@@ -57,6 +62,8 @@ Das CLI **verweigert** jeden Lauf, sobald ein Supabase-Backend konfiguriert ist
 1. Production-Write eines neuen Profils + Auth-Nutzers (`--allow-production`).
 2. Optional: `HELMUT_TENANT_LLM_LIMITS` um `{"<id>": <limit>}` ergänzen (Env-Änderung,
    Freigabepunkt) für den per-Mandant-Kostendeckel.
-3. Cron-Versorgung: siehe QA-Befund „Crons bedienen per Default nur cem-ince" —
-   für echte Multi-Tenant-Versorgung (Matching/Decisions) ist ein separater
-   Cron-Umbau nötig (eigener Freigabepunkt, in diesem Sprint NICHT umgesetzt).
+3. Cron-Versorgung: mandantenbezogene Crons laden ihre Mandate ausschließlich
+   aus der Datenbank und verarbeiten **alle aktiven Mandate isoliert** — kein
+   Flag, kein bevorzugtes/konfiguriertes Mandat. Ein neu provisioniertes,
+   aktives Mandat wird ohne weitere Konfiguration automatisch mitversorgt
+   (siehe `docs/multitenancy-pilot-neutralisierung.md`).

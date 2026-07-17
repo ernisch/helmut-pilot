@@ -118,11 +118,11 @@ check("prepared-Paket -> 'vorbereitet'", pkgBy["paket-prep"].supply === "vorbere
 // ============================ 4) PROFILVERSORGUNG ============================
 console.log("== 4) Profilversorgung (Sprint-4-Wiederverwendung) ==");
 const M = buildFullModel();
-const cem = { id: "cem-ince", fullName: "Cem Ince", party: "Die Linke", politische_ebene: "bundestag", ausschuesse: ["Arbeit und Soziales"], bundesland: "Niedersachsen", profileActive: true };
+const bund = { id: "test-politician-one", fullName: "Test Politician One", party: "Testpartei Alpha", politische_ebene: "bundestag", ausschuesse: ["Arbeit und Soziales"], bundesland: "Niedersachsen", profileActive: true };
 const berlin = { id: "be", fullName: "Berlin MdA", party: "SPD", politische_ebene: "landtag", bundesland: "Berlin", ausschuesse: ["Inneres"], profileActive: true };
-const profSupply = q.assessProfiles({ profiles: [cem, berlin], packages: M.packages, packagePaths: M.packagePaths });
+const profSupply = q.assessProfiles({ profiles: [bund, berlin], packages: M.packages, packagePaths: M.packagePaths });
 const profBy = Object.fromEntries(profSupply.map((p) => [p.profileId, p]));
-check("(7) Bundestagsprofil (Bund Basis aktiv) -> versorgt", profBy["cem-ince"].supply === "versorgt");
+check("(7) Bundestagsprofil (Bund Basis aktiv) -> versorgt", profBy["test-politician-one"].supply === "versorgt");
 check("(7) Berliner Landtagsprofil (Landespaket prepared) -> unversorgt", profBy["be"].supply === "unversorgt");
 check("(7) unversorgtes Profil -> konkrete Handlung", profBy["be"].recommendedAction.severity !== "keine");
 
@@ -182,10 +182,10 @@ check("Kosten-Attributionshinweis, wenn Records keine sourceId tragen", recs.som
 
 // ============================ 8) GESAMTREPORT + EHRLICHKEIT ============================
 console.log("== 8) Gesamtreport + Ehrlichkeits-Flags ==");
-const activation = pp.computeGlobalActivation({ packages: M.packages, packagePaths: M.packagePaths, retrievalPaths: M.retrievalPaths, profiles: [cem] });
+const activation = pp.computeGlobalActivation({ packages: M.packages, packagePaths: M.packagePaths, retrievalPaths: M.retrievalPaths, profiles: [bund] });
 const report = q.buildQualityReport({
   catalog: { retrievalPaths: M.retrievalPaths, packages: M.packages, packagePaths: M.packagePaths },
-  activation, rawDocs, koSourceLinks, dedupDocuments, profiles: [cem, berlin], llmUsage, signals, now: NOW
+  activation, rawDocs, koSourceLinks, dedupDocuments, profiles: [bund, berlin], llmUsage, signals, now: NOW
 });
 check("Report enthaelt alle Bausteine", report.sourceMetrics && report.pathQuality.length > 0 && report.packageSupply.length > 0 && report.profileSupply.length === 2 && report.costs && report.watchdog && report.recommendations);
 check("Ehrlichkeit: pathTelemetry=false (last_success_at in Prod leer)", report.availability.pathTelemetry === false);

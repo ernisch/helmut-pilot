@@ -143,6 +143,6 @@ kein Deploy nötig. Datenverlust: nur Tageszählerstände; das `llmUsage`-Log
 - Warnstufen/Alerting auf Budgetstand (Monitoring-Zweitkanal existiert; Verdrahtung
   einer 80%-Warnung ist ein kleiner Folgeschritt nach dem Piloten).
 
-Begründung: Der Cem-Pilot braucht einen harten, ehrlichen Gesamtdeckel und Schutz des
+Begründung: Der Pilotbetrieb braucht einen harten, ehrlichen Gesamtdeckel und Schutz des
 Understanding-Pfads — beides liefert diese Lösung mit einer Tabelle + einer Funktion.
 Alles Weitere würde den Piloten verzögern, ohne das Risiko weiter zu senken.

@@ -36,7 +36,7 @@ const backup = fs.existsSync(authFile) ? fs.readFileSync(authFile, "utf8") : nul
     if (fs.existsSync(authFile)) fs.unlinkSync(authFile);
 
     // ── (1) Ein Pipeline-Fehler mit rohem, sensiblem Text ───────────────────────
-    const rawSensitive = new Error("Supabase storage failed (409): Failing row contains (geheim, cem@example.invalid, VOLLTEXT-DOKUMENT); Bearer sk-FAKE1234567890abcdef");
+    const rawSensitive = new Error("Supabase storage failed (409): Failing row contains (geheim, person@example.invalid, VOLLTEXT-DOKUMENT); Bearer sk-FAKE1234567890abcdef");
     const e1 = await recordPipelineError({ process: "understanding-eager", runId: "run-a", sourceId: "src-bmas", userId: "mandate-1", error: rawSensitive, retry: 0 });
     check("Eintrag erzeugt", e1 && e1.scope === "pipeline");
     check("Prozessname vorhanden", e1.process === "understanding-eager");
@@ -74,7 +74,7 @@ const backup = fs.existsSync(authFile) ? fs.readFileSync(authFile, "utf8") : nul
 
     // ── (5) recordSystemError redigiert Secrets/PII zentral ─────────────────────
     process.env.CRON_SECRET = "cronsecretFAKE1234567890";
-    await accounts.recordSystemError({ scope: "server", message: `crash mit Bearer ${process.env.CRON_SECRET} und cem@example.invalid` });
+    await accounts.recordSystemError({ scope: "server", message: `crash mit Bearer ${process.env.CRON_SECRET} und person@example.invalid` });
     store = await readAuthStore();
     const serverErr = (store.systemErrors || []).find((e) => e.scope === "server");
     check("recordSystemError: Eintrag vorhanden", Boolean(serverErr));

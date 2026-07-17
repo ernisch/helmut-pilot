@@ -41,7 +41,7 @@
 --      nicht auf JWT-Minting + `authenticated`-Rolle umgestellt wird (separater,
 --      NICHT in diesem Sprint enthaltener Folgeschritt), hat das Anwenden
 --      dieser Migration FUNKTIONAL KEINE Auswirkung auf den Piloten
---      (cem-ince) — reine Defense-in-Depth-Vorbereitung.
+--      (Pilotmandat) — reine Defense-in-Depth-Vorbereitung.
 --
 -- Live-vs-tote Tabellen (verifiziert per grep auf /rest/v1/<table> in
 -- lib/helmut/storage.js): 9 Tabellen werden von der App tatsächlich

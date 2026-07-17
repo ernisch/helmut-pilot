@@ -51,7 +51,7 @@ Abrufweg · Paket + zentrale Geografie- und Entitätsschicht, **additiv** und al
 - **144 + 13 vollständig behandelt:** 0 unzugeordnet; 8 Legacy- + 4 Test-Orphans + DIP klassifiziert.
 - **Bund/Land/EU/Kommune + Geografie:** 5-stufiger Ebenen-Enum; 16 Länder strukturell; Berlin (12
   Bezirke) + Brandenburg (18 Kreise/Städte) vertieft; Wahlkreis separat.
-- **Cem-Schutz:** gesunde Bundesquellen (DLF/Tagesschau/BMAS) erhalten; 6 defekte Pflicht-Direktfeeds
+- **Pilot-Schutz:** gesunde Bundesquellen (DLF/Tagesschau/BMAS) erhalten; 6 defekte Pflicht-Direktfeeds
   sichtbar als `broken` + `is_critical` (nicht still archiviert).
 
 ## 4. Testergebnis

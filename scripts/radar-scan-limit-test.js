@@ -40,7 +40,7 @@ storage.getRenderedBriefingV3 = async () => null;
 sourceSafety.guardKnowledgeObject = () => ({ status: "ok" });
 
 (async () => {
-  const res = await lage.buildLageBriefing({ id: "cem-ince", fullName: "Cem Ince" }, { politicianId: "cem-ince", cacheOnly: true });
+  const res = await lage.buildLageBriefing({ id: "test-politician-one", fullName: "Test Politician One" }, { politicianId: "test-politician-one", cacheOnly: true });
   check("Scan-Fenster >= 500 angefragt (deckt Bestand ab)", Number(requestedLimit) >= 500, `limit=${requestedLimit}`);
   check("KO auf Position 220 liegt im Scan-Fenster (vorher unsichtbar)", KOS.length <= Number(requestedLimit), `${KOS.length} <= ${requestedLimit}`);
   check("Lage liefert Karten aus dem erweiterten Fenster", res.available === true && Array.isArray(res.vorgaenge));

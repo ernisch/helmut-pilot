@@ -99,7 +99,7 @@ Prioritäten: **P0** kritischer Sicherheits-/Datenisolationsfehler · **P1** Pro
 
 ### P1-4 · Watchdog-Fehlalarm beheben (toter Pipeline-Marker)
 - **Problem:** WhatsApp-Report meldet „Pipeline seit 139h nicht durchgelaufen", obwohl die Pipeline läuft.
-- **Belegte Ursache:** `buildHealthReport` liest `getLatestPipelineDebugReport` (server.js:2573/2588/2607); Marker `main-p-cem-ince` zuletzt 2026-07-06 (~139h); `savePipelineDebugReport` hat **null Aufrufer** (storage.js:1783). Crawl frisch 2026-07-12 07:43 (selbst verifiziert).
+- **Belegte Ursache:** `buildHealthReport` liest `getLatestPipelineDebugReport` (server.js:2573/2588/2607); Marker `main-p-<pilot-mandats-id>` zuletzt 2026-07-06 (~139h); `savePipelineDebugReport` hat **null Aufrufer** (storage.js:1783). Crawl frisch 2026-07-12 07:43 (selbst verifiziert).
 - **Betroffene Nutzer:** Betreiber (Fehlvertrauen). **Nutzerwirkung:** falscher Rot-Alarm untergräbt Vertrauen; echte Ausfälle gehen im Rauschen unter.
 - **Technische Lösung:** Pipeline-Alarm an `crawlRuns[0].createdAt` (lebt) hängen **oder** `savePipelineDebugReport` am Ende von `runSourceCrawl` wieder aufrufen. Profil-/Global-Timestamp-Mismatch vereinheitlichen.
 - **Betroffene Dateien:** `server.js` (buildHealthReport ~2588/2607), ggf. `scheduler.js`.
@@ -165,7 +165,7 @@ Prioritäten: **P0** kritischer Sicherheits-/Datenisolationsfehler · **P1** Pro
 - **P2-7 · App-Start-Serverzeit** — doppelten KO-Load(200) + doppelten N+1-Quellen-Load zu einer gemeinsamen Ladung + Batch-`IN(...)` (server.js:1330/1422, lage.js:286/320). Komplexität: M. Reihenfolge: 18.
 - **P2-8 · Radar-Recency auf `published_at`** statt `updated_at` (verhindert Hochspülen reprozessierter Altvorgänge; radar.js:150). Komplexität: S. Reihenfolge: 19.
 - **P2-9 · Profildaten in DB** überführen (`profiles`-Tabelle befüllen; `neutralProfileDefaults`-Problem lösen), damit Mehr-Mandanten überhaupt versorgbar. ⚠️ Prod-Writes. Komplexität: M. Reihenfolge: 20.
-- **P2-10 · Demo-Profile aus Prod entfernen** (`james-brown`, `angela-merkel`). ⚠️ Prod-Writes/Datenlöschung → Betreiber-Freigabe. Komplexität: S. Reihenfolge: 21.
+- **P2-10 · Demo-Profile aus Prod entfernen** (`<demo-mandant-b>`, `<demo-mandant-c>`). ⚠️ Prod-Writes/Datenlöschung → Betreiber-Freigabe. Komplexität: S. Reihenfolge: 21.
 
 ---
 

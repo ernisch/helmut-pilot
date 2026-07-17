@@ -2,10 +2,11 @@
 
 // Tests fuer die zentrale Profilvalidierung (Phase 5).
 // Prueft alle 5 Zustaende, die Pflichtfeld-Erkennung, die Funktionsauswirkung
-// und dass Cems reales Profil als "vollstaendig" gilt.
+// und dass das zentrale (klar kuenstliche) Fixture-Profil als "vollstaendig" gilt.
 
 const { validateProfile, STATES } = require("../lib/helmut/profile-validation");
-const { cemInceProfile, profileCompleteness } = require("../lib/helmut/config");
+const { profileCompleteness } = require("../lib/helmut/config");
+const { testPoliticianOne } = require("./fixtures/test-profiles");
 
 let pass = 0, fail = 0;
 function check(name, cond) {
@@ -100,11 +101,11 @@ console.log("== Fraktionslos ==");
 const fraktionslos = { ...full, party: "Fraktionslos" };
 check("Fraktionslos gilt als Partei-Angabe", !validateProfile(fraktionslos).missingRequired.includes("partei_oder_fraktionslos"));
 
-// --- Cem real ---
-console.log("== Cem (real) ==");
-const rCem = validateProfile({ ...cemInceProfile, parliamentType: "Bundestag" });
-check("Cem ist vollständig", rCem.state === STATES.COMPLETE);
-check("Cem kann alles", rCem.impact.kannBriefingErhalten && rCem.impact.kannRadar && rCem.impact.kannLagePersonalisieren && rCem.impact.kannHelmutEmpfehlen);
+// --- Zentrales Fixture-Profil (voll ausgefuellt, rein kuenstlich) ---
+console.log("== Fixture-Profil (vollständig) ==");
+const rFix = validateProfile({ ...testPoliticianOne });
+check("Fixture-Profil ist vollständig", rFix.state === STATES.COMPLETE);
+check("Fixture-Profil kann alles", rFix.impact.kannBriefingErhalten && rFix.impact.kannRadar && rFix.impact.kannLagePersonalisieren && rFix.impact.kannHelmutEmpfehlen);
 
 console.log("");
 const total = pass + fail;

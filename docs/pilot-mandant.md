@@ -1,8 +1,8 @@
-# Cem Ince Pilot
+# Pilotmandanten-Pilot
 
 ## Ziel
 
-Helmut wird Cem nicht als Dashboard gezeigt, sondern als digitaler politischer Stabschef.
+Helmut wird dem Pilotmandanten nicht als Dashboard gezeigt, sondern als digitaler politischer Stabschef.
 
 Kernsatz:
 
@@ -17,7 +17,7 @@ Kernsatz:
 5. Kommunikationsvorschlag generieren.
 6. Aufgabe an Büro delegieren.
 
-## Was Cem sehen soll
+## Was der Pilotmandant sehen soll
 
 - Was heute wichtig ist.
 - Was ignoriert werden kann.
@@ -69,7 +69,7 @@ Ohne API-Key läuft Helmut regelbasiert weiter.
 
 Fortsetzen, wenn mindestens drei Punkte zutreffen:
 
-- Cem öffnet Helmut morgens freiwillig.
+- Der Pilotmandant öffnet Helmut morgens freiwillig.
 - Mindestens eine Empfehlung pro Tag ist politisch nutzbar.
 - Mindestens ein Kommunikationsvorschlag spart echte Zeit.
 - Das Büro kann Aufgaben daraus ableiten.

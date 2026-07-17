@@ -19,7 +19,7 @@ Production-Migration, keine Production-Datenänderung, kein Deployment, keine Qu
 ## 2. Zeigt klar (Auftrag)
 - **Länder aktiv/vorbereitet:** Niedersachsen aktiv; Berlin/Brandenburg vorbereitet; 13 ohne Modul.
 - **Fehlende Pflichtklassen:** Berlin/Brandenburg „0/15 — 15 fehlen" (ehrlich, keine Quellen).
-- **Profile versorgt/unversorgt:** Cem versorgt; Berlin-MdA unversorgt (Landespaket `prepared`).
+- **Profile versorgt/unversorgt:** Pilotmandant versorgt; Berlin-MdA unversorgt (Landespaket `prepared`).
 - **Abrufwege gesund/defekt/unbekannt:** 6 defekt (Pflichtquellen sichtbar), Rest „unbekannt" ohne
   Metriken (nie „gesund" geraten).
 - **Nicht verfügbare Messwerte:** eigener Block (Dokumente/KO/Duplikate/Telemetrie/Kosten je Quelle).
@@ -51,7 +51,7 @@ verdrahten (KO-/Duplikat-Kennzahlen) · `sourceId` in `llm_usage` (Kosten je Que
 Die Oberfläche ist **read-only** und ändert nichts.
 
 ## 7. Nächster Sprint
-**Sprint 6** (Migration bestehender Quellen + Shadow-Betrieb, Cem-Schutz) — füllt die heute „nicht
+**Sprint 6** (Migration bestehender Quellen + Shadow-Betrieb, Pilot-Schutz) — füllt die heute „nicht
 verfügbaren" Kennzahlen mit echten Daten und macht die neue Struktur produktiv. **Oder** Sprint 9
 (Berlin/Brandenburg-Quellenrecherche), das die vorbereiteten Landesmodule mit Quellen füllt. Beide
 freigabepflichtig.

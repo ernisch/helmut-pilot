@@ -13,7 +13,7 @@
 **Modus:** Nur Analyse. Kein Code geändert. Keine Optimierung umgesetzt.
 **Basis:** Vollständige Lektüre von `lib/helmut/*` (crawler, sources, dip, ai, learning, storage, personalization, scheduler, runtime, accounts, auth, push), `server.js` (2665 Z.), `api/index.js`, `vercel.json`, `supabase/schema.sql`, `.github/`, sowie Analyse des Live-Datenspeichers `.helmut-data/store.json` (2,1 MB, 1 Profil).
 
-> **Wichtiger Kontext vorweg:** Helmut ist heute ein **Single-Tenant-Pilot für genau einen Abgeordneten** (Cem Ince, Die Linke, Ausschuss Arbeit & Soziales). Das ist keine Randnotiz – es prägt jede Bewertung unten. Vieles ist „multi-tenant-förmig" gebaut, aber auf diesen einen Mandanten hart verdrahtet.
+> **Wichtiger Kontext vorweg:** Helmut ist heute ein **Single-Tenant-Pilot für genau einen Abgeordneten** (den Pilotmandanten; dessen Partei und Ausschussdomäne prägen die gesamte Konfiguration). Das ist keine Randnotiz – es prägt jede Bewertung unten. Vieles ist „multi-tenant-förmig" gebaut, aber auf diesen einen Mandanten hart verdrahtet.
 
 ---
 
@@ -66,8 +66,8 @@ flowchart TD
 | ministry | 9 | BMAS, Bundesregierung |
 | bundestag | 7 | Bundestag, Fraktionen |
 | local | 4 | Regional/Wahlkreis |
-| party | 2 | Die Linke, Linksfraktion |
-| person | 1 | „Cem Ince News-Suche" |
+| party | 2 | Partei des Pilotmandanten, zugehörige Fraktion |
+| person | 1 | Personen-News-Suche des Pilotmandanten (`<pilot-mandats-id>-news`) |
 
 **Pro Quelle gespeichert:** `id, name, type, url, rssUrl, rssUrls[], crawlMethod (rss/html), priority, active, maxItems, lastCrawledAt`. **Keywords/Filter sind in die Google-News-Query-Strings eingebacken**, nicht als Feld.
 
@@ -143,7 +143,7 @@ flowchart TD
 > „…Bewerte kurz diesen offiziellen Bundestags-Vorgang für das Mandat. `whyRelevant`: genau 1 Satz; `recommendedAction`: 1 konkreter Schritt (Stellungnahme/Kleine Anfrage/…)." → `{whyRelevant, recommendedAction}`.
 
 ### Prompt D — `generateHelmutAssessment` (die „Handlungsempfehlung", Temp 0.3)
-> „Du bist Helmut … kurze persönliche Einschätzung auf Basis eines **bereits priorisierten Briefings**. Lage zeigt Fakten, Helmut trifft eine Entscheidung. Beantworte: ‚Hat sich meine Priorität geändert?' Max 120–180 Wörter; du-Ansprache; keine Spekulation; keine Fakten außerhalb des Kontexts. Hero-Felder mit harten Wortlimits …" → `{greeting, priorityStatus (stable|changed|risk|chance), assessment, recommendation, whyImportant, risk, heroWhy, heroRisk, heroNextStep, typingText}`. *Der Name „Cem" ist im Prompt-Beispiel hart verdrahtet.*
+> „Du bist Helmut … kurze persönliche Einschätzung auf Basis eines **bereits priorisierten Briefings**. Lage zeigt Fakten, Helmut trifft eine Entscheidung. Beantworte: ‚Hat sich meine Priorität geändert?' Max 120–180 Wörter; du-Ansprache; keine Spekulation; keine Fakten außerhalb des Kontexts. Hero-Felder mit harten Wortlimits …" → `{greeting, priorityStatus (stable|changed|risk|chance), assessment, recommendation, whyImportant, risk, heroWhy, heroRisk, heroNextStep, typingText}`. *Der Vorname des Pilotmandanten ist im Prompt-Beispiel hart verdrahtet.*
 
 **Output/Kosten/Dauer:** Der `usage`-Block der API wird **nie gelesen**. **Es gibt kein Token-, Kosten- oder Latenz-Tracking.** Kein Timing um LLM-Calls. Bei 500 Mandanten wäre die KI-Ausgabe **komplett blind** – ein finanzielles Blindflug-Risiko.
 
@@ -195,11 +195,11 @@ flowchart TD
 | noGo-Themen | ✅ | Penalty |
 
 **Ehrliche Einordnung: Die Personalisierung ist eine Fassade über einem Ein-Personen-System.** Belege im Code:
-- **committee-Score 92** wird vergeben, sobald der Text `["arbeit","soziales","bmas","pflege","mindestlohn","rente","bürgergeld","tarif","arbeitszeit"]` enthält – **unabhängig vom Profil**. Das ist Cem Inces Ausschussdomäne, universell einkodiert.
-- **Literaler Namens-Check** in der Ranking-Mathematik: Items mit „cem ince" umgehen die Einzelquellen-Deckelung (79).
-- `speaksAboutUser` defaultet auf Vorname „Cem"; Fallback-Texte nennen „deinen Ausschuss Arbeit und Soziales".
+- **committee-Score 92** wird vergeben, sobald der Text `["arbeit","soziales","bmas","pflege","mindestlohn","rente","bürgergeld","tarif","arbeitszeit"]` enthält – **unabhängig vom Profil**. Das ist die Ausschussdomäne des Pilotmandanten, universell einkodiert.
+- **Literaler Namens-Check** in der Ranking-Mathematik: Items, die den Namen des Pilotmandanten enthalten, umgehen die Einzelquellen-Deckelung (79).
+- `speaksAboutUser` defaultet auf den Vornamen des Pilotmandanten; Fallback-Texte nennen „deinen Ausschuss Arbeit und Soziales".
 
-Ein zweiter Abgeordneter würde denselben Arbeit-&-Soziales-Boost erben und der cem-ince-Bypass würde für ihn nie greifen. **→ De facto nicht personalisiert, sondern auf den Piloten getunt.**
+Ein zweiter Abgeordneter würde denselben Arbeit-&-Soziales-Boost erben und der auf den Namen des Pilotmandanten verdrahtete Bypass würde für ihn nie greifen. **→ De facto nicht personalisiert, sondern auf den Piloten getunt.**
 
 ---
 
@@ -274,7 +274,7 @@ Zwei Ebenen:
 | **Datenqualität** | **6** | Breite Quellen, echte Artikel, guter Ablehnungs-Trichter. Aber titelbasierter Hash-Dedup, viele geleerte URLs, Keyword-Filter nur für Personen. |
 | **Aktualität** | **6** | 2×/Tag Crawl + Watchdog, tagesfrisch – aber kein Realtime, gestriges Briefing bei Cron-Ausfall, Fake-Fallbacks. |
 | **Quellen** | **6** | 133 kuratiert, breit. Aber ~massive Google-News-Abhängigkeit (inoffiziell, fragiler `batchexecute`), TLS-Verifikation aus, DIP brach. |
-| **KI-Bewertung** | **4** | Das LLM *entscheidet nichts*. Klassifikation = handgetunte Keyword-Regeln mit hartkodierten Cem-Ince-Biases. Clever, aber nicht „KI" und schlecht generalisierbar. |
+| **KI-Bewertung** | **4** | Das LLM *entscheidet nichts*. Klassifikation = handgetunte Keyword-Regeln mit hartkodierten Pilotmandanten-Biases. Clever, aber nicht „KI" und schlecht generalisierbar. |
 | **Priorisierung** | **6** | Transparent, debuggbar, nachvollziehbar. Aber Dutzende Magic Numbers, Hero-Sonderranking, hartkodierte Boosts. |
 | **Personalisierung** | **3** | Struktur profilfähig, real aber auf 1 MP verdrahtet (Namens-Check + Arbeit-&-Soziales-92-Boost universell). Für MP #2 faktisch nicht personalisiert. |
 | **Architektur** | **4** | Saubere Modul-Struktur in `lib/`, aber: 1 HTTP-Mega-Funktion (2665 Z.), 1 JSON-Blob als „DB", kein Framework, camel/snake-Naht. |
@@ -321,7 +321,7 @@ Zwei Ebenen:
 - JSON-Blob-Storage durch die **bereits definierten relationalen Tabellen** ersetzen (RLS statt Service-Role) – zumindest die heißen Collections. Beseitigt Contention & Leak-Fläche.
 - **Single-Flight/Lock** (oder atomare Upserts) für die Pipeline; Cron-Zeiten entzerren.
 - Google-News-Abhängigkeit diversifizieren: **DIP-API aktivieren** (offiziell, strukturiert), echte RSS der Ministerien/Ausschüsse priorisieren.
-- Hartkodierte Cem-Ince-/Arbeit-&-Soziales-Biases aus dem Scoring **ins Profil** verlagern (echte Personalisierung).
+- Hartkodierte Pilotmandanten-/Arbeit-&-Soziales-Biases aus dem Scoring **ins Profil** verlagern (echte Personalisierung).
 - Request-/Latenz-/Fehler-Logging + Dashboard.
 
 **P3 — Später (Sauberkeit & Skalierung):**
@@ -350,7 +350,7 @@ Zwei Ebenen:
 1. **Persistenz:** echtes relationales Postgres/Supabase mit pro-Mandant-Zeilen und **RLS** (Schema liegt schon vor, wird nur nicht genutzt) – weg vom Einzel-Blob.
 2. **Pipeline-Orchestrierung:** Job-Queue + Worker (ein Job pro Mandat), idempotent, mit Single-Flight – raus aus der Web-Funktion.
 3. **Datenbeschaffung:** geteilter Crawl **einmal** → Fanout-Scoring pro Mandat; offizielle APIs (DIP, Ministerien) statt Google-News-Monokultur.
-4. **Personalisierung:** komplett datengetrieben pro Profil – alle hartkodierten Cem-Ince-/Arbeit-&-Soziales-Annahmen raus.
+4. **Personalisierung:** komplett datengetrieben pro Profil – alle hartkodierten Pilotmandanten-/Arbeit-&-Soziales-Annahmen raus.
 5. **Observability & Kostenkontrolle:** Metriken, Token-/€-Budgets, Alerting – als Fundament, nicht als Nachtrag.
 
 **CTO-Gesamturteil:** Helmut ist ein **beeindruckend durchdachter Single-Tenant-Prototyp** mit echtem Produktdenken (Trichter-Transparenz, robuste Fallbacks, DSGVO-EU-KI, Watchdog). Aber der „Datenmotor" ist **kein KI-Motor, sondern eine regelbasierte Engine mit KI-Lack**, verankert auf **einem** Abgeordneten, gespeichert in **einer** JSON-Datei, ausgeliefert aus **einer** Funktion. Für einen Piloten: gut genug. Für ein Investment mit „500 MPs"-Narrativ: **Persistenz, Orchestrierung und Personalisierung sind vor jeder Skalierung neu zu bauen**, und drei Sicherheits-/Kostenrisiken (Fail-open-Cron, TLS aus, blinde KI-Kosten) sind sofort zu schließen.

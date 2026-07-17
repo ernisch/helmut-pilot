@@ -160,26 +160,20 @@ function check(name, cond, detail = "") {
     && !/totalLine = `Heute gibt es/.test(clientSource)
     && clientSource.includes('${countWord} in deiner Lage.'));
 
-  // ── 4) Morgenablauf: Multi-Profil-Loop vorbereitet, Default AUS ─────────────
+  // ── 4) Morgenablauf: IMMER alle aktiven Mandate isoliert (kein Flag, kein Default-Mandant)
   const serverSource = fs.readFileSync(path.join(root, "server.js"), "utf8");
-  check("morning-briefing-Cron hat flag-gesicherten Multi-Profil-Loop (Default aus)",
-    serverSource.includes("HELMUT_MORNING_PUSH_ALL_PROFILES")
-    && /flagOn\(process\.env\.HELMUT_MORNING_PUSH_ALL_PROFILES\)/.test(serverSource)
-    && /morning-briefing[\s\S]{0,2500}listProfiles\(\)/.test(serverSource));
-  check("Multi-Profil-Loop überspringt deaktivierte Profile und hat Zeitbudget",
-    /HELMUT_MORNING_PUSH_ALL_PROFILES[\s\S]{0,1600}val\.disabled/.test(serverSource)
-    && /HELMUT_MORNING_PUSH_ALL_PROFILES[\s\S]{0,1600}deadline/.test(serverSource));
-  // Review-Fix M4: jeder Profil-Iterationsschritt ist vollständig in try/catch
-  // (früher nur Build/Push; ein activeProfile-Fehler brach die ganze Schleife).
-  check("Multi-Profil-Loop kapselt JEDES Profil in try/catch (kein Schleifenabbruch bei einem Fehler)",
-    /Per-Profil try\/catch \(Review-Fix\)/.test(serverSource) &&
-    /try \{\s*\n\s*const profile = await activeProfile\(p\.id \|\| politicianId\);/.test(serverSource) &&
-    /catch \(error\) \{\s*\n\s*results\.push\(\{ userId: p\.id, skipped: true, reason: "profil-fehler"/.test(serverSource));
-  const envExample = fs.readFileSync(path.join(root, ".env.example"), "utf8");
-  check("Neues Flag ist in .env.example dokumentiert", envExample.includes("HELMUT_MORNING_PUSH_ALL_PROFILES"));
-  check("Cron-Zieländerung ist als Freigabepunkt dokumentiert (keine vercel.json-Änderung)",
-    fs.readFileSync(path.join(root, "docs/freigabepunkte.md"), "utf8").includes("50 5 * * *")
-    && fs.readFileSync(path.join(root, "vercel.json"), "utf8").includes('"0 5 * * *"'));
+  check("morning-briefing-Cron verarbeitet ALLE aktiven Mandate ueber runCronForTenants (kein Flag)",
+    /morning-briefing[\s\S]{0,600}runCronForTenants\("morning-briefing"/.test(serverSource)
+    && !serverSource.includes("HELMUT_MORNING_PUSH_ALL_PROFILES"));
+  check("morning-briefing ueberspringt deaktivierte Profile (val.disabled)",
+    /morning-briefing[\s\S]{0,1200}val\.disabled/.test(serverSource));
+  check("runCronForTenants isoliert jedes Mandat (try/catch) und hat ein Zeitbudget (deadline)",
+    /runCronForTenants[\s\S]{0,1500}try \{[\s\S]{0,400}catch \(error\)/.test(serverSource)
+    && /runCronForTenants[\s\S]{0,900}deadline/.test(serverSource));
+  check("Mandatsbezogene Crons brauchen KEINE mandantenspezifische Env-Variable",
+    !/HELMUT_PILOT_TENANT_ID|HELMUT_CRON_MULTI_TENANT|HELMUT_MORNING_PUSH_ALL_PROFILES/.test(serverSource));
+  check("Cron-Zeiten unveraendert (vercel.json nicht angefasst)",
+    fs.readFileSync(path.join(root, "vercel.json"), "utf8").includes('"0 5 * * *"'));
 
   console.log(`\n${passed} PASS, ${failed} FAIL`);
   process.exit(failed ? 1 : 0);

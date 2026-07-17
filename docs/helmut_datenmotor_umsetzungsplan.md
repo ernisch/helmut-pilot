@@ -20,8 +20,8 @@
 
 - **P0 — kritisch:** Beobachtbarkeit/Sicherheit; ohne diese ist ein *überwachter*
   Betrieb blind oder verlustanfällig.
-- **P1 — vor Bundestagspilot:** nötig, damit der laufende Cem-/Bundestag-Pilot
-  belastbar und ehrlich ist.
+- **P1 — vor Bundestagspilot:** nötig, damit der laufende Bundestag-Pilot
+  (Pilotmandant) belastbar und ehrlich ist.
 - **P2 — vor Landtagspilot:** nötig, damit Berlin/Brandenburg überhaupt Inhalte
   liefern.
 - **P3 — später:** Hygiene, Skalierung, Aufräumen.
@@ -94,7 +94,7 @@ Secret-Rotation und Deployments bleiben Gründer-Freigaben.**
 | **P3-1** | Retention/Archiv für `raw_documents`/`knowledge_objects` (unbegrenztes Wachstum). | R11 | Storage | M |
 | **P3-2** | Briefing→Decision relational verlinken (`decision_ids`/`ko_ids` in `briefings`) für revisionssichere Nachvollziehbarkeit. | R12, Audit §6 | `storage.js:1630-1636` | M |
 | **P3-3** | Toten V2-KI-Pfad entfernen (`generateHelmutAssessment` + Umfeld in `ai.js`) nach Bestätigung, dass `buildHelmutAssessment` endgültig ist. | Audit §11 | `ai.js:350-420, 1201` | S |
-| **P3-4** | Einmal-/Migrations-Module archivieren (`staff-backfill`, `migration-mapper`, `cem-shadow-compare`, `ko-classification-backfill`) nach `scripts/one-off/`. | Audit §11 | `lib/helmut/` | S |
+| **P3-4** | Einmal-/Migrations-Module archivieren (`staff-backfill`, `migration-mapper`, `supply-shadow-compare`, `ko-classification-backfill`) nach `scripts/one-off/`. | Audit §11 | `lib/helmut/` | S |
 | **P3-5** | require-Graph-/Dead-Code-Scan in CI (`scripts/deadcode-scan.js`). | Audit §11 | CI | S |
 | **P3-6** | Zwei Erwähnungs-Engines konsolidieren (`radar.js` vs. `radarState.js`). | Audit §10 | beide | M |
 | **P3-7** | `decisions`/`matching_results` bereinigen (verwaiste Zeilen; heute nie gelöscht) oder als Output-Quelle nutzen. | Audit §10, Output-Analyse | `storage.js:1443-1473` | M |
@@ -214,7 +214,7 @@ Secret-Rotation und Deployments bleiben Gründer-Freigaben.**
 1. **Entscheidung:** persistierte Relevanz-Tabellen als Output-Quelle nutzen, über
    alle Profile schreiben, oder als Telemetrie führen.
 2. **Erklärung:** Heute werden sie fast nie gelesen (Output = on-read-Recompute),
-   nur für `cem-ince` geschrieben, nie bereinigt.
+   nur für `<pilot-mandats-id>` geschrieben, nie bereinigt.
 3. **Warum notwendig:** Klärt, ob Persistenz gebraucht wird und ob weitere Mandate
    sie brauchen.
 4. **Optionen:** (a) als Telemetrie führen + Cleanup; (b) Read-Pfad umstellen +

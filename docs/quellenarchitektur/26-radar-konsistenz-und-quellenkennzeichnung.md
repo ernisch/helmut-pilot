@@ -29,7 +29,7 @@ und beide sind „Ausschuss der Bundesregierung/Koalitionsausschuss" — kein Fa
 
 ### A.C Wahlkreis (bereits in Dok. 25 behoben, hier bestätigt)
 Allgemeine Geografien (16 Bundesländer + Bund/Europa, zentral aus der Geografie-Seed-Liste) zählen nicht
-als Wahlkreisbeleg. Für Cem aktuell 0 Wahlkreis-Signale (Bovenschulte korrekt entfernt).
+als Wahlkreisbeleg. Für den Pilotmandanten aktuell 0 Wahlkreis-Signale (Bovenschulte korrekt entfernt).
 
 ### A.D "Offizielle Quellen": Amtlichkeit über die DOMAIN, nicht über source_type
 `raw_documents.source_type` ist im Bestand **nachweislich unzuverlässig**: dieselbe journalistische
@@ -39,7 +39,7 @@ Quellen" wahrheitsgemäß machen. Fix: die Amtlichkeit der **angezeigten primär
 **Domain** über das kuratierte Herausgeber-Register (`seeds/publishers.js`) bestimmt. Amtlich =
 Herausgebertyp ∈ {parliament, government, ministry, authority, statistical_office}. Medien/Verbände/
 Parteien/Fraktionen/Aggregatoren sind **nicht** amtlich; unbekannte Domain → journalistisch (Default),
-niemals amtlich. Ergebnis (Cem, real): 5 „official"-Artikel, alle bundesregierung.de/bmas.de/bundesrat.de
+niemals amtlich. Ergebnis (Pilotmandant, real): 5 „official"-Artikel, alle bundesregierung.de/bmas.de/bundesrat.de
 — **0** journalistische Fehl-Kennzeichnungen. Das Label „Offizielle Quellen" bleibt (die angezeigte Quelle
 IST amtlich) — keine Umbenennung nötig.
 

@@ -66,8 +66,8 @@ function makeFakeAtomicDb(startClock = 1000) {
   {
     const db = makeFakeAtomicDb();
     const [a, b] = await Promise.all([
-      acquirePipelineLock("crawl-cem", 600000, { request: db.request }),
-      acquirePipelineLock("crawl-cem", 600000, { request: db.request })
+      acquirePipelineLock("crawl-tenant-alpha", 600000, { request: db.request }),
+      acquirePipelineLock("crawl-tenant-alpha", 600000, { request: db.request })
     ]);
     check("Parallel-Acquire: genau EINER gewinnt", (a === true) !== (b === true), `a=${a} b=${b}`);
     check("Parallel-Acquire: nicht beide true", !(a && b));

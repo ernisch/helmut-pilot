@@ -11,7 +11,7 @@
 //   5. Kein estimatedCost/Token gelangt in die (fuer den Client bestimmten) Vertragsdaten.
 //   6. Kosten-Logging erfasst tenantId/profileId/runId/model/Token/estimatedCost/
 //      createdAt/pipelineStep und bleibt rueckwaertskompatibel.
-//   7. Keine Cem-Logik / keine hartkodierte Partei wird eingefuehrt.
+//   7. Keine Personen-Logik / keine hartkodierte Partei wird eingefuehrt.
 
 const schema = require("../lib/helmut/understanding-schema");
 const understanding = require("../lib/helmut/understanding");
@@ -356,7 +356,7 @@ check("Kostenlog: fehlender usage-Block -> Token 'unknown' (kein stiller Verlust
 check("Kostenlog: fehlende SaaS-Felder -> null (kein Crash, mandantenfaehig)",
   storage.buildLlmUsageRecord({}).tenantId === null && storage.buildLlmUsageRecord({}).runId === null);
 
-// --- 7) Keine Cem-Logik / keine hartkodierte Partei -------------------------
+// --- 7) Keine Personen-Logik / keine hartkodierte Partei -------------------------
 // Ein neutrales Profil OHNE Partei/Ausschuss darf keine erfundenen Stabschef-Inhalte
 // oder Partei-Fallbacks bekommen (Felder kommen NUR aus dem KO).
 const neutralStaff = contract.koStaffFields(baseKo({ understanding_status: "complete" }), NOW);

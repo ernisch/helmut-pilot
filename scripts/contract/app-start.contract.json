@@ -139,6 +139,101 @@
             }
           }
         },
+        "currentRadarState": {
+          "t": "object",
+          "keys": {
+            "articles": {
+              "t": "array",
+              "el": null
+            },
+            "dynamics": {
+              "t": "array",
+              "el": null
+            },
+            "environment": {
+              "t": "object",
+              "keys": {
+                "committees": {
+                  "t": "array",
+                  "el": null
+                },
+                "constituency": {
+                  "t": "array",
+                  "el": null
+                },
+                "party": {
+                  "t": "array",
+                  "el": null
+                }
+              }
+            },
+            "generatedAt": {
+              "t": "string"
+            },
+            "lastUpdated": {
+              "t": "null"
+            },
+            "mentions": {
+              "t": "array",
+              "el": null
+            },
+            "profileId": {
+              "t": "string"
+            },
+            "quality": {
+              "t": "object",
+              "keys": {
+                "articleCount": {
+                  "t": "number"
+                },
+                "dynamicsDetected": {
+                  "t": "number"
+                },
+                "environmentMatched": {
+                  "t": "number"
+                },
+                "hasThumbnails": {
+                  "t": "boolean"
+                },
+                "lastUpdated": {
+                  "t": "null"
+                },
+                "mentionsFound": {
+                  "t": "number"
+                },
+                "reason": {
+                  "t": "string"
+                },
+                "sourcesLoaded": {
+                  "t": "boolean"
+                },
+                "status": {
+                  "t": "string"
+                },
+                "thumbnailsAvailable": {
+                  "t": "boolean"
+                }
+              }
+            },
+            "status": {
+              "t": "string"
+            },
+            "summary": {
+              "t": "object",
+              "keys": {
+                "line1": {
+                  "t": "string"
+                },
+                "line2": {
+                  "t": "string"
+                },
+                "text": {
+                  "t": "string"
+                }
+              }
+            }
+          }
+        },
         "decisionMetrics": {
           "t": "object",
           "keys": {
@@ -286,6 +381,9 @@
             "generatedAt": {
               "t": "string"
             },
+            "latestUpdatedAt": {
+              "t": "null"
+            },
             "paragraphs": {
               "t": "array",
               "el": null
@@ -372,6 +470,9 @@
     "profile": {
       "t": "object",
       "keys": {
+        "accountType": {
+          "t": "string"
+        },
         "committee": {
           "t": "string"
         },
@@ -465,6 +566,9 @@
             "t": "string"
           }
         },
+        "parliamentType": {
+          "t": "string"
+        },
         "party": {
           "t": "string"
         },
@@ -475,6 +579,88 @@
           "t": "array",
           "el": {
             "t": "string"
+          }
+        },
+        "profilValidierung": {
+          "t": "object",
+          "keys": {
+            "budgetProblems": {
+              "t": "array",
+              "el": null
+            },
+            "completeness": {
+              "t": "object",
+              "keys": {
+                "accountType": {
+                  "t": "string"
+                },
+                "complete": {
+                  "t": "boolean"
+                },
+                "empty": {
+                  "t": "boolean"
+                },
+                "level": {
+                  "t": "string"
+                },
+                "missing": {
+                  "t": "array",
+                  "el": null
+                },
+                "parliamentType": {
+                  "t": "string"
+                },
+                "restricted": {
+                  "t": "boolean"
+                }
+              }
+            },
+            "disabled": {
+              "t": "boolean"
+            },
+            "impact": {
+              "t": "object",
+              "keys": {
+                "kannBriefingErhalten": {
+                  "t": "boolean"
+                },
+                "kannHelmutEmpfehlen": {
+                  "t": "boolean"
+                },
+                "kannLagePersonalisieren": {
+                  "t": "boolean"
+                },
+                "kannRadar": {
+                  "t": "boolean"
+                }
+              }
+            },
+            "missingRequired": {
+              "t": "array",
+              "el": null
+            },
+            "missingRequiredLabels": {
+              "t": "array",
+              "el": null
+            },
+            "parliamentType": {
+              "t": "string"
+            },
+            "ready": {
+              "t": "boolean"
+            },
+            "reason": {
+              "t": "string"
+            },
+            "state": {
+              "t": "string"
+            },
+            "stateLabel": {
+              "t": "string"
+            },
+            "usable": {
+              "t": "boolean"
+            }
           }
         },
         "publicPositions": {
@@ -522,55 +708,13 @@
             "Arbeitsmarkt": {
               "t": "number"
             },
-            "Arbeitszeit": {
-              "t": "number"
-            },
-            "Außenpolitik": {
-              "t": "number"
-            },
-            "Bildung": {
-              "t": "number"
-            },
             "Bürgergeld": {
-              "t": "number"
-            },
-            "Digitalisierung": {
-              "t": "number"
-            },
-            "Energie": {
-              "t": "number"
-            },
-            "Europa": {
-              "t": "number"
-            },
-            "Familie": {
-              "t": "number"
-            },
-            "Gesundheit": {
-              "t": "number"
-            },
-            "Gewerkschaften": {
-              "t": "number"
-            },
-            "Industriearbeitsplätze": {
-              "t": "number"
-            },
-            "Klima": {
-              "t": "number"
-            },
-            "Migration": {
               "t": "number"
             },
             "Mindestlohn": {
               "t": "number"
             },
-            "Niedersachsen": {
-              "t": "number"
-            },
             "Pflege": {
-              "t": "number"
-            },
-            "Pflegeversicherung": {
               "t": "number"
             },
             "Rente": {
@@ -581,15 +725,6 @@
             },
             "Tarifbindung": {
               "t": "number"
-            },
-            "Tariftreue": {
-              "t": "number"
-            },
-            "Verteidigung": {
-              "t": "number"
-            },
-            "Wohnen": {
-              "t": "number"
             }
           }
         },
@@ -598,6 +733,9 @@
           "el": {
             "t": "string"
           }
+        },
+        "updatedAt": {
+          "t": "string"
         }
       }
     },

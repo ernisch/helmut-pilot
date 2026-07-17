@@ -4,7 +4,7 @@
 // Kette (echte Module): Quelle -> Parser -> Normalisierung -> techn. Filter -> globale Dedup ->
 // Fundstellen -> Understanding-GATE -> Klassifikation -> KO-Vorbereitung -> Scoring ->
 // Profilmatching (4 Profile) -> Kostenmessung -> Isolation. REINE LOGIK, kein Netz/KI/DB-Write.
-// Zusaetzlich (Phase I): Alt-vs-Neu fuer Cem — die neue Gate-Logik darf Cems Versorgung NICHT
+// Zusaetzlich (Phase I): Alt-vs-Neu fuer das Pilot-aehnliche Profil — die neue Gate-Logik darf dessen Versorgung NICHT
 // verschlechtern (Bund-Basis + Fachpaket bleiben; kein amtlicher/relevanter Vorgang geht verloren).
 
 const fs = require("fs");
@@ -62,7 +62,7 @@ check("3 globale Wichtigkeit: relevanter Bund-Vorgang > neutraler", scoring.glob
 
 // --- 4. PROFILMATCHING: 4 Profile (Bund-Basis / Landespaket / Partei / Fraktion / Ausschuss / Region) ---
 const profile = {
-  cem: { fullName: "Cem-vergleichbar", party: "Die Linke", politische_ebene: "bundestag", ausschuesse: ["Arbeit und Soziales"], bundesland: "Niedersachsen", profileActive: true },
+  pilotaehnlich: { fullName: "Test Politician One", party: "Testpartei Alpha", politische_ebene: "bundestag", ausschuesse: ["Arbeit und Soziales"], bundesland: "Niedersachsen", profileActive: true },
   bundestag: { fullName: "Reines Bundestagsprofil", party: "CDU", politische_ebene: "bundestag", profileActive: true },
   berlin: { fullName: "Berliner Landtag", party: "SPD", politische_ebene: "landtag", bundesland: "Berlin", profileActive: true },
   brandenburg: { fullName: "Brandenburger Landtag", party: "SPD", politische_ebene: "landtag", bundesland: "Brandenburg", profileActive: true }
@@ -72,23 +72,23 @@ check("4 ALLE Profile haben bund-basis (Bundespolitik fuer alle sichtbar)", Obje
 check("4b Berlin -> berlin-basis (Landespaket)", pkg.berlin.all.includes("berlin-basis") && pkg.berlin.requiredMissing.length === 0);
 check("4c Brandenburg -> brandenburg-basis (Landespaket)", pkg.brandenburg.all.includes("brandenburg-basis"));
 check("4d Reines Bundestagsprofil -> KEIN Landespaket (keine Filterblase andersherum)", !pkg.bundestag.all.some((k) => /-basis$/.test(k) && k !== "bund-basis"));
-check("4e Cem-vergleichbar -> mehrere Pakete (Bund + Fachdimensionen)", pkg.cem.all.length >= 2 && pkg.cem.all.includes("bund-basis"));
+check("4e Pilot-aehnliches Profil -> mehrere Pakete (Bund + Fachdimensionen)", pkg.pilotaehnlich.all.length >= 2 && pkg.pilotaehnlich.all.includes("bund-basis"));
 check("4f Landtagsprofile behalten Bund-Kern (Landesvorgaenge NICHT statt, sondern ZUSAETZLICH)", pkg.berlin.all.includes("bund-basis") && pkg.brandenburg.all.includes("bund-basis"));
 
 // --- 5. Persoenliche Relevanz respektiert Profil, ohne Bundespolitik zu verstecken ---
-const relCem = scoring.personalRelevance(koBund, profile.cem, { now: NOW }).score;
+const relPilot = scoring.personalRelevance(koBund, profile.pilotaehnlich, { now: NOW }).score;
 const relBb = scoring.personalRelevance(koBund, profile.brandenburg, { now: NOW }).score;
-check("5 persoenliche Relevanz: Cem (Arbeit&Soziales) >= fremdes Profil fuer Sozial-Vorgang", relCem >= relBb);
+check("5 persoenliche Relevanz: Fachprofil (Arbeit&Soziales) >= fremdes Profil fuer Sozial-Vorgang", relPilot >= relBb);
 check("5b globale Wichtigkeit ist profil-UNABHAENGIG (Lage keine Filterblase)", scoring.globalImportance(koBund).score === scoring.globalImportance(koBund).score);
 
-// --- 6. Phase I: Cem Alt-vs-Neu — neue Gate-Logik verschlechtert Cems Versorgung NICHT ---
+// --- 6. Phase I: Alt-vs-Neu — neue Gate-Logik verschlechtert die Versorgung des Fachprofils NICHT ---
 // Cems Bund-/Fachvorgaenge (Institution/Ausschuss-Signal) werden vom Gate 'verstehen' -> nicht verloren.
-const cemVorgaenge = [
+const fachVorgaenge = [
   { id: "c1", content_hash: "c1", title: "Bundestag beschliesst Rentenpaket", source_id: "committee-arbeit-soziales" },
   { id: "c2", content_hash: "c2", title: "Ausschuss fuer Arbeit und Soziales beraet Buergergeld", source_id: "committee-arbeit-soziales" },
   { id: "c3", content_hash: "c3", title: "Kleine Anfrage zur Rente", source_id: "dip", document_type: "Kleine Anfrage" }
 ];
-check("6 Cem-Bund/Fachvorgaenge -> alle verstehen (keine Verschlechterung durch Gate)", cemVorgaenge.every((v) => G.assessDocument(v, { now: NOW }).decision === "verstehen"));
+check("6 Bund-/Fachvorgaenge -> alle verstehen (keine Verschlechterung durch Gate)", fachVorgaenge.every((v) => G.assessDocument(v, { now: NOW }).decision === "verstehen"));
 
-console.log(`\n== E2E-Shadow (Gate + 4 Profile + Scoring + Cem-Vergleich): ${fail === 0 ? "ALLE GRÜN" : fail + " FEHLGESCHLAGEN"} · Dokumente=${rep.dokumente} Kosten=${rep.kostenUsd}USD ==`);
+console.log(`\n== E2E-Shadow (Gate + 4 Profile + Scoring + Fachprofil-Vergleich): ${fail === 0 ? "ALLE GRÜN" : fail + " FEHLGESCHLAGEN"} · Dokumente=${rep.dokumente} Kosten=${rep.kostenUsd}USD ==`);
 process.exit(fail > 0 ? 1 : 0);

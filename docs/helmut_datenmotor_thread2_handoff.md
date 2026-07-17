@@ -186,7 +186,7 @@ werden (nur „gesetzt/Wert-Kategorie", **keine Secrets in Logs**):
 | `HELMUT_V3_LAZY_UNDERSTANDING` | Lazy-Pfad aktiv? | Durchsatz, P1-5 |
 | `HELMUT_AUTH_MODE` | Single- vs. Multi-Tenant | Nutzertrennung |
 | `HELMUT_DIP_PRIMARY` | DIP als Primärquelle? | Quellenpfad |
-| `HELMUT_MORNING_PUSH_ALL_PROFILES` | Push an alle Profile? | Briefing-Zustellung |
+| ~~`HELMUT_MORNING_PUSH_ALL_PROFILES`~~ (entfallen) | Morgen-Push läuft immer über alle aktiven Mandate | Briefing-Zustellung |
 | `HELMUT_MONITORING_WEBHOOK_URL` | Zweitkanal vorhanden? | **P1-7** |
 | `HELMUT_SCORING_MODE` | Scoring scharf? (Default aus) | E5 |
 

@@ -149,7 +149,7 @@ manueller Deploy, keine Cron-, keine Secret-, keine Datenänderung.
   Quellenlinks 59/59, Radar 20/10, Datenmotor V3 100 %, Score 75 unverändert).
 - `/api/app/start` → **401** (Auth-Gate intakt) · App-Shell `/` → **200**
   (Commit 204d5ef9).
-- Pilot `cem-ince`: **52 decisions, 1 briefing, Store-Blob present, 217 KOs** —
+- Pilot `<pilot-mandats-id>`: **52 decisions, 1 briefing, Store-Blob present, 217 KOs** —
   vollständig intakt (service_role liest alles).
 - Vercel Runtime-Errors (1 h nach Migration): **keine**.
 

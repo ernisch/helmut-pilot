@@ -62,46 +62,46 @@ check("leeres KO => Wichtigkeit niedrig, kein Crash", s.globalImportance({ id: "
 
 // --- 2) PERSOENLICHE RELEVANZ (Naehe + Dynamik, profilabhaengig) ------------
 console.log("== 2) Persoenliche Relevanz ==");
-const cem = { fullName: "Cem Ince", party: "Die Linke", committees: ["Arbeit und Soziales"], constituency: "Salzgitter" };
+const profilA = { fullName: "Deniz Inal", party: "Testpartei Alpha", committees: ["Arbeit und Soziales"], constituency: "Testkreis Nord" };
 const fremd = { fullName: "Anna Fremd", party: "FDP", committees: ["Digitales"], constituency: "Passau" };
-const relCem = s.personalRelevance(bundGesetz, cem, { now: NOW });
+const relProfilA = s.personalRelevance(bundGesetz, profilA, { now: NOW });
 const relFremd = s.personalRelevance(bundGesetz, fremd, { now: NOW });
-check("Relevanz ist profilABHAENGIG (Cem != Fremd fuer denselben Vorgang)", relCem.score !== relFremd.score);
-check("Cem (Ausschuss-Treffer) relevanter als Fremd (kein Treffer)", relCem.score > relFremd.score);
+check("Relevanz ist profilABHAENGIG (Deniz != Fremd fuer denselben Vorgang)", relProfilA.score !== relFremd.score);
+check("Deniz (Ausschuss-Treffer) relevanter als Fremd (kein Treffer)", relProfilA.score > relFremd.score);
 check("voellig unbezogener Vorgang => Relevanz 0 (Naehe-Gate)", s.personalRelevance(kommRand, fremd, { now: NOW }).score === 0);
 // Person-Erwaehnung ist starke Naehe
-const personKO = { id: "p", status: "neu", mentioned_mps: ["Cem Ince"], source_document_count: 2, sources: [{ published_at: iso(1 * H) }] };
-check("Person-Erwaehnung erzeugt starke Naehe", s.proximityScore(personKO, cem) >= s.PROX.person);
-// Ganzwort-Absicherung: 'Cem Ince' ist Substring von 'Cem Incentive', darf aber NICHT
+const personKO = { id: "p", status: "neu", mentioned_mps: ["Deniz Inal"], source_document_count: 2, sources: [{ published_at: iso(1 * H) }] };
+check("Person-Erwaehnung erzeugt starke Naehe", s.proximityScore(personKO, profilA) >= s.PROX.person);
+// Ganzwort-Absicherung: 'Deniz Inal' ist Substring von 'Deniz Inalntive', darf aber NICHT
 // matchen (nachfolgendes 'n' ist keine Wortgrenze) — ein simples includes() wuerde hier
 // faelschlich treffen, also prueft dieser Fall die Wortgrenzen-Logik echt.
-check("Namensteil-Fehltreffer vermieden (Ganzwort): 'Cem Ince' in 'Cem Incentive' matcht nicht", s.proximityScore({ id: "z", was_ist_passiert: "Das Cem Incentive-Programm startet" }, { fullName: "Cem Ince" }) === 0);
-check("echte Namensnennung matcht (Ganzwort-Positivgegentest)", s.proximityScore({ id: "z2", was_ist_passiert: "Rede von Cem Ince heute" }, { fullName: "Cem Ince" }) >= s.PROX.person);
+check("Namensteil-Fehltreffer vermieden (Ganzwort): 'Deniz Inal' in 'Deniz Inalntive' matcht nicht", s.proximityScore({ id: "z", was_ist_passiert: "Das Deniz Inalntive-Programm startet" }, { fullName: "Deniz Inal" }) === 0);
+check("echte Namensnennung matcht (Ganzwort-Positivgegentest)", s.proximityScore({ id: "z2", was_ist_passiert: "Rede von Deniz Inal heute" }, { fullName: "Deniz Inal" }) >= s.PROX.person);
 // Fix (Verify): reine matching.js-Aehnlichkeit darf das belegbasierte Naehe-Gate NICHT allein oeffnen.
 check("reine Aehnlichkeit oeffnet das Naehe-Gate NICHT (belegbasiert)", s.personalRelevance({ id: "sim", status: "neu", source_document_count: 1, sources: [{ published_at: iso(1 * H) }] }, fremd, { now: NOW, match: { similarity: 0.9 } }).score === 0);
-check("Aehnlichkeit verstaerkt NUR nach bestandenem Gate", s.personalRelevance(bundGesetz, cem, { now: NOW, match: { similarity: 0.9 } }).score >= s.personalRelevance(bundGesetz, cem, { now: NOW }).score);
+check("Aehnlichkeit verstaerkt NUR nach bestandenem Gate", s.personalRelevance(bundGesetz, profilA, { now: NOW, match: { similarity: 0.9 } }).score >= s.personalRelevance(bundGesetz, profilA, { now: NOW }).score);
 check("leeres Profil => Relevanz 0 (kein Crash, Naehe-Gate greift)", s.personalRelevance(bundGesetz, {}, { now: NOW }).score === 0);
 // Dynamik: neu+frisch+geclustert > abgeschlossen+alt+einzeln
 const bewegt = { id: "d1", status: "neu", source_document_count: 4, ausschuesse: ["Arbeit und Soziales"], sources: [{ published_at: iso(1 * H) }] };
 const ruht = { id: "d2", status: "abgeschlossen", source_document_count: 1, ausschuesse: ["Arbeit und Soziales"], sources: [{ published_at: iso(12 * D) }] };
-check("gleiche Naehe: bewegter Vorgang relevanter als ruhender", s.personalRelevance(bewegt, cem, { now: NOW }).score > s.personalRelevance(ruht, cem, { now: NOW }).score);
+check("gleiche Naehe: bewegter Vorgang relevanter als ruhender", s.personalRelevance(bewegt, profilA, { now: NOW }).score > s.personalRelevance(ruht, profilA, { now: NOW }).score);
 check("Dynamik: neu+frisch > abgeschlossen+alt", s.dynamicsScore(bewegt, NOW) > s.dynamicsScore(ruht, NOW));
 check("Dynamik im Bereich 0..1", s.dynamicsScore(bewegt, NOW) <= 1 && s.dynamicsScore(ruht, NOW) >= 0);
 
 // --- 3) HANDLUNGSFAEHIGKEIT -------------------------------------------------
 console.log("== 3) Handlungsfaehigkeit ==");
-const actBund = s.actionability(bundGesetz, cem).score;
+const actBund = s.actionability(bundGesetz, profilA).score;
 check("konkret handelbarer Vorgang => hohe Handlungsfaehigkeit", actBund >= 50);
-check("Randnotiz ohne Schritte => niedrige Handlungsfaehigkeit", s.actionability(kommRand, cem).score < actBund - 20);
+check("Randnotiz ohne Schritte => niedrige Handlungsfaehigkeit", s.actionability(kommRand, profilA).score < actBund - 20);
 // prepareStatement (aktiv) schlaegt monitor (passiv)
 const aktiv = { id: "a1", action_items_struct: [{ actionType: "prepareStatement", dueHint: "morgen" }], zeitdruck: "hoch" };
 const passiv = { id: "a2", action_items_struct: [{ actionType: "monitor" }], zeitdruck: "keiner" };
-check("aktive Handlung (prepareStatement) > passive (monitor)", s.actionability(aktiv, cem).factors.steps > s.actionability(passiv, cem).factors.steps);
-check("Frist/Zeitdruck erhoeht Zeitfenster-Faktor", s.actionability(aktiv, cem).factors.timeWindow > s.actionability(passiv, cem).factors.timeWindow);
-check("eigener Ausschuss => voller Mandats-Hebel", s.actionability(bundGesetz, cem).factors.handle === 1.0);
+check("aktive Handlung (prepareStatement) > passive (monitor)", s.actionability(aktiv, profilA).factors.steps > s.actionability(passiv, profilA).factors.steps);
+check("Frist/Zeitdruck erhoeht Zeitfenster-Faktor", s.actionability(aktiv, profilA).factors.timeWindow > s.actionability(passiv, profilA).factors.timeWindow);
+check("eigener Ausschuss => voller Mandats-Hebel", s.actionability(bundGesetz, profilA).factors.handle === 1.0);
 check("fremder Ausschuss => geringerer Hebel", s.actionability(bundGesetz, fremd).factors.handle < 1.0);
-check("konkreter Kommunikationskanal erhoeht Kanal-Faktor", s.actionability(bundGesetz, cem).factors.channel > 0.6);
-check("Kanal-Passung (preferredChannels 'presse') hebt Kanal-Faktor", s.actionability(bundGesetz, { ...cem, preferredChannels: ["presse"] }).factors.channel > s.actionability(bundGesetz, cem).factors.channel);
+check("konkreter Kommunikationskanal erhoeht Kanal-Faktor", s.actionability(bundGesetz, profilA).factors.channel > 0.6);
+check("Kanal-Passung (preferredChannels 'presse') hebt Kanal-Faktor", s.actionability(bundGesetz, { ...profilA, preferredChannels: ["presse"] }).factors.channel > s.actionability(bundGesetz, profilA).factors.channel);
 check("ohne Profil => neutraler Mandats-Hebel (KO-intrinsisch)", s.actionability(aktiv, {}).factors.handle === 0.3);
 
 // --- 4) DIE DREI DIMENSIONEN SIND WIRKLICH VERSCHIEDEN ----------------------
@@ -110,14 +110,14 @@ console.log("== 4) Dimensionen sind entkoppelt (Kern der Sprint-These) ==");
 check("global wichtig, aber persoenlich irrelevant moeglich", impBund >= 70 && relFremd.score < 25);
 // Persoenlich nah, aber kaum handelbar (kein Schritt/Kanal/Frist):
 const nahAberPassiv = { id: "np", status: "beobachtung", ausschuesse: ["Arbeit und Soziales"], source_document_count: 1, sources: [{ published_at: iso(20 * H) }] };
-const rnp = s.personalRelevance(nahAberPassiv, cem, { now: NOW }).score;
-const anp = s.actionability(nahAberPassiv, cem).score;
+const rnp = s.personalRelevance(nahAberPassiv, profilA, { now: NOW }).score;
+const anp = s.actionability(nahAberPassiv, profilA).score;
 check("persoenlich relevant, aber wenig handelbar moeglich", rnp > 0 && anp < 35);
 // Dritte Richtung: konkret handelbar, aber global unwichtig (kommunal, wenig belegt).
 const handelbarNurKO = { id: "hn", decision_level: "kommune", event_type: "sonstiges", source_document_count: 1, zeitdruck: "hoch", action_items_struct: [{ actionType: "prepareStatement", dueHint: "heute" }], recommended_communication_struct: { recommendedChannel: "press", recommendedFormat: "statement" }, risk_of_no_action: "x" };
 check("handlungsfaehig hoch, aber global unwichtig moeglich", s.actionability(handelbarNurKO, fremd).score > 40 && s.globalImportance(handelbarNurKO).score < 35);
 check("scoreVorgang liefert alle drei Dimensionen getrennt", (() => {
-  const t = s.scoreVorgang(bundGesetz, cem, { now: NOW });
+  const t = s.scoreVorgang(bundGesetz, profilA, { now: NOW });
   return typeof t.importance === "number" && typeof t.relevance === "number" && typeof t.actionability === "number" && t.importance !== t.actionability;
 })());
 
@@ -130,14 +130,14 @@ check("Lage: nach Wichtigkeit absteigend sortiert", lage.every((x, i) => i === 0
 // Echter Profilunabhaengigkeits-Nachweis: ein UEBERGEBENES Profil aendert Reihenfolge UND
 // Scores der Lage NICHT (rankForLage ignoriert es bewusst).
 check("Lage: profilunabhaengig (uebergebenes Profil aendert Reihenfolge/Scores NICHT)",
-  JSON.stringify(s.rankForLage(pool, { now: NOW, profile: cem }).map((x) => [x.ko.id, x.importance]))
+  JSON.stringify(s.rankForLage(pool, { now: NOW, profile: profilA }).map((x) => [x.ko.id, x.importance]))
   === JSON.stringify(lage.map((x) => [x.ko.id, x.importance])));
-const radar = s.rankForRadar(pool, cem, { now: NOW });
+const radar = s.rankForRadar(pool, profilA, { now: NOW });
 check("Radar: nur Vorgaenge mit persoenlicher Naehe (score>0)", radar.every((x) => x.relevance > 0));
 check("Radar: unbezogene kommunale Randnotiz faellt raus", !radar.some((x) => x.ko.id === "ko-komm"));
 check("Radar: nach Relevanz absteigend", radar.every((x, i) => i === 0 || radar[i - 1].relevance >= x.relevance));
 check("Radar: leeres Profil => leere Liste (Naehe-Gate, kein Crash)", s.rankForRadar(pool, {}, { now: NOW }).length === 0);
-const helmut = s.rankForHelmut(pool, cem, { now: NOW, floor: 1 });
+const helmut = s.rankForHelmut(pool, profilA, { now: NOW, floor: 1 });
 check("Helmut: bestes Handlungssignal zuerst (bund)", helmut[0].ko.id === "ko-bund");
 check("Helmut: nach Handlungsfaehigkeit absteigend", helmut.every((x, i) => i === 0 || helmut[i - 1].actionability >= x.actionability));
 // Echte Entkopplung: die GETEILTEN Vorgaenge (Schnittmenge) werden in Lage anders gereiht
@@ -194,7 +194,7 @@ check("kein Zeitstempel: Detail nennt 'unbekannt'", /unbekannt/.test(esNoTs.deta
 // --- 8) Determinismus + Flag ------------------------------------------------
 console.log("== 8) Determinismus + Flag ==");
 check("gleiche Eingabe => gleiche Wichtigkeit (deterministisch)", s.globalImportance(bundGesetz).score === s.globalImportance(bundGesetz).score);
-check("gleiche Eingabe => gleiche Relevanz", s.personalRelevance(bundGesetz, cem, { now: NOW }).score === s.personalRelevance(bundGesetz, cem, { now: NOW }).score);
+check("gleiche Eingabe => gleiche Relevanz", s.personalRelevance(bundGesetz, profilA, { now: NOW }).score === s.personalRelevance(bundGesetz, profilA, { now: NOW }).score);
 check("scoringMode default off (kein Live-Effekt ohne Freigabe)", s.scoringMode({}) === "off");
 check("scoringMode on erkannt", s.scoringMode({ HELMUT_SCORING_MODE: "on" }) === "on");
 check("scoringMode shadow erkannt", s.scoringMode({ HELMUT_SCORING_MODE: "shadow" }) === "shadow");

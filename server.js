@@ -5,7 +5,8 @@ const path = require("path");
 
 loadLocalEnv();
 
-const { cemInceProfile, profileCompleteness } = require("./lib/helmut/config");
+const { profileCompleteness } = require("./lib/helmut/config");
+const tenantContext = require("./lib/helmut/tenant-context");
 const { validateProfile } = require("./lib/helmut/profile-validation");
 const sourceSafety = require("./lib/helmut/sourceSafety");
 const { runLageCheck, runSourceCrawl } = require("./lib/helmut/scheduler");
@@ -139,11 +140,20 @@ async function handleRequest(request, response) {
   }
 
   if (url.pathname === "/api/release/public") {
-    // SICHERHEIT: bewusst oeffentlich (externe Smoke-Tests/Monitoring ohne Login), aber
-    // OHNE client-waehlbare politicianId — sonst liesse sich per ?politicianId= erraten/
-    // brute-forcen, ob ein bestimmtes Mandat existiert und wie sein Status ist (Mandanten-
-    // Oracle). scripts/smoke-test.js ruft diesen Endpunkt nie mit politicianId auf.
-    return handleAsync(response, async () => publicReleasePayload(await computeReleaseCheck()));
+    // SICHERHEIT/DATENSPARSAMKEIT: bewusst oeffentlich (externes Monitoring ohne
+    // Login), aber MANDATSAGNOSTISCH — KEINE Pilot-/Tenant-Konfiguration, keine
+    // Mandats-ID und keine Per-Mandant-Metriken. Nur ein globales Bereitschafts-
+    // signal (persistenter Speicher aktiv + juengster Crawl frisch). Kein
+    // Mandanten-Oracle, keine Rechenverstaerkung durch anonyme Aufrufer.
+    return handleAsync(response, async () => {
+      const storage = getStorageStatus();
+      const latestCrawl = await getLatestCrawlRun().catch(() => null);
+      const crawlTs = latestCrawl && (latestCrawl.checkedAt || latestCrawl.createdAt);
+      const crawlAgeH = crawlTs ? (Date.now() - new Date(crawlTs).getTime()) / 3600000 : null;
+      const storageOk = storage.backend === "supabase";
+      const ready = storageOk && crawlAgeH != null && crawlAgeH < 48;
+      return { ok: true, ready, storage: storageOk };
+    });
   }
 
   if (url.pathname === "/impressum") {
@@ -285,7 +295,7 @@ async function handleRequest(request, response) {
     politicianId = auth.pickPoliticianId(authUser, requested, allowedPoliticians);
     if (!politicianId) politicianId = await defaultPoliticianIdForUser(authUser, allowedPoliticians);
     // DATENLECK-SCHUTZ: Ein eingeloggter Account-Nutzer OHNE gültiges Mandat darf
-    // NIE still auf cem-ince (oder ein fremdes Mandat) fallen. Klarer Zustand statt
+    // NIE still auf ein fremdes Mandat fallen. Klarer Zustand statt
     // fremder Daten: API -> 403 (no-mandate); SPA-HTML/Assets fallen durch (Leerzustand).
     if (!politicianId) {
       // BOOTSTRAP-AUSNAHME: Ein Administrator braucht KEIN Mandat, um das System zu
@@ -311,14 +321,33 @@ async function handleRequest(request, response) {
       // sonst: statische Auslieferung bzw. mandatsfreier Admin-/Auth-Pfad, kein Fremddaten-Read.
     }
   } else {
-    // Legacy-Pilot-Modus: EIN geteiltes Pilotmandat hinter PILOT_SECRET.
-    // SICHERHEIT: Ein clientseitig gesetztes ?politicianId darf hier NICHT als
-    // Mandanten-Auswahl dienen — sonst koennte ein Pilot-Client die Daten eines
-    // anderen Mandats laden. Nur der (secret-geschuetzte) Admin-Bypass darf
-    // explizit ein anderes Mandat waehlen. Alle anderen bekommen das Pilotmandat.
-    politicianId = hasAdminBypass(request, url)
-      ? politicianIdFromUrl(url)
-      : cemInceProfile.id;
+    // Legacy-Zugang (geteiltes PILOT_SECRET, keine Accounts): Es gibt KEIN bevorzugtes,
+    // konfiguriertes oder geratenes Mandat. Die AKTIVEN Mandate der Datenbank sind die
+    // Zugriffsmenge (allgemeine, datenbankbasierte Zugangszuordnung):
+    //   * Admin-Bypass (secret-geschuetzt) darf jedes Mandat per ?politicianId waehlen.
+    //   * sonst: ?politicianId, falls es ein AKTIVES Mandat benennt; sonst genau EIN
+    //     aktives Mandat (ohne Environment-Auswahl); sonst "" -> Auswahl/Leerzustand.
+    const requested = url.searchParams.get("politicianId") || url.searchParams.get("profileId");
+    if (hasAdminBypass(request, url)) {
+      // Admin-Bypass (secret-geschuetzt) darf jedes Mandat waehlen; ohne Parameter
+      // greift dieselbe Aufloesung wie fuer normale Zugriffe (einziges aktives Mandat).
+      politicianId = tenantContext.slugifyTenantId(requested)
+        || (await tenantContext.resolveActiveTenant({ deps: { listProfiles: listFullProfiles } })).tenantId;
+    } else {
+      const resolved = await tenantContext.resolveActiveTenant({ requested, deps: { listProfiles: listFullProfiles } });
+      politicianId = resolved.tenantId;
+    }
+    if (!politicianId) {
+      const isCron = url.pathname.startsWith("/api/cron/");
+      const isSelectableStart = url.pathname === "/api/app/start";
+      // Mandatsbezogene API-Pfade (ausser Cron und dem auswahlfaehigen app/start)
+      // erhalten einen klaren Auswahl-/Leerzustand statt eines geratenen Mandanten.
+      if (url.pathname.startsWith("/api/") && !isCron && !isSelectableStart) {
+        return sendMandateSelectionRequired(response, await activeMandateList());
+      }
+      // sonst: app/start (Auswahl-Payload unten), Cron (eigene DB-Aufloesung) und
+      // statische SPA-Auslieferung fallen durch.
+    }
   }
 
   if (url.pathname === "/api/security/csrf") {
@@ -333,6 +362,12 @@ async function handleRequest(request, response) {
     // Nutzungs-Tracking: App-Oeffnung erfassen (nicht-blockierend, gedrosselt).
     if (accountAuth && authUser) accounts.recordUserActivity(authUser.id).catch(() => {});
     return handleAsync(response, async () => {
+      if (!politicianId) {
+        // Legacy-Zugang ohne aufloesbaren Einzelmandanten: Auswahl-/Leerzustand
+        // (der Account-Modus wird oben bereits per no-mandate abgefangen).
+        const mandates = await activeMandateList();
+        return { needsMandateSelection: mandates.length > 1, empty: mandates.length === 0, mandates };
+      }
       const profile = await activeProfile(politicianId);
       const briefing = await latestBriefingPayload({ politicianId, profile, url, previewMode, compact: true });
       // Lage = das politische Morgen-Briefing des Referenten (keine Empfehlung/Bewertung).
@@ -723,70 +758,38 @@ async function handleRequest(request, response) {
 
   if (url.pathname === "/api/cron/crawl") {
     if (!authorizeCron(request, url, response)) return;
-    return handleAsync(response, () => runSourceCrawl(politicianId));
+    // Mandate kommen aus der Datenbank (kein Request-/Code-Default): siehe runCronForTenants.
+    return handleAsync(response, () => runCronForTenants("crawl", (tenantId) => runSourceCrawl(tenantId)));
   }
 
   if (url.pathname === "/api/cron/morning-briefing") {
     if (!authorizeCron(request, url, response)) return;
     return handleAsync(response, async () => {
       const t0 = Date.now();
-      // Mehrmandantenfaehigkeit (Audit-Fix 2026-07, Default AUS): Der Cron bediente
-      // fest EIN Profil (Default-politicianId) — weitere Mandate erhielten nie einen
-      // Morgen-Push. Mit HELMUT_MORNING_PUSH_ALL_PROFILES=1 loopt er wie der
-      // lage-briefing-Cron ueber alle Profile (deaktivierte werden uebersprungen,
-      // per-Profil try/catch, hartes Zeitbudget). Aktivierung = bewusste
-      // Betreiber-Entscheidung (zusaetzliche Build-Laeufe, 0 KI — der Briefing-Build
-      // ist eine reine Lese-Transformation; Push nur bei echtem Inhalt).
-      const flagOn = (v) => ["1", "true", "on", "yes"].includes(String(v || "").trim().toLowerCase());
-      if (flagOn(process.env.HELMUT_MORNING_PUSH_ALL_PROFILES)) {
-        const deadline = t0 + 240000; // 240s < maxDuration 300s: Cron antwortet IMMER
-        let profiles = await listProfiles().catch(() => []);
-        if (!Array.isArray(profiles) || !profiles.length) profiles = [{ id: politicianId }];
-        const results = [];
-        let skipped = 0;
-        for (const p of profiles) {
-          if (Date.now() > deadline) { results.push({ userId: p.id, skipped: true, reason: "zeitbudget" }); continue; }
-          // Per-Profil try/catch (Review-Fix): früher waren nur Build/Push gefangen,
-          // NICHT activeProfile/validateProfile — ein Storage-Fehler bei EINEM Profil
-          // brach die gesamte Schleife (500, alle übrigen ohne Push). Jetzt isoliert
-          // jedes Profil vollständig; ein Fehler wird als Ergebniszeile vermerkt.
-          try {
-            const profile = await activeProfile(p.id || politicianId);
-            const val = validateProfile(profile);
-            if (val.disabled) { skipped += 1; results.push({ userId: profile.id, skipped: true, reason: "profil-deaktiviert" }); continue; }
-            const briefing = await withTimeout(buildV3Briefing(profile, profile.id), 60000, "cron-briefing-build")
-              .catch((error) => ({ available: false, reason: "build-timeout", error: error && error.message, items: [], personalizedRecommendations: [], personMentions: [] }));
-            const push = await withTimeout(sendBriefingReadyPush(briefing, profile), 30000, "cron-briefing-push")
-              .catch((error) => ({ ok: false, reason: "push-timeout", error: error && error.message }));
-            results.push({ userId: profile.id, available: Boolean(briefing && briefing.available), pushSkipped: Boolean(push && push.skipped), pushReason: (push && push.reason) || null });
-          } catch (error) {
-            results.push({ userId: p.id, skipped: true, reason: "profil-fehler", error: error && error.message });
-          }
-        }
-        console.log(`[cron/morning-briefing] multi-profil: ${results.length} Profile, ${skipped} uebersprungen, ${Date.now() - t0}ms`);
-        return { multiProfile: true, profile: results.length, uebersprungen: skipped, results };
-      }
-      const profile = await activeProfile(politicianId);
-      // V3: das Briefing entsteht frisch aus den aktuellen Knowledge Objects (0 KI) —
-      // kein V2-runMorningBriefing mehr. Beide Schritte (Build + Push) hart begrenzt,
-      // damit der Cron immer antwortet; fail-safe -> Leerzustand statt Hänger.
-      const briefing = await withTimeout(buildV3Briefing(profile, politicianId), 60000, "cron-briefing-build")
-        .catch((error) => ({ available: false, reason: "build-timeout", error: error && error.message, items: [], personalizedRecommendations: [], personMentions: [] }));
-      const tBuild = Date.now();
-      const push = await withTimeout(sendBriefingReadyPush(briefing, profile), 30000, "cron-briefing-push")
-        .catch((error) => ({ ok: false, reason: "push-timeout", error: error && error.message }));
-      console.log(`[cron/morning-briefing] build=${tBuild - t0}ms push=${Date.now() - tBuild}ms available=${briefing && briefing.available} items=${((briefing && briefing.items) || []).length}`);
-      // P0-1: echte Briefing-Aufbau-Dauer persistieren (0 KI, reine Lese-Transformation).
-      // Nur Zaehler/Status — KEIN Briefingtext (DSGVO-Datensparsamkeit).
+      // ALLE aktiven Mandate isoliert (kein Flag, kein bevorzugtes/geratenes Mandat):
+      // jedes Mandat erhaelt seinen Morgen-Build + Push. 0 KI (reine Lese-Transformation);
+      // Push nur bei echtem Inhalt; deaktivierte Profile werden uebersprungen.
+      const summary = await runCronForTenants("morning-briefing", async (tenantId) => {
+        const profile = await activeProfile(tenantId);
+        const val = validateProfile(profile);
+        if (val.disabled) return { skipped: true, reason: "profil-deaktiviert" };
+        const briefing = await withTimeout(buildV3Briefing(profile, tenantId), 60000, "cron-briefing-build")
+          .catch((error) => ({ available: false, reason: "build-timeout", error: error && error.message, items: [], personalizedRecommendations: [], personMentions: [] }));
+        const push = await withTimeout(sendBriefingReadyPush(briefing, profile), 30000, "cron-briefing-push")
+          .catch((error) => ({ ok: false, reason: "push-timeout", error: error && error.message }));
+        return { available: Boolean(briefing && briefing.available), pushSkipped: Boolean(push && push.skipped), pushReason: (push && push.reason) || null };
+      }, { deadlineMs: 240000 });
+      // P0-1: Lauf-Kennzahlen persistieren (Zaehler/Status, KEIN Briefingtext).
       await recordProcessRun({
         process: "briefing-morning", runId: helmutRunId("briefing-morning", t0), mode: "cron", location: helmutExecLocation(),
-        startedAt: new Date(t0).toISOString(), finishedAt: new Date(tBuild).toISOString(),
-        durationMs: tBuild - t0,
-        processed: ((briefing && briefing.items) || []).length,
-        reason: briefing && briefing.available ? null : (briefing && briefing.reason) || null,
-        status: briefing && briefing.available ? "ok" : "empty"
+        startedAt: new Date(t0).toISOString(), finishedAt: new Date().toISOString(),
+        durationMs: Date.now() - t0,
+        processed: (summary.results || []).filter((r) => r && r.available).length,
+        status: (summary.ok === false || ((summary.results || []).length > 0 && (summary.results || []).every((r) => r && r.failed)))
+          ? "error" : (summary.tenants ? "ok" : "empty")
       }).catch(() => {});
-      return { briefing, push };
+      console.log(`[cron/morning-briefing] ${Date.now() - t0}ms tenants=${summary.tenants} reason=${summary.reason || "ok"}`);
+      return summary;
     });
   }
 
@@ -798,9 +801,13 @@ async function handleRequest(request, response) {
     // der interne Fortschritt (Crawl/Shadows) ist idempotent + zeitbudgetiert.
     return handleAsync(response, async () => {
       const t0 = Date.now();
-      const result = await withTimeout(runSourceCrawl(politicianId), 280000, "cron-pipeline")
-        .catch((error) => ({ ok: false, bounded: true, reason: "pipeline-timeout", error: error && error.message }));
-      console.log(`[cron/pipeline] runSourceCrawl ${Date.now() - t0}ms bounded=${Boolean(result && result.bounded)}`);
+      // Mandate aus der Datenbank; hartes Gesamtbudget 280s < maxDuration 300s.
+      const result = await withTimeout(
+        runCronForTenants("pipeline", (tenantId) => runSourceCrawl(tenantId), { deadlineMs: 270000 }),
+        280000,
+        "cron-pipeline"
+      ).catch((error) => ({ ok: false, bounded: true, reason: "pipeline-timeout", error: error && error.message }));
+      console.log(`[cron/pipeline] ${Date.now() - t0}ms tenants=${result && result.tenants} bounded=${Boolean(result && result.bounded)}`);
       return result;
     });
   }
@@ -841,40 +848,49 @@ async function handleRequest(request, response) {
   if (url.pathname === "/api/cron/health-report") {
     if (!authorizeCron(request, url, response)) return;
     return handleAsync(response, async () => {
-      const report = await buildHealthReport(politicianId);
-      // DRY-RUN (Phase 11): ?dryRun=1 baut den kompletten Report und zeigt die
-      // Kanal-Konfiguration, versendet aber NICHTS und schreibt keinen
-      // Systemfehler. Damit lässt sich der Alarmweg (auch im Preview) gefahrlos
-      // prüfen, ohne eine echte Nachricht auszulösen.
-      if (url.searchParams.get("dryRun") === "1") {
-        return {
-          dryRun: true,
-          ok: report.ok,
-          text: report.text,
-          kanaele: {
-            whatsapp: { konfiguriert: Boolean(String(process.env.CALLMEBOT_PHONE || "").trim() && String(process.env.CALLMEBOT_APIKEY || "").trim()) },
-            webhook: { konfiguriert: Boolean(String(process.env.HELMUT_MONITORING_WEBHOOK_URL || "").trim()) }
-          },
-          overdueCrons: report.overdueCrons,
-          googleUrlResolutionRate: report.googleUrlResolutionRate
-        };
+      const dryRun = url.searchParams.get("dryRun") === "1";
+      // Mandate AUSSCHLIESSLICH aus der Datenbank; je aktivem Mandat ein isolierter
+      // Report. Zugestellt wird EINE aggregierte Alarm-Nachricht je Kanal (kein
+      // Spam, kein 'erstes' Mandat); top-level ok = ECHTER Gesundheitsstatus (alle
+      // Mandate ok). 0 aktive Mandate -> sauberer Lauf; Ladestoerung -> ok:false.
+      const { tenantIds, reason } = await tenantContext.resolveCronTenants();
+      if (!tenantIds.length) {
+        const ladeStoerung = reason === "mandanten-liste-nicht-ladbar";
+        if (ladeStoerung) {
+          await accounts.recordSystemError({ scope: "health-report", message: "Mandantenliste nicht ladbar — Health-Report uebersprungen.", path: "/api/cron/health-report" }).catch(() => {});
+        }
+        return { ok: !ladeStoerung, skipped: true, reason, tenants: 0, reports: [] };
       }
-      // ZWEITKANAL (Audit-Folgebranch): der Report ging bisher NUR über CallMeBot-
-      // WhatsApp — fehlten dessen Keys, wurde er still übersprungen (einziger
-      // Alarmweg tot). Jetzt zusätzlich ein generischer Webhook-Kanal
-      // (HELMUT_MONITORING_WEBHOOK_URL: Slack/Discord/Zapier/E-Mail-Relay).
-      // Beide Kanäle fail-safe und unabhängig; ein Kanal-Fehler kippt den anderen
-      // nicht. Kein neuer Dienst/kein SMTP-Secret nötig.
-      // P1-7 Datenschutz: auch der Text-only-Kanal (WhatsApp) erhält den über
-      // buildAlarmText redigierten Statustext (doppelter Boden gegen Inhalte/Secrets).
+      const reports = [];
+      for (const tenantId of tenantIds) {
+        try {
+          const r = await buildHealthReport(tenantId);
+          reports.push({ tenant: tenantId, ok: r.ok, text: r.text, overdueCrons: r.overdueCrons, googleUrlResolutionRate: r.googleUrlResolutionRate });
+        } catch (error) {
+          reports.push({ tenant: tenantId, ok: false, text: `${tenantId}: Health-Report-Fehler: ${error && error.message}`, error: error && error.message });
+        }
+      }
+      const overallOk = reports.every((r) => r.ok);
+      const combinedText = reports.map((r) => r.text).filter(Boolean).join("\n\n");
+      const kanaele = {
+        whatsapp: { konfiguriert: Boolean(String(process.env.CALLMEBOT_PHONE || "").trim() && String(process.env.CALLMEBOT_APIKEY || "").trim()) },
+        webhook: { konfiguriert: Boolean(String(process.env.HELMUT_MONITORING_WEBHOOK_URL || "").trim()) }
+      };
+      if (dryRun) {
+        return { dryRun: true, ok: overallOk, tenants: tenantIds.length, text: combinedText, kanaele, reports };
+      }
+      // EINE aggregierte Nachricht je Kanal (Alarm feuert, wenn IRGENDEIN Mandat nicht ok ist).
+      const aggregate = {
+        ok: overallOk, text: combinedText,
+        overdueCrons: reports.flatMap((r) => r.overdueCrons || []),
+        googleUrlResolutionRate: reports.map((r) => r.googleUrlResolutionRate).filter((x) => x != null).sort((a, b) => a - b)[0] ?? null
+      };
       const [delivery, webhook] = await Promise.all([
-        sendCallMeBotMessage(buildAlarmText(report)),
-        sendMonitoringWebhook(report)
+        sendCallMeBotMessage(buildAlarmText(aggregate)),
+        sendMonitoringWebhook(aggregate)
       ]);
       const whatsappBroken = delivery && delivery.sent === false && !delivery.skipped;
       const webhookBroken = webhook && webhook.sent === false && !webhook.skipped;
-      // Echten Zustellfehler protokollieren (nicht: Keys fehlen). Beide Kanäle
-      // still tot (skipped) bei einem NICHT-grünen Report ist selbst ein Alarm.
       if (whatsappBroken || webhookBroken) {
         await accounts.recordSystemError({
           scope: "health-report",
@@ -882,14 +898,14 @@ async function handleRequest(request, response) {
           path: "/api/cron/health-report"
         }).catch(() => {});
       }
-      if (!report.ok && delivery && delivery.skipped && webhook && webhook.skipped) {
+      if (!overallOk && delivery && delivery.skipped && webhook && webhook.skipped) {
         await accounts.recordSystemError({
           scope: "health-report",
           message: "Nicht-grüner Health-Report, aber KEIN Alarmkanal konfiguriert (CALLMEBOT_* und HELMUT_MONITORING_WEBHOOK_URL fehlen).",
           path: "/api/cron/health-report"
         }).catch(() => {});
       }
-      return { ok: report.ok, text: report.text, delivery, webhook, overdueCrons: report.overdueCrons, googleUrlResolutionRate: report.googleUrlResolutionRate };
+      return { ok: overallOk, tenants: tenantIds.length, text: combinedText, delivery, webhook, reports };
     });
   }
 
@@ -901,14 +917,22 @@ async function handleRequest(request, response) {
     // der interne Understanding-Loop ist zeitbudgetiert + fail-safe.
     return handleAsync(response, async () => {
       const t0 = Date.now();
-      const profile = await activeProfile(politicianId);
-      const lageCheck = await withTimeout(runLageCheck(politicianId), 280000, "cron-lage-check")
-        .catch((error) => ({ status: "stable", bounded: true, reason: "lage-check-timeout", error: error && error.message }));
-      const tCheck = Date.now();
-      const push = await withTimeout(sendLageChangePush(lageCheck, profile), 30000, "cron-lage-push")
-        .catch((error) => ({ ok: false, reason: "push-timeout", error: error && error.message }));
-      console.log(`[cron/lage-check] check=${tCheck - t0}ms push=${Date.now() - tCheck}ms status=${lageCheck && lageCheck.status}`);
-      return { lageCheck, push };
+      // Mandate aus der Datenbank; je Mandat Check + Push, isoliert und zeitbudgetiert.
+      // Aeusseres Gesamt-Timeout 280s < maxDuration 300s: die Antwort kommt IMMER,
+      // auch wenn ein einzelner Mandats-Check sein Einzelbudget ausschoepft.
+      const summary = await withTimeout(runCronForTenants("lage-check", async (tenantId) => {
+        const profile = await activeProfile(tenantId);
+        const val = validateProfile(profile);
+        if (val.disabled) return { skipped: true, reason: "profil-deaktiviert" };
+        const lageCheck = await withTimeout(runLageCheck(tenantId), 240000, "cron-lage-check")
+          .catch((error) => ({ status: "stable", bounded: true, reason: "lage-check-timeout", error: error && error.message }));
+        const push = await withTimeout(sendLageChangePush(lageCheck, profile), 30000, "cron-lage-push")
+          .catch((error) => ({ ok: false, reason: "push-timeout", error: error && error.message }));
+        return { lageCheck, push };
+      }, { deadlineMs: 240000 }), 280000, "cron-lage-check-gesamt")
+        .catch((error) => ({ ok: false, bounded: true, reason: "lage-check-timeout", error: error && error.message }));
+      console.log(`[cron/lage-check] ${Date.now() - t0}ms tenants=${summary && summary.tenants} bounded=${Boolean(summary && summary.bounded)}`);
+      return summary;
     });
   }
 
@@ -920,25 +944,37 @@ async function handleRequest(request, response) {
       const lageBriefingStartMs = Date.now();
       const lageBriefingRunId = helmutRunId("briefing-lage", lageBriefingStartMs);
       let profiles = await listProfiles().catch(() => []);
-      if (!Array.isArray(profiles) || !profiles.length) profiles = [{ id: politicianId }];
+      if (!Array.isArray(profiles)) profiles = [];
+      // KEIN Fallback auf ein Default-Mandat: ohne gespeicherte Profile ist der
+      // Vorwaerm-Lauf ein ehrlicher Leerlauf.
       const results = [];
       let skipped = 0;
+      // Hartes Zeitbudget wie im morning-briefing (240s < maxDuration 300s):
+      // der Cron antwortet IMMER; nicht erreichte Mandate holt der naechste
+      // (idempotente) Lauf nach.
+      const lageBriefingDeadline = lageBriefingStartMs + 240000;
       for (const p of profiles) {
-        const profile = await activeProfile(p.id || politicianId);
+        if (!p || !p.id) { skipped += 1; results.push({ userId: null, available: false, reason: "profil-ohne-id", vorgaenge: 0 }); continue; }
+        if (Date.now() > lageBriefingDeadline) { results.push({ userId: p.id, available: false, reason: "zeitbudget", vorgaenge: 0 }); continue; }
         // Mehrmandantenfaehigkeit Phase 8: deaktivierte Profile nehmen an der
-        // Verarbeitung NICHT teil (sie sollen kein Briefing erzeugen). Fehlerhafte/
-        // leere Profile liefern ohnehin natuerlich einen Leerzustand — nur die
-        // bewusst deaktivierten werden aktiv uebersprungen. Ein Fehler/Skip bei
-        // einem Profil betrifft NUR dieses (per-Profil try/catch), nie die anderen.
-        const val = validateProfile(profile);
-        if (val.disabled) {
-          skipped += 1;
-          results.push({ userId: profile.id, available: false, reason: "profil-deaktiviert", vorgaenge: 0 });
-          continue;
+        // Verarbeitung NICHT teil (sie sollen kein Briefing erzeugen). VOLLSTAENDIGE
+        // Fehler-Isolation je Mandat: auch activeProfile/validateProfile stehen im
+        // try/catch — ein Storage-Fehler bei EINEM Profil bricht die Schleife nicht
+        // (Befund der Cron-Inventur: frueher war nur buildLageBriefing gefangen).
+        try {
+          const profile = await activeProfile(p.id);
+          const val = validateProfile(profile);
+          if (val.disabled) {
+            skipped += 1;
+            results.push({ userId: profile.id, available: false, reason: "profil-deaktiviert", vorgaenge: 0 });
+            continue;
+          }
+          const res = await buildLageBriefing(profile, { politicianId: profile.id })
+            .catch((e) => ({ available: false, reason: "error", error: e && e.message }));
+          results.push({ userId: profile.id, available: res.available, fromCache: res.fromCache, reason: res.reason || null, vorgaenge: (res.vorgaenge || []).length });
+        } catch (error) {
+          results.push({ userId: p.id, available: false, reason: "profil-fehler", error: error && error.message, vorgaenge: 0 });
         }
-        const res = await buildLageBriefing(profile, { politicianId: profile.id })
-          .catch((e) => ({ available: false, reason: "error", error: e && e.message }));
-        results.push({ userId: profile.id, available: res.available, fromCache: res.fromCache, reason: res.reason || null, vorgaenge: (res.vorgaenge || []).length });
       }
       // P0-1: echte Lage-Briefing-Vorwaerm-Laufzeit persistieren (Zaehler/Status, kein Text).
       await recordProcessRun({
@@ -1337,20 +1373,31 @@ async function handleRequest(request, response) {
       // erfuellt ist. Nur Booleans, KEINE Werte/Secrets. So ist auf einen Blick
       // sichtbar, ob der Flag in der Laufzeit ankommt und ob der DB-Profilpfad greift.
       const profileDbEnabled = profileDbModeEnabled();
-      // Live-Selbsttest des echten JWT-Profil-Lesepfads: versucht den DB-Read von
-      // cem-ince (existiert). Erfolg (Zeile zurueck) => App->PostgREST-JWT wird
-      // akzeptiert (SUPABASE_JWT_SECRET korrekt). Fehlschlag/null bei aktivem Flag
-      // => JWT wird abgewiesen (401 PGRST301, Secret-Mismatch) ODER Zeile fehlt.
+      // Live-Selbsttest des echten JWT-Profil-Lesepfads: versucht den DB-Read
+      // fuer die VORHANDENEN Mandate aus dem Store (mandantenneutral, keine
+      // hartkodierte ID). Erfolg bei mindestens einem => App->PostgREST-JWT wird
+      // akzeptiert (SUPABASE_JWT_SECRET korrekt). Kein Erfolg bei aktivem Flag
+      // => JWT wird abgewiesen (401 PGRST301, Secret-Mismatch) ODER Zeilen fehlen.
       // Nur ausgefuehrt, wenn der DB-Modus aktiv ist; sonst nicht aussagekraeftig.
       let tenantJwtReadWorks = null;
       let tenantReadProbe = "nicht ausgeführt (DB-Modus aus)";
       if (profileDbEnabled) {
         try {
-          const probe = await getProfileFromDb(cemInceProfile.id);
-          tenantJwtReadWorks = Boolean(probe && probe.id);
-          tenantReadProbe = tenantJwtReadWorks
-            ? "OK: cem-ince aus mandate_profiles gelesen (JWT akzeptiert)"
-            : "FEHLGESCHLAGEN: kein Profil (JWT abgewiesen/401 oder Zeile fehlt) -> Fallback Blob";
+          const knownProfiles = await listProfiles().catch(() => []);
+          const probeIds = knownProfiles.map((p) => p.id).filter(Boolean).sort();
+          if (!probeIds.length) {
+            tenantReadProbe = "nicht ausführbar (keine gespeicherten Mandate)";
+          } else {
+            let readId = null;
+            for (const probeId of probeIds) {
+              const probe = await getProfileFromDb(probeId);
+              if (probe && probe.id) { readId = probe.id; break; }
+            }
+            tenantJwtReadWorks = Boolean(readId);
+            tenantReadProbe = tenantJwtReadWorks
+              ? "OK: Mandatsprofil aus mandate_profiles gelesen (JWT akzeptiert)"
+              : "FEHLGESCHLAGEN: kein Profil lesbar (JWT abgewiesen/401 oder Zeilen fehlen) -> Fallback Blob";
+          }
         } catch (_) {
           tenantJwtReadWorks = false;
           tenantReadProbe = "FEHLGESCHLAGEN (Ausnahme) -> Fallback Blob";
@@ -3097,7 +3144,8 @@ function readinessScore(issues, warnings) {
   return Math.max(0, Math.min(100, 100 - issues.length * 25 - warnings.length * 8));
 }
 
-async function computeReleaseCheck(politicianId = cemInceProfile.id) {
+async function computeReleaseCheck(politicianId) {
+  politicianId = tenantContext.requireTenantId(politicianId, "computeReleaseCheck");
   const profile = await activeProfile(politicianId);
   const latestCrawl = await getLatestCrawlRun();
   const latestLageCheck = await getLatestLageCheck(politicianId);
@@ -3161,7 +3209,8 @@ function publicReleasePayload(release) {
 // Operativer Morgen-Health-Report (fuer WhatsApp). Bewusst pragmatisch: prueft echte
 // Betriebssignale (Crawl/Briefing frisch, Speicher aktiv, Fehler-Spike) statt des
 // strengen Pitch-Gates, plus Engagement aus dem Nutzungs-Tracking.
-async function buildHealthReport(politicianId = cemInceProfile.id) {
+async function buildHealthReport(politicianId) {
+  politicianId = tenantContext.requireTenantId(politicianId, "buildHealthReport");
   // V3: Health-Report bewertet das frisch erzeugte V3-Briefing (kein V2-Blob).
   // P1-4/P1-5: Betriebszustand kommt jetzt aus dem Zwei-Achsen-Zustandsmodell
   // (lib/helmut/watchdog-state.js) auf Basis LEBENDER Zeitstempel — NICHT mehr
@@ -3776,10 +3825,8 @@ async function allKnownPoliticianIds() {
   users.forEach((user) => {
     if (user.role === "abgeordneter" && user.politicianId) ids.add(user.politicianId);
   });
-  // Pilot-Modus: das geteilte Demo-Mandat cem-ince ist immer erreichbar.
-  // Account-Modus: cem-ince erscheint nur, wenn ein Profil gespeichert oder ein
-  // Nutzer zugewiesen ist - kein automatischer cem-ince-Eintrag im Switcher.
-  if (!auth.authMode()) ids.add(cemInceProfile.id);
+  // Kein bevorzugtes/konfiguriertes Mandat: die erreichbaren Mandate sind genau die
+  // gespeicherten Profile bzw. zugewiesenen Mandate (oben) — nichts wird ergaenzt.
   return Array.from(ids);
 }
 
@@ -3795,7 +3842,7 @@ async function listAllowedProfiles(user, allowed) {
 }
 
 async function defaultPoliticianIdForUser(user, allowed) {
-  // SaaS-Datenleck-Schutz: KEIN stiller Fallback auf cem-ince (oder ein fremdes
+  // SaaS-Datenleck-Schutz: KEIN stiller Fallback auf ein fremdes
   // Mandat) für Account-Nutzer. Wer kein gültiges eigenes/zugewiesenes Mandat hat,
   // bekommt null -> der Aufrufer liefert einen klaren Fehler statt fremder Daten.
   if (user.role === "abgeordneter") return user.politicianId || null;
@@ -3805,8 +3852,14 @@ async function defaultPoliticianIdForUser(user, allowed) {
   // Zuweisung bekommt KEIN Mandat (null) -> klarer Fehler statt fremder Daten.
   if (allowed === "all") {
     const users = await accounts.listUsers();
-    const firstMandate = users.find((entry) => entry.role === "abgeordneter" && entry.politicianId);
-    return firstMandate ? firstMandate.politicianId : null;
+    // Deterministisch (alphabetisch nach Mandats-ID) statt "erster Treffer in
+    // Speicher-Reihenfolge" — die Auswahl ist eine Admin-Bequemlichkeit, kein
+    // implizites Standardmandat, und darf nicht von Insertion-Order abhaengen.
+    const mandateIds = users
+      .filter((entry) => entry.role === "abgeordneter" && entry.politicianId)
+      .map((entry) => entry.politicianId)
+      .sort();
+    return mandateIds.length ? mandateIds[0] : null;
   }
   return null;
 }
@@ -4390,9 +4443,9 @@ async function buildAdminDataStatus({ perAccountLimit = 25 } = {}) {
       },
       onboardingStatus: (profile && profile.onboardingStatus) || "neu",
       aktiv: !(profile && profile.profileActive === false),
-      // Konto-Typ NUR wenn sicher ermittelbar (nicht raten): das Pilot-/Demo-Seed-Mandat
-      // cem-ince -> "Pilot"; sonst ein evtl. vorhandenes explizites Flag; sonst null.
-      kontoTyp: id === cemInceProfile.id ? "Pilot" : (u.kontoTyp || u.accountKind || u.kind || null),
+      // Konto-Typ NUR aus persistierten Flags (nicht raten): es gibt kein bevorzugtes
+      // Mandat, dessen ID einen "Pilot"-Typ herleiten wuerde.
+      kontoTyp: u.kontoTyp || u.accountKind || u.kind || null,
       ampel: dsAccountAmpel({ level: comp.level, restricted: comp.restricted || comp.empty, hasBriefing })
     });
   }
@@ -4523,7 +4576,8 @@ const DATA_STATUS_LEGEND = {
   "ampel": "Gruen: Lauf ok + relevante Vorgaenge oder sauberer Leerstatus. Gelb: wenig Daten/unvollstaendiges Profil/eingeschraenkte Personalisierung/schwache Abdeckung. Rot: Pipeline-Fehler, kein aktueller Stand, fremder Fallback oder kein Stand bis 7:30."
 };
 
-async function normalizeTask(task, politicianId = cemInceProfile.id) {
+async function normalizeTask(task, politicianId) {
+  politicianId = tenantContext.requireTenantId(politicianId, "normalizeTask");
   const profile = await activeProfile(politicianId);
   return {
     id: task.id || `task-${Date.now()}`,
@@ -4548,7 +4602,8 @@ async function normalizeTask(task, politicianId = cemInceProfile.id) {
   };
 }
 
-async function normalizeInteraction(interaction, politicianId = cemInceProfile.id) {
+async function normalizeInteraction(interaction, politicianId) {
+  politicianId = tenantContext.requireTenantId(politicianId, "normalizeInteraction");
   const profile = await activeProfile(politicianId);
   return {
     // SICHERHEIT: siehe normalizeTask — politicianId niemals aus dem Client-Body.
@@ -4565,7 +4620,8 @@ async function normalizeInteraction(interaction, politicianId = cemInceProfile.i
   };
 }
 
-async function normalizeUserNote(note, politicianId = cemInceProfile.id) {
+async function normalizeUserNote(note, politicianId) {
+  politicianId = tenantContext.requireTenantId(politicianId, "normalizeUserNote");
   const profile = await activeProfile(politicianId);
   return {
     id: note.id,
@@ -4578,21 +4634,19 @@ async function normalizeUserNote(note, politicianId = cemInceProfile.id) {
   };
 }
 
-async function activeProfile(politicianId = cemInceProfile.id) {
+async function activeProfile(politicianId) {
+  politicianId = tenantContext.requireTenantId(politicianId, "activeProfile");
   const stored = await getProfile(politicianId);
   if (stored) return mergeProfileDefaults(stored);
-  // Immer zuerst das gespeicherte Profil (oben). cem-ince erhaelt seine reichen
-  // Seed-Defaults NUR im Pilot-Modus, solange noch kein Profil gespeichert ist.
-  // Im Account-Modus gibt es keinen stillen cem-ince-Ersatz: fehlt das Profil,
-  // greift das neutrale blankProfile wie fuer jedes andere Mandat.
-  if (!auth.authMode() && politicianId === cemInceProfile.id) return cemInceProfile;
+  // Fehlt das gespeicherte Profil, greift fuer JEDES Mandat (auch den Piloten)
+  // das neutrale blankProfile — Profildaten sind ausschliesslich Datensaetze
+  // im Store, niemals Code-Konstanten.
   return blankProfile(politicianId);
 }
 
-// Neutrale Default-Werte fuer JEDES Mandat ausser dem Demo-Profil cem-ince.
-// Wichtig: Neue Abgeordnete duerfen KEINE inhaltlichen Cem-Ince-Defaults erben
-// (Ausschuesse, Themen, Positionen). Nur generisches Geruest, damit der Briefing-
-// Motor arbeiten kann, bleibt vorbelegt.
+// Neutrale Default-Werte fuer JEDES Mandat — ausnahmslos. Kein Mandat erbt
+// inhaltliche Defaults eines anderen (Ausschuesse, Themen, Positionen). Nur
+// generisches Geruest, damit der Briefing-Motor arbeiten kann, bleibt vorbelegt.
 function blankProfile(id) {
   return {
     id,
@@ -4640,16 +4694,10 @@ function blankProfile(id) {
   };
 }
 
-// Nur im Pilot-Modus erbt das Demo-Mandat cem-ince seine reichhaltigen Defaults
-// als Merge-Basis. Im Account-Modus erhaelt cem-ince (wie jedes andere Mandat)
-// die neutrale blankProfile-Basis; gespeicherte Felder ueberschreiben sie ohnehin.
-function baseProfileFor(id) {
-  if (!auth.authMode() && id === cemInceProfile.id) return cemInceProfile;
-  return blankProfile(id);
-}
-
 function mergeProfileDefaults(profile) {
-  const base = baseProfileFor(profile.id);
+  // JEDES Mandat erhaelt die neutrale blankProfile-Basis; gespeicherte Felder
+  // ueberschreiben sie. Es gibt kein Demo-Mandat mit Sonder-Defaults mehr.
+  const base = blankProfile(profile.id);
   return {
     ...base,
     ...profile,
@@ -4683,7 +4731,8 @@ function mergeProfileDefaults(profile) {
   };
 }
 
-async function normalizeProfile(profile, politicianId = cemInceProfile.id) {
+async function normalizeProfile(profile, politicianId) {
+  politicianId = tenantContext.requireTenantId(politicianId, "normalizeProfile");
   const base = await activeProfile(politicianId);
   // Abgeleitete Nur-Anzeige-Felder NIE persistieren (Review-Fix): GET/app-start
   // hängen profilValidierung an das zurückgegebene Profil; sendet ein Client das
@@ -4788,11 +4837,9 @@ function budgetCentValue(value, fallback) {
 }
 
 function politicianIdFromUrl(url) {
-  return String(url.searchParams.get("politicianId") || url.searchParams.get("profileId") || cemInceProfile.id)
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, "-")
-    .replace(/^-|-$/g, "") || cemInceProfile.id;
+  // KEIN Fallback-Mandat: ohne (gueltigen) Parameter "" -> Aufrufer brechen sicher
+  // ab bzw. loesen den Mandanten aus dem aktiven DB-Bestand auf.
+  return tenantContext.slugifyTenantId(url.searchParams.get("politicianId") || url.searchParams.get("profileId"));
 }
 
 function readableNameFromId(id) {
@@ -4871,6 +4918,72 @@ function topicPriorityValue(value, fallback) {
   return Object.keys(priorities).length ? { ...(fallback || {}), ...priorities } : fallback || {};
 }
 
+// Aktive Mandate (id + Anzeigename) fuer die Mandatsauswahl im Legacy-Zugang.
+// Rein datenbankbasiert (aktive Mandate = Zugriffsmenge), kein bevorzugtes Mandat.
+async function activeMandateList() {
+  const profiles = await listFullProfiles().catch(() => []);
+  return (Array.isArray(profiles) ? profiles : [])
+    .filter((p) => tenantContext.isActiveMandate(p))
+    .map((p) => ({ id: tenantContext.slugifyTenantId(p.id), name: p.fullName || readableNameFromId(p.id) }))
+    .filter((m) => m.id)
+    .sort((a, b) => a.id.localeCompare(b.id));
+}
+
+// Legacy-Zugang ohne aufloesbaren EINZELmandanten: klarer Auswahl-/Leerzustand,
+// NIE ein geratener Mandant und KEIN Pilot-/Konfig-Fehler. 0 aktive Mandate -> 200
+// Leerzustand; mehrere -> 409 mit Auswahlliste (der Client rendert die Auswahl).
+function sendMandateSelectionRequired(response, mandates = []) {
+  const list = Array.isArray(mandates) ? mandates : [];
+  const status = list.length > 1 ? 409 : 200;
+  response.writeHead(status, jsonHeaders());
+  response.end(JSON.stringify({
+    needsMandateSelection: list.length > 1,
+    empty: list.length === 0,
+    mandates: list,
+    reason: list.length > 1 ? "mehrere-mandanten-auswahl-noetig" : "keine-aktiven-mandanten"
+  }, null, 2));
+}
+
+// Mandantenaufloesung + Isolation fuer mandantenbezogene Crons.
+// Mandate kommen AUSSCHLIESSLICH aus der Datenbank (tenant-context.resolveCronTenants):
+// ALLE aktiven Mandate, jedes isoliert. Kein Environment, kein Flag, kein bevorzugtes
+// Mandat. 0 aktive Mandate -> sauberer Lauf mit 0 verarbeiteten (ok:true). Eine
+// Ladestoerung der Mandantenliste -> ok:false + Systemfehler (von 0-Mandate
+// unterscheidbar). Isolation: jedes Mandat in eigenem try/catch — ein fehlerhaftes
+// Mandat stoppt die anderen nicht; ein hartes Zeitbudget sorgt fuer eine Antwort.
+async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000 } = {}) {
+  const startedMs = Date.now();
+  const { tenantIds, reason } = await tenantContext.resolveCronTenants();
+  if (!tenantIds.length) {
+    // EHRLICHER Grund statt pauschalem "nicht konfiguriert": eine Ladestoerung
+    // (Blob/DB nicht erreichbar) meldet ok:false, damit Monitoring sie von einem
+    // bewussten Leerlauf unterscheiden kann.
+    const ladeStoerung = reason === "mandanten-liste-nicht-ladbar";
+    console[ladeStoerung ? "error" : "warn"](`[cron/${cronName}] ${ladeStoerung ? "Mandantenliste nicht ladbar" : "0 aktive Mandate"} — ${reason}.`);
+    if (ladeStoerung) {
+      await accounts.recordSystemError({ scope: `cron-${cronName}`, message: "Mandantenliste nicht ladbar — Cron-Lauf uebersprungen.", path: `/api/cron/${cronName}` }).catch(() => {});
+    }
+    return { ok: !ladeStoerung, skipped: true, reason, tenants: 0, results: [] };
+  }
+  const deadline = startedMs + deadlineMs;
+  const results = [];
+  for (const tenantId of tenantIds) {
+    if (Date.now() > deadline) {
+      results.push({ politicianId: tenantId, skipped: true, reason: "zeitbudget" });
+      continue;
+    }
+    try {
+      const result = await perTenant(tenantId);
+      results.push({ politicianId: tenantId, ...(result && typeof result === "object" ? result : { result }) });
+    } catch (error) {
+      // Fehler-Isolation: nur DIESES Mandat scheitert; Fehler wird protokolliert.
+      console.error(`[cron/${cronName}] Mandant ${tenantId} fehlgeschlagen (isoliert):`, error && error.message);
+      results.push({ politicianId: tenantId, error: error && error.message, failed: true });
+    }
+  }
+  return { ok: true, tenants: tenantIds.length, durationMs: Date.now() - startedMs, results };
+}
+
 // Cron-Autorisierung — FAIL CLOSED.
 // Schreibt bei Ablehnung selbst die Antwort und gibt false zurueck; bei Erfolg true.
 // - Fehlt CRON_SECRET: Endpoint ist NICHT offen, sondern 503 mit klarer Meldung.
@@ -4938,7 +5051,12 @@ function isDebugSecretOk(request, url) {
 }
 
 async function handleDebugRequest(request, response, url) {
-  const politicianId = politicianIdFromUrl(url);
+  // Ohne ?politicianId: einziges aktives Mandat aufloesen (kein bevorzugtes Mandat).
+  // Mehrere/keine aktiven Mandate -> Auswahl-/Leerzustand statt generischem 500
+  // (der zudem die systemErrors-Metrik verschmutzen wuerde).
+  let politicianId = politicianIdFromUrl(url);
+  if (!politicianId) politicianId = (await tenantContext.resolveActiveTenant({ deps: { listProfiles: listFullProfiles } })).tenantId;
+  if (!politicianId) return sendMandateSelectionRequired(response, await activeMandateList());
 
   // ZUSTANDSAENDERNDE Debug-Endpunkte nur per POST (Review-Fix, Phase 9):
   // Sie schreiben in Store/DB, stossen Crawls/KI-Laeufe an oder heben Sperren/
@@ -5068,7 +5186,7 @@ async function handleDebugRequest(request, response, url) {
         status: "neu",
         understanding_status: "complete",
         mentioned_people: [],
-        mentioned_mps: ["Hubertus Heil"],
+        mentioned_mps: ["Test Politician One"],
         mentioned_parties: ["SPD", "Gruene", "CDU"],
         mentioned_committees: ["Ausschuss fuer Arbeit und Soziales"],
         mentioned_ministries: ["BMAS"],

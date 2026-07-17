@@ -189,12 +189,16 @@ on conflict (id) do update set name = excluded.name, evidence_role = excluded.ev
 
 
 -- Quellenpakete
+-- HINWEIS (Mandantenneutralisierung): Persoenliche Pakete ('profil-<mandats-id>',
+-- inkl. Abrufweg 'rp-<mandats-id>-news') werden NICHT geseedet — sie entstehen je
+-- Mandat bei der Provisionierung als normale Datenbank-Zeilen. Bereits vorhandene
+-- Production-Zeilen bleiben unveraendert bestehen (dieses Seed loescht nichts;
+-- alle Statements sind additive Upserts).
 insert into public.source_packages (id, key, name, purpose, status, is_base, political_level, geography_id, required_classes) values
   ('pkg-bund-basis', 'bund-basis', 'Bund Basis', 'Neutrale bundespolitische Grundversorgung fuer JEDES Mandat (Institutionen, alle Ausschuesse, alle Fraktionen, Leitmedien, DIP).', 'active', true, 'bund', 'geo-bund', '{}'),
   ('pkg-arbeit-und-soziales', 'arbeit-und-soziales', 'Arbeit und Soziales', 'Fachthemenpaket Arbeit- und Sozialpolitik (Fachmedien, Verbaende, Gewerkschaften, Prozess-/Radar-Quellen, Themen-Buendel). Fachthema, NICHT Region.', 'active', false, 'bund', 'geo-bund', '{}'),
   ('pkg-die-linke-bund', 'die-linke-bund', 'Die Linke Bund', 'Partei-Direktquellen Die Linke (Bundesebene).', 'active', false, 'bund', 'geo-bund', '{}'),
-  ('pkg-regional-niedersachsen', 'regional-niedersachsen', 'Regional Niedersachsen', 'Regionale Beobachtung fuer den Piloten Cem (Salzgitter/Braunschweig/Wolfenbuettel/Niedersachsen).', 'active', false, 'land', 'geo-land-niedersachsen', '{}'),
-  ('pkg-profil-cem-ince', 'profil-cem-ince', 'Persoenliche Beobachtung Cem Ince', 'Personenbezogene Nachrichtensuche des Piloten (nur fuer dieses Profil).', 'active', false, 'bund', null, '{}'),
+  ('pkg-regional-niedersachsen', 'regional-niedersachsen', 'Regional Niedersachsen', 'Regionale Beobachtung Niedersachsen (Salzgitter/Braunschweig/Wolfenbuettel).', 'active', false, 'land', 'geo-land-niedersachsen', '{}'),
   ('pkg-berlin-basis', 'berlin-basis', 'Berlin Basis', 'Landespaket Berlin (Abgeordnetenhaus, Senat, Senatsverwaltungen, Fraktionen, Regionalmedien, rbb Berlin). Struktur vorbereitet — Quellen folgen nach Pruefung + Freigabe.', 'prepared', true, 'land', 'geo-land-berlin', array['landesparlament','plenum','ausschuesse','drucksachen','schriftliche_anfragen','gesetzgebung','landesregierung','staatskanzlei','ministerien','landesfraktionen','regionale_leitmedien','oer_landesberichterstattung','partei_pilot','fraktion_pilot','person_pilot']::text[]),
   ('pkg-brandenburg-basis', 'brandenburg-basis', 'Brandenburg Basis', 'Landespaket Brandenburg (Landtag, Landesregierung, Staatskanzlei, Ministerien, Fraktionen, Regionalmedien, rbb Brandenburg). Struktur vorbereitet — Quellen folgen nach Pruefung + Freigabe.', 'prepared', true, 'land', 'geo-land-brandenburg', array['landesparlament','plenum','ausschuesse','drucksachen','schriftliche_anfragen','gesetzgebung','landesregierung','staatskanzlei','ministerien','landesfraktionen','regionale_leitmedien','oer_landesberichterstattung','partei_pilot','fraktion_pilot','person_pilot']::text[])
 on conflict (id) do update set name = excluded.name, purpose = excluded.purpose, status = excluded.status, required_classes = excluded.required_classes;
@@ -202,7 +206,6 @@ on conflict (id) do update set name = excluded.name, purpose = excluded.purpose,
 
 -- Abrufwege
 insert into public.retrieval_paths (id, publisher_id, legacy_source_id, name, method, url, query, parser, priority, status, activation_mode, is_critical, max_items, represents_type) values
-  ('rp-cem-ince-news', 'aggregator-google-news', 'cem-ince-news', 'Cem Ince News-Suche', 'googlenews_search', 'https://news.google.com/rss/search?q=%22Cem%20Ince%22&hl=de&gl=DE&ceid=DE:de', '"Cem Ince"', 'googlenews-batchexecute', 100, 'needs_review', 'auto', false, 40, 'person'),
   ('rp-bmas', 'publisher-bmas.de', 'bmas', 'BMAS', 'rss', 'https://www.bmas.de/SiteGlobals/Functions/RSSFeed/DE/RSSNewsfeed/RSSNewsfeed.xml', null, 'rss-regex', 95, 'healthy', 'auto', true, 16, null),
   ('rp-bundesregierung', 'publisher-bundesregierung.de', 'bundesregierung', 'Bundesregierung', 'rss', 'https://www.bundesregierung.de/breg-de/service/rss', null, 'rss-regex', 95, 'broken', 'always_on', true, 16, null),
   ('rp-bundestag', 'publisher-bundestag.de', 'bundestag', 'Bundestag', 'rss', 'https://www.bundestag.de/rss', null, 'rss-regex', 100, 'broken', 'always_on', true, 16, null),
@@ -352,7 +355,6 @@ on conflict (id) do update set publisher_id = excluded.publisher_id, method = ex
 
 -- Paket <-> Abrufweg (m:n)
 insert into public.package_paths (package_id, retrieval_path_id) values
-  ('pkg-profil-cem-ince', 'rp-cem-ince-news'),
   ('pkg-arbeit-und-soziales', 'rp-bmas'),
   ('pkg-bund-basis', 'rp-bundesregierung'),
   ('pkg-bund-basis', 'rp-bundestag'),

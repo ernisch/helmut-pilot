@@ -9,9 +9,11 @@
 // (legacy_source_id-Mapping) machen den Bestandsertrag zum Ausführungsnachweis des
 // relationalen Plans, ohne einen einzigen Produktions-Write.
 //
-// Aufruf:  node scripts/relational-shadow-compare.js <snapshot-dir>
+// Aufruf:  node scripts/relational-shadow-compare.js <snapshot-dir> [mandats-id]
 //   erwartet: retrieval_paths.json, source_packages.json, package_paths.json,
 //             blob_sources.json, blob_profiles.json, ertrag30.json
+//   mandats-id (optional): Profil fuer die Mandats-Sicht; ohne Angabe das erste
+//   Profil im Snapshot (KEIN Mandant ist im Code hinterlegt).
 // Ausgabe:  kompakter Bericht (stdout) + <snapshot-dir>/vergleich.json
 
 const fs = require("fs");
@@ -69,17 +71,20 @@ for (const s of legacyShared) {
   else if (y.docs30 > 0) fehlendMitErtrag.push({ id: s.id, name: s.name, docs30: y.docs30, koKandidaten: y.koKandidaten, defektImRelationalen: defektIds.has(s.id) });
 }
 
-// --- Cem-Sicht ------------------------------------------------------------------------------
-const cem = profiles.find((p) => (p.id || p.politicianId) === "cem-ince") || profiles[0] || {};
-const cemPakete = resolveProfilePackages(cem);
+// --- Mandats-Sicht ---------------------------------------------------------------------------
+// Mandat per CLI-Arg waehlbar; sonst das erste Profil im Snapshot. Kein Mandant im Code.
+const wantedId = String(process.argv[3] || "").trim().toLowerCase();
+const mandat = (wantedId && profiles.find((p) => String(p.id || p.politicianId || "").toLowerCase() === wantedId)) || profiles[0] || {};
+const mandatId = mandat.id || mandat.politicianId || "(kein Profil im Snapshot)";
+const mandatPakete = resolveProfilePackages(mandat);
 const packageByKey = new Map(packages.map((p) => [p.key, p]));
-const cemPaketStatus = cemPakete.all.map((key) => {
+const mandatPaketStatus = mandatPakete.all.map((key) => {
   const pk = packageByKey.get(key);
   const wege = pk ? packagePaths.filter((l) => l.package_id === pk.id).length : 0;
   const aktiveWege = pk ? plan.aktiv.filter((p) => p.packageKeys.includes(key)).length : 0;
   return { paket: key, dbStatus: pk ? pk.status : "FEHLT-IN-DB", wege, aktiveWege };
 });
-const supply = profileSupplyStatus(cem, { packages });
+const supply = profileSupplyStatus(mandat, { packages });
 
 // --- Fundstellen/Dedup-Status (ehrlich) ------------------------------------------------------
 const fingerprintDocs = [...ertragBySource.values()].reduce((s, y) => s + y.mitFingerprint, 0);
@@ -98,7 +103,7 @@ const bericht = {
     abdeckungKoProzent: altKo ? Math.round((relKo / altKo) * 1000) / 10 : 100,
     fehlendMitErtrag
   },
-  cem: { pakete: cemPakete, paketStatus: cemPaketStatus, versorgung: supply },
+  mandat: { id: mandatId, pakete: mandatPakete, paketStatus: mandatPaketStatus, versorgung: supply },
   dedupFundstellen: {
     docsMitFingerprint30Tage: fingerprintDocs,
     hinweis: fingerprintDocs === 0 ? "content_fingerprint/document_findings in Production noch unbefüllt — Schreibpfad ist Teil des Cutovers (P9-Shadow-Nachweis separat)." : "Fingerprints teilweise befüllt."
@@ -124,8 +129,8 @@ console.log(`Alt-Plan: ${cmp.quellenzahl.alt} geteilte Quellen · relational akt
 console.log(`Fehlend im Relationalen: ${cmp.fehlendImRelationalen.length} · zusätzlich: ${cmp.zusaetzlichImRelationalen.length} · Alt-URL-Duplikate: ${cmp.doppelteImLegacy.length}`);
 console.log(`Ertrag 30 Tage: alt=${altDocs} docs / ${altKo} KO-Kandidaten · relational abgedeckt=${relDocs} docs (${bericht.ertragsVergleich.abdeckungDocsProzent}%) / ${relKo} KO (${bericht.ertragsVergleich.abdeckungKoProzent}%)`);
 console.log(`Fehlende Wege MIT realem Ertrag: ${fehlendMitErtrag.length}${fehlendMitErtrag.length ? " -> " + fehlendMitErtrag.map((f) => `${f.id}(${f.docs30}d${f.defektImRelationalen ? ",defekt" : ""})`).join(", ") : ""}`);
-console.log(`Cem-Pakete: ${cemPakete.all.join(", ")}`);
-for (const st of cemPaketStatus) console.log(`  - ${st.paket}: db=${st.dbStatus} wege=${st.wege} aktiv=${st.aktiveWege}`);
+console.log(`Mandats-Pakete (${mandatId}): ${mandatPakete.all.join(", ")}`);
+for (const st of mandatPaketStatus) console.log(`  - ${st.paket}: db=${st.dbStatus} wege=${st.wege} aktiv=${st.aktiveWege}`);
 console.log(`BE/BB gesperrt: ${bericht.ausgeschlossen.landesmodul.join(", ") || "-"} · DIP separat: ${bericht.ausgeschlossen.dip.join(", ") || "-"}`);
 console.log(`Defekt (kein Abruf): ${plan.defekt.map((d) => d.id).join(", ") || "-"}`);
 console.log(`Bericht: ${path.join(dir, "vergleich.json")}`);

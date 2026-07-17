@@ -9,3 +9,8 @@ shadow-store/
 # Betreiber-Backups (scripts/backup-export.js): enthalten personenbezogene/
 # politische Daten (Art. 9 DSGVO) — NIE committen.
 backups/
+
+# Temp-/Build-Artefakte (nie tracken)
+tmp/
+output/
+.DS_Store

@@ -41,7 +41,7 @@ scharf zu schalten. Konkret:
 | 5. Systemprozesse validieren Mandantenbezug | per-Profil-Scoping (matching/decisions); Understanding bewusst global |
 | 6. Globale Quelldaten bleiben global | `shared_read`-Policy, kein `user_id`; Korpus mandantenlos |
 | 7. Entscheidungen/Matchings/Briefings/Profile/Büro getrennt | eigene `user_id`-Zeilen + `main-p-<id>`-Blob je Mandant |
-| 8. Cem bleibt funktionsfähig | alle Änderungen Default AUS / additiv; volle Offline-Suite grün inkl. cem-Pfade |
+| 8. Der Pilotmandant bleibt funktionsfähig | alle Änderungen Default AUS / additiv; volle Offline-Suite grün inkl. der Pilot-Pfade |
 
 ## Warum diese Architektur sicherer ist
 

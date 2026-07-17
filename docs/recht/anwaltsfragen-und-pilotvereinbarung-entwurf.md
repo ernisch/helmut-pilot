@@ -37,7 +37,7 @@ Kunden werden (Landes-DSG, Beschaffung, ggf. Geheimschutz).
 
 ## Teil 2 — Pilotvereinbarung (ARBEITSENTWURF zur anwaltlichen Ausarbeitung)
 
-**Zwischen** Lüey Nohut (Betreiber, lt. Impressum) **und** [Cem Ince, MdB]
+**Zwischen** Lüey Nohut (Betreiber, lt. Impressum) **und** [Name Pilotmandant, MdB]
 (Pilotnutzer).
 
 1. **Gegenstand:** Unentgeltliche Testnutzung der Software „Helmut" (politisches

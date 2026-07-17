@@ -17,7 +17,7 @@
 //   - riskLevel/opportunityLevel werden angezeigt
 //   - status/staleState/qualityStatus werden angezeigt
 //   - Mobil-Reihenfolge (DOM-Reihenfolge = Flex-Column-Reihenfolge): Vorschlag zuerst
-//   - KEINE Kostenwerte im Markup, KEINE Cem-Logik/Partei im Leerzustand, KEINE LLM-Calls
+//   - KEINE Kostenwerte im Markup, KEINE Personen-Logik/Partei im Leerzustand, KEINE LLM-Calls
 
 const fs = require("fs");
 const path = require("path");
@@ -284,7 +284,7 @@ check("Leer: neutraler Leerzustand (.hstand--state), kein Crash",
   /hstand--state/.test(htmlEmpty) && htmlEmpty.includes("Heute kein Handlungsbedarf"));
 check("Leer: kein Vorschlags-Fließtext (keine erfundenen Motor-Inhalte)",
   !htmlEmpty.includes("hstand-proposal-text"));
-check("Leer: KEINE hartkodierte Partei / keine Cem-Logik",
+check("Leer: KEINE hartkodierte Partei / keine Personen-Logik",
   !/cem|ince|\bSPD\b|\bCDU\b|Gr[üu]ne|\bLinke\b|\bAfD\b|\bFDP\b/i.test(htmlEmpty));
 
 // === 4) currentHelmutState fehlt ganz ===
@@ -346,7 +346,7 @@ check("Review: rendert den vollen Stand (kein Leerzustand)",
   /class="hstand"/.test(fxHtml) && !/hstand--state/.test(fxHtml) && fxHtml.includes("Für dein Mandat"));
 check("Review: KEINE Kostenwerte im gerenderten Review-Stand",
   !/cost|estimat|token|pipelineStep|€\s?\d|\$\d/i.test(fxHtml));
-check("Review: keine hartkodierte Partei / keine Cem-Logik im Fixture",
+check("Review: keine hartkodierte Partei / keine Personen-Logik im Fixture",
   !/\bcem\b|ince(?!Last)|\bSPD\b|\bCDU\b|\bAfD\b|\bFDP\b|Gr[üu]ne/i.test(JSON.stringify(fx).replace(/changedSinceLastVisit/g, "")));
 
 console.log(`\n${passed}/${passed + failed} Helmut-Tab-UI-Assertions erfolgreich.`);

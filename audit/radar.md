@@ -76,13 +76,13 @@ System A wird aus `listKnowledgeObjects({limit:200})` gespeist (server.js:1330),
 
 ## 4. Namensnormalisierung (verifiziert)
 
-- **`nameKey`** (radar.js:39, dupliziert radarState.js:106): NFKD-Zerlegung, Diakritika entfernt, türkisches `ı/İ→i`, lowercase, Nicht-alphanumerisch→Space. Deckt **Umlaute** und „Cem İnce/Ince/İnce" → `cem ince`.
-- **Ganzwort-Match** (`wholeWordInText`) verhindert Teilwort-Fehltreffer („ince" in „Provinces" → kein Treffer, Test `radar-state-test.js:119`).
+- **`nameKey`** (radar.js:39, dupliziert radarState.js:106): NFKD-Zerlegung, Diakritika entfernt, türkisches `ı/İ→i`, lowercase, Nicht-alphanumerisch→Space. Deckt **Umlaute** und die türkischen Schreibvarianten des Pilotnamens (mit/ohne Diakritika) → ein einheitlicher `nameKey`.
+- **Ganzwort-Match** (`wholeWordInText`) verhindert Teilwort-Fehltreffer (kurzer Nachname als Teilstring eines längeren Wortes → kein Treffer, Test `radar-state-test.js:119`).
 - **Bindestriche/Leerzeichen:** über die Nicht-alphanumerisch→Space-Regel abgedeckt (Doppelname mit Bindestrich wird zu Space-getrennten Tokens).
 - **Parteien** über `slug`, nicht `nameKey`.
 
 **Lücken (Befund):**
-1. **Keine Amts-/Titel-/Abkürzungs-Normalisierung.** „MdB", „Dr.", „Staatssekretär" werden nicht abgetrennt/synonymisiert. „Dr. Cem İnce, MdB" trifft nur, weil Vor- UND Nachname im Eintrag vorkommen — der Titel wird ignoriert, nicht normalisiert. Reine **Amtsnennung ohne Namen** („der Ausschussvorsitzende") → **kein** Treffer.
+1. **Keine Amts-/Titel-/Abkürzungs-Normalisierung.** „MdB", „Dr.", „Staatssekretär" werden nicht abgetrennt/synonymisiert. Ein Eintrag wie „Dr. Vorname Nachname, MdB" trifft nur, weil Vor- UND Nachname darin vorkommen — der Titel wird ignoriert, nicht normalisiert. Reine **Amtsnennung ohne Namen** („der Ausschussvorsitzende") → **kein** Treffer.
 2. **Kein Alias-/Spitznamen-Register** (grep: 0 Treffer außer Kommentaren).
 3. **Doppelte `nameKey`-Implementierungen** (radar.js/radarState.js) → Drift-Risiko.
 

@@ -21,7 +21,7 @@ Schließt die offenen Supabase-SECURITY-Advisor-Punkte (read-only gegen Prod
 - `REVOKE` trifft **nur** anon/authenticated/public. Die App nutzt ausschließlich
   **service_role** (BYPASSRLS, eigene Grants) → unberührt. Trigger-Firing
   (`helmut_ensure_profile`, `helmut_set_updated_at`) hängt nicht an EXECUTE-Grants.
-- Keine Daten-, Spalten- oder Policy-Änderung. Kein Effekt auf cem-ince.
+- Keine Daten-, Spalten- oder Policy-Änderung. Kein Effekt auf den Pilotmandanten.
 
 ## Vorprüfung (vor Anwendung, read-only)
 1. `npm run test:security-hardening-sql` grün.

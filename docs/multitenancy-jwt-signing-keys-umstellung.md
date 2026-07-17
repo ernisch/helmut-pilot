@@ -76,7 +76,7 @@ zurück, ausführlicher Kommentar im Code). Wirkung:
   werden im Request-Pfad nicht mehr aufgerufen. `SUPABASE_JWT_SECRET` wird nicht
   mehr benötigt.
 
-**Cem bleibt jederzeit funktionsfähig:** der Blob-Fallback ist unverändert; fällt
+**Der Pilotmandant bleibt jederzeit funktionsfähig:** der Blob-Fallback ist unverändert; fällt
 der DB-Read (aus welchem Grund auch immer) aus, dient weiter der Blob.
 
 Tests: tenant-jwt 30/30, profile-db 44/44, profile-completeness 46/46,

@@ -88,7 +88,7 @@ function loadClient() {
   return sandbox.__bg;
 }
 
-const CACHE = () => ({ profile: { id: "cem-ince" }, briefing: { items: [] } });
+const CACHE = () => ({ profile: { id: "test-politician-one" }, briefing: { items: [] } });
 const okResponse = (payload) => ({ ok: true, status: 200, json: () => Promise.resolve(payload) });
 
 (async () => {
@@ -116,7 +116,7 @@ const okResponse = (payload) => ({ ok: true, status: 200, json: () => Promise.re
   check("Timeout/Abbruch nach Cache-Render -> ehrliche Meldung", hasHonest(bg.toasts()) && !hasBackgroundLie(bg.toasts()));
 
   // 4) ERFOLGREICHE Aktualisierung -> KEIN Fehl-Toast (Erfolgspfad unverändert)
-  bg.clear(); bg.setCache(CACHE); bg.setFetch(async () => okResponse({ profile: { id: "cem-ince" }, briefing: { items: [] }, aiStatus: { enabled: false } }));
+  bg.clear(); bg.setCache(CACHE); bg.setFetch(async () => okResponse({ profile: { id: "test-politician-one" }, briefing: { items: [] }, aiStatus: { enabled: false } }));
   await bg.run();
   check("Erfolgreiche Aktualisierung -> KEIN Fehler-/Hintergrund-Toast",
     !hasHonest(bg.toasts()) && !hasBackgroundLie(bg.toasts()), JSON.stringify(bg.toasts()));
@@ -125,7 +125,7 @@ const okResponse = (payload) => ({ ok: true, status: 200, json: () => Promise.re
   bg.clear(); bg.setCache(CACHE); bg.setFetch(async () => { throw new Error("net"); });
   await bg.run();
   const afterFail = bg.toasts().length;
-  bg.clear(); bg.setFetch(async () => okResponse({ profile: { id: "cem-ince" }, briefing: { items: [] } }));
+  bg.clear(); bg.setFetch(async () => okResponse({ profile: { id: "test-politician-one" }, briefing: { items: [] } }));
   await bg.run();
   check("Erneuter Versuch: nach Fehler folgt bei Erfolg kein Fehler-Toast mehr",
     afterFail > 0 && bg.toasts().length === 0);

@@ -223,7 +223,7 @@ async function main() {
   check("Security: KEINE Kosten-/Token-Felder im slot-aware State",
     FORBIDDEN_COST.every((k) => !serialized.includes(k)), FORBIDDEN_COST.filter((k) => serialized.includes(k)).join(","));
   // koPrimary traegt bewusst KEINE Partei -> der Slot darf keine erfinden.
-  check("Security: keine hartkodierte Partei/Cem-Logik durch den Slot",
+  check("Security: keine hartkodierte Partei/Personen-Logik durch den Slot",
     !/cem|ince|\bspd\b|\bcdu\b|gruene|grüne|\blinke\b|\bafd\b|\bfdp\b/i.test(JSON.stringify(mk("morning"))));
   // Keine neue Persistenz durch den Slot: briefingLanguage/briefingContract schreiben nichts.
   const fs = require("fs"), path = require("path");

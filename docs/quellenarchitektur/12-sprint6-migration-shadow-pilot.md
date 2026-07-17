@@ -1,4 +1,4 @@
-# 12 — Sprint 6 Stufe 1: Migration, Shadow-Betrieb, Cem-Vergleich (offline/read-only)
+# 12 — Sprint 6 Stufe 1: Migration, Shadow-Betrieb, Pilot-Vergleich (offline/read-only)
 
 **Stand:** 2026-07-13 · **Branch:** `claude/helmut-source-architecture-ruhyvb` ·
 **Modus:** ausschließlich **offline / read-only** vorbereitet und getestet. **Keine**
@@ -7,7 +7,7 @@ Production-Migration, **keine** Production-Seeds, **kein** Deployment, **keine**
 
 Ziel des Sprints (Auftrag): Die bestehenden Quellen werden in die neue Struktur überführt,
 ein **Shadow-Betrieb** läuft parallel, und ein **Alt-gegen-Neu-Vergleich** stellt sicher, dass
-**Cems Versorgung sich nicht verschlechtert** und **kein Datenverlust** entsteht.
+**die Versorgung des Pilotmandanten sich nicht verschlechtert** und **kein Datenverlust** entsteht.
 
 ---
 
@@ -28,7 +28,7 @@ Reine Logik. Validiert den De-facto-Migrations-Mapper (`catalog.buildCatalog`: 1
 - **Namensdrift** (source_name ≠ Katalogname) ist nur **informativ**, kein Fehler (bei
   Google-News weicht der Herausgebername bewusst ab).
 
-### b) `lib/helmut/quellenarchitektur/cem-shadow-compare.js`
+### b) `lib/helmut/quellenarchitektur/supply-shadow-compare.js`
 Reine Logik. Vergleicht die **Quellenversorgung** eines Profils ALT (v1Sources-Auswahl, das
 heutige Erlebnis) gegen NEU (Paketauflösung → Abrufwege).
 
@@ -41,7 +41,7 @@ heutige Erlebnis) gegen NEU (Paketauflösung → Abrufwege).
   Verdrahtung in den Live-Pfad ist **freigabepflichtig** (Stufe 2), hier nicht scharf.
 
 ### c) `scripts/sprint6-migration-dryrun.js` (read-only)
-Fährt die **echte** Cem-Auswahl (`scheduler.getSourcesForProfile`) gegen die neue
+Fährt die **echte** Quellenauswahl des Pilotmandanten (`scheduler.getSourcesForProfile`) gegen die neue
 Paketauflösung und validiert den Mapper gegen `raw_documents` — falls read-only erreichbar,
 sonst strukturell. **Kein** Write, **kein** Crawl, **kein** KI-Call. Exit 0 = kein
 Datenverlust/keine Regression.
@@ -53,18 +53,18 @@ Datenverlust/keine Regression.
 ```
 Katalog: 145 Abrufwege, 51 Herausgeber, unmapped=0
 [Mapper] verdict=OK (strukturell; raw_documents in dieser Umgebung nicht erreichbar)
-[Cem Alt-vs-Neu] verdict=ERKLAERTE_KONSOLIDIERUNG
+[Pilot Alt-vs-Neu] verdict=ERKLAERTE_KONSOLIDIERUNG
    alt=149  neu=145  both=143  onlyAlt=6  onlyNew=2
-   NEU-Pakete: bund-basis, die-linke-bund, arbeit-und-soziales, regional-niedersachsen, profil-cem-ince
-   6 erklärt konsolidiert: cem-ince-news-{regierung-vorhaben, fraktion-partei, ministerien,
+   NEU-Pakete: bund-basis, die-linke-bund, arbeit-und-soziales, regional-niedersachsen, profil-<pilot-mandats-id>
+   6 erklärt konsolidiert: <pilot-mandats-id>-news-{regierung-vorhaben, fraktion-partei, ministerien,
                             ausschuss-themen, themen-medien, region}  [alle orphan_legacy]
    Gewinn (nur NEU): dip, region-braunschweig-arbeit-soziales
-=== OK — kein Datenverlust, keine Regression für Cem ===
+=== OK — kein Datenverlust, keine Regression für den Piloten ===
 ```
 
-**Interpretation:** Cems **143** von 149 Alt-Quellen bleiben 1:1 erhalten. Die **6** Wegfälle
-sind ausnahmslos die dynamischen `cem-ince-news-*`-Mehrfachsuchen, die bewusst durch **eine**
-Personenquelle (`cem-ince-news` im Paket `profil-cem-ince`) abgelöst werden (in
+**Interpretation:** **143** von 149 Alt-Quellen des Pilotmandanten bleiben 1:1 erhalten. Die **6** Wegfälle
+sind ausnahmslos die dynamischen `<pilot-mandats-id>-news-*`-Mehrfachsuchen, die bewusst durch **eine**
+Personenquelle (`<pilot-mandats-id>-news` im Paket `profil-<pilot-mandats-id>`) abgelöst werden (in
 `ORPHAN_CLASSIFICATION` als `orphan_legacy` dokumentiert; Dokumente bleiben erhalten, keine
 Reaktivierung). NEU **gewinnt** sogar die amtliche `dip`-API und eine Regionalquelle.
 
@@ -82,7 +82,7 @@ ohne ausführenden Schreibschritt** (Auftrag: keine Datenänderung):
 
 | Orphan-Klasse | Einträge | Empfohlene Aktion (freigabepflichtig) |
 |---------------|----------|----------------------------------------|
-| `orphan_legacy` | 8× `cem-ince-news-*` | Als Legacy markieren, **Dokumente erhalten**, nicht reaktivieren. |
+| `orphan_legacy` | 8× `<pilot-mandats-id>-news-*` | Als Legacy markieren, **Dokumente erhalten**, nicht reaktivieren. |
 | `orphan_test` | 4× `test-mdb-news-*` | Archivieren (Testmüll, tot seit 2026-07-02). |
 | `active_uncatalogued` | 1× `dip` | Als amtlichen API-Abrufweg (Bund Basis) führen. |
 
@@ -90,9 +90,9 @@ ohne ausführenden Schreibschritt** (Auftrag: keine Datenänderung):
 
 ## 4. Tests
 
-- **`test:sprint6-cem-migration` 35/35** (Mapper-Coverage, Datenverlust-Erkennung,
+- **`test:sprint6-migration` 35/35** (Mapper-Coverage, Datenverlust-Erkennung,
   Orphan-Konsistenz, Namensdrift, erklärte Konsolidierung vs. echte Regression, Shadow-Flag,
-  Cem-NEU-Auflösung, **SQL-Idempotenz + Rollback-Symmetrie**).
+  Pilot-NEU-Auflösung, **SQL-Idempotenz + Rollback-Symmetrie**).
 - **`sprint6:dryrun`** (read-only) → Exit 0.
 - **Keine Regression:** source-architecture 88, profile-packages 57, quality-watchdog 65,
   admin-source-report 54, landesmodule-kandidaten 50.

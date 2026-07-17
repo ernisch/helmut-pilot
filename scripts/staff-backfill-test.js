@@ -211,7 +211,7 @@ function makeDeps(overrides = {}, kos = ALL_KOS) {
       !/require\(["'][^"']*client["']\)/.test(modSrc + cliSrc) && !/styles\.css/.test(modSrc + cliSrc));
     check("Kostenschaetzung bleibt serverseitig (Plan-Objekt, nicht Teil von currentHelmutState)",
       !/currentHelmutState/.test(modSrc));
-    check("Keine hartkodierte Partei / keine Cem-Logik im Modul",
+    check("Keine hartkodierte Partei / keine Personen-Logik im Modul",
       !/\bcem\b|\bince\b|özdemir|\bSPD\b|\bCDU\b|\bCSU\b|\bFDP\b|\bAfD\b|Gr[üu]ne|\bLinke\b/i.test(modSrc));
   }
 
