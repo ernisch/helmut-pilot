@@ -140,15 +140,19 @@ async function handleRequest(request, response) {
   }
 
   if (url.pathname === "/api/release/public") {
-    // SICHERHEIT: bewusst oeffentlich (externe Smoke-Tests/Monitoring ohne Login), aber
-    // OHNE client-waehlbare politicianId — sonst liesse sich per ?politicianId= erraten,
-    // welches Mandat existiert (Mandanten-Oracle). Gibt KEINE Pilot-/Tenant-Konfiguration
-    // aus: nur ein Bereitschaftssignal. Genau EIN aktives Mandat -> dessen Release-Check;
-    // sonst neutraler Zustand ohne Mandatsdetails.
+    // SICHERHEIT/DATENSPARSAMKEIT: bewusst oeffentlich (externes Monitoring ohne
+    // Login), aber MANDATSAGNOSTISCH — KEINE Pilot-/Tenant-Konfiguration, keine
+    // Mandats-ID und keine Per-Mandant-Metriken. Nur ein globales Bereitschafts-
+    // signal (persistenter Speicher aktiv + juengster Crawl frisch). Kein
+    // Mandanten-Oracle, keine Rechenverstaerkung durch anonyme Aufrufer.
     return handleAsync(response, async () => {
-      const resolved = await tenantContext.resolveActiveTenant({ deps: { listProfiles: listFullProfiles } });
-      if (!resolved.tenantId) return { ok: true, ready: false };
-      return publicReleasePayload(await computeReleaseCheck(resolved.tenantId));
+      const storage = getStorageStatus();
+      const latestCrawl = await getLatestCrawlRun().catch(() => null);
+      const crawlTs = latestCrawl && (latestCrawl.checkedAt || latestCrawl.createdAt);
+      const crawlAgeH = crawlTs ? (Date.now() - new Date(crawlTs).getTime()) / 3600000 : null;
+      const storageOk = storage.backend === "supabase";
+      const ready = storageOk && crawlAgeH != null && crawlAgeH < 48;
+      return { ok: true, ready, storage: storageOk };
     });
   }
 
@@ -781,7 +785,8 @@ async function handleRequest(request, response) {
         startedAt: new Date(t0).toISOString(), finishedAt: new Date().toISOString(),
         durationMs: Date.now() - t0,
         processed: (summary.results || []).filter((r) => r && r.available).length,
-        status: summary.ok === false ? "error" : (summary.tenants ? "ok" : "empty")
+        status: (summary.ok === false || ((summary.results || []).length > 0 && (summary.results || []).every((r) => r && r.failed)))
+          ? "error" : (summary.tenants ? "ok" : "empty")
       }).catch(() => {});
       console.log(`[cron/morning-briefing] ${Date.now() - t0}ms tenants=${summary.tenants} reason=${summary.reason || "ok"}`);
       return summary;
@@ -843,45 +848,64 @@ async function handleRequest(request, response) {
   if (url.pathname === "/api/cron/health-report") {
     if (!authorizeCron(request, url, response)) return;
     return handleAsync(response, async () => {
-      // Mandate AUSSCHLIESSLICH aus der Datenbank; jedes aktive Mandat erhaelt seinen
-      // eigenen, isolierten Health-Report (kein bevorzugtes/erstes Mandat). 0 aktive
-      // Mandate -> sauberer Lauf (ok:true, 0 verarbeitet); Ladestoerung -> ok:false.
       const dryRun = url.searchParams.get("dryRun") === "1";
-      const summary = await runCronForTenants("health-report", async (tenantId) => {
-        const report = await buildHealthReport(tenantId);
-        if (dryRun) {
-          return {
-            dryRun: true, ok: report.ok, text: report.text,
-            kanaele: {
-              whatsapp: { konfiguriert: Boolean(String(process.env.CALLMEBOT_PHONE || "").trim() && String(process.env.CALLMEBOT_APIKEY || "").trim()) },
-              webhook: { konfiguriert: Boolean(String(process.env.HELMUT_MONITORING_WEBHOOK_URL || "").trim()) }
-            },
-            overdueCrons: report.overdueCrons, googleUrlResolutionRate: report.googleUrlResolutionRate
-          };
+      // Mandate AUSSCHLIESSLICH aus der Datenbank; je aktivem Mandat ein isolierter
+      // Report. Zugestellt wird EINE aggregierte Alarm-Nachricht je Kanal (kein
+      // Spam, kein 'erstes' Mandat); top-level ok = ECHTER Gesundheitsstatus (alle
+      // Mandate ok). 0 aktive Mandate -> sauberer Lauf; Ladestoerung -> ok:false.
+      const { tenantIds, reason } = await tenantContext.resolveCronTenants();
+      if (!tenantIds.length) {
+        const ladeStoerung = reason === "mandanten-liste-nicht-ladbar";
+        if (ladeStoerung) {
+          await accounts.recordSystemError({ scope: "health-report", message: "Mandantenliste nicht ladbar — Health-Report uebersprungen.", path: "/api/cron/health-report" }).catch(() => {});
         }
-        const [delivery, webhook] = await Promise.all([
-          sendCallMeBotMessage(buildAlarmText(report)),
-          sendMonitoringWebhook(report)
-        ]);
-        const whatsappBroken = delivery && delivery.sent === false && !delivery.skipped;
-        const webhookBroken = webhook && webhook.sent === false && !webhook.skipped;
-        if (whatsappBroken || webhookBroken) {
-          await accounts.recordSystemError({
-            scope: "health-report",
-            message: `Alarm-Zustellung fehlgeschlagen: ${whatsappBroken ? "WhatsApp " + (delivery.reason || "HTTP " + (delivery.status || "?")) : ""} ${webhookBroken ? "Webhook " + (webhook.reason || "HTTP " + (webhook.status || "?")) : ""}`.trim(),
-            path: "/api/cron/health-report"
-          }).catch(() => {});
+        return { ok: !ladeStoerung, skipped: true, reason, tenants: 0, reports: [] };
+      }
+      const reports = [];
+      for (const tenantId of tenantIds) {
+        try {
+          const r = await buildHealthReport(tenantId);
+          reports.push({ tenant: tenantId, ok: r.ok, text: r.text, overdueCrons: r.overdueCrons, googleUrlResolutionRate: r.googleUrlResolutionRate });
+        } catch (error) {
+          reports.push({ tenant: tenantId, ok: false, text: `${tenantId}: Health-Report-Fehler: ${error && error.message}`, error: error && error.message });
         }
-        if (!report.ok && delivery && delivery.skipped && webhook && webhook.skipped) {
-          await accounts.recordSystemError({
-            scope: "health-report",
-            message: "Nicht-grüner Health-Report, aber KEIN Alarmkanal konfiguriert (CALLMEBOT_* und HELMUT_MONITORING_WEBHOOK_URL fehlen).",
-            path: "/api/cron/health-report"
-          }).catch(() => {});
-        }
-        return { ok: report.ok, text: report.text, delivery, webhook, overdueCrons: report.overdueCrons, googleUrlResolutionRate: report.googleUrlResolutionRate };
-      });
-      return summary;
+      }
+      const overallOk = reports.every((r) => r.ok);
+      const combinedText = reports.map((r) => r.text).filter(Boolean).join("\n\n");
+      const kanaele = {
+        whatsapp: { konfiguriert: Boolean(String(process.env.CALLMEBOT_PHONE || "").trim() && String(process.env.CALLMEBOT_APIKEY || "").trim()) },
+        webhook: { konfiguriert: Boolean(String(process.env.HELMUT_MONITORING_WEBHOOK_URL || "").trim()) }
+      };
+      if (dryRun) {
+        return { dryRun: true, ok: overallOk, tenants: tenantIds.length, text: combinedText, kanaele, reports };
+      }
+      // EINE aggregierte Nachricht je Kanal (Alarm feuert, wenn IRGENDEIN Mandat nicht ok ist).
+      const aggregate = {
+        ok: overallOk, text: combinedText,
+        overdueCrons: reports.flatMap((r) => r.overdueCrons || []),
+        googleUrlResolutionRate: reports.map((r) => r.googleUrlResolutionRate).filter((x) => x != null).sort((a, b) => a - b)[0] ?? null
+      };
+      const [delivery, webhook] = await Promise.all([
+        sendCallMeBotMessage(buildAlarmText(aggregate)),
+        sendMonitoringWebhook(aggregate)
+      ]);
+      const whatsappBroken = delivery && delivery.sent === false && !delivery.skipped;
+      const webhookBroken = webhook && webhook.sent === false && !webhook.skipped;
+      if (whatsappBroken || webhookBroken) {
+        await accounts.recordSystemError({
+          scope: "health-report",
+          message: `Alarm-Zustellung fehlgeschlagen: ${whatsappBroken ? "WhatsApp " + (delivery.reason || "HTTP " + (delivery.status || "?")) : ""} ${webhookBroken ? "Webhook " + (webhook.reason || "HTTP " + (webhook.status || "?")) : ""}`.trim(),
+          path: "/api/cron/health-report"
+        }).catch(() => {});
+      }
+      if (!overallOk && delivery && delivery.skipped && webhook && webhook.skipped) {
+        await accounts.recordSystemError({
+          scope: "health-report",
+          message: "Nicht-grüner Health-Report, aber KEIN Alarmkanal konfiguriert (CALLMEBOT_* und HELMUT_MONITORING_WEBHOOK_URL fehlen).",
+          path: "/api/cron/health-report"
+        }).catch(() => {});
+      }
+      return { ok: overallOk, tenants: tenantIds.length, text: combinedText, delivery, webhook, reports };
     });
   }
 
@@ -898,6 +922,8 @@ async function handleRequest(request, response) {
       // auch wenn ein einzelner Mandats-Check sein Einzelbudget ausschoepft.
       const summary = await withTimeout(runCronForTenants("lage-check", async (tenantId) => {
         const profile = await activeProfile(tenantId);
+        const val = validateProfile(profile);
+        if (val.disabled) return { skipped: true, reason: "profil-deaktiviert" };
         const lageCheck = await withTimeout(runLageCheck(tenantId), 240000, "cron-lage-check")
           .catch((error) => ({ status: "stable", bounded: true, reason: "lage-check-timeout", error: error && error.message }));
         const push = await withTimeout(sendLageChangePush(lageCheck, profile), 30000, "cron-lage-push")
@@ -4898,7 +4924,7 @@ async function activeMandateList() {
   const profiles = await listFullProfiles().catch(() => []);
   return (Array.isArray(profiles) ? profiles : [])
     .filter((p) => tenantContext.isActiveMandate(p))
-    .map((p) => ({ id: String(p.id || ""), name: p.fullName || readableNameFromId(p.id) }))
+    .map((p) => ({ id: tenantContext.slugifyTenantId(p.id), name: p.fullName || readableNameFromId(p.id) }))
     .filter((m) => m.id)
     .sort((a, b) => a.id.localeCompare(b.id));
 }

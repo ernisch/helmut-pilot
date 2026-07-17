@@ -67,12 +67,15 @@ Zeitbudget). Grund-Codes: `ok` (≥1), `keine-aktiven-mandanten` (0, `ok:true`),
 | `/api/cron/morning-briefing` (05:00) | mandantenbezogen | wie crawl (deaktivierte übersprungen) | `ok:true, tenants:0` | isoliert + 240 s-Deadline | Push-Dedup `briefing-push:<id>:<Tag>` |
 | `/api/cron/lage-briefing` (05:45) | mandantenbezogen | alle Profile, deaktivierte übersprungen | Leerlauf | isoliert + 240 s-Deadline | Tages-Cache + Lock je User |
 | `/api/cron/lage-check` (10:00) | mandantenbezogen | alle aktiven DB-Mandate | `ok:true, tenants:0` | isoliert + 280 s-Gesamt-Timeout | Push-Dedup `lage-change:<id>:<Tag>` |
-| `/api/cron/health-report` (06:00) | mandantenbezogen | **je aktives Mandat ein eigener, isolierter Report** (kein „erstes" Mandat) | `ok:true, tenants:0` | isoliert | nicht idempotent (Versand), 1×/Tag, `dryRun=1` |
+| `/api/cron/health-report` (06:00) | mandantenbezogen | je aktives Mandat ein isolierter Report; **eine aggregierte Alarm-Nachricht je Kanal** (kein „erstes" Mandat, kein N-fach-Spam); top-level `ok` = alle Mandate ok | `ok:true, tenants:0` | isoliert | nicht idempotent (Versand), 1×/Tag, `dryRun=1` |
 | `/api/cron/understanding` (05:30, 21:30) | **global** | benötigt keinen Mandanten | No-Op | per-Cluster try/catch | je `vorgang_id` + globaler Lock |
 | `/api/cron/pipeline-status` | global, read-only | — | — | — | idempotent |
 
-`/api/release/public` gibt **keine** Pilot-/Tenant-Konfiguration aus: genau ein
-aktives Mandat → dessen Release-Check; sonst neutrales `{ ok:true, ready:false }`.
+`/api/release/public` ist **mandatsagnostisch**: es gibt **keine** Mandats-ID,
+keine Per-Mandant-Metriken und keine Pilot-/Tenant-Konfiguration aus — nur ein
+globales Bereitschaftssignal (`{ ok, ready, storage }`: persistenter Speicher
+aktiv + jüngster Crawl frisch). Die detaillierte, mandatsbezogene Pitch-
+Readiness bleibt dem authentifizierten `/api/release/check` vorbehalten.
 
 ## 5. Auswirkung auf den bestehenden Production-Mandanten
 

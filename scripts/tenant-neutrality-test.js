@@ -153,8 +153,23 @@ const listOf = (arr) => async () => arr.map((p) => ({ ...p }));
     !/pilot-tenant-not-configured/.test(serverSrc));
   const cronSingle = await req(server, { pathname: "/api/cron/morning-briefing", headers: cronHeaders });
   const cronSinglePayload = parse(cronSingle);
-  check("(8) Mandatsbezogener Cron mit einem aktiven Mandanten: verarbeitet (tenants>=1, nicht skipped)",
-    cronSingle.status === 200 && cronSinglePayload.tenants >= 1 && !cronSinglePayload.skipped);
+  check("(8) Mandatsbezogener Cron mit GENAU einem aktiven Mandanten: verarbeitet (tenants===1, nicht skipped)",
+    cronSingle.status === 200 && cronSinglePayload.tenants === 1 && !cronSinglePayload.skipped);
+  // health-report: top-level ok = ECHTER Gesundheitsstatus (nicht nur 'Cron lief'); dryRun-Top-Level-Form.
+  const health = await req(server, { pathname: "/api/cron/health-report?dryRun=1", headers: cronHeaders });
+  const healthPayload = parse(health);
+  check("health-report: dryRun liefert top-level {dryRun, ok(bool), tenants, text} und ok spiegelt den Report",
+    health.status === 200 && healthPayload.dryRun === true && typeof healthPayload.ok === "boolean"
+      && healthPayload.tenants === 1 && typeof healthPayload.text === "string"
+      && Array.isArray(healthPayload.reports) && healthPayload.reports.length === 1
+      && healthPayload.ok === healthPayload.reports[0].ok);
+  // release/public: mandatsagnostisch — kein Tenant-Leak, keine Per-Mandant-Metriken.
+  const rel = await req(server, { pathname: "/api/release/public" });
+  const relPayload = parse(rel);
+  check("release/public ist mandatsagnostisch (ready-Signal, KEINE Mandats-ID/Score/Checks/liveFlow)",
+    rel.status === 200 && typeof relPayload.ready === "boolean"
+      && !("score" in relPayload) && !("checks" in relPayload) && !("liveFlow" in relPayload)
+      && !/test-politician|politicianId|tenant/i.test(rel.body));
 
   // 3) HTTP: ZWEI aktive Mandanten.
   await setActiveMandates([testPoliticianOne, testPoliticianTwo]);

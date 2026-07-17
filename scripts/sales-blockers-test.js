@@ -72,15 +72,16 @@ check("ko-enrichment-backfill: execute/bypassBudget nur bei POST wirksam",
   // P1-7: der Text-Kanal erhält jetzt den redigierten buildAlarmText(report)
   // (Datenschutz-Leitplanke), der Webhook den Allowlist-Payload — beide weiterhin parallel.
   check("health-report-Cron ruft BEIDE Kanäle (CallMeBot + Webhook) parallel",
-    /Promise\.all\(\[\s*\n\s*sendCallMeBotMessage\(buildAlarmText\(report\)\),\s*\n\s*sendMonitoringWebhook\(report\)/.test(serverSource));
+    /Promise\.all\(\[\s*\n\s*sendCallMeBotMessage\(buildAlarmText\(aggregate\)\),\s*\n\s*sendMonitoringWebhook\(aggregate\)/.test(serverSource));
   check("health-report loggt Systemfehler, wenn Report nicht grün UND kein Kanal konfiguriert",
     /KEIN Alarmkanal konfiguriert/.test(serverSource));
   // Phase 11: Dry-Run — Report bauen + Kanalstatus zeigen, ohne irgendetwas zu
   // versenden (Versand-Aufrufe liegen NACH dem dryRun-Return).
   check("health-report ?dryRun=1: baut Report ohne Versand (Return VOR den Versand-Aufrufen)",
     /dryRun.*=== "1"/.test(serverSource) &&
-    serverSource.indexOf('url.searchParams.get("dryRun")') < serverSource.indexOf("sendCallMeBotMessage(buildAlarmText(report))") &&
-    /kanaele:\s*\{/.test(serverSource));
+    serverSource.indexOf('url.searchParams.get("dryRun")') < serverSource.indexOf("sendCallMeBotMessage(buildAlarmText(aggregate))") &&
+    serverSource.indexOf("if (dryRun)") < serverSource.indexOf("sendCallMeBotMessage(buildAlarmText(aggregate))") &&
+    /dryRun: true[\s\S]{0,120}kanaele/.test(serverSource));
 
   // ── 4) Cron-Vollständigkeit + Google-News-Quote im Health-Report ──────────
   check("Health-Report prüft Infrastruktur-Cron-Überfälligkeit (Crawl/Lage)",
