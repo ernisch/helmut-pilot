@@ -166,4 +166,51 @@ Gesamte Offline-Suite: **117/117 grün** (inkl. der neuen Suite; Netz-Guard akti
 3. **Terminales Aussortieren** der Duplikat-/Rauschen-Fälle (`failed-final`/verworfen) → Prod-Write.
 4. **Bis dahin:** keine Retention-Löschung der 02./03.07.-Rohdokumente.
 
+---
+
+## Nachtrag (2026-07-17): Live-Bestätigung am aktuellen Prod-Stand + vorbereitete Umsetzung
+
+### A · Live-Bestätigung der 6 Fälle (rein lesend, kein Write/KI)
+Am aktuellen Datenstand erneut über die Supabase-Leseschnittstelle geprüft (der Container hat keine
+direkten Skript-Lese-Secrets, und für eine dispatchbare GitHub-Action dürfte ich nicht nach `main`
+mergen — daher dieselbe read-only-Matching-Logik live). **Alle 6 weiterhin freigabetauglich:**
+
+| exakte `vorgang_id` | Status jetzt | Seed-Docs / Quellen | complete-KO jetzt? (Dup) | Zuordnung |
+|---|---|---|---|---|
+| `vg-arbeitsverträge` | pending | 1 / 1 | **0** | eindeutig |
+| `vg-medikamenten` | pending | 3 / 3 | **0** | wahrscheinlich (1 Cluster) |
+| `vg-psychotherapie` | pending | 2 / 2 | **0** | wahrscheinlich (1 Cluster) |
+| `vg-sozialwohnungen` | pending | 1 / 1 | **0** | eindeutig |
+| `vg-steuerstrafrecht` | pending | 1 / 1 | **0** | eindeutig |
+| `vg-umstellungen` | pending | 1 / 1 | **0** | eindeutig |
+
+**Re-Checks bestätigt:** (1) kein Fall inzwischen `complete` — alle noch `pending`; (2) Duplikation
+ausgeschlossen — `complete`-Themen-Treffer = 0 für alle 6; (3) Quelldokumente vorhanden (Seed-Docs
+je Fall ≥1); (4) Zuordnung eindeutig (je 1 Dokumentgruppe). **Korrektur:** die exakte ID lautet
+`vg-arbeitsverträge` (mit „ä"; `slug()` behält Umlaute) — die Allowlist verwendet die exakte Form.
+
+### B · Vorbereiteter Code + Tests (committet, NICHT ausgeführt/deployt)
+- **Feldbug-Fix** `lib/helmut/lazyUnderstanding.js`: neue Helferin `clusterDocCount(cluster)` nimmt
+  `documents.length` (Fallback `documentCount`); `source_document_count` beim Vormerken ist nicht
+  mehr fälschlich 0. Export + Tests.
+- **Recovery-Pfad** `lib/helmut/understanding-recovery.js`: `RECOVERY_ALLOWLIST` (die 6 exakten IDs),
+  `recoveryExecuteEnabled` (Flag `HELMUT_RECOVERY_EXECUTE`, **Default AUS**), `recoveryConfirmed`
+  (Token `RECOVER_6_CONFIRMED`), `planRecovery` (rein; nur Allowlist + offen + eindeutig/
+  wahrscheinlich + kein Duplikat), `recoverOne` (Laufzeit-Re-Checks: Idempotenz/Dedup; delegiert den
+  EINZIGEN KI-/Schreibschritt an injizierte Deps).
+- **Ausführungs-Skript** `scripts/understanding-recovery-execute.js`: **doppelt gesperrt** (Flag +
+  Token). Ohne beides: reiner Plan-Ausdruck, kein Write/KI. **Auch mit Flag+Token schreibt es NICHTS**,
+  weil der `understandAndSave`-Deps-Schritt bewusst **nicht verdrahtet** ist (das Verdrahten =
+  Deploy + KI + Prod-Write = genau der freizugebende Schritt).
+- **Tests** (`scripts/understanding-recovery-test.js`, jetzt **48/48**): zusätzlich Feldbug-Fix (9),
+  planRecovery Allowlist/offen/fehlend (10), Duplikat/mehrdeutig/keine-Quelle-Ausschluss (11),
+  Gating + `recoverOne`-Idempotenz/Write-Sperre (12), Skript-Default-Sperre (13).
+- **Env-Inventar** um `HELMUT_RECOVERY_EXECUTE` ergänzt (Regressionstest grün). Gesamte Offline-Suite
+  **117/117 grün**.
+
+### C · Weiterhin offen (freigabepflichtig — Gegenstand der Freigabeanfrage)
+Feldbug-Fix-**Deploy**; Verdrahten + Ausführen des Recovery-Write-/KI-Pfades für die 6 Fälle
+(≤ ~6 KI-Calls, ~6 Prod-Writes); terminales Aussortieren der Duplikat-/Rauschen-Fälle; bis dahin
+keine Retention-Löschung der 02./03.07.-Rohdokumente.
+
 _Rein lesende Vorbereitung. Keine Production-Änderung. Umsetzung ausschließlich nach ausdrücklicher Freigabe._

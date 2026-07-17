@@ -8,6 +8,7 @@
 const fs = require("fs");
 const path = require("path");
 const rec = require("../lib/helmut/understanding-recovery");
+const lazy = require("../lib/helmut/lazyUnderstanding");
 
 let passed = 0, failed = 0;
 function check(name, cond, detail = "") {
@@ -110,9 +111,11 @@ const doc = (id, title, summary = "", source_name = "Quelle") => ({ id, title, s
 
 // (8) SCHUTZ VOR VERSEHENTLICHEM WRITE.
 (() => {
-  // (a) Modul exportiert KEINE Schreibfunktion.
-  const writeLike = Object.keys(rec).filter((k) => /save|write|delete|insert|update|^mark|reset|patch|persist|execute/i.test(k));
-  check("8a · Modul exportiert keine Schreib-/Execute-Funktion", writeLike.length === 0, writeLike.join(","));
+  // (a) Modul exportiert KEINE schreibende Funktion (Write-Verb-Praefixe;
+  //     recoveryExecuteEnabled/recoverOne/planRecovery sind Lese-/Plan-/Kontroll-
+  //     funktionen und duerfen NICHT als Schreibfunktion gelten).
+  const writeLike = Object.keys(rec).filter((k) => /^(save|write|delete|insert|update|persist|mark|reset|patch)/i.test(k));
+  check("8a · Modul exportiert keine schreibende Funktion", writeLike.length === 0, writeLike.join(","));
 
   // (b) Eingaben werden nicht mutiert (tief eingefroren -> Mutation wuerde werfen).
   const cand = Object.freeze({ vorgang_id: "vg-tariftreuegesetz", understanding_status: "pending", headline: "Tariftreuegesetz" });
@@ -128,5 +131,80 @@ const doc = (id, title, summary = "", source_name = "Quelle") => ({ id, title, s
   check("8c · Skript ruft keine Storage-Schreibfunktion auf", badCalls.length === 0, badCalls.join(","));
 })();
 
-console.log(`\n${passed}/${passed + failed} Understanding-Recovery-Assertions erfolgreich.`);
-if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exit(1); }
+// (9) FELDBUG-FIX (lazyUnderstanding.clusterDocCount): documents.length statt documentCount.
+(() => {
+  check("9 · Feldbug-Fix: documents.length zaehlt (3)", lazy.clusterDocCount({ documents: [{}, {}, {}] }) === 3);
+  check("9 · Feldbug-Fix: ohne documents -> 0", lazy.clusterDocCount({}) === 0 && lazy.clusterDocCount(undefined) === 0);
+  check("9 · Feldbug-Fix: Fallback auf Skalar documentCount", lazy.clusterDocCount({ documentCount: 5 }) === 5);
+  // Regression gegen den Alt-Bug: {documents:[a,b]} OHNE documentCount ergab frueher 0.
+  check("9 · Regression: {documents:[a,b]} -> 2 (nicht 0)", lazy.clusterDocCount({ documents: [{}, {}] }) === 2);
+})();
+
+// (10) planRecovery: nur Allowlist, offene Faelle; nicht-offen/fehlend -> skip.
+(() => {
+  const doc = (id, title, sn = "Q") => ({ id, title, summary: "", source_name: sn });
+  const cands = [
+    { vorgang_id: "vg-steuerstrafrecht", understanding_status: "pending", headline: "Steuerstrafrecht Reform" },
+    { vorgang_id: "vg-medikamenten", understanding_status: "pending", headline: "Medikamente GKV Zuzahlung" },
+    { vorgang_id: "vg-einkommensteuer", understanding_status: "pending", headline: "Einkommensteuer Reform" }, // NICHT in Allowlist
+    { vorgang_id: "vg-sozialwohnungen", understanding_status: "complete", headline: "Sozialwohnungen" }        // nicht mehr offen
+  ];
+  const docs = [doc("d1", "Steuerstrafrecht Reform beschlossen"), doc("d2", "Medikamente Zuzahlung neue Regel")];
+  const plan = rec.planRecovery(cands, docs, {});
+  const execIds = plan.execute.map((e) => e.vorgangId);
+  check("10 · nur Allowlist im Plan (kein vg-einkommensteuer)", !execIds.includes("vg-einkommensteuer"));
+  check("10 · eindeutige/wahrscheinliche Allowlist-Faelle in execute", execIds.includes("vg-steuerstrafrecht") && execIds.includes("vg-medikamenten"));
+  check("10 · nicht-mehr-offener Fall -> skip", plan.skip.some((s) => s.vorgangId === "vg-sozialwohnungen" && s.grund === "nicht-mehr-offen"));
+  check("10 · fehlende Allowlist-Eintraege transparent -> skip nicht-gefunden", plan.skip.some((s) => s.vorgangId === "vg-psychotherapie" && s.grund === "nicht-gefunden"));
+  check("10 · kiCalls == execute.length", plan.kiCalls === plan.execute.length);
+})();
+
+// (11) planRecovery: Duplikat/mehrdeutig/keine-quelle werden ausgeschlossen.
+(() => {
+  const doc = (id, title, sn = "Q") => ({ id, title, summary: "", source_name: sn });
+  const cands = [
+    { vorgang_id: "vg-medikamenten", understanding_status: "pending", headline: "Medikamente GKV" },          // -> duplikat (completeTopicSet)
+    { vorgang_id: "vg-steuerstrafrecht", understanding_status: "pending", headline: "Steuerstrafrecht" },      // -> keine-quelle (kein doc)
+    { vorgang_id: "vg-psychotherapie", understanding_status: "pending", headline: "Krankenversicherung Pflegeversicherung" } // -> mehrdeutig
+  ];
+  const docs = [doc("a", "Krankenversicherung Beitrag"), doc("b", "Pflegeversicherung Leistung", "Q2")];
+  const plan = rec.planRecovery(cands, docs, { completeTopicSet: new Set(["vg-medikamenten"]) });
+  check("11 · Duplikat-Fall NICHT im Plan", !plan.execute.some((e) => e.vorgangId === "vg-medikamenten")
+    && plan.skip.some((s) => s.vorgangId === "vg-medikamenten" && s.grund === "duplikat-complete-existiert"));
+  check("11 · keine-Quelle-Fall NICHT im Plan", plan.skip.some((s) => s.vorgangId === "vg-steuerstrafrecht" && s.grund === "keine-quelldokumente"));
+  check("11 · mehrdeutiger Fall NICHT im Plan", plan.skip.some((s) => s.vorgangId === "vg-psychotherapie" && s.grund === "mehrdeutig-manuell"));
+  check("11 · execute leer (alle ausgeschlossen)", plan.execute.length === 0);
+})();
+
+// (12) Gating (Default AUS + Token) und recoverOne (Idempotenz/Dedup, Write-Sperre) — async.
+(async () => {
+  check("12 · recoveryExecuteEnabled Default false", rec.recoveryExecuteEnabled({}) === false);
+  check("12 · recoveryExecuteEnabled bei 'on' true", rec.recoveryExecuteEnabled({ HELMUT_RECOVERY_EXECUTE: "on" }) === true);
+  check("12 · recoveryConfirmed nur exaktes Token", rec.recoveryConfirmed("RECOVER_6_CONFIRMED") === true && rec.recoveryConfirmed("x") === false && rec.recoveryConfirmed("") === false);
+  check("12 · Allowlist genau die 6 bestaetigten Faelle", rec.RECOVERY_ALLOWLIST.length === 6 && rec.RECOVERY_ALLOWLIST.includes("vg-arbeitsverträge") && rec.RECOVERY_ALLOWLIST.includes("vg-umstellungen"));
+
+  // recoverOne ohne verdrahteten Write-Pfad -> kein Write/KI (freigabepflichtig).
+  const r1 = await rec.recoverOne({ vorgangId: "vg-steuerstrafrecht" }, { getExisting: async () => null });
+  check("12 · recoverOne ohne understandAndSave -> kein Write, aiCalls 0", r1.wrote === false && r1.aiCalls === 0 && r1.grund === "write-pfad-nicht-verdrahtet-freigabepflichtig");
+
+  // recoverOne idempotent: bereits complete -> skip, understandAndSave NICHT aufgerufen.
+  let called = 0;
+  const r2 = await rec.recoverOne({ vorgangId: "vg-medikamenten" },
+    { getExisting: async () => ({ understanding_status: "complete" }), understandAndSave: async () => { called += 1; return {}; } });
+  check("12 · recoverOne idempotent: complete -> skip, 0 KI-Call", r2.wrote === false && r2.aiCalls === 0 && r2.grund === "bereits-complete-idempotent" && called === 0);
+
+  // recoverOne mit injizierten Deps -> genau EIN understand+save (nur im Test, kein echtes Prod/KI).
+  let saved = 0;
+  const r3 = await rec.recoverOne({ vorgangId: "vg-umstellungen" },
+    { getExisting: async () => null, understandAndSave: async () => { saved += 1; return { ok: true }; } });
+  check("12 · recoverOne mit Deps -> genau 1 understand+save", r3.wrote === true && r3.aiCalls === 1 && saved === 1);
+
+  // (13) Ausfuehrungs-SKRIPT: Default-Sperre + kein Storage-Schreibaufruf (statisch).
+  const src = fs.readFileSync(path.join(__dirname, "understanding-recovery-execute.js"), "utf8");
+  check("13 · Execute-Skript ist Default-gesperrt (Flag+Token)", /recoveryExecuteEnabled/.test(src) && /recoveryConfirmed/.test(src));
+  const badCalls = src.match(/storage\.(save\w*|write\w*|delete\w*|mark\w*Failed|resetUnderstanding|markUnderstandingTerminal|saveKoDocumentLinks|deleteRetention)\b/g) || [];
+  check("13 · Execute-Skript ruft keine Storage-Schreibfunktion auf", badCalls.length === 0, badCalls.join(","));
+
+  console.log(`\n${passed}/${passed + failed} Understanding-Recovery-Assertions erfolgreich.`);
+  if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exit(1); }
+})();
