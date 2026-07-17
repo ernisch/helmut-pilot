@@ -11,7 +11,8 @@ const { validateProfile } = require("./lib/helmut/profile-validation");
 const sourceSafety = require("./lib/helmut/sourceSafety");
 const { runLageCheck, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, listFailedKnowledgeObjects, resetUnderstandingToPending, markUnderstandingTerminal, getUnderstandingRetries, saveUnderstandingRetries, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, getLlmUsageBreakdownToday, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getClassificationCoverage, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState, tenantJwtModeEnabled, saveKnowledgeObjectEnrichment, profileDbModeEnabled, getProfileFromDb, diagnoseTenantJwt, recordProcessRun, listProcessRuns, saveMonitoringDeliveryState, getMonitoringDeliveryState } = require("./lib/helmut/storage");
+const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, listFailedKnowledgeObjects, resetUnderstandingToPending, markUnderstandingTerminal, getUnderstandingRetries, saveUnderstandingRetries, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, getLlmUsageBreakdownToday, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getClassificationCoverage, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState, tenantJwtModeEnabled, saveKnowledgeObjectEnrichment, profileDbModeEnabled, getProfileFromDb, diagnoseTenantJwt, recordProcessRun, listProcessRuns, saveMonitoringDeliveryState, getMonitoringDeliveryState, getLlmCostSince, getAdminCostsPerUser, listSourceArchitectureRows, getSourceModeShadowLastRun } = require("./lib/helmut/storage");
+const llmBudgetLib = require("./lib/helmut/llm-budget");
 
 // P0-1: technischer Ausfuehrungsort + Laufkennung fuer Prozess-Laufzeit-Telemetrie
 // (Cron-Understanding, Briefing-Aufbau). Reine technische Metadaten, nie PII.
@@ -1724,6 +1725,90 @@ async function handleRequest(request, response) {
       await accounts.recordAudit({ action: "admin.feedback.update", userId: authUser.id, actorEmail: authUser.email, detail: feedbackId });
       return { ok: true, feedback: entry };
     });
+  }
+
+  // --- Admin-Leserouten (Admin-Neuaufbau 2026-07) ----------------------------
+  // Alle: requireRoleOr403 "admin", read-only, minimale Datenmenge, keine Secrets,
+  // keine Token-Hashes. Fehler laufen ueber handleAsync -> respondError.
+
+  // Tagesbudget im EXAKTEN Fenster des Budget-Gates (UTC-Kalendertag; NICHT das
+  // rollierende Fenster von /stats/costs) + Monat-bis-heute aus getLlmCostSince.
+  if (url.pathname === "/api/admin/stats/budget-today") {
+    if (!requireRoleOr403(response, authUser, "admin")) return undefined;
+    return handleAsync(response, async () => {
+      const heute = await getLlmUsageBreakdownToday();
+      const monthStart = `${String(heute.day || "").slice(0, 7)}-01`;
+      const monat = /^\d{4}-\d{2}-01$/.test(monthStart)
+        ? await getLlmCostSince(null, monthStart).catch(() => null)
+        : null;
+      return {
+        ...heute,
+        monat: monat ? { seit: monthStart, calls: monat.calls, estimatedCostUsd: monat.estimatedCostUsd } : null
+      };
+    });
+  }
+
+  // Kosten pro Mandant (rollierendes Fenster) + Pro-Mandant-Budgetstatus.
+  if (url.pathname === "/api/admin/stats/costs-per-user") {
+    if (!requireRoleOr403(response, authUser, "admin")) return undefined;
+    const cpuDays = Math.max(1, Math.min(90, Number(url.searchParams.get("days")) || 30));
+    return handleAsync(response, () => buildAdminCostsPerUser(cpuDays));
+  }
+
+  // Laufzeiten der inneren Prozesse (understanding/briefing/lage) — nur technische
+  // Skalare (sanitizeProcessRun), keine Inhalte. Plus Cron-Zeitplan aus vercel.json.
+  if (url.pathname === "/api/admin/stats/process-runs") {
+    if (!requireRoleOr403(response, authUser, "admin")) return undefined;
+    const prLimit = Math.max(1, Math.min(300, Number(url.searchParams.get("limit")) || 60));
+    const prProcess = String(url.searchParams.get("process") || "").trim() || null;
+    return handleAsync(response, async () => {
+      const runs = await listProcessRuns({ process: prProcess, limit: prLimit });
+      const latestByProcess = {};
+      for (const run of Array.isArray(runs) ? runs : []) {
+        const key = run && run.process ? String(run.process) : "unknown";
+        if (!latestByProcess[key]) latestByProcess[key] = run;
+      }
+      return { generatedAt: new Date().toISOString(), processRuns: runs, latestByProcess, zeitplan: readVercelCronSchedule() };
+    });
+  }
+
+  // Audit-Log als eigene Route (bisher nur als Teil von /api/admin/overview).
+  if (url.pathname === "/api/admin/audit") {
+    if (!requireRoleOr403(response, authUser, "admin")) return undefined;
+    const auditLimit = Math.max(1, Math.min(200, Number(url.searchParams.get("limit")) || 50));
+    return handleAsync(response, async () => ({
+      generatedAt: new Date().toISOString(),
+      auditEvents: await accounts.listAuditEvents(auditLimit)
+    }));
+  }
+
+  // Feedback-Liste als eigene GET-Route (bisher nur als Teil von /api/admin/overview).
+  // Exakter Pfad — kollidiert nicht mit dem startsWith("/api/admin/feedback/")-Matcher.
+  if (url.pathname === "/api/admin/feedback" && request.method === "GET") {
+    if (!requireRoleOr403(response, authUser, "admin")) return undefined;
+    const fbLimit = Math.max(1, Math.min(500, Number(url.searchParams.get("limit")) || 100));
+    return handleAsync(response, async () => {
+      const feedback = await listFeedback(fbLimit);
+      return {
+        generatedAt: new Date().toISOString(),
+        offen: feedback.filter((item) => !item.done).length,
+        feedback
+      };
+    });
+  }
+
+  // Kunden & Abrechnung: serverseitiges Aggregat aus accounts.listUsers()
+  // (sanitizeUser — nie Hashes) + aktive Sessions als reine Anzahl.
+  if (url.pathname === "/api/admin/customers") {
+    if (!requireRoleOr403(response, authUser, "admin")) return undefined;
+    return handleAsync(response, () => buildAdminCustomers());
+  }
+
+  // Quellen & Watchdog: Statuszaehler und problematische Abrufwege aus den
+  // relationalen Quellen-Tabellen + Google-News-Anteil aus crawlRuns.
+  if (url.pathname === "/api/admin/sources-status") {
+    if (!requireRoleOr403(response, authUser, "admin")) return undefined;
+    return handleAsync(response, () => buildAdminSourcesStatus());
   }
 
   // SICHERHEIT: dieser Fallback bediente frueher JEDEN auf dem Server liegenden Pfad
@@ -4143,7 +4228,255 @@ function adminMandateSummary(p = {}) {
     tonality: p.tonality || "",
     keyAudiences: p.keyAudiences || [],
     noGoPhrases: p.noGoPhrases || p.noGoTopics || [],
-    updatedAt: p.updatedAt || null
+    updatedAt: p.updatedAt || null,
+    accountType: p.accountType || null,
+    profileActive: p.profileActive !== false,
+    // Profil-Validierung (reine Funktion, keine Zusatz-Reads): der Betreiber muss
+    // pro Mandat sehen, ob das Profil fuer Matching/Briefing ausreichend ist.
+    validierung: adminMandateValidierung(p)
+  };
+}
+
+function adminMandateValidierung(p) {
+  try {
+    const val = validateProfile(p);
+    return {
+      zustand: val.state,
+      zustandLabel: val.stateLabel,
+      bereit: val.ready,
+      nutzbar: val.usable,
+      deaktiviert: val.disabled,
+      fehlendePflichtfelder: val.missingRequiredLabels || []
+    };
+  } catch (_) {
+    return null;
+  }
+}
+
+// --- Builder fuer die Admin-Leserouten (Admin-Neuaufbau 2026-07) -------------
+
+// Cron-Zeitplan aus vercel.json (Wahrheit der Deploy-Konfiguration) statt
+// hartkodierter Zeiten (Audit-Befund Nr. 13 zu /api/ops/status: dortige Zeiten
+// sind veraltet). Nicht lesbar -> null, keine erfundenen Zeiten.
+function readVercelCronSchedule() {
+  try {
+    const raw = fs.readFileSync(path.join(root, "vercel.json"), "utf8");
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed.crons)) return null;
+    return parsed.crons.map((entry) => ({
+      path: String(entry.path || "").slice(0, 80),
+      schedule: String(entry.schedule || "").slice(0, 40)
+    }));
+  } catch (_) {
+    return null;
+  }
+}
+
+// GitHub-Actions-Waechter aus den Workflow-Dateien lesen (nicht hartkodieren):
+// aktiv = mindestens ein NICHT auskommentierter "cron:"-Eintrag.
+function readWorkflowWatchdog(rel) {
+  try {
+    const raw = fs.readFileSync(path.join(root, rel), "utf8");
+    const activeLines = raw.split("\n").filter((line) => !/^\s*#/.test(line));
+    const match = activeLines.join("\n").match(/cron:\s*["']?([0-9*\/,\- ]+)["']?/);
+    return { verfuegbar: true, aktiv: Boolean(match), zeitplanUtc: match ? match[1].trim() : null, quelle: rel };
+  } catch (_) {
+    return { verfuegbar: false, aktiv: null, zeitplanUtc: null, quelle: rel };
+  }
+}
+
+async function buildAdminCostsPerUser(days = 30) {
+  const [per, users, profiles, heute] = await Promise.all([
+    getAdminCostsPerUser({ days }),
+    accounts.listUsers().catch(() => []),
+    listFullProfiles().catch(() => []),
+    getLlmUsageBreakdownToday().catch(() => null)
+  ]);
+  const nameByUserId = new Map(users.map((u) => [u.id, u.name || u.email]));
+  const nameByPoliticianId = new Map(profiles.map((p) => [p.id, p.fullName || p.id]));
+  const perUser = (per.perUser || []).map((entry) => ({
+    ...entry,
+    name: nameByUserId.get(entry.userId) || nameByPoliticianId.get(entry.userId) || entry.userId
+  }));
+  // Pro-Mandant-Budgetstatus: Profil-Budgets sind EUR-Cent, das Nutzungslog USD.
+  // evaluateTenantBudget vergleicht bewusst 1:1 (konservativer Schutzdeckel,
+  // siehe lib/helmut/llm-budget.js) — der Admin kennzeichnet beide Waehrungen.
+  const monthStart = heute && /^\d{4}-\d{2}/.test(String(heute.day || ""))
+    ? `${String(heute.day).slice(0, 7)}-01`
+    : null;
+  const tenantBudgets = [];
+  for (const p of profiles) {
+    const dailyBudgetCent = Number.isFinite(Number(p.aiBudgetDailyCents)) && p.aiBudgetDailyCents != null ? Number(p.aiBudgetDailyCents) : null;
+    const monthlyBudgetCent = Number.isFinite(Number(p.aiBudgetMonthlyCents)) && p.aiBudgetMonthlyCents != null ? Number(p.aiBudgetMonthlyCents) : null;
+    const heuteTenant = heute && heute.byTenant && heute.byTenant[p.id] ? heute.byTenant[p.id] : null;
+    const spentTodayUsd = heute ? (heuteTenant ? Number(heuteTenant.estimatedCostUsd) || 0 : 0) : null;
+    let spentMonthUsd = null;
+    if (monthStart) {
+      try { spentMonthUsd = (await getLlmCostSince(p.id, monthStart)).estimatedCostUsd; } catch (_) { spentMonthUsd = null; }
+    }
+    const budget = llmBudgetLib.evaluateTenantBudget({ dailyBudgetCent, monthlyBudgetCent, spentTodayUsd, spentMonthUsd });
+    tenantBudgets.push({
+      politicianId: p.id,
+      name: p.fullName || p.id,
+      dailyBudgetCent,
+      monthlyBudgetCent,
+      heuteUsd: Number.isFinite(spentTodayUsd) ? spentTodayUsd : null,
+      monatUsd: Number.isFinite(Number(spentMonthUsd)) ? Number(spentMonthUsd) : null,
+      applied: budget.applied,
+      allowed: budget.allowed,
+      warn: budget.warn,
+      reason: budget.reason,
+      dailyRemainingCent: budget.dailyRemainingCent,
+      monthlyRemainingCent: budget.monthlyRemainingCent
+    });
+  }
+  return { generatedAt: new Date().toISOString(), ...per, perUser, tenantBudgets };
+}
+
+async function buildAdminCustomers() {
+  const users = await accounts.listUsers();
+  const sessions = await accounts.countActiveSessions().catch(() => null);
+  const today = new Date().toISOString().slice(0, 10);
+  // Kundensicht: Mandats-Konten (abgeordneter) fuehren die Abrechnung. Konten
+  // anderer Rollen erscheinen nur, wenn tatsaechlich customer-Daten gepflegt sind.
+  const kunden = users
+    .filter((u) => u.role === "abgeordneter" || (u.customer && (u.customer.pricePerMonth != null || (u.customer.paymentStatus && u.customer.paymentStatus !== "none"))))
+    .map((u) => ({
+      userId: u.id,
+      name: u.name || u.email,
+      email: u.email,
+      politicianId: u.politicianId || null,
+      role: u.role,
+      status: u.status,
+      active: u.active !== false,
+      paidUntil: u.paidUntil || null,
+      customer: u.customer,
+      lastLoginAt: u.lastLoginAt || null,
+      lastSeenAt: u.lastSeenAt || null
+    }));
+  const beendet = (k) => k.status === "gekuendigt" || k.status === "deaktiviert";
+  const counts = {
+    kunden: kunden.length,
+    paid: kunden.filter((k) => k.customer.paymentStatus === "paid").length,
+    open: kunden.filter((k) => k.customer.paymentStatus === "open").length,
+    overdue: kunden.filter((k) => k.customer.paymentStatus === "overdue").length,
+    none: kunden.filter((k) => !k.customer.paymentStatus || k.customer.paymentStatus === "none").length,
+    trial: kunden.filter((k) => k.customer.trialUntil && String(k.customer.trialUntil) > today && !beendet(k)).length,
+    gekuendigt: kunden.filter((k) => k.status === "gekuendigt").length,
+    deaktiviert: kunden.filter((k) => k.status === "deaktiviert").length
+  };
+  // MRR = Summe pricePerMonth (EUR) ueber nicht beendete Kunden mit gesetztem Preis.
+  const mitPreis = kunden.filter((k) => !beendet(k) && Number.isFinite(Number(k.customer.pricePerMonth)) && k.customer.pricePerMonth != null);
+  const mrrEur = mitPreis.length ? mitPreis.reduce((sum, k) => sum + Number(k.customer.pricePerMonth), 0) : null;
+  return {
+    generatedAt: new Date().toISOString(),
+    counts,
+    mrrEur,
+    kunden,
+    // Reine Anzahl (Datensparsamkeit): keine Session-Objekte, keine Hashes.
+    sessionsAktiv: sessions ? sessions.total : null
+  };
+}
+
+async function buildAdminSourcesStatus() {
+  const [rows, shadow, runs] = await Promise.all([
+    listSourceArchitectureRows().catch(() => null),
+    getSourceModeShadowLastRun().catch(() => null),
+    listCrawlRuns(20).catch(() => [])
+  ]);
+
+  // Google-News-Anteil (Klumpenrisiko) aus den letzten Crawl-Laeufen. Grund:
+  // source_crawl_telemetry hat keinen Lesepfad im Code (Analyse 2026-07) —
+  // crawlRuns.providerBreakdown ist die einzige belastbare Quelle.
+  let googleNews = null;
+  const withProviders = (runs || []).filter((r) => r && r.providerBreakdown && (r.providerBreakdown.googleNews || r.providerBreakdown.direct));
+  if (withProviders.length) {
+    const sum = { googleChecked: 0, googleOk: 0, googleFailed: 0, directChecked: 0, directOk: 0, directFailed: 0 };
+    for (const run of withProviders) {
+      const g = run.providerBreakdown.googleNews || {};
+      const d = run.providerBreakdown.direct || {};
+      sum.googleChecked += Number(g.checked) || 0;
+      sum.googleOk += Number(g.ok) || 0;
+      sum.googleFailed += Number(g.failed) || 0;
+      sum.directChecked += Number(d.checked) || 0;
+      sum.directOk += Number(d.ok) || 0;
+      sum.directFailed += Number(d.failed) || 0;
+    }
+    const totalOk = sum.googleOk + sum.directOk;
+    googleNews = {
+      laeufe: withProviders.length,
+      ...sum,
+      anteilOkProzent: totalOk > 0 ? Math.round((sum.googleOk / totalOk) * 100) : null
+    };
+  }
+
+  const statusRank = { broken: 5, degraded: 4, needs_review: 3, paused: 2, archived: 1, healthy: 0 };
+  let statusCounts = null;
+  let zaehler = null;
+  let problematischeWege = null;
+  let herausgeber = null;
+  if (rows && Array.isArray(rows.retrievalPaths)) {
+    statusCounts = { healthy: 0, degraded: 0, broken: 0, needs_review: 0, paused: 0, archived: 0 };
+    for (const p of rows.retrievalPaths) {
+      const s = String(p.status || "needs_review");
+      if (statusCounts[s] == null) statusCounts[s] = 0;
+      statusCounts[s] += 1;
+    }
+    zaehler = {
+      herausgeber: (rows.publishers || []).length,
+      abrufwege: rows.retrievalPaths.length,
+      pakete: (rows.packages || []).length,
+      paketPfade: (rows.packagePaths || []).length
+    };
+    const pubById = new Map((rows.publishers || []).map((p) => [p.id, p]));
+    const pfad = (p) => ({
+      id: p.id,
+      name: p.name || p.id,
+      herausgeber: (pubById.get(p.publisher_id) || {}).name || p.publisher_id || null,
+      methode: p.method || null,
+      status: p.status || null,
+      fehlerserie: Number(p.error_streak) || 0,
+      letzterErfolg: p.last_success_at || null,
+      // last_error ist im Schema ein Freitext — auf inhaltsfreie Laenge kappen.
+      letzterFehler: p.last_error ? String(p.last_error).slice(0, 160) : null,
+      kritisch: p.is_critical === true
+    });
+    problematischeWege = rows.retrievalPaths
+      .filter((p) => p.status && p.status !== "healthy" && p.status !== "archived")
+      .map(pfad)
+      .sort((a, b) => ((statusRank[b.status] || 0) - (statusRank[a.status] || 0)) || (b.fehlerserie - a.fehlerserie));
+    herausgeber = (rows.publishers || [])
+      .filter((p) => p.lifecycle_status !== "archived")
+      .map((p) => {
+        const wege = rows.retrievalPaths.filter((rp) => rp.publisher_id === p.id).map(pfad);
+        const schlechtester = wege.reduce((max, w) => Math.max(max, statusRank[w.status] || 0), 0);
+        return { id: p.id, name: p.name, typ: p.publisher_type || null, vertrauen: p.trust || null, wege, schlechtesterStatusRang: schlechtester };
+      })
+      .sort((a, b) => (b.schlechtesterStatusRang - a.schlechtesterStatusRang) || String(a.name).localeCompare(String(b.name), "de"));
+  }
+
+  return {
+    generatedAt: new Date().toISOString(),
+    verfuegbar: Boolean(rows && Array.isArray(rows.retrievalPaths)),
+    hinweis: rows ? null : "Relationale Quellen-Tabellen nicht erreichbar (Supabase-Backend erforderlich) — keine erfundenen Kennzahlen.",
+    statusCounts,
+    zaehler,
+    problematischeWege,
+    herausgeber,
+    googleNews,
+    letzterShadowLauf: shadow
+      ? {
+          savedAt: shadow.savedAt || null,
+          modus: shadow.modus || null,
+          abdeckungDokumenteProzent: shadow.vergleich && shadow.vergleich.abdeckungDokumenteProzent != null
+            ? shadow.vergleich.abdeckungDokumenteProzent
+            : null
+        }
+      : null,
+    watchdog: {
+      briefingWatchdog: readWorkflowWatchdog(".github/workflows/briefing-watchdog.yml"),
+      healthWatch: readWorkflowWatchdog(".github/workflows/health-watch.yml")
+    }
   };
 }
 
