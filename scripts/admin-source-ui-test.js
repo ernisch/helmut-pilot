@@ -1,101 +1,113 @@
 "use strict";
 
-// UI-Test (Sprint 8): die ECHTEN Client-Render-Funktionen der Admin-Quellenarchitektur
-// im vm-Kontext. Prueft die 6 Ansichten, ruhige Leerzustaende, ehrliche „nicht verfügbar"-
-// Markierungen (keine erfundenen 0/Demozahlen) und den Migrations-Hinweis.
+// Render-Test des Admin-Bereichs "Quellen & Watchdog" (Neuaufbau 2026-07).
+// Fuehrt renderAdmQuellen aus client.js im vm aus (Browser-Stubs, kein Netz).
+//
+// Geprueft:
+//  - Ehrlichkeit: ohne relationale Tabellen (verfuegbar:false) KEINE erfundenen
+//    Kennzahlen, sondern der Hinweis des Servers
+//  - Statuszaehler mit verstaendlichen Text-Labels (gesund/defekt/... nicht nur Farbe)
+//  - Problematische Abrufwege: Herausgeber, Methode, Fehlerserie, letzter Erfolg,
+//    konkrete Handlungsempfehlung
+//  - Klumpenrisiko (Google-News-Anteil) inkl. Quelle der Zahl
+//  - Watchdog-Zustand aus den Workflow-Dateien (aktiv vs. nur manuell)
+//  - Fehlende Messwerte je Abrufweg als — (Telemetrie hat noch keinen Lesepfad)
 
 const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
 const root = path.join(__dirname, "..");
 
-const { buildFullModel } = require(path.join(root, "lib/helmut/quellenarchitektur"));
-const pp = require(path.join(root, "lib/helmut/quellenarchitektur/profile-packages"));
-const qw = require(path.join(root, "lib/helmut/quellenarchitektur/quality-watchdog"));
-const ar = require(path.join(root, "lib/helmut/quellenarchitektur/admin-report"));
-
-let pass = 0, fail = 0;
-function check(name, cond) { if (cond) { pass += 1; console.log(`PASS  ${name}`); } else { fail += 1; console.log(`FAIL  ${name}`); } }
-
 function loadClient() {
   let code = fs.readFileSync(path.join(root, "client.js"), "utf8");
   code = code.replace(/^\s*loadBriefing\(\)[\s\S]*$/m, "");
-  code += `\n;globalThis.__saUi = { render: (sa) => renderAdminQuellenarchitektur(sa) };`;
+  code += `\n;globalThis.__srcTest = {
+    render: () => renderAdmQuellen(),
+    setUser: (u) => { currentUser = u; },
+    setData: (key, payload) => { admData[key] = payload; },
+    clearData: () => { admData = {}; admErrors = {}; }
+  };`;
   const noop = () => {};
-  const fakeNode = () => ({ classList: { toggle: noop, add: noop, remove: noop, contains: () => false }, style: {}, dataset: {}, addEventListener: noop, removeEventListener: noop, querySelector: () => null, querySelectorAll: () => [], appendChild: noop, setAttribute: noop, getAttribute: () => null, removeAttribute: noop, focus: noop, blur: noop, click: noop, closest: () => null, contains: () => false, insertAdjacentHTML: noop, scrollIntoView: noop, getBoundingClientRect: () => ({ top: 0, left: 0 }), set innerHTML(_v) {}, get innerHTML() { return ""; }, textContent: "", value: "", offsetParent: null });
-  const storage = { getItem: () => null, setItem: noop, removeItem: noop, clear: noop };
-  const doc = { querySelector: () => fakeNode(), querySelectorAll: () => [], getElementById: () => fakeNode(), createElement: () => fakeNode(), createDocumentFragment: () => fakeNode(), body: fakeNode(), documentElement: fakeNode(), addEventListener: noop, removeEventListener: noop, cookie: "", visibilityState: "visible", hidden: false };
-  const sandbox = { console, Intl, Date, Math, JSON, Number, String, Boolean, Array, Object, RegExp, Set, Map, Promise, parseInt, parseFloat, isNaN, isFinite, encodeURIComponent, decodeURIComponent, URL, URLSearchParams, setTimeout: () => 0, clearTimeout: noop, setInterval: () => 0, clearInterval: noop, requestAnimationFrame: () => 0, cancelAnimationFrame: noop, queueMicrotask: (f) => Promise.resolve().then(f), document: doc, navigator: { userAgent: "node-test", serviceWorker: undefined, language: "de-DE", onLine: true, sendBeacon: noop }, localStorage: storage, sessionStorage: storage, location: { search: "", href: "http://localhost/", pathname: "/", hash: "", origin: "http://localhost" }, matchMedia: () => ({ matches: false, addEventListener: noop, removeEventListener: noop, addListener: noop, removeListener: noop }), fetch: () => Promise.reject(new Error("no-net")), getComputedStyle: () => ({ getPropertyValue: () => "" }), performance: { now: () => 0 }, atob: (s) => Buffer.from(s, "base64").toString("binary"), btoa: (s) => Buffer.from(s, "binary").toString("base64") };
-  sandbox.window = sandbox; sandbox.globalThis = sandbox; sandbox.self = sandbox; sandbox.window.addEventListener = noop; sandbox.window.removeEventListener = noop; sandbox.window.scrollTo = noop;
+  const fakeNode = () => ({ classList: { toggle: noop, add: noop, remove: noop, contains: () => false }, style: {}, dataset: {}, addEventListener: noop, removeEventListener: noop, querySelector: () => null, querySelectorAll: () => [], appendChild: noop, setAttribute: noop, getAttribute: () => null, focus: noop, closest: () => null, set innerHTML(_v) {}, get innerHTML() { return ""; }, textContent: "", value: "" });
+  const storage = { getItem: () => null, setItem: noop, removeItem: noop };
+  const sandbox = {
+    console, Intl, Date, Math, JSON, Number, String, Boolean, Array, Object, RegExp, Set, Map, Promise,
+    parseInt, parseFloat, isNaN, isFinite, encodeURIComponent, decodeURIComponent, URL, URLSearchParams,
+    setTimeout: () => 0, clearTimeout: noop, setInterval: () => 0, clearInterval: noop,
+    requestAnimationFrame: () => 0, cancelAnimationFrame: noop,
+    document: { querySelector: () => fakeNode(), querySelectorAll: () => [], getElementById: () => fakeNode(), createElement: () => fakeNode(), body: fakeNode(), documentElement: fakeNode(), addEventListener: noop, removeEventListener: noop, cookie: "", visibilityState: "visible" },
+    navigator: { userAgent: "node-test", language: "de-DE" },
+    localStorage: storage, sessionStorage: storage,
+    location: { search: "", href: "http://localhost/", pathname: "/", origin: "http://localhost" },
+    matchMedia: () => ({ matches: false, addEventListener: noop, addListener: noop }),
+    fetch: () => { throw new Error("fetch-should-not-be-called-during-render"); }
+  };
+  sandbox.window = sandbox; sandbox.globalThis = sandbox; sandbox.self = sandbox;
+  sandbox.window.addEventListener = noop; sandbox.window.scrollTo = noop;
   vm.createContext(sandbox);
   vm.runInContext(code, sandbox, { filename: "client.js" });
-  if (!sandbox.__saUi) throw new Error("Test-Hook nicht gesetzt");
-  return sandbox.__saUi;
+  return sandbox.__srcTest;
 }
 
-// --- Report bauen (echter Katalog, leere Metriken = Migrations-Leerzustand) ---
-const NOW = Date.parse("2026-07-13T12:00:00Z");
-const M = buildFullModel();
-const bund = { id: "test-politician-one", fullName: "Test Politician One", party: "Testpartei Alpha", politische_ebene: "bundestag", ausschuesse: ["Arbeit und Soziales"], bundesland: "Niedersachsen", profileActive: true };
-const berlin = { id: "be", fullName: "Berlin MdA", party: "SPD", politische_ebene: "landtag", bundesland: "Berlin", ausschuesse: ["Inneres"], profileActive: true };
-const activation = pp.computeGlobalActivation({ packages: M.packages, packagePaths: M.packagePaths, retrievalPaths: M.retrievalPaths, profiles: [bund, berlin] });
-const quality = qw.buildQualityReport({ catalog: { retrievalPaths: M.retrievalPaths, packages: M.packages, packagePaths: M.packagePaths }, activation, rawDocs: [], koSourceLinks: [], dedupDocuments: [], profiles: [bund, berlin], llmUsage: [], signals: {}, now: NOW });
-const report = ar.buildSourceAdminReport({ catalog: M, activation, qualityReport: quality, now: NOW });
+let passed = 0, failed = 0;
+function check(name, cond, detail = "") {
+  if (cond) { passed += 1; console.log(`PASS  ${name}`); }
+  else { failed += 1; console.log(`FAIL  ${name}${detail ? "  -- " + detail : ""}`); }
+}
 
-const ui = loadClient();
-const html = ui.render(report);
+const api = loadClient();
+check("client.js laedt im vm", Boolean(api && api.render));
+api.setUser({ id: "admin1", role: "admin" });
 
-console.log("== Struktur + Migrationshinweis ==");
-check("rendert ohne Crash, liefert HTML", typeof html === "string" && html.length > 500);
-check("sechs Ansichts-Anker vorhanden", ["admin-sa-laender", "admin-sa-quellen", "admin-sa-profile", "admin-sa-pruefbedarf", "admin-sa-detail", "admin-sa-kosten"].every((id) => html.includes(`id="${id}"`)));
-check("Migrations-Hinweis sichtbar (Tabellen nicht migriert)", /sa-mig-note/.test(html) && /nicht migriert/i.test(html));
-check("nutzt bestehende Muster (adminSection/op-tiles)", /admin-sec/.test(html) && /op-tiles/.test(html));
+// A) Nicht verfuegbar (lokales Backend): Hinweis statt erfundener Zahlen.
+api.clearData();
+api.setData("sources", { generatedAt: new Date().toISOString(), verfuegbar: false, hinweis: "Relationale Quellen-Tabellen nicht erreichbar (Supabase-Backend erforderlich) — keine erfundenen Kennzahlen.", statusCounts: null, zaehler: null, problematischeWege: null, herausgeber: null, googleNews: null, letzterShadowLauf: null, watchdog: { briefingWatchdog: { verfuegbar: true, aktiv: true, zeitplanUtc: "30 5 * * *", quelle: ".github/workflows/briefing-watchdog.yml" }, healthWatch: { verfuegbar: true, aktiv: false, zeitplanUtc: null, quelle: ".github/workflows/health-watch.yml" } } });
+const offView = api.render();
+check("A1 Ohne relationale Tabellen: Server-Hinweis sichtbar", offView.includes("keine erfundenen Kennzahlen"));
+check("A2 Keine erfundenen Statuszahlen", !/adm-tile-value">\d/.test(offView));
+check("A3 Zustand 'unbekannt' statt gruen", offView.includes("unbekannt"));
 
-console.log("== View 1: Länder und Pakete ==");
-check("Berlin als 'Vorbereitet'", /Berlin[\s\S]{0,120}Vorbereitet/.test(html));
-check("Niedersachsen als 'Aktiv'", /Niedersachsen[\s\S]{0,120}Aktiv/.test(html));
-check("Pflichtklassen: 15 fehlen sichtbar", /15 fehlen|15<\/b> fehlen|>15<\/b>/.test(html));
-check("Pakete berlin-basis 'Vorbereitet'", /Berlin Basis[\s\S]{0,120}Vorbereitet/.test(html));
+// B) Voll verfuegbar.
+const minsAgo = (m) => new Date(Date.now() - m * 60000).toISOString();
+api.clearData();
+api.setData("sources", {
+  generatedAt: new Date().toISOString(),
+  verfuegbar: true,
+  hinweis: null,
+  statusCounts: { healthy: 64, degraded: 9, broken: 3, needs_review: 6, paused: 1, archived: 2 },
+  zaehler: { herausgeber: 38, abrufwege: 85, pakete: 11, paketPfade: 146 },
+  problematischeWege: [
+    { id: "p1", name: "Ministerium X HTML", herausgeber: "Ministerium X", methode: "html", status: "broken", fehlerserie: 11, letzterErfolg: minsAgo(60 * 24 * 9), letzterFehler: "http-404", kritisch: true },
+    { id: "p2", name: "Bundestag RSS", herausgeber: "Bundestag", methode: "rss", status: "degraded", fehlerserie: 3, letzterErfolg: minsAgo(60 * 5), letzterFehler: null, kritisch: false }
+  ],
+  herausgeber: [
+    { id: "h1", name: "Ministerium X", typ: "ministry", vertrauen: "hoch", wege: [{ id: "p1", name: "Ministerium X HTML", methode: "html", status: "broken", fehlerserie: 11, letzterErfolg: minsAgo(60 * 24 * 9) }], schlechtesterStatusRang: 5 },
+    { id: "h2", name: "ARD", typ: "media", vertrauen: "hoch", wege: [{ id: "p3", name: "ARD Tagesschau", methode: "rss", status: "healthy", fehlerserie: 0, letzterErfolg: minsAgo(30) }], schlechtesterStatusRang: 0 }
+  ],
+  googleNews: { laeufe: 12, googleChecked: 400, googleOk: 350, googleFailed: 50, directChecked: 500, directOk: 480, directFailed: 20, anteilOkProzent: 42 },
+  letzterShadowLauf: { savedAt: minsAgo(60 * 20), modus: "shadow", abdeckungDokumenteProzent: 96 },
+  watchdog: {
+    briefingWatchdog: { verfuegbar: true, aktiv: true, zeitplanUtc: "30 5 * * *", quelle: ".github/workflows/briefing-watchdog.yml" },
+    healthWatch: { verfuegbar: true, aktiv: false, zeitplanUtc: null, quelle: ".github/workflows/health-watch.yml" }
+  }
+});
+api.setData("crawl", { recentRawItemCount: 3910 });
+api.setData("crawlReport", { failedSources: 8, checkedSources: 94 });
+const view = api.render();
+check("B1 Status-Labels als Text (gesund/beeintraechtigt/defekt/pruefen)", view.includes("gesund") && view.includes("defekt") && view.includes("Prüfen (needs_review)") && view.includes("Beeinträchtigt (degraded)"));
+check("B2 Zustandskopf nennt Zaehler", view.includes("64 gesund"));
+check("B3 Handlungsbedarf: defekte Wege benannt", view.includes("Abrufwege defekt"));
+check("B4 Architektur-Zaehler (Herausgeber/Wege/Pakete/Zuordnungen)", view.includes("38") && view.includes("85") && view.includes("146"));
+check("B5 Problematische Wege: Herausgeber + Methode + Fehlerserie", view.includes("Ministerium X") && view.includes("html") && view.includes("11"));
+check("B6 Konkrete Handlungsempfehlung je Weg", view.includes("Reparieren oder ersetzen"));
+check("B7 Google-News-Anteil mit Quelle der Zahl", view.includes("42 %") && view.includes("Crawl-Läufen"));
+check("B8 Shadow-Messlauf mit Abdeckung", view.includes("Abdeckung 96"));
+check("B9 Watchdog aktiv mit UTC-Zeitplan", view.includes("30 5 * * *") && view.includes("aktiv"));
+check("B10 Health-Watch ehrlich 'nur manuell'", view.includes("nur manuell"));
+check("B11 Messwerte je Weg ehrlich — (Telemetrie ohne Lesepfad)", view.includes("source_crawl_telemetry"));
+check("B12 Fehlerquote letzter Lauf berechnet (9 %)", view.includes("9 %"));
+check("B13 Herausgeber-Detail aufklappbar", view.includes("adm-pub-sum"));
+check("B14 Kein Kosten-/Tokenwert im Quellen-Bereich", !/USD|Tokens/.test(view));
 
-console.log("== View 1b: Reifegrad-Darstellung (Kandidat != einsatzbereit) ==");
-const kand = require(path.join(root, "lib/helmut/quellenarchitektur/seeds/landesmodule-kandidaten"));
-const reportR = ar.buildSourceAdminReport({ catalog: M, activation, qualityReport: quality, now: NOW, candidateReadiness: kand.readinessByGeography() });
-const htmlR = ui.render(reportR);
-check("Reifegrad: 'Kandidatenabdeckung' sichtbar", /Kandidatenabdeckung/.test(htmlR));
-check("Reifegrad: 'Kandidat'- und 'einsatzbereit'-Badges sichtbar", /Kandidat</.test(htmlR) && /einsatzbereit/.test(htmlR));
-check("Reifegrad: ehrlich 'noch nicht technisch verifiziert'", /noch nicht technisch verifiziert/.test(htmlR));
-check("Brandenburg: unbesetzte Pilotklassen sichtbar (fraktion_pilot/person_pilot)", /fraktion_pilot/.test(htmlR) && /person_pilot/.test(htmlR));
-check("Brandenburg: 'kein Ersatz durch fremde Partei/Person'", /kein Ersatz durch fremde Partei\/Person/.test(htmlR));
-check("ohne Rollup (report): keine erfundene Kandidatenabdeckung", !/Kandidatenabdeckung/.test(html));
-
-console.log("== View 2: Quellen und Abrufwege ==");
-check("Health-Badges gesund/defekt/unbekannt sichtbar", /gesund/.test(html) && /defekt/.test(html) && /unbekannt/.test(html));
-check("defekte Pflichtquelle (Bundestag) im Herausgeber-Prüfbedarf", /Bundestag/.test(html));
-check("Hinweis: ohne Dokumentdaten 'Unbekannt' statt erfundenem 'gesund'", /nicht „gesund" erfunden|Unbekannt/.test(html));
-
-console.log("== View 3: Profile ==");
-check("Bundestagsprofil 'Versorgt'", /test-politician-one[\s\S]{0,140}Versorgt/.test(html));
-check("Berlin-MdA 'Unversorgt'", /be[\s\S]{0,200}Unversorgt/.test(html) || /Unversorgt/.test(html));
-
-console.log("== View 4: Prüfbedarf ==");
-check("Prüfbedarf als ac-items (echte Probleme)", /ac-item ac-item--bad|ac-item ac-item--warn/.test(html));
-check("Noch nicht verfügbare Messwerte gelistet (ds-unavail)", /Noch nicht verfügbare Messwerte/.test(html) && /ds-unavail/.test(html));
-check("kein Rauschen: nicht 100+ Prüfpunkte (ruhig)", (html.match(/ac-item ac-item--/g) || []).length < 25);
-
-console.log("== View 5: Quellendetail — Ehrlichkeit ==");
-check("Dokumente/KO als 'nicht verfügbar' (kein erfundenes 0)", /Dokumente[\s\S]{0,80}ds-unavail/.test(html));
-check("Duplikate 'nicht verfügbar'", /Duplikate[\s\S]{0,80}ds-unavail/.test(html));
-check("Kosten je Quelle 'noch nicht zuordenbar'", /noch nicht zuordenbar/.test(html));
-
-console.log("== View 6: Kosten und Produktnutzen ==");
-check("Kosten-Leerzustand (keine KI-Kosten)", /Keine KI-Kosten/.test(html));
-check("Kosten-Attribution ehrlich nicht verfügbar erwähnt", /nicht zuordenbar|noch keine sourceId/.test(html));
-
-console.log("== Ehrlichkeit: keine erfundenen Demozahlen ==");
-check("kein hartes '0 Dokumente'/'0 KOs' im Detail (statt ds-unavail)", !/>0 Dokumente<|0 Knowledge Objects</.test(html));
-
-console.log("== Fehlende Daten -> gar keine Sektion (Alt-Admin unveraendert) ==");
-check("ohne Report: renderAdminQuellenarchitektur() = leer", ui.render(undefined) === "" && ui.render({}) === "");
-
-console.log(`\n== Ergebnis: ${pass} PASS, ${fail} FAIL ==`);
-process.exit(fail > 0 ? 1 : 0);
+console.log(`\n${failed === 0 ? "ALLE GRÜN" : failed + " FEHLGESCHLAGEN"} — ${passed}/${passed + failed} Quellen-UI-Assertions`);
+process.exit(failed > 0 ? 1 : 0);
