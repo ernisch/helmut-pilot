@@ -196,14 +196,31 @@ const doc = (id, title, summary = "", source_name = "Quelle") => ({ id, title, s
   // recoverOne mit injizierten Deps -> genau EIN understand+save (nur im Test, kein echtes Prod/KI).
   let saved = 0;
   const r3 = await rec.recoverOne({ vorgangId: "vg-umstellungen" },
-    { getExisting: async () => null, understandAndSave: async () => { saved += 1; return { ok: true }; } });
-  check("12 · recoverOne mit Deps -> genau 1 understand+save", r3.wrote === true && r3.aiCalls === 1 && saved === 1);
+    { getExisting: async () => null, understandAndSave: async () => { saved += 1; return { wrote: true, aiCalls: 1, status: "saved" }; } });
+  check("12 · recoverOne mit Deps -> genau 1 understand+save", r3.wrote === true && r3.aiCalls === 1 && r3.status === "saved" && saved === 1);
+  // recoverOne zaehlt einen KI-Skip korrekt als 0 Writes.
+  const r4 = await rec.recoverOne({ vorgangId: "vg-medikamenten" },
+    { getExisting: async () => null, understandAndSave: async () => ({ wrote: false, aiCalls: 0, status: "no-cluster" }) });
+  check("12 · recoverOne: no-cluster -> kein Write, 0 KI", r4.wrote === false && r4.aiCalls === 0);
 
-  // (13) Ausfuehrungs-SKRIPT: Default-Sperre + kein Storage-Schreibaufruf (statisch).
+  // (13) Ausfuehrungs-SKRIPT: Understand/Write-Pfad erst NACH der Flag+Token-Sperre.
   const src = fs.readFileSync(path.join(__dirname, "understanding-recovery-execute.js"), "utf8");
   check("13 · Execute-Skript ist Default-gesperrt (Flag+Token)", /recoveryExecuteEnabled/.test(src) && /recoveryConfirmed/.test(src));
-  const badCalls = src.match(/storage\.(save\w*|write\w*|delete\w*|mark\w*Failed|resetUnderstanding|markUnderstandingTerminal|saveKoDocumentLinks|deleteRetention)\b/g) || [];
-  check("13 · Execute-Skript ruft keine Storage-Schreibfunktion auf", badCalls.length === 0, badCalls.join(","));
+  const guardIdx = src.indexOf("if (!enabled || !confirmed)");
+  const writeIdx = src.indexOf("await understanding.understandOneCluster");
+  check("13 · Understand/Write-Pfad (Call) erst NACH der Flag+Token-Sperre", guardIdx > 0 && writeIdx > guardIdx);
+  check("13 · Execute-Skript ruft keine Storage-Schreibfunktion DIREKT auf",
+    !/storage\.(saveKnowledgeObject|saveKoDocumentLinks|markUnderstandingFailed|deleteRetention|resetUnderstanding|markUnderstandingTerminal)\b/.test(src));
+  // Dry-Run-Skript schreibt garantiert nie (kein --execute, keine Storage-Schreibaufrufe).
+  const drySrc = fs.readFileSync(path.join(__dirname, "understanding-recovery-dryrun.js"), "utf8");
+  check("13 · Dry-Run-Skript: kein Write, kein understandOneCluster", !/understandOneCluster/.test(drySrc) && /KEINEN --execute|schreibt niemals/i.test(drySrc));
+
+  // (14) reconstructCluster: passende Docs aus dem Pool; kein Treffer -> null.
+  const doc = (id, title, sn = "Q") => ({ id, title, summary: "", source_name: sn });
+  const pool = [doc("d1", "Steuerstrafrecht Reform beschlossen"), doc("x", "Fussball Weltmeisterschaft"), doc("d2", "Steuerstrafrecht Details geklaert")];
+  const cl = rec.reconstructCluster({ vorgang_id: "vg-steuerstrafrecht", headline: "Steuerstrafrecht Reform" }, pool);
+  check("14 · reconstructCluster findet genau die passenden Docs (2)", cl && cl.documents.length === 2);
+  check("14 · reconstructCluster: kein Treffer -> null", rec.reconstructCluster({ vorgang_id: "vg-x", headline: "Voelligfremdesthema Randnotiz" }, pool) === null);
 
   console.log(`\n${passed}/${passed + failed} Understanding-Recovery-Assertions erfolgreich.`);
   if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exit(1); }
