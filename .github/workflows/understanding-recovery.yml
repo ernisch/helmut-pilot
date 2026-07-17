@@ -90,4 +90,5 @@ jobs:
 
       - name: Hinweis kein echter Lauf
         if: ${{ inputs.confirm_text != 'RECOVER_6_CONFIRMED' }}
-        run: echo "Kein echter Lauf: confirm_text war nicht exakt RECOVER_6_CONFIRMED (nur Plan+Snapshot, read-only)."
+        run: |
+          echo "Kein echter Lauf (nur Plan/Snapshot, read-only) - confirm_text war nicht exakt RECOVER_6_CONFIRMED."
