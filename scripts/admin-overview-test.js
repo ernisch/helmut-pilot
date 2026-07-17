@@ -238,6 +238,15 @@ check("G3 Prozesslaufzeiten erscheinen (42 s)", pipelineView.includes("42 s"));
 check("G4 Cron-Zeitplan aus Server-Daten (UTC-Kennzeichnung)", pipelineView.includes("0 4 * * *") && pipelineView.includes("UTC"));
 check("G5 Pro-Tag-Tabelle vorhanden", pipelineView.includes("2026-07-17"));
 check("G6 Teurer Datenstatus nur auf Klick (data-adm-load)", pipelineView.includes("data-adm-load=\"dataStatus\""));
+check("G7 Datenfluss erklärt Understanding als separaten Schritt (kein Datenverlust)", pipelineView.includes("separaten Understanding-Schritt") && pipelineView.includes("kein Datenverlust"));
+
+// G8: 891 Rohdokumente -> 0 Wissensobjekte MIT Rückstau -> Hint nennt den Rückstau,
+// damit "891 → 0" nicht als Totalausfall missverstanden wird (Production-Frage "warum 0?").
+api.setData("crawlReport", { lastCrawlAt: minsAgo(90), mode: "full", scannedArticles: 1012, deduplicatedArticles: 891, checkedSources: 144, successfulSources: 144, failedSources: 0, newVorgaenge: 0, newKnowledgeObjects: 0, newRawDocuments: 891, errorCount: 0, errors: [] });
+api.setRecovery({ v3StoreAktiv: true, knowledgeObjects: { pending: 49, failed: 4, complete: 100 }, understandingLock: { aktiv: false, verdaechtig: false } });
+const backlogView = api.pipeline();
+check("G8 0 Wissensobjekte bei Rückstau: Hint nennt Rückstau-Zahl (49) statt Rätsel", backlogView.includes("49 im Rückstau"));
+check("G8b Rückstau-Hint nennt auch failed (4)", backlogView.includes("4 failed"));
 
 // ── H) Fehlerzustaende je Endpoint ───────────────────────────────────────────
 api.clearData();

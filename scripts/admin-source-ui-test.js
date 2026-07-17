@@ -78,6 +78,9 @@ api.setData("sources", {
   zaehler: { herausgeber: 38, abrufwege: 85, pakete: 11, paketPfade: 146 },
   problematischeWege: [
     { id: "p1", name: "Ministerium X HTML", herausgeber: "Ministerium X", methode: "html", status: "broken", fehlerserie: 11, letzterErfolg: minsAgo(60 * 24 * 9), letzterFehler: "http-404", kritisch: true },
+    // Wie in Production beobachtet: als 'broken' konfiguriert, aber OHNE Abruf-Verlauf
+    // (Fehlerserie 0, kein letzter Erfolg/Fehler) — darf NICHT "liefert nicht mehr" sagen.
+    { id: "p0", name: "Bundestag (Config)", herausgeber: "Deutscher Bundestag", methode: "rss", status: "broken", fehlerserie: 0, letzterErfolg: null, letzterFehler: null, kritisch: true },
     { id: "p2", name: "Bundestag RSS", herausgeber: "Bundestag", methode: "rss", status: "degraded", fehlerserie: 3, letzterErfolg: minsAgo(60 * 5), letzterFehler: null, kritisch: false }
   ],
   herausgeber: [
@@ -99,7 +102,9 @@ check("B2 Zustandskopf nennt Zaehler", view.includes("64 gesund"));
 check("B3 Handlungsbedarf: defekte Wege benannt", view.includes("Abrufwege defekt"));
 check("B4 Architektur-Zaehler (Herausgeber/Wege/Pakete/Zuordnungen)", view.includes("38") && view.includes("85") && view.includes("146"));
 check("B5 Problematische Wege: Herausgeber + Methode + Fehlerserie", view.includes("Ministerium X") && view.includes("html") && view.includes("11"));
-check("B6 Konkrete Handlungsempfehlung je Weg", view.includes("Reparieren oder ersetzen"));
+check("B6 Konkrete Handlungsempfehlung je Weg (mit Beleg -> 'liefert nicht mehr')", view.includes("Reparieren oder ersetzen — liefert nicht mehr."));
+check("B6b Ehrlich: broken OHNE Abruf-Verlauf sagt NICHT 'liefert nicht mehr', sondern 'ohne Abruf-Verlauf'", view.includes("ohne Abruf-Verlauf — Konfiguration/Aktivierung prüfen"));
+check("B6c Kontext-Notiz: Status stammt aus der Quellen-Architektur (kann vom Crawl abweichen)", view.includes("Quellen-Architektur") && view.includes("aktive Crawl kann davon abweichen"));
 check("B7 Google-News-Anteil mit Quelle der Zahl", view.includes("42 %") && view.includes("Crawl-Läufen"));
 check("B8 Shadow-Messlauf mit Abdeckung", view.includes("Abdeckung 96"));
 check("B9 Watchdog aktiv mit UTC-Zeitplan", view.includes("30 5 * * *") && view.includes("aktiv"));
