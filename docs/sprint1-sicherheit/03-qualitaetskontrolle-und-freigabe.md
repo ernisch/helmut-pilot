@@ -105,13 +105,14 @@ Lücke. Daraus behoben/dokumentiert:
 
 ### F4 — Cron-Versorgung für mehrere Mandanten
 - **Zweck:** Matching/Decisions/Pushes auch für den zweiten Mandanten erzeugen.
-- **Schritt:** Der Cron-Umbau ist inzwischen umgesetzt — Crons laden ihre Mandate aus
-  der DB (siehe `docs/multitenancy-pilot-neutralisierung.md`). Aktivierung:
-  `HELMUT_CRON_MULTI_TENANT=1` setzen, ggf. `HELMUT_MORNING_PUSH_ALL_PROFILES=1`.
-- **Risiko:** höhere KI-Kosten (mehr Profile × Läufe) — hier greift F1 als Schutz;
-  Cron-Laufzeit/Zeitbudget beachten.
-- **Rollback:** Flag leeren → Einzel-Mandats-Betrieb über `HELMUT_PILOT_TENANT_ID`.
-- **Benötigte Freigabe:** Env-/Flag-Änderung in Production + Kosten-Entscheidung.
+- **Schritt:** Umgesetzt — Crons laden ihre Mandate aus der DB und verarbeiten
+  **alle aktiven Mandate isoliert** (siehe `docs/multitenancy-pilot-neutralisierung.md`).
+  Keine Env-/Flag-Aktivierung nötig, kein bevorzugtes Mandat.
+- **Risiko:** höhere KI-Kosten skalieren mit der Zahl aktiver Mandate — hier
+  greift F1 (globaler Tagesdeckel) als Schutz; Cron-Laufzeit/Zeitbudget beachten.
+  Optionaler per-Mandant-Deckel: `HELMUT_TENANT_LLM_CAP` (eigener Freigabepunkt).
+- **Rollback:** kein Flag-Rückweg nötig; ein Mandat lässt sich über das Admin-/
+  Provisionierungswerkzeug deaktivieren (nimmt dann nicht mehr an Crons teil).
 
 ### F5 — (Später) Echte DB-seitige Trennung (GoTrue, Option B)
 - **Zweck:** RLS wirksam machen (Defense-in-Depth statt nur App-Guard).

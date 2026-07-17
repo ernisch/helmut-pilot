@@ -72,17 +72,14 @@ Arbeitsbeginn; lage-briefing 05:45 kann unverändert bleiben, da unabhängig.)
 Pilotmandanten passt; alternativ understanding auf 04:30 UND morning-briefing auf 05:00
 belassen). **Rückweg:** Zeile zurückstellen + Deploy.
 
-## F4 — Morgen-Push für alle Profile aktivieren (vor Mandant 2)
+## F4 — Morgen-Push für alle Profile ~~(erledigt/entfällt)~~
 
-**Vorbereitet (Sprint 3, Code deployt inert):** `HELMUT_MORNING_PUSH_ALL_PROFILES=1`
-in Vercel setzen + Redeploy → der 05:00-Cron bedient alle aktiven Profile
-(deaktivierte übersprungen, per-Profil try/catch, 240s-Budget, 0 KI).
-**Aktueller Mechanik-Stand (Mandantenneutralisierung, siehe
-`docs/multitenancy-pilot-neutralisierung.md`):** Ohne dieses Flag bedient der
-Cron nur das über `HELMUT_PILOT_TENANT_ID` konfigurierte Mandat (aus der DB
-validiert); fehlt der Wert, läuft der Cron ehrlich leer (`skipped`) — es gibt
-kein synthetisches oder hartkodiertes Fallback-Mandat mehr.
-**Rückweg:** Variable entfernen/0 + Redeploy.
+**Erledigt durch die Mandantenneutralisierung
+(`docs/multitenancy-pilot-neutralisierung.md`):** Der 05:00-Cron
+`morning-briefing` bedient jetzt IMMER alle aktiven DB-Mandate isoliert
+(deaktivierte übersprungen, per-Mandat try/catch, 240s-Budget, 0 KI) — ohne
+Flag, ohne bevorzugtes Mandat. Es gibt kein `HELMUT_MORNING_PUSH_ALL_PROFILES`
+und kein Fallback-Mandat mehr. Kein Freigabeschritt nötig.
 
 ## F5 — LLM-Tageslimit ✅ VOLLSTÄNDIG AUSGEFÜHRT (2026-07-15)
 
@@ -166,23 +163,27 @@ F5-Rest (`HELMUT_LLM_RESERVE_UNDERSTANDING=30` + `HELMUT_UNDERSTANDING_LOCK=1`)
 **Rückweg:** `20260717_llm_budget_reservation_rollback.sql` (App fällt
 automatisch auf Altverhalten zurück, kein Deploy nötig).
 
-## F13 — `HELMUT_PILOT_TENANT_ID` setzen (Pflicht VOR Deploy des mandantenneutralen Stands)
+## F13 — Mandantenneutraler Stand: KEINE Mandanten-Env nötig (nur Daten-Hygiene)
 
-**Warum:** Mit der Mandantenneutralisierung (`docs/multitenancy-pilot-neutralisierung.md`)
-gibt es keinen im Code hinterlegten Standardmandanten mehr. Das Legacy-Pilotgate
-und die mandantenbezogenen Crons beziehen ihr Mandat aus der Env-Variable
-`HELMUT_PILOT_TENANT_ID` (muss ein existierendes DB-Profil sein). Fail-closed:
-Ohne Wert antwortet die Pilotgate-API mit `503 pilot-tenant-not-configured` und
-Crons laufen leer (`skipped`) — es werden nie Daten eines geratenen Nutzers
-ausgeliefert.
+**Warum:** Die Mandantenneutralisierung
+(`docs/multitenancy-pilot-neutralisierung.md`) entfernt jeden bevorzugten
+Mandanten — es gibt **keine** `HELMUT_PILOT_TENANT_ID` und **kein**
+`HELMUT_CRON_MULTI_TENANT` mehr. Nutzeranfragen und Crons beziehen ihr Mandat
+ausschließlich aus den **aktiven DB-Mandaten**. Der bestehende Mandant
+funktioniert nach dem Merge **ohne jede zusätzliche Env-Variable** als normaler
+aktiver DB-Mandant; Crons laufen mit ≥1 aktivem Mandat nie leer, die App
+antwortet nie mit 503.
 
-**Schritt:** Vercel → Project `helmut-pilot` → Environment Variables →
-`HELMUT_PILOT_TENANT_ID` auf die Mandats-ID des bestehenden Pilotmandats setzen
-→ Redeploy. Der Wert ist Konfiguration, kein Code; das Profil liegt bereits als
-normaler Datensatz in der Datenbank.
+**Empfohlener (separater) Daten-Hygiene-Schritt:** Die beiden Demo-Mandate
+(`james-brown`, `angela-merkel`, Audit-Befund „vor Vertrieb löschen") über das
+Provisionierungs-/Admin-Werkzeug deaktivieren/entfernen. Danach existiert genau
+ein aktives Mandat und der Bare-Root-Aufruf serviert es ohne Mandatsauswahl.
+Das ist eine **Daten-Aktion, kein Deploy und kein Code-Schritt** — und für den
+Betrieb nicht zwingend (mit mehreren aktiven Mandaten erscheint lediglich eine
+einmalige Mandatsauswahl).
 
-**Rückweg:** Vorheriges Deployment re-deployen (die Variable kann gesetzt
-bleiben; der alte Stand liest sie nicht). Keine Migration, keine Datenänderung.
+**Rückweg:** Vorheriges Deployment re-deployen. Keine Migration, keine
+Datenänderung nötig.
 
 ## F11 — Branch Protection aktivieren (einmalig, 2 Minuten)
 

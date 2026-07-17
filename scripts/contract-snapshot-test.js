@@ -11,7 +11,7 @@
 // Produktverhalten geändert; der Test liest nur /api/app/start.
 //
 // Mandanten-Setup: Es gibt keinen im Code definierten Standardmandanten mehr.
-// Der Test konfiguriert das kuenstliche Test-Mandat per HELMUT_PILOT_TENANT_ID
+// Der Test macht das kuenstliche Test-Mandat zum EINZIGEN aktiven Datenbank-Mandat
 // (VOR dem require des Servers) und schreibt dessen Fixture-Profil
 // (scripts/fixtures/test-profiles.js) vor dem Request per storage.saveProfile
 // in den lokalen Store. Unkonfiguriert antwortet das Gate mit 503 — auch das
@@ -79,11 +79,19 @@ const TEST_TENANT_ID = "test-politician-one";
 process.env.HELMUT_AUTH_MODE = "pilot";        // nicht "accounts" -> Legacy-Pilotgate
 process.env.PILOT_SECRET = TEST_PILOT_SECRET;   // bekannt -> Bearer-Auth im Test
 process.env.HELMUT_STORAGE_BACKEND = "local";   // nicht "supabase" -> lokaler Datei-Store
-process.env.HELMUT_PILOT_TENANT_ID = TEST_TENANT_ID; // konfiguriertes Test-Mandat
 
 const handler = require(path.join(root, "server.js"));
 const storage = require(path.join(root, "lib", "helmut", "storage.js"));
 const { testPoliticianOne } = require(path.join(__dirname, "fixtures", "test-profiles.js"));
+
+async function setActiveMandates(profiles) {
+  const store = await storage.readStore("main");
+  store.profiles = {};
+  store.mandateProfiles = {};
+  await storage.writeStore(store, "main");
+  // saveProfile -> setzt updatedAt + mandateProfiles (Vertragsform bleibt stabil).
+  for (const p of profiles) await storage.saveProfile({ ...p });
+}
 
 function request(server, pathname) {
   const { port } = server.address();
@@ -201,22 +209,19 @@ async function main() {
 
   let json;
   try {
-    // --- (0) NEUE Mandanten-Semantik: ohne konfiguriertes Mandat FAIL CLOSED.
-    //     Das Legacy-Pilotgate hat KEINEN Code-Default mehr — unkonfiguriert
-    //     antworten mandatsbezogene /api/*-Pfade mit 503 statt mit den Daten
-    //     eines geratenen Nutzers.
-    delete process.env.HELMUT_PILOT_TENANT_ID;
+    // --- (0) NEUE Mandanten-Semantik (mandantenneutral): OHNE aktives Mandat gibt
+    //     es kein geratenes Profil — /api/app/start liefert einen Leerzustand
+    //     (kein 503-Pilotfehler, kein Code-Seed).
+    await setActiveMandates([]);
     const unconfigured = await request(server, "/api/app/start");
-    let unconfiguredReason = "";
-    try { unconfiguredReason = JSON.parse(unconfigured.body).reason || ""; } catch { /* kein JSON -> Check schlaegt unten fehl */ }
-    check("(0) Ohne HELMUT_PILOT_TENANT_ID: 503 pilot-tenant-not-configured (fail closed, kein Default-Mandat)",
-      unconfigured.status === 503 && unconfiguredReason === "pilot-tenant-not-configured",
-      `status=${unconfigured.status} reason=${JSON.stringify(unconfiguredReason)}`);
-    process.env.HELMUT_PILOT_TENANT_ID = TEST_TENANT_ID;
+    let unconfiguredPayload = {};
+    try { unconfiguredPayload = JSON.parse(unconfigured.body); } catch { /* kein JSON -> Check unten */ }
+    check("(0) Ohne aktives Mandat: 200 Leerzustand (kein geratenes Profil, kein 503)",
+      unconfigured.status === 200 && unconfiguredPayload.empty === true && !unconfiguredPayload.profile,
+      `status=${unconfigured.status}`);
 
-    // Fixture-Profil in den lokalen Store schreiben: Profildaten sind Datensaetze,
-    // kein Code-Seed — der Vertragstest stellt seine Testdaten selbst bereit.
-    await storage.saveProfile(testPoliticianOne);
+    // Fixture-Profil ist das EINZIGE aktive Mandat -> wird ohne Env/Auswahl serviert.
+    await setActiveMandates([testPoliticianOne]);
 
     const res = await request(server, "/api/app/start");
     check("Antwort ist HTTP 200 (Vertrag erreichbar, Auth ok)", res.status === 200, `status=${res.status}`);

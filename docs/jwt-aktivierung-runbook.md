@@ -84,10 +84,9 @@ alles danach (Verifikation, Rollback-Anweisung) übernimmt der Agent.
   Reads** — bleiben die Zahlen erhalten, funktioniert der JWT-Pfad für den
   Pilotmandanten („der Mandant sieht seine Daten"). Fallen sie
   auf 0, ist der JWT-Pfad defekt → Rollback. **Mechanik-Stand heute
-  (Mandantenneutralisierung):** Das Mandat kommt aus `HELMUT_PILOT_TENANT_ID`;
-  ohne gesetzten Wert antwortet der Endpoint fail-closed mit
-  `configured:false` („Kein Pilotmandat konfiguriert") statt des Status eines
-  geratenen Mandats.
+  (Mandantenneutralisierung):** `/api/release/public` gibt KEINE Pilot-/Tenant-
+  Konfiguration aus. Genau ein aktives DB-Mandat → dessen Release-Check; sonst
+  neutrales `{ ok:true, ready:false }` (kein geratener Mandant, keine Env).
 - Vercel-Runtime-Fehler: **leer**. Ein Anstieg von `[v3Store] … fehlgeschlagen`-Logs
   signalisiert ein JWT-/Claim-Problem.
 

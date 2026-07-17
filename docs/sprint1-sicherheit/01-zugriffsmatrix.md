@@ -111,17 +111,18 @@ Pilotprofils. **Matching + Decisions** laufen in crawl/pipeline/lage-check
 **nur für den Pilotmandanten** (scheduler.js:315/322/445/448).
 
 > **Update 2026-07-17:** Der Code-Fallback auf ein hartkodiertes Pilotprofil ist
-> entfernt. Crons laden ihre Mandate jetzt aus der DB: ohne
-> `HELMUT_CRON_MULTI_TENANT` (Default AUS) nur das über `HELMUT_PILOT_TENANT_ID`
-> konfigurierte Mandat, fail-closed (`skipped`) ohne Wert — siehe
-> `docs/multitenancy-pilot-neutralisierung.md`. Die folgende Tabelle beschreibt
+> entfernt — und NICHT durch eine Env-Variable ersetzt. Crons laden ihre Mandate
+> aus der DB und verarbeiten **alle aktiven Mandate isoliert** (kein Flag, kein
+> bevorzugtes Mandat); Nutzeranfragen lösen ihr Mandat aus Session bzw. den
+> aktiven DB-Mandaten auf — siehe `docs/multitenancy-pilot-neutralisierung.md`.
+> Die folgende Tabelle beschreibt
 > den verifizierten Stand vom 2026-07-16.
 
 | Cron | Scope |
 |---|---|
 | `/api/cron/crawl`, `/api/cron/pipeline` | Understanding global; Matching+Decision **nur Pilotmandant** |
 | `/api/cron/lage-check` | **hart Pilotmandant** (Fold-Matching/Decision + Push nur Pilot) |
-| `/api/cron/morning-briefing` | **nur Pilotmandant** (Loop über alle Profile nur mit Flag `HELMUT_MORNING_PUSH_ALL_PROFILES=1`, Default AUS) |
+| `/api/cron/morning-briefing` | **alle aktiven DB-Mandate isoliert** (kein Flag, kein bevorzugtes Mandat; deaktivierte übersprungen) |
 | `/api/cron/lage-briefing` | **echt multi-tenant** (Loop `listProfiles()`) |
 | `/api/cron/understanding` | global/mandantenneutral |
 | `/api/cron/health-report` | Pilotmandant (Betreiber-Monitoring) |
@@ -172,6 +173,6 @@ bewusst mandantenlos (globaler Deckel). Klassifikation im Code: `isSharedGlobalC
 | kein per-Mandant-Kostendeckel | ein Mandant kann Budget monopolisieren | **behoben** (atomar, Default AUS, freigabepflichtig scharf) |
 | kein idempotentes Provisioning | halbe/doppelte Accounts | **behoben** (provisioning.js + CLI) |
 | Advisor: search_path/REVOKE | Priv-Esc-Vektor / Korpus-Abzug bei aktiver Policy | **vorbereitet** (Migration 20260721, freigabepflichtig) |
-| Crons nur Pilotmandant | zweiter Mandant unterversorgt | **dokumentiert** (Freigabepunkt, Cron-Umbau nicht in Sprint 1; inzwischen umgesetzt — Mandate aus der DB, Multi-Tenant hinter `HELMUT_CRON_MULTI_TENANT`) |
+| Crons nur Pilotmandant | zweiter Mandant unterversorgt | **behoben** — Crons verarbeiten alle aktiven DB-Mandate isoliert, ohne Flag/bevorzugtes Mandat |
 | RLS inert (JWT tot) | keine DB-seitige Durchsetzung | **dokumentiert** (echtes GoTrue-Auth = eigener großer Schritt) |
 | main-auth-Blob Single-Point | alle Konten in einer Zeile | **dokumentiert** (Folgeschritt) |

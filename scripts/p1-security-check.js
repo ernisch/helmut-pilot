@@ -32,8 +32,7 @@ delete process.env.PILOT_SECRET;
 delete process.env.HELMUT_ADMIN_SECRET;
 delete process.env.CRON_SECRET;
 // KEIN konfiguriertes Pilotmandat als Ausgangszustand: es gibt keinen Code-Default,
-// Testbloecke setzen HELMUT_PILOT_TENANT_ID bei Bedarf selbst (und raeumen auf).
-delete process.env.HELMUT_PILOT_TENANT_ID;
+// Mandantenneutral: Testbloecke stellen das aktive Test-Mandat im Store bereit.
 // Backend hart auf "local" zwingen. loadLocalEnv() (im Server) ueberschreibt nur
 // UNGESETZTE Keys — ein definierter Wert bleibt also erhalten und useSupabase()
 // bleibt false (kein Netzwerk/Node-fetch noetig).
@@ -93,43 +92,39 @@ async function presentationBackfillEndpointChecks() {
   await new Promise((r) => server.listen(0, "127.0.0.1", r));
   const p = "/api/admin/presentation-backfill";
   const parse = (r) => { try { return JSON.parse(r.body); } catch (_) { return {}; } };
-  // Legacy-Pilot-Modus: mandatsbezogene /api/-Pfade brauchen ein konfiguriertes
-  // Mandat, sonst antwortet das Pilotgate VOR der Cron-Autorisierung mit 503
-  // (dieser Zustand wird separat in saasMandateHardeningChecks bewiesen).
-  // Hier wird die Secret-Absicherung des Endpunkts selbst getestet.
-  process.env.HELMUT_PILOT_TENANT_ID = testPoliticianOne.id;
+  // Admin-Bypass mit explizitem ?politicianId (secret-geschuetzt) — mandatsneutral,
+  // keine Tenant-Env noetig. Hier wird die Secret-Absicherung selbst getestet.
+  const pid = `politicianId=${testPoliticianOne.id}`;
   try {
     // 1) kein Secret -> 503 (fail closed)
     delete process.env.CRON_SECRET;
-    const a = await request(server, { pathname: p, headers: { Authorization: "Bearer irgendwas" } });
+    const a = await request(server, { pathname: `${p}?${pid}`, headers: { Authorization: "Bearer irgendwas" } });
     check("Presentation-Backfill ohne CRON_SECRET blockiert (503, fail closed)", a.status === 503, `status=${a.status}`);
 
     process.env.CRON_SECRET = "p1-test-secret";
     // 2) falsches Secret -> 403
-    const b = await request(server, { pathname: p, headers: { Authorization: "Bearer falsch" } });
+    const b = await request(server, { pathname: `${p}?${pid}`, headers: { Authorization: "Bearer falsch" } });
     check("Presentation-Backfill mit falschem Secret blockiert (403)", b.status === 403, `status=${b.status}`);
 
     // 3) richtiges Secret, ohne execute -> Default DRY-RUN (sicher)
-    const d = await request(server, { pathname: p, headers: { Authorization: "Bearer p1-test-secret" } });
+    const d = await request(server, { pathname: `${p}?${pid}`, headers: { Authorization: "Bearer p1-test-secret" } });
     const dj = parse(d);
     check("Presentation-Backfill: ohne execute -> mode=dry-run (sicherer Default)", d.status === 200 && dj.mode === "dry-run", `status=${d.status} mode=${dj.mode}`);
 
-    // 4a) execute=1 per GET -> 405 (Review-Fix Phase 9: Schreiblauf nur per POST,
-    //     damit kein Link/Prefetch/Verlauf-Klick je einen KI-Lauf ausloest)
-    const eGet = await request(server, { pathname: `${p}?execute=1`, headers: { Authorization: "Bearer p1-test-secret" } });
+    // 4a) execute=1 per GET -> 405 (Review-Fix Phase 9: Schreiblauf nur per POST)
+    const eGet = await request(server, { pathname: `${p}?${pid}&execute=1`, headers: { Authorization: "Bearer p1-test-secret" } });
     check("Presentation-Backfill: execute=1 per GET -> 405 (Schreiblauf nur POST)", eGet.status === 405, `status=${eGet.status}`);
 
     // 4b) execute=1 per POST -> mode=execute (Flag-Logik; ohne Store trotzdem kein Schreibvorgang)
-    const e = await request(server, { method: "POST", pathname: `${p}?execute=1`, headers: { Authorization: "Bearer p1-test-secret" } });
+    const e = await request(server, { method: "POST", pathname: `${p}?${pid}&execute=1`, headers: { Authorization: "Bearer p1-test-secret" } });
     const ej = parse(e);
     check("Presentation-Backfill: execute=1 per POST -> mode=execute", e.status === 200 && ej.mode === "execute", `status=${e.status} mode=${ej.mode}`);
 
     // 5) ganz ohne Authorization (Secret ist gesetzt) -> 403: die Route ist nie offen
-    const noauth = await request(server, { pathname: p });
+    const noauth = await request(server, { pathname: `${p}?${pid}` });
     check("Presentation-Backfill ohne Authorization blockiert (403, nie offen)", noauth.status === 403, `status=${noauth.status}`);
   } finally {
     delete process.env.CRON_SECRET;
-    delete process.env.HELMUT_PILOT_TENANT_ID;
     await new Promise((r) => server.close(r));
   }
 }
@@ -137,7 +132,7 @@ async function presentationBackfillEndpointChecks() {
 // SaaS-Hardening: KEIN im Code definierter Standardmandant, kein stiller
 // Fremd-Mandats-Fallback.
 // - Isolations-Kern (auth.pickPoliticianId) direkt geprüft.
-// - Legacy-Pilot-Modus OHNE HELMUT_PILOT_TENANT_ID -> 503 pilot-tenant-not-configured.
+// - Legacy-Zugang ohne aktives Mandat -> ehrlicher Leerzustand (kein geratener Mandant).
 // - MIT konfiguriertem Mandat kommen Profildaten AUSSCHLIESSLICH aus dem Store
 //   (blankProfile als Basis, kein Seed-Profil fuer irgendwen).
 // - E2E im Account-Modus: eingeloggter Nutzer OHNE Mandat -> 403 no-mandate,
@@ -183,49 +178,46 @@ async function saasMandateHardeningChecks() {
     else clearStore();
   };
 
-  const prev = { mode: process.env.HELMUT_AUTH_MODE, email: process.env.HELMUT_ADMIN_EMAIL, pass: process.env.HELMUT_ADMIN_PASSWORD, pilot: process.env.HELMUT_PILOT_TENANT_ID };
+  const prev = { mode: process.env.HELMUT_AUTH_MODE, email: process.env.HELMUT_ADMIN_EMAIL, pass: process.env.HELMUT_ADMIN_PASSWORD };
   try {
     clearStore();
 
-    // A) LEGACY-PILOT-Modus: welches Mandat bedient wird, ist REINE Betreiber-
-    //    Konfiguration (HELMUT_PILOT_TENANT_ID). Ohne Konfiguration antworten
-    //    mandatsbezogene API-Pfade fail-closed mit 503 — nie mit geratenen Daten.
+    // A) MANDANTENNEUTRAL: kein Pilot-/Default-/Fallback-Mandat. Das Mandat ergibt
+    //    sich ausschliesslich aus den AKTIVEN Datenbankmandaten — keine Env-Variable.
     delete process.env.HELMUT_AUTH_MODE;
-    delete process.env.HELMUT_PILOT_TENANT_ID;
     const pilot = http.createServer(handler);
     await new Promise((r) => pilot.listen(0, "127.0.0.1", r));
     try {
-      // A1) OHNE HELMUT_PILOT_TENANT_ID -> 503 pilot-tenant-not-configured.
+      // A1) KEIN aktives Mandat -> ehrlicher Leerzustand (kein 503, kein geratener Mandant).
+      clearStore();
       const res = await requestFull(pilot, { pathname: "/api/profile/current" });
       const p = parse(res);
-      check("SaaS: Pilot-Modus OHNE HELMUT_PILOT_TENANT_ID -> 503 pilot-tenant-not-configured (kein geratener Mandant)",
-        res.status === 503 && p.reason === "pilot-tenant-not-configured",
+      check("SaaS: KEIN aktives Mandat -> Leerzustand statt geratenem Profil (kein 503 pilot-tenant-*)",
+        (res.status === 200 || res.status === 409) && p.empty === true && !p.party && !p.id,
         `status=${res.status} reason=${p.reason}`);
 
-      // A2) MIT konfiguriertem Mandat + gespeichertem Profil: der Endpoint
-      //     funktioniert, Profildaten kommen AUS DEM STORE (kein Code-Seed).
-      process.env.HELMUT_PILOT_TENANT_ID = testPoliticianOne.id;
+      // A2) GENAU EIN aktives Mandat (im Store) -> ohne Env/Auswahl serviert; Daten AUS DEM STORE.
       await storage.saveProfile({ ...testPoliticianOne });
       const okRes = await requestFull(pilot, { pathname: "/api/profile/current" });
       const op = parse(okRes);
-      check("SaaS: Pilot-Modus MIT HELMUT_PILOT_TENANT_ID -> 200, Profildaten kommen aus dem Store",
+      check("SaaS: EIN aktives Mandat -> 200, Profildaten aus dem Store (kein Code-Seed, keine Env)",
         okRes.status === 200 && op.id === testPoliticianOne.id && op.party === testPoliticianOne.party &&
         Array.isArray(op.committees) && op.committees.includes("Arbeit und Soziales"),
         `status=${okRes.status} id=${op.id} party=${op.party}`);
 
-      // A3) Konfiguriertes Mandat OHNE gespeichertes Profil -> neutrales
-      //     blankProfile (KEIN reiches Seed-Profil fuer irgendwen).
+      // A3) Minimal gefuelltes (aber aktives) Mandat -> neutrales blankProfile
+      //     (KEIN reiches Seed-Profil fuer irgendwen).
       clearStore();
+      await storage.saveProfile({ id: testPoliticianOne.id, fullName: testPoliticianOne.fullName });
       const blankRes = await requestFull(pilot, { pathname: "/api/profile/current" });
       const bpRes = parse(blankRes);
-      check("SaaS: Pilot-Modus ohne gespeichertes Profil -> neutrales blankProfile (keine Partei/Ausschuesse/Themen)",
+      check("SaaS: minimal gefuelltes Mandat -> neutrales blankProfile (keine Partei/Ausschuesse/Themen)",
         blankRes.status === 200 && bpRes.id === testPoliticianOne.id && bpRes.party === "" &&
         Array.isArray(bpRes.committees) && bpRes.committees.length === 0 &&
         !JSON.stringify(bpRes).includes("Testpartei") && !JSON.stringify(bpRes).includes("Bürgergeld"),
         `status=${blankRes.status} party="${bpRes.party}" committees=${JSON.stringify(bpRes.committees)}`);
     } finally {
       await new Promise((r) => pilot.close(r));
-      delete process.env.HELMUT_PILOT_TENANT_ID;
     }
 
     // Account-Modus vorbereiten (Admin-Seed via Env).
@@ -277,7 +269,6 @@ async function saasMandateHardeningChecks() {
     if (prev.mode === undefined) delete process.env.HELMUT_AUTH_MODE; else process.env.HELMUT_AUTH_MODE = prev.mode;
     if (prev.email === undefined) delete process.env.HELMUT_ADMIN_EMAIL; else process.env.HELMUT_ADMIN_EMAIL = prev.email;
     if (prev.pass === undefined) delete process.env.HELMUT_ADMIN_PASSWORD; else process.env.HELMUT_ADMIN_PASSWORD = prev.pass;
-    if (prev.pilot === undefined) delete process.env.HELMUT_PILOT_TENANT_ID; else process.env.HELMUT_PILOT_TENANT_ID = prev.pilot;
   }
 }
 
@@ -290,33 +281,31 @@ async function debugBriefingEndpointChecks() {
   const p = "/api/debug/briefing";
   const parse = (r) => { try { return JSON.parse(r.body); } catch (_) { return {}; } };
   const prevAdmin = process.env.HELMUT_ADMIN_SECRET, prevCron = process.env.CRON_SECRET, prevQ = process.env.HELMUT_ALLOW_QUERY_SECRETS;
-  // Mandatsbezogener Debug-Endpoint: braucht im Legacy-Pilot-Modus ein
-  // konfiguriertes Mandat (Betreiber-Env, kein Code-Default).
-  process.env.HELMUT_PILOT_TENANT_ID = testPoliticianOne.id;
+  // Mandatsneutral: Admin-Bypass mit explizitem ?politicianId (secret-geschuetzt).
+  const pid = `politicianId=${testPoliticianOne.id}`;
   try {
     delete process.env.HELMUT_ALLOW_QUERY_SECRETS; // wie Production: nur Bearer, kein ?secret=
     // A) HELMUT_ADMIN_SECRET gesetzt
     process.env.HELMUT_ADMIN_SECRET = "p1-admin-secret";
     delete process.env.CRON_SECRET;
-    const noAuth = await request(server, { pathname: p });
+    const noAuth = await request(server, { pathname: `${p}?${pid}` });
     check("Debug-Briefing ohne Secret -> 404 (fail closed)", noAuth.status === 404, `status=${noAuth.status}`);
-    const wrong = await request(server, { pathname: p, headers: { Authorization: "Bearer falsch" } });
+    const wrong = await request(server, { pathname: `${p}?${pid}`, headers: { Authorization: "Bearer falsch" } });
     check("Debug-Briefing mit falschem Secret -> 404", wrong.status === 404, `status=${wrong.status}`);
-    const ok = await request(server, { pathname: p, headers: { Authorization: "Bearer p1-admin-secret" } });
+    const ok = await request(server, { pathname: `${p}?${pid}`, headers: { Authorization: "Bearer p1-admin-secret" } });
     const okj = parse(ok);
     check("Debug-Briefing mit Bearer HELMUT_ADMIN_SECRET -> 200 + engine v3",
       ok.status === 200 && okj.engine === "v3" && okj.briefing && okj.briefing.engine === "v3", `status=${ok.status} engine=${okj.engine}`);
     // B) HELMUT_ADMIN_SECRET NICHT gesetzt -> CRON_SECRET ist der Fallback (konsistent zu hasAdminBypass)
     delete process.env.HELMUT_ADMIN_SECRET;
     process.env.CRON_SECRET = "p1-cron-secret";
-    const cronOk = await request(server, { pathname: p, headers: { Authorization: "Bearer p1-cron-secret" } });
+    const cronOk = await request(server, { pathname: `${p}?${pid}`, headers: { Authorization: "Bearer p1-cron-secret" } });
     check("Debug-Briefing: ohne ADMIN_SECRET akzeptiert Bearer CRON_SECRET (Fallback) -> 200 + engine v3",
       cronOk.status === 200 && parse(cronOk).engine === "v3", `status=${cronOk.status}`);
   } finally {
     if (prevAdmin === undefined) delete process.env.HELMUT_ADMIN_SECRET; else process.env.HELMUT_ADMIN_SECRET = prevAdmin;
     if (prevCron === undefined) delete process.env.CRON_SECRET; else process.env.CRON_SECRET = prevCron;
     if (prevQ === undefined) delete process.env.HELMUT_ALLOW_QUERY_SECRETS; else process.env.HELMUT_ALLOW_QUERY_SECRETS = prevQ;
-    delete process.env.HELMUT_PILOT_TENANT_ID;
     await new Promise((r) => server.close(r));
   }
 }

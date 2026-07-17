@@ -437,8 +437,19 @@ async function loadBriefing() {
       else renderPilotAccess();
       return;
     }
+    if (startResponse.status === 409) {
+      // Legacy-Zugang mit mehreren aktiven Mandaten: Auswahl noetig (kein geratenes Mandat).
+      const selection = await startResponse.json().catch(() => ({}));
+      renderMandateSelection(selection.mandates || []);
+      return;
+    }
     if (!startResponse.ok) throw new Error(`Helmut konnte nicht gestartet werden (${startResponse.status})`);
     const startPayload = await startResponse.json();
+    if (startPayload && (startPayload.needsMandateSelection || (startPayload.empty && !startPayload.profile))) {
+      // Legacy-Zugang: mehrere aktive Mandate -> Auswahl; keine aktiven Mandate -> Leerzustand.
+      renderMandateSelection(startPayload.mandates || []);
+      return;
+    }
     applyStartPayload(startPayload);
     saveCachedStartPayload(startPayload);
     restorePersistedView();
@@ -847,6 +858,46 @@ async function getCsrfToken() {
       });
   }
   return csrfTokenPromise;
+}
+
+// Legacy-Zugang mit mehreren aktiven Mandaten (kein bevorzugtes/geratenes Mandat):
+// der Nutzer waehlt sein Mandat aus der datenbankbasierten Liste aktiver Mandate.
+// 0 aktive Mandate -> ehrlicher Leerzustand. Die Auswahl wird als ?politicianId
+// uebernommen (Server loest sie auf) und lokal fuer Folgeaufrufe gemerkt.
+function renderMandateSelection(mandates = []) {
+  hideStartupSplash();
+  const list = Array.isArray(mandates) ? mandates.filter((m) => m && m.id) : [];
+  if (!list.length) {
+    app.innerHTML = `
+      <section class="loading-card pilot-access-card">
+        <div class="loading-logo"><span>H</span></div>
+        <p>Helmut</p>
+        <h1>Kein aktives Mandat.</h1>
+        <p class="pilot-access-copy">Es ist derzeit kein aktives Mandat hinterlegt. Sobald ein Mandat aktiv ist, erscheint es hier.</p>
+      </section>`;
+    return;
+  }
+  const buttons = list.map((m) =>
+    `<button type="button" class="primary-button" data-mandate-pick="${escapeAttribute(m.id)}">${escapeHtml(m.name || m.id)}</button>`
+  ).join("");
+  app.innerHTML = `
+    <section class="loading-card pilot-access-card">
+      <div class="loading-logo"><span>H</span></div>
+      <p>Helmut</p>
+      <h1>Mandat wählen.</h1>
+      <p class="pilot-access-copy">Wähle das Mandat, dessen politische Lage du öffnen möchtest.</p>
+      <div class="pilot-access-form">${buttons}</div>
+    </section>`;
+  app.querySelectorAll("[data-mandate-pick]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = sanitizePoliticianId(btn.getAttribute("data-mandate-pick"));
+      if (!id) return;
+      rememberPoliticianId(id);
+      const params = new URLSearchParams(window.location.search);
+      params.set("politicianId", id);
+      window.location.search = params.toString();
+    });
+  });
 }
 
 function renderPilotAccess(message = "") {

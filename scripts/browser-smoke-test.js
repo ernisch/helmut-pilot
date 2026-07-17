@@ -74,10 +74,9 @@ function check(name, cond, detail = "") {
   delete process.env.HELMUT_AUTH_MODE;
   delete process.env.OPENAI_API_KEY;
   delete process.env.AZURE_OPENAI_KEY;
-  // Mandantenneutralisierung: Es gibt keinen Code-Standardmandanten mehr — das
-  // Pilotgate braucht ein KONFIGURIERTES Mandat + gespeichertes Profil (wie in
-  // Production, dort via Vercel-Env + Datenbank-Datensatz).
-  process.env.HELMUT_PILOT_TENANT_ID = "test-politician-one";
+  // Mandantenneutral: Es gibt KEIN bevorzugtes/konfiguriertes Mandat. Der Legacy-
+  // Zugang loest das EINZIGE aktive Datenbankmandat auf — der Test macht das
+  // Test-Mandat zum einzigen aktiven (kein Env noetig).
   process.env.HELMUT_STORAGE_BACKEND = "local";
   process.env.HELMUT_STORE_CACHE_MS = "0";
   const dataDir = path.join(root, ".helmut-data");
@@ -96,10 +95,14 @@ function check(name, cond, detail = "") {
   process.on("exit", restore);
 
   const handler = require(path.join(root, "server.js"));
-  // Profil des Test-Mandats als normalen Datensatz in den lokalen Store legen
-  // (die App laedt Profildaten ausschliesslich aus dem Store, nie aus Code).
+  // Test-Mandat als EINZIGES aktives Datenbankmandat bereitstellen (Store leeren,
+  // dann speichern) -> der Bare-Boot loest es ohne Env/Auswahl auf.
   const { testPoliticianOne } = require(path.join(root, "scripts", "fixtures", "test-profiles"));
-  await require(path.join(root, "lib", "helmut", "storage")).saveProfile({ ...testPoliticianOne });
+  const smokeStorage = require(path.join(root, "lib", "helmut", "storage"));
+  const clean = await smokeStorage.readStore("main");
+  clean.profiles = {}; clean.mandateProfiles = {};
+  await smokeStorage.writeStore(clean, "main");
+  await smokeStorage.saveProfile({ ...testPoliticianOne });
   const server = http.createServer(handler);
   await new Promise((r) => server.listen(0, "127.0.0.1", r));
   const { port } = server.address();

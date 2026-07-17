@@ -62,9 +62,8 @@ Das CLI **verweigert** jeden Lauf, sobald ein Supabase-Backend konfiguriert ist
 1. Production-Write eines neuen Profils + Auth-Nutzers (`--allow-production`).
 2. Optional: `HELMUT_TENANT_LLM_LIMITS` um `{"<id>": <limit>}` ergänzen (Env-Änderung,
    Freigabepunkt) für den per-Mandant-Kostendeckel.
-3. Cron-Versorgung: mandantenbezogene Crons laden ihre Mandate aus der
-   Datenbank — ohne `HELMUT_CRON_MULTI_TENANT` (Default AUS) bedienen sie nur
-   das über `HELMUT_PILOT_TENANT_ID` konfigurierte Mandat (fail-closed:
-   `skipped` ohne Wert). Für echte Multi-Tenant-Versorgung (Matching/Decisions)
-   muss das Flag aktiviert werden — eigener Freigabepunkt, siehe
-   `docs/multitenancy-pilot-neutralisierung.md`.
+3. Cron-Versorgung: mandantenbezogene Crons laden ihre Mandate ausschließlich
+   aus der Datenbank und verarbeiten **alle aktiven Mandate isoliert** — kein
+   Flag, kein bevorzugtes/konfiguriertes Mandat. Ein neu provisioniertes,
+   aktives Mandat wird ohne weitere Konfiguration automatisch mitversorgt
+   (siehe `docs/multitenancy-pilot-neutralisierung.md`).

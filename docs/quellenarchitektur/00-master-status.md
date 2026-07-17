@@ -10,9 +10,10 @@
   entsteht zur Laufzeit dynamisch als `<mandats-id>-news`. Der Code-Seed enthält
   **keine Personenpakete mehr** — bestehende DB-Zeilen (inkl. des persönlichen Pakets
   des Pilotmandanten) bleiben unverändert.
-- Referenz: `docs/multitenancy-pilot-neutralisierung.md` (Pilotgate über
-  `HELMUT_PILOT_TENANT_ID`, fail-closed; Crons laden Mandanten aus der DB;
-  Provisionierungs-Schutz datengetrieben statt Namensliste).
+- Referenz: `docs/multitenancy-pilot-neutralisierung.md` (kein bevorzugter/
+  Pilot-/Default-Mandant; Nutzeranfragen und Crons beziehen ihr Mandat aus den
+  aktiven DB-Mandaten — ohne mandantenspezifische Env-Variable; Provisionierungs-
+  Schutz datengetrieben statt Namensliste).
 
 ## NACHTRAG 2026-07-15 (Technische Rest-PRs: Watchdog-Timeout + Radar-Störungswahrheit live) — aktuellster verifizierter Stand
 

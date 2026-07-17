@@ -1,112 +1,104 @@
-# Mandantenneutralisierung — Entfernung der Pilot-Sonderbehandlung
+# Mandantenneutralisierung — Entfernung jeder Pilot-Sonderbehandlung
 
 Stand: 2026-07-17 · Branch `claude/remove-pilot-tenant-hardcoding-qkqxw0`
 
 ## 1. Ziel und Grundregeln
 
-Der Pilotmandant war bisher an vielen Stellen fest in den Code eingebaut
-(Vollprofil als Konstante, Default-Parameter, Cron-Fallbacks, Schutzliste,
-Personenquelle, Paketbindung). Dieser Umbau entfernt jede dieser
-Sonderbehandlungen. Es gelten ab jetzt folgende Regeln:
+Der Pilotmandant war an vielen Stellen fest eingebaut (Vollprofil als Konstante,
+Default-Parameter, Cron-Fallbacks, Schutzliste, Personenquelle, Paketbindung).
+Dieser Umbau entfernt jede Sonderbehandlung — **und ersetzt sie NICHT durch eine
+Environment-Variable.** Es gibt **keinen Pilot-, Default-, primären oder
+Fallback-Mandanten** mehr, weder im Code, noch in einer Env-Variable, noch als
+Cron-Fallback.
 
-1. **Kein Nutzer ist im Code als Standardmandant definiert.** Das frühere
-   Code-Vollprofil ist ersatzlos gelöscht; Profildaten (auch die des Piloten)
+1. **Kein Nutzer ist bevorzugt.** Profildaten (auch die des bestehenden Mandanten)
    leben ausschließlich als normale Datensätze im Store/der Datenbank.
-2. **Crons laden aktive Mandanten aus der Datenbank**
-   (`tenant-context.resolveCronTenantIds` → `listProfiles()`).
-3. **Fehlender Mandantenkontext führt zu einem sicheren Abbruch**:
-   HTTP-Pfade → `503 pilot-tenant-not-configured`; interne Funktionen →
-   `TenantContextError`; Crons → ehrlicher Leerlauf (`skipped`).
-4. **Es gibt keinen Fallback auf einen bestimmten Nutzer** — nirgends.
-5. **Budgets** stammen aus Mandatsprofil (`ki_budget_*`) oder neutraler
-   Standardkonfiguration (`HELMUT_MAX_LLM_CALLS_PER_TENANT_PER_DAY`,
-   sicherer Fallback 40); es gibt keine persönlichen Overrides im Code.
-6. **Quellenpakete** stammen aus Profil und Datenbank. Das persönliche Paket
-   eines Mandats folgt der Konvention `profil-<mandats-id>`
-   (`profile-packages.personalPackageKeyFor`); die Personenquelle wird zur
-   Laufzeit aus dem Profil erzeugt (`personNewsSource`, id `<mandats-id>-news`).
-7. **Cache- und Blob-Schlüssel** entstehen ausschließlich aus validiertem
-   Mandantenkontext (`requireTenantId`); Personen-Rohdaten gehören strikt dem
-   Mandat, dessen Personenquelle sie geliefert hat.
-8. **Admin-Werkzeuge** arbeiten mit übergebenen und validierten IDs; die
-   Provisionierung schützt bestehende Mandanten **datengetrieben**
-   (`provisionedBy`-Marker + optional `HELMUT_PROTECTED_TENANT_IDS`) statt
-   über eine Namensliste.
-9. **Tests verwenden ausschließlich künstliche Namen und IDs**
-   (`tenant-alpha`, `tenant-beta`, `test-politician-one`, `test-politician-two`).
-10. **Systemprozesse unterscheiden global und mandantenbezogen** (siehe
-    Inventur unten).
+2. **Nutzeranfragen** bestimmen ihr Mandat aus verifiziertem Kontext:
+   - Account-Modus: Session + Zuweisungen.
+   - Legacy-Zugang (geteiltes `PILOT_SECRET`, keine Accounts): die **aktiven
+     Mandate der Datenbank sind die Zugriffsmenge** (allgemeine, datenbankbasierte
+     Zugangszuordnung).
+3. **Mandantenbezogene Crons** verarbeiten **immer alle aktiven DB-Mandate**,
+   jedes isoliert — kein Env, kein Flag, kein Einzel-Mandats-Fallback.
+4. **Fehlender authentifizierter Mandantenkontext** bricht sicher ab (403 im
+   Account-Modus; `TenantContextError` intern).
+5. Budgets/Quellenpakete/Cache-Schlüssel stammen aus Profil bzw. validiertem
+   Mandantenkontext; das persönliche Paket folgt der Konvention
+   `profil-<mandats-id>`, die Personenquelle `<mandats-id>-news`.
+6. **Es ist KEINE mandantenspezifische Env-Variable nötig** — der bestehende
+   Mandant funktioniert nach dem Merge als normaler aktiver DB-Mandant.
 
-## 2. Neue Konfiguration (alle Werte fail-closed, keine Code-Defaults)
+## 2. Wie der Mandant bestimmt wird
 
-| Variable | Bedeutung | Ohne Wert |
+### Nutzeranfragen
+- **Account-Modus** (`HELMUT_AUTH_MODE=accounts`): `politicianId` kommt aus
+  Session + Assignments (`auth.getAllowedPoliticianIds` / `pickPoliticianId`).
+  Ohne gültiges Mandat: 403 (`no-mandate`) — kein stiller Fallback.
+- **Legacy-Zugang** (`tenant-context.resolveActiveTenant`):
+  1. `?politicianId=`, falls es ein **aktives** DB-Mandat benennt → dieses.
+  2. sonst **genau ein** aktives Mandat → dieses (ohne Auswahl, ohne Env).
+  3. sonst (mehrere aktive, keine Auswahl) → **Mandatsauswahl** (der Client
+     rendert eine Auswahl der aktiven Mandate); keines → ehrlicher Leerzustand.
+  Es wird **niemals** ein Mandat geraten. Der Admin-Bypass (secret-geschützt)
+  darf zusätzlich jedes Mandat per `?politicianId=` wählen.
+
+### Crons/Hintergrundprozesse
+`tenant-context.resolveCronTenants` liefert **alle aktiven DB-Mandate**
+(`listActiveTenantIds` → `storage.listFullProfiles`, gefiltert nach
+`isActiveMandate`: nicht deaktiviert, nicht gelöscht), deterministisch sortiert.
+`runCronForTenants` iteriert sie isoliert (try/catch je Mandat, hartes
+Zeitbudget). Grund-Codes: `ok` (≥1), `keine-aktiven-mandanten` (0, `ok:true`),
+`mandanten-liste-nicht-ladbar` (Ladestörung → `ok:false` + Systemfehler).
+
+## 3. Verhalten bei 0 / 1 / mehreren Mandanten
+
+| Aktive Mandate | Nutzeranfrage (Legacy) | Mandatsbezogener Cron |
 |---|---|---|
-| `HELMUT_PILOT_TENANT_ID` | Mandats-ID, die das Legacy-Pilotgate bedient und die mandantenbezogene Crons ohne Multi-Tenant-Flag verarbeiten. Muss ein existierendes, **aktives** Datenbank-Profil sein (wird je Cron-Lauf gegen die DB validiert). **Auch im Account-Modus nötig**, solange `HELMUT_CRON_MULTI_TENANT` aus ist — sonst laufen mandatsbezogene Crons leer. | Pilotgate-API → 503; Crons → Leerlauf (`skipped`) |
-| `HELMUT_CRON_MULTI_TENANT` | **Freigabepflichtig, Default AUS.** Mandantenbezogene Crons iterieren über alle aktiven DB-Mandate (Isolation je Mandat, Zeitbudget). | Einzel-Mandats-Betrieb über `HELMUT_PILOT_TENANT_ID` |
-| `HELMUT_PROTECTED_TENANT_IDS` | Optionale zusätzliche Schutzliste (Komma) für die Provisionierung. | Datengetriebener Schutz greift trotzdem |
+| **0** | `/api/app/start` → 200 Leerzustand (kein Profil, **kein 503**); andere mandatsbezogene API → Auswahl-/Leerzustand | `{ ok:true, tenants:0, results:[] }` — sauberer Lauf mit 0 verarbeiteten |
+| **1** | das eine aktive Mandat wird **ohne Env/Auswahl** serviert | dieses eine Mandat wird verarbeitet |
+| **≥2** | `?politicianId=` (aktives Mandat) wird serviert; ohne Auswahl → Mandatsauswahl (kein geratener Mandant) | **jedes** Mandat isoliert; ein fehlerhafter Mandant stoppt die anderen nicht |
 
-Der Account-Modus (`HELMUT_AUTH_MODE=accounts`) ist unverändert: Identität aus
-Session + Zuweisungen, kein stiller Fallback.
+## 4. Cron-Inventur (Zeiten unverändert — vercel.json nicht angefasst)
 
-## 3. Cron- und Hintergrundprozess-Inventur
+| Prozess (UTC) | Typ | Mandantenladung | 0 Mandanten | Fehlerhafter Mandant | Idempotenz |
+|---|---|---|---|---|---|
+| `/api/cron/crawl` (04:00, 20:00) | mandantenbezogen | alle aktiven DB-Mandate (`runCronForTenants`) | `ok:true, tenants:0` | isoliert (try/catch je Mandat) | Lock `crawl-<id>`, Hash-Dedup |
+| `/api/cron/pipeline` (16:00) | mandantenbezogen | wie crawl | wie crawl | wie crawl | wie crawl |
+| `/api/cron/morning-briefing` (05:00) | mandantenbezogen | wie crawl (deaktivierte übersprungen) | `ok:true, tenants:0` | isoliert + 240 s-Deadline | Push-Dedup `briefing-push:<id>:<Tag>` |
+| `/api/cron/lage-briefing` (05:45) | mandantenbezogen | alle Profile, deaktivierte übersprungen | Leerlauf | isoliert + 240 s-Deadline | Tages-Cache + Lock je User |
+| `/api/cron/lage-check` (10:00) | mandantenbezogen | alle aktiven DB-Mandate | `ok:true, tenants:0` | isoliert + 280 s-Gesamt-Timeout | Push-Dedup `lage-change:<id>:<Tag>` |
+| `/api/cron/health-report` (06:00) | mandantenbezogen | **je aktives Mandat ein eigener, isolierter Report** (kein „erstes" Mandat) | `ok:true, tenants:0` | isoliert | nicht idempotent (Versand), 1×/Tag, `dryRun=1` |
+| `/api/cron/understanding` (05:30, 21:30) | **global** | benötigt keinen Mandanten | No-Op | per-Cluster try/catch | je `vorgang_id` + globaler Lock |
+| `/api/cron/pipeline-status` | global, read-only | — | — | — | idempotent |
 
-Alle Zeiten unverändert (vercel.json wurde nicht angefasst — keine
-Production-Cron-Änderung). „Mandanten aus DB“ = `resolveCronTenants`:
-Multi-Tenant-Flag AN → alle **aktiven** Profile (deaktivierte/gelöschte nehmen
-nicht teil); AUS → konfiguriertes Pilotmandat, gegen die DB validiert (fehlend/
-deaktiviert → Leerlauf); nichts konfiguriert → Leerlauf. Jeder Leerlauf trägt
-einen **ehrlichen Grund** (`kein-mandant-konfiguriert`,
-`pilot-mandat-nicht-in-datenbank`, `pilot-mandat-deaktiviert`,
-`keine-aktiven-mandanten`); eine Ladestörung der Mandantenliste meldet
-`ok:false` + `mandanten-liste-nicht-ladbar` und schreibt einen Systemfehler —
-Monitoring kann sie von bewusstem Leerlauf unterscheiden.
+`/api/release/public` gibt **keine** Pilot-/Tenant-Konfiguration aus: genau ein
+aktives Mandat → dessen Release-Check; sonst neutrales `{ ok:true, ready:false }`.
 
-| Prozess (Zeit UTC) | Typ | Mandantenladung | 0 Mandanten | Fehlerhafter Mandant | Kostenbegrenzung | Protokollierung | Idempotenz |
-|---|---|---|---|---|---|---|---|
-| `/api/cron/crawl` (04:00, 20:00) | mandantenbezogen | aus DB via `runCronForTenants` | `skipped`-Antwort, kein Lauf | try/catch je Mandat, Lauf der anderen unberührt | globales LLM-Tageslimit; per-Mandant-Deckel vorbereitet (`HELMUT_TENANT_LLM_CAP`, Default aus); Zeitbudget 240 s | Konsolen-Log je Mandat + `recordProcessRun`/Telemetrie | Lock `crawl-<id>` (15 min), Hash-Dedup, Understanding je `vorgang_id` |
-| `/api/cron/pipeline` (16:00) | mandantenbezogen | wie crawl | `skipped` | wie crawl | wie crawl; hartes 280 s-Gesamt-Timeout | wie crawl | wie crawl |
-| `/api/cron/morning-briefing` (05:00) | mandantenbezogen | Flag `HELMUT_MORNING_PUSH_ALL_PROFILES`: alle DB-Profile; sonst Cron-Mandantenauflösung | `skipped` (kein synthetisches Mandat mehr) | per-Profil try/catch + 240 s-Deadline | 0 KI (reine Lese-Transformation), Timeouts 60 s/30 s | Konsolen-Log + `recordProcessRun` | Push-Dedup `briefing-push:<id>:<Tag>` |
-| `/api/cron/lage-briefing` (05:45) | mandantenbezogen | alle DB-Profile (`listProfiles`), deaktivierte übersprungen | Leerlauf (0 Ergebnisse) | **neu:** vollständige Isolation — auch `activeProfile`/`validateProfile` im try/catch; **neu:** 240 s-Deadline | KI je Mandat über `canSpendLlmForTenant` | `recordProcessRun` | Tages-Cache `bf-<user>-lage-<Tag>` + Lock je User |
-| `/api/cron/lage-check` (10:00) | mandantenbezogen | aus DB via `runCronForTenants` | `skipped` | try/catch je Mandat | globales LLM-Limit + Zeitbudgets (240 s Check / 30 s Push) | Konsolen-Log je Mandat | Push-Dedup `lage-change:<id>:<Tag>`, additive Writes |
-| `/api/cron/health-report` (06:00) | mandantenbezogen (Betriebsreport) | Cron-Mandantenauflösung; ein Report je Lauf (erster aufgelöster Mandant = konfiguriertes Pilotmandat) | `skipped`, kein Versand | n/a (ein Mandat je Lauf) | 0 KI | Systemfehler-Log bei Zustellfehlern | nicht idempotent (Versand je Aufruf), 1×/Tag geplant, `dryRun=1` vorhanden |
-| `/api/cron/understanding` (05:30, 21:30) | **global** (einmal verstehen, mehrfach bewerten) | benötigt keinen Mandanten | No-Op (`no-pending`) | per-Cluster try/catch | globales Tageslimit + `HELMUT_UNDERSTAND_BUDGET_MS` (240 s); Understanding ist bewusst vom per-Mandant-Deckel ausgenommen | Konsolen-Log + `recordProcessRun` | je `vorgang_id` + globaler Lock (flag-gated) |
-| `/api/cron/pipeline-status` | global, read-only | n/a | n/a | n/a | 0 Kosten | n/a | idempotent (0 Writes) |
-| GitHub Actions `briefing-watchdog` (05:30) | global (prüft `pipeline-status`) | n/a | n/a | n/a | 0 KI | Actions-Log | idempotent |
-| GitHub Actions `health-watch` | manuell (kein Schedule aktiv) | n/a | n/a | n/a | n/a | Actions-Log | idempotent |
-| übrige Actions (staff-backfill, pardok, sprint9b, ko-classification) | manuell/Dry-Run | n/a bzw. explizite Parameter | n/a | n/a | dokumentierte Limits je Workflow | Actions-Log | idempotent/Dry-Run |
+## 5. Auswirkung auf den bestehenden Production-Mandanten
 
-**Bewusst NICHT aktiviert (freigabepflichtig):**
+Production läuft im Legacy-Zugang (keine Auth-Nutzer). Die Datenbank enthält
+neben dem realen Mandanten zwei **Demo-Mandate** (`james-brown`, `angela-merkel`,
+vom Audit bereits als „vor Vertrieb löschen" markiert). Daraus folgt:
 
-1. `HELMUT_CRON_MULTI_TENANT` bleibt AUS — Multi-Tenant-Verarbeitung ist
-   gebaut und getestet, die Aktivierung ist eine Kosten-/Betriebsentscheidung.
-2. `HELMUT_TENANT_LLM_CAP` (per-Mandant-Kostendeckel) bleibt AUS (bestehender
-   Freigabepunkt).
-3. Adversariale Gegenprüfung (umgesetzt): Bestandsschutz der Provisionierung ist
-   fail-closed (Lesestörung ⇒ geschützt); Orphan-Klassifikation kennt KEIN
-   Namensmuster (lebende Mandatsquellen `<id>-news-<suffix>` können nicht als
-   Legacy maskiert werden — Zuordnung historischer IDs ist eine explizite
-   Datenkarte des Aufrufers, Konsolidierung nur über deklarierte Basen);
-   DSGVO-Export/-Löschung erfasst eigene Personen-Rohdaten auch über den
-   relationalen Abrufweg-Alias (`rp-<id>-news`); `lage-check` hat wieder ein
-   hartes Gesamt-Timeout (280 s); `morning-briefing` beliefert bei aktivem
-   Multi-Tenant-Flag alle Mandate.
-4. Bekannte Grenzen im (noch nicht freigegebenen) Multi-Tenant-Betrieb:
-   `pipeline-status` meldet den letzten Lauf global (nicht je Mandat), und das
-   globale Understanding-Budget ist nicht fair je Mandat verteilt (ein
-   quellenstarker Mandant kann es aufbrauchen). Beides ist erst bei
-   Aktivierung des Multi-Tenant-Flags relevant und dort als Vorbedingung
-   dokumentiert.
+- **Crons** verarbeiten nach dem Merge alle aktiven Mandate isoliert — der reale
+  Mandant ist immer dabei (≥1, **kein leerer Lauf, kein 503**).
+- **Bare-Root-Aufruf** (ohne `?politicianId=`): Solange mehrere aktive Mandate
+  existieren, zeigt die App eine **Mandatsauswahl** (einmalige Auswahl, danach
+  lokal gemerkt). Der reale Nutzer erreicht sein Mandat weiterhin sofort über
+  `?politicianId=<id>` bzw. seine gemerkte Auswahl. **Sobald die zwei
+  Demo-Mandate entfernt sind** (reine Daten-Hygiene, kein Code/Schema), bleibt
+  genau ein aktives Mandat und wird **ohne jede Konfiguration** automatisch
+  serviert.
+- **Keine neue Env-Variable, keine Migration, kein Production-Write** ist für den
+  Betrieb des bestehenden Mandanten nötig. Die bestehenden DB-Zeilen (Profil,
+  Paket `profil-…`, Abrufweg `rp-…-news`) bleiben unverändert gültig.
 
-## 4. Betriebs-/Merge-Hinweis (Gate)
+## 6. Merge- und Rollback-Plan
 
-Production läuft im Legacy-Pilotgate. **Vor dem ersten Deploy dieses Stands
-muss der Betreiber `HELMUT_PILOT_TENANT_ID` in Vercel auf die Mandats-ID des
-bestehenden Pilotmandats setzen** (der Wert ist Konfiguration, kein Code; das
-Profil liegt bereits als normaler Datensatz in der Datenbank). Ohne diesen
-Wert antwortet die App fail-closed mit einem klaren 503-Zustand und Crons
-laufen leer — es werden niemals Daten eines geratenen Nutzers ausgeliefert.
-
-Rollback: vorheriges Deployment in Vercel re-deployen (Env-Variable kann
-gesetzt bleiben; der alte Stand liest sie nicht). Es gibt keine Migration und
-keine Datenänderung — Production-Datensätze (Profile, Pakete, Abrufwege,
-Dokumente) bleiben in beiden Richtungen unverändert.
+- **Merge:** PR mergen → Vercel deployt. **Ohne zusätzliche Konfiguration.** Der
+  reale Mandant funktioniert als normaler aktiver DB-Mandant.
+- **Empfohlen (Daten-Hygiene, separat, kein Teil dieses Diffs):** die zwei
+  Demo-Mandate über das Provisionierungs-/Admin-Werkzeug deaktivieren/entfernen —
+  danach entfällt die Mandatsauswahl am Bare-Root-Aufruf.
+- **Rollback:** vorheriges Deployment re-deployen bzw. Revert-Commit. Keine
+  Daten-/Schemarücknahme nötig (nichts migriert, kein Production-Write).

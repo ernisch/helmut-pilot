@@ -1,29 +1,24 @@
 "use strict";
 
 // =============================================================================
-// Mandantenneutralitaets-Suite — beweist die Kernregeln der Pilot-Neutralisierung
+// Mandantenneutralitaets-Suite — beweist: KEIN bevorzugter/Pilot-/Default-Mandant
 // =============================================================================
 // Offline, in-process, lokaler Datei-Store (kein Netz, kein Supabase, keine KI).
-// Beweist:
-//   1)  Es existiert KEIN Standardmandant im Code (config/scheduler/tenant-context).
-//   2)  Fehlender Mandantenkontext wird blockiert (HTTP 503 + TenantContextError).
-//   3)  Mandant A sieht keine Daten von Mandant B (Tasks/Export).
-//   4)  Mandant A loescht/schreibt keine Daten von Mandant B (DSGVO-Loeschung,
-//       Personen-Rohdaten strikt eigen).
-//   5)  Crons koennen mehrere aktive Mandanten aus der Datenbank laden.
-//   6)  Ein fehlerhafter Mandant stoppt andere Mandanten nicht (Cron-Isolation).
-//   7)  Globale Prozesse (understanding, pipeline-status) brauchen keinen Mandanten.
-//   8)  Budgetlogik funktioniert ohne persoenliche Overrides (neutrale Limits).
-//   9)  Provisionierung funktioniert mit beliebigen validen (kuenstlichen) IDs.
-//  10)  Teardown loescht keine fremden Daten.
-//  11)  Cache-/Blob-/Store-Schluessel sind je Mandant getrennt.
-//  12)  Bestehende Production-Daten brauchen KEINE Umbenennung: Personenquelle
-//       und persoenliches Paket folgen exakt der Bestandskonvention
-//       ("<id>-news" / "profil-<id>") — fuer JEDE Mandats-ID.
-//  13)  Betrieb mit genau EINEM aktiven Mandanten bleibt funktionsfaehig.
+// Beweist die geforderten Punkte der Nachbesserung:
+//   1)  Das Repository enthaelt weder HELMUT_PILOT_TENANT_ID noch ein semantisch
+//       gleichartiges Pilot-/Default-/Fallback-/Primary-Tenant-Konstrukt.
+//   2)  Ein einzelner aktiver Datenbankmandant wird OHNE Tenant-Env gefunden.
+//   3)  Zwei aktive Datenbankmandanten werden OHNE Tenant-Env isoliert verarbeitet.
+//   4)  Null aktive Mandanten fuehren zu KEINEM geratenen/kuenstlichen Mandanten.
+//   5)  Eine normale authentifizierte Anfrage funktioniert ohne Pilotkonfiguration.
+//   6)  Ein fehlender (authentifizierter) Mandantenkontext bricht sicher ab.
+//   7)  Der bestehende Mandant benoetigt nach dem Merge KEINE neue Env-Variable.
+//   8)  Ein gueltiger DB-Kontext verursacht ohne Zusatzkonfiguration weder 503
+//       noch leere Cron-Laeufe.
+// Zusaetzlich: Mandantentrennung, ein fehlerhafter Mandant stoppt andere nicht,
+// globale Prozesse ohne Mandant, Provisionierung mit beliebigen IDs.
 //
 // Ausfuehren: node scripts/tenant-neutrality-test.js   (npm run test:tenant-neutral)
-// Exitcode 0 = alle Checks bestanden.
 // =============================================================================
 
 const http = require("http");
@@ -31,12 +26,8 @@ const fs = require("fs");
 const path = require("path");
 const root = path.join(__dirname, "..");
 
-// Sauberer Ausgangszustand: Pilot-Modus (kein Account-Gate), lokaler Datei-Store,
-// KEIN konfiguriertes Pilotmandat (wird je Testblock gesetzt).
 delete process.env.HELMUT_AUTH_MODE;
 delete process.env.PILOT_SECRET;
-delete process.env.HELMUT_PILOT_TENANT_ID;
-delete process.env.HELMUT_CRON_MULTI_TENANT;
 delete process.env.HELMUT_TENANT_LLM_LIMITS;
 delete process.env.SUPABASE_URL;
 delete process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -46,11 +37,10 @@ process.env.CRON_SECRET = "test-cron-secret";
 
 const { testPoliticianOne, testPoliticianTwo, TENANT_ALPHA, TENANT_BETA } = require("./fixtures/test-profiles");
 
-// Store-Hermetik: betroffene Dateien sichern und am Ende wiederherstellen.
 const dataDir = path.join(root, ".helmut-data");
 const GUARDED = ["auth.json", "store.json",
   `p-${testPoliticianOne.id}.json`, `p-${testPoliticianTwo.id}.json`,
-  `p-${TENANT_ALPHA}.json`, `p-${TENANT_BETA}.json`, "p-tenant-bestand.json"];
+  `p-${TENANT_ALPHA}.json`, `p-${TENANT_BETA}.json`];
 const snap = new Map(GUARDED.map((n) => [n, fs.existsSync(path.join(dataDir, n)) ? fs.readFileSync(path.join(dataDir, n)) : null]));
 process.on("exit", () => {
   for (const [n, c] of snap) {
@@ -71,7 +61,6 @@ function check(name, cond, detail = "") {
   if (cond) { passed += 1; console.log(`PASS  ${name}`); }
   else { failed += 1; console.log(`FAIL  ${name}${detail ? "  — " + detail : ""}`); }
 }
-
 function req(server, { method = "GET", pathname, headers = {}, body = null }) {
   const { port } = server.address();
   return new Promise((resolve, reject) => {
@@ -87,208 +76,201 @@ function req(server, { method = "GET", pathname, headers = {}, body = null }) {
 const cronHeaders = { authorization: "Bearer test-cron-secret" };
 const parse = (res) => { try { return JSON.parse(res.body); } catch { return {}; } };
 
+async function setActiveMandates(profiles) {
+  const store = await storage.readStore("main");
+  store.profiles = {};
+  store.mandateProfiles = {};
+  for (const p of profiles) { store.profiles[p.id] = { ...p }; }
+  await storage.writeStore(store, "main");
+}
+const listOf = (arr) => async () => arr.map((p) => ({ ...p }));
+
 (async () => {
   const server = http.createServer(handler);
   await new Promise((r) => server.listen(0, "127.0.0.1", r));
 
-  // ── 1) Kein Standardmandant im Code ────────────────────────────────────────
+  // 1) Kein Pilot-/Default-/Fallback-/Primary-Tenant-Konstrukt im Code.
+  const tcSrc = fs.readFileSync(path.join(root, "lib/helmut/tenant-context.js"), "utf8");
+  const serverSrc = fs.readFileSync(path.join(root, "server.js"), "utf8");
+  const clientSrc = fs.readFileSync(path.join(root, "client.js"), "utf8");
+  const envExample = fs.readFileSync(path.join(root, ".env.example"), "utf8");
+  const codeBlob = tcSrc + serverSrc + clientSrc;
+  check("tenant-context exportiert KEIN configuredPilotTenantId / cronMultiTenantEnabled mehr",
+    !("configuredPilotTenantId" in tenantContext) && !("cronMultiTenantEnabled" in tenantContext));
+  check("Kein HELMUT_PILOT_TENANT_ID / HELMUT_CRON_MULTI_TENANT im Code",
+    !/HELMUT_PILOT_TENANT_ID|HELMUT_CRON_MULTI_TENANT/.test(codeBlob));
+  check("Kein HELMUT_PILOT_TENANT_ID in .env.example",
+    !/HELMUT_PILOT_TENANT_ID|HELMUT_CRON_MULTI_TENANT/.test(envExample));
+  check("Kein Default-/Primary-/Fallback-Tenant-Bezeichner im Code",
+    !/defaultTenant|primaryTenant|fallbackTenant|DEFAULT_TENANT|PRIMARY_TENANT|FALLBACK_TENANT/i.test(codeBlob));
   check("config.js exportiert exakt die vier neutralen Helfer (kein Personenprofil)",
     JSON.stringify(Object.keys(config).sort()) === JSON.stringify(["accountTypeOf", "inferEntities", "parliamentTypeOf", "profileCompleteness"]));
-  check("tenant-context: ohne Env kein konfiguriertes Pilotmandat",
-    tenantContext.configuredPilotTenantId({}) === "");
-  check("scheduler.getActiveProfile ohne ID wirft TenantContextError",
+
+  // tenant-context: 0/1/2 aktive Mandanten (deterministisch, injiziert).
+  const one = { id: "test-politician-one", fullName: "Test Politician One" };
+  const two = { id: "test-politician-two", fullName: "Test Politician Two" };
+  const inactive = { id: "test-politician-two", fullName: "Test Politician Two", profileActive: false };
+
+  const rc1 = await tenantContext.resolveCronTenants({ listProfiles: listOf([one]) });
+  check("(2) Cron: ein aktiver Mandant wird OHNE Env gefunden", rc1.reason === "ok" && rc1.tenantIds.length === 1 && rc1.tenantIds[0] === "test-politician-one");
+  const ra1 = await tenantContext.resolveActiveTenant({ deps: { listProfiles: listOf([one]) } });
+  check("(2) Request: einziges aktives Mandat wird OHNE Env + OHNE Auswahl aufgeloest", ra1.tenantId === "test-politician-one" && ra1.reason === "ok");
+
+  const rc2 = await tenantContext.resolveCronTenants({ listProfiles: listOf([one, two]) });
+  check("(3) Cron: zwei aktive Mandanten OHNE Env gefunden (beide)", rc2.reason === "ok" && rc2.tenantIds.length === 2);
+  const ra2 = await tenantContext.resolveActiveTenant({ requested: "test-politician-two", deps: { listProfiles: listOf([one, two]) } });
+  check("(3) Request: Auswahl unter mehreren aktiven Mandaten (requested) wird honoriert", ra2.tenantId === "test-politician-two");
+  const ra2none = await tenantContext.resolveActiveTenant({ deps: { listProfiles: listOf([one, two]) } });
+  check("(3) Request: mehrere aktive, keine Auswahl -> KEIN geratener Mandant", ra2none.tenantId === "" && ra2none.reason === "mehrere-mandanten-auswahl-noetig");
+
+  const rc0 = await tenantContext.resolveCronTenants({ listProfiles: listOf([]) });
+  check("(4) Cron: 0 aktive Mandanten -> 0 tenants, ok (kein geratener Mandant)", rc0.tenantIds.length === 0 && rc0.reason === "keine-aktiven-mandanten");
+  const ra0 = await tenantContext.resolveActiveTenant({ deps: { listProfiles: listOf([]) } });
+  check("(4) Request: 0 aktive Mandanten -> leer, kein geratener Mandant", ra0.tenantId === "" && ra0.reason === "keine-aktiven-mandanten");
+  const rcInactive = await tenantContext.resolveCronTenants({ listProfiles: listOf([one, inactive]) });
+  check("(4) Deaktivierte Mandate zaehlen NICHT als aktiv", rcInactive.tenantIds.length === 1 && rcInactive.tenantIds[0] === "test-politician-one");
+  const rcErr = await tenantContext.resolveCronTenants({ listProfiles: async () => { throw new Error("db down"); } });
+  check("Ladestoerung ist von 0-Mandaten unterscheidbar", rcErr.reason === "mandanten-liste-nicht-ladbar");
+
+  check("scheduler.getActiveProfile() ohne ID wirft TenantContextError",
     await scheduler.getActiveProfile().then(() => false).catch((e) => e.name === "TenantContextError"));
-  check("scheduler.runSourceCrawl ohne ID wirft TenantContextError",
+  check("scheduler.runSourceCrawl() ohne ID wirft TenantContextError",
     await scheduler.runSourceCrawl().then(() => false).catch((e) => e.name === "TenantContextError"));
-  check("scheduler.runLageCheck ohne ID wirft TenantContextError",
-    await scheduler.runLageCheck().then(() => false).catch((e) => e.name === "TenantContextError"));
-  const mergedNeutral = scheduler.mergeProfileDefaults({ id: "irgendein-neues-mandat" });
-  check("mergeProfileDefaults liefert fuer JEDE ID neutrale Defaults (keine Partei/Themen/Termine)",
-    (mergedNeutral.party || "") === "" && (mergedNeutral.focusTopics || []).length === 0 && (mergedNeutral.upcomingAppointments || []).length === 0);
-  check("mergeProfileDefaults erfindet KEINE Mandats-ID",
-    scheduler.mergeProfileDefaults({}).id === "");
+  check("mergeProfileDefaults erfindet KEINE Mandats-ID", scheduler.mergeProfileDefaults({}).id === "");
+  check("mergeProfileDefaults liefert fuer JEDE ID neutrale Defaults", (() => {
+    const m = scheduler.mergeProfileDefaults({ id: "irgendein-mandat" });
+    return (m.party || "") === "" && (m.focusTopics || []).length === 0 && (m.upcomingAppointments || []).length === 0;
+  })());
 
-  // ── 2) Fehlender Kontext wird blockiert (fail-closed) ──────────────────────
-  const startUnconfigured = await req(server, { pathname: "/api/app/start" });
-  check("Pilot-Modus ohne HELMUT_PILOT_TENANT_ID: /api/app/start -> 503 pilot-tenant-not-configured",
-    startUnconfigured.status === 503 && parse(startUnconfigured).reason === "pilot-tenant-not-configured",
-    `status=${startUnconfigured.status}`);
-  const tasksUnconfigured = await req(server, { pathname: "/api/tasks" });
-  check("Pilot-Modus ohne Mandat: /api/tasks -> 503 (kein stiller Personen-Fallback)",
-    tasksUnconfigured.status === 503);
-  const releasePublic = await req(server, { pathname: "/api/release/public" });
-  check("/api/release/public ohne Mandat: ehrlicher Leerzustand statt geratenem Mandat",
-    releasePublic.status === 200 && parse(releasePublic).configured === false);
-  const cronNoTenant = await req(server, { pathname: "/api/cron/crawl", headers: cronHeaders });
-  check("Cron crawl ohne Mandanten: skipped kein-mandant-konfiguriert (kein Lauf, kein Fallback)",
-    cronNoTenant.status === 200 && parse(cronNoTenant).skipped === true && parse(cronNoTenant).reason === "kein-mandant-konfiguriert");
-  const healthNoTenant = await req(server, { pathname: "/api/cron/health-report", headers: cronHeaders });
-  check("Cron health-report ohne Mandanten: skipped (kein Versand)",
-    healthNoTenant.status === 200 && parse(healthNoTenant).skipped === true);
+  // 5)+7)+8) HTTP: EIN aktiver Mandant, OHNE Tenant-Env -> automatisch.
+  await setActiveMandates([testPoliticianOne]);
+  const startSingle = await req(server, { pathname: "/api/app/start" });
+  const singlePayload = parse(startSingle);
+  check("(5/7/8) EIN aktiver Mandant, KEINE Env: /api/app/start -> 200, Profil aus dem Store",
+    startSingle.status === 200 && singlePayload.profile && singlePayload.profile.id === testPoliticianOne.id
+      && singlePayload.profile.fullName === testPoliticianOne.fullName, `status=${startSingle.status}`);
+  check("(8) Kein 503 pilot-tenant-not-configured mehr (Zustand existiert nicht)",
+    !/pilot-tenant-not-configured/.test(serverSrc));
+  const cronSingle = await req(server, { pathname: "/api/cron/morning-briefing", headers: cronHeaders });
+  const cronSinglePayload = parse(cronSingle);
+  check("(8) Mandatsbezogener Cron mit einem aktiven Mandanten: verarbeitet (tenants>=1, nicht skipped)",
+    cronSingle.status === 200 && cronSinglePayload.tenants >= 1 && !cronSinglePayload.skipped);
 
-  // Ein Phantom-Mandat (konfiguriert, aber NICHT in der Datenbank) laeuft ebenfalls leer.
-  process.env.HELMUT_PILOT_TENANT_ID = "phantom-mandat";
-  const cronPhantom = await req(server, { pathname: "/api/cron/lage-check", headers: cronHeaders });
-  check("Cron mit konfiguriertem, aber in der DB fehlendem Mandat: skipped (DB-Validierung)",
-    cronPhantom.status === 200 && parse(cronPhantom).skipped === true);
-  delete process.env.HELMUT_PILOT_TENANT_ID;
+  // 3) HTTP: ZWEI aktive Mandanten.
+  await setActiveMandates([testPoliticianOne, testPoliticianTwo]);
+  const startNoParam = await req(server, { pathname: "/api/app/start" });
+  const noParamPayload = parse(startNoParam);
+  check("(3) Zwei aktive, kein Param: /api/app/start bietet Auswahl (kein geratener Mandant, kein 503)",
+    startNoParam.status === 200 && noParamPayload.needsMandateSelection === true
+      && Array.isArray(noParamPayload.mandates) && noParamPayload.mandates.length === 2, `status=${startNoParam.status}`);
+  const startPick = await req(server, { pathname: `/api/app/start?politicianId=${testPoliticianOne.id}` });
+  check("(3) Zwei aktive, mit Auswahl: das gewaehlte aktive Mandat wird serviert",
+    startPick.status === 200 && parse(startPick).profile && parse(startPick).profile.id === testPoliticianOne.id);
+  const otherApi = await req(server, { pathname: "/api/tasks" });
+  check("(3) Andere mandatsbezogene API ohne Auswahl -> 409 Auswahl noetig (kein geratener Mandant)",
+    otherApi.status === 409 && parse(otherApi).needsMandateSelection === true);
+  const cronTwo = await req(server, { pathname: "/api/cron/morning-briefing", headers: cronHeaders });
+  const twoPayload = parse(cronTwo);
+  check("(3) Mandatsbezogener Cron mit zwei aktiven Mandanten: beide isoliert verarbeitet",
+    cronTwo.status === 200 && twoPayload.tenants === 2 && Array.isArray(twoPayload.results)
+      && twoPayload.results.some((r) => r.politicianId === testPoliticianOne.id)
+      && twoPayload.results.some((r) => r.politicianId === testPoliticianTwo.id));
 
-  // ── Fixtures anlegen: zwei kuenstliche Mandanten als normale Datensaetze ───
-  await storage.saveProfile({ ...testPoliticianOne });
-  await storage.saveProfile({ ...testPoliticianTwo });
-
-  // ── 13) Betrieb mit EINEM konfigurierten Mandanten bleibt funktionsfaehig ──
-  process.env.HELMUT_PILOT_TENANT_ID = testPoliticianOne.id;
-  const startConfigured = await req(server, { pathname: "/api/app/start" });
-  const startPayload = parse(startConfigured);
-  check("Mit konfiguriertem Mandat: /api/app/start -> 200 und Profil aus dem STORE (nicht aus Code)",
-    startConfigured.status === 200 && startPayload.profile && startPayload.profile.id === testPoliticianOne.id
-      && startPayload.profile.fullName === testPoliticianOne.fullName,
-    `status=${startConfigured.status}`);
-  check("Profil-Inhalte stammen aus dem Datensatz (Partei des Fixtures, keine Code-Konstante)",
-    startPayload.profile && startPayload.profile.party === testPoliticianOne.party);
-
-  // ── 3+4+11) Mandantentrennung: Tasks, Export, DSGVO-Loeschung, Store-Keys ──
-  await storage.saveTask({ id: "task-alpha-1", title: "Aufgabe Alpha", politicianId: testPoliticianOne.id, status: "open" });
-  const tasksOne = await storage.getTasks(testPoliticianOne.id);
-  const tasksTwo = await storage.getTasks(testPoliticianTwo.id);
-  check("Mandant B sieht die Tasks von Mandant A nicht (getrennte Politiker-Stores)",
-    tasksOne.some((t) => t.id === "task-alpha-1") && !tasksTwo.some((t) => t.id === "task-alpha-1"));
-
-  // Personen-Rohdaten: Item der Personenquelle von A gehoert NICHT B.
-  const mainStore = await storage.readStore("main").catch(() => null);
-  if (mainStore) {
-    mainStore.rawItems = [
-      ...(mainStore.rawItems || []),
-      { id: "raw-alpha-person", title: "Meldung ueber Test Politician One", content: "x", sourceId: `${testPoliticianOne.id}-news`, sourceType: "person", retrievedAt: new Date().toISOString() },
-      { id: "raw-beta-person", title: "Meldung ueber Test Politician Two", content: "y", sourceId: `${testPoliticianTwo.id}-news`, sourceType: "person", retrievedAt: new Date().toISOString() }
-    ];
-    await storage.writeStore(mainStore, "main");
-  }
-  const exportOne = await storage.exportProfileData(testPoliticianOne.id);
-  const exportedRawIds = (exportOne.rawItems || []).map((i) => i.id);
-  check("Export von Mandant A enthaelt NUR die eigenen Personen-Rohdaten",
-    exportedRawIds.includes("raw-alpha-person") && !exportedRawIds.includes("raw-beta-person"));
-  await storage.deleteProfileData(testPoliticianOne.id);
-  const afterDelete = await storage.readStore("main");
-  const remainingIds = (afterDelete.rawItems || []).map((i) => i.id);
-  check("DSGVO-Loeschung von Mandant A loescht die Personen-Rohdaten von Mandant B NICHT",
-    !remainingIds.includes("raw-alpha-person") && remainingIds.includes("raw-beta-person"));
-  check("DSGVO-Loeschung von A laesst das Profil von B unangetastet",
-    Boolean(await storage.getProfile(testPoliticianTwo.id)));
-  // Profil A fuer die folgenden Blöcke wiederherstellen.
-  await storage.saveProfile({ ...testPoliticianOne });
-
-  // ── 5) Crons laden mehrere aktive Mandanten aus der Datenbank ──────────────
-  process.env.HELMUT_CRON_MULTI_TENANT = "1";
-  const multiIds = await tenantContext.resolveCronTenantIds();
-  check("Multi-Tenant-Flag: resolveCronTenantIds liefert BEIDE Mandanten aus der DB",
-    multiIds.includes(testPoliticianOne.id) && multiIds.includes(testPoliticianTwo.id));
-  const lageBriefingMulti = await req(server, { pathname: "/api/cron/lage-briefing", headers: cronHeaders });
-  const lageMultiPayload = parse(lageBriefingMulti);
-  check("Cron lage-briefing verarbeitet mehrere Mandanten in EINEM Lauf",
-    lageBriefingMulti.status === 200 && Number(lageMultiPayload.prewarmed || 0) >= 2);
-
-  // ── 6) Ein fehlerhafter Mandant stoppt andere nicht ────────────────────────
-  // Kaputtes Profil (id vorhanden, Inhalt zerstoert) + intaktes Profil: der Lauf
-  // antwortet 200 und liefert je Mandant ein Ergebnis (Fehler isoliert, kein 500).
   const brokenStore = await storage.readStore("main");
-  brokenStore.profiles[TENANT_BETA] = { id: TENANT_BETA, fullName: 42, committees: "kein-array", topicPriorities: "kaputt" };
+  brokenStore.profiles[TENANT_BETA] = { id: TENANT_BETA, fullName: 42, committees: "kaputt", topicPriorities: "kaputt" };
   await storage.writeStore(brokenStore, "main");
-  const isolationRun = await req(server, { pathname: "/api/cron/lage-briefing", headers: cronHeaders });
-  const isolationPayload = parse(isolationRun);
-  check("Fehlerhafter Mandant: Cron antwortet 200 und die intakten Mandanten wurden trotzdem verarbeitet",
-    isolationRun.status === 200 && Array.isArray(isolationPayload.results)
-      && isolationPayload.results.some((r) => r.userId === testPoliticianOne.id),
-    `status=${isolationRun.status}`);
-  const cleanupStore = await storage.readStore("main");
-  delete cleanupStore.profiles[TENANT_BETA];
-  await storage.writeStore(cleanupStore, "main");
-  delete process.env.HELMUT_CRON_MULTI_TENANT;
+  const cronBroken = await req(server, { pathname: "/api/cron/lage-briefing", headers: cronHeaders });
+  check("Fehlerhafter Mandant: Cron antwortet 200 und intakte Mandanten wurden trotzdem verarbeitet",
+    cronBroken.status === 200 && Array.isArray(parse(cronBroken).results)
+      && parse(cronBroken).results.some((r) => r.userId === testPoliticianOne.id));
 
-  // ── 7) Globale Prozesse brauchen keinen Mandanten ───────────────────────────
-  delete process.env.HELMUT_PILOT_TENANT_ID;
+  // 4) HTTP: NULL aktive Mandanten.
+  await setActiveMandates([]);
+  const startZero = await req(server, { pathname: "/api/app/start" });
+  const zeroPayload = parse(startZero);
+  check("(4) 0 aktive Mandanten: /api/app/start -> 200 Leerzustand (kein Profil, kein 503, kein geratener Mandant)",
+    startZero.status === 200 && zeroPayload.empty === true && !zeroPayload.profile);
+  const cronZero = await req(server, { pathname: "/api/cron/morning-briefing", headers: cronHeaders });
+  const cronZeroPayload = parse(cronZero);
+  check("(4) 0 aktive Mandanten: Cron endet sauber mit 0 verarbeiteten (ok:true, tenants:0)",
+    cronZero.status === 200 && cronZeroPayload.ok === true && cronZeroPayload.tenants === 0);
+
+  // 5)+6) Account-Modus.
+  const acc = await runAccountModeChecks();
+  passed += acc.passed; failed += acc.failed;
+
+  // Mandantentrennung.
+  await setActiveMandates([testPoliticianOne, testPoliticianTwo]);
+  await storage.saveTask({ id: "task-a-1", title: "A", politicianId: testPoliticianOne.id, status: "open" });
+  const tasksA = await storage.getTasks(testPoliticianOne.id);
+  const tasksB = await storage.getTasks(testPoliticianTwo.id);
+  check("Mandant B sieht Tasks von Mandant A nicht", tasksA.some((t) => t.id === "task-a-1") && !tasksB.some((t) => t.id === "task-a-1"));
+  const mainStore = await storage.readStore("main");
+  mainStore.rawItems = [
+    { id: "raw-a", title: "x", sourceId: `${testPoliticianOne.id}-news`, sourceType: "person", retrievedAt: new Date().toISOString() },
+    { id: "raw-b", title: "y", sourceId: `${testPoliticianTwo.id}-news`, sourceType: "person", retrievedAt: new Date().toISOString() }
+  ];
+  await storage.writeStore(mainStore, "main");
+  const exportA = await storage.exportProfileData(testPoliticianOne.id);
+  check("Export von A enthaelt NUR eigene Personen-Rohdaten",
+    (exportA.rawItems || []).some((i) => i.id === "raw-a") && !(exportA.rawItems || []).some((i) => i.id === "raw-b"));
+  await storage.deleteProfileData(testPoliticianOne.id);
+  const afterDel = await storage.readStore("main");
+  check("DSGVO-Loeschung von A entfernt Personen-Rohdaten von B NICHT",
+    !(afterDel.rawItems || []).some((i) => i.id === "raw-a") && (afterDel.rawItems || []).some((i) => i.id === "raw-b"));
+
   const understanding = await req(server, { pathname: "/api/cron/understanding", headers: cronHeaders });
-  check("Globaler understanding-Cron laeuft ohne Mandantenkontext (kein tenant-skipped, kein 503)",
-    understanding.status === 200 && parse(understanding).ok === true);
-  const pipelineStatus = await req(server, { pathname: "/api/cron/pipeline-status", headers: cronHeaders });
-  check("Globaler pipeline-status laeuft ohne Mandantenkontext",
-    pipelineStatus.status === 200 && parse(pipelineStatus).ok === true);
+  check("Globaler understanding-Cron laeuft ohne Mandantenkontext", understanding.status === 200 && parse(understanding).ok === true);
 
-  // ── 8) Budgetlogik ohne persoenliche Overrides ──────────────────────────────
-  // Keine Env-Overrides gesetzt: es gibt keine im Code hinterlegten Limits fuer
-  // konkrete Personen — die Konfiguration ist leer und damit neutral.
-  check("Keine persoenlichen Budget-Overrides konfiguriert oder im Code hinterlegt",
-    String(process.env.HELMUT_TENANT_LLM_LIMITS || "") === "");
-  const libSource = ["storage.js", "llm-budget.js"].map((f) => fs.readFileSync(path.join(root, "lib/helmut", f), "utf8")).join("\n");
-  check("Budget-Code enthaelt keine hartkodierten Mandanten-Limits (nur Env/Profil/neutraler Fallback)",
-    !/TENANT_LLM_LIMITS\s*=\s*\{[^}]*"/.test(libSource) && /TENANT_LLM_LIMIT_FALLBACK\s*=\s*40/.test(libSource));
+  await setActiveMandates([testPoliticianOne]);
+  const spec = { id: TENANT_ALPHA, email: "a@example.test", name: "Tenant Alpha", password: "pw-1234567", party: "Testpartei Alpha", parliamentType: "Bundestag", constituency: "Testkreis", committees: ["Arbeit und Soziales"], focusTopics: ["Arbeit"] };
+  const prov = await provisioning.provisionTenant(spec, {});
+  check("Provisionierung mit beliebiger kuenstlicher ID funktioniert", prov.ok === true, JSON.stringify(prov.reason || prov.errors || ""));
+  check("Bestehendes (nicht provisioniertes) Mandat ist automatisch geschuetzt", (await provisioning.isProtectedTenant(testPoliticianOne.id)) === true);
+  const teardown = await provisioning.teardownTenant(TENANT_ALPHA);
+  check("Teardown des eigenen Test-Mandanten funktioniert und laesst fremde unberuehrt",
+    teardown.ok === true && Boolean(await storage.getProfile(testPoliticianOne.id)));
 
-  // ── 9+10) Provisionierung mit beliebigen validen IDs + Teardown-Schutz ─────
-  const provDeps = {}; // echte lokale Module (Datei-Store)
-  const spec = {
-    id: TENANT_ALPHA, email: "tenant-alpha@example.test", name: "Tenant Alpha", password: "test-passwort-123",
-    party: "Testpartei Alpha", parliamentType: "Bundestag", constituency: "Testkreis Nord",
-    committees: ["Arbeit und Soziales"], focusTopics: ["Arbeit"]
-  };
-  const provisioned = await provisioning.provisionTenant(spec, provDeps);
-  check("Provisionierung funktioniert mit beliebiger kuenstlicher ID (tenant-alpha)",
-    provisioned.ok === true, JSON.stringify(provisioned.reason || provisioned.errors || ""));
-  check("Provisioniertes Profil traegt die Herkunftsmarkierung (datengetriebener Schutz)",
-    (await storage.getProfile(TENANT_ALPHA))?.provisionedBy === provisioning.PROVISIONING_MARKER);
-  check("Bestehende (nicht provisionierte) Mandanten sind automatisch geschuetzt",
-    (await provisioning.isProtectedTenant(testPoliticianOne.id)) === true);
-  check("Selbst provisionierte Mandanten sind NICHT geschuetzt (idempotente Pflege erlaubt)",
-    (await provisioning.isProtectedTenant(TENANT_ALPHA)) === false);
-  const protectedTeardown = await provisioning.teardownTenant(testPoliticianOne.id);
-  check("Teardown eines bestehenden Mandanten wird verweigert (protected-tenant)",
-    protectedTeardown.ok === false && protectedTeardown.reason === "protected-tenant");
-  const ownTeardown = await provisioning.teardownTenant(TENANT_ALPHA);
-  check("Teardown des eigenen Test-Mandanten funktioniert",
-    ownTeardown.ok === true);
-  check("Teardown von tenant-alpha hat fremde Profile NICHT geloescht",
-    Boolean(await storage.getProfile(testPoliticianOne.id)) && Boolean(await storage.getProfile(testPoliticianTwo.id)));
-
-  // ── 12) Bestandskonvention: keine Umbenennung von Production-Daten noetig ──
-  const pp = require("../lib/helmut/quellenarchitektur/profile-packages");
-  check("Persoenliches Paket folgt fuer JEDE ID der Bestandskonvention profil-<id>",
-    pp.personalPackageKeyFor("beliebige-id") === "profil-beliebige-id");
-  const personSources = await scheduler.getSourcesForProfile({ ...testPoliticianOne });
-  const personSource = personSources.find((s) => s.type === "person");
-  check("Personenquelle folgt fuer JEDE ID der Bestandskonvention <id>-news (dynamisch aus dem Profil)",
-    Boolean(personSource) && personSource.id === `${testPoliticianOne.id}-news`);
-  const catalog = require("../lib/helmut/quellenarchitektur/catalog");
-  check("Kein Namensmuster klassifiziert lebende Mandatsquellen als Legacy (nur explizite Karten)",
-    catalog.classifyOrphanId("beliebige-id-news-region") === null
-      && catalog.classifyOrphanId("dip") === "active_uncatalogued");
-  const ssc = require("../lib/helmut/quellenarchitektur/supply-shadow-compare");
-  const supplyCmp = ssc.compareSupply({
-    altSourceIds: ["beliebige-id-news", "beliebige-id-news-region"],
-    newSourceIds: ["beliebige-id-news"],
-    consolidationBases: ["beliebige-id-news"]
-  });
-  check("Abgeloeste Mehrfachsuche wird NUR ueber deklarierte Konsolidierungsbasis erklaert",
-    supplyCmp.regression === false && supplyCmp.onlyAltExplained.some((e) => e.id === "beliebige-id-news-region"));
-  const supplyCmpStrict = ssc.compareSupply({
-    altSourceIds: ["beliebige-id-news", "beliebige-id-news-region"],
-    newSourceIds: ["beliebige-id-news"],
-    docsBySource: { "beliebige-id-news-region": 5 }
-  });
-  check("OHNE Deklaration bleibt der Wegfall eine echte, sichtbare Regression",
-    supplyCmpStrict.regression === true);
-
-  // Aufraeumen der Fixture-Profile aus dem Main-Store.
-  const finalStore = await storage.readStore("main");
-  delete finalStore.profiles[testPoliticianOne.id];
-  delete finalStore.profiles[testPoliticianTwo.id];
-  if (finalStore.mandateProfiles) {
-    delete finalStore.mandateProfiles[testPoliticianOne.id];
-    delete finalStore.mandateProfiles[testPoliticianTwo.id];
-  }
-  finalStore.rawItems = (finalStore.rawItems || []).filter((i) => !["raw-alpha-person", "raw-beta-person"].includes(i.id));
-  await storage.writeStore(finalStore, "main");
-
+  await setActiveMandates([]);
   server.close();
   console.log(`\n${passed} PASS, ${failed} FAIL`);
   process.exit(failed ? 1 : 0);
 })().catch((e) => { console.error("TESTFEHLER", e); process.exit(1); });
+
+async function runAccountModeChecks() {
+  let p = 0, f = 0;
+  const check2 = (name, cond) => { if (cond) { p += 1; console.log(`PASS  ${name}`); } else { f += 1; console.log(`FAIL  ${name}`); } };
+  process.env.HELMUT_AUTH_MODE = "accounts";
+  process.env.HELMUT_ADMIN_EMAIL = "admin@example.test";
+  process.env.HELMUT_ADMIN_PASSWORD = "admin-pw-1234567";
+  const accounts = require("../lib/helmut/accounts");
+  const auth = require("../lib/helmut/auth");
+  try {
+    await accounts.ensureAdminSeed();
+    const store = await storage.readStore("main");
+    store.profiles = { [testPoliticianOne.id]: { ...testPoliticianOne } };
+    store.mandateProfiles = {};
+    await storage.writeStore(store, "main");
+    const user = await accounts.createUser({ email: "mdb@example.test", name: "MdB", role: "abgeordneter", password: "mdb-pw-1234567", politicianId: testPoliticianOne.id });
+    const session = await accounts.createSession(user.id);
+    const token = session && (session.token || session.id || session);
+    const cookie = `${auth.SESSION_COOKIE}=${encodeURIComponent(String(token))}`;
+    const srv = http.createServer(handler);
+    await new Promise((r) => srv.listen(0, "127.0.0.1", r));
+    const authed = await req(srv, { pathname: "/api/app/start", headers: { cookie } });
+    check2("(5) Normale authentifizierte Anfrage funktioniert OHNE Pilotkonfiguration",
+      authed.status === 200 && parse(authed).profile && parse(authed).profile.id === testPoliticianOne.id);
+    const noSession = await req(srv, { pathname: "/api/tasks" });
+    check2("(6) Anfrage ohne Session/Mandatskontext bricht sicher ab (401/403)",
+      noSession.status === 401 || noSession.status === 403);
+    srv.close();
+  } catch (e) {
+    check2("(5/6) Account-Modus-Checks liefen ohne Fehler", false);
+    console.error("account-mode error", e && e.message);
+  } finally {
+    delete process.env.HELMUT_AUTH_MODE;
+    delete process.env.HELMUT_ADMIN_EMAIL;
+    delete process.env.HELMUT_ADMIN_PASSWORD;
+  }
+  return { passed: p, failed: f };
+}

@@ -45,8 +45,6 @@ weg, App läuft; fail-closed = Zugriff/Aktion wird verweigert) · Rotationsbedar
 | Variable | P/O | Zweck / Default | Merkmale |
 |---|---|---|---|
 | `HELMUT_AUTH_MODE` | O | `accounts` = Konten-Login; sonst Legacy-Pilotgate. | server.js/auth.js · Prod · Default Legacy-Gate · — |
-| `HELMUT_PILOT_TENANT_ID` | P* | Mandats-ID, die das Legacy-Pilotgate bedient und die mandantenbezogene Crons ohne Multi-Tenant-Flag verarbeiten (gegen die DB validiert). *Pflicht im Pilot-Modus — es gibt KEINEN Code-Default. | server.js/tenant-context.js · Prod · **fail-closed** (API 503 `pilot-tenant-not-configured`, Crons `skipped`) · — |
-| `HELMUT_CRON_MULTI_TENANT` | O | **Freigabepflichtig, Default AUS:** mandantenbezogene Crons iterieren über ALLE aktiven DB-Mandate (Isolation je Mandat, Zeitbudget). | tenant-context.js · Prod · Default aus (Einzel-Mandats-Betrieb) · — |
 | `HELMUT_PROTECTED_TENANT_IDS` | O | Optionale zusätzliche Schutzliste (Komma-Liste von Mandats-IDs) für die Provisionierung; bestehende, nicht vom Werkzeug angelegte Mandanten sind auch ohne Wert datengetrieben geschützt. | provisioning.js · alle · Default leer (Marker-Schutz greift) · — |
 | `HELMUT_TENANT_MODE` | O | Default `pilot`. | server.js · alle · Default greift · — |
 | `HELMUT_TENANT_JWT_MODE` | O | **Stillgelegt** (tenantJwtModeEnabled()=false). Ohne Wirkung. → Abschnitt 9 | storage.js · — · wirkungslos · — |
@@ -124,7 +122,6 @@ weg, App läuft; fail-closed = Zugriff/Aktion wird verweigert) · Rotationsbedar
 | `HELMUT_MONITORING_WEBHOOK_URL` | O | **Zweiter Alarmkanal** (Audit-Folgebranch): Health-Report wird zusätzlich zu CallMeBot als JSON-POST hierher geschickt (Slack/Discord/Zapier/E-Mail-Relais). Ohne: nur WhatsApp. | server.js · Prod empfohlen · fail-open (Kanal still aus) · Rot: bei Webhook-Leak |
 | `HELMUT_ASSET_VERSION` | O | Cache-Busting-Version für den CLI-Deploy-Weg (setzt `scripts/vercel-deploy.sh` aus Git-SHA+Zeit). Git-Integration-Deploys nutzen stattdessen `VERCEL_GIT_COMMIT_SHA`. **CLI-Deploys IMMER über das Skript** (siehe `deploy-rollback.md`). | server.js · nur CLI-Deploy · ohne: Konstante (Stale-Asset-Falle) · — |
 | `HELMUT_LAGE_CHECK_RECENT_HOURS` · `HELMUT_LAGE_CHECK_REGENERATE_THRESHOLD` | O | Lage-Check-Feinsteuerung. | lage.js · alle · Default greift · — |
-| `HELMUT_MORNING_PUSH_ALL_PROFILES` | O | Morgen-Push für alle Profile (Multi-Mandant). Default aus (Freigabepunkt F4). | server.js · alle · Default aus · — |
 | `HELMUT_STAFF_STALE_DAYS` | O | Staff-Backfill-Frische. | staff.js · alle · Default greift · — |
 
 ## 7. Pflicht-Mindestset für einen funktionierenden Production-Neuaufbau
