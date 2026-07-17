@@ -2,9 +2,9 @@
 
 | | |
 |---|---|
-| **Stand / Prüfdatum** | **2026-07-17** |
-| **Geprüfter Stand** | `main`-HEAD `7346653` (Merge PR #100) = Production-Codebasis |
-| **Grundlagen** | PR #95–#100, `docs/betrieb/production_beweisprotokoll.md`, `docs/helmut_datenmotor_thread2_handoff.md` §0a, `docs/quellenarchitektur/00-master-status.md` (Nachtrag 2026-07-17), Audit-Serie |
+| **Stand / Prüfdatum** | **2026-07-17** (aktualisiert nach PR #102) |
+| **Geprüfter Stand** | `main`-HEAD `ca7e404` (Merge PR #102) = Production-Codebasis |
+| **Grundlagen** | PR #95–#102, `docs/betrieb/production_beweisprotokoll.md` (inkl. §7 Google-News-Härtung), `docs/betrieb/google_news_haertung.md`, `docs/betrieb/health_report_rollierend.md`, `docs/betrieb/f5_freigabe.md`, `docs/helmut_datenmotor_thread2_handoff.md` §0a, `docs/quellenarchitektur/00-master-status.md` (Nachtrag 2026-07-17), Audit-Serie |
 
 > **Dies ist die EINZIGE verbindliche Liste aller offenen Punkte des Datenmotors.**
 > Sie konsolidiert: offene Production-Beweise, Betriebsbefunde, Freigabepunkte und
@@ -86,6 +86,13 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 - **Live seit PR #96/#97:** vollständige Tenant-Guards + Cross-Tenant-Write-Guard,
   idempotente Zweitmandanten-Provisionierung, Mandantenneutralisierung (kein
   Pilot-/Default-/Fallback-Mandant, Crons über alle aktiven DB-Mandate, isoliert).
+- **Auf `main` seit PR #102 (Code gemergt, offline getestet — NICHT production-bewiesen):**
+  Google-News-Härtung (Provider-Gate/Retry/Backoff/Circuit-Breaker/Cooldown,
+  Kill-Switch `HELMUT_GOOGLE_HARDENING`, **Default AN im Code**), ehrliche
+  7-Zustands-Lauf-Klassifikation, rollierender Health-Report (schließt die
+  B1-Alarm-Lücke im Code), `source_id`-Dubletten-Fix, gehärteter Monitoring-Webhook
+  (Ereigniskennung/Dedupe/Retry/Zustellstatus/Heartbeat). **Offen:** Production-Beweisläufe
+  + Aktivierungen (OP-07/OP-15/OP-19) — Merge ≠ Deploy-Beweis.
 - **Gebaut, bewusst AUS (je eigene Freigabe):** siehe §5 (deaktivierte Funktionen).
 - **Betrieb:** Quellen **on** · Gate **shadow** · PARDOK **shadow** · Scoring **off** ·
   BE/BB **inaktiv** · 0 neue `systemErrors` im gesamten Beweiszeitraum.
@@ -98,24 +105,26 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 |---|---|---|
 | Lock-**Deny-Pfad** unter echter Konkurrenz (2. Lauf wird abgewiesen) | kein konkurrierender Zweitlauf im Beweiszeitraum; bewusster Doppelstart verboten | OP-09 |
 | **Fehlerfall** → `systemErrors`-Eintrag + Alarm | keine echte technische Störung im Beweiszeitraum; künstliche Injektion verboten | OP-10 |
-| **Zweitkanal-Zustelltest** (Webhook real zugestellt) | braucht FT2-5-Aktivierung | OP-07 |
+| **Zweitkanal-Zustelltest** (Webhook real zugestellt) | Sender durch PR #102 gehärtet + offline getestet, aber `HELMUT_MONITORING_WEBHOOK_URL` unset (No-Op), kein `webhook.sent`-Beleg | OP-07 |
 | **Backfill-Idempotenz auf Prod** (Zweitlauf = 0 Änderungen) | braucht FT2-4-Ausführung | OP-08 |
-| **Quellen-Dubletten-Freiheit** nach Mandantenneutralisierung (Telemetrie: Zeilen = distinct `source_id`) | Nachweis am nächsten regulären Crawl nach PR #97-Deploy dokumentieren | OP-19 |
+| **Google-News-Härtung unter echter Drosselung** (Breaker/Gate/Cooldown greifen live) | #102-Härtung nur offline bewiesen; kein Production-Beweislauf unter realem Throttle | OP-15 |
+| **Quellen-Dubletten-Freiheit** (Telemetrie: Zeilen = distinct `source_id`) | #102-Dedup-Fix nur offline bewiesen; Live-Nachweis am nächsten regulären Crawl noch offen (Invariante ersetzt „= 145", s. B3) | OP-19 |
 | **Recovery-Wirkung** (6 Alt-Fälle `complete`, mit Rollback-Kennung) | braucht OP-05-Freigabe | OP-05 |
 
 ## 4 · Betriebsbefunde (Übersicht)
 
 | Befund | Stand | → OP |
 |---|---|---|
-| **B1** — Google-News-Rate-Limiting degradierte den 20:00-Crawl (129/145) | transient, per Gegenprobe erholt (volumeninduziert); **latentes Klumpenrisiko bleibt**; Zusatzbefund: täglicher, jüngster-Crawl-basierter Watchdog übersieht selbst-erholte Degradationen zwischen zwei Reports | OP-15 (Minderung), OP-07 (Alarm-Lücke) |
+| **B1** — Google-News-Rate-Limiting degradierte den 20:00-Crawl (129/145) | transient, erholt (volumeninduziert); Provider-Ursache durch PR #102 **read-only bewiesen** (alle 129 Ausfälle Google, 3/3 direkte Quellen ok); **operative Härtung umgesetzt + offline getestet** (Gate/Retry/Breaker/Cooldown, Default AN), **aber nicht production-bewiesen**; die Alarm-Lücke (jüngster-Crawl-Blindheit) ist per rollierendem Health-Report **im Code geschlossen**, operativ erst nach OP-07-Aktivierung; **strukturelles Klumpenrisiko bleibt** (146/163 Wege Google) | OP-15 (Härtung + Struktur), OP-07 (Alarm-Aktivierung) |
 | **B2** — Understanding-Rückstand (50 `pending` + 2 `failed`, eingefroren 02./03.07.) | forensisch aufgelöst (PR #98): kein laufender Verlust, aber ~8 kernmandatsrelevante Fälle + 2 `failed` blockiert; Verlust aktuell reversibel, wird bei Retention-Löschung permanent | OP-05, OP-06, OP-12 |
-| Katalog-Dublette der Personen-News-Quelle (2 Abrufe/Crawl) | strukturell behoben durch Mandantenneutralisierung (Code-Seed ohne Personenquellen); Live-Nachweis offen | OP-19 |
+| **B3** — Quellenzahl mandats-/profilabhängig (Demo-/Testmandat-Lauf: 139 statt 145 Quellen) | neu aus PR-#102-Analyse; feste Referenz „145" gilt nicht mehr — harte Invariante künftig `Zeilenzahl = distinct source_id` | OP-19 |
+| Katalog-Dublette der Personen-News-Quelle (2 Abrufe/Crawl) | Ursache präzisiert (id-Kollision, nicht statischer Katalog); `source_id`-Dedup durch PR #102 umgesetzt + offline getestet; Live-Nachweis offen | OP-19 |
 
 ## 5 · Deaktivierte Funktionen / nicht angewandte Migrationen (vollständig)
 
 | Funktion / Migration | Default | → OP |
 |---|---|---|
-| `HELMUT_MONITORING_WEBHOOK_URL` (Zweitkanal) + `health-watch.yml`-Schedule | nicht gesetzt / kein `schedule:` | OP-07 |
+| `HELMUT_MONITORING_WEBHOOK_URL` (Zweitkanal, durch PR #102 gehärtet: Ereigniskennung/Dedupe/Retry/Zustellstatus/Heartbeat) + `health-watch.yml`-Schedule | nicht gesetzt / kein `schedule:` (Sender ist No-Op ohne URL) | OP-07 |
 | KO-Klassifikations-Backfill-Lauf (`workflow_dispatch`, Token `BACKFILL_KO_CLASSIFICATION`) | nie automatisch | OP-08 |
 | `HELMUT_RECOVERY_EXECUTE` + Token `RECOVER_6_CONFIRMED` (Understanding-Recovery, 6er-Allowlist) | AUS | OP-05 |
 | `HELMUT_FAILED_KO_RECOVERY` (+ `HELMUT_FAILED_KO_MAX_RETRIES`) | AUS | OP-13 |
@@ -190,12 +199,14 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 - **Freigabe:** **JA** (Prod-Write).
 
 #### OP-07 · Monitoring-Zweitkanal + Meta-Heartbeat aktivieren (früher FT2-5)
-- **Status:** vorbereitet; Code live (fail-safe, Allowlist + Redaction), `health-watch.yml` bewusst ohne `schedule:`; Anleitung: `docs/betrieb/zweitkanal-alarm-vorbereitung.md`. Motivation verschärft durch B1-Zusatzbefund (Alarm-Lücke zwischen Tagesreports).
-- **Fehlender Schritt:** geprüfte Webhook-URL bereitstellen → `HELMUT_MONITORING_WEBHOOK_URL` in Vercel setzen → Redeploy → `dryRun=1`-Verifikation → echten Zustellbeleg dokumentieren → `schedule:`-Cron in `health-watch.yml` ergänzen.
+- **Status:** **vorbereitet (durch PR #102 deutlich ausgebaut/gehärtet), NICHT aktiviert, NICHT bewiesen.**
+  - *Umgesetzt + offline getestet auf `main` (PR #102):* gehärteter Webhook-Sender `lib/helmut/monitoring-webhook.js` — stabile Ereigniskennung (`hb-<Tag>` / `al-<Tag>-<hash>`), Dedupe (letzte 20 Kennungen), begrenzter Retry (Default 2, 8-s-Timeout, 4xx nie), Zustellstatus-Persistenz (`monitoringWebhookDelivery`), Meta-Heartbeat (auch grüner Report wird zugestellt); rollierender Health-Report `lib/helmut/rolling-health.js` (24-h-Fenster, 5 Zustände) + `rollingCrawl` in der Alarm-Payload-Allowlist. Der rollierende Report **schließt die B1-Alarm-Lücke (jüngster-Lauf-Blindheit) im Code**. Verdrahtet in `server.js` (Health-Report-Pfad, `dryRun=1` meldet `kanaele.webhook.konfiguriert`). Tests: `monitoring-webhook-test.js` (20), `alarm-payload-test.js`, `rolling-health-test.js` (18). Doku: `docs/betrieb/f5_freigabe.md`, `docs/betrieb/health_report_rollierend.md`.
+  - *NICHT aktiviert / NICHT bewiesen:* `HELMUT_MONITORING_WEBHOOK_URL` ist **nirgends gesetzt** → der Sendepfad ist ein No-Op; **kein** echter Zustellbeleg (`webhook.sent`/`monitoringWebhookDelivery`) im Beweisprotokoll; `.github/workflows/health-watch.yml` hat weiterhin **kein `schedule:`** (nur `workflow_dispatch`). Der B1-Alarm-Lücken-Schluss wirkt operativ erst nach Aktivierung + laufendem Schedule.
+- **Fehlender Schritt:** geprüfte Webhook-URL bereitstellen → `HELMUT_MONITORING_WEBHOOK_URL` in Vercel setzen → Redeploy → `dryRun=1`-Verifikation (`konfiguriert=true`) → echten Zustellbeleg dokumentieren (nächster 06:00-UTC-Report: `webhook.sent=true` + `monitoringWebhookDelivery` `hb-<Tag>`, genau eine Nachricht) → `schedule:`-Cron in `health-watch.yml` ergänzen.
 - **Abhängigkeiten:** keine.
-- **Risiko:** gering — Payload datenschutzgehärtet; Kanalfehler kippen den Cron nicht.
+- **Risiko:** gering — Payload datenschutzgehärtet (Allowlist + Redaction); Kanalfehler kippen den Cron nicht.
 - **Parallelisierbarkeit:** vollständig parallel.
-- **Freigabe:** **JA** (Env + neuer Alarmkanal/Cron).
+- **Freigabe:** **JA** (Env-Wert = F5-Gründerfreigabe + neuer Alarmkanal/Cron).
 
 #### OP-08 · KO-Klassifikations-Backfill ausführen (früher FT2-4)
 - **Status:** vorbereitet; Trockenlauf belegt, 0 KI-Calls, idempotent, dispatchbare Action mit harter Bestätigung.
@@ -256,12 +267,14 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 - **Freigabe:** **JA** (Verhaltensänderung).
 
 #### OP-15 · Google-News-Klumpenrisiko mindern (Betriebsbefund B1)
-- **Status:** offen; B1 war transient/volumeninduziert, das strukturelle Klumpenrisiko (viele Quellen über einen Google-News-Weg) bleibt latent.
-- **Fehlender Schritt:** Kernquellen schrittweise auf Direkt-RSS umstellen (Audit-Minderung), beginnend mit den amtlichen/kuratierten Wegen; per Telemetrie nachweisen.
-- **Abhängigkeiten:** keine; Telemetrie (live) liefert die Messbasis.
-- **Risiko:** niedrig — additive Quellenpflege; jeweils per Crawl-Vergleich absichern.
-- **Parallelisierbarkeit:** gut parallelisierbar (quellenweise).
-- **Freigabe:** **JA** (Quellenkatalog-/Deploy-Änderung).
+- **Status:** **offen — zwei getrennt zu haltende Ebenen (nicht vermengen):**
+  - *(a) Operative Härtung — durch PR #102 umgesetzt + offline getestet, aber NICHT production-bewiesen.* `lib/helmut/google-news-hardening.js`: Provider-Trennung/Gate (Parallelität 5, Abstand 200 ms), Retry+Backoff+Jitter mit Retry-After-Deckel + Retry-Budget/Lauf, Circuit Breaker je Lauf (10 Beob./0,6) + Prozess-Gedächtnis, Cooldown nach Degradation, Vollcrawl-Abstands-Schutz, kein HTML-Fallback-Zweitrequest, Kill-Switch `HELMUT_GOOGLE_HARDENING` (**Default AN im Code**). 7-Zustands-Lauf-Klassifikation (`crawl-run-state.js`). Tests: `google-news-hardening-test.js` (58), `crawler-hardening-test.js` (19). Doku: `docs/betrieb/google_news_haertung.md`. **Provider-Ursache von B1 read-only bewiesen** (alle 129 Ausfälle waren Google, 3/3 direkte Quellen ok; `docs/betrieb/google_news_drosselung_analyse.md`). **Es fehlt** der Production-Beweislauf unter echter Drosselung (Breaker öffnet, `circuit-open`, direkte Quellen unberührt) — die Härtungs-Werte sind laut `google_news_haertung.md` bewusst „Empfehlungen, erst durch echte Beweisläufe bestätigt".
+  - *(b) Strukturelle Dauer-Minderung — NICHT begonnen (die eigentliche OP-15-Akzeptanz).* Direkt-RSS-Umstellung geeigneter Kernwege (amtlich/kuratiert), per Telemetrie belegt. Der Katalog ist weiterhin **146 von 163 Wegen Google-News**; `google_news_haertung.md` benennt die Direkt-RSS-Migration ausdrücklich als „nicht Teil dieses Sprints". Das Klumpenrisiko bleibt genau deshalb latent.
+- **Fehlender Schritt:** (a) Production-Beweislauf der #102-Härtung dokumentieren (kann mit OP-10-Fehlerpfad einhergehen); (b) Kernquellen schrittweise auf Direkt-RSS umstellen und die gesunkene Google-Quote per `source_crawl_telemetry` nachweisen.
+- **Abhängigkeiten:** (a) braucht einen echten Google-Drosselungs-Fall im Betrieb (nicht erzwingbar); (b) keine — Telemetrie (live) liefert die Messbasis.
+- **Risiko:** niedrig — Härtung additiv + Kill-Switch; Direkt-RSS-Umstellung quellenweise per Crawl-Vergleich absicherbar.
+- **Parallelisierbarkeit:** (b) gut parallelisierbar (quellenweise); (a) passiv/beobachtend.
+- **Freigabe:** **JA** für (b) (Quellenkatalog-/Deploy-Änderung); (a) ist Beobachtung (keine Freigabe), setzt aber den bereits gemergten #102-Code in Production voraus.
 
 #### OP-16 · Cron-Reihenfolge Morgenablauf (früher FA-3)
 - **Status:** offen; Morgen-Push (05:00 UTC) läuft weiterhin vor dem 05:30-Understanding — er verpasst systematisch die Tagesanalysen; exakte Diff-Vorbereitung liegt in `docs/freigabepunkte.md` (FA-3).
@@ -287,13 +300,16 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 - **Parallelisierbarkeit:** eigenes Beobachtungsfenster.
 - **Freigabe:** **JA** (Verhaltensänderung mit Kosten-/Inhaltswirkung).
 
-#### OP-19 · Production-Beweis: Quellen-Dubletten-Freiheit nach Neutralisierung
-- **Status:** offen; die Katalog-Dublette der Personen-News-Quelle (doppelter Abruf je Crawl) ist durch PR #97 strukturell behoben; Live-Nachweis fehlt noch.
-- **Fehlender Schritt:** am nächsten regulären Crawl per `source_crawl_telemetry` belegen: Zeilenzahl = distinct `source_id` (keine Doppel-Einreihung); im Beweisprotokoll nachtragen.
-- **Abhängigkeiten:** keine.
+#### OP-19 · Production-Beweis: Quellen-Dubletten-Freiheit (Umsetzung + fehlender Nachweis getrennt)
+- **Status:** **offen — Umsetzung erfolgt, Live-Nachweis fehlt.**
+  - *Umsetzung (PR #102, offline getestet):* Der statische Katalog-Eintrag war schon vor #102 entfernt (Commit `40e130f`); die verbliebene, live gemessene Dublette (145 Zeilen / 144 distinct in il02g/v268f/mb1k6) entstand aus einer **id-Kollision** zwischen dynamischer Personenquelle und relationalem Pfad (unterschiedliche URLs → URL-Dedup griff nicht). #102 ergänzt eine **`source_id`-Dedup im Quellenplan** (`dedupeSourcesById` in `mergeProfileAndPlanSources` + Fallback-Pfad, first-wins/kuratierte Namensquelle bevorzugt). Erwartete Quellenzahl 145 → 144. Test: `scripts/source-dedupe-test.js`. Doku: Beweisprotokoll §7.
+  - *Live-Nachweis (fehlt):* Am nächsten regulären Crawl per `source_crawl_telemetry` belegen, dass **Zeilenzahl = distinct `source_id`** (keine Doppel-Einreihung), und im Beweisprotokoll nachtragen. Bisher gibt es dafür **keinen** dokumentierten Production-Lauf mit aktivem Fix.
+  - *Neuer Betriebsbefund B3 (aus PR-#102-Analyse, offen):* Die Quellenzahl ist **mandats-/profilabhängig** (ein manueller Crawl mit einem Demo-/Testmandat lief mit 139 Quellen, die profil-dynamischen Suchen fehlten). Die feste Referenz „145" gilt nicht mehr absolut; die **harte Invariante lautet künftig `Zeilenzahl = distinct source_id`** (nicht „= 145").
+- **Fehlender Schritt:** einen regulären Crawl nach Deploy des #102-Fixes per Telemetrie auswerten (Zeilen = distinct `source_id`) und dokumentieren; die B3-Invariante als Prüfregel übernehmen.
+- **Abhängigkeiten:** setzt den gemergten #102-Dedup-Code in Production voraus (der Merge selbst ist erfolgt).
 - **Risiko:** keines (Beobachtung).
 - **Parallelisierbarkeit:** passiv.
-- **Freigabe:** **NEIN**.
+- **Freigabe:** **NEIN** (reiner Beobachtungs-/Nachweisschritt).
 
 #### OP-20 · Git-Historie bereinigen (früher FA-2)
 - **Status:** offen/optional; der alte Pilot-Code ist seit FA-1-Rotation wertlos, bleibt aber in der Historie lesbar. **Zwingend vor Repo-Weitergabe an Dritte (Due Diligence/Dienstleister).**

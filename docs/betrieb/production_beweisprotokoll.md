@@ -447,6 +447,16 @@ unbelegt, und B1/B2 sind offene Betriebsbefunde. **Keine Betriebsreife-Behauptun
 
 ## 7 · Nachtrag Sprint „Google-News-Härtung" (2026-07-17, Branch `claude/helmut-google-news-hardening-975p22`)
 
+> **Redaktioneller Nachtrag (2026-07-17, Doku-Konsolidierung):** (1) Dieser Sprint
+> ist inzwischen als **PR #102** nach `main` gemergt (`ca7e404`) — die Formulierung
+> „NICHT gemergt/deployt" unten beschreibt den *Branch-Stand zum Schreibzeitpunkt*.
+> Ob der Code über den Merge hinaus in Production **deployt** und durch einen echten
+> **Production-Beweislauf** bestätigt ist, ist **noch offen** und wird verbindlich in
+> `docs/datenmotor-restliste.md` (OP-07, OP-15, OP-19) geführt. (2) „F5–F8" unten =
+> **FT2-5…FT2-8** (neues Schema, siehe Restliste §1). (3) Mandantenkennungen sind wie
+> im übrigen Protokoll anonymisiert (`<pilot-mandats-id>` / `<demo-mandant>`); die
+> Messwerte, runIds und Zähler sind unverändert original.
+
 **Rein lesende Vertiefung von B1 (Production-Telemetrie, nur SELECT):**
 - **Provider-Trennung des Schadens jetzt BEWIESEN:** Kreuzung der 145
   Telemetrie-Zeilen von `v268f` mit `retrieval_paths` → **alle 129 Ausfälle
@@ -459,12 +469,12 @@ unbelegt, und B1/B2 sind offene Betriebsbefunde. **Keine Betriebsreife-Behauptun
   `sources.js`-Eintrag ist auf aktuellem `main` bereits entfernt (Commit
   `40e130f`). Die live gemessene Dublette (145 Zeilen / 144 distinct in
   il02g/v268f/mb1k6) entsteht aus **id-Kollision** `personNewsSource`
-  (bei leerem Profil-`fullName`: Query `"cem-ince"`, Label „cem-ince
-  News-Suche") ↔ relationaler Pfad `rp-cem-ince-news` (Query `"Cem Ince"`) —
+  (bei leerem Profil-`fullName`: Query `"<pilot-mandats-id>"`, Label „<pilot-mandats-id>
+  News-Suche") ↔ relationaler Pfad `rp-<pilot-mandats-id>-news` (Query `"<voller Name>"`) —
   unterschiedliche URLs, daher griff die reine URL-Dedup nicht.
 - **Neuer Nebenbefund B3 (beobachtet, offen):** Nach Merge #97
   (Mandantenneutralisierung) lief `crawl-20260717073217-sge68` (manuell,
-  07:32 UTC) mit nur **139 Quellen** für ein Testmandat `angela-merkel`
+  07:32 UTC) mit nur **139 Quellen** für ein Testmandat `<demo-mandant>`
   (angelegt 17.07.); die 6 profil-dynamischen Suchen des Piloten fehlten.
   Die Referenzzahl „145" ist damit mandats-/profilabhängig; harte Invariante
   künftig: **Zeilenzahl = distinct `source_id`**. Kein Eingriff in diesem
