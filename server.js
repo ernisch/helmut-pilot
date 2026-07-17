@@ -11,7 +11,7 @@ const { validateProfile } = require("./lib/helmut/profile-validation");
 const sourceSafety = require("./lib/helmut/sourceSafety");
 const { runLageCheck, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, listFailedKnowledgeObjects, resetUnderstandingToPending, markUnderstandingTerminal, getUnderstandingRetries, saveUnderstandingRetries, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, getLlmUsageBreakdownToday, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getClassificationCoverage, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState, tenantJwtModeEnabled, saveKnowledgeObjectEnrichment, profileDbModeEnabled, getProfileFromDb, diagnoseTenantJwt, recordProcessRun, listProcessRuns } = require("./lib/helmut/storage");
+const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, listFailedKnowledgeObjects, resetUnderstandingToPending, markUnderstandingTerminal, getUnderstandingRetries, saveUnderstandingRetries, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, getLlmUsageBreakdownToday, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getClassificationCoverage, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState, tenantJwtModeEnabled, saveKnowledgeObjectEnrichment, profileDbModeEnabled, getProfileFromDb, diagnoseTenantJwt, recordProcessRun, listProcessRuns, saveMonitoringDeliveryState, getMonitoringDeliveryState } = require("./lib/helmut/storage");
 
 // P0-1: technischer Ausfuehrungsort + Laufkennung fuer Prozess-Laufzeit-Telemetrie
 // (Cron-Understanding, Briefing-Aufbau). Reine technische Metadaten, nie PII.
@@ -26,6 +26,8 @@ const { classifyOperationalState, describeState } = require("./lib/helmut/watchd
 const healthAxes = require("./lib/helmut/health-axes");
 const { recoverFailedUnderstanding } = require("./lib/helmut/ko-recovery");
 const { buildAlarmPayload, buildAlarmText } = require("./lib/helmut/alarm-payload");
+const rollingHealth = require("./lib/helmut/rolling-health");
+const monitoringWebhook = require("./lib/helmut/monitoring-webhook");
 const { sourceMode } = require("./lib/helmut/quellenarchitektur/source-mode");
 const { sourceCoverageThresholds, effectiveActiveSourceCount } = require("./lib/helmut/source-coverage");
 const { runKoEnrichmentBackfill } = require("./lib/helmut/ko-enrichment");
@@ -477,13 +479,16 @@ async function handleRequest(request, response) {
     if (previewMode) return sendPreviewReadOnly(response);
     return handleAsync(response, async () => {
       const latest = await getLatestCrawlRun();
-      if (!isForcedPilotRun(request, url) && !hasAdminBypass(request, url) && isRecent(latest?.createdAt, manualRunMinIntervalMs)) {
+      const forced = isForcedPilotRun(request, url) || hasAdminBypass(request, url);
+      if (!forced && isRecent(latest?.createdAt, manualRunMinIntervalMs)) {
         return {
           ...latest,
           skippedReason: "Quellen wurden gerade erst geprüft. Helmut nutzt den letzten Lauf, um unnötige Last zu vermeiden."
         };
       }
-      return runSourceCrawl(politicianId);
+      // Betreiber-Override: wer den 10-min-Frischeschutz bewusst umgeht, umgeht
+      // auch den Google-Cooldown/Abstands-Schutz (Google-News-Härtung).
+      return runSourceCrawl(politicianId, { force: forced });
     });
   }
 
@@ -494,13 +499,15 @@ async function handleRequest(request, response) {
       // die V3-Engines (Understanding/Matching/Decision) über runSourceCrawl.
       // Kein V2-Briefing-Lauf mehr. Das Briefing liest der Client danach frisch aus V3.
       const latestCrawl = await getLatestCrawlRun();
-      if (!isForcedPilotRun(request, url) && !hasAdminBypass(request, url) && isRecent(latestCrawl?.createdAt, manualRunMinIntervalMs)) {
+      const forcedPipeline = isForcedPilotRun(request, url) || hasAdminBypass(request, url);
+      if (!forcedPipeline && isRecent(latestCrawl?.createdAt, manualRunMinIntervalMs)) {
         return {
           ...latestCrawl,
           skippedReason: "Pipeline wurde gerade erst ausgeführt. Helmut nutzt den letzten Lauf."
         };
       }
-      return runSourceCrawl(politicianId);
+      // Betreiber-Override wie bei /api/crawl/run (siehe dort).
+      return runSourceCrawl(politicianId, { force: forcedPipeline });
     });
   }
 
@@ -865,9 +872,27 @@ async function handleRequest(request, response) {
       for (const tenantId of tenantIds) {
         try {
           const r = await buildHealthReport(tenantId);
-          reports.push({ tenant: tenantId, ok: r.ok, text: r.text, overdueCrons: r.overdueCrons, googleUrlResolutionRate: r.googleUrlResolutionRate });
+          reports.push({
+            tenant: tenantId, ok: r.ok, text: r.text, overdueCrons: r.overdueCrons,
+            googleUrlResolutionRate: r.googleUrlResolutionRate,
+            // Härtungs-Sprint: Zustand/Blocker/rollierende Crawl-Sicht für den
+            // aggregierten Alarm-Payload (nur technische Felder).
+            state: r.state, severity: r.severity,
+            healthBlockers: r.healthBlockers, healthWarnings: r.healthWarnings,
+            rollingCrawl: r.rollingCrawl
+          });
         } catch (error) {
-          reports.push({ tenant: tenantId, ok: false, text: `${tenantId}: Health-Report-Fehler: ${error && error.message}`, error: error && error.message });
+          // Auch der Fehlerfall trägt Zustand/Blocker (Review-Fix): sonst
+          // kollidieren die Alarm-Ereigniskennungen verschiedener Report-
+          // Crashes (leere Hash-Basis) und ein zweiter, anderer Ausfall am
+          // selben Tag würde als Duplikat unterdrückt.
+          reports.push({
+            tenant: tenantId, ok: false,
+            text: `${tenantId}: Health-Report-Fehler: ${error && error.message}`,
+            error: error && error.message,
+            state: "report-fehler", severity: "alarm",
+            healthBlockers: ["report-fehler", tenantId]
+          });
         }
       }
       const overallOk = reports.every((r) => r.ok);
@@ -880,8 +905,18 @@ async function handleRequest(request, response) {
         return { dryRun: true, ok: overallOk, tenants: tenantIds.length, text: combinedText, kanaele, reports };
       }
       // EINE aggregierte Nachricht je Kanal (Alarm feuert, wenn IRGENDEIN Mandat nicht ok ist).
+      // Härtungs-Sprint: Zustand/Blocker/rollierende Crawl-Sicht des SCHLECHTESTEN
+      // Mandats fließen mit — stabile Ereigniskennung + Webhook-Payload brauchen sie.
+      const alertRank = { alarm: 2, warnung: 1, ok: 0 };
+      const worstRolling = reports.map((r) => r.rollingCrawl).filter(Boolean)
+        .sort((a, b) => (alertRank[b.alertLevel] || 0) - (alertRank[a.alertLevel] || 0))[0] || null;
+      const leadReport = reports.find((r) => !r.ok) || reports[0] || {};
       const aggregate = {
         ok: overallOk, text: combinedText,
+        state: leadReport.state, severity: leadReport.severity,
+        healthBlockers: reports.flatMap((r) => r.healthBlockers || []),
+        healthWarnings: reports.flatMap((r) => r.healthWarnings || []),
+        rollingCrawl: worstRolling,
         overdueCrons: reports.flatMap((r) => r.overdueCrons || []),
         googleUrlResolutionRate: reports.map((r) => r.googleUrlResolutionRate).filter((x) => x != null).sort((a, b) => a - b)[0] ?? null
       };
@@ -898,7 +933,9 @@ async function handleRequest(request, response) {
           path: "/api/cron/health-report"
         }).catch(() => {});
       }
-      if (!overallOk && delivery && delivery.skipped && webhook && webhook.skipped) {
+      // webhook.skipped kann auch "duplicate-event" (bereits zugestellt) sein —
+      // das ist KEIN unkonfigurierter Kanal (Review-Fix: unconfigured-Flag).
+      if (!overallOk && delivery && delivery.skipped && webhook && webhook.skipped && webhook.unconfigured === true) {
         await accounts.recordSystemError({
           scope: "health-report",
           message: "Nicht-grüner Health-Report, aber KEIN Alarmkanal konfiguriert (CALLMEBOT_* und HELMUT_MONITORING_WEBHOOK_URL fehlen).",
@@ -3217,8 +3254,7 @@ async function buildHealthReport(politicianId) {
   // aus dem toten `pipelineDebugReports`-Marker und NICHT mehr aus der
   // build-zeit-blinden Briefing-`generatedAt`.
   const profile = await activeProfile(politicianId);
-  const [crawl, lageCheck, briefing, completeKoAt, prevState, storeSummary, errors, users, feedback, pushEvents, llmBreakdown, classificationCoverage] = await Promise.all([
-    getLatestCrawlRun(),
+  const [lageCheck, briefing, completeKoAt, prevState, storeSummary, errors, users, feedback, pushEvents, llmBreakdown, classificationCoverage, recentCrawlRuns] = await Promise.all([
     getLatestLageCheck(politicianId),
     buildV3Briefing(profile, politicianId),
     getLatestCompleteKnowledgeObjectAt(), // OUTPUT-Frische: jüngstes verstandenes Thema (real)
@@ -3230,8 +3266,17 @@ async function buildHealthReport(politicianId) {
     listPushEvents(politicianId, 200),
     // P1-6: KI-Budget-Ausschöpfung + Klassifikationsabdeckung (fail-safe).
     getLlmUsageBreakdownToday().catch(() => null),
-    getClassificationCoverage().catch(() => null)
+    getClassificationCoverage().catch(() => null),
+    // Härtungs-Sprint: rollierende Crawl-Betrachtung (24-h-Fenster) statt
+    // Nur-jüngster-Lauf — transiente Störungen bleiben sichtbar (B1-Lücke).
+    listCrawlRuns(10).catch(() => [])
   ]);
+  // Basis-Lauf für die Frische-/Qualitätsachsen: der jüngste NICHT bewusst
+  // google-übersprungene Lauf. Ein 'crawl-abstand'-Skip-Lauf (successful ~5 von
+  // 145) würde die absoluten Watchdog-Minima (minSuccessfulSources) sonst
+  // fälschlich reißen — er ist eine Schutzmaßnahme, keine Störung (Review-Fix).
+  // Ein Extra-Store-Read entfällt: der jüngste Lauf steckt in recentCrawlRuns.
+  const crawl = (recentCrawlRuns || []).find((r) => !(r && r.cooldown && r.cooldown.skipGoogle)) || (recentCrawlRuns || [])[0] || null;
   const storage = getStorageStatus();
   const now = Date.now();
   const ageMs = (t) => (t ? now - new Date(t).getTime() : null);
@@ -3307,6 +3352,20 @@ async function buildHealthReport(politicianId) {
   });
   const axes = healthAxes.combineHealthAxes({ budget, idle, coverage, freshness });
 
+  // Härtungs-Sprint: rollierende Crawl-Gesundheit. Ein stark degradierter Lauf im
+  // 24-h-Fenster verschwindet nicht mehr, nur weil der jüngste Lauf gesund war.
+  const rollingCrawl = rollingHealth.buildRollingCrawlHealth({ runs: recentCrawlRuns, nowMs: now });
+  const fmtRun = (r) => r ? `${r.failedSources}/${r.checkedSources} Fehler${r.runId ? `, ${String(r.runId).slice(0, 40)}` : ""}` : "";
+  const rollingLine = rollingCrawl.status === "aktuell-gesund"
+    ? null
+    : rollingCrawl.status === "gesund-mit-stoerung-im-zeitraum"
+      ? `🟡 Crawl-Störung im 24h-Fenster: ${rollingCrawl.worstRun?.state} (${fmtRun(rollingCrawl.worstRun)}) — inzwischen erholt ⚠️`
+      : rollingCrawl.status === "wiederholt-degradiert"
+        ? `🔴 Crawls wiederholt degradiert: ${rollingCrawl.degradedRuns}/${rollingCrawl.windowRuns} Läufe im Fenster (schlechtester: ${fmtRun(rollingCrawl.worstRun)})`
+        : rollingCrawl.status === "aktuell-degradiert"
+          ? `🔴 Jüngster Crawl degradiert: ${rollingCrawl.latestState} (${fmtRun(rollingCrawl.worstRun)})`
+          : `⚪ Crawl-Verlauf: Datenlage unbekannt`;
+
   // Betriebszustand persistieren (fail-safe) — ermöglicht Recovery-Erkennung.
   await saveWatchdogState(politicianId, classification.state);
 
@@ -3347,6 +3406,7 @@ async function buildHealthReport(politicianId) {
     `Crawl: ${fmtAge(crawlH)} (${checked} Quellen, ${failed} Fehler) · Lage: ${fmtAge(lageH)}`,
     `Briefing: ${briefingItems} Einträge · Verstanden zuletzt: ${fmtAge(completeKoH)} · Fehler (24h): ${errors24}`,
     cronLine,
+    ...(rollingLine ? [rollingLine] : []),
     ...(gnrLine ? [gnrLine] : []),
     // P1-6: KI-Budget-Ausschöpfung (Calls/Limit/Rest/Skips) + Leerlauf-Warnung.
     budget.limit != null
@@ -3361,11 +3421,16 @@ async function buildHealthReport(politicianId) {
   return {
     // P1-6: Budget-Erschöpfung ODER Leerlauf kippen ok (harte Alarm-Gründe);
     // Abdeckung/Quellenfrische sind WARN-Signale (kippen ok nicht).
-    ok: ok && overdueCrons.length === 0 && !gnrDegraded && axes.ok,
+    // Härtungs-Sprint: rollierende Crawl-Betrachtung — aktuell/wiederholt
+    // degradiert = Alarm (kippt ok); eine einmalige, selbst-erholte Störung im
+    // Fenster = Warnung (sichtbar in Text + Payload, kippt ok nicht — dokumentierte
+    // Empfehlung gegen Fehlalarm-Müdigkeit, siehe health_report_rollierend.md).
+    ok: ok && overdueCrons.length === 0 && !gnrDegraded && axes.ok && rollingCrawl.alertLevel !== "alarm",
     text,
     state: classification.state,
     severity: classification.severity,
     overdueCrons: overdueCrons.map((c) => c.name),
+    rollingCrawl,
     googleUrlResolution: gnr,
     googleUrlResolutionRate: gnrRate,
     // P1-6: strukturierte Achsen für Watchdog/Admin (nur technische Zähler).
@@ -3390,22 +3455,18 @@ async function buildHealthReport(politicianId) {
 // Slack/Discord/Zapier/E-Mail-Relais (Feld "text" + strukturierte Zusatzfelder).
 // Fail-safe: fehlt die URL → sauber übersprungen; Netzfehler brechen den Cron nie.
 async function sendMonitoringWebhook(report) {
-  const targetUrl = String(process.env.HELMUT_MONITORING_WEBHOOK_URL || "").trim();
-  if (!targetUrl) return { sent: false, skipped: true, reason: "HELMUT_MONITORING_WEBHOOK_URL nicht gesetzt." };
+  // Härtungs-Sprint (F5-Vorbereitung): Zustellung über das gehärtete Modul —
+  // stabile Ereigniskennung (Dedupe), begrenzter Retry mit Backoff, persistierter
+  // Zustellstatus, Heartbeat-Kennzeichnung. Payload weiterhin AUSSCHLIESSLICH
+  // über buildAlarmPayload (Allowlist + Redaction — P1-7-Leitplanke). Ohne
+  // HELMUT_MONITORING_WEBHOOK_URL bleibt alles ein sauberer No-Op (F5 inaktiv).
   try {
-    const res = await fetch(targetUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      // Timeout (Review-Fix): "fail-safe" muss auch HAENGER abdecken, nicht nur
-      // Fehler — ein haengender Webhook wuerde sonst den Health-Cron blockieren.
-      signal: AbortSignal.timeout(8000),
-      // P1-7 Datenschutz-Leitplanke: der Payload wird über buildAlarmPayload
-      // gebaut — ALLOWLIST technischer Felder + Redaction des Statustextes. Es
-      // verlassen NIE Nutzerinhalte/Briefingtexte/Secrets den Alarmkanal.
-      body: JSON.stringify(buildAlarmPayload(report))
+    return await monitoringWebhook.deliverMonitoringWebhook(report, {
+      loadState: getMonitoringDeliveryState,
+      saveState: saveMonitoringDeliveryState
     });
-    return { sent: res.ok, status: res.status };
   } catch (error) {
+    // Fail-safe: der Health-Cron darf an einem Webhook-Fehler nie scheitern.
     return { sent: false, reason: error && error.message };
   }
 }

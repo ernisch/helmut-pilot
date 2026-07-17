@@ -430,6 +430,62 @@ unbelegt, und B1/B2 sind offene Betriebsbefunde. **Keine Betriebsreife-Behauptun
 
 ---
 
-_Letzte Aktualisierung: 2026-07-17 nach vollständigem Morgenzyklus. Stopp-Bedingungen erfüllt;
-Zwischenurteil in §5. Befunde B1 (transient/erholt) und B2 (vorbestehender Understanding-Rückstand)
-offen dokumentiert._
+---
+
+## 7 · Nachtrag Sprint „Google-News-Härtung" (2026-07-17, Branch `claude/helmut-google-news-hardening-975p22`)
+
+**Rein lesende Vertiefung von B1 (Production-Telemetrie, nur SELECT):**
+- **Provider-Trennung des Schadens jetzt BEWIESEN:** Kreuzung der 145
+  Telemetrie-Zeilen von `v268f` mit `retrieval_paths` → **alle 129 Ausfälle
+  waren Google-News-Abrufe** (Plan-Wege 45×429/77×timeout/1×4xx; profil-
+  dynamische Suchen 2×429/4×timeout); die **3 direkten Quellen liefen 3/3
+  fehlerfrei**. 142 der 145 Quellen des Laufs sind Google-News-basiert
+  (Katalog: 146 von 163 Wegen `googlenews_search`). Kein anderer Anbieter
+  betroffen. Vollanalyse: `docs/betrieb/google_news_drosselung_analyse.md`.
+- **Dubletten-Ursache präzisiert (Korrektur zu §4.1):** Der statische
+  `sources.js`-Eintrag ist auf aktuellem `main` bereits entfernt (Commit
+  `40e130f`). Die live gemessene Dublette (145 Zeilen / 144 distinct in
+  il02g/v268f/mb1k6) entsteht aus **id-Kollision** `personNewsSource`
+  (bei leerem Profil-`fullName`: Query `"cem-ince"`, Label „cem-ince
+  News-Suche") ↔ relationaler Pfad `rp-cem-ince-news` (Query `"Cem Ince"`) —
+  unterschiedliche URLs, daher griff die reine URL-Dedup nicht.
+- **Neuer Nebenbefund B3 (beobachtet, offen):** Nach Merge #97
+  (Mandantenneutralisierung) lief `crawl-20260717073217-sge68` (manuell,
+  07:32 UTC) mit nur **139 Quellen** für ein Testmandat `angela-merkel`
+  (angelegt 17.07.); die 6 profil-dynamischen Suchen des Piloten fehlten.
+  Die Referenzzahl „145" ist damit mandats-/profilabhängig; harte Invariante
+  künftig: **Zeilenzahl = distinct `source_id`**. Kein Eingriff in diesem
+  Sprint — Prüfpunkt für den Betreiber.
+
+**Auf dem Sprint-Branch umgesetzt (implementiert + offline getestet, NICHT
+gemergt/deployt — freigabepflichtig):**
+1. **Dubletten-Fix:** source_id-Dedup im Quellenplan (Merge + Fallback-Pfad);
+   erwartete Quellenzahl 145 → 144 (`scripts/source-dedupe-test.js`).
+2. **Google-News-Härtung:** Provider-Trennung, Gate (Parallelität 5, Abstand
+   200 ms), Retry mit Backoff/Jitter + Retry-After, Circuit Breaker je Lauf,
+   Cooldown nach Degradation, Vollcrawl-Abstands-Schutz, kein HTML-Fallback-
+   Zweitrequest; Kill-Switch `HELMUT_GOOGLE_HARDENING=off`
+   (`docs/betrieb/google_news_haertung.md`).
+3. **Ehrliche Lauf-Zustände:** 7-Zustands-Klassifikation + Provider-Breakdown/
+   Fehlercodes/Retries/Cooldown im crawlRun persistiert (compactStore-Whitelist
+   erweitert).
+4. **Rollierender Health-Report:** 24-h-Fenster/letzte 3 Läufe, 5 Report-
+   Zustände — die B1-Lücke (jüngster-Lauf-Blindheit, §Morgenzyklus Teil 2) ist
+   damit geschlossen (`docs/betrieb/health_report_rollierend.md`).
+5. **F5-Vorbereitung:** Webhook mit stabiler Ereigniskennung, Dedupe,
+   begrenztem Retry, Zustellstatus-Persistenz, Meta-Heartbeat; weiterhin
+   inaktiv ohne URL (`docs/betrieb/f5_freigabe.md`).
+
+Zusätzlich wurde eine **adversariale Review** (5 unabhängige Perspektiven)
+durchgeführt; alle 9 substanziellen Befunde wurden eingearbeitet (Details:
+`google_news_haertung.md` §8). Offline-Suite nach Umsetzung: **127/127 Suiten
+grün** (inkl. 5 neuer Suiten). Production blieb unangetastet (kein Merge, kein
+Deploy, keine Env-/Cron-/Migrationsänderung, F5–F8 aus).
+
+---
+
+_Letzte Aktualisierung: 2026-07-17 nach vollständigem Morgenzyklus + Nachtrag
+Sprint Google-News-Härtung (§7). Stopp-Bedingungen erfüllt; Zwischenurteil in
+§5. Befunde B1 (transient/erholt, Härtung vorbereitet), B2 (vorbestehender
+Understanding-Rückstand) und B3 (Quellenzahl mandatsabhängig nach #97) offen
+dokumentiert._

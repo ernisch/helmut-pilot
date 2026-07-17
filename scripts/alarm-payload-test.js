@@ -38,7 +38,7 @@ const report = {
 const payload = buildAlarmPayload(report, fakeEnv);
 
 // ── ALLOWLIST: nur technische Felder ───────────────────────────────────────
-const allowed = new Set(["source", "text", "ok", "state", "severity", "overdueCrons", "googleUrlResolutionRate", "budget", "healthBlockers", "healthWarnings", "errors24"]);
+const allowed = new Set(["source", "text", "ok", "state", "severity", "overdueCrons", "googleUrlResolutionRate", "budget", "healthBlockers", "healthWarnings", "errors24", "rollingCrawl"]);
 const extraKeys = Object.keys(payload).filter((k) => !allowed.has(k));
 check("Allowlist: keine Fremdfelder im Payload", extraKeys.length === 0, `extra: ${extraKeys.join(",")}`);
 check("technische Felder vorhanden", payload.ok === false && payload.state === "Veraltet" && payload.budget.limit === 100);
