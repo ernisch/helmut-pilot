@@ -58,7 +58,11 @@ async function main() {
   const pending = await storage.listPendingKnowledgeObjects({ limit: 500 }).catch(() => []);
   const failed = await storage.listFailedKnowledgeObjects({ limit: 200 }).catch(() => []);
   const candidates = [...pending, ...failed];
-  const rawDocs = await storage.listRawDocuments({ limit: 8000, days: 120 }).catch(() => []);
+  // Vollstaendige Pagination statt eines einzelnen limit-Arguments: der PostgREST-
+  // db-max-rows-Cap (Default 1000) wuerde sonst nur die neuesten ~1000 Rohdoks laden
+  // und die Anfang-Juli-Seeds abschneiden (Bugfix 2026-07-17). KEIN .catch: eine
+  // fehlerhafte Seite MUSS abbrechen, damit kein Teil-Pool den Plan verfaelscht.
+  const rawDocs = await storage.listAllRawDocuments({ days: 120 });
   const completeKos = typeof storage.listKnowledgeObjects === "function"
     ? await storage.listKnowledgeObjects({ status: "neu", limit: 2000 }).catch(() => [])
     : [];

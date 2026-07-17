@@ -1,5 +1,10 @@
 # Understanding-Recovery — Trockenlauf-Bericht (rein lesend)
 
+> ⚠️ **Aktueller Stand siehe „Nachtrag Teil 2 (2026-07-17)" am Ende.** Nach Behebung eines
+> Pagination-Fehlers (PostgREST kappte die Rohdok-Lesung auf ~1000 Zeilen) ist die vollständige
+> Production-Lesung die **neue verbindliche Grundlage**. Die Fall-Bewertungen in den Abschnitten 2–12
+> und in Nachtrag Teil A sind dadurch **überholt** (sie beruhten auf einer unvollständigen Lesung).
+
 **Auftrag:** Ohne Production-Änderung und ohne KI-Aufruf prüfen, ob die politisch relevanten
 `pending`/`failed`-Vorgänge des Alt-Bestands (02./03.07., 2 `failed` vom 15.07.) aus den noch
 vorhandenen Rohdokumenten **zuverlässig** rekonstruiert werden können. Grundlage:
@@ -214,3 +219,121 @@ Feldbug-Fix-**Deploy**; Verdrahten + Ausführen des Recovery-Write-/KI-Pfades f�
 keine Retention-Löschung der 02./03.07.-Rohdokumente.
 
 _Rein lesende Vorbereitung. Keine Production-Änderung. Umsetzung ausschließlich nach ausdrücklicher Freigabe._
+
+---
+
+## Nachtrag Teil 2 (2026-07-17): Pagination-Bugfix + korrigierte, vollständige Production-Lesung
+
+> **Diese Sektion ist die neue, verbindliche Grundlage.** Sie **ersetzt** die Fall-Bewertung
+> aus Nachtrag Teil A und aus den Abschnitten 2–12 oben. Grund: Teil A beruhte auf einer
+> **unvollständigen** Rohdok-Lesung (siehe unten). Bei Widersprüchen gilt ausschließlich die hier
+> dokumentierte, **vollständig paginierte** Lesung. **Kein Deploy, keine KI, kein Write, keine
+> Env-/Migration-/Retention-Änderung, kein Recovery-Gate aktiviert.**
+
+### 1 · Ursache des Pagination-Fehlers
+`storage.listRawDocuments({ limit })` verließ sich auf **ein einzelnes `?limit=`-Argument**. PostgREST
+(Supabase) erzwingt aber eine **server-seitige Zeilenobergrenze** (`db-max-rows`, Default **1000**):
+ein höheres `limit` (der Trockenlauf forderte 8000) wird **still gekappt**. Wegen
+`order=created_at.desc` kamen dadurch nur die **neuesten ~1000** Rohdokumente zurück.
+
+Belegt an der Production-DB (rein lesend):
+- `raw_documents` im 120-Tage-Fenster: **6185** Zeilen (alle im Fenster) — also **~5185 Zeilen unsichtbar**.
+- Das **1000.-neueste** Dokument datiert auf **2026-07-14 16:02** → alles vom **02./03.07.** (genau die
+  Seed-Dokumente der zurückgestellten Vorgänge) lag **außerhalb** der geladenen Menge.
+- Konsequenz: Fälle wurden fälschlich als **`keine-quelldokumente`** klassifiziert, obwohl das
+  Seed-Dokument existiert. Lokal gegen das echte Modul reproduziert: mit vorhandenem Seed liefert
+  `assessCandidate` für `vg-medikamenten` `eindeutig` — der Fehler lag rein in der Datenbeschaffung.
+
+### 2 · Technische Korrektur (rein lesend)
+- Neu `storage.collectAllPages(fetchPage, {pageSize,maxPages,keyField})` — **reine, netzfreie**
+  Pagination-Schleife: ruft `fetchPage(offset, pageSize)` seitenweise auf, **dedupliziert nach `id`**,
+  terminiert **ausschließlich an einer leeren Seite**, zählt den Fortschritt über die **tatsächlich
+  zurückgegebene Zeilenzahl** (nicht über das angeforderte Limit → **robust auch wenn der Server-Cap
+  kleiner als `pageSize` ist**). `maxPages` = harter Endlosschutz.
+- Neu `storage.listAllRawDocuments({days})` — lädt **alle** Rohdoks des Fensters via `collectAllPages`,
+  stabile Sortierung `created_at.desc,id.asc`, **kein `.catch`**: eine fehlerhafte Seite **bricht ab**
+  (throw), damit **nie ein Teil-Pool** eine irreführende Bewertung erzeugt.
+- `scripts/understanding-recovery-dryrun.js` **und** die read-only-Planvorschau in
+  `scripts/understanding-recovery-execute.js` nutzen jetzt `listAllRawDocuments` statt des einzelnen
+  `limit`-Arguments. Der Write-/KI-Pfad bleibt unverändert **default-AUS und nicht verdrahtet**.
+
+### 3 · Neue Testergebnisse
+- Neue Suite `scripts/understanding-pagination-test.js` — **21/21 grün, offline** (injizierte
+  Fake-Seiten-Funktion, kein Netz): (a) **>1000** Dok vollständig; (b) **>2000** Dok vollständig;
+  (c) **altes Seed außerhalb Seite 1** wird gefunden (und fehlt in Seite 1 allein — belegt den Bug);
+  (d) **vollständige Pagination ohne Duplikate** (Dedup auch bei überlappenden Seiten); (e) **Abbruch
+  bei fehlerhafter Seite** (throw, kein stiller Teil-Pool) + Anti-Endlosschleife via `maxPages`;
+  (f) **rein lesend** ohne Write-Pfad (nur `(offset,limit)`-Aufrufe; `listAllRawDocuments` ohne Secrets
+  inert `[]`; Quelltext-Scan: kein `understandOneCluster`/`saveKnowledgeObject`; GET-only).
+- `understanding-recovery-test.js` weiterhin **53/53**. **Gesamte Offline-Suite: 123/123 grün.**
+
+### 4 · Endgültige Bewertung jedes Falls (vollständige Pagination, echtes Modul)
+Reproduziert mit dem **echten** `understanding-recovery`-Modul gegen den **vollständig paginierten**
+Production-Pool (Superset via Anker-Stems, das Modul re-filtert exakt). `completeTopicSet`-Duplikatflag
+traf **nur** `vg-psychotherapie`.
+
+| `vorgang_id` | Docs / Quellen | Cluster | abgeleitete ID(s) | Klasse (Modul) | **Ehrliche Bewertung** |
+|---|---|---|---|---|---|
+| `vg-sozialwohnungen` | **1 / 1** | 1 | `vg-sozialwohnungen` (idMatch ✓) | eindeutig | **Sauber recoverbar** — einziger klarer Fall |
+| `vg-medikamenten` | 9 / 3 | 1 | `vg-infranken` (idMatch ✗) | wahrscheinlich | **Cluster verunreinigt** (Quellname-Anker „infranken" + generisch „medikament": bündelt Rente/Steuern/Löhne/Ebola/Drohnen) → **nicht sauber** |
+| `vg-umstellungen` | 27 / 15 | 1 | `vg-unternehmen` (idMatch ✗) | wahrscheinlich | **Stark verunreinigt** (generischer Anker „unternehmen": Rüstung, Datenschutz-Reform, Tariftreue, NATO …; Seed TRBA-500/Biostoffe = 1 von 27) → **nicht recoverbar** |
+| `vg-arbeitsverträge` | 12 / 11 | 3 | `vg-beschlüsse`, `vg-arbeitsverträge`, `vg-beschlüssen` | mehrdeutig | Seed-Cluster identifizierbar, aber generischer Anker „beschlüsse" erzeugt Zusatzcluster → **manuell** |
+| `vg-steuerstrafrecht` | 44 / 27 | 2 | `vg-klingbeil`, `vg-abgeschafft` (idMatch ✗) | mehrdeutig | Seed geht in generische Cluster auf, ID wird **nicht** reproduziert → **manuell** |
+| `vg-psychotherapie` | 84 / 30 | 5 | u. a. `vg-psychotherapeuten` | duplikat-risiko | **Echtes Duplikat** (siehe 6) → **verwerfen** |
+
+**Kernbefund:** Die Pagination-Korrektur ist richtig und nötig, legt aber offen, dass die
+**anker­basierte Cluster-Rekonstruktion über den vollen Pool fragil** ist: generische Wörter
+(`unternehmen`, `beschlüsse`, `medikament`, `beträgen`) und **Quellname-Token** (`infranken`,
+`aerztezeitung`) in der Kandidaten-Headline ziehen große, themenfremde Cluster an. Das Label
+„wahrscheinlich" ist damit **keine** Garantie für ein sauberes, themengleiches Cluster. Ein blindes
+Ausführen des Modul-Plans („recover 3") würde für `vg-medikamenten` und `vg-umstellungen`
+**thematisch falsche** Wissensobjekte schreiben.
+
+### 5 · Sicher recoverbar
+**Genau 1 Fall: `vg-sozialwohnungen`** — genau 1 spezifisches Seed-Dokument, `idMatch=true`,
+abgeleitete ID = gespeicherte ID, netto-neu (kein `complete`-KO zum Thema; `vg-wohnungsbau` behandelt
+einen anderen Vorgang: CSU-OB-Kandidatin-Debatte).
+
+### 6 · Echte Duplikate
+**`vg-psychotherapie`** ist ein **echtes Duplikat** des bereits vorhandenen `complete`-KO
+**`vg-psychotherapeuten`** (erstellt 2026-07-05, 1 Quelle): dessen Analyse
+(„Psychotherapeutenverbände … warnen vor negativen Folgen der geplanten GKV-Reform … längere
+Wartezeiten …") deckt **denselben politischen Vorgang** ab wie die Pending-Stub
+(„Psychotherapie-Honorare: Therapeuten … GKV-Reform"). Hinweis zur Werkzeug-Logik: `completeTopicSet`
+flaggte den Fall über eine **teils zufällige** Headline-Überlappung (`honorare`↔`arzthonorare` mit
+`vg-krankenhausreform`); das **tatsächliche** Duplikat `vg-psychotherapeuten` hat eine **leere
+Headline** und wurde von der Heuristik gar nicht erkannt. Ergebnis (verwerfen) korrekt, Begründung der
+Heuristik aber unzuverlässig.
+
+### 7 · Manuell zu prüfen
+`vg-arbeitsverträge`, `vg-steuerstrafrecht` (mehrdeutig: mehrere Cluster, Seed teils nicht
+ID-reproduzierend) sowie `vg-medikamenten` (Quellname-Anker-Verunreinigung). Für diese ist eine
+saubere Recovery nur mit **manueller Auswahl des exakten Seed-Dokuments** denkbar — nicht über den
+aktuellen anker­basierten Auto-Cluster.
+
+### 8 · Nicht recoverbar (mit dem aktuellen Werkzeug)
+`vg-umstellungen` — der 27-Dokumente-Cluster ist rein durch den generischen Anker „unternehmen"
+entstanden und thematisch inkohärent; eine Recovery würde ein irreführendes KO erzeugen.
+
+### 9 · Muss die Freigabe für sechs Fälle angepasst werden?
+**Ja, zwingend.** Die ursprüngliche 6-Fälle-Freigabe beruhte auf einer unvollständigen bzw. naiven
+Lesung. Nach vollständiger Pagination gilt: **kein einziger der anderen fünf** Fälle ist so sauber wie
+angenommen — vier brauchen manuelle Prüfung/sind nicht recoverbar, einer (`vg-psychotherapie`) ist ein
+**echtes Duplikat**. Die 6-Fälle-Freigabe ist damit **hinfällig**.
+
+### 10 · Exakte neue Empfehlung für den echten Recovery-Lauf
+1. **Höchstens `vg-sozialwohnungen`** automatisch recovern (1 KI-Call, 1 Write, 1 Quelle) — und auch
+   das nur, wenn der Fall redaktionell als relevant genug eingestuft wird.
+2. **`vg-psychotherapie` verwerfen** (Duplikat von `vg-psychotherapeuten`).
+3. **`vg-medikamenten`, `vg-umstellungen`, `vg-arbeitsverträge`, `vg-steuerstrafrecht` NICHT** über den
+   aktuellen Auto-Cluster recovern (Anker-Verunreinigung/Mehrdeutigkeit). Falls gewünscht: separater,
+   **freizugebender** Folgeschritt mit manueller Seed-Doc-Auswahl bzw. einer robusteren Anker-Filterung
+   (generische Wörter + Quellname-Token ausschließen).
+4. Bis dahin **kein** KI-Call, **kein** Write, **keine** Retention-Löschung der 02./03.07.-Rohdoks.
+
+**Benötigte Production-Freigabe danach:** eine **neue, engere** Freigabe für **1 Fall
+(`vg-sozialwohnungen`)** statt der hinfälligen 6-Fälle-Freigabe — inkl. Feldbug-Fix-Deploy und
+Verdrahten des Write-/KI-Pfades; alles Übrige bleibt gesperrt.
+
+_Rein lesende Analyse und Bugfix. Keine Production-Änderung, kein KI-Call, kein Write. Umsetzung
+ausschließlich nach neuer, ausdrücklicher Freigabe._

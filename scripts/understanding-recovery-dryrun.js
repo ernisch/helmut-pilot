@@ -18,8 +18,10 @@ const storage = require("../lib/helmut/storage");
 const recovery = require("../lib/helmut/understanding-recovery");
 
 // Breiteres Lesefenster als der 30d/500-Cron, um den Anfang-Juli-Bestand zu
-// erreichen — rein lesend (order/limit auf raw_documents), kein Retention-Eingriff.
-const RAW_LIMIT = Number(process.env.HELMUT_RECOVERY_RAW_LIMIT || 8000);
+// erreichen — rein lesend (paginierte Lesung auf raw_documents), kein Retention-Eingriff.
+// WICHTIG: vollstaendige Pagination (listAllRawDocuments) statt eines einzelnen
+// limit-Arguments — ein server-seitiger PostgREST-Cap (db-max-rows, Default 1000)
+// wuerde sonst die aelteren Seed-Dokumente still abschneiden (Bugfix 2026-07-17).
 const RAW_DAYS = Number(process.env.HELMUT_RECOVERY_RAW_DAYS || 120);
 
 async function main() {
@@ -40,7 +42,9 @@ async function main() {
   const candidates = [...pending, ...failed];
 
   // (2) Passende Rohdokumente + complete-KOs lesen (read-only).
-  const rawDocs = await storage.listRawDocuments({ limit: RAW_LIMIT, days: RAW_DAYS }).catch(() => []);
+  // Vollstaendige Pagination: KEIN .catch(() => []) — ein Seitenfehler MUSS abbrechen,
+  // sonst wuerde ein Teil-Pool wieder Faelle faelschlich als "keine-quelle" bewerten.
+  const rawDocs = await storage.listAllRawDocuments({ days: RAW_DAYS });
   const completeKos = typeof storage.listKnowledgeObjects === "function"
     ? await storage.listKnowledgeObjects({ status: "neu", limit: 2000 }).catch(() => [])
     : [];
