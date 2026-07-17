@@ -337,3 +337,50 @@ Verdrahten des Write-/KI-Pfades; alles Übrige bleibt gesperrt.
 
 _Rein lesende Analyse und Bugfix. Keine Production-Änderung, kein KI-Call, kein Write. Umsetzung
 ausschließlich nach neuer, ausdrücklicher Freigabe._
+
+---
+
+## Nachtrag Teil 3 (2026-07-17): AUSGEFÜHRTER Recovery-Lauf — nur `vg-sozialwohnungen`
+
+Betreiber-Freigabe: **ausschließlich `vg-sozialwohnungen`** (genau 1 KI-Call, genau 1 Write + Links).
+Umgesetzt über GitHub-Action `understanding-recovery.yml` (Schritt B) auf dem Feature-Branch — Allowlist
+auf **genau diesen einen** Vorgang verengt (`RECOVERY_ALLOWLIST = ["vg-sozialwohnungen"]`), plus harte
+1-Fall-Sicherheitsschranke im Skript. **Kein Merge nach `main`, kein Vercel-Deploy.**
+
+**Lauf-Kennung:** `rec-29569461715` (Run 29569461715, Job 87849581636, `conclusion: success`).
+
+**Ergebnis (aus dem Job-Log + DB-Verifikation):**
+- `executed: true`, `geschriebene: 1`, `ki_calls_tatsaechlich: 1`, `ergebnisse[0].status: "saved"`.
+- Plan: `execute = [vg-sozialwohnungen]`, `skip = []` — **kein anderer Vorgang** berührt.
+- **Pre-Snapshot** (vor dem Lauf, read-only): `ko-vg-sozialwohnungen` = `pending`/`pending`,
+  `source_document_count=0`, `understanding_model="gpt-5-mini"`, 0 Links, erstellt 2026-07-02 16:36:12.
+- **Duplikatprüfung** (vor dem Lauf): kein `complete`-KO deckt das Thema ab (Headline **und**
+  `was_ist_passiert` gescannt) → netto-neu.
+- **Post-State:** `understanding_status=complete`, `status=neu`, `source_document_count=3`,
+  `understanding_model="gpt-5-mini | recovery:rec-29569461715"` (Rollback-Kennung gesetzt), 3 Links.
+- **Kollateral-Check:** genau **1** KO trägt die Recovery-Kennung; die anderen 5 Kandidaten sind
+  unverändert `pending`.
+
+**Ehrliche Einschränkung zur Inhaltsqualität (keine Schönfärberei):** Der Lauf hat **3** Quelldokumente
+gebündelt statt des einen Seed-Dokuments. Ursache: der Anker `sozialwohnungen` matcht per Teilstring
+auch das generische Token **`wohnungen`** → zusätzlich eingezogen wurden „Berlin Verstaatlichungsverbot"
+(Berliner Morgenpost) und „Nebenkosten in älteren Wohnungen" (Deutschlandfunk). Das erzeugte KO ist
+daher ein **wohnungspolitischer 3-Themen-Digest** (Verstaatlichungsverbot + sinkende Sozialwohnungen +
+Nebenkosten), **Headline leer**. Der eigentliche Seed („20.000 weniger Sozialwohnungen 2025") ist
+enthalten, aber nicht isoliert. Das ist dieselbe (hier mildere) Anker-Verunreinigung wie bei den
+manuellen Fällen — meine frühere Superset-Reproduktion hatte den `wohnungen`-Teilstring übersehen und
+den Fall als „1 Dok / eindeutig" statt „3 Dok / wahrscheinlich" ausgewiesen.
+
+**Rollback (Möglichkeit, NICHT ausgeführt):** eindeutig über die Kennung `recovery:rec-29569461715`:
+```sql
+delete from ko_document_links where knowledge_object_id = 'ko-vg-sozialwohnungen';
+update knowledge_objects
+   set understanding_status='pending', status='pending', source_document_count=0,
+       understanding_model='gpt-5-mini', headline=null, was_ist_passiert=null /* + weitere Analysefelder */
+ where vorgang_id='vg-sozialwohnungen'
+   and understanding_model like '%recovery:rec-29569461715%';
+```
+
+**Freigabepflichtig / offen:** ggf. Rollback + sauberere Einzel-Doc-Recovery (falls das 3-Themen-KO
+unerwünscht ist); die 4 manuellen Fälle; Duplikat-Aussortierung `vg-psychotherapie`; Feldbug-Fix-Deploy
+nach `main`. Bis dahin keine weiteren Schritte.
