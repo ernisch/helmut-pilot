@@ -1,18 +1,5 @@
 name: Understanding-Recovery (6 bestaetigte Faelle)
 
-# =============================================================================
-# ECHTE Recovery der 6 bestaetigten, netto-neuen Understanding-Vorgaenge.
-# NUR manuell (workflow_dispatch), harte Bestaetigung. Eng begrenzt auf die
-# Allowlist in lib/helmut/understanding-recovery.js (6 vorgang_ids).
-#
-# Schritt A (IMMER, read-only): Plan + Pre-Snapshot der Zielfaelle. Kein Write, kein KI.
-# Schritt B (NUR bei confirm_text == "RECOVER_6_CONFIRMED"): fuehrt den EXAKT
-#   bestehenden Understand+Save-Pfad (understanding.understandOneCluster) fuer die
-#   geplanten Faelle aus — <=6 KI-Calls, <=6 neue complete-KOs (+ ko_document_links),
-#   jeweils mit Rollback-Kennung "recovery:rec-<run_id>" im Feld understanding_model.
-#   Idempotent (bereits complete -> skip). Keine anderen Vorgaenge, keine Loeschung.
-# =============================================================================
-
 on:
   workflow_dispatch:
     inputs:
@@ -20,6 +7,14 @@ on:
         description: "Fuer den ECHTEN Lauf EXAKT eingeben: RECOVER_6_CONFIRMED (sonst nur Plan+Snapshot, read-only)"
         required: true
         default: ""
+
+# ECHTE Recovery der 6 bestaetigten, netto-neuen Understanding-Vorgaenge.
+# NUR manuell (workflow_dispatch), harte Bestaetigung. Eng begrenzt auf die
+# Allowlist in lib/helmut/understanding-recovery.js (6 vorgang_ids).
+# Schritt A (IMMER, read-only): Plan + Pre-Snapshot. Kein Write, kein KI.
+# Schritt B (NUR bei confirm_text == "RECOVER_6_CONFIRMED"): understanding.understandOneCluster
+#   fuer die geplanten Faelle — max 6 KI-Calls, max 6 neue complete-KOs (+ Links),
+#   Rollback-Kennung "recovery:rec-<run_id>" im Feld understanding_model, idempotent.
 
 permissions:
   contents: read
@@ -43,7 +38,7 @@ jobs:
       - name: Abhaengigkeiten (keine Runtime-Deps; defensiv, kein Lockfile)
         run: npm install --no-audit --no-fund
 
-      - name: Preflight — Store-Secrets vorhanden
+      - name: Preflight Store-Secrets vorhanden
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -54,16 +49,14 @@ jobs:
           fi
           echo "Preflight Store OK."
 
-      # Schritt A: Plan + Pre-Snapshot (read-only, KEIN Write, KEIN KI-Key noetig).
-      - name: Schritt A — Plan + Pre-Snapshot (read-only)
+      - name: Schritt A Plan und Pre-Snapshot (read-only)
         env:
           HELMUT_V3_STORE: "1"
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: node scripts/understanding-recovery-execute.js
 
-      # Preflight KI — nur relevant, wenn der echte Lauf folgt.
-      - name: Preflight — KI-Key (nur fuer echten Lauf)
+      - name: Preflight KI-Key (nur fuer echten Lauf)
         if: ${{ inputs.confirm_text == 'RECOVER_6_CONFIRMED' }}
         env:
           AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
@@ -72,12 +65,11 @@ jobs:
         run: |
           set -euo pipefail
           if { [ -z "${AZURE_OPENAI_ENDPOINT:-}" ] || [ -z "${AZURE_OPENAI_KEY:-}" ]; } && [ -z "${OPENAI_API_KEY:-}" ]; then
-            echo "::error::Kein KI-Key (weder AZURE_OPENAI_* noch OPENAI_API_KEY) — Abbruch, um KEINE regelbasierten Ersatz-KOs zu schreiben."; exit 1
+            echo "::error::Kein KI-Key vorhanden — Abbruch, um keine regelbasierten Ersatz-KOs zu schreiben."; exit 1
           fi
           echo "Preflight KI OK."
 
-      # Schritt B: ECHTER Lauf — NUR bei exaktem confirm_text.
-      - name: Schritt B — Echter Recovery-Lauf (<=6 KI + Writes)
+      - name: Schritt B Echter Recovery-Lauf (max 6 KI + Writes)
         if: ${{ inputs.confirm_text == 'RECOVER_6_CONFIRMED' }}
         env:
           HELMUT_V3_STORE: "1"
@@ -87,8 +79,6 @@ jobs:
           AZURE_OPENAI_KEY: ${{ secrets.AZURE_OPENAI_KEY }}
           AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          # Tagesbudget grosszuegig, damit die <=6 Recovery-Calls nicht blockiert werden.
-          # Harte Obergrenze bleibt die 6er-Allowlist (nicht dieses Limit).
           HELMUT_MAX_LLM_CALLS_PER_DAY: "150"
           HELMUT_RECOVERY_EXECUTE: "1"
           HELMUT_RECOVERY_CONFIRM: "RECOVER_6_CONFIRMED"
@@ -98,6 +88,6 @@ jobs:
           echo "Starte ECHTEN Recovery-Lauf (Runkennung rec-${{ github.run_id }})."
           node scripts/understanding-recovery-execute.js
 
-      - name: Hinweis — kein echter Lauf
+      - name: Hinweis kein echter Lauf
         if: ${{ inputs.confirm_text != 'RECOVER_6_CONFIRMED' }}
         run: echo "Kein echter Lauf: confirm_text war nicht exakt RECOVER_6_CONFIRMED (nur Plan+Snapshot, read-only)."
