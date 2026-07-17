@@ -152,8 +152,27 @@ Pro-Quellen-Laufzeiten decken sich fast exakt mit dem gesunden Lauf 1 (Ø 2421 v
 Median 2397 vs. 2375). **B1 war sehr wahrscheinlich ein volumeninduzierter Einmaleffekt**
 (3 Vollcrawls in ~4 h), kein Dauerproblem. Locks/Telemetrie erneut sauber bestätigt.
 
-<!-- LAUF-PLATZHALTER: Morgenzyklus (05:00 briefing / 05:30 understanding / 05:45 lage-briefing /
-     06:00 health-report), Überschneidungsfenster, Nachholung der deferred Docs. -->
+### Morgenzyklus (2026-07-17) — Teil 1: 05:00 Morning-Briefing + 05:30 Understanding-Cron
+
+| Lauf | runId | Start–Ende (UTC) | Dauer | processed | deferred | status | Fehler |
+|---|---|---|---|---|---|---|---|
+| Morning-Briefing (05:00) | `briefing-morning-20260717050045-crk4d` | 05:00:45–05:00:47 | **2 243 ms** | 54 | – | ok | 0 |
+| Understanding-Cron (05:30) | `understanding-cron-20260717053016-a5s5f` | 05:30:16–05:30:18 | **1 987 ms** | **0** | **0** | ok | 0 |
+
+`systemErrors` unverändert (59 → 59), keine neuen KOs/Rohdokumente (kein Crawl in diesem Fenster).
+
+**Nachhol-/Coverage-Ergebnis (gemessen, wichtig):** Der dedizierte Understanding-Cron verarbeitet
+zum zweiten Mal (nach Lauf 3) **0** — nicht, weil zurückgestellte Dokumente verloren gehen, sondern
+weil **kein Rückstand existiert**: **alle 6069 von 6069 `raw_documents` haben `finding_count > 0`
+(0 ohne Findings)**; die 434 seit 2026-07-16 und die 61 aus Lauf 4 sind **vollständig** abgedeckt.
+Damit ist belegt: das per-Lauf gemeldete „zurückgestellt" ist ein **laufinternes Budget-Merkmal,
+kein Datenverlustpfad** — zurückgestellte Dokumente erhalten dennoch Findings. Der Cron-0-Lauf ist
+korrektes idempotentes Verhalten.
+_Ehrlicher Vorbehalt: `finding_count` misst die Finding-Extraktion; die KO-Ebenen-Dedup habe ich
+nicht separat auditiert, aber `ko_total` wuchs konsistent (323→344) und es gibt keinen findingslosen
+Rückstand._
+
+<!-- LAUF-PLATZHALTER: Morgenzyklus Teil 2 (05:45 lage-briefing / 06:00 health-report + B1-Eskalationsprüfung). -->
 
 ---
 
