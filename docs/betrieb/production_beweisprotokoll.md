@@ -161,18 +161,48 @@ Median 2397 vs. 2375). **B1 war sehr wahrscheinlich ein volumeninduzierter Einma
 
 `systemErrors` unverändert (59 → 59), keine neuen KOs/Rohdokumente (kein Crawl in diesem Fenster).
 
-**Nachhol-/Coverage-Ergebnis (gemessen, wichtig):** Der dedizierte Understanding-Cron verarbeitet
-zum zweiten Mal (nach Lauf 3) **0** — nicht, weil zurückgestellte Dokumente verloren gehen, sondern
-weil **kein Rückstand existiert**: **alle 6069 von 6069 `raw_documents` haben `finding_count > 0`
-(0 ohne Findings)**; die 434 seit 2026-07-16 und die 61 aus Lauf 4 sind **vollständig** abgedeckt.
-Damit ist belegt: das per-Lauf gemeldete „zurückgestellt" ist ein **laufinternes Budget-Merkmal,
-kein Datenverlustpfad** — zurückgestellte Dokumente erhalten dennoch Findings. Der Cron-0-Lauf ist
-korrektes idempotentes Verhalten.
-_Ehrlicher Vorbehalt: `finding_count` misst die Finding-Extraktion; die KO-Ebenen-Dedup habe ich
-nicht separat auditiert, aber `ko_total` wuchs konsistent (323→344) und es gibt keinen findingslosen
-Rückstand._
+**Coverage-Ergebnis (gemessen — KORRIGIERT gegenüber einer ersten, zu optimistischen Lesart):**
+Zwei getrennte Ebenen, ehrlich auseinandergehalten:
+- **Finding-Extraktion (Rohebene): vollständig.** Alle **6069/6069 `raw_documents` haben
+  `finding_count > 0`** (0 ohne Findings); die 434 seit 2026-07-16 und die 61 aus Lauf 4 sind
+  abgedeckt. (`cluster_id` ist übrigens für **alle** Rohdokumente NULL — die Spalte ist ungenutzt;
+  die Clusterung läuft über einen anderen Mechanismus.)
+- **Understanding (Vorgangs-/KO-Ebene): NICHT vollständig — es gibt einen Rückstand.** Gemessen:
+  `knowledge_objects.understanding_status` = **292 complete / 50 pending / 2 failed** (344 gesamt).
+  Der Vercel-Log des 05:30-Crons belegt, warum „processed 0" **nicht** „nichts pending" heißt:
+  `{"processed":0,"pending":48,"deferred":0,"counts":{"skipped-no-cluster":48}}` — **48 pending
+  Vorgänge werden als `skipped-no-cluster` übersprungen**, nicht verarbeitet.
 
-<!-- LAUF-PLATZHALTER: Morgenzyklus Teil 2 (05:45 lage-briefing / 06:00 health-report + B1-Eskalationsprüfung). -->
+**Ehrliche Einordnung (keine Annahme):** Dieser ~52er-Rückstand (50 pending + 2 failed) ist
+**stabil und vorbestehend** — schon vor diesem Sprint lag „nicht-complete" bei ~52 (316/264 →
+jetzt 344/292). Er ist **nicht** durch die Flags oder diesen Sprint verursacht. Die übersprungenen
+Vorgänge tragen überwiegend themenfremd wirkende IDs (`vg-achtelfinale`, `vg-aargauer`,
+`vg-parkplätzen`, `vg-seniorenresidenz`) — plausibel korrektes Aussortieren von Rauschen, **aber
+das ist nicht bewiesen**. Als eigener Befund **B2** geführt (offener Prüfpunkt, kein Blocker der
+Flag-Beweise). Die 2 `failed`-KOs sind genau die Kandidaten für die (deaktivierte) F6-Recovery.
+
+### Morgenzyklus (2026-07-17) — Teil 2: 05:45 Lage-Briefing + 06:00 Health-Report
+
+Beide Crons **direkt aus den Vercel-Runtime-Logs** belegt (sie schreiben keinen processRun):
+- **05:45:38 `GET /api/cron/lage-briefing` → 200** [info], dep `dpl_2fki2AnpmMjECxUD8hAVgM4kTWUP`.
+- **06:00:16 `GET /api/cron/health-report` → 200** [info], dep `dpl_2fki2AnpmMjECxUD8hAVgM4kTWUP`.
+
+`systemErrors` nach 06:00 unverändert (**59 → 59**), `pipeline_locks` leer.
+
+**B1-Eskalationsprüfung — ERGEBNIS:** Der Watchdog bewertet die Crawl-Gesundheit über den
+**jüngsten** Crawl (`getLatestCrawlRun`) gegen `HELMUT_MAX_CRAWL_FAILURE_RATIO` (Default 0.1);
+im Code an mehreren Stellen `crawlFailureRatio = failedSources/checkedSources`. Jüngster Crawl
+um 06:00 = **Lauf 4 (04:00, 0/145 Fehler, Ratio 0 %)** → Report **grün**, kein Alarm, **0 neue
+`systemErrors`** (bestätigt). **Die transiente B1-Degradation (Lauf 2, 89 % Ausfall) wird NICHT
+rückwirkend eskaliert**, weil sie sich vor dem Health-Report erholt hat. Ehrliche Doppelseite:
+kein Fehlalarm für einen selbst-erholten Ausreißer — **aber** eine schwere, zwischen zwei
+(täglichen 06:00-)Reports auftretende und wieder verschwindende Degradation bleibt vom Alarmpfad
+**unbemerkt**. Neuer Wert aus diesem Sprint: die jetzt aktive `source_crawl_telemetry` macht genau
+solche Ausreißer **nachträglich diagnostizierbar** (145 Zeilen mit `http-429`/`timeout`-Codes) —
+dort, wo der Alarmpfad blind ist.
+
+**Morgenzyklus damit vollständig beobachtet:** 05:00 Briefing (ok), 05:30 Understanding (ok, aber
+B2-Rückstand), 05:45 Lage-Briefing (200), 06:00 Health-Report (200, grün).
 
 ---
 
@@ -205,12 +235,28 @@ senkt es dauerhaft. Für den Normalbetrieb (~2 Crawls/Tag, weit gespreizt) ist d
 `error_code`) — **nicht** im `systemErrors`-Ring. Dieser Ring ist für Pipeline-/Technikfehler
 (`recordPipelineError`), nicht für routinemäßige Einzelquell-Ausfälle; 129 Einträge würden ihn
 fluten. Der **Eskalationspfad** für eine solche Crawl-Degradation ist der Health-Report-Watchdog
-(Crawl-Failure-Ratio, `HELMUT_MAX_CRAWL_FAILURE_RATIO`) — er sollte beim **06:00-UTC-Health-Report**
-anschlagen. **Das wird im Morgenzyklus beobachtet** (offener Prüfpunkt).
+(Crawl-Failure-Ratio, `HELMUT_MAX_CRAWL_FAILURE_RATIO`). **Ergebnis (Morgenzyklus Teil 2):** Der
+Watchdog schaute den **jüngsten** Crawl an (Lauf 4, gesund) und schlug daher **nicht** an — B1
+blieb unalarmiert (Details + ehrliche Bewertung siehe Morgenzyklus Teil 2).
 
 **Kein Eingriff:** Regelkonform NICHT verändert (kein Crawl-/Retry-/Zeitplan-Eingriff während der
 Beweisläufe). Bekannte Minderungsoption (bereits im Audit): Direkt-RSS-Feeds statt
 Google-News-Suchen (`audit/source-coverage.md` — „Google-News-Klumpenrisiko senken").
+
+### B2 · Understanding-Rückstand: ~52 Vorgänge nicht `complete` (`skipped-no-cluster`)
+
+**Messung:** `knowledge_objects.understanding_status` = **292 complete / 50 pending / 2 failed**.
+Der 05:30-Understanding-Cron-Log (Vercel): `{"processed":0,"pending":48,"counts":{"skipped-no-cluster":48}}`
+— die pending Vorgänge werden als **`skipped-no-cluster`** übersprungen, nicht verarbeitet.
+
+**Ehrliche Einordnung:** Der Rückstand ist **stabil und vorbestehend** (~52 „nicht-complete" schon
+vor diesem Sprint: 316/264 → 344/292), also **nicht** durch die Flags/diesen Sprint verursacht. Die
+übersprungenen Vorgänge tragen überwiegend themenfremde IDs (`vg-achtelfinale`, `vg-aargauer`,
+`vg-parkplätzen`) — **plausibel** korrektes Rauschaussortieren, **aber nicht bewiesen**. Die 2
+`failed`-KOs sind die Kandidaten für die (bewusst deaktivierte) **F6**-Recovery
+(`HELMUT_FAILED_KO_RECOVERY`). **Kein Blocker der Flag-Beweise; offener Prüfpunkt** (Follow-up:
+Stichprobe der pending-Vorgänge — echtes Rauschen vs. fälschlich verworfene politische Vorgänge —
+und Klärung, ob `skipped-no-cluster` ein bewusster Filter oder eine Lücke ist). **Kein Eingriff.**
 
 ---
 
@@ -233,10 +279,12 @@ ausgewiesen und fließt nicht in den gesunden Baseline ein.
 
 ## 3 · Lock-Nachweis (Zusammenfassung)
 
-- **Atomischer Pipeline-Lock (`HELMUT_ATOMIC_LOCK`):** in Lauf 1 live in `pipeline_locks`
-  gefangen (`crawl-cem-ince`, mit `token`), Blob-Pfad nicht genutzt, saubere Freigabe. **Bewiesen.**
-- **Understanding-Lock (`HELMUT_UNDERSTANDING_LOCK`):** in Lauf 1 live gefangen
-  (`global-understanding`, mit `token`). **Bewiesen.**
+- **Atomischer Pipeline-Lock (`HELMUT_ATOMIC_LOCK`):** in **Lauf 1, 2 UND 4** live in
+  `pipeline_locks` gefangen (`crawl-cem-ince`, mit `token`/`expires_at`), Blob-Pfad nie genutzt,
+  jedes Mal saubere Freigabe. **Bewiesen.**
+- **Understanding-Lock (`HELMUT_UNDERSTANDING_LOCK`):** in **Lauf 1 & 2** live gefangen
+  (`global-understanding`, mit `token`); der dedizierte Understanding-Cron (Lauf 3, 05:30) nutzt
+  denselben atomaren Pfad (wegen ~1–2 s Laufzeit nicht erneut live nachgefangen). **Bewiesen.**
 - **Pipeline↔Understanding-Überlappung (in-run):** in Lauf 1 UND Lauf 2 **beobachtet** —
   `crawl-cem-ince` und `global-understanding` wurden **gleichzeitig** gehalten (Lauf 2:
   20:03:28 UTC, zwei getrennte atomare Locks mit je eigenem Token). Das belegt: die atomaren
@@ -312,23 +360,68 @@ Alarmkanäle (Allowlist + Redaction, in Lauf 1/2 real ohne Inhalt/PII).
 
 ---
 
-## 5 · Zwischenurteil
+## 5 · Zwischenurteil (Stand 2026-07-17, 06:xx UTC)
 
-_Wird am Ende des Sprints gefüllt (nach ≥3 Crawls, vollständigem Morgenzyklus und
-geprüftem Überschneidungsfenster)._
+**Stopp-Bedingungen erfüllt:** ≥3 echte Crawls dokumentiert (Lauf 1/2/4) · vollständiger
+Morgenzyklus (05:00/05:30/05:45/06:00) · Pipeline↔Understanding-Überschneidung beobachtet · alle
+Pflicht-Messwerte im Protokoll · klares Zwischenurteil möglich.
+
+### Bewiesen (an echten Production-Messwerten)
+1. **Die drei Flags sind im laufenden Code aktiv und werden real ausgeführt:**
+   - `HELMUT_ATOMIC_LOCK`: atomarer `crawl-cem-ince`-Lock **live gefangen in Lauf 1, 2 UND 4**
+     (relational, mit `token`, `expires_at`), Blob-Pfad nie genutzt, jedes Mal saubere Freigabe.
+   - `HELMUT_UNDERSTANDING_LOCK`: `global-understanding`-Lock **live gefangen in Lauf 1 & 2**,
+     inkl. **gleichzeitiger** Haltung mit dem Crawl-Lock (in-run Überschneidung, Lauf 2 20:03:28).
+   - `HELMUT_SOURCE_TELEMETRY`: **je Crawl 145 Zeilen** geschrieben (0 im Flag-AUS-Kontrolllauf 16:00).
+2. **Telemetrie erfasst auch Fehler korrekt:** Der degradierte Lauf 2 hinterließ 145 Zeilen mit
+   **präziser Klassifikation** (`http-429` ×47, `timeout` ×81, `http-4xx` ×1) — Beobachtbarkeit
+   bewährt sich genau im Störfall.
+3. **Laufzeit real gemessen (P0-1):** `durationMs` je Crawl (183106 / 169572 / 170106 ms) und
+   **Pro-Quellen-Laufzeiten** (gesunder Baseline Läufe 1+4: Ø ~2427, Median ~2386, Min 131, Max 7234 ms).
+4. **Gesunde Vollläufe:** 145/145 Quellen, 0 Fehler in Lauf 1 & 4; der degradierte Lauf 2 wurde
+   **sauber** verarbeitet (kein Absturz, saubere Freigabe) und war extern/transient (B1, erholt).
+5. **Datensparsamkeit real:** keine Inhalte/PII in Telemetrie/Alarm-Payloads (Allowlist + Redaction).
+6. **Robustheit/Ordnung:** über den gesamten Sprint **0 neue `systemErrors`** (59→59); idempotente
+   Leerläufe des Understanding-Crons korrekt; Locks nie im Blob, immer sauber freigegeben.
+
+### Offen (ehrlich, nicht bewiesen)
+- **Deny-Pfad unter echter Konkurrenz** (zweiter Lauf wird abgewiesen): nicht ausgeübt — es gab
+  keinen konkurrierenden Zweitlauf; bewusster Doppelstart ist verboten. Fail-closed ist im Code +
+  auf DB-Ebene belegt, der Live-Beweis unter echter Überlappung fehlt.
+- **Fehlerfall → `systemErrors` + Recovery:** mangels echter technischer Störung nicht gezeigt
+  (künstliche Injektion verboten). Der `recordPipelineError`-Pfad blieb im Sprint unausgelöst.
+- **Zweitkanal-Alarmtest:** braucht `HELMUT_MONITORING_WEBHOOK_URL` (F5) — technisch vorbereitet.
+- **B1 (latentes Google-News-Klumpenrisiko):** einmal transient aufgetreten (volumeninduziert),
+  vollständig erholt; latent fort — Minderung Direkt-RSS bekannt. **Zusatzbefund:** der Alarm-Watchdog
+  ist jüngster-Crawl-basiert + täglich → eine zwischen zwei Reports auftretende, selbst-erholte
+  Degradation bleibt unalarmiert (Telemetrie macht sie aber nachträglich sichtbar).
+- **B2 (Understanding-Rückstand):** ~52 Vorgänge nicht `complete` (50 pending/2 failed,
+  `skipped-no-cluster`); **vorbestehend**, nicht flag-verursacht; plausibel Rauschen, aber unbewiesen.
+  Follow-up: Stichprobe + Klärung Filter-vs-Lücke. Die 2 `failed` sind F6-Kandidaten.
+
+### Gesamtbewertung (kein Reife-Urteil, keine DSGVO-Konformitätsbehauptung)
+Die drei freigeschalteten Funktionen wirken **korrekt, additiv und beobachtbar** — an echten
+Läufen belegt, nicht behauptet. Die neue Beobachtbarkeit hat ihren ersten echten Störfall (B1)
+präzise sichtbar und diagnostizierbar gemacht. **Aber:** ein „sauberer Beweistag" im vollen Sinn
+ist noch **nicht** abgeschlossen — der Deny-Pfad und der echte Fehler-/Recovery-Pfad sind
+unbelegt, und B1/B2 sind offene Betriebsbefunde. **Keine Betriebsreife-Behauptung.**
 
 ---
 
 ## 6 · Offen / nächste Freigaben
 
-- **Offen (Beweis):** Deny-Pfad (Doppelstart-Abweisung) unter echter Konkurrenz;
-  dedizierter Understanding-Cron (21:30); ≥1 weiterer Crawl (04:00 → Lauf 4, zugleich
-  B1-Gegenprobe); vollständiger Morgenzyklus; **ob der 06:00-Health-Report die 20:00-Crawl-
-  Degradation (B1) als Crawl-Failure-Ratio-Alarm eskaliert**; Fehlerfall→`systemErrors` (nur
-  ohne künstliche Injektion beobachtbar); Zweitkanal-Alarmtest (braucht F5-Webhook-URL).
-- **Nächste Freigaben (Kandidaten):** F5 (Webhook-URL liefern → Zweitkanal);
-  danach — nach ≥1 sauberem Beweistag — F6/F7; F8 später.
+- **Erledigt in diesem Sprint:** 3 Crawls (Lauf 1/2/4) · Understanding-Cron (Lauf 3 + 05:30) ·
+  vollständiger Morgenzyklus · in-run Pipeline↔Understanding-Überschneidung · B1-Gegenprobe (erholt) ·
+  B1-Eskalationsfrage beantwortet (Watchdog jüngster-Crawl-basiert → keine Rückschau).
+- **Offen (Beweis, ehrlich):** Deny-Pfad unter echter Konkurrenz; Fehlerfall→`systemErrors` +
+  Recovery (ohne künstliche Injektion nicht auslösbar); Zweitkanal-Alarmtest (braucht F5-Webhook-URL);
+  B2-Follow-up (Stichprobe der `skipped-no-cluster`-Vorgänge).
+- **Nächste Freigabe (konkret):** **F5** — geprüfte `HELMUT_MONITORING_WEBHOOK_URL` liefern, dann
+  aktiviere ich kontrolliert und führe den echten Zweitkanal-Zustelltest durch. Danach — nach einem
+  vollständig sauberen Beweistag inkl. Deny-/Fehlerpfad — **F6/F7**; **F8** später (nach Pilot + Recht).
 
 ---
 
-_Letzte Aktualisierung: 2026-07-17 (nach Lauf 4, 04:00-Crawl; 3 Crawls dokumentiert, B1-Gegenprobe erholt). Morgenzyklus folgt._
+_Letzte Aktualisierung: 2026-07-17 nach vollständigem Morgenzyklus. Stopp-Bedingungen erfüllt;
+Zwischenurteil in §5. Befunde B1 (transient/erholt) und B2 (vorbestehender Understanding-Rückstand)
+offen dokumentiert._
