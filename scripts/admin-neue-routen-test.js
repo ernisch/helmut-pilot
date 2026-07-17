@@ -104,6 +104,18 @@ async function login(port, email, password) {
       check(`A ${route}: Admin -> 200`, adm.status === 200, `status=${adm.status}`);
     }
 
+    // A2) Methoden-Guard: alle neuen Leserouten sind GET-only. Ein POST/PATCH als
+    // Admin MIT gueltigem CSRF-Token darf KEINE Leselogik ausfuehren (kein 200 mit
+    // Payload) — die Route faellt sauber durch auf 404 (wie /api/admin/feedback).
+    const csrfForMethods = JSON.parse((await req(port, "GET", "/api/security/csrf", { headers: { Cookie: adminCookie } })).body).token;
+    for (const route of NEW_ROUTES) {
+      for (const method of ["POST", "PATCH"]) {
+        const res = await req(port, method, route, { headers: { Cookie: adminCookie, "x-csrf-token": csrfForMethods }, body: {} });
+        check(`A2 ${route}: ${method} -> abgelehnt (404, keine Leselogik)`, res.status === 404, `status=${res.status}`);
+        check(`A2 ${route}: ${method} liefert keinen Lese-Payload`, !/generatedAt|auditEvents|tenantBudgets|processRuns|statusCounts|"kunden"/.test(res.body), `body=${res.body.slice(0, 80)}`);
+      }
+    }
+
     // B) Shapes + Sicherheit der Antworten.
     const getJson = async (route) => JSON.parse((await req(port, "GET", route, { headers: { Cookie: adminCookie } })).body);
 

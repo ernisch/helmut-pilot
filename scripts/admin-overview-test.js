@@ -117,6 +117,19 @@ check("B1 Ohne Daten: Zustand 'unbekannt', keine gruene Beschoenigung", emptyVie
 check("B2 Ohne Daten: Werte als — (keine erfundenen Zahlen)", (emptyView.match(/—/g) || []).length >= 5);
 check("B3 Ohne Daten: keine Beispieldaten (kein 'demo', keine Platzhalterzahl 8.420)", !/8\.420|Beispieldaten/i.test(emptyView));
 
+// ── B6 Unbekannter Zustand: neutraler Text, NIE gruene Entwarnung ────────────
+// Grün ("Alles ruhig. Kein Eingreifen nötig.") darf nur bei tatsächlich gesundem
+// Zustand erscheinen — bei unbekanntem Zustand (Daten nicht ladbar) ein neutraler
+// Hinweis. Prüfung über ALLE sieben Bereiche.
+const NEUTRAL = "Der Zustand kann aktuell nicht zuverlässig bewertet werden.";
+for (const sec of ["uebersicht", "pipeline", "kosten", "daten", "nutzer", "system", "quellen"]) {
+  api.clearData();
+  const v = api[sec]();
+  check(`B6 ${sec}: unbekannter Zustand zeigt neutralen Text`, v.includes(NEUTRAL));
+  check(`B6 ${sec}: unbekannter Zustand zeigt NICHT 'Alles ruhig'`, !v.includes("Alles ruhig"));
+  check(`B6 ${sec}: unbekannter Zustand hat keine gruene adm-allquiet-Klasse`, !v.includes("adm-allquiet"));
+}
+
 api.clearData();
 api.setData("daily", { crawl: { runs: null, checkedSources: null }, ai: {}, v3: { note: "V3-Store nicht aktiv (HELMUT_V3_STORE nicht gesetzt)" } });
 const partialView = api.uebersicht();
@@ -133,6 +146,7 @@ api.setData("feedback", { offen: 0, feedback: [] });
 api.setData("audit", { auditEvents: [] });
 const quietView = api.uebersicht();
 check("C1 Ruhiger Zustand: 'Alles ruhig. Kein Eingreifen nötig.'", quietView.includes("Alles ruhig. Kein Eingreifen nötig."));
+check("C1b Nur bei gesundem Zustand: gruene adm-allquiet-Klasse + kein neutraler Unbekannt-Text", quietView.includes("adm-allquiet") && !quietView.includes(NEUTRAL));
 check("C2 Zustands-Chip mit Text (nicht nur Farbe)", /adm-chip--ok/.test(quietView) && quietView.includes("System läuft"));
 
 api.setData("crawlReport", { lastCrawlAt: minsAgo(30), failedSources: 4, checkedSources: 47, errorCount: 4 });

@@ -11851,6 +11851,8 @@ summary:focus-visible {
 .adm-statehead-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .adm-statehead-text { font-size: 13.5px; color: var(--muted-2); }
 .adm-allquiet { margin: 0; font-size: 13.5px; color: var(--chance); }
+/* Neutraler Hinweis bei unbekanntem Zustand — bewusst NICHT gruen (keine Entwarnung). */
+.adm-unknown-note { margin: 0; font-size: 13.5px; color: var(--muted-2); }
 .adm-actions-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .adm-action-item { font-size: 13.5px; color: var(--text); padding-left: 14px; position: relative; }
 .adm-action-item::before { content: ""; position: absolute; left: 0; top: 7px; width: 7px; height: 7px; border-radius: 50%; background: var(--watch); }

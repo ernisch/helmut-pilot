@@ -1463,11 +1463,19 @@ function admSectionMeta(section) {
 }
 
 // Zustandskopf eines Bereichs: Zuerst Zustand + Handlungsbedarf, dann Details.
+// Die gruene "Alles ruhig"-Zeile erscheint AUSSCHLIESSLICH bei tatsaechlich
+// gesundem Zustand (tone==="ok"). Bei unbekanntem Zustand (Daten nicht ladbar/
+// verfuegbar) steht ein neutraler Hinweis — nie eine gruene Entwarnung.
 function admStateHead(state, extraHtml) {
   const items = Array.isArray(state.actions) ? state.actions : [];
-  const list = items.length
-    ? `<ul class="adm-actions-list">${items.map((a) => `<li class="adm-action-item adm-action-item--${escapeAttribute(a.tone || "warn")}">${a.goto ? `<button type="button" class="adm-action-link" data-adm-goto="${escapeAttribute(a.goto)}">${escapeHtml(a.text)} <span aria-hidden="true">›</span></button>` : escapeHtml(a.text)}</li>`).join("")}</ul>`
-    : `<p class="adm-allquiet">Alles ruhig. Kein Eingreifen nötig.</p>`;
+  let list;
+  if (items.length) {
+    list = `<ul class="adm-actions-list">${items.map((a) => `<li class="adm-action-item adm-action-item--${escapeAttribute(a.tone || "warn")}">${a.goto ? `<button type="button" class="adm-action-link" data-adm-goto="${escapeAttribute(a.goto)}">${escapeHtml(a.text)} <span aria-hidden="true">›</span></button>` : escapeHtml(a.text)}</li>`).join("")}</ul>`;
+  } else if (state.tone === "ok") {
+    list = `<p class="adm-allquiet">Alles ruhig. Kein Eingreifen nötig.</p>`;
+  } else {
+    list = `<p class="adm-unknown-note">Der Zustand kann aktuell nicht zuverlässig bewertet werden.</p>`;
+  }
   return `<section class="adm-card adm-statehead">
     <div class="adm-statehead-top">
       ${admChip(state.tone, state.label)}

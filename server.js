@@ -1733,7 +1733,7 @@ async function handleRequest(request, response) {
 
   // Tagesbudget im EXAKTEN Fenster des Budget-Gates (UTC-Kalendertag; NICHT das
   // rollierende Fenster von /stats/costs) + Monat-bis-heute aus getLlmCostSince.
-  if (url.pathname === "/api/admin/stats/budget-today") {
+  if (url.pathname === "/api/admin/stats/budget-today" && request.method === "GET") {
     if (!requireRoleOr403(response, authUser, "admin")) return undefined;
     return handleAsync(response, async () => {
       const heute = await getLlmUsageBreakdownToday();
@@ -1749,7 +1749,7 @@ async function handleRequest(request, response) {
   }
 
   // Kosten pro Mandant (rollierendes Fenster) + Pro-Mandant-Budgetstatus.
-  if (url.pathname === "/api/admin/stats/costs-per-user") {
+  if (url.pathname === "/api/admin/stats/costs-per-user" && request.method === "GET") {
     if (!requireRoleOr403(response, authUser, "admin")) return undefined;
     const cpuDays = Math.max(1, Math.min(90, Number(url.searchParams.get("days")) || 30));
     return handleAsync(response, () => buildAdminCostsPerUser(cpuDays));
@@ -1757,7 +1757,7 @@ async function handleRequest(request, response) {
 
   // Laufzeiten der inneren Prozesse (understanding/briefing/lage) — nur technische
   // Skalare (sanitizeProcessRun), keine Inhalte. Plus Cron-Zeitplan aus vercel.json.
-  if (url.pathname === "/api/admin/stats/process-runs") {
+  if (url.pathname === "/api/admin/stats/process-runs" && request.method === "GET") {
     if (!requireRoleOr403(response, authUser, "admin")) return undefined;
     const prLimit = Math.max(1, Math.min(300, Number(url.searchParams.get("limit")) || 60));
     const prProcess = String(url.searchParams.get("process") || "").trim() || null;
@@ -1773,7 +1773,7 @@ async function handleRequest(request, response) {
   }
 
   // Audit-Log als eigene Route (bisher nur als Teil von /api/admin/overview).
-  if (url.pathname === "/api/admin/audit") {
+  if (url.pathname === "/api/admin/audit" && request.method === "GET") {
     if (!requireRoleOr403(response, authUser, "admin")) return undefined;
     const auditLimit = Math.max(1, Math.min(200, Number(url.searchParams.get("limit")) || 50));
     return handleAsync(response, async () => ({
@@ -1799,14 +1799,14 @@ async function handleRequest(request, response) {
 
   // Kunden & Abrechnung: serverseitiges Aggregat aus accounts.listUsers()
   // (sanitizeUser — nie Hashes) + aktive Sessions als reine Anzahl.
-  if (url.pathname === "/api/admin/customers") {
+  if (url.pathname === "/api/admin/customers" && request.method === "GET") {
     if (!requireRoleOr403(response, authUser, "admin")) return undefined;
     return handleAsync(response, () => buildAdminCustomers());
   }
 
   // Quellen & Watchdog: Statuszaehler und problematische Abrufwege aus den
   // relationalen Quellen-Tabellen + Google-News-Anteil aus crawlRuns.
-  if (url.pathname === "/api/admin/sources-status") {
+  if (url.pathname === "/api/admin/sources-status" && request.method === "GET") {
     if (!requireRoleOr403(response, authUser, "admin")) return undefined;
     return handleAsync(response, () => buildAdminSourcesStatus());
   }
@@ -2782,6 +2782,11 @@ module.exports.__SPLASH_WATCHDOG_SCRIPT = SPLASH_WATCHDOG_SCRIPT;
 // Onboarding, Namensvarianten) korrekt uebernommen/validiert werden und Bearbeiten
 // nie ungewollt Felder loescht.
 module.exports.__normalizeProfile = normalizeProfile;
+// Test-Hooks (Offline): Betriebs-Metadaten-Leser fuer den Admin. Pruefen die
+// EHRLICHE Degradation, wenn vercel.json (config=null) oder eine Workflow-Datei
+// nicht lesbar/nicht gebundelt ist — Rueckgabe null bzw. { verfuegbar:false }.
+module.exports.__readVercelCronSchedule = readVercelCronSchedule;
+module.exports.__readWorkflowWatchdog = readWorkflowWatchdog;
 // Test-Hooks (Offline, Audit-Folgebranch): Monitoring-Zweitkanal + Asset-Version.
 module.exports.__sendMonitoringWebhook = sendMonitoringWebhook;
 module.exports.__ASSET_VERSION = () => ASSET_VERSION;
@@ -4255,21 +4260,24 @@ function adminMandateValidierung(p) {
 
 // --- Builder fuer die Admin-Leserouten (Admin-Neuaufbau 2026-07) -------------
 
-// Cron-Zeitplan aus vercel.json (Wahrheit der Deploy-Konfiguration) statt
-// hartkodierter Zeiten (Audit-Befund Nr. 13 zu /api/ops/status: dortige Zeiten
-// sind veraltet). Nicht lesbar -> null, keine erfundenen Zeiten.
-function readVercelCronSchedule() {
-  try {
-    const raw = fs.readFileSync(path.join(root, "vercel.json"), "utf8");
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed.crons)) return null;
-    return parsed.crons.map((entry) => ({
-      path: String(entry.path || "").slice(0, 80),
-      schedule: String(entry.schedule || "").slice(0, 40)
-    }));
-  } catch (_) {
-    return null;
-  }
+// vercel.json ist die EINZIGE Wahrheit des Cron-Zeitplans (kein hartkodierter
+// Zweitwert). STATISCHES require statt fs-Read: @vercel/nft traegt eine literale
+// require-Abhaengigkeit deterministisch ins Serverless-Bundle — ein fs-Read mit
+// dynamisch gebautem Pfad wird von NFT NICHT aufgeloest und landet in Production
+// nicht im Bundle. Nicht ladbar -> null (ehrlich, kein Absturz).
+const VERCEL_CONFIG = (() => {
+  try { return require("./vercel.json"); } catch (_) { return null; }
+})();
+
+// config-Parameter nur fuer Offline-Tests injizierbar (Default: das gebundelte
+// vercel.json). config === null simuliert "nicht lesbar" -> null.
+function readVercelCronSchedule(config = VERCEL_CONFIG) {
+  const crons = config && Array.isArray(config.crons) ? config.crons : null;
+  if (!crons) return null;
+  return crons.map((entry) => ({
+    path: String(entry.path || "").slice(0, 80),
+    schedule: String(entry.schedule || "").slice(0, 40)
+  }));
 }
 
 // GitHub-Actions-Waechter aus den Workflow-Dateien lesen (nicht hartkodieren):
