@@ -140,17 +140,20 @@ const doc = (id, title, summary = "", source_name = "Quelle") => ({ id, title, s
   check("9 · Regression: {documents:[a,b]} -> 2 (nicht 0)", lazy.clusterDocCount({ documents: [{}, {}] }) === 2);
 })();
 
-// (10) planRecovery: nur Allowlist, offene Faelle; nicht-offen/fehlend -> skip.
+// (10) planRecovery-LOGIK: nur Allowlist, offene Faelle; nicht-offen/fehlend -> skip.
+// Die planRecovery-MECHANIK wird mit einer EXPLIZITEN Test-Allowlist geprueft (opts.allowlist),
+// entkoppelt von der auf 1 Fall verengten Production-Konstante (die separat in Test 12 geprueft wird).
 (() => {
   const doc = (id, title, sn = "Q") => ({ id, title, summary: "", source_name: sn });
+  const ALLOW = ["vg-steuerstrafrecht", "vg-medikamenten", "vg-sozialwohnungen", "vg-psychotherapie"];
   const cands = [
     { vorgang_id: "vg-steuerstrafrecht", understanding_status: "pending", headline: "Steuerstrafrecht Reform" },
     { vorgang_id: "vg-medikamenten", understanding_status: "pending", headline: "Medikamente GKV Zuzahlung" },
-    { vorgang_id: "vg-einkommensteuer", understanding_status: "pending", headline: "Einkommensteuer Reform" }, // NICHT in Allowlist
+    { vorgang_id: "vg-einkommensteuer", understanding_status: "pending", headline: "Einkommensteuer Reform" }, // NICHT in Test-Allowlist
     { vorgang_id: "vg-sozialwohnungen", understanding_status: "complete", headline: "Sozialwohnungen" }        // nicht mehr offen
   ];
   const docs = [doc("d1", "Steuerstrafrecht Reform beschlossen"), doc("d2", "Medikamente Zuzahlung neue Regel")];
-  const plan = rec.planRecovery(cands, docs, {});
+  const plan = rec.planRecovery(cands, docs, { allowlist: ALLOW });
   const execIds = plan.execute.map((e) => e.vorgangId);
   check("10 · nur Allowlist im Plan (kein vg-einkommensteuer)", !execIds.includes("vg-einkommensteuer"));
   check("10 · eindeutige/wahrscheinliche Allowlist-Faelle in execute", execIds.includes("vg-steuerstrafrecht") && execIds.includes("vg-medikamenten"));
@@ -159,16 +162,17 @@ const doc = (id, title, summary = "", source_name = "Quelle") => ({ id, title, s
   check("10 · kiCalls == execute.length", plan.kiCalls === plan.execute.length);
 })();
 
-// (11) planRecovery: Duplikat/mehrdeutig/keine-quelle werden ausgeschlossen.
+// (11) planRecovery-LOGIK: Duplikat/mehrdeutig/keine-quelle werden ausgeschlossen (explizite Test-Allowlist).
 (() => {
   const doc = (id, title, sn = "Q") => ({ id, title, summary: "", source_name: sn });
+  const ALLOW = ["vg-medikamenten", "vg-steuerstrafrecht", "vg-psychotherapie"];
   const cands = [
     { vorgang_id: "vg-medikamenten", understanding_status: "pending", headline: "Medikamente GKV" },          // -> duplikat (completeTopicSet)
     { vorgang_id: "vg-steuerstrafrecht", understanding_status: "pending", headline: "Steuerstrafrecht" },      // -> keine-quelle (kein doc)
     { vorgang_id: "vg-psychotherapie", understanding_status: "pending", headline: "Krankenversicherung Pflegeversicherung" } // -> mehrdeutig
   ];
   const docs = [doc("a", "Krankenversicherung Beitrag"), doc("b", "Pflegeversicherung Leistung", "Q2")];
-  const plan = rec.planRecovery(cands, docs, { completeTopicSet: new Set(["vg-medikamenten"]) });
+  const plan = rec.planRecovery(cands, docs, { allowlist: ALLOW, completeTopicSet: new Set(["vg-medikamenten"]) });
   check("11 · Duplikat-Fall NICHT im Plan", !plan.execute.some((e) => e.vorgangId === "vg-medikamenten")
     && plan.skip.some((s) => s.vorgangId === "vg-medikamenten" && s.grund === "duplikat-complete-existiert"));
   check("11 · keine-Quelle-Fall NICHT im Plan", plan.skip.some((s) => s.vorgangId === "vg-steuerstrafrecht" && s.grund === "keine-quelldokumente"));
@@ -180,8 +184,24 @@ const doc = (id, title, summary = "", source_name = "Quelle") => ({ id, title, s
 (async () => {
   check("12 · recoveryExecuteEnabled Default false", rec.recoveryExecuteEnabled({}) === false);
   check("12 · recoveryExecuteEnabled bei 'on' true", rec.recoveryExecuteEnabled({ HELMUT_RECOVERY_EXECUTE: "on" }) === true);
-  check("12 · recoveryConfirmed nur exaktes Token", rec.recoveryConfirmed("RECOVER_6_CONFIRMED") === true && rec.recoveryConfirmed("x") === false && rec.recoveryConfirmed("") === false);
-  check("12 · Allowlist genau die 6 bestaetigten Faelle", rec.RECOVERY_ALLOWLIST.length === 6 && rec.RECOVERY_ALLOWLIST.includes("vg-arbeitsverträge") && rec.RECOVERY_ALLOWLIST.includes("vg-umstellungen"));
+  check("12 · recoveryConfirmed nur exaktes Token", rec.recoveryConfirmed("RECOVER_SOZIALWOHNUNGEN_CONFIRMED") === true && rec.recoveryConfirmed("RECOVER_6_CONFIRMED") === false && rec.recoveryConfirmed("x") === false && rec.recoveryConfirmed("") === false);
+  // Nach der korrigierten Bewertung (2026-07-17) ist die Allowlist auf GENAU EINEN
+  // freigegebenen Fall (vg-sozialwohnungen) verengt — die anderen 5 sind hinfaellig.
+  check("12 · Allowlist genau 1 Fall: vg-sozialwohnungen", rec.RECOVERY_ALLOWLIST.length === 1 && rec.RECOVERY_ALLOWLIST[0] === "vg-sozialwohnungen");
+  // planRecovery darf ausserhalb der Allowlist NICHTS einplanen (kein medikamenten/umstellungen).
+  (() => {
+    const cands = [
+      { vorgang_id: "vg-sozialwohnungen", understanding_status: "pending", headline: "Weniger Sozialwohnungen" },
+      { vorgang_id: "vg-medikamenten", understanding_status: "pending", headline: "Medikamenten Zuzahlung" }
+    ];
+    const docs = [
+      { id: "s1", title: "Weniger Sozialwohnungen 2025", summary: "Sozialwohnungen" },
+      { id: "m1", title: "Medikamenten Zuzahlung neu", summary: "Medikamenten" }
+    ];
+    const plan = rec.planRecovery(cands, docs, {});
+    const planned = plan.execute.map((e) => e.vorgangId);
+    check("12 · planRecovery plant nur Allowlist-Faelle (kein medikamenten)", !planned.includes("vg-medikamenten"));
+  })();
 
   // recoverOne ohne verdrahteten Write-Pfad -> kein Write/KI (freigabepflichtig).
   const r1 = await rec.recoverOne({ vorgangId: "vg-steuerstrafrecht" }, { getExisting: async () => null });

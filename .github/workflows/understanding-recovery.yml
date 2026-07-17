@@ -1,19 +1,19 @@
-name: Understanding-Recovery (6 bestaetigte Faelle)
+name: "Understanding-Recovery (1 freigegebener Fall — vg-sozialwohnungen)"
 
 on:
   workflow_dispatch:
     inputs:
       confirm_text:
-        description: "Fuer den ECHTEN Lauf EXAKT eingeben: RECOVER_6_CONFIRMED (sonst nur Plan+Snapshot, read-only)"
+        description: "Fuer den ECHTEN Lauf EXAKT eingeben: RECOVER_SOZIALWOHNUNGEN_CONFIRMED (sonst nur Plan+Snapshot, read-only)"
         required: true
         default: ""
 
-# ECHTE Recovery der 6 bestaetigten, netto-neuen Understanding-Vorgaenge.
+# ECHTE Recovery des EINEN freigegebenen Vorgangs vg-sozialwohnungen (2026-07-17).
 # NUR manuell (workflow_dispatch), harte Bestaetigung. Eng begrenzt auf die
-# Allowlist in lib/helmut/understanding-recovery.js (6 vorgang_ids).
+# Allowlist in lib/helmut/understanding-recovery.js (GENAU 1 vorgang_id).
 # Schritt A (IMMER, read-only): Plan + Pre-Snapshot. Kein Write, kein KI.
-# Schritt B (NUR bei confirm_text == "RECOVER_6_CONFIRMED"): understanding.understandOneCluster
-#   fuer die geplanten Faelle — max 6 KI-Calls, max 6 neue complete-KOs (+ Links),
+# Schritt B (NUR bei confirm_text == "RECOVER_SOZIALWOHNUNGEN_CONFIRMED"): understanding.understandOneCluster
+#   fuer den EINEN Fall — genau 1 KI-Call, genau 1 neues complete-KO (+ Links),
 #   Rollback-Kennung "recovery:rec-<run_id>" im Feld understanding_model, idempotent.
 
 permissions:
@@ -57,7 +57,7 @@ jobs:
         run: node scripts/understanding-recovery-execute.js
 
       - name: Preflight KI-Key (nur fuer echten Lauf)
-        if: ${{ inputs.confirm_text == 'RECOVER_6_CONFIRMED' }}
+        if: ${{ inputs.confirm_text == 'RECOVER_SOZIALWOHNUNGEN_CONFIRMED' }}
         env:
           AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
           AZURE_OPENAI_KEY: ${{ secrets.AZURE_OPENAI_KEY }}
@@ -70,7 +70,7 @@ jobs:
           echo "Preflight KI OK."
 
       - name: Schritt B Echter Recovery-Lauf (max 6 KI + Writes)
-        if: ${{ inputs.confirm_text == 'RECOVER_6_CONFIRMED' }}
+        if: ${{ inputs.confirm_text == 'RECOVER_SOZIALWOHNUNGEN_CONFIRMED' }}
         env:
           HELMUT_V3_STORE: "1"
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -81,7 +81,7 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           HELMUT_MAX_LLM_CALLS_PER_DAY: "150"
           HELMUT_RECOVERY_EXECUTE: "1"
-          HELMUT_RECOVERY_CONFIRM: "RECOVER_6_CONFIRMED"
+          HELMUT_RECOVERY_CONFIRM: "RECOVER_SOZIALWOHNUNGEN_CONFIRMED"
           HELMUT_RECOVERY_RUNID: "rec-${{ github.run_id }}"
         run: |
           set -euo pipefail
@@ -89,6 +89,6 @@ jobs:
           node scripts/understanding-recovery-execute.js
 
       - name: Hinweis kein echter Lauf
-        if: ${{ inputs.confirm_text != 'RECOVER_6_CONFIRMED' }}
+        if: ${{ inputs.confirm_text != 'RECOVER_SOZIALWOHNUNGEN_CONFIRMED' }}
         run: |
-          echo "Kein echter Lauf (nur Plan/Snapshot, read-only) - confirm_text war nicht exakt RECOVER_6_CONFIRMED."
+          echo "Kein echter Lauf (nur Plan/Snapshot, read-only) - confirm_text war nicht exakt RECOVER_SOZIALWOHNUNGEN_CONFIRMED."

@@ -90,6 +90,19 @@ async function main() {
     return;
   }
 
+  // HARTE Sicherheitsschranke (Defense-in-Depth zusaetzlich zur 1-Eintrag-Allowlist):
+  // Die Betreiber-Freigabe 2026-07-17 gilt AUSSCHLIESSLICH fuer vg-sozialwohnungen —
+  // genau 1 KI-Call, genau 1 Write. Wenn der Plan NICHT exakt [vg-sozialwohnungen] ist,
+  // wird VOR jedem KI-/Schreibschritt abgebrochen (kein Write, kein KI).
+  const APPROVED = ["vg-sozialwohnungen"];
+  const planned = plan.execute.map((e) => e.vorgangId);
+  const unexpected = planned.filter((v) => !APPROVED.includes(v));
+  if (planned.length !== APPROVED.length || unexpected.length > 0) {
+    console.log(JSON.stringify({ ...header, executed: false,
+      grund: `Sicherheitsabbruch: Plan != genau ${JSON.stringify(APPROVED)} (geplant: ${JSON.stringify(planned)}) -> kein Write/KI` }, null, 2));
+    return;
+  }
+
   // Freigeschaltet+bestaetigt: pro Fall recoverOne mit dem echten Understand+Save-Pfad.
   const uDeps = recoveryUnderstandingDeps();
   const deps = {
