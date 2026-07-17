@@ -92,8 +92,8 @@ const parse = (res) => { try { return JSON.parse(res.body); } catch { return {};
   await new Promise((r) => server.listen(0, "127.0.0.1", r));
 
   // ── 1) Kein Standardmandant im Code ────────────────────────────────────────
-  check("config.js exportiert kein Personenprofil mehr",
-    !("cemInceProfile" in config) && !Object.keys(config).some((k) => /profile$/i.test(k) && k !== "profileCompleteness"));
+  check("config.js exportiert exakt die vier neutralen Helfer (kein Personenprofil)",
+    JSON.stringify(Object.keys(config).sort()) === JSON.stringify(["accountTypeOf", "inferEntities", "parliamentTypeOf", "profileCompleteness"]));
   check("tenant-context: ohne Env kein konfiguriertes Pilotmandat",
     tenantContext.configuredPilotTenantId({}) === "");
   check("scheduler.getActiveProfile ohne ID wirft TenantContextError",
