@@ -1659,13 +1659,24 @@ function renderAdmFunnel() {
   const rec = admData.recovery || {};
   const pr = admData.processRuns || {};
   const briefingRun = pr.latestByProcess && pr.latestByProcess.briefing;
+  // Wissensobjekte/Vorgänge entstehen NICHT im Crawl, sondern im separaten
+  // Understanding-Schritt (eigener Cron). Sind neue Rohdokumente da, aber diese
+  // Stufe 0, liegt es am Understanding-Rückstau — kein Datenverlust. Das erklären
+  // wir direkt an der Stufe, damit "891 → 0" nicht als Totalausfall missverstanden wird.
+  const koPending = rec.knowledgeObjects && admIsNum(Number(rec.knowledgeObjects.pending)) ? Number(rec.knowledgeObjects.pending) : null;
+  const koFailed = rec.knowledgeObjects && admIsNum(Number(rec.knowledgeObjects.failed)) ? Number(rec.knowledgeObjects.failed) : null;
+  const understandingHint = rep.v3Note
+    ? String(rep.v3Note)
+    : (koPending > 0
+        ? `separater Understanding-Schritt · ${admNum(koPending)} im Rückstau${koFailed > 0 ? ` · ${admNum(koFailed)} failed` : ""}`
+        : "aus dem Understanding-Schritt (eigener Cron)");
   const steps = [
     { label: "Quellen geprüft", value: admNum(rep.checkedSources), hint: "Quelle → Abruf" },
     { label: "Abruf erfolgreich", value: admNum(rep.successfulSources), hint: rep.failedSources > 0 ? `${admNum(rep.failedSources)} fehlgeschlagen` : "" },
     { label: "Fundstücke gescannt", value: admNum(rep.scannedArticles), hint: "vor Dublettenprüfung" },
     { label: "Rohdokumente gespeichert", value: admNum(rep.deduplicatedArticles), hint: "Dubletten entfernt" },
-    { label: "Wissensobjekte (KI)", value: admNum(rep.newKnowledgeObjects), hint: rep.v3Note ? String(rep.v3Note) : "einmal global verstanden" },
-    { label: "Neue Vorgänge", value: admNum(rep.newVorgaenge), hint: "" },
+    { label: "Wissensobjekte (KI)", value: admNum(rep.newKnowledgeObjects), hint: understandingHint },
+    { label: "Neue Vorgänge", value: admNum(rep.newVorgaenge), hint: "aus dem Understanding-Schritt" },
     { label: "Matching / Entscheidung", value: ADM_DASH, hint: "Schattenbetrieb — keine Live-Zahl je Lauf" },
     { label: "Briefing", value: briefingRun ? admDur(briefingRun.durationMs) : ADM_DASH, hint: briefingRun ? `zuletzt ${admDateTime(briefingRun.startedAt)}` : "kein Lauf protokolliert" }
   ];
@@ -1675,7 +1686,7 @@ function renderAdmFunnel() {
       <span class="adm-flow-value${s.value === ADM_DASH ? " adm-tile-value--empty" : ""}">${escapeHtml(String(s.value))}</span>
       ${s.hint ? `<span class="adm-flow-hint">${escapeHtml(s.hint)}</span>` : ""}
     </div>${i < steps.length - 1 ? '<span class="adm-flow-arrow" aria-hidden="true">→</span>' : ""}`).join("")}</div>
-  <p class="adm-note">Der Betreiber sieht hier, an welcher Stufe Daten verloren gehen: große Sprünge zwischen zwei Stufen sind der Ansatzpunkt.</p>`;
+  <p class="adm-note">Der Betreiber sieht hier, an welcher Stufe Daten verloren gehen: große Sprünge zwischen zwei Stufen sind der Ansatzpunkt. <strong>Wissensobjekte und Vorgänge entstehen im separaten Understanding-Schritt (Cron)</strong> — sind Rohdokumente angekommen, diese Stufen aber 0, liegt es am Understanding-Rückstau (kein Datenverlust; siehe Zustandskopf).</p>`;
 }
 
 function renderAdmPipeline() {
@@ -2249,7 +2260,7 @@ function renderAdmPrivacyCard() {
 function renderAdmActionsCard() {
   const bf = admBackfillState;
   const bfResult = bf && bf.result
-    ? `<pre class="ds-recovery-json">${escapeHtml(JSON.stringify(bf.result, null, 2).slice(0, 4000))}</pre>`
+    ? `<p class="adm-note">Ergebnis · ${bf.mode === "execute" ? "KO-Anreicherung ausführen" : "KO-Anreicherung Dry-Run"}:</p><pre class="ds-recovery-json">${escapeHtml(JSON.stringify(bf.result, null, 2).slice(0, 4000))}</pre>`
     : "";
   return `
     <div class="adm-action-row">
@@ -2419,15 +2430,27 @@ function renderAdmQuellen() {
     ${admCard("Klumpenrisiko & Messläufe", "Google-News-Anteil aus crawlRuns.providerBreakdown — Telemetrie-Lesepfad existiert noch nicht", riskTiles)}
     ${admCard("Watchdog", "Externe Wächter (GitHub Actions) — Zustand aus den Workflow-Dateien gelesen", watchdogRows)}
     ${admCard("Problematische Abrufwege", "Defekte zuerst — mit konkreter Handlungsempfehlung",
-      problemRows ? admTableShell("qw-problems", ["Abrufweg", "Methode", "Status", "Fehlerserie", "Letzter Erfolg", "Letzter Fehler", "Empfehlung"], problemRows) : admEmpty("Aktuell keine problematischen Abrufwege — alle Wege gesund oder archiviert."))}
+      problemRows
+        ? `${admTableShell("qw-problems", ["Abrufweg", "Methode", "Status", "Fehlerserie", "Letzter Erfolg", "Letzter Fehler", "Empfehlung"], problemRows)}<p class="adm-note">Status stammt aus der <strong>Quellen-Architektur</strong> (retrieval_paths). Wege mit <strong>Fehlerserie 0 und ohne letzten Erfolg/Fehler</strong> sind so konfiguriert, nicht beobachtet ausgefallen — der aktive Crawl kann davon abweichen (siehe Fehlerquote in „Klumpenrisiko & Messläufe").</p>`
+        : admEmpty("Aktuell keine problematischen Abrufwege — alle Wege gesund oder archiviert."))}
     ${admCard("Quellendetail", "Herausgeber → Abrufwege", publisherRows || admEmpty("Keine Herausgeber hinterlegt."))}
     `}
   `;
 }
 
 function admSourceEmpfehlung(p) {
-  if (p.status === "broken") return "Reparieren oder ersetzen — liefert nicht mehr.";
-  if (p.status === "degraded") return p.fehlerserie >= 5 ? "Beobachten; bei anhaltender Fehlerserie ersetzen." : "Beobachten.";
+  // Beleg = tatsaechlicher Abruf-Verlauf: eine Fehlerserie, ein letzter Fehler
+  // oder je ein letzter Erfolg. Ohne jeden Verlauf (Fehlerserie 0, kein letzter
+  // Fehler, kein letzter Erfolg) darf NICHT "liefert nicht mehr" behauptet werden
+  // — der Weg hat nie geliefert; der Status stammt aus der Konfiguration, nicht
+  // aus einem beobachteten Ausfall (ehrliche Empfehlung statt Fehlalarm).
+  const hatVerlauf = (Number(p.fehlerserie) || 0) > 0 || Boolean(p.letzterFehler) || Boolean(p.letzterErfolg);
+  if (p.status === "broken") {
+    return hatVerlauf
+      ? "Reparieren oder ersetzen — liefert nicht mehr."
+      : "Als defekt hinterlegt, aber ohne Abruf-Verlauf — Konfiguration/Aktivierung prüfen (kein beobachteter Ausfall).";
+  }
+  if (p.status === "degraded") return (Number(p.fehlerserie) || 0) >= 5 ? "Beobachten; bei anhaltender Fehlerserie ersetzen." : "Beobachten.";
   if (p.status === "needs_review") return "Manuell prüfen (neu oder auffällig).";
   if (p.status === "paused") return "Pausiert — bei Bedarf reaktivieren.";
   return "Keine Aktion nötig.";
