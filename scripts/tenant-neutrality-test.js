@@ -258,9 +258,24 @@ const parse = (res) => { try { return JSON.parse(res.body); } catch { return {};
   check("Personenquelle folgt fuer JEDE ID der Bestandskonvention <id>-news (dynamisch aus dem Profil)",
     Boolean(personSource) && personSource.id === `${testPoliticianOne.id}-news`);
   const catalog = require("../lib/helmut/quellenarchitektur/catalog");
-  check("Legacy-Mehrfachsuchen JEDES Mandats werden musterbasiert als orphan_legacy erklaert",
-    catalog.classifyOrphanId("beliebige-id-news-region") === "orphan_legacy"
-      && catalog.classifyOrphanId("test-mdb-news-region") === "orphan_test");
+  check("Kein Namensmuster klassifiziert lebende Mandatsquellen als Legacy (nur explizite Karten)",
+    catalog.classifyOrphanId("beliebige-id-news-region") === null
+      && catalog.classifyOrphanId("dip") === "active_uncatalogued");
+  const ssc = require("../lib/helmut/quellenarchitektur/supply-shadow-compare");
+  const supplyCmp = ssc.compareSupply({
+    altSourceIds: ["beliebige-id-news", "beliebige-id-news-region"],
+    newSourceIds: ["beliebige-id-news"],
+    consolidationBases: ["beliebige-id-news"]
+  });
+  check("Abgeloeste Mehrfachsuche wird NUR ueber deklarierte Konsolidierungsbasis erklaert",
+    supplyCmp.regression === false && supplyCmp.onlyAltExplained.some((e) => e.id === "beliebige-id-news-region"));
+  const supplyCmpStrict = ssc.compareSupply({
+    altSourceIds: ["beliebige-id-news", "beliebige-id-news-region"],
+    newSourceIds: ["beliebige-id-news"],
+    docsBySource: { "beliebige-id-news-region": 5 }
+  });
+  check("OHNE Deklaration bleibt der Wegfall eine echte, sichtbare Regression",
+    supplyCmpStrict.regression === true);
 
   // Aufraeumen der Fixture-Profile aus dem Main-Store.
   const finalStore = await storage.readStore("main");

@@ -176,14 +176,16 @@ console.log("== Migration: Orphans + defekte Pflichtquellen ==");
 // den beobachteten Bestandsdaten (hier: 12 kuenstliche Muster-IDs) — im Code steht kein
 // Mandant. Ohne Datenkontext bleibt nur der explizite Eintrag (dip).
 const observedOrphanIds = [
-  ...Array.from({ length: 8 }, (_, i) => `tenant-alpha-news-alt${i + 1}`),   // Muster orphan_legacy
-  ...Array.from({ length: 4 }, (_, i) => `test-politician-news-alt${i + 1}`) // Muster orphan_test
+  ...Array.from({ length: 8 }, (_, i) => `tenant-alpha-news-alt${i + 1}`),   // historische Bestands-IDs (Daten)
+  ...Array.from({ length: 4 }, (_, i) => `test-politician-news-alt${i + 1}`) // Test-Rueckstaende (Daten)
 ];
 const orphans = catalog.classifyOrphans(observedOrphanIds);
-check("13 Orphan-Eintraege klassifiziert (12 uebergebene Bestands-IDs + dip)", orphans.length === 13);
-check("8 Legacy + 4 Test + 1 aktiv-unkatalogisiert (DIP)", (() => {
+// KEIN Namensmuster mehr: historische Bestands-IDs klassifiziert der Aufrufer
+// ueber seine eigene Datenkarte; der Code kennt nur den expliziten dip-Eintrag.
+check("classifyOrphans klassifiziert uebergebene Bestands-IDs NICHT per Muster (nur dip explizit)", orphans.length === 1 && orphans[0].legacy_source_id === "dip");
+check("Historische Bestands-IDs bleiben unklassifiziert (kein Muster) — Zuordnung ist Datenkarte des Aufrufers", (() => {
   const c = orphans.reduce((a, o) => (a[o.classification] = (a[o.classification] || 0) + 1, a), {});
-  return c.orphan_legacy === 8 && c.orphan_test === 4 && c.active_uncatalogued === 1;
+  return !c.orphan_legacy && !c.orphan_test && c.active_uncatalogued === 1;
 })());
 check("ohne Datenkontext nur explizite Eintraege (dip)", (() => {
   const rows = catalog.classifyOrphans();

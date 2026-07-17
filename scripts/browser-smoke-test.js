@@ -74,6 +74,12 @@ function check(name, cond, detail = "") {
   delete process.env.HELMUT_AUTH_MODE;
   delete process.env.OPENAI_API_KEY;
   delete process.env.AZURE_OPENAI_KEY;
+  // Mandantenneutralisierung: Es gibt keinen Code-Standardmandanten mehr — das
+  // Pilotgate braucht ein KONFIGURIERTES Mandat + gespeichertes Profil (wie in
+  // Production, dort via Vercel-Env + Datenbank-Datensatz).
+  process.env.HELMUT_PILOT_TENANT_ID = "test-politician-one";
+  process.env.HELMUT_STORAGE_BACKEND = "local";
+  process.env.HELMUT_STORE_CACHE_MS = "0";
   const dataDir = path.join(root, ".helmut-data");
   const guarded = ["auth.json", "store.json", "p-test-politician-one.json"].map((name) => {
     const file = path.join(dataDir, name);
@@ -90,6 +96,10 @@ function check(name, cond, detail = "") {
   process.on("exit", restore);
 
   const handler = require(path.join(root, "server.js"));
+  // Profil des Test-Mandats als normalen Datensatz in den lokalen Store legen
+  // (die App laedt Profildaten ausschliesslich aus dem Store, nie aus Code).
+  const { testPoliticianOne } = require(path.join(root, "scripts", "fixtures", "test-profiles"));
+  await require(path.join(root, "lib", "helmut", "storage")).saveProfile({ ...testPoliticianOne });
   const server = http.createServer(handler);
   await new Promise((r) => server.listen(0, "127.0.0.1", r));
   const { port } = server.address();

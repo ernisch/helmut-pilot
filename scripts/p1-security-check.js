@@ -358,8 +358,8 @@ function staticChecks() {
     check("lageDisplayHeadline: sauberer Klausel-Schluss bleibt erhalten (kündigt an -> nicht 'kündigt')",
       /kündigt an$/.test(clause), clause);
     check("lageDisplayHeadline: erfindet nichts / verzerrt Person(Partei) nicht (Name bleibt, keine Partei-Ersetzung)",
-      /Heil/.test(headline("Minister Hubertus Heil (SPD) fordert höhere Löhne im Pflegebereich und mehr Tarifbindung"))
-      && !/^SPD\b/.test(headline("Minister Hubertus Heil (SPD) fordert höhere Löhne")));
+      /Mustermann/.test(headline("Minister Max Mustermann (SPD) fordert höhere Löhne im Pflegebereich und mehr Tarifbindung"))
+      && !/^SPD\b/.test(headline("Minister Max Mustermann (SPD) fordert höhere Löhne")));
     check("lageDisplayHeadline: kurzer, guter Titel bleibt unverändert",
       headline("Bürgergeld-Reform passiert den Bundesrat") === "Bürgergeld-Reform passiert den Bundesrat");
     check("lageDisplayHeadline: Roh-Ellipse der Quelle wird entfernt (kein '…')",

@@ -41,7 +41,7 @@ Sonderbehandlungen. Es gelten ab jetzt folgende Regeln:
 
 | Variable | Bedeutung | Ohne Wert |
 |---|---|---|
-| `HELMUT_PILOT_TENANT_ID` | Mandats-ID, die das Legacy-Pilotgate bedient und die mandantenbezogene Crons ohne Multi-Tenant-Flag verarbeiten. Muss ein existierendes Datenbank-Profil sein (wird je Cron-Lauf gegen die DB validiert). | Pilotgate-API → 503; Crons → Leerlauf (`skipped`) |
+| `HELMUT_PILOT_TENANT_ID` | Mandats-ID, die das Legacy-Pilotgate bedient und die mandantenbezogene Crons ohne Multi-Tenant-Flag verarbeiten. Muss ein existierendes, **aktives** Datenbank-Profil sein (wird je Cron-Lauf gegen die DB validiert). **Auch im Account-Modus nötig**, solange `HELMUT_CRON_MULTI_TENANT` aus ist — sonst laufen mandatsbezogene Crons leer. | Pilotgate-API → 503; Crons → Leerlauf (`skipped`) |
 | `HELMUT_CRON_MULTI_TENANT` | **Freigabepflichtig, Default AUS.** Mandantenbezogene Crons iterieren über alle aktiven DB-Mandate (Isolation je Mandat, Zeitbudget). | Einzel-Mandats-Betrieb über `HELMUT_PILOT_TENANT_ID` |
 | `HELMUT_PROTECTED_TENANT_IDS` | Optionale zusätzliche Schutzliste (Komma) für die Provisionierung. | Datengetriebener Schutz greift trotzdem |
 
@@ -51,9 +51,15 @@ Session + Zuweisungen, kein stiller Fallback.
 ## 3. Cron- und Hintergrundprozess-Inventur
 
 Alle Zeiten unverändert (vercel.json wurde nicht angefasst — keine
-Production-Cron-Änderung). „Mandanten aus DB“ = `resolveCronTenantIds`:
-Multi-Tenant-Flag AN → alle aktiven Profile; AUS → konfiguriertes Pilotmandat,
-gegen die DB validiert; nichts konfiguriert → Leerlauf.
+Production-Cron-Änderung). „Mandanten aus DB“ = `resolveCronTenants`:
+Multi-Tenant-Flag AN → alle **aktiven** Profile (deaktivierte/gelöschte nehmen
+nicht teil); AUS → konfiguriertes Pilotmandat, gegen die DB validiert (fehlend/
+deaktiviert → Leerlauf); nichts konfiguriert → Leerlauf. Jeder Leerlauf trägt
+einen **ehrlichen Grund** (`kein-mandant-konfiguriert`,
+`pilot-mandat-nicht-in-datenbank`, `pilot-mandat-deaktiviert`,
+`keine-aktiven-mandanten`); eine Ladestörung der Mandantenliste meldet
+`ok:false` + `mandanten-liste-nicht-ladbar` und schreibt einen Systemfehler —
+Monitoring kann sie von bewusstem Leerlauf unterscheiden.
 
 | Prozess (Zeit UTC) | Typ | Mandantenladung | 0 Mandanten | Fehlerhafter Mandant | Kostenbegrenzung | Protokollierung | Idempotenz |
 |---|---|---|---|---|---|---|---|
@@ -75,7 +81,16 @@ gegen die DB validiert; nichts konfiguriert → Leerlauf.
    gebaut und getestet, die Aktivierung ist eine Kosten-/Betriebsentscheidung.
 2. `HELMUT_TENANT_LLM_CAP` (per-Mandant-Kostendeckel) bleibt AUS (bestehender
    Freigabepunkt).
-3. Bekannte Grenzen im (noch nicht freigegebenen) Multi-Tenant-Betrieb:
+3. Adversariale Gegenprüfung (umgesetzt): Bestandsschutz der Provisionierung ist
+   fail-closed (Lesestörung ⇒ geschützt); Orphan-Klassifikation kennt KEIN
+   Namensmuster (lebende Mandatsquellen `<id>-news-<suffix>` können nicht als
+   Legacy maskiert werden — Zuordnung historischer IDs ist eine explizite
+   Datenkarte des Aufrufers, Konsolidierung nur über deklarierte Basen);
+   DSGVO-Export/-Löschung erfasst eigene Personen-Rohdaten auch über den
+   relationalen Abrufweg-Alias (`rp-<id>-news`); `lage-check` hat wieder ein
+   hartes Gesamt-Timeout (280 s); `morning-briefing` beliefert bei aktivem
+   Multi-Tenant-Flag alle Mandate.
+4. Bekannte Grenzen im (noch nicht freigegebenen) Multi-Tenant-Betrieb:
    `pipeline-status` meldet den letzten Lauf global (nicht je Mandat), und das
    globale Understanding-Budget ist nicht fair je Mandat verteilt (ein
    quellenstarker Mandant kann es aufbrauchen). Beides ist erst bei

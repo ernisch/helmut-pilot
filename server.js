@@ -759,7 +759,10 @@ async function handleRequest(request, response) {
       // Betreiber-Entscheidung (zusaetzliche Build-Laeufe, 0 KI — der Briefing-Build
       // ist eine reine Lese-Transformation; Push nur bei echtem Inhalt).
       const flagOn = (v) => ["1", "true", "on", "yes"].includes(String(v || "").trim().toLowerCase());
-      if (flagOn(process.env.HELMUT_MORNING_PUSH_ALL_PROFILES)) {
+      // Multi-Profil laeuft mit dem briefing-eigenen Flag ODER dem globalen
+      // Multi-Tenant-Cron-Flag — sonst wuerde bei aktivem HELMUT_CRON_MULTI_TENANT
+      // nur der alphabetisch erste Mandant beliefert (Review-Befund).
+      if (flagOn(process.env.HELMUT_MORNING_PUSH_ALL_PROFILES) || tenantContext.cronMultiTenantEnabled()) {
         const deadline = t0 + 240000; // 240s < maxDuration 300s: Cron antwortet IMMER
         let profiles = await listProfiles().catch(() => []);
         if (!Array.isArray(profiles)) profiles = [];
@@ -792,11 +795,11 @@ async function handleRequest(request, response) {
       }
       // Standardzweig (Multi-Profil-Flag aus): Mandat aus der Cron-Mandanten-
       // aufloesung (Datenbank/Env) — kein Request-/Code-Default.
-      const morningTenantIds = await tenantContext.resolveCronTenantIds();
-      if (!morningTenantIds.length) {
-        return { ok: true, skipped: true, reason: "kein-mandant-konfiguriert", hinweis: "HELMUT_PILOT_TENANT_ID setzen oder HELMUT_MORNING_PUSH_ALL_PROFILES aktivieren." };
+      const morningResolved = await tenantContext.resolveCronTenants();
+      if (!morningResolved.tenantIds.length) {
+        return { ok: morningResolved.reason !== "mandanten-liste-nicht-ladbar", skipped: true, reason: morningResolved.reason, tenants: 0, results: [], hinweis: "HELMUT_PILOT_TENANT_ID setzen oder HELMUT_MORNING_PUSH_ALL_PROFILES aktivieren." };
       }
-      const morningTenantId = morningTenantIds[0];
+      const morningTenantId = morningResolved.tenantIds[0];
       const profile = await activeProfile(morningTenantId);
       // V3: das Briefing entsteht frisch aus den aktuellen Knowledge Objects (0 KI) —
       // kein V2-runMorningBriefing mehr. Beide Schritte (Build + Push) hart begrenzt,
@@ -878,9 +881,10 @@ async function handleRequest(request, response) {
     return handleAsync(response, async () => {
       // Der operative Report ist mandantenbezogen: Mandat kommt aus der
       // Cron-Mandantenaufloesung (Datenbank/Env), nicht aus einem Code-Default.
-      const healthTenantIds = await tenantContext.resolveCronTenantIds();
+      const healthResolved = await tenantContext.resolveCronTenants();
+      const healthTenantIds = healthResolved.tenantIds;
       if (!healthTenantIds.length) {
-        return { ok: true, skipped: true, reason: "kein-mandant-konfiguriert", hinweis: "HELMUT_PILOT_TENANT_ID setzen oder Mandate anlegen." };
+        return { ok: healthResolved.reason !== "mandanten-liste-nicht-ladbar", skipped: true, reason: healthResolved.reason, tenants: 0, results: [], hinweis: "HELMUT_PILOT_TENANT_ID setzen oder Mandate anlegen." };
       }
       // Ein Report je Lauf: erster aufgeloester Mandant (Single-Tenant-Betrieb:
       // exakt das konfigurierte Pilotmandat; Multi-Tenant-Aggregation ist bewusst
@@ -946,15 +950,18 @@ async function handleRequest(request, response) {
     return handleAsync(response, async () => {
       const t0 = Date.now();
       // Mandate aus der Datenbank; je Mandat Check + Push, isoliert und zeitbudgetiert.
-      const summary = await runCronForTenants("lage-check", async (tenantId) => {
+      // Aeusseres Gesamt-Timeout 280s < maxDuration 300s: die Antwort kommt IMMER,
+      // auch wenn ein einzelner Mandats-Check sein Einzelbudget ausschoepft.
+      const summary = await withTimeout(runCronForTenants("lage-check", async (tenantId) => {
         const profile = await activeProfile(tenantId);
         const lageCheck = await withTimeout(runLageCheck(tenantId), 240000, "cron-lage-check")
           .catch((error) => ({ status: "stable", bounded: true, reason: "lage-check-timeout", error: error && error.message }));
         const push = await withTimeout(sendLageChangePush(lageCheck, profile), 30000, "cron-lage-push")
           .catch((error) => ({ ok: false, reason: "push-timeout", error: error && error.message }));
         return { lageCheck, push };
-      }, { deadlineMs: 270000 });
-      console.log(`[cron/lage-check] ${Date.now() - t0}ms tenants=${summary && summary.tenants}`);
+      }, { deadlineMs: 240000 }), 280000, "cron-lage-check-gesamt")
+        .catch((error) => ({ ok: false, bounded: true, reason: "lage-check-timeout", error: error && error.message }));
+      console.log(`[cron/lage-check] ${Date.now() - t0}ms tenants=${summary && summary.tenants} bounded=${Boolean(summary && summary.bounded)}`);
       return summary;
     });
   }
@@ -4382,6 +4389,8 @@ async function buildPipelineRecoveryStatus() {
 
 async function buildAdminDataStatus({ perAccountLimit = 25 } = {}) {
   const radar = require("./lib/helmut/radar");
+  // Requestkonstant — einmal berechnen statt je Account (Konto-Typ-Anzeige unten).
+  const pilotTenantIdForStatus = tenantContext.configuredPilotTenantId();
   const [users, statsToday, crawlReport, latestCrawl, crawlRuns, recentErrors, catalogQuality, quarantineStats, kiStatus] = await Promise.all([
     accounts.listUsers().catch(() => []),
     getAdminStatsOverview({ days: 1 }).catch(() => null),
@@ -4472,7 +4481,7 @@ async function buildAdminDataStatus({ perAccountLimit = 25 } = {}) {
       aktiv: !(profile && profile.profileActive === false),
       // Konto-Typ NUR wenn sicher ermittelbar (nicht raten): das Pilot-/Demo-Seed-Mandat
       // Konfiguriertes Pilotmandat -> "Pilot"; sonst ein evtl. vorhandenes explizites Flag; sonst null.
-      kontoTyp: (tenantContext.configuredPilotTenantId() && id === tenantContext.configuredPilotTenantId()) ? "Pilot" : (u.kontoTyp || u.accountKind || u.kind || null),
+      kontoTyp: (pilotTenantIdForStatus && id === pilotTenantIdForStatus) ? "Pilot" : (u.kontoTyp || u.accountKind || u.kind || null),
       ampel: dsAccountAmpel({ level: comp.level, restricted: comp.restricted || comp.empty, hasBriefing })
     });
   }
@@ -4721,14 +4730,10 @@ function blankProfile(id) {
   };
 }
 
-// JEDES Mandat erhaelt die neutrale blankProfile-Basis; gespeicherte Felder
-// ueberschreiben sie. Es gibt kein Demo-Mandat mit Sonder-Defaults mehr.
-function baseProfileFor(id) {
-  return blankProfile(id);
-}
-
 function mergeProfileDefaults(profile) {
-  const base = baseProfileFor(profile.id);
+  // JEDES Mandat erhaelt die neutrale blankProfile-Basis; gespeicherte Felder
+  // ueberschreiben sie. Es gibt kein Demo-Mandat mit Sonder-Defaults mehr.
+  const base = blankProfile(profile.id);
   return {
     ...base,
     ...profile,
@@ -4870,11 +4875,9 @@ function budgetCentValue(value, fallback) {
 function politicianIdFromUrl(url) {
   // KEIN Personen-Fallback: ohne Parameter greift hoechstens das konfigurierte
   // Pilotmandat (Betreiber-Env), sonst "" -> Aufrufer muessen sicher abbrechen.
-  return String(url.searchParams.get("politicianId") || url.searchParams.get("profileId") || "")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, "-")
-    .replace(/^-|-$/g, "") || tenantContext.configuredPilotTenantId();
+  // EINE Slug-Logik fuer Mandats-IDs (tenant-context), keine Inline-Kopie.
+  return tenantContext.slugifyTenantId(url.searchParams.get("politicianId") || url.searchParams.get("profileId"))
+    || tenantContext.configuredPilotTenantId();
 }
 
 function readableNameFromId(id) {
@@ -4975,10 +4978,17 @@ function sendPilotNotConfigured(response) {
 // gemeldet (der naechste Lauf holt sie nach; die Einzelschritte sind idempotent).
 async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000 } = {}) {
   const startedMs = Date.now();
-  const tenantIds = await tenantContext.resolveCronTenantIds();
+  const { tenantIds, reason } = await tenantContext.resolveCronTenants();
   if (!tenantIds.length) {
-    console.warn(`[cron/${cronName}] uebersprungen: kein Mandant konfiguriert/aktiv (HELMUT_PILOT_TENANT_ID bzw. HELMUT_CRON_MULTI_TENANT pruefen).`);
-    return { ok: true, skipped: true, reason: "kein-mandant-konfiguriert", tenants: 0, results: [] };
+    // EHRLICHER Grund statt pauschalem "nicht konfiguriert": eine Ladestoerung
+    // (Blob/DB nicht erreichbar) meldet ok:false, damit Monitoring sie von einem
+    // bewussten Leerlauf unterscheiden kann.
+    const ladeStoerung = reason === "mandanten-liste-nicht-ladbar";
+    console[ladeStoerung ? "error" : "warn"](`[cron/${cronName}] uebersprungen: ${reason} (HELMUT_PILOT_TENANT_ID bzw. HELMUT_CRON_MULTI_TENANT pruefen).`);
+    if (ladeStoerung) {
+      await accounts.recordSystemError({ scope: `cron-${cronName}`, message: "Mandantenliste nicht ladbar — Cron-Lauf uebersprungen.", path: `/api/cron/${cronName}` }).catch(() => {});
+    }
+    return { ok: !ladeStoerung, skipped: true, reason, tenants: 0, results: [] };
   }
   const deadline = startedMs + deadlineMs;
   const results = [];
@@ -5067,6 +5077,10 @@ function isDebugSecretOk(request, url) {
 
 async function handleDebugRequest(request, response, url) {
   const politicianId = politicianIdFromUrl(url);
+  // Ohne ?politicianId und ohne konfiguriertes Pilotmandat gibt es keinen
+  // Mandantenkontext: klarer 503-Zustand statt generischem 500 (der zudem die
+  // systemErrors-Metrik verschmutzen wuerde, die Health-Report/Watchdog lesen).
+  if (!politicianId) return sendPilotNotConfigured(response);
 
   // ZUSTANDSAENDERNDE Debug-Endpunkte nur per POST (Review-Fix, Phase 9):
   // Sie schreiben in Store/DB, stossen Crawls/KI-Laeufe an oder heben Sperren/

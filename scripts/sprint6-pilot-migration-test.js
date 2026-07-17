@@ -19,17 +19,14 @@ function check(name, cond) { if (cond) { pass += 1; console.log(`PASS  ${name}`)
 const cat = buildCatalog();
 
 console.log("== Orphan-Klassifikation: musterbasiert, kein Mandant im Code ==");
-check("'<id>-news-<suffix>' -> orphan_legacy (Muster)", classifyOrphanId("tenant-alpha-news-region") === "orphan_legacy");
-check("'test-…-news-<suffix>' -> orphan_test (Muster)", classifyOrphanId("test-politician-news-alt") === "orphan_test");
+check("KEIN Namensmuster: '<id>-news-<suffix>' wird NICHT automatisch als Legacy maskiert (lebende Mandatsquellen!)", classifyOrphanId("tenant-alpha-news-region") === null);
+check("KEIN Namensmuster: 'test-…' wird NICHT automatisch klassifiziert", classifyOrphanId("test-politician-news-alt") === null);
 check("'dip' -> active_uncatalogued (einziger expliziter Eintrag)", classifyOrphanId("dip") === "active_uncatalogued");
 check("Personenquelle selbst ('<id>-news') ist KEIN Orphan", classifyOrphanId("tenant-alpha-news") === null);
 check("EXPLICIT_ORPHAN_CLASSIFICATION enthaelt NUR dip", JSON.stringify(Object.keys(EXPLICIT_ORPHAN_CLASSIFICATION)) === JSON.stringify(["dip"]));
-check("classifyOrphans klassifiziert UEBERGEBENE IDs (+ explizite); Unbekanntes faellt raus", (() => {
+check("classifyOrphans klassifiziert NUR explizite Eintraege; Unbekanntes/Muster faellt raus", (() => {
   const rows = classifyOrphans(["tenant-alpha-news-region", "test-politician-news-alt", "voellig-unbekannt"]);
-  return rows.length === 3
-    && rows.some((r) => r.legacy_source_id === "tenant-alpha-news-region" && r.classification === "orphan_legacy")
-    && rows.some((r) => r.legacy_source_id === "test-politician-news-alt" && r.classification === "orphan_test")
-    && rows.some((r) => r.legacy_source_id === "dip" && r.classification === "active_uncatalogued");
+  return rows.length === 1 && rows[0].legacy_source_id === "dip" && rows[0].classification === "active_uncatalogued";
 })());
 check("classifyOrphans ohne Datenkontext: nur dip", (() => { const rows = classifyOrphans(); return rows.length === 1 && rows[0].legacy_source_id === "dip"; })());
 
@@ -43,36 +40,39 @@ check("strukturell verdict=ok", vStruct.verdict === "ok");
 console.log("== Migrations-Mapper: Datenverlust-Erkennung (injizierte observed) ==");
 const observed = [
   { source_id: "bundestag", source_name: "Deutscher Bundestag", count: 120 },              // gemappt
-  { source_id: "tenant-alpha-news-region", source_name: "Test Politician One", count: 8 }, // orphan_legacy (Muster)
-  { source_id: "test-politician-news-alt", source_name: "Test", count: 0 },                // orphan_test (Muster)
+  { source_id: "tenant-alpha-news-region", source_name: "Test Politician One", count: 8 }, // orphan_legacy (explizite Karte unten)
+  { source_id: "test-politician-news-alt", source_name: "Test", count: 0 },                // orphan_test (explizite Karte unten)
   { source_id: "geister-quelle-x", source_name: "Unbekannt", count: 42 }                   // unerklärt + Docs!
 ];
-const vObs = mm.validateMigration({ catalog: cat, observedSources: observed });
+// Orphan-Wissen ist DATEN des Aufrufers: explizite Karte statt Namensmuster.
+const ORPHAN_MAP = { "tenant-alpha-news-region": "orphan_legacy", "test-politician-news-alt": "orphan_test" };
+const vObs = mm.validateMigration({ catalog: cat, orphanClassification: ORPHAN_MAP, observedSources: observed });
 check("availability.observedSources=true bei Injektion", vObs.availability.observedSources === true);
 check("gemappte Quelle erkannt (bundestag)", vObs.mappedObserved.some((m) => m.source_id === "bundestag"));
-check("orphan_legacy + orphan_test erkannt (musterbasiert)", vObs.counts.orphan === 2 && vObs.orphanObserved.some((o) => o.classification === "orphan_legacy") && vObs.orphanObserved.some((o) => o.classification === "orphan_test"));
+check("orphan_legacy + orphan_test erkannt (explizite Karte)", vObs.counts.orphan === 2 && vObs.orphanObserved.some((o) => o.classification === "orphan_legacy") && vObs.orphanObserved.some((o) => o.classification === "orphan_test"));
 check("unerklärte Quelle MIT Dokumenten -> verdict kritisch (Datenverlust-Risiko)", vObs.verdict === "kritisch" && vObs.counts.unexplainedWithDocs === 1);
 check("die unerklärte Quelle ist geister-quelle-x", vObs.unexplainedObserved.length === 1 && vObs.unexplainedObserved[0].source_id === "geister-quelle-x");
 
 console.log("== Migrations-Mapper: unerklärt OHNE Dokumente -> nur Warnung ==");
-const vWarn = mm.validateMigration({ catalog: cat, observedSources: [{ source_id: "leiche-ohne-docs", source_name: "X", count: 0 }] });
+const vWarn = mm.validateMigration({ catalog: cat, orphanClassification: ORPHAN_MAP, observedSources: [{ source_id: "leiche-ohne-docs", source_name: "X", count: 0 }] });
 check("unerklärt ohne Dokumente -> verdict warnungen (kein Datenverlust)", vWarn.verdict === "warnungen" && vWarn.counts.unexplainedWithDocs === 0);
 
 console.log("== Migrations-Mapper: alles erklärt -> ok ==");
-const vOk = mm.validateMigration({ catalog: cat, observedSources: [{ source_id: "bundestag", source_name: "Deutscher Bundestag", count: 5 }, { source_id: "tenant-alpha-news-region", source_name: "Test Politician One", count: 3 }] });
+const vOk = mm.validateMigration({ catalog: cat, orphanClassification: ORPHAN_MAP, observedSources: [{ source_id: "bundestag", source_name: "Deutscher Bundestag", count: 5 }, { source_id: "tenant-alpha-news-region", source_name: "Test Politician One", count: 3 }] });
 check("nur gemappte/orphan -> verdict ok", vOk.verdict === "ok" && vOk.counts.unexplained === 0);
 
 console.log("== Migrations-Mapper: Namensdrift nur informativ (kein Fehler) ==");
-const vDrift = mm.validateMigration({ catalog: cat, observedSources: [{ source_id: "bundestag", source_name: "VÖLLIG ANDERER NAME", count: 3 }] });
+const vDrift = mm.validateMigration({ catalog: cat, orphanClassification: ORPHAN_MAP, observedSources: [{ source_id: "bundestag", source_name: "VÖLLIG ANDERER NAME", count: 3 }] });
 check("Namensdrift erfasst, ändert verdict NICHT (bleibt ok)", vDrift.counts.nameDrift === 1 && vDrift.verdict === "ok");
 
 console.log("== Versorgungs-Vergleich: erklärte Konsolidierung vs. Regression ==");
 const cmpClean = cs.compareSupply({
   altSourceIds: ["bundestag", "tenant-alpha-news", "tenant-alpha-news-region", "die-linke"],
-  newSourceIds: ["bundestag", "tenant-alpha-news", "die-linke", "dip"]
+  newSourceIds: ["bundestag", "tenant-alpha-news", "die-linke", "dip"],
+  consolidationBases: ["tenant-alpha-news"]
 });
 check("both = gemeinsame Quellen (bundestag/tenant-alpha-news/die-linke)", cmpClean.bothCount === 3);
-check("onlyAlt tenant-alpha-news-region als orphan_legacy erklärt (Muster, keine explizite Karte)", cmpClean.onlyAltExplained.some((e) => e.id === "tenant-alpha-news-region" && e.reason === "orphan_legacy"));
+check("onlyAlt tenant-alpha-news-region ueber DEKLARIERTE Konsolidierungsbasis erklärt", cmpClean.onlyAltExplained.some((e) => e.id === "tenant-alpha-news-region" && e.reason === "konsolidiert"));
 check("onlyNew = dip (Gewinn)", cmpClean.onlyNew.includes("dip"));
 check("kein unerklärter Wegfall -> keine Regression", cmpClean.regression === false && cmpClean.verdict === "erklaerte_konsolidierung");
 

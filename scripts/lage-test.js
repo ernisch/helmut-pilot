@@ -122,7 +122,7 @@ async function run() {
       // Whitespace, Leerstring) zum Prüfen der Normalisierung in cleanStringList.
       parteien: ["SPD", "  spd  ", "", "Die Linke"],
       ministerien: ["BMAS"],
-      mentioned_people: ["Hubertus Heil", null],
+      mentioned_people: ["Test Politician Two", null],
       mentioned_parties: ["CDU"]
     };
     const docs = [
@@ -152,7 +152,7 @@ async function run() {
     // und Duplikate (case-insensitiv), erfindet aber NIE neue Namen.
     ok("parteien normalisiert (dedupe + trim, leere raus)", JSON.stringify(card.parteien) === JSON.stringify(["SPD", "Die Linke"]));
     ok("ministerien 1:1 durchgereicht", JSON.stringify(card.ministerien) === JSON.stringify(["BMAS"]));
-    ok("mentionedPeople bereinigt (null raus)", JSON.stringify(card.mentionedPeople) === JSON.stringify(["Hubertus Heil"]));
+    ok("mentionedPeople bereinigt (null raus)", JSON.stringify(card.mentionedPeople) === JSON.stringify(["Test Politician Two"]));
     ok("mentionedParties 1:1 durchgereicht", JSON.stringify(card.mentionedParties) === JSON.stringify(["CDU"]));
     ok("createdAt 1:1 durchgereicht", card.createdAt === "2025-06-12T08:30:00Z");
     ok("keine Betroffene erfunden (leere Gruppen bleiben leer)", card.mentionedCommittees.length === 0 && card.mentionedMinistries.length === 0);
