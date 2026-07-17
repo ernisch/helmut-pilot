@@ -124,8 +124,36 @@ Fehler. Die **substanzielle** Understanding-Laufzeit steckt in den eager-Batches
 Cron (nächste Chance: 05:30-Understanding-Cron) nachgeholt werden — Test der Zusicherung
 „zurückgestellt = idempotent beim nächsten Lauf nachgeholt". Wird im Morgenzyklus geprüft.
 
-<!-- LAUF-PLATZHALTER: Lauf 4 (Crawl 04:00 UTC), Morgenzyklus (05:00–06:00 UTC),
-     Überschneidungsfenster, 05:30-Understanding (Nachholung der 20 deferred). -->
+### Lauf 4 — Crawl (natürlicher 04:00-UTC-Cron) — zugleich B1-Gegenprobe
+
+| Feld | Gemessener Wert |
+|---|---|
+| runId | `crawl-20260717040100-mb1k6` |
+| Startzeit (UTC) | 2026-07-17 04:01:00 (Crawl-Lock `locked_at`) |
+| Endzeit (UTC) | 2026-07-17 04:03:50 (crawlRun gespeichert) |
+| **Gesamtdauer** | **170 106 ms (~2 min 50 s)**, `sourceMode=on` |
+| Quellenzahl (geprüft) | **145** |
+| Erfolgreiche Quellen | **145** ✅ |
+| Fehlgeschlagene Quellen | **0** ✅ |
+| Neue Dokumente | `newRawDocuments=820`, `savedItems=892`; **Netto `raw_documents` = +61** (6008→6069) |
+| Duplikate | 120 (`crawlRun.duplicates`); `loadedItems=1762`, `discardedItems=750`, Telemetrie `sum(new_documents)=880`, `sum(duplicate)=146` |
+| Understanding verarbeitet | **50** |
+| Understanding zurückgestellt | **32** |
+| **Lock-Nutzung** | **ATOMISCH (relational), live gefangen** (04:02:00). `crawl-cem-ince` token `c80be957-1e00-45de-b0a9-578069b4653e` (04:01:00 → 04:16:00). Blob nicht genutzt; nach Abschluss `pipeline_locks`=0 → saubere Freigabe. Eager-Understanding-processRun +1 (5). |
+| Fehler in systemErrors | **0 neue** (59 → 59) |
+| Telemetrie-Zeilen | **145** (`run_id=mb1k6`), `status ok=145 / not_ok=0`, Fehlercodes: **nur `ok` ×145** |
+| Quellenlaufzeiten `duration_ms` | **Min 131 · Median 2397 · Ø 2421 · p95 4397 · Max 7234 ms** (gesund). Fetch-Fenster 04:01:01.713–04:01:21.826 (~20,1 s). |
+| Kategorien | offiziell 78 · medien 48 · partei_fraktion 12 · regional 5 · profil 2 = 145, alle `ok`; `googleUrlResolution` 1766/1770 |
+
+**Bewertung Lauf 4:** **Gesunder Crawl, 145/145, 0 Fehler** — und die entscheidende
+**B1-Gegenprobe: das Rate-Limiting ist weg.** Nach langer Google-News-Pause (letzter Crawl
+20:00) liefen alle 145 Quellen inkl. voller Google-URL-Auflösung (1766/1770) durch. Die
+Pro-Quellen-Laufzeiten decken sich fast exakt mit dem gesunden Lauf 1 (Ø 2421 vs. 2433,
+Median 2397 vs. 2375). **B1 war sehr wahrscheinlich ein volumeninduzierter Einmaleffekt**
+(3 Vollcrawls in ~4 h), kein Dauerproblem. Locks/Telemetrie erneut sauber bestätigt.
+
+<!-- LAUF-PLATZHALTER: Morgenzyklus (05:00 briefing / 05:30 understanding / 05:45 lage-briefing /
+     06:00 health-report), Überschneidungsfenster, Nachholung der deferred Docs. -->
 
 ---
 
@@ -144,6 +172,14 @@ Cron (Lauf 2). Der Normalplan sieht ~2 Crawls/Tag vor (04:00/20:00). Das verdrei
 Google-News-Anfragevolumen in diesem Fenster hat die Drosselung sehr wahrscheinlich
 mitausgelöst. Der 04:00-Crawl (Lauf 4) — nach langer Google-News-Pause — ist der ehrliche
 Test, ob dies ein volumeninduzierter Einmaleffekt oder ein Dauerproblem ist.
+
+**GEGENPROBE-ERGEBNIS (Lauf 4, `mb1k6`, 04:00 UTC):** **Rate-Limiting weg.** 145/145 Quellen
+erfolgreich, 0 Fehler, volle Google-URL-Auflösung (1766/1770), Pro-Quellen-Laufzeiten wie im
+gesunden Lauf 1. Damit ist B1 sehr wahrscheinlich **volumeninduziert und transient** (Auslöser:
+3 Vollcrawls in ~4 h), **kein Dauerproblem**. **Bleibende Empfehlung (kein Blocker):** Das
+Google-News-Klumpenrisiko besteht latent fort — bei erhöhtem Crawl-Volumen (z. B. mehreren
+manuellen Läufen) kann es erneut auftreten; die Audit-Minderung (Direkt-RSS statt Google-News)
+senkt es dauerhaft. Für den Normalbetrieb (~2 Crawls/Tag, weit gespreizt) ist der Pfad gesund.
 
 **Warum 0 neue `systemErrors`:** Per-Quelle-Fetchfehler (Rate-Limit/Timeout) landen bewusst in
 `crawlRun.errors[]` (inhaltsfrei klassifiziert) **und** in `source_crawl_telemetry` (mit
@@ -168,6 +204,11 @@ Kennwerte sonst verzerren.
 |---|---|---|---|---|---|---|---|---|
 | `crawl-20260716182458-il02g` (Lauf 1) | 145 | 145 | 0 | 2433 | 2375 | 191 | 7048 | gesund |
 | `crawl-20260716200114-v268f` (Lauf 2) | 145 | 16 | 129 | 6803 | 7294 | 24 | 14189 | degradiert (Rate-Limit, B1) |
+| `crawl-20260717040100-mb1k6` (Lauf 4) | 145 | 145 | 0 | 2421 | 2397 | 131 | 7234 | gesund (B1-Gegenprobe: erholt) |
+
+**Gesunder Pro-Quellen-Baseline (Läufe 1 & 4, 290 Quellenabrufe):** Ø ~2427 ms · Median ~2386 ms
+· Min 131 ms · Max 7234 ms. Der degradierte Lauf 2 (timeoutgetrieben) ist bewusst getrennt
+ausgewiesen und fließt nicht in den gesunden Baseline ein.
 
 ---
 
@@ -271,4 +312,4 @@ geprüftem Überschneidungsfenster)._
 
 ---
 
-_Letzte Aktualisierung: 2026-07-16 (nach Lauf 3, Understanding-Cron). Fortschreibung erfolgt fortlaufend._
+_Letzte Aktualisierung: 2026-07-17 (nach Lauf 4, 04:00-Crawl; 3 Crawls dokumentiert, B1-Gegenprobe erholt). Morgenzyklus folgt._
