@@ -120,7 +120,10 @@ const updateSeenStorageKey = "helmut:lastSeenUpdatesAt";
 const officeSeenStorageKey = "helmut:lastSeenOfficeAt";
 const helmutSeenStorageKey = "helmut:lastSeenHelmutAt";
 const pushEnabledStorageKey = "helmut:pushEnabled";
-let activePoliticianId = "cem-ince";
+// KEIN Standardmandant im Client: Das aktive Mandat kommt aus URL-Parameter,
+// Session (Account-Modus) oder der Server-Antwort (/api/app/start) — der Server
+// loest das Pilotgate-Mandat ausschliesslich aus seiner Konfiguration auf.
+let activePoliticianId = "";
 let previewMode = false;
 
 // Account-Modus (HELMUT_AUTH_MODE=accounts). Bleibt null im Legacy-Pilotmodus,
@@ -395,7 +398,9 @@ async function loadBriefing() {
   briefingRefreshing = true;
   try {
   const params = new URLSearchParams(window.location.search);
-  activePoliticianId = sanitizePoliticianId(params.get("politicianId") || params.get("profileId") || "cem-ince");
+  // URL-Parameter > zuletzt bekanntes Mandat (nur fuer stabile lokale Schluessel;
+  // die AUTORISIERUNG liegt immer beim Server) > leer (Server entscheidet).
+  activePoliticianId = sanitizePoliticianId(params.get("politicianId") || params.get("profileId") || lastKnownPoliticianId());
   previewMode = isPreviewModeParam(params);
 
   // Account-Modus erkennen: /api/auth/session ist nur dort eine JSON-Antwort.
@@ -463,6 +468,12 @@ async function loadBriefing() {
 
 function applyStartPayload(startPayload) {
   profile = startPayload.profile || {};
+  // Serverseitig aufgeloestes Mandat uebernehmen (Quelle der Wahrheit) und fuer
+  // stabile lokale Schluessel merken.
+  if (profile.id) {
+    activePoliticianId = sanitizePoliticianId(profile.id) || activePoliticianId;
+    rememberPoliticianId(activePoliticianId);
+  }
   briefing = startPayload.briefing || {};
   briefing.items = Array.isArray(briefing.items) ? briefing.items : [];
   briefing.tasks = Array.isArray(briefing.tasks) ? briefing.tasks : [];
@@ -5853,7 +5864,7 @@ function renderHelmutHeader() {
         <p>Du hast ${escapeHtml(madeText)}. ${escapeHtml(remainText)}</p>
       </header>`;
   }
-  const greeting = timeGreeting(firstName); // enthält bereits den Punkt, z. B. "Guten Morgen, Cem."
+  const greeting = timeGreeting(firstName); // enthält bereits den Punkt, z. B. "Guten Morgen, <Vorname>."
   // Einleitung an die TATSÄCHLICHEN Zahlen koppeln (keine falsche Dringlichkeit):
   // nur bei echten Handeln-Vorgängen "kümmern"; sonst "beobachten, aktives Handeln nicht nötig".
   const introCounts = { handeln: 0, beobachten: 0, ignorieren: 0 };
@@ -11976,11 +11987,30 @@ async function logDecisionInteraction(type, decision, extra = {}) {
 }
 
 function sanitizePoliticianId(value) {
-  return String(value || "cem-ince")
+  // Leerer/ungueltiger Wert bleibt leer — es gibt KEIN eingebautes Ersatzmandat.
+  return String(value || "")
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9-]+/g, "-")
-    .replace(/^-|-$/g, "") || "cem-ince";
+    .replace(/^-|-$/g, "");
+}
+
+// Zuletzt vom Server bestaetigtes Mandat (nur Komfort fuer lokale Cache-/
+// Einstellungs-Schluessel ueber Reloads hinweg; niemals eine Berechtigung).
+const lastPoliticianIdStorageKey = "helmut:lastPoliticianId";
+function lastKnownPoliticianId() {
+  try {
+    return sanitizePoliticianId(window.localStorage.getItem(lastPoliticianIdStorageKey) || "");
+  } catch {
+    return "";
+  }
+}
+function rememberPoliticianId(id) {
+  try {
+    if (id) window.localStorage.setItem(lastPoliticianIdStorageKey, id);
+  } catch {
+    // localStorage kann in privaten/restriktiven Modi fehlen.
+  }
 }
 
 function isPreviewModeParam(params) {
@@ -11989,7 +12019,9 @@ function isPreviewModeParam(params) {
 }
 
 function apiScopeQuery(extra = {}) {
-  const params = new URLSearchParams({ politicianId: activePoliticianId, ...extra });
+  // Ohne bekanntes Mandat KEIN leerer politicianId-Parameter: der Server loest
+  // den Kontext aus Session bzw. seiner Pilot-Konfiguration auf.
+  const params = new URLSearchParams(activePoliticianId ? { politicianId: activePoliticianId, ...extra } : { ...extra });
   if (previewMode) params.set("preview", "1");
   return params.toString();
 }

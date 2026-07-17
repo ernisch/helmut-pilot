@@ -9,7 +9,7 @@
 // erkannt — das wörtliche process.env.NAME-Muster war blind für
 //   (a) envList("NAME")            (lib/helmut/sourceSafety.js: SOURCE_BLOCK-/ALLOWLIST),
 //   (b) flagValue("NAME")/flagInfo (lib/helmut/flags.js: SOURCE_MODE, GATE, DISPATCH),
-//   (c) env.NAME auf injizierten env-Parametern (scoring.js, cem-shadow-compare.js).
+//   (c) env.NAME auf injizierten env-Parametern (scoring.js, supply-shadow-compare.js).
 // Genau so konnte HELMUT_SOURCE_BLOCKLIST/ALLOWLIST unbemerkt im Inventar fehlen.
 
 const fs = require("fs");

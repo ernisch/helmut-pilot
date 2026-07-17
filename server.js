@@ -5,7 +5,8 @@ const path = require("path");
 
 loadLocalEnv();
 
-const { cemInceProfile, profileCompleteness } = require("./lib/helmut/config");
+const { profileCompleteness } = require("./lib/helmut/config");
+const tenantContext = require("./lib/helmut/tenant-context");
 const { validateProfile } = require("./lib/helmut/profile-validation");
 const sourceSafety = require("./lib/helmut/sourceSafety");
 const { runLageCheck, runSourceCrawl } = require("./lib/helmut/scheduler");
@@ -143,7 +144,14 @@ async function handleRequest(request, response) {
     // OHNE client-waehlbare politicianId — sonst liesse sich per ?politicianId= erraten/
     // brute-forcen, ob ein bestimmtes Mandat existiert und wie sein Status ist (Mandanten-
     // Oracle). scripts/smoke-test.js ruft diesen Endpunkt nie mit politicianId auf.
-    return handleAsync(response, async () => publicReleasePayload(await computeReleaseCheck()));
+    return handleAsync(response, async () => {
+      // KEIN Standardmandant: der oeffentliche Check laeuft nur, wenn der Betreiber
+      // ein Pilotmandat konfiguriert hat (HELMUT_PILOT_TENANT_ID). Sonst ehrlicher
+      // Leerzustand statt Status eines geratenen Mandats.
+      const pilotId = tenantContext.configuredPilotTenantId();
+      if (!pilotId) return { configured: false, hinweis: "Kein Pilotmandat konfiguriert — mandatsbezogener Release-Check inaktiv." };
+      return publicReleasePayload(await computeReleaseCheck(pilotId));
+    });
   }
 
   if (url.pathname === "/impressum") {
@@ -285,7 +293,7 @@ async function handleRequest(request, response) {
     politicianId = auth.pickPoliticianId(authUser, requested, allowedPoliticians);
     if (!politicianId) politicianId = await defaultPoliticianIdForUser(authUser, allowedPoliticians);
     // DATENLECK-SCHUTZ: Ein eingeloggter Account-Nutzer OHNE gültiges Mandat darf
-    // NIE still auf cem-ince (oder ein fremdes Mandat) fallen. Klarer Zustand statt
+    // NIE still auf ein fremdes Mandat fallen. Klarer Zustand statt
     // fremder Daten: API -> 403 (no-mandate); SPA-HTML/Assets fallen durch (Leerzustand).
     if (!politicianId) {
       // BOOTSTRAP-AUSNAHME: Ein Administrator braucht KEIN Mandat, um das System zu
@@ -315,10 +323,22 @@ async function handleRequest(request, response) {
     // SICHERHEIT: Ein clientseitig gesetztes ?politicianId darf hier NICHT als
     // Mandanten-Auswahl dienen — sonst koennte ein Pilot-Client die Daten eines
     // anderen Mandats laden. Nur der (secret-geschuetzte) Admin-Bypass darf
-    // explizit ein anderes Mandat waehlen. Alle anderen bekommen das Pilotmandat.
+    // explizit ein anderes Mandat waehlen.
+    // KEIN Code-Default: welches Mandat das Pilotgate bedient, ist reine
+    // Betreiber-Konfiguration (HELMUT_PILOT_TENANT_ID). Ohne Konfiguration
+    // antworten mandatsbezogene API-Pfade mit einem klaren 503-Zustand
+    // (sicherer Abbruch) — NIE mit den Daten eines im Code geratenen Nutzers.
     politicianId = hasAdminBypass(request, url)
       ? politicianIdFromUrl(url)
-      : cemInceProfile.id;
+      : tenantContext.configuredPilotTenantId();
+    if (!politicianId) {
+      const isCron = url.pathname.startsWith("/api/cron/");
+      if (url.pathname.startsWith("/api/") && !isCron) {
+        return sendPilotNotConfigured(response);
+      }
+      // sonst: statische Auslieferung; Cron-Routen loesen ihre Mandate selbst
+      // ueber die Datenbank auf (resolveCronTenantIds).
+    }
   }
 
   if (url.pathname === "/api/security/csrf") {
@@ -723,7 +743,8 @@ async function handleRequest(request, response) {
 
   if (url.pathname === "/api/cron/crawl") {
     if (!authorizeCron(request, url, response)) return;
-    return handleAsync(response, () => runSourceCrawl(politicianId));
+    // Mandate kommen aus der Datenbank (kein Request-/Code-Default): siehe runCronForTenants.
+    return handleAsync(response, () => runCronForTenants("crawl", (tenantId) => runSourceCrawl(tenantId)));
   }
 
   if (url.pathname === "/api/cron/morning-briefing") {
@@ -741,17 +762,20 @@ async function handleRequest(request, response) {
       if (flagOn(process.env.HELMUT_MORNING_PUSH_ALL_PROFILES)) {
         const deadline = t0 + 240000; // 240s < maxDuration 300s: Cron antwortet IMMER
         let profiles = await listProfiles().catch(() => []);
-        if (!Array.isArray(profiles) || !profiles.length) profiles = [{ id: politicianId }];
+        if (!Array.isArray(profiles)) profiles = [];
+        // KEIN Fallback auf ein Default-Mandat: ohne gespeicherte Profile ist der
+        // Lauf ein ehrlicher Leerlauf (0 Briefings) statt eines geratenen Nutzers.
         const results = [];
         let skipped = 0;
         for (const p of profiles) {
+          if (!p || !p.id) { skipped += 1; results.push({ userId: null, skipped: true, reason: "profil-ohne-id" }); continue; }
           if (Date.now() > deadline) { results.push({ userId: p.id, skipped: true, reason: "zeitbudget" }); continue; }
           // Per-Profil try/catch (Review-Fix): früher waren nur Build/Push gefangen,
           // NICHT activeProfile/validateProfile — ein Storage-Fehler bei EINEM Profil
           // brach die gesamte Schleife (500, alle übrigen ohne Push). Jetzt isoliert
           // jedes Profil vollständig; ein Fehler wird als Ergebniszeile vermerkt.
           try {
-            const profile = await activeProfile(p.id || politicianId);
+            const profile = await activeProfile(p.id);
             const val = validateProfile(profile);
             if (val.disabled) { skipped += 1; results.push({ userId: profile.id, skipped: true, reason: "profil-deaktiviert" }); continue; }
             const briefing = await withTimeout(buildV3Briefing(profile, profile.id), 60000, "cron-briefing-build")
@@ -766,11 +790,18 @@ async function handleRequest(request, response) {
         console.log(`[cron/morning-briefing] multi-profil: ${results.length} Profile, ${skipped} uebersprungen, ${Date.now() - t0}ms`);
         return { multiProfile: true, profile: results.length, uebersprungen: skipped, results };
       }
-      const profile = await activeProfile(politicianId);
+      // Standardzweig (Multi-Profil-Flag aus): Mandat aus der Cron-Mandanten-
+      // aufloesung (Datenbank/Env) — kein Request-/Code-Default.
+      const morningTenantIds = await tenantContext.resolveCronTenantIds();
+      if (!morningTenantIds.length) {
+        return { ok: true, skipped: true, reason: "kein-mandant-konfiguriert", hinweis: "HELMUT_PILOT_TENANT_ID setzen oder HELMUT_MORNING_PUSH_ALL_PROFILES aktivieren." };
+      }
+      const morningTenantId = morningTenantIds[0];
+      const profile = await activeProfile(morningTenantId);
       // V3: das Briefing entsteht frisch aus den aktuellen Knowledge Objects (0 KI) —
       // kein V2-runMorningBriefing mehr. Beide Schritte (Build + Push) hart begrenzt,
       // damit der Cron immer antwortet; fail-safe -> Leerzustand statt Hänger.
-      const briefing = await withTimeout(buildV3Briefing(profile, politicianId), 60000, "cron-briefing-build")
+      const briefing = await withTimeout(buildV3Briefing(profile, morningTenantId), 60000, "cron-briefing-build")
         .catch((error) => ({ available: false, reason: "build-timeout", error: error && error.message, items: [], personalizedRecommendations: [], personMentions: [] }));
       const tBuild = Date.now();
       const push = await withTimeout(sendBriefingReadyPush(briefing, profile), 30000, "cron-briefing-push")
@@ -798,9 +829,13 @@ async function handleRequest(request, response) {
     // der interne Fortschritt (Crawl/Shadows) ist idempotent + zeitbudgetiert.
     return handleAsync(response, async () => {
       const t0 = Date.now();
-      const result = await withTimeout(runSourceCrawl(politicianId), 280000, "cron-pipeline")
-        .catch((error) => ({ ok: false, bounded: true, reason: "pipeline-timeout", error: error && error.message }));
-      console.log(`[cron/pipeline] runSourceCrawl ${Date.now() - t0}ms bounded=${Boolean(result && result.bounded)}`);
+      // Mandate aus der Datenbank; hartes Gesamtbudget 280s < maxDuration 300s.
+      const result = await withTimeout(
+        runCronForTenants("pipeline", (tenantId) => runSourceCrawl(tenantId), { deadlineMs: 270000 }),
+        280000,
+        "cron-pipeline"
+      ).catch((error) => ({ ok: false, bounded: true, reason: "pipeline-timeout", error: error && error.message }));
+      console.log(`[cron/pipeline] ${Date.now() - t0}ms tenants=${result && result.tenants} bounded=${Boolean(result && result.bounded)}`);
       return result;
     });
   }
@@ -841,7 +876,16 @@ async function handleRequest(request, response) {
   if (url.pathname === "/api/cron/health-report") {
     if (!authorizeCron(request, url, response)) return;
     return handleAsync(response, async () => {
-      const report = await buildHealthReport(politicianId);
+      // Der operative Report ist mandantenbezogen: Mandat kommt aus der
+      // Cron-Mandantenaufloesung (Datenbank/Env), nicht aus einem Code-Default.
+      const healthTenantIds = await tenantContext.resolveCronTenantIds();
+      if (!healthTenantIds.length) {
+        return { ok: true, skipped: true, reason: "kein-mandant-konfiguriert", hinweis: "HELMUT_PILOT_TENANT_ID setzen oder Mandate anlegen." };
+      }
+      // Ein Report je Lauf: erster aufgeloester Mandant (Single-Tenant-Betrieb:
+      // exakt das konfigurierte Pilotmandat; Multi-Tenant-Aggregation ist bewusst
+      // noch nicht aktiviert — siehe docs/multitenancy-pilot-neutralisierung.md).
+      const report = await buildHealthReport(healthTenantIds[0]);
       // DRY-RUN (Phase 11): ?dryRun=1 baut den kompletten Report und zeigt die
       // Kanal-Konfiguration, versendet aber NICHTS und schreibt keinen
       // Systemfehler. Damit lässt sich der Alarmweg (auch im Preview) gefahrlos
@@ -901,14 +945,17 @@ async function handleRequest(request, response) {
     // der interne Understanding-Loop ist zeitbudgetiert + fail-safe.
     return handleAsync(response, async () => {
       const t0 = Date.now();
-      const profile = await activeProfile(politicianId);
-      const lageCheck = await withTimeout(runLageCheck(politicianId), 280000, "cron-lage-check")
-        .catch((error) => ({ status: "stable", bounded: true, reason: "lage-check-timeout", error: error && error.message }));
-      const tCheck = Date.now();
-      const push = await withTimeout(sendLageChangePush(lageCheck, profile), 30000, "cron-lage-push")
-        .catch((error) => ({ ok: false, reason: "push-timeout", error: error && error.message }));
-      console.log(`[cron/lage-check] check=${tCheck - t0}ms push=${Date.now() - tCheck}ms status=${lageCheck && lageCheck.status}`);
-      return { lageCheck, push };
+      // Mandate aus der Datenbank; je Mandat Check + Push, isoliert und zeitbudgetiert.
+      const summary = await runCronForTenants("lage-check", async (tenantId) => {
+        const profile = await activeProfile(tenantId);
+        const lageCheck = await withTimeout(runLageCheck(tenantId), 240000, "cron-lage-check")
+          .catch((error) => ({ status: "stable", bounded: true, reason: "lage-check-timeout", error: error && error.message }));
+        const push = await withTimeout(sendLageChangePush(lageCheck, profile), 30000, "cron-lage-push")
+          .catch((error) => ({ ok: false, reason: "push-timeout", error: error && error.message }));
+        return { lageCheck, push };
+      }, { deadlineMs: 270000 });
+      console.log(`[cron/lage-check] ${Date.now() - t0}ms tenants=${summary && summary.tenants}`);
+      return summary;
     });
   }
 
@@ -920,11 +967,14 @@ async function handleRequest(request, response) {
       const lageBriefingStartMs = Date.now();
       const lageBriefingRunId = helmutRunId("briefing-lage", lageBriefingStartMs);
       let profiles = await listProfiles().catch(() => []);
-      if (!Array.isArray(profiles) || !profiles.length) profiles = [{ id: politicianId }];
+      if (!Array.isArray(profiles)) profiles = [];
+      // KEIN Fallback auf ein Default-Mandat: ohne gespeicherte Profile ist der
+      // Vorwaerm-Lauf ein ehrlicher Leerlauf.
       const results = [];
       let skipped = 0;
       for (const p of profiles) {
-        const profile = await activeProfile(p.id || politicianId);
+        if (!p || !p.id) { skipped += 1; results.push({ userId: null, available: false, reason: "profil-ohne-id", vorgaenge: 0 }); continue; }
+        const profile = await activeProfile(p.id);
         // Mehrmandantenfaehigkeit Phase 8: deaktivierte Profile nehmen an der
         // Verarbeitung NICHT teil (sie sollen kein Briefing erzeugen). Fehlerhafte/
         // leere Profile liefern ohnehin natuerlich einen Leerzustand — nur die
@@ -1337,20 +1387,31 @@ async function handleRequest(request, response) {
       // erfuellt ist. Nur Booleans, KEINE Werte/Secrets. So ist auf einen Blick
       // sichtbar, ob der Flag in der Laufzeit ankommt und ob der DB-Profilpfad greift.
       const profileDbEnabled = profileDbModeEnabled();
-      // Live-Selbsttest des echten JWT-Profil-Lesepfads: versucht den DB-Read von
-      // cem-ince (existiert). Erfolg (Zeile zurueck) => App->PostgREST-JWT wird
-      // akzeptiert (SUPABASE_JWT_SECRET korrekt). Fehlschlag/null bei aktivem Flag
-      // => JWT wird abgewiesen (401 PGRST301, Secret-Mismatch) ODER Zeile fehlt.
+      // Live-Selbsttest des echten JWT-Profil-Lesepfads: versucht den DB-Read
+      // fuer die VORHANDENEN Mandate aus dem Store (mandantenneutral, keine
+      // hartkodierte ID). Erfolg bei mindestens einem => App->PostgREST-JWT wird
+      // akzeptiert (SUPABASE_JWT_SECRET korrekt). Kein Erfolg bei aktivem Flag
+      // => JWT wird abgewiesen (401 PGRST301, Secret-Mismatch) ODER Zeilen fehlen.
       // Nur ausgefuehrt, wenn der DB-Modus aktiv ist; sonst nicht aussagekraeftig.
       let tenantJwtReadWorks = null;
       let tenantReadProbe = "nicht ausgeführt (DB-Modus aus)";
       if (profileDbEnabled) {
         try {
-          const probe = await getProfileFromDb(cemInceProfile.id);
-          tenantJwtReadWorks = Boolean(probe && probe.id);
-          tenantReadProbe = tenantJwtReadWorks
-            ? "OK: cem-ince aus mandate_profiles gelesen (JWT akzeptiert)"
-            : "FEHLGESCHLAGEN: kein Profil (JWT abgewiesen/401 oder Zeile fehlt) -> Fallback Blob";
+          const knownProfiles = await listProfiles().catch(() => []);
+          const probeIds = knownProfiles.map((p) => p.id).filter(Boolean).sort();
+          if (!probeIds.length) {
+            tenantReadProbe = "nicht ausführbar (keine gespeicherten Mandate)";
+          } else {
+            let readId = null;
+            for (const probeId of probeIds) {
+              const probe = await getProfileFromDb(probeId);
+              if (probe && probe.id) { readId = probe.id; break; }
+            }
+            tenantJwtReadWorks = Boolean(readId);
+            tenantReadProbe = tenantJwtReadWorks
+              ? "OK: Mandatsprofil aus mandate_profiles gelesen (JWT akzeptiert)"
+              : "FEHLGESCHLAGEN: kein Profil lesbar (JWT abgewiesen/401 oder Zeilen fehlen) -> Fallback Blob";
+          }
         } catch (_) {
           tenantJwtReadWorks = false;
           tenantReadProbe = "FEHLGESCHLAGEN (Ausnahme) -> Fallback Blob";
@@ -3097,7 +3158,8 @@ function readinessScore(issues, warnings) {
   return Math.max(0, Math.min(100, 100 - issues.length * 25 - warnings.length * 8));
 }
 
-async function computeReleaseCheck(politicianId = cemInceProfile.id) {
+async function computeReleaseCheck(politicianId) {
+  politicianId = tenantContext.requireTenantId(politicianId, "computeReleaseCheck");
   const profile = await activeProfile(politicianId);
   const latestCrawl = await getLatestCrawlRun();
   const latestLageCheck = await getLatestLageCheck(politicianId);
@@ -3161,7 +3223,8 @@ function publicReleasePayload(release) {
 // Operativer Morgen-Health-Report (fuer WhatsApp). Bewusst pragmatisch: prueft echte
 // Betriebssignale (Crawl/Briefing frisch, Speicher aktiv, Fehler-Spike) statt des
 // strengen Pitch-Gates, plus Engagement aus dem Nutzungs-Tracking.
-async function buildHealthReport(politicianId = cemInceProfile.id) {
+async function buildHealthReport(politicianId) {
+  politicianId = tenantContext.requireTenantId(politicianId, "buildHealthReport");
   // V3: Health-Report bewertet das frisch erzeugte V3-Briefing (kein V2-Blob).
   // P1-4/P1-5: Betriebszustand kommt jetzt aus dem Zwei-Achsen-Zustandsmodell
   // (lib/helmut/watchdog-state.js) auf Basis LEBENDER Zeitstempel — NICHT mehr
@@ -3776,10 +3839,12 @@ async function allKnownPoliticianIds() {
   users.forEach((user) => {
     if (user.role === "abgeordneter" && user.politicianId) ids.add(user.politicianId);
   });
-  // Pilot-Modus: das geteilte Demo-Mandat cem-ince ist immer erreichbar.
-  // Account-Modus: cem-ince erscheint nur, wenn ein Profil gespeichert oder ein
-  // Nutzer zugewiesen ist - kein automatischer cem-ince-Eintrag im Switcher.
-  if (!auth.authMode()) ids.add(cemInceProfile.id);
+  // Pilot-Modus: das konfigurierte Pilotmandat (Betreiber-Env) ist erreichbar,
+  // sofern gesetzt. Es gibt keinen automatischen Code-Eintrag im Switcher.
+  if (!auth.authMode()) {
+    const pilotId = tenantContext.configuredPilotTenantId();
+    if (pilotId) ids.add(pilotId);
+  }
   return Array.from(ids);
 }
 
@@ -3795,7 +3860,7 @@ async function listAllowedProfiles(user, allowed) {
 }
 
 async function defaultPoliticianIdForUser(user, allowed) {
-  // SaaS-Datenleck-Schutz: KEIN stiller Fallback auf cem-ince (oder ein fremdes
+  // SaaS-Datenleck-Schutz: KEIN stiller Fallback auf ein fremdes
   // Mandat) für Account-Nutzer. Wer kein gültiges eigenes/zugewiesenes Mandat hat,
   // bekommt null -> der Aufrufer liefert einen klaren Fehler statt fremder Daten.
   if (user.role === "abgeordneter") return user.politicianId || null;
@@ -3805,8 +3870,14 @@ async function defaultPoliticianIdForUser(user, allowed) {
   // Zuweisung bekommt KEIN Mandat (null) -> klarer Fehler statt fremder Daten.
   if (allowed === "all") {
     const users = await accounts.listUsers();
-    const firstMandate = users.find((entry) => entry.role === "abgeordneter" && entry.politicianId);
-    return firstMandate ? firstMandate.politicianId : null;
+    // Deterministisch (alphabetisch nach Mandats-ID) statt "erster Treffer in
+    // Speicher-Reihenfolge" — die Auswahl ist eine Admin-Bequemlichkeit, kein
+    // implizites Standardmandat, und darf nicht von Insertion-Order abhaengen.
+    const mandateIds = users
+      .filter((entry) => entry.role === "abgeordneter" && entry.politicianId)
+      .map((entry) => entry.politicianId)
+      .sort();
+    return mandateIds.length ? mandateIds[0] : null;
   }
   return null;
 }
@@ -4391,8 +4462,8 @@ async function buildAdminDataStatus({ perAccountLimit = 25 } = {}) {
       onboardingStatus: (profile && profile.onboardingStatus) || "neu",
       aktiv: !(profile && profile.profileActive === false),
       // Konto-Typ NUR wenn sicher ermittelbar (nicht raten): das Pilot-/Demo-Seed-Mandat
-      // cem-ince -> "Pilot"; sonst ein evtl. vorhandenes explizites Flag; sonst null.
-      kontoTyp: id === cemInceProfile.id ? "Pilot" : (u.kontoTyp || u.accountKind || u.kind || null),
+      // Konfiguriertes Pilotmandat -> "Pilot"; sonst ein evtl. vorhandenes explizites Flag; sonst null.
+      kontoTyp: (tenantContext.configuredPilotTenantId() && id === tenantContext.configuredPilotTenantId()) ? "Pilot" : (u.kontoTyp || u.accountKind || u.kind || null),
       ampel: dsAccountAmpel({ level: comp.level, restricted: comp.restricted || comp.empty, hasBriefing })
     });
   }
@@ -4523,7 +4594,8 @@ const DATA_STATUS_LEGEND = {
   "ampel": "Gruen: Lauf ok + relevante Vorgaenge oder sauberer Leerstatus. Gelb: wenig Daten/unvollstaendiges Profil/eingeschraenkte Personalisierung/schwache Abdeckung. Rot: Pipeline-Fehler, kein aktueller Stand, fremder Fallback oder kein Stand bis 7:30."
 };
 
-async function normalizeTask(task, politicianId = cemInceProfile.id) {
+async function normalizeTask(task, politicianId) {
+  politicianId = tenantContext.requireTenantId(politicianId, "normalizeTask");
   const profile = await activeProfile(politicianId);
   return {
     id: task.id || `task-${Date.now()}`,
@@ -4548,7 +4620,8 @@ async function normalizeTask(task, politicianId = cemInceProfile.id) {
   };
 }
 
-async function normalizeInteraction(interaction, politicianId = cemInceProfile.id) {
+async function normalizeInteraction(interaction, politicianId) {
+  politicianId = tenantContext.requireTenantId(politicianId, "normalizeInteraction");
   const profile = await activeProfile(politicianId);
   return {
     // SICHERHEIT: siehe normalizeTask — politicianId niemals aus dem Client-Body.
@@ -4565,7 +4638,8 @@ async function normalizeInteraction(interaction, politicianId = cemInceProfile.i
   };
 }
 
-async function normalizeUserNote(note, politicianId = cemInceProfile.id) {
+async function normalizeUserNote(note, politicianId) {
+  politicianId = tenantContext.requireTenantId(politicianId, "normalizeUserNote");
   const profile = await activeProfile(politicianId);
   return {
     id: note.id,
@@ -4578,21 +4652,19 @@ async function normalizeUserNote(note, politicianId = cemInceProfile.id) {
   };
 }
 
-async function activeProfile(politicianId = cemInceProfile.id) {
+async function activeProfile(politicianId) {
+  politicianId = tenantContext.requireTenantId(politicianId, "activeProfile");
   const stored = await getProfile(politicianId);
   if (stored) return mergeProfileDefaults(stored);
-  // Immer zuerst das gespeicherte Profil (oben). cem-ince erhaelt seine reichen
-  // Seed-Defaults NUR im Pilot-Modus, solange noch kein Profil gespeichert ist.
-  // Im Account-Modus gibt es keinen stillen cem-ince-Ersatz: fehlt das Profil,
-  // greift das neutrale blankProfile wie fuer jedes andere Mandat.
-  if (!auth.authMode() && politicianId === cemInceProfile.id) return cemInceProfile;
+  // Fehlt das gespeicherte Profil, greift fuer JEDES Mandat (auch den Piloten)
+  // das neutrale blankProfile — Profildaten sind ausschliesslich Datensaetze
+  // im Store, niemals Code-Konstanten.
   return blankProfile(politicianId);
 }
 
-// Neutrale Default-Werte fuer JEDES Mandat ausser dem Demo-Profil cem-ince.
-// Wichtig: Neue Abgeordnete duerfen KEINE inhaltlichen Cem-Ince-Defaults erben
-// (Ausschuesse, Themen, Positionen). Nur generisches Geruest, damit der Briefing-
-// Motor arbeiten kann, bleibt vorbelegt.
+// Neutrale Default-Werte fuer JEDES Mandat — ausnahmslos. Kein Mandat erbt
+// inhaltliche Defaults eines anderen (Ausschuesse, Themen, Positionen). Nur
+// generisches Geruest, damit der Briefing-Motor arbeiten kann, bleibt vorbelegt.
 function blankProfile(id) {
   return {
     id,
@@ -4640,11 +4712,9 @@ function blankProfile(id) {
   };
 }
 
-// Nur im Pilot-Modus erbt das Demo-Mandat cem-ince seine reichhaltigen Defaults
-// als Merge-Basis. Im Account-Modus erhaelt cem-ince (wie jedes andere Mandat)
-// die neutrale blankProfile-Basis; gespeicherte Felder ueberschreiben sie ohnehin.
+// JEDES Mandat erhaelt die neutrale blankProfile-Basis; gespeicherte Felder
+// ueberschreiben sie. Es gibt kein Demo-Mandat mit Sonder-Defaults mehr.
 function baseProfileFor(id) {
-  if (!auth.authMode() && id === cemInceProfile.id) return cemInceProfile;
   return blankProfile(id);
 }
 
@@ -4683,7 +4753,8 @@ function mergeProfileDefaults(profile) {
   };
 }
 
-async function normalizeProfile(profile, politicianId = cemInceProfile.id) {
+async function normalizeProfile(profile, politicianId) {
+  politicianId = tenantContext.requireTenantId(politicianId, "normalizeProfile");
   const base = await activeProfile(politicianId);
   // Abgeleitete Nur-Anzeige-Felder NIE persistieren (Review-Fix): GET/app-start
   // hängen profilValidierung an das zurückgegebene Profil; sendet ein Client das
@@ -4788,11 +4859,13 @@ function budgetCentValue(value, fallback) {
 }
 
 function politicianIdFromUrl(url) {
-  return String(url.searchParams.get("politicianId") || url.searchParams.get("profileId") || cemInceProfile.id)
+  // KEIN Personen-Fallback: ohne Parameter greift hoechstens das konfigurierte
+  // Pilotmandat (Betreiber-Env), sonst "" -> Aufrufer muessen sicher abbrechen.
+  return String(url.searchParams.get("politicianId") || url.searchParams.get("profileId") || "")
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9-]+/g, "-")
-    .replace(/^-|-$/g, "") || cemInceProfile.id;
+    .replace(/^-|-$/g, "") || tenantContext.configuredPilotTenantId();
 }
 
 function readableNameFromId(id) {
@@ -4869,6 +4942,52 @@ function topicPriorityValue(value, fallback) {
     });
   }
   return Object.keys(priorities).length ? { ...(fallback || {}), ...priorities } : fallback || {};
+}
+
+// Legacy-Pilotgate ohne konfiguriertes Mandat — FAIL CLOSED (503, klarer Zustand).
+function sendPilotNotConfigured(response) {
+  response.writeHead(503, jsonHeaders());
+  response.end(JSON.stringify({
+    error: "Pilotmodus ohne konfiguriertes Mandat: HELMUT_PILOT_TENANT_ID ist nicht gesetzt. " +
+      "Bitte die Umgebungsvariable in Vercel setzen (Wert = Mandats-ID aus der Datenbank) " +
+      "oder den Account-Modus (HELMUT_AUTH_MODE=accounts) aktivieren.",
+    reason: "pilot-tenant-not-configured"
+  }, null, 2));
+}
+
+// Mandantenaufloesung + Isolation fuer mandantenbezogene Crons.
+// Mandate kommen aus der Datenbank (tenant-context.resolveCronTenantIds):
+//   * HELMUT_CRON_MULTI_TENANT=1 (freigabepflichtig, Default AUS) -> alle aktiven Mandate.
+//   * sonst -> [konfiguriertes Pilotmandat], validiert gegen die Datenbank.
+//   * nichts konfiguriert -> sauberer Leerlauf (skipped), KEIN Personen-Fallback.
+// Isolation: jedes Mandat laeuft in einem eigenen try/catch — ein fehlerhaftes
+// Mandat stoppt die anderen nicht. Ein hartes Zeitbudget sorgt dafuer, dass der
+// Cron IMMER antwortet; nicht erreichte Mandate werden ehrlich als uebersprungen
+// gemeldet (der naechste Lauf holt sie nach; die Einzelschritte sind idempotent).
+async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000 } = {}) {
+  const startedMs = Date.now();
+  const tenantIds = await tenantContext.resolveCronTenantIds();
+  if (!tenantIds.length) {
+    console.warn(`[cron/${cronName}] uebersprungen: kein Mandant konfiguriert/aktiv (HELMUT_PILOT_TENANT_ID bzw. HELMUT_CRON_MULTI_TENANT pruefen).`);
+    return { ok: true, skipped: true, reason: "kein-mandant-konfiguriert", tenants: 0, results: [] };
+  }
+  const deadline = startedMs + deadlineMs;
+  const results = [];
+  for (const tenantId of tenantIds) {
+    if (Date.now() > deadline) {
+      results.push({ politicianId: tenantId, skipped: true, reason: "zeitbudget" });
+      continue;
+    }
+    try {
+      const result = await perTenant(tenantId);
+      results.push({ politicianId: tenantId, ...(result && typeof result === "object" ? result : { result }) });
+    } catch (error) {
+      // Fehler-Isolation: nur DIESES Mandat scheitert; Fehler wird protokolliert.
+      console.error(`[cron/${cronName}] Mandant ${tenantId} fehlgeschlagen (isoliert):`, error && error.message);
+      results.push({ politicianId: tenantId, error: error && error.message, failed: true });
+    }
+  }
+  return { ok: true, tenants: tenantIds.length, durationMs: Date.now() - startedMs, results };
 }
 
 // Cron-Autorisierung — FAIL CLOSED.

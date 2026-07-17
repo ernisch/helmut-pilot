@@ -9,7 +9,7 @@ const { buildCatalog, ORPHAN_CLASSIFICATION } = require("../lib/helmut/quellenar
 const { buildFullModel } = require("../lib/helmut/quellenarchitektur");
 const pp = require("../lib/helmut/quellenarchitektur/profile-packages");
 const mm = require("../lib/helmut/quellenarchitektur/migration-mapper");
-const cs = require("../lib/helmut/quellenarchitektur/cem-shadow-compare");
+const cs = require("../lib/helmut/quellenarchitektur/supply-shadow-compare");
 
 let pass = 0, fail = 0;
 function check(name, cond) { if (cond) { pass += 1; console.log(`PASS  ${name}`); } else { fail += 1; console.log(`FAIL  ${name}`); } }

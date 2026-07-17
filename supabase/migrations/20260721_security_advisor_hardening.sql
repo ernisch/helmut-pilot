@@ -32,7 +32,7 @@
 --   * Rollback: 20260721_security_advisor_hardening_rollback.sql.
 --
 -- KEINE Daten-, Spalten- oder Policy-Änderung. Keine Auswirkung auf den laufenden
--- Piloten (cem-ince). DSGVO: keine Inhalte/PII berührt.
+-- Piloten. DSGVO: keine Inhalte/PII berührt.
 
 begin;
 

@@ -17,7 +17,7 @@ const { buildCatalog, ORPHAN_CLASSIFICATION } = require("../lib/helmut/quellenar
 const { buildFullModel } = require("../lib/helmut/quellenarchitektur");
 const pp = require("../lib/helmut/quellenarchitektur/profile-packages");
 const mm = require("../lib/helmut/quellenarchitektur/migration-mapper");
-const cs = require("../lib/helmut/quellenarchitektur/cem-shadow-compare");
+const cs = require("../lib/helmut/quellenarchitektur/supply-shadow-compare");
 const { cemInceProfile } = require("../lib/helmut/config");
 
 function line(s) { console.log(s); }
