@@ -254,9 +254,17 @@ vor diesem Sprint: 316/264 → 344/292), also **nicht** durch die Flags/diesen S
 übersprungenen Vorgänge tragen überwiegend themenfremde IDs (`vg-achtelfinale`, `vg-aargauer`,
 `vg-parkplätzen`) — **plausibel** korrektes Rauschaussortieren, **aber nicht bewiesen**. Die 2
 `failed`-KOs sind die Kandidaten für die (bewusst deaktivierte) **F6**-Recovery
-(`HELMUT_FAILED_KO_RECOVERY`). **Kein Blocker der Flag-Beweise; offener Prüfpunkt** (Follow-up:
-Stichprobe der pending-Vorgänge — echtes Rauschen vs. fälschlich verworfene politische Vorgänge —
-und Klärung, ob `skipped-no-cluster` ein bewusster Filter oder eine Lücke ist). **Kein Eingriff.**
+(`HELMUT_FAILED_KO_RECOVERY`). **Kein Blocker der Flag-Beweise.**
+
+**AUFGELÖST — vollständige Analyse in `docs/betrieb/understanding_rueckstand_analyse.md`
+(rein lesend, mit Code-Belegen).** Ergebnis: **kein laufender Datenverlust** (alle 4230 Rohdok.
+seit 07-04 verarbeitet), aber der eingefrorene Alt-Bestand (02./03.07.) ist **nicht nur Rauschen**:
+~**8 kernmandatsrelevante Vorgänge** (Rente/GKV/Steuer/Arbeitsrecht) + 2 `failed` sind blockiert.
+Ursache: `skipped-no-cluster` (`understanding.js:788`) vermengt echt-verwaiste und nur
+außerhalb-des-500-Zeilen-Fensters liegende Vorgänge; die Seed-Rohdokumente **existieren noch**
+(1839 Zeilen), sind aber über Cron/Admin-Recovery unerreichbar. **F6 löst das NICHT** (nur die 2
+`failed`); **F7 wirkungslos**. Datenverlust **teilweise, aktuell reversibel**. Korrektur
+vorbereitet, **nicht angewendet** (freigabepflichtig). **Kein Eingriff.**
 
 ---
 
