@@ -6,6 +6,8 @@ const path = require("path");
 loadLocalEnv();
 
 const { cemInceProfile, profileCompleteness } = require("./lib/helmut/config");
+// Landtag-Sprint (P2-3): zentrale Parlaments-Registry fuer ebenen-bewusste Profil-Defaults.
+const { resolveParlament } = require("./lib/helmut/parlamente");
 const { validateProfile } = require("./lib/helmut/profile-validation");
 const sourceSafety = require("./lib/helmut/sourceSafety");
 const { runLageCheck, runSourceCrawl } = require("./lib/helmut/scheduler");
@@ -483,7 +485,10 @@ async function handleRequest(request, response) {
       if (!isValidChannel(outputType)) throw accounts.httpError(400, `Unbekannter outputType: ${outputType}`);
       const userId = politicianId;
       const ko = await getKnowledgeObjectByVorgang(vorgangId);
-      return generateOfficeOutput(userId, vorgangId, outputType, ko);
+      // Landtag-Sprint (P2-3): Profil fuer den Parlamentskontext der Templates
+      // (Redeart etc.) — fail-safe: ohne Profil greifen die Bundestag-Defaults.
+      const officeProfile = await activeProfile(userId).catch(() => null);
+      return generateOfficeOutput(userId, vorgangId, outputType, ko, { profile: officeProfile });
     });
   }
 
@@ -1154,7 +1159,9 @@ async function handleRequest(request, response) {
         // damit Helmut ab Tag 1 personalisiert. DSGVO: nur berufliche Pflichtfelder,
         // editier-/löschbar durch den/die Abgeordnete:n.
         if (user.role === "abgeordneter" && user.politicianId) {
-          const quickStartKeys = ["party", "faction", "committee", "constituency", "state"];
+          // Landtag-Sprint (P2-3): parliamentType/politicalLevel gehoeren zum Schnellstart,
+          // damit ein Landtagsmandat nicht beim ersten Save als Bund persistiert wird.
+          const quickStartKeys = ["party", "faction", "committee", "constituency", "state", "parliamentType", "politicalLevel"];
           const hasQuickStart = quickStartKeys.some((key) => String(body[key] || "").trim())
             || (Array.isArray(body.focusTopics) && body.focusTopics.length);
           if (hasQuickStart) {
@@ -1165,6 +1172,8 @@ async function handleRequest(request, response) {
               committee: body.committee,
               constituency: body.constituency,
               state: body.state,
+              parliamentType: body.parliamentType,
+              politicalLevel: body.politicalLevel,
               focusTopics: Array.isArray(body.focusTopics) ? body.focusTopics : undefined
             }, user.politicianId));
           }
@@ -4648,8 +4657,34 @@ function baseProfileFor(id) {
   return blankProfile(id);
 }
 
+// Landtag-Sprint (P2-3, Ebenen-Default-Fix): Erkennt das (eingehende/gespeicherte)
+// Profil eine Landtags-Ebene, werden die NEUTRALEN Bundestag-Platzhalter der Basis
+// (Funktion "Bundestagsabgeordnete:r", politicalLevel "Bund", Ministerien
+// ["Bundesregierung"], Monitoring "Bundesregierung Vorhaben") durch die Werte der
+// Parlaments-Registry ersetzt. Vom Nutzer gesetzte Basiswerte bleiben unberuehrt;
+// Bundestagsprofile und Profile ohne erkennbare Ebene sind byte-identisch zu vorher.
+function ebenenBewussteBasis(profile, base) {
+  if (!profile || typeof profile !== "object" || !base) return base;
+  const parlament = resolveParlament({ ...base, ...profile });
+  if (parlament.key === "bundestag") return base;
+  const neutraleFunktion = ["Bundestagsabgeordnete:r", "Bundestagsabgeordneter"].includes(String(base.function || "").trim());
+  const neutraleMinisterien = Array.isArray(base.relevantMinistries)
+    && base.relevantMinistries.length === 1 && base.relevantMinistries[0] === "Bundesregierung";
+  const neutralesMonitoring = Array.isArray(base.monitoringTargets)
+    && base.monitoringTargets.join("|") === "Meine Partei|Meine Person|Bundesregierung Vorhaben";
+  return {
+    ...base,
+    function: neutraleFunktion ? parlament.mitglied.funktion : base.function,
+    role: ["Bundestagsabgeordnete:r", "Bundestagsabgeordneter"].includes(String(base.role || "").trim()) ? parlament.mitglied.funktion : base.role,
+    parliamentType: String(base.parliamentType || "").trim() || "Landtag",
+    politicalLevel: String(base.politicalLevel || "").trim() === "Bund" ? parlament.defaults.politicalLevel : base.politicalLevel,
+    relevantMinistries: neutraleMinisterien ? [...parlament.defaults.relevantMinistries] : base.relevantMinistries,
+    monitoringTargets: neutralesMonitoring ? [...parlament.defaults.monitoringTargets] : base.monitoringTargets
+  };
+}
+
 function mergeProfileDefaults(profile) {
-  const base = baseProfileFor(profile.id);
+  const base = ebenenBewussteBasis(profile, baseProfileFor(profile.id));
   return {
     ...base,
     ...profile,
@@ -4684,7 +4719,9 @@ function mergeProfileDefaults(profile) {
 }
 
 async function normalizeProfile(profile, politicianId = cemInceProfile.id) {
-  const base = await activeProfile(politicianId);
+  // Landtag-Sprint (P2-3): Basis ebenen-bewusst — ein als Landtag erkanntes Profil
+  // erbt keine Bundestag-Platzhalter mehr (Save-Fallback unten nutzt dieselbe Basis).
+  const base = ebenenBewussteBasis(profile, await activeProfile(politicianId));
   // Abgeleitete Nur-Anzeige-Felder NIE persistieren (Review-Fix): GET/app-start
   // hängen profilValidierung an das zurückgegebene Profil; sendet ein Client das
   // Objekt roh zurück, würde der veraltete Validierungsstand sonst über `...profile`
@@ -4701,7 +4738,7 @@ async function normalizeProfile(profile, politicianId = cemInceProfile.id) {
     fullName: stringValue(profile.fullName, base.fullName),
     party: stringValue(profile.party, base.party),
     faction: stringValue(profile.faction, base.faction),
-    function: stringValue(profile.function, base.function || "Bundestagsabgeordneter"),
+    function: stringValue(profile.function, base.function || resolveParlament({ ...base, ...profile }).mitglied.funktionM),
     constituency: stringValue(profile.constituency, base.constituency),
     state: stringValue(profile.state, base.state),
     location: stringValue(profile.location, base.location || "Noch offen"),
@@ -4724,7 +4761,9 @@ async function normalizeProfile(profile, politicianId = cemInceProfile.id) {
   // profilbasierte Ingestion und Admin-Vollstaendigkeitspruefung.
   next.accountType = stringValue(profile.accountType, base.accountType || "abgeordneter");
   next.parliamentType = stringValue(profile.parliamentType, base.parliamentType || "");
-  next.politicalLevel = stringValue(profile.politicalLevel, base.politicalLevel || "Bund");
+  // Landtag-Sprint (P2-3): kein pauschales auto-"Bund" mehr — der Fallback kommt aus der
+  // Parlaments-Registry (Bundestag/unbekannt: "Bund" wie bisher; Landtag: "Land").
+  next.politicalLevel = stringValue(profile.politicalLevel, base.politicalLevel || resolveParlament({ ...base, ...profile }).defaults.politicalLevel);
   next.reportingTopics = arrayValue(profile.reportingTopics, base.reportingTopics);
   next.currentCampaigns = arrayValue(profile.currentCampaigns, base.currentCampaigns);
   next.publicPositions = arrayValue(profile.publicPositions, base.publicPositions);
