@@ -11,6 +11,7 @@ shadow-store/
 backups/
 
 # Temp-/Build-Artefakte (nie tracken)
+node_modules/
 tmp/
 output/
 .DS_Store
