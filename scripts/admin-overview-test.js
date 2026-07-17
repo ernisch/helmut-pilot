@@ -1,11 +1,19 @@
 "use strict";
 
-// Render-Test des Admin-Betreiber-Kontrollzentrums. Fuehrt die ECHTEN Client-Funktionen
-// aus client.js in einem vm-Kontext (Browser-Stubs) aus und prueft das erzeugte HTML.
-// KEIN Netz, KEINE KI. Geprueft: sechs Kacheln (Betrieb), Handlungsbedarf mit echten
-// Hinweisen + ruhigem Leerzustand, verdichtete Profile-Liste, Kosten admin-only,
-// Secrets nur als Status, klare Abschnittsueberschriften, Admin-Gating, keine
-// automatische Recovery-/Pipeline-Aktion, keine Kosten/Secrets/Demo im Betrieb.
+// Render-Test des NEUEN Admin-Bereichs (Neuaufbau 2026-07). Fuehrt die ECHTEN
+// Client-Funktionen aus client.js in einem vm-Kontext (Browser-Stubs) aus und
+// prueft das erzeugte HTML. KEIN Netz, KEINE KI.
+//
+// Geprueft:
+//  - Admin-Gating ("Kein Zugriff" fuer Nicht-Admins; rein kosmetisch, Server gated echt)
+//  - Sieben Bereiche in der Navigation, aktiver Bereich markiert
+//  - Eiserne Regel: fehlende Werte -> "—", niemals erfundene Zahlen/Beispieldaten
+//  - Zustand + Handlungsbedarf VOR Detailzahlen ("Alles ruhig. Kein Eingreifen nötig.")
+//  - Waehrung: KI-Kosten ausschliesslich als USD gekennzeichnet, nie als EUR;
+//    EUR nur fuer echte EUR-Felder (Kundenpreis, Budget-Cents)
+//  - Escaping (kein XSS ueber Namen/Feldwerte)
+//  - Kein fetch waehrend des Renderns (Sandbox-fetch wirft)
+//  - Sichere Loeschbestaetigung (Mandats-ID-Tippfeld) im DSGVO-Block
 
 const fs = require("fs");
 const path = require("path");
@@ -16,13 +24,24 @@ function loadClient() {
   let code = fs.readFileSync(path.join(root, "client.js"), "utf8");
   code = code.replace(/^\s*loadBriefing\(\)[\s\S]*$/m, "");
   code += `\n;globalThis.__adminTest = {
-    overview: (data, ds, rec) => renderAdminOperatorOverview(data, ds, rec),
-    actionCenter: (ds, rec) => renderAdminActionCenter(ds, rec),
     view: () => renderAdminView(),
     setUser: (u) => { currentUser = u; },
-    setAdmin: (d, ds, rec, period) => { adminData = d; adminDataStatus = ds; adminRecovery = rec; if (period) adminPeriod = period; },
-    setRecoveryUI: (open, result, busy) => { adminRecoveryDetailsOpen = !!open; adminRecoveryResult = result || null; adminRecoveryBusy = !!busy; },
-    relAge: (iso) => adminRelAge(iso),
+    setSection: (s) => { admSection = s; },
+    setData: (key, payload) => { admData[key] = payload; },
+    setError: (key, msg) => { admErrors[key] = msg; },
+    clearData: () => { admData = {}; admErrors = {}; admLoading = {}; admLoadedAt = {}; },
+    setRecovery: (rec) => { adminRecovery = rec; admData.recovery = rec; },
+    setPrivacyConfirm: (pid) => { admPrivacyConfirm = pid ? { politicianId: pid } : null; },
+    uebersicht: () => renderAdmUebersicht(),
+    pipeline: () => renderAdmPipeline(),
+    kosten: () => renderAdmKosten(),
+    daten: () => renderAdmDaten(),
+    nutzer: () => renderAdmNutzer(),
+    system: () => renderAdmSystem(),
+    quellen: () => renderAdmQuellen(),
+    usd: (v) => admUsd(v),
+    eur: (v) => admEur(v),
+    num: (v) => admNum(v),
     esc: (s) => escapeHtml(s)
   };`;
   const noop = () => {};
@@ -73,223 +92,160 @@ function check(name, cond, detail = "") {
 }
 
 const api = loadClient();
-check("client.js laedt im vm (Admin-Boot ohne Browser)", Boolean(api && api.overview));
+check("client.js laedt im vm (Admin ohne Browser)", Boolean(api && api.view));
 
-const nowIso = new Date().toISOString();
 const minsAgo = (m) => new Date(Date.now() - m * 60000).toISOString();
 
-// ── Fixtures (echte Feld-Shapes von server buildAdminOverview/-DataStatus/-Recovery) ──
-const dsHealthy = {
-  v3StoreAktiv: true,
-  global: {
-    ampel: "gruen", letzterLauf: minsAgo(18), modus: "full",
-    quellen: { geprueft: 21, erfolgreich: 21, fehlgeschlagen: 0 },
-    kiAnalyseFehler: false, morgenstatus0730: { ok: true, note: null }, letzterFehler: null,
-    profile: { accountsGesamt: 1, ausgewertet: 1, personalisierungEingeschraenkt: 0 },
-    briefing: { punkteGesamt: 5, sichtbarBeiAccounts: 1, accountsOhneBriefing: 0 },
-    kiStatus: { available: true, anbieter: "azure", azureKeyGesetzt: true, azureEndpointGesetzt: true }
-  },
-  perAccount: [{
-    politicianId: "max-mandat", name: "Max Mandat",
-    profilVollstaendigkeit: { level: "full", complete: true, fehlendePflichtfelder: [] },
-    personalisierungEingeschraenkt: false, briefingSichtbar: true, briefingPunkte: 5,
-    radarChancen: 2, radarRisiken: 1, kiKosten: { estimatedUsd: "0.05", calls: 10 }, kontoTyp: "Pilot", ampel: "gruen"
-  }]
-};
-const recHealthy = {
-  knowledgeObjects: { available: true, pending: 0, failed: 0, complete: 42 },
-  understandingLock: { aktiv: false, verdaechtig: false }, letzterUnderstandingLauf: minsAgo(18)
-};
-const adminDataFull = {
-  generatedAt: nowIso, counts: { users: 3 },
+// ── A) Gating + Shell ─────────────────────────────────────────────────────────
+api.setUser({ id: "u1", role: "abgeordneter", email: "a@example.org" });
+check("A1 Nicht-Admin sieht 'Kein Zugriff'", api.view().includes("Kein Zugriff"));
+
+api.setUser({ id: "admin1", role: "admin", email: "admin@example.org" });
+api.clearData();
+const shell = api.view();
+for (const label of ["Übersicht", "Pipeline", "KI-Kosten", "Daten &amp; Profile", "Nutzer &amp; Kunden", "System &amp; Sicherheit", "Quellen &amp; Watchdog"]) {
+  check(`A2 Navigation enthaelt Bereich: ${label.replace(/&amp;/g, "&")}`, shell.includes(label));
+}
+check("A3 Bereichs-Buttons tragen data-adm-section", (shell.match(/data-adm-section="/g) || []).length === 7);
+check("A4 Aktiver Bereich markiert (is-active)", /adm-nav-btn is-active/.test(shell));
+check("A5 Aktualisieren-Knopf vorhanden (data-adm-refresh)", shell.includes("data-adm-refresh"));
+
+// ── B) Eiserne Regel: leere Daten -> "—", nichts erfunden ────────────────────
+api.clearData();
+const emptyView = api.uebersicht();
+check("B1 Ohne Daten: Zustand 'unbekannt', keine gruene Beschoenigung", emptyView.includes("unbekannt"));
+check("B2 Ohne Daten: Werte als — (keine erfundenen Zahlen)", (emptyView.match(/—/g) || []).length >= 5);
+check("B3 Ohne Daten: keine Beispieldaten (kein 'demo', keine Platzhalterzahl 8.420)", !/8\.420|Beispieldaten/i.test(emptyView));
+
+// ── B6 Unbekannter Zustand: neutraler Text, NIE gruene Entwarnung ────────────
+// Grün ("Alles ruhig. Kein Eingreifen nötig.") darf nur bei tatsächlich gesundem
+// Zustand erscheinen — bei unbekanntem Zustand (Daten nicht ladbar) ein neutraler
+// Hinweis. Prüfung über ALLE sieben Bereiche.
+const NEUTRAL = "Der Zustand kann aktuell nicht zuverlässig bewertet werden.";
+for (const sec of ["uebersicht", "pipeline", "kosten", "daten", "nutzer", "system", "quellen"]) {
+  api.clearData();
+  const v = api[sec]();
+  check(`B6 ${sec}: unbekannter Zustand zeigt neutralen Text`, v.includes(NEUTRAL));
+  check(`B6 ${sec}: unbekannter Zustand zeigt NICHT 'Alles ruhig'`, !v.includes("Alles ruhig"));
+  check(`B6 ${sec}: unbekannter Zustand hat keine gruene adm-allquiet-Klasse`, !v.includes("adm-allquiet"));
+}
+
+api.clearData();
+api.setData("daily", { crawl: { runs: null, checkedSources: null }, ai: {}, v3: { note: "V3-Store nicht aktiv (HELMUT_V3_STORE nicht gesetzt)" } });
+const partialView = api.uebersicht();
+check("B4 null-Werte werden — (nicht 0)", !/adm-tile-value">0</.test(partialView));
+check("B5 V3-note wird ehrlich angezeigt statt Zahlen zu erfinden", partialView.includes("V3-Store nicht aktiv"));
+
+// ── C) Zustand + Handlungsbedarf ─────────────────────────────────────────────
+api.clearData();
+api.setData("daily", { crawl: { runs: 2, checkedSources: 47, successfulSources: 47, failedSources: 0, savedArticles: 12, latestCrawlAt: minsAgo(30) }, ai: { totalCalls: 5, failedCalls: 0 }, v3: { newRawDocuments: 12, newKnowledgeObjects: 3 } });
+api.setData("budget", { day: "2026-07-17", limit: 100, calls: 5, errors: 0, skips: 0, remaining: 95, estimatedCostUsd: 0.12, byTenant: {}, skipsByReason: {} });
+api.setData("crawlReport", { lastCrawlAt: minsAgo(30), failedSources: 0, checkedSources: 47 });
+api.setRecovery({ v3StoreAktiv: true, knowledgeObjects: { pending: 0, failed: 0, complete: 10, gesamt: 10 }, understandingLock: { aktiv: false, verdaechtig: false } });
+api.setData("feedback", { offen: 0, feedback: [] });
+api.setData("audit", { auditEvents: [] });
+const quietView = api.uebersicht();
+check("C1 Ruhiger Zustand: 'Alles ruhig. Kein Eingreifen nötig.'", quietView.includes("Alles ruhig. Kein Eingreifen nötig."));
+check("C1b Nur bei gesundem Zustand: gruene adm-allquiet-Klasse + kein neutraler Unbekannt-Text", quietView.includes("adm-allquiet") && !quietView.includes(NEUTRAL));
+check("C2 Zustands-Chip mit Text (nicht nur Farbe)", /adm-chip--ok/.test(quietView) && quietView.includes("System läuft"));
+
+api.setData("crawlReport", { lastCrawlAt: minsAgo(30), failedSources: 4, checkedSources: 47, errorCount: 4 });
+api.setData("budget", { day: "2026-07-17", limit: 100, calls: 100, errors: 2, skips: 9, remaining: 0, estimatedCostUsd: 0.42, byTenant: {}, skipsByReason: { "budget-erreicht": 9 } });
+api.setRecovery({ v3StoreAktiv: true, knowledgeObjects: { pending: 3, failed: 2, complete: 10 }, understandingLock: { aktiv: false, verdaechtig: true } });
+const busyView = api.uebersicht();
+check("C3 Handlungsbedarf: fehlgeschlagene Quellen erscheinen", busyView.includes("Quellen im letzten Lauf fehlgeschlagen"));
+check("C4 Handlungsbedarf: Tageslimit erreicht erscheint", busyView.includes("Tageslimit erreicht"));
+check("C5 Handlungsbedarf: failed Wissensobjekte erscheinen", busyView.includes("Wissensobjekte fehlgeschlagen"));
+check("C6 Handlungsbedarf: Lock-verdaechtig erscheint", busyView.includes("Understanding-Lock wirkt veraltet"));
+check("C7 Handlungsbedarf verlinkt Bereiche (data-adm-goto)", busyView.includes("data-adm-goto="));
+check("C8 Kein automatischer Aktions-Aufruf im Markup (keine data-recovery-action in der Übersicht)", !busyView.includes("data-recovery-action"));
+
+// ── D) Waehrung: USD nie als EUR ─────────────────────────────────────────────
+check("D1 admUsd kennzeichnet USD", api.usd(1.23).includes("USD"));
+check("D2 admUsd erfindet nichts (null -> —)", api.usd(null) === "—");
+check("D3 admEur formatiert EUR", api.eur(49).includes("€"));
+api.clearData();
+api.setData("budget", { day: "2026-07-17", limit: 100, calls: 38, errors: 2, skips: 9, remaining: 62, estimatedCostUsd: 0.42, reserveUnderstanding: 20, failClosed: false, byTenant: {}, skipsByReason: { "budget-erreicht": 6 }, monat: { seit: "2026-07-01", calls: 500, estimatedCostUsd: 6.4 } });
+api.setData("costs", { periodDays: 30, totalCalls: 1180, successfulCalls: 1131, failedCalls: 49, totalCostUsd: 12.87, totalTokens: 1940000, perModel: { "gpt-5-mini": { calls: 980, estimatedCostUsd: 3.1, totalTokens: 1420000 } }, perCategory: { intelligence: { calls: 620, estimatedCostUsd: 9.4 } }, byDay: [{ day: "2026-07-17", calls: 38, estimatedCostUsd: 0.42, totalTokens: 61240 }] });
+api.setData("costsPerUser", { periodDays: 30, totalCostUsd: 12.87, perUser: [{ userId: "pilot-a", name: "Pilot A", totalCostUsd: 11.1, calls: 1020 }], tenantBudgets: [{ politicianId: "pilot-a", name: "Pilot A", dailyBudgetCent: 100, monthlyBudgetCent: 2000, heuteUsd: 0.42, monatUsd: 6.4, applied: true, allowed: true, warn: false, reason: null }] });
+const kostenView = api.kosten();
+check("D4 KI-Kosten tragen USD-Kennzeichnung", (kostenView.match(/USD/g) || []).length >= 6);
+check("D5 Waehrungshinweis vorhanden (keine stille Umrechnung)", kostenView.includes("Schätzwerte in USD") && kostenView.includes("EUR-Umrechnung"));
+check("D6 Kosten-Zahlen nie mit €-Suffix (EUR nur fuer Budget-Cents)", !/0,42 €|12,87 €/.test(kostenView));
+check("D7 Budget-Cents als EUR gekennzeichnet", kostenView.includes("1,00 €") && kostenView.includes("20,00 €"));
+check("D8 Skip-Gruende erscheinen", kostenView.includes("budget-erreicht"));
+check("D9 Monat-bis-heute erscheint", kostenView.includes("seit 2026-07-01"));
+
+// ── E) Nutzer & Kunden ───────────────────────────────────────────────────────
+api.clearData();
+api.setData("overview", {
+  generatedAt: minsAgo(1),
+  counts: { users: 3, activeLast7d: 2 },
   users: [
-    { id: "u-admin", name: "Admin Root", email: "admin@bt.de", role: "admin", active: true, status: "aktiv", lastSeenAt: minsAgo(5), openCount: 10, loginCount: 5, customer: {} },
-    { id: "u-ref", name: "Rita Referent", email: "rita@bt.de", role: "referent", active: true, status: "aktiv", lastSeenAt: minsAgo(60), openCount: 3, loginCount: 2, customer: {} },
-    { id: "u-mdb", name: "Max Mandat", email: "max@bt.de", role: "abgeordneter", politicianId: "max-mandat", active: true, status: "aktiv", lastSeenAt: minsAgo(200), paidUntil: new Date(Date.now() + 30 * 86400000).toISOString(), openCount: 20, loginCount: 8, customer: {} }
+    { id: "u1", name: "<script>alert(1)</script>", email: "x@example.org", role: "abgeordneter", politicianId: "pilot-a", active: true, status: "aktiv", customer: { pricePerMonth: 49, paymentStatus: "paid", startDate: "2026-07-01", trialUntil: null, nextInvoice: "2026-08-01", internalNote: "" }, notificationSettings: { briefing: true, lage: true, radar: false, crisis: true, opportunity: true, statement: true }, loginCount: 4, openCount: 9, lastLoginAt: minsAgo(60), lastSeenAt: minsAgo(10) },
+    { id: "u2", name: "Referentin R", email: "r@example.org", role: "referent", politicianId: null, active: true, status: "aktiv", customer: { pricePerMonth: null, paymentStatus: "none" }, loginCount: 0, openCount: 0 },
+    { id: "u3", name: "Admin", email: "admin@example.org", role: "admin", politicianId: null, active: true, status: "aktiv", customer: { pricePerMonth: null, paymentStatus: "none" }, loginCount: 1, openCount: 1 }
   ],
-  assignments: [{ userId: "u-ref", politicianId: "max-mandat" }],
-  feedback: [], mandates: [], profiles: [{ id: "max-mandat", fullName: "Max Mandat" }],
-  stats: {
-    today: { articles: 120, kos: 8, briefings: 2, totalCostUsd: 0.234, totalCalls: 42, perUser: [{ userId: "max-mandat", name: "Max Mandat", totalCostUsd: 0.2 }], perCategory: { intelligence: { calls: 20, estimatedCostUsd: 0.1 }, briefing: { calls: 15, estimatedCostUsd: 0.08 }, office: { calls: 7, estimatedCostUsd: 0.05 } } },
-    days30: { articles: 3000, kos: 200, briefings: 40, totalCostUsd: 5.6, totalCalls: 900, perUser: [], perCategory: {} }
-  },
-  crawlReport: { lastCrawlAt: minsAgo(18), mode: "full", scannedArticles: 500, deduplicatedArticles: 60, newVorgaenge: 12, newKnowledgeObjects: 8, checkedSources: 21, failedSources: 0, errorCount: 0, durationSec: 42 },
-  system: { storage: { backend: "supabase", supabaseConfigured: true }, store: { briefings: { total: 12 } }, ai: { enabled: true, model: "gpt-4o" }, push: { enabled: false }, authMode: true, deploy: { version: "abc12345", commit: "abc123456789", branch: "main", environment: "production" } },
-  recentErrors: [], auditEvents: [{ createdAt: nowIso, action: "admin.user.update", actorEmail: "admin@bt.de" }]
-};
+  assignments: [{ id: "as1", userId: "u2", politicianId: "pilot-a", createdAt: minsAgo(500) }],
+  profiles: [{ id: "pilot-a", fullName: "Pilot A" }],
+  mandates: [], feedback: [], system: {}
+});
+api.setData("customers", { counts: { kunden: 1, paid: 1, open: 0, overdue: 0, none: 0, trial: 0, gekuendigt: 0, deaktiviert: 0 }, mrrEur: 49, kunden: [{ userId: "u1", name: "Pilot A", email: "x@example.org", politicianId: "pilot-a", status: "aktiv", customer: { pricePerMonth: 49, paymentStatus: "paid", startDate: "2026-07-01", nextInvoice: "2026-08-01", internalNote: "VIP" } }], sessionsAktiv: 2 });
+const nutzerView = api.nutzer();
+check("E1 XSS: Nutzername wird escaped", !nutzerView.includes("<script>alert(1)</script>") && nutzerView.includes("&lt;script&gt;"));
+check("E2 MRR in EUR", nutzerView.includes("49,00 €"));
+check("E3 Aktive Sessions als reine Anzahl", nutzerView.includes("Aktive Sessions"));
+check("E4 Keine Token/Hashes im Markup", !/tokenHash|passwordHash/.test(nutzerView));
+check("E5 Referenten-Hinweis (bestehende Rollenstruktur, kein Ausbau)", nutzerView.includes("bestehende Rollenstruktur"));
+check("E6 Benachrichtigungen je Mandat erscheinen", nutzerView.includes("Benachrichtigungen je Mandat"));
+check("E7 Konten-Tabelle suchbar (data-adm-search)", nutzerView.includes("data-adm-search"));
+check("E8 Konten-Tabelle sortierbar (data-adm-sort)", nutzerView.includes("data-adm-sort"));
+check("E9 Zahlungsstatus als Text-Chip", nutzerView.includes("bezahlt"));
 
-// ── 1) Betrieb: sechs Kacheln, gesund = 6x gruen, KEINE Warnungen mehr in der Kachelzeile.
-const htmlOk = api.overview({ generatedAt: minsAgo(2) }, dsHealthy, recHealthy);
-const labels = ["System", "Datenstand", "Pipeline", "Quellen", "Understanding", "Watchdog"];
-check("Betrieb: genau 6 Statuskacheln", (htmlOk.match(/class="op-tile /g) || []).length === 6);
-labels.forEach((l) => check(`Betrieb: Kachel [${l}]`, htmlOk.includes(`>${l}<`)));
-check("Betrieb: gesund => 6 gruene Kacheln", (htmlOk.match(/op-tile--ok/g) || []).length === 6);
-check("Betrieb: keine Warn-/Hinweiszeilen mehr in der Kachelzeile", !htmlOk.includes("op-warnings"));
-check("Betrieb: echte Zaehler (21 von 21 ok)", htmlOk.includes("21 von 21 ok"));
+// ── F) System & Sicherheit ───────────────────────────────────────────────────
+api.clearData();
+api.setData("overview", { generatedAt: minsAgo(1), counts: {}, users: [], assignments: [], profiles: [], mandates: [{ id: "pilot-a", fullName: "Pilot A", committees: [], focusTopics: [], validierung: { zustand: "vollstaendig", zustandLabel: "Vollständig", bereit: true, nutzbar: true, deaktiviert: false, fehlendePflichtfelder: [] } }], feedback: [], recentErrors: [], auditEvents: [], system: { store: { backend: "local", rawItems: {}, briefings: {}, crawlRuns: {} }, deploy: { commit: "abc12345", environment: "development" }, storage: {}, ai: {}, push: {}, helmutConfig: [] } });
+api.setData("tenantMode", { tenantJwtModeEnabled: false, effectiveTransport: "service_role" });
+api.setData("setupStatus", { adminExists: true, storageBackend: "local" });
+api.setRecovery({ v3StoreAktiv: true, knowledgeObjects: { pending: 0, failed: 0, complete: 5 }, understandingLock: { aktiv: false, verdaechtig: false } });
+const systemView = api.system();
+check("F1 Sicherheitszustand ehrlich: service_role sichtbar", systemView.includes("service_role"));
+check("F2 RLS ehrlich: 'NICHT wirksam' statt Beschoenigung", systemView.includes("NICHT wirksam"));
+check("F3 Tenant-JWT ehrlich: dauerhaft deaktiviert", systemView.includes("dauerhaft deaktiviert"));
+check("F4 Recovery-Bereich eingebettet (bestehendes Muster)", systemView.includes("data-recovery-action"));
+check("F5 Recovery-Kernaktionen vorhanden", systemView.includes("Understanding-Lauf starten") && systemView.includes("Pending Vorgänge"));
+check("F6 Backfill-Ausfuehrung klar als gefaehrlich markiert", systemView.includes("adm-action-row--danger") && systemView.includes("AUSFÜHREN"));
+check("F7 presentation-backfill ohne Button (nur CRON_SECRET)", systemView.includes("presentation-backfill") && systemView.includes("CRON_SECRET"));
 
-// ── 2) Handlungsbedarf: gesund => ruhiger Leerzustand.
-const acOk = api.actionCenter(dsHealthy, recHealthy);
-check("Handlungsbedarf: Ueberschrift vorhanden", acOk.includes("Handlungsbedarf"));
-check("Handlungsbedarf: gesund => 'Alles ruhig. Kein Eingreifen noetig.'", acOk.includes("Alles ruhig. Kein Eingreifen nötig."));
-check("Handlungsbedarf: gesund => keine ac-items", !/ac-item /.test(acOk));
+// DSGVO: Loeschung braucht Tippbestaetigung mit Mandats-ID.
+api.setPrivacyConfirm("pilot-a");
+const privacyView = api.system();
+check("F8 Loeschbestaetigung zeigt Mandats-ID + Tippfeld", privacyView.includes("data-privacy-confirm-input=\"pilot-a\"") && privacyView.includes("Unwiderrufliche Löschung"));
+check("F9 Loeschung als eigene, klar getrennte Gefahren-Aktion", privacyView.includes("adm-danger-btn"));
+check("F10 Export nutzt bestehende Privacy-Route", privacyView.includes("Auskunft exportieren"));
+api.setPrivacyConfirm(null);
 
-// ── 3) Handlungsbedarf: degradiert => echte Hinweise.
-const dsBad = {
-  v3StoreAktiv: true,
-  global: {
-    ampel: "rot", letzterLauf: new Date(Date.now() - 30 * 3600000).toISOString(), modus: "full",
-    quellen: { geprueft: 21, erfolgreich: 18, fehlgeschlagen: 3 },
-    kiAnalyseFehler: true, morgenstatus0730: { ok: false, note: "Kein erfolgreicher Tageslauf bis 7:30" },
-    letzterFehler: { headline: "Crawl-Timeout", reason: "Quelle X nicht erreichbar", when: nowIso, scope: "pipeline" }
-  },
-  perAccount: []
-};
-const recBad = {
-  knowledgeObjects: { available: true, pending: 4, failed: 2, complete: 10 },
-  understandingLock: { aktiv: false, verdaechtig: true }, letzterUnderstandingLauf: minsAgo(120)
-};
-const acBad = api.actionCenter(dsBad, recBad);
-check("Handlungsbedarf: 2 Vorgaenge fehlgeschlagen", acBad.includes("2 Understanding-Vorgänge fehlgeschlagen"));
-check("Handlungsbedarf: Lock veraltet", acBad.includes("Understanding-Lock wirkt veraltet"));
-check("Handlungsbedarf: 4 warten", acBad.includes("4 Understanding-Vorgänge warten"));
-check("Handlungsbedarf: 3 von 21 Quellen mit Fehlern", acBad.includes("3 von 21 Quellen mit Fehlern"));
-check("Handlungsbedarf: letzter Fehler mit Headline", acBad.includes("Letzter Fehler: Crawl-Timeout"));
-check("Handlungsbedarf: KI-Analyse-Fehler", acBad.includes("KI-Analyse heute mit Fehlern"));
-check("Handlungsbedarf: KEINE Aktions-Buttons hier (Recovery bleibt geschuetzt)", !/data-recovery-action/.test(acBad));
+// ── G) Pipeline ──────────────────────────────────────────────────────────────
+api.clearData();
+api.setData("crawl", { periodDays: 30, totalCrawlRuns: 58, totalCheckedSources: 1364, totalSuccessfulSources: 1247, totalFailedSources: 117, totalSavedArticles: 3910, totalNewCandidateItems: 4520, recentRawItemCount: 3910, totalRawItemCount: 8421, crawlByDay: [{ day: "2026-07-17", runs: 2, checkedSources: 94, successfulSources: 86, failedSources: 8, savedItems: 128 }] });
+api.setData("crawlReport", { lastCrawlAt: minsAgo(90), mode: "full", scannedArticles: 156, deduplicatedArticles: 128, checkedSources: 94, successfulSources: 86, failedSources: 8, newVorgaenge: 14, newKnowledgeObjects: 19, newRawDocuments: 128, errorCount: 8, errors: [] });
+api.setData("processRuns", { processRuns: [{ process: "understanding", startedAt: minsAgo(120), durationMs: 42000, processed: 5, status: "ok" }], latestByProcess: { understanding: { process: "understanding", startedAt: minsAgo(120), durationMs: 42000, status: "ok" } }, zeitplan: [{ path: "/api/cron/crawl", schedule: "0 4 * * *" }] });
+api.setRecovery({ v3StoreAktiv: true, knowledgeObjects: { pending: 2, failed: 0, complete: 100 }, understandingLock: { aktiv: false, verdaechtig: false } });
+const pipelineView = api.pipeline();
+check("G1 Datenfluss zeigt Stufen Quelle→Briefing", pipelineView.includes("Quellen geprüft") && pipelineView.includes("Rohdokumente gespeichert") && pipelineView.includes("Briefing"));
+check("G2 Matching/Entscheidung ehrlich als — (Schattenbetrieb)", pipelineView.includes("Schattenbetrieb"));
+check("G3 Prozesslaufzeiten erscheinen (42 s)", pipelineView.includes("42 s"));
+check("G4 Cron-Zeitplan aus Server-Daten (UTC-Kennzeichnung)", pipelineView.includes("0 4 * * *") && pipelineView.includes("UTC"));
+check("G5 Pro-Tag-Tabelle vorhanden", pipelineView.includes("2026-07-17"));
+check("G6 Teurer Datenstatus nur auf Klick (data-adm-load)", pipelineView.includes("data-adm-load=\"dataStatus\""));
 
-// ── 4) Leere Daten -> Betrieb grau, Handlungsbedarf ruhig, nichts erfunden.
-const htmlEmpty = api.overview({}, null, null);
-check("Leer: Betrieb nur grau (unknown)", !/op-tile--ok|op-tile--warn|op-tile--bad/.test(htmlEmpty));
-check("Leer: neutrales 'Keine Daten'/'Unbekannt'", /Keine Daten|Unbekannt/.test(htmlEmpty));
-check("Leer: Handlungsbedarf ruhig", api.actionCenter(null, null).includes("Alles ruhig"));
+// ── H) Fehlerzustaende je Endpoint ───────────────────────────────────────────
+api.clearData();
+api.setError("daily", "HTTP 500");
+api.setData("budget", { day: "2026-07-17", calls: 1, errors: 0, skips: 0, remaining: 9, limit: 10, estimatedCostUsd: 0.01, byTenant: {}, skipsByReason: {} });
+const errView = api.uebersicht();
+check("H1 Endpoint-Fehler als ruhige Notiz mit Retry", errView.includes("data-adm-retry=\"daily\""));
+check("H2 Uebrige Karten bleiben nutzbar (Budget sichtbar)", errView.includes("KI heute"));
 
-// ── 5) Vollstaendige Ansicht (Admin): sechs Bereiche, Verdichtung, Details eingeklappt.
-api.setUser({ role: "admin", name: "Admin Root" });
-api.setAdmin(adminDataFull, dsHealthy, recHealthy, "today");
-const view = api.view();
-check("Full: Ueberschrift Betrieb (eyebrow)", view.includes(">Betrieb<"));
-["Handlungsbedarf", "Datenmotor", "Profile", "Kosten intern", "System und Sicherheit"].forEach((h) =>
-  check(`Full: Abschnitts-Ueberschrift [${h}]`, view.includes(`admin-sec-title">${h}`)));
-check("Full: Betreiber-Uebersicht (op-overview) oben", view.includes("op-overview"));
-check("Full: Datenmotor-Kompaktkopf (dm-summary)", view.includes("dm-summary"));
-check("Full: einklappbare Details vorhanden", view.includes("admin-details"));
-check("Full: verdichtete Profil-Liste (admin-table--compact)", view.includes("admin-table--compact") && view.includes("Max Mandat"));
-check("Full: Recovery klar als intern markiert", view.includes("admin-recovery-flag"));
-check("Full: Recovery-Buttons existieren (im DOM, eingeklappt)", view.includes("data-recovery-action"));
-
-// ── 6) Kosten intern: nur im Admin, verdichteter Kopf + Details.
-check("Kosten: 'Kosten heute' im verdichteten Kopf", view.includes("Kosten heute"));
-check("Kosten: Tageswert sichtbar ($0.234)", view.includes("$0.234"));
-check("Kosten: Engine-/Nutzer-Details eingeklappt", view.includes("Kosten pro Engine"));
-
-// ── 7) System und Sicherheit: Version + Secrets-STATUS (kein Wert) + Admin-Zugriff.
-check("System: Commit sichtbar", view.includes("abc123456789"));
-check("System: Admin-Zugriff rollen-geschuetzt", view.includes("Rollen-geschützt"));
-check("System: Secrets nur als Status (KI-Schluessel)", view.includes("KI-Schlüssel"));
-check("System: Hinweis 'nur als Status ... nie im Klartext'", view.includes("nie im Klartext"));
-
-// ── 8) Sicherheit: keine Secret-Werte, keine Demo-Texte in der ganzen Ansicht.
-// Passwort-Eingabefelder sind erlaubt (Nutzerverwaltung), duerfen aber NIE einen Wert
-// tragen; und es duerfen keine Klartext-Secret-Muster (Keys/Tokens) im Markup stehen.
-check("Secrets: Passwort-Felder tragen keinen Wert", !/type="password"[^>]*\svalue="[^"]/.test(view) && !/\svalue="[^"]*"[^>]*type="password"/.test(view));
-check("Secrets: keine Klartext-Secret-Muster (bearer/sk-/service_role/apikey=)", !/bearer\s|sk-[a-z0-9]{12}|service_role|apikey=/i.test(view));
-check("Keine Demo-/Platzhalter-Texte", !/lorem|dummy|beispieltext|coming soon|demnaechst|\bTODO\b|\bFIXME\b/i.test(view));
-
-// ── 8b) Sprungmarken: Kacheln & Hinweise sind sichere interne Anker (nur Scrollen).
-const jumpVals = (s) => (s.match(/data-admin-jump="([^"]+)"/g) || []).map((m) => m.replace(/.*"([^"]+)"$/, "$1"));
-// Betrieb gesund: alle 6 Kacheln sind Anker; Ziele wie spezifiziert.
-check("Sprung: alle 6 Kacheln sind Anker (a.op-tile)", (htmlOk.match(/<a class="op-tile /g) || []).length === 6);
-check("Sprung: gesund -> System-Kachel zu System und Sicherheit", htmlOk.includes('href="#admin-system"'));
-check("Sprung: gesund -> Datenstand/Pipeline/Quellen zu Datenmotor", htmlOk.includes('href="#admin-datenmotor"'));
-check("Sprung: gesund -> KEIN Handlungsbedarf-/Recovery-Ziel", !htmlOk.includes('#admin-handlungsbedarf') && !htmlOk.includes('#admin-recovery'));
-check("Sprung: Chevron-Indikator vorhanden", htmlOk.includes("op-tile-chevron"));
-// Betrieb degradiert: System->Handlungsbedarf, Understanding->Recovery.
-const htmlBad2 = api.overview({ generatedAt: nowIso }, dsBad, recBad);
-check("Sprung: System (Fehler) -> Handlungsbedarf", htmlBad2.includes('href="#admin-handlungsbedarf"'));
-check("Sprung: Understanding (failed/pending/lock) -> Recovery", htmlBad2.includes('href="#admin-recovery"'));
-check("Sprung: alle Kachel-Ziele sind bekannte admin-Anker", jumpVals(htmlBad2).every((v) => /^admin-(betrieb|handlungsbedarf|datenmotor|profile|kosten|system|recovery)$/.test(v)));
-// Handlungsbedarf-Hinweise klickbar mit passenden Zielen.
-check("Sprung: Lock-Hinweis -> Recovery", /href="#admin-recovery"[^>]*>[\s\S]*?Understanding-Lock wirkt veraltet/.test(acBad) || acBad.includes('href="#admin-recovery"'));
-check("Sprung: Hinweise sind Anker (a.ac-item--link)", acBad.includes("ac-item--link"));
-check("Sprung: Quellen-/Fehler-Hinweis -> Datenmotor", acBad.includes('href="#admin-datenmotor"'));
-// SICHERHEIT: Sprung-Anker loesen KEINE Aktion aus (kein Recovery-/Pipeline-Trigger).
-check("Sprung: KEIN data-recovery-action in Kacheln/Hinweisen", !/data-admin-jump="[^"]*"[^>]*data-recovery-action|data-recovery-action[^>]*data-admin-jump/.test(htmlBad2 + acBad));
-check("Sprung: Kacheln/Hinweise haben kein onclick/kein fetch", !/onclick=/.test(htmlBad2 + acBad));
-
-// ── 8c) Full-View: alle sieben Abschnittsanker existieren.
-["admin-betrieb", "admin-handlungsbedarf", "admin-datenmotor", "admin-profile", "admin-kosten", "admin-system", "admin-recovery"].forEach((anchor) =>
-  check(`Anker vorhanden: #${anchor}`, view.includes(`id="${anchor}"`)));
-check("Full: Sprung-Anker vorhanden (data-admin-jump)", jumpVals(view).length >= 6);
-check("Full: alle Sprungziele sind bekannte admin-Anker", jumpVals(view).every((v) => /^admin-(betrieb|handlungsbedarf|datenmotor|profile|kosten|system|recovery)$/.test(v)));
-
-// ── 8d) Erklärungsebene: Info-Symbole + Glossar (Betreiber-Verständlichkeit).
-check("Info: Begriffs-Hilfen vorhanden (data-admin-info)", (view.match(/data-admin-info/g) || []).length >= 6);
-check("Info: Erklärung im aria-label (Screenreader)", /aria-label="Erklärung [^"]+: [^"]+"/.test(view));
-check("Info: Popover als role=tooltip", view.includes('role="tooltip"'));
-check("Info: Info-Buttons sind type=button, keine Aktion", /class="admin-info-btn"/.test(view) && !/data-admin-info[^>]*data-recovery-action/.test(view) && !/data-admin-info[^>]*href=/.test(view));
-check("Glossar: eingeklappte Begriffs-Legende vorhanden", view.includes("admin-glossary") && view.includes("Begriffe erklärt"));
-["Understanding", "Watchdog", "Recovery", "Knowledge Objects", "Understanding-Lock"].forEach((term) =>
-  check(`Glossar erklärt Begriff [${term}]`, view.includes(`<dt>${term}</dt>`)));
-check("Enum: Lauf-Modus menschlich (Vollständiger Lauf, kein rohes '· full')", view.includes("Vollständiger Lauf") && !view.includes("· full"));
-check("Info: keine Secret-Muster in Erklärungen", !/bearer\s|sk-[a-z0-9]{12}|service_role|apikey=/i.test(view));
-// Nicht-Admin darf keinerlei Info-Hilfen / Glossar sehen (kommt aus renderAdminView, das
-// fuer Nicht-Admin nur "Kein Zugriff" liefert).
-api.setUser({ role: "referent" });
-check("Info: Nicht-Admin sieht keine Begriffs-Hilfen/Glossar", !api.view().includes("data-admin-info") && !api.view().includes("admin-glossary"));
-api.setUser({ role: "admin", name: "Admin Root" });
-
-// ── 8e) HOTFIX: Recovery-Aktionen vs. Sprungmarken (Panel-Kollaps-Regression).
-const clientSrc = fs.readFileSync(path.join(root, "client.js"), "utf8");
-// Recovery-Buttons sind echte Aktions-Buttons: type=button, data-recovery-action,
-// KEIN href-Anker, KEIN data-admin-jump.
-const relLock = (view.match(/<button[^>]*data-recovery-action="release-lock"[^>]*>/) || [])[0] || "";
-const runU = (view.match(/<button[^>]*data-recovery-action="run-understanding"[^>]*>/) || [])[0] || "";
-check("Recovery: Lock-lösen-Button vorhanden", relLock.length > 0);
-check("Recovery: Understanding-Lauf-Button vorhanden", runU.length > 0);
-check("Recovery: Aktions-Buttons sind type=button", /type="button"/.test(relLock) && /type="button"/.test(runU));
-check("Recovery: Aktions-Buttons sind KEINE Anker (kein href)", !/href=/.test(relLock) && !/href=/.test(runU));
-check("Recovery: Aktions-Buttons haben KEIN data-admin-jump", !/data-admin-jump/.test(relLock) && !/data-admin-jump/.test(runU));
-check("Recovery: #admin-recovery ist KEIN Sprung-Anker (kein data-admin-jump am Wrap)", /id="admin-recovery"[^>]*>/.test(view) && !/id="admin-recovery"[^>]*data-admin-jump/.test(view) && !/data-admin-jump[^>]*id="admin-recovery"/.test(view));
-// Jump-Links tragen keine Recovery-Action.
-check("Sprung: kein data-admin-jump-Element hat data-recovery-action", !/data-admin-jump="[^"]*"[^>]*data-recovery-action|data-recovery-action[^>]*data-admin-jump="/.test(view));
-// Phase-3-Erklärungen (Kostenhinweis nur hier im Admin).
-check("Recovery: Lock-lösen erklärt (title: startet keinen neuen Lauf)", /title="Gibt einen veralteten Verarbeitungsschutz frei\. Startet keinen neuen Lauf\."/.test(view));
-check("Recovery: Understanding-Lauf erklärt (title: kann KI-Kosten verursachen)", /title="Startet die Verarbeitung wartender Vorgänge\. Kann interne KI-Kosten verursachen\."/.test(view));
-
-// Regression-Kern: bei aktiver Aktion / vorliegendem Ergebnis bleibt das Recovery-Panel
-// OFFEN (sonst klappt es bei jedem Re-Render zu -> „Seite springt", Ergebnis verdeckt).
-api.setRecoveryUI(true, { action: "release-lock", ok: true, geloest: true, finishedAt: "10:00" }, false);
-const viewOpen = api.view();
-check("Regression: Recovery-Panel bleibt OFFEN, wenn ein Ergebnis vorliegt", /<details class="admin-details" open>\s*<summary[^>]*>Recovery-Aktionen \(intern\) anzeigen/.test(viewOpen));
-api.setRecoveryUI(false, null, false);
-const viewClosed = api.view();
-check("Ruhezustand: Recovery-Panel ist zugeklappt ohne Aktivität", /<details class="admin-details">\s*<summary[^>]*>Recovery-Aktionen \(intern\) anzeigen/.test(viewClosed));
-
-// Bestätigung bleibt erhalten (Quellcode-Invariante — kein echter Lauf im Test).
-check("Recovery: reset-failed braucht window.confirm", /action === "reset-failed"[\s\S]{0,200}window\.confirm/.test(clientSrc));
-check("Recovery: run-understanding braucht window.confirm", /action === "run-understanding"[\s\S]{0,200}window\.confirm/.test(clientSrc));
-// Jump-Handler hat den defensiven Riegel gegen Aktions-Klicks.
-check("Sprung: Jump-Handler ignoriert Klicks aus Recovery-/Pending-Controls", /closest\("\[data-recovery-action\], \[data-pending-diagnose\]"\)/.test(clientSrc));
-// Keine Auto-Auslösung beim Rendern (kein onclick, keine Selbstaufrufe im Markup).
-check("Recovery: keine Auto-Auslösung beim Rendern (kein onclick)", !/onclick=/.test(view));
-// Nicht-Admin sieht keine Recovery-Aktionen.
-api.setUser({ role: "referent" });
-check("Recovery: Nicht-Admin sieht keine Recovery-Aktionen", !api.view().includes("data-recovery-action"));
-api.setUser({ role: "admin", name: "Admin Root" });
-
-// ── 9) Admin-Gating: Nicht-Admin sieht nichts, keine Kosten.
-api.setUser({ role: "referent" });
-const viewRef = api.view();
-check("Nicht-Admin (referent): 'Kein Zugriff'", viewRef.includes("Kein Zugriff"));
-check("Nicht-Admin: keine Kacheln/Bereiche", !viewRef.includes("op-tile") && !viewRef.includes("admin-sec-title"));
-check("Nicht-Admin: keine Kostenwerte", !viewRef.includes("$0.234") && !viewRef.includes("Kosten heute"));
-api.setUser({ role: "abgeordneter" });
-check("Nicht-Admin (abgeordneter): 'Kein Zugriff'", api.view().includes("Kein Zugriff"));
-
-// ── 10) relAge-Sanity.
-check("relAge: null bei fehlendem Wert", api.relAge(null) === null && api.relAge("nonsense") === null);
-check("relAge: frisch -> 'gerade eben'", api.relAge(minsAgo(0.5)) === "gerade eben");
-check("relAge: Minuten korrekt", api.relAge(minsAgo(12)) === "vor 12 Min.");
-
-console.log(`\n${passed}/${passed + failed} Admin-Kontrollzentrum-Checks bestanden.`);
-if (failed > 0) process.exit(1);
+console.log(`\n${failed === 0 ? "ALLE GRÜN" : failed + " FEHLGESCHLAGEN"} — ${passed}/${passed + failed} Admin-Render-Assertions`);
+process.exit(failed > 0 ? 1 : 0);

@@ -131,11 +131,17 @@ let previewMode = false;
 let authState = null;
 let currentUser = null;
 let allowedProfiles = [];
-let adminData = null;
-let adminDataLoaded = false;
-let adminLoadError = false;
-let adminPeriod = "today";
-let adminDataStatus = null; // interner Datenmotor-Status (global + pro Account)
+// --- Admin (Neuaufbau 2026-07): Bereichs-Zustand ---------------------------
+let admSection = "uebersicht";   // aktiver Admin-Bereich
+let admData = {};                // Endpoint-Key -> Payload (gemeinsamer Cache)
+let admErrors = {};              // Endpoint-Key -> Fehlertext
+let admLoading = {};             // Endpoint-Key -> true solange Anfrage laeuft
+let admLoadedAt = {};            // Bereichs-ID -> Zeitstempel letzter Ladung
+let admSort = {};                // Tabellen-ID -> { key, dir }
+let admSearchTerms = {};         // Tabellen-ID -> Suchbegriff
+let admCostDays = 30;            // Zeitraum der KI-Kosten-Ansicht (Tage)
+let admPrivacyConfirm = null;    // aktive DSGVO-Loesch-Bestaetigung { politicianId }
+let admBackfillState = null;     // Zustand/Ergebnis des KO-Backfill-Aufrufs
 let adminRecovery = null;      // interner Pipeline-Recovery-Status (nur Admin)
 let adminRecoveryResult = null; // Ergebnis der letzten Recovery-Aktion (Anzeige)
 let adminRecoveryBusy = false;  // verhindert Doppelklick/Parallelausführung
@@ -164,17 +170,9 @@ let onboardingDraft = {};
 const app = document.querySelector("#app");
 const toast = document.querySelector("#toast");
 
-const USD_TO_EUR = 0.92;
-
 function fmtCost(n) {
   if (typeof n !== "number") return "—";
   return n < 0.01 ? n.toFixed(4) : n.toFixed(2);
-}
-
-function formatUsdEur(usd) {
-  if (typeof usd !== "number") return "—";
-  const eur = usd * USD_TO_EUR;
-  return `$${fmtCost(usd)} | €${fmtCost(eur)}`;
 }
 
 // --- View-Persistenz ---
@@ -739,42 +737,10 @@ async function ensureViewData(view) {
   // Radar liest den fertigen Lesevertrag briefing.currentRadarState (beim App-Start
   // über /api/app/start geladen) — KEIN separater Radar-Request pro Ansicht mehr
   // (ein Read-State pro Start, keine unnötigen API-Aufrufe).
-  if (view === "admin" && !adminDataLoaded) {
-    adminDataLoaded = true;
-    adminLoadError = false;
-    try {
-      const response = await fetchWithTimeout(`/api/admin/overview?${apiScopeQuery()}`, {}, 20000);
-      if (response.status === 401 || response.status === 403) {
-        adminLoadError = true;
-      } else {
-        adminData = response.ok ? await response.json() : null;
-        if (!adminData) adminLoadError = true;
-      }
-      // Interner Datenmotor-Status (separater, etwas teurerer Endpoint) — bewusst
-      // fehlertolerant: schlaegt er fehl, bleibt der restliche Admin sichtbar.
-      try {
-        const dsResp = await fetchWithTimeout(`/api/admin/data-status?${apiScopeQuery()}`, {}, 25000);
-        adminDataStatus = dsResp.ok ? await dsResp.json() : null;
-      } catch (_) {
-        adminDataStatus = null;
-      }
-      // Interner Pipeline-Recovery-Status (nur Anzeige, kein KI-Call). Fehlertolerant:
-      // nur mit gültigem Objekt überschreiben, sonst letzten bekannten Stand behalten.
-      try {
-        const rvResp = await fetchWithTimeout(`/api/admin/recovery-status?${apiScopeQuery()}`, {}, 25000);
-        const j = rvResp.ok ? await rvResp.json().catch(() => null) : null;
-        if (j && typeof j === "object" && !Array.isArray(j)) { adminRecovery = j; adminRecoveryStale = false; }
-        else if (adminRecovery) { adminRecoveryStale = true; } // vorhandenen Stand behalten
-        else { adminRecovery = null; }                          // erster Load ohne Daten -> Fail-safe-Karte
-      } catch (_) {
-        if (adminRecovery) adminRecoveryStale = true; else adminRecovery = null;
-      }
-    } catch (error) {
-      adminDataLoaded = false;
-      adminLoadError = true;
-      console.warn("Admin overview not loaded", error);
-    }
-    render();
+  if (view === "admin") {
+    // Neuaufbau 2026-07: bereichsweises Laden; ein fehlgeschlagener Endpoint
+    // blockiert nie den ganzen Admin (Details in ensureAdminSection).
+    await ensureAdminSection(admSection);
   }
   if (view === "daily-input" && !dailyInputsLoaded) {
     dailyInputsLoaded = true;
@@ -1077,9 +1043,7 @@ async function switchPolitician(id) {
   activePoliticianId = next;
   radarArchiveLoaded = false;
   opsStatusLoaded = false;
-  adminDataLoaded = false;
-  adminLoadError = false;
-  adminData = null;
+  admResetState();
   dailyInputsLoaded = false;
   csrfTokenPromise = null;
   try {
@@ -1220,154 +1184,11 @@ function adminRelAge(iso) {
   return tage === 1 ? "vor 1 Tag" : `vor ${tage} Tagen`;
 }
 
-// Eine Statuskachel der Betreiber-Übersicht. cls ∈ {ok, warn, bad, unknown} steuert NUR
-// die semantische Farbe (grün/gelb/rot/grau). Alle Texte werden escaped. Ist `target`
-// (eine interne Abschnitts-id) gesetzt, wird die Kachel zu einem sicheren internen
-// Sprung-Anker (<a href="#…">) — reine Navigation/Scrollen, NIE eine Aktion.
-function opTile(label, cls, statusText, subText, timeText, target) {
-  const inner = `
-      <div class="op-tile-top"><span class="op-dot" aria-hidden="true"></span><span class="op-tile-label">${escapeHtml(label)}</span>${target ? `<span class="op-tile-chevron" aria-hidden="true">›</span>` : ""}</div>
-      <span class="op-tile-status">${escapeHtml(statusText)}</span>
-      ${subText ? `<span class="op-tile-sub">${escapeHtml(subText)}</span>` : ""}
-      ${timeText ? `<span class="op-tile-time">${escapeHtml(timeText)}</span>` : ""}`;
-  if (target) {
-    return `<a class="op-tile op-tile--${escapeAttribute(cls)} op-tile--link" href="#${escapeAttribute(target)}" data-admin-jump="${escapeAttribute(target)}" title="Zum Bereich springen: ${escapeAttribute(adminJumpLabel(target))}" aria-label="${escapeAttribute(label)}: ${escapeAttribute(statusText)} — zum Bereich ${escapeAttribute(adminJumpLabel(target))} springen">${inner}</a>`;
-  }
-  return `<div class="op-tile op-tile--${escapeAttribute(cls)}">${inner}</div>`;
-}
-
-// 30-Sekunden-Betreiber-Übersicht (nur Admin). Leitet AUSSCHLIESSLICH aus bereits
-// geladenen Admin-Daten ab (overview, data-status, recovery-status) — kein neuer
-// Endpoint, kein KI-Call, keine Aktion. Fehlt ein Wert sicher, wird er neutral als
-// „Keine Daten"/„Unbekannt" (grau) gezeigt, niemals erfunden. Farbe nur semantisch.
-function renderAdminOperatorOverview(data, ds, rec) {
-  const g = (ds && ds.global) || null;
-  const koRaw = rec && rec.knowledgeObjects;
-  const ko = (koRaw && koRaw.available !== false) ? koRaw : null;
-  const tiles = [];
-
-  // 1) System — Gesamt-Ampel des Datenmotors (Rollup über Pipeline + Daten + Profil).
-  //    Sprungziel: bei Warnung/Fehler zum Handlungsbedarf, sonst zu System und Sicherheit.
-  {
-    const a = g && g.ampel;
-    const map = { gruen: ["ok", "Gesund"], gelb: ["warn", "Prüfen"], rot: ["bad", "Fehler"] };
-    const [cls, label] = map[a] || ["unknown", "Unbekannt"];
-    let sub;
-    if (!a) sub = "Kein Statusobjekt geladen";
-    else if (a === "gruen") sub = "Kernbereiche ok, brauchbarer Stand";
-    else if (a === "rot") sub = (g.letzterFehler && g.letzterFehler.headline) ? g.letzterFehler.headline : "Pipeline-Fehler oder kein aktueller Stand";
-    else sub = "Eingeschränkt — Details unten prüfen";
-    const chk = data && data.generatedAt ? adminRelAge(data.generatedAt) : null;
-    const target = (cls === "warn" || cls === "bad") ? "admin-handlungsbedarf" : "admin-system";
-    tiles.push(opTile("System", cls, label, sub, chk ? `geprüft ${chk}` : null, target));
-  }
-
-  // 2) Datenstand — Frische des letzten Laufs. Zeitstempel ist echt; die Alters-Schwelle
-  //    (6 h / 24 h) ist reine Anzeige-Heuristik, kein erfundener Wert. Sprung: Datenmotor.
-  {
-    const iso = g && g.letzterLauf;
-    if (!iso) tiles.push(opTile("Datenstand", "unknown", "Keine Daten", "Kein Lauf-Zeitstempel", null, "admin-datenmotor"));
-    else {
-      const ageH = (Date.now() - new Date(iso).getTime()) / 3600000;
-      const cls = ageH < 6 ? "ok" : ageH < 24 ? "warn" : "bad";
-      const label = cls === "ok" ? "Aktuell" : cls === "warn" ? "Älter" : "Veraltet";
-      tiles.push(opTile("Datenstand", cls, label, `Letzte Daten ${adminRelAge(iso)}`, null, "admin-datenmotor"));
-    }
-  }
-
-  // 3) Pipeline — lief der letzte Lauf erfolgreich? (echte Quellen-Zahlen + Modus). Sprung: Datenmotor.
-  {
-    if (!g) tiles.push(opTile("Pipeline", "unknown", "Unbekannt", "Kein Lauf-Status geladen", null, "admin-datenmotor"));
-    else {
-      const geprueft = dsNum(g.quellen && g.quellen.geprueft);
-      const erfolg = dsNum(g.quellen && g.quellen.erfolgreich);
-      const fehl = dsNum(g.quellen && g.quellen.fehlgeschlagen);
-      const ratio = geprueft > 0 ? fehl / geprueft : 0;
-      let cls, label;
-      if (geprueft === 0 && !g.letzterLauf) { cls = "unknown"; label = "Kein Lauf"; }
-      else if (geprueft > 0 && erfolg === 0) { cls = "bad"; label = "Fehlgeschlagen"; }
-      else if (ratio > 0.1) { cls = "warn"; label = "Mit Fehlern"; }
-      else { cls = "ok"; label = "Erfolgreich"; }
-      const modus = g.modus ? ` · ${adminModusLabel(g.modus)}` : "";
-      const sub = g.letzterLauf ? `Letzter Lauf ${adminRelAge(g.letzterLauf)}${modus}` : "Noch kein Lauf erfasst";
-      tiles.push(opTile("Pipeline", cls, label, sub, null, "admin-datenmotor"));
-    }
-  }
-
-  // 4) Quellen — wie viele Quellen lieferten Daten? (echte Zähler). Sprung: Datenmotor.
-  {
-    const q = g && g.quellen;
-    const geprueft = dsNum(q && q.geprueft);
-    if (!q || geprueft === 0) tiles.push(opTile("Quellen", "unknown", "Keine Daten", "Ab nächstem Lauf verfügbar", null, "admin-datenmotor"));
-    else {
-      const erfolg = dsNum(q.erfolgreich);
-      const fehl = dsNum(q.fehlgeschlagen);
-      // Rot nur bei Total-/Mehrheitsausfall; einzelne Fehlquellen sind „prüfen" (gelb).
-      const cls = fehl === 0 ? "ok" : (erfolg === 0 || fehl / geprueft > 0.5 ? "bad" : "warn");
-      const sub = fehl > 0 ? `${fehl} ${fehl === 1 ? "Quelle" : "Quellen"} prüfen` : "Alle Quellen ok";
-      tiles.push(opTile("Quellen", cls, `${erfolg} von ${geprueft} ok`, sub, null, "admin-datenmotor"));
-    }
-  }
-
-  // 5) Understanding — KO-Zustände + KI-Analysefehler (echte Zähler, kein KI-Call).
-  //    Sprung: bei pending/failed/auffälligem Lock zu Recovery, sonst zu Datenmotor.
-  {
-    const kiFehler = Boolean(g && g.kiAnalyseFehler);
-    const lockAuff = Boolean(rec && rec.understandingLock && (rec.understandingLock.verdaechtig || rec.understandingLock.aktiv));
-    if (!ko && !g) tiles.push(opTile("Understanding", "unknown", "Keine Daten", "Kein Status geladen", null, "admin-datenmotor"));
-    else {
-      const pending = ko ? dsNum(ko.pending) : 0;
-      const failed = ko ? dsNum(ko.failed) : 0;
-      let cls, label, sub;
-      if (failed > 0) { cls = "bad"; label = "Fehler"; sub = `${failed} ${failed === 1 ? "Vorgang" : "Vorgänge"} fehlgeschlagen`; }
-      else if (pending > 0) { cls = "warn"; label = "Wartet"; sub = `${pending} ${pending === 1 ? "Vorgang wartet" : "Vorgänge warten"}`; }
-      else if (kiFehler) { cls = "warn"; label = "Prüfen"; sub = "KI-Analyse heute mit Fehlern"; }
-      else { cls = "ok"; label = "Ok"; sub = "Keine Fehler im letzten Lauf"; }
-      const luf = rec && rec.letzterUnderstandingLauf ? adminRelAge(rec.letzterUnderstandingLauf) : null;
-      const auffaellig = failed > 0 || pending > 0 || lockAuff;
-      tiles.push(opTile("Understanding", cls, label, sub, luf ? `Lauf ${luf}` : null, auffaellig ? "admin-recovery" : "admin-datenmotor"));
-    }
-  }
-
-  // 6) Watchdog — der einzige automatische Readiness-Guard im System ist der Morgen-Check
-  //    7:30 (morgenstatus0730). Ehrlich als solcher benannt. Sprung: System und Sicherheit.
-  {
-    const m = g && g.morgenstatus0730;
-    if (!m || typeof m.ok === "undefined") tiles.push(opTile("Watchdog", "unknown", "Keine Daten", "Kein Morgen-Check-Status", null, "admin-system"));
-    else if (m.ok) tiles.push(opTile("Watchdog", "ok", "Ok", "Morgen-Check 7:30 bestanden", null, "admin-system"));
-    else tiles.push(opTile("Watchdog", "warn", "Prüfen", m.note ? String(m.note) : "Morgen-Check 7:30 nicht bestanden", null, "admin-system"));
-  }
-
-  // Nur die sechs Kacheln — Handlungsbedarf/Hinweise stehen bewusst im eigenen
-  // Bereich direkt darunter (renderAdminActionCenter), damit „Betrieb" ruhig bleibt.
-  return `
-    <section class="op-overview" id="admin-betrieb" aria-label="Betrieb — Betreiber-Übersicht">
-      <div class="op-tiles">${tiles.join("")}</div>
-      ${renderAdminGlossary()}
-    </section>`;
-}
-
-// Menschlicher Name eines internen Sprungziels (für title/aria-label).
-function adminJumpLabel(id) {
-  return ({
-    "admin-betrieb": "Betrieb",
-    "admin-handlungsbedarf": "Handlungsbedarf",
-    "admin-datenmotor": "Datenmotor",
-    "admin-profile": "Profile",
-    "admin-kosten": "Kosten intern",
-    "admin-system": "System und Sicherheit",
-    "admin-recovery": "Recovery (intern)"
-  })[id] || id;
-}
-
-// Technischer Lauf-Modus -> menschlicher Klartext (kein roher Enum in der Anzeige).
+// Crawl-Modus -> ruhiger Klartext (genutzt vom Crawl-Trichter).
 function adminModusLabel(m) {
   return ({ "full": "Vollständiger Lauf", "lage-check": "Lage-Check", "incremental": "Teil-Lauf" })[String(m || "")] || String(m || "");
 }
 
-// ── Erklärungsebene (Phase 2) ────────────────────────────────────────────────
-// Ruhige Begriffs-Erklärungen für Betreiber ohne Entwicklerwissen. Max. zwei kurze
-// Sätze, allgemein (nicht auf ein Mandat zugeschnitten), keine Secrets/Rohsprache.
 const ADMIN_GLOSSARY = {
   "System": "Gesamtzustand von Helmut auf einen Blick. Grün heißt: Pipeline, Daten und Profile sind in Ordnung.",
   "Datenstand": "Wie aktuell die Daten sind — gemessen daran, wie lange der letzte erfolgreiche Lauf her ist.",
@@ -1416,19 +1237,6 @@ function renderAdminGlossary() {
   return `<details class="admin-glossary"><summary class="admin-details-sum">Begriffe erklärt</summary><dl class="admin-gl-list">${items}</dl></details>`;
 }
 
-// ── Struktur-Helfer für das Betreiber-Kontrollzentrum ─────────────────────────
-// Klarer Bereich mit Überschrift. Reine Gliederung, keine neuen Daten.
-function adminSection(title, sub, inner, id) {
-  return `
-    <section class="admin-sec"${id ? ` id="${escapeAttribute(id)}"` : ""}>
-      <div class="admin-sec-head">
-        <h2 class="admin-sec-title">${escapeHtml(title)}</h2>
-        ${sub ? `<span class="admin-sec-sub">${escapeHtml(sub)}</span>` : ""}
-      </div>
-      ${inner}
-    </section>`;
-}
-
 // Aufklappbarer Detailbereich (zugeklappt per Default) — hält technisches Rohmaterial
 // aus der Hauptansicht, ohne es zu entfernen. Rein visuell; Inhalt bleibt im DOM.
 function adminDetails(label, inner, open = false) {
@@ -1438,388 +1246,732 @@ function adminDetails(label, inner, open = false) {
   </details>`;
 }
 
-// Kompakte Kennzahl-Kachel (wiederverwendet die bestehende admin-stat-Optik).
-function adminStatCell(value, label, tone, info) {
-  return `<div class="admin-stat-card"><span class="admin-stat-num${tone ? ` admin-stat-num--${escapeAttribute(tone)}` : ""}">${escapeHtml(String(value))}</span><span class="admin-stat-label">${escapeHtml(label)}${info ? adminInfo(info) : ""}</span></div>`;
-}
-
-// Echte Handlungsbedarf-Punkte aus bereits geladenen Daten (kein KI-Call, keine
-// Aktion). Leere Liste => „Alles ruhig". Erfindet nichts.
-function adminActionItems(ds, rec) {
-  const g = (ds && ds.global) || null;
-  const koRaw = rec && rec.knowledgeObjects;
-  const ko = (koRaw && koRaw.available !== false) ? koRaw : null;
-  const q = g && g.quellen;
-  const items = [];
-  // target = sicheres internes Sprungziel (nur Scrollen, keine Aktion).
-  if (ko && dsNum(ko.failed) > 0) items.push({ level: "bad", target: "admin-recovery", title: `${dsNum(ko.failed)} Understanding-Vorgänge fehlgeschlagen`, detail: `Im Datenmotor unter „Recovery (intern)“ prüfen und ggf. „Failed → Pending“ zurücksetzen.` });
-  if (g && g.letzterFehler && g.letzterFehler.headline) items.push({ level: "bad", target: "admin-datenmotor", title: `Letzter Fehler: ${g.letzterFehler.headline}`, detail: `${g.letzterFehler.reason ? g.letzterFehler.reason : "Details unter „System und Sicherheit“."}${g.letzterFehler.when ? ` · ${dsDateLabel(g.letzterFehler.when)}` : ""}` });
-  if (rec && rec.understandingLock && rec.understandingLock.verdaechtig) items.push({ level: "warn", target: "admin-recovery", title: "Understanding-Lock wirkt veraltet", detail: `Ein Lock hängt möglicherweise. Im Datenmotor unter „Recovery (intern)“ „Lock lösen“, falls kein Lauf mehr aktiv ist.` });
-  if (ko && dsNum(ko.pending) > 0) items.push({ level: "warn", target: "admin-recovery", title: `${dsNum(ko.pending)} Understanding-Vorgänge warten`, detail: "Warten auf Verarbeitung — der nächste Lauf holt sie nach." });
-  if (q && dsNum(q.fehlgeschlagen) > 0) items.push({ level: "warn", target: "admin-datenmotor", title: `${dsNum(q.fehlgeschlagen)} von ${dsNum(q.geprueft)} Quellen mit Fehlern`, detail: "Einzelne Quellen lieferten im letzten Lauf keine Daten. Im Datenmotor prüfen." });
-  if (g && g.kiAnalyseFehler) items.push({ level: "warn", target: "admin-datenmotor", title: "KI-Analyse heute mit Fehlern", detail: "Einzelne KI-Calls sind heute fehlgeschlagen. KI-Status im Datenmotor prüfen." });
-  return items;
-}
-
-// B. Handlungsbedarf — nur echte Hinweise, sonst ruhiger Leerzustand. Keine Buttons:
-// echte (gefährliche) Aktionen bleiben ausschließlich im markierten Recovery-Bereich.
-function renderAdminActionCenter(ds, rec) {
-  const items = adminActionItems(ds, rec);
-  // Jeder Hinweis mit sicherem Ziel wird zu einem internen Sprung-Anker (nur Scrollen).
-  // Ohne Ziel bleibt er nicht klickbar (reiner Text). Keine Aktion, kein Button.
-  const renderItem = (it) => {
-    const body = `
-        <span class="ac-dot" aria-hidden="true"></span>
-        <div class="ac-body">
-          <p class="ac-title">${escapeHtml(it.title)}</p>
-          ${it.detail ? `<p class="ac-detail">${escapeHtml(it.detail)}</p>` : ""}
-        </div>${it.target ? `<span class="ac-chevron" aria-hidden="true">›</span>` : ""}`;
-    if (it.target) {
-      return `<a class="ac-item ac-item--${escapeAttribute(it.level)} ac-item--link" href="#${escapeAttribute(it.target)}" data-admin-jump="${escapeAttribute(it.target)}" title="Zum Bereich springen: ${escapeAttribute(adminJumpLabel(it.target))}" aria-label="${escapeAttribute(it.title)} — zum Bereich ${escapeAttribute(adminJumpLabel(it.target))} springen">${body}</a>`;
-    }
-    return `<div class="ac-item ac-item--${escapeAttribute(it.level)}">${body}</div>`;
-  };
-  const inner = items.length
-    ? `<div class="ac-list">${items.map(renderItem).join("")}</div>`
-    : `<div class="ac-list"><p class="ac-empty">Alles ruhig. Kein Eingreifen nötig.</p></div>`;
-  return adminSection("Handlungsbedarf", items.length ? `${items.length} ${items.length === 1 ? "Hinweis" : "Hinweise"}` : "", inner, "admin-handlungsbedarf");
-}
-
-// C. Datenmotor — kompakte Kernzahlen (Rest steckt in „Details anzeigen").
-function renderAdminDatenmotorSummary(ds, rec, crawlReport) {
-  const g = (ds && ds.global) || {};
-  const ko = (rec && rec.knowledgeObjects && rec.knowledgeObjects.available !== false) ? rec.knowledgeObjects : null;
-  const lock = (rec && rec.understandingLock) || {};
-  const cr = crawlReport && !crawlReport.noData ? crawlReport : null;
-  const cell = (k, v, tone, info) => `<div class="dm-cell"><span class="dm-k">${escapeHtml(k)}${info ? adminInfo(info) : ""}</span><span class="dm-v${tone ? ` dm-v--${tone}` : ""}">${v}</span></div>`;
-  const lockText = lock.aktiv ? `<span class="ds-warn">Aktiv</span>` : lock.verdaechtig ? `<span class="ds-warn">Veraltet</span>` : (rec ? `<span class="ds-ok">Frei</span>` : "—");
-  const failed = ko ? dsNum(ko.failed) : null;
-  return `<div class="dm-summary">
-    ${cell("Letzter Lauf", g.letzterLauf ? escapeHtml(adminRelAge(g.letzterLauf)) : "—")}
-    ${cell("Quellen", g.quellen ? `${dsNum(g.quellen.erfolgreich)}/${dsNum(g.quellen.geprueft)}` : "—", null, "Quellen")}
-    ${cell("Neue Dokumente", cr && cr.deduplicatedArticles != null ? escapeHtml(String(cr.deduplicatedArticles)) : "—")}
-    ${cell("Knowledge Objects", cr && cr.newKnowledgeObjects != null ? escapeHtml(String(cr.newKnowledgeObjects)) : (ko ? escapeHtml(String(dsNum(ko.complete))) : "—"), null, "Knowledge Objects")}
-    ${cell("Pending", ko ? escapeHtml(String(dsNum(ko.pending))) : "—", null, "Pending")}
-    ${cell("Failed", failed == null ? "—" : String(failed), failed > 0 ? "bad" : null, "Failed")}
-    ${cell("Lock", lockText, null, "Understanding-Lock")}
-  </div>`;
-}
-
-// D. Profile — kompakte Summe + verdichtete Liste (große Karten nur in Details).
-function renderAdminProfilesSection(ds, detailsInner) {
-  const g = (ds && ds.global) || {};
-  const accounts = Array.isArray(ds && ds.perAccount) ? ds.perAccount : [];
-  const complete = accounts.filter((a) => a.profilVollstaendigkeit && a.profilVollstaendigkeit.complete).length;
-  const problems = accounts.filter((a) => a.ampel && a.ampel !== "gruen").length;
-  const profLabel = { full: "Vollständig", restricted: "Eingeschränkt", empty: "Kein Profil" };
-  const dotCls = (a) => a === "gruen" ? "ok" : a === "gelb" ? "warn" : a === "rot" ? "bad" : "unknown";
-  const summary = `<div class="admin-stats-row admin-stats-row--5">
-    ${adminStatCell(g.profile ? dsNum(g.profile.ausgewertet) : accounts.length, "Profile aktiv")}
-    ${adminStatCell(complete, "Vollständig")}
-    ${adminStatCell(g.briefing ? dsNum(g.briefing.sichtbarBeiAccounts) : "—", "Briefings sichtbar")}
-    ${adminStatCell(problems, "Mit Problemen", problems > 0 ? "warn" : null)}
-    ${adminStatCell(g.profile ? dsNum(g.profile.personalisierungEingeschraenkt) : "—", "Eingeschränkt")}
-  </div>`;
-  const rows = accounts.length
-    ? accounts.map((a) => `<tr>
-        <td data-label="Name"><span class="pf-dot pf-dot--${dotCls(a.ampel)}" aria-hidden="true"></span>${escapeHtml(a.name || a.politicianId || "")}</td>
-        <td data-label="Status">${a.ampel === "gruen" ? "In Ordnung" : a.ampel === "gelb" ? "Eingeschränkt" : a.ampel === "rot" ? "Kein Wert" : "—"}</td>
-        <td data-label="Profil">${escapeHtml(profLabel[a.profilVollstaendigkeit && a.profilVollstaendigkeit.level] || "—")}</td>
-        <td data-label="Briefing">${a.briefingSichtbar ? "Ja" : "Nein"}</td>
-        <td data-label="Punkte">${dsFmt(a.briefingPunkte)}</td>
-        <td data-label="Kosten heute">${dsCost(a.kiKosten)}</td>
-      </tr>`).join("")
-    : `<tr><td colspan="6" class="empty-state">Noch keine Accounts zur Auswertung.</td></tr>`;
-  const list = `<div class="admin-table-wrap"><table class="admin-table admin-table--compact">
-    <thead><tr><th>Name</th><th>Status</th><th>Profil</th><th>Briefing</th><th>Punkte${adminInfo("Briefing-Punkte")}</th><th>Kosten heute${adminInfo("KI-Kosten")}</th></tr></thead>
-    <tbody>${rows}</tbody></table></div>`;
-  return adminSection("Profile", `${accounts.length} ${accounts.length === 1 ? "Account" : "Accounts"}`, `${summary}${list}${detailsInner ? adminDetails("Verwaltung & Detailkarten anzeigen", detailsInner) : ""}`, "admin-profile");
-}
-
-// E. Kosten intern — leiser, verdichteter Kopf (Details eingeklappt).
-function renderAdminKostenSummary(stats, periodLabel) {
-  const cost = stats && typeof stats.totalCostUsd === "number" ? stats.totalCostUsd : null;
-  const calls = stats && stats.totalCalls != null ? stats.totalCalls : null;
-  const perUser = Array.isArray(stats && stats.perUser)
-    ? stats.perUser.slice().sort((a, b) => (b.totalCostUsd || 0) - (a.totalCostUsd || 0))
-    : [];
-  const top = perUser[0];
-  return `<div class="admin-stats-row admin-stats-row--3">
-    ${adminStatCell(cost != null ? `$${cost.toFixed(3)}` : "—", `Kosten ${periodLabel}`, "cost", "KI-Kosten")}
-    ${adminStatCell(calls != null ? String(calls) : "—", "Calls", null, "Calls")}
-    ${adminStatCell(top && top.totalCostUsd != null ? `$${fmtCost(top.totalCostUsd)}` : "—", top ? `Top: ${top.name || top.userId}` : "Top Nutzer")}
-  </div>`;
-}
-
-// Budget-Wahrheit (Phase 8): der heutige Stand im EXAKTEN Fenster des Budget-Gates
-// (UTC-Kalendertag) — nicht das rollierende 24h-Fenster der Kostentrends. Skips und
-// Fehler getrennt; pro Pfad einsehbar. Ruhig gehalten: eine Zeile + Aufklapper.
-function renderAdminBudgetHeute(b) {
-  if (!b) return "";
-  const limitText = b.limit != null ? `${b.calls}/${b.limit}` : `${b.calls} (kein Limit)`;
-  const restText = b.remaining != null ? String(b.remaining) : "—";
-  const tone = b.limit != null && b.remaining === 0 ? "bad" : (b.limit != null && b.remaining <= Math.ceil(b.limit * 0.2) ? "warn" : null);
-  const pfade = Object.entries(b.byCallType || {})
-    .sort((a, z) => (z[1].calls || 0) - (a[1].calls || 0))
-    .map(([ct, v]) => `<tr><td>${escapeHtml(ct)}</td><td>${v.calls}</td><td>${v.errors || 0}</td><td>$${Number(v.estimatedCostUsd || 0).toFixed(4)}</td></tr>`)
-    .join("");
-  const mandanten = Object.entries(b.byTenant || {})
-    .sort((a, z) => (z[1].calls || 0) - (a[1].calls || 0))
-    .map(([tid, v]) => `<tr><td>${escapeHtml(tid)}</td><td>${v.calls}</td><td>$${Number(v.estimatedCostUsd || 0).toFixed(4)}</td></tr>`)
-    .join("");
-  const skipReasons = Object.entries(b.skipsByReason || {})
-    .map(([reason, n]) => `<tr><td>${escapeHtml(reason)}</td><td>${n}</td></tr>`)
-    .join("");
-  const detail = `
-    <p class="sa-note">Tagesgrenze: ${escapeHtml(b.timezone)}. Fail-closed: ${b.failClosed ? "AN" : "aus"}${b.reserveUnderstanding ? ` · Understanding-Reserve: ${b.reserveUnderstanding} Calls` : ""}.</p>
-    <div class="admin-charts-row">
-      <div class="sa-block"><h3 class="sa-h3">Calls & Kosten pro Pfad (heute)</h3>
-        ${pfade ? `<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Pfad</th><th>Calls</th><th>Fehler</th><th>Kosten</th></tr></thead><tbody>${pfade}</tbody></table></div>` : `<p class="ac-empty">Heute noch keine KI-Calls.</p>`}</div>
-      <div class="sa-block"><h3 class="sa-h3">Calls pro Mandant (heute)</h3>
-        ${mandanten ? `<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Mandant</th><th>Calls</th><th>Kosten</th></tr></thead><tbody>${mandanten}</tbody></table></div>` : `<p class="ac-empty">Keine Mandanten-Calls.</p>`}</div>
-    </div>
-    ${skipReasons ? `<div class="sa-block"><h3 class="sa-h3">Übersprungene Anfragen (zählen nicht gegen das Budget)</h3><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Grund</th><th>Anzahl</th></tr></thead><tbody>${skipReasons}</tbody></table></div></div>` : ""}`;
-  return `<div class="admin-stats-row admin-stats-row--3">
-    ${adminStatCell(limitText, "Budget heute (Gate-Fenster)", tone, "KI-Kosten")}
-    ${adminStatCell(restText, "Verbleibend heute")}
-    ${adminStatCell(`${b.skips} / ${b.errors}`, "Skips / Fehler heute")}
-  </div>
-  ${adminDetails("Budget-Details (Pfade, Mandanten, Skips) anzeigen", detail)}`;
-}
-
 // ============================================================================
-// Sprint 8 — Admin: Quellenarchitektur (macht Sprint 4/5/7 sichtbar). Ruhig, hochwertig,
-// wiederverwendete Muster (adminSection/dsRow/ds-unavail/op-tile/ac-item). Rendert NUR
-// bereits geladene Daten (adminData.sourceArchitecture); fehlt sie -> nichts (Alt-Admin
-// unveraendert). Kein KI-Call, keine Aktion, keine erfundenen Zahlen.
+// ADMIN (Neuaufbau 2026-07): Betriebs-Cockpit mit sieben Bereichen.
+//
+// Prinzipien:
+//  - Kein Wert wird geraten: fehlt ein Wert (null/Fehler/nicht geliefert),
+//    steht "—". Keine Beispieldaten, keine geschaetzten Live-Werte.
+//  - Bereichsweises Laden: jeder Bereich laedt nur seine Endpoints; ein
+//    fehlgeschlagener Endpoint macht nie den ganzen Admin unbrauchbar.
+//  - Waehrung: KI-Kosten sind USD-Schaetzwerte (llmPriceTable, storage.js).
+//    Es gibt KEINE EUR-Umrechnung im Code — USD wird ausdruecklich als USD
+//    ausgewiesen. EUR erscheint nur bei echten EUR-Feldern (Kundenpreis,
+//    Budget-Cents der Profile).
+//  - Identitaet/Rollen ausschliesslich serverseitig (requireRoleOr403);
+//    die Client-Rollenpruefung ist rein kosmetisch.
 // ============================================================================
-function saBadge(label, tone) { return `<span class="sa-badge sa-badge--${escapeAttribute(tone || "muted")}">${escapeHtml(label)}</span>`; }
-function saUnavail(text) { return `<span class="ds-unavail">${escapeHtml(text || "Noch nicht verfügbar")}</span>`; }
-const SA_HEALTH = { gesund: ["Gesund", "ok"], defekt: ["Defekt", "bad"], unbekannt: ["Unbekannt", "muted"], inaktiv: ["Inaktiv", "muted"] };
-const SA_VALUE = { ergiebig: ["Nutzen", "ok"], nur_duplikate: ["Nur Duplikate", "bad"], ohne_ko: ["Kein KO", "warn"], keine_dokumente: ["Keine Dokumente", "muted"], unbestaetigt: ["Unbestätigt", "muted"] };
-function saHealthBadge(h) { const [l, t] = SA_HEALTH[h] || ["Unbekannt", "muted"]; return saBadge(l, t); }
-function saValueBadge(v) { const [l, t] = SA_VALUE[v] || ["Unbestätigt", "muted"]; return saBadge(l, t); }
-function saUsd(usd) { if (usd == null) return "–"; const n = Number(usd); return n === 0 ? "$0" : `$${n.toFixed(n < 0.01 ? 4 : 2)}`; }
-function saNumOrUnavail(v, unit) { return v == null ? saUnavail("nicht verfügbar") : `${escapeHtml(String(v))}${unit ? " " + escapeHtml(unit) : ""}`; }
 
-function renderSaLaenderPakete(sa) {
-  const lp = sa.views.laenderPakete;
-  const withModule = lp.laender.filter((l) => l.status !== "kein_modul");
-  const laenderRows = withModule.map((l) => {
-    const badge = l.status === "aktiv" ? saBadge("Aktiv", "ok") : saBadge("Vorbereitet", "warn");
-    const rd = l.readiness;
-    let body;
-    if (rd && rd.available) {
-      // Kandidaten-Land: Reifegrad EHRLICH — Kandidatenabdeckung ist NICHT Einsatzbereitschaft.
-      const abgedeckt = rd.klassenAbgedeckt != null ? rd.klassenAbgedeckt : rd.besetzt;
-      const abdeckung = `Kandidatenabdeckung ${abgedeckt}/${rd.klassenGesamt}${rd.unbesetzt ? ` · ${rd.unbesetzt} unbesetzt` : ""} — noch nicht technisch verifiziert`;
-      const reifegrad = `<div class="sa-badges">${saBadge(`${rd.kandidat} Kandidat`, "warn")}${rd.verifiziert ? saBadge(`${rd.verifiziert} verifiziert`, "ok") : ""}${saBadge(`${rd.einsatzbereit} einsatzbereit`, rd.einsatzbereit > 0 ? "ok" : "muted")}</div>`;
-      const unbesetztLine = rd.unbesetzt ? `<span class="sa-sub">Pilotklassen offen: <b>${escapeHtml((rd.unbesetzteKlassen || []).join(", "))}</b> — kein Ersatz durch fremde Partei/Person.</span>` : "";
-      body = `<span class="sa-sub">${escapeHtml(abdeckung)}</span>${reifegrad}${unbesetztLine}`;
+const ADMIN_SECTIONS = [
+  { id: "uebersicht", label: "Übersicht" },
+  { id: "pipeline", label: "Pipeline" },
+  { id: "kosten", label: "KI-Kosten" },
+  { id: "daten", label: "Daten & Profile" },
+  { id: "nutzer", label: "Nutzer & Kunden" },
+  { id: "system", label: "System & Sicherheit" },
+  { id: "quellen", label: "Quellen & Watchdog" }
+];
+
+// Endpoint-Registry: EIN gemeinsamer Cache (admData) ueber alle Bereiche —
+// keine doppelten Abfragen, ein Fehler bleibt auf seinen Endpoint begrenzt.
+const ADM_ENDPOINTS = {
+  daily: { path: () => "/api/admin/stats/daily", timeout: 15000 },
+  crawl: { path: () => "/api/admin/stats/crawl", timeout: 15000 },
+  crawlReport: { path: () => "/api/admin/stats/crawl-report", timeout: 15000 },
+  costs: { path: () => `/api/admin/stats/costs?days=${admCostDays}`, timeout: 15000 },
+  budget: { path: () => "/api/admin/stats/budget-today", timeout: 15000 },
+  costsPerUser: { path: () => `/api/admin/stats/costs-per-user?days=${admCostDays}`, timeout: 20000 },
+  processRuns: { path: () => "/api/admin/stats/process-runs?limit=60", timeout: 15000 },
+  audit: { path: () => "/api/admin/audit?limit=50", timeout: 15000 },
+  feedback: { path: () => "/api/admin/feedback?limit=200", timeout: 15000 },
+  customers: { path: () => "/api/admin/customers", timeout: 15000 },
+  sources: { path: () => "/api/admin/sources-status", timeout: 25000 },
+  overview: { path: () => "/api/admin/overview", timeout: 25000 },
+  tenantMode: { path: () => "/api/admin/tenant-mode", timeout: 15000 },
+  recovery: { path: () => "/api/admin/recovery-status", timeout: 25000 },
+  setupStatus: { path: () => "/api/auth/setup-status", timeout: 15000 },
+  // teuer (baut pro Account Briefings) — wird NUR auf Klick geladen.
+  dataStatus: { path: () => "/api/admin/data-status", timeout: 30000 }
+};
+
+const ADM_SECTION_ENDPOINTS = {
+  uebersicht: ["daily", "budget", "crawlReport", "recovery", "feedback", "audit"],
+  pipeline: ["crawl", "crawlReport", "recovery", "processRuns"],
+  kosten: ["costs", "budget", "costsPerUser"],
+  daten: ["overview"],
+  nutzer: ["overview", "customers"],
+  system: ["overview", "tenantMode", "recovery", "audit", "setupStatus"],
+  quellen: ["sources", "crawl", "crawlReport"]
+};
+
+function admResetState() {
+  admSection = "uebersicht";
+  admData = {}; admErrors = {}; admLoading = {}; admLoadedAt = {};
+  admSort = {}; admSearchTerms = {}; admPrivacyConfirm = null; admBackfillState = null;
+}
+
+// Ein Endpoint, ein Fehlerpfad: Fehler landen in admErrors[key], nie als Wurf.
+async function admFetchEndpoint(key, { force = false } = {}) {
+  const spec = ADM_ENDPOINTS[key];
+  if (!spec) return;
+  if (!force && admData[key] !== undefined) return;
+  admLoading[key] = true;
+  try {
+    const base = spec.path();
+    const url = `${base}${base.includes("?") ? "&" : "?"}${apiScopeQuery()}`;
+    const res = await fetchWithTimeout(url, {}, spec.timeout || 15000);
+    if (!res.ok) {
+      admErrors[key] = res.status === 401 ? "Anmeldung erforderlich" : res.status === 403 ? "Keine Berechtigung" : `HTTP ${res.status}`;
+      if (key === "recovery" && adminRecovery) adminRecoveryStale = true;
     } else {
-      body = l.pflichtklassen.total > 0
-        ? `<span class="sa-sub">${l.pflichtklassen.total - l.pflichtklassen.missing.length}/${l.pflichtklassen.total} Pflichtklassen — <b>${l.pflichtklassen.missing.length} fehlen</b></span>`
-        : `<span class="sa-sub">keine Pflichtklassen-Vorgabe</span>`;
+      const j = await res.json().catch(() => null);
+      if (j && typeof j === "object" && !Array.isArray(j)) {
+        admData[key] = j;
+        delete admErrors[key];
+        // Recovery-Status zusaetzlich in den bestehenden Recovery-Zustand spiegeln:
+        // runRecoveryAction/Status-Polling arbeiten unveraendert auf adminRecovery.
+        if (key === "recovery") { adminRecovery = j; adminRecoveryStale = false; }
+      } else {
+        admErrors[key] = "Unerwartete Antwort";
+        if (key === "recovery" && adminRecovery) adminRecoveryStale = true;
+      }
     }
-    return `<div class="sa-item"><div class="sa-item-main"><span class="sa-item-name">${escapeHtml(l.name)}</span>${badge}</div>${body}</div>`;
-  }).join("");
-  const rest = `<p class="sa-note">${sa.counts.laenderKeinModul} weitere Bundesländer haben noch kein Landesmodul. „Vorbereitet" = Quellen als Kandidat recherchiert, aber noch nicht technisch verifiziert und nicht aktiv (0 einsatzbereit).</p>`;
-  const paketRows = lp.pakete.map((p) => {
-    const tone = p.supply === "vollstaendig" ? "ok" : p.supply === "unterversorgt" ? "bad" : p.supply === "vorbereitet" ? "warn" : "muted";
-    const supplyLabel = { vollstaendig: "Vollständig", teilversorgt: "Teilversorgt", unterversorgt: "Unterversorgt", vorbereitet: "Vorbereitet", leer: "Leer", unbekannt: "Unbekannt" }[p.supply] || p.supply;
-    const meta = `${p.pathCount != null ? `${p.pathCount} Abrufwege` : ""}${p.refCount ? ` · ${p.refCount} Profil${p.refCount === 1 ? "" : "e"}` : ""}${p.is_base ? " · Pflicht" : ""}`;
-    return `<div class="sa-item"><div class="sa-item-main"><span class="sa-item-name">${escapeHtml(p.name)}</span>${saBadge(supplyLabel, tone)}</div><span class="sa-sub">${escapeHtml(meta)}</span></div>`;
-  }).join("");
-  const inner = `
-    <div class="sa-block"><h3 class="sa-h3">Bundesländer <span class="sa-count">${sa.counts.laenderAktiv} aktiv · ${sa.counts.laenderVorbereitet} vorbereitet</span></h3>
-      <div class="sa-list">${laenderRows || `<p class="ac-empty">Noch kein Landesmodul.</p>`}</div>${rest}</div>
-    <div class="sa-block"><h3 class="sa-h3">Pakete <span class="sa-count">${lp.pakete.length}</span></h3>
-      <div class="sa-list">${paketRows}</div></div>`;
-  return adminSection("Länder und Pakete", "Welche Länder aktiv oder vorbereitet sind", inner, "admin-sa-laender");
-}
-
-function renderSaQuellen(sa) {
-  const qa = sa.views.quellenAbrufwege;
-  const hc = qa.healthCounts;
-  const summary = `<div class="sa-badges">${saBadge(`${hc.gesund} gesund`, "ok")}${saBadge(`${hc.defekt} defekt`, "bad")}${saBadge(`${hc.unbekannt} unbekannt`, "muted")}${hc.inaktiv ? saBadge(`${hc.inaktiv} inaktiv`, "muted") : ""}</div>`;
-  const note = !sa.availability.documents ? `<p class="sa-note">Health-Signal aus Status + Dokument-Frische. Ohne geladene Dokumentdaten sind funktionierende Wege „Unbekannt" (nicht „gesund" erfunden).</p>` : "";
-  // Herausgeber mit defekten Wegen zuerst; Rest in Details.
-  const withBroken = qa.herausgeber.filter((h) => h.paths.some((p) => p.health === "defekt"));
-  const row = (h) => {
-    const badges = h.paths.map((p) => p.health === "defekt" ? "●" : p.health === "gesund" ? "○" : "·").join("");
-    const worst = h.paths.some((p) => p.health === "defekt") ? saBadge("Defekt", "bad") : h.paths.every((p) => p.health === "gesund") ? saBadge("Gesund", "ok") : saBadge("Unbekannt", "muted");
-    return `<div class="sa-item"><div class="sa-item-main"><span class="sa-item-name">${escapeHtml(h.name)}</span>${worst}</div><span class="sa-sub">${h.paths.length} Abrufweg${h.paths.length === 1 ? "" : "e"}</span></div>`;
-  };
-  const brokenList = withBroken.length ? `<div class="sa-list">${withBroken.map(row).join("")}</div>` : `<p class="ac-empty">Kein Herausgeber mit defektem Abrufweg.</p>`;
-  const fullList = adminDetails(`Alle ${qa.herausgeber.length} Herausgeber anzeigen`, `<div class="sa-list">${qa.herausgeber.map(row).join("")}</div>`);
-  const inner = `${summary}${note}<h3 class="sa-h3">Herausgeber mit Prüfbedarf</h3>${brokenList}${fullList}`;
-  return adminSection("Quellen und Abrufwege", `${qa.pathCount} Abrufwege · ${qa.herausgeber.length} Herausgeber`, inner, "admin-sa-quellen");
-}
-
-function renderSaProfile(sa) {
-  const rows = sa.views.profileVersorgung.map((p) => {
-    const tone = p.supply === "versorgt" ? "ok" : p.supply === "unversorgt" ? "bad" : "muted";
-    const label = { versorgt: "Versorgt", unversorgt: "Unversorgt", nicht_aktivierbar: "Nicht aktivierbar" }[p.supply] || p.supply;
-    const pkgs = (p.requiredPackages || []).map((k) => `<span class="ds-chip">${escapeHtml(k)}</span>`).join("");
-    const missing = (p.missingBasePackages || []).length ? `<span class="sa-sub">fehlt: <b>${escapeHtml(p.missingBasePackages.map((m) => m.key).join(", "))}</b></span>` : "";
-    return `<div class="sa-item"><div class="sa-item-main"><span class="sa-item-name">${escapeHtml(p.profileId)}</span>${saBadge(label, tone)}</div><div class="ds-chips">${pkgs}</div>${missing}</div>`;
-  }).join("");
-  const inner = `<div class="sa-badges">${saBadge(`${sa.counts.profileVersorgt} versorgt`, "ok")}${saBadge(`${sa.counts.profileUnversorgt} unversorgt`, "bad")}</div><div class="sa-list">${rows || `<p class="ac-empty">Keine Profile.</p>`}</div>`;
-  return adminSection("Profile und Paketversorgung", "Welche Profile versorgt oder unversorgt sind", inner, "admin-sa-profile");
-}
-
-function renderSaPruefbedarf(sa) {
-  const pb = sa.views.pruefbedarf;
-  const items = pb.actions.map((a) => {
-    const lvl = a.severity === "hoch" ? "bad" : "warn";
-    return `<div class="ac-item ac-item--${lvl}"><span class="ac-dot" aria-hidden="true"></span><div class="ac-body"><p class="ac-title">${escapeHtml(a.text)}</p><p class="ac-detail">${escapeHtml(a.area)} · ${escapeHtml(String(a.ref))}</p></div></div>`;
-  }).join("");
-  const list = pb.actions.length ? `<div class="ac-list">${items}</div>` : `<div class="ac-list"><p class="ac-empty">Kein konkreter Prüfbedarf. Alles ruhig.</p></div>`;
-  const missing = pb.missingMetrics.length
-    ? `<div class="sa-block"><h3 class="sa-h3">Noch nicht verfügbare Messwerte</h3><ul class="sa-missing">${pb.missingMetrics.map((m) => `<li>${saUnavail(m)}</li>`).join("")}</ul><p class="sa-note">Diese Werte erscheinen nach Migration/Shadow-Ingest — bewusst nicht geschätzt.</p></div>`
-    : "";
-  return adminSection("Prüfbedarf", pb.actions.length ? `${pb.actions.length} ${pb.actions.length === 1 ? "Punkt" : "Punkte"}` : "", `${list}${missing}`, "admin-sa-pruefbedarf");
-}
-
-function renderSaQuellendetail(sa) {
-  const paths = sa.views.quellendetail.paths;
-  const byPub = new Map();
-  for (const p of paths) { const k = p.publisher || "Unbekannt"; if (!byPub.has(k)) byPub.set(k, []); byPub.get(k).push(p); }
-  const groups = [...byPub.entries()].sort((a, b) => String(a[0]).localeCompare(String(b[0]))).map(([pub, list]) => {
-    const rows = list.map((p) => {
-      const detail = [
-        dsRow("Methode", escapeHtml(p.method || "–")),
-        dsRow("Status / Health", `${escapeHtml(p.status)} · ${saHealthBadge(p.health)}${p.is_critical ? " " + saBadge("Pflicht", "warn") : ""}`),
-        dsRow("Dokumente", saNumOrUnavail(p.documentCount)),
-        dsRow("Knowledge Objects", saNumOrUnavail(p.koCount)),
-        dsRow("Duplikate", saNumOrUnavail(p.duplicateCount)),
-        dsRow("Produktnutzen", saValueBadge(p.value)),
-        dsRow("Pakete", p.packages.length ? p.packages.map((k) => `<span class="ds-chip">${escapeHtml(k)}</span>`).join("") : "–"),
-        dsRow("Kosten", p.cost && p.cost.available ? saUsd(p.cost.usd) : saUnavail("noch nicht zuordenbar")),
-        p.recommendedAction && p.recommendedAction.severity !== "keine" ? dsRow("Empfehlung", escapeHtml(p.recommendedAction.text)) : ""
-      ].join("");
-      return `<div class="sa-detail-card"><div class="sa-detail-head"><span class="sa-item-name">${escapeHtml(p.name)}</span>${saHealthBadge(p.health)}</div>${detail}</div>`;
-    }).join("");
-    return adminDetails(`${escapeHtml(pub)} — ${list.length} Abrufweg${list.length === 1 ? "" : "e"}`, rows);
-  }).join("");
-  return adminSection("Quellendetail", "Herausgeber → Abrufwege im Detail", `<p class="sa-note">Aufklappen für Herausgeber-Details. Kennzahlen erscheinen, sobald Bestandsdaten/Migration vorliegen.</p>${groups}`, "admin-sa-detail");
-}
-
-function renderSaKosten(sa) {
-  const kn = sa.views.kostenNutzen;
-  const c = kn.costs;
-  const stepRows = Object.entries(c.byPipelineStep || {}).sort((a, b) => b[1] - a[1]).map(([k, v]) => dsRow(k, saUsd(v))).join("");
-  const modelRows = Object.entries(c.byModel || {}).sort((a, b) => b[1] - a[1]).map(([k, v]) => dsRow(k, saUsd(v))).join("");
-  const kostenBlock = c.records > 0
-    ? `${dsRow("Gesamt (Zeitfenster)", `<b>${saUsd(c.totalUsd)}</b> · ${c.records} Calls`)}
-       <div class="sa-block"><h3 class="sa-h3">Je Pipeline-Schritt</h3>${stepRows || saUnavail("keine")}</div>
-       <div class="sa-block"><h3 class="sa-h3">Je Modell</h3>${modelRows || saUnavail("keine")}</div>
-       <p class="sa-note">${!c.sourceAttributionAvailable ? "Kosten je Quelle noch nicht zuordenbar — llm_usage trägt noch keine sourceId (freigabepflichtige Verdrahtung)." : (c.unattributedUsd > 0 ? `Kosten teilweise je Quelle zugeordnet; ${saUsd(c.unattributedUsd)} noch nicht zuordenbar.` : "Kosten je Quelle zugeordnet.")}</p>`
-    : `<p class="ac-empty">Keine KI-Kosten im Zeitfenster.</p>`;
-  const nutzenRows = kn.kostenOhneNutzen.length
-    ? kn.kostenOhneNutzen.map((s) => `<div class="sa-item"><div class="sa-item-main"><span class="sa-item-name">${escapeHtml(s.name || s.legacy_source_id)}</span>${saValueBadge(s.value)}</div><span class="sa-sub">${escapeHtml(s.recommendedAction ? s.recommendedAction.text : "")}</span></div>`).join("")
-    : `<p class="ac-empty">${sa.availability.documents ? "Keine Quelle erzeugt aktuell Kosten ohne Nutzen." : "Nutzendaten noch nicht verfügbar — erscheint nach Ingest."}</p>`;
-  const inner = `<div class="sa-block"><h3 class="sa-h3">KI-Kosten</h3>${kostenBlock}</div>
-    <div class="sa-block"><h3 class="sa-h3">Kosten ohne Nutzen</h3><div class="sa-list">${nutzenRows}</div></div>`;
-  return adminSection("Kosten und Produktnutzen", "Was Geld kostet — und was Nutzen bringt", inner, "admin-sa-kosten");
-}
-
-function renderAdminQuellenarchitektur(sa) {
-  if (!sa || !sa.views) return "";
-  const migBanner = !sa.migration.newTablesMigrated
-    ? `<div class="sa-mig-note">${escapeHtml(sa.migration.note)}</div>`
-    : "";
-  const tiles = [
-    opTile("Länder", sa.counts.laenderAktiv ? "ok" : "unknown", `${sa.counts.laenderAktiv} aktiv`, `${sa.counts.laenderVorbereitet} vorbereitet`, null, "admin-sa-laender"),
-    opTile("Abrufwege", sa.counts.abrufwegeDefekt ? "warn" : "unknown", `${sa.counts.abrufwegeDefekt} defekt`, `${sa.counts.abrufwegeGesund} gesund · ${sa.counts.abrufwegeUnbekannt} unbekannt`, null, "admin-sa-quellen"),
-    opTile("Profile", sa.counts.profileUnversorgt ? "warn" : "ok", `${sa.counts.profileVersorgt} versorgt`, `${sa.counts.profileUnversorgt} unversorgt`, null, "admin-sa-profile"),
-    opTile("Prüfbedarf", sa.counts.pruefbedarf ? "bad" : "ok", `${sa.counts.pruefbedarf} ${sa.counts.pruefbedarf === 1 ? "Punkt" : "Punkte"}`, "konkrete Probleme", null, "admin-sa-pruefbedarf")
-  ];
-  return `
-    ${adminSection("Quellenarchitektur", "Länder · Pakete · Quellen · Profile · Kosten (Sprint 4/5/7 sichtbar gemacht)",
-      `${migBanner}<div class="op-tiles">${tiles.join("")}</div>`, "admin-quellenarchitektur")}
-    ${renderSaQuellenmodus(sa)}
-    ${renderSaLaenderPakete(sa)}
-    ${renderSaQuellen(sa)}
-    ${renderSaProfile(sa)}
-    ${renderSaPruefbedarf(sa)}
-    ${renderSaQuellendetail(sa)}
-    ${renderSaKosten(sa)}`;
-}
-
-// Quellenmodus (off/shadow/on) + Vergleich alter Katalog vs. relationaler Plan.
-// EHRLICH: ohne erreichbare relationale Tabellen nur der Hinweis, keine erfundenen Zahlen.
-function renderSaQuellenmodus(sa) {
-  const qm = sa.quellenmodus;
-  if (!qm) return "";
-  const modusBadge = qm.modus === "on" ? saBadge("ON — Cutover", "bad")
-    : qm.modus === "shadow" ? saBadge("Shadow — Vergleich", "warn")
-    : qm.modus === "off" ? saBadge("Off — alter Katalog aktiv", "ok")
-    : saBadge("Unbekannt", "muted");
-  if (!qm.datenquelle) {
-    return `<div class="admin-card"><div class="sa-item-main"><span class="sa-item-name">Quellenmodus</span>${modusBadge}</div><p class="sa-note">${escapeHtml(qm.hinweis || "")}</p></div>`;
+  } catch (_) {
+    admErrors[key] = "Zeitüberschreitung oder Netzwerkfehler";
+    if (key === "recovery" && adminRecovery) adminRecoveryStale = true;
+  } finally {
+    admLoading[key] = false;
   }
-  const abw = qm.abweichungen || {};
-  const fehlend = abw.fehlendImRelationalen || [];
-  const zusaetzlich = abw.zusaetzlichImRelationalen || [];
-  return `
-    <div class="admin-card">
-      <div class="sa-item-main"><span class="sa-item-name">Quellenmodus</span>${modusBadge}</div>
-      <div class="admin-sys-grid">
-        <div class="admin-sys-item"><span class="admin-sys-key">Alter Plan (aktiver Katalog)</span><span class="admin-sys-val">${escapeHtml(String(qm.alterPlan.quellen))} geteilte Quellen</span></div>
-        <div class="admin-sys-item"><span class="admin-sys-key">Relationaler Plan</span><span class="admin-sys-val">${escapeHtml(String(qm.relationalerPlan.aktiv))} aktiv · ${escapeHtml(String(qm.relationalerPlan.defekt))} defekt · ${escapeHtml(String(qm.relationalerPlan.ausgeschlossen))} ausgeschlossen</span></div>
-        <div class="admin-sys-item"><span class="admin-sys-key">Aktivierung</span><span class="admin-sys-val">${escapeHtml(String(qm.aktivierung.aktiveProfile))} Profile → ${escapeHtml(String(qm.aktivierung.aktivePakete))} Pakete</span></div>
-        <div class="admin-sys-item"><span class="admin-sys-key">Abweichungen</span><span class="admin-sys-val">${fehlend.length ? `${fehlend.length} fehlend (${escapeHtml(fehlend.slice(0, 4).join(", "))}${fehlend.length > 4 ? "…" : ""})` : "0 fehlend"} · ${zusaetzlich.length} zusätzlich</span></div>
-        <div class="admin-sys-item"><span class="admin-sys-key">Defekte Wege (kein Abruf)</span><span class="admin-sys-val">${(qm.defekteWege || []).length ? escapeHtml(qm.defekteWege.join(", ")) : "–"}</span></div>
-        <div class="admin-sys-item"><span class="admin-sys-key">Berlin/Brandenburg</span><span class="admin-sys-val">${escapeHtml(String(qm.landesmodulGesperrt))} Wege vorbereitet und GESPERRT (inaktiv)</span></div>
-        ${qm.letzterShadowLauf ? `
-        <div class="admin-sys-item"><span class="admin-sys-key">Letzter Shadow-Messlauf</span><span class="admin-sys-val">${escapeHtml(formatBriefingDate(qm.letzterShadowLauf.savedAt))} · relational ${escapeHtml(String(qm.letzterShadowLauf.relational?.dokumente ?? "–"))}/${escapeHtml(String(qm.letzterShadowLauf.alt?.dokumente ?? "–"))} Docs (${escapeHtml(String(qm.letzterShadowLauf.vergleich?.abdeckungDokumenteProzent ?? "–"))}%) · Dedup: ${escapeHtml(String(qm.letzterShadowLauf.dedupDryRun?.eindeutigeDokumente ?? "–"))} eindeutig / ${escapeHtml(String(qm.letzterShadowLauf.dedupDryRun?.fundstellen ?? "–"))} Fundstellen · +$0</span></div>` : `
-        <div class="admin-sys-item"><span class="admin-sys-key">Letzter Shadow-Messlauf</span><span class="admin-sys-val"><span class="ds-unavail">noch kein Lauf (erst ab Modus shadow + nächstem Crawl)</span></span></div>`}
-      </div>
-      <p class="sa-note">${escapeHtml(qm.hinweis || "")}</p>
-    </div>`;
 }
 
-function renderAdminView() {
-  if (userRole() !== "admin") return `<section class="page-intro"><h1 class="hero-title">Kein Zugriff.</h1></section>`;
-  if (!adminData) {
-    if (adminLoadError) {
-      return `
-        <section class="page-intro executive-intro">
-          <span class="eyebrow-line">Verwaltung</span>
-          <h1 class="hero-title">Admin</h1>
-          <p style="color:var(--muted-2);margin-bottom:16px">Admin-Daten konnten nicht geladen werden.</p>
-          <button class="secondary-button" type="button" data-reload-admin>Neu laden</button>
-        </section>`;
-    }
-    return `
-      <section class="page-intro executive-intro">
-        <span class="eyebrow-line">Verwaltung</span>
-        <h1 class="hero-title">Admin</h1>
-        <div class="skeleton-stack" aria-busy="true" aria-label="Admin-Daten werden geladen">
-          <div class="skeleton skeleton-line short"></div>
-          <div class="skeleton skeleton-card"></div>
-          <div class="skeleton skeleton-card"></div>
-          <div class="skeleton skeleton-card"></div>
-        </div>
-      </section>`;
+async function ensureAdminSection(section, { force = false } = {}) {
+  if (userRole() !== "admin") return;
+  const keys = ADM_SECTION_ENDPOINTS[section] || [];
+  const pending = keys.filter((k) => (force || admData[k] === undefined) && !admLoading[k]);
+  if (pending.length) {
+    render(); // Skeleton/Zwischenstand sofort anzeigen
+    await Promise.all(pending.map((k) => admFetchEndpoint(k, { force })));
   }
-  const data = adminData;
-  const mandateOptions = adminMandateOptions();
-  const referenten = (data.users || []).filter((user) => user.role === "referent");
-  const feedbackCountByUser = {};
-  (Array.isArray(data.feedback) ? data.feedback : []).forEach((item) => {
-    if (item.userId) feedbackCountByUser[item.userId] = (feedbackCountByUser[item.userId] || 0) + 1;
+  // Daten & Profile: Tages-Inputs je Mandat (kleine Zusatzabfragen, fehlertolerant).
+  if (section === "daten") await admLoadDailyInputs(force);
+  admLoadedAt[section] = Date.now();
+  render();
+}
+
+async function admLoadDailyInputs(force = false) {
+  if (!force && admData.dailyInputs !== undefined) return;
+  const mandates = (admData.overview && Array.isArray(admData.overview.mandates)) ? admData.overview.mandates.slice(0, 10) : [];
+  if (!mandates.length) { admData.dailyInputs = {}; return; }
+  const out = {};
+  await Promise.all(mandates.map(async (m) => {
+    try {
+      const res = await fetchWithTimeout(`/api/daily-inputs?politicianId=${encodeURIComponent(m.id)}`, {}, 12000);
+      const j = res.ok ? await res.json().catch(() => null) : null;
+      out[m.id] = j && typeof j === "object" ? { max: j.max, heute: Array.isArray(j.inputs) ? j.inputs.length : null } : null;
+    } catch (_) { out[m.id] = null; }
+  }));
+  admData.dailyInputs = out;
+}
+
+// Nach schreibenden Aktionen: betroffene Caches verwerfen, aktuellen Bereich neu laden.
+async function admAfterMutation(keys = ["overview", "customers", "feedback", "audit"]) {
+  keys.forEach((k) => { delete admData[k]; delete admErrors[k]; });
+  await ensureAdminSection(admSection);
+}
+
+// --- Formatierung (zentral; eiserne Regel: fehlt ein Wert -> "—") -----------
+const ADM_DASH = "—";
+
+function admIsNum(v) { return typeof v === "number" && Number.isFinite(v); }
+function admNum(v) { return admIsNum(v) ? v.toLocaleString("de-DE") : ADM_DASH; }
+// KI-Kosten: USD-Schaetzwert. NIE als EUR ausgeben, NIE stillschweigend umrechnen.
+function admUsd(v) { return admIsNum(v) ? (v === 0 ? "0 USD" : `${fmtCost(v).replace(".", ",")} USD`) : ADM_DASH; }
+function admEur(v) {
+  const n = Number(v);
+  return v != null && Number.isFinite(n) ? `${n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €` : ADM_DASH;
+}
+function admCentEur(cent) {
+  const n = Number(cent);
+  return cent != null && Number.isFinite(n) ? admEur(n / 100) : ADM_DASH;
+}
+function admPct(part, total) {
+  if (!admIsNum(part) || !admIsNum(total) || total <= 0) return ADM_DASH;
+  return `${Math.round((part / total) * 100)} %`;
+}
+function admBerlin(iso, opts) {
+  if (!iso) return ADM_DASH;
+  try {
+    const d = new Date(iso);
+    if (!Number.isFinite(d.getTime())) return ADM_DASH;
+    return new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", ...opts }).format(d);
+  } catch (_) { return ADM_DASH; }
+}
+function admDateTime(iso) { return admBerlin(iso, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); }
+function admDay(iso) { return admBerlin(iso, { day: "2-digit", month: "2-digit", year: "numeric" }); }
+function admRel(iso) { const r = adminRelAge(iso); return r == null ? ADM_DASH : r; }
+function admDur(ms) {
+  const n = Number(ms);
+  if (ms == null || !Number.isFinite(n) || n < 0) return ADM_DASH;
+  const s = Math.round(n / 1000);
+  if (s < 60) return `${s} s`;
+  return `${Math.floor(s / 60)} min ${s % 60} s`;
+}
+
+// --- Statuslogik (zentral; nie nur Farbe — immer Text dazu) ------------------
+const ADM_TONES = { ok: "gesund", warn: "eingeschränkt", bad: "kritisch", unknown: "unbekannt", paused: "pausiert" };
+function admChip(tone, label) {
+  const t = ADM_TONES[tone] ? tone : "unknown";
+  return `<span class="adm-chip adm-chip--${t}"><span class="adm-chip-dot" aria-hidden="true"></span>${escapeHtml(label || ADM_TONES[t])}</span>`;
+}
+const ADM_SOURCE_STATUS = {
+  healthy: ["gesund", "ok"], degraded: ["beeinträchtigt", "warn"], broken: ["defekt", "bad"],
+  needs_review: ["prüfen", "warn"], paused: ["pausiert", "paused"], archived: ["archiviert", "unknown"]
+};
+function admSourceChip(status) {
+  const meta = ADM_SOURCE_STATUS[status];
+  return meta ? admChip(meta[1], meta[0]) : admChip("unknown", status || ADM_DASH);
+}
+
+// --- Bausteine ---------------------------------------------------------------
+function admTile(label, value, hint) {
+  const val = value == null || value === "" ? ADM_DASH : String(value);
+  return `<div class="adm-tile"><span class="adm-tile-label">${escapeHtml(label)}</span><span class="adm-tile-value${val === ADM_DASH ? " adm-tile-value--empty" : ""}">${val}</span>${hint ? `<span class="adm-tile-hint">${escapeHtml(hint)}</span>` : ""}</div>`;
+}
+function admTiles(inner) { return `<div class="adm-tiles">${inner}</div>`; }
+function admCard(title, sub, inner, opts = {}) {
+  return `<section class="adm-card"${opts.id ? ` id="${escapeAttribute(opts.id)}"` : ""}>
+    ${title ? `<div class="adm-card-head"><div><h2 class="adm-card-title">${escapeHtml(title)}</h2>${sub ? `<p class="adm-card-sub">${escapeHtml(sub)}</p>` : ""}</div>${opts.headExtra || ""}</div>` : ""}
+    ${inner}
+  </section>`;
+}
+function admNote(text) { return `<p class="adm-note">${escapeHtml(text)}</p>`; }
+function admEmpty(text) { return `<p class="adm-empty">${escapeHtml(text || "Keine Daten vorhanden.")}</p>`; }
+
+// Fehlerzustand je Endpoint: ruhige Notiz mit Retry statt geratener Werte.
+function admEndpointNote(key, was) {
+  if (!admErrors[key]) return "";
+  return `<p class="adm-note adm-note--warn">${escapeHtml(was || "Dieser Teil konnte nicht geladen werden")} (${escapeHtml(admErrors[key])}). <button type="button" class="adm-inline-btn" data-adm-retry="${escapeAttribute(key)}">Erneut laden</button></p>`;
+}
+
+function admSectionMeta(section) {
+  const at = admLoadedAt[section];
+  const busy = (ADM_SECTION_ENDPOINTS[section] || []).some((k) => admLoading[k]);
+  const stand = busy
+    ? "Aktualisiert …"
+    : at ? `Stand ${new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" }).format(new Date(at))} Uhr` : "";
+  return `<div class="adm-meta"><span class="adm-meta-stand">${escapeHtml(stand)}</span><button type="button" class="adm-inline-btn" data-adm-refresh${busy ? " disabled" : ""}>Aktualisieren</button></div>`;
+}
+
+// Zustandskopf eines Bereichs: Zuerst Zustand + Handlungsbedarf, dann Details.
+// Die gruene "Alles ruhig"-Zeile erscheint AUSSCHLIESSLICH bei tatsaechlich
+// gesundem Zustand (tone==="ok"). Bei unbekanntem Zustand (Daten nicht ladbar/
+// verfuegbar) steht ein neutraler Hinweis — nie eine gruene Entwarnung.
+function admStateHead(state, extraHtml) {
+  const items = Array.isArray(state.actions) ? state.actions : [];
+  let list;
+  if (items.length) {
+    list = `<ul class="adm-actions-list">${items.map((a) => `<li class="adm-action-item adm-action-item--${escapeAttribute(a.tone || "warn")}">${a.goto ? `<button type="button" class="adm-action-link" data-adm-goto="${escapeAttribute(a.goto)}">${escapeHtml(a.text)} <span aria-hidden="true">›</span></button>` : escapeHtml(a.text)}</li>`).join("")}</ul>`;
+  } else if (state.tone === "ok") {
+    list = `<p class="adm-allquiet">Alles ruhig. Kein Eingreifen nötig.</p>`;
+  } else {
+    list = `<p class="adm-unknown-note">Der Zustand kann aktuell nicht zuverlässig bewertet werden.</p>`;
+  }
+  return `<section class="adm-card adm-statehead">
+    <div class="adm-statehead-top">
+      ${admChip(state.tone, state.label)}
+      <span class="adm-statehead-text">${escapeHtml(state.text || "")}</span>
+    </div>
+    ${list}
+    ${extraHtml || ""}
+  </section>`;
+}
+
+// Tabellen: thead + tbody; jede Zelle braucht data-label (mobile Karten-Muster).
+function admTableShell(id, headCells, bodyRows, opts = {}) {
+  const sort = admSort[id] || null;
+  const head = headCells.map((c) => {
+    if (typeof c === "string") return `<th>${escapeHtml(c)}</th>`;
+    if (!c.sortKey) return `<th>${escapeHtml(c.label)}</th>`;
+    const active = sort && sort.key === c.sortKey;
+    return `<th class="adm-th-sort${active ? " is-sorted" : ""}" data-adm-sort="${escapeAttribute(id)}:${escapeAttribute(c.sortKey)}" role="button" tabindex="0" title="Sortieren">${escapeHtml(c.label)} <span class="adm-sort-ind" aria-hidden="true">${active ? (sort.dir > 0 ? "↑" : "↓") : "↕"}</span></th>`;
+  }).join("");
+  const search = opts.searchable
+    ? `<input type="search" class="adm-search" data-adm-search="${escapeAttribute(id)}" value="${escapeAttribute(admSearchTerms[id] || "")}" placeholder="${escapeAttribute(opts.searchPlaceholder || "Suchen …")}" aria-label="Tabelle durchsuchen" />`
+    : "";
+  return `${search}<div class="admin-table-wrap"><table class="admin-table adm-table">
+    <thead><tr>${head}</tr></thead>
+    <tbody>${bodyRows}</tbody>
+  </table></div>`;
+}
+
+function admSortRows(id, rows, getters, defaultKey, defaultDir = -1) {
+  const sort = admSort[id] || (defaultKey ? { key: defaultKey, dir: defaultDir } : null);
+  if (!sort || !getters[sort.key]) return rows;
+  const get = getters[sort.key];
+  return rows.slice().sort((a, b) => {
+    const va = get(a); const vb = get(b);
+    const na = typeof va === "number" && Number.isFinite(va);
+    const nb = typeof vb === "number" && Number.isFinite(vb);
+    if (na && nb) return (va - vb) * sort.dir;
+    if (na) return -1 * sort.dir;
+    if (nb) return 1 * sort.dir;
+    return String(va || "").localeCompare(String(vb || ""), "de") * sort.dir;
   });
+}
 
-  const userRows = (data.users || []).map((user) => {
+function admFilterRows(id, rows, textOf) {
+  const term = String(admSearchTerms[id] || "").trim().toLowerCase();
+  if (!term) return rows;
+  return rows.filter((r) => textOf(r).toLowerCase().includes(term));
+}
+
+// --- Bereich: Übersicht -------------------------------------------------------
+// Gesamtzustand + Handlungsbedarf aus den geladenen Endpoints ableiten. Nur echte
+// Signale — kann ein Wert nicht ermittelt werden, entsteht daraus KEIN gruener Punkt.
+function admUebersichtState() {
+  const daily = admData.daily || null;
+  const budget = admData.budget || null;
+  const rep = admData.crawlReport || null;
+  const rec = admData.recovery || null;
+  const fb = admData.feedback || null;
+  const actions = [];
+  let worst = "ok";
+  const raise = (tone) => { if (tone === "bad") worst = "bad"; else if (tone === "warn" && worst !== "bad") worst = "warn"; };
+
+  const crawlAt = (daily && daily.crawl && daily.crawl.latestCrawlAt) || (rep && rep.lastCrawlAt) || null;
+  if (!crawlAt) { actions.push({ tone: "warn", text: "Kein Crawl-Lauf protokolliert", goto: "pipeline" }); raise("warn"); }
+  else if (Date.now() - new Date(crawlAt).getTime() > 24 * 3600 * 1000) {
+    actions.push({ tone: "bad", text: `Letzter Crawl liegt über 24 Stunden zurück (${admDateTime(crawlAt)})`, goto: "pipeline" }); raise("bad");
+  }
+  const failedSources = rep && admIsNum(rep.failedSources) ? rep.failedSources : null;
+  if (failedSources > 0) { actions.push({ tone: "warn", text: `${admNum(failedSources)} Quellen im letzten Lauf fehlgeschlagen`, goto: "quellen" }); raise("warn"); }
+  if (budget && admIsNum(budget.remaining) && budget.remaining <= 0) {
+    actions.push({ tone: "bad", text: "KI-Tageslimit erreicht — weitere Aufrufe werden übersprungen", goto: "kosten" }); raise("bad");
+  }
+  if (budget && admIsNum(budget.errors) && budget.errors > 0) {
+    actions.push({ tone: "warn", text: `${admNum(budget.errors)} KI-Fehler heute`, goto: "kosten" }); raise("warn");
+  }
+  const ko = rec && rec.knowledgeObjects;
+  if (ko && admIsNum(ko.failed) && ko.failed > 0) {
+    actions.push({ tone: "bad", text: `${admNum(ko.failed)} Wissensobjekte fehlgeschlagen (failed)`, goto: "system" }); raise("bad");
+  }
+  const lock = rec && rec.understandingLock;
+  if (lock && lock.verdaechtig) { actions.push({ tone: "warn", text: "Understanding-Lock wirkt veraltet (hängt)", goto: "system" }); raise("warn"); }
+  if (fb && admIsNum(fb.offen) && fb.offen > 0) {
+    actions.push({ tone: "warn", text: `${admNum(fb.offen)} offene Rückmeldungen aus der App`, goto: "uebersicht" });
+  }
+  const anyLoaded = Boolean(daily || budget || rep || rec);
+  if (!anyLoaded) return { tone: "unknown", label: "unbekannt", text: "Zustand kann nicht beurteilt werden — Daten wurden nicht geladen.", actions: [] };
+  const label = worst === "ok" ? "System läuft" : worst === "warn" ? "eingeschränkt" : "Eingriff nötig";
+  const text = worst === "ok"
+    ? `Letzter Crawl ${admRel(crawlAt)} · KI heute ${budget ? admNum(budget.calls) : ADM_DASH} Aufrufe`
+    : "Die markierten Punkte unten zeigen, wo gehandelt werden sollte.";
+  return { tone: worst, label, text, actions };
+}
+
+function renderAdmUebersicht() {
+  const daily = admData.daily || {};
+  const crawl = daily.crawl || {};
+  const ai = daily.ai || {};
+  const v3 = daily.v3 || {};
+  const budget = admData.budget || null;
+  const rep = admData.crawlReport || null;
+  const rec = admData.recovery || null;
+  const fb = admData.feedback || null;
+  const audit = (admData.audit && Array.isArray(admData.audit.auditEvents)) ? admData.audit.auditEvents : [];
+  const v3Active = v3 && !v3.note && !v3.error;
+
+  const crawlTiles = admTiles([
+    admTile("Crawl-Läufe heute", admNum(crawl.runs), "Geplant: 2× täglich (04:00, 20:00 UTC)"),
+    admTile("Quellen geprüft", admNum(crawl.checkedSources)),
+    admTile("Quellen erfolgreich", admNum(crawl.successfulSources)),
+    admTile("Quellen fehlgeschlagen", admNum(crawl.failedSources)),
+    admTile("Gespeicherte Artikel", admNum(crawl.savedArticles), "Nach Dublettenprüfung"),
+    admTile("Letzter Crawl", crawl.latestCrawlAt ? `${admDateTime(crawl.latestCrawlAt)}` : ADM_DASH, crawl.latestCrawlAt ? admRel(crawl.latestCrawlAt) : undefined)
+  ].join(""));
+
+  const aiTiles = admTiles([
+    admTile("KI-Aufrufe heute", budget ? admNum(budget.calls) : admNum(ai.totalCalls), budget ? "Budget-Fenster (UTC-Kalendertag)" : undefined),
+    admTile("KI-Fehler", budget ? admNum(budget.errors) : admNum(ai.failedCalls)),
+    admTile("Übersprungen", budget ? admNum(budget.skips) : ADM_DASH, "Bewusst ausgelassene Aufrufe"),
+    admTile("Verbleibend", budget ? admNum(budget.remaining) : ADM_DASH, budget && admIsNum(budget.limit) ? `Limit ${admNum(budget.limit)}` : "Kein Limit gesetzt"),
+    admTile("Kosten heute", budget ? admUsd(budget.estimatedCostUsd) : admUsd(ai.totalCostUsd), "Schätzwert in USD")
+  ].join(""));
+
+  const koTiles = admTiles([
+    admTile("Neue Rohdokumente", v3Active ? admNum(v3.newRawDocuments) : ADM_DASH, v3Active ? "Heute" : (v3.note || v3.error || undefined)),
+    admTile("Neue Wissensobjekte", v3Active ? admNum(v3.newKnowledgeObjects) : ADM_DASH, v3Active ? "Heute" : undefined),
+    admTile("Understanding offen", rec && rec.knowledgeObjects ? admNum(rec.knowledgeObjects.pending) : ADM_DASH, "Warten auf KI-Analyse"),
+    admTile("Understanding failed", rec && rec.knowledgeObjects ? admNum(rec.knowledgeObjects.failed) : ADM_DASH, "Geparkt, kein Auto-Retry")
+  ].join(""));
+
+  const auditRows = audit.slice(0, 8).map((e) => `
+    <tr>
+      <td data-label="Zeit">${escapeHtml(admDateTime(e.createdAt))}</td>
+      <td data-label="Ereignis">${escapeHtml(e.action || ADM_DASH)}</td>
+      <td data-label="Akteur">${escapeHtml(e.actorEmail || ADM_DASH)}</td>
+      <td data-label="Mandat">${escapeHtml(e.politicianId || ADM_DASH)}</td>
+    </tr>`).join("");
+
+  return `
+    ${admStateHead(admUebersichtState())}
+    ${admEndpointNote("daily", "Tagesstatistik konnte nicht geladen werden")}
+    ${admEndpointNote("budget", "Tagesbudget konnte nicht geladen werden")}
+    ${admEndpointNote("crawlReport", "Crawl-Report konnte nicht geladen werden")}
+    ${admEndpointNote("recovery", "Pipeline-Status konnte nicht geladen werden")}
+    ${admCard("Crawl heute", "Aus GET /api/admin/stats/daily", crawlTiles)}
+    ${admCard("KI heute", "Budget-Fenster: UTC-Kalendertag · Kosten sind Schätzwerte in USD", aiTiles)}
+    ${admCard("Wissensaufbau", v3Active ? "Neue Dokumente und verstandene Vorgänge" : "V3-Store nicht aktiv — Werte nicht verfügbar", koTiles)}
+    ${admCard("Offenes Feedback", fb ? `${admNum(fb.offen)} offen · ${admNum(Array.isArray(fb.feedback) ? fb.feedback.length : null)} gesamt` : "Nicht geladen",
+      `${admEndpointNote("feedback", "Feedback konnte nicht geladen werden")}${fb && Array.isArray(fb.feedback) && fb.feedback.length ? renderAdminFeedbackSection(fb.feedback.slice(0, 30)) : admEmpty("Noch kein Feedback eingegangen.")}`)}
+    ${admCard("Letzte Systemereignisse", "Audit-Log (neueste zuerst)",
+      `${admEndpointNote("audit", "Audit-Log konnte nicht geladen werden")}${auditRows ? admTableShell("ov-audit", ["Zeit", "Ereignis", "Akteur", "Mandat"], auditRows) : admEmpty("Noch keine Ereignisse protokolliert.")}`)}
+  `;
+}
+
+// --- Bereich: Pipeline --------------------------------------------------------
+function admPipelineState() {
+  const rep = admData.crawlReport || null;
+  const rec = admData.recovery || null;
+  const actions = [];
+  let worst = "ok";
+  const raise = (tone) => { if (tone === "bad") worst = "bad"; else if (tone === "warn" && worst !== "bad") worst = "warn"; };
+  if (!rep || rep.noData) { actions.push({ tone: "warn", text: "Noch kein Crawl-Lauf protokolliert" }); raise("warn"); }
+  if (rep && admIsNum(rep.errorCount) && rep.errorCount > 0) { actions.push({ tone: "warn", text: `${admNum(rep.errorCount)} Quellenfehler im letzten Lauf`, goto: "quellen" }); raise("warn"); }
+  const ko = rec && rec.knowledgeObjects;
+  if (ko && admIsNum(ko.failed) && ko.failed > 0) { actions.push({ tone: "bad", text: `${admNum(ko.failed)} Wissensobjekte failed — Recovery prüfen`, goto: "system" }); raise("bad"); }
+  if (ko && admIsNum(ko.pending) && ko.pending > 0) { actions.push({ tone: "warn", text: `${admNum(ko.pending)} Vorgänge warten auf Understanding (Rückstau)`, goto: "system" }); raise("warn"); }
+  const lock = rec && rec.understandingLock;
+  if (lock && (lock.aktiv || lock.verdaechtig)) { actions.push({ tone: lock.verdaechtig ? "warn" : "ok", text: lock.verdaechtig ? "Understanding-Lock wirkt veraltet" : "Understanding-Lauf aktiv (Lock gesetzt)", goto: "system" }); if (lock.verdaechtig) raise("warn"); }
+  if (!rep && !rec) return { tone: "unknown", label: "unbekannt", text: "Pipeline-Zustand nicht ermittelbar.", actions: [] };
+  return {
+    tone: worst,
+    label: worst === "ok" ? "Pipeline läuft" : worst === "warn" ? "eingeschränkt" : "Eingriff nötig",
+    text: rep && rep.lastCrawlAt ? `Letzter Lauf ${admDateTime(rep.lastCrawlAt)} (${admRel(rep.lastCrawlAt)})` : "",
+    actions
+  };
+}
+
+// Datenfluss-Leiste: Quelle -> Abruf -> Rohdokument -> Dublettenprüfung ->
+// Wissensobjekt -> Matching -> Entscheidung -> Briefing. Zahlen NUR wo belastbar.
+function renderAdmFunnel() {
+  const rep = admData.crawlReport || {};
+  const rec = admData.recovery || {};
+  const pr = admData.processRuns || {};
+  const briefingRun = pr.latestByProcess && pr.latestByProcess.briefing;
+  const steps = [
+    { label: "Quellen geprüft", value: admNum(rep.checkedSources), hint: "Quelle → Abruf" },
+    { label: "Abruf erfolgreich", value: admNum(rep.successfulSources), hint: rep.failedSources > 0 ? `${admNum(rep.failedSources)} fehlgeschlagen` : "" },
+    { label: "Fundstücke gescannt", value: admNum(rep.scannedArticles), hint: "vor Dublettenprüfung" },
+    { label: "Rohdokumente gespeichert", value: admNum(rep.deduplicatedArticles), hint: "Dubletten entfernt" },
+    { label: "Wissensobjekte (KI)", value: admNum(rep.newKnowledgeObjects), hint: rep.v3Note ? String(rep.v3Note) : "einmal global verstanden" },
+    { label: "Neue Vorgänge", value: admNum(rep.newVorgaenge), hint: "" },
+    { label: "Matching / Entscheidung", value: ADM_DASH, hint: "Schattenbetrieb — keine Live-Zahl je Lauf" },
+    { label: "Briefing", value: briefingRun ? admDur(briefingRun.durationMs) : ADM_DASH, hint: briefingRun ? `zuletzt ${admDateTime(briefingRun.startedAt)}` : "kein Lauf protokolliert" }
+  ];
+  return `<div class="adm-flow">${steps.map((s, i) => `
+    <div class="adm-flow-step">
+      <span class="adm-flow-label">${escapeHtml(s.label)}</span>
+      <span class="adm-flow-value${s.value === ADM_DASH ? " adm-tile-value--empty" : ""}">${escapeHtml(String(s.value))}</span>
+      ${s.hint ? `<span class="adm-flow-hint">${escapeHtml(s.hint)}</span>` : ""}
+    </div>${i < steps.length - 1 ? '<span class="adm-flow-arrow" aria-hidden="true">→</span>' : ""}`).join("")}</div>
+  <p class="adm-note">Der Betreiber sieht hier, an welcher Stufe Daten verloren gehen: große Sprünge zwischen zwei Stufen sind der Ansatzpunkt.</p>`;
+}
+
+function renderAdmPipeline() {
+  const crawl = admData.crawl || {};
+  const rep = admData.crawlReport || null;
+  const rec = admData.recovery || null;
+  const pr = admData.processRuns || null;
+  const byDay = Array.isArray(crawl.crawlByDay) ? crawl.crawlByDay.slice(0, 14) : [];
+
+  const tiles30 = admTiles([
+    admTile("Crawl-Läufe", admNum(crawl.totalCrawlRuns), `${admNum(crawl.periodDays)} Tage`),
+    admTile("Quellen geprüft", admNum(crawl.totalCheckedSources)),
+    admTile("Erfolgreich", admNum(crawl.totalSuccessfulSources)),
+    admTile("Fehlgeschlagen", admNum(crawl.totalFailedSources)),
+    admTile("Artikel gespeichert", admNum(crawl.totalSavedArticles)),
+    admTile("Dubletten entfernt", admIsNum(crawl.totalNewCandidateItems) && admIsNum(crawl.totalSavedArticles) ? admNum(crawl.totalNewCandidateItems - crawl.totalSavedArticles) : ADM_DASH, "Fundstücke minus gespeichert"),
+    admTile("Rohdokumente (Zeitraum)", admNum(crawl.recentRawItemCount)),
+    admTile("Rohdokumente gesamt", admNum(crawl.totalRawItemCount))
+  ].join(""));
+
+  const dayRows = byDay.map((d) => `
+    <tr>
+      <td data-label="Tag">${escapeHtml(d.day || ADM_DASH)}</td>
+      <td data-label="Läufe">${admNum(d.runs)}</td>
+      <td data-label="Geprüft">${admNum(d.checkedSources)}</td>
+      <td data-label="Erfolgreich">${admNum(d.successfulSources)}</td>
+      <td data-label="Fehlgeschlagen">${d.failedSources > 0 ? `<span class="adm-val-bad">${admNum(d.failedSources)}</span>` : admNum(d.failedSources)}</td>
+      <td data-label="Gespeichert">${admNum(d.savedItems)}</td>
+    </tr>`).join("");
+
+  const ko = rec && rec.knowledgeObjects;
+  const understandingTiles = admTiles([
+    admTile("Pending", ko ? admNum(ko.pending) : ADM_DASH, "Warten auf Verarbeitung"),
+    admTile("Failed", ko ? admNum(ko.failed) : ADM_DASH, "Geparkt — Recovery nötig"),
+    admTile("Complete", ko ? admNum(ko.complete) : ADM_DASH),
+    admTile("Letzter Understanding-Lauf", rec && rec.letzterUnderstandingLauf ? admDateTime(rec.letzterUnderstandingLauf) : ADM_DASH)
+  ].join(""));
+
+  const latest = (pr && pr.latestByProcess) || {};
+  const procLabel = { understanding: "Understanding-Batch", briefing: "Briefing-Aufbau", lage: "Lage-Fold" };
+  const runtimeTiles = admTiles(["understanding", "briefing", "lage"].map((p) => {
+    const run = latest[p];
+    return admTile(procLabel[p], run ? admDur(run.durationMs) : ADM_DASH, run ? `${run.status || ADM_DASH} · ${admDateTime(run.startedAt)}` : "kein Lauf protokolliert");
+  }).join(""));
+
+  const runRows = (pr && Array.isArray(pr.processRuns) ? pr.processRuns.slice(0, 20) : []).map((r) => `
+    <tr>
+      <td data-label="Prozess">${escapeHtml(procLabel[r.process] || r.process || ADM_DASH)}</td>
+      <td data-label="Gestartet">${escapeHtml(admDateTime(r.startedAt))}</td>
+      <td data-label="Dauer">${escapeHtml(admDur(r.durationMs))}</td>
+      <td data-label="Verarbeitet">${admNum(r.processed)}</td>
+      <td data-label="Ergebnis">${r.status === "ok" ? admChip("ok", "ok") : admChip("warn", r.status || ADM_DASH)}</td>
+    </tr>`).join("");
+
+  const zeitplan = pr && Array.isArray(pr.zeitplan) && pr.zeitplan.length
+    ? `<div class="adm-cron-list">${pr.zeitplan.map((c) => `<div class="adm-cron-row"><span class="adm-cron-path">${escapeHtml(c.path)}</span><span class="adm-cron-schedule">${escapeHtml(c.schedule)} UTC</span></div>`).join("")}</div><p class="adm-note">Zeitplan aus vercel.json (Deploy-Wahrheit). Alle Zeiten UTC — Berlin liegt im Sommer 2 Stunden davor.</p>`
+    : admEmpty("Zeitplan nicht lesbar — keine erfundenen Zeiten.");
+
+  return `
+    ${admStateHead(admPipelineState())}
+    ${admEndpointNote("crawl", "Crawl-Statistik konnte nicht geladen werden")}
+    ${admEndpointNote("crawlReport", "Crawl-Report konnte nicht geladen werden")}
+    ${admEndpointNote("recovery", "Understanding-Status konnte nicht geladen werden")}
+    ${admEndpointNote("processRuns", "Prozesslaufzeiten konnten nicht geladen werden")}
+    ${admCard("Datenfluss des letzten Laufs", rep && rep.lastCrawlAt ? `Lauf vom ${admDateTime(rep.lastCrawlAt)} · Modus ${rep.mode || ADM_DASH}` : "Noch kein Lauf protokolliert", renderAdmFunnel())}
+    ${admCard("Letzte 30 Tage", "Aus GET /api/admin/stats/crawl", tiles30)}
+    ${admCard("Pro Tag", "Crawl-Läufe der letzten Tage", dayRows ? admTableShell("pl-days", ["Tag", "Läufe", "Geprüft", "Erfolgreich", "Fehlgeschlagen", "Gespeichert"], dayRows) : admEmpty())}
+    ${admCard("Understanding", "Rückstau und fehlgeschlagene Wissensobjekte — Aktionen unter System & Sicherheit", `${understandingTiles}<p class="adm-note"><button type="button" class="adm-inline-btn" data-adm-goto="system">Zu den Recovery-Aktionen ›</button></p>`)}
+    ${admCard("Prozesslaufzeiten", "Nur technische Dauer/Status — keine Inhalte", `${runtimeTiles}${runRows ? admTableShell("pl-runs", ["Prozess", "Gestartet", "Dauer", "Verarbeitet", "Ergebnis"], runRows) : admEmpty("Noch keine Prozessläufe protokolliert.")}`)}
+    ${admCard("Zeitplan", "Geplante automatische Läufe", zeitplan)}
+    ${admCard("Crawl-Trichter (Detail)", "Bestehender Trichter des letzten Laufs", rep ? renderAdminCrawlStats(rep) : admEmpty())}
+    ${admCard("Datenstatus (Detail)", "Teurer interner Bericht — nur auf Klick",
+      admData.dataStatus
+        ? renderAdminDataStatus(admData.dataStatus, "global")
+        : `${admEndpointNote("dataStatus", "Datenstatus konnte nicht geladen werden")}<p class="adm-note">Baut serverseitig den vollständigen Datenmotor-Bericht auf (dauert einige Sekunden).</p><button type="button" class="secondary-button" data-adm-load="dataStatus"${admLoading.dataStatus ? " disabled" : ""}>${admLoading.dataStatus ? "Lädt …" : "Datenstatus laden"}</button>`)}
+  `;
+}
+
+// --- Bereich: KI-Kosten -------------------------------------------------------
+function admKostenState() {
+  const budget = admData.budget || null;
+  const cpu = admData.costsPerUser || null;
+  const actions = [];
+  let worst = "ok";
+  const raise = (tone) => { if (tone === "bad") worst = "bad"; else if (tone === "warn" && worst !== "bad") worst = "warn"; };
+  if (budget && admIsNum(budget.remaining) && budget.remaining <= 0) { actions.push({ tone: "bad", text: "Tageslimit erreicht — KI-Aufrufe werden übersprungen" }); raise("bad"); }
+  else if (budget && admIsNum(budget.remaining) && admIsNum(budget.limit) && budget.limit > 0 && budget.remaining / budget.limit < 0.2) {
+    actions.push({ tone: "warn", text: `Nur noch ${admNum(budget.remaining)} von ${admNum(budget.limit)} Aufrufen frei` }); raise("warn");
+  }
+  if (budget && admIsNum(budget.errors) && budget.errors > 0) { actions.push({ tone: "warn", text: `${admNum(budget.errors)} KI-Fehler heute` }); raise("warn"); }
+  const tb = cpu && Array.isArray(cpu.tenantBudgets) ? cpu.tenantBudgets : [];
+  const over = tb.filter((t) => t.applied && t.allowed === false);
+  const warn = tb.filter((t) => t.applied && t.allowed && t.warn);
+  if (over.length) { actions.push({ tone: "bad", text: `${over.length} Mandant(en) über Budget: ${over.map((t) => t.name).join(", ")}` }); raise("bad"); }
+  if (warn.length) { actions.push({ tone: "warn", text: `${warn.length} Mandant(en) nahe Warnschwelle (80 %)` }); raise("warn"); }
+  if (!budget && !cpu) return { tone: "unknown", label: "unbekannt", text: "Kostenzustand nicht ermittelbar.", actions: [] };
+  return {
+    tone: worst,
+    label: worst === "ok" ? "Im Rahmen" : worst === "warn" ? "Warnschwelle" : "Budget-Stopp",
+    text: budget ? `Heute ${admUsd(budget.estimatedCostUsd)} · ${admNum(budget.calls)} Aufrufe${admIsNum(budget.limit) ? ` von ${admNum(budget.limit)}` : ""}` : "",
+    actions
+  };
+}
+
+function renderAdmKosten() {
+  const budget = admData.budget || null;
+  const costs = admData.costs || null;
+  const cpu = admData.costsPerUser || null;
+
+  const currencyNote = `<p class="adm-note adm-note--currency">Alle KI-Kosten sind <strong>Schätzwerte in USD</strong> (Preistabelle des Codes). Eine EUR-Umrechnung existiert nicht — Beträge werden bewusst nicht in Euro ausgewiesen. Mandanten-Budgets sind in EUR-Cent gepflegt und werden vom Schutzdeckel konservativ 1:1 gegen USD verglichen.</p>`;
+
+  const budgetTiles = budget ? admTiles([
+    admTile("Aufrufe heute", admNum(budget.calls), `Budget-Tag ${budget.day || ADM_DASH} (UTC)`),
+    admTile("Tageslimit", admIsNum(budget.limit) ? admNum(budget.limit) : "Kein Limit", "HELMUT_MAX_LLM_CALLS_PER_DAY"),
+    admTile("Verbleibend", admNum(budget.remaining)),
+    admTile("Fehler", admNum(budget.errors), "Zählen gegen das Budget"),
+    admTile("Übersprungen", admNum(budget.skips), "Bewusst ausgelassen"),
+    admTile("Kosten heute", admUsd(budget.estimatedCostUsd)),
+    admTile("Understanding-Reserve", admNum(budget.reserveUnderstanding), "Reservierte Aufrufe fürs Verstehen"),
+    admTile("Fail-closed", budget.failClosed ? "an" : "aus", budget.failClosed ? "Bei Störung wird gestoppt" : "Bei Störung läuft es weiter"),
+    admTile("Monat bis heute", budget.monat ? admUsd(budget.monat.estimatedCostUsd) : ADM_DASH, budget.monat ? `seit ${budget.monat.seit}` : undefined)
+  ].join("")) : admEmpty("Tagesbudget nicht geladen.");
+
+  const skipReasons = budget && budget.skipsByReason && Object.keys(budget.skipsByReason).length
+    ? admTableShell("ko-skips", ["Grund", "Anzahl"], Object.entries(budget.skipsByReason)
+        .sort((a, b) => b[1] - a[1])
+        .map(([reason, n]) => `<tr><td data-label="Grund">${escapeHtml(reason)}</td><td data-label="Anzahl">${admNum(Number(n))}</td></tr>`).join(""))
+    : admEmpty("Heute wurden keine Aufrufe übersprungen.");
+
+  const periodBtns = [7, 30, 90].map((d) => `<button type="button" class="adm-seg-btn${admCostDays === d ? " is-active" : ""}" data-adm-days="${d}">${d} Tage</button>`).join("");
+  const periodTiles = costs ? admTiles([
+    admTile("Aufrufe", admNum(costs.totalCalls), `${admNum(costs.periodDays)} Tage rollierend`),
+    admTile("Erfolgreich", admNum(costs.successfulCalls)),
+    admTile("Fehlgeschlagen", admNum(costs.failedCalls)),
+    admTile("Kosten", admUsd(costs.totalCostUsd)),
+    admTile("Tokens", admNum(costs.totalTokens))
+  ].join("")) : admEmpty("Kostenstatistik nicht geladen.");
+
+  const modelRows = costs && costs.perModel ? Object.entries(costs.perModel)
+    .sort((a, b) => (b[1].estimatedCostUsd || 0) - (a[1].estimatedCostUsd || 0))
+    .map(([model, m]) => `<tr><td data-label="Modell">${escapeHtml(model)}</td><td data-label="Aufrufe">${admNum(m.calls)}</td><td data-label="Kosten (USD)">${admUsd(m.estimatedCostUsd)}</td><td data-label="Tokens">${admNum(m.totalTokens)}</td></tr>`).join("") : "";
+
+  const catRows = costs && costs.perCategory ? Object.entries(costs.perCategory)
+    .sort((a, b) => (b[1].estimatedCostUsd || 0) - (a[1].estimatedCostUsd || 0))
+    .map(([cat, c]) => `<tr><td data-label="Kategorie">${escapeHtml(cat)}</td><td data-label="Aufrufe">${admNum(c.calls)}</td><td data-label="Kosten (USD)">${admUsd(c.estimatedCostUsd)}</td></tr>`).join("") : "";
+
+  const dayRows = costs && Array.isArray(costs.byDay) ? costs.byDay.slice(0, 14)
+    .map((d) => `<tr><td data-label="Tag">${escapeHtml(d.day || ADM_DASH)}</td><td data-label="Aufrufe">${admNum(d.calls)}</td><td data-label="Kosten (USD)">${admUsd(d.estimatedCostUsd)}</td><td data-label="Tokens">${admNum(d.totalTokens)}</td></tr>`).join("") : "";
+
+  const perUserRows = cpu && Array.isArray(cpu.perUser) ? cpu.perUser
+    .map((u) => `<tr><td data-label="Mandant">${escapeHtml(u.name || u.userId || ADM_DASH)}</td><td data-label="Aufrufe">${admNum(u.calls)}</td><td data-label="Kosten (USD)">${admUsd(u.totalCostUsd)}</td></tr>`).join("") : "";
+
+  const tenantRows = cpu && Array.isArray(cpu.tenantBudgets) ? cpu.tenantBudgets.map((t) => {
+    const status = !t.applied
+      ? admChip("unknown", "kein Budget gesetzt")
+      : t.allowed === false ? admChip("bad", "über Budget") : t.warn ? admChip("warn", "Warnschwelle") : admChip("ok", "im Rahmen");
+    return `<tr>
+      <td data-label="Mandant">${escapeHtml(t.name || t.politicianId)}</td>
+      <td data-label="Tagesbudget (€)">${admCentEur(t.dailyBudgetCent)}</td>
+      <td data-label="Monatsbudget (€)">${admCentEur(t.monthlyBudgetCent)}</td>
+      <td data-label="Heute (USD)">${admUsd(t.heuteUsd)}</td>
+      <td data-label="Monat (USD)">${admUsd(t.monatUsd)}</td>
+      <td data-label="Status">${status}</td>
+    </tr>`;
+  }).join("") : "";
+
+  return `
+    ${admStateHead(admKostenState())}
+    ${currencyNote}
+    ${admEndpointNote("budget", "Tagesbudget konnte nicht geladen werden")}
+    ${admEndpointNote("costs", "Kostenstatistik konnte nicht geladen werden")}
+    ${admEndpointNote("costsPerUser", "Kosten pro Mandant konnten nicht geladen werden")}
+    ${admCard("Tagesbudget (heute)", "Exaktes Fenster des Budget-Gates — nicht das rollierende Statistikfenster", budgetTiles)}
+    ${admCard("Übersprungene Aufrufe", "Gründe (heute)", skipReasons)}
+    ${admCard("Zeitraum", undefined, `<div class="adm-seg">${periodBtns}</div>${periodTiles}`)}
+    ${admCard("Pro Modell", undefined, modelRows ? admTableShell("ko-model", ["Modell", "Aufrufe", "Kosten (USD)", "Tokens"], modelRows) : admEmpty())}
+    ${admCard("Pro Kategorie", undefined, catRows ? admTableShell("ko-cat", ["Kategorie", "Aufrufe", "Kosten (USD)"], catRows) : admEmpty())}
+    ${admCard("Pro Tag", undefined, dayRows ? admTableShell("ko-day", ["Tag", "Aufrufe", "Kosten (USD)", "Tokens"], dayRows) : admEmpty())}
+    ${admCard("Pro Mandant", "Rollierendes Fenster", perUserRows ? admTableShell("ko-user", ["Mandant", "Aufrufe", "Kosten (USD)"], perUserRows) : admEmpty())}
+    ${admCard("Budget pro Mandant", "Budgets in EUR-Cent (Profil) · Ausgaben in USD · Schutzdeckel vergleicht 1:1", tenantRows ? admTableShell("ko-tenant", ["Mandant", "Tagesbudget (€)", "Monatsbudget (€)", "Heute (USD)", "Monat (USD)", "Status"], tenantRows) : admEmpty("Keine Mandanten-Budgets gepflegt."))}
+  `;
+}
+
+// --- Bereich: Daten & Profile -------------------------------------------------
+function admDatenState() {
+  const ov = admData.overview || null;
+  const store = ov && ov.system && ov.system.store;
+  const actions = [];
+  let worst = "ok";
+  const raise = (tone) => { if (tone === "bad") worst = "bad"; else if (tone === "warn" && worst !== "bad") worst = "warn"; };
+  const mandates = ov && Array.isArray(ov.mandates) ? ov.mandates : [];
+  const unready = mandates.filter((m) => m.validierung && !m.validierung.nutzbar && !m.validierung.deaktiviert);
+  if (unready.length) { actions.push({ tone: "bad", text: `${unready.length} Profil(e) nicht nutzbar: ${unready.map((m) => m.fullName || m.id).join(", ")}` }); raise("bad"); }
+  const partial = mandates.filter((m) => m.validierung && m.validierung.nutzbar && !m.validierung.bereit);
+  if (partial.length) { actions.push({ tone: "warn", text: `${partial.length} Profil(e) nur teilweise vollständig` }); raise("warn"); }
+  if (store && store.rawItems && admIsNum(store.rawItems.last24h) && store.rawItems.last24h === 0) {
+    actions.push({ tone: "warn", text: "Keine neuen Rohdokumente in den letzten 24 Stunden", goto: "pipeline" }); raise("warn");
+  }
+  if (!ov) return { tone: "unknown", label: "unbekannt", text: "Datenbestand nicht ermittelbar.", actions: [] };
+  return {
+    tone: worst,
+    label: worst === "ok" ? "Bestand in Ordnung" : worst === "warn" ? "eingeschränkt" : "Eingriff nötig",
+    text: store ? `Backend ${store.backend || ADM_DASH} · ${admNum(store.rawItems && store.rawItems.total)} Rohdokumente` : "",
+    actions
+  };
+}
+
+function renderAdmDaten() {
+  const ov = admData.overview || null;
+  const store = (ov && ov.system && ov.system.store) || {};
+  const mandates = ov && Array.isArray(ov.mandates) ? ov.mandates : [];
+  const dailyInputs = admData.dailyInputs || {};
+
+  const bestandTiles = admTiles([
+    admTile("Quellen gesamt", admNum(store.sources && store.sources.total)),
+    admTile("Quellen aktiv", admNum(store.sources && store.sources.active)),
+    admTile("Rohdokumente gesamt", admNum(store.rawItems && store.rawItems.total)),
+    admTile("Rohdokumente (24 h)", admNum(store.rawItems && store.rawItems.last24h)),
+    admTile("Direkte Links", admNum(store.rawItems && store.rawItems.directLinks)),
+    admTile("Fehlende Links", admNum(store.rawItems && store.rawItems.missingLinks), "z. B. Google-News-Umleitung"),
+    admTile("Wissensobjekte", admNum(ov && ov.counts && ov.counts.knowledgeObjects)),
+    admTile("Briefings", admNum(store.briefings && store.briefings.total), store.briefings && store.briefings.latestGeneratedAt ? `zuletzt ${admDateTime(store.briefings.latestGeneratedAt)}` : undefined),
+    admTile("Lage-Checks", admNum(store.lageChecks && store.lageChecks.total)),
+    admTile("Aufgaben offen", admNum(store.tasks && store.tasks.open)),
+    admTile("Notizen", admNum(store.notes && store.notes.total)),
+    admTile("Empfehlungen aktiv", admNum(store.recommendations && store.recommendations.active)),
+    admTile("Push-Abos", admNum(store.push && store.push.subscriptions)),
+    admTile("Crawl-Läufe", admNum(store.crawlRuns && store.crawlRuns.total), store.crawlRuns && store.crawlRuns.latestAt ? `zuletzt ${admDateTime(store.crawlRuns.latestAt)}` : undefined)
+  ].join(""));
+
+  const profileRows = mandates.map((m) => {
+    const val = m.validierung || null;
+    const di = dailyInputs[m.id];
+    const badge = !val
+      ? admChip("unknown")
+      : val.deaktiviert ? admChip("paused", "deaktiviert")
+      : val.bereit ? admChip("ok", "vollständig")
+      : val.nutzbar ? admChip("warn", "teilweise")
+      : admChip("bad", val.zustandLabel || "nicht bereit");
+    const missing = val && Array.isArray(val.fehlendePflichtfelder) && val.fehlendePflichtfelder.length
+      ? `<div class="adm-cell-sub">Fehlt: ${escapeHtml(val.fehlendePflichtfelder.join(", "))}</div>` : "";
+    return `<tr>
+      <td data-label="Mandat"><strong>${escapeHtml(m.fullName || m.id)}</strong><div class="adm-cell-sub">${escapeHtml(m.id || "")}</div></td>
+      <td data-label="Partei">${escapeHtml(m.party || ADM_DASH)}</td>
+      <td data-label="Ausschüsse">${admNum(Array.isArray(m.committees) ? m.committees.length : null)}</td>
+      <td data-label="Schwerpunkte">${admNum(Array.isArray(m.focusTopics) ? m.focusTopics.length : null)}</td>
+      <td data-label="Vollständigkeit">${badge}${missing}</td>
+      <td data-label="Tages-Inputs heute">${di && admIsNum(di.heute) ? `${admNum(di.heute)} / ${admNum(di.max)}` : ADM_DASH}</td>
+      <td data-label="Aktion" class="admin-actions-cell"><button class="account-logout" type="button" data-profile-test-briefing="${escapeAttribute(m.id)}">Testbriefing</button></td>
+    </tr>`;
+  }).join("");
+
+  return `
+    ${admStateHead(admDatenState())}
+    ${admEndpointNote("overview", "Datenbestand konnte nicht geladen werden")}
+    ${admCard("Datenbestand", "Aus getStoreSummary() — was aktuell im Speicher liegt", bestandTiles)}
+    ${admCard("Mandatsprofile", "Vollständigkeit steuert Matching und Briefing — Validierung aus profile-validation.js",
+      profileRows ? admTableShell("dt-profiles", ["Mandat", "Partei", "Ausschüsse", "Schwerpunkte", "Vollständigkeit", "Tages-Inputs heute", "Aktion"], profileRows, { searchable: true, searchPlaceholder: "Mandat, Partei …" }) : admEmpty("Noch keine Mandatsprofile angelegt."))}
+    ${admCard("Profil-Details", "Politisches Profil je Mandat (read-only)", mandates.length ? adminDetails("Profilkarten anzeigen", renderAdminMandatesSection(mandates)) : admEmpty("Noch keine Mandatsprofile angelegt."))}
+    ${admCard("Versorgung je Mandat (Detail)", "Teurer interner Bericht — Briefing-Punkte, Lage, Radar, KI-Budget je Account",
+      admData.dataStatus
+        ? renderAdminDataStatus(admData.dataStatus, "accounts")
+        : `${admEndpointNote("dataStatus", "Versorgungsbericht konnte nicht geladen werden")}<p class="adm-note">Baut serverseitig pro Account Briefing/Lage/Radar auf (dauert einige Sekunden).</p><button type="button" class="secondary-button" data-adm-load="dataStatus"${admLoading.dataStatus ? " disabled" : ""}>${admLoading.dataStatus ? "Lädt …" : "Versorgungsdetails laden"}</button>`)}
+  `;
+}
+
+// --- Bereich: Nutzer & Kunden -------------------------------------------------
+function admNutzerState() {
+  const ov = admData.overview || null;
+  const cu = admData.customers || null;
+  const actions = [];
+  let worst = "ok";
+  const raise = (tone) => { if (tone === "bad") worst = "bad"; else if (tone === "warn" && worst !== "bad") worst = "warn"; };
+  if (cu && cu.counts) {
+    if (cu.counts.overdue > 0) { actions.push({ tone: "bad", text: `${admNum(cu.counts.overdue)} Zahlung(en) überfällig — nachfassen` }); raise("bad"); }
+    if (cu.counts.open > 0) { actions.push({ tone: "warn", text: `${admNum(cu.counts.open)} offene Rechnung(en)` }); raise("warn"); }
+  }
+  if (!ov && !cu) return { tone: "unknown", label: "unbekannt", text: "Nutzerbestand nicht ermittelbar.", actions: [] };
+  const counts = ov && ov.counts;
+  return {
+    tone: worst,
+    label: worst === "ok" ? "in Ordnung" : worst === "warn" ? "offene Posten" : "Handeln nötig",
+    text: counts ? `${admNum(counts.users)} Konten · ${admNum(counts.activeLast7d)} in den letzten 7 Tagen aktiv${cu && admIsNum(cu.sessionsAktiv) ? ` · ${admNum(cu.sessionsAktiv)} aktive Sessions` : ""}` : "",
+    actions
+  };
+}
+
+function renderAdmUserRows(users, feedbackCountByUser) {
+  return users.map((user) => {
     const billingDays = user.paidUntil ? Math.ceil((new Date(user.paidUntil) - Date.now()) / 86400000) : null;
     const billingBadge = !user.paidUntil
       ? ""
       : billingDays > 7
-        ? `<span class="admin-pill billing-ok">✓ bis ${new Date(user.paidUntil).toLocaleDateString("de-DE")}</span>`
+        ? `<span class="admin-pill billing-ok">✓ bis ${admDay(user.paidUntil)}</span>`
         : billingDays >= 0
-          ? `<span class="admin-pill billing-warn">⚠ ${billingDays}d noch</span>`
+          ? `<span class="admin-pill billing-warn">⚠ noch ${billingDays} Tage</span>`
           : `<span class="admin-pill billing-overdue">✕ überfällig</span>`;
     const billingInput = user.paidUntil
       ? `<input type="date" class="billing-date-input" data-billing-user="${escapeAttribute(user.id)}" value="${user.paidUntil.slice(0, 10)}" title="Bezahlt bis" />`
@@ -1833,9 +1985,7 @@ function renderAdminView() {
       ? `<span class="admin-activity-badge admin-activity-none">Nie</span>`
       : daysSince <= 7
         ? `<span class="admin-activity-badge admin-activity-active">Aktiv</span>`
-        : daysSince <= 30
-          ? `<span class="admin-activity-badge admin-activity-idle">Vor ${daysSince}d</span>`
-          : `<span class="admin-activity-badge admin-activity-idle">Vor ${Math.floor(daysSince / 30)}M</span>`;
+        : `<span class="admin-activity-badge admin-activity-idle">Vor ${daysSince <= 30 ? `${daysSince} T` : `${Math.floor(daysSince / 30)} M`}</span>`;
     return `
     <tr>
       <td data-label="Name">
@@ -1849,10 +1999,10 @@ function renderAdminView() {
       </td>
       <td data-label="Rolle"><span class="admin-role-tag admin-role-${escapeAttribute(user.role)}">${escapeHtml(roleLabel(user.role))}</span></td>
       <td data-label="Status"><span class="admin-status-tag admin-status-${escapeAttribute(status)}">${escapeHtml(statusLabel(status))}</span></td>
-      <td data-label="Aktivität">${activityBadge}</td>
-      <td data-label="Bezahlt bis" class="billing-cell">
-        ${billingBadge}${billingInput}
-      </td>
+      <td data-label="Mandat">${escapeHtml(user.politicianId || ADM_DASH)}</td>
+      <td data-label="Letzter Login">${user.lastLoginAt ? escapeHtml(admDateTime(user.lastLoginAt)) : ADM_DASH}</td>
+      <td data-label="Aktivität">${activityBadge}<div class="adm-cell-sub">${admNum(user.loginCount)} Logins · ${admNum(user.openCount)} Öffnungen</div></td>
+      <td data-label="Bezahlt bis" class="billing-cell">${billingBadge}${billingInput}</td>
       <td data-label="Aktion" class="admin-actions-cell">
         <button class="account-logout admin-edit-toggle" type="button" data-admin-user-edit="${escapeAttribute(user.id)}">${isExpanded ? "Schließen" : "Bearbeiten"}</button>
         <button class="account-logout" type="button" data-toggle-user="${escapeAttribute(user.id)}" data-active="${user.active === false ? "0" : "1"}">${user.active === false ? "Aktivieren" : "Deaktivieren"}</button>
@@ -1860,10 +2010,29 @@ function renderAdminView() {
     </tr>
     ${isExpanded ? renderAdminUserEditRow(user, status, feedbackCountByUser[user.id] || 0) : ""}`;
   }).join("");
+}
 
-  const assignmentRows = (data.assignments || []).length
-    ? data.assignments.map((entry) => {
-        const u = (data.users || []).find((user) => user.id === entry.userId);
+function renderAdmNutzer() {
+  const ov = admData.overview || null;
+  const cu = admData.customers || null;
+  const users = ov && Array.isArray(ov.users) ? ov.users : [];
+  const assignments = ov && Array.isArray(ov.assignments) ? ov.assignments : [];
+  const referenten = users.filter((u) => u.role === "referent");
+  const feedbackCountByUser = {};
+  ((ov && ov.feedback) || []).forEach((item) => { if (item.userId) feedbackCountByUser[item.userId] = (feedbackCountByUser[item.userId] || 0) + 1; });
+
+  const filtered = admFilterRows("nu-users", users, (u) => `${u.name || ""} ${u.email || ""} ${u.role || ""} ${u.politicianId || ""} ${u.status || ""}`);
+  const sorted = admSortRows("nu-users", filtered, {
+    name: (u) => u.name || u.email || "",
+    role: (u) => u.role || "",
+    status: (u) => u.status || "",
+    lastLogin: (u) => u.lastLoginAt ? new Date(u.lastLoginAt).getTime() : 0
+  }, null);
+  const userRows = renderAdmUserRows(sorted, feedbackCountByUser);
+
+  const assignmentRows = assignments.length
+    ? assignments.map((entry) => {
+        const u = users.find((user) => user.id === entry.userId);
         return `<tr>
           <td data-label="Referent:in">${escapeHtml(u ? (u.name || u.email) : entry.userId)}</td>
           <td data-label="Mandat">${escapeHtml(entry.politicianId)}</td>
@@ -1872,222 +2041,621 @@ function renderAdminView() {
       }).join("")
     : `<tr><td colspan="3" class="empty-state">Noch keine Zuweisungen.</td></tr>`;
 
-  const errors = (data.recentErrors || []).slice(0, 12);
-  const audit = (data.auditEvents || []).slice(0, 15);
-  const sys = data.system || {};
-  const feedback = Array.isArray(data.feedback) ? data.feedback : [];
-  const mandates = Array.isArray(data.mandates) ? data.mandates : [];
+  const counts = (cu && cu.counts) || null;
+  const kundenTiles = admTiles([
+    admTile("Zahlende Kunden", counts ? admNum(counts.paid) : ADM_DASH),
+    admTile("Offen", counts ? admNum(counts.open) : ADM_DASH, "Rechnung gestellt"),
+    admTile("Überfällig", counts ? admNum(counts.overdue) : ADM_DASH, counts && counts.overdue > 0 ? "Nachfassen" : undefined),
+    admTile("Im Test (Trial)", counts ? admNum(counts.trial) : ADM_DASH),
+    admTile("MRR", cu ? admEur(cu.mrrEur) : ADM_DASH, "Summe pricePerMonth (EUR), ohne beendete"),
+    admTile("Gekündigt", counts ? admNum(counts.gekuendigt) : ADM_DASH),
+    admTile("Deaktiviert", counts ? admNum(counts.deaktiviert) : ADM_DASH),
+    admTile("Aktive Sessions", cu ? admNum(cu.sessionsAktiv) : ADM_DASH, "Reine Anzahl — keine Sitzungsdaten")
+  ].join(""));
+
+  const kundenRows = cu && Array.isArray(cu.kunden) ? cu.kunden.map((k) => {
+    const c = k.customer || {};
+    const pay = { paid: ["ok", "bezahlt"], open: ["warn", "offen"], overdue: ["bad", "überfällig"], none: ["unknown", "kein Status"] }[c.paymentStatus || "none"] || ["unknown", c.paymentStatus];
+    return `<tr>
+      <td data-label="Kunde"><strong>${escapeHtml(k.name)}</strong><div class="adm-cell-sub">${escapeHtml(k.politicianId || k.email || "")}</div></td>
+      <td data-label="Preis/Monat">${admEur(c.pricePerMonth)}</td>
+      <td data-label="Zahlung">${admChip(pay[0], pay[1])}</td>
+      <td data-label="Start">${c.startDate ? admDay(c.startDate) : ADM_DASH}</td>
+      <td data-label="Trial bis">${c.trialUntil ? admDay(c.trialUntil) : ADM_DASH}</td>
+      <td data-label="Nächste Rechnung">${c.nextInvoice ? admDay(c.nextInvoice) : ADM_DASH}</td>
+      <td data-label="Status"><span class="admin-status-tag admin-status-${escapeAttribute(k.status || "aktiv")}">${escapeHtml(statusLabel(k.status || "aktiv"))}</span></td>
+      <td data-label="Notiz">${c.internalNote ? escapeHtml(String(c.internalNote).slice(0, 120)) : ADM_DASH}</td>
+    </tr>`;
+  }).join("") : "";
+
+  const abgeordnete = users.filter((u) => u.role === "abgeordneter");
+  const notifRows = abgeordnete.map((u) => {
+    const n = u.notificationSettings || {};
+    const cell = (v) => v ? "an" : "aus";
+    return `<tr>
+      <td data-label="Mandat">${escapeHtml(u.politicianId || u.name || ADM_DASH)}</td>
+      <td data-label="Briefing">${cell(n.briefing)}</td>
+      <td data-label="Lage">${cell(n.lage)}</td>
+      <td data-label="Radar">${cell(n.radar)}</td>
+      <td data-label="Krise">${cell(n.crisis)}</td>
+      <td data-label="Chance">${cell(n.opportunity)}</td>
+      <td data-label="Statement">${cell(n.statement)}</td>
+    </tr>`;
+  }).join("");
+
+  const mandateOptions = admMandateOptions();
 
   return `
-    <div class="admin-page">
+    ${admStateHead(admNutzerState())}
+    ${admEndpointNote("overview", "Nutzerdaten konnten nicht geladen werden")}
+    ${admEndpointNote("customers", "Kundendaten konnten nicht geladen werden")}
+    ${admCard("Konten", `${admNum(users.length)} Konten · Identität und Rollen kommen ausschließlich serverseitig`,
+      users.length
+        ? admTableShell("nu-users", [
+            { label: "Name", sortKey: "name" }, { label: "Rolle", sortKey: "role" }, { label: "Status", sortKey: "status" },
+            "Mandat", { label: "Letzter Login", sortKey: "lastLogin" }, "Aktivität", "Bezahlt bis", "Aktion"
+          ], userRows || `<tr><td colspan="8" class="empty-state">Keine Treffer.</td></tr>`, { searchable: true, searchPlaceholder: "Name, E-Mail, Rolle, Mandat …" })
+        : admEmpty("Noch keine Konten angelegt."))}
+    ${referenten.length ? admNote("Hinweis: Referenten-Konten sind bestehende Rollenstruktur. Einen Referentenzugang als Produkt gibt es vorerst nicht — die Funktionalität wird nicht erweitert.") : ""}
+    ${admCard("Kunden & Abrechnung", "Beträge in Euro — gepflegt am Konto (customer)",
+      `${kundenTiles}${kundenRows ? admTableShell("nu-kunden", ["Kunde", "Preis/Monat", "Zahlung", "Start", "Trial bis", "Nächste Rechnung", "Status", "Notiz"], kundenRows) : admEmpty("Noch keine Kundendaten gepflegt.")}`)}
+    ${admCard("Benachrichtigungen je Mandat", "Pflege über Konto bearbeiten", notifRows ? admTableShell("nu-notif", ["Mandat", "Briefing", "Lage", "Radar", "Krise", "Chance", "Statement"], notifRows) : admEmpty("Keine Mandats-Konten vorhanden."))}
+    ${admCard("Zuweisungen", "Referent:in → Mandat (bestehende Rollenstruktur)",
+      `${admTableShell("nu-assign", ["Referent:in", "Mandat", "Aktion"], assignmentRows)}
+      <div class="admin-subsection">
+        <p class="admin-subsection-label">Neue Zuweisung</p>
+        <form class="admin-inline-form" id="assignForm">
+          <select name="userId" aria-label="Referent:in">
+            ${referenten.map((user) => `<option value="${escapeAttribute(user.id)}">${escapeHtml(user.name || user.email)}</option>`).join("") || `<option value="">— keine Referent:innen —</option>`}
+          </select>
+          <select name="politicianId" aria-label="Mandat">
+            ${mandateOptions.map((entry) => `<option value="${escapeAttribute(entry.id)}">${escapeHtml(entry.name)}</option>`).join("")}
+          </select>
+          <button class="primary-button" type="submit">Zuweisen</button>
+        </form>
+        <small class="admin-form-error" id="assignError"></small>
+      </div>`)}
+    ${admCard("Passwort zurücksetzen", "Alle Sitzungen des Kontos werden dabei beendet",
+      `<form class="admin-inline-form" id="resetPasswordForm">
+        <select name="userId" aria-label="Nutzer">
+          ${users.map((user) => `<option value="${escapeAttribute(user.id)}">${escapeHtml(user.name || user.email)}</option>`).join("")}
+        </select>
+        <div class="password-field" style="flex:1; min-width:160px;">
+          <input name="password" id="resetPasswordInput" type="password" placeholder="Neues Passwort (min. 8)" aria-label="Neues Passwort" autocomplete="new-password" />
+          <button type="button" class="password-toggle" data-toggle-password="resetPasswordInput" aria-label="Passwort anzeigen">Anzeigen</button>
+        </div>
+        <button class="secondary-button" type="submit">Zurücksetzen</button>
+      </form>
+      <small class="admin-form-error" id="resetPasswordError"></small>`)}
+    ${admCard("Nutzer anlegen", "Neues Konto im System",
+      `<form class="admin-create-form" id="createUserForm">
+        <div class="admin-field-group">
+          <input name="name" type="text" placeholder="Vollständiger Name" aria-label="Name" required />
+          <input name="email" type="email" placeholder="name@bundestag.de" aria-label="E-Mail" required />
+          <select name="role" aria-label="Rolle">
+            <option value="abgeordneter">Abgeordnete:r</option>
+            <option value="referent">Referent:in (bestehende Rollenstruktur)</option>
+            <option value="demo">Demo</option>
+            <option value="admin">Administrator</option>
+          </select>
+          <div class="password-field">
+            <input name="password" id="createUserPassword" type="password" placeholder="Mind. 8 Zeichen" aria-label="Passwort" autocomplete="new-password" required />
+            <button type="button" class="password-toggle" data-toggle-password="createUserPassword" aria-label="Passwort anzeigen">Anzeigen</button>
+          </div>
+        </div>
+        <div class="admin-quickstart">
+          <p class="admin-quickstart-hint">Schnellstart <span class="admin-quickstart-opt">(optional, nur Abgeordnete)</span></p>
+          <input name="party" type="text" placeholder="Partei / Fraktion" aria-label="Partei" />
+          <input name="committee" type="text" placeholder="Ausschuss" aria-label="Ausschuss" />
+          <input name="constituency" type="text" placeholder="Wahlkreis" aria-label="Wahlkreis" />
+          <input name="state" type="text" placeholder="Bundesland" aria-label="Bundesland" />
+          <input name="focusTopics" type="text" placeholder="Schwerpunktthemen (Komma-getrennt)" aria-label="Schwerpunktthemen" />
+        </div>
+        <div class="admin-form-foot">
+          <button class="primary-button" type="submit">Nutzer erstellen</button>
+          <small class="admin-form-error" id="createUserError"></small>
+        </div>
+      </form>`)}
+  `;
+}
 
-      <header class="admin-header">
-        <span class="eyebrow-line">Betrieb</span>
-        <h1 class="admin-title">Admin</h1>
-        <p class="admin-subtitle">Betreiber-Übersicht: Systemzustand, Datenmotor, Pipeline, Quellen und Nutzer.${sys.deploy?.commit || sys.deploy?.version ? ` <span class="admin-version-tag" title="Laufende Deploy-Version${sys.deploy?.environment ? ` · ${escapeHtml(adminEnvLabel(sys.deploy.environment))}` : ""}">Version ${escapeHtml(sys.deploy?.commit || sys.deploy?.version)}</span>` : ""}</p>
+// Mandatsoptionen fuer Zuweisungen: vorhandene Profile + Abgeordneten-Mandate.
+function admMandateOptions() {
+  const ov = admData.overview || {};
+  const map = new Map();
+  (ov.profiles || []).forEach((entry) => map.set(entry.id, entry.fullName || entry.id));
+  (ov.users || []).forEach((user) => {
+    if (user.role === "abgeordneter" && user.politicianId && !map.has(user.politicianId)) {
+      map.set(user.politicianId, user.name || user.politicianId);
+    }
+  });
+  return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+}
+
+// --- Bereich: System & Sicherheit ---------------------------------------------
+function admSystemState() {
+  const ov = admData.overview || null;
+  const store = ov && ov.system && ov.system.store;
+  const rec = admData.recovery || null;
+  const errors = ov && Array.isArray(ov.recentErrors) ? ov.recentErrors : null;
+  const actions = [];
+  let worst = "ok";
+  const raise = (tone) => { if (tone === "bad") worst = "bad"; else if (tone === "warn" && worst !== "bad") worst = "warn"; };
+  if (errors && errors.length > 0) { actions.push({ tone: "warn", text: `${admNum(errors.length)} protokollierte Systemfehler (letzte ${admNum(Math.min(errors.length, 50))})` }); raise("warn"); }
+  const rawAt = store && store.rawItems && store.rawItems.latestAt;
+  if (rawAt && Date.now() - new Date(rawAt).getTime() > 24 * 3600 * 1000) { actions.push({ tone: "warn", text: "Letztes Rohdokument älter als 24 Stunden", goto: "pipeline" }); raise("warn"); }
+  const ko = rec && rec.knowledgeObjects;
+  if (ko && admIsNum(ko.failed) && ko.failed > 0) { actions.push({ tone: "bad", text: `${admNum(ko.failed)} fehlgeschlagene Wissensobjekte — Recovery unten` }); raise("bad"); }
+  const lock = rec && rec.understandingLock;
+  if (lock && lock.verdaechtig) { actions.push({ tone: "warn", text: "Understanding-Lock wirkt veraltet — unten lösbar" }); raise("warn"); }
+  if (!ov && !rec) return { tone: "unknown", label: "unbekannt", text: "Systemzustand nicht ermittelbar.", actions: [] };
+  return {
+    tone: worst,
+    label: worst === "ok" ? "System läuft" : worst === "warn" ? "eingeschränkt" : "Eingriff nötig",
+    text: store ? `Backend ${store.backend || ADM_DASH} · letztes Briefing ${store.briefings && store.briefings.latestGeneratedAt ? admRel(store.briefings.latestGeneratedAt) : ADM_DASH}` : "",
+    actions
+  };
+}
+
+// Sicherheitszustand ehrlich: keine Beschönigung. Werte kommen live aus
+// /api/admin/tenant-mode; die Einordnung (RLS inert, service_role) ist der
+// dokumentierte Code-Stand (docs/mandantentrennung-architektur.md).
+function renderAdmSecurityCard() {
+  const tm = admData.tenantMode || null;
+  const setup = admData.setupStatus || null;
+  const rows = [
+    dsRow("Tenant-JWT-Modus", tm ? (tm.tenantJwtModeEnabled ? `<span class="ds-ok">aktiv</span>` : `<span class="ds-warn">aus (im Code dauerhaft deaktiviert)</span>`) : ADM_DASH),
+    dsRow("Tatsächlicher DB-Zugriff", tm && tm.effectiveTransport ? `<span class="${tm.effectiveTransport === "service_role" ? "ds-warn" : "ds-ok"}">${escapeHtml(tm.effectiveTransport)}</span>` : ADM_DASH),
+    dsRow("RLS-Policies", tm ? (tm.tenantJwtModeEnabled ? `<span class="ds-ok">wirksam</span>` : `<span class="ds-warn">vorbereitet, aber NICHT wirksam (service_role umgeht RLS)</span>`) : ADM_DASH),
+    dsRow("Mandantentrennung heute", `<span class="ds-warn">App-seitige Guards (assertTenant) — keine DB-seitige zweite Verteidigungslinie</span>`),
+    dsRow("Admin eingerichtet", setup ? (setup.adminExists ? `<span class="ds-ok">Ja</span>` : `<span class="ds-bad">Nein</span>`) : ADM_DASH),
+    dsRow("Speicher-Backend", setup && setup.storageBackend ? escapeHtml(setup.storageBackend) : ADM_DASH)
+  ].join("");
+  return `${rows}<p class="adm-note">Vor einem zweiten echten Mandanten ist die DB-seitige Trennung freizugeben (dokumentierter Freigabepunkt). Diese Anzeige beschönigt nichts: solange der Server mit service_role zugreift, sind die 23 RLS-Policies funktional inert.</p>`;
+}
+
+function renderAdmPrivacyCard() {
+  const ov = admData.overview || null;
+  const mandates = ov && Array.isArray(ov.mandates) ? ov.mandates : [];
+  if (!mandates.length) return admEmpty("Keine Mandate vorhanden.");
+  const rows = mandates.map((m) => {
+    const confirm = admPrivacyConfirm && admPrivacyConfirm.politicianId === m.id;
+    const confirmPanel = confirm ? `
+      <div class="adm-danger-confirm">
+        <p class="adm-danger-text"><strong>Unwiderrufliche Löschung</strong> aller Inhaltsdaten, Konten und Sitzungen des Mandats <strong>${escapeHtml(m.id)}</strong> (Art. 17 DSGVO). Diese Aktion ist NICHT reversibel und wird im Audit-Log protokolliert.</p>
+        <p class="adm-danger-text">Zur Bestätigung die Mandats-ID exakt eintippen:</p>
+        <div class="admin-inline-form">
+          <input type="text" class="adm-danger-input" data-privacy-confirm-input="${escapeAttribute(m.id)}" placeholder="${escapeAttribute(m.id)}" autocomplete="off" />
+          <button type="button" class="adm-danger-btn" data-privacy-delete-run="${escapeAttribute(m.id)}">Endgültig löschen</button>
+          <button type="button" class="account-logout" data-privacy-delete-cancel>Abbrechen</button>
+        </div>
+        <small class="admin-form-error" data-privacy-error="${escapeAttribute(m.id)}"></small>
+      </div>` : "";
+    return `<div class="adm-privacy-row">
+      <div class="adm-privacy-head">
+        <strong>${escapeHtml(m.fullName || m.id)}</strong>
+        <span class="adm-cell-sub">${escapeHtml(m.id)}</span>
+        <span class="adm-privacy-actions">
+          <button type="button" class="account-logout" data-privacy-export="${escapeAttribute(m.id)}">Auskunft exportieren (Art. 15)</button>
+          <button type="button" class="adm-danger-btn adm-danger-btn--ghost" data-privacy-delete-start="${escapeAttribute(m.id)}">Löschung vorbereiten (Art. 17)</button>
+        </span>
+      </div>
+      ${confirmPanel}
+    </div>`;
+  }).join("");
+  return `${rows}<p class="adm-note">Export nutzt die bestehende Route /api/privacy/export (redigiert Dritte, Sessions nur als Metadaten). Löschung verlangt zusätzlich die serverseitige Bestätigung und schreibt einen Audit-Eintrag. Automatische Aufbewahrungsfristen sind laut Betriebskonzept NICHT aktiv.</p>`;
+}
+
+function renderAdmActionsCard() {
+  const bf = admBackfillState;
+  const bfResult = bf && bf.result
+    ? `<pre class="ds-recovery-json">${escapeHtml(JSON.stringify(bf.result, null, 2).slice(0, 4000))}</pre>`
+    : "";
+  return `
+    <div class="adm-action-row">
+      <span class="adm-method adm-method--get">GET</span>
+      <code class="adm-endpoint">/api/admin/ko-enrichment-backfill</code>
+      <span class="adm-action-desc">KO-Anreicherung prüfen (Dry-Run, ändert nichts)</span>
+      <button type="button" class="secondary-button adm-action-btn" data-adm-backfill="dry"${bf && bf.busy ? " disabled" : ""}>${bf && bf.busy && bf.mode === "dry" ? "Läuft …" : "Dry-Run"}</button>
+    </div>
+    <div class="adm-action-row adm-action-row--danger">
+      <span class="adm-method adm-method--post">POST</span>
+      <code class="adm-endpoint">/api/admin/ko-enrichment-backfill?execute=1</code>
+      <span class="adm-action-desc">KO-Anreicherung AUSFÜHREN — schreibt in den Bestand, kann KI-Kosten verursachen. Nicht ohne vorherigen Dry-Run.</span>
+      <button type="button" class="adm-danger-btn adm-action-btn" data-adm-backfill="execute"${bf && bf.busy ? " disabled" : ""}>${bf && bf.busy && bf.mode === "execute" ? "Läuft …" : "Ausführen"}</button>
+    </div>
+    <div class="adm-action-row">
+      <span class="adm-method adm-method--post">POST</span>
+      <code class="adm-endpoint">/api/admin/presentation-backfill</code>
+      <span class="adm-action-desc">Darstellungs-Backfill — nur per CRON_SECRET auslösbar (kein Session-Zugriff), daher hier ohne Button.</span>
+    </div>
+    ${bfResult}
+    <p class="adm-note">Gefährliche Aktionen sind bewusst von der normalen Ansicht getrennt: Vor der Ausführung steht, was läuft, welches System betroffen ist und ob es ein Dry-Run ist.</p>`;
+}
+
+function renderAdmSystem() {
+  const ov = admData.overview || null;
+  const sys = (ov && ov.system) || {};
+  const store = sys.store || {};
+  const errors = (ov && ov.recentErrors ? ov.recentErrors.slice(0, 12) : []);
+  const audit = (admData.audit && Array.isArray(admData.audit.auditEvents)) ? admData.audit.auditEvents.slice(0, 15) : ((ov && ov.auditEvents) || []).slice(0, 15);
+
+  const freshTiles = admTiles([
+    admTile("Letzter Crawl", store.crawlRuns && store.crawlRuns.latestAt ? admDateTime(store.crawlRuns.latestAt) : ADM_DASH, store.crawlRuns && store.crawlRuns.latestAt ? admRel(store.crawlRuns.latestAt) : undefined),
+    admTile("Letztes Rohdokument", store.rawItems && store.rawItems.latestAt ? admDateTime(store.rawItems.latestAt) : ADM_DASH, store.rawItems && store.rawItems.latestAt ? admRel(store.rawItems.latestAt) : undefined),
+    admTile("Letztes Briefing", store.briefings && store.briefings.latestGeneratedAt ? admDateTime(store.briefings.latestGeneratedAt) : ADM_DASH, store.briefings && store.briefings.latestGeneratedAt ? admRel(store.briefings.latestGeneratedAt) : undefined),
+    admTile("Offene Systemfehler", ov ? admNum((ov.recentErrors || []).length) : ADM_DASH, "Letzte 50 protokollierte")
+  ].join(""));
+
+  return `
+    ${admStateHead(admSystemState())}
+    ${admEndpointNote("overview", "Systemdaten konnten nicht geladen werden")}
+    ${admEndpointNote("tenantMode", "Tenant-Modus konnte nicht geladen werden")}
+    ${admEndpointNote("recovery", "Recovery-Status konnte nicht geladen werden")}
+    ${admEndpointNote("setupStatus", "Setup-Status konnte nicht geladen werden")}
+    ${admCard("Datenfrische", "Läuft das System? Sind die Daten aktuell?", freshTiles)}
+    ${admCard("System", "Version · Umgebung · Dienste — Secrets nur als Status, nie im Klartext", ov ? renderAdminSystemBody(sys, ov, admData.dataStatus || null, errors, audit) : admEmpty("Nicht geladen."))}
+    ${admCard("Sicherheit & Mandantentrennung", "Ehrlicher Ist-Zustand — keine Beschönigung", renderAdmSecurityCard())}
+    ${admCard("Pipeline-Recovery", "Aktionen laufen nur nach bewusstem Klick und mit Bestätigung", `
+      <div class="admin-recovery-wrap" id="admin-recovery">
+        <p class="admin-recovery-flag">Interner Recovery-Bereich${adminInfo("Recovery")} — Aktionen laufen nur nach bewusstem Klick und mit Bestätigung.</p>
+        ${adminDetails("Recovery-Aktionen (intern) anzeigen", safeRenderAdminRecovery(adminRecovery, adminRecoveryResult, adminPendingDiagnose), adminRecoveryDetailsOpen || adminRecoveryBusy || adminPendingDiagnoseBusy)}
+      </div>`)}
+    ${admCard("Betriebs-Aktionen", "Backfills — klar getrennt von der normalen Ansicht", renderAdmActionsCard())}
+    ${admCard("Datenschutz (DSGVO)", "Auskunft und Löschung je Mandat", renderAdmPrivacyCard())}
+    ${renderAdminGlossary()}
+  `;
+}
+
+// --- Bereich: Quellen & Watchdog ----------------------------------------------
+function admQuellenState() {
+  const src = admData.sources || null;
+  const actions = [];
+  let worst = "ok";
+  const raise = (tone) => { if (tone === "bad") worst = "bad"; else if (tone === "warn" && worst !== "bad") worst = "warn"; };
+  if (!src) return { tone: "unknown", label: "unbekannt", text: "Quellenstatus nicht ermittelbar.", actions: [] };
+  if (!src.verfuegbar) {
+    return { tone: "unknown", label: "unbekannt", text: src.hinweis || "Relationale Quellen-Tabellen nicht erreichbar.", actions: [] };
+  }
+  const sc = src.statusCounts || {};
+  if (sc.broken > 0) { actions.push({ tone: "bad", text: `${admNum(sc.broken)} Abrufwege defekt — reparieren oder ersetzen` }); raise("bad"); }
+  if (sc.degraded > 0) { actions.push({ tone: "warn", text: `${admNum(sc.degraded)} Abrufwege beeinträchtigt` }); raise("warn"); }
+  if (sc.needs_review > 0) { actions.push({ tone: "warn", text: `${admNum(sc.needs_review)} Abrufwege brauchen einen menschlichen Blick` }); raise("warn"); }
+  const g = src.googleNews;
+  if (g && admIsNum(g.anteilOkProzent) && g.anteilOkProzent > 50) { actions.push({ tone: "warn", text: `Google-News-Anteil ${g.anteilOkProzent} % — Klumpenrisiko` }); raise("warn"); }
+  const wd = src.watchdog && src.watchdog.briefingWatchdog;
+  if (wd && wd.verfuegbar && wd.aktiv === false) { actions.push({ tone: "warn", text: "Briefing-Wächter hat keinen aktiven Zeitplan" }); raise("warn"); }
+  return {
+    tone: worst,
+    label: worst === "ok" ? "Quellen gesund" : worst === "warn" ? "eingeschränkt" : "Eingriff nötig",
+    text: `${admNum(sc.healthy)} gesund · ${admNum(sc.degraded)} beeinträchtigt · ${admNum(sc.broken)} defekt`,
+    actions
+  };
+}
+
+function renderAdmQuellen() {
+  const src = admData.sources || null;
+  const crawl = admData.crawl || {};
+  const rep = admData.crawlReport || {};
+
+  if (!src && admErrors.sources) {
+    return `${admStateHead(admQuellenState())}${admEndpointNote("sources", "Quellenstatus konnte nicht geladen werden")}`;
+  }
+  const sc = (src && src.statusCounts) || {};
+  const z = (src && src.zaehler) || {};
+
+  const statusTiles = admTiles([
+    admTile("Gesund (healthy)", admNum(sc.healthy)),
+    admTile("Beeinträchtigt (degraded)", admNum(sc.degraded)),
+    admTile("Defekt (broken)", admNum(sc.broken)),
+    admTile("Prüfen (needs_review)", admNum(sc.needs_review)),
+    admTile("Pausiert", admNum(sc.paused)),
+    admTile("Archiviert", admNum(sc.archived))
+  ].join(""));
+
+  const archTiles = admTiles([
+    admTile("Herausgeber", admNum(z.herausgeber)),
+    admTile("Abrufwege", admNum(z.abrufwege)),
+    admTile("Quellen-Pakete", admNum(z.pakete)),
+    admTile("Paketzuordnungen", admNum(z.paketPfade))
+  ].join(""));
+
+  const g = src && src.googleNews;
+  const fehlerquote = admIsNum(rep.failedSources) && admIsNum(rep.checkedSources) ? admPct(rep.failedSources, rep.checkedSources) : ADM_DASH;
+  const riskTiles = admTiles([
+    admTile("Google-News-Anteil", g && admIsNum(g.anteilOkProzent) ? `${g.anteilOkProzent} %` : ADM_DASH, g ? `Aus ${admNum(g.laeufe)} Crawl-Läufen (erfolgreiche Abrufe)` : "Keine Provider-Daten in den letzten Läufen"),
+    admTile("Dokumente (30 T)", admNum(crawl.recentRawItemCount), "Gesamtzufluss"),
+    admTile("Fehlerquote letzter Lauf", fehlerquote, admIsNum(rep.failedSources) ? `${admNum(rep.failedSources)} von ${admNum(rep.checkedSources)} Quellen` : undefined),
+    admTile("Letzter Shadow-Messlauf", src && src.letzterShadowLauf ? admDateTime(src.letzterShadowLauf.savedAt) : ADM_DASH, src && src.letzterShadowLauf && admIsNum(src.letzterShadowLauf.abdeckungDokumenteProzent) ? `Abdeckung ${src.letzterShadowLauf.abdeckungDokumenteProzent} %` : undefined)
+  ].join(""));
+
+  const wd = (src && src.watchdog) || {};
+  const wdRow = (w, name, desc) => {
+    if (!w || !w.verfuegbar) return dsRow(name, `<span class="ds-sub">${ADM_DASH} (Workflow-Datei nicht lesbar)</span>`);
+    return dsRow(name, w.aktiv
+      ? `<span class="ds-ok">aktiv</span> <span class="ds-sub">· ${escapeHtml(w.zeitplanUtc || "")} UTC · ${escapeHtml(desc)}</span>`
+      : `<span class="ds-warn">nur manuell</span> <span class="ds-sub">· Zeitplan bewusst deaktiviert (Freigabepunkt) · ${escapeHtml(desc)}</span>`);
+  };
+  const watchdogRows = `${wdRow(wd.briefingWatchdog, "Briefing-Wächter", "prüft täglich, ob die Pipeline wirklich lief")}${wdRow(wd.healthWatch, "Health-Watch", "Gesundheitsbericht-Prüfung")}`;
+
+  const problemRows = (src && Array.isArray(src.problematischeWege) ? src.problematischeWege : []).map((p) => `
+    <tr>
+      <td data-label="Abrufweg"><strong>${escapeHtml(p.name || p.id)}</strong><div class="adm-cell-sub">${escapeHtml(p.herausgeber || "")}</div></td>
+      <td data-label="Methode">${escapeHtml(p.methode || ADM_DASH)}</td>
+      <td data-label="Status">${admSourceChip(p.status)}${p.kritisch ? ` <span class="adm-cell-sub">kritisch</span>` : ""}</td>
+      <td data-label="Fehlerserie">${p.fehlerserie > 0 ? `<span class="adm-val-bad">${admNum(p.fehlerserie)}</span>` : admNum(p.fehlerserie)}</td>
+      <td data-label="Letzter Erfolg">${p.letzterErfolg ? escapeHtml(admDateTime(p.letzterErfolg)) : ADM_DASH}</td>
+      <td data-label="Letzter Fehler">${p.letzterFehler ? escapeHtml(p.letzterFehler) : ADM_DASH}</td>
+      <td data-label="Empfehlung">${escapeHtml(admSourceEmpfehlung(p))}</td>
+    </tr>`).join("");
+
+  const publisherList = (src && Array.isArray(src.herausgeber) ? src.herausgeber : []);
+  const publisherRows = publisherList.map((p) => {
+    const wege = Array.isArray(p.wege) ? p.wege : [];
+    const worstTone = wege.some((w) => w.status === "broken") ? "bad" : wege.some((w) => w.status === "degraded" || w.status === "needs_review") ? "warn" : "ok";
+    const inner = wege.map((w) => `
+      <div class="adm-pub-path">
+        <span class="adm-pub-path-name">${escapeHtml(w.name || w.id)}</span>
+        <span class="adm-pub-path-method">${escapeHtml(w.methode || ADM_DASH)}</span>
+        ${admSourceChip(w.status)}
+        <span class="adm-cell-sub">letzter Erfolg: ${w.letzterErfolg ? escapeHtml(admDateTime(w.letzterErfolg)) : ADM_DASH}${w.fehlerserie > 0 ? ` · Fehlerserie ${admNum(w.fehlerserie)}` : ""}</span>
+      </div>`).join("");
+    return `<details class="adm-pub">
+      <summary class="adm-pub-sum">${admChip(worstTone, "")} <span class="adm-pub-name">${escapeHtml(p.name)}</span> <span class="adm-cell-sub">${wege.length} ${wege.length === 1 ? "Abrufweg" : "Abrufwege"}${p.vertrauen ? ` · Vertrauen: ${escapeHtml(p.vertrauen)}` : ""}</span></summary>
+      <div class="adm-pub-body">
+        ${inner || admEmpty("Keine Abrufwege hinterlegt.")}
+        <p class="adm-note">Dokumente/Fehlerquote je Abrufweg erscheinen, sobald die Quellen-Telemetrie (source_crawl_telemetry) einen Lesepfad hat — bis dahin ${ADM_DASH}.</p>
+      </div>
+    </details>`;
+  }).join("");
+
+  return `
+    ${admStateHead(admQuellenState())}
+    ${admEndpointNote("sources", "Quellenstatus konnte nicht geladen werden")}
+    ${admEndpointNote("crawl", "Crawl-Statistik konnte nicht geladen werden")}
+    ${src && !src.verfuegbar ? admCard("Quellen-Architektur", undefined, admEmpty(src.hinweis || "Relationale Quellen-Tabellen nicht erreichbar — keine erfundenen Kennzahlen.")) : `
+    ${admCard("Abrufwege nach Status", "Aus den relationalen Quellen-Tabellen (retrieval_paths.status)", statusTiles)}
+    ${admCard("Quellen-Architektur", undefined, archTiles)}
+    ${admCard("Klumpenrisiko & Messläufe", "Google-News-Anteil aus crawlRuns.providerBreakdown — Telemetrie-Lesepfad existiert noch nicht", riskTiles)}
+    ${admCard("Watchdog", "Externe Wächter (GitHub Actions) — Zustand aus den Workflow-Dateien gelesen", watchdogRows)}
+    ${admCard("Problematische Abrufwege", "Defekte zuerst — mit konkreter Handlungsempfehlung",
+      problemRows ? admTableShell("qw-problems", ["Abrufweg", "Methode", "Status", "Fehlerserie", "Letzter Erfolg", "Letzter Fehler", "Empfehlung"], problemRows) : admEmpty("Aktuell keine problematischen Abrufwege — alle Wege gesund oder archiviert."))}
+    ${admCard("Quellendetail", "Herausgeber → Abrufwege", publisherRows || admEmpty("Keine Herausgeber hinterlegt."))}
+    `}
+  `;
+}
+
+function admSourceEmpfehlung(p) {
+  if (p.status === "broken") return "Reparieren oder ersetzen — liefert nicht mehr.";
+  if (p.status === "degraded") return p.fehlerserie >= 5 ? "Beobachten; bei anhaltender Fehlerserie ersetzen." : "Beobachten.";
+  if (p.status === "needs_review") return "Manuell prüfen (neu oder auffällig).";
+  if (p.status === "paused") return "Pausiert — bei Bedarf reaktivieren.";
+  return "Keine Aktion nötig.";
+}
+
+// --- Shell --------------------------------------------------------------------
+function admSectionLoadingState(section) {
+  const keys = ADM_SECTION_ENDPOINTS[section] || [];
+  const anyData = keys.some((k) => admData[k] !== undefined);
+  const anyLoading = keys.some((k) => admLoading[k]);
+  const allFailed = keys.length > 0 && keys.every((k) => admErrors[k] && admData[k] === undefined);
+  return { anyData, anyLoading, allFailed };
+}
+
+function renderAdmSectionBody(section) {
+  const st = admSectionLoadingState(section);
+  if (!st.anyData && st.anyLoading) {
+    return `<div class="skeleton-stack" aria-busy="true" aria-label="Admin-Daten werden geladen">
+      <div class="skeleton skeleton-line short"></div>
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+    </div>`;
+  }
+  if (st.allFailed) {
+    return `<section class="adm-card">
+      <p class="adm-note adm-note--warn">Dieser Bereich konnte nicht geladen werden. ${escapeHtml(Object.values(admErrors)[0] || "")}</p>
+      <button class="secondary-button" type="button" data-reload-admin>Neu laden</button>
+    </section>`;
+  }
+  switch (section) {
+    case "uebersicht": return renderAdmUebersicht();
+    case "pipeline": return renderAdmPipeline();
+    case "kosten": return renderAdmKosten();
+    case "daten": return renderAdmDaten();
+    case "nutzer": return renderAdmNutzer();
+    case "system": return renderAdmSystem();
+    case "quellen": return renderAdmQuellen();
+    default: return renderAdmUebersicht();
+  }
+}
+
+function renderAdminView() {
+  if (userRole() !== "admin") return `<section class="page-intro"><h1 class="hero-title">Kein Zugriff.</h1></section>`;
+  const sys = admData.overview && admData.overview.system;
+  const version = sys && sys.deploy && (sys.deploy.commit || sys.deploy.version);
+  const nav = ADMIN_SECTIONS.map((s) => `<button type="button" class="adm-nav-btn${admSection === s.id ? " is-active" : ""}" data-adm-section="${escapeAttribute(s.id)}">${escapeHtml(s.label)}</button>`).join("");
+  return `
+    <div class="adm">
+      <header class="adm-header">
+        <div class="adm-header-top">
+          <div>
+            <span class="eyebrow-line">Betrieb</span>
+            <h1 class="adm-title">Helmut Admin</h1>
+            <p class="adm-subtitle">Betriebsinstrument — Zustand, Handlungsbedarf, Kosten und Sicherheit auf einen Blick.${version ? ` <span class="admin-version-tag" title="Laufende Deploy-Version${sys.deploy.environment ? ` · ${escapeAttribute(adminEnvLabel(sys.deploy.environment))}` : ""}">Version ${escapeHtml(version)}</span>` : ""}</p>
+          </div>
+          ${admSectionMeta(admSection)}
+        </div>
+        <nav class="adm-nav" aria-label="Admin-Bereiche">${nav}</nav>
       </header>
-
-      ${renderAdminOperatorOverview(data, adminDataStatus, adminRecovery)}
-
-      ${renderAdminActionCenter(adminDataStatus, adminRecovery)}
-
-      ${adminSection("Datenmotor", "Crawl · Verstehen · Recovery",
-        `${renderAdminDatenmotorSummary(adminDataStatus, adminRecovery, data.crawlReport)}
-         ${adminDetails("Crawl-Trichter & Datenstatus anzeigen", `${renderAdminCrawlStats(data.crawlReport)}${renderAdminDataStatus(adminDataStatus, "global")}`)}
-         <div class="admin-recovery-wrap" id="admin-recovery">
-           <p class="admin-recovery-flag">Interner Recovery-Bereich${adminInfo("Recovery")} — Aktionen laufen nur nach bewusstem Klick und mit Bestätigung.</p>
-           ${adminDetails("Recovery-Aktionen (intern) anzeigen", safeRenderAdminRecovery(adminRecovery, adminRecoveryResult, adminPendingDiagnose), adminRecoveryDetailsOpen || adminRecoveryBusy || adminPendingDiagnoseBusy)}
-         </div>`,
-        "admin-datenmotor"
-      )}
-
-      ${renderAdminProfilesSection(adminDataStatus, renderAdminProfileManagement(adminDataStatus, data, userRows, assignmentRows, referenten, mandateOptions, mandates, feedback))}
-
-      ${adminSection("Kosten intern", "Nur im Admin sichtbar",
-        `<div class="admin-period-toggle">
-           <button class="admin-period-btn${adminPeriod === "today" ? " is-active" : ""}" type="button" data-admin-period="today">Heute</button>
-           <button class="admin-period-btn${adminPeriod === "days30" ? " is-active" : ""}" type="button" data-admin-period="days30">30 Tage</button>
-         </div>
-         ${renderAdminKostenSummary(data.stats?.[adminPeriod], adminPeriod === "today" ? "heute" : "30 Tage")}
-         ${renderAdminBudgetHeute(sys?.llmBudget)}
-         ${adminDetails("Kosten pro Engine & pro Nutzer anzeigen", `<div class="admin-charts-row">${renderAdminEngineChart(data.stats?.[adminPeriod])}${renderAdminCostsCard(data.stats?.[adminPeriod])}</div>`)}`,
-        "admin-kosten"
-      )}
-
-      ${data.sourceArchitecture ? renderAdminQuellenarchitektur(data.sourceArchitecture) : ""}
-
-      ${adminSection("System und Sicherheit", "Version · Umgebung · Dienste · Zugriff", renderAdminSystemBody(sys, data, adminDataStatus, errors, audit), "admin-system")}
-
+      <div class="adm-body">${renderAdmSectionBody(admSection)}</div>
     </div>
   `;
 }
 
-// Profile-Detailbereich (in „Verwaltung & Detailkarten anzeigen" eingeklappt): die
-// großen Pro-Account-Karten sowie die vollständige Nutzer-/Zuweisungs-/Anlegen-
-// Verwaltung + Mandate + Feedback. Markup unverändert übernommen — nur verschoben
-// und eingeklappt, damit die Hauptansicht ruhig bleibt.
-function renderAdminProfileManagement(ds, data, userRows, assignmentRows, referenten, mandateOptions, mandates, feedback) {
-  return `
-    ${renderAdminDataStatus(ds, "accounts")}
-    <div class="admin-body">
-      <div class="admin-col-primary">
+// --- Aktionen (Bindings) ------------------------------------------------------
+// Wird aus bindActions() aufgerufen — render() bindet selbst; keine Doppel-Listener.
+function bindAdmActions() {
+  app.querySelectorAll("[data-adm-section]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      admSection = btn.dataset.admSection;
+      render();
+      try { window.scrollTo({ top: 0 }); } catch (_) {}
+      ensureAdminSection(admSection);
+    });
+  });
+  app.querySelectorAll("[data-adm-goto]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      admSection = btn.dataset.admGoto;
+      render();
+      try { window.scrollTo({ top: 0 }); } catch (_) {}
+      ensureAdminSection(admSection);
+    });
+  });
+  app.querySelectorAll("[data-adm-refresh]").forEach((btn) => {
+    btn.addEventListener("click", () => { ensureAdminSection(admSection, { force: true }); });
+  });
+  app.querySelectorAll("[data-adm-retry]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const key = btn.dataset.admRetry;
+      delete admErrors[key];
+      render();
+      await admFetchEndpoint(key, { force: true });
+      admLoadedAt[admSection] = Date.now();
+      render();
+    });
+  });
+  app.querySelectorAll("[data-adm-load]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const key = btn.dataset.admLoad;
+      btn.disabled = true;
+      render();
+      await admFetchEndpoint(key, { force: true });
+      render();
+    });
+  });
+  app.querySelectorAll("[data-adm-days]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const days = Number(btn.dataset.admDays);
+      if (!Number.isFinite(days) || days === admCostDays) return;
+      admCostDays = days;
+      delete admData.costs; delete admData.costsPerUser;
+      await ensureAdminSection("kosten");
+    });
+  });
+  // Tabellen-Suche: nach dem Re-Render Fokus + Cursor wiederherstellen.
+  app.querySelectorAll("[data-adm-search]").forEach((input) => {
+    input.addEventListener("input", () => {
+      const id = input.dataset.admSearch;
+      admSearchTerms[id] = input.value;
+      render();
+      const next = app.querySelector(`[data-adm-search="${id}"]`);
+      if (next) { next.focus(); try { next.setSelectionRange(next.value.length, next.value.length); } catch (_) {} }
+    });
+  });
+  app.querySelectorAll("[data-adm-sort]").forEach((th) => {
+    const activate = () => {
+      const [id, key] = String(th.dataset.admSort || "").split(":");
+      if (!id || !key) return;
+      const cur = admSort[id];
+      admSort[id] = cur && cur.key === key ? { key, dir: -cur.dir } : { key, dir: 1 };
+      render();
+    };
+    th.addEventListener("click", activate);
+    th.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); activate(); } });
+  });
 
-        <div class="admin-card admin-card-flush">
-          <div class="admin-card-header">
-            <div>
-              <h2 class="admin-section-title">Nutzerverwaltung</h2>
-              <p class="admin-section-sub">Alle Nutzer im System</p>
-            </div>
-          </div>
-          <div class="admin-table-wrap">
-            <table class="admin-table">
-              <thead><tr><th>Name</th><th>Rolle</th><th>Status</th><th>Aktivität</th><th>Bezahlt bis</th><th></th></tr></thead>
-              <tbody>${userRows}</tbody>
-            </table>
-          </div>
-          <div class="admin-subsection">
-            <p class="admin-subsection-label">Passwort zurücksetzen</p>
-            <form class="admin-inline-form" id="resetPasswordForm">
-              <select name="userId" aria-label="Nutzer">
-                ${(data.users || []).map((user) => `<option value="${escapeAttribute(user.id)}">${escapeHtml(user.name || user.email)}</option>`).join("")}
-              </select>
-              <div class="password-field" style="flex:1; min-width:160px;">
-                <input name="password" id="resetPasswordInput" type="password" placeholder="Neues Passwort (min. 8)" aria-label="Neues Passwort" autocomplete="new-password" />
-                <button type="button" class="password-toggle" data-toggle-password="resetPasswordInput" aria-label="Passwort anzeigen">Anzeigen</button>
-              </div>
-              <button class="secondary-button" type="submit">Zurücksetzen</button>
-            </form>
-            <small class="admin-form-error" id="resetPasswordError"></small>
-          </div>
-        </div>
+  // DSGVO: Export (Download) + zweistufige Löschung (Mandats-ID tippen; der Server
+  // verlangt zusätzlich confirm:"DELETE" — keine unsichere Client-Bestätigung allein).
+  app.querySelectorAll("[data-privacy-export]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const pid = btn.dataset.privacyExport;
+      btn.disabled = true;
+      const prev = btn.textContent;
+      btn.textContent = "Exportiert …";
+      try {
+        const res = await fetchWithTimeout(`/api/privacy/export?politicianId=${encodeURIComponent(pid)}`, {}, 60000);
+        if (!res.ok) { showToast(`Export fehlgeschlagen (HTTP ${res.status})`); return; }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `helmut-auskunft-${pid}-${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+        showToast("Auskunft exportiert (Audit-Eintrag geschrieben).");
+      } catch (_) {
+        showToast("Export fehlgeschlagen (Netzwerk/Timeout).");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = prev;
+      }
+    });
+  });
+  app.querySelectorAll("[data-privacy-delete-start]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      admPrivacyConfirm = { politicianId: btn.dataset.privacyDeleteStart };
+      render();
+    });
+  });
+  app.querySelectorAll("[data-privacy-delete-cancel]").forEach((btn) => {
+    btn.addEventListener("click", () => { admPrivacyConfirm = null; render(); });
+  });
+  app.querySelectorAll("[data-privacy-delete-run]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const pid = btn.dataset.privacyDeleteRun;
+      const input = app.querySelector(`[data-privacy-confirm-input="${pid}"]`);
+      const err = app.querySelector(`[data-privacy-error="${pid}"]`);
+      if (err) err.textContent = "";
+      if (!input || input.value.trim() !== pid) {
+        if (err) err.textContent = "Die eingegebene Mandats-ID stimmt nicht überein — es wurde nichts gelöscht.";
+        return;
+      }
+      btn.disabled = true;
+      try {
+        const res = await apiSend("POST", `/api/privacy/delete?politicianId=${encodeURIComponent(pid)}`, { confirm: "DELETE" });
+        if (res.ok && res.json && res.json.ok) {
+          showToast("Mandatsdaten gelöscht — Audit-Eintrag geschrieben.");
+        } else if (res.ok && res.json && res.json.ok === false) {
+          showToast("Löschung TEILWEISE fehlgeschlagen — bitte Audit-Log prüfen.");
+        } else {
+          if (err) err.textContent = (res.json && res.json.error) || `Löschung fehlgeschlagen (HTTP ${res.status}).`;
+          btn.disabled = false;
+          return;
+        }
+        admPrivacyConfirm = null;
+        await admAfterMutation(["overview", "customers", "audit", "feedback", "daily"]);
+      } catch (_) {
+        if (err) err.textContent = "Netzwerkfehler — Zustand unklar, bitte Audit-Log prüfen.";
+        btn.disabled = false;
+      }
+    });
+  });
 
-        <div class="admin-card admin-card-flush">
-          <div class="admin-card-header">
-            <div>
-              <h2 class="admin-section-title">Zuweisungen</h2>
-              <p class="admin-section-sub">Referent:in → Mandat</p>
-            </div>
-          </div>
-          <div class="admin-table-wrap">
-            <table class="admin-table">
-              <thead><tr><th>Referent:in</th><th>Mandat</th><th></th></tr></thead>
-              <tbody>${assignmentRows}</tbody>
-            </table>
-          </div>
-          <div class="admin-subsection">
-            <p class="admin-subsection-label">Neue Zuweisung</p>
-            <form class="admin-inline-form" id="assignForm">
-              <select name="userId" aria-label="Referent:in">
-                ${referenten.map((user) => `<option value="${escapeAttribute(user.id)}">${escapeHtml(user.name || user.email)}</option>`).join("") || `<option value="">— keine Referent:innen —</option>`}
-              </select>
-              <select name="politicianId" aria-label="Mandat">
-                ${mandateOptions.map((entry) => `<option value="${escapeAttribute(entry.id)}">${escapeHtml(entry.name)}</option>`).join("")}
-              </select>
-              <button class="primary-button" type="submit">Zuweisen</button>
-            </form>
-            <small class="admin-form-error" id="assignError"></small>
-          </div>
-        </div>
-
-      </div>
-
-      <div class="admin-col-secondary">
-
-        <form class="admin-card admin-card-flush admin-create-form" id="createUserForm">
-          <div class="admin-card-header">
-            <div>
-              <h2 class="admin-section-title">Nutzer anlegen</h2>
-              <p class="admin-section-sub">Neuen Nutzer im System erstellen</p>
-            </div>
-          </div>
-          <div class="admin-field-group">
-            <input name="name" type="text" placeholder="Vollständiger Name" aria-label="Name" required />
-            <input name="email" type="email" placeholder="name@bundestag.de" aria-label="E-Mail" required />
-            <select name="role" aria-label="Rolle">
-              <option value="abgeordneter">Abgeordnete:r</option>
-              <option value="referent">Referent:in</option>
-              <option value="demo">Demo</option>
-              <option value="admin">Administrator</option>
-            </select>
-            <div class="password-field">
-              <input name="password" id="createUserPassword" type="password" placeholder="Mind. 8 Zeichen" aria-label="Passwort" autocomplete="new-password" required />
-              <button type="button" class="password-toggle" data-toggle-password="createUserPassword" aria-label="Passwort anzeigen">Anzeigen</button>
-            </div>
-          </div>
-          <div class="admin-quickstart">
-            <p class="admin-quickstart-hint">Schnellstart <span class="admin-quickstart-opt">(optional)</span></p>
-            <select name="party" aria-label="Partei / Fraktion">
-              <option value="">Partei / Fraktion</option>
-              <option>SPD</option>
-              <option>CDU</option>
-              <option>CSU</option>
-              <option>Bündnis 90/Die Grünen</option>
-              <option>FDP</option>
-              <option>AfD</option>
-              <option>BSW</option>
-              <option>Die Linke</option>
-              <option>SSW</option>
-              <option>Fraktionslos</option>
-            </select>
-            <select name="committee" aria-label="Ausschuss">
-              <option value="">Ausschuss wählen</option>
-              <option>Auswärtiger Ausschuss</option>
-              <option>Innenausschuss</option>
-              <option>Rechtsausschuss</option>
-              <option>Finanzausschuss</option>
-              <option>Haushaltsausschuss</option>
-              <option>Wirtschaftsausschuss</option>
-              <option>Arbeit und Soziales</option>
-              <option>Verteidigungsausschuss</option>
-              <option>Ernährung und Landwirtschaft</option>
-              <option>Familienausschuss</option>
-              <option>Gesundheitsausschuss</option>
-              <option>Verkehrsausschuss</option>
-              <option>Umweltausschuss</option>
-              <option>Bildung und Forschung</option>
-              <option>Digitales</option>
-              <option>Wohnungsbau</option>
-              <option>Sportausschuss</option>
-              <option>Tourismus</option>
-              <option>Europaausschuss</option>
-              <option>Wirtschaftliche Zusammenarbeit</option>
-              <option>Petitionsausschuss</option>
-            </select>
-            <input name="constituency" type="text" placeholder="Wahlkreis (z. B. 096 – Köln I)" aria-label="Wahlkreis" />
-            <select name="state" aria-label="Bundesland">
-              <option value="">Bundesland wählen</option>
-              <option>Baden-Württemberg</option>
-              <option>Bayern</option>
-              <option>Berlin</option>
-              <option>Brandenburg</option>
-              <option>Bremen</option>
-              <option>Hamburg</option>
-              <option>Hessen</option>
-              <option>Mecklenburg-Vorpommern</option>
-              <option>Niedersachsen</option>
-              <option>Nordrhein-Westfalen</option>
-              <option>Rheinland-Pfalz</option>
-              <option>Saarland</option>
-              <option>Sachsen</option>
-              <option>Sachsen-Anhalt</option>
-              <option>Schleswig-Holstein</option>
-              <option>Thüringen</option>
-            </select>
-            <input name="focusTopics" type="text" placeholder="Schwerpunktthemen (Komma-getrennt)" aria-label="Schwerpunktthemen" />
-          </div>
-          <div class="admin-form-foot">
-            <button class="primary-button" type="submit">Nutzer erstellen</button>
-            <small class="admin-form-error" id="createUserError"></small>
-          </div>
-        </form>
-
-      </div>
-    </div>
-
-    ${renderAdminMandatesSection(mandates)}
-
-    ${renderAdminFeedbackSection(feedback)}`;
+  // KO-Enrichment-Backfill: Dry-Run per GET (gefahrlos), Ausführung per POST nach
+  // ausdrücklicher Bestätigung.
+  app.querySelectorAll("[data-adm-backfill]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const mode = btn.dataset.admBackfill;
+      if (mode === "execute") {
+        if (!window.confirm("KO-Anreicherung wirklich AUSFÜHREN? Das schreibt in den Bestand und kann KI-Kosten verursachen. Vorher Dry-Run prüfen.")) return;
+      }
+      admBackfillState = { busy: true, mode };
+      render();
+      try {
+        const res = mode === "execute"
+          ? await apiSend("POST", `/api/admin/ko-enrichment-backfill?execute=1&${apiScopeQuery()}`, {})
+          : await (async () => { const r = await fetchWithTimeout(`/api/admin/ko-enrichment-backfill?${apiScopeQuery()}`, {}, 120000); return { ok: r.ok, status: r.status, json: await r.json().catch(() => null) }; })();
+        admBackfillState = { busy: false, mode, result: res.json || { fehler: `HTTP ${res.status}` } };
+      } catch (_) {
+        admBackfillState = { busy: false, mode, result: { fehler: "Zeitüberschreitung oder Netzwerkfehler" } };
+      }
+      render();
+    });
+  });
 }
+
 
 // F. System und Sicherheit: Deploy-Identität, Dienste, Secrets-STATUS (nur ja/nein,
 // keine Werte), Admin-Zugriff — plus Logs (Letzte Fehler & Audit) eingeklappt.
@@ -2223,92 +2791,6 @@ function renderAdminUserEditRow(user, status, feedbackCount = 0) {
     </tr>`;
 }
 
-function renderAdminCostsCard(costs) {
-  if (!costs) return "";
-  const perUser = Array.isArray(costs.perUser) ? costs.perUser : [];
-  const maxCost = perUser.reduce((m, u) => Math.max(m, u.totalCostUsd || 0), 0);
-
-  const bars = perUser.length
-    ? perUser.map((u) => {
-        const pct = maxCost > 0 ? Math.round((u.totalCostUsd / maxCost) * 100) : 0;
-        const pctEur = Math.round(pct * USD_TO_EUR);
-        return `
-        <div class="cost-bar-item">
-          <div class="cost-bar-head">
-            <span class="cost-bar-name">${escapeHtml(u.name || u.userId)}</span>
-            <span class="cost-bar-amounts"><span class="cost-usd">$${fmtCost(u.totalCostUsd)}</span> <span class="cost-sep">|</span> <span class="cost-eur">€${fmtCost(u.totalCostUsd * USD_TO_EUR)}</span></span>
-          </div>
-          <div class="cost-bar-track">
-            <div class="cost-bar-fill cost-bar-fill--usd" style="width:${pct}%"></div>
-            <div class="cost-bar-fill cost-bar-fill--eur" style="width:${pctEur}%"></div>
-          </div>
-        </div>`;
-      }).join("")
-    : `<p class="empty-state" style="font-size:12px;margin:8px 0">Noch keine KI-Calls.</p>`;
-
-  return `
-    <div class="admin-card">
-      <h2 class="admin-section-title">KI-Kosten pro Nutzer <span class="admin-stat-period">(${costs.periodDays ?? 30}d)</span></h2>
-      <div class="cost-legend">
-        <span class="cost-legend-dot cost-legend-dot--usd"></span><span>USD</span>
-        <span class="cost-legend-dot cost-legend-dot--eur"></span><span>EUR</span>
-        <span class="cost-legend-rate">1 USD = ${USD_TO_EUR.toFixed(2)} EUR</span>
-      </div>
-      <div class="cost-bar-list">${bars}</div>
-    </div>`;
-}
-
-function renderAdminEngineChart(aiStats) {
-  if (!aiStats?.perCategory) return "";
-  const ENGINES = [
-    { key: "intelligence", label: "Intelligence" },
-    { key: "briefing", label: "Briefing" },
-    { key: "office", label: "Office" }
-  ];
-  const total = typeof aiStats.totalCostUsd === "number" ? aiStats.totalCostUsd : 0;
-  const cat = aiStats.perCategory || {};
-  const maxCost = Math.max(...ENGINES.map((e) => cat[e.key]?.estimatedCostUsd || 0), 0.000001);
-
-  const bars = ENGINES.map(({ key, label }) => {
-    const entry = cat[key] || { calls: 0, estimatedCostUsd: 0 };
-    const usd = typeof entry.estimatedCostUsd === "number" ? entry.estimatedCostUsd : 0;
-    const eur = usd * USD_TO_EUR;
-    const sharePct = total > 0 ? Math.round((usd / total) * 100) : 0;
-    const barPct = Math.round((usd / maxCost) * 100);
-    const eurBarPct = Math.round(barPct * USD_TO_EUR);
-    return `
-    <div class="cost-bar-item">
-      <div class="cost-bar-head">
-        <span class="cost-bar-name cost-bar-name--wide">${escapeHtml(label)}</span>
-        <span class="cost-bar-amounts">
-          <span class="cost-usd">$${fmtCost(usd)}</span>
-          <span class="cost-sep">|</span>
-          <span class="cost-eur">€${fmtCost(eur)}</span>
-          <span class="cost-share">${sharePct}%</span>
-        </span>
-      </div>
-      <div class="cost-bar-track">
-        <div class="cost-bar-fill cost-bar-fill--usd" style="width:${barPct}%"></div>
-        <div class="cost-bar-fill cost-bar-fill--eur" style="width:${eurBarPct}%"></div>
-      </div>
-    </div>`;
-  }).join("");
-
-  return `
-    <div class="admin-card">
-      <h2 class="admin-section-title">Kosten pro Engine <span class="admin-stat-period">(${aiStats.periodDays ?? 30}d · ${aiStats.totalCalls ?? 0} Calls)</span></h2>
-      <div class="cost-legend">
-        <span class="cost-legend-dot cost-legend-dot--usd"></span><span>USD</span>
-        <span class="cost-legend-dot cost-legend-dot--eur"></span><span>EUR</span>
-        <span class="cost-legend-rate">1 USD = ${USD_TO_EUR.toFixed(2)} EUR</span>
-      </div>
-      <div class="cost-bar-list">${bars || '<p class="empty-state" style="font-size:12px;margin:8px 0">Noch keine KI-Calls.</p>'}</div>
-    </div>`;
-}
-
-// Interner Datenmotor-Status (nur Admin/Betreiber): global + pro Account. Bewusst
-// schlicht (kein Kunden-Dashboard) — Ziel: morgens sehen, ob Helmut echten Wert liefert.
-// Kurzer, verständlicher Ersatz für "n/v" – abgeleitet aus dem Server-Hinweis.
 function dsUnavailText(note) {
   const n = String(note || "").toLowerCase();
   if (/n(ae|ä)chst/.test(n)) return "Ab nächstem Lauf verfügbar";
@@ -3218,18 +3700,6 @@ function renderAdminMandatesSection(mandates) {
       </div>
       <div class="admin-mandate-list">${cards}</div>
     </div>`;
-}
-
-// Mandatsoptionen fuer Zuweisungen: vorhandene Profile + Abgeordneten-Mandate.
-function adminMandateOptions() {
-  const map = new Map();
-  (adminData?.profiles || []).forEach((entry) => map.set(entry.id, entry.fullName || entry.id));
-  (adminData?.users || []).forEach((user) => {
-    if (user.role === "abgeordneter" && user.politicianId && !map.has(user.politicianId)) {
-      map.set(user.politicianId, user.name || user.politicianId);
-    }
-  });
-  return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
 }
 
 function toDecision(item) {
@@ -9767,8 +10237,7 @@ function bindAccountActions() {
         if (err) err.textContent = res.json?.error || "Konnte nicht angelegt werden.";
         return;
       }
-      adminDataLoaded = false;
-      await ensureViewData("admin");
+      await admAfterMutation();
       showToast("Nutzer angelegt");
     });
   }
@@ -9808,8 +10277,7 @@ function bindAccountActions() {
       const active = button.dataset.active === "1";
       const res = await apiSend("POST", `/api/admin/profile/${encodeURIComponent(pid)}?${apiScopeQuery()}`, { profileActive: !active });
       if (res.ok) {
-        adminDataLoaded = false;
-        await ensureViewData("admin");
+        await admAfterMutation();
         showToast(active ? "Profil deaktiviert." : "Profil aktiviert.");
       } else {
         showToast("Konnte Status nicht ändern.");
@@ -9839,8 +10307,7 @@ function bindAccountActions() {
       if (msg) msg.textContent = "Speichere …";
       const res = await apiSend("POST", `/api/admin/profile/${encodeURIComponent(pid)}?${apiScopeQuery()}`, body);
       if (res.ok) {
-        adminDataLoaded = false;
-        await ensureViewData("admin");
+        await admAfterMutation();
         showToast("Profil gespeichert.");
       } else if (msg) {
         msg.textContent = res.json?.error || "Speichern fehlgeschlagen.";
@@ -9867,8 +10334,7 @@ function bindAccountActions() {
       button.classList.remove("btn-confirm");
       const res = await apiSend("PATCH", `/api/admin/users/${encodeURIComponent(id)}?${apiScopeQuery()}`, { active: !active });
       if (res.ok) {
-        adminDataLoaded = false;
-        await ensureViewData("admin");
+        await admAfterMutation();
       }
     });
   });
@@ -9879,8 +10345,7 @@ function bindAccountActions() {
       const value = input.value || null;
       const res = await apiSend("PATCH", `/api/admin/users/${encodeURIComponent(id)}?${apiScopeQuery()}`, { paidUntil: value });
       if (res.ok) {
-        adminDataLoaded = false;
-        await ensureViewData("admin");
+        await admAfterMutation();
         showToast(value ? `Bezahlt bis ${new Date(value).toLocaleDateString("de-DE")} gesetzt.` : "Abo-Datum entfernt.");
       }
     });
@@ -9923,8 +10388,7 @@ function bindAccountActions() {
           return;
         }
         expandedAdminUsers.delete(id);
-        adminDataLoaded = false;
-        await ensureViewData("admin");
+        await admAfterMutation();
         showToast("Gespeichert");
       } catch (error) {
         if (err) err.textContent = "Netzwerkfehler.";
@@ -9941,8 +10405,7 @@ function bindAccountActions() {
       try {
         const res = await apiSend("PATCH", `/api/admin/feedback/${encodeURIComponent(id)}?${apiScopeQuery()}`, { done: true });
         if (res.ok) {
-          adminDataLoaded = false;
-          await ensureViewData("admin");
+          await admAfterMutation();
           showToast("Als erledigt markiert");
         } else {
           button.disabled = false;
@@ -9973,8 +10436,7 @@ function bindAccountActions() {
         if (err) err.textContent = res.json?.error || "Zurücksetzen fehlgeschlagen.";
         return;
       }
-      adminDataLoaded = false;
-      await ensureViewData("admin");
+      await admAfterMutation();
       showToast("Passwort zurückgesetzt — der Nutzer muss sich neu anmelden.");
     });
   }
@@ -9996,8 +10458,7 @@ function bindAccountActions() {
         if (err) err.textContent = res.json?.error || "Zuweisung fehlgeschlagen.";
         return;
       }
-      adminDataLoaded = false;
-      await ensureViewData("admin");
+      await admAfterMutation();
       showToast("Zugewiesen");
     });
   }
@@ -10007,8 +10468,7 @@ function bindAccountActions() {
       const body = { userId: button.dataset.user, politicianId: button.dataset.mandate };
       const res = await apiSend("DELETE", `/api/admin/assignments?${apiScopeQuery()}`, body);
       if (res.ok) {
-        adminDataLoaded = false;
-        await ensureViewData("admin");
+        await admAfterMutation();
       }
     });
   });
@@ -10077,21 +10537,17 @@ function bindActions() {
     document.addEventListener("keydown", (event) => { if (event.key === "Escape") { try { closeAllAdminInfoGlobal(); } catch (_) {} } });
   }
 
-  app.querySelectorAll("[data-admin-period]").forEach((button) => {
+  app.querySelectorAll("[data-reload-admin]").forEach((button) => {
     button.addEventListener("click", () => {
-      adminPeriod = button.dataset.adminPeriod;
-      render(); // render() bindet selbst
+      Object.keys(admErrors).forEach((k) => { delete admErrors[k]; });
+      ensureAdminSection(admSection, { force: true });
     });
   });
 
-  app.querySelectorAll("[data-reload-admin]").forEach((button) => {
-    button.addEventListener("click", () => {
-      adminDataLoaded = false;
-      adminLoadError = false;
-      render();
-      ensureViewData("admin");
-    });
-  });
+  // Admin-Neuaufbau: Bereichs-Navigation, Aktualisieren, Tabellen, DSGVO, Backfill.
+  if (currentView === "admin") {
+    try { bindAdmActions(); } catch (error) { console.warn("Admin bindings failed", error); }
+  }
 
   // Pipeline-Recovery-Aktionen: laufen NUR nach bewusstem Klick (kein Auto-Run).
   // Serverseitig admin-gegatet + CSRF (fetchWithTimeout setzt den Token).

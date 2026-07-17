@@ -47,6 +47,8 @@
     "test:rls-policy-sim": "node scripts/rls-policy-simulation-test.js",
     "test:tenant-jwt": "node scripts/tenant-jwt-test.js",
     "test:admin": "node scripts/admin-overview-test.js",
+    "test:admin-routen": "node scripts/admin-neue-routen-test.js",
+    "test:admin-betriebsmetadaten": "node scripts/admin-betriebsmetadaten-test.js",
     "test:admin-config-diagnose": "node scripts/admin-config-diagnose-test.js",
     "test:flags": "node scripts/flags-test.js",
     "test:source-mode": "node scripts/source-mode-test.js",

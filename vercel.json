@@ -3,7 +3,8 @@
   "regions": ["fra1"],
   "functions": {
     "api/index.js": {
-      "maxDuration": 300
+      "maxDuration": 300,
+      "includeFiles": ".github/workflows/{briefing-watchdog,health-watch}.yml"
     }
   },
   "routes": [
