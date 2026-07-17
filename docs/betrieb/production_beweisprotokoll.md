@@ -428,8 +428,72 @@ unbelegt, und B1/B2 sind offene Betriebsbefunde. **Keine Betriebsreife-Behauptun
   aktiviere ich kontrolliert und führe den echten Zweitkanal-Zustelltest durch. Danach — nach einem
   vollständig sauberen Beweistag inkl. Deny-/Fehlerpfad — **F6/F7**; **F8** später (nach Pilot + Recht).
 
+## 7 · Understanding-Recovery `vg-sozialwohnungen` (B2-Teilbehebung, freigegeben & bewiesen)
+
+Chronologie (alles an echten Production-Messwerten, keine Schönfärberei):
+
+1. **Pagination-Bugfix (rein lesend):** `listRawDocuments` wurde server-seitig von PostgREST
+   (`db-max-rows`, Default 1000) gekappt → alte Seed-Dokumente unsichtbar, Fälle fälschlich
+   „keine-quelldokumente". Behoben via `storage.collectAllPages`/`listAllRawDocuments` (vollständige
+   Pagination, Dedup, Abbruch bei fehlerhafter Seite). Tests: `understanding-pagination-test.js` 21/21.
+2. **Korrigierte Bewertung (vollständige Pagination):** nur **1** von 6 Fällen sauber recoverbar
+   (`vg-sozialwohnungen`); `vg-psychotherapie` echtes Duplikat (`vg-psychotherapeuten`);
+   `vg-medikamenten`/`vg-umstellungen` anker-verunreinigt; `vg-arbeitsverträge`/`vg-steuerstrafrecht`
+   mehrdeutig. Details: `docs/betrieb/understanding_recovery_trockenlauf.md` (Nachtrag Teil 2).
+3. **Anker-Lauf `rec-29569461715` (verworfen + zurückgerollt):** erzeugte über den Teilstring
+   „wohnungen" einen 3-Themen-Digest (3 Docs). Vollständig & exakt zurückgerollt (marker-gefiltert,
+   idempotent 0/0). Belege: `recovery_rollback_snapshot_rec_29569461715.md`,
+   `recovery_rollback_rec_29569461715.md`.
+4. **Einzel-Dokument-Recovery `singledoc-29583280106` (freigegeben, erfolgreich):** rekonstruiert aus
+   **genau 1** per exakter `raw_document_id` verdrahtetem Seed-Dokument — keine Anker-/Teilstring-/
+   Pool-Suche. Code default AUS + Token; Tests `single-doc-recovery-test.js` 26/15 Szenarien.
+
+### Lauf-Kennung `singledoc-29583280106` — bewiesene Messwerte (read-only verifiziert)
+| Nachweis | Ergebnis |
+|---|---|
+| Genau **1** KI-Aufruf | `ki_calls_tatsaechlich: 1` (Action Schritt B, `success`) |
+| Genau **1** Wissensobjekt | `ko-vg-sozialwohnungen` → `complete`/`neu`, `source_document_count=1` |
+| Genau **1** Dokumentlink | `rd-e229f73873e0640fdcf34e65d382b0e10ffb78974fe7eb328048468c94edb48f` (Seed; Doc gesamt 1 Link) |
+| Keine anderen Datensätze verändert | andere 5 Kandidaten unverändert `pending`; genau **1** Zeile trägt die Kennung |
+| Rollback-Kennung vorhanden | `understanding_model = "gpt-5-mini \| recovery:singledoc-29583280106"` |
+| Headline vorhanden + themenrein | „Rückgang Sozialwohnungen 2025: 20.000 Einheiten weggefallen"; Inhalt nur zum Seed |
+
+Ausführung: einzige dispatchbare Recovery-Action, auf dem Feature-Branch auf den Einzel-Dokument-Pfad
+umgestellt und via `ref=feature-branch` gestartet — **kein Merge nach `main`, kein Vercel-Deploy**.
+
+## 8 · Abschlussübersicht (Thread-Schluss 2026-07-17)
+
+**Bewiesen (echte Production-Messwerte):**
+- 3 Crawls + voller Morgenzyklus + Überschneidungsfenster; 3 Feature-Flags live-aktiv (§5); Locks atomar.
+- Befunde B1 (Google-News-Rate-Limit, transient/erholt) und B2 (Understanding-Rückstand) ehrlich belegt.
+- Pagination-Bug gefunden **und** behoben; anker-basierter Fehl-Recovery `rec-29569461715` sauber
+  zurückgerollt (idempotent); Einzel-Dokument-Recovery `singledoc-29583280106` exakt wie freigegeben
+  (1 KI / 1 KO / 1 Link / rückrollbar).
+
+**Offen (ehrlich, nicht bewiesen):**
+- Deny-Pfad unter echter Konkurrenz; Fehlerfall→`systemErrors`+Recovery (ohne Injektion nicht auslösbar).
+- Zweitkanal-Alarmtest (braucht F5-Webhook-URL).
+- B2-Rest: 4 Vorgänge nur manuell recoverbar (`vg-medikamenten`, `vg-umstellungen`, `vg-arbeitsverträge`,
+  `vg-steuerstrafrecht`); 1 echtes Duplikat (`vg-psychotherapie`) → verwerfen; übriger `pending`-Rückstand.
+- Anker-basierter Recovery-Pfad ist wegen Teilstring-/Quellname-Anker-Verunreinigung **nicht** für
+  Multi-Doc-Fälle geeignet (dokumentiert; nicht mehr für diesen Zweck nutzen).
+
+**Risiken:**
+- Keine DSGVO-Konformitätsbehauptung (keine dokumentierten TOMs); kein Betriebsreife-Urteil.
+- Recovery-Pfade sind mächtige Schreibpfade — bleiben **default AUS + Token + fail-closed**; nur per
+  Freigabe und ausschließlich per exakter `raw_document_id` (Einzel-Doc) betreiben.
+- `understanding_model` als Rollback-Kennung ist eine additive Metadaten-Konvention, kein FK — Rollback
+  hängt an der exakten Kennungszeichenkette (belegt funktionsfähig).
+
+**Nächster Thread (Vorschlag, jeweils freigabepflichtig):**
+1. **F5** — geprüfte `HELMUT_MONITORING_WEBHOOK_URL` liefern → kontrollierter Zweitkanal-Zustelltest.
+2. B2-Rest entscheiden: manuelle Einzel-Doc-Recovery für die 4 Fälle (je exakte `raw_document_id`) oder
+   bewusstes Zurückstellen; `vg-psychotherapie` terminal verwerfen.
+3. Nach sauberem Beweistag inkl. Deny-/Fehlerpfad: **F6/F7**; **F8** später (nach Pilot + Recht).
+
 ---
 
-_Letzte Aktualisierung: 2026-07-17 nach vollständigem Morgenzyklus. Stopp-Bedingungen erfüllt;
-Zwischenurteil in §5. Befunde B1 (transient/erholt) und B2 (vorbestehender Understanding-Rückstand)
-offen dokumentiert._
+_Letzte Aktualisierung: 2026-07-17 — Recovery-/Beweis-Thread abgeschlossen. Einzel-Dokument-Recovery
+`singledoc-29583280106` erfolgreich (1 KI / 1 KO / 1 Link, rückrollbar); Fehl-Lauf `rec-29569461715`
+zurückgerollt. Recovery-Flags bleiben default AUS (nur transient in Action-Schritt B, nie in Vercel-Prod).
+B1 (transient/erholt) und B2 (Rest offen) ehrlich dokumentiert. Keine DSGVO-/Reife-Behauptung._
