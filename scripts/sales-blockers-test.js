@@ -54,7 +54,10 @@ check("ko-enrichment-backfill: execute/bypassBudget nur bei POST wirksam",
   global.fetch = async (url, opts) => { calls.push({ url, opts }); return { ok: true, status: 200, text: async () => "" }; };
   process.env.HELMUT_MONITORING_WEBHOOK_URL = "https://hooks.example.com/x";
   try {
-    const sent = await sendWebhook({ text: "Report-Text", ok: false, state: "warn", severity: "watch", overdueCrons: ["Crawl"], googleUrlResolutionRate: 0.3 });
+    // healthBlockers eindeutig je Testlauf: die gehärtete Zustellung dedupliziert
+    // identische Ereigniskennungen desselben Tages (persistierter Zustellstatus) —
+    // ohne Eindeutigkeit würde ein zweiter Suitenlauf am selben Tag flaken.
+    const sent = await sendWebhook({ text: "Report-Text", ok: false, state: "warn", severity: "watch", overdueCrons: ["Crawl"], healthBlockers: [`testlauf-${Date.now()}`], googleUrlResolutionRate: 0.3 });
     check("Webhook mit URL: POST abgesetzt", sent.sent === true && calls.length === 1 && calls[0].opts.method === "POST");
     const body = JSON.parse(calls[0].opts.body);
     check("Webhook-Payload Slack-kompatibel (text) + strukturierte Felder",
