@@ -972,23 +972,32 @@ async function handleRequest(request, response) {
       // Vorwaerm-Lauf ein ehrlicher Leerlauf.
       const results = [];
       let skipped = 0;
+      // Hartes Zeitbudget wie im morning-briefing (240s < maxDuration 300s):
+      // der Cron antwortet IMMER; nicht erreichte Mandate holt der naechste
+      // (idempotente) Lauf nach.
+      const lageBriefingDeadline = lageBriefingStartMs + 240000;
       for (const p of profiles) {
         if (!p || !p.id) { skipped += 1; results.push({ userId: null, available: false, reason: "profil-ohne-id", vorgaenge: 0 }); continue; }
-        const profile = await activeProfile(p.id);
+        if (Date.now() > lageBriefingDeadline) { results.push({ userId: p.id, available: false, reason: "zeitbudget", vorgaenge: 0 }); continue; }
         // Mehrmandantenfaehigkeit Phase 8: deaktivierte Profile nehmen an der
-        // Verarbeitung NICHT teil (sie sollen kein Briefing erzeugen). Fehlerhafte/
-        // leere Profile liefern ohnehin natuerlich einen Leerzustand — nur die
-        // bewusst deaktivierten werden aktiv uebersprungen. Ein Fehler/Skip bei
-        // einem Profil betrifft NUR dieses (per-Profil try/catch), nie die anderen.
-        const val = validateProfile(profile);
-        if (val.disabled) {
-          skipped += 1;
-          results.push({ userId: profile.id, available: false, reason: "profil-deaktiviert", vorgaenge: 0 });
-          continue;
+        // Verarbeitung NICHT teil (sie sollen kein Briefing erzeugen). VOLLSTAENDIGE
+        // Fehler-Isolation je Mandat: auch activeProfile/validateProfile stehen im
+        // try/catch — ein Storage-Fehler bei EINEM Profil bricht die Schleife nicht
+        // (Befund der Cron-Inventur: frueher war nur buildLageBriefing gefangen).
+        try {
+          const profile = await activeProfile(p.id);
+          const val = validateProfile(profile);
+          if (val.disabled) {
+            skipped += 1;
+            results.push({ userId: profile.id, available: false, reason: "profil-deaktiviert", vorgaenge: 0 });
+            continue;
+          }
+          const res = await buildLageBriefing(profile, { politicianId: profile.id })
+            .catch((e) => ({ available: false, reason: "error", error: e && e.message }));
+          results.push({ userId: profile.id, available: res.available, fromCache: res.fromCache, reason: res.reason || null, vorgaenge: (res.vorgaenge || []).length });
+        } catch (error) {
+          results.push({ userId: p.id, available: false, reason: "profil-fehler", error: error && error.message, vorgaenge: 0 });
         }
-        const res = await buildLageBriefing(profile, { politicianId: profile.id })
-          .catch((e) => ({ available: false, reason: "error", error: e && e.message }));
-        results.push({ userId: profile.id, available: res.available, fromCache: res.fromCache, reason: res.reason || null, vorgaenge: (res.vorgaenge || []).length });
       }
       // P0-1: echte Lage-Briefing-Vorwaerm-Laufzeit persistieren (Zaehler/Status, kein Text).
       await recordProcessRun({
