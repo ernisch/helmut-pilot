@@ -59,12 +59,12 @@ function installMocks({ cachedNarrative = null } = {}) {
 }
 function restore() { Object.assign(storage, { v3StoreReady: orig.v3StoreReady, listKnowledgeObjects: orig.listKnowledgeObjects, listMatchingResults: orig.listMatchingResults, getSourcesForVorgang: orig.getSourcesForVorgang, getRenderedBriefingV3: orig.getRenderedBriefingV3, saveRenderedBriefingV3: orig.saveRenderedBriefingV3, acquirePipelineLock: orig.acquirePipelineLock, releasePipelineLock: orig.releasePipelineLock, canSpendLlm: orig.canSpendLlm }); sourceSafety.guardKnowledgeObject = orig.guardKnowledgeObject; ai.generateLageBriefing = orig.generateLageBriefing; }
 
-const profile = { id: "cem-ince", fullName: "Cem Ince" };
+const profile = { id: "test-politician-one", fullName: "Test Politician One" };
 
 (async () => {
   // ── 1) cacheOnly + Cache-Miss: Karten sofort, KEIN LLM-Call ──
   installMocks({ cachedNarrative: null });
-  const r1 = await lage.buildLageBriefing(profile, { politicianId: "cem-ince", cacheOnly: true });
+  const r1 = await lage.buildLageBriefing(profile, { politicianId: "test-politician-one", cacheOnly: true });
   check("cacheOnly: available=true", r1.available === true, JSON.stringify(r1).slice(0, 120));
   check("cacheOnly: Karten vorhanden (vorgaenge>0)", Array.isArray(r1.vorgaenge) && r1.vorgaenge.length > 0);
   check("cacheOnly: KEIN Narrativ (paragraphs leer)", Array.isArray(r1.paragraphs) && r1.paragraphs.length === 0);
@@ -73,14 +73,14 @@ const profile = { id: "cem-ince", fullName: "Cem Ince" };
 
   // ── 2) Kontrast: OHNE cacheOnly + Cache-Miss -> LLM WIRD aufgerufen ──
   installMocks({ cachedNarrative: null });
-  const r2 = await lage.buildLageBriefing(profile, { politicianId: "cem-ince" });
+  const r2 = await lage.buildLageBriefing(profile, { politicianId: "test-politician-one" });
   check("ohne cacheOnly: Live-LLM-Call wird ausgelöst (Kontrollprobe)", aiCalls === 1, `aiCalls=${aiCalls}`);
   check("ohne cacheOnly: Narrativ vorhanden", Array.isArray(r2.paragraphs) && r2.paragraphs.length > 0);
 
   // ── 3) cacheOnly löst NIE einen LLM-Call aus (Kernsicherheit), auch wenn ein
   //      (hier nicht hash-passender) Cache-Eintrag existiert -> Karten trotzdem sofort.
   installMocks({ cachedNarrative: [{ text: "Gecacht.", vorgang_ids: ["vg-1"] }] });
-  const r3 = await lage.buildLageBriefing(profile, { politicianId: "cem-ince", cacheOnly: true });
+  const r3 = await lage.buildLageBriefing(profile, { politicianId: "test-politician-one", cacheOnly: true });
   check("cacheOnly: Karten immer vorhanden", Array.isArray(r3.vorgaenge) && r3.vorgaenge.length > 0);
   check("cacheOnly: NIE ein LLM-Call (Kernsicherheit)", aiCalls === 0, `aiCalls=${aiCalls}`);
 

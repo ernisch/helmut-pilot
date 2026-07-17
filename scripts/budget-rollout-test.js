@@ -103,7 +103,7 @@ async function billableCount() {
 }
 
 const decision = { title: "Testvorgang Budget", suggestedStatement: "Wir stehen fuer soziale Sicherheit.", recommendedAction: "Kleine Anfrage vorbereiten." };
-const profile = { id: "cem-test", fullName: "Test MdB" };
+const profile = { id: "tenant-alpha", fullName: "Test MdB" };
 const commDraft = () => ai.generateCommunicationDraft({ prompt: "Kurzes Statement", decision, profile, channel: "press" });
 
 function understandingDeps(track) {

@@ -181,7 +181,7 @@ check("CurrentHelmutState traegt KEINE Kosten-/Token-Felder",
   FORBIDDEN_COST.every((k) => !serialized.includes(k)),
   FORBIDDEN_COST.filter((k) => serialized.includes(k)).join(","));
 
-// --- 11) Keine Cem-Logik / keine hartkodierte Partei ------------------------
+// --- 11) Keine Personen-Logik / keine hartkodierte Partei --------------------
 // Ein neutrales Profil OHNE Partei/Ausschuss + KO ohne diese Labels -> keine erfundenen
 // Partei-/Personen-Fallbacks (contextChips leer, kein hardcoded String).
 const neutralState = contract.buildCurrentHelmutState({
@@ -191,7 +191,7 @@ const neutralState = contract.buildCurrentHelmutState({
   sourcesByVorgang: {}, now: NOW
 });
 check("Neutraler Vorgang: contextChips leer (keine erfundene Partei)", neutralState.contextChips.length === 0);
-check("Kein hartkodierter Partei-/Cem-String in neutralem State",
+check("Kein hartkodierter Partei-/Personen-String in neutralem State",
   !/cem|ince|\bspd\b|\bcdu\b|gruene|grüne|\blinke\b|\bafd\b|\bfdp\b/i.test(JSON.stringify(neutralState)));
 
 // --- 12) Integration: currentHelmutState haengt am /api/app/start-Vertrag ----
@@ -429,7 +429,7 @@ check("15h: buildPrimarySelectionDebug crasht nicht bei leerer Eingabe",
 const serFresh = JSON.stringify(stFreshWins);
 check("D5-7: kein Kosten-/Token-/LLM-Feld im fresh-aware State (nur V3-Daten)",
   !/estimatedCost|promptTokens|totalTokens|pipelineStep|llmUsage/i.test(serFresh));
-check("D5-7: keine hartkodierte Partei/Cem-Logik durch die Auswahl",
+check("D5-7: keine hartkodierte Partei/Personen-Logik durch die Auswahl",
   !/\bcem\b|ince|\bspd\b|\bcdu\b|gruene|grüne|\blinke\b|\bafd\b|\bfdp\b/i.test(serFresh));
 
 console.log(`\n${passed}/${passed + failed} CurrentHelmutState-Assertions erfolgreich.`);

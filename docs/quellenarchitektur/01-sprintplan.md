@@ -25,7 +25,7 @@ S1 Fundament-Datenmodell  ──┬─► S2 KO-Klassifikation (Ebene/Geo/Entit�
                            │
                            └─► S7 Qualitäts-/Kostenmetriken (llm_usage) ─► S8 Admin-Oberfläche
 S2 ──► S5 Wichtigkeit vs. Relevanz vs. Handlungsfähigkeit + 3 Leerzustände
-S1..S5 ──► S6 Migration + Shadow-Betrieb + Alt-gegen-Neu-Vergleich (Cem-Schutz)
+S1..S5 ──► S6 Migration + Shadow-Betrieb + Alt-gegen-Neu-Vergleich (Pilot-Schutz)
 S1+S2+S4 ──► S9 Berlin/Brandenburg strukturell + Quellenrecherche
 alle ──► S10 Tests/Security/Performance/Doku + Freigabebericht
 ```
@@ -127,15 +127,15 @@ Leerzustände server- und UI-seitig unterscheidbar machen (Frische-/Qualitätssi
 
 ---
 
-## Sprint 6 — Migration bestehender Quellen · Shadow-Betrieb · Alt-gegen-Neu-Vergleich (Cem-Schutz)
+## Sprint 6 — Migration bestehender Quellen · Shadow-Betrieb · Alt-gegen-Neu-Vergleich (Pilot-Schutz)
 
 **Auftragsphasen:** 6 + 7 · **Abhängig von:** S1–S5.
 
-**Nutzen:** Cems Versorgung darf sich nicht verschlechtern; Datenverlust wird ausgeschlossen. **Umfang:**
+**Nutzen:** Die Versorgung des Pilotmandanten darf sich nicht verschlechtern; Datenverlust wird ausgeschlossen. **Umfang:**
 144 Quellen + 13 Orphans + `dip` vollständig in die neue Struktur überführen (Mapper aus S1 gegen echte
 `raw_documents.source_name` validieren, 713 Publisher-Strings kanonisieren); Orphans markieren
-(`test-mdb-*` = Testmüll, `cem-ince-news-*` = Legacy); defekte Pflichtquellen sichtbar + Ersatzabrufweg;
-Feature-Flag/Umschalter + Shadow-Betrieb; strukturierter Alt-gegen-Neu-Vergleich für Cem (Doku-Menge,
+(`test-mdb-*` = Testmüll, `<pilot-mandats-id>-news-*` = Legacy); defekte Pflichtquellen sichtbar + Ersatzabrufweg;
+Feature-Flag/Umschalter + Shadow-Betrieb; strukturierter Alt-gegen-Neu-Vergleich für den Pilotmandanten (Doku-Menge,
 KOs, Vielfalt, Lage/Radar/Helmut, Laufzeit, Kosten, Leerzustände). **Prod-Migration erst nach Freigabe.**
 
 ---
@@ -194,6 +194,6 @@ Production-Schrittliste + Rollback.
 ## Freigabepflichtige Schritte (über alle Sprints, gesammelt)
 
 Diese werden **vorbereitet**, aber erst nach ausdrücklicher Freigabe ausgeführt:
-Prod-Migrationen anwenden · Cem-Profil in `mandate_profiles` schreiben · `HELMUT_PROFILE_DB_MODE`
+Prod-Migrationen anwenden · Pilotprofil in `mandate_profiles` schreiben · `HELMUT_PROFILE_DB_MODE`
 scharf · echtes Supabase-Auth/RLS scharf · Cron-Änderungen (global-once-Crawl) · neue Quellen
 (Berlin/BB) live · kostenrelevante Backfill-Crawls · Deployments.

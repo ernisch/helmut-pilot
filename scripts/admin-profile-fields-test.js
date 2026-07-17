@@ -5,7 +5,7 @@
 // sie und loescht beim Bearbeiten nie ungewollt Bestandsfelder.
 // Offline: kein Supabase-Env -> activeProfile faellt auf neutrale Defaults/blankProfile.
 
-delete process.env.HELMUT_AUTH_MODE; // Pilotmodus -> cem-ince = Demo-Basis verfuegbar
+delete process.env.HELMUT_AUTH_MODE; // Pilotmodus (Mandat kommt aus HELMUT_PILOT_TENANT_ID)
 const server = require("../server");
 const normalizeProfile = server.__normalizeProfile;
 const { validateProfile } = require("../lib/helmut/profile-validation");

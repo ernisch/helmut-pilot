@@ -10,15 +10,16 @@
 //     Blob zurueck (kein Crash, kein Datenverlust).
 //  4) saveProfile() mit Flag AN: Blob wird IMMER geschrieben (Fallback-Treue), der
 //     DB-Schreibfehler darf saveProfile() nie zum Scheitern bringen.
-//  5) Cem-Vorher/Nachher: cemInceProfile (Code) -> toMandateProfileRow() ->
-//     fromMandateProfileRow() liefert alle matching-relevanten Felder unveraendert
-//     zurueck (Partei/Ausschuss/Wahlkreis/Themen -- die vier Scoring-Dimensionen).
+//  5) Fixture-Vorher/Nachher: testPoliticianOne (zentrale, klar kuenstliche
+//     Fixture) -> toMandateProfileRow() -> fromMandateProfileRow() liefert alle
+//     matching-relevanten Felder unveraendert zurueck (Partei/Ausschuss/
+//     Wahlkreis/Themen -- die vier Scoring-Dimensionen).
 //
 // Deterministisch/offline: alle DB-Aufrufe werden ueber deps.request/deps.upsert
 // gefaelscht (kein Netzwerk).
 
 const storage = require("../lib/helmut/storage");
-const { cemInceProfile } = require("../lib/helmut/config");
+const { testPoliticianOne } = require("./fixtures/test-profiles");
 
 let pass = 0;
 let fail = 0;
@@ -31,8 +32,8 @@ function check(name, cond) {
   console.log("== 1) Flag AUS (Default): profileDbModeEnabled() ==");
   delete process.env.HELMUT_PROFILE_DB_MODE;
   check("profileDbModeEnabled() === false ohne Flag", storage.profileDbModeEnabled() === false);
-  check("getProfileFromDb() -> null ohne Flag (kein DB-Zugriff)", (await storage.getProfileFromDb("cem-ince")) === null);
-  const saveSkipped = await storage.saveProfileToDb({ id: "cem-ince", fullName: "Cem Ince" });
+  check("getProfileFromDb() -> null ohne Flag (kein DB-Zugriff)", (await storage.getProfileFromDb("test-politician-one")) === null);
+  const saveSkipped = await storage.saveProfileToDb({ id: testPoliticianOne.id, fullName: testPoliticianOne.fullName });
   check("saveProfileToDb() -> skipped ohne Flag", saveSkipped && saveSkipped.skipped === true);
 
   console.log("== 2) toMandateProfileRow() / fromMandateProfileRow() Roundtrip ==");
@@ -119,17 +120,17 @@ function check(name, cond) {
 
   console.log("== 6) getProfile(): SQL-Treffer hat Vorrang vor Blob ==");
   const fakeSqlRequest = async (endpoint) => {
-    check("Endpoint traegt id=eq.<userId>", endpoint.includes("id=eq.cem-ince"));
+    check("Endpoint traegt id=eq.<userId>", endpoint.includes("id=eq.test-politician-one"));
     check("Endpoint nutzt PostgREST-Embed fuer mandate_profiles", endpoint.includes("mandate_profiles(*)"));
     return [{
-      id: "cem-ince",
-      name: "Cem Ince (aus DB)",
-      mandate_profiles: [{ user_id: "cem-ince", partei: "Die Linke", politische_ebene: "bundestag" }]
+      id: "test-politician-one",
+      name: "Test Politician One (aus DB)",
+      mandate_profiles: [{ user_id: "test-politician-one", partei: "Testpartei Alpha", politische_ebene: "bundestag" }]
     }];
   };
-  const dbFirst = await storage.getProfile("cem-ince", { request: fakeSqlRequest });
-  check("getProfile() liefert DB-Wert (fullName aus DB)", dbFirst && dbFirst.fullName === "Cem Ince (aus DB)");
-  check("getProfile() liefert DB-Partei", dbFirst && dbFirst.party === "Die Linke");
+  const dbFirst = await storage.getProfile("test-politician-one", { request: fakeSqlRequest });
+  check("getProfile() liefert DB-Wert (fullName aus DB)", dbFirst && dbFirst.fullName === "Test Politician One (aus DB)");
+  check("getProfile() liefert DB-Partei", dbFirst && dbFirst.party === "Testpartei Alpha");
 
   console.log("== 7) getProfile(): DB-Fehler -> Fallback auf Blob (KEIN Crash, KEIN Datenverlust) ==");
   const failingRequest = async () => { throw new Error("simulierter Netzwerkfehler"); };
@@ -150,17 +151,17 @@ function check(name, cond) {
   check("saveProfile() wirft NICHT, obwohl DB-Write scheitert", saveThrew === false);
   check("saveProfile() liefert trotzdem das gespeicherte Profil zurueck", saved && saved.id === "resilient-test");
 
-  console.log("== 9) Cem-Vorher/Nachher: cemInceProfile ueberlebt Roundtrip vollstaendig ==");
-  const cemRow = storage.toMandateProfileRow(cemInceProfile);
-  const cemBack = storage.fromMandateProfileRow({ id: cemInceProfile.id, name: cemInceProfile.fullName }, cemRow);
-  check("Cem: party unveraendert", cemBack.party === cemInceProfile.party);
-  check("Cem: faction unveraendert", cemBack.faction === cemInceProfile.faction);
-  check("Cem: committees unveraendert (Ausschuss-Dimension, 34 Punkte)", JSON.stringify(cemBack.committees) === JSON.stringify(cemInceProfile.committees));
-  check("Cem: constituency unveraendert (Wahlkreis-Dimension, 20 Punkte)", cemBack.constituency === cemInceProfile.constituency);
-  check("Cem: focusTopics vollstaendig (16 Themen, Themen-Dimension)", Array.isArray(cemBack.focusTopics) && cemBack.focusTopics.length === cemInceProfile.focusTopics.length);
-  check("Cem: politicalLevel abgeleitet aus 'Bund' -> 'bundestag' -> 'Bund'", cemBack.politicalLevel === "Bund");
-  check("Cem: alle 16 focusTopics identisch (kein Verlust, keine Erfindung)",
-    cemInceProfile.focusTopics.every((t) => cemBack.focusTopics.includes(t)) && cemBack.focusTopics.every((t) => cemInceProfile.focusTopics.includes(t)));
+  console.log("== 9) Fixture-Vorher/Nachher: testPoliticianOne ueberlebt Roundtrip vollstaendig ==");
+  const fixRow = storage.toMandateProfileRow(testPoliticianOne);
+  const fixBack = storage.fromMandateProfileRow({ id: testPoliticianOne.id, name: testPoliticianOne.fullName }, fixRow);
+  check("Fixture: party unveraendert", fixBack.party === testPoliticianOne.party);
+  check("Fixture: faction unveraendert", fixBack.faction === testPoliticianOne.faction);
+  check("Fixture: committees unveraendert (Ausschuss-Dimension, 34 Punkte)", JSON.stringify(fixBack.committees) === JSON.stringify(testPoliticianOne.committees));
+  check("Fixture: constituency unveraendert (Wahlkreis-Dimension, 20 Punkte)", fixBack.constituency === testPoliticianOne.constituency);
+  check("Fixture: focusTopics vollstaendig (Themen-Dimension, gleiche Anzahl)", Array.isArray(fixBack.focusTopics) && fixBack.focusTopics.length === testPoliticianOne.focusTopics.length);
+  check("Fixture: politicalLevel abgeleitet aus 'Bund' -> 'bundestag' -> 'Bund'", fixBack.politicalLevel === "Bund");
+  check("Fixture: alle focusTopics identisch (kein Verlust, keine Erfindung)",
+    testPoliticianOne.focusTopics.every((t) => fixBack.focusTopics.includes(t)) && fixBack.focusTopics.every((t) => testPoliticianOne.focusTopics.includes(t)));
 
   delete process.env.HELMUT_PROFILE_DB_MODE;
   delete process.env.HELMUT_V3_STORE;

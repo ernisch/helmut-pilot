@@ -55,7 +55,7 @@ const kos = [
     recommendation: "Position mit Referent abstimmen.",
     was_ist_passiert: "Reform der Pflegeversicherung vorgestellt.", warum_wichtig: "Millionen betroffen.",
     parteien: ["SPD"], ausschuesse: ["Gesundheit"], ministerien: ["BMG"], tags: ["Pflege"],
-    risiken: ["Leistungskürzung"], chancen: [], mentioned_mps: ["Karl Lauterbach"],
+    risiken: ["Leistungskürzung"], chancen: [], mentioned_mps: ["Test Politician Two"],
     source_document_count: 3, confidence_score: 80, best_source_url: "https://bmg.bund.de/pflege"
   },
   {

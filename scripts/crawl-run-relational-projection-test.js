@@ -21,7 +21,7 @@ const blobRun = {
   runId: "crawl-20260716T040300-abcde",
   createdAt: "2026-07-16T04:03:48.000Z",
   mode: "full",
-  politicianId: "cem-ince",
+  politicianId: "test-politician-one",
   durationMs: 48231,
   sourceMode: "on",
   checkedSources: 145,

@@ -68,7 +68,10 @@ console.log(`    SUPABASE_ANON_KEY   : ${mask(ANON_KEY)}`);
 console.log("\n[1] Unser erzeugtes Tenant-JWT (signTenantJWT)");
 let ownHeader = null;
 let ownPayload = null;
-const token = storage.signTenantJWT ? storage.signTenantJWT("cem-ince", { ttlSeconds: 60 }) : null;
+// Synthetische Mandanten-ID — die Diagnose ist mandantenunabhaengig, es geht
+// nur um Struktur und Signatur des Tokens, nicht um einen konkreten Mandanten.
+const DIAG_TENANT_ID = "tenant-alpha";
+const token = storage.signTenantJWT ? storage.signTenantJWT(DIAG_TENANT_ID, { ttlSeconds: 60 }) : null;
 if (!token) {
   console.log("    -> signTenantJWT lieferte null (SUPABASE_JWT_SECRET fehlt lokal?).");
   console.log("       Struktur wird dann mit einem Dummy-Secret demonstriert.");
@@ -79,7 +82,7 @@ const demoSecret = JWT_SECRET || "dummy-local-secret-nur-fuer-strukturdemo";
 const demoToken = token || (() => {
   const prev = process.env.SUPABASE_JWT_SECRET;
   process.env.SUPABASE_JWT_SECRET = demoSecret;
-  const t = storage.signTenantJWT("cem-ince", { ttlSeconds: 60 });
+  const t = storage.signTenantJWT(DIAG_TENANT_ID, { ttlSeconds: 60 });
   if (prev === undefined) delete process.env.SUPABASE_JWT_SECRET;
   else process.env.SUPABASE_JWT_SECRET = prev;
   return t;

@@ -4,7 +4,7 @@
 **Branch:** `claude/helmut-saas-readiness-audit-5btd4a` · **Basis-Commit:** `edcebaed864beebc6c7ee74d4025cab82b40d585`
 **Modus:** Rein lesend. **Belegbasis:** `lib/helmut/sources.js`, `crawler.js`, `sourceSafety.js`, `storage.js`; SELECT-Abfragen gegen Prod-Supabase `ddckuvvpcytqbyfmbvie` (`raw_documents=4594`).
 
-> **Kernbefund:** Helmut crawlt technisch sauber und **tagesfrisch** (jüngstes Dokument 2026-07-12 10:00 UTC; **1.180 Dokumente < 24 h**, 3.601 < 7 Tage). Die Breite ist auf dem Papier groß (~566 konfiguriert → ~130 kuratiert), **aber inhaltlich massiv auf EIN Politikfeld — Arbeit & Soziales — und das Pilotprofil Cem Ince / Die Linke zugeschnitten.** → Empfehlung **B (gezielte Quellenpakete)**, keine Massenerweiterung.
+> **Kernbefund:** Helmut crawlt technisch sauber und **tagesfrisch** (jüngstes Dokument 2026-07-12 10:00 UTC; **1.180 Dokumente < 24 h**, 3.601 < 7 Tage). Die Breite ist auf dem Papier groß (~566 konfiguriert → ~130 kuratiert), **aber inhaltlich massiv auf EIN Politikfeld — Arbeit & Soziales — und das Profil des Pilotmandanten (Person und Partei) zugeschnitten.** → Empfehlung **B (gezielte Quellenpakete)**, keine Massenerweiterung.
 
 ---
 
@@ -53,7 +53,7 @@
 | Retries | Kein genereller Fetch-Retry; Google-Decoding 2 Versuche; Redirects ≤6 | :176, :588 |
 | **TLS** | **`rejectUnauthorized` NICHT deaktiviert → Zertifikatsprüfung AKTIV** | :554-556, :601 |
 | Response-Cap | 10 MB Body-Limit | :16, :569 |
-| Keyword-Filter | Nur für `type:"person"` (Cem-Ince-Feed); übrige Quellen ungefiltert | :131, :343 |
+| Keyword-Filter | Nur für `type:"person"` (Feed `<pilot-mandats-id>-news`); übrige Quellen ungefiltert | :131, :343 |
 | Dedup | SHA-256 über `title\|hashUrl\|hashDate` | :434, :519 |
 | linkType | `classifyLinkType` → direct/publisher/google_proxy/missing; `url=""` wenn nicht direct | :430-431, :460-466 |
 | Kandidaten-Cap | max 1000 Roh-Kandidaten/Crawl, priorisiert | :7, :95-108 |
@@ -87,7 +87,7 @@
 
 **Top-Quellen (Volumen):** Deutschlandfunk 435 · Tagesschau 308 · hib/Bundestag 127 · DIP 50 · ver.di 40 · BMG-Pflege 33 · IG Metall 26 · SPD-Fraktion 24. → Die **Direkt-RSS-Feeds dominieren** das Volumen; Google-News-Quellen liefern viele kleine Beiträge. **121 distinct `source_id`** haben Dokumente erzeugt.
 
-**Katalog-Drift:** Es tauchen `source_id`s auf, die **nicht** in der aktuellen `sources.js` stehen (`dip`, `cem-ince-news-themen-medien`, `bundle-ausschuss-gewerkschaften`) → Legacy-Bestand früherer Katalog-Versionen; die Kuratierung ignoriert verwaiste Store-Quellen, aber alte `raw_documents` bleiben.
+**Katalog-Drift:** Es tauchen `source_id`s auf, die **nicht** in der aktuellen `sources.js` stehen (`dip`, `<pilot-mandats-id>-news-themen-medien`, `bundle-ausschuss-gewerkschaften`) → Legacy-Bestand früherer Katalog-Versionen; die Kuratierung ignoriert verwaiste Store-Quellen, aber alte `raw_documents` bleiben.
 
 **Regional = klare Schwachstelle:** nur **21 local-Dokumente insgesamt, 0 in den letzten 24 h**. Ursache: `stateAndConstituencySources` tragen `regional:true` **UND** `SOCIAL_THEME_TERMS` → **doppeltes Gate**, nur fürs Sozial-Pilotprofil aktiv.
 
@@ -117,7 +117,7 @@
 | **Landesregierungen** | **keine gezielte Quelle** | gering | — | **groß** |
 | Ministerien | ja (BMAS/BMG/BMFSFJ/BMF) | 196 | tw. SOCIAL | **eng auf Sozialressorts** |
 | Ausschüsse | **alle 22** als Radar | 1.381 | neutral | keine (aber je 1 flache Query) |
-| Wahlkreise | nur Cem-Ince-Regionen | in 21 local | regional+SOCIAL | **groß außerhalb Pilot** |
+| Wahlkreise | nur Regionen des Pilotmandanten | in 21 local | regional+SOCIAL | **groß außerhalb Pilot** |
 | Regionen/Bundesländer | 27 konfiguriert | **11** | regional+SOCIAL | **groß (Gate blockt)** |
 | Verbände | ja (VdK/SoVD/Paritätische/BDA/BDI) | 137 | SOCIAL | **nur Sozialverbände** |
 | Gewerkschaften | ja (ver.di/IG Metall/DGB) | in association | SOCIAL | gering |
@@ -127,7 +127,7 @@
 | Fachmedien | ja, aber sozial-getönt (LTO/Haufe/Ärzteblatt) | tw. | SOCIAL | **nur arbeits-/sozialrechtlich** |
 | offizielle Quellen | ja (Destatis/BA/DRV/Zoll/BRH) | 196 | SOCIAL | eng auf Sozialdaten |
 
-**Pilot-Bias bestätigt:** Nur EIN Personenprofil (`cem-ince-news`, prio 100) ist als Quelle verdrahtet. Die 350er Themen-Matrix, alle Prozess-/Radar-/Institutions-/Spezialquellen tragen `SOCIAL_THEME_TERMS`. **Ein CDU-Verteidigungs- oder Grünen-Klima-Profil bekäme heute kein einziges Fachmedium, keinen Fachverband, keine Prozess-Radar-Quelle seines Feldes — nur die neutrale Basis.**
+**Pilot-Bias bestätigt:** Nur EIN Personenprofil (`<pilot-mandats-id>-news`, prio 100) ist als Quelle verdrahtet. Die 350er Themen-Matrix, alle Prozess-/Radar-/Institutions-/Spezialquellen tragen `SOCIAL_THEME_TERMS`. **Ein CDU-Verteidigungs- oder Grünen-Klima-Profil bekäme heute kein einziges Fachmedium, keinen Fachverband, keine Prozess-Radar-Quelle seines Feldes — nur die neutrale Basis.**
 
 ---
 

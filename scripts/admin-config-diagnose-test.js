@@ -142,7 +142,7 @@ async function login(server, email, password) {
       check("B1b unangemeldet: kein Whitelist-Wert im Body", !anon.body.includes(WHITELIST_SENTINEL));
 
       // 2) normaler politischer Nutzer -> 403
-      await accounts.createUser({ email: "mdb@test.local", name: "Test MdB", role: "abgeordneter", password: "mdb-pass-123", politicianId: "cem-ince" });
+      await accounts.createUser({ email: "mdb@test.local", name: "Test MdB", role: "abgeordneter", password: "mdb-pass-123", politicianId: "test-politician-one" });
       const userCookie = await login(server, "mdb@test.local", "mdb-pass-123");
       check("B2 normaler Nutzer erhaelt Session", Boolean(userCookie));
       const asUser = await requestFull(server, { pathname: "/api/admin/overview", headers: { Cookie: userCookie } });

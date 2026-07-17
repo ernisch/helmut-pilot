@@ -79,7 +79,7 @@ Vorher: 0 Policies / 24 RLS-Tabellen / Helper-Fn absent. Nachher: **23 Policies 
 nach Anwendung (alles grün): `/api/release/public` byte-identisch zum Baseline
 (Briefing 1/54/1, Radar 20/10, Datenmotor V3 100 %, Quellenlinks 59/59),
 `/api/app/start` → 401 (Auth-Gate intakt), App-Shell → 200 (Commit 204d5ef9),
-Pilot `cem-ince` unverändert (52 decisions, 1 briefing, Store-Blob present, 217
+Pilot `<pilot-mandats-id>` unverändert (52 decisions, 1 briefing, Store-Blob present, 217
 KOs), Vercel-Runtime-Errors: **keine**. Funktional ein NO-OP (service_role
 bypassed RLS), wie entworfen. **Rollback bereit:**
 `20260712_tenant_rls_policies_rollback.sql`.
@@ -103,7 +103,7 @@ bypassed RLS), wie entworfen. **Rollback bereit:**
 
 - `HELMUT_TENANT_JWT_MODE=1` in Production setzen (Config-Änderung, **kein**
   Secret, aber sicherheitsrelevant genug für eine eigene Freigabe/Beobachtung).
-- **Empfehlung:** zuerst nur für den Piloten (cem-ince) beobachten — da es nur
+- **Empfehlung:** zuerst nur für den Piloten (`<pilot-mandats-id>`) beobachten — da es nur
   ein aktives Mandat gibt, ist „schrittweise pro Mandant" hier gleichbedeutend
   mit „an/aus für alle", da HELMUT_TENANT_JWT_MODE global gilt (kein
   Per-Mandant-Rollout-Mechanismus in diesem Sprint gebaut — bei mehreren
@@ -145,4 +145,4 @@ JWT-Traffic ohne Policies = unmöglich (Migration muss zuerst da sein, sonst
 lehnt PostgREST wegen `enable row level security` ohne passende Policy jede
 Zeile ab — das ist der Grund, warum Schritt 4 zwingend vor Schritt 5 kommt).
 Diese Reihenfolge stellt sicher, dass **zu keinem Zeitpunkt** ein halb
-konfigurierter Zustand den Piloten (cem-ince) sichtbar beeinträchtigt.
+konfigurierter Zustand den Piloten (`<pilot-mandats-id>`) sichtbar beeinträchtigt.

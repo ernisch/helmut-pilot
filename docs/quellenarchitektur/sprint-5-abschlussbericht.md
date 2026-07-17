@@ -64,7 +64,7 @@ behoben und getestet: **3 echte Code-Probleme** und **6 Test-Härtungen**.
 4. **(Tests)** tautologische „profilunabhängig"-Assertions durch echte Zwei-Profile-Nachweise ersetzt;
    Lage-Leerzustand jetzt **end-to-end** über `buildLageBriefing` getestet (gap/stale/quiet); Ranking-
    Entkopplung über die geteilte Schnittmenge statt Längendifferenz; Edge-Case „kein Zeitstempel → stale";
-   Ganzwort-Fehltreffer echt geprüft (`Cem Ince` in `Cem Incentive`); Map-`kosById` + leeres Profil ergänzt.
+   Ganzwort-Fehltreffer echt geprüft (Personenname des Piloten als Präfix eines längeren Wortes, Muster `Muster` in `Musterung`); Map-`kosById` + leeres Profil ergänzt.
 
 ## 4. Sicherheit, Kosten, Performance
 - **Sicherheit/Mandanten:** `globalImportance` ist strikt mandantenlos; `personalRelevance`/
@@ -88,6 +88,6 @@ Crawl-Umstellung global-once (Referenzzählung) · Landespakete aktivieren. **Al
 nichts ausgeführt.**
 
 ## 7. Nächster Sprint
-**Sprint 6** (Migration bestehender Quellen · Shadow-Betrieb · Alt-gegen-Neu-Vergleich, Cem-Schutz) —
+**Sprint 6** (Migration bestehender Quellen · Shadow-Betrieb · Alt-gegen-Neu-Vergleich, Pilot-Schutz) —
 **oder** Sprint 8 (Admin-Oberfläche), die `profileSupplyStatus`/`computeGlobalActivation` (S4) und die
 neuen Scores/Leerzustände (S5) sichtbar macht.

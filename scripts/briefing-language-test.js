@@ -96,7 +96,7 @@ check("Prompt bleibt DSGVO-vollstaendig auch mit briefingType",
 const src = require("fs").readFileSync(require("path").join(__dirname, "..", "lib/helmut/briefingLanguage.js"), "utf8");
 check("briefingLanguage.js macht KEINE KI-/Netz-Calls (kein fetch/require ai/openai)",
   !/\bfetch\b|require\(["']\.\/ai|openai|azure/i.test(src));
-check("briefingLanguage.js enthaelt keine hartkodierte Partei/Person (Cem etc.)",
+check("briefingLanguage.js enthaelt keine hartkodierte Partei/Person",
   !/cem|ince|\bspd\b|\bcdu\b|gruene|grüne|\blinke\b|\bafd\b|\bfdp\b/i.test(src));
 // Beispielrichtungen sind SPRACHFORM (Tariftreue/Ausschuss generisch), keine konkrete Tagespolitik/Partei.
 check("Beispielrichtungen tragen keine Parteizuordnung",

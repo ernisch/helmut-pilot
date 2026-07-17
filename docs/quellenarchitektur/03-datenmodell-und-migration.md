@@ -74,7 +74,7 @@ Ergebnis der Abbildung (per `npm run test:source-architecture` verifiziert):
 | Katalog-Quellen | 144 (+ DIP = 145 Abrufwege) |
 | Herausgeber (dedupliziert) | 51 |
 | Pakete | 7 (5 aktiv, Berlin/Brandenburg `prepared`) |
-| Paketzuordnungen | Bund Basis 54 · Arbeit&Soziales 84 · Die Linke 2 · Regional NDS 4 · Cem 1 |
+| Paketzuordnungen | Bund Basis 54 · Arbeit&Soziales 84 · Die Linke 2 · Regional NDS 4 · Profilpaket des Piloten 1 |
 | defekte Direkt-Feeds (`broken`) | 6 (Bundestag, Bundesregierung, Die Linke, Linksfraktion, DGB, Ausschuss A&S) |
 | unzugeordnete Quellen | 0 |
 

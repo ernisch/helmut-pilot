@@ -1,5 +1,19 @@
 # MASTER-STATUS — Helmut Quellenarchitektur-Migration
 
+## NACHTRAG 2026-07-17 (Mandantenneutralisierung — Hinweis)
+
+- Diese Doku-Serie ist vom realen Pilotmandanten anonymisiert: technische Stellen
+  verwenden die Platzhalter `<pilot-mandats-id>` (Pilot) bzw. `<demo-mandant-b>`/
+  `<demo-mandant-c>` (Testprofile); in Prosa steht „der Pilotmandant".
+- Das persönliche Quellenpaket folgt seit der Mandantenneutralisierung der Konvention
+  `profil-<mandats-id>` (`profile-packages.personalPackageKeyFor`); die Personenquelle
+  entsteht zur Laufzeit dynamisch als `<mandats-id>-news`. Der Code-Seed enthält
+  **keine Personenpakete mehr** — bestehende DB-Zeilen (inkl. des persönlichen Pakets
+  des Pilotmandanten) bleiben unverändert.
+- Referenz: `docs/multitenancy-pilot-neutralisierung.md` (Pilotgate über
+  `HELMUT_PILOT_TENANT_ID`, fail-closed; Crons laden Mandanten aus der DB;
+  Provisionierungs-Schutz datengetrieben statt Namensliste).
+
 ## NACHTRAG 2026-07-15 (Technische Rest-PRs: Watchdog-Timeout + Radar-Störungswahrheit live) — aktuellster verifizierter Stand
 
 | Was | Wert (live verifiziert) |
@@ -31,7 +45,7 @@ Browser-Smoke 21/21.
 **Betrieb (nach beiden Merges):** 0 neue 5xx/Runtime-Fehler, 0 Systemfehler heute.
 Budget **100 / Reserve 30 / fail-closed / Lock** unverändert wirksam; Zähler **8/100**,
 Kosten **$0,1037** (< $0,50/Tag). Quellen **on** / Gate **shadow** / PARDOK **shadow** /
-Scoring **off** / BE+BB **inaktiv** — unverändert. Cem: Store present, **10 Briefings**.
+Scoring **off** / BE+BB **inaktiv** — unverändert. Pilotmandant: Store present, **10 Briefings**.
 
 **Offen bleibt (Freigabepunkt):** der Monitoring-Härtungs-Teil aus PR 88 (`fa7d528`):
 Wächter-Wächter-Cron `health-watch.yml` (06:30 UTC), Audit-Log an Admin-/Debug-Routen,
@@ -56,7 +70,7 @@ Verifikation durchgeführt — **alles grün, keine Abweichung**.
 | RPC-Nutzung / kein Fallback | Realer Production-Call **12:37:14 UTC → `global used=1`** (atomar). Kein „RPC fehlt"-Log, **kein PGRST202/404**, 0 error/warning-Logs in 25 min (Redeploy-Fenster). Redeploy fährt denselben RPC-aufrufenden Code — Atomik bleibt aktiv. |
 | Keine Überbuchung | Row-Lock serialisiert (früher: Burst 10 parallel @ Deckel 5 → exakt 5). Isolierter 100er-Deckel nie überschritten. |
 | Betrieb | 0 Systemfehler heute, 0 neue Runtime-Fehlercluster ab 12:32; Shell 200 + Asset `e9150801`; Daten unverändert (findings 990 / KO 274 / raw 5462 / gate_shadow 2043). |
-| Cem / Quellen | Cem-Store present, **4 Briefings**; Quellenmodus **on**, Gate **shadow**, PARDOK **shadow** (helmut-flags.json byte-identisch), Scoring **off**, BE/BB **inaktiv**. |
+| Pilotmandant / Quellen | Pilot-Store present, **4 Briefings**; Quellenmodus **on**, Gate **shadow**, PARDOK **shadow** (helmut-flags.json byte-identisch), Scoring **off**, BE/BB **inaktiv**. |
 | Kosten heute | **33 billable Calls / $0,0838** — deutlich < $0,50/Tag. |
 | Methoden-Hinweis (ehrlich) | Vercel-Env-Werte selbst nicht separat rückgelesen (in dieser Umgebung keine Env-Lesefähigkeit) — Wirksamkeit ist durch Redeploy-READY + exakte Wirkungstests (Reserve 70/30/100, Lock granted:false) belegt. Tab-Funktionen (Lage/Radar/Briefing/Büro/Admin) sind auth-gebunden nicht eingeloggt durchklickbar — bestätigt über Datenintegrität, App-200, 0 Fehler und die additive DB-only-Natur der Migration (keine Regressionsfläche). |
 
@@ -91,7 +105,7 @@ Der Schritt-B-Abschnitt unten ist damit historisch (seine Budget-Zeile „inert 
 | Rollback | Vercel Instant Rollback auf `dpl_9NaaV71MBFaJV9BHiMye4AU43kQN` (`3875674`, Stand nach PR 85) bzw. Revert des Squash-Commits |
 | Quellenmodus | **on** (relational aktiv, Alt-Katalog Fallback) · Gate **shadow** · PARDOK **shadow** · Scoring **off** · BE/BB **inaktiv** (0 Dokumente, verifiziert) |
 | Budget | `HELMUT_MAX_LLM_CALLS_PER_DAY=100` + `HELMUT_LLM_BUDGET_FAIL_CLOSED=1` wirksam. Atomare Reservierung deployt, aber **inert bis Migration F12** — RPC/Tabelle fehlen (verifiziert), Code fällt sicher aufs bisherige Read-then-Decide-Gate zurück (fehlende Migration löst NICHT fail-closed aus). Reserve 30 + Understanding-Lock noch NICHT gesetzt. |
-| Merge-/Prod-Smoke | Suite 91/91 + Browser 21/21 auf `b28d0c2`, CI grün; adversariale Deckel-Prüfung 38/38 (Stand 99/Limit 100, 50 parallel, Reserve 30). Nach Deploy: Shell 200 + Asset-Version `e9150801`, Auth-Gate 401, 0 neue Systemfehler, Datenstand unverändert (5462/274/990/2043), Cem-Profil + 4 Briefings vorhanden, BE/BB/PARDOK 0 |
+| Merge-/Prod-Smoke | Suite 91/91 + Browser 21/21 auf `b28d0c2`, CI grün; adversariale Deckel-Prüfung 38/38 (Stand 99/Limit 100, 50 parallel, Reserve 30). Nach Deploy: Shell 200 + Asset-Version `e9150801`, Auth-Gate 401, 0 neue Systemfehler, Datenstand unverändert (5462/274/990/2043), Pilotprofil + 4 Briefings vorhanden, BE/BB/PARDOK 0 |
 | Offene PRs | **PR 84** (Rest-Fixes der Tiefenprüfung: Parlaments-Gate, tote Deck-Buttons, Privacy-Ehrlichkeit, Debug-POST, Mandatsebene, SW-Update — auf `e915080` rebased, Duplikate entfernt, 92/92, **mergebereit, NICHT gemergt**) · **PR 87** (Watchdog, unabhängig, ungeprüft in diesem Auftrag) |
 | Nächste Freigabe | **Migration F12** (`supabase/migrations/20260717_llm_budget_reservation.sql` einspielen → dann `HELMUT_LLM_RESERVE_UNDERSTANDING=30` + `HELMUT_UNDERSTANDING_LOCK=1`) ODER **Go PR 84** (reine Code-Ehrlichkeits-Fixes, migrationsfrei) — Reihenfolge nach Gründer-Wahl |
 
@@ -165,7 +179,7 @@ Grenzen: ~100 Understanding + Spielraum, ~$8–10/Monat, Stop >$0,50/Tag, NIE un
 - **ERSTER ECHTER PRODUCTION-SHADOW-MESSLAUF (20:00-UTC-Crawl, Bericht 20:01:45, 1353 ms, +$0):**
   Alt-Plan real: 149 Wege, 149 erfolgreich, 0 Fehler, 1745 Dokument-Kandidaten. Relational
   zugerechnet: 138 Wege (137 im Lauf), 0 Fehler, 1601 Kandidaten = **91,7 % Abdeckung**;
-  die Differenz sind exakt die 6 profilgenerierten Cem-Personensuchen (bleiben im ON-Modus
+  die Differenz sind exakt die 6 profilgenerierten Personensuchen des Pilotmandanten (bleiben im ON-Modus
   erhalten — mergeProfileAndPlanSources) + die 6 defekten Wege (heute 0 persistierte neue
   Docs — kein Ertragsverlust). nurRelational: +1 funktionierender Weg
   (region-braunschweig-arbeit-soziales). Dedup-Dry-Run: 1601 Kandidaten → 1465 eindeutig,
@@ -187,7 +201,7 @@ Grenzen: ~100 Understanding + Spielraum, ~$8–10/Monat, Stop >$0,50/Tag, NIE un
   Dokumente falsch behandelt** (über alle 1000 Events). Understanding heute 15 = exakt
   Ø-Normalbereich (NICHT gesunken); 9 neue KO-Vormerkungen ohne KI-Call; 41×
   skipped-understanding-budget stammen vom BESTEHENDEN Tagesdeckel (Bestandsverhalten,
-  Begründung für Phase 4B) — das Gate blockierte nichts. Cem: Lesepfad unverändert,
+  Begründung für Phase 4B) — das Gate blockierte nichts. Pilotmandant: Lesepfad unverändert,
   Briefing 05:45 erzeugt, 0 sichtbare Abweichung. 0 Runtime-Fehler (4-h-Fenster über
   beide Crons). document_findings weiter 0, BE/BB/PARDOK weiter 0.
 - **Telemetrie-Qualitätsbefund (Folgearbeit, KEIN Cutover-Blocker):** auch der 21:30-Pfad
@@ -223,9 +237,9 @@ Grenzen: ~100 Understanding + Spielraum, ~$8–10/Monat, Stop >$0,50/Tag, NIE un
   **0 fehlende Wege mit Ertrag.** Die 6 „fehlenden" Altquellen sind exakt die 6 defekten
   (bot-gesperrten) Wege mit 0 Ertrag (bundestag/bundesregierung/die-linke/linksfraktion/
   ausschuss-arbeit-soziales/dgb) — Ersatz über Google-News-Wege vorhanden und aktiv.
-- Cem-Pakete: bund-basis 51 aktiv · arbeit-und-soziales 82 · regional-niedersachsen 4 ·
-  profil-cem-ince 1 · die-linke-bund 1 (nach Paketfix, s. u.). Aktive Profile: 3
-  (cem-ince + 2 Testprofile james-brown/angela-merkel), aktive Pakete: 5.
+- Pilot-Pakete: bund-basis 51 aktiv · arbeit-und-soziales 82 · regional-niedersachsen 4 ·
+  profil-<pilot-mandats-id> 1 · die-linke-bund 1 (nach Paketfix, s. u.). Aktive Profile: 3
+  (<pilot-mandats-id> + 2 Testprofile <demo-mandant-b>/<demo-mandant-c>), aktive Pakete: 5.
 - **Behobener Paketfehler (sicher, additiv):** die-linke-bund enthielt nur die 2 defekten
   Original-RSS-Wege → `rp-fraction-linke` (funktionierender Fraktions-Suchweg) zusätzlich
   zugeordnet (Seed-Regel + 1 additiver `package_paths`-Link in Production;
@@ -271,8 +285,8 @@ Cron-Änderungen · KO-Klassifikations-Backfill.
    Massen-Crawl); Vergleich Dokumentzahl/Quellenabdeckung gegen Vortag.
 5. **Smoke:** App-Start/Lage/Radar/Briefing/Büro/Admin unverändert · 0 neue Runtime-Fehler ·
    Admin-Quellenmodus-Panel zeigt on + Plan · raw_documents wachsen weiter (±Normalbereich) ·
-   document_findings beginnen zu wachsen · KEINE BE/BB-Inhalte · Cem-Briefing gefüllt.
-6. **Cem-Vergleich:** Briefing/Radar vor/nach Cutover — mindestens gleiche Versorgung
+   document_findings beginnen zu wachsen · KEINE BE/BB-Inhalte · Pilot-Briefing gefüllt.
+6. **Pilot-Vergleich:** Briefing/Radar vor/nach Cutover — mindestens gleiche Versorgung
    (Referenz: 100% Ertragsabdeckung, §5).
 7. **Kostenlimit:** unverändert (Tagesdeckel bleibt; Dedup REDUZIERT Understanding-Nachfrage).
 8. **Stop-Bedingungen:** Dokumentzufluss bricht ein (> −50% vs. Vortag) · leere Briefings ·

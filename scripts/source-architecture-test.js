@@ -3,9 +3,10 @@
 // Tests fuer die Neue Quellenarchitektur — Sprint 1 (relationales Fundament).
 // Deckt ab (Auftrag §36): Unit (Herausgeber-/URL-/Fingerprint-/Paket-/Refcount-/Status-/
 // Ebenen-/Geografie-/Entitaetslogik), Integration (Quelle->Abrufweg->Paket, m:n, ein Crawl),
-// Migration (144 zugeordnet, 13 Orphans klassifiziert, keine Bundesquelle verloren, Rollback
-// vollstaendig) und Edge-Cases (kaputte/doppelte/Google-News-Quellen).
+// Migration (143 zugeordnet, Orphans musterbasiert klassifiziert, keine Bundesquelle
+// verloren, Rollback vollstaendig) und Edge-Cases (kaputte/doppelte/Google-News-Quellen).
 // Reine Offline-Tests (injizierte Deps/Fixtures), kein Netz, keine KI, kein DB-Zugriff.
+// Mandats-Testdaten sind KLAR KUENSTLICH (tenant-alpha etc.), kein realer Mandant im Code.
 
 const fs = require("fs");
 const path = require("path");
@@ -48,8 +49,8 @@ console.log("== Unit: Abrufweg-Methode ==");
 check("Google-News-RSS -> googlenews_search", model.classifyMethod({ rssUrl: "https://news.google.com/rss/search?q=x" }) === "googlenews_search");
 check("Direkt-RSS -> rss", model.classifyMethod({ rssUrl: "https://www.bmas.de/feed.xml", crawlMethod: "rss" }) === "rss");
 check("HTML-Scrape -> html", model.classifyMethod({ url: "https://www.dgb.de", crawlMethod: "html" }) === "html");
-check("directSource mit GN-URL -> googlenews_search (cem-ince-news-Fall)",
-  model.classifyMethod({ crawlMethod: "rss", rssUrl: "https://news.google.com/rss/search?q=%22Cem%20Ince%22" }) === "googlenews_search");
+check("directSource mit GN-URL -> googlenews_search (dynamische Personenquelle '<id>-news')",
+  model.classifyMethod({ crawlMethod: "rss", rssUrl: "https://news.google.com/rss/search?q=%22Test%20Politician%20One%22" }) === "googlenews_search");
 
 console.log("== Unit: Belegfunktion (evidence_role) ==");
 check("offiziell -> official_primary", model.evidenceRoleFor({ category: "offiziell", entityType: "ministry" }) === "official_primary");
@@ -75,7 +76,9 @@ check("neutral -> bund-basis", packageKeysForSource({ neutral: true }).includes(
 check("thema:social -> arbeit-und-soziales", packageKeysForSource({ themeTerms: ["soziales"] }).includes("arbeit-und-soziales"));
 check("Die Linke -> die-linke-bund", packageKeysForSource({ party: "Die Linke" }).includes("die-linke-bund"));
 check("regional trennt Thema (nur Regionalpaket)", JSON.stringify(packageKeysForSource({ regional: true, themeTerms: ["soziales"] })) === JSON.stringify(["regional-niedersachsen"]));
-check("demoOnly -> Profilpaket", packageKeysForSource({ demoOnly: true }).includes("profil-cem-ince"));
+check("demoOnly-Personenquelle '<id>-news' -> Profilpaket 'profil-<id>' (abgeleitet, kein Mandant im Code)",
+  JSON.stringify(packageKeysForSource({ demoOnly: true, id: "tenant-alpha-news" })) === JSON.stringify(["profil-tenant-alpha"]));
+check("demoOnly ohne '-news'-Basis -> KEINE Paketzuordnung", packageKeysForSource({ demoOnly: true, id: "irgendwas" }).length === 0);
 
 console.log("== Unit: Referenzzaehlung ==");
 const rc = model.computePathRefcounts({
@@ -100,7 +103,7 @@ check("Bund als Wurzel (parent null)", M.geographies.find((g) => g.id === "geo-b
 check("jede Geografie hat gueltigen parent (oder null)", M.geographies.every((g) => g.parent_id === null || geoIds.has(g.parent_id)));
 check("Berlin mit 12 Bezirken (Stadtstaat: Land/Bezirk getrennt)", M.geographies.filter((g) => g.level === "bezirk" && g.parent_id === "geo-land-berlin").length === 12);
 check("Brandenburg-Grundstruktur (kreisfreie Staedte + Landkreise)", M.geographies.filter((g) => g.parent_id === "geo-land-brandenburg").length >= 14);
-check("Niedersachsen-Bezug fuer Cem vorhanden", M.geographies.some((g) => g.name === "Salzgitter"));
+check("Niedersachsen-Bezug (Regionalpaket) vorhanden", M.geographies.some((g) => g.name === "Salzgitter"));
 
 console.log("== Politische Entitaeten (typisiert) ==");
 check("alle entity_type im Enum", M.entities.every((e) => model.ENTITY_TYPES.includes(e.entity_type)));
@@ -147,32 +150,44 @@ check("Aggregator-Abrufwege sind googlenews_search", M.retrievalPaths.filter((p)
 
 // ============================ MIGRATION ============================
 console.log("== Migration: Katalogabbildung ==");
-check("144 kuratierte Quellen im Katalog", v1Sources.length === 144);
-check("alle 144 + DIP als Abrufwege abgebildet", M.retrievalPaths.length === 145);
+check("143 kuratierte Quellen im Katalog — KEINE Personenquelle (entsteht dynamisch als '<id>-news')",
+  v1Sources.length === 143 && v1Sources.every((s) => s.type !== "person" && !s.demoOnly));
+check("alle 143 + DIP als Abrufwege abgebildet", M.retrievalPaths.length === 144);
 check("keine unzugeordnete Quelle (unmapped=0)", M.unmapped.length === 0);
 check("jeder Abrufweg traegt legacy_source_id (ID-Kompatibilitaet)", M.retrievalPaths.every((p) => !!p.legacy_source_id));
 // Ist-Zustand seit dem P8-Paketfix: fraction-linke gehoert BEWUSST zu ZWEI Paketen
 // (bund-basis als neutraler Fraktions-Suchweg + die-linke-bund als funktionierender
 // Ersatz fuer die zwei defekten Original-RSS-Wege der Partei) -> 146 Zuordnungen.
-check("jede Katalog-Quelle mind. einem Paket zugeordnet; fraction-linke bewusst in zweien (145+1)", M.packagePaths.length === 146);
+check("jede Katalog-Quelle mind. einem Paket zugeordnet; fraction-linke bewusst in zweien (144+1)", M.packagePaths.length === 145);
 check("fraction-linke in bund-basis UND die-linke-bund",
   M.packagePaths.some((pp) => pp.package_id === "pkg-die-linke-bund" && pp.retrieval_path_id === "rp-fraction-linke") &&
   M.packagePaths.some((pp) => pp.package_id === "pkg-bund-basis" && pp.retrieval_path_id === "rp-fraction-linke"));
 
-console.log("== Migration: Bundesbasis nicht verloren (Cem-Schutz) ==");
+console.log("== Migration: Bundesbasis nicht verloren (Bestandsschutz) ==");
 const legacyIds = new Set(M.retrievalPaths.map((p) => p.legacy_source_id));
 check("gesunde Bundesquellen erhalten (DLF/Tagesschau/BMAS)", ["deutschlandfunk-politik", "tagesschau-politik", "bmas"].every((id) => legacyIds.has(id)));
 const bundBasis = M.packagePaths.filter((pp) => pp.package_id === "pkg-bund-basis").length;
 check("Bund-Basis-Paket traegt 53 neutrale + DIP = 54 Abrufwege", bundBasis === 54);
 check("Arbeit-und-Soziales-Paket traegt 84 Fachquellen", M.packagePaths.filter((pp) => pp.package_id === "pkg-arbeit-und-soziales").length === 84);
-check("Regional Niedersachsen = 4 (Cems Region)", M.packagePaths.filter((pp) => pp.package_id === "pkg-regional-niedersachsen").length === 4);
+check("Regional Niedersachsen = 4 Abrufwege", M.packagePaths.filter((pp) => pp.package_id === "pkg-regional-niedersachsen").length === 4);
 
 console.log("== Migration: Orphans + defekte Pflichtquellen ==");
-const orphans = catalog.classifyOrphans();
-check("13 Orphan-Eintraege klassifiziert", orphans.length === 13);
+// Orphans werden DATENGETRIEBEN klassifiziert: die zu pruefenden Legacy-IDs kommen aus
+// den beobachteten Bestandsdaten (hier: 12 kuenstliche Muster-IDs) — im Code steht kein
+// Mandant. Ohne Datenkontext bleibt nur der explizite Eintrag (dip).
+const observedOrphanIds = [
+  ...Array.from({ length: 8 }, (_, i) => `tenant-alpha-news-alt${i + 1}`),   // Muster orphan_legacy
+  ...Array.from({ length: 4 }, (_, i) => `test-politician-news-alt${i + 1}`) // Muster orphan_test
+];
+const orphans = catalog.classifyOrphans(observedOrphanIds);
+check("13 Orphan-Eintraege klassifiziert (12 uebergebene Bestands-IDs + dip)", orphans.length === 13);
 check("8 Legacy + 4 Test + 1 aktiv-unkatalogisiert (DIP)", (() => {
   const c = orphans.reduce((a, o) => (a[o.classification] = (a[o.classification] || 0) + 1, a), {});
   return c.orphan_legacy === 8 && c.orphan_test === 4 && c.active_uncatalogued === 1;
+})());
+check("ohne Datenkontext nur explizite Eintraege (dip)", (() => {
+  const rows = catalog.classifyOrphans();
+  return rows.length === 1 && rows[0].legacy_source_id === "dip" && rows[0].classification === "active_uncatalogued";
 })());
 const broken = M.retrievalPaths.filter((p) => p.status === "broken").map((p) => p.legacy_source_id);
 check("6 defekte Direkt-Feeds als broken markiert", broken.length === 6);
@@ -204,7 +219,7 @@ check("RLS aktiviert + restriktiv (nur service_role, KEINE authenticated-Leseric
 
 // ============================ SEED-VOLLSTAENDIGKEIT ============================
 console.log("== Seed-Vollstaendigkeit ==");
-check("7 Pakete (5 aktiv + Berlin/Brandenburg prepared)", M.packages.length === 7);
+check("6 Pakete (4 aktiv + Berlin/Brandenburg prepared) — KEIN Personenpaket im Code-Seed", M.packages.length === 6 && M.packages.every((p) => !p.key.startsWith("profil-")));
 check("Berlin+Brandenburg als prepared Basispakete", (() => {
   const b = M.packages.find((p) => p.key === "berlin-basis");
   const bb = M.packages.find((p) => p.key === "brandenburg-basis");

@@ -30,10 +30,10 @@ Andere Politikfelder haben noch **kein** eigenes Paket → keine Zuordnung (ehrl
 Stamm nur ein Suffix, das Thema ist Denkmal/Landschaft) — so verschwindet ein früherer Fehltreffer,
 ohne den Recall für echte Sozial-Komposita (`Tarifbindung`, `Rentenreform`) zu verlieren.
 
-**Personenbezogenes Paket (`profil-cem-ince`):** an die **konkrete Profil-ID** gebunden (Pilot
-`cem-ince`), **nicht** aus Sachfeldern ableitbar (personenbezogene Nachrichtensuche nur für dieses
+**Personenbezogenes Paket (`profil-<pilot-mandats-id>`):** an die **konkrete Profil-ID** gebunden (Pilot
+`<pilot-mandats-id>`), **nicht** aus Sachfeldern ableitbar (personenbezogene Nachrichtensuche nur für dieses
 Profil). Ohne diese explizite Bindung wäre das Paket samt seinem `demoOnly`-Abrufweg unerreichbar
-(nie referenziert → nie aktiviert). Ein anderes „Cem"-Profil (andere ID) bekommt es **nicht**.
+(nie referenziert → nie aktiviert). Ein anderes gleichnamiges Profil (andere ID) bekommt es **nicht**.
 
 ## Pflichtpaket-Garantie & unvollständige Aktivierung (`profileSupplyStatus`)
 
@@ -75,7 +75,7 @@ Die Linke, Linksfraktion) — diese laufen aber **nur über Referenzzählung**, 
 | Bundestagsprofil | → Bund Basis, vollständig aktiviert |
 | Berliner/Brandenburger Landtag | → Bund Basis + Landespaket; **nicht** vollständig (Landespaket prepared) |
 | **reines** Bundestagsprofil (SPD, Gesundheit) | → **nur** Bund Basis = **54 Abrufwege** (nicht 144) |
-| Cem-**Pilot** (`cem-ince`: Linke/Sozial/NDS + persönliches Paket) | → Bund Basis + Die-Linke + Arbeit&Soziales + Regional NDS + `profil-cem-ince` = **145 Abrufwege** |
+| **Pilot**-Profil (`<pilot-mandats-id>`: Linke/Sozial/NDS + persönliches Paket) | → Bund Basis + Die-Linke + Arbeit&Soziales + Regional NDS + `profil-<pilot-mandats-id>` = **145 Abrufwege** |
 | 1 vs. 100 identische Profile (ohne Pilot-ID) | **144 aktive Abrufwege** in beiden Fällen (Refcount 1 vs. 100) |
 | Berliner/Brandenburger Landtag | Bund Basis aktiv (54); Landespaket `requested_unsupplied` (prepared) |
 | **kein** aktives Profil | **5 aktive Abrufwege** (nur die neutralen Kern-Systemquellen; **kein** Paket aktiv) |

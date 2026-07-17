@@ -68,16 +68,26 @@ alles danach (Verifikation, Rollback-Anweisung) übernimmt der Agent.
 **Betreiber (mit Admin-Session):**
 - `GET /api/admin/tenant-mode` → `tenantJwtModeEnabled: true`,
   `effectiveTransport: "authenticated (per-Mandant-JWT, RLS aktiv)"`,
-  `jwtSecretPresent/anonKeyPresent: true`.
-- Eingeloggt als cem-ince die App öffnen: **Lage, Radar, Helmut, Büro, Admin** laden
-  wie zuvor; das Briefing zeigt weiter Cems Entscheidungen/Belege (nicht leer).
+  `jwtSecretPresent/anonKeyPresent: true`. **Mechanik-Stand heute
+  (Mandantenneutralisierung):** Der Live-Selbsttest des JWT-Lesepfads
+  (`tenantReadProbe`) probiert die **vorhandenen Mandate aus dem Store** durch —
+  mandantenneutral, keine hartkodierte ID; Erfolg bei mindestens einem
+  gespeicherten Mandat genügt.
+- Eingeloggt als der Pilotmandant die App öffnen: **Lage, Radar, Helmut, Büro, Admin** laden
+  wie zuvor; das Briefing zeigt weiter die Entscheidungen/Belege des
+  Pilotmandanten (nicht leer).
 
 **Agent (unauthentifiziert, automatisch):**
 - `GET /api/release/public` → Briefing/Radar/Datenmotor **unverändert** grün
   (16 Entscheidungen, 103 Belege, Radar 20/10). Dieser Endpoint rechnet das komplette
-  V3-Briefing für cem-ince über die **tenant-scoped Reads** — bleiben die Zahlen
-  erhalten, funktioniert der JWT-Pfad für Cem („Cem sieht seine Daten"). Fallen sie
-  auf 0, ist der JWT-Pfad defekt → Rollback.
+  V3-Briefing für das **konfigurierte Pilotmandat** über die **tenant-scoped
+  Reads** — bleiben die Zahlen erhalten, funktioniert der JWT-Pfad für den
+  Pilotmandanten („der Mandant sieht seine Daten"). Fallen sie
+  auf 0, ist der JWT-Pfad defekt → Rollback. **Mechanik-Stand heute
+  (Mandantenneutralisierung):** Das Mandat kommt aus `HELMUT_PILOT_TENANT_ID`;
+  ohne gesetzten Wert antwortet der Endpoint fail-closed mit
+  `configured:false` („Kein Pilotmandat konfiguriert") statt des Status eines
+  geratenen Mandats.
 - Vercel-Runtime-Fehler: **leer**. Ein Anstieg von `[v3Store] … fehlgeschlagen`-Logs
   signalisiert ein JWT-/Claim-Problem.
 

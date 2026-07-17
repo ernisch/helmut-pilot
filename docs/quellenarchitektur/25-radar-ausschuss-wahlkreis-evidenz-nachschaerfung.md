@@ -64,7 +64,7 @@ verglichen werden.
 | „…warum Tarifflucht unsere Demokratie destabilisiert" | Ausschuss | bloßes Themenwort „Arbeit und Soziales" (kein „Ausschuss"), Quelle bachhausen.de (kein Bundestag) | nicht belegbar | keiner | **entfernt** |
 | **Koalitionsausschuss einigt sich auf Reformpaket** (Steuern/Gesundheit/Rente/Arbeitsmarkt) | Ausschuss | Vorgang ist ein Koalitionsausschuss-Beschluss; Kurzform „Arbeits- und Sozialausschuss" ohne Beleg | Koalitionsausschuss (keine Parlamentsebene) | keiner | **entfernt** |
 | **Bund plant Ausnahmen für Landwirtschaft in GKV-Novelle** | Ausschuss | bloße Kurzform „Sozialausschuss", Quelle top agrar (Fachmedium, kein Bundestag) | nicht belegbar | keiner | **entfernt** |
-| Landkreis führt bezahlte Nachbarschaftshilfe ein | Ausschuss | „Sozialausschuss" im Landkreis-Kontext, Quelle Merkur (Lokalzeitung) | Kommune | kommunaler Sozialausschuss (nicht Cems Ausschuss) | **entfernt** |
+| Landkreis führt bezahlte Nachbarschaftshilfe ein | Ausschuss | „Sozialausschuss" im Landkreis-Kontext, Quelle Merkur (Lokalzeitung) | Kommune | kommunaler Sozialausschuss (nicht der Ausschuss des Piloten) | **entfernt** |
 | **BMAS und kommunale Ausschüsse stärken Teilhabe und Inklusion** | Ausschuss | explizit „kommunale Ausschüsse"/„Bundes- und kommunaler Ebene" gemischt | Bund+Kommune gemischt | keiner eindeutig | **entfernt** |
 | Servicestelle SGB II – Hinweise §10 Abs.1 Nr.3 | Ausschuss | bloße Kurzform „Sozialausschuss", Quelle Servicestelle SGB II (Verwaltung, kein Bundestag) | Bundesverwaltung (nicht Parlament) | keiner | **entfernt** |
 | **Bovenschulte: Ein starkes, soziales und einiges Europa wichtiger denn je** | Wahlkreis | nur Bundesland „Niedersachsen" + „Europa"/„Deutschland" in mentioned_locations, Quelle Bundesrat | Land (Bundesrat) | kein konkreter Wahlkreisbezug | **entfernt** |
@@ -77,7 +77,7 @@ verglichen werden.
   jetzt knapp aus der Top-12, da weniger Konkurrenz um die Plätze besteht als vorher gedacht).
 - **Entfernte Fehlzuordnungen:** 6 Ausschuss-Vorgänge (siehe Tabelle) + 1 Wahlkreis-Vorgang
   (Bovenschulte).
-- **Wahlkreis-Prüfung:** 0 echte Wahlkreis-Signale für Cem (Bovenschulte war der einzige
+- **Wahlkreis-Prüfung:** 0 echte Wahlkreis-Signale für den Pilotmandanten (Bovenschulte war der einzige
   Treffer und ist jetzt korrekt entfernt; kein Ersatztreffer aufgetaucht).
 
 ## Regression (unverändert, verifiziert)

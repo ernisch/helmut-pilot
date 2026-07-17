@@ -2,7 +2,7 @@
 
 **Stand:** 2026-07-15 · **Modus der Analyse:** lesend gegen Production
 (`ddckuvvpcytqbyfmbvie`) + Code · **Branch:** `claude/source-coverage-p2-readiness-cqh0za`
-**Umfang:** Bundestag + Cem-Pilot. **Büro bewusst ausgelassen** (wird separat überarbeitet).
+**Umfang:** Bundestag + Pilotmandant. **Büro bewusst ausgelassen** (wird separat überarbeitet).
 
 > **Kernbefund in einem Satz:** Es fehlen **keine** Quellen für den Piloten — der
 > Readiness-Check stellte einen **gesunden ~145-Quellen-Crawl** gegen Schwellen von
@@ -49,10 +49,10 @@ Die aktive relationale Struktur (Production):
 | Ebene | Zahl |
 |---|---|
 | retrieval_paths gesamt | 163 |
-| davon aktiv im Plan (Cem-Profil) | ~138 (+ Profilquellen → 145 geprüft) |
+| davon aktiv im Plan (Pilotprofil) | ~138 (+ Profilquellen → 145 geprüft) |
 | davon **broken** (ausgeschlossen) | 6 |
 | davon Landesmodul BE/BB (hart gesperrt) | 18 |
-| aktive Pakete | 5 (bund-basis, arbeit-und-soziales, die-linke-bund, regional-niedersachsen, profil-cem-ince) |
+| aktive Pakete | 5 (bund-basis, arbeit-und-soziales, die-linke-bund, regional-niedersachsen, profil-<pilot-mandats-id>) |
 
 ### 3. Fehlen wirklich Quellen — oder zählt der Check falsch?
 
@@ -77,7 +77,7 @@ general-bundestag-plenum) + **DIP** (amtliche Drucksachen, direkt). Die 145 sind
 
 ### 4. Welche Quellen/Abrufwege/Pakete fehlen konkret?
 
-**Für die Breite des Piloten: keine.** Die 5 aktiven Pakete decken das Cem-Mandat exakt ab
+**Für die Breite des Piloten: keine.** Die 5 aktiven Pakete decken das Pilot-Mandat exakt ab
 (Bundestag + Die Linke + Arbeit&Soziales + Niedersachsen + persönliche Beobachtung). Die
 Audit-Empfehlung war ausdrücklich **B (gezielte Pakete), keine Massenerweiterung**.
 
@@ -111,7 +111,7 @@ GitHub-Runner **real verifiziert** (HTTP 200, u. a. echte Direktfeeds für Bunde
 → **Founder-gated** (Production-Write + abgestimmter Code-Change). Nicht Teil dieser
 Behebung. Siehe „Nächste Schritte".
 
-### 5. Was ist für Bundestag + Cem-Pilot tatsächlich notwendig?
+### 5. Was ist für Bundestag + Pilotmandant tatsächlich notwendig?
 
 - **Notwendig & jetzt behoben:** Schwellen, die den relationalen Ist-Stand (~145)
   abbilden, und eine **ehrliche Zählung** der aktiven Quellenbasis. Damit meldet der Check
@@ -123,15 +123,15 @@ Behebung. Siehe „Nächste Schritte".
 
 ---
 
-## Kritische Nachprüfung: Sind die 6 defekten Primärquellen für den Cem-Pilot verzichtbar?
+## Kritische Nachprüfung: Sind die 6 defekten Primärquellen für den Pilotmandanten verzichtbar?
 
 Auftragsgemäß nochmals hart gegen Production geprüft (Momentaufnahme 2026-07-15). **Belege
-je Cem-Kern-Dimension (7 Tage):** Arbeit & Soziales **700 Dok.** · Die Linke **101 Dok.** ·
+je Kern-Dimension des Piloten (7 Tage):** Arbeit & Soziales **700 Dok.** · Die Linke **101 Dok.** ·
 Bundestag **499 Dok.** — jeweils aus *funktionierenden* Quellen, unabhängig von den 6 defekten.
 
 Und die *funktionierende* Ersatzdeckung je defekte Quelle (aus den aktiven Paketen):
 
-| Defekte Quelle | Cem-Bezug | Funktionierender Ersatz (aktiv/needs_review, läuft) | Verzichtbar? |
+| Defekte Quelle | Pilot-Bezug | Funktionierender Ersatz (aktiv/needs_review, läuft) | Verzichtbar? |
 |---|---|---|---|
 | `rp-ausschuss-arbeit-soziales` (HTML-Seite) | **sein Ausschuss** | **25+ googlenews-Wege** auf `"Ausschuss für Arbeit und Soziales"` (Bürgergeld/Rente/Mindestlohn/Pflege/Tarif/… je eigener Weg) + hib-Ausschuss + Prozess-Radare | **Ja — sogar übertroffen** (die eine HTML-Seite liefert weniger als die 25er-Themenmatrix) |
 | `rp-bundesregierung` (RSS) | Regierung | `general-bundesregierung-vorhaben` + `process-eckpunkte/-bundeskabinett` | **Ja** — Reparatur wäre ohnehin googlenews (Direktfeed real 404); überlappt |
@@ -142,7 +142,7 @@ Und die *funktionierende* Ersatzdeckung je defekte Quelle (aus den aktiven Paket
 
 **Ehrliches Fazit der Nachprüfung — zwei getrennte Fragen:**
 
-1. **Breite/Abdeckung:** Alle 6 sind für den Piloten **verzichtbar**. Cems Ausschuss (700),
+1. **Breite/Abdeckung:** Alle 6 sind für den Piloten **verzichtbar**. Der Ausschuss des Piloten (700),
    Partei/Fraktion (101) und der Bundestag (499) sind über funktionierende Wege dicht
    gedeckt; die A&S-Themenmatrix übertrifft die einzelne defekte Ausschuss-Seite sogar.
    Es entsteht **keine Themenlücke**, wenn die 6 fehlen.

@@ -17,20 +17,20 @@ function check(name, cond, detail = "") {
 function briefingCacheId(userId, slot, day) { return `bf-${userId}-${slot}-${day}`; }
 
 console.log("== 1) Briefing-/Lage-Cache: Schlüssel trägt die Mandanten-ID ==");
-const aKey = briefingCacheId("cem-ince", "lage", "2026-07-12");
+const aKey = briefingCacheId("tenant-alpha", "lage", "2026-07-12");
 const bKey = briefingCacheId("anna-beispiel", "lage", "2026-07-12");
-check("Cem und Anna haben verschiedene Cache-Keys am selben Tag", aKey !== bKey, `${aKey} vs ${bKey}`);
-check("Cem-Key enthält 'cem-ince'", aKey.includes("cem-ince"));
-check("Anna-Key enthält NICHT 'cem-ince'", !bKey.includes("cem-ince"));
+check("Tenant Alpha und Anna haben verschiedene Cache-Keys am selben Tag", aKey !== bKey, `${aKey} vs ${bKey}`);
+check("Alpha-Key enthält 'tenant-alpha'", aKey.includes("tenant-alpha"));
+check("Anna-Key enthält NICHT 'tenant-alpha'", !bKey.includes("tenant-alpha"));
 
 console.log("== 2) Büro-Output-Cache: Schlüssel trägt die Mandanten-ID ==");
-const oA = storage.officeOutputId("cem-ince", "vg-1", "rede");
+const oA = storage.officeOutputId("tenant-alpha", "vg-1", "rede");
 const oB = storage.officeOutputId("anna-beispiel", "vg-1", "rede");
 check("gleicher Vorgang+Kanal, verschiedene Mandanten -> verschiedene Keys", oA !== oB, `${oA} vs ${oB}`);
-check("Büro-Key A enthält Mandant A", oA.includes("cem-ince"));
-check("Büro-Key B enthält NICHT Mandant A", !oB.includes("cem-ince"));
+check("Büro-Key A enthält Mandant A", oA.includes("tenant-alpha"));
+check("Büro-Key B enthält NICHT Mandant A", !oB.includes("tenant-alpha"));
 // Gleicher Mandant, verschiedene Vorgaenge/Kanaele -> verschiedene Keys (keine Kollision)
-check("gleicher Mandant, anderer Kanal -> anderer Key", storage.officeOutputId("cem-ince", "vg-1", "rede") !== storage.officeOutputId("cem-ince", "vg-1", "pm"));
+check("gleicher Mandant, anderer Kanal -> anderer Key", storage.officeOutputId("tenant-alpha", "vg-1", "rede") !== storage.officeOutputId("tenant-alpha", "vg-1", "pm"));
 
 console.log("== 3) Neuer Kunde startet NICHT mit fremdem Cache ==");
 const neu = briefingCacheId("neu-mdb", "lage", "2026-07-12");

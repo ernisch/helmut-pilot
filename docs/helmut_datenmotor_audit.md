@@ -139,7 +139,7 @@ Berichte (`docs/AUDIT_DATENMOTOR_2026-07.md` ist nachweislich veraltet, siehe
 | Externe Dienste | Azure OpenAI (`gpt-5-mini`), Supabase, Google News (Crawl + URL-Decode), Bundestag-DIP-API, CallMeBot-WhatsApp, Monitoring-Webhook, Web-Push (VAPID) | §9, `.env.example` |
 | Verwendete KI-Modelle | Azure OpenAI `gpt-5-mini` (685 echte Calls); OpenAI `gpt-4.1` = Notfall-Fallback, in Prod durch Azure-Vorrang inaktiv | DB `llmUsage.model`; `ai.js:18-31`, `.env.example:1-8` |
 | Aktive Quellenpakete | 7 `source_packages` (5 aktiv Bund-Basis, 2 `prepared`: berlin-basis/brandenburg-basis); 163 `retrieval_paths` (145 Bund + 18 BE/BB inaktiv) | DB; `05-quellenarchitektur`-Analyse |
-| Aktive Nutzerprofile | 3: `cem-ince` (Pilot), `angela-merkel`, `james-brown` (Testpersonen) | DB `helmut_store`-Keys, `briefings`, `mandate_profiles` (2) |
+| Aktive Nutzerprofile | 3: `<pilot-mandats-id>` (Pilot), `<demo-mandant-c>`, `<demo-mandant-b>` (Testpersonen) | DB `helmut_store`-Keys, `briefings`, `mandate_profiles` (2) |
 | Feature-Flags (managed) | `HELMUT_UNDERSTANDING_GATE=shadow`, `HELMUT_PARDOK_DISPATCH=shadow`, `HELMUT_SOURCE_MODE=on` | `helmut-flags.json`; Allowlist `flags.js:31-35` |
 | Unterschied lokal ↔ Production | Keiner auf Code-Ebene (HEAD = Prod). Prod-Env-Werte sind „sensitive" und nicht einsehbar → als Annahmen markiert (§9). | — |
 
@@ -160,7 +160,7 @@ RSS/HTML, Google-News-Decode, PARDOK-Streaming); Dedup (2 Mechanismen);
 Storage-Layer inkl. `compactStore`/Retention/Locks; Understanding (Clustering,
 KI-Call, Schema, Klassifikation, Feature-Vektor, Gate, Budget);
 Matching/Decisions/Scoring; Briefing-/Lage-/Radar-Ausgabe; Dokumentlebenszyklus;
-Fehlerpfade & Monitoring; Landtag-/Cem-Hardcoding; toter Code; Env/Flags/Secrets.
+Fehlerpfade & Monitoring; Landtag-/Pilotmandanten-Hardcoding; toter Code; Env/Flags/Secrets.
 Datenseitig: Crawl-Läufe, LLM-Nutzung, Gate-Telemetrie, Wissensobjekte,
 Rohdokumente, Briefings, Decisions, Matching, Systemfehler.
 
@@ -192,9 +192,9 @@ Der Motor fährt **zwei parallele, nicht synchron gehaltene Speicher:**
 | id | Größe | wichtige Keys |
 |---|---|---|
 | `main` | 1,24 MB | `crawlRuns`, `systemErrors`, `briefings`, `politicalItems`, `sources` (144), `rawItems` (466), `lageChecks`, `pipelineDebugReports` |
-| `main-p-cem-ince` | 734 KB | per-Nutzer: `briefings`, `communicationDrafts`, `politicalItems` … |
+| `main-p-<pilot-mandats-id>` | 734 KB | per-Nutzer: `briefings`, `communicationDrafts`, `politicalItems` … |
 | `main-auth` | 85 KB | `llmUsage` (1878), `pipelineLocks`, `systemErrors` (59), `sourceModeShadowLastRun`, `sessions`, `users` |
-| `main-p-james-brown` | 364 B | quasi leer (Testpersona) |
+| `main-p-<demo-mandant-b>` | 364 B | quasi leer (Testpersona) |
 
 → Bei jedem Schreiben läuft `compactStore` (`storage.js:2118`) und kappt hart
 (`crawlRuns` ≤ 30, zusätzlich `saveCrawlRun` ≤ 20; `rawItems` ≤ 600;
@@ -235,12 +235,13 @@ Query-Secret nur wenn `HELMUT_ALLOW_QUERY_SECRETS=true`, Default aus).
 - **Zweck:** Alle Profil-Quellen abrufen, Rohdokumente speichern,
   Understanding/Matching/Decisions anstoßen.
 - **Ausführungsort/Datei/Funktion:** Vercel-Lambda → `server.js:711-714` →
-  `scheduler.js:168` `runSourceCrawl(politicianId=cemInceProfile.id)`.
+  `scheduler.js:168` `runSourceCrawl(politicianId=<pilot-mandats-id>)` (zum
+  Auditzeitpunkt über das damals hartkodierte Pilot-Default-Profil).
 - **Auslöser/Startzeit/Zeitzone/Häufigkeit:** Vercel-Cron `0 4 * * *` und
   `0 20 * * *` (UTC) → 06:00 & 22:00 CEST (05:00 & 21:00 CET). 2×/Tag.
-- **Politische Ebene / Mandant:** Bund; single-tenant — ohne Login fällt
-  `politicianId` auf `cem-ince` (`server.js:306-308`; nur Admin-Bypass wählt
-  anderes Mandat).
+- **Politische Ebene / Mandant:** Bund; single-tenant — ohne Login fiel
+  `politicianId` zum Auditzeitpunkt auf `<pilot-mandats-id>` (`server.js:306-308`;
+  nur Admin-Bypass wählt anderes Mandat).
 - **Tatsächliche Startzeiten (belegt, 20 Läufe 12.–16.07.):** planmäßig
   04:03/16:02/20:02 UTC; zusätzlich manuelle Läufe (07:26, 07:43, 08:33, 09:41,
   14:35) — Gründer-Trigger während Merge-Sessions.
@@ -300,7 +301,7 @@ Wissensobjekte/Decisions (`foldLageItemsIntoV3`).
 `45 5 * * *` UTC → 07:45 CEST. `server.js:888-914` → `buildLageBriefing` je
 Profil (Loop über alle aktiven Profile; deaktivierte übersprungen). Schreibt
 `briefings`-Tabelle (`slot=lage`, Upsert `bf-{user}-lage-{Berlin-Tag}`). Erklärt
-die 13 Zeilen (cem 5 / merkel 4 / brown 4).
+die 13 Zeilen (Pilot 5 / `<demo-mandant-c>` 4 / `<demo-mandant-b>` 4).
 
 ### 4.7 `/api/cron/health-report` — Morgen-Health-Report (einziger aktiver Alarmweg)
 
@@ -389,7 +390,7 @@ gepollt.
 | 9 | Personen/Themen | in KO-Feldern (`mentioned_*`, `parteien`, `ausschuesse`) + `radar.js`/`radarState.js` (2 Engines) | KO | — | 2 divergierende Erwähnungs-Engines | aktiv |
 | 10 | Politische Ebene | `decision_level` ∈ {bund, land, kommune, eu, international, unknown} | — | KO | Casing: Deriver schreibt klein (`bund`), Alt-Daten groß (`Bund`) | aktiv (sparse) |
 | 11 | Quellenpaket / Mandatsprofil | `profile-packages.js` `resolveProfilePackages` (Referenzzählung) | Profil, Pakete | — | Bund-Basis Pflicht für jedes Profil | aktiv |
-| 12 | Relevanzbewertung | on-read `decisions.js` `decideForUser` → `matching.js` `matchProfileToKnowledgeObjects` (deterministisch, 0 KI) | Profil + KOs + Feature-Vektoren | — (Read-Pfad); Shadow schreibt `matching_results`/`decisions` nur für cem-ince | Shadow-Fehler `.catch(()=>null)` ohne Log | aktiv |
+| 12 | Relevanzbewertung | on-read `decisions.js` `decideForUser` → `matching.js` `matchProfileToKnowledgeObjects` (deterministisch, 0 KI) | Profil + KOs + Feature-Vektoren | — (Read-Pfad); Shadow schreibt `matching_results`/`decisions` nur für `<pilot-mandats-id>` | Shadow-Fehler `.catch(()=>null)` ohne Log | aktiv |
 | 13 | Handlungsempfehlung | aus KO-LLM-Feld `recommendation`/`handlungsempfehlung` | KO | — | — | aktiv |
 | 14 | Briefing | `server.js:1746` `buildV3Briefing` (0 KI) → `briefingContract.js` | KOs + on-read Decisions + Quellen | — (nicht persistiert) | Store-Fehler → `empty('store-error')` | aktiv |
 | 15 | Ausgabe/Speicherung | Lage-Narrativ (`lage.js`, 1 KI-Call) → `briefings`-Tabelle; Home/Radar on-read | KOs | `briefings` (nur Lage) | Cache-Fehler still verschluckt → KI-Neuerzeugung | aktiv |
@@ -413,7 +414,7 @@ Tabelle mit `decision_id` + `knowledge_object_id`) ist leer.
 | zur Verarbeitung vorgesehen (pending) | ✅ | `runLazyUnderstandingShadow` → `savePendingKnowledgeObject` | `knowledge_objects.status='pending'` | bleibt bis Understanding; Budget-Skip belässt pending → Retry idempotent |
 | in Verarbeitung | ❌ | — | — | kein `processing`-Status; nur grobkörniger globaler Lock (Default aus) |
 | erfolgreich verarbeitet | ✅ | `assembleKnowledgeObject` (KI ok+valide) | `understanding_status='complete'` | — |
-| relevant / nicht relevant | ✅ (Relation, kein Dok-Flag) | on-read `decideForUser`; Shadow `runDecision/Matching` (nur cem-ince) | `decisions`/`matching_results`; Gate-Telemetrie `gate_shadow_events` | keine Löschung stale Zeilen |
+| relevant / nicht relevant | ✅ (Relation, kein Dok-Flag) | on-read `decideForUser`; Shadow `runDecision/Matching` (nur `<pilot-mandats-id>`) | `decisions`/`matching_results`; Gate-Telemetrie `gate_shadow_events` | keine Löschung stale Zeilen |
 | doppelt | ✅ | `dedupeRawDocuments` (content_hash) + dedup-global (3 Stufen: canonical / Fingerprint / Domain+Titel-Ähnlichkeit ≥ 0,72 + 2-Tage-Fenster) | Duplikat → nie eigene Zeile, stattdessen `document_findings` + `finding_count++` | — |
 | unvollständig | ✅ | Schema-Validierung schlägt fehl → `markUnderstandingFailed`; oder Lese-Qualitätsstatus | `understanding_status='failed'` | terminal |
 | nicht lesbar | ❌ (nur quellenweit) | Fetch-Fehler `ok:false` | `crawlRun.errors` (max 20, pro Quelle) | kein Pro-Dokument-Zustand |
@@ -563,7 +564,7 @@ flüchtigen Vercel-Logs.
   divergierende Erwähnungs-Engines (`radar.js` vs. `radarState.js`) mit
   unterschiedlicher Strenge → Radar-Tab und „Über dich"-Sektion können abweichen.
 - **Nutzerzuordnung / Relevanz:** on-read deterministisch für alle Profile; die
-  persistierten `decisions`/`matching_results` existieren nur für `cem-ince` und
+  persistierten `decisions`/`matching_results` existieren nur für `<pilot-mandats-id>` und
   werden im Ausgabepfad fast nicht gelesen (`listDecisions` hat „keinen
   Produktionsaufrufer", `storage.js:1478`).
 - **Quellenangabe:** ✅ 93 % direkte Links; KO→Dokument via `ko_document_links`.
@@ -582,7 +583,7 @@ flüchtigen Vercel-Logs.
 |---|---|---|---|---|---|
 | `staff-backfill.js` | `lib/helmut/` | Stabschef-Felder-Backfill | nur `scripts/staff-backfill.js` (CLI, dry-run-Default) | niedrig | nach `scripts/one-off/` |
 | `migration-mapper.js` | `lib/helmut/quellenarchitektur/` | Sprint-6-Migration Blob→relational | nur `scripts/sprint6-*` | niedrig | als abgeschlossene Migration archivieren |
-| `cem-shadow-compare.js` | `lib/helmut/quellenarchitektur/` | Cem-Migrations-Shadow-Vergleich | nur `scripts/sprint6-*` | niedrig | wie oben |
+| `supply-shadow-compare.js` (zum Auditzeitpunkt noch nach dem Pilotmandanten benannt) | `lib/helmut/quellenarchitektur/` | Sprint-6-Migrations-Shadow-Vergleich für das Pilotmandat | nur `scripts/sprint6-*` | niedrig | wie oben |
 | `understanding-priority.js` | `lib/helmut/quellenarchitektur/` | relevanzbasierte Budget-Auswahl (fertig, getestet, nie scharf) | nur `scripts/gate-adversarial-test.js` | mittel (verdrängt heute relevante späte Vorgänge, Ankunftsreihenfolge) | scharfschalten (Freigabe) — Kern-Fix gegen Aushungern |
 | `ko-classification-backfill.js` | `lib/helmut/` | Altbestand-Ebenen-Nachfüllung | nur `scripts/` (`--execute` manuell) | hoch (247 KOs ohne Ebene) | einmalig ausführen / an Cron |
 | `generateHelmutAssessment` (+Umfeld) | `ai.js:350` | V2-KI-Bewertung | 0 Aufrufer (V3 nutzt deterministisches `buildHelmutAssessment`) | mittel (versehentliche LLM-Reaktivierung) | als toten V2-Pfad entfernen (nach Bestätigung) |
@@ -654,13 +655,13 @@ BE/BB-Seed (`20260717`) ist in der Live-DB angewendet: 4 Entitäten, 14 Publishe
 
 ### 12.4 Bund-Bias, der Landtag heute verhindert (produktweit, nicht nur Demo)
 
-- `neutralProfileDefaults`/`blankProfile` setzen für jedes Nicht-Cem-Mandat
+- `neutralProfileDefaults`/`blankProfile` setzen für jedes Mandat außer dem Pilotmandanten
   `politicalLevel='Bund'`, `function='Bundestagsabgeordnete:r'`,
   `relevantMinistries=['Bundesregierung']` (`scheduler.js:1404-1441`,
   `server.js:4490-4534`, Save-Fallback 4621). → `parliamentTypeOf` klassifiziert
   ein Mandat ohne explizites `politische_ebene='landtag'` als Bundestag.
-- Crawl-/Scoring-/Relevanz-Heuristiken mit Default `profile=cemInceProfile`
-  feuern für jedes Profil mit fixen Bundesbegriffen: `itemPoliticalWeight` +35 für
+- Crawl-/Scoring-/Relevanz-Heuristiken mit Default auf das (damals hartkodierte)
+  Pilot-Default-Profil feuern für jedes Profil mit fixen Bundesbegriffen: `itemPoliticalWeight` +35 für
   `bundesregierung`/`bmas` (`scheduler.js:1145`); `lageCheckSourceWeight` +120 für
   `bmas|bundesregierung|bundestag|linke|dgb` (427); `hasGovernmentWork` nur
   Bundesbegriffe (975); föderale Top-Quelle (prio 94) rangiert über Landtag-Quelle
@@ -668,9 +669,9 @@ BE/BB-Seed (`20260717`) ist in der Live-DB angewendet: 4 Entitäten, 14 Publishe
 - `matching.js` Synonymkataloge nur Bundestags-Ausschüsse/Bundesparteien
   (53-74, 118-126). DIP (nur Bundestag, WP 21) wird für jedes Mandat abgerufen
   (`dip.js`, `scheduler.js:220`) — kein Landtags-Pendant.
-- **Sauber gegated (nur Demo):** das volle `cemInceProfile`
-  (Die Linke/BMAS/Niedersachsen) und `demoFallback`-Themen greifen nur bei
-  `!authModeOn() && id==='cem-ince'`.
+- **Sauber gegated (nur Demo):** das volle Pilot-Default-Profil
+  (Partei/Ressort/Bundesland des Pilotmandanten) und `demoFallback`-Themen greifen nur bei
+  `!authModeOn() && id==='<pilot-mandats-id>'`.
 
 ### 12.5 Urteil Landtag
 

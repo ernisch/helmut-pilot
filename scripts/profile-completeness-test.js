@@ -6,9 +6,10 @@
 // (regionalInterests, relevantMinistries, topicPriorities, opponents,
 // monitoringTargets) UND aller uebrigen Blob-Felder via profil_extras
 // (localMedia, mainQuestion, officeFormats, outputNeeds, location, ...).
-// Getestet gegen Cems reales Profil + mehrere Testprofile.
+// Getestet gegen das zentrale (klar kuenstliche) Fixture-Profil + mehrere Testprofile.
 
 const storage = require("../lib/helmut/storage");
+const { testPoliticianOne } = require("./fixtures/test-profiles");
 
 let pass = 0, fail = 0;
 function check(name, cond, detail = "") {
@@ -16,42 +17,11 @@ function check(name, cond, detail = "") {
   else { fail += 1; console.log(`FAIL  ${name}${detail ? "  — " + detail : ""}`); }
 }
 
-// Cems vollstaendiges Profil, exakt wie im Production-Blob (aus dem Live-Dump).
-const CEM = {
-  id: "cem-ince",
-  fullName: "Cem Ince",
-  party: "Die Linke",
-  faction: "Die Linke",
-  function: "Bundestagsabgeordneter",
-  role: "Bundestagsabgeordneter",
-  politicalLevel: "Bund",
-  constituency: "Salzgitter-Wolfenbüttel",
-  state: "Niedersachsen",
-  location: "Salzgitter",
-  committee: "Arbeit und Soziales",
-  committees: ["Arbeit und Soziales"],
-  committeeUnknown: false,
-  focusTopics: ["Arbeit", "Soziales", "Bürgergeld", "Mindestlohn", "Pflege", "Familie", "Rente", "Gesundheit", "Tarifbindung", "Arbeitsmarkt", "Sozialstaat", "Armut", "Gewerkschaften", "Tariftreue", "Arbeitszeit", "Industriearbeitsplätze", "Pflegeversicherung", "Bundesregierung Vorhaben im Bereich Arbeit und Soziales"],
-  topicPriorities: { Arbeit: 5, Soziales: 5, Bürgergeld: 5, Mindestlohn: 5, Pflege: 4, Rente: 5 },
-  mainQuestion: "Welche Pläne hat die Bundesregierung im Bereich Arbeit und Soziales?",
-  monitoringTargets: ["Meine Partei", "Meine Person", "Mein Fachausschuss", "Bundesregierung Vorhaben", "Arbeit und Soziales"],
-  outputNeeds: ["Was ist heute wichtig?", "Was kann ignoriert werden?", "Worauf sollte ich reagieren?", "Welche Chance entsteht?", "Welches Risiko entsteht?", "Welche Formulierung kann ich nutzen?"],
-  regionalInterests: ["Niedersachsen", "Salzgitter-Wolfenbüttel", "Salzgitter", "Wolfenbüttel", "lokale Beschäftigung", "Industriearbeitsplätze", "VW-Beschäftigte", "Betriebsräte", "Stahlindustrie", "Pflegeversorgung", "Armutsbekämpfung", "Tarifbindung vor Ort"],
-  relevantMinistries: ["BMAS", "BMG", "BMF", "Bundesregierung"],
-  opponents: ["CDU/CSU", "SPD-Regierungslinie", "FDP", "AfD"],
-  localMedia: ["Salzgitter Zeitung", "Braunschweiger Zeitung", "Wolfsburger Nachrichten", "NDR Niedersachsen", "Hannoversche Allgemeine", "taz", "nd"],
-  communicationStyle: "Lösungsorientiert",
-  riskTopics: ["Bürgergeld-Sanktionsframe", "Angriffe auf soziale Sicherung", "fehlende Tarifkontrollen", "Renten- und Sozialstaatsdebatten ohne linke Linie", "Angriffe auf Erwerbslose", "zu späte Reaktion auf BMAS-Vorhaben"],
-  opportunityTopics: ["Tariftreue", "Mindestlohn", "gute Arbeit", "Pflegearbeitsbedingungen", "BMAS Vorhaben früh einordnen", "Rente für niedrige Einkommen"],
-  noGoTopics: ["unbelegte persönliche Angriffe", "verkürzte Kulturkampf-Frames", "unklare Forderungen ohne Handlungsvorschlag"],
-  preferredChannels: ["presse", "linkedin", "x", "ausschuss", "buergerdialog"],
-  officeHandoffMethod: "share",
+// Vollstaendiges, rein kuenstliches Profil: zentrale Fixture + die Zusatzfelder,
+// die den profil_extras-Pfad abdecken (officeFormats, onboardedAt).
+const FULL = {
+  ...testPoliticianOne,
   officeFormats: ["pressemitteilung", "social", "rede"],
-  reportingTopics: ["Arbeit", "Soziales", "Bürgergeld", "Mindestlohn", "Rente", "Pflege", "Tariftreue", "Arbeitszeit"],
-  currentCampaigns: ["Gute Arbeit", "Armutsfester Sozialstaat", "Tarifbindung stärken", "Gute Arbeit und Tarifbindung", "Mindestlohn und Respekt für Beschäftigte", "Pflege sozial absichern"],
-  publicPositions: ["Gute Arbeit braucht Tarifbindung und Kontrolle.", "Soziale Sicherung darf Menschen nicht unter Generalverdacht stellen.", "Pflege braucht verlässliche Arbeitsbedingungen."],
-  keyAudiences: ["Beschäftigte", "Gewerkschaften", "Sozialverbände", "Pflegekräfte", "Menschen mit niedrigen Einkommen"],
-  upcomingAppointments: ["Gespräch mit Sozialverband | 2026-06-30T14:00:00+02:00", "Wahlkreiszeit Salzgitter | 2026-07-01T10:00:00+02:00"],
   onboardedAt: "2026-06-01T00:00:00Z"
 };
 
@@ -65,8 +35,8 @@ function roundtrip(profile) {
   return storage.fromMandateProfileRow({ id: profile.id, name: profile.fullName }, mandateRow);
 }
 
-console.log("== 1) Cem: JEDES Feld überlebt den DB-Roundtrip ==");
-const back = roundtrip(CEM);
+console.log("== 1) Fixture: JEDES Feld überlebt den DB-Roundtrip ==");
+const back = roundtrip(FULL);
 const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const fields = [
   "party", "faction", "function", "role", "constituency", "state", "committee",
@@ -80,19 +50,19 @@ const fields = [
   "localMedia", "mainQuestion", "outputNeeds", "officeFormats", "location", "onboardedAt", "committeeUnknown"
 ];
 for (const f of fields) {
-  check(`Cem.${f} identisch`, eq(back[f], CEM[f]), `db=${JSON.stringify(back[f])} blob=${JSON.stringify(CEM[f])}`);
+  check(`Fixture.${f} identisch`, eq(back[f], FULL[f]), `db=${JSON.stringify(back[f])} blob=${JSON.stringify(FULL[f])}`);
 }
-check("Cem.politicalLevel = 'Bund' (aus bundestag rekonstruiert)", back.politicalLevel === "Bund");
+check("Fixture.politicalLevel = 'Bund' (aus bundestag rekonstruiert)", back.politicalLevel === "Bund");
 
 console.log("== 2) Kein Blob-Feld geht verloren (Schlüssel-Vollständigkeit) ==");
-const verloren = Object.keys(CEM).filter((k) => {
+const verloren = Object.keys(FULL).filter((k) => {
   if (["id", "fullName", "updatedAt", "parliamentType"].includes(k)) return false; // separat/abgeleitet
   return !(k in back) || back[k] === undefined;
 });
 check("keine verlorenen Felder", verloren.length === 0, `verloren: ${verloren.join(", ")}`);
 
 console.log("== 3) profil_extras enthält NUR die spaltenlosen Felder ==");
-const row = storage.toMandateProfileRow(CEM);
+const row = storage.toMandateProfileRow(FULL);
 const extrasKeys = Object.keys(row.profil_extras).sort();
 check("profil_extras enthält localMedia/mainQuestion/outputNeeds/officeFormats/location/committeeUnknown/onboardedAt",
   ["committeeUnknown", "localMedia", "location", "mainQuestion", "officeFormats", "onboardedAt", "outputNeeds"].every((k) => extrasKeys.includes(k)), extrasKeys.join(","));

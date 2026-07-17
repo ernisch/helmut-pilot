@@ -318,7 +318,9 @@ async function checkSourceLinks(briefing) {
 
 async function checkRadar(briefing) {
   ok(Array.isArray(briefing.personMentions), "Radar data is present");
-  const mentionPool = [...(briefing.personMentions || []), ...(briefing.rawItems || [])].filter(mentionsPilotProfile);
+  // Mandantenneutral: personMentions sind bereits die serverseitig erkannten
+  // Profil-Erwaehnungen — kein namensbasierter Filter im Test noetig.
+  const mentionPool = [...(briefing.personMentions || [])];
   const preciseMentions = mentionPool.filter((item) => Boolean(directArticleUrl(item)));
   if (mentionPool.length) {
     ok(true, "Radar hides weak profile mentions instead of exposing broken links");
@@ -405,11 +407,6 @@ function collectSources(briefing) {
 
 function hasTaskDirectSource(task) {
   return [task.primarySource, ...(task.sources || [])].filter(Boolean).some((source) => Boolean(directArticleUrl(source)));
-}
-
-function mentionsPilotProfile(item = {}) {
-  const text = `${item.title || ""} ${item.content || ""} ${item.excerpt || ""} ${item.author || ""}`.toLowerCase();
-  return text.includes("cem ince") || /(^|[^a-zäöüß])ince($|[^a-zäöüß])/i.test(text);
 }
 
 function directArticleUrl(source = {}) {

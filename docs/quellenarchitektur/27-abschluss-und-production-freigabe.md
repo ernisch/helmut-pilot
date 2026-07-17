@@ -18,7 +18,7 @@ Production-Änderung/Deployment/Migration/Flag/Cron ausgeführt. Branch:
 | Neue Dynamiken 7↔6 | „Bug"? | **kein Bug** | Deterministisch je `(Snapshot, now)`; 7-Tage-Fenster gleitet (Vorgang altert am Rand heraus). Als Test gepinnt, keine fixe Zahl. |
 | Wahlkreis (Bovenschulte) | 1 (falsch) | **0** | Bundesland/Bund/Europa zählen nicht als Wahlkreisbeleg (bereits Dok. 25). |
 
-Details: Dok. 23–26. Cem-Radar nach allen Fixes (frozen Snapshot, `now`=2026‑07‑14):
+Details: Dok. 23–26. Pilot-Radar nach allen Fixes (frozen Snapshot, `now`=2026‑07‑14):
 Partei 0 · Wahlkreis 0 · Ausschüsse 0 · Dynamiken 7 · Erwähnungen 0 · Offizielle Quellen 5.
 
 ## 2. Phase D — Branch-Konsolidierung
@@ -50,7 +50,7 @@ Automatisiert vorab geprüft (offline gegen echte Prod-Daten reproduziert): V3-R
 Belegregeln, Quellen-Kennzeichnung, Determinismus, Profilauflösung (Blob==mandate_profiles),
 Tenant (1 Profil), keine Runtime-Fehler in den reinen Modulen. **Vercel-SSO verhindert eine
 vollständige automatisierte Browser-Prüfung** — bitte manuell im Branch-Preview (Commit `c58ada2`):
-1. Login + Profil „Cem" wird erkannt.
+1. Login + Profil des Pilotmandanten wird erkannt.
 2. **Lage / Radar / Helmut / Büro** laden Inhalte (nicht leer).
 3. **Radar › Dein Umfeld:** Partei leer, Wahlkreis leer, **Ausschüsse leer** (kein BMAS-/
    Koalitions-/kommunaler Treffer mehr).
@@ -62,7 +62,7 @@ Keine Production-Freigabe, bis diese 6 Punkte grün bestätigt sind.
 
 ## 5. Phase G — Nutzerergebnisse Preview vs. Production
 Production läuft `main` (alte Radar-Logik, zeigt die falschen 13 Ausschuss-/1 Wahlkreis-Treffer);
-Preview läuft der Branch (korrigiert). **Erwartete, begründete** Abweichungen für Cem:
+Preview läuft der Branch (korrigiert). **Erwartete, begründete** Abweichungen für den Pilotmandanten:
 - Ausschüsse 13→0, Wahlkreis 1→0, „Offizielle Quellen" bereinigt = **Qualitätsgewinn** (Entfernen
   falscher Treffer), **keine** Versorgungsverschlechterung an echten Signalen.
 - Partei (0), Dynamiken (7), Lage/Helmut/Büro, Briefings, Decisions, KOs, Datenfrische, Quellenzahl,
@@ -114,7 +114,7 @@ PARDOK/Tenant/Security/Watchdog/Kosten-Suiten alle grün.
 | Shadow-Daten im Nutzerpfad / Gate blockiert im Shadow | widerlegt (gate off; shadow nur Telemetrie) |
 | PARDOK/Berlin/Brandenburg versehentlich aktiv | widerlegt (default off + inert; 0 aktive Landeswege) |
 | Tagesdeckel versehentlich verändert | nicht angefasst |
-| Cem verliert echte Vorgänge | nein (nur falsche Treffer entfernt; Ranking/Dynamik unverändert) |
+| Pilotmandant verliert echte Vorgänge | nein (nur falsche Treffer entfernt; Ranking/Dynamik unverändert) |
 | App-Start langsamer | neue Requires sind reine Daten/Logik (seeds/config), kein Netz/DB beim Laden |
 | Tenant-Leck | widerlegt (1 Profil, RLS service_role-only) |
 | Rollback scheitert | jede Migration hat `*_rollback.sql` (idempotent) |
@@ -153,7 +153,7 @@ folgenden Stufen sind einzeln freigebbar; **nichts** davon ist ausgeführt:
 
 **Stufe 1 — Production-Deployment (Code, alle Guards off).** Exakte Änderung: Vercel-Deploy von
 `c58ada2` nach `main`. Nutzen: die korrigierten Radar-Belegregeln + Quellen-Kennzeichnung werden für
-Cem sichtbar (Ausschüsse/Wahlkreis/Offizielle Quellen korrekt). Risiko: gering (reine Lesepfad-
+den Pilotmandanten sichtbar (Ausschüsse/Wahlkreis/Offizielle Quellen korrekt). Risiko: gering (reine Lesepfad-
 Änderung, 70/71 Tests grün, offline gegen Realdaten verifiziert). Kostenlimit: keine Zusatzkosten.
 Smoke-Tests: §11. Stop: §11. Rollback: Deploy auf vorherigen main-Commit.
 

@@ -58,7 +58,7 @@ read-only) unterlegt.
   (BYPASSRLS).** Diese Migration ändert daran nichts. Solange die App nicht auf
   JWT-Minting + `authenticated`-Rolle umgestellt wird (separater, **nicht** in
   diesem Sprint enthaltener Folgeschritt), ist das Anwenden dieser Migration
-  **funktional wirkungslos** für den laufenden Piloten (cem-ince) — reine
+  **funktional wirkungslos** für den laufenden Piloten (`<pilot-mandats-id>`) — reine
   Defense-in-Depth-Vorbereitung. Das ist die Grundlage für „Pilotbetrieb nicht
   beeinträchtigt" (§6).
 
@@ -159,7 +159,7 @@ sind (BYPASSRLS).
 
 ---
 
-## 6. Risiken für den Einzelpiloten (cem-ince)
+## 6. Risiken für den Einzelpiloten (`<pilot-mandats-id>`)
 
 - **Anwenden der Migration (falls/wenn freigegeben): kein funktionales Risiko
   für den laufenden Betrieb.** Die App nutzt weiterhin `service_role`

@@ -1,8 +1,9 @@
 "use strict";
 
-// Sprint 1 (Teil 4/6) — Zweitmandanten-Provisionierung: idempotent, sauberer
-// Abbruch, kein halber Account, Deaktivierung ohne Fremddaten, Schutz echter
-// Mandanten. Zwei SYNTHETISCHE Testmandanten. KEIN Netz, KEINE echte DB.
+// Sprint 1 (Teil 4/6) — Mandanten-Provisionierung: idempotent, sauberer
+// Abbruch, kein halber Account, Deaktivierung ohne Fremddaten, DATENGETRIEBENER
+// Bestandsschutz (kein Namensregister im Code). Ausschliesslich SYNTHETISCHE
+// Testmandanten. KEIN Netz, KEINE echte DB.
 
 const fs = require("fs");
 const path = require("path");
@@ -14,6 +15,7 @@ delete process.env.SUPABASE_SERVICE_ROLE_KEY;
 const storage = require("../lib/helmut/storage");
 const accounts = require("../lib/helmut/accounts");
 const provisioning = require("../lib/helmut/provisioning");
+const { testPoliticianOne, testPoliticianTwo, TENANT_ALPHA, TENANT_BETA } = require("./fixtures/test-profiles");
 
 let pass = 0, fail = 0;
 function check(name, cond, detail = "") {
@@ -35,7 +37,7 @@ const specB = {
 };
 
 const dataDir = path.join(__dirname, "..", ".helmut-data");
-const guarded = ["store.json", "auth.json", `p-${A}.json`, `p-${B}.json`, "p-raw-test-synthetic.json", "p-prot-mail-synthetic.json"].map((f) => path.join(dataDir, f));
+const guarded = ["store.json", "auth.json", `p-${A}.json`, `p-${B}.json`, `p-${TENANT_ALPHA}.json`, `p-${TENANT_BETA}.json`, "p-tenant-bestand.json", "p-raw-test-synthetic.json", "p-prot-mail-synthetic.json"].map((f) => path.join(dataDir, f));
 const backups = guarded.map((f) => (fs.existsSync(f) ? fs.readFileSync(f, "utf8") : null));
 
 async function countUsers(politicianId) {
@@ -86,16 +88,58 @@ async function countProfiles(id) {
     check("KEIN halber Account: neu angelegter Auth-Nutzer wurde zurückgerollt", (await countUsers(failId)) === 0, `users=${await countUsers(failId)}`);
     check("Rollback-Schritt im Protokoll dokumentiert", rFail.log.some((s) => s.step === "rollback" && s.status === "ok"));
 
-    // ── 6) SCHUTZ echter Mandanten (cem-ince/james-brown/angela-merkel) ────────
-    for (const prot of ["cem-ince", "james-brown", "angela-merkel"]) {
-      const rp = await provisioning.provisionTenant({ ...specA, id: prot, email: `${prot}@x.test` });
-      check(`Provisionierung von ${prot} verweigert (protected-tenant)`, rp.ok === false && rp.reason === "protected-tenant");
-      const rd = await provisioning.deactivateTenant(prot);
-      check(`Deaktivierung von ${prot} verweigert`, rd.ok === false && rd.reason === "protected-tenant");
-      const rt = await provisioning.teardownTenant(prot);
-      check(`Löschung von ${prot} verweigert`, rt.ok === false && rt.reason === "protected-tenant");
-    }
-    check("isProtected erkennt geschützte, nicht synthetische", provisioning.isProtected("james-brown") && !provisioning.isProtected(A));
+    // ── 6) DATENGETRIEBENER Bestandsschutz (keine Namensliste im Code) ─────────
+    // (a) Vorbestehendes Profil OHNE provisionedBy-Marker (z. B. manuell/extern
+    //     angelegt) ist geschützt: kein Anlegen/Deaktivieren/Löschen hierüber.
+    const BESTAND = "tenant-bestand";
+    await storage.saveProfile({ id: BESTAND, fullName: "Bestand Mandant", party: "Testpartei Alpha", parliamentType: "Bundestag", state: "Berlin", constituency: "Mitte", committees: ["Haushalt"] });
+    check("(a) Profil OHNE Marker -> isProtectedTenant true", (await provisioning.isProtectedTenant(BESTAND)) === true);
+    const rpBestand = await provisioning.provisionTenant({ ...specA, id: BESTAND, email: "bestand@synthetic.test" });
+    check("(a) Provisionierung über Bestandsprofil verweigert (protected-tenant)", rpBestand.ok === false && rpBestand.reason === "protected-tenant");
+    const rdBestand = await provisioning.deactivateTenant(BESTAND);
+    check("(a) Deaktivierung des Bestandsmandanten verweigert", rdBestand.ok === false && rdBestand.reason === "protected-tenant");
+    const rtBestand = await provisioning.teardownTenant(BESTAND);
+    check("(a) Löschung des Bestandsmandanten verweigert", rtBestand.ok === false && rtBestand.reason === "protected-tenant");
+    const bestandAfter = await storage.getProfile(BESTAND);
+    check("(a) Bestandsprofil nach allen Verweigerungen unverändert vorhanden (kein Account angelegt)",
+      Boolean(bestandAfter) && bestandAfter.provisionedBy === undefined && (await countUsers(BESTAND)) === 0);
+    // Auch ein Auth-Konto OHNE Profil ist Bestand -> geschützt.
+    await accounts.createUser({ email: "nur-auth@synthetic.test", name: "Nur Auth", role: "abgeordneter", password: "test-pass-000", politicianId: "tenant-nur-auth" });
+    check("(a) Auth-Konto ohne Profil -> geschützt", (await provisioning.isProtectedTenant("tenant-nur-auth")) === true);
+
+    // (b) Selbst provisionierter Mandant (mit Marker) ist NICHT geschützt:
+    //     idempotentes Update und Teardown sind erlaubt.
+    const specAlpha = {
+      id: TENANT_ALPHA, email: "alpha@synthetic.test", name: testPoliticianOne.fullName,
+      password: "test-pass-alpha", party: testPoliticianOne.party, parliamentType: testPoliticianOne.parliamentType,
+      state: testPoliticianOne.state, constituency: testPoliticianOne.constituency,
+      committees: testPoliticianOne.committees, focusTopics: testPoliticianOne.focusTopics
+    };
+    const rAlpha1 = await provisioning.provisionTenant(specAlpha);
+    check("(b) tenant-alpha provisioniert, Profil trägt PROVISIONING_MARKER",
+      rAlpha1.ok === true && (await storage.getProfile(TENANT_ALPHA)).provisionedBy === provisioning.PROVISIONING_MARKER);
+    check("(b) selbst provisionierter Mandant ist NICHT geschützt", (await provisioning.isProtectedTenant(TENANT_ALPHA)) === false);
+    const rAlpha2 = await provisioning.provisionTenant(specAlpha);
+    check("(b) idempotentes Update erlaubt (updated, keine Dublette)",
+      rAlpha2.ok === true && rAlpha2.updated === true && (await countUsers(TENANT_ALPHA)) === 1 && (await countProfiles(TENANT_ALPHA)) === 1);
+
+    // (c) Betreiber-Sperrliste per Env (HELMUT_PROTECTED_TENANT_IDS) schützt auch frische ids.
+    process.env.HELMUT_PROTECTED_TENANT_IDS = "tenant-gesperrt";
+    check("(c) Env-gelistete id ist geschützt", (await provisioning.isProtectedTenant("tenant-gesperrt")) === true);
+    const rGesperrt = await provisioning.provisionTenant({ ...specA, id: "tenant-gesperrt", email: "gesperrt@synthetic.test" });
+    check("(c) Provisionierung der Env-gesperrten id verweigert (protected-tenant)", rGesperrt.ok === false && rGesperrt.reason === "protected-tenant");
+    delete process.env.HELMUT_PROTECTED_TENANT_IDS;
+    check("(c) ohne Env-Eintrag ist dieselbe (frische) id wieder erlaubt", (await provisioning.isProtectedTenant("tenant-gesperrt")) === false);
+
+    // (d) Teardown ist strikt mandantsgescoped: tenant-alpha entfernen berührt
+    //     das vorbestehende tenant-beta-Profil NICHT.
+    await storage.saveProfile({ ...testPoliticianTwo, id: TENANT_BETA });
+    const rtAlpha = await provisioning.teardownTenant(TENANT_ALPHA);
+    check("(d) Teardown des selbst provisionierten tenant-alpha erlaubt (0 Nutzer, 0 Profil)",
+      rtAlpha.ok === true && (await countUsers(TENANT_ALPHA)) === 0 && (await countProfiles(TENANT_ALPHA)) === 0);
+    const betaAfter = await storage.getProfile(TENANT_BETA);
+    check("(d) tenant-beta-Profil bleibt nach Alpha-Teardown vollständig erhalten",
+      Boolean(betaAfter) && betaAfter.fullName === testPoliticianTwo.fullName && betaAfter.party === testPoliticianTwo.party);
 
     // ── 7) DEAKTIVIERUNG isoliert: A deaktiviert, B unberührt ──────────────────
     const rDeact = await provisioning.deactivateTenant(A);
@@ -133,7 +177,7 @@ async function countProfiles(id) {
     await provisioning.teardownTenant("raw-test-synthetic");
     const mainAfter = await storage.readStore("main");
     const rawIds = (mainAfter.rawItems || []).map((r) => r.id);
-    check("Teardown erhält FREMDES Personen-Rohitem (kein Kollateralschaden an cem/anderen)",
+    check("Teardown erhält FREMDES Personen-Rohitem (kein Kollateralschaden an anderen Mandanten)",
       rawIds.includes("raw-person-foreign"), JSON.stringify(rawIds));
     check("Teardown entfernt das EIGENE Rohitem des Mandanten", !rawIds.includes("raw-own"));
 

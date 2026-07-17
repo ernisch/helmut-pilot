@@ -105,7 +105,7 @@ in diesem Dokument als Plan — der Code kommt in späteren, kleinen Commits.
    bleibt als Fallback erhalten, bis mehrere Wochen stabil.
 6. **Aufräumen (späterer Commit, nicht Teil des Cut-Over):** erst wenn V3 dauerhaft
    trägt, toten Code + Hardcodes entfernen (`scoring.ts`, `briefingEngine.ts`,
-   `mockData.ts`, `types.ts`, `prompts.ts`, Cem-Ince-Hardcodes, Doppel-Scoring).
+   `mockData.ts`, `types.ts`, `prompts.ts`, Pilotmandanten-Hardcodes, Doppel-Scoring).
 
 **Not-Aus (jederzeit):** jedes Flag einzeln auf AUS. Reihenfolge im Zweifel:
 `CANARY_PERCENT=0` (Nutzer sofort zurück auf V2) → `READ_THROUGH` aus →

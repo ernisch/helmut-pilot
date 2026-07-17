@@ -5196,7 +5196,7 @@ async function handleDebugRequest(request, response, url) {
         status: "neu",
         understanding_status: "complete",
         mentioned_people: [],
-        mentioned_mps: ["Hubertus Heil"],
+        mentioned_mps: ["Test Politician One"],
         mentioned_parties: ["SPD", "Gruene", "CDU"],
         mentioned_committees: ["Ausschuss fuer Arbeit und Soziales"],
         mentioned_ministries: ["BMAS"],

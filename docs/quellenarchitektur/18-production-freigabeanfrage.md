@@ -16,8 +16,8 @@ Deployment, Limits, Smoke-Tests, Stop-Bedingungen und Rollback.
 |---|---|---|
 | 1 PARDOK-Stabilität | 5 DB-freie Läufe je Quelle: externe-ID-Menge identisch, 0 neue/verschwundene Dokumente, geparst be=800·5/bb=816·5, Dokumentart-Verteilung stabil, Titel/Datum 100%, 0 Parserfehler, Puffer ≤14 KB | `pardok-parser.yml` Run 29318834005 |
 | 2 Shadow-Ingest | isolierte Kette (Normalisierung→Dedup/Fundstellen→Klassifikation Ebene/Geo→KO-Input→Kosten=0) grün; amtliche PARDOK-Ebene quelle-autoritativ; Isolation bestätigt | `node scripts/shadow-ingest-test.js` |
-| 3 Profile/Pakete | Bundestag=54 Wege·nur bund-basis; Cem(cem-ince)=5 Pakete·145 Wege·persönliches Paket; Berlin/Brandenburg Landtag=bund-basis aktiv(54)+Landespaket `requested_unsupplied`; kein Profil=nur 5 always_on-Kernwege | `node scripts/profile-packages-test.js` |
-| 4 Alt/Neu (Cem-Schutz) | `compareSupply`/`validateMigration`: keine Regression, Orphans erklärt, source_names-Mapping konsistent | `node scripts/sprint6-cem-migration-test.js` |
+| 3 Profile/Pakete | Bundestag=54 Wege·nur bund-basis; Pilot(`<pilot-mandats-id>`)=5 Pakete·145 Wege·persönliches Paket; Berlin/Brandenburg Landtag=bund-basis aktiv(54)+Landespaket `requested_unsupplied`; kein Profil=nur 5 always_on-Kernwege | `node scripts/profile-packages-test.js` |
+| 4 Alt/Neu (Pilot-Schutz) | `compareSupply`/`validateMigration`: keine Regression, Orphans erklärt, source_names-Mapping konsistent | `node scripts/sprint6-migration-test.js` |
 | 5 Watchdog/Kosten | 10 Achsen + Kostenattribution + ehrliche „nicht verfügbar"-Flags | `node scripts/quality-watchdog-test.js` + read-only Prod-Snapshot (unten) |
 | 6 Adversarial | 16 Angriffs-/Ausfall-Szenarien alle grün — Architektur hält stand | `node scripts/adversarial-gesamttest.js` |
 
@@ -25,7 +25,7 @@ Deployment, Limits, Smoke-Tests, Stop-Bedingungen und Rollback.
 
 ### Realer Production-Ist-Zustand (read-only gemessen)
 - `raw_documents` **5096** über **123** Quellen; **2280** in 7 Tagen; jüngstes = heute → **Crawl läuft, frisch**.
-- `knowledge_objects` **247**; `mandate_profiles` **1** (Cem).
+- `knowledge_objects` **247**; `mandate_profiles` **1** (der Pilotmandant).
 - `llm_usage` **0 Zeilen** → gemessene Kosten **$0** (Attributions-Spalten `source_id/package_id/vorgang_id/knowledge_object_id` existieren, aber noch ohne Daten) → Watchdog zeigt Kosten **ehrlich „noch keine Daten"**.
 - `document_findings` **existiert nicht** → Dedup-Findings-Migration ist **noch nicht angewendet**.
 - Die 6 BE/BB-Wege + `rp-be-plenum`/`rp-bb-plenum` sind `needs_review`/`manual`/inaktiv.
@@ -33,16 +33,16 @@ Deployment, Limits, Smoke-Tests, Stop-Bedingungen und Rollback.
 
 ---
 
-## Cem-Schutz (durchgehende Invariante über alle Schritte)
-- Cem ist voll versorgt (Bund Basis + Arbeit&Soziales + Die Linke + Regional NDS + persönliches Paket) → **145** aktive Abrufwege, unverändert.
-- Kein Schritt entfernt oder ersetzt eine Cem-Bundesquelle. `compareSupply` läuft in Schritt 1 als Regressionswächter (verdict muss `keine_verschlechterung` sein) → sonst **Stop**.
+## Pilot-Schutz (durchgehende Invariante über alle Schritte)
+- Der Pilotmandant ist voll versorgt (Bund Basis + Arbeit&Soziales + Die Linke + Regional NDS + persönliches Paket) → **145** aktive Abrufwege, unverändert.
+- Kein Schritt entfernt oder ersetzt eine Bundesquelle des Pilotmandanten. `compareSupply` läuft in Schritt 1 als Regressionswächter (verdict muss `keine_verschlechterung` sein) → sonst **Stop**.
 - Bundespolitik bleibt für **alle** Profile sichtbar (5 always_on-Kernwege + bund-basis).
 
 ## Landtagsprofil-Ergebnisse (bewiesen, Phase 3)
 - **Berlin-Landtag**: required = bund-basis + berlin-basis; bund-basis aktiv (54 Wege), berlin-basis = `requested_unsupplied` bis BE-Quellen aktiv. Landespolitik erscheint erst nach Schritt 3.
 - **Brandenburg-Landtag**: analog (brandenburg-basis `requested_unsupplied`).
 - **Reines Bundestagsprofil**: nur bund-basis (54), keine Landes-/Sozial-/Regionalquellen.
-- **Cem-vergleichbar**: 5 Pakete, 145 Wege (Spezialfall voll belegter Dimensionen).
+- **Pilot-vergleichbar**: 5 Pakete, 145 Wege (Spezialfall voll belegter Dimensionen).
 - **Keine Filterblase**: Landtagsprofile behalten die Bundes-Kernwege; Landesvorgänge gehen nicht im Bundesrauschen verloren (getrennte Ebenen-Klassifikation land/bund/unknown).
 
 ---
@@ -67,7 +67,7 @@ Reihenfolge strikt. Jeder Schritt ist eine **eigene Freigabeentscheidung**.
 - **Wirkung:** Lage/Radar/Helmut/Büro bleiben **byte-identisch** (Read-Pfade lesen weiter wie bisher; nur Schatten-Berechnung).
 - **Crawl-Frequenz:** unverändert (bestehende Crons 04:00/16:00/20:00 UTC). **Keine Cron-Änderung.**
 - **Dokumentlimit/Kosten:** kein zusätzlicher LLM-Aufwand über den Bestand hinaus; Tages-Cap `HELMUT_MAX_LLM_CALLS_PER_DAY` (Default 20) bleibt fail-closed.
-- **Smoke-Tests:** nach 1 Crawl-Zyklus read-only: `raw_documents`-Delta plausibel; `cem-shadow-compare`-Verdict = `keine_verschlechterung`; Lage/Radar-Payload-Hash unverändert.
+- **Smoke-Tests:** nach 1 Crawl-Zyklus read-only: `raw_documents`-Delta plausibel; `supply-shadow-compare`-Verdict = `keine_verschlechterung`; Lage/Radar-Payload-Hash unverändert.
 - **Stop-Bedingung:** compareSupply meldet `regression`; Lage/Radar-Payload weicht ab; Kosten steigen unerwartet.
 - **Rollback:** Flags zurück auf AUS (inert; Verhalten sofort byte-identisch zum Alt-Zustand). Kein Datenrückbau nötig (V3-Schatten stört Blob/Briefing nicht).
 
@@ -86,15 +86,15 @@ Reihenfolge strikt. Jeder Schritt ist eine **eigene Freigabeentscheidung**.
 - **Dokumentlimit:** je Weg `max_items` (RSS/GN 20, Open-Data 800); Gesamt-Beobachtung über Watchdog.
 - **Kostenlimit:** Understanding der neuen Dokumente kostet LLM — Tages-Cap fail-closed; empfohlene Obergrenze für die ersten Tage als expliziter Wert festlegen (**Kostenrisiko → Rückfrage**, falls > Cap).
 - **Wirkung Profile:** Berlin/Brandenburg-Landtagsprofile wechseln berlin-basis/brandenburg-basis von `requested_unsupplied` → aktiv (Landespolitik wird sichtbar). Bundespolitik bleibt sichtbar.
-- **Smoke-Tests:** `computeGlobalActivation` mit Berlin/Brandenburg-Profil → Landespaket aktiv; Landesdokumente erscheinen; Cem unverändert 145 Wege.
-- **Stop-Bedingung:** Cem verliert Wege; Bundespolitik verschwindet für Landtagsprofile; Watchdog meldet Paketunterversorgung/Kostenanstieg.
+- **Smoke-Tests:** `computeGlobalActivation` mit Berlin/Brandenburg-Profil → Landespaket aktiv; Landesdokumente erscheinen; Pilotmandant unverändert 145 Wege.
+- **Stop-Bedingung:** Pilotmandant verliert Wege; Bundespolitik verschwindet für Landtagsprofile; Watchdog meldet Paketunterversorgung/Kostenanstieg.
 - **Rollback:** Wege zurück auf `manual`/`needs_review` (Referenzzählung entzieht die Aktivierung sofort; keine Datenlöschung).
 
 ### Schritt E — Sichtbarer Cutover (Scoring/Neu-Read scharf)
 - **Was:** `HELMUT_SCORING_MODE=on` (Lage/Radar/Helmut ranken nach den neuen Dimensionen); optional `HELMUT_PROFILE_DB_MODE=1`. **Sichtbarer Cutover + Flag-Änderung → freigabepflichtig.**
 - **Vorbedingung:** Schritte B–D mehrere Tage grün im Shadow; compareSupply dauerhaft `keine_verschlechterung`.
-- **Smoke-Tests:** Lage/Radar/Helmut liefern für Cem gleichwertige/bessere Ergebnisse (mehr Dokumente gelten **nicht** automatisch als besser — Bewertung an Relevanz/Handlungsfähigkeit); drei Leerzustände korrekt.
-- **Stop-Bedingung:** Regression in Cem-Briefingqualität/Relevanz; Laufzeit/Kosten über Limit.
+- **Smoke-Tests:** Lage/Radar/Helmut liefern für den Pilotmandanten gleichwertige/bessere Ergebnisse (mehr Dokumente gelten **nicht** automatisch als besser — Bewertung an Relevanz/Handlungsfähigkeit); drei Leerzustände korrekt.
+- **Stop-Bedingung:** Regression in Briefingqualität/Relevanz des Piloten; Laufzeit/Kosten über Limit.
 - **Rollback:** `HELMUT_SCORING_MODE=shadow`/`off` (sofort byte-identisch zum Alt-Ranking).
 
 ---
@@ -115,7 +115,7 @@ Reihenfolge strikt. Jeder Schritt ist eine **eigene Freigabeentscheidung**.
 - Zusatzkosten: Extraktion/Dedup/Klassifikation **0 €** (LLM-frei). Reale KI-Kosten entstehen nur durch Understanding der **neuen** BE/BB-Dokumente in Schritt D — durch Tages-Cap fail-closed gedeckelt.
 
 ## Globale Stop-Bedingungen (jederzeit)
-Sofort stoppen + Rollback des jeweiligen Schritts, wenn: compareSupply `regression` · Cem verliert Abrufwege · Bundespolitik verschwindet für ein Profil · unerwarteter Kostenanstieg · Parser-/Pipeline-Fehlerquote steigt · Tenant-/Shadow-Leck im sichtbaren Nutzerpfad · eine erwartete Menge/Aktivierung weicht ab.
+Sofort stoppen + Rollback des jeweiligen Schritts, wenn: compareSupply `regression` · der Pilotmandant verliert Abrufwege · Bundespolitik verschwindet für ein Profil · unerwarteter Kostenanstieg · Parser-/Pipeline-Fehlerquote steigt · Tenant-/Shadow-Leck im sichtbaren Nutzerpfad · eine erwartete Menge/Aktivierung weicht ab.
 
 ## Vollständiger Rollback (Gesamt)
 Rückwärts E→A: Flags AUS (sofort byte-identisch) → Wege auf manual → Code-Revert PARDOK → Flags AUS → Migration-Rollbacks (jede Migration hat `_rollback.sql`, Rollback-Symmetrie im adversarialen Test bestätigt). Kein Datenverlust an bestehenden Beständen.

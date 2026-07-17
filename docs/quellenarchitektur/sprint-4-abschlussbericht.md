@@ -48,9 +48,9 @@ profile-db 44/44, supply-matrix 20/20, drei-profile 93/93, p1 **322/322**.
 ### Nachgezogene Verify-Korrekturen (adversarialer Verify-Workflow)
 Nach Sprint 4 fand der adversariale Verify-Workflow vier echte, kleine Befunde — alle behoben und
 getestet:
-1. **Totes Paket `profil-cem-ince`** (mittel): wurde von `resolveProfilePackages` nie erzeugt →
+1. **Totes Paket `profil-<pilot-mandats-id>`** (mittel): wurde von `resolveProfilePackages` nie erzeugt →
    unerreichbar. Jetzt **an die Pilot-Profil-ID gebunden** (`PERSONAL_PACKAGE_BY_PROFILE`), damit die
-   Referenzzählung es aktivieren kann. Cems reales Profil (`cem-ince`) hat damit **5 Pakete / 145
+   Referenzzählung es aktivieren kann. Das reale Profil des Pilotmandanten (`<pilot-mandats-id>`) hat damit **5 Pakete / 145
    Abrufwege**; ein gleichnamiges Profil mit anderer ID bekommt es **nicht**.
 2. **`profileCompleteness` (config)** prüfte nur `state`, `validateProfile` aber `state` **oder**
    `bundesland` → Landtagsprofile aus `mandate_profiles` (Feld `bundesland`) wurden fälschlich als

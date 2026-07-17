@@ -4,7 +4,7 @@ Stand: read-only reproduziert aus Produktionsdaten. **Keine** Production-Änderu
 kein Deploy, keine Quellenaktivierung. Der Fix liegt ausschließlich im Feature-Branch.
 
 ## Genaue Ursache
-Der Ausschuss-Reiter zeigte für Cem (Ausschuss „Arbeit und Soziales") nur **1** Vorgang, obwohl
+Der Ausschuss-Reiter zeigte für den Pilotmandanten (Ausschuss „Arbeit und Soziales") nur **1** Vorgang, obwohl
 19 echte, strukturell verankerte Ausschuss-Signale vorlagen. Ursache: `radarState.js` verglich
 den Ausschuss mit rohem `slug()` (`"arbeit und soziales"` ≠ `"ausschuss fuer arbeit und
 soziales"`), während das Matching (`matching.js`) für die Erzeugung der `matched_features`
@@ -33,8 +33,8 @@ entwicklung`, `recht`↔`menschenrechte`, `digitales`↔`digitales und verkehr`,
 
 ## Wichtige Design-Entscheidung: Ranking-Neutralität
 Ein erster Korrekturversuch (Kollisionsfix direkt in `normalizeCommittee`) wurde **verworfen**,
-weil er nachweislich Ranking-Nebenwirkungen hatte: „Neue Dynamiken" verschob sich für Cem von
-**7 auf 8** Signale — obwohl Cems eigener Ausschuss („Arbeit und Soziales") von keiner der 6
+weil er nachweislich Ranking-Nebenwirkungen hatte: „Neue Dynamiken" verschob sich für den Piloten von
+**7 auf 8** Signale — obwohl der eigene Ausschuss des Piloten („Arbeit und Soziales") von keiner der 6
 Kollisionen betroffen ist. Ursache: `normalizeCommittee`/`slugCommittee` speisen über
 `knowledgeObjectWeightedTokens`/`profileWeightedTokens` den geteilten Feature-Vektor-Raum
 (Kosinus-Ähnlichkeit), der den Top-50-Relevanz-Cut in `decideForUser` bestimmt — eine Änderung
@@ -67,7 +67,7 @@ oder den Ausschuss-Funktionen — strukturell unberührt.
 `vg-fcbc7c45c29ae0de58406c2e`, `vg-gewerkschaft`, `vg-renteneintrittsmodelle`, `vg-teilhabe`,
 `vg-zuzahlungsfalle`, `vg-deutsche`. Alle tragen „Ausschuss für Arbeit und Soziales" bzw.
 „Bundestagsausschuss für Arbeit und Soziales" **strukturell** in `ko.ausschuesse` (nicht nur
-`mentioned_committees`), meist mit BMAS als Akteur, Themen genau in Cems Fokus (Bürgergeld,
+`mentioned_committees`), meist mit BMAS als Akteur, Themen genau im Fokus des Piloten (Bürgergeld,
 Rente, Arbeitsmarkt, Tarifbindung, Arbeitsschutz, Teilhabe/Inklusion).
 
 **Gruppe 2 — naheliegende Kurzform, thematisch eindeutig Bund (1 von 19):** `vg-gesundheit`
@@ -86,7 +86,7 @@ Gremium, nicht der Bundestagsausschuss).
 ein **bereits bestehender** Eintrag im zentralen Synonym-Katalog (nicht neu eingeführt), der
 schon heute von `profile-packages.js` (Paketaktivierung) und der Matching-Ähnlichkeitsbewertung
 für ALLE Profile verwendet wird — das Ausschuss-Datenmodell (`ko.ausschuesse`) trägt keine
-Ebenen-Kennzeichnung (Bund/Land/Kommune), die eine allgemeingültige, nicht-Cem-spezifische
+Ebenen-Kennzeichnung (Bund/Land/Kommune), die eine allgemeingültige, nicht pilotspezifische
 Unterscheidung erlauben würde. Eine Änderung dieser Synonymbreite ist eine eigene, größere
 Entscheidung mit Auswirkung auf alle Profile/Pakete — außerhalb des heutigen Auftrags (Radar an
 zentrale Normalisierung anbinden). Flagge für eine mögliche spätere, separate Verbesserung

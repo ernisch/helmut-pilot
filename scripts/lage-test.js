@@ -408,12 +408,12 @@ async function run() {
   {
     const beforeStore = process.env.HELMUT_V3_STORE; delete process.env.HELMUT_V3_STORE;
     const beforeDemo = process.env.HELMUT_LAGE_DEMO; delete process.env.HELMUT_LAGE_DEMO;
-    const res = await lage.buildLageBriefing({ id: "cem-ince", fullName: "Cem Ince" }, {});
+    const res = await lage.buildLageBriefing({ id: "test-politician-one", fullName: "Test Politician One" }, {});
     ok("V3 aus -> available:false (kein Fake)", res.available === false && res.reason === "v3-disabled");
     ok("V3 aus -> keine Absaetze", Array.isArray(res.paragraphs) && res.paragraphs.length === 0);
 
     process.env.HELMUT_LAGE_DEMO = "1";
-    const demo = await lage.buildLageBriefing({ id: "cem-ince", fullName: "Cem Ince" }, {});
+    const demo = await lage.buildLageBriefing({ id: "test-politician-one", fullName: "Test Politician One" }, {});
     ok("Demo-Flag -> demo:true, available:true", demo.demo === true && demo.available === true && demo.paragraphs.length > 0);
     if (beforeStore !== undefined) process.env.HELMUT_V3_STORE = beforeStore; else delete process.env.HELMUT_V3_STORE;
     if (beforeDemo !== undefined) process.env.HELMUT_LAGE_DEMO = beforeDemo; else delete process.env.HELMUT_LAGE_DEMO;

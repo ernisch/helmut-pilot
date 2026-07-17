@@ -63,12 +63,12 @@
 | `main` | crawlRuns (n=20) | **2026-07-12 07:43** | ~2,4h | **FRISCH** |
 | `main` | lageChecks (n≈7) | 2026-06-30 10:01 | ~12 T | (global, unbenutzt) |
 | `main` | pipelineDebugReports (n=4) | 2026-06-30 16:02 | ~12 T | TOT |
-| `main-p-cem-ince` | lageChecks (n=10) | **2026-07-12 10:00** | ~0h | **FRISCH** |
-| `main-p-cem-ince` | pipelineDebugReports (n=2) | **2026-07-06 15:24** | **~139h** | **TOT ⚠️** |
-| `main-p-cem-ince` | crawlRuns | — | (n=0) | (crawlRuns liegen global in `main`) |
+| `main-p-<pilot-mandats-id>` | lageChecks (n=10) | **2026-07-12 10:00** | ~0h | **FRISCH** |
+| `main-p-<pilot-mandats-id>` | pipelineDebugReports (n=2) | **2026-07-06 15:24** | **~139h** | **TOT ⚠️** |
+| `main-p-<pilot-mandats-id>` | crawlRuns | — | (n=0) | (crawlRuns liegen global in `main`) |
 
 **Ursachenkette (verifiziert):**
-1. `buildHealthReport` liest `pipelineH = hoursSince(getLatestPipelineDebugReport('cem-ince'))` = **~139h** (server.js:2573/2588).
+1. `buildHealthReport` liest `pipelineH = hoursSince(getLatestPipelineDebugReport('<pilot-mandats-id>'))` = **~139h** (server.js:2573/2588).
 2. Schwelle `pipelineH != null && pipelineH > 28` → `problems.push("Pipeline seit 139h nicht durchgelaufen")` (server.js:2607) → `ok=false` → WhatsApp „⚠️ Achtung".
 3. **Aber:** `pipelineDebugReports` wird nur von `savePipelineDebugReport` geschrieben, und das hat **null Aufrufer** (bestätigt: nur Definition storage.js:1783 + Export 2601). Der letzte Eintrag (07-06) stammt aus dem abgeschalteten V2-Briefing-Lauf. Der Code-Kommentar server.js:2605 („wird am Ende jedes Briefing-Laufs geschrieben") ist **veraltet/falsch**.
 4. `/api/cron/pipeline` fährt `runSourceCrawl` → schreibt `saveCrawlRun` (frisch) + KOs + Decisions, aber **nie** einen pipelineDebugReport.
@@ -142,5 +142,5 @@ Als „Pipeline-durchgelaufen"-Signal **`crawlRuns[0].createdAt` benutzen** (leb
 ## 8. Tests, Belege, Grenzen
 
 **Ausgeführt (offline, grün):** `watchdog-eval-test.js` 14/14, `splash-boot-test.js` 29/29, `admin-overview-test.js` 104/104, `current-helmut-state-test.js` 79/79.
-**Abfragegrundlage:** Prod-Supabase `ddckuvvpcytqbyfmbvie`, nur SELECT (helmut_store-Blobs + V3-Tabellen). Datenstand 2026-07-12. Verwendetes Profil: cem-ince.
+**Abfragegrundlage:** Prod-Supabase `ddckuvvpcytqbyfmbvie`, nur SELECT (helmut_store-Blobs + V3-Tabellen). Datenstand 2026-07-12. Verwendetes Profil: `<pilot-mandats-id>`.
 **Grenzen / VERMUTUNG:** `savePipelineDebugReport`-Aufruferlosigkeit ist per Repo-Grep belegt; ob nicht ein externer/manueller Pfad ihn doch triggert, ist unwahrscheinlich, aber read-only nicht 100% ausschließbar. Die entworfenen Schwellenwerte (§4) sind Design-Vorschläge, nicht empirisch kalibriert.

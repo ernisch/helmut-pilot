@@ -25,7 +25,7 @@ read-only).
 **latente** Blob-Leser ohne `assertTenant`; (b) Schreib-Guard prüfte nur user_id-
 Präsenz, nicht Herkunft; (c) **kein** atomarer per-Mandant-Kostendeckel (nur globaler);
 (d) **kein** idempotenter Provisionierungsprozess; (e) offene Security-Advisor-Punkte
-(mutable search_path ×5, REVOKEs); (f) Crons bedienen per Default nur cem-ince.
+(mutable search_path ×5, REVOKEs); (f) Crons bedienen per Default nur den Pilotmandanten.
 
 ---
 
@@ -54,10 +54,11 @@ operative Tabellen (Deny-all außer service_role, **beabsichtigt**).
 | pipeline_locks | 0 | — | keine (Deny) | RPC | operativ | service_role-only |
 | geographies, electoral_districts, political_entities, publishers, source_packages, package_paths, retrieval_paths, path_expected_* | Konfig | — | keine (Deny) | R | global | Konfiguration |
 
-**Tenant-Identitäten (verifiziert):** `profiles` = cem-ince, james-brown, angela-merkel;
-`mandate_profiles` = cem-ince, james-brown; `helmut_store` = main, main-auth,
-main-p-cem-ince, main-p-james-brown. → **cem-ince** = echter Pilot, **james-brown** =
-geschütztes Bestandsprofil, **angela-merkel** = Legacy-Demo.
+**Tenant-Identitäten (verifiziert):** `profiles` = `<pilot-mandats-id>`, `<demo-mandant-b>`,
+`<demo-mandant-c>`; `mandate_profiles` = `<pilot-mandats-id>`, `<demo-mandant-b>`;
+`helmut_store` = main, main-auth, main-p-`<pilot-mandats-id>`, main-p-`<demo-mandant-b>`.
+→ **`<pilot-mandats-id>`** = echter Pilot, **`<demo-mandant-b>`** = geschütztes
+Bestandsprofil, **`<demo-mandant-c>`** = Legacy-Demo.
 
 ---
 
@@ -102,20 +103,28 @@ Query-`politicianId`/`profileId` ist nur **Auswahl** und wird durch `pickPolitic
 
 ---
 
-## 4. Cron-Prozesse & Hintergrundjobs — „bedienen sie nur cem?"
+## 4. Cron-Prozesse & Hintergrundjobs — „bedienen sie nur den Pilotmandanten?"
 
 **JA, per Default.** Mechanismus: session-lose Crons haben `authUser === null` →
-server.js:319-321 setzt `politicianId = cemInceProfile.id`. **Matching + Decisions**
-laufen in crawl/pipeline/lage-check **nur für cem** (scheduler.js:315/322/445/448).
+server.js:319-321 setzt `politicianId` auf die ID des (damals) hartkodierten
+Pilotprofils. **Matching + Decisions** laufen in crawl/pipeline/lage-check
+**nur für den Pilotmandanten** (scheduler.js:315/322/445/448).
+
+> **Update 2026-07-17:** Der Code-Fallback auf ein hartkodiertes Pilotprofil ist
+> entfernt. Crons laden ihre Mandate jetzt aus der DB: ohne
+> `HELMUT_CRON_MULTI_TENANT` (Default AUS) nur das über `HELMUT_PILOT_TENANT_ID`
+> konfigurierte Mandat, fail-closed (`skipped`) ohne Wert — siehe
+> `docs/multitenancy-pilot-neutralisierung.md`. Die folgende Tabelle beschreibt
+> den verifizierten Stand vom 2026-07-16.
 
 | Cron | Scope |
 |---|---|
-| `/api/cron/crawl`, `/api/cron/pipeline` | Understanding global; Matching+Decision **nur cem** |
-| `/api/cron/lage-check` | **hart cem** (Fold-Matching/Decision + Push nur cem) |
-| `/api/cron/morning-briefing` | **nur cem** (Loop über alle Profile nur mit Flag `HELMUT_MORNING_PUSH_ALL_PROFILES=1`, Default AUS) |
+| `/api/cron/crawl`, `/api/cron/pipeline` | Understanding global; Matching+Decision **nur Pilotmandant** |
+| `/api/cron/lage-check` | **hart Pilotmandant** (Fold-Matching/Decision + Push nur Pilot) |
+| `/api/cron/morning-briefing` | **nur Pilotmandant** (Loop über alle Profile nur mit Flag `HELMUT_MORNING_PUSH_ALL_PROFILES=1`, Default AUS) |
 | `/api/cron/lage-briefing` | **echt multi-tenant** (Loop `listProfiles()`) |
 | `/api/cron/understanding` | global/mandantenneutral |
-| `/api/cron/health-report` | cem (Betreiber-Monitoring) |
+| `/api/cron/health-report` | Pilotmandant (Betreiber-Monitoring) |
 
 **Folge für einen zweiten Mandanten:** bekäme verstandenes Rohwissen + Lage-Briefing-
 Vorwärmung, aber **keine** personalisierte Priorisierung/Decisions/Pushes. →
@@ -163,6 +172,6 @@ bewusst mandantenlos (globaler Deckel). Klassifikation im Code: `isSharedGlobalC
 | kein per-Mandant-Kostendeckel | ein Mandant kann Budget monopolisieren | **behoben** (atomar, Default AUS, freigabepflichtig scharf) |
 | kein idempotentes Provisioning | halbe/doppelte Accounts | **behoben** (provisioning.js + CLI) |
 | Advisor: search_path/REVOKE | Priv-Esc-Vektor / Korpus-Abzug bei aktiver Policy | **vorbereitet** (Migration 20260721, freigabepflichtig) |
-| Crons nur cem | zweiter Mandant unterversorgt | **dokumentiert** (Freigabepunkt, Cron-Umbau nicht in Sprint 1) |
+| Crons nur Pilotmandant | zweiter Mandant unterversorgt | **dokumentiert** (Freigabepunkt, Cron-Umbau nicht in Sprint 1; inzwischen umgesetzt — Mandate aus der DB, Multi-Tenant hinter `HELMUT_CRON_MULTI_TENANT`) |
 | RLS inert (JWT tot) | keine DB-seitige Durchsetzung | **dokumentiert** (echtes GoTrue-Auth = eigener großer Schritt) |
 | main-auth-Blob Single-Point | alle Konten in einer Zeile | **dokumentiert** (Folgeschritt) |

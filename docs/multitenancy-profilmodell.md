@@ -107,5 +107,5 @@ dieses Sprints — Spalten löschen ist eine Schema-Änderung, die hier nicht n�
 ---
 
 *Nächster Schritt: Phase 3 — `storage.getProfile`/`saveProfile` auf diese Tabelle umstellen,
-mit Code-Fallback (`cemInceProfile`) bis alle Tests grün sind. Production-Migration erst nach
+mit Code-Fallback (dem damals hartkodierten Pilot-Vollprofil) bis alle Tests grün sind. Production-Migration erst nach
 Freigabe.*

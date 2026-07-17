@@ -1,73 +1,89 @@
 "use strict";
 
-// Tests fuer Sprint 6 Stufe 1: Migrations-Mapper-Validierung + Cem Alt-gegen-Neu-Vergleich.
+// Tests fuer Sprint 6 Stufe 1: Migrations-Mapper-Validierung + Mandats-Alt-gegen-Neu-Vergleich.
 // Reine Offline-Tests (Fixtures + echter Katalog via buildCatalog/buildFullModel). Kein Netz,
-// kein DB-Write, kein Live-Crawl. Prueft: Coverage, Datenverlust-Erkennung, Orphan-Konsistenz,
-// erklaerte Konsolidierung vs. echte Regression, Shadow-Flag-Default.
+// kein DB-Write, kein Live-Crawl. Prueft: Coverage, Datenverlust-Erkennung, Orphan-Konsistenz
+// (musterbasiert, KEINE Mandanten-IDs im Code), erklaerte Konsolidierung vs. echte Regression,
+// Shadow-Flag-Default. Alle Mandats-Testdaten sind KLAR KUENSTLICH (fixtures/test-profiles).
 
-const { buildCatalog, ORPHAN_CLASSIFICATION } = require("../lib/helmut/quellenarchitektur/catalog");
+const { buildCatalog, EXPLICIT_ORPHAN_CLASSIFICATION, classifyOrphanId, classifyOrphans } = require("../lib/helmut/quellenarchitektur/catalog");
 const { buildFullModel } = require("../lib/helmut/quellenarchitektur");
 const pp = require("../lib/helmut/quellenarchitektur/profile-packages");
 const mm = require("../lib/helmut/quellenarchitektur/migration-mapper");
 const cs = require("../lib/helmut/quellenarchitektur/supply-shadow-compare");
+const { testPoliticianOne } = require("./fixtures/test-profiles");
 
 let pass = 0, fail = 0;
 function check(name, cond) { if (cond) { pass += 1; console.log(`PASS  ${name}`); } else { fail += 1; console.log(`FAIL  ${name}`); } }
 
 const cat = buildCatalog();
 
+console.log("== Orphan-Klassifikation: musterbasiert, kein Mandant im Code ==");
+check("'<id>-news-<suffix>' -> orphan_legacy (Muster)", classifyOrphanId("tenant-alpha-news-region") === "orphan_legacy");
+check("'test-…-news-<suffix>' -> orphan_test (Muster)", classifyOrphanId("test-politician-news-alt") === "orphan_test");
+check("'dip' -> active_uncatalogued (einziger expliziter Eintrag)", classifyOrphanId("dip") === "active_uncatalogued");
+check("Personenquelle selbst ('<id>-news') ist KEIN Orphan", classifyOrphanId("tenant-alpha-news") === null);
+check("EXPLICIT_ORPHAN_CLASSIFICATION enthaelt NUR dip", JSON.stringify(Object.keys(EXPLICIT_ORPHAN_CLASSIFICATION)) === JSON.stringify(["dip"]));
+check("classifyOrphans klassifiziert UEBERGEBENE IDs (+ explizite); Unbekanntes faellt raus", (() => {
+  const rows = classifyOrphans(["tenant-alpha-news-region", "test-politician-news-alt", "voellig-unbekannt"]);
+  return rows.length === 3
+    && rows.some((r) => r.legacy_source_id === "tenant-alpha-news-region" && r.classification === "orphan_legacy")
+    && rows.some((r) => r.legacy_source_id === "test-politician-news-alt" && r.classification === "orphan_test")
+    && rows.some((r) => r.legacy_source_id === "dip" && r.classification === "active_uncatalogued");
+})());
+check("classifyOrphans ohne Datenkontext: nur dip", (() => { const rows = classifyOrphans(); return rows.length === 1 && rows[0].legacy_source_id === "dip"; })());
+
 console.log("== Migrations-Mapper: Coverage (strukturell) ==");
-const vStruct = mm.validateMigration({ catalog: cat, orphanClassification: ORPHAN_CLASSIFICATION });
-check("145 Abrufwege (144 v1Sources + dip)", vStruct.counts.legacyIds === 145);
+const vStruct = mm.validateMigration({ catalog: cat });
+check("144 Abrufwege (143 v1Sources + dip)", vStruct.counts.legacyIds === 144);
 check("keine Quelle ohne Paketzuordnung (unmapped leer)", vStruct.counts.unmappedPackages === 0 && cat.unmapped.length === 0);
 check("ohne raw_documents: availability.observedSources=false (ehrlich, nichts erfunden)", vStruct.availability.observedSources === false);
 check("strukturell verdict=ok", vStruct.verdict === "ok");
 
 console.log("== Migrations-Mapper: Datenverlust-Erkennung (injizierte observed) ==");
 const observed = [
-  { source_id: "bundestag", source_name: "Deutscher Bundestag", count: 120 }, // gemappt
-  { source_id: "cem-ince-news-region", source_name: "Cem Ince", count: 8 },   // orphan_legacy
-  { source_id: "test-mdb-news-bmas-vorhaben", source_name: "Test", count: 0 },// orphan_test
-  { source_id: "geister-quelle-x", source_name: "Unbekannt", count: 42 }      // unerklärt + Docs!
+  { source_id: "bundestag", source_name: "Deutscher Bundestag", count: 120 },              // gemappt
+  { source_id: "tenant-alpha-news-region", source_name: "Test Politician One", count: 8 }, // orphan_legacy (Muster)
+  { source_id: "test-politician-news-alt", source_name: "Test", count: 0 },                // orphan_test (Muster)
+  { source_id: "geister-quelle-x", source_name: "Unbekannt", count: 42 }                   // unerklärt + Docs!
 ];
-const vObs = mm.validateMigration({ catalog: cat, orphanClassification: ORPHAN_CLASSIFICATION, observedSources: observed });
+const vObs = mm.validateMigration({ catalog: cat, observedSources: observed });
 check("availability.observedSources=true bei Injektion", vObs.availability.observedSources === true);
 check("gemappte Quelle erkannt (bundestag)", vObs.mappedObserved.some((m) => m.source_id === "bundestag"));
-check("orphan_legacy + orphan_test erkannt", vObs.counts.orphan === 2 && vObs.orphanObserved.some((o) => o.classification === "orphan_legacy") && vObs.orphanObserved.some((o) => o.classification === "orphan_test"));
+check("orphan_legacy + orphan_test erkannt (musterbasiert)", vObs.counts.orphan === 2 && vObs.orphanObserved.some((o) => o.classification === "orphan_legacy") && vObs.orphanObserved.some((o) => o.classification === "orphan_test"));
 check("unerklärte Quelle MIT Dokumenten -> verdict kritisch (Datenverlust-Risiko)", vObs.verdict === "kritisch" && vObs.counts.unexplainedWithDocs === 1);
 check("die unerklärte Quelle ist geister-quelle-x", vObs.unexplainedObserved.length === 1 && vObs.unexplainedObserved[0].source_id === "geister-quelle-x");
 
 console.log("== Migrations-Mapper: unerklärt OHNE Dokumente -> nur Warnung ==");
-const vWarn = mm.validateMigration({ catalog: cat, orphanClassification: ORPHAN_CLASSIFICATION, observedSources: [{ source_id: "leiche-ohne-docs", source_name: "X", count: 0 }] });
+const vWarn = mm.validateMigration({ catalog: cat, observedSources: [{ source_id: "leiche-ohne-docs", source_name: "X", count: 0 }] });
 check("unerklärt ohne Dokumente -> verdict warnungen (kein Datenverlust)", vWarn.verdict === "warnungen" && vWarn.counts.unexplainedWithDocs === 0);
 
 console.log("== Migrations-Mapper: alles erklärt -> ok ==");
-const vOk = mm.validateMigration({ catalog: cat, orphanClassification: ORPHAN_CLASSIFICATION, observedSources: [{ source_id: "bundestag", source_name: "Deutscher Bundestag", count: 5 }, { source_id: "cem-ince-news-region", source_name: "Cem", count: 3 }] });
+const vOk = mm.validateMigration({ catalog: cat, observedSources: [{ source_id: "bundestag", source_name: "Deutscher Bundestag", count: 5 }, { source_id: "tenant-alpha-news-region", source_name: "Test Politician One", count: 3 }] });
 check("nur gemappte/orphan -> verdict ok", vOk.verdict === "ok" && vOk.counts.unexplained === 0);
 
 console.log("== Migrations-Mapper: Namensdrift nur informativ (kein Fehler) ==");
-const vDrift = mm.validateMigration({ catalog: cat, orphanClassification: ORPHAN_CLASSIFICATION, observedSources: [{ source_id: "bundestag", source_name: "VÖLLIG ANDERER NAME", count: 3 }] });
+const vDrift = mm.validateMigration({ catalog: cat, observedSources: [{ source_id: "bundestag", source_name: "VÖLLIG ANDERER NAME", count: 3 }] });
 check("Namensdrift erfasst, ändert verdict NICHT (bleibt ok)", vDrift.counts.nameDrift === 1 && vDrift.verdict === "ok");
 
-console.log("== Cem-Vergleich: erklärte Konsolidierung vs. Regression ==");
+console.log("== Versorgungs-Vergleich: erklärte Konsolidierung vs. Regression ==");
 const cmpClean = cs.compareSupply({
-  altSourceIds: ["bundestag", "cem-ince-news", "cem-ince-news-region", "die-linke"],
-  newSourceIds: ["bundestag", "cem-ince-news", "die-linke", "dip"],
-  orphanClassification: ORPHAN_CLASSIFICATION
+  altSourceIds: ["bundestag", "tenant-alpha-news", "tenant-alpha-news-region", "die-linke"],
+  newSourceIds: ["bundestag", "tenant-alpha-news", "die-linke", "dip"]
 });
-check("both = gemeinsame Quellen (bundestag/cem-ince-news/die-linke)", cmpClean.bothCount === 3);
-check("onlyAlt cem-ince-news-region als orphan_legacy erklärt", cmpClean.onlyAltExplained.some((e) => e.id === "cem-ince-news-region" && e.reason === "orphan_legacy"));
+check("both = gemeinsame Quellen (bundestag/tenant-alpha-news/die-linke)", cmpClean.bothCount === 3);
+check("onlyAlt tenant-alpha-news-region als orphan_legacy erklärt (Muster, keine explizite Karte)", cmpClean.onlyAltExplained.some((e) => e.id === "tenant-alpha-news-region" && e.reason === "orphan_legacy"));
 check("onlyNew = dip (Gewinn)", cmpClean.onlyNew.includes("dip"));
 check("kein unerklärter Wegfall -> keine Regression", cmpClean.regression === false && cmpClean.verdict === "erklaerte_konsolidierung");
 
-console.log("== Cem-Vergleich: Personenquellen-Konsolidierung NUR mit expliziter Basis ==");
+console.log("== Versorgungs-Vergleich: Personenquellen-Konsolidierung NUR mit expliziter Basis ==");
 const cmpPrefix = cs.compareSupply({
-  altSourceIds: ["cem-ince-news", "cem-ince-news-neuer-suffix"],
-  newSourceIds: ["cem-ince-news"],
+  altSourceIds: ["tenant-alpha-suche", "tenant-alpha-suche-neuer-suffix"],
+  newSourceIds: ["tenant-alpha-suche"],
   orphanClassification: {},
-  consolidationBases: ["cem-ince-news"]
+  consolidationBases: ["tenant-alpha-suche"]
 });
-check("cem-ince-news-neuer-suffix via DEKLARIERTE Basis-Konsolidierung erklärt", cmpPrefix.onlyAltExplained.some((e) => e.id === "cem-ince-news-neuer-suffix" && e.reason === "konsolidiert") && cmpPrefix.regression === false);
+check("tenant-alpha-suche-neuer-suffix via DEKLARIERTE Basis-Konsolidierung erklärt", cmpPrefix.onlyAltExplained.some((e) => e.id === "tenant-alpha-suche-neuer-suffix" && e.reason === "konsolidiert") && cmpPrefix.regression === false);
 
 console.log("== Preflight-Fix M2: KEIN blinder Prefix-Match (fremde Quelle X-fake) ==");
 const cmpM2 = cs.compareSupply({
@@ -78,7 +94,7 @@ const cmpM2 = cs.compareSupply({
   // KEINE consolidationBases -> darf NICHT als konsolidiert durchgehen
 });
 check("eigenständige 'bundestag-fake' wird NICHT fälschlich zu 'bundestag' konsolidiert -> regression", cmpM2.regression === true && cmpM2.onlyAltUnexplained.some((e) => e.id === "bundestag-fake-eigenstaendig"));
-const cmpM2b = cs.compareSupply({ altSourceIds: ["bundestag", "bundestag-x"], newSourceIds: ["bundestag"], orphanClassification: {}, consolidationBases: ["cem-ince-news"] });
+const cmpM2b = cs.compareSupply({ altSourceIds: ["bundestag", "bundestag-x"], newSourceIds: ["bundestag"], orphanClassification: {}, consolidationBases: ["tenant-alpha-suche"] });
 check("Prefix-Match nur für DEKLARIERTE Basis (bundestag nicht deklariert -> regression)", cmpM2b.regression === true);
 
 console.log("== Preflight-Fix M3: unbekannte Dokumentzahl konservativ als Risiko ==");
@@ -97,7 +113,7 @@ const cmpM3b = cs.compareSupply({
 });
 check("unerklärter Wegfall mit NACHWEISLICH 0 Dokumenten -> struktur_warnung (keine Regression)", cmpM3b.regression === false && cmpM3b.verdict === "struktur_warnung");
 
-console.log("== Cem-Vergleich: echte Regression (unerklärter Wegfall MIT Dokumenten) ==");
+console.log("== Versorgungs-Vergleich: echte Regression (unerklärter Wegfall MIT Dokumenten) ==");
 const cmpReg = cs.compareSupply({
   altSourceIds: ["bundestag", "wichtige-quelle"],
   newSourceIds: ["bundestag"],
@@ -106,7 +122,7 @@ const cmpReg = cs.compareSupply({
 });
 check("unerklärter Wegfall mit 30 Dokumenten -> regression", cmpReg.regression === true && cmpReg.verdict === "regression" && cmpReg.docsAtRisk === 30);
 
-console.log("== Cem-Vergleich: unerklärt OHNE Dokumente -> nur Struktur-Warnung ==");
+console.log("== Versorgungs-Vergleich: unerklärt OHNE Dokumente -> nur Struktur-Warnung ==");
 const cmpStruct = cs.compareSupply({
   altSourceIds: ["bundestag", "tote-quelle"],
   newSourceIds: ["bundestag"],
@@ -115,7 +131,7 @@ const cmpStruct = cs.compareSupply({
 });
 check("unerklärter Wegfall ohne Dokumente -> struktur_warnung (keine Regression)", cmpStruct.regression === false && cmpStruct.verdict === "struktur_warnung");
 
-console.log("== Cem-Vergleich: identische Mengen -> keine Verschlechterung ==");
+console.log("== Versorgungs-Vergleich: identische Mengen -> keine Verschlechterung ==");
 const cmpSame = cs.compareSupply({ altSourceIds: ["a", "b"], newSourceIds: ["a", "b"], orphanClassification: {} });
 check("keine Differenz -> keine_verschlechterung", cmpSame.verdict === "keine_verschlechterung" && cmpSame.onlyAlt.length === 0);
 
@@ -124,19 +140,18 @@ check("Flag ohne env -> AUS", cs.shadowCompareEnabled({}) === false && cs.shadow
 check("Flag 'shadow'/'on'/'1'/'true' -> AN", ["shadow", "on", "1", "true"].every((v) => cs.shadowCompareEnabled({ HELMUT_V3_SHADOW_COMPARE: v })));
 check("Flag 'off'/'0'/'' -> AUS", ["off", "0", ""].every((v) => cs.shadowCompareEnabled({ HELMUT_V3_SHADOW_COMPARE: v }) === false));
 
-console.log("== Cem NEU-Auflösung (echter Katalog, sync) ==");
+console.log("== NEU-Auflösung Fixture-Mandat (echter Katalog, sync) ==");
 const M = buildFullModel();
-const { cemInceProfile } = require("../lib/helmut/config");
-const res = pp.resolveProfilePackages(cemInceProfile);
-check("Cem NEU: bund-basis als Pflichtpaket", res.required.includes("bund-basis"));
-check("Cem NEU: Personenpaket profil-cem-ince enthalten", res.all.includes("profil-cem-ince"));
+const res = pp.resolveProfilePackages(testPoliticianOne);
+check("Fixture-Mandat: bund-basis als Pflichtpaket", res.required.includes("bund-basis"));
+check("Fixture-Mandat: Personenpaket-Key 'profil-<id>' per Konvention referenziert", res.all.includes("profil-test-politician-one"));
 const pkgIdByKey = new Map(M.packages.map((p) => [p.key, p.id]));
 const activePkgIds = new Set(res.all.map((k) => pkgIdByKey.get(k)).filter(Boolean));
 const pathById = new Map(M.retrievalPaths.map((p) => [p.id, p]));
 const newLegacyIds = new Set();
 for (const pk of M.packagePaths) if (activePkgIds.has(pk.package_id)) { const path = pathById.get(pk.retrieval_path_id); if (path && path.legacy_source_id) newLegacyIds.add(path.legacy_source_id); }
-check("Cem NEU: cem-ince-news (Personenquelle) über Paket abgedeckt", newLegacyIds.has("cem-ince-news"));
-check("Cem NEU: dip als amtliche Quelle enthalten", newLegacyIds.has("dip"));
+check("Katalog enthaelt KEINE Personenquelle mehr (entsteht dynamisch als '<id>-news')", M.retrievalPaths.every((p) => !/-news$/.test(String(p.legacy_source_id))));
+check("Fixture-Mandat NEU: dip als amtliche Quelle enthalten", newLegacyIds.has("dip"));
 
 console.log("== SQL offline: Idempotenz + Rollback-Symmetrie (read-only) ==");
 const fs = require("fs");

@@ -75,7 +75,7 @@ function check(name, cond, detail = "") {
   delete process.env.OPENAI_API_KEY;
   delete process.env.AZURE_OPENAI_KEY;
   const dataDir = path.join(root, ".helmut-data");
-  const guarded = ["auth.json", "store.json", "p-cem-ince.json"].map((name) => {
+  const guarded = ["auth.json", "store.json", "p-test-politician-one.json"].map((name) => {
     const file = path.join(dataDir, name);
     return { file, content: fs.existsSync(file) ? fs.readFileSync(file) : null };
   });

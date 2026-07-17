@@ -14,22 +14,22 @@ Audit-Fixes; alles Übrige ist bereits im Code umgesetzt und getestet.
 `helmut-pilot`, Production) gesetzt + Redeploy. Zugang anschließend verifiziert:
 `POST /api/pilot/unlock` → **HTTP 200**, Body `{"ok":true}`. Der alte Code ist
 damit sofort ungültig; **F1 ist technisch abgeschlossen.** Der neue Wert wurde
-ausschließlich über einen sicheren Kanal an Cem übergeben — nie im Repo, kein
+ausschließlich über einen sicheren Kanal an den Pilotmandanten übergeben — nie im Repo, kein
 Wert/Fragment in dieser oder einer anderen Datei. Offen bleibt nur die optionale
 Git-Historien-Bereinigung (siehe F2).
 
 **Warum (Historie, war der Auslöser):** Der geteilte Pilot-Zugangscode stand bis
-Sprint 1 im Klartext in `docs/PILOT_UEBERGABE_CEM.md` und steht weiterhin in der
+Sprint 1 im Klartext in der Pilot-Übergabedatei unter `docs/` und steht weiterhin in der
 Git-Historie (2 Commits). Jeder mit (auch historischem) Repo-Zugriff kannte ihn —
 nach der Rotation ist dieser Alt-Code wertlos.
 
 **Durchgeführte Schritte (Vercel-Dashboard):** Project `helmut-pilot` → Settings →
 Environment Variables → `PILOT_SECRET` → neuen, langen Zufallswert gesetzt →
 Redeploy (Deployments → aktuelles → Redeploy). Neuer Wert NUR über sicheren Kanal
-(Signal/persönlich) an Cem gegeben.
+(Signal/persönlich) an den Pilotmandanten gegeben.
 
 **Wirkung (eingetreten):** Alter Code sofort ungültig; laufende Pilot-Cookies
-(helmut_pilot) verfallen — Cem gibt den neuen Code einmal ein. Account-Logins
+(helmut_pilot) verfallen — der Pilotmandant gibt den neuen Code einmal ein. Account-Logins
 (helmut_session) sind NICHT betroffen.
 
 **Rückweg (nicht nötig):** alten Wert wieder setzen (nicht empfohlen).
@@ -68,8 +68,8 @@ Arbeitsbeginn; lage-briefing 05:45 kann unverändert bleiben, da unabhängig.)
 Änderungen sind laut Betriebsregel (Master-Status §8) freigabepflichtig.
 
 **Wirkung:** Morgen-Push enthält die heutigen Analysen. **Risiko:** Push kommt
-50 statt 0 Minuten nach 5 UTC (7:50 Berlin Sommerzeit — prüfen, ob das für Cem
-passt; alternativ understanding auf 04:30 UND morning-briefing auf 05:00
+50 statt 0 Minuten nach 5 UTC (7:50 Berlin Sommerzeit — prüfen, ob das für den
+Pilotmandanten passt; alternativ understanding auf 04:30 UND morning-briefing auf 05:00
 belassen). **Rückweg:** Zeile zurückstellen + Deploy.
 
 ## F4 — Morgen-Push für alle Profile aktivieren (vor Mandant 2)
@@ -77,6 +77,11 @@ belassen). **Rückweg:** Zeile zurückstellen + Deploy.
 **Vorbereitet (Sprint 3, Code deployt inert):** `HELMUT_MORNING_PUSH_ALL_PROFILES=1`
 in Vercel setzen + Redeploy → der 05:00-Cron bedient alle aktiven Profile
 (deaktivierte übersprungen, per-Profil try/catch, 240s-Budget, 0 KI).
+**Aktueller Mechanik-Stand (Mandantenneutralisierung, siehe
+`docs/multitenancy-pilot-neutralisierung.md`):** Ohne dieses Flag bedient der
+Cron nur das über `HELMUT_PILOT_TENANT_ID` konfigurierte Mandat (aus der DB
+validiert); fehlt der Wert, läuft der Cron ehrlich leer (`skipped`) — es gibt
+kein synthetisches oder hartkodiertes Fallback-Mandat mehr.
 **Rückweg:** Variable entfernen/0 + Redeploy.
 
 ## F5 — LLM-Tageslimit ✅ VOLLSTÄNDIG AUSGEFÜHRT (2026-07-15)
@@ -160,6 +165,24 @@ F5-Rest (`HELMUT_LLM_RESERVE_UNDERSTANDING=30` + `HELMUT_UNDERSTANDING_LOCK=1`)
 → Redeploy. Die Env-Werte 100/fail-closed sind bereits live (F5/F6 ✅).
 **Rückweg:** `20260717_llm_budget_reservation_rollback.sql` (App fällt
 automatisch auf Altverhalten zurück, kein Deploy nötig).
+
+## F13 — `HELMUT_PILOT_TENANT_ID` setzen (Pflicht VOR Deploy des mandantenneutralen Stands)
+
+**Warum:** Mit der Mandantenneutralisierung (`docs/multitenancy-pilot-neutralisierung.md`)
+gibt es keinen im Code hinterlegten Standardmandanten mehr. Das Legacy-Pilotgate
+und die mandantenbezogenen Crons beziehen ihr Mandat aus der Env-Variable
+`HELMUT_PILOT_TENANT_ID` (muss ein existierendes DB-Profil sein). Fail-closed:
+Ohne Wert antwortet die Pilotgate-API mit `503 pilot-tenant-not-configured` und
+Crons laufen leer (`skipped`) — es werden nie Daten eines geratenen Nutzers
+ausgeliefert.
+
+**Schritt:** Vercel → Project `helmut-pilot` → Environment Variables →
+`HELMUT_PILOT_TENANT_ID` auf die Mandats-ID des bestehenden Pilotmandats setzen
+→ Redeploy. Der Wert ist Konfiguration, kein Code; das Profil liegt bereits als
+normaler Datensatz in der Datenbank.
+
+**Rückweg:** Vorheriges Deployment re-deployen (die Variable kann gesetzt
+bleiben; der alte Stand liest sie nicht). Keine Migration, keine Datenänderung.
 
 ## F11 — Branch Protection aktivieren (einmalig, 2 Minuten)
 

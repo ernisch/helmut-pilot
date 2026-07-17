@@ -113,5 +113,5 @@
 ## 9. Tests, Belege, Grenzen
 
 **Ausgeführt (offline, grün):** `lage-test.js` 138/138 (inkl. limit/dry-run/Legacy-Fallback-Sektionen).
-**Abfragegrundlage:** Prod-Supabase `ddckuvvpcytqbyfmbvie`, nur SELECT. Verwendete Profile: cem-ince (real), james-brown/angela-merkel (leer). Datenstand 2026-07-12.
+**Abfragegrundlage:** Prod-Supabase `ddckuvvpcytqbyfmbvie`, nur SELECT. Verwendete Profile: `<pilot-mandats-id>` (real), `<demo-mandant-b>`/`<demo-mandant-c>` (leer). Datenstand 2026-07-12.
 **Grenzen / VERMUTUNG:** Ob ein *befülltes* Profil bei angereichertem Korpus tatsächlich >2 Karten Personalisierung erzeugt, ist mangels befüllter Profile nicht direkt gemessen, sondern aus Formel+Korpus abgeleitet. Ob das 12s-Timeout in Prod real zuschlägt, hängt von KI-Latenz + Cache-Wärme ab und wurde nicht live provoziert (kein Prod-Schreibtest).

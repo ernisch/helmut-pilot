@@ -14,7 +14,7 @@ Begriffe in einem Satz:
 
 ---
 
-## 1. Einzelpilot (cem-ince) — ✅ **BEREIT**
+## 1. Einzelpilot (`<pilot-mandats-id>`) — ✅ **BEREIT**
 
 - **Sicherheit:** App-seitiger Mandanten-Guard aktiv (P0-1); zusätzlich seit heute
   **RLS als zweite Verteidigungslinie in Production** (P0-2, 23 Policies) — als
@@ -50,7 +50,7 @@ Was noch fehlt, bevor ein zweiter echter Mandant sicher dazu kommt:
    DB die Trennung wirklich (heute schützt nur die App-Schicht). Eigener
    Freigabepunkt; der Schalter gilt global (kein Per-Mandant-Rollout gebaut).
 2. **Profildaten in die DB** (P2-9): reiche Profildaten liegen heute nur im Code
-   für cem-ince; jeder andere Mandant bekommt leere Default-Merkmale und wäre ab
+   für den Pilotmandanten; jeder andere Mandant bekommt leere Default-Merkmale und wäre ab
    Tag 1 unterversorgt. Ohne KO-Anreicherung (P1-1) matchen auch gute Profile ins
    Leere.
 

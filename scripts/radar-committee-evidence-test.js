@@ -146,7 +146,7 @@ check("9 Konkreter Wahlkreisort in mentioned_locations -> Wahlkreis-Reiter",
 check("9b Zugehörige Kommune -> Wahlkreis-Reiter",
   runConstituency({ profileFields: { constituency: "Salzgitter-Wolfenbüttel", regionalInterests: ["Niedersachsen", "Salzgitter"] },
     mentioned_locations: ["Salzgitter"] }).granted);
-check("10 Bundesland allein (Niedersachsen) -> NICHT (der reale Bovenschulte-Fall)",
+check("10 Bundesland allein (Niedersachsen) -> NICHT (Landes- statt Bundesebene)",
   !runConstituency({ profileFields: { constituency: "Salzgitter-Wolfenbüttel", regionalInterests: ["Niedersachsen", "Salzgitter-Wolfenbüttel"] },
     mentioned_locations: ["Europa", "Bundesrepublik Deutschland", "Niedersachsen"], docs: [{ source_type: "bundestag", source_name: "Bundesrat", url: "https://www.bundesrat.de/x" }] }).granted);
 check("10b Jedes der 16 Bundeslaender allein -> NICHT (allgemeingueltig)",

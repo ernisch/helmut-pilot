@@ -110,11 +110,11 @@ check("ko-enrichment-backfill: execute/bypassBudget nur bei POST wirksam",
   // OHNE best_source_url verschwindet ohne geladene Quelle — und erscheint, sobald
   // die Quelle vorliegt (genau das liefert der neue Server-Pfad additiv nach).
   const radarState = require("../lib/helmut/radarState");
-  const profile = { id: "u-cem", fullName: "Cem Ince" };
+  const profile = { id: "u-one", fullName: "Test Politician One" };
   const mentionKo = {
     id: "ko-m", vorgang_id: "vg-m", status: "neu", understanding_status: "complete",
-    mentioned_people: ["Cem Ince"], display_title: "Cem Ince fordert Reform",
-    was_ist_passiert: "Cem Ince hat einen Antrag gestellt.", warum_wichtig: "x",
+    mentioned_people: ["Test Politician One"], display_title: "Test Politician One fordert Reform",
+    was_ist_passiert: "Test Politician One hat einen Antrag gestellt.", warum_wichtig: "x",
     // KEIN best_source_url — genau der ~37%-Fall aus dem Audit.
     updated_at: "2026-07-14T06:00:00Z"
   };

@@ -50,7 +50,7 @@ Pipeline/Cron/Ops-mit-Daten nicht) und werden daher **nicht blind gelöscht**:
 |---|---|---|
 | ~~`runMorningBriefing` (V2-Briefing-Motor) | scheduler.js~~ | ✅ **Step 4 erledigt:** kein aktiver Aufruf mehr (nur `runDailyPipeline`, selbst tot). `runDailyPipeline` + `runMorningBriefing` + die gesamte exklusiv genutzte V2-Helper-Kaskade entfernt (−742 Zeilen). |
 | ~~`personalization.js` | Modul~~ | ✅ **Step 4 erledigt:** einziger Importeur war `runMorningBriefing` → **Datei gelöscht** (−888 Zeilen). |
-| ~~`runtime.js` `generateBriefing`-Familie | Modul~~ | ✅ **Step 5 erledigt:** `/api/tasks/demo` **entfernt** (vom Client nie gefetcht) → `generateBriefing`/`demoRawItems`/`demoSources` obsolet. `/api/debug/briefing` **auf `buildV3Briefing` umgestellt** → `getLatestOrDemoBriefing`+`buildEmptyBriefing`+`isBriefingStale` (scheduler) entfernt. **`runtime.js` gelöscht**; `cemInceProfile` + `inferEntities` in neues **`lib/helmut/config.js`** verschoben (p1-Test repointet). |
+| ~~`runtime.js` `generateBriefing`-Familie | Modul~~ | ✅ **Step 5 erledigt:** `/api/tasks/demo` **entfernt** (vom Client nie gefetcht) → `generateBriefing`/`demoRawItems`/`demoSources` obsolet. `/api/debug/briefing` **auf `buildV3Briefing` umgestellt** → `getLatestOrDemoBriefing`+`buildEmptyBriefing`+`isBriefingStale` (scheduler) entfernt. **`runtime.js` gelöscht**; das Pilotmandanten-Default-Profilobjekt + `inferEntities` in neues **`lib/helmut/config.js`** verschoben (p1-Test repointet). |
 | ~~`getLatestBriefing` (V2-Blob-Lesen) | server.js Ops/Health/Release-Check~~ | ✅ **Step 2 erledigt:** Ops/Health/Release-Check lesen jetzt `buildV3Briefing` + `v3BriefingQuality` (Datenmotor-V3-Signal); `referentEngine`/`quality`-Blob raus. Import `getLatestBriefing` ist jetzt ungenutzt (Cleanup im Modul-Löschschritt). |
 | ~~`runLageCheck` regeneriert V2-Briefing | scheduler.js~~ | ✅ **Step 3 erledigt:** Lage-Check liest Vorwissen aus verstandenen Knowledge Objects (nicht mehr `getLatestBriefing`) und faltet bei neuer Lage die frischen Items via `foldLageItemsIntoV3` (understanding→matching→decisions, zeitbudgetiert) in V3 — **kein** `runMorningBriefing` mehr, kein V2-Fallback. |
 | `/api/briefing/latest`, `/api/briefing/demo`, `/api/profile/demo` | server.js | V2-Read/Demo-Endpunkte (vom Client NICHT für die Anzeige gefetcht) |
@@ -81,13 +81,13 @@ Pipeline/Cron/Ops-mit-Daten nicht) und werden daher **nicht blind gelöscht**:
    Aufruf) + exklusive V2-Helper-Kaskade **entfernt** (scheduler −742 Z.); `personalization.js` **gelöscht**
    (−888 Z.); tote Imports in `server.js` raus. Offline-Gate 8/8 grün. **Bewusst NICHT gelöscht** (noch
    gebraucht → berichtet, kein blindes Löschen): `runtime.js` (`generateBriefing`/`demoRawItems`/`demoSources`
-   → `/api/tasks/demo`; `cemInceProfile` = Single-Tenant-Default; `inferEntities` → p1-Test),
+   → `/api/tasks/demo`; Pilotmandanten-Default-Profilobjekt = Single-Tenant-Default; `inferEntities` → p1-Test),
    `getLatestOrDemoBriefing`+`buildEmptyBriefing` (→ `/api/debug/briefing`), `buildPipelineDebugReport` (→ p1).
-   **Config-Modul-Move entfällt vorerst:** `runtime.js` bleibt bestehen, daher behält `cemInceProfile` sein Zuhause;
+   **Config-Modul-Move entfällt vorerst:** `runtime.js` bleibt bestehen, daher behält das Pilotmandanten-Default-Profilobjekt sein Zuhause;
    `getActiveProfile` liegt ohnehin in `scheduler.js`. Der Config-Move lohnt erst, wenn `runtime.js` wirklich gelöscht wird.
 5. **(Follow-up vor endgültigem `runtime.js`-Löschen):** Demo-/Debug-Endpunkte `/api/tasks/demo` +
    `/api/debug/briefing` auf V3 umstellen **oder** entfernen; danach `runtime.js`-Briefing-Familie +
-   `getLatestOrDemoBriefing`/`buildEmptyBriefing` löschen und `cemInceProfile`/`inferEntities` in ein Config-Modul ziehen.
+   `getLatestOrDemoBriefing`/`buildEmptyBriefing` löschen und das Pilotmandanten-Default-Profilobjekt/`inferEntities` in ein Config-Modul ziehen.
 6. Flags in `storage.js` unbedingt-live schalten + entfernen.
 
 ---
@@ -338,7 +338,7 @@ Risiko · Tests · was danach gelöscht werden kann.**
   gegen ein Deployment ohne V2-Blob-Read/-Write.
 
 ### Phase F — V1/V2-Module, tote Flags & TEMP-Endpunkte löschen; V3 bedingungslos
-- `runtime.js` (`generateBriefing`-Familie) löschen — vorher `cemInceProfile`/
+- `runtime.js` (`generateBriefing`-Familie) löschen — vorher das Pilotmandanten-Default-Profilobjekt/
   `demoSources` + `getActiveProfile`/`mergeProfileDefaults`/`neutralProfileDefaults`
   in ein Config-/Profil-Modul verschieben; `personalization.js` + `learning.js`
   löschen (nach „Helmut lernt"-Entscheidung); `briefing.js` löschen falls abgelöst.
@@ -399,7 +399,7 @@ Risiko · Tests · was danach gelöscht werden kann.**
 - **`smoke-test.js`** (= `npm test`, Release-Gate gegen Live-Deployment) — jede
   V2-Briefing-Assertion auf V3-Lage/Vorgang + Office umhängen; `status.store.rawItems`
   + `pipeline/debug` durch `knowledge_objects`/`matching_results`-Health ersetzen;
-  hartkodierte `cem ince`-Radar-Probe löschen; Accounts/RBAC/IDOR-Flow behalten.
+  hartkodierte Radar-Probe auf den Namen des Pilotmandanten löschen; Accounts/RBAC/IDOR-Flow behalten.
   **Muss im Gleichschritt** mit jedem Endpoint-Cutover landen.
 - **`p1-security-check.js`** — zweiseitig: V2-Sektionen
   (`personalizationChecks`/`entityChecks`/`debugReportChecks`/`engineV2Checks`) +
@@ -437,7 +437,7 @@ Die vier bau-bestimmenden Forks sind entschieden:
 Zusätzlich entschieden:
 - **`decisions`-Layer wird gebaut** (CRUD in storage.js) — Grundlage für Adapter,
   Radar und Office (`decision_id`).
-- **Single-Tenant bleibt** durch den Cutover (ein Pilot cem-ince); Hardcodes werden
+- **Single-Tenant bleibt** durch den Cutover (ein Pilotmandant, `<pilot-mandats-id>`); Hardcodes werden
   im Zuge des V2-Rückbaus in Profil-/Config-Daten überführt, nicht vorher.
 
 ### Noch operativ (durch den Betreiber, gegen das Live-Deployment)

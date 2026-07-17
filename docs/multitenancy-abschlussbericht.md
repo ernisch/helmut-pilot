@@ -45,7 +45,7 @@ Blob-Pfad weiter.
 ## 4. Sind Kundendaten sicher getrennt?
 
 **Ja.** In der Production-Datenbank verifiziert: ohne Nutzerkontext = 0 Zeilen; als Kunde A
-= nur A's Zeilen; als fremder Kunde = **0** Zeilen von Cem in allen Tenant-Tabellen. Interne
+= nur A's Zeilen; als fremder Kunde = **0** Zeilen des Pilotmandanten in allen Tenant-Tabellen. Interne
 Systemjobs (Crawl/Understanding) laufen über den Service-Schlüssel unverändert weiter.
 
 ## 5. Bekommt jedes Profil eigene Inhalte?
@@ -93,7 +93,7 @@ bestehende Suite (36 Suiten grün). Einziger Rest: 1 vorbestehender splash-boot-
 
 ## 12. Wie ist der Production-Status?
 
-Gesund. JWT-Modus scharf, keine Runtime-Fehler, Cem unverändert (19 Entscheidungen, Radar
+Gesund. JWT-Modus scharf, keine Runtime-Fehler, der Pilotmandant unverändert (19 Entscheidungen, Radar
 20/10, Datenmotor 100 %). Der `ready:false`-Status kommt von zwei vorbestehenden
 strukturellen Punkten (Lage-Frische, Live-Flow — dünne Quellenlage), **nicht** von dieser Arbeit.
 
@@ -102,13 +102,13 @@ strukturellen Punkten (Lage-Frische, Live-Flow — dünne Quellenlage), **nicht*
 - Keine Production-Profil-Migration (mandate_profiles bleibt leer bis Freigabe).
 - Keine Cron-Schedule-Änderung, keine Secret-/Env-Änderung, kein Backfill.
 - Kein automatisch angelegtes echtes Nutzerkonto.
-- Der Abgeordneten-Bereich (Cems sichtbare App) — inhaltlich unverändert.
+- Der Abgeordneten-Bereich (die für den Pilotmandanten sichtbare App) — inhaltlich unverändert.
 
 ## 14. Welcher echte Freigabepunkt ist als Nächstes nötig?
 
-**Production-Datenübernahme für Cem + Aktivierung des DB-Profilpfads** (Phase 15,
-`docs/multitenancy-cem-cutover-plan.md`): (a) Migration `20260712_mandate_profile_fields.sql`
-auf Production anwenden, (b) Cems Profil einmalig in `mandate_profiles` schreiben,
+**Production-Datenübernahme für den Pilotmandanten + Aktivierung des DB-Profilpfads** (Phase 15,
+siehe den Pilot-Cutover-Plan in `docs/`): (a) Migration `20260712_mandate_profile_fields.sql`
+auf Production anwenden, (b) das Profil des Pilotmandanten einmalig in `mandate_profiles` schreiben,
 (c) `HELMUT_PROFILE_DB_MODE=1` setzen. Alles reversibel (Blob bleibt Backup), aber es sind
 Production-Writes → **ausdrückliche Freigabe erforderlich**. Optional davor/parallel:
 morning-briefing/lage-check auf Multi-Profil-Loop (Cron-Kosten-Entscheidung).
@@ -125,5 +125,5 @@ Kunde** nach der Datenübernahme — nicht sofort offener Verkauf.
 ---
 
 *Technische Details in: `multitenancy-profildatenkarte.md`, `-profilmodell.md`,
-`-profilvalidierung.md`, `-jobs-und-versorgung.md`, `-cache-und-budget.md`,
-`-cem-cutover-plan.md`.*
+`-profilvalidierung.md`, `-jobs-und-versorgung.md`, `-cache-und-budget.md`
+sowie dem Pilot-Cutover-Plan.*

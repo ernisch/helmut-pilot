@@ -23,14 +23,14 @@ const fakeEnv = { CRON_SECRET: "cronsecretFAKE1234567890", HELMUT_MONITORING_WEB
 
 // Ein Report, dem jemand (fälschlich) Nutzer-/Dokumentinhalte + Secrets untergeschoben hat.
 const report = {
-  text: "Crawl: vor 2h (145 Quellen, 0 Fehler) · Briefing: 7 Einträge · Kontakt cem@example.invalid · Bearer cronsecretFAKE1234567890",
+  text: "Crawl: vor 2h (145 Quellen, 0 Fehler) · Briefing: 7 Einträge · Kontakt person@example.invalid · Bearer cronsecretFAKE1234567890",
   ok: false, state: "Veraltet", severity: "alarm",
   overdueCrons: ["Crawl"], googleUrlResolutionRate: 0.95,
   budget: { calls: 40, limit: 100, remaining: 60, skips: 5, exhausted: false },
   healthBlockers: ["budget-erschoepft"], healthWarnings: ["quellenfrische"], errors24: 3,
   // verbotene Felder (dürfen NIE in den Payload):
   briefingText: "VERTRAULICH: kompletter Briefingtext eines Nutzers",
-  userEmail: "cem@example.invalid",
+  userEmail: "person@example.invalid",
   profile: { partei: "Die Linke", politicalProfile: "…" },
   documents: [{ title: "Interner Vorgang", content: "GEHEIM" }]
 };
@@ -49,13 +49,13 @@ check("keine verbotenen Felder (briefingText/userEmail/profile/documents)",
 const serialized = JSON.stringify(payload);
 check("kein Briefing-Volltext im Payload", !serialized.includes("VERTRAULICH") && !serialized.includes("kompletter Briefingtext"));
 check("kein Dokumentinhalt im Payload", !serialized.includes("GEHEIM") && !serialized.includes("Interner Vorgang"));
-check("keine E-Mail im Payload (redigiert)", !serialized.includes("cem@example.invalid"));
+check("keine E-Mail im Payload (redigiert)", !serialized.includes("person@example.invalid"));
 check("kein Secret/Bearer im Payload (redigiert)", !serialized.includes("cronsecretFAKE1234567890"));
 check("keine Partei/politisches Profil im Payload", !serialized.includes("Die Linke"));
 
 // ── Text-only-Kanal (WhatsApp) ebenfalls redigiert ─────────────────────────
 const text = buildAlarmText(report, fakeEnv);
-check("Text-Kanal: E-Mail redigiert", !text.includes("cem@example.invalid"));
+check("Text-Kanal: E-Mail redigiert", !text.includes("person@example.invalid"));
 check("Text-Kanal: Secret redigiert", !text.includes("cronsecretFAKE1234567890"));
 check("Text-Kanal: technischer Status bleibt lesbar", text.includes("145 Quellen") && text.includes("Briefing: 7"));
 

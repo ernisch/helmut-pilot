@@ -5,10 +5,10 @@
 
 ## Problem
 
-Beim Schreiben von Cems Profil in `mandate_profiles` (Phase 15) fiel auf: einige
+Beim Schreiben des Pilotmandanten-Profils in `mandate_profiles` (Phase 15) fiel auf: einige
 Blob-Profilfelder hatten **keine** Entsprechung in `mandate_profiles`. Beim Aktivieren
 von `HELMUT_PROFILE_DB_MODE` (DB-Pfad liest DB statt Blob) wären sie **verloren**
-gegangen. Vollständige Liste der zuvor fehlenden Felder aus Cems Live-Blob:
+gegangen. Vollständige Liste der zuvor fehlenden Felder aus dem Live-Blob des Pilotmandanten:
 
 `regionalInterests`, `relevantMinistries`, `topicPriorities`, `opponents`,
 `monitoringTargets`, `officeHandoffMethod`, `localMedia`, `mainQuestion`,
@@ -50,7 +50,7 @@ eingeführten.**
 
 ## Bewiesen (Tests)
 
-- **Cems reales Profil** (36 Felder): **jedes** Feld überlebt den DB-Roundtrip
+- **Das reale Profil des Pilotmandanten** (36 Felder): **jedes** Feld überlebt den DB-Roundtrip
   1:1 (`profile-completeness-test.js` §1, 33 Feldvergleiche + Schlüssel-Vollständigkeit).
 - `profil_extras` enthält **nur** die spaltenlosen Felder, **kein** Feld mit eigener
   Spalte (keine Doppelspeicherung).
@@ -65,16 +65,16 @@ eingeführten.**
 ## Sicherheit / kein Production-Effekt
 
 - Der Code läuft **nur** bei `HELMUT_PROFILE_DB_MODE=1` (via `saveProfileToDb`/
-  `getProfileFromDb`). Flag ist **aus** → **kein** Verhaltensunterschied für Cem heute.
+  `getProfileFromDb`). Flag ist **aus** → **kein** Verhaltensunterschied für den Pilotmandanten heute.
 - Selbst wenn das Flag vor der Production-Migration eingeschaltet würde: `saveProfileToDb`
   ist fail-safe (Fehler → skipped, Blob-Write bereits erfolgt), `getProfileFromDb`
   fällt bei Fehler auf den Blob zurück. Kein Crash, kein Datenverlust.
 
 ## Offene Production-Schritte (Freigabe erforderlich)
 
-Damit der DB-Pfad Cem in **Production** 1:1 abbildet, sind noch nötig (Production-Writes
+Damit der DB-Pfad den Pilotmandanten in **Production** 1:1 abbildet, sind noch nötig (Production-Writes
 → Freigabe):
 1. Migration `20260712_mandate_profile_completeness.sql` auf Production anwenden.
-2. Cems `mandate_profiles`-Zeile um die neuen Felder ergänzen (UPDATE aus dem Blob).
+2. Die `mandate_profiles`-Zeile des Pilotmandanten um die neuen Felder ergänzen (UPDATE aus dem Blob).
 
 Danach ist der letzte Schritt die Flag-Aktivierung `HELMUT_PROFILE_DB_MODE=1` (Vercel).

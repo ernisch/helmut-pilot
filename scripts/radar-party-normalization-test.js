@@ -7,7 +7,7 @@
 // Partei-/Fraktions-Normalisierung (slugParty) auf BEIDEN Seiten (Profil + ko.parteien).
 // Fix B2: der Akteurs-/Quellenbeleg prueft ALLE Quellen des Vorgangs (nicht nur die primaere).
 //
-// KEINE Cem-Sonderregel: die Kette wird ueber ALLE Parteien/Fraktionen + Schreibweisen +
+// KEINE Personen-Sonderregel: die Kette wird ueber ALLE Parteien/Fraktionen + Schreibweisen +
 // de/en-Profilfelder getestet. Die matched_features werden mit der ECHTEN Matching-Engine
 // erzeugt (matching.matchedFeatures) — kein hand-authored Feature, damit der Test die reale
 // Konsistenz matching -> radarState prueft.
@@ -134,7 +134,7 @@ check("4b Titel-Akteur mit Umlaut: 'Die Grünen fordern …' + Medienquelle -> e
 }
 
 // =============================================================================
-// 6) Leerzustand vs. Präsenz — die reale Cem-Konstellation (Gegenprüfung Preview)
+// 6) Leerzustand vs. Präsenz — die reale Pilot-Konstellation (Gegenprüfung Preview)
 // =============================================================================
 // (a) Koalitions-Auflistung: eigene Partei nur EINE von fünf, Medienquelle, kein Titel-Akteur
 //     -> korrekt NICHT im Partei-Reiter (kein Zuordnungsfehler, echte Leere).
