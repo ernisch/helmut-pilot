@@ -1,5 +1,80 @@
 # MASTER-STATUS — Helmut Quellenarchitektur-Migration
 
+## NACHTRAG 2026-07-17 (Konsolidierung: Thread-2-Härtung, Sprint 1, Mandantenneutralisierung, Understanding-Forensik, Recovery-Pfad) — aktuellster verifizierter Stand
+
+> **Verbindliche Restliste aller offenen Punkte:** `docs/datenmotor-restliste.md`.
+> **Nummernschema:** Die früheren, kollidierenden F-/P-Nummern sind aufgelöst —
+> Alt-Freigabepunkte heißen jetzt **FA-1…FA-13**, Thread-2-Freigaben **FT2-1…FT2-8**,
+> offene Punkte tragen eindeutige **OP-Nummern** (Mapping in der Restliste). Die in
+> älteren Nachträgen unten verwendeten Bezeichnungen (z. B. „F12") sind historisch.
+
+| Was | Wert (verifiziert) |
+|---|---|
+| `main`-HEAD (= Stand dieser Konsolidierung) | **`7346653`** (Merge PR #100) |
+| Gemergte PRs seit letztem Nachtrag | **#95** (Thread-2-Härtung P0/P1 + Beobachtbarkeit) · **#96** (Sprint 1: Sicherheit & Mehrmandantenfähigkeit) · **#97** (Mandantenneutralisierung) · **#98** (Understanding-Forensik + Feldbug-Fix + gated Recovery-Pfad) · **#99/#100** (Recovery-Action `workflow_dispatch` registriert) |
+| Migrationen live (neu) | `20260718` (`source_crawl_telemetry`) · `20260719` (`pipeline_locks` + atomare Lock-Funktionen) |
+| Flags live seit 2026-07-16 18:06 UTC | `HELMUT_ATOMIC_LOCK=on` · `HELMUT_UNDERSTANDING_LOCK=on` · `HELMUT_SOURCE_TELEMETRY=on` (= FT2-1…FT2-3) |
+| Production-Beweise | `docs/betrieb/production_beweisprotokoll.md` — 3 echte Crawls + voller Morgenzyklus; Locks live gefangen (inkl. gleichzeitiger Haltung), je Crawl 145 Telemetrie-Zeilen, echte Laufzeiten (183/170/170 s), 0 neue `systemErrors` |
+
+**1 · Thread-2-Härtung (PR #95, deployt).** Alle Audit-Aufgaben P0-1…P0-5(Stufe 1)
+und P1-1…P1-9 sind im Code umgesetzt; Erledigungsstand je Aufgabe:
+`docs/helmut_datenmotor_thread2_handoff.md` §0a. In Production **wirksam**:
+Laufzeitmessung, Fehler-Sammler, atomare fail-closed Locks, Quellen-Telemetrie,
+ehrlicher Durchsatz, ausgebauter Health-Report, Radar-Störungswahrheit,
+Ebenen-Kanon. **Gebaut, aber bewusst AUS** (je eigene Freigabe): KO-Backfill-Lauf
+(FT2-4), Zweitkanal/Meta-Heartbeat (FT2-5), `failed`-KO-Recovery (FT2-6),
+Understanding-Priorisierung (FT2-7), Crawl-Läufe relational + Retention (FT2-8).
+Betriebsbefunde aus den Beweisläufen: **B1** (Google-News-Rate-Limiting, transient,
+erholt; latentes Klumpenrisiko) und **B2** (Understanding-Rückstand → Punkt 4).
+
+**2 · Sprint 1 — Sicherheit & Mehrmandantenfähigkeit (PR #96, deployt).**
+App-seitige Tenant-Guards vervollständigt + Cross-Tenant-Write-Guard; atomarer
+**Per-Mandant-Kostendeckel** (`HELMUT_TENANT_LLM_CAP`, Default AUS, nutzt die
+vorhandene Reservierungs-Funktion, keine neue Migration); **idempotente
+Zweitmandanten-Provisionierung** mit Rollback, Teardown-Isolation und
+datengetriebenem Schutz bestehender Mandanten; DSGVO-Nachbesserung
+(E-Mail-Maskierung im Provisionierungs-Protokoll); adversariale Review (3 echte
+Funde behoben, u. a. Kontoübernahme-, Teardown-Kollateral-, Eviction-Bug).
+DB-Härtungs-Migration `20260721` (Advisor-Fixes) **vorbereitet, NICHT angewandt**.
+Doku: `docs/sprint1-sicherheit/01-zugriffsmatrix.md`, `02-zielarchitektur.md`,
+`03-qualitaetskontrolle-und-freigabe.md`. Offline-Suite 120/120.
+
+**3 · Mandantenneutralisierung (PR #97, deployt).** Kein bevorzugter/Pilot-/
+Default-/Fallback-Mandant mehr — weder im Code noch als Env-Variable. Nutzeranfragen
+und Crons beziehen ihr Mandat ausschließlich aus den **aktiven DB-Mandaten**
+(`resolveActiveTenant`/`resolveCronTenants`); mandantenbezogene Crons laufen je
+Mandat isoliert (try/catch + Zeitbudget); vollständige Cron-Inventur und
+0/1/n-Mandanten-Verhalten: `docs/multitenancy-pilot-neutralisierung.md`. Tests
+ausschließlich mit künstlichen Identitäten + Beweis-Suite für Mandantenneutralität;
+Doku/Assets von Pilot-Bezügen bereinigt. Damit sind FA-4 (Morgen-Push alle Profile)
+und FA-13 (keine Mandanten-Env) gegenstandslos bzw. erledigt; offen bleibt nur die
+**Daten-Hygiene** (zwei Demo-Mandate deaktivieren, Restliste OP-04).
+
+**4 · Understanding-Forensik (PR #98).** Befund B2 vollständig aufgelöst
+(`docs/betrieb/understanding_rueckstand_analyse.md`, rein lesend): **kein laufender
+Datenverlust** (alle Rohdokumente seit 04.07. verarbeitet); der Rückstand ist ein
+**eingefrorener Alt-Bestand** (50 `pending` vom 02./03.07. + 2 `failed`), Ursache
+ist das recency-begrenzte `skipped-no-cluster`-Fenster — **nicht nur Rauschen**:
+~8 kernmandatsrelevante Fälle + 2 `failed` sind blockiert, die Seed-Rohdokumente
+existieren noch (Verlust aktuell reversibel; wird permanent bei Retention-Löschung).
+Der aktive **Feldbug** (`source_document_count` immer 0 im Lazy-Pfad) ist gefixt
+und deployt (null Runtime-Wirkung, Pfad Default AUS).
+
+**5 · Vorbereiteter Recovery-Pfad (PR #98–#100, NICHT ausgeführt).** Trockenlauf
+bestätigt **6 netto-neue, eindeutig/wahrscheinlich rekonstruierbare Fälle**
+(`docs/betrieb/understanding_recovery_trockenlauf.md`); echter Pfad ist verdrahtet,
+aber **doppelt gesperrt** (Flag `HELMUT_RECOVERY_EXECUTE` Default AUS + Token
+`RECOVER_6_CONFIRMED`), eng begrenzt (6er-Allowlist, ≤ ~6 KI-Calls, additiv,
+Rollback-Kennung) und als GitHub-Action `understanding-recovery.yml` **nur** per
+`workflow_dispatch` startbar (Schritt A immer read-only). Ausführung =
+freigabepflichtig (Restliste OP-05); bis dahin **keine Retention-Löschung** der
+02./03.07.-Rohdokumente.
+
+**Betrieb unverändert:** Quellen **on** · Gate **shadow** · PARDOK **shadow** ·
+Scoring **off** · BE/BB **inaktiv** · Budget 100/Reserve 30/fail-closed/Locks an.
+
+---
+
 ## NACHTRAG 2026-07-17 (Mandantenneutralisierung — Hinweis)
 
 - Diese Doku-Serie ist vom realen Pilotmandanten anonymisiert: technische Stellen
@@ -15,7 +90,7 @@
   aktiven DB-Mandaten — ohne mandantenspezifische Env-Variable; Provisionierungs-
   Schutz datengetrieben statt Namensliste).
 
-## NACHTRAG 2026-07-15 (Technische Rest-PRs: Watchdog-Timeout + Radar-Störungswahrheit live) — aktuellster verifizierter Stand
+## NACHTRAG 2026-07-15 (Technische Rest-PRs: Watchdog-Timeout + Radar-Störungswahrheit live) — historisch (überholt durch Nachtrag 2026-07-17 oben)
 
 | Was | Wert (live verifiziert) |
 |---|---|
@@ -114,7 +189,11 @@ Der Abschnitt unten (Stand 2026-07-14) bleibt als historischer Detailnachweis.
 
 ---
 
-**Dies ist die EINZIGE aktuelle Statuswahrheit.** Alle älteren Status-/Abschlussberichte —
+**Hinweis 2026-07-17:** Die aktuelle Statuswahrheit ist der **oberste Nachtrag
+(2026-07-17, Konsolidierung)**; die einzige verbindliche Liste offener Punkte ist
+`docs/datenmotor-restliste.md`. Der folgende Satz gilt historisch für den Stand 2026-07-14.
+
+**Dies ist die EINZIGE aktuelle Statuswahrheit (Stand 2026-07-14).** Alle älteren Status-/Abschlussberichte —
 insbesondere Doku 20–27 und frühere Master-Status-Fassungen — sind **ÜBERHOLT** und dürfen
 nicht mehr als aktueller Stand zitiert werden; sie bleiben historische Detailnachweise.
 Konsolidiert am **2026-07-14 (abends, nach Diagnose- und Shadow-Deployment + Quellenmodus-Bau)**

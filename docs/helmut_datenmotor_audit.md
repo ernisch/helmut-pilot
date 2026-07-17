@@ -1,5 +1,12 @@
 # Helmut Datenmotor — Kritischer Audit (Teil I: Auditbericht)
 
+> ## ✅ STATUS-NACHTRAG 2026-07-17
+> Der geprüfte Stand `427295c` ist ÜBERHOLT: Die P0-/P1-Härtungen sind durch **PR #95–#100**
+> umgesetzt und teilweise production-bewiesen (`docs/betrieb/production_beweisprotokoll.md`).
+> Dieser Bericht bleibt der gültige **Audit-Beleg des damaligen Ist-Zustands**; der aktuelle
+> Reststand steht verbindlich in **`docs/datenmotor-restliste.md`** (Aufgaben-IDs dieses
+> Audits werden dort als **A-P0-x…A-P3-x** zitiert).
+
 > **⚠️ Dies ist ein AUDITBERICHT, noch KEIN endgültiges Betriebsdokument.**
 > Er beschreibt den *geprüften Ist-Zustand* des Datenmotors und dient als
 > verbindliche Grundlage für die Umsetzung im zweiten Thread. Das endgültige

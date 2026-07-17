@@ -26,7 +26,7 @@ Zentrale Wahrheit: **Alle** LLM-Calls laufen durch den einzigen Choke-Point
   Voll-Upsert (Kosten-/Audit-Verluste unter Parallellast möglich — das BUDGET
   hängt nach der Migration nicht mehr am Log); Understanding-Doppel-Call pro
   Vorgang nur bei aktivem `HELMUT_UNDERSTANDING_LOCK=1` verhindert (im
-  F5-Produktionsschritt mitsetzen); Office-Zähler/Lage-Lock nicht atomar (low,
+  FA-5-Produktionsschritt mitsetzen); Office-Zähler/Lage-Lock nicht atomar (low,
   Deckel begrenzt).
 
 ---

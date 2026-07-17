@@ -6,6 +6,7 @@
 > Kontext**. Der verbindliche, gegen Code + Production-DB geprüfte Auditstand ist
 > `docs/helmut_datenmotor_audit.md` (+ `…_umsetzungsplan.md`, `…_thread2_handoff.md`).
 > Nicht mehr für Betrieb/Due-Diligence heranziehen.
+> Aktueller verbindlicher Reststand: `docs/datenmotor-restliste.md` (Stand 2026-07-17).
 
 **Rolle:** Externer CTO / Due-Diligence vor Investment
 **Datum:** 2026-07-01

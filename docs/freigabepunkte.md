@@ -1,5 +1,13 @@
 # Helmut — Gebündelte Freigabepunkte (Stand Sprint-Serie Audit 2026-07-15)
 
+> ## ⚠️ HISTORISCH (Stand 2026-07-17)
+> Dieses Dokument ist **keine aktuelle Restliste mehr.** Die einzige verbindliche
+> Liste offener Punkte ist **`docs/datenmotor-restliste.md`**. Zur Auflösung der
+> Nummernkollision mit den Thread-2-Freigaben („F1–F8" vom 2026-07-16) heißen die
+> Freigabepunkte dieses Dokuments jetzt eindeutig **FA-1…FA-13** (Alt-Freigabepunkte);
+> die Überschriften unten sind entsprechend umbenannt, die alten F-Nummern stehen
+> in Klammern. Mapping und Reststand je Punkt: Restliste §1.
+
 Dieses Dokument sammelt ALLE Aktionen, die vorbereitet, aber bewusst NICHT
 ausgeführt wurden, weil sie eine ausdrückliche Betreiber-/Gründer-Freigabe
 brauchen (Production-Env, Production-Daten, Cron, Kosten, Recht). Jeder Punkt:
@@ -8,7 +16,7 @@ Audit-Fixes; alles Übrige ist bereits im Code umgesetzt und getestet.
 
 ---
 
-## F1 — PILOT_SECRET rotieren ✅ AUSGEFÜHRT (2026-07-15)
+## FA-1 (früher F1) — PILOT_SECRET rotieren ✅ AUSGEFÜHRT (2026-07-15)
 
 **AUSGEFÜHRT (2026-07-15):** Neuer, langer PILOT_SECRET in Vercel (Project
 `helmut-pilot`, Production) gesetzt + Redeploy. Zugang anschließend verifiziert:
@@ -34,7 +42,7 @@ Redeploy (Deployments → aktuelles → Redeploy). Neuer Wert NUR über sicheren
 
 **Rückweg (nicht nötig):** alten Wert wieder setzen (nicht empfohlen).
 
-## F2 — Git-Historie bereinigen (optional, vor Repo-Weitergabe)
+## FA-2 (früher F2) — Git-Historie bereinigen (optional, vor Repo-Weitergabe)
 
 **Warum:** Der alte Pilot-Code bleibt in der Historie lesbar, bis diese
 umgeschrieben wird. F1 ist ausgeführt (2026-07-15), der alte Code ist damit bereits
@@ -48,7 +56,7 @@ Branches müssen neu aufgesetzt werden; Vercel-Deploy-Historie bleibt).
 **Risiko:** Force-Push bricht offene Branches/Checkouts. **Rückweg:** Backup-
 Klon vor dem Rewrite behalten.
 
-## F3 — Cron-Reihenfolge Morgenablauf (Produktqualität)
+## FA-3 (früher F3) — Cron-Reihenfolge Morgenablauf (Produktqualität)
 
 **Ist (verifiziert, vercel.json + Code):** crawl 04:00 → **morning-briefing
 05:00** → understanding 05:30 → lage-briefing 05:45 (UTC). Der Morgen-Push
@@ -72,7 +80,7 @@ Arbeitsbeginn; lage-briefing 05:45 kann unverändert bleiben, da unabhängig.)
 Pilotmandanten passt; alternativ understanding auf 04:30 UND morning-briefing auf 05:00
 belassen). **Rückweg:** Zeile zurückstellen + Deploy.
 
-## F4 — Morgen-Push für alle Profile ~~(erledigt/entfällt)~~
+## FA-4 (früher F4) — Morgen-Push für alle Profile ~~(erledigt/entfällt)~~
 
 **Erledigt durch die Mandantenneutralisierung
 (`docs/multitenancy-pilot-neutralisierung.md`):** Der 05:00-Cron
@@ -81,7 +89,7 @@ belassen). **Rückweg:** Zeile zurückstellen + Deploy.
 Flag, ohne bevorzugtes Mandat. Es gibt kein `HELMUT_MORNING_PUSH_ALL_PROFILES`
 und kein Fallback-Mandat mehr. Kein Freigabeschritt nötig.
 
-## F5 — LLM-Tageslimit ✅ VOLLSTÄNDIG AUSGEFÜHRT (2026-07-15)
+## FA-5 (früher F5) — LLM-Tageslimit ✅ VOLLSTÄNDIG AUSGEFÜHRT (2026-07-15)
 
 **AUSGEFÜHRT mit Gründer-Freigabe „Go kontrollierter LLM Budget Rollout"
 (Merge `170d310` + Vercel-Env):** `HELMUT_MAX_LLM_CALLS_PER_DAY=100` und
@@ -89,8 +97,14 @@ und kein Fallback-Mandat mehr. Kein Freigabeschritt nötig.
 (live verifiziert: 33 echte Calls am 15.07. > altes Limit 20; Understanding
 lief 23×). Rollback-Referenz: alter Ist-Wert war `20`.
 
-**NOCH OFFEN — Migration F12 ist seit 2026-07-15 eingespielt, es fehlen NUR
-noch diese zwei Vercel-Env-Werte + ein Redeploy (Gründer-Dashboard-Schritt):**
+**✅ ERLEDIGT (Nachtrag 2026-07-17):** Auch dieser Rest ist ausgeführt —
+`HELMUT_LLM_RESERVE_UNDERSTANDING=30` + `HELMUT_UNDERSTANDING_LOCK=1` sind seit
+2026-07-15 gesetzt und live verifiziert (Master-Status, Nachtrag „FA-12 FINAL").
+FA-5 ist damit vollständig abgeschlossen. Der folgende Absatz ist historisch:
+
+**NOCH OFFEN (historisch, inzwischen erledigt) — Migration FA-12 ist seit 2026-07-15
+eingespielt, es fehlen NUR noch diese zwei Vercel-Env-Werte + ein Redeploy
+(Gründer-Dashboard-Schritt):**
 - `HELMUT_LLM_RESERVE_UNDERSTANDING=30` — Understanding kann nie unter
   30 Calls/Tag gedrückt werden; Büro/Lage/App-Start teilen sich max. 70
   (behebt das belegte Aushungern strukturell; der Code dafür liegt im
@@ -99,12 +113,12 @@ noch diese zwei Vercel-Env-Werte + ein Redeploy (Gründer-Dashboard-Schritt):**
   überlappenden Cron-Läufen (Exists-Check ist sonst Read-then-Decide).
 **Rückweg:** Variablen entfernen + Redeploy.
 
-## F6 — Fail-closed ✅ AUSGEFÜHRT (2026-07-15)
+## FA-6 (früher F6) — Fail-closed ✅ AUSGEFÜHRT (2026-07-15)
 
 `HELMUT_LLM_BUDGET_FAIL_CLOSED=1` ist in Vercel gesetzt und seit Deployment
 `170d310` wirksam. **Rückweg:** Variable entfernen + Redeploy.
 
-## F7 — Supabase Pro + PITR (Betriebsrisiko, DRINGEND)
+## FA-7 (früher F7) — Supabase Pro + PITR (Betriebsrisiko, DRINGEND)
 
 **Warum:** Free-Plan = keine Backups; der zentrale Blob (`helmut_store.main`,
 ~1,2 MB) ist Last-Write-Wins — ein fehlerhafter Write ist irreversibler
@@ -113,13 +127,13 @@ Totalverlust. **Schritt:** Supabase-Dashboard → Projekt → Billing → Pro
 nach `docs/betrieb/backup-restore-runbook.md` (Sprint 7). **Rückweg:** Downgrade
 möglich, Backups gehen dann wieder verloren.
 
-## F8 — Rotation weiterer Secrets NUR falls Verdacht
+## FA-8 (früher F8) — Rotation weiterer Secrets NUR falls Verdacht
 
 Der Secret-Scan (Sprint 1) fand außer dem Pilot-Code KEINE echten Secrets in
 Arbeitsstand oder Historie (nur Test-Fixtures; nie eine .env committet). Keine
 Aktion nötig, solange kein Verdacht auf Leak besteht.
 
-## F9 — Rechtliche Festlegungen (Anwalt/DSB)
+## FA-9 (früher F9) — Rechtliche Festlegungen (Anwalt/DSB)
 
 Entwürfe liegen ab Sprint 7 unter `docs/recht/` (Datenfluss, Dienstleister,
 TOMs, Löschkonzept, VVT, AVV-Liste, Pilotvereinbarung als ARBEITSENTWURF,
@@ -127,7 +141,7 @@ Fragenkatalog). JEDE verbindliche Festlegung (Art.-9-Grundlage, DSFA,
 AVV-Abschluss, Pilotvereinbarung unterschreiben) braucht Anwalt/DSB — keine
 Rechtsbewertung durch dieses Audit.
 
-## F12 — Migration: atomare LLM-Budget-Reservierung ✅ AUSGEFÜHRT (2026-07-15)
+## FA-12 (früher F12) — Migration: atomare LLM-Budget-Reservierung ✅ AUSGEFÜHRT (2026-07-15)
 
 **AUSGEFÜHRT mit Gründer-Freigabe „Go für Migration F12"
 (Registry-Version `20260715123216`, genau einmal):**
@@ -163,7 +177,7 @@ F5-Rest (`HELMUT_LLM_RESERVE_UNDERSTANDING=30` + `HELMUT_UNDERSTANDING_LOCK=1`)
 **Rückweg:** `20260717_llm_budget_reservation_rollback.sql` (App fällt
 automatisch auf Altverhalten zurück, kein Deploy nötig).
 
-## F13 — Mandantenneutraler Stand: KEINE Mandanten-Env nötig (nur Daten-Hygiene)
+## FA-13 (früher F13) — Mandantenneutraler Stand: KEINE Mandanten-Env nötig (nur Daten-Hygiene)
 
 **Warum:** Die Mandantenneutralisierung
 (`docs/multitenancy-pilot-neutralisierung.md`) entfernt jeden bevorzugten
@@ -185,7 +199,7 @@ einmalige Mandatsauswahl).
 **Rückweg:** Vorheriges Deployment re-deployen. Keine Migration, keine
 Datenänderung nötig.
 
-## F11 — Branch Protection aktivieren (einmalig, 2 Minuten)
+## FA-11 (früher F11) — Branch Protection aktivieren (einmalig, 2 Minuten)
 
 Das neue CI-Gate (.github/workflows/ci.yml) läuft bei jedem PR, blockiert den
 Merge aber erst mit Branch Protection: GitHub → Settings → Branches → Add rule
@@ -193,7 +207,7 @@ Merge aber erst mit Branch Protection: GitHub → Settings → Branches → Add 
 „Syntax + Offline-Suiten" und „Browser-/Mobile-Smoke (Chromium)" auswählen.
 **Rückweg:** Regel deaktivieren.
 
-## F10 — Merge dieses Branches nach main (= Production-Deployment)
+## FA-10 (früher F10) — Merge dieses Branches nach main (= Production-Deployment)
 
 Der Branch `claude/helmut-audit-readiness-boirkf` enthält ausschließlich
 verhaltenssichere Fixes (alle Suiten grün, keine Flag-/Cron-/Datenänderung,

@@ -4,7 +4,7 @@
 automatischen Backups, KEIN Point-in-Time-Recovery. Der zentrale Blob
 (`helmut_store.main`, ~1,2 MB) wird bei jedem Write komplett überschrieben
 (Last-Write-Wins). Ein fehlerhafter Write oder ein DB-Vorfall ist heute ein
-**irreversibler Totalverlust**. Deshalb: Freigabepunkt **F7 (Supabase Pro +
+**irreversibler Totalverlust**. Deshalb: Freigabepunkt **FA-7 (früher FA-7) (Supabase Pro +
 PITR, ~25 $/Monat)** ist die wichtigste einzelne Betriebsentscheidung.
 
 ## 1. Sofort verfügbar: manuelles Voll-Backup (read-only)
@@ -30,9 +30,9 @@ SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... node scripts/backup-export.js
   Tabellen-Export angelegtes `knowledge_object`). **Deshalb: Export nur zu
   nutzungsarmer Zeit** — empfohlen täglich VOR dem 20:00-UTC-Crawl — und nie
   parallel zu Migrationen/Backfills. Eine echte Snapshot-Garantie liefert erst
-  F7 (PITR); bis dahin ist das ein bewusst akzeptiertes, über den Zeitpunkt
+  FA-7 (PITR); bis dahin ist das ein bewusst akzeptiertes, über den Zeitpunkt
   gesteuertes Restrisiko.
-- Empfohlener Rhythmus bis F7: **täglich vor dem 20:00-UTC-Crawl** sowie
+- Empfohlener Rhythmus bis FA-7: **täglich vor dem 20:00-UTC-Crawl** sowie
   **immer unmittelbar vor**: Migrationen, Flag-Änderungen, Datenlöschungen,
   Deployments mit Schreibpfad-Änderungen.
 - Erfolgskontrolle: Skript meldet Zeilenzahlen je Tabelle + manifest.json;
@@ -102,7 +102,7 @@ neuere). Vorgehen:
 6. **Dokumentation:** Vorfall, Ursache, wiederhergestellter Stand, Datenverlust-
    Fenster (relevant für DSGVO-Meldepflicht-Prüfung durch DSB).
 
-## 3. Nach F7 (Supabase Pro + PITR)
+## 3. Nach FA-7 (Supabase Pro + PITR)
 
 - PITR aktivieren; vor jeder riskanten Aktion den Zeitstempel notieren
   (Preflight-Checklisten verlangen das bereits).
@@ -207,8 +207,8 @@ wiederhergestellt, damit der atomare LLM-Tageszähler nach einem Restore nicht
 bei 0 beginnt (sonst am Restore-Tag bis zu 2x Tagesbudget).
 **Realistische Wiederherstellungszeit:** Blob-Only-Restore < 5 Min; Voll-Restore
 (38 Tabellen, aktuelle Datenmenge) 15–30 Min inkl. Validierung.
-**Datenverlustfenster:** Zeit seit letztem Export (bis F7: bis zu 24 h beim
-empfohlenen Tagesrhythmus; nach F7/PITR: Minuten).
+**Datenverlustfenster:** Zeit seit letztem Export (bis FA-7: bis zu 24 h beim
+empfohlenen Tagesrhythmus; nach FA-7/PITR: Minuten).
 
 ## 4. Was NICHT gesichert wird (bewusst)
 

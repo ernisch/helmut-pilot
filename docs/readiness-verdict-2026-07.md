@@ -1,5 +1,14 @@
 # Helmut — Readiness-Urteil (Stand 2026-07-12, nach Umsetzungssprint)
 
+> ## ⚠️ HISTORISCH (Stand 2026-07-17)
+> Dieses Urteil beschreibt den Stand **2026-07-12** — VOR Thread-2-Härtung (PR #95),
+> Sprint 1 Mehrmandantenfähigkeit (PR #96), Mandantenneutralisierung (PR #97) und
+> Understanding-Forensik (PR #98). Die hier verwendeten P-Nummern (P0-1/P0-2/P2-5 …)
+> folgen einem **älteren, abgelösten Schema** und sind NICHT die Datenmotor-Aufgaben
+> A-P0-x. Der Abschnitt zu JWT-Modus/RLS ist teilweise überholt (JWT-Modus inzwischen
+> stillgelegt; Zweitmandanten-Voraussetzungen siehe Restliste OP-03).
+> **Verbindlicher aktueller Stand: `docs/datenmotor-restliste.md`.**
+
 Kurz & einfach aus Gründerperspektive. „Bereit" heißt: sicher betreibbar **und**
 liefert echten Nutzen, ohne dass etwas Wichtiges kaputt oder unsicher ist.
 

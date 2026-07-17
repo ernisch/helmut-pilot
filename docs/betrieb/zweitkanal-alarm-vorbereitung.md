@@ -1,6 +1,8 @@
-# Zweiter Alarmkanal — technische Vorbereitung (F5)
+# Zweiter Alarmkanal — technische Vorbereitung (FT2-5)
 
-**Status: VORBEREITET, NICHT AKTIVIERT.** Aktivierung = Freigabepunkt **F5** (Env-Wert
+> **Hinweis 2026-07-17:** Freigabe-Nummern folgen jetzt dem eindeutigen Thread-2-Schema **FT2-x** (früher „Fx“); Mapping und verbindlicher Reststand: `docs/datenmotor-restliste.md`.
+
+**Status: VORBEREITET, NICHT AKTIVIERT.** Aktivierung = Freigabepunkt **FT2-5** (Env-Wert
 in Vercel Production setzen). Dieses Dokument beschreibt exakt, was der Code bereits
 kann und welche Schritte die Aktivierung braucht — **ohne** etwas zu aktivieren.
 Grundlage: rein lesende Analyse des Production-Codes (HEAD des Feature-Branches, =
@@ -57,14 +59,14 @@ Zapier/Make/E-Mail-Relais-Routing. Kein zusätzlicher Dienst / kein SMTP-Secret 
   Ziel-Webhook einmal mit einem **Beispiel-Payload** (siehe Schema oben) per `curl`
   anstoßen und prüfen, dass HTTP 2xx zurückkommt und die Nachricht korrekt ankommt —
   bevor die URL überhaupt in Vercel gesetzt wird. So ist die URL geprüft, bevor sie
-  produktiv wird (das war die Bedingung des Gründers für F5).
+  produktiv wird (das war die Bedingung des Gründers für FT2-5).
 
-## 3 · Aktivierungsschritte (erst mit F5-Freigabe des Gründers)
+## 3 · Aktivierungsschritte (erst mit FT2-5-Freigabe des Gründers)
 
 1. **Webhook-URL bereitstellen** (Slack „Incoming Webhook", Discord-Webhook,
    Zapier/Make-Catch-Hook oder E-Mail-Relais) und wie in §2 vorab per `curl` prüfen.
 2. `HELMUT_MONITORING_WEBHOOK_URL` in **Vercel → helmut-pilot → Settings → Environment
-   Variables → Production** setzen. **(= F5, freigabepflichtig, hier NICHT ausgeführt.)**
+   Variables → Production** setzen. **(= FT2-5, freigabepflichtig, hier NICHT ausgeführt.)**
    Die URL ist ein Secret (enthält oft ein Token) → nur in Vercel + Passwort-Manager,
    nie ins Repo.
 3. **Redeploy** (Env-Werte greifen erst im neuen Deployment).
@@ -76,7 +78,7 @@ Zapier/Make/E-Mail-Relais-Routing. Kein zusätzlicher Dienst / kein SMTP-Secret 
 
 ## 4 · Ausdrücklich NICHT Teil dieser Vorbereitung
 
-- Kein Setzen von `HELMUT_MONITORING_WEBHOOK_URL` (das ist F5).
+- Kein Setzen von `HELMUT_MONITORING_WEBHOOK_URL` (das ist FT2-5).
 - Kein Deploy, keine Cron-/Migration-Änderung.
 - Keine künstliche Auslösung eines nicht-grünen Reports zum „Testen" (kein bewusster
   Fehlerfall während der laufenden Beweisläufe).

@@ -1,8 +1,10 @@
 # Understanding-Rückstand — vollständige, rein lesende Analyse
 
+> **Hinweis 2026-07-17:** Freigabe-Nummern folgen jetzt dem eindeutigen Thread-2-Schema **FT2-x** (früher „Fx“); Mapping und verbindlicher Reststand: `docs/datenmotor-restliste.md`.
+
 **Auftrag:** Klären, ob die offenen Understanding-Fälle irrelevantes Rauschen sind oder ob
 politisch relevante Inhalte verloren gehen. **Arbeitsweise:** ausschließlich lesend — keine
-Production-Daten geändert, kein Deploy, keine Migration, keine Env-Änderung, F6/F7 nicht
+Production-Daten geändert, kein Deploy, keine Migration, keine Env-Änderung, FT2-6/FT2-7 nicht
 aktiviert, keine KI-Aufrufe. Keine personenbezogenen Rohtexte/Volltexte übernommen (nur
 öffentliche Themenlabels + `vorgang_id`-Slugs). Stand 2026-07-17.
 
@@ -29,7 +31,7 @@ Datenverlust-Prüfung.
   die **bestehenden** Pfade nicht erreichbar (Fenster zu klein). Ohne gezielte Recovery bleiben
   diese Vorgänge **dauerhaft `pending`** = werden nie an ein Profil ausgeliefert; bei späterer
   Retention-Löschung würde der Verlust **permanent**.
-- **F6 löst den Rückstand NICHT** (nur die 2 `failed`). **F7 ist wirkungslos** dafür.
+- **FT2-6 löst den Rückstand NICHT** (nur die 2 `failed`). **FT2-7 ist wirkungslos** dafür.
 
 ---
 
@@ -117,7 +119,7 @@ gelegt, weil sie die eigentliche Frage (Rauschen vs. relevanter Verlust) beantwo
 | **1 · politisch relevant und blockiert** | **8** | `vg-medikamenten` (GKV-Zuzahlung), `vg-krankschreibung` (Arbeit/Gesundheit, docs=1), `vg-arbeitsvertraege` (Arbeitsrecht), `vg-einkommensteuer` (Steuer), `vg-kinderfreibetrag` (Familie/Steuer), `vg-steuerstrafrecht` (Steuer), `vg-bundesagentur` (Arbeitsverwaltung), `vg-umstellungen` (Arbeitsschutz TRBA 500) |
 | **2 · möglicherweise relevant, manuell prüfen** | **14** | Rente (Position/Kampagne/Kommentar): `vg-privatsieren`, `vg-versicherten`, `vg-riesenfehler`, `vg-0fab030265ec2c2d9d1dcaf2`; GKV/Arbeit borderline: `vg-psychotherapie`, `vg-fachkraeftepotenzial`, `vg-sozialwohnungen`, `vg-mietregulierung`; Bundesthemen außerhalb Kernmandat: `vg-wissenschafts`, `vg-justizminister`, `vg-justizvertreter`, `vg-bahnprojekte`, `vg-einreise`, `vg-direktbeschluss` |
 | **3 · irrelevantes Rauschen** | **27** | Nicht-politisch/Kommentar (11): `vg-achtelfinale` (Sport), `vg-seniorenresidenz` (Immo-PR), `vg-pflegefachkraft` (Stellenanzeige), `vg-volkspartei` (AT-Website), `vg-0fb6ee…` (TV-Listing), `vg-problemfall`, `vg-autosuggestion`, `vg-eingespart`, `vg-rassistische`, `vg-attackiert`, `vg-buerokratischen` · Regional/lokal (8): `vg-wochenvorschau`, `vg-dringend`, `vg-demonstranten`, `vg-mobilitaetsknoten`, `vg-parkplaetzen`, `vg-kundgebung`, `vg-minderheitenpartei`, `vg-agrarreform` · Ausland/EU (8): `vg-dauerkrise`, `vg-gerettet`, `vg-zwangsadoptionen`, `vg-produzieren`, `vg-aargauer`, `vg-ausnahmezustand`, `vg-verbrenner`, `vg-b2e2e8…` |
-| **4 · technischer Fehler** | **2** | `vg-gesetzentwurf` (Arbeitszeit-Gesetzentwurf), `vg-buerokratie` (Gesundheit/Digital) — beide `understanding_status=failed`, mandatsrelevant, F6-adressierbar |
+| **4 · technischer Fehler** | **2** | `vg-gesetzentwurf` (Arbeitszeit-Gesetzentwurf), `vg-buerokratie` (Gesundheit/Digital) — beide `understanding_status=failed`, mandatsrelevant, FT2-6-adressierbar |
 | **6 · Duplikat** | **1** | `vg-forschung` (= `vg-wissenschafts`, „Wissenschaftsfreiheitsgesetz Bundesrat") |
 | *5 · Datenqualität unzureichend* | *(52, cross-cutting)* | technischer Zustand aller Fälle (siehe oben), nicht als Primärkategorie gezählt |
 | *7 · veraltet* | *(52, cross-cutting)* | Legacy 02./03.07., nicht als Primärkategorie gezählt |
@@ -127,29 +129,29 @@ Kategorie 2 (14) ist Ermessenssache (manuell). Kategorie 3 (27) darf dauerhaft v
 
 ---
 
-## 4 · F6-Analyse & Empfehlung
+## 4 · FT2-6-Analyse & Empfehlung
 
 `recoverFailedUnderstanding` (`lib/helmut/ko-recovery.js`) verarbeitet **ausschließlich**
 `understanding_status='failed'` (`listFailedKnowledgeObjects`, `storage.js:1841`), **nicht**
 `pending`.
-- **Auf die 2 `failed`-Fälle (mandatsrelevant): F6 hilft.** Reset `failed→pending` und Verstehen
+- **Auf die 2 `failed`-Fälle (mandatsrelevant): FT2-6 hilft.** Reset `failed→pending` und Verstehen
   im selben Cron-Lauf kann `complete` erreichen — sofern deren Cluster/Dokumente im Fenster liegen.
-- **Auf die 50 `pending`-Waisen: F6 hilft NICHT.** Sie sind nie `failed`, tauchen also nie in F6
+- **Auf die 50 `pending`-Waisen: FT2-6 hilft NICHT.** Sie sind nie `failed`, tauchen also nie in FT2-6
   auf; würde man sie künstlich auf `failed` setzen, liefe der unmittelbar folgende
   `runPendingUnderstandingShadow` erneut in `skipped-no-cluster` (Dokumente weiter außerhalb des
-  Fensters) — F6 verbrennt nur den Retry-Zähler bis `failed-final`, ohne je zu verstehen.
-- **Empfehlung:** **F6 darf freigegeben werden** — es ist sicher, begrenzt (Default 2 Retries,
-  terminal `failed-final`) und räumt die 2 echten Fehlschläge. **Aber F6 ist NICHT die Lösung des
+  Fensters) — FT2-6 verbrennt nur den Retry-Zähler bis `failed-final`, ohne je zu verstehen.
+- **Empfehlung:** **FT2-6 darf freigegeben werden** — es ist sicher, begrenzt (Default 2 Retries,
+  terminal `failed-final`) und räumt die 2 echten Fehlschläge. **Aber FT2-6 ist NICHT die Lösung des
   Rückstands** und **sollte NICHT auf `pending-no-cluster` ausgeweitet werden** (kontraproduktiv:
-  nutzloses Nachverstehen ohne erreichbare Quellen). F6-Freigabe bleibt eine eigenständige
+  nutzloses Nachverstehen ohne erreichbare Quellen). FT2-6-Freigabe bleibt eine eigenständige
   Entscheidung nach einem sauberen Beweistag, nicht ein Fix für diesen Rückstand.
 
-## 5 · F7-Analyse & Empfehlung
+## 5 · FT2-7-Analyse & Empfehlung
 
-`HELMUT_UNDERSTANDING_PRIORITY` (F7) sortiert nur die **ohnehin verarbeitbaren**, dokument-tragenden
+`HELMUT_UNDERSTANDING_PRIORITY` (FT2-7) sortiert nur die **ohnehin verarbeitbaren**, dokument-tragenden
 Cluster um (`understanding-priority.js:96-105`) und wirkt nur im **eager**-Pfad
 (`understanding.js:732`), nicht im `pending`-Cron-Pfad. **Auf dokumentlose Waisen: null Wirkung.**
-**Empfehlung:** F7 nach eigener Kostenlogik entscheiden — **für diesen Rückstand irrelevant**.
+**Empfehlung:** FT2-7 nach eigener Kostenlogik entscheiden — **für diesen Rückstand irrelevant**.
 
 ---
 
@@ -192,7 +194,7 @@ Keiner der Schritte wurde ausgeführt (alle brauchen Deploy oder Prod-Write → 
 
 - **Feldbug:** Unit-Test — `provisionalKnowledgeObject` schreibt `source_document_count =
   cluster.documents.length` (nicht 0) bei ≥1 Dokument.
-- **F6-Abgrenzung (Regression):** `recoverFailedUnderstanding` fasst **nur** `failed` an, **nie**
+- **FT2-6-Abgrenzung (Regression):** `recoverFailedUnderstanding` fasst **nur** `failed` an, **nie**
   `pending` (Fixture mit gemischten Status → pending unberührt).
 - **Gezielte Recovery (offline):** Fixture mit einem `pending`-Waisen + vorhandenen Seed-Docs →
   Werkzeug findet die Docs anker-basiert und meldet „rekonstruierbar", ohne Prod-Write.
@@ -203,7 +205,7 @@ Keiner der Schritte wurde ausgeführt (alle brauchen Deploy oder Prod-Write → 
 ## 9 · Restrisiko für den Bundestagspiloten
 
 - **Laufender Betrieb: gering.** Der Live-Pfad verarbeitet lückenlos; die tägliche Lage/Briefing
-  für Cem stützt sich auf die wachsenden `complete`-KOs, nicht auf den eingefrorenen Alt-Bestand.
+  für den Pilotmandanten stützt sich auf die wachsenden `complete`-KOs, nicht auf den eingefrorenen Alt-Bestand.
 - **Historische Lücke: real, mittel-niedrig.** ~10 mandatszentrale Ereignisse vom 02./03.07.
   (Rente/GKV/Steuer/Arbeitsrecht) erscheinen **nicht** in der Vorgangsbasis und würden ohne
   gezielte Recovery nie ausgeliefert. Für einen Piloten, der **Vollständigkeit** demonstrieren
@@ -220,8 +222,8 @@ Keiner der Schritte wurde ausgeführt (alle brauchen Deploy oder Prod-Write → 
 `server.js:1019`, `storage.js:1771-1777` (500 Zeilen/30 Tage) · `server.js:1511-1514,1548`
 (bekanntes Fenster-Problem + Admin-Recovery 2000/90) · `lazyUnderstanding.js:111` vs.
 `understanding.js:84` (Feldbug) · `storage.js:1737-1757` (Stub-Erzeugung ohne Links) ·
-`ko-recovery.js:39`, `storage.js:1841` (F6 nur `failed`) · `understanding.js:732`,
-`understanding-priority.js:96` (F7 nur eager) · `understanding.js:854-961` (Diagnose, kein Auto-Fix).
+`ko-recovery.js:39`, `storage.js:1841` (FT2-6 nur `failed`) · `understanding.js:732`,
+`understanding-priority.js:96` (FT2-7 nur eager) · `understanding.js:854-961` (Diagnose, kein Auto-Fix).
 DB: `raw_documents` 07-02/03 = 1839 vorhanden; 4230/4230 seit 07-04 verarbeitet; `pending`
 eingefroren `max(created_at)=2026-07-03`.
 

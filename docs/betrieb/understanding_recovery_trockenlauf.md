@@ -1,12 +1,14 @@
 # Understanding-Recovery — Trockenlauf-Bericht (rein lesend)
 
+> **Hinweis 2026-07-17:** Freigabe-Nummern folgen jetzt dem eindeutigen Thread-2-Schema **FT2-x** (früher „Fx“); Mapping und verbindlicher Reststand: `docs/datenmotor-restliste.md`.
+
 **Auftrag:** Ohne Production-Änderung und ohne KI-Aufruf prüfen, ob die politisch relevanten
 `pending`/`failed`-Vorgänge des Alt-Bestands (02./03.07., 2 `failed` vom 15.07.) aus den noch
 vorhandenen Rohdokumenten **zuverlässig** rekonstruiert werden können. Grundlage:
 `docs/betrieb/understanding_rueckstand_analyse.md`.
 
 **Arbeitsweise (eingehalten):** kein Prod-Write, kein Deploy, keine Migration angewendet, keine
-Env-Änderung, keine KI-Aufrufe, F6/F7 nicht aktiviert, keine Retention/Löschung, keine Änderung an
+Env-Änderung, keine KI-Aufrufe, FT2-6/FT2-7 nicht aktiviert, keine Retention/Löschung, keine Änderung an
 Crawl/Lock/Telemetrie. Keine vollständigen Dokumenttexte / keine unnötigen personenbezogenen Daten
 in dieser Doku (nur Themen-Labels, `vorgang_id`-Slugs, Zahlen).
 
@@ -135,7 +137,7 @@ Recovery-Kennung, (d) die 5 Duplikat- + 27 Rauschen-Fälle kontrolliert terminal
 ### 12 · Fälle, die verworfen oder manuell geprüft werden sollten
 **Verwerfen — bereits durch `complete`-KO abgedeckt (Duplikat, 5):** `vg-einkommensteuer`,
 `vg-kinderfreibetrag`, `vg-bundesagentur`, `vg-riesenfehler`, `vg-gesetzentwurf` (failed —
-F6-Retry würde hier **duplizieren**, nicht helfen).
+FT2-6-Retry würde hier **duplizieren**, nicht helfen).
 **Manuell prüfen (3):** `vg-krankschreibung` (mehrdeutig, 36 Docs — redaktionelle Dokumentwahl),
 `vg-privatsieren` (Partei-Kampagne), sowie das strukturelle Duplikatpaar `vg-forschung` ≡
 `vg-wissenschafts`.

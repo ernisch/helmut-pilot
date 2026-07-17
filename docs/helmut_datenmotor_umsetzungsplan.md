@@ -1,5 +1,13 @@
 # Helmut Datenmotor — Umsetzungsplan (Teil II)
 
+> ## ✅ STATUS-NACHTRAG 2026-07-17 — P0/P1 UMGESETZT
+> Alle P0- und P1-Aufgaben dieses Plans sind durch **PR #95** umgesetzt (Erledigungsstand
+> je Aufgabe: `docs/helmut_datenmotor_thread2_handoff.md` §0a); die freigabepflichtigen
+> Aktivierungen und alle offenen Reste stehen verbindlich in **`docs/datenmotor-restliste.md`**
+> (dort werden die Aufgaben-IDs dieses Plans als **A-P0-x…A-P3-x** zitiert, um die Kollision
+> mit den Prioritätsklassen P0–P3 der Restliste aufzulösen). Dieses Dokument bleibt als
+> Planungsgrundlage historisch unverändert.
+
 > **⚠️ Dies ist der UMSETZUNGSPLAN zum Auditbericht, noch KEIN endgültiges
 > Betriebsdokument.** Er beschreibt *was* zu tun ist, *warum*, *wo* (`Datei:Zeile`)
 > und mit welchem *Risiko/Aufwand*. Grundlage: `docs/helmut_datenmotor_audit.md`
