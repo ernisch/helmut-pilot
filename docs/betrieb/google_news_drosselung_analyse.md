@@ -62,14 +62,14 @@ Der 18:24-Lauf war ein manueller Vercel-„Run". Die vorhandene Drossel
 Refresh-Endpunkte, **nicht** für `/api/cron/crawl|pipeline` — der manuelle
 Cron-Trigger war ungeschützt.
 
-### 1.5 Einfluss der `cem-ince-news`-Dublette
+### 1.5 Einfluss der `<pilot-mandats-id>-news`-Dublette
 
 Gemessen: in den Läufen il02g/v268f/mb1k6 je **145 Zeilen, aber nur 144
-distinct `source_id`** — `cem-ince-news` lief doppelt (Labels „Cem Ince
-News-Suche" und „cem-ince News-Suche"). Ursache (live nachvollzogen, nicht nur
-aus Alt-Doku): der relationale Pfad `rp-cem-ince-news` sucht `q="Cem Ince"`,
+distinct `source_id`** — `<pilot-mandats-id>-news` lief doppelt (Labels „<voller Name>
+News-Suche" und „<pilot-mandats-id> News-Suche"). Ursache (live nachvollzogen, nicht nur
+aus Alt-Doku): der relationale Pfad `rp-<pilot-mandats-id>-news` sucht `q="<voller Name>"`,
 die profil-dynamische `personNewsSource` baute bei **leerem `fullName`**
-`q="cem-ince"` — unterschiedliche URLs, daher griff die reine URL-Dedup im
+`q="<pilot-mandats-id>"` — unterschiedliche URLs, daher griff die reine URL-Dedup im
 Merge nicht; beide tragen dieselbe `source_id`. Effekt auf B1: +1 Google-Abruf
 pro Crawl (~0,7 % des Volumens) — **messbar, aber nicht ursächlich**.
 Zusätzlich verfälschte die Dublette alle per `source_id` geschlüsselten
@@ -97,7 +97,7 @@ Sprint behoben (rollierende Betrachtung, `docs/betrieb/health_report_rollierend.
 3. Nach ~8 h Google-Pause war der 04:00-Lauf **vollständig erholt** (145/145,
    volle URL-Auflösung 1766/1770, Laufzeiten wie gesunde Baseline).
 4. Die Dublette existierte (145/144) und ist auf die id-Kollision
-   personNewsSource ↔ `rp-cem-ince-news` zurückzuführen.
+   personNewsSource ↔ `rp-<pilot-mandats-id>-news` zurückzuführen.
 
 ### Wahrscheinlich (plausibel, nicht formal beweisbar)
 - **Volumeninduzierte, temporäre IP-Drosselung durch Google News**: das
@@ -120,7 +120,7 @@ Sprint behoben (rollierende Betrachtung, `docs/betrieb/health_report_rollierend.
 
 **B3 (neu, beobachtet):** Nach dem Merge der Mandantenneutralisierung (#97,
 17.07. ~05:26 UTC) zeigt der nächste Lauf `crawl-20260717073217-sge68` (manuell,
-07:32 UTC) nur **139 Quellen** und lief für ein Mandat `angela-merkel`
+07:32 UTC) nur **139 Quellen** und lief für ein Mandat `<demo-mandant>`
 (Testmandat, am 17.07. angelegt): die **6 profil-dynamischen Suchen des
 Piloten fehlen** (Regierungsvorhaben/Fraktion/Ministerien/Ausschuss/Region/
 Themen-Medien), die Personensuche des Piloten lief nur noch über den
@@ -131,7 +131,7 @@ in diesem Sprint** — als offener Prüfpunkt an den Betreiber gemeldet, weil er
 die Referenzzahl „145" betrifft (siehe §4).
 
 **Leeres `fullName` zur Cron-Laufzeit** (Ursache der Dubletten-URL-Abweichung
-und des Labels „cem-ince News-Suche"): das im Cron geladene Profil trägt keinen
+und des Labels „<pilot-mandats-id> News-Suche"): das im Cron geladene Profil trägt keinen
 Vollnamen. Die Personensuche fällt dann auf den Mandats-Slug zurück. Prüf-
 empfehlung: Profil-Datensatz vervollständigen (Datenpflege, kein Code).
 

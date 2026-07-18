@@ -1,6 +1,6 @@
 # LLM-Budget: Atomare Call-Reservierung (Race-Fix 2026-07)
 
-## Der Befund (verifiziert, F5)
+## Der Befund (verifiziert, FA-5 — früher F5)
 
 1. Das Budget-Gate (`canSpendLlm`) war **Read-then-Decide**: erst Zählerstand aus dem
    `llmUsage`-Log lesen, dann entscheiden — der Log-Eintrag (`recordLlmUsage`) folgt
@@ -34,7 +34,7 @@
 - **Prioritätsklasse statt zweitem Budgetsystem**: Understanding (callType
   `understanding`) darf das volle Tageslimit nutzen; alle anderen Pfade (Büro,
   Kommunikation, Lage, App-Start, Backfills) nur `Limit − HELMUT_LLM_RESERVE_UNDERSTANDING`.
-  So kann Büro Understanding nicht mehr aushungern (F5-Punkt 10), Büro bleibt bis zur
+  So kann Büro Understanding nicht mehr aushungern (FA-5-Punkt 10), Büro bleibt bis zur
   Reservegrenze normal nutzbar, und es entsteht keine komplizierte Paketlogik.
 - **Fehlgeschlagene/abgebrochene Calls**: eine verbrauchte Reservierung wird bewusst
   **nicht** zurückgegeben (konservativ; identisch zur bisherigen Zählung, die
@@ -73,7 +73,7 @@ Altverhalten, RPC-Fehler fail-open/fail-closed, lokaler Parallel-Modus, Choke-Po
 ## Production-Freigabeschritt
 
 **STATUS 2026-07-15:** Schritte 1–3 (Vorprüfung, Migration, Nachprüfung) sind
-mit Gründer-Freigabe „Go für Migration F12" AUSGEFÜHRT und grün (Registry-Version
+mit Gründer-Freigabe „Go für Migration FA-12" AUSGEFÜHRT und grün (Registry-Version
 `20260715123216`; Atomik live belegt via realem Call → `used=1`). **Offen: nur
 noch Schritt 4** (die zwei Env-Werte `HELMUT_LLM_RESERVE_UNDERSTANDING=30` +
 `HELMUT_UNDERSTANDING_LOCK=1` + Redeploy im Vercel-Dashboard). Schritt 5 (Rollback)

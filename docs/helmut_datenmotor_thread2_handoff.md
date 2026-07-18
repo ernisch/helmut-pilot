@@ -1,6 +1,27 @@
 # Helmut Datenmotor — Verbindliche Übergabe an Thread 2
 
-> **Zweck:** Diese Datei ist die *verbindliche* Arbeitsgrundlage für den
+> ## ✅ STATUS-NACHTRAG 2026-07-17 — Thread 2 ist ABGEARBEITET (PR #95–#100)
+>
+> Dieses Dokument war die Arbeitsgrundlage für Thread 2. **Thread 2 ist
+> abgeschlossen:** Alle hier definierten P0-/P1-Aufgaben sind per **PR #95**
+> (Squash-/Merge-Kette bis `7d4a41a`) im Code umgesetzt; die Freigaben FT2-1
+> bis FT2-3 (Deploy + Migrationen `20260718`/`20260719` + Flags
+> `HELMUT_ATOMIC_LOCK`/`HELMUT_UNDERSTANDING_LOCK`/`HELMUT_SOURCE_TELEMETRY`)
+> sind erteilt und **seit 2026-07-16 18:06 UTC in Production wirksam**.
+> Anschließend folgten **PR #96** (Sprint 1: Sicherheit &
+> Mehrmandantenfähigkeit), **PR #97** (Mandantenneutralisierung), **PR #98**
+> (Understanding-Forensik + Feldbug-Fix + gated Recovery-Pfad) und
+> **PR #99/#100** (Recovery-Action-Registrierung). Der detaillierte
+> Erledigungsstand je Aufgabe steht in **§0a** unten.
+>
+> **Verbindlich für alles noch Offene ist ausschließlich
+> `docs/datenmotor-restliste.md`.** Die Abschnitte §1–§10 dieses Dokuments
+> bleiben als historische Arbeitsgrundlage unverändert erhalten; ihre
+> Reihenfolgen, Freigabe-Tabellen und der PR-#88-Hinweis sind ÜBERHOLT.
+> (Hinweis Nummernschema: die früheren Thread-2-Freigaben „F1–F8" heißen jetzt
+> eindeutig **FT2-1…FT2-8** — siehe Restliste, Abschnitt Nummernschema.)
+
+> **Zweck (historisch):** Diese Datei ist die *verbindliche* Arbeitsgrundlage für den
 > Implementierungs-Thread („Thread 2"). Sie legt Reihenfolge, Abhängigkeiten,
 > Akzeptanzkriterien, Freigabe-Grenzen, Tests und die notwendigen
 > Production-Beweisläufe fest. Sie ersetzt keine der Grundlagen, sondern bündelt
@@ -43,6 +64,43 @@ gelten unverändert (kein Code seit `427295c` geändert). **Inzwischen erledigt:
 nichts zusätzlich seit dem Audit — der Radar-Teil (P1-8) wurde jedoch *bereits vor
 dem Audit* isoliert via PR #89 gemergt (siehe §10, PR-#88-Warnung); der
 `main`-Stand von `radar.js`/`radarState.js` ist vor P1-8 zu prüfen.
+
+---
+
+## 0a. Erledigungsstand je Aufgabe (Stand 2026-07-17, HEAD `7346653`)
+
+> Legende: **✅ ERLEDIGT** = Code gemergt UND in Production wirksam (bzw. Aufgabe
+> vollständig abgeschlossen). **✅ Code / 🔒 Aktivierung offen** = Code gemergt und
+> deployt, aber die Wirkung hängt an einer noch nicht erteilten Freigabe
+> (Flag/Env/Migration/Lauf). Production-Beweise: `docs/betrieb/production_beweisprotokoll.md`.
+
+| ID | Aufgabe (kurz) | Stand 2026-07-17 |
+|---|---|---|
+| **P0-2** | compactStore-Diagnosefeld-Allowlist | **✅ ERLEDIGT** (PR #95, deployt; Felder bleiben im Roundtrip erhalten) |
+| **P0-1** | Echte Laufzeitmessung persistieren | **✅ ERLEDIGT + PRODUCTION-BEWIESEN** (`durationMs` real gemessen: 183106/169572/170106 ms in Läufen 1/2/4; Pro-Quellen-Laufzeiten via Telemetrie) |
+| **P0-3** | Pipeline-Fehler → `systemErrors` | **✅ ERLEDIGT (Code, deployt)** — Live-Auslösung noch unbewiesen (im Beweiszeitraum trat kein echter Pipeline-Fehler auf; künstliche Injektion verboten → Restliste OP-10) |
+| **P0-4** | Atomarer, fail-closed Pipeline-Lock + Understanding-Lock | **✅ ERLEDIGT + PRODUCTION-BEWIESEN** (Migration `20260719` eingespielt; `HELMUT_ATOMIC_LOCK`+`HELMUT_UNDERSTANDING_LOCK` seit 2026-07-16 18:06 UTC an; Locks live gefangen inkl. gleichzeitiger Haltung). Offen bleibt nur der Deny-Pfad unter echter Konkurrenz (Restliste OP-09) |
+| **P0-5 Stufe 1** | Blob-Timeout-Robustheit (Retry+Backoff, non-lossy Retention) | **✅ ERLEDIGT** (PR #95, deployt) |
+| **P0-5 Stufe 2** | Crawl-Läufe relational (Dual-Write) | **✅ Code / 🔒 Aktivierung offen** — Migration `20260720` + `HELMUT_CRAWL_RUNS_RELATIONAL` nicht angewendet/gesetzt (= FT2-8, Restliste OP-17) |
+| **P1-9** | Stale-Kommentare + Alt-Audit als überholt kennzeichnen | **✅ ERLEDIGT** |
+| **P1-2** | Ebenen-Casing-Kanon (`bund` klein) | **✅ ERLEDIGT** (deployt) |
+| **P1-1** | KO-Klassifikations-Backfill (Alt-KOs) | **✅ Code + Trockenlauf + dispatchbare Action / 🔒 Ausführung offen** (= FT2-4, Restliste OP-08; 0 KI, idempotent, harte Bestätigung `BACKFILL_KO_CLASSIFICATION`) |
+| **P1-5** | Ehrlicher Durchsatz (echte `raw_documents`-Deltas) | **✅ ERLEDIGT** (deployt; Beweisprotokoll weist Netto-Deltas getrennt von `savedItems` aus) |
+| **P1-6** | Health-Report: Budget-/Leerlauf-/Frische-/Abdeckungs-Achse | **✅ ERLEDIGT** (deployt; 06:00-Report grün gelaufen) |
+| **P1-7** | Monitoring-Zweitkanal + Meta-Heartbeat | **✅ Code / 🔒 Aktivierung offen** — `HELMUT_MONITORING_WEBHOOK_URL` nicht gesetzt, `health-watch.yml` bewusst ohne `schedule:` (= FT2-5, Restliste OP-07); Vorbereitung: `docs/betrieb/zweitkanal-alarm-vorbereitung.md` |
+| **P1-4** | Begrenzte `failed`-KO-Recovery | **✅ Code / 🔒 Aktivierung offen** — `HELMUT_FAILED_KO_RECOVERY` Default AUS (= FT2-6, Restliste OP-13). Achtung: löst den B2-Alt-Rückstand NICHT (siehe Forensik) |
+| **P1-8** | Radar-Störungswahrheit (Archiv-/Admin-Pfad) | **✅ ERLEDIGT** (Rest-Differenz zu PR #89 umgesetzt, deployt) |
+| **P1-3** | Understanding-Priorisierung | **✅ Code / 🔒 Aktivierung offen** — `HELMUT_UNDERSTANDING_PRIORITY` Default AUS (= FT2-7, Restliste OP-14) |
+
+**Zusätzlich seit dieser Übergabe erledigt (nicht Teil des ursprünglichen Auftrags):**
+
+| Was | Stand |
+|---|---|
+| Production-Beweisläufe (3 Crawls, Understanding-Cron, voller Morgenzyklus, Lock-/Telemetrie-Beweise, Betriebsbefunde B1/B2) | **✅ dokumentiert** in `docs/betrieb/production_beweisprotokoll.md` (Zwischenurteil §5) |
+| Sprint 1 — Sicherheit & Mehrmandantenfähigkeit (Tenant-Guards, Cross-Tenant-Write-Guard, atomarer Per-Mandant-Kostendeckel Default AUS, idempotente Zweitmandanten-Provisionierung, DB-Härtungs-Migration `20260721` vorbereitet/nicht angewandt) | **✅ gemergt** (PR #96); Doku `docs/sprint1-sicherheit/` |
+| Mandantenneutralisierung (kein Pilot-/Default-/Fallback-Mandant, keine mandantenspezifische Env; Crons über alle aktiven DB-Mandate; Cron-Fehler-Isolation + Zeitbudget) | **✅ gemergt** (PR #97); Doku `docs/multitenancy-pilot-neutralisierung.md` |
+| Understanding-Rückstand: vollständige rein-lesende Forensik (B2 aufgelöst: eingefrorener Alt-Bestand 02./03.07., ~10 kritische Fälle, Ursache `skipped-no-cluster`-Fenster) + Feldbug-Fix `lazyUnderstanding` | **✅ gemergt** (PR #98); Doku `docs/betrieb/understanding_rueckstand_analyse.md`, `…_recovery_trockenlauf.md` |
+| Recovery-Pfad für 6 bestätigte Fälle: verdrahtet, doppelt gesperrt (Flag `HELMUT_RECOVERY_EXECUTE` Default AUS + Token), als `workflow_dispatch`-Action registriert | **✅ vorbereitet** (PR #98–#100); **Ausführung offen** (Restliste OP-05) |
 
 ---
 
@@ -293,7 +351,14 @@ Betriebsdokument eintragen (echte, gemessene Werte).
 
 ## 10. ⚠️ Ausdrücklicher Hinweis: PR #88 NICHT ungeprüft übernehmen
 
-**Verbindlich:** PR #88 darf **nicht** ungeprüft gemergt, gecherry-pickt oder als
+> **✅ ERLEDIGT/ÜBERHOLT (2026-07-17):** Thread 2 hat genau die hier verlangte
+> Vorgehensweise umgesetzt — die Inhalte von PR #88 wurden **gegen `main` neu
+> implementiert** (P0-1/P0-2/P1-6/P1-7 via PR #95), der Radar-Teil war bereits
+> via PR #89 live. PR #88 ist damit inhaltlich vollständig überholt und darf
+> weiterhin nicht gemergt werden (nur noch schließen). Abschnitt bleibt als
+> historische Begründung stehen.
+
+**Verbindlich (historisch):** PR #88 darf **nicht** ungeprüft gemergt, gecherry-pickt oder als
 Basis übernommen werden.
 
 | Fakt | Beleg |
@@ -337,3 +402,6 @@ Basis übernommen werden.
 
 *Prüfdatum: 2026-07-16 · Commit: `427295c` · Grundlage:
 `docs/helmut_datenmotor_audit.md`, `docs/helmut_datenmotor_umsetzungsplan.md`.*
+
+*Status-Nachtrag 2026-07-17 (§0a): Thread 2 abgearbeitet (PR #95–#100), HEAD
+`7346653`. Verbindliche Restliste: `docs/datenmotor-restliste.md`.*

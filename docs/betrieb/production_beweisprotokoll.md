@@ -1,5 +1,12 @@
 # Production-Beweisprotokoll — Helmut Datenmotor (Thread 2)
 
+> **Redaktioneller Nachtrag 2026-07-17:** (1) Die Freigabe-Nummern dieses Protokolls
+> folgen jetzt dem eindeutigen Thread-2-Schema **FT2-1…FT2-8** (früher „F1–F8";
+> Mapping: `docs/datenmotor-restliste.md` §1). (2) Mandantenkennungen sind gemäß
+> Neutralisierungs-Konvention anonymisiert (`<pilot-mandats-id>`); alle Messwerte,
+> Tokens und Zeitstempel sind unverändert original. (3) Die offenen Punkte aus §5/§6
+> werden verbindlich in der **Restliste** geführt (OP-05…OP-10, OP-19).
+
 **Zweck.** Fortlaufender, ausschließlich aus echten Production-Messwerten gespeister
 Nachweis, dass die am 2026-07-16 freigeschalteten Funktionen im laufenden Betrieb
 tatsächlich wirken — und ehrliche Trennung zwischen *bewiesen* und *offen*.
@@ -31,7 +38,7 @@ tatsächlich wirken — und ehrliche Trennung zwischen *bewiesen* und *offen*.
 `raw_documents` = 5948.
 
 **Kontroll-Lauf (Flag AUS) als A/B-Vergleich:** Der 16:00-UTC-Pipeline-Crawl
-`crawl-20260716160030-z34lk` lief auf demselben (F1-)Code, aber **vor** dem
+`crawl-20260716160030-z34lk` lief auf demselben (FT2-1-)Code, aber **vor** dem
 18:06-Redeploy, also mit Flags AUS. Ergebnis: vollständiger crawlRun mit
 `durationMs=196645`, 145/145 Quellen — **aber 0 Zeilen in `source_crawl_telemetry`**.
 Das belegt: die P0-1-Laufzeitmessung ist flag-unabhängig, die Telemetrie hängt
@@ -56,7 +63,7 @@ echt am Flag.
 | Duplikate | 143 (`crawlRun.duplicates`; Telemetrie `sum(duplicate_documents)=143`); zusätzlich `discardedItems=752`, `loadedItems=1764`, `newCandidateItems=1012` |
 | Understanding verarbeitet | **66** |
 | Understanding zurückgestellt | **19** |
-| **Lock-Nutzung** | **ATOMISCH (relational), live gefangen.** `crawl-cem-ince` token `372ef316-e30c-4c6c-918e-c1d4a89e6a67` (18:24:58 → exp 18:39:58, 15-min-TTL); `global-understanding` token `99b2d564-7100-448e-b65f-57cedf469658` (18:26:21 → exp 18:36:21, 10-min-TTL). Beide in `pipeline_locks` (nicht im Blob `main-auth.pipelineLocks`) → nicht der fail-open-Blob-Pfad. Nach Abschluss: `pipeline_locks` = 0 → token-gebundene Freigabe sauber. |
+| **Lock-Nutzung** | **ATOMISCH (relational), live gefangen.** `crawl-<pilot-mandats-id>` token `372ef316-e30c-4c6c-918e-c1d4a89e6a67` (18:24:58 → exp 18:39:58, 15-min-TTL); `global-understanding` token `99b2d564-7100-448e-b65f-57cedf469658` (18:26:21 → exp 18:36:21, 10-min-TTL). Beide in `pipeline_locks` (nicht im Blob `main-auth.pipelineLocks`) → nicht der fail-open-Blob-Pfad. Nach Abschluss: `pipeline_locks` = 0 → token-gebundene Freigabe sauber. |
 | Fehler in systemErrors | **0 neue** (59 → 59); `crawlRun.errors=[]`; je Quelle `error_code`-Zeilen = 0 |
 | Telemetrie-Zeilen | **145** (`run_id=crawl-20260716182458-il02g`), 145× `status=ok`, 0 Fehlercodes; distinct `source_id` = 144 (Katalog-Dublette, siehe §4.1) |
 | Quellenlaufzeiten `duration_ms` | **Min 191 · Median 2375 · Ø 2433 · p95 4624 · Max 7048 ms** (145 Quellen). Quellen-Fetch-Fenster 18:24:59.727 – 18:25:20.129 (~20,4 s wall, nebenläufig) |
@@ -84,7 +91,7 @@ keine Doppelverarbeitung (ein Lock-Halter, ein crawlRun, eine Telemetrie-Run-Gru
 | Duplikate | 5 (`crawlRun.duplicates`); `loadedItems=73`, `discardedItems=0`, Telemetrie `sum(new_documents)=56` |
 | Understanding verarbeitet | **18** |
 | Understanding zurückgestellt | **20** |
-| **Lock-Nutzung** | **ATOMISCH (relational), beide live gefangen.** `crawl-cem-ince` token `bacc4f5b-61f6-4a1b-8fe2-0ecf53283a79` (20:01:14 → 20:16:14); `global-understanding` token `30864d16-c692-48d8-a08b-aa3e5cbac212` (20:02:29 → 20:12:29). **Um 20:03:28 UTC beide gleichzeitig gehalten** (in-run Pipeline↔Understanding-Überlappung, zwei getrennte atomare Locks). Blob nicht genutzt; nach Abschluss `pipeline_locks`=0 → saubere Freigabe. |
+| **Lock-Nutzung** | **ATOMISCH (relational), beide live gefangen.** `crawl-<pilot-mandats-id>` token `bacc4f5b-61f6-4a1b-8fe2-0ecf53283a79` (20:01:14 → 20:16:14); `global-understanding` token `30864d16-c692-48d8-a08b-aa3e5cbac212` (20:02:29 → 20:12:29). **Um 20:03:28 UTC beide gleichzeitig gehalten** (in-run Pipeline↔Understanding-Überlappung, zwei getrennte atomare Locks). Blob nicht genutzt; nach Abschluss `pipeline_locks`=0 → saubere Freigabe. |
 | Fehler in systemErrors | **0 neue** (59 → 59) — trotz 129 fehlgeschlagener Quellen (Einordnung: B1) |
 | Telemetrie-Zeilen | **145** (`run_id=v268f`), `status ok=16 / not_ok=129`. **Fehlerklassifikation: `http-429` ×47, `timeout` ×81, `http-4xx` ×1, ok(kein Code) ×16.** |
 | Quellenlaufzeiten `duration_ms` | Min 24 · Median 7294 · Ø 6803 · Max 14189 ms — **timeoutgetrieben (degradierter Lauf)**; gesunder Pro-Quellen-Baseline bleibt Lauf 1. Fetch-Fenster 20:01:15.534–20:02:17.499 (~62 s). |
@@ -109,7 +116,7 @@ kein Flag-/Lock-/Telemetrie-Fehler. Details + ehrlicher Ursachen-Caveat: Betrieb
 | **Lock-Nutzung** | Understanding-Cron zieht `global-understanding` (atomar, da beide Flags on). Wegen ~1 s Laufzeit **nicht** live nachgefangen; der atomare `global-understanding`-Lock ist in Lauf 1 UND Lauf 2 live belegt (unveränderte Flags/Codepfad). |
 | Fehler in systemErrors | **0 neue** (59 → 59) |
 | Neue KOs | 0 (ko_total 337 → 337) |
-| Quellenfelder | n/a (kein Crawl → keine `source_crawl_telemetry`, kein `crawl-cem-ince`-Lock) |
+| Quellenfelder | n/a (kein Crawl → keine `source_crawl_telemetry`, kein `crawl-<pilot-mandats-id>`-Lock) |
 
 **Bewertung Lauf 3 (ehrlich):** Ein **legitim leerer** Lauf — es gab nichts zu verstehen, weil
 das **eager**-Understanding des 20:00-Crawls die Warteschlange bereits geleert hatte. Das ist
@@ -139,7 +146,7 @@ Cron (nächste Chance: 05:30-Understanding-Cron) nachgeholt werden — Test der 
 | Duplikate | 120 (`crawlRun.duplicates`); `loadedItems=1762`, `discardedItems=750`, Telemetrie `sum(new_documents)=880`, `sum(duplicate)=146` |
 | Understanding verarbeitet | **50** |
 | Understanding zurückgestellt | **32** |
-| **Lock-Nutzung** | **ATOMISCH (relational), live gefangen** (04:02:00). `crawl-cem-ince` token `c80be957-1e00-45de-b0a9-578069b4653e` (04:01:00 → 04:16:00). Blob nicht genutzt; nach Abschluss `pipeline_locks`=0 → saubere Freigabe. Eager-Understanding-processRun +1 (5). |
+| **Lock-Nutzung** | **ATOMISCH (relational), live gefangen** (04:02:00). `crawl-<pilot-mandats-id>` token `c80be957-1e00-45de-b0a9-578069b4653e` (04:01:00 → 04:16:00). Blob nicht genutzt; nach Abschluss `pipeline_locks`=0 → saubere Freigabe. Eager-Understanding-processRun +1 (5). |
 | Fehler in systemErrors | **0 neue** (59 → 59) |
 | Telemetrie-Zeilen | **145** (`run_id=mb1k6`), `status ok=145 / not_ok=0`, Fehlercodes: **nur `ok` ×145** |
 | Quellenlaufzeiten `duration_ms` | **Min 131 · Median 2397 · Ø 2421 · p95 4397 · Max 7234 ms** (gesund). Fetch-Fenster 04:01:01.713–04:01:21.826 (~20,1 s). |
@@ -179,7 +186,7 @@ jetzt 344/292). Er ist **nicht** durch die Flags oder diesen Sprint verursacht. 
 Vorgänge tragen überwiegend themenfremd wirkende IDs (`vg-achtelfinale`, `vg-aargauer`,
 `vg-parkplätzen`, `vg-seniorenresidenz`) — plausibel korrektes Aussortieren von Rauschen, **aber
 das ist nicht bewiesen**. Als eigener Befund **B2** geführt (offener Prüfpunkt, kein Blocker der
-Flag-Beweise). Die 2 `failed`-KOs sind genau die Kandidaten für die (deaktivierte) F6-Recovery.
+Flag-Beweise). Die 2 `failed`-KOs sind genau die Kandidaten für die (deaktivierte) FT2-6-Recovery.
 
 ### Morgenzyklus (2026-07-17) — Teil 2: 05:45 Lage-Briefing + 06:00 Health-Report
 
@@ -253,7 +260,7 @@ Der 05:30-Understanding-Cron-Log (Vercel): `{"processed":0,"pending":48,"counts"
 vor diesem Sprint: 316/264 → 344/292), also **nicht** durch die Flags/diesen Sprint verursacht. Die
 übersprungenen Vorgänge tragen überwiegend themenfremde IDs (`vg-achtelfinale`, `vg-aargauer`,
 `vg-parkplätzen`) — **plausibel** korrektes Rauschaussortieren, **aber nicht bewiesen**. Die 2
-`failed`-KOs sind die Kandidaten für die (bewusst deaktivierte) **F6**-Recovery
+`failed`-KOs sind die Kandidaten für die (bewusst deaktivierte) **FT2-6**-Recovery
 (`HELMUT_FAILED_KO_RECOVERY`). **Kein Blocker der Flag-Beweise.**
 
 **AUFGELÖST — vollständige Analyse in `docs/betrieb/understanding_rueckstand_analyse.md`
@@ -262,8 +269,8 @@ seit 07-04 verarbeitet), aber der eingefrorene Alt-Bestand (02./03.07.) ist **ni
 ~**8 kernmandatsrelevante Vorgänge** (Rente/GKV/Steuer/Arbeitsrecht) + 2 `failed` sind blockiert.
 Ursache: `skipped-no-cluster` (`understanding.js:788`) vermengt echt-verwaiste und nur
 außerhalb-des-500-Zeilen-Fensters liegende Vorgänge; die Seed-Rohdokumente **existieren noch**
-(1839 Zeilen), sind aber über Cron/Admin-Recovery unerreichbar. **F6 löst das NICHT** (nur die 2
-`failed`); **F7 wirkungslos**. Datenverlust **teilweise, aktuell reversibel**. Korrektur
+(1839 Zeilen), sind aber über Cron/Admin-Recovery unerreichbar. **FT2-6 löst das NICHT** (nur die 2
+`failed`); **FT2-7 wirkungslos**. Datenverlust **teilweise, aktuell reversibel**. Korrektur
 vorbereitet, **nicht angewendet** (freigabepflichtig). **Kein Eingriff.**
 
 ---
@@ -288,13 +295,13 @@ ausgewiesen und fließt nicht in den gesunden Baseline ein.
 ## 3 · Lock-Nachweis (Zusammenfassung)
 
 - **Atomischer Pipeline-Lock (`HELMUT_ATOMIC_LOCK`):** in **Lauf 1, 2 UND 4** live in
-  `pipeline_locks` gefangen (`crawl-cem-ince`, mit `token`/`expires_at`), Blob-Pfad nie genutzt,
+  `pipeline_locks` gefangen (`crawl-<pilot-mandats-id>`, mit `token`/`expires_at`), Blob-Pfad nie genutzt,
   jedes Mal saubere Freigabe. **Bewiesen.**
 - **Understanding-Lock (`HELMUT_UNDERSTANDING_LOCK`):** in **Lauf 1 & 2** live gefangen
   (`global-understanding`, mit `token`); der dedizierte Understanding-Cron (Lauf 3, 05:30) nutzt
   denselben atomaren Pfad (wegen ~1–2 s Laufzeit nicht erneut live nachgefangen). **Bewiesen.**
 - **Pipeline↔Understanding-Überlappung (in-run):** in Lauf 1 UND Lauf 2 **beobachtet** —
-  `crawl-cem-ince` und `global-understanding` wurden **gleichzeitig** gehalten (Lauf 2:
+  `crawl-<pilot-mandats-id>` und `global-understanding` wurden **gleichzeitig** gehalten (Lauf 2:
   20:03:28 UTC, zwei getrennte atomare Locks mit je eigenem Token). Das belegt: die atomaren
   Locks koexistieren korrekt für unterschiedliche Jobs im selben Lauf. **Beobachtet.**
 - **Deny-Pfad (Doppelstart-Abweisung):** ein zweiter Versuch auf **denselben** `job_name`
@@ -307,29 +314,35 @@ ausgewiesen und fließt nicht in den gesunden Baseline ein.
 
 ## 4 · Parallele sichere Arbeiten (kein Eingriff in laufende Beweisläufe)
 
-### 4.1 · Katalog-Dublette `cem-ince-news` — geprüft, Bereinigung vorbereitet (NICHT angewendet)
+### 4.1 · Katalog-Dublette `<pilot-mandats-id>-news` — geprüft, Bereinigung vorbereitet (NICHT angewendet)
+
+> **Nachtrag 2026-07-17:** Strukturell behoben durch die Mandantenneutralisierung
+> (PR #97) — der Code-Seed enthält keine statische Personenquelle mehr, die
+> Personenquelle entsteht nur noch dynamisch (genau einmal). Offen bleibt der
+> Live-Nachweis am nächsten regulären Crawl (Telemetrie-Zeilen = distinct
+> `source_id`) → Restliste **OP-19**. Der folgende Befund gilt für den Stand vor PR #97.
 
 **Befund (gemessen):** In Lauf 1 trägt die Telemetrie 145 Zeilen, aber nur 144 distinct
-`source_id`. Ursache: `source_id=cem-ince-news` erscheint zweimal, unter zwei Labels
-(„Cem Ince News-Suche" und „cem-ince News-Suche", beide Kategorie `profil`).
+`source_id`. Ursache: `source_id=<pilot-mandats-id>-news` erscheint zweimal, unter zwei Labels
+(„<Voller Name> News-Suche" und „<pilot-mandats-id> News-Suche", beide Kategorie `profil`).
 
 **Ursache im Code (rein lesend ermittelt):**
-- `lib/helmut/sources.js:134` — statischer Katalogeintrag `id:"cem-ince-news"`, `name:"Cem Ince News-Suche"`.
-- `lib/helmut/scheduler.js:763` `personNewsSource()` — baut dynamisch `id:` `` `${profile.id}-news` `` = `cem-ince-news`, `name:` `` `${fullName||profile.id} News-Suche` `` → bei fehlendem `fullName` „cem-ince News-Suche".
+- `lib/helmut/sources.js:134` — statischer Katalogeintrag `id:"<pilot-mandats-id>-news"`, `name:"<Voller Name> News-Suche"`.
+- `lib/helmut/scheduler.js:763` `personNewsSource()` — baut dynamisch `id:` `` `${profile.id}-news` `` = `<pilot-mandats-id>-news`, `name:` `` `${fullName||profile.id} News-Suche` `` → bei fehlendem `fullName` „<pilot-mandats-id> News-Suche".
 
 Beide Wege liefern **dieselbe `source_id`** → dieselbe Google-News-Suche wird pro Crawl
 zweimal abgerufen.
 
 **Sicherheitsnachweis (keine Quelle geht verloren):** Es handelt sich um **eine**
-logische Quelle (`source_id=cem-ince-news`), doppelt eingereiht. Eine De-Duplizierung
+logische Quelle (`source_id=<pilot-mandats-id>-news`), doppelt eingereiht. Eine De-Duplizierung
 der zusammengesetzten Quellenliste **nach `source_id`** entfernt nur die Doppel-Einreihung;
-`cem-ince-news` bleibt genau einmal enthalten. Kein `source_id` verschwindet.
+`<pilot-mandats-id>-news` bleibt genau einmal enthalten. Kein `source_id` verschwindet.
 
 **Warum jetzt NICHT angewendet:** Die Korrektur ist eine **Code-Änderung** (→ Deploy,
 ohne Freigabe verboten) und würde die Quellenzahl während der Beweisläufe von 145 auf 144
 verschieben (verfälscht den laufenden Nachweis). Daher: **vorbereitet, nicht angewendet.**
 Empfohlener Eingriffsort nach dem Sprint (mit Freigabe): De-Dup nach `source_id` bei der
-Quellenlisten-Zusammenstellung, ODER den statischen `cem-ince-news`-Katalogeintrag
+Quellenlisten-Zusammenstellung, ODER den statischen `<pilot-mandats-id>-news`-Katalogeintrag
 weglassen, wenn `personNewsSource` dieselbe `id` erzeugt.
 
 ### 4.2 · Zweiter Alarmkanal — technische Vorbereitung (nicht aktiviert) ✔ dokumentiert
@@ -337,7 +350,7 @@ Vollständige technische Vorbereitung in **`docs/betrieb/zweitkanal-alarm-vorber
 verifizierter Code-Pfad (`sendMonitoringWebhook` → `buildAlarmPayload`, 8-s-Timeout,
 fail-safe, Allowlist+Redaction), exaktes Payload-Schema, gefahrloser Prüfweg
 (`GET /api/cron/health-report?dryRun=1`, kein Versand) und die Aktivierungsschritte.
-Aktivierung = F5 (Env-Wert setzen) — **verboten ohne Freigabe** und ohne geprüfte
+Aktivierung = FT2-5 (Env-Wert setzen) — **verboten ohne Freigabe** und ohne geprüfte
 Webhook-URL. Hier nichts aktiviert, Code unverändert.
 
 ### 4.3 · Berlin/Brandenburg — strukturelle Vorbereitung (nicht aktiviert) ✔ vorhanden & inert bestätigt
@@ -353,7 +366,7 @@ ausdrücklich **inerte** Schicht — nichts davon ist verdrahtet oder aktiv:
   `13-landesmodule-technische-pruefung-und-bundeswege.md`.
 
 **Live-Gegenprobe:** In Lauf 1 und 2 trugen alle 145 Quellen ausschließlich Bundestags-Kategorien
-(offiziell/medien/partei_fraktion/regional/profil des `cem-ince`-Profils) — **kein Landtags-/BE/BB-
+(offiziell/medien/partei_fraktion/regional/profil des Pilotmandats-Profils) — **kein Landtags-/BE/BB-
 Abruf aktiv**. Aktivierung wäre freigabepflichtig (nach Bundestagspilot). **Hier nichts verändert.**
 
 ### 4.4 · Datenschutz / Aufbewahrung / Löschung — dokumentarische Weiterarbeit
@@ -376,7 +389,7 @@ Pflicht-Messwerte im Protokoll · klares Zwischenurteil möglich.
 
 ### Bewiesen (an echten Production-Messwerten)
 1. **Die drei Flags sind im laufenden Code aktiv und werden real ausgeführt:**
-   - `HELMUT_ATOMIC_LOCK`: atomarer `crawl-cem-ince`-Lock **live gefangen in Lauf 1, 2 UND 4**
+   - `HELMUT_ATOMIC_LOCK`: atomarer `crawl-<pilot-mandats-id>`-Lock **live gefangen in Lauf 1, 2 UND 4**
      (relational, mit `token`, `expires_at`), Blob-Pfad nie genutzt, jedes Mal saubere Freigabe.
    - `HELMUT_UNDERSTANDING_LOCK`: `global-understanding`-Lock **live gefangen in Lauf 1 & 2**,
      inkl. **gleichzeitiger** Haltung mit dem Crawl-Lock (in-run Überschneidung, Lauf 2 20:03:28).
@@ -398,14 +411,14 @@ Pflicht-Messwerte im Protokoll · klares Zwischenurteil möglich.
   auf DB-Ebene belegt, der Live-Beweis unter echter Überlappung fehlt.
 - **Fehlerfall → `systemErrors` + Recovery:** mangels echter technischer Störung nicht gezeigt
   (künstliche Injektion verboten). Der `recordPipelineError`-Pfad blieb im Sprint unausgelöst.
-- **Zweitkanal-Alarmtest:** braucht `HELMUT_MONITORING_WEBHOOK_URL` (F5) — technisch vorbereitet.
+- **Zweitkanal-Alarmtest:** braucht `HELMUT_MONITORING_WEBHOOK_URL` (FT2-5) — technisch vorbereitet.
 - **B1 (latentes Google-News-Klumpenrisiko):** einmal transient aufgetreten (volumeninduziert),
   vollständig erholt; latent fort — Minderung Direkt-RSS bekannt. **Zusatzbefund:** der Alarm-Watchdog
   ist jüngster-Crawl-basiert + täglich → eine zwischen zwei Reports auftretende, selbst-erholte
   Degradation bleibt unalarmiert (Telemetrie macht sie aber nachträglich sichtbar).
 - **B2 (Understanding-Rückstand):** ~52 Vorgänge nicht `complete` (50 pending/2 failed,
   `skipped-no-cluster`); **vorbestehend**, nicht flag-verursacht; plausibel Rauschen, aber unbewiesen.
-  Follow-up: Stichprobe + Klärung Filter-vs-Lücke. Die 2 `failed` sind F6-Kandidaten.
+  Follow-up: Stichprobe + Klärung Filter-vs-Lücke. Die 2 `failed` sind FT2-6-Kandidaten.
 
 ### Gesamtbewertung (kein Reife-Urteil, keine DSGVO-Konformitätsbehauptung)
 Die drei freigeschalteten Funktionen wirken **korrekt, additiv und beobachtbar** — an echten
@@ -422,17 +435,27 @@ unbelegt, und B1/B2 sind offene Betriebsbefunde. **Keine Betriebsreife-Behauptun
   vollständiger Morgenzyklus · in-run Pipeline↔Understanding-Überschneidung · B1-Gegenprobe (erholt) ·
   B1-Eskalationsfrage beantwortet (Watchdog jüngster-Crawl-basiert → keine Rückschau).
 - **Offen (Beweis, ehrlich):** Deny-Pfad unter echter Konkurrenz; Fehlerfall→`systemErrors` +
-  Recovery (ohne künstliche Injektion nicht auslösbar); Zweitkanal-Alarmtest (braucht F5-Webhook-URL);
+  Recovery (ohne künstliche Injektion nicht auslösbar); Zweitkanal-Alarmtest (braucht FT2-5-Webhook-URL);
   B2-Follow-up (Stichprobe der `skipped-no-cluster`-Vorgänge).
-- **Nächste Freigabe (konkret):** **F5** — geprüfte `HELMUT_MONITORING_WEBHOOK_URL` liefern, dann
+- **Nächste Freigabe (konkret):** **FT2-5** — geprüfte `HELMUT_MONITORING_WEBHOOK_URL` liefern, dann
   aktiviere ich kontrolliert und führe den echten Zweitkanal-Zustelltest durch. Danach — nach einem
-  vollständig sauberen Beweistag inkl. Deny-/Fehlerpfad — **F6/F7**; **F8** später (nach Pilot + Recht).
+  vollständig sauberen Beweistag inkl. Deny-/Fehlerpfad — **FT2-6/FT2-7**; **FT2-8** später (nach Pilot + Recht).
 
 ---
 
 ---
 
 ## 7 · Nachtrag Sprint „Google-News-Härtung" (2026-07-17, Branch `claude/helmut-google-news-hardening-975p22`)
+
+> **Redaktioneller Nachtrag (2026-07-17, Doku-Konsolidierung):** (1) Dieser Sprint
+> ist inzwischen als **PR #102** nach `main` gemergt (`ca7e404`) — die Formulierung
+> „NICHT gemergt/deployt" unten beschreibt den *Branch-Stand zum Schreibzeitpunkt*.
+> Ob der Code über den Merge hinaus in Production **deployt** und durch einen echten
+> **Production-Beweislauf** bestätigt ist, ist **noch offen** und wird verbindlich in
+> `docs/datenmotor-restliste.md` (OP-07, OP-15, OP-19) geführt. (2) „F5–F8" unten =
+> **FT2-5…FT2-8** (neues Schema, siehe Restliste §1). (3) Mandantenkennungen sind wie
+> im übrigen Protokoll anonymisiert (`<pilot-mandats-id>` / `<demo-mandant>`); die
+> Messwerte, runIds und Zähler sind unverändert original.
 
 **Rein lesende Vertiefung von B1 (Production-Telemetrie, nur SELECT):**
 - **Provider-Trennung des Schadens jetzt BEWIESEN:** Kreuzung der 145
@@ -446,12 +469,12 @@ unbelegt, und B1/B2 sind offene Betriebsbefunde. **Keine Betriebsreife-Behauptun
   `sources.js`-Eintrag ist auf aktuellem `main` bereits entfernt (Commit
   `40e130f`). Die live gemessene Dublette (145 Zeilen / 144 distinct in
   il02g/v268f/mb1k6) entsteht aus **id-Kollision** `personNewsSource`
-  (bei leerem Profil-`fullName`: Query `"cem-ince"`, Label „cem-ince
-  News-Suche") ↔ relationaler Pfad `rp-cem-ince-news` (Query `"Cem Ince"`) —
+  (bei leerem Profil-`fullName`: Query `"<pilot-mandats-id>"`, Label „<pilot-mandats-id>
+  News-Suche") ↔ relationaler Pfad `rp-<pilot-mandats-id>-news` (Query `"<voller Name>"`) —
   unterschiedliche URLs, daher griff die reine URL-Dedup nicht.
 - **Neuer Nebenbefund B3 (beobachtet, offen):** Nach Merge #97
   (Mandantenneutralisierung) lief `crawl-20260717073217-sge68` (manuell,
-  07:32 UTC) mit nur **139 Quellen** für ein Testmandat `angela-merkel`
+  07:32 UTC) mit nur **139 Quellen** für ein Testmandat `<demo-mandant>`
   (angelegt 17.07.); die 6 profil-dynamischen Suchen des Piloten fehlten.
   Die Referenzzahl „145" ist damit mandats-/profilabhängig; harte Invariante
   künftig: **Zeilenzahl = distinct `source_id`**. Kein Eingriff in diesem

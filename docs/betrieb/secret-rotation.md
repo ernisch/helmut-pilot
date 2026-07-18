@@ -20,7 +20,7 @@ Allgemeine Regeln:
 
 - **Ablageort:** Vercel (Production) + Passwort-Manager. Wird an die
   Pilot-Nutzer als geteilter Zugangscode ausgegeben.
-- **Anlass/Intervall:** Freigabepunkt F1 — **am 2026-07-15 ausgeführt** (in Vercel
+- **Anlass/Intervall:** Freigabepunkt FA-1 (früher F1) — **am 2026-07-15 ausgeführt** (in Vercel
   rotiert + Redeploy; `POST /api/pilot/unlock` → HTTP 200 `{"ok":true}` verifiziert).
   Danach bei Verdacht oder wenn ein Pilot-Teilnehmer ausscheidet. Kein fester Turnus.
 - **Schritte:**

@@ -1,4 +1,4 @@
-# Branch Protection für `main` — exakte Einrichtung (Freigabepunkt F11)
+# Branch Protection für `main` — exakte Einrichtung (Freigabepunkt FA-11, früher F11)
 
 Das CI-Gate (`.github/workflows/ci.yml`) läuft bei jedem PR und jedem Push auf
 `main`, **blockiert aber erst mit Branch Protection**. Diese Anleitung ist die
