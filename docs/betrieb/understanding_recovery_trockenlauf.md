@@ -2,6 +2,13 @@
 
 > **Hinweis 2026-07-17:** Freigabe-Nummern folgen jetzt dem eindeutigen Thread-2-Schema **FT2-x** (früher „Fx“); Mapping und verbindlicher Reststand: `docs/datenmotor-restliste.md`.
 
+> **STILLLEGUNG 2026-07-18 (Pending-Sprint):** Der in diesem Bericht vorbereitete
+> **anker-basierte Ausführungspfad** (Nachtrag §B, 6er-Allowlist, `understanding-recovery.yml`)
+> ist **stillgelegt und entfernt** — ein echter Anker-Lauf erzeugte einen Multi-Themen-Digest
+> (`rec-29569461715`, vollständig zurückgerollt). Die rein lesende Analyse dieses Berichts
+> bleibt gültig; für echte Recovery gilt ausschließlich der Einzel-Dokument-Pfad je exakter
+> `raw_document_id` (Restliste **OP-05**; aktueller Stand dort).
+
 **Auftrag:** Ohne Production-Änderung und ohne KI-Aufruf prüfen, ob die politisch relevanten
 `pending`/`failed`-Vorgänge des Alt-Bestands (02./03.07., 2 `failed` vom 15.07.) aus den noch
 vorhandenen Rohdokumenten **zuverlässig** rekonstruiert werden können. Grundlage:

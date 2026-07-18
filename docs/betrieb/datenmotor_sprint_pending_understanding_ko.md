@@ -22,8 +22,12 @@ Workflow-Dispatch (Backfill-Dry-Run ohne Token — technisch schreibunfähig).
   geteilte Dateien sind Doku-Anhänge (`env-inventar.md`: 1 neue Zeile, append-only).
 - **Wichtiger Nebenbefund:** Der ungemergte Branch `claude/helmut-datenmotor-impl-2-kd1jl9`
   (Recovery-/Beweis-Thread, abgeschlossen 2026-07-17) enthält neuere OP-05-Belege und den
-  Einzel-Dokument-Recovery-Pfad (siehe §4). Dieser Sprint ändert **nichts** an dessen
-  Dateien (`understanding-recovery.js/.yml`, Beweisprotokoll) — kein Konflikt.
+  Einzel-Dokument-Recovery-Pfad (siehe §4). Dieser Sprint legt den dort ebenfalls
+  ersetzten **anker-basierten** Pfad auf `main` hart still (§4/§9 Punkt 6) — das berührt
+  `understanding-recovery.js`, das Execute-Skript und entfernt die Action. Bei einem
+  späteren impl-2-Merge entstehen dadurch kleine, gleichgerichtete Konflikte (beide
+  Seiten deaktivieren den Anker-Pfad); Auflösung: impl-2-Fassung (Einzel-Doc-Variante)
+  übernehmen, die Stilllegung bleibt inhaltlich erhalten. Beweisprotokoll unberührt.
 
 ## 2 · Pending-Rückstau: vollständige Live-Analyse (read-only, 2026-07-17)
 
@@ -79,13 +83,20 @@ hat den OP-05-Stand nach Redaktionsschluss der Restliste weitergedreht; live ver
   `singledoc-29583280106` (1 KI-Call, 1 KO, 1 Link, Rollback-Kennung). Ein früherer
   **anker-basierter** Lauf `rec-29569461715` erzeugte einen verunreinigten 3-Themen-Digest
   und wurde **sauber zurückgerollt**.
-- **Konsequenz (dokumentiert auf dem Branch, hier bestätigt):** Der anker-basierte
-  6er-Recovery-Pfad (auf `main` weiterhin als `understanding-recovery.yml` dispatchbar!)
-  ist für Multi-Doc-Fälle **ungeeignet** — Teilstring-Anker ziehen fremde Themen an. Beleg
+- **Konsequenz (in diesem PR DURCHGESETZT):** Der anker-basierte 6er-Recovery-Pfad ist
+  für Multi-Doc-Fälle **ungeeignet** — Teilstring-Anker ziehen fremde Themen an. Beleg
   aus diesem Sprint: die 3 „Medikamenten"-Titeltreffer im Seed-Fenster sind **drei
   verschiedene Ereignisse** (FDP-Drohnen-Lieferung, GKV-Zuzahlung, Ebola-Studie).
-  **Empfehlung: die alte 6er-Action nicht mehr benutzen**; Ersatz ist der Einzel-Doc-Pfad
-  des impl-2-Branches (dessen Merge außerhalb dieses Sprint-Scopes liegt).
+  **Stilllegung dreifach hart umgesetzt:** (1) GitHub-Action `understanding-recovery.yml`
+  **entfernt** (keine dispatchbare Anker-Recovery von `main` mehr), (2)
+  `scripts/understanding-recovery-execute.js` ist ein reiner Stilllegungs-Hinweis (kein
+  DB-/KI-/Write-Pfad, Flag+Token wirkungslos), (3) `RECOVERY_ALLOWLIST` in
+  `lib/helmut/understanding-recovery.js` ist **leer** (planRecovery liefert strukturell
+  nie einen Ausführungsfall). Die reinen Analysefunktionen + Dry-Run bleiben nutzbar.
+  Ersatz ist der Einzel-Doc-Pfad des impl-2-Branches (dessen Merge außerhalb dieses
+  Sprint-Scopes liegt). Hinweis: auf Nicht-`main`-Refs (z. B. impl-2) bleibt dessen
+  eigene Workflow-Datei per API dispatchbar — das ist der bewusste Einzel-Doc-Pfad,
+  nicht der Anker-Pfad.
 - **Rest: 4 Fälle, Recovery vorbereitet.** Exakte Seed-Dokumente read-only identifiziert
   (Seed-Fenster 02./03.07., je genau 1 kohärentes Dokument):
 
@@ -164,20 +175,25 @@ auch die OP-14-Abhängigkeit „sinnvoll nach OP-08" erfüllt und die OP-22-Vorb
 3. `lib/helmut/understanding.js` — `understandOneCluster`: `skipped-terminal`-Guard.
 4. `scripts/pending-terminal-aussortieren.js` + `.github/workflows/pending-terminal-aussortieren.yml`
    — Default read-only Plan/Snapshot; echter Lauf nur mit Flag + Token (neu).
-5. `scripts/pending-terminal-test.js` — 63 Assertions (neu, läuft in der Offline-Suite/CI).
-6. Doku: diese Datei, `pending_terminal_aussortierung.md` (Freigabevorlage),
-   `env-inventar.md` (+1 Zeile), `datenmotor-restliste.md` (nur belegte Abschlüsse/Stände
-   nachgezogen; Hinweis: Datei stammt aus PR #101 — Konfliktauflösung im PR-Text).
+5. `scripts/pending-terminal-test.js` — 63 Assertionen (neu, läuft in der Offline-Suite/CI).
+6. **Stilllegung des anker-basierten Recovery-Pfads (Nachtrag nach Rebase auf #101-Merge):**
+   `.github/workflows/understanding-recovery.yml` entfernt; `understanding-recovery-execute.js`
+   → reiner Stilllegungs-Hinweis; `RECOVERY_ALLOWLIST` geleert; `understanding-recovery-test.js`
+   angepasst (Stilllegungs-Assertionen; Plan-Logik-Tests mit expliziter Test-Allowlist), 55/55.
+7. Doku: diese Datei, `pending_terminal_aussortierung.md` (Freigabevorlage),
+   `env-inventar.md` (+1 Zeile, Recovery-Zeile auf „stillgelegt"), Stilllegungs-Banner im
+   Recovery-Trockenlauf, `datenmotor-restliste.md` (nur belegte Abschlüsse/Stände nachgezogen,
+   inkl. adversarial geschärfter Akzeptanzkriterien für OP-13/OP-14).
 
 ## 10 · Offene Production-Beweise / Freigaben nach diesem Sprint
 
 | # | Aktion | Freigabe |
 |---|---|---|
 | 1 | OP-06: Aussortier-Action mit `AUSSORTIEREN_34_BESTAETIGT` (nach Merge dieses PRs) | JA — Freigabesatz in `pending_terminal_aussortierung.md` §6 |
-| 2 | OP-05-Rest: Einzel-Doc-Recovery der 4 Fälle (je exakte `raw_document_id`, §4) | JA — setzt impl-2-Branch-Merge bzw. Allowlist-Erweiterung voraus |
+| 2 | OP-05-Rest: Einzel-Doc-Recovery der 4 Fälle (je exakte `raw_document_id`, §4); der Anker-Pfad ist entfernt und steht nicht mehr als (falscher) Weg bereit | JA — setzt impl-2-Branch-Merge bzw. Allowlist-Erweiterung voraus |
 | 3 | OP-06-Nachweis: SQL-Gegenprobe + Idempotenz-Zweitlauf dokumentieren | folgt aus 1 |
-| 4 | OP-13: `HELMUT_FAILED_KO_RECOVERY=1` (empfohlen nach 1) | JA (Env + Redeploy) |
-| 5 | OP-14: `HELMUT_UNDERSTANDING_PRIORITY=1` + Budgetdeckel-Tag-Beleg | JA (Env + Redeploy) |
+| 4 | OP-13: `HELMUT_FAILED_KO_RECOVERY=1` (nach 1 + Fenster-Erreichbarkeits-Check der Rest-`failed`; Akzeptanzkriterien in Restliste OP-13) | JA (Env + Redeploy) |
+| 5 | OP-14: `HELMUT_UNDERSTANDING_PRIORITY=1` + Budgetdeckel-Tag-Beleg (Akzeptanzkriterien in Restliste OP-14) | JA (Env + Redeploy) |
 | 6 | Optional: KI-Tags-Backfill (≤ ~5 €, Admin-Endpoint) für 149 Alt-KOs | JA (Prod-Write + KI) |
 | 7 | Betreiber-Entscheid: 10 Ermessensfälle + 2 manuelle Fälle (zweite Tranche oder Recovery) | JA (Klassifikationsentscheid) |
 | — | Keine Retention vor Abschluss von 1+2 (sonst permanenter Verlust der 4 Recovery-Fälle) | Sperrvermerk bleibt |
