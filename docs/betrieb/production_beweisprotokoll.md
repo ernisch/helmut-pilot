@@ -507,8 +507,86 @@ Deploy, keine Env-/Cron-/Migrationsänderung, F5–F8 aus).
 
 ---
 
-_Letzte Aktualisierung: 2026-07-17 nach vollständigem Morgenzyklus + Nachtrag
-Sprint Google-News-Härtung (§7). Stopp-Bedingungen erfüllt; Zwischenurteil in
-§5. Befunde B1 (transient/erholt, Härtung vorbereitet), B2 (vorbestehender
-Understanding-Rückstand) und B3 (Quellenzahl mandatsabhängig nach #97) offen
-dokumentiert._
+## 8 · Beweisläufe der Google-News-Härtung (2026-07-17/18, nach Merge #102)
+
+**Freigabe & Deploy:** Gründer-Freigabe für Merge + Production-Deployment am
+17.07.; Merge **#102** (`ca7e404`) um ~14:53 UTC, Deployment
+`dpl_AfxS5NvyEVZ6Vp9PkvveeyJDwyzk` READY ~14:53 UTC. Die Härtung lief mit den
+dokumentierten Standardwerten (Gate 5 parallel / 200 ms Abstand, Retry 2 mit
+Budget 12, Breaker 10/0.6, Cooldown 60 min, Vollcrawl-Abstand 30 min). Der
+04:00-Lauf lief bereits auf dem Folge-Deployment `dpl_DqPCykno…` (Merge **#101**,
+reiner Doku-Commit des Gründers — Härtungscode unverändert). **Keine manuellen
+Vollcrawls während der Beobachtung; F5–F8 blieben aus; keine Env-/Cron-Änderung.**
+
+### 8.1 · Drei natürliche Crawls (alle gemessen, `politicianId=<pilot-mandats-id>`)
+
+| Feld | Lauf H1 (16:00 Pipeline) | Lauf H2 (20:00 Crawl) | Lauf H3 (04:00 Crawl) |
+|---|---|---|---|
+| runId | `crawl-20260717160028-8jnlr` | `crawl-20260717200131-236sd` | `crawl-20260718040143-hl6ku` |
+| Telemetrie-Zeilen / distinct `source_id` | **144 / 144** | **144 / 144** | **144 / 144** |
+| `runState` | **gesund** | **gesund** | **gesund** |
+| ok / empty / failed | 143 / 1 / **0** | 143 / 1 / **0** | 143 / 1 / **0** |
+| 429 / Timeout / circuit-open / sonstige | 0 / 0 / 0 / 0 | 0 / 0 / 0 / 0 | 0 / 0 / 0 / 0 |
+| Retries (`retriesTotal`) | 0 | 0 | 0 |
+| Circuit Breaker (`googleGate`) | zu (141 beobachtet, 0 Drossel-Fehler) | zu (141/0) | zu (141/0) |
+| Cooldown | inaktiv | inaktiv | inaktiv |
+| Provider-Breakdown | Google 141/141 ok · Direkt 3/3 ok | Google 141/141 ok · Direkt 3/3 ok | Google 141/141 ok · Direkt 3/3 ok |
+| Google-URL-Auflösung | 1728/1731 | 1727/1730 | 1728/1731 |
+| Quellen-Fetch-Fenster / Ø je Quelle | ~35 s · 1085 ms | ~32 s · 928 ms | ~30 s · 831 ms |
+| Gesamtdauer (`durationMs`) | 206 545 ms | 201 408 ms | 184 624 ms |
+| systemErrors danach | 59 | 59 | 59 |
+
+**Damit live bewiesen:**
+1. **Dublette weg:** Zeilenzahl = distinct `source_id` (144 = 144) in allen drei
+   Läufen — die harte Invariante aus §7 hält; erwartete Quellenzahl 144 exakt
+   getroffen (Profil des Piloten trug zur Laufzeit wieder einen `fullName`,
+   die Personensuche fiel per URL-Dedup mit `rp-…-news` zusammen; die 6
+   profil-dynamischen Mandatssuchen liefen wieder mit).
+2. **Härtung im Normalbetrieb verhaltensneutral-positiv:** 0 Fehler, 0 Retries,
+   Breaker nie geöffnet, kein Cooldown; URL-Auflösung unverändert ~99,8 %;
+   `empty`-Status zählt korrekt nicht als Fehler.
+3. **Neue Beobachtbarkeit vollständig persistiert:** `runState`,
+   Provider-Breakdown, Fehlercodes, Retries, Cooldown- und Gate-Zustand stehen
+   in jedem crawlRun (compactStore-Whitelist wirkt).
+4. **Laufzeit-Effekt der Taktung:** Fetch-Fenster ~30–35 s (vorher ~20 s),
+   Gesamtdauern 185–207 s — unter den Deckeln (Pipeline 280 s, Crawl 300 s);
+   Haupttreiber bleibt das Eager-Understanding (94–100 s), nicht das Gate.
+5. **Kein einziger neuer `systemError`** über den gesamten Zeitraum (59, jüngster
+   Eintrag weiterhin vom 16.07.).
+
+### 8.2 · Morgenzyklus 2026-07-18 (erster rollierender Health-Report)
+
+| Cron (UTC) | Ergebnis |
+|---|---|
+| 05:00 morning-briefing | 200, `tenants=1 reason=ok` (5 192 ms) |
+| 05:30 understanding | 200 — **B2-Bewegung:** `vg-einkommensteuer` wurde natürlich aufgelöst (`saved`, 1 Dokument; der 04:00-Crawl brachte frische passende Rohdokumente). Pending-Rückstand 46, weiter `skipped-no-cluster` (bekannt, OP). |
+| 05:45 lage-briefing | 200 |
+| 06:00 health-report | 200 — Datenbasis der rollierenden Sicht: 3 gesunde Läufe im 24-h-Fenster → `aktuell-gesund` (per getesteter Klassifikationslogik; der Report-Text selbst wird nicht persistiert). **Kein** neuer `systemError`, insbesondere KEIN „kein Alarmkanal konfiguriert"-Fehlalarm; Webhook-Zustellstatus im Auth-Store leer = Webhook sauber übersprungen (F5 inaktiv, `unconfigured`-Pfad korrekt). |
+
+**Ehrlicher Nebenbefund (vorbestehend, nicht sprint-verursacht):**
+`watchdogStates` (Persistenz des Betriebszustands für die „Erholt"-Hysterese,
+P1-4/P1-5 des Vorgänger-Sprints) existiert in KEINEM Store — der
+`saveWatchdogState`-Write scheitert offenbar seit jeher still (fail-safe
+try/catch). Wirkung: nur das „Erholt"-Label der Zustandsklassifikation;
+Alarmlogik und rollierende Sicht sind davon unabhängig. Als offener Punkt an
+die Restliste übergeben.
+
+### 8.3 · Konsequenz
+
+Alle in der Freigabe geforderten Nachweise sind erbracht: 3 natürliche Crawls
+gesund und vollständig instrumentiert, Dublette live weg, Health-Report-Zyklus
+sauber, 0 neue Systemfehler, keine manuellen Eingriffe. Der STÖRFALL-Pfad
+(Breaker öffnet, Cooldown greift, Retry bei echtem 429) konnte mangels echter
+Google-Drosselung im Fenster NICHT live ausgeübt werden — er bleibt durch die
+Offline-Suiten (127/127, inkl. Mock-Server-Sturm-Szenarien) belegt und wird
+beim nächsten echten Drossel-Ereignis automatisch sichtbar (Telemetrie +
+rollierender Report). Betriebsreife-Urteil: siehe Thread-Abschluss des
+Härtungs-Sprints (kein pauschales „betriebsreif", Begründung dort).
+
+---
+
+_Letzte Aktualisierung: 2026-07-18 nach den Härtungs-Beweisläufen (§8).
+Befunde: B1 (Ursache belegt, Härtung deployt und in 3 Läufen gesund beobachtet),
+B2 (Rückstand, erste natürliche Auflösung `vg-einkommensteuer`), B3 (Quellenzahl
+mandatsabhängig; Invariante Zeilen = distinct source_id, live bestätigt),
+NEU: stiller `watchdogStates`-Write-Ausfall (vorbestehend, offen)._
