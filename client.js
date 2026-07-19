@@ -2187,14 +2187,6 @@ function renderAdmNutzer() {
             <option value="admin">Administrator</option>
           </select>
         </div>
-        <div class="admin-quickstart">
-          <p class="admin-quickstart-hint">Schnellstart <span class="admin-quickstart-opt">(optional, nur Abgeordnete)</span></p>
-          <input name="party" type="text" placeholder="Partei / Fraktion" aria-label="Partei" />
-          <input name="committee" type="text" placeholder="Ausschuss" aria-label="Ausschuss" />
-          <input name="constituency" type="text" placeholder="Wahlkreis" aria-label="Wahlkreis" />
-          <input name="state" type="text" placeholder="Bundesland" aria-label="Bundesland" />
-          <input name="focusTopics" type="text" placeholder="Schwerpunktthemen (Komma-getrennt)" aria-label="Schwerpunktthemen" />
-        </div>
         <div class="admin-form-foot">
           <button class="primary-button" type="submit">Nutzer einladen</button>
           <small class="admin-form-error" id="createUserError"></small>
@@ -10311,17 +10303,13 @@ function bindAccountActions() {
       if (err) err.textContent = "";
       const fd = new FormData(createUserForm);
       // Invite-Flow (§6): nur Vorname, Nachname, E-Mail, Rolle — KEIN Passwort.
-      // Die Person setzt es selbst über den Einladungs-Link.
+      // Die Person setzt es selbst über den Einladungs-Link. Die politische
+      // Profilkonfiguration (Partei, Ausschuss, Wahlkreis, ...) gehört nicht in
+      // die Zugangserstellung — sie erfolgt im Onboarding bzw. in der Profil-
+      // bearbeitung. Der Server akzeptiert diese Felder weiterhin optional
+      // (andere Aufrufer/Altpfade); dieses Formular sendet sie schlicht nicht mehr.
       const fullName = [fd.get("firstName"), fd.get("lastName")].map((v) => String(v || "").trim()).filter(Boolean).join(" ");
       const body = { name: fullName, email: fd.get("email"), role: fd.get("role") };
-      if (body.role === "abgeordneter") {
-        body.party = fd.get("party");
-        body.committee = fd.get("committee");
-        body.constituency = fd.get("constituency");
-        body.state = fd.get("state");
-        const topics = String(fd.get("focusTopics") || "").split(",").map((t) => t.trim()).filter(Boolean);
-        if (topics.length) body.focusTopics = topics;
-      }
       const res = await apiSend("POST", `/api/admin/users?${apiScopeQuery()}`, body);
       if (!res.ok) {
         if (err) err.textContent = res.json?.error || "Konnte nicht angelegt werden.";
