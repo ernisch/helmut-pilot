@@ -1313,6 +1313,21 @@ async function handleRequest(request, response) {
     });
   }
 
+  // Nutzer loeschen (nur Admin, ausschliesslich ueber die interne Nutzer-ID aus
+  // dem Pfad — nie ueber E-Mail). Loescht GENAU dieses Konto + seine eigenen
+  // Sessions/Passwort-Tokens/Zuweisungen; Mandatsinhalte und Audit-Log bleiben
+  // unberuehrt (siehe accounts.deleteUser). Schutzregeln (Selbstloeschung,
+  // Administratoren) sind dort verdrahtet, nicht hier dupliziert.
+  if (url.pathname.startsWith("/api/admin/users/") && request.method === "DELETE") {
+    if (!requireRoleOr403(response, authUser, "admin")) return undefined;
+    const targetUserId = decodeURIComponent(url.pathname.replace("/api/admin/users/", ""));
+    return handleAsync(response, async () => {
+      const result = await accounts.deleteUser(targetUserId, authUser.id);
+      await accounts.recordAudit({ action: "admin.user.delete", userId: authUser.id, actorEmail: authUser.email, detail: result.deletedEmail });
+      return result;
+    });
+  }
+
   if (url.pathname.startsWith("/api/admin/users/") && (request.method === "PATCH" || request.method === "POST")) {
     if (!requireRoleOr403(response, authUser, "admin")) return undefined;
     const userId = decodeURIComponent(url.pathname.replace("/api/admin/users/", ""));

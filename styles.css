@@ -8207,6 +8207,14 @@ a.ac-item, a.ac-item:visited { text-decoration: none; color: inherit; }
   padding: 0 20px;
 }
 
+/* Loesch-Aktion am Ende der Nutzerkarte: abgesetzt vom Speichern-Bereich, damit
+   sie nicht wie eine weitere Formularaktion aussieht, aber jederzeit erreichbar bleibt. */
+.admin-user-delete-section {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--hairline);
+}
+
 .admin-edit-toggle { margin-bottom: 6px; }
 
 @media (max-width: 720px) {

@@ -145,6 +145,7 @@ let admSearchTerms = {};         // Tabellen-ID -> Suchbegriff
 let admCostDays = 30;            // Zeitraum der KI-Kosten-Ansicht (Tage)
 let admPrivacyConfirm = null;    // aktive DSGVO-Loesch-Bestaetigung { politicianId }
 let admBackfillState = null;     // Zustand/Ergebnis des KO-Backfill-Aufrufs
+let admUserDeleteConfirm = null; // aktive Nutzer-Loesch-Bestaetigung { userId }
 let adminRecovery = null;      // interner Pipeline-Recovery-Status (nur Admin)
 let adminRecoveryResult = null; // Ergebnis der letzten Recovery-Aktion (Anzeige)
 let adminRecoveryBusy = false;  // verhindert Doppelklick/Parallelausführung
@@ -1384,6 +1385,7 @@ function admResetState() {
   admSection = "uebersicht";
   admData = {}; admErrors = {}; admLoading = {}; admLoadedAt = {};
   admSort = {}; admSearchTerms = {}; admPrivacyConfirm = null; admBackfillState = null;
+  admUserDeleteConfirm = null;
 }
 
 // Ein Endpoint, ein Fehlerpfad: Fehler landen in admErrors[key], nie als Wurf.
@@ -2708,6 +2710,41 @@ function bindAdmActions() {
   app.querySelectorAll("[data-privacy-delete-cancel]").forEach((btn) => {
     btn.addEventListener("click", () => { admPrivacyConfirm = null; render(); });
   });
+  // Nutzer loeschen: dezenter Start-Button oeffnet eine Bestaetigung mit Name/
+  // E-Mail/Sessions-Hinweis; erst der explizite Bestaetigen-Klick loest die
+  // DELETE-Anfrage aus. Bei Fehlern bleibt die Karte offen, keine Erfolgsmeldung.
+  app.querySelectorAll("[data-user-delete-start]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      admUserDeleteConfirm = { userId: btn.dataset.userDeleteStart };
+      render();
+    });
+  });
+  app.querySelectorAll("[data-user-delete-cancel]").forEach((btn) => {
+    btn.addEventListener("click", () => { admUserDeleteConfirm = null; render(); });
+  });
+  app.querySelectorAll("[data-user-delete-confirm]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const userId = btn.dataset.userDeleteConfirm;
+      const err = app.querySelector(`[data-user-delete-error="${userId}"]`);
+      if (err) err.textContent = "";
+      btn.disabled = true;
+      try {
+        const res = await apiSend("DELETE", `/api/admin/users/${encodeURIComponent(userId)}?${apiScopeQuery()}`);
+        if (!res.ok || !res.json || res.json.ok !== true) {
+          if (err) err.textContent = (res.json && res.json.error) || `Löschen fehlgeschlagen (HTTP ${res.status}).`;
+          btn.disabled = false;
+          return;
+        }
+        admUserDeleteConfirm = null;
+        expandedAdminUsers.delete(userId);
+        await admAfterMutation();
+        showToast("Nutzer gelöscht.");
+      } catch (_) {
+        if (err) err.textContent = "Netzwerkfehler — Zustand unklar, bitte prüfen.";
+        btn.disabled = false;
+      }
+    });
+  });
   app.querySelectorAll("[data-privacy-delete-run]").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const pid = btn.dataset.privacyDeleteRun;
@@ -2833,6 +2870,32 @@ function renderAdminSystemBody(sys, data, ds, errors, audit) {
       </div>`)}`;
 }
 
+// Loesch-Bereich am Ende der Nutzerkarte: dezenter Ghost-Button, der erst nach
+// ausdruecklicher Bestaetigung (Name/E-Mail/Sessions-Hinweis) die Loeschung
+// ausloest. Administratoren bekommen diese Aktion nicht angeboten (Schutzregel
+// "Andere Administratoren duerfen vorerst nicht ueber diesen Button geloescht
+// werden" — betrifft auch den eigenen Account, der ohnehin immer Rolle admin hat).
+function renderAdminUserDeleteSection(user) {
+  if (user.role === "admin") return "";
+  const confirming = admUserDeleteConfirm && admUserDeleteConfirm.userId === user.id;
+  const confirmPanel = confirming ? `
+    <div class="adm-danger-confirm">
+      <p class="adm-danger-text">Nutzer wirklich löschen?<br />
+        <strong>${escapeHtml(user.name || "")}</strong> · ${escapeHtml(user.email || "")}<br />
+        Der Zugang und alle Sitzungen dieser Person werden entfernt und sie kann sich danach nicht mehr anmelden.</p>
+      <div class="admin-inline-form">
+        <button type="button" class="adm-danger-btn" data-user-delete-confirm="${escapeAttribute(user.id)}">Endgültig löschen</button>
+        <button type="button" class="account-logout" data-user-delete-cancel>Abbrechen</button>
+      </div>
+      <small class="admin-form-error" data-user-delete-error="${escapeAttribute(user.id)}"></small>
+    </div>` : "";
+  return `
+    <div class="admin-user-delete-section">
+      <button type="button" class="adm-danger-btn adm-danger-btn--ghost" data-user-delete-start="${escapeAttribute(user.id)}">Nutzer löschen</button>
+      ${confirmPanel}
+    </div>`;
+}
+
 // Aufklappbares Bearbeiten-Panel je Nutzer: Status + Kundenfelder. Speichert
 // additiv via PATCH /api/admin/users/:id mit { status, customer }.
 function renderAdminUserEditRow(user, status, feedbackCount = 0) {
@@ -2896,6 +2959,7 @@ function renderAdminUserEditRow(user, status, feedbackCount = 0) {
             <small class="admin-form-error" data-customer-error="${escapeAttribute(user.id)}"></small>
           </div>
         </form>
+        ${renderAdminUserDeleteSection(user)}
       </td>
     </tr>`;
 }
