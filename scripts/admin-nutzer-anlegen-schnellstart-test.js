@@ -126,11 +126,14 @@ async function login(port, email, password) {
   check("Handler sendet focusTopics NICHT mehr", !/body\.focusTopics|fd\.get\("focusTopics"\)/.test(handlerSrc));
   check("Handler baut weiterhin fullName aus firstName+lastName", /fd\.get\("firstName"\)/.test(handlerSrc) && /fd\.get\("lastName"\)/.test(handlerSrc));
 
-  console.log("== Bestehende Profilfelder bleiben an ihren eigentlichen Stellen ==");
-  check("Onboarding-Formular hat weiterhin Partei", /<label>Partei<input name="party"/.test(clientSrc));
-  check("Onboarding-Formular hat weiterhin Ausschuss", /name="committee" type="text" list="onboardingCommittees"/.test(clientSrc));
-  check("Onboarding-Formular hat weiterhin Wahlkreis", /<label>Wahlkreis<input name="constituency"/.test(clientSrc));
-  check("Onboarding-Formular hat weiterhin Bundesland", /<label>Bundesland<input name="state"/.test(clientSrc));
+  console.log("== Bestehende Profilfelder bleiben an ihren eigentlichen Stellen (Erstkonfiguration) ==");
+  // Die politischen Profilfelder werden NICHT im Admin-Anlegen-Formular, sondern in
+  // der Erstkonfiguration (Onboarding-Flow, .ho-* / data-onb-*) erhoben. Nach dem
+  // Umbau auf den 14-Schritt-Flow prüfen wir dieselbe Absicht gegen die neue Markup.
+  check("Erstkonfiguration erhebt weiterhin Partei", /onbSelect\("party"/.test(clientSrc));
+  check("Erstkonfiguration erhebt weiterhin Ausschuss", /onbRow\("committees"/.test(clientSrc));
+  check("Erstkonfiguration erhebt weiterhin Wahlkreis", /data-onb-input="constituency"/.test(clientSrc));
+  check("Erstkonfiguration erhebt weiterhin Bundesland", /onbSelect\("state"/.test(clientSrc));
   check("renderProfileSettingsView existiert weiterhin (Profilbearbeitung unangetastet)", /function renderProfileSettingsView\(\)/.test(clientSrc));
 
   console.log("== End-to-End: Einladung funktioniert weiterhin unveraendert (echter HTTP-Flow) ==");

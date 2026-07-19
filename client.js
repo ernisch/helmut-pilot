@@ -173,6 +173,8 @@ let expandedSections = new Set();
 let onboardingActive = false;
 let onboardingStep = 0;
 let onboardingDraft = {};
+let onboardingUi = { scanPhase: 0, lookup: { status: "idle", candidates: [], warnings: [] }, saving: false, editMandate: false, error: "", pct: null };
+let onboardingTimers = [];
 
 const app = document.querySelector("#app");
 const toast = document.querySelector("#toast");
@@ -426,9 +428,11 @@ async function loadBriefing() {
   if (cachedStart) {
     try {
       applyStartPayload(cachedStart);
-      renderedFromCache = true;
-      render();
-      generateOfficeDraftsInBackground();
+      if (!shouldRunOnboarding()) {
+        renderedFromCache = true;
+        render();
+        generateOfficeDraftsInBackground();
+      }
     } catch (error) {
       console.warn("Cached Helmut start payload ignored", error);
     }
@@ -477,6 +481,7 @@ async function loadBriefing() {
     }
     applyStartPayload(startPayload);
     saveCachedStartPayload(startPayload);
+    if (shouldRunOnboarding()) { startOnboardingFlow(); return; }
     restorePersistedView();
     render();
     ensureViewData(currentView);
@@ -582,162 +587,914 @@ function applyStartPayload(startPayload) {
 
   selectedDecisionId = decisions[0]?.id || "";
   generatedStatement = decisions[0]?.statement || "";
-  maybeStartOnboarding();
 }
 
-const ONBOARDING_STEPS = 7;
+// ============================================================================
+// ERSTKONFIGURATION (ONBOARDING) — geführter Erstlogin, 14 Screens
+// ----------------------------------------------------------------------------
+// Vollbild-Takeover (wie renderLogin): setzt app.innerHTML direkt und bindet
+// eigene Events — NICHT über render()/bindActions() (kein Sidebar/Topbar/Dock).
+// Gate: beim Login, wenn profile.onboardingStatus !== 'abgeschlossen'.
+// Persistenz pro Schritt via PATCH /api/profile/current (partiell, dank
+// server-seitigem normalizeProfile-Merge) + onboardingStatus='in_bearbeitung' +
+// onboardingStep (landet über den Mapper in profil_extras.onboarding_step).
+// Design: gescoptes Handoff-Design-System (.onboarding-handoff, .ho-*), Tokens
+// via var(--*), self-hosted Spectral/Hanken/IBM-Plex. Ton: „Du" + Ich-Form.
+// Demo-Namen/-Personen sind NICHT hardcodiert; erkannte Werte kommen aus dem
+// Lookup (GET /api/mandate/lookup). Kataloge sind generische Referenzlisten.
+// ============================================================================
 
-function renderOnboarding() {
-  if (!onboardingActive) return "";
-  const d = onboardingDraft;
-  const mandateName = profile?.fullName || allowedProfiles.find((p) => p.id === activePoliticianId)?.name || "dein Mandat";
-  let body = "";
-  if (onboardingStep === 0) {
-    body = `
-      <h2>Willkommen bei Helmut.</h2>
-      <p class="onboarding-lead">Lass uns ${escapeHtml(mandateName)} in unter 2 Minuten einrichten, damit dein Briefing sofort passt.</p>
-      <p class="onboarding-note">Diese Angaben nutzt Helmut nur zur Personalisierung deiner Briefings. Du kannst sie jederzeit ändern oder löschen.</p>`;
-  } else if (onboardingStep === 1) {
-    body = `
-      <h2>Partei & Fraktion</h2>
-      <label>Partei<input name="party" type="text" value="${escapeAttribute(d.party || "")}" placeholder="z. B. SPD" /></label>
-      <label>Fraktion<input name="faction" type="text" value="${escapeAttribute(d.faction || "")}" placeholder="z. B. SPD-Bundestagsfraktion" /></label>`;
-  } else if (onboardingStep === 2) {
-    body = `
-      <h2>Ausschuss</h2>
-      <label>Dein (Haupt-)Ausschuss
-        <input name="committee" type="text" list="onboardingCommittees" value="${escapeAttribute(d.committee || "")}" placeholder="z. B. Gesundheit" />
-      </label>
-      <datalist id="onboardingCommittees">${committeeOptions.map((c) => `<option value="${escapeAttribute(c)}"></option>`).join("")}</datalist>`;
-  } else if (onboardingStep === 3) {
-    const selected = new Set(d.focusTopics || []);
-    body = `
-      <h2>Schwerpunktthemen</h2>
-      <p class="onboarding-note">Wähle aus, was für dein Mandat zählt — das steuert deine Top-Themen.</p>
-      <div class="onboarding-chips">
-        ${priorityTopics.map((t) => `<label class="onboarding-chip"><input type="checkbox" name="focusTopic" value="${escapeAttribute(t)}" ${selected.has(t) ? "checked" : ""}/> ${escapeHtml(t)}</label>`).join("")}
-      </div>
-      <label>Weitere Themen (Komma-getrennt)<input name="focusTopicsFree" type="text" placeholder="z. B. Krankenhausreform, Prävention" /></label>`;
-  } else if (onboardingStep === 4) {
-    body = `
-      <h2>Region & Stil</h2>
-      <label>Wahlkreis<input name="constituency" type="text" value="${escapeAttribute(d.constituency || "")}" placeholder="z. B. Berlin-Mitte" /></label>
-      <label>Bundesland<input name="state" type="text" value="${escapeAttribute(d.state || "")}" placeholder="z. B. Berlin" /></label>
-      <label>Kommunikationsstil
-        <select name="communicationStyle">${communicationStyles.map((s) => `<option value="${escapeAttribute(s)}" ${d.communicationStyle === s ? "selected" : ""}>${escapeHtml(s)}</option>`).join("")}</select>
-      </label>`;
-  } else if (onboardingStep === 5) {
-    const selectedFormats = new Set(d.officeFormats || ["presse", "linkedin"]);
-    body = `
-      <h2>Büro-Formate</h2>
-      <p class="onboarding-note">Was soll Helmut automatisch vorbereiten, wenn dein Briefing kommt? Du kannst das jederzeit in den Einstellungen ändern.</p>
-      <div class="onboarding-chips">
-        ${OFFICE_FORMATS.map((f) => `<label class="onboarding-chip"><input type="checkbox" name="officeFormat" value="${escapeAttribute(f.id)}" ${selectedFormats.has(f.id) ? "checked" : ""}/> ${escapeHtml(f.label)}</label>`).join("")}
-      </div>`;
-  } else {
-    body = `
-      <h2>Risiken & Chancen (optional)</h2>
-      <label>Risiko-Themen (Komma-getrennt)<input name="riskTopics" type="text" value="${escapeAttribute(d.riskTopics || "")}" placeholder="z. B. Klinikschließungen" /></label>
-      <label>Chancen-Themen (Komma-getrennt)<input name="opportunityTopics" type="text" value="${escapeAttribute(d.opportunityTopics || "")}" placeholder="z. B. Pflege-Offensive" /></label>
-      <p class="onboarding-note">Fertig — danach ist Helmut auf dich eingestellt.</p>`;
-  }
-  const isFirst = onboardingStep === 0;
-  const isLast = onboardingStep === ONBOARDING_STEPS - 1;
-  return `
-    <div class="onboarding-layer">
-      <form class="onboarding-card" id="onboardingForm" onsubmit="return false">
-        <div class="onboarding-progress">Schritt ${onboardingStep + 1} von ${ONBOARDING_STEPS}</div>
-        <div class="onboarding-body">${body}</div>
-        <div class="onboarding-actions">
-          ${!isFirst ? `<button type="button" class="secondary-button" data-onboard-back>Zurück</button>` : ""}
-          <button type="button" class="account-logout" data-onboard-skip>Später</button>
-          ${isLast
-            ? `<button type="button" class="primary-button" data-onboard-finish>Fertig & speichern</button>`
-            : `<button type="button" class="primary-button" data-onboard-next>${isFirst ? "Los geht's" : "Weiter"}</button>`}
-        </div>
-      </form>
-    </div>
-  `;
+const ONB_TOTAL_STEPS = 14; // 0..13
+
+// Generische Referenzkataloge (KEINE personen-/regionsspezifischen Demo-Daten).
+const ONB_COMMITTEES = [
+  "Arbeit und Soziales", "Gesundheit", "Finanzen", "Haushalt", "Wirtschaft und Klimaschutz",
+  "Familie, Senioren, Frauen und Jugend", "Bildung, Forschung und Technikfolgenabschätzung",
+  "Inneres und Heimat", "Recht", "Verkehr", "Digitales", "Auswärtiges", "Verteidigung",
+  "Umwelt, Naturschutz, nukleare Sicherheit und Verbraucherschutz",
+  "Ernährung und Landwirtschaft", "Wohnen, Stadtentwicklung, Bauwesen und Kommunen",
+  "Klimaschutz und Energie", "Kultur und Medien", "Europäische Union", "Menschenrechte und humanitäre Hilfe"
+];
+const ONB_FUNCTIONS = [
+  "Berichterstatter/in", "Sprecher/in der Fraktion", "Obmann/Obfrau im Ausschuss",
+  "Arbeitsgruppen-Leitung", "Ausschussvorsitz", "Stellv. Ausschussvorsitz"
+];
+const ONB_TOPICS = [
+  "Rente & Alterssicherung", "Arbeitsmarkt", "Mindestlohn", "Pflege", "Gesundheit",
+  "Bürgergeld", "Arbeitsschutz", "Fachkräfte", "Kinderarmut", "Wohnen", "Bildung",
+  "Klimaschutz", "Wirtschaft", "Digitalisierung", "Innere Sicherheit", "Migration",
+  "Europa", "Energie", "Verkehr & Mobilität", "Landwirtschaft"
+];
+const ONB_MINISTRIES = [
+  "BMAS — Arbeit & Soziales", "BMG — Gesundheit", "BMF — Finanzen", "BMFSFJ — Familie",
+  "BMWK — Wirtschaft & Klimaschutz", "BMI — Inneres", "BMJ — Justiz", "BMBF — Bildung & Forschung",
+  "BMUV — Umwelt", "BMDV — Digitales & Verkehr", "BMEL — Ernährung & Landwirtschaft",
+  "BMWSB — Wohnen & Bau", "BMVg — Verteidigung", "AA — Auswärtiges", "BMZ — Entwicklung"
+];
+const ONB_CHANNELS = [
+  "Pressemitteilung", "Social Media", "Newsletter", "Reden", "Bürgersprechstunde", "Interviews", "Podcast"
+];
+const ONB_SENSITIVE = ["Migration", "Nahost", "Innere Sicherheit", "Energiepreise", "Klimaschutz"];
+const ONB_BUNDESLAENDER = [
+  "Baden-Württemberg", "Bayern", "Berlin", "Brandenburg", "Bremen", "Hamburg", "Hessen",
+  "Mecklenburg-Vorpommern", "Niedersachsen", "Nordrhein-Westfalen", "Rheinland-Pfalz",
+  "Saarland", "Sachsen", "Sachsen-Anhalt", "Schleswig-Holstein", "Thüringen"
+];
+const ONB_PARTIES = ["SPD", "CDU/CSU", "Bündnis 90/Die Grünen", "FDP", "AfD", "Die Linke", "BSW", "fraktionslos"];
+const ONB_TONES = ["Ruhig & sachlich", "Nahbar & klar", "Pointiert"];
+const ONB_DIRECTNESS = ["Zurückhaltend", "Ausgewogen", "Sehr direkt"];
+const ONB_LENGTHS = ["Kurz", "Mittel", "Ausführlich"];
+const ONB_TIMES = ["06:00", "07:00", "08:00"];
+const ONB_DEPTHS = [{ id: "knapp", label: "Knapp" }, { id: "standard", label: "Standard" }, { id: "ausfuehrlich", label: "Ausführlich" }];
+const ONB_MAXPRIO = [3, 5, 7];
+const ONB_INSTANT = [
+  { id: "crisis", label: "Kritische Risiken für dich" },
+  { id: "deadlines", label: "Presseanfragen mit Frist" },
+  { id: "votes", label: "Kurzfristige Abstimmungen" },
+  { id: "opportunity", label: "Große mediale Chancen" }
+];
+// Ausschuss -> Kernthema / Ministerium (für „Erkanntes ist vorausgewählt"):
+const ONB_COMMITTEE_TOPIC = {
+  "Arbeit und Soziales": ["Arbeitsmarkt", "Rente & Alterssicherung"],
+  "Gesundheit": ["Gesundheit", "Pflege"],
+  "Finanzen": ["Wirtschaft"], "Wirtschaft und Klimaschutz": ["Wirtschaft", "Energie"],
+  "Bildung, Forschung und Technikfolgenabschätzung": ["Bildung"], "Verkehr": ["Verkehr & Mobilität"],
+  "Digitales": ["Digitalisierung"], "Inneres und Heimat": ["Innere Sicherheit", "Migration"],
+  "Ernährung und Landwirtschaft": ["Landwirtschaft"], "Wohnen, Stadtentwicklung, Bauwesen und Kommunen": ["Wohnen"],
+  "Klimaschutz und Energie": ["Klimaschutz", "Energie"]
+};
+const ONB_COMMITTEE_MINISTRY = {
+  "Arbeit und Soziales": "BMAS — Arbeit & Soziales", "Gesundheit": "BMG — Gesundheit",
+  "Finanzen": "BMF — Finanzen", "Wirtschaft und Klimaschutz": "BMWK — Wirtschaft & Klimaschutz",
+  "Familie, Senioren, Frauen und Jugend": "BMFSFJ — Familie", "Inneres und Heimat": "BMI — Inneres",
+  "Recht": "BMJ — Justiz", "Bildung, Forschung und Technikfolgenabschätzung": "BMBF — Bildung & Forschung",
+  "Verkehr": "BMDV — Digitales & Verkehr", "Digitales": "BMDV — Digitales & Verkehr",
+  "Ernährung und Landwirtschaft": "BMEL — Ernährung & Landwirtschaft",
+  "Wohnen, Stadtentwicklung, Bauwesen und Kommunen": "BMWSB — Wohnen & Bau", "Verteidigung": "BMVg — Verteidigung",
+  "Auswärtiges": "AA — Auswärtiges"
+};
+const ONB_PROGRESS_LABELS = {
+  3: "Mandat bestätigen", 4: "Zuständigkeiten", 5: "Prioritäten", 6: "Region",
+  7: "Beobachtung", 8: "Kommunikation", 9: "Arbeitsweise", 10: "Datenschutz", 11: "Prüfung"
+};
+
+// SVG-Glyphen (dünne 1,5px-Line-Icons; keine Emoji, keine Icon-Library-Füllstile)
+const ONB_SVG_CHECK = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
+const ONB_SVG_CHECK_SM = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
+const ONB_SVG_BACK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>';
+const ONB_SVG_ARROW = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const ONB_SVG_CHEVRON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const ONB_SVG_SEARCH = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3" stroke-linecap="round"/></svg>';
+const ONB_SVG_SHIELD = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2l7 3v6c0 5-3 8-7 11-4-3-7-6-7-11V5z"/></svg>';
+const ONB_SVG_EDIT = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
+const ONB_SVG_PLUS = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
+
+// --- Gate + Start -----------------------------------------------------------
+// Fällig, wenn ein Abgeordneter/Referent im Account-Modus ein Mandat mit noch
+// nicht abgeschlossener Erstkonfiguration öffnet. Vorschau-Modus nie onboarden.
+function shouldRunOnboarding() {
+  if (!isAccountMode() || previewMode) return false;
+  if (!["abgeordneter", "referent"].includes(userRole())) return false;
+  if (!profile) return false;
+  const status = String(profile.onboardingStatus || "").trim().toLowerCase();
+  return status !== "abgeschlossen";
 }
 
-function captureOnboardingStep() {
-  const root = document.querySelector("#onboardingForm");
+function onbSeedDraftFromProfile() {
+  const p = profile || {};
+  const arr = (v) => (Array.isArray(v) ? v.filter(Boolean) : []);
+  onboardingDraft = {
+    fullName: p.fullName || "",
+    party: p.party || "",
+    faction: p.faction || "",
+    parliamentType: p.parliamentType || "",
+    politicalLevel: p.politicalLevel || "",
+    accountType: p.accountType || "abgeordneter",
+    constituency: p.constituency || "",
+    state: p.state || "",
+    location: p.location && p.location !== "Noch offen" ? p.location : "",
+    committees: arr(p.committees),
+    deputyCommittees: arr(p.deputyCommittees),
+    reportingTopics: arr(p.reportingTopics),
+    focusTopics: arr(p.focusTopics),
+    currentCampaigns: arr(p.currentCampaigns),
+    regionalInterests: arr(p.regionalInterests),
+    relevantMinistries: arr(p.relevantMinistries),
+    monitoringTargets: arr(p.monitoringTargets),
+    localMedia: arr(p.localMedia),
+    communicationStyle: p.communicationStyle || "Nahbar & klar",
+    communicationDirectness: p.communicationDirectness || "Ausgewogen",
+    communicationLength: p.communicationLength || "Mittel",
+    preferredChannels: arr(p.preferredChannels),
+    noGoTopics: arr(p.noGoTopics),
+    briefTime: "07:00", briefDepth: "standard", maxPrio: 5,
+    instant: ["crisis", "deadlines"]
+  };
+}
+
+function startOnboardingFlow() {
+  onboardingActive = true;
+  onbSeedDraftFromProfile();
+  onboardingUi = { scanPhase: 0, lookup: { status: "idle", candidates: [], warnings: [] }, saving: false, editMandate: false, error: "", pct: null };
+  // Wiederaufnahme: gespeicherte Position, aber nie auf einem transienten Screen
+  // (Scan/Abschluss) landen — höchstens bis „Mandat bestätigen" zurückspringen.
+  const savedStep = Number(profile && profile.onboardingStep);
+  onboardingStep = Number.isFinite(savedStep) && savedStep >= 3 && savedStep <= 11 ? savedStep : 0;
+  renderOnboardingFlow();
+}
+
+// --- Adaptivität ------------------------------------------------------------
+// Ebene/Kontotyp steuern die sichtbaren Screens. Abgeordnete: alle 14. Andere
+// Kontotypen (Ministerium/Organisation/Fraktion) haben kein persönliches Mandat
+// mit Ausschüssen/Wahlkreis -> diese Screens ausblenden.
+function onbAccountType() { return String(onboardingDraft.accountType || "abgeordneter").toLowerCase(); }
+function onbParliament() {
+  const t = String(onboardingDraft.parliamentType || "").toLowerCase();
+  if (t.includes("landtag")) return "Landtag";
+  if (t.includes("bundestag")) return "Bundestag";
+  return "";
+}
+function onbStepVisible(step) {
+  const acc = onbAccountType();
+  const personalMandate = acc === "abgeordneter";
+  if (!personalMandate && (step === 3 || step === 4 || step === 6)) return false; // Mandat/Ausschüsse/Region
+  return true;
+}
+function onbNextVisible(from, dir) {
+  let s = from + dir;
+  while (s > 0 && s < ONB_TOTAL_STEPS && !onbStepVisible(s)) s += dir;
+  return Math.max(0, Math.min(ONB_TOTAL_STEPS - 1, s));
+}
+
+// --- Navigation -------------------------------------------------------------
+function onbGoto(step) {
+  onboardingStep = step;
+  onboardingUi.error = "";
+  renderOnboardingFlow();
+}
+function onbNext() {
+  onbCaptureInputs();
+  const target = onbNextVisible(onboardingStep, 1);
+  onbPersistStep();
+  onbGoto(target);
+}
+function onbBack() {
+  onbCaptureInputs();
+  // Von „Mandat bestätigen" (3) zurück auf Identität (1), von Identität auf Begrüßung.
+  if (onboardingStep === 3) return onbGoto(1);
+  if (onboardingStep === 1) return onbGoto(0);
+  onbGoto(onbNextVisible(onboardingStep, -1));
+}
+
+// --- Auswahl-Helfer ---------------------------------------------------------
+function onbToggle(field, value) {
+  const set = new Set(Array.isArray(onboardingDraft[field]) ? onboardingDraft[field] : []);
+  set.has(value) ? set.delete(value) : set.add(value);
+  onboardingDraft[field] = [...set];
+  renderOnboardingFlow();
+}
+function onbSetOne(field, value) {
+  onboardingDraft[field] = value;
+  renderOnboardingFlow();
+}
+function onbAddCustom(field, inputId) {
+  const el = document.getElementById(inputId);
+  const raw = el ? String(el.value || "").trim() : "";
+  if (!raw) return;
+  const set = new Set(Array.isArray(onboardingDraft[field]) ? onboardingDraft[field] : []);
+  set.add(raw);
+  onboardingDraft[field] = [...set];
+  renderOnboardingFlow();
+}
+function onbCaptureInputs() {
+  const root = document.querySelector("#onbRoot");
   if (!root) return;
-  root.querySelectorAll("input[type=text], textarea, select").forEach((el) => {
-    if (el.name && el.name !== "focusTopicsFree") onboardingDraft[el.name] = el.value;
+  root.querySelectorAll("[data-onb-input]").forEach((el) => {
+    const field = el.getAttribute("data-onb-input");
+    if (field) onboardingDraft[field] = el.value;
   });
-  if (root.querySelector("input[name='focusTopic']")) {
-    const checked = Array.from(root.querySelectorAll("input[name='focusTopic']:checked")).map((c) => c.value);
-    const free = root.querySelector("input[name='focusTopicsFree']");
-    const extra = free ? String(free.value || "").split(",").map((s) => s.trim()).filter(Boolean) : [];
-    onboardingDraft.focusTopics = Array.from(new Set([...checked, ...extra]));
-  }
-  if (root.querySelector("input[name='officeFormat']")) {
-    onboardingDraft.officeFormats = Array.from(root.querySelectorAll("input[name='officeFormat']:checked")).map((c) => c.value);
-  }
 }
 
-async function finishOnboarding(skip) {
-  onboardingActive = false;
-  const now = new Date().toISOString();
-  const payload = skip
-    ? { id: activePoliticianId, onboardedAt: now }
-    : {
-        id: activePoliticianId,
-        onboardedAt: now,
-        party: onboardingDraft.party,
-        faction: onboardingDraft.faction,
-        committee: onboardingDraft.committee,
-        committees: onboardingDraft.committee ? [onboardingDraft.committee] : undefined,
-        focusTopics: Array.isArray(onboardingDraft.focusTopics) ? onboardingDraft.focusTopics : undefined,
-        constituency: onboardingDraft.constituency,
-        state: onboardingDraft.state,
-        communicationStyle: onboardingDraft.communicationStyle,
-        riskTopics: String(onboardingDraft.riskTopics || "").split(",").map((s) => s.trim()).filter(Boolean),
-        opportunityTopics: String(onboardingDraft.opportunityTopics || "").split(",").map((s) => s.trim()).filter(Boolean),
-        officeFormats: Array.isArray(onboardingDraft.officeFormats) ? onboardingDraft.officeFormats : ["presse", "linkedin"]
-      };
-  render();
+// --- HTML-Bausteine ---------------------------------------------------------
+function onbChip(field, label, extra) {
+  const on = (onboardingDraft[field] || []).includes(label);
+  return `<button type="button" class="ho-chip ${on ? "is-on" : ""}" data-onb-toggle="${escapeAttribute(field)}" data-onb-value="${escapeAttribute(label)}">
+    <span class="ho-dot"></span>${escapeHtml(label)}${extra ? `<span class="ho-hint" style="margin-left:6px">${escapeHtml(extra)}</span>` : ""}</button>`;
+}
+function onbChips(field, items) {
+  return `<div class="ho-chips">${items.map((it) => onbChip(field, it)).join("")}</div>`;
+}
+function onbAddRow(field, placeholder) {
+  const inputId = `onbadd-${field}`;
+  return `<div class="ho-input-inline" style="margin-top:10px">
+    <input class="ho-input" id="${inputId}" type="text" placeholder="${escapeAttribute(placeholder)}" data-onb-addfield="${escapeAttribute(field)}" />
+    <button type="button" class="ho-add" data-onb-add="${escapeAttribute(field)}" data-onb-addinput="${inputId}" aria-label="Hinzufügen">${ONB_SVG_PLUS}</button>
+  </div>`;
+}
+function onbRow(field, label, sub) {
+  const on = (onboardingDraft[field] || []).includes(label);
+  return `<button type="button" class="ho-row ${on ? "is-on" : ""}" data-onb-toggle="${escapeAttribute(field)}" data-onb-value="${escapeAttribute(label)}">
+    <span class="ho-row-main"><span class="ho-row-title">${escapeHtml(label)}</span>${sub ? `<span class="ho-row-sub">${escapeHtml(sub)}</span>` : ""}</span>
+    <span class="ho-check">${ONB_SVG_CHECK}</span></button>`;
+}
+function onbTopicRow(label) {
+  const on = (onboardingDraft.focusTopics || []).includes(label);
+  return `<button type="button" class="ho-topicrow ${on ? "is-on" : ""}" data-onb-toggle="focusTopics" data-onb-value="${escapeAttribute(label)}">
+    <span class="ho-topicrow-label">${escapeHtml(label)}</span><span class="ho-check">${ONB_SVG_CHECK}</span></button>`;
+}
+function onbSegment(field, options) {
+  return `<div class="ho-seg">${options.map((o) => {
+    const val = typeof o === "object" ? o.id : o;
+    const label = typeof o === "object" ? o.label : String(o);
+    const on = String(onboardingDraft[field]) === String(val);
+    return `<button type="button" class="ho-seg-btn ${on ? "is-on" : ""}" data-onb-seg="${escapeAttribute(field)}" data-onb-value="${escapeAttribute(String(val))}">${escapeHtml(label)}</button>`;
+  }).join("")}</div>`;
+}
+function onbInstantRow(item) {
+  const on = (onboardingDraft.instant || []).includes(item.id);
+  return `<button type="button" class="ho-row ${on ? "is-on" : ""}" data-onb-toggle="instant" data-onb-value="${escapeAttribute(item.id)}">
+    <span class="ho-row-main"><span class="ho-row-title" style="font-weight:400">${escapeHtml(item.label)}</span></span>
+    <span class="ho-check">${ONB_SVG_CHECK}</span></button>`;
+}
+function onbSelect(field, options, current) {
+  const opts = ["", ...options].map((o) => `<option value="${escapeAttribute(o)}" ${String(current) === String(o) ? "selected" : ""}>${o ? escapeHtml(o) : "Bitte wählen"}</option>`).join("");
+  return `<div class="ho-select-wrap"><select class="ho-select" data-onb-select="${escapeAttribute(field)}">${opts}</select><span class="ho-select-chevron">${ONB_SVG_CHEVRON}</span></div>`;
+}
+function onbLabel(text) { return `<div class="ho-label">${escapeHtml(text)}</div>`; }
+function onbEyebrow(text, accent) { return `<span class="ho-eyebrow ${accent ? "is-accent" : ""}">${accent ? '<span class="ho-eyebrow-dot"></span>' : ""}${escapeHtml(text)}</span>`; }
+
+function onbActionBar(inner) { return `<div class="ho-actionbar">${inner}</div>`; }
+function onbPrimary(action, label, disabled) {
+  return `<button type="button" class="ho-btn ${disabled ? "is-disabled" : ""}" ${disabled ? "disabled" : ""} data-onb-${action}>${escapeHtml(label)}</button>`;
+}
+function onbSecondary(action, label) { return `<button type="button" class="ho-btn-secondary" data-onb-${action}>${escapeHtml(label)}</button>`; }
+
+// --- Mandat-Lookup (S2) -----------------------------------------------------
+async function onbStartScan() {
+  onbCaptureInputs();
+  const name = String(onboardingDraft.fullName || "").trim();
+  if (!name) { onboardingUi.error = "Bitte gib zuerst deinen Namen ein."; return onbGoto(1); }
+  onboardingStep = 2;
+  onboardingUi.scanPhase = 0;
+  onboardingUi.lookup = { status: "loading", candidates: [], warnings: [] };
+  renderOnboardingFlow();
+  // Gestaffelte Häkchen (Stammdaten -> Abgeordnetenwatch -> Ausschuss), unabhängig
+  // vom echten Netz-Timing; der echte Lookup läuft parallel.
+  onbClearTimers();
+  onboardingTimers.push(setTimeout(() => { onboardingUi.scanPhase = 1; onbRepaintScan(); }, 700));
+  onboardingTimers.push(setTimeout(() => { onboardingUi.scanPhase = 2; onbRepaintScan(); }, 1500));
+  onboardingTimers.push(setTimeout(() => { onboardingUi.scanPhase = 3; onbRepaintScan(); }, 2300));
+  let result = null;
+  try {
+    const level = onbParliament();
+    const res = await fetchWithTimeout(`/api/mandate/lookup?name=${encodeURIComponent(name)}${level ? `&level=${encodeURIComponent(level)}` : ""}`, {}, 12000);
+    if (res.ok) result = await res.json();
+  } catch (error) {
+    result = { status: "source_down", warnings: [] };
+  }
+  // Mindest-Scan-Dauer, damit die Animation nicht abrupt springt.
+  const minDelay = new Promise((r) => onboardingTimers.push(setTimeout(r, 2600)));
+  await minDelay;
+  onbApplyLookup(result || { status: "source_down", warnings: [] });
+}
+function onbRepaintScan() { if (onboardingActive && onboardingStep === 2) renderOnboardingFlow(); }
+function onbClearTimers() { (onboardingTimers || []).forEach((t) => clearTimeout(t)); onboardingTimers = []; }
+
+function onbApplyLookup(result) {
+  onbClearTimers();
+  const status = (result && result.status) || "source_down";
+  onboardingUi.lookup = { status, candidates: (result && result.candidates) || [], warnings: (result && result.warnings) || [] };
+  if (status === "found" && result.profile) {
+    onbMergeLookupProfile(result.profile);
+    onboardingUi.editMandate = false;
+    return onbGoto(3);
+  }
+  if (status === "ambiguous") {
+    onboardingUi.editMandate = false;
+    return onbGoto(3); // Auswahlliste wird auf S3 gerendert
+  }
+  // not_found / source_down -> manueller Pfad auf S3 (Korrekturmodus offen).
+  onboardingUi.editMandate = true;
+  return onbGoto(3);
+}
+async function onbPickCandidate(id) {
+  onboardingStep = 2;
+  onboardingUi.scanPhase = 3;
+  onboardingUi.lookup = { status: "loading", candidates: [], warnings: [] };
+  renderOnboardingFlow();
+  let result = null;
+  try {
+    const res = await fetchWithTimeout(`/api/mandate/lookup?id=${encodeURIComponent(id)}&name=${encodeURIComponent(onboardingDraft.fullName || "")}`, {}, 12000);
+    if (res.ok) result = await res.json();
+  } catch (error) { result = { status: "source_down" }; }
+  onbApplyLookup(result || { status: "source_down" });
+}
+// Erkannte Werte übernehmen (Widerspruchsregel: bereits manuell Gesetztes gewinnt;
+// erkannte Listen werden dedupliziert ergänzt).
+function onbMergeLookupProfile(p) {
+  const d = onboardingDraft;
+  if (p.fullName && !d.fullName) d.fullName = p.fullName;
+  if (p.party && !d.party) d.party = p.party;
+  if (p.faction && !d.faction) d.faction = p.faction;
+  if (p.parliamentType && !d.parliamentType) d.parliamentType = p.parliamentType;
+  if (p.politicalLevel && !d.politicalLevel) d.politicalLevel = p.politicalLevel;
+  if (p.constituency && !d.constituency) d.constituency = p.constituency;
+  if (p.state && !d.state) d.state = p.state;
+  const mergeList = (a, b) => Array.from(new Set([...(a || []), ...(b || [])].filter(Boolean)));
+  d.committees = mergeList(d.committees, p.committees);
+  d.deputyCommittees = mergeList(d.deputyCommittees, p.deputyCommittees);
+  if (Array.isArray(p.nameVariants) && p.nameVariants.length) d.nameVariants = mergeList(d.nameVariants, p.nameVariants);
+  if (p.mandateSource) { d.mandateSource = p.mandateSource; d.mandateSourceId = p.mandateSourceId; }
+  // „Erkanntes ist vorausgewählt": Kernthemen + Ministerien aus Ausschüssen ableiten.
+  const derivedTopics = [];
+  const derivedMin = [];
+  (d.committees || []).forEach((c) => {
+    (ONB_COMMITTEE_TOPIC[c] || []).forEach((t) => derivedTopics.push(t));
+    if (ONB_COMMITTEE_MINISTRY[c]) derivedMin.push(ONB_COMMITTEE_MINISTRY[c]);
+  });
+  if (!d.focusTopics.length) d.focusTopics = Array.from(new Set(derivedTopics));
+  if (!d.relevantMinistries.length) d.relevantMinistries = Array.from(new Set(derivedMin));
+}
+
+// --- Persistenz -------------------------------------------------------------
+function onbDraftToProfilePayload() {
+  const d = onboardingDraft;
+  const uniq = (v) => Array.from(new Set((Array.isArray(v) ? v : []).map((s) => String(s || "").trim()).filter(Boolean)));
+  const parliamentType = onbParliament();
+  return {
+    id: activePoliticianId,
+    fullName: String(d.fullName || "").trim(),
+    party: d.party || "",
+    faction: d.faction || d.party || "",
+    parliamentType,
+    politicalLevel: parliamentType === "Landtag" ? "Land" : (parliamentType === "Bundestag" ? "Bund" : (d.politicalLevel || "")),
+    accountType: d.accountType || "abgeordneter",
+    constituency: String(d.constituency || "").trim(),
+    state: String(d.state || "").trim(),
+    location: String(d.location || "").trim(),
+    committees: uniq(d.committees),
+    deputyCommittees: uniq(d.deputyCommittees),
+    reportingTopics: uniq(d.reportingTopics),
+    focusTopics: uniq(d.focusTopics),
+    currentCampaigns: uniq(d.currentCampaigns),
+    regionalInterests: uniq(d.regionalInterests),
+    relevantMinistries: uniq(d.relevantMinistries),
+    monitoringTargets: uniq(d.monitoringTargets),
+    localMedia: uniq(d.localMedia),
+    nameVariants: uniq(d.nameVariants),
+    communicationStyle: d.communicationStyle || "",
+    communicationDirectness: d.communicationDirectness || "",
+    communicationLength: d.communicationLength || "",
+    preferredChannels: uniq(d.preferredChannels),
+    noGoTopics: uniq(d.noGoTopics),
+    mandateSource: d.mandateSource || undefined,
+    mandateSourceId: d.mandateSourceId || undefined
+  };
+}
+async function onbPersistStep() {
+  onboardingUi.saving = true;
+  onbPaintSavedIndicator(true);
+  const payload = Object.assign(onbDraftToProfilePayload(), {
+    onboardingStatus: "in_bearbeitung",
+    onboardingStep: onboardingStep
+  });
   try {
     const res = await apiSend("PATCH", `/api/profile/current?${apiScopeQuery()}`, payload);
     if (res.ok && res.json) profile = res.json;
-    showToast(skip ? "Du kannst dein Profil jederzeit in den Einstellungen ergänzen." : "Profil eingerichtet — Helmut ist startklar.");
   } catch (error) {
-    console.warn("Onboarding speichern fehlgeschlagen", error);
+    console.warn("Onboarding: Zwischenspeichern fehlgeschlagen", error);
+  } finally {
+    onboardingUi.saving = false;
   }
-  render();
+}
+function onbPaintSavedIndicator(saving) {
+  const el = document.querySelector("#onbSaved");
+  if (el) el.textContent = saving ? "Speichert …" : "Gespeichert";
 }
 
-function bindOnboarding() {
-  const next = app.querySelector("[data-onboard-next]");
-  if (next) next.addEventListener("click", () => { captureOnboardingStep(); onboardingStep = Math.min(ONBOARDING_STEPS - 1, onboardingStep + 1); render(); });
-  const back = app.querySelector("[data-onboard-back]");
-  if (back) back.addEventListener("click", () => { captureOnboardingStep(); onboardingStep = Math.max(0, onboardingStep - 1); render(); });
-  const skip = app.querySelector("[data-onboard-skip]");
-  if (skip) skip.addEventListener("click", () => finishOnboarding(true));
-  const finish = app.querySelector("[data-onboard-finish]");
-  if (finish) finish.addEventListener("click", () => { captureOnboardingStep(); finishOnboarding(false); });
+async function onbComplete() {
+  onboardingUi.saving = true;
+  renderOnboardingFlow();
+  const now = new Date().toISOString();
+  const payload = Object.assign(onbDraftToProfilePayload(), {
+    onboardingStatus: "abgeschlossen",
+    onboardingStep: 11,
+    privacyConfirmedAt: now,
+    profileActive: true,
+    onboardedAt: now // Rückwärtskompatibilität (Alt-Gate/Anzeige)
+  });
+  try {
+    const res = await apiSend("PATCH", `/api/profile/current?${apiScopeQuery()}`, payload);
+    if (res.ok && res.json) profile = res.json;
+    // Briefing-Präferenzen auf Account-Ebene (S9) — getrennt von mandate_profiles.
+    const instant = new Set(onboardingDraft.instant || []);
+    await apiSend("PATCH", "/api/user/notification-settings", {
+      crisis: instant.has("crisis"), opportunity: instant.has("opportunity"),
+      deadlines: instant.has("deadlines"), votes: instant.has("votes"),
+      briefingTime: onboardingDraft.briefTime, briefingDepth: onboardingDraft.briefDepth,
+      maxPriorities: Number(onboardingDraft.maxPrio)
+    }).catch(() => {});
+  } catch (error) {
+    console.warn("Onboarding: Abschluss-Speichern fehlgeschlagen", error);
+    showToast("Speichern fehlgeschlagen – bitte erneut versuchen.");
+    onboardingUi.saving = false;
+    return renderOnboardingFlow();
+  }
+  onboardingUi.saving = false;
+  onbGoto(12);
 }
 
-// Zeigt den geführten Einstieg, wenn ein Abgeordneter oder zugewiesener Referent
-// ein Mandat mit noch nicht eingerichtetem Profil zum ersten Mal öffnet.
-function maybeStartOnboarding() {
-  if (!isAccountMode() || onboardingActive) return;
-  if (!["abgeordneter", "referent"].includes(userRole())) return;
-  if (!profile || profile.onboardedAt) return;
-  onboardingActive = true;
-  onboardingStep = 0;
-  onboardingDraft = {
-    party: profile.party || "",
-    faction: profile.faction || "",
-    committee: profile.committee || (profile.committees || [])[0] || "",
-    focusTopics: Array.isArray(profile.focusTopics) ? [...profile.focusTopics] : [],
-    constituency: profile.constituency || "",
-    state: profile.state || "",
-    communicationStyle: profile.communicationStyle || "Sachlich",
-    riskTopics: (profile.riskTopics || []).join(", "),
-    opportunityTopics: (profile.opportunityTopics || []).join(", ")
+function onbExitToApp() {
+  onbClearTimers();
+  onboardingActive = false;
+  // Frischen Zustand laden (echtes erstes Briefing) — Gate greift jetzt nicht mehr.
+  window.location.reload();
+}
+
+// --- Fortschritt/Validierung ------------------------------------------------
+function onbValidation() {
+  return (profile && profile.profilValidierung) || null;
+}
+function onbCorePct() {
+  const v = onbValidation();
+  if (!v) return { pct: 60, ready: false, missing: [] };
+  const missing = Array.isArray(v.missingRequired) ? v.missingRequired : [];
+  const CORE = 6; // name, nutzerId, partei, mandatsebene, region, schwerpunkt (+ bundesland bei Landtag)
+  const ready = v.state === "vollstaendig";
+  const pct = ready ? 100 : Math.max(15, Math.round(((CORE - Math.min(missing.length, CORE)) / CORE) * 100));
+  return { pct, ready, missing: Array.isArray(v.missingRequiredLabels) ? v.missingRequiredLabels : [] };
+}
+
+// ============================================================================
+// RENDER — ein Vollbild-Screen je Schritt
+// ============================================================================
+function renderOnboardingFlow() {
+  if (!onboardingActive || !app) return;
+  hideStartupSplash();
+  const step = onboardingStep;
+  const showChrome = step >= 1 && step <= 11 && step !== 2;
+  const showBack = showChrome;
+  const showProgress = step >= 3 && step <= 11;
+  const showSaved = step >= 3;
+  const pIndex = Math.min(9, Math.max(1, step - 2));
+  const progressWidth = (pIndex / 9) * 100;
+
+  const chrome = showChrome ? `
+    <div class="ho-chrome">
+      <div class="ho-chrome-row">
+        ${showBack ? `<button type="button" class="ho-back" data-onb-back>${ONB_SVG_BACK}Zurück</button>` : "<span></span>"}
+        ${showSaved ? `<span class="ho-saved"><span class="ho-saved-dot"></span><span id="onbSaved">${onboardingUi.saving ? "Speichert …" : "Gespeichert"}</span></span>` : ""}
+      </div>
+      ${showProgress ? `
+        <div>
+          <div class="ho-progress-track"><div class="ho-progress-fill" style="width:${progressWidth}%"></div></div>
+          <div class="ho-progress-label" style="margin-top:8px">${escapeHtml(ONB_PROGRESS_LABELS[step] || "")}</div>
+        </div>` : ""}
+    </div>` : "";
+
+  const s = onbRenderStep(step);
+  const inner = s.full
+    ? s.full
+    : `<div class="ho-screen ho-anim">${chrome}<div class="ho-body">${s.body}</div>${s.action ? onbActionBar(s.action) : ""}</div>`;
+
+  app.innerHTML = `<div class="onboarding-handoff" id="onbRoot">${inner}</div>`;
+  document.body.classList.remove("is-loading");
+  document.body.classList.add("app-ready", "splash-gone");
+  onbBindFlow();
+}
+
+function onbRenderStep(step) {
+  switch (step) {
+    case 0: return onbStepWelcome();
+    case 1: return onbStepIdentity();
+    case 2: return onbStepScan();
+    case 3: return onbStepConfirm();
+    case 4: return onbStepFunctions();
+    case 5: return onbStepPriorities();
+    case 6: return onbStepRegion();
+    case 7: return onbStepMonitoring();
+    case 8: return onbStepCommunication();
+    case 9: return onbStepBriefing();
+    case 10: return onbStepPrivacy();
+    case 11: return onbStepReview();
+    case 12: return onbStepDone();
+    case 13: return onbStepFirstBriefing();
+    default: return onbStepWelcome();
+  }
+}
+
+// S0 — Begrüßung (ganzflächig tippbar)
+function onbStepWelcome() {
+  return { full: `
+    <div class="ho-center is-tap ho-anim" data-onb-tap>
+      <div class="ho-mark is-lg"><span>H</span></div>
+      <h2 class="ho-h2">Hallo.</h2>
+      <p class="ho-lead" style="max-width:28ch;margin-top:12px">Ich bin Helmut, dein politischer Stabschef.</p>
+      <span class="ho-tap-hint">Tippen zum Beginnen ${ONB_SVG_ARROW}</span>
+    </div>` };
+}
+
+// S1 — Identität
+function onbStepIdentity() {
+  const err = onboardingUi.error ? `<p class="ho-hint" style="color:var(--risk);margin-top:10px">${escapeHtml(onboardingUi.error)}</p>` : "";
+  return {
+    body: `
+      ${onbEyebrow("Schritt 1 · Identität")}
+      <h2 class="ho-h2">Wie heißt du?</h2>
+      <p class="ho-p">Sag mir deinen Namen — den Rest finde ich für dich in öffentlichen Quellen.</p>
+      <div style="margin-top:30px">
+        <input class="ho-input" type="text" value="${escapeAttribute(onboardingDraft.fullName || "")}" placeholder="Dein Name" data-onb-input="fullName" data-onb-enter="scan" autocomplete="name" aria-label="Dein Name" />
+        <div style="margin-top:14px;display:flex;align-items:center;gap:9px;color:var(--muted-2)" class="ho-label" >${ONB_SVG_SEARCH} Ich suche in Bundestag &amp; Landtag</div>
+        ${err}
+      </div>`,
+    action: onbPrimary("scan", "Mein Mandat suchen")
   };
+}
+
+// S2 — Erkennung (Scan)
+function onbStepScan() {
+  const ph = onboardingUi.scanPhase;
+  const item = (done, label) => `<div class="ho-scanitem ${done ? "is-done" : ""}"><span class="ho-scanitem-check">${done ? ONB_SVG_CHECK_SM : ""}</span>${escapeHtml(label)}</div>`;
+  return { full: `
+    <div class="ho-scan-wrap ho-anim">
+      <div class="ho-scan"><span class="ho-scan-glow"></span><span class="ho-scan-ring"></span><span class="ho-scan-core"></span></div>
+      <h2 class="ho-h2" style="font-size:24px;margin:0">Ich sehe mich für dich um …</h2>
+      <div class="ho-scanlist">
+        ${item(ph >= 1, "Bundestag-Stammdaten")}
+        ${item(ph >= 2, "Abgeordnetenwatch")}
+        ${item(ph >= 3, "Ausschuss-Zuordnung")}
+      </div>
+    </div>` };
+}
+
+// S3 — Mandat bestätigen (+ Auswahlliste bei Mehrdeutigkeit, + Korrekturmodus)
+function onbStepConfirm() {
+  const lk = onboardingUi.lookup || { status: "idle" };
+  const d = onboardingDraft;
+  // Fehlerpfad „Quelle down": Retry + manueller Pfad.
+  if (lk.status === "source_down") {
+    return {
+      body: `
+        ${onbEyebrow("Erkennung")}
+        <h2 class="ho-h2">Die Quellen sind gerade nicht erreichbar.</h2>
+        <p class="ho-p">Kein Problem — du kannst es erneut versuchen oder dein Mandat von Hand eintragen. Ändern kannst du später alles.</p>
+        <div class="ho-error">
+          ${onbSecondary("retry", "Erneut versuchen")}
+          ${onbConfirmEditFields()}
+        </div>`,
+      action: onbPrimary("confirm", "Übernehmen & weiter", !onbConfirmMinReady())
+    };
+  }
+  // Fehlerpfad „mehrdeutig": Auswahlliste.
+  if (lk.status === "ambiguous" && (lk.candidates || []).length) {
+    return {
+      body: `
+        ${onbEyebrow("Mehrere Treffer", true)}
+        <h2 class="ho-h2">Welche/r bist du?</h2>
+        <p class="ho-p">Ich habe mehrere Personen mit diesem Namen gefunden. Wähl dich aus — oder trag dein Mandat von Hand ein.</p>
+        <div class="ho-rows" style="margin-top:18px">
+          ${lk.candidates.map((c) => `<button type="button" class="ho-row" data-onb-pick="${escapeAttribute(c.id)}">
+            <span class="ho-row-main"><span class="ho-row-title">${escapeHtml(c.name)}</span><span class="ho-row-sub">${escapeHtml([c.party, c.hint].filter(Boolean).join(" · "))}</span></span>
+            <span style="color:var(--muted)">${ONB_SVG_ARROW}</span></button>`).join("")}
+        </div>
+        <div style="margin-top:18px">${onbSecondary("manual", "Keine/r davon — von Hand eintragen")}</div>`
+    };
+  }
+  // Gefunden / manuell.
+  const found = lk.status === "found";
+  const level = onbParliament();
+  const mandateLine = (level === "Landtag" ? "Mitglied des Landtags" : (level === "Bundestag" ? "Mitglied des Bundestages" : "Mandat")) + (d.party ? " · " + d.party : "");
+  const ebeneLine = level ? (level + (level === "Bundestag" ? " · 21. WP" : (d.state ? " · " + d.state : ""))) : "—";
+  const wahlkreisLine = [d.constituency, d.state].filter(Boolean).join(" · ") || "—";
+  const ausLine = (d.committees || []).length ? d.committees.map((c) => onbShortCommittee(c)).join(" · ") : "—";
+  const landtagNote = level === "Landtag"
+    ? `<div class="ho-note is-warn" style="margin-top:14px"><span class="ho-fact-icon" style="color:var(--watch)">${ONB_SVG_SHIELD}</span><span class="ho-note-text">Landtag erkannt. Die regionalen Quellen für Landtage baue ich gerade aus — Stammdaten stimmen, laufende Meldungen folgen.</span></div>`
+    : "";
+  return {
+    body: `
+      ${onbEyebrow(found ? "Gefunden" : "Von Hand", found)}
+      <h2 class="ho-h2">${found ? "Bist du das?" : "Trag dein Mandat ein"}</h2>
+      <p class="ho-p">${found
+        ? "Ich habe dein Mandat in öffentlichen Quellen gefunden. Prüf kurz, ob alles stimmt — ändern kannst du jederzeit alles."
+        : "Ich habe nichts Eindeutiges gefunden. Trag die Kernangaben ein — den Rest ergänzen wir gleich."}</p>
+      <div class="ho-card" style="margin-top:20px">
+        <div class="ho-card-accentline"></div>
+        <div class="ho-card-head">
+          <div class="ho-card-name">${escapeHtml(d.fullName || "—")}</div>
+          <div class="ho-card-meta">${escapeHtml(mandateLine)}</div>
+        </div>
+        <div class="ho-kv-list">
+          <div class="ho-kv"><span class="ho-kv-k">Ebene</span><span class="ho-kv-v">${escapeHtml(ebeneLine)}</span></div>
+          <div class="ho-kv"><span class="ho-kv-k">Wahlkreis</span><span class="ho-kv-v">${escapeHtml(wahlkreisLine)}</span></div>
+          <div class="ho-kv"><span class="ho-kv-k">Ausschüsse</span><span class="ho-kv-v">${escapeHtml(ausLine)}</span></div>
+        </div>
+      </div>
+      ${found ? `<div class="ho-source">${ONB_SVG_SHIELD}<span>Quelle: Bundestag-Opendata &amp; Abgeordnetenwatch. Öffentlich zugänglich, von dir bestätigt.</span></div>` : ""}
+      ${landtagNote}
+      ${onboardingUi.editMandate ? onbConfirmEditFields() : ""}`,
+    action: onboardingUi.editMandate
+      ? onbPrimary("confirm", "Übernehmen & weiter", !onbConfirmMinReady())
+      : `${found ? onbPrimary("confirm", "Ja, das bin ich", !onbConfirmMinReady()) : onbPrimary("confirm", "Weiter", !onbConfirmMinReady())}${onbSecondary("edit", "Etwas stimmt nicht")}`
+  };
+}
+function onbShortCommittee(c) { return String(c || "").split(",")[0].split(" und ")[0].trim(); }
+function onbConfirmMinReady() {
+  return String(onboardingDraft.fullName || "").trim().length > 1
+    && (onboardingDraft.party || onboardingDraft.faction) && onbParliament();
+}
+function onbConfirmEditFields() {
+  const d = onboardingDraft;
+  return `
+    <div style="margin-top:18px;padding-top:18px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:14px">
+      ${onbEyebrow("Korrigieren", true)}
+      <div><div class="ho-label">Name</div><input class="ho-input" style="font-size:15px" type="text" value="${escapeAttribute(d.fullName || "")}" placeholder="Dein Name" data-onb-input="fullName" /></div>
+      <div><div class="ho-label">Ebene</div>${onbSelect("parliamentType", ["Bundestag", "Landtag"], onbParliament())}</div>
+      <div><div class="ho-label">Partei / Fraktion</div>${onbSelect("party", ONB_PARTIES, d.party)}</div>
+      <p class="ho-hint">Wahlkreis und Ausschüsse passt du gleich in den nächsten Schritten an.</p>
+    </div>`;
+}
+
+// S4 — Zuständigkeiten
+function onbStepFunctions() {
+  const detected = new Set(onboardingDraft.committees || []);
+  const deputy = new Set(onboardingDraft.deputyCommittees || []);
+  const ordered = [...ONB_COMMITTEES].sort((a, b) => (detected.has(b) ? 1 : 0) - (detected.has(a) ? 1 : 0));
+  const rows = ordered.map((c) => {
+    let sub = "";
+    if (deputy.has(c)) sub = "Stellvertreter · erkannt";
+    else if (detected.has(c)) sub = "Ordentliches Mitglied · erkannt";
+    return onbRow("committees", c, sub);
+  }).join("");
+  return {
+    body: `
+      <h2 class="ho-h2" style="margin-top:0">Deine Ausschüsse und Funktionen</h2>
+      <p class="ho-p">Vorgänge gewichte ich am stärksten nach deinen Ausschüssen. Erkanntes ist vorausgewählt.</p>
+      <div class="ho-rows" style="margin-top:22px">${rows}</div>
+      ${onbLabel("Weitere Funktionen")}
+      ${onbChips("reportingTopics", ONB_FUNCTIONS)}
+      ${onbAddRow("reportingTopics", "Eigene Funktion / Berichterstattung")}`,
+    action: onbPrimary("next", "Weiter")
+  };
+}
+
+// S5 — Prioritäten
+function onbStepPriorities() {
+  return {
+    body: `
+      <h2 class="ho-h2" style="margin-top:0">Welche Themen liegen dir am Herzen?</h2>
+      <p class="ho-p">Diese Auswahl nutze ich, um Meldungen und Entwicklungen für dich zu priorisieren.</p>
+      <div class="ho-topiclist" style="margin-top:18px">${ONB_TOPICS.map(onbTopicRow).join("")}</div>
+      ${onbLabel("Woran arbeitest du gerade?")}
+      ${onbChips("currentCampaigns", onboardingDraft.currentCampaigns || [])}
+      ${onbAddRow("currentCampaigns", "Eigenes Vorhaben hinzufügen")}`,
+    action: onbPrimary("next", "Weiter", !(onboardingDraft.focusTopics || []).length && !(onboardingDraft.committees || []).length)
+  };
+}
+
+// S6 — Region
+function onbStepRegion() {
+  const d = onboardingDraft;
+  const note = (d.constituency || d.state)
+    ? `<div class="ho-note" style="margin-bottom:20px"><span class="ho-fact-icon">${ONB_SVG_SHIELD}</span><span class="ho-note-text">Aus öffentlichen Quellen erkannt — du kannst jederzeit ändern.</span></div>`
+    : "";
+  return {
+    body: `
+      <h2 class="ho-h2" style="margin-top:0">Für welche Region trägst du Verantwortung?</h2>
+      <p class="ho-p">Damit gewichte ich lokale Entwicklungen für dich stärker.</p>
+      <div style="margin-top:20px">${note}</div>
+      <div class="ho-field"><div class="ho-label">Bundesland</div>${onbSelect("state", ONB_BUNDESLAENDER, d.state)}</div>
+      <div class="ho-field"><div class="ho-label">Wahlkreis</div><input class="ho-input" style="font-size:15px" type="text" value="${escapeAttribute(d.constituency || "")}" placeholder="z. B. Salzgitter-Wolfenbüttel" data-onb-input="constituency" /></div>
+      <div class="ho-field"><div class="ho-label">Ort</div><input class="ho-input" style="font-size:15px" type="text" value="${escapeAttribute(d.location || "")}" placeholder="z. B. dein Wahlkreisbüro-Ort" data-onb-input="location" /></div>
+      ${onbLabel("Regionale Themen")}
+      ${onbChips("regionalInterests", onboardingDraft.regionalInterests || [])}
+      ${onbAddRow("regionalInterests", "z. B. lokaler Arbeitgeber, Großprojekt")}`,
+    action: onbPrimary("next", "Weiter")
+  };
+}
+
+// S7 — Beobachtung
+function onbStepMonitoring() {
+  return {
+    body: `
+      <h2 class="ho-h2" style="margin-top:0">Wen soll ich für dich beobachten?</h2>
+      <p class="ho-p">Ich melde dir, wenn diese Akteure oder Vorhaben in Bewegung geraten.</p>
+      ${onbLabel("Ministerien")}
+      ${onbChips("relevantMinistries", ONB_MINISTRIES)}
+      <div style="margin-top:22px">${onbLabel("Verbände & Organisationen")}</div>
+      ${onbChips("monitoringTargets", onboardingDraft.monitoringTargets || [])}
+      ${onbAddRow("monitoringTargets", "z. B. DGB, VdK, Branchenverband")}
+      <div style="margin-top:22px">${onbLabel("Medien & Quellen")}</div>
+      ${onbChips("localMedia", onboardingDraft.localMedia || [])}
+      ${onbAddRow("localMedia", "z. B. Lokalzeitung, Fachdienst")}`,
+    action: onbPrimary("next", "Weiter")
+  };
+}
+
+// S8 — Kommunikation
+function onbStepCommunication() {
+  return {
+    body: `
+      <h2 class="ho-h2" style="margin-top:0">Wie klingst du?</h2>
+      <p class="ho-p">So treffe ich deinen Ton, wenn ich dir Entwürfe und Statements vorbereite.</p>
+      ${onbLabel("Ton")}${onbSegment("communicationStyle", ONB_TONES)}
+      <div style="margin-top:22px">${onbLabel("Direktheit")}${onbSegment("communicationDirectness", ONB_DIRECTNESS)}</div>
+      <div style="margin-top:22px">${onbLabel("Bevorzugte Textlänge")}${onbSegment("communicationLength", ONB_LENGTHS)}</div>
+      <div style="margin-top:24px">${onbLabel("Kanäle")}${onbChips("preferredChannels", ONB_CHANNELS)}</div>
+      <div style="margin-top:24px">${onbLabel("Heikle Themen — hier vorsichtig")}
+        <p class="ho-hint" style="margin:-6px 0 13px">Bei diesen formuliere ich zurückhaltend und weise dich extra darauf hin.</p>
+        ${onbChips("noGoTopics", ONB_SENSITIVE)}
+        ${onbAddRow("noGoTopics", "Eigenes heikles Thema")}</div>`,
+    action: onbPrimary("next", "Weiter")
+  };
+}
+
+// S9 — Arbeitsweise & Briefing (Account-Ebene)
+function onbStepBriefing() {
+  return {
+    body: `
+      <h2 class="ho-h2" style="margin-top:0">Wann und wie brief' ich dich?</h2>
+      <p class="ho-p">Dein Morgenbriefing liegt bereit, wenn dein Tag beginnt.</p>
+      ${onbLabel("Uhrzeit")}${onbSegment("briefTime", ONB_TIMES)}
+      <div style="margin-top:22px">${onbLabel("Tiefe")}${onbSegment("briefDepth", ONB_DEPTHS)}</div>
+      <div style="margin-top:22px">${onbLabel("Höchstens Prioritäten pro Tag")}${onbSegment("maxPrio", ONB_MAXPRIO)}</div>
+      <div style="margin-top:26px">${onbLabel("Sofort melden — nicht bis morgen warten")}
+        <p class="ho-hint" style="margin:-6px 0 13px">Alles andere sammle ich ruhig fürs Morgenbriefing.</p>
+        <div class="ho-rows">${ONB_INSTANT.map(onbInstantRow).join("")}</div></div>`,
+    action: onbPrimary("next", "Weiter")
+  };
+}
+
+// S10 — Datenschutz
+function onbStepPrivacy() {
+  const consent = !!onboardingDraft.consent;
+  return {
+    body: `
+      ${onbEyebrow("Datenschutz")}
+      <h2 class="ho-h2">Deine Daten bleiben bei dir.</h2>
+      <div class="ho-facts">
+        <div class="ho-fact"><span class="ho-fact-icon">${ONB_SVG_SHIELD}</span><span class="ho-fact-text"><b>Nur dein Mandatsprofil.</b> Ich speichere, was ich zum Priorisieren brauche — nichts darüber hinaus.</span></div>
+        <div class="ho-fact"><span class="ho-fact-icon">${ONB_SVG_SHIELD}</span><span class="ho-fact-text"><b>Öffentlich vs. privat.</b> Mandatsdaten stammen aus offiziellen Quellen. Deine Prioritäten und Notizen sieht nur du.</span></div>
+        <div class="ho-fact"><span class="ho-fact-icon">${ONB_SVG_SHIELD}</span><span class="ho-fact-text"><b>Jederzeit änderbar.</b> Du kannst jede Angabe später anpassen oder löschen.</span></div>
+      </div>
+      <div class="ho-callout" style="margin-top:22px">Keine automatische Veröffentlichung. Ich schlage vor — die Entscheidung bleibt immer bei dir.</div>
+      <button type="button" class="ho-consent" data-onb-consent>
+        <span class="ho-toggle-track ${consent ? "is-on" : ""}"><span class="ho-toggle-knob"></span></span>
+        <span class="ho-consent-text">Ich stimme zu, dass Helmut mein politisches Profil speichert und für meine Personalisierung nutzt.</span>
+      </button>`,
+    action: onbPrimary("privacygo", "Zustimmen & weiter", !consent)
+  };
+}
+
+// S11 — Prüfung
+function onbStepReview() {
+  const d = onboardingDraft;
+  const core = onbCorePct();
+  const level = onbParliament();
+  const rows = [
+    { k: "Person", v: (d.fullName || "—") + (level ? " · " + (level === "Bundestag" ? "MdB" : "MdL") : ""), step: 3 },
+    { k: "Fraktion", v: [d.party || d.faction, level].filter(Boolean).join(" · ") || "—", step: 3 },
+    { k: "Wahlkreis", v: [d.constituency, d.state].filter(Boolean).join(" · ") || "—", step: 6, missing: !(d.constituency || d.state) },
+    { k: "Ausschüsse", v: (d.committees || []).map(onbShortCommittee).join(", ") || "—", step: 4 },
+    { k: "Kernthemen", v: (d.focusTopics || []).length ? (d.focusTopics.length + " Themen ausgewählt") : "—", step: 5 },
+    { k: "Beobachtung", v: ((d.relevantMinistries || []).length + (d.monitoringTargets || []).length + (d.localMedia || []).length) + " Akteure & Quellen", step: 7 },
+    { k: "Kommunikation", v: [d.communicationStyle, (d.preferredChannels || []).length + " Kanäle"].filter(Boolean).join(" · "), step: 8 },
+    { k: "Briefing", v: `${d.briefTime} Uhr · ${(ONB_DEPTHS.find((x) => x.id === d.briefDepth) || {}).label || "Standard"} · max. ${d.maxPrio}`, step: 9 }
+  ];
+  const missingHint = !core.ready && core.missing.length
+    ? `<p class="ho-hint" style="margin-top:10px;color:var(--watch)">Noch offen: ${core.missing.map(escapeHtml).join(", ")}. Tipp auf eine Zeile, um es zu ergänzen.</p>` : "";
+  return {
+    body: `
+      ${onbEyebrow("Prüfung")}
+      <h2 class="ho-h2">Dein Profil im Überblick</h2>
+      <div class="ho-complete">
+        <div class="ho-complete-track"><div class="ho-complete-fill ${core.ready ? "" : "is-partial"}" style="width:${core.pct}%"></div></div>
+        <span class="ho-complete-pct ${core.ready ? "" : "is-partial"}">${core.pct} %</span>
+      </div>
+      <p class="ho-complete-note ${core.ready ? "" : "is-partial"}"><span class="ho-complete-note-dot"></span>${core.ready ? "Vollständig — keine Lücken, keine Widersprüche." : "Fast fertig — ergänze die offenen Pflichtangaben."}</p>
+      ${missingHint}
+      <div class="ho-summary" style="margin-top:8px">
+        ${rows.map((r) => `<button type="button" class="ho-summary-row" data-onb-goto="${r.step}">
+          <span class="ho-summary-k">${escapeHtml(r.k)}</span>
+          <span class="ho-summary-v ${r.missing ? "is-missing" : ""}">${escapeHtml(r.v)}</span>
+          <span class="ho-summary-edit">${ONB_SVG_EDIT}</span></button>`).join("")}
+      </div>`,
+    action: onbPrimary("finish", onboardingUi.saving ? "Speichert …" : "Profil bestätigen", !core.ready || onboardingUi.saving)
+  };
+}
+
+// S12 — Abschluss
+function onbStepDone() {
+  return { full: `
+    <div class="ho-done ho-anim">
+      <div class="ho-mark is-sm"><span>H</span></div>
+      <div style="margin-top:30px">${onbEyebrow("Einsatzbereit", true)}</div>
+      <h2 class="ho-h1" style="margin-top:16px">Dein Profil ist vollständig.</h2>
+      <p class="ho-lead">Ich kenne jetzt dein Mandat, deine Zuständigkeiten und deine Prioritäten. Ab jetzt filtere ich jeden Tag für dich, was wirklich zählt.</p>
+      <div style="margin-top:38px">${onbPrimary("tobriefing", "Zu meinem ersten Briefing")}</div>
+    </div>` };
+}
+
+// S13 — Erstes Briefing (personalisierte, klar als Beispiel markierte Vorschau)
+function onbStepFirstBriefing() {
+  const first = String(onboardingDraft.fullName || "").trim().split(/\s+/)[0] || "";
+  const topic = (onboardingDraft.focusTopics || [])[0] || (onboardingDraft.committees || []).map(onbShortCommittee)[0] || "dein Kernthema";
+  const ministry = (onboardingDraft.relevantMinistries || [])[0] || "das zuständige Ministerium";
+  return { full: `
+    <div class="ho-screen ho-anim">
+      <div class="ho-body" style="padding-top:24px">
+        <div class="ho-brief-accent"></div>
+        ${onbEyebrow("Morgenbriefing · Vorschau")}
+        <h2 class="ho-h2" style="font-size:29px">Guten Morgen${first ? ", " + escapeHtml(first) : ""}.</h2>
+        <p class="ho-p">So sieht dein Briefing künftig aus: drei Dinge, die zählen — gewichtet nach deinem Profil. Sechs Minuten, dann ist dein Tag sortiert.</p>
+        <div class="ho-brief-list" style="margin-top:20px">
+          <div class="ho-brief-inner">
+            <div class="ho-brief-item"><span class="ho-brief-bullet is-accent"></span><span style="min-width:0"><span class="ho-brief-title">${escapeHtml(topic)} — Anhörung im Ausschuss</span><span class="ho-brief-sub">Betrifft dein Kernthema. Ich lege dir Kontext und mögliche Reaktion bereit.</span></span><span class="ho-brief-tag is-risk">REAKTION</span></div>
+            <div class="ho-brief-item"><span class="ho-brief-bullet is-ring"></span><span style="min-width:0"><span class="ho-brief-title">Gute Gelegenheit für ein Statement</span><span class="ho-brief-sub">Ein Verbündeter stützt deine Position. Entwurf liegt im Büro bereit.</span></span><span class="ho-brief-tag is-chance">CHANCE</span></div>
+            <div class="ho-brief-item"><span class="ho-brief-bullet is-faint"></span><span style="min-width:0"><span class="ho-brief-title">${escapeHtml(ministry)} in Bewegung</span><span class="ho-brief-sub">Regional relevant. Ich beobachte weiter und melde mich, wenn es zählt.</span></span><span class="ho-brief-tag is-watch">RADAR</span></div>
+          </div>
+        </div>
+        <p class="ho-hint" style="text-align:center;margin-top:16px">Beispielhafte Darstellung. Deine echten Inhalte lädt Helmut gleich.</p>
+      </div>
+      ${onbActionBar(onbPrimary("toapp", "Los geht's"))}
+    </div>` };
+}
+
+// --- Event-Bindung ----------------------------------------------------------
+function onbBindFlow() {
+  const root = document.querySelector("#onbRoot");
+  if (!root) return;
+  const on = (sel, ev, fn) => root.querySelectorAll(sel).forEach((el) => el.addEventListener(ev, fn));
+
+  on("[data-onb-tap]", "click", () => onbGoto(1));
+  on("[data-onb-back]", "click", onbBack);
+  on("[data-onb-scan]", "click", () => onbStartScan());
+  on("[data-onb-next]", "click", onbNext);
+  on("[data-onb-confirm]", "click", () => { onbCaptureInputs(); onbPersistStep(); onbGoto(onbNextVisible(3, 1)); });
+  on("[data-onb-edit]", "click", () => { onboardingUi.editMandate = true; renderOnboardingFlow(); });
+  on("[data-onb-manual]", "click", () => { onboardingUi.lookup = { status: "not_found" }; onboardingUi.editMandate = true; renderOnboardingFlow(); });
+  on("[data-onb-retry]", "click", () => onbStartScan());
+  on("[data-onb-privacygo]", "click", () => { if (onboardingDraft.consent) { onbPersistStep(); onbGoto(11); } });
+  on("[data-onb-consent]", "click", () => { onboardingDraft.consent = !onboardingDraft.consent; renderOnboardingFlow(); });
+  on("[data-onb-finish]", "click", () => { if (onbCorePct().ready && !onboardingUi.saving) onbComplete(); });
+  on("[data-onb-tobriefing]", "click", () => onbGoto(13));
+  on("[data-onb-toapp]", "click", onbExitToApp);
+  on("[data-onb-goto]", "click", (e) => { onbCaptureInputs(); onbGoto(Number(e.currentTarget.getAttribute("data-onb-goto"))); });
+  on("[data-onb-pick]", "click", (e) => onbPickCandidate(e.currentTarget.getAttribute("data-onb-pick")));
+
+  on("[data-onb-toggle]", "click", (e) => onbToggle(e.currentTarget.getAttribute("data-onb-toggle"), e.currentTarget.getAttribute("data-onb-value")));
+  on("[data-onb-seg]", "click", (e) => onbSetOne(e.currentTarget.getAttribute("data-onb-seg"), e.currentTarget.getAttribute("data-onb-value")));
+  on("[data-onb-select]", "change", (e) => onbSetOne(e.currentTarget.getAttribute("data-onb-select"), e.currentTarget.value));
+  on("[data-onb-add]", "click", (e) => onbAddCustom(e.currentTarget.getAttribute("data-onb-add"), e.currentTarget.getAttribute("data-onb-addinput")));
+
+  // Text-Eingaben: Draft live aktualisieren OHNE Re-Render (Fokus halten).
+  on("[data-onb-input]", "input", (e) => { onboardingDraft[e.currentTarget.getAttribute("data-onb-input")] = e.currentTarget.value; });
+  on("[data-onb-enter]", "keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); if (e.currentTarget.getAttribute("data-onb-enter") === "scan") onbStartScan(); } });
+  root.querySelectorAll("[data-onb-addfield]").forEach((el) => el.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); onbAddCustom(el.getAttribute("data-onb-addfield"), el.id); }
+  }));
+
+  // Autofokus auf das Namensfeld (S1).
+  if (onboardingStep === 1) { const nf = root.querySelector('[data-onb-input="fullName"]'); if (nf) setTimeout(() => nf.focus(), 60); }
 }
 
 function loadCachedStartPayload() {
@@ -4033,7 +4790,6 @@ function render() {
       ${renderMobileDock()}
       ${renderUpdatesPanel()}
       ${renderTaskHandoffPanel()}
-      ${renderOnboarding()}
     </div>
   `;
   lastAnimatedView = currentView;
@@ -10785,7 +11541,6 @@ function bindActions() {
   if (isAccountMode()) {
     try {
       bindAccountActions();
-      bindOnboarding();
     } catch (error) {
       console.warn("Account actions binding failed", error);
     }

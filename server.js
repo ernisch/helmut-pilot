@@ -40,6 +40,7 @@ const accounts = require("./lib/helmut/accounts");
 const inviteMail = require("./lib/helmut/invite-mail");
 const helmutFlags = require("./lib/helmut/flags");
 const { getRelevantParliamentaryItems } = require("./lib/helmut/dip");
+const { lookupMandate } = require("./lib/helmut/mandate-lookup");
 const { runPendingUnderstandingShadow, clusterRawDocuments, deriveVorgangId, diagnosePendingUnderstanding } = require("./lib/helmut/understanding");
 const { generateOfficeOutput, isValidChannel } = require("./lib/helmut/office");
 const { buildLageBriefing } = require("./lib/helmut/lage");
@@ -471,6 +472,19 @@ async function handleRequest(request, response) {
         return { ...saved, profilValidierung: validateProfile(saved) };
       });
     }
+  }
+
+  // Mandatserkennung fuer die Erstkonfiguration (Onboarding Screen 2/3): aus einem
+  // Namen ein Mandatsprofil aus oeffentlichen Quellen (Abgeordnetenwatch +
+  // Bundestag-Opendata) vorschlagen. Read-only GET (kein CSRF); im Account-Modus
+  // bereits durch das /api/-Auth-Gate geschuetzt. Fail-safe: das Modul wirft nie,
+  // sondern liefert einen Status (found|ambiguous|not_found|source_down).
+  if (url.pathname === "/api/mandate/lookup" && request.method === "GET") {
+    return handleAsync(response, async () => lookupMandate({
+      name: url.searchParams.get("name") || url.searchParams.get("q") || "",
+      level: url.searchParams.get("level") || "",
+      id: url.searchParams.get("id") || ""
+    }));
   }
 
   if (url.pathname === "/api/profile/demo") {
