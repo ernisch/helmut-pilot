@@ -53,6 +53,10 @@ weg, App läuft; fail-closed = Zugriff/Aktion wird verweigert) · Rotationsbedar
 | `HELMUT_ADMIN_EMAIL` / `HELMUT_ADMIN_PASSWORD` / `HELMUT_ADMIN_NAME` / `HELMUT_ADMIN_RESET` | O·(S bei Passwort) | Erst-Admin-Seed (nach erstem Start entfernbar). | server.js · Prod (einmalig) · nur beim Seed relevant · nach Nutzung entfernen |
 | `HELMUT_ALLOW_QUERY_SECRETS` | O | Query-Secret-Login erlauben. Default false. **In Prod ungesetzt lassen.** | server.js · alle · Default sicher (aus) · — |
 | `HELMUT_SESSION_TTL_MS` | O | Session-Laufzeit. Default 30 Tage. | accounts.js · alle · Default greift · — |
+| `HELMUT_INVITE_TOKEN_TTL_MS` | O | Gültigkeit des Einladungs-Links (Invite-Token, Umsetzungsnotiz §6). Default 7 Tage. | accounts.js · alle · Default greift · — |
+| `HELMUT_RESET_TOKEN_TTL_MS` | O | Gültigkeit des Passwort-Reset-Links. Default 1 Stunde. | accounts.js · alle · Default greift · — |
+| `HELMUT_PUBLIC_URL` | O | Basis-URL für öffentliche Zugangs-Links (`/passwort-setzen?token=…`). Default: aus Request-Headern (x-forwarded-host/-proto) abgeleitet. | server.js · alle · Default greift · — |
+| `HELMUT_MAIL_FROM` | O | Absender für Invite-/Reset-Mails, sobald ein Mail-Dienst existiert (Domain folgt). Default Platzhalter `Helmut <no-reply@…de>`; Versand derzeit deaktiviert, Interim = Kopierlink im Admin. | invite-mail.js · später · Versand aus (ehrlicher sent=false-Status) · — |
 | `HELMUT_CANONICAL_HOST` | O | Default `helmut-pilot.vercel.app`. | server.js · Prod · Default greift · — |
 | `NODE_ENV` / `PORT` / `VERCEL` / `VERCEL_ENV` / `VERCEL_GIT_COMMIT_SHA` / `VERCEL_GIT_COMMIT_REF` | (Plattform) | Von Vercel/Node gesetzt. `VERCEL_GIT_COMMIT_SHA` speist die Asset-Versionierung (ASSET_VERSION). | Plattform · automatisch · — · — |
 
