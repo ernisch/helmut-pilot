@@ -156,12 +156,21 @@ function loadPlaywright() {
   check("Route schreibt einen Audit-Eintrag bei Erfolg", /recordAudit\(\{ action: "admin\.user\.delete"/.test(deleteRouteSrc));
 
   console.log("\n== Quelltext: accounts.deleteUser (Schutzregeln + atomare Loeschung) ==");
+  const assertDeletableFnSrc = (accountsSrc.match(/function assertUserDeletable\(store, userId, actingUserId\) \{[\s\S]*?\n}\n/) || [""])[0];
+  check("assertUserDeletable existiert", assertDeletableFnSrc.length > 100);
+  check("Selbstloeschung wird IMMER zuerst geprueft", /if \(actingUserId && target\.id === actingUserId\) \{/.test(assertDeletableFnSrc));
+  check("Administratoren sind blockiert (target.role === \"admin\")", /if \(target\.role === "admin"\) \{/.test(assertDeletableFnSrc));
+  check("Eigenstaendige 'letzter Administrator'-Schranke unabhaengig vom generellen Admin-Block",
+    /const adminCount = \(store\.users \|\| \[\]\)\.filter\(\(entry\) => entry\.role === "admin"\)\.length;[\s\S]{0,80}if \(adminCount <= 1\) \{/.test(assertDeletableFnSrc));
+
   const deleteUserFnSrc = (accountsSrc.match(/async function deleteUser\(userId, actingUserId\) \{[\s\S]*?\n}\n/) || [""])[0];
   check("deleteUser existiert", deleteUserFnSrc.length > 200);
-  check("Selbstloeschung wird IMMER zuerst geprueft", /if \(actingUserId && target\.id === actingUserId\) \{/.test(deleteUserFnSrc));
-  check("Administratoren sind blockiert (target.role === \"admin\")", /if \(target\.role === "admin"\) \{/.test(deleteUserFnSrc));
-  check("Eigenstaendige 'letzter Administrator'-Schranke unabhaengig vom generellen Admin-Block",
-    /const adminCount = \(store\.users \|\| \[\]\)\.filter\(\(entry\) => entry\.role === "admin"\)\.length;[\s\S]{0,80}if \(adminCount <= 1\) \{/.test(deleteUserFnSrc));
+  const assertCallCount = (deleteUserFnSrc.match(/assertUserDeletable\(/g) || []).length;
+  check("TOCTOU-Fix: assertUserDeletable wird MEHRFACH aufgerufen — beim ersten Lesen UND erneut in der Verifikations-/Wiederholungsschleife (nicht nur einmal am Anfang)",
+    assertCallCount >= 2, `Aufrufe gefunden: ${assertCallCount}`);
+  const retryLoopSrc = (deleteUserFnSrc.match(/for \(let attempt = 0; attempt < 2; attempt\+\+\) \{[\s\S]*?\n  \}\n/) || [""])[0];
+  check("Verifikationsschleife pruefen die Schutzregeln ERNEUT, bevor sie ein zweites Mal loescht (Reihenfolge: assertUserDeletable VOR stripUserAndSideRows)",
+    /assertUserDeletable\([\s\S]*?stripUserAndSideRows\(/.test(retryLoopSrc));
   check("Nur EIN Read+Write-Zyklus mit Verifikations-/Wiederholungsmuster (kein stilles Teil-Loeschen)",
     /for \(let attempt = 0; attempt < 2; attempt\+\+\) \{/.test(deleteUserFnSrc) && /Löschung konnte nicht eindeutig bestätigt werden/.test(deleteUserFnSrc));
   check("Loescht Sessions/Passworttokens/Zuweisungen NUR dieses Nutzers (Filter auf userId)",
@@ -245,6 +254,50 @@ function loadPlaywright() {
     check("Ein ZWEITER Administrator ist ueber diesen Button ebenfalls nicht löschbar (403, andere Meldung als 'letzter')",
       otherAdminDelete.status === 403 && !/letzte/i.test(parse(otherAdminDelete.body).error || ""),
       `status=${otherAdminDelete.status} body=${otherAdminDelete.body}`);
+
+    // --- TOCTOU-Fix (Security-Review, siehe Abschlussbericht): die Schutzregeln
+    // muessen bei JEDEM Schreibversuch erneut gelten, nicht nur beim ersten Lesen.
+    // Deterministisch simuliert (Aufruf-Zaehlung, KEIN Timing/Sleep) einen
+    // parallelen Admin, dessen Rollen-Befoerderung GENAU zwischen dem ersten
+    // Loesch-Schreibvorgang und der Verifikations-Lesephase landet (last-write-
+    // wins des Voll-Blob-Stores lässt den Nutzer als Administrator wieder auftauchen). ---
+    {
+      const createRace = parse((await req(port, "POST", "/api/admin/users", { headers: adminWrite, body: {
+        name: "Race Nutzer", email: "race-nutzer@example.org", role: "referent"
+      } })).body);
+      const raceUserRaw = await accounts.getUserByIdRaw(createRace.id);
+      const authFile = path.join(dataDir, "auth.json");
+      const originalWriteFileSync = fs.writeFileSync;
+      let interceptedFirstWrite = false;
+      fs.writeFileSync = function (filePath, data, ...rest) {
+        const result = originalWriteFileSync.call(fs, filePath, data, ...rest);
+        if (!interceptedFirstWrite && String(filePath) === authFile) {
+          interceptedFirstWrite = true;
+          // Simuliert Admin B's parallele Befoerderung, deren Schreibvorgang
+          // (last-write-wins) GENAU nach Admin A's erstem Loesch-Schreibvorgang
+          // landet: der Nutzer taucht wieder auf, jetzt mit role:"admin".
+          const resurrected = JSON.parse(data);
+          resurrected.users = resurrected.users || [];
+          resurrected.users.push({ ...raceUserRaw, role: "admin" });
+          originalWriteFileSync.call(fs, filePath, JSON.stringify(resurrected, null, 2));
+        }
+        return result;
+      };
+      let raceBlocked = false, raceMessage = "";
+      try {
+        await accounts.deleteUser(createRace.id, adminId);
+      } catch (error) {
+        raceBlocked = error.statusCode === 403;
+        raceMessage = error.publicMessage || error.message || "";
+      } finally {
+        fs.writeFileSync = originalWriteFileSync;
+      }
+      check("TOCTOU-Fix: eine waehrend der Verifikation erkannte Befoerderung zum Administrator bricht die Loeschung ab (kein stiller Erfolg)",
+        raceBlocked, raceMessage);
+      const afterRace = parse((await req(port, "GET", "/api/admin/users", { headers: adminWrite })).body);
+      check("Der zwischenzeitlich befoerderte Nutzer bleibt nach dem abgebrochenen Loeschversuch als Administrator vollstaendig erhalten",
+        afterRace.some((u) => u.id === createRace.id && u.role === "admin"));
+    }
 
     // --- Schutzregel: manipulierte/fremde Nutzer-ID loescht kein anderes Konto ---
     const bogusDelete = await req(port, "DELETE", "/api/admin/users/user-existiert-nicht-abc123", { headers: adminWrite });
