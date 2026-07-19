@@ -8153,6 +8153,7 @@ a.ac-item, a.ac-item:visited { text-decoration: none; color: inherit; }
 }
 
 .admin-status-aktiv { background: rgba(57, 209, 143, .16); color: var(--chance); }
+.admin-status-eingeladen { background: rgba(111, 143, 247, .16); color: var(--accent-ink); }
 .admin-status-testphase { background: rgba(111, 143, 247, .16); color: var(--accent-ink); }
 .admin-status-pausiert { background: rgba(251, 191, 36, .16); color: #fbbf24; }
 .admin-status-gekuendigt { background: rgba(255, 89, 103, .16); color: var(--danger); }
