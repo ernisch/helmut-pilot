@@ -2695,6 +2695,16 @@ function sendSetPasswordPage(response) {
         background: rgba(255, 255, 255, .06); color: #f5f1e8; outline: none;
       }
       input:focus { border-color: rgba(139, 92, 246, .56); box-shadow: 0 0 0 4px rgba(139, 92, 246, .16); }
+      .password-field { position: relative; display: flex; align-items: center; }
+      .password-field input { padding-right: 48px; }
+      .password-toggle {
+        position: absolute; right: 0; top: 0; bottom: 0; width: 48px; height: auto;
+        display: flex; align-items: center; justify-content: center;
+        background: transparent; border: 0; border-radius: 0 16px 16px 0;
+        color: rgba(245, 241, 232, .36); padding: 0; margin: 0; cursor: pointer; transition: color .15s ease;
+      }
+      .password-toggle:hover { color: rgba(245, 241, 232, .78); }
+      .password-toggle svg { width: 19px; height: 19px; flex-shrink: 0; pointer-events: none; }
       button {
         margin-top: 20px; width: 100%; min-height: 48px; padding: 0 22px; font-size: 16px; font-weight: 500;
         color: #ffffff; background: linear-gradient(135deg, #102354, #1d3f8f);
@@ -2722,9 +2732,15 @@ function sendSetPasswordPage(response) {
         <p>Wähle ein Passwort für deinen Helmut-Zugang. Mindestens 8 Zeichen.</p>
         <form id="setForm">
           <label for="pw1">Neues Passwort</label>
-          <input id="pw1" type="password" minlength="8" required autocomplete="new-password" />
+          <div class="password-field">
+            <input id="pw1" type="password" minlength="8" required autocomplete="new-password" />
+            <button type="button" class="password-toggle" data-toggle-password="pw1" aria-label="Passwort anzeigen"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+          </div>
           <label for="pw2">Passwort wiederholen</label>
-          <input id="pw2" type="password" minlength="8" required autocomplete="new-password" />
+          <div class="password-field">
+            <input id="pw2" type="password" minlength="8" required autocomplete="new-password" />
+            <button type="button" class="password-toggle" data-toggle-password="pw2" aria-label="Passwort anzeigen"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+          </div>
           <button type="submit" id="setSubmit">Passwort setzen</button>
           <p class="error" id="formError" hidden></p>
         </form>
@@ -2762,6 +2778,19 @@ function sendSetPasswordPage(response) {
             .then(function (data) { show(data && data.valid ? "formView" : "expiredView"); })
             .catch(function () { show("expiredView"); });
         }
+
+        var EYE_OPEN_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+        var EYE_CLOSED_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+        Array.prototype.forEach.call(document.querySelectorAll("[data-toggle-password]"), function (button) {
+          button.addEventListener("click", function () {
+            var input = document.getElementById(button.getAttribute("data-toggle-password"));
+            if (!input) return;
+            var reveal = input.type === "password";
+            input.type = reveal ? "text" : "password";
+            button.innerHTML = reveal ? EYE_CLOSED_SVG : EYE_OPEN_SVG;
+            button.setAttribute("aria-label", reveal ? "Passwort verbergen" : "Passwort anzeigen");
+          });
+        });
 
         document.getElementById("setForm").addEventListener("submit", function (event) {
           event.preventDefault();

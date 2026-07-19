@@ -97,6 +97,7 @@
     "test:admin-nutzer-anlegen-schnellstart": "node scripts/admin-nutzer-anlegen-schnellstart-test.js",
     "test:passwort-setzen-login-fix": "node scripts/passwort-setzen-login-fix-test.js",
     "test:admin-nutzer-loeschen": "node scripts/admin-nutzer-loeschen-test.js",
+    "test:passwort-setzen-eye-toggle": "node scripts/passwort-setzen-eye-toggle-test.js",
     "test:supply-matrix": "node scripts/profile-supply-matrix-test.js",
     "test:llm-budget": "node scripts/llm-budget-test.js",
     "test:llm-reservation": "node scripts/llm-reservation-test.js",
