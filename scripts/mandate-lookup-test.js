@@ -108,12 +108,14 @@ const politician = (id, label, party) => ({ id, label, first_name: label.split("
 
   // ── 6) Gezielter Abruf nach Disambiguierung (id) ────────────────────────────
   installFetch([
+    ["/politicians/42", { data: { id: 42, label: "Sven Beispiel", first_name: "Sven", last_name: "Beispiel", party: { label: "SPD" } } }],
     ["/candidacies-mandates?", { data: [{ parliament_period: { parliament: { label: "Bundestag" } }, fraction_membership: [{ fraction: { label: "SPD-Fraktion" } }] }] }],
     ["/committee-memberships?", { data: [] }]
   ]);
   const byId = await lookup.lookupMandate({ id: "42", name: "Sven Beispiel" });
   check("id-Abruf: status 'found'", byId.status === "found", byId.status);
   check("id-Abruf: Ebene Bundestag", byId.profile && byId.profile.parliamentType === "Bundestag");
+  check("id-Abruf: Partei aus Detail übernommen (nicht leer)", byId.profile && byId.profile.party === "SPD", byId.profile && byId.profile.party);
 
   // ── 7) Leere Eingabe -> not_found (kein Netzaufruf nötig) ────────────────────
   const empty = await lookup.lookupMandate({ name: " " });

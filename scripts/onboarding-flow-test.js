@@ -73,6 +73,7 @@ codeVm += `\n;globalThis.__onb = {
   renderStep: (n) => { onboardingActive = true; onboardingStep = n; renderOnboardingFlow(); return document.querySelector("#app").innerHTML; },
   stepBody: (n) => { const s = onbRenderStep(n); return (s.full || "") + (s.body || "") + (s.action || ""); },
   stepVisible: (n) => onbStepVisible(n),
+  corePct: () => onbCorePct(),
   parliament: () => onbParliament()
 };`;
 
@@ -170,11 +171,22 @@ check("Mapping: relevantMinistries/monitoringTargets/localMedia", pl.relevantMin
 check("Mapping: communicationStyle + preferredChannels + noGoTopics", pl.communicationStyle === "Nahbar & klar" && pl.preferredChannels.includes("Pressemitteilung") && pl.noGoTopics.includes("Migration"));
 check("Mapping: KEIN chanceTopics-Feld (heißt opportunityTopics)", !("chanceTopics" in pl));
 
-// ── 7) Adaptivität je Kontotyp ───────────────────────────────────────────────
+// ── 7) Adaptivität: keine Sackgasse — Kernscreens bleiben immer erfüllbar ────
 onb.setDraft(Object.assign(onb.draft(), { accountType: "abgeordneter" }));
-check("Adaptiv: Abgeordneter sieht Mandat/Ausschuss/Region", onb.stepVisible(3) && onb.stepVisible(4) && onb.stepVisible(6));
+check("Adaptiv: Kernscreens sichtbar (Abgeordneter)", onb.stepVisible(3) && onb.stepVisible(4) && onb.stepVisible(6));
 onb.setDraft(Object.assign(onb.draft(), { accountType: "ministerium" }));
-check("Adaptiv: Ministerium blendet Mandat/Ausschuss/Region aus", !onb.stepVisible(3) && !onb.stepVisible(4) && !onb.stepVisible(6) && onb.stepVisible(5));
+check("Adaptiv: keine Sackgasse für andere Kontotypen (Kernscreens bleiben erfüllbar)", onb.stepVisible(3) && onb.stepVisible(4) && onb.stepVisible(6));
+
+// ── 8) Pflichtkern zur Laufzeit aus dem Entwurf (inkl. Landtag→Bundesland) ────
+onb.setDraft({ fullName: "Voll Ständig", party: "SPD", parliamentType: "Bundestag", constituency: "K1", committees: ["Gesundheit"], focusTopics: [] });
+check("Pflichtkern: vollständiges Bundestagsprofil ist ready (100 %)", onb.corePct().ready === true && onb.corePct().pct === 100);
+onb.setDraft({ fullName: "", party: "", parliamentType: "", constituency: "", committees: [], focusTopics: [] });
+const empty = onb.corePct();
+check("Pflichtkern: leeres Profil nicht ready + benennt fehlende Felder", empty.ready === false && empty.missing.length >= 4);
+onb.setDraft({ fullName: "Land Tag", party: "CDU/CSU", parliamentType: "Landtag", constituency: "K2", focusTopics: ["Bildung"], state: "" });
+check("Pflichtkern: Landtag ohne Bundesland NICHT ready", onb.corePct().ready === false && onb.corePct().missing.includes("Bundesland"));
+onb.setDraft({ fullName: "Land Tag", party: "CDU/CSU", parliamentType: "Landtag", constituency: "K2", focusTopics: ["Bildung"], state: "Bayern" });
+check("Pflichtkern: Landtag MIT Bundesland ready", onb.corePct().ready === true);
 
 console.log(`\n${fail === 0 ? "ALLE GRÜN" : fail + " FEHLGESCHLAGEN"} — ${pass}/${pass + fail} Onboarding-Flow-Assertions`);
 process.exit(fail > 0 ? 1 : 0);

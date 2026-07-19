@@ -12128,13 +12128,13 @@ summary:focus-visible {
   width: 100%; padding: 14px 42px 14px 16px; min-height: 44px;
   border-radius: var(--r-md); border: 1px solid var(--line-2) !important;
   background: var(--bg-2) !important; color: var(--ink) !important;
-  font-family: var(--font-body); font-size: 15px; outline: none; cursor: pointer;
+  font-family: var(--font-body); font-size: 16px; outline: none; cursor: pointer;
 }
 .onboarding-handoff select.ho-select:focus { border-color: var(--accent) !important; }
 .ho-select-chevron { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--muted); }
 .ho-field { margin-bottom: 15px; }
 .ho-input-inline { display: flex; gap: 9px; }
-.ho-input-inline .ho-input { font-size: 14px; padding: 12px 15px; }
+.ho-input-inline .ho-input { font-size: 16px; padding: 12px 15px; }
 .ho-add {
   flex: none; width: 46px; min-height: 44px; border-radius: var(--r-sm);
   border: 1px solid var(--line-2); background: transparent; color: var(--accent);

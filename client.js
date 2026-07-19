@@ -697,7 +697,17 @@ function shouldRunOnboarding() {
   if (!["abgeordneter", "referent"].includes(userRole())) return false;
   if (!profile) return false;
   const status = String(profile.onboardingStatus || "").trim().toLowerCase();
-  return status !== "abgeschlossen";
+  if (status === "abgeschlossen") return false;
+  // Bestandsprofile OHNE Status-Feld (angelegt vor der Erstkonfiguration) NICHT
+  // erneut onboarden, wenn sie faktisch schon eingerichtet sind: frueher
+  // abgeschlossen (onboardedAt) ODER bereits als vollstaendig validiert. Sonst
+  // wuerde ein fertig konfiguriertes Altprofil beim Login ins Onboarding gezwungen.
+  if (!status) {
+    if (profile.onboardedAt) return false;
+    const v = profile.profilValidierung;
+    if (v && v.state === "vollstaendig") return false;
+  }
+  return true;
 }
 
 function onbSeedDraftFromProfile() {
@@ -733,6 +743,11 @@ function onbSeedDraftFromProfile() {
 }
 
 function startOnboardingFlow() {
+  // Idempotent: laeuft die Erstkonfiguration bereits (z. B. ruft der
+  // Foreground-Refresh ueber visibilitychange loadBriefing erneut auf), NICHT neu
+  // aufsetzen — sonst gingen nicht gespeicherte Eingaben verloren und der Schritt
+  // spraenge auf die zuletzt persistierte Position zurueck. Nur neu zeichnen.
+  if (onboardingActive) { renderOnboardingFlow(); return; }
   onboardingActive = true;
   onbSeedDraftFromProfile();
   onboardingUi = { scanPhase: 0, lookup: { status: "idle", candidates: [], warnings: [] }, saving: false, editMandate: false, error: "", pct: null };
@@ -755,9 +770,13 @@ function onbParliament() {
   return "";
 }
 function onbStepVisible(step) {
-  const acc = onbAccountType();
-  const personalMandate = acc === "abgeordneter";
-  if (!personalMandate && (step === 3 || step === 4 || step === 6)) return false; // Mandat/Ausschüsse/Region
+  // Alle Screens sind für den Standardfall (Abgeordneter) relevant. Die adaptive
+  // Steuerung erfolgt heute über die Ebene (Landtag: Bundesland Pflicht +
+  // transparenter Quellenvorbehalt auf S3). Kontotyp-spezifische Sonderscreens
+  // (Ministerium/Fraktion/Verband) sind im Design NICHT ausgearbeitet — daher
+  // werden hier bewusst KEINE Pflicht-/Mandatsscreens ausgeblendet: sonst wäre
+  // der Pflichtkern (Partei·Ebene·Region·Ausschuss|Thema) nicht erfüllbar und der
+  // Ablauf liefe in eine Sackgasse (kein Abschluss möglich).
   return true;
 }
 function onbNextVisible(from, dir) {
@@ -873,7 +892,13 @@ function onbSecondary(action, label) { return `<button type="button" class="ho-b
 async function onbStartScan() {
   onbCaptureInputs();
   const name = String(onboardingDraft.fullName || "").trim();
-  if (!name) { onboardingUi.error = "Bitte gib zuerst deinen Namen ein."; return onbGoto(1); }
+  if (!name) {
+    // Direkt neu zeichnen (nicht über onbGoto, das onboardingUi.error zurücksetzt),
+    // damit die Hinweis-Meldung auf dem Identitäts-Screen sichtbar bleibt.
+    onboardingStep = 1;
+    onboardingUi.error = "Bitte gib zuerst deinen Namen ein.";
+    return renderOnboardingFlow();
+  }
   onboardingStep = 2;
   onboardingUi.scanPhase = 0;
   onboardingUi.lookup = { status: "loading", candidates: [], warnings: [] };
@@ -1005,6 +1030,7 @@ async function onbPersistStep() {
     console.warn("Onboarding: Zwischenspeichern fehlgeschlagen", error);
   } finally {
     onboardingUi.saving = false;
+    onbPaintSavedIndicator(false); // „Speichert …" wieder auf „Gespeichert" zurücksetzen
   }
 }
 function onbPaintSavedIndicator(saving) {
@@ -1025,7 +1051,11 @@ async function onbComplete() {
   });
   try {
     const res = await apiSend("PATCH", `/api/profile/current?${apiScopeQuery()}`, payload);
-    if (res.ok && res.json) profile = res.json;
+    // NICHT als fertig behandeln, wenn der Abschluss-Schreibvorgang scheiterte —
+    // sonst zeigt Helmut „vollständig", das Gate greift beim nächsten Login aber
+    // erneut (onboarding_status blieb ungespeichert).
+    if (!res.ok) throw new Error(`save-failed-${res.status}`);
+    if (res.json) profile = res.json;
     // Briefing-Präferenzen auf Account-Ebene (S9) — getrennt von mandate_profiles.
     const instant = new Set(onboardingDraft.instant || []);
     await apiSend("PATCH", "/api/user/notification-settings", {
@@ -1052,17 +1082,28 @@ function onbExitToApp() {
 }
 
 // --- Fortschritt/Validierung ------------------------------------------------
-function onbValidation() {
-  return (profile && profile.profilValidierung) || null;
-}
+// Pflichtkern zur Laufzeit AUS DEM ENTWURF berechnen — dieselbe Logik wie
+// profile-validation.validateProfile (Name · Partei/fraktionslos · Ebene ·
+// Region/Wahlkreis (+ Bundesland bei Landtag) · Ausschuss ODER Thema). Bewusst
+// clientseitig aus dem Draft (nicht aus profilValidierung): so bleibt der
+// Abschluss auch dann erfüllbar, wenn der letzte Zwischenspeicher-PATCH scheiterte
+// oder das gespeicherte Profil (noch) als deaktiviert gilt.
 function onbCorePct() {
-  const v = onbValidation();
-  if (!v) return { pct: 60, ready: false, missing: [] };
-  const missing = Array.isArray(v.missingRequired) ? v.missingRequired : [];
-  const CORE = 6; // name, nutzerId, partei, mandatsebene, region, schwerpunkt (+ bundesland bei Landtag)
-  const ready = v.state === "vollstaendig";
-  const pct = ready ? 100 : Math.max(15, Math.round(((CORE - Math.min(missing.length, CORE)) / CORE) * 100));
-  return { pct, ready, missing: Array.isArray(v.missingRequiredLabels) ? v.missingRequiredLabels : [] };
+  const d = onboardingDraft || {};
+  const has = (v) => String(v || "").trim().length > 0;
+  const hasList = (v) => Array.isArray(v) && v.some((x) => String(x || "").trim());
+  const level = onbParliament();
+  const checks = [
+    { key: "Name", ok: has(d.fullName) },
+    { key: "Partei (oder „fraktionslos“)", ok: has(d.party) || has(d.faction) },
+    { key: "Mandatsebene (Bundestag/Landtag)", ok: !!level },
+    { key: "Region oder Wahlkreis", ok: has(d.constituency) || has(d.state) || has(d.location) },
+    { key: "mind. ein Schwerpunkt oder Ausschuss", ok: hasList(d.committees) || hasList(d.focusTopics) }
+  ];
+  if (level === "Landtag") checks.push({ key: "Bundesland", ok: has(d.state) });
+  const missing = checks.filter((c) => !c.ok).map((c) => c.key);
+  const pct = Math.round(((checks.length - missing.length) / checks.length) * 100);
+  return { pct: Math.max(pct, missing.length ? 15 : 100), ready: missing.length === 0, missing };
 }
 
 // ============================================================================
@@ -1247,7 +1288,7 @@ function onbConfirmEditFields() {
   return `
     <div style="margin-top:18px;padding-top:18px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:14px">
       ${onbEyebrow("Korrigieren", true)}
-      <div><div class="ho-label">Name</div><input class="ho-input" style="font-size:15px" type="text" value="${escapeAttribute(d.fullName || "")}" placeholder="Dein Name" data-onb-input="fullName" /></div>
+      <div><div class="ho-label">Name</div><input class="ho-input" style="font-size:16px" type="text" value="${escapeAttribute(d.fullName || "")}" placeholder="Dein Name" data-onb-input="fullName" /></div>
       <div><div class="ho-label">Ebene</div>${onbSelect("parliamentType", ["Bundestag", "Landtag"], onbParliament())}</div>
       <div><div class="ho-label">Partei / Fraktion</div>${onbSelect("party", ONB_PARTIES, d.party)}</div>
       <p class="ho-hint">Wahlkreis und Ausschüsse passt du gleich in den nächsten Schritten an.</p>
@@ -1303,8 +1344,8 @@ function onbStepRegion() {
       <p class="ho-p">Damit gewichte ich lokale Entwicklungen für dich stärker.</p>
       <div style="margin-top:20px">${note}</div>
       <div class="ho-field"><div class="ho-label">Bundesland</div>${onbSelect("state", ONB_BUNDESLAENDER, d.state)}</div>
-      <div class="ho-field"><div class="ho-label">Wahlkreis</div><input class="ho-input" style="font-size:15px" type="text" value="${escapeAttribute(d.constituency || "")}" placeholder="z. B. Salzgitter-Wolfenbüttel" data-onb-input="constituency" /></div>
-      <div class="ho-field"><div class="ho-label">Ort</div><input class="ho-input" style="font-size:15px" type="text" value="${escapeAttribute(d.location || "")}" placeholder="z. B. dein Wahlkreisbüro-Ort" data-onb-input="location" /></div>
+      <div class="ho-field"><div class="ho-label">Wahlkreis</div><input class="ho-input" style="font-size:16px" type="text" value="${escapeAttribute(d.constituency || "")}" placeholder="z. B. Salzgitter-Wolfenbüttel" data-onb-input="constituency" /></div>
+      <div class="ho-field"><div class="ho-label">Ort</div><input class="ho-input" style="font-size:16px" type="text" value="${escapeAttribute(d.location || "")}" placeholder="z. B. dein Wahlkreisbüro-Ort" data-onb-input="location" /></div>
       ${onbLabel("Regionale Themen")}
       ${onbChips("regionalInterests", onboardingDraft.regionalInterests || [])}
       ${onbAddRow("regionalInterests", "z. B. lokaler Arbeitgeber, Großprojekt")}`,
