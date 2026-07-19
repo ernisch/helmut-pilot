@@ -2626,6 +2626,12 @@ function sendImpressumPage(response) {
 // Formular (Token gueltig) / erledigt (Passwort gesetzt, eingeloggt) / abgelaufen
 // (-> "Neuen Link anfordern"). Der Token bleibt in der URL und wird nur an die
 // eigenen /api/auth-Endpunkte geschickt (CSP: connect-src 'self').
+// Design (Produktionsfehler-Fix): dieselben Tokens/Radien/Farben wie der
+// dunkle App-/Login-Screen (client.js renderLogin/renderPilotAccess,
+// styles.css .login-screen/.pilot-access-card/.pilot-access-form). Diese Seite
+// wird VOR dem SPA-Bootstrap ausgeliefert (kein Zugriff auf styles.css/
+// client.js-Klassen) — die Werte sind deshalb bewusst 1:1 hierher uebertragen,
+// keine neue Designwelt.
 function sendSetPasswordPage(response) {
   response.writeHead(200, htmlHeaders());
   response.end(`<!doctype html>
@@ -2633,29 +2639,66 @@ function sendSetPasswordPage(response) {
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#050914" />
     <meta name="robots" content="noindex" />
     <title>Passwort setzen · Helmut</title>
     <style>
-      :root { color-scheme: light; --ink: #111; --muted: #5f615f; --line: #d9ddd7; --paper: #f7f7f2; --accent: #7d1734; }
+      :root { color-scheme: dark; }
       * { box-sizing: border-box; }
-      body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--paper); color: var(--ink); line-height: 1.6; }
-      main { width: min(100% - 32px, 520px); margin: 0 auto; padding: 56px 0 72px; }
-      a { color: var(--accent); }
-      h1 { font-size: clamp(32px, 6vw, 48px); line-height: 1.05; margin: 0 0 16px; letter-spacing: -0.03em; }
-      p { color: var(--muted); font-size: 17px; }
-      label { display: block; margin: 18px 0 6px; font-weight: 600; font-size: 15px; }
-      input { width: 100%; padding: 12px 14px; font-size: 16px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink); }
-      input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
-      button { margin-top: 20px; width: 100%; padding: 13px 18px; font-size: 16px; font-weight: 600; color: #fff; background: var(--accent); border: 0; border-radius: 8px; cursor: pointer; }
-      button[disabled] { opacity: 0.6; cursor: wait; }
-      .error { color: #a11616; font-size: 15px; margin-top: 12px; }
-      .notice { border: 1px solid var(--line); background: #fff; padding: 16px 18px; border-radius: 8px; font-size: 15px; }
-      footer { margin-top: 40px; font-size: 14px; color: var(--muted); }
+      html, body { width: 100%; min-height: 100%; }
+      body {
+        margin: 0; min-height: 100dvh; display: grid; place-items: center;
+        padding: clamp(32px, 8dvh, 96px) 20px;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #f5f1e8; line-height: 1.6;
+        background:
+          radial-gradient(ellipse at 84% 10%, rgba(88, 46, 196, .09), transparent 38%),
+          radial-gradient(ellipse at 12% 92%, rgba(28, 66, 168, .07), transparent 34%),
+          radial-gradient(circle at 50% 40%, rgba(140, 92, 255, .11), transparent 26%),
+          linear-gradient(180deg, #070b15 0%, #050914 72%, #03050b 100%);
+      }
+      main {
+        width: min(100%, 480px);
+        background: linear-gradient(155deg, rgba(15, 21, 38, .97), rgba(7, 10, 21, .96));
+        border: 1px solid rgba(255, 255, 255, .07);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .042), 0 36px 80px rgba(0, 0, 0, .44), 0 6px 28px rgba(0, 0, 0, .3);
+        border-radius: 24px;
+        padding: 48px 40px;
+        text-align: center;
+      }
+      .mark { display: grid; place-items: center; color: #fbf7ef; margin-bottom: 6px; }
+      .mark span { font: 720 48px/1 Inter, sans-serif; letter-spacing: -.04em; text-shadow: 0 20px 70px rgba(140, 92, 255, .34); }
+      .wordmark { margin: 0 0 14px; font-weight: 800; letter-spacing: .08em; color: #d7e0ff; opacity: .72; text-transform: uppercase; font-size: 13px; }
+      h1 { font-size: clamp(26px, 5vw, 34px); line-height: 1.15; margin: 0 0 12px; letter-spacing: -.02em; color: #f5f1e8; }
+      p { color: rgba(245, 241, 232, .68); font-size: 16px; max-width: 360px; margin: 0 auto 4px; }
+      a { color: #6f8ff7; }
+      label { display: block; margin: 16px 0 6px; font-weight: 600; font-size: 14px; text-align: left; color: rgba(245, 241, 232, .68); }
+      form { margin-top: 8px; }
+      input {
+        width: 100%; min-height: 52px; padding: 0 16px; font-size: 16px; font: inherit;
+        border: 1px solid rgba(255, 255, 255, .12); border-radius: 16px;
+        background: rgba(255, 255, 255, .06); color: #f5f1e8; outline: none;
+      }
+      input:focus { border-color: rgba(139, 92, 246, .56); box-shadow: 0 0 0 4px rgba(139, 92, 246, .16); }
+      button {
+        margin-top: 20px; width: 100%; min-height: 48px; padding: 0 22px; font-size: 16px; font-weight: 500;
+        color: #ffffff; background: linear-gradient(135deg, #102354, #1d3f8f);
+        border: 1px solid #f5f1e8; border-radius: 14px; cursor: pointer;
+        box-shadow: 0 14px 34px rgba(29, 63, 143, .16);
+      }
+      button[disabled] { opacity: .6; cursor: wait; }
+      .error { color: #ff7a8a; font-size: 14px; margin-top: 12px; min-height: 18px; }
+      .notice { border: 1px solid rgba(255, 255, 255, .1); background: rgba(255, 255, 255, .04); padding: 16px 18px; border-radius: 14px; font-size: 15px; color: rgba(245, 241, 232, .68); }
+      footer { margin-top: 32px; font-size: 13px; color: rgba(245, 241, 232, .5); }
+      footer a { color: rgba(245, 241, 232, .5); text-decoration: underline; }
       [hidden] { display: none !important; }
+      @media (max-width: 480px) { main { border-radius: 20px; padding: 36px 24px; } }
     </style>
   </head>
   <body>
     <main>
+      <div class="mark"><span>H</span></div>
+      <p class="wordmark">Helmut</p>
       <h1>Passwort setzen</h1>
 
       <section id="loadingView"><p>Der Link wird geprüft …</p></section>
@@ -2673,8 +2716,8 @@ function sendSetPasswordPage(response) {
       </section>
 
       <section id="doneView" hidden>
-        <p class="notice">Dein Passwort ist gesetzt — du bist jetzt angemeldet.</p>
-        <p><a href="/">Weiter zu Helmut</a></p>
+        <p class="notice">Dein Passwort ist gesetzt — du bist jetzt angemeldet. Du wirst weitergeleitet …</p>
+        <p style="margin-top:14px"><a href="/">Weiter zu Helmut</a></p>
       </section>
 
       <section id="expiredView" hidden>
@@ -2720,7 +2763,16 @@ function sendSetPasswordPage(response) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ token: token, password: pw1 })
           }).then(function (res) {
-            if (res.ok) { show("doneView"); return null; }
+            if (res.ok) {
+              show("doneView");
+              // Funktionaler Fix: automatisch weiterleiten statt nur einen
+              // manuellen Link zu zeigen — die Session-Cookie ist mit dieser
+              // Antwort bereits gesetzt, eine echte Top-Level-Navigation nimmt
+              // sie zuverlaessig mit (identisches Muster wie der normale
+              // Login-Screen, der nach Erfolg reload() ausloest).
+              window.setTimeout(function () { window.location.href = "/"; }, 600);
+              return null;
+            }
             if (res.status === 410) { show("expiredView"); return null; }
             return res.json().catch(function () { return {}; }).then(function (data) {
               errorEl.textContent = (data && data.error) || "Das hat nicht geklappt. Bitte versuch es erneut.";
