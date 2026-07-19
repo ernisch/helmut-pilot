@@ -436,7 +436,27 @@ async function loadBriefing() {
   try {
     const startResponse = await fetchWithTimeout(`/api/app/start?${scope}`, {}, renderedFromCache ? 15000 : 25000);
 
-    if (startResponse.status === 401 || startResponse.status === 403) {
+    if (startResponse.status === 401) {
+      // Echter Auth-Fehler: Session fehlt/ist ungueltig -> Login/Zugang zeigen.
+      if (authState) renderLogin();
+      else renderPilotAccess();
+      return;
+    }
+    if (startResponse.status === 403) {
+      // WICHTIG (Root-Cause-Fix): ein 403 auf /api/app/start bedeutet NICHT
+      // zwangslaeufig "nicht eingeloggt" — im Account-Modus liefert der Server
+      // ihn auch fuer einen VOLLSTAENDIG authentifizierten Nutzer ohne
+      // zugewiesenes Mandat (reason "no-mandate", server.js Mandant-Gate).
+      // Diesen Fall faelschlich als renderLogin() zu behandeln, sperrt den
+      // Nutzer trotz gueltiger Session dauerhaft aus (genau das gemeldete
+      // "keine Weiterleitung, zurueck zur Loginseite"). Mandantentrennung
+      // bleibt unangetastet: es werden weiterhin KEINE fremden Daten gezeigt,
+      // nur ein ehrlicher Zustand statt eines irrefuehrenden Login-Screens.
+      const payload = await startResponse.json().catch(() => ({}));
+      if (authState && authState.authenticated && payload && payload.reason === "no-mandate") {
+        renderNoMandateState();
+        return;
+      }
       if (authState) renderLogin();
       else renderPilotAccess();
       return;
@@ -871,6 +891,26 @@ function renderMandateSelection(mandates = []) {
       window.location.search = params.toString();
     });
   });
+}
+
+// Ehrlicher Zustand fuer einen authentifizierten Account-Nutzer OHNE
+// zugewiesenes Mandat (Rolle referent/demo ohne Zuweisung, oder Admin auf
+// einem mandatslosen System). KEIN Login-Screen (die Session ist gueltig!)
+// und KEINE fremden Daten — nur die Erklaerung + Abmelden, damit der Nutzer
+// nicht in einer Sackgasse haengt (Root-Cause-Fix, Umsetzungsnotiz §6-Folgefix).
+function renderNoMandateState() {
+  hideStartupSplash();
+  app.innerHTML = `
+    <section class="loading-card pilot-access-card">
+      <div class="loading-logo"><span>H</span></div>
+      <p>Helmut</p>
+      <h1>Noch kein Mandat zugewiesen.</h1>
+      <p class="pilot-access-copy">Dein Zugang ist aktiv, aber dir ist noch kein Mandat zugeordnet. Bitte wende dich an einen Administrator.</p>
+      <div class="pilot-access-form">
+        <button type="button" class="primary-button" data-logout>Abmelden</button>
+      </div>
+    </section>`;
+  app.querySelector("[data-logout]")?.addEventListener("click", () => logout());
 }
 
 function renderPilotAccess(message = "") {
