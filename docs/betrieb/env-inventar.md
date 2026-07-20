@@ -48,7 +48,8 @@ weg, App läuft; fail-closed = Zugriff/Aktion wird verweigert) · Rotationsbedar
 | `HELMUT_PROTECTED_TENANT_IDS` | O | Optionale zusätzliche Schutzliste (Komma-Liste von Mandats-IDs) für die Provisionierung; bestehende, nicht vom Werkzeug angelegte Mandanten sind auch ohne Wert datengetrieben geschützt. | provisioning.js · alle · Default leer (Marker-Schutz greift) · — |
 | `HELMUT_TENANT_MODE` | O | Default `pilot`. | server.js · alle · Default greift · — |
 | `HELMUT_TENANT_JWT_MODE` | O | **Stillgelegt** (tenantJwtModeEnabled()=false). Ohne Wirkung. → Abschnitt 9 | storage.js · — · wirkungslos · — |
-| `HELMUT_PROFILE_DB_MODE` | O | Profile aus mandate_profiles statt Blob. Default aus. | storage.js · alle · Default aus · — |
+| `HELMUT_PROFILE_DB_MODE` | O | Profile aus mandate_profiles statt Blob (Dual Write). Default aus. | storage.js · alle · Default aus · — |
+| `HELMUT_PROFILE_DB_EXCLUSIVE` | O | Stufe E: Profile relational-only, saveProfile schreibt keinen helmut_store-Blob mehr. Setzt `HELMUT_PROFILE_DB_MODE=1` voraus. Default aus. Nur nach verifiziertem Backfill. Rollback = Flag leeren. | storage.js · alle · Default aus (Dual Write) · — |
 | `HELMUT_V3_STORE` | O | V3-Relationstabellen nutzen. In Prod = 1. | storage.js · Prod=1 · ohne: V3 inert (fail-open) · — |
 | `HELMUT_ADMIN_EMAIL` / `HELMUT_ADMIN_PASSWORD` / `HELMUT_ADMIN_NAME` / `HELMUT_ADMIN_RESET` | O·(S bei Passwort) | Erst-Admin-Seed (nach erstem Start entfernbar). | server.js · Prod (einmalig) · nur beim Seed relevant · nach Nutzung entfernen |
 | `HELMUT_ALLOW_QUERY_SECRETS` | O | Query-Secret-Login erlauben. Default false. **In Prod ungesetzt lassen.** | server.js · alle · Default sicher (aus) · — |

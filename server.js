@@ -11,7 +11,7 @@ const { validateProfile } = require("./lib/helmut/profile-validation");
 const sourceSafety = require("./lib/helmut/sourceSafety");
 const { runLageCheck, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, listFailedKnowledgeObjects, resetUnderstandingToPending, markUnderstandingTerminal, getUnderstandingRetries, saveUnderstandingRetries, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, getLlmUsageBreakdownToday, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getClassificationCoverage, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState, tenantJwtModeEnabled, saveKnowledgeObjectEnrichment, profileDbModeEnabled, getProfileFromDb, diagnoseTenantJwt, recordProcessRun, listProcessRuns, saveMonitoringDeliveryState, getMonitoringDeliveryState, getLlmCostSince, getAdminCostsPerUser, listSourceArchitectureRows, getSourceModeShadowLastRun } = require("./lib/helmut/storage");
+const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, listFailedKnowledgeObjects, resetUnderstandingToPending, markUnderstandingTerminal, getUnderstandingRetries, saveUnderstandingRetries, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, getLlmUsageBreakdownToday, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getClassificationCoverage, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState, tenantJwtModeEnabled, saveKnowledgeObjectEnrichment, profileDbModeEnabled, profileDbExclusiveEnabled, getProfileTelemetry, getProfileFromDb, diagnoseTenantJwt, recordProcessRun, listProcessRuns, saveMonitoringDeliveryState, getMonitoringDeliveryState, getLlmCostSince, getAdminCostsPerUser, listSourceArchitectureRows, getSourceModeShadowLastRun } = require("./lib/helmut/storage");
 const llmBudgetLib = require("./lib/helmut/llm-budget");
 
 // P0-1: technischer Ausfuehrungsort + Laufkennung fuer Prozess-Laufzeit-Telemetrie
@@ -1542,6 +1542,16 @@ async function handleRequest(request, response) {
         v3StoreFlagSet: isFlag(process.env.HELMUT_V3_STORE),
         v3StoreReady: v3StoreReady(),
         profileDbModeEnabled: profileDbEnabled,
+        // --- Profil-Exklusivmodus (Stufe E): kein globaler helmut_store-Blob-Write mehr ---
+        // flagSet zeigt den ROHEN Flag-Wert; enabled erfordert zusaetzlich den DB-Modus.
+        profileDbExclusiveFlagSet: isFlag(process.env.HELMUT_PROFILE_DB_EXCLUSIVE),
+        profileDbExclusiveEnabled: profileDbExclusiveEnabled(),
+        profileWriteTarget: profileDbExclusiveEnabled()
+          ? "mandate_profiles (relational-only, kein Blob-Write)"
+          : (profileDbEnabled ? "mandate_profiles + helmut_store (Dual Write)" : "helmut_store (Blob-only)"),
+        // Divergenz-Signal: wie oft fiel ein SQL-Miss im Dual-Write-Modus auf den
+        // Blob zurueck? Dauerhaft >0 => Backfill unvollstaendig (Cutover E noch nicht reif).
+        profileBlobReadFallbacks: (getProfileTelemetry() || {}).blobReadFallbacks || 0,
         // Live-Selbsttest: liest der DB-Profilpfad wirklich (JWT akzeptiert)?
         tenantJwtReadWorks,
         tenantReadProbe,
@@ -4501,7 +4511,8 @@ const HELMUT_CONFIG_DIAGNOSE_WHITELIST = Object.freeze([
   Object.freeze({ name: "HELMUT_V3_STORE", codeDefault: "aus — V3-Read/Understanding inaktiv" }),
   Object.freeze({ name: "HELMUT_SCORING_MODE", codeDefault: "off — Alt-Ranking byte-identisch" }),
   Object.freeze({ name: "HELMUT_V3_SHADOW_COMPARE", codeDefault: "aus — live nicht verdrahtet" }),
-  Object.freeze({ name: "HELMUT_PROFILE_DB_MODE", codeDefault: "aus — Profile Blob-only" })
+  Object.freeze({ name: "HELMUT_PROFILE_DB_MODE", codeDefault: "aus — Profile Blob-only" }),
+  Object.freeze({ name: "HELMUT_PROFILE_DB_EXCLUSIVE", codeDefault: "aus — Dual Write (Blob + SQL); an: relational-only, kein Blob-Write" })
 ]);
 
 function buildHelmutConfigDiagnose(env = process.env) {
