@@ -398,11 +398,16 @@ function seedDraftAndGotoPrivacy(fullName) {
 
     // ═══ 2) FEHLGESCHLAGENES SPEICHERN: kein Erfolg, kein Redirect, ruhiger
     // Fehler, Wiederholung möglich ══════════════════════════════════════════
+    // Bewusst KLEINES Display (375x667, iPhone SE/8-Klasse): die Fehlermeldung
+    // ist die letzte Zeile des Prüfungs-Bodys und lag auf kurzen Displays UNTER
+    // dem Falz (Regression-Nachweis: mit 844px-Viewport unentdeckt). onbComplete
+    // holt sie im Fehlerfall aktiv per scrollIntoView in den sichtbaren Bereich —
+    // dieser Abschnitt prüft das jetzt auf genau so einem kurzen Display.
     {
       const created = await newInvite("Fehler Fall Zwei", "fehler-completion-e2e@example.org");
       const { cookie } = await setPassword(created.inviteUrl);
 
-      const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: "block", bypassCSP: true });
+      const ctx = await browser.newContext({ viewport: { width: 375, height: 667 }, isMobile: true, hasTouch: true, serviceWorkers: "block", bypassCSP: true });
       await ctx.addCookies([{ name: cookie.split("=")[0], value: cookie.split("=").slice(1).join("="), url: base }]);
       const page = await ctx.newPage();
       let navigatedToApp = false;
@@ -437,6 +442,7 @@ function seedDraftAndGotoPrivacy(fullName) {
           hasBanner: !!el,
           bannerText: el ? el.textContent.trim() : "",
           bannerVisible: !!r && r.width > 0 && r.height > 0 && !!topAtCenter && (topAtCenter === el || el.contains(topAtCenter)),
+          bannerWithinViewport: !!r && r.top >= 0 && r.bottom <= window.innerHeight,
           bannerAboveActionbar: !!r && !!barRect && r.bottom <= barRect.top + 1,
           finishReenabled: (document.querySelector("[data-onb-finish]") || {}).disabled === false,
           persistedView: (() => { try { return localStorage.getItem("helmut:view"); } catch (_) { return null; } })()
@@ -448,6 +454,8 @@ function seedDraftAndGotoPrivacy(fullName) {
         failed.hasBanner && /[Ff]ehlgeschlagen/.test(failed.bannerText) && !/\bstack\b|TypeError|ReferenceError/i.test(failed.bannerText), JSON.stringify(failed));
       check("Fehlermeldung ist TATSÄCHLICH sichtbar (elementFromPoint, keine z-index-Verdeckung wie zuvor beim #toast)",
         failed.bannerVisible, JSON.stringify(failed));
+      check("Fehlermeldung liegt auf kleinem Display (375x667) IM sichtbaren Bereich, NICHT unter dem Falz (scrollIntoView im Fehlerfall)",
+        failed.bannerWithinViewport, JSON.stringify(failed));
       check("Fehlermeldung liegt NICHT hinter der festen Aktionsleiste (oberhalb des Buttons)", failed.bannerAboveActionbar, JSON.stringify(failed));
       check("Abschluss-Button wird nach dem Fehler wieder aktiv (erneuter Versuch möglich)", failed.finishReenabled);
       check("Fehlgeschlagenes Speichern: navigiert nirgendwohin (URL unverändert, kein Zielbereich persistiert)",

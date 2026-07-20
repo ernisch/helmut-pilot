@@ -1253,6 +1253,15 @@ async function onbComplete() {
     onbFadeThenGoto(12, onbRunFinalSequence);
   } else {
     renderOnboardingFlow();
+    // Der neu gerenderte S11-Body startet oben (frischer Render, Scroll = 0). Die
+    // Fehlermeldung ist die LETZTE Zeile (direkt oberhalb der Aktionsleiste) und
+    // liegt auf kleinen Displays (z. B. 360x640 / iPhone SE) unter dem Falz —
+    // sonst sieht der Nutzer nur, wie der Button wieder aktiv wird, OHNE Grund.
+    // Deshalb die Meldung aktiv in den sichtbaren Bereich holen (kein neues UI,
+    // nur die bestehende Meldung sichtbar machen). block:"end" setzt sie direkt
+    // über den Button; ohne "smooth", damit reduzierte Bewegung respektiert bleibt.
+    const errEl = document.getElementById("onbReviewError");
+    if (errEl && typeof errEl.scrollIntoView === "function") errEl.scrollIntoView({ block: "end" });
   }
 }
 
