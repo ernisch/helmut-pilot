@@ -45,10 +45,38 @@ const storageStub = {
   removeItem: (k) => { storageMap.delete(k); },
   clear: () => { storageMap.clear(); }
 };
+// Minimaler Headers-Polyfill: prepareRequestOptions() (CSRF) nutzt `new Headers(...)`.
+// Bisher nie über diesen vm-Pfad exerciert (onbComplete()/onbPersistStep() liefen
+// hier vor diesem P0-Fix nie) -- ohne diesen Stub würfe new Headers() ReferenceError.
+class FakeHeaders {
+  constructor(init) {
+    this._map = new Map();
+    if (init) for (const k in init) this._map.set(String(k).toLowerCase(), String(init[k]));
+  }
+  set(k, v) { this._map.set(String(k).toLowerCase(), String(v)); }
+  get(k) { return this._map.has(String(k).toLowerCase()) ? this._map.get(String(k).toLowerCase()) : null; }
+  has(k) { return this._map.has(String(k).toLowerCase()); }
+}
+
+// Mock-Fetch für die onbComplete()/onbPersistStep()-Tests (Requests/Antworten/
+// Exceptions gezielt steuerbar): pro Test per setMockFetch(fn) gesetzt, sonst
+// Standard-Ablehnung wie zuvor. Zählt Aufrufe je Pfad (für den Doppelklick-Test).
+let mockFetch = null;
+const fetchCallLog = [];
+function setMockFetch(fn) { mockFetch = fn; }
+function resetFetchLog() { fetchCallLog.length = 0; }
+
+// setTimeout/clearTimeout: ECHTE (aber SOFORTIGE) Ausführung statt reinem No-op
+// -- die Abschlusssequenz (onbFadeThenGoto -> onbRunFinalSequence -> onbExitToApp)
+// hängt an setTimeout-Ketten; ein No-op-Stub würde sie nie logisch abschließen
+// lassen und könnte so genau das P0-Symptom (dauerhaftes "Speichert …") maskieren,
+// statt es zu prüfen. Ein Timer-Callback, der wirft, darf den Aufrufer nicht
+// mitreißen (entspricht echtem setTimeout-Verhalten im Browser).
 const sandbox = {
   console, Intl, Date, Math, JSON, Number, String, Boolean, Array, Object, RegExp, Set, Map, Promise,
   parseInt, parseFloat, isNaN, isFinite, encodeURIComponent, decodeURIComponent, URL, URLSearchParams,
-  setTimeout: () => 0, clearTimeout: noop, setInterval: () => 0, clearInterval: noop,
+  setTimeout: (fn) => { try { if (typeof fn === "function") fn(); } catch (e) { console.error("[sandbox setTimeout]", e); } return 0; },
+  clearTimeout: noop, setInterval: () => 0, clearInterval: noop,
   requestAnimationFrame: () => 0, cancelAnimationFrame: noop, queueMicrotask: (f) => Promise.resolve().then(f),
   document: { querySelector: (sel) => (sel === "#app" ? appNode : fakeNode()), querySelectorAll: () => [],
     getElementById: () => fakeNode(), createElement: () => fakeNode(), createDocumentFragment: () => fakeNode(),
@@ -58,10 +86,15 @@ const sandbox = {
   localStorage: storageStub, sessionStorage: storageStub,
   location: { search: "", href: "http://localhost/", pathname: "/", hash: "", origin: "http://localhost", reload: noop },
   matchMedia: () => ({ matches: false, addEventListener: noop, removeEventListener: noop, addListener: noop, removeListener: noop }),
-  fetch: () => Promise.reject(new Error("no-net-in-test")),
+  fetch: (url, options) => {
+    fetchCallLog.push({ url: String(url), method: (options && options.method) || "GET" });
+    if (mockFetch) return mockFetch(url, options);
+    return Promise.reject(new Error("no-net-in-test"));
+  },
   getComputedStyle: () => ({ getPropertyValue: () => "" }),
   performance: { now: () => 0 },
-  atob: (s) => Buffer.from(s, "base64").toString("binary"), btoa: (s) => Buffer.from(s, "binary").toString("base64")
+  atob: (s) => Buffer.from(s, "base64").toString("binary"), btoa: (s) => Buffer.from(s, "binary").toString("base64"),
+  Headers: FakeHeaders
 };
 sandbox.window = sandbox; sandbox.globalThis = sandbox; sandbox.self = sandbox;
 sandbox.window.addEventListener = noop; sandbox.window.removeEventListener = noop; sandbox.window.scrollTo = noop;
@@ -88,7 +121,18 @@ codeVm += `\n;globalThis.__onb = {
   exitToApp: () => { onbExitToApp(); },
   viewPersistKey: () => VIEW_PERSIST_KEY,
   parliament: () => onbParliament(),
-  migrateChannels: (l) => onbMigrateChannels(l)
+  migrateChannels: (l) => onbMigrateChannels(l),
+  complete: () => onbComplete(),
+  persistStep: () => onbPersistStep(),
+  resetUi: () => { onboardingUi = { scanPhase: 0, lookup: { status: "idle", candidates: [], warnings: [] }, saving: false, editMandate: false, error: "", pct: null, finalSequenceStarted: false }; },
+  uiSaving: () => onboardingUi.saving,
+  active: () => onboardingActive,
+  step: () => onboardingStep,
+  toastText: () => (typeof toast !== "undefined" && toast && toast.textContent) || "",
+  // Spiegelt EXAKT den Klick-Handler von [data-onb-finish] (client.js onbBindFlow)
+  // -- keine Neuimplementierung der Guard-Logik, sondern derselbe Code, damit der
+  // Doppelklick-Test die ECHTE Bedingung prüft.
+  clickFinish: () => { if (onbCorePct().ready && !onboardingUi.saving) return onbComplete(); return null; }
 };`;
 
 vm.createContext(sandbox);
@@ -354,5 +398,101 @@ check("onbExitToApp: Zielbereich ist der interne Lage-Schlüssel 'briefing'", pe
 check("onbExitToApp: Zielbereich ist NICHT 'helmut' (das ist der Reiter 'Briefing')", persistedView !== "helmut");
 check("onbExitToApp: Zielbereich ist NICHT 'lage' (kein verdrahteter Nav-Zustand)", persistedView !== "lage");
 
-console.log(`\n${fail === 0 ? "ALLE GRÜN" : fail + " FEHLGESCHLAGEN"} — ${pass}/${pass + fail} Onboarding-Flow-Assertions`);
-process.exit(fail > 0 ? 1 : 0);
+// ── 11) P0-Regression: onbComplete() — state.saving, Response-Randfälle,
+// Exceptions, Doppelklick ────────────────────────────────────────────────────
+// Root Cause des gemeldeten P0 ("Speichert …" hängt dauerhaft, obwohl oben
+// bereits "Gespeichert" steht): der Übergang S10->S11 ruft onbPersistStep()
+// UNAWAITED direkt vor onbGoto(11) auf. Da onbPersistStep() onboardingUi.saving
+// bereits synchron (vor seinem ersten await) auf true setzt, wird S11 IMMER mit
+// saving=true gerendert (Abschluss-Button disabled + "Speichert …"). Bisher
+// patchte onbPaintSavedIndicator() beim Abklingen der Zwischenspeicherung NUR
+// den oberen Indikator (#onbSaved) direkt im DOM — der separate Button-Knoten
+// wurde nie nachgezogen und blieb für immer disabled; ein Tippen erreichte
+// onbComplete() dadurch NIE (disabled Buttons feuern kein click). Fix (siehe
+// client.js onbPaintSavedIndicator + onbComplete): der Button wird jetzt beim
+// selben Patch mitgezogen, und onbComplete() setzt state.saving jetzt per
+// finally IMMER zurück, unabhängig davon, WO genau etwas schiefgeht.
+(async () => {
+  function jsonRes(status, body) { return { status, ok: status >= 200 && status < 300, json: async () => body }; }
+  const validDraft = () => ({
+    fullName: "Petra Baumann", party: "SPD", faction: "SPD", parliamentType: "Bundestag",
+    constituency: "Salzgitter", state: "Niedersachsen", committees: ["Gesundheit"],
+    focusTopics: ["Rente"], instant: [], briefTime: "07:00", briefDepth: "kompakt", maxPrio: 3
+  });
+
+  // 11a) Erfolgreicher finaler Request startet die Abschlusssequenz vollständig
+  // (bis onbExitToApp: onboardingActive=false, Lage persistiert).
+  onb.resetUi();
+  onb.setDraft(validDraft());
+  onb.renderStep(11);
+  storageMap.clear();
+  setMockFetch(async (url) => jsonRes(200, String(url).includes("/api/profile/current") ? { id: "mandat-test", fullName: "Petra Baumann", onboardingStatus: "abgeschlossen" } : {}));
+  await onb.complete();
+  check("Erfolgreicher Abschluss-Request: state.saving wird zurückgesetzt", onb.uiSaving() === false);
+  check("Erfolgreicher Abschluss-Request: Sequenz läuft bis onbExitToApp durch (Lage persistiert, Onboarding beendet)",
+    onb.active() === false && storageMap.get(onb.viewPersistKey()) === "briefing");
+
+  // 11b) Response OHNE erwartetes optionales Feld (leerer/„null"-Body) hängt nicht.
+  onb.resetUi();
+  onb.setDraft(validDraft());
+  onb.renderStep(11);
+  storageMap.clear();
+  setMockFetch(async (url) => jsonRes(200, String(url).includes("/api/profile/current") ? null : {}));
+  await onb.complete();
+  check("Response ohne erwartetes optionales Feld (json=null): Sequenz hängt NICHT, schließt trotzdem ab",
+    onb.uiSaving() === false && onb.active() === false);
+
+  // 11c) Erfolgreicher AUTOSAVE (onbPersistStep) allein löst die Abschlusssequenz NICHT aus.
+  onb.resetUi();
+  onb.setDraft(validDraft());
+  onb.renderStep(11);
+  storageMap.clear();
+  setMockFetch(async () => jsonRes(200, { id: "mandat-test" }));
+  await onb.persistStep();
+  check("Autosave (onbPersistStep) allein löst KEINE Abschlusssequenz aus (Onboarding bleibt aktiv, kein Lage-Übergang)",
+    onb.active() === true && storageMap.get(onb.viewPersistKey()) == null);
+  check("Autosave: state.saving danach zurückgesetzt", onb.uiSaving() === false);
+
+  // 11d) Fehlgeschlagenes Speichern: state.saving zurückgesetzt, Nutzer bleibt im Onboarding.
+  onb.resetUi();
+  onb.setDraft(validDraft());
+  onb.renderStep(11);
+  setMockFetch(async () => jsonRes(500, { error: "Serverfehler" }));
+  await onb.complete();
+  check("Fehlgeschlagenes Speichern: state.saving wird zurückgesetzt", onb.uiSaving() === false);
+  check("Fehlgeschlagenes Speichern: Onboarding bleibt aktiv (kein Redirect nach Lage)", onb.active() === true);
+  check("Fehlgeschlagenes Speichern: verständliche Fehlermeldung im Toast", onb.toastText().includes("Speichern fehlgeschlagen"));
+
+  // 11e) Exception NACH dem Request (nicht netzwerkbedingt) führt nicht zu
+  // dauerhaftem "Speichert …" — instant=42 (nicht iterierbar) lässt new Set(...) werfen.
+  onb.resetUi();
+  onb.setDraft(Object.assign(validDraft(), { instant: 42 }));
+  onb.renderStep(11);
+  setMockFetch(async (url) => jsonRes(200, String(url).includes("/api/profile/current") ? { id: "mandat-test" } : {}));
+  await onb.complete();
+  check("Exception nach erfolgreichem Request (new Set(instant) wirft): state.saving trotzdem zurückgesetzt", onb.uiSaving() === false);
+  check("Exception nach erfolgreichem Request: Onboarding bleibt aktiv, kein stiller Hänger", onb.active() === true);
+
+  // 11f) Doppelklick: zweiter (synchron unmittelbar folgender) Aufruf wird durch
+  // state.saving blockiert (onboardingUi.saving=true ist die ALLERERSTE
+  // synchrone Anweisung in onbComplete(), noch vor jedem await) -- EIN Request.
+  onb.resetUi();
+  onb.setDraft(validDraft());
+  onb.renderStep(11);
+  resetFetchLog();
+  setMockFetch(async (url) => jsonRes(200, String(url).includes("/api/profile/current") ? { id: "mandat-test" } : {}));
+  const firstClick = onb.clickFinish();
+  const secondClick = onb.clickFinish();
+  check("Doppelklick: zweiter Aufruf wird durch state.saving blockiert (kein zweiter onbComplete-Lauf)", firstClick !== null && secondClick === null);
+  await firstClick;
+  const profileCalls = fetchCallLog.filter((c) => c.url.includes("/api/profile/current") && c.method === "PATCH").length;
+  check("Doppelklick: genau EIN PATCH-Request an /api/profile/current", profileCalls === 1, `calls=${profileCalls}`);
+
+  setMockFetch(null);
+})().then(() => {
+  console.log(`\n${fail === 0 ? "ALLE GRÜN" : fail + " FEHLGESCHLAGEN"} — ${pass}/${pass + fail} Onboarding-Flow-Assertions`);
+  process.exit(fail > 0 ? 1 : 0);
+}).catch((e) => {
+  console.error("Testlauf-Fehler (P0-Regressionsblock):", e);
+  process.exit(1);
+});

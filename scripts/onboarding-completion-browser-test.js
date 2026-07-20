@@ -131,6 +131,33 @@ function seedDraftAndGotoReview(fullName) {
   /* eslint-enable no-undef */
 }
 
+// Wie seedDraftAndGotoReview, aber landet auf S10 (Datenschutz) statt direkt auf
+// S11 -- damit der Test den ECHTEN, unveränderten Übergang S10->S11 durchläuft
+// (Klick auf [data-onb-privacygo] -> onbPersistStep() UNAWAITED + onbGoto(11)).
+// Genau dieser Übergang war die Ursache des gemeldeten P0: S11 wurde dadurch
+// immer mit onboardingUi.saving=true gerendert (Button disabled + "Speichert …"),
+// und der Button wurde beim Abklingen der Zwischenspeicherung nie nachgezogen.
+function seedDraftAndGotoPrivacy(fullName) {
+  /* eslint-disable no-undef */
+  Object.assign(onboardingDraft, {
+    fullName,
+    party: "SPD",
+    faction: "SPD",
+    parliamentType: "Bundestag",
+    constituency: "Salzgitter",
+    state: "Niedersachsen",
+    committees: ["Gesundheit"],
+    focusTopics: ["Rente"],
+    instant: [],
+    briefTime: "07:00",
+    briefDepth: "kompakt",
+    maxPrio: 3
+  });
+  onboardingStep = 10;
+  renderOnboardingFlow();
+  /* eslint-enable no-undef */
+}
+
 (async () => {
   const pw = loadPlaywright();
   if (!pw) {
@@ -262,6 +289,93 @@ function seedDraftAndGotoReview(fullName) {
         navState.activeLabels.some((l) => /Lage/.test(l)), JSON.stringify(navState.activeLabels));
       check("Briefing (interner Schlüssel 'helmut') ist NICHT der aktive Bereich",
         navState.helmutAnyActive === false, JSON.stringify(navState));
+
+      await ctx.close();
+    }
+
+    // ═══ 1b) P0-REGRESSION: ECHTER Klick-Pfad ab dem Datenschutz-Schritt (S10)
+    // über den ECHTEN Übergang S10->S11 bis zum ECHTEN Klick auf den Abschluss-
+    // Button und weiter bis Lage. Deckt genau den gemeldeten P0 ab: alle
+    // anderen Abschnitte dieser Datei rufen onbComplete() direkt per
+    // page.evaluate auf und übersehen dadurch, dass ein echter Tap auf den
+    // Button den Handler nie erreichte (Button blieb nach der automatischen
+    // Zwischenspeicherung dauerhaft disabled + "Speichert …", weil er beim
+    // Abklingen des Autosaves nie in-place nachgezogen wurde) ════════════════
+    {
+      const created = await newInvite("Lina Prüfweg", "lina-p0-completion-e2e@example.org");
+      const { cookie } = await setPassword(created.inviteUrl);
+
+      const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, reducedMotion: "no-preference", serviceWorkers: "block", bypassCSP: true });
+      await ctx.addCookies([{ name: cookie.split("=")[0], value: cookie.split("=").slice(1).join("="), url: base }]);
+      await ctx.addInitScript(installViewFlashObserver);
+      const page = await ctx.newPage();
+      const perr = [];
+      page.on("pageerror", (e) => perr.push(String((e && e.message) || e)));
+
+      await page.goto(base + "/", { waitUntil: "domcontentloaded", timeout: 20000 });
+      await page.waitForFunction(() => document.querySelector("#onbRoot") !== null, null, { timeout: 20000 });
+      await page.evaluate(seedDraftAndGotoPrivacy, "Lina Prüfweg");
+
+      // Echter Klick auf den Datenschutz-Toggle, dann echter Klick auf
+      // "Zustimmen & weiter" -- löst den unveränderten Produktions-Handler
+      // (onbPersistStep(); onbGoto(11);) aus, GENAU wie ein echter Nutzer.
+      await page.click("[data-onb-consent]");
+      await page.click("[data-onb-privacygo]");
+
+      // Sofort nach dem Übergang: S11 ist da, aber (bekannter, jetzt behobener
+      // Fehlerzustand) mit laufender Zwischenspeicherung gerendert.
+      const rightAfterTransition = await page.evaluate(() => ({
+        onS11: !!document.querySelector("[data-onb-finish]"),
+        savingFlag: onboardingUi.saving
+      }));
+      check("S10->S11: echter Übergang landet auf der Prüfung (S11)", rightAfterTransition.onS11);
+
+      // Der Button MUSS sich wieder freigeben, sobald die automatische
+      // Zwischenspeicherung durchgelaufen ist (P0-Fix: onbPaintSavedIndicator
+      // zieht ihn jetzt in-place nach) -- das ist der Kern der Reproduktion.
+      await page.waitForFunction(() => (document.getElementById("onbSaved") || {}).textContent === "Gespeichert", null, { timeout: 8000 });
+      await page.waitForFunction(() => (document.querySelector("[data-onb-finish]") || {}).disabled === false, null, { timeout: 4000 });
+      const afterAutosave = await page.evaluate(() => ({
+        savingFlag: onboardingUi.saving,
+        onbSavedText: (document.getElementById("onbSaved") || {}).textContent || null,
+        finishDisabled: (document.querySelector("[data-onb-finish]") || {}).disabled,
+        finishText: (document.querySelector("[data-onb-finish]") || {}).textContent
+      }));
+      check("P0-Kern: Abschluss-Button wird nach der Zwischenspeicherung wieder freigegeben (nicht dauerhaft 'Speichert …')",
+        afterAutosave.savingFlag === false && afterAutosave.finishDisabled === false && /Profil bestätigen/.test(afterAutosave.finishText || ""),
+        JSON.stringify(afterAutosave));
+
+      // Der eigentliche Tap: muss den Handler jetzt wirklich erreichen (kein
+      // Playwright-Actionability-Timeout mehr auf einem toten Button).
+      const navPromise = page.waitForNavigation({ timeout: 6000 }).catch(() => null);
+      let clickError = null;
+      try { await page.click("[data-onb-finish]", { timeout: 4000 }); } catch (e) { clickError = String(e).split("\n")[0]; }
+      check("Echter Klick auf 'Profil bestätigen' wird zugestellt (kein Actionability-Timeout auf disabled Button)", clickError === null, clickError || "");
+
+      await page.waitForFunction(() => document.querySelector(".ho-final") !== null, null, { timeout: 4000 });
+      const ready = await page.evaluate(() => ({
+        readyOn: document.getElementById("onbFinalReady")?.classList.contains("is-on"),
+        readyText: (document.getElementById("onbFinalReady") || {}).textContent || ""
+      }));
+      check("Nach echtem Klick: 'Dein Profil ist bereit.' erscheint", ready.readyOn === true && /Dein Profil ist bereit\./.test(ready.readyText));
+
+      await page.waitForFunction(() => document.getElementById("onbFinalWelcome")?.classList.contains("is-on"), null, { timeout: 3000 });
+      const welcome = await page.evaluate(() => (document.getElementById("onbFinalWelcome") || {}).textContent || "");
+      check("Persönliche Begrüßung erscheint mit korrektem Vornamen", /Willkommen, Lina\./.test(welcome), welcome);
+
+      const navigated = await navPromise;
+      check("Automatischer Übergang in die App nach echtem Klick", navigated !== null);
+
+      await page.waitForSelector("[data-view].active", { timeout: 15000 });
+      const navState = await page.evaluate(() => {
+        const activeEls = Array.from(document.querySelectorAll("[data-view].active"));
+        return { activeIds: activeEls.map((el) => el.getAttribute("data-view")) };
+      });
+      check("Lage ist nach dem echten Klick-Pfad der aktive Bereich", navState.activeIds.length > 0 && navState.activeIds.every((id) => id === "briefing"), JSON.stringify(navState));
+
+      const sessAfter = await page.evaluate(async () => (await fetch("/api/auth/session", { credentials: "same-origin" }).then((r) => r.ok ? r.json() : {})));
+      check("Sitzung bleibt nach dem echten Klick-Pfad gültig", sessAfter.authenticated === true);
+      check("Keine unbehandelten JS-Fehler beim echten Klick-Pfad", perr.length === 0, perr.slice(0, 2).join(" | "));
 
       await ctx.close();
     }

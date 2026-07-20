@@ -1179,23 +1179,41 @@ async function onbPersistStep() {
     onbPaintSavedIndicator(false); // „Speichert …" wieder auf „Gespeichert" zurücksetzen
   }
 }
+// P0-Fix: der obere Speicher-Indikator (#onbSaved, autosave je Schritt) und der
+// Abschluss-Button auf S11 lasen BEIDE onboardingUi.saving nur beim RENDERN.
+// Der Übergang S10->S11 (und jeder onbNext()) ruft onbPersistStep() aber
+// UNAWAITED direkt vor onbGoto() auf — S11 wird deshalb schon mit saving=true
+// gerendert (Button disabled + "Speichert …"). Bisher wurde beim Abschluss der
+// Zwischenspeicherung NUR der Indikator-Text direkt gepatcht (kein Neurender),
+// der separate Button-Knoten blieb dauerhaft auf dem veralteten Stand hängen —
+// ein Tippen darauf erreichte onbComplete() nie (disabled Buttons feuern kein
+// click). Jetzt wird der Button hier im selben Zug in-place mitgezogen (kein
+// Voll-Neurender, keine sonstigen Layout-/Fokus-Nebenwirkungen).
 function onbPaintSavedIndicator(saving) {
   const el = document.querySelector("#onbSaved");
   if (el) el.textContent = saving ? "Speichert …" : "Gespeichert";
+  const finishBtn = document.querySelector("[data-onb-finish]");
+  if (finishBtn) {
+    const disabled = saving || !onbCorePct().ready;
+    finishBtn.disabled = disabled;
+    finishBtn.classList.toggle("is-disabled", disabled);
+    finishBtn.textContent = saving ? "Speichert …" : "Profil bestätigen";
+  }
 }
 
 async function onbComplete() {
   onboardingUi.saving = true;
   renderOnboardingFlow();
-  const now = new Date().toISOString();
-  const payload = Object.assign(onbDraftToProfilePayload(), {
-    onboardingStatus: "abgeschlossen",
-    onboardingStep: 11,
-    privacyConfirmedAt: now,
-    profileActive: true,
-    onboardedAt: now // Rückwärtskompatibilität (Alt-Gate/Anzeige)
-  });
+  let ok = false;
   try {
+    const now = new Date().toISOString();
+    const payload = Object.assign(onbDraftToProfilePayload(), {
+      onboardingStatus: "abgeschlossen",
+      onboardingStep: 11,
+      privacyConfirmedAt: now,
+      profileActive: true,
+      onboardedAt: now // Rückwärtskompatibilität (Alt-Gate/Anzeige)
+    });
     const res = await apiSend("PATCH", `/api/profile/current?${apiScopeQuery()}`, payload);
     // NICHT als fertig behandeln, wenn der Abschluss-Schreibvorgang scheiterte —
     // sonst zeigt Helmut „vollständig", das Gate greift beim nächsten Login aber
@@ -1210,17 +1228,25 @@ async function onbComplete() {
       briefingTime: onboardingDraft.briefTime, briefingDepth: onboardingDraft.briefDepth,
       maxPriorities: Number(onboardingDraft.maxPrio)
     }).catch(() => {});
+    ok = true;
   } catch (error) {
     console.warn("Onboarding: Abschluss-Speichern fehlgeschlagen", error);
     showToast("Speichern fehlgeschlagen – bitte erneut versuchen.");
+  } finally {
+    // IMMER zurücksetzen, unabhängig davon, WO genau etwas schiefging (Netz,
+    // Payload-Aufbau, unerwartete Exception) — sonst bleibt der Button
+    // dauerhaft auf "Speichert …" hängen, ohne dass der Nutzer je einen
+    // Fehler oder einen erneuten Versuch angeboten bekommt.
     onboardingUi.saving = false;
-    return renderOnboardingFlow();
   }
-  onboardingUi.saving = false;
-  // Bestätigte Speicherung -> ruhiger Abschlussmoment: der bisherige Inhalt
-  // (Prüfung, S11) blendet WEICH aus, bevor der Abschluss-Screen erscheint —
-  // kein harter Schnitt auf einen technischen "Speichert …"-Zustand.
-  onbFadeThenGoto(12, onbRunFinalSequence);
+  if (ok) {
+    // Bestätigte Speicherung -> ruhiger Abschlussmoment: der bisherige Inhalt
+    // (Prüfung, S11) blendet WEICH aus, bevor der Abschluss-Screen erscheint —
+    // kein harter Schnitt auf einen technischen "Speichert …"-Zustand.
+    onbFadeThenGoto(12, onbRunFinalSequence);
+  } else {
+    renderOnboardingFlow();
+  }
 }
 
 // Blendet den aktuellen Screen weich aus, wechselt DANACH den Schritt (frisches
