@@ -173,7 +173,7 @@ let expandedSections = new Set();
 let onboardingActive = false;
 let onboardingStep = 0;
 let onboardingDraft = {};
-let onboardingUi = { scanPhase: 0, lookup: { status: "idle", candidates: [], warnings: [] }, saving: false, editMandate: false, error: "", pct: null };
+let onboardingUi = { scanPhase: 0, lookup: { status: "idle", candidates: [], warnings: [] }, saving: false, editMandate: false, error: "", pct: null, finalSequenceStarted: false };
 let onboardingTimers = [];
 
 const app = document.querySelector("#app");
@@ -829,7 +829,7 @@ function startOnboardingFlow() {
   if (onboardingActive) { renderOnboardingFlow(); return; }
   onboardingActive = true;
   onbSeedDraftFromProfile();
-  onboardingUi = { scanPhase: 0, lookup: { status: "idle", candidates: [], warnings: [] }, saving: false, editMandate: false, error: "", pct: null };
+  onboardingUi = { scanPhase: 0, lookup: { status: "idle", candidates: [], warnings: [] }, saving: false, editMandate: false, error: "", pct: null, finalSequenceStarted: false };
   // Einstiegspunkt bestimmen:
   //  - Frisches, leeres Mandat (kein Fortschritt, keine politischen Kernangaben)
   //    -> vollständiger Ablauf ab Begrüßung (S0).
@@ -1217,12 +1217,35 @@ async function onbComplete() {
     return renderOnboardingFlow();
   }
   onboardingUi.saving = false;
-  onbGoto(12);
+  // Bestätigte Speicherung -> ruhiger Abschlussmoment: der bisherige Inhalt
+  // (Prüfung, S11) blendet WEICH aus, bevor der Abschluss-Screen erscheint —
+  // kein harter Schnitt auf einen technischen "Speichert …"-Zustand.
+  onbFadeThenGoto(12, onbRunFinalSequence);
+}
+
+// Blendet den aktuellen Screen weich aus, wechselt DANACH den Schritt (frisches
+// .ho-anim-Eintreten) und ruft optional einen Folgeschritt auf. Reduzierte
+// Bewegung: sofortiger Wechsel ohne Wartezeit (kein unnötiges stilles Warten).
+function onbFadeThenGoto(step, after) {
+  const root = document.querySelector("#onbRoot");
+  let reduce = false;
+  try { reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (_) {}
+  const run = () => { onbGoto(step); if (after) after(); };
+  if (root && !reduce) {
+    root.classList.add("ho-fade-out");
+    onboardingTimers.push(setTimeout(run, 300));
+  } else {
+    run();
+  }
 }
 
 function onbExitToApp() {
   onbClearTimers();
   onboardingActive = false;
+  // Zielbereich fuer den ersten Blick nach dem Abschluss VERBINDLICH setzen,
+  // BEVOR die normale App gerendert wird — Lage, nicht Briefing/Radar/Büro/
+  // Profil (auch dann, wenn irgendwo noch ein anderer Bereich persistiert war).
+  persistView("briefing");
   // Weicher Abgang in die normale App: kurz ausblenden, dann frischen Zustand
   // laden (Gate greift jetzt nicht mehr). Bei reduzierter Bewegung sofort neu
   // laden — kein künstliches Warten. Die dunkle Startanzeige der App deckt den
@@ -1637,20 +1660,52 @@ function onbStepReview() {
   };
 }
 
-// S12 — Abschluss (erscheint NUR nach nachweislich erfolgreichem Speichern; siehe
-// onbComplete). Ruhiger, persönlicher Willkommen-Screen -> „Los geht's" öffnet die App.
+// S12 — Abschluss NACH nachweislich erfolgreichem Speichern (onbComplete ruft
+// dies nur bei res.ok auf; siehe dort). Ein einziger ruhiger Moment, VOLLSTÄNDIG
+// automatisch: H bleibt mittig und ortsfest, nur der Text darunter blendet
+// weich von „Dein Profil ist bereit." zu „Willkommen, …" über — kein Klick,
+// kein Spinner, kein Prozentbalken, keine Featureliste. onbRunFinalSequence()
+// (unten) steuert Crossfade + automatischen Übergang in die App.
 function onbStepDone() {
-  const first = onbFirstNameOf(onboardingDraft.fullName || (profile && profile.fullName) || onbAccountName());
-  // Abschluss bewusst reduziert: viel Dunkelraum, kein Eyebrow/Label, keine
-  // Featureliste, keine Erklärung. Nur Marke, Willkommen, ein ruhiger Satz und —
-  // mit großem Abstand — „Los geht's".
+  // Vorname aus dem BESTÄTIGTEN Profil (frisch gespeichert, siehe onbComplete:
+  // profile = res.json), ersatzweise aus dem Konto — NICHT mehr aus dem Entwurf,
+  // der Entwurf ist nach erfolgreichem Speichern nicht mehr die maßgebliche Quelle.
+  const first = onbFirstNameOf((profile && profile.fullName) || onbAccountName());
   return { full: `
-    <div class="ho-done is-final ho-anim">
-      <div class="ho-mark is-sm"><span>H</span></div>
-      <h2 class="ho-h1" style="margin-top:40px;text-wrap:balance">Willkommen${first ? ", " + escapeHtml(first) : ""}.</h2>
-      <p class="ho-lead" style="margin-top:18px">Ich bin Helmut.<br>Ab jetzt bin ich an deiner Seite.</p>
-      <div style="margin-top:56px">${onbPrimary("toapp", "Los geht's")}</div>
+    <div class="ho-final ho-anim" id="onbFinal">
+      <div class="ho-mark is-lg"><span>H</span></div>
+      <div class="ho-final-textwrap">
+        <div class="ho-final-msg is-on" id="onbFinalReady"><h2 class="ho-h1" style="text-wrap:balance">Dein Profil ist bereit.</h2></div>
+        <div class="ho-final-msg" id="onbFinalWelcome">
+          <h2 class="ho-h1" style="text-wrap:balance">Willkommen${first ? ", " + escapeHtml(first) : ""}.</h2>
+          <p class="ho-lead" style="margin-top:18px">Ich bin Helmut.<br>Ab jetzt bin ich an deiner Seite.</p>
+        </div>
+      </div>
     </div>` };
+}
+
+// Steuert den automatischen Ablauf NACH dem Rendern von S12: kurzer Moment auf
+// „Dein Profil ist bereit.", weiches Crossfade (in-place Klassenumschaltung,
+// KEIN Neurender) zu „Willkommen, …", kurzer ruhiger Moment, dann automatischer,
+// klicklose Übergang in die App (Bereich Lage). Reduzierte Bewegung: Übergänge
+// werden nicht animiert (globale CSS-Regel erzwingt .001ms-Transitions), aber
+// die Lesezeiten (Hold) bleiben gleich — das ist Lesezeit, keine Bewegung.
+// Einmaliger Ablauf: gegen doppeltes Anstoßen abgesichert (z. B. Foreground-
+// Refresh während der ~2s-Sequenz).
+function onbRunFinalSequence() {
+  if (onboardingUi.finalSequenceStarted) return;
+  onboardingUi.finalSequenceStarted = true;
+  let reduce = false;
+  try { reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (_) {}
+  const holdMs = 700; // Lesezeit — bewusst unabhängig von reduzierter Bewegung
+  const crossfadeWaitMs = reduce ? 0 : 350;
+  onboardingTimers.push(setTimeout(() => {
+    const ready = document.getElementById("onbFinalReady");
+    const welcome = document.getElementById("onbFinalWelcome");
+    if (ready) ready.classList.remove("is-on");
+    if (welcome) welcome.classList.add("is-on");
+    onboardingTimers.push(setTimeout(onbExitToApp, crossfadeWaitMs + holdMs));
+  }, holdMs));
 }
 
 // S13 — Erstes Briefing (personalisierte, klar als Beispiel markierte Vorschau)

@@ -332,21 +332,72 @@ function renderStepInPage(opts) {
       await normal.close();
     }
 
-    // ── 7) Moment „Übergang in die normale App": S12 blendet weich aus ────────
+    // ── 7) Abschluss-Moment (S12): H bleibt mittig, Text blendet automatisch von
+    // „Dein Profil ist bereit." zu „Willkommen, …" über, dann klickloser Übergang
+    // in die App (Bereich Lage) — kein Button mehr, kein harter Sprung ─────────
     {
       const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: "no-preference", serviceWorkers: "block", bypassCSP: true });
       const { page } = await bootPage(context);
-      await page.evaluate(renderStepInPage, { step: 12, draft: { fullName: "Katrin Vogt" } });
-      const exit = await page.evaluate(() => {
-        let reloaded = false;
-        try { window.location.reload = () => { reloaded = true; }; } catch (_) {}
-        const btn = document.querySelector("[data-onb-toapp]");
-        btn.click();
-        // Synchron direkt nach dem Klick: weicher Abgang statt hartem Sprung.
-        return { fade: !!document.querySelector("#onbRoot.ho-fade-out"), label: btn.textContent.trim() };
+      await page.evaluate(renderStepInPage, { step: 12 });
+      const initial = await page.evaluate(() => {
+        profile.fullName = "Katrin Vogt"; // bestätigtes Profil nach erfolgreichem Speichern
+        const mark = document.querySelector(".ho-final .ho-mark");
+        const ready = document.getElementById("onbFinalReady");
+        const welcome = document.getElementById("onbFinalWelcome");
+        return {
+          hasMark: !!mark,
+          readyOn: ready ? ready.classList.contains("is-on") : null,
+          welcomeOn: welcome ? welcome.classList.contains("is-on") : null,
+          readyText: ready ? ready.textContent.trim() : "",
+          noButton: !document.querySelector("[data-onb-toapp]")
+        };
       });
-      check("S12 'Los geht's' vorhanden", /Los geht/.test(exit.label));
-      check("Moment 7: weicher Abgang in die App (ho-fade-out), kein harter Sprung", exit.fade === true);
+      check("S12: Helmut-H zentral vorhanden", initial.hasMark);
+      check("S12: 'Dein Profil ist bereit.' initial sichtbar", initial.readyOn === true && /Dein Profil ist bereit\./.test(initial.readyText));
+      check("S12: Willkommen-Text initial NICHT eingeblendet", initial.welcomeOn === false);
+      check("S12: kein 'Los geht's'-Button mehr — vollautomatischer Abschluss (kein Klick nötig)", initial.noButton);
+
+      // location.reload() lässt sich in Chromium nicht überschreiben (Location.
+      // prototype.reload ist non-writable/non-configurable) — der ECHTE Reload
+      // wird deshalb abgewartet (waitForNavigation) statt gemockt; das prüft den
+      // tatsächlichen Übergang gleich mit, statt ihn nur zu simulieren.
+      const navPromise = page.waitForNavigation({ timeout: 5000 }).catch(() => null);
+      const started = await page.evaluate(() => { onbRunFinalSequence(); return true; });
+      check("Moment 7: Abschlusssequenz startet automatisch (kein Klick nötig)", started === true);
+
+      // Nach der Lesezeit (~700ms) crossfadet der Text zum Willkommen — das H
+      // bleibt derselbe DOM-Knoten (ortsfest, kein Neurender).
+      await page.waitForTimeout(900);
+      const mid = await page.evaluate(() => {
+        const mark = document.querySelector(".ho-final .ho-mark");
+        const ready = document.getElementById("onbFinalReady");
+        const welcome = document.getElementById("onbFinalWelcome");
+        return {
+          markStillThere: !!mark,
+          readyOn: ready.classList.contains("is-on"),
+          welcomeOn: welcome.classList.contains("is-on"),
+          welcomeText: welcome.textContent
+        };
+      });
+      check("Moment 7: Helmut-H bleibt während des Crossfades ortsfest", mid.markStillThere);
+      check("Moment 7: Text crossfadet automatisch zu 'Willkommen' (kein Neurender)", mid.readyOn === false && mid.welcomeOn === true);
+      check("Moment 7: korrekter Begrüßungstext mit Vorname aus dem bestätigten Profil",
+        /Willkommen, Katrin\./.test(mid.welcomeText) && /Ich bin Helmut/.test(mid.welcomeText) && /Ab jetzt bin ich an deiner Seite/.test(mid.welcomeText),
+        JSON.stringify(mid.welcomeText));
+
+      // Danach: weicher Abgang (ho-fade-out) und automatischer Übergang in die
+      // App — ohne weiteren Klick, ohne Swipe, ohne erneuten Login.
+      await page.waitForFunction(() => document.querySelector("#onbRoot.ho-fade-out") !== null, null, { timeout: 2000 });
+      check("Moment 7: weicher Abgang (ho-fade-out) vor dem App-Wechsel, kein harter Sprung", true);
+
+      // Der tatsächliche Reload (window.location.reload(), 300ms nach dem
+      // Fade-out) navigiert die Seite real neu — ohne weiteren Klick, Swipe
+      // oder erneuten Login.
+      const navigated = await navPromise;
+      check("Moment 7: automatischer Übergang in die App (kein Klick/Swipe/Login)", navigated !== null);
+      const view = await page.evaluate(() => { try { return localStorage.getItem("helmut:view"); } catch (_) { return null; } });
+      check("Moment 7: Ziel-Bereich Lage vor dem Übergang verbindlich gesetzt (übersteht den Reload)", view === "briefing", `view=${view}`);
+
       await context.close();
     }
   } finally {

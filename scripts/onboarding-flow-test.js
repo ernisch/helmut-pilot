@@ -312,12 +312,25 @@ check("S8 Kanäle: primärer Katalog gerendert (Pressemitteilung … Bürgerdial
 check("S8 Kanäle: Podcast unter 'Weitere Kanäle'", comm.includes("Weitere Kanäle") && comm.includes("Podcast"));
 
 // ── 10) Abschluss-Screen (S12) erscheint NUR nach erfolgreichem Speichern ────
-// (onbComplete bleibt bei Speicherfehler auf S11; hier prüfen wir die Copy des
-// Willkommen-Screens, den onbComplete NUR nach erfolgreichem PATCH ansteuert.)
-onb.setDraft(Object.assign(onb.draft(), { fullName: "Katrin Vogt" }));
+// (onbComplete bleibt bei Speicherfehler auf S11.) Vollautomatischer Abschluss:
+// H bleibt mittig, "Dein Profil ist bereit." ist initial sichtbar (is-on), der
+// Willkommen-Text liegt fürs Crossfade bereit (noch NICHT is-on) — KEIN Klick,
+// KEIN "Los geht's"-Button mehr (onbRunFinalSequence steuert den Rest automatisch).
+onb.setProfile({ id: "mandat-test", fullName: "Katrin Vogt", onboardingStatus: "abgeschlossen" });
+onb.setAuth({ authenticated: true }, { role: "abgeordneter", name: "Fallback Name" });
 const done = onb.stepBody(12);
-check("S12 Willkommen: 'Willkommen, Katrin.' + 'Ab jetzt bin ich an deiner Seite.' + Los geht's",
-  done.includes("Willkommen, Katrin.") && done.includes("Ab jetzt bin ich an deiner Seite") && done.includes("Los geht"));
+check("S12: 'Dein Profil ist bereit.' initial sichtbar (is-on)", done.includes('class="ho-final-msg is-on" id="onbFinalReady"') && done.includes("Dein Profil ist bereit."));
+check("S12: Willkommen-Block bereit, aber NOCH NICHT eingeblendet (kein is-on)", done.includes('class="ho-final-msg" id="onbFinalWelcome"'));
+check("S12 Willkommen: 'Willkommen, Katrin.' + 'Ab jetzt bin ich an deiner Seite.'",
+  done.includes("Willkommen, Katrin.") && done.includes("Ab jetzt bin ich an deiner Seite"));
+check("S12: Vorname aus dem BESTÄTIGTEN Profil, nicht aus dem Konto (Profil hat Vorrang)", !done.includes("Fallback Name"));
+check("S12: KEIN 'Los geht's'-Button mehr (vollautomatischer Abschluss)", !done.includes("Los geht") && !done.includes("data-onb-toapp"));
+
+// Namens-Fallback: fehlt der bestätigte Profilname, greift der Kontoname.
+onb.setProfile({ id: "mandat-test", fullName: "", onboardingStatus: "abgeschlossen" });
+onb.setAuth({ authenticated: true }, { role: "abgeordneter", name: "Konto Name" });
+const doneFallback = onb.stepBody(12);
+check("S12: ohne bestätigten Profilnamen greift der Kontoname (Fallback)", doneFallback.includes("Willkommen, Konto."));
 
 console.log(`\n${fail === 0 ? "ALLE GRÜN" : fail + " FEHLGESCHLAGEN"} — ${pass}/${pass + fail} Onboarding-Flow-Assertions`);
 process.exit(fail > 0 ? 1 : 0);

@@ -104,3 +104,12 @@ jobs:
         env:
           HELMUT_REQUIRE_BROWSER: "1"
         run: node scripts/admin-nutzer-kunden-timeout-fix-test.js
+      - name: Onboarding-Abschluss-Moment (echte Sitzung, echtes Speichern, echter Übergang)
+        # Abschluss NACH erfolgreichem Speichern: "Dein Profil ist bereit." ->
+        # persönliche Begrüßung -> automatischer, klickloser Übergang nach Lage
+        # (kein anderer Bereich blitzt vorher auf), Fehlerpfad + Wiederholung,
+        # reduced-motion, Sitzung + Mandantentrennung bleiben gültig. Gleiche
+        # Fail-closed-Regel wie oben.
+        env:
+          HELMUT_REQUIRE_BROWSER: "1"
+        run: node scripts/onboarding-completion-browser-test.js
