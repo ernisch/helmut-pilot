@@ -12304,8 +12304,14 @@ summary:focus-visible {
 /* Fokus (Barrierefreiheit): sichtbarer 2px-Akzent-Ring */
 .onboarding-handoff :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--r-sm); }
 
-/* Eintritts-Animationen (nur eine Easing-Kurve; reduzierte Bewegung respektiert) */
-@keyframes hoScreenIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+/* Eintritts-/Übergangs-Animationen (nur eine Easing-Kurve; reduzierte Bewegung
+   respektiert). Kurzer Crossfade + wenige Pixel von unten nach oben (~320ms),
+   nur an den zentralen Zustandswechseln (ganze Screens) — NICHT bei Chips/Toggles/
+   Auswahlfeldern, die in-place ohne Neurender aktualisiert werden. */
+@keyframes hoScreenIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+/* Weicher Abgang in die normale App (S12 „Los geht's"). */
+@keyframes hoFadeOut { from { opacity: 1; } to { opacity: 0; } }
+.ho-fade-out { animation: hoFadeOut var(--dur-slow) var(--ease) forwards; }
 @keyframes hoScanPulse { 0%, 100% { opacity: .5; transform: scale(.9); } 50% { opacity: 1; transform: scale(1.04); } }
 @keyframes hoRingSpin { to { transform: rotate(360deg); } }
 /* Dezenter Puls des „Zum Starten tippen"-Hinweises (S0). Nur Opazität, keine

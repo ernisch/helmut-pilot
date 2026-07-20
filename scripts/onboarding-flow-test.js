@@ -161,8 +161,8 @@ onb.setProfile({ id: "x", onboardingStatus: "neu", fullName: "" });
 onb.seed();
 const welcome = onb.renderStep(0);
 check("Container: gescoptes .onboarding-handoff", welcome.includes("onboarding-handoff") && welcome.includes('id="onbRoot"'));
-check("S0 personalisiert: 'Hallo, Katrin.' + Ich-Form + Mandat-Zusage",
-  welcome.includes(">Hallo, Katrin.<") && welcome.includes("Ich bin Helmut") && welcome.includes("richte mich jetzt auf dein Mandat ein"));
+check("S0 personalisiert: 'Hallo, Katrin.' + Ich-Form + Stabschef-Zusage",
+  welcome.includes(">Hallo, Katrin.<") && welcome.includes("Ich bin Helmut") && welcome.includes("Ab jetzt passe ich auf, was für dein Mandat wichtig wird"));
 check("S0 Auto-Suche: ganzflächig tippbar (data-onb-tap) + dezenter Puls-Hinweis",
   welcome.includes("data-onb-tap") && welcome.includes("Zum Starten tippen") && welcome.includes("ho-pulse"));
 check("S0 KEINE Namenseingabe / KEIN 'Mein Mandat suchen'-Button",

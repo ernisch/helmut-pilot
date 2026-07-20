@@ -2748,7 +2748,14 @@ function sendSetPasswordPage(response) {
       #activatingView h2 { font-size: 21px; font-weight: 600; margin: 0 0 4px; color: #f5f1e8; letter-spacing: -.01em; }
       #activatingView p { color: rgba(245, 241, 232, .6); font-size: 15px; margin: 0 auto; }
       @keyframes hoBreath { 0%, 100% { opacity: .5; transform: scale(.96); } 50% { opacity: 1; transform: scale(1.04); } }
-      @media (prefers-reduced-motion: reduce) { .activating-glow { animation: none; opacity: .78; } }
+      /* Dezenter Crossfade beim Wechsel der Zustände (Formular → „Konto wird
+         eingerichtet" usw.): kurzer Fade + wenige Pixel von unten. */
+      main section:not([hidden]) { animation: pwViewIn 340ms cubic-bezier(.22,1,.36,1); }
+      @keyframes pwViewIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+      @media (prefers-reduced-motion: reduce) {
+        .activating-glow { animation: none; opacity: .78; }
+        main section:not([hidden]) { animation: none; }
+      }
       @media (max-width: 480px) { main { border-radius: 20px; padding: 36px 24px; } }
     </style>
   </head>

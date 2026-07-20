@@ -134,6 +134,7 @@ async function launch(pw) {
         && (await page.getAttribute("#pw1Toggle", "aria-pressed")) === "true"
         && /verbergen/i.test(await page.getAttribute("#pw1Toggle", "aria-label")));
       check("7. Wert von Feld 1 bleibt beim Umschalten unverändert", (await page.inputValue("#pw1")) === "geheim-passwort-1");
+      check("Fokus/Bedienbarkeit: Fokus bleibt nach dem Umschalten im Feld", await page.evaluate(() => document.activeElement && document.activeElement.id === "pw1"));
       check("3. Feld 2 bleibt unabhängig verborgen, während Feld 1 sichtbar ist", (await page.getAttribute("#pw2", "type")) === "password");
       await page.click("#pw1Toggle");
       check("5b. Feld 1 wieder verbergen (type=password, aria-pressed=false)",
@@ -155,7 +156,7 @@ async function launch(pw) {
       const afterUrl = new URL(page.url());
       check("13. Weiterleitung bleibt auf DEMSELBEN Host, Pfad /", afterUrl.host === `127.0.0.1:${port}` && afterUrl.pathname === "/", page.url());
       const bodyText = await page.evaluate(() => document.body.innerText);
-      check("15. Persönliche Begrüßung erscheint unmittelbar", /Ich bin Helmut/.test(bodyText) && /richte mich jetzt auf dein Mandat ein/.test(bodyText));
+      check("15. Persönliche Begrüßung erscheint unmittelbar (Stabschef-Ton)", /Ich bin Helmut/.test(bodyText) && /Ab jetzt passe ich auf, was für dein Mandat wichtig wird/.test(bodyText));
       check("16. Vorname stammt aus dem Account (Profil leer) — 'Hallo, Greta.'", /Hallo,\s*Greta\./.test(bodyText), bodyText.slice(0, 80));
       check("17. Normale App NICHT sichtbar (keine Dock-Navigation/Views)", await page.evaluate(() => !document.querySelector(".mobile-dock") && !document.querySelector("[data-view]")));
       check("18. KEINE erneute Loginseite (kein Login-/Passwort-Login-Formular)", await page.evaluate(() => !document.querySelector("#loginPassword") && !document.querySelector("[data-login]") && !/Anmelden/.test(document.body.innerText)));
@@ -207,12 +208,14 @@ async function launch(pw) {
       const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: "reduce", serviceWorkers: "block", bypassCSP: true });
       const page = await ctx.newPage();
       await page.goto(`${base}/passwort-setzen?token=ungueltig-xyz`, { waitUntil: "load", timeout: 20000 });
-      const anim = await page.evaluate(() => {
+      const rm = await page.evaluate(() => {
         var v = document.getElementById("activatingView"); if (v) v.hidden = false;
         var g = document.querySelector(".activating-glow");
-        return g ? getComputedStyle(g).animationName : "none";
+        var sec = document.getElementById("activatingView");
+        return { glow: g ? getComputedStyle(g).animationName : "none", section: sec ? getComputedStyle(sec).animationName : "none" };
       });
-      check("Reduced Motion: Übergangs-Schein pulsiert nicht (animation-name none)", anim === "none", anim);
+      check("Reduced Motion: Übergangs-Schein pulsiert nicht (animation-name none)", rm.glow === "none", rm.glow);
+      check("Reduced Motion: Ansicht-Crossfade deaktiviert (keine Bewegung)", rm.section === "none", rm.section);
       await ctx.close();
     }
   } finally {

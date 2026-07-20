@@ -687,10 +687,6 @@ const ONB_COMMITTEE_MINISTRY = {
   "Wohnen, Stadtentwicklung, Bauwesen und Kommunen": "BMWSB — Wohnen & Bau", "Verteidigung": "BMVg — Verteidigung",
   "Auswärtiges": "AA — Auswärtiges"
 };
-const ONB_PROGRESS_LABELS = {
-  3: "Mandat bestätigen", 4: "Zuständigkeiten", 5: "Prioritäten", 6: "Region",
-  7: "Beobachtung", 8: "Kommunikation", 9: "Arbeitsweise", 10: "Datenschutz", 11: "Prüfung"
-};
 
 // SVG-Glyphen (dünne 1,5px-Line-Icons; keine Emoji, keine Icon-Library-Füllstile)
 const ONB_SVG_CHECK = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
@@ -1227,8 +1223,19 @@ async function onbComplete() {
 function onbExitToApp() {
   onbClearTimers();
   onboardingActive = false;
-  // Frischen Zustand laden (echtes erstes Briefing) — Gate greift jetzt nicht mehr.
-  window.location.reload();
+  // Weicher Abgang in die normale App: kurz ausblenden, dann frischen Zustand
+  // laden (Gate greift jetzt nicht mehr). Bei reduzierter Bewegung sofort neu
+  // laden — kein künstliches Warten. Die dunkle Startanzeige der App deckt den
+  // Boot, sodass weder Login noch leere App dazwischen aufblitzen.
+  const root = document.querySelector("#onbRoot");
+  let reduce = false;
+  try { reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (_) {}
+  if (root && !reduce) {
+    root.classList.add("ho-fade-out");
+    onboardingTimers.push(setTimeout(() => window.location.reload(), 300));
+  } else {
+    window.location.reload();
+  }
 }
 
 // --- Fortschritt/Validierung ------------------------------------------------
@@ -1280,7 +1287,7 @@ function renderOnboardingFlow() {
       ${showProgress ? `
         <div>
           <div class="ho-progress-track"><div class="ho-progress-fill" style="width:${progressWidth}%"></div></div>
-          <div class="ho-progress-label" style="margin-top:8px">${escapeHtml(ONB_PROGRESS_LABELS[step] || "")}</div>
+          <div class="ho-progress-label" style="margin-top:8px">Helmut lernt dich kennen</div>
         </div>` : ""}
     </div>` : "";
 
@@ -1325,7 +1332,7 @@ function onbStepWelcome() {
     <div class="ho-center is-tap ho-anim" data-onb-tap>
       <div class="ho-mark is-lg"><span>H</span></div>
       <h2 class="ho-h2" style="text-wrap:balance">Hallo${first ? ", " + escapeHtml(first) : ""}.</h2>
-      <p class="ho-lead" style="max-width:30ch;margin-top:12px">Ich bin Helmut.<br>Ich richte mich jetzt auf dein Mandat ein.</p>
+      <p class="ho-lead" style="max-width:32ch;margin-top:12px">Ich bin Helmut.<br>Ab jetzt passe ich auf, was für dein Mandat wichtig wird.</p>
       <span class="ho-tap-hint ho-pulse">Zum Starten tippen ${ONB_SVG_ARROW}</span>
     </div>` };
 }
@@ -1634,13 +1641,15 @@ function onbStepReview() {
 // onbComplete). Ruhiger, persönlicher Willkommen-Screen -> „Los geht's" öffnet die App.
 function onbStepDone() {
   const first = onbFirstNameOf(onboardingDraft.fullName || (profile && profile.fullName) || onbAccountName());
+  // Abschluss bewusst reduziert: viel Dunkelraum, kein Eyebrow/Label, keine
+  // Featureliste, keine Erklärung. Nur Marke, Willkommen, ein ruhiger Satz und —
+  // mit großem Abstand — „Los geht's".
   return { full: `
-    <div class="ho-done ho-anim">
+    <div class="ho-done is-final ho-anim">
       <div class="ho-mark is-sm"><span>H</span></div>
-      <div style="margin-top:30px">${onbEyebrow("Einsatzbereit", true)}</div>
-      <h2 class="ho-h1" style="margin-top:16px;text-wrap:balance">Willkommen${first ? ", " + escapeHtml(first) : ""}.</h2>
-      <p class="ho-lead">Ich bin Helmut. Ab jetzt bin ich an deiner Seite.</p>
-      <div style="margin-top:38px">${onbPrimary("toapp", "Los geht's")}</div>
+      <h2 class="ho-h1" style="margin-top:40px;text-wrap:balance">Willkommen${first ? ", " + escapeHtml(first) : ""}.</h2>
+      <p class="ho-lead" style="margin-top:18px">Ich bin Helmut.<br>Ab jetzt bin ich an deiner Seite.</p>
+      <div style="margin-top:56px">${onbPrimary("toapp", "Los geht's")}</div>
     </div>` };
 }
 

@@ -155,9 +155,13 @@ function renderStepInPage(opts) {
       const rendered = await page.evaluate(renderStepInPage, { step: 4 });
       check("S4 gerendert (onbRoot vorhanden)", rendered === true);
 
+      // Eintritts-Animation des Screens abwarten, damit ein danach evtl. laufender
+      // Entry-Effekt eindeutig einer NEUEN Auswahl zuzuordnen wäre (Determinismus).
+      await page.waitForTimeout(450);
       // Body nach unten scrollen, DOM-Marker setzen, dann eine Auswahl anklicken.
       const result = await page.evaluate(() => {
         const body = document.querySelector(".ho-body");
+        const screen = document.querySelector(".ho-screen");
         body.scrollTop = 160;
         const before = body.scrollTop;
         body.setAttribute("data-keep", "1"); // überlebt NUR ohne Voll-Neurender
@@ -167,16 +171,25 @@ function renderStepInPage(opts) {
         const wasOn = target.classList.contains("is-on");
         target.click();
         const bodyAfter = document.querySelector(".ho-body");
+        const screenAfter = document.querySelector(".ho-screen");
+        // Läuft nach der Auswahl irgendwo eine Eintritts-/Screen-Animation? (Sollte
+        // NICHT — Chips/Toggles aktualisieren in-place, kein Neurender, kein Übergang.)
+        const running = (screenAfter ? screenAfter.getAnimations({ subtree: true }) : [])
+          .filter((a) => (a.animationName || "").indexOf("hoScreenIn") >= 0 && a.playState === "running").length;
         return {
           before,
           after: bodyAfter.scrollTop,
           markerSurvived: bodyAfter.getAttribute("data-keep") === "1",
           sameNode: bodyAfter === body,
+          screenSameNode: screenAfter === screen,
+          runningEntry: running,
           toggledOn: target.classList.contains("is-on") && !wasOn
         };
       });
       check("Scroll-Stabilität: Position bleibt nach Auswahl erhalten", Math.abs(result.after - result.before) <= 2, `before=${result.before} after=${result.after}`);
       check("Kein Voll-Neurender: Body-Knoten identisch + DOM-Marker überlebt", result.sameNode && result.markerSurvived);
+      check("Kein Übergang bei Auswahl (Chips/Toggles): Screen-Knoten identisch, keine laufende Eintritts-Animation",
+        result.screenSameNode && result.runningEntry === 0, `sameScreen=${result.screenSameNode} runningEntry=${result.runningEntry}`);
       check("Auswahl greift: Element wurde in-place aktiv (.is-on)", result.toggledOn);
       check("Keine JS-Fehler bei der Auswahl", pageErrors.length === 0, pageErrors.slice(0, 2).join(" | "));
 
@@ -291,27 +304,50 @@ function renderStepInPage(opts) {
       await context.close();
     }
 
-    // ── 6) reduced-motion stellt den Puls still (und läuft sonst) ────────────
+    // ── 6) reduced-motion stellt Puls UND Screen-Übergang still (und läuft sonst) ─
     {
       const reduced = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: "reduce", serviceWorkers: "block", bypassCSP: true });
       const { page } = await bootPage(reduced);
       await page.evaluate(renderStepInPage, { step: 0 });
-      const durReduced = await page.evaluate(() => {
-        const el = document.querySelector(".ho-pulse");
-        return el ? getComputedStyle(el).animationDuration : "none";
+      const rd = await page.evaluate(() => {
+        const p = document.querySelector(".ho-pulse");
+        const a = document.querySelector(".ho-anim");
+        return { pulse: p ? getComputedStyle(p).animationDuration : "none", entry: a ? getComputedStyle(a).animationDuration : "none" };
       });
-      check("reduced-motion: Puls-Animation stillgestellt (Dauer ~0)", durReduced !== "none" && parseFloat(durReduced) <= 0.01, `dauer=${durReduced}`);
+      check("reduced-motion: Puls-Animation stillgestellt (Dauer ~0)", rd.pulse !== "none" && parseFloat(rd.pulse) <= 0.01, `dauer=${rd.pulse}`);
+      check("reduced-motion: Screen-Übergang (.ho-anim) stillgestellt — keine Bewegung", rd.entry !== "none" && parseFloat(rd.entry) <= 0.01, `dauer=${rd.entry}`);
       await reduced.close();
 
       const normal = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: "no-preference", serviceWorkers: "block", bypassCSP: true });
       const np = await bootPage(normal);
-      await np.page.evaluate(renderStepInPage, 0);
-      const durNormal = await np.page.evaluate(() => {
-        const el = document.querySelector(".ho-pulse");
-        return el ? getComputedStyle(el).animationDuration : "none";
+      await np.page.evaluate(renderStepInPage, { step: 0 });
+      const nd = await np.page.evaluate(() => {
+        const p = document.querySelector(".ho-pulse");
+        const a = document.querySelector(".ho-anim");
+        return { pulse: p ? getComputedStyle(p).animationDuration : "none", entry: a ? getComputedStyle(a).animationDuration : "none" };
       });
-      check("Ohne Präferenz: Puls läuft tatsächlich (Dauer > 1s) — Präferenz greift nachweislich", durNormal !== "none" && parseFloat(durNormal) >= 1, `dauer=${durNormal}`);
+      check("Ohne Präferenz: Puls läuft (Dauer > 1s) — Präferenz greift nachweislich", nd.pulse !== "none" && parseFloat(nd.pulse) >= 1, `dauer=${nd.pulse}`);
+      check("Ohne Präferenz: Screen-Übergang läuft (~300–500ms Crossfade)", nd.entry !== "none" && parseFloat(nd.entry) >= 0.2 && parseFloat(nd.entry) <= 0.6, `dauer=${nd.entry}`);
+      await np.page.close();
       await normal.close();
+    }
+
+    // ── 7) Moment „Übergang in die normale App": S12 blendet weich aus ────────
+    {
+      const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: "no-preference", serviceWorkers: "block", bypassCSP: true });
+      const { page } = await bootPage(context);
+      await page.evaluate(renderStepInPage, { step: 12, draft: { fullName: "Katrin Vogt" } });
+      const exit = await page.evaluate(() => {
+        let reloaded = false;
+        try { window.location.reload = () => { reloaded = true; }; } catch (_) {}
+        const btn = document.querySelector("[data-onb-toapp]");
+        btn.click();
+        // Synchron direkt nach dem Klick: weicher Abgang statt hartem Sprung.
+        return { fade: !!document.querySelector("#onbRoot.ho-fade-out"), label: btn.textContent.trim() };
+      });
+      check("S12 'Los geht's' vorhanden", /Los geht/.test(exit.label));
+      check("Moment 7: weicher Abgang in die App (ho-fade-out), kein harter Sprung", exit.fade === true);
+      await context.close();
     }
   } finally {
     await browser.close();
