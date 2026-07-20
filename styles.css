@@ -12218,6 +12218,11 @@ summary:focus-visible {
 .ho-note-text { font-size: 12px; line-height: 1.45; color: var(--text-2); }
 .ho-note.is-warn { border-color: rgba(214,160,64,.4); background: var(--watch-dim, rgba(214,160,64,.13)); }
 .ho-callout { padding: 15px 17px; border-radius: var(--r-md); border: 1px solid var(--line); background: var(--bg-1); font-size: 12.5px; line-height: 1.55; color: var(--muted); }
+/* Fehlermeldung des Abschluss-Speicherns (S11), DIREKT im Screen -- NICHT der
+   globale #toast: der liegt hinter dem Vollbild-Onboarding (.onboarding-handoff
+   z-index 1200 vs. #toast z-index 70) und ist dort faktisch unsichtbar. Bleibt
+   stehen, bis der nächste Versuch beginnt (kein automatisches Verschwinden). */
+.ho-review-error { margin-top: 14px; padding: 13px 15px; border-radius: var(--r-md); border: 1px solid rgba(255,89,103,.4); background: rgba(255,89,103,.12); font-size: 13px; line-height: 1.5; color: var(--ink); }
 
 /* Datenschutz-Punkte + Consent-Schalter */
 .ho-facts { margin: 22px 0 0; display: flex; flex-direction: column; gap: 16px; }

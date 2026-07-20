@@ -120,7 +120,12 @@ function seedDraftAndGotoReview(fullName) {
     constituency: "Salzgitter",
     state: "Niedersachsen",
     committees: ["Gesundheit"],
+    deputyCommittees: ["Haushalt"],
     focusTopics: ["Rente"],
+    regionalInterests: ["Salzgitter Innenstadt"],
+    relevantMinistries: ["Bundesministerium fuer Arbeit und Soziales"],
+    communicationStyle: "sachlich",
+    preferredChannels: ["press", "linkedin"],
     instant: [],
     briefTime: "07:00",
     briefDepth: "kompakt",
@@ -147,7 +152,12 @@ function seedDraftAndGotoPrivacy(fullName) {
     constituency: "Salzgitter",
     state: "Niedersachsen",
     committees: ["Gesundheit"],
+    deputyCommittees: ["Haushalt"],
     focusTopics: ["Rente"],
+    regionalInterests: ["Salzgitter Innenstadt"],
+    relevantMinistries: ["Bundesministerium fuer Arbeit und Soziales"],
+    communicationStyle: "sachlich",
+    preferredChannels: ["press", "linkedin"],
     instant: [],
     briefTime: "07:00",
     briefDepth: "kompakt",
@@ -284,9 +294,11 @@ function seedDraftAndGotoPrivacy(fullName) {
         return {
           activeIds: activeEls.map((el) => el.getAttribute("data-view")),
           activeLabels: activeEls.map((el) => el.textContent.trim()),
-          helmutAnyActive: helmutEls.some((el) => el.classList.contains("active"))
+          helmutAnyActive: helmutEls.some((el) => el.classList.contains("active")),
+          onboardingReappeared: !!document.querySelector("#onbRoot")
         };
       });
+      check("Reload nach Erfolg öffnet die normale App, NICHT erneut das Onboarding", navState.onboardingReappeared === false, JSON.stringify(navState));
       check("Lage (interner Schlüssel 'briefing') ist nach dem Abschluss der aktive Bereich",
         navState.activeIds.length > 0 && navState.activeIds.every((id) => id === "briefing"), JSON.stringify(navState));
       check("Sichtbares Label des aktiven Reiters lautet 'Lage' (Bestätigung, nicht alleinige Grundlage)",
@@ -407,16 +419,37 @@ function seedDraftAndGotoPrivacy(fullName) {
       navigatedToApp = false;
       const urlBeforeFailure = page.url();
       await page.evaluate(() => onbComplete());
-      await page.waitForTimeout(400);
-      const failed = await page.evaluate(() => ({
-        noFinal: !document.querySelector(".ho-final"),
-        stillOnb: !!document.querySelector("#onbRoot"),
-        errorText: document.body.innerText,
-        persistedView: (() => { try { return localStorage.getItem("helmut:view"); } catch (_) { return null; } })()
-      }));
+      await page.waitForFunction(() => !!document.getElementById("onbReviewError"), null, { timeout: 4000 });
+      const failed = await page.evaluate(() => {
+        const el = document.getElementById("onbReviewError");
+        const r = el ? el.getBoundingClientRect() : null;
+        const bar = document.querySelector(".ho-actionbar");
+        const barRect = bar ? bar.getBoundingClientRect() : null;
+        // Echte Sichtbarkeitsprobe (nicht nur innerText — der alte #toast-Bug
+        // wäre mit einer reinen innerText-Prüfung NIE aufgefallen: z-index-
+        // Verdeckung ändert innerText nicht, wohl aber elementFromPoint).
+        const cx = r ? r.left + r.width / 2 : -1;
+        const cy = r ? r.top + r.height / 2 : -1;
+        const topAtCenter = r ? document.elementFromPoint(cx, cy) : null;
+        return {
+          noFinal: !document.querySelector(".ho-final"),
+          stillOnb: !!document.querySelector("#onbRoot"),
+          hasBanner: !!el,
+          bannerText: el ? el.textContent.trim() : "",
+          bannerVisible: !!r && r.width > 0 && r.height > 0 && !!topAtCenter && (topAtCenter === el || el.contains(topAtCenter)),
+          bannerAboveActionbar: !!r && !!barRect && r.bottom <= barRect.top + 1,
+          finishReenabled: (document.querySelector("[data-onb-finish]") || {}).disabled === false,
+          persistedView: (() => { try { return localStorage.getItem("helmut:view"); } catch (_) { return null; } })()
+        };
+      });
       check("Fehlgeschlagenes Speichern: KEIN 'Dein Profil ist bereit.' / KEIN Willkommen-Screen", failed.noFinal);
       check("Fehlgeschlagenes Speichern: Nutzer bleibt im Onboarding (kein Redirect nach Lage)", failed.stillOnb && !navigatedToApp);
-      check("Fehlgeschlagenes Speichern: ruhige, verständliche Fehlermeldung erscheint", /[Ff]ehlgeschlagen/.test(failed.errorText) && !/\bstack\b|TypeError|ReferenceError/i.test(failed.errorText));
+      check("Fehlgeschlagenes Speichern: verständliche, dauerhaft sichtbare Fehlermeldung erscheint DIREKT auf S11 (nicht der verdeckte #toast)",
+        failed.hasBanner && /[Ff]ehlgeschlagen/.test(failed.bannerText) && !/\bstack\b|TypeError|ReferenceError/i.test(failed.bannerText), JSON.stringify(failed));
+      check("Fehlermeldung ist TATSÄCHLICH sichtbar (elementFromPoint, keine z-index-Verdeckung wie zuvor beim #toast)",
+        failed.bannerVisible, JSON.stringify(failed));
+      check("Fehlermeldung liegt NICHT hinter der festen Aktionsleiste (oberhalb des Buttons)", failed.bannerAboveActionbar, JSON.stringify(failed));
+      check("Abschluss-Button wird nach dem Fehler wieder aktiv (erneuter Versuch möglich)", failed.finishReenabled);
       check("Fehlgeschlagenes Speichern: navigiert nirgendwohin (URL unverändert, kein Zielbereich persistiert)",
         page.url() === urlBeforeFailure && failed.persistedView === null, `url=${page.url()} persistedView=${failed.persistedView}`);
 
@@ -428,6 +461,104 @@ function seedDraftAndGotoPrivacy(fullName) {
       check("Wiederholung nach Fehler ist möglich und führt zum Erfolg", true);
       await retryNav;
 
+      await ctx.close();
+    }
+
+    // ═══ 2b) 204/leerer Response-Body verursacht KEINEN falschen Fehler — nur
+    // res.ok entscheidet, apiSend() behandelt einen nicht parsebaren Body
+    // (leer/204) durch das eigene try/catch um res.json() bereits tolerant ══
+    {
+      const created = await newInvite("Nadja Nobody", "nadja-204-completion-e2e@example.org");
+      const { cookie } = await setPassword(created.inviteUrl);
+      const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: "block", bypassCSP: true });
+      await ctx.addCookies([{ name: cookie.split("=")[0], value: cookie.split("=").slice(1).join("="), url: base }]);
+      const page = await ctx.newPage();
+      await page.goto(base + "/", { waitUntil: "domcontentloaded", timeout: 20000 });
+      await page.waitForFunction(() => document.querySelector("#onbRoot") !== null, null, { timeout: 20000 });
+      await page.evaluate(seedDraftAndGotoReview, "Nadja Nobody");
+
+      await page.route(/\/api\/profile\/current/, (route) => {
+        if (route.request().method() === "PATCH") return route.fulfill({ status: 204 });
+        return route.continue();
+      });
+      const navPromise204 = page.waitForNavigation({ timeout: 8000 }).catch(() => null);
+      await page.evaluate(() => onbComplete());
+      const reached204 = await page.waitForFunction(() => document.querySelector(".ho-final") !== null, null, { timeout: 4000 }).then(() => true).catch(() => false);
+      check("204/leerer Response-Body (kein optionales Feld) verursacht KEINEN falschen Fehler — Sequenz startet trotzdem", reached204);
+      await navPromise204;
+      await ctx.close();
+    }
+
+    // ═══ 2c) Nicht-JSON-Response (z. B. "OK" als Text) hängt NICHT — res.ok
+    // entscheidet, ein fehlgeschlagenes res.json()-Parsing wird von apiSend()
+    // abgefangen (json bleibt null), onbComplete() liest json nur optional ══
+    {
+      const created = await newInvite("Nils Nonjson", "nils-nonjson-completion-e2e@example.org");
+      const { cookie } = await setPassword(created.inviteUrl);
+      const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: "block", bypassCSP: true });
+      await ctx.addCookies([{ name: cookie.split("=")[0], value: cookie.split("=").slice(1).join("="), url: base }]);
+      const page = await ctx.newPage();
+      await page.goto(base + "/", { waitUntil: "domcontentloaded", timeout: 20000 });
+      await page.waitForFunction(() => document.querySelector("#onbRoot") !== null, null, { timeout: 20000 });
+      await page.evaluate(seedDraftAndGotoReview, "Nils Nonjson");
+
+      await page.route(/\/api\/profile\/current/, (route) => {
+        if (route.request().method() === "PATCH") return route.fulfill({ status: 200, contentType: "text/plain", body: "OK" });
+        return route.continue();
+      });
+      const navPromiseTxt = page.waitForNavigation({ timeout: 8000 }).catch(() => null);
+      await page.evaluate(() => onbComplete());
+      const reachedTxt = await page.waitForFunction(() => document.querySelector(".ho-final") !== null, null, { timeout: 4000 }).then(() => true).catch(() => false);
+      check("Nicht-JSON-Response (200, Text statt JSON) hängt NICHT — Sequenz startet trotzdem", reachedTxt);
+      await navPromiseTxt;
+      await ctx.close();
+    }
+
+    // ═══ 2d) Exception NACH erfolgreichem Request (z. B. beim Aufbau der
+    // Briefing-Präferenzen) — über einen ECHTEN Klick, nicht nur direkten
+    // onbComplete()-Aufruf: Fehlermeldung muss sichtbar erscheinen, S11 bleibt,
+    // kein stiller Hänger ═══════════════════════════════════════════════════
+    {
+      const created = await newInvite("Erik Exception", "erik-exception-completion-e2e@example.org");
+      const { cookie } = await setPassword(created.inviteUrl);
+      const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, serviceWorkers: "block", bypassCSP: true });
+      await ctx.addCookies([{ name: cookie.split("=")[0], value: cookie.split("=").slice(1).join("="), url: base }]);
+      const page = await ctx.newPage();
+      let navigatedDuringException = false;
+      page.on("framenavigated", (fr) => { try { if (fr === page.mainFrame()) navigatedDuringException = true; } catch (_) {} });
+      await page.goto(base + "/", { waitUntil: "domcontentloaded", timeout: 20000 });
+      await page.waitForFunction(() => document.querySelector("#onbRoot") !== null, null, { timeout: 20000 });
+      await page.evaluate(seedDraftAndGotoReview, "Erik Exception");
+      // instant=42 (nicht iterierbar) lässt new Set(onboardingDraft.instant) in
+      // onbComplete() NACH dem erfolgreichen PATCH werfen — echte Exception,
+      // kein Netzwerkfehler.
+      await page.evaluate(() => { onboardingDraft.instant = 42; });
+      navigatedDuringException = false;
+      await page.click("[data-onb-finish]");
+      await page.waitForFunction(() => !!document.getElementById("onbReviewError"), null, { timeout: 4000 });
+      const excState = await page.evaluate(() => {
+        const el = document.getElementById("onbReviewError");
+        const r = el ? el.getBoundingClientRect() : null;
+        const cx = r ? r.left + r.width / 2 : -1;
+        const cy = r ? r.top + r.height / 2 : -1;
+        const top = r ? document.elementFromPoint(cx, cy) : null;
+        return {
+          stillOnb: !!document.querySelector("#onbRoot"),
+          noFinal: !document.querySelector(".ho-final"),
+          bannerVisible: !!r && r.width > 0 && r.height > 0 && !!top && (top === el || el.contains(top)),
+          finishReenabled: (document.querySelector("[data-onb-finish]") || {}).disabled === false
+        };
+      });
+      check("Exception NACH erfolgreichem Request (echter Klick): S11 bleibt, kein stiller Hänger", excState.stillOnb && excState.noFinal && !navigatedDuringException);
+      check("Exception NACH erfolgreichem Request: sichtbare Fehlermeldung + Button wieder aktiv", excState.bannerVisible && excState.finishReenabled, JSON.stringify(excState));
+      // Ehrlichkeitsprobe (Auftragsfrage): der ERSTE PATCH war real erfolgreich,
+      // BEVOR die Exception danach auftrat — serverseitig ist das Profil in
+      // diesem synthetischen Fall also bereits "abgeschlossen", obwohl der
+      // Client einen Fehler zeigt. Kein Bugfix hierfür (kein reales Nutzer-
+      // Szenario, da onboardingDraft.instant in der echten UI nie eine Zahl
+      // ist) -- nur dokumentiert, siehe Bericht.
+      const serverSideAfterException = await page.evaluate(async () => (await fetch("/api/profile/current").then((r) => r.ok ? r.json() : {})));
+      console.log(`INFO  Server-onboardingStatus nach synthetischem Exception-Fall: ${serverSideAfterException.onboardingStatus} (der erste PATCH war real erfolgreich, bevor die Exception danach auftrat)`);
       await ctx.close();
     }
 

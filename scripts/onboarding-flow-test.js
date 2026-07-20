@@ -454,6 +454,11 @@ check("onbExitToApp: Zielbereich ist NICHT 'lage' (kein verdrahteter Nav-Zustand
   check("Autosave: state.saving danach zurückgesetzt", onb.uiSaving() === false);
 
   // 11d) Fehlgeschlagenes Speichern: state.saving zurückgesetzt, Nutzer bleibt im Onboarding.
+  // Fehlermeldung geht NICHT mehr über den globalen #toast (der liegt hinter
+  // dem Vollbild-Onboarding, z-index 1200 vs. 70, und ist dort unsichtbar —
+  // per echtem Browser-Test nachgewiesen), sondern über onboardingUi.error,
+  // von onbStepReview() DIREKT im S11-Markup gerendert (immer sichtbar, da im
+  // selben Overlay wie der Button).
   onb.resetUi();
   onb.setDraft(validDraft());
   onb.renderStep(11);
@@ -461,7 +466,19 @@ check("onbExitToApp: Zielbereich ist NICHT 'lage' (kein verdrahteter Nav-Zustand
   await onb.complete();
   check("Fehlgeschlagenes Speichern: state.saving wird zurückgesetzt", onb.uiSaving() === false);
   check("Fehlgeschlagenes Speichern: Onboarding bleibt aktiv (kein Redirect nach Lage)", onb.active() === true);
-  check("Fehlgeschlagenes Speichern: verständliche Fehlermeldung im Toast", onb.toastText().includes("Speichern fehlgeschlagen"));
+  check("Fehlgeschlagenes Speichern: verständliche Fehlermeldung NICHT im (verdeckten) Toast", onb.toastText() === "");
+  const s11AfterFailure = onb.stepBody(11);
+  check("Fehlgeschlagenes Speichern: Fehlermeldung wird DIREKT im S11-Markup gerendert (onbReviewError)",
+    s11AfterFailure.includes('id="onbReviewError"') && s11AfterFailure.includes("Speichern fehlgeschlagen"));
+
+  // Erneuter Versuch: onbComplete() muss die alte Fehlermeldung zu Beginn
+  // löschen (kein Stehenbleiben eines veralteten Fehlers waehrend "Speichert …").
+  setMockFetch(async (url) => jsonRes(200, String(url).includes("/api/profile/current") ? { id: "mandat-test" } : {}));
+  const retryPromiseVm = onb.complete();
+  const s11DuringRetry = onb.stepBody(11);
+  check("Erneuter Versuch: alte Fehlermeldung wird beim Start des neuen Versuchs sofort gelöscht",
+    !s11DuringRetry.includes('id="onbReviewError"'));
+  await retryPromiseVm;
 
   // 11e) Exception NACH dem Request (nicht netzwerkbedingt) führt nicht zu
   // dauerhaftem "Speichert …" — instant=42 (nicht iterierbar) lässt new Set(...) werfen.

@@ -1203,6 +1203,7 @@ function onbPaintSavedIndicator(saving) {
 
 async function onbComplete() {
   onboardingUi.saving = true;
+  onboardingUi.error = "";
   renderOnboardingFlow();
   let ok = false;
   try {
@@ -1231,7 +1232,13 @@ async function onbComplete() {
     ok = true;
   } catch (error) {
     console.warn("Onboarding: Abschluss-Speichern fehlgeschlagen", error);
-    showToast("Speichern fehlgeschlagen – bitte erneut versuchen.");
+    // Inline auf S11 statt #toast: der globale Toast liegt HINTER dem Vollbild-
+    // Onboarding (.onboarding-handoff hat z-index 1200, #toast nur 70 — er wird
+    // korrekt sichtbar geschaltet, ist aber vom Onboarding-Overlay verdeckt und
+    // damit für den Nutzer unsichtbar). onboardingUi.error wird von
+    // onbStepReview() direkt oberhalb des Buttons gerendert und bleibt stehen,
+    // bis der nächste Versuch beginnt (kein automatisches Verschwinden).
+    onboardingUi.error = "Speichern fehlgeschlagen – bitte erneut versuchen.";
   } finally {
     // IMMER zurücksetzen, unabhängig davon, WO genau etwas schiefging (Netz,
     // Payload-Aufbau, unerwartete Exception) — sonst bleibt der Button
@@ -1680,7 +1687,8 @@ function onbStepReview() {
           <span class="ho-summary-k">${escapeHtml(r.k)}</span>
           <span class="ho-summary-v ${r.missing ? "is-missing" : ""}">${escapeHtml(r.v)}</span>
           <span class="ho-summary-edit">${ONB_SVG_EDIT}</span></button>`).join("")}
-      </div>`,
+      </div>
+      ${onboardingUi.error ? `<div class="ho-review-error" id="onbReviewError" role="alert">${escapeHtml(onboardingUi.error)}</div>` : ""}`,
     action: onbPrimary("finish", onboardingUi.saving ? "Speichert …" : "Profil bestätigen", !core.ready || onboardingUi.saving)
   };
 }
