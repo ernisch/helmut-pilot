@@ -96,3 +96,11 @@ jobs:
         env:
           HELMUT_REQUIRE_BROWSER: "1"
         run: node scripts/onboarding-erstlogin-browser-test.js
+      - name: Admin "Nutzer & Kunden"-Fix (Root-Cause-Beweis + Browser-E2E)
+        # P0-Fix: Admin-Login -> Tab "Nutzer & Kunden" -> API erfolgreich/Fehler/
+        # Timeout -> Sitzung bleibt gültig. Teil A/B laufen bereits offline mit;
+        # dieser Schritt stellt sicher, dass Teil C (echter Chromium-Browser)
+        # tatsächlich ausgeführt wird statt mangels Playwright zu SKIPpen.
+        env:
+          HELMUT_REQUIRE_BROWSER: "1"
+        run: node scripts/admin-nutzer-kunden-timeout-fix-test.js

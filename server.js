@@ -3148,6 +3148,12 @@ module.exports = requestHandler;
 // Test-Hook (nur fuer Offline-Tests; veraendert den HTTP-Pfad nicht): erlaubt den
 // direkten, auth-freien Aufruf der internen Datenstatus-Funktion.
 module.exports.__buildAdminDataStatus = buildAdminDataStatus;
+// Test-Hooks (Offline, P0-Fix "Nutzer & Kunden"-Timeout): direkter, auth-freier
+// Aufruf der Overview-/Customers-Aufbaufunktionen — misst deren EIGENE
+// Auth-Store-Lesezugriffe isoliert von der (unveraenderten, separaten)
+// Session-Pruefung der Request-Middleware.
+module.exports.__buildAdminOverview = buildAdminOverview;
+module.exports.__buildAdminCustomers = buildAdminCustomers;
 module.exports.__buildHelmutConfigDiagnose = buildHelmutConfigDiagnose;
 module.exports.__buildPipelineRecoveryStatus = buildPipelineRecoveryStatus;
 // Test-Hook (nur fuer Offline-Tests, wie __build* oben): der slot-aware Read-Pfad.
@@ -4555,7 +4561,11 @@ async function defaultPoliticianIdForUser(user, allowed) {
 // Sektion einfach nicht (Alt-Admin unveraendert). Struktur aus dem Code-Modell; Metriken aus
 // Bestandsdaten (raw_documents/llm_usage). Fehlen Daten, markiert der Report sie EHRLICH als
 // „nicht verfügbar" — es werden KEINE Zahlen erfunden. Keine DB-Aenderung, kein KI-Call.
-async function buildSourceArchitectureReport(mandateProfiles = []) {
+// deps.authStore: optionaler, bereits gelesener Auth-Store-Snapshot (P0-Fix
+// "Nutzer & Kunden"-Timeout) — vermeidet einen weiteren eigenstaendigen
+// readAuthStore()-Aufruf ueber getLlmUsage(), wenn der Aufrufer (buildAdminOverview)
+// den Auth-Store bereits fuer denselben Aufbau gelesen hat.
+async function buildSourceArchitectureReport(mandateProfiles = [], deps = {}) {
   try {
     const { buildFullModel } = require("./lib/helmut/quellenarchitektur");
     const { computeGlobalActivation } = require("./lib/helmut/quellenarchitektur/profile-packages");
@@ -4569,7 +4579,7 @@ async function buildSourceArchitectureReport(mandateProfiles = []) {
     // Beide Bestandsdaten-Reads PARALLEL (nicht sequenziell), je defensiv -> [] bei Fehler.
     const [rawDocs, llmUsage] = await Promise.all([
       storageMod.listRawDocuments({ days: 30, limit: 800 }).then((r) => r || []).catch(() => []),
-      storageMod.getLlmUsage(null, 2000).then((r) => r || []).catch(() => [])
+      storageMod.getLlmUsage(null, 2000, { store: deps.authStore }).then((r) => r || []).catch(() => [])
     ]);
     const now = Date.now();
     const quality = qw.buildQualityReport({
@@ -4668,31 +4678,45 @@ function buildHelmutConfigDiagnose(env = process.env) {
 }
 
 async function buildAdminOverview() {
+  // ROOT-CAUSE-FIX (P0 "Nutzer & Kunden"-Timeout): der Auth-Store ist EIN einzelnes
+  // Supabase-Dokument (users/sessions/assignments/audit/systemErrors/llmUsage/
+  // passwordTokens), aber die Aufrufe unten lasen es bisher JEDER FUER SICH per
+  // eigenem readAuthStore() erneut — anders als der Haupt-Store hat der Auth-Store
+  // keinen Cache. Ergebnis: rund zehn identische Netz-Roundtrips fuer EINEN Aufruf
+  // dieser Funktion (listUsers, listAssignments, listSystemErrors, listAuditEvents,
+  // listPendingInvites, je zweimal getAdminCostsPerUser/getAdminStatsCosts ueber
+  // getAdminPeriodStats(1)+(30), getLlmUsageBreakdownToday) — plus zwei weitere durch
+  // das parallel vom Client geladene /api/admin/customers (buildAdminCustomers).
+  // Bei einem gewachsenen Auth-Store (Sessions/LLM-Nutzung/Audit) genuegte das, um
+  // den Client-Timeout zu ueberschreiten ("Zeitüberschreitung oder Netzwerkfehler").
+  // Fix: EIN gemeinsamer Snapshot fuer diesen Aufbau (nur hier — Login/Session-
+  // Pruefung anderswo bleiben unveraendert live, kein globaler Cache).
+  const authStore = await readAuthStore();
   const [users, profiles, mandates, assignments, errors, audit, feedback, koCountTotal, statsToday, stats30d, crawlReport] = await Promise.all([
-    accounts.listUsers(),
+    accounts.listUsers({ store: authStore }),
     listProfiles(),
     listFullProfiles(),
-    accounts.listAssignments(),
-    accounts.listSystemErrors(50),
-    accounts.listAuditEvents(50),
+    accounts.listAssignments({ store: authStore }),
+    accounts.listSystemErrors(50, { store: authStore }),
+    accounts.listAuditEvents(50, { store: authStore }),
     listFeedback(80),
     getKnowledgeObjectCount(),
-    getAdminPeriodStats(1),
-    getAdminPeriodStats(30),
+    getAdminPeriodStats(1, { authStore }),
+    getAdminPeriodStats(30, { authStore }),
     getAdminStatsCrawlReport()
   ]);
   const storage = getStorageStatus();
   const storeSummary = await getStoreSummary();
   // Offene Einladungen je Konto (§6): nur Zeiten, nie Token-Hashes — fuer die
   // Admin-Nutzerliste ("Einladung laeuft ab am …" + "erneut senden").
-  const pendingInvites = await accounts.listPendingInvites().catch(() => ({}));
+  const pendingInvites = await accounts.listPendingInvites({ store: authStore }).catch(() => ({}));
   const usersWithInvites = users.map((user) => ({ ...user, invite: pendingInvites[user.id] || null }));
   // Read-only, defensiv: der Quellenarchitektur-Report (Sprint 8). Fehler -> null.
-  const sourceArchitecture = await buildSourceArchitectureReport(mandates);
+  const sourceArchitecture = await buildSourceArchitectureReport(mandates, { authStore });
   // Budget-Wahrheit (Phase 8): heutiger Stand im EXAKTEN Fenster des Budget-Gates
   // (UTC-Kalendertag) — Skips/Fehler getrennt, pro Pfad, pro Mandant, Limit/Rest.
   // Die 24h-Rolling-Statistik (stats.today) bleibt fuer Kostentrends bestehen.
-  const llmBudget = await getLlmUsageBreakdownToday().catch(() => null);
+  const llmBudget = await getLlmUsageBreakdownToday(null, { readAuth: () => Promise.resolve(authStore) }).catch(() => null);
 
   const userById = new Map(users.map((u) => [u.id, u.name || u.email]));
   const userByPoliticianId = new Map(users.filter((u) => u.politicianId).map((u) => [u.politicianId, u.name || u.email]));
@@ -4881,8 +4905,11 @@ async function buildAdminCostsPerUser(days = 30) {
 }
 
 async function buildAdminCustomers() {
-  const users = await accounts.listUsers();
-  const sessions = await accounts.countActiveSessions().catch(() => null);
+  // Gleicher Snapshot fuer beide Reads (siehe buildAdminOverview) — 1 statt 2
+  // Netz-Roundtrips zum selben Auth-Store-Dokument.
+  const authStore = await readAuthStore();
+  const users = await accounts.listUsers({ store: authStore });
+  const sessions = await accounts.countActiveSessions({ store: authStore }).catch(() => null);
   const today = new Date().toISOString().slice(0, 10);
   // Kundensicht: Mandats-Konten (abgeordneter) fuehren die Abrechnung. Konten
   // anderer Rollen erscheinen nur, wenn tatsaechlich customer-Daten gepflegt sind.

@@ -2378,7 +2378,10 @@ async function admFetchEndpoint(key, { force = false } = {}) {
     const url = `${base}${base.includes("?") ? "&" : "?"}${apiScopeQuery()}`;
     const res = await fetchWithTimeout(url, {}, spec.timeout || 15000);
     if (!res.ok) {
-      admErrors[key] = res.status === 401 ? "Anmeldung erforderlich" : res.status === 403 ? "Keine Berechtigung" : `HTTP ${res.status}`;
+      admErrors[key] = res.status === 401 ? "Anmeldung erforderlich"
+        : res.status === 403 ? "Keine Berechtigung"
+        : res.status >= 500 ? `Serverfehler (HTTP ${res.status})`
+        : `HTTP ${res.status}`;
       if (key === "recovery" && adminRecovery) adminRecoveryStale = true;
     } else {
       const j = await res.json().catch(() => null);
@@ -2393,8 +2396,13 @@ async function admFetchEndpoint(key, { force = false } = {}) {
         if (key === "recovery" && adminRecovery) adminRecoveryStale = true;
       }
     }
-  } catch (_) {
-    admErrors[key] = "Zeitüberschreitung oder Netzwerkfehler";
+  } catch (error) {
+    // Client-seitiger Timeout (fetchWithTimeout wirft mit dieser festen Vorsilbe,
+    // siehe dort) ist von einem ECHTEN Netzwerkfehler unterscheidbar (fetch() selbst
+    // schlaegt fehl/die Verbindung wird getrennt) — beide wurden bisher zur selben
+    // Meldung zusammengefasst, obwohl die Ursache unterschiedlich ist.
+    const isClientTimeout = /^Zeitüberschreitung beim Laden/.test(String((error && error.message) || ""));
+    admErrors[key] = isClientTimeout ? "Zeitüberschreitung" : "Temporär nicht erreichbar";
     if (key === "recovery" && adminRecovery) adminRecoveryStale = true;
   } finally {
     admLoading[key] = false;
@@ -3526,7 +3534,7 @@ function admSectionLoadingState(section) {
   const anyData = keys.some((k) => admData[k] !== undefined);
   const anyLoading = keys.some((k) => admLoading[k]);
   const allFailed = keys.length > 0 && keys.every((k) => admErrors[k] && admData[k] === undefined);
-  return { anyData, anyLoading, allFailed };
+  return { keys, anyData, anyLoading, allFailed };
 }
 
 function renderAdmSectionBody(section) {
@@ -3539,8 +3547,12 @@ function renderAdmSectionBody(section) {
     </div>`;
   }
   if (st.allFailed) {
+    // Nur die tatsaechlichen Gruende DIESES Bereichs zeigen — nicht irgendeinen
+    // (moeglicherweise laengst veralteten) Fehler eines ANDEREN, zuvor besuchten
+    // Bereichs. Mehrere unterschiedliche Gruende werden getrennt aufgefuehrt.
+    const reasons = [...new Set(st.keys.map((k) => admErrors[k]).filter(Boolean))];
     return `<section class="adm-card">
-      <p class="adm-note adm-note--warn">Dieser Bereich konnte nicht geladen werden. ${escapeHtml(Object.values(admErrors)[0] || "")}</p>
+      <p class="adm-note adm-note--warn">Dieser Bereich konnte nicht geladen werden. ${escapeHtml(reasons.join(" · "))}</p>
       <button class="secondary-button" type="button" data-reload-admin>Neu laden</button>
     </section>`;
   }
