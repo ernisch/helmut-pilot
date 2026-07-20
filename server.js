@@ -1316,14 +1316,15 @@ async function handleRequest(request, response) {
       if (!target) throw accounts.httpError(404, "Nutzer nicht gefunden.");
       const purpose = target.passwordHash ? "reset" : "invite";
       const issued = await accounts.createPasswordToken(target.id, purpose);
-      const linkUrl = passwordSetUrl(request, issued.token);
+      const mailUrl = passwordSetUrl(request, issued.token); // gemailter Link: kanonischer Host
       const mailContent = purpose === "reset"
-        ? inviteMail.buildResetMail({ name: target.name, resetUrl: linkUrl })
-        : inviteMail.buildInviteMail({ name: target.name, inviteUrl: linkUrl });
+        ? inviteMail.buildResetMail({ name: target.name, resetUrl: mailUrl })
+        : inviteMail.buildInviteMail({ name: target.name, inviteUrl: mailUrl });
       const mail = await inviteMail.sendAccessMail({ to: target.email, ...mailContent });
       const action = purpose === "reset" ? "admin.user.reset-link" : "admin.user.invite";
       await accounts.recordAudit({ action, userId: authUser.id, actorEmail: authUser.email, detail: target.email });
-      return { ok: true, purpose, inviteUrl: linkUrl, expiresAt: issued.expiresAt, mail };
+      // Admin-Kopier-Link: derselbe Host wie die Admin-Anfrage (Preview-tauglich).
+      return { ok: true, purpose, inviteUrl: adminCopyInviteUrl(request, issued.token), expiresAt: issued.expiresAt, mail };
     });
   }
 
@@ -2709,6 +2710,19 @@ function sendSetPasswordPage(response) {
         background: rgba(255, 255, 255, .06); color: #f5f1e8; outline: none;
       }
       input:focus { border-color: rgba(139, 92, 246, .56); box-shadow: 0 0 0 4px rgba(139, 92, 246, .16); }
+      /* Passwortfeld mit Anzeigen/Verbergen-Schalter */
+      .pw-field { position: relative; }
+      .pw-field input { padding-right: 56px; }
+      .pw-toggle {
+        position: absolute; top: 0; right: 0; margin: 0;
+        width: 52px; min-width: 44px; height: 52px; min-height: 44px;
+        display: grid; place-items: center; padding: 0;
+        background: transparent; border: 0; box-shadow: none; border-radius: 14px;
+        color: rgba(245, 241, 232, .62); cursor: pointer;
+      }
+      .pw-toggle:hover { color: #f5f1e8; background: transparent; }
+      .pw-toggle:focus-visible { outline: 2px solid rgba(139, 92, 246, .85); outline-offset: 2px; color: #f5f1e8; }
+      .pw-toggle svg { width: 20px; height: 20px; display: block; }
       button {
         margin-top: 20px; width: 100%; min-height: 48px; padding: 0 22px; font-size: 16px; font-weight: 500;
         color: #ffffff; background: linear-gradient(135deg, #102354, #1d3f8f);
@@ -2721,6 +2735,20 @@ function sendSetPasswordPage(response) {
       footer { margin-top: 32px; font-size: 13px; color: rgba(245, 241, 232, .5); }
       footer a { color: rgba(245, 241, 232, .5); text-decoration: underline; }
       [hidden] { display: none !important; }
+      /* Übergang während echter Kontoaktivierung/Sitzungsprüfung: dezent, ohne
+         rotierendes Ladesymbol, ohne Fortschrittsbalken, ohne technische Liste. */
+      #activatingView { padding: 8px 0 4px; }
+      .activating-mark { position: relative; display: grid; place-items: center; margin: 8px auto 22px; width: 96px; height: 96px; }
+      .activating-glow {
+        position: absolute; inset: -18px; border-radius: 50%; z-index: 0;
+        background: radial-gradient(circle at 50% 50%, rgba(140, 92, 255, .30), rgba(29, 63, 143, .10) 46%, transparent 70%);
+        animation: hoBreath 2.6s ease-in-out infinite;
+      }
+      .activating-mark span { position: relative; z-index: 1; font: 720 52px/1 Inter, sans-serif; letter-spacing: -.04em; color: #fbf7ef; text-shadow: 0 18px 60px rgba(140, 92, 255, .4); }
+      #activatingView h2 { font-size: 21px; font-weight: 600; margin: 0 0 4px; color: #f5f1e8; letter-spacing: -.01em; }
+      #activatingView p { color: rgba(245, 241, 232, .6); font-size: 15px; margin: 0 auto; }
+      @keyframes hoBreath { 0%, 100% { opacity: .5; transform: scale(.96); } 50% { opacity: 1; transform: scale(1.04); } }
+      @media (prefers-reduced-motion: reduce) { .activating-glow { animation: none; opacity: .78; } }
       @media (max-width: 480px) { main { border-radius: 20px; padding: 36px 24px; } }
     </style>
   </head>
@@ -2736,17 +2764,29 @@ function sendSetPasswordPage(response) {
         <p>Wähle ein Passwort für deinen Helmut-Zugang. Mindestens 8 Zeichen.</p>
         <form id="setForm">
           <label for="pw1">Neues Passwort</label>
-          <input id="pw1" type="password" minlength="8" required autocomplete="new-password" />
+          <div class="pw-field">
+            <input id="pw1" type="password" minlength="8" required autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false" />
+            <button type="button" class="pw-toggle" id="pw1Toggle" data-toggle-password="pw1" aria-label="Passwort anzeigen" aria-pressed="false"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+          </div>
           <label for="pw2">Passwort wiederholen</label>
-          <input id="pw2" type="password" minlength="8" required autocomplete="new-password" />
+          <div class="pw-field">
+            <input id="pw2" type="password" minlength="8" required autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false" />
+            <button type="button" class="pw-toggle" id="pw2Toggle" data-toggle-password="pw2" aria-label="Passwort anzeigen" aria-pressed="false"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+          </div>
           <button type="submit" id="setSubmit">Passwort setzen</button>
           <p class="error" id="formError" hidden></p>
         </form>
       </section>
 
-      <section id="doneView" hidden>
-        <p class="notice">Dein Passwort ist gesetzt — du bist jetzt angemeldet. Du wirst weitergeleitet …</p>
-        <p style="margin-top:14px"><a href="/">Weiter zu Helmut</a></p>
+      <section id="activatingView" hidden aria-live="polite">
+        <div class="activating-mark"><span class="activating-glow" aria-hidden="true"></span><span>H</span></div>
+        <h2>Helmut richtet dein Konto ein.</h2>
+        <p>Nur einen Moment.</p>
+      </section>
+
+      <section id="errorView" hidden>
+        <p class="notice">Das hat gerade nicht ganz geklappt. Deine Eingabe ist noch da — bitte versuch es einfach erneut.</p>
+        <button type="button" id="errorRetry">Erneut versuchen</button>
       </section>
 
       <section id="expiredView" hidden>
@@ -2763,11 +2803,44 @@ function sendSetPasswordPage(response) {
     </main>
     <script>
       (function () {
+        // Token EINMALIG aus der URL lesen und danach aus der sichtbaren Adresse
+        // entfernen (nur im Speicher halten). Nicht loggen, nirgends ausgeben.
         var token = new URLSearchParams(window.location.search).get("token") || "";
-        var views = ["loadingView", "formView", "doneView", "expiredView"];
-        function show(id) {
-          views.forEach(function (view) { document.getElementById(view).hidden = view !== id; });
+        if (token) {
+          try { window.history.replaceState(null, "", window.location.pathname); } catch (e) { /* kein History-API: Token bleibt in der URL, funktional unkritisch */ }
         }
+        var views = ["loadingView", "formView", "activatingView", "errorView", "expiredView"];
+        function show(id) {
+          views.forEach(function (view) { var el = document.getElementById(view); if (el) el.hidden = view !== id; });
+        }
+        // Sitzung erst NACH bestaetigter Gueltigkeit auf DEMSELBEN Ursprung
+        // freigeben. Mindestdauer ~700ms, damit der Uebergang nicht flackert.
+        function goToAppWhenReady(startedAt) {
+          fetch("/api/auth/session", { credentials: "same-origin", cache: "no-store" })
+            .then(function (res) { return res.ok ? res.json() : {}; })
+            .then(function (data) {
+              if (data && data.authenticated === true) {
+                var wait = Math.max(0, 700 - (Date.now() - startedAt));
+                window.setTimeout(function () {
+                  // Gleicher Ursprung, KEIN anderer Host/Alias/Produktionshost.
+                  // replace(), damit der Zurueck-Button die Token-Seite nicht erneut oeffnet.
+                  window.location.replace("/");
+                }, wait);
+              } else {
+                // Kein falscher Erfolg: ruhiger Fehlerzustand, erneut versuchen
+                // pruefen NUR die Sitzung (Passwort ist bereits gesetzt).
+                showRetryError(function () { show("activatingView"); goToAppWhenReady(Date.now()); });
+              }
+            })
+            .catch(function () {
+              showRetryError(function () { show("activatingView"); goToAppWhenReady(Date.now()); });
+            });
+        }
+        var retryHandler = null;
+        function showRetryError(onRetry) { retryHandler = onRetry; show("errorView"); }
+        var errorRetryBtn = document.getElementById("errorRetry");
+        if (errorRetryBtn) errorRetryBtn.addEventListener("click", function () { if (retryHandler) retryHandler(); });
+
         if (!token) {
           show("expiredView");
         } else {
@@ -2776,6 +2849,24 @@ function sendSetPasswordPage(response) {
             .then(function (data) { show(data && data.valid ? "formView" : "expiredView"); })
             .catch(function () { show("expiredView"); });
         }
+
+        // Anzeigen/Verbergen je Feld, unabhaengig; Wert und Cursorposition bleiben.
+        var EYE_OPEN = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+        var EYE_CLOSED = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+        Array.prototype.forEach.call(document.querySelectorAll(".pw-toggle"), function (btn) {
+          btn.addEventListener("click", function () {
+            var input = document.getElementById(btn.getAttribute("data-toggle-password"));
+            if (!input) return;
+            var reveal = input.type === "password";
+            var start = input.selectionStart, end = input.selectionEnd;
+            input.type = reveal ? "text" : "password";
+            btn.innerHTML = reveal ? EYE_CLOSED : EYE_OPEN;
+            btn.setAttribute("aria-pressed", reveal ? "true" : "false");
+            btn.setAttribute("aria-label", reveal ? "Passwort verbergen" : "Passwort anzeigen");
+            // Wert + Cursor erhalten (Fokus zurueck ins Feld, Auswahl wiederherstellen).
+            try { input.focus(); if (start !== null && end !== null) input.setSelectionRange(start, end); } catch (e) { /* manche Browser erlauben setSelectionRange nicht bei allen Typen */ }
+          });
+        });
 
         document.getElementById("setForm").addEventListener("submit", function (event) {
           event.preventDefault();
@@ -2787,30 +2878,35 @@ function sendSetPasswordPage(response) {
           if (pw1 !== pw2) { errorEl.textContent = "Die Passwörter stimmen nicht überein."; errorEl.hidden = false; return; }
           var button = document.getElementById("setSubmit");
           button.disabled = true;
+          // Hochwertiger Uebergang waehrend der ECHTEN Aktivierung/Sitzungspruefung.
+          var startedAt = Date.now();
+          show("activatingView");
           fetch("/api/auth/set-password", {
             method: "POST",
+            credentials: "same-origin",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ token: token, password: pw1 })
           }).then(function (res) {
             if (res.ok) {
-              show("doneView");
-              // Funktionaler Fix: automatisch weiterleiten statt nur einen
-              // manuellen Link zu zeigen — die Session-Cookie ist mit dieser
-              // Antwort bereits gesetzt, eine echte Top-Level-Navigation nimmt
-              // sie zuverlaessig mit (identisches Muster wie der normale
-              // Login-Screen, der nach Erfolg reload() ausloest).
-              window.setTimeout(function () { window.location.href = "/"; }, 600);
+              // Erst NACH bestaetigter Sitzung auf demselben Ursprung weiterleiten.
+              goToAppWhenReady(startedAt);
               return null;
             }
+            button.disabled = false;
             if (res.status === 410) { show("expiredView"); return null; }
+            // Kein Erfolg: zurueck zum Formular, EINGABE BLEIBT erhalten.
             return res.json().catch(function () { return {}; }).then(function (data) {
+              show("formView");
               errorEl.textContent = (data && data.error) || "Das hat nicht geklappt. Bitte versuch es erneut.";
               errorEl.hidden = false;
             });
           }).catch(function () {
+            // Technischer Fehler: Eingabe NICHT leeren, ruhig zurueck zum Formular.
+            button.disabled = false;
+            show("formView");
             errorEl.textContent = "Keine Verbindung. Bitte versuch es erneut.";
             errorEl.hidden = false;
-          }).then(function () { button.disabled = false; });
+          });
         });
 
         document.getElementById("renewForm").addEventListener("submit", function (event) {
@@ -4246,15 +4342,41 @@ function passwordSetUrl(request, token) {
   return `${publicBaseUrl(request)}/passwort-setzen?token=${encodeURIComponent(token)}`;
 }
 
+// Ursprung der KONKRETEN Anfrage (Protokoll + Host, den der aufrufende
+// Administrator gerade verwendet). NUR fuer den admin-seitigen Kopier-Link
+// gedacht, der in der API-Antwort an denselben eingeloggten Administrator
+// zurueckgeht — damit die Erprobung auf einem Preview-Deployment NICHT auf den
+// kanonischen Produktionshost abbiegt (nachgewiesene Ursache). SICHERHEIT: der
+// Host-Header ist spoofbar, aber dieser Link erreicht ausschliesslich den
+// anfragenden Admin selbst (kein fremdes Opfer). Der GEMAILTE Link und der
+// anonyme request-reset-Pfad bleiben unveraendert am kanonischen Host
+// (publicBaseUrl) — dort waere Host-Vertrauen ein Reset-Link-Poisoning-Risiko.
+function requestOriginBaseUrl(request) {
+  const host = String(request.headers.host || "").split(",")[0].trim();
+  if (!host) return "";
+  const xfProto = String(request.headers["x-forwarded-proto"] || "").split(",")[0].trim();
+  const httpsDeploy = Boolean(process.env.VERCEL || process.env.VERCEL_ENV || process.env.NODE_ENV === "production");
+  const proto = xfProto || (httpsDeploy ? "https" : "http");
+  return `${proto}://${host}`;
+}
+// Admin-seitiger Kopier-Link auf DEMSELBEN Host wie die Admin-Anfrage; faellt auf
+// den kanonischen Link zurueck, falls der Host nicht bestimmbar ist.
+function adminCopyInviteUrl(request, token) {
+  const base = requestOriginBaseUrl(request);
+  return base ? `${base}/passwort-setzen?token=${encodeURIComponent(token)}` : passwordSetUrl(request, token);
+}
+
 // Einladung erzeugen + Zustellung versuchen. Solange kein Mail-Dienst existiert
 // (Domain folgt), traegt die Antwort den Link fuer den Admin-Kopierweg (§6 Interim)
 // und einen ehrlichen mail.sent-Status — es wird NIE stillschweigend "gesendet".
+// Der GEMAILTE Link nutzt den kanonischen Host (stabile Domain); der an den Admin
+// ZURUECKGEGEBENE Kopier-Link nutzt den Host der Admin-Anfrage (Preview-tauglich).
 async function issueInvite(request, user) {
   const { token, expiresAt } = await accounts.createPasswordToken(user.id, "invite");
-  const inviteUrl = passwordSetUrl(request, token);
-  const mailContent = inviteMail.buildInviteMail({ name: user.name, inviteUrl });
+  const mailUrl = passwordSetUrl(request, token);
+  const mailContent = inviteMail.buildInviteMail({ name: user.name, inviteUrl: mailUrl });
   const mail = await inviteMail.sendAccessMail({ to: user.email, ...mailContent });
-  return { inviteUrl, expiresAt, mail };
+  return { inviteUrl: adminCopyInviteUrl(request, token), expiresAt, mail };
 }
 
 // POST /api/auth/set-password — { token, password }: Token pruefen (gueltig,

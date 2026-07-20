@@ -138,12 +138,22 @@ function loadPlaywright() {
       const m = clientSrc.match(/function renderNoMandateState\(\)[\s\S]*?\n}\n/);
       return Boolean(m) && !/fetch\(/.test(m[0]);
     })());
-  check("sendSetPasswordPage: automatischer Redirect nach Erfolg (window.location.href)",
-    /window\.location\.href = "\/";/.test(serverSrc));
   // Nur den Funktionskoerper von sendSetPasswordPage pruefen (Impressum/Datenschutz
   // bleiben bewusst im hellen Design — nicht Teil dieser Aufgabe, nicht anfassen).
   const setPasswordPageSrc = (serverSrc.match(/function sendSetPasswordPage\(response\)[\s\S]*?\n}\n/) || [""])[0];
   check("sendSetPasswordPage-Funktion gefunden", setPasswordPageSrc.length > 100);
+  check("sendSetPasswordPage: Redirect via location.replace('/') (gleicher Ursprung, back-safe)",
+    /location\.replace\("\/"\)/.test(setPasswordPageSrc) && !/window\.location\.href = "\/"/.test(setPasswordPageSrc));
+  check("sendSetPasswordPage: Sitzung wird auf demselben Ursprung geprueft, BEVOR weitergeleitet wird",
+    /\/api\/auth\/session/.test(setPasswordPageSrc) && /credentials: "same-origin"/.test(setPasswordPageSrc));
+  check("sendSetPasswordPage: hochwertiger Uebergang (kein <progress>-Balken, keine Spin-Animation)",
+    /Helmut richtet dein Konto ein\./.test(setPasswordPageSrc)
+    && !/<progress/i.test(setPasswordPageSrc)
+    && !/@keyframes\s+\w*spin/i.test(setPasswordPageSrc));
+  check("sendSetPasswordPage: Token wird nach dem Lesen aus der Adresse entfernt (history.replaceState)",
+    /history\.replaceState/.test(setPasswordPageSrc));
+  check("sendSetPasswordPage: beide Passwortfelder haben einen Anzeigen/Verbergen-Schalter",
+    (setPasswordPageSrc.match(/data-toggle-password="pw[12]"/g) || []).length === 2);
   check("sendSetPasswordPage: dunkles Design (color-scheme: dark), kein helles Alt-Design mehr",
     /color-scheme: dark/.test(setPasswordPageSrc) && !/color-scheme: light/.test(setPasswordPageSrc) && !/--paper: #f7f7f2/.test(setPasswordPageSrc));
   check("sendSetPasswordPage: dieselben Farb-Tokens wie der App-Hintergrund (#070b15/#050914/#03050b)",
@@ -296,10 +306,11 @@ function loadPlaywright() {
         await page.fill("#pw1", "testpasswort-123");
         await page.fill("#pw2", "testpasswort-123");
         await page.click("#setSubmit");
-        await page.waitForSelector("#doneView:not([hidden])", { timeout: 8000 });
-        check("Formular funktioniert auf Mobil (doneView erscheint)", true);
-        await page.waitForTimeout(2500);
-        check("6. Automatische Weiterleitung nach erfolgreichem Setzen (kein manueller Klick noetig)", redirectedToRoot);
+        await page.waitForSelector("#activatingView:not([hidden])", { timeout: 8000 });
+        check("Formular funktioniert auf Mobil (Uebergang 'Helmut richtet dein Konto ein' erscheint)",
+          (await page.textContent("#activatingView")).includes("Helmut richtet dein Konto ein"));
+        await page.waitForTimeout(3000);
+        check("6. Automatische Weiterleitung (location.replace('/')) erst nach Sitzungspruefung", redirectedToRoot);
         await page.close();
       }
 
