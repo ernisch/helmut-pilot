@@ -36,7 +36,15 @@ const fakeNode = () => ({ classList: { toggle: noop, add: noop, remove: noop, co
 const appNode = Object.assign(fakeNode(), { _html: "" });
 Object.defineProperty(appNode, "innerHTML", { get() { return this._html; }, set(v) { this._html = String(v); } });
 
-const storageStub = { getItem: () => null, setItem: noop, removeItem: noop, clear: noop };
+// Echt Map-hinterlegt (statt reinem No-op): so lässt sich verifizieren, welchen
+// Schlüssel persistView() tatsächlich schreibt (z. B. beim Abschluss-Übergang).
+const storageMap = new Map();
+const storageStub = {
+  getItem: (k) => (storageMap.has(k) ? storageMap.get(k) : null),
+  setItem: (k, v) => { storageMap.set(k, String(v)); },
+  removeItem: (k) => { storageMap.delete(k); },
+  clear: () => { storageMap.clear(); }
+};
 const sandbox = {
   console, Intl, Date, Math, JSON, Number, String, Boolean, Array, Object, RegExp, Set, Map, Promise,
   parseInt, parseFloat, isNaN, isFinite, encodeURIComponent, decodeURIComponent, URL, URLSearchParams,
@@ -77,6 +85,8 @@ codeVm += `\n;globalThis.__onb = {
   operational: (p) => isProfileOperational(p),
   firstMissing: (p) => onbFirstMissingStep(p),
   startFlowStep: () => { onboardingActive = false; startOnboardingFlow(); return onboardingStep; },
+  exitToApp: () => { onbExitToApp(); },
+  viewPersistKey: () => VIEW_PERSIST_KEY,
   parliament: () => onbParliament(),
   migrateChannels: (l) => onbMigrateChannels(l)
 };`;
@@ -331,6 +341,18 @@ onb.setProfile({ id: "mandat-test", fullName: "", onboardingStatus: "abgeschloss
 onb.setAuth({ authenticated: true }, { role: "abgeordneter", name: "Konto Name" });
 const doneFallback = onb.stepBody(12);
 check("S12: ohne bestätigten Profilnamen greift der Kontoname (Fallback)", doneFallback.includes("Willkommen, Konto."));
+
+// Zielbereich des Abschluss-Übergangs: onbExitToApp() muss GENAU den internen
+// Schlüssel "briefing" persistieren — das ist (per Bestandskommentar + Nav-
+// Aktiv-Logik in client.js, siehe isMobileNavActive) der interne Schlüssel des
+// sichtbar "Lage" beschrifteten Reiters. NICHT "lage" (dort nirgends als aktiver
+// Nav-Zustand verdrahtet) und NICHT "helmut" (das ist der Reiter "Briefing").
+storageMap.clear();
+onb.exitToApp();
+const persistedView = storageMap.get(onb.viewPersistKey());
+check("onbExitToApp: Zielbereich ist der interne Lage-Schlüssel 'briefing'", persistedView === "briefing", `persistiert='${persistedView}'`);
+check("onbExitToApp: Zielbereich ist NICHT 'helmut' (das ist der Reiter 'Briefing')", persistedView !== "helmut");
+check("onbExitToApp: Zielbereich ist NICHT 'lage' (kein verdrahteter Nav-Zustand)", persistedView !== "lage");
 
 console.log(`\n${fail === 0 ? "ALLE GRÜN" : fail + " FEHLGESCHLAGEN"} — ${pass}/${pass + fail} Onboarding-Flow-Assertions`);
 process.exit(fail > 0 ? 1 : 0);

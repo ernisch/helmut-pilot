@@ -241,6 +241,28 @@ function seedDraftAndGotoReview(fullName) {
       check("Kein anderer Bereich (Briefing/Radar/Büro/Profil) blitzt vor Lage auf", after.flash.length > 0 && after.flash[0].view === "briefing", JSON.stringify(after.flash));
       check("Keine unbehandelten JS-Fehler während des gesamten Abschlusses", perr.length === 0, perr.slice(0, 2).join(" | "));
 
+      // Die frisch gebootete normale App (nach dem echten Reload) tatsächlich
+      // rendern lassen und den REALEN Navigationszustand prüfen — nicht nur den
+      // persistierten Schlüssel. Grundlage ist isMobileNavActive() in client.js
+      // (setzt die "active"-Klasse); das sichtbare Label wird nur als
+      // Bestätigung mitgeprüft, nicht als alleinige Grundlage.
+      await page.waitForSelector("[data-view].active", { timeout: 15000 });
+      const navState = await page.evaluate(() => {
+        const activeEls = Array.from(document.querySelectorAll("[data-view].active"));
+        const helmutEls = Array.from(document.querySelectorAll('[data-view="helmut"]'));
+        return {
+          activeIds: activeEls.map((el) => el.getAttribute("data-view")),
+          activeLabels: activeEls.map((el) => el.textContent.trim()),
+          helmutAnyActive: helmutEls.some((el) => el.classList.contains("active"))
+        };
+      });
+      check("Lage (interner Schlüssel 'briefing') ist nach dem Abschluss der aktive Bereich",
+        navState.activeIds.length > 0 && navState.activeIds.every((id) => id === "briefing"), JSON.stringify(navState));
+      check("Sichtbares Label des aktiven Reiters lautet 'Lage' (Bestätigung, nicht alleinige Grundlage)",
+        navState.activeLabels.some((l) => /Lage/.test(l)), JSON.stringify(navState.activeLabels));
+      check("Briefing (interner Schlüssel 'helmut') ist NICHT der aktive Bereich",
+        navState.helmutAnyActive === false, JSON.stringify(navState));
+
       await ctx.close();
     }
 
@@ -265,16 +287,20 @@ function seedDraftAndGotoReview(fullName) {
         return route.continue();
       });
       navigatedToApp = false;
+      const urlBeforeFailure = page.url();
       await page.evaluate(() => onbComplete());
       await page.waitForTimeout(400);
       const failed = await page.evaluate(() => ({
         noFinal: !document.querySelector(".ho-final"),
         stillOnb: !!document.querySelector("#onbRoot"),
-        errorText: document.body.innerText
+        errorText: document.body.innerText,
+        persistedView: (() => { try { return localStorage.getItem("helmut:view"); } catch (_) { return null; } })()
       }));
       check("Fehlgeschlagenes Speichern: KEIN 'Dein Profil ist bereit.' / KEIN Willkommen-Screen", failed.noFinal);
       check("Fehlgeschlagenes Speichern: Nutzer bleibt im Onboarding (kein Redirect nach Lage)", failed.stillOnb && !navigatedToApp);
       check("Fehlgeschlagenes Speichern: ruhige, verständliche Fehlermeldung erscheint", /[Ff]ehlgeschlagen/.test(failed.errorText) && !/\bstack\b|TypeError|ReferenceError/i.test(failed.errorText));
+      check("Fehlgeschlagenes Speichern: navigiert nirgendwohin (URL unverändert, kein Zielbereich persistiert)",
+        page.url() === urlBeforeFailure && failed.persistedView === null, `url=${page.url()} persistedView=${failed.persistedView}`);
 
       // Wiederholung: Route aufheben, erneut versuchen — muss diesmal gelingen.
       await page.unroute(/\/api\/profile\/current/);
