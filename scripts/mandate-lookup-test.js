@@ -122,17 +122,66 @@ const politician = (id, label, party) => ({ id, label, first_name: label.split("
   check("Quelle down: status 'source_down'", down.status === "source_down", down.status);
   check("Quelle down: Profil null", down.profile === null);
 
-  // ── 4b) ROOT-CAUSE-FIX: 4xx (Query abgelehnt) ist KEIN technischer Ausfall ───
-  // Beide Query-Formen antworten 400 -> Quelle ist erreichbar, nur die Query passt
-  // nicht -> 'not_found' (ruhiger Hilfezustand), NICHT 'source_down'.
+  // ── 4b) VERBINDLICHE HTTP-Klassifikation ────────────────────────────────────
+  // GRUNDREGEL: KEIN Nicht-200 wird not_found. Ein 4xx/401/403/429/5xx/Netz
+  // beweist NICHT die Nichtexistenz der Person; jeder Status bleibt intern getrennt.
   installFetch([["/politicians?", { __status: 400 }]]);
-  const badQuery = await lookup.lookupMandate({ name: "Katrin Vogt" });
-  check("4xx auf Query: status 'not_found' (NICHT source_down)", badQuery.status === "not_found", badQuery.status);
+  const invalid400 = await lookup.lookupMandate({ name: "Katrin Vogt" });
+  check("400 auf Query: status 'invalid_request' (NICHT not_found)", invalid400.status === "invalid_request", invalid400.status);
+  check("400: KEIN Profil, sourceStatus 400 vermerkt (Telemetrie)", invalid400.profile === null && invalid400.sourceStatus === 400);
+
+  installFetch([["/politicians?", { __status: 422 }]]);
+  const invalid422 = await lookup.lookupMandate({ name: "Katrin Vogt" });
+  check("422 auf Query: status 'invalid_request'", invalid422.status === "invalid_request", invalid422.status);
+
+  installFetch([["/politicians?", { __status: 401 }]]);
+  const denied401 = await lookup.lookupMandate({ name: "Katrin Vogt" });
+  check("401 auf Query: status 'access_denied' (NICHT not_found)", denied401.status === "access_denied", denied401.status);
+
+  // 403 (Egress-Proxy/AW/Sicherheitsregel blockt) -> access_denied, NIE not_found.
+  installFetch([["/politicians?", { __status: 403 }]]);
+  const denied403 = await lookup.lookupMandate({ name: "Katrin Vogt" });
+  check("403 auf Query: status 'access_denied' (NICHT not_found)", denied403.status === "access_denied", denied403.status);
+  check("403: KEIN Profil (kein hohles 'found')", denied403.profile === null);
+
+  installFetch([["/politicians?", { __status: 429 }]]);
+  const limited = await lookup.lookupMandate({ name: "Katrin Vogt" });
+  check("429 auf Query: status 'rate_limited' (NICHT not_found/source_down)", limited.status === "rate_limited", limited.status);
 
   // ── 4c) 5xx = echter technischer Ausfall -> 'source_down' ───────────────────
   installFetch([["/politicians?", { __status: 503 }]]);
   const serverErr = await lookup.lookupMandate({ name: "Katrin Vogt" });
   check("5xx auf Query: status 'source_down' (technischer Ausfall)", serverErr.status === "source_down", serverErr.status);
+  installFetch([["/politicians?", { __status: 500 }]]);
+  const err500 = await lookup.lookupMandate({ name: "Katrin Vogt" });
+  check("500 auf Query: status 'source_down'", err500.status === "source_down", err500.status);
+
+  // ── 4c2) Timeout/Netzabbruch -> 'source_down' (kind 'network' in fetchJson) ──
+  installFetch([["/politicians?", "THROW"]]);
+  const timeout = await lookup.lookupMandate({ name: "Katrin Vogt" });
+  check("Timeout/Netzausfall: status 'source_down'", timeout.status === "source_down", timeout.status);
+
+  // ── 4c3) KEIN technischer Fehler wird als Nichtexistenz ausgegeben ──────────
+  // (Anforderung #8: ein technischer Fehler darf nicht als „Person existiert nicht"
+  // gespeichert werden — d. h. NIE not_found, NIE ein Profil.)
+  for (const st of [400, 401, 403, 429, 500, 503]) {
+    installFetch([["/politicians?", { __status: st }]]);
+    const r = await lookup.lookupMandate({ name: "Katrin Vogt" });
+    check(`HTTP ${st}: NICHT 'not_found' und KEIN Profil (keine Nichtexistenz gespeichert)`, r.status !== "not_found" && r.profile === null, `${r.status}`);
+  }
+  installFetch([["/politicians?", "THROW"]]);
+  const rThrow = await lookup.lookupMandate({ name: "Katrin Vogt" });
+  check("Timeout: NICHT 'not_found' und KEIN Profil", rThrow.status !== "not_found" && rThrow.profile === null, rThrow.status);
+
+  // ── 4c4) Klassifikator direkt (Einheitentest der verbindlichen Zuordnung) ───
+  check("classify: kind 'network' -> source_down", lookup.classifyLookupError({ kind: "network" }) === "source_down");
+  check("classify: 500 -> source_down", lookup.classifyLookupError({ status: 500 }) === "source_down");
+  check("classify: 429 -> rate_limited", lookup.classifyLookupError({ status: 429 }) === "rate_limited");
+  check("classify: 403 -> access_denied", lookup.classifyLookupError({ status: 403 }) === "access_denied");
+  check("classify: 401 -> access_denied", lookup.classifyLookupError({ status: 401 }) === "access_denied");
+  check("classify: 400 -> invalid_request", lookup.classifyLookupError({ status: 400 }) === "invalid_request");
+  check("classify: 422 -> invalid_request", lookup.classifyLookupError({ status: 422 }) === "invalid_request");
+  check("classify: alle Fehlstatus sind KEINE Nichtexistenz", !lookup.LOOKUP_FAILURE_STATUSES.includes("not_found") && lookup.LOOKUP_FAILURE_STATUSES.length === 4);
 
   // ── 4d) Erste Query-Form 4xx, zweite liefert Treffer -> found (Fallback greift) ─
   installFetch([
@@ -144,13 +193,20 @@ const politician = (id, label, party) => ({ id, label, first_name: label.split("
   const fallback = await lookup.lookupMandate({ name: "Robust Fallback" });
   check("Query-Fallback: 1. Form 4xx, 2. Form liefert -> 'found'", fallback.status === "found", fallback.status);
 
-  // ── 4e) 403 (Egress-Proxy/AW blockt) = 4xx -> 'not_found', NIE 'source_down' ─
-  // Der reale Auslöser der Fehlklassifikation: abgeordnetenwatch.de kann per
-  // Org-Policy mit 403 geblockt sein. Das ist ein Client-Status (erreichbar, aber
-  // abgelehnt) -> ruhiger Hilfezustand, KEIN technischer Ausfall.
+  // ── 4e) Beide Formen blockiert (403) -> access_denied (nicht 'found'/'not_found') ─
   installFetch([["/politicians?", { __status: 403 }]]);
-  const forbidden = await lookup.lookupMandate({ name: "Katrin Vogt" });
-  check("403 auf Query: status 'not_found' (NICHT source_down)", forbidden.status === "not_found", forbidden.status);
+  const bothBlocked = await lookup.lookupMandate({ name: "Katrin Vogt" });
+  check("Beide Query-Formen 403 -> 'access_denied'", bothBlocked.status === "access_denied", bothBlocked.status);
+
+  // ── 4e2) Gemischt: Form1 5xx, Form2 200-leer -> 'not_found' (eine 200 kam an) ─
+  // Kam MINDESTENS eine erfolgreiche 200-Antwort an, ist eine leere Trefferliste
+  // eine echte Nichtexistenz — der 5xx der anderen Form ändert daran nichts.
+  installFetch([
+    ["last_name[cn]", { __status: 500 }],
+    ["/politicians?", { data: [] }]
+  ]);
+  const mixed = await lookup.lookupMandate({ name: "Niemand Da" });
+  check("Gemischt: Form1 5xx + Form2 200-leer -> 'not_found' (echte Nichtexistenz)", mixed.status === "not_found", mixed.status);
 
   // ── 4f) Treffer, aber Kernmandat-Abruf 5xx -> 'source_down' (kein hohles 'found') ─
   // Root-Cause-Prinzip „nie einen Ausfall verstecken": schlägt der Mandat-Abruf

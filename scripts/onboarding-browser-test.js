@@ -216,6 +216,22 @@ function renderStepInPage(opts) {
       check("S3-Gate: nach nur-Ebene bleibt 'Weiter' gesperrt (Partei fehlt)", gate.hasEbeneSel && gate.afterEbene === true);
       check("S3-Gate: erst mit Name+Ebene+Partei wird 'Weiter' frei", gate.hasPartySel && gate.afterParty === false);
 
+      // ── 2c) Blockiert (403/access_denied): ruhiger Hilfezustand, KEINE
+      // technischen Begriffe, manuelle Ergänzung + erneute Suche (echte Render).
+      await page.evaluate(renderStepInPage, { step: 3, draft: { fullName: "Voll Name", party: "", faction: "", parliamentType: "" }, ui: { editMandate: true, lookup: { status: "access_denied", sourceStatus: 403, candidates: [], warnings: [] } } });
+      const blocked = await page.evaluate(() => {
+        const root = document.querySelector("#onbRoot");
+        const text = root ? root.textContent : "";
+        return {
+          calm: /Ich brauche kurz deine Hilfe\./.test(text) && /Einige Angaben konnte ich gerade nicht automatisch übernehmen\./.test(text),
+          noTech: !/Quelle|Netzwerk|Timeout|\bAPI\b|\bHTTP\b|Server|Proxy|Egress|blockiert|abgelehnt|403|429|\bFehler\b/i.test(text),
+          hasManual: !!document.querySelector('[data-onb-select="parliamentType"]') && !!document.querySelector('[data-onb-select="party"]'),
+          hasRetry: /Automatisch erneut suchen/.test(text)
+        };
+      });
+      check("S3 access_denied (403): ruhige Copy, keine technischen Begriffe", blocked.calm && blocked.noTech);
+      check("S3 access_denied (403): manuelle Ergänzung + erneute Suche verfügbar", blocked.hasManual && blocked.hasRetry);
+
       // ── 3) Review-Überschrift NICHT oben angeschnitten (S11) ────────────────
       await page.evaluate(renderStepInPage, { step: 11, draft: { fullName: "Katrin Vogt", party: "Die Linke", parliamentType: "Bundestag", constituency: "Salzgitter", state: "Niedersachsen", committees: ["Gesundheit"], focusTopics: ["Rente"] } });
       const head = await page.evaluate(() => {

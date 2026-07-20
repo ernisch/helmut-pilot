@@ -641,6 +641,10 @@ const ONB_CHANNELS_MORE = ["Podcast", "LinkedIn", "X"];
 // keine verschwundene Auswahl): Bürgersprechstunde→Bürgerdialog, Reden→Rede,
 // Interviews→Interview. Podcast bleibt erhalten (nur anders einsortiert).
 const ONB_CHANNEL_MIGRATE = { "Bürgersprechstunde": "Bürgerdialog", "Reden": "Rede", "Interviews": "Interview" };
+// Fehlstatus der Mandatssuche, die KEINE Nichtexistenz sind (Quelle blockiert/
+// abgelehnt/gedrosselt/technisch aus). Alle zeigen denselben ruhigen Hilfezustand
+// wie „kein Treffer", bieten aber zusätzlich die erneute automatische Suche an.
+const ONB_TECHNICAL_STATUSES = ["source_down", "access_denied", "rate_limited", "invalid_request"];
 function onbMigrateChannels(list) {
   return Array.from(new Set((Array.isArray(list) ? list : []).map((c) => ONB_CHANNEL_MIGRATE[c] || c).filter(Boolean)));
 }
@@ -1061,7 +1065,13 @@ function onbClearTimers() { (onboardingTimers || []).forEach((t) => clearTimeout
 function onbApplyLookup(result, isRetry) {
   onbClearTimers();
   const status = (result && result.status) || "source_down";
-  onboardingUi.lookup = { status, candidates: (result && result.candidates) || [], warnings: (result && result.warnings) || [] };
+  // Internen Status + HTTP-Code für Telemetrie/Debugging erhalten (getrennt halten).
+  onboardingUi.lookup = {
+    status,
+    sourceStatus: (result && result.sourceStatus) || 0,
+    candidates: (result && result.candidates) || [],
+    warnings: (result && result.warnings) || []
+  };
   if (status === "found" && result.profile) {
     onbMergeLookupProfile(result.profile);
     onboardingUi.editMandate = false;
@@ -1071,15 +1081,14 @@ function onbApplyLookup(result, isRetry) {
     onboardingUi.editMandate = false;
     return onbGoto(3); // Auswahlliste wird auf S3 gerendert
   }
-  if (status === "source_down") {
-    // Technischer Ausfall: EINMAL automatisch wiederholen (keine Nutzeraktion,
-    // bestehende Daten bleiben). Danach ruhig zur manuellen Ergänzung — ohne
-    // alarmierende Überschrift, ohne API/Timeout/Netz/Quelle-Begriffe.
-    if (!isRetry) return void onbStartScan(true);
-    onboardingUi.editMandate = true;
-    return onbGoto(3);
-  }
-  // not_found (echt kein Treffer) -> ruhiger Hilfezustand, nur fehlende Pflichtfelder.
+  // Nur ein TRANSIENTER Infrastruktur-Ausfall (source_down: Netz/5xx/Timeout) wird
+  // EINMAL automatisch wiederholt. 429/403/401/4xx werden NICHT sofort erneut
+  // angefragt (verschärfte Drosselung / dieselbe Ablehnung) — der Nutzer kann
+  // manuell wiederholen. Alle Fehlstatus landen im GLEICHEN ruhigen Hilfezustand.
+  if (status === "source_down" && !isRetry) return void onbStartScan(true);
+  // not_found + invalid_request/access_denied/rate_limited/source_down ->
+  // ruhiger Hilfezustand, nur fehlende Pflichtfelder. NIE als Nichtexistenz
+  // gespeichert: hier wird nichts persistiert, der Nutzer ergänzt manuell.
   onboardingUi.editMandate = true;
   return onbGoto(3);
 }
@@ -1363,17 +1372,22 @@ function onbStepConfirm() {
     };
   }
 
-  // Ruhiger Hilfezustand (kein Treffer) bzw. technischer Ausfall — beide OHNE
+  // Ruhiger Hilfezustand — für ALLE Fehlstatus gleich: kein Treffer (not_found)
+  // UND jeder technische/blockierte/abgelehnte/gedrosselte Fall
+  // (source_down · access_denied · rate_limited · invalid_request). IMMER OHNE
   // alarmierende Überschrift und ohne API/Timeout/Netz/Quelle-Begriffe. Bestehende
-  // Daten bleiben erhalten; es werden nur die tatsächlich fehlenden Pflichtfelder gezeigt.
-  const technical = lk.status === "source_down";
+  // Daten bleiben erhalten; es werden nur die tatsächlich fehlenden Pflichtfelder
+  // gezeigt; die manuelle Ergänzung ist sofort verfügbar. „technical" steuert nur,
+  // ob zusätzlich eine erneute automatische Suche angeboten wird (nicht bei
+  // not_found — derselbe Name liefert dasselbe leere Ergebnis).
+  const technical = ONB_TECHNICAL_STATUSES.includes(lk.status);
   const helpMode = technical || lk.status === "not_found" || lk.status === "manual" || (onboardingUi.editMandate && lk.status !== "found");
   if (helpMode) {
     return {
       body: `
         ${onbEyebrow("Erstkonfiguration", true)}
         <h2 class="ho-h2">Ich brauche kurz deine Hilfe.</h2>
-        <p class="ho-p">Ein paar Angaben konnte ich noch nicht eindeutig zuordnen. Ergänze sie bitte, damit ich dein Profil korrekt einrichten kann.</p>
+        <p class="ho-p">Einige Angaben konnte ich gerade nicht automatisch übernehmen. Ergänze sie bitte, damit ich dein Profil korrekt einrichten kann.</p>
         ${onbManualMandateFields()}
         ${technical ? `<div style="margin-top:16px">${onbSecondary("retry", "Automatisch erneut suchen")}</div>` : ""}`,
       action: onbPrimary("confirm", "Weiter", !onbConfirmMinReady())

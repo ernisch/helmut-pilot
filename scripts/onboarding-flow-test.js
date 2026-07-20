@@ -217,6 +217,23 @@ onb.setDraft(Object.assign(onb.draft(), { fullName: "Kein Treffer", party: "", f
 const none = onb.stepBody(3);
 check("S3 kein Treffer: ruhiger Hilfezustand ohne Retry-Zwang", none.includes("Ich brauche kurz deine Hilfe.") && !none.includes("Automatisch erneut suchen"));
 
+// Anforderung #7: In JEDEM Fehlstatus (technisch/blockiert/gedrosselt/abgelehnt)
+// bleibt der Nutzertext ruhig und OHNE technische Begriffe, die manuelle Ergänzung
+// ist sofort verfügbar, und eine erneute automatische Suche wird angeboten. Die
+// Zustände bleiben intern getrennt (unterschiedlicher lk.status, gleiche Copy).
+const FORBIDDEN_TECH = /\bQuelle\b|\bQuellen\b|nicht erreichbar|Netzwerk|Timeout|\bAPI\b|\bHTTP\b|Server|Proxy|Egress|Statuscode|blockiert|gedrosselt|abgelehnt|\bFehler\b|\b4\d\d\b|\b5\d\d\b/i;
+for (const st of ["source_down", "access_denied", "rate_limited", "invalid_request"]) {
+  onb.setUi({ scanPhase: 3, lookup: { status: st, candidates: [], warnings: [] }, saving: false, editMandate: true, error: "" });
+  onb.setDraft(Object.assign(onb.draft(), { fullName: "Voll Name", party: "", faction: "", parliamentType: "" }));
+  const body = onb.stepBody(3);
+  check(`S3 ${st}: exakt geforderte ruhige Copy`,
+    body.includes("Ich brauche kurz deine Hilfe.") && body.includes("Einige Angaben konnte ich gerade nicht automatisch übernehmen."));
+  check(`S3 ${st}: KEINE technischen/alarmierenden Begriffe im Nutzertext`, !FORBIDDEN_TECH.test(body), st);
+  check(`S3 ${st}: manuelle Ergänzung sofort verfügbar (Pflichtfeld-Auswahl)`,
+    body.includes('data-onb-select="parliamentType"') && body.includes('data-onb-select="party"'));
+  check(`S3 ${st}: erneute automatische Suche angeboten`, body.includes("Automatisch erneut suchen"));
+}
+
 // S3-Mandat-Gate (Review-Fix): „Weiter/Das bin ich" bleibt gesperrt, solange
 // Name/Ebene/Partei unvollständig sind — auch nachdem eine Auswahl den Button
 // per onbSyncDynamic aktualisiert (kein Durchrutschen mit leerer Partei).
