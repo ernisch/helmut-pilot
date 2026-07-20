@@ -150,18 +150,23 @@ const parse = (b) => { try { return JSON.parse(b); } catch { return {}; } };
     check("A1: readAuthStore liefert trotz einmaligem 503 ein Ergebnis (Retry greift)", storeAfterRetry && Array.isArray(storeAfterRetry.users));
 
     // -- A2: permanenter Fehler (4xx) wird NICHT retryt (kein Fehl-Retry auf dauerhaft abgelehnte Anfragen) --
-    // Ebenfalls isoliert VOR jeder HTTP-Aktivitaet. Zeitbasiert statt Zaehl-basiert
-    // geprueft: ein RETRYTER Fehlschlag wartet mind. den ersten Backoff (250ms) vor
-    // dem naechsten Versuch; ein NICHT retryter 4xx wirft nahezu sofort. (Reine
-    // Zaehlung waere hier irrefuehrend — ein endgueltig gescheiterter Read loest
-    // zusaetzlich recordPipelineError aus, das SELBST den Auth-Store anfasst.)
+    // Ebenfalls isoliert VOR jeder HTTP-Aktivitaet. Log-basiert statt zeit- oder
+    // zaehl-basiert geprueft (Review-Haertung): withStoreRetry loggt "[blob-retry]"
+    // NUR, wenn es tatsaechlich einen Backoff-Retry einplant (storage.js) — dieses
+    // Log ist ein deterministischer Beweis, unabhaengig von Timing-Jitter auf einem
+    // ausgelasteten CI-Runner. (Reine Zaehlung der Mock-Aufrufe waere irrefuehrend —
+    // ein endgueltig gescheiterter Read loest zusaetzlich recordPipelineError aus,
+    // das SELBST den Auth-Store anfasst.)
     mock.scriptedStatuses[authRowId] = [400];
     let threw = null;
-    const startedAt = Date.now();
-    try { await readAuthStore(); } catch (e) { threw = e; }
-    const elapsedMs = Date.now() - startedAt;
+    const originalWarn = console.warn;
+    const warnCalls = [];
+    console.warn = (...args) => { warnCalls.push(args.join(" ")); };
+    try {
+      try { await readAuthStore(); } catch (e) { threw = e; }
+    } finally { console.warn = originalWarn; }
     check("A2: 400 auf Auth-Store-Read wirft (kein stilles Leerobjekt) statt endlos zu retryen", Boolean(threw));
-    check("A2: 4xx wirft SOFORT (kein Backoff-Retry, elapsed < 200ms statt >= 250ms)", elapsedMs < 200, `elapsed=${elapsedMs}ms`);
+    check("A2: 4xx plant KEINEN Backoff-Retry (kein '[blob-retry]'-Log)", !warnCalls.some((w) => w.includes("[blob-retry]")), warnCalls.join(" | "));
     mock.scriptedStatuses[authRowId] = [];
 
     // -- A3: Admin anlegen + Test-Mandat (normale Auth-Store-Nutzung ueber HTTP) --
@@ -391,17 +396,24 @@ async function runBrowserTests() {
     } catch (_) {}
   };
 
-  const handler = require(path.join(root, "server.js"));
-  const accounts = require(path.join(root, "lib/helmut/accounts"));
-  await accounts.createUser({ email: "admin-browser@example.org", name: "Admin Browser", role: "admin", password: "sicher-genug-1" });
-
-  const server = http.createServer(handler);
-  await new Promise((r) => server.listen(0, "127.0.0.1", r));
-  const port = server.address().port;
-  const base = `http://127.0.0.1:${port}`;
-
-  const browser = await launchChromium(pw);
+  // WICHTIG: alles ab hier bis zum Ende (Nutzeranlage, Server, Browser) MUSS im
+  // try/finally liegen — sonst bleibt ein angelegter Testnutzer bei einem
+  // Fehlschlag (z. B. Chromium-Start) dauerhaft in .helmut-data/auth.json
+  // liegen und laesst spaetere Laeufe faelschlich mit 409 scheitern (gefunden
+  // beim Haerten dieses Tests: restore() lag vorher AUSSERHALB der Absicherung).
+  let server = null;
+  let browser = null;
   try {
+    const handler = require(path.join(root, "server.js"));
+    const accounts = require(path.join(root, "lib/helmut/accounts"));
+    await accounts.createUser({ email: "admin-browser@example.org", name: "Admin Browser", role: "admin", password: "sicher-genug-1" });
+
+    server = http.createServer(handler);
+    await new Promise((r) => server.listen(0, "127.0.0.1", r));
+    const port = server.address().port;
+    const base = `http://127.0.0.1:${port}`;
+
+    browser = await launchChromium(pw);
     const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 }, serviceWorkers: "block", bypassCSP: true });
     const page = await ctx.newPage();
     const pageErrors = [];
@@ -468,8 +480,10 @@ async function runBrowserTests() {
 
     await ctx.close();
   } finally {
-    await browser.close();
-    await new Promise((r) => server.close(r));
+    // Guards: server/browser koennten null sein, wenn schon accounts.createUser()
+    // oder launchChromium() (beide jetzt INNERHALB dieses try) geworfen hat.
+    if (browser) await browser.close().catch(() => {});
+    if (server) await new Promise((r) => server.close(r));
     restore();
   }
 }
