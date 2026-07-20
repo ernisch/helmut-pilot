@@ -23,7 +23,10 @@ function installFetch(routes) {
     const u = String(url);
     for (const [needle, payload] of routes) {
       if (u.includes(needle)) {
-        if (payload === "THROW") throw new Error("network-down");
+        if (payload === "THROW") throw new Error("network-down");                 // Netzausfall
+        if (payload && payload.__status) {                                        // HTTP-Fehlerstatus
+          return { ok: payload.__status < 400, status: payload.__status, json: async () => (payload.body || {}) };
+        }
         return { ok: true, status: 200, json: async () => payload };
       }
     }
@@ -89,6 +92,28 @@ const politician = (id, label, party) => ({ id, label, first_name: label.split("
   const down = await lookup.lookupMandate({ name: "Katrin Vogt" });
   check("Quelle down: status 'source_down'", down.status === "source_down", down.status);
   check("Quelle down: Profil null", down.profile === null);
+
+  // ── 4b) ROOT-CAUSE-FIX: 4xx (Query abgelehnt) ist KEIN technischer Ausfall ───
+  // Beide Query-Formen antworten 400 -> Quelle ist erreichbar, nur die Query passt
+  // nicht -> 'not_found' (ruhiger Hilfezustand), NICHT 'source_down'.
+  installFetch([["/politicians?", { __status: 400 }]]);
+  const badQuery = await lookup.lookupMandate({ name: "Katrin Vogt" });
+  check("4xx auf Query: status 'not_found' (NICHT source_down)", badQuery.status === "not_found", badQuery.status);
+
+  // ── 4c) 5xx = echter technischer Ausfall -> 'source_down' ───────────────────
+  installFetch([["/politicians?", { __status: 503 }]]);
+  const serverErr = await lookup.lookupMandate({ name: "Katrin Vogt" });
+  check("5xx auf Query: status 'source_down' (technischer Ausfall)", serverErr.status === "source_down", serverErr.status);
+
+  // ── 4d) Erste Query-Form 4xx, zweite liefert Treffer -> found (Fallback greift) ─
+  installFetch([
+    ["last_name[cn]", { __status: 400 }],
+    ["/politicians?", { data: [politician(51, "Robust Fallback", "SPD")] }],
+    ["/candidacies-mandates?", { data: [] }],
+    ["/committee-memberships?", { data: [] }]
+  ]);
+  const fallback = await lookup.lookupMandate({ name: "Robust Fallback" });
+  check("Query-Fallback: 1. Form 4xx, 2. Form liefert -> 'found'", fallback.status === "found", fallback.status);
 
   // ── 5) LANDTAG-VORBEHALT ────────────────────────────────────────────────────
   installFetch([

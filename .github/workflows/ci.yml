@@ -79,3 +79,12 @@ jobs:
         env:
           HELMUT_REQUIRE_BROWSER: "1"
         run: node scripts/browser-smoke-test.js
+      - name: Onboarding-Browser-Test (Erstkonfiguration: Scroll/Layout/reduced-motion)
+        # Prüft die vom Auftrag geforderten Layout-/Interaktions-Eigenschaften der
+        # Erstkonfiguration, die nur im echten Browser messbar sind (Scroll-
+        # Stabilität ohne Voll-Neurender, Header nicht angeschnitten, feste
+        # Aktionsleiste ohne Überdeckung, kein Querscrollen, reduced-motion).
+        # Gleiche Fail-closed-Regel wie oben.
+        env:
+          HELMUT_REQUIRE_BROWSER: "1"
+        run: node scripts/onboarding-browser-test.js

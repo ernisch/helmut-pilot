@@ -77,7 +77,8 @@ codeVm += `\n;globalThis.__onb = {
   operational: (p) => isProfileOperational(p),
   firstMissing: (p) => onbFirstMissingStep(p),
   startFlowStep: () => { onboardingActive = false; startOnboardingFlow(); return onboardingStep; },
-  parliament: () => onbParliament()
+  parliament: () => onbParliament(),
+  migrateChannels: (l) => onbMigrateChannels(l)
 };`;
 
 vm.createContext(sandbox);
@@ -137,7 +138,9 @@ check("operational: vollständiger Kern + 'neu' -> false", onb.operational(Objec
 check("operational: Altprofil (kein Status) + vollständiger Kern -> true", onb.operational(completeBt) === true);
 
 // ── 1d) Erster fehlender Pflichtschritt (gezielte Wiederaufnahme) ───────────
-check("firstMissing: kein Name -> S1 (Identität)", onb.firstMissing({ id: "m" }) === 1);
+// Auto-Erkennung: Name/Ebene/Partei führen zum Mandat-Screen (S3) — kein separater
+// Identitäts-Screen mehr, keine erneute Namenseingabe im Normalfall.
+check("firstMissing: kein Name -> S3 (Mandat, nicht mehr S1)", onb.firstMissing({ id: "m" }) === 3);
 check("firstMissing: Ebene/Partei fehlen -> S3 (Mandat)", onb.firstMissing({ id: "m", fullName: "Max Muster" }) === 3);
 check("firstMissing: Region fehlt -> S6", onb.firstMissing({ id: "m", fullName: "Max Muster", parliamentType: "Bundestag", party: "SPD" }) === 6);
 check("firstMissing: Datenschutz fehlt -> S10", onb.firstMissing({ id: "m", fullName: "Max Muster", parliamentType: "Bundestag", party: "SPD", constituency: "K1" }) === 10);
@@ -150,38 +153,71 @@ onb.setProfile({ id: "mandat-test", fullName: "Teil Profil", role: "MdB", parlia
 check("startFlow: Wiederaufnahme mit Lücke -> springt zum ersten fehlenden Schritt (S6)", onb.startFlowStep() === 6);
 onb.setAuth({ authenticated: true }, { role: "abgeordneter" });
 
-// ── 2) Vollbild-Container + Begrüßung/Identität ──────────────────────────────
+// ── 2) Vollbild-Container + personalisierte Begrüßung (Auto-Erkennung) ───────
+// Der Name kommt aus dem Konto (Admin-Anlage). S0 begrüßt persönlich; ein Tippen
+// startet AUTOMATISCH die Suche — kein Namensfeld, kein „Mein Mandat suchen".
+onb.setAuth({ authenticated: true }, { role: "abgeordneter", name: "Katrin Vogt" });
 onb.setProfile({ id: "x", onboardingStatus: "neu", fullName: "" });
 onb.seed();
 const welcome = onb.renderStep(0);
 check("Container: gescoptes .onboarding-handoff", welcome.includes("onboarding-handoff") && welcome.includes('id="onbRoot"'));
-check("S0 Begruessung: Hallo + Ich-Form", welcome.includes(">Hallo.<") && welcome.includes("Ich bin Helmut"));
-const identity = onb.renderStep(1);
-check("S1 Identitaet: Wie heisst du + leeres Namensfeld", identity.includes("Wie heißt du?") && identity.includes('data-onb-input="fullName"'));
-check("S1: Du-Ansprache (Sag mir deinen Namen)", identity.includes("Sag mir deinen Namen"));
+check("S0 personalisiert: 'Hallo, Katrin.' + Ich-Form + Mandat-Zusage",
+  welcome.includes(">Hallo, Katrin.<") && welcome.includes("Ich bin Helmut") && welcome.includes("richte mich jetzt auf dein Mandat ein"));
+check("S0 Auto-Suche: ganzflächig tippbar (data-onb-tap) + dezenter Puls-Hinweis",
+  welcome.includes("data-onb-tap") && welcome.includes("Zum Starten tippen") && welcome.includes("ho-pulse"));
+check("S0 KEINE Namenseingabe / KEIN 'Mein Mandat suchen'-Button",
+  !welcome.includes('data-onb-input="fullName"') && !/Mein Mandat suchen/.test(welcome));
+// Ohne Konto-Name (Sonderfall): neutrale Begrüßung, kein leerer/kaputter Name.
+onb.setAuth({ authenticated: true }, { role: "abgeordneter" });
+onb.setProfile({ id: "x", onboardingStatus: "neu", fullName: "" });
+onb.seed();
+check("S0 ohne Konto-Name: neutrale Begrüßung 'Hallo.'", onb.renderStep(0).includes(">Hallo.<"));
+// S1 (manuelle Namenseingabe) und S2 (Scan) sind KEINE Navigationsziele mehr.
+check("S1/S2 aus der Navigation entfernt (onbStepVisible=false)", onb.stepVisible(1) === false && onb.stepVisible(2) === false);
+onb.setAuth({ authenticated: true }, { role: "abgeordneter" });
 
 // ── 3) Scan (Lade-Zustand) ───────────────────────────────────────────────────
 onb.setUi({ scanPhase: 2, lookup: { status: "loading", candidates: [], warnings: [] }, saving: false, editMandate: false, error: "" });
 const scan = onb.stepBody(2);
 check("S2 Erkennung: Spinner + Quell-Checkliste (Abgeordnetenwatch)", scan.includes("ho-scan") && scan.includes("Abgeordnetenwatch") && scan.includes("Ausschuss-Zuordnung"));
 
-// ── 4) Bestätigen: gefunden / mehrdeutig / Quelle down / Landtag ─────────────
+// ── 4) Bestätigen: gefunden / mehrdeutig / techn. Ausfall / kein Treffer / Landtag ─
+// Hochwertige Bestätigungskarte („Ich habe dein Mandat gefunden.") mit erkannten
+// Stammdaten als Zeilen + klaren Aktionen „Das bin ich" / „Etwas stimmt nicht".
 onb.setUi({ scanPhase: 3, lookup: { status: "found", candidates: [], warnings: [] }, saving: false, editMandate: false, error: "" });
-onb.setDraft(Object.assign(onb.draft(), { fullName: "Beispiel Person", party: "SPD", parliamentType: "Bundestag", constituency: "Musterkreis", committees: ["Gesundheit"] }));
+onb.setDraft(Object.assign(onb.draft(), { fullName: "Beispiel Person", party: "SPD", faction: "SPD", parliamentType: "Bundestag", constituency: "Musterkreis", committees: ["Gesundheit"] }));
 const confirm = onb.stepBody(3);
-check("S3 gefunden: Bist du das + Quellenhinweis", confirm.includes("Bist du das?") && confirm.includes("Abgeordnetenwatch"));
-check("S3 gefunden: Ja-das-bin-ich + Etwas-stimmt-nicht", confirm.includes("Ja, das bin ich") && confirm.includes("Etwas stimmt nicht"));
+check("S3 gefunden: Bestätigungskarte ('Ich habe dein Mandat gefunden.') + Quellenhinweis",
+  confirm.includes("Ich habe dein Mandat gefunden.") && confirm.includes("Abgeordnetenwatch"));
+check("S3 gefunden: Name + Mandatszeile + Kartenzeilen",
+  confirm.includes("Beispiel Person") && confirm.includes("Mitglied des Deutschen Bundestages") && confirm.includes("ho-card-line"));
+check("S3 gefunden: Aktionen 'Das bin ich' + 'Etwas stimmt nicht'",
+  confirm.includes("Das bin ich") && confirm.includes("Etwas stimmt nicht") && !/Mein Mandat suchen/.test(confirm));
 
 onb.setUi({ scanPhase: 3, lookup: { status: "ambiguous", candidates: [{ id: "1", name: "A Person", party: "SPD" }, { id: "2", name: "B Person", party: "CDU/CSU" }], warnings: [] }, saving: false, editMandate: false, error: "" });
 const ambiguous = onb.stepBody(3);
-check("S3 mehrdeutig: Auswahlliste (Welche/r bist du?)", ambiguous.includes("Welche/r bist du?") && ambiguous.includes('data-onb-pick="1"'));
+check("S3 mehrdeutig: Auswahlliste (Welche/r bist du?), kein stilles Raten", ambiguous.includes("Welche/r bist du?") && ambiguous.includes('data-onb-pick="1"'));
 
-onb.setUi({ scanPhase: 3, lookup: { status: "source_down", candidates: [], warnings: [] }, saving: false, editMandate: false, error: "" });
+// Technischer Ausfall (source_down) -> RUHIGER Hilfezustand: keine alarmierende
+// Überschrift, KEINE API/Timeout/Netzwerk/Quelle-Begriffe, nur fehlende
+// Pflichtfelder + automatischer Wiederholungsversuch.
+onb.setUi({ scanPhase: 3, lookup: { status: "source_down", candidates: [], warnings: [] }, saving: false, editMandate: true, error: "" });
+onb.setDraft(Object.assign(onb.draft(), { fullName: "Voll Name", party: "", faction: "", parliamentType: "" }));
 const down = onb.stepBody(3);
-check("S3 Quelle down: Retry + manueller Pfad", down.includes("nicht erreichbar") && down.includes("Erneut versuchen"));
+check("S3 techn. Ausfall: ruhiger Hilfezustand ('Ich brauche kurz deine Hilfe.')", down.includes("Ich brauche kurz deine Hilfe."));
+check("S3 techn. Ausfall: KEINE technischen/alarmierenden Begriffe",
+  !/nicht erreichbar|Netzwerk|Timeout|\bAPI\b|Quellen?\s+(sind|nicht|nicht erreichbar)|Fehler|Server/i.test(down));
+check("S3 techn. Ausfall: automatischer Wiederholungsversuch angeboten", down.includes("Automatisch erneut suchen"));
+check("S3 techn. Ausfall: nur fehlende Pflichtfelder (Ebene + Partei), kein Namensfeld nötig",
+  down.includes('data-onb-select="parliamentType"') && down.includes('data-onb-select="party"') && !down.includes('data-onb-input="fullName"'));
+
+// Kein Treffer (echt) -> derselbe ruhige Hilfezustand (nicht als Ausfall getarnt).
+onb.setUi({ scanPhase: 3, lookup: { status: "not_found", candidates: [], warnings: [] }, saving: false, editMandate: true, error: "" });
+const none = onb.stepBody(3);
+check("S3 kein Treffer: ruhiger Hilfezustand ohne Retry-Zwang", none.includes("Ich brauche kurz deine Hilfe.") && !none.includes("Automatisch erneut suchen"));
 
 onb.setUi({ scanPhase: 3, lookup: { status: "found", candidates: [], warnings: ["landtag-quellen-im-aufbau"] }, saving: false, editMandate: false, error: "" });
-onb.setDraft(Object.assign(onb.draft(), { parliamentType: "Landtag", state: "Niedersachsen" }));
+onb.setDraft(Object.assign(onb.draft(), { fullName: "Lea Berg", party: "CDU/CSU", faction: "CDU/CSU", parliamentType: "Landtag", state: "Niedersachsen" }));
 const landtag = onb.stepBody(3);
 check("S3 Landtag: transparenter Vorbehalt (Quellen im Aufbau)", /Landtag erkannt/.test(landtag) && /baue ich gerade aus|im Aufbau/.test(landtag));
 
@@ -234,6 +270,27 @@ onb.setDraft({ fullName: "Land Tag", party: "CDU/CSU", parliamentType: "Landtag"
 check("Pflichtkern: Landtag ohne Bundesland NICHT ready", onb.corePct().ready === false && onb.corePct().missing.includes("Bundesland"));
 onb.setDraft({ fullName: "Land Tag", party: "CDU/CSU", parliamentType: "Landtag", constituency: "K2", focusTopics: ["Bildung"], state: "Bayern" });
 check("Pflichtkern: Landtag MIT Bundesland ready", onb.corePct().ready === true);
+
+// ── 9) Kommunikationskanäle: Katalog + verlustfreie Migration ───────────────
+// Primär: Pressemitteilung, Social Media, Newsletter, Rede, Interview, Bürgerdialog.
+// Podcast lebt in „Weitere Kanäle"; alte Labels wandern verlustfrei (keine
+// verschwundene Auswahl): Bürgersprechstunde→Bürgerdialog, Reden→Rede, Interviews→Interview.
+check("Kanäle: Bürgersprechstunde -> Bürgerdialog", onb.migrateChannels(["Bürgersprechstunde"]).includes("Bürgerdialog") && !onb.migrateChannels(["Bürgersprechstunde"]).includes("Bürgersprechstunde"));
+check("Kanäle: Reden->Rede, Interviews->Interview", JSON.stringify(onb.migrateChannels(["Reden", "Interviews"])) === JSON.stringify(["Rede", "Interview"]));
+check("Kanäle: Podcast bleibt erhalten (nur anders einsortiert)", onb.migrateChannels(["Podcast"]).includes("Podcast"));
+check("Kanäle: Migration ist idempotent + dedupliziert", JSON.stringify(onb.migrateChannels(["Bürgerdialog", "Bürgersprechstunde"])) === JSON.stringify(["Bürgerdialog"]));
+const comm = onb.stepBody(8);
+check("S8 Kanäle: primärer Katalog gerendert (Pressemitteilung … Bürgerdialog)",
+  comm.includes("Pressemitteilung") && comm.includes("Bürgerdialog") && !comm.includes("Bürgersprechstunde"));
+check("S8 Kanäle: Podcast unter 'Weitere Kanäle'", comm.includes("Weitere Kanäle") && comm.includes("Podcast"));
+
+// ── 10) Abschluss-Screen (S12) erscheint NUR nach erfolgreichem Speichern ────
+// (onbComplete bleibt bei Speicherfehler auf S11; hier prüfen wir die Copy des
+// Willkommen-Screens, den onbComplete NUR nach erfolgreichem PATCH ansteuert.)
+onb.setDraft(Object.assign(onb.draft(), { fullName: "Katrin Vogt" }));
+const done = onb.stepBody(12);
+check("S12 Willkommen: 'Willkommen, Katrin.' + 'Ab jetzt bin ich an deiner Seite.' + Los geht's",
+  done.includes("Willkommen, Katrin.") && done.includes("Ab jetzt bin ich an deiner Seite") && done.includes("Los geht"));
 
 console.log(`\n${fail === 0 ? "ALLE GRÜN" : fail + " FEHLGESCHLAGEN"} — ${pass}/${pass + fail} Onboarding-Flow-Assertions`);
 process.exit(fail > 0 ? 1 : 0);

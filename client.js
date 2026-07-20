@@ -631,9 +631,19 @@ const ONB_MINISTRIES = [
   "BMUV — Umwelt", "BMDV — Digitales & Verkehr", "BMEL — Ernährung & Landwirtschaft",
   "BMWSB — Wohnen & Bau", "BMVg — Verteidigung", "AA — Auswärtiges", "BMZ — Entwicklung"
 ];
-const ONB_CHANNELS = [
-  "Pressemitteilung", "Social Media", "Newsletter", "Reden", "Bürgersprechstunde", "Interviews", "Podcast"
+// Primäre Kanäle (Standard). Bürgersprechstunde → Bürgerdialog. Podcast bleibt
+// speicherbar, wandert aber in „Weitere Kanäle" (kein primärer Standardkanal).
+const ONB_CHANNELS_PRIMARY = [
+  "Pressemitteilung", "Social Media", "Newsletter", "Rede", "Interview", "Bürgerdialog"
 ];
+const ONB_CHANNELS_MORE = ["Podcast", "LinkedIn", "X"];
+// Migration alter gespeicherter Kanal-Labels auf die neuen (keine Datenverluste,
+// keine verschwundene Auswahl): Bürgersprechstunde→Bürgerdialog, Reden→Rede,
+// Interviews→Interview. Podcast bleibt erhalten (nur anders einsortiert).
+const ONB_CHANNEL_MIGRATE = { "Bürgersprechstunde": "Bürgerdialog", "Reden": "Rede", "Interviews": "Interview" };
+function onbMigrateChannels(list) {
+  return Array.from(new Set((Array.isArray(list) ? list : []).map((c) => ONB_CHANNEL_MIGRATE[c] || c).filter(Boolean)));
+}
 const ONB_SENSITIVE = ["Migration", "Nahost", "Innere Sicherheit", "Energiepreise", "Klimaschutz"];
 const ONB_BUNDESLAENDER = [
   "Baden-Württemberg", "Bayern", "Berlin", "Brandenburg", "Bremen", "Hamburg", "Hessen",
@@ -746,9 +756,10 @@ function isProfileOperational(p) {
 }
 // Erster fehlender PFLICHT-Schritt (fuer gezielte Wiederaufnahme, nicht Neustart bei S1).
 function onbFirstMissingStep(p) {
-  if (!onbHasFullName(p)) return 1;                                            // Identität
   const ebene = onbLevelOf(p);
-  if (!ebene || (!onbHasStr(p.party) && !onbHasStr(p.faction))) return 3;      // Mandat (Ebene/Partei)
+  // Name/Ebene/Partei -> Mandat-Screen (S3): dort bestätigen oder von Hand ergänzen
+  // (kein separater Identitäts-Screen mehr, keine erneute Namenseingabe im Normalfall).
+  if (!onbHasFullName(p) || !ebene || (!onbHasStr(p.party) && !onbHasStr(p.faction))) return 3;
   if (!onbHasRegion(p) || (ebene === "Landtag" && !onbHasStr(p.state))) return 6; // Region/Bundesland
   if (!onbHasStr(p.privacyConfirmedAt)) return 10;                             // Datenschutz
   return 11;                                                                   // nur noch bestätigen
@@ -765,11 +776,25 @@ function shouldRunOnboarding() {
   return !isProfileOperational(profile);
 }
 
+// Vom Admin gespeicherter Konto-Name (Vor- + Nachname) — Grundlage der
+// automatischen Erkennung; der Nutzer muss seinen Namen nicht erneut eingeben.
+function onbAccountName() {
+  return (typeof currentUser !== "undefined" && currentUser && currentUser.name) ? String(currentUser.name).trim() : "";
+}
+function onbFirstNameOf(source) {
+  const n = String(source || "").trim();
+  return n.split(/\s+/).filter(Boolean)[0] || "";
+}
+
 function onbSeedDraftFromProfile() {
   const p = profile || {};
   const arr = (v) => (Array.isArray(v) ? v.filter(Boolean) : []);
+  // Frisches Mandat (noch keine politischen Kernangaben) -> den vom Admin
+  // gespeicherten Konto-Namen verwenden; sonst den bereits bestätigten Profilnamen.
+  const fresh = !onbHasStr(p.party) && !onbHasStr(p.faction) && !onbHasStr(p.parliamentType) && !onbHasStr(p.constituency) && !onbHasStr(p.state);
+  const seededName = (fresh && onbAccountName()) ? onbAccountName() : (onbHasStr(p.fullName) ? p.fullName : onbAccountName());
   onboardingDraft = {
-    fullName: p.fullName || "",
+    fullName: seededName || "",
     party: p.party || "",
     faction: p.faction || "",
     parliamentType: p.parliamentType || "",
@@ -790,7 +815,7 @@ function onbSeedDraftFromProfile() {
     communicationStyle: p.communicationStyle || "Nahbar & klar",
     communicationDirectness: p.communicationDirectness || "Ausgewogen",
     communicationLength: p.communicationLength || "Mittel",
-    preferredChannels: arr(p.preferredChannels),
+    preferredChannels: onbMigrateChannels(p.preferredChannels), // Bürgersprechstunde→Bürgerdialog, Podcast bleibt erhalten
     noGoTopics: arr(p.noGoTopics),
     briefTime: "07:00", briefDepth: "standard", maxPrio: 5,
     instant: ["crisis", "deadlines"]
@@ -835,13 +860,10 @@ function onbParliament() {
   return "";
 }
 function onbStepVisible(step) {
-  // Alle Screens sind für den Standardfall (Abgeordneter) relevant. Die adaptive
-  // Steuerung erfolgt heute über die Ebene (Landtag: Bundesland Pflicht +
-  // transparenter Quellenvorbehalt auf S3). Kontotyp-spezifische Sonderscreens
-  // (Ministerium/Fraktion/Verband) sind im Design NICHT ausgearbeitet — daher
-  // werden hier bewusst KEINE Pflicht-/Mandatsscreens ausgeblendet: sonst wäre
-  // der Pflichtkern (Partei·Ebene·Region·Ausschuss|Thema) nicht erfüllbar und der
-  // Ablauf liefe in eine Sackgasse (kein Abschluss möglich).
+  // Automatische Erkennung: S1 (manuelle Namenseingabe) und S2 (Scan) sind KEINE
+  // Navigationsziele mehr — der Name kommt aus dem Konto, gescannt wird automatisch.
+  // Alle übrigen Screens bleiben (Pflichtkern muss erfüllbar sein, keine Sackgasse).
+  if (step === 1 || step === 2) return false;
   return true;
 }
 function onbNextVisible(from, dir) {
@@ -864,31 +886,76 @@ function onbNext() {
 }
 function onbBack() {
   onbCaptureInputs();
-  // Von „Mandat bestätigen" (3) zurück auf Identität (1), von Identität auf Begrüßung.
-  if (onboardingStep === 3) return onbGoto(1);
-  if (onboardingStep === 1) return onbGoto(0);
+  // Von „Mandat bestätigen" (3) zurück auf die Begrüßung (S0); dort kann per Tippen
+  // erneut automatisch gesucht werden. Sonst ein sichtbarer Schritt zurück.
+  if (onboardingStep === 3) return onbGoto(0);
   onbGoto(onbNextVisible(onboardingStep, -1));
 }
 
-// --- Auswahl-Helfer ---------------------------------------------------------
-function onbToggle(field, value) {
+// --- Auswahl-Helfer (IN-PLACE, ohne Voll-Neurender) --------------------------
+// Auswahl aktualisiert NUR den Zustand + das geklickte Element. KEIN
+// innerHTML-Rebuild -> Scrollposition bleibt stabil, kein Flackern, kein Sprung
+// nach oben, kein window.scrollTo. Der on/off-Look kommt komplett aus CSS
+// (.is-on), daher genügt das Umschalten der Klasse am geklickten Element.
+function onbToggle(field, value, el) {
   const set = new Set(Array.isArray(onboardingDraft[field]) ? onboardingDraft[field] : []);
-  set.has(value) ? set.delete(value) : set.add(value);
+  let now;
+  if (set.has(value)) { set.delete(value); now = false; } else { set.add(value); now = true; }
   onboardingDraft[field] = [...set];
-  renderOnboardingFlow();
+  if (el) el.classList.toggle("is-on", now); else renderOnboardingFlow();
+  onbSyncDynamic();
 }
-function onbSetOne(field, value) {
+function onbSetOne(field, value, el) {
   onboardingDraft[field] = value;
-  renderOnboardingFlow();
+  if (el) {
+    const group = el.closest(".ho-seg");
+    if (group) group.querySelectorAll(".ho-seg-btn").forEach((b) => b.classList.toggle("is-on", b === el));
+    else el.classList.add("is-on");
+  } else {
+    renderOnboardingFlow();
+  }
+  onbSyncDynamic();
 }
-function onbAddCustom(field, inputId) {
-  const el = document.getElementById(inputId);
-  const raw = el ? String(el.value || "").trim() : "";
+function onbAddCustom(field, inputId, addBtn) {
+  const input = document.getElementById(inputId);
+  const raw = input ? String(input.value || "").trim() : "";
   if (!raw) return;
   const set = new Set(Array.isArray(onboardingDraft[field]) ? onboardingDraft[field] : []);
+  if (input) input.value = "";
+  if (set.has(raw)) return;
   set.add(raw);
   onboardingDraft[field] = [...set];
-  renderOnboardingFlow();
+  // Neuen, bereits aktiven Chip in-place an die Chip-Gruppe anhängen (kein Rebuild).
+  const inline = addBtn && addBtn.closest ? addBtn.closest(".ho-input-inline") : null;
+  const chips = inline && inline.previousElementSibling && inline.previousElementSibling.classList
+    && inline.previousElementSibling.classList.contains("ho-chips") ? inline.previousElementSibling : null;
+  if (chips) {
+    chips.insertAdjacentHTML("beforeend", onbChip(field, raw));
+    onbBindToggle(chips.lastElementChild);
+  } else {
+    renderOnboardingFlow();
+  }
+  onbSyncDynamic();
+}
+// Bindet EIN Auswahl-Element (Chip/Row/TopicRow/Instant) für In-Place-Toggle.
+function onbBindToggle(el) {
+  if (!el) return;
+  el.addEventListener("click", () => onbToggle(el.getAttribute("data-onb-toggle"), el.getAttribute("data-onb-value"), el));
+}
+// Aktualisiert schrittabhängige, von der Auswahl abhängige UI (Weiter-/Bestätigen-
+// Button) in-place — ohne Neurender, damit die Scrollposition erhalten bleibt.
+function onbSyncDynamic() {
+  const root = document.querySelector("#onbRoot");
+  if (!root) return;
+  const d = onboardingDraft;
+  const primary = root.querySelector(".ho-actionbar .ho-btn");
+  if (!primary) return;
+  let disabled = false;
+  if (onboardingStep === 5) disabled = !(d.focusTopics && d.focusTopics.length) && !(d.committees && d.committees.length);
+  else if (onboardingStep === 10) disabled = !d.consent;
+  else if (onboardingStep === 11) disabled = !onbCorePct().ready || onboardingUi.saving;
+  primary.disabled = disabled;
+  primary.classList.toggle("is-disabled", disabled);
 }
 function onbCaptureInputs() {
   const root = document.querySelector("#onbRoot");
@@ -953,23 +1020,24 @@ function onbPrimary(action, label, disabled) {
 }
 function onbSecondary(action, label) { return `<button type="button" class="ho-btn-secondary" data-onb-${action}>${escapeHtml(label)}</button>`; }
 
-// --- Mandat-Lookup (S2) -----------------------------------------------------
-async function onbStartScan() {
+// --- Automatische Mandatserkennung (S2) -------------------------------------
+// Sucht mit dem im Konto gespeicherten Namen — der Nutzer gibt nichts erneut ein.
+async function onbStartScan(isRetry) {
   onbCaptureInputs();
-  const name = String(onboardingDraft.fullName || "").trim();
+  const name = String(onboardingDraft.fullName || onbAccountName() || "").trim();
   if (!name) {
-    // Direkt neu zeichnen (nicht über onbGoto, das onboardingUi.error zurücksetzt),
-    // damit die Hinweis-Meldung auf dem Identitäts-Screen sichtbar bleibt.
-    onboardingStep = 1;
-    onboardingUi.error = "Bitte gib zuerst deinen Namen ein.";
-    return renderOnboardingFlow();
+    // Kein Name im Konto (Sonderfall) -> ruhig zum manuellen Mandat-Screen,
+    // KEIN separater Identitäts-Screen, KEINE technische Fehlermeldung.
+    onboardingUi.lookup = { status: "manual", candidates: [], warnings: [] };
+    onboardingUi.editMandate = true;
+    return onbGoto(3);
   }
   onboardingStep = 2;
   onboardingUi.scanPhase = 0;
   onboardingUi.lookup = { status: "loading", candidates: [], warnings: [] };
   renderOnboardingFlow();
-  // Gestaffelte Häkchen (Stammdaten -> Abgeordnetenwatch -> Ausschuss), unabhängig
-  // vom echten Netz-Timing; der echte Lookup läuft parallel.
+  // Gestaffelte Häkchen (Stammdaten -> Abgeordnetenwatch -> Ausschuss); der echte
+  // Lookup läuft parallel. Bei einem Auto-Retry ohne erneute Nutzeraktion.
   onbClearTimers();
   onboardingTimers.push(setTimeout(() => { onboardingUi.scanPhase = 1; onbRepaintScan(); }, 700));
   onboardingTimers.push(setTimeout(() => { onboardingUi.scanPhase = 2; onbRepaintScan(); }, 1500));
@@ -979,18 +1047,18 @@ async function onbStartScan() {
     const level = onbParliament();
     const res = await fetchWithTimeout(`/api/mandate/lookup?name=${encodeURIComponent(name)}${level ? `&level=${encodeURIComponent(level)}` : ""}`, {}, 12000);
     if (res.ok) result = await res.json();
+    else result = { status: "source_down" }; // Fehler der EIGENEN API -> technischer Ausfall
   } catch (error) {
-    result = { status: "source_down", warnings: [] };
+    result = { status: "source_down" }; // Netz/Timeout -> technischer Ausfall
   }
-  // Mindest-Scan-Dauer, damit die Animation nicht abrupt springt.
-  const minDelay = new Promise((r) => onboardingTimers.push(setTimeout(r, 2600)));
+  const minDelay = new Promise((r) => onboardingTimers.push(setTimeout(r, isRetry ? 900 : 2600)));
   await minDelay;
-  onbApplyLookup(result || { status: "source_down", warnings: [] });
+  onbApplyLookup(result || { status: "source_down" }, isRetry);
 }
 function onbRepaintScan() { if (onboardingActive && onboardingStep === 2) renderOnboardingFlow(); }
 function onbClearTimers() { (onboardingTimers || []).forEach((t) => clearTimeout(t)); onboardingTimers = []; }
 
-function onbApplyLookup(result) {
+function onbApplyLookup(result, isRetry) {
   onbClearTimers();
   const status = (result && result.status) || "source_down";
   onboardingUi.lookup = { status, candidates: (result && result.candidates) || [], warnings: (result && result.warnings) || [] };
@@ -1003,7 +1071,15 @@ function onbApplyLookup(result) {
     onboardingUi.editMandate = false;
     return onbGoto(3); // Auswahlliste wird auf S3 gerendert
   }
-  // not_found / source_down -> manueller Pfad auf S3 (Korrekturmodus offen).
+  if (status === "source_down") {
+    // Technischer Ausfall: EINMAL automatisch wiederholen (keine Nutzeraktion,
+    // bestehende Daten bleiben). Danach ruhig zur manuellen Ergänzung — ohne
+    // alarmierende Überschrift, ohne API/Timeout/Netz/Quelle-Begriffe.
+    if (!isRetry) return void onbStartScan(true);
+    onboardingUi.editMandate = true;
+    return onbGoto(3);
+  }
+  // not_found (echt kein Treffer) -> ruhiger Hilfezustand, nur fehlende Pflichtfelder.
   onboardingUi.editMandate = true;
   return onbGoto(3);
 }
@@ -1230,14 +1306,15 @@ function onbRenderStep(step) {
   }
 }
 
-// S0 — Begrüßung (ganzflächig tippbar)
+// S0 — Begrüßung (persönlich, ganzflächig tippbar; dezenter pulsierender Schein)
 function onbStepWelcome() {
+  const first = onbFirstNameOf(onboardingDraft.fullName || onbAccountName());
   return { full: `
     <div class="ho-center is-tap ho-anim" data-onb-tap>
       <div class="ho-mark is-lg"><span>H</span></div>
-      <h2 class="ho-h2">Hallo.</h2>
-      <p class="ho-lead" style="max-width:28ch;margin-top:12px">Ich bin Helmut, dein politischer Stabschef.</p>
-      <span class="ho-tap-hint">Tippen zum Beginnen ${ONB_SVG_ARROW}</span>
+      <h2 class="ho-h2" style="text-wrap:balance">Hallo${first ? ", " + escapeHtml(first) : ""}.</h2>
+      <p class="ho-lead" style="max-width:30ch;margin-top:12px">Ich bin Helmut.<br>Ich richte mich jetzt auf dein Mandat ein.</p>
+      <span class="ho-tap-hint ho-pulse">Zum Starten tippen ${ONB_SVG_ARROW}</span>
     </div>` };
 }
 
@@ -1274,87 +1351,105 @@ function onbStepScan() {
     </div>` };
 }
 
-// S3 — Mandat bestätigen (+ Auswahlliste bei Mehrdeutigkeit, + Korrekturmodus)
+// S3 — Mandat bestätigen: gefunden / Auswahl / ruhiger Hilfezustand / techn. Ausfall
 function onbStepConfirm() {
   const lk = onboardingUi.lookup || { status: "idle" };
   const d = onboardingDraft;
-  // Fehlerpfad „Quelle down": Retry + manueller Pfad.
-  if (lk.status === "source_down") {
-    return {
-      body: `
-        ${onbEyebrow("Erkennung")}
-        <h2 class="ho-h2">Die Quellen sind gerade nicht erreichbar.</h2>
-        <p class="ho-p">Kein Problem — du kannst es erneut versuchen oder dein Mandat von Hand eintragen. Ändern kannst du später alles.</p>
-        <div class="ho-error">
-          ${onbSecondary("retry", "Erneut versuchen")}
-          ${onbConfirmEditFields()}
-        </div>`,
-      action: onbPrimary("confirm", "Übernehmen & weiter", !onbConfirmMinReady())
-    };
-  }
-  // Fehlerpfad „mehrdeutig": Auswahlliste.
+
+  // Mehrdeutig -> übersichtliche Auswahl (keine Person wird stillschweigend geraten).
   if (lk.status === "ambiguous" && (lk.candidates || []).length) {
     return {
       body: `
         ${onbEyebrow("Mehrere Treffer", true)}
         <h2 class="ho-h2">Welche/r bist du?</h2>
-        <p class="ho-p">Ich habe mehrere Personen mit diesem Namen gefunden. Wähl dich aus — oder trag dein Mandat von Hand ein.</p>
+        <p class="ho-p">Ich habe mehrere Personen mit diesem Namen gefunden. Wähl dich aus — danach prüfst du nur noch.</p>
         <div class="ho-rows" style="margin-top:18px">
           ${lk.candidates.map((c) => `<button type="button" class="ho-row" data-onb-pick="${escapeAttribute(c.id)}">
             <span class="ho-row-main"><span class="ho-row-title">${escapeHtml(c.name)}</span><span class="ho-row-sub">${escapeHtml([c.party, c.hint].filter(Boolean).join(" · "))}</span></span>
             <span style="color:var(--muted)">${ONB_SVG_ARROW}</span></button>`).join("")}
         </div>
-        <div style="margin-top:18px">${onbSecondary("manual", "Keine/r davon — von Hand eintragen")}</div>`
+        <div style="margin-top:18px">${onbSecondary("manual", "Keine/r davon — selbst ergänzen")}</div>`
     };
   }
-  // Gefunden / manuell.
-  const found = lk.status === "found";
+
+  // Ruhiger Hilfezustand (kein Treffer) bzw. technischer Ausfall — beide OHNE
+  // alarmierende Überschrift und ohne API/Timeout/Netz/Quelle-Begriffe. Bestehende
+  // Daten bleiben erhalten; es werden nur die tatsächlich fehlenden Pflichtfelder gezeigt.
+  const technical = lk.status === "source_down";
+  const helpMode = technical || lk.status === "not_found" || lk.status === "manual" || (onboardingUi.editMandate && lk.status !== "found");
+  if (helpMode) {
+    return {
+      body: `
+        ${onbEyebrow("Erstkonfiguration", true)}
+        <h2 class="ho-h2">Ich brauche kurz deine Hilfe.</h2>
+        <p class="ho-p">Ein paar Angaben konnte ich noch nicht eindeutig zuordnen. Ergänze sie bitte, damit ich dein Profil korrekt einrichten kann.</p>
+        ${onbManualMandateFields()}
+        ${technical ? `<div style="margin-top:16px">${onbSecondary("retry", "Automatisch erneut suchen")}</div>` : ""}`,
+      action: onbPrimary("confirm", "Weiter", !onbConfirmMinReady())
+    };
+  }
+
+  // Erfolgreiche Erkennung -> hochwertige Bestätigungskarte.
   const level = onbParliament();
-  const mandateLine = (level === "Landtag" ? "Mitglied des Landtags" : (level === "Bundestag" ? "Mitglied des Bundestages" : "Mandat")) + (d.party ? " · " + d.party : "");
-  const ebeneLine = level ? (level + (level === "Bundestag" ? " · 21. WP" : (d.state ? " · " + d.state : ""))) : "—";
-  const wahlkreisLine = [d.constituency, d.state].filter(Boolean).join(" · ") || "—";
-  const ausLine = (d.committees || []).length ? d.committees.map((c) => onbShortCommittee(c)).join(" · ") : "—";
+  const mandateLine = level === "Landtag"
+    ? ("Mitglied des Landtags" + (d.state ? " " + d.state : ""))
+    : "Mitglied des Deutschen Bundestages";
+  const party = d.party || d.faction || "";
+  const wahlkreis = [d.constituency, d.state].filter(Boolean).join(", ");
+  const committees = (d.committees || []).map((c) => "Ausschuss für " + onbShortCommittee(c));
   const landtagNote = level === "Landtag"
     ? `<div class="ho-note is-warn" style="margin-top:14px"><span class="ho-fact-icon" style="color:var(--watch)">${ONB_SVG_SHIELD}</span><span class="ho-note-text">Landtag erkannt. Die regionalen Quellen für Landtage baue ich gerade aus — Stammdaten stimmen, laufende Meldungen folgen.</span></div>`
     : "";
+  const line = (t) => t ? `<div class="ho-card-line">${escapeHtml(t)}</div>` : "";
   return {
     body: `
-      ${onbEyebrow(found ? "Gefunden" : "Von Hand", found)}
-      <h2 class="ho-h2">${found ? "Bist du das?" : "Trag dein Mandat ein"}</h2>
-      <p class="ho-p">${found
-        ? "Ich habe dein Mandat in öffentlichen Quellen gefunden. Prüf kurz, ob alles stimmt — ändern kannst du jederzeit alles."
-        : "Ich habe nichts Eindeutiges gefunden. Trag die Kernangaben ein — den Rest ergänzen wir gleich."}</p>
+      ${onbEyebrow("Gefunden", true)}
+      <h2 class="ho-h2">Ich habe dein Mandat gefunden.</h2>
       <div class="ho-card" style="margin-top:20px">
         <div class="ho-card-accentline"></div>
-        <div class="ho-card-head">
+        <div class="ho-card-head" style="padding-bottom:18px">
           <div class="ho-card-name">${escapeHtml(d.fullName || "—")}</div>
-          <div class="ho-card-meta">${escapeHtml(mandateLine)}</div>
-        </div>
-        <div class="ho-kv-list">
-          <div class="ho-kv"><span class="ho-kv-k">Ebene</span><span class="ho-kv-v">${escapeHtml(ebeneLine)}</span></div>
-          <div class="ho-kv"><span class="ho-kv-k">Wahlkreis</span><span class="ho-kv-v">${escapeHtml(wahlkreisLine)}</span></div>
-          <div class="ho-kv"><span class="ho-kv-k">Ausschüsse</span><span class="ho-kv-v">${escapeHtml(ausLine)}</span></div>
+          <div class="ho-card-lines" style="margin-top:8px">
+            ${line(mandateLine)}
+            ${line(party)}
+            ${wahlkreis ? line("Wahlkreis " + wahlkreis) : ""}
+            ${committees.map(line).join("")}
+          </div>
         </div>
       </div>
-      ${found ? `<div class="ho-source">${ONB_SVG_SHIELD}<span>Quelle: Bundestag-Opendata &amp; Abgeordnetenwatch. Öffentlich zugänglich, von dir bestätigt.</span></div>` : ""}
+      <div class="ho-source">${ONB_SVG_SHIELD}<span>Aus öffentlichen Quellen (Abgeordnetenwatch, Bundestag-Opendata) erkannt und von dir bestätigt.</span></div>
       ${landtagNote}
       ${onboardingUi.editMandate ? onbConfirmEditFields() : ""}`,
     action: onboardingUi.editMandate
       ? onbPrimary("confirm", "Übernehmen & weiter", !onbConfirmMinReady())
-      : `${found ? onbPrimary("confirm", "Ja, das bin ich", !onbConfirmMinReady()) : onbPrimary("confirm", "Weiter", !onbConfirmMinReady())}${onbSecondary("edit", "Etwas stimmt nicht")}`
+      : `${onbPrimary("confirm", "Das bin ich", !onbConfirmMinReady())}${onbSecondary("edit", "Etwas stimmt nicht")}`
   };
 }
-function onbShortCommittee(c) { return String(c || "").split(",")[0].split(" und ")[0].trim(); }
+function onbShortCommittee(c) { return String(c || "").replace(/^Ausschuss für\s+/i, "").split(",")[0].trim(); }
 function onbConfirmMinReady() {
-  return String(onboardingDraft.fullName || "").trim().length > 1
-    && (onboardingDraft.party || onboardingDraft.faction) && onbParliament();
+  return String(onboardingDraft.fullName || "").trim().split(/\s+/).filter(Boolean).length >= 2
+    && (onboardingDraft.party || onboardingDraft.faction) && !!onbParliament();
+}
+// Nur die tatsächlich fehlenden Mandat-Pflichtfelder (Name/Ebene/Partei). Region
+// und Ausschüsse folgen in den nächsten Schritten.
+function onbManualMandateFields() {
+  const d = onboardingDraft;
+  const nameOk = String(d.fullName || "").trim().split(/\s+/).filter(Boolean).length >= 2;
+  const ebeneOk = !!onbParliament();
+  const partyOk = onbHasStr(d.party) || onbHasStr(d.faction);
+  const rows = [];
+  if (!nameOk) rows.push(`<div><div class="ho-label">Vor- und Nachname</div><input class="ho-input" style="font-size:16px" type="text" value="${escapeAttribute(d.fullName || "")}" placeholder="Vor- und Nachname" data-onb-input="fullName" autocomplete="name" /></div>`);
+  if (!ebeneOk) rows.push(`<div><div class="ho-label">Ebene</div>${onbSelect("parliamentType", ["Bundestag", "Landtag"], onbParliament())}</div>`);
+  if (!partyOk) rows.push(`<div><div class="ho-label">Partei / Fraktion</div>${onbSelect("party", ONB_PARTIES, d.party)}</div>`);
+  if (!rows.length) return `<p class="ho-hint" style="margin-top:16px">Alles Nötige liegt vor — tipp auf „Weiter".</p>`;
+  return `<div style="margin-top:20px;display:flex;flex-direction:column;gap:14px">${rows.join("")}</div>`;
 }
 function onbConfirmEditFields() {
   const d = onboardingDraft;
   return `
     <div style="margin-top:18px;padding-top:18px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:14px">
       ${onbEyebrow("Korrigieren", true)}
-      <div><div class="ho-label">Name</div><input class="ho-input" style="font-size:16px" type="text" value="${escapeAttribute(d.fullName || "")}" placeholder="Dein Name" data-onb-input="fullName" /></div>
+      <div><div class="ho-label">Vor- und Nachname</div><input class="ho-input" style="font-size:16px" type="text" value="${escapeAttribute(d.fullName || "")}" placeholder="Vor- und Nachname" data-onb-input="fullName" /></div>
       <div><div class="ho-label">Ebene</div>${onbSelect("parliamentType", ["Bundestag", "Landtag"], onbParliament())}</div>
       <div><div class="ho-label">Partei / Fraktion</div>${onbSelect("party", ONB_PARTIES, d.party)}</div>
       <p class="ho-hint">Wahlkreis und Ausschüsse passt du gleich in den nächsten Schritten an.</p>
@@ -1446,7 +1541,8 @@ function onbStepCommunication() {
       ${onbLabel("Ton")}${onbSegment("communicationStyle", ONB_TONES)}
       <div style="margin-top:22px">${onbLabel("Direktheit")}${onbSegment("communicationDirectness", ONB_DIRECTNESS)}</div>
       <div style="margin-top:22px">${onbLabel("Bevorzugte Textlänge")}${onbSegment("communicationLength", ONB_LENGTHS)}</div>
-      <div style="margin-top:24px">${onbLabel("Kanäle")}${onbChips("preferredChannels", ONB_CHANNELS)}</div>
+      <div style="margin-top:24px">${onbLabel("Kanäle")}${onbChips("preferredChannels", ONB_CHANNELS_PRIMARY)}
+        <div style="margin-top:14px">${onbLabel("Weitere Kanäle")}${onbChips("preferredChannels", ONB_CHANNELS_MORE)}</div></div>
       <div style="margin-top:24px">${onbLabel("Heikle Themen — hier vorsichtig")}
         <p class="ho-hint" style="margin:-6px 0 13px">Bei diesen formuliere ich zurückhaltend und weise dich extra darauf hin.</p>
         ${onbChips("noGoTopics", ONB_SENSITIVE)}
@@ -1529,15 +1625,17 @@ function onbStepReview() {
   };
 }
 
-// S12 — Abschluss
+// S12 — Abschluss (erscheint NUR nach nachweislich erfolgreichem Speichern; siehe
+// onbComplete). Ruhiger, persönlicher Willkommen-Screen -> „Los geht's" öffnet die App.
 function onbStepDone() {
+  const first = onbFirstNameOf(onboardingDraft.fullName || (profile && profile.fullName) || onbAccountName());
   return { full: `
     <div class="ho-done ho-anim">
       <div class="ho-mark is-sm"><span>H</span></div>
       <div style="margin-top:30px">${onbEyebrow("Einsatzbereit", true)}</div>
-      <h2 class="ho-h1" style="margin-top:16px">Dein Profil ist vollständig.</h2>
-      <p class="ho-lead">Ich kenne jetzt dein Mandat, deine Zuständigkeiten und deine Prioritäten. Ab jetzt filtere ich jeden Tag für dich, was wirklich zählt.</p>
-      <div style="margin-top:38px">${onbPrimary("tobriefing", "Zu meinem ersten Briefing")}</div>
+      <h2 class="ho-h1" style="margin-top:16px;text-wrap:balance">Willkommen${first ? ", " + escapeHtml(first) : ""}.</h2>
+      <p class="ho-lead">Ich bin Helmut. Ab jetzt bin ich an deiner Seite.</p>
+      <div style="margin-top:38px">${onbPrimary("toapp", "Los geht's")}</div>
     </div>` };
 }
 
@@ -1572,36 +1670,39 @@ function onbBindFlow() {
   if (!root) return;
   const on = (sel, ev, fn) => root.querySelectorAll(sel).forEach((el) => el.addEventListener(ev, fn));
 
-  on("[data-onb-tap]", "click", () => onbGoto(1));
+  // S0 tippen -> AUTOMATISCH suchen (Name aus dem Konto), keine Namenseingabe.
+  on("[data-onb-tap]", "click", () => onbStartScan());
   on("[data-onb-back]", "click", onbBack);
-  on("[data-onb-scan]", "click", () => onbStartScan());
   on("[data-onb-next]", "click", onbNext);
   on("[data-onb-confirm]", "click", () => { onbCaptureInputs(); onbPersistStep(); onbGoto(onbNextVisible(3, 1)); });
   on("[data-onb-edit]", "click", () => { onboardingUi.editMandate = true; renderOnboardingFlow(); });
   on("[data-onb-manual]", "click", () => { onboardingUi.lookup = { status: "not_found" }; onboardingUi.editMandate = true; renderOnboardingFlow(); });
-  on("[data-onb-retry]", "click", () => onbStartScan());
+  on("[data-onb-retry]", "click", () => onbStartScan()); // automatischer Wiederholungsversuch
   on("[data-onb-privacygo]", "click", () => { if (onboardingDraft.consent) { onbPersistStep(); onbGoto(11); } });
-  on("[data-onb-consent]", "click", () => { onboardingDraft.consent = !onboardingDraft.consent; renderOnboardingFlow(); });
   on("[data-onb-finish]", "click", () => { if (onbCorePct().ready && !onboardingUi.saving) onbComplete(); });
-  on("[data-onb-tobriefing]", "click", () => onbGoto(13));
   on("[data-onb-toapp]", "click", onbExitToApp);
   on("[data-onb-goto]", "click", (e) => { onbCaptureInputs(); onbGoto(Number(e.currentTarget.getAttribute("data-onb-goto"))); });
   on("[data-onb-pick]", "click", (e) => onbPickCandidate(e.currentTarget.getAttribute("data-onb-pick")));
 
-  on("[data-onb-toggle]", "click", (e) => onbToggle(e.currentTarget.getAttribute("data-onb-toggle"), e.currentTarget.getAttribute("data-onb-value")));
-  on("[data-onb-seg]", "click", (e) => onbSetOne(e.currentTarget.getAttribute("data-onb-seg"), e.currentTarget.getAttribute("data-onb-value")));
-  on("[data-onb-select]", "change", (e) => onbSetOne(e.currentTarget.getAttribute("data-onb-select"), e.currentTarget.value));
-  on("[data-onb-add]", "click", (e) => onbAddCustom(e.currentTarget.getAttribute("data-onb-add"), e.currentTarget.getAttribute("data-onb-addinput")));
+  // Consent-Schalter IN-PLACE (kein Re-Render): nur die Spur umschalten + Button syncen.
+  on("[data-onb-consent]", "click", (e) => {
+    onboardingDraft.consent = !onboardingDraft.consent;
+    const track = e.currentTarget.querySelector(".ho-toggle-track");
+    if (track) track.classList.toggle("is-on", onboardingDraft.consent);
+    onbSyncDynamic();
+  });
+
+  // Auswahl IN-PLACE (Element mitgeben -> kein Voll-Neurender, Scroll bleibt stabil).
+  root.querySelectorAll("[data-onb-toggle]").forEach((el) => onbBindToggle(el));
+  on("[data-onb-seg]", "click", (e) => onbSetOne(e.currentTarget.getAttribute("data-onb-seg"), e.currentTarget.getAttribute("data-onb-value"), e.currentTarget));
+  on("[data-onb-select]", "change", (e) => { onboardingDraft[e.currentTarget.getAttribute("data-onb-select")] = e.currentTarget.value; onbSyncDynamic(); });
+  on("[data-onb-add]", "click", (e) => onbAddCustom(e.currentTarget.getAttribute("data-onb-add"), e.currentTarget.getAttribute("data-onb-addinput"), e.currentTarget));
 
   // Text-Eingaben: Draft live aktualisieren OHNE Re-Render (Fokus halten).
   on("[data-onb-input]", "input", (e) => { onboardingDraft[e.currentTarget.getAttribute("data-onb-input")] = e.currentTarget.value; });
-  on("[data-onb-enter]", "keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); if (e.currentTarget.getAttribute("data-onb-enter") === "scan") onbStartScan(); } });
   root.querySelectorAll("[data-onb-addfield]").forEach((el) => el.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") { e.preventDefault(); onbAddCustom(el.getAttribute("data-onb-addfield"), el.id); }
+    if (e.key === "Enter") { e.preventDefault(); const btn = el.parentElement && el.parentElement.querySelector("[data-onb-add]"); onbAddCustom(el.getAttribute("data-onb-addfield"), el.id, btn); }
   }));
-
-  // Autofokus auf das Namensfeld (S1).
-  if (onboardingStep === 1) { const nf = root.querySelector('[data-onb-input="fullName"]'); if (nf) setTimeout(() => nf.focus(), 60); }
 }
 
 function loadCachedStartPayload() {
