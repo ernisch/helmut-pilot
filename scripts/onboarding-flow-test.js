@@ -89,8 +89,8 @@ onb.setAuth({ authenticated: true }, { role: "abgeordneter" });
 onb.setPid("mandat-test");
 onb.setPreview(false);
 
-// Vollständiger Bundestags-Kern (ohne optionale Felder).
-const completeBt = { id: "mandat-test", fullName: "Katrin Vogt", role: "MdB", parliamentType: "Bundestag", party: "Die Linke", constituency: "Salzgitter", state: "Niedersachsen" };
+// Vollständiger Bundestags-Kern (ohne optionale Felder), inkl. Datenschutz.
+const completeBt = { id: "mandat-test", fullName: "Katrin Vogt", role: "MdB", parliamentType: "Bundestag", party: "Die Linke", constituency: "Salzgitter", state: "Niedersachsen", privacyConfirmedAt: "2026-07-19T00:00:00Z" };
 
 // ── 1) Gate = !isProfileOperational (Einsatzbereitschaft) ───────────────────
 onb.setProfile({ id: "x", onboardingStatus: "neu" });
@@ -103,6 +103,8 @@ onb.setProfile(Object.assign({}, completeBt, { onboardingStatus: "abgeschlossen"
 check("Gate: fehlende OPTIONALE Felder (Ausschüsse/Themen) blockieren die App NICHT", onb.gate() === false);
 onb.setProfile(Object.assign({}, completeBt)); // Altprofil ohne onboardingStatus, Kern vollständig
 check("Gate: Altprofil mit vollständigem Kern (kein Status) -> KEIN erneutes Onboarding", onb.gate() === false);
+onb.setProfile(Object.assign({}, completeBt, { onboardingStatus: "abgeschlossen", privacyConfirmedAt: "" })); // Datenschutz fehlt
+check("Gate: Kern ok + 'abgeschlossen' aber Datenschutz fehlt -> fällig (Sicherheit)", onb.gate() === true);
 onb.setProfile({ id: "mandat-test", fullName: "Teil Profil", role: "MdB", parliamentType: "Bundestag", party: "SPD" }); // Region fehlt
 check("Gate: Altprofil mit fehlenden Kernfeldern -> fällig (gezielt ergänzen)", onb.gate() === true);
 

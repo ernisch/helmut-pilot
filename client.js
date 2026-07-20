@@ -722,6 +722,8 @@ function onbHasOperationalCore(p) {
   if (!onbHasStr(p.party) && !onbHasStr(p.faction)) return false;
   if (!onbHasRegion(p)) return false;
   if (ebene === "Landtag" && !onbHasStr(p.state)) return false;
+  // Datenschutzbestätigung ist hartes Kernkriterium (deckungsgleich mit dem Server).
+  if (!onbHasStr(p.privacyConfirmedAt) && !onbHasStr(p.datenschutz_bestaetigt_at)) return false;
   return true;
 }
 // Client-Fallback-Spiegel von profile-validation.isProfileOperational (falls das
