@@ -59,7 +59,12 @@ function check(name, cond) {
   process.env.SUPABASE_SERVICE_ROLE_KEY = "fake";
   check("profileDbModeEnabled() true fuer Execute", storage.profileDbModeEnabled() === true);
   const rows = new Map();
-  const upsert = async (table, row) => {
+  // Upsert-Ziel validieren: falsches on_conflict -> Fehler (wie echtes PostgREST).
+  // So ist die Idempotenz eine Eigenschaft des Codes (korrektes Upsert-Ziel), nicht
+  // nur des Map-Schluessels (Review-Fix Test-Rigor).
+  const upsert = async (table, row, onConflict) => {
+    const expected = table === "mandate_profiles" ? "user_id" : "id";
+    if (onConflict !== expected) throw new Error(`falsches on_conflict fuer ${table}: ${onConflict} (erwartet ${expected})`);
     const key = `${table}:${row.id || row.user_id}`;
     rows.set(key, (rows.get(key) || 0) + 1);
     return [row];
@@ -73,6 +78,13 @@ function check(name, cond) {
     distinctKeys.length === 4);
   check("Jeder Key wurde genau 2x geschrieben (Upsert, kein Wachstum)",
     [...rows.values()].every((n) => n === 2));
+
+  console.log("== 6) saveProfileToDb nutzt korrektes on_conflict-Ziel je Tabelle ==");
+  const seen = [];
+  const recordingUpsert = async (table, row, onConflict) => { seen.push({ table, onConflict }); return [row]; };
+  await storage.saveProfileToDb({ id: testPoliticianOne.id, fullName: "x" }, { strict: true, upsert: recordingUpsert });
+  check("profiles -> on_conflict=id", seen.some((s) => s.table === "profiles" && s.onConflict === "id"));
+  check("mandate_profiles -> on_conflict=user_id", seen.some((s) => s.table === "mandate_profiles" && s.onConflict === "user_id"));
 
   process.env.HELMUT_STORAGE_BACKEND = "";
   delete process.env.HELMUT_PROFILE_DB_MODE;

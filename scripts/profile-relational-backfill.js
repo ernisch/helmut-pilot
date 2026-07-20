@@ -89,9 +89,52 @@ function profileFor(profiles, id) {
   return (Array.isArray(profiles) ? profiles : []).find((p) => p && p.id === id) || {};
 }
 
+// REVERSE-Backfill (relational -> Blob). Schliesst die Rollback-Luecke E -> DB-Modus
+// aus: waehrend des Exklusivmodus (Stufe E) wird der Blob nicht mitgeschrieben, also
+// werden E-Aera-Profile (neu ODER geaendert) unsichtbar, sobald HELMUT_PROFILE_DB_MODE
+// ganz aus geht. Dieser Lauf synchronisiert den aktuellen SQL-Stand in den Blob
+// zurueck, sodass ein vollstaendiger Rollback verlustfrei bleibt. Idempotent
+// (saveProfile im Blob-Pfad ueberschreibt je id). deps.request injizierbar (Tests).
+async function runReverseBackfill(opts = {}) {
+  const execute = opts.execute === true;
+  // SQL-Profile lesen (erfordert aktiven DB-Modus).
+  const sqlProfiles = await storage.listFullProfilesFromDb(opts.deps || {});
+  if (!Array.isArray(sqlProfiles)) return { execute, direction: "reverse", error: "sql-read-failed", written: 0 };
+  const result = { execute, direction: "reverse", total: sqlProfiles.length, written: 0, errors: [] };
+  if (!execute) return { ...result, dryRun: true, ids: sqlProfiles.map((p) => p.id) };
+  // Blob-Write erzwingen: DB-/Exklusiv-Flags fuer die Dauer neutralisieren, damit
+  // saveProfile den reinen Blob-Pfad nimmt (kein SQL-Write, keine Rekursion).
+  const prevMode = process.env.HELMUT_PROFILE_DB_MODE;
+  const prevExcl = process.env.HELMUT_PROFILE_DB_EXCLUSIVE;
+  delete process.env.HELMUT_PROFILE_DB_MODE;
+  delete process.env.HELMUT_PROFILE_DB_EXCLUSIVE;
+  try {
+    for (const p of sqlProfiles) {
+      try { await storage.saveProfile(p); result.written += 1; }
+      catch (error) { result.errors.push({ id: p.id, reason: String((error && error.message) || "write-failed").slice(0, 200) }); }
+    }
+  } finally {
+    if (prevMode !== undefined) process.env.HELMUT_PROFILE_DB_MODE = prevMode;
+    if (prevExcl !== undefined) process.env.HELMUT_PROFILE_DB_EXCLUSIVE = prevExcl;
+  }
+  return result;
+}
+
 async function main() {
   const args = process.argv.slice(2);
   const execute = args.includes("--execute");
+  const reverse = args.includes("--reverse");
+  if (reverse) {
+    console.log(`== Profil-REVERSE-Backfill relational -> Blob (${execute ? "EXECUTE" : "DRY-RUN"}) ==`);
+    if (!storage.profileDbModeEnabled()) {
+      console.error("ABBRUCH: --reverse erfordert HELMUT_PROFILE_DB_MODE=1 + Supabase (Lesen aus SQL).");
+      return 2;
+    }
+    const res = await runReverseBackfill({ execute });
+    if (res.error) { console.error(`Fehler: ${res.error}`); return 2; }
+    console.log(execute ? `In Blob geschrieben: ${res.written}/${res.total}. Fehler: ${res.errors.length}` : `Gefundene SQL-Profile: ${res.total} (Dry-Run, mit --execute schreiben)`);
+    return (res.errors && res.errors.length) ? 1 : 0;
+  }
   // Blob-Profile lesen (nur der Blob, unabhaengig vom DB-Modus).
   const blob = await requireBlobProfiles();
   const profiles = Object.values(blob || {});
@@ -139,7 +182,7 @@ async function requireBlobProfiles() {
   }
 }
 
-module.exports = { buildBackfillPlan, runBackfill };
+module.exports = { buildBackfillPlan, runBackfill, runReverseBackfill };
 
 if (require.main === module) {
   main().then((code) => process.exit(code || 0)).catch((error) => {

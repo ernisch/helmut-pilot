@@ -190,10 +190,15 @@ Kernaussage: Für die Entkopplung sind **genau zwei Blob-Schlüssel** relevant �
 
 ## 9. Rollback-Strategie
 
-- **Stufen B–D (Blob wird noch mitgeschrieben):** `HELMUT_PROFILE_DB_MODE=off` in Vercel-Env ⇒ nächster Request liest/schreibt wieder Blob-only. **Nulldatenverlust**, da der Blob durchgehend aktuell gehalten wurde. Reiner Flag-Flip, kein Deploy nötig (Env überstimmt sofort).
+> Umsetzungshinweis: Stufe D **und** Stufe E sind als **Flags** implementiert
+> (`HELMUT_PROFILE_DB_MODE`, `HELMUT_PROFILE_DB_EXCLUSIVE`), nicht als Code-Entfernung.
+> Jeder Rollback ist damit ein Flag-Flip, kein Deploy/Revert.
+
+- **Stufen B–D (Blob wird noch mitgeschrieben):** `HELMUT_PROFILE_DB_MODE=off` ⇒ nächster Request liest/schreibt wieder Blob-only. **Nulldatenverlust**, da der Blob im Dual-Write durchgehend aktuell gehalten wurde. Reiner Flag-Flip.
+- **Rollback E → D** (`HELMUT_PROFILE_DB_EXCLUSIVE=off`, `HELMUT_PROFILE_DB_MODE` bleibt an): **verlustfrei und sofort**. `getProfile` liest weiterhin SQL-first, alle im Exklusivmodus relational geschriebenen Profile bleiben lesbar; ab jetzt wird zusätzlich wieder der Blob mitgeschrieben.
+- **Rollback E → OFF (voller Rollback bis Blob-only):** ⚠️ **Nicht ohne Reverse-Backfill verlustfrei.** Im Exklusivmodus wurde der Blob bewusst **nicht** mitgeschrieben — in Stufe E neu angelegte oder geänderte Profile existieren nur relational. Ein direkter Sprung `HELMUT_PROFILE_DB_MODE=off` würde diese E-Ära-Profile blob-only unsichtbar machen (Daten bleiben in SQL, sind aber nicht mehr gelesen). **Pflichtschritt vor D→OFF:** `node scripts/profile-relational-backfill.js --reverse --execute` (SQL → Blob-Resync), erst danach `HELMUT_PROFILE_DB_MODE=off`. Der Reverse-Lauf ist idempotent und fail-safe; die Sichtbarkeits-Heilung ist in `scripts/profile-exclusive-store-test.js` (Fall 13) bewiesen. Empfohlener Normalfall: bei einem Zwischenfall in Stufe E nur auf **D** zurückgehen (verlustfrei), OFF nur nach Reverse-Backfill.
 - **Schema-Ebene:** Jede Migration hat `_rollback.sql` (Policies/Spalten). Für die Entkopplung selbst nicht erforderlich (kein neues Schema).
-- **Stufe E (Blob-Profilpfad entfernt):** Rollback = Revert des Stufe-E-Commits; die relationalen Daten bleiben Wahrheit, der Blob-Pfad wird per Code wieder aktiviert. Deshalb ist Stufe E ein **eigener, klar abgegrenzter, spät gezogener** Commit mit vorheriger Beobachtungsphase.
-- **Divergenz als Abbruchkriterium:** Bleibt die Blob-vs-SQL-Telemetrie in Dual-Write nicht deckungsgleich, wird Stufe D/E **nicht** gezogen.
+- **Divergenz als Abbruchkriterium:** Bleibt die Blob-vs-SQL-Telemetrie (`getProfileTelemetry`/`/api/admin/tenant-mode`) in Dual-Write nicht deckungsgleich (`profileBlobReadFallbacks` dauerhaft > 0 ⇒ Backfill unvollständig), wird Stufe E **nicht** gezogen.
 
 ---
 
