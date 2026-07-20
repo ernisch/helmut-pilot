@@ -74,6 +74,9 @@ codeVm += `\n;globalThis.__onb = {
   stepBody: (n) => { const s = onbRenderStep(n); return (s.full || "") + (s.body || "") + (s.action || ""); },
   stepVisible: (n) => onbStepVisible(n),
   corePct: () => onbCorePct(),
+  operational: (p) => isProfileOperational(p),
+  firstMissing: (p) => onbFirstMissingStep(p),
+  startFlowStep: () => { onboardingActive = false; startOnboardingFlow(); return onboardingStep; },
   parliament: () => onbParliament()
 };`;
 
@@ -84,23 +87,65 @@ const onb = sandbox.__onb;
 // Standard-Setup: Account-Modus, Abgeordneter.
 onb.setAuth({ authenticated: true }, { role: "abgeordneter" });
 onb.setPid("mandat-test");
-
-// ── 1) Gate ───────────────────────────────────────────────────────────────
-onb.setProfile({ id: "x", onboardingStatus: "neu" });
 onb.setPreview(false);
-check("Gate: Status 'neu' -> Onboarding fällig", onb.gate() === true);
-onb.setProfile({ id: "x", onboardingStatus: "in_bearbeitung" });
-check("Gate: Status 'in_bearbeitung' -> fällig (Wiederaufnahme)", onb.gate() === true);
-onb.setProfile({ id: "x", onboardingStatus: "abgeschlossen" });
-check("Gate: Status 'abgeschlossen' -> NICHT fällig", onb.gate() === false);
+
+// Vollständiger Bundestags-Kern (ohne optionale Felder).
+const completeBt = { id: "mandat-test", fullName: "Katrin Vogt", role: "MdB", parliamentType: "Bundestag", party: "Die Linke", constituency: "Salzgitter", state: "Niedersachsen" };
+
+// ── 1) Gate = !isProfileOperational (Einsatzbereitschaft) ───────────────────
+onb.setProfile({ id: "x", onboardingStatus: "neu" });
+check("Gate: neues, leeres Profil -> Onboarding fällig", onb.gate() === true);
+onb.setProfile(Object.assign({}, completeBt, { onboardingStatus: "in_bearbeitung" }));
+check("Gate: Kern vollständig aber Status 'in_bearbeitung' -> fällig (muss abschließen)", onb.gate() === true);
+onb.setProfile(Object.assign({}, completeBt, { onboardingStatus: "abgeschlossen" }));
+check("Gate: Kern vollständig + 'abgeschlossen' -> NICHT fällig", onb.gate() === false);
+onb.setProfile(Object.assign({}, completeBt, { onboardingStatus: "abgeschlossen", committees: [], focusTopics: [] }));
+check("Gate: fehlende OPTIONALE Felder (Ausschüsse/Themen) blockieren die App NICHT", onb.gate() === false);
+onb.setProfile(Object.assign({}, completeBt)); // Altprofil ohne onboardingStatus, Kern vollständig
+check("Gate: Altprofil mit vollständigem Kern (kein Status) -> KEIN erneutes Onboarding", onb.gate() === false);
+onb.setProfile({ id: "mandat-test", fullName: "Teil Profil", role: "MdB", parliamentType: "Bundestag", party: "SPD" }); // Region fehlt
+check("Gate: Altprofil mit fehlenden Kernfeldern -> fällig (gezielt ergänzen)", onb.gate() === true);
+
+// Vorschau-Modus nie onboarden.
 onb.setProfile({ id: "x", onboardingStatus: "neu" });
 onb.setPreview(true);
 check("Gate: Vorschau-Modus -> nie Onboarding", onb.gate() === false);
 onb.setPreview(false);
-onb.setAuth({ authenticated: true }, { role: "admin" });
-check("Gate: Admin-Rolle -> kein Onboarding", onb.gate() === false);
+
+// EINE Quelle der Wahrheit: das Server-Urteil (profilValidierung.operational) gewinnt.
+onb.setProfile({ id: "x", onboardingStatus: "neu", profilValidierung: { operational: true } });
+check("Gate: Single-Source — Server sagt operational=true -> KEIN Onboarding (trotz dünnem Profil)", onb.gate() === false);
+onb.setProfile(Object.assign({}, completeBt, { onboardingStatus: "abgeschlossen", profilValidierung: { operational: false } }));
+check("Gate: Single-Source — Server sagt operational=false -> Onboarding (trotz vollem Kern)", onb.gate() === true);
+
+// ── 1b) Rollenlogik: nur Abgeordnete, NIE Admin/Referent/Demo ───────────────
+onb.setProfile({ id: "x", onboardingStatus: "neu" }); // unvollständig
+for (const role of ["admin", "referent", "demo"]) {
+  onb.setAuth({ authenticated: true }, { role });
+  check(`Gate: Rolle '${role}' -> NIE ins Abgeordneten-Onboarding`, onb.gate() === false);
+}
 onb.setAuth(null, null);
 check("Gate: Legacy/Pilot (kein Account-Modus) -> kein Onboarding", onb.gate() === false);
+onb.setAuth({ authenticated: true }, { role: "abgeordneter" });
+check("Gate: Abgeordneter mit unvollständigem Profil -> fällig", onb.gate() === true);
+
+// ── 1c) Einsatzbereitschafts-Funktion direkt ────────────────────────────────
+check("operational: vollständiger Kern + abgeschlossen -> true", onb.operational(Object.assign({}, completeBt, { onboardingStatus: "abgeschlossen" })) === true);
+check("operational: vollständiger Kern + 'neu' -> false", onb.operational(Object.assign({}, completeBt, { onboardingStatus: "neu" })) === false);
+check("operational: Altprofil (kein Status) + vollständiger Kern -> true", onb.operational(completeBt) === true);
+
+// ── 1d) Erster fehlender Pflichtschritt (gezielte Wiederaufnahme) ───────────
+check("firstMissing: kein Name -> S1 (Identität)", onb.firstMissing({ id: "m" }) === 1);
+check("firstMissing: Ebene/Partei fehlen -> S3 (Mandat)", onb.firstMissing({ id: "m", fullName: "Max Muster" }) === 3);
+check("firstMissing: Region fehlt -> S6", onb.firstMissing({ id: "m", fullName: "Max Muster", parliamentType: "Bundestag", party: "SPD" }) === 6);
+check("firstMissing: Datenschutz fehlt -> S10", onb.firstMissing({ id: "m", fullName: "Max Muster", parliamentType: "Bundestag", party: "SPD", constituency: "K1" }) === 10);
+check("firstMissing: alles da -> S11 (nur bestätigen)", onb.firstMissing(Object.assign({}, completeBt, { privacyConfirmedAt: "2026-07-19T00:00:00Z" })) === 11);
+
+// ── 1e) startOnboardingFlow: frisch -> S0, Wiederaufnahme -> gezielt ─────────
+onb.setProfile({ id: "mandat-test", fullName: "Frisch Neu", role: "MdB", onboardingStatus: "neu" }); // keine politischen Daten
+check("startFlow: frisches leeres Mandat -> Begrüßung (S0)", onb.startFlowStep() === 0);
+onb.setProfile({ id: "mandat-test", fullName: "Teil Profil", role: "MdB", parliamentType: "Bundestag", party: "SPD", onboardingStatus: "in_bearbeitung" }); // Region fehlt
+check("startFlow: Wiederaufnahme mit Lücke -> springt zum ersten fehlenden Schritt (S6)", onb.startFlowStep() === 6);
 onb.setAuth({ authenticated: true }, { role: "abgeordneter" });
 
 // ── 2) Vollbild-Container + Begrüßung/Identität ──────────────────────────────

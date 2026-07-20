@@ -692,22 +692,75 @@ const ONB_SVG_PLUS = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none
 // --- Gate + Start -----------------------------------------------------------
 // Fällig, wenn ein Abgeordneter/Referent im Account-Modus ein Mandat mit noch
 // nicht abgeschlossener Erstkonfiguration öffnet. Vorschau-Modus nie onboarden.
+// Politische Ebene aus einem beliebigen Profil-/Entwurfsobjekt ableiten (Spiegel
+// von config.parliamentTypeOf: parliamentType -> politische_ebene -> politicalLevel).
+function onbLevelOf(p) {
+  const t = String((p && p.parliamentType) || (p && p.politische_ebene) || "").trim().toLowerCase();
+  if (t.includes("landtag")) return "Landtag";
+  if (t.includes("bundestag")) return "Bundestag";
+  const legacy = String((p && p.politicalLevel) || "").trim().toLowerCase();
+  if (legacy.startsWith("land")) return "Landtag";
+  if (legacy.startsWith("bund")) return "Bundestag";
+  return "";
+}
+function onbHasStr(v) { return String(v == null ? "" : v).trim().length > 0; }
+function onbHasFullName(p) {
+  return String((p && (p.fullName || p.name)) || "").trim().split(/\s+/).filter(Boolean).length >= 2;
+}
+function onbHasRegion(p) {
+  return onbHasStr(p && p.constituency) || onbHasStr(p && p.wahlkreis) || onbHasStr(p && p.location) || onbHasStr(p && p.state);
+}
+// KERN eines einsatzbereiten Profils (Ausschuesse/Themen/Kommunikation/Briefing
+// sind OPTIONAL und blockieren NICHT) — Spiegel von profile-validation.hasOperationalCore.
+function onbHasOperationalCore(p) {
+  if (!p) return false;
+  if (!onbHasFullName(p)) return false;
+  if (!onbHasStr(p.role) && !onbHasStr(p.function)) return false;
+  const ebene = onbLevelOf(p);
+  if (!ebene) return false;
+  if (!onbHasStr(p.id)) return false;
+  if (!onbHasStr(p.party) && !onbHasStr(p.faction)) return false;
+  if (!onbHasRegion(p)) return false;
+  if (ebene === "Landtag" && !onbHasStr(p.state)) return false;
+  return true;
+}
+// Client-Fallback-Spiegel von profile-validation.isProfileOperational (falls das
+// Server-Urteil ausnahmsweise fehlt). Gleiche Status-Logik.
+function onbClientOperational(p) {
+  if (!onbHasOperationalCore(p)) return false;
+  const status = String((p && p.onboardingStatus) || "").trim().toLowerCase();
+  if (status === "abgeschlossen") return true;
+  if (status === "neu" || status === "in_bearbeitung") return false;
+  return true;
+}
+// EINE Quelle der Wahrheit: bevorzugt das Server-Urteil (profilValidierung.operational),
+// das aus profile-validation.isProfileOperational stammt; nur wenn es fehlt, wird der
+// deckungsgleiche Client-Spiegel genutzt.
+function isProfileOperational(p) {
+  if (!p) return false;
+  const v = p.profilValidierung;
+  if (v && typeof v.operational === "boolean") return v.operational;
+  return onbClientOperational(p);
+}
+// Erster fehlender PFLICHT-Schritt (fuer gezielte Wiederaufnahme, nicht Neustart bei S1).
+function onbFirstMissingStep(p) {
+  if (!onbHasFullName(p)) return 1;                                            // Identität
+  const ebene = onbLevelOf(p);
+  if (!ebene || (!onbHasStr(p.party) && !onbHasStr(p.faction))) return 3;      // Mandat (Ebene/Partei)
+  if (!onbHasRegion(p) || (ebene === "Landtag" && !onbHasStr(p.state))) return 6; // Region/Bundesland
+  if (!onbHasStr(p.privacyConfirmedAt)) return 10;                             // Datenschutz
+  return 11;                                                                   // nur noch bestätigen
+}
+
+// Onboarding-Gate: NUR der Mandatsinhaber (Abgeordneter) wird gefuehrt. Admin,
+// Referent und Demo haben kein eigenes Mandat und werden NIE ins Abgeordneten-
+// Onboarding gezwungen (eindeutige, separate Rollenlogik). Die Entscheidung
+// „einsatzbereit?" trifft ausschliesslich isProfileOperational (Server-Urteil).
 function shouldRunOnboarding() {
   if (!isAccountMode() || previewMode) return false;
-  if (!["abgeordneter", "referent"].includes(userRole())) return false;
+  if (userRole() !== "abgeordneter") return false;
   if (!profile) return false;
-  const status = String(profile.onboardingStatus || "").trim().toLowerCase();
-  if (status === "abgeschlossen") return false;
-  // Bestandsprofile OHNE Status-Feld (angelegt vor der Erstkonfiguration) NICHT
-  // erneut onboarden, wenn sie faktisch schon eingerichtet sind: frueher
-  // abgeschlossen (onboardedAt) ODER bereits als vollstaendig validiert. Sonst
-  // wuerde ein fertig konfiguriertes Altprofil beim Login ins Onboarding gezwungen.
-  if (!status) {
-    if (profile.onboardedAt) return false;
-    const v = profile.profilValidierung;
-    if (v && v.state === "vollstaendig") return false;
-  }
-  return true;
+  return !isProfileOperational(profile);
 }
 
 function onbSeedDraftFromProfile() {
@@ -751,10 +804,20 @@ function startOnboardingFlow() {
   onboardingActive = true;
   onbSeedDraftFromProfile();
   onboardingUi = { scanPhase: 0, lookup: { status: "idle", candidates: [], warnings: [] }, saving: false, editMandate: false, error: "", pct: null };
-  // Wiederaufnahme: gespeicherte Position, aber nie auf einem transienten Screen
-  // (Scan/Abschluss) landen — höchstens bis „Mandat bestätigen" zurückspringen.
-  const savedStep = Number(profile && profile.onboardingStep);
-  onboardingStep = Number.isFinite(savedStep) && savedStep >= 3 && savedStep <= 11 ? savedStep : 0;
+  // Einstiegspunkt bestimmen:
+  //  - Frisches, leeres Mandat (kein Fortschritt, keine politischen Kernangaben)
+  //    -> vollständiger Ablauf ab Begrüßung (S0).
+  //  - Sonst (Wiederaufnahme / Altprofil mit Lücken) -> GEZIELT zum ersten
+  //    fehlenden Pflichtschritt springen, NICHT wieder bei Screen 1 beginnen.
+  const p = profile || {};
+  const status = String(p.onboardingStatus || "").trim().toLowerCase();
+  const savedStep = Number(p.onboardingStep);
+  const hasPoliticalData = onbHasStr(p.party) || onbHasStr(p.faction) || onbHasStr(p.parliamentType)
+    || onbHasStr(p.constituency) || onbHasStr(p.state)
+    || (Array.isArray(p.committees) && p.committees.length > 0)
+    || (Array.isArray(p.focusTopics) && p.focusTopics.length > 0);
+  const resuming = status === "in_bearbeitung" || (Number.isFinite(savedStep) && savedStep >= 1) || hasPoliticalData;
+  onboardingStep = resuming ? onbFirstMissingStep(p) : 0;
   renderOnboardingFlow();
 }
 
@@ -1091,14 +1154,15 @@ function onbExitToApp() {
 function onbCorePct() {
   const d = onboardingDraft || {};
   const has = (v) => String(v || "").trim().length > 0;
-  const hasList = (v) => Array.isArray(v) && v.some((x) => String(x || "").trim());
   const level = onbParliament();
+  // Pflichtkern = Einsatzbereitschaft. Ausschüsse/Kernthemen/Schwerpunkte sind
+  // OPTIONAL und blockieren den Abschluss NICHT (deckungsgleich mit
+  // profile-validation.operationalCoreMissing).
   const checks = [
-    { key: "Name", ok: has(d.fullName) },
+    { key: "Vor- und Nachname", ok: String(d.fullName || "").trim().split(/\s+/).filter(Boolean).length >= 2 },
     { key: "Partei (oder „fraktionslos“)", ok: has(d.party) || has(d.faction) },
     { key: "Mandatsebene (Bundestag/Landtag)", ok: !!level },
-    { key: "Region oder Wahlkreis", ok: has(d.constituency) || has(d.state) || has(d.location) },
-    { key: "mind. ein Schwerpunkt oder Ausschuss", ok: hasList(d.committees) || hasList(d.focusTopics) }
+    { key: "Region oder Wahlkreis", ok: has(d.constituency) || has(d.state) || has(d.location) }
   ];
   if (level === "Landtag") checks.push({ key: "Bundesland", ok: has(d.state) });
   const missing = checks.filter((c) => !c.ok).map((c) => c.key);
