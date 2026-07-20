@@ -1272,19 +1272,18 @@ function onbExitToApp() {
   // BEVOR die normale App gerendert wird — Lage, nicht Briefing/Radar/Büro/
   // Profil (auch dann, wenn irgendwo noch ein anderer Bereich persistiert war).
   persistView("briefing");
-  // Weicher Abgang in die normale App: kurz ausblenden, dann frischen Zustand
-  // laden (Gate greift jetzt nicht mehr). Bei reduzierter Bewegung sofort neu
-  // laden — kein künstliches Warten. Die dunkle Startanzeige der App deckt den
-  // Boot, sodass weder Login noch leere App dazwischen aufblitzen.
+  // Langsamer, hochwertiger Abgang in die normale App (~800ms, .ho-fade-out-slow
+  // — EIGENE, längere Dauer statt --dur-slow, damit kein anderer Screen-Wechsel
+  // im Flow mitverlangsamt wird). Die Wartezeit selbst bleibt bei reduzierter
+  // Bewegung erhalten (Teil der ~5s-Lesezeit des Abschlussmoments, siehe
+  // onbRunFinalSequence) — nur die sichtbare Animation entfällt (globale
+  // .onboarding-handoff *-Regel erzwingt .001ms). Die dunkle Startanzeige der
+  // App deckt den Boot, sodass weder Login noch leere App dazwischen aufblitzen.
   const root = document.querySelector("#onbRoot");
   let reduce = false;
   try { reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (_) {}
-  if (root && !reduce) {
-    root.classList.add("ho-fade-out");
-    onboardingTimers.push(setTimeout(() => window.location.reload(), 300));
-  } else {
-    window.location.reload();
-  }
+  if (root && !reduce) root.classList.add("ho-fade-out-slow");
+  onboardingTimers.push(setTimeout(() => window.location.reload(), 800));
 }
 
 // --- Fortschritt/Validierung ------------------------------------------------
@@ -1710,28 +1709,30 @@ function onbStepDone() {
     </div>` };
 }
 
-// Steuert den automatischen Ablauf NACH dem Rendern von S12: kurzer Moment auf
+// Steuert den automatischen Ablauf NACH dem Rendern von S12: ruhiger Moment auf
 // „Dein Profil ist bereit.", weiches Crossfade (in-place Klassenumschaltung,
-// KEIN Neurender) zu „Willkommen, …", kurzer ruhiger Moment, dann automatischer,
-// klicklose Übergang in die App (Bereich Lage). Reduzierte Bewegung: Übergänge
-// werden nicht animiert (globale CSS-Regel erzwingt .001ms-Transitions), aber
-// die Lesezeiten (Hold) bleiben gleich — das ist Lesezeit, keine Bewegung.
-// Einmaliger Ablauf: gegen doppeltes Anstoßen abgesichert (z. B. Foreground-
-// Refresh während der ~2s-Sequenz).
+// KEIN Neurender) zu „Willkommen, …", ausreichend lange lesbar, dann
+// automatischer, klickloser Übergang in die App (Bereich Lage). Der gesamte
+// Abschlussmoment (Erscheinen bis Fade-out) dauert bewusst ~5s — kurz genug,
+// um nicht zu ziehen, lang genug, um beide Texte in Ruhe zu lesen. Reduzierte
+// Bewegung: die Lesezeiten UND die Wartezeiten bleiben erhalten (Teil der ~5s),
+// nur die sichtbaren Animationen entfallen (globale CSS-Regel erzwingt
+// .001ms-Transitions) — das ist Lesezeit, keine Bewegung. Einmaliger Ablauf:
+// gegen doppeltes Anstoßen abgesichert (z. B. Foreground-Refresh während der
+// Sequenz).
 function onbRunFinalSequence() {
   if (onboardingUi.finalSequenceStarted) return;
   onboardingUi.finalSequenceStarted = true;
-  let reduce = false;
-  try { reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (_) {}
-  const holdMs = 700; // Lesezeit — bewusst unabhängig von reduzierter Bewegung
-  const crossfadeWaitMs = reduce ? 0 : 350;
+  const readyHoldMs = 1500;     // „Dein Profil ist bereit." lesbar
+  const crossfadeWaitMs = 600;  // weicher Crossfade zur Begrüßung
+  const welcomeHoldMs = 2000;   // persönliche Begrüßung lesbar
   onboardingTimers.push(setTimeout(() => {
     const ready = document.getElementById("onbFinalReady");
     const welcome = document.getElementById("onbFinalWelcome");
     if (ready) ready.classList.remove("is-on");
     if (welcome) welcome.classList.add("is-on");
-    onboardingTimers.push(setTimeout(onbExitToApp, crossfadeWaitMs + holdMs));
-  }, holdMs));
+    onboardingTimers.push(setTimeout(onbExitToApp, crossfadeWaitMs + welcomeHoldMs));
+  }, readyHoldMs));
 }
 
 // S13 — Erstes Briefing (personalisierte, klar als Beispiel markierte Vorschau)

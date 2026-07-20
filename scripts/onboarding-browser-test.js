@@ -361,13 +361,28 @@ function renderStepInPage(opts) {
       // prototype.reload ist non-writable/non-configurable) — der ECHTE Reload
       // wird deshalb abgewartet (waitForNavigation) statt gemockt; das prüft den
       // tatsächlichen Übergang gleich mit, statt ihn nur zu simulieren.
-      const navPromise = page.waitForNavigation({ timeout: 5000 }).catch(() => null);
+      const navPromise = page.waitForNavigation({ timeout: 8000 }).catch(() => null);
+      const t0 = Date.now();
       const started = await page.evaluate(() => { onbRunFinalSequence(); return true; });
       check("Moment 7: Abschlusssequenz startet automatisch (kein Klick nötig)", started === true);
 
-      // Nach der Lesezeit (~700ms) crossfadet der Text zum Willkommen — das H
+      // Der Abschlussmoment ist bewusst ~5s lang (readyHold 1500ms, Crossfade-
+      // Wartezeit 600ms, welcomeHold 2000ms, Schluss-Fade 800ms). Kurz VOR Ablauf
+      // der Lesezeit für "Dein Profil ist bereit." (1500ms) darf noch KEINE
+      // Navigation stattgefunden haben (zu frühes Verschwinden wäre der genau
+      // gemeldete Fehler: der Moment "verschwindet zu schnell").
+      await page.waitForTimeout(1300);
+      const early = await page.evaluate(() => ({
+        readyOn: document.getElementById("onbFinalReady")?.classList.contains("is-on"),
+        welcomeOn: document.getElementById("onbFinalWelcome")?.classList.contains("is-on"),
+        stillOnb: !!document.querySelector("#onbFinal")
+      }));
+      check("Moment 7: 'Dein Profil ist bereit.' bleibt ausreichend lange sichtbar (kein zu schnelles Verschwinden)",
+        early.stillOnb && early.readyOn === true && early.welcomeOn === false, JSON.stringify(early));
+
+      // Nach der Lesezeit (1500ms) crossfadet der Text zum Willkommen — das H
       // bleibt derselbe DOM-Knoten (ortsfest, kein Neurender).
-      await page.waitForTimeout(900);
+      await page.waitForTimeout(500);
       const mid = await page.evaluate(() => {
         const mark = document.querySelector(".ho-final .ho-mark");
         const ready = document.getElementById("onbFinalReady");
@@ -385,15 +400,18 @@ function renderStepInPage(opts) {
         /Willkommen, Katrin\./.test(mid.welcomeText) && /Ich bin Helmut/.test(mid.welcomeText) && /Ab jetzt bin ich an deiner Seite/.test(mid.welcomeText),
         JSON.stringify(mid.welcomeText));
 
-      // Danach: weicher Abgang (ho-fade-out) und automatischer Übergang in die
-      // App — ohne weiteren Klick, ohne Swipe, ohne erneuten Login.
-      await page.waitForFunction(() => document.querySelector("#onbRoot.ho-fade-out") !== null, null, { timeout: 2000 });
-      check("Moment 7: weicher Abgang (ho-fade-out) vor dem App-Wechsel, kein harter Sprung", true);
+      // Danach: weicher Abgang (ho-fade-out-slow) und automatischer Übergang in
+      // die App — ohne weiteren Klick, ohne Swipe, ohne erneuten Login.
+      await page.waitForFunction(() => document.querySelector("#onbRoot.ho-fade-out-slow") !== null, null, { timeout: 3000 });
+      check("Moment 7: langsamer, hochwertiger Abgang (ho-fade-out-slow) vor dem App-Wechsel, kein harter Sprung", true);
 
-      // Der tatsächliche Reload (window.location.reload(), 300ms nach dem
-      // Fade-out) navigiert die Seite real neu — ohne weiteren Klick, Swipe
-      // oder erneuten Login.
+      // Der tatsächliche Reload navigiert die Seite real neu — ohne weiteren
+      // Klick, Swipe oder erneuten Login. Zusätzlich: die Navigation darf nicht
+      // deutlich VOR den vorgesehenen ~5s erfolgt sein.
       const navigated = await navPromise;
+      const elapsedMs = Date.now() - t0;
+      check("Moment 7: Gesamtmoment dauert ungefähr 5s (Navigation nicht vor Ablauf der vorgesehenen Zeit)",
+        elapsedMs >= 4200 && elapsedMs <= 7000, `elapsedMs=${elapsedMs}`);
       check("Moment 7: automatischer Übergang in die App (kein Klick/Swipe/Login)", navigated !== null);
       const view = await page.evaluate(() => { try { return localStorage.getItem("helmut:view"); } catch (_) { return null; } });
       check("Moment 7: Ziel-Bereich Lage vor dem Übergang verbindlich gesetzt (übersteht den Reload)", view === "briefing", `view=${view}`);

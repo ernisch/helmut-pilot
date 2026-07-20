@@ -12321,9 +12321,16 @@ summary:focus-visible {
    nur an den zentralen Zustandswechseln (ganze Screens) — NICHT bei Chips/Toggles/
    Auswahlfeldern, die in-place ohne Neurender aktualisiert werden. */
 @keyframes hoScreenIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-/* Weicher Abgang in die normale App (S12 „Los geht's"). */
+/* Weicher Abgang in die normale App (S11->S12-Übergang, unverändert ~320ms). */
 @keyframes hoFadeOut { from { opacity: 1; } to { opacity: 0; } }
 .ho-fade-out { animation: hoFadeOut var(--dur-slow) var(--ease) forwards; }
+/* Langsamer, hochwertiger Schluss-Fade NUR beim endgültigen Übergang in die App
+   (onbExitToApp, nach dem ~5s-Abschlussmoment) -- bewusst EIGENE, längere Dauer
+   statt var(--dur-slow) (320ms, von .ho-anim/.ho-fade-out an vielen anderen
+   Übergängen im Onboarding geteilt) zu ändern, was jeden anderen Screen-Wechsel
+   im Flow mitverlangsamt hätte. Reduced Motion: durch die globale
+   .onboarding-handoff *-Regel unten ohnehin auf .001ms stillgestellt. */
+.ho-fade-out-slow { animation: hoFadeOut 800ms var(--ease) forwards; }
 @keyframes hoScanPulse { 0%, 100% { opacity: .5; transform: scale(.9); } 50% { opacity: 1; transform: scale(1.04); } }
 @keyframes hoRingSpin { to { transform: rotate(360deg); } }
 /* Dezenter Puls des „Zum Starten tippen"-Hinweises (S0). Nur Opazität, keine

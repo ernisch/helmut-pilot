@@ -232,7 +232,8 @@ function seedDraftAndGotoPrivacy(fullName) {
       check("Während des echten Speicherns: Knopf zeigt 'Speichert …' statt eines eigenen technischen Zustands", /Speichert/.test(duringSave.label || ""), duringSave.label);
       await completion;
 
-      const navPromise = page.waitForNavigation({ timeout: 6000 }).catch(() => null);
+      const t0 = Date.now();
+      const navPromise = page.waitForNavigation({ timeout: 8000 }).catch(() => null);
 
       // Erst NACH S12 entfernen: die künstliche Verzögerung ist dann sicher
       // abgeklungen (route.continue() bereits aufgerufen) — unroute() während
@@ -249,13 +250,16 @@ function seedDraftAndGotoPrivacy(fullName) {
       check("Nach ECHTEM erfolgreichem Speichern: 'Dein Profil ist bereit.' erscheint", ready.readyOn === true && /Dein Profil ist bereit\./.test(ready.readyText));
       check("Helmut-H zentral vorhanden", ready.hasMark);
 
-      await page.waitForFunction(() => document.getElementById("onbFinalWelcome")?.classList.contains("is-on"), null, { timeout: 3000 });
+      await page.waitForFunction(() => document.getElementById("onbFinalWelcome")?.classList.contains("is-on"), null, { timeout: 4000 });
       const welcome = await page.evaluate(() => (document.getElementById("onbFinalWelcome") || {}).textContent || "");
       check("Persönliche Begrüßung crossfadet automatisch ein, korrekter Vorname aus dem BESTÄTIGTEN Profil ('Petra')",
         /Willkommen, Petra\./.test(welcome) && /Ich bin Helmut/.test(welcome) && /Ab jetzt bin ich an deiner Seite/.test(welcome), welcome);
 
       const navigated = await navPromise;
+      const elapsedMs = Date.now() - t0;
       check("Automatischer Übergang in die App — kein Klick, kein Swipe, kein erneuter Login", navigated !== null);
+      check("Abschlussmoment dauert ungefähr 5s (Navigation erfolgt nicht vor Ablauf der vorgesehenen Zeit)",
+        elapsedMs >= 4200 && elapsedMs <= 7500, `elapsedMs=${elapsedMs}`);
 
       const after = await page.evaluate(async () => {
         const sess = await fetch("/api/auth/session", { credentials: "same-origin" }).then((r) => r.ok ? r.json() : {});
@@ -347,7 +351,7 @@ function seedDraftAndGotoPrivacy(fullName) {
 
       // Der eigentliche Tap: muss den Handler jetzt wirklich erreichen (kein
       // Playwright-Actionability-Timeout mehr auf einem toten Button).
-      const navPromise = page.waitForNavigation({ timeout: 6000 }).catch(() => null);
+      const navPromise = page.waitForNavigation({ timeout: 8000 }).catch(() => null);
       let clickError = null;
       try { await page.click("[data-onb-finish]", { timeout: 4000 }); } catch (e) { clickError = String(e).split("\n")[0]; }
       check("Echter Klick auf 'Profil bestätigen' wird zugestellt (kein Actionability-Timeout auf disabled Button)", clickError === null, clickError || "");
@@ -359,7 +363,7 @@ function seedDraftAndGotoPrivacy(fullName) {
       }));
       check("Nach echtem Klick: 'Dein Profil ist bereit.' erscheint", ready.readyOn === true && /Dein Profil ist bereit\./.test(ready.readyText));
 
-      await page.waitForFunction(() => document.getElementById("onbFinalWelcome")?.classList.contains("is-on"), null, { timeout: 3000 });
+      await page.waitForFunction(() => document.getElementById("onbFinalWelcome")?.classList.contains("is-on"), null, { timeout: 4000 });
       const welcome = await page.evaluate(() => (document.getElementById("onbFinalWelcome") || {}).textContent || "");
       check("Persönliche Begrüßung erscheint mit korrektem Vornamen", /Willkommen, Lina\./.test(welcome), welcome);
 
@@ -418,7 +422,7 @@ function seedDraftAndGotoPrivacy(fullName) {
 
       // Wiederholung: Route aufheben, erneut versuchen — muss diesmal gelingen.
       await page.unroute(/\/api\/profile\/current/);
-      const retryNav = page.waitForNavigation({ timeout: 6000 }).catch(() => null);
+      const retryNav = page.waitForNavigation({ timeout: 8000 }).catch(() => null);
       await page.evaluate(() => onbComplete());
       await page.waitForFunction(() => document.querySelector(".ho-final") !== null, null, { timeout: 4000 });
       check("Wiederholung nach Fehler ist möglich und führt zum Erfolg", true);
@@ -441,19 +445,23 @@ function seedDraftAndGotoPrivacy(fullName) {
       await page.evaluate(seedDraftAndGotoReview, "Rosa Reduced");
 
       const startedAt = Date.now();
-      const navPromise = page.waitForNavigation({ timeout: 6000 }).catch(() => null);
+      const navPromise = page.waitForNavigation({ timeout: 8000 }).catch(() => null);
       await page.evaluate(() => onbComplete());
       await page.waitForFunction(() => document.querySelector(".ho-final") !== null, null, { timeout: 4000 });
       const dur = await page.evaluate(() => {
         const el = document.getElementById("onbFinalWelcome");
         return el ? getComputedStyle(el).transitionDuration : "none";
       });
-      check("reduced-motion: Text-Crossfade (.ho-final-msg) stillgestellt (Dauer ~0)", dur !== "none" && parseFloat(dur) <= 0.01, `dauer=${dur}`);
+      check("reduced-motion: Text-Crossfade (.ho-final-msg) stillgestellt (Dauer ~0, keine sichtbare Bewegung)", dur !== "none" && parseFloat(dur) <= 0.01, `dauer=${dur}`);
       await navPromise;
       const elapsedMs = Date.now() - startedAt;
       const view = await page.evaluate(() => { try { return localStorage.getItem("helmut:view"); } catch (_) { return null; } });
       check("reduced-motion: landet trotzdem verbindlich in Lage", view === "briefing", `view=${view}`);
-      check("reduced-motion: Gesamtmoment bleibt kurz (kein künstliches langes Warten, < 3s)", elapsedMs < 3000, `elapsedMs=${elapsedMs}`);
+      // Reduzierte Bewegung entfernt nur die sichtbaren Animationen — die
+      // Lesezeit des Abschlussmoments bleibt (Auftrag: "auch dort soll der
+      // Inhalt ungefähr 5 Sekunden lesbar bleiben"), NICHT auf nahe Null gekürzt.
+      check("reduced-motion: Inhalt bleibt ungefähr 5s lesbar (Lesezeit wird nicht auf fast null gekürzt)",
+        elapsedMs >= 4200 && elapsedMs <= 7000, `elapsedMs=${elapsedMs}`);
 
       await ctx.close();
     }
