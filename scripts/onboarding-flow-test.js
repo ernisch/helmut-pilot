@@ -213,8 +213,18 @@ check("S3 techn. Ausfall: nur fehlende Pflichtfelder (Ebene + Partei), kein Name
 
 // Kein Treffer (echt) -> derselbe ruhige Hilfezustand (nicht als Ausfall getarnt).
 onb.setUi({ scanPhase: 3, lookup: { status: "not_found", candidates: [], warnings: [] }, saving: false, editMandate: true, error: "" });
+onb.setDraft(Object.assign(onb.draft(), { fullName: "Kein Treffer", party: "", faction: "", parliamentType: "" }));
 const none = onb.stepBody(3);
 check("S3 kein Treffer: ruhiger Hilfezustand ohne Retry-Zwang", none.includes("Ich brauche kurz deine Hilfe.") && !none.includes("Automatisch erneut suchen"));
+
+// S3-Mandat-Gate (Review-Fix): „Weiter/Das bin ich" bleibt gesperrt, solange
+// Name/Ebene/Partei unvollständig sind — auch nachdem eine Auswahl den Button
+// per onbSyncDynamic aktualisiert (kein Durchrutschen mit leerer Partei).
+check("S3-Gate: unvollständiges Mandat (keine Partei/Ebene) -> Bestätigen gesperrt", /ho-btn is-disabled/.test(onb.stepBody(3)));
+onb.setDraft(Object.assign(onb.draft(), { parliamentType: "Bundestag" })); // nur Ebene, Partei fehlt weiter
+check("S3-Gate: nur Ebene gesetzt, Partei fehlt -> weiter gesperrt", /ho-btn is-disabled/.test(onb.stepBody(3)));
+onb.setDraft(Object.assign(onb.draft(), { party: "SPD" }));
+check("S3-Gate: Name+Ebene+Partei vollständig -> Bestätigen frei", !/ho-btn is-disabled/.test(onb.stepBody(3)));
 
 onb.setUi({ scanPhase: 3, lookup: { status: "found", candidates: [], warnings: ["landtag-quellen-im-aufbau"] }, saving: false, editMandate: false, error: "" });
 onb.setDraft(Object.assign(onb.draft(), { fullName: "Lea Berg", party: "CDU/CSU", faction: "CDU/CSU", parliamentType: "Landtag", state: "Niedersachsen" }));

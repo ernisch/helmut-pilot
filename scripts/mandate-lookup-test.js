@@ -80,6 +80,35 @@ const politician = (id, label, party) => ({ id, label, first_name: label.split("
   ]);
   const exact = await lookup.lookupMandate({ name: "Katrin Vogt" });
   check("exakter Treffer gewinnt trotz zweitem Rohtreffer -> 'found'", exact.status === "found", exact.status);
+  // Verschärft (Review): nicht nur 'found', sondern der RICHTIGE Datensatz (id 21,
+  // nicht der 'Vogt-Meier'-Köder) — ein Fehlgriff auf die falsche Person würde sonst
+  // still durchgehen.
+  check("exakter Treffer wählt die KORREKTE Person (id 21)", exact.profile && exact.profile.mandateSourceId === "21", exact.profile && exact.profile.mandateSourceId);
+
+  // ── 2c) GLEICHER NAME + GLEICHE PARTEI, KEIN Geburtsjahr -> mehrdeutig ───────
+  // Zwei ECHTE, unterschiedliche Personen dürfen ohne Unterscheidungsmerkmal NICHT
+  // still zu einer verschmelzen (kein stilles Raten) -> Auswahlliste.
+  installFetch([
+    ["/politicians?", { data: [
+      { id: 61, label: "Hans Meier", first_name: "Hans", last_name: "Meier", party: { label: "SPD" } },
+      { id: 62, label: "Hans Meier", first_name: "Hans", last_name: "Meier", party: { label: "SPD" } }
+    ] }]
+  ]);
+  const twins = await lookup.lookupMandate({ name: "Hans Meier" });
+  check("Namensgleich + parteigleich ohne Geburtsjahr -> 'ambiguous' (kein stilles Auto-Wählen)", twins.status === "ambiguous", twins.status);
+  check("Namensgleich: beide Personen zur Auswahl (2 Kandidaten)", (twins.candidates || []).length === 2, String((twins.candidates || []).length));
+
+  // ── 2d) DIESELBE Person aus zwei Datensätzen (gleiches Geburtsjahr) -> 1x ────
+  installFetch([
+    ["/politicians?", { data: [
+      { id: 71, label: "Eva Klein", first_name: "Eva", last_name: "Klein", party: { label: "CDU" }, year_of_birth: 1970 },
+      { id: 72, label: "Eva Klein", first_name: "Eva", last_name: "Klein", party: { label: "CDU" }, year_of_birth: 1970 }
+    ] }],
+    ["/candidacies-mandates?", { data: [] }],
+    ["/committee-memberships?", { data: [] }]
+  ]);
+  const sameYob = await lookup.lookupMandate({ name: "Eva Klein" });
+  check("Gleicher Name + Partei + Geburtsjahr = dieselbe Person -> 'found' (Dedup greift)", sameYob.status === "found", sameYob.status);
 
   // ── 3) NICHTS GEFUNDEN (manueller Pfad) ─────────────────────────────────────
   installFetch([["/politicians?", { data: [] }]]);
@@ -114,6 +143,37 @@ const politician = (id, label, party) => ({ id, label, first_name: label.split("
   ]);
   const fallback = await lookup.lookupMandate({ name: "Robust Fallback" });
   check("Query-Fallback: 1. Form 4xx, 2. Form liefert -> 'found'", fallback.status === "found", fallback.status);
+
+  // ── 4e) 403 (Egress-Proxy/AW blockt) = 4xx -> 'not_found', NIE 'source_down' ─
+  // Der reale Auslöser der Fehlklassifikation: abgeordnetenwatch.de kann per
+  // Org-Policy mit 403 geblockt sein. Das ist ein Client-Status (erreichbar, aber
+  // abgelehnt) -> ruhiger Hilfezustand, KEIN technischer Ausfall.
+  installFetch([["/politicians?", { __status: 403 }]]);
+  const forbidden = await lookup.lookupMandate({ name: "Katrin Vogt" });
+  check("403 auf Query: status 'not_found' (NICHT source_down)", forbidden.status === "not_found", forbidden.status);
+
+  // ── 4f) Treffer, aber Kernmandat-Abruf 5xx -> 'source_down' (kein hohles 'found') ─
+  // Root-Cause-Prinzip „nie einen Ausfall verstecken": schlägt der Mandat-Abruf
+  // NACH erfolgreicher Namenssuche technisch fehl, darf KEIN leeres, aber
+  // „gefundenes" Profil entstehen.
+  installFetch([
+    ["/politicians?", { data: [politician(81, "Ausfall Danach", "SPD")] }],
+    ["/candidacies-mandates?", { __status: 503 }],
+    ["/committee-memberships?", { data: [] }]
+  ]);
+  const hollow = await lookup.lookupMandate({ name: "Ausfall Danach" });
+  check("Treffer + Mandat-Abruf 5xx -> 'source_down' (nicht hohles 'found')", hollow.status === "source_down", hollow.status);
+  check("Treffer + Mandat-Abruf 5xx -> KEIN Profil ausgeliefert", hollow.profile === null);
+
+  // ── 4g) Treffer, Mandat-Abruf ERREICHBAR aber leer -> bleibt 'found' (legitim) ─
+  // Gegenprobe zu 4f: eine leere, aber erreichbare Antwort ist KEIN Ausfall.
+  installFetch([
+    ["/politicians?", { data: [politician(82, "Leer Aber Da", "SPD")] }],
+    ["/candidacies-mandates?", { data: [] }],
+    ["/committee-memberships?", { data: [] }]
+  ]);
+  const emptyMandate = await lookup.lookupMandate({ name: "Leer Aber Da" });
+  check("Treffer + leeres (erreichbares) Mandat -> bleibt 'found'", emptyMandate.status === "found", emptyMandate.status);
 
   // ── 5) LANDTAG-VORBEHALT ────────────────────────────────────────────────────
   installFetch([

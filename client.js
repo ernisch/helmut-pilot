@@ -694,7 +694,6 @@ const ONB_SVG_CHECK_SM = '<svg width="11" height="11" viewBox="0 0 24 24" fill="
 const ONB_SVG_BACK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>';
 const ONB_SVG_ARROW = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const ONB_SVG_CHEVRON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-const ONB_SVG_SEARCH = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3" stroke-linecap="round"/></svg>';
 const ONB_SVG_SHIELD = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2l7 3v6c0 5-3 8-7 11-4-3-7-6-7-11V5z"/></svg>';
 const ONB_SVG_EDIT = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
 const ONB_SVG_PLUS = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
@@ -951,7 +950,8 @@ function onbSyncDynamic() {
   const primary = root.querySelector(".ho-actionbar .ho-btn");
   if (!primary) return;
   let disabled = false;
-  if (onboardingStep === 5) disabled = !(d.focusTopics && d.focusTopics.length) && !(d.committees && d.committees.length);
+  if (onboardingStep === 3) disabled = !onbConfirmMinReady(); // Mandat-Gate: Name+Partei+Ebene
+  else if (onboardingStep === 5) disabled = !(d.focusTopics && d.focusTopics.length) && !(d.committees && d.committees.length);
   else if (onboardingStep === 10) disabled = !d.consent;
   else if (onboardingStep === 11) disabled = !onbCorePct().ready || onboardingUi.saving;
   primary.disabled = disabled;
@@ -1289,7 +1289,10 @@ function renderOnboardingFlow() {
 function onbRenderStep(step) {
   switch (step) {
     case 0: return onbStepWelcome();
-    case 1: return onbStepIdentity();
+    // S1 (manuelle Namenseingabe) entfällt bei der Auto-Erkennung — der Name kommt
+    // aus dem Konto. Kein Navigationsziel (onbStepVisible=false); ein etwaiger
+    // Restaufruf zeigt sicher die persönliche Begrüßung mit Auto-Suche.
+    case 1: return onbStepWelcome();
     case 2: return onbStepScan();
     case 3: return onbStepConfirm();
     case 4: return onbStepFunctions();
@@ -1318,22 +1321,10 @@ function onbStepWelcome() {
     </div>` };
 }
 
-// S1 — Identität
-function onbStepIdentity() {
-  const err = onboardingUi.error ? `<p class="ho-hint" style="color:var(--risk);margin-top:10px">${escapeHtml(onboardingUi.error)}</p>` : "";
-  return {
-    body: `
-      ${onbEyebrow("Schritt 1 · Identität")}
-      <h2 class="ho-h2">Wie heißt du?</h2>
-      <p class="ho-p">Sag mir deinen Namen — den Rest finde ich für dich in öffentlichen Quellen.</p>
-      <div style="margin-top:30px">
-        <input class="ho-input" type="text" value="${escapeAttribute(onboardingDraft.fullName || "")}" placeholder="Dein Name" data-onb-input="fullName" data-onb-enter="scan" autocomplete="name" aria-label="Dein Name" />
-        <div style="margin-top:14px;display:flex;align-items:center;gap:9px;color:var(--muted-2)" class="ho-label" >${ONB_SVG_SEARCH} Ich suche in Bundestag &amp; Landtag</div>
-        ${err}
-      </div>`,
-    action: onbPrimary("scan", "Mein Mandat suchen")
-  };
-}
+// S1 — Identität: bei der Auto-Erkennung entfernt (Name aus dem Konto, keine
+// erneute Eingabe). Bewusst KEINE onbStepIdentity-Funktion mehr, damit das alte
+// Namensfeld/„Mein Mandat suchen" nicht versehentlich wiederbelebt wird; der
+// Schritt ist kein Navigationsziel und case 1 zeigt die Begrüßung mit Auto-Suche.
 
 // S2 — Erkennung (Scan)
 function onbStepScan() {
@@ -1674,7 +1665,7 @@ function onbBindFlow() {
   on("[data-onb-tap]", "click", () => onbStartScan());
   on("[data-onb-back]", "click", onbBack);
   on("[data-onb-next]", "click", onbNext);
-  on("[data-onb-confirm]", "click", () => { onbCaptureInputs(); onbPersistStep(); onbGoto(onbNextVisible(3, 1)); });
+  on("[data-onb-confirm]", "click", () => { onbCaptureInputs(); if (!onbConfirmMinReady()) return void onbSyncDynamic(); onbPersistStep(); onbGoto(onbNextVisible(3, 1)); });
   on("[data-onb-edit]", "click", () => { onboardingUi.editMandate = true; renderOnboardingFlow(); });
   on("[data-onb-manual]", "click", () => { onboardingUi.lookup = { status: "not_found" }; onboardingUi.editMandate = true; renderOnboardingFlow(); });
   on("[data-onb-retry]", "click", () => onbStartScan()); // automatischer Wiederholungsversuch

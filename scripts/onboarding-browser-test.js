@@ -191,6 +191,31 @@ function renderStepInPage(opts) {
       check("S3 Bestätigungskarte gerendert + sichtbar", card.hasCard && card.cardVisible);
       check("S3 Überschrift 'Ich habe dein Mandat gefunden.'", /Ich habe dein Mandat gefunden\./.test(card.heading), card.heading);
 
+      // ── 2b) S3-Mandat-Gate: Auswahl per Select darf „Weiter" NICHT vorzeitig
+      // freischalten (Regression: onbSyncDynamic auf Schritt 3). Hilfezustand mit
+      // Name vorhanden, aber Ebene UND Partei leer -> Button gesperrt; nach nur
+      // Ebene weiter gesperrt; erst mit Partei frei. Echte change-Events.
+      await page.evaluate(renderStepInPage, { step: 3, draft: { fullName: "Voll Name", party: "", faction: "", parliamentType: "" }, ui: { editMandate: true, lookup: { status: "not_found", candidates: [], warnings: [] } } });
+      const gate = await page.evaluate(() => {
+        const btn = () => document.querySelector("[data-onb-confirm]");
+        const setSel = (field, val) => {
+          const sel = document.querySelector(`[data-onb-select="${field}"]`);
+          if (!sel) return false;
+          sel.value = val;
+          sel.dispatchEvent(new Event("change", { bubbles: true }));
+          return true;
+        };
+        const initial = btn() ? btn().disabled : null;
+        const hasEbeneSel = setSel("parliamentType", "Bundestag");
+        const afterEbene = btn() ? btn().disabled : null;
+        const hasPartySel = setSel("party", "SPD");
+        const afterParty = btn() ? btn().disabled : null;
+        return { initial, afterEbene, afterParty, hasEbeneSel, hasPartySel };
+      });
+      check("S3-Gate: bei unvollständigem Mandat ist 'Weiter' initial gesperrt", gate.initial === true);
+      check("S3-Gate: nach nur-Ebene bleibt 'Weiter' gesperrt (Partei fehlt)", gate.hasEbeneSel && gate.afterEbene === true);
+      check("S3-Gate: erst mit Name+Ebene+Partei wird 'Weiter' frei", gate.hasPartySel && gate.afterParty === false);
+
       // ── 3) Review-Überschrift NICHT oben angeschnitten (S11) ────────────────
       await page.evaluate(renderStepInPage, { step: 11, draft: { fullName: "Katrin Vogt", party: "Die Linke", parliamentType: "Bundestag", constituency: "Salzgitter", state: "Niedersachsen", committees: ["Gesundheit"], focusTopics: ["Rente"] } });
       const head = await page.evaluate(() => {
