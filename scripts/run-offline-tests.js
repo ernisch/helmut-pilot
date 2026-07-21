@@ -95,6 +95,8 @@ const DENYLIST = new Set([
   "gate-realdata-validation.js", // braucht Production-Datenexport
   "gate-shadow-replay.js", // braucht echte DB-Snapshots
   "relational-shadow-compare.js", // Werkzeug gegen echte DB
+  "master-catalog-shadow-compare.js", // Werkzeug (Treiber), kein Test-Gate
+  "generate-master-catalog-seed.js", // Seed-Generator (schreibt Datei), kein Test
   "shadow-ingest.js", // Werkzeug
   "shadow-pilot-crawl.js", // echter Crawl
   "pardok-structure-probe.js", // echte Parlaments-Endpunkte
