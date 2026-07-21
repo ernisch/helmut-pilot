@@ -40,7 +40,7 @@ anderen.**
 |---|---|---|---|---|---|
 | S1 Mandatsregister | `claude/universelles-mandatsregister-sprint1` | `d6d9063` | 2 | 8 (+1708) | `supabase/migrations/prepared/` (quarantäniert, nicht angewendet) |
 | S2 Quellenbibliothek | `claude/session-ckedi8` | `d6d9063` | 1 | 18 (+2172) | **keine** |
-| S3 Master-Katalog | `claude/session-pyryop` | `d6d9063` | 2 | 32 (+4405) | `supabase/migrations/` (aktiver Pfad, freigabepflichtig) |
+| S3 Master-Katalog | `claude/session-pyryop` | `d6d9063` | 2 | 32 (+4405) | `supabase/migrations/prepared/` (nach Freigabe-Entscheidung angeglichen, siehe §9) |
 
 **Dateiüberschneidung zwischen den Branches: null.** Nur zwei Bestandsdateien werden überhaupt
 geändert — `.github/workflows/ci.yml` (nur S2) und `scripts/run-offline-tests.js` (nur S3),
@@ -155,8 +155,9 @@ Nach Priorität. **Bis diese entschieden sind, darf Sprint 4 nicht auf der Quell
 5. **[HOCH] Ein Qualitätsmodell** — `main` kategorialer Watchdog vs. S2 Skalar (und ob der Skalar oben aufsetzt).
 6. **[HOCH] S2-Tenant-Blindheit** — S2s global deduplizierte Registry hat kein `tenant_id`, keine
    Private-Source-/PII-Behandlung. Unkritisch solange in-memory; Leck-Risiko bei Persistenz. S3-Tenant-/RLS-/DSGVO-Schicht als maßgeblich übernehmen.
-7. **[MEDIUM] Migrations-Konvention** — S1 `prepared/` (physisch außerhalb des Runner-Pfads) vs. S3
-   im aktiven Pfad mit `FREIGABEPFLICHTIG`-Kommentar. Vereinheitlichen (Empfehlung: S3 ebenfalls nach `prepared/`).
+7. **[MEDIUM] ~~Migrations-Konvention~~ — ERLEDIGT (§9).** S3-Migration + Rollback nach
+   `supabase/migrations/prepared/` verschoben, konsistent mit S1; Test erzwingt jetzt die
+   „nicht im aktiven Pfad"-Invariante.
 8. **[NIEDRIG] S1 `mandate_register.profile_id` FK-Ziel** — `mandate_profiles.id` vs. `profiles.id`,
    auskommentiert; vor jeder Anwendung verifizieren (README OP-01). Nicht dringend (staged).
 
@@ -168,13 +169,13 @@ Nach Priorität. **Bis diese entschieden sind, darf Sprint 4 nicht auf der Quell
   (S1×1, S2×5, S3×3) und aller Bestandstests. Der `[NETZ-GUARD]`-Hinweis zu `pardok-shadow-test.js`
   ist **Bestand auf `main`** (keine Sprint-Datei): der Netz-Guard blockte einen Nicht-Localhost-Versuch,
   die Suite blieb grün — kein Regress.
-- **Syntax-Check:** alle **39** geänderten/neuen `.js`-Dateien bestehen `node --check`.
-  Hinweis: `.github/workflows/ci.yml` deckt `lib/helmut/quellenarchitektur/master/*.js` im
-  Syntax-Glob **nicht** ab (Unterverzeichnis) — Folge-Fix empfohlen; die kanonische Gate
-  (`run-offline-tests.js`) erfasst die Tests jedoch automatisch.
+- **Syntax-Check:** alle **39** geänderten/neuen `.js`-Dateien bestehen `node --check`. Der
+  `.github/workflows/ci.yml`-Syntax-Glob ist um `lib/helmut/quellenarchitektur/master/*.js` und
+  `…/master/seeds/*.js` **ergänzt** (§9) — deckt jetzt alle 293 gelisteten Dateien ab.
 - **Migrations-Additivität:** beide Migrationen sind **rein additiv** (S1: 2 `CREATE TABLE`; S3: 12;
   alle `ALTER` nur `enable row level security` auf **eigenen** neuen Tabellen; kein `ALTER`/`DROP` auf
-  Bestandstabellen). Rollbacks sind DROP-only und deckungsgleich (2 bzw. 12 Tabellen). **Keine Migration wurde ausgeführt.**
+  Bestandstabellen). Rollbacks sind DROP-only und deckungsgleich (2 bzw. 12 Tabellen). Beide liegen
+  in `supabase/migrations/prepared/` (außerhalb des Runner-Pfads). **Keine Migration wurde ausgeführt.**
 - **Mandantentrennung / DSGVO / Zuweisung / Coverage / Shadow:** die Sprint-Tests
   (`master-catalog-tenant-test`, `quellenbibliothek-assignment-test`, `master-catalog-migration-test`,
   `master-catalog-shadow-compare`) sowie die Bestandstests (`tenant-neutrality`, `tenant-guard`,
@@ -196,3 +197,26 @@ Nach Priorität. **Bis diese entschieden sind, darf Sprint 4 nicht auf der Quell
 7. **Alle Tests grün?** — siehe Abschnitt 7.
 8. **Stabil genug für Sprint 4?** — **Bedingt.** Als *ruhende* Vereinigung ja; für Aufbau auf der
    Quell-/Zuweisungsschicht **erst nach** den Entscheidungen #1–#3.
+
+---
+
+## 9. Angewendete Folgeaktionen (nach Freigabe)
+
+Der Nutzer hat den **Kernkonflikt (Paket/Quellmodell) bewusst offen gelassen** — es wurde **keine
+Architekturentscheidung** getroffen, die ruhende Union bleibt bestehen. Freigegeben und angewendet
+wurden ausschließlich zwei **sichere, nicht-architektonische** Angleichungen:
+
+1. **S3-Migration → `prepared/`.** `20260722_master_source_catalog.sql` + `_rollback.sql` von
+   `supabase/migrations/` nach `supabase/migrations/prepared/` verschoben (reiner `git mv`),
+   konsistent mit S1s Safety-Konvention und dem eigenen `FREIGABEPFLICHTIG`-Kommentar der Migration.
+   Der Seed bleibt in `supabase/seeds/20260722_master_source_catalog_seed.sql` (dortige Repo-Konvention
+   für vorbereitete Seeds; der Generator schreibt genau dorthin). `master-catalog-migration-test.js` liest
+   nun aus `prepared/` und erzwingt zusätzlich die Invariante „**nicht** im aktiven Migrationspfad"
+   (analog S1). `prepared/README.md` um zwei S3-Zeilen ergänzt.
+2. **CI-Syntax-Glob ergänzt.** `.github/workflows/ci.yml` deckt jetzt
+   `lib/helmut/quellenarchitektur/master/*.js` und `…/master/seeds/*.js` ab (zuvor Lücke).
+
+**Nicht** angewendet (bewusst): Enum-/Fassaden-/Label-Deduplizierung (berührt Modell-API-Fläche,
+wartet auf die Quellmodell-Entscheidung). Alle Live-Dateien bleiben unverändert gegenüber `main`;
+keine Migration ausgeführt. Nach diesen Angleichungen: **149/149 Offline-Suiten grün**,
+`master-catalog-migration-test.js` 33/33 PASS.

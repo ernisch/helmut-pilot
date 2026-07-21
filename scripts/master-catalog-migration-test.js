@@ -14,9 +14,15 @@ function check(name, cond) {
   else { fail += 1; console.log(`FAIL  ${name}`); }
 }
 
-const migDir = path.join(__dirname, "..", "supabase", "migrations");
+// VORBEREITET: die Migration liegt bewusst in supabase/migrations/prepared/ (ausserhalb des
+// aktiven Runner-Pfads, konsistent mit Sprint 1), damit kein Auto-Apply moeglich ist.
+const root = path.join(__dirname, "..");
+const migDir = path.join(root, "supabase", "migrations", "prepared");
 const mig = fs.readFileSync(path.join(migDir, "20260722_master_source_catalog.sql"), "utf8");
 const rollback = fs.readFileSync(path.join(migDir, "20260722_master_source_catalog_rollback.sql"), "utf8");
+// Invariante: die Migration liegt NICHT im aktiven Pfad (supabase/migrations/*.sql).
+check("NICHT im aktiven Migrationspfad (kein Auto-Apply)",
+  !fs.existsSync(path.join(root, "supabase/migrations/20260722_master_source_catalog.sql")));
 
 const createdTables = [...mig.matchAll(/create table if not exists public\.(\w+)/g)].map((m) => m[1]);
 const droppedTables = [...rollback.matchAll(/drop table if exists public\.(\w+)/g)].map((m) => m[1]);

@@ -18,8 +18,10 @@ passieren kann, solange niemand die Datei bewusst in den aktiven Pfad zieht.
 
 | Datei | Zweck |
 |---|---|
-| `20260722_mandate_register.sql` | Persistente kanonische Projektion des Mandatsregisters (`mandate_register`) + stabile externe Personen-IDs (`mandate_external_ids`, DB-seitiger Dubletten-Schutz). |
-| `20260722_mandate_register_rollback.sql` | Vollständiger Rollback (droppt beide additiven Tabellen). |
+| `20260722_mandate_register.sql` | (Sprint 1) Persistente kanonische Projektion des Mandatsregisters (`mandate_register`) + stabile externe Personen-IDs (`mandate_external_ids`, DB-seitiger Dubletten-Schutz). |
+| `20260722_mandate_register_rollback.sql` | (Sprint 1) Vollständiger Rollback (droppt beide additiven Tabellen). |
+| `20260722_master_source_catalog.sql` | (Sprint 3) Globaler Master-Quellenkatalog: 12 additive Tabellen (`catalog_*` service_role-only, `tenant_source_*`/`tenant_private_sources` mit RLS via `helmut_current_tenant()`). Zugehöriger Seed liegt in `supabase/seeds/20260722_master_source_catalog_seed.sql` (ebenfalls freigabepflichtig). |
+| `20260722_master_source_catalog_rollback.sql` | (Sprint 3) Vollständiger Rollback (droppt alle 12 additiven Tabellen in FK-Reihenfolge). |
 
 ## Eigenschaften der Migration
 
