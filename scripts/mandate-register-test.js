@@ -60,7 +60,9 @@ eq("stellv. Mitglied -> stellv-mitglied", (reg.resolveFunction("stellvertretende
 check("leere Funktion -> null", reg.resolveFunction("") === null);
 
 console.log("\n== 4. Identitaet & Dubletten ==");
-eq("Namensslug faltet Umlaute+Titel", R.nameSlug("Prof. Dr. Änna von Müller-Schmidt (MdB)"), "aenna-mueller-schmidt");
+// Akademische Titel entfernt, Umlaute gefaltet, Adelspartikel ("von") BEWUSST erhalten
+// (Teil des gesetzlichen Nachnamens — Entfernen wuerde Personen falsch verschmelzen).
+eq("Namensslug: Titel weg, Umlaut gefaltet, Partikel erhalten", R.nameSlug("Prof. Dr. Änna von Müller-Schmidt (MdB)"), "aenna-von-mueller-schmidt");
 const idStable = R.mandateIdentity(mandate({ bundestagId: "11004711" }));
 eq("stabile externe ID -> personKey ext:", idStable.personKey, "ext:bundestag:11004711");
 eq("stabile ID -> Konfidenz stable", idStable.confidence, "stable");
@@ -165,7 +167,40 @@ for (const bad of [null, undefined, {}, [], 42, "x", { id: 1 }]) {
 }
 check("buildCoverageMatrix(nicht-Array) -> leere Matrix", R.buildCoverageMatrix(null).summary.total === 0);
 
-console.log("\n== 12. Vorbereitete Migration: existiert, NICHT angewendet, wohlgeformt ==");
+console.log("\n== 12. Regressionen aus adversarialem Review ==");
+// (high) Wahlkreis-Nr ist KEINE stabile Personen-ID -> zwei Personen im selben WK nicht verschmelzen
+check("Wahlkreis-Nr NICHT als stabile ID", R.mandateIdentity(mandate({ constituencyNumber: 218 })).confidence !== "stable");
+eq("2 Personen gleicher Wahlkreis -> KEINE Dublette",
+  R.detectDuplicates([{ fullName: "Alice W", constituencyNumber: 218 }, { fullName: "Bob L", constituencyNumber: 218 }]).duplicates.length, 0);
+check("Bundestag-ID bleibt stabile ID", R.mandateIdentity(mandate({ bundestagId: "11004711" })).confidence === "stable");
+// (medium) Fraktionslos im Partei-Feld ist KEIN Review-Grund
+eq("Fraktionslos (party-Feld) -> vollstaendig",
+  R.resolveMandate(mandate({ party: "Fraktionslos" })).coverageStatus, "vollstaendig");
+eq("Fraktionslos (faction-Feld) -> vollstaendig",
+  R.resolveMandate(mandate({ party: "", faction: "fraktionslos" })).coverageStatus, "vollstaendig");
+// (low) Union/CDU-CSU als Sammelbezeichnung bekannt, ohne die 9-Parteien-Zahl zu veraendern
+check("resolveParty('Union') known", reg.resolveParty("Union").known === true && reg.resolveParty("Union").key === "union");
+check("resolveParty('CDU/CSU') known", reg.resolveParty("CDU/CSU").known === true);
+eq("listParties bleibt 9 (union ist Sammelbez.)", reg.listParties().length, 9);
+check("Union traegt Fraktion cdu-csu", reg.fractionForParty("union").key === "cdu-csu");
+// (medium) Umgangssprachliche Ausschuss-Komposita werden erkannt
+for (const [raw, key] of [["Klimaausschuss", "umwelt"], ["Klimaschutzausschuss", "umwelt"], ["Wohnungsausschuss", "wohnen"], ["Bau-/Wohnungsausschuss", "wohnen"], ["Petitionsausschuss", "petitionen"], ["Umweltausschuss", "umwelt"]]) {
+  eq(`resolveCommittee('${raw}') -> ${key}`, reg.resolveCommittee(raw).key, key);
+  check(`'${raw}' known`, reg.resolveCommittee(raw).known === true);
+}
+// (low) numerische/leere Platzhalter sind KEINE Identitaet
+eq("nameSlug('123') -> leer", R.nameSlug("123"), "");
+eq("zwei '123'-Platzhalter -> KEINE Dublette",
+  R.detectDuplicates([{ id: "n1", fullName: "123" }, { id: "n2", fullName: "123" }]).duplicates.length, 0);
+// (medium/high honesty) unaufgeloestes/unvollstaendiges Mandat ist NICHT source-ready
+check("unaufgeloester Ausschuss -> sourceReady=false",
+  R.resolveMandate(mandate({ committees: ["Ausschuss für Weltraumfahrt"] })).supplyOutlook.allNeededActive === false);
+check("leeres Profil -> sourceReady=false",
+  R.resolveMandate({ id: "e", fullName: "Leer" }).supplyOutlook.allNeededActive === false);
+// Adelspartikel bleiben erhalten -> verschiedene Personen nicht verschmolzen
+check("'von der Leyen' behaelt Partikel (kein Falsch-Merge)", R.nameSlug("Ursula von der Leyen").includes("von"));
+
+console.log("\n== 13. Vorbereitete Migration: existiert, NICHT angewendet, wohlgeformt ==");
 const root = path.join(__dirname, "..");
 const preparedSql = path.join(root, "supabase/migrations/prepared/20260722_mandate_register.sql");
 const preparedRb = path.join(root, "supabase/migrations/prepared/20260722_mandate_register_rollback.sql");

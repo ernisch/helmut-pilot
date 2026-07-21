@@ -43,7 +43,7 @@ create table if not exists public.mandate_register (
   disambiguation_key    text,                    -- name:<slug>|<partei>|<wahlkreis> (Namensvetter-Trennung)
 
   -- Partei / Fraktion (kanonische Registry-Schluessel)
-  party_key             text,                    -- normalizeParty(...)  z. B. cdu/spd/gruene/linke/afd/fdp/bsw/csu/ssw
+  party_key             text,                    -- normalizeParty(...)  z. B. cdu/csu/spd/gruene/linke/afd/fdp/bsw/ssw + Sammelbez. "union"
   party_entity_id       text,                    -- seeds/entities.js
   party_known           boolean,
   fraction_key          text,                    -- cdu-csu/spd/gruene/linke/afd/fdp/bsw/ssw
@@ -93,11 +93,13 @@ comment on table public.mandate_register is
 create table if not exists public.mandate_external_ids (
   id            bigint generated always as identity primary key,
   profile_id    text not null,
-  id_source     text not null,   -- bundestag | abgeordnetenwatch | wahlkreis_nr | internal
+  id_source     text not null,   -- bundestag | abgeordnetenwatch | internal
   external_id   text not null,
   created_at    timestamptz not null default now(),
+  -- BEWUSST OHNE wahlkreis_nr: ein Wahlkreis ist GEOGRAFISCH, nicht personen-eindeutig
+  -- (Direkt- + Listenkandidaten teilen ihn) -> darf keine UNIQUE-Personen-ID sein.
   constraint mandate_external_ids_source_chk
-    check (id_source in ('bundestag','abgeordnetenwatch','wahlkreis_nr','internal')),
+    check (id_source in ('bundestag','abgeordnetenwatch','internal')),
   -- Personen-Eindeutigkeit: EINE externe ID gehoert zu genau EINEM Mandat.
   constraint mandate_external_ids_unique unique (id_source, external_id)
 );

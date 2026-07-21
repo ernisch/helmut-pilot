@@ -67,9 +67,12 @@ Alle Achsen werden **immer** berechnet und als `reviewFlags`/`blockers`/`infoFla
 - **Clusterschlüssel:** mit stabiler externer ID → `ext:<quelle>:<id>`; sonst
   `name:<slug>|<partei>|<wahlkreis>`. → Namensvetter werden **nicht** zusammengelegt, echte
   Doppelanlagen schon.
-- **Namensslug:** Umlaute gefaltet (`ü`→`ue`), Titel/Adelspartikel entfernt (Dr., Prof., MdB,
-  von, …), Bindestrich-Namen als Worttrenner. „Prof. Dr. Änna von Müller-Schmidt (MdB)" →
-  `aenna-mueller-schmidt`.
+- **Stabile ID = nur personen-eindeutige Quellen** (Bundestag-/abgeordnetenwatch-ID).
+  **Nicht** die Wahlkreis-Nr (geografisch — Direkt- + Listenkandidaten teilen sie) und
+  **nicht** rein numerische Platzhalter — sonst würden verschiedene Personen falsch verschmelzen.
+- **Namensslug:** nur **akademische Titel** entfernt (Dr., Prof., MdB, …); Umlaute gefaltet
+  (`ü`→`ue`). **Adelspartikel bleiben erhalten** (`von`/`der`/`zu` sind Teil des gesetzlichen
+  Nachnamens — „von der Leyen"). „Prof. Dr. Anna Müller-Schmidt (MdB)" → `anna-mueller-schmidt`.
 - **DB-Durchsetzung:** `mandate_external_ids UNIQUE(id_source, external_id)` — eine externe ID
   gehört zu genau einem Mandat.
 
