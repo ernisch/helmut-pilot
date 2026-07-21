@@ -42,7 +42,7 @@ jobs:
       - name: Syntax-Check aller JS-Dateien
         run: |
           set -e
-          for f in server.js client.js sw.js api/index.js lib/helmut/*.js lib/helmut/quellenarchitektur/*.js lib/helmut/quellenarchitektur/seeds/*.js scripts/*.js; do
+          for f in server.js client.js sw.js api/index.js lib/helmut/*.js lib/helmut/quellenarchitektur/*.js lib/helmut/quellenarchitektur/seeds/*.js lib/helmut/quellenbibliothek/*.js scripts/*.js; do
             node --check "$f"
           done
           echo "Syntax OK"
