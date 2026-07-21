@@ -52,6 +52,18 @@ console.log("== Private Mandantenquelle ==");
   check("A erhaelt NICHT die private Quelle von B", !rA.sources.some((s) => s.source_id === "priv-b1"));
 }
 
+// ============================ Private ID darf globale Referenz nicht verdraengen ============================
+console.log("== Namespacing private vs. global ==");
+{
+  const gcat = [{ id: "shared-id", source_type: "parlament" }];
+  const r = tenant.resolveTenantSources(A, {
+    globalCatalogById: gcat, mandateSourceIds: ["shared-id"],
+    privateSources: [{ id: "shared-id", tenant_id: A }]
+  });
+  const hits = r.sources.filter((s) => s.source_id === "shared-id");
+  check("gleiche ID global+privat: beide erhalten, keine Verdraengung", hits.length === 2 && hits.some((s) => s.private) && hits.some((s) => !s.private));
+}
+
 // ============================ 11) Mandantentrennung (harte Isolation) ============================
 console.log("== Mandantentrennung ==");
 {

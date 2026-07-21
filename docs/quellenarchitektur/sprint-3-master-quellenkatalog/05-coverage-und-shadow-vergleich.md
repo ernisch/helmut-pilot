@@ -10,7 +10,7 @@ datenportal 2, rechnungshof 1, gericht 1, behoerde 1, ministerium 16, partei 9, 
 ausschuss 24 (23 Suchwege + 1 Direktweg), medien_ueberregional 7, medien_regional 6, gewerkschaft 3,
 arbeitgeberverband 2, fachverband 1, wissenschaft 3, thinktank 1, ngo 1, bundesland 16, landtag 3.
 
-**Perspektive (funktionierende Quellen):** Fakt 41 · Position 21 · Journalismus 13 · Analyse 0
+**Perspektive (funktionierende Quellen):** Fakt 41 · Position 20 · Journalismus 13 · Analyse 0
 (die Analyse-Quellen — Wissenschaft/Thinktanks — sind noch `released`/`classified`, also vor der
 finalen Aktivierung, und zählen daher noch nicht als „funktionierend"). Faktenquellen dominieren
 deutlich — die Gewichtung bevorzugt amtliche Fakten vor Meinungsbeiträgen.
@@ -19,10 +19,12 @@ deutlich — die Gewichtung bevorzugt amtliche Fakten vor Meinungsbeiträgen.
 
 - **Alle 9 Parteien** des Mandatsregisters haben je ≥ 1 eigene Direktquelle → **keine Partei
   unterversorgt**, keine Partei durch die Architektur bevorzugt.
-- **6 von 8 Fraktionen** haben eine belegbare Direktdomain (CDU/CSU, SPD, Grüne, Linke, AfD, FDP).
-  **Unterversorgt: BSW-Gruppe und SSW im Bundestag** — für diese kleinen Gruppen existiert derzeit
-  **keine** belegbare eigene Fraktions-Feed-Domain. Der Versorgungsstandard erlaubt hier die Partei
-  als Ersatzquelle (BSW/SSW-Parteiseiten sind vorhanden). **Kein erfundener Feed.**
+- **5 von 8 Fraktionen** haben eine aktive belegbare Direktdomain: **CDU/CSU, SPD, Grüne, Die Linke,
+  AfD** — exakt die Fraktionen des 21. Deutschen Bundestags (2025). Die **FDP-Bundestagsfraktion ist
+  seit der Wahl 2025 nicht mehr vertreten** (4,3 % Zweitstimmen) und wird als `superseded` (veraltet)
+  geführt — ein realer Beleg für diesen Importzustand. **BSW und SSW** haben keine belegbare eigene
+  Fraktions-Feed-Domain; der Versorgungsstandard erlaubt hier die Partei als Ersatzquelle
+  (BSW/SSW-Parteiseiten sind vorhanden). **Kein erfundener Feed.**
 - Gegenpositionen sind vorhanden (mehrere Parteien/Fraktionen mit eigenen Positionsquellen) →
   `fehlendeGegenpositionen = false`.
 
@@ -45,13 +47,15 @@ deutlich — die Gewichtung bevorzugt amtliche Fakten vor Meinungsbeiträgen.
 
 ### Anbieter-/Suchabhängigkeit
 
-- **Suchanbieter-Gesamtanteil: 30,7 %** der funktionierenden Quellen (die 23 Ausschuss-Suchwege).
+- **Suchanbieter-Gesamtanteil: 31,1 %** der funktionierenden Quellen (die 23 Ausschuss-Suchwege).
   Zum Vergleich Altbestand: dort sind **134 von 143** Quellen (~94 %) Google-News-basiert. Der
   Master-Katalog senkt die strukturelle Suchabhängigkeit drastisch und macht den Rest sichtbar.
+  Die Suchanbieter-Erkennung ist bewusst robust (Aggregator-Herausgeber, `search`/`googlenews`-
+  Methode **und** Google-News-via-RSS) — ein Suchweg kann sich nicht als Direktquelle tarnen.
 
 ### Weitere Befunde
 
-- **Quellen ohne Rechtsbewertung: 33** (`license_status`/`privacy_status` = `unbewertet`) — u. a. die
+- **Quellen ohne Rechtsbewertung: 34** (`license_status`/`privacy_status` = `unbewertet`) — u. a. die
   Ausschuss-Suchwege und einzelne, bewusst noch nicht rechtlich geprüfte Institutionen. Ehrlich als
   Lücke geführt; Aktivierung erst nach `legally_checked`.
 - **Quellen ohne (aktiven) Abrufweg: 32** — die noch nicht aktivierten `released`/`classified`-
@@ -59,16 +63,16 @@ deutlich — die Gewichtung bevorzugt amtliche Fakten vor Meinungsbeiträgen.
 
 ## 2. Shadow-Vergleich Alt-relational vs. Master (Phase 1)
 
-`node scripts/master-catalog-shadow-compare.js` → `audit/master-katalog-vergleich.json`. **Urteil:
-`konflikt`** (wegen 2 echter URL-Widersprüche). Reproduzierbar (zweiter Lauf identisch).
+`node scripts/master-catalog-shadow-compare.js` → schreibt `master-katalog-vergleich.json` (Default
+`audit/`; reproduzierbar, zweiter Lauf identisch). **Urteil: `konflikt`** (wegen 1 echtem URL-Widerspruch).
 
 | Frage | Ergebnis |
 |-------|---------:|
 | 1) nur im alten System | 143 |
 | 2) nur im neuen Modell | 106 |
 | 3) unterschiedlich klassifiziert | 1 |
-| 4) widersprüchliche URLs | 2 |
-| 5) vermutlich doppelt | 1 |
+| 4) widersprüchliche URLs | 1 |
+| 5) vermutlich doppelt | 0 |
 | 6) abweichende Paketzuweisung | 1 |
 
 **Interpretation (wichtig — kein Regressionssignal):** Alt und Neu sind **absichtlich**
@@ -78,11 +82,14 @@ URLs**. Deshalb sind fast alle Einträge `nur-Alt` (die Suchwege) bzw. `nur-Neu`
 — das ist die **gewollte** Modellierungsverbesserung, keine verlorene Quelle. Genau ein Weg (DIP,
 `search.dip.bundestag.de/api/v1`) ist in beiden identisch.
 
-**Die harten Befunde (Punkt 4):**
+**Der harte Befund (Punkt 4):**
 - `publisher-bundestag.de|html|parliament-bundestag` — der Bundestag erscheint mit zwei URLs
-  (Alt-Weg vs. Master-Direktweg).
-- `publisher-tagesschau.de|rss|medien_ueberregional` — Tagesschau mit zwei RSS-URLs.
+  (Alt-Weg vs. Master-Direktweg) bei gleicher starker Rolle (Institution Bundestag) → echter
+  Widerspruch, der reconciled werden muss. Der URL-Vergleich flaggt nur bei starker inhaltlicher
+  Rolle (Partei/Fraktion/Ausschuss/Institution); zwei legitime Feeds eines Mediums ohne Institution
+  (z. B. Tagesschau) werden bewusst **nicht** als Widerspruch gewertet (kein Over-Flagging).
 
 **Punkt 3 (Klassifikation):** der DGB-Weg trägt im Alt-System keine Institution, im Master
-`institution_id = union-dgb` (Verbesserung). **Punkt 5/6:** je eine vermutliche Dublette und eine
-abweichende Paketzuweisung — als Prüfpunkte dokumentiert.
+`institution_id = union-dgb` (Verbesserung). **Punkt 5 (Dubletten):** 0 — die erwartete Alt↔Neu-
+Überlappung (DIP) zählt korrekt als `geteilt`, nicht als Dublette; katalog-interne Dubletten gibt es
+keine. **Punkt 6:** eine abweichende Paketzuweisung als Prüfpunkt dokumentiert.

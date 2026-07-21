@@ -12,7 +12,8 @@ Versorgungsstandard je Mandat (12 Ebenen), eine kontrollierte, idempotente Impor
 Zustände), einen rein lesenden Adapter + Shadow-Vergleich gegen den Altbestand, einen
 repräsentativen, belegbaren Startkatalog (107 Quellen), die SaaS-/RLS-Vorbereitung inkl.
 Mandantentrennung, eine DSGVO-Datenflussübersicht und eine Coverage-/Ausgewogenheitsmatrix.
-**Alle 142 bestehenden Offline-Testsuiten bleiben grün; 117 neue Assertions (3 Suiten) kommen hinzu.**
+**Alle Offline-Testsuiten bleiben grün (143/143); 129 neue Assertions (3 Suiten) kommen hinzu.**
+Eine adversariale Mehr-Agenten-Review lief zusätzlich; ihre bestätigten Funde sind eingearbeitet.
 
 ## Die zwölf Fragen
 
@@ -23,26 +24,27 @@ Bundestag/Bundesrat/Bundesregierung, BMAS, Leitmedien.
 
 **2. Welche wurden in den neuen Katalog übernommen?**
 Der Master-Startkatalog enthält **107 belegbare Quellen** (neu modelliert, nicht 1:1 kopiert):
-9 Parteien, 6 Fraktionen, 23 Ausschüsse, 15 Ministerien (+1 ersetzte Alt-Domain), Bundestag/DIP,
+9 Parteien, 5 aktive Bundestagsfraktionen (+1 als veraltet geführte FDP-Fraktion), 23 Ausschüsse,
+15 Ministerien (+1 ersetzte Alt-Domain), Bundestag/DIP,
 Bundesrat, Bundesregierung, Destatis, GovData, Bundesrechnungshof, Bundesverfassungsgericht,
 BA-Statistik, 16 Landesportale, 3 Landtags-/Landesquellen, 13 Medien (7 überregional, 6 regional),
 11 Fachöffentlichkeit (Gewerkschaften/Arbeitgeber/Wissenschaft/Thinktank/NGO). Der Adapter bindet
 den Altbestand **rein lesend** an; die produktive Übernahme (Seed-Einspielung) ist freigabepflichtig.
 
 **3. Welche Dubletten und Widersprüche wurden gefunden?**
-Shadow-Vergleich: **2 URL-Widersprüche** (Bundestag, Tagesschau — je zwei URLs für dieselbe Rolle),
-**1 abweichende Klassifikation** (DGB: Alt ohne Institution → Neu `union-dgb`), **1 vermutliche
-Dublette**, **1 abweichende Paketzuweisung**. Innerhalb des Startkatalogs: 0 doppelte kanonische
-Schlüssel (Dedup wirkt).
+Shadow-Vergleich: **1 URL-Widerspruch** (Bundestag — zwei URLs für dieselbe starke Rolle),
+**1 abweichende Klassifikation** (DGB: Alt ohne Institution → Neu `union-dgb`), **0 Dubletten**
+(die erwartete Alt↔Neu-Überlappung DIP zählt korrekt als `geteilt`), **1 abweichende
+Paketzuweisung**. Innerhalb des Startkatalogs: 0 doppelte kanonische Schlüssel (Dedup wirkt).
 
 **4. Welche Parteien sind ausreichend abgedeckt?**
 **Alle 9** (CDU, CSU, SPD, Grüne, FDP, AfD, Linke, BSW, SSW) — je ≥ 1 eigene Direktquelle. Keine
 Partei unterversorgt, keine bevorzugt.
 
 **5. Welche Parteien/Fraktionen sind unterversorgt?**
-Auf Fraktionsebene: **BSW-Gruppe und SSW im Bundestag** — keine belegbare eigene Fraktions-Feed-
-Domain. Ersatz über die Parteiseiten ist vorhanden (Versorgungsstandard erlaubt Partei als Ersatz).
-Kein erfundener Feed.
+Auf Fraktionsebene: **FDP** (seit der Wahl 2025 keine Bundestagsfraktion mehr — als `superseded`
+geführt), **BSW und SSW** (keine belegbare eigene Fraktions-Feed-Domain). Ersatz über die
+Parteiseiten ist vorhanden (Versorgungsstandard erlaubt Partei als Ersatz). Kein erfundener Feed.
 
 **6. Welche Ausschüsse sind ausreichend abgedeckt?**
 Strukturell alle 23 (je Ausschuss ein generiertes Paket + Coverage-Eintrag). **Qualitativ nur der
@@ -56,9 +58,10 @@ Hessen, Saarland**. Themen: die Themenversorgung ist datengetrieben modelliert, 
 bewusst nicht flächendeckend befüllt (Fachverbände/Wissenschaft je Politikfeld folgen kontrolliert).
 
 **8. Wie stark ist die Abhängigkeit von Google News / Suchanbietern?**
-Master-Katalog: **30,7 %** der funktionierenden Quellen (nur die Ausschuss-Suchwege). Altbestand:
+Master-Katalog: **31,1 %** der funktionierenden Quellen (nur die Ausschuss-Suchwege). Altbestand:
 **~94 %**. Die Abhängigkeit ist damit strukturell drastisch reduziert **und** vollständig sichtbar;
-der Versorgungsstandard verbietet Suchanbieter als alleinige Versorgung.
+der Versorgungsstandard verbietet Suchanbieter als alleinige Versorgung. Die Erkennung ist robust
+(auch Google-News-via-RSS und Aggregator-Herausgeber gelten als Suchanbieter — keine Tarnung möglich).
 
 **9. Ist die Architektur SaaS-tauglich?**
 **Ja.** Globaler Katalog + referenzielle Zuweisung (keine Duplikation je Mandant), strikte
@@ -111,9 +114,9 @@ Importe existieren nur als Fixture/vorbereitete Seed-Datei. **Kein Pull Request.
 
 | Suite | Assertions | Deckt ab |
 |-------|-----------:|----------|
-| `master-catalog-test.js` | 66 | Import/Dedup/URL/Herausgeber/Parteien/Ausschuss/Themen/Region/global/Zustände/Shadow/Ausgewogenheit/Suchanbieter/Pilot/Erweiterbarkeit |
-| `master-catalog-tenant-test.js` | 20 | private Quelle, Mandantentrennung, Korrekturen, Datenschutz/Datenminimierung |
-| `master-catalog-migration-test.js` | 31 | Migrations-Additivität, RLS-Vorbereitung, Rollback-Vollständigkeit |
+| `master-catalog-test.js` | 72 | Import/Dedup/URL/Herausgeber/Parteien/Ausschuss/Themen/Region/global/Zustände/Shadow/Ausgewogenheit/Suchanbieter/Pilot/Erweiterbarkeit |
+| `master-catalog-tenant-test.js` | 21 | private Quelle, Mandantentrennung, Korrekturen, Namespacing, Datenschutz/Datenminimierung |
+| `master-catalog-migration-test.js` | 32 | Migrations-Additivität, RLS-Vorbereitung, Rollback-Vollständigkeit |
 
 Die 25 Auftrags-Testpunkte (Phase 10) sind vollständig abgedeckt; Zuordnung im Kopfkommentar der
 Suiten.

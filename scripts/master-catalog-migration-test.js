@@ -32,6 +32,15 @@ const createdSet = new Set(createdTables);
 const foreignAlters = alteredTables.filter((t) => !createdSet.has(t));
 check("kein ALTER auf bestehende Tabellen (nur eigene, fuer RLS)", foreignAlters.length === 0);
 check("kein DROP TABLE in der Migration selbst", !/drop table/i.test(mig));
+// Die ALTER/RLS/Trigger laufen dynamisch ueber `array['t1','t2',…]`-Schleifen (%I) — der statische
+// alter-Regex sieht die nicht. Deshalb explizit: JEDE in einer Schleifen-Array genannte Tabelle
+// muss eine NEU angelegte sein (nie eine bestehende Produktionstabelle).
+{
+  const loopTables = [...mig.matchAll(/array\[([\s\S]*?)\]/g)]
+    .flatMap((m) => [...m[1].matchAll(/'(\w+)'/g)].map((x) => x[1]));
+  check("dynamische RLS/Trigger-Schleifen referenzieren NUR neu angelegte Tabellen",
+    loopTables.length > 0 && loopTables.every((t) => createdSet.has(t)));
+}
 // Bestehende Kern-Tabellen duerfen NICHT angefasst werden.
 for (const t of ["publishers", "retrieval_paths", "source_packages", "package_paths", "mandate_profiles", "source_crawl_telemetry", "knowledge_objects", "raw_documents"]) {
   check(`bestehende Tabelle '${t}' unangetastet`, !new RegExp(`(alter|drop)\\s+table[^;]*public\\.${t}\\b`, "i").test(mig));
@@ -42,7 +51,10 @@ for (const t of ["catalog_sources", "catalog_source_paths", "catalog_package_ass
   check(`Tabelle ${t} vorhanden`, createdSet.has(t));
 }
 check("catalog_sources traegt canonical_key UNIQUE (eine Quelle einmal)", /canonical_key\s+text\s+not null\s+unique/.test(mig));
-check("catalog_sources kennt review_status mit 12 Zustaenden", /review_status[\s\S]*?discovered[\s\S]*?archived/.test(mig));
+{
+  const states = ["discovered", "normalized", "duplicate_candidate", "technically_checked", "classified", "legally_checked", "released", "active", "restricted", "quarantined", "superseded", "archived"];
+  check("catalog_sources kennt ALLE 12 Importzustaende im CHECK", states.every((s) => new RegExp("'" + s + "'").test(mig)));
+}
 
 console.log("== Mandantentrennung / RLS ==");
 check("globale catalog_*-Tabellen: RLS an, Rechte entzogen (service_role-only)",

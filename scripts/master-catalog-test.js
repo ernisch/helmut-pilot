@@ -115,6 +115,14 @@ check("je Bundesland ein generiertes Landespaket", landPackages().length === M.l
   const rbb = CAT.records.find((r) => r.id === "seed-region-rbb24-de");
   check("rbb24 traegt Region Berlin+Brandenburg", rbb && rbb.region_ids.includes("geo-land-berlin") && rbb.region_ids.includes("geo-land-brandenburg"));
 }
+{
+  // Fix: ein Bundesland, dessen Slug Praefix eines anderen ist, wird NICHT vom kuerzeren geschluckt.
+  const sa = M.sourceRecord.buildSourceRecord({ url: "https://sachsen-anhalt.de", method: "html", source_type: "bundesland", region_ids: ["geo-land-sachsen-anhalt"], political_level: "land", discovery_origin: "official_directory", discovered_at: "2026-07-21", review_status: "active" });
+  const covLand = coverage.buildCoverageMatrix({ records: [sa], parties: [], groups: [], committees: [], laender: [{ id: "geo-land-sachsen", name: "Sachsen", level: "land" }, { id: "geo-land-sachsen-anhalt", name: "Sachsen-Anhalt", level: "land" }] });
+  const sn = covLand.byBundesland.find((b) => b.id === "geo-land-sachsen");
+  const st = covLand.byBundesland.find((b) => b.id === "geo-land-sachsen-anhalt");
+  check("Sachsen schluckt NICHT Sachsen-Anhalt (Praefix-Kollision behoben)", sn.working === 0 && st.working === 1);
+}
 
 // ============================ 9) Globale Quelle (einmal kanonisch) ============================
 console.log("== Globale Quelle ==");
@@ -175,15 +183,33 @@ console.log("== Shadow-Vergleich ==");
   check("Vergleich liefert ein Urteil", ["identisch", "erklaerbare_abweichung", "pruefbeduerftig", "konflikt"].includes(comparison.verdict));
   check("alle 6 Kategorien sind Arrays", [comparison.onlyOld, comparison.onlyNew, comparison.differingClassification, comparison.conflictingUrls, comparison.likelyDuplicates, comparison.differingAssignment].every(Array.isArray));
   check("reproduzierbar: zweiter Lauf identisch", JSON.stringify(M.shadowAgainstRelational(full).comparison.counts) === JSON.stringify(comparison.counts));
-  check("nur-Alt und nur-Neu werden getrennt ausgewiesen", comparison.counts.onlyOld >= 0 && comparison.counts.onlyNew >= 0);
+  // Meaningful statt tautologisch: nurAlt/nurNeu sind disjunkt (geteilte Quellen in keiner Liste)
+  // und die counts entsprechen den Array-Laengen.
+  {
+    const oldKeys = new Set(comparison.onlyOld.map((x) => x.key));
+    const newKeys = new Set(comparison.onlyNew.map((x) => x.key));
+    const disjoint = [...oldKeys].every((k) => !newKeys.has(k));
+    check("nur-Alt und nur-Neu sind disjunkt + counts == Array-Laenge",
+      disjoint && comparison.counts.onlyOld === comparison.onlyOld.length && comparison.counts.onlyNew === comparison.onlyNew.length);
+  }
+  // Fix-Nachweis: geteilte Alt<->Neu-Quellen zaehlen NICHT als Dublette (nur katalog-interne).
+  check("Dubletten sind katalog-intern markiert (alt|neu), nicht die Ueberlappung",
+    comparison.likelyDuplicates.every((d) => d.catalog === "alt" || d.catalog === "neu"));
 }
 {
-  // gezielte URL-Widerspruchspruefung: gleicher Herausgeber+Methode+Rolle, zwei URLs.
+  // gezielte URL-Widerspruchspruefung: gleicher Herausgeber+Methode+STARKE Rolle (Institution),
+  // zwei URLs -> Widerspruch. Ohne starke Rolle wird bewusst NICHT geflaggt (kein Over-Flagging).
   const conflicts = shadow.detectUrlConflicts([
-    { id: "a", publisher_id: "publisher-x.de", source_type: "ministerium", canonical_url: "https://x.de/feed-a", retrieval: { method: "rss" } },
-    { id: "b", publisher_id: "publisher-x.de", source_type: "ministerium", canonical_url: "https://x.de/feed-b", retrieval: { method: "rss" } }
+    { id: "a", publisher_id: "publisher-x.de", source_type: "ministerium", institution_id: "ministry-x", canonical_url: "https://x.de/feed-a", retrieval: { method: "rss" } },
+    { id: "b", publisher_id: "publisher-x.de", source_type: "ministerium", institution_id: "ministry-x", canonical_url: "https://x.de/feed-b", retrieval: { method: "rss" } }
   ]);
-  check("widerspruechliche URLs erkannt", conflicts.length === 1 && conflicts[0].urls.length === 2);
+  check("widerspruechliche URLs erkannt (starke Rolle)", conflicts.length === 1 && conflicts[0].urls.length === 2);
+  // Zwei Feeds eines Mediums OHNE Institution werden NICHT als Konflikt geflaggt.
+  const noConflict = shadow.detectUrlConflicts([
+    { id: "c", publisher_id: "publisher-m.de", source_type: "medien_ueberregional", canonical_url: "https://m.de/feed-1", retrieval: { method: "rss" } },
+    { id: "d", publisher_id: "publisher-m.de", source_type: "medien_ueberregional", canonical_url: "https://m.de/feed-2", retrieval: { method: "rss" } }
+  ]);
+  check("zwei Medien-Feeds ohne Institution -> kein Konflikt", noConflict.length === 0);
 }
 
 // ============================ 19/20) Ausgewogenheit & keine Alleinversorgung durch Suchanbieter ============================
@@ -203,6 +229,14 @@ check("22 von 23 Ausschuessen sind Suchanbieter-Monokultur (Petitionen ausgenomm
 }
 check("Suchanbieter-Gesamtanteil wird ausgewiesen", typeof CAT.coverage.overallSearchShare === "number");
 check("Quellen ohne Rechtsbewertung werden gefunden", CAT.coverage.findings.quellenOhneRechtsbewertung.length > 0);
+{
+  // Haertung: Google News via RSS (method rss + Aggregator-Herausgeber) MUSS als Suchanbieter
+  // gelten — sonst koennte sie sich an der §9-Regel vorbei als Grundversorgung tarnen.
+  const gnRss = { source_type: "partei", political_level: "bund", publisher_id: "aggregator-google-news", retrieval: { method: "rss" }, review_status: "active", trust: "niedrig" };
+  check("Google-News-via-RSS gilt als Suchanbieter", model.isSearchProviderSource(gnRss));
+  check("Google-News-via-RSS nicht in bund-basis (kein search_provider_ok)", !assignment.assignSourceToPackages({ ...gnRss, source_type: "parlament" }, CAT.packages).includes("bund-basis"));
+  check("Partei nur ueber Google-News-via-RSS -> nicht versorgt", supply.evaluateLevel(supply.LEVEL_BY_ID.get("party"), [gnRss]).met === false);
+}
 
 // ============================ 22) Kein fest codierter Pilot-Sonderfall ============================
 console.log("== Kein Pilot-Sonderfall ==");
