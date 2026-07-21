@@ -121,8 +121,8 @@ verbindlichen Entscheidungen als neue, dormante Schicht (`konsolidierung*.js`) u
 - **Übernommen:** Ausschuss→Politikfeld/Ministerium/Themen-Relationen (Obermenge). Ebene zentral aus `config.parliamentTypeOf`.
 - **Doppelung:** `mandate-registry.COMMITTEE_RELATIONS.policyField` überlappt `matching.POLICY_FIELD_LABELS` (~22 Keys).
 - **Legacy-Übergang:** keiner nötig — `mandate_profiles` ist bereits die einzige Schreibwahrheit.
-- **Risiko:** die policyField-Dedup berührt die **Live-Datei** `matching.js` → **nicht** angefasst (Kap. 5, aufgeschoben).
-- **Tests:** `mandate-register-test.js` (Bestand) + Manifest-Fall M1.
+- **Risiko:** die policyField-Dedup berührt die **Live-Datei** `matching.js` → **nicht** angefasst; die beiden Karten werden zudem von **verschiedenen** Nachschlagefunktionen adressiert (`normalizeCommittee` mit der akzeptierten `menschenrechte→recht`-Kollision auf dem Live-Ranking-Pfad vs. kollisionssicherem `committeeMatchKey`) — ein Zusammenlegen der Pfade würde das Live-Ranking verschieben.
+- **Tests:** `mandate-register-test.js` (Bestand) + Manifest-Fall M1 + **neu** `mandate-policyfield-consistency-test.js` (Drift-Guard, siehe Kap. 5).
 
 ### 2. Quellenmodell
 - **Verbindlich:** `master/model.js` + `master/source-record.js` (Sprint 3, 20-Attribut-Record, kanonischer Dedup-Schlüssel).
@@ -231,9 +231,13 @@ gehalten.
 3. `quellenbibliothek/index.js:createLibrary` — der tote Komfort-Export wird von
    `konsolidierung-versorgungsplan.js:buildRuntimeRegistry` **genutzt** und damit lebendig + getestet.
 
-**Bewusst NICHT entfernt (Risiko/Live-Berührung — aufgeschoben):**
+**Bewusst NICHT entfernt, aber GEGEN DRIFT GESICHERT (Risiko/Live-Berührung — aufgeschoben):**
 - `mandate-registry.policyField` ↔ `matching.POLICY_FIELD_LABELS`: die Auflösung würde die **Live-Datei**
-  `matching.js` berühren → aufgeschoben, bis eine bewusste Freigabe vorliegt.
+  `matching.js` berühren (und die beiden Karten hängen an **verschiedenen** Nachschlagefunktionen) →
+  Entfernen aufgeschoben. Statt Löschen wird die Äquivalenz durch einen **additiven Drift-Guard-Test**
+  festgenagelt: `scripts/mandate-policyfield-consistency-test.js` erzwingt, dass `COMMITTEE_RELATIONS`
+  eine byte-identische Obermenge von `POLICY_FIELD_LABELS` bleibt (0 Mismatches, `petitionen`=null) —
+  so kann keine der beiden Tabellen künftig still von der anderen abdriften. Berührt keine Live-Datei.
 - Architektonische „Doppelungen" (drei Quellmodelle, zwei Zuweisungsmaschinen, drei Health-Vokabulare,
   zwei Qualitätsmodelle) werden **nicht durch Löschen** aufgelöst, sondern durch die **kanonische
   Konsolidierungsschicht** überlagert — die Sprint-Module bleiben dormant erhalten (ihre Tests grün).
@@ -256,11 +260,12 @@ in `server.js`/`scheduler.js`/`crawler.js` verdrahtet** und schreiben nichts.
 ## 7. Phase 5 — Verifikation
 
 - **Alle bisherigen Offline-Suiten:** siehe `## Verifikationslauf` unten — die Zahl fällt **nicht** unter 149.
-- **Neue Konsolidierungstests** (4 Suiten, in die Offline-Gesamtsuite eingesammelt):
+- **Neue Konsolidierungstests** (5 Suiten, in die Offline-Gesamtsuite eingesammelt):
   - `konsolidierung-architektur-test.js` — Syntax-implizit, EIN-Health, EIN-Quality, Manifest, keine Pilot-Sonderfälle.
   - `konsolidierung-versorgungsplan-test.js` — dynamische Zuweisung, Paket=Laufzeit, globale Nicht-Kopie, Determinismus, realer Katalog.
   - `konsolidierung-legacy-shadow-test.js` — Legacy-Paket-Shadow-Vergleich (§9), ehrliche Nicht-Abdeckung.
   - `konsolidierung-tenant-isolation-test.js` — Tenant-Isolation (global referenziert / privat getrennt) + DSGVO/PII.
+  - `mandate-policyfield-consistency-test.js` — Drift-Guard für die eine Politikfeld-Label-Wahrheit (Komponente 1).
 - **Syntax-Checks:** `node --check` über alle neuen `.js`-Dateien; CI-Glob deckt `quellenarchitektur/*.js` + `scripts/*.js` ab.
 - **Keine Pilot-Sonderfälle:** strukturell geprüft (`konsolidierung-architektur-test.js` P1).
 
@@ -305,14 +310,15 @@ Integrationsstand.
 ## Verifikationslauf
 
 - **Basis (Integrationsstand):** `run-offline-tests.js` → **149/149 Suiten grün** (Exit 0).
-- **Nach Konsolidierung:** `run-offline-tests.js` → **153/153 Suiten grün** (Exit 0, ~33 s) —
-  die 149 Bestands-Suiten plus die 4 neuen Konsolidierungs-Suiten. Die Zahl fällt **nicht** unter 149.
+- **Nach Konsolidierung:** `run-offline-tests.js` → **154/154 Suiten grün** (Exit 0, ~33 s) —
+  die 149 Bestands-Suiten plus 5 neue Konsolidierungs-Suiten. Die Zahl fällt **nicht** unter 149.
   - `konsolidierung-architektur-test.js` — 23/23 Assertions grün (H1–H9 Gesundheit, Q1–Q5 Qualität,
     M1–M8 Manifest, P1 keine Pilot-Sonderfälle).
   - `konsolidierung-versorgungsplan-test.js` — 13/13 (Adapter, Paket=Laufzeit, globale Nicht-Kopie,
     Determinismus, realer Master-Katalog).
   - `konsolidierung-legacy-shadow-test.js` — 9/9 (Legacy-Paket-Shadow-Vergleich, ehrliche Nicht-Abdeckung).
   - `konsolidierung-tenant-isolation-test.js` — 10/10 (global referenziert / privat getrennt + DSGVO/PII).
+  - `mandate-policyfield-consistency-test.js` — 5/5 (Drift-Guard: eine Wahrheit für Politikfeld-Labels).
 - **`[NETZ-GUARD]`-Hinweis** zu `pardok-shadow-test.js`: **Bestand aus `main`** (kein Sprint-/
   Konsolidierungsartefakt) — der Guard blockte einen Nicht-Localhost-Versuch, die Suite blieb grün. Kein Regress.
 - **Syntax-Check:** `node --check` über alle 9 geänderten/neuen `.js`-Dateien bestanden; alle liegen im
