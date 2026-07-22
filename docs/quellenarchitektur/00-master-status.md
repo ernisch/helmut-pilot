@@ -1,5 +1,27 @@
 # MASTER-STATUS — Helmut Quellenarchitektur-Migration
 
+> # 🧭 RE-ANKER (Recovery Sprint R2, 2026-07-22)
+>
+> - **Aktueller `main`-HEAD: `d6d9063`** (Merge #113). Ältere HEAD-Angaben in diesem
+>   Dokument (`7346653`/#100 usw.) sind **historische Stände**, nicht der aktuelle.
+> - **Quellenmodus: `HELMUT_SOURCE_MODE=on` — der Cutover ist AUSGEFÜHRT** (Freigabe
+>   „Go Quellen Cutover" 2026-07-15, `helmut-flags.json`). Die relationale DB ist die
+>   **aktive** Quellenwahrheit, der hartkodierte Katalog ist Fallback. **Es gibt kein
+>   offenes Quellen-Cutover-Gate mehr.** Ältere Passagen unten (§4/§8/§9, Stand
+>   2026-07-14), die den Cutover als „einzige noch offene Freigabe / NICHT ausgeführt"
+>   beschreiben, sind ein **historischer Vor-Cutover-Snapshot** und überholt.
+> - **JWT-Selbstsignierung: dauerhaft stillgelegt** (`tenantJwtModeEnabled()`→`false`,
+>   `storage.js:2432-2434`). RLS ist **inert**; Mandantentrennung erfolgt **ausschließlich
+>   App-seitig**. Kein Dokument darf behaupten, RLS schütze die Produktion vollständig.
+>   Verbindlich: `05-sicherheitsmodell-rls.md`.
+> - **OP-03** (DB-seitige Scharfschaltung): **blockiert den Einzelpiloten nicht**,
+>   ist aber **zwingende Voraussetzung vor dem ersten echten zahlenden Zweitmandanten**.
+> - **Demo-/Pilot-Mandate:** offene Bereinigungsaufgabe **OP-04** (nicht erledigt).
+> - **Generation B („Quellenplattform") wird bewusst NICHT integriert** — siehe
+>   `docs/architecture/retired-quellenplattform-branches.md`.
+> - **Scope:** dieses Dokument = Gesamt-Migrationsstatus. Sicherheit/RLS/JWT →
+>   `05-sicherheitsmodell-rls.md`; offene Punkte → `datenmotor-restliste.md`.
+
 ## NACHTRAG 2026-07-17 (Konsolidierung: Thread-2-Härtung, Sprint 1, Mandantenneutralisierung, Understanding-Forensik, Recovery-Pfad) — aktuellster verifizierter Stand
 
 > **Verbindliche Restliste aller offenen Punkte:** `docs/datenmotor-restliste.md`.
@@ -347,12 +369,16 @@ needs_review+manual · Migration-Registry 12 Einträge, **keine Migration offen*
 Datenänderung seit letzter Konsolidierung: der additive package_paths-Link (§5).
 
 ## 8) Verbindlich AUS (bis je eigene Freigabe)
-Quellenmodus **on** (= Cutover, einzige noch offene Freigabe) · Gate **on** · Cheap-Triage ·
+Quellenmodus **on** (= Cutover, ~~einzige noch offene Freigabe~~ **erledigt 2026-07-15, siehe Re-Anker-Banner**) · Gate **on** · Cheap-Triage ·
 Scoring **on** · Berlin-/Brandenburg-Aktivierung · Bot-Quellen · Datenlöschungen ·
 Cron-Änderungen · KO-Klassifikations-Backfill.
 
-## 9) CUTOVER-PAKET (P14 — vorbereitet, NICHT ausgeführt)
-**Nächstes und einziges offenes Gate: „Go Quellen Cutover?"**
+## 9) CUTOVER-PAKET (P14 — historischer Vor-Cutover-Snapshot, 2026-07-14)
+> **[ÜBERHOLT — R2, 2026-07-22]** Dieser Cutover wurde am **2026-07-15 ausgeführt**
+> (`HELMUT_SOURCE_MODE=on`). Der Abschnitt unten ist der **historische Plan von vor**
+> der Ausführung; „offenes Gate" gilt **nicht mehr**. Siehe Re-Anker-Banner am Dateianfang.
+
+**~~Nächstes und einziges offenes Gate: „Go Quellen Cutover?"~~ (erledigt 2026-07-15)**
 1. **Exakte Änderung:** in `helmut-flags.json` eine Zeile ergänzen: `"HELMUT_SOURCE_MODE": "on"`
    → PR → Merge → Production-Deployment. (Env-Alternative: Vercel-Env `HELMUT_SOURCE_MODE=on`
    + Redeploy — überstimmt die Datei.) Der Feature-Branch enthält den kompletten Code bereits.

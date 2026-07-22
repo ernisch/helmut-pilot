@@ -1,24 +1,30 @@
-# Runbook — Tenant-JWT-Modus aktivieren (RLS scharf schalten)
+# [HISTORISCH · NICHT AUSFÜHREN] Runbook — Tenant-JWT-Modus (überholt)
 
-> # ⛔ ÜBERHOLT — DIESES RUNBOOK NICHT BEFOLGEN (Stand 2026-07-15, Audit-Korrektur)
+> # ⛔ ÜBERHOLT — DIESES RUNBOOK NICHT BEFOLGEN
+> **Recovery Sprint R2 · Stand 2026-07-22 · `main` @ `d6d9063`**
 >
-> **Der hier beschriebene Schalter ist tot.** `tenantJwtModeEnabled()` ist seit
-> dem 2026-07-13 **hart auf `false` stillgelegt** (lib/helmut/storage.js,
+> **Der hier beschriebene Schalter ist tot.** `tenantJwtModeEnabled()` ist
+> **hart auf `false` stillgelegt** (`lib/helmut/storage.js:2432-2434`,
 > Commit f952b69 / PR #68): Supabase hat das Projekt auf **asymmetrische
 > JWT-Signing-Keys** umgestellt — die App kann mit `SUPABASE_JWT_SECRET` kein
 > von PostgREST akzeptiertes Token mehr selbst signieren (Fehlerbild PGRST301
-> „No suitable key or wrong key type", in Production-Logs vom 12./13.07. belegt).
+> „None of the keys was able to decode the JWT", in Production-Logs vom 12./13.07. belegt).
 >
 > **Folge:** `HELMUT_TENANT_JWT_MODE=1` zu setzen bewirkt NICHTS. Wer diesem
 > Runbook folgt, wähnt sich fälschlich DB-seitig geschützt. Die 23 RLS-Policies
 > liegen weiterhin inert in der DB (service_role umgeht sie, BYPASSRLS).
 >
-> **Aktueller Stand der Mandantentrennung:** ausschließlich App-seitig
-> (Tenant-Guards, adversarial getestet). Die bewerteten Wege zu einer echten
-> DB-seitigen Trennung stehen in **`docs/mandantentrennung-architektur.md`**
-> (Entscheidung vor Mandant 2 nötig — Freigabepunkt).
+> **VERBINDLICHE QUELLE (ersetzt dieses Runbook):**
+> **`docs/quellenarchitektur/05-sicherheitsmodell-rls.md`** — aktuelle Mandantentrennung,
+> RLS-Status, stillgelegter JWT-Pfad und OP-03. Der Weg zu echter DB-seitiger Trennung
+> (GoTrue) ist dort in §5 beschrieben; die Freigabe-Voraussetzung ist **OP-03**
+> (`datenmotor-restliste.md`).
 >
-> Der Rest dieses Dokuments bleibt nur als historischer Nachweis erhalten.
+> **Aktueller Stand der Mandantentrennung:** ausschließlich App-seitig
+> (Tenant-Guards, adversarial getestet); RLS **inert**.
+>
+> **Alles ab hier ist rein historischer Nachweis des damals geplanten Ablaufs —
+> keine Anweisung. Nichts unten ausführen.**
 
 **Stand:** 2026-07-12 · **Status:** ~~Vorprüfungen ✅, Aktivierung wartet auf **einen Betreiber-Handgriff**~~ **ÜBERHOLT, siehe Banner oben.**
 
@@ -108,7 +114,13 @@ Falls ein wichtiger Test fehlschlägt:
 
 ## 5. Danach
 
-Nach erfolgreicher Aktivierung ist die **DB-seitige Mandantentrennung scharf**. Der
+> **[HISTORISCH — falsch, korrigiert R2]** Der ursprüngliche Text behauptete, nach
+> Aktivierung sei „die DB-seitige Mandantentrennung scharf". Das trifft **nicht** zu:
+> der Schalter ist stillgelegt (siehe Banner), die DB-seitige Trennung ist **nicht**
+> scharf. Verbindlicher Weg zu echter DB-Durchsetzung: `05-sicherheitsmodell-rls.md` §5
+> (GoTrue) unter Freigabe **OP-03**.
+
+~~Nach erfolgreicher Aktivierung ist die DB-seitige Mandantentrennung scharf.~~ Der
 nächste sinnvolle Schritt Richtung Mehrmandantenbetrieb ist die **Profilversorgung in
-der DB** (P2-9) + **KO-Anreicherung** (siehe `docs/ko-anreicherung-analyse.md`). Ein
+der DB** + **KO-Anreicherung** (siehe `docs/ko-anreicherung-analyse.md`). Ein
 zweiter echter Mandant sollte erst danach und kontrolliert dazukommen.

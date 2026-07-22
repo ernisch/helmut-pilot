@@ -23,12 +23,17 @@ Sechs klar getrennte, einzeln getestete und gemergte Pakete:
 | #62 | KI-Budget pro Kunde (Tag/Monat, Warnschwelle, harter Stopp, fail-closed) + Cache-Trennung verifiziert |
 | (dieser) | Abschlussbericht |
 
-Zusätzlich: der **JWT-Modus** wurde in Production scharf geschaltet (Secret-Fix durch
-den Betreiber), sodass die Datenbank die Mandantentrennung jetzt selbst erzwingt.
+> **[KORRIGIERT R2, 2026-07-22]** Der ursprüngliche Satz („der JWT-Modus wurde in
+> Production scharf geschaltet … die Datenbank erzwingt die Trennung selbst") ist
+> **falsch/überholt**. Der JWT-Modus ist **stillgelegt**; die DB erzwingt **nichts** —
+> die Trennung ist rein App-seitig, RLS inert. Verbindlich: `05-sicherheitsmodell-rls.md`.
+
+~~Zusätzlich: der JWT-Modus wurde in Production scharf geschaltet, sodass die Datenbank
+die Mandantentrennung selbst erzwingt.~~
 
 ## 2. Was ist jetzt besser?
 
-- Die **Datenbank selbst** trennt die Kunden (RLS scharf) — nicht mehr nur der App-Code.
+- ~~Die Datenbank selbst trennt die Kunden (RLS scharf)~~ **[KORRIGIERT R2: falsch — RLS ist inert, die Trennung erfolgt ausschließlich App-seitig; siehe `05-sicherheitsmodell-rls.md`]**.
 - Es gibt ein **sauberes Profilmodell** in der DB statt Profildaten nur im Code.
 - Der Admin sieht auf einen Blick, ob ein Profil **vollständig, dünn versorgt oder leer** ist.
 - Jeder Kunde hat ein **eigenes KI-Budget** — einer kann nicht das ganze Budget verbrauchen.

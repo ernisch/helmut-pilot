@@ -1,4 +1,17 @@
-# Sicherheitsmodell: Mandantentrennung, JWT, RLS, service_role (Stand 2026-07-13)
+# Sicherheitsmodell: Mandantentrennung, JWT, RLS, service_role
+
+> # ✅ VERBINDLICHE QUELLE (Recovery Sprint R2, 2026-07-22, `main` @ `d6d9063`)
+>
+> **Dieses Dokument ist die einzige verbindliche Wahrheit** für: aktuelle
+> Mandantentrennung · RLS-Status · `service_role` / BYPASSRLS · den stillgelegten
+> JWT-Pfad · und **OP-03 als Voraussetzung vor einem echten zweiten Mandanten**.
+> Bei jedem Widerspruch gilt dieses Dokument. Nachrangig/überholt und explizit auf
+> diese Datei umgeleitet: `docs/jwt-aktivierung-runbook.md`,
+> `docs/rls-activation-rollout.md` (Schritt 5), `docs/multitenancy-abschlussbericht.md`
+> (§§1/2/4), `docs/readiness-verdict-2026-07.md` (JWT/RLS-Passagen).
+> Gegen den Code re-verifiziert am `main`-HEAD `d6d9063` (Zeilennummern unten aktualisiert).
+> **Scope-Abgrenzung:** Gesamt-Migrationsstatus → `00-master-status.md`; offene
+> Punkte → `datenmotor-restliste.md`. Dieses Dokument ändert nichts an Produktion.
 
 **Zweck:** Den bisherigen Widerspruch zwischen den Aussagen „JWT scharf / RLS scharf" und
 „RLS inert / service_role / App-Guard" **eindeutig** auflösen — durch Verfolgung einer echten
@@ -40,11 +53,11 @@ Postgres:  liefert die Zeilen — gefiltert ausschließlich durch den App-seitig
 
 | Frage | Antwort |
 |---|---|
-| **Welcher DB-Zugang wird verwendet?** | Ausschließlich der **`service_role`**-Schlüssel (`SUPABASE_SERVICE_ROLE_KEY`), `storage.supabaseRequest` (`storage.js:1411-1417`). |
+| **Welcher DB-Zugang wird verwendet?** | Ausschließlich der **`service_role`**-Schlüssel (`SUPABASE_SERVICE_ROLE_KEY`), `storage.supabaseRequest` (`storage.js:2381,2396`). |
 | **Greift RLS tatsächlich?** | **Nein.** Die Policies sind angewendet, aber `service_role` hat `BYPASSRLS` → sie werden nie ausgewertet. RLS ist **inert**. |
 | **Wo wird die Mandantentrennung erzwungen?** | **App-seitig im Code:** `assertTenant`/`assertTenantRows` (`storage.js:877-893`, hart, kein stiller „alle Mandanten"-Fallback) **plus** ein verpflichtender `user_id=eq.<tenant>`-Filter in jeder mandantenbezogenen Query. |
 | **Umgeht `service_role` RLS?** | **Ja** — per Definition (`BYPASSRLS`). Das ist der Grund, warum die App-seitige Trennung die einzige wirksame Linie ist. |
-| **Welches Sicherheitsmodell nutzt Production?** | **`service_role` + verpflichtendes App-seitiges Tenant-Scoping.** Der tenant-JWT-/`authenticated`-Pfad ist codiert, aber **stillgelegt** (`tenantJwtModeEnabled()` gibt hart `false`, `storage.js:1462`). |
+| **Welches Sicherheitsmodell nutzt Production?** | **`service_role` + verpflichtendes App-seitiges Tenant-Scoping.** Der tenant-JWT-/`authenticated`-Pfad ist codiert, aber **stillgelegt** (`tenantJwtModeEnabled()` gibt hart `false`, `storage.js:2432-2434`). |
 
 ## 3. Auflösung des Widerspruchs
 
@@ -56,7 +69,7 @@ Postgres:  liefert die Zeilen — gefiltert ausschließlich durch den App-seitig
   **selbst** signiertes HS256-Token wird von PostgREST hart abgelehnt
   (`PGRST301 "None of the keys was able to decode the JWT"`). Der private Schlüssel liegt bei
   Supabase und wird nie exportiert → die App **kann kein akzeptiertes Token mehr selbst signieren**.
-  Belegt im Code-Kommentar `storage.js:1443-1461` und im Fix-Commit `f952b69` (#68).
+  Belegt im Code-Kommentar `storage.js:2412-2430` und im Fix-Commit `f952b69` (#68).
 - **Folge (aktueller, korrekter Stand):** `tenantJwtModeEnabled()` ist hart `false`; `tenantRequest`
   nutzt immer `service_role`; `signTenantJWT`/`verifyTenantJWT` bleiben nur für Tests/Historie.
 
@@ -82,3 +95,11 @@ die vom **aktiven** (asymmetrischen) Signing-Key signiert sind, sodass PostgREST
 `request.jwt.claims` für die RLS-Policies (`auth.jwt()->>'user_id'`) setzt. Das ist ein eigener,
 größerer Schritt (Login/Session-Umbau, Token-Ausgabe, RLS-Verifikation) und **freigabepflichtig**
 (RLS-/Auth-Änderung in Production). **In diesem Sprint wurde nichts an RLS oder Production geändert.**
+
+**Verbindliche Abgrenzung (OP-03, siehe `datenmotor-restliste.md`):** Der obige Schritt ist als
+**OP-03** geführt (Sicherheits-Scharfschaltung vor dem ersten zahlenden Zweitmandanten). OP-03
+**blockiert den heutigen Einzelpiloten nicht** (eine einzige reale Mandant-Identität, App-Guards
+greifen lückenlos), ist aber **zwingende Voraussetzung, bevor ein echter zweiter zahlender Mandant
+hinzukommt** — bis dahin ist die DB-seitige Durchsetzung nicht scharf. Kein aktives Dokument darf
+behaupten, RLS schütze die Produktion bereits vollständig; heute schützt **ausschließlich die
+App-Schicht**.
