@@ -1,5 +1,13 @@
 # Auth- & Service-Role-Matrix — Sprint 3 (P0-2-Folgearbeit)
 
+> # ⚠️ ÜBERHOLT bzgl. Aktivierbarkeit (R2, 2026-07-22, `main` @ `d6d9063`)
+> Die Pfad-Matrix unten bleibt als Bestandsaufnahme gültig, **aber der beschriebene
+> Transport-Umschalter ist tot:** `HELMUT_TENANT_JWT_MODE=1` bewirkt **nichts**
+> (`tenantJwtModeEnabled()`→`false`, Supabase asymmetrische Keys → PGRST301). Die
+> `authenticated`+JWT-Transportvariante ist **nicht aktivierbar**; RLS bleibt inert,
+> Trennung rein App-seitig. Verbindlich: `docs/quellenarchitektur/05-sicherheitsmodell-rls.md`;
+> DB-Durchsetzung nur über GoTrue unter Freigabe **OP-03**.
+
 **Sprint:** SaaS-Security · **Datum:** 2026-07-12
 **Status:** App-seitiger JWT-Umbau **implementiert** (flag-gated, Default AUS,
 zero Verhaltensänderung ohne explizite Konfiguration). **RLS bleibt in

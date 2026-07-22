@@ -7,7 +7,11 @@
 > folgen einem **älteren, abgelösten Schema** und sind NICHT die Datenmotor-Aufgaben
 > A-P0-x. Der Abschnitt zu JWT-Modus/RLS ist teilweise überholt (JWT-Modus inzwischen
 > stillgelegt; Zweitmandanten-Voraussetzungen siehe Restliste OP-03).
-> **Verbindlicher aktueller Stand: `docs/datenmotor-restliste.md`.**
+> **[R2, 2026-07-22, `main` @ `d6d9063`]** Verbindlich für **Sicherheit/RLS/JWT**:
+> `docs/quellenarchitektur/05-sicherheitsmodell-rls.md` — JWT **stillgelegt**, RLS **inert**,
+> Trennung **rein App-seitig**; jede Aussage hier zu „JWT als nächstem Freigabepunkt" oder
+> „RLS schützt Production" gilt **nicht**. Zweitmandant-Voraussetzung = **OP-03**.
+> **Verbindlicher Gesamt-Reststand: `docs/datenmotor-restliste.md`.**
 
 Kurz & einfach aus Gründerperspektive. „Bereit" heißt: sicher betreibbar **und**
 liefert echten Nutzen, ohne dass etwas Wichtiges kaputt oder unsicher ist.

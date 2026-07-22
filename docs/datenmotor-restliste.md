@@ -1,9 +1,20 @@
 # Helmut Datenmotor — VERBINDLICHE KONSOLIDIERTE RESTLISTE
 
+> # 🧭 RE-ANKER (Recovery Sprint R2, 2026-07-22)
+>
+> - **Aktueller `main`-HEAD: `d6d9063`** (Merge #113). Die Pins `ca7e404`/#102 und
+>   `7346653`/#100 unten sind **historische Stände**.
+> - **Quellenmodus `on` (Cutover ausgeführt 2026-07-15)** — kein offenes Quellen-Cutover-Gate.
+> - **JWT-Selbstsignierung stillgelegt**, RLS **inert**, Mandantentrennung **App-seitig** —
+>   verbindlich: `quellenarchitektur/05-sicherheitsmodell-rls.md`.
+> - **OP-03** blockiert den Einzelpiloten nicht, ist aber **zwingend vor dem ersten echten
+>   zahlenden Zweitmandanten**. **OP-04** (Demo-Mandate) bleibt offen.
+> - **Scope:** dieses Dokument = offene Punkte; Sicherheit → `05-…`; Status → `00-master-status.md`.
+
 | | |
 |---|---|
-| **Stand / Prüfdatum** | **2026-07-17** (aktualisiert nach PR #102) |
-| **Geprüfter Stand** | `main`-HEAD `ca7e404` (Merge PR #102) = Production-Codebasis |
+| **Stand / Prüfdatum** | **2026-07-17** (Basisstand; re-verankert 2026-07-22, siehe Banner) |
+| **Geprüfter Stand** | historisch `main`-HEAD `ca7e404` (Merge PR #102); **aktuell `d6d9063` (#113)** |
 | **Grundlagen** | PR #95–#102, `docs/betrieb/production_beweisprotokoll.md` (inkl. §7 Google-News-Härtung), `docs/betrieb/google_news_haertung.md`, `docs/betrieb/health_report_rollierend.md`, `docs/betrieb/f5_freigabe.md`, `docs/helmut_datenmotor_thread2_handoff.md` §0a, `docs/quellenarchitektur/00-master-status.md` (Nachtrag 2026-07-17), Audit-Serie |
 
 > **Dies ist die EINZIGE verbindliche Liste aller offenen Punkte des Datenmotors.**
@@ -359,6 +370,6 @@ Restliste (sie bleiben als Belege erhalten, sind aber kein aktueller Stand mehr)
 - `docs/visual/helmut_datenmotor_thread2_freigabe.html/.pdf` (Entscheidungsvorlage FT2, entschieden bzw. hier fortgeschrieben)
 - ältere Nachträge in `docs/quellenarchitektur/00-master-status.md` sowie Doku 20–27 der Quellenarchitektur-Serie
 
-_Erstellt 2026-07-17 auf Basis von Code (`main` `7346653`), gemergten PRs #95–#100,
+_Erstellt 2026-07-17 auf Basis von Code (`main` `7346653`); re-verankert 2026-07-22 auf `main` `d6d9063` (#113). Gemergte PRs #95–#100,
 Production-Beweisprotokoll und Audit-Serie. Reine Dokumentation — kein Code, keine
 Datenbank, keine Workflows, keine Production-Konfiguration verändert._

@@ -1,5 +1,14 @@
 # RLS-Isolationstest — Ergebnisbericht
 
+> # ⚠️ TEIL-ÜBERHOLT (Recovery Sprint R2, 2026-07-22, `main` @ `d6d9063`)
+> Die Testergebnisse (Isolation unter der `authenticated`-Rolle) bleiben gültig, **aber
+> jede Aussage, RLS greife „sobald `HELMUT_TENANT_JWT_MODE=1`" bzw. dies sei der
+> „nächste echte Freigabepunkt", ist überholt.** Der JWT-Selbstsignier-Pfad ist
+> **dauerhaft stillgelegt** (`tenantJwtModeEnabled()`→`false`; Supabase asymmetrische
+> Keys → PGRST301); das Flag wirkt nicht. RLS bleibt in Produktion **inert**, die
+> Mandantentrennung ist **rein App-seitig**. Verbindlich:
+> `docs/quellenarchitektur/05-sicherheitsmodell-rls.md`; DB-Durchsetzung = **OP-03**.
+
 **Datum:** 2026-07-12 · **Status:** abgeschlossen, Testressource gelöscht ·
 **Production:** RLS-Migration am 2026-07-12 **angewendet** (Nachtrag §7)
 
