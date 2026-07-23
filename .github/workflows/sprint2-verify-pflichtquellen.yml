@@ -1,0 +1,77 @@
+name: Sprint 2 · Pflichtquellen-Verifikation (hib, BReg, BVerfG)
+
+# =============================================================================
+# NUR manuelle, einmalige technische Verifikation von GENAU DREI oeffentlichen
+# Pflichtquellen-URLs gegen die ECHTE Adresse:
+#   1. Heute im Bundestag (hib)
+#   2. Pressemitteilungen der Bundesregierung
+#   3. Pressemitteilungen des Bundesverfassungsgerichts
+# =============================================================================
+# Diese Action laeuft NIEMALS automatisch: ausschliesslich workflow_dispatch.
+#
+# SICHERHEIT / GRENZEN (bewusst):
+#   - KEINE Secrets, KEINE Supabase-/DB-Verbindung, KEINE Production-Daten, KEIN Deployment.
+#   - permissions: contents: read -> schreibt NICHTS ins Repo, aktiviert KEINE Quelle,
+#     aendert KEINEN bestehenden Retrieval Path, testet KEINE weiteren Quellen.
+#   - Ruft ausschliesslich die drei oben genannten oeffentlichen URLs ab (siehe
+#     scripts/sprint2-verify-pflichtquellen.js). Realistischer User-Agent, TLS bleibt an;
+#     kein Captcha-Solving, keine IP-Rotation, keine Zugriffsbeschraenkung wird umgangen.
+#   - Ergebnis je Quelle: eindeutig ✅ / ⚠ / ❌ (siehe Skript-Klassifikation).
+#
+# ARTEFAKTE: JSON-Report + Markdown-Zusammenfassung (Job Summary + Artifact-Upload).
+
+on:
+  workflow_dispatch: {}
+  # Zusaetzlich bei einem Pull Request, der genau diese zwei Dateien betrifft: GitHub
+  # fuehrt die YAML dann AUS DEM PR-HEAD aus (kein main-Merge noetig) — auf einem Runner
+  # mit offenem Egress, damit die drei echten oeffentlichen Adressen tatsaechlich geprueft
+  # werden koennen, bevor dieser Workflow ueberhaupt auf main liegt. KEIN Deployment,
+  # KEINE Secrets, KEINE Production-Aenderung (permissions: contents: read).
+  pull_request:
+    paths:
+      - ".github/workflows/sprint2-verify-pflichtquellen.yml"
+      - "scripts/sprint2-verify-pflichtquellen.js"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sprint2-verify-pflichtquellen
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # Echter Abruf der drei oeffentlichen Adressen. KEINE Env ausser optionalem Timeout-Tuning.
+      - name: Pflichtquellen abrufen und bewerten (echter Abruf)
+        run: node scripts/sprint2-verify-pflichtquellen.js --out sprint2-pflichtquellen-report.json --summary-out sprint2-pflichtquellen-summary.md
+
+      - name: Zusammenfassung in Job Summary schreiben
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ -f sprint2-pflichtquellen-summary.md ]; then
+            cat sprint2-pflichtquellen-summary.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Kein Summary erzeugt (Abruf-Schritt fehlgeschlagen)." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Artefakte hochladen (JSON + Zusammenfassung)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sprint2-pflichtquellen-verifikation
+          path: |
+            sprint2-pflichtquellen-report.json
+            sprint2-pflichtquellen-summary.md
+          if-no-files-found: warn
+          retention-days: 30
