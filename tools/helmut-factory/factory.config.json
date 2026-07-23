@@ -1,0 +1,26 @@
+{
+  "repo": "ernisch/helmut-pilot",
+  "runsDir": ".factory-runs",
+  "maxComments": 10,
+  "defaults": {
+    "erlaubterUmfang": [
+      "Nur die Dateien anfassen, die für dieses eine Issue nötig sind.",
+      "Bestehenden Code-Stil und vorhandene Muster im Repository beibehalten.",
+      "Kleine, gut nachvollziehbare Änderungen bevorzugen."
+    ],
+    "verboteneAenderungen": [
+      "Keine Änderungen an Produktion oder Deployment.",
+      "Keine automatischen Merges und keine automatische Pull-Request-Erstellung.",
+      "Keine neuen Abhängigkeiten ohne ausdrückliche Freigabe.",
+      "Keine kostenpflichtigen Modell- oder API-Aufrufe.",
+      "Nichts anfassen, das nichts mit diesem Issue zu tun hat."
+    ],
+    "abnahmekriterien": [
+      "Das im Issue beschriebene Ziel ist erfüllt.",
+      "Der Umfang wurde eingehalten (keine unnötigen Änderungen).",
+      "Vorhandene Tests laufen weiterhin; nötige neue Tests sind vorhanden.",
+      "Die Änderung ist verständlich und klein gehalten."
+    ]
+  },
+  "claudeAuftragHinweis": "Öffne Claude Code MANUELL im Repository und übergib die Arbeitsdatei als Kontext. Dieses Script startet Claude Code nicht selbst."
+}
