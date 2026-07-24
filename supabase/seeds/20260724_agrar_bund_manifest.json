@@ -1,0 +1,203 @@
+{
+  "package": {
+    "id": "pkg-landwirtschaft-ernaehrung-und-laendliche-raeume-bund",
+    "key": "landwirtschaft-ernaehrung-und-laendliche-raeume-bund",
+    "name": "Landwirtschaft, Ernährung und ländliche Räume (Bund)",
+    "status": "prepared",
+    "is_base": false,
+    "political_level": "bund",
+    "geography_id": "geo-bund",
+    "required_classes": []
+  },
+  "counts": {
+    "new_entities": 3,
+    "new_publishers": 3,
+    "reused_publishers": 1,
+    "new_paths": 7,
+    "reused_paths": 2,
+    "package_paths": 9,
+    "expected_levels": 7,
+    "expected_geographies": 7,
+    "expected_topics": 30
+  },
+  "new_entities": [
+    {
+      "id": "ministry-bmleh",
+      "type": "ministry",
+      "name": "Bundesministerium für Landwirtschaft, Ernährung und Heimat",
+      "aliases": [
+        "BMLEH",
+        "BMEL",
+        "Bundesministerium für Ernährung und Landwirtschaft"
+      ]
+    },
+    {
+      "id": "authority-ble",
+      "type": "authority",
+      "name": "Bundesanstalt für Landwirtschaft und Ernährung",
+      "aliases": [
+        "BLE"
+      ]
+    },
+    {
+      "id": "authority-bvl",
+      "type": "authority",
+      "name": "Bundesamt für Verbraucherschutz und Lebensmittelsicherheit",
+      "aliases": [
+        "BVL"
+      ]
+    }
+  ],
+  "new_publishers": [
+    {
+      "id": "publisher-bmleh.de",
+      "domain": "bmleh.de",
+      "type": "ministry",
+      "entity_id": "ministry-bmleh"
+    },
+    {
+      "id": "publisher-ble.de",
+      "domain": "ble.de",
+      "type": "authority",
+      "entity_id": "authority-ble"
+    },
+    {
+      "id": "publisher-bvl.bund.de",
+      "domain": "bvl.bund.de",
+      "type": "authority",
+      "entity_id": "authority-bvl"
+    }
+  ],
+  "reused_publishers": [
+    "publisher-destatis.de"
+  ],
+  "new_paths": [
+    {
+      "id": "rp-agrar-bmleh-gesetzgebung",
+      "publisher_id": "publisher-bmleh.de",
+      "tier": 1,
+      "status": "needs_review",
+      "activation_mode": "manual",
+      "topics": [
+        "agrarpolitik",
+        "gesetzgebung",
+        "tierhaltung",
+        "ernaehrungspolitik"
+      ]
+    },
+    {
+      "id": "rp-agrar-bmleh-veroeffentlichungen",
+      "publisher_id": "publisher-bmleh.de",
+      "tier": 1,
+      "status": "needs_review",
+      "activation_mode": "manual",
+      "topics": [
+        "agrarpolitik",
+        "tierschutz",
+        "ernaehrungspolitik",
+        "wald",
+        "strategie"
+      ]
+    },
+    {
+      "id": "rp-agrar-bmleh-gap",
+      "publisher_id": "publisher-bmleh.de",
+      "tier": 1,
+      "status": "needs_review",
+      "activation_mode": "manual",
+      "topics": [
+        "gap",
+        "agrarfoerderung",
+        "eu-agrarpolitik",
+        "direktzahlungen"
+      ]
+    },
+    {
+      "id": "rp-agrar-bmleh-gak-laendliche-raeume",
+      "publisher_id": "publisher-bmleh.de",
+      "tier": 1,
+      "status": "needs_review",
+      "activation_mode": "manual",
+      "topics": [
+        "gak",
+        "laendliche_raeume",
+        "agrarstruktur",
+        "kuestenschutz"
+      ]
+    },
+    {
+      "id": "rp-agrar-destatis-agrarstatistik",
+      "publisher_id": "publisher-destatis.de",
+      "tier": 1,
+      "status": "needs_review",
+      "activation_mode": "manual",
+      "topics": [
+        "agrarstatistik",
+        "landwirtschaft",
+        "tierbestaende",
+        "flaechennutzung",
+        "oekolandbau"
+      ]
+    },
+    {
+      "id": "rp-agrar-ble-publikationen",
+      "publisher_id": "publisher-ble.de",
+      "tier": 2,
+      "status": "needs_review",
+      "activation_mode": "manual",
+      "topics": [
+        "agrarmarkt",
+        "ernaehrung",
+        "oekolandbau",
+        "laendliche_raeume"
+      ]
+    },
+    {
+      "id": "rp-agrar-bvl-monitoring",
+      "publisher_id": "publisher-bvl.bund.de",
+      "tier": 2,
+      "status": "needs_review",
+      "activation_mode": "manual",
+      "topics": [
+        "lebensmittelsicherheit",
+        "monitoring",
+        "zoonosen",
+        "antibiotika"
+      ]
+    }
+  ],
+  "reused_paths": [
+    {
+      "id": "rp-dip",
+      "tier": 1,
+      "reused": true
+    },
+    {
+      "id": "rp-committee-landwirtschaft",
+      "tier": 1,
+      "reused": true
+    }
+  ],
+  "future_targets": [
+    {
+      "name": "Thünen-Institut (thuenen.de)",
+      "grund": "Bundesforschungsinstitut ländliche Räume/Wald/Fischerei; Waldzustandserhebung 2025 wird über den BMLEH-Veröffentlichungsweg mit erfasst. Top-Kandidat für spätere Promotion (Tier 2)."
+    },
+    {
+      "name": "BfR (bfr.bund.de)",
+      "grund": "Risikobewertung/Stellungnahmen; für ein kleines Paket zunächst Future Target (Auftrag §14)."
+    },
+    {
+      "name": "JKI / FLI / MRI",
+      "grund": "Überwiegend wissenschaftlich-operativ; kein ausreichender eigenständiger politischer Signalwert (Auftrag §15)."
+    }
+  ],
+  "safety": {
+    "package_status": "prepared",
+    "is_base": false,
+    "all_new_paths_inactive": true,
+    "profile_mapping": false,
+    "active_crawl_plan": false,
+    "applied_to_db": false
+  }
+}

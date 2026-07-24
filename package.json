@@ -110,6 +110,8 @@
     "test:drei-profile": "node scripts/drei-profile-e2e-test.js",
     "test:source-architecture": "node scripts/source-architecture-test.js",
     "seed:source-architecture": "node scripts/generate-source-architecture-seed.js",
+    "test:agrar-bund": "node scripts/agrar-bund-seed-test.js",
+    "seed:agrar-bund": "node scripts/generate-agrar-bund-seed.js",
     "test:ko-classification": "node scripts/ko-classification-test.js",
     "backfill:ko-classification": "node scripts/ko-classification-backfill.js",
     "test:dedup-findings": "node scripts/dedup-findings-test.js",

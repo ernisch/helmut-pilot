@@ -22,6 +22,35 @@
 > - **Scope:** dieses Dokument = Gesamt-Migrationsstatus. Sicherheit/RLS/JWT →
 >   `05-sicherheitsmodell-rls.md`; offene Punkte → `datenmotor-restliste.md`.
 
+## NACHTRAG 2026-07-24 (Bundes-Fachpaket „landwirtschaft-ernaehrung-und-laendliche-raeume-bund" — PREPARED vorbereitet, INAKTIV, NICHT angewendet)
+
+Auf dem Branch `claude/bund-landwirtschaft-validierung-dzrj54` wurde das Bundesquellenpaket für
+Agrar-/Ernährungs-/Ländliche-Räume-Politik (BMLEH-Ressort) **fachlich validiert und vollständig
+inaktiv technisch vorbereitet**. **Kein DB-Write, keine Migration, kein Profil-Mapping, kein aktiver
+Crawl-Plan, kein PR, kein Deployment, kein Merge.** Vollständige Doku + Freigabeanfrage:
+`docs/quellenarchitektur/29-paket-landwirtschaft-ernaehrung-laendliche-raeume-bund.md`.
+
+| Was | Wert |
+|---|---|
+| Kanonischer Paket-Key (bestätigt, kollisionsfrei) | `landwirtschaft-ernaehrung-und-laendliche-raeume-bund` |
+| Paketstatus | `prepared` · `is_base=false` · `political_level=bund` · kein Profil-Mapping |
+| Neue Publisher / Entitäten | **3 / 3** (BMLEH, BLE, BVL) — Destatis **wiederverwendet** (`publisher-destatis.de`) |
+| Abrufwege im Paket | **9** = 7 neu (`needs_review`+`manual`, INAKTIV) + 2 wiederverwendet (`rp-dip`, `rp-committee-landwirtschaft`, nur additiv verknüpft) |
+| Tier-Verteilung | Tier 1 = 7 · Tier 2 = 2 (BLE/BVL) · Thünen/BfR/JKI/FLI/MRI = Future Target/ausgeschlossen |
+| Artefakte | `lib/helmut/quellenarchitektur/seeds/agrar-bund-quellen.js` · `scripts/generate-agrar-bund-seed.js` · `supabase/seeds/20260724_agrar_bund_seed(.rollback).sql`,`_manifest.json` · `scripts/agrar-bund-seed-test.js` |
+| Tests | agrar-bund-seed 58/58 · **Offline-Suite 141/141 grün** (mein Test additiv aufgenommen) |
+| Basis-Seed / `packages.js` | **unverändert** (dediziertes additives Seed statt Basis-Seed-Regeneration; Begründung in Doku §1) |
+
+Amtlich verifizierte Korrekturen: Ausschussname (BT „Landwirtschaft, Ernährung und Heimat"),
+Tierschutzbericht (14., BT-Drs. 20/9860 vom 14.12.2023, **4-jährlich**, nicht 2-jährlich),
+GAP-Leistungsbericht (FY2024 eingereicht 28.02.2025, **nicht** „in Erstellung"),
+GAK-Rahmenplan 2026–2029 (beschlossen 10.12.2025, 1,067 Mrd € 2026),
+Tierhaltungskennzeichnung (Verwendungspflicht auf **1.1.2027** verschoben, nicht März 2026).
+**Offen vor Aktivierung:** byte-genaue URL-Prüfung (Bot-Schutz 403 im aktuellen Egress), Promotion
+in die Code-Paketlandkarte, Ausschuss-Entitätsname (Bestandsdaten). Details: Doku §11/§14.
+
+---
+
 ## NACHTRAG 2026-07-17 (Konsolidierung: Thread-2-Härtung, Sprint 1, Mandantenneutralisierung, Understanding-Forensik, Recovery-Pfad) — aktuellster verifizierter Stand
 
 > **Verbindliche Restliste aller offenen Punkte:** `docs/datenmotor-restliste.md`.
