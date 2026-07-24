@@ -22,6 +22,23 @@
 > - **Scope:** dieses Dokument = Gesamt-Migrationsstatus. Sicherheit/RLS/JWT →
 >   `05-sicherheitsmodell-rls.md`; offene Punkte → `datenmotor-restliste.md`.
 
+## NACHTRAG 2026-07-24 (Vorbereitetes Fachthemenpaket „Wohnen, Bauen & Stadtentwicklung (Bund)" — INAKTIV)
+
+- Neues Bund-Fachthemenpaket `wohnen-bauen-stadtentwicklung-bund` **strukturell
+  vorbereitet, technisch VOLLSTÄNDIG INAKTIV** (`status = prepared`; 10 Abrufwege
+  `needs_review` + `manual`; 0 aktive Wege). **Nicht aktiviert, nicht deployt, nicht
+  gemergt.** Kompaktes Manifest + Integrationsprotokoll:
+  **`docs/quellenarchitektur/29-wohnen-bauen-stadtentwicklung-bund.md`** (dort steht
+  alles Nötige — zukünftige Threads müssen NICHT das ganze Repo lesen).
+- Lebt eigenständig in `lib/helmut/quellenarchitektur/seeds/wohnen-bauen-quellen.js`
+  (+ Generator/Test/SQL). **Kein** Eingriff in Katalog/Registry/Generator/Methodik:
+  `buildFullModel` bleibt 6 Pakete, `source-architecture-test` 91/91 unverändert.
+  Wiederverwendet Destatis/Bundesrat/Bundestag/DIP/Ausschuss (keine Dubletten);
+  8 neue Entitäten (BMWSB/BBSR/UBA/BiB/KfW/Difu/Städtetag/Landkreistag). BBSR=BBR
+  (eine Institution). GMBl/ARGEBAU = Future Targets. Offline-Suite 141/141 grün.
+- **Betrieb dadurch unverändert** (nichts crawlt; Aktivierung ist eigener,
+  freigabepflichtiger Schritt — siehe Doku 29 §7).
+
 ## NACHTRAG 2026-07-17 (Konsolidierung: Thread-2-Härtung, Sprint 1, Mandantenneutralisierung, Understanding-Forensik, Recovery-Pfad) — aktuellster verifizierter Stand
 
 > **Verbindliche Restliste aller offenen Punkte:** `docs/datenmotor-restliste.md`.
