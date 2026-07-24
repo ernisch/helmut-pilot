@@ -150,22 +150,46 @@ check("Aggregator-Abrufwege sind googlenews_search", M.retrievalPaths.filter((p)
 
 // ============================ MIGRATION ============================
 console.log("== Migration: Katalogabbildung ==");
-// Das Pilot-Paket wohnen-bauen-stadtentwicklung-bund wird additiv eingemischt (11 Abrufwege,
-// 11 Paketzuordnungen). Die Legacy-Migrationszahlen werden daher gegen den Alt-Katalog
-// (ohne das WBSB-Modul) geprueft, damit die Migrations-Invariante unveraendert gilt.
+// Pilot-Vereinigung + P1-Workflow-Haertung: KEINE harten globalen Zahlen mehr (143/144/145
+// brachen, sobald ein Paket/Weg hinzukam). Sollwerte werden aus dem Modell + der kanonischen
+// Paket-Registry abgeleitet. Non-Catalog-Wege (legacy_source_id NICHT im Katalog) werden
+// FACHLICH klassifiziert statt pauschal als "nur dip" angenommen:
+//   - "explicit"           -> dokumentierter Einzelweg (amtliche DIP-API)
+//   - "registered_package" -> gehoert zu einem registrierten, vorbereiteten Paket (WBSB)
+//   - "orphan"             -> unbekannt/verwaist -> Test ROT
+// Das WBSB-Paket besteht diese Pruefung als registriertes Paket, NICHT als Legacy-Pfad.
 const WBSB_MODULE = "wohnen-bauen-stadtentwicklung-bund";
 const WBSB_PKG_ID = "pkg-wohnen-bauen-stadtentwicklung-bund";
-const legacyPaths = M.retrievalPaths.filter((p) => p.module !== WBSB_MODULE);
-const legacyPackagePaths = M.packagePaths.filter((pp) => pp.package_id !== WBSB_PKG_ID);
-check("143 kuratierte Quellen im Katalog — KEINE Personenquelle (entsteht dynamisch als '<id>-news')",
-  v1Sources.length === 143 && v1Sources.every((s) => s.type !== "person" && !s.demoOnly));
-check("alle 143 + DIP als Abrufwege abgebildet (Alt-Katalog, ohne WBSB-Modul)", legacyPaths.length === 144);
+const catalogIds = new Set(v1Sources.map((s) => s.id));
+const nonCatalogPaths = M.retrievalPaths.filter((p) => !catalogIds.has(p.legacy_source_id));
+// Pfade vorbereiteter Pakete (Soll aus PACKAGE_DEFINITIONS, dynamisch) — WBSB inklusive.
+const preparedPkgIds = new Set(seeds.PACKAGE_DEFINITIONS.filter((d) => d.status === "prepared").map((d) => d.id));
+const preparedPkgPathIds = new Set(M.packagePaths.filter((pp) => preparedPkgIds.has(pp.package_id)).map((pp) => pp.retrieval_path_id));
+const classifyNonCatalog = (p) => p.legacy_source_id === "dip" ? "explicit" : (preparedPkgPathIds.has(p.id) ? "registered_package" : "orphan");
+check("Katalog kuenstlich sauber: KEINE Personen-/Demo-Quelle (entsteht dynamisch als '<id>-news')",
+  v1Sources.length > 0 && v1Sources.every((s) => s.type !== "person" && !s.demoOnly));
+check("jede Katalog-Quelle als Abrufweg abgebildet (Soll = Katalog, dynamisch)",
+  v1Sources.every((s) => M.retrievalPaths.some((p) => p.legacy_source_id === s.id)));
+check("Abrufweg-Zahl = Katalog + klassifizierte Nicht-Katalog-Wege; KEIN verwaister Non-Catalog-Weg",
+  M.retrievalPaths.length === v1Sources.length + nonCatalogPaths.length
+  && nonCatalogPaths.every((p) => classifyNonCatalog(p) !== "orphan"));
+check("Non-Catalog-Wege sind exakt DIP + registrierte Paketwege (WBSB), NICHT als Legacy behandelt",
+  nonCatalogPaths.some((p) => classifyNonCatalog(p) === "explicit")
+  && nonCatalogPaths.some((p) => classifyNonCatalog(p) === "registered_package")
+  && nonCatalogPaths.filter((p) => classifyNonCatalog(p) === "registered_package").every((p) => !catalogIds.has(p.legacy_source_id) && /^rp-wbsb-/.test(p.id)));
 check("keine unzugeordnete Quelle (unmapped=0)", M.unmapped.length === 0);
 check("jeder Abrufweg traegt legacy_source_id (ID-Kompatibilitaet)", M.retrievalPaths.every((p) => !!p.legacy_source_id));
+check("Path-IDs eindeutig", new Set(M.retrievalPaths.map((p) => p.id)).size === M.retrievalPaths.length);
 // Ist-Zustand seit dem P8-Paketfix: fraction-linke gehoert BEWUSST zu ZWEI Paketen
 // (bund-basis als neutraler Fraktions-Suchweg + die-linke-bund als funktionierender
-// Ersatz fuer die zwei defekten Original-RSS-Wege der Partei) -> 146 Zuordnungen.
-check("jede Katalog-Quelle mind. einem Paket zugeordnet; fraction-linke bewusst in zweien (144+1)", legacyPackagePaths.length === 145);
+// Ersatz fuer die zwei defekten Original-RSS-Wege der Partei). Statt einer globalen
+// Gesamtzahl pruefen wir die INVARIANTEN: gueltige Referenzen, keine Doppellinks,
+// kein verwaister (nicht-dev) Weg.
+check("package_paths referenzieren gueltige IDs + keine Doppel-Links",
+  M.packagePaths.every((pp) => pkgIds.has(pp.package_id) && pathIds.has(pp.retrieval_path_id)) &&
+  new Set(M.packagePaths.map((pp) => `${pp.package_id}|${pp.retrieval_path_id}`)).size === M.packagePaths.length);
+check("jeder nicht-dev Abrufweg mind. einem Paket zugeordnet (kein verwaister Weg)",
+  M.retrievalPaths.filter((p) => p.activation_mode !== "dev_only").every((p) => M.packagePaths.some((pp) => pp.retrieval_path_id === p.id)));
 check("fraction-linke in bund-basis UND die-linke-bund",
   M.packagePaths.some((pp) => pp.package_id === "pkg-die-linke-bund" && pp.retrieval_path_id === "rp-fraction-linke") &&
   M.packagePaths.some((pp) => pp.package_id === "pkg-bund-basis" && pp.retrieval_path_id === "rp-fraction-linke"));
@@ -173,10 +197,21 @@ check("fraction-linke in bund-basis UND die-linke-bund",
 console.log("== Migration: Bundesbasis nicht verloren (Bestandsschutz) ==");
 const legacyIds = new Set(M.retrievalPaths.map((p) => p.legacy_source_id));
 check("gesunde Bundesquellen erhalten (DLF/Tagesschau/BMAS)", ["deutschlandfunk-politik", "tagesschau-politik", "bmas"].every((id) => legacyIds.has(id)));
-const bundBasis = M.packagePaths.filter((pp) => pp.package_id === "pkg-bund-basis").length;
-check("Bund-Basis-Paket traegt 53 neutrale + DIP = 54 Abrufwege", bundBasis === 54);
-check("Arbeit-und-Soziales-Paket traegt 84 Fachquellen", M.packagePaths.filter((pp) => pp.package_id === "pkg-arbeit-und-soziales").length === 84);
-check("Regional Niedersachsen = 4 Abrufwege", M.packagePaths.filter((pp) => pp.package_id === "pkg-regional-niedersachsen").length === 4);
+// P2 (§8): KEINE harten Paket-Gesamtzahlen mehr (54/84/4 druecken Modellumfang aus und
+// braechen bei jeder Quellenerweiterung). Statt der Zahl pruefen wir die fachliche STRUKTUR
+// (Mitgliedschaft der Pflicht-Kernwege + Groessenordnung), aus dem Modell abgeleitet.
+const ppOf = (pkgId) => M.packagePaths.filter((pp) => pp.package_id === pkgId).map((pp) => pp.retrieval_path_id);
+const bundBasisPaths = ppOf("pkg-bund-basis");
+const alwaysOnPathIds = M.retrievalPaths.filter((p) => p.activation_mode === "always_on").map((p) => p.id);
+check("Bund-Basis traegt DIP + JEDEN always_on-Kernweg (Grundversorgung strukturell nicht verloren)",
+  bundBasisPaths.length > 0
+  && M.retrievalPaths.some((p) => p.legacy_source_id === "dip" && bundBasisPaths.includes(p.id))
+  && alwaysOnPathIds.every((id) => bundBasisPaths.includes(id)));
+check("Arbeit-und-Soziales traegt deutlich mehr Wege als das Regionalpaket (groesstes Fachpaket)",
+  ppOf("pkg-arbeit-und-soziales").length > ppOf("pkg-regional-niedersachsen").length && ppOf("pkg-regional-niedersachsen").length > 0);
+check("Regional Niedersachsen ist nicht-leer und referenziert ausschliesslich Katalogquellen (kein verwaister Weg)",
+  ppOf("pkg-regional-niedersachsen").length > 0
+  && ppOf("pkg-regional-niedersachsen").every((id) => { const p = M.retrievalPaths.find((rp) => rp.id === id); return p && catalogIds.has(p.legacy_source_id); }));
 
 console.log("== Migration: Orphans + defekte Pflichtquellen ==");
 // Orphans werden DATENGETRIEBEN klassifiziert: die zu pruefenden Legacy-IDs kommen aus
@@ -198,8 +233,13 @@ check("ohne Datenkontext nur explizite Eintraege (dip)", (() => {
   const rows = catalog.classifyOrphans();
   return rows.length === 1 && rows[0].legacy_source_id === "dip" && rows[0].classification === "active_uncatalogued";
 })());
-const broken = M.retrievalPaths.filter((p) => p.status === "broken").map((p) => p.legacy_source_id);
-check("6 defekte Direkt-Feeds als broken markiert", broken.length === 6);
+const broken = M.retrievalPaths.filter((p) => p.status === "broken").map((p) => p.legacy_source_id).sort();
+// P2 (§8): statt harter Anzahl (6) eine BENANNTE, dokumentierte Menge — fachlich konstant
+// (die bekannten defekten Original-Feeds), KEINE Modell-Gesamtzahl. Ein NEU brechender Feed
+// (nicht in dieser Menge) faellt sofort auf, ein stiller Zuwachs bleibt nicht unbemerkt.
+const KNOWN_BROKEN_FEEDS = ["ausschuss-arbeit-soziales", "bundesregierung", "bundestag", "dgb", "die-linke", "linksfraktion"];
+check("bekannte defekte Direkt-Feeds exakt als broken markiert (benannte Menge, dokumentiert)",
+  JSON.stringify(broken) === JSON.stringify(KNOWN_BROKEN_FEEDS));
 check("defekte Pflichtquellen (Bundestag/Bundesregierung) als kritisch -> nicht still archivieren", (() => {
   const bt = M.retrievalPaths.find((p) => p.legacy_source_id === "bundestag");
   const br = M.retrievalPaths.find((p) => p.legacy_source_id === "bundesregierung");
@@ -217,7 +257,9 @@ const upSql = fs.readFileSync(path.join(migDir, "20260713_source_architecture.sq
 const downSql = fs.readFileSync(path.join(migDir, "20260713_source_architecture_rollback.sql"), "utf8");
 const createdTables = [...upSql.matchAll(/create table if not exists public\.(\w+)/g)].map((m) => m[1]);
 const droppedTables = new Set([...downSql.matchAll(/drop table if exists public\.(\w+)/g)].map((m) => m[1]));
-check("Migration legt 11 Tabellen an", createdTables.length === 11);
+// 11 ist ein FIXER Schema-Fakt (Anzahl Architektur-Tabellen der Migration), unabhaengig vom
+// Modellumfang und damit stabil gegen Quellenerweiterungen — dokumentierte fachliche Konstante.
+check("Migration legt 11 Architektur-Tabellen an (fixer Schema-Fakt)", createdTables.length === 11);
 check("Rollback entfernt jede angelegte Tabelle", createdTables.every((t) => droppedTables.has(t)));
 check("Migration ist additiv (kein DROP/ALTER an Bestandstabellen)", !/drop table (?!if exists public\.(geographies|electoral_districts|political_entities|publishers|retrieval_paths|source_packages|package_paths|path_expected))/.test(upSql) && !/alter table public\.(raw_documents|knowledge_objects|sources|profiles|mandate_profiles)/.test(upSql));
 check("begin/commit balanciert (up + down)", (upSql.match(/begin;/g) || []).length === 1 && (upSql.match(/commit;/g) || []).length === 1 && (downSql.match(/begin;/g) || []).length === 1);
@@ -228,13 +270,19 @@ check("RLS aktiviert + restriktiv (nur service_role, KEINE authenticated-Leseric
 
 // ============================ SEED-VOLLSTAENDIGKEIT ============================
 console.log("== Seed-Vollstaendigkeit ==");
-check("7 Pakete (4 aktiv + Berlin/Brandenburg prepared + WBSB-Pilot prepared) — KEIN Personenpaket im Code-Seed", M.packages.length === 7 && M.packages.every((p) => !p.key.startsWith("profil-")));
+// P1-Workflow-Haertung: Soll dynamisch aus den Paketdefinitionen (kein hartes 6/7); das
+// WBSB-Pilotpaket ist Teil von PACKAGE_DEFINITIONS und damit automatisch mitgezaehlt.
+check("Paketzahl = Paketdefinitionen (Soll dynamisch), KEIN Personenpaket im Code-Seed, Keys eindeutig",
+  M.packages.length === seeds.PACKAGE_DEFINITIONS.length
+  && M.packages.every((p) => !p.key.startsWith("profil-"))
+  && new Set(M.packages.map((p) => p.key)).size === M.packages.length);
 check("Berlin+Brandenburg als prepared Basispakete", (() => {
   const b = M.packages.find((p) => p.key === "berlin-basis");
   const bb = M.packages.find((p) => p.key === "brandenburg-basis");
   return b && b.status === "prepared" && b.is_base && bb && bb.status === "prepared" && bb.is_base;
 })());
-check("Landesmodule tragen 15 Pflichtklassen", M.packages.find((p) => p.key === "berlin-basis").required_classes.length === 15);
+check("Landesmodule tragen die Pflichtklassen aus dem Modell (Soll = LANDESMODUL_PFLICHTKLASSEN)",
+  M.packages.find((p) => p.key === "berlin-basis").required_classes.length === seeds.LANDESMODUL_PFLICHTKLASSEN.length);
 check("Bund Basis ist Pflicht-Basispaket (is_base)", (() => { const b = M.packages.find((p) => p.key === "bund-basis"); return b.is_base === true; })());
 check("kein Paket traegt mehr ein always_on-Flag (Daueraktivierung lebt auf Abrufweg-Ebene)", M.packages.every((p) => p.always_on === undefined));
 check("nur die 5 neutralen Kern-Abrufwege sind activation_mode=always_on", (() => {
