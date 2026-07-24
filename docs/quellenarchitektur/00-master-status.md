@@ -22,6 +22,35 @@
 > - **Scope:** dieses Dokument = Gesamt-Migrationsstatus. Sicherheit/RLS/JWT →
 >   `05-sicherheitsmodell-rls.md`; offene Punkte → `datenmotor-restliste.md`.
 
+## NACHTRAG 2026-07-24 (Quellenpaket-Vorbereitung `aussen-europa-und-entwicklung-bund` — prepared/inaktiv, additiv, NICHT angewendet)
+
+> **Scope-Hinweis:** Dieser Nachtrag betrifft **ausschließlich** die technische Vorbereitung EINES
+> neuen Fachthemen-Quellenpakets als `prepared`. Er ändert **nichts** am Gesamt-Migrations-/
+> Production-Status (dafür gilt weiter die Konsolidierung 2026-07-17 unten + `datenmotor-restliste.md`).
+> **Keine** Migration/SQL angewendet, **kein** Crawl, **kein** Profil-Mapping, **kein** Deployment, **kein** PR/Merge.
+
+Additiv nach dem etablierten BE/BB-Prepared-Muster (eigener Seed + guarded Rollback + Generator + Test)
+vorbereitet — **noch nichts auf Production angewendet** (freigabepflichtig, Manifest:
+`docs/quellenarchitektur/29-aussen-europa-entwicklung-paket.md`).
+
+- **Paket:** `pkg-aussen-europa-und-entwicklung-bund` (`key=aussen-europa-und-entwicklung-bund`),
+  `status=prepared`, `is_base=false`, `political_level=bund`. Kanonischer Name im Repo vorher nicht vorhanden.
+- **7 Abrufwege (5 neu + 2 wiederverwendet):** neu AA-Newsroom, BMZ-Aktuelles, EU-Kommission,
+  Rat+Europäischer Rat (gebündelt), Europäisches Parlament (Legislative Observatory/OEIL) — alle
+  `needs_review`/`manual` (**technisch inaktiv**); wiederverwendet `rp-dip` + `rp-bundesregierung` (nur
+  `package_paths`-Verknüpfung, beide bereits `always_on` → **kein neuer Crawl**).
+- **Neu:** 5 Entitäten (`ministry-bmz` + 4 EU-Institutionen `other_institution`/`level=eu`) · 5 Herausgeber.
+  **Wiederverwendet:** Entity `ministry-auswaertiges-amt`, Ausschuss-/Bundesrat-/Bundesregierungs-Entities
+  (keine Dubletten). Bundeskanzleramt/GIZ/KfW/Engagement Global **bewusst nicht** modelliert.
+- **Verifikation:** Egress in der Bau-Umgebung für die Zielhosts gesperrt (403) → neue URLs **fachlich**
+  bestätigt, **nicht bytegenau**; amtliche RSS/API als Aktivierungs-Upgrade dokumentiert (nicht verdrahtet).
+- **Artefakte:** `supabase/seeds/20260724_aussen_europa_entwicklung_seed.sql` (+ `_rollback.sql`),
+  `scripts/generate-aussen-europa-entwicklung-seed.js`,
+  `lib/helmut/quellenarchitektur/seeds/aussen-europa-entwicklung-quellen.js`,
+  Test `scripts/aussen-europa-entwicklung-seed-test.js` (56/56). Basis-Seeds unverändert.
+
+---
+
 ## NACHTRAG 2026-07-17 (Konsolidierung: Thread-2-Härtung, Sprint 1, Mandantenneutralisierung, Understanding-Forensik, Recovery-Pfad) — aktuellster verifizierter Stand
 
 > **Verbindliche Restliste aller offenen Punkte:** `docs/datenmotor-restliste.md`.
