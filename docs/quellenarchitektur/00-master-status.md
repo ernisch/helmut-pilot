@@ -21,6 +21,9 @@
 >   `docs/architecture/retired-quellenplattform-branches.md`.
 > - **Scope:** dieses Dokument = Gesamt-Migrationsstatus. Sicherheit/RLS/JWT →
 >   `05-sicherheitsmodell-rls.md`; offene Punkte → `datenmotor-restliste.md`.
+> - **Kompakter Einstieg für neue Threads:** `PAKET-MANIFEST.md` (Paketbestand + Modell-/Seed-/
+>   Test-Pfade, ohne das ganze Repo zu lesen). Neu vorbereitet (2026-07-24, **inaktiv**):
+>   Themenpaket `verkehr-infrastruktur-bund` → `29-paket-verkehr-infrastruktur-bund.md`.
 
 ## NACHTRAG 2026-07-17 (Konsolidierung: Thread-2-Härtung, Sprint 1, Mandantenneutralisierung, Understanding-Forensik, Recovery-Pfad) — aktuellster verifizierter Stand
 
