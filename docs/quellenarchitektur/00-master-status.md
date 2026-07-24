@@ -22,6 +22,29 @@
 > - **Scope:** dieses Dokument = Gesamt-Migrationsstatus. Sicherheit/RLS/JWT →
 >   `05-sicherheitsmodell-rls.md`; offene Punkte → `datenmotor-restliste.md`.
 
+## NACHTRAG 2026-07-24 (Quellenpaket `digitales-daten-staatsmodernisierung-bund` — PREPARED vorbereitet, INAKTIV)
+
+Neues Bund-Paket **`digitales-daten-staatsmodernisierung-bund`** vollständig, aber **inaktiv**
+vorbereitet (`status=prepared`, alle neuen Wege `needs_review`/`manual`/`verify_before_activation`).
+**Nicht angewendet, nicht freigegeben, kein Merge/PR/Deployment.** Details + kompaktes Manifest:
+`docs/quellenarchitektur/29-paket-digitales-daten-staatsmodernisierung-bund.md`.
+
+- **Additiv, nichts Bestehendes verändert** (`git`: nur 5 neue Dateien): Seed-Daten
+  `lib/helmut/quellenarchitektur/seeds/bund-digital-quellen.js`, Generator
+  `scripts/generate-bund-digital-seed.js`, SQL `supabase/seeds/20260724_paket_..._seed.sql` (+`_rollback`),
+  Test `scripts/bund-digital-seed-test.js`. **Basis-Seed/`packages.js`/`index.js`/Generatoren/Test-Runner
+  unberührt** → Contract-Snapshot + Offline-Suite bleiben grün (**141/141**).
+- **Kern (kompakt, wiederverwendungs-first):** 4 neue Entitäten (BMDS, IT-Planungsrat, NKR, BfDI),
+  4 neue Herausgeber, 5 neue Wege + **2 wiederverwendete** (`rp-dip`, `rp-committee-digitales`);
+  Bundesrechnungshof-Herausgeber wiederverwendet (neuer Digital-Weg). Tier1=4, Tier2=3.
+- **Verifizierte Ressortstruktur:** BMDS seit 06.05.2025 (bmds.bund.de); Markus Richter = **BMDS-**
+  Staatssekretär (nicht mehr BMI); **Bundes-CIO-Funktion aufgelöst** → keine eigene Entität, über BMDS
+  abgedeckt. Keine Personenabhängigkeit in IDs.
+- **Verifikationsstand:** byte-genau bestätigt = keiner (Egress gesperrt); fachlich per WebSearch
+  bestätigt; alle Wege `verify_before_activation=true`. Kein Repository-Vollscan.
+
+---
+
 ## NACHTRAG 2026-07-17 (Konsolidierung: Thread-2-Härtung, Sprint 1, Mandantenneutralisierung, Understanding-Forensik, Recovery-Pfad) — aktuellster verifizierter Stand
 
 > **Verbindliche Restliste aller offenen Punkte:** `docs/datenmotor-restliste.md`.
