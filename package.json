@@ -52,6 +52,7 @@
     "test:admin-config-diagnose": "node scripts/admin-config-diagnose-test.js",
     "test:flags": "node scripts/flags-test.js",
     "test:source-mode": "node scripts/source-mode-test.js",
+    "test:bildung-bund": "node scripts/bildung-bund-seed-test.js",
     "compare:relational": "node scripts/relational-shadow-compare.js",
     "replay:gate-shadow": "node scripts/gate-shadow-replay.js",
     "test:gate-integration": "node scripts/understanding-gate-integration-test.js",

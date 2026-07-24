@@ -115,6 +115,7 @@ const DENYLIST = new Set([
   "staff-backfill.js",
   "ko-classification-backfill.js",
   "generate-landesmodul-seed.js",
+  "generate-bildung-bund-seed.js",
   "generate-source-architecture-seed.js",
   "generate-vapid-keys.js",
   "run-offline-tests.js"
