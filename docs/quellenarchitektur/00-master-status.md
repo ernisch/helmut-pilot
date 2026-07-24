@@ -22,29 +22,36 @@
 > - **Scope:** dieses Dokument = Gesamt-Migrationsstatus. Sicherheit/RLS/JWT →
 >   `05-sicherheitsmodell-rls.md`; offene Punkte → `datenmotor-restliste.md`.
 
-## NACHTRAG 2026-07-24 (Prepared-Paket `familie-gleichstellung-demografie-bund` vorbereitet — vollständig INAKTIV)
+## NACHTRAG 2026-07-24b (KORREKTUR kanonischer Paketname → `familie-jugend-integration-und-teilhabe`)
 
-Neues Bundes-Fachthemenpaket **strukturell vorbereitet, vollständig INAKTIV** (analog zum
-BE/BB-Prepared-Muster). **Nichts aktiviert/deployt/gemergt; kein PR; keine SQL angewendet; keine
-DB-/Cron-/Crawler-/Profil-Änderung.** Betrieb unverändert (Quellen **on** · Gate **shadow** ·
-PARDOK **shadow** · Scoring **off** · BE/BB **inaktiv** · Budget/Locks unverändert).
+**Namenskorrektur.** Der erste 07-24-Lauf legte das Paket als
+`familie-gleichstellung-demografie-bund` an und schloss Integration/Teilhabe fälschlich aus. Erneute
+**exhaustive Repo-Prüfung**: das Repo enthält **keine Paketlandkarte-Datei, kein
+Quellenarchitektur-README** und **kein** vorbestehendes Paket zu diesem Thema (die Bestands-Keys sind
+exakt `bund-basis`, `arbeit-und-soziales`, `die-linke-bund`, `regional-niedersachsen`, `berlin-basis`,
+`brandenburg-basis`). Der **verbindliche** kanonische Name stammt aus der **Projekt-Paketlandkarte**
+(Projektleitung, außerhalb des Repos): **`familie-jugend-integration-und-teilhabe`**. Übernommen;
+Altnamen-Dateisatz vollständig entfernt. **Nichts aktiviert/deployt/gemergt; kein PR; keine SQL
+angewendet; keine DB-/Cron-/Crawler-/Profil-Änderung.** Betrieb unverändert.
 
 | Was | Wert |
 |---|---|
-| Kanonischer Schlüssel (Vorab-Check §1, konfliktfrei) | `pkg-familie-gleichstellung-demografie-bund` (kein überlappendes Bestandspaket, kein `familie-jugend-integration-und-teilhabe-bund`) |
+| Kanonischer Schlüssel | `pkg-familie-jugend-integration-und-teilhabe` (aus Projekt-Paketlandkarte; Repo enthält keine Paketlandkarte) |
 | Paketstatus | **`prepared`, is_base=false, KEINE Profilzuordnung, KEIN aktiver Crawl-Plan** |
-| Neu (additiv) | 1 Paket · 2 Entitäten (ADS, UBSKM — Institutionen, keine Personen) · 3 Publisher (BMBFSFJ, ADS, UBSKM) · **6 Abrufwege alle `needs_review`+`manual`** · 7 package_paths · 6 levels · 26 topics |
-| Wiederverwendet (kein Overwrite) | Entität `ministry-bmfsfj` · Publisher `publisher-destatis.de` (2 Wege) · Weg `rp-dip` (parlamentarisch); Bundestagsausschuss+Bundesrat via DIP+Bund-Basis |
-| Bündelung | 4 Regierungsberichte (Familien-/Kinder-Jugend-/Gleichstellungs-/Altersbericht) über **1** Weg (`rp-fgd-bmbfsfj-berichte`, stabile Übersichtsseite) |
-| Tier | 1=3 (inkl. DIP) · 2=4 · 3=0 |
-| Verifikation | Institutionen/Berichte **amtlich** bestätigt (WebSearch gg. bundestag.de/bmbfsfj.bund.de/antidiskriminierungsstelle.de/gesetze-im-internet.de); **byte-genau NICHT** (Egress-Direktabruf 403) → vor Aktivierung zu prüfen |
-| Dateien | Builder `lib/helmut/quellenarchitektur/seeds/familie-gleichstellung-demografie-bund.js` · Generator+Test in `scripts/` · Seed+Rollback `supabase/seeds/20260724_familie_gleichstellung_demografie_bund_seed(.rollback).sql` · **Manifest `29-paket-familie-gleichstellung-demografie-bund.md`** |
-| Tests | Paket-Suite grün; **volle Offline-Suite 141/141 grün** |
+| Scope | Familie · Jugend (voll) · Integration · Teilhabe; Gleichstellung sekundär (nicht ersetzt) |
+| Neu (additiv) | 1 Paket · 4 Entitäten (ADS, UBSKM, Integrationsbeauftragte, Behindertenbeauftragter — Institutionen, keine Personen) · 5 Publisher · **8 Abrufwege alle `needs_review`+`manual`** · 9 package_paths · 8 levels · 40 topics |
+| Neu ggü. Altlauf | + Integration (`rp-fjit-integration`, integrationsbeauftragte.de) · + Teilhabe (`rp-fjit-teilhabe`, behindertenbeauftragter.de) |
+| Wiederverwendet (kein Overwrite) | Entität `ministry-bmfsfj` · Publisher `publisher-destatis.de` (2 Wege) · Weg `rp-dip`; Ausschuss+Bundesrat via DIP+Bund-Basis |
+| Bündelung | 4 Regierungsberichte über **1** Weg (`rp-fjit-bmbfsfj-berichte`, stabile Übersichtsseite) |
+| Tier | 1=3 (inkl. DIP) · 2=6 · 3=0 |
+| Verifikation | Institutionen **amtlich** bestätigt (WebSearch gg. amtl. Domains, inkl. integrationsbeauftragte.de/behindertenbeauftragter.de); **byte-genau NICHT** (Egress 403) → vor Aktivierung zu prüfen |
+| Dateien | `…/seeds/familie-jugend-integration-und-teilhabe.js` · Generator+Test in `scripts/` · Seed+Rollback `supabase/seeds/20260724_familie_jugend_integration_und_teilhabe_seed(.rollback).sql` · **Manifest `29-paket-familie-jugend-integration-und-teilhabe.md`** |
+| Tests | Paket-Suite grün; **volle Offline-Suite grün** |
 
-Deep-Research-Korrekturen: 4. Gleichstellungsbericht **2025** (nicht 2026); Familien-/Altersbericht
-**veröffentlicht 2025**; Bundesrat amtlich **„Ausschuss für Familie und Senioren (FS)"**;
-Minimalarchitektur um BMBFSFJ-Vorhaben-Weg + UBSKM-Kinderschutz-Weg erweitert (§5/§9/§11). Details +
-Dubletten-/Abdeckungsmatrix + offene Risiken: **`29-paket-familie-gleichstellung-demografie-bund.md`**.
+Deep-Research-/Korrektur-Notizen: 4. Gleichstellungsbericht **2025**; Familien-/Altersbericht
+**veröffentlicht 2025**; Bundesrat amtlich **„Ausschuss für Familie und Senioren (FS)"**; Integration =
+**Integrationsbeauftragte** (beim BMAS), Teilhabe = **Behindertenbeauftragter** (UN-BRK) — Boundary zu
+`arbeit-und-soziales` dokumentiert. Details: **`29-paket-familie-jugend-integration-und-teilhabe.md`**.
 
 ---
 

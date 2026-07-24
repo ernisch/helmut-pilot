@@ -1,8 +1,8 @@
 "use strict";
 
 // Helmut — Quellenarchitektur · Generator für den PREPARED-Seed des Bundes-Fachthemenpakets
-// `familie-gleichstellung-demografie-bund` (1 Paket + 3 neue Herausgeber + 2 neue Entitäten +
-// 6 neue Abrufwege + 1 wiederverwendeter DIP-Weg + Paket-/Ebenen-/Themen-Zuordnungen).
+// `familie-jugend-integration-und-teilhabe` (1 Paket + 5 neue Herausgeber + 4 neue Entitäten +
+// 8 neue Abrufwege + 1 wiederverwendeter DIP-Weg + Paket-/Ebenen-/Themen-Zuordnungen).
 // Erzeugt idempotentes, NICHT-destruktives SQL (ON CONFLICT DO NOTHING) + guarded Rollback.
 // REINE CODEGEN, KEIN DB-Zugriff, KEIN Netz.
 //
@@ -13,16 +13,16 @@
 //    Profilzuordnung. Bestehende Zeilen (destatis-Herausgeber, rp-dip, ministry-bmfsfj) werden
 //    NUR referenziert, nie überschrieben (ON CONFLICT DO NOTHING).
 //
-// Ausführung: node scripts/generate-familie-gleichstellung-demografie-bund-seed.js
-//   -> supabase/seeds/20260724_familie_gleichstellung_demografie_bund_seed.sql
-//   -> supabase/seeds/20260724_familie_gleichstellung_demografie_bund_seed_rollback.sql
+// Ausführung: node scripts/generate-familie-jugend-integration-und-teilhabe-seed.js
+//   -> supabase/seeds/20260724_familie_jugend_integration_und_teilhabe_seed.sql
+//   -> supabase/seeds/20260724_familie_jugend_integration_und_teilhabe_seed_rollback.sql
 
 const fs = require("fs");
 const path = require("path");
-const { buildSeed } = require("../lib/helmut/quellenarchitektur/seeds/familie-gleichstellung-demografie-bund");
+const { buildSeed } = require("../lib/helmut/quellenarchitektur/seeds/familie-jugend-integration-und-teilhabe");
 
-const SEED_FILE = "20260724_familie_gleichstellung_demografie_bund_seed.sql";
-const ROLLBACK_FILE = "20260724_familie_gleichstellung_demografie_bund_seed_rollback.sql";
+const SEED_FILE = "20260724_familie_jugend_integration_und_teilhabe_seed.sql";
+const ROLLBACK_FILE = "20260724_familie_jugend_integration_und_teilhabe_seed_rollback.sql";
 
 function q(v) { return (v === null || v === undefined) ? "null" : `'${String(v).replace(/'/g, "''")}'`; }
 function qbool(v) { return v ? "true" : "false"; }
@@ -42,14 +42,14 @@ function insert(table, columns, rows, conflictKey) {
 function build() {
   const seed = buildSeed();
   const out = [];
-  out.push("-- Helmut — Paket `familie-gleichstellung-demografie-bund` · PREPARED-Seed (generiert, idempotent, NICHT-destruktiv).");
-  out.push("-- Generiert von scripts/generate-familie-gleichstellung-demografie-bund-seed.js. NICHT von Hand editieren.");
+  out.push("-- Helmut — Paket `familie-jugend-integration-und-teilhabe` · PREPARED-Seed (generiert, idempotent, NICHT-destruktiv).");
+  out.push("-- Generiert von scripts/generate-familie-jugend-integration-und-teilhabe-seed.js. NICHT von Hand editieren.");
   out.push("-- Voraussetzung: 20260713_source_architecture.sql + _seed.sql sind angewendet (Tabellen + Bestand: publisher-destatis.de, rp-dip, ministry-bmfsfj).");
   out.push("-- Paket: status='prepared', is_base=false, KEINE Profilzuordnung. ALLE neuen Abrufwege: status='needs_review', activation_mode='manual' -> technisch INAKTIV. FREIGABEPFLICHTIG.");
   out.push("begin;");
   out.push("");
 
-  out.push("-- 1) Politische Entitäten (nur NEUE: ADS + UBSKM; ministry-bmfsfj/statoffice-destatis werden wiederverwendet)");
+  out.push("-- 1) Politische Entitäten (nur NEUE: ADS, UBSKM, Integrationsbeauftragte, Behindertenbeauftragter; ministry-bmfsfj/statoffice-destatis wiederverwendet)");
   out.push(insert("political_entities", ["id", "entity_type", "name", "canonical_key", "level", "geography_id", "aliases"],
     seed.entities.map((e) => [q(e.id), q(e.entity_type), q(e.name), q(e.canonical_key), q(e.level), q(e.geography_id), qarr(e.aliases)]),
     "id"));
@@ -77,7 +77,7 @@ function build() {
     "id"));
   out.push("");
 
-  out.push("-- 5) Paket <-> Abrufweg (6 neue Wege + WIEDERVERWENDUNG von rp-dip als parlamentarischer Weg)");
+  out.push("-- 5) Paket <-> Abrufweg (8 neue Wege + WIEDERVERWENDUNG von rp-dip als parlamentarischer Weg)");
   out.push(insert("package_paths", ["package_id", "retrieval_path_id"],
     seed.packagePaths.map((pp) => [q(pp.package_id), q(pp.retrieval_path_id)]),
     "package_id, retrieval_path_id"));
@@ -112,13 +112,12 @@ function buildRollback(seed) {
   const pubIds = seed.publishers.map((p) => `'${p.id}'`).join(", ");
   const entIds = seed.entities.map((e) => `'${e.id}'`).join(", ");
   const out = [];
-  out.push("-- Rollback des PREPARED-Seeds `familie-gleichstellung-demografie-bund`. GUARDED + NICHT-destruktiv");
+  out.push("-- Rollback des PREPARED-Seeds `familie-jugend-integration-und-teilhabe`. GUARDED + NICHT-destruktiv");
   out.push("-- gegenüber Bestand: löscht NUR die eigenen neuen Wege/Zuordnungen; Herausgeber/Entitäten werden");
   out.push("-- nur gelöscht, wenn sie danach von KEINEM Weg/Herausgeber mehr referenziert werden. Das schützt");
   out.push("-- Bestand (publisher-destatis.de, rp-dip, ministry-bmfsfj, statoffice-destatis) vor Cascade-Löschung.");
   out.push("-- Das Paket wird nur gelöscht, solange es 'prepared' ist (versehentlich aktiviertes Paket bleibt).");
   out.push("begin;");
-  // Kinder zuerst. package_paths löscht AUCH die additive rp-dip-Verknüpfung — rp-dip selbst bleibt.
   out.push(`delete from public.path_expected_topics where retrieval_path_id in (${pathIds});`);
   out.push(`delete from public.path_expected_levels where retrieval_path_id in (${pathIds});`);
   out.push(`delete from public.package_paths where package_id = '${seed.package.id}';`);

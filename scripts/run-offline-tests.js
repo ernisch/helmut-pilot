@@ -116,7 +116,7 @@ const DENYLIST = new Set([
   "ko-classification-backfill.js",
   "generate-landesmodul-seed.js",
   "generate-source-architecture-seed.js",
-  "generate-familie-gleichstellung-demografie-bund-seed.js",
+  "generate-familie-jugend-integration-und-teilhabe-seed.js",
   "generate-vapid-keys.js",
   "run-offline-tests.js"
 ]);
