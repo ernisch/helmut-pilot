@@ -64,7 +64,7 @@ const qa = rEmpty.views.quellenAbrufwege;
 check("alle 144 Abrufwege bewertet (keine Lücke)", qa.pathCount === 144);
 check("nach Herausgeber gruppiert (51 Herausgeber)", qa.herausgeber.length === 51);
 check("welche Abrufwege gesund/defekt/unbekannt (drei Kübel)", typeof qa.healthCounts.gesund === "number" && typeof qa.healthCounts.defekt === "number" && typeof qa.healthCounts.unbekannt === "number");
-check("keine defekten Abrufwege mehr (P1-3: alle 6 vormals 'broken' markierten Bundeswege repariert)", qa.healthCounts.defekt === 0);
+check("keine defekten Abrufwege mehr (P1-5: alle 6 vormals 'broken' markierten Bundeswege repariert)", qa.healthCounts.defekt === 0);
 check("ohne Metriken: keine 'gesund' erfunden (alle unbekannt/defekt/inaktiv)", qa.healthCounts.gesund === 0);
 const bundestagPath = rEmpty.views.quellendetail.paths.find((p) => p.legacy_source_id === "bundestag");
 check("reparierte Pflichtquelle (bundestag) -> status needs_review, nicht mehr broken", bundestagPath.status === "needs_review" && bundestagPath.health === "unbekannt");
@@ -79,7 +79,7 @@ console.log("== View 4: Prüfbedarf (kuratiert, ruhig) ==");
 const pb = rEmpty.views.pruefbedarf;
 check("Prüfbedarf ist entrauscht (nur konkrete Probleme, < 20)", pb.actions.length > 0 && pb.actions.length < 20);
 check("KEINE 139 'beobachten'-Rauschhinweise (nur echte Probleme)", pb.actions.every((a) => a.severity === "hoch" || a.severity === "mittel"));
-check("keine 'hoch'-Abrufweg-Probleme mehr (P1-3: kein Katalog-Pfad mehr 'broken')", !pb.actions.some((a) => a.area === "abrufweg" && a.severity === "hoch"));
+check("keine 'hoch'-Abrufweg-Probleme mehr (P1-5: kein Katalog-Pfad mehr 'broken')", !pb.actions.some((a) => a.area === "abrufweg" && a.severity === "hoch"));
 check("unversorgtes Profil im Prüfbedarf", pb.actions.some((a) => a.area === "profil" && a.ref === "be"));
 // Sortier-Mechanismus (hoch vor mittel) bleibt separat mit synthetischem broken-Pfad geprüft (Block D unten).
 check("Prüfbedarf ohne 'hoch'-Eintrag bleibt korrekt sortiert (nur 'mittel')", pb.actions.every((a) => a.severity === "mittel"));
