@@ -1,0 +1,75 @@
+name: WBSB · Kandidaten-Verifikation (Pilot wohnen-bauen-stadtentwicklung-bund)
+
+# =============================================================================
+# NUR manuelle/PR-getriebene, einmalige technische Verifikation der KANDIDATEN-
+# Abrufwege des Pilotpakets wohnen-bauen-stadtentwicklung-bund gegen die ECHTE
+# Adresse — auf einem Runner mit OFFENEM Egress (die Agent-Sandbox blockt Egress).
+# =============================================================================
+# SICHERHEIT / GRENZEN (bewusst, wie Sprint 9B):
+#   - permissions: contents: read  -> schreibt NICHTS ins Repo, aktiviert KEINE Quelle.
+#   - KEINE Secrets, KEINE Supabase-/DB-Verbindung, KEIN Deployment, KEIN LLM.
+#   - Prueft nur OEFFENTLICHE Adressen mit realistischem Browser-User-Agent; TLS bleibt
+#     an; KEIN Umgehen technischer Zugriffsbeschraenkungen (kein Captcha/IP-Rotation).
+#   - Ergebnis je Weg: geeignet / geeignet mit Einschraenkung / ablehnen / nicht_verifizierbar
+#     (Egress-Gate: neutrale Kontroll-URLs; ohne Egress -> KEIN erfundenes Urteil).
+#
+# Der pull_request-Trigger fuehrt die YAML AUS DEM PR-HEAD aus (kein main-Merge noetig),
+# sodass die echten oeffentlichen Adressen tatsaechlich geprueft werden.
+
+on:
+  workflow_dispatch:
+    inputs:
+      fresh_days:
+        description: "Aktualitaetsfenster in Tagen (juengstes Item juenger als) — Default 60"
+        required: false
+        default: "60"
+  pull_request:
+    paths:
+      - ".github/workflows/wohnen-bauen-stadtentwicklung-verify.yml"
+      - "scripts/wohnen-bauen-stadtentwicklung-verify.js"
+      - "scripts/wohnen-bauen-stadtentwicklung-verify-test.js"
+      - "scripts/sprint9b-verify-abrufwege.js"
+      - "lib/helmut/crawler.js"
+      - "lib/helmut/quellenarchitektur/seeds/wohnen-bauen-stadtentwicklung-kandidaten.js"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wbsb-verify-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Abhaengigkeiten (Projekt hat keine Runtime-Deps; defensiv, kein Lockfile)
+        run: npm install --no-audit --no-fund
+
+      # Offline-Selbsttest der Urteilslogik + Kandidaten-Seed-Integritaet VOR dem echten Abruf.
+      - name: Verifikationslogik testen (offline)
+        run: node scripts/wohnen-bauen-stadtentwicklung-verify-test.js
+
+      # Echter Abruf aller Kandidaten. Exit 0 auch bei 'ablehnen'/'nicht_verifizierbar'.
+      - name: Kandidaten verifizieren (echter Abruf)
+        env:
+          WBSB_FRESH_DAYS: ${{ inputs.fresh_days || '60' }}
+        run: node scripts/wohnen-bauen-stadtentwicklung-verify.js --out wbsb-verify-report.json
+
+      - name: Artefakt hochladen (JSON-Report)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wbsb-verifikation
+          path: wbsb-verify-report.json
+          if-no-files-found: warn
+          retention-days: 30

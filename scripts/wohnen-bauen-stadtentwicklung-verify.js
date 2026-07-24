@@ -189,7 +189,9 @@ async function run() {
   const rows = applyEgressGate(rawRows, controlOk, controlStatuses);
   for (const r of rows) {
     const roh = r.urteilRoh ? ` (roh: ${r.urteilRoh})` : "";
-    console.log(`${String(r.key).padEnd(26)} ${String(r.urteil).padEnd(24)} HTTP ${String(r.status ?? "-").padEnd(4)}${roh}`);
+    console.log(`${String(r.key).padEnd(26)} ${String(r.urteil).padEnd(24)} HTTP ${String(r.status ?? "-").padEnd(4)} ${r.retrieval_type || ""}`);
+    console.log(`    final: ${r.finalUrl || r.angefragteUrl}`);
+    console.log(`    ct=${r.contentType || "-"} redirects=${r.redirects ?? 0} note=${(r.note || "").slice(0, 160)}${roh}`);
   }
 
   const zaehl = rows.reduce((a, r) => { a[r.urteil] = (a[r.urteil] || 0) + 1; return a; }, {});
@@ -201,10 +203,17 @@ async function run() {
   console.log(`\n  real verifiziert: ${verifiziert}/${rows.length}`);
   if (verifiziert === 0) console.log("  -> KEIN Weg real geprueft (Egress gesperrt). KEIN Urteil erfunden.");
 
+  // generatedAt bewusst aus der Umgebung (CI-Runner hat Zeit) — hier reproduzierbar.
+  const report = { generatedAt: new Date().toISOString(), fresh_days: FRESH_DAYS, egressOffen: controlOk, controlStatuses, rows, zaehl, verifiziert, total: rows.length };
   if (outPath) {
-    fs.writeFileSync(outPath, JSON.stringify({ generatedAt: new Date().toISOString(), fresh_days: FRESH_DAYS, egressOffen: controlOk, controlStatuses, rows, zaehl, verifiziert, total: rows.length }, null, 2));
+    fs.writeFileSync(outPath, JSON.stringify(report, null, 2));
     console.log(`\nJSON-Report: ${outPath}`);
   }
+  // Vollstaendigen strukturierten Report zusaetzlich auf stdout ausgeben (zwischen Markern),
+  // damit er verlustfrei aus dem CI-Job-Log rekonstruierbar ist (unabhaengig vom Artefakt-Download).
+  console.log("\n===WBSB_JSON_BEGIN===");
+  console.log(JSON.stringify(report));
+  console.log("===WBSB_JSON_END===");
   return rows;
 }
 
