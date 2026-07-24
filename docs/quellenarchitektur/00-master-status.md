@@ -22,6 +22,22 @@
 > - **Scope:** dieses Dokument = Gesamt-Migrationsstatus. Sicherheit/RLS/JWT →
 >   `05-sicherheitsmodell-rls.md`; offene Punkte → `datenmotor-restliste.md`.
 
+## NACHTRAG 2026-07-24 (Fachpaket `wissenschaft-forschung-bund` — PREPARED/inaktiv vorbereitet)
+
+Additiv, **rein vorbereitend, keine Produktionsänderung**: das Bund-Fachpaket
+`wissenschaft-forschung-bund` wurde vollständig, aber **inaktiv** angelegt (Paket `prepared`;
+12 Abrufwege `needs_review`+`manual`; doppelt gesperrt). 8 neue Entitäten + 8 Herausgeber;
+**Destatis + OECD wiederverwendet**; parlamentarische Abdeckung über `bund-basis` (keine
+parallelen Ausschuss-/DIP-Wege). BMBF = Alias des BMFTR (keine Dublette); BMBFSFJ gehört zu
+`bildung-bund`/`familie-bund`. Tier 1/2/3 = 5/5/2. Neue Dateien:
+`lib/helmut/quellenarchitektur/seeds/wissenschaft-forschung-bund.js`,
+`scripts/generate-wissenschaft-forschung-bund-seed.js`,
+`supabase/seeds/20260724_wissenschaft_forschung_bund_seed.sql` (+ Rollback),
+`scripts/wissenschaft-forschung-bund-seed-test.js`. **Manifest + volle Details:**
+`docs/quellenarchitektur/29-wissenschaft-forschung-bund-paket.md`. Offline-Suite 141/141 grün.
+Aktivierung/Eintragung in Production = eigener, **freigabepflichtiger** Schritt (byte-Verifikation
+der Wege noch offen).
+
 ## NACHTRAG 2026-07-17 (Konsolidierung: Thread-2-Härtung, Sprint 1, Mandantenneutralisierung, Understanding-Forensik, Recovery-Pfad) — aktuellster verifizierter Stand
 
 > **Verbindliche Restliste aller offenen Punkte:** `docs/datenmotor-restliste.md`.
