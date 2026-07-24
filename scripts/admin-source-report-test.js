@@ -61,8 +61,10 @@ check("counts: 28 Kandidat-Klassen, 0 einsatzbereit, 2 unbesetzt", rReadiness.co
 
 console.log("== View 2: Quellen und Abrufwege ==");
 const qa = rEmpty.views.quellenAbrufwege;
-check("alle 144 Abrufwege bewertet (keine Lücke)", qa.pathCount === 144);
-check("nach Herausgeber gruppiert (51 Herausgeber)", qa.herausgeber.length === 51);
+// 144 Legacy-Abrufwege (143 v1Sources + dip) + 11 WBSB-Pilot-Abrufwege (prepared/inaktiv) = 155.
+check("alle 155 Abrufwege bewertet (keine Lücke; 144 Legacy + 11 WBSB-Pilot)", qa.pathCount === 155);
+// 51 Legacy-Herausgeber + 5 neue WBSB-Herausgeber (destatis/bundestag wiederverwendet) = 56.
+check("nach Herausgeber gruppiert (56 Herausgeber; 51 Legacy + 5 WBSB neu)", qa.herausgeber.length === 56);
 check("welche Abrufwege gesund/defekt/unbekannt (drei Kübel)", typeof qa.healthCounts.gesund === "number" && typeof qa.healthCounts.defekt === "number" && typeof qa.healthCounts.unbekannt === "number");
 check("defekte Abrufwege erkannt (>=6 broken aus Sprint 1)", qa.healthCounts.defekt >= 6);
 check("ohne Metriken: keine 'gesund' erfunden (alle unbekannt/defekt/inaktiv)", qa.healthCounts.gesund === 0);
@@ -86,7 +88,7 @@ check("welche Messwerte noch nicht verfügbar: als Hinweise gelistet", pb.missin
 
 console.log("== View 5: Quellendetail ==");
 const detail = rEmpty.views.quellendetail.paths;
-check("Quellendetail je Abrufweg vorhanden (144) — KEINE Personenquelle im Katalog", detail.length === 144 && !detail.some((p) => /-news$/.test(String(p.legacy_source_id))));
+check("Quellendetail je Abrufweg vorhanden (155: 144 Legacy + 11 WBSB) — KEINE Personenquelle im Katalog", detail.length === 155 && !detail.some((p) => /-news$/.test(String(p.legacy_source_id))));
 const detailPath = detail.find((p) => p.legacy_source_id === "tagesschau-politik");
 check("Detail trägt Herausgeber/Methode/Pakete", detailPath.publisher && detailPath.method && Array.isArray(detailPath.packages));
 check("ohne Metriken: documentCount/koCount = null (nicht 0 erfunden)", detailPath.documentCount === null && detailPath.koCount === null);
