@@ -221,7 +221,11 @@ check("RLS aktiviert + restriktiv (nur service_role, KEINE authenticated-Leseric
 
 // ============================ SEED-VOLLSTAENDIGKEIT ============================
 console.log("== Seed-Vollstaendigkeit ==");
-check("6 Pakete (4 aktiv + Berlin/Brandenburg prepared) — KEIN Personenpaket im Code-Seed", M.packages.length === 6 && M.packages.every((p) => !p.key.startsWith("profil-")));
+check("7 Pakete (4 aktiv + Berlin/Brandenburg + gesundheit-bund prepared) — KEIN Personenpaket im Code-Seed", M.packages.length === 7 && M.packages.every((p) => !p.key.startsWith("profil-")));
+check("gesundheit-bund als prepared Fachthemenpaket (is_base false, nie aktiviert)", (() => {
+  const g = M.packages.find((p) => p.key === "gesundheit-bund");
+  return g && g.status === "prepared" && g.is_base === false && g.political_level === "bund";
+})());
 check("Berlin+Brandenburg als prepared Basispakete", (() => {
   const b = M.packages.find((p) => p.key === "berlin-basis");
   const bb = M.packages.find((p) => p.key === "brandenburg-basis");
