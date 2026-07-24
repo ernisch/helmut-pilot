@@ -106,6 +106,7 @@ insert into public.political_entities (id, entity_type, name, canonical_key, lev
   ('ministry-bmfsfj', 'ministry', 'Bundesministerium für Familie, Senioren, Frauen und Jugend', null, 'bund', 'geo-bund', array['BMFSFJ']::text[]),
   ('ministry-bmi', 'ministry', 'Bundesministerium des Innern', null, 'bund', 'geo-bund', array['BMI']::text[]),
   ('ministry-auswaertiges-amt', 'ministry', 'Auswärtiges Amt', null, 'bund', 'geo-bund', array['AA']::text[]),
+  ('ministry-bmwsb', 'ministry', 'Bundesministerium für Wohnen, Stadtentwicklung und Bauwesen', null, 'bund', 'geo-bund', array['BMWSB','Bundesbauministerium']::text[]),
   ('parliament-bundestag', 'parliament', 'Deutscher Bundestag', null, 'bund', 'geo-bund', array['Bundestag']::text[]),
   ('parliament-bundesrat', 'parliament', 'Bundesrat', null, 'bund', 'geo-bund', '{}'),
   ('parliament-berlin-agh', 'parliament', 'Abgeordnetenhaus von Berlin', null, 'land', 'geo-land-berlin', '{}'),
@@ -128,13 +129,14 @@ insert into public.political_entities (id, entity_type, name, canonical_key, lev
   ('statoffice-destatis', 'statistical_office', 'Statistisches Bundesamt', null, 'bund', 'geo-bund', array['Destatis']::text[]),
   ('authority-drv', 'authority', 'Deutsche Rentenversicherung', null, 'bund', 'geo-bund', '{}'),
   ('authority-bundesrechnungshof', 'authority', 'Bundesrechnungshof', null, 'bund', 'geo-bund', '{}'),
+  ('authority-bbr', 'authority', 'Bundesamt für Bauwesen und Raumordnung', null, 'bund', 'geo-bund', array['BBR']::text[]),
+  ('authority-bfj', 'authority', 'Bundesamt für Justiz', null, 'bund', 'geo-bund', array['BfJ','Verkündungsplattform des Bundes']::text[]),
   ('statoffice-berlin-brandenburg', 'statistical_office', 'Amt für Statistik Berlin-Brandenburg', null, 'land', 'geo-land-berlin', '{}')
 on conflict (id) do update set name = excluded.name, canonical_key = excluded.canonical_key, aliases = excluded.aliases;
 
 
 -- Herausgeber
 insert into public.publishers (id, name, canonical_domain, publisher_type, evidence_role, trust, lifecycle_status, entity_id) values
-  ('aggregator-google-news', 'Google News (Aggregator/Suchweg)', 'news.google.com', 'aggregator', 'aggregator', 'unbekannt', 'active', null),
   ('publisher-bmas.de', 'Bundesministerium für Arbeit und Soziales', 'bmas.de', 'ministry', 'official_primary', 'hoch', 'active', 'ministry-bmas'),
   ('publisher-bundesregierung.de', 'Bundesregierung', 'bundesregierung.de', 'government', 'official_primary', 'hoch', 'active', 'government-bund'),
   ('publisher-bundestag.de', 'Deutscher Bundestag', 'bundestag.de', 'parliament', 'official_primary', 'hoch', 'active', 'parliament-bundestag'),
@@ -143,6 +145,7 @@ insert into public.publishers (id, name, canonical_domain, publisher_type, evide
   ('publisher-tagesschau.de', 'Tagesschau', 'tagesschau.de', 'media', 'journalistic', 'hoch', 'active', null),
   ('publisher-deutschlandfunk.de', 'Deutschlandfunk', 'deutschlandfunk.de', 'media', 'journalistic', 'hoch', 'active', null),
   ('publisher-dgb.de', 'Deutscher Gewerkschaftsbund', 'dgb.de', 'union', 'direct_interest', 'unbekannt', 'active', 'union-dgb'),
+  ('aggregator-google-news', 'Google News (Aggregator/Suchweg)', 'news.google.com', 'aggregator', 'aggregator', 'unbekannt', 'active', null),
   ('publisher-spiegel.de', 'Der Spiegel', 'spiegel.de', 'media', 'journalistic', 'hoch', 'active', null),
   ('publisher-zeit.de', 'ZEIT Online', 'zeit.de', 'media', 'journalistic', 'hoch', 'active', null),
   ('publisher-sueddeutsche.de', 'Süddeutsche Zeitung', 'sueddeutsche.de', 'media', 'journalistic', 'hoch', 'active', null),
@@ -184,23 +187,24 @@ insert into public.publishers (id, name, canonical_domain, publisher_type, evide
   ('publisher-wsi.de', 'Wirtschafts- und Sozialwissenschaftliches Institut', 'wsi.de', 'association', 'direct_interest', 'mittel', 'active', null),
   ('publisher-boeckler.de', 'Hans-Böckler-Stiftung', 'boeckler.de', 'association', 'direct_interest', 'mittel', 'active', null),
   ('publisher-oecd.org', 'OECD', 'oecd.org', 'authority', 'data_source', 'hoch', 'active', null),
-  ('publisher-dip.bundestag.de', 'Deutscher Bundestag', 'dip.bundestag.de', 'parliament', 'official_primary', 'hoch', 'active', 'parliament-bundestag')
+  ('publisher-dip.bundestag.de', 'Deutscher Bundestag', 'dip.bundestag.de', 'parliament', 'official_primary', 'hoch', 'active', 'parliament-bundestag'),
+  ('publisher-bmwsb.bund.de', 'Bundesministerium für Wohnen, Stadtentwicklung und Bauwesen', 'bmwsb.bund.de', 'ministry', 'official_primary', 'hoch', 'active', 'ministry-bmwsb'),
+  ('publisher-bbr.bund.de', 'Bundesamt für Bauwesen und Raumordnung', 'bbr.bund.de', 'authority', 'official_primary', 'hoch', 'active', 'authority-bbr'),
+  ('publisher-recht.bund.de', 'Bundesamt für Justiz — Verkündungsplattform des Bundes', 'recht.bund.de', 'authority', 'official_primary', 'hoch', 'active', 'authority-bfj'),
+  ('publisher-staedtebaufoerderung.info', 'Städtebauförderung (Bund-Länder-Programm)', 'staedtebaufoerderung.info', 'government', 'official_primary', 'hoch', 'active', null),
+  ('publisher-foerderdatenbank.de', 'Förderdatenbank des Bundes', 'foerderdatenbank.de', 'authority', 'data_source', 'hoch', 'active', null)
 on conflict (id) do update set name = excluded.name, evidence_role = excluded.evidence_role, trust = excluded.trust, entity_id = excluded.entity_id;
 
 
 -- Quellenpakete
--- HINWEIS (Mandantenneutralisierung): Persoenliche Pakete ('profil-<mandats-id>',
--- inkl. Abrufweg 'rp-<mandats-id>-news') werden NICHT geseedet — sie entstehen je
--- Mandat bei der Provisionierung als normale Datenbank-Zeilen. Bereits vorhandene
--- Production-Zeilen bleiben unveraendert bestehen (dieses Seed loescht nichts;
--- alle Statements sind additive Upserts).
 insert into public.source_packages (id, key, name, purpose, status, is_base, political_level, geography_id, required_classes) values
   ('pkg-bund-basis', 'bund-basis', 'Bund Basis', 'Neutrale bundespolitische Grundversorgung fuer JEDES Mandat (Institutionen, alle Ausschuesse, alle Fraktionen, Leitmedien, DIP).', 'active', true, 'bund', 'geo-bund', '{}'),
   ('pkg-arbeit-und-soziales', 'arbeit-und-soziales', 'Arbeit und Soziales', 'Fachthemenpaket Arbeit- und Sozialpolitik (Fachmedien, Verbaende, Gewerkschaften, Prozess-/Radar-Quellen, Themen-Buendel). Fachthema, NICHT Region.', 'active', false, 'bund', 'geo-bund', '{}'),
   ('pkg-die-linke-bund', 'die-linke-bund', 'Die Linke Bund', 'Partei-Direktquellen Die Linke (Bundesebene).', 'active', false, 'bund', 'geo-bund', '{}'),
   ('pkg-regional-niedersachsen', 'regional-niedersachsen', 'Regional Niedersachsen', 'Regionale Beobachtung Niedersachsen (Salzgitter/Braunschweig/Wolfenbuettel).', 'active', false, 'land', 'geo-land-niedersachsen', '{}'),
   ('pkg-berlin-basis', 'berlin-basis', 'Berlin Basis', 'Landespaket Berlin (Abgeordnetenhaus, Senat, Senatsverwaltungen, Fraktionen, Regionalmedien, rbb Berlin). Struktur vorbereitet — Quellen folgen nach Pruefung + Freigabe.', 'prepared', true, 'land', 'geo-land-berlin', array['landesparlament','plenum','ausschuesse','drucksachen','schriftliche_anfragen','gesetzgebung','landesregierung','staatskanzlei','ministerien','landesfraktionen','regionale_leitmedien','oer_landesberichterstattung','partei_pilot','fraktion_pilot','person_pilot']::text[]),
-  ('pkg-brandenburg-basis', 'brandenburg-basis', 'Brandenburg Basis', 'Landespaket Brandenburg (Landtag, Landesregierung, Staatskanzlei, Ministerien, Fraktionen, Regionalmedien, rbb Brandenburg). Struktur vorbereitet — Quellen folgen nach Pruefung + Freigabe.', 'prepared', true, 'land', 'geo-land-brandenburg', array['landesparlament','plenum','ausschuesse','drucksachen','schriftliche_anfragen','gesetzgebung','landesregierung','staatskanzlei','ministerien','landesfraktionen','regionale_leitmedien','oer_landesberichterstattung','partei_pilot','fraktion_pilot','person_pilot']::text[])
+  ('pkg-brandenburg-basis', 'brandenburg-basis', 'Brandenburg Basis', 'Landespaket Brandenburg (Landtag, Landesregierung, Staatskanzlei, Ministerien, Fraktionen, Regionalmedien, rbb Brandenburg). Struktur vorbereitet — Quellen folgen nach Pruefung + Freigabe.', 'prepared', true, 'land', 'geo-land-brandenburg', array['landesparlament','plenum','ausschuesse','drucksachen','schriftliche_anfragen','gesetzgebung','landesregierung','staatskanzlei','ministerien','landesfraktionen','regionale_leitmedien','oer_landesberichterstattung','partei_pilot','fraktion_pilot','person_pilot']::text[]),
+  ('pkg-wohnen-bauen-stadtentwicklung-bund', 'wohnen-bauen-stadtentwicklung-bund', 'Wohnen, Bauen und Stadtentwicklung (Bund)', 'Fachthemenpaket Bundesebene fuer Wohnen/Mietrecht, sozialen Wohnungsbau, Wohnraumfoerderung, Baupolitik/Baugesetzgebung, Stadtentwicklung/Staedtebaufoerderung, Raumordnung, Wohnungsmarkt-/Baustatistik und Foerderprogramme. Struktur vorbereitet, Quellen technisch geprueft — INAKTIV (needs_review/manual), Freigabe durch separaten Auditlauf.', 'prepared', false, 'bund', 'geo-bund', '{}')
 on conflict (id) do update set name = excluded.name, purpose = excluded.purpose, status = excluded.status, required_classes = excluded.required_classes;
 
 
@@ -349,7 +353,18 @@ insert into public.retrieval_paths (id, publisher_id, legacy_source_id, name, me
   ('rp-region-salzgitter-arbeit-soziales', 'aggregator-google-news', 'region-salzgitter-arbeit-soziales', 'Salzgitter Arbeit und Soziales', 'googlenews_search', 'https://news.google.com/rss/search?q=Salzgitter%20(Arbeit%20OR%20Soziales%20OR%20Pflege%20OR%20Rente%20OR%20B%C3%BCrgergeld%20OR%20Mindestlohn%20OR%20Arbeitsmarkt)&hl=de&gl=DE&ceid=DE:de', 'Salzgitter (Arbeit OR Soziales OR Pflege OR Rente OR Bürgergeld OR Mindestlohn OR Arbeitsmarkt)', 'googlenews-batchexecute', 72, 'needs_review', 'auto', false, 8, 'local'),
   ('rp-region-wolfenbuttel-arbeit-soziales', 'aggregator-google-news', 'region-wolfenbuttel-arbeit-soziales', 'Wolfenbüttel Arbeit und Soziales', 'googlenews_search', 'https://news.google.com/rss/search?q=Wolfenb%C3%BCttel%20(Arbeit%20OR%20Soziales%20OR%20Pflege%20OR%20Rente%20OR%20B%C3%BCrgergeld%20OR%20Mindestlohn%20OR%20Arbeitsmarkt)&hl=de&gl=DE&ceid=DE:de', 'Wolfenbüttel (Arbeit OR Soziales OR Pflege OR Rente OR Bürgergeld OR Mindestlohn OR Arbeitsmarkt)', 'googlenews-batchexecute', 72, 'needs_review', 'auto', false, 8, 'local'),
   ('rp-region-braunschweig-arbeit-soziales', 'aggregator-google-news', 'region-braunschweig-arbeit-soziales', 'Braunschweig Arbeit und Soziales', 'googlenews_search', 'https://news.google.com/rss/search?q=Braunschweig%20(Arbeit%20OR%20Soziales%20OR%20Pflege%20OR%20Rente%20OR%20B%C3%BCrgergeld%20OR%20Mindestlohn%20OR%20Arbeitsmarkt)&hl=de&gl=DE&ceid=DE:de', 'Braunschweig (Arbeit OR Soziales OR Pflege OR Rente OR Bürgergeld OR Mindestlohn OR Arbeitsmarkt)', 'googlenews-batchexecute', 72, 'needs_review', 'auto', false, 8, 'local'),
-  ('rp-dip', 'publisher-dip.bundestag.de', 'dip', 'DIP — Dokumentations- und Informationssystem (Bundestag)', 'api', 'https://search.dip.bundestag.de/api/v1', null, 'dip-json', 96, 'healthy', 'always_on', true, null, null)
+  ('rp-dip', 'publisher-dip.bundestag.de', 'dip', 'DIP — Dokumentations- und Informationssystem (Bundestag)', 'api', 'https://search.dip.bundestag.de/api/v1', null, 'dip-json', 96, 'healthy', 'always_on', true, null, null),
+  ('rp-wbsb-bmwsb-presse', 'publisher-bmwsb.bund.de', 'wbsb-bmwsb-presse', 'BMWSB — Pressemitteilungen (Wohnen/Bauen/Stadtentwicklung, Bundespolitik)', 'html', 'https://www.bmwsb.bund.de/DE/tools-services/presse/pressemitteilungen/pressemitteilungen_node.html', null, 'html-scrape', 74, 'needs_review', 'manual', false, 16, null),
+  ('rp-wbsb-bmwsb-foerderung-wohnen', 'publisher-bmwsb.bund.de', 'wbsb-bmwsb-foerderung-wohnen', 'BMWSB — Wohnraumförderung (sozialer Wohnungsbau, Förderprogramme Wohnen)', 'html', 'https://www.bmwsb.bund.de/DE/wohnen/foerderprogramme-bmwsb/foerderprogramme-bmwsb_node.html', null, 'html-scrape', 66, 'needs_review', 'manual', false, 16, null),
+  ('rp-wbsb-bbr-presse', 'publisher-bbr.bund.de', 'wbsb-bbr-presse', 'BBR — Pressemitteilungen (Bundesbau, Raumordnung)', 'html', 'https://www.bbr.bund.de/SiteGlobals/Forms/Suche/PressemitteilungenSuche_Formular.html?nn=1368394', null, 'html-scrape', 64, 'needs_review', 'manual', false, 16, null),
+  ('rp-wbsb-destatis-bautaetigkeit', 'publisher-destatis.de', 'wbsb-destatis-bautaetigkeit', 'Destatis — Bautätigkeit (Baugenehmigungen/-fertigstellungen/Bauüberhang)', 'html', 'https://www.destatis.de/DE/Themen/Branchen-Unternehmen/Bauen/Tabellen/_tabellen-innen-bautaetigkeit.html', null, 'html-scrape', 62, 'needs_review', 'manual', false, 16, null),
+  ('rp-wbsb-destatis-baupreisindex', 'publisher-destatis.de', 'wbsb-destatis-baupreisindex', 'Destatis — Baupreisindex (Preisindizes für Bauwerke)', 'html', 'https://www.destatis.de/DE/Themen/Wirtschaft/Konjunkturindikatoren/Preise/bpr110.html', null, 'html-scrape', 62, 'needs_review', 'manual', false, 16, null),
+  ('rp-wbsb-destatis-wohnen-mieten', 'publisher-destatis.de', 'wbsb-destatis-wohnen-mieten', 'Destatis — Wohnen (Mieten/Nettokaltmiete, Wohnkosten, Wohnsituation)', 'html', 'https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Wohnen/Tabellen/_tabellen.html', null, 'html-scrape', 62, 'needs_review', 'manual', false, 16, null),
+  ('rp-wbsb-destatis-wohngeld', 'publisher-destatis.de', 'wbsb-destatis-wohngeld', 'Destatis — Wohngeld-Statistik', 'html', 'https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Soziales/Wohngeld/Tabellen/_tabellen.html', null, 'html-scrape', 60, 'needs_review', 'manual', false, 16, null),
+  ('rp-wbsb-bgbl-teil1-liste', 'publisher-recht.bund.de', 'wbsb-bgbl-teil1-liste', 'Bundesgesetzblatt Teil I — Verkündungsliste (recht.bund.de)', 'html', 'https://www.recht.bund.de/de/bundesgesetzblatt/bgbl-1/bgbl-1_node.html', null, 'html-scrape', 72, 'needs_review', 'manual', false, 16, null),
+  ('rp-wbsb-bundestag-bauausschuss', 'publisher-bundestag.de', 'wbsb-bundestag-bauausschuss', 'Bundestag — Ausschuss für Wohnen, Stadtentwicklung, Bauwesen und Kommunen', 'html', 'https://www.bundestag.de/ausschuesse/a24_wohnen', null, 'html-scrape', 70, 'needs_review', 'manual', false, 16, null),
+  ('rp-wbsb-staedtebaufoerderung-start', 'publisher-staedtebaufoerderung.info', 'wbsb-staedtebaufoerderung-start', 'Städtebauförderung — Bund-Länder-Portal (Aktuelles/Programme)', 'html', 'https://www.staedtebaufoerderung.info/DE/Startseite/startseite_node.html', null, 'html-scrape', 64, 'needs_review', 'manual', false, 16, null),
+  ('rp-wbsb-foerderdatenbank-bmwsb', 'publisher-foerderdatenbank.de', 'wbsb-foerderdatenbank-bmwsb', 'Förderdatenbank des Bundes — BMWSB-Förderprogramme', 'html', 'https://www.foerderdatenbank.de/FDB/Content/DE/Foerdergeber/B/bmwsb-bundesministerium_wohnen_stadtentw_bau.html', null, 'html-scrape', 60, 'needs_review', 'manual', false, 16, null)
 on conflict (id) do update set publisher_id = excluded.publisher_id, method = excluded.method, status = excluded.status, priority = excluded.priority;
 
 
@@ -389,6 +404,7 @@ insert into public.package_paths (package_id, retrieval_path_id) values
   ('pkg-bund-basis', 'rp-fraction-cdu-csu'),
   ('pkg-bund-basis', 'rp-fraction-spd'),
   ('pkg-bund-basis', 'rp-fraction-gruene'),
+  ('pkg-die-linke-bund', 'rp-fraction-linke'),
   ('pkg-bund-basis', 'rp-fraction-linke'),
   ('pkg-bund-basis', 'rp-fraction-afd'),
   ('pkg-bund-basis', 'rp-fraction-fdp'),
@@ -498,7 +514,18 @@ insert into public.package_paths (package_id, retrieval_path_id) values
   ('pkg-regional-niedersachsen', 'rp-region-salzgitter-arbeit-soziales'),
   ('pkg-regional-niedersachsen', 'rp-region-wolfenbuttel-arbeit-soziales'),
   ('pkg-regional-niedersachsen', 'rp-region-braunschweig-arbeit-soziales'),
-  ('pkg-bund-basis', 'rp-dip')
+  ('pkg-bund-basis', 'rp-dip'),
+  ('pkg-wohnen-bauen-stadtentwicklung-bund', 'rp-wbsb-bmwsb-presse'),
+  ('pkg-wohnen-bauen-stadtentwicklung-bund', 'rp-wbsb-bmwsb-foerderung-wohnen'),
+  ('pkg-wohnen-bauen-stadtentwicklung-bund', 'rp-wbsb-bbr-presse'),
+  ('pkg-wohnen-bauen-stadtentwicklung-bund', 'rp-wbsb-destatis-bautaetigkeit'),
+  ('pkg-wohnen-bauen-stadtentwicklung-bund', 'rp-wbsb-destatis-baupreisindex'),
+  ('pkg-wohnen-bauen-stadtentwicklung-bund', 'rp-wbsb-destatis-wohnen-mieten'),
+  ('pkg-wohnen-bauen-stadtentwicklung-bund', 'rp-wbsb-destatis-wohngeld'),
+  ('pkg-wohnen-bauen-stadtentwicklung-bund', 'rp-wbsb-bgbl-teil1-liste'),
+  ('pkg-wohnen-bauen-stadtentwicklung-bund', 'rp-wbsb-bundestag-bauausschuss'),
+  ('pkg-wohnen-bauen-stadtentwicklung-bund', 'rp-wbsb-staedtebaufoerderung-start'),
+  ('pkg-wohnen-bauen-stadtentwicklung-bund', 'rp-wbsb-foerderdatenbank-bmwsb')
 on conflict (package_id, retrieval_path_id) do nothing;
 
 

@@ -150,15 +150,22 @@ check("Aggregator-Abrufwege sind googlenews_search", M.retrievalPaths.filter((p)
 
 // ============================ MIGRATION ============================
 console.log("== Migration: Katalogabbildung ==");
+// Das Pilot-Paket wohnen-bauen-stadtentwicklung-bund wird additiv eingemischt (11 Abrufwege,
+// 11 Paketzuordnungen). Die Legacy-Migrationszahlen werden daher gegen den Alt-Katalog
+// (ohne das WBSB-Modul) geprueft, damit die Migrations-Invariante unveraendert gilt.
+const WBSB_MODULE = "wohnen-bauen-stadtentwicklung-bund";
+const WBSB_PKG_ID = "pkg-wohnen-bauen-stadtentwicklung-bund";
+const legacyPaths = M.retrievalPaths.filter((p) => p.module !== WBSB_MODULE);
+const legacyPackagePaths = M.packagePaths.filter((pp) => pp.package_id !== WBSB_PKG_ID);
 check("143 kuratierte Quellen im Katalog — KEINE Personenquelle (entsteht dynamisch als '<id>-news')",
   v1Sources.length === 143 && v1Sources.every((s) => s.type !== "person" && !s.demoOnly));
-check("alle 143 + DIP als Abrufwege abgebildet", M.retrievalPaths.length === 144);
+check("alle 143 + DIP als Abrufwege abgebildet (Alt-Katalog, ohne WBSB-Modul)", legacyPaths.length === 144);
 check("keine unzugeordnete Quelle (unmapped=0)", M.unmapped.length === 0);
 check("jeder Abrufweg traegt legacy_source_id (ID-Kompatibilitaet)", M.retrievalPaths.every((p) => !!p.legacy_source_id));
 // Ist-Zustand seit dem P8-Paketfix: fraction-linke gehoert BEWUSST zu ZWEI Paketen
 // (bund-basis als neutraler Fraktions-Suchweg + die-linke-bund als funktionierender
 // Ersatz fuer die zwei defekten Original-RSS-Wege der Partei) -> 146 Zuordnungen.
-check("jede Katalog-Quelle mind. einem Paket zugeordnet; fraction-linke bewusst in zweien (144+1)", M.packagePaths.length === 145);
+check("jede Katalog-Quelle mind. einem Paket zugeordnet; fraction-linke bewusst in zweien (144+1)", legacyPackagePaths.length === 145);
 check("fraction-linke in bund-basis UND die-linke-bund",
   M.packagePaths.some((pp) => pp.package_id === "pkg-die-linke-bund" && pp.retrieval_path_id === "rp-fraction-linke") &&
   M.packagePaths.some((pp) => pp.package_id === "pkg-bund-basis" && pp.retrieval_path_id === "rp-fraction-linke"));
@@ -221,7 +228,7 @@ check("RLS aktiviert + restriktiv (nur service_role, KEINE authenticated-Leseric
 
 // ============================ SEED-VOLLSTAENDIGKEIT ============================
 console.log("== Seed-Vollstaendigkeit ==");
-check("6 Pakete (4 aktiv + Berlin/Brandenburg prepared) — KEIN Personenpaket im Code-Seed", M.packages.length === 6 && M.packages.every((p) => !p.key.startsWith("profil-")));
+check("7 Pakete (4 aktiv + Berlin/Brandenburg prepared + WBSB-Pilot prepared) — KEIN Personenpaket im Code-Seed", M.packages.length === 7 && M.packages.every((p) => !p.key.startsWith("profil-")));
 check("Berlin+Brandenburg als prepared Basispakete", (() => {
   const b = M.packages.find((p) => p.key === "berlin-basis");
   const bb = M.packages.find((p) => p.key === "brandenburg-basis");
@@ -238,6 +245,42 @@ check("Publisher-Entity-FK gueltig (falls gesetzt)", (() => {
   const eIds = new Set(M.entities.map((e) => e.id));
   return M.publishers.every((p) => !p.entity_id || eIds.has(p.entity_id));
 })());
+
+// ============================ PILOT: WOHNEN-BAUEN-STADTENTWICKLUNG-BUND ============================
+console.log("== Pilot: wohnen-bauen-stadtentwicklung-bund (prepared, INAKTIV) ==");
+const wbsbPkg = M.packages.find((p) => p.key === WBSB_MODULE);
+const wbsbPaths = M.retrievalPaths.filter((p) => p.module === WBSB_MODULE);
+const wbsbPP = M.packagePaths.filter((pp) => pp.package_id === WBSB_PKG_ID);
+check("WBSB-Paket vorhanden: prepared, Bund, Fachthema (nicht is_base)",
+  !!wbsbPkg && wbsbPkg.status === "prepared" && wbsbPkg.political_level === "bund" && wbsbPkg.is_base === false && wbsbPkg.geography_id === "geo-bund");
+check("WBSB: 11 Abrufwege im Pflichtkern", wbsbPaths.length === 11);
+check("WBSB: 11 Paketzuordnungen (alle zum WBSB-Paket)", wbsbPP.length === 11 &&
+  wbsbPP.every((pp) => wbsbPaths.some((p) => p.id === pp.retrieval_path_id)));
+check("WBSB: ALLE Wege technisch inaktiv (status=needs_review, activation_mode=manual)",
+  wbsbPaths.length > 0 && wbsbPaths.every((p) => p.status === "needs_review" && p.activation_mode === "manual"));
+check("WBSB: KEIN Weg is_critical/always_on/auto (keine Produktionseinbindung)",
+  wbsbPaths.every((p) => p.is_critical === false && p.activation_mode !== "always_on" && p.activation_mode !== "auto"));
+check("WBSB: jeder Weg hat gueltigen Herausgeber + eigene rp-wbsb-ID + legacy_source_id",
+  wbsbPaths.every((p) => pubIds.has(p.publisher_id) && /^rp-wbsb-/.test(p.id) && /^wbsb-/.test(p.legacy_source_id)));
+check("WBSB: Herausgeber destatis.de + bundestag.de WIEDERVERWENDET (nicht dupliziert)", (() => {
+  const byDom = {}; for (const p of M.publishers) if (p.canonical_domain) byDom[p.canonical_domain] = (byDom[p.canonical_domain] || 0) + 1;
+  return byDom["destatis.de"] === 1 && byDom["bundestag.de"] === 1;
+})());
+check("WBSB: neue Herausgeber (BMWSB/BBR/recht.bund.de/Staedtebaufoerderung/Foerderdatenbank) vorhanden", (() => {
+  const doms = new Set(M.publishers.map((p) => p.canonical_domain));
+  return ["bmwsb.bund.de", "bbr.bund.de", "recht.bund.de", "staedtebaufoerderung.info", "foerderdatenbank.de"].every((d) => doms.has(d));
+})());
+check("WBSB: neue Entitaeten (ministry-bmwsb/authority-bbr/authority-bfj) vorhanden", (() => {
+  const ids = new Set(M.entities.map((e) => e.id));
+  return ["ministry-bmwsb", "authority-bbr", "authority-bfj"].every((id) => ids.has(id));
+})());
+check("WBSB: keine Domain-Kollision, keine doppelte Path-ID/URL im Gesamtmodell", (() => {
+  const ids = M.retrievalPaths.map((p) => p.id);
+  const urls = wbsbPaths.map((p) => p.url);
+  return new Set(ids).size === ids.length && new Set(urls).size === urls.length;
+})());
+check("WBSB: kein Weg ohne aktives Paket aktivierbar (isPathActive=false ohne aktive Referenz)",
+  wbsbPaths.every((p) => model.isPathActive(p, []) === false));
 
 // ============================ ZUSAMMENFASSUNG ============================
 console.log(`\n== Ergebnis: ${pass} PASS, ${fail} FAIL ==`);
