@@ -14,6 +14,9 @@ const model = require("../lib/helmut/quellenarchitektur/model");
 const catalog = require("../lib/helmut/quellenarchitektur/catalog");
 const { buildFullModel, seeds, packageKeysForSource } = require("../lib/helmut/quellenarchitektur");
 const { v1Sources } = require("../lib/helmut/sources");
+// Kanonische Paket-Registry: Single Source of Truth fuer registrierte, vorbereitete Pakete.
+// Grundlage der §7-Klassifikation von Non-Catalog-Abrufwegen (Legacy/DIP/Paket/verwaist).
+const pkgRegistry = require("./quellenpaket-registry");
 
 let pass = 0, fail = 0;
 function check(name, cond) {
@@ -162,10 +165,8 @@ const WBSB_MODULE = "wohnen-bauen-stadtentwicklung-bund";
 const WBSB_PKG_ID = "pkg-wohnen-bauen-stadtentwicklung-bund";
 const catalogIds = new Set(v1Sources.map((s) => s.id));
 const nonCatalogPaths = M.retrievalPaths.filter((p) => !catalogIds.has(p.legacy_source_id));
-// Pfade vorbereiteter Pakete (Soll aus PACKAGE_DEFINITIONS, dynamisch) — WBSB inklusive.
-const preparedPkgIds = new Set(seeds.PACKAGE_DEFINITIONS.filter((d) => d.status === "prepared").map((d) => d.id));
-const preparedPkgPathIds = new Set(M.packagePaths.filter((pp) => preparedPkgIds.has(pp.package_id)).map((pp) => pp.retrieval_path_id));
-const classifyNonCatalog = (p) => p.legacy_source_id === "dip" ? "explicit" : (preparedPkgPathIds.has(p.id) ? "registered_package" : "orphan");
+const registeredPkgPathIds = pkgRegistry.registeredPackagePathIds();
+const classifyNonCatalog = (p) => pkgRegistry.classifyNonCatalogPath(p, { registeredPackagePathIds: registeredPkgPathIds });
 check("Katalog kuenstlich sauber: KEINE Personen-/Demo-Quelle (entsteht dynamisch als '<id>-news')",
   v1Sources.length > 0 && v1Sources.every((s) => s.type !== "person" && !s.demoOnly));
 check("jede Katalog-Quelle als Abrufweg abgebildet (Soll = Katalog, dynamisch)",

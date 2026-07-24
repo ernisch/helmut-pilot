@@ -32,8 +32,11 @@ check("classifyOrphans ohne Datenkontext: nur dip", (() => { const rows = classi
 
 console.log("== Migrations-Mapper: Coverage (strukturell) ==");
 const vStruct = mm.validateMigration({ catalog: cat });
-// 143 v1Sources + dip = 144 Legacy-Abrufwege; zusaetzlich 11 WBSB-Pilot-Abrufwege (prepared/inaktiv) = 155.
-check("155 Abrufwege (143 v1Sources + dip + 11 WBSB-Pilot)", vStruct.counts.legacyIds === 155);
+// §8: Soll aus der TATSAECHLICH aufgebauten Katalogmenge ableiten (statt hartem 155). Der
+// Migrations-Mapper zaehlt legacyIds unabhaengig vom Katalog-Aufbau -> echter Kreuzabgleich
+// "Mapper-Zaehlung == Katalog-Abrufwege", der mit weiteren Paketen mitwaechst.
+check("Abrufweg-Zahl des Mappers == Katalog-Abrufwege (kein Verlust, kein Zuwachs ohne Quelle)",
+  vStruct.counts.legacyIds === cat.retrievalPaths.length);
 check("keine Quelle ohne Paketzuordnung (unmapped leer)", vStruct.counts.unmappedPackages === 0 && cat.unmapped.length === 0);
 check("ohne raw_documents: availability.observedSources=false (ehrlich, nichts erfunden)", vStruct.availability.observedSources === false);
 check("strukturell verdict=ok", vStruct.verdict === "ok");

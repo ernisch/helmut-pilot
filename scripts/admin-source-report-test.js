@@ -18,6 +18,10 @@ function check(name, cond) {
 
 const NOW = Date.parse("2026-07-13T12:00:00Z");
 const H = 3600000;
+// §8: Sollwerte fuer Berichtszahlen aus der TATSAECHLICH aufgebauten Modellmenge ableiten
+// (statt harter 155/56). Der Test prueft damit "Bericht == Modell", nicht eine feste Zahl —
+// und bleibt gruen, wenn ein weiteres vorbereitetes Paket hinzukommt.
+const MODEL = buildFullModel();
 const iso = (agoMs) => new Date(NOW - agoMs).toISOString();
 const M = buildFullModel();
 // KLAR KUENSTLICHES, voll versorgtes Bundestagsmandat (kein realer Mandant im Test).
@@ -61,10 +65,10 @@ check("counts: 28 Kandidat-Klassen, 0 einsatzbereit, 2 unbesetzt", rReadiness.co
 
 console.log("== View 2: Quellen und Abrufwege ==");
 const qa = rEmpty.views.quellenAbrufwege;
-// 144 Legacy-Abrufwege (143 v1Sources + dip) + 11 WBSB-Pilot-Abrufwege (prepared/inaktiv) = 155.
-check("alle 155 Abrufwege bewertet (keine Lücke; 144 Legacy + 11 WBSB-Pilot)", qa.pathCount === 155);
-// 51 Legacy-Herausgeber + 5 neue WBSB-Herausgeber (destatis/bundestag wiederverwendet) = 56.
-check("nach Herausgeber gruppiert (56 Herausgeber; 51 Legacy + 5 WBSB neu)", qa.herausgeber.length === 56);
+// §8: Bericht zaehlt ALLE Abrufwege des Modells (keine Luecke) — Soll aus der Modellmenge.
+check("alle Abrufwege bewertet (Bericht == Modell-Abrufwege, keine Lücke)", qa.pathCount === MODEL.retrievalPaths.length);
+// §8: Bericht gruppiert nach ALLEN Herausgebern des Modells — Soll aus der Modellmenge.
+check("nach Herausgeber gruppiert (Bericht == Modell-Herausgeber)", qa.herausgeber.length === MODEL.publishers.length);
 check("welche Abrufwege gesund/defekt/unbekannt (drei Kübel)", typeof qa.healthCounts.gesund === "number" && typeof qa.healthCounts.defekt === "number" && typeof qa.healthCounts.unbekannt === "number");
 check("defekte Abrufwege erkannt (>=6 broken aus Sprint 1)", qa.healthCounts.defekt >= 6);
 check("ohne Metriken: keine 'gesund' erfunden (alle unbekannt/defekt/inaktiv)", qa.healthCounts.gesund === 0);
@@ -88,7 +92,7 @@ check("welche Messwerte noch nicht verfügbar: als Hinweise gelistet", pb.missin
 
 console.log("== View 5: Quellendetail ==");
 const detail = rEmpty.views.quellendetail.paths;
-check("Quellendetail je Abrufweg vorhanden (155: 144 Legacy + 11 WBSB) — KEINE Personenquelle im Katalog", detail.length === 155 && !detail.some((p) => /-news$/.test(String(p.legacy_source_id))));
+check("Quellendetail je Abrufweg vorhanden (Detail == Modell-Abrufwege) — KEINE Personenquelle im Katalog", detail.length === MODEL.retrievalPaths.length && !detail.some((p) => /-news$/.test(String(p.legacy_source_id))));
 const detailPath = detail.find((p) => p.legacy_source_id === "tagesschau-politik");
 check("Detail trägt Herausgeber/Methode/Pakete", detailPath.publisher && detailPath.method && Array.isArray(detailPath.packages));
 check("ohne Metriken: documentCount/koCount = null (nicht 0 erfunden)", detailPath.documentCount === null && detailPath.koCount === null);

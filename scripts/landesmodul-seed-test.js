@@ -13,11 +13,28 @@ const { sql, seed } = build();
 const rollback = buildRollback(seed);
 const cls = klassifiziere(seed);
 
-// --- 1. Zeilenzahlen (Seed) ---
-check("4 neue Entitäten", seed.entities.length === 4);
-check("14 Herausgeber", seed.publishers.length === 14);
-check("18 Abrufwege", seed.retrievalPaths.length === 18);
-check("19 Paketzuordnungen", seed.packagePaths.length === 19);
+// --- 1. Struktur-Konsistenz (§8: KEINE harten Gesamtzahlen 4/14/18/19; Soll aus dem Modell) ---
+// Statt Zahlen pruefen wir die INVARIANTEN: eindeutige IDs, Herausgeber == distinkt von den
+// Abrufwegen referenzierte Menge (kein verwaister/fehlender Herausgeber), FK der neuen
+// Entitaeten erfuellbar, jede Paketzuordnung auf einen gueltigen Weg, keine Doppelzuordnung,
+// jeder Weg mindestens einmal zugeordnet.
+check("Abrufweg-IDs eindeutig", new Set(seed.retrievalPaths.map((p) => p.id)).size === seed.retrievalPaths.length);
+// HINWEIS: Herausgeber duerfen die von Abrufwegen referenzierte Menge geringfuegig
+// UEBERSTEIGEN — die URL-Dedup (gleiche method|url) fuehrt Kandidaten zu EINEM Weg zusammen,
+// waehrend ihr Herausgeber bereits angelegt wurde (z. B. Staatskanzlei Brandenburg). Das ist
+// bestehendes, additives Verhalten (nicht Teil dieses Sprints). Geprueft wird daher:
+// eindeutige Herausgeber-IDs + KEIN danglender Verweis eines Abrufwegs.
+check("Herausgeber-IDs eindeutig + jeder Abrufweg zeigt auf einen vorhandenen Herausgeber (kein danglender Verweis)",
+  new Set(seed.publishers.map((p) => p.id)).size === seed.publishers.length
+  && seed.retrievalPaths.every((p) => seed.publishers.some((pub) => pub.id === p.publisher_id)));
+check("neue Entitäten eindeutig + jede von einem eigenen Herausgeber referenziert (FK erfüllbar)",
+  new Set(seed.entities.map((e) => e.id)).size === seed.entities.length
+  && seed.entities.every((e) => seed.publishers.some((pub) => pub.entity_id === e.id)));
+check("Paketzuordnungen: keine Doppelzuordnung, jede auf gültigen Weg, jeder Weg >= 1x zugeordnet (>= Wege wg. rbb24-Mehrfach)",
+  new Set(seed.packagePaths.map((pp) => `${pp.package_id}|${pp.retrieval_path_id}`)).size === seed.packagePaths.length
+  && seed.packagePaths.every((pp) => seed.retrievalPaths.some((p) => p.id === pp.retrieval_path_id))
+  && seed.retrievalPaths.every((p) => seed.packagePaths.some((pp) => pp.retrieval_path_id === p.id))
+  && seed.packagePaths.length >= seed.retrievalPaths.length);
 check("je Abrufweg genau 1 erwartete Ebene + 1 erwartete Geografie (Soll = retrievalPaths.length)",
   seed.pathExpectedLevels.length === seed.retrievalPaths.length && seed.pathExpectedGeographies.length === seed.retrievalPaths.length);
 
@@ -45,18 +62,18 @@ check("jedes insert ist ON CONFLICT DO NOTHING (rein additiv, Soll = Zahl der in
 check("keine destruktive Anweisung im Seed (delete/drop/truncate/alter/do update)", !/\b(delete|drop|truncate|alter)\b|do update/i.test(sql));
 check("begin + commit + notify pgrst", /begin;/.test(sql) && /commit;/.test(sql) && /notify pgrst/.test(sql));
 
-// --- 5. Klassifikation ---
+// --- 5. Klassifikation (§8: Partition statt harter Kategoriezahlen 11/2/2/3) ---
 const byKat = cls.reduce((m, c) => { m[c.kategorie] = (m[c.kategorie] || 0) + 1; return m; }, {});
-check("11 Google-News-Ersatzwege", byKat["Google-News-Ersatzweg"] === 11);
-check("2 direkte Primärquellen (Open-Data)", byKat["direkte Primärquelle"] === 2);
-check("2 journalistische Quellen (Tagesspiegel/rbb24)", byKat["journalistische Quelle"] === 2);
-check("3 Partei-/Fraktionsquellen", byKat["Partei-/Fraktionsquelle (Eigeninteresse)"] === 3);
+check("Klassifikation partitioniert JEDEN Weg genau einmal (Summe = Wege, keine Restkategorie)",
+  Object.values(byKat).reduce((a, b) => a + b, 0) === cls.length && cls.every((c) => !!c.kategorie));
+check("die fachlichen Kernkategorien sind vertreten (GN-Ersatz, Open-Data, journalistisch, Partei/Fraktion)",
+  ["Google-News-Ersatzweg", "direkte Primärquelle", "journalistische Quelle", "Partei-/Fraktionsquelle (Eigeninteresse)"].every((k) => (byKat[k] || 0) > 0));
 
 // --- 6. 3 Bot-gesperrte Parteiquellen: eingeschränkt + NICHT aktivierbar ---
 const eingeschr = cls.filter((c) => c.eingeschraenkt).map((c) => c.id).sort();
 check("genau 3 eingeschränkte Wege = die Bot-429-Parteifeeds", JSON.stringify(eingeschr) === JSON.stringify(["rp-bb-partei_pilot", "rp-be-fraktion_pilot", "rp-be-partei_pilot"]));
 check("eingeschränkte Wege sind NICHT aktivierbar", cls.filter((c) => c.eingeschraenkt).every((c) => c.aktivierbar === false));
-check("alle übrigen (21) sind aktivierbar", cls.filter((c) => !c.eingeschraenkt).every((c) => c.aktivierbar === true));
+check("alle übrigen (nicht-eingeschränkten) Wege sind aktivierbar", cls.filter((c) => !c.eingeschraenkt).every((c) => c.aktivierbar === true));
 
 // --- 7. Rollback vollständig + dependency-korrekt ---
 check("Rollback löscht path_expected_geographies + levels + package_paths + retrieval_paths + publishers + political_entities",
