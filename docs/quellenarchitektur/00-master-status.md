@@ -22,6 +22,30 @@
 > - **Scope:** dieses Dokument = Gesamt-Migrationsstatus. Sicherheit/RLS/JWT →
 >   `05-sicherheitsmodell-rls.md`; offene Punkte → `datenmotor-restliste.md`.
 
+## NACHTRAG 2026-07-24 (Quellenpaket `bevoelkerungsschutz-katastrophenschutz-bund` — PREPARED/INAKTIV vorbereitet)
+
+> **Scope:** rein additive, **vollständig inaktive** Vorbereitung eines einzelnen Bundespakets.
+> Ändert **nichts** am Migrations-Gesamtstand, am RE-ANKER oben oder am Betrieb (Quellen on /
+> Gate shadow / PARDOK shadow / Scoring off / BE/BB inaktiv — unverändert). **Nicht auf
+> Production angewendet. Kein Deployment, kein Merge, kein PR, keine Aktivierung.** Details +
+> Manifest: **`docs/quellenarchitektur/29-bevoelkerungsschutz-katastrophenschutz-bund.md`.**
+
+| Was | Wert |
+|---|---|
+| Neues Paket | `pkg-bevoelkerungsschutz-katastrophenschutz-bund` · `status=prepared` · `is_base=false` · `bund`/`geo-bund` · **kein Profil-Mapping, kein aktiver Crawl-Plan** |
+| Neue Wege | **7** (alle `needs_review` + `manual` = inaktiv, `googlenews_search`, site:-scoped) |
+| Wiederverwendet (nur additive `package_paths`) | `rp-dip`, `rp-committee-inneres` (unverändert) |
+| Neue Herausgeber / Entitäten | 4 (BMI, BBK, THW, IMK) / 3 (BBK, THW, IMK) · BMI+BRH wiederverwendet |
+| Tiering | Tier 1 = 5 · Tier 2 = 3 · Tier 3 = 1 (Wege gesamt 9) |
+| Artefakte | `seeds/bevoelkerungsschutz-quellen.js` · `scripts/generate-bevoelkerungsschutz-seed.js` · `scripts/bevoelkerungsschutz-seed-test.js` (48 grün) · `supabase/seeds/20260724_bevoelkerungsschutz_katastrophenschutz_bund_seed(.rollback).sql` |
+| Bestand unberührt | Haupt-Seed + `seeds/{entities,publishers,packages}.js` + `catalog.js` + BE/BB-Seed **byte-identisch**; einzige Bestandsänderung: `run-offline-tests.js` +1 Zeile (Generator-Denylist) |
+| Tests | Paket-Test 48/48 · **Offline-Suite 141/141 grün** |
+| DeepSeek-Korrekturen | Innenausschuss (21. WP) statt „Ausschuss für Inneres und Heimat"; PiB-16 (Methodik) ≠ parlam. Risikoanalyse (über DIP); KRITIS-DachG in Kraft 17.03.2026; Pakt ~10,2 Mrd. (IMK 19.06.2026); Resilienz-Fortschrittsbericht **nicht** als veröffentlicht bestätigt; keine Personen in IDs |
+| Egress | blockiert (Proxy 403) → **keine Byte-Verifikation**; Institutionen nur amtlich/WebSearch bestätigt (Byte-Check vor Aktivierung zwingend) |
+| Bestandsdrift dokumentiert | `committee-bt-inneres`/`rp-committee-inneres` tragen noch den Altnamen — **nicht** still geändert (Doc 29 §8a) |
+
+---
+
 ## NACHTRAG 2026-07-17 (Konsolidierung: Thread-2-Härtung, Sprint 1, Mandantenneutralisierung, Understanding-Forensik, Recovery-Pfad) — aktuellster verifizierter Stand
 
 > **Verbindliche Restliste aller offenen Punkte:** `docs/datenmotor-restliste.md`.
