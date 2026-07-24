@@ -192,11 +192,27 @@ check("ohne Datenkontext nur explizite Eintraege (dip)", (() => {
   return rows.length === 1 && rows[0].legacy_source_id === "dip" && rows[0].classification === "active_uncatalogued";
 })());
 const broken = M.retrievalPaths.filter((p) => p.status === "broken").map((p) => p.legacy_source_id);
-check("6 defekte Direkt-Feeds als broken markiert", broken.length === 6);
-check("defekte Pflichtquellen (Bundestag/Bundesregierung) als kritisch -> nicht still archivieren", (() => {
+check("P1-5: keine defekten Direkt-Feeds mehr (alle 6 verifiziert repariert, Sprint 9B)", broken.length === 0);
+check("P1-5: reparierte Pflichtquellen (Bundestag/Bundesregierung) needs_review, weiter kritisch -> nicht still archiviert", (() => {
   const bt = M.retrievalPaths.find((p) => p.legacy_source_id === "bundestag");
   const br = M.retrievalPaths.find((p) => p.legacy_source_id === "bundesregierung");
-  return bt.status === "broken" && bt.is_critical && br.status === "broken" && br.is_critical;
+  return bt.status === "needs_review" && bt.is_critical && br.status === "needs_review" && br.is_critical;
+})());
+check("P1-5: die 6 reparierten Bundeswege tragen ihre verifizierte Ersatz-URL", (() => {
+  const byId = new Map(M.retrievalPaths.map((p) => [p.legacy_source_id, p]));
+  return byId.get("bundestag").url === "https://www.bundestag.de/static/appdata/includes/rss/pressemitteilungen.rss"
+    && byId.get("bundesregierung").url === "https://news.google.com/rss/search?q=site:bundesregierung.de&hl=de&gl=DE&ceid=DE:de"
+    && byId.get("die-linke").url === "https://news.google.com/rss/search?q=site:die-linke.de&hl=de&gl=DE&ceid=DE:de"
+    && byId.get("linksfraktion").url === "https://www.dielinkebt.de/presse/pressemitteilungen/feed.rss"
+    && byId.get("ausschuss-arbeit-soziales").url === "https://news.google.com/rss/search?q=site:bundestag.de%20%22Ausschuss%20f%C3%BCr%20Arbeit%20und%20Soziales%22"
+    && byId.get("dgb").url === "https://news.google.com/rss/search?q=site:dgb.de&hl=de&gl=DE&ceid=DE:de";
+})());
+check("P1-5: Herausgeber-Identitaet bei googlenews-Ersatz erhalten (site:-Filter haelt die Original-Domain)", (() => {
+  const byId = new Map(M.retrievalPaths.map((p) => [p.legacy_source_id, p]));
+  return byId.get("bundesregierung").publisher_id === "publisher-bundesregierung.de"
+    && byId.get("die-linke").publisher_id === "publisher-die-linke.de"
+    && byId.get("dgb").publisher_id === "publisher-dgb.de"
+    && byId.get("ausschuss-arbeit-soziales").publisher_id === "publisher-bundestag.de";
 })());
 check("DIP als amtlicher API-Abrufweg (healthy, always_on, Bund Basis)", (() => {
   const dip = M.retrievalPaths.find((p) => p.legacy_source_id === "dip");
@@ -221,13 +237,36 @@ check("RLS aktiviert + restriktiv (nur service_role, KEINE authenticated-Leseric
 
 // ============================ SEED-VOLLSTAENDIGKEIT ============================
 console.log("== Seed-Vollstaendigkeit ==");
-check("6 Pakete (4 aktiv + Berlin/Brandenburg prepared) — KEIN Personenpaket im Code-Seed", M.packages.length === 6 && M.packages.every((p) => !p.key.startsWith("profil-")));
+check("8 Pakete (4 aktiv + Berlin/Brandenburg-Basis + 2 Landes-Partei-Pakete prepared) — KEIN Personenpaket im Code-Seed", M.packages.length === 8 && M.packages.every((p) => !p.key.startsWith("profil-")));
 check("Berlin+Brandenburg als prepared Basispakete", (() => {
   const b = M.packages.find((p) => p.key === "berlin-basis");
   const bb = M.packages.find((p) => p.key === "brandenburg-basis");
   return b && b.status === "prepared" && b.is_base && bb && bb.status === "prepared" && bb.is_base;
 })());
-check("Landesmodule tragen 15 Pflichtklassen", M.packages.find((p) => p.key === "berlin-basis").required_classes.length === 15);
+check("P0-2: Landes-Basispakete tragen nur die 12 NEUTRALEN Pflichtklassen (keine Partei-/Personenklasse)", (() => {
+  const PILOT = ["partei_pilot", "fraktion_pilot", "person_pilot"];
+  const b = M.packages.find((p) => p.key === "berlin-basis");
+  const bb = M.packages.find((p) => p.key === "brandenburg-basis");
+  return b.required_classes.length === 12 && bb.required_classes.length === 12
+    && PILOT.every((k) => !b.required_classes.includes(k)) && PILOT.every((k) => !bb.required_classes.includes(k));
+})());
+check("P0-2: Landes-Partei-Pakete (die-linke-berlin/-brandenburg) existieren, NICHT is_base, tragen die 3 Pilotklassen", (() => {
+  const dlb = M.packages.find((p) => p.key === "die-linke-berlin");
+  const dlbb = M.packages.find((p) => p.key === "die-linke-brandenburg");
+  const PILOT = ["partei_pilot", "fraktion_pilot", "person_pilot"];
+  return dlb && dlb.is_base === false && dlb.status === "prepared" && JSON.stringify(dlb.required_classes.slice().sort()) === JSON.stringify(PILOT.slice().sort())
+    && dlbb && dlbb.is_base === false && dlbb.status === "prepared" && JSON.stringify(dlbb.required_classes.slice().sort()) === JSON.stringify(PILOT.slice().sort());
+})());
+check("P0-2: die 15 Pflichtklassen (Basis+Partei) je Land bleiben in Summe vollstaendig", (() => {
+  const b = M.packages.find((p) => p.key === "berlin-basis");
+  const dlb = M.packages.find((p) => p.key === "die-linke-berlin");
+  const union = new Set([...b.required_classes, ...dlb.required_classes]);
+  return union.size === 15 && seeds.LANDESMODUL_PFLICHTKLASSEN.every((k) => union.has(k));
+})());
+check("P0-2: KEIN Abrufweg der Linke-Berlin-Partei-/Fraktions-/Personenquellen in berlin-basis (Neutralitaet)", (() => {
+  const pilotPathIds = new Set(M.retrievalPaths.filter((p) => ["be-partei_pilot", "be-fraktion_pilot", "be-person_pilot"].includes(p.legacy_source_id)).map((p) => p.id));
+  return !M.packagePaths.some((pp) => pp.package_id === "pkg-berlin-basis" && pilotPathIds.has(pp.retrieval_path_id));
+})());
 check("Bund Basis ist Pflicht-Basispaket (is_base)", (() => { const b = M.packages.find((p) => p.key === "bund-basis"); return b.is_base === true; })());
 check("kein Paket traegt mehr ein always_on-Flag (Daueraktivierung lebt auf Abrufweg-Ebene)", M.packages.every((p) => p.always_on === undefined));
 check("nur die 5 neutralen Kern-Abrufwege sind activation_mode=always_on", (() => {

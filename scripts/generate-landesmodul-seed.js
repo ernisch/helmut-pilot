@@ -69,7 +69,7 @@ function build() {
     "id"));
   out.push("");
 
-  out.push("-- 4) Paket <-> Abrufweg (nur berlin-basis / brandenburg-basis)");
+  out.push("-- 4) Paket <-> Abrufweg (Landespakete berlin-basis/brandenburg-basis + Partei-Pakete die-linke-berlin/die-linke-brandenburg)");
   out.push(insert("package_paths", ["package_id", "retrieval_path_id"],
     seed.packagePaths.map((pp) => [q(pp.package_id), q(pp.retrieval_path_id)]),
     "package_id, retrieval_path_id"));

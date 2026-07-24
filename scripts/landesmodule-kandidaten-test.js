@@ -107,7 +107,18 @@ check("ALLE Abrufwege status='needs_review' + activation_mode='manual' (technisc
 check("Dedup (R2): 18 Abrufwege (bb-staatskanzlei dedupt in bb-landesregierung via zentralem bbo_rss)", seed.retrievalPaths.length === 18 && seed.retrievalPaths.length < 28);
 check("rbb24 GLOBAL dedup: ein Abrufweg, zwei Paketreferenzen (BE+BB)", seed.summary.rbb24GlobalDedup && seed.packagePaths.filter((pp) => pp.retrieval_path_id === "rp-rbb24-politik").length === 2);
 check("Berlin PARDOK-Rohquelle deckt 4 Klassen ab (2/4/5/6)", (() => { const p = seed.retrievalPaths.find((x) => x.url.includes("pardok-wp19")); return p && p.covers.length === 4; })());
-check("Paketzuordnungen nur zu berlin-basis/brandenburg-basis", seed.packagePaths.every((pp) => ["pkg-berlin-basis","pkg-brandenburg-basis"].includes(pp.package_id)));
+check("Paketzuordnungen nur zu den 4 vorbereiteten Landespaketen (Basis + Partei)", seed.packagePaths.every((pp) => ["pkg-berlin-basis","pkg-brandenburg-basis","pkg-die-linke-berlin","pkg-die-linke-brandenburg"].includes(pp.package_id)));
+console.log("== P0-2: Neutralitaet der Landes-Basispakete (Architektur-Audit 29) ==");
+check("Partei-/Fraktions-/Person-Pilot-Wege gehen NICHT ins Basispaket, sondern ins Partei-Paket", (() => {
+  const pilotPathIds = new Set(seed.retrievalPaths.filter((p) => /_pilot$/.test(p.legacy_source_id) || p.legacy_source_id.endsWith("-partei_pilot") || ["be-partei_pilot","be-fraktion_pilot","be-person_pilot","bb-partei_pilot"].includes(p.legacy_source_id)).map((p) => p.id));
+  const basisPP = seed.packagePaths.filter((pp) => ["pkg-berlin-basis","pkg-brandenburg-basis"].includes(pp.package_id));
+  const parteiPP = seed.packagePaths.filter((pp) => ["pkg-die-linke-berlin","pkg-die-linke-brandenburg"].includes(pp.package_id));
+  return !basisPP.some((pp) => pilotPathIds.has(pp.retrieval_path_id)) && parteiPP.length === 4 && parteiPP.every((pp) => pilotPathIds.has(pp.retrieval_path_id));
+})());
+check("berlin-basis/brandenburg-basis erhalten weiterhin alle NICHT-Pilot-Wege (Institutionen/Medien)", (() => {
+  const basisCount = seed.packagePaths.filter((pp) => ["pkg-berlin-basis","pkg-brandenburg-basis"].includes(pp.package_id)).length;
+  return basisCount === 15; // 19 Zuordnungen gesamt - 4 Pilotklassen-Zuordnungen
+})());
 check("politische Ebene 'land' + Geografie je Abrufweg gesetzt", seed.pathExpectedLevels.every((l) => l.level === "land") && seed.pathExpectedGeographies.every((g) => ["geo-land-berlin","geo-land-brandenburg"].includes(g.geography_id)));
 check("neue Entitäten Landespartei/Fraktion/Person (nicht Bundes-Duplikate)", seed.entities.some((e) => e.id === "party-linke-berlin") && seed.entities.some((e) => e.id === "person-tobias-schulze") && seed.entities.some((e) => e.id === "party-linke-brandenburg"));
 

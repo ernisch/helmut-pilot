@@ -93,9 +93,20 @@ function build() {
   return out.join("\n");
 }
 
-const target = path.join(__dirname, "..", "supabase", "seeds", "20260713_source_architecture_seed.sql");
-fs.mkdirSync(path.dirname(target), { recursive: true });
-fs.writeFileSync(target, build());
-const m = buildFullModel();
-console.log(`Seed-SQL geschrieben: ${path.relative(path.join(__dirname, ".."), target)}`);
-console.log(`  geographies=${m.geographies.length} entities=${m.entities.length} publishers=${m.publishers.length} paths=${m.retrievalPaths.length} packages=${m.packages.length} package_paths=${m.packagePaths.length}`);
+const TARGET = path.join(__dirname, "..", "supabase", "seeds", "20260713_source_architecture_seed.sql");
+
+// Nur beim direkten Aufruf schreiben (node scripts/generate-source-architecture-seed.js),
+// NICHT beim require() aus einem Test (P0-1, Architektur-Audit 29: build() muss rein
+// in-memory aufrufbar sein, damit ein Drift-Test den Generator gegen den committeten Seed
+// diffen kann, ohne die Datei als Nebeneffekt zu ueberschreiben). Analog generate-landesmodul-seed.js.
+function writeFile() {
+  fs.mkdirSync(path.dirname(TARGET), { recursive: true });
+  fs.writeFileSync(TARGET, build());
+  const m = buildFullModel();
+  console.log(`Seed-SQL geschrieben: ${path.relative(path.join(__dirname, ".."), TARGET)}`);
+  console.log(`  geographies=${m.geographies.length} entities=${m.entities.length} publishers=${m.publishers.length} paths=${m.retrievalPaths.length} packages=${m.packages.length} package_paths=${m.packagePaths.length}`);
+}
+
+if (require.main === module) writeFile();
+
+module.exports = { build, writeFile, TARGET };

@@ -134,7 +134,6 @@ on conflict (id) do update set name = excluded.name, canonical_key = excluded.ca
 
 -- Herausgeber
 insert into public.publishers (id, name, canonical_domain, publisher_type, evidence_role, trust, lifecycle_status, entity_id) values
-  ('aggregator-google-news', 'Google News (Aggregator/Suchweg)', 'news.google.com', 'aggregator', 'aggregator', 'unbekannt', 'active', null),
   ('publisher-bmas.de', 'Bundesministerium für Arbeit und Soziales', 'bmas.de', 'ministry', 'official_primary', 'hoch', 'active', 'ministry-bmas'),
   ('publisher-bundesregierung.de', 'Bundesregierung', 'bundesregierung.de', 'government', 'official_primary', 'hoch', 'active', 'government-bund'),
   ('publisher-bundestag.de', 'Deutscher Bundestag', 'bundestag.de', 'parliament', 'official_primary', 'hoch', 'active', 'parliament-bundestag'),
@@ -143,6 +142,7 @@ insert into public.publishers (id, name, canonical_domain, publisher_type, evide
   ('publisher-tagesschau.de', 'Tagesschau', 'tagesschau.de', 'media', 'journalistic', 'hoch', 'active', null),
   ('publisher-deutschlandfunk.de', 'Deutschlandfunk', 'deutschlandfunk.de', 'media', 'journalistic', 'hoch', 'active', null),
   ('publisher-dgb.de', 'Deutscher Gewerkschaftsbund', 'dgb.de', 'union', 'direct_interest', 'unbekannt', 'active', 'union-dgb'),
+  ('aggregator-google-news', 'Google News (Aggregator/Suchweg)', 'news.google.com', 'aggregator', 'aggregator', 'unbekannt', 'active', null),
   ('publisher-spiegel.de', 'Der Spiegel', 'spiegel.de', 'media', 'journalistic', 'hoch', 'active', null),
   ('publisher-zeit.de', 'ZEIT Online', 'zeit.de', 'media', 'journalistic', 'hoch', 'active', null),
   ('publisher-sueddeutsche.de', 'Süddeutsche Zeitung', 'sueddeutsche.de', 'media', 'journalistic', 'hoch', 'active', null),
@@ -189,32 +189,29 @@ on conflict (id) do update set name = excluded.name, evidence_role = excluded.ev
 
 
 -- Quellenpakete
--- HINWEIS (Mandantenneutralisierung): Persoenliche Pakete ('profil-<mandats-id>',
--- inkl. Abrufweg 'rp-<mandats-id>-news') werden NICHT geseedet — sie entstehen je
--- Mandat bei der Provisionierung als normale Datenbank-Zeilen. Bereits vorhandene
--- Production-Zeilen bleiben unveraendert bestehen (dieses Seed loescht nichts;
--- alle Statements sind additive Upserts).
 insert into public.source_packages (id, key, name, purpose, status, is_base, political_level, geography_id, required_classes) values
   ('pkg-bund-basis', 'bund-basis', 'Bund Basis', 'Neutrale bundespolitische Grundversorgung fuer JEDES Mandat (Institutionen, alle Ausschuesse, alle Fraktionen, Leitmedien, DIP).', 'active', true, 'bund', 'geo-bund', '{}'),
   ('pkg-arbeit-und-soziales', 'arbeit-und-soziales', 'Arbeit und Soziales', 'Fachthemenpaket Arbeit- und Sozialpolitik (Fachmedien, Verbaende, Gewerkschaften, Prozess-/Radar-Quellen, Themen-Buendel). Fachthema, NICHT Region.', 'active', false, 'bund', 'geo-bund', '{}'),
   ('pkg-die-linke-bund', 'die-linke-bund', 'Die Linke Bund', 'Partei-Direktquellen Die Linke (Bundesebene).', 'active', false, 'bund', 'geo-bund', '{}'),
   ('pkg-regional-niedersachsen', 'regional-niedersachsen', 'Regional Niedersachsen', 'Regionale Beobachtung Niedersachsen (Salzgitter/Braunschweig/Wolfenbuettel).', 'active', false, 'land', 'geo-land-niedersachsen', '{}'),
-  ('pkg-berlin-basis', 'berlin-basis', 'Berlin Basis', 'Landespaket Berlin (Abgeordnetenhaus, Senat, Senatsverwaltungen, Fraktionen, Regionalmedien, rbb Berlin). Struktur vorbereitet — Quellen folgen nach Pruefung + Freigabe.', 'prepared', true, 'land', 'geo-land-berlin', array['landesparlament','plenum','ausschuesse','drucksachen','schriftliche_anfragen','gesetzgebung','landesregierung','staatskanzlei','ministerien','landesfraktionen','regionale_leitmedien','oer_landesberichterstattung','partei_pilot','fraktion_pilot','person_pilot']::text[]),
-  ('pkg-brandenburg-basis', 'brandenburg-basis', 'Brandenburg Basis', 'Landespaket Brandenburg (Landtag, Landesregierung, Staatskanzlei, Ministerien, Fraktionen, Regionalmedien, rbb Brandenburg). Struktur vorbereitet — Quellen folgen nach Pruefung + Freigabe.', 'prepared', true, 'land', 'geo-land-brandenburg', array['landesparlament','plenum','ausschuesse','drucksachen','schriftliche_anfragen','gesetzgebung','landesregierung','staatskanzlei','ministerien','landesfraktionen','regionale_leitmedien','oer_landesberichterstattung','partei_pilot','fraktion_pilot','person_pilot']::text[])
+  ('pkg-berlin-basis', 'berlin-basis', 'Berlin Basis', 'Landespaket Berlin (Abgeordnetenhaus, Senat, Senatsverwaltungen, Fraktionen, Regionalmedien, rbb Berlin). Struktur vorbereitet — Quellen folgen nach Pruefung + Freigabe. NEUTRAL: keine Partei-/Personenquellen (siehe pkg-die-linke-berlin).', 'prepared', true, 'land', 'geo-land-berlin', array['landesparlament','plenum','ausschuesse','drucksachen','schriftliche_anfragen','gesetzgebung','landesregierung','staatskanzlei','ministerien','landesfraktionen','regionale_leitmedien','oer_landesberichterstattung']::text[]),
+  ('pkg-brandenburg-basis', 'brandenburg-basis', 'Brandenburg Basis', 'Landespaket Brandenburg (Landtag, Landesregierung, Staatskanzlei, Ministerien, Fraktionen, Regionalmedien, rbb Brandenburg). Struktur vorbereitet — Quellen folgen nach Pruefung + Freigabe. NEUTRAL: keine Partei-/Personenquellen (siehe pkg-die-linke-brandenburg).', 'prepared', true, 'land', 'geo-land-brandenburg', array['landesparlament','plenum','ausschuesse','drucksachen','schriftliche_anfragen','gesetzgebung','landesregierung','staatskanzlei','ministerien','landesfraktionen','regionale_leitmedien','oer_landesberichterstattung']::text[]),
+  ('pkg-die-linke-berlin', 'die-linke-berlin', 'Die Linke Berlin', 'Partei-/Fraktions-/Personenquellen Die Linke Berlin (Landesebene). Struktur vorbereitet — Quellen folgen nach Pruefung + Freigabe.', 'prepared', false, 'land', 'geo-land-berlin', array['partei_pilot','fraktion_pilot','person_pilot']::text[]),
+  ('pkg-die-linke-brandenburg', 'die-linke-brandenburg', 'Die Linke Brandenburg', 'Parteiquellen Die Linke Brandenburg (Landesebene; 8. WP ohne Landtagsfraktion). Struktur vorbereitet — Quellen folgen nach Pruefung + Freigabe.', 'prepared', false, 'land', 'geo-land-brandenburg', array['partei_pilot','fraktion_pilot','person_pilot']::text[])
 on conflict (id) do update set name = excluded.name, purpose = excluded.purpose, status = excluded.status, required_classes = excluded.required_classes;
 
 
 -- Abrufwege
 insert into public.retrieval_paths (id, publisher_id, legacy_source_id, name, method, url, query, parser, priority, status, activation_mode, is_critical, max_items, represents_type) values
   ('rp-bmas', 'publisher-bmas.de', 'bmas', 'BMAS', 'rss', 'https://www.bmas.de/SiteGlobals/Functions/RSSFeed/DE/RSSNewsfeed/RSSNewsfeed.xml', null, 'rss-regex', 95, 'healthy', 'auto', true, 16, null),
-  ('rp-bundesregierung', 'publisher-bundesregierung.de', 'bundesregierung', 'Bundesregierung', 'rss', 'https://www.bundesregierung.de/breg-de/service/rss', null, 'rss-regex', 95, 'broken', 'always_on', true, 16, null),
-  ('rp-bundestag', 'publisher-bundestag.de', 'bundestag', 'Bundestag', 'rss', 'https://www.bundestag.de/rss', null, 'rss-regex', 100, 'broken', 'always_on', true, 16, null),
-  ('rp-ausschuss-arbeit-soziales', 'publisher-bundestag.de', 'ausschuss-arbeit-soziales', 'Ausschuss Arbeit und Soziales', 'html', 'https://www.bundestag.de/ausschuesse/a11_arbeit_soziales', null, 'html-scrape', 95, 'broken', 'auto', false, 1, null),
-  ('rp-die-linke', 'publisher-die-linke.de', 'die-linke', 'Die Linke', 'rss', 'https://www.die-linke.de/start/presse/rss.xml', null, 'rss-regex', 90, 'broken', 'auto', true, 16, null),
-  ('rp-linksfraktion', 'publisher-dielinkebt.de', 'linksfraktion', 'Die Linke im Bundestag', 'rss', 'https://www.dielinkebt.de/presse/pressemitteilungen/rss.xml', null, 'rss-regex', 90, 'broken', 'auto', true, 16, null),
+  ('rp-bundesregierung', 'publisher-bundesregierung.de', 'bundesregierung', 'Bundesregierung', 'googlenews_search', 'https://news.google.com/rss/search?q=site:bundesregierung.de&hl=de&gl=DE&ceid=DE:de', 'site:bundesregierung.de', 'googlenews-batchexecute', 95, 'needs_review', 'always_on', true, 16, null),
+  ('rp-bundestag', 'publisher-bundestag.de', 'bundestag', 'Bundestag', 'rss', 'https://www.bundestag.de/static/appdata/includes/rss/pressemitteilungen.rss', null, 'rss-regex', 100, 'needs_review', 'always_on', true, 16, null),
+  ('rp-ausschuss-arbeit-soziales', 'publisher-bundestag.de', 'ausschuss-arbeit-soziales', 'Ausschuss Arbeit und Soziales', 'googlenews_search', 'https://news.google.com/rss/search?q=site:bundestag.de%20%22Ausschuss%20f%C3%BCr%20Arbeit%20und%20Soziales%22', 'site:bundestag.de "Ausschuss für Arbeit und Soziales"', 'googlenews-batchexecute', 95, 'needs_review', 'auto', false, 16, null),
+  ('rp-die-linke', 'publisher-die-linke.de', 'die-linke', 'Die Linke', 'googlenews_search', 'https://news.google.com/rss/search?q=site:die-linke.de&hl=de&gl=DE&ceid=DE:de', 'site:die-linke.de', 'googlenews-batchexecute', 90, 'needs_review', 'auto', true, 16, null),
+  ('rp-linksfraktion', 'publisher-dielinkebt.de', 'linksfraktion', 'Die Linke im Bundestag', 'rss', 'https://www.dielinkebt.de/presse/pressemitteilungen/feed.rss', null, 'rss-regex', 90, 'needs_review', 'auto', true, 16, null),
   ('rp-tagesschau-politik', 'publisher-tagesschau.de', 'tagesschau-politik', 'Tagesschau Politik', 'rss', 'https://www.tagesschau.de/infoservices/alle-meldungen-100~rss2.xml', null, 'rss-regex', 70, 'healthy', 'always_on', true, 16, null),
   ('rp-deutschlandfunk-politik', 'publisher-deutschlandfunk.de', 'deutschlandfunk-politik', 'Deutschlandfunk Politik', 'rss', 'https://www.deutschlandfunk.de/nachrichten-100.rss', null, 'rss-regex', 70, 'healthy', 'always_on', true, 16, null),
-  ('rp-dgb', 'publisher-dgb.de', 'dgb', 'DGB', 'html', 'https://www.dgb.de', null, 'html-scrape', 75, 'broken', 'auto', false, 1, null),
+  ('rp-dgb', 'publisher-dgb.de', 'dgb', 'DGB', 'googlenews_search', 'https://news.google.com/rss/search?q=site:dgb.de&hl=de&gl=DE&ceid=DE:de', 'site:dgb.de', 'googlenews-batchexecute', 75, 'needs_review', 'auto', false, 16, null),
   ('rp-committee-gesundheit', 'aggregator-google-news', 'committee-gesundheit', 'Ausschuss Gesundheit', 'googlenews_search', 'https://news.google.com/rss/search?q=(Gesundheit%20OR%20Krankenhaus%20OR%20Pflegeversicherung%20OR%20Krankenkasse%20OR%20Gesundheitsreform%20OR%20Bundesgesundheitsminister)%20(Bundestag%20OR%20Bundesregierung%20OR%20Gesetzentwurf%20OR%20Ausschuss%20OR%20Reform)&hl=de&gl=DE&ceid=DE:de', '(Gesundheit OR Krankenhaus OR Pflegeversicherung OR Krankenkasse OR Gesundheitsreform OR Bundesgesundheitsminister) (Bundestag OR Bundesregierung OR Gesetzentwurf OR Ausschuss OR Reform)', 'googlenews-batchexecute', 80, 'needs_review', 'auto', false, 16, 'committee'),
   ('rp-committee-verteidigung', 'aggregator-google-news', 'committee-verteidigung', 'Ausschuss Verteidigung', 'googlenews_search', 'https://news.google.com/rss/search?q=(Bundeswehr%20OR%20Verteidigung%20OR%20Wehrdienst%20OR%20R%C3%BCstung%20OR%20NATO%20OR%20Verteidigungsminister)%20(Bundestag%20OR%20Bundesregierung%20OR%20Gesetzentwurf%20OR%20Ausschuss%20OR%20Reform)&hl=de&gl=DE&ceid=DE:de', '(Bundeswehr OR Verteidigung OR Wehrdienst OR Rüstung OR NATO OR Verteidigungsminister) (Bundestag OR Bundesregierung OR Gesetzentwurf OR Ausschuss OR Reform)', 'googlenews-batchexecute', 80, 'needs_review', 'auto', false, 16, 'committee'),
   ('rp-committee-auswaertiges', 'aggregator-google-news', 'committee-auswaertiges', 'Ausschuss Auswärtiges', 'googlenews_search', 'https://news.google.com/rss/search?q=(Au%C3%9Fenpolitik%20OR%20%22Ausw%C3%A4rtiges%20Amt%22%20OR%20Diplomatie%20OR%20Au%C3%9Fenminister)%20(Bundestag%20OR%20Bundesregierung%20OR%20Gesetzentwurf%20OR%20Ausschuss%20OR%20Reform)&hl=de&gl=DE&ceid=DE:de', '(Außenpolitik OR "Auswärtiges Amt" OR Diplomatie OR Außenminister) (Bundestag OR Bundesregierung OR Gesetzentwurf OR Ausschuss OR Reform)', 'googlenews-batchexecute', 80, 'needs_review', 'auto', false, 16, 'committee'),
@@ -389,6 +386,7 @@ insert into public.package_paths (package_id, retrieval_path_id) values
   ('pkg-bund-basis', 'rp-fraction-cdu-csu'),
   ('pkg-bund-basis', 'rp-fraction-spd'),
   ('pkg-bund-basis', 'rp-fraction-gruene'),
+  ('pkg-die-linke-bund', 'rp-fraction-linke'),
   ('pkg-bund-basis', 'rp-fraction-linke'),
   ('pkg-bund-basis', 'rp-fraction-afd'),
   ('pkg-bund-basis', 'rp-fraction-fdp'),
