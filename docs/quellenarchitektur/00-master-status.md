@@ -22,6 +22,32 @@
 > - **Scope:** dieses Dokument = Gesamt-Migrationsstatus. Sicherheit/RLS/JWT →
 >   `05-sicherheitsmodell-rls.md`; offene Punkte → `datenmotor-restliste.md`.
 
+## NACHTRAG 2026-07-24 (Prepared-Paket `familie-gleichstellung-demografie-bund` vorbereitet — vollständig INAKTIV)
+
+Neues Bundes-Fachthemenpaket **strukturell vorbereitet, vollständig INAKTIV** (analog zum
+BE/BB-Prepared-Muster). **Nichts aktiviert/deployt/gemergt; kein PR; keine SQL angewendet; keine
+DB-/Cron-/Crawler-/Profil-Änderung.** Betrieb unverändert (Quellen **on** · Gate **shadow** ·
+PARDOK **shadow** · Scoring **off** · BE/BB **inaktiv** · Budget/Locks unverändert).
+
+| Was | Wert |
+|---|---|
+| Kanonischer Schlüssel (Vorab-Check §1, konfliktfrei) | `pkg-familie-gleichstellung-demografie-bund` (kein überlappendes Bestandspaket, kein `familie-jugend-integration-und-teilhabe-bund`) |
+| Paketstatus | **`prepared`, is_base=false, KEINE Profilzuordnung, KEIN aktiver Crawl-Plan** |
+| Neu (additiv) | 1 Paket · 2 Entitäten (ADS, UBSKM — Institutionen, keine Personen) · 3 Publisher (BMBFSFJ, ADS, UBSKM) · **6 Abrufwege alle `needs_review`+`manual`** · 7 package_paths · 6 levels · 26 topics |
+| Wiederverwendet (kein Overwrite) | Entität `ministry-bmfsfj` · Publisher `publisher-destatis.de` (2 Wege) · Weg `rp-dip` (parlamentarisch); Bundestagsausschuss+Bundesrat via DIP+Bund-Basis |
+| Bündelung | 4 Regierungsberichte (Familien-/Kinder-Jugend-/Gleichstellungs-/Altersbericht) über **1** Weg (`rp-fgd-bmbfsfj-berichte`, stabile Übersichtsseite) |
+| Tier | 1=3 (inkl. DIP) · 2=4 · 3=0 |
+| Verifikation | Institutionen/Berichte **amtlich** bestätigt (WebSearch gg. bundestag.de/bmbfsfj.bund.de/antidiskriminierungsstelle.de/gesetze-im-internet.de); **byte-genau NICHT** (Egress-Direktabruf 403) → vor Aktivierung zu prüfen |
+| Dateien | Builder `lib/helmut/quellenarchitektur/seeds/familie-gleichstellung-demografie-bund.js` · Generator+Test in `scripts/` · Seed+Rollback `supabase/seeds/20260724_familie_gleichstellung_demografie_bund_seed(.rollback).sql` · **Manifest `29-paket-familie-gleichstellung-demografie-bund.md`** |
+| Tests | Paket-Suite grün; **volle Offline-Suite 141/141 grün** |
+
+Deep-Research-Korrekturen: 4. Gleichstellungsbericht **2025** (nicht 2026); Familien-/Altersbericht
+**veröffentlicht 2025**; Bundesrat amtlich **„Ausschuss für Familie und Senioren (FS)"**;
+Minimalarchitektur um BMBFSFJ-Vorhaben-Weg + UBSKM-Kinderschutz-Weg erweitert (§5/§9/§11). Details +
+Dubletten-/Abdeckungsmatrix + offene Risiken: **`29-paket-familie-gleichstellung-demografie-bund.md`**.
+
+---
+
 ## NACHTRAG 2026-07-17 (Konsolidierung: Thread-2-Härtung, Sprint 1, Mandantenneutralisierung, Understanding-Forensik, Recovery-Pfad) — aktuellster verifizierter Stand
 
 > **Verbindliche Restliste aller offenen Punkte:** `docs/datenmotor-restliste.md`.
