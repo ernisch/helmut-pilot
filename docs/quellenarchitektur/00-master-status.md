@@ -22,7 +22,35 @@
 > - **Scope:** dieses Dokument = Gesamt-Migrationsstatus. Sicherheit/RLS/JWT →
 >   `05-sicherheitsmodell-rls.md`; offene Punkte → `datenmotor-restliste.md`.
 
-## NACHTRAG 2026-07-17 (Konsolidierung: Thread-2-Härtung, Sprint 1, Mandantenneutralisierung, Understanding-Forensik, Recovery-Pfad) — aktuellster verifizierter Stand
+## NACHTRAG 2026-07-24 (Fachpaket `innere-sicherheit-bund` — PREPARED, technisch INAKTIV vorbereitet)
+
+- **Betriebszustand UNVERÄNDERT** (Quellen on · Gate shadow · PARDOK shadow · Scoring off · BE/BB
+  inaktiv). Dieser Nachtrag ändert **nichts** Aktives — er dokumentiert eine rein additive,
+  inaktive Vorbereitung auf Branch `claude/innere-sicherheit-bund-validation-o0fh17`.
+- **Angelegt (additiv, isoliert):** Fachthemenpaket `pkg-innere-sicherheit-bund` (`prepared`,
+  is_base=false, bund) mit **3 neuen Entitäten** (`authority-bka/-bfv/-bfdi`), **4 neuen
+  Herausgebern** (`publisher-bmi.bund.de` → bestehende Entität `ministry-bmi`; `publisher-bka.de`,
+  `publisher-verfassungsschutz.de`, `publisher-bfdi.bund.de`), **5 neuen Abrufwegen** (alle
+  `status=needs_review`, `activation_mode=manual` → inaktiv) und **2 wiederverwendeten** Wegen
+  (`rp-dip`, `rp-committee-inneres` — nur `package_paths`-Referenz, kein Parallelweg).
+- **Dateien:** `lib/helmut/quellenarchitektur/seeds/innere-sicherheit-bund.js`,
+  `scripts/generate-innere-sicherheit-bund-seed.js`, `scripts/innere-sicherheit-bund-seed-test.js`
+  (47 Checks, auto in Offline-Suite), `supabase/seeds/20260724_innere_sicherheit_bund_seed.sql`
+  (+ `_rollback.sql`), Doku `29-innere-sicherheit-bund-paket.md` + `manifest-innere-sicherheit-bund.md`.
+- **Bewusst NICHT verändert (Isolation):** `seeds/packages.js` bleibt **6 Pakete**
+  (`source-architecture-test` grün), Basis-Seed `20260713_*` **byte-identisch**, `catalog.js`,
+  `profile-packages.js`, alle Generatoren/Registry/Workflow. Das Paket trägt die
+  `source_packages`-Zeile im **eigenen** Seed (es entsteht nach dem angewendeten Basis-Seed).
+- **Kein Profil-Mapping** (keine Resolver-Regel), **kein aktiver Crawl-Plan** (`prepared`+`manual`),
+  **kein SQL angewendet**, **kein PR**. Offline-Suite **141/141 grün** (Basis 140/140 + neuer Test).
+- **Verifikation (ehrlich, §17):** alle URLs/Institutionen amtlich/WebSearch **fachlich** bestätigt
+  (BMI-Name, Innenausschuss 21. WP, VSB 2025, PKS/PMK 2025, BfDI 34. TB); **byte-genau KEINE**
+  (lokaler Egress zu Behörden-Domains Proxy-seitig gesperrt) → vor Aktivierung auf offenem
+  Egress-Runner byte-prüfen. **Bestandsdrift** (nur dokumentiert, nicht geändert): `committee-bt-inneres`
+  Bestandsname „Ausschuss für Inneres und Heimat" vs. amtlich 21. WP „Innenausschuss"; 23 vs. 24 Ausschüsse.
+- **Vollständiger Wiedereinstieg ohne Vollscan:** `manifest-innere-sicherheit-bund.md`.
+
+## NACHTRAG 2026-07-17 (Konsolidierung: Thread-2-Härtung, Sprint 1, Mandantenneutralisierung, Understanding-Forensik, Recovery-Pfad) — aktuellster verifizierter Stand (Betrieb)
 
 > **Verbindliche Restliste aller offenen Punkte:** `docs/datenmotor-restliste.md`.
 > **Nummernschema:** Die früheren, kollidierenden F-/P-Nummern sind aufgelöst —
