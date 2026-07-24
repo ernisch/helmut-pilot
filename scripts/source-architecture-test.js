@@ -315,9 +315,9 @@ check("WBSB: Herausgeber destatis.de + bundestag.de WIEDERVERWENDET (nicht dupli
   const byDom = {}; for (const p of M.publishers) if (p.canonical_domain) byDom[p.canonical_domain] = (byDom[p.canonical_domain] || 0) + 1;
   return byDom["destatis.de"] === 1 && byDom["bundestag.de"] === 1;
 })());
-check("WBSB: neue Herausgeber (BMWSB/BBSR/BBR/recht.bund.de/gesetze-im-internet/Staedtebaufoerderung/Foerderdatenbank) vorhanden", (() => {
+check("WBSB: neue Herausgeber (BMWSB/BBSR/BBR/recht.bund.de/Staedtebaufoerderung/Foerderdatenbank) vorhanden", (() => {
   const doms = new Set(M.publishers.map((p) => p.canonical_domain));
-  return ["bmwsb.bund.de", "bbsr.bund.de", "bbr.bund.de", "recht.bund.de", "gesetze-im-internet.de", "staedtebaufoerderung.info", "foerderdatenbank.de"].every((d) => doms.has(d));
+  return ["bmwsb.bund.de", "bbsr.bund.de", "bbr.bund.de", "recht.bund.de", "staedtebaufoerderung.info", "foerderdatenbank.de"].every((d) => doms.has(d));
 })());
 check("WBSB: neue Entitaeten (ministry-bmwsb/authority-bbsr/authority-bbr/authority-bfj) vorhanden", (() => {
   const ids = new Set(M.entities.map((e) => e.id));

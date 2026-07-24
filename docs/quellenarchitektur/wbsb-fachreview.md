@@ -7,175 +7,158 @@ alle Wege `needs_review` / `manual`, `is_critical=false`).
 **Stand:** 2026-07-24 · **Reviewtyp:** rein fachlich (kein Workflow-/Registry-/Generator-Umbau).
 **Basis:** `main` nach dem Merge von PR #117 (Quellenarchitektur technisch abgeschlossen).
 
-> Dieses Review betrifft ausschließlich die **fachliche Qualität** des Pakets. Die technische
-> Quellenarchitektur (Registry, Generatoren, Testarchitektur) bleibt unverändert; geändert
-> wurden nur die **Paketdaten** dieses einen Pakets und die davon **zwingend** abhängigen
-> Paket-Assertions/Seeds.
+> Dieses Review betrifft ausschließlich die **fachliche Qualität** dieses einen Pakets. Die
+> technische Quellenarchitektur (Registry, Generatoren, Testarchitektur) bleibt unverändert;
+> geändert wurden nur die **Paketdaten** und zwei davon **zwingend** abhängige Paket-Assertions.
 
 ---
 
-## 0. Verifikationsrealität (ehrlich, vorab)
+## 0. Verifikationsrealität & echter Prüflauf (ehrlich, vorab)
 
-Die Agent-Sandbox blockt ausgehenden Egress per Organisations-Policy: `curl` → `403 CONNECT`,
-`WebFetch` → `403` für **alle** `.bund.de`/`.de`-Hosts. **Nur `WebSearch`** ist verfügbar.
-Reale HTTP-Verifikation (Status, Content-Type, Feed-Wohlgeformtheit) läuft daher — wie schon im
-Vorsprint — **auf einem GitHub-Actions-Runner mit offenem Egress**
-(`.github/workflows/wohnen-bauen-stadtentwicklung-verify.yml` → `scripts/wohnen-bauen-
-stadtentwicklung-verify.js`, Egress-Gate über Kontroll-URLs).
+Die Agent-Sandbox blockt ausgehenden Egress per Organisations-Policy (`curl`/`WebFetch` → `403`
+für alle `.bund.de`/`.de`-Hosts); nur `WebSearch` ist verfügbar. Reale HTTP-Verifikation läuft
+daher — wie im Vorsprint — **auf einem GitHub-Actions-Runner mit offenem Egress**
+(`wohnen-bauen-stadtentwicklung-verify.yml` → `scripts/wohnen-bauen-stadtentwicklung-verify.js`).
 
-Daraus folgen zwei **Ehrlichkeitsregeln**, die dieses Review durchgehend einhält:
+**Für dieses Review wurde ein ECHTER Prüflauf ausgelöst und ausgewertet:**
+Actions-Run **`30097099429`** (Branch `claude/quellenpaket-fachqualitaet-j1fwfz`, 2026-07-24),
+Egress **OFFEN** (Kontrolle: `example.com=200`, `google.com=200`). 30 Kandidaten, davon
+**20 „geeignet mit Einschränkung" (alle HTTP 200) · 5 „ablehnen" · 5 „nicht_verifizierbar"**.
 
-1. **Keine erfundenen URLs.** Übernommen wurden nur reale WebSearch-Treffer bzw. amtlich
-   dokumentierte Endpunkte. Wo ein struktureller Feed nachweislich *existiert*, seine konkrete
-   `.xml`-Adresse aber aus der Sandbox nicht auflösbar ist (GSB-`nn`-ID), wird die **Zielmethode**
-   dokumentiert und die Auflösung als **Aktivierungs-Gate** markiert — nicht geraten.
-2. **Kein erfundenes Prüfurteil.** Bestehende Wege tragen das **echte** CI-Ergebnis des Vorlaufs
-   (Actions-Run `30079020728`, 2026-07-24, HTTP 200). **Neue** Wege (BBSR, GENESIS, gii-toc)
-   tragen `recherchiert_unverifiziert` und werden vor Aktivierung real geprüft.
+Dieser Lauf hat die reine WebSearch-Recherche **korrigiert** (Ehrlichkeitsprinzip: kein
+erfundenes Urteil, keine erfundene URL):
 
-Konsequenz für die Referenz-Eignung: Das Paket ist **fachlich** referenzreif; die **letzte
-HTTP-Verifikation der neuen/geänderten Wege** ist Teil des ohnehin freigabepflichtigen
-Aktivierungsschritts (`verifyBeforeActivation`).
+| Kandidat | WebSearch-Annahme | ECHTES Runner-Urteil | Konsequenz |
+|---|---|---|---|
+| BBSR `…/presse/presseinformationen/` | live | **HTTP 200 ✅** | → **Pflichtkern** (BBSR-Lücke geschlossen) |
+| BBSR `…/veroeffentlichungen/` | live | **HTTP 200 ✅** | verifizierte Alternative |
+| BBSR `…/Aktuell/aktuell.html` | live | **HTTP 404 ✘** | verworfen (Adresse instabil) |
+| BBSR RSS-Hub | Feed vorh. | **HTTP 404 ✘** | Feed erst aus Prod-Infra |
+| Destatis GENESIS REST-Basis | strukturierte API | **HTTP 404** (GET; Redirect) | **nicht** Pflichtkern — POST+Token nötig |
+| `gii-toc.xml` (gesetze-im-internet) | XML-Index | **Timeout 12 s** | **nicht** Pflichtkern — Host aus CI unerreichbar |
+| BMWSB-RSS-Hub / BGBl-RSS-Hub | RSS | **HTML** (kein Feed) | Feed-Deep-Link offen |
+| 11 gewählte HTML-Wege | erreichbar | **alle HTTP 200 ✅** | Pflichtkern bestätigt |
+
+**Kernbefund:** Von den strukturierten Kandidaten (RSS-Feeds, GENESIS-API, gii-toc.xml) ist
+**derzeit keiner aus unserer/CI-Infrastruktur nutzbar/verifizierbar**. Ein „produktionsreifes"
+Paket darf keine unverifizierten 404/Timeout-Wege als Kern führen — deshalb enthält der
+Pflichtkern **ausschließlich real (HTTP 200) verifizierte** Wege, und die strukturierte
+Migration ist als **oberster Aktivierungs-Task** dokumentiert (§3/§10), nicht vorgetäuscht.
 
 ---
 
 ## 1. Vollständige Fachanalyse je Quelle (§1)
 
-Legende: ✔ ja · ✘ nein · ~ teilweise/eingeschränkt · „Feed vorh.?“ = maschinenlesbarer Feed
-(RSS/Atom/JSON/API) real vorhanden.
+Legende: ✔ ja · ✘ nein · ~ eingeschränkt. „Feed nutzbar?" = maschinenlesbarer Feed **real
+verifiziert** (nicht nur „existiert laut Doku").
 
-### 1a. Analyse-Matrix (14 Prüffragen, verdichtet)
+### 1a. Analyse-Matrix (14 Prüffragen) — die 11 Pflichtkern-Wege
 
-| # | Quelle | off. Herausg. | Bund | thematisch | dauerhaft erreichb. | RSS | Atom | JSON/API | Sitemap | HTML-Scrape nötig | robots-konform | Aktualisierung | Veröff.-Qualität | Dublette | bessere Alternative |
-|---|--------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|---|---|---|---|
-| 1 | BMWSB Pressemitteilungen | ✔ | ✔ | ✔ hoch | ✔ | ✔ (GSB) | ✘ | ✘ | ✔ | ~ (bis RSS) | ✔ | laufend | hoch | nein | RSS-Feed (Ziel) |
-| 2 | BMWSB Wohnraumförderung | ✔ | ✔ | ✔ | ✔ | ✘ | ✘ | ✘ | ✔ | ✔ | ✔ | periodisch | mittel | ~ (Förderdatenbank) | — |
-| 3 | BBSR Aktuelles/Presse | ✔ | ✔ | ✔ hoch | ✔ (URL neu) | ✔ (GSB/IDW) | ✘ | ✘ | ✔ | ~ (bis RSS) | ✔ | laufend | hoch | nein | RSS/IDW (Ziel) |
-| 4 | BBR Pressemitteilungen | ✔ | ✔ | ✔ | ✔ | ✔ (GSB) | ✘ | ✘ | ✔ | ~ | ✔ | laufend | mittel | ~ (BBSR-Familie) | RSS (Ziel) |
-| 5 | Destatis GENESIS REST-API | ✔ | ✔ | ✔ | ✔ | ✘ | ✘ | ✔ (REST) | n/a | ✘ | ✔ | periodisch | hoch (Daten) | Superset v. 6/7 | — (ist die Alternative) |
-| 6 | Destatis Bautätigkeit (HTML) | ✔ | ✔ | ✔ | ✔ | ✘ | ✘ | ✔ (GENESIS) | ✔ | ✔ | ✔ | periodisch | hoch (Daten) | ~ (in GENESIS) | GENESIS-API |
-| 7 | Destatis Wohnen/Mieten (HTML) | ✔ | ✔ | ✔ | ✔ | ✘ | ✘ | ✔ (GENESIS) | ✔ | ✔ | ✔ | periodisch | hoch (Daten) | ~ (in GENESIS) | GENESIS-API |
-| 8 | Bundesgesetzblatt Teil I | ✔ | ✔ | ✔ hoch | ✔ | ✔ (3 Feeds dok.) | ✘ | ~ (ELI; XML geplant) | ✔ | ~ (bis RSS) | ✔ | laufend | hoch | nein | RSS Teil I (Ziel) |
-| 9 | gii-toc.xml (Normindex) | ✔ | ✔ | ✔ | ✔ | ✘ | ✘ | ✔ (XML) | n/a | ✘ | ✔ | laufend* | hoch (Referenz) | ~ (vs. BGBl) | — (ist die Alternative) |
-| 10 | Städtebauförderung Portal | ✔ | ✔ | ✔ | ✔ | ~ (GSB mögl.) | ✘ | ✘ | ✔ | ✔ | ✔ | laufend | mittel | ~ (BMWSB-Stadt) | RSS (prüfen) |
-| 11 | Förderdatenbank (BMWSB) | ✔ | ✔ | ✔ | ✔ | ✘ | ✘ | ✘ | ✔ | ✔ | ✔ | periodisch | mittel | ~ (BMWSB-Förd.) | — |
+| # | Quelle (Domain) | off. Herausg. | Bund | thematisch | erreichb. (Run) | RSS nutzbar | Atom | JSON/API nutzbar | Sitemap | HTML nötig | robots-ok | Aktualis. | Qualität | Dublette | bessere Alt. |
+|---|---|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|--|--|--|--|
+| 1 | BMWSB Presse (bmwsb.bund.de) | ✔ | ✔ | ✔ hoch | ✔ 200 | ✘ (Hub=HTML) | ✘ | ✘ | ✔ | ✔ | ✔ | laufend | hoch | nein | RSS (Ziel, offen) |
+| 2 | BMWSB Wohnraumförd. | ✔ | ✔ | ✔ | ✔ 200 | ✘ | ✘ | ✘ | ✔ | ✔ | ✔ | period. | mittel | ~ Förderdb | — |
+| 3 | BBSR Presseinfo (bbsr.bund.de) | ✔ | ✔ | ✔ hoch | ✔ 200 | ✘ (Hub=404) | ✘ | ✘ | ✔ | ✔ | ✔ | laufend | hoch | nein | RSS/IDW (Ziel) |
+| 4 | BBR Presse (bbr.bund.de) | ✔ | ✔ | ✔ | ✔ 200 | ✘ | ✘ | ✘ | ✔ | ✔ | ✔ | laufend | mittel | ~ BBSR-Fam. | RSS (Ziel) |
+| 5 | Destatis Bautätigkeit | ✔ | ✔ | ✔ | ✔ 200 | ✘ | ✘ | ~ GENESIS(404 GET) | ✔ | ✔ | ✔ | period. | hoch(Daten) | nein | GENESIS(Token) |
+| 6 | Destatis Baupreisindex | ✔ | ✔ | ✔ | ✔ 200 | ✘ | ✘ | ~ GENESIS | ✔ | ✔ | ✔ | period. | hoch(Daten) | nein | GENESIS(Token) |
+| 7 | Destatis Wohnen/Mieten | ✔ | ✔ | ✔ | ✔ 200 | ✘ | ✘ | ~ GENESIS | ✔ | ✔ | ✔ | period. | hoch(Daten) | nein | GENESIS(Token) |
+| 8 | Destatis Wohngeld | ✔ | ✔ | ✔ | ✔ 200 | ✘ | ✘ | ~ GENESIS | ✔ | ✔ | ✔ | period. | hoch(Daten) | nein | GENESIS(Token) |
+| 9 | Bundesgesetzblatt Teil I | ✔ | ✔ | ✔ hoch | ✔ 200 | ✘ (Hub=HTML) | ✘ | ~ ELI/geplant | ✔ | ✔ | ✔ | laufend | hoch | nein | RSS Teil I (Ziel) |
+| 10 | Städtebauförderung | ✔ | ✔ | ✔ | ✔ 200 | ✘ | ✘ | ✘ | ✔ | ✔ | ✔ | laufend | mittel | ~ BMWSB-Stadt | RSS (prüfen) |
+| 11 | Förderdatenbank (BMWSB) | ✔ | ✔ | ✔ | ✔ 200 | ✘ | ✘ | ✘ | ✔ | ✔ | ✔ | period. | mittel | ~ BMWSB-Förd | — |
 
-\* gii-toc.xml ist ein *Norm-Index* (ändert sich, wenn irgendeine Norm geändert wird) — als
-**News**-Frühwarnung nachrangig, als **strukturierte Änderungserkennung** wertvoll.
+Alle 11: offizieller Bund-Herausgeber, thematisch passend, **real HTTP 200**, `robots`-konform
+(GSB-Sitemaps vorhanden; Content-Pfade i. d. R. erlaubt — je Weg vor Aktivierung final prüfen),
+HTML-Scrape nötig (kein verifizierter Feed), **kein** RSS/Atom real nutzbar.
 
 ### 1b. Fachliche Einzelbewertung (Kurzform)
-
-1. **BMWSB Pressemitteilungen** — zuständiges Bundesressort; Erstquelle für Gesetzentwürfe,
-   Programm-/Ministerentscheidungen. **Kernquelle.** GSB-RSS existiert → Ziel `rss`.
-2. **BMWSB Wohnraumförderung** — ressorteigene Förderübersicht; überschneidet sich mit der
-   neutraleren Förderdatenbank → **optional**.
-3. **BBSR Aktuelles/Presse** — zentrale Ressortforschung (Wohnungs-/Immobilienmärkte,
-   Stadtentwicklung, Raumbeobachtung). **Vom Auditor vermisst → ergänzt.** GSB-RSS + IDW-Feed.
-4. **BBR Pressemitteilungen** — Bundesbau/Raumordnung (nachgeordnete Behörde). Behördenfamilie
-   mit BBSR, Rollen getrennt. Finale URL ist ein Suchformular → Ergebnis-Parsing absichern.
-5. **Destatis GENESIS REST-API** — **strukturierter Superset** aller amtlichen Bau-/Wohn-
-   Statistiken. Ersetzt fragile HTML-Tabellen-Scrapes; POST + kostenfreier Token (Aktivierung).
-6. **Destatis Bautätigkeit (HTML)** — amtlicher Kernindikator der Wohnungsbau-Zielerreichung;
-   **keyfreier Faktenbeleg** neben GENESIS. Daten-Grounding, keine News.
-7. **Destatis Wohnen/Mieten (HTML)** — amtliche Miet-/Wohnkostendaten (mietpolitische Bewertung);
-   keyfreier Faktenbeleg neben GENESIS. Daten-Grounding, keine News.
-8. **Bundesgesetzblatt Teil I (recht.bund.de)** — amtliche Verkündung neuer Bundesgesetze (seit
-   2023 ausschließlich hier). **Kernquelle.** 3 dokumentierte RSS-Feeds → Ziel `rss` (Teil I).
-9. **gii-toc.xml** — maschinenlesbarer XML-Index aller geltenden Bundesnormen (BauGB/BauNVO/GEG/
-   WoFG). Strukturierte Änderungserkennung ohne Einzelgesetz-Polling; **Referenz**.
-10. **Städtebauförderung (Bund-Länder-Portal)** — Programmneuigkeiten, Verwaltungsvereinbarungen,
-    Mittelverteilung. GSB → RSS am Runner prüfen.
-11. **Förderdatenbank des Bundes (Fördergeber BMWSB)** — neutrale, vollständige Sicht der
-    Bundes-Förderprogramme Bauen/Wohnen/Städtebau.
+1. **BMWSB Presse** — zuständiges Ressort, politische Erstquelle. **Kernquelle.**
+2. **BMWSB Wohnraumförderung** — Ressort-Förderliste; überschneidet Förderdatenbank → optional.
+3. **BBSR Presseinformationen** — zentrale Ressortforschung (Wohnungs-/Immobilienmärkte, Stadt-/
+   Raumforschung). **Vom Auditor vermisst → ergänzt** (verifizierte URL, nicht die 404-Aktuell-Seite).
+4. **BBR Presse** — Bundesbau/Raumordnung; Behördenfamilie mit BBSR, Rollen getrennt.
+5.–8. **Destatis Bautätigkeit / Baupreisindex / Wohnen-Mieten / Wohngeld** — je ein **distinkter**
+   Auftrags-Bereich (Bautätigkeit · Baukosten · Wohnungsmarkt · Wohngeld). Daten-Grounding, keine News.
+9. **Bundesgesetzblatt Teil I** — alleinige amtliche Verkündungsquelle seit 2023. **Kernquelle.**
+10. **Städtebauförderung** — Bund-Länder-Programmportal.
+11. **Förderdatenbank (BMWSB)** — neutrale Vollsicht der Bundes-Förderprogramme.
 
 ---
 
 ## 2. BBSR-Integration (§2)
 
-**Befund:** Das BBSR fehlte im Erst-Pflichtkern, weil die per WebSearch gefundenen Erst-URLs im
-CI-Lauf `HTTP 404` lieferten (stale/umgezogen). Der Auditor hat das ausdrücklich vermisst.
+**Befund:** BBSR fehlte im Erst-Pflichtkern (Erst-URLs 404). Der Auditor vermisste es ausdrücklich.
 
-**Nachrecherche (WebSearch 2026-07-24):** Die aktuellen BBSR-Adressen sind **live**:
+**Ergebnis der echten Verifikation (Run 30097099429):**
 
-| Rolle | Aktuelle URL | Methode |
-|---|---|---|
-| Aktuelles/Meldungen | `https://www.bbsr.bund.de/BBSR/DE/Aktuell/aktuell.html` | html (Ziel rss) |
-| Presseinformationen | `https://www.bbsr.bund.de/BBSR/DE/presse/presseinformationen/_node.html` | html |
-| Veröffentlichungen | `https://www.bbsr.bund.de/BBSR/DE/veroeffentlichungen/_node.html` | html |
-| RSS-Hub (GSB) | `https://www.bbsr.bund.de/BBSR/DE/Service/RSS/rssnewsfeed_node.html` | rss (Feed am Runner) |
-| IDW-Feed (alternativ) | `https://idw-online.de/de/institution957` | rss |
+| BBSR-Adresse | Urteil |
+|---|---|
+| `…/BBSR/DE/presse/presseinformationen/_node.html` | **HTTP 200 → aufgenommen** |
+| `…/BBSR/DE/veroeffentlichungen/_node.html` | HTTP 200 (verifizierte Alternative) |
+| `…/BBSR/DE/Aktuell/aktuell.html` | **HTTP 404 → verworfen** |
+| `…/BBSR/DE/Service/RSS/rssnewsfeed_node.html` (RSS-Hub) | HTTP 404 |
 
-**Bevorzugte Einbindung (RSS/API vor HTML):** BBSR läuft auf dem Government Site Builder (GSB);
-GSB exponiert echte Feeds unter `/SiteGlobals/Functions/RSSFeed/RSSGenerator*.xml?nn=<ID>`
-(belegt an service.bund.de/bundesrat.de/bva.bund.de). Die site-spezifische `nn`-ID ist aus der
-Sandbox nicht auflösbar → **Zielmethode `rss`**, konkrete Feed-URL am offenen Runner extrahieren.
-Zusätzlich existiert ein **IDW-Institutions-Feed** (BBSR = idw-Institution 957) als
-maschinenlesbare Alternative.
-
-**Umsetzung:** aufgenommen als `rp-wbsb-bbsr-aktuelles` (Herausgeber `bbsr.bund.de`, neue Entität
-`authority-bbsr`), Priorität **A**, Status `needs_review`/`manual` (INAKTIV). Verifikation:
-`recherchiert_unverifiziert` (Runner-Reverifikation der finalen URL = Aktivierungs-Gate).
+**Umsetzung:** `rp-wbsb-bbsr-presseinformationen` (Herausgeber `bbsr.bund.de`, neue Entität
+`authority-bbsr`), Priorität **A**, `needs_review`/`manual` (INAKTIV). **Zielmethode RSS** (GSB-
+Feed bzw. IDW-Feed `idw-online.de/de/institution957`) dokumentiert; die konkrete Feed-URL ist —
+weil der RSS-Hub 404 lieferte — aus Produktions-Infra aufzulösen (Aktivierungs-Task).
 
 ---
 
-## 3. HTML-Reduktion (§3)
+## 3. HTML-Reduktion (§3) — ehrliches Ergebnis
 
-Grundsatz: Wo eine strukturierte Alternative **existiert**, wird sie zur **Zielmethode**; HTML
-bleibt nur, wo kein Feed nachweisbar ist oder als keyfreier Faktenbeleg sinnvoll.
+Für **jede** Quelle wurde eine strukturierte Alternative gesucht **und real geprüft**. Ergebnis:
 
-| Dimension | vorher | nachher | Struktur-Gewinn |
-|---|---|---|---|
-| Statistik (4× Destatis-HTML) | 4 HTML-Tabellen-Scrapes | **1 GENESIS-REST-API** + 2 HTML-Faktenbelege | 4→(1 API + 2 HTML); `baupreisindex`/`wohngeld` konsolidiert |
-| Gesetzgebung (Norminhalt) | verworfene HTML (Timeout) | **gii-toc.xml** (dokumentiert, XML) | HTML→XML |
-| Gesetzgebung (Verkündung) | HTML-Verkündungsliste | HTML + **Ziel RSS Teil I** (3 Feeds dok.) | Zielmethode strukturiert |
-| Ministerium/Forschung (Presse) | HTML-Listen | HTML + **Ziel RSS** (GSB-Feed belegt) | Zielmethode strukturiert |
-| Parlament (Ausschuss) | HTML-Ausschussseite | **entfernt → DIP-API** (Bestand) | HTML entfällt ganz |
+| Struktur-Kandidat | Prüfung (Run 30097099429) | Verwendbar? |
+|---|---|---|
+| BMWSB-RSS-Hub | HTTP 200, aber **text/html** (kein Feed) | ✘ Deep-Link offen |
+| BGBl-RSS-Hub | HTTP 200, aber **text/html** | ✘ Deep-Link offen |
+| BBSR-RSS-Hub | **HTTP 404** | ✘ |
+| Destatis GENESIS REST-Basis | **HTTP 404** (GET; braucht POST+Methode+Token) | ✘ (keyfrei) |
+| gii-toc.xml (gesetze-im-internet) | **Timeout 12 s** (Host aus CI unerreichbar) | ✘ |
 
-**Realität:** Ein *dramatischer* HTML-Abbau ist aus der Sandbox nicht ehrlich machbar, weil die
-konkreten GSB-`.xml`-URLs nicht auflösbar sind (Regel: keine geratenen URLs). Erreicht wurde:
+**Folgerung:** Die strukturierten Feeds/APIs **existieren** (GSB-`/SiteGlobals/Functions/RSSFeed/…`
+ist an anderen Bundesbehörden belegt; recht.bund.de nennt 3 BGBl-Feeds; GENESIS ist dokumentiert),
+aber **keiner ist derzeit aus unserer Infrastruktur nutzbar/verifizierbar**. Deshalb bleiben alle
+11 Pflichtkern-Wege **HTML — aus verifizierter Notwendigkeit**, nicht aus Bequemlichkeit.
 
-- **structured_download/api** statt HTML wo eine **exakte, dokumentierte** Adresse existiert
-  (`gii-toc.xml`, GENESIS-REST-Basis).
-- **Ein HTML-Weg vollständig entfernt** (Bauausschuss → DIP-API).
-- **Zwei HTML-Tabellen konsolidiert** (Destatis baupreisindex/wohngeld → GENESIS-Superset).
-- Für die verbleibenden GSB-Presse-/Verkündungsseiten ist die **Zielmethode RSS** samt Beleg
-  ihrer Feed-Existenz dokumentiert; die Umstellung `html→rss` erfolgt bei Feed-Auflösung am Runner.
+**Tatsächlich reduziert wurde HTML dort, wo eine echte Dublette existiert:**
+`bundestag-bauausschuss` (HTML) **entfernt** → parlamentarische Vorgänge laufen strukturiert über
+die **bestehende DIP-API** (`rp-dip`, always_on, bund-basis). Das ist die einzige ehrliche
+HTML-Reduktion; alle übrigen HTML-Wege bleiben **bewusst** bestehen (§10 Q5).
 
-Methodenmix nachher: **9× html · 1× api · 1× structured_download** (vorher: 11× html).
+**Die strukturierte Migration ist damit der oberste Aktivierungs-Task** (nicht ein vorgetäuschter
+Fortschritt): GSB-Feed-Deep-Links aus den Hub-Seiten extrahieren, BGBl-Teil-I-Feed-URL auflösen,
+GENESIS-Token bereitstellen, gii-toc aus Prod-Infra prüfen.
 
 ---
 
 ## 4. Freshness (§4)
 
-Bewertung = Eignung als **News-Frühwarnung für politische Lageberichte** (nicht bloße
-Aktualisierungsfrequenz).
+Bewertung = Eignung als **News-Frühwarnung für politische Lageberichte**.
 
 | Freshness | Quellen | Begründung |
 |---|---|---|
-| **hoch** | BMWSB-Presse, BBSR-Aktuelles, Bundesgesetzblatt Teil I, (Parlament via **rp-dip**) | laufende, politisch unmittelbare Meldungen/Verkündungen/Vorgänge |
+| **hoch** | BMWSB-Presse, BBSR-Presseinfo, Bundesgesetzblatt Teil I, (Parlament via **rp-dip**) | laufende, politisch unmittelbare Meldungen/Verkündungen/Vorgänge |
 | **mittel** | BBR-Presse, Städtebauförderung, BMWSB-Wohnraumförderung, Förderdatenbank | ereignisgetrieben, aber seltener/programmatisch |
-| **niedrig** | Destatis-GENESIS-API, Destatis-Bautätigkeit, Destatis-Wohnen/Mieten, gii-toc.xml | periodische Statistik / statischer Normindex |
+| **niedrig** | Destatis Bautätigkeit, Baupreisindex, Wohnen/Mieten, Wohngeld | periodische Statistik |
 
-**Kennzeichnung „für politische Lageberichte ungeeignet als News“** (nur Daten-Grounding /
-Faktenbeleg, **nicht** als Lagebericht-Auslöser verwenden):
-`destatis-genesis-api`, `destatis-bautaetigkeit`, `destatis-wohnen-mieten`, `gii-toc`.
-Diese Quellen liefern **Belege/Zahlen zur Untermauerung**, keine tagesaktuelle Lage. Der Paket-
-Seed markiert das über `update_character: periodisch/laufend` + `ziel_hinweis` (Daten-Grounding).
+**Für politische Lageberichte als NEWS ungeeignet** (nur Daten-Grounding/Faktenbeleg, **nicht** als
+Lagebericht-Auslöser): die **vier Destatis-Statistiken**. Sie liefern Zahlen zur Untermauerung,
+keine tagesaktuelle Lage — im Seed über `update_character: periodisch` + `ziel_hinweis`
+(Daten-Grounding) markiert.
 
 ---
 
 ## 5. Dubletten & Überschneidungen (§5)
 
-Über URL-Dubletten hinaus (im Modell strukturell ausgeschlossen: eindeutige Path-IDs/URLs, eine
-Domain = ein Herausgeber) wurden **fachliche** Überschneidungen geprüft:
-
 | Überschneidung | Bewertung | Maßnahme |
 |---|---|---|
-| **Bauausschuss-HTML** ⟂ **DIP-API** (`rp-dip`, always_on, bund-basis) ⟂ **committee-bau-wohnen** (Google-News, bund-basis) | parlamentarische Vorgänge **dreifach** gedeckt | **Bauausschuss-HTML entfernt** → DIP-API (strukturiert, amtlich, Bestand) |
-| **Destatis baupreisindex/wohngeld** ⟂ **GENESIS-API** | GENESIS ist Superset aller Tabellen | **konsolidiert** → GENESIS + 2 HTML-Faktenbelege |
+| **Bauausschuss-HTML** ⟂ **DIP-API** (`rp-dip`, Bestand) ⟂ **committee-bau-wohnen** (Google-News, Bestand) | parlamentarische Vorgänge **dreifach** gedeckt | **Bauausschuss-HTML entfernt** → DIP-API |
 | **BMWSB-Wohnraumförderung** ⟂ **Förderdatenbank (BMWSB)** | Ressortsicht vs. neutrale Vollsicht | beide behalten, Förderdatenbank priorisiert; BMWSB-Förd. → C |
 | **BBR-Presse** ⟂ **BBSR** | gleiche Behördenfamilie (BBSR im BBR) | beide behalten, Rollen getrennt (BBR=Bundesbau/Raumordnung, BBSR=Forschung) |
-| **gii-toc.xml** ⟂ **Bundesgesetzblatt Teil I** | Normbestand vs. neue Verkündungen | beide behalten (komplementär: Konsolidierung vs. Frühwarnung) |
+| **4× Destatis** untereinander | je **distinkter** Auftrags-Bereich (Bautätigkeit/Baukosten/Markt/Wohngeld) | **keine** Dublette — alle 4 behalten; GENESIS-API als Konsolidierungs-**Upgrade** dokumentiert |
 
 Kein Ministerium-/Behörden-Spiegel und kein identischer Newsfeed doppelt aufgenommen.
 
@@ -186,15 +169,15 @@ Kein Ministerium-/Behörden-Spiegel und kein identischer Newsfeed doppelt aufgen
 | Prio | Quelle | Begründung |
 |---|---|---|
 | **A** | BMWSB-Presse | zuständiges Ressort, politische Erstquelle |
-| **A** | BBSR-Aktuelles | zentrale Ressortforschung, Frühindikator (Auditor-Lücke) |
+| **A** | BBSR-Presseinformationen | zentrale Ressortforschung, Frühindikator (Auditor-Lücke) |
 | **A** | Bundesgesetzblatt Teil I | amtliche Baugesetzgebung, alleinige Verkündungsquelle |
-| **A** | (Parlament via `rp-dip`, Bestand) | Ausschuss-Vorgänge/Drucksachen strukturiert (kein neuer Weg nötig) |
+| **A** | (Parlament via `rp-dip`, Bestand) | Ausschuss-Vorgänge/Drucksachen strukturiert (kein neuer Weg) |
 | **B** | BBR-Presse | Bundesbau/Raumordnung |
-| **B** | Destatis GENESIS-API | strukturierte Statistik-Vollsicht (Grounding) |
-| **B** | Destatis Bautätigkeit (HTML) | Kernindikator Wohnungsbau, keyfreier Beleg |
-| **B** | Destatis Wohnen/Mieten (HTML) | Mietdaten, keyfreier Beleg |
+| **B** | Destatis Bautätigkeit | Kernindikator Wohnungsbau |
+| **B** | Destatis Wohnen/Mieten | Mietdaten (mietpolitische Bewertung) |
+| **B** | Destatis Baupreisindex | Baukosten |
 | **B** | Städtebauförderung | Stadtentwicklungs-/Programmnachrichten |
-| **B** | gii-toc.xml | strukturierte Norm-Änderungserkennung |
+| **C** | Destatis Wohngeld | Wohngeld-Statistik (Sekundärindikator) |
 | **C** | BMWSB-Wohnraumförderung | Ressort-Förderliste (überschneidet Förderdatenbank) |
 | **C** | Förderdatenbank (BMWSB) | Förderprogramm-Referenz |
 
@@ -202,116 +185,122 @@ Kein Ministerium-/Behörden-Spiegel und kein identischer Newsfeed doppelt aufgen
 
 ## 7. Retrieval-Empfehlungen (§7)
 
-Empfehlung **je Zielmethode**; alle Werte gelten für die **Aktivierung** (aktuell inaktiv).
+Gültig für die **Aktivierung** (aktuell inaktiv). Alle Wege heute `html`; `ziel` = strukturierte
+Zielmethode (Aktivierungs-Task).
 
-| Quelle | Abrufmethode (Ziel) | Frequenz | Priorität | Retry | Timeout |
+| Quelle | Methode heute / Ziel | Frequenz | Priorität | Retry | Timeout |
 |---|---|---|---|---|---|
-| BMWSB-Presse | rss (→ Feed) / html interim | 2×/Tag | A | 3× exp. Backoff | 12 s |
-| BBSR-Aktuelles | rss/IDW (→ Feed) / html interim | 1×/Tag | A | 3× | 12 s |
-| Bundesgesetzblatt Teil I | rss (Teil I) / html interim | 4×/Tag | A | 3× | 15 s |
-| BBR-Presse | rss (→ Feed) / html interim | 1×/Tag | B | 2× | 12 s |
-| Destatis GENESIS-API | api (POST, Token) | 1×/Woche | B | 2× | 20 s |
-| Destatis Bautätigkeit (HTML) | html | 1×/Woche | B | 2× | 15 s |
-| Destatis Wohnen/Mieten (HTML) | html | 1×/Woche | B | 2× | 15 s |
-| Städtebauförderung | rss/html | 1×/Tag | B | 2× | 12 s |
-| gii-toc.xml | structured_download (XML) | 1×/Tag (Diff) | B | 2× | 30 s (großes XML) |
+| BMWSB-Presse | html / rss | 2×/Tag | A | 3× exp. Backoff | 12 s |
+| BBSR-Presseinformationen | html / rss(IDW) | 1×/Tag | A | 3× | 12 s |
+| Bundesgesetzblatt Teil I | html / rss(Teil I) | 4×/Tag | A | 3× | 15 s |
+| BBR-Presse | html / rss | 1×/Tag | B | 2× | 12 s |
+| Destatis Bautätigkeit | html / api(GENESIS) | 1×/Woche | B | 2× | 15 s |
+| Destatis Wohnen/Mieten | html / api | 1×/Woche | B | 2× | 15 s |
+| Destatis Baupreisindex | html / api | 1×/Woche | B | 2× | 15 s |
+| Städtebauförderung | html / rss(prüfen) | 1×/Tag | B | 2× | 12 s |
+| Destatis Wohngeld | html / api | 2×/Monat | C | 2× | 15 s |
 | BMWSB-Wohnraumförderung | html | 2×/Woche | C | 2× | 12 s |
 | Förderdatenbank (BMWSB) | html | 1×/Woche | C | 2× | 15 s |
 
 Allgemein (GSB/bund.de): realistischer Browser-User-Agent (keine Umgehung), TLS an, bei
 `403/429` **kein Bypass**, sondern serverseitiger Abruf + Backoff; `robots.txt` je Weg vor
-Aktivierung prüfen (GSB-Sitemaps vorhanden, Content-Pfade i. d. R. erlaubt).
+Aktivierung final prüfen.
 
 ---
 
-## 8. Empfohlene Änderungen / Ergänzungen / Löschungen & Referenzarchitektur (§8)
+## 8. Änderungen / Ergänzungen / Löschungen & Referenzarchitektur (§8)
 
-### Ergänzungen (neu)
-- **BBSR** (`rp-wbsb-bbsr-aktuelles`, Publisher `bbsr.bund.de`, Entität `authority-bbsr`) — A.
-- **Destatis GENESIS REST-API** (`rp-wbsb-destatis-genesis-api`, `api`) — strukturierter
-  Statistik-Superset.
-- **gii-toc.xml** (`rp-wbsb-gii-toc`, `structured_download`, Publisher `gesetze-im-internet.de`)
-  — maschinenlesbarer Normindex.
+### Ergänzungen (neu, real verifiziert)
+- **BBSR** (`rp-wbsb-bbsr-presseinformationen`, Publisher `bbsr.bund.de`, Entität `authority-bbsr`)
+  — Priorität A, **HTTP 200 verifiziert**.
 
 ### Änderungen (bestehende Wege)
-- **Zielmethode `rss`** dokumentiert für BMWSB-Presse, BBSR, Bundesgesetzblatt Teil I (Feed
-  existiert; `nn`/Feed-URL am Runner auflösen).
-- **Prioritäten** neu gesetzt (A/B/C, s. §6); Statistik als Daten-Grounding gekennzeichnet.
+- Verifikation aller Wege auf das **echte** Runner-Urteil (Run 30097099429, HTTP 200) gesetzt.
+- **Zielmethode `rss`** dokumentiert (BMWSB-Presse, BBSR, Bundesgesetzblatt Teil I, Städtebauförd.).
+- Prioritäten neu (A/B/C, §6); Destatis-Statistik als Daten-Grounding gekennzeichnet.
 
-### Löschungen (Dedup/Konsolidierung)
+### Löschungen (Dedup)
 - **`bundestag-bauausschuss` (HTML) entfernt** → DIP-API (`rp-dip`, Bestand) deckt es strukturiert.
-- **`destatis-baupreisindex` + `destatis-wohngeld` (HTML) entfernt** → GENESIS-Superset + niedrige
-  News-Freshness.
 
-### Endgültige Referenzarchitektur (11 Wege, INAKTIV)
+### NICHT aufgenommen (real geprüft, als Upgrade dokumentiert)
+- **Destatis GENESIS REST-API** — Basis-GET 404; braucht POST+Methode+Token → Aktivierungs-Upgrade.
+- **gii-toc.xml** — Host aus CI im Timeout → nur aus Prod-Infra prüfbar.
+- **RSS-Hubs** (BMWSB/BBSR/BGBl) — liefern HTML/404 → Feed-Deep-Link-Auflösung als Aktivierungs-Task.
+
+### Endgültige Referenzarchitektur (11 Wege, alle HTTP 200, INAKTIV)
 
 ```
 pkg-wohnen-bauen-stadtentwicklung-bund  (prepared, Bund, Fachthema, is_base=false)
-├─ A  rp-wbsb-bmwsb-presse             bmwsb.bund.de            html → Ziel rss
-├─ A  rp-wbsb-bbsr-aktuelles           bbsr.bund.de   [NEU]     html → Ziel rss/IDW
-├─ A  rp-wbsb-bgbl-teil1-liste         recht.bund.de            html → Ziel rss (Teil I)
-├─ B  rp-wbsb-bbr-presse               bbr.bund.de              html → Ziel rss
-├─ B  rp-wbsb-destatis-genesis-api     destatis.de    [NEU]     api  (Token @ Aktivierung)
-├─ B  rp-wbsb-destatis-bautaetigkeit   destatis.de              html (Faktenbeleg)
-├─ B  rp-wbsb-destatis-wohnen-mieten   destatis.de              html (Faktenbeleg)
+├─ A  rp-wbsb-bmwsb-presse              bmwsb.bund.de            html → Ziel rss
+├─ A  rp-wbsb-bbsr-presseinformationen  bbsr.bund.de   [NEU]     html → Ziel rss/IDW
+├─ A  rp-wbsb-bgbl-teil1-liste          recht.bund.de            html → Ziel rss (Teil I)
+├─ B  rp-wbsb-bbr-presse                bbr.bund.de              html → Ziel rss
+├─ B  rp-wbsb-destatis-bautaetigkeit    destatis.de              html → Ziel GENESIS
+├─ B  rp-wbsb-destatis-baupreisindex    destatis.de              html → Ziel GENESIS
+├─ B  rp-wbsb-destatis-wohnen-mieten    destatis.de              html → Ziel GENESIS
 ├─ B  rp-wbsb-staedtebaufoerderung-start staedtebaufoerderung.info html → Ziel rss
-├─ B  rp-wbsb-gii-toc                  gesetze-im-internet.de [NEU] structured_download (XML)
-├─ C  rp-wbsb-bmwsb-foerderung-wohnen  bmwsb.bund.de            html
-└─ C  rp-wbsb-foerderdatenbank-bmwsb   foerderdatenbank.de      html
+├─ C  rp-wbsb-destatis-wohngeld         destatis.de              html → Ziel GENESIS
+├─ C  rp-wbsb-bmwsb-foerderung-wohnen   bmwsb.bund.de            html
+└─ C  rp-wbsb-foerderdatenbank-bmwsb    foerderdatenbank.de      html
 
 Parlament: KEIN eigener Weg — Abdeckung über rp-dip (DIP-API, always_on, bund-basis).
-Herausgeber: 7 neu (bmwsb/bbsr/bbr/recht.bund.de/gesetze-im-internet/staedtebaufoerderung/
-             foerderdatenbank) + 1 wiederverwendet (destatis.de).
+Herausgeber: 6 neu (bmwsb/bbsr/bbr/recht.bund.de/staedtebaufoerderung/foerderdatenbank)
+             + 1 wiederverwendet (destatis.de).  Entität neu: authority-bbsr.
 Sicherheit:  alle Wege needs_review + manual, is_critical=false → isPathActive()=false.
+Methodenmix: 11× html (strukturierte Ziele dokumentiert, s. o.).
 ```
 
 ---
 
 ## 9. Umsetzung & Offline-Nachweis (§9)
 
-Geänderte Dateien (nur dieses Paket + zwingend abhängige Paket-Assertions/Seeds):
+Geänderte Dateien (nur dieses Paket + zwei zwingend abhängige Paket-Assertions):
 
-- `lib/helmut/quellenarchitektur/seeds/wohnen-bauen-stadtentwicklung.js` — neuer Pflichtkern,
-  per-Weg `method`/`parser`/`ziel_methode`, ehrliche `verifikation`.
-- `lib/helmut/quellenarchitektur/seeds/wohnen-bauen-stadtentwicklung-kandidaten.js` — BBSR-URLs
-  korrigiert (live), GENESIS-REST-Basis, `gii-toc.xml` ergänzt (für Runner-Reverifikation).
-- `lib/helmut/quellenarchitektur/seeds/entities.js` — Entität `authority-bbsr` ergänzt.
-- `scripts/source-architecture-test.js` — Paket-Assertions (neue Herausgeber/Entität) erweitert.
+- `lib/helmut/quellenarchitektur/seeds/wohnen-bauen-stadtentwicklung.js` — Pflichtkern neu
+  (BBSR ergänzt, Bauausschuss entfernt), per-Weg `method`/`parser`/`ziel_methode`, echte `verifikation`.
+- `lib/helmut/quellenarchitektur/seeds/wohnen-bauen-stadtentwicklung-kandidaten.js` — reale
+  Runner-Ergebnisse dokumentiert (BBSR-URL-Korrektur, GENESIS/gii-toc als Upgrade).
+- `lib/helmut/quellenarchitektur/seeds/entities.js` — Entität `authority-bbsr`.
+- `scripts/source-architecture-test.js` — Paket-Assertions (neue Herausgeber/Entität).
 - `supabase/seeds/20260713_source_architecture_seed.sql` — deterministisch **regeneriert**.
 
 **Offline-Suite:** `143/143 Suiten grün`. Kern-WBSB-Suiten: source-architecture **106**,
 quellenpaket-workflow **30**, quellenpaket-negativ **35**, wbsb-verify **14**, admin-report **54**,
-sprint6 **46**, landesmodul **18** — alle **0 FAIL**. Seed-Regeneration deterministisch.
+sprint6 **46**, landesmodul **18** — alle **0 FAIL**.
+**Online-Verifikation:** Actions-Run `30097099429` (offener Egress) — alle 11 Pflichtkern-Wege HTTP 200.
 
 Registry/Generatoren/Testarchitektur **unverändert** (die Registry leitet Zählungen aus dem
-Paket-Seed ab → Änderungen fließen automatisch durch; nur zwei Paket-Assertions in
-`source-architecture-test.js` wurden zwingend nachgezogen).
+Paket-Seed ab; nur zwei Paket-Assertions in `source-architecture-test.js` wurden zwingend nachgezogen).
 
 ---
 
 ## 10. Offene Risiken (für den Auditor)
 
-1. **Konkrete Feed-/Token-Auflösung offen (aktivierungspflichtig):** GSB-`.xml`-URLs
-   (BMWSB/BBSR/BBR/Städtebauförderung), BGBl-Teil-I-RSS-URL und GENESIS-Token sind aus der
-   Sandbox nicht auflösbar/prüfbar → am offenen Runner auflösen + `verify.js` re-laufen lassen.
-2. **BBSR-URL 404↔live:** Vorsprint-CI meldete 404, WebSearch meldet live. Diskrepanz nur per
-   Runner endgültig klärbar (Redirect-Case/Transiente).
-3. **BBR-Presse finale URL = Suchformular:** Ergebnis-Parsing vor Aktivierung absichern.
-4. **GENESIS-API = POST + Zugangsdaten:** eigener Abrufpfad (analog DIP, nicht generischer Crawl);
-   kostenfreier Account/Token als Aktivierungs-Task.
-5. **Bot-Sperren (403/429) bei echten Crawls** auf bund.de-GSB — realistischer UA, kein Bypass;
-   je Weg re-verifizieren.
-6. **Freshness bei HTML nicht maschinell messbar** (kein Item-Datum) — bei Aktivierung prüfen.
+1. **Strukturierte Migration offen (oberster Aktivierungs-Task):** RSS-Feed-Deep-Links
+   (BMWSB/BBSR/BGBl/Städtebauförd.), GENESIS-Token+Endpoint, gii-toc aus Prod-Infra — **real**
+   nicht aus CI/Sandbox auflösbar (Run 30097099429: Hubs=HTML, GENESIS-Basis=404, gii-toc=Timeout).
+2. **Alle 11 Kernwege sind HTML-Scrapes:** DOM-Selektoren fragil; je Weg vor Aktivierung
+   Item-Extraktion + Freshness absichern (HTML liefert kein maschinelles Item-Datum).
+3. **BBSR-Adress-Instabilität:** `/Aktuell/aktuell.html` = 404, `/presse/presseinformationen/` = 200;
+   GSB-Case/Umzüge vor Aktivierung re-verifizieren.
+4. **BBR-Presse finale URL = Suchformular:** Ergebnis-Parsing absichern.
+5. **Bot-Sperren (403/429)** bei echten Crawls auf bund.de-GSB — realistischer UA, kein Bypass.
+6. **Kein maschineller Feed im Kern:** bis zur Feed-Auflösung keine ereignisgenaue Frühwarnung
+   (HTML-Poll-Intervalle gemäß §7).
 
 ---
 
 ## 11. Referenz-Muster für weitere Quellenpakete
 
-Dieses Paket etabliert den wiederverwendbaren Ablauf:
+Dieses Paket etabliert den wiederverwendbaren, **ehrlichen** Ablauf:
 **(1)** Kandidaten-Superset per WebSearch (nur reale URLs) → `…-kandidaten.js`;
-**(2)** ehrliche Trennung `echtes CI-Urteil` vs. `recherchiert_unverifiziert`;
-**(3)** Zielmethode strukturiert (RSS/API/XML) mit belegter Feed-Existenz, HTML nur als
-Interim/Faktenbeleg; **(4)** Dedup gegen Bestand (DIP/Google-News/andere Pakete);
-**(5)** Priorisierung A/B/C + Retrieval-Profil; **(6)** Paket bleibt `prepared`/INAKTIV bis zum
-freigabepflichtigen Aktivierungs-Gate mit Runner-Verifikation; **(7)** Offline-Suite grün +
-deterministische Seed-Regeneration.
+**(2)** **echter** Runner-Prüflauf (offener Egress) VOR der finalen Auswahl — WebSearch-Annahmen
+werden dort widerlegt/bestätigt; **(3)** in den Pflichtkern nur **real verifizierte** Wege;
+strukturierte Ziele (RSS/API) mit belegter Existenz, aber Auflösung als Aktivierungs-Task;
+**(4)** Dedup gegen Bestand (DIP/Google-News/andere Pakete); **(5)** Priorisierung A/B/C +
+Retrieval-Profil; **(6)** Paket bleibt `prepared`/INAKTIV bis zum freigabepflichtigen
+Aktivierungs-Gate; **(7)** Offline-Suite grün + deterministische Seed-Regeneration.
+
+> **Lehre aus diesem Piloten:** WebSearch findet Kandidaten, entscheidet aber **nicht**. Erst der
+> echte HTTP-Lauf trennt „existiert laut Doku" von „real nutzbar". Genau diese Trennung macht das
+> Paket referenzfähig.

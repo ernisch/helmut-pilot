@@ -167,7 +167,6 @@ insert into public.publishers (id, name, canonical_domain, publisher_type, evide
   ('publisher-dip.bundestag.de', 'Deutscher Bundestag', 'dip.bundestag.de', 'parliament', 'official_primary', 'hoch', 'active', 'parliament-bundestag'),
   ('publisher-faz.net', 'Frankfurter Allgemeine Zeitung', 'faz.net', 'media', 'journalistic', 'hoch', 'active', null),
   ('publisher-foerderdatenbank.de', 'Förderdatenbank des Bundes', 'foerderdatenbank.de', 'authority', 'data_source', 'hoch', 'active', null),
-  ('publisher-gesetze-im-internet.de', 'Bundesamt für Justiz — Gesetze im Internet', 'gesetze-im-internet.de', 'authority', 'official_primary', 'hoch', 'active', 'authority-bfj'),
   ('publisher-handelsblatt.com', 'Handelsblatt', 'handelsblatt.com', 'media', 'journalistic', 'hoch', 'active', null),
   ('publisher-iab.de', 'Institut für Arbeitsmarkt- und Berufsforschung', 'iab.de', 'authority', 'data_source', 'hoch', 'active', null),
   ('publisher-igmetall.de', 'IG Metall', 'igmetall.de', 'union', 'direct_interest', 'mittel', 'active', 'union-ig-metall'),
@@ -363,15 +362,15 @@ insert into public.retrieval_paths (id, publisher_id, legacy_source_id, name, me
   ('rp-signal-tarifflucht', 'aggregator-google-news', 'signal-tarifflucht', 'Tarifflucht', 'googlenews_search', 'https://news.google.com/rss/search?q=Tarifflucht%20OR%20Tarifbindung%20(DGB%20OR%20Arbeitgeber%20OR%20Bundesregierung)&hl=de&gl=DE&ceid=DE:de', 'Tarifflucht OR Tarifbindung (DGB OR Arbeitgeber OR Bundesregierung)', 'googlenews-batchexecute', 72, 'needs_review', 'auto', false, 10, 'association'),
   ('rp-tagesschau-politik', 'publisher-tagesschau.de', 'tagesschau-politik', 'Tagesschau Politik', 'rss', 'https://www.tagesschau.de/infoservices/alle-meldungen-100~rss2.xml', null, 'rss-regex', 70, 'healthy', 'always_on', true, 16, null),
   ('rp-wbsb-bbr-presse', 'publisher-bbr.bund.de', 'wbsb-bbr-presse', 'BBR — Pressemitteilungen (Bundesbau, Raumordnung)', 'html', 'https://www.bbr.bund.de/SiteGlobals/Forms/Suche/PressemitteilungenSuche_Formular.html?nn=1368394', null, 'html-scrape', 60, 'needs_review', 'manual', false, 16, null),
-  ('rp-wbsb-bbsr-aktuelles', 'publisher-bbsr.bund.de', 'wbsb-bbsr-aktuelles', 'BBSR — Aktuelles/Presseinformationen (Wohnungsmarkt-, Stadt- und Raumforschung des Bundes)', 'html', 'https://www.bbsr.bund.de/BBSR/DE/Aktuell/aktuell.html', null, 'html-scrape', 68, 'needs_review', 'manual', false, 16, null),
+  ('rp-wbsb-bbsr-presseinformationen', 'publisher-bbsr.bund.de', 'wbsb-bbsr-presseinformationen', 'BBSR — Presseinformationen (Wohnungsmarkt-, Stadt- und Raumforschung des Bundes)', 'html', 'https://www.bbsr.bund.de/BBSR/DE/presse/presseinformationen/_node.html', null, 'html-scrape', 68, 'needs_review', 'manual', false, 16, null),
   ('rp-wbsb-bgbl-teil1-liste', 'publisher-recht.bund.de', 'wbsb-bgbl-teil1-liste', 'Bundesgesetzblatt Teil I — Verkündungsliste (recht.bund.de)', 'html', 'https://www.recht.bund.de/de/bundesgesetzblatt/bgbl-1/bgbl-1_node.html', null, 'html-scrape', 72, 'needs_review', 'manual', false, 16, null),
   ('rp-wbsb-bmwsb-foerderung-wohnen', 'publisher-bmwsb.bund.de', 'wbsb-bmwsb-foerderung-wohnen', 'BMWSB — Wohnraumförderung (sozialer Wohnungsbau, Förderprogramme Wohnen)', 'html', 'https://www.bmwsb.bund.de/DE/wohnen/foerderprogramme-bmwsb/foerderprogramme-bmwsb_node.html', null, 'html-scrape', 58, 'needs_review', 'manual', false, 16, null),
   ('rp-wbsb-bmwsb-presse', 'publisher-bmwsb.bund.de', 'wbsb-bmwsb-presse', 'BMWSB — Pressemitteilungen (Wohnen/Bauen/Stadtentwicklung, Bundespolitik)', 'html', 'https://www.bmwsb.bund.de/DE/tools-services/presse/pressemitteilungen/pressemitteilungen_node.html', null, 'html-scrape', 74, 'needs_review', 'manual', false, 16, null),
-  ('rp-wbsb-destatis-bautaetigkeit', 'publisher-destatis.de', 'wbsb-destatis-bautaetigkeit', 'Destatis — Bautätigkeit (Baugenehmigungen/-fertigstellungen/Bauüberhang)', 'html', 'https://www.destatis.de/DE/Themen/Branchen-Unternehmen/Bauen/Tabellen/_tabellen-innen-bautaetigkeit.html', null, 'html-scrape', 60, 'needs_review', 'manual', false, 16, null),
-  ('rp-wbsb-destatis-genesis-api', 'publisher-destatis.de', 'wbsb-destatis-genesis-api', 'Destatis — GENESIS-Online REST-API (Bau-/Wohn-/Wohngeld-/Baupreis-Zeitreihen)', 'api', 'https://www-genesis.destatis.de/genesisWS/rest/2020/', null, 'genesis-rest-json', 64, 'needs_review', 'manual', false, 16, null),
-  ('rp-wbsb-destatis-wohnen-mieten', 'publisher-destatis.de', 'wbsb-destatis-wohnen-mieten', 'Destatis — Wohnen (Mieten/Nettokaltmiete, Wohnkosten, Wohnsituation)', 'html', 'https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Wohnen/Tabellen/_tabellen.html', null, 'html-scrape', 60, 'needs_review', 'manual', false, 16, null),
+  ('rp-wbsb-destatis-baupreisindex', 'publisher-destatis.de', 'wbsb-destatis-baupreisindex', 'Destatis — Baupreisindex (Preisindizes für Bauwerke)', 'html', 'https://www.destatis.de/DE/Themen/Wirtschaft/Konjunkturindikatoren/Preise/bpr110.html', null, 'html-scrape', 60, 'needs_review', 'manual', false, 16, null),
+  ('rp-wbsb-destatis-bautaetigkeit', 'publisher-destatis.de', 'wbsb-destatis-bautaetigkeit', 'Destatis — Bautätigkeit (Baugenehmigungen/-fertigstellungen/Bauüberhang)', 'html', 'https://www.destatis.de/DE/Themen/Branchen-Unternehmen/Bauen/Tabellen/_tabellen-innen-bautaetigkeit.html', null, 'html-scrape', 62, 'needs_review', 'manual', false, 16, null),
+  ('rp-wbsb-destatis-wohnen-mieten', 'publisher-destatis.de', 'wbsb-destatis-wohnen-mieten', 'Destatis — Wohnen (Mieten/Nettokaltmiete, Wohnkosten, Wohnsituation)', 'html', 'https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Wohnen/Tabellen/_tabellen.html', null, 'html-scrape', 62, 'needs_review', 'manual', false, 16, null),
+  ('rp-wbsb-destatis-wohngeld', 'publisher-destatis.de', 'wbsb-destatis-wohngeld', 'Destatis — Wohngeld-Statistik', 'html', 'https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Soziales/Wohngeld/Tabellen/_tabellen.html', null, 'html-scrape', 58, 'needs_review', 'manual', false, 16, null),
   ('rp-wbsb-foerderdatenbank-bmwsb', 'publisher-foerderdatenbank.de', 'wbsb-foerderdatenbank-bmwsb', 'Förderdatenbank des Bundes — BMWSB-Förderprogramme', 'html', 'https://www.foerderdatenbank.de/FDB/Content/DE/Foerdergeber/B/bmwsb-bundesministerium_wohnen_stadtentw_bau.html', null, 'html-scrape', 56, 'needs_review', 'manual', false, 16, null),
-  ('rp-wbsb-gii-toc', 'publisher-gesetze-im-internet.de', 'wbsb-gii-toc', 'Gesetze im Internet — Norm-Inhaltsübersicht (gii-toc.xml, maschinenlesbar)', 'structured_download', 'https://www.gesetze-im-internet.de/gii-toc.xml', null, 'gii-toc-xml', 56, 'needs_review', 'manual', false, 16, null),
   ('rp-wbsb-staedtebaufoerderung-start', 'publisher-staedtebaufoerderung.info', 'wbsb-staedtebaufoerderung-start', 'Städtebauförderung — Bund-Länder-Portal (Aktuelles/Programme)', 'html', 'https://www.staedtebaufoerderung.info/DE/Startseite/startseite_node.html', null, 'html-scrape', 62, 'needs_review', 'manual', false, 16, null)
 on conflict (id) do update set publisher_id = excluded.publisher_id, method = excluded.method, status = excluded.status, priority = excluded.priority;
 
@@ -524,15 +523,15 @@ insert into public.package_paths (package_id, retrieval_path_id) values
   ('pkg-regional-niedersachsen', 'rp-region-salzgitter-arbeit-soziales'),
   ('pkg-regional-niedersachsen', 'rp-region-wolfenbuttel-arbeit-soziales'),
   ('pkg-wohnen-bauen-stadtentwicklung-bund', 'rp-wbsb-bbr-presse'),
-  ('pkg-wohnen-bauen-stadtentwicklung-bund', 'rp-wbsb-bbsr-aktuelles'),
+  ('pkg-wohnen-bauen-stadtentwicklung-bund', 'rp-wbsb-bbsr-presseinformationen'),
   ('pkg-wohnen-bauen-stadtentwicklung-bund', 'rp-wbsb-bgbl-teil1-liste'),
   ('pkg-wohnen-bauen-stadtentwicklung-bund', 'rp-wbsb-bmwsb-foerderung-wohnen'),
   ('pkg-wohnen-bauen-stadtentwicklung-bund', 'rp-wbsb-bmwsb-presse'),
+  ('pkg-wohnen-bauen-stadtentwicklung-bund', 'rp-wbsb-destatis-baupreisindex'),
   ('pkg-wohnen-bauen-stadtentwicklung-bund', 'rp-wbsb-destatis-bautaetigkeit'),
-  ('pkg-wohnen-bauen-stadtentwicklung-bund', 'rp-wbsb-destatis-genesis-api'),
   ('pkg-wohnen-bauen-stadtentwicklung-bund', 'rp-wbsb-destatis-wohnen-mieten'),
+  ('pkg-wohnen-bauen-stadtentwicklung-bund', 'rp-wbsb-destatis-wohngeld'),
   ('pkg-wohnen-bauen-stadtentwicklung-bund', 'rp-wbsb-foerderdatenbank-bmwsb'),
-  ('pkg-wohnen-bauen-stadtentwicklung-bund', 'rp-wbsb-gii-toc'),
   ('pkg-wohnen-bauen-stadtentwicklung-bund', 'rp-wbsb-staedtebaufoerderung-start')
 on conflict (package_id, retrieval_path_id) do nothing;
 
