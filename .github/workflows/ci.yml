@@ -54,6 +54,28 @@ jobs:
         # liegt beim browser-smoke-Job unten (dort fail-closed).
         run: node scripts/run-offline-tests.js
 
+      # Quellenpaket-Workflow-Nachweis (P1): Drift/Additivitaet/Kollision/Runtime-Inertheit
+      # wird als MASCHINENLESBARER JSON-Report erzeugt und archiviert. Der Script-Output ist
+      # die Quelle der Dokumentation — es werden KEINE Ergebnisse von Hand notiert. Der Report
+      # traegt einen CI-Zeitstempel (das Skript selbst stempelt nicht, um reproduzierbar/
+      # sandbox-tauglich zu bleiben). Der Schritt selbst ist bereits Teil der Offline-Suite
+      # oben (Exit-Gate); hier geht es nur um das archivierbare Artefakt.
+      - name: Quellenpaket-Workflow-Nachweis erzeugen (maschinenlesbar)
+        if: always()
+        run: |
+          set -euo pipefail
+          node scripts/quellenpaket-workflow-test.js --out quellenpaket-workflow-report.json
+          node -e "const fs=require('fs');const p='quellenpaket-workflow-report.json';const r=JSON.parse(fs.readFileSync(p));r.archivedAt=new Date().toISOString();r.gitSha=process.env.GITHUB_SHA||null;fs.writeFileSync(p,JSON.stringify(r,null,2));"
+
+      - name: Nachweis archivieren (JSON-Artefakt)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quellenpaket-workflow-nachweis
+          path: quellenpaket-workflow-report.json
+          if-no-files-found: warn
+          retention-days: 90
+
   browser-smoke:
     name: Browser-/Mobile-Smoke (Chromium)
     runs-on: ubuntu-latest

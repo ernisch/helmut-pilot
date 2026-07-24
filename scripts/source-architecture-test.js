@@ -150,15 +150,31 @@ check("Aggregator-Abrufwege sind googlenews_search", M.retrievalPaths.filter((p)
 
 // ============================ MIGRATION ============================
 console.log("== Migration: Katalogabbildung ==");
-check("143 kuratierte Quellen im Katalog — KEINE Personenquelle (entsteht dynamisch als '<id>-news')",
-  v1Sources.length === 143 && v1Sources.every((s) => s.type !== "person" && !s.demoOnly));
-check("alle 143 + DIP als Abrufwege abgebildet", M.retrievalPaths.length === 144);
+// P1-Workflow-Haertung: KEINE harten globalen Zahlen mehr (143/144/145 brachen, sobald ein
+// Paket/Weg hinzukam). Sollwerte werden dynamisch aus dem Modell abgeleitet — der Test bleibt
+// gruen, wenn spaeter ein neues Quellenpaket ergaenzt wird, und faellt nur bei echten
+// Struktur-/Referenzfehlern.
+const catalogIds = new Set(v1Sources.map((s) => s.id));
+const nonCatalogPaths = M.retrievalPaths.filter((p) => !catalogIds.has(p.legacy_source_id));
+check("Katalog kuenstlich sauber: KEINE Personen-/Demo-Quelle (entsteht dynamisch als '<id>-news')",
+  v1Sources.length > 0 && v1Sources.every((s) => s.type !== "person" && !s.demoOnly));
+check("jede Katalog-Quelle als Abrufweg abgebildet (Soll = Katalog, dynamisch)",
+  v1Sources.every((s) => M.retrievalPaths.some((p) => p.legacy_source_id === s.id)));
+check("Abrufweg-Zahl = Katalog + explizite Nicht-Katalog-Wege (nur dip); Soll aus Modell abgeleitet",
+  M.retrievalPaths.length === v1Sources.length + nonCatalogPaths.length && nonCatalogPaths.every((p) => p.legacy_source_id === "dip"));
 check("keine unzugeordnete Quelle (unmapped=0)", M.unmapped.length === 0);
 check("jeder Abrufweg traegt legacy_source_id (ID-Kompatibilitaet)", M.retrievalPaths.every((p) => !!p.legacy_source_id));
+check("Path-IDs eindeutig", new Set(M.retrievalPaths.map((p) => p.id)).size === M.retrievalPaths.length);
 // Ist-Zustand seit dem P8-Paketfix: fraction-linke gehoert BEWUSST zu ZWEI Paketen
 // (bund-basis als neutraler Fraktions-Suchweg + die-linke-bund als funktionierender
-// Ersatz fuer die zwei defekten Original-RSS-Wege der Partei) -> 146 Zuordnungen.
-check("jede Katalog-Quelle mind. einem Paket zugeordnet; fraction-linke bewusst in zweien (144+1)", M.packagePaths.length === 145);
+// Ersatz fuer die zwei defekten Original-RSS-Wege der Partei). Statt einer globalen
+// Gesamtzahl pruefen wir jetzt die INVARIANTEN: gueltige Referenzen, keine Doppellinks,
+// kein verwaister (nicht-dev) Weg.
+check("package_paths referenzieren gueltige IDs + keine Doppel-Links",
+  M.packagePaths.every((pp) => pkgIds.has(pp.package_id) && pathIds.has(pp.retrieval_path_id)) &&
+  new Set(M.packagePaths.map((pp) => `${pp.package_id}|${pp.retrieval_path_id}`)).size === M.packagePaths.length);
+check("jeder nicht-dev Abrufweg mind. einem Paket zugeordnet (kein verwaister Weg)",
+  M.retrievalPaths.filter((p) => p.activation_mode !== "dev_only").every((p) => M.packagePaths.some((pp) => pp.retrieval_path_id === p.id)));
 check("fraction-linke in bund-basis UND die-linke-bund",
   M.packagePaths.some((pp) => pp.package_id === "pkg-die-linke-bund" && pp.retrieval_path_id === "rp-fraction-linke") &&
   M.packagePaths.some((pp) => pp.package_id === "pkg-bund-basis" && pp.retrieval_path_id === "rp-fraction-linke"));
@@ -221,13 +237,17 @@ check("RLS aktiviert + restriktiv (nur service_role, KEINE authenticated-Leseric
 
 // ============================ SEED-VOLLSTAENDIGKEIT ============================
 console.log("== Seed-Vollstaendigkeit ==");
-check("6 Pakete (4 aktiv + Berlin/Brandenburg prepared) — KEIN Personenpaket im Code-Seed", M.packages.length === 6 && M.packages.every((p) => !p.key.startsWith("profil-")));
+check("Paketzahl = Paketdefinitionen (Soll dynamisch), KEIN Personenpaket im Code-Seed, Keys eindeutig",
+  M.packages.length === seeds.PACKAGE_DEFINITIONS.length
+  && M.packages.every((p) => !p.key.startsWith("profil-"))
+  && new Set(M.packages.map((p) => p.key)).size === M.packages.length);
 check("Berlin+Brandenburg als prepared Basispakete", (() => {
   const b = M.packages.find((p) => p.key === "berlin-basis");
   const bb = M.packages.find((p) => p.key === "brandenburg-basis");
   return b && b.status === "prepared" && b.is_base && bb && bb.status === "prepared" && bb.is_base;
 })());
-check("Landesmodule tragen 15 Pflichtklassen", M.packages.find((p) => p.key === "berlin-basis").required_classes.length === 15);
+check("Landesmodule tragen die Pflichtklassen aus dem Modell (Soll = LANDESMODUL_PFLICHTKLASSEN)",
+  M.packages.find((p) => p.key === "berlin-basis").required_classes.length === seeds.LANDESMODUL_PFLICHTKLASSEN.length);
 check("Bund Basis ist Pflicht-Basispaket (is_base)", (() => { const b = M.packages.find((p) => p.key === "bund-basis"); return b.is_base === true; })());
 check("kein Paket traegt mehr ein always_on-Flag (Daueraktivierung lebt auf Abrufweg-Ebene)", M.packages.every((p) => p.always_on === undefined));
 check("nur die 5 neutralen Kern-Abrufwege sind activation_mode=always_on", (() => {

@@ -18,23 +18,31 @@ check("4 neue Entitäten", seed.entities.length === 4);
 check("14 Herausgeber", seed.publishers.length === 14);
 check("18 Abrufwege", seed.retrievalPaths.length === 18);
 check("19 Paketzuordnungen", seed.packagePaths.length === 19);
-check("18 path_expected_levels + 18 path_expected_geographies", seed.pathExpectedLevels.length === 18 && seed.pathExpectedGeographies.length === 18);
+check("je Abrufweg genau 1 erwartete Ebene + 1 erwartete Geografie (Soll = retrievalPaths.length)",
+  seed.pathExpectedLevels.length === seed.retrievalPaths.length && seed.pathExpectedGeographies.length === seed.retrievalPaths.length);
 
 // --- 2. Technisch INAKTIV (hart im SQL) ---
+// P1-Workflow-Haertung: Sollwerte aus dem Modell abgeleitet statt hart kodiert, damit der
+// Test mitwaechst, falls der verifizierte Landesmodul-Seed spaeter Wege gewinnt/verliert.
 check("KEIN 'auto'/'always_on'/'healthy' im SQL", !/'auto'|'always_on'|'healthy'/.test(sql));
 const nManual = (sql.match(/'needs_review', 'manual'/g) || []).length;
-check("alle 18 Abrufwege needs_review + manual", nManual === 18);
+check("JEDER Abrufweg needs_review + manual (Soll = seed.retrievalPaths.length)", nManual === seed.retrievalPaths.length);
 check("Seed-Selbstprüfung: 0 aktive Wege", seed.retrievalPaths.filter((p) => p.status === "healthy" || p.activation_mode === "auto" || p.activation_mode === "always_on").length === 0);
 
 // --- 3. method-CHECK-konform (opendata_xml -> structured_download) ---
+const nStructured = seed.retrievalPaths.filter((p) => dbMethod(p.method) === "structured_download").length;
 check("kein 'opendata_xml' im SQL (gemappt)", !/'opendata_xml'/.test(sql));
-check("structured_download vorhanden (2x Open-Data)", (sql.match(/'structured_download'/g) || []).length === 2);
+check("structured_download im SQL = Zahl der gemappten Open-Data-Wege (Soll aus Modell)", (sql.match(/'structured_download'/g) || []).length === nStructured);
 check("dbMethod: opendata_xml -> structured_download", dbMethod("opendata_xml") === "structured_download" && dbMethod("rss") === "rss" && dbMethod("googlenews_search") === "googlenews_search");
 const erlaubteMethoden = new Set(["rss", "api", "html", "googlenews_search", "structured_download"]);
 check("alle method-Werte DB-CHECK-konform", seed.retrievalPaths.every((p) => erlaubteMethoden.has(dbMethod(p.method))));
 
-// --- 4. Idempotent + transaktional ---
-check("ON CONFLICT DO NOTHING (nicht-destruktiv, überschreibt nichts)", (sql.match(/on conflict \([^)]*\) do nothing/g) || []).length === 6);
+// --- 4. Idempotent + transaktional + REIN ADDITIV ---
+// Soll = Zahl der insert-Anweisungen: jedes insert ist ein additives ON CONFLICT DO NOTHING,
+// kein Upsert-Overwrite, kein destruktives Statement.
+const nInserts = (sql.match(/insert into public\./g) || []).length;
+check("jedes insert ist ON CONFLICT DO NOTHING (rein additiv, Soll = Zahl der inserts)", (sql.match(/on conflict \([^)]*\) do nothing/g) || []).length === nInserts);
+check("keine destruktive Anweisung im Seed (delete/drop/truncate/alter/do update)", !/\b(delete|drop|truncate|alter)\b|do update/i.test(sql));
 check("begin + commit + notify pgrst", /begin;/.test(sql) && /commit;/.test(sql) && /notify pgrst/.test(sql));
 
 // --- 5. Klassifikation ---

@@ -37,6 +37,12 @@ function insert(table, columns, rows, conflictKey) {
   return `${head}\n${values}\non conflict (${conflictKey}) do nothing;\n`;
 }
 
+// Deterministische Gesamtordnung (P1-Workflow-Haertung): reproduzierbare Zeilenreihenfolge
+// unabhaengig von der Modell-Iteration -> kein scheinbarer Drift, weniger Merge-Konflikte
+// bei paralleler Paketarbeit. Der Drift-Check verlaesst sich auf diese Reproduzierbarkeit.
+function cmp(a, b) { return a < b ? -1 : a > b ? 1 : 0; }
+function sortByKey(rows, keyFn) { return [...rows].sort((a, b) => cmp(keyFn(a), keyFn(b))); }
+
 function build() {
   const seed = buildLandesmodulSeed();
   const out = [];
@@ -49,20 +55,20 @@ function build() {
 
   out.push("-- 1) Politische Entitaeten (nur neue Landesverbaende/Fraktion/Person)");
   out.push(insert("political_entities", ["id", "entity_type", "name", "canonical_key", "level", "geography_id"],
-    seed.entities.map((e) => [q(e.id), q(e.entity_type), q(e.name), q(e.canonical_key), q(e.level), q(e.geography_id)]),
+    sortByKey(seed.entities, (e) => e.id).map((e) => [q(e.id), q(e.entity_type), q(e.name), q(e.canonical_key), q(e.level), q(e.geography_id)]),
     "id"));
   out.push("");
 
-  out.push("-- 2) Herausgeber (14)");
+  out.push("-- 2) Herausgeber");
   out.push(insert("publishers", ["id", "name", "canonical_domain", "publisher_type", "evidence_role", "trust", "lifecycle_status", "entity_id"],
-    seed.publishers.map((p) => [q(p.id), q(p.name), q(p.canonical_domain), q(p.publisher_type), q(p.evidence_role), q(p.trust), q(p.lifecycle_status), q(p.entity_id)]),
+    sortByKey(seed.publishers, (p) => p.id).map((p) => [q(p.id), q(p.name), q(p.canonical_domain), q(p.publisher_type), q(p.evidence_role), q(p.trust), q(p.lifecycle_status), q(p.entity_id)]),
     "id"));
   out.push("");
 
-  out.push("-- 3) Abrufwege (18) — INAKTIV: needs_review + manual");
+  out.push("-- 3) Abrufwege — INAKTIV: needs_review + manual (technisch kein Runtime-Effekt)");
   out.push(insert("retrieval_paths",
     ["id", "publisher_id", "legacy_source_id", "name", "method", "url", "query", "parser", "priority", "status", "activation_mode", "is_critical", "max_items"],
-    seed.retrievalPaths.map((p) => [
+    sortByKey(seed.retrievalPaths, (p) => p.id).map((p) => [
       q(p.id), q(p.publisher_id), q(p.legacy_source_id), q(p.name), q(dbMethod(p.method)), q(p.url), q(p.query), q(p.parser),
       qint(p.priority), q("needs_review"), q("manual"), qbool(p.is_critical), qint(p.max_items)
     ]),
@@ -71,19 +77,19 @@ function build() {
 
   out.push("-- 4) Paket <-> Abrufweg (nur berlin-basis / brandenburg-basis)");
   out.push(insert("package_paths", ["package_id", "retrieval_path_id"],
-    seed.packagePaths.map((pp) => [q(pp.package_id), q(pp.retrieval_path_id)]),
+    sortByKey(seed.packagePaths, (pp) => `${pp.package_id}|${pp.retrieval_path_id}`).map((pp) => [q(pp.package_id), q(pp.retrieval_path_id)]),
     "package_id, retrieval_path_id"));
   out.push("");
 
   out.push("-- 5) Erwartete politische Ebene (land) je Abrufweg");
   out.push(insert("path_expected_levels", ["retrieval_path_id", "level"],
-    seed.pathExpectedLevels.map((l) => [q(l.retrieval_path_id), q(l.level)]),
+    sortByKey(seed.pathExpectedLevels, (l) => `${l.retrieval_path_id}|${l.level}`).map((l) => [q(l.retrieval_path_id), q(l.level)]),
     "retrieval_path_id, level"));
   out.push("");
 
   out.push("-- 6) Erwartete Geografie je Abrufweg");
   out.push(insert("path_expected_geographies", ["retrieval_path_id", "geography_id"],
-    seed.pathExpectedGeographies.map((g) => [q(g.retrieval_path_id), q(g.geography_id)]),
+    sortByKey(seed.pathExpectedGeographies, (g) => `${g.retrieval_path_id}|${g.geography_id}`).map((g) => [q(g.retrieval_path_id), q(g.geography_id)]),
     "retrieval_path_id, geography_id"));
   out.push("");
 
@@ -100,9 +106,9 @@ function build() {
 }
 
 function buildRollback(seed) {
-  const pathIds = seed.retrievalPaths.map((p) => `'${p.id}'`).join(", ");
-  const pubIds = seed.publishers.map((p) => `'${p.id}'`).join(", ");
-  const entIds = seed.entities.map((e) => `'${e.id}'`).join(", ");
+  const pathIds = sortByKey(seed.retrievalPaths, (p) => p.id).map((p) => `'${p.id}'`).join(", ");
+  const pubIds = sortByKey(seed.publishers, (p) => p.id).map((p) => `'${p.id}'`).join(", ");
+  const entIds = sortByKey(seed.entities, (e) => e.id).map((e) => `'${e.id}'`).join(", ");
   const out = [];
   out.push("-- Rollback des Landesmodul-PREPARED-Seeds (Berlin/Brandenburg). Loescht die eingefuegten");
   out.push("-- BE/BB-Abrufwege + Zuordnungen (eindeutige Ids). Herausgeber/Entitaeten werden GUARDED");
