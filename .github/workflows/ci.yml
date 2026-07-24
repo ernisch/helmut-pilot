@@ -54,26 +54,41 @@ jobs:
         # liegt beim browser-smoke-Job unten (dort fail-closed).
         run: node scripts/run-offline-tests.js
 
-      # Quellenpaket-Workflow-Nachweis (P1): Drift/Additivitaet/Kollision/Runtime-Inertheit
-      # wird als MASCHINENLESBARER JSON-Report erzeugt und archiviert. Der Script-Output ist
-      # die Quelle der Dokumentation — es werden KEINE Ergebnisse von Hand notiert. Der Report
-      # traegt einen CI-Zeitstempel (das Skript selbst stempelt nicht, um reproduzierbar/
-      # sandbox-tauglich zu bleiben). Der Schritt selbst ist bereits Teil der Offline-Suite
-      # oben (Exit-Gate); hier geht es nur um das archivierbare Artefakt.
-      - name: Quellenpaket-Workflow-Nachweis erzeugen (maschinenlesbar)
+      # Quellenpaket-Workflow-Nachweis (P1, §11): Vollstaendigkeit/Drift/Additivitaet/
+      # Mutationsmodus/Kollision/Runtime-Inertheit wird als MASCHINENLESBARER JSON-Report
+      # erzeugt und archiviert. Der Script-Output ist die Quelle der Dokumentation — es
+      # werden KEINE Ergebnisse von Hand notiert. FAIL-CLOSED:
+      #   - keine veraltete Report-Datei wiederverwenden (rm -f vor der Erzeugung),
+      #   - Git-SHA IMMER im Report (--sha ${{ github.sha }}),
+      #   - stuerzt das Pruefsystem VOR dem JSON-Schreiben ab -> minimaler Fehlerbericht (ROT),
+      #   - ROT-Verdikt ODER Exit != 0 laesst den Schritt (und damit CI) fehlschlagen.
+      # Der Report enthaelt NUR Pruefergebnisse + Zaehlwerte + Git-SHA — KEINE Secrets/Prod-Daten.
+      - name: Quellenpaket-Workflow-Nachweis erzeugen (maschinenlesbar, fail-closed)
         if: always()
         run: |
-          set -euo pipefail
-          node scripts/quellenpaket-workflow-test.js --out quellenpaket-workflow-report.json
-          node -e "const fs=require('fs');const p='quellenpaket-workflow-report.json';const r=JSON.parse(fs.readFileSync(p));r.archivedAt=new Date().toISOString();r.gitSha=process.env.GITHUB_SHA||null;fs.writeFileSync(p,JSON.stringify(r,null,2));"
+          set -uo pipefail
+          rm -f quellenpaket-workflow-report.json
+          node scripts/quellenpaket-workflow-test.js --out quellenpaket-workflow-report.json --sha "${GITHUB_SHA:-unknown}"
+          rc=$?
+          if [ ! -f quellenpaket-workflow-report.json ]; then
+            echo "::warning::Kein Report geschrieben — Pruefsystem vor JSON-Write abgestuerzt; erzeuge minimalen Fehlerbericht"
+            node -e "require('fs').writeFileSync('quellenpaket-workflow-report.json', JSON.stringify({tool:'quellenpaket-workflow-test',schema_version:2,git_sha:(process.env.GITHUB_SHA||'unknown'),status:'crashed',verdict:'ROT',error:'kein Report vor Absturz'},null,2))"
+          fi
+          node -e "const fs=require('fs');const p='quellenpaket-workflow-report.json';const r=JSON.parse(fs.readFileSync(p));r.archived_at=new Date().toISOString();fs.writeFileSync(p,JSON.stringify(r,null,2));"
+          verdict=$(node -e "try{console.log(JSON.parse(require('fs').readFileSync('quellenpaket-workflow-report.json')).verdict||'ROT')}catch(e){console.log('ROT')}")
+          echo "Workflow-Nachweis: verdict=$verdict rc=$rc"
+          if [ "$verdict" != "GRUEN" ] || [ "$rc" != "0" ]; then
+            echo "::error::Quellenpaket-Workflow-Nachweis ROT oder Pruefung fehlgeschlagen (verdict=$verdict rc=$rc)"
+            exit 1
+          fi
 
-      - name: Nachweis archivieren (JSON-Artefakt)
+      - name: Nachweis archivieren (JSON-Artefakt, ohne Secrets/Prod-Daten)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: quellenpaket-workflow-nachweis
           path: quellenpaket-workflow-report.json
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 90
 
   browser-smoke:
