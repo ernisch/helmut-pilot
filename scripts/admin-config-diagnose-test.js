@@ -49,14 +49,15 @@ const accounts = require(path.join(root, "lib/helmut/accounts.js"));
 
 const EXPECTED_NAMES = [
   "HELMUT_UNDERSTANDING_GATE", "HELMUT_PARDOK_DISPATCH", "HELMUT_MAX_LLM_CALLS_PER_DAY",
-  "HELMUT_V3_STORE", "HELMUT_SCORING_MODE", "HELMUT_V3_SHADOW_COMPARE", "HELMUT_PROFILE_DB_MODE"
+  "HELMUT_V3_STORE", "HELMUT_SCORING_MODE", "HELMUT_V3_SHADOW_COMPARE", "HELMUT_PROFILE_DB_MODE",
+  "HELMUT_PROFILE_DB_EXCLUSIVE"
 ];
 
 // --- A) Builder-Unit: Whitelist, Defaults, keine Fremdnamen -------------------------------
 {
   const rows = buildDiagnose(process.env);
-  check("A1 GENAU sieben Eintraege", rows.length === 7, `len=${rows.length}`);
-  check("A2 exakt die sieben Whitelist-Namen (Reihenfolge fix)",
+  check("A1 GENAU acht Eintraege", rows.length === 8, `len=${rows.length}`);
+  check("A2 exakt die acht Whitelist-Namen (Reihenfolge fix)",
     JSON.stringify(rows.map((r) => r.name)) === JSON.stringify(EXPECTED_NAMES));
   const scoring = rows.find((r) => r.name === "HELMUT_SCORING_MODE");
   check("A3 gesetzte Variable zeigt den aktuellen Wert", scoring.gesetzt === true && scoring.wert === WHITELIST_SENTINEL);
@@ -75,10 +76,10 @@ const EXPECTED_NAMES = [
     maxLlm.quelle === "default" && maxLlm.dateiWert === null);
   const json = JSON.stringify(rows);
   check("A5 KEIN Secret-Sentinel im Builder-Ergebnis", !json.includes(SECRET_SENTINEL));
-  // Fremdnamen strukturell unmoeglich: env mit Secret-Keys liefert trotzdem nur die 7.
+  // Fremdnamen strukturell unmoeglich: env mit Secret-Keys liefert trotzdem nur die Whitelist.
   const injected = buildDiagnose({ EVIL_WUNSCHNAME: "x", SUPABASE_SERVICE_ROLE_KEY: SECRET_SENTINEL, HELMUT_V3_STORE: "1" });
   check("A6 Builder ignoriert beliebige Fremd-/Secret-Namen im env-Objekt",
-    injected.length === 7 && !JSON.stringify(injected).includes(SECRET_SENTINEL) && !JSON.stringify(injected).includes("EVIL_WUNSCHNAME"));
+    injected.length === 8 && !JSON.stringify(injected).includes(SECRET_SENTINEL) && !JSON.stringify(injected).includes("EVIL_WUNSCHNAME"));
   // Lange Werte werden gekappt (Leitplanke).
   const long = buildDiagnose({ HELMUT_V3_STORE: "x".repeat(500) }).find((r) => r.name === "HELMUT_V3_STORE");
   check("A7 Wert-Anzeige auf 40 Zeichen gekappt", long.wert.length === 40);
@@ -158,7 +159,7 @@ async function login(server, email, password) {
       check("B4 Admin darf lesen (200)", asAdmin.status === 200, `status=${asAdmin.status}`);
       const payload = parse(asAdmin);
       const cfg = payload && payload.system && payload.system.helmutConfig;
-      check("B5 Payload enthaelt system.helmutConfig mit GENAU 7 Eintraegen", Array.isArray(cfg) && cfg.length === 7);
+      check("B5 Payload enthaelt system.helmutConfig mit GENAU 8 Eintraegen", Array.isArray(cfg) && cfg.length === 8);
       check("B6 exakt die Whitelist-Namen", Array.isArray(cfg) && JSON.stringify(cfg.map((r) => r.name)) === JSON.stringify(EXPECTED_NAMES));
       check("B7 gesetzter Wert sichtbar (HELMUT_SCORING_MODE)", Array.isArray(cfg) && cfg.find((r) => r.name === "HELMUT_SCORING_MODE").wert === WHITELIST_SENTINEL);
       check("B8 fehlende Variable zeigt Code-Default (HELMUT_UNDERSTANDING_GATE)",

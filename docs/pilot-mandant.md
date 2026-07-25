@@ -1,5 +1,19 @@
 # Pilotmandanten-Pilot
 
+> # ℹ️ HISTORISCHES DEMO-SKRIPT (Recovery Sprint R2, 2026-07-22, `main` @ `d6d9063`)
+>
+> Dieses Dokument beschreibt das **frühe Einzelpiloten-Demo** (Vorführ-Ablauf,
+> Feedback-Fragen). Es ist **kein** Architektur- oder Betriebsstatus.
+>
+> **Einordnung zur Mandantenneutralisierung:** Im Code gibt es **keinen** bevorzugten/
+> Default-/Fallback-Mandanten mehr (PR #97). Verbleibende **Demo-/Pilot-Mandate** sind
+> eine **offene Bereinigungsaufgabe — OP-04** (`datenmotor-restliste.md`, „vor Vertrieb
+> löschen"), **nicht** ein aktiver Sonderpfad. Begriffe wie „Pilotmandant"/„Pilot-Regel"
+> unten sind historisch zu lesen.
+>
+> **Verbindliche Quellen:** Mandantentrennung/Sicherheit → `quellenarchitektur/05-sicherheitsmodell-rls.md`;
+> Gesamtstatus → `quellenarchitektur/00-master-status.md`; offene Punkte → `datenmotor-restliste.md`.
+
 ## Ziel
 
 Helmut wird dem Pilotmandanten nicht als Dashboard gezeigt, sondern als digitaler politischer Stabschef.

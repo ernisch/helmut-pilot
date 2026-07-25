@@ -11,7 +11,7 @@ const { validateProfile } = require("./lib/helmut/profile-validation");
 const sourceSafety = require("./lib/helmut/sourceSafety");
 const { runLageCheck, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, listFailedKnowledgeObjects, resetUnderstandingToPending, markUnderstandingTerminal, getUnderstandingRetries, saveUnderstandingRetries, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, getLlmUsageBreakdownToday, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getClassificationCoverage, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState, tenantJwtModeEnabled, saveKnowledgeObjectEnrichment, profileDbModeEnabled, getProfileFromDb, diagnoseTenantJwt, recordProcessRun, listProcessRuns, saveMonitoringDeliveryState, getMonitoringDeliveryState, getLlmCostSince, getAdminCostsPerUser, listSourceArchitectureRows, getSourceModeShadowLastRun } = require("./lib/helmut/storage");
+const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, listFailedKnowledgeObjects, resetUnderstandingToPending, markUnderstandingTerminal, getUnderstandingRetries, saveUnderstandingRetries, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, getLlmUsageBreakdownToday, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getClassificationCoverage, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState, tenantJwtModeEnabled, saveKnowledgeObjectEnrichment, profileDbModeEnabled, profileDbExclusiveEnabled, getProfileTelemetry, getProfileFromDb, diagnoseTenantJwt, recordProcessRun, listProcessRuns, saveMonitoringDeliveryState, getMonitoringDeliveryState, getLlmCostSince, getAdminCostsPerUser, listSourceArchitectureRows, getSourceModeShadowLastRun } = require("./lib/helmut/storage");
 const llmBudgetLib = require("./lib/helmut/llm-budget");
 
 // P0-1: technischer Ausfuehrungsort + Laufkennung fuer Prozess-Laufzeit-Telemetrie
@@ -37,6 +37,7 @@ const { derivePolicyFields } = require("./lib/helmut/matching");
 const { pushStatus, sendBriefingReadyPush, sendLageChangePush, sendPushToPolitician } = require("./lib/helmut/push");
 const auth = require("./lib/helmut/auth");
 const accounts = require("./lib/helmut/accounts");
+const inviteMail = require("./lib/helmut/invite-mail");
 const helmutFlags = require("./lib/helmut/flags");
 const { getRelevantParliamentaryItems } = require("./lib/helmut/dip");
 const { runPendingUnderstandingShadow, clusterRawDocuments, deriveVorgangId, diagnosePendingUnderstanding } = require("./lib/helmut/understanding");
@@ -167,6 +168,12 @@ async function handleRequest(request, response) {
     return sendPrivacyPage(response);
   }
 
+  // Umsetzungsnotiz §6: oeffentliche Seite fuer Invite-/Reset-Links. Der Empfaenger
+  // hat noch keine Session — die Seite muss deshalb VOR allen Auth-Gates liegen.
+  if (url.pathname === "/passwort-setzen") {
+    return sendSetPasswordPage(response);
+  }
+
   // Status-Check fuer Live-Gang-Diagnose. SICHERHEIT: urspruenglich ohne Secret
   // ("public"), das machte Config-Recon (welche Provider/Keys gesetzt sind, ob ein
   // Admin existiert) fuer jeden im Internet abrufbar und stiess bei jedem Aufruf
@@ -255,6 +262,19 @@ async function handleRequest(request, response) {
     }
     if (url.pathname === "/api/auth/logout" && request.method === "POST") {
       return handleAuthLogout(request, response);
+    }
+
+    // Invite-/Passwort-Flow (Umsetzungsnotiz §6): oeffentlich, ohne Session erreichbar
+    // (die Person HAT noch keine Session). Wie der Login vor dem CSRF-Guard registriert;
+    // Schutz: Rate-Limit + einmalige, ablaufende Tokens (im Store nur SHA-256-Hash).
+    if (url.pathname === "/api/auth/set-password" && request.method === "POST") {
+      return handleAuthSetPassword(request, response);
+    }
+    if (url.pathname === "/api/auth/request-reset" && request.method === "POST") {
+      return handleAuthRequestReset(request, response);
+    }
+    if (url.pathname === "/api/auth/password-token" && request.method === "GET") {
+      return handleAuthPasswordToken(request, response, url);
     }
 
     // Setup-Diagnose: sensible Felder (E-Mails etc.) nur fuer eingeloggte Admins.
@@ -425,7 +445,10 @@ async function handleRequest(request, response) {
         aiStatus: {
           enabled: isAiEnabled(),
           model: activeModelName()
-        }
+        },
+        // Umsetzungsnotiz §9: echte Build-Version an den Client durchreichen
+        // (Profil-Footer zeigt sie statt der toten "Version 1.0").
+        version: ASSET_VERSION
       };
     });
   }
@@ -1220,7 +1243,14 @@ async function handleRequest(request, response) {
   // --- Admin-Bereich (nur Rolle admin) ---
   if (url.pathname === "/api/admin/users") {
     if (!requireRoleOr403(response, authUser, "admin")) return undefined;
-    if (request.method === "GET") return handleAsync(response, () => accounts.listUsers());
+    if (request.method === "GET") {
+      return handleAsync(response, async () => {
+        // Offene Einladungen je Konto mitliefern (nur Zeiten, nie Token-Hashes),
+        // damit der Admin "Einladung ausstehend / laeuft ab am" anzeigen kann (§6).
+        const [users, invites] = await Promise.all([accounts.listUsers(), accounts.listPendingInvites()]);
+        return users.map((user) => ({ ...user, invite: invites[user.id] || null }));
+      });
+    }
     if (request.method === "POST") {
       return handleJson(request, response, async (body) => {
         const user = await accounts.createUser(body);
@@ -1244,24 +1274,78 @@ async function handleRequest(request, response) {
           }
         }
         await accounts.recordAudit({ action: "admin.user.create", userId: authUser.id, actorEmail: authUser.email, detail: user.email });
+        // Invite-Flow (§6): ohne Passwort angelegte Konten bekommen sofort einen
+        // Einladungs-Link. Die Antwort traegt inviteUrl fuer den Interim-Kopierweg
+        // (Mail-Versand folgt mit der Domain) + ehrlichen mail.sent-Status.
+        // Gesperrt angelegte Konten (active:false, API-Randfall) bekommen keinen
+        // Link — createPasswordToken wuerde 409 werfen, NACHDEM der Nutzer schon
+        // angelegt ist; der Admin kann aktivieren und dann den Zugangslink erstellen.
+        if (user.status === "eingeladen" && user.active !== false) {
+          const invite = await issueInvite(request, user);
+          return { ...user, inviteUrl: invite.inviteUrl, inviteExpiresAt: invite.expiresAt, mail: invite.mail };
+        }
         return user;
       });
     }
+  }
+
+  // Zugangslink erstellen (§6): Einladung erneut senden (Konto ohne Passwort,
+  // 7 Tage) bzw. Reset-Link (Konto mit Passwort, 1 Stunde). Der Admin fasst nie
+  // ein Passwort an — er bekommt nur den Link (Interim-Kopierweg, solange kein
+  // Mail-Dienst existiert). Ein neuer Link invalidiert alte offene Links.
+  // MUSS vor der generischen /api/admin/users/:id-Route stehen (die matcht POST auch).
+  if (url.pathname.startsWith("/api/admin/users/") && url.pathname.endsWith("/invite") && request.method === "POST") {
+    if (!requireRoleOr403(response, authUser, "admin")) return undefined;
+    const inviteUserId = decodeURIComponent(url.pathname.slice("/api/admin/users/".length, -"/invite".length));
+    return handleJson(request, response, async () => {
+      const target = await accounts.getUserByIdRaw(inviteUserId);
+      if (!target) throw accounts.httpError(404, "Nutzer nicht gefunden.");
+      const purpose = target.passwordHash ? "reset" : "invite";
+      const issued = await accounts.createPasswordToken(target.id, purpose);
+      const linkUrl = passwordSetUrl(request, issued.token);
+      const mailContent = purpose === "reset"
+        ? inviteMail.buildResetMail({ name: target.name, resetUrl: linkUrl })
+        : inviteMail.buildInviteMail({ name: target.name, inviteUrl: linkUrl });
+      const mail = await inviteMail.sendAccessMail({ to: target.email, ...mailContent });
+      const action = purpose === "reset" ? "admin.user.reset-link" : "admin.user.invite";
+      await accounts.recordAudit({ action, userId: authUser.id, actorEmail: authUser.email, detail: target.email });
+      return { ok: true, purpose, inviteUrl: linkUrl, expiresAt: issued.expiresAt, mail };
+    });
+  }
+
+  // Nutzer loeschen (nur Admin, ausschliesslich ueber die interne Nutzer-ID aus
+  // dem Pfad — nie ueber E-Mail). Loescht GENAU dieses Konto + seine eigenen
+  // Sessions/Passwort-Tokens/Zuweisungen; Mandatsinhalte und Audit-Log bleiben
+  // unberuehrt (siehe accounts.deleteUser). Schutzregeln (Selbstloeschung,
+  // Administratoren) sind dort verdrahtet, nicht hier dupliziert.
+  if (url.pathname.startsWith("/api/admin/users/") && request.method === "DELETE") {
+    if (!requireRoleOr403(response, authUser, "admin")) return undefined;
+    const targetUserId = decodeURIComponent(url.pathname.replace("/api/admin/users/", ""));
+    return handleAsync(response, async () => {
+      const result = await accounts.deleteUser(targetUserId, authUser.id);
+      await accounts.recordAudit({ action: "admin.user.delete", userId: authUser.id, actorEmail: authUser.email, detail: result.deletedEmail });
+      return result;
+    });
   }
 
   if (url.pathname.startsWith("/api/admin/users/") && (request.method === "PATCH" || request.method === "POST")) {
     if (!requireRoleOr403(response, authUser, "admin")) return undefined;
     const userId = decodeURIComponent(url.pathname.replace("/api/admin/users/", ""));
     return handleJson(request, response, async (body) => {
+      // Umsetzungsnotiz §6: Der Admin fasst nie ein Passwort an. Der fruehere
+      // admin-seitige Passwort-Reset ist durch den Zugangslink-Flow ersetzt
+      // (POST /api/admin/users/:id/invite) — Passwoerter setzt nur noch die
+      // Person selbst ueber /passwort-setzen.
+      if (body.password !== undefined && body.password !== "") {
+        throw accounts.httpError(400, "Passwoerter werden nicht mehr admin-seitig gesetzt — Zugangslink erstellen (Einladung/Reset).");
+      }
       const user = await accounts.updateUser(userId, body);
-      // Deaktivierte Nutzer sofort ausloggen; bei Passwort-Reset bestehende
-      // Sessions ungueltig machen (neues Passwort erzwingt Neu-Login). Auch wenn
-      // der Status (gekuendigt/deaktiviert) den Login serverseitig gesperrt hat.
-      if (user.active === false || (body.password !== undefined && body.password !== "")) {
+      // Deaktivierte Nutzer sofort ausloggen — auch wenn der Status
+      // (gekuendigt/deaktiviert) den Login serverseitig gesperrt hat.
+      if (user.active === false) {
         await accounts.destroyUserSessions(userId);
       }
-      const action = (body.password !== undefined && body.password !== "") ? "admin.user.password-reset" : "admin.user.update";
-      await accounts.recordAudit({ action, userId: authUser.id, actorEmail: authUser.email, detail: user.email });
+      await accounts.recordAudit({ action: "admin.user.update", userId: authUser.id, actorEmail: authUser.email, detail: user.email });
       return user;
     });
   }
@@ -1458,6 +1542,16 @@ async function handleRequest(request, response) {
         v3StoreFlagSet: isFlag(process.env.HELMUT_V3_STORE),
         v3StoreReady: v3StoreReady(),
         profileDbModeEnabled: profileDbEnabled,
+        // --- Profil-Exklusivmodus (Stufe E): kein globaler helmut_store-Blob-Write mehr ---
+        // flagSet zeigt den ROHEN Flag-Wert; enabled erfordert zusaetzlich den DB-Modus.
+        profileDbExclusiveFlagSet: isFlag(process.env.HELMUT_PROFILE_DB_EXCLUSIVE),
+        profileDbExclusiveEnabled: profileDbExclusiveEnabled(),
+        profileWriteTarget: profileDbExclusiveEnabled()
+          ? "mandate_profiles (relational-only, kein Blob-Write)"
+          : (profileDbEnabled ? "mandate_profiles + helmut_store (Dual Write)" : "helmut_store (Blob-only)"),
+        // Divergenz-Signal: wie oft fiel ein SQL-Miss im Dual-Write-Modus auf den
+        // Blob zurueck? Dauerhaft >0 => Backfill unvollstaendig (Cutover E noch nicht reif).
+        profileBlobReadFallbacks: (getProfileTelemetry() || {}).blobReadFallbacks || 0,
         // Live-Selbsttest: liest der DB-Profilpfad wirklich (JWT akzeptiert)?
         tenantJwtReadWorks,
         tenantReadProbe,
@@ -2549,6 +2643,188 @@ function sendImpressumPage(response) {
 
       <p><a href="/datenschutz">Datenschutz</a> · <a href="/">Zurück zu Helmut</a></p>
     </main>
+  </body>
+</html>`);
+}
+
+// Umsetzungsnotiz §6: oeffentliche Seite fuer Invite-/Reset-Links. Zustaende:
+// Formular (Token gueltig) / erledigt (Passwort gesetzt, eingeloggt) / abgelaufen
+// (-> "Neuen Link anfordern"). Der Token bleibt in der URL und wird nur an die
+// eigenen /api/auth-Endpunkte geschickt (CSP: connect-src 'self').
+// Design (Produktionsfehler-Fix): dieselben Tokens/Radien/Farben wie der
+// dunkle App-/Login-Screen (client.js renderLogin/renderPilotAccess,
+// styles.css .login-screen/.pilot-access-card/.pilot-access-form). Diese Seite
+// wird VOR dem SPA-Bootstrap ausgeliefert (kein Zugriff auf styles.css/
+// client.js-Klassen) — die Werte sind deshalb bewusst 1:1 hierher uebertragen,
+// keine neue Designwelt.
+function sendSetPasswordPage(response) {
+  response.writeHead(200, htmlHeaders());
+  response.end(`<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#050914" />
+    <meta name="robots" content="noindex" />
+    <title>Passwort setzen · Helmut</title>
+    <style>
+      :root { color-scheme: dark; }
+      * { box-sizing: border-box; }
+      html, body { width: 100%; min-height: 100%; }
+      body {
+        margin: 0; min-height: 100dvh; display: grid; place-items: center;
+        padding: clamp(32px, 8dvh, 96px) 20px;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #f5f1e8; line-height: 1.6;
+        background:
+          radial-gradient(ellipse at 84% 10%, rgba(88, 46, 196, .09), transparent 38%),
+          radial-gradient(ellipse at 12% 92%, rgba(28, 66, 168, .07), transparent 34%),
+          radial-gradient(circle at 50% 40%, rgba(140, 92, 255, .11), transparent 26%),
+          linear-gradient(180deg, #070b15 0%, #050914 72%, #03050b 100%);
+      }
+      main {
+        width: min(100%, 480px);
+        background: linear-gradient(155deg, rgba(15, 21, 38, .97), rgba(7, 10, 21, .96));
+        border: 1px solid rgba(255, 255, 255, .07);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .042), 0 36px 80px rgba(0, 0, 0, .44), 0 6px 28px rgba(0, 0, 0, .3);
+        border-radius: 24px;
+        padding: 48px 40px;
+        text-align: center;
+      }
+      .mark { display: grid; place-items: center; color: #fbf7ef; margin-bottom: 6px; }
+      .mark span { font: 720 48px/1 Inter, sans-serif; letter-spacing: -.04em; text-shadow: 0 20px 70px rgba(140, 92, 255, .34); }
+      .wordmark { margin: 0 0 14px; font-weight: 800; letter-spacing: .08em; color: #d7e0ff; opacity: .72; text-transform: uppercase; font-size: 13px; }
+      h1 { font-size: clamp(26px, 5vw, 34px); line-height: 1.15; margin: 0 0 12px; letter-spacing: -.02em; color: #f5f1e8; }
+      p { color: rgba(245, 241, 232, .68); font-size: 16px; max-width: 360px; margin: 0 auto 4px; }
+      a { color: #6f8ff7; }
+      label { display: block; margin: 16px 0 6px; font-weight: 600; font-size: 14px; text-align: left; color: rgba(245, 241, 232, .68); }
+      form { margin-top: 8px; }
+      input {
+        width: 100%; min-height: 52px; padding: 0 16px; font-size: 16px; font: inherit;
+        border: 1px solid rgba(255, 255, 255, .12); border-radius: 16px;
+        background: rgba(255, 255, 255, .06); color: #f5f1e8; outline: none;
+      }
+      input:focus { border-color: rgba(139, 92, 246, .56); box-shadow: 0 0 0 4px rgba(139, 92, 246, .16); }
+      button {
+        margin-top: 20px; width: 100%; min-height: 48px; padding: 0 22px; font-size: 16px; font-weight: 500;
+        color: #ffffff; background: linear-gradient(135deg, #102354, #1d3f8f);
+        border: 1px solid #f5f1e8; border-radius: 14px; cursor: pointer;
+        box-shadow: 0 14px 34px rgba(29, 63, 143, .16);
+      }
+      button[disabled] { opacity: .6; cursor: wait; }
+      .error { color: #ff7a8a; font-size: 14px; margin-top: 12px; min-height: 18px; }
+      .notice { border: 1px solid rgba(255, 255, 255, .1); background: rgba(255, 255, 255, .04); padding: 16px 18px; border-radius: 14px; font-size: 15px; color: rgba(245, 241, 232, .68); }
+      footer { margin-top: 32px; font-size: 13px; color: rgba(245, 241, 232, .5); }
+      footer a { color: rgba(245, 241, 232, .5); text-decoration: underline; }
+      [hidden] { display: none !important; }
+      @media (max-width: 480px) { main { border-radius: 20px; padding: 36px 24px; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="mark"><span>H</span></div>
+      <p class="wordmark">Helmut</p>
+      <h1>Passwort setzen</h1>
+
+      <section id="loadingView"><p>Der Link wird geprüft …</p></section>
+
+      <section id="formView" hidden>
+        <p>Wähle ein Passwort für deinen Helmut-Zugang. Mindestens 8 Zeichen.</p>
+        <form id="setForm">
+          <label for="pw1">Neues Passwort</label>
+          <input id="pw1" type="password" minlength="8" required autocomplete="new-password" />
+          <label for="pw2">Passwort wiederholen</label>
+          <input id="pw2" type="password" minlength="8" required autocomplete="new-password" />
+          <button type="submit" id="setSubmit">Passwort setzen</button>
+          <p class="error" id="formError" hidden></p>
+        </form>
+      </section>
+
+      <section id="doneView" hidden>
+        <p class="notice">Dein Passwort ist gesetzt — du bist jetzt angemeldet. Du wirst weitergeleitet …</p>
+        <p style="margin-top:14px"><a href="/">Weiter zu Helmut</a></p>
+      </section>
+
+      <section id="expiredView" hidden>
+        <p class="notice">Dieser Link ist abgelaufen oder wurde bereits verwendet.</p>
+        <form id="renewForm">
+          <label for="renewEmail">Neuen Link anfordern</label>
+          <input id="renewEmail" type="email" required autocomplete="email" placeholder="deine E-Mail-Adresse" />
+          <button type="submit" id="renewSubmit">Neuen Link anfordern</button>
+        </form>
+        <p id="renewDone" hidden>Anfrage angekommen. Solange der Mail-Versand noch nicht aktiv ist, wende dich bitte direkt ans Helmut-Team — es kann dir sofort einen neuen Link erstellen.</p>
+      </section>
+
+      <footer><a href="/impressum">Impressum</a> · <a href="/datenschutz">Datenschutz</a></footer>
+    </main>
+    <script>
+      (function () {
+        var token = new URLSearchParams(window.location.search).get("token") || "";
+        var views = ["loadingView", "formView", "doneView", "expiredView"];
+        function show(id) {
+          views.forEach(function (view) { document.getElementById(view).hidden = view !== id; });
+        }
+        if (!token) {
+          show("expiredView");
+        } else {
+          fetch("/api/auth/password-token?token=" + encodeURIComponent(token))
+            .then(function (res) { return res.json(); })
+            .then(function (data) { show(data && data.valid ? "formView" : "expiredView"); })
+            .catch(function () { show("expiredView"); });
+        }
+
+        document.getElementById("setForm").addEventListener("submit", function (event) {
+          event.preventDefault();
+          var pw1 = document.getElementById("pw1").value;
+          var pw2 = document.getElementById("pw2").value;
+          var errorEl = document.getElementById("formError");
+          errorEl.hidden = true;
+          if (pw1.length < 8) { errorEl.textContent = "Das Passwort muss mindestens 8 Zeichen haben."; errorEl.hidden = false; return; }
+          if (pw1 !== pw2) { errorEl.textContent = "Die Passwörter stimmen nicht überein."; errorEl.hidden = false; return; }
+          var button = document.getElementById("setSubmit");
+          button.disabled = true;
+          fetch("/api/auth/set-password", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: token, password: pw1 })
+          }).then(function (res) {
+            if (res.ok) {
+              show("doneView");
+              // Funktionaler Fix: automatisch weiterleiten statt nur einen
+              // manuellen Link zu zeigen — die Session-Cookie ist mit dieser
+              // Antwort bereits gesetzt, eine echte Top-Level-Navigation nimmt
+              // sie zuverlaessig mit (identisches Muster wie der normale
+              // Login-Screen, der nach Erfolg reload() ausloest).
+              window.setTimeout(function () { window.location.href = "/"; }, 600);
+              return null;
+            }
+            if (res.status === 410) { show("expiredView"); return null; }
+            return res.json().catch(function () { return {}; }).then(function (data) {
+              errorEl.textContent = (data && data.error) || "Das hat nicht geklappt. Bitte versuch es erneut.";
+              errorEl.hidden = false;
+            });
+          }).catch(function () {
+            errorEl.textContent = "Keine Verbindung. Bitte versuch es erneut.";
+            errorEl.hidden = false;
+          }).then(function () { button.disabled = false; });
+        });
+
+        document.getElementById("renewForm").addEventListener("submit", function (event) {
+          event.preventDefault();
+          var email = document.getElementById("renewEmail").value;
+          var button = document.getElementById("renewSubmit");
+          button.disabled = true;
+          fetch("/api/auth/request-reset", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: email })
+          }).catch(function () {}).then(function () {
+            document.getElementById("renewForm").hidden = true;
+            document.getElementById("renewDone").hidden = false;
+          });
+        });
+      })();
+    </script>
   </body>
 </html>`);
 }
@@ -3943,6 +4219,132 @@ async function handleAuthLogout(request, response) {
   response.end(JSON.stringify({ ok: true }, null, 2));
 }
 
+// ---------------------------------------------------------------------------
+// Invite-/Passwort-Flow (Umsetzungsnotiz §6)
+// ---------------------------------------------------------------------------
+
+// Basis-URL fuer oeffentliche Links (Invite/Reset). Vorrang: explizite Env
+// (HELMUT_PUBLIC_URL), auf Deployments der kanonische Host, lokal der Request-Host.
+// SICHERHEIT (Reset-Link-Poisoning): Host-/x-forwarded-host-Header sind vom
+// Anfragenden spoofbar — wer sie in den Link uebernimmt, laesst einen Angreifer
+// per request-reset Links mit SEINEM Host erzeugen (Token-Exfiltration, sobald
+// Mail-Versand aktiv ist). Auf echten Deployments deshalb NIE dem Header vertrauen.
+function publicBaseUrl(request) {
+  const envBase = String(process.env.HELMUT_PUBLIC_URL || "").trim().replace(/\/+$/, "");
+  if (envBase) return envBase;
+  const httpsDeploy = Boolean(process.env.VERCEL || process.env.VERCEL_ENV || process.env.NODE_ENV === "production");
+  if (httpsDeploy && canonicalHost) return `https://${canonicalHost}`;
+  const host = String(request.headers.host || "").split(",")[0].trim();
+  return host ? `http://${host}` : "";
+}
+
+function passwordSetUrl(request, token) {
+  return `${publicBaseUrl(request)}/passwort-setzen?token=${encodeURIComponent(token)}`;
+}
+
+// Einladung erzeugen + Zustellung versuchen. Solange kein Mail-Dienst existiert
+// (Domain folgt), traegt die Antwort den Link fuer den Admin-Kopierweg (§6 Interim)
+// und einen ehrlichen mail.sent-Status — es wird NIE stillschweigend "gesendet".
+async function issueInvite(request, user) {
+  const { token, expiresAt } = await accounts.createPasswordToken(user.id, "invite");
+  const inviteUrl = passwordSetUrl(request, token);
+  const mailContent = inviteMail.buildInviteMail({ name: user.name, inviteUrl });
+  const mail = await inviteMail.sendAccessMail({ to: user.email, ...mailContent });
+  return { inviteUrl, expiresAt, mail };
+}
+
+// POST /api/auth/set-password — { token, password }: Token pruefen (gueltig,
+// unbenutzt, nicht abgelaufen), Passwort setzen, Status aktiv, direkt einloggen.
+function handleAuthSetPassword(request, response) {
+  if (!allowRate(request, "set-password", 10, 15 * 60 * 1000)) {
+    return sendTooManyRequests(response);
+  }
+  return handleJson(request, response, async (body) => {
+    const token = String(body.token || "").trim();
+    if (!token) throw accounts.httpError(400, "Token ist erforderlich.");
+    const user = await accounts.setPasswordWithToken(token, String(body.password || ""));
+    // SICHERHEIT (Review-Fix): Ein Passwort-Reset muss denjenigen aussperren, der
+    // das Konto gerade haelt (gestohlene/geteilte Session) — sonst ueberlebt eine
+    // fremde Session den Reset dank rollierender Verlaengerung unbegrenzt. Gleiche
+    // Garantie wie der fruehere Admin-Reset-Pfad: alle Alt-Sessions verwerfen,
+    // erst dann die neue Session ausstellen.
+    await accounts.destroyUserSessions(user.id);
+    const { token: sessionToken, ttlSeconds } = await accounts.createSession(user.id, {
+      ip: auth.clientIp(request),
+      userAgent: request.headers["user-agent"] || ""
+    });
+    await accounts.markLogin(user.id);
+    await accounts.recordAudit({ action: "password.set", userId: user.id, actorEmail: user.email, ip: auth.clientIp(request) });
+    response.writeHead(200, jsonHeaders({ "Set-Cookie": auth.sessionCookieHeader(sessionToken, ttlSeconds) }));
+    response.end(JSON.stringify({ ok: true, user: publicUser(user) }, null, 2));
+    return null;
+  });
+}
+
+// POST /api/auth/request-reset — { email }: antwortet IMMER generisch mit 200
+// (keine User-Enumeration). Eingeladene ohne Passwort bekommen erneut einen
+// Invite-Link (7 Tage), alle anderen einen Reset-Link (1 Stunde).
+function handleAuthRequestReset(request, response) {
+  if (!allowRate(request, "request-reset", 5, 15 * 60 * 1000)) {
+    return sendTooManyRequests(response);
+  }
+  return handleJson(request, response, async (body) => {
+    const email = accounts.normalizeEmail(body.email);
+    const generic = { ok: true, hinweis: "Wenn die Adresse existiert, wurde ein Link erstellt." };
+    if (!email) return generic;
+    // Besitzer-Erkennung VOR jeder Kontoabfrage (kostet fuer alle Anfragen gleich viel).
+    const ctx = await auth.getAuthContext(request).catch(() => null);
+    const user = await accounts.getUserByEmailRaw(email).catch(() => null);
+    const isOwner = Boolean(user && ctx?.user?.id === user.id);
+    // Interim §6 + Review-Fixes: Solange kein Mail-Dienst existiert, kann ein anonym
+    // erzeugter Token NIEMANDEN erreichen (Mail tot, Antwort bleibt generisch) — er
+    // wuerde nur den einzigen Zustellweg zerstoeren (createPasswordToken invalidiert
+    // offene Links, z. B. den vom Admin kopierten Einladungs-Link). Deshalb: ohne
+    // Mail-Dienst erzeugen NUR eingeloggte Besitzer ("Passwort aendern") einen Token.
+    // Nebeneffekt: der anonyme Pfad macht fuer bekannte wie unbekannte Adressen
+    // exakt dieselbe Store-Arbeit (1 Read) — kein Timing-Seitenkanal zur User-
+    // Enumeration. WICHTIG bei Mail-Aktivierung: dann laeuft der Token-Zweig auch
+    // anonym, und die Store-Arbeit (Token + Audit-Write) muss gegen den Not-Found-
+    // Zweig angeglichen werden (Muster: Login-Dummy-scrypt, accounts.verifyPassword).
+    if (!user || user.active === false) return generic;
+    if (!isOwner && !inviteMail.isMailConfigured()) return generic;
+    const purpose = user.passwordHash ? "reset" : "invite";
+    let issued;
+    try {
+      issued = await accounts.createPasswordToken(user.id, purpose);
+    } catch {
+      // z. B. gesperrter Status: nach aussen identisch zur generischen Antwort.
+      return generic;
+    }
+    const linkUrl = passwordSetUrl(request, issued.token);
+    const mailContent = purpose === "reset"
+      ? inviteMail.buildResetMail({ name: user.name, resetUrl: linkUrl })
+      : inviteMail.buildInviteMail({ name: user.name, inviteUrl: linkUrl });
+    const mail = await inviteMail.sendAccessMail({ to: user.email, ...mailContent });
+    await accounts.recordAudit({ action: "password.reset-requested", userId: user.id, ip: auth.clientIp(request) });
+    if (isOwner) {
+      // Dem Besitzer ehrlich antworten: ohne Mail-Versand den Link direkt (Interim-
+      // Kopierweg), mit Mail-Versand den Zustellstatus (Client zeigt den Toast).
+      if (!mail.sent) return { ...generic, resetUrl: linkUrl, expiresAt: issued.expiresAt, mail };
+      return { ...generic, mail: { sent: true } };
+    }
+    return generic;
+  });
+}
+
+// GET /api/auth/password-token?token=… — Zustand fuer die /passwort-setzen-Seite.
+// Bewusst minimal (nur gueltig/Zweck): keine E-Mail, kein Name, kein Kontostatus.
+function handleAuthPasswordToken(request, response, url) {
+  if (!allowRate(request, "password-token", 30, 15 * 60 * 1000)) {
+    return sendTooManyRequests(response);
+  }
+  return handleAsync(response, async () => {
+    const token = String(url.searchParams.get("token") || "").trim();
+    const check = await accounts.inspectPasswordToken(token);
+    return { valid: check.valid === true, purpose: check.valid ? check.purpose : null };
+  });
+}
+
 async function handleAuthSession(response, authUser, token) {
   if (!authUser) {
     response.writeHead(200, jsonHeaders());
@@ -4109,7 +4511,8 @@ const HELMUT_CONFIG_DIAGNOSE_WHITELIST = Object.freeze([
   Object.freeze({ name: "HELMUT_V3_STORE", codeDefault: "aus — V3-Read/Understanding inaktiv" }),
   Object.freeze({ name: "HELMUT_SCORING_MODE", codeDefault: "off — Alt-Ranking byte-identisch" }),
   Object.freeze({ name: "HELMUT_V3_SHADOW_COMPARE", codeDefault: "aus — live nicht verdrahtet" }),
-  Object.freeze({ name: "HELMUT_PROFILE_DB_MODE", codeDefault: "aus — Profile Blob-only" })
+  Object.freeze({ name: "HELMUT_PROFILE_DB_MODE", codeDefault: "aus — Profile Blob-only" }),
+  Object.freeze({ name: "HELMUT_PROFILE_DB_EXCLUSIVE", codeDefault: "aus — Dual Write (Blob + SQL); an: relational-only, kein Blob-Write" })
 ]);
 
 function buildHelmutConfigDiagnose(env = process.env) {
@@ -4148,6 +4551,10 @@ async function buildAdminOverview() {
   ]);
   const storage = getStorageStatus();
   const storeSummary = await getStoreSummary();
+  // Offene Einladungen je Konto (§6): nur Zeiten, nie Token-Hashes — fuer die
+  // Admin-Nutzerliste ("Einladung laeuft ab am …" + "erneut senden").
+  const pendingInvites = await accounts.listPendingInvites().catch(() => ({}));
+  const usersWithInvites = users.map((user) => ({ ...user, invite: pendingInvites[user.id] || null }));
   // Read-only, defensiv: der Quellenarchitektur-Report (Sprint 8). Fehler -> null.
   const sourceArchitecture = await buildSourceArchitectureReport(mandates);
   // Budget-Wahrheit (Phase 8): heutiger Stand im EXAKTEN Fenster des Budget-Gates
@@ -4177,7 +4584,7 @@ async function buildAdminOverview() {
         return seen && (Date.now() - new Date(seen).getTime()) < 7 * 24 * 60 * 60 * 1000;
       }).length
     },
-    users,
+    users: usersWithInvites,
     profiles,
     mandates: mandates.map(adminMandateSummary),
     sourceArchitecture,
@@ -5182,7 +5589,24 @@ async function normalizeProfile(profile, politicianId) {
   next.keyAudiences = arrayValue(profile.keyAudiences, base.keyAudiences);
   next.riskTopics = arrayValue(profile.riskTopics, base.riskTopics);
   next.opportunityTopics = arrayValue(profile.opportunityTopics, base.opportunityTopics);
-  next.preferredChannels = arrayValue(profile.preferredChannels, base.preferredChannels);
+  // Umsetzungsnotiz §8: "Bevorzugte Kanaele" ist kein UI-Feld mehr (war Dublette zu
+  // den Buero-Formaten). Die Kanal-Passung im Scoring (channelFactor) braucht aber
+  // weiterhin eine Quelle -> aus den aktiven officeFormats ableiten. Explizit
+  // gesendete preferredChannels (Admin/API-Altpfade) gewinnen weiterhin.
+  // Explizit gesendetes officeFormats gewinnt (auch []: "alle Formate abgewaehlt"
+  // muss die Kanaele ehrlich leeren, nicht den alten Stand einfrieren); ohne das
+  // Feld im Body zaehlt der gespeicherte Bestand.
+  const officeFormatsSent = Array.isArray(profile.officeFormats);
+  const officeFormatsValue = officeFormatsSent
+    ? profile.officeFormats
+    : (Array.isArray(base.officeFormats) ? base.officeFormats : null);
+  if (Array.isArray(profile.preferredChannels) && profile.preferredChannels.length) {
+    next.preferredChannels = arrayValue(profile.preferredChannels, base.preferredChannels);
+  } else if (officeFormatsValue) {
+    next.preferredChannels = deriveChannelsFromOfficeFormats(officeFormatsValue);
+  } else {
+    next.preferredChannels = arrayValue(profile.preferredChannels, base.preferredChannels);
+  }
   next.officeHandoffMethod = officeHandoffMethodValue(profile.officeHandoffMethod, base.officeHandoffMethod);
   next.upcomingAppointments = appointmentValue(profile.upcomingAppointments, base.upcomingAppointments);
   next.committees = next.committee ? [next.committee] : next.committees;
@@ -5199,6 +5623,29 @@ async function normalizeProfile(profile, politicianId) {
   next.aiBudgetDailyCents = budgetCentValue(profile.aiBudgetDailyCents, base.aiBudgetDailyCents);
   next.aiBudgetMonthlyCents = budgetCentValue(profile.aiBudgetMonthlyCents, base.aiBudgetMonthlyCents);
   return next;
+}
+
+// Umsetzungsnotiz §8 — Buero-Format -> Kanal, exakt wie in der Notiz:
+// presse->press, anfrage->committee_question, buergerbrief->citizen_dialogue,
+// intern->internal_line, Rest direkt (linkedin/x/instagram/rede unveraendert;
+// "rede" kennt scoring.js bereits als parlamentarischen Kanal).
+const OFFICE_FORMAT_TO_CHANNEL = {
+  presse: "press",
+  anfrage: "committee_question",
+  buergerbrief: "citizen_dialogue",
+  intern: "internal_line"
+};
+
+function deriveChannelsFromOfficeFormats(formats) {
+  if (!Array.isArray(formats)) return [];
+  const channels = [];
+  for (const format of formats) {
+    const key = String(format || "").trim().toLowerCase();
+    if (!key) continue;
+    const channel = OFFICE_FORMAT_TO_CHANNEL[key] || key;
+    if (!channels.includes(channel)) channels.push(channel);
+  }
+  return channels;
 }
 
 // Regierungsrolle: nur erlaubte Enum-Werte, sonst Basiswert (nie raten).

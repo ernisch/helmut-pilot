@@ -21,11 +21,16 @@ Supabase Postgres (AWS eu-west-1, Irland)
   │  mandate_profiles (politische Positionen! Art. 9), briefings, decisions,
   │  matching_results, profile_embeddings, office_outputs, llm_usage, ...
   └─ Blob-Store helmut_store: main (Betriebszustand), main-auth (Konten mit
-     scrypt-Hashes, Sessions, Audit-Log inkl. Login-IP), main-p-<mandat>
+     scrypt-Hashes, Sessions, Invite-/Reset-Tokens NUR als SHA-256-Hash mit
+     Ablauf/Einmaligkeit, Audit-Log inkl. Login-IP), main-p-<mandat>
       ▼
 KI-Verarbeitung: Azure OpenAI (laut Doku EU/Sweden Central, Deployment
 gpt-5-mini) — erhält publicProfile (Mandatsprofil-Auszug inkl. politischer
-Schwerpunkte/No-Go-Themen) + Vorgangskontext. Kein Prompt-/Antwort-Logging im
+Schwerpunkte/No-Go-Themen; seit KI-Profilfelder-Umsetzung 2026-07 zusätzlich
+publicPositions, keyAudiences, riskTopics, opportunityTopics, governmentRole —
+alles politische Personendaten, gekappt via capText) + Vorgangskontext.
+profile.opponents (zu beobachtende Akteure) bleibt bewusst AUSSERHALB des
+Prompts (nur Radar-Erwähnungserkennung, lokal). Kein Prompt-/Antwort-Logging im
 Kostenlog (nur Tokens/Kosten/Modell).
       ▼
 Auslieferung: Vercel (Functions fra1 gepinnt — Wirksamkeit auf aktuellem Plan
@@ -38,7 +43,10 @@ Mandatsinhalte (prüfen!).
 
 **Besondere Kategorien (Art. 9 DSGVO), im System vorhanden:**
 1. Mandatsprofil = politische Meinung/Zugehörigkeit des Kunden (party, faction,
-   publicPositions, noGoTopics, riskTopics) — Blob + mandate_profiles + KI-Prompts.
+   publicPositions, noGoTopics, riskTopics, opportunityTopics, keyAudiences,
+   governmentRole, opponents) — Blob + mandate_profiles; davon gehen seit der
+   KI-Profilfelder-Umsetzung 2026-07 publicPositions/keyAudiences/riskTopics/
+   opportunityTopics/governmentRole auch in die KI-Prompts (opponents nicht).
 2. Global geteilte KI-Analysen mit Nennungen öffentlich handelnder Politiker
    (knowledge_objects.mentioned_*).
 3. Gecrawlte Personenartikel über den Abgeordneten (Radar/Archiv, V2-Blob).

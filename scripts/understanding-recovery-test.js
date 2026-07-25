@@ -7,6 +7,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const cp = require("child_process");
 const rec = require("../lib/helmut/understanding-recovery");
 const lazy = require("../lib/helmut/lazyUnderstanding");
 
@@ -226,6 +227,31 @@ const doc = (id, title, summary = "", source_name = "Quelle") => ({ id, title, s
   // Der stillgelegte Workflow ist ENTFERNT — keine dispatchbare Anker-Recovery mehr.
   check("13 · Anker-Recovery-Workflow entfernt",
     !fs.existsSync(path.join(__dirname, "..", ".github", "workflows", "understanding-recovery.yml")));
+  // (13b) Namensunabhaengiger Riegel: KEIN Workflow — egal wie er heisst — darf das
+  // Execute-Skript aufrufen oder die Recovery-Sperren als Env setzen. Faengt die
+  // Wiederbelebung ueber eine umbenannte Action (z. B. beim spaeteren Merge des
+  // ungemergten impl-2-Branches, der eine eigene Fassung unter demselben Pfad traegt).
+  const wfDir = path.join(__dirname, "..", ".github", "workflows");
+  const wfFiles = fs.existsSync(wfDir) ? fs.readdirSync(wfDir).filter((f) => /\.ya?ml$/i.test(f)) : [];
+  const wfTreffer = wfFiles.filter((f) => {
+    const y = fs.readFileSync(path.join(wfDir, f), "utf8");
+    return /understanding-recovery-execute/.test(y)
+      || /HELMUT_RECOVERY_EXECUTE\s*:/.test(y)
+      || /HELMUT_RECOVERY_CONFIRM\s*:/.test(y);
+  });
+  check(`13b · Kein Workflow ruft die Anker-Recovery auf (gefunden: ${wfTreffer.join(", ") || "keiner"})`,
+    wfTreffer.length === 0);
+  // (13c) Die Stilllegung ist verhaltensbelegt, nicht nur quelltextlich: das Skript
+  // liefert auch MIT Flag + korrektem Token ausschliesslich den Stilllegungs-Hinweis.
+  const scharf = cp.execFileSync(process.execPath, [path.join(__dirname, "understanding-recovery-execute.js")], {
+    env: { ...process.env, HELMUT_V3_STORE: "1", HELMUT_RECOVERY_EXECUTE: "1",
+      HELMUT_RECOVERY_CONFIRM: rec.RECOVERY_CONFIRM_TOKEN,
+      SUPABASE_URL: "https://example.invalid", SUPABASE_SERVICE_ROLE_KEY: "test-nur-lokal" },
+    encoding: "utf8", timeout: 20000
+  });
+  const scharfJson = JSON.parse(scharf);
+  check("13c · Execute-Skript bleibt mit Flag+Token wirkungslos (executed:false, stillgelegt:true)",
+    scharfJson.executed === false && scharfJson.stillgelegt === true);
   // Dry-Run-Skript schreibt garantiert nie (kein --execute, keine Storage-Schreibaufrufe).
   const drySrc = fs.readFileSync(path.join(__dirname, "understanding-recovery-dryrun.js"), "utf8");
   check("13 · Dry-Run-Skript: kein Write, kein understandOneCluster", !/understandOneCluster/.test(drySrc) && /KEINEN --execute|schreibt niemals/i.test(drySrc));

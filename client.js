@@ -42,6 +42,9 @@ try { window.__helmutClientLoaded = true; } catch (e) {}
 let profile = null;
 let briefing = null;
 let aiStatus = { enabled: false, model: "" };
+// Umsetzungsnotiz §9: echte Build-Version vom Server (/api/app/start), fuer den
+// Profil-Footer. Leer, bis der erste Start-Payload da ist.
+let appBuildVersion = "";
 let opsStatus = null;
 let decisions = [];
 let helmutBriefings = [];
@@ -142,6 +145,7 @@ let admSearchTerms = {};         // Tabellen-ID -> Suchbegriff
 let admCostDays = 30;            // Zeitraum der KI-Kosten-Ansicht (Tage)
 let admPrivacyConfirm = null;    // aktive DSGVO-Loesch-Bestaetigung { politicianId }
 let admBackfillState = null;     // Zustand/Ergebnis des KO-Backfill-Aufrufs
+let admUserDeleteConfirm = null; // aktive Nutzer-Loesch-Bestaetigung { userId }
 let adminRecovery = null;      // interner Pipeline-Recovery-Status (nur Admin)
 let adminRecoveryResult = null; // Ergebnis der letzten Recovery-Aktion (Anzeige)
 let adminRecoveryBusy = false;  // verhindert Doppelklick/Parallelausführung
@@ -155,6 +159,9 @@ let adminRecoveryDetailsOpen = false; // Offen-Zustand des Recovery-Detailblocks
 let adminPendingDiagnose = null; // Ergebnis der letzten Pending-Diagnose (nur lesen)
 let adminPendingDiagnoseBusy = false;
 let expandedAdminUsers = new Set();
+// Zuletzt erzeugter Zugangslink (Invite/Reset) fuer den Admin-Kopierweg (§6 Interim,
+// solange kein Mail-Dienst existiert). Ueberlebt das Re-Rendern nach Mutationen.
+let admLastInvite = null;
 let adminInfoGlobalBound = false; // dokumentweite Info-Popover-Schließer nur einmal binden
 let dailyInputs = [];
 let dailyInputsLoaded = false;
@@ -430,7 +437,27 @@ async function loadBriefing() {
   try {
     const startResponse = await fetchWithTimeout(`/api/app/start?${scope}`, {}, renderedFromCache ? 15000 : 25000);
 
-    if (startResponse.status === 401 || startResponse.status === 403) {
+    if (startResponse.status === 401) {
+      // Echter Auth-Fehler: Session fehlt/ist ungueltig -> Login/Zugang zeigen.
+      if (authState) renderLogin();
+      else renderPilotAccess();
+      return;
+    }
+    if (startResponse.status === 403) {
+      // WICHTIG (Root-Cause-Fix): ein 403 auf /api/app/start bedeutet NICHT
+      // zwangslaeufig "nicht eingeloggt" — im Account-Modus liefert der Server
+      // ihn auch fuer einen VOLLSTAENDIG authentifizierten Nutzer ohne
+      // zugewiesenes Mandat (reason "no-mandate", server.js Mandant-Gate).
+      // Diesen Fall faelschlich als renderLogin() zu behandeln, sperrt den
+      // Nutzer trotz gueltiger Session dauerhaft aus (genau das gemeldete
+      // "keine Weiterleitung, zurueck zur Loginseite"). Mandantentrennung
+      // bleibt unangetastet: es werden weiterhin KEINE fremden Daten gezeigt,
+      // nur ein ehrlicher Zustand statt eines irrefuehrenden Login-Screens.
+      const payload = await startResponse.json().catch(() => ({}));
+      if (authState && authState.authenticated && payload && payload.reason === "no-mandate") {
+        renderNoMandateState();
+        return;
+      }
       if (authState) renderLogin();
       else renderPilotAccess();
       return;
@@ -490,6 +517,7 @@ function applyStartPayload(startPayload) {
   briefing.situationalBriefing = Array.isArray(briefing.situationalBriefing) ? briefing.situationalBriefing : [];
   previewMode = previewMode || Boolean(briefing.previewMode);
   aiStatus = startPayload.aiStatus || { enabled: false, model: "" };
+  if (startPayload.version) appBuildVersion = String(startPayload.version);
   briefing.status = previewMode ? "Vorschau" : (briefing.status || "Live");
   briefing.sourceStats = briefing.sourceStats || { checkedSources: 0, successfulSources: 0, failedSources: 0 };
 
@@ -866,6 +894,26 @@ function renderMandateSelection(mandates = []) {
   });
 }
 
+// Ehrlicher Zustand fuer einen authentifizierten Account-Nutzer OHNE
+// zugewiesenes Mandat (Rolle referent/demo ohne Zuweisung, oder Admin auf
+// einem mandatslosen System). KEIN Login-Screen (die Session ist gueltig!)
+// und KEINE fremden Daten — nur die Erklaerung + Abmelden, damit der Nutzer
+// nicht in einer Sackgasse haengt (Root-Cause-Fix, Umsetzungsnotiz §6-Folgefix).
+function renderNoMandateState() {
+  hideStartupSplash();
+  app.innerHTML = `
+    <section class="loading-card pilot-access-card">
+      <div class="loading-logo"><span>H</span></div>
+      <p>Helmut</p>
+      <h1>Noch kein Mandat zugewiesen.</h1>
+      <p class="pilot-access-copy">Dein Zugang ist aktiv, aber dir ist noch kein Mandat zugeordnet. Bitte wende dich an einen Administrator.</p>
+      <div class="pilot-access-form">
+        <button type="button" class="primary-button" data-logout>Abmelden</button>
+      </div>
+    </section>`;
+  app.querySelector("[data-logout]")?.addEventListener("click", () => logout());
+}
+
 function renderPilotAccess(message = "") {
   hideStartupSplash();
   app.innerHTML = `
@@ -1037,6 +1085,34 @@ async function logout() {
   window.location.reload();
 }
 
+// "Passwort ändern" (Umsetzungsnotiz §6): Self-Service über denselben Token-
+// Mechanismus wie "Passwort vergessen". Solange kein Mail-Dienst existiert, gibt
+// der Server dem eingeloggten Besitzer den Link direkt zurück — wir öffnen ihn.
+async function requestPasswordChange(row) {
+  if (!currentUser?.email) return;
+  if (row) row.classList.add("stg-row--busy");
+  try {
+    const res = await apiSend("POST", "/api/auth/request-reset", { email: currentUser.email });
+    const json = res.json || {};
+    if (!res.ok) {
+      showToast("Das hat nicht geklappt. Bitte später erneut versuchen.");
+      return;
+    }
+    if (json.resetUrl) {
+      window.location.href = json.resetUrl;
+      return;
+    }
+    if (json.mail?.sent) {
+      showToast("Wir haben dir einen Link per E-Mail geschickt (1 Stunde gültig).");
+    } else {
+      // Ehrlich bleiben: ohne Mail-Versand und ohne Interim-Link gibt es nichts zu tun.
+      showToast("Der Link konnte nicht zugestellt werden — bitte ans Helmut-Team wenden.");
+    }
+  } finally {
+    if (row) row.classList.remove("stg-row--busy");
+  }
+}
+
 async function switchPolitician(id) {
   const next = sanitizePoliticianId(id);
   if (!next || next === activePoliticianId) return;
@@ -1062,6 +1138,7 @@ function roleLabel(role) {
 
 const USER_STATUS_OPTIONS = [
   ["aktiv", "Aktiv"],
+  ["eingeladen", "Eingeladen"],
   ["testphase", "Testphase"],
   ["pausiert", "Pausiert"],
   ["gekuendigt", "Gekündigt"],
@@ -1308,6 +1385,7 @@ function admResetState() {
   admSection = "uebersicht";
   admData = {}; admErrors = {}; admLoading = {}; admLoadedAt = {};
   admSort = {}; admSearchTerms = {}; admPrivacyConfirm = null; admBackfillState = null;
+  admUserDeleteConfirm = null;
 }
 
 // Ein Endpoint, ein Fehlerpfad: Fehler landen in admErrors[key], nie als Wurf.
@@ -2009,12 +2087,15 @@ function renderAdmUserRows(users, feedbackCountByUser) {
         </div>
       </td>
       <td data-label="Rolle"><span class="admin-role-tag admin-role-${escapeAttribute(user.role)}">${escapeHtml(roleLabel(user.role))}</span></td>
-      <td data-label="Status"><span class="admin-status-tag admin-status-${escapeAttribute(status)}">${escapeHtml(statusLabel(status))}</span></td>
+      <td data-label="Status"><span class="admin-status-tag admin-status-${escapeAttribute(status)}">${escapeHtml(statusLabel(status))}</span>${status === "eingeladen"
+        ? `<div class="adm-cell-sub">${user.invite ? `Einladung läuft ab ${escapeHtml(admDay(user.invite.expiresAt))}` : "Einladung abgelaufen — neuen Link erstellen"}</div>`
+        : ""}</td>
       <td data-label="Mandat">${escapeHtml(user.politicianId || ADM_DASH)}</td>
       <td data-label="Letzter Login">${user.lastLoginAt ? escapeHtml(admDateTime(user.lastLoginAt)) : ADM_DASH}</td>
       <td data-label="Aktivität">${activityBadge}<div class="adm-cell-sub">${admNum(user.loginCount)} Logins · ${admNum(user.openCount)} Öffnungen</div></td>
       <td data-label="Bezahlt bis" class="billing-cell">${billingBadge}${billingInput}</td>
       <td data-label="Aktion" class="admin-actions-cell">
+        ${status === "eingeladen" ? `<button class="account-logout" type="button" data-admin-user-invite="${escapeAttribute(user.id)}">Einladung erneut senden</button>` : ""}
         <button class="account-logout admin-edit-toggle" type="button" data-admin-user-edit="${escapeAttribute(user.id)}">${isExpanded ? "Schließen" : "Bearbeiten"}</button>
         <button class="account-logout" type="button" data-toggle-user="${escapeAttribute(user.id)}" data-active="${user.active === false ? "0" : "1"}">${user.active === false ? "Aktivieren" : "Deaktivieren"}</button>
       </td>
@@ -2126,22 +2207,20 @@ function renderAdmNutzer() {
         </form>
         <small class="admin-form-error" id="assignError"></small>
       </div>`)}
-    ${admCard("Passwort zurücksetzen", "Alle Sitzungen des Kontos werden dabei beendet",
-      `<form class="admin-inline-form" id="resetPasswordForm">
+    ${admInviteResultCard()}
+    ${admCard("Zugangslink erstellen", "Einladung erneut senden (ohne Passwort, 7 Tage) oder Passwort-Reset-Link (1 Stunde) — der Admin fasst nie ein Passwort an",
+      `<form class="admin-inline-form" id="accessLinkForm">
         <select name="userId" aria-label="Nutzer">
-          ${users.map((user) => `<option value="${escapeAttribute(user.id)}">${escapeHtml(user.name || user.email)}</option>`).join("")}
+          ${users.map((user) => `<option value="${escapeAttribute(user.id)}">${escapeHtml(user.name || user.email)}${user.status === "eingeladen" ? " · eingeladen" : ""}</option>`).join("")}
         </select>
-        <div class="password-field" style="flex:1; min-width:160px;">
-          <input name="password" id="resetPasswordInput" type="password" placeholder="Neues Passwort (min. 8)" aria-label="Neues Passwort" autocomplete="new-password" />
-          <button type="button" class="password-toggle" data-toggle-password="resetPasswordInput" aria-label="Passwort anzeigen">Anzeigen</button>
-        </div>
-        <button class="secondary-button" type="submit">Zurücksetzen</button>
+        <button class="secondary-button" type="submit">Link erstellen</button>
       </form>
-      <small class="admin-form-error" id="resetPasswordError"></small>`)}
-    ${admCard("Nutzer anlegen", "Neues Konto im System",
+      <small class="admin-form-error" id="accessLinkError"></small>`)}
+    ${admCard("Nutzer anlegen", "Die Person setzt ihr Passwort selbst — per Einladungs-Link (7 Tage gültig, nur einmal nutzbar)",
       `<form class="admin-create-form" id="createUserForm">
         <div class="admin-field-group">
-          <input name="name" type="text" placeholder="Vollständiger Name" aria-label="Name" required />
+          <input name="firstName" type="text" placeholder="Vorname" aria-label="Vorname" required />
+          <input name="lastName" type="text" placeholder="Nachname" aria-label="Nachname" required />
           <input name="email" type="email" placeholder="name@bundestag.de" aria-label="E-Mail" required />
           <select name="role" aria-label="Rolle">
             <option value="abgeordneter">Abgeordnete:r</option>
@@ -2149,25 +2228,31 @@ function renderAdmNutzer() {
             <option value="demo">Demo</option>
             <option value="admin">Administrator</option>
           </select>
-          <div class="password-field">
-            <input name="password" id="createUserPassword" type="password" placeholder="Mind. 8 Zeichen" aria-label="Passwort" autocomplete="new-password" required />
-            <button type="button" class="password-toggle" data-toggle-password="createUserPassword" aria-label="Passwort anzeigen">Anzeigen</button>
-          </div>
-        </div>
-        <div class="admin-quickstart">
-          <p class="admin-quickstart-hint">Schnellstart <span class="admin-quickstart-opt">(optional, nur Abgeordnete)</span></p>
-          <input name="party" type="text" placeholder="Partei / Fraktion" aria-label="Partei" />
-          <input name="committee" type="text" placeholder="Ausschuss" aria-label="Ausschuss" />
-          <input name="constituency" type="text" placeholder="Wahlkreis" aria-label="Wahlkreis" />
-          <input name="state" type="text" placeholder="Bundesland" aria-label="Bundesland" />
-          <input name="focusTopics" type="text" placeholder="Schwerpunktthemen (Komma-getrennt)" aria-label="Schwerpunktthemen" />
         </div>
         <div class="admin-form-foot">
-          <button class="primary-button" type="submit">Nutzer erstellen</button>
+          <button class="primary-button" type="submit">Nutzer einladen</button>
           <small class="admin-form-error" id="createUserError"></small>
         </div>
       </form>`)}
   `;
+}
+
+// Zuletzt erzeugter Zugangslink (§6 Interim): kopierbar anzeigen, solange kein
+// Mail-Dienst zustellt. Der Link traegt das einmalige Token — nach dem Kopieren
+// per Knopf ausblendbar; ein neuer Link fuer dasselbe Konto invalidiert alte.
+function admInviteResultCard() {
+  if (!admLastInvite) return "";
+  const inv = admLastInvite;
+  const zweck = inv.purpose === "reset" ? "Passwort-Reset-Link (1 Stunde gültig)" : "Einladungs-Link (7 Tage gültig)";
+  const zustellung = inv.mailSent
+    ? "Die E-Mail wurde versendet."
+    : "Kein Mail-Versand konfiguriert — Link bitte kopieren und sicher übermitteln.";
+  return admCard(`Zugangslink für ${escapeHtml(inv.email || "")}`, `${zweck} · ${zustellung}`,
+    `<div class="admin-inline-form admin-invite-result">
+      <input type="text" readonly value="${escapeAttribute(inv.url)}" aria-label="Zugangslink" onclick="this.select()" style="flex:1; min-width:220px;" />
+      <button class="secondary-button" type="button" data-adm-invite-copy>Link kopieren</button>
+      <button class="account-logout" type="button" data-adm-invite-dismiss>Ausblenden</button>
+    </div>`);
 }
 
 // Mandatsoptionen fuer Zuweisungen: vorhandene Profile + Abgeordneten-Mandate.
@@ -2625,6 +2710,41 @@ function bindAdmActions() {
   app.querySelectorAll("[data-privacy-delete-cancel]").forEach((btn) => {
     btn.addEventListener("click", () => { admPrivacyConfirm = null; render(); });
   });
+  // Nutzer loeschen: dezenter Start-Button oeffnet eine Bestaetigung mit Name/
+  // E-Mail/Sessions-Hinweis; erst der explizite Bestaetigen-Klick loest die
+  // DELETE-Anfrage aus. Bei Fehlern bleibt die Karte offen, keine Erfolgsmeldung.
+  app.querySelectorAll("[data-user-delete-start]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      admUserDeleteConfirm = { userId: btn.dataset.userDeleteStart };
+      render();
+    });
+  });
+  app.querySelectorAll("[data-user-delete-cancel]").forEach((btn) => {
+    btn.addEventListener("click", () => { admUserDeleteConfirm = null; render(); });
+  });
+  app.querySelectorAll("[data-user-delete-confirm]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const userId = btn.dataset.userDeleteConfirm;
+      const err = app.querySelector(`[data-user-delete-error="${userId}"]`);
+      if (err) err.textContent = "";
+      btn.disabled = true;
+      try {
+        const res = await apiSend("DELETE", `/api/admin/users/${encodeURIComponent(userId)}?${apiScopeQuery()}`);
+        if (!res.ok || !res.json || res.json.ok !== true) {
+          if (err) err.textContent = (res.json && res.json.error) || `Löschen fehlgeschlagen (HTTP ${res.status}).`;
+          btn.disabled = false;
+          return;
+        }
+        admUserDeleteConfirm = null;
+        expandedAdminUsers.delete(userId);
+        await admAfterMutation();
+        showToast("Nutzer gelöscht.");
+      } catch (_) {
+        if (err) err.textContent = "Netzwerkfehler — Zustand unklar, bitte prüfen.";
+        btn.disabled = false;
+      }
+    });
+  });
   app.querySelectorAll("[data-privacy-delete-run]").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const pid = btn.dataset.privacyDeleteRun;
@@ -2750,11 +2870,40 @@ function renderAdminSystemBody(sys, data, ds, errors, audit) {
       </div>`)}`;
 }
 
+// Loesch-Bereich am Ende der Nutzerkarte: dezenter Ghost-Button, der erst nach
+// ausdruecklicher Bestaetigung (Name/E-Mail/Sessions-Hinweis) die Loeschung
+// ausloest. Administratoren bekommen diese Aktion nicht angeboten (Schutzregel
+// "Andere Administratoren duerfen vorerst nicht ueber diesen Button geloescht
+// werden" — betrifft auch den eigenen Account, der ohnehin immer Rolle admin hat).
+function renderAdminUserDeleteSection(user) {
+  if (user.role === "admin") return "";
+  const confirming = admUserDeleteConfirm && admUserDeleteConfirm.userId === user.id;
+  const confirmPanel = confirming ? `
+    <div class="adm-danger-confirm">
+      <p class="adm-danger-text">Nutzer wirklich löschen?<br />
+        <strong>${escapeHtml(user.name || "")}</strong> · ${escapeHtml(user.email || "")}<br />
+        Der Zugang und alle Sitzungen dieser Person werden entfernt und sie kann sich danach nicht mehr anmelden.</p>
+      <div class="admin-inline-form">
+        <button type="button" class="adm-danger-btn" data-user-delete-confirm="${escapeAttribute(user.id)}">Endgültig löschen</button>
+        <button type="button" class="account-logout" data-user-delete-cancel>Abbrechen</button>
+      </div>
+      <small class="admin-form-error" data-user-delete-error="${escapeAttribute(user.id)}"></small>
+    </div>` : "";
+  return `
+    <div class="admin-user-delete-section">
+      <button type="button" class="adm-danger-btn adm-danger-btn--ghost" data-user-delete-start="${escapeAttribute(user.id)}">Nutzer löschen</button>
+      ${confirmPanel}
+    </div>`;
+}
+
 // Aufklappbares Bearbeiten-Panel je Nutzer: Status + Kundenfelder. Speichert
 // additiv via PATCH /api/admin/users/:id mit { status, customer }.
 function renderAdminUserEditRow(user, status, feedbackCount = 0) {
   const c = user.customer || {};
+  // "eingeladen" ist ein System-Status (Invite-Flow) — nicht manuell setzbar,
+  // nur anzeigen, wenn er der aktuelle Zustand ist (der Server lehnt ihn sonst ab).
   const statusSelect = USER_STATUS_OPTIONS
+    .filter(([value]) => value !== "eingeladen" || value === status)
     .map(([value, label]) => `<option value="${value}" ${value === status ? "selected" : ""}>${escapeHtml(label)}</option>`)
     .join("");
   const paymentSelect = PAYMENT_STATUS_OPTIONS
@@ -2810,6 +2959,7 @@ function renderAdminUserEditRow(user, status, feedbackCount = 0) {
             <small class="admin-form-error" data-customer-error="${escapeAttribute(user.id)}"></small>
           </div>
         </form>
+        ${renderAdminUserDeleteSection(user)}
       </td>
     </tr>`;
 }
@@ -9630,6 +9780,15 @@ function renderSettingsView() {
 
     ${isAccountMode() && currentUser ? `
     <div class="stg-section">
+      <span class="stg-label">Zugang</span>
+      <div class="stg-group">
+        <div class="stg-row stg-row--tappable" role="button" data-password-change>
+          <span class="stg-row-label">Passwort ändern</span>
+          <span class="stg-row-chevron">›</span>
+        </div>
+      </div>
+    </div>
+    <div class="stg-section">
       <div class="stg-group">
         <div class="stg-row stg-row--tappable" role="button" data-logout>
           <span class="stg-row-label">Abmelden</span>
@@ -9637,7 +9796,7 @@ function renderSettingsView() {
       </div>
     </div>` : ""}
 
-    <p class="stg-version">Helmut · Version 1.0</p>
+    <p class="stg-version">Helmut · v1.0${appBuildVersion ? ` · Build ${escapeHtml(appBuildVersion)}` : ""}</p>
   `;
 }
 
@@ -10030,7 +10189,7 @@ function renderProfileSettingsView() {
         ${profileArea("keyAudiences", "Wichtige Zielgruppen", profile.keyAudiences)}
         ${profileArea("riskTopics", "Risiko-Themen", profile.riskTopics)}
         ${profileArea("opportunityTopics", "Chancen-Themen", profile.opportunityTopics)}
-        ${profileArea("preferredChannels", "Bevorzugte Kanäle", profile.preferredChannels)}
+        ${profileArea("opponents", "Zu beobachtende Akteure", profile.opponents)}
         <div class="profile-subsection">
           <span>Büro-Übergabe</span>
           <p>Welcher Weg soll beim Button „Ans Büro geben” zuerst angeboten werden?</p>
@@ -10201,6 +10360,7 @@ async function apiSend(method, path, body) {
 function bindAccountActions() {
   bindPasswordToggles(app);
   app.querySelectorAll("[data-logout]").forEach((button) => button.addEventListener("click", () => logout()));
+  app.querySelectorAll("[data-password-change]").forEach((row) => row.addEventListener("click", () => requestPasswordChange(row)));
   app.querySelectorAll("[data-profile-switch]").forEach((select) => select.addEventListener("change", (event) => switchPolitician(event.target.value)));
 
   const dailyForm = app.querySelector("#dailyInputForm");
@@ -10246,22 +10406,25 @@ function bindAccountActions() {
       const err = app.querySelector("#createUserError");
       if (err) err.textContent = "";
       const fd = new FormData(createUserForm);
-      const body = { name: fd.get("name"), email: fd.get("email"), role: fd.get("role"), password: fd.get("password") };
-      if (body.role === "abgeordneter") {
-        body.party = fd.get("party");
-        body.committee = fd.get("committee");
-        body.constituency = fd.get("constituency");
-        body.state = fd.get("state");
-        const topics = String(fd.get("focusTopics") || "").split(",").map((t) => t.trim()).filter(Boolean);
-        if (topics.length) body.focusTopics = topics;
-      }
+      // Invite-Flow (§6): nur Vorname, Nachname, E-Mail, Rolle — KEIN Passwort.
+      // Die Person setzt es selbst über den Einladungs-Link. Die politische
+      // Profilkonfiguration (Partei, Ausschuss, Wahlkreis, ...) gehört nicht in
+      // die Zugangserstellung — sie erfolgt im Onboarding bzw. in der Profil-
+      // bearbeitung. Der Server akzeptiert diese Felder weiterhin optional
+      // (andere Aufrufer/Altpfade); dieses Formular sendet sie schlicht nicht mehr.
+      const fullName = [fd.get("firstName"), fd.get("lastName")].map((v) => String(v || "").trim()).filter(Boolean).join(" ");
+      const body = { name: fullName, email: fd.get("email"), role: fd.get("role") };
       const res = await apiSend("POST", `/api/admin/users?${apiScopeQuery()}`, body);
       if (!res.ok) {
         if (err) err.textContent = res.json?.error || "Konnte nicht angelegt werden.";
         return;
       }
+      // Einladungs-Link fuer den Kopierweg merken (uebersteht das Re-Rendern).
+      if (res.json?.inviteUrl) {
+        admLastInvite = { email: res.json.email, url: res.json.inviteUrl, purpose: "invite", mailSent: Boolean(res.json.mail?.sent) };
+      }
       await admAfterMutation();
-      showToast("Nutzer angelegt");
+      showToast(res.json?.inviteUrl ? "Nutzer eingeladen — Link oben kopieren" : "Nutzer angelegt");
     });
   }
 
@@ -10441,26 +10604,60 @@ function bindAccountActions() {
     });
   });
 
-  const resetPasswordForm = app.querySelector("#resetPasswordForm");
-  if (resetPasswordForm) {
-    resetPasswordForm.addEventListener("submit", async (event) => {
+  // Zugangslink erstellen (§6): ersetzt das alte admin-seitige Passwort-Setzen.
+  // Der Server entscheidet den Zweck (Invite ohne Passwort / Reset mit Passwort).
+  async function admCreateAccessLink(userId, errEl) {
+    const res = await apiSend("POST", `/api/admin/users/${encodeURIComponent(userId)}/invite?${apiScopeQuery()}`, {});
+    if (!res.ok) {
+      const message = res.json?.error || "Link konnte nicht erstellt werden.";
+      if (errEl) errEl.textContent = message; else showToast(message);
+      return;
+    }
+    const users = admData.overview?.users || [];
+    const target = users.find((user) => user.id === userId);
+    admLastInvite = {
+      email: target?.email || "",
+      url: res.json.inviteUrl,
+      purpose: res.json.purpose || "invite",
+      mailSent: Boolean(res.json.mail?.sent)
+    };
+    await admAfterMutation();
+    showToast("Zugangslink erstellt — oben kopieren");
+  }
+
+  const accessLinkForm = app.querySelector("#accessLinkForm");
+  if (accessLinkForm) {
+    accessLinkForm.addEventListener("submit", async (event) => {
       event.preventDefault();
-      const err = app.querySelector("#resetPasswordError");
+      const err = app.querySelector("#accessLinkError");
       if (err) err.textContent = "";
-      const fd = new FormData(resetPasswordForm);
-      const userId = fd.get("userId");
-      const password = String(fd.get("password") || "");
-      if (password.length < 8) {
-        if (err) err.textContent = "Passwort muss mindestens 8 Zeichen haben.";
-        return;
+      const fd = new FormData(accessLinkForm);
+      await admCreateAccessLink(String(fd.get("userId") || ""), err);
+    });
+  }
+
+  app.querySelectorAll("[data-admin-user-invite]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      try {
+        await admCreateAccessLink(button.dataset.adminUserInvite, null);
+      } finally {
+        // Bei Erfolg wurde laengst neu gerendert — bei Fehlern darf der Knopf
+        // nicht dauerhaft tot bleiben (sonst ist "erneut senden" ausgesperrt).
+        button.disabled = false;
       }
-      const res = await apiSend("PATCH", `/api/admin/users/${encodeURIComponent(userId)}?${apiScopeQuery()}`, { password });
-      if (!res.ok) {
-        if (err) err.textContent = res.json?.error || "Zurücksetzen fehlgeschlagen.";
-        return;
-      }
-      await admAfterMutation();
-      showToast("Passwort zurückgesetzt — der Nutzer muss sich neu anmelden.");
+    });
+  });
+
+  const inviteCopyButton = app.querySelector("[data-adm-invite-copy]");
+  if (inviteCopyButton) {
+    inviteCopyButton.addEventListener("click", () => copyText(admLastInvite?.url || "", "Link konnte nicht kopiert werden"));
+  }
+  const inviteDismissButton = app.querySelector("[data-adm-invite-dismiss]");
+  if (inviteDismissButton) {
+    inviteDismissButton.addEventListener("click", () => {
+      admLastInvite = null;
+      render();
     });
   }
 
@@ -11505,7 +11702,10 @@ async function saveProfileFromForm(form) {
     keyAudiences: lines(data.get("keyAudiences")),
     riskTopics: lines(data.get("riskTopics")),
     opportunityTopics: lines(data.get("opportunityTopics")),
-    preferredChannels: lines(data.get("preferredChannels")),
+    // "Zu beobachtende Akteure" speist die Radar-Erwähnungserkennung (inferEntities).
+    // preferredChannels wird NICHT mehr gesendet — der Server leitet die Kanäle aus
+    // den aktiven Büro-Formaten ab (Umsetzungsnotiz §8, Dublette entfernt).
+    opponents: lines(data.get("opponents")),
     officeHandoffMethod: normalizeOfficeHandoffMethod(data.get("officeHandoffMethod")),
     upcomingAppointments: lines(data.get("upcomingAppointments")),
     noGoTopics: lines(data.get("noGoTopics"))

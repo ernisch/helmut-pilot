@@ -1,12 +1,26 @@
-# Sichere Rollout-Reihenfolge — RLS-Aktivierung (P0-2, Sprint 2 + 3)
+# [TEILWEISE ÜBERHOLT] Sichere Rollout-Reihenfolge — RLS-Aktivierung (P0-2, Sprint 2 + 3)
 
-**Status (2026-07-12):** Schritte 1–4 **ausgeführt**. Production hat jetzt
-**23 aktive RLS-Policies** (Schritt 4 angewendet), `HELMUT_TENANT_JWT_MODE`
-bleibt **weiterhin aus** → die App nutzt weiter service_role (RLS-Bypass), kein
-Nutzer merkt etwas. Schritt 3 wurde als **isolierte lokale Postgres-Verifikation**
-statt kostenpflichtiger Preview-Branch durchgeführt (19/19 Tests, siehe
-`docs/rls-isolation-test-results.md`). **Offen bleibt nur Schritt 5**
-(`HELMUT_TENANT_JWT_MODE=1`) — eigener Freigabepunkt, NICHT ausgeführt.
+> # ⛔ SCHRITT 5 IST TOT — NICHT AUSFÜHREN (Recovery Sprint R2, 2026-07-22, `main` @ `d6d9063`)
+>
+> **Schritt 5 (`HELMUT_TENANT_JWT_MODE=1`) ist KEIN offener Freigabepunkt mehr.**
+> Der Tenant-JWT-Pfad ist **dauerhaft stillgelegt** (`tenantJwtModeEnabled()` →
+> hart `false`, `storage.js:2432-2434`; Supabase asymmetrische Keys → PGRST301).
+> Das Flag zu setzen bewirkt **nichts**; es macht RLS **nicht** scharf.
+>
+> **Historisch korrekt bleiben:** Schritte 1–4 (App-Guards + die als NO-OP
+> angewandte RLS-Migration). **Nicht mehr gültig:** Schritt 5 und jede Aussage,
+> die Aktivierung stelle DB-seitige Trennung her.
+>
+> **VERBINDLICHE QUELLE:** `docs/quellenarchitektur/05-sicherheitsmodell-rls.md`
+> (RLS/JWT-Status). Der einzige gültige Weg zu DB-seitiger Durchsetzung ist dort
+> §5 (GoTrue), Freigabe-Voraussetzung **OP-03** (`datenmotor-restliste.md`).
+
+**Status (historisch, 2026-07-12):** Schritte 1–4 **ausgeführt**. Production hat
+**23 RLS-Policies** (Schritt 4 angewendet), `HELMUT_TENANT_JWT_MODE`
+bleibt **aus** → die App nutzt weiter service_role (RLS-Bypass, RLS inert). Schritt 3
+wurde als **isolierte lokale Postgres-Verifikation** durchgeführt (19/19 Tests, siehe
+`docs/rls-isolation-test-results.md`). **Schritt 5 ist ~~offen~~ stillgelegt** — siehe
+Banner (nicht ausführbar, kein Freigabepunkt).
 
 Dieses Dokument verbindet Sprint 2 (`supabase/migrations/20260712_tenant_rls_policies.sql`,
 Policy-Design) mit Sprint 3 (`lib/helmut/storage.js`, App-seitiger JWT-Umbau,
@@ -99,7 +113,11 @@ bypassed RLS), wie entworfen. **Rollback bereit:**
   Zustand identisch zu vorher (0 Policies).
 - **⚠️ Dies ist ein Freigabepunkt** (Production-Migration + RLS-Policy-Aktivierung).
 
-## Schritt 5 — App-Traffic schrittweise umstellen
+## Schritt 5 — App-Traffic schrittweise umstellen — ⛔ STILLGELEGT, NICHT AUSFÜHREN
+
+> **[HISTORISCH — nicht ausführen]** Dieser Schritt ist tot (siehe Banner oben):
+> `tenantJwtModeEnabled()` gibt hart `false` zurück, das Flag wirkt nicht. Der Text
+> unten dokumentiert nur den damals geplanten Ablauf. Verbindlich: `05-sicherheitsmodell-rls.md`.
 
 - `HELMUT_TENANT_JWT_MODE=1` in Production setzen (Config-Änderung, **kein**
   Secret, aber sicherheitsrelevant genug für eine eigene Freigabe/Beobachtung).
