@@ -84,6 +84,16 @@ const minLageCheckSources = Number(process.env.HELMUT_MIN_LAGE_CHECK_SOURCES || 
 const maxCrawlFailureRatio = Number(process.env.HELMUT_MAX_CRAWL_FAILURE_RATIO || 0.1);
 const maxFullCrawlAgeMs = Number(process.env.HELMUT_MAX_FULL_CRAWL_AGE_MS || 14 * 60 * 60 * 1000);
 const maxLageCheckAgeMs = Number(process.env.HELMUT_MAX_LAGE_CHECK_AGE_MS || 4 * 60 * 60 * 1000);
+// Watchdog-Lage-Achse: eigene Schwelle, weil sie am CRON-TAKT gemessen werden muss,
+// nicht an der In-App-Frische (maxLageCheckAgeMs = 4h, bewusst unverändert).
+// BEFUND Incident 2026-07-25: der Lage-Cron läuft EINMAL täglich (`0 10 * * *`), der
+// Health-Report um `0 6 * * *`. Zur Report-Zeit ist die Lage damit IMMER ~20 h alt —
+// eine 4-h-Schwelle ist gegen einen 24-h-Takt strukturell unerfüllbar und erzeugte
+// jeden Morgen "Lage-Check veraltet", obwohl der Lauf pünktlich und für ALLE Mandate
+// erfolgreich war (verifiziert: 6/6 Mandate am 23. und 24.07. um 10:0x, Status
+// 'changed'). Takt 24 h + 2 h Kulanz = 26 h; darüber ist ein Lauf WIRKLICH ausgefallen.
+// Der Zeitstempel selbst wird NICHT künstlich erneuert — nur die Schwelle stimmt jetzt.
+const watchdogLageFreshMs = Number(process.env.HELMUT_WATCHDOG_LAGE_FRESH_MS || 26 * 60 * 60 * 1000);
 // P1-5: OUTPUT-Frische wird am jüngsten VERSTANDENEN Knowledge-Object gemessen
 // (nicht an der build-zeit-blinden Briefing-`generatedAt`). >36h ohne neues
 // complete-KO trotz laufendem Crawl = echter stiller Ausfall (VERALTET). Bewusst
@@ -3642,7 +3652,12 @@ async function buildHealthReport(politicianId) {
   // 145) würde die absoluten Watchdog-Minima (minSuccessfulSources) sonst
   // fälschlich reißen — er ist eine Schutzmaßnahme, keine Störung (Review-Fix).
   // Ein Extra-Store-Read entfällt: der jüngste Lauf steckt in recentCrawlRuns.
-  const crawl = (recentCrawlRuns || []).find((r) => !(r && r.cooldown && r.cooldown.skipGoogle)) || (recentCrawlRuns || [])[0] || null;
+  // Incident 2026-07-25 (Erweiterung): auch Läufe, deren geteilte Abrufwege bereits
+  // ein anderes Mandat geholt hat, sind bewusst REDUZIERT und beschreiben die
+  // Datenzufuhr nicht. Ohne diese Ergänzung bewertete der Report immer den zuletzt
+  // gelaufenen Mandanten (alphabetisch letzter) statt des Laufs, der die Daten
+  // tatsächlich geholt hat — und meldete dauerhaft "Datenzufuhr verzögert".
+  const crawl = (recentCrawlRuns || []).find((r) => !rollingHealth.isReducedRun(r)) || (recentCrawlRuns || [])[0] || null;
   const storage = getStorageStatus();
   const now = Date.now();
   const ageMs = (t) => (t ? now - new Date(t).getTime() : null);
@@ -3692,8 +3707,9 @@ async function buildHealthReport(politicianId) {
     crawlWarnMs: 2 * maxFullCrawlAgeMs,
     outputFreshMs: 24 * 60 * 60 * 1000,
     outputWarnMs: maxOutputFreshnessMs,
-    lageFreshMs: maxLageCheckAgeMs,
-    lageWarnMs: 2 * maxFullCrawlAgeMs,
+    // Am Cron-Takt gemessen (siehe watchdogLageFreshMs), nicht an der In-App-Frische.
+    lageFreshMs: watchdogLageFreshMs,
+    lageWarnMs: Math.max(2 * maxFullCrawlAgeMs, watchdogLageFreshMs + 2 * 60 * 60 * 1000),
     minCheckedSources,
     minSuccessfulSources,
     maxFailureRatio: maxCrawlFailureRatio
@@ -5830,7 +5846,20 @@ async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000 } = 
       results.push({ politicianId: tenantId, error: error && error.message, failed: true });
     }
   }
-  return { ok: true, tenants: tenantIds.length, durationMs: Date.now() - startedMs, results };
+  // SICHTBARKEIT (Incident 2026-07-25): vom Zeitbudget abgeschnittene Mandate
+  // standen bisher nur im Antwort-Body, den niemand liest — vier aktive Mandate
+  // wurden dadurch über Tage NIE gecrawlt, ohne jedes Signal. Ein Systemfehler
+  // macht den Abschnitt im Health-Report/Fehler-Spike sichtbar. Fail-safe.
+  const budgetSkipped = results.filter((r) => r && r.skipped && r.reason === "zeitbudget");
+  if (budgetSkipped.length) {
+    console.error(`[cron/${cronName}] Zeitbudget erschoepft — ${budgetSkipped.length} von ${tenantIds.length} Mandaten NICHT verarbeitet.`);
+    await accounts.recordSystemError({
+      scope: `cron-${cronName}`,
+      message: `Zeitbudget erschoepft: ${budgetSkipped.length} von ${tenantIds.length} Mandaten nicht verarbeitet.`,
+      path: `/api/cron/${cronName}`
+    }).catch(() => {});
+  }
+  return { ok: true, tenants: tenantIds.length, durationMs: Date.now() - startedMs, results, budgetSkipped: budgetSkipped.length };
 }
 
 // Cron-Autorisierung — FAIL CLOSED.

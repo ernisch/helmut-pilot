@@ -1,8 +1,18 @@
 # Google-News-Härtung — Design, Grenzwerte, Rollback
 
-**Stand:** 2026-07-17 · **Status:** implementiert + offline getestet,
-**NICHT deployt** (Merge/Deploy freigabepflichtig). Ursachenanalyse:
-`docs/betrieb/google_news_drosselung_analyse.md`.
+**Stand:** 2026-07-17 · **Status:** über PR #102 gemergt und deployt (Beweisläufe H1–H3:
+`production_beweisprotokoll.md` §8). Die Statusangabe „NICHT deployt" unten war der Stand
+vor dem Merge. Ursachenanalyse: `docs/betrieb/google_news_drosselung_analyse.md`.
+
+> **NACHTRAG 2026-07-25 — Grenze dieses Sprints, nachgeschärft.**
+> Der Abstands-Schutz (`fullCrawlMinSpacingMs`, §2) ist **pro Mandat** gefiltert, die von
+> Google gedrosselte Ressource ist aber **pro Egress-IP** global. Mit inzwischen **sechs
+> aktiven Mandaten** holte der sequenzielle Cron-Loop dieselben ~138 geteilten
+> Google-Wege einmal **je Mandat**: Mandat 1 lief gesund (145/145), Mandat 2 lief
+> vollständig in die Drosselung, und die 130 vom Breaker beendeten Wege wurden als 130
+> **Einzelquellenfehler** gezählt → Dauermeldung „141/144 Fehler".
+> Ursachenanalyse, Fix und Beweislaufplan:
+> **`docs/betrieb/incident_2026-07-25_crawl_mandantenamplifikation.md`**.
 
 ## 1 · Prinzipien
 
