@@ -125,6 +125,7 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 
 | PR | Inhalt | Einschätzung |
 |---|---|---|
+| **#119** | Kontext-Einstiegsschicht für Claude Code (`CLAUDE.md`, `START_HERE`, `CURRENT_STATE`, `ARCHITECTURE`) | Doku-only, 140/140 grün, mergefähig |
 | **#118** | Quellenarchitektur-Gesamtaudit + Remediation (Seed-Reproduzierbarkeit, Neutralisierung der Landes-Basispakete, 6 verifizierte Bundesweg-Reparaturen), 141/141 grün | **jüngster, review-fähiger PR** — Review empfohlen |
 | #117 | WBSB-Pilotpaket + Workflow-Härtung vereinigt | **Draft, ausdrücklich nicht mergen** (öffnet nur die CI-Prüfung) |
 | #115 | Bestandsabgleich `bund-basis` + Pflichtquellen-Verifikationstest | **Draft, ausdrücklich nicht mergen** (nur um den Workflow auf einem Runner mit Egress laufen zu lassen) |
@@ -194,5 +195,5 @@ Parallel möglich, ohne Freigabe:
   aller in den vier Einstiegsdateien referenzierten Pfade → 0 tote Verweise;
   Kernaussagen zu Architektur, Auth, Cache-Schlüsseln und Cron-Zahl gegen den Code
   gegengeprüft.
-- **Branch:** `claude/helmut-claude-context-setup-2em4mt` · **PR:** siehe §8 nach Erstellung.
+- **Branch:** `claude/helmut-claude-context-setup-2em4mt` · **PR:** #119 (offen, nicht gemergt).
 - **Weiterverwendbar:** ja, reine Dokumentation, jederzeit revertierbar.
