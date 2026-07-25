@@ -1,7 +1,7 @@
 # Quellen-Seeds einspielen — Freigabevorlage
 
 **Stand:** 2026-07-25 · **Code-Grundlage der Seeds:** `main` `61767a9` (Merge #118) ·
-**`main`-HEAD:** `118e90c` (Merge #124) · **Deployment:** `READY`
+**`main`-HEAD:** `4089b5d` (Merge #126) · **Deployment:** `READY`
 
 > **Status: BLOCKIERT.** Diese Vorlage ist vollständig vorbereitet, aber die Ausführung ist
 > **nicht freigegeben**. Nichts hiervon wurde ausgeführt.

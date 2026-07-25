@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-25 · **`main`-HEAD:** `118e90c` (Merge #124)
+**Letzte Aktualisierung:** 2026-07-25 · **`main`-HEAD:** `4089b5d` (Merge #126)
 
 > **Diese Datei ist der aktuelle Stand.** Bei Widerspruch zu älteren Statusdokumenten
 > gilt diese Datei. Sie enthält **keine Chronik** — Details je offenem Punkt stehen in
@@ -39,8 +39,8 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | **Anker-Recovery-Pfad (F-3) technisch stillgelegt** — Workflow entfernt, Execute-Skript ohne DB-/KI-/Write-Pfad, `RECOVERY_ALLOWLIST` leer, namensunabhängiger CI-Riegel | PR #105, gemergt 2026-07-25 (`43e9e35`); auf `main` verifiziert: Workflow weg, Allowlist `[]`, 0 `require` im Execute-Skript |
 | `failed-final` wird im Pending-Filter und in `understandOneCluster` terminal behandelt („nie wieder") | PR #105 |
 | Freigabevorlage Quellen-Seed-Einspielung (Soll-Zahlen, Idempotenznachweis, Go-/Stop-Kriterien) | PR #123, gemergt 2026-07-25 (`bed7f53`), CI grün |
-| **Production-Inventur aller Quellenpakete** (7 Pakete in der DB, 8 im Code-Seed seit #118; 163 Abrufwege; Ertrag/letzte Lieferung/Fehler je Paket) | `quellenarchitektur/30-paket-inventur-production.md`, read-only erhoben 2026-07-25 |
-| **Automatische Profil→Paket-Zuweisung belegt** — Bund/Berlin/Brandenburg gegen den echten Production-Katalog, ohne Codeänderung; keine Mandanten-Hardcodes, Bestandsmandanten unverändert | `scripts/paketzuweisung-nachweis-test.js` 147/147, Inventur §6 |
+| **Production-Inventur aller Quellenpakete** (7 Pakete in der DB, 8 im Code-Seed seit #118; 163 Abrufwege; Ertrag/letzte Lieferung/Fehler je Paket) | `quellenarchitektur/30-paket-inventur-production.md`; PR #124, gemergt 2026-07-25 (`118e90c`), CI grün, Deployment `READY` |
+| **Automatische Profil→Paket-Zuweisung belegt** — Bund/Berlin/Brandenburg gegen den echten Production-Katalog, ohne Codeänderung; keine Mandanten-Hardcodes, Bestandsmandanten unverändert | `scripts/paketzuweisung-nachweis-test.js` 147/147, Inventur §6; PR #124, gemergt 2026-07-25 (`118e90c`) |
 
 ## 3 · Teilweise abgeschlossen (Code da, Abnahme fehlt)
 
@@ -162,7 +162,7 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 
 | PR | Inhalt | Einschätzung |
 |---|---|---|
-| **#125** | Pre-Seed-Sicherung, gezielter Restore-Generator, Seed-Runbook | **wartet auf Review.** Werkzeuge + Doku, **kein** Production-Schreibpfad, kein Cron, kein Auto-Trigger. `seed-restore-test.js` 33/33 (CI 31/31), Offline-Suite 145/145 |
+| **#125** | Pre-Seed-Sicherung, gezielter Restore-Generator, Seed-Runbook | **gemergt** (siehe §12) |
 | #117 | WBSB-Pilotpaket + Workflow-Härtung vereinigt | **Draft, ausdrücklich nicht mergen** (öffnet nur die CI-Prüfung) |
 | #115 | Bestandsabgleich `bund-basis` + Pflichtquellen-Verifikationstest | **Draft, ausdrücklich nicht mergen** (nur um den Workflow auf einem Runner mit Egress laufen zu lassen) |
 | #112 | Geführter Erstlogin-/Onboarding-Flow (14 Screens) | manuelle Abnahme im Preview ausstehend |
@@ -197,6 +197,7 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 |---|---|
 | 2026-07-25 | Der Seed-Rückweg ist ein **gezielter, zeilenscharfer Restore** — `drop table … cascade` ist als Rollback **verworfen** (würde wegen `ON DELETE CASCADE` fremde Daten mitreißen und ist für Rückbau unbrauchbar) |
 | 2026-07-25 | Ein Backup mit Fehlern gilt **nicht** als Backup: `backup-export.js` prüft die Zeilenzahl serverseitig gegen und markiert das Manifest `vollstaendig: false` + Exit 1 |
+| 2026-07-25 | PR #124 (Paket-Inventur + Zuweisungsnachweis) auf Betreiberfreigabe gemergt (`118e90c`); CI auf `main` grün, Vercel-Production `READY` |
 | 2026-07-25 | Anker-Recovery-Pfad **stillgelegt und auf `main` durchgesetzt** (PR #105, `43e9e35`); Wiederbelebung wird durch einen namensunabhängigen CI-Riegel blockiert |
 | 2026-07-25 | Kontext-Einstiegsschicht ist verbindlich; `CLAUDE.md` → `START_HERE` → `CURRENT_STATE` ist die Pflichtlektüre jedes Threads (PR #119) |
 | 2026-07-25 | Der anker-basierte Recovery-Pfad wird **nicht repariert, sondern stillgelegt**; echte Recovery läuft ausschließlich über den Einzeldokument-Pfad je exakter `raw_document_id` (PR #105) |
@@ -252,7 +253,7 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 |---|---|---|
 | Review + Merge von PR #125, danach Production-Ablauf bis vor den ersten Zugriff vorbereiten | 2026-07-25 | **Teilweise abgeschlossen** — PR #125 adversarial reviewt (3 Reviewer, 20 belegte Befunde, alle behoben) und gemergt. Der Production-Ablauf ist vollständig vorbereitet; **kein Production-Zugriff erfolgt, keine Seeds ausgeführt**. Wartet auf die Betreiberfreigabe für den Pre-Seed-Export. Details unten. |
 | Merge #123 + Sicherung, gezielter Restore und Entscheidungsreife für die Seed-Einspielung | 2026-07-25 | **Teilweise abgeschlossen** — #123 gemergt (`bed7f53`); Backup- und Restore-Werkzeug gebaut und isoliert getestet (33/33 lokal, 31/31 in CI, Suite 145/145). Die Seed-Ausführung bleibt **blockiert**: die Sicherung ist noch nicht gelaufen und die Reaktivierung der 6 Bundeswege ist nicht freigegeben. Details unten. |
-| Phase-1-Block: Quellenpakete inventarisieren + automatische Paketzuweisung beweisen | 2026-07-25 | **Erfolgreich abgeschlossen** — beide Abnahmekriterien erfüllt und belegt; 145/145 Offline-Suiten grün. Details unten. |
+| Phase-1-Block: Quellenpakete inventarisieren + automatische Paketzuweisung beweisen | 2026-07-25 | **Erfolgreich abgeschlossen** — beide Abnahmekriterien erfüllt und belegt; 145/145 Offline-Suiten grün; als PR #124 gemergt (`118e90c`), CI auf `main` grün, Vercel-Production `READY`. Details unten. |
 | Merge PR #118 + Vorbereitung des Quellen-Seed-Sprints | 2026-07-25 | **Teilweise abgeschlossen** — #118 gemergt (`61767a9`), CI grün, Deployment `READY`. Die Seed-Einspielung ist vollständig entscheidungsreif vorbereitet, aber **blockiert** (fehlende Sicherung). Details unten. |
 | Merge #122 + adversarialer Review von PR #118 (Quellenarchitektur-Remediation) | 2026-07-25 | **Erfolgreich abgeschlossen** — #122 gemergt (`54fe370`); #118 reviewt, 3 belegte Defekte behoben. |
 | Merge von PR #105 — Anker-Recovery-Pfad in Production stillgelegt | 2026-07-25 | **Erfolgreich abgeschlossen** — gemergt als `43e9e35`; Stilllegung auf `main` verifiziert. |
@@ -408,6 +409,12 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
   Suite `paketzuweisung-nachweis-test` **147/147** nach dem Rebase auf `61767a9` (die zwei
   neuen Landes-Parteipakete aus #118 sind mit abgedeckt), dreimal wiederholt byte-identisch.
   Kein Browser-Smoke nötig (keine UI-Änderung).
+- **Merge:** PR #124 auf ausdrückliche Betreiberfreigabe gemergt (`118e90c`, 2026-07-25).
+  Vorab verifiziert: `mergeable_state: clean`, beide Pflicht-Checks grün (Offline-Suite,
+  Chromium-Smoke), Vercel-Preview `Ready`, keine offenen Reviews/Change-Requests, kein
+  Rebase nötig (Basis = aktueller `main`-Stand). Nach dem Merge gegengeprüft: CI auf dem
+  Merge-Commit grün, Vercel-Production-Deployment `dpl_47sPA8z5T11rWjYT4J6R83XdxPd8`
+  `READY` mit `githubCommitSha=118e90c`.
 - **Nächster Schritt:** Freigabe für das Einspielen der beiden Seeds — vorbereitet und
   bewertet in [`betrieb/quellen-seed-einspielung.md`](betrieb/quellen-seed-einspielung.md),
   derzeit blockiert durch die fehlende Sicherung (§11).
