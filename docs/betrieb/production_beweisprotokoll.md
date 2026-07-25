@@ -585,8 +585,56 @@ Härtungs-Sprints (kein pauschales „betriebsreif", Begründung dort).
 
 ---
 
-_Letzte Aktualisierung: 2026-07-18 nach den Härtungs-Beweisläufen (§8).
+_Stand dieses Abschnitts: 2026-07-18 nach den Härtungs-Beweisläufen (§8).
 Befunde: B1 (Ursache belegt, Härtung deployt und in 3 Läufen gesund beobachtet),
 B2 (Rückstand, erste natürliche Auflösung `vg-einkommensteuer`), B3 (Quellenzahl
 mandatsabhängig; Invariante Zeilen = distinct source_id, live bestätigt),
 NEU: stiller `watchdogStates`-Write-Ausfall (vorbestehend, offen)._
+
+---
+
+## 9 · Beweislauf Incident 2026-07-25 „Crawl-Mandantenamplifikation" (IB-0 … IB-5)
+
+> **Achtung Namenskollision:** die Stufen dieses Beweislaufs heißen **`IB-x`**, nicht `Bx`.
+> `B1`/`B2`/`B3` sind in diesem Dokument seit §7/§8 mit einer **anderen** Bedeutung belegt
+> (Betriebsbefunde). Der ursprüngliche Incident-Entwurf verwendete `B0–B6` und ist
+> zurückgezogen — Begründung und Spezifikationslücke:
+> [`incident_2026-07-25_crawl_mandantenamplifikation.md`](incident_2026-07-25_crawl_mandantenamplifikation.md)
+> §10/§11.
+
+**Gegenstand:** Wirkt die Shared-Path-Deduplizierung (PR #120) in Production, verschwindet die
+Falschmeldung „141 von 144 Quellen fehlgeschlagen", werden wieder alle aktiven Mandate
+versorgt, und meldet der Health-Report wieder die Wahrheit?
+
+**Methode:** rein beobachtend. Keine manuellen Läufe, keine forcierten Crawls (`force`
+deaktiviert den zu beweisenden Schutz — Incident-Dokument §11.2), keine Env-, Flag-, Cron-
+oder Datenänderung. Ausschließlich lesende `SELECT`s gegen `ddckuvvpcytqbyfmbvie` und
+Vercel-Runtime-Logs.
+
+**Merge:** PR #120 → `main` `9f95d87`, 2026-07-25 10:27 UTC.
+**Production-Deployment:** `dpl_146taCPQSupxYfD3Lav1HoiVAHkP` READY 10:27 UTC; abgelöst um
+10:33 UTC durch `dpl_4ohE8HRNxYCHuXLPALq8rFw8GReD` (Merge #121, reiner Doku-Commit —
+Incident-Code byte-identisch).
+
+### 9.1 · IB-0 — Deploy-Bereitschaft · **bestanden** (2026-07-25 10:46 UTC)
+
+| Prüfung | Ergebnis |
+|---|---|
+| Production-Deployment auf dem Merge-Commit `READY` | **ja** — `dpl_146taCPQSupxYfD3Lav1HoiVAHkP` (9f95d87), aktuell produktiv `dpl_4ohE8HRNxYCHuXLPALq8rFw8GReD` (045393c) |
+| Zählerfelder in der `compactCrawlRunForStore`-Whitelist | **ja** — `circuitOpenSources`, `sharedSkippedSources` (`storage.js:2759–2760`); ohne Whitelist-Eintrag würde `compactStore` sie beim Schreiben strippen |
+| Beide Felder in bestehenden Läufen | **`null`** — erwartet: die Alt-Fassung hat sie nie geschrieben. Damit ist `null` → Zahl der eindeutige Beleg, dass ein Lauf **unter dem Fix** gelaufen ist |
+| Baseline vor dem Fix dokumentiert | **ja** — Incident-Dokument §11.4 |
+| Kein Eingriff erfolgt | **ja** — 0 Writes, 0 manuelle Läufe |
+
+### 9.2 · IB-1 bis IB-5 — Beobachtung der regulären Crons
+
+_Ergebnisse werden hier nach jeder Stufe mit Messwerten eingetragen. Stufenkriterien:
+Incident-Dokument §11.3._
+
+| Stufe | Cron (UTC) | Stand |
+|---|---|---|
+| IB-1 | Pipeline 16:00 | ausstehend |
+| IB-2 | Crawl 20:00 | ausstehend |
+| IB-3 | Crawl 04:00 (Folgetag) | ausstehend |
+| IB-4 | Health-Report 06:00 | ausstehend |
+| IB-5 | Lage-Check 10:00 | ausstehend |

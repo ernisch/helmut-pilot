@@ -1,10 +1,22 @@
 # Incident 2026-07-25 — „141 von 144 Quellen fehlgeschlagen"
 
-**Status:** Ursache bestätigt · Fix implementiert + offline getestet · **NICHT deployt**
-(Merge/Deploy/Beweislauf freigabepflichtig) · **Keine Production-Schreibzugriffe** in diesem Sprint
-(ausschließlich lesende `SELECT`s gegen `ddckuvvpcytqbyfmbvie` + Vercel-Runtime-Logs).
+**Status:** Ursache bestätigt · Fix implementiert + offline getestet · **gemergt und in Production
+deployt** · Production-Beweislauf **läuft** (§10/§11).
 
-**Branch:** `claude/helmut-crawl-incident-triage-ce39a2` · **Basis:** `main` @ `035898b`
+**Merge:** PR **#120** → `main` `9f95d87`, 2026-07-25 10:27 UTC ·
+**Production-Deployment:** `dpl_146taCPQSupxYfD3Lav1HoiVAHkP` READY 10:27 UTC, abgelöst durch
+`dpl_4ohE8HRNxYCHuXLPALq8rFw8GReD` (Merge #121, reiner Doku-Commit, Incident-Code unverändert)
+READY 10:33 UTC.
+
+**Ursprünglicher Branch:** `claude/helmut-crawl-incident-triage-ce39a2` · **Basis:** `main` @ `035898b`
+· **Rollout-Branch:** `claude/helmut-incident-rollout-nm2j7u`
+
+> **Korrekturhinweis 2026-07-25:** Das ursprüngliche Beweisprotokoll in §10 beschrieb in den
+> Stufen B1–B3 Testläufe, die **technisch nie ausführbar waren** (keine Schnittstelle grenzt
+> einen Crawl auf einzelne Abrufwege oder auf `rss` ein). Das ist eine **Spezifikationslücke
+> der Dokumentation**, kein Implementierungsfehler — an der Software wurde deshalb nichts
+> geändert. §10 ist durch das an der realen Implementierung ausgerichtete Protokoll **§11**
+> ersetzt; die Lücke ist in §11.1 belegt.
 
 ---
 
@@ -116,6 +128,7 @@ Googles Toleranz erschöpft. Danach: 8 Timeouts + 3× HTTP 503.
 | Antwortstruktur von Google geändert? | **Nein.** Keine Parser-Fehler (`parse`: 0). |
 | Token/Cookie/Header/RPC-ID ungültig? | **Nein.** Keine 401/403 gegen Google; Mandat 1 identisch authentifiziert und erfolgreich. |
 | 403-/429-Antworten? | **Keine.** Google antwortete mit **503** und Timeouts (weiche Drosselung). |
+| Ist außer dem Crawl noch ein Cron-Pfad betroffen? | **Ja — der Lage-Check.** Siehe §2.5. |
 | Vercel-Laufzeitgrenze erreicht? | **Nein** für die Function (300 s, Antwort 200). **Ja** für das interne Tenant-Zeitbudget (240 s) → 4 Mandate stillschweigend übersprungen. |
 | Parallele Crawl-/Understanding-Jobs? | **Nein.** Ein Cron-Aufruf, `pipeline_locks` je Mandat, keine Overlaps. |
 | Scheduler-Überlappung / Doppel-Crawl? | **Ja, aber intern:** ein Cron, sequenzieller Mandanten-Loop, 138 doppelt geholte Wege. |
@@ -123,6 +136,28 @@ Googles Toleranz erschöpft. Danach: 8 Timeouts + 3× HTTP 503.
 | Lock-Konflikte / Lock-Leaks? | **Keine.** |
 | Ist die Health-Meldung korrekt? | **Arithmetisch ja, semantisch nein** — siehe §3.3. |
 | KI-Budget/Kosten beteiligt? | **Nein.** 15/100, 0 Skips, 0 KI-Calls im Crawl-Fehlerpfad. |
+
+### 2.5 · Zweiter betroffener Pfad: der Lage-Check 10:00 UTC
+
+Der Fix deckt ihn ab (`runLageCheck` baut dasselbe geteilte Wege-Gedächtnis, `scheduler.js`),
+die Belegtabelle in §2 zeigte ihn aber nicht. Nachgetragen, weil er dieselbe Ursache mit
+derselben Signatur trägt — und weil er im Beweislauf eine eigene Stufe braucht (§11, IB-5).
+
+`/api/cron/lage-check` läuft ebenfalls über `runCronForTenants`: **ein** Aufruf, alle Mandate
+sequenziell, je Mandat ein quellenreduzierter Lauf über **90 Wege**. Telemetrie
+(`source_crawl_telemetry`, Läufe `lage-*`), zwei aufeinanderfolgende Tage vor dem Deploy:
+
+| Datum | Läufe 10:0x UTC | Mandat 1 | Mandate 2–6 |
+|---|---|---|---|
+| 2026-07-24 | 6 | `8ks53`: 90 Wege, **89 ok, 0 Fehler** | je 90 Wege, **3 ok / 87 Fehler**, davon 80–87 `circuit-open` |
+| 2026-07-25 | 6 | `tz751`: 90 Wege, **89 ok, 0 Fehler** | je 90 Wege, **3 ok / 87 Fehler**, davon 76–87 `circuit-open` |
+
+Identisches Muster wie beim Crawl: der erste Mandantenlauf ist vollständig gesund, alle
+folgenden laufen in dieselbe Egress-IP-Drosselung; die überwiegende Mehrheit der „Fehler" sind
+Breaker-Abbrüche ohne Request. Die **Lage-Ergebnisse** blieben davon unberührt (RC-5, §3):
+der Kandidatenpfad liest den **globalen** Rohbestand (`getRawItemsSince`) und sieht die
+Dokumente des ersten Mandats vollständig — belegt durch 6/6 Lage-Checks mit Status `changed`
+am 23. und 24.07. **Kein Lage-Datenverlust, aber dieselbe unnötige Last gegen Google.**
 
 ---
 
@@ -283,22 +318,107 @@ gelöscht oder migriert.
 
 ---
 
-## 10 · Freigabevorlage: kontrollierter Production-Beweislauf
+## 10 · Ursprüngliche Freigabevorlage (B0–B6) — **historisch, ersetzt durch §11**
 
-**Noch nichts davon ausgeführt.** Jede Stufe braucht eine ausdrückliche Freigabe; nach jeder
-Stufe wird gestoppt und ausgewertet.
+Die erste Fassung dieses Abschnitts entwarf sieben Stufen B0–B6. Drei davon (B1, B2, B3)
+beschrieben Läufe, die es in der Software **nicht gibt**; zwei weitere (B2, B3) hätten über
+`force` genau den Schutz abgeschaltet, den sie beweisen sollten. Der Entwurf entstand vor
+dem Deploy und wurde nie ausgeführt — außer B0, das als reine Whitelist-/Deploy-Prüfung
+gültig bleibt und in §11 als **IB-0** weitergeführt wird.
 
-**Vorbedingung (freigabepflichtig):** Merge + Deploy des Branches.
+**Nicht als Ablaufplan verwenden.** Verbindlich ist §11. Die Stufenbezeichnungen sind dort
+bewusst auf `IB-x` umgestellt: `B1`/`B2`/`B3` sind in
+[`production_beweisprotokoll.md`](production_beweisprotokoll.md) seit dem 17.07. mit einer
+**anderen** Bedeutung belegt (Betriebsbefunde Google-News-Rate-Limiting,
+Understanding-Rückstand, Quellenzahl) — die Doppelbelegung war Teil des Problems.
 
-| Stufe | Aktion | Erfolgskriterium | Abbruch bei |
+---
+
+## 11 · Production-Beweislauf (verbindlich, an der realen Implementierung ausgerichtet)
+
+### 11.1 · Spezifikationslücke SL-1: B1–B3 waren technisch nie ausführbar
+
+**Befund:** Es existiert **keine** Schnittstelle, die einen Crawl auf eine Teilmenge der
+Abrufwege, auf eine Anzahl Wege oder auf ein Abrufverfahren (`rss`) eingrenzt. Ein Crawl ist
+in Helmut immer der **vollständige Quellenplan eines Mandats**.
+
+Belege im Code (Stand `9f95d87`):
+
+| Einstiegspunkt | Datei | Wirksame Parameter |
+|---|---|---|
+| `GET /api/crawl/run` | `server.js:512–527` | nur `force` (aus `isForcedPilotRun` / `hasAdminBypass`) → `runSourceCrawl(politicianId, { force })` |
+| `GET /api/pipeline/run` | `server.js:529–546` | nur `force`, sonst identisch |
+| `GET /api/cron/crawl` | `server.js:800–803` | keine → `runCronForTenants("crawl", (t) => runSourceCrawl(t))` |
+| `GET /api/debug/crawl` | `server.js:6017–6023` | keine → `runSourceCrawl(politicianId)` |
+
+`runSourceCrawl` (`scheduler.js:219–240`) setzt `mode` auf `"full"`, wenn nichts anderes
+übergeben wird, und benutzt dann `allSources` — den kompletten Plan. Das Feld `sourceLimit`
+wird **ausschließlich** im Zweig `mode === "lage-check"` ausgewertet (`scheduler.js:239`) und
+ist über HTTP nicht setzbar. Ein Filter nach Abrufverfahren existiert im gesamten Crawl-Pfad
+nicht.
+
+**Damit sind hinfällig:** B1 („eine Direktquelle, `sourceLimit` klein, nur `rss`-Wege"),
+B2 („ein Google-News-Weg") und B3 („~20 Wege, gemischt").
+
+**Einordnung:** Dokumentationsfehler, kein Implementierungsfehler. Es wird **keine** Software
+geändert und **kein** solcher Parameter nachgerüstet — der Beweis ist ohne ihn führbar (§11.3),
+und eine Schnittstelle zum gezielten Teil-Crawl wäre eine neue Funktion außerhalb dieses
+Incidents.
+
+### 11.2 · Spezifikationslücke SL-2: `force` schaltet genau den zu beweisenden Schutz ab
+
+`scheduler.js:263` baut das geteilte Wege-Gedächtnis nur, wenn **kein** `force` gesetzt ist:
+
+```js
+const sharedLedger = hardening.enabled && hardening.sharedPathDedup && !options.force
+  ? sharedFetchLedger(hardening.sharedPathWindowMs) : null;
+```
+
+Gleiches gilt für den Cooldown (`scheduler.js:253`, `force: Boolean(options.force)`). Ein
+manuell forcierter Lauf fährt also **das Verhalten von vor dem Incident**: voller Plan, ~1 744
+Google-URL-Auflösungen, ohne Abstands- und Dedup-Schutz.
+
+**Konsequenz:** Manuell forcierte Crawls sind **kein** Beweismittel und werden aus dem
+Beweislauf ausgeschlossen. Sie würden die Drosselung, die den Incident ausgelöst hat, aktiv
+erneut provozieren.
+
+### 11.3 · Der tatsächliche Ablauf
+
+Fix A wirkt **prozessweit innerhalb einer Function-Invocation** über mehrere Mandate hinweg
+(`sharedFetchLedger` ist eine Modul-Singleton-Instanz, `google-news-hardening.js:177–185`).
+Reproduzierbar ist das **ausschließlich** auf dem regulären Cron-Pfad — ein Aufruf,
+sequenzieller Mandanten-Loop, dieselbe Egress-IP.
+
+Der Beweislauf ist deshalb **rein beobachtend**: keine manuellen Läufe, keine Eingriffe,
+ausschließlich lesende `SELECT`s gegen `ddckuvvpcytqbyfmbvie` und Vercel-Runtime-Logs.
+
+**Beobachtete Cron-Zeiten (UTC, aus `vercel.json`):**
+Pipeline 16:00 · Crawl 20:00 und 04:00 · Health-Report 06:00 · Lage-Check 10:00.
+
+| Stufe | Ereignis | Erfolgskriterium | Abbruch / Stopp bei |
 |---|---|---|---|
-| **B0** | Kein Crawl. Nur `SELECT`: Zählerfelder `circuitOpenSources`/`sharedSkippedSources` sind nach Deploy schreibbar (Whitelist greift). | Felder vorhanden | Feld fehlt → Whitelist prüfen |
-| **B1** | **Eine Direktquelle**, ein Mandat: `POST /api/crawl/run` mit `force`, `sourceLimit` klein, nur `rss`-Wege. | `runState=gesund`, 0 Fehler, keine Google-Requests im Log | jeder Fehler |
-| **B2** | **Ein Google-News-Weg**, dasselbe Mandat, `force`. | 1 Weg `ok`, Breaker geschlossen, `googleUrlResolution.resolved > 0` | 429/503/Timeout |
-| **B3** | **Kontrollierter Batch**: ein Mandat, ~20 Wege (gemischt), **ohne** `force`. | `runState=gesund`, `sharedSkippedSources=0` (erstes Mandat), Laufzeit < 60 s | Fehlerquote > 10 % |
-| **B4** | **Zwei Mandate hintereinander** (der eigentliche Beweis) — regulärer Cron-Pfad, ein Aufruf. | Mandat 1 `gesund`; Mandat 2 `cooldown-reduziert` mit `sharedSkippedSources ≈ 138` und **`failedSources = 0`**; **keine** `circuit-open`-Zeile in der Telemetrie | Mandat 2 zeigt `circuit-open` oder Fehler > 5 |
-| **B5** | **Vollständiger Crawl, alle 6 Mandate** (regulärer 20:00-Cron beobachten, nicht manuell forcieren). | alle 6 Mandate erscheinen in `crawlRuns`; **kein** `zeitbudget`-Systemfehler; Rohdokumente ≥ Vortagesniveau | ein Mandat fehlt oder degradiert |
-| **B6** | **Health-Report 06:00 UTC beobachten** (kein Eingriff). | `aktuell-gesund`, keine „141/144"-Meldung, **kein** „Lage-Check veraltet", Lage-Zeitstempel **echt** (10:0x des Vortags) | erneute Degradations-Meldung |
+| **IB-0** | Deploy-Bereitschaft (kein Lauf) | Production-Deployment des Merge-Commits `READY`; `circuitOpenSources`/`sharedSkippedSources` stehen in der `compactCrawlRunForStore`-Whitelist (`storage.js:2759–2760`); Baseline vor dem Fix dokumentiert | Deployment nicht READY oder Feld fehlt |
+| **IB-1** | **Pipeline-Cron 16:00 UTC** — erster Mehr-Mandanten-Durchlauf unter dem Fix | Mandat 1 `gesund`; jedes Folgemandat `sharedSkippedSources > 0`, `failedSources = 0`, `circuitOpenSources = 0`; Folgeläufe deutlich kürzer als Mandat 1 | ein Folgemandat zeigt `circuit-open` oder Fehler > 5 |
+| **IB-2** | **Crawl-Cron 20:00 UTC** — Hauptbeweis über alle aktiven Mandate | **alle 6 Mandate** in `crawlRuns`; **kein** `zeitbudget`-Systemfehler; **keine** `circuit-open`-Zeile in der Telemetrie des Durchlaufs; neue Rohdokumente ≥ Niveau der Vortage | ein Mandat fehlt, degradiert, oder Rohdokumente brechen ein |
+| **IB-3** | **Crawl-Cron 04:00 UTC (Folgetag)** — Wiederholbarkeit | wie IB-2, an einem zweiten unabhängigen Durchlauf | wie IB-2 |
+| **IB-4** | **Health-Report 06:00 UTC** (kein Eingriff) | Basislauf ist der **nicht** reduzierte Lauf (`isReducedRun`); Gesamtzustand `aktuell-gesund`; keine „141/144"-Meldung; **kein** „Lage-Check veraltet" | erneute Degradations- oder Lage-Fehlalarm-Meldung |
+| **IB-5** | **Lage-Check-Cron 10:00 UTC** — zweiter amplifizierter Pfad (§2.5) | Mandat 1 vollständig (~89 ok); Folgemandate mit `skipped-shared` statt `circuit-open`; 6/6 Mandate mit Lage-Ergebnis | Folgemandate zeigen weiterhin ~87 `circuit-open` |
 
-**Ausdrücklich nicht Teil des Beweislaufs:** Migration, Secret-Änderung, Cron-Änderung,
-Quellenpaket-Aktivierung, Mandats-Deaktivierung, Budget-Erhöhung.
+**Fortschreiten nur bei vollständig erfüllter Stufe.** Ergebnisse je Stufe werden in
+[`production_beweisprotokoll.md`](production_beweisprotokoll.md) §9 mit Messwerten
+festgehalten.
+
+**Ausdrücklich nicht Teil des Beweislaufs:** manuelle oder forcierte Crawls, Migration,
+Secret-Änderung, Cron-Änderung, Quellenpaket-Aktivierung, Mandats-Deaktivierung,
+Budget-Erhöhung, Flag-Umschaltung.
+
+### 11.4 · Baseline vor dem Fix (gemessen 2026-07-25 10:46 UTC, vor dem ersten Cron unter #120)
+
+| Größe | Wert |
+|---|---|
+| Letzte Crawl-Durchläufe (04:00, 20:00, 07:31 manuell) | je Mandat 1 `gesund` 145/145/0 · Mandat 2 `stark-degradiert` 144/3/**141** |
+| `circuitOpenSources` / `sharedSkippedSources` in `crawlRuns` | durchgängig `null` (Felder existieren, wurden von der Alt-Fassung nie geschrieben) |
+| `googleGate` Mandat 2 | `{open: true, observed: 14, breakerFailures: 14}` |
+| Lage-Läufe 10:0x | 1× 89 ok / 0 Fehler, 5× 3 ok / 87 Fehler (§2.5) |
+| `systemErrors` (`main-auth`) | **65**, jüngster Eintrag **2026-07-20** — insbesondere **kein** `zeitbudget`-Fehler, obwohl seit dem 21.07. täglich 4 Mandate übersprungen wurden (RC-4 war stumm) |
+| Neue Rohdokumente je Tag | 25.07. (Teiltag) 97 · 24.07. 283 · 23.07. 296 · 22.07. 315 · 21.07. 302 |
