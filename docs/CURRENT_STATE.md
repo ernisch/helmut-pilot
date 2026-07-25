@@ -52,7 +52,7 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | Zweitmandanten-Provisionierung + Per-Mandant-Kostendeckel | Migration `20260721` nicht angewandt, `HELMUT_TENANT_LLM_CAP` AUS, DB-seitige Durchsetzung unentschieden | OP-03 |
 | Retention/Löschung | nur Trockenlauf; braucht verbindliche Fristen aus OP-02 | OP-12 |
 | Understanding-Gate, Cheap-Triage, Scoring, Berlin/Brandenburg | in `shadow`/`off`, Scharfschaltung ist Freigabe | OP-18, OP-21, OP-22 |
-| Pre-Seed-Sicherung + gezielter Seed-Restore (kein `drop table cascade`) — gebaut, isoliert getestet (33/33 lokal, 31/31 in CI, Suite 145/145) | PR #125 **nicht gemergt**; nie gegen Production gelaufen; deckt nur 8 Tabellen ab und ersetzt OP-01 nicht | OP-01 |
+| Pre-Seed-Sicherung + gezielter Seed-Restore (kein `drop table cascade`) — gebaut, adversarial reviewt, isoliert getestet (43/43 lokal, 41/41 in CI; `backup-export-test` 38/38; Suite 147/147) | **nie gegen Production gelaufen**; deckt nur 8 Tabellen ab und ersetzt OP-01 nicht | OP-01 |
 | OP-06 Terminales Aussortieren des Alt-Rückstands (34 Fälle, Default AUS) | Ausführung ist freigabepflichtig — **und** eine offene Fachfrage: 16 der 34 Allowlist-Einträge sind mit „außerhalb Mandat" begründet, also relativ zum Pilotmandat, geschrieben wird aber in das mandantenneutrale `knowledge_objects` (kein `tenant_id`). Ein künftiger Zweitmandant mit regionalem/EU-Schwerpunkt bekäme diese Vorgänge dauerhaft nie verstanden | OP-06 |
 
 ## 4 · Blockiert
@@ -60,7 +60,7 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | Punkt | Ursache | Nächster Schritt |
 |---|---|---|
 | **OP-01** Supabase Pro + PITR | Kostenentscheidung des Betreibers (~25 $/Monat); Free-Plan = **keine Backups** | Betreiber schaltet Pro + PITR frei, dann Restore-Übung nach `betrieb/backup-restore-runbook.md` |
-| **Quellen-Seed-Einspielung** (macht P0-2 und die 6 Bundesweg-Reparaturen in der DB wirksam) | zwei fehlende Betreiberhandlungen: (a) die Pre-Seed-Sicherung ist **noch nicht gelaufen** (Werkzeug fertig, braucht Production-Credentials), (b) die **absichtliche Reaktivierung** der 6 Bundeswege ist nicht freigegeben | Runbook `betrieb/quellen-seed-einspielung.md` §6c Schritt 1–17 — `node scripts/backup-export.js --scope=seed` ausführen, Manifest auf `vollstaendig: true` prüfen, dann Go/Stop nach §6 |
+| **Quellen-Seed-Einspielung** (macht P0-2 und die 6 Bundesweg-Reparaturen in der DB wirksam) | drei offene Go-Kriterien, alle Betreiberhandlungen: **2** die Pre-Seed-Sicherung ist **noch nicht gelaufen** · **8** die Einspielung ist nicht freigegeben · **11** die **absichtliche Reaktivierung** der 6 Bundeswege ist nicht mitfreigegeben | Runbook `betrieb/quellen-seed-einspielung.md` §6c Schritt 1–17 — beginnt mit `node scripts/backup-export.js --scope=seed`, danach Manifest auf `vollstaendig: true` prüfen |
 | **OP-02** Recht (Pilotvertrag, AVV, DSFA, Art.-9-Grundlage, Fristen) | externe Prüfung durch Anwalt/DSB steht aus | Entwürfe aus `recht/` prüfen lassen und zeichnen; blockiert OP-12 |
 | **OP-03** Zweitmandanten-Freigabepaket | Grundsatzentscheidung „DB-seitige Durchsetzung vs. dokumentierte App-Guard-Akzeptanz" fehlt (`mandantentrennung-architektur.md` bewertet die Wege) | Betreiber entscheidet einen Weg; danach Migration + Env + Probelauf |
 | **OP-04** Demo-Mandate entfernen — **Umfang korrigiert 2026-07-25:** Production führt **8 Profile, davon 6 aktiv** (nicht 1 Pilot + 2 Demo-Mandate); fünf davon tragen Klarnamen realer Abgeordneter | Production-Datenänderung, freigabepflichtig; berührt zusätzlich OP-02 (personenbezogene Daten) | je Profil entscheiden, dann über Provisionierungswerkzeug deaktivieren (`quellenarchitektur/30-paket-inventur-production.md` §5, A-1) |
@@ -250,6 +250,7 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 
 | Sprint | Datum | Zustand |
 |---|---|---|
+| Review + Merge von PR #125, danach Production-Ablauf bis vor den ersten Zugriff vorbereiten | 2026-07-25 | **Teilweise abgeschlossen** — PR #125 adversarial reviewt (3 Reviewer, 20 belegte Befunde, alle behoben) und gemergt. Der Production-Ablauf ist vollständig vorbereitet; **kein Production-Zugriff erfolgt, keine Seeds ausgeführt**. Wartet auf die Betreiberfreigabe für den Pre-Seed-Export. Details unten. |
 | Merge #123 + Sicherung, gezielter Restore und Entscheidungsreife für die Seed-Einspielung | 2026-07-25 | **Teilweise abgeschlossen** — #123 gemergt (`bed7f53`); Backup- und Restore-Werkzeug gebaut und isoliert getestet (33/33 lokal, 31/31 in CI, Suite 145/145). Die Seed-Ausführung bleibt **blockiert**: die Sicherung ist noch nicht gelaufen und die Reaktivierung der 6 Bundeswege ist nicht freigegeben. Details unten. |
 | Phase-1-Block: Quellenpakete inventarisieren + automatische Paketzuweisung beweisen | 2026-07-25 | **Erfolgreich abgeschlossen** — beide Abnahmekriterien erfüllt und belegt; 145/145 Offline-Suiten grün. Details unten. |
 | Merge PR #118 + Vorbereitung des Quellen-Seed-Sprints | 2026-07-25 | **Teilweise abgeschlossen** — #118 gemergt (`61767a9`), CI grün, Deployment `READY`. Die Seed-Einspielung ist vollständig entscheidungsreif vorbereitet, aber **blockiert** (fehlende Sicherung). Details unten. |
@@ -257,6 +258,63 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 | Merge von PR #105 — Anker-Recovery-Pfad in Production stillgelegt | 2026-07-25 | **Erfolgreich abgeschlossen** — gemergt als `43e9e35`; Stilllegung auf `main` verifiziert. |
 | Recovery-Pfad-Review + Zusammenführung von PR #105 auf die kanonische Kontextstruktur | 2026-07-25 | **Erfolgreich abgeschlossen** |
 | Kontextstruktur für Claude Code (`CLAUDE.md` + Einstiegsschicht) | 2026-07-25 | **Erfolgreich abgeschlossen** — reine Dokumentation, gemergt als PR #119 (`c6a3d40`). |
+
+**Sprint „Review + Merge PR #125, Production-Ablauf vorbereiten" — Nachweis**
+
+- **Review von PR #125:** drei spezialisierte Reviewer gegen den tatsächlichen Code, **20 belegte
+  Befunde**, jeder einzeln nachgerechnet und behoben. Die vier schwersten:
+  1. **Ein leerer Export galt als vollständiges Backup.** Auf allen 8 Quellentabellen ist RLS
+     aktiv, aber es existiert **keine Policy** — ein anon-Key oder ein falsches Projekt liefert
+     deshalb `HTTP 200` mit `[]` statt eines Fehlers. Das Ergebnis war ein grünes Manifest über
+     leeren Dateien, und genau dieses Manifest ist das Go-/Stop-Gate des Runbooks. Der
+     wahrscheinlichste Bedienfehler hätte das Sicherheitsnetz passiert.
+  2. **Der Restore-`delete` war nicht eingegrenzt** und hätte eine nach dem Backup entstandene
+     Mandantenzeile still gelöscht. Die Nachprüfung konnte das **strukturell nicht** bemerken:
+     nach `delete … not in` + `insert` ist der Inhalt per Konstruktion die Backup-Menge, die
+     Zählprüfung war damit **immer** erfüllt.
+  3. **Ein zu spät gezogenes Backup wurde nicht erkannt** — der Restore wäre ein No-Op gewesen
+     und hätte Erfolg gemeldet.
+  4. **Die Soll-Zahlen des Runbooks widersprachen der gemessenen Production.** Die Vorlage
+     rechnete mit 6 Paketen / 162 Wegen / 163 Zuordnungen, die Inventur aus #124 misst **7 / 163 /
+     165**. Runbook-Schritt 6 hätte eine **korrekte** Datenbank gestoppt.
+- **Konsequenz aus Befund 4:** Alle Prüfungen im Runbook arbeiten jetzt mit **gemessenen Deltas
+  und benannten Zeilen** statt mit absoluten Zahlen aus einer Doku — absolute Zahlen driften bei
+  jeder Provisionierung. Jede Differenz ist zugeordnet: zwei DB-only-Zeilen aus der
+  Provisionierung, eine bereits vorhandene Zuordnung. **Seed 1 fügt in Production 0 statt 1
+  Zuordnung ein.**
+- **Weitere behobene Sachfehler:** Runbook-Schritt 13 prüfte auf `status='healthy'`, den kein
+  Landesmodul-Weg je hat (wirkungslose Sicherheitsprüfung) · Schritt 16 konnte die
+  Stopentscheidung aus Schritt 15 stillschweigend rückgängig machen · die Gate-Beschreibung
+  behauptete, Paketschlüssel spielten keine Rolle, obwohl sie für `rp-rbb24-politik` die einzige
+  Barriere sind · „2× `html` → `rss`" war in Anzahl und Richtung falsch (4×, alle nach
+  `googlenews_search`) · die Kostenrechnung unterschlug die nicht deduplizierten Direktfeeds
+  (≈16 statt 4 Abrufe) · `--scope seed` mit Leerzeichen fiel still auf den Voll-Export zurück.
+- **Testlage.** `backup-export.js` hatte vorher **keinen einzigen Test**; der neue
+  `scripts/backup-export-test.js` fährt es als echten Kindprozess gegen einen lokalen
+  PostgREST-Nachbau und belegt **am HTTP-Verkehr**, dass ausschließlich `GET` rausgeht.
+  Im `seed-restore-test.js` wurden die `do $$`-Prüfblöcke bisher nur **gezählt**, nie ausgeführt —
+  sie werden jetzt ausgewertet.
+
+  | Lauf | Ergebnis |
+  |---|---|
+  | `seed-restore-test.js` (lokal) | **43 PASS, 0 FAIL** |
+  | `seed-restore-test.js` (`--depth 1`-Klon wie CI) | **41 PASS, 0 FAIL** |
+  | `backup-export-test.js` | **38 PASS, 0 FAIL** |
+  | `run-offline-tests.js` | **147/147 grün** |
+
+  Mutationsprobe: Nimmt man die Eingrenzung des Restore-`delete` zurück, fängt Test 16 das
+  reproduzierbar als FAIL.
+- **Production-Ablauf vorbereitet, nicht ausgeführt.** Offline prüfbar und geprüft: `main`-Stand,
+  Seeds unverändert seit #118, Drift-Gate grün, Cron-Fenster, Ablageort und Dateinamen des
+  Backups, erwartete Manifest-Werte, Soll-Zahlen vor/nach Seed 1 und Seed 2, Stop-Kriterien,
+  Restore-Entscheidungspunkte, Überwachung der 6 Wege. **Nicht** geprüft, weil es Production-Lesezugriff
+  erfordert: laufende Locks, Health, offene Vorfälle — die stehen als Runbook-Schritte 2 und 3.
+- **Die Production-Secrets sind in dieser Umgebung nicht gesetzt.** Der Export kann hier also
+  ohnehin nicht laufen; er gehört auf die Betreibermaschine mit `.env.local`.
+- **Nicht getan (bewusst):** kein Production-Zugriff, weder lesend noch schreibend · kein Backup
+  ausgeführt · keine Seeds eingespielt · kein Restore gefahren · keine Secrets gelesen, gesetzt
+  oder rotiert · keine Cron-Änderung · keine Quelle aktiviert oder deaktiviert · keine Änderung
+  an der Paketfachlogik oder an `required_classes` · kein weiterer PR gemergt.
 
 **Sprint „Merge #123 + Sicherung und Restore für die Seed-Einspielung" — Nachweis**
 
