@@ -634,10 +634,10 @@ Incident-Dokument §11.3._
 | Stufe | Cron (UTC) | Stand |
 |---|---|---|
 | IB-1 | Pipeline 16:00 | **nicht messbar** — strukturelle Beobachtungslücke, siehe 9.3. Kein Fehlschlag, kein Abbruch |
-| IB-2 | Crawl 20:00 | ausstehend — trägt jetzt den Ledger-Nachweis (L-1…L-7) |
-| IB-3 | Crawl 04:00 (Folgetag) | ausstehend |
-| IB-4 | Health-Report 06:00 | ausstehend |
-| IB-5 | Lage-Check 10:00 | ausstehend |
+| IB-2 | Crawl 20:00 | **teilweise bestanden** — L-1…L-6 bestanden (Ursachen-Fix bewiesen), **L-7 gescheitert**. Siehe 9.4 |
+| IB-3 | Crawl 04:00 (Folgetag) | **angehalten** — Betreiberentscheidung nötig (9.4, Befunde F-A/F-C) |
+| IB-4 | Health-Report 06:00 | **vorab rechnerisch gescheitert** (L-8) — Nachweis in 9.5 |
+| IB-5 | Lage-Check 10:00 | angehalten |
 
 ### 9.3 · IB-1 — Pipeline-Cron 16:00 UTC · **nicht messbar** (ausgewertet 16:12 UTC)
 
@@ -698,3 +698,115 @@ Fehler.
 `/api/cron/crawl` ruft `runCronForTenants` **ohne** äußeren `withTimeout` auf
 (`server.js:800–803`), sodass alle Mandantenläufe regulär persistiert werden und der
 `zeitbudget`-Systemfehler aus Fix D greifen kann.
+
+### 9.4 · IB-2 — Crawl-Cron 20:00 UTC · **teilweise bestanden** (ausgewertet 20:14 UTC)
+
+Deployment unverändert `dpl_AuatHn8VSaHt6yrTtimECSgXaoWb` (`9534bc0`); `main` seit der
+IB-1-Auswertung nicht weitergelaufen; Incident-Pfad byte-identisch.
+
+**Gemessene Läufe (`/api/cron/crawl`, ein Aufruf 20:00:33 UTC):**
+
+| Feld | Mandat 1 `annika-klose` `crawl-20260725200035-8oa6t` | Mandat 2 `cem-ince` `crawl-20260725200354-jk062` |
+|---|---|---|
+| `runState` | `gesund` | **`stark-degradiert`** |
+| `checkedSources` | 145 | 144 |
+| `successfulSources` | 145 | **3** |
+| `failedSources` | 0 | **7** (vorher 141) |
+| `circuitOpenSources` | **0** | **0** (vorher 130–135) |
+| `sharedSkippedSources` | 0 | **134** |
+| `skippedSources` | 0 | 134 |
+| `googleUrlResolution` | 1 738 / **1 743** | **0 / 0** |
+| `googleGate` | `{open:false, observed:142, breakerFailures:0}` | `{open:true, observed:11, breakerFailures:11}` |
+| `durationMs` | 197 090 | **47 224** (vorher 72 000–84 000) |
+| Telemetrie | 145 Zeilen / 145 distinct, 143 `ok`, 0 `error`, **0** `circuit-open` | 144 Zeilen / 144 distinct, 3 `ok`, 7 `error` (`timeout`), **0** `circuit-open`, 134 übersprungen |
+
+**Prüfliste L-1…L-7:**
+
+| # | Ergebnis | Beleg |
+|---|---|---|
+| **L-1** | ✅ | Mandat 1 `gesund`, 145/145/0, `sharedSkippedSources = 0`, 1 743 Auflösungen — der Ledger bremst das erste Mandat nicht |
+| **L-2** | ✅ | `sharedSkippedSources = 134`, `> 0` und `< 144` — die geteilten Wege wurden übersprungen, nicht alle |
+| **L-3** | ✅ | `successfulSources = 3 > 0` — die drei Direktquellen liefen trotz Dedup (`sharedFetchKey` liefert `null` ohne `news.google.`-URL) |
+| **L-4** | ✅ | `3 + 7 + 0 + 134 = 144 = checkedSources`; `sharedSkipped (134) ≤ skipped (134)` |
+| **L-5** | ✅ | `circuitOpenSources = 0` in **beiden** Läufen (vorher 130–135) |
+| **L-6** | ✅ | **Σ `googleUrlResolution.attempted` = 1 743 + 0 = 1 743** — exakt das Volumen **eines** Mandats. Google sieht die Last einmal statt zweimal |
+| **L-7** | ❌ | **Nur 2 von 6 Mandaten verarbeitet.** `systemErrors` 65 → **66**, neuer Eintrag 20:04:48, Scope `cron-crawl`: „Zeitbudget erschoepft: 4 von 6 Mandaten nicht verarbeitet." Summe der Laufzeiten 197 090 + 47 224 = **244 314 ms > 240 000 ms** |
+
+**Der Ursachen-Fix ist damit produktiv bewiesen.** Entscheidend ist die Kombination, die bei
+IB-1 noch fehlte: `attempted = 0` bei Mandat 2 entsteht jetzt nachweislich durch **bewusstes
+Überspringen** (`sharedSkippedSources = 134`), nicht durch einen **Breaker-Abbruch**
+(`circuitOpenSources = 0`). Vor dem Fix war derselbe Nullwert das Ergebnis von 130 – 135
+`circuit-open`. Die Falschmeldung „141 von 144 Quellen fehlgeschlagen" **kann nicht mehr
+entstehen**: aus 141 wurden 7.
+
+**Kostenwächter (§11.5):** 40 abrechenbare LLM-Calls am 25.07. (Grenze 85), 0 Skips, kein
+`daily-llm-budget-reached`. Baseline 43–52/Tag. Unauffällig.
+
+**Rohdokumente:** 25.07. (Samstag) 166. Vergleich Samstage: 18.07. 229, 11.07. 198;
+Sonntage 199 / 188; Werktage 283–384. Am unteren Rand der Wochenendspanne, **kein
+Einbruch, der auf Datenverlust hindeutet** — der Korpus ist global und wurde von Mandat 1
+vollständig geholt. Als Beobachtungspunkt vermerkt, nicht als Befund.
+
+---
+
+## 9.5 · Drei Befunde aus IB-2 (Rollout angehalten)
+
+### F-A · Der Health-Report schlägt trotz wirksamem Fix Alarm — **P1**
+
+Fix C machte die **Basislauf-Auswahl** reduziert-bewusst (`server.js:3666`,
+`!isReducedRun(r)`). Die **rollierende Degradationszählung** in
+`buildRollingCrawlHealth` (`rolling-health.js:96–111`) benutzt `isReducedRun`
+jedoch **gar nicht**. Ein bewusst reduzierter Lauf mit `runState =
+stark-degradiert` zählt daher voll als degradierter Lauf im 24-h-Fenster.
+
+Gegenrechnung mit dem **ausgelieferten Code** gegen die **echten** Laufdaten
+(`nowMs = 2026-07-26T06:00:00Z`):
+
+| Szenario | `status` | `alertLevel` | `degradedRuns` |
+|---|---|---|---|
+| ohne den 04:00-Lauf des 26.07. | `wiederholt-degradiert` | **`alarm`** | 2 von 5 |
+| mit einem 04:00-Durchlauf wie am 25.07. | `wiederholt-degradiert` | **`alarm`** | 3 von 7 |
+
+`server.js:3816` verknüpft `ok` mit `rollingCrawl.alertLevel !== "alarm"` — der
+06:00-Report meldet also **nicht ok**. Die Basislauf-Auswahl selbst arbeitet korrekt
+(sie wählt den gesunden, nicht reduzierten Lauf). **L-8 ist damit vorab gescheitert;
+IB-4 würde die Störungsmeldung erneut zeigen.**
+
+### F-B · Klassifikationsgrenze verfehlt den Fall um genau eins — **P2**
+
+`classifyCrawlRunState` (`crawl-run-state.js:87–97`) rechnet
+`attempted = checked − skipped − circuitOpen = 144 − 134 − 0 = **10**`. Der Schutz
+„aus einem winzigen Restanteil darf keine Lauf-Degradation extrapoliert werden" greift
+bei `attempted < minAttempted`; `HELMUT_RUNSTATE_MIN_ATTEMPTED` ist per Default **10**.
+`10 < 10` ist falsch → der Lauf wird quotenbewertet: `7 / 10 = 70 % > starkAb (50 %)` →
+`stark-degradiert`.
+
+Gegenprobe mit dem echten Code: bei `attempted = 9` liefert dieselbe Funktion
+`cooldown-reduziert`. Die Schwelle wurde **für genau diesen Fall** eingeführt und
+verfehlt ihn um einen einzigen Weg.
+
+### F-C · RC-4 löst sich **nicht** mit — die Prognose ist widerlegt — **P1**
+
+Incident-Dokument §7 sagte vorher: „Läufe 2–6 dauern Sekunden statt Minuten → **alle 6
+Mandate passen ins 240-s-Budget** (RC-4 löst sich mit)." **Gemessen widerlegt:**
+
+* Mandat 1 braucht **197 s** — unverändert, davon Eager-Understanding **82 s**. Der Fix
+  kann daran nichts ändern; Mandat 1 muss alles holen.
+* Mandat 2 braucht **47 s** statt „Sekunden" — dominiert von den **7 eigenen**
+  Google-Wegen, die in Timeouts mit Retries laufen, plus 14 s Eager-Understanding.
+* Zusammen **244 s > 240 s** — Mandate 3–6 fallen wieder aus dem Budget.
+
+**Fix D funktioniert dabei nachweislich:** der Abbruch ist nicht mehr stumm, sondern
+erzeugt den Systemfehler „Zeitbudget erschoepft: 4 von 6 Mandaten nicht verarbeitet."
+Das ist die erste echte Production-Bestätigung von Fix D.
+
+**Residuale Ursache:** Fix A entfernt die **redundanten** Abrufe. Die **legitime** Last
+von Mandat 1 (1 743 URL-Auflösungen) drosselt die Egress-IP aber weiterhin, sodass die
+~7 **mandantseigenen** Google-Wege von Mandat 2 in Timeouts laufen. Das ist keine
+Amplifikation mehr, aber die Datenversorgung der Folgemandate für ihre **eigenen**
+Suchen bleibt unzuverlässig.
+
+**Konsequenz:** Der Rollout ist nach IB-2 **angehalten**. Jede Behebung von F-A, F-B
+oder F-C wäre eine Änderung außerhalb des freigegebenen Incident-Rahmens
+(Code-Hotfix, Schwellen-/Env-Änderung, Cron-/Zeitbudget-Änderung oder
+Mandats-Deaktivierung nach OP-04) und ist eine **Betreiberentscheidung**.

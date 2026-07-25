@@ -1,7 +1,15 @@
 # Incident 2026-07-25 — „141 von 144 Quellen fehlgeschlagen"
 
 **Status:** Ursache bestätigt · Fix implementiert + offline getestet · **gemergt und in Production
-deployt** · Production-Beweislauf **läuft** (§10/§11).
+deployt** · **Ursachen-Fix produktiv bewiesen (IB-2, L-1…L-6)** · Beweislauf nach IB-2
+**angehalten** — drei Befunde brauchen eine Betreiberentscheidung (§7.1, Beweisprotokoll §9.5).
+
+> **Kurzfassung des Stands (2026-07-25 20:14 UTC):** Die **Mandanten-Amplifikation ist weg**
+> und produktiv belegt: 134 geteilte Wege übersprungen, **0** `circuit-open` (vorher 130–135),
+> Fehler **141 → 7**, Google-Last **1 743 statt 2 × 1 743**. Die Falschmeldung „141 von 144"
+> kann nicht mehr entstehen. **Nicht** erreicht sind zwei Folgeziele: 4 von 6 Mandaten fallen
+> weiterhin aus dem Zeitbudget (**F-C**), und der Health-Report meldet trotz wirksamem Fix
+> `alarm` (**F-A**). Beides ist gemessen, nicht vermutet.
 
 **Merge:** PR **#120** → `main` `9f95d87`, 2026-07-25 10:27 UTC ·
 **Production-Deployment:** `dpl_146taCPQSupxYfD3Lav1HoiVAHkP` READY 10:27 UTC, abgelöst durch
@@ -287,6 +295,24 @@ Crawl-Cron 04:00 UTC, 6 aktive Mandate:
    (RC-4 löst sich mit).
 5. Health-Report 06:00: Basis ist der gesunde Lauf → `aktuell-gesund`, Lage bei 20 h
    `fresh` → **kein „Teilweise gestört"**, kein „wiederholt degradiert".
+
+### 7.1 · Abgleich mit der Messung (IB-2, 2026-07-25 20:00 UTC) — **Punkte 4 und 5 widerlegt**
+
+| Prognose | Gemessen | Urteil |
+|---|---|---|
+| 1 · Mandat 1 `gesund` | `gesund`, 145/145/0, 1 743 Auflösungen | ✅ **eingetreten** |
+| 2 · Mandate 2–6 überspringen die geteilten Wege | `sharedSkippedSources = 134`, `circuitOpenSources = 0`, Direktquellen 3/3 `ok` | ✅ **eingetreten** — aber **nicht** „0 Fehler": die 7 **mandantseigenen** Google-Wege laufen weiterhin in Timeouts, daher `stark-degradiert` statt `cooldown-reduziert` |
+| 3 · Google sieht die Last einmal | Σ `attempted` = 1 743 + 0 = **1 743** | ✅ **eingetreten** — der Ursachen-Fix wirkt |
+| 4 · Läufe 2–6 dauern Sekunden, alle 6 passen ins Budget | Mandat 2 braucht **47 s**; 197 + 47 = **244 s > 240 s**; 4 von 6 Mandaten übersprungen | ❌ **widerlegt** → Befund F-C |
+| 5 · Health-Report `aktuell-gesund` | Gegenrechnung mit dem ausgelieferten Code gegen die echten Laufdaten: `wiederholt-degradiert`, `alertLevel = alarm` | ❌ **widerlegt** → Befund F-A |
+
+Die Prognose unterschätzte zwei Dinge: dass die **legitime** Last von Mandat 1 die
+Egress-IP weiterhin drosselt (die eigenen Wege der Folgemandate laufen deshalb in
+Timeouts, nicht in Sekunden), und dass die **rollierende** Degradationszählung —
+anders als die Basislauf-Auswahl — reduzierte Läufe gar nicht kennt.
+
+Messwerte, Prüfliste und Befunde: [`production_beweisprotokoll.md`](production_beweisprotokoll.md)
+§9.4/§9.5.
 
 ---
 

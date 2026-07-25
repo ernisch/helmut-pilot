@@ -254,6 +254,7 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 
 | Sprint | Datum | Zustand |
 |---|---|---|
+| Incident-Rollout 2026-07-25 (Crawl-Mandantenamplifikation): Beweisprotokoll korrigieren + Production-Beweislauf | 2026-07-25 | **Teilweise abgeschlossen** — der **Ursachen-Fix ist produktiv bewiesen** (IB-2, L-1…L-6): 134 geteilte Wege übersprungen, **0** `circuit-open` (vorher 130–135), Fehler **141 → 7**, Google-Last **1 743 statt 2 × 1 743**. Der Beweislauf ist nach IB-2 **angehalten**: drei Befunde (F-A Health-Report meldet trotzdem `alarm`, F-B Klassifikationsgrenze um 1 verfehlt, F-C 4 von 6 Mandaten weiter außerhalb des Zeitbudgets) brauchen eine Betreiberentscheidung. Details unten. |
 | Review + Merge von PR #125, danach Production-Ablauf bis vor den ersten Zugriff vorbereiten | 2026-07-25 | **Teilweise abgeschlossen** — PR #125 adversarial reviewt (3 Reviewer, 20 belegte Befunde, alle behoben) und als `0d6d867` gemergt (CI auf `main` grün, Vercel-Production `READY`). Der Production-Ablauf ist vollständig vorbereitet; **kein Production-Zugriff erfolgt, keine Seeds ausgeführt**. Wartet auf die Betreiberfreigabe für den Pre-Seed-Export. Details unten. |
 | Merge #123 + Sicherung, gezielter Restore und Entscheidungsreife für die Seed-Einspielung | 2026-07-25 | **Teilweise abgeschlossen** — #123 gemergt (`bed7f53`); Backup- und Restore-Werkzeug gebaut und isoliert getestet (33/33 lokal, 31/31 in CI, Suite 145/145). Die Seed-Ausführung bleibt **blockiert**: die Sicherung ist noch nicht gelaufen und die Reaktivierung der 6 Bundeswege ist nicht freigegeben. Details unten. |
 | Phase-1-Block: Quellenpakete inventarisieren + automatische Paketzuweisung beweisen | 2026-07-25 | **Erfolgreich abgeschlossen** — beide Abnahmekriterien erfüllt und belegt; 145/145 Offline-Suiten grün; als PR #124 gemergt (`118e90c`), CI auf `main` grün, Vercel-Production `READY`. Details unten. |
@@ -262,6 +263,43 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 | Merge von PR #105 — Anker-Recovery-Pfad in Production stillgelegt | 2026-07-25 | **Erfolgreich abgeschlossen** — gemergt als `43e9e35`; Stilllegung auf `main` verifiziert. |
 | Recovery-Pfad-Review + Zusammenführung von PR #105 auf die kanonische Kontextstruktur | 2026-07-25 | **Erfolgreich abgeschlossen** |
 | Kontextstruktur für Claude Code (`CLAUDE.md` + Einstiegsschicht) | 2026-07-25 | **Erfolgreich abgeschlossen** — reine Dokumentation, gemergt als PR #119 (`c6a3d40`). |
+
+**Sprint „Incident-Rollout 2026-07-25 (Crawl-Mandantenamplifikation)" — Nachweis**
+
+- **Was versucht wurde:** das Beweisprotokoll des Incidents an der realen Implementierung
+  ausrichten und den Production-Beweislauf rein beobachtend bis zum Abschluss führen.
+- **Dokumentationskorrektur (abgeschlossen):** drei Spezifikationslücken belegt und
+  behoben — **SL-1** die Stufen B1–B3 waren technisch nie ausführbar (keine Schnittstelle
+  grenzt einen Crawl auf einzelne Wege oder auf `rss` ein); **SL-2** `force` deaktiviert
+  den zu beweisenden Schutz selbst (`scheduler.js:263`), die alten Stufen hätten das
+  Vorfall-Verhalten reproduziert; **SL-3** der Pipeline-Cron kann Folgemandate wegen
+  seines äußeren 280-s-Timeouts gar nicht belegen. Neuer Ablauf IB-0…IB-5 plus
+  Prüfliste L-1…L-9. **Keine Softwareänderung** — es sind Doku-Lücken.
+- **Production-Beweise:** IB-0 bestanden (Deployment `READY`, Zählerfelder in der
+  Whitelist). IB-1 strukturell nicht messbar (SL-3). **IB-2 teilweise bestanden:**
+  L-1…L-6 ✅ — der Ursachen-Fix wirkt nachweislich (`sharedSkippedSources = 134`,
+  `circuitOpenSources = 0`, `failedSources` 141 → 7, Σ `googleUrlResolution.attempted`
+  = 1 743 = Volumen **eines** Mandats). **L-7 ❌** — nur 2 von 6 Mandaten verarbeitet.
+- **Was nicht erreicht wurde:** **F-A (P1)** `buildRollingCrawlHealth` kennt
+  `isReducedRun` nicht; ein reduzierter Lauf mit `stark-degradiert` treibt den
+  06:00-Report auf `wiederholt-degradiert` / `alarm` (mit dem ausgelieferten Code gegen
+  echte Laufdaten nachgerechnet) → L-8 vorab gescheitert. **F-B (P2)** `attempted = 10`
+  gegen `minAttempted = 10`: der Schutz greift erst bei `< 10`, verfehlt den Fall also um
+  einen Weg. **F-C (P1)** die §7-Prognose „alle 6 Mandate passen ins 240-s-Budget" ist
+  widerlegt (197 s + 47 s = 244 s); Fix D machte den Abbruch aber erstmals sichtbar
+  (`systemErrors` 65 → 66, „Zeitbudget erschoepft: 4 von 6 Mandaten nicht verarbeitet").
+- **Tests:** Offline-Suite **147/147 grün**. Keine Codeänderung in diesem Sprint.
+- **Eingriffe:** **keine** — rein lesende `SELECT`s und Vercel-Logs; kein manueller Lauf,
+  kein `force`, keine Env-, Flag-, Cron-, Migrations- oder Datenänderung.
+- **Branch:** `claude/helmut-incident-rollout-nm2j7u` (enthält `origin/main` bis `9534bc0`),
+  kein PR eröffnet. Änderungen sind reine Dokumentation und sicher weiterverwendbar.
+- **Nächste Entscheidung (Betreiber):** F-A/F-B beheben (Health-Report-Zählung
+  reduziert-bewusst machen bzw. `HELMUT_RUNSTATE_MIN_ATTEMPTED` anheben) und für F-C
+  einen Weg wählen — Zeitbudget anheben, Demo-Mandate nach **OP-04** deaktivieren oder
+  den Zustand bewusst akzeptieren. Alles drei liegt außerhalb des freigegebenen
+  Incident-Rahmens.
+- **Kanonische Belege:** [`betrieb/incident_2026-07-25_crawl_mandantenamplifikation.md`](betrieb/incident_2026-07-25_crawl_mandantenamplifikation.md)
+  §7.1/§11 · [`betrieb/production_beweisprotokoll.md`](betrieb/production_beweisprotokoll.md) §9.
 
 **Sprint „Review + Merge PR #125, Production-Ablauf vorbereiten" — Nachweis**
 
