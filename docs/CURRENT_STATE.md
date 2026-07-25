@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-25 · **`main`-HEAD:** `54fe370` (Merge #122)
+**Letzte Aktualisierung:** 2026-07-25 · **`main`-HEAD:** `61767a9` (Merge #118)
 
 > **Diese Datei ist der aktuelle Stand.** Bei Widerspruch zu älteren Statusdokumenten
 > gilt diese Datei. Sie enthält **keine Chronik** — Details je offenem Punkt stehen in
@@ -34,6 +34,7 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | Blockierendes CI-Gate (Offline-Suite + Chromium-Smoke) existiert | `.github/workflows/ci.yml` |
 | Profil-Storage relational entkoppelt (Exklusivmodus) | PR #113 |
 | Doku-Konsolidierung: `main` als einzige Architekturwahrheit | PR #114 (Recovery Sprint R2) |
+| Quellenarchitektur-Remediation: Seed-Reproduzierbarkeit (P0-1) inkl. Drift-CI-Gate, Neutralisierung der Pflicht-Landespakete (P0-2), 6 Bundesweg-Reparaturen im Katalog (P1-5) | PR #118, gemergt 2026-07-25 (`61767a9`), CI grün, Deployment `READY` |
 | Kontext-Einstiegsschicht (`CLAUDE.md`, `START_HERE`, `CURRENT_STATE`, `ARCHITECTURE`) | PR #119, gemergt 2026-07-25 |
 | **Anker-Recovery-Pfad (F-3) technisch stillgelegt** — Workflow entfernt, Execute-Skript ohne DB-/KI-/Write-Pfad, `RECOVERY_ALLOWLIST` leer, namensunabhängiger CI-Riegel | PR #105, gemergt 2026-07-25 (`43e9e35`); auf `main` verifiziert: Workflow weg, Allowlist `[]`, 0 `require` im Execute-Skript |
 | `failed-final` wird im Pending-Filter und in `understandOneCluster` terminal behandelt („nie wieder") | PR #105 |
@@ -55,6 +56,7 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | Punkt | Ursache | Nächster Schritt |
 |---|---|---|
 | **OP-01** Supabase Pro + PITR | Kostenentscheidung des Betreibers (~25 $/Monat); Free-Plan = **keine Backups** | Betreiber schaltet Pro + PITR frei, dann Restore-Übung nach `betrieb/backup-restore-runbook.md` |
+| **Quellen-Seed-Einspielung** (macht P0-2 und die 6 Bundesweg-Reparaturen in der DB wirksam) | **fehlende Sicherung** — kein Backup, kein PITR (Folge von OP-01). Code ist fertig und deployt, die Vorschau steht | Vorlage `betrieb/quellen-seed-einspielung.md` §7 — entweder manuelles Backup vor dem Lauf oder OP-01 freigeben |
 | **OP-02** Recht (Pilotvertrag, AVV, DSFA, Art.-9-Grundlage, Fristen) | externe Prüfung durch Anwalt/DSB steht aus | Entwürfe aus `recht/` prüfen lassen und zeichnen; blockiert OP-12 |
 | **OP-03** Zweitmandanten-Freigabepaket | Grundsatzentscheidung „DB-seitige Durchsetzung vs. dokumentierte App-Guard-Akzeptanz" fehlt (`mandantentrennung-architektur.md` bewertet die Wege) | Betreiber entscheidet einen Weg; danach Migration + Env + Probelauf |
 | **OP-04** Demo-Mandate entfernen | Production-Datenänderung, freigabepflichtig | Freigabe einholen, dann über Provisionierungswerkzeug deaktivieren |
@@ -154,7 +156,7 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 
 | PR | Inhalt | Einschätzung |
 |---|---|---|
-| **#118** | Quellenarchitektur-Gesamtaudit + Remediation (Seed-Reproduzierbarkeit P0-1, Neutralisierung der Landes-Basispakete P0-2, 6 verifizierte Bundesweg-Reparaturen P1-5) | **reviewt, nachgebessert, mergefähig** — adversarial geprüft, 3 belegte Defekte behoben, auf `main` `54fe370` gezogen, Offline-Suite 144/144. **Merge empfohlen** (Option B abgeschlossen) |
+| **#123** | Freigabevorlage Quellen-Seed-Einspielung + Statusnachzug | Doku-only; die Vorlage klassifiziert die Seed-Ausführung als **blockiert** (siehe §4) |
 | #117 | WBSB-Pilotpaket + Workflow-Härtung vereinigt | **Draft, ausdrücklich nicht mergen** (öffnet nur die CI-Prüfung) |
 | #115 | Bestandsabgleich `bund-basis` + Pflichtquellen-Verifikationstest | **Draft, ausdrücklich nicht mergen** (nur um den Workflow auf einem Runner mit Egress laufen zu lassen) |
 | #112 | Geführter Erstlogin-/Onboarding-Flow (14 Screens) | manuelle Abnahme im Preview ausstehend |
@@ -197,16 +199,18 @@ ausführen** — er ist unabhängig von allem anderen, beseitigt das größte
 Einzelrisiko und ist Voraussetzung dafür, dass die Migration aus OP-03 gefahrlos
 eingespielt werden kann.
 
-Parallel möglich, ohne Freigabe:
-1. **PR #118 mergen** — reviewt, nachgebessert, mergefähig (siehe §12). Der Merge ändert das
-   Crawl-Verhalten **nicht**: die reparierten Wege bleiben in der DB `broken` und damit
-   ausgeschlossen, bis der Seed separat und freigabepflichtig eingespielt wird.
-2. **OP-11 Branch Protection** verifizieren (2 Minuten, reversibel,
-   `betrieb/branch-protection.md`).
+OP-01 ist zugleich der Blocker für den nächsten konkret vorbereiteten Schritt: die
+**Quellen-Seed-Einspielung** (Seeds `20260713` + `20260717`) macht die P0-2-Neutralisierung und die
+6 Bundesweg-Reparaturen in der Datenbank wirksam. Sie ist vollständig entscheidungsreif vorbereitet
+— Soll-Zahlen, Idempotenznachweis, Rollback-Bewertung und Go-/Stop-Kriterien stehen in
+[`betrieb/quellen-seed-einspielung.md`](betrieb/quellen-seed-einspielung.md) — aber **blockiert**,
+weil kein Backup und kein PITR existieren. Kleinster Weg ohne Kostenentscheidung: vor dem Lauf
+`node scripts/backup-export.js` (read-only) sichern.
 
-**Erst nach dem Merge von #118 und als eigene Freigabe:** Einspielen der beiden Seeds
-(20260713 + 20260717). Das ist der Schritt, der die P1-5-Reparaturen und die P0-2-Neutralisierung
-in der Datenbank tatsächlich wirksam macht — **Production-Datenänderung, freigabepflichtig**.
+Parallel möglich, ohne Freigabe:
+1. **OP-11 Branch Protection** verifizieren (2 Minuten, reversibel,
+   `betrieb/branch-protection.md`).
+2. **Review offener PRs** (#112, #111).
 
 **Vor einer OP-06-Ausführung ist eine Fachentscheidung nötig:** die mandatsrelative
 Begründung von 16 der 34 Allowlist-Einträge (§3) muss bewertet werden — terminale
@@ -216,10 +220,43 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 
 | Sprint | Datum | Zustand |
 |---|---|---|
-| Merge #122 + adversarialer Review von PR #118 (Quellenarchitektur-Remediation) | 2026-07-25 | **Erfolgreich abgeschlossen** — #122 gemergt (`54fe370`); #118 reviewt, 3 belegte Defekte behoben, mergefähig. Details unten. |
+| Merge PR #118 + Vorbereitung des Quellen-Seed-Sprints | 2026-07-25 | **Teilweise abgeschlossen** — #118 gemergt (`61767a9`), CI grün, Deployment `READY`. Die Seed-Einspielung ist vollständig entscheidungsreif vorbereitet, aber **blockiert** (fehlende Sicherung). Details unten. |
+| Merge #122 + adversarialer Review von PR #118 (Quellenarchitektur-Remediation) | 2026-07-25 | **Erfolgreich abgeschlossen** — #122 gemergt (`54fe370`); #118 reviewt, 3 belegte Defekte behoben. |
 | Merge von PR #105 — Anker-Recovery-Pfad in Production stillgelegt | 2026-07-25 | **Erfolgreich abgeschlossen** — gemergt als `43e9e35`; Stilllegung auf `main` verifiziert. |
 | Recovery-Pfad-Review + Zusammenführung von PR #105 auf die kanonische Kontextstruktur | 2026-07-25 | **Erfolgreich abgeschlossen** |
 | Kontextstruktur für Claude Code (`CLAUDE.md` + Einstiegsschicht) | 2026-07-25 | **Erfolgreich abgeschlossen** — reine Dokumentation, gemergt als PR #119 (`c6a3d40`). |
+
+**Sprint „Merge PR #118 + Seed-Vorbereitung" — Nachweis**
+
+- **PR #118 gemergt** als Merge-Commit `61767a9`. Vorab alle zwölf Bedingungen verifiziert
+  (`clean`, CI 5/5, 0 fehlende `main`-Commits, keine Reviews, Trockenlauf konfliktfrei, alle vier
+  Korrekturen im Branch, keine festen Personen-IDs). CI auf `main` **grün**, Vercel-Production
+  `READY`. Auf `main` gegengeprüft: Aufräum-DELETE vorhanden, Editionspinning gesetzt, 0
+  `broken`-Annotationen in `catalog.js`.
+- **Der Merge hat die Datenbank nicht verändert** — verifiziert: kein Workflow, kein Cron und kein
+  Server-Pfad spielt Seeds ein; die Dateien werden ausschließlich von Test-/Preflight-Skripten
+  gelesen.
+- **Seed-Sprint vorbereitet, nicht ausgeführt.** Vollständige Vorlage inklusive Soll-Zahlen,
+  Reihenfolge, Idempotenznachweis, Rollback-Bewertung, Go-/Stop-Kriterien und Betreiberentscheidung:
+  [`betrieb/quellen-seed-einspielung.md`](betrieb/quellen-seed-einspielung.md).
+- **Vorschau (lokal simuliert, kein Production-Zugriff):** Seed 1 → +2 Pakete, +1 Paketzuordnung,
+  6 Abrufwege aktualisiert; Seed 2 → 4 alte Paketzuordnungen entfernt, 4 neue eingefügt.
+  Betroffen: **0** Publisher · **6** Retrieval Paths · **4** Source Packages · **4** entfernte und
+  **5** neu eingefügte Paketzuordnungen. Zweiter Lauf beider Seeds: **0 Änderungen** (idempotent).
+- **Wichtigster operativer Punkt:** die 6 reparierten Bundeswege stehen in Production auf
+  `broken` und laufen deshalb heute **nicht**. Seed 1 setzt sie auf `needs_review` und macht sie
+  damit **absichtlich wieder ausführbar** — am Crawl-Plan verifiziert: +2 garantiert und sofort
+  (die beiden `always_on`-Wege), bis zu +4 weitere abhängig vom Live-Profilbestand. Das muss
+  ausdrücklich mitfreigegeben werden. Keine Amplifikation (Shared-Path-Dedup aus #120), keine
+  zusätzlichen KI-Kosten.
+- **Berlin/Brandenburg bleiben gesperrt** — verifiziert: alle 18 BE/BB-Wege `landesmodul-gesperrt`,
+  0 im aktiven Plan; das Gate greift über Pfad-IDs, nicht über Paketschlüssel.
+- **Backup/Rollback:** **kein Backup, kein PITR** (Supabase Free-Plan, Folge von OP-01). Feiner
+  Rollback existiert nur für Seed 2; der Bund-Rollback ist ein `drop table … cascade` und für
+  gezielten Rückbau unbrauchbar. Ein Rollback stellt die alten Zuordnungen **nicht** wieder her.
+- **Entscheidung: Option B — Ausführung blockiert.** Es fehlt genau eine belastbare Sicherung.
+  Kleinster Weg ohne Kostenentscheidung: `node scripts/backup-export.js` vor dem Lauf. Dauerhaft:
+  OP-01 freigeben. **Die Kostenentscheidung liegt beim Betreiber.**
 
 **Sprint „Merge #122 + Review PR #118" — Nachweis**
 
