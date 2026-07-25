@@ -199,7 +199,14 @@ check("Ehrlichkeit: leere Dokumentdaten -> contentYield.available=false", emptyR
 check("Ehrlichkeit: ohne Signale -> Frische-Achsen 'unbekannt' (nicht 'frisch')", emptyReport.watchdog.axes.find((a) => a.key === "crawl").status === "unbekannt");
 check("echter Katalog: jeder Abrufweg bekommt eine Bewertung (keine Luecke)", report.pathQuality.length === M.retrievalPaths.length);
 check("P1-5: reparierte Pflichtquellen (bundestag/bundesregierung) nicht mehr defekt, sondern 'pruefen' (needs_review, noch keine Dokumente in diesem Fixture)", report.pathQuality.some((p) => p.legacy_source_id === "bundestag" && p.technicalHealth === "pruefen") && report.pathQuality.some((p) => p.legacy_source_id === "bundesregierung" && p.technicalHealth === "pruefen"));
-check("P1-5: keine Pflichtquelle mehr technicalHealth='defekt' (alle 6 vormals broken markierten Wege repariert)", !report.pathQuality.some((p) => p.technicalHealth === "defekt"));
+// A-1 (Seed-Fachpruefung): genau ein Weg bleibt bewusst 'defekt' — ausschuss-arbeit-soziales
+// wird nicht mit dem Seed reaktiviert (catalog.js PATH_STATUS_OVERRIDE). Er ist NICHT kritisch
+// (is_critical=false), es bleibt also keine Pflichtquelle defekt.
+const defekt = report.pathQuality.filter((p) => p.technicalHealth === "defekt");
+check("A-1: genau ein bewusst nicht reaktivierter Weg ist 'defekt' (ausschuss-arbeit-soziales)",
+  defekt.length === 1 && defekt[0].legacy_source_id === "ausschuss-arbeit-soziales");
+check("A-1: keine KRITISCHE Pflichtquelle ist defekt",
+  !defekt.some((p) => M.retrievalPaths.find((rp) => rp.legacy_source_id === p.legacy_source_id)?.is_critical));
 
 console.log(`\n== Ergebnis: ${pass} PASS, ${fail} FAIL ==`);
 process.exit(fail > 0 ? 1 : 0);

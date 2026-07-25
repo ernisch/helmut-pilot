@@ -74,11 +74,23 @@ function build() {
   out.push("");
 
   // 5) retrieval_paths
+  //
+  // ON-CONFLICT-Spalten (R-2 der Seed-Fachpruefung, betrieb/quellen-seed-einspielung.md §8.6):
+  // 'url', 'query', 'parser' und 'max_items' gehoeren MIT in das Update. Ohne sie beschreibt
+  // eine bestehende Zeile nach dem Einspielen den Abrufweg falsch — z. B. rp-dgb mit
+  // method='googlenews_search', aber url='https://www.dgb.de', parser='html-scrape',
+  // max_items=1. Das widerspricht "Quellenwahrheit ist relational" (START_HERE §6) und dem
+  // Prinzip ehrlicher Zustaende. Der Abruf selbst haengt nicht daran (toCrawlerSource
+  // bevorzugt das Legacy-Objekt) — es geht ausschliesslich darum, dass die Tabelle stimmt.
+  //
+  // BEWUSST NICHT im Update: 'activation_mode' (entscheidet, ob ein Weg auch OHNE Profil
+  // laeuft — eine Aktivierungsentscheidung, die nie als Nebeneffekt eines Seeds fallen darf),
+  // 'is_critical', 'name', 'represents_type' (rein beschreibend, kein Konsistenzproblem).
   out.push("-- Abrufwege");
   out.push(insert("retrieval_paths",
     ["id", "publisher_id", "legacy_source_id", "name", "method", "url", "query", "parser", "priority", "status", "activation_mode", "is_critical", "max_items", "represents_type"],
     m.retrievalPaths.map((p) => [q(p.id), q(p.publisher_id), q(p.legacy_source_id), q(p.name), q(p.method), q(p.url), q(p.query), q(p.parser), qint(p.priority), q(p.status), q(p.activation_mode), qbool(p.is_critical), qint(p.max_items), q(p.represents_type)]),
-    "id", ["publisher_id", "method", "status", "priority"]));
+    "id", ["publisher_id", "method", "url", "query", "parser", "status", "priority", "max_items"]));
   out.push("");
 
   // 6) package_paths

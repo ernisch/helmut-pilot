@@ -192,7 +192,21 @@ check("ohne Datenkontext nur explizite Eintraege (dip)", (() => {
   return rows.length === 1 && rows[0].legacy_source_id === "dip" && rows[0].classification === "active_uncatalogued";
 })());
 const broken = M.retrievalPaths.filter((p) => p.status === "broken").map((p) => p.legacy_source_id);
-check("P1-5: keine defekten Direkt-Feeds mehr (alle 6 verifiziert repariert, Sprint 9B)", broken.length === 0);
+// A-1 (Seed-Fachpruefung, betrieb/quellen-seed-einspielung.md §8.5): 5 der 6 in Sprint 9B
+// verifizierten Reparaturen werden mit dem Seed reaktiviert; ausschuss-arbeit-soziales bleibt
+// bewusst 'broken' (catalog.js PATH_STATUS_OVERRIDE) — der Google-Ersatzweg holt Inhalte der
+// Domain bundestag.de, die rp-bundestag bereits direkt abruft.
+check("A-1: genau ein bewusst nicht reaktivierter Weg (ausschuss-arbeit-soziales)",
+  broken.length === 1 && broken[0] === "ausschuss-arbeit-soziales");
+check("A-1: der nicht reaktivierte Weg ist NICHT kritisch und nicht always_on", (() => {
+  const p = M.retrievalPaths.find((x) => x.legacy_source_id === "ausschuss-arbeit-soziales");
+  return p.is_critical === false && p.activation_mode === "auto";
+})());
+check("A-1: der nicht reaktivierte Weg ist trotzdem korrekt beschrieben (Seed-Wahrheit, R-2)", (() => {
+  const p = M.retrievalPaths.find((x) => x.legacy_source_id === "ausschuss-arbeit-soziales");
+  return p.method === "googlenews_search" && p.parser === "googlenews-batchexecute"
+    && p.url.startsWith("https://news.google.com/rss/search?") && p.max_items === 16;
+})());
 check("P1-5: reparierte Pflichtquellen (Bundestag/Bundesregierung) needs_review, weiter kritisch -> nicht still archiviert", (() => {
   const bt = M.retrievalPaths.find((p) => p.legacy_source_id === "bundestag");
   const br = M.retrievalPaths.find((p) => p.legacy_source_id === "bundesregierung");
@@ -259,12 +273,32 @@ check("P0-2: Landes-Basispakete tragen nur die 12 NEUTRALEN Pflichtklassen (kein
   return b.required_classes.length === 12 && bb.required_classes.length === 12
     && PILOT.every((k) => !b.required_classes.includes(k)) && PILOT.every((k) => !bb.required_classes.includes(k));
 })());
-check("P0-2: Landes-Partei-Pakete (die-linke-berlin/-brandenburg) existieren, NICHT is_base, tragen die 3 Pilotklassen", (() => {
+check("P0-2: Landes-Partei-Pakete (die-linke-berlin/-brandenburg) existieren, NICHT is_base, sind 'prepared'", (() => {
   const dlb = M.packages.find((p) => p.key === "die-linke-berlin");
   const dlbb = M.packages.find((p) => p.key === "die-linke-brandenburg");
-  const PILOT = ["partei_pilot", "fraktion_pilot", "person_pilot"];
-  return dlb && dlb.is_base === false && dlb.status === "prepared" && JSON.stringify(dlb.required_classes.slice().sort()) === JSON.stringify(PILOT.slice().sort())
-    && dlbb && dlbb.is_base === false && dlbb.status === "prepared" && JSON.stringify(dlbb.required_classes.slice().sort()) === JSON.stringify(PILOT.slice().sort());
+  return dlb && dlb.is_base === false && dlb.status === "prepared"
+    && dlbb && dlbb.is_base === false && dlbb.status === "prepared";
+})());
+check("P0-2: die-linke-berlin traegt alle 3 Pilotklassen (partei/fraktion/person real belegt)", (() => {
+  const dlb = M.packages.find((p) => p.key === "die-linke-berlin");
+  const PILOT = ["fraktion_pilot", "partei_pilot", "person_pilot"];
+  return JSON.stringify(dlb.required_classes.slice().sort()) === JSON.stringify(PILOT);
+})());
+// A-3 (Seed-Fachpruefung): Brandenburg fuehrt NUR partei_pilot als Pflicht. fraktion_pilot ist
+// strukturell unmoeglich (Die Linke ist in der 8. WP nicht im Landtag), person_pilot entsteht
+// zur Laufzeit aus dem Profil und gehoert nie in ein geteiltes Parteipaket. Beides als Pflicht
+// zu fuehren erzeugt dauerhaft unerfuellbare "fehlende" Klassen im Landesmodul-Rollup.
+check("A-3: die-linke-brandenburg fuehrt nur partei_pilot als Pflichtklasse", (() => {
+  const dlbb = M.packages.find((p) => p.key === "die-linke-brandenburg");
+  return JSON.stringify(dlbb.required_classes) === JSON.stringify(["partei_pilot"]);
+})());
+// Gegen den Landesmodul-Seed pruefen — die BB-Abrufwege leben dort, nicht im Bund-Modell M.
+check("A-3: fuer die entfallenen Klassen existiert in Brandenburg auch wirklich kein Abrufweg", (() => {
+  const { buildLandesmodulSeed } = require("../lib/helmut/quellenarchitektur/seeds/landesmodule-quellen");
+  const bb = buildLandesmodulSeed().retrievalPaths
+    .filter((p) => String(p.id).startsWith("rp-bb-")).map((p) => p.legacy_source_id);
+  if (!bb.length) return false; // Vorbedingung: der BB-Teil des Seeds ist nicht leer
+  return bb.includes("bb-partei_pilot") && !bb.includes("bb-fraktion_pilot") && !bb.includes("bb-person_pilot");
 })());
 check("P0-2: die 15 Pflichtklassen (Basis+Partei) je Land bleiben in Summe vollstaendig", (() => {
   const b = M.packages.find((p) => p.key === "berlin-basis");

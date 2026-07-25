@@ -58,7 +58,7 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | Punkt | Ursache | Nächster Schritt |
 |---|---|---|
 | **OP-01** Supabase Pro + PITR | Kostenentscheidung des Betreibers (~25 $/Monat); Free-Plan = **keine Backups** | Betreiber schaltet Pro + PITR frei, dann Restore-Übung nach `betrieb/backup-restore-runbook.md` |
-| **Quellen-Seed-Einspielung** (macht P0-2 und die 6 Bundesweg-Reparaturen in der DB wirksam) | **fehlende Sicherung** — kein Backup, kein PITR (Folge von OP-01). Code ist fertig und deployt, die Vorschau steht | Vorlage `betrieb/quellen-seed-einspielung.md` §7 — entweder manuelles Backup vor dem Lauf oder OP-01 freigeben |
+| **Quellen-Seed-Einspielung** (macht P0-2 und die Bundesweg-Reparaturen in der DB wirksam; fachlich geprüft und gehärtet, reaktiviert 5 von 6 Wegen) | **fehlende Sicherung** — kein Backup, kein PITR (Folge von OP-01). Code ist fertig und deployt, Vorschau, Fachprüfung (§8) und Härtung (§9) stehen | Vorlage `betrieb/quellen-seed-einspielung.md` §7 — entweder manuelles Backup vor dem Lauf oder OP-01 freigeben |
 | **OP-02** Recht (Pilotvertrag, AVV, DSFA, Art.-9-Grundlage, Fristen) | externe Prüfung durch Anwalt/DSB steht aus | Entwürfe aus `recht/` prüfen lassen und zeichnen; blockiert OP-12 |
 | **OP-03** Zweitmandanten-Freigabepaket | Grundsatzentscheidung „DB-seitige Durchsetzung vs. dokumentierte App-Guard-Akzeptanz" fehlt (`mandantentrennung-architektur.md` bewertet die Wege) | Betreiber entscheidet einen Weg; danach Migration + Env + Probelauf |
 | **OP-04** Demo-Mandate entfernen — **Umfang korrigiert 2026-07-25:** Production führt **8 Profile, davon 6 aktiv** (nicht 1 Pilot + 2 Demo-Mandate); fünf davon tragen Klarnamen realer Abgeordneter | Production-Datenänderung, freigabepflichtig; berührt zusätzlich OP-02 (personenbezogene Daten) | je Profil entscheiden, dann über Provisionierungswerkzeug deaktivieren (`quellenarchitektur/30-paket-inventur-production.md` §5, A-1) |
@@ -216,6 +216,15 @@ OP-01 ist zugleich der Blocker für den nächsten konkret vorbereiteten Schritt:
 weil kein Backup und kein PITR existieren. Kleinster Weg ohne Kostenentscheidung: vor dem Lauf
 `node scripts/backup-export.js` (read-only) sichern.
 
+**Stand des Seeds nach der Fachprüfung und Härtung (2026-07-25, §8/§9 der Vorlage):** Der Seed
+reaktiviert **5 statt 6** Bundeswege — `ausschuss-arbeit-soziales` bleibt bewusst `broken`
+(Google-Ersatzweg ohne Eigenertrag, A-1). `die-linke-brandenburg` führt nur noch `partei_pilot`
+als Pflichtklasse (A-3). Die `on-conflict`-Klausel schreibt jetzt auch `url`, `query`, `parser`
+und `max_items`, damit keine Abrufweg-Zeile ihren eigenen Weg falsch beschreibt (R-2). Belegt:
+der Seed hebt die real abgerufenen Direktwege von **3 auf 5** und senkt damit das
+Google-Klumpenrisiko (B1), statt es zu erhöhen. Fachlich ist der Seed damit einspielbereit; der
+**einzige verbleibende Blocker ist die fehlende Sicherung**.
+
 Die Paket-Inventur belegt den Handlungsbedarf mit Production-Zahlen: die Landes-Basispakete tragen
 in der Datenbank weiterhin Partei-, Fraktions- und Personenquellen (A-3), und 2 der 5
 `always_on`-Kernwege stehen weiterhin auf `broken` (A-4). Ohne die Seed-Einspielung können die
@@ -238,6 +247,7 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 
 | Sprint | Datum | Zustand |
 |---|---|---|
+| Quellen-Seed: Fachprüfung jeder Einzeländerung + Härtung (A-1, A-3, R-2) | 2026-07-25 | **Erfolgreich abgeschlossen** — 18 Seed-Änderungen einzeln bewertet, drei umgesetzt; 145/145 Offline-Suiten grün. Production unverändert (nur lesende `SELECT`s). Nachweis in [`betrieb/quellen-seed-einspielung.md`](betrieb/quellen-seed-einspielung.md) §8/§9; Branch `claude/helmut-seed-review-6nocps`, kein PR, kein Merge |
 | Phase-1-Block: Quellenpakete inventarisieren + automatische Paketzuweisung beweisen | 2026-07-25 | **Erfolgreich abgeschlossen** — beide Abnahmekriterien erfüllt und belegt; 145/145 Offline-Suiten grün; als PR #124 gemergt (`118e90c`), CI auf `main` grün, Vercel-Production `READY`. Details unten. |
 | Merge PR #118 + Vorbereitung des Quellen-Seed-Sprints | 2026-07-25 | **Teilweise abgeschlossen** — #118 gemergt (`61767a9`), CI grün, Deployment `READY`. Die Seed-Einspielung ist vollständig entscheidungsreif vorbereitet, aber **blockiert** (fehlende Sicherung). Details unten. |
 | Merge #122 + adversarialer Review von PR #118 (Quellenarchitektur-Remediation) | 2026-07-25 | **Erfolgreich abgeschlossen** — #122 gemergt (`54fe370`); #118 reviewt, 3 belegte Defekte behoben. |

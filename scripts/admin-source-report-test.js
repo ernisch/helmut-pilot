@@ -64,7 +64,15 @@ const qa = rEmpty.views.quellenAbrufwege;
 check("alle 144 Abrufwege bewertet (keine Lücke)", qa.pathCount === 144);
 check("nach Herausgeber gruppiert (51 Herausgeber)", qa.herausgeber.length === 51);
 check("welche Abrufwege gesund/defekt/unbekannt (drei Kübel)", typeof qa.healthCounts.gesund === "number" && typeof qa.healthCounts.defekt === "number" && typeof qa.healthCounts.unbekannt === "number");
-check("keine defekten Abrufwege mehr (P1-5: alle 6 vormals 'broken' markierten Bundeswege repariert)", qa.healthCounts.defekt === 0);
+// A-1 (Seed-Fachpruefung): 5 der 6 vormals 'broken' markierten Bundeswege sind repariert und
+// wieder ausfuehrbar; ausschuss-arbeit-soziales bleibt bewusst 'broken' (Betriebsentscheidung,
+// catalog.js PATH_STATUS_OVERRIDE) — kein Google-Ersatzweg ohne belegten Eigenertrag.
+const defektePfade = rEmpty.views.quellendetail.paths.filter((p) => p.status === "broken").map((p) => p.legacy_source_id);
+check("genau ein bewusst nicht reaktivierter Abrufweg (A-1: ausschuss-arbeit-soziales)",
+  defektePfade.length === 1 && defektePfade[0] === "ausschuss-arbeit-soziales");
+check("die uebrigen 5 vormals defekten Bundeswege sind reaktiviert (P1-5)",
+  ["bundestag", "bundesregierung", "die-linke", "linksfraktion", "dgb"]
+    .every((id) => !defektePfade.includes(id)));
 check("ohne Metriken: keine 'gesund' erfunden (alle unbekannt/defekt/inaktiv)", qa.healthCounts.gesund === 0);
 const bundestagPath = rEmpty.views.quellendetail.paths.find((p) => p.legacy_source_id === "bundestag");
 check("reparierte Pflichtquelle (bundestag) -> status needs_review, nicht mehr broken", bundestagPath.status === "needs_review" && bundestagPath.health === "unbekannt");

@@ -50,14 +50,21 @@ Seeds erzeugt **0 Einfügungen, 0 Aktualisierungen, 0 Löschungen**, Zustand byt
 
 | Tabelle | aktualisierte Spalten bei bestehender Zeile |
 |---|---|
-| `retrieval_paths` | `publisher_id`, `method`, `status`, `priority` — **nicht** `url`, `query`, `parser`, `max_items`, `activation_mode` |
+| `retrieval_paths` | `publisher_id`, `method`, `url`, `query`, `parser`, `status`, `priority`, `max_items` — **nicht** `activation_mode`, `is_critical`, `name`, `represents_type` |
 | `source_packages` | `name`, `purpose`, `status`, `required_classes` |
 | `publishers` | `name`, `evidence_role`, `trust`, `entity_id` |
 | `package_paths` | — (`do nothing`) |
 
-Das ist **kein Defekt**: Für die 6 reparierten Wege liefert `toCrawlerSource` das Legacy-Objekt aus
-`lib/helmut/sources.js` (Code, mit dem Deployment bereits live) — die neue URL und `maxItems`
-kommen also aus dem Code, nicht aus der DB-Spalte. Die DB-Spalte `url` bliebe kosmetisch veraltet.
+> **Geändert 2026-07-25 (Härtungs-Sprint, §9):** `url`, `query`, `parser` und `max_items` sind
+> **neu** in der Update-Liste. Vorher blieben sie stehen, wodurch nach dem Einspielen sechs Zeilen
+> ihren eigenen Abrufweg falsch beschrieben hätten (R-2, §8.6). `activation_mode` bleibt bewusst
+> draußen: es entscheidet, ob ein Weg auch **ohne** Profil läuft — eine Aktivierungsentscheidung,
+> die nie als Nebeneffekt eines Seeds fallen darf.
+
+Am Crawl-Verhalten ändert das nichts: für die 6 Wege liefert `toCrawlerSource` das Legacy-Objekt
+aus `lib/helmut/sources.js` (Code, mit dem Deployment bereits live) — URL und `maxItems` kommen
+also aus dem Code, nicht aus der DB-Spalte (§8.1, F-A). Die erweiterte Update-Liste sorgt allein
+dafür, dass die Tabelle beschreibt, was tatsächlich abgerufen wird.
 
 ---
 
@@ -68,9 +75,13 @@ kommen also aus dem Code, nicht aus der DB-Spalte. Die DB-Spalte `url` bliebe ko
    `is_base = false`, also **nicht** verpflichtend und **nie** automatisch aktiv.
 2. Reduziert `required_classes` von `berlin-basis` / `brandenburg-basis` von **15 auf 12**
    (die 3 Partei-/Personen-Pilotklassen wandern in die neuen Pakete) — das ist P0-2 auf Paketebene.
-3. Setzt bei **6 Bundeswegen** `status` von `broken` auf `needs_review` und korrigiert `method`
-   (2× `html` → `rss`): `bundestag`, `bundesregierung`, `die-linke`, `linksfraktion`,
-   `ausschuss-arbeit-soziales`, `dgb`.
+   `die-linke-berlin` trägt alle 3 Klassen; `die-linke-brandenburg` seit dem Härtungs-Sprint nur
+   `partei_pilot` (A-3, §9).
+3. Beschreibt **6 Bundeswege** vollständig neu (`method`, `url`, `query`, `parser`, `max_items`)
+   und setzt **5 davon** von `status = broken` auf `needs_review`: `bundestag`,
+   `bundesregierung`, `die-linke`, `linksfraktion`, `dgb`.
+   **`ausschuss-arbeit-soziales` bleibt bewusst `broken`** (A-1, §9): die Zeile wird korrekt
+   beschrieben, der Weg aber **nicht** reaktiviert.
 4. Ergänzt **1 Paketzuordnung**: `pkg-die-linke-bund` → `rp-fraction-linke` (Folge des P0-1-Fixes;
    das Partei-Paket wurde bisher mit 0 funktionierenden Wegen ausgeliefert).
 
@@ -92,9 +103,10 @@ Paket, das **jedes** Berliner Landtagsprofil verpflichtend erhält. Genau das be
 
 | Wirkt sofort nach dem Einspielen | Bleibt nur vorbereitet |
 |---|---|
-| 6 Bundeswege werden ausführbar (§4, Punkt 11) | Berlin/Brandenburg bleiben gesperrt |
+| 5 Bundeswege werden ausführbar (§4, Punkt 11) | Berlin/Brandenburg bleiben gesperrt |
 | `required_classes` der Landes-Basispakete: 15 → 12 | Die 2 neuen Partei-Pakete bleiben `prepared` |
-| Paketzuordnungen der 4 Landeswege verschoben | Alle 18 BE/BB-Wege bleiben `needs_review` + `manual` |
+| Paketzuordnungen der 4 Landeswege verschoben | `ausschuss-arbeit-soziales` bleibt `broken` (A-1) |
+| 6 Abrufweg-Zeilen beschreiben ihren Weg korrekt (R-2) | Alle 18 BE/BB-Wege bleiben `needs_review` + `manual` |
 
 ---
 
@@ -121,7 +133,7 @@ Simuliert wurde gegen `main` `54fe370` (vorher) → `61767a9` (nachher) mit den 
 | Nr. | Kennzahl | Soll |
 |---|---|---|
 | 4 | betroffene **Publisher** | **0** (keine neuen, keine geänderten) |
-| 5 | betroffene **Retrieval Paths** | **6** (aktualisiert; 0 neu, 0 entfernt) |
+| 5 | betroffene **Retrieval Paths** | **6** (aktualisiert; 0 neu, 0 entfernt) — davon **5** mit Statuswechsel `broken → needs_review`, **1** (`rp-ausschuss-arbeit-soziales`) nur beschreibend korrigiert, Status bleibt `broken` |
 | 6 | betroffene **Source Packages** | **4** (2 neu + 2 mit reduzierten `required_classes`) |
 | 7 | **entfernte** alte Paketzuordnungen | **4** |
 | 8 | **neu eingefügte** Paketzuordnungen | **5** (1 aus Seed 1 + 4 aus Seed 2) |
@@ -139,22 +151,25 @@ Simuliert wurde gegen `main` `54fe370` (vorher) → `61767a9` (nachher) mit den 
 wichtigste operative Punkt dieser Vorlage und darf nicht übersehen werden:
 
 Die 6 reparierten Wege stehen in Production heute auf `status = 'broken'` und werden vom Crawl-Plan
-in `defekt` einsortiert, also **nicht ausgeführt**. Seed 1 setzt sie auf `needs_review` — damit sind
-sie wieder ausführbar. Am Crawl-Plan verifiziert (Vorher/Nachher mit echtem `buildRelationalCrawlPlan`):
+in `defekt` einsortiert, also **nicht ausgeführt**. Seed 1 setzt **5 davon** auf `needs_review` —
+damit sind sie wieder ausführbar. Am Crawl-Plan verifiziert (Vorher/Nachher mit echtem
+`buildRelationalCrawlPlan`):
 
 - **+2 garantiert und sofort:** `rp-bundestag` und `rp-bundesregierung` sind `activation_mode = always_on`
   und laufen unabhängig von jeder Paketaktivierung. Vorher `defekt`, nachher `aktiv`.
-- **bis zu +4 weitere:** `die-linke`, `linksfraktion`, `ausschuss-arbeit-soziales`, `dgb` sind
-  `auto` und laufen, sobald ihr Paket für mindestens ein Profil aktiv ist (in Production der
-  Regelfall für `bund-basis` / `arbeit-und-soziales`). Die exakte Zahl hängt vom Live-Profilbestand
-  ab und ist ohne Production-Read nicht bestimmbar.
+- **bis zu +3 weitere:** `die-linke`, `linksfraktion`, `dgb` sind `auto` und laufen, sobald ihr
+  Paket für mindestens ein Profil aktiv ist (in Production der Regelfall für `bund-basis` /
+  `arbeit-und-soziales`). Die exakte Zahl hängt vom Live-Profilbestand ab und ist ohne
+  Production-Read nicht bestimmbar.
+- **0 aus `rp-ausschuss-arbeit-soziales`:** bleibt `broken` und damit `defekt` im Plan (A-1, §9).
 
-**Kosten-/Crawl-Wirkung:** 4 der 6 Wege sind Google-News-Suchen. Sie sind mandantenunabhängig und
-werden von der Shared-Path-Deduplizierung aus PR #120 erfasst (Mandant 2+ → `skipped-shared`), es
-entsteht also **keine** Mandanten-Amplifikation. Zusatzlast ≈ 4 Abrufe pro Cron-Lauf. **Keine**
-zusätzlichen KI-Kosten (Crawl ≠ Understanding). Der Google-News-Anteil steigt von 134 auf 138 von
-143 Wegen — bei offenem Circuit Breaker liefern dann nur noch 5 statt 9 Direktfeeds (bekannter
-SPOF, im Audit als eigener P1 geführt).
+**Kosten-/Crawl-Wirkung:** 3 der 5 reaktivierten Wege sind Google-News-Suchen. Sie sind
+mandantenunabhängig und werden von der Shared-Path-Deduplizierung aus PR #120 erfasst
+(Mandant 2+ → `skipped-shared`), es entsteht also **keine** Mandanten-Amplifikation. Zusatzlast
+≈ 3 Abrufe pro Cron-Lauf. Die 2 Direktwege laufen außerhalb des Google-Gates. **Keine**
+zusätzlichen KI-Kosten im Crawl-Schritt — aber mehr Rohdokumente und damit mehr
+Understanding-Last (R-1, §8.6). Gemessen an den heute real abgerufenen Wegen: Google 85 → 88,
+Direkt-RSS **3 → 5**; bei offenem Circuit Breaker liefern also 5 statt 3 Quellen (§8.4).
 
 **12 · Bleiben Berlin/Brandenburg vorbereitet, aber inaktiv?** — **Ja, verifiziert.** Ausführung
 von `buildRelationalCrawlPlan` mit einem Berlin-/Linke-Landtagsprofil: **alle 18 BE/BB-Wege
@@ -225,7 +240,7 @@ nach dieser Prüfung gefahrlos.
 | 8 | Betreiberfreigabe | ❌ **offen** |
 | 9 | Seeds einzeln ausführen | Vorgabe für die Ausführung |
 | 10 | Nach jedem Seed Soll-Ist-Vergleich | Vorgabe (Prüfabfragen in §5) |
-| 11 | Keine automatische Quellenaktivierung | ⚠️ **bewusst nicht erfüllt** — §4 Punkt 11: 6 Wege werden absichtlich wieder ausführbar. Muss ausdrücklich mitfreigegeben werden |
+| 11 | Keine automatische Quellenaktivierung | ⚠️ **bewusst nicht erfüllt** — §4 Punkt 11: **5** Wege werden absichtlich wieder ausführbar (2 Direktfeeds, 3 Google-Suchen). Fachlich geprüft und begründet in §8; muss ausdrücklich mitfreigegeben werden |
 | 12 | Keine Crawl-Amplifikation | ✅ durch #120 abgedeckt |
 | 13 | Keine mandantenübergreifende Fehlzuordnung | ✅ §4 Punkt 12 |
 
@@ -483,3 +498,156 @@ nicht stimmt. Sauber wäre, die `on-conflict`-Klausel um `url`, `query`, `parser
    an Go-Kriterium 2 und 8 nichts; sie schließt lediglich Go-Kriterium 11 (bewusste
    Reaktivierung) fachlich ab: die Reaktivierung ist gewollt und begründet, mit der Einschränkung
    aus A-1.
+
+---
+
+## 9 · Seed-Härtung (2026-07-25) — umgesetzt, **nicht eingespielt**
+
+Umsetzung von A-1, A-3 und R-2 aus §8. **Production ist unverändert:** kein Schreibzugriff, keine
+Seed-Ausführung, keine Migration, keine Aktivierung, kein Deployment. Geändert wurden
+ausschließlich Code-Daten, der Generator, die regenerierte Seed-Datei und Tests.
+
+### 9.1 · Was geändert wurde
+
+| # | Datei | Änderung |
+|---|---|---|
+| A-1 | `lib/helmut/quellenarchitektur/catalog.js` | Neuer `PATH_STATUS_OVERRIDE` (getrennt von `KNOWN_PATH_HEALTH`) setzt `ausschuss-arbeit-soziales` auf `broken` |
+| A-3 | `lib/helmut/quellenarchitektur/seeds/packages.js` | `die-linke-brandenburg`: `required_classes` → `['partei_pilot']` (neue Konstante `LANDESPARTEI_PFLICHTKLASSEN_BRANDENBURG`) |
+| R-2 | `scripts/generate-source-architecture-seed.js` | `on conflict`-Update um `url`, `query`, `parser`, `max_items` erweitert |
+| — | `supabase/seeds/20260713_source_architecture_seed.sql` | regeneriert (**3 geänderte Zeilen**) |
+| — | 3 Testdateien | Zusicherungen auf den neuen Sollzustand gezogen (§9.5) |
+
+### 9.2 · A-1 — erneut geprüft, Empfehlung bestätigt
+
+Die Prüfung von §8.3 (Ä-9) hält: Der Ersatzweg
+`site:bundestag.de "Ausschuss für Arbeit und Soziales"` holt über einen Aggregator Inhalte der
+Domain `bundestag.de`, die Helmut nach der Reparatur von `rp-bundestag` wieder **direkt** abruft
+(`pressemitteilungen.rss` **und** `presse/hib/rss`, beide in `sources.js`). Dazu decken 6
+`rp-bundle-ausschuss-*`-Suchen dasselbe Themenfeld ab. Bei 92 % Google-Anteil im Katalog ist das
+der einzige der vier Google-Ersatzwege ohne belegten Eigenertrag.
+
+Gegengeprüft, dass die Nicht-Aktivierung nichts Kritisches trifft: `is_critical = false`,
+`activation_mode = auto`, kein `always_on`. Es bleibt **keine Pflichtquelle** defekt — beides
+ist jetzt per Test festgenagelt.
+
+**Warum `broken` und nicht `paused`:** `broken` steht heute schon in der Production-Zeile, der
+Seed lässt sie damit unverändert (Null-Delta). Semantisch wäre `paused` treffender — der Weg ist
+nicht kaputt, er wird bewusst nicht reaktiviert; `source-mode.js` schließt `paused` in Schritt 4
+mit dem Grund „nicht-reaktiviert" aus, `broken` erst in Schritt 6 als „defekt". Beide Werte
+halten ihn gleichermaßen aus dem Crawl-Plan. Die Umstellung auf `paused` wäre eine eigene
+Betreiberentscheidung und würde eine Production-Zeile für eine reine Etikettierung anfassen —
+deshalb hier bewusst nicht. Der Code-Kommentar in `catalog.js` hält beides fest, damit die
+Angabe niemand als Messwert missversteht.
+
+### 9.3 · A-3 — geprüft und geändert
+
+Der Auftrag nannte als Ausgangswert `['landtagsfraktion','partei_pilot']`; tatsächlich stand dort
+`['partei_pilot','fraktion_pilot','person_pilot']` (die gemeinsame Konstante
+`LANDESMODUL_PARTEI_PFLICHTKLASSEN`, die Berlin weiterhin nutzt). Zielwert `['partei_pilot']` ist
+richtig, belegt aus `seeds/landesmodule-kandidaten.js`:
+
+- **`fraktion_pilot` ist strukturell unmöglich:** „Die Linke ist in der 8. WP NICHT im Landtag —
+  es gibt keine aktive Linksfraktion. Nur die Partei (`partei_pilot`) ist valide."
+- **`person_pilot` bleibt bewusst unbesetzt** („Keine Ersatzperson aus fremder Partei") — und
+  eine Personenquelle entsteht ohnehin zur Laufzeit aus dem Profil
+  (`scheduler.personNewsSource`, id `<mandats-id>-news`) und gehört in das persönliche Paket,
+  nicht in ein geteiltes Parteipaket (CLAUDE.md §4.2). Sie kann hier also nie erfüllt werden.
+
+Verifiziert, dass für beide Klassen in Brandenburg wirklich kein Abrufweg existiert (Test gegen
+`buildLandesmodulSeed`, mit Nichtleer-Vorbedingung). **Wirkung:** der Landesmodul-Rollup für
+Brandenburg verlangt 13 statt 15 Pflichtklassen und führt zwei unerfüllbare Klassen nicht mehr
+als „fehlend" — Ende eines dauerhaften „falschen Rots". Berlin bleibt unverändert bei 3 Klassen
+(alle drei real belegt). Die 15er-Gesamtliste `LANDESMODUL_PFLICHTKLASSEN` für die
+klassenbezogene Kandidaten-/Reifegradzählung ist **nicht** angefasst.
+
+### 9.4 · Relationale Konsistenz — die 6 Abrufwege
+
+Der Seed **beschrieb** die sechs Wege bereits korrekt; die Inkonsistenz entstand erst beim
+Einspielen, weil `on conflict do update` `url`, `query`, `parser` und `max_items` nicht schrieb.
+Behoben im Generator, nicht in den Daten. Sollzustand nach dem Einspielen:
+
+| Abrufweg | method | url | parser | max_items | status |
+|---|---|---|---|---|---|
+| `rp-bundestag` | `rss` | `bundestag.de/static/appdata/includes/rss/pressemitteilungen.rss` | `rss-regex` | 16 | `needs_review` |
+| `rp-linksfraktion` | `rss` | `dielinkebt.de/presse/pressemitteilungen/feed.rss` | `rss-regex` | 16 | `needs_review` |
+| `rp-bundesregierung` | `googlenews_search` | `news.google.com/rss/search?q=site:bundesregierung.de…` | `googlenews-batchexecute` | 16 | `needs_review` |
+| `rp-die-linke` | `googlenews_search` | `news.google.com/rss/search?q=site:die-linke.de…` | `googlenews-batchexecute` | 16 | `needs_review` |
+| `rp-dgb` | `googlenews_search` | `news.google.com/rss/search?q=site:dgb.de…` | `googlenews-batchexecute` | 16 | `needs_review` |
+| `rp-ausschuss-arbeit-soziales` | `googlenews_search` | `news.google.com/rss/search?q=site:bundestag.de "Ausschuss…"` | `googlenews-batchexecute` | 16 | **`broken`** (A-1) |
+
+Keine der in §8.6 R-2 genannten Kombinationen bleibt übrig. Die letzte Zeile ist jetzt die
+ehrliche Aussage „korrekt beschriebener Weg, bewusst nicht aktiv" statt „falsch beschriebener,
+angeblich aktiver Weg".
+
+**Blast-Radius der erweiterten `on-conflict`-Klausel — offline exakt bestimmt.** Vergleich der
+144 Bund-Abrufwege des Alt-Seeds (`main` `54fe370`, entspricht dem Production-Stand) gegen das
+heutige Modell über `url`, `query`, `parser`, `max_items`:
+
+| Abweichende Zeilen | Felder |
+|---|---|
+| **6** — und zwar genau die sechs oben | `url` 6× · `query` 4× · `parser` 4× · `max_items` 2× |
+| **138** übrige Zeilen | 0 Abweichungen — byte-identisch |
+
+Die erweiterte Klausel kann also nichts anderes anfassen als die sechs reparierten Wege.
+Abgesichert: Production wurde seit dem Seeden nicht von Hand editiert (`updated_at` in nur
+4 Batches: 49+49+47 am 2026-07-13, 18 BE/BB-Wege am 2026-07-14) — es gibt keine manuelle
+Korrektur, die überschrieben werden könnte. Der einzige Weg außerhalb des Seeds,
+`rp-cem-ince-news` (bei der Provisionierung entstanden), steht nicht in der Seed-Datei und wird
+von `on conflict` nie erreicht.
+
+Zusätzlich geprüft: nach dem Schreiben der `url`-Spalte entstehen **0** doppelte
+`method|normalizeUrl(url)`-Schlüssel über alle 144 Wege — die URL-Dedup im Crawl-Plan
+(`source-mode.js` Schritt 7) schließt also keinen Weg neu aus.
+
+**Nicht geändert:** die `on conflict … do nothing`-Klausel des Landesmodul-Seeds
+(`20260717`, Abrufwege). Sie kann keine widersprüchliche Zeile erzeugen — sie schreibt bei
+Bestandszeilen gar nichts. Die 18 BE/BB-Zeilen sind in Production bereits konsistent.
+
+### 9.5 · Warum das keine Production-Auswirkung hat
+
+1. **Nichts wurde ausgeführt.** Die Seed-Datei liegt im Repository; kein Workflow, kein Cron und
+   kein Server-Pfad spielt sie ein (§1, unverändert gültig).
+2. **Kein Laufzeitpfad geändert.** `sources.js`, `crawler.js`, `scheduler.js`, `source-mode.js`
+   und `storage.js` sind unangetastet. Geändert wurden nur die Modell-Daten, aus denen der Seed
+   erzeugt wird, plus der Generator.
+3. **Selbst nach dem Einspielen ändern die neuen Spaltenwerte das Crawl-Verhalten nicht** — für
+   diese sechs Wege liefert `toCrawlerSource` das Legacy-Objekt aus dem Code (§8.1, F-A). Die
+   einzige verhaltenswirksame Spalte bleibt `status`, und dort ist die Änderung eine
+   **Reduktion**: 5 statt 6 reaktivierte Wege.
+4. **A-3 wirkt ausschließlich auf ein `prepared`-Paket** eines hart gesperrten Landesmoduls.
+
+### 9.6 · Tests
+
+`node scripts/run-offline-tests.js` → **145/145 Suiten grün** (35 s), Netz technisch gesperrt.
+Vor der Testanpassung schlugen genau die drei Suiten fehl, die den alten Sollzustand
+festhielten — die Änderungen waren also wirksam und nicht stillschweigend:
+
+| Suite | vorher | nachher | Anpassung |
+|---|---|---|---|
+| `source-architecture-test.js` | 95 PASS / 2 FAIL | **105 PASS / 0 FAIL** | „keine defekten Direkt-Feeds" → „genau ein bewusst nicht reaktivierter Weg" (+ nicht kritisch, + trotzdem korrekt beschrieben); Pilotklassen-Zusicherung nach Berlin/Brandenburg getrennt; A-3 gegen den Landesmodul-Seed geprüft |
+| `quality-watchdog-test.js` | 65 PASS / 1 FAIL | **67 PASS / 0 FAIL** | „kein Weg defekt" → „genau ein Weg defekt, und **keine kritische** Pflichtquelle" |
+| `admin-source-report-test.js` | 55 PASS / 1 FAIL | **57 PASS / 0 FAIL** | „0 defekte Wege" → „genau `ausschuss-arbeit-soziales`, die übrigen 5 reaktiviert" |
+| `seed-drift-test.js` | grün | **grün** | keine — Generator und committete Seed-Datei stimmen weiterhin überein |
+| `paketzuweisung-nachweis-test.js` | 147/147 | **147/147** | keine |
+| `profile-packages-test.js` · `tenant-neutrality-test.js` · `landesmodule-kandidaten-test.js` · `landesmodul-seed-test.js` | grün | **grün** | keine |
+
+Die neuen Zusicherungen sind schärfer als die ersetzten: Sie prüfen nicht mehr „0 defekte", was
+jede künftige Statusänderung durchgelassen hätte, sondern **genau welcher** Weg aus welchem
+Grund nicht läuft.
+
+### 9.7 · Verbleibende Risiken und offene Punkte
+
+| Punkt | Stand |
+|---|---|
+| **Sicherung fehlt** (kein Backup, kein PITR) | **unverändert der einzige Blocker** — §5/§7, Folge von OP-01 |
+| A-2 (gestaffelt einspielen) | nicht umgesetzt — Ausführungsvorgabe, keine Seed-Änderung. Bleibt Betreiberentscheidung |
+| A-4 (Direktfeeds für `bundesregierung`/`dgb` auslesen) | offen — braucht einen Lauf mit offenem Egress **und** eine Änderung an `sources.js`. `rp-bundesregierung` bleibt bis dahin ein `always_on`+`is_critical`-Kernweg über Google |
+| R-1 (Understanding-Last) | offen — durch A-1 leicht entschärft (5 statt 6 Wege), bleibt aber zu beobachten; Tagesbudget lag zuletzt einmal bei 100/100 |
+| Feed-URLs zuletzt am 2026-07-14 live geprüft | unverändert — in dieser Umgebung nicht nachprüfbar (Egress gesperrt). Ein erneuter Umzug fällt als sichtbarer Telemetriefehler auf, nicht als stiller Ausfall |
+| `ausschuss-arbeit-soziales` künftig auf `paused` statt `broken` | offen, kosmetisch (§9.2) |
+| `rp-be-person_pilot` (realer Landespolitiker) fest im Seed | unverändert Alt-Bestand; Seed 2 nimmt ihn aus dem Pflichtpaket heraus, entfernt ihn aber nicht |
+
+**Ist der Seed jetzt fachlich bereit?** Ja. Alle in §8 gefundenen fachlichen Mängel sind
+umgesetzt oder als Betreiberentscheidung ausgewiesen; der Seed beschreibt jeden Abrufweg korrekt
+und aktiviert nur, was fachlich begründet ist. **Der einzige verbleibende Blocker ist die
+fehlende Sicherung** (Go-Kriterium 2) — plus die Freigabe selbst (Go-Kriterium 8).
