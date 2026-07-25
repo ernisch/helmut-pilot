@@ -1,246 +1,245 @@
-# CURRENT_STATE — Understanding-Recovery-Pfad & PR #105
+# CURRENT STATE — Helmut
 
-**Stand:** 2026-07-25 · **Sprint:** Review des scharfen Recovery-Pfades auf `main`, Merge-Entscheidung zu PR #105
-**Geprüfter `main`-Stand:** `035898b` (Merge #114) · **PR #105 HEAD:** `525af50` (Basis war `8369a5b`, Merge #101)
+**Letzte Aktualisierung:** 2026-07-25 · **`main`-HEAD:** `c6a3d40` (Merge #119)
 
-> Hinweis: Die in der Sprint-Vorgabe genannten Orientierungsdateien `CLAUDE.md`,
-> `docs/START_HERE.md` und `docs/CURRENT_STATE.md` existierten in diesem Repository
-> **nicht**. Orientierung erfolgte daher über `docs/datenmotor-restliste.md`
-> (die dort selbst als „EINZIGE verbindliche Liste aller offenen Punkte" deklarierte
-> Restliste), `docs/betrieb/env-inventar.md`, `docs/betrieb/understanding_recovery_trockenlauf.md`
-> und `docs/mandantentrennung-architektur.md`. Diese Datei wird hiermit angelegt.
+> **Diese Datei ist der aktuelle Stand.** Bei Widerspruch zu älteren Statusdokumenten
+> gilt diese Datei. Sie enthält **keine Chronik** — Details je offenem Punkt stehen in
+> [`datenmotor-restliste.md`](datenmotor-restliste.md) (OP-Nummern, verbindlich),
+> der Systemstatus in [`quellenarchitektur/00-master-status.md`](quellenarchitektur/00-master-status.md),
+> die Sicherheitswahrheit in [`quellenarchitektur/05-sicherheitsmodell-rls.md`](quellenarchitektur/05-sicherheitsmodell-rls.md).
+>
+> **Pflege:** nach jedem größeren Sprint aktualisieren — nur die tatsächlich
+> veränderten Zeilen. Regeln dafür: [`../CLAUDE.md`](../CLAUDE.md) §8/§9.
 
 ---
 
-## 1. Tatsächlicher Zustand auf `main`
+## 1 · Aktive Phase
 
-Der Verdacht ist **bestätigt**. Auf `main` (`035898b`) gilt:
+**Verkaufsreife herstellen.** Der Einzelpilot läuft stabil in Production; offen sind
+die vier P0-Verkaufsblocker (OP-01…OP-04). Produktseitig gilt Feature-Stopp zugunsten
+von Betriebs-, Rechts- und Sicherheitsreife.
 
-| Prüfpunkt | Befund auf `main` |
+## 2 · Erfolgreich abgeschlossen (Abnahme erfüllt, Production-belegt)
+
+| Punkt | Beleg |
 |---|---|
-| `.github/workflows/understanding-recovery.yml` | **existiert** (94 Zeilen) |
-| Trigger | **ausschließlich** `workflow_dispatch` — kein `schedule`, kein `push`, kein `workflow_call` |
-| Manueller Trigger | ja, mit Freitext-Eingabe `confirm_text` |
-| `RECOVERY_ALLOWLIST` | **gefüllt** — 6 `vorgang_id`s (`lib/helmut/understanding-recovery.js:161-168`) |
-| Secrets | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `AZURE_OPENAI_*`, `OPENAI_API_KEY` |
-| Erreichbare Umgebung | **Production-Datenbank** über den Service-Role-Key (umgeht RLS vollständig) |
-| Schreiboperationen | bis zu **6 neue complete-KOs** + Dokument-Links über `understanding.understandOneCluster` |
-| Schutzmechanismen | Allowlist · Doppelsperre (`HELMUT_RECOVERY_EXECUTE` + Token `RECOVER_6_CONFIRMED`) · `concurrency`-Gruppe · Idempotenz-Re-Check (`bereits-complete`) · Themen-Duplikat-Filter · Rollback-Kennung `recovery:rec-<run_id>` in `understanding_model` · KI-Key-Preflight |
-| Fehlender Schutz | **keine Rückabwicklung im Code** (Rollback nur manuell über die Kennung); kein Dry-Run-Zwang vor dem Write |
-| Gescheiterter Prod-Lauf | Lauf **`rec-29569461715`** (2026-07-17, `workflow_dispatch`, Branch `claude/helmut-datenmotor-impl-2-kd1jl9`) erzeugte einen Multi-Themen-Digest, wurde zurückgerollt |
-| **Dokumentation des Fehlschlags auf `main`** | **fehlt vollständig.** `grep -rn "29569461715" docs/` auf `main` = 0 Treffer |
+| Quellen-Cutover: relationale DB ist aktive Quellenwahrheit (`HELMUT_SOURCE_MODE=on`) | `helmut-flags.json`, Freigabe 2026-07-15 |
+| App-seitige Mandantentrennung inkl. Cross-Tenant-Write-Guard | PR #96, `quellenarchitektur/05-sicherheitsmodell-rls.md` |
+| Mandantenneutralisierung: kein Pilot-/Default-/Fallback-Mandant im Code | PR #97 |
+| Atomare fail-closed Locks (Crawl + Understanding), Quellen-Telemetrie | PR #95, `betrieb/production_beweisprotokoll.md` |
+| LLM-Tagesbudget 100 + Reserve 30, fail-closed | live (FA-5/FA-6/FA-12) |
+| Ehrlicher Health-Report, Radar-Störungswahrheit, echte Laufzeitmessung | PR #95, Beweisprotokoll |
+| PILOT_SECRET rotiert (alter Klartext-Code wertlos) | FA-1, 2026-07-15, `HTTP 200` verifiziert |
+| KO-Klassifikations-Backfill inkl. Idempotenz-Nachweis (OP-08) | Runs 29511858469 / 29621926765, SQL-Gegenprobe 0 Lücken |
+| Blockierendes CI-Gate (Offline-Suite + Chromium-Smoke) existiert | `.github/workflows/ci.yml` |
+| Profil-Storage relational entkoppelt (Exklusivmodus) | PR #113 |
+| Doku-Konsolidierung: `main` als einzige Architekturwahrheit | PR #114 (Recovery Sprint R2) |
+| Kontext-Einstiegsschicht (`CLAUDE.md`, `START_HERE`, `CURRENT_STATE`, `ARCHITECTURE`) | PR #119, gemergt 2026-07-25 |
 
-**Kernbefund:** Nicht nur der Pfad ist scharf — die Betriebsdokumentation auf `main`
-(`docs/betrieb/understanding_recovery_trockenlauf.md` §B/§C) beschreibt den Anker-Pfad
-weiterhin als *vorbereitet und freigabepflichtig offen*, inklusive des exakten Tokens
-`RECOVER_6_CONFIRMED`. Ein Operator, der ausschließlich `main` liest, findet **keinen
-Hinweis darauf, dass genau dieser Lauf in Production bereits falsche Ergebnisse
-erzeugt hat**. Die Stilllegung *und* die Fehlerdokumentation liegen beide nur im
-ungemergten PR #105.
+## 3 · Teilweise abgeschlossen (Code da, Abnahme fehlt)
 
-### Ursache und Wiederholbarkeit
-
-Die Ursache ist verstanden und liegt im Matcher, nicht in der Orchestrierung:
-`matchDocuments`/`anchorsMatch` (`lib/helmut/understanding-recovery.js:31-53`) matcht über
-**Teilstring-Anker** (`a.includes(b) || b.includes(a)`) ab 8 Zeichen Länge. Bei Multi-Doc-Fällen
-zieht das fremde Themen in dasselbe Cluster → ein KO über mehrere unzusammenhängende Vorgänge.
-Der Matcher ist auf `main` **unverändert**, die Allowlist unverändert → **derselbe Fehler kann
-identisch erneut auftreten**.
-
-### Andere Codepfade auf denselben Mechanismus (verifiziert)
-
-- `lib/helmut/ko-recovery.js` (P1-4, bounded Auto-Retry, Flag `HELMUT_FAILED_KO_RECOVERY`, Default AUS) —
-  setzt `failed` → `pending` und nutzt den **normalen** Understanding-Pfad, **nicht** den Anker-Matcher. Nicht betroffen.
-- `POST /api/admin/recovery/reset-failed` (`server.js:1629`, Rolle `admin`, `confirm:true`) und
-  `GET /api/debug/reset-failed-kos` (`server.js:6627`, gegated durch `HELMUT_ADMIN_SECRET` + Rate-Limit) —
-  beide lösen `bulkResetUnderstandingFailed()` (Bulk-PATCH ohne Limit) plus einen Understanding-Lauf aus.
-  Ebenfalls **normaler** Pfad, nicht der Anker-Matcher. `understanding_status=eq.failed` trifft
-  `failed-final` nicht → die „nie wieder"-Garantie aus PR #105 bleibt intakt.
-- Kein weiterer Workflow, kein Cron und kein Server-Endpunkt ruft
-  `scripts/understanding-recovery-execute.js` oder `planRecovery`/`recoverOne` auf (repoweiter Grep).
-
----
-
-## 2. Risiko des Recovery-Pfades auf `main`
-
-| Dimension | Bewertung | Beleg |
+| Punkt | Was fehlt | → OP |
 |---|---|---|
-| Datenkorruption | **mittel** | additive Writes, kein Delete/Update bestehender complete-KOs |
-| Falsche Understanding-Ergebnisse | **hoch** | in Production eingetreten (`rec-29569461715`) |
-| Überschreiben korrekter Ergebnisse | niedrig | Idempotenz-Re-Check + `completeTopicSet`-Duplikatfilter greifen vor dem Write |
-| Mandantenübergreifend | **ja, strukturell** | `knowledge_objects` hat **kein** `tenant_id` (`supabase/schema.sql:238`); geteilter Wissenskorpus laut `docs/mandantentrennung-architektur.md:63` → ein falsches KO ist für **alle** Mandanten sichtbar |
-| Doppelverarbeitung | niedrig | `concurrency`-Gruppe + Idempotenz |
-| Kosten | vernachlässigbar | max. 6 KI-Calls, Tagesdeckel 150 |
-| Lock-Konflikte | niedrig | eigener Pfad, `concurrency: understanding-recovery` |
-| Wiederholbarkeit | **hoch** | Matcher + Allowlist unverändert |
-| Fehlende Rückabwicklung | **mittel** | nur manuell über die Kennung `recovery:rec-<id>`; kein automatischer Rollback |
-| Unbemerkte Ausführung | **niedrig** | nur `workflow_dispatch`; braucht Actions-Schreibrecht **und** das exakte Token. Ein Fehlstart ohne Token bleibt read-only (Schritt A) |
-| Datenschutz | niedrig | ausschließlich öffentliche politische Quellen, keine PII; Ausgabe ist redigiert (`redactAssessment`) |
-| Auswirkung Cem-Pilot | **hoch** | ein Multi-Themen-Digest erscheint direkt im Briefing des Piloten |
+| Google-News-Härtung (Gate/Retry/Breaker/Cooldown, Default AN) | Production-Beweislauf unter echter Drosselung | OP-15 |
+| Monitoring-Zweitkanal + Meta-Heartbeat (Sender gehärtet) | `HELMUT_MONITORING_WEBHOOK_URL` unset → No-Op, kein `webhook.sent`-Beleg | OP-07 |
+| `source_id`-Dubletten-Fix | Live-Nachweis „Telemetriezeilen = distinct `source_id`" | OP-19 |
+| Zweitmandanten-Provisionierung + Per-Mandant-Kostendeckel | Migration `20260721` nicht angewandt, `HELMUT_TENANT_LLM_CAP` AUS, DB-seitige Durchsetzung unentschieden | OP-03 |
+| Retention/Löschung | nur Trockenlauf; braucht verbindliche Fristen aus OP-02 | OP-12 |
+| Understanding-Gate, Cheap-Triage, Scoring, Berlin/Brandenburg | in `shadow`/`off`, Scharfschaltung ist Freigabe | OP-18, OP-21, OP-22 |
+| **Stilllegung des gescheiterten Recovery-Pfads (F-3)** — Code fertig, Review abgeschlossen, Tests grün, PR mergefähig | **Merge + Deployment.** Bis dahin ist die Stilllegung in Production **nicht aktiv**: `understanding-recovery.yml` und die gefüllte `RECOVERY_ALLOWLIST` liegen unverändert auf `main` | OP-05, PR #105 |
+| OP-06 Terminales Aussortieren des Alt-Rückstands (34 Fälle, Default AUS) | Ausführung ist freigabepflichtig — **und** eine offene Fachfrage: 16 der 34 Allowlist-Einträge sind mit „außerhalb Mandat" begründet, also relativ zum Pilotmandat, geschrieben wird aber in das mandantenneutrale `knowledge_objects` (kein `tenant_id`). Ein künftiger Zweitmandant mit regionalem/EU-Schwerpunkt bekäme diese Vorgänge dauerhaft nie verstanden | OP-06 |
 
-### Einstufung: **Hohes Risiko** (nicht kritisch)
+## 4 · Blockiert
 
-Begründung: Der Schadensfall ist **real eingetreten**, die Ursache ist im Code **unverändert
-vorhanden**, die Auswirkung reicht durch den geteilten Wissenskorpus über alle Mandanten bis in
-das Pilot-Briefing, und `main` **dokumentiert den Fehlschlag nirgends** — die Doku lädt den
-Operator sogar aktiv zum Lauf ein. Nicht *kritisch*, weil kein automatischer Trigger existiert,
-der Write ein exaktes Token erfordert, der Blast-Radius auf 6 Vorgänge und ~6 KI-Calls begrenzt
-ist, ein Rollback-Anker in jedem Datensatz mitgeschrieben wird und der reale Vorfall
-nachweislich zurückgerollt werden konnte.
+| Punkt | Ursache | Nächster Schritt |
+|---|---|---|
+| **OP-01** Supabase Pro + PITR | Kostenentscheidung des Betreibers (~25 $/Monat); Free-Plan = **keine Backups** | Betreiber schaltet Pro + PITR frei, dann Restore-Übung nach `betrieb/backup-restore-runbook.md` |
+| **OP-02** Recht (Pilotvertrag, AVV, DSFA, Art.-9-Grundlage, Fristen) | externe Prüfung durch Anwalt/DSB steht aus | Entwürfe aus `recht/` prüfen lassen und zeichnen; blockiert OP-12 |
+| **OP-03** Zweitmandanten-Freigabepaket | Grundsatzentscheidung „DB-seitige Durchsetzung vs. dokumentierte App-Guard-Akzeptanz" fehlt (`mandantentrennung-architektur.md` bewertet die Wege) | Betreiber entscheidet einen Weg; danach Migration + Env + Probelauf |
+| **OP-04** Demo-Mandate entfernen | Production-Datenänderung, freigabepflichtig | Freigabe einholen, dann über Provisionierungswerkzeug deaktivieren |
+| **OP-09/OP-10** Production-Beweise Lock-Deny und Fehlerpfad | brauchen ein echtes Störereignis; künstliche Injektion und Doppelstart sind verboten | beim nächsten echten Vorfall dokumentieren |
 
-Das Risiko ist damit **operativer, nicht technischer Natur**: es realisiert sich nur durch eine
-bewusste Operator-Handlung — die die aktuelle `main`-Dokumentation jedoch nahelegt.
+## 5 · Fehlgeschlagene oder abgebrochene Ansätze — **nicht wiederholen**
 
----
+> Diese Einträge existieren, damit kein neuer Thread dieselbe Sackgasse erneut baut.
 
-## 3. Ergebnis des PR-#105-Reviews
+### F-1 · Tenant-JWT-Selbstsignierung → RLS scharfschalten — **gescheitert, dauerhaft stillgelegt**
+- **Versucht:** Mandantentrennung DB-seitig über selbstsignierte Tenant-JWTs und die
+  23 RLS-Policies durchsetzen.
+- **Warum gescheitert:** Supabase stellte auf asymmetrische JWT-Signing-Keys um; der
+  Selbstsignatur-Pfad ist tot (PGRST301-Logs 12./13.07.). Stillgelegt am 2026-07-13
+  (Commit `f952b69`, PR #68); `tenantJwtModeEnabled()` gibt hart `false`.
+- **Folge:** RLS ist **inert**, Trennung ist App-seitig. Ein Nachfolgekonzept ist Teil
+  von **OP-03**. `HELMUT_TENANT_JWT_MODE` zu setzen ist wirkungslos.
 
-**Die zentrale Sicherheitsaussage des PRs hält der Prüfung gegen den Code stand.**
-Die Stilllegung ist **technisch wirksam**, nicht bloß dokumentarisch, und dreifach durchgesetzt:
+### F-2 · Generation B „Quellenplattform" — **abgebrochen, nicht mergen**
+- **Versucht:** paralleler Nachbau der Quellenarchitektur auf eigenen Branches.
+- **Warum abgebrochen:** dupliziert, was auf `main` bereits live läuft; aus Sicht des
+  Servers additiver toter Code. Merge würde die laufende Architektur gefährden.
+- **Verbindlich:** [`architecture/retired-quellenplattform-branches.md`](architecture/retired-quellenplattform-branches.md)
+  (vollständige Branch-Liste).
 
-1. `.github/workflows/understanding-recovery.yml` **gelöscht** → kein `workflow_dispatch` mehr
-   möglich (Voraussetzung ist die Präsenz der Datei auf dem Default-Branch).
-2. `scripts/understanding-recovery-execute.js` auf einen reinen `console.log`-Hinweis reduziert —
-   **kein einziges `require`** von `storage`/`ai`/`understanding` mehr. Verhaltensbeleg:
-   Aufruf mit `HELMUT_RECOVERY_EXECUTE=1` **und** korrektem Token liefert
-   `{executed:false, stillgelegt:true}` (siehe neue Regression 13c).
-3. `RECOVERY_ALLOWLIST = []` → `planRecovery` liefert strukturell nie einen Ausführungsfall.
+### F-3 · Anker-basierter Understanding-Recovery-Pfad — **in Production fehlgeschlagen**
+- **Versucht:** 6 eingefrorene Alt-Fälle über einen anker-basierten Recovery-Pfad
+  rekonstruieren (OP-05).
+- **Was passierte:** der Lauf `rec-29569461715` erzeugte in Production einen
+  **Multi-Themen-Digest** statt sauber getrennter Vorgänge; er wurde zurückgerollt.
+- **Ursache (verifiziert):** `matchDocuments`/`anchorsMatch` in
+  `lib/helmut/understanding-recovery.js` vergleicht über **Teilstring-Anker**
+  (`a.includes(b) || b.includes(a)`) ab 8 Zeichen. Bei Multi-Doc-Fällen zieht das
+  fremde Themen in dasselbe Cluster. Der Fehler liegt im Matcher, nicht in der
+  Orchestrierung — er ist also **reproduzierbar**, solange Matcher und Allowlist stehen.
+- **Blast-Radius:** Der Workflow lief nur manuell (`workflow_dispatch`, kein
+  `schedule`/`push`), griff aber mit dem **Service-Role-Key** auf die Production-DB zu
+  (umgeht RLS) und schrieb bis zu 6 neue complete-KOs. `knowledge_objects` trägt
+  **kein** `tenant_id` — ein falsches KO ist für **alle** Mandanten sichtbar, inklusive
+  Pilot-Briefing.
+- **Stand auf `main`:** Der Pfad ist auf `main` **weiterhin scharf** —
+  `.github/workflows/understanding-recovery.yml` existiert, `RECOVERY_ALLOWLIST` ist
+  gefüllt. Die technische Stilllegung liegt in **PR #105** und wird erst **mit dessen
+  Merge und Deployment** in Production wirksam.
+- **Wie PR #105 stilllegt (drei unabhängig wirksame Sperren):** Workflow-Datei
+  entfernt · `scripts/understanding-recovery-execute.js` auf einen Hinweis reduziert
+  (kein `require` von `storage`/`ai`/`understanding`, wirkungslos auch mit Flag +
+  korrektem Token) · `RECOVERY_ALLOWLIST` geleert. Zusätzlich ein
+  **namensunabhängiger Regressionsriegel**: die Offline-Suite schlägt fehl, sobald
+  *irgendein* Workflow — auch unter anderem Dateinamen — das Execute-Skript aufruft
+  oder `HELMUT_RECOVERY_EXECUTE`/`-CONFIRM` setzt. Da CI die Offline-Suite fährt,
+  blockiert das eine spätere Wiederbelebung.
+- **Nicht wiederbeleben:** Der Branch `claude/helmut-datenmotor-impl-2-kd1jl9` trägt
+  unter demselben Pfad eine **lauffähige** Fassung. Bei einem späteren Merge gilt für
+  alle vier Recovery-Dateien die stillgelegte Fassung aus #105; eine
+  Einzeldokument-Recovery gehört unter einen **eigenen** Dateinamen.
+- **Konsequenz:** Diesen Workflow **nicht** ausführen. Der tragfähige Ersatzweg ist
+  die **Einzeldokument-Recovery** je exakter `raw_document_id` (1 von 6 Fällen so
+  bereits erfolgreich recovert, `singledoc-29583280106`); 1 Fall ist live als Duplikat
+  verifiziert (→ OP-06).
+- **Nicht betroffen:** `lib/helmut/ko-recovery.js` (P1-4, Default AUS) sowie
+  `POST /api/admin/recovery/reset-failed` und `GET /api/debug/reset-failed-kos` nutzen
+  den **normalen** Understanding-Pfad, nicht den Anker-Matcher.
 
-Jede der drei Sperren allein würde genügen; sie sind unabhängig voneinander wirksam.
+### F-4 · Befund „Quellenbasis zu dünn" (altes Schema P2-5) — **Fehlbefund**
+- Die Warnung entstand aus nie erfüllbaren Schwellen (495/450/405) gegen einen
+  gesunden Crawl (~145 Quellen) und einer Zählung über den toten `store.sources`-Blob.
+  Schwellen und Zählung sind korrigiert. **Es fehlen keine Quellen für den Piloten** —
+  diese Analyse nicht erneut aufsetzen.
 
-Weitere Prüfpunkte:
+### F-5 · Feste Referenzzahl „145 Quellen" — **verworfen**
+- Die Quellenzahl ist mandats-/profilabhängig (Demo-Mandat: 139). Die gültige
+  Invariante ist `Telemetriezeilen = distinct source_id`, nicht eine feste Zahl (B3).
 
-- **Aktive Production-Abläufe:** unbeeinträchtigt. Pending-Verarbeitung, Understanding und
-  KO-Anreicherung laufen über `runPendingUnderstandingShadow`, das der PR nicht anfasst.
-- **`failed-final`-Lücke (echter Fund des PRs):** `listPendingKnowledgeObjects` filterte auf
-  `main` nur `!== "failed"`, nicht `failed-final` — terminale Fälle wären ewig neu geprüft und
-  bei passendem Cluster erneut per KI verstanden worden. Der Fix ist verhaltensneutral und korrekt.
-- **Mandantentrennung:** erhalten; `tenant-neutrality-test.js` 39/39, `tenant-guard-test.js` grün.
-- **Keine festen Mandanten-IDs** eingeführt. Die neuen Allowlists enthalten `vorgang_id`s
-  (mandantenneutrale Vorgangs-Slugs), keine Tenant-Identifikatoren.
-- **PR-Größe:** 15 Dateien / +959/−256, davon der überwiegende Teil Doku und neue Tests.
-  Zwei Themen (Stilllegung + OP-06-Vorbereitung) in einem PR — vertretbar, da OP-06 die
-  `failed-final`-Semantik einführt, auf der die Stilllegungs-Nacharbeit aufsetzt. Eine Trennung
-  brächte hier keinen Sicherheitsgewinn.
-- **Aktualität:** Der PR basierte auf `8369a5b` und war **19 Commits hinter `main`** mit einem
-  Merge-Konflikt in `docs/datenmotor-restliste.md`. Beides in diesem Sprint bereinigt (§4).
-  Die 19 `main`-Commits berühren **keine** der Recovery-/Understanding-Dateien; der einzige
-  Code-Overlap ist `lib/helmut/storage.js`, wo die Änderungen in disjunkten Bereichen liegen
-  (Profil/Accounts vs. Pending-Filter) und sauber automerged.
+## 6 · Offene Punkte (Übersicht)
 
-### Verifizierte Restrisiken (kein Merge-Blocker)
+Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste.md) §6.
 
-1. **Wiederbelebung über den ungemergten `impl-2`-Branch (Hauptrisiko).**
-   `claude/helmut-datenmotor-impl-2-kd1jl9` existiert weiterhin auf dem Remote und trägt unter
-   **demselben Pfad** `.github/workflows/understanding-recovery.yml` eine **voll funktionsfähige**
-   Fassung (Einzel-Dokument-Variante, Token `RECOVER_SOZIALWOHNUNGEN_CONFIRMED`) sowie ein
-   **lebendes** `understanding-recovery-execute.js` (mit `require`s auf `storage`/`understanding`/`ai`
-   und `understandOneCluster`-Aufruf). Die ursprüngliche PR-Beschreibung empfahl für den späteren
-   Merge ausdrücklich, die **impl-2-Fassung zu übernehmen** — das hätte den Anker-Pfad samt seiner
-   eigenen (alten) Tests **stillschweigend reaktiviert**. Behoben in §4.
-2. **`planRecovery(opts.allowlist)`** akzeptiert weiterhin eine vom Aufrufer übergebene Allowlist,
-   und `recoverOne` bleibt exportiert. Es existiert **kein** Production-Aufrufer (nur Tests) —
-   eine Reaktivierung erforderte neuen Code, nicht nur eine Konfigurationsänderung. Akzeptabel.
-3. **OP-06-Allowlist ist mandatsrelativ, die Tabelle nicht.** 16 der 34 Einträge in
-   `lib/helmut/pending-terminal.js` sind mit „regional/lokal außerhalb Mandat" bzw.
-   „Ausland/EU außerhalb Mandat" begründet — also relativ zum Mandat des **Cem-Piloten**.
-   Geschrieben wird aber in `knowledge_objects` **ohne** `tenant_id`. In Kombination mit der neuen
-   „nie wieder"-Garantie (`skipped-terminal`) würden diese Vorgänge auch für einen künftigen
-   Zweitmandanten mit regionalem oder EU-Schwerpunkt **dauerhaft** nie verstanden.
-   **Kein Merge-Blocker** — OP-06 wird durch den Merge nicht ausgeführt (Default AUS, nur
-   `workflow_dispatch`, eigenes Token). **Aber: vor der OP-06-Freigabe zu entscheiden.**
+- **P0 (Verkaufsblocker):** OP-01 Backups · OP-02 Recht · OP-03 Zweitmandanten-Paket · OP-04 Demo-Mandate
+- **P1 (Betriebsreife):** OP-05 … OP-12
+- **P2 (Produktqualität):** OP-13 … OP-20
+- **P3 (später):** OP-21 Berlin/Brandenburg · OP-22 Scoring · OP-23 Hygiene
 
----
+## 7 · Aktuelle Blocker (zusammengefasst)
 
-## 4. Durchgeführte Änderungen (auf dem Branch von PR #105)
+1. **Kein Backup in Production.** Supabase Free-Plan, zentraler Blob ist
+   Last-Write-Wins → ein fehlerhafter Write kann den Betriebszustand unwiederbringlich
+   zerstören. Höchstes Einzelrisiko (OP-01).
+2. **Keine rechtliche Grundlage für Verkauf.** Kein geprüfter Pilotvertrag/AVV/DSFA,
+   `knowledge_objects` enthalten Art.-9-Daten (OP-02).
+3. **Sicherheits-Grundsatzentscheidung offen.** Ohne Entscheidung zu OP-03 darf kein
+   zahlender Zweitmandant aufgeschaltet werden.
+4. **Branch Protection unbestätigt.** Das CI-Gate blockiert erst mit aktivierter
+   Branch Protection; Aktivierungsstand ist nicht verifiziert (OP-11,
+   `betrieb/branch-protection.md`).
 
-| Datei | Änderung |
+## 8 · Offene Pull Requests (Stand 2026-07-25)
+
+| PR | Inhalt | Einschätzung |
+|---|---|---|
+| **#105** | Datenmotor-Sprint Pending/Understanding/KO; enthält die **technische Stilllegung** des gescheiterten Recovery-Pfads (F-3), die `failed-final`-Korrektur und den namensunabhängigen Regressionsriegel | **offen.** Basiert auf `main` `c6a3d40`, Offline-Suite grün, CI grün, `mergeable_state: clean` — **Merge empfohlen**; bis zum Merge bleibt F-3 auf `main` scharf |
+| **#118** | Quellenarchitektur-Gesamtaudit + Remediation (Seed-Reproduzierbarkeit, Neutralisierung der Landes-Basispakete, 6 verifizierte Bundesweg-Reparaturen), 141/141 grün | review-fähig — Review empfohlen |
+| #117 | WBSB-Pilotpaket + Workflow-Härtung vereinigt | **Draft, ausdrücklich nicht mergen** (öffnet nur die CI-Prüfung) |
+| #115 | Bestandsabgleich `bund-basis` + Pflichtquellen-Verifikationstest | **Draft, ausdrücklich nicht mergen** (nur um den Workflow auf einem Runner mit Egress laufen zu lassen) |
+| #112 | Geführter Erstlogin-/Onboarding-Flow (14 Screens) | manuelle Abnahme im Preview ausstehend |
+| #111 | Sichtbarkeits-Toggle auf `/passwort-setzen` | technisch mergefähig, wartet auf Freigabe |
+| #88, #70, #8 | ältere Stände (teils auf verwaisten Basis-Branches) | **veraltet** — vor Verwendung auf Aktualität prüfen oder schließen |
+
+## 9 · Aktuelle Production-Situation
+
+- **Deployment:** Vercel, Region `fra1`, Projekt `helmut-pilot`; Deploy erfolgt
+  automatisch beim Merge nach `main`. Rollback: `betrieb/deploy-rollback.md`.
+- **Datenbank:** Supabase **Free-Plan** — keine Backups, kein PITR (OP-01).
+- **Flags:** `HELMUT_SOURCE_MODE=on` · `HELMUT_UNDERSTANDING_GATE=shadow` ·
+  `HELMUT_PARDOK_DISPATCH=shadow` · Scoring `off` · Berlin/Brandenburg inaktiv.
+- **Crons:** 9 Vercel-Cron-Einträge (Crawl 04:00/20:00, Understanding 05:30/21:30,
+  Morgenbriefing 05:00, Lage-Briefing 05:45, Health-Report 06:00, Lage-Check 10:00,
+  Pipeline 16:00 UTC) — siehe `vercel.json`.
+- **Zustand:** 0 neue `systemErrors` im dokumentierten Beweiszeitraum; Betriebsbefunde
+  B1 (Google-News-Klumpenrisiko, 146 von 163 Wegen über Google) und B2
+  (Understanding-Rückstand) bleiben offen.
+- **Nicht angewandte Migration:** `20260721` (DB-Härtung) — gehört zu OP-03.
+
+## 10 · Letzte wichtige Entscheidungen
+
+| Datum | Entscheidung |
 |---|---|
-| `docs/datenmotor-restliste.md` | Merge-Konflikt gegen aktuellen `main` aufgelöst (Kopfzeilen zusammengeführt: Basisstand + Re-Verankerung + Sprintstände; geprüfter Stand auf `035898b`/#114 gehoben) |
-| `scripts/understanding-recovery-test.js` | **2 neue Regressionen** (55 → 57 Assertionen) |
-| `docs/CURRENT_STATE.md` | **neu** — diese Datei |
+| 2026-07-25 | Kontext-Einstiegsschicht ist verbindlich; `CLAUDE.md` → `START_HERE` → `CURRENT_STATE` ist die Pflichtlektüre jedes Threads (PR #119) |
+| 2026-07-25 | Der anker-basierte Recovery-Pfad wird **nicht repariert, sondern stillgelegt**; echte Recovery läuft ausschließlich über den Einzeldokument-Pfad je exakter `raw_document_id` (PR #105) |
+| 2026-07-22 | `main` ist die einzige Architekturwahrheit; Generation B wird nicht integriert (PR #114) |
+| 2026-07-22 | Kanonische Doku-Hierarchie festgelegt: Sicherheit → `05-…`, Status → `00-master-status`, offene Punkte → `datenmotor-restliste` |
+| 2026-07-17 | Einheitliches Nummernschema: OP-xx für offene Punkte; FA-x/FT2-x/A-Px nur noch historisch |
+| 2026-07-15 | Quellen-Cutover ausgeführt (`HELMUT_SOURCE_MODE=on`) |
+| 2026-07-15 | PILOT_SECRET rotiert |
+| 2026-07-13 | Tenant-JWT-Pfad dauerhaft stillgelegt; Trennung bleibt App-seitig |
 
-Zusätzlich: `origin/main` (`035898b`) in den PR-Branch gemergt — der PR ist damit aktuell und konfliktfrei.
+## 11 · Nächster sinnvoller Sprint
 
-Die neuen Regressionen schließen genau Restrisiko 1:
+**Empfehlung: OP-01 (Supabase Pro + PITR) als Betreiber-Freigabe einholen und
+ausführen** — er ist unabhängig von allem anderen, beseitigt das größte
+Einzelrisiko und ist Voraussetzung dafür, dass die Migration aus OP-03 gefahrlos
+eingespielt werden kann.
 
-- **13b · namensunabhängiger Riegel** — scannt **alle** `.github/workflows/*.yml` und schlägt fehl,
-  sobald irgendein Workflow `understanding-recovery-execute` aufruft oder
-  `HELMUT_RECOVERY_EXECUTE`/`HELMUT_RECOVERY_CONFIRM` setzt. Die bisherige Prüfung testete nur
-  **einen festen Dateinamen** und hätte eine umbenannte Action nicht gefangen.
-  *Negativkontrolle durchgeführt:* eine unter `zzz-renamed-recovery.yml` wiederhergestellte Kopie
-  lässt 13b fehlschlagen (`gefunden: zzz-renamed-recovery.yml`).
-- **13c · Verhaltensbeleg statt Quelltext-Regex** — startet das Execute-Skript als echten
-  Subprozess mit `HELMUT_RECOVERY_EXECUTE=1` **und** korrektem Token und verlangt
-  `executed:false, stillgelegt:true`. Die bisherigen 13er-Prüfungen waren reine
-  Quelltext-Mustervergleiche und hätten eine Reaktivierung mit anderer Schreibweise nicht erkannt.
+Parallel möglich, ohne Freigabe:
+1. **PR #105 mergen** — er ist auf aktuellem `main` (`c6a3d40`), Tests und CI grün.
+   Solange er offen ist, liegt der in Production gescheiterte Recovery-Pfad (F-3)
+   unverändert scharf auf `main`. Das ist der Schritt mit dem größten
+   Sicherheitsgewinn pro Aufwand.
+2. **Review und Merge-Entscheidung zu PR #118** (Quellenarchitektur-Remediation).
+3. **OP-11 Branch Protection** verifizieren (2 Minuten, reversibel,
+   `betrieb/branch-protection.md`).
 
-Da `.github/workflows/ci.yml` `scripts/run-offline-tests.js` ausführt, blockiert CI ab sofort jede
-Wiederbelebung des Anker-Pfades — auch die über einen späteren `impl-2`-Merge.
+**Erst nach dem Merge von #105 und einer Fachentscheidung:** OP-06-Ausführung — die
+mandatsrelative Begründung von 16 der 34 Allowlist-Einträge (§3) muss vorher bewertet
+werden.
 
-Die PR-Beschreibung wurde entsprechend korrigiert: Für den `impl-2`-Merge gilt nun ausdrücklich
-**nicht mehr** „impl-2-Fassung übernehmen", sondern die Stilllegung dieses Branches behalten.
+## 12 · Letzter Sprintausgang
 
-**Keine** Production-Ausführung, **kein** Workflow-Dispatch, **keine** Secret-/Env-Änderung,
-**keine** Production-Datenänderung, **kein** Merge, **kein** Deploy.
+| Sprint | Datum | Zustand |
+|---|---|---|
+| Recovery-Pfad-Review + Zusammenführung PR #105 auf die kanonische Kontextstruktur | 2026-07-25 | **Erfolgreich abgeschlossen** — Review, Fix und Integration fertig; Merge und Deployment stehen aus (Betreiberentscheidung). Details unten. |
+| Kontextstruktur für Claude Code (`CLAUDE.md` + Einstiegsschicht) | 2026-07-25 | **Erfolgreich abgeschlossen** — reine Dokumentation, gemergt als PR #119 (`c6a3d40`). |
 
----
+**Sprint „Recovery-Pfad-Review + PR #105" — Nachweis**
 
-## 5. Tests
-
-| Suite | Ergebnis |
-|---|---|
-| Offline-Gesamtsuite (`npm run test:offline`), PR-Branch gemergt auf `main` `035898b` | **141/141 grün** |
-| Offline-Gesamtsuite, PR-Branch allein (vor Merge) | 130/130 grün |
-| `understanding-recovery-test.js` | **57/57** (vorher 55, +13b, +13c) |
-| Negativkontrolle 13b (umbenannter Workflow wiederhergestellt) | **schlägt korrekt fehl** |
-| `pending-terminal-test.js` (OP-06) | 63 PASS / 0 FAIL |
-| `tenant-neutrality-test.js` (Mandantentrennung) | 39 PASS / 0 FAIL |
-| `ko-recovery-test.js` (P1-4) | 12/12 |
-| `tenant-guard-test.js`, `understanding-gate-*`, `understanding-priorisierung` | grün (in der Gesamtsuite) |
-| YAML-Validierung aller 11 Workflows | alle parsebar; `understanding-recovery.yml` entfernt; kein `schedule` auf dem neuen OP-06-Workflow |
-| Direktaufruf des stillgelegten Skripts mit Flag + Token + `--confirm=` | kein DB-Zugriff, kein Write, kein KI-Call |
-
----
-
-## 6. Offene Risiken
-
-1. **Solange PR #105 nicht gemergt ist, bleibt der Anker-Recovery-Pfad auf `main` scharf**
-   und die Betriebsdoku lädt weiterhin zum Lauf ein. Das ist der dringlichste offene Punkt.
-2. **OP-06-Allowlist mandatsrelativ** (§3, Restrisiko 3) — vor der OP-06-Freigabe zu entscheiden,
-   ob „außerhalb Mandat"-Fälle in einer mandantenneutralen Tabelle terminal markiert werden dürfen.
-3. **`impl-2`-Branch** trägt weiterhin eine lauffähige Recovery-Fassung. Nach dem Merge von #105
-   ist sie nicht mehr dispatchbar und CI blockiert ihre Rückkehr — der Branch sollte dennoch
-   bereinigt oder gelöscht werden.
-4. **OP-05-Restfälle** (4 Vorgänge) bleiben unverstanden, bis der Einzel-Dokument-Pfad läuft.
-5. **OP-13-Fensterfalle** und **OP-14-Budgetdeckel-Beleg** unverändert offen (nicht aktiviert).
-
----
-
-## 7. Merge-Empfehlung
-
-**Ja — PR #105 mergen**, nach den in §4 ergänzten Korrekturen. Der PR ist die einzige
-existierende Stilllegung des in Production nachweislich fehlgeschlagenen Recovery-Pfades;
-ihn offen zu lassen ist deutlich riskanter als ihn zu mergen.
-
-**Entscheidung: Option B** — PR #105 gezielt korrigiert, nicht ersetzt. Ein Ersatz-PR wäre
-nicht gerechtfertigt: der PR ist inhaltlich korrekt, technisch wirksam, testgedeckt und nach
-dem Merge von `main` konfliktfrei.
-
-**Merge löst das Vercel-Deployment aus** — Merge und Deploy bleiben ausdrücklich beim Menschen.
-
----
-
-## 8. Nächster Schritt
-
-**PR #105 reviewen und mergen** (durch einen Menschen, mit Deployment-Fenster).
-Erst danach die freigabepflichtigen Folgeschritte (OP-06-Ausführung, OP-05-Einzel-Doc-Recovery)
-— OP-06 zusätzlich erst nach der Entscheidung zu Restrisiko 3.
-
----
-
-## 9. Sprintzustand
-
-**Erfolgreich abgeschlossen.** Zustand verifiziert, Risiko eingestuft, PR vollständig geprüft,
-adversarialer Review durchgeführt, ein verifizierter Defekt gezielt behoben, Regressionstests
-ergänzt und belegt, PR aktualisiert und mergefähig. Keine kritische Stopregel wurde ausgelöst.
+- **Was versucht wurde:** prüfen, ob der Understanding-Recovery-Pfad auf `main`
+  tatsächlich noch scharf ist, das Production-Risiko bewerten, PR #105 vollständig
+  gegen `main` reviewen und ihn mergefähig machen.
+- **Was erledigt wurde:** Der Verdacht wurde **bestätigt** (F-3). Die Stilllegung in
+  PR #105 wurde gegen den Code geprüft und ist **technisch wirksam**, nicht nur
+  dokumentarisch — belegt durch einen Subprozess-Aufruf mit Flag *und* korrektem
+  Token, der `{executed:false, stillgelegt:true}` liefert. Ein verifizierter Defekt
+  wurde behoben: die Regression prüfte nur **einen festen Dateinamen** und hätte eine
+  umbenannte Action nicht gefangen — ersetzt durch einen namensunabhängigen Riegel
+  über alle Workflows (Negativkontrolle: eine umbenannt wiederhergestellte Kopie
+  lässt den Test korrekt fehlschlagen). Die frühere PR-Empfehlung, beim späteren
+  `impl-2`-Merge dessen Fassung zu übernehmen, war gefährlich und wurde
+  zurückgezogen. PR #105 wurde auf `main` `c6a3d40` gezogen; seine eigene, vor #119
+  angelegte `CURRENT_STATE.md` ist in **diese** kanonische Datei überführt.
+- **Was nicht erledigt wurde:** kein Merge, kein Deployment, keine Ausführung von
+  OP-06 — alles freigabepflichtig. Die mandatsrelative OP-06-Allowlist wurde bewusst
+  **nicht** fachlich neu bewertet (§3).
+- **Tests:** Offline-Suite **141/141 grün** · `understanding-recovery` 57/57 (davon 2
+  neu) · `pending-terminal` 63/63 · `tenant-neutrality` 39/39 · `ko-recovery` 12/12 ·
+  YAML-Validierung aller Workflows · Negativkontrolle umbenannter Workflow.
+- **Branch:** `claude/datenmotor-pending-understanding-ko-77bog4` · **PR:** #105
+  (offen, mergefähig, CI grün).
+- **Weiterverwendbar:** ja — der PR ist der einzige Ort, an dem die Stilllegung
+  existiert.
