@@ -20,8 +20,10 @@
 //     Tabellen an und loescht dort ausschliesslich einzeln benannte Zeilen.
 //   * Alles in EINER Transaktion; jeder Soll-Ist-Verstoss bricht per raise
 //     exception ab und rollt die gesamte Transaktion zurueck.
-//   * Idempotent: ein zweiter Lauf findet den Sollzustand bereits vor und
-//     aendert 0 Zeilen (der Vorher-Check laesst beide Zustaende zu).
+//   * Idempotent in den FACHLICHEN Werten: ein zweiter Lauf findet den Sollzustand
+//     vor und aendert keinen fachlichen Wert. Er schreibt die Zeilen aber erneut,
+//     und der Trigger set_updated_at bumpt dabei jedes Mal `updated_at`. Die
+//     fruehere Zusicherung "aendert 0 Zeilen" war am DB-Objekt falsch.
 //
 // Aufruf:
 //   node scripts/seed-restore-sql.js <pfad-zum-pre-seed-backup-verzeichnis>
@@ -44,6 +46,16 @@ const SECHS_WEGE = [
 
 // Die 2 Pakete, die Seed 1 NEU anlegt (existieren im Pre-Seed-Backup nicht).
 const NEUE_PAKETE = ["pkg-die-linke-berlin", "pkg-die-linke-brandenburg"];
+
+// Genau die Pakete, deren Zuordnungen die beiden Seeds anfassen. Nur innerhalb
+// dieses Wirkbereichs darf der Restore loeschen (Review PR #125, Befund 1).
+// Alles ausserhalb — insbesondere die bei der Provisionierung entstehenden
+// 'profil-<mandats-id>'-Pakete — bleibt unberuehrt.
+const SEED_PAKETE = [
+  "pkg-bund-basis", "pkg-arbeit-und-soziales", "pkg-die-linke-bund",
+  "pkg-regional-niedersachsen", "pkg-berlin-basis", "pkg-brandenburg-basis",
+  "pkg-die-linke-berlin", "pkg-die-linke-brandenburg"
+];
 
 // Genau die Spalten, die die beiden Seeds schreiben (= die Spaltenlisten ihrer
 // insert-Statements). Der Restore setzt exakt diese zurueck — nicht mehr.
@@ -101,21 +113,98 @@ function readBackup(dir) {
     const raw = fs.readFileSync(p, "utf8");
     // Pruefsumme gegen das Manifest — ein nachtraeglich veraendertes Backup darf
     // nie unbemerkt zur Restore-Grundlage werden.
+    // FAIL-CLOSED (Review PR #125, Befund 4): frueher wurde die Pruefung
+    // uebersprungen, wenn die Pruefsumme FEHLTE (`if (soll && …)`). Ein Angreifer
+    // oder ein Versehen musste also nur den Manifest-Eintrag entfernen, um eine
+    // manipulierte Datei durchzubringen. Eine fehlende Pruefsumme ist jetzt ein Fehler.
     const ist = crypto.createHash("sha256").update(raw).digest("hex");
     const soll = manifest.pruefsummen && manifest.pruefsummen[t];
-    if (soll && soll !== ist) throw new Error(`Pruefsumme fuer ${t} stimmt nicht (Backup veraendert?)`);
+    if (!soll) throw new Error(`Keine Pruefsumme fuer ${t} im Manifest — Backup nicht verifizierbar`);
+    if (soll !== ist) throw new Error(`Pruefsumme fuer ${t} stimmt nicht (Backup veraendert?)`);
     tables[t] = JSON.parse(raw);
+  }
+  // Gesamtpruefsumme nachrechnen — sie war bisher nur Zierde im Kopf des Skripts.
+  if (manifest.pruefsummeGesamt) {
+    const gesamt = crypto.createHash("sha256").update(JSON.stringify(manifest.pruefsummen)).digest("hex");
+    if (gesamt !== manifest.pruefsummeGesamt) {
+      throw new Error("Gesamtpruefsumme stimmt nicht — Manifest veraendert?");
+    }
   }
   return { manifest, tables };
 }
 
+// Belegt, dass das Backup WIRKLICH den Zustand VOR den Seeds zeigt.
+// Ohne diese Pruefung (Review PR #125, Befund 2) waere ein zu spaet gezogenes
+// Backup — also eines NACH der Einspielung — nicht erkennbar: der erzeugte Restore
+// waere ein No-Op, alle Nachpruefungen liefen gruen durch und das Werkzeug meldete
+// Erfolg, ohne irgendetwas zurueckgedreht zu haben.
+function pruefeVorSeedZustand(tables) {
+  const pfade = new Map(tables.retrieval_paths.map((r) => [r.id, r]));
+  const pakete = new Set(tables.source_packages.map((r) => r.id));
+
+  const fehlend = SECHS_WEGE.filter((id) => !pfade.has(id));
+  if (fehlend.length) {
+    throw new Error(`Backup unvollstaendig: diese Abrufwege fehlen: ${fehlend.join(", ")}`);
+  }
+  // Vor der Einspielung stehen alle 6 auf 'broken'. Steht auch nur einer auf
+  // 'needs_review', wurde Seed 1 bereits eingespielt.
+  const schonRepariert = SECHS_WEGE.filter((id) => pfade.get(id).status !== "broken");
+  if (schonRepariert.length) {
+    throw new Error(
+      `Backup zeigt NICHT den Zustand vor der Einspielung: ${schonRepariert.join(", ")} `
+      + "steht/stehen nicht mehr auf 'broken'. Vermutlich wurde das Backup ERST NACH Seed 1 gezogen. "
+      + "Ein solcher Restore waere wirkungslos und wuerde faelschlich Erfolg melden."
+    );
+  }
+  const schonDa = NEUE_PAKETE.filter((id) => pakete.has(id));
+  if (schonDa.length) {
+    throw new Error(
+      `Backup enthaelt bereits die von Seed 1 angelegten Pakete (${schonDa.join(", ")}) `
+      + "— es zeigt also den Zustand NACH der Einspielung und taugt nicht als Rueckweg."
+    );
+  }
+  // Ein leeres Backup erzeugt syntaktisch ungueltiges SQL (`not in ()`, `insert … values`
+  // ohne Werte, `unnest(array[])` ohne Typ). Lieber hier klar abbrechen.
+  for (const t of RESTORE_TABLES) {
+    if (!Array.isArray(tables[t]) || tables[t].length === 0) {
+      throw new Error(`Tabelle ${t} ist im Backup leer — als Restore-Grundlage unbrauchbar`);
+    }
+  }
+  // Pflichtspalten — aber NUR fuer die Zeilen, die der Restore tatsaechlich schreibt.
+  // Eine dort fehlende Spalte wuerde still zu `null` und echte Werte ueberschreiben.
+  // Zeilen ausserhalb des Schreibbereichs duerfen unvollstaendig sein; sie werden nie
+  // angefasst.
+  for (const id of SECHS_WEGE) {
+    const fehlt = SEED_COLUMNS.retrieval_paths.filter((c) => !(c in pfade.get(id)));
+    if (fehlt.length) throw new Error(`Zeile ${id} in retrieval_paths: Spalten fehlen im Backup: ${fehlt.join(", ")}`);
+  }
+  for (const row of tables.source_packages) {
+    if (!SEED_PAKETE.includes(row.id)) continue;
+    const fehlt = SEED_COLUMNS.source_packages.filter((c) => !(c in row));
+    if (fehlt.length) throw new Error(`Zeile ${row.id} in source_packages: Spalten fehlen im Backup: ${fehlt.join(", ")}`);
+  }
+  for (const row of tables.package_paths) {
+    if (!row.package_id || !row.retrieval_path_id) {
+      throw new Error("Zeile in package_paths ohne package_id/retrieval_path_id — Backup unbrauchbar");
+    }
+  }
+}
+
 function build(dir) {
   const { manifest, tables } = readBackup(dir);
+  pruefeVorSeedZustand(tables);
   const pfadeVorher = new Map(tables.retrieval_paths.map((r) => [r.id, r]));
   const paketeVorher = new Map(tables.source_packages.map((r) => [r.id, r]));
   const zuordnungenVorher = tables.package_paths.map((r) => [r.package_id, r.retrieval_path_id]);
+  // Nur die Zuordnungen INNERHALB des Seed-Wirkbereichs sind Gegenstand des
+  // Rueckbaus. Alles andere (z. B. `profil-<mandats-id>` aus der Provisionierung)
+  // bleibt unangetastet.
+  const zuordnungenImScope = zuordnungenVorher.filter(([p]) => SEED_PAKETE.includes(p));
 
-  const sechs = SECHS_WEGE.filter((id) => pfadeVorher.has(id));
+  // Nach pruefeVorSeedZustand() sind garantiert alle 6 da — kein stilles Filtern mehr
+  // (Review PR #125, Befund 3): frueher verschwand ein im Backup fehlender Weg
+  // kommentarlos aus Rueckbau UND Pruefung.
+  const sechs = SECHS_WEGE.slice();
   const out = [];
   out.push("-- ============================================================================");
   out.push("-- RESTORE der Quellen-Seed-Einspielung (erzeugt, nicht von Hand schreiben)");
@@ -131,6 +220,12 @@ function build(dir) {
   out.push("-- Kein drop/truncate, keine Elterntabellen, alles in einer Transaktion.");
   out.push("");
   out.push("begin;");
+  out.push("");
+  out.push("-- Textliterale strikt nach SQL-Standard auslegen. q() maskiert nur das");
+  out.push("-- einfache Anfuehrungszeichen; bei standard_conforming_strings=off wuerde ein");
+  out.push("-- Backslash im Backup-Wert aus dem Literal ausbrechen koennen. Postgres liefert");
+  out.push("-- seit 9.1 'on' aus — diese Zeile macht es unabhaengig von der Serverkonfiguration.");
+  out.push("set local standard_conforming_strings = on;");
   out.push("");
 
   // --- Soll-Ist-Check VOR der Aenderung ------------------------------------
@@ -162,25 +257,48 @@ function build(dir) {
   out.push("-- 3) source_packages: alle vom Seed geschriebenen Spalten zurueck — u. a.");
   out.push("--    required_classes (15 -> 12 wird rueckgaengig gemacht) UND purpose/name,");
   out.push("--    die der Seed per on-conflict ebenfalls aktualisiert.");
+  out.push("--    NUR die vom Seed beschriebenen Pakete (Review PR #125, Befund 9): frueher");
+  out.push("--    wurde JEDES Paket aus dem Backup zurueckgeschrieben, also auch die an ein");
+  out.push("--    konkretes Mandat gebundenen 'profil-<mandats-id>'-Pakete. Ein");
+  out.push("--    Quellen-Rollback hat auf Mandantenzeilen nichts zu suchen.");
   for (const [id, p] of paketeVorher) {
+    if (!SEED_PAKETE.includes(id)) continue;
     const sets = SEED_COLUMNS.source_packages.map((c) => `  ${c} = ${qVal(c, p[c])}`).join(",\n");
     out.push(`update public.source_packages set\n${sets}\nwhere id = ${q(id)};`);
   }
   out.push("");
 
   // --- 4) Paketzuordnungen exakt auf den gesicherten Stand ------------------
-  out.push("-- 4) package_paths auf den gesicherten Stand: erst alles entfernen, was NICHT");
-  out.push("--    gesichert war (die vom Seed neu eingefuegten Zuordnungen), dann die");
-  out.push("--    gesicherten wieder einfuegen (die vom Seed geloeschten kommen so zurueck).");
+  out.push("-- 4) package_paths auf den gesicherten Stand — AUSSCHLIESSLICH innerhalb des");
+  out.push("--    Seed-Wirkbereichs (die 8 Seed-Pakete). Zuordnungen anderer Pakete, etwa");
+  out.push("--    der bei der Provisionierung entstandenen 'profil-<mandats-id>'-Pakete,");
+  out.push("--    werden NICHT angefasst: ein Quellen-Rollback darf keine Mandantendaten");
+  out.push("--    loeschen, auch nicht solche, die nach dem Backup entstanden sind.");
   out.push("--    Kein Delete auf Elterntabellen -> kein Cascade-Risiko.");
-  const paare = zuordnungenVorher.map(([p, r]) => `(${q(p)}, ${q(r)})`).join(",\n    ");
+  const scopeListe = SEED_PAKETE.map(q).join(", ");
+  const paare = zuordnungenImScope.map(([p, r]) => `(${q(p)}, ${q(r)})`).join(",\n    ");
+  // Was geloescht wird, wird vorher benannt — ein stiller Verlust waere hier das
+  // gefaehrlichste Ergebnis.
+  out.push("do $$");
+  out.push("declare r record;");
+  out.push("begin");
+  out.push("  for r in select package_id, retrieval_path_id from public.package_paths");
+  out.push(`   where package_id in (${scopeListe})`);
+  out.push("     and (package_id, retrieval_path_id) not in (");
+  out.push(`      ${paare}`);
+  out.push("     ) loop");
+  out.push("    raise notice 'Restore entfernt Zuordnung: % -> %', r.package_id, r.retrieval_path_id;");
+  out.push("  end loop;");
+  out.push("end $$;");
+  out.push("");
   out.push("delete from public.package_paths");
-  out.push(" where (package_id, retrieval_path_id) not in (");
+  out.push(` where package_id in (${scopeListe})`);
+  out.push("   and (package_id, retrieval_path_id) not in (");
   out.push(`    ${paare}`);
   out.push("   );");
   out.push("");
   out.push("insert into public.package_paths (package_id, retrieval_path_id) values");
-  out.push(`  ${zuordnungenVorher.map(([p, r]) => `(${q(p)}, ${q(r)})`).join(",\n  ")}`);
+  out.push(`  ${zuordnungenImScope.map(([p, r]) => `(${q(p)}, ${q(r)})`).join(",\n  ")}`);
   out.push("on conflict (package_id, retrieval_path_id) do nothing;");
   out.push("");
 
@@ -201,20 +319,39 @@ function build(dir) {
   // --- 6) Soll-Ist-Check NACH der Aenderung --------------------------------
   out.push("-- 6) Nachher-Check: Zielzahlen muessen exakt dem Backup entsprechen, sonst");
   out.push("--    bricht die Transaktion ab und NICHTS wird geschrieben.");
+  out.push("--    WICHTIG: die tragenden Pruefungen sind die ZEILENBEZOGENEN unten. Eine reine");
+  out.push("--    Zeilenzahl ueber package_paths waere nach delete+insert per Konstruktion");
+  out.push("--    immer erfuellt und damit wertlos (Review PR #125, Befund 1).");
   out.push("do $$");
-  out.push("declare n_pfade int; n_pakete int; n_zuordnungen int;");
+  out.push("declare n_pfade int; n_pakete int; n_zuordnungen int; n_fehlend int;");
   out.push("begin");
   out.push(`  select count(*) into n_pfade from public.retrieval_paths where id in (${sechs.map(q).join(", ")}) and status = 'broken';`);
   out.push(`  if n_pfade <> ${sechs.filter((id) => pfadeVorher.get(id).status === "broken").length} then`);
   out.push("    raise exception 'Restore-Nachpruefung: unerwarteter Status der Abrufwege (%)', n_pfade;");
   out.push("  end if;");
-  out.push("  select count(*) into n_zuordnungen from public.package_paths;");
-  out.push(`  if n_zuordnungen <> ${zuordnungenVorher.length} then`);
-  out.push(`    raise exception 'Restore-Nachpruefung: % Paketzuordnungen, erwartet ${zuordnungenVorher.length}', n_zuordnungen;`);
+  out.push("");
+  out.push("  -- Zeilenbezogen: JEDE gesicherte Zuordnung des Seed-Wirkbereichs muss wieder da sein.");
+  out.push("  select count(*) into n_fehlend from (values");
+  out.push(`    ${zuordnungenImScope.map(([p, r]) => `(${q(p)}, ${q(r)})`).join(",\n    ")}`);
+  out.push("  ) as s(pid, rid)");
+  out.push("   where not exists (select 1 from public.package_paths pp");
+  out.push("                      where pp.package_id = s.pid and pp.retrieval_path_id = s.rid);");
+  out.push("  if n_fehlend > 0 then");
+  out.push("    raise exception 'Restore-Nachpruefung: % gesicherte Zuordnungen fehlen', n_fehlend;");
   out.push("  end if;");
-  out.push("  select count(*) into n_pakete from public.source_packages;");
-  out.push(`  if n_pakete <> ${paketeVorher.size} then`);
-  out.push(`    raise exception 'Restore-Nachpruefung: % Pakete, erwartet ${paketeVorher.size}', n_pakete;`);
+  out.push("");
+  out.push("  -- Zeilenbezogen: die von Seed 1 angelegten Pakete duerfen nicht mehr existieren.");
+  out.push(`  select count(*) into n_pakete from public.source_packages where id in (${NEUE_PAKETE.map(q).join(", ")});`);
+  out.push(`  if n_pakete <> ${NEUE_PAKETE.filter((id) => paketeVorher.has(id)).length} then`);
+  out.push("    raise exception 'Restore-Nachpruefung: von Seed 1 angelegte Pakete noch vorhanden (%)', n_pakete;");
+  out.push("  end if;");
+  out.push("");
+  out.push("  -- Zahlenprobe NUR im Seed-Wirkbereich. Global waere sie falsch: zwischen Backup");
+  out.push("  -- und Restore kann die Provisionierung eines Mandanten legitim ein Paket");
+  out.push("  -- anlegen — das darf den Rueckweg nicht blockieren (Befund 6).");
+  out.push(`  select count(*) into n_zuordnungen from public.package_paths where package_id in (${scopeListe});`);
+  out.push(`  if n_zuordnungen <> ${zuordnungenImScope.length} then`);
+  out.push(`    raise exception 'Restore-Nachpruefung: % Zuordnungen im Seed-Bereich, erwartet ${zuordnungenImScope.length}', n_zuordnungen;`);
   out.push("  end if;");
   out.push("end $$;");
   out.push("");

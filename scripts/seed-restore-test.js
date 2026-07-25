@@ -125,8 +125,9 @@ function execSql(db, sql) {
   for (const stmt of stmts) {
     const clean = stmt.replace(/^\s*--.*$/gm, "").trim();
     // Nicht datenverändernde Statements überspringen (Transaktionsklammer,
-    // PostgREST-Schema-Reload am Seed-Ende).
-    if (!clean || /^(begin|commit)$/i.test(clean) || /^notify\s+/i.test(clean)) continue;
+    // PostgREST-Schema-Reload am Seed-Ende, Sitzungsparameter).
+    if (!clean || /^(begin|commit)$/i.test(clean) || /^notify\s+/i.test(clean)
+      || /^set\s+local\s+/i.test(clean)) continue;
 
     let m = clean.match(/^insert into public\.(\w+)\s*\(([^)]*)\)\s*values([\s\S]*?)on conflict\s*\(([^)]*)\)\s*do\s+(nothing|update set([\s\S]*))$/i);
     if (m) {
@@ -157,6 +158,19 @@ function execSql(db, sql) {
       const keep = new Set(rowTuples(keepRaw).map((t) => `${t[0]}|${t[1]}`));
       for (const [k, row] of [...db[table]]) {
         if (ids.has(row.retrieval_path_id) && !keep.has(k)) { db[table].delete(k); stats.del += 1; }
+      }
+      continue;
+    }
+
+    // Eingegrenzte Form des Restores: nur innerhalb der Seed-Pakete loeschen.
+    // Genau diese Eingrenzung schuetzt Zeilen, die nach dem Backup entstanden sind.
+    m = clean.match(/^delete from public\.(\w+)\s*where\s*package_id in \(([\s\S]*?)\)\s*and\s*\(package_id, retrieval_path_id\) not in \(([\s\S]*)\)$/i);
+    if (m) {
+      const [, table, scopeRaw, keepRaw] = m;
+      const scope = new Set(splitValues(scopeRaw).map(parseVal));
+      const keep = new Set(rowTuples(keepRaw).map((t) => `${t[0]}|${t[1]}`));
+      for (const [k, row] of [...db[table]]) {
+        if (scope.has(row.package_id) && !keep.has(k)) { db[table].delete(k); stats.del += 1; }
       }
       continue;
     }
@@ -197,6 +211,65 @@ function execSql(db, sql) {
     throw new Error("Unbekanntes Statement: " + clean.slice(0, 90));
   }
   return { stats, doBlocks };
+}
+
+// Wertet die `do $$ … $$;`-Pruefbloecke des erzeugten Restores WIRKLICH aus.
+// Bis hierhin wurden sie nur aus dem SQL herausgeschnitten und ihr Vorkommen
+// gezaehlt (Review PR #125, Befund 12) — die gesamte Vor- und Nachpruefung war
+// damit unbelegt. Nachgebildet werden genau die vier Formen, die der Generator
+// erzeugt; jede andere Form faellt auf, weil sie hier nicht gefunden wird.
+// Rueckgabe: Liste der ausgeloesten Ausnahmen (leer = alle Pruefungen bestanden).
+function execDoBlocks(db, bloecke) {
+  const ausnahmen = [];
+  const zahl = (t) => Number(String(t).trim());
+
+  for (const block of bloecke) {
+    // a) Vorher-Check: wie viele der aufgezaehlten Wege fehlen in retrieval_paths?
+    let m = block.match(/unnest\(array\[([^\]]*)\]\)[\s\S]*?not exists[\s\S]*?retrieval_paths[\s\S]*?if fehlend > 0 then/i);
+    if (m) {
+      const ids = m[1].split(",").map((s) => s.trim().replace(/^'|'$/g, ""));
+      const fehlend = ids.filter((id) => !(db.retrieval_paths || new Map()).has(id)).length;
+      if (fehlend > 0) ausnahmen.push(`Vorher-Check: ${fehlend} Abrufwege fehlen`);
+      continue;
+    }
+    // b) raise notice-Schleife: reine Meldung, veraendert nichts.
+    if (/for\s+r\s+in\s+select/i.test(block) && !/raise exception/i.test(block)) continue;
+
+    // c) Nachher-Check: mehrere Bedingungen in einem Block.
+    if (/Restore-Nachpruefung/i.test(block)) {
+      // c1) Status der 6 Wege
+      let mm = block.match(/where id in \(([^)]*)\) and status = 'broken';\s*if n_pfade <> (\d+) then/i);
+      if (mm) {
+        const ids = mm[1].split(",").map((s) => s.trim().replace(/^'|'$/g, ""));
+        const ist = ids.filter((id) => (db.retrieval_paths.get(id) || {}).status === "broken").length;
+        if (ist !== zahl(mm[2])) ausnahmen.push(`Nachpruefung: Status der Abrufwege ${ist} statt ${mm[2]}`);
+      }
+      // c2) fehlende gesicherte Zuordnungen
+      mm = block.match(/from \(values([\s\S]*?)\) as s\(pid, rid\)/i);
+      if (mm) {
+        const paare = [...mm[1].matchAll(/\('([^']*)',\s*'([^']*)'\)/g)].map((x) => `${x[1]}|${x[2]}`);
+        const fehlend = paare.filter((k) => !db.package_paths.has(k)).length;
+        if (fehlend > 0) ausnahmen.push(`Nachpruefung: ${fehlend} gesicherte Zuordnungen fehlen`);
+      }
+      // c3) die von Seed 1 angelegten Pakete
+      mm = block.match(/from public\.source_packages where id in \(([^)]*)\);\s*if n_pakete <> (\d+) then/i);
+      if (mm) {
+        const ids = mm[1].split(",").map((s) => s.trim().replace(/^'|'$/g, ""));
+        const ist = ids.filter((id) => db.source_packages.has(id)).length;
+        if (ist !== zahl(mm[2])) ausnahmen.push(`Nachpruefung: ${ist} neue Pakete noch vorhanden, erwartet ${mm[2]}`);
+      }
+      // c4) Zuordnungen im Seed-Wirkbereich
+      mm = block.match(/from public\.package_paths where package_id in \(([^)]*)\);\s*if n_zuordnungen <> (\d+) then/i);
+      if (mm) {
+        const pakete = new Set(mm[1].split(",").map((s) => s.trim().replace(/^'|'$/g, "")));
+        const ist = [...db.package_paths.values()].filter((r) => pakete.has(r.package_id)).length;
+        if (ist !== zahl(mm[2])) ausnahmen.push(`Nachpruefung: ${ist} Zuordnungen im Seed-Bereich, erwartet ${mm[2]}`);
+      }
+      continue;
+    }
+    ausnahmen.push(`UNBEKANNTER Pruefblock (Test deckt ihn nicht ab): ${block.slice(0, 80)}`);
+  }
+  return ausnahmen;
 }
 
 function snapshot(db, tables) {
@@ -325,6 +398,11 @@ check("7 · Restore fasst keine Elterntabellen an (publishers/political_entities
 const rst = execSql(db, restoreSql);
 console.log(`   +${rst.stats.ins} eingefuegt, ${rst.stats.upd} aktualisiert, ${rst.stats.del} geloescht`);
 
+// Die Pruefbloecke werden jetzt tatsaechlich ausgewertet, nicht nur gezaehlt.
+const nachAusnahmen = execDoBlocks(db, rst.doBlocks);
+check(`7 · Die Pruefbloecke laufen wirklich durch (${rst.doBlocks.length} Bloecke, 0 Ausnahmen)`,
+  rst.doBlocks.length >= 3 && nachAusnahmen.length === 0, nachAusnahmen.join(" | "));
+
 console.log("\n== 8) Endzustand gegen Ausgangszustand ==");
 const ENDE = snapshot(db, TAB);
 check("8 · Endzustand ist BYTEGLEICH zum Ausgangszustand", ENDE === AUSGANG);
@@ -413,6 +491,139 @@ check("13 · Verworfene Transaktion laesst den Ausgangszustand unberuehrt", snap
 
 console.log("\n== 14) Kein Restdiff ==");
 check("14 · Nach vollstaendigem Zyklus bleibt kein Diff zurueck", snapshot(db, TAB) === AUSGANG);
+
+// ---------------------------------------------------------------------------
+// 15) Regressionstests zu den Befunden aus dem Review von PR #125
+// ---------------------------------------------------------------------------
+console.log("\n== 15) Regression: Eingangspruefungen des Generators ==");
+
+// Hilfsfunktion: schreibt ein Backup-Verzeichnis aus beliebigen Tabellen.
+function schreibeBackup(tabellen, patch = {}) {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), "regress-"));
+  const mf = { art: "pre-seed", erstellt: new Date().toISOString(), mainCommit: "test", quelle: "fixture",
+    tabellen: {}, pruefsummen: {}, fehler: [], vollstaendig: true };
+  for (const [t, rows] of Object.entries(tabellen)) {
+    const json = JSON.stringify(rows);
+    fs.writeFileSync(path.join(d, `${t}.json`), json);
+    mf.tabellen[t] = rows.length;
+    mf.pruefsummen[t] = crypto.createHash("sha256").update(json).digest("hex");
+  }
+  mf.pruefsummeGesamt = crypto.createHash("sha256").update(JSON.stringify(mf.pruefsummen)).digest("hex");
+  Object.assign(mf, patch);
+  fs.writeFileSync(path.join(d, "manifest.json"), JSON.stringify(mf, null, 2));
+  return d;
+}
+function wirft(d) {
+  try { build(d); return null; } catch (e) { return String(e.message); }
+}
+
+// Ausgangsbestand fuer die Regressionsfaelle: der echte Pre-Seed-Stand.
+const basis = {};
+execSql(basis, loadSeed("20260713_source_architecture_seed.sql"));
+execSql(basis, loadSeed("20260717_landesmodul_be_bb_seed.sql"));
+const roh = (t) => [...basis[t].values()].map((r) => ({ ...r }));
+
+// 15a · Backup NACH der Einspielung gezogen -> muss abbrechen.
+// Frueher lief der Restore als No-Op durch und meldete Erfolg.
+{
+  const nachSeed = {};
+  execSql(nachSeed, loadSeed("20260713_source_architecture_seed.sql"));
+  execSql(nachSeed, loadSeed("20260717_landesmodul_be_bb_seed.sql"));
+  execSql(nachSeed, loadAktuell("20260713_source_architecture_seed.sql"));
+  execSql(nachSeed, loadAktuell("20260717_landesmodul_be_bb_seed.sql"));
+  const d = schreibeBackup({
+    retrieval_paths: [...nachSeed.retrieval_paths.values()],
+    source_packages: [...nachSeed.source_packages.values()],
+    package_paths: [...nachSeed.package_paths.values()]
+  });
+  const msg = wirft(d);
+  check("15a · Zu spaet gezogenes Backup (nach Seed 1) wird abgewiesen",
+    msg !== null && /nicht den Zustand vor der Einspielung|bereits die von Seed 1/i.test(msg), msg || "kein Abbruch");
+  fs.rmSync(d, { recursive: true, force: true });
+}
+
+// 15b · Fehlender Abrufweg -> muss abbrechen statt still zu filtern.
+{
+  const d = schreibeBackup({
+    retrieval_paths: roh("retrieval_paths").filter((r) => r.id !== "rp-dgb"),
+    source_packages: roh("source_packages"),
+    package_paths: roh("package_paths")
+  });
+  const msg = wirft(d);
+  check("15b · Fehlender Abrufweg im Backup wird abgewiesen (kein stilles Filtern)",
+    msg !== null && /rp-dgb/.test(msg), msg || "kein Abbruch");
+  fs.rmSync(d, { recursive: true, force: true });
+}
+
+// 15c · Fehlende Pruefsumme -> muss abbrechen (frueher fail-open).
+{
+  const d = schreibeBackup({
+    retrieval_paths: roh("retrieval_paths"), source_packages: roh("source_packages"),
+    package_paths: roh("package_paths")
+  });
+  const mf = JSON.parse(fs.readFileSync(path.join(d, "manifest.json"), "utf8"));
+  delete mf.pruefsummen.retrieval_paths;
+  delete mf.pruefsummeGesamt;
+  fs.writeFileSync(path.join(d, "manifest.json"), JSON.stringify(mf));
+  const msg = wirft(d);
+  check("15c · Fehlende Pruefsumme wird abgewiesen (fail-closed)",
+    msg !== null && /Keine Pruefsumme/i.test(msg), msg || "kein Abbruch");
+  fs.rmSync(d, { recursive: true, force: true });
+}
+
+// 15d · Leere Tabelle -> muss abbrechen (erzeugte sonst ungueltiges SQL).
+{
+  const d = schreibeBackup({
+    retrieval_paths: roh("retrieval_paths"), source_packages: roh("source_packages"), package_paths: []
+  });
+  const msg = wirft(d);
+  check("15d · Leere Tabelle im Backup wird abgewiesen",
+    msg !== null && /leer/i.test(msg), msg || "kein Abbruch");
+  fs.rmSync(d, { recursive: true, force: true });
+}
+
+console.log("\n== 16) Regression: Wirkbereich des Restores ==");
+{
+  // Ein nach dem Backup provisionierter Mandant: eigenes Paket, eigener Weg,
+  // eigene Zuordnung. Der Restore darf davon NICHTS anfassen.
+  const d = schreibeBackup({
+    retrieval_paths: roh("retrieval_paths"), source_packages: roh("source_packages"),
+    package_paths: roh("package_paths")
+  });
+  const sql = build(d);
+  fs.rmSync(d, { recursive: true, force: true });
+
+  const dbM = {};
+  execSql(dbM, loadSeed("20260713_source_architecture_seed.sql"));
+  execSql(dbM, loadSeed("20260717_landesmodul_be_bb_seed.sql"));
+  execSql(dbM, loadAktuell("20260713_source_architecture_seed.sql"));
+  execSql(dbM, loadAktuell("20260717_landesmodul_be_bb_seed.sql"));
+  // Provisionierung NACH dem Backup:
+  dbM.source_packages.set("pkg-profil-neu", { id: "pkg-profil-neu", key: "profil-neu", name: "Profil neu",
+    purpose: null, status: "active", is_base: false, political_level: "bund", geography_id: null, required_classes: [] });
+  dbM.retrieval_paths.set("rp-neu-news", { id: "rp-neu-news", publisher_id: null, legacy_source_id: null,
+    name: "Personensuche neu", method: "googlenews_search", url: "https://news.google.com/x", query: null,
+    parser: "googlenews-batchexecute", priority: 50, status: "healthy", activation_mode: "auto",
+    is_critical: false, max_items: 16, represents_type: null });
+  dbM.package_paths.set("pkg-profil-neu|rp-neu-news", { package_id: "pkg-profil-neu", retrieval_path_id: "rp-neu-news" });
+
+  const r = execSql(dbM, sql);
+  const ausnahmen = execDoBlocks(dbM, r.doBlocks);
+
+  check("16 · Das nach dem Backup angelegte Mandantenpaket ueberlebt den Restore",
+    dbM.source_packages.has("pkg-profil-neu"));
+  check("16 · Seine Paketzuordnung wird NICHT geloescht",
+    dbM.package_paths.has("pkg-profil-neu|rp-neu-news"));
+  check("16 · Sein Abrufweg bleibt unveraendert",
+    dbM.retrieval_paths.get("rp-neu-news").status === "healthy");
+  check("16 · Die Nachpruefung bricht deswegen NICHT ab (kein Fehlalarm)",
+    ausnahmen.length === 0, ausnahmen.join(" | "));
+  check("16 · Der Seed-Wirkbereich ist trotzdem vollstaendig zurueckgedreht",
+    ["rp-bundestag", "rp-bundesregierung", "rp-die-linke", "rp-linksfraktion",
+      "rp-ausschuss-arbeit-soziales", "rp-dgb"].every((id) => dbM.retrieval_paths.get(id).status === "broken")
+    && !dbM.source_packages.has("pkg-die-linke-berlin")
+    && dbM.package_paths.has("pkg-berlin-basis|rp-be-partei_pilot"));
+}
 
 fs.rmSync(dir, { recursive: true, force: true });
 console.log(`\n== Ergebnis: ${pass} PASS, ${fail} FAIL ==`);

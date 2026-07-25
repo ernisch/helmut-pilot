@@ -137,6 +137,20 @@ function gitCommit() {
 }
 
 async function main() {
+  // Argumente streng pruefen (Review PR #125, Befund 2): `--scope seed` mit Leerzeichen
+  // oder ein Tippfehler fiel frueher still auf den VOLL-Export zurueck — und der zieht
+  // auch raw_documents, briefings, user_notes und interactions auf die Platte. Genau die
+  // Datenminimierung, wegen der es den Seed-Modus gibt, war damit unbemerkt aufgehoben.
+  // ZUERST pruefen, VOR jedem Verzeichnis: ein abgewiesener Aufruf darf keinen leeren
+  // Ordner hinterlassen, der spaeter wie ein Backup aussieht.
+  let seedScope = false;
+  for (const arg of process.argv.slice(2)) {
+    const m = /^--scope=(.*)$/.exec(arg);
+    if (m && (m[1] === "seed" || m[1] === "voll")) { seedScope = m[1] === "seed"; continue; }
+    console.error(`FEHLER: unbekanntes Argument '${arg}'. Erlaubt: --scope=seed oder --scope=voll (Standard: voll).`);
+    process.exit(2);
+  }
+
   const baseUrl = String(process.env.SUPABASE_URL || "").replace(/\/+$/, "");
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
   if (!baseUrl || !key) {
@@ -147,7 +161,6 @@ async function main() {
   const dir = path.join(__dirname, "..", "backups", stamp);
   fs.mkdirSync(dir, { recursive: true });
 
-  const seedScope = process.argv.includes("--scope=seed");
   const tableNames = seedScope ? SEED_SCOPE_TABLES.slice() : Object.keys(TABLES);
   const manifest = {
     art: seedScope ? "pre-seed" : "voll",
@@ -168,21 +181,50 @@ async function main() {
       const rows = [];
       for (let offset = 0; ; offset += PAGE_SIZE) {
         const page = await fetchPage(baseUrl, key, table, TABLES[table], offset);
+        if (!Array.isArray(page)) throw new Error(`unerwartete Antwort (kein Array) bei offset ${offset}`);
         rows.push(...page);
-        if (!Array.isArray(page) || page.length < PAGE_SIZE) break;
+        if (page.length < PAGE_SIZE) break;
       }
       // Vollstaendigkeitsprobe: ein still gekappter Export darf NIE als ok gelten.
-      if (erwartet !== null && rows.length !== erwartet) {
+      if (erwartet === null) {
+        throw new Error("Zeilenzahl serverseitig nicht bestaetigt (kein Content-Range) — Vollstaendigkeit nicht pruefbar");
+      }
+      if (rows.length !== erwartet) {
         throw new Error(`unvollstaendig: ${rows.length} exportiert, ${erwartet} erwartet`);
       }
       const json = JSON.stringify(rows);
       fs.writeFileSync(path.join(dir, `${table}.json`), json);
       manifest.tabellen[table] = rows.length;
       manifest.pruefsummen[table] = sha256(json);
-      console.log(`OK    ${table}: ${rows.length} Zeilen${erwartet === null ? " (Zeilenzahl serverseitig nicht bestaetigt)" : ""}`);
+      console.log(`OK    ${table}: ${rows.length} Zeilen`);
     } catch (error) {
       manifest.fehler.push({ tabelle: table, fehler: String(error.message).slice(0, 200) });
       console.error(`FEHL  ${table}: ${error.message}`);
+    }
+  }
+  // PLAUSIBILISIERUNG (2026-07-25, Review PR #125, Befund 1): Ein technisch
+  // fehlerfreier Lauf kann trotzdem wertlos sein. Auf allen acht Quellentabellen ist
+  // RLS aktiv, es existiert aber KEINE Policy (20260713_source_architecture.sql:205).
+  // Ein Zugriff mit anon-/publishable-Key oder gegen ein falsches Projekt ist deshalb
+  // kein Fehler, sondern liefert HTTP 200 mit `[]` — frueher lief das als
+  // `vollstaendig: true` durch und haette das Go-/Stop-Gate des Runbooks bestanden.
+  // Ein leeres Backup ist keine Wiederherstellungsgrundlage.
+  const summe = Object.values(manifest.tabellen).reduce((a, b) => a + b, 0);
+  if (Object.keys(manifest.tabellen).length > 0 && summe === 0) {
+    manifest.fehler.push({
+      tabelle: "(alle)",
+      fehler: "0 Zeilen ueber alle Tabellen — vermutlich falscher Schluessel (kein service_role) oder falsches Projekt"
+    });
+  }
+  // Im Pre-Seed-Modus ist zusaetzlich belegbar, WELCHE Tabellen nicht leer sein duerfen:
+  // ohne Abrufwege, Pakete und Zuordnungen gibt es nichts zurueckzurollen. Bewusst nur
+  // "> 0" und keine festen Sollzahlen — absolute Zahlen driften (die Production-Inventur
+  // vom 2026-07-25 weicht bereits vom Code-Seed ab) und wuerden hier falsch alarmieren.
+  if (seedScope) {
+    for (const t of ["retrieval_paths", "source_packages", "package_paths"]) {
+      if (manifest.tabellen[t] === 0) {
+        manifest.fehler.push({ tabelle: t, fehler: "0 Zeilen — als Pre-Seed-Sicherung unbrauchbar" });
+      }
     }
   }
   // Ein Backup mit Fehlern ist KEIN Backup — im Manifest unmissverstaendlich markieren,
@@ -192,8 +234,17 @@ async function main() {
   fs.writeFileSync(path.join(dir, "manifest.json"), JSON.stringify(manifest, null, 2));
   console.log(`\nBackup unter ${dir}`);
   console.log(`Art: ${manifest.art} · Tabellen ok: ${Object.keys(manifest.tabellen).length}/${tableNames.length} · Fehler: ${manifest.fehler.length}`);
-  console.log(manifest.vollstaendig ? "VOLLSTAENDIG — als Wiederherstellungsgrundlage verwendbar."
-    : "UNVOLLSTAENDIG — NICHT als Wiederherstellungsgrundlage verwenden.");
+  // Die Meldung muss den Umfang mitsagen: ein Pre-Seed-Backup ist fuer SEINEN Zweck
+  // vollstaendig, deckt aber nur 8 der Tabellen ab — nicht die uebrige Datenbank.
+  if (!manifest.vollstaendig) {
+    console.log("UNVOLLSTAENDIG — NICHT als Wiederherstellungsgrundlage verwenden.");
+    for (const f of manifest.fehler) console.log(`      ${f.tabelle}: ${f.fehler}`);
+  } else if (seedScope) {
+    console.log(`VOLLSTAENDIG fuer die ${tableNames.length} Quellentabellen (pre-seed) — deckt die uebrigen`
+      + ` ${Object.keys(TABLES).length - tableNames.length} Tabellen ausdruecklich NICHT ab.`);
+  } else {
+    console.log("VOLLSTAENDIG — als Wiederherstellungsgrundlage verwendbar.");
+  }
   process.exit(manifest.vollstaendig ? 0 : 1);
 }
 
