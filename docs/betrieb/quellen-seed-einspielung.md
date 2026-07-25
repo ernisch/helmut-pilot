@@ -3,8 +3,14 @@
 **Stand:** 2026-07-25 · **Code-Grundlage:** `main` `61767a9` (Merge #118) · **Deployment:** `READY`
 
 > **Status: BLOCKIERT.** Diese Vorlage ist vollständig vorbereitet, aber die Ausführung ist
-> **nicht freigegeben** — es fehlt eine belastbare Sicherung (§5). Nichts hiervon wurde ausgeführt.
-> Die Vorschau in §4 ist rein lokal simuliert, ohne jeden Production-Zugriff.
+> **nicht freigegeben**. Nichts hiervon wurde ausgeführt. Die Vorschau in §4 ist rein lokal
+> simuliert, ohne jeden Production-Zugriff.
+>
+> **Stand 2026-07-25 (zweiter Sicherheits-Sprint):** Von den beiden ursprünglichen Blockern ist
+> einer **erledigt** — es gibt jetzt einen gezielten, isoliert getesteten Restore (§5b, 31/31 grün)
+> und ein Pre-Seed-Backup mit Prüfsummen (§5). Offen bleibt **nur noch**, dass die Sicherung
+> tatsächlich gegen Production **gelaufen** ist — dafür braucht es Betreiberzugriff. Zusätzlich
+> muss die **absichtliche Reaktivierung der 6 Bundeswege** (§4 Punkt 11, §6b) freigegeben werden.
 
 ---
 
@@ -168,15 +174,20 @@ es wird keine Zeile entfernt; die einzigen Änderungen an bestehenden Wegen sind
 
 ## 5 · Backup und Rollback — hier liegt der Blocker
 
+> **Aktualisiert 2026-07-25:** Der zuvor fehlende gezielte Rückbau **existiert jetzt** —
+> `scripts/seed-restore-sql.js` erzeugt aus einer Pre-Seed-Sicherung ein zielgenaues
+> Restore-SQL, isoliert getestet mit 31/31 grün (§5b). Damit bleibt als offener Punkt nur noch
+> die **Sicherung selbst**.
+
 | Frage | Antwort |
 |---|---|
 | Aktuelles Backup? | **Nein** — Supabase **Free-Plan**, keine automatischen Backups (`CURRENT_STATE.md` §9) |
 | PITR verfügbar? | **Nein** — Teil des offenen, **blockierten** OP-01 |
 | Restore-Prozess dokumentiert? | Ja — `betrieb/backup-restore-runbook.md`; PITR-Abschnitt §3 gilt aber ausdrücklich erst **nach** dem Pro-Upgrade |
-| Restore getestet? | Werkzeug `scripts/restore-drill.js` existiert und ist gefahrlos ausführbar (§3b), eine Übung ist aber **nicht** protokolliert |
-| Manuelles Backup möglich? | **Ja, heute** — `node scripts/backup-export.js` exportiert alle 38 Tabellen als JSON (read-only). Ehrliche Grenze: kein konsistenter Snapshot, nur tabellenweise |
+| Restore getestet? | **Ja, isoliert** — `scripts/seed-restore-test.js`, 31/31 grün, inkl. Bytegleichheit, Idempotenz, Teilerfolg und Manipulationserkennung |
+| Manuelles Backup möglich? | **Ja, heute** — `node scripts/backup-export.js --scope=seed` sichert gezielt die 8 betroffenen Tabellen (read-only), mit Prüfsummen, `main`-Commit und Pre-Seed-Kennzeichnung. Ehrliche Grenze: kein transaktionaler Snapshot, nur tabellenweise |
 | Technischer Rollback Seed 2? | **Ja, fein** — `20260717_landesmodul_be_bb_seed_rollback.sql` löscht gezielt per `retrieval_path_id` |
-| Technischer Rollback Seed 1? | **Nein, nur destruktiv** — `20260713_source_architecture_rollback.sql` macht `drop table … cascade` über die gesamte Quellenarchitektur. Für einen gezielten Rückbau **unbrauchbar** |
+| Technischer Rollback Seed 1? | **Neu: ja** — `scripts/seed-restore-sql.js` (gezielt, ohne `drop table`). Der alte `20260713_source_architecture_rollback.sql` bleibt ein `drop table … cascade` und ist für gezielten Rückbau weiterhin **unbrauchbar** — er darf hierfür **nicht** verwendet werden |
 
 **Entfernt der Rollback alle neu erzeugten Zuordnungen?** Für die BE/BB-Wege ja (Löschung per
 `retrieval_path_id` trifft beide Paketvarianten). Die zusätzliche Bund-Zuordnung
@@ -204,6 +215,46 @@ nach dieser Prüfung gefahrlos.
 
 ---
 
+## 5b · Isolierter Restore-Test (Nachweis)
+
+`node scripts/seed-restore-test.js` → **31 PASS, 0 FAIL** (Teil der Offline-Suite, 145/145).
+
+Der Test führt den vollständigen Zyklus offline und ohne jede Datenbank aus, gegen das **echte
+SQL der Repo-Dateien** (Ausgangszustand = die vor #118 committeten Seeds, also der erwartete
+Production-Stand; keine echten Production-Daten):
+
+Ausgangszustand → Pre-Seed-Backup → Seed 1 → Prüfung → Seed 2 → Prüfung → Seeds erneut
+(Idempotenz) → **Restore** → Vergleich mit dem Ausgangszustand.
+
+Belegt:
+
+- **Bytegleichheit:** der Endzustand nach Restore ist über alle 8 Tabellen byte-identisch zum Ausgangszustand.
+- **Idempotenz:** zweiter Lauf der Seeds = 0 Änderungen; zweiter Restore = 0 Änderungen.
+- **Teilerfolg:** ein Zustand, in dem nur Seed 1 lief, wird vom Restore vollständig geheilt.
+- **Abbruch:** eine nicht committete Transaktion lässt den Ausgangszustand unberührt.
+- **Manipulationsschutz:** ein nachträglich verändertes Backup wird per Prüfsumme abgewiesen; ein als `vollstaendig: false` markiertes Backup ebenfalls.
+- **Sicherheitszusicherungen am erzeugten SQL:** kein `drop`/`truncate`, eine Transaktion, Vorher- **und** Nachher-Check mit hartem Abbruch, keine Elterntabellen angefasst, 162 Abrufwege unverändert.
+
+**Ehrliche Grenzen dieses Nachweises:**
+
+- Der Test nutzt einen **minimalen SQL-Ausführer**, der genau die Statement-Formen von Seeds und
+  Restore versteht — kein Postgres. Er beweist die *Datenlogik*, nicht das Verhalten einer echten
+  Datenbank (Constraints, Trigger, Nebenläufigkeit).
+- **`updated_at` lässt sich nicht zurücksetzen:** auf diesen Tabellen liegt ein
+  `set_updated_at`-Trigger. Nach einem Restore trägt jede angefasste Zeile einen neuen
+  `updated_at`-Wert. Fachlich ohne Bedeutung — die Spalte wird nirgends für Auswahl, Crawl-Plan
+  oder Anzeige ausgewertet; alle fachlichen Spalten sind nachweislich byte-identisch.
+- Ebenfalls bewusst **nicht** zurückgesetzt: `last_success_at`, `last_error`, `error_streak`
+  (Laufzeit-Telemetrie). Die Seeds fassen sie nicht an; sie zurückzuschreiben würde echte
+  Betriebsdaten überschreiben, die zwischen Backup und Restore entstanden sind.
+- Bei der Absicherung des Tests gegen sich selbst zeigte sich: Mutationen, die die *Form* eines
+  Statements verändern, lassen den Mini-Ausführer abbrechen statt eine Regression zu melden. Eine
+  **formerhaltende** Mutation (eine zu entfernende Zuordnung in der Keep-Liste belassen) wird
+  dagegen zuverlässig als 2 FAILs gefangen — die Erkennung ist also belegt, aber der Ausführer ist
+  kein allgemeiner SQL-Prüfer.
+
+---
+
 ## 6 · Abnahmekriterien
 
 **Go — alle müssen erfüllt sein:**
@@ -211,10 +262,10 @@ nach dieser Prüfung gefahrlos.
 | # | Kriterium | Stand |
 |---|---|---|
 | 1 | PR #118 gemergt und deployt | ✅ `61767a9`, CI grün, Vercel `READY` |
-| 2 | Backup oder PITR bestätigt | ❌ **offen** — siehe §5 |
+| 2 | Backup oder PITR bestätigt | ❌ **offen** — Werkzeug steht (`--scope=seed`), der Lauf gegen Production ist noch nicht erfolgt (Betreiberzugriff) |
 | 3 | Vorschau ohne unerwarteten Diff | ✅ §4 |
 | 4 | Exakte Soll-Zahlen dokumentiert | ✅ §4 |
-| 5 | Rollback geprüft | ⚠️ **teilweise** — fein nur für Seed 2 |
+| 5 | Rollback geprüft | ✅ **erledigt** — gezielter Restore-Generator, isoliert getestet 31/31 (§5b) |
 | 6 | Keine laufende Migration / kritische Verarbeitung | ⚠️ vor Ausführung prüfen (Crawl-Cron 04:00/20:00 UTC, Understanding 05:30/21:30) |
 | 7 | Kein Konflikt mit neuen `main`-Änderungen | ✅ zum Zeitpunkt dieser Vorlage |
 | 8 | Betreiberfreigabe | ❌ **offen** |
@@ -232,6 +283,66 @@ Production-Health verschlechtert sich · Rollback nicht eindeutig möglich.
 
 ---
 
+## 6b · Die sechs reaktivierten Bundeswege — Kontrollkarten
+
+Alle Werte aus dem echten Katalog erzeugt (`buildFullModel()` + `v1Sources`).
+Gemeinsam für alle sechs: **Crawl-Häufigkeit** = die bestehenden Crawl-Crons (04:00/20:00 UTC),
+**keine** eigene Frequenz · **keine KI-Folgekosten** (Crawl ≠ Understanding; Understanding läuft
+budgetiert und fail-closed) · **Rücksetzweg** = `update public.retrieval_paths set status='broken'
+where id='<id>'` (einzeln, sofort wirksam, kein Deploy nötig) · **Prüfmetrik** = die Pro-Weg-Telemetrie
+(`source_crawl_telemetry`) und der Health-Report.
+
+| # | ID | Herausgeber | Typ | Status alt → neu | Aktivierung | Zusatzumfang | Risiko | Dedup |
+|---|---|---|---|---|---|---|---|---|
+| 1 | `rp-bundestag` | bundestag.de | **Direktfeed** (RSS) | `broken` → `needs_review` | `always_on` — **läuft sofort** | ≤16 Items | gering (offizieller Feed) | ❌ nein (Direktfeed, pro Mandant) |
+| 2 | `rp-bundesregierung` | bundesregierung.de | Google News | `broken` → `needs_review` | `always_on` — **läuft sofort** | ≤16 Items | 429/Timeout bei IP-Drosselung | ✅ ja |
+| 3 | `rp-die-linke` | die-linke.de | Google News | `broken` → `needs_review` | `auto` — nur bei aktivem Paket | ≤16 Items | 429/Timeout | ✅ ja |
+| 4 | `rp-linksfraktion` | dielinkebt.de | **Direktfeed** (RSS) | `broken` → `needs_review` | `auto` | ≤16 Items | gering | ❌ nein |
+| 5 | `rp-ausschuss-arbeit-soziales` | bundestag.de | Google News | `broken` → `needs_review` | `auto` | ≤16 Items | 429/Timeout | ✅ ja |
+| 6 | `rp-dgb` | dgb.de | Google News | `broken` → `needs_review` | `auto` | ≤16 Items | 429/Timeout | ✅ ja |
+
+**Stopbedingung je Weg:** zwei aufeinanderfolgende Crawl-Läufe mit Fehler/Timeout **oder** ein
+Weg liefert dauerhaft 0 Items → betroffenen Weg einzeln auf `broken` zurücksetzen (Zeile oben),
+kein Gesamt-Rollback nötig.
+
+**Erneut verifizierte Antworten:**
+
+1. **Garantiert sofort:** 2 (`rp-bundestag`, `rp-bundesregierung` — `always_on`, unabhängig von jeder Paketaktivierung).
+2. **Profilabhängig:** 4 (`auto` — laufen, sobald ihr Paket für mindestens ein Profil aktiv ist; in Production der Regelfall).
+3. **Crawl-Amplifikation ausgeschlossen?** Für die 4 Google-Wege **ja** — mandantenunabhängige URLs, von der Shared-Path-Dedup aus PR #120 erfasst. Die **2 Direktfeeds** sind bewusst **nicht** dedupliziert und laufen einmal pro Mandant (heute 6× pro Cron-Lauf) — bei offiziellen Feeds unkritisch, aber ehrlich zu benennen.
+4. **Google-News-Konzentration:** steigt 134 → 138 von 143 Wegen. Bei offenem Circuit Breaker liefern dann nur noch **5 statt 9** Direktfeeds. Bekannter SPOF, im Audit als eigener P1 geführt — durch diese Einspielung leicht verschärft.
+5. **Kosten:** ≈ 4 zusätzliche Google-Abrufe + 2 Direktabrufe pro Cron-Lauf. Kein LLM-Aufwand.
+6. **KI-Folgeprozesse:** nein. Mehr Rohdokumente können mittelbar mehr Understanding-Cluster erzeugen; das läuft gegen das bestehende Tagesbudget (fail-closed) und ist kein neuer Pfad.
+7. **Einzeln zurücksetzbar:** ja, je Weg eine Zeile — ohne Rollback der Seeds.
+
+---
+
+## 6c · Production-Runbook (verbindliche Reihenfolge)
+
+> Jeder Schritt ist eine eigene Entscheidung. Bei jedem Stop-Kriterium: **anhalten**, nicht „durchziehen".
+
+| # | Schritt | Prüfung / Kommando |
+|---|---|---|
+| 1 | `main`-Stand verifizieren | `git ls-remote origin refs/heads/main` = erwarteter Commit; Seeds unverändert seit dem Test |
+| 2 | Locks und laufende Prozesse | `select * from pipeline_locks;` → keine aktiven Crawl-/Understanding-Locks |
+| 3 | Production-Health | Health-Report ohne Störung; **nicht** im Crawl-Fenster (04:00/20:00 UTC) starten |
+| 4 | **Pre-Seed-Backup** | `SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… node scripts/backup-export.js --scope=seed` |
+| 5 | Backup-Integrität | `manifest.json`: `art: "pre-seed"`, `vollstaendig: true`, `pruefsummeGesamt` vorhanden, `mainCommit` = Schritt 1 |
+| 6 | Soll-Zahlen bestätigen | Ist-Zustand gegen §4 prüfen: 162 Abrufwege, 6 Pakete, 163 Zuordnungen |
+| 7 | **Seed 1 einzeln** | `20260713_source_architecture_seed.sql` einspielen |
+| 8 | Seed 1 prüfen | `source_packages` = **8**, `package_paths` = **164**, die 6 Wege auf `needs_review` |
+| 9 | Bei Abweichung | **Stop** → Restore erzeugen (`node scripts/seed-restore-sql.js <backup>`), prüfen, einspielen |
+| 10 | **Seed 2 einzeln** | `20260717_landesmodul_be_bb_seed.sql` einspielen |
+| 11 | Seed 2 prüfen | `package_paths` = **164** (4 raus / 4 rein); `select package_id from package_paths where retrieval_path_id='rp-be-partei_pilot'` → `pkg-die-linke-berlin` |
+| 12 | Gesamtzustand | Zahlen gegen §4 |
+| 13 | **BE/BB-Sperre** | `select count(*) from retrieval_paths where id like 'rp-be-%' or id like 'rp-bb-%' and status='healthy'` → **0**; Crawl-Plan enthält 0 BE/BB-Wege |
+| 14 | Bundestagsquellen | `select count(*) from retrieval_paths` → **162**, keine Zeile verloren |
+| 15 | Die 6 Wege überwachen | Nach dem ersten Crawl: Telemetrie je Weg (Items > 0, kein Dauerfehler) — Stopbedingung §6b |
+| 16 | Idempotenz | Beide Seeds ein zweites Mal einspielen → **0 Änderungen** (oder read-only-Vergleich) |
+| 17 | Dokumentation | `CURRENT_STATE.md` + diese Vorlage nachziehen |
+
+---
+
 ## 7 · Betreiberentscheidung
 
 ### Option A — jetzt kontrolliert ausführen
@@ -240,17 +351,20 @@ Production-Health verschlechtert sich · Rollback nicht eindeutig möglich.
 
 ### Option B — Ausführung blockieren ← **empfohlen**
 
-**Es fehlt genau eine belastbare Sicherung.** Zwei Wege, sie herzustellen:
+**Es fehlt nur noch eine Voraussetzung: die Sicherung muss tatsächlich gelaufen sein.**
+Werkzeug und Rückweg stehen bereit und sind getestet.
 
-1. **Klein und sofort, ohne Kostenentscheidung:** vor der Ausführung
-   `node scripts/backup-export.js` laufen lassen (read-only) und den Export sichern. Für diese
-   Seeds ist das eine **angemessene** Sicherung: geändert werden ausschließlich
-   Konfigurationstabellen, deren Sollzustand deterministisch aus dem Code erzeugt wird — der
-   Alt-Zustand ist zusätzlich über `main` `54fe370` jederzeit rekonstruierbar.
-2. **Grundsätzlich und dauerhaft:** OP-01 freigeben (Supabase Pro + PITR, ca. 25 $/Monat) und die
-   Restore-Übung nach `backup-restore-runbook.md` §3b protokollieren. Das ist ohnehin der
-   dokumentierte höchste Einzelrisiko-Punkt des Projekts — **die Kostenentscheidung liegt
-   ausschließlich beim Betreiber.**
+Konkret zu tun, in dieser Reihenfolge:
 
-Zusätzlich vor einer Freigabe zu bestätigen: dass die **absichtliche Reaktivierung der 6
-Bundeswege** (§4 Punkt 11) gewollt ist.
+1. **Pre-Seed-Backup gegen Production laufen lassen** (read-only, keine Kostenentscheidung nötig):
+   `SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… node scripts/backup-export.js --scope=seed`
+   Danach prüfen: `manifest.json` trägt `art: "pre-seed"`, `vollstaendig: true`, eine
+   `pruefsummeGesamt` und den `mainCommit`. Nur ein so markiertes Backup akzeptiert der
+   Restore-Generator.
+2. **Reaktivierung der 6 Bundeswege freigeben** (§6b) — das ist eine bewusste Verhaltensänderung
+   in Production, keine Nebenwirkung.
+3. Danach Runbook §6c Schritt für Schritt.
+
+**Dauerhaft empfohlen, aber für diese Einspielung nicht zwingend:** OP-01 freigeben
+(Supabase Pro + PITR). Das bleibt das größte Einzelrisiko des Projekts insgesamt —
+**die Kostenentscheidung liegt ausschließlich beim Betreiber.**

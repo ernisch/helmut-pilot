@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-25 · **`main`-HEAD:** `61767a9` (Merge #118)
+**Letzte Aktualisierung:** 2026-07-25 · **`main`-HEAD:** `bed7f53` (Merge #123)
 
 > **Diese Datei ist der aktuelle Stand.** Bei Widerspruch zu älteren Statusdokumenten
 > gilt diese Datei. Sie enthält **keine Chronik** — Details je offenem Punkt stehen in
@@ -38,6 +38,8 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | Kontext-Einstiegsschicht (`CLAUDE.md`, `START_HERE`, `CURRENT_STATE`, `ARCHITECTURE`) | PR #119, gemergt 2026-07-25 |
 | **Anker-Recovery-Pfad (F-3) technisch stillgelegt** — Workflow entfernt, Execute-Skript ohne DB-/KI-/Write-Pfad, `RECOVERY_ALLOWLIST` leer, namensunabhängiger CI-Riegel | PR #105, gemergt 2026-07-25 (`43e9e35`); auf `main` verifiziert: Workflow weg, Allowlist `[]`, 0 `require` im Execute-Skript |
 | `failed-final` wird im Pending-Filter und in `understandOneCluster` terminal behandelt („nie wieder") | PR #105 |
+| Freigabevorlage Quellen-Seed-Einspielung (Soll-Zahlen, Idempotenznachweis, Go-/Stop-Kriterien) | PR #123, gemergt 2026-07-25 (`bed7f53`), CI grün |
+| **Werkzeug** für Pre-Seed-Sicherung und gezielten Seed-Restore gebaut und isoliert getestet (kein `drop table cascade`) | Branch `claude/recovery-path-pr-105-review-9jgxo1`, PR (siehe §8); `seed-restore-test.js` 31/31, Offline-Suite 145/145 · **Ausführung gegen Production steht aus** |
 
 ## 3 · Teilweise abgeschlossen (Code da, Abnahme fehlt)
 
@@ -56,7 +58,7 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | Punkt | Ursache | Nächster Schritt |
 |---|---|---|
 | **OP-01** Supabase Pro + PITR | Kostenentscheidung des Betreibers (~25 $/Monat); Free-Plan = **keine Backups** | Betreiber schaltet Pro + PITR frei, dann Restore-Übung nach `betrieb/backup-restore-runbook.md` |
-| **Quellen-Seed-Einspielung** (macht P0-2 und die 6 Bundesweg-Reparaturen in der DB wirksam) | **fehlende Sicherung** — kein Backup, kein PITR (Folge von OP-01). Code ist fertig und deployt, die Vorschau steht | Vorlage `betrieb/quellen-seed-einspielung.md` §7 — entweder manuelles Backup vor dem Lauf oder OP-01 freigeben |
+| **Quellen-Seed-Einspielung** (macht P0-2 und die 6 Bundesweg-Reparaturen in der DB wirksam) | zwei fehlende Betreiberhandlungen: (a) die Pre-Seed-Sicherung ist **noch nicht gelaufen** (Werkzeug fertig, braucht Production-Credentials), (b) die **absichtliche Reaktivierung** der 6 Bundeswege ist nicht freigegeben | Runbook `betrieb/quellen-seed-einspielung.md` §6c Schritt 1–17 — `node scripts/backup-export.js --scope=seed` ausführen, Manifest auf `vollstaendig: true` prüfen, dann Go/Stop nach §6 |
 | **OP-02** Recht (Pilotvertrag, AVV, DSFA, Art.-9-Grundlage, Fristen) | externe Prüfung durch Anwalt/DSB steht aus | Entwürfe aus `recht/` prüfen lassen und zeichnen; blockiert OP-12 |
 | **OP-03** Zweitmandanten-Freigabepaket | Grundsatzentscheidung „DB-seitige Durchsetzung vs. dokumentierte App-Guard-Akzeptanz" fehlt (`mandantentrennung-architektur.md` bewertet die Wege) | Betreiber entscheidet einen Weg; danach Migration + Env + Probelauf |
 | **OP-04** Demo-Mandate entfernen | Production-Datenänderung, freigabepflichtig | Freigabe einholen, dann über Provisionierungswerkzeug deaktivieren |
@@ -143,7 +145,9 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 
 1. **Kein Backup in Production.** Supabase Free-Plan, zentraler Blob ist
    Last-Write-Wins → ein fehlerhafter Write kann den Betriebszustand unwiederbringlich
-   zerstören. Höchstes Einzelrisiko (OP-01).
+   zerstören. Höchstes Einzelrisiko (OP-01). Für den **Seed-Sonderfall** existiert seit
+   2026-07-25 ein geprüftes Werkzeugpaar (Pre-Seed-Export + gezielter Restore, §12) —
+   das ersetzt OP-01 **nicht** und deckt nur die 8 Quellentabellen ab.
 2. **Keine rechtliche Grundlage für Verkauf.** Kein geprüfter Pilotvertrag/AVV/DSFA,
    `knowledge_objects` enthalten Art.-9-Daten (OP-02).
 3. **Sicherheits-Grundsatzentscheidung offen.** Ohne Entscheidung zu OP-03 darf kein
@@ -156,7 +160,7 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 
 | PR | Inhalt | Einschätzung |
 |---|---|---|
-| **#123** | Freigabevorlage Quellen-Seed-Einspielung + Statusnachzug | Doku-only; die Vorlage klassifiziert die Seed-Ausführung als **blockiert** (siehe §4) |
+| **#PR_BACKUP_RESTORE** | Pre-Seed-Sicherung, gezielter Restore-Generator, Seed-Runbook | **neu, wartet auf Review.** Werkzeuge + Doku, **kein** Production-Schreibpfad, kein Cron, kein Auto-Trigger. `seed-restore-test.js` 31/31, Offline-Suite 145/145 |
 | #117 | WBSB-Pilotpaket + Workflow-Härtung vereinigt | **Draft, ausdrücklich nicht mergen** (öffnet nur die CI-Prüfung) |
 | #115 | Bestandsabgleich `bund-basis` + Pflichtquellen-Verifikationstest | **Draft, ausdrücklich nicht mergen** (nur um den Workflow auf einem Runner mit Egress laufen zu lassen) |
 | #112 | Geführter Erstlogin-/Onboarding-Flow (14 Screens) | manuelle Abnahme im Preview ausstehend |
@@ -182,6 +186,8 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 
 | Datum | Entscheidung |
 |---|---|
+| 2026-07-25 | Der Seed-Rückweg ist ein **gezielter, zeilenscharfer Restore** — `drop table … cascade` ist als Rollback **verworfen** (würde wegen `ON DELETE CASCADE` fremde Daten mitreißen und ist für Rückbau unbrauchbar) |
+| 2026-07-25 | Ein Backup mit Fehlern gilt **nicht** als Backup: `backup-export.js` prüft die Zeilenzahl serverseitig gegen und markiert das Manifest `vollstaendig: false` + Exit 1 |
 | 2026-07-25 | Anker-Recovery-Pfad **stillgelegt und auf `main` durchgesetzt** (PR #105, `43e9e35`); Wiederbelebung wird durch einen namensunabhängigen CI-Riegel blockiert |
 | 2026-07-25 | Kontext-Einstiegsschicht ist verbindlich; `CLAUDE.md` → `START_HERE` → `CURRENT_STATE` ist die Pflichtlektüre jedes Threads (PR #119) |
 | 2026-07-25 | Der anker-basierte Recovery-Pfad wird **nicht repariert, sondern stillgelegt**; echte Recovery läuft ausschließlich über den Einzeldokument-Pfad je exakter `raw_document_id` (PR #105) |
@@ -199,13 +205,19 @@ ausführen** — er ist unabhängig von allem anderen, beseitigt das größte
 Einzelrisiko und ist Voraussetzung dafür, dass die Migration aus OP-03 gefahrlos
 eingespielt werden kann.
 
-OP-01 ist zugleich der Blocker für den nächsten konkret vorbereiteten Schritt: die
-**Quellen-Seed-Einspielung** (Seeds `20260713` + `20260717`) macht die P0-2-Neutralisierung und die
-6 Bundesweg-Reparaturen in der Datenbank wirksam. Sie ist vollständig entscheidungsreif vorbereitet
-— Soll-Zahlen, Idempotenznachweis, Rollback-Bewertung und Go-/Stop-Kriterien stehen in
-[`betrieb/quellen-seed-einspielung.md`](betrieb/quellen-seed-einspielung.md) — aber **blockiert**,
-weil kein Backup und kein PITR existieren. Kleinster Weg ohne Kostenentscheidung: vor dem Lauf
-`node scripts/backup-export.js` (read-only) sichern.
+Der **konkret vorbereitete** nächste Schritt ist die **Quellen-Seed-Einspielung** (Seeds
+`20260713` + `20260717`); sie macht die P0-2-Neutralisierung und die 6 Bundesweg-Reparaturen in
+der Datenbank wirksam. Sie ist jetzt **vollständig entscheidungsreif**: Soll-Zahlen,
+Idempotenznachweis, Rückweg, Kontrollkarten je Abrufweg und ein 17-Schritte-Runbook stehen in
+[`betrieb/quellen-seed-einspielung.md`](betrieb/quellen-seed-einspielung.md).
+
+Sie bleibt **blockiert**, aber nur noch an zwei Betreiberhandlungen:
+1. `node scripts/backup-export.js --scope=seed` gegen Production ausführen (read-only, braucht
+   `SUPABASE_SERVICE_ROLE_KEY`) und im Manifest `vollstaendig: true` bestätigen.
+2. Die **absichtliche Reaktivierung der 6 Bundeswege** ausdrücklich mitfreigeben (§12).
+
+Der gezielte Restore für den Fehlerfall ist gebaut und isoliert getestet — er ersetzt OP-01
+**nicht**, deckt aber genau den Seed-Sonderfall ab.
 
 Parallel möglich, ohne Freigabe:
 1. **OP-11 Branch Protection** verifizieren (2 Minuten, reversibel,
@@ -220,11 +232,68 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 
 | Sprint | Datum | Zustand |
 |---|---|---|
+| Merge #123 + Sicherung, gezielter Restore und Entscheidungsreife für die Seed-Einspielung | 2026-07-25 | **Teilweise abgeschlossen** — #123 gemergt (`bed7f53`); Backup- und Restore-Werkzeug gebaut und isoliert getestet (31/31, Suite 145/145). Die Seed-Ausführung bleibt **blockiert**: die Sicherung ist noch nicht gelaufen und die Reaktivierung der 6 Bundeswege ist nicht freigegeben. Details unten. |
 | Merge PR #118 + Vorbereitung des Quellen-Seed-Sprints | 2026-07-25 | **Teilweise abgeschlossen** — #118 gemergt (`61767a9`), CI grün, Deployment `READY`. Die Seed-Einspielung ist vollständig entscheidungsreif vorbereitet, aber **blockiert** (fehlende Sicherung). Details unten. |
 | Merge #122 + adversarialer Review von PR #118 (Quellenarchitektur-Remediation) | 2026-07-25 | **Erfolgreich abgeschlossen** — #122 gemergt (`54fe370`); #118 reviewt, 3 belegte Defekte behoben. |
 | Merge von PR #105 — Anker-Recovery-Pfad in Production stillgelegt | 2026-07-25 | **Erfolgreich abgeschlossen** — gemergt als `43e9e35`; Stilllegung auf `main` verifiziert. |
 | Recovery-Pfad-Review + Zusammenführung von PR #105 auf die kanonische Kontextstruktur | 2026-07-25 | **Erfolgreich abgeschlossen** |
 | Kontextstruktur für Claude Code (`CLAUDE.md` + Einstiegsschicht) | 2026-07-25 | **Erfolgreich abgeschlossen** — reine Dokumentation, gemergt als PR #119 (`c6a3d40`). |
+
+**Sprint „Merge #123 + Sicherung und Restore für die Seed-Einspielung" — Nachweis**
+
+- **PR #123 gemergt** als Merge-Commit `bed7f53` (Doku-only). Vorher geprüft: `mergeable: clean`,
+  CI-Pflichtchecks grün, keine offenen Reviews, kein Code-Pfad berührt. Auf `main` gegengeprüft:
+  `betrieb/quellen-seed-einspielung.md` trägt weiterhin `Status: BLOCKIERT`.
+- **Backup-Umfang.** `scripts/backup-export.js` bekommt einen `--scope=seed`-Modus: genau die
+  **8 Tabellen**, die die beiden Seeds berühren oder per Fremdschlüssel daran hängen
+  (`geographies`, `political_entities`, `publishers`, `retrieval_paths`, `source_packages`,
+  `package_paths`, `path_expected_levels`, `path_expected_geographies`), in FK-sicherer
+  Restore-Reihenfolge. Neu **für beide Modi**: serverseitige Zeilenzahl-Gegenprobe per
+  `Prefer: count=exact`, SHA-256 je Tabelle plus Gesamtprüfsumme, der gesicherte `main`-Commit
+  im Manifest, und ein `vollstaendig`-Flag mit Exit-Code 1 — ein still gekapptes Teil-Backup
+  kann damit nicht mehr wie ein vollständiges aussehen. Das Skript bleibt **ausschließlich
+  lesend** (nur `GET`).
+- **Restore-Status: gebaut und getestet, nicht ausgeführt.** `scripts/seed-restore-sql.js` ist ein
+  reiner **SQL-Generator** — kein DB-Client, kein Netzwerk, kein Schreibpfad. Er erzeugt aus einem
+  Pre-Seed-Backup ein zeilenscharfes Rückbau-Skript: eine Transaktion mit Vorprüfung
+  (`raise exception` bei Abweichung), gezielten `update`s auf die 6 Abrufwege, `delete … not in`
+  plus Wiedereinfügen der gesicherten Paketzuordnungen, bedingtem Entfernen der 2 neuen Pakete
+  und einer Nachprüfung. **Kein `drop table … cascade`** — das war der bisherige Rollback und ist
+  wegen `ON DELETE CASCADE` auf `retrieval_paths.publisher_id` und beiden `package_paths`-FKs für
+  gezielten Rückbau unbrauchbar. Ehrliche Grenze: `updated_at` ist wegen des `set_updated_at`-
+  Triggers **nicht** wiederherstellbar.
+- **Testergebnisse (echte Zahlen).** `scripts/seed-restore-test.js`: **31 PASS, 0 FAIL** — 14
+  Gruppen, darunter Byte-Gleichheit der zurückgeschriebenen Spalten, Idempotenz des Restores,
+  Schutz der Eltern-Zeilen, Abbruch bei verändertem Ausgangszustand und „kein Restdiff nach
+  vollständigem Zyklus". Kanonische Offline-Suite: **145/145 Suiten grün** in 48 s. Der Test
+  arbeitet auf **synthetischen Fixtures** aus den committeten Seeds — **keine
+  Production-Daten**. Eine formprüfende Mutation im Generator erzeugt reproduzierbar **2 FAIL**
+  (Erkennung belegt); zwei formverändernde Mutationen brachten den Mini-Executor stattdessen zum
+  Abbruch — als Grenze in `betrieb/quellen-seed-einspielung.md` §5b offen dokumentiert.
+- **Die 6 betroffenen Retrieval Paths** (heute `broken`, Seed 1 setzt sie auf `needs_review` und
+  macht sie damit **absichtlich wieder ausführbar**):
+
+  | # | Pfad-ID | Betreiber | Abruf | Aktivierung |
+  |---|---|---|---|---|
+  | 1 | `rp-bundestag` | bundestag.de | Direktfeed (RSS) | `always_on` — **läuft sofort** |
+  | 2 | `rp-bundesregierung` | bundesregierung.de | Google News | `always_on` — **läuft sofort** |
+  | 3 | `rp-die-linke` | die-linke.de | Google News | `auto` — nur bei aktivem Paket |
+  | 4 | `rp-linksfraktion` | dielinkebt.de | Direktfeed (RSS) | `auto` |
+  | 5 | `rp-ausschuss-arbeit-soziales` | bundestag.de | Google News | `auto` |
+  | 6 | `rp-dgb` | dgb.de | Google News | `auto` |
+
+  Kontrollkarten je Weg (URL, Parser, Item-Deckel, Ausfallmuster, Dedup-Verhalten):
+  `betrieb/quellen-seed-einspielung.md` §6b.
+- **Entscheidung: weiterhin Option B — Ausführung blockiert.** Werkzeug und Rückweg stehen
+  bereit und sind getestet; es fehlen genau zwei Betreiberhandlungen (§4, §11): die Sicherung
+  muss **tatsächlich gelaufen** sein (`vollstaendig: true`), und die Reaktivierung der 6
+  Bundeswege muss ausdrücklich mitfreigegeben werden.
+- **Fehlende Betreiberfreigaben:** (1) Production-Lesezugriff für den Pre-Seed-Export ausführen ·
+  (2) Reaktivierung der 6 Bundeswege · (3) Seed-Ausführung selbst · (4) OP-01 (Supabase Pro/PITR)
+  als dauerhafte Lösung.
+- **Nicht getan (bewusst):** kein Production-Backup ausgeführt, kein Seed eingespielt, kein
+  Restore gefahren, kein Production-Schreibzugriff, keine Secrets, keine Cron-Änderung, kein
+  Flag, kein weiterer PR gemergt.
 
 **Sprint „Merge PR #118 + Seed-Vorbereitung" — Nachweis**
 
