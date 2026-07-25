@@ -437,3 +437,27 @@ Mandat 1 hat die Cluster bereits verstanden, die Folgemandate finden nichts Neue
 **Stopp, wenn:** die abrechenbaren Calls eines Tages **> 85** erreichen oder ein
 `daily-llm-budget-reached`-Skip auftritt. Dann ist der Beweislauf anzuhalten und die
 Betreiberentscheidung über das Tageslimit einzuholen — nicht eigenmächtig zu erhöhen.
+
+### 11.6 · Empirischer Nachweis des Shared-Path-Ledgers (verbindliche Prüfliste)
+
+Dass der Code existiert und die Offline-Suite grün ist, ist **kein** Production-Beweis.
+Jede Stufe ab IB-1 wird gegen diese neun Prüfungen an **echten** Produktionsläufen geführt.
+Alle Werte stammen aus `helmut_store.data->crawlRuns` und `source_crawl_telemetry`.
+
+| # | Prüfung | Messgröße | Bestanden, wenn |
+|---|---|---|---|
+| **L-1** | Erstes Mandat arbeitet **regulär** — der Ledger bremst es nicht | `sharedSkippedSources`, `successfulSources`, `googleUrlResolution.attempted` | `sharedSkippedSources = 0`, `successfulSources ≈ 145`, `attempted ≈ 1 740` (Baseline-Niveau), `runState = gesund` |
+| **L-2** | Folge-Mandate zeigen **plausible** `sharedSkippedSources` | Zähler je Folgelauf | `sharedSkippedSources > 0` und in der Größenordnung der gemessenen Wege-Überschneidung (`shared = 138` zwischen Mandat 1 und 2, §2.2). Nicht `= checkedSources` — die mandantseigenen Wege und **alle** Direktquellen müssen weiterhin laufen |
+| **L-3** | Direktquellen werden **nie** dedupliziert | `successfulSources` der Folgeläufe | `> 0` in jedem Folgelauf (Belegt durch `sharedFetchKey`, `google-news-hardening.js:133–140`: liefert `null` für jede Quelle ohne `news.google.`-URL) |
+| **L-4** | Zähl-Arithmetik ist geschlossen — kein Ereignis fällt durch | alle Zähler | `successfulSources + failedSources + circuitOpenSources + skippedSources = checkedSources` in **jedem** Lauf; `sharedSkippedSources ≤ skippedSources` |
+| **L-5** | `circuitOpenSources` verhält sich plausibel | Zähler + Telemetrie | `= 0` in allen Läufen des Durchlaufs **und** `null` → Zahl (der Wert wird überhaupt geschrieben, d. h. der Lauf lief unter dem Fix). **Wichtig:** `attempted = 0` allein beweist nichts — genau das zeigte auch der gedrosselte Alt-Lauf bei offenem Breaker. Beweiskräftig ist erst die Kombination `circuitOpenSources = 0` **+** `sharedSkippedSources > 0` **+** `failedSources = 0` |
+| **L-6** | **Keine erneute Google-News-Amplifikation** | Summe `googleUrlResolution.attempted` über alle Mandate **eines** Cron-Durchlaufs | ≈ Wert **eines** Mandats (~1 740), **nicht** das 2- bis 6-fache. Das ist der eigentliche Ursachen-Beweis: Google sieht die Last einmal statt sechsmal |
+| **L-7** | **Alle sechs Mandate** passen ins Zeitbudget | `crawlRuns` des Durchlaufs, `systemErrors` | 6 Läufe mit 6 verschiedenen `politicianId`; **kein** `zeitbudget`-Systemfehler; Summe der Laufzeiten < 240 000 ms |
+| **L-8** | **Health-Report** bleibt korrekt | Basislauf-Auswahl, Gesamtzustand | Basis ist ein Lauf mit `isReducedRun = false` (also `sharedSkippedSources = 0`); `aktuell-gesund`; keine „141/144"-Meldung; kein „Lage-Check veraltet" |
+| **L-9** | **Lage-Check** zeigt dasselbe korrekte Verhalten | Telemetrie der `lage-*`-Läufe 10:0x | Mandat 1 ~89 ok / 0 Fehler; Folgemandate mit `skipped-shared` statt ~87 `circuit-open`; 6/6 Mandate mit Lage-Ergebnis |
+
+**Zuordnung zu den Stufen:** IB-1 → L-1…L-5 · IB-2 und IB-3 → L-1…L-7 · IB-4 → L-8 ·
+IB-5 → L-9. Der Kostenwächter (§11.5) läuft in **jeder** Stufe mit.
+
+Ein Nachweis gilt nur mit **gemessenen Zahlen** im Beweisprotokoll — nicht mit einer
+Zustandsbehauptung.
