@@ -60,7 +60,7 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | Punkt | Ursache | Nächster Schritt |
 |---|---|---|
 | **OP-01** Supabase Pro + PITR | Kostenentscheidung des Betreibers (~25 $/Monat); Free-Plan = **keine Backups** | Betreiber schaltet Pro + PITR frei, dann Restore-Übung nach `betrieb/backup-restore-runbook.md` |
-| **Quellen-Seed-Einspielung** (macht P0-2 und die 6 Bundesweg-Reparaturen in der DB wirksam) | noch zwei offene Go-Kriterien: **2** die Pre-Seed-Sicherung ist **noch nicht gelaufen** · **8** die Einspielung ist nicht freigegeben. Kriterium **11** ist **entschieden**: gestaffelte Reaktivierung (§6d) | Runbook `betrieb/quellen-seed-einspielung.md` §6c Schritt 1–19 — beginnt mit `node scripts/backup-export.js --scope=seed`, danach Manifest auf `vollstaendig: true` prüfen |
+| **Quellen-Seed-Einspielung** (macht P0-2 und die 6 Bundesweg-Reparaturen in der DB wirksam) | noch zwei offene Go-Kriterien: **2** die Pre-Seed-Sicherung ist **noch nicht gelaufen** · **8** die Einspielung ist nicht freigegeben. Kriterium **11** ist **entschieden**: gestaffelte Reaktivierung (§6d). **Versucht 2026-07-25:** `node scripts/backup-export.js --scope=seed` in der Agenten-Sitzung ausgeführt — Abbruch vor jedem Netzwerkzugriff (Exit 2), da `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` in dieser Umgebung nicht gesetzt sind und keine `.env.local` existiert. **Kein** Production-Zugriff erfolgt. Betreiber führt den Export selbst mit echter `.env.local` aus | Betreiber führt `node scripts/backup-export.js --scope=seed` lokal aus und teilt das Manifest (`art`, `vollstaendig`, Zeilenzahlen je Tabelle, `pruefsummeGesamt`, `mainCommit`) mit; danach Runbook `betrieb/quellen-seed-einspielung.md` §6c Schritt 6 ff. |
 | **OP-02** Recht (Pilotvertrag, AVV, DSFA, Art.-9-Grundlage, Fristen) | externe Prüfung durch Anwalt/DSB steht aus | Entwürfe aus `recht/` prüfen lassen und zeichnen; blockiert OP-12 |
 | **OP-03** Zweitmandanten-Freigabepaket | Grundsatzentscheidung „DB-seitige Durchsetzung vs. dokumentierte App-Guard-Akzeptanz" fehlt (`mandantentrennung-architektur.md` bewertet die Wege) | Betreiber entscheidet einen Weg; danach Migration + Env + Probelauf |
 | **OP-04** Demo-Mandate entfernen — **Umfang korrigiert 2026-07-25:** Production führt **8 Profile, davon 6 aktiv** (nicht 1 Pilot + 2 Demo-Mandate); fünf davon tragen Klarnamen realer Abgeordneter | Production-Datenänderung, freigabepflichtig; berührt zusätzlich OP-02 (personenbezogene Daten) | je Profil entscheiden, dann über Provisionierungswerkzeug deaktivieren (`quellenarchitektur/30-paket-inventur-production.md` §5, A-1) |
@@ -254,6 +254,7 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 
 | Sprint | Datum | Zustand |
 |---|---|---|
+| Go-Kriterium 2 kontrolliert versuchen: Pre-Seed-Backup-Export | 2026-07-25 | **Blockiert** — `node scripts/backup-export.js --scope=seed` exakt wie angefordert ausgeführt; Abbruch vor jedem Netzwerkzugriff (Exit 2), da diese Agenten-Sitzung keine `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` und keine `.env.local` besitzt. **Kein** Production-Zugriff erfolgt. Betreiberentscheidung: Export läuft auf der Betreibermaschine mit echter `.env.local`, Manifest wird zurückgemeldet. Details unten. |
 | Review + Merge von PR #125, danach Production-Ablauf bis vor den ersten Zugriff vorbereiten | 2026-07-25 | **Teilweise abgeschlossen** — PR #125 adversarial reviewt (3 Reviewer, 20 belegte Befunde, alle behoben) und als `0d6d867` gemergt (CI auf `main` grün, Vercel-Production `READY`). Der Production-Ablauf ist vollständig vorbereitet; **kein Production-Zugriff erfolgt, keine Seeds ausgeführt**. Wartet auf die Betreiberfreigabe für den Pre-Seed-Export. Details unten. |
 | Merge #123 + Sicherung, gezielter Restore und Entscheidungsreife für die Seed-Einspielung | 2026-07-25 | **Teilweise abgeschlossen** — #123 gemergt (`bed7f53`); Backup- und Restore-Werkzeug gebaut und isoliert getestet (33/33 lokal, 31/31 in CI, Suite 145/145). Die Seed-Ausführung bleibt **blockiert**: die Sicherung ist noch nicht gelaufen und die Reaktivierung der 6 Bundeswege ist nicht freigegeben. Details unten. |
 | Phase-1-Block: Quellenpakete inventarisieren + automatische Paketzuweisung beweisen | 2026-07-25 | **Erfolgreich abgeschlossen** — beide Abnahmekriterien erfüllt und belegt; 145/145 Offline-Suiten grün; als PR #124 gemergt (`118e90c`), CI auf `main` grün, Vercel-Production `READY`. Details unten. |
@@ -262,6 +263,29 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 | Merge von PR #105 — Anker-Recovery-Pfad in Production stillgelegt | 2026-07-25 | **Erfolgreich abgeschlossen** — gemergt als `43e9e35`; Stilllegung auf `main` verifiziert. |
 | Recovery-Pfad-Review + Zusammenführung von PR #105 auf die kanonische Kontextstruktur | 2026-07-25 | **Erfolgreich abgeschlossen** |
 | Kontextstruktur für Claude Code (`CLAUDE.md` + Einstiegsschicht) | 2026-07-25 | **Erfolgreich abgeschlossen** — reine Dokumentation, gemergt als PR #119 (`c6a3d40`). |
+
+**Sprint „Go-Kriterium 2 kontrolliert versuchen" — Nachweis**
+
+- **Auftrag:** ausschließlich `node scripts/backup-export.js --scope=seed` gegen Production
+  ausführen, danach Manifest vollständig prüfen, dann zwingend vor Seed 1 stoppen.
+- **Ausgeführt:** genau dieser eine Befehl, ohne Abweichung. Ergebnis: sofortiger Abbruch mit
+  Exit-Code 2, Meldung „SUPABASE_URL und SUPABASE_SERVICE_ROLE_KEY muessen gesetzt sein
+  (.env.local)". Das Skript prüft die Zugangsdaten **vor** jedem `fetch`-Aufruf — es wurde
+  **keine einzige Anfrage** gegen Production gestellt, kein Verzeichnis unter `./backups/`
+  angelegt, kein Manifest erzeugt.
+- **Ursache verifiziert:** diese Agenten-Sitzung führt weder `SUPABASE_URL` noch
+  `SUPABASE_SERVICE_ROLE_KEY` als Umgebungsvariable, und es existiert keine `.env.local` im
+  Projektverzeichnis (nur `.env.example`). Das ist keine neue Erkenntnis — bereits im vorigen
+  Sprint dokumentiert (s. u., „Die Production-Secrets sind in dieser Umgebung nicht gesetzt").
+- **Keine Ersatzmaßnahme ergriffen:** kein Rückgriff auf den Supabase-MCP-Connector oder einen
+  anderen Zugangsweg, da der Auftrag ausdrücklich genau dieses Skript vorschrieb.
+- **Betreiberentscheidung:** der Export läuft auf der Betreibermaschine mit echter `.env.local`;
+  das Manifest (`art`, `vollstaendig`, Zeilenzahlen je Tabelle, `pruefsummeGesamt`, `mainCommit`)
+  wird zurückgemeldet und gegen die erwarteten Werte (163 Abrufwege, 7 Pakete, 165 Zuordnungen,
+  siehe Inventur) geprüft, bevor Runbook-Schritt 6 fortgeführt wird.
+- **Nicht getan (bewusst):** kein Production-Zugriff, weder lesend noch schreibend · keine
+  Migration · kein Seed · kein Restore · keine Cron-/Flag-/Secret-Änderung · keine
+  Quellenaktivierung · keine Datenänderung.
 
 **Sprint „Review + Merge PR #125, Production-Ablauf vorbereiten" — Nachweis**
 
