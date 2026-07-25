@@ -11,9 +11,20 @@
 // delete ... not in, update ... where id). Damit laeuft der Nachweis am ECHTEN
 // SQL der Repo-Dateien statt an einer Nachbildung.
 //
-// AUSGANGSZUSTAND: die vor PR #118 committeten Seeds (git show 54fe370:...) —
-// das ist der erwartete Production-Stand laut Freigabedoku. Es werden KEINE
-// echten Production-Daten verwendet; alles stammt aus Repo-Dateien.
+// AUSGANGSZUSTAND: die vor PR #118 committeten Seeds — das ist der erwartete
+// Production-Stand laut Freigabedoku. Es werden KEINE echten Production-Daten
+// verwendet; alles stammt aus Repo-Dateien.
+//
+// Diese beiden Dateien liegen als Fixture unter scripts/fixtures/seeds-vor-pr118/.
+// Frueher las der Test sie per `git show 54fe370:...`. Das lief lokal, ist aber in
+// CI reproduzierbar gescheitert: actions/checkout klont flach (fetch-depth 1), der
+// Commit existiert dort nicht ("fatal: invalid object name '54fe370'"). Ein Test,
+// der von der Klontiefe abhaengt, ist kein Test.
+//
+// Damit die Fixture nicht still von der Historie abdriftet, wird sie zusaetzlich
+// gegen `git show 54fe370:...` geprueft — aber nur, wenn der Commit lokal
+// vorhanden ist. Fehlt er (CI), sagt der Lauf das ausdruecklich; der inhaltliche
+// Nachweis laeuft trotzdem vollstaendig.
 
 const fs = require("fs");
 const path = require("path");
@@ -194,17 +205,50 @@ function snapshot(db, tables) {
   return JSON.stringify(o);
 }
 
-function loadSeed(sha, file) {
-  return execFileSync("git", ["show", `${sha}:supabase/seeds/${file}`], { cwd: ROOT, encoding: "utf8", maxBuffer: 20 * 1024 * 1024 });
+const FIXTURE_DIR = path.join(__dirname, "fixtures", "seeds-vor-pr118");
+
+function loadSeed(file) {
+  return fs.readFileSync(path.join(FIXTURE_DIR, file), "utf8");
+}
+
+// Aktueller Sollstand: die Seeds im Arbeitsbaum. Bewusst NICHT `git show HEAD:...` —
+// geprueft wird der Stand, den CI auscheckt und den das Drift-Gate absichert.
+function loadAktuell(file) {
+  return fs.readFileSync(path.join(ROOT, "supabase", "seeds", file), "utf8");
+}
+
+// Herkunftsnachweis: stimmt die Fixture noch mit dem Stand vor PR #118 ueberein?
+// Nur moeglich, wenn der Commit im lokalen Klon liegt — in CI (flacher Klon) nicht.
+// Rueckgabe: true = geprueft und gleich, false = geprueft und ABWEICHEND,
+// null = nicht pruefbar (Commit fehlt).
+function fixtureEntsprichtHistorie(file) {
+  let ausHistorie;
+  try {
+    ausHistorie = execFileSync("git", ["show", `${VORHER_COMMIT}:supabase/seeds/${file}`],
+      { cwd: ROOT, encoding: "utf8", maxBuffer: 20 * 1024 * 1024, stdio: ["ignore", "pipe", "ignore"] });
+  } catch (_) {
+    return null;
+  }
+  return ausHistorie === loadSeed(file);
 }
 
 // ------------------------------------------------------------------ Ablauf --
 const TAB = ["geographies", "political_entities", "publishers", "retrieval_paths", "source_packages", "package_paths", "path_expected_levels", "path_expected_geographies"];
 
-console.log("== 1) Ausgangszustand herstellen (Stand VOR PR #118) ==");
+console.log("== 0) Herkunft der Fixture ==");
+for (const f of ["20260713_source_architecture_seed.sql", "20260717_landesmodul_be_bb_seed.sql"]) {
+  const gleich = fixtureEntsprichtHistorie(f);
+  if (gleich === null) {
+    console.log(`INFO  0 · ${f}: Herkunft nicht pruefbar — Commit ${VORHER_COMMIT} fehlt im Klon (flacher CI-Klon). Inhaltlicher Nachweis laeuft trotzdem.`);
+  } else {
+    check(`0 · ${f} entspricht dem Stand vor PR #118 (${VORHER_COMMIT})`, gleich);
+  }
+}
+
+console.log("\n== 1) Ausgangszustand herstellen (Stand VOR PR #118) ==");
 const db = {};
-execSql(db, loadSeed(VORHER_COMMIT, "20260713_source_architecture_seed.sql"));
-execSql(db, loadSeed(VORHER_COMMIT, "20260717_landesmodul_be_bb_seed.sql"));
+execSql(db, loadSeed("20260713_source_architecture_seed.sql"));
+execSql(db, loadSeed("20260717_landesmodul_be_bb_seed.sql"));
 const AUSGANG = snapshot(db, TAB);
 const n0 = Object.fromEntries(TAB.map((t) => [t, (db[t] || new Map()).size]));
 console.log("   " + JSON.stringify(n0));
@@ -234,7 +278,7 @@ check("2 · Backup enthaelt die 3 veraenderten Tabellen + Pruefsummen + Pre-Seed
   manifest.art === "pre-seed" && Object.keys(manifest.pruefsummen).length === 3 && !!manifest.pruefsummeGesamt);
 
 console.log("\n== 3) Seed 1 (Bund, nach #118) ==");
-const s1 = execSql(db, loadSeed("HEAD", "20260713_source_architecture_seed.sql"));
+const s1 = execSql(db, loadAktuell("20260713_source_architecture_seed.sql"));
 const n1 = Object.fromEntries(TAB.map((t) => [t, (db[t] || new Map()).size]));
 console.log(`   +${s1.stats.ins} eingefuegt, ${s1.stats.upd} aktualisiert, ${s1.stats.del} geloescht`);
 check("3 · Seed 1: +2 Pakete, +1 Paketzuordnung", n1.source_packages === 8 && n1.package_paths === 164);
@@ -246,7 +290,7 @@ check("3 · Seed 1: required_classes der Landes-Basispakete auf 12 reduziert",
   && db.source_packages.get("pkg-brandenburg-basis").required_classes.length === 12);
 
 console.log("\n== 4/5) Seed 2 (Landesmodul, nach #118) ==");
-const s2 = execSql(db, loadSeed("HEAD", "20260717_landesmodul_be_bb_seed.sql"));
+const s2 = execSql(db, loadAktuell("20260717_landesmodul_be_bb_seed.sql"));
 const n2 = Object.fromEntries(TAB.map((t) => [t, (db[t] || new Map()).size]));
 console.log(`   +${s2.stats.ins} eingefuegt, ${s2.stats.upd} aktualisiert, ${s2.stats.del} geloescht`);
 check("5 · Seed 2: genau 4 alte Zuordnungen entfernt, 4 neue eingefuegt", s2.stats.del === 4 && s2.stats.ins === 4);
@@ -260,8 +304,8 @@ check("5 · Gesamtzahl Zuordnungen unveraendert (4 raus, 4 rein)", n2.package_pa
 
 console.log("\n== 6) Idempotenz der Seeds ==");
 const vorWdh = snapshot(db, TAB);
-const r1 = execSql(db, loadSeed("HEAD", "20260713_source_architecture_seed.sql"));
-const r2 = execSql(db, loadSeed("HEAD", "20260717_landesmodul_be_bb_seed.sql"));
+const r1 = execSql(db, loadAktuell("20260713_source_architecture_seed.sql"));
+const r2 = execSql(db, loadAktuell("20260717_landesmodul_be_bb_seed.sql"));
 check("6 · Zweiter Lauf beider Seeds aendert 0 Zeilen",
   r1.stats.ins + r1.stats.upd + r1.stats.del + r2.stats.ins + r2.stats.upd + r2.stats.del === 0,
   `ins=${r1.stats.ins + r2.stats.ins} upd=${r1.stats.upd + r2.stats.upd} del=${r1.stats.del + r2.stats.del}`);
@@ -347,10 +391,10 @@ check("10 · Zustand nach zweitem Restore unveraendert", snapshot(db, TAB) === v
 
 console.log("\n== 11/12) Teilerfolg: nur Seed 1 lief, dann Restore ==");
 const dbT = {};
-execSql(dbT, loadSeed(VORHER_COMMIT, "20260713_source_architecture_seed.sql"));
-execSql(dbT, loadSeed(VORHER_COMMIT, "20260717_landesmodul_be_bb_seed.sql"));
+execSql(dbT, loadSeed("20260713_source_architecture_seed.sql"));
+execSql(dbT, loadSeed("20260717_landesmodul_be_bb_seed.sql"));
 const AUSGANG_T = snapshot(dbT, TAB);
-execSql(dbT, loadSeed("HEAD", "20260713_source_architecture_seed.sql")); // nur Seed 1
+execSql(dbT, loadAktuell("20260713_source_architecture_seed.sql")); // nur Seed 1
 check("11 · Teilzustand nach nur Seed 1: 8 Pakete, Landeswege noch am Pflichtpaket",
   dbT.source_packages.size === 8 && dbT.package_paths.has("pkg-berlin-basis|rp-be-partei_pilot"));
 execSql(dbT, build(dir));
@@ -360,11 +404,11 @@ console.log("\n== 13) Prozessabbruch: Transaktion nicht committet ==");
 // Abbruch VOR commit = keine Wirkung. Nachbildung: Seeds auf einer Kopie anwenden
 // und verwerfen -> der Originalzustand bleibt unberuehrt.
 const dbA = {};
-execSql(dbA, loadSeed(VORHER_COMMIT, "20260713_source_architecture_seed.sql"));
-execSql(dbA, loadSeed(VORHER_COMMIT, "20260717_landesmodul_be_bb_seed.sql"));
+execSql(dbA, loadSeed("20260713_source_architecture_seed.sql"));
+execSql(dbA, loadSeed("20260717_landesmodul_be_bb_seed.sql"));
 const vorAbbruch = snapshot(dbA, TAB);
 const kopie = {}; for (const t of TAB) kopie[t] = new Map([...dbA[t]].map(([k, v]) => [k, { ...v }]));
-execSql(kopie, loadSeed("HEAD", "20260713_source_architecture_seed.sql"));
+execSql(kopie, loadAktuell("20260713_source_architecture_seed.sql"));
 check("13 · Verworfene Transaktion laesst den Ausgangszustand unberuehrt", snapshot(dbA, TAB) === vorAbbruch);
 
 console.log("\n== 14) Kein Restdiff ==");

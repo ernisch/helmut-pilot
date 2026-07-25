@@ -50,7 +50,7 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | Zweitmandanten-Provisionierung + Per-Mandant-Kostendeckel | Migration `20260721` nicht angewandt, `HELMUT_TENANT_LLM_CAP` AUS, DB-seitige Durchsetzung unentschieden | OP-03 |
 | Retention/Löschung | nur Trockenlauf; braucht verbindliche Fristen aus OP-02 | OP-12 |
 | Understanding-Gate, Cheap-Triage, Scoring, Berlin/Brandenburg | in `shadow`/`off`, Scharfschaltung ist Freigabe | OP-18, OP-21, OP-22 |
-| Pre-Seed-Sicherung + gezielter Seed-Restore (kein `drop table cascade`) — gebaut, isoliert getestet (31/31, Suite 145/145) | PR #125 **nicht gemergt**; nie gegen Production gelaufen; deckt nur 8 Tabellen ab und ersetzt OP-01 nicht | OP-01 |
+| Pre-Seed-Sicherung + gezielter Seed-Restore (kein `drop table cascade`) — gebaut, isoliert getestet (33/33 lokal, 31/31 in CI, Suite 145/145) | PR #125 **nicht gemergt**; nie gegen Production gelaufen; deckt nur 8 Tabellen ab und ersetzt OP-01 nicht | OP-01 |
 | OP-06 Terminales Aussortieren des Alt-Rückstands (34 Fälle, Default AUS) | Ausführung ist freigabepflichtig — **und** eine offene Fachfrage: 16 der 34 Allowlist-Einträge sind mit „außerhalb Mandat" begründet, also relativ zum Pilotmandat, geschrieben wird aber in das mandantenneutrale `knowledge_objects` (kein `tenant_id`). Ein künftiger Zweitmandant mit regionalem/EU-Schwerpunkt bekäme diese Vorgänge dauerhaft nie verstanden | OP-06 |
 
 ## 4 · Blockiert
@@ -160,7 +160,7 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 
 | PR | Inhalt | Einschätzung |
 |---|---|---|
-| **#125** | Pre-Seed-Sicherung, gezielter Restore-Generator, Seed-Runbook | **neu, wartet auf Review.** Werkzeuge + Doku, **kein** Production-Schreibpfad, kein Cron, kein Auto-Trigger. `seed-restore-test.js` 31/31, Offline-Suite 145/145 |
+| **#125** | Pre-Seed-Sicherung, gezielter Restore-Generator, Seed-Runbook | **neu, wartet auf Review.** Werkzeuge + Doku, **kein** Production-Schreibpfad, kein Cron, kein Auto-Trigger. `seed-restore-test.js` 33/33 (CI 31/31), Offline-Suite 145/145 |
 | #117 | WBSB-Pilotpaket + Workflow-Härtung vereinigt | **Draft, ausdrücklich nicht mergen** (öffnet nur die CI-Prüfung) |
 | #115 | Bestandsabgleich `bund-basis` + Pflichtquellen-Verifikationstest | **Draft, ausdrücklich nicht mergen** (nur um den Workflow auf einem Runner mit Egress laufen zu lassen) |
 | #112 | Geführter Erstlogin-/Onboarding-Flow (14 Screens) | manuelle Abnahme im Preview ausstehend |
@@ -232,7 +232,7 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 
 | Sprint | Datum | Zustand |
 |---|---|---|
-| Merge #123 + Sicherung, gezielter Restore und Entscheidungsreife für die Seed-Einspielung | 2026-07-25 | **Teilweise abgeschlossen** — #123 gemergt (`bed7f53`); Backup- und Restore-Werkzeug gebaut und isoliert getestet (31/31, Suite 145/145). Die Seed-Ausführung bleibt **blockiert**: die Sicherung ist noch nicht gelaufen und die Reaktivierung der 6 Bundeswege ist nicht freigegeben. Details unten. |
+| Merge #123 + Sicherung, gezielter Restore und Entscheidungsreife für die Seed-Einspielung | 2026-07-25 | **Teilweise abgeschlossen** — #123 gemergt (`bed7f53`); Backup- und Restore-Werkzeug gebaut und isoliert getestet (33/33 lokal, 31/31 in CI, Suite 145/145). Die Seed-Ausführung bleibt **blockiert**: die Sicherung ist noch nicht gelaufen und die Reaktivierung der 6 Bundeswege ist nicht freigegeben. Details unten. |
 | Merge PR #118 + Vorbereitung des Quellen-Seed-Sprints | 2026-07-25 | **Teilweise abgeschlossen** — #118 gemergt (`61767a9`), CI grün, Deployment `READY`. Die Seed-Einspielung ist vollständig entscheidungsreif vorbereitet, aber **blockiert** (fehlende Sicherung). Details unten. |
 | Merge #122 + adversarialer Review von PR #118 (Quellenarchitektur-Remediation) | 2026-07-25 | **Erfolgreich abgeschlossen** — #122 gemergt (`54fe370`); #118 reviewt, 3 belegte Defekte behoben. |
 | Merge von PR #105 — Anker-Recovery-Pfad in Production stillgelegt | 2026-07-25 | **Erfolgreich abgeschlossen** — gemergt als `43e9e35`; Stilllegung auf `main` verifiziert. |
@@ -262,10 +262,12 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
   wegen `ON DELETE CASCADE` auf `retrieval_paths.publisher_id` und beiden `package_paths`-FKs für
   gezielten Rückbau unbrauchbar. Ehrliche Grenze: `updated_at` ist wegen des `set_updated_at`-
   Triggers **nicht** wiederherstellbar.
-- **Testergebnisse (echte Zahlen).** `scripts/seed-restore-test.js`: **31 PASS, 0 FAIL** — 14
+- **Testergebnisse (echte Zahlen).** `scripts/seed-restore-test.js`: **33 PASS, 0 FAIL** lokal,
+  **31 PASS, 0 FAIL** in CI (zwei Herkunftsprüfungen der Fixture brauchen die volle Git-Historie
+  und melden im flachen CI-Klon ausdrücklich „nicht prüfbar" statt still durchzulaufen) — 14
   Gruppen, darunter Byte-Gleichheit der zurückgeschriebenen Spalten, Idempotenz des Restores,
   Schutz der Eltern-Zeilen, Abbruch bei verändertem Ausgangszustand und „kein Restdiff nach
-  vollständigem Zyklus". Kanonische Offline-Suite: **145/145 Suiten grün** in 48 s. Der Test
+  vollständigem Zyklus". Kanonische Offline-Suite: **145/145 Suiten grün**. Der Test
   arbeitet auf **synthetischen Fixtures** aus den committeten Seeds — **keine
   Production-Daten**. Eine formprüfende Mutation im Generator erzeugt reproduzierbar **2 FAIL**
   (Erkennung belegt); zwei formverändernde Mutationen brachten den Mini-Executor stattdessen zum

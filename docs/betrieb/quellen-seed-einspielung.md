@@ -8,7 +8,7 @@
 > simuliert, ohne jeden Production-Zugriff.
 >
 > **Stand 2026-07-25 (zweiter Sicherheits-Sprint):** Von den beiden ursprünglichen Blockern ist
-> einer **erledigt** — es gibt jetzt einen gezielten, isoliert getesteten Restore (§5b, 31/31 grün)
+> einer **erledigt** — es gibt jetzt einen gezielten, isoliert getesteten Restore (§5b, 33/33 grün)
 > und ein Pre-Seed-Backup mit Prüfsummen (§5). Offen bleibt **nur noch**, dass die Sicherung
 > tatsächlich gegen Production **gelaufen** ist — dafür braucht es Betreiberzugriff. Zusätzlich
 > muss die **absichtliche Reaktivierung der 6 Bundeswege** (§4 Punkt 11, §6b) freigegeben werden.
@@ -177,7 +177,7 @@ es wird keine Zeile entfernt; die einzigen Änderungen an bestehenden Wegen sind
 
 > **Aktualisiert 2026-07-25:** Der zuvor fehlende gezielte Rückbau **existiert jetzt** —
 > `scripts/seed-restore-sql.js` erzeugt aus einer Pre-Seed-Sicherung ein zielgenaues
-> Restore-SQL, isoliert getestet mit 31/31 grün (§5b). Damit bleibt als offener Punkt nur noch
+> Restore-SQL, isoliert getestet mit 33/33 grün (§5b). Damit bleibt als offener Punkt nur noch
 > die **Sicherung selbst**.
 
 | Frage | Antwort |
@@ -185,7 +185,7 @@ es wird keine Zeile entfernt; die einzigen Änderungen an bestehenden Wegen sind
 | Aktuelles Backup? | **Nein** — Supabase **Free-Plan**, keine automatischen Backups (`CURRENT_STATE.md` §9) |
 | PITR verfügbar? | **Nein** — Teil des offenen, **blockierten** OP-01 |
 | Restore-Prozess dokumentiert? | Ja — `betrieb/backup-restore-runbook.md`; PITR-Abschnitt §3 gilt aber ausdrücklich erst **nach** dem Pro-Upgrade |
-| Restore getestet? | **Ja, isoliert** — `scripts/seed-restore-test.js`, 31/31 grün, inkl. Bytegleichheit, Idempotenz, Teilerfolg und Manipulationserkennung |
+| Restore getestet? | **Ja, isoliert** — `scripts/seed-restore-test.js`, 33/33 grün, inkl. Bytegleichheit, Idempotenz, Teilerfolg und Manipulationserkennung |
 | Manuelles Backup möglich? | **Ja, heute** — `node scripts/backup-export.js --scope=seed` sichert gezielt die 8 betroffenen Tabellen (read-only), mit Prüfsummen, `main`-Commit und Pre-Seed-Kennzeichnung. Ehrliche Grenze: kein transaktionaler Snapshot, nur tabellenweise |
 | Technischer Rollback Seed 2? | **Ja, fein** — `20260717_landesmodul_be_bb_seed_rollback.sql` löscht gezielt per `retrieval_path_id` |
 | Technischer Rollback Seed 1? | **Neu: ja** — `scripts/seed-restore-sql.js` (gezielt, ohne `drop table`). Der alte `20260713_source_architecture_rollback.sql` bleibt ein `drop table … cascade` und ist für gezielten Rückbau weiterhin **unbrauchbar** — er darf hierfür **nicht** verwendet werden |
@@ -218,11 +218,18 @@ nach dieser Prüfung gefahrlos.
 
 ## 5b · Isolierter Restore-Test (Nachweis)
 
-`node scripts/seed-restore-test.js` → **31 PASS, 0 FAIL** (Teil der Offline-Suite, 145/145).
+`node scripts/seed-restore-test.js` → **33 PASS, 0 FAIL** (Teil der Offline-Suite, 145/145).
+
+In CI sind es **31 PASS, 0 FAIL**: zwei Prüfungen belegen, dass die Fixture noch dem Stand vor
+#118 (`54fe370`) entspricht, und brauchen dafür die volle Git-Historie. `actions/checkout` klont
+flach, deshalb melden sie dort ausdrücklich „Herkunft nicht prüfbar" statt still durchzulaufen.
+Der inhaltliche Nachweis ist in beiden Fällen vollständig — nachgestellt und verifiziert in einem
+echten `--depth 1`-Klon.
 
 Der Test führt den vollständigen Zyklus offline und ohne jede Datenbank aus, gegen das **echte
-SQL der Repo-Dateien** (Ausgangszustand = die vor #118 committeten Seeds, also der erwartete
-Production-Stand; keine echten Production-Daten):
+SQL der Repo-Dateien** (Ausgangszustand = die vor #118 committeten Seeds als Fixture unter
+`scripts/fixtures/seeds-vor-pr118/`, also der erwartete Production-Stand; keine echten
+Production-Daten):
 
 Ausgangszustand → Pre-Seed-Backup → Seed 1 → Prüfung → Seed 2 → Prüfung → Seeds erneut
 (Idempotenz) → **Restore** → Vergleich mit dem Ausgangszustand.
@@ -266,7 +273,7 @@ Belegt:
 | 2 | Backup oder PITR bestätigt | ❌ **offen** — Werkzeug steht (`--scope=seed`), der Lauf gegen Production ist noch nicht erfolgt (Betreiberzugriff) |
 | 3 | Vorschau ohne unerwarteten Diff | ✅ §4 |
 | 4 | Exakte Soll-Zahlen dokumentiert | ✅ §4 |
-| 5 | Rollback geprüft | ✅ **erledigt** — gezielter Restore-Generator, isoliert getestet 31/31 (§5b) |
+| 5 | Rollback geprüft | ✅ **erledigt** — gezielter Restore-Generator, isoliert getestet 33/33 (§5b) |
 | 6 | Keine laufende Migration / kritische Verarbeitung | ⚠️ vor Ausführung prüfen (Crawl-Cron 04:00/20:00 UTC, Understanding 05:30/21:30) |
 | 7 | Kein Konflikt mit neuen `main`-Änderungen | ✅ zum Zeitpunkt dieser Vorlage |
 | 8 | Betreiberfreigabe | ❌ **offen** |
