@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-25 · **`main`-HEAD:** `4089b5d` (Merge #126)
+**Letzte Aktualisierung:** 2026-07-25 · **`main`-HEAD:** `0d6d867` (Merge #125)
 
 > **Diese Datei ist der aktuelle Stand.** Bei Widerspruch zu älteren Statusdokumenten
 > gilt diese Datei. Sie enthält **keine Chronik** — Details je offenem Punkt stehen in
@@ -60,7 +60,7 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | Punkt | Ursache | Nächster Schritt |
 |---|---|---|
 | **OP-01** Supabase Pro + PITR | Kostenentscheidung des Betreibers (~25 $/Monat); Free-Plan = **keine Backups** | Betreiber schaltet Pro + PITR frei, dann Restore-Übung nach `betrieb/backup-restore-runbook.md` |
-| **Quellen-Seed-Einspielung** (macht P0-2 und die 6 Bundesweg-Reparaturen in der DB wirksam) | drei offene Go-Kriterien, alle Betreiberhandlungen: **2** die Pre-Seed-Sicherung ist **noch nicht gelaufen** · **8** die Einspielung ist nicht freigegeben · **11** die **absichtliche Reaktivierung** der 6 Bundeswege ist nicht mitfreigegeben | Runbook `betrieb/quellen-seed-einspielung.md` §6c Schritt 1–17 — beginnt mit `node scripts/backup-export.js --scope=seed`, danach Manifest auf `vollstaendig: true` prüfen |
+| **Quellen-Seed-Einspielung** (macht P0-2 und die 6 Bundesweg-Reparaturen in der DB wirksam) | noch zwei offene Go-Kriterien: **2** die Pre-Seed-Sicherung ist **noch nicht gelaufen** · **8** die Einspielung ist nicht freigegeben. Kriterium **11** ist **entschieden**: gestaffelte Reaktivierung (§6d) | Runbook `betrieb/quellen-seed-einspielung.md` §6c Schritt 1–19 — beginnt mit `node scripts/backup-export.js --scope=seed`, danach Manifest auf `vollstaendig: true` prüfen |
 | **OP-02** Recht (Pilotvertrag, AVV, DSFA, Art.-9-Grundlage, Fristen) | externe Prüfung durch Anwalt/DSB steht aus | Entwürfe aus `recht/` prüfen lassen und zeichnen; blockiert OP-12 |
 | **OP-03** Zweitmandanten-Freigabepaket | Grundsatzentscheidung „DB-seitige Durchsetzung vs. dokumentierte App-Guard-Akzeptanz" fehlt (`mandantentrennung-architektur.md` bewertet die Wege) | Betreiber entscheidet einen Weg; danach Migration + Env + Probelauf |
 | **OP-04** Demo-Mandate entfernen — **Umfang korrigiert 2026-07-25:** Production führt **8 Profile, davon 6 aktiv** (nicht 1 Pilot + 2 Demo-Mandate); fünf davon tragen Klarnamen realer Abgeordneter | Production-Datenänderung, freigabepflichtig; berührt zusätzlich OP-02 (personenbezogene Daten) | je Profil entscheiden, dann über Provisionierungswerkzeug deaktivieren (`quellenarchitektur/30-paket-inventur-production.md` §5, A-1) |
@@ -162,7 +162,6 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 
 | PR | Inhalt | Einschätzung |
 |---|---|---|
-| **#125** | Pre-Seed-Sicherung, gezielter Restore-Generator, Seed-Runbook | **gemergt** (siehe §12) |
 | #117 | WBSB-Pilotpaket + Workflow-Härtung vereinigt | **Draft, ausdrücklich nicht mergen** (öffnet nur die CI-Prüfung) |
 | #115 | Bestandsabgleich `bund-basis` + Pflichtquellen-Verifikationstest | **Draft, ausdrücklich nicht mergen** (nur um den Workflow auf einem Runner mit Egress laufen zu lassen) |
 | #112 | Geführter Erstlogin-/Onboarding-Flow (14 Screens) | manuelle Abnahme im Preview ausstehend |
@@ -195,6 +194,10 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 
 | Datum | Entscheidung |
 |---|---|
+| 2026-07-25 | **Die 6 reparierten Bundeswege werden gestaffelt reaktiviert** — erst die 2 Direktfeeds, nach einem vollen Crawl-Zyklus die 4 Google-Wege (`betrieb/quellen-seed-einspielung.md` §6d). Umsetzung als gezieltes `update` nach dem Seed, **nicht** durch Bearbeiten der Seed-Datei: der Bund-Seed ist per Drift-Gate byte-genau an seinen Generator gebunden |
+| 2026-07-25 | Empfehlung, `rp-ausschuss-arbeit-soziales` wegzulassen, **geprüft und abgelehnt** — die Begründung („kein belegter Eigenertrag") ist zirkulär: der Weg hat keine Telemetrie, weil er `broken` ist. Sein einziger echter Abruf (Sprint 9B) ergab HTTP 200, 20 Items, jüngstes 0 Tage alt |
+| 2026-07-25 | PR #125 (Sicherung + gezielter Restore) gemergt (`0d6d867`); CI auf `main` grün, Vercel-Production `READY` |
+| 2026-07-25 | **Prüfungen im Seed-Runbook arbeiten mit gemessenen Deltas und benannten Zeilen**, nicht mit absoluten Zahlen aus einer Doku — absolute Zahlen driften bei jeder Provisionierung und hätten eine korrekte Datenbank fälschlich gestoppt |
 | 2026-07-25 | Der Seed-Rückweg ist ein **gezielter, zeilenscharfer Restore** — `drop table … cascade` ist als Rollback **verworfen** (würde wegen `ON DELETE CASCADE` fremde Daten mitreißen und ist für Rückbau unbrauchbar) |
 | 2026-07-25 | Ein Backup mit Fehlern gilt **nicht** als Backup: `backup-export.js` prüft die Zeilenzahl serverseitig gegen und markiert das Manifest `vollstaendig: false` + Exit 1 |
 | 2026-07-25 | PR #124 (Paket-Inventur + Zuweisungsnachweis) auf Betreiberfreigabe gemergt (`118e90c`); CI auf `main` grün, Vercel-Production `READY` |
@@ -251,7 +254,7 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 
 | Sprint | Datum | Zustand |
 |---|---|---|
-| Review + Merge von PR #125, danach Production-Ablauf bis vor den ersten Zugriff vorbereiten | 2026-07-25 | **Teilweise abgeschlossen** — PR #125 adversarial reviewt (3 Reviewer, 20 belegte Befunde, alle behoben) und gemergt. Der Production-Ablauf ist vollständig vorbereitet; **kein Production-Zugriff erfolgt, keine Seeds ausgeführt**. Wartet auf die Betreiberfreigabe für den Pre-Seed-Export. Details unten. |
+| Review + Merge von PR #125, danach Production-Ablauf bis vor den ersten Zugriff vorbereiten | 2026-07-25 | **Teilweise abgeschlossen** — PR #125 adversarial reviewt (3 Reviewer, 20 belegte Befunde, alle behoben) und als `0d6d867` gemergt (CI auf `main` grün, Vercel-Production `READY`). Der Production-Ablauf ist vollständig vorbereitet; **kein Production-Zugriff erfolgt, keine Seeds ausgeführt**. Wartet auf die Betreiberfreigabe für den Pre-Seed-Export. Details unten. |
 | Merge #123 + Sicherung, gezielter Restore und Entscheidungsreife für die Seed-Einspielung | 2026-07-25 | **Teilweise abgeschlossen** — #123 gemergt (`bed7f53`); Backup- und Restore-Werkzeug gebaut und isoliert getestet (33/33 lokal, 31/31 in CI, Suite 145/145). Die Seed-Ausführung bleibt **blockiert**: die Sicherung ist noch nicht gelaufen und die Reaktivierung der 6 Bundeswege ist nicht freigegeben. Details unten. |
 | Phase-1-Block: Quellenpakete inventarisieren + automatische Paketzuweisung beweisen | 2026-07-25 | **Erfolgreich abgeschlossen** — beide Abnahmekriterien erfüllt und belegt; 145/145 Offline-Suiten grün; als PR #124 gemergt (`118e90c`), CI auf `main` grün, Vercel-Production `READY`. Details unten. |
 | Merge PR #118 + Vorbereitung des Quellen-Seed-Sprints | 2026-07-25 | **Teilweise abgeschlossen** — #118 gemergt (`61767a9`), CI grün, Deployment `READY`. Die Seed-Einspielung ist vollständig entscheidungsreif vorbereitet, aber **blockiert** (fehlende Sicherung). Details unten. |
@@ -312,6 +315,20 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
   erfordert: laufende Locks, Health, offene Vorfälle — die stehen als Runbook-Schritte 2 und 3.
 - **Die Production-Secrets sind in dieser Umgebung nicht gesetzt.** Der Export kann hier also
   ohnehin nicht laufen; er gehört auf die Betreibermaschine mit `.env.local`.
+- **Merge:** PR #125 als Merge-Commit `0d6d867`. Vorab verifiziert: `mergeable_state: clean`,
+  beide Pflichtchecks grün auf `6baaa0b`, keine offenen Reviews, Basis = aktueller `main`.
+  Nach dem Merge auf `main` gegengeprüft: CI-Lauf #134 `success`, Vercel-Production-Deployment
+  `dpl_4NFEyoJgQnbjTP4G8u1pJrjDrxuB` **READY** mit `githubCommitSha=0d6d867`; die drei
+  Kernkorrekturen (Leer-Backup-Plausibilisierung, Vor-Seed-Prüfung, eingegrenzter `delete`)
+  liegen auf `main`, das Runbook trägt weiterhin `Status: BLOCKIERT`.
+- **Paralleler Arbeitsstand, ungemergt:** Branch `claude/helmut-seed-review-6nocps` enthält eine
+  read-only Fachprüfung jeder einzelnen Seed-Änderung gegen Production. Sie **bestätigt die hier
+  korrigierten Ist-Zahlen unabhängig** (7 Pakete / 163 Abrufwege / 165 Zuordnungen) und empfiehlt
+  zusätzlich, `rp-ausschuss-arbeit-soziales` **nicht** mitzuaktivieren (einziger Google-Weg ohne
+  belegten Eigenertrag). **Bewertet und entschieden:** die Empfehlung wurde abgelehnt (zirkuläre
+  Begründung, siehe §6d.1 des Runbooks), stattdessen wird **gestaffelt** reaktiviert (§6d).
+  Zwei weitere Punkte des Branches sind als offene Fachfragen übernommen (§6d.2), ohne
+  `required_classes` zu ändern.
 - **Nicht getan (bewusst):** kein Production-Zugriff, weder lesend noch schreibend · kein Backup
   ausgeführt · keine Seeds eingespielt · kein Restore gefahren · keine Secrets gelesen, gesetzt
   oder rotiert · keine Cron-Änderung · keine Quelle aktiviert oder deaktiviert · keine Änderung
