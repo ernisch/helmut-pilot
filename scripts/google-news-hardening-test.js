@@ -220,8 +220,11 @@ function check(name, cond, detail = "") {
   const cdDegOther = evaluateCooldown({ lastRuns: [degradedOther], nowMs, config: cfg, tenantId: "mandat-b" });
   check("Degradations-Cooldown wirkt mandantsübergreifend", cdDegOther.active === true && cdDegOther.reason === "nach-degradation");
 
-  // ── Lauf-Klassifikation (7 Zustände) ──────────────────────────────────────
-  check("Zustandskatalog vollständig (7)", RUN_STATES.length === 7);
+  // ── Lauf-Klassifikation (8 Zustände) ──────────────────────────────────────
+  // 8 statt 7: 'aggregator-gedrosselt' (zentrale Provider-Drosselung) ist seit
+  // Incident 2026-07-25 ein eigener Zustand — ein zentraler Breaker-Abbruch ist
+  // NICHT dasselbe wie N defekte Einzelquellen.
+  check("Zustandskatalog vollständig (8)", RUN_STATES.length === 8);
   check("gesund (<=10% Fehler)", classifyCrawlRunState({ checkedSources: 145, successfulSources: 140, failedSources: 5 }) === "gesund");
   check("teilweise-degradiert (>10%, <=50%)", classifyCrawlRunState({ checkedSources: 100, successfulSources: 70, failedSources: 30 }) === "teilweise-degradiert");
   check("stark-degradiert (>50%) — der B1-Lauf (129/145)", classifyCrawlRunState({ checkedSources: 145, successfulSources: 16, failedSources: 129 }) === "stark-degradiert");
