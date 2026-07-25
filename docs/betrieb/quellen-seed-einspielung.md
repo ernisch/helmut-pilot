@@ -1,16 +1,16 @@
 # Quellen-Seeds einspielen — Freigabevorlage
 
 **Stand:** 2026-07-25 · **Code-Grundlage der Seeds:** `main` `61767a9` (Merge #118) ·
-**`main`-HEAD:** `4089b5d` (Merge #126) · **Deployment:** `READY`
+**`main`-HEAD:** `0d6d867` (Merge #125) · **Deployment:** `READY`
 
 > **Status: BLOCKIERT.** Diese Vorlage ist vollständig vorbereitet, aber die Ausführung ist
 > **nicht freigegeben**. Nichts hiervon wurde ausgeführt.
 >
-> **Offen sind genau drei Go-Kriterien (§6), alle drei Betreiberhandlungen:**
+> **Offen sind noch zwei Go-Kriterien (§6), beide Betreiberhandlungen:**
 > **2** die Pre-Seed-Sicherung muss gegen Production **gelaufen** sein ·
 > **8** die Einspielung muss freigegeben sein ·
-> **11** die **absichtliche Reaktivierung der 6 Bundeswege** (§4 Punkt 11, §6b) muss
-> ausdrücklich mitfreigegeben werden.
+> **11** ~~die absichtliche Reaktivierung der 6 Bundeswege~~ — **entschieden 2026-07-25:
+> gestaffelt**, erst die 2 Direktfeeds, dann nach einem Crawl-Zyklus die 4 Google-Wege (§6d).
 >
 > Werkzeug und Rückweg sind gebaut und isoliert getestet (§5b, 43/43 grün).
 >
@@ -361,7 +361,7 @@ Belegt:
 | 8 | Betreiberfreigabe | ❌ **offen** |
 | 9 | Seeds einzeln ausführen | Vorgabe für die Ausführung |
 | 10 | Nach jedem Seed Soll-Ist-Vergleich | Vorgabe (Prüfabfragen in §5) |
-| 11 | Keine automatische Quellenaktivierung | ⚠️ **bewusst nicht erfüllt** — §4 Punkt 11: 6 Wege werden absichtlich wieder ausführbar. Muss ausdrücklich mitfreigegeben werden |
+| 11 | Keine automatische Quellenaktivierung | ✅ **entschieden** — §4 Punkt 11: 6 Wege werden absichtlich wieder ausführbar, aber **gestaffelt** in zwei Stufen (§6d). Betreiberentscheidung vom 2026-07-25 |
 | 12 | Keine Crawl-Amplifikation | ✅ durch #120 abgedeckt |
 | 13 | Keine mandantenübergreifende Fehlzuordnung | ✅ §4 Punkt 12 |
 
@@ -432,9 +432,89 @@ kein Gesamt-Rollback nötig.
 | 12 | Bei Abweichung | **Stop** → wie Schritt 9 |
 | 13 | **BE/BB-Sperre** (wirksame Prüfung) | `select count(*) from retrieval_paths rp join package_paths pp on pp.retrieval_path_id = rp.id join source_packages sp on sp.id = pp.package_id where sp.key in ('berlin-basis','brandenburg-basis') and rp.activation_mode <> 'manual';` → **0**. **Nicht** gegen `status='healthy'` prüfen: alle 18 Landesmodul-Wege stehen auf `needs_review`, diese Abfrage liefert immer 0 und beweist nichts. Zusätzlich der belastbare Nachweis: Crawl-Plan mit einem BE-Profil erzeugen → 0 BE/BB-Wege aktiv, alle mit Grund `landesmodul-gesperrt` |
 | 14 | Bundestagsquellen | `select count(*) from retrieval_paths;` → **unverändert gegenüber Schritt 6** (keine Zeile verloren, keine hinzugekommen) |
-| 15 | Idempotenz | Beide Seeds ein zweites Mal einspielen → **0 Änderungen**. **Vor** Schritt 16 ausführen, nicht danach |
-| 16 | Die 6 Wege überwachen | Nach dem ersten Crawl: Telemetrie je Weg (Items > 0, kein Dauerfehler) — Stopbedingung §6b. **Wichtig:** Wird hier ein Weg bewusst auf `broken` zurückgesetzt, darf Seed 1 **nicht erneut** eingespielt werden — sein `on conflict do update set status = excluded.status` würde die Entscheidung stillschweigend rückgängig machen. Genau deshalb steht die Idempotenzprobe davor |
-| 17 | Dokumentation | `CURRENT_STATE.md` + diese Vorlage nachziehen |
+| 15 | Idempotenz | Beide Seeds ein zweites Mal einspielen → **0 Änderungen**. **Muss vor Schritt 16 laufen** — Begründung dort |
+| 16 | **Staffelung Stufe 1** | Die 4 Google-Wege zunächst zurückhalten (§6d). Ab hier darf Seed 1 **nicht erneut** eingespielt werden, bis Stufe 2 durch ist |
+| 17 | Stufe 1 überwachen | Nach dem ersten vollständigen Crawl-Cron: Telemetrie der 2 Direktfeeds (Items > 0, kein Dauerfehler) — Stopbedingung §6b |
+| 18 | **Staffelung Stufe 2** | Die 4 Google-Wege nachziehen (§6d), erneut überwachen |
+| 19 | Dokumentation | `CURRENT_STATE.md` + diese Vorlage nachziehen |
+
+---
+
+## 6d · Gestaffelte Reaktivierung (Betreiberentscheidung 2026-07-25)
+
+**Entschieden: gestaffelt.** Die beiden Direktfeeds sind unstrittig und sind genau die, die das
+Google-Klumpenrisiko senken (real laufende Direktwege 3 → 5). Die vier Google-Wege folgen erst
+nach einem vollständigen Crawl-Zyklus, damit die Wirkung jedes Schritts in der Telemetrie
+**einzeln** sichtbar ist.
+
+> **Nicht durch Bearbeiten der Seed-Datei umsetzen.** Der Bund-Seed wird von
+> `scripts/generate-source-architecture-seed.js` erzeugt und ist per `scripts/seed-drift-test.js`
+> byte-genau daran gebunden. Eine Handänderung an `supabase/seeds/20260713_…_seed.sql` lässt das
+> Drift-Gate und damit die CI rot werden. Die Staffelung läuft deshalb als **gezieltes `update`
+> nach dem Seed** — sofort wirksam, ohne Deploy, jederzeit umkehrbar.
+
+**Stufe 1 — direkt nach Schritt 15 einspielen:**
+
+```sql
+begin;
+update public.retrieval_paths set status = 'broken'
+ where id in ('rp-bundesregierung', 'rp-die-linke', 'rp-ausschuss-arbeit-soziales', 'rp-dgb');
+-- Gegenprobe: genau 2 der 6 Wege sind jetzt ausfuehrbar
+select id, status from public.retrieval_paths
+ where id in ('rp-bundestag', 'rp-bundesregierung', 'rp-die-linke',
+              'rp-linksfraktion', 'rp-ausschuss-arbeit-soziales', 'rp-dgb')
+ order by id;
+commit;
+```
+
+Erwartet: `rp-bundestag` und `rp-linksfraktion` auf `needs_review`, die übrigen vier auf `broken`.
+
+**Stufe 2 — nach einem vollständigen Crawl-Cron und stabiler Telemetrie:**
+
+```sql
+begin;
+update public.retrieval_paths set status = 'needs_review'
+ where id in ('rp-bundesregierung', 'rp-die-linke', 'rp-ausschuss-arbeit-soziales', 'rp-dgb');
+commit;
+```
+
+**Reihenfolge-Falle, die durch die Staffelung entsteht:** Seed 1 trägt
+`on conflict (id) do update set … status = excluded.status`. Ein erneutes Einspielen zwischen
+Stufe 1 und Stufe 2 würde die vier zurückgehaltenen Wege **stillschweigend** wieder auf
+`needs_review` setzen und die Staffelung aufheben. Deshalb steht die Idempotenzprobe (Schritt 15)
+**vor** Stufe 1 — und zwischen Stufe 1 und Stufe 2 wird Seed 1 nicht noch einmal eingespielt.
+
+**Rücksetzweg** in beiden Stufen: derselbe `update … set status = 'broken'` je Weg-ID, einzeln.
+
+### 6d.1 · Geprüfte und abgelehnte Empfehlung: `rp-ausschuss-arbeit-soziales` weglassen
+
+Ein paralleler Arbeitsstand (Branch `claude/helmut-seed-review-6nocps`) empfahl, diesen Weg
+dauerhaft auf `broken` zu belassen — „einziger Google-Weg ohne belegten Eigenertrag".
+**Geprüft und abgelehnt.** Die Begründung ist zirkulär:
+
+| Prüfung | Ergebnis |
+|---|---|
+| Warum keine Telemetrie? | Weil der Weg auf `broken` steht und deshalb **nie abgerufen wird** — nicht, weil er nichts liefert |
+| Was ergab der einzige echte Abruf? | Sprint 9B: **HTTP 200, 20 Items, jüngstes 0 Tage alt**, `verifiziert: true`, Verdikt `geeignet` (`lib/helmut/quellenarchitektur/seeds/bundeswege-reparaturen.js`) |
+| Im Vergleich zu den anderen fünf | Alle sechs `geeignet`/HTTP 200; die Direktfeeds liefern 15 Items, die vier Google-Wege je 20. Dieser Weg gehört zu den stärksten, nicht zu den schwächsten |
+| Redundanz im Katalog | **28** Ausschuss-Wege, **27 laufen bereits**. Die Empfehlung nannte „6 vorhandene Suchen" — tatsächlich 25 `rp-bundle-ausschuss-*` plus Radar- und Prozess-Weg |
+| Alleinstellung | Einziger Ausschuss-Weg mit `site:bundestag.de`. Alle 27 anderen sind Medien-/Aggregatorsuchen über `aggregator-google-news`. Er ist der einzige, der auf die **Primärquelle** zielt |
+
+Die Redundanz ist also groß in der **Menge**, nicht in der **Art**. Ein Weglassen würde
+ausgerechnet die einzige Primärquellensuche zum Ausschuss entfernen. Der Weg läuft in **Stufe 2**
+regulär mit und unterliegt dort der Stopbedingung aus §6b wie die anderen drei Google-Wege.
+
+### 6d.2 · Zwei offene Fachfragen (noch keine OP-Nummern vergeben)
+
+1. **`required_classes` von `pkg-die-linke-brandenburg`.** Das Paket verlangt `partei_pilot`,
+   `fraktion_pilot` und `person_pilot`, im Katalog existiert aber nur `rp-bb-partei_pilot` —
+   Brandenburg hat in der 8. WP keine Landtagsfraktion der Linken. Der Rollup führt damit dauerhaft
+   zwei unerfüllbare Klassen als fehlend. **Heute wirkungslos** (Paket ist `prepared` und nie
+   aktiv) und eine fachliche Paketentscheidung; `required_classes` wird hier **nicht** geändert.
+2. **Direktwege für `bundesregierung` und `dgb`.** In `bundeswege-reparaturen.js` sind Direktfeeds
+   dokumentiert, aber nie ausgelesen worden. Das braucht einen Lauf mit offenem Egress und danach
+   eine Änderung in `lib/helmut/sources.js` — eigener Sprint. Bis dahin bleiben beide
+   Google-abhängig.
 
 ---
 
@@ -442,13 +522,12 @@ kein Gesamt-Rollback nötig.
 
 ### Option A — jetzt kontrolliert ausführen
 
-**Wird nicht empfohlen.** Drei Go-Kriterien sind offen: 2 (Backup), 8 (Betreiberfreigabe) und
-11 (Reaktivierung der 6 Wege muss ausdrücklich mitfreigegeben werden).
+**Wird nicht empfohlen.** Zwei Go-Kriterien sind offen: 2 (Backup) und 8 (Betreiberfreigabe).
 
 ### Option B — Ausführung blockieren ← **empfohlen**
 
-**Es fehlen genau die drei Go-Kriterien 2, 8 und 11 — alle drei sind Betreiberhandlungen, keine
-Bauarbeit.** Werkzeug und Rückweg stehen bereit und sind getestet.
+**Kriterium 11 ist entschieden** (gestaffelt, §6d). **Offen bleiben 2 und 8** — beide sind
+Betreiberhandlungen, keine Bauarbeit. Werkzeug und Rückweg stehen bereit und sind getestet.
 
 Konkret zu tun, in dieser Reihenfolge:
 
@@ -457,10 +536,8 @@ Konkret zu tun, in dieser Reihenfolge:
    Danach prüfen: `manifest.json` trägt `art: "pre-seed"`, `vollstaendig: true`, eine
    `pruefsummeGesamt` und den `mainCommit`. Nur ein so markiertes Backup akzeptiert der
    Restore-Generator.
-2. **Reaktivierung der 6 Bundeswege freigeben** (§6b, Go-Kriterium 11) — das ist eine bewusste
-   Verhaltensänderung in Production, keine Nebenwirkung.
-3. **Die Einspielung selbst freigeben** (Go-Kriterium 8).
-4. Danach Runbook §6c Schritt für Schritt.
+2. **Die Einspielung selbst freigeben** (Go-Kriterium 8).
+3. Danach Runbook §6c Schritt für Schritt — inklusive der gestaffelten Reaktivierung nach §6d.
 
 **Dauerhaft empfohlen, aber für diese Einspielung nicht zwingend:** OP-01 freigeben
 (Supabase Pro + PITR). Das bleibt das größte Einzelrisiko des Projekts insgesamt —
