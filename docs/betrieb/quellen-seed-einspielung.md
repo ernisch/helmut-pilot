@@ -1,6 +1,7 @@
 # Quellen-Seeds einspielen — Freigabevorlage
 
-**Stand:** 2026-07-25 · **Code-Grundlage:** `main` `61767a9` (Merge #118) · **Deployment:** `READY`
+**Stand:** 2026-07-25 · **Code-Grundlage der Seeds:** `main` `61767a9` (Merge #118) ·
+**`main`-HEAD:** `bed7f53` (Merge #123, Doku-only — ändert die Seeds nicht) · **Deployment:** `READY`
 
 > **Status: BLOCKIERT.** Diese Vorlage ist vollständig vorbereitet, aber die Ausführung ist
 > **nicht freigegeben**. Nichts hiervon wurde ausgeführt. Die Vorschau in §4 ist rein lokal
@@ -335,7 +336,7 @@ kein Gesamt-Rollback nötig.
 | 10 | **Seed 2 einzeln** | `20260717_landesmodul_be_bb_seed.sql` einspielen |
 | 11 | Seed 2 prüfen | `package_paths` = **164** (4 raus / 4 rein); `select package_id from package_paths where retrieval_path_id='rp-be-partei_pilot'` → `pkg-die-linke-berlin` |
 | 12 | Gesamtzustand | Zahlen gegen §4 |
-| 13 | **BE/BB-Sperre** | `select count(*) from retrieval_paths where id like 'rp-be-%' or id like 'rp-bb-%' and status='healthy'` → **0**; Crawl-Plan enthält 0 BE/BB-Wege |
+| 13 | **BE/BB-Sperre** | `select count(*) from retrieval_paths where (id like 'rp-be-%' or id like 'rp-bb-%') and status = 'healthy';` → **0**. Die Klammern sind zwingend — ohne sie bindet `and` stärker als `or` und die Abfrage zählt **alle** BE-Wege statt der gesuchten. Zusätzlich: Crawl-Plan enthält 0 BE/BB-Wege |
 | 14 | Bundestagsquellen | `select count(*) from retrieval_paths` → **162**, keine Zeile verloren |
 | 15 | Die 6 Wege überwachen | Nach dem ersten Crawl: Telemetrie je Weg (Items > 0, kein Dauerfehler) — Stopbedingung §6b |
 | 16 | Idempotenz | Beide Seeds ein zweites Mal einspielen → **0 Änderungen** (oder read-only-Vergleich) |
@@ -351,8 +352,9 @@ kein Gesamt-Rollback nötig.
 
 ### Option B — Ausführung blockieren ← **empfohlen**
 
-**Es fehlt nur noch eine Voraussetzung: die Sicherung muss tatsächlich gelaufen sein.**
-Werkzeug und Rückweg stehen bereit und sind getestet.
+**Es fehlen noch genau zwei Voraussetzungen — beide sind Betreiberhandlungen, keine Bauarbeit:**
+die Sicherung muss tatsächlich gelaufen sein, und die Reaktivierung der 6 Bundeswege muss
+ausdrücklich freigegeben sein. Werkzeug und Rückweg stehen bereit und sind getestet.
 
 Konkret zu tun, in dieser Reihenfolge:
 
