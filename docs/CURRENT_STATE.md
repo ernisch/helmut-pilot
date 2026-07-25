@@ -39,7 +39,6 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | **Anker-Recovery-Pfad (F-3) technisch stillgelegt** — Workflow entfernt, Execute-Skript ohne DB-/KI-/Write-Pfad, `RECOVERY_ALLOWLIST` leer, namensunabhängiger CI-Riegel | PR #105, gemergt 2026-07-25 (`43e9e35`); auf `main` verifiziert: Workflow weg, Allowlist `[]`, 0 `require` im Execute-Skript |
 | `failed-final` wird im Pending-Filter und in `understandOneCluster` terminal behandelt („nie wieder") | PR #105 |
 | Freigabevorlage Quellen-Seed-Einspielung (Soll-Zahlen, Idempotenznachweis, Go-/Stop-Kriterien) | PR #123, gemergt 2026-07-25 (`bed7f53`), CI grün |
-| **Werkzeug** für Pre-Seed-Sicherung und gezielten Seed-Restore gebaut und isoliert getestet (kein `drop table cascade`) | Branch `claude/seed-backup-restore`, PR #125; `seed-restore-test.js` 31/31, Offline-Suite 145/145 · **Ausführung gegen Production steht aus** |
 
 ## 3 · Teilweise abgeschlossen (Code da, Abnahme fehlt)
 
@@ -51,6 +50,7 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | Zweitmandanten-Provisionierung + Per-Mandant-Kostendeckel | Migration `20260721` nicht angewandt, `HELMUT_TENANT_LLM_CAP` AUS, DB-seitige Durchsetzung unentschieden | OP-03 |
 | Retention/Löschung | nur Trockenlauf; braucht verbindliche Fristen aus OP-02 | OP-12 |
 | Understanding-Gate, Cheap-Triage, Scoring, Berlin/Brandenburg | in `shadow`/`off`, Scharfschaltung ist Freigabe | OP-18, OP-21, OP-22 |
+| Pre-Seed-Sicherung + gezielter Seed-Restore (kein `drop table cascade`) — gebaut, isoliert getestet (31/31, Suite 145/145) | PR #125 **nicht gemergt**; nie gegen Production gelaufen; deckt nur 8 Tabellen ab und ersetzt OP-01 nicht | OP-01 |
 | OP-06 Terminales Aussortieren des Alt-Rückstands (34 Fälle, Default AUS) | Ausführung ist freigabepflichtig — **und** eine offene Fachfrage: 16 der 34 Allowlist-Einträge sind mit „außerhalb Mandat" begründet, also relativ zum Pilotmandat, geschrieben wird aber in das mandantenneutrale `knowledge_objects` (kein `tenant_id`). Ein künftiger Zweitmandant mit regionalem/EU-Schwerpunkt bekäme diese Vorgänge dauerhaft nie verstanden | OP-06 |
 
 ## 4 · Blockiert
