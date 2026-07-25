@@ -3645,7 +3645,13 @@ async function buildHealthReport(politicianId) {
     getClassificationCoverage().catch(() => null),
     // Härtungs-Sprint: rollierende Crawl-Betrachtung (24-h-Fenster) statt
     // Nur-jüngster-Lauf — transiente Störungen bleiben sichtbar (B1-Lücke).
-    listCrawlRuns(10).catch(() => [])
+    // N1 (2026-07-25): 10 -> 20 angeglichen an die drei anderen Aufrufstellen
+    // (scheduler.js, server.js:4816/5188) und an CRAWL_RUN_RETENTION (storage.js,
+    // Default 20). Bei >10 aktiven Mandaten in einem Cron-Durchlauf fiel der
+    // einzige NICHT reduzierte Lauf (isReducedRun, Zeile weiter unten) aus dem
+    // 10er-Fenster — der Report griff dann auf einen reduzierten Lauf zurueck und
+    // meldete faelschlich "Teilweise gestoert" (P2-1, adversarialer Merge-Review).
+    listCrawlRuns(20).catch(() => [])
   ]);
   // Basis-Lauf für die Frische-/Qualitätsachsen: der jüngste NICHT bewusst
   // google-übersprungene Lauf. Ein 'crawl-abstand'-Skip-Lauf (successful ~5 von
