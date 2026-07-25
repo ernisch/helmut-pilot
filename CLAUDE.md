@@ -104,6 +104,14 @@ reversibel und eindeutig sinnvoll ist.
 
 ## 6 · Branches, Tests, Pull Requests, Review
 
+- **Vor jedem größeren Sprint erst auf bestehende Arbeit zum selben Thema prüfen:**
+  offene Branches und Pull Requests sowie `docs/CURRENT_STATE.md` (teilweise
+  abgeschlossene/blockierte Punkte) gezielt durchsehen, bevor eine neue
+  Implementierung beginnt. Passende, sichere, aktuelle Arbeit fortsetzen statt
+  unbegründet parallel neu bauen; bei konkurrierenden Lösungen erst die
+  Unterschiede bewerten. Nur bei einer kritischen Produkt-/Architektur-/
+  Sicherheitsentscheidung unterbrechen. Veraltete/ungeeignete Arbeit darf
+  verworfen werden, dann aber kurz in `docs/CURRENT_STATE.md` dokumentieren.
 - **Nie direkt auf `main`.** Feature-Branch, dann PR. `main` deployt automatisch.
 - **Tests vor jedem PR:** `node scripts/run-offline-tests.js` (kanonischer Lauf,
   sammelt alle `scripts/*-test.js` ein, erzwingt Offline technisch). Bei UI-Änderungen
