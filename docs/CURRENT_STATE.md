@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-25 · **`main`-HEAD:** `c6a3d40` (Merge #119)
+**Letzte Aktualisierung:** 2026-07-25 · **`main`-HEAD:** `43e9e35` (Merge #105)
 
 > **Diese Datei ist der aktuelle Stand.** Bei Widerspruch zu älteren Statusdokumenten
 > gilt diese Datei. Sie enthält **keine Chronik** — Details je offenem Punkt stehen in
@@ -35,6 +35,8 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | Profil-Storage relational entkoppelt (Exklusivmodus) | PR #113 |
 | Doku-Konsolidierung: `main` als einzige Architekturwahrheit | PR #114 (Recovery Sprint R2) |
 | Kontext-Einstiegsschicht (`CLAUDE.md`, `START_HERE`, `CURRENT_STATE`, `ARCHITECTURE`) | PR #119, gemergt 2026-07-25 |
+| **Anker-Recovery-Pfad (F-3) technisch stillgelegt** — Workflow entfernt, Execute-Skript ohne DB-/KI-/Write-Pfad, `RECOVERY_ALLOWLIST` leer, namensunabhängiger CI-Riegel | PR #105, gemergt 2026-07-25 (`43e9e35`); auf `main` verifiziert: Workflow weg, Allowlist `[]`, 0 `require` im Execute-Skript |
+| `failed-final` wird im Pending-Filter und in `understandOneCluster` terminal behandelt („nie wieder") | PR #105 |
 
 ## 3 · Teilweise abgeschlossen (Code da, Abnahme fehlt)
 
@@ -46,7 +48,6 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | Zweitmandanten-Provisionierung + Per-Mandant-Kostendeckel | Migration `20260721` nicht angewandt, `HELMUT_TENANT_LLM_CAP` AUS, DB-seitige Durchsetzung unentschieden | OP-03 |
 | Retention/Löschung | nur Trockenlauf; braucht verbindliche Fristen aus OP-02 | OP-12 |
 | Understanding-Gate, Cheap-Triage, Scoring, Berlin/Brandenburg | in `shadow`/`off`, Scharfschaltung ist Freigabe | OP-18, OP-21, OP-22 |
-| **Stilllegung des gescheiterten Recovery-Pfads (F-3)** — Code fertig, Review abgeschlossen, Tests grün, PR mergefähig | **Merge + Deployment.** Bis dahin ist die Stilllegung in Production **nicht aktiv**: `understanding-recovery.yml` und die gefüllte `RECOVERY_ALLOWLIST` liegen unverändert auf `main` | OP-05, PR #105 |
 | OP-06 Terminales Aussortieren des Alt-Rückstands (34 Fälle, Default AUS) | Ausführung ist freigabepflichtig — **und** eine offene Fachfrage: 16 der 34 Allowlist-Einträge sind mit „außerhalb Mandat" begründet, also relativ zum Pilotmandat, geschrieben wird aber in das mandantenneutrale `knowledge_objects` (kein `tenant_id`). Ein künftiger Zweitmandant mit regionalem/EU-Schwerpunkt bekäme diese Vorgänge dauerhaft nie verstanden | OP-06 |
 
 ## 4 · Blockiert
@@ -94,11 +95,10 @@ von Betriebs-, Rechts- und Sicherheitsreife.
   (umgeht RLS) und schrieb bis zu 6 neue complete-KOs. `knowledge_objects` trägt
   **kein** `tenant_id` — ein falsches KO ist für **alle** Mandanten sichtbar, inklusive
   Pilot-Briefing.
-- **Stand auf `main`:** Der Pfad ist auf `main` **weiterhin scharf** —
-  `.github/workflows/understanding-recovery.yml` existiert, `RECOVERY_ALLOWLIST` ist
-  gefüllt. Die technische Stilllegung liegt in **PR #105** und wird erst **mit dessen
-  Merge und Deployment** in Production wirksam.
-- **Wie PR #105 stilllegt (drei unabhängig wirksame Sperren):** Workflow-Datei
+- **Stand auf `main`: stillgelegt** (PR #105, gemergt 2026-07-25, `43e9e35`). Auf
+  `main` verifiziert: `.github/workflows/understanding-recovery.yml` existiert nicht
+  mehr, `RECOVERY_ALLOWLIST` ist `[]`, das Execute-Skript enthält 0 `require`.
+- **Die drei unabhängig wirksamen Sperren:** Workflow-Datei
   entfernt · `scripts/understanding-recovery-execute.js` auf einen Hinweis reduziert
   (kein `require` von `storage`/`ai`/`understanding`, wirkungslos auch mit Flag +
   korrektem Token) · `RECOVERY_ALLOWLIST` geleert. Zusätzlich ein
@@ -154,8 +154,7 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 
 | PR | Inhalt | Einschätzung |
 |---|---|---|
-| **#105** | Datenmotor-Sprint Pending/Understanding/KO; enthält die **technische Stilllegung** des gescheiterten Recovery-Pfads (F-3), die `failed-final`-Korrektur und den namensunabhängigen Regressionsriegel | **offen.** Basiert auf `main` `c6a3d40`, Offline-Suite grün, CI grün, `mergeable_state: clean` — **Merge empfohlen**; bis zum Merge bleibt F-3 auf `main` scharf |
-| **#118** | Quellenarchitektur-Gesamtaudit + Remediation (Seed-Reproduzierbarkeit, Neutralisierung der Landes-Basispakete, 6 verifizierte Bundesweg-Reparaturen), 141/141 grün | review-fähig — Review empfohlen |
+| **#118** | Quellenarchitektur-Gesamtaudit + Remediation (Seed-Reproduzierbarkeit, Neutralisierung der Landes-Basispakete, 6 verifizierte Bundesweg-Reparaturen), 141/141 grün | **jüngster review-fähiger PR** — Review empfohlen |
 | #117 | WBSB-Pilotpaket + Workflow-Härtung vereinigt | **Draft, ausdrücklich nicht mergen** (öffnet nur die CI-Prüfung) |
 | #115 | Bestandsabgleich `bund-basis` + Pflichtquellen-Verifikationstest | **Draft, ausdrücklich nicht mergen** (nur um den Workflow auf einem Runner mit Egress laufen zu lassen) |
 | #112 | Geführter Erstlogin-/Onboarding-Flow (14 Screens) | manuelle Abnahme im Preview ausstehend |
@@ -181,6 +180,7 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 
 | Datum | Entscheidung |
 |---|---|
+| 2026-07-25 | Anker-Recovery-Pfad **stillgelegt und auf `main` durchgesetzt** (PR #105, `43e9e35`); Wiederbelebung wird durch einen namensunabhängigen CI-Riegel blockiert |
 | 2026-07-25 | Kontext-Einstiegsschicht ist verbindlich; `CLAUDE.md` → `START_HERE` → `CURRENT_STATE` ist die Pflichtlektüre jedes Threads (PR #119) |
 | 2026-07-25 | Der anker-basierte Recovery-Pfad wird **nicht repariert, sondern stillgelegt**; echte Recovery läuft ausschließlich über den Einzeldokument-Pfad je exakter `raw_document_id` (PR #105) |
 | 2026-07-22 | `main` ist die einzige Architekturwahrheit; Generation B wird nicht integriert (PR #114) |
@@ -198,26 +198,23 @@ Einzelrisiko und ist Voraussetzung dafür, dass die Migration aus OP-03 gefahrlo
 eingespielt werden kann.
 
 Parallel möglich, ohne Freigabe:
-1. **PR #105 mergen** — er ist auf aktuellem `main` (`c6a3d40`), Tests und CI grün.
-   Solange er offen ist, liegt der in Production gescheiterte Recovery-Pfad (F-3)
-   unverändert scharf auf `main`. Das ist der Schritt mit dem größten
-   Sicherheitsgewinn pro Aufwand.
-2. **Review und Merge-Entscheidung zu PR #118** (Quellenarchitektur-Remediation).
-3. **OP-11 Branch Protection** verifizieren (2 Minuten, reversibel,
+1. **Review und Merge-Entscheidung zu PR #118** (Quellenarchitektur-Remediation).
+2. **OP-11 Branch Protection** verifizieren (2 Minuten, reversibel,
    `betrieb/branch-protection.md`).
 
-**Erst nach dem Merge von #105 und einer Fachentscheidung:** OP-06-Ausführung — die
-mandatsrelative Begründung von 16 der 34 Allowlist-Einträge (§3) muss vorher bewertet
-werden.
+**Vor einer OP-06-Ausführung ist eine Fachentscheidung nötig:** die mandatsrelative
+Begründung von 16 der 34 Allowlist-Einträge (§3) muss bewertet werden — terminale
+Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandanten.
 
 ## 12 · Letzter Sprintausgang
 
 | Sprint | Datum | Zustand |
 |---|---|---|
-| Recovery-Pfad-Review + Zusammenführung PR #105 auf die kanonische Kontextstruktur | 2026-07-25 | **Erfolgreich abgeschlossen** — Review, Fix und Integration fertig; Merge und Deployment stehen aus (Betreiberentscheidung). Details unten. |
+| Merge von PR #105 — Anker-Recovery-Pfad in Production stillgelegt | 2026-07-25 | **Erfolgreich abgeschlossen** — gemergt als `43e9e35`; Stilllegung auf `main` verifiziert. Details unten. |
+| Recovery-Pfad-Review + Zusammenführung von PR #105 auf die kanonische Kontextstruktur | 2026-07-25 | **Erfolgreich abgeschlossen** |
 | Kontextstruktur für Claude Code (`CLAUDE.md` + Einstiegsschicht) | 2026-07-25 | **Erfolgreich abgeschlossen** — reine Dokumentation, gemergt als PR #119 (`c6a3d40`). |
 
-**Sprint „Recovery-Pfad-Review + PR #105" — Nachweis**
+**Sprint „Recovery-Pfad: Review, Stilllegung, Merge" — Nachweis**
 
 - **Was versucht wurde:** prüfen, ob der Understanding-Recovery-Pfad auf `main`
   tatsächlich noch scharf ist, das Production-Risiko bewerten, PR #105 vollständig
@@ -232,14 +229,20 @@ werden.
   lässt den Test korrekt fehlschlagen). Die frühere PR-Empfehlung, beim späteren
   `impl-2`-Merge dessen Fassung zu übernehmen, war gefährlich und wurde
   zurückgezogen. PR #105 wurde auf `main` `c6a3d40` gezogen; seine eigene, vor #119
-  angelegte `CURRENT_STATE.md` ist in **diese** kanonische Datei überführt.
-- **Was nicht erledigt wurde:** kein Merge, kein Deployment, keine Ausführung von
-  OP-06 — alles freigabepflichtig. Die mandatsrelative OP-06-Allowlist wurde bewusst
-  **nicht** fachlich neu bewertet (§3).
+  angelegte `CURRENT_STATE.md` ist in **diese** kanonische Datei überführt. Danach
+  gemergt (siehe unten).
+- **Merge:** PR #105 auf ausdrückliche Betreiberfreigabe als Merge-Commit gemergt
+  (`43e9e35`, 2026-07-25). Vorab verifiziert: `mergeable_state: clean`, CI 3/3 grün,
+  keine neuen `main`-Commits, keine Reviews/Change-Requests, Trockenlauf konfliktfrei.
+  Nach dem Merge auf `main` gegengeprüft: Workflow entfernt, `RECOVERY_ALLOWLIST` `[]`,
+  0 `require` im Execute-Skript.
+- **Was nicht erledigt wurde:** keine Ausführung von OP-06 und keine Recovery — beides
+  freigabepflichtig. Die mandatsrelative OP-06-Allowlist wurde bewusst **nicht**
+  fachlich neu bewertet (§3). Keine Migration, keine Flag-Aktivierung, keine
+  Production-Datenänderung.
 - **Tests:** Offline-Suite **141/141 grün** · `understanding-recovery` 57/57 (davon 2
-  neu) · `pending-terminal` 63/63 · `tenant-neutrality` 39/39 · `ko-recovery` 12/12 ·
-  YAML-Validierung aller Workflows · Negativkontrolle umbenannter Workflow.
-- **Branch:** `claude/datenmotor-pending-understanding-ko-77bog4` · **PR:** #105
-  (offen, mergefähig, CI grün).
-- **Weiterverwendbar:** ja — der PR ist der einzige Ort, an dem die Stilllegung
-  existiert.
+  neu) · `pending-terminal` 63/63 · `tenant-neutrality` 39/39 · `tenant-guard` 37/37 ·
+  `ko-recovery` 12/12 · YAML-Validierung aller Workflows · 55 Doku-Verweise (0 tot) ·
+  Negativkontrolle umbenannter Workflow.
+- **Offener Folgepunkt:** die OP-06-Fachfrage (§3) — nicht blockierend, da OP-06
+  Default AUS ist und ein eigenes Token braucht.
