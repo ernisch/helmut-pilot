@@ -58,7 +58,7 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | Punkt | Ursache | Nächster Schritt |
 |---|---|---|
 | **OP-01** Supabase Pro + PITR | Kostenentscheidung des Betreibers (~25 $/Monat); Free-Plan = **keine Backups** | Betreiber schaltet Pro + PITR frei, dann Restore-Übung nach `betrieb/backup-restore-runbook.md` |
-| **Quellen-Seed-Einspielung** (macht P0-2 und die 6 Bundesweg-Reparaturen in der DB wirksam) | **fehlende Sicherung** — kein Backup, kein PITR (Folge von OP-01). Code ist fertig und deployt, die Vorschau steht | Vorlage `betrieb/quellen-seed-einspielung.md` §7 — entweder manuelles Backup vor dem Lauf oder OP-01 freigeben |
+| **Quellen-Seed-Einspielung** (macht P0-2 und die 6 Bundesweg-Reparaturen in der DB wirksam) | **fehlende Sicherung** — kein Backup, kein PITR (Folge von OP-01). Fachlich ist der Punkt seit 2026-07-25 **abgeschlossen**: Soll-Zahlen gegen Production verifiziert, alle Abweichungen aufgeklärt | Betreiber führt `node scripts/backup-export.js` **lokal** aus (in einer Agenten-Sitzung nicht herstellbar, `betrieb/quellen-seed-einspielung.md` §5), danach Ablauf §8 |
 | **OP-02** Recht (Pilotvertrag, AVV, DSFA, Art.-9-Grundlage, Fristen) | externe Prüfung durch Anwalt/DSB steht aus | Entwürfe aus `recht/` prüfen lassen und zeichnen; blockiert OP-12 |
 | **OP-03** Zweitmandanten-Freigabepaket | Grundsatzentscheidung „DB-seitige Durchsetzung vs. dokumentierte App-Guard-Akzeptanz" fehlt (`mandantentrennung-architektur.md` bewertet die Wege) | Betreiber entscheidet einen Weg; danach Migration + Env + Probelauf |
 | **OP-04** Demo-Mandate entfernen — **Umfang korrigiert 2026-07-25:** Production führt **8 Profile, davon 6 aktiv** (nicht 1 Pilot + 2 Demo-Mandate); fünf davon tragen Klarnamen realer Abgeordneter | Production-Datenänderung, freigabepflichtig; berührt zusätzlich OP-02 (personenbezogene Daten) | je Profil entscheiden, dann über Provisionierungswerkzeug deaktivieren (`quellenarchitektur/30-paket-inventur-production.md` §5, A-1) |
@@ -174,8 +174,10 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 - **Crons:** 9 Vercel-Cron-Einträge (Crawl 04:00/20:00, Understanding 05:30/21:30,
   Morgenbriefing 05:00, Lage-Briefing 05:45, Health-Report 06:00, Lage-Check 10:00,
   Pipeline 16:00 UTC) — siehe `vercel.json`.
-- **Quellen (read-only gemessen 2026-07-25):** 7 Pakete in der DB (die zwei Landes-Partei-Pakete
-  aus #118 existieren bisher nur im Code-Seed) · 163 Abrufwege · 145 modell-aktiv ·
+- **Quellen (read-only gemessen 2026-07-25, per md5-Prüfsumme verifiziert):** 7 Pakete · 163 Abrufwege ·
+  **165 Paketzuordnungen** · 64 Herausgeber · 73 politische Entitäten · 50 Geografien · je 18
+  `path_expected_levels`/`_geographies`. Die zwei Landes-Partei-Pakete aus #118 existieren bisher
+  nur im Code-Seed. Davon 145 modell-aktiv ·
   138 real gecrawlt (6 defekte Wege ohne Abruf, DIP eigener Pfad) · 19 Berlin-/Brandenburg-Wege
   hart gesperrt · 8 Mandatsprofile, davon 6 aktiv, alle Bundestagsebene.
   Details: `quellenarchitektur/30-paket-inventur-production.md`.
@@ -210,11 +212,14 @@ eingespielt werden kann.
 
 OP-01 ist zugleich der Blocker für den nächsten konkret vorbereiteten Schritt: die
 **Quellen-Seed-Einspielung** (Seeds `20260713` + `20260717`) macht die P0-2-Neutralisierung und die
-6 Bundesweg-Reparaturen in der Datenbank wirksam. Sie ist vollständig entscheidungsreif vorbereitet
-— Soll-Zahlen, Idempotenznachweis, Rollback-Bewertung und Go-/Stop-Kriterien stehen in
-[`betrieb/quellen-seed-einspielung.md`](betrieb/quellen-seed-einspielung.md) — aber **blockiert**,
-weil kein Backup und kein PITR existieren. Kleinster Weg ohne Kostenentscheidung: vor dem Lauf
-`node scripts/backup-export.js` (read-only) sichern.
+6 Bundesweg-Reparaturen in der Datenbank wirksam. Sie ist seit 2026-07-25 **fachlich fertig**:
+Soll-Zahlen sind gegen die echte Production-Datenbank verifiziert, alle Abweichungen aufgeklärt,
+Idempotenz, Rollback-Bewertung, Go-/Stop-Kriterien und ein Schritt-für-Schritt-Ablauf mit
+Vorher-/Nachher-Prüfsummen stehen in
+[`betrieb/quellen-seed-einspielung.md`](betrieb/quellen-seed-einspielung.md) §4a und §8.
+**Offen ist nur noch die Sicherung.** Kleinster Weg ohne Kostenentscheidung:
+`node scripts/backup-export.js` (read-only) — **muss der Betreiber lokal ausführen**, weil in einer
+Agenten-Sitzung weder die Zugangsdaten noch ein haltbarer Ablageort existieren (§5).
 
 Die Paket-Inventur belegt den Handlungsbedarf mit Production-Zahlen: die Landes-Basispakete tragen
 in der Datenbank weiterhin Partei-, Fraktions- und Personenquellen (A-3), und 2 der 5
@@ -238,12 +243,49 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 
 | Sprint | Datum | Zustand |
 |---|---|---|
+| Production-Seed-Einspielung (Backup zuerst) | 2026-07-25 | **Blockiert** — Phase 1 (Backup) nicht ausführbar, deshalb **kein** Seed eingespielt und **kein** Production-Write. Preflight, Regression und Doku wurden vollständig erledigt. Details unten. |
 | Phase-1-Block: Quellenpakete inventarisieren + automatische Paketzuweisung beweisen | 2026-07-25 | **Erfolgreich abgeschlossen** — beide Abnahmekriterien erfüllt und belegt; 145/145 Offline-Suiten grün; als PR #124 gemergt (`118e90c`), CI auf `main` grün, Vercel-Production `READY`. Details unten. |
 | Merge PR #118 + Vorbereitung des Quellen-Seed-Sprints | 2026-07-25 | **Teilweise abgeschlossen** — #118 gemergt (`61767a9`), CI grün, Deployment `READY`. Die Seed-Einspielung ist vollständig entscheidungsreif vorbereitet, aber **blockiert** (fehlende Sicherung). Details unten. |
 | Merge #122 + adversarialer Review von PR #118 (Quellenarchitektur-Remediation) | 2026-07-25 | **Erfolgreich abgeschlossen** — #122 gemergt (`54fe370`); #118 reviewt, 3 belegte Defekte behoben. |
 | Merge von PR #105 — Anker-Recovery-Pfad in Production stillgelegt | 2026-07-25 | **Erfolgreich abgeschlossen** — gemergt als `43e9e35`; Stilllegung auf `main` verifiziert. |
 | Recovery-Pfad-Review + Zusammenführung von PR #105 auf die kanonische Kontextstruktur | 2026-07-25 | **Erfolgreich abgeschlossen** |
 | Kontextstruktur für Claude Code (`CLAUDE.md` + Einstiegsschicht) | 2026-07-25 | **Erfolgreich abgeschlossen** — reine Dokumentation, gemergt als PR #119 (`c6a3d40`). |
+
+**Sprint „Production-Seed-Einspielung (Backup zuerst)" — Nachweis**
+
+- **Auftrag:** Backup erstellen, Preflight, dann die beiden Quellen-Seeds in Production einspielen.
+- **Ergebnis: blockiert an Phase 1.** Der dokumentierte Backup-Export
+  (`scripts/backup-export.js`) ist in einer Agenten-Sitzung **nicht ausführbar**: weder
+  `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` noch `SUPABASE_ANON_KEY`, `SUPABASE_ACCESS_TOKEN`,
+  `DATABASE_URL` oder eine `.env.local` existieren. Der einzige DB-Zugang ist der Supabase-MCP-Server,
+  über den ein Vollexport von ~40 MB nicht möglich ist. Unabhängig davon wäre ein Export in einem
+  flüchtigen Remote-Container keine Sicherung (`backups/` ist gitignored und darf nie committet
+  werden). Nach dem verbindlichen Stop-Kriterium des Auftrags wurde **kein Seed eingespielt**.
+- **Kein Production-Write.** Es wurden ausschließlich `select`-Abfragen ausgeführt — kein
+  `insert`/`update`/`delete`, keine Migration, keine Flag-/Cron-/Secret-Änderung, keine
+  Aktivierung von Berlin/Brandenburg.
+- **Trotzdem erledigt — der Preflight ist damit abgeschlossen** (`betrieb/quellen-seed-einspielung.md`
+  §4a): Ausgangswerte gemessen und je Tabelle per **md5-Prüfsumme über die sortierte
+  Schlüsselmenge** verifiziert. Drei Abweichungen zur bisherigen Vorlage gefunden und **vollständig
+  aufgeklärt** — `source_packages` 7 statt 6, `retrieval_paths` 163 statt 162, `package_paths` 165
+  statt 163. Ursachen: die drei zur Laufzeit erzeugten Profil-Resolver-Zeilen
+  (`pkg-profil-cem-ince`, `rp-cem-ince-news`, deren Zuordnung — vom Seed nicht berührt) und die
+  bereits vorhandene Zuordnung `pkg-die-linke-bund → rp-fraction-linke`. **Keine unbekannten Daten.**
+- **Drei belegte Korrekturen an der Freigabevorlage:** (1) die Soll-Zahl „5 neu eingefügte
+  Paketzuordnungen" ist **4** — die fünfte existiert bereits; (2) die Beschreibung der
+  Methodenkorrektur („2× `html` → `rss`") war falsch: **4** Wege werden auf `googlenews_search`
+  umgestellt, zwei davon (`rp-bundesregierung`, `rp-die-linke`) von einem Direkt-RSS-Feed aus;
+  (3) das Restrisiko „`on conflict do update` überschreibt still weitere Abrufwege" ist
+  **ausgeschlossen** — die Prüfsumme über `id|publisher_id|method|priority|status` aller 162
+  Katalogwege stimmt byte-genau mit dem Erwartungswert, wenn die 6 bekannten Reparaturen die
+  einzige Differenz sind; für die übrigen 156 Wege ändert Seed 1 nichts.
+- **Tests:** Offline-Suite **145/145 grün** (51 s) · `paketzuweisung-nachweis` 147/0 ·
+  `landesmodule-kandidaten` 77/0 · `profile-packages` 69/0 · `tenant-neutrality` 39/0 ·
+  `seed-drift` grün (Generatoren byte-identisch). Kein Browser-Smoke nötig (keine UI-Änderung).
+- **Zusätzlich bestätigt:** Supabase-Organisation steht auf Plan `free` → OP-01 (keine Backups,
+  kein PITR) ist unverändert offen.
+- **Nächster Schritt:** Der Betreiber führt `node scripts/backup-export.js` **lokal** aus; danach
+  ist der Ablauf in §8 der Vorlage abarbeitbar, inklusive der Prüfsummen für Vorher/Nachher.
 
 **Sprint „Quellenpakete inventarisieren + Paketzuweisung beweisen" — Nachweis**
 

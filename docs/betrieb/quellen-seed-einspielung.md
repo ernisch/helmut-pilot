@@ -1,10 +1,12 @@
 # Quellen-Seeds einspielen — Freigabevorlage
 
 **Stand:** 2026-07-25 · **Code-Grundlage:** `main` `61767a9` (Merge #118) · **Deployment:** `READY`
+· **Preflight gegen Production verifiziert:** 2026-07-25 (§4a)
 
-> **Status: BLOCKIERT.** Diese Vorlage ist vollständig vorbereitet, aber die Ausführung ist
-> **nicht freigegeben** — es fehlt eine belastbare Sicherung (§5). Nichts hiervon wurde ausgeführt.
-> Die Vorschau in §4 ist rein lokal simuliert, ohne jeden Production-Zugriff.
+> **Status: WEITERHIN BLOCKIERT.** Diese Vorlage ist vollständig vorbereitet, die Soll-Zahlen sind
+> inzwischen **gegen die echte Production-Datenbank verifiziert und korrigiert** (§4a) — die
+> Ausführung bleibt aber **nicht freigegeben**, weil weiterhin eine belastbare Sicherung fehlt (§5).
+> **Es wurde kein einziger Schreibvorgang gegen Production ausgeführt.**
 
 ---
 
@@ -63,9 +65,23 @@ kommen also aus dem Code, nicht aus der DB-Spalte. Die DB-Spalte `url` bliebe ko
    `is_base = false`, also **nicht** verpflichtend und **nie** automatisch aktiv.
 2. Reduziert `required_classes` von `berlin-basis` / `brandenburg-basis` von **15 auf 12**
    (die 3 Partei-/Personen-Pilotklassen wandern in die neuen Pakete) — das ist P0-2 auf Paketebene.
-3. Setzt bei **6 Bundeswegen** `status` von `broken` auf `needs_review` und korrigiert `method`
-   (2× `html` → `rss`): `bundestag`, `bundesregierung`, `die-linke`, `linksfraktion`,
-   `ausschuss-arbeit-soziales`, `dgb`.
+3. Setzt bei **6 Bundeswegen** `status` von `broken` auf `needs_review` und korrigiert bei **4**
+   davon die `method`. Gegen Production verifiziert (§4a), exakte Werte:
+
+   | Abrufweg | `method` vorher → nachher | `status` |
+   |---|---|---|
+   | `rp-bundestag` | `rss` → `rss` (unverändert) | `broken` → `needs_review` |
+   | `rp-linksfraktion` | `rss` → `rss` (unverändert) | `broken` → `needs_review` |
+   | `rp-bundesregierung` | `rss` → **`googlenews_search`** | `broken` → `needs_review` |
+   | `rp-die-linke` | `rss` → **`googlenews_search`** | `broken` → `needs_review` |
+   | `rp-ausschuss-arbeit-soziales` | `html` → **`googlenews_search`** | `broken` → `needs_review` |
+   | `rp-dgb` | `html` → **`googlenews_search`** | `broken` → `needs_review` |
+
+   `publisher_id` und `priority` bleiben bei allen sechs unverändert. **Korrektur gegenüber
+   früheren Fassungen dieser Vorlage:** die Beschreibung „2× `html` → `rss`" war falsch — es
+   werden 4 Wege auf `googlenews_search` umgestellt, zwei davon (`rp-bundesregierung`,
+   `rp-die-linke`) von einem **Direkt-RSS-Feed** aus. Das ist genau die Bewegung, die den
+   Google-News-Anteil von 134 auf 138 Wege hebt (§4).
 4. Ergänzt **1 Paketzuordnung**: `pkg-die-linke-bund` → `rp-fraction-linke` (Folge des P0-1-Fixes;
    das Partei-Paket wurde bisher mit 0 funktionierenden Wegen ausgeliefert).
 
@@ -94,6 +110,10 @@ Paket, das **jedes** Berliner Landtagsprofil verpflichtend erhält. Genau das be
 ---
 
 ## 4 · Soll-Ist-Vorschau (lokal simuliert, ohne Production-Zugriff)
+
+> **Überholt in den absoluten Zahlen.** Der hier angenommene Ausgangszustand stimmt nicht mit
+> Production überein. Verbindlich sind die gemessenen Werte in **§4a**. Die fachliche Bewertung
+> (Punkte 11–14) bleibt gültig und ist durch §4a bestätigt.
 
 **Methode:** Der erwartete Production-Ausgangszustand ist der Inhalt der **vor** #118 committeten
 Seeds — beide sind laut `quellenarchitektur/18-production-freigabeanfrage.md` bereits angewendet.
@@ -166,6 +186,88 @@ es wird keine Zeile entfernt; die einzigen Änderungen an bestehenden Wegen sind
 
 ---
 
+## 4a · Verifizierter Production-Preflight (2026-07-25, ausschließlich lesend)
+
+**Methode:** rein lesende `select`-Abfragen gegen das Production-Projekt (Supabase MCP,
+`ddckuvvpcytqbyfmbvie`). **Kein `insert`, kein `update`, kein `delete`, keine Migration.** Der
+Abgleich erfolgte nicht über Zählungen allein, sondern über **md5-Prüfsummen der vollständigen,
+sortierten Schlüsselmengen** je Tabelle — eine gleiche Zeilenzahl bei vertauschtem Inhalt kann
+damit nicht durchrutschen.
+
+### Ausgangswerte (Ist) gegen die Annahme aus §4
+
+| Tabelle | Annahme §4 | **Production Ist** | Bewertung |
+|---|---|---|---|
+| `geographies` | 50 | **50** | ✅ identisch (md5 gleich) |
+| `political_entities` | 73 | **73** | ✅ identisch (md5 gleich) |
+| `publishers` | 64 | **64** | ✅ identisch (md5 gleich) |
+| `source_packages` | 6 | **7** | ⚠️ Abweichung |
+| `retrieval_paths` | 162 | **163** | ⚠️ Abweichung |
+| `package_paths` | 163 | **165** | ⚠️ Abweichung |
+| `path_expected_levels` | 18 | **18** | ✅ |
+| `path_expected_geographies` | 18 | **18** | ✅ |
+
+### Die drei Abweichungen sind vollständig aufgeklärt — keine unbekannten Daten
+
+Die Prüfsummen gehen exakt auf, sobald man genau drei Ursachen einrechnet:
+
+1. **Profil-Resolver-Zeilen zur Laufzeit (2 + 1):** Production führt zusätzlich das Paket
+   `pkg-profil-cem-ince`, den Abrufweg `rp-cem-ince-news` und deren Zuordnung. Diese Zeilen
+   entstehen aus dem Profil (`scheduler.personNewsSource`) und stehen **bewusst nicht** im Seed.
+   **Beide Seeds fassen sie nicht an** — verifiziert: keine der Seed-Anweisungen nennt diese IDs,
+   und das Aufräum-`delete` in Seed 2 ist auf 18 fest benannte `rp-be-`/`rp-bb-`-Wege begrenzt.
+2. **`pkg-die-linke-bund → rp-fraction-linke` existiert bereits** in Production. Die in §4 als
+   „+1 Paketzuordnung" geführte Einfügung aus Seed 1 ist damit ein **No-Op**.
+3. Der Rest der Mengen ist deckungsgleich mit dem Code-Seed.
+
+### Korrigierte Soll-Zahlen (verbindlich für die Ausführung)
+
+| Tabelle | vorher | nach Seed 1 | nach Seed 2 |
+|---|---|---|---|
+| `geographies` | 50 | 50 | 50 |
+| `political_entities` | 73 | 73 | 73 |
+| `publishers` | 64 | 64 | 64 |
+| `source_packages` | 7 | **9** (+2) | 9 |
+| `retrieval_paths` | 163 | 163 (6 aktualisiert) | 163 |
+| `package_paths` | 165 | 165 (**±0**, s. Punkt 2) | 165 (−4 / +4) |
+| `path_expected_levels` | 18 | 18 | 18 |
+| `path_expected_geographies` | 18 | 18 | 18 |
+
+| Nr. | Kennzahl | §4 sagte | **verifiziertes Soll** |
+|---|---|---|---|
+| 4 | betroffene Publisher | 0 | **0** ✅ bestätigt |
+| 5 | betroffene Retrieval Paths | 6 | **6** ✅ exakt bestätigt (s. u.) |
+| 6 | betroffene Source Packages | 4 | **4** ✅ (2 neu + 2 mit `required_classes` 15 → 12) |
+| 7 | entfernte Paketzuordnungen | 4 | **4** ✅ bestätigt |
+| 8 | neu eingefügte Paketzuordnungen | 5 | **4** ❗ korrigiert (die 5. existiert bereits) |
+
+### Kein verstecktes Überschreiben durch `on conflict do update`
+
+Der größte ungeprüfte Rest war, ob Seed 1 über `on conflict (id) do update set publisher_id,
+method, status, priority` **mehr** als die 6 gemeldeten Abrufwege verändert — etwa weil der
+Quality-Watchdog zur Laufzeit Status gesetzt hat. **Gegenprobe: nein.**
+
+Die md5-Prüfsumme über alle 162 Katalogwege in der Form
+`id|publisher_id|method|priority|status` (ohne den profilgenerierten `rp-cem-ince-news`) stimmt
+**byte-genau** mit dem lokal aus den Seeds berechneten Erwartungswert überein, wenn man exakt die
+6 bekannten Reparaturen als einzige Differenz ansetzt
+(`b96271cd6c0b9178be4d0d6883c131d3`). Für die übrigen **156 Abrufwege ändert Seed 1 in diesen
+vier Spalten nachweislich nichts.**
+
+### Bestätigte Ausgangslage der 4 Landeswege
+
+`rp-be-partei_pilot`, `rp-be-fraktion_pilot`, `rp-be-person_pilot` hängen in Production heute an
+`pkg-berlin-basis`, `rp-bb-partei_pilot` an `pkg-brandenburg-basis` — also genau der in §3
+beschriebene, durch P0-2 zu behebende Zustand. `pkg-berlin-basis` und `pkg-brandenburg-basis`
+führen heute **15** `required_classes`. Die beiden `rp-rbb24-politik`-Zuordnungen stehen
+ausdrücklich in der Ausnahmeliste des Aufräum-`delete` und werden **nicht** gelöscht.
+
+### Was der Preflight **nicht** ersetzt
+
+Er ersetzt **keine Sicherung**. Er zeigt nur, dass der Ausgangszustand vollständig verstanden ist.
+
+---
+
 ## 5 · Backup und Rollback — hier liegt der Blocker
 
 | Frage | Antwort |
@@ -190,6 +292,28 @@ Zuordnung der 4 Wege zu den Pflicht-Basispaketen müsste manuell aus dem Alt-See
 einem Rollback als leere `prepared`-Pakete stehen. **Nur kosmetisch:** `prepared` wird nie aktiv,
 0 zugeordnete Wege, keine Fremdschlüsselverletzung, keine Auswirkung auf den Crawl-Plan.
 
+### Backup-Versuch 2026-07-25 — **fehlgeschlagen, Ursache dokumentiert**
+
+Vor der Einspielung wurde der dokumentierte Backup-Weg (`backup-restore-runbook.md` §1) geprüft
+und **konnte nicht ausgeführt werden**. Zwei unabhängige Gründe:
+
+1. **Keine Zugangsdaten.** `scripts/backup-export.js` verlangt `SUPABASE_URL` +
+   `SUPABASE_SERVICE_ROLE_KEY`. Beide sind in einer Claude-Code-Sitzung **nicht gesetzt**
+   (geprüft: auch `SUPABASE_ANON_KEY`, `SUPABASE_ACCESS_TOKEN`, `DATABASE_URL` fehlen; es gibt
+   keine `.env.local`). Der einzige verfügbare DB-Zugang ist der Supabase-MCP-Server, der
+   SQL-Ergebnisse in den Modellkontext zurückgibt — bei ~40 MB Nutzdaten (u. a.
+   `gate_shadow_events` 11 MB, `raw_documents` 11 MB, `helmut_store` 7,9 MB) ist ein Vollexport
+   über diesen Weg technisch nicht möglich.
+2. **Kein haltbarer Ablageort.** Selbst mit Zugangsdaten wäre der Export in einer
+   Remote-Sitzung wertlos: der Container ist flüchtig, und `backups/` ist gitignored und darf
+   **nie** committet werden (Art.-9-relevante Daten, Runbook §1b). Ein Backup, das mit der
+   Sitzung verschwindet, ist keine Sicherung.
+
+**Konsequenz:** Das Backup muss der **Betreiber lokal** ausführen — mit der `.env.local` und
+Ablage auf einem verschlüsselten Gerät. Erst danach ist Go-Kriterium 2 erfüllt. Zusätzlich
+bestätigt (Supabase-Organisation, gelesen 2026-07-25): Plan = **`free`**, also weiterhin **keine
+automatischen Backups und kein PITR** — OP-01 ist unverändert offen.
+
 **Teilerfolg zwischen Seed 1 und Seed 2:** unkritisch. Beide Seeds sind je für sich transaktional.
 Läuft nur Seed 1, entstehen die 2 neuen Pakete leer und die 4 Landeswege bleiben an den
 Pflichtpaketen — also exakt der heutige Zustand plus zwei ungenutzte Pakete. Kein inkonsistenter
@@ -211,9 +335,9 @@ nach dieser Prüfung gefahrlos.
 | # | Kriterium | Stand |
 |---|---|---|
 | 1 | PR #118 gemergt und deployt | ✅ `61767a9`, CI grün, Vercel `READY` |
-| 2 | Backup oder PITR bestätigt | ❌ **offen** — siehe §5 |
-| 3 | Vorschau ohne unerwarteten Diff | ✅ §4 |
-| 4 | Exakte Soll-Zahlen dokumentiert | ✅ §4 |
+| 2 | Backup oder PITR bestätigt | ❌ **offen und in der Agenten-Sitzung nicht herstellbar** — §5, „Backup-Versuch 2026-07-25" |
+| 3 | Vorschau ohne unerwarteten Diff | ✅ **gegen Production verifiziert** — §4a, alle Abweichungen aufgeklärt, keine unbekannten Zeilen |
+| 4 | Exakte Soll-Zahlen dokumentiert | ✅ §4a (korrigiert gegenüber §4) |
 | 5 | Rollback geprüft | ⚠️ **teilweise** — fein nur für Seed 2 |
 | 6 | Keine laufende Migration / kritische Verarbeitung | ⚠️ vor Ausführung prüfen (Crawl-Cron 04:00/20:00 UTC, Understanding 05:30/21:30) |
 | 7 | Kein Konflikt mit neuen `main`-Änderungen | ✅ zum Zeitpunkt dieser Vorlage |
@@ -236,11 +360,14 @@ Production-Health verschlechtert sich · Rollback nicht eindeutig möglich.
 
 ### Option A — jetzt kontrolliert ausführen
 
-**Wird nicht empfohlen.** Go-Kriterium 2 (Backup/PITR) und 8 (Freigabe) sind nicht erfüllt.
+**Wird nicht empfohlen.** Go-Kriterium 2 (Backup/PITR) ist nicht erfüllt.
 
-### Option B — Ausführung blockieren ← **empfohlen**
+### Option B — Ausführung blockieren ← **empfohlen, Stand 2026-07-25 weiterhin gültig**
 
-**Es fehlt genau eine belastbare Sicherung.** Zwei Wege, sie herzustellen:
+**Es fehlt nur noch genau eine belastbare Sicherung.** Der fachliche Teil ist inzwischen
+abgeschlossen: die Soll-Zahlen sind gegen Production gemessen, alle Abweichungen aufgeklärt und
+das versteckte Überschreiben durch `on conflict do update` ist ausgeschlossen (§4a). Zwei Wege,
+die Sicherung herzustellen:
 
 1. **Klein und sofort, ohne Kostenentscheidung:** vor der Ausführung
    `node scripts/backup-export.js` laufen lassen (read-only) und den Export sichern. Für diese
@@ -254,3 +381,47 @@ Production-Health verschlechtert sich · Rollback nicht eindeutig möglich.
 
 Zusätzlich vor einer Freigabe zu bestätigen: dass die **absichtliche Reaktivierung der 6
 Bundeswege** (§4 Punkt 11) gewollt ist.
+
+---
+
+## 8 · Ausführungsablauf, sobald das Backup vorliegt
+
+Nur ausführen, wenn Go-Kriterium 2 **und** 8 erfüllt sind. Fenster außerhalb der Crons wählen
+(Crawl 04:00/20:00 UTC, Understanding 05:30/21:30 UTC).
+
+1. **Backup lokal** erzeugen und ablegen:
+   `SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… node scripts/backup-export.js`
+   Prüfen: `manifest.json` vorhanden, Zeilenzahlen plausibel, Löschtermin im Betriebs-Log
+   notieren (Runbook §1b).
+2. **Ist-Stand festhalten** (die Prüfsummen aus §4a erneut ziehen — sie müssen unverändert sein;
+   andernfalls **abbrechen**, weil sich Production seit diesem Preflight verändert hat):
+
+   ```sql
+   select
+     md5((select string_agg(id,'|' order by id collate "C") from source_packages))  as source_packages,
+     md5((select string_agg(id,'|' order by id collate "C") from retrieval_paths))  as retrieval_paths,
+     md5((select string_agg(k,'|'  order by k  collate "C")
+          from (select package_id||'>'||retrieval_path_id as k from package_paths) x)) as package_paths;
+   ```
+
+   Soll (gemessen 2026-07-25): `source_packages = 4aa7d38d3f8fff9584d4373e8bfdfe72` ·
+   `retrieval_paths = 4c5bbe3f8d5f95b57ac6ac4a25b345e6` ·
+   `package_paths = c792989853c8e44fbfbf3147033b1491`.
+3. **Seed 1** ausführen (`20260713_source_architecture_seed.sql`), danach prüfen:
+   `select count(*) from source_packages` → **9** ·
+   `select count(*) from package_paths` → **165** (unverändert) ·
+   `select id, status, method from retrieval_paths where status = 'needs_review' and id in (…)`
+   → die 6 Wege aus §3.
+4. **Seed 2** ausführen (`20260717_landesmodul_be_bb_seed.sql`), danach prüfen:
+   `select package_id from package_paths where retrieval_path_id = 'rp-be-partei_pilot'`
+   → **`pkg-die-linke-berlin`** · `select count(*) from package_paths` → **165**.
+5. **Abschlussprüfsummen** — nach beiden Seeds müssen gelten:
+   `source_packages = 86834ef85257ad1affdd52829c73c9e1` ·
+   `package_paths = 1d5364f91d5be34c4bc3231e1e80c5d2` ·
+   `retrieval_paths` (IDs) unverändert `4c5bbe3f8d5f95b57ac6ac4a25b345e6`.
+   Jede Abweichung ist ein **Stop** nach §6.
+6. **Neutralität gegenprüfen:** `select required_classes from source_packages where id in
+   ('pkg-berlin-basis','pkg-brandenburg-basis')` → je **12** Klassen, keine `*_pilot`-Klasse.
+   Beide neuen Pakete `status = 'prepared'`, `is_base = false`.
+7. Ergebnis in `CURRENT_STATE.md` §9 und in
+   `quellenarchitektur/30-paket-inventur-production.md` nachziehen.
