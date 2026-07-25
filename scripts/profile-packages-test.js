@@ -49,6 +49,29 @@ check("Region Niedersachsen -> regional-niedersachsen", rc.optional.includes("re
 check("Fachthema (Rente) allein -> arbeit-und-soziales", pp.resolveProfilePackages({ fullName: "x", party: "SPD", politische_ebene: "bundestag", fachpolitische_schwerpunkte: ["Rente"], profileActive: true }).optional.includes("arbeit-und-soziales"));
 check("Nicht-Sozial-Ausschuss -> KEIN Sozialpaket", !pp.resolveProfilePackages(bundestag).optional.includes("arbeit-und-soziales"));
 
+// ====================== P0-2: LANDES-PARTEI-PAKET (Architektur-Audit 29) ======================
+// Nachweis, dass die Neutralisierung der Landes-Basispakete (Partei-/Personenquellen raus)
+// ein echtes Linke-Mandat in Berlin/Brandenburg NICHT unversorgt zurueckliess: es erhaelt sein
+// Partei-Paket weiterhin automatisch — nur eben ueber ein eigenes optionales Paket statt ueber
+// das Pflicht-Basispaket. Klar kuenstliche Fixtures, kein realer Mandant.
+console.log("== 3b) Landes-Partei-Paket: Linke-Mandat in Berlin/Brandenburg bleibt versorgt (P0-2) ==");
+const berlinLinke = { id: "berlinLinke", fullName: "Berlin Linke MdA", party: "Die Linke", politische_ebene: "landtag", bundesland: "Berlin", profileActive: true };
+const brandenburgLinke = { id: "bbLinke", fullName: "BB Linke MdL", party: "Die Linke", politische_ebene: "landtag", bundesland: "Brandenburg", profileActive: true };
+check("Berlin + Die Linke -> optional enthaelt die-linke-berlin", pp.resolveProfilePackages(berlinLinke).optional.includes("die-linke-berlin"));
+check("Brandenburg + Die Linke -> optional enthaelt die-linke-brandenburg", pp.resolveProfilePackages(brandenburgLinke).optional.includes("die-linke-brandenburg"));
+check("Berlin + SPD (nicht Linke) -> KEIN die-linke-berlin", !pp.resolveProfilePackages(berlin).optional.includes("die-linke-berlin"));
+check("Brandenburg + CDU (nicht Linke) -> KEIN die-linke-brandenburg", !pp.resolveProfilePackages(brandenburg).optional.includes("die-linke-brandenburg"));
+check("Bundestagsprofil (kein Landtag) loest NIEMALS ein Landes-Partei-Paket aus, auch bei Die Linke", !pp.resolveProfilePackages(vollprofil).optional.some((k) => /^die-linke-(berlin|brandenburg)$/.test(k)));
+// Bindend statt vakuos: 'required' kann strukturell nie einen Parteischluessel enthalten, ein
+// blosses "nicht enthalten" konnte also nie fehlschlagen. Geprueft wird jetzt die exakte
+// Pflichtmenge — sie faellt rot, wenn ein Parteipaket in die Pflicht rutscht ODER das neutrale
+// Basispaket verlorengeht. Ausserdem: das Parteipaket ist trotzdem zugeteilt (ueber 'all').
+check("Berlin-Linke-Landtagsprofil: Pflichtmenge ist exakt bund-basis + berlin-basis (neutral)", (() => {
+  const r = pp.resolveProfilePackages(berlinLinke);
+  return JSON.stringify(r.required.slice().sort()) === JSON.stringify(["berlin-basis", "bund-basis"]);
+})());
+check("Berlin-Linke-Landtagsprofil: Parteipaket ist trotz Neutralisierung zugeteilt (in 'all')", pp.resolveProfilePackages(berlinLinke).all.includes("die-linke-berlin"));
+
 // ============================ PFLICHTFALL 4 ============================
 console.log("== 4) 100 Profile mit demselben Paket -> nur EINE technische Aktivierung ==");
 const one = pp.computeGlobalActivation({ ...base, profiles: [vollprofil] });

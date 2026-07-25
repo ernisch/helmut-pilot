@@ -198,7 +198,8 @@ check("Ehrlichkeit: leere Eingaben -> availability-Flags alle false", emptyRepor
 check("Ehrlichkeit: leere Dokumentdaten -> contentYield.available=false", emptyReport.pathQuality[0].contentYield.available === false);
 check("Ehrlichkeit: ohne Signale -> Frische-Achsen 'unbekannt' (nicht 'frisch')", emptyReport.watchdog.axes.find((a) => a.key === "crawl").status === "unbekannt");
 check("echter Katalog: jeder Abrufweg bekommt eine Bewertung (keine Luecke)", report.pathQuality.length === M.retrievalPaths.length);
-check("echter Katalog: defekte Pflichtquellen (bundestag/bundesregierung) als defekt erkannt", report.pathQuality.some((p) => p.legacy_source_id === "bundestag" && p.technicalHealth === "defekt"));
+check("P1-5: reparierte Pflichtquellen (bundestag/bundesregierung) nicht mehr defekt, sondern 'pruefen' (needs_review, noch keine Dokumente in diesem Fixture)", report.pathQuality.some((p) => p.legacy_source_id === "bundestag" && p.technicalHealth === "pruefen") && report.pathQuality.some((p) => p.legacy_source_id === "bundesregierung" && p.technicalHealth === "pruefen"));
+check("P1-5: keine Pflichtquelle mehr technicalHealth='defekt' (alle 6 vormals broken markierten Wege repariert)", !report.pathQuality.some((p) => p.technicalHealth === "defekt"));
 
 console.log(`\n== Ergebnis: ${pass} PASS, ${fail} FAIL ==`);
 process.exit(fail > 0 ? 1 : 0);

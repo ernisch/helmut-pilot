@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-25 · **`main`-HEAD:** `43e9e35` (Merge #105)
+**Letzte Aktualisierung:** 2026-07-25 · **`main`-HEAD:** `54fe370` (Merge #122)
 
 > **Diese Datei ist der aktuelle Stand.** Bei Widerspruch zu älteren Statusdokumenten
 > gilt diese Datei. Sie enthält **keine Chronik** — Details je offenem Punkt stehen in
@@ -154,7 +154,7 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 
 | PR | Inhalt | Einschätzung |
 |---|---|---|
-| **#118** | Quellenarchitektur-Gesamtaudit + Remediation (Seed-Reproduzierbarkeit, Neutralisierung der Landes-Basispakete, 6 verifizierte Bundesweg-Reparaturen), 141/141 grün | **jüngster review-fähiger PR** — Review empfohlen |
+| **#118** | Quellenarchitektur-Gesamtaudit + Remediation (Seed-Reproduzierbarkeit P0-1, Neutralisierung der Landes-Basispakete P0-2, 6 verifizierte Bundesweg-Reparaturen P1-5) | **reviewt, nachgebessert, mergefähig** — adversarial geprüft, 3 belegte Defekte behoben, auf `main` `54fe370` gezogen, Offline-Suite 144/144. **Merge empfohlen** (Option B abgeschlossen) |
 | #117 | WBSB-Pilotpaket + Workflow-Härtung vereinigt | **Draft, ausdrücklich nicht mergen** (öffnet nur die CI-Prüfung) |
 | #115 | Bestandsabgleich `bund-basis` + Pflichtquellen-Verifikationstest | **Draft, ausdrücklich nicht mergen** (nur um den Workflow auf einem Runner mit Egress laufen zu lassen) |
 | #112 | Geführter Erstlogin-/Onboarding-Flow (14 Screens) | manuelle Abnahme im Preview ausstehend |
@@ -198,9 +198,15 @@ Einzelrisiko und ist Voraussetzung dafür, dass die Migration aus OP-03 gefahrlo
 eingespielt werden kann.
 
 Parallel möglich, ohne Freigabe:
-1. **Review und Merge-Entscheidung zu PR #118** (Quellenarchitektur-Remediation).
+1. **PR #118 mergen** — reviewt, nachgebessert, mergefähig (siehe §12). Der Merge ändert das
+   Crawl-Verhalten **nicht**: die reparierten Wege bleiben in der DB `broken` und damit
+   ausgeschlossen, bis der Seed separat und freigabepflichtig eingespielt wird.
 2. **OP-11 Branch Protection** verifizieren (2 Minuten, reversibel,
    `betrieb/branch-protection.md`).
+
+**Erst nach dem Merge von #118 und als eigene Freigabe:** Einspielen der beiden Seeds
+(20260713 + 20260717). Das ist der Schritt, der die P1-5-Reparaturen und die P0-2-Neutralisierung
+in der Datenbank tatsächlich wirksam macht — **Production-Datenänderung, freigabepflichtig**.
 
 **Vor einer OP-06-Ausführung ist eine Fachentscheidung nötig:** die mandatsrelative
 Begründung von 16 der 34 Allowlist-Einträge (§3) muss bewertet werden — terminale
@@ -210,9 +216,50 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 
 | Sprint | Datum | Zustand |
 |---|---|---|
-| Merge von PR #105 — Anker-Recovery-Pfad in Production stillgelegt | 2026-07-25 | **Erfolgreich abgeschlossen** — gemergt als `43e9e35`; Stilllegung auf `main` verifiziert. Details unten. |
+| Merge #122 + adversarialer Review von PR #118 (Quellenarchitektur-Remediation) | 2026-07-25 | **Erfolgreich abgeschlossen** — #122 gemergt (`54fe370`); #118 reviewt, 3 belegte Defekte behoben, mergefähig. Details unten. |
+| Merge von PR #105 — Anker-Recovery-Pfad in Production stillgelegt | 2026-07-25 | **Erfolgreich abgeschlossen** — gemergt als `43e9e35`; Stilllegung auf `main` verifiziert. |
 | Recovery-Pfad-Review + Zusammenführung von PR #105 auf die kanonische Kontextstruktur | 2026-07-25 | **Erfolgreich abgeschlossen** |
 | Kontextstruktur für Claude Code (`CLAUDE.md` + Einstiegsschicht) | 2026-07-25 | **Erfolgreich abgeschlossen** — reine Dokumentation, gemergt als PR #119 (`c6a3d40`). |
+
+**Sprint „Merge #122 + Review PR #118" — Nachweis**
+
+- **PR #122 gemergt** (`54fe370`, Merge-Commit). Vorab verifiziert: `clean`, CI 3/3 grün, keine
+  neuen `main`-Commits, keine Reviews, Trockenlauf konfliktfrei, Diff = nur die angekündigte
+  Doku-Korrektur. Danach auf `main` gegengeprüft: Banner und Tabelle nennen beide `d6d9063`/#113
+  als Re-Anker, der Altwert `035898b`/#114 kommt im Dokument nicht mehr vor.
+- **PR #118 adversarial reviewt** (5 spezialisierte Prüfer, jeder Befund gegen den echten Code
+  verifiziert). **Weiterhin nötig:** P0-1 ist auf `main` nachweislich offen — die committeten
+  Seeds reproduzieren dort nicht aus dem Code (empirisch: realer Diff). Nicht überholt.
+- **Verifizierte Risiken — entwarnt:**
+  - *Kein* BE/BB-Aktivierungsleck: das harte Gate greift über die Pfad-IDs (`rp-be-`/`rp-bb-`),
+    nicht über Paketschlüssel. Ausführung von `buildRelationalCrawlPlan` mit einem Berlin-/
+    Linke-Landtagsprofil: alle 18 BE/BB-Wege `landesmodul-gesperrt`, `plan.aktiv = []`.
+    Zweite Barriere: beide neuen Pakete sind `prepared` → nie `active`.
+  - *Keine* neue Crawl-Amplifikation: die 4 neuen Google-News-Wege sind mandantenunabhängig und
+    werden von der Shared-Path-Dedup aus PR #120 abgedeckt (Mandant 2+ → `skipped-shared`).
+  - *Kein* Konflikt mit #105/#120/#121/#122; Merge konfliktfrei; Provenienz (`site:`-Filter hält
+    die Herausgeber-Domain) intakt; keine festen Personen-IDs; Paketzuweisung datengetrieben.
+  - `sources.js` ist trotz `SOURCE_MODE=on` produktionswirksam (`toCrawlerSource` gibt das
+    Legacy-Objekt zurück). Die 6 reparierten Wege tragen in der DB aber weiterhin `status='broken'`
+    und bleiben damit ausgeschlossen — die Reparatur wird erst mit dem **freigabepflichtigen**
+    Seed-Einspielen wirksam. Der Merge allein ändert das Crawl-Verhalten nicht.
+- **Behobene Defekte (in #118 nachgebessert):** (1) P0-2 war in der **Datenbank** wirkungslos —
+  der Seed verschob die Partei-/Personenwege per `insert … on conflict do nothing` ohne Delete,
+  die alten Zuordnungen am Pflicht-Basispaket wären geblieben (Seed 20260717 ist laut
+  `quellenarchitektur/18-production-freigabeanfrage.md` in Production angewendet); (2) die einzige
+  Google-News-URL ohne Editions-/Sprachpinning; (3) zwei Testlücken, beide per Mutationstest
+  belegt (Sortierung nach Schwere nirgends mehr abgedeckt; zwei nie fehlschlagende Zusicherungen).
+- **Tests:** Offline-Suite **144/144 grün** · source-architecture 97/0 · admin-source-report 56/0 ·
+  profile-packages 69/0 · landesmodule-kandidaten 77/0 · quality-watchdog 66/0 ·
+  tenant-neutrality 39/0 · seed-drift grün (adversarial: Manipulation auf Code- **und** Seed-Seite
+  wird gefangen) · Generatoren byte-identisch · Mutationsproben rot wie erwartet.
+- **Offene Entscheidungen (bewusst nicht geändert):** `required_classes` von
+  `die-linke-brandenburg` (3 Pflichtklassen, nur `partei_pilot` belegt) ist eine **fachliche**
+  Paketfrage; Rollback lässt zwei leere `prepared`-Pakete stehen (kosmetisch); die
+  **Google-News-Konzentration** steigt von 134 auf 138 von 143 Wegen — bei offenem Circuit Breaker
+  liefern nur noch 5 statt 9 Direktfeeds. Das ist kein Defekt dieses PRs, aber der wichtigste
+  verbleibende Architekturpunkt (SPOF, im Audit als eigener P1 geführt).
+- **Merge-Empfehlung:** **ja** (Option B abgeschlossen). Merge und Deployment bleiben beim Betreiber.
 
 **Sprint „Recovery-Pfad: Review, Stilllegung, Merge" — Nachweis**
 
