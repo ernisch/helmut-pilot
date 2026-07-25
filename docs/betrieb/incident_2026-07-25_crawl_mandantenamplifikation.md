@@ -422,3 +422,18 @@ Budget-Erhöhung, Flag-Umschaltung.
 | Lage-Läufe 10:0x | 1× 89 ok / 0 Fehler, 5× 3 ok / 87 Fehler (§2.5) |
 | `systemErrors` (`main-auth`) | **65**, jüngster Eintrag **2026-07-20** — insbesondere **kein** `zeitbudget`-Fehler, obwohl seit dem 21.07. täglich 4 Mandate übersprungen wurden (RC-4 war stumm) |
 | Neue Rohdokumente je Tag | 25.07. (Teiltag) 97 · 24.07. 283 · 23.07. 296 · 22.07. 315 · 21.07. 302 |
+| Abrechenbare LLM-Calls je Tag (`llmUsage`, Limit 100 + 30 Reserve, fail-closed) | 25.07. (Teiltag) 26 · 24.07. 52 · 23.07. 43 · 22.07. 45 · 21.07. 50 |
+
+### 11.5 · Ausdrücklicher Kostenwächter (Stopp-Kriterium in jeder Stufe)
+
+Der Fix hat einen **erwarteten Nebeneffekt auf die Kosten**: RC-4 hat vier aktive Mandate
+täglich stillschweigend übersprungen. Passen ab jetzt alle sechs ins Zeitbudget, durchlaufen
+vier Mandate **erstmals** den Eager-Understanding-Pfad. Das Tageslimit ist **100 Calls +
+30 Reserve, fail-closed** — die Basis liegt bei 43–52 Calls/Tag.
+
+**Erwartung:** kein nennenswerter Anstieg, weil der Rohdokumentenbestand **global** ist —
+Mandat 1 hat die Cluster bereits verstanden, die Folgemandate finden nichts Neues.
+
+**Stopp, wenn:** die abrechenbaren Calls eines Tages **> 85** erreichen oder ein
+`daily-llm-budget-reached`-Skip auftritt. Dann ist der Beweislauf anzuhalten und die
+Betreiberentscheidung über das Tageslimit einzuholen — nicht eigenmächtig zu erhöhen.
