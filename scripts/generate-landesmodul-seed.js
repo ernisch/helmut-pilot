@@ -69,7 +69,18 @@ function build() {
     "id"));
   out.push("");
 
-  out.push("-- 4) Paket <-> Abrufweg (nur berlin-basis / brandenburg-basis)");
+  out.push("-- 4) Paket <-> Abrufweg (Landespakete berlin-basis/brandenburg-basis + Partei-Pakete die-linke-berlin/die-linke-brandenburg)");
+  // P0-2-Nachzug: Dieser Seed ist bereits in Production angewendet (18-production-freigabeanfrage.md).
+  // Die Partei-/Fraktions-/Personenwege lagen dort urspruenglich am PFLICHT-Basispaket
+  // (pkg-berlin-basis / pkg-brandenburg-basis). Ein reines "insert ... on conflict do nothing"
+  // VERSCHIEBT nichts — die alten Zeilen wuerden bestehen bleiben und die Neutralisierung des
+  // is_base-Pakets waere in der Datenbank wirkungslos. Darum vorher gezielt aufraeumen:
+  // fuer die Wege DIESES Seeds ist der Seed die alleinige Wahrheit der Paketzuordnung; jede
+  // NICHT hier vorgesehene Zuordnung wird entfernt. Idempotent (Zweitlauf loescht 0 Zeilen),
+  // eng begrenzt auf BE/BB-Wege, ruehrt keine Bundeswege und keine anderen Pakete an.
+  const pkgPathIds = [...new Set(seed.packagePaths.map((pp) => pp.retrieval_path_id))].map(q).join(", ");
+  const gewollt = seed.packagePaths.map((pp) => `(${q(pp.package_id)}, ${q(pp.retrieval_path_id)})`).join(",\n    ");
+  out.push(`delete from public.package_paths\n where retrieval_path_id in (${pkgPathIds})\n   and (package_id, retrieval_path_id) not in (\n    ${gewollt}\n   );\n`);
   out.push(insert("package_paths", ["package_id", "retrieval_path_id"],
     seed.packagePaths.map((pp) => [q(pp.package_id), q(pp.retrieval_path_id)]),
     "package_id, retrieval_path_id"));

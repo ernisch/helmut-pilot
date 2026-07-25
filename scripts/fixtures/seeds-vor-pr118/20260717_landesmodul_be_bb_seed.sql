@@ -55,31 +55,7 @@ insert into public.retrieval_paths (id, publisher_id, legacy_source_id, name, me
 on conflict (id) do nothing;
 
 
--- 4) Paket <-> Abrufweg (Landespakete berlin-basis/brandenburg-basis + Partei-Pakete die-linke-berlin/die-linke-brandenburg)
-delete from public.package_paths
- where retrieval_path_id in ('rp-be-landesparlament', 'rp-be-plenum', 'rp-be-landesregierung', 'rp-be-staatskanzlei', 'rp-be-landesfraktionen', 'rp-be-regionale_leitmedien', 'rp-rbb24-politik', 'rp-be-partei_pilot', 'rp-be-fraktion_pilot', 'rp-be-person_pilot', 'rp-bb-landesparlament', 'rp-bb-plenum', 'rp-bb-ausschuesse', 'rp-bb-landesregierung', 'rp-bb-ministerien', 'rp-bb-landesfraktionen', 'rp-bb-regionale_leitmedien', 'rp-bb-partei_pilot')
-   and (package_id, retrieval_path_id) not in (
-    ('pkg-berlin-basis', 'rp-be-landesparlament'),
-    ('pkg-berlin-basis', 'rp-be-plenum'),
-    ('pkg-berlin-basis', 'rp-be-landesregierung'),
-    ('pkg-berlin-basis', 'rp-be-staatskanzlei'),
-    ('pkg-berlin-basis', 'rp-be-landesfraktionen'),
-    ('pkg-berlin-basis', 'rp-be-regionale_leitmedien'),
-    ('pkg-berlin-basis', 'rp-rbb24-politik'),
-    ('pkg-die-linke-berlin', 'rp-be-partei_pilot'),
-    ('pkg-die-linke-berlin', 'rp-be-fraktion_pilot'),
-    ('pkg-die-linke-berlin', 'rp-be-person_pilot'),
-    ('pkg-brandenburg-basis', 'rp-bb-landesparlament'),
-    ('pkg-brandenburg-basis', 'rp-bb-plenum'),
-    ('pkg-brandenburg-basis', 'rp-bb-ausschuesse'),
-    ('pkg-brandenburg-basis', 'rp-bb-landesregierung'),
-    ('pkg-brandenburg-basis', 'rp-bb-ministerien'),
-    ('pkg-brandenburg-basis', 'rp-bb-landesfraktionen'),
-    ('pkg-brandenburg-basis', 'rp-bb-regionale_leitmedien'),
-    ('pkg-brandenburg-basis', 'rp-rbb24-politik'),
-    ('pkg-die-linke-brandenburg', 'rp-bb-partei_pilot')
-   );
-
+-- 4) Paket <-> Abrufweg (nur berlin-basis / brandenburg-basis)
 insert into public.package_paths (package_id, retrieval_path_id) values
   ('pkg-berlin-basis', 'rp-be-landesparlament'),
   ('pkg-berlin-basis', 'rp-be-plenum'),
@@ -88,9 +64,9 @@ insert into public.package_paths (package_id, retrieval_path_id) values
   ('pkg-berlin-basis', 'rp-be-landesfraktionen'),
   ('pkg-berlin-basis', 'rp-be-regionale_leitmedien'),
   ('pkg-berlin-basis', 'rp-rbb24-politik'),
-  ('pkg-die-linke-berlin', 'rp-be-partei_pilot'),
-  ('pkg-die-linke-berlin', 'rp-be-fraktion_pilot'),
-  ('pkg-die-linke-berlin', 'rp-be-person_pilot'),
+  ('pkg-berlin-basis', 'rp-be-partei_pilot'),
+  ('pkg-berlin-basis', 'rp-be-fraktion_pilot'),
+  ('pkg-berlin-basis', 'rp-be-person_pilot'),
   ('pkg-brandenburg-basis', 'rp-bb-landesparlament'),
   ('pkg-brandenburg-basis', 'rp-bb-plenum'),
   ('pkg-brandenburg-basis', 'rp-bb-ausschuesse'),
@@ -99,7 +75,7 @@ insert into public.package_paths (package_id, retrieval_path_id) values
   ('pkg-brandenburg-basis', 'rp-bb-landesfraktionen'),
   ('pkg-brandenburg-basis', 'rp-bb-regionale_leitmedien'),
   ('pkg-brandenburg-basis', 'rp-rbb24-politik'),
-  ('pkg-die-linke-brandenburg', 'rp-bb-partei_pilot')
+  ('pkg-brandenburg-basis', 'rp-bb-partei_pilot')
 on conflict (package_id, retrieval_path_id) do nothing;
 
 

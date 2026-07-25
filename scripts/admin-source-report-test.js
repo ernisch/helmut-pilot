@@ -64,10 +64,10 @@ const qa = rEmpty.views.quellenAbrufwege;
 check("alle 144 Abrufwege bewertet (keine Lücke)", qa.pathCount === 144);
 check("nach Herausgeber gruppiert (51 Herausgeber)", qa.herausgeber.length === 51);
 check("welche Abrufwege gesund/defekt/unbekannt (drei Kübel)", typeof qa.healthCounts.gesund === "number" && typeof qa.healthCounts.defekt === "number" && typeof qa.healthCounts.unbekannt === "number");
-check("defekte Abrufwege erkannt (>=6 broken aus Sprint 1)", qa.healthCounts.defekt >= 6);
+check("keine defekten Abrufwege mehr (P1-5: alle 6 vormals 'broken' markierten Bundeswege repariert)", qa.healthCounts.defekt === 0);
 check("ohne Metriken: keine 'gesund' erfunden (alle unbekannt/defekt/inaktiv)", qa.healthCounts.gesund === 0);
 const bundestagPath = rEmpty.views.quellendetail.paths.find((p) => p.legacy_source_id === "bundestag");
-check("defekte Pflichtquelle (bundestag) -> health defekt", bundestagPath.health === "defekt");
+check("reparierte Pflichtquelle (bundestag) -> status needs_review, nicht mehr broken", bundestagPath.status === "needs_review" && bundestagPath.health === "unbekannt");
 
 console.log("== View 3: Profile und Paketversorgung ==");
 const prof = rEmpty.views.profileVersorgung;
@@ -79,9 +79,12 @@ console.log("== View 4: Prüfbedarf (kuratiert, ruhig) ==");
 const pb = rEmpty.views.pruefbedarf;
 check("Prüfbedarf ist entrauscht (nur konkrete Probleme, < 20)", pb.actions.length > 0 && pb.actions.length < 20);
 check("KEINE 139 'beobachten'-Rauschhinweise (nur echte Probleme)", pb.actions.every((a) => a.severity === "hoch" || a.severity === "mittel"));
-check("defekte Pflichtquellen als 'hoch'", pb.actions.some((a) => a.area === "abrufweg" && a.severity === "hoch"));
+check("keine 'hoch'-Abrufweg-Probleme mehr (P1-5: kein Katalog-Pfad mehr 'broken')", !pb.actions.some((a) => a.area === "abrufweg" && a.severity === "hoch"));
 check("unversorgtes Profil im Prüfbedarf", pb.actions.some((a) => a.area === "profil" && a.ref === "be"));
-check("nach Schwere sortiert (hoch zuerst)", pb.actions[0].severity === "hoch");
+// Nach P1-5 enthält der Echt-Katalog keinen 'hoch'-Eintrag mehr — die Sortierung ist hier also
+// nicht mehr beobachtbar und wird deshalb in Block E mit einem synthetischen Fixture geprüft,
+// das BEIDE Schweregrade erzeugt (Block D hat nur eine einzige Aktion und kann keine Reihenfolge belegen).
+check("Prüfbedarf ohne 'hoch'-Eintrag bleibt korrekt sortiert (nur 'mittel')", pb.actions.every((a) => a.severity === "mittel"));
 check("welche Messwerte noch nicht verfügbar: als Hinweise gelistet", pb.missingMetrics.length >= 4);
 
 console.log("== View 5: Quellendetail ==");
@@ -153,6 +156,29 @@ const dPaths = [{ id: "rp-d", legacy_source_id: "d", status: "broken", activatio
 const dRep = ar.buildSourceAdminReport({ catalog: { publishers: [], retrievalPaths: dPaths, packages: [], packagePaths: [], geographies: [] }, activation: { packageStatus: [], activePathIds: [] }, qualityReport: { pathQuality: [], packageSupply: [], profileSupply: [], costs: {}, recommendations: [], availability: { documents: false, knowledgeObjects: false, duplicates: false, costAttribution: false, pathTelemetry: false } }, now: NOW });
 check("D: broken kritischer Pfad ohne pathQuality -> health defekt (Katalog-Status geehrt)", dRep.views.quellendetail.paths[0].health === "defekt");
 check("D: broken kritischer Pfad ohne pathQuality -> im Prüfbedarf als hoch", dRep.views.pruefbedarf.actions.some((a) => a.area === "abrufweg" && a.ref === "d" && a.severity === "hoch"));
+// E: Sortierung 'hoch' vor 'mittel' — echtes Regressionsnetz. Fixture erzeugt BEIDE Schweregrade
+// und speist sie in UMGEKEHRTER Reihenfolge ein (Nicht-Basispaket = mittel zuerst, Basispaket =
+// hoch danach). Ohne die Sortierung in admin-report.js stünde 'mittel' vorn -> Test wird rot.
+// (Ohne diesen Block war die Sortierung nach P1-5 nirgends mehr abgedeckt.)
+const ePaths = [
+  { id: "rp-e1", legacy_source_id: "e1", status: "broken", activation_mode: "auto", is_critical: false },
+  { id: "rp-e2", legacy_source_id: "e2", status: "broken", activation_mode: "auto", is_critical: false }
+];
+const ePackages = [
+  { id: "pk-e-optional", key: "paket-e-optional", status: "active", is_base: false },
+  { id: "pk-e-basis", key: "paket-e-basis", status: "active", is_base: true }
+];
+const ePackagePaths = [
+  { package_id: "pk-e-optional", retrieval_path_id: "rp-e1" },
+  { package_id: "pk-e-basis", retrieval_path_id: "rp-e2" }
+];
+const eCatalog = { publishers: [], retrievalPaths: ePaths, packages: ePackages, packagePaths: ePackagePaths, geographies: [] };
+const eActivation = { packageStatus: [{ id: "pk-e-optional", activation: "active" }, { id: "pk-e-basis", activation: "active" }], activePathIds: [] };
+const eQ = qw.buildQualityReport({ catalog: eCatalog, activation: eActivation, rawDocs: [], koSourceLinks: [], dedupDocuments: [], profiles: [], llmUsage: [], signals: {}, now: NOW });
+const eRep = ar.buildSourceAdminReport({ catalog: eCatalog, activation: eActivation, qualityReport: eQ, now: NOW });
+const eSev = eRep.views.pruefbedarf.actions.map((a) => a.severity);
+check("E: Fixture erzeugt beide Schweregrade (sonst wäre der Sortiertest wirkungslos)", eSev.includes("hoch") && eSev.includes("mittel"));
+check("E: Prüfbedarf ist nach Schwere sortiert — 'hoch' steht vor jedem 'mittel'", eSev.lastIndexOf("hoch") < eSev.indexOf("mittel"));
 
 console.log(`\n== Ergebnis: ${pass} PASS, ${fail} FAIL ==`);
 process.exit(fail > 0 ? 1 : 0);

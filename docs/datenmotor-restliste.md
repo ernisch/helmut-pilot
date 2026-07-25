@@ -2,8 +2,9 @@
 
 > # 🧭 RE-ANKER (Recovery Sprint R2, 2026-07-22)
 >
-> - **Aktueller `main`-HEAD: `d6d9063`** (Merge #113). Die Pins `ca7e404`/#102 und
->   `7346653`/#100 unten sind **historische Stände**.
+> - **`main`-HEAD beim Re-Anker: `d6d9063`** (Merge #113). Die Pins `ca7e404`/#102 und
+>   `7346653`/#100 unten sind **historische Stände**; der tatsächlich aktuelle `main`-HEAD
+>   steht in der Tabelle unten unter „Geprüfter Stand" (fortlaufend nachgezogen).
 > - **Quellenmodus `on` (Cutover ausgeführt 2026-07-15)** — kein offenes Quellen-Cutover-Gate.
 > - **JWT-Selbstsignierung stillgelegt**, RLS **inert**, Mandantentrennung **App-seitig** —
 >   verbindlich: `quellenarchitektur/05-sicherheitsmodell-rls.md`.
@@ -14,7 +15,7 @@
 | | |
 |---|---|
 | **Stand / Prüfdatum** | **2026-07-18** (Basisstand 2026-07-17, re-verankert 2026-07-22, siehe Banner; OP-05/06/08/13/14 nachgezogen durch den Pending/Understanding/KO-Sprint — Belege: `docs/betrieb/datenmotor_sprint_pending_understanding_ko.md`) |
-| **Geprüfter Stand** | historisch `main`-HEAD `ca7e404` (Merge PR #102); **aktuell `035898b` (#114)** |
+| **Geprüfter Stand** | historisch `main`-HEAD `ca7e404` (Merge PR #102); Re-Anker (siehe Banner) `d6d9063` (#113); seither weiter nachgezogen (Pending/Understanding/KO-Sprint + Recovery-Stilllegung PR #105, Kontextstruktur PR #119, Doku-Nachzug PR #121) — **aktuell `045393c` (#121)** |
 | **Grundlagen** | PR #95–#102, `docs/betrieb/production_beweisprotokoll.md` (inkl. §7 Google-News-Härtung), `docs/betrieb/google_news_haertung.md`, `docs/betrieb/health_report_rollierend.md`, `docs/betrieb/f5_freigabe.md`, `docs/helmut_datenmotor_thread2_handoff.md` §0a, `docs/quellenarchitektur/00-master-status.md` (Nachtrag 2026-07-17), Audit-Serie |
 
 > **Dies ist die EINZIGE verbindliche Liste aller offenen Punkte des Datenmotors.**
@@ -185,8 +186,8 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 - **Freigabe:** **JA** (Migration + Env + Grundsatzentscheidung).
 
 #### OP-04 · Demo-Mandate deaktivieren/entfernen (Daten-Hygiene, Audit: „vor Vertrieb löschen")
-- **Status:** offen; zwei Demo-Mandate existieren neben dem realen Mandanten; nach Entfernung entfällt zudem die Mandatsauswahl am Bare-Root-Aufruf.
-- **Fehlender Schritt:** über das Provisionierungs-/Admin-Werkzeug deaktivieren/entfernen (reine Daten-Aktion, kein Deploy, kein Schema).
+- **Status:** offen; **Umfang am 2026-07-25 read-only nachgemessen und größer als bisher geführt.** Production hält **8 Mandatsprofile, davon 6 aktiv** — nicht „zwei Demo-Mandate neben dem realen Mandanten". Fünf der Profile wurden am 20.07. angelegt und tragen Klarnamen realer Bundestagsabgeordneter; jedes aktive Profil erzeugt Crawl-Last und eigene profilgenerierte Personensuchen (belegt in `docs/quellenarchitektur/30-paket-inventur-production.md` §5, Abweichung A-1). Nach Entfernung entfällt zudem die Mandatsauswahl am Bare-Root-Aufruf.
+- **Fehlender Schritt:** je Profil entscheiden (behalten / deaktivieren / löschen) und über das Provisionierungs-/Admin-Werkzeug umsetzen (reine Daten-Aktion, kein Deploy, kein Schema). **Rechtlicher Nebenaspekt:** personenbezogene Daten realer Abgeordneter ohne Mandatsverhältnis berühren OP-02.
 - **Abhängigkeiten:** keine; Teardown-Isolation ist getestet (PR #96).
 - **Risiko:** niedrig — Werkzeug strikt gescoped; echter Mandant datengetrieben geschützt.
 - **Parallelisierbarkeit:** vollständig parallel.
