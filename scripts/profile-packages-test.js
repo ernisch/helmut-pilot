@@ -62,7 +62,15 @@ check("Brandenburg + Die Linke -> optional enthaelt die-linke-brandenburg", pp.r
 check("Berlin + SPD (nicht Linke) -> KEIN die-linke-berlin", !pp.resolveProfilePackages(berlin).optional.includes("die-linke-berlin"));
 check("Brandenburg + CDU (nicht Linke) -> KEIN die-linke-brandenburg", !pp.resolveProfilePackages(brandenburg).optional.includes("die-linke-brandenburg"));
 check("Bundestagsprofil (kein Landtag) loest NIEMALS ein Landes-Partei-Paket aus, auch bei Die Linke", !pp.resolveProfilePackages(vollprofil).optional.some((k) => /^die-linke-(berlin|brandenburg)$/.test(k)));
-check("berlin-basis (Pflicht-Basispaket) bleibt fuer JEDES Berlin-Landtagsprofil neutral (kein die-linke-berlin in required)", !pp.resolveProfilePackages(berlinLinke).required.includes("die-linke-berlin"));
+// Bindend statt vakuos: 'required' kann strukturell nie einen Parteischluessel enthalten, ein
+// blosses "nicht enthalten" konnte also nie fehlschlagen. Geprueft wird jetzt die exakte
+// Pflichtmenge — sie faellt rot, wenn ein Parteipaket in die Pflicht rutscht ODER das neutrale
+// Basispaket verlorengeht. Ausserdem: das Parteipaket ist trotzdem zugeteilt (ueber 'all').
+check("Berlin-Linke-Landtagsprofil: Pflichtmenge ist exakt bund-basis + berlin-basis (neutral)", (() => {
+  const r = pp.resolveProfilePackages(berlinLinke);
+  return JSON.stringify(r.required.slice().sort()) === JSON.stringify(["berlin-basis", "bund-basis"]);
+})());
+check("Berlin-Linke-Landtagsprofil: Parteipaket ist trotz Neutralisierung zugeteilt (in 'all')", pp.resolveProfilePackages(berlinLinke).all.includes("die-linke-berlin"));
 
 // ============================ PFLICHTFALL 4 ============================
 console.log("== 4) 100 Profile mit demselben Paket -> nur EINE technische Aktivierung ==");

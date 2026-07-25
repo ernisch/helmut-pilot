@@ -204,8 +204,17 @@ check("P1-5: die 6 reparierten Bundeswege tragen ihre verifizierte Ersatz-URL", 
     && byId.get("bundesregierung").url === "https://news.google.com/rss/search?q=site:bundesregierung.de&hl=de&gl=DE&ceid=DE:de"
     && byId.get("die-linke").url === "https://news.google.com/rss/search?q=site:die-linke.de&hl=de&gl=DE&ceid=DE:de"
     && byId.get("linksfraktion").url === "https://www.dielinkebt.de/presse/pressemitteilungen/feed.rss"
-    && byId.get("ausschuss-arbeit-soziales").url === "https://news.google.com/rss/search?q=site:bundestag.de%20%22Ausschuss%20f%C3%BCr%20Arbeit%20und%20Soziales%22"
+    && byId.get("ausschuss-arbeit-soziales").url === "https://news.google.com/rss/search?q=site:bundestag.de%20%22Ausschuss%20f%C3%BCr%20Arbeit%20und%20Soziales%22&hl=de&gl=DE&ceid=DE:de"
     && byId.get("dgb").url === "https://news.google.com/rss/search?q=site:dgb.de&hl=de&gl=DE&ceid=DE:de";
+})());
+// Regression: JEDE Google-News-Feed-URL im Katalog muss Ausgabe und Sprache pinnen. Ohne
+// &hl=de&gl=DE&ceid=DE:de waehlt Google die Edition nach Egress-IP des Runners aus — moeglich
+// waere eine leere oder englischsprachige Ausgabe. Der ausschuss-arbeit-soziales-Weg war beim
+// Uebernehmen der P1-5-Reparatur als einziger ungepinnt; dieser Check verhindert den Rueckfall.
+check("Alle Google-News-Feeds pinnen Ausgabe/Sprache (hl=de, gl=DE, ceid=DE:de)", (() => {
+  const googleFeeds = v1Sources.filter((s) => String(s.rssUrl || "").includes("news.google.com"));
+  if (googleFeeds.length < 5) return false; // Vorbedingung: es gibt ueberhaupt Google-Feeds
+  return googleFeeds.every((s) => /[?&]hl=de(&|$)/.test(s.rssUrl) && /[?&]gl=DE(&|$)/.test(s.rssUrl) && /[?&]ceid=DE:de(&|$)/.test(s.rssUrl));
 })());
 check("P1-5: Herausgeber-Identitaet bei googlenews-Ersatz erhalten (site:-Filter haelt die Original-Domain)", (() => {
   const byId = new Map(M.retrievalPaths.map((p) => [p.legacy_source_id, p]));
@@ -263,9 +272,19 @@ check("P0-2: die 15 Pflichtklassen (Basis+Partei) je Land bleiben in Summe volls
   const union = new Set([...b.required_classes, ...dlb.required_classes]);
   return union.size === 15 && seeds.LANDESMODUL_PFLICHTKLASSEN.every((k) => union.has(k));
 })());
+// Diese Pruefung MUSS gegen den Landesmodul-Seed laufen: die BE/BB-Abrufwege leben dort, nicht
+// im Bund-Modell M. Frueher lief sie gegen M — dort sind beide Mengen leer, der Check konnte
+// also nie fehlschlagen (vakuos). Jetzt mit Nichtleer-Vorbedingung, damit er echt bindet.
 check("P0-2: KEIN Abrufweg der Linke-Berlin-Partei-/Fraktions-/Personenquellen in berlin-basis (Neutralitaet)", (() => {
-  const pilotPathIds = new Set(M.retrievalPaths.filter((p) => ["be-partei_pilot", "be-fraktion_pilot", "be-person_pilot"].includes(p.legacy_source_id)).map((p) => p.id));
-  return !M.packagePaths.some((pp) => pp.package_id === "pkg-berlin-basis" && pilotPathIds.has(pp.retrieval_path_id));
+  const { buildLandesmodulSeed } = require("../lib/helmut/quellenarchitektur/seeds/landesmodule-quellen");
+  const L = buildLandesmodulSeed();
+  const pilotPathIds = new Set(L.retrievalPaths
+    .filter((p) => ["be-partei_pilot", "be-fraktion_pilot", "be-person_pilot"].includes(p.legacy_source_id))
+    .map((p) => p.id));
+  if (pilotPathIds.size !== 3) return false; // Vorbedingung: die 3 Pilotwege existieren wirklich
+  const imBasis = L.packagePaths.some((pp) => pp.package_id === "pkg-berlin-basis" && pilotPathIds.has(pp.retrieval_path_id));
+  const imParteipaket = L.packagePaths.filter((pp) => pp.package_id === "pkg-die-linke-berlin" && pilotPathIds.has(pp.retrieval_path_id)).length;
+  return !imBasis && imParteipaket === 3; // raus aus dem Pflichtpaket UND drin im Parteipaket
 })());
 check("Bund Basis ist Pflicht-Basispaket (is_base)", (() => { const b = M.packages.find((p) => p.key === "bund-basis"); return b.is_base === true; })());
 check("kein Paket traegt mehr ein always_on-Flag (Daueraktivierung lebt auf Abrufweg-Ebene)", M.packages.every((p) => p.always_on === undefined));
