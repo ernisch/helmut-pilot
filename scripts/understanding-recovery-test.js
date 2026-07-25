@@ -7,6 +7,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const cp = require("child_process");
 const rec = require("../lib/helmut/understanding-recovery");
 const lazy = require("../lib/helmut/lazyUnderstanding");
 
@@ -150,7 +151,10 @@ const doc = (id, title, summary = "", source_name = "Quelle") => ({ id, title, s
     { vorgang_id: "vg-sozialwohnungen", understanding_status: "complete", headline: "Sozialwohnungen" }        // nicht mehr offen
   ];
   const docs = [doc("d1", "Steuerstrafrecht Reform beschlossen"), doc("d2", "Medikamente Zuzahlung neue Regel")];
-  const plan = rec.planRecovery(cands, docs, {});
+  // Explizite TEST-Allowlist: die ausgelieferte RECOVERY_ALLOWLIST ist seit der
+  // Stilllegung leer (siehe Assertion 12); hier wird die PLAN-LOGIK geprueft.
+  const testAllowlist = ["vg-steuerstrafrecht", "vg-medikamenten", "vg-psychotherapie", "vg-sozialwohnungen"];
+  const plan = rec.planRecovery(cands, docs, { allowlist: testAllowlist });
   const execIds = plan.execute.map((e) => e.vorgangId);
   check("10 · nur Allowlist im Plan (kein vg-einkommensteuer)", !execIds.includes("vg-einkommensteuer"));
   check("10 · eindeutige/wahrscheinliche Allowlist-Faelle in execute", execIds.includes("vg-steuerstrafrecht") && execIds.includes("vg-medikamenten"));
@@ -168,7 +172,10 @@ const doc = (id, title, summary = "", source_name = "Quelle") => ({ id, title, s
     { vorgang_id: "vg-psychotherapie", understanding_status: "pending", headline: "Krankenversicherung Pflegeversicherung" } // -> mehrdeutig
   ];
   const docs = [doc("a", "Krankenversicherung Beitrag"), doc("b", "Pflegeversicherung Leistung", "Q2")];
-  const plan = rec.planRecovery(cands, docs, { completeTopicSet: new Set(["vg-medikamenten"]) });
+  // Explizite TEST-Allowlist (ausgelieferte Liste ist seit Stilllegung leer).
+  const plan = rec.planRecovery(cands, docs, {
+    allowlist: ["vg-medikamenten", "vg-steuerstrafrecht", "vg-psychotherapie"],
+    completeTopicSet: new Set(["vg-medikamenten"]) });
   check("11 · Duplikat-Fall NICHT im Plan", !plan.execute.some((e) => e.vorgangId === "vg-medikamenten")
     && plan.skip.some((s) => s.vorgangId === "vg-medikamenten" && s.grund === "duplikat-complete-existiert"));
   check("11 · keine-Quelle-Fall NICHT im Plan", plan.skip.some((s) => s.vorgangId === "vg-steuerstrafrecht" && s.grund === "keine-quelldokumente"));
@@ -181,7 +188,13 @@ const doc = (id, title, summary = "", source_name = "Quelle") => ({ id, title, s
   check("12 · recoveryExecuteEnabled Default false", rec.recoveryExecuteEnabled({}) === false);
   check("12 · recoveryExecuteEnabled bei 'on' true", rec.recoveryExecuteEnabled({ HELMUT_RECOVERY_EXECUTE: "on" }) === true);
   check("12 · recoveryConfirmed nur exaktes Token", rec.recoveryConfirmed("RECOVER_6_CONFIRMED") === true && rec.recoveryConfirmed("x") === false && rec.recoveryConfirmed("") === false);
-  check("12 · Allowlist genau die 6 bestaetigten Faelle", rec.RECOVERY_ALLOWLIST.length === 6 && rec.RECOVERY_ALLOWLIST.includes("vg-arbeitsverträge") && rec.RECOVERY_ALLOWLIST.includes("vg-umstellungen"));
+  // Stilllegung 2026-07-18: Anker-Pfad erzeugte Multi-Themen-Digest (rec-29569461715,
+  // zurueckgerollt) -> Allowlist LEER, planRecovery liefert strukturell nie execute.
+  check("12 · Allowlist leer (Anker-Pfad stillgelegt)", rec.RECOVERY_ALLOWLIST.length === 0);
+  const stillgelegtPlan = rec.planRecovery(
+    [{ vorgang_id: "vg-arbeitsverträge", understanding_status: "pending" }],
+    [{ id: "d1", title: "Neue Beschluesse fuer Arbeitsverträge" }], {});
+  check("12 · planRecovery mit Default-Allowlist: nie execute, 0 KI", stillgelegtPlan.execute.length === 0 && stillgelegtPlan.kiCalls === 0);
 
   // recoverOne ohne verdrahteten Write-Pfad -> kein Write/KI (freigabepflichtig).
   const r1 = await rec.recoverOne({ vorgangId: "vg-steuerstrafrecht" }, { getExisting: async () => null });
@@ -203,14 +216,42 @@ const doc = (id, title, summary = "", source_name = "Quelle") => ({ id, title, s
     { getExisting: async () => null, understandAndSave: async () => ({ wrote: false, aiCalls: 0, status: "no-cluster" }) });
   check("12 · recoverOne: no-cluster -> kein Write, 0 KI", r4.wrote === false && r4.aiCalls === 0);
 
-  // (13) Ausfuehrungs-SKRIPT: Understand/Write-Pfad erst NACH der Flag+Token-Sperre.
+  // (13) Ausfuehrungs-SKRIPT: seit 2026-07-18 STILLGELEGT — kein DB-/KI-/Write-Pfad mehr.
   const src = fs.readFileSync(path.join(__dirname, "understanding-recovery-execute.js"), "utf8");
-  check("13 · Execute-Skript ist Default-gesperrt (Flag+Token)", /recoveryExecuteEnabled/.test(src) && /recoveryConfirmed/.test(src));
-  const guardIdx = src.indexOf("if (!enabled || !confirmed)");
-  const writeIdx = src.indexOf("await understanding.understandOneCluster");
-  check("13 · Understand/Write-Pfad (Call) erst NACH der Flag+Token-Sperre", guardIdx > 0 && writeIdx > guardIdx);
+  check("13 · Execute-Skript ist stillgelegt (Hard-Stop, kein Require von storage/ai/understanding)",
+    /stillgelegt/i.test(src) && !/require\(.*\/(storage|ai|understanding)"\)/.test(src));
+  check("13 · Execute-Skript enthaelt keinen Understand-/Write-Aufruf mehr",
+    !/understandOneCluster/.test(src) && !/recoverOne/.test(src));
   check("13 · Execute-Skript ruft keine Storage-Schreibfunktion DIREKT auf",
     !/storage\.(saveKnowledgeObject|saveKoDocumentLinks|markUnderstandingFailed|deleteRetention|resetUnderstanding|markUnderstandingTerminal)\b/.test(src));
+  // Der stillgelegte Workflow ist ENTFERNT — keine dispatchbare Anker-Recovery mehr.
+  check("13 · Anker-Recovery-Workflow entfernt",
+    !fs.existsSync(path.join(__dirname, "..", ".github", "workflows", "understanding-recovery.yml")));
+  // (13b) Namensunabhaengiger Riegel: KEIN Workflow — egal wie er heisst — darf das
+  // Execute-Skript aufrufen oder die Recovery-Sperren als Env setzen. Faengt die
+  // Wiederbelebung ueber eine umbenannte Action (z. B. beim spaeteren Merge des
+  // ungemergten impl-2-Branches, der eine eigene Fassung unter demselben Pfad traegt).
+  const wfDir = path.join(__dirname, "..", ".github", "workflows");
+  const wfFiles = fs.existsSync(wfDir) ? fs.readdirSync(wfDir).filter((f) => /\.ya?ml$/i.test(f)) : [];
+  const wfTreffer = wfFiles.filter((f) => {
+    const y = fs.readFileSync(path.join(wfDir, f), "utf8");
+    return /understanding-recovery-execute/.test(y)
+      || /HELMUT_RECOVERY_EXECUTE\s*:/.test(y)
+      || /HELMUT_RECOVERY_CONFIRM\s*:/.test(y);
+  });
+  check(`13b · Kein Workflow ruft die Anker-Recovery auf (gefunden: ${wfTreffer.join(", ") || "keiner"})`,
+    wfTreffer.length === 0);
+  // (13c) Die Stilllegung ist verhaltensbelegt, nicht nur quelltextlich: das Skript
+  // liefert auch MIT Flag + korrektem Token ausschliesslich den Stilllegungs-Hinweis.
+  const scharf = cp.execFileSync(process.execPath, [path.join(__dirname, "understanding-recovery-execute.js")], {
+    env: { ...process.env, HELMUT_V3_STORE: "1", HELMUT_RECOVERY_EXECUTE: "1",
+      HELMUT_RECOVERY_CONFIRM: rec.RECOVERY_CONFIRM_TOKEN,
+      SUPABASE_URL: "https://example.invalid", SUPABASE_SERVICE_ROLE_KEY: "test-nur-lokal" },
+    encoding: "utf8", timeout: 20000
+  });
+  const scharfJson = JSON.parse(scharf);
+  check("13c · Execute-Skript bleibt mit Flag+Token wirkungslos (executed:false, stillgelegt:true)",
+    scharfJson.executed === false && scharfJson.stillgelegt === true);
   // Dry-Run-Skript schreibt garantiert nie (kein --execute, keine Storage-Schreibaufrufe).
   const drySrc = fs.readFileSync(path.join(__dirname, "understanding-recovery-dryrun.js"), "utf8");
   check("13 · Dry-Run-Skript: kein Write, kein understandOneCluster", !/understandOneCluster/.test(drySrc) && /KEINEN --execute|schreibt niemals/i.test(drySrc));

@@ -1,0 +1,77 @@
+name: Pending-Terminal-Aussortieren (OP-06, 34 bestaetigte Faelle)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_text:
+        description: "Fuer den ECHTEN Lauf EXAKT eingeben: AUSSORTIEREN_34_BESTAETIGT (sonst nur Plan+Snapshot, read-only)"
+        required: true
+        default: ""
+
+# Terminales Aussortieren der 34 bestaetigten Alt-Rueckstands-Faelle
+# (27 Rauschen + 7 belegte Themen-Duplikate) — understanding_status -> 'failed-final'.
+# NUR manuell (workflow_dispatch), harte Bestaetigung, eng begrenzt auf die
+# Allowlist in lib/helmut/pending-terminal.js. 0 KI-Aufrufe, kein Delete.
+# Schritt A (IMMER, read-only): Plan + Pre-Snapshot. Kein Write.
+# Schritt B (NUR bei confirm_text == "AUSSORTIEREN_34_BESTAETIGT"): konditionale
+#   PATCHes (pending/failed -> failed-final) mit Rollback-Kennung
+#   "aussortiert:aus-<run_id>:<vorstatus>" in understanding_model, idempotent.
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pending-terminal-aussortieren
+  cancel-in-progress: false
+
+jobs:
+  aussortieren:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Abhaengigkeiten (keine Runtime-Deps; defensiv, kein Lockfile)
+        run: npm install --no-audit --no-fund
+
+      - name: Preflight Store-Secrets vorhanden
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SUPABASE_URL:-}" ] || [ -z "${SUPABASE_SERVICE_ROLE_KEY:-}" ]; then
+            echo "::error::SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY fehlen."; exit 1
+          fi
+          echo "Preflight Store OK."
+
+      - name: Schritt A Plan und Pre-Snapshot (read-only)
+        env:
+          HELMUT_V3_STORE: "1"
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node scripts/pending-terminal-aussortieren.js
+
+      - name: Schritt B Echter Aussortier-Lauf (nur PATCHes, 0 KI)
+        if: ${{ inputs.confirm_text == 'AUSSORTIEREN_34_BESTAETIGT' }}
+        env:
+          HELMUT_V3_STORE: "1"
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          HELMUT_PENDING_TERMINAL_EXECUTE: "1"
+          HELMUT_PENDING_TERMINAL_CONFIRM: "AUSSORTIEREN_34_BESTAETIGT"
+          HELMUT_PENDING_TERMINAL_RUNID: "aus-${{ github.run_id }}"
+        run: |
+          set -euo pipefail
+          echo "Starte ECHTEN Aussortier-Lauf (Runkennung aus-${{ github.run_id }})."
+          node scripts/pending-terminal-aussortieren.js
+
+      - name: Hinweis kein echter Lauf
+        if: ${{ inputs.confirm_text != 'AUSSORTIEREN_34_BESTAETIGT' }}
+        run: |
+          echo "Kein echter Lauf (nur Plan/Snapshot, read-only) - confirm_text war nicht exakt AUSSORTIEREN_34_BESTAETIGT."
