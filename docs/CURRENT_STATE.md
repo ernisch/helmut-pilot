@@ -39,7 +39,7 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | **Anker-Recovery-Pfad (F-3) technisch stillgelegt** — Workflow entfernt, Execute-Skript ohne DB-/KI-/Write-Pfad, `RECOVERY_ALLOWLIST` leer, namensunabhängiger CI-Riegel | PR #105, gemergt 2026-07-25 (`43e9e35`); auf `main` verifiziert: Workflow weg, Allowlist `[]`, 0 `require` im Execute-Skript |
 | `failed-final` wird im Pending-Filter und in `understandOneCluster` terminal behandelt („nie wieder") | PR #105 |
 | Freigabevorlage Quellen-Seed-Einspielung (Soll-Zahlen, Idempotenznachweis, Go-/Stop-Kriterien) | PR #123, gemergt 2026-07-25 (`bed7f53`), CI grün |
-| **Werkzeug** für Pre-Seed-Sicherung und gezielten Seed-Restore gebaut und isoliert getestet (kein `drop table cascade`) | Branch `claude/recovery-path-pr-105-review-9jgxo1`, PR (siehe §8); `seed-restore-test.js` 31/31, Offline-Suite 145/145 · **Ausführung gegen Production steht aus** |
+| **Werkzeug** für Pre-Seed-Sicherung und gezielten Seed-Restore gebaut und isoliert getestet (kein `drop table cascade`) | Branch `claude/seed-backup-restore`, PR #125; `seed-restore-test.js` 31/31, Offline-Suite 145/145 · **Ausführung gegen Production steht aus** |
 
 ## 3 · Teilweise abgeschlossen (Code da, Abnahme fehlt)
 
@@ -160,7 +160,7 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 
 | PR | Inhalt | Einschätzung |
 |---|---|---|
-| **#PR_BACKUP_RESTORE** | Pre-Seed-Sicherung, gezielter Restore-Generator, Seed-Runbook | **neu, wartet auf Review.** Werkzeuge + Doku, **kein** Production-Schreibpfad, kein Cron, kein Auto-Trigger. `seed-restore-test.js` 31/31, Offline-Suite 145/145 |
+| **#125** | Pre-Seed-Sicherung, gezielter Restore-Generator, Seed-Runbook | **neu, wartet auf Review.** Werkzeuge + Doku, **kein** Production-Schreibpfad, kein Cron, kein Auto-Trigger. `seed-restore-test.js` 31/31, Offline-Suite 145/145 |
 | #117 | WBSB-Pilotpaket + Workflow-Härtung vereinigt | **Draft, ausdrücklich nicht mergen** (öffnet nur die CI-Prüfung) |
 | #115 | Bestandsabgleich `bund-basis` + Pflichtquellen-Verifikationstest | **Draft, ausdrücklich nicht mergen** (nur um den Workflow auf einem Runner mit Egress laufen zu lassen) |
 | #112 | Geführter Erstlogin-/Onboarding-Flow (14 Screens) | manuelle Abnahme im Preview ausstehend |
