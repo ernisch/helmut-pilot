@@ -398,7 +398,7 @@ Pipeline 16:00 · Crawl 20:00 und 04:00 · Health-Report 06:00 · Lage-Check 10:
 | Stufe | Ereignis | Erfolgskriterium | Abbruch / Stopp bei |
 |---|---|---|---|
 | **IB-0** | Deploy-Bereitschaft (kein Lauf) | Production-Deployment des Merge-Commits `READY`; `circuitOpenSources`/`sharedSkippedSources` stehen in der `compactCrawlRunForStore`-Whitelist (`storage.js:2759–2760`); Baseline vor dem Fix dokumentiert | Deployment nicht READY oder Feld fehlt |
-| **IB-1** | **Pipeline-Cron 16:00 UTC** — erster Mehr-Mandanten-Durchlauf unter dem Fix | Mandat 1 `gesund`; jedes Folgemandat `sharedSkippedSources > 0`, `failedSources = 0`, `circuitOpenSources = 0`; Folgeläufe deutlich kürzer als Mandat 1 | ein Folgemandat zeigt `circuit-open` oder Fehler > 5 |
+| **IB-1** | **Pipeline-Cron 16:00 UTC** — erster Mehr-Mandanten-Durchlauf unter dem Fix | Mandat 1 `gesund` und Zähler werden geschrieben (`null` → Zahl). **Der Folgemandats-Nachweis ist auf diesem Cron strukturell nicht führbar → SL-3, §11.7; er wandert nach IB-2** | Mandat 1 degradiert |
 | **IB-2** | **Crawl-Cron 20:00 UTC** — Hauptbeweis über alle aktiven Mandate | **alle 6 Mandate** in `crawlRuns`; **kein** `zeitbudget`-Systemfehler; **keine** `circuit-open`-Zeile in der Telemetrie des Durchlaufs; neue Rohdokumente ≥ Niveau der Vortage | ein Mandat fehlt, degradiert, oder Rohdokumente brechen ein |
 | **IB-3** | **Crawl-Cron 04:00 UTC (Folgetag)** — Wiederholbarkeit | wie IB-2, an einem zweiten unabhängigen Durchlauf | wie IB-2 |
 | **IB-4** | **Health-Report 06:00 UTC** (kein Eingriff) | Basislauf ist der **nicht** reduzierte Lauf (`isReducedRun`); Gesamtzustand `aktuell-gesund`; keine „141/144"-Meldung; **kein** „Lage-Check veraltet" | erneute Degradations- oder Lage-Fehlalarm-Meldung |
@@ -461,3 +461,34 @@ IB-5 → L-9. Der Kostenwächter (§11.5) läuft in **jeder** Stufe mit.
 
 Ein Nachweis gilt nur mit **gemessenen Zahlen** im Beweisprotokoll — nicht mit einer
 Zustandsbehauptung.
+
+### 11.7 · Spezifikationslücke SL-3: der Pipeline-Cron kann Folgemandate nicht belegen
+
+**Gefunden bei der Auswertung von IB-1 (2026-07-25 16:12 UTC).** Dies ist eine Lücke im
+Beweisplan aus §11.3 — dieselbe Klasse wie SL-1/SL-2 — und wird genauso behandelt:
+Dokumentation korrigieren, **keine** Softwareänderung.
+
+`/api/cron/pipeline` umschließt `runCronForTenants` mit einem harten `withTimeout` von
+280 000 ms (`server.js:846–850`, knapp unter `maxDuration: 300`). In `runSourceCrawl`
+liegen `saveCrawlRun` (`scheduler.js:425`) und die Telemetrie-Persistenz
+(`scheduler.js:495`) **hinter** dem Eager-Understanding. Mandat 1 belegt allein
+~200 s — jedes Folgemandat wird abgeschnitten, **bevor** sein Lauf geschrieben wird.
+
+**Belegt:** am 23.07., 24.07. und 25.07. persistierte der 16:00-Cron ausschließlich den
+Lauf von Mandat 1, obwohl das Runtime-Log den Crawl von Mandat 2 zeigt. Vorbestehend,
+nicht durch den Fix verursacht.
+
+**Konsequenz für den Beweislauf:** Der Ledger-Nachweis (L-2, L-3, L-6) ist auf dem
+Pipeline-Cron nicht führbar und wird auf **IB-2/IB-3** geführt. `/api/cron/crawl` ruft
+`runCronForTenants` **ohne** äußeren `withTimeout` auf (`server.js:800–803`); dort werden
+alle Mandantenläufe regulär persistiert.
+
+**Eigenständiger Nebenbefund (nicht Teil dieses Incidents, kein Blocker):** Wird eine
+Invocation vom äußeren Timeout beendet, kehrt `runCronForTenants` **nie** zurück — der
+`zeitbudget`-Systemfehler aus Fix D (`server.js:5859–5867`) wird also **nicht**
+geschrieben. Ein Mandat kann auf diesem Pfad weiterhin **spurlos** aus dem Datenbestand
+verschwinden; genau die Blindheit, die RC-4 beschreibt, besteht für den Pipeline-Cron
+fort. Bestätigt: nach dem 16:00-Lauf steht `systemErrors` unverändert bei 65 (jüngster
+Eintrag 2026-07-20). Fix D deckt den regulären Zeitbudget-Abbruch ab, nicht den
+Invocation-Abbruch. **Als offener Betriebspunkt zu führen** — eine Behebung wäre eine
+Änderung außerhalb dieses Incidents und ist hier bewusst nicht vorgenommen.

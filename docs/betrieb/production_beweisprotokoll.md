@@ -633,8 +633,68 @@ Incident-Dokument §11.3._
 
 | Stufe | Cron (UTC) | Stand |
 |---|---|---|
-| IB-1 | Pipeline 16:00 | ausstehend |
-| IB-2 | Crawl 20:00 | ausstehend |
+| IB-1 | Pipeline 16:00 | **nicht messbar** — strukturelle Beobachtungslücke, siehe 9.3. Kein Fehlschlag, kein Abbruch |
+| IB-2 | Crawl 20:00 | ausstehend — trägt jetzt den Ledger-Nachweis (L-1…L-7) |
 | IB-3 | Crawl 04:00 (Folgetag) | ausstehend |
 | IB-4 | Health-Report 06:00 | ausstehend |
 | IB-5 | Lage-Check 10:00 | ausstehend |
+
+### 9.3 · IB-1 — Pipeline-Cron 16:00 UTC · **nicht messbar** (ausgewertet 16:12 UTC)
+
+**Deployment-Kontrolle vorab.** Der Lauf lief auf `dpl_AuatHn8VSaHt6yrTtimECSgXaoWb`
+(Merge **#127**, `9534bc0`) — nicht mehr auf dem Incident-Deployment. Während der
+Beobachtungspause sind 32 Commits nach `main` gelaufen (PRs #124–#127:
+Quellen-Seed-Einspielung, Backup/Restore, Paketzuweisung). **Gegenprobe:** alle
+incident-relevanten Laufzeitdateien sind zwischen `045393c` und `9534bc0`
+**byte-identisch** (`google-news-hardening.js`, `crawler.js`, `scheduler.js`,
+`crawl-run-state.js`, `rolling-health.js`, `storage.js`, `server.js`, `vercel.json`).
+Der Fix läuft unverändert, die Cron-Zeiten sind unverändert — die Beweisstufen bleiben
+gültig.
+
+**Gemessen (Mandat 1, `crawl-20260725160020-0x4st`, `annika-klose`):**
+
+| Größe | Wert | Bewertung |
+|---|---|---|
+| `runState` | `gesund` | L-1 ✓ |
+| `checkedSources` / `successfulSources` / `failedSources` | 145 / 145 / 0 | L-1 ✓ |
+| `circuitOpenSources` / `sharedSkippedSources` | **0 / 0** (vorher: `null`) | L-1 ✓ · L-5 teilweise ✓ — die Zähler werden geschrieben, der Lauf lief also **unter dem Fix** |
+| `googleUrlResolution` | 1 738 / 1 744 aufgelöst | L-1 ✓, Baseline-Niveau |
+| `googleGate` | `{open:false, observed:142, breakerFailures:0}` | Breaker nie geöffnet |
+| Telemetrie | 145 Zeilen / 145 distinct `source_id`, 143 ok, **0** `error`, **0** `circuit-open` | Invariante Zeilen = distinct `source_id` hält |
+| Laufzeit | 203 309 ms | Baseline-Niveau |
+| `successful + failed + circuitOpen + skipped` | 145 + 0 + 0 + 0 = 145 = `checkedSources` | **L-4 ✓** für Mandat 1 |
+
+**Warum die Stufe nicht messbar ist.** Mandat 2 (`cem-ince`) **lief** — im Runtime-Log
+sind sein Crawl und sein `lazy-understanding` (1 515 ms, 28 Cluster) belegt —, aber sein
+Lauf wurde **nie persistiert**. `/api/cron/pipeline` umschließt `runCronForTenants` mit
+einem harten `withTimeout` von 280 000 ms (`server.js:846–850`); das Log endet mit
+`[cron/pipeline] 280001ms tenants=undefined bounded=true`. In `runSourceCrawl` liegen
+`saveCrawlRun` (`scheduler.js:425`) und die Telemetrie-Persistenz (`scheduler.js:495`)
+**hinter** dem Eager-Understanding — die Invocation wurde vorher abgeschnitten. Es gibt
+daher für Mandat 2 **keine** Zähler: **L-2, L-3, L-6 sind an diesem Lauf nicht
+entscheidbar**.
+
+**Warum das kein Fehlschlag ist.** Das Muster ist **vorbestehend und unverändert**: auch
+am 23.07. und 24.07. persistierte der 16:00-Cron ausschließlich Mandat 1. Es ist keine
+Folge des Fixes.
+
+**Warum die Log-Beweislage nicht ausreicht (ehrliche Abgrenzung).** Im Log erscheinen für
+Mandat 2 genau **7** `Crawl failed`-Zeilen, und zwar ausschließlich auf
+**profildynamischen, mandantseigenen** Wegen (Themen `Rente/Arbeit/Soziales/Tariftreue/
+Bürgergeld`, Region `Salzgitter-Wolfenbüttel`, `cem-ince News-Suche`) — nicht auf den
+geteilten. Das ist mit einem wirksamen Ledger gut vereinbar, **beweist ihn aber nicht**:
+`circuit-open`-Ergebnisse erzeugen **ebenfalls keine** Log-Zeile. Aus 7 statt 141
+sichtbaren Zeilen lässt sich deshalb nicht unterscheiden, ob die 138 geteilten Wege
+*übersprungen* oder vom Breaker *abgebrochen* wurden. Der Nachweis wird nicht behauptet,
+sondern auf IB-2 verschoben.
+
+**Kostenwächter (§11.5):** 34 abrechenbare LLM-Calls am 25.07. (Grenze 85), **0** Skips,
+kein `daily-llm-budget-reached`. Baseline 43–52/Tag. Unauffällig.
+
+**`systemErrors`:** unverändert **65**, jüngster Eintrag weiterhin 2026-07-20 — kein neuer
+Fehler.
+
+**Konsequenz:** IB-2 (Crawl-Cron 20:00 UTC) trägt den vollständigen Ledger-Nachweis.
+`/api/cron/crawl` ruft `runCronForTenants` **ohne** äußeren `withTimeout` auf
+(`server.js:800–803`), sodass alle Mandantenläufe regulär persistiert werden und der
+`zeitbudget`-Systemfehler aus Fix D greifen kann.
