@@ -186,8 +186,8 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 - **Freigabe:** **JA** (Migration + Env + Grundsatzentscheidung).
 
 #### OP-04 · Demo-Mandate deaktivieren/entfernen (Daten-Hygiene, Audit: „vor Vertrieb löschen")
-- **Status:** offen; zwei Demo-Mandate existieren neben dem realen Mandanten; nach Entfernung entfällt zudem die Mandatsauswahl am Bare-Root-Aufruf.
-- **Fehlender Schritt:** über das Provisionierungs-/Admin-Werkzeug deaktivieren/entfernen (reine Daten-Aktion, kein Deploy, kein Schema).
+- **Status:** offen; **Umfang am 2026-07-25 read-only nachgemessen und größer als bisher geführt.** Production hält **8 Mandatsprofile, davon 6 aktiv** — nicht „zwei Demo-Mandate neben dem realen Mandanten". Fünf der Profile wurden am 20.07. angelegt und tragen Klarnamen realer Bundestagsabgeordneter; jedes aktive Profil erzeugt Crawl-Last und eigene profilgenerierte Personensuchen (belegt in `docs/quellenarchitektur/30-paket-inventur-production.md` §5, Abweichung A-1). Nach Entfernung entfällt zudem die Mandatsauswahl am Bare-Root-Aufruf.
+- **Fehlender Schritt:** je Profil entscheiden (behalten / deaktivieren / löschen) und über das Provisionierungs-/Admin-Werkzeug umsetzen (reine Daten-Aktion, kein Deploy, kein Schema). **Rechtlicher Nebenaspekt:** personenbezogene Daten realer Abgeordneter ohne Mandatsverhältnis berühren OP-02.
 - **Abhängigkeiten:** keine; Teardown-Isolation ist getestet (PR #96).
 - **Risiko:** niedrig — Werkzeug strikt gescoped; echter Mandant datengetrieben geschützt.
 - **Parallelisierbarkeit:** vollständig parallel.

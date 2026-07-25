@@ -3,6 +3,19 @@
 Erklärt, wie ein Profil automatisch seine Pakete bekommt und wie viele Profile trotzdem nur **einen**
 Crawl auslösen — verständlich aus Gründerperspektive.
 
+> **Nachtrag 2026-07-25 (Production-Abgleich).** Zwei Aussagen dieses Dokuments waren zum
+> Prüfzeitpunkt überholt und sind unten korrigiert:
+> 1. Die Landespakete `berlin-basis`/`brandenburg-basis` sind **nicht** leer — Production
+>    führt **10 bzw. 9** Abrufwege (`manual`/`needs_review`). Sie bleiben trotzdem
+>    unaktiviert, weil der Paketstatus `prepared` allein genügt, um die Aktivierung zu
+>    verhindern.
+> 2. Der Resolver ist **in den Live-Betrieb verdrahtet** (seit dem Quellen-Cutover,
+>    `HELMUT_SOURCE_MODE=on`): `scheduler.getSourcesForProfile` → `buildRelationalCrawlPlan`
+>    → `computeGlobalActivation`. Der Schlusssatz „nicht in den Live-Scheduler verdrahtet"
+>    galt für den Stand vor dem Cutover.
+>
+> Belege und vollständige Inventur: [`30-paket-inventur-production.md`](30-paket-inventur-production.md).
+
 ## Zwei getrennte Aktivierungen (Auftrag §10)
 
 1. **Profilzuordnung:** Jedes aktive Profil bekommt **automatisch** seine Pakete abgeleitet — keine
@@ -41,7 +54,8 @@ Ein Profil ist nur **vollständig aktiviert**, wenn **alle** Pflicht-Basispakete
 `active` haben **und** Abrufwege tragen. Konsequenzen:
 - **Bundestagsprofil:** Bund Basis ist `active` + versorgt → vollständig aktiviert.
 - **Berliner/Brandenburger Landtagsprofil:** braucht `berlin-basis`/`brandenburg-basis` — die sind
-  aktuell `prepared` (0 Quellen, Sprint 9 folgt) → **nicht vollständig aktiviert**,
+  aktuell `prepared` (Code-Seed 0 Wege; **Production 10 bzw. 9 Wege**, alle `manual` und durch das
+  harte Landesmodul-Gate nie abgerufen) → **nicht vollständig aktiviert**,
   `missingBasePackages` nennt das fehlende Landespaket, `reason = "pflichtpaket-unversorgt"`. Der
   Admin (Sprint 8) macht das sichtbar.
 - **Landtagsprofil ohne Bundesland:** kein falsches Landespaket; `requiredMissing` meldet
@@ -82,5 +96,12 @@ Die Linke, Linksfraktion) — diese laufen aber **nur über Referenzzählung**, 
 | pausiert/gelöscht | Refcount → 0, Paket nicht mehr aktiv |
 | leeres/unvollständiges Profil | keine falsche Aktivierung |
 
-**Nicht in den Live-Scheduler verdrahtet** (wie Sprint 1–3 additive Kompatibilitätsschicht); die
-Umstellung des profilgebundenen Crawls auf global-once ist ein **freigabepflichtiger** Folgeschritt.
+**Stand 2026-07-25 — live verdrahtet.** Mit dem Quellen-Cutover (`HELMUT_SOURCE_MODE=on`,
+Freigabe 2026-07-15) baut `scheduler.getSourcesForProfile` den geteilten Quellenplan über
+`buildRelationalCrawlPlan` → `computeGlobalActivation`. Der Satz „nicht in den Live-Scheduler
+verdrahtet" galt für den Vor-Cutover-Stand von Sprint 4.
+
+**Wichtige Abgrenzung:** Der Plan wird **global über alle aktiven Profile** gebildet
+(global-once). Die Paketzuweisung entscheidet damit, **was überhaupt gecrawlt wird** — nicht,
+welche Dokumente ein einzelnes Mandat sieht. Die mandatsbezogene Auswahl entsteht erst im
+Matching/Briefing und ist ein eigener, noch offener Nachweis (Phase-1-Punkt 28).

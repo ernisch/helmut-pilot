@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-25 · **`main`-HEAD:** `bed7f53` (Merge #123)
+**Letzte Aktualisierung:** 2026-07-25 · **`main`-HEAD:** `118e90c` (Merge #124)
 
 > **Diese Datei ist der aktuelle Stand.** Bei Widerspruch zu älteren Statusdokumenten
 > gilt diese Datei. Sie enthält **keine Chronik** — Details je offenem Punkt stehen in
@@ -39,6 +39,8 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | **Anker-Recovery-Pfad (F-3) technisch stillgelegt** — Workflow entfernt, Execute-Skript ohne DB-/KI-/Write-Pfad, `RECOVERY_ALLOWLIST` leer, namensunabhängiger CI-Riegel | PR #105, gemergt 2026-07-25 (`43e9e35`); auf `main` verifiziert: Workflow weg, Allowlist `[]`, 0 `require` im Execute-Skript |
 | `failed-final` wird im Pending-Filter und in `understandOneCluster` terminal behandelt („nie wieder") | PR #105 |
 | Freigabevorlage Quellen-Seed-Einspielung (Soll-Zahlen, Idempotenznachweis, Go-/Stop-Kriterien) | PR #123, gemergt 2026-07-25 (`bed7f53`), CI grün |
+| **Production-Inventur aller Quellenpakete** (7 Pakete in der DB, 8 im Code-Seed seit #118; 163 Abrufwege; Ertrag/letzte Lieferung/Fehler je Paket) | `quellenarchitektur/30-paket-inventur-production.md`, read-only erhoben 2026-07-25 |
+| **Automatische Profil→Paket-Zuweisung belegt** — Bund/Berlin/Brandenburg gegen den echten Production-Katalog, ohne Codeänderung; keine Mandanten-Hardcodes, Bestandsmandanten unverändert | `scripts/paketzuweisung-nachweis-test.js` 147/147, Inventur §6 |
 
 ## 3 · Teilweise abgeschlossen (Code da, Abnahme fehlt)
 
@@ -61,7 +63,7 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | **Quellen-Seed-Einspielung** (macht P0-2 und die 6 Bundesweg-Reparaturen in der DB wirksam) | zwei fehlende Betreiberhandlungen: (a) die Pre-Seed-Sicherung ist **noch nicht gelaufen** (Werkzeug fertig, braucht Production-Credentials), (b) die **absichtliche Reaktivierung** der 6 Bundeswege ist nicht freigegeben | Runbook `betrieb/quellen-seed-einspielung.md` §6c Schritt 1–17 — `node scripts/backup-export.js --scope=seed` ausführen, Manifest auf `vollstaendig: true` prüfen, dann Go/Stop nach §6 |
 | **OP-02** Recht (Pilotvertrag, AVV, DSFA, Art.-9-Grundlage, Fristen) | externe Prüfung durch Anwalt/DSB steht aus | Entwürfe aus `recht/` prüfen lassen und zeichnen; blockiert OP-12 |
 | **OP-03** Zweitmandanten-Freigabepaket | Grundsatzentscheidung „DB-seitige Durchsetzung vs. dokumentierte App-Guard-Akzeptanz" fehlt (`mandantentrennung-architektur.md` bewertet die Wege) | Betreiber entscheidet einen Weg; danach Migration + Env + Probelauf |
-| **OP-04** Demo-Mandate entfernen | Production-Datenänderung, freigabepflichtig | Freigabe einholen, dann über Provisionierungswerkzeug deaktivieren |
+| **OP-04** Demo-Mandate entfernen — **Umfang korrigiert 2026-07-25:** Production führt **8 Profile, davon 6 aktiv** (nicht 1 Pilot + 2 Demo-Mandate); fünf davon tragen Klarnamen realer Abgeordneter | Production-Datenänderung, freigabepflichtig; berührt zusätzlich OP-02 (personenbezogene Daten) | je Profil entscheiden, dann über Provisionierungswerkzeug deaktivieren (`quellenarchitektur/30-paket-inventur-production.md` §5, A-1) |
 | **OP-09/OP-10** Production-Beweise Lock-Deny und Fehlerpfad | brauchen ein echtes Störereignis; künstliche Injektion und Doppelstart sind verboten | beim nächsten echten Vorfall dokumentieren |
 
 ## 5 · Fehlgeschlagene oder abgebrochene Ansätze — **nicht wiederholen**
@@ -160,7 +162,7 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 
 | PR | Inhalt | Einschätzung |
 |---|---|---|
-| **#125** | Pre-Seed-Sicherung, gezielter Restore-Generator, Seed-Runbook | **neu, wartet auf Review.** Werkzeuge + Doku, **kein** Production-Schreibpfad, kein Cron, kein Auto-Trigger. `seed-restore-test.js` 33/33 (CI 31/31), Offline-Suite 145/145 |
+| **#125** | Pre-Seed-Sicherung, gezielter Restore-Generator, Seed-Runbook | **wartet auf Review.** Werkzeuge + Doku, **kein** Production-Schreibpfad, kein Cron, kein Auto-Trigger. `seed-restore-test.js` 33/33 (CI 31/31), Offline-Suite 145/145 |
 | #117 | WBSB-Pilotpaket + Workflow-Härtung vereinigt | **Draft, ausdrücklich nicht mergen** (öffnet nur die CI-Prüfung) |
 | #115 | Bestandsabgleich `bund-basis` + Pflichtquellen-Verifikationstest | **Draft, ausdrücklich nicht mergen** (nur um den Workflow auf einem Runner mit Egress laufen zu lassen) |
 | #112 | Geführter Erstlogin-/Onboarding-Flow (14 Screens) | manuelle Abnahme im Preview ausstehend |
@@ -177,9 +179,16 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 - **Crons:** 9 Vercel-Cron-Einträge (Crawl 04:00/20:00, Understanding 05:30/21:30,
   Morgenbriefing 05:00, Lage-Briefing 05:45, Health-Report 06:00, Lage-Check 10:00,
   Pipeline 16:00 UTC) — siehe `vercel.json`.
+- **Quellen (read-only gemessen 2026-07-25):** 7 Pakete in der DB (die zwei Landes-Partei-Pakete
+  aus #118 existieren bisher nur im Code-Seed) · 163 Abrufwege · 145 modell-aktiv ·
+  138 real gecrawlt (6 defekte Wege ohne Abruf, DIP eigener Pfad) · 19 Berlin-/Brandenburg-Wege
+  hart gesperrt · 8 Mandatsprofile, davon 6 aktiv, alle Bundestagsebene.
+  Details: `quellenarchitektur/30-paket-inventur-production.md`.
 - **Zustand:** 0 neue `systemErrors` im dokumentierten Beweiszeitraum; Betriebsbefunde
   B1 (Google-News-Klumpenrisiko, 146 von 163 Wegen über Google) und B2
-  (Understanding-Rückstand) bleiben offen.
+  (Understanding-Rückstand) bleiben offen. Neu belegt: jeder Cron-Lauf erscheint doppelt —
+  ein vollständiger Lauf und ~3 min später eine Wiederholung mit `circuit-open` auf fast
+  allen Wegen (3 988 Telemetriezeilen gesamt) → gehört zu OP-15.
 - **Nicht angewandte Migration:** `20260721` (DB-Härtung) — gehört zu OP-03.
 
 ## 10 · Letzte wichtige Entscheidungen
@@ -219,10 +228,19 @@ Sie bleibt **blockiert**, aber nur noch an zwei Betreiberhandlungen:
 Der gezielte Restore für den Fehlerfall ist gebaut und isoliert getestet — er ersetzt OP-01
 **nicht**, deckt aber genau den Seed-Sonderfall ab.
 
+Die Paket-Inventur belegt den Handlungsbedarf mit Production-Zahlen: die Landes-Basispakete tragen
+in der Datenbank weiterhin Partei-, Fraktions- und Personenquellen (A-3), und 2 der 5
+`always_on`-Kernwege stehen weiterhin auf `broken` (A-4). Ohne die Seed-Einspielung können die
+Phase-1-Punkte 6, 7, 14 und 15 nicht grün werden
+([`quellenarchitektur/30-paket-inventur-production.md`](quellenarchitektur/30-paket-inventur-production.md) §7).
+
 Parallel möglich, ohne Freigabe:
 1. **OP-11 Branch Protection** verifizieren (2 Minuten, reversibel,
    `betrieb/branch-protection.md`).
 2. **Review offener PRs** (#112, #111).
+3. **Phase-1-Checkliste** fortführen: [`roadmap/phase_1_checkliste.md`](roadmap/phase_1_checkliste.md)
+   ist die operative Wahrheit; nächster nicht-freigabepflichtiger Block sind die Punkte 19–23
+   (Ebenen-/Geografie-/Embedding-Vollständigkeit, Matching-Nachvollziehbarkeit).
 
 **Vor einer OP-06-Ausführung ist eine Fachentscheidung nötig:** die mandatsrelative
 Begründung von 16 der 34 Allowlist-Einträge (§3) muss bewertet werden — terminale
@@ -233,6 +251,7 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 | Sprint | Datum | Zustand |
 |---|---|---|
 | Merge #123 + Sicherung, gezielter Restore und Entscheidungsreife für die Seed-Einspielung | 2026-07-25 | **Teilweise abgeschlossen** — #123 gemergt (`bed7f53`); Backup- und Restore-Werkzeug gebaut und isoliert getestet (33/33 lokal, 31/31 in CI, Suite 145/145). Die Seed-Ausführung bleibt **blockiert**: die Sicherung ist noch nicht gelaufen und die Reaktivierung der 6 Bundeswege ist nicht freigegeben. Details unten. |
+| Phase-1-Block: Quellenpakete inventarisieren + automatische Paketzuweisung beweisen | 2026-07-25 | **Erfolgreich abgeschlossen** — beide Abnahmekriterien erfüllt und belegt; 145/145 Offline-Suiten grün. Details unten. |
 | Merge PR #118 + Vorbereitung des Quellen-Seed-Sprints | 2026-07-25 | **Teilweise abgeschlossen** — #118 gemergt (`61767a9`), CI grün, Deployment `READY`. Die Seed-Einspielung ist vollständig entscheidungsreif vorbereitet, aber **blockiert** (fehlende Sicherung). Details unten. |
 | Merge #122 + adversarialer Review von PR #118 (Quellenarchitektur-Remediation) | 2026-07-25 | **Erfolgreich abgeschlossen** — #122 gemergt (`54fe370`); #118 reviewt, 3 belegte Defekte behoben. |
 | Merge von PR #105 — Anker-Recovery-Pfad in Production stillgelegt | 2026-07-25 | **Erfolgreich abgeschlossen** — gemergt als `43e9e35`; Stilllegung auf `main` verifiziert. |
@@ -296,6 +315,44 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 - **Nicht getan (bewusst):** kein Production-Backup ausgeführt, kein Seed eingespielt, kein
   Restore gefahren, kein Production-Schreibzugriff, keine Secrets, keine Cron-Änderung, kein
   Flag, kein weiterer PR gemergt.
+**Sprint „Quellenpakete inventarisieren + Paketzuweisung beweisen" — Nachweis**
+
+- **Auftrag:** die beiden nächsten zusammenhängenden Phase-1-Punkte schließen — Punkt 18
+  (Production-Inventur aller Quellenpakete) und Punkt 12 (automatische Paketzuweisung
+  beweisen).
+- **Was erledigt wurde:** vollständige, rein lesende Production-Inventur aller Pakete
+  (Wege, Aktivierung, Ertrag, letzte Lieferung, Fehler, Pflichtklassen, zugeordnete
+  Profile) in `quellenarchitektur/30-paket-inventur-production.md`; Nachweis der
+  automatischen Paketzuweisung für Bundestag/Berlin/Brandenburg **gegen den echten
+  Production-Katalog** und zusätzlich als Offline-Suite
+  `scripts/paketzuweisung-nachweis-test.js`; neue operative Checkliste
+  `docs/roadmap/phase_1_checkliste.md` (11 ✅ / 7 ⏳ / 12 ☐).
+- **Ergebnis der Zuweisungsprüfung:** Bund→`bund-basis`, Berlin→`berlin-basis`,
+  Brandenburg→`brandenburg-basis`; Fachpakete entstehen aus Profildaten; keine fremden
+  Regionalpakete; kein Mandant im Code hartkodiert (Sachzuordnung ist unter beliebiger
+  Profil-ID identisch); drei zusätzliche Profile ändern an den Bestandsmandanten nichts
+  (145 → 145 aktive Abrufwege); Berlin/Brandenburg bleiben ehrlich `requested_unsupplied`.
+- **Modell ↔ Realität abgeglichen:** 145 modell-aktive Wege gegen 145 real gecrawlte
+  Quellen vollständig aufgelöst (138 Katalogwege + 7 profilgenerierte Personensuchen;
+  6 defekte Wege und DIP laufen bewusst nicht mit); 0 Berlin-/Brandenburg-Wege im Lauf.
+- **Gefundene Abweichungen (A-1…A-8):** in der Inventur §7 dokumentiert. Doku-Fehler in
+  `quellenarchitektur/07-…` korrigiert (Landespakete sind nicht leer; der Resolver ist
+  seit dem Cutover live verdrahtet). **A-1** hat OP-04 in der Restliste verschärft.
+  **A-3** (Landes-Basispakete nicht mandantenneutral) und **A-4** (2 von 5
+  `always_on`-Kernwegen defekt) sind seit dem Merge von #118 **auf `main` behoben**, in der
+  **Production-Datenbank aber weiterhin wirksam** — dafür fehlt das freigabepflichtige
+  Einspielen der Seeds (§11).
+- **Was bewusst nicht erledigt wurde:** keine Production-Datenänderung, kein Seed-Einspielen,
+  keine Migration, keine Aktivierung von Berlin/Brandenburg, kein Deaktivieren bestehender
+  Quellen, keine Flag-/Cron-/Secret-Änderung, kein Anlegen echter Profile. Keine Änderung an
+  `profile-packages.js` oder `seeds/packages.js` — die Zuweisungslogik war fehlerfrei.
+- **Tests:** Offline-Suite **145/145 grün** (`node scripts/run-offline-tests.js`, 38 s); neue
+  Suite `paketzuweisung-nachweis-test` **147/147** nach dem Rebase auf `61767a9` (die zwei
+  neuen Landes-Parteipakete aus #118 sind mit abgedeckt), dreimal wiederholt byte-identisch.
+  Kein Browser-Smoke nötig (keine UI-Änderung).
+- **Nächster Schritt:** Freigabe für das Einspielen der beiden Seeds — vorbereitet und
+  bewertet in [`betrieb/quellen-seed-einspielung.md`](betrieb/quellen-seed-einspielung.md),
+  derzeit blockiert durch die fehlende Sicherung (§11).
 
 **Sprint „Merge PR #118 + Seed-Vorbereitung" — Nachweis**
 
