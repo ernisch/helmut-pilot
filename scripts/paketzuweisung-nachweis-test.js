@@ -118,6 +118,16 @@ const rBb = pp.resolveProfilePackages(P_BRANDENBURG);
 check("Partei 'Die Linke' -> die-linke-bund", rBb.optional.includes("die-linke-bund"));
 check("Region Niedersachsen -> regional-niedersachsen", pp.resolveProfilePackages(P_BESTAND).optional.includes("regional-niedersachsen"));
 check("Fachthema allein (ohne Ausschuss) genuegt", pp.resolveProfilePackages({ id: "t", fullName: "T", partei: "SPD", politische_ebene: "bundestag", fachpolitische_schwerpunkte: ["Mindestlohn"], profileActive: true }).optional.includes("arbeit-und-soziales"));
+// Landes-Parteipakete (P0-2, Architektur-Audit 29): das Landes-BASISpaket bleibt neutral,
+// das Parteipaket des Mandats kommt als eigenes, optionales Landespaket dazu.
+check("Landtag Brandenburg + Die Linke -> die-linke-brandenburg", rBb.optional.includes("die-linke-brandenburg"));
+check("Landtag Brandenburg + Die Linke -> NICHT die-linke-berlin", !rBb.all.includes("die-linke-berlin"));
+{
+  const berlinLinke = pp.resolveProfilePackages({ id: "t-be-linke", fullName: "T", partei: "Die Linke", politische_ebene: "landtag", bundesland: "Berlin", profileActive: true });
+  check("Landtag Berlin + Die Linke -> die-linke-berlin", berlinLinke.optional.includes("die-linke-berlin"));
+  check("Landes-Parteipaket ist optional, nie Pflicht", !berlinLinke.required.includes("die-linke-berlin"));
+  check("Landtag Berlin + Die Linke -> NICHT die-linke-brandenburg", !berlinLinke.all.includes("die-linke-brandenburg"));
+}
 check("nicht-sozialer Ausschuss erzeugt KEIN Fachpaket", !pp.resolveProfilePackages({ id: "t", fullName: "T", partei: "SPD", politische_ebene: "bundestag", ausschuesse: ["Ausschuss für Verkehr"], profileActive: true }).optional.includes("arbeit-und-soziales"));
 
 // ============ 5) Fremde Regionalpakete werden NICHT zugewiesen ============
@@ -125,6 +135,8 @@ console.log("== 5) Keine fremden Regional-/Landespakete ==");
 check("Berlin-Profil erhaelt KEIN brandenburg-basis", !pp.resolveProfilePackages(P_BERLIN).all.includes("brandenburg-basis"));
 check("Brandenburg-Profil erhaelt KEIN berlin-basis", !pp.resolveProfilePackages(P_BRANDENBURG).all.includes("berlin-basis"));
 check("Berlin-Profil erhaelt KEIN regional-niedersachsen", !pp.resolveProfilePackages(P_BERLIN).all.includes("regional-niedersachsen"));
+check("Berlin-Profil (CDU) erhaelt KEIN fremdes Landes-Parteipaket", !pp.resolveProfilePackages(P_BERLIN).all.some((k) => /^die-linke-/.test(k)));
+check("Landes-Basispakete sind neutral: kein Parteipaket ist Pflichtpaket", [P_BERLIN, P_BRANDENBURG].every((p) => pp.resolveProfilePackages(p).required.every((k) => !/^die-linke-/.test(k))));
 check("Brandenburg-Profil erhaelt KEIN regional-niedersachsen", !pp.resolveProfilePackages(P_BRANDENBURG).all.includes("regional-niedersachsen"));
 check("Bundesprofil (Hessen) erhaelt KEIN Landespaket", !pp.resolveProfilePackages(P_BUND).all.some((k) => /-basis$/.test(k) && k !== "bund-basis"));
 check("Berlin-Profil erhaelt KEIN fremdes Personenpaket", !pp.resolveProfilePackages(P_BERLIN).all.includes(`profil-${BESTANDS_MANDAT}`));
@@ -279,8 +291,13 @@ console.log("== 10) Ein neues Profil aendert an bestehenden Mandanten nichts =="
 
 // ============ Konsistenz Code-Seed <-> Inventur-Annahmen ============
 console.log("== Konsistenz: Annahmen der Paket-Inventur ==");
-check("Code-Seed enthaelt genau die 6 Sachpakete (kein Personenpaket im Code)",
-  M.packages.length === 6 && M.packages.every((p) => !p.key.startsWith("profil-")));
+check("Code-Seed enthaelt ausschliesslich Sachpakete (kein Personenpaket im Code)",
+  M.packages.length > 0 && M.packages.every((p) => !p.key.startsWith("profil-")));
+check("Code-Seed enthaelt die 8 erwarteten Paketschluessel",
+  JSON.stringify(M.packages.map((p) => p.key).sort()) === JSON.stringify([
+    "arbeit-und-soziales", "berlin-basis", "brandenburg-basis", "bund-basis",
+    "die-linke-berlin", "die-linke-brandenburg", "die-linke-bund", "regional-niedersachsen"
+  ]));
 check("berlin-basis und brandenburg-basis sind Pflicht-Basispakete", ["berlin-basis", "brandenburg-basis"].every((k) => M.packages.find((p) => p.key === k).is_base === true));
 check("berlin-basis und brandenburg-basis sind 'prepared' (nicht aktivierbar)", ["berlin-basis", "brandenburg-basis"].every((k) => M.packages.find((p) => p.key === k).status === "prepared"));
 check("nur Berlin und Brandenburg haben ein Landespaket-Mapping", JSON.stringify(Object.keys(pp.LANDESPAKET_BY_BUNDESLAND).sort()) === JSON.stringify(["berlin", "brandenburg"]));
