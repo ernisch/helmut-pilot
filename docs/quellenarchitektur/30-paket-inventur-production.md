@@ -1,7 +1,7 @@
 # Paket-Inventur Production — Quellenpakete und automatische Paketzuweisung
 
 **Erhebung:** 2026-07-25, **rein lesend** gegen die Production-Datenbank (Supabase-Projekt
-`ddckuvvpcytqbyfmbvie`) · **Code-Stand:** `main` `54fe370` (Merge #122) · **Quellenmodus:**
+`ddckuvvpcytqbyfmbvie`) · **Code-Stand:** `main` `61767a9` (Merge #118) · **Quellenmodus:**
 `HELMUT_SOURCE_MODE=on` (relationale DB ist die aktive Quellenwahrheit)
 
 > **Zweck.** Diese Datei ist die kanonische Antwort auf „welche Quellenpakete gibt es
@@ -29,10 +29,17 @@ Versorgung:
 | **fachlich vollständig** | alle `required_classes` des Pakets besetzt | §4 |
 | **durch Tests belegt** | automatisierte Offline-Suite | `scripts/paketzuweisung-nachweis-test.js` (§6) |
 
-## 2 · Bestand: 7 Pakete in Production
+## 2 · Bestand: 7 Pakete in Production, 8 im Code-Seed
 
-Gesamtbestand der relationalen Quellenwahrheit: **7 Pakete · 163 Abrufwege · 165
-Paket-Zuordnungen · 64 Herausgeber · 73 politische Entitäten · 50 Geografien.**
+Gesamtbestand der relationalen Quellenwahrheit **in der Datenbank**: **7 Pakete · 163
+Abrufwege · 165 Paket-Zuordnungen · 64 Herausgeber · 73 politische Entitäten · 50
+Geografien.**
+
+> **Code-Seed ≠ Datenbank.** Seit dem Merge von PR #118 (`61767a9`) führt der Code-Seed
+> **8** Pakete: die zwei neuen, nicht-verpflichtenden Landes-Parteipakete
+> `die-linke-berlin` und `die-linke-brandenburg` (beide `prepared`). Sie existieren
+> **noch nicht** als Datenbankzeilen — Seeds werden nicht automatisch eingespielt. Bis das
+> freigabepflichtige Einspielen erfolgt, bleibt die Production-Wahrheit die Tabelle unten.
 
 | Paket | Zweck (Kurzform) | Ebene | Region | Status | Herkunft |
 |---|---|---|---|---|---|
@@ -114,6 +121,21 @@ Der Admin-Report weist die Pflichtklassen heute ehrlich als `present: 0` aus, we
 Abrufwege **kein** Klassen-Tagging tragen; die Zahlen oben stammen aus der
 Namenskonvention der Landesmodul-Wege und sind eine Hilfsableitung, keine Systemwahrheit.
 
+**Wie sich das mit dem Seed-Einspielen ändert.** PR #118 teilt die 15 Pflichtklassen auf:
+12 neutrale institutionelle Klassen bleiben im Basispaket, die 3 Pilotklassen
+(`partei_pilot`, `fraktion_pilot`, `person_pilot`) wandern in die neuen Landes-Parteipakete.
+Nach dem Einspielen der Seeds wären die Zahlen:
+
+| Paket | Pflichtklassen | besetzt |
+|---|---|---|
+| `berlin-basis` | 12 | 7 |
+| `brandenburg-basis` | 12 | 8 |
+| `die-linke-berlin` | 3 | 3 |
+| `die-linke-brandenburg` | 3 | **1** (nur `partei_pilot`) |
+
+Die Lücke wird durch die Aufteilung also **nicht** kleiner — sie wird nur korrekt
+zugeordnet. Beide Landesmodule bleiben fachlich unvollständig (Checklistenpunkte 6/7).
+
 ## 5 · Zugeordnete Profile / Mandate
 
 In Production existieren **8 Mandatsprofile, davon 6 aktiv** (nicht 1 Pilot + 2
@@ -147,7 +169,12 @@ gelesenen Production-Katalog** geführt. Es wurde **kein** Profil in Production 
 |---|---|---|---|---|
 | Bundestag (SPD, Ausschuss Arbeit und Soziales) | `bund-basis` | `arbeit-und-soziales` | **ja** | 138 |
 | Landtag Berlin (CDU, Ausschuss Inneres) | `bund-basis` + **`berlin-basis`** | — | **nein**, `pflichtpaket-unversorgt` | 54 |
-| Landtag Brandenburg (Die Linke, Ausschuss Wirtschaft) | `bund-basis` + **`brandenburg-basis`** | `die-linke-bund` | **nein**, `pflichtpaket-unversorgt` | 56 |
+| Landtag Brandenburg (Die Linke, Ausschuss Wirtschaft) | `bund-basis` + **`brandenburg-basis`** | `die-linke-bund`, `die-linke-brandenburg`¹ | **nein**, `pflichtpaket-unversorgt` | 56 |
+
+¹ `die-linke-brandenburg` ist die Neuerung aus PR #118: das Landes-**Basis**paket bleibt
+neutral, das Parteipaket des Mandats kommt als eigenes, **optionales** Paket dazu. Gegen
+den Production-Katalog bleibt die Referenz heute wirkungslos, weil die Paketzeile noch
+nicht in der Datenbank steht (§2).
 
 Ergebnis gegen den Production-Katalog, jeweils belegt:
 
@@ -167,7 +194,7 @@ Ergebnis gegen den Production-Katalog, jeweils belegt:
    angefordert (`refCount` 1), aber als `requested_unsupplied` geführt — Status
    `prepared` verhindert die Aktivierung, **auch wenn Abrufwege vorhanden sind**.
 
-**Automatisierter Beleg:** `scripts/paketzuweisung-nachweis-test.js` — **139/139 grün**,
+**Automatisierter Beleg:** `scripts/paketzuweisung-nachweis-test.js` — **147/147 grün**,
 dreimal wiederholt mit identischem Ergebnis. Die Suite prüft dieselbe Logik gegen zwei
 Katalogformen: den Bund-Code-Seed **und** einen produktionsförmigen Katalog (Landespakete
 **mit** Abrufwegen, ein personenbezogenes Paket) aus neutralen Platzhaltern. Sie enthält
@@ -182,10 +209,10 @@ Alle Abweichungen sind **Befunde dieser Inventur**, keine in diesem Sprint verur
 |---|---|---|---|
 | **A-1** | Production führt **8 Profile (6 aktiv)**, nicht „1 Pilot + 2 Demo-Mandate". Fünf davon tragen Klarnamen realer Bundestagsabgeordneter und wurden am 20.07. angelegt. | `OP-04` ist deutlich größer als dokumentiert; jedes aktive Profil erzeugt Crawl-Last und Personensuchen | in `CURRENT_STATE.md` §3 und `datenmotor-restliste.md` (OP-04) nachgezogen. Löschen/Deaktivieren ist **freigabepflichtig** — nicht ausgeführt |
 | **A-2** | `docs/quellenarchitektur/07-…` behauptete, `berlin-basis`/`brandenburg-basis` hätten **0 Quellen**. Production führt **10 bzw. 9** Abrufwege. | Doku widersprach dem Ist-Stand | Doku korrigiert (dieser Sprint) |
-| **A-3** | Die Landes-Basispakete (`is_base`, für **jedes** Landtagsprofil verpflichtend) enthalten in Production **Partei-, Fraktions- und Personenquellen** (`be-partei_pilot`, `be-fraktion_pilot`, `be-person_pilot`, `bb-partei_pilot`). | Ein Landtagsmandat beliebiger Partei bekäme zwingend die Quellen **einer** Partei — Verstoß gegen die Mandantenneutralität | Codeseitig behoben in **PR #118** (P0-2), dort **nicht gemergt**. Production-Daten unverändert. **Vor jeder BE/BB-Aktivierung zu bereinigen** |
-| **A-4** | 2 der 5 `always_on`-Kernwege (`bundestag`, `bundesregierung`) sind `broken` — die „5 neutralen Kernquellen ohne Profil" sind faktisch **3**. | Ein Betrieb ohne aktives Profil hätte weniger Grundversorgung als dokumentiert | verifizierte Ersatz-URLs liegen in **PR #118** (P1), ungemergt |
+| **A-3** | Die Landes-Basispakete (`is_base`, für **jedes** Landtagsprofil verpflichtend) enthalten **in Production** weiterhin **Partei-, Fraktions- und Personenquellen** (`be-partei_pilot`, `be-fraktion_pilot`, `be-person_pilot`, `bb-partei_pilot`). | Ein Landtagsmandat beliebiger Partei bekäme zwingend die Quellen **einer** Partei — Verstoß gegen die Mandantenneutralität | **Auf `main` behoben** (PR #118, P0-2, gemergt `61767a9`): Basispakete neutralisiert, zwei optionale Landes-Parteipakete ergänzt. **In der Datenbank noch nicht wirksam** — dafür muss der Landesmodul-Seed `20260717` eingespielt werden (**freigabepflichtig**, in diesem Sprint nicht getan). **Vor jeder BE/BB-Aktivierung zwingend** |
+| **A-4** | 2 der 5 `always_on`-Kernwege (`bundestag`, `bundesregierung`) sind `broken` — die „5 neutralen Kernquellen ohne Profil" sind faktisch **3**. | Ein Betrieb ohne aktives Profil hätte weniger Grundversorgung als dokumentiert | verifizierte Ersatz-URLs sind **auf `main`** (PR #118, P1-5, gemergt). In der Datenbank tragen die Wege weiterhin `status='broken'` und bleiben ausgeschlossen, bis der Seed `20260713` eingespielt wird (**freigabepflichtig**) |
 | **A-5** | `profil-<pilot-mandats-id>` liefert in **5 von 5** Läufen `empty`, während dasselbe Mandat parallel 6 profilgenerierte Personensuchen fährt. | Die DB-Katalogzeile ist redundant zum Laufzeitmechanismus und trägt nichts bei | dokumentiert; Entfernen wäre eine **Production-Datenänderung** → freigabepflichtig, nicht ausgeführt |
-| **A-6** | `retrieval_paths.last_success_at`/`last_error`/`error_streak` sind zu **0 von 163** befüllt. | Die Pfad-Statusmaschine ist toter Code; `status` (`healthy`/`needs_review`/`broken`) ist eine Seed-Annotation, keine Messung | bekannt und als P1 in **PR #118** ausdrücklich ausgeklammert; hier nur belegt |
+| **A-6** | `retrieval_paths.last_success_at`/`last_error`/`error_streak` sind zu **0 von 163** befüllt. | Die Pfad-Statusmaschine ist toter Code; `status` (`healthy`/`needs_review`/`broken`) ist eine Seed-Annotation, keine Messung | in **PR #118** ausdrücklich als P1 ausgeklammert und dort nicht behoben; hier nur belegt |
 | **A-8** | `docs/quellenarchitektur/07-…` schloss mit „**nicht** in den Live-Scheduler verdrahtet". Tatsächlich läuft der Resolver seit dem Cutover live: `scheduler.getSourcesForProfile` → `buildRelationalCrawlPlan` → `computeGlobalActivation`. | Die zentrale Aussage dieses Sprints stand in der Doku als „nicht produktiv" | Doku korrigiert (dieser Sprint) |
 | **A-7** | Jeder Cron-Lauf erscheint doppelt: ein vollständiger Lauf (145 Quellen, 143 `ok`) und ~3 Minuten später ein Wiederholungslauf mit **`circuit-open`** auf fast allen Wegen (3 988 Zeilen gesamt). | Telemetrie-Auswertungen über „alle Läufe" unterschätzen den Ertrag massiv | für diese Inventur durch Beschränkung auf vollständige Läufe entschärft; Ursachenanalyse gehört zu **OP-15** |
 
@@ -235,7 +262,7 @@ GROUP BY pk.key ORDER BY pk.key;
 Der Zuweisungsnachweis (§6) ist ohne DB-Zugriff reproduzierbar:
 
 ```
-node scripts/paketzuweisung-nachweis-test.js     # 139/139
+node scripts/paketzuweisung-nachweis-test.js     # 147/147
 node scripts/profile-packages-test.js            # Bestandssuite
 node scripts/run-offline-tests.js                # gesamte Offline-Suite
 ```
