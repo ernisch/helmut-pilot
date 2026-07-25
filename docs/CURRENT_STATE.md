@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-25 · **`main`-HEAD:** `0d6d867` (Merge #125)
+**Letzte Aktualisierung:** 2026-07-25 · **`main`-HEAD:** `9534bc0` (Merge #127)
 
 > **Diese Datei ist der aktuelle Stand.** Bei Widerspruch zu älteren Statusdokumenten
 > gilt diese Datei. Sie enthält **keine Chronik** — Details je offenem Punkt stehen in
@@ -195,7 +195,9 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 | Datum | Entscheidung |
 |---|---|
 | 2026-07-25 | **Die 6 reparierten Bundeswege werden gestaffelt reaktiviert** — erst die 2 Direktfeeds, nach einem vollen Crawl-Zyklus die 4 Google-Wege (`betrieb/quellen-seed-einspielung.md` §6d). Umsetzung als gezieltes `update` nach dem Seed, **nicht** durch Bearbeiten der Seed-Datei: der Bund-Seed ist per Drift-Gate byte-genau an seinen Generator gebunden |
-| 2026-07-25 | Empfehlung, `rp-ausschuss-arbeit-soziales` wegzulassen, **geprüft und abgelehnt** — die Begründung („kein belegter Eigenertrag") ist zirkulär: der Weg hat keine Telemetrie, weil er `broken` ist. Sein einziger echter Abruf (Sprint 9B) ergab HTTP 200, 20 Items, jüngstes 0 Tage alt |
+| 2026-07-25 | Der Parallelbranch `claude/helmut-seed-review-6nocps` wird **nicht als Ganzes gemergt** — seine Doku-Fassung ist von vor den Korrekturen abgezweigt und würde die gemessenen Ist-Zahlen, die Delta-Prüflogik und die Staffelung zurückdrehen. Seine drei Code-Änderungen sind einzeln triagiert (Runbook §6d.2) |
+| 2026-07-25 | `rp-ausschuss-arbeit-soziales` wird **erst vor Stufe 2 entschieden**, anhand echter Telemetrie. Das zweite Argument des Parallelbranches trifft zu: der reparierte `rp-bundestag` holt `pressemitteilungen.rss` **und** `presse/hib/rss` direkt — der Google-Weg `site:bundestag.de` ist damit ein Aggregator-Umweg auf eine bereits direkt abgerufene Domain. Umsetzung per `update`, nicht per Katalog-Override |
+| 2026-07-25 | Die Erweiterung der `on-conflict`-Klausel um `url`/`query`/`parser`/`max_items` (R-2) **läuft nicht mit der Erstanwendung** — sie betrifft 144 Abrufwege statt 6 und ist von keiner geprüften Soll-Zahl abgedeckt. Eigener Schritt, eigene Vorschau, eigene Freigabe |
 | 2026-07-25 | PR #125 (Sicherung + gezielter Restore) gemergt (`0d6d867`); CI auf `main` grün, Vercel-Production `READY` |
 | 2026-07-25 | **Prüfungen im Seed-Runbook arbeiten mit gemessenen Deltas und benannten Zeilen**, nicht mit absoluten Zahlen aus einer Doku — absolute Zahlen driften bei jeder Provisionierung und hätten eine korrekte Datenbank fälschlich gestoppt |
 | 2026-07-25 | Der Seed-Rückweg ist ein **gezielter, zeilenscharfer Restore** — `drop table … cascade` ist als Rollback **verworfen** (würde wegen `ON DELETE CASCADE` fremde Daten mitreißen und ist für Rückbau unbrauchbar) |
@@ -325,10 +327,8 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
   read-only Fachprüfung jeder einzelnen Seed-Änderung gegen Production. Sie **bestätigt die hier
   korrigierten Ist-Zahlen unabhängig** (7 Pakete / 163 Abrufwege / 165 Zuordnungen) und empfiehlt
   zusätzlich, `rp-ausschuss-arbeit-soziales` **nicht** mitzuaktivieren (einziger Google-Weg ohne
-  belegten Eigenertrag). **Bewertet und entschieden:** die Empfehlung wurde abgelehnt (zirkuläre
-  Begründung, siehe §6d.1 des Runbooks), stattdessen wird **gestaffelt** reaktiviert (§6d).
-  Zwei weitere Punkte des Branches sind als offene Fachfragen übernommen (§6d.2), ohne
-  `required_classes` zu ändern.
+  belegten Eigenertrag). **Bewertet, triagiert und dokumentiert** — Einzelheiten in §6d.1/§6d.2
+  des Runbooks.
 - **Nicht getan (bewusst):** kein Production-Zugriff, weder lesend noch schreibend · kein Backup
   ausgeführt · keine Seeds eingespielt · kein Restore gefahren · keine Secrets gelesen, gesetzt
   oder rotiert · keine Cron-Änderung · keine Quelle aktiviert oder deaktiviert · keine Änderung

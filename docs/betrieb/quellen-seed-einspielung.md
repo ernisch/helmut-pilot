@@ -435,8 +435,9 @@ kein Gesamt-Rollback nötig.
 | 15 | Idempotenz | Beide Seeds ein zweites Mal einspielen → **0 Änderungen**. **Muss vor Schritt 16 laufen** — Begründung dort |
 | 16 | **Staffelung Stufe 1** | Die 4 Google-Wege zunächst zurückhalten (§6d). Ab hier darf Seed 1 **nicht erneut** eingespielt werden, bis Stufe 2 durch ist |
 | 17 | Stufe 1 überwachen | Nach dem ersten vollständigen Crawl-Cron: Telemetrie der 2 Direktfeeds (Items > 0, kein Dauerfehler) — Stopbedingung §6b |
-| 18 | **Staffelung Stufe 2** | Die 4 Google-Wege nachziehen (§6d), erneut überwachen |
-| 19 | Dokumentation | `CURRENT_STATE.md` + diese Vorlage nachziehen |
+| 18 | **Entscheidung vor Stufe 2** | Anhand der Telemetrie aus Schritt 17 prüfen, was `rp-bundestag` über `presse/hib/rss` an Ausschussmaterial liefert → entscheiden, ob `rp-ausschuss-arbeit-soziales` mit nachgezogen wird (§6d.1) |
+| 19 | **Staffelung Stufe 2** | Die verbleibenden Google-Wege nachziehen (§6d), erneut überwachen |
+| 20 | Dokumentation | `CURRENT_STATE.md` + diese Vorlage nachziehen |
 
 ---
 
@@ -486,25 +487,60 @@ Stufe 1 und Stufe 2 würde die vier zurückgehaltenen Wege **stillschweigend** w
 
 **Rücksetzweg** in beiden Stufen: derselbe `update … set status = 'broken'` je Weg-ID, einzeln.
 
-### 6d.1 · Geprüfte und abgelehnte Empfehlung: `rp-ausschuss-arbeit-soziales` weglassen
+### 6d.1 · `rp-ausschuss-arbeit-soziales` — Entscheidung vor Stufe 2
 
-Ein paralleler Arbeitsstand (Branch `claude/helmut-seed-review-6nocps`) empfahl, diesen Weg
-dauerhaft auf `broken` zu belassen — „einziger Google-Weg ohne belegten Eigenertrag".
-**Geprüft und abgelehnt.** Die Begründung ist zirkulär:
+Ein paralleler Arbeitsstand (Branch `claude/helmut-seed-review-6nocps`, **ungemergt**) empfiehlt,
+diesen Weg nicht mitzuaktivieren. Die Empfehlung wurde zweimal geprüft; die zweite Fassung trägt
+ein **besseres Argument** als die erste, und dieses Argument hält:
 
-| Prüfung | Ergebnis |
+| Begründung | Bewertung |
 |---|---|
-| Warum keine Telemetrie? | Weil der Weg auf `broken` steht und deshalb **nie abgerufen wird** — nicht, weil er nichts liefert |
-| Was ergab der einzige echte Abruf? | Sprint 9B: **HTTP 200, 20 Items, jüngstes 0 Tage alt**, `verifiziert: true`, Verdikt `geeignet` (`lib/helmut/quellenarchitektur/seeds/bundeswege-reparaturen.js`) |
-| Im Vergleich zu den anderen fünf | Alle sechs `geeignet`/HTTP 200; die Direktfeeds liefern 15 Items, die vier Google-Wege je 20. Dieser Weg gehört zu den stärksten, nicht zu den schwächsten |
-| Redundanz im Katalog | **28** Ausschuss-Wege, **27 laufen bereits**. Die Empfehlung nannte „6 vorhandene Suchen" — tatsächlich 25 `rp-bundle-ausschuss-*` plus Radar- und Prozess-Weg |
-| Alleinstellung | Einziger Ausschuss-Weg mit `site:bundestag.de`. Alle 27 anderen sind Medien-/Aggregatorsuchen über `aggregator-google-news`. Er ist der einzige, der auf die **Primärquelle** zielt |
+| *erste Fassung:* „einziger Google-Weg ohne belegten Eigenertrag" | **Zirkulär.** Der Weg hat keine Telemetrie, weil er `broken` ist und nie abgerufen wird. Sein einziger echter Abruf (Sprint 9B) ergab HTTP 200, 20 Items, jüngstes 0 Tage alt |
+| *zweite Fassung:* der Google-Weg `site:bundestag.de` ist ein **Aggregator-Umweg auf eine Domain, die Helmut direkt abruft** | **Trifft zu.** Der reparierte `rp-bundestag` holt **zwei** Direktfeeds: `pressemitteilungen.rss` **und** `presse/hib/rss`. *heute im bundestag* ist die Ausschussberichterstattung des Bundestags selbst — direkt, vollständiger und schneller als über Googles Index |
+| „6 vorhandene `rp-bundle-ausschuss-*`-Suchen" | **Zahl falsch** — es sind 25; insgesamt 28 Ausschuss-Wege, 27 laufen bereits. Der Fehler schwächt die Empfehlung nicht, er stärkt sie |
 
-Die Redundanz ist also groß in der **Menge**, nicht in der **Art**. Ein Weglassen würde
-ausgerechnet die einzige Primärquellensuche zum Ausschuss entfernen. Der Weg läuft in **Stufe 2**
-regulär mit und unterliegt dort der Stopbedingung aus §6b wie die anderen drei Google-Wege.
+**Entscheidung: offen bis Stufe 2, dann anhand echter Telemetrie.** Die Staffelung (§6d) ist genau
+dafür da. Nach Stufe 1 und einem vollständigen Crawl-Zyklus ist messbar, was `rp-bundestag` über
+`presse/hib/rss` tatsächlich an Ausschussmaterial liefert. Erst dann wird entschieden, ob der
+Google-Weg noch einen Beitrag leistet.
 
-### 6d.2 · Zwei offene Fachfragen (noch keine OP-Nummern vergeben)
+**Umsetzung, falls er wegbleiben soll:** ein `update` — kein Code, kein Deploy, jederzeit
+umkehrbar:
+
+```sql
+update public.retrieval_paths set status = 'broken' where id = 'rp-ausschuss-arbeit-soziales';
+```
+
+Das ist einem `PATH_STATUS_OVERRIDE` im Katalog (so der Parallelbranch) **vorzuziehen**: der
+Override macht aus einer Betriebsentscheidung eine dauerhafte Code-Eigenschaft, die über den
+Generator in jeden künftigen Seed einfließt und nur per Deploy zurücknehmbar ist.
+
+### 6d.2 · Der Parallelbranch — Triage (Stand 2026-07-25)
+
+`claude/helmut-seed-review-6nocps` hat **keinen offenen PR** und ist **nicht** auf dem Merge-Weg.
+Er enthält vier Teile, die getrennt zu bewerten sind:
+
+| Teil | Umgang |
+|---|---|
+| **Doku-Fassung** von `quellen-seed-einspielung.md` | **Nicht übernehmen.** Der Branch ist von *vor* den Korrekturen abgezweigt und führt weiterhin `source_packages 6 → 8` sowie absolute Prüfzahlen. Ein Merge würde die korrigierten Ist-Zahlen (7/163/165), die Umstellung auf gemessene Deltas und §6d zurückdrehen |
+| **A-1** — `PATH_STATUS_OVERRIDE` im Katalog | **Als Entscheidung vor Stufe 2** übernehmen, aber als `update` statt als Code-Override (§6d.1) |
+| **A-3** — `required_classes` von `die-linke-brandenburg` auf `['partei_pilot']` | **Separat entscheiden**, entkoppelt von der Einspielung. Sachlich richtig (`rp-bb-fraktion_pilot`/`-person_pilot` existieren nicht), heute wirkungslos (Paket `prepared`, nie aktiv), steht auf der Freigabe-Stopliste |
+| **R-2** — `on conflict` schreibt zusätzlich `url`, `query`, `parser`, `max_items` | **Eigener Schritt mit eigener Vorschau, NICHT im selben Zug wie die Erstanwendung.** Siehe unten |
+
+**Warum R-2 nicht mitläuft.** Die Änderung ist sachlich gut begründet — ohne sie beschreibt die
+DB-Zeile ihren eigenen Abruf falsch, weil `url`/`query`/`parser`/`max_items` bei bestehenden Zeilen
+nie geschrieben werden (§2). Aber ihr Wirkradius ist ein anderer als alles bisher Geprüfte:
+
+- betroffen sind **144 Abrufwege** im `insert`, nicht die 6 reparierten
+- jede Zeile, deren DB-Werte heute von den Seed-Werten abweichen, wird überschrieben — auch
+  Abweichungen, die jemand bewusst gesetzt hat
+- **keine der geprüften Soll-Zahlen deckt das ab.** „Aktualisierungen Seed 1: 8" gilt nur für die
+  heutige `on-conflict`-Klausel; mit R-2 ist die Zahl ohne Production-Read nicht bestimmbar
+
+R-2 braucht deshalb eine eigene Soll-Ist-Vorschau und eine eigene Freigabe. Bis dahin bleibt die
+`on-conflict`-Klausel unverändert.
+
+### 6d.3 · Zwei offene Fachfragen (noch keine OP-Nummern vergeben)
 
 1. **`required_classes` von `pkg-die-linke-brandenburg`.** Das Paket verlangt `partei_pilot`,
    `fraktion_pilot` und `person_pilot`, im Katalog existiert aber nur `rp-bb-partei_pilot` —
