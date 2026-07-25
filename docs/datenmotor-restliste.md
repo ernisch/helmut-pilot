@@ -2,8 +2,9 @@
 
 > # 🧭 RE-ANKER (Recovery Sprint R2, 2026-07-22)
 >
-> - **Aktueller `main`-HEAD: `d6d9063`** (Merge #113). Die Pins `ca7e404`/#102 und
->   `7346653`/#100 unten sind **historische Stände**.
+> - **`main`-HEAD beim Re-Anker: `d6d9063`** (Merge #113). Die Pins `ca7e404`/#102 und
+>   `7346653`/#100 unten sind **historische Stände**; der tatsächlich aktuelle `main`-HEAD
+>   steht in der Tabelle unten unter „Geprüfter Stand" (fortlaufend nachgezogen).
 > - **Quellenmodus `on` (Cutover ausgeführt 2026-07-15)** — kein offenes Quellen-Cutover-Gate.
 > - **JWT-Selbstsignierung stillgelegt**, RLS **inert**, Mandantentrennung **App-seitig** —
 >   verbindlich: `quellenarchitektur/05-sicherheitsmodell-rls.md`.
@@ -13,8 +14,8 @@
 
 | | |
 |---|---|
-| **Stand / Prüfdatum** | **2026-07-17** (Basisstand; re-verankert 2026-07-22, siehe Banner) |
-| **Geprüfter Stand** | historisch `main`-HEAD `ca7e404` (Merge PR #102); **aktuell `d6d9063` (#113)** |
+| **Stand / Prüfdatum** | **2026-07-18** (Basisstand 2026-07-17, re-verankert 2026-07-22, siehe Banner; OP-05/06/08/13/14 nachgezogen durch den Pending/Understanding/KO-Sprint — Belege: `docs/betrieb/datenmotor_sprint_pending_understanding_ko.md`) |
+| **Geprüfter Stand** | historisch `main`-HEAD `ca7e404` (Merge PR #102); Re-Anker (siehe Banner) `d6d9063` (#113); seither weiter nachgezogen (Pending/Understanding/KO-Sprint + Recovery-Stilllegung PR #105, Kontextstruktur PR #119, Doku-Nachzug PR #121) — **aktuell `045393c` (#121)** |
 | **Grundlagen** | PR #95–#102, `docs/betrieb/production_beweisprotokoll.md` (inkl. §7 Google-News-Härtung), `docs/betrieb/google_news_haertung.md`, `docs/betrieb/health_report_rollierend.md`, `docs/betrieb/f5_freigabe.md`, `docs/helmut_datenmotor_thread2_handoff.md` §0a, `docs/quellenarchitektur/00-master-status.md` (Nachtrag 2026-07-17), Audit-Serie |
 
 > **Dies ist die EINZIGE verbindliche Liste aller offenen Punkte des Datenmotors.**
@@ -70,7 +71,7 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 | FT2-1 | F1 | Deploy Feature-Branch (P0/P1-Härtung) nach `main` | ✅ live (PR #95) |
 | FT2-2 | F2 | Migration `20260719` + `HELMUT_ATOMIC_LOCK` + `HELMUT_UNDERSTANDING_LOCK` | ✅ live seit 2026-07-16 18:06 UTC, production-bewiesen |
 | FT2-3 | F3 | Migration `20260718` + `HELMUT_SOURCE_TELEMETRY` | ✅ live, production-bewiesen (145 Zeilen/Crawl) |
-| FT2-4 | F4 | KO-Klassifikations-Backfill ausführen | offen → **OP-08** |
+| FT2-4 | F4 | KO-Klassifikations-Backfill ausführen | ✅ ausgeführt 2026-07-16 + Idempotenz belegt → **OP-08 geschlossen** |
 | FT2-5 | F5 | `HELMUT_MONITORING_WEBHOOK_URL` + `health-watch.yml`-Schedule | offen → **OP-07** |
 | FT2-6 | F6 | `HELMUT_FAILED_KO_RECOVERY=on` | offen → **OP-13** |
 | FT2-7 | F7 | `HELMUT_UNDERSTANDING_PRIORITY=on` | offen → **OP-14** |
@@ -117,17 +118,17 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 | Lock-**Deny-Pfad** unter echter Konkurrenz (2. Lauf wird abgewiesen) | kein konkurrierender Zweitlauf im Beweiszeitraum; bewusster Doppelstart verboten | OP-09 |
 | **Fehlerfall** → `systemErrors`-Eintrag + Alarm | keine echte technische Störung im Beweiszeitraum; künstliche Injektion verboten | OP-10 |
 | **Zweitkanal-Zustelltest** (Webhook real zugestellt) | Sender durch PR #102 gehärtet + offline getestet, aber `HELMUT_MONITORING_WEBHOOK_URL` unset (No-Op), kein `webhook.sent`-Beleg | OP-07 |
-| **Backfill-Idempotenz auf Prod** (Zweitlauf = 0 Änderungen) | braucht FT2-4-Ausführung | OP-08 |
+| **Backfill-Idempotenz auf Prod** (Zweitlauf = 0 Änderungen) | ✅ erbracht: echter Lauf 195/195 (Run 29511858469, 2026-07-16) + Zweitlauf `candidates: 0` (Run 29621926765, 2026-07-17) + SQL-Gegenprobe 0 Lücken | OP-08 ✅ |
 | **Google-News-Härtung unter echter Drosselung** (Breaker/Gate/Cooldown greifen live) | #102-Härtung nur offline bewiesen; kein Production-Beweislauf unter realem Throttle | OP-15 |
 | **Quellen-Dubletten-Freiheit** (Telemetrie: Zeilen = distinct `source_id`) | #102-Dedup-Fix nur offline bewiesen; Live-Nachweis am nächsten regulären Crawl noch offen (Invariante ersetzt „= 145", s. B3) | OP-19 |
-| **Recovery-Wirkung** (6 Alt-Fälle `complete`, mit Rollback-Kennung) | braucht OP-05-Freigabe | OP-05 |
+| **Recovery-Wirkung** (Alt-Fälle `complete`, mit Rollback-Kennung) | teilerbracht: 1/6 recovert (`vg-sozialwohnungen`, `recovery:singledoc-29583280106`, 1 KI/1 KO/1 Link); Rest: 4 Fälle per Einzel-Doc-Pfad (Freigabe nötig), 1 Fall als Duplikat → OP-06 | OP-05 |
 
 ## 4 · Betriebsbefunde (Übersicht)
 
 | Befund | Stand | → OP |
 |---|---|---|
 | **B1** — Google-News-Rate-Limiting degradierte den 20:00-Crawl (129/145) | transient, erholt (volumeninduziert); Provider-Ursache durch PR #102 **read-only bewiesen** (alle 129 Ausfälle Google, 3/3 direkte Quellen ok); **operative Härtung umgesetzt + offline getestet** (Gate/Retry/Breaker/Cooldown, Default AN), **aber nicht production-bewiesen**; die Alarm-Lücke (jüngster-Crawl-Blindheit) ist per rollierendem Health-Report **im Code geschlossen**, operativ erst nach OP-07-Aktivierung; **strukturelles Klumpenrisiko bleibt** (146/163 Wege Google) | OP-15 (Härtung + Struktur), OP-07 (Alarm-Aktivierung) |
-| **B2** — Understanding-Rückstand (50 `pending` + 2 `failed`, eingefroren 02./03.07.) | forensisch aufgelöst (PR #98): kein laufender Verlust, aber ~8 kernmandatsrelevante Fälle + 2 `failed` blockiert; Verlust aktuell reversibel, wird bei Retention-Löschung permanent | OP-05, OP-06, OP-12 |
+| **B2** — Understanding-Rückstand (Live-Stand 2026-07-17: 49 `pending` + 4 `failed`) | forensisch aufgelöst (PR #98); Sprint-Nachtrag: `vg-sozialwohnungen` recovert (`recovery:singledoc-29583280106`); 2 **neue** `failed` vom 17.07. (netto-neu, OP-13-Kandidaten); vollständige Klassifikation aller 53 Fälle mit terminalem Behandlungspfad im Sprintbericht §2; Verlustrisiko der 4 Recovery-Restfälle bleibt bis Recovery, wird bei Retention-Löschung permanent | OP-05, OP-06, OP-12 |
 | **B3** — Quellenzahl mandats-/profilabhängig (Demo-/Testmandat-Lauf: 139 statt 145 Quellen) | neu aus PR-#102-Analyse; feste Referenz „145" gilt nicht mehr — harte Invariante künftig `Zeilenzahl = distinct source_id` | OP-19 |
 | Katalog-Dublette der Personen-News-Quelle (2 Abrufe/Crawl) | Ursache präzisiert (id-Kollision, nicht statischer Katalog); `source_id`-Dedup durch PR #102 umgesetzt + offline getestet; Live-Nachweis offen | OP-19 |
 
@@ -136,8 +137,9 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 | Funktion / Migration | Default | → OP |
 |---|---|---|
 | `HELMUT_MONITORING_WEBHOOK_URL` (Zweitkanal, durch PR #102 gehärtet: Ereigniskennung/Dedupe/Retry/Zustellstatus/Heartbeat) + `health-watch.yml`-Schedule | nicht gesetzt / kein `schedule:` (Sender ist No-Op ohne URL) | OP-07 |
-| KO-Klassifikations-Backfill-Lauf (`workflow_dispatch`, Token `BACKFILL_KO_CLASSIFICATION`) | nie automatisch | OP-08 |
-| `HELMUT_RECOVERY_EXECUTE` + Token `RECOVER_6_CONFIRMED` (Understanding-Recovery, 6er-Allowlist) | AUS | OP-05 |
+| KO-Klassifikations-Backfill-Lauf (`workflow_dispatch`, Token `BACKFILL_KO_CLASSIFICATION`) | ✅ ausgeführt 2026-07-16 (bleibt für künftige Bestände dispatchbar; Zweitlauf = No-Op belegt) | OP-08 ✅ |
+| OP-06-Aussortier-Lauf (`workflow_dispatch`, Token `AUSSORTIEREN_34_BESTAETIGT`, Flag `HELMUT_PENDING_TERMINAL_EXECUTE`) | AUS / nie automatisch (vorbereitet durch Pending-Sprint) | OP-06 |
+| `HELMUT_RECOVERY_EXECUTE` + Token `RECOVER_6_CONFIRMED` (anker-basierte Understanding-Recovery) | **STILLGELEGT und auf `main` durchgesetzt** (PR #105, gemergt 2026-07-25, `43e9e35`): Action `understanding-recovery.yml` entfernt, Execute-Skript = reiner Stilllegungs-Hinweis, `RECOVERY_ALLOWLIST` leer — Flag+Token sind wirkungslos; ein namensunabhängiger CI-Riegel blockiert die Wiederbelebung auch über einen umbenannten Workflow. Grund: Anker-Pfad erzeugte Multi-Themen-Digest (Lauf `rec-29569461715`, zurückgerollt). Ersatz: Einzel-Doc-Pfad, siehe OP-05 | OP-05 |
 | `HELMUT_FAILED_KO_RECOVERY` (+ `HELMUT_FAILED_KO_MAX_RETRIES`) | AUS | OP-13 |
 | `HELMUT_UNDERSTANDING_PRIORITY` | AUS | OP-14 |
 | `HELMUT_CRAWL_RUNS_RELATIONAL` + Migration `20260720` (nicht angewandt) | AUS | OP-17 |
@@ -193,21 +195,21 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 
 ### P1 — Betriebsreife
 
-#### OP-05 · Understanding-Recovery der 6 bestätigten Alt-Fälle ausführen
-- **Status:** vorbereitet (PR #98–#100): Pfad verdrahtet, doppelt gesperrt (Flag + Token), 6er-Allowlist, ≤ ~6 KI-Calls, additiv, Rollback-Kennung, `workflow_dispatch` registriert; Live-Recheck bestätigt alle 6 als netto-neu und rekonstruierbar.
-- **Fehlender Schritt:** GitHub-Action `understanding-recovery.yml` mit Token `RECOVER_6_CONFIRMED` ausführen; Ergebnis (6 neue `complete`-KOs + Links, Idempotenz-Zweitlauf) im Beweisprotokoll dokumentieren.
-- **Abhängigkeiten:** keine technischen; **muss vor jeder Retention-Löschung (OP-12) geschehen**, sonst permanent verlorene mandatsrelevante Fälle.
-- **Risiko:** niedrig — eng begrenzt, additiv, Rollback = gezieltes Delete der gekennzeichneten Zeilen.
+#### OP-05 · Understanding-Recovery der bestätigten Alt-Fälle ausführen (Stand korrigiert 2026-07-18)
+- **Status:** **teilerledigt, Pfad gewechselt.** 1/6 recovert und bewiesen (`vg-sozialwohnungen` per Einzel-Dokument-Recovery `singledoc-29583280106`: 1 KI/1 KO/1 Link, Rollback-Kennung). Der frühere **anker-basierte** 6er-Lauf `rec-29569461715` erzeugte einen 3-Themen-Digest und wurde sauber **zurückgerollt** — der Anker-Pfad ist für Multi-Doc-Fälle ungeeignet und ist seit PR #105 (gemergt 2026-07-25, `43e9e35`) auf `main` **hart stillgelegt** (Action entfernt, Execute-Skript = Stilllegungs-Hinweis, Allowlist leer; Ersatz: Einzel-Doc-Pfad des Branches `claude/helmut-datenmotor-impl-2-kd1jl9`, ungemergt). `vg-psychotherapie` ist als **echtes Duplikat** live verifiziert → nach OP-06 verschoben.
+- **Fehlender Schritt:** Einzel-Doc-Recovery der **4 Restfälle** (`vg-arbeitsverträge`, `vg-medikamenten`, `vg-steuerstrafrecht`, `vg-umstellungen`) — je exakte `raw_document_id` (read-only identifiziert: Sprintbericht §4); je 1 KI-Call, additiv, Rollback-Kennung; danach Beweisprotokoll-Eintrag.
+- **Abhängigkeiten:** Merge/Erweiterung des Einzel-Doc-Pfads (impl-2-Branch); **muss vor jeder Retention-Löschung (OP-12) geschehen**, sonst permanent verlorene mandatsrelevante Fälle.
+- **Risiko:** niedrig — eng begrenzt, additiv, Rollback = gezieltes Zurücksetzen der gekennzeichneten Zeilen (Verfahren belegt durch den durchgeführten Rollback von `rec-29569461715`).
 - **Parallelisierbarkeit:** parallel zu allem außer OP-12.
-- **Freigabe:** **JA** (KI-Calls + Prod-Write).
+- **Freigabe:** **JA** (KI-Calls + Prod-Write; je Fall exakte `raw_document_id`).
 
-#### OP-06 · Terminales Aussortieren der Rückstands-Reste (27 Rauschen + 5 Duplikate + Mehrdeutige)
-- **Status:** offen; Klassifikation liegt vollständig vor (Forensik + Trockenlauf); ohne Aussortieren prüft der Cron die Fälle ewig neu.
-- **Fehlender Schritt:** kontrolliertes Setzen auf `failed-final`/verworfen (idempotent, referenzintegritätssicher, gemäß Testliste der Analyse §8); 3 mehrdeutige Fälle manuell entscheiden.
-- **Abhängigkeiten:** nach OP-05 (erst retten, dann aussortieren).
-- **Risiko:** niedrig–mittel — Prod-Write; Fehlklassifikation würde einen relevanten Fall endgültig verwerfen (darum manuelle Liste).
+#### OP-06 · Terminales Aussortieren der Rückstands-Reste (Stand 2026-07-18: 27 Rauschen + 7 belegte Duplikate)
+- **Status:** **vorbereitet + offline getestet (Pending-Sprint), NICHT ausgeführt.** Werkzeug fertig: `lib/helmut/pending-terminal.js` (34er-Allowlist, jede Duplikat-Behauptung per SQL live verifiziert), doppelt gesperrtes Skript + Action `pending-terminal-aussortieren.yml` (Default read-only), konditionale PATCHes mit Rollback-Kennung `aussortiert:<runId>:<vorstatus>`, 0 KI, kein Delete; 63 Offline-Assertions. Zusätzlich geschlossen: die `failed-final`-Lücke (Pending-Filter + `understandOneCluster` griffen Terminal-Fälle wieder auf — jetzt „nie wieder" garantiert). Freigabevorlage: `docs/betrieb/pending_terminal_aussortierung.md`.
+- **Fehlender Schritt:** nach Merge des Sprint-PRs die Action mit Token `AUSSORTIEREN_34_BESTAETIGT` ausführen; Nachweise (34 Writes, SQL-Gegenprobe, Idempotenz-Zweitlauf) dokumentieren. Getrennt: Betreiber-Entscheid über die 10 Ermessensfälle (Kat. 2) + 2 manuelle Fälle (`vg-krankschreibung`, `vg-privatsieren`) — zweite Tranche oder Einzel-Doc-Recovery.
+- **Abhängigkeiten:** empfohlen nach OP-05-Rest (erst retten, dann aussortieren); Allowlisten sind disjunkt — kein technischer Zwang.
+- **Risiko:** niedrig — Prod-Write, aber konditional, idempotent, vollständig reversibel; relevante/mehrdeutige Fälle ausdrücklich nicht in der Allowlist.
 - **Parallelisierbarkeit:** direkt nach OP-05 im selben Freigabefenster möglich.
-- **Freigabe:** **JA** (Prod-Write).
+- **Freigabe:** **JA** (Prod-Write; exakter Freigabesatz in der Freigabevorlage §6).
 
 #### OP-07 · Monitoring-Zweitkanal + Meta-Heartbeat aktivieren (früher FT2-5)
 - **Status:** **vorbereitet (durch PR #102 deutlich ausgebaut/gehärtet), NICHT aktiviert, NICHT bewiesen.**
@@ -219,13 +221,9 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 - **Parallelisierbarkeit:** vollständig parallel.
 - **Freigabe:** **JA** (Env-Wert = F5-Gründerfreigabe + neuer Alarmkanal/Cron).
 
-#### OP-08 · KO-Klassifikations-Backfill ausführen (früher FT2-4)
-- **Status:** vorbereitet; Trockenlauf belegt, 0 KI-Calls, idempotent, dispatchbare Action mit harter Bestätigung.
-- **Fehlender Schritt:** Action mit `BACKFILL_KO_CLASSIFICATION` ausführen; Beweis: alle Alt-KOs tragen Ebene + Feature-Vektor, Idempotenz-Zweitlauf = 0 Änderungen.
-- **Abhängigkeiten:** keine (Ebenen-Kanon A-P1-2 ist live); sinnvoll **vor** OP-14.
-- **Risiko:** sehr gering — deterministisch, kostenneutral.
-- **Parallelisierbarkeit:** vollständig parallel.
-- **Freigabe:** **JA** (Prod-Write).
+#### OP-08 · KO-Klassifikations-Backfill ausführen (früher FT2-4) — ✅ GESCHLOSSEN 2026-07-18
+- **Status:** **✅ ausgeführt und vollständig belegt.** Echter Lauf 2026-07-16 15:36 UTC (Action-Run **29511858469**, Token korrekt): `candidates: 195, processed: 195, failed: 0`, levelHist `{bund:118, eu:2, unknown:68, land:7}`. **Idempotenz-Zweitlauf** 2026-07-17 23:56 UTC (Run **29621926765**, read-only): `totalKos: 375, candidates: 0`. SQL-Gegenprobe: **0** von 322 complete-KOs ohne `decision_level`/`political_level`/`embedding`/`event_type`. Belege: Sprintbericht §5.
+- **Folge:** OP-14-Abhängigkeit („nach OP-08") und OP-22-Vorbedingung (vollständige KO-Merkmale) sind erfüllt. Die Action bleibt für künftige Alt-Bestände dispatchbar (Zweitlauf = No-Op belegt).
 
 #### OP-09 · Production-Beweis: Lock-Deny-Pfad unter echter Konkurrenz
 - **Status:** offen; fail-closed + Atomik sind auf Code- und DB-Ebene belegt, der Live-Deny (`acquired=false` beim echten Überlappungsfall) wurde noch nicht beobachtet.
@@ -262,17 +260,20 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 ### P2 — Produktqualität
 
 #### OP-13 · `failed`-KO-Recovery aktivieren (früher FT2-6, A-P1-4)
-- **Status:** Code live, Flag AUS; laut Forensik bewusst NICHT auf `pending`-Waisen ausweiten. Achtung: einer der 2 aktuellen `failed`-Fälle ist ein Duplikat-Risiko (würde doppeln — vorher OP-06).
-- **Fehlender Schritt:** nach einem sauberen Beweistag `HELMUT_FAILED_KO_RECOVERY=1` setzen + Redeploy; Wirkung (bounded Retry → `complete`/`failed-final`) dokumentieren.
-- **Abhängigkeiten:** empfohlen nach OP-05/OP-06.
-- **Risiko:** gering — bounded, terminal, No-Op ohne Kandidaten.
+- **Status:** Code live, Flag AUS; laut Forensik bewusst NICHT auf `pending`-Waisen ausweiten. Live-Stand 2026-07-17: **4** `failed`-Fälle — 1 Duplikat-Risiko (`vg-gesetzentwurf`, würde doppeln — vorher OP-06), 1 Alt-Fall (`vg-bürokratie`, Docs ≈15.07.), 2 **neue netto-neue** vom 17.07. (`vg-45975d00f663a2ec163778de`, `vg-unterhaltsvorschuss`; SQL-geprüft kein Duplikat). Die `failed-final`-Terminal-Garantie ist durch den Sprint-Fix jetzt vollständig durchgesetzt (Pending-Filter + `understandOneCluster`).
+- **Adversarial-Befund Fensterfalle (Sprint 2026-07-18):** Der Retry setzt `failed→pending` zurück; verstanden wird aber nur, was im Rohdok-Lesefenster des Cron liegt (500 Zeilen ≈ 1,3 Tage). Ein `failed`-Fall, dessen Quelldokumente älter sind, wird durch den Reset zur **ewigen `pending`-Waise** (schlechter als `failed`, da er aus dem bounded Retry herausfällt). Die Aktivierung schützt daher primär **künftige** Fehlschläge (Retry am Folgetag); für die 3 heutigen Nicht-Duplikat-Fälle ist die Fenster-Erreichbarkeit zum Aktivierungszeitpunkt **vorab read-only zu prüfen** — nicht mehr erreichbare Fälle stattdessen per Einzel-Doc-Pfad retten oder bewusst terminalisieren.
+- **Akzeptanzkriterien über die Aktivierung hinaus (Production-Beweise):** (a) Wirkungsnachweis: mindestens ein Fall durchläuft `failed → pending → complete` ODER erreicht nach `MAX_RETRIES` `failed-final` (Cron-Log `recovery: {retried, terminal}` + KO-Status); (b) **Zähler-Persistenz** über ≥2 Läufe (`understandingRetries` im Auth-Store inkrementiert — strukturell offline verifiziert: Shallow-Spread ohne Kompaktierungs-Stripping, das PR-#88-Bugmuster liegt nicht vor; Prod-Beleg steht aus); (c) kein Wiederaufgriff nach `failed-final` (Folgelauf-Logs); (d) Budget-Verhalten: Retries laufen durch `canSpend`/Reserve, ein Budget-Stopp verbrennt keinen Retry-Zähler (Fall bleibt `pending`, kein Doppel-Inkrement — Code-analytisch belegt).
+- **Fehlender Schritt:** nach OP-06-Ausführung + Fenster-Check `HELMUT_FAILED_KO_RECOVERY=1` setzen + Redeploy; Akzeptanzkriterien (a)–(c) im Beweisprotokoll dokumentieren.
+- **Abhängigkeiten:** OP-06 vorher (Duplikat-Fall terminalisieren); empfohlen nach OP-05-Rest.
+- **Risiko:** gering — bounded, terminal, No-Op ohne Kandidaten; Fensterfalle durch Vorab-Check kontrolliert.
 - **Parallelisierbarkeit:** parallel zu OP-14…OP-20.
 - **Freigabe:** **JA** (Env, Prod-KO-Writes).
 
 #### OP-14 · Understanding-Priorisierung aktivieren (früher FT2-7, A-P1-3)
-- **Status:** Code live, Flag AUS; KI-freie Umsortierung (amtlich > Relevanz > Frist > …), wirkt nur im Eager-Pfad.
-- **Fehlender Schritt:** `HELMUT_UNDERSTANDING_PRIORITY=1` + Redeploy; an einem Budgetdeckel-Tag belegen, dass höchstpriorisierte Vorgänge zuerst verstanden werden.
-- **Abhängigkeiten:** sinnvoll nach OP-08 (vollständiger KO-Bestand).
+- **Status:** Code live, Flag AUS; KI-freie Umsortierung (amtlich > Relevanz > Frist > …), wirkt nur im Eager-Pfad. Sprint-Analyse 2026-07-18: auf den Alt-Rückstand wirkungslos (dokumentlose Waisen), auf den Pending-Cron-Pfad ohne Wirkung; 2 Testsuiten grün; **nicht aktiviert** (Freigabe steht aus).
+- **Akzeptanzkriterien über die Aktivierung hinaus (Production-Beweis, adversarial geschärft 2026-07-18):** Der Nachweis ist **nur an einem Budgetdeckel-Tag** erbringbar — an Tagen ohne Deckelung ist die Aktivierung mengen-neutral (reine Reihenfolge, kein messbarer Effekt). Er muss aus einem **Crawl-Lauf (Eager-Pfad)** stammen, nicht aus dem Pending-Cron. Kriterien: (a) höchstpriorisierte/amtliche Vorgänge werden zuerst verstanden (Verarbeitungsreihenfolge + Tier aus den Cron-/Prozess-Logs); (b) **kein amtlicher Vorgang verdrängt** (Kennzahl `amtlichVerdraengt = 0`); (c) Nicht-Regression: die Understanding-Gesamtzahl des Tages sinkt nicht unplausibel; (d) Rollback trivial (Flag aus, byte-identisches Altverhalten — testbelegt). Ohne definierten Messweg (Log-Auswertung eines Deckel-Tages) gilt die Aktivierung als **nicht bewiesen**.
+- **Fehlender Schritt:** `HELMUT_UNDERSTANDING_PRIORITY=1` + Redeploy; Akzeptanzkriterien (a)–(c) am nächsten Budgetdeckel-Tag im Beweisprotokoll dokumentieren.
+- **Abhängigkeiten:** ~~sinnvoll nach OP-08~~ — **erfüllt** (OP-08 geschlossen 2026-07-18).
 - **Risiko:** gering — reine Reihenfolgeänderung.
 - **Parallelisierbarkeit:** parallel.
 - **Freigabe:** **JA** (Verhaltensänderung).
