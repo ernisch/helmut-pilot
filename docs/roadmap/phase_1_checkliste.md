@@ -1,0 +1,91 @@
+# Phase 1 — Checkliste (operative Wahrheit)
+
+**Letzte Prüfung:** 2026-07-25 · **`main`:** `61767a9` (Merge #118) · **Prüfer:** Sprint
+„Quellenpakete inventarisieren + Paketzuweisung beweisen"
+
+> **Diese Datei ist die operative Wahrheit im Repository.** Die Excel-Datei
+> `Helmut_Phase_1_Checkliste.xlsx` bleibt die Management-Ansicht; bei Widerspruch gilt
+> diese Datei. Nummerierung und Abnahmekriterien sind identisch mit der Excel — Punkt 25
+> ist im Repository mandantenneutral formuliert (`START_HERE.md` §5.4).
+>
+> **Ein Punkt ist nur grün, wenn sein Abnahmekriterium vollständig und nachvollziehbar
+> erfüllt ist.** Code oder Datenbankzeilen allein genügen nicht.
+
+## Legende
+
+| Symbol | Bedeutung |
+|---|---|
+| ✅ | **Erledigt** — Abnahmekriterium vollständig und belegt erfüllt |
+| ⏳ | **Teilweise** — Technik vorhanden, Produktionsnachweis oder Fachtiefe fehlt |
+| ☐ | **Offen** — nicht begonnen oder nicht belegt |
+
+**Stand:** 11 ✅ · 7 ⏳ · 12 ☐ (von 30)
+
+---
+
+## Übersicht
+
+| Nr | Bereich | Aufgabe | Status | Abnahmekriterium | Beleg / warum nicht grün |
+|---|---|---|---|---|---|
+| 1 | Architektur | Neue Quellenarchitektur produktiv vorhanden | ✅ | Publishers, Abrufwege, Pakete, Geografien und politische Entitäten sind produktiv vorhanden | Production: 64 Herausgeber · 163 Abrufwege · 7 Pakete · 50 Geografien · 73 Entitäten ([Inventur §2](../quellenarchitektur/30-paket-inventur-production.md)) |
+| 2 | Architektur | Zentralen Quellenkatalog aufgebaut | ✅ | Quellen werden zentral verwaltet und nicht nur fest im Code gepflegt | `HELMUT_SOURCE_MODE=on`; relationaler Plan ist die aktive Quellenwahrheit (`scheduler.getSourcesForProfile`), Alt-Katalog nur Fallback |
+| 3 | Quellenpakete | Quellenpakete technisch eingefügt | ✅ | Alle vorgesehenen Pakete liegen im aktuellen Hauptstand | **8** Pakete im Code-Seed auf `main` (seit #118 inkl. `die-linke-berlin`/`die-linke-brandenburg`), **7** in Production (+ personenbezogenes Paket, kein Code-Seed). Die zwei neuen sind noch keine Datenbankzeilen — dafür fehlt das freigabepflichtige Seed-Einspielen. **Hinweis:** das Wohnen/Bauen-Paket existiert nur auf dem ungemergten Branch PR #117 und zählt nicht als vorhanden |
+| 4 | Quellenpakete | Quellenpakete mit Abrufwegen verbunden | ✅ | Jedes Paket besitzt die vorgesehenen Paketzuordnungen | 165 `package_paths`; jedes der 7 Pakete trägt ≥1 Abrufweg; 0 verwaiste Zuordnungen, 0 Abrufwege ohne Paket ([Inventur §2](../quellenarchitektur/30-paket-inventur-production.md)) |
+| 5 | Quellenpakete | Bund Basis Paket vorhanden | ✅ | Bundesweite Pflichtversorgung ist als Paket angelegt | `bund-basis` `active`, `is_base`, 54 Abrufwege, 51 liefern, letzte Lieferung 2026-07-25 |
+| 6 | Quellenpakete | Berlin Basis Paket vorhanden | ⏳ | Berliner Pflichtversorgung ist als Paket angelegt | Paket existiert (`prepared`, 10 Wege), **aber nur 10 der 15 Pflichtklassen sind besetzt** (fehlend: `ausschuesse`, `drucksachen`, `schriftliche_anfragen`, `gesetzgebung`, `ministerien`). In **Production** ist es zudem **nicht mandantenneutral** (A-3) — auf `main` ist das seit #118 behoben, in der Datenbank noch nicht. Nach dem Seed-Einspielen bleiben 7 von 12 Klassen besetzt, die Lücke wird also nur korrekt zugeordnet. Abweichung zur Excel (dort ✅) — Begründung in [Inventur §4/§7](../quellenarchitektur/30-paket-inventur-production.md) |
+| 7 | Quellenpakete | Brandenburg Basis Paket vorhanden | ⏳ | Brandenburger Pflichtversorgung ist als Paket angelegt | Paket existiert (`prepared`, 9 Wege), **9 von 15 Pflichtklassen besetzt** (fehlend u. a. `drucksachen`, `schriftliche_anfragen`, `gesetzgebung`, `staatskanzlei`); dieselbe Neutralitätslücke A-3. Nach dem Seed-Einspielen 8 von 12 Klassen, zusätzlich `die-linke-brandenburg` mit nur 1 von 3 Klassen. Abweichung zur Excel (dort ✅) |
+| 8 | Profil | Technische Profilzuordnung zu Paketen vorhanden | ✅ | Profile können Pakete nach Ebene, Region und Themen erhalten | `resolveProfilePackages` ist über `buildRelationalCrawlPlan` in den Live-Crawl verdrahtet; 147/147 Tests, inkl. der Landes-Parteipakete aus #118 ([Inventur §6](../quellenarchitektur/30-paket-inventur-production.md)) |
+| 9 | Betrieb | KI Tagesdeckel gelöst | ✅ | Das frühere zu niedrige Tageslimit blockiert den Betrieb nicht mehr | Deckel 100 + Reserve 30, fail-closed, atomar (`CURRENT_STATE.md` §2). In diesem Sprint nicht erneut geprüft |
+| 10 | Qualität | Grundlage für Quellenüberwachung vorhanden | ✅ | Zustand, Ertrag und Fehler können grundsätzlich überwacht werden | `source_crawl_telemetry` 10 402 Zeilen / 85 Läufe, Ertrag und Fehlercodes je Abrufweg messbar |
+| 11 | Datenmotor | Gesamte Verarbeitungskette technisch gebaut | ✅ | Quelle bis Briefing ist technisch vorhanden | Crawl → `raw_documents` (8 472) → `document_findings` (4 857) → Understanding → Briefing läuft täglich |
+| 12 | Profil | Automatische Paketzuweisung in Production beweisen | ✅ | Ein neues Profil erhält ohne Codeänderung automatisch alle richtigen Pakete | **Dieser Sprint.** Drei Testprofile (Bund/Berlin/Brandenburg) durch den produktiven Resolver gegen den echten Production-Katalog, rein lesend; 6 Bestandsprofile korrekt zugeordnet; 147/147 Offline-Tests ([Inventur §6](../quellenarchitektur/30-paket-inventur-production.md)). **Grenze:** die Zuweisung steuert die **globale Aktivierung** (was überhaupt gecrawlt wird), nicht die Auslieferung je Mandat — die inhaltliche Trennung ist Punkt 28 |
+| 13 | Quellenpakete | Vollständigkeit jedes Pakets prüfen | ⏳ | Jedes Paket ist fachlich vollständig und nicht nur technisch angelegt | Für `bund-basis`, `arbeit-und-soziales`, `die-linke-bund`, `regional-niedersachsen` existiert **kein** Vollständigkeitskriterium (`required_classes` leer) — nicht belegt und nicht widerlegt. Berlin 10/15, Brandenburg 9/15 |
+| 14 | Landtag | Berlin als laufende Versorgung aktivieren und prüfen | ⏳ | Berliner Quellen liefern regelmäßig echte und verwertbare Dokumente | 10 Wege angelegt, **0 Abrufe, 0 Dokumente, nie eine erfolgreiche Lieferung**; hartes Landesmodul-Gate im Crawl-Plan. Aktivierung ist **freigabepflichtig** |
+| 15 | Landtag | Brandenburg als laufende Versorgung aktivieren und prüfen | ⏳ | Brandenburger Quellen liefern regelmäßig echte und verwertbare Dokumente | 9 Wege angelegt, **0 Abrufe, 0 Dokumente**; wie Punkt 14 |
+| 16 | Qualität | Quellenfehler vollständig automatisch erkennen | ⏳ | Leere, blockierte, langsame und fehlerhafte Quellen werden zuverlässig gemeldet | Telemetrie erfasst `ok`/`empty`/`timeout`/`http-4xx`/`http-5xx`/`circuit-open`. **Aber:** `retrieval_paths.last_success_at`/`last_error`/`error_streak` sind zu **0 von 163** befüllt (A-6) — kein Rückschreiben, kein Dauerzustand je Weg |
+| 17 | Kosten | Echte Kostenmessung im Betrieb bestätigen | ⏳ | Kosten sind pro Lauf, Tag und später pro Mandant nachvollziehbar | Tages-/Laufkosten über `llm_usage` + `llm_budget_counters` belegt; **pro Mandant** offen (`HELMUT_TENANT_LLM_CAP` AUS, OP-03) |
+| 18 | Inventur | Production Inventur aller Pakete erstellen | ✅ | Pro Paket sind Wege, Aktivierung, Ertrag, letzte Lieferung und Fehler dokumentiert | **Dieser Sprint:** [`30-paket-inventur-production.md`](../quellenarchitektur/30-paket-inventur-production.md), 16 Merkmale je Paket, reproduzierbare SQL-Abfragen |
+| 19 | Daten | Politische Ebene vollständig speichern | ☐ | Alle relevanten Wissensobjekte sind korrekt als Bund, Berlin, Brandenburg, Europa oder Kommune klassifiziert | nicht Gegenstand dieses Sprints |
+| 20 | Daten | Geografische Zuordnung vollständig speichern | ☐ | Alle relevanten Inhalte besitzen die richtige Region | nicht Gegenstand dieses Sprints |
+| 21 | Daten | Alten Datenbestand nachklassifizieren | ☐ | Bestehende Datensätze sind mit Ebene, Geografie, Fachgebiet und Entitäten ergänzt | nicht Gegenstand dieses Sprints |
+| 22 | Daten | Embeddings vollständig speichern und prüfen | ☐ | Relevante Wissensobjekte besitzen dauerhafte Embeddings | nicht Gegenstand dieses Sprints |
+| 23 | Matching | Matching-Ergebnisse dauerhaft nachvollziehbar machen | ☐ | Es ist nachvollziehbar, warum ein Vorgang zu einem Profil passt | nicht Gegenstand dieses Sprints |
+| 24 | Landtag | Landtags-Parser für Berlin und Brandenburg prüfen | ☐ | Drucksachen, Anfragen, Sitzungen und Vorgänge werden korrekt getrennt | PARDOK-Dispatch steht auf `shadow`; die 2 `structured_download`-Wege (`be-plenum`, `bb-plenum`) laufen nie |
+| 25 | Tests | Ende-zu-Ende-Test für den Pilotmandanten durchführen | ☐ | Der Pilotmandant erhält passende Bundespolitik bis ins fertige Briefing | nicht Gegenstand dieses Sprints (Excel-Wortlaut nennt den Klarnamen; im Repository mandantenneutral) |
+| 26 | Tests | Ende-zu-Ende-Test für Berliner Profil durchführen | ☐ | Das Berliner Profil erhält überwiegend passende Berliner Landespolitik | blockiert durch Punkt 14 — es existiert kein Landtagsprofil und keine Berliner Lieferung |
+| 27 | Tests | Ende-zu-Ende-Test für Brandenburger Profil durchführen | ☐ | Das Brandenburger Profil erhält überwiegend passende Brandenburger Landespolitik | blockiert durch Punkt 15 |
+| 28 | Tests | Inhaltliche Trennung Bund, Berlin und Brandenburg beweisen | ☐ | Die drei Profile erhalten nachweisbar unterschiedliche und passende Inhalte | blockiert durch Punkte 14/15. Zusätzlich offen: im Modus `on` crawlen alle Mandate **eine** gemeinsame Vereinigungsmenge; die Trennung entsteht erst im Matching und ist nicht belegt |
+| 29 | Betrieb | Fehlerpfade und Wiederholungen prüfen | ☐ | Timeouts, Limits, fehlerhafte Inhalte und Wiederholungen funktionieren kontrolliert | offen; Befund A-7 (Doppelläufe mit `circuit-open`) gehört hierher und zu OP-15 |
+| 30 | Abnahme | Phase 1 offiziell abnehmen | ☐ | Der gesamte Datenmotor arbeitet automatisch, stabil und ohne manuelle Eingriffe | erst nach 1–29 |
+
+---
+
+## Abweichungen zur Excel-Datei
+
+| Nr | Excel | Repository | Begründung |
+|---|---|---|---|
+| 6 | ✅ Erledigt | ⏳ Teilweise | `berlin-basis` besetzt nur 10 seiner 15 eigenen Pflichtklassen und enthält Partei-/Fraktions-/Personenquellen in einem verpflichtenden Basispaket (A-3). „Pflichtversorgung angelegt" ist damit nicht erfüllt |
+| 7 | ✅ Erledigt | ⏳ Teilweise | `brandenburg-basis` besetzt 9 von 15 Pflichtklassen; gleiche Neutralitätslücke |
+| 12 | ⏳ Teilweise | ✅ Erledigt | in diesem Sprint gegen den echten Production-Katalog belegt, inkl. 147 automatisierter Prüfungen |
+| 18 | ☐ Offen | ✅ Erledigt | Inventur in diesem Sprint erstellt |
+| 25 | Klarname | „Pilotmandant" | Mandantenneutralität (`START_HERE.md` §5.4) — inhaltlich identisch |
+
+## Offene Punkte, die aus dieser Prüfung entstanden sind
+
+Vollständig beschrieben in [`../quellenarchitektur/30-paket-inventur-production.md`](../quellenarchitektur/30-paket-inventur-production.md) §7.
+
+- **A-1** Production führt 8 Profile (6 aktiv), nicht 1 Pilot + 2 Demo-Mandate → verschärft **OP-04**.
+- **A-3** Die Landes-Basispakete sind **in Production** nicht mandantenneutral → auf `main` seit #118 behoben, in der Datenbank erst nach dem freigabepflichtigen Seed-Einspielen (Punkte 6/7/14/15).
+- **A-4** 2 der 5 `always_on`-Kernwege sind in der Datenbank weiterhin defekt → Ersatz-URLs sind auf `main`, wirksam erst mit dem Seed.
+- **A-5** Das personenbezogene Katalogpaket des Piloten liefert dauerhaft nichts.
+- **A-6** Die Pfad-Statusmaschine schreibt nicht zurück → betrifft Punkt 16.
+- **A-7** Doppelte Cron-Läufe mit `circuit-open` verzerren jede Telemetrie-Auswertung → **OP-15**.
+
+## Nächster sinnvoller Schritt
+
+**Freigabe für das Einspielen der beiden Seeds** (`20260713` Bund, `20260717` Landesmodul).
+PR #118 ist gemergt (`61767a9`) und hat A-3 und A-4 **im Code** behoben — in der
+Production-Datenbank sind beide Befunde aber weiterhin wirksam, weil Seeds nicht automatisch
+eingespielt werden. Ohne diesen Schritt wäre jede Berlin-/Brandenburg-Aktivierung eine
+Aktivierung nicht-neutraler Pflichtpakete, und die Punkte 6, 7, 14 und 15 können nicht grün
+werden. **Production-Datenänderung, freigabepflichtig** — in diesem Sprint bewusst nicht getan.
