@@ -311,16 +311,27 @@ jede Einzelbezeichnung zusätzlich über Rang 3/4 belegt ist.
 
 Der Innenausschuss zeigt, warum das wahlperiodengenau gepflegt werden muss:
 **18. WP „Innenausschuss" → 19./20. WP „Ausschuss für Inneres und Heimat" → 21. WP wieder
-„Innenausschuss"**. Eine Bezeichnung „von früher" kann also zufällig wieder richtig werden — und
-genau deshalb ist sie ohne Wahlperiodenbezug kein Beleg.
+„Innenausschuss"** (Belege: die Webarchiv-Seitentitel `…/ausschuesse18/a04`,
+`…/ausschuesse19/a04_innenausschuss`, `…/ausschuesse20/a04_inneres` gegen die aktuelle Seite
+`bundestag.de/inneres`). Eine Bezeichnung „von früher" kann also zufällig wieder richtig werden —
+und genau deshalb ist sie ohne Wahlperiodenbezug kein Beleg.
 
 **Zusätzlich korrigiert: die Reihenfolge.** Die Sollmenge behauptete im Kommentar, ihre Reihenfolge
-sei die amtliche Ausschussnummerierung, prüfte das aber nicht — und für die Positionen **20–24** war
-sie tatsächlich falsch (Tourismus und Kultur/Medien vertauscht, Europa an falscher Stelle). Amtlich:
-20 Europäische Union · 21 Digitales und Staatsmodernisierung · 22 Kultur und Medien · 23 Tourismus ·
-24 Wohnen. Die Nummer ist jetzt **Daten statt Kommentar** (`nummer` je Eintrag) und wird geprüft.
-Unabhängig bestätigt durch die amtlichen Dokumentpräfixe der 21. WP: `PA22_to14-pdf.pdf` für Kultur
-und Medien (= Nr. 22) und `a13-28-TO.pdf` für Bildung/Familie (= Nr. 13).
+sei die amtliche Ausschussnummerierung, prüfte das aber nicht — und für die Positionen **20–24**
+stand **jede der fünf** falsch:
+
+| Ausschuss | vorher | amtlich |
+|---|---|---|
+| Angelegenheiten der Europäischen Union | 24 | **20** |
+| Digitales und Staatsmodernisierung | 22 | **21** |
+| Kultur und Medien | 21 | **22** |
+| Tourismus | 20 | **23** |
+| Wohnen, Stadtentwicklung, Bauwesen und Kommunen | 23 | **24** |
+
+Die Positionen 1–19 waren richtig. Die Nummer ist jetzt **Daten statt Kommentar** (`nummer` je
+Eintrag) und wird geprüft. Unabhängig bestätigt durch die amtlichen Dokumentpräfixe der 21. WP:
+`PA22_to14-pdf.pdf` für Kultur und Medien (= Nr. 22) und `a13-28-TO.pdf` für Bildung/Familie
+(= Nr. 13).
 
 ### Was **nicht** abwich
 
