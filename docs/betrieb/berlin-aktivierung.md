@@ -65,6 +65,15 @@ keinen: `CONNECT` → `403`). Workflow `sprint9b-verify.yml`, neu eingrenzbar ü
 und **nicht aktivierbar**. Ein Weg ohne datierbares Item gilt als veraltet, nicht als frisch.
 Maßstab ist der Produktzweck: Helmut baut eine **tägliche** Morgenlage.
 
+**Gegenprobe zur Methode (Run 30209848288, voller Umfang, 24 Wege).** Der Verdacht liegt nahe, dass
+der `site:`-Operator in Google News generell nicht mehr trägt. Er trägt: `bb-landesparlament` nutzt
+**dieselbe Abfrageform** (`site:landtag.brandenburg.de`) und liefert ein **1 Tag** altes jüngstes
+Item; `bundesregierung` (`site:bundesregierung.de`) und `die-linke` (`site:die-linke.de`) liegen bei
+**0 Tagen**. Das Problem ist also **domänenspezifisch**: Google News indexiert
+`parlament-berlin.de` nicht mehr aktuell. Damit ist auch die Reparaturrichtung klar — nicht die
+Methode wechseln, sondern die Abfrage vom `site:`-Operator lösen. Das bleibt ein eigener Schritt
+**mit eigener Verifikation**; ihn hier zu raten wäre eine erfundene Quelle.
+
 ## 3 · Neutralität von `berlin-basis` (Bedingung V1)
 
 `berlin-basis` ist das `is_base`-Pflichtpaket **jedes** Berliner Landtagsmandats.
