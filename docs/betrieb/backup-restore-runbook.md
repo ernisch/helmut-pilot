@@ -38,6 +38,41 @@ SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... node scripts/backup-export.js
 - Erfolgskontrolle: Skript meldet Zeilenzahlen je Tabelle + manifest.json;
   Zahlen grob gegen den Admin-Datenstand prüfen (raw_documents, knowledge_objects).
 
+## 1a. Teil-Umfänge (`--scope`) — kleiner, gezielter, datenminimierend
+
+Ein Voll-Export zieht Rohdokumente, Briefings, Interaktionen und Notizen auf die
+Platte. Vor einem eng umrissenen Eingriff ist das unnötig viel personenbezogene
+Datenmenge. Deshalb gibt es zwei Teil-Umfänge, jeweils genau auf die Tabellen
+zugeschnitten, die der jeweilige Eingriff berührt:
+
+| Aufruf | Tabellen | Manifestart | Wofür |
+|---|---|---|---|
+| `node scripts/backup-export.js --scope=seed` | **8** Quellentabellen (`geographies` … `path_expected_geographies`) | `pre-seed` | vor der Quellen-Seed-Einspielung (`quellen-seed-einspielung.md`) |
+| `node scripts/backup-export.js --scope=profil` | **2** Profiltabellen (`profiles`, `mandate_profiles`) | `pre-profil` | vor dem Anlegen eines Mandatsprofils — insbesondere Schritt 5 der Berliner Aktivierungsreihenfolge (`berlin-aktivierung.md` §9) |
+| `node scripts/backup-export.js` (Standard) | alle **38** | `voll` | alles Übrige |
+
+- **Warum `--scope=profil` seit 2026-07-26 (Punkt 14B) existiert:** `--scope=seed`
+  deckt **keine** der beiden Profiltabellen ab. Für den einzigen mutierenden
+  Schritt der Berliner Reihenfolge, der Profile anfasst, gab es damit vorher
+  keine passende Sicherung — und `--scope=voll` hätte die Datenminimierung
+  aufgehoben, wegen der es die Teil-Umfänge überhaupt gibt.
+- **Reihenfolge im Manifest ist FK-sicher** (`restoreReihenfolge`): Eltern vor
+  Kindern — `profiles` vor `mandate_profiles`
+  (`mandate_profiles.user_id → profiles.id ON DELETE CASCADE`).
+- **Ein leerer Teil-Export gilt nicht als Sicherung:** ist eine der Tabellen des
+  Umfangs auf 0 Zeilen, endet der Lauf mit `vollstaendig: false` und Exit 1.
+- **Auch der kleine Export ist personenbezogen:** `profiles` trägt Klarnamen
+  realer Mandatsträger. Aufbewahrung, Verschlüsselung und Löschung nach 1b.
+- **Ein Teil-Export ersetzt kein Voll-Backup und nicht OP-01.** Er deckt
+  ausdrücklich nur seine eigenen Tabellen ab; die Meldung am Ende des Laufs sagt
+  das explizit mit.
+- **Rückweg zuerst, Restore zweitens:** für die Berliner Profilschritte ist der
+  vorgesehene Rückweg **nicht** ein Restore aus diesem Export, sondern die drei
+  zeilenscharfen, fail-closed Rollback-Dateien
+  (`20260726_berlin_abnahmeprofil_rollback_stufe0…2.sql`, gegen ein echtes
+  PostgreSQL bewiesen). Der Export ist die Beweisgrundlage für den
+  Vorher-/Nachher-Vergleich (Zeilenzahlen + Prüfsummen je Tabelle).
+
 ## 1b. Aufbewahrung, Löschung, Verschlüsselung (VERBINDLICH)
 
 **Retention (verbindlich, übernommen aus dem TOMs-/Löschkonzept-Entwurf):

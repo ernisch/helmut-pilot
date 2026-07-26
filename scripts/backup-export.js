@@ -28,6 +28,10 @@
 // personenbezogene/politische Daten). Ablage nur auf verschluesseltem Geraet;
 // Retention + Verschluesselung vor Offsite-Kopie: Runbook Abschnitt 1b.
 
+// TEIL-UMFAENGE (`--scope=`): `voll` (Standard, alle Tabellen) · `seed` (8 Quellentabellen) ·
+// `profil` (2 Profiltabellen, seit Punkt 14B). Uebersicht + Zweck je Umfang:
+// docs/betrieb/backup-restore-runbook.md Abschnitt 1a.
+//
 // PRE-SEED-MODUS (2026-07-25, Vorbereitung Quellen-Seed-Einspielung):
 //   node scripts/backup-export.js --scope=seed
 // Exportiert NUR die 8 Tabellen, die die beiden Quellen-Seeds beruehren. Zweck:
@@ -107,6 +111,29 @@ const SEED_SCOPE_TABLES = [
   "path_expected_geographies"
 ];
 
+// PROFIL-MODUS (2026-07-26, Phase-1-Punkt 14B): `node scripts/backup-export.js --scope=profil`
+// Genau die zwei Tabellen, die das Anlegen des Berliner Abnahmeprofils beruehrt
+// (supabase/seeds/20260726_berlin_abnahmeprofil.sql). Warum ein eigener Umfang noetig war:
+// `--scope=seed` sichert die 8 QUELLEN-Tabellen und damit KEINE der beiden Profiltabellen —
+// die Vorbereitung fuer Schritt 5 der Aktivierungsreihenfolge hatte bis 14B also gar keine
+// passende Sicherung. `--scope=voll` deckt sie ab, zieht aber zusaetzlich raw_documents,
+// briefings, interactions und user_notes auf die Platte und hebt damit genau die
+// Datenminimierung auf, wegen der es die Teil-Umfaenge gibt.
+// Reihenfolge = FK-sichere Restore-Reihenfolge (Eltern vor Kindern:
+// mandate_profiles.user_id -> profiles.id ON DELETE CASCADE).
+// EHRLICHE GRENZE: `profiles` traegt Klarnamen realer Mandatstraeger. Auch dieser kleine
+// Export ist personenbezogen und gehoert auf ein verschluesseltes Geraet (Runbook 1b).
+const PROFIL_SCOPE_TABLES = [
+  "profiles",
+  "mandate_profiles"
+];
+
+const SCOPES = {
+  voll: null,                       // null = alle Tabellen aus TABLES
+  seed: SEED_SCOPE_TABLES,
+  profil: PROFIL_SCOPE_TABLES
+};
+
 async function fetchPage(baseUrl, key, table, orderCols, offset) {
   const order = String(orderCols).split(",").map((c) => `${c.trim()}.asc`).join(",");
   const url = `${baseUrl}/rest/v1/${table}?select=*&order=${order}&limit=${PAGE_SIZE}&offset=${offset}`;
@@ -148,13 +175,15 @@ async function main() {
   // Datenminimierung, wegen der es den Seed-Modus gibt, war damit unbemerkt aufgehoben.
   // ZUERST pruefen, VOR jedem Verzeichnis: ein abgewiesener Aufruf darf keinen leeren
   // Ordner hinterlassen, der spaeter wie ein Backup aussieht.
-  let seedScope = false;
+  let scope = "voll";
   for (const arg of process.argv.slice(2)) {
     const m = /^--scope=(.*)$/.exec(arg);
-    if (m && (m[1] === "seed" || m[1] === "voll")) { seedScope = m[1] === "seed"; continue; }
-    console.error(`FEHLER: unbekanntes Argument '${arg}'. Erlaubt: --scope=seed oder --scope=voll (Standard: voll).`);
+    if (m && Object.prototype.hasOwnProperty.call(SCOPES, m[1])) { scope = m[1]; continue; }
+    console.error(`FEHLER: unbekanntes Argument '${arg}'. Erlaubt: ${Object.keys(SCOPES).map((s) => "--scope=" + s).join(", ")} (Standard: voll).`);
     process.exit(2);
   }
+  const seedScope = scope === "seed";
+  const profilScope = scope === "profil";
 
   const baseUrl = String(process.env.SUPABASE_URL || "").replace(/\/+$/, "");
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -166,9 +195,9 @@ async function main() {
   const dir = path.join(__dirname, "..", "backups", stamp);
   fs.mkdirSync(dir, { recursive: true });
 
-  const tableNames = seedScope ? SEED_SCOPE_TABLES.slice() : Object.keys(TABLES);
+  const tableNames = SCOPES[scope] ? SCOPES[scope].slice() : Object.keys(TABLES);
   const manifest = {
-    art: seedScope ? "pre-seed" : "voll",
+    art: seedScope ? "pre-seed" : (profilScope ? "pre-profil" : "voll"),
     erstellt: new Date().toISOString(),
     mainCommit: gitCommit(),
     quelle: baseUrl.replace(/^https?:\/\//, "").split(".")[0],
@@ -179,6 +208,10 @@ async function main() {
   if (seedScope) {
     manifest.zweck = "Pre-Seed-Sicherung vor Einspielung von 20260713_source_architecture_seed.sql + 20260717_landesmodul_be_bb_seed.sql";
     manifest.restoreReihenfolge = SEED_SCOPE_TABLES.slice();
+  }
+  if (profilScope) {
+    manifest.zweck = "Pre-Profil-Sicherung vor Ausfuehrung von 20260726_berlin_abnahmeprofil.sql (Schritt 5 der Berliner Aktivierungsreihenfolge)";
+    manifest.restoreReihenfolge = PROFIL_SCOPE_TABLES.slice();
   }
   for (const table of tableNames) {
     try {
@@ -232,6 +265,15 @@ async function main() {
       }
     }
   }
+  // Dieselbe Logik fuer den Profil-Umfang: eine Sicherung ohne Mandatsbestand kann den
+  // Zustand vor dem Anlegen des Abnahmeprofils nicht belegen und ist damit unbrauchbar.
+  if (profilScope) {
+    for (const t of PROFIL_SCOPE_TABLES) {
+      if (manifest.tabellen[t] === 0) {
+        manifest.fehler.push({ tabelle: t, fehler: "0 Zeilen — als Pre-Profil-Sicherung unbrauchbar" });
+      }
+    }
+  }
   // Ein Backup mit Fehlern ist KEIN Backup — im Manifest unmissverstaendlich markieren,
   // damit ein Teil-Export nicht spaeter faelschlich als Wiederherstellungsgrundlage gilt.
   manifest.vollstaendig = manifest.fehler.length === 0 && Object.keys(manifest.tabellen).length === tableNames.length;
@@ -247,6 +289,9 @@ async function main() {
   } else if (seedScope) {
     console.log(`VOLLSTAENDIG fuer die ${tableNames.length} Quellentabellen (pre-seed) — deckt die uebrigen`
       + ` ${Object.keys(TABLES).length - tableNames.length} Tabellen ausdruecklich NICHT ab.`);
+  } else if (profilScope) {
+    console.log(`VOLLSTAENDIG fuer die ${tableNames.length} Profiltabellen (pre-profil) — deckt die uebrigen`
+      + ` ${Object.keys(TABLES).length - tableNames.length} Tabellen ausdruecklich NICHT ab.`);
   } else {
     console.log("VOLLSTAENDIG — als Wiederherstellungsgrundlage verwendbar.");
   }
@@ -257,4 +302,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { TABLES, SEED_SCOPE_TABLES };
+module.exports = { TABLES, SEED_SCOPE_TABLES, PROFIL_SCOPE_TABLES, SCOPES };
