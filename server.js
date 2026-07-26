@@ -11,7 +11,7 @@ const { validateProfile } = require("./lib/helmut/profile-validation");
 const sourceSafety = require("./lib/helmut/sourceSafety");
 const { runLageCheck, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, listFailedKnowledgeObjects, resetUnderstandingToPending, markUnderstandingTerminal, getUnderstandingRetries, saveUnderstandingRetries, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, getLlmUsageBreakdownToday, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getClassificationCoverage, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState, tenantJwtModeEnabled, saveKnowledgeObjectEnrichment, profileDbModeEnabled, profileDbExclusiveEnabled, getProfileTelemetry, getProfileFromDb, diagnoseTenantJwt, recordProcessRun, listProcessRuns, saveMonitoringDeliveryState, getMonitoringDeliveryState, getLlmCostSince, getAdminCostsPerUser, listSourceArchitectureRows, getSourceModeShadowLastRun } = require("./lib/helmut/storage");
+const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, listFailedKnowledgeObjects, resetUnderstandingToPending, markUnderstandingTerminal, getUnderstandingRetries, saveUnderstandingRetries, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, getLlmUsageBreakdownToday, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getClassificationCoverage, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState, tenantJwtModeEnabled, saveKnowledgeObjectEnrichment, profileDbModeEnabled, profileDbExclusiveEnabled, getProfileTelemetry, getProfileFromDb, diagnoseTenantJwt, recordProcessRun, listProcessRuns, saveMonitoringDeliveryState, getMonitoringDeliveryState, getLlmCostSince, getAdminCostsPerUser, listSourceArchitectureRows, getSourceModeShadowLastRun, listSourceCrawlTelemetry } = require("./lib/helmut/storage");
 const llmBudgetLib = require("./lib/helmut/llm-budget");
 
 // P0-1: technischer Ausfuehrungsort + Laufkennung fuer Prozess-Laufzeit-Telemetrie
@@ -4822,10 +4822,16 @@ async function buildAdminCustomers() {
 }
 
 async function buildAdminSourcesStatus() {
-  const [rows, shadow, runs] = await Promise.all([
+  const [rows, shadow, runs, telemetrie, mandate] = await Promise.all([
     listSourceArchitectureRows().catch(() => null),
     getSourceModeShadowLastRun().catch(() => null),
-    listCrawlRuns(20).catch(() => [])
+    listCrawlRuns(20).catch(() => []),
+    // Punkt 16: der neue Lesepfad auf die Quellen-Telemetrie. Defensiv -> []
+    // bedeutet "keine Erkennung moeglich", nicht "keine Stoerung".
+    listSourceCrawlTelemetry({ days: 14 }).catch(() => []),
+    // Mandatswirkung nur, wenn die Profile ueberhaupt lesbar sind; sonst meldet
+    // der Bericht sie ausdruecklich als nicht bestimmbar (statt zu raten).
+    listFullProfiles().catch(() => [])
   ]);
 
   // Google-News-Anteil (Klumpenrisiko) aus den letzten Crawl-Laeufen. Grund:
@@ -4898,6 +4904,72 @@ async function buildAdminSourcesStatus() {
       .sort((a, b) => (b.schlechtesterStatusRang - a.schlechtesterStatusRang) || String(a.name).localeCompare(String(b.name), "de"));
   }
 
+  // --- Punkt 16: automatische Quellenstoerungs-Erkennung -------------------
+  // Leitet aus der ECHTEN Laufhistorie (source_crawl_telemetry) je Quelle einen
+  // klassifizierten Zustand ab. Ersetzt die bisherige Anzeige NICHT, sondern
+  // ergaenzt sie: `problematischeWege` oben liest weiter retrieval_paths.status
+  // (Konfiguration), dieser Block liest das tatsaechliche Laufverhalten.
+  // Rein lesend, rein additiv; jeder Fehler -> null -> die Sektion entfaellt.
+  let stoerungen = null;
+  try {
+    const sf = require("./lib/helmut/quellenarchitektur/source-failure");
+    const bericht = sf.bewerteQuellenstoerungen({
+      telemetrie,
+      retrievalPaths: (rows && rows.retrievalPaths) || [],
+      packages: (rows && rows.packages) || [],
+      packagePaths: (rows && rows.packagePaths) || [],
+      profiles: Array.isArray(mandate) && mandate.length ? mandate : null
+    });
+    // Fuer die Anzeige nur das Noetige serialisieren (keine Rohhistorie, keine
+    // internen Schwellenobjekte in jeder Zeile).
+    const zeile = (b) => ({
+      quelle: b.sourceId,
+      name: b.name,
+      methode: b.methode,
+      klasse: b.klasse,
+      kurz: b.kurz,
+      erklaerung: b.erklaerung,
+      ursache: b.ursache,
+      ursacheText: b.ursacheText,
+      stufe: b.stufe,
+      stufeText: b.stufeText,
+      kritisch: b.kritisch,
+      imKatalog: b.imKatalog,
+      laufzeitquelle: b.laufzeitquelle === true,
+      problemSeit: b.problemSeit ? new Date(b.problemSeit).toISOString() : null,
+      letzterErfolg: b.letzterErfolgAt ? new Date(b.letzterErfolgAt).toISOString() : null,
+      letzteLieferung: b.letzteLieferungAt ? new Date(b.letzteLieferungAt).toISOString() : null,
+      wiederholungen: b.wiederholungen,
+      laufdaten: b.laufdaten,
+      wirkung: b.wirkung,
+      signatur: b.signatur
+    });
+    stoerungen = {
+      verfuegbar: bericht.verfuegbar,
+      hinweis: bericht.hinweis,
+      fensterTage: bericht.fensterTage,
+      zaehler: bericht.zaehler,
+      stufen: bericht.stufen,
+      summe: bericht.summe,
+      // Nur die tatsaechlich Gestoerten in die Anzeige — die gesunden Wege
+      // stehen bereits als Zaehler drin (keine Rauschliste).
+      gestoerte: bericht.gestoerte.map(zeile),
+      handlungsbedarf: bericht.handlungsbedarf.map(zeile),
+      paketLage: bericht.paketLage.filter((p) => p.versorgung !== "versorgt"),
+      schwellen: {
+        fensterTage: bericht.schwellen.fensterTage,
+        fehlerAbLaeufen: bericht.schwellen.fehlerAbLaeufen,
+        leerAbLaeufen: bericht.schwellen.leerAbLaeufen,
+        instabilAbEpisoden: bericht.schwellen.instabilAbEpisoden,
+        veraltetTage: bericht.schwellen.veraltetTage,
+        langsamMs: bericht.schwellen.langsamMs
+      }
+    };
+  } catch (error) {
+    console.error("[admin] Quellenstoerungs-Bericht fehlgeschlagen (ignoriert):", error && error.message);
+    stoerungen = null;
+  }
+
   return {
     generatedAt: new Date().toISOString(),
     verfuegbar: Boolean(rows && Array.isArray(rows.retrievalPaths)),
@@ -4906,6 +4978,7 @@ async function buildAdminSourcesStatus() {
     zaehler,
     problematischeWege,
     herausgeber,
+    stoerungen,
     googleNews,
     letzterShadowLauf: shadow
       ? {

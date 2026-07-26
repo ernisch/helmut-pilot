@@ -1510,6 +1510,67 @@ function admSourceChip(status) {
   return meta ? admChip(meta[1], meta[0]) : admChip("unknown", status || ADM_DASH);
 }
 
+// Punkt 16 — Zustandsklassen der automatischen Stoerungserkennung. Jede Klasse
+// traegt eine verstaendliche Bezeichnung; Farbe ist nie die einzige Information.
+const ADM_STOERUNG_KLASSEN = {
+  ok: ["erfolgreich", "ok"],
+  erholt: ["wieder erreichbar", "ok"],
+  leer: ["liefert keine Inhalte", "warn"],
+  veraltet: ["seit Langem ohne Inhalte", "warn"],
+  langsam: ["zu langsam / Zeitüberschreitung", "warn"],
+  instabil: ["wiederholt instabil", "warn"],
+  gedrosselt: ["zentral gedrosselt", "warn"],
+  blockiert: ["vom Anbieter begrenzt", "bad"],
+  parserfehler: ["Inhalt nicht lesbar", "bad"],
+  abruffehler: ["Abruf schlägt fehl", "bad"],
+  nie_erfolgreich: ["noch nie erfolgreich", "bad"],
+  inaktiv: ["bewusst deaktiviert", "paused"],
+  manuell: ["bewusst manuell", "paused"],
+  unbekannt: ["unbekannt", "unknown"]
+};
+function admStoerungChip(klasse) {
+  const meta = ADM_STOERUNG_KLASSEN[klasse];
+  return meta ? admChip(meta[1], meta[0]) : admChip("unknown", klasse || ADM_DASH);
+}
+const ADM_STUFEN = {
+  keine: ["kein Handeln erforderlich", "ok"],
+  beobachten: ["beobachten", "warn"],
+  zeitnah_pruefen: ["zeitnah prüfen", "warn"],
+  akut: ["akut handeln", "bad"]
+};
+function admStufeChip(stufe) {
+  const meta = ADM_STUFEN[stufe];
+  return meta ? admChip(meta[1], meta[0]) : admChip("unknown", stufe || ADM_DASH);
+}
+
+// Auswirkung in EINEM verstaendlichen Satz — politische Versorgung zuerst,
+// technische Details bleiben in der Detailzeile.
+function admWirkungText(w) {
+  if (!w) return "Auswirkung nicht bestimmbar.";
+  const pakete = Array.isArray(w.pakete) ? w.pakete : [];
+  const namen = pakete.map((p) => p.key).join(", ");
+  switch (w.art) {
+    case "kein_paket": return "Betrifft kein aktives Quellenpaket.";
+    case "keine": return "Keine Auswirkung auf die Versorgung.";
+    case "paket_ohne_funktionierenden_weg":
+      return `Kein funktionierender Abrufweg mehr für ${namen || "das betroffene Paket"} — Versorgung dieses Pakets aktuell ungedeckt.`;
+    case "einzelne_quelle_gestoert_alternativen_vorhanden":
+      return `Einzelne Quelle gestört, ${namen ? `Paket ${namen}` : "das Paket"} wird weiterhin von anderen Wegen versorgt.`;
+    case "paket_teilweise_geschwaecht":
+      return `${namen ? `Paket ${namen}` : "Das Paket"} ist geschwächt — kein Ersatzweg für diese Quelle.`;
+    default:
+      return "Auswirkung aktuell nicht zuverlässig bestimmbar.";
+  }
+}
+function admMandatText(w) {
+  const m = w && w.mandate;
+  if (!m) return ADM_DASH;
+  if (!m.bestimmbar) return m.strukturhinweis ? `nicht bestimmbar · ${m.strukturhinweis}` : "nicht bestimmbar";
+  const n = Array.isArray(m.betroffene) ? m.betroffene.length : 0;
+  if (!n) return "keine Mandate betroffen";
+  return `${n} ${n === 1 ? "Mandat" : "Mandate"} potenziell betroffen${m.strukturhinweis ? ` · ${m.strukturhinweis}` : ""}`;
+}
+
 // --- Bausteine ---------------------------------------------------------------
 function admTile(label, value, hint) {
   const val = value == null || value === "" ? ADM_DASH : String(value);
@@ -2413,6 +2474,15 @@ function admQuellenState() {
   if (!src.verfuegbar) {
     return { tone: "unknown", label: "unbekannt", text: src.hinweis || "Relationale Quellen-Tabellen nicht erreichbar.", actions: [] };
   }
+  // Punkt 16: die BEOBACHTETE Lage geht der konfigurierten vor. Ein akuter
+  // Befund aus echten Laufdaten kippt die Ampel, auch wenn retrieval_paths.status
+  // (Konfiguration) noch „gesund" behauptet.
+  const st = src.stoerungen || null;
+  if (st && st.verfuegbar && st.stufen) {
+    if (st.stufen.akut > 0) { actions.push({ tone: "bad", text: `${admNum(st.stufen.akut)} Quellen brauchen akutes Handeln (beobachtet)` }); raise("bad"); }
+    if (st.stufen.zeitnah_pruefen > 0) { actions.push({ tone: "warn", text: `${admNum(st.stufen.zeitnah_pruefen)} Quellen zeitnah prüfen` }); raise("warn"); }
+    if (st.stufen.beobachten > 0) { actions.push({ tone: "warn", text: `${admNum(st.stufen.beobachten)} Quellen beobachten` }); raise("warn"); }
+  }
   const sc = src.statusCounts || {};
   if (sc.broken > 0) { actions.push({ tone: "bad", text: `${admNum(sc.broken)} Abrufwege defekt — reparieren oder ersetzen` }); raise("bad"); }
   if (sc.degraded > 0) { actions.push({ tone: "warn", text: `${admNum(sc.degraded)} Abrufwege beeinträchtigt` }); raise("warn"); }
@@ -2485,6 +2555,67 @@ function renderAdmQuellen() {
       <td data-label="Empfehlung">${escapeHtml(admSourceEmpfehlung(p))}</td>
     </tr>`).join("");
 
+  // --- Punkt 16: automatisch erkannte Quellenstörungen ----------------------
+  const st = (src && src.stoerungen) || null;
+  let stoerungCards = "";
+  if (st) {
+    if (!st.verfuegbar) {
+      stoerungCards = admCard("Erkannte Quellenstörungen",
+        "Aus der tatsächlichen Laufhistorie (source_crawl_telemetry)",
+        admEmpty(st.hinweis || "Keine Quellen-Telemetrie im Bewertungsfenster — es wird keine Störung behauptet."));
+    } else {
+      const kz = st.zaehler || {};
+      const stf = st.stufen || {};
+      const stoerungTiles = admTiles([
+        admTile("Akut handeln", admNum(stf.akut), "Versorgung ungedeckt oder Pflichtquelle"),
+        admTile("Zeitnah prüfen", admNum(stf.zeitnah_pruefen)),
+        admTile("Beobachten", admNum(stf.beobachten)),
+        admTile("Erfolgreich", admNum(kz.ok), `Bewertungsfenster ${admNum(st.fensterTage)} Tage`),
+        admTile("Wieder erreichbar", admNum(kz.erholt), "Störung hat sich selbst erholt"),
+        admTile("Bewusst inaktiv/manuell", admNum((kz.inaktiv || 0) + (kz.manuell || 0)), "kein technischer Fehler")
+      ].join(""));
+
+      const gestoerte = Array.isArray(st.gestoerte) ? st.gestoerte : [];
+      const stoerungRows = gestoerte.map((b) => `
+        <tr>
+          <td data-label="Quelle"><strong>${escapeHtml(b.name || b.quelle || "")}</strong><div class="adm-cell-sub">${escapeHtml(b.methode || ADM_DASH)}${b.kritisch ? " · Pflichtquelle" : ""}${b.laufzeitquelle ? " · Laufzeitquelle aus dem Profil" : ""}</div></td>
+          <td data-label="Zustand">${admStoerungChip(b.klasse)}<div class="adm-cell-sub">${escapeHtml(b.erklaerung || "")}</div></td>
+          <td data-label="Problem seit">${b.problemSeit ? escapeHtml(admDateTime(b.problemSeit)) : ADM_DASH}<div class="adm-cell-sub">${b.wiederholungen > 0 ? `${admNum(b.wiederholungen)}× in Folge` : ""}</div></td>
+          <td data-label="Letzte Lieferung">${b.letzteLieferung ? escapeHtml(admDateTime(b.letzteLieferung)) : "noch nie geliefert"}<div class="adm-cell-sub">${b.letzterErfolg ? `letzter Erfolg: ${escapeHtml(admDateTime(b.letzterErfolg))}` : "noch nie erfolgreich abgerufen"}</div></td>
+          <td data-label="Auswirkung">${escapeHtml(admWirkungText(b.wirkung))}<div class="adm-cell-sub">${escapeHtml(admMandatText(b.wirkung))}</div></td>
+          <td data-label="Handlungsbedarf">${admStufeChip(b.stufe)}</td>
+        </tr>`).join("");
+
+      const paketLage = Array.isArray(st.paketLage) ? st.paketLage : [];
+      const paketRows = paketLage.map((p) => `
+        <tr>
+          <td data-label="Paket"><strong>${escapeHtml(p.key || p.id || "")}</strong>${p.isBase ? `<div class="adm-cell-sub">Pflicht-Basispaket</div>` : ""}</td>
+          <td data-label="Versorgung">${escapeHtml({
+            versorgt: "versorgt",
+            teilweise_geschwaecht: "teilweise geschwächt",
+            ohne_funktionierenden_weg: "kein funktionierender Abrufweg",
+            leer: "keine Abrufwege hinterlegt",
+            unbestimmt: "nicht bestimmbar (nur inaktive/unbekannte Wege)"
+          }[p.versorgung] || p.versorgung || "")}</td>
+          <td data-label="Wege">${admNum(p.wege)}</td>
+          <td data-label="Tragend">${admNum(p.wirksam)}</td>
+          <td data-label="Gestört">${p.gestoert > 0 ? `<span class="adm-val-bad">${admNum(p.gestoert)}</span>` : admNum(p.gestoert)}</td>
+        </tr>`).join("");
+
+      const sw = st.schwellen || {};
+      const schwellenNote = `Schwellen: ab ${admNum(sw.fehlerAbLaeufen)} Fehlläufen in Folge akut · ab ${admNum(sw.leerAbLaeufen)} Leerläufen „liefert keine Inhalte" · ab ${admNum(sw.instabilAbEpisoden)} getrennten Ausfällen „instabil" · veraltet nach ${admNum(sw.veraltetTage)} Tagen ohne Lieferung (oder dem beobachteten Rhythmus) · langsam ab ${admNum(sw.langsamMs)} ms.`;
+
+      stoerungCards = `
+        ${admCard("Erkannte Quellenstörungen", `Aus der tatsächlichen Laufhistorie der letzten ${admNum(st.fensterTage)} Tage (source_crawl_telemetry)`, stoerungTiles)}
+        ${admCard("Störungen mit Auswirkung", "Akut zuerst — politische Versorgung vor technischem Detail",
+          stoerungRows
+            ? `${admTableShell("qw-stoerungen", ["Quelle", "Zustand", "Problem seit", "Letzte Lieferung", "Auswirkung", "Handlungsbedarf"], stoerungRows)}<p class="adm-note">${escapeHtml(schwellenNote)}</p><p class="adm-note">Übersprungene Läufe (geteilter Abrufweg) und zentrale Drosselung zählen bewusst <strong>nicht</strong> als Quellenfehler — sie haben die Quelle nie erreicht.</p>`
+            : `${admEmpty("Keine erkannte Störung im Bewertungsfenster.")}<p class="adm-note">${escapeHtml(schwellenNote)}</p>`)}
+        ${paketRows ? admCard("Betroffene Quellenpakete", "Nur Pakete, deren Versorgung nicht vollständig getragen wird",
+          admTableShell("qw-paketlage", ["Paket", "Versorgung", "Wege", "Tragend", "Gestört"], paketRows)) : ""}`;
+    }
+  }
+
   const publisherList = (src && Array.isArray(src.herausgeber) ? src.herausgeber : []);
   const publisherRows = publisherList.map((p) => {
     const wege = Array.isArray(p.wege) ? p.wege : [];
@@ -2500,7 +2631,7 @@ function renderAdmQuellen() {
       <summary class="adm-pub-sum">${admChip(worstTone, "")} <span class="adm-pub-name">${escapeHtml(p.name)}</span> <span class="adm-cell-sub">${wege.length} ${wege.length === 1 ? "Abrufweg" : "Abrufwege"}${p.vertrauen ? ` · Vertrauen: ${escapeHtml(p.vertrauen)}` : ""}</span></summary>
       <div class="adm-pub-body">
         ${inner || admEmpty("Keine Abrufwege hinterlegt.")}
-        <p class="adm-note">Dokumente/Fehlerquote je Abrufweg erscheinen, sobald die Quellen-Telemetrie (source_crawl_telemetry) einen Lesepfad hat — bis dahin ${ADM_DASH}.</p>
+        <p class="adm-note">Dieser Block zeigt den <strong>konfigurierten</strong> Status. Das beobachtete Laufverhalten je Quelle wird aus <strong>source_crawl_telemetry</strong> abgeleitet und oben angezeigt.</p>
       </div>
     </details>`;
   }).join("");
@@ -2510,9 +2641,10 @@ function renderAdmQuellen() {
     ${admEndpointNote("sources", "Quellenstatus konnte nicht geladen werden")}
     ${admEndpointNote("crawl", "Crawl-Statistik konnte nicht geladen werden")}
     ${src && !src.verfuegbar ? admCard("Quellen-Architektur", undefined, admEmpty(src.hinweis || "Relationale Quellen-Tabellen nicht erreichbar — keine erfundenen Kennzahlen.")) : `
-    ${admCard("Abrufwege nach Status", "Aus den relationalen Quellen-Tabellen (retrieval_paths.status)", statusTiles)}
+    ${stoerungCards}
+    ${admCard("Abrufwege nach Status", "Konfigurierter Status aus den relationalen Quellen-Tabellen (retrieval_paths.status) — nicht das beobachtete Laufverhalten", statusTiles)}
     ${admCard("Quellen-Architektur", undefined, archTiles)}
-    ${admCard("Klumpenrisiko & Messläufe", "Google-News-Anteil aus crawlRuns.providerBreakdown — Telemetrie-Lesepfad existiert noch nicht", riskTiles)}
+    ${admCard("Klumpenrisiko & Messläufe", "Google-News-Anteil aus crawlRuns.providerBreakdown", riskTiles)}
     ${admCard("Watchdog", "Externe Wächter (GitHub Actions) — Zustand aus den Workflow-Dateien gelesen", watchdogRows)}
     ${admCard("Problematische Abrufwege", "Defekte zuerst — mit konkreter Handlungsempfehlung",
       problemRows
