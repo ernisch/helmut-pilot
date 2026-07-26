@@ -156,10 +156,30 @@ Ergänzung sinnvoll (Roadmap), aber kein Blocker.
 
 Diese Variablen liest NICHT der Server, sondern Betriebs-Skripte bzw.
 GitHub-Actions-Workflows. Sie gehören nicht nach Vercel (Ausnahmen vermerkt),
-sondern in die Shell des Betreibers, `.env.local` oder GitHub Secrets/Variables.
+sondern in die Shell des Betreibers, `.env.local`, GitHub Secrets/Variables —
+**oder, für Claude-Code-Cloud-Sitzungen, die Claude-Code-Environment-Einstellungen**
+(Environment → Environment Variables).
+
+**Vierter Kanal — Claude Code Cloud (seit 2026-07-25, `CLAUDE.md` §4.9):**
+Produktionsrelevante Skripte, die Secrets benötigen, müssen sowohl lokal als auch in
+einer Cloud-Sitzung lauffähig sein. Eine Cloud-Sitzung läuft in einem isolierten,
+frisch geklonten Container ohne Zugriff auf die lokale Maschine des Betreibers und
+ohne persistenten Zustand über einen Neustart hinaus — eine `.env.local` kann dort
+nicht wie gewohnt abgelegt werden. Secrets erreichen den Prozess einer Cloud-Sitzung
+stattdessen als echte `process.env`-Variablen, sobald sie einmal in den
+Environment-Einstellungen der jeweiligen Claude-Code-Umgebung hinterlegt sind —
+analog zu `GITHUB_TOKEN`, das dort bereits ohne jede manuelle Eingabe verfügbar ist.
+**Niemals** Secrets in den Chat einer Sitzung eingeben oder in einen Commit
+aufnehmen. Technische Voraussetzung (bereits erfüllt, geprüft 2026-07-25): kein
+Skript in diesem Repo lädt `.env.local` selbst per `dotenv` — jedes liest Secrets
+ausschließlich über `process.env`, ist also gegenüber dem Herkunftskanal
+(Shell-Export, `.env.local`, GitHub Secret, Cloud-Environment-Variable) blind und
+funktioniert identisch, unabhängig davon, welcher der vier Kanäle die Variable
+gesetzt hat.
 
 | Variable | Ort (Lesestelle) | Zweck / Hinweise |
 |---|---|---|
+| `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` (S) | `scripts/backup-export.js` | Pre-Seed-/Voll-Backup (read-only). Läuft identisch lokal (`.env.local`) und in einer Claude-Code-Cloud-Sitzung (Environment Variables der Cloud-Umgebung) — beide Kanäle landen gleichermaßen in `process.env`. |
 | `TARGET_SUPABASE_SERVICE_ROLE_KEY` (S) | `scripts/restore-drill.js` | Service-Role-Key des ZIEL-Testprojekts für die Restore-Übung (die Ziel-URL kommt als CLI-Argument `--target-url`, nicht als Env). Nur ad hoc in der Shell setzen, nie persistieren. Darf NIE der Production-Key sein. |
 | `VERCEL_TOKEN` (S) | vercel-CLI (`scripts/vercel-deploy.sh` setzt Login via `vercel whoami` voraus) | CLI-/CI-Zugang zum Vercel-Account. Wird von keinem Repo-Code direkt gelesen; Erzeugung/Widerruf unter vercel.com → Account → Tokens. Rotationspflichtig (secret-rotation.md). |
 | `HELMUT_CRON_SECRET` (S, GitHub-Secret) | `.github/workflows/briefing-watchdog.yml` | GitHub-Seite der `CRON_SECRET`-Doppelpflege — MUSS wertgleich mit `CRON_SECRET` in Vercel sein, sonst schlägt der Watchdog fehl. |

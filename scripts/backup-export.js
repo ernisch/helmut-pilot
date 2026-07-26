@@ -16,8 +16,13 @@
 // zu nutzungsarmer Zeit (vor dem 20:00-UTC-Crawl), Details im Runbook
 // docs/betrieb/backup-restore-runbook.md Abschnitt 1.
 //
-// Aufruf (lokal, mit .env.local des Betreibers):
+// Aufruf lokal (mit .env.local des Betreibers):
 //   SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... node scripts/backup-export.js
+// Aufruf in einer Claude-Code-Cloud-Sitzung: identischer Befehl, ohne Praefix — die
+// beiden Variablen muessen vorab in den Environment-Einstellungen der Cloud-Umgebung
+// hinterlegt sein (niemals im Chat, niemals in einem Commit). Siehe CLAUDE.md §4.9
+// und docs/betrieb/env-inventar.md §8. Das Skript liest ausschliesslich process.env
+// und ist gegenueber dem Herkunftskanal der Variablen blind.
 // Ablage: ./backups/<UTC-Zeitstempel>/<tabelle>.json + manifest.json
 // WICHTIG: ./backups/ ist gitignored — Backups NIE committen (enthalten
 // personenbezogene/politische Daten). Ablage nur auf verschluesseltem Geraet;

@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-25 · **`main`-HEAD:** `0d6d867` (Merge #125)
+**Letzte Aktualisierung:** 2026-07-25 · **`main`-HEAD:** `9534bc0` (Merge #127)
 
 > **Diese Datei ist der aktuelle Stand.** Bei Widerspruch zu älteren Statusdokumenten
 > gilt diese Datei. Sie enthält **keine Chronik** — Details je offenem Punkt stehen in
@@ -194,6 +194,7 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 
 | Datum | Entscheidung |
 |---|---|
+| 2026-07-25 | **Neue dauerhafte Regel (`CLAUDE.md` §4.9):** produktionsrelevante Skripte mit Secrets müssen sowohl lokal als auch in einer Claude-Code-Cloud-Sitzung lauffähig sein. Secrets erreichen eine Cloud-Sitzung ausschließlich über die Claude-Code-Environment-Einstellungen, niemals über Chat oder Commits. Geprüft: kein Skript im Repo parst `.env.local` selbst per `dotenv` — alle lesen ausschließlich `process.env` und sind damit bereits kanalunabhängig; `docs/betrieb/env-inventar.md` §8 führt die Cloud-Environment-Variable als vierten Kanal neben Vercel, lokaler Shell/`.env.local` und GitHub Secrets |
 | 2026-07-25 | **Die 6 reparierten Bundeswege werden gestaffelt reaktiviert** — erst die 2 Direktfeeds, nach einem vollen Crawl-Zyklus die 4 Google-Wege (`betrieb/quellen-seed-einspielung.md` §6d). Umsetzung als gezieltes `update` nach dem Seed, **nicht** durch Bearbeiten der Seed-Datei: der Bund-Seed ist per Drift-Gate byte-genau an seinen Generator gebunden |
 | 2026-07-25 | Empfehlung, `rp-ausschuss-arbeit-soziales` wegzulassen, **geprüft und abgelehnt** — die Begründung („kein belegter Eigenertrag") ist zirkulär: der Weg hat keine Telemetrie, weil er `broken` ist. Sein einziger echter Abruf (Sprint 9B) ergab HTTP 200, 20 Items, jüngstes 0 Tage alt |
 | 2026-07-25 | PR #125 (Sicherung + gezielter Restore) gemergt (`0d6d867`); CI auf `main` grün, Vercel-Production `READY` |
