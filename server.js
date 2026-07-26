@@ -11,7 +11,7 @@ const { validateProfile } = require("./lib/helmut/profile-validation");
 const sourceSafety = require("./lib/helmut/sourceSafety");
 const { runLageCheck, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, listFailedKnowledgeObjects, resetUnderstandingToPending, markUnderstandingTerminal, getUnderstandingRetries, saveUnderstandingRetries, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, getLlmUsageBreakdownToday, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getClassificationCoverage, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState, tenantJwtModeEnabled, saveKnowledgeObjectEnrichment, profileDbModeEnabled, profileDbExclusiveEnabled, getProfileTelemetry, getProfileFromDb, diagnoseTenantJwt, recordProcessRun, listProcessRuns, saveMonitoringDeliveryState, getMonitoringDeliveryState, getLlmCostSince, getAdminCostsPerUser, listSourceArchitectureRows, getSourceModeShadowLastRun, listSourceCrawlTelemetry } = require("./lib/helmut/storage");
+const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, listFailedKnowledgeObjects, resetUnderstandingToPending, markUnderstandingTerminal, getUnderstandingRetries, saveUnderstandingRetries, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, getLlmUsageBreakdownToday, getRunCostReport, llmPriceProvenance, recordLlmUsage, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getClassificationCoverage, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState, tenantJwtModeEnabled, saveKnowledgeObjectEnrichment, profileDbModeEnabled, profileDbExclusiveEnabled, getProfileTelemetry, getProfileFromDb, diagnoseTenantJwt, recordProcessRun, listProcessRuns, saveMonitoringDeliveryState, getMonitoringDeliveryState, getLlmCostSince, getAdminCostsPerUser, listSourceArchitectureRows, getSourceModeShadowLastRun, listSourceCrawlTelemetry } = require("./lib/helmut/storage");
 const llmBudgetLib = require("./lib/helmut/llm-budget");
 
 // P0-1: technischer Ausfuehrungsort + Laufkennung fuer Prozess-Laufzeit-Telemetrie
@@ -1850,6 +1850,15 @@ async function handleRequest(request, response) {
         monat: monat ? { seit: monthStart, calls: monat.calls, estimatedCostUsd: monat.estimatedCostUsd } : null
       };
     });
+  }
+
+  // Kosten JE LAUF (Punkt 17). Verbindet processRuns mit dem Kostenlog; weist je
+  // Lauf aus, ob die Zuordnung gemessen (Laufkennung) oder rekonstruiert
+  // (Zeitfenster) ist. Rein lesend.
+  if (url.pathname === "/api/admin/stats/run-costs" && request.method === "GET") {
+    if (!requireRoleOr403(response, authUser, "admin")) return undefined;
+    const runLimit = Math.max(1, Math.min(50, Number(url.searchParams.get("limit")) || 12));
+    return handleAsync(response, () => getRunCostReport({ limit: runLimit }));
   }
 
   // Kosten pro Mandant (rollierendes Fenster) + Pro-Mandant-Budgetstatus.
@@ -6698,10 +6707,31 @@ async function handleDebugRequest(request, response, url) {
             body: JSON.stringify({ model: azDeployment, input: "ping", max_output_tokens: 16 }),
             signal: AbortSignal.timeout(15000)
           });
-          const bodyText = (await res.text().catch(() => "")).slice(0, 300);
+          // Vollen Body NUR lokal halten (fuer den usage-Block); persistiert und
+          // ausgeliefert wird ausschliesslich die gekuerzte Fassung.
+          const bodyFull = await res.text().catch(() => "");
+          const bodyText = bodyFull.slice(0, 300);
+          // KOSTENWAHRHEIT (Punkt 17): Dieser Probe-Call verbraucht ECHTE Tokens,
+          // lief aber bisher an ai.requestOpenAI vorbei — also ohne Reservierung
+          // UND ohne Kostenlog. Er war damit die einzige Stelle, an der Kosten
+          // vollstaendig unsichtbar entstanden. Die Reservierung bleibt bewusst
+          // aus (eine Diagnose muss gerade dann laufen, wenn das Budget erschoepft
+          // ist — dieselbe Begruendung wie beim budgetExempt-Pfad des
+          // KO-Backfills); protokolliert wird sie ab jetzt trotzdem, mit eigenem
+          // callType. Fail-safe: ein Log-Fehler darf die Diagnose nie stoeren.
+          try {
+            let usage = null;
+            try { usage = res.ok ? (JSON.parse(bodyFull) || {}).usage || null : null; } catch (_) { usage = null; }
+            await recordLlmUsage({
+              callType: "pipeline-probe", pipelineStep: "diagnose", model: azDeployment,
+              politicianId: null, usage, durationMs: Date.now() - startedAt,
+              success: res.ok, error: res.ok ? null : `Azure HTTP ${res.status}`
+            });
+          } catch (_) { /* Diagnose darf am Logging nie scheitern */ }
           out.azure = {
             apiUrl, httpStatus: res.status, ok: res.ok, deployment: azDeployment,
             latencyMs: Date.now() - startedAt,
+            kostenhinweis: "Verbraucht echte Tokens. Wird im Kostenlog als callType 'pipeline-probe' gefuehrt, zaehlt aber bewusst NICHT gegen das Tagesbudget.",
             ...(res.ok ? {} : { error: bodyText }),
             hint: res.status === 404 ? "404: Diese Azure-Ressource unterstuetzt /openai/v1/responses nicht ODER Endpoint/Deployment ist falsch."
               : res.status === 401 ? "401: AZURE_OPENAI_KEY ungueltig oder passt nicht zur Ressource."

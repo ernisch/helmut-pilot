@@ -1358,6 +1358,7 @@ const ADM_ENDPOINTS = {
   costs: { path: () => `/api/admin/stats/costs?days=${admCostDays}`, timeout: 15000 },
   budget: { path: () => "/api/admin/stats/budget-today", timeout: 15000 },
   costsPerUser: { path: () => `/api/admin/stats/costs-per-user?days=${admCostDays}`, timeout: 20000 },
+  runCosts: { path: () => "/api/admin/stats/run-costs?limit=12", timeout: 20000 },
   processRuns: { path: () => "/api/admin/stats/process-runs?limit=60", timeout: 15000 },
   audit: { path: () => "/api/admin/audit?limit=50", timeout: 15000 },
   feedback: { path: () => "/api/admin/feedback?limit=200", timeout: 15000 },
@@ -1374,7 +1375,7 @@ const ADM_ENDPOINTS = {
 const ADM_SECTION_ENDPOINTS = {
   uebersicht: ["daily", "budget", "crawlReport", "recovery", "feedback", "audit"],
   pipeline: ["crawl", "crawlReport", "recovery", "processRuns"],
-  kosten: ["costs", "budget", "costsPerUser"],
+  kosten: ["costs", "budget", "costsPerUser", "runCosts"],
   daten: ["overview"],
   nutzer: ["overview", "customers"],
   system: ["overview", "tenantMode", "recovery", "audit", "setupStatus"],
@@ -1937,6 +1938,47 @@ function renderAdmKosten() {
 
   const currencyNote = `<p class="adm-note adm-note--currency">Alle KI-Kosten sind <strong>Schätzwerte in USD</strong> (Preistabelle des Codes). Eine EUR-Umrechnung existiert nicht — Beträge werden bewusst nicht in Euro ausgewiesen. Mandanten-Budgets sind in EUR-Cent gepflegt und werden vom Schutzdeckel konservativ 1:1 gegen USD verglichen.</p>`;
 
+  // --- Kostenwahrheit (Punkt 17) ---------------------------------------------
+  // Trennt strikt: bekannte Kosten · unbekannte Kosten · nachweislich 0,00.
+  // Zeigt NIE einen Gesamtbetrag, wenn unbekannte Anteile bestehen.
+  const kw = budget && budget.kostenwahrheit ? budget.kostenwahrheit : null;
+  const kwBlock = !kw ? admEmpty("Kostenwahrheit nicht geladen.") : (() => {
+    const g = kw.gesamt || {};
+    const zur = kw.jeZurechnung || {};
+    const mv = kw.messvollstaendigkeit || "unbekannt";
+    const mvChip = mv === "vollstaendig gemessen" ? admChip("ok", "vollständig gemessen")
+      : mv === "teilweise gemessen" ? admChip("warn", "teilweise gemessen")
+        : mv === "Kosten unbekannt" ? admChip("bad", "Kosten unbekannt") : admChip("unknown", mv);
+    const bs = kw.budgetstatus || "";
+    const bsChip = bs === "Budget frei" ? admChip("ok", bs)
+      : bs === "Budget nahezu erreicht" ? admChip("warn", bs)
+        : bs === "Budget erreicht" ? admChip("bad", bs) : admChip("unknown", bs || "Budget unbekannt");
+    const preis = kw.preisbasis || {};
+    const preisChip = preis.herkunft === "belegt"
+      ? admChip("ok", `Preisbasis belegt${preis.stand ? ` (${escapeHtml(preis.stand)})` : ""}`)
+      : admChip("warn", "Preisbasis: unbelegter Schätzwert");
+    const unbekannteGruende = Object.entries(kw.unbekannteGruende || {});
+    return `
+      <p class="adm-note"><strong>${escapeHtml(kw.klartext || "")}</strong></p>
+      <p class="adm-note">Messung: ${mvChip} · Budget: ${bsChip} · ${preisChip}</p>
+      ${admTiles([
+        admTile("Bekannte Kosten heute", admUsd(g.kostenUsd), "Nur gemessene Aufrufe"),
+        admTile("Aufrufe mit unbekannten Kosten", admNum(g.kostenUnbekannt), g.kostenUnbekannt ? "Betrag NICHT enthalten" : "keine"),
+        admTile("Abgewiesen / übersprungen", admNum(g.keinProvideraufruf), "Kein Provideraufruf → nachweislich 0,00"),
+        admTile("Input-Tokens", admNum(g.inputTokens)),
+        admTile("Output-Tokens", admNum(g.outputTokens)),
+        admTile("Global (geteilt)", admUsd((zur.global || {}).kostenUsd), "Nicht einem Mandanten zurechenbar"),
+        admTile("Direkt zurechenbar", admUsd((zur.direkt || {}).kostenUsd), "Mandant bekannt"),
+        admTile("Noch nicht zurechenbar", admUsd((zur["nicht-zurechenbar"] || {}).kostenUsd), "Mandantenbezug fehlt am Eintrag")
+      ].join(""))}
+      ${unbekannteGruende.length ? admTableShell("kw-unbekannt", ["Warum die Kosten unbekannt sind", "Aufrufe"],
+        unbekannteGruende.sort((a, b) => b[1] - a[1])
+          .map(([grund, n]) => `<tr><td data-label="Warum die Kosten unbekannt sind">${escapeHtml(grund)}</td><td data-label="Aufrufe">${admNum(Number(n))}</td></tr>`).join(""))
+        : ""}
+      <p class="adm-note">${escapeHtml((kw.verteilungsgrundlage && kw.verteilungsgrundlage.hinweis) || "")}</p>
+      <p class="adm-note"><strong>Nicht erfasst und nicht gedeckelt:</strong> Hosting und Funktionslaufzeit, Datenbank und Speicher, Crawl-Datenverkehr, Push-Versand. Für diese Anbieter liegen weder Nutzungsmessung noch Preis vor — ihre Kosten sind <em>unbekannt</em>, nicht null.</p>`;
+  })();
+
   const budgetTiles = budget ? admTiles([
     admTile("Aufrufe heute", admNum(budget.calls), `Budget-Tag ${budget.day || ADM_DASH} (UTC)`),
     admTile("Tageslimit", admIsNum(budget.limit) ? admNum(budget.limit) : "Kein Limit", "HELMUT_MAX_LLM_CALLS_PER_DAY"),
@@ -1975,6 +2017,28 @@ function renderAdmKosten() {
   const dayRows = costs && Array.isArray(costs.byDay) ? costs.byDay.slice(0, 14)
     .map((d) => `<tr><td data-label="Tag">${escapeHtml(d.day || ADM_DASH)}</td><td data-label="Aufrufe">${admNum(d.calls)}</td><td data-label="Kosten (USD)">${admUsd(d.estimatedCostUsd)}</td><td data-label="Tokens">${admNum(d.totalTokens)}</td></tr>`).join("") : "";
 
+  // Laufkosten (Punkt 17). 'gemessen' = der Nutzungseintrag trug die Laufkennung;
+  // 'rekonstruiert' = ueber das Zeitfenster des Laufs zugeordnet. Der Unterschied
+  // wird angezeigt, damit eine rekonstruierte Zahl nie wie eine gemessene wirkt.
+  const runCosts = admData.runCosts || null;
+  const runCostRows = runCosts && Array.isArray(runCosts.laeufe) ? runCosts.laeufe.map((l) => {
+    const g = (l.kosten && l.kosten.gesamt) || {};
+    const zuord = l.zuordnungExakt ? admChip("ok", "gemessen") : admChip("warn", "rekonstruiert");
+    const kosten = g.kostenUnbekannt
+      ? `${admUsd(g.kostenUsd)} <span class="adm-note">+ ${admNum(g.kostenUnbekannt)} unbekannt</span>`
+      : admUsd(g.kostenUsd);
+    return `<tr>
+      <td data-label="Lauf">${escapeHtml(l.laufkennung || ADM_DASH)}</td>
+      <td data-label="Typ">${escapeHtml(l.lauftyp || ADM_DASH)}</td>
+      <td data-label="Start">${escapeHtml(l.start ? admDateTime(l.start) : ADM_DASH)}</td>
+      <td data-label="Dauer (s)">${admIsNum(l.dauerMs) ? admNum(Math.round(l.dauerMs / 100) / 10) : ADM_DASH}</td>
+      <td data-label="Einheiten">${admNum(l.verarbeiteteEinheiten)}</td>
+      <td data-label="KI-Aufrufe">${admNum(g.aufrufe)}</td>
+      <td data-label="Kosten (USD)">${kosten}</td>
+      <td data-label="Zuordnung">${zuord}</td>
+    </tr>`;
+  }).join("") : "";
+
   const perUserRows = cpu && Array.isArray(cpu.perUser) ? cpu.perUser
     .map((u) => `<tr><td data-label="Mandant">${escapeHtml(u.name || u.userId || ADM_DASH)}</td><td data-label="Aufrufe">${admNum(u.calls)}</td><td data-label="Kosten (USD)">${admUsd(u.totalCostUsd)}</td></tr>`).join("") : "";
 
@@ -1998,6 +2062,11 @@ function renderAdmKosten() {
     ${admEndpointNote("budget", "Tagesbudget konnte nicht geladen werden")}
     ${admEndpointNote("costs", "Kostenstatistik konnte nicht geladen werden")}
     ${admEndpointNote("costsPerUser", "Kosten pro Mandant konnten nicht geladen werden")}
+    ${admEndpointNote("runCosts", "Laufkosten konnten nicht geladen werden")}
+    ${admCard("Was heute sicher bekannt ist", "Bekannte Kosten, unbekannte Anteile und nachweislich kostenlose Aufrufe — strikt getrennt", kwBlock)}
+    ${admCard("Kosten je Lauf", "Ein Lauf = ein Crawl-, Lage- oder Briefing-Durchgang", runCostRows
+      ? admTableShell("ko-run", ["Lauf", "Typ", "Start", "Dauer (s)", "Einheiten", "KI-Aufrufe", "Kosten (USD)", "Zuordnung"], runCostRows)
+      : admEmpty("Laufkosten nicht geladen."))}
     ${admCard("Tagesbudget (heute)", "Exaktes Fenster des Budget-Gates — nicht das rollierende Statistikfenster", budgetTiles)}
     ${admCard("Übersprungene Aufrufe", "Gründe (heute)", skipReasons)}
     ${admCard("Zeitraum", undefined, `<div class="adm-seg">${periodBtns}</div>${periodTiles}`)}

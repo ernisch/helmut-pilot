@@ -19,7 +19,7 @@
 | ⏳ | **Teilweise** — Technik vorhanden, Produktionsnachweis oder Fachtiefe fehlt |
 | ☐ | **Offen** — nicht begonnen oder nicht belegt |
 
-**Stand:** 12 ✅ · 6 ⏳ · 12 ☐ (von 30)
+**Stand:** 13 ✅ · 5 ⏳ · 12 ☐ (von 30)
 
 ---
 
@@ -43,7 +43,7 @@
 | 14 | Landtag | Berlin als laufende Versorgung aktivieren und prüfen | ⏳ | Berliner Quellen liefern regelmäßig echte und verwertbare Dokumente | **Aktivierungsreife hergestellt (2026-07-26), Production unverändert.** 10 Wege angelegt, weiterhin **0 Abrufe, 0 Dokumente**. Der Aktivierungsschritt ist zeilengenau beschrieben, generiert und in drei Stufen rückrollbar; das Landesmodul-Gate ist jetzt **je Land** freigebbar (`HELMUT_LANDESMODULE`, Default leer) und `activation_mode='manual'` ist eine echte Sperre geworden. Geplant sind **6 liefernde Wege** (8 von 12 Pflichtklassen; die 4 PARDOK-Klassen liefern strukturell nichts). **Harter Blocker V1:** `berlin-basis` trägt in Production weiterhin Partei-/Fraktions-/Personenquellen (A-3). Aktivierung bleibt **freigabepflichtig** → [`betrieb/berlin-aktivierung.md`](../betrieb/berlin-aktivierung.md) |
 | 15 | Landtag | Brandenburg als laufende Versorgung aktivieren und prüfen | ⏳ | Brandenburger Quellen liefern regelmäßig echte und verwertbare Dokumente | 9 Wege angelegt, **0 Abrufe, 0 Dokumente**; wie Punkt 14 |
 | 16 | Qualität | Quellenfehler vollständig automatisch erkennen | ⏳ | Leere, blockierte, langsame und fehlerhafte Quellen werden zuverlässig gemeldet | **A-6 behoben:** `source_crawl_telemetry` (13 081 Zeilen) hat einen Lesepfad; zentrale Klassifikation mit 14 Zustandsklassen + 4 Handlungsstufen, aus der echten Laufhistorie **abgeleitet** statt zweitgespeichert (keine Migration). Production read-only gegengeprüft (205 Quellen, 1 akut, 6 zeitnah, 48 beobachten; Dedup 0 Doppelmeldungen). **Offen:** 7 der 14 Klassen sind mangels realer Vorfälle nur testbelegt; `retrieval_paths.last_success_at`/`error_streak` bleiben bewusst leer. Doku: `betrieb/quellenstoerungen.md` |
-| 17 | Kosten | Echte Kostenmessung im Betrieb bestätigen | ⏳ | Kosten sind pro Lauf, Tag und später pro Mandant nachvollziehbar | Tages-/Laufkosten über `llm_usage` + `llm_budget_counters` belegt; **pro Mandant** offen (`HELMUT_TENANT_LLM_CAP` AUS, OP-03) |
+| 17 | Kosten | Echte Kostenmessung im Betrieb bestätigen | ✅ | Kosten sind pro Lauf, Tag und später pro Mandant nachvollziehbar | **Dieser Sprint**, mit read-only Production-Messung belegt ([`betrieb/kostenmessung.md`](../betrieb/kostenmessung.md)). **Pro Lauf:** `crawl-20260726160130-7bznw` = 147 Abrufwege, 940 neue Dokumente, 8 LLM-Aufrufe, 35 080/9 017 Tokens, **0,026805 USD**. **Pro Tag:** Mittel **0,1370 USD** (7 volle Tage, Spanne 0,118–0,150). **Pro Mandant vorbereitet, nicht behauptet:** gemessen sind **79 % global** / **21 % direkt zurechenbar**; eine Verteilung der globalen Kosten wird bewusst **nicht** vorgenommen. Die Angabe im Alt-Beleg war falsch: die Tabelle `llm_usage` hat **0 Zeilen**, Kostenquelle ist der `llmUsage`-Blob. 8 Messlücken benannt (K-1…K-8), darunter **~16 % verlorene Protokolleinträge** → bekannte Kosten sind eine **Untergrenze**. `kostenmessung-test` 96/96, Offline-Suite 153/153 |
 | 18 | Inventur | Production Inventur aller Pakete erstellen | ✅ | Pro Paket sind Wege, Aktivierung, Ertrag, letzte Lieferung und Fehler dokumentiert | **Dieser Sprint:** [`30-paket-inventur-production.md`](../quellenarchitektur/30-paket-inventur-production.md), 16 Merkmale je Paket, reproduzierbare SQL-Abfragen |
 | 19 | Daten | Politische Ebene vollständig speichern | ☐ | Alle relevanten Wissensobjekte sind korrekt als Bund, Berlin, Brandenburg, Europa oder Kommune klassifiziert | nicht Gegenstand dieses Sprints |
 | 20 | Daten | Geografische Zuordnung vollständig speichern | ☐ | Alle relevanten Inhalte besitzen die richtige Region | nicht Gegenstand dieses Sprints |
@@ -80,6 +80,12 @@ Vollständig beschrieben in [`../quellenarchitektur/30-paket-inventur-production
 - **A-4** 2 der 5 `always_on`-Kernwege sind in der Datenbank weiterhin defekt → Ersatz-URLs sind auf `main`, wirksam erst mit dem Seed.
 - **A-5** Das personenbezogene Katalogpaket des Piloten liefert dauerhaft nichts.
 - **A-6** *behoben (Punkt 16, 2026-07-26):* Die Pfad-Statusmaschine schreibt weiterhin nicht zurück — der Zustand je Quelle wird stattdessen aus `source_crawl_telemetry` **abgeleitet** (führende Quelle). Ein Rückschreiben wäre ein Production-Write je Crawl und eine redundante Zweitspeicherung; es bleibt bewusst unterlassen. `retrieval_paths.last_success_at`/`last_error`/`error_streak` sind damit weiter leer, die Admin-Ansicht unterscheidet jetzt aber ausdrücklich **konfigurierten** von **beobachtetem** Status.
+
+Aus der Kostenmessung (Punkt 17, vollständig in [`../betrieb/kostenmessung.md`](../betrieb/kostenmessung.md) §4):
+
+- **K-1** Der Kostenlog verliert unter Parallelität Einträge (Reservierungszähler an allen 12 gemessenen Tagen höher, Σ 740 vs. 620 ≈ **16 %**). Bekannte Kosten sind eine **Untergrenze**. Größter offener Hebel; die leere Tabelle `llm_usage` wäre der Zielspeicher.
+- **K-2** Die Preisbasis ist ein **unbelegter Schätzwert** im Code. Schließbar ohne Codeänderung über `HELMUT_LLM_PRICE_SOURCE`.
+- **K-6** Supabase, Vercel, Crawl-Volumen, Push und DIP sind **vollständig ungemessen und ungedeckelt** — offene Kostenexposition.
 - **A-7** Doppelte Cron-Läufe mit `circuit-open` verzerren jede Telemetrie-Auswertung → **OP-15**.
 
 Aus der Vollständigkeitsprüfung (Punkt 13, vollständig in
