@@ -1369,8 +1369,19 @@ async function c7UnderstandingChecks() {
   ]);
   check("C7 Cluster: Komposit-Variante (Bundestariftreuegesetz ~ Tariftreuegesetz) -> 1 Cluster",
     compound.length === 1, `clusters=${compound.length}`);
-  check("C7 Cluster: deriveVorgangId stabil aus Wurzel-Anker (vg-tariftreuegesetz)",
-    u.deriveVorgangId(compound[0]) === "vg-tariftreuegesetz", `id=${u.deriveVorgangId(compound[0])}`);
+  // Seit Betriebsbefund B4 traegt die Kennung zusaetzlich Ereignistag und
+  // Ankerpruefsumme (`vg-<wurzel>[-<tag>]-<summe>`) — genau das verhindert, dass
+  // ein neues Ereignis einen fachfremden Altvorgang "trifft". Unveraendert
+  // geprueft wird das Wesentliche: die Wurzel stammt aus dem Komposit-Anker und
+  // dieselbe Dokumentmenge ergibt immer dieselbe Kennung.
+  const compoundId = u.deriveVorgangId(compound[0]);
+  check("C7 Cluster: deriveVorgangId aus Wurzel-Anker (Praefix vg-tariftreuegesetz)",
+    compoundId.startsWith("vg-tariftreuegesetz"), `id=${compoundId}`);
+  check("C7 Cluster: deriveVorgangId ist deterministisch (gleiche Dokumente -> gleiche Kennung)",
+    u.deriveVorgangId(u.clusterRawDocuments([
+      { title: "Bundestariftreuegesetz vorgelegt" },
+      { title: "Tariftreuegesetz stoesst auf Kritik" }
+    ])[0]) === compoundId);
 
   // (b) Prompt traegt die DSGVO-Regeln + Pflichtfelder, kein Volltext.
   const prompt = u.buildUnderstandingPrompt({ documents: [{ title: "Rentenpaket", summary: "Kabinett beschliesst." }] });
@@ -1446,11 +1457,45 @@ async function c7UnderstandingChecks() {
   check("C7 Zeitbudget: KEIN KI-Call fuer deferred Cluster (Kostenschutz)",
     understandCalls === budgeted.processed, `calls=${understandCalls} processed=${budgeted.processed}`);
 
-  // (f) Idempotenz: existiert das KO bereits -> KEIN KI-Call (einmal pro Vorgang).
+  // (f) Idempotenz: derselbe Vorgang wird nie zweimal per KI verstanden.
+  // Seit Betriebsbefund B4 genuegt dafuer NICHT mehr, dass irgendein KO mit
+  // passender Kennung existiert (genau das hat Ereignisse verschluckt) — der
+  // Bestand muss dieselbe Sache BELEGEN. Deshalb hier ein realistischer Bestand:
+  // gleiche Kennung, gleiche Quell-Dokumente. Erwartung: `duplicate`, 0 KI-Calls.
   understandCalls = 0;
-  const exists = await u.runUnderstandingShadow(items, { ...baseDeps, getExisting: () => ({ id: "ko-vg-rentenpaket" }) });
-  check("C7 Idempotenz: vorhandener Vorgang -> skipped-exists, KEIN KI-Call",
-    understandCalls === 0 && exists.counts && exists.counts["skipped-exists"] === 1);
+  const { toRawDocumentRow: toRow, dedupeRawDocuments: dedupe } = require(path.join(root, "lib/helmut/dedup.js"));
+  const idemRows = dedupe(items.map(toRow).filter((r) => r && r.id));
+  const idemVid = u.deriveVorgangId(u.clusterRawDocuments(idemRows)[0]);
+  const idemKo = { id: `ko-${idemVid}`, vorgang_id: idemVid, status: "neu", understanding_status: "complete" };
+  const exists = await u.runUnderstandingShadow(items, {
+    ...baseDeps,
+    findVorgangCandidates: () => [idemKo],
+    listVorgangDocuments: () => idemRows,
+    getExisting: () => idemKo
+  });
+  check("C7 Idempotenz: identischer Vorgang -> duplicate, KEIN KI-Call",
+    understandCalls === 0 && exists.counts && exists.counts.duplicate === 1,
+    `calls=${understandCalls} counts=${JSON.stringify(exists.counts)}`);
+  check("C7 Idempotenz: `skipped-exists` existiert als Ergebnisklasse NICHT mehr",
+    !exists.counts || exists.counts["skipped-exists"] === undefined);
+
+  // (f2) Kollisionsfestigkeit: ein FACHFREMDER Altvorgang mit derselben Kennung
+  // darf den neuen Cluster nicht mehr verschlucken (der CSD-2026-Fall).
+  understandCalls = 0;
+  const fremdKo = { id: `ko-${idemVid}`, vorgang_id: idemVid, status: "neu", understanding_status: "complete", headline: "Taifun Noul in China" };
+  const kollision = await u.runUnderstandingShadow(items, {
+    ...baseDeps,
+    findVorgangCandidates: () => [fremdKo],
+    listVorgangDocuments: () => [{ id: "fremd-1", title: "340.000 Menschen in China wegen Taifun Noul in Sicherheit gebracht" }],
+    getExisting: () => fremdKo
+  });
+  check("C7 Kollision: fachfremder Altvorgang mit gleicher Kennung -> eigener Vorgang, KI-Call findet statt",
+    understandCalls === 1 && kollision.counts && kollision.counts.saved === 1,
+    `calls=${understandCalls} counts=${JSON.stringify(kollision.counts)}`);
+  check("C7 Kollision: die Aufloesung ist als technischer Konflikt protokolliert",
+    kollision.telemetrie && kollision.telemetrie.aufloesungen
+      && kollision.telemetrie.aufloesungen["konflikt-neue-kennung"] === 1,
+    JSON.stringify(kollision.telemetrie && kollision.telemetrie.aufloesungen));
 
   // (g) Budget: canSpend verweigert -> kein KI-Call, sauberer Skip + Log.
   understandCalls = 0; skips.length = 0;
@@ -1710,11 +1755,37 @@ async function c8UnderstandingChecks() {
   check("C8 Kein Endlos-Retry (eager): KI-Fehler bei NEUEM Vorgang -> failed geparkt (markFailed aufgerufen)",
     eagerFail.status === "skipped-error" && failed.length === 1 && failed[0].vorgangId === "vg-neu");
 
-  // (d) Bereits verstandenes KO -> skipped-exists, KEIN KI-Call (einmal pro Vorgang).
+  // (d) Bereits verstandenes KO -> KEIN erneuter KI-Call. Ohne Beleg am Bestand
+  // (Alt-Vorgang ohne verknuepfte Dokumente) wird bewusst nur verknuepft statt
+  // teuer neu verstanden: verloren geht nichts, die Kosten bleiben gedeckelt.
   understandCalls = 0;
   const ex = await u.understandOneCluster(cluster, baseDeps, { vorgangId: "vg-x", existing: { id: "ko-vg-x", status: "neu" } });
-  check("C8 Idempotenz: verstandenes KO -> skipped-exists, KEIN KI-Call",
-    ex.status === "skipped-exists" && understandCalls === 0);
+  check("C8 Idempotenz: verstandenes KO ohne Beleg -> merged, KEIN KI-Call",
+    ex.status === "merged" && ex.begruendung === "bestand-ohne-beleg" && understandCalls === 0,
+    `status=${ex.status} grund=${ex.begruendung} calls=${understandCalls}`);
+
+  // (d2) Verstandenes KO MIT Beleg und identischen Dokumenten -> echtes Duplikat.
+  understandCalls = 0;
+  const dupCluster = { documents: [{ id: "rd-1", title: "Rentenpaket 2026 im Kabinett beschlossen" }] };
+  const dup = await u.understandOneCluster(dupCluster, {
+    ...baseDeps, listVorgangDocuments: () => [{ id: "rd-1", title: "Rentenpaket 2026 im Kabinett beschlossen" }]
+  }, { vorgangId: "vg-x", existing: { id: "ko-vg-x", status: "neu" } });
+  check("C8 Idempotenz: identische Dokumente am Bestand -> duplicate, KEIN KI-Call",
+    dup.status === "duplicate" && understandCalls === 0, `status=${dup.status} calls=${understandCalls}`);
+
+  // (d3) Verstandenes KO MIT Beleg, aber NEUEN Fakten -> Aktualisierung (KI-Call).
+  // Genau dieser Fall ging frueher als `skipped-exists` lautlos verloren.
+  understandCalls = 0;
+  const updCluster = { documents: [
+    { id: "rd-1", title: "Rentenpaket 2026 im Kabinett beschlossen" },
+    { id: "rd-2", title: "Rentenpaket 2026: Bundesrat kuendigt Vermittlungsausschuss an" }
+  ] };
+  const upd = await u.understandOneCluster(updCluster, {
+    ...baseDeps, listVorgangDocuments: () => [{ id: "rd-1", title: "Rentenpaket 2026 im Kabinett beschlossen" }]
+  }, { vorgangId: "vg-x", existing: { id: "ko-vg-x", status: "neu", ko_version: 1 } });
+  check("C8 Aktualisierung: neue Fakten am bestehenden Vorgang -> updated, GENAU 1 KI-Call",
+    upd.status === "updated" && understandCalls === 1 && upd.koVersion === 2,
+    `status=${upd.status} calls=${understandCalls} version=${upd.koVersion}`);
 
   // (e) Geparktes (failed) KO -> skipped-failed, KEIN KI-Call (kein Endlos-Retry).
   understandCalls = 0;
