@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-26 · **`main`-HEAD:** `9f1def5` (Merge #130)
+**Letzte Aktualisierung:** 2026-07-26 · **`main`-HEAD:** `ca80b2f` (Merge #131)
 
 > **Diese Datei ist der aktuelle Stand.** Bei Widerspruch zu älteren Statusdokumenten
 > gilt diese Datei. Sie enthält **keine Chronik** — Details je offenem Punkt stehen in
@@ -54,6 +54,7 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | Retention/Löschung | nur Trockenlauf; braucht verbindliche Fristen aus OP-02 | OP-12 |
 | Understanding-Gate, Cheap-Triage, Scoring, Berlin/Brandenburg | in `shadow`/`off`, Scharfschaltung ist Freigabe | OP-18, OP-21, OP-22 |
 | Pre-Seed-Sicherung + gezielter Seed-Restore (kein `drop table cascade`) — gebaut, adversarial reviewt, isoliert getestet (43/43 lokal, 41/41 in CI; `backup-export-test` 38/38; Suite 147/147) | **nie gegen Production gelaufen**; deckt nur 8 Tabellen ab und ersetzt OP-01 nicht | OP-01 |
+| **Berlin-Aktivierungsreife (Phase-1-Punkt 14)** — Gate je Land freigebbar, `manual` ist jetzt eine echte Sperre, Aktivierungs-SQL + 3 Rollback-Stufen generiert und getestet, Runbook vollständig | die **Production-Aktivierung selbst** (Neutralisierung, Berliner Landtagsprofil, Paket-/Wegstatus, Flag) und der Beweislauf über mehrere Crawls | Punkt 14 |
 | OP-06 Terminales Aussortieren des Alt-Rückstands (34 Fälle, Default AUS) | Ausführung ist freigabepflichtig — **und** eine offene Fachfrage: 16 der 34 Allowlist-Einträge sind mit „außerhalb Mandat" begründet, also relativ zum Pilotmandat, geschrieben wird aber in das mandantenneutrale `knowledge_objects` (kein `tenant_id`). Ein künftiger Zweitmandant mit regionalem/EU-Schwerpunkt bekäme diese Vorgänge dauerhaft nie verstanden | OP-06 |
 
 ## 4 · Blockiert
@@ -184,6 +185,24 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
   138 real gecrawlt (6 defekte Wege ohne Abruf, DIP eigener Pfad) · 19 Berlin-/Brandenburg-Wege
   hart gesperrt · 8 Mandatsprofile, davon 6 aktiv, alle Bundestagsebene.
   Details: `quellenarchitektur/30-paket-inventur-production.md`.
+- **Nachtrag, read-only nachgemessen am 2026-07-26 (Punkt-14-Sprint):** die Datenbank hat sich
+  seit dem 25.07. verändert — die Seed-Einspielung ist **teilweise erfolgt**. Gemessen:
+  **9 Pakete** (`die-linke-berlin` und `die-linke-brandenburg` am 2026-07-26 11:07:48 UTC
+  angelegt, beide `prepared`, beide mit **0 Abrufwegen**) · 144 Abrufwege um 11:07:48 aktualisiert,
+  **0 neu angelegt** · `rp-bundestag` und `rp-linksfraktion` sind nicht mehr `broken`
+  (= **Stufe 1** der beschlossenen gestaffelten Reaktivierung), die 4 Google-Wege blieben in einem
+  zweiten Eingriff um 11:13:10 bewusst `broken` (= Stufe 2 offen) · `package_paths` unverändert
+  **165**. **Folge:** der Landesmodul-Seed `20260717` ist **nicht** eingespielt — die
+  P0-2-Umhängung (Befund **A-3**) ist in der Datenbank weiterhin **offen**: `berlin-basis`
+  (`is_base`) trägt nach wie vor `rp-be-partei_pilot`, `rp-be-fraktion_pilot` und
+  `rp-be-person_pilot`. Ebenfalls nicht eingespielt: die Punkt-13-Ergänzungen
+  (24. Ausschuss `rp-committee-wahlpruefung` fehlt, 7 Niedersachsen-Wege fehlen) und die
+  reparierten URLs (die on-conflict-Klausel aktualisiert `url` nicht — `rp-bundestag` ist
+  reaktiviert, zeigt aber weiter auf die alte Adresse `bundestag.de/rss`).
+  **Dieser Sprint hat nichts davon verändert** (nur `select`-Abfragen); wer den Eingriff
+  ausgeführt hat, ist von hier aus nicht feststellbar. Die Zeilen in §4 zur
+  Quellen-Seed-Einspielung sind damit **überholt** und gehören beim nächsten Seed-Sprint
+  nachgezogen.
 - **Zustand:** 0 neue `systemErrors` im dokumentierten Beweiszeitraum; Betriebsbefunde
   B1 (Google-News-Klumpenrisiko, 146 von 163 Wegen über Google) und B2
   (Understanding-Rückstand) bleiben offen. Neu belegt: jeder Cron-Lauf erscheint doppelt —
@@ -231,6 +250,13 @@ ausführen** — er ist unabhängig von allem anderen, beseitigt das größte
 Einzelrisiko und ist Voraussetzung dafür, dass die Migration aus OP-03 gefahrlos
 eingespielt werden kann.
 
+**Entscheidungsreif und wartend (seit 2026-07-26): die Berlin-Aktivierung.** Punkt 14 ist bis
+unmittelbar vor die erste Production-Änderung vorbereitet; jeder Eingriff ist zeilengenau benannt
+und in drei Stufen rückrollbar. Vor der Ausführung sind zwei Dinge zu klären: die in der Datenbank
+weiterhin offene Neutralisierung von `berlin-basis` (Befund A-3, Bedingung **V1**) und eine
+Neuverifikation der 6 Wege auf einem Runner mit offenem Egress (**V2**). Beides ist im Runbook
+[`betrieb/berlin-aktivierung.md`](betrieb/berlin-aktivierung.md) beschrieben.
+
 Der **konkret vorbereitete** nächste Schritt ist die **Quellen-Seed-Einspielung** (Seeds
 `20260713` + `20260717`); sie macht die P0-2-Neutralisierung und die 6 Bundesweg-Reparaturen in
 der Datenbank wirksam. Sie ist jetzt **vollständig entscheidungsreif**: Soll-Zahlen,
@@ -267,6 +293,7 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 
 | Sprint | Datum | Zustand |
 |---|---|---|
+| **Phase-1-Punkt 14: Berlin als laufende Versorgung aktivieren** | 2026-07-26 | **Teilweise abgeschlossen — Aktivierungsreife erreicht, Production unverändert.** Berlin ist bis unmittelbar vor die erste Production-Änderung vorbereitet: Aktivierungsplan, SQL, 3 Rollback-Stufen, Runbook und 123 ausführbare Prüfungen liegen vor. **Keine** Aktivierung, kein Flag, kein SQL ausgeführt, keine Zeile verändert. Zwei echte Sperrlücken behoben (globales statt landesscharfes Gate; `activation_mode='manual'` war wirkungslos). **Empfehlung: Go mit Bedingungen** — der harte Blocker ist die in der Datenbank offene Neutralisierung von `berlin-basis` (A-3). Offline-Suite 151/151, Browser-Smoke 32/32. Brandenburg unverändert und inaktiv. Details unten. |
 | Punkt 13 — Abschlusskorrektur: Niedersachsen, nicht-anwendbar, Fraktionen | 2026-07-26 | **Erfolgreich abgeschlossen** — alle 8 Pakete abgeschlossen (7 vollständig + 1 mit belegten Ausnahmen, 0 teilweise, 0 blockiert). `regional-niedersachsen` hat eine benannte Basis aus 7 Wegen (5 Bestandsquellen + 2 amtliche), **vorbereitet und inaktiv, 0 zusätzliche Abrufe**. „Nicht anwendbar" ist gegen die amtliche Parlamentszusammensetzung überprüfbar. Fraktionssollmenge extern verankert — die Alt-Angabe „8 von 8" war fachlich falsch, richtig sind **5**. Offline-Suite 150/150. Keine Production-Änderung. Details unten. |
 | Punkt 13 — Nachtrag: Ausschuss-Sollmenge extern verankern (23 → 24) | 2026-07-26 | **Erfolgreich abgeschlossen** — der 21. Bundestag hat 24 ständige Ausschüsse (Drucksache 21/150); der Katalog führte 23 und neun Bezeichnungen der 20. Wahlperiode. Fehlend war der Ausschuss für Wahlprüfung, Immunität und Geschäftsordnung. Kanonische Quelle korrigiert (nicht der Testwert), Sollmenge extern verankert, 36 neue Prüfungen mit 6 Negativkontrollen; zusätzlich eine Lücke im Seed-Rückweg behoben. Offline-Suite 149/149. Keine Production-Änderung. Details unten. |
 | Phase-1-Punkt 13: Vollständigkeit jedes Quellenpakets prüfen | 2026-07-26 | **Erfolgreich abgeschlossen** — Abnahmekriterium erfüllt und belegt: alle 8 Pakete haben ein ausführbares fachliches Kriterium, 6 sind vollständig, 2 belegt teilweise vollständig (kein falsches Grün), 3 Lücken behoben. `paketvollstaendigkeit-test` 89/89, Offline-Suite 148/148, Seeds byte-identisch reproduzierbar. Keine Production-Änderung, Berlin/Brandenburg unverändert vorbereitet und inaktiv. Details unten. |
@@ -279,6 +306,73 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 | Merge von PR #105 — Anker-Recovery-Pfad in Production stillgelegt | 2026-07-25 | **Erfolgreich abgeschlossen** — gemergt als `43e9e35`; Stilllegung auf `main` verifiziert. |
 | Recovery-Pfad-Review + Zusammenführung von PR #105 auf die kanonische Kontextstruktur | 2026-07-25 | **Erfolgreich abgeschlossen** |
 | Kontextstruktur für Claude Code (`CLAUDE.md` + Einstiegsschicht) | 2026-07-25 | **Erfolgreich abgeschlossen** — reine Dokumentation, gemergt als PR #119 (`c6a3d40`). |
+
+**Sprint „Phase-1-Punkt 14: Berlin als laufende Versorgung aktivieren" — Nachweis**
+
+- **Auftrag:** Berlin bis zur sicheren Production-Aktivierungsreife bringen; die Aktivierung selbst
+  war ausdrücklich verboten. **Ergebnis: Aktivierungsreife erreicht, Production unverändert.**
+- **Zwei echte Sperrlücken gefunden und behoben** (beide hätten bei der Aktivierung zugeschlagen):
+  1. **`activation_mode='manual'` war keine Sperre.** `model.isPathActive` prüft nur
+     `dev_only`/`paused`/`archived`; ein manueller Weg in einem aktiven Paket galt als aktiv. Das
+     fiel nie auf, weil das Landesmodul-Gate vorher greift. Beim Öffnen des Gates wären **alle 10**
+     vorbereiteten Berliner Wege auf einmal gelaufen — inklusive der Partei-/Personenquellen und
+     des ~48-MB-PARDOK-Downloads. Neue Plan-Regel 4b im **ausführenden** Plan
+     (`buildRelationalCrawlPlan`), nicht in `model.isPathActive`. Wirkung auf den Bund: **keine** —
+     0 Bundeswege tragen `manual` (gemessen: 18 manuelle Wege, alle BE/BB).
+  2. **Das Gate war global.** Berlin und Brandenburg konnten nur gemeinsam geöffnet werden. Jetzt
+     je Land: `HELMUT_LANDESMODULE` (Default **leer**, fail-closed, **kein** Sammel-Schlüsselwort;
+     `alle`/`*` sind wirkungslos). Auf der Datei-Allowlist, damit eine Freigabe ein reviewbarer,
+     sofort rollbarer Diff ist. In `helmut-flags.json` **nicht** gesetzt.
+- **Geplante Aktivierung: 6 liefernde Wege** (4 Google-News-Suchwege + 2 Direktfeeds), Ziel je Weg
+  `healthy`/`auto`. Pflichtklassen ehrlich: **8 von 12 liefern, 4 nicht** — `plenum`,
+  `drucksachen`, `schriftliche_anfragen` und `gesetzgebung` hängen alle an `rp-be-plenum`, dessen
+  PARDOK-Dispatch die harte Invariante `items: []` in **jedem** Modus hält (Live-Modus bewusst nicht
+  implementiert). Der Weg wird deshalb **nicht** aktiviert; er würde je Crawl ~48 MB laden und
+  0 Dokumente liefern. `die-linke-berlin` bleibt `prepared` (2 seiner 3 Wege sind bot-gesperrt, 429).
+- **Harter Blocker (V1):** `berlin-basis` ist das `is_base`-Pflichtpaket **jedes** Berliner
+  Landtagsmandats und trägt in der Datenbank weiterhin `rp-be-partei_pilot`,
+  `rp-be-fraktion_pilot`, `rp-be-person_pilot` (Befund **A-3**, am 2026-07-26 nachgemessen). Eine
+  Aktivierung ohne Neutralisierung gäbe einem Mandat **jeder** Partei die Quellen **einer** Partei
+  und die Nachrichtensuche zu **einer namentlich benannten realen Person** (`CLAUDE.md` §4.2).
+  Der Landesmodul-Seed würde das beheben, würde dabei aber auch eine Brandenburg-Zeile umhängen —
+  deshalb ist die Umhängung hier **Berlin-genau** als eigenes SQL formuliert (Block A).
+- **Last, aus dem Crawler abgeleitet statt geschätzt:** +6 Wege je Lauf · **6–198 Abrufe je Lauf** ·
+  **12–396 je Tag** (2 Crawl-Crons) · bis **196** davon gegen `news.google.com` · bis **96** neue
+  Rohdokumente je Lauf, **192** je Tag · **0 LLM-Aufrufe durch den Crawl**. Annahmen: `max_items`=16,
+  je Google-Item 0–3 Auflösungs-Requests. **Keine Behauptung „kostenlos":** die Google-Requests
+  verschärfen Befund B1 und OP-15, und bis zu 192 Rohdokumente/Tag treffen auf ein
+  Understanding-Tagesbudget von ~15–20 — der Rückstand B2 wächst.
+- **Rollback in drei Stufen, getestet:** Stufe 0 = Flag leeren (Sekunden, **kein** DB-Schreibzugriff,
+  der Regelweg) · Stufe 1 = SQL, dreht die Aktivierung zurück und **lässt die Neutralisierung
+  bestehen** · Stufe 2 = zusätzlich Block A zurück, zeilengenau auf den gemessenen Ist-Zustand.
+  Keine Stufe löscht Dokumente, Knowledge Objects oder Telemetrie — die Auditspur bleibt.
+- **Tests:** `berlin-aktivierung` **123/123** (neu) · `seed-drift` grün (Aktivierungs-SQL ist
+  byte-genau an seinen Generator gebunden) · `source-mode` 51/51 · `profile-packages` 69/69 ·
+  `paketzuweisung-nachweis` 147/147 · `env-inventar` grün · **Offline-Suite 151/151** ·
+  **Browser-Smoke 32/32**. Der Rollback-Test führt das committete SQL wirklich aus; sein
+  Mini-SQL-Ausführer bricht bei jeder unbekannten Statementform hart ab.
+- **Adversarialer Review (24 Punkte), drei nennenswerte Befunde:** die 4 Berliner Google-Wege
+  werden vom Google-Gate erkannt (Drossel/Retry/Breaker greifen), die 2 Direktfeeds nicht
+  (Provider-Trennung bleibt) · `retrieval_paths.parser` ist **Metadatum**: `toCrawlerSource`
+  entscheidet allein über `method` — eine Parser-Korrektur ändert das Abrufverhalten nicht ·
+  hinter dem Crawl gibt es **keinen** zweiten Berlin-Filter, die Kette bricht nicht still ab
+  (alle „Berlin"-Treffer in Lage/Radar/Briefing/Push sind `Europe/Berlin`).
+- **Nicht getan (bewusst):** keine Production-Mutation · kein Flag gesetzt · kein SQL ausgeführt ·
+  kein Profil angelegt · keine Migration · keine Seed-Einspielung · keine Cron-/Lock-/Telemetrie-/
+  Secret-Änderung · Brandenburg, Niedersachsen und alle Bundesquellen unverändert · kein
+  PARDOK-Cutover · keine Quelle erfunden.
+- **Verbleibende Grenzen, ehrlich:** die Live-Verifikation der 6 Wege stammt vom **2026-07-14** —
+  aus dieser Sitzung ist kein Egress möglich (`CONNECT` → `403`, auch für `tagesspiegel.de` und
+  `rbb24.de`), deshalb ist die Neuverifikation als Bedingung **V2** geführt · 4 der 6 Wege sind
+  Google-News-Suchwege, keine amtlichen Direktfeeds · ein Berliner Testmandat existiert nicht, der
+  Kettennachweis ist bisher rein lokal · `rp-rbb24-politik` hängt in **beiden** Landespaketen und
+  bringt auch Brandenburg-Inhalte in den Rohstrom (benannt, im Plan als `mehrlaendrig` ausgewiesen,
+  im Monitoring getrennt gemessen — es wird dadurch **kein** Brandenburg-Paket, -Weg oder -Profil
+  aktiv).
+- **Nächster Schritt:** Betreiberentscheidung über den Go/No-Go-Bericht. Bei „Go mit Bedingungen"
+  folgt ein **eigener** Sprint für die Aktivierung und den Beweislauf (empfohlene
+  Beobachtungsdauer: **3 Tage = 6 Crawl-Läufe**; ein Weg gilt als tragfähig ab 4 von 6 `ok`).
+  Runbook: [`betrieb/berlin-aktivierung.md`](betrieb/berlin-aktivierung.md).
 
 **Sprint „Punkt 13 — Abschlusskorrektur: Niedersachsen, nicht-anwendbar, Fraktionen" — Nachweis**
 
