@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-26 · **`main`-HEAD:** `299470a` (Merge #133)
+**Letzte Aktualisierung:** 2026-07-26 · **`main`-HEAD:** `93006e8` (Merge #134)
 
 > **Diese Datei ist der aktuelle Stand.** Bei Widerspruch zu älteren Statusdokumenten
 > gilt diese Datei. Sie enthält **keine Chronik** — Details je offenem Punkt stehen in
@@ -55,6 +55,7 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | Understanding-Gate, Cheap-Triage, Scoring, Berlin/Brandenburg | in `shadow`/`off`, Scharfschaltung ist Freigabe | OP-18, OP-21, OP-22 |
 | Pre-Seed-Sicherung + gezielter Seed-Restore (kein `drop table cascade`) — gebaut, adversarial reviewt, isoliert getestet (43/43 lokal, 41/41 in CI; `backup-export-test` 38/38; Suite 147/147) | **nie gegen Production gelaufen**; deckt nur 8 Tabellen ab und ersetzt OP-01 nicht | OP-01 |
 | **Berlin-Aktivierungsreife (Phase-1-Punkt 14)** — Gate je Land freigebbar, `manual` ist eine echte Sperre, Aktivierungs-SQL + 3 Rollback-Stufen generiert und getestet, Runbook vollständig. **Zweiter Durchgang 2026-07-26:** Neutralität von `berlin-basis` ist jetzt eine **ausführbare Prüfung** (Code neutral, Production-Bestand **nicht** — Befund A-3 reproduziert), Wege **neu verifiziert** (Aktivierungsset 6 → **4**, zwei Wege veraltet), Lastmodell gegen gemessene Production-Zahlen korrigiert, Profilplan getestet, Aktivierung gestaffelt, Rollback gehärtet | die **Production-Aktivierung selbst** (Block A, Berliner Landtagsprofil, Paket-/Wegstatus, Flag) und der Beweislauf über mehrere Crawls | Punkt 14 |
+| **Automatische Quellenstörungs-Erkennung (Phase-1-Punkt 16)** — `source_crawl_telemetry` hat einen Lesepfad (Befund **A-6** behoben); 14 Zustandsklassen, 4 Handlungsstufen, rhythmus-bewusste Leer-/Veraltet-Schwellen, Erholungsregel, Paket-/Mandatswirkung, Meldungs-Deduplizierung; Admin-Bereich „Quellen & Watchdog” erweitert | der **Production-Beleg für 7 der 14 Klassen** (u. a. `parserfehler`, `veraltet`, `nie_erfolgreich`) — diese Fehler sind in Production real nie aufgetreten und dürfen nicht künstlich erzeugt werden; ausschließlich testbelegt | Punkt 16 |
 | OP-06 Terminales Aussortieren des Alt-Rückstands (34 Fälle, Default AUS) | Ausführung ist freigabepflichtig — **und** eine offene Fachfrage: 16 der 34 Allowlist-Einträge sind mit „außerhalb Mandat" begründet, also relativ zum Pilotmandat, geschrieben wird aber in das mandantenneutrale `knowledge_objects` (kein `tenant_id`). Ein künftiger Zweitmandant mit regionalem/EU-Schwerpunkt bekäme diese Vorgänge dauerhaft nie verstanden | OP-06 |
 
 ## 4 · Blockiert
@@ -307,6 +308,7 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 
 | Sprint | Datum | Zustand |
 |---|---|---|
+| **Phase-1-Punkt 16: Quellenfehler vollständig automatisch erkennen** | 2026-07-26 | **Teilweise abgeschlossen — Erkennung vollständig gebaut und getestet, Production lesend belegt, 7 Klassen nur testbelegt.** Befund **A-6 behoben**: `source_crawl_telemetry` (13 081 echte Laufzeilen) hatte **keinen Lesepfad**, während `retrieval_paths.last_success_at`/`last_error`/`error_streak` zu **0 von 163** befüllt sind — die Admin-Ansicht las genau die leeren Spalten und meldete **falsches Grün**. Neue zentrale, reine Klassifikation mit **14 Zustandsklassen** und **4 Handlungsstufen**, abgeleitet aus der echten Laufhistorie statt zweitgespeichert (**keine Migration, kein Production-Write**). Fünf belegte Fehlalarmbremsen: übersprungene Läufe und zentrale Drosselung sind **keine** Quellenfehler (1 736 bzw. **4 044** der 13 081 Zeilen), Leer/Veraltet brauchen **zusätzlich** eine überschrittene Lieferpause, ein Einzelausreißer wird nie hochgestuft, zu wenig Daten heißt `unbekannt`. **Production-Gegenprobe (read-only)** über 205 Quellen: 150 ohne Handlungsbedarf, 48 beobachten, 6 zeitnah, **1 akut**; **141 von 154** je gestörten Quellen hatten sich selbst erholt — ein naiver Alarm hätte 154 Meldungen erzeugt, 141 davon bereits erledigt. Deduplizierung gegen echte Daten belegt (**0** neue Meldungen bei unverändertem Zustand). `source-failure` **160/160** (neu), `admin-source-ui` **40/40** (von 20 erweitert), **Offline-Suite 153/153**, Browser-Smoke 32/32. **Keine Production-Mutation, kein Cron, kein Flag, keine Migration.** Berlin/Brandenburg unverändert (beide Pakete bleiben `unbestimmt`, keine Störung behauptet). Punkt 17 unberührt. Details unten. |
 | **Punkt 14 (2. Durchgang): Berlin fachlich neutralisieren, aktuell verifizieren, freigabereif machen** | 2026-07-26 | **Teilweise abgeschlossen — Aktivierungsreife für ein reduziertes Set, Production unverändert.** Neutralität ist jetzt eine **ausführbare Prüfung** über Code **und** gemessenen Datenbankbestand: Code neutral, Production **nicht** (Befund A-3 reproduziert), nach Block A neutral. Neuverifikation auf einem Runner mit offenem Egress hat **zwei Wege als veraltet entlarvt** (156 bzw. 41 Tage) — Aktivierungsset **6 → 4**. Pflichtklassen ehrlich neu gezählt: **4 eigenständig, 1 mitabgedeckt, 7 ohne Weg** (vorher „8 von 12 liefern"). Lastmodell gegen gemessene Production-Zahlen korrigiert (beide Terme der Alt-Rechnung waren falsch). Profilplan getestet, zwei Befunde (P-1, P-2). Aktivierung gestaffelt, Rollback gehärtet. **Empfehlung: Go mit Bedingungen** für das reduzierte Set; harter Blocker bleibt V1. Offline-Suite **152/152**, Browser-Smoke 32/32, `berlin-neutralitaet` 109/109 (neu), `berlin-aktivierung` 123/123. **Keine Production-Mutation.** Brandenburg unverändert und inaktiv. Details unten. |
 | **Phase-1-Punkt 14: Berlin als laufende Versorgung aktivieren** | 2026-07-26 | **Teilweise abgeschlossen — Aktivierungsreife erreicht, Production unverändert.** Berlin ist bis unmittelbar vor die erste Production-Änderung vorbereitet: Aktivierungsplan, SQL, 3 Rollback-Stufen, Runbook und 123 ausführbare Prüfungen liegen vor. **Keine** Aktivierung, kein Flag, kein SQL ausgeführt, keine Zeile verändert. Zwei echte Sperrlücken behoben (globales statt landesscharfes Gate; `activation_mode='manual'` war wirkungslos). **Empfehlung: Go mit Bedingungen** — der harte Blocker ist die in der Datenbank offene Neutralisierung von `berlin-basis` (A-3). Offline-Suite 151/151, Browser-Smoke 32/32. Brandenburg unverändert und inaktiv. Details unten. |
 | Punkt 13 — Abschlusskorrektur: Niedersachsen, nicht-anwendbar, Fraktionen | 2026-07-26 | **Erfolgreich abgeschlossen** — alle 8 Pakete abgeschlossen (7 vollständig + 1 mit belegten Ausnahmen, 0 teilweise, 0 blockiert). `regional-niedersachsen` hat eine benannte Basis aus 7 Wegen (5 Bestandsquellen + 2 amtliche), **vorbereitet und inaktiv, 0 zusätzliche Abrufe**. „Nicht anwendbar" ist gegen die amtliche Parlamentszusammensetzung überprüfbar. Fraktionssollmenge extern verankert — die Alt-Angabe „8 von 8" war fachlich falsch, richtig sind **5**. Offline-Suite 150/150. Keine Production-Änderung. Details unten. |
@@ -321,6 +323,103 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 | Merge von PR #105 — Anker-Recovery-Pfad in Production stillgelegt | 2026-07-25 | **Erfolgreich abgeschlossen** — gemergt als `43e9e35`; Stilllegung auf `main` verifiziert. |
 | Recovery-Pfad-Review + Zusammenführung von PR #105 auf die kanonische Kontextstruktur | 2026-07-25 | **Erfolgreich abgeschlossen** |
 | Kontextstruktur für Claude Code (`CLAUDE.md` + Einstiegsschicht) | 2026-07-25 | **Erfolgreich abgeschlossen** — reine Dokumentation, gemergt als PR #119 (`c6a3d40`). |
+
+**Sprint „Phase-1-Punkt 16: Quellenfehler vollständig automatisch erkennen" — Nachweis**
+
+- **Auftrag:** leere, blockierte, langsame und fehlerhafte Quellen zuverlässig erkennen, speichern,
+  verständlich klassifizieren und melden — ohne Production-Mutation. **Ergebnis: Erkennung gebaut,
+  getestet und in Production lesend gegengeprüft; 7 von 14 Klassen sind mangels realer Vorfälle nur
+  testbelegt.**
+- **Startprüfung bestanden:** Arbeitsbaum sauber, lokaler Stand == `origin/main` == `93006e8`,
+  Pflichtlektüre in der vorgeschriebenen Reihenfolge gelesen.
+- **Der eigentliche Befund (A-6), read-only nachgemessen am 2026-07-26:** `source_crawl_telemetry`
+  trägt **13 081 echte Laufzeilen** (2026-07-16 bis 2026-07-26, 105 Läufe, 182 verschiedene Quellen) —
+  im Code gab es dafür aber **keinen einzigen Lesepfad**. Gleichzeitig sind
+  `retrieval_paths.last_success_at`, `last_error` und `error_streak` zu **0 von 163** befüllt. Die
+  Admin-Ansicht „Problematische Abrufwege" las genau diese drei leeren Spalten. Ergebnis war
+  **falsches Grün** über einer Datenbank mit 215 belegten Timeouts, 47 Rate-Limit-Treffern und
+  4 044 Drosselungsabbrüchen.
+- **Architekturentscheidung: `source_crawl_telemetry` ist die führende Wahrheit.** Der Zustand wird
+  daraus **abgeleitet**, nicht zweitgespeichert. Ein Rückschreiben nach `retrieval_paths` wäre ein
+  Production-Write je Crawl **und** eine redundante Doppelspeicherung. **Folge: keine Migration,
+  kein Schemawechsel, kein Production-Write** — und damit keine Berührungsfläche mit Punkt 14 oder 17.
+- **14 Zustandsklassen, 4 Handlungsstufen.** Klassen: `ok` · `leer` · `veraltet` · `blockiert` ·
+  `gedrosselt` · `langsam` · `parserfehler` · `abruffehler` · `instabil` · `erholt` ·
+  `nie_erfolgreich` · `inaktiv` · `manuell` · `unbekannt`. Stufen: `keine` · `beobachten` ·
+  `zeitnah_pruefen` · `akut`. Jeder Befund trägt Kurzbezeichnung, Klartext-Erklärung, Problembeginn,
+  letzten Erfolg, letzte Lieferung, Wiederholungszahl, Ursache, Erholungsstatus und Auswirkung.
+- **Fünf Fehlalarmbremsen — jede an Production-Zahlen begründet:**
+  1. **Übersprungene Läufe sind keine Versuche** (`skipped-shared`: **1 736** der 13 081 Zeilen) —
+     sie erreichten die Quelle nie, begründen keine Fehlerserie und unterbrechen keine.
+  2. **Zentrale Drosselung ist kein Quellendefekt** (`circuit-open`: **4 044** Zeilen, der mit
+     Abstand häufigste „Fehler") — eigene Klasse `gedrosselt`, Stufe `beobachten`, gehört zu OP-15.
+     Ohne diese Trennung wäre der Bericht dauerhaft rot.
+  3. **Nie allein aus „0 Dokumente".** Leer und veraltet verlangen **zusätzlich** eine überschrittene
+     Lieferpause. Bei 5 Crawl-Vollrunden je Tag erzeugt eine wöchentliche Quelle zwangsläufig
+     dutzende Leerläufe — eine reine Zählschwelle hätte genau die seltenen Quellen als kaputt gemeldet.
+  4. **Ein Einzelausreißer ist keine Störung** — nie über `beobachten`, auch bei einer Pflichtquelle,
+     und er zählt für das Paket weiterhin als tragend.
+  5. **Zu wenig Daten heißt `unbekannt`** (unter 3 echten Versuchen), unklare Ursache heißt
+     `abruffehler` statt erfundener Präzision.
+- **Erwarteter Rhythmus, ehrlich gelöst:** `expected_frequency` ist in Production bei **allen 163**
+  Wegen `NULL`. Die Erwartung kommt deshalb aus dem **beobachteten** Median-Lieferabstand × 3
+  (begrenzt auf 3…60 Tage, ab 4 Lieferungen), sonst aus einem Standardwert. Deterministisch und
+  testbar — kein Anomalie-Lernverfahren.
+- **Erholungsregel (§13 des Auftrags):** Erholung wird erst anerkannt, wenn nach dem letzten Fehler
+  wieder **echter Inhalt** geliefert wurde. Eine rein technische 200-Antwort ohne Inhalt genügt
+  **nicht** und fällt weiter zu `leer`/`veraltet` durch. Bei ≥ 2 getrennten Ausfällen bleibt die
+  Quelle `instabil` — Erholung überschreibt Instabilität nicht.
+- **Production-Gegenprobe (read-only, ausschließlich `select`), 2026-07-26.** Eingang: 13 081
+  Telemetriezeilen · 163 Abrufwege · 9 Pakete · 165 Zuordnungen. Klassifiziert wurden **205 Quellen**
+  (163 Katalogwege + 42 Laufzeit-Personenquellen aus Profilen):
+
+  | Klasse | n | | Stufe | n |
+  |---|---:|---|---|---:|
+  | `erholt` | 110 | | `keine` | 150 |
+  | `unbekannt` | 23 | | `beobachten` | 48 |
+  | `ok` | 22 | | `zeitnah_pruefen` | 6 |
+  | `manuell` | 18 | | `akut` | **1** |
+  | `gedrosselt` | 13 | | | |
+  | `instabil` | 12 | | | |
+  | `langsam` | 6 | | | |
+  | `leer` | 1 | | | |
+
+  **Der wichtigste einzelne Beleg:** von 154 je gestörten Quellen hatten sich **141 selbst erholt**.
+  Ein System, das jeden Fehler meldet, hätte 154 Alarme erzeugt — 141 davon zum Meldezeitpunkt
+  bereits erledigt. Genau deshalb ist die Erholungsregel keine Kosmetik.
+  Weiter belegt: `manuell` **18** deckt sich exakt mit den 18 `activation_mode='manual'`-Wegen ·
+  `unbekannt` **23** sind exakt die 23 Katalogwege ohne jede Telemetrie (nie abgerufen, ehrlich
+  „keine Aussage" statt „defekt") · der eine `akut`-Fall ist ein Personenpaket mit genau **einem**
+  Abrufweg, 21 getrennten Ausfällen und ohne Alternative · **Deduplizierung belegt: 0 neue Meldungen**,
+  wenn derselbe Bericht zweimal gegen dieselben Production-Daten läuft.
+- **Ein echter Klassifikationsfehler, den erst die Production-Gegenprobe zeigte:** `langsam` entsteht
+  sowohl aus reiner Laufzeit (Quelle liefert weiter) als auch aus einer **Timeout-Serie** (Quelle
+  liefert nichts). Beide landeten zunächst auf `beobachten` — 6 Laufzeitquellen mit bis zu 13
+  aufeinanderfolgenden Timeouts wären damit untergegangen. Behoben: die Stufe hängt jetzt an der
+  Ursache, nicht am Klassennamen; die 6 Fälle stehen korrekt auf `zeitnah_pruefen`. Als
+  Regressionstest fixiert.
+- **Politische Versorgung statt technischem Alarm.** Paketlage: `versorgt` · `teilweise_geschwaecht` ·
+  `ohne_funktionierenden_weg` · `leer` · `unbestimmt`. Liefert ein anderer Weg desselben Pakets, wird
+  **kein** Versorgungsausfall behauptet und die Stufe heruntergesetzt. Mandatswirkung nur mit
+  übergebenen Profilen über den bestehenden Resolver; ohne sie meldet der Bericht ausdrücklich
+  `bestimmbar: false` **mit Begründung** plus Strukturhinweis bei Pflicht-Basispaketen — nie geraten.
+- **Tests:** `source-failure` **160/160** (neu; deckt alle 26 geforderten Fälle ab, davon 9 reine
+  Fehlalarm-Gegenproben) · `admin-source-ui` **40/40** (von 20 erweitert, inkl. ehrlichem
+  Leerzustand ohne Telemetrie) · **Offline-Suite 153/153** · **Browser-Smoke 32/32**.
+- **Nicht getan (bewusst):** keine Production-Mutation — ausschließlich `select`-Abfragen · keine
+  Migration · kein Flag gesetzt · keine Cron-Änderung · keine Quelle/kein Paket verändert · kein
+  Rückschreiben nach `retrieval_paths` · **keine externe Benachrichtigungsplattform** (nur der
+  bestehende Admin-Bereich) · keine künstlichen Fehler erzeugt · Berlin/Brandenburg unverändert.
+- **Verbleibende Grenzen, ehrlich:** `parserfehler`, `nie_erfolgreich`, `veraltet`, `blockiert` als
+  laufende Serie, HTTP-4xx-Serie, Rückfall nach Erholung und die Mandatswirkung mit Profilen sind in
+  Production **nie aufgetreten** und daher **ausschließlich testbelegt** — ein echter Beleg entsteht
+  erst beim nächsten realen Vorfall (künstliche Fehler sind verboten) · die doppelten Cron-Läufe
+  (A-7/OP-15) verzerren die Rohzählung weiterhin, `gedrosselt` fängt das nur ab · `retrieval_paths`
+  bleibt unbefüllt, die konfigurierte und die beobachtete Sicht stehen als solche beschriftet
+  nebeneinander.
+- **Betriebsdokumentation:** [`betrieb/quellenstoerungen.md`](betrieb/quellenstoerungen.md)
+  (Zustandsklassen, Schwellen, Handlungsstufen, Erholungslogik, Fehlalarmvermeidung,
+  Production-Nachweis, Grenzen, sichere spätere Aktivierung).
 
 **Sprint „Punkt 14 (2. Durchgang): Berlin fachlich neutralisieren, aktuell verifizieren" — Nachweis**
 

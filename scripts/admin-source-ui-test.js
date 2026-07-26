@@ -11,7 +11,9 @@
 //    konkrete Handlungsempfehlung
 //  - Klumpenrisiko (Google-News-Anteil) inkl. Quelle der Zahl
 //  - Watchdog-Zustand aus den Workflow-Dateien (aktiv vs. nur manuell)
-//  - Fehlende Messwerte je Abrufweg als — (Telemetrie hat noch keinen Lesepfad)
+//  - Punkt 16: automatisch erkannte Quellenstoerungen (Zustand, Problem seit,
+//    letzte Lieferung, Paket-/Mandatswirkung, Handlungsstufe, offengelegte
+//    Schwellen) und der ehrliche Leerzustand ohne Telemetrie
 
 const fs = require("fs");
 const path = require("path");
@@ -109,10 +111,80 @@ check("B7 Google-News-Anteil mit Quelle der Zahl", view.includes("42 %") && view
 check("B8 Shadow-Messlauf mit Abdeckung", view.includes("Abdeckung 96"));
 check("B9 Watchdog aktiv mit UTC-Zeitplan", view.includes("30 5 * * *") && view.includes("aktiv"));
 check("B10 Health-Watch ehrlich 'nur manuell'", view.includes("nur manuell"));
-check("B11 Messwerte je Weg ehrlich — (Telemetrie ohne Lesepfad)", view.includes("source_crawl_telemetry"));
+check("B11 Herkunft der Zahlen benannt (source_crawl_telemetry)", view.includes("source_crawl_telemetry"));
 check("B12 Fehlerquote letzter Lauf berechnet (9 %)", view.includes("9 %"));
 check("B13 Herausgeber-Detail aufklappbar", view.includes("adm-pub-sum"));
 check("B14 Kein Kosten-/Tokenwert im Quellen-Bereich", !/USD|Tokens/.test(view));
+// Ohne Störungsblock (Server liefert stoerungen:null) bleibt die Alt-Ansicht heil.
+check("B15 Ohne Stoerungsblock rendert die Ansicht unveraendert", !view.includes("Störungen mit Auswirkung") && !view.includes("Erkannte Quellenstörungen") && !view.includes("Handlungsbedarf"));
+
+// C) Punkt 16 — automatisch erkannte Quellenstoerungen.
+api.clearData();
+api.setUser({ id: "admin1", role: "admin" });
+const basis = {
+  generatedAt: new Date().toISOString(), verfuegbar: true, hinweis: null,
+  statusCounts: { healthy: 4, degraded: 0, broken: 0, needs_review: 155, paused: 0, archived: 0 },
+  zaehler: { herausgeber: 38, abrufwege: 163, pakete: 9, paketPfade: 165 },
+  problematischeWege: [], herausgeber: [], googleNews: null, letzterShadowLauf: null,
+  watchdog: { briefingWatchdog: { verfuegbar: true, aktiv: true, zeitplanUtc: "30 5 * * *" }, healthWatch: { verfuegbar: true, aktiv: false, zeitplanUtc: null } }
+};
+api.setData("sources", {
+  ...basis,
+  stoerungen: {
+    verfuegbar: true, hinweis: null, fensterTage: 14,
+    zaehler: { ok: 120, erholt: 4, leer: 2, veraltet: 1, blockiert: 1, inaktiv: 8, manuell: 18, unbekannt: 9 },
+    stufen: { keine: 150, beobachten: 3, zeitnah_pruefen: 1, akut: 1 },
+    summe: { quellen: 163, gestoert: 5, akut: 1, zeitnah: 1, beobachten: 3, erholt: 4, mandatswirkungBestimmbar: true },
+    schwellen: { fensterTage: 14, fehlerAbLaeufen: 2, leerAbLaeufen: 3, instabilAbEpisoden: 2, veraltetTage: 14, langsamMs: 8000 },
+    gestoerte: [
+      { quelle: "s-akut", name: "Amtsblatt Beispiel", methode: "rss", klasse: "blockiert", kurz: "Abruf wird begrenzt",
+        erklaerung: "3 Läufe in Folge fehlgeschlagen. Der Anbieter begrenzt die Abrufe (HTTP 429).",
+        ursache: "http-429", ursacheText: "Der Anbieter begrenzt die Abrufe (HTTP 429).",
+        stufe: "akut", stufeText: "Akut prüfen", kritisch: true, imKatalog: true, laufzeitquelle: false,
+        problemSeit: minsAgo(60 * 30), letzterErfolg: minsAgo(60 * 34), letzteLieferung: minsAgo(60 * 34), wiederholungen: 3,
+        laufdaten: { laeufe: 20, versuche: 18, erfolge: 15, lieferungen: 15, fehler: 3, leerlaeufe: 0, gedrosselt: 2, uebersprungen: 0, fehlerserie: 3, leerserie: 0, episoden: 1, dokumente: 42, medianDauerMs: 620 },
+        wirkung: { art: "paket_ohne_funktionierenden_weg", pakete: [{ key: "bund-basis", isBase: true, versorgung: "ohne_funktionierenden_weg", wege: 1, wirksam: 0, gestoert: 1 }], alternativenVorhanden: false, alternativen: [], mandate: { bestimmbar: true, betroffene: ["mandat-1", "mandat-2"], grund: null, strukturhinweis: null } },
+        signatur: "blockiert|http-429|akut|bund-basis" },
+      { quelle: "s-leer", name: "Themensuche Beispiel", methode: "googlenews_search", klasse: "leer", kurz: "Liefert keine Inhalte",
+        erklaerung: "Seit 24 geplanten Läufen antwortet die Quelle technisch einwandfrei, hat aber noch nie Inhalte geliefert.",
+        ursache: null, ursacheText: null, stufe: "beobachten", stufeText: "Beobachten", kritisch: false, imKatalog: false, laufzeitquelle: true,
+        problemSeit: minsAgo(60 * 200), letzterErfolg: minsAgo(30), letzteLieferung: null, wiederholungen: 24,
+        laufdaten: { laeufe: 24, versuche: 24, erfolge: 24, lieferungen: 0, fehler: 0, leerlaeufe: 24, gedrosselt: 0, uebersprungen: 0, fehlerserie: 0, leerserie: 24, episoden: 0, dokumente: 0, medianDauerMs: 480 },
+        wirkung: { art: "kein_paket", pakete: [], alternativenVorhanden: false, alternativen: [], mandate: { bestimmbar: true, betroffene: [], grund: null, strukturhinweis: null } },
+        signatur: "leer||beobachten|" }
+    ],
+    handlungsbedarf: [],
+    paketLage: [{ id: "pkg-b", key: "bund-basis", name: "Bund Basis", isBase: true, versorgung: "ohne_funktionierenden_weg", wege: 1, wirksam: 0, gestoert: 1, inaktiv: 0, unbekannt: 0 }]
+  }
+});
+api.setData("crawl", { recentRawItemCount: 3910 });
+api.setData("crawlReport", { failedSources: 8, checkedSources: 94 });
+const stView = api.render();
+check("C1 Störungsblock erscheint", stView.includes("Erkannte Quellenstörungen"));
+check("C2 Zustand als verständlicher Text (nicht nur Farbe)", stView.includes("vom Anbieter begrenzt") && stView.includes("liefert keine Inhalte"));
+check("C3 Handlungsstufe im Klartext", stView.includes("akut handeln") && stView.includes("beobachten"));
+check("C4 'Problem seit' und Wiederholungen sichtbar", stView.includes("3× in Folge") && stView.includes("24× in Folge"));
+check("C5 Letzte Lieferung getrennt vom letzten Erfolg", stView.includes("letzter Erfolg:"));
+check("C6 Noch nie geliefert wird ausdrücklich benannt", stView.includes("noch nie geliefert"));
+check("C7 Paketwirkung im Klartext", stView.includes("Kein funktionierender Abrufweg mehr für bund-basis"));
+check("C8 Mandatswirkung im Klartext", stView.includes("2 Mandate potenziell betroffen"));
+check("C9 Quelle ohne Paket sagt das ehrlich", stView.includes("Betrifft kein aktives Quellenpaket"));
+check("C10 Laufzeitquelle aus dem Profil markiert", stView.includes("Laufzeitquelle aus dem Profil"));
+check("C11 Pflichtquelle markiert", stView.includes("Pflichtquelle"));
+check("C12 Schwellenwerte werden offengelegt", stView.includes("ab 2 Fehlläufen in Folge akut") && stView.includes("langsam ab 8.000 ms"));
+check("C13 Drosselung/Übersprungen ausdrücklich als Nicht-Fehler erklärt", stView.includes("zählen bewusst"));
+check("C14 Betroffene Paketlage als eigene Karte", stView.includes("Betroffene Quellenpakete") && stView.includes("kein funktionierender Abrufweg"));
+check("C15 Ampel kippt auf 'Eingriff nötig' durch beobachtete Lage", stView.includes("brauchen akutes Handeln (beobachtet)"));
+check("C16 Erholung als eigener Zähler sichtbar", stView.includes("Wieder erreichbar"));
+check("C17 Kein Kosten-/Tokenwert im Störungsblock", !/USD|Tokens/.test(stView));
+
+// D) Telemetrie fehlt -> ehrlicher Leerzustand, KEIN falsches Grün.
+api.clearData();
+api.setUser({ id: "admin1", role: "admin" });
+api.setData("sources", { ...basis, stoerungen: { verfuegbar: false, hinweis: "Keine Quellen-Telemetrie im Bewertungsfenster (source_crawl_telemetry leer oder Schreibpfad aus) — es wird keine Quellenstörung behauptet." } });
+const leerView = api.render();
+check("D1 Ohne Telemetrie: ehrlicher Hinweis statt erfundener Zahlen", leerView.includes("es wird keine Quellenstörung behauptet"));
+check("D2 Ohne Telemetrie: keine Störungstabelle", !leerView.includes("Störungen mit Auswirkung"));
 
 console.log(`\n${failed === 0 ? "ALLE GRÜN" : failed + " FEHLGESCHLAGEN"} — ${passed}/${passed + failed} Quellen-UI-Assertions`);
 process.exit(failed > 0 ? 1 : 0);
