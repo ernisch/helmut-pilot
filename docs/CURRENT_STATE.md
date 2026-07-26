@@ -254,7 +254,7 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 
 | Sprint | Datum | Zustand |
 |---|---|---|
-| Incident-Rollout 2026-07-25 (Crawl-Mandantenamplifikation): Beweisprotokoll korrigieren + Production-Beweislauf | 2026-07-25 | **Teilweise abgeschlossen** — der **Ursachen-Fix ist produktiv bewiesen** (IB-2, L-1…L-6): 134 geteilte Wege übersprungen, **0** `circuit-open` (vorher 130–135), Fehler **141 → 7**, Google-Last **1 743 statt 2 × 1 743**. Der Beweislauf ist nach IB-2 **angehalten**: drei Befunde (F-A Health-Report meldet trotzdem `alarm`, F-B Klassifikationsgrenze um 1 verfehlt, F-C 4 von 6 Mandaten weiter außerhalb des Zeitbudgets) brauchen eine Betreiberentscheidung. Details unten. |
+| Incident-Rollout 2026-07-25/26 (Crawl-Mandantenamplifikation): Beweisprotokoll korrigieren + Production-Beweislauf | 2026-07-26 | **Teilweise abgeschlossen** — der **Ursachen-Fix ist produktiv bewiesen**, über die volle Kette von 6 Mandaten: 134–135 geteilte Wege je Folgemandat übersprungen, Fehler **141 → 7**, Google-Last **1 745 bei 6 Mandaten** statt ~6 × 1 744. Der Beweislauf ist **angehalten**: vier Befunde (F-A Health-Report meldet trotzdem `alarm` — durch Webhook belegt; F-B Klassifikationsgrenze um 1 verfehlt; F-C Zeitbudget grenzwertig; F-D Breaker-Gedächtnis nimmt Mandaten 3–6 die eigenen Suchen) brauchen eine Betreiberentscheidung. Details unten. |
 | Review + Merge von PR #125, danach Production-Ablauf bis vor den ersten Zugriff vorbereiten | 2026-07-25 | **Teilweise abgeschlossen** — PR #125 adversarial reviewt (3 Reviewer, 20 belegte Befunde, alle behoben) und als `0d6d867` gemergt (CI auf `main` grün, Vercel-Production `READY`). Der Production-Ablauf ist vollständig vorbereitet; **kein Production-Zugriff erfolgt, keine Seeds ausgeführt**. Wartet auf die Betreiberfreigabe für den Pre-Seed-Export. Details unten. |
 | Merge #123 + Sicherung, gezielter Restore und Entscheidungsreife für die Seed-Einspielung | 2026-07-25 | **Teilweise abgeschlossen** — #123 gemergt (`bed7f53`); Backup- und Restore-Werkzeug gebaut und isoliert getestet (33/33 lokal, 31/31 in CI, Suite 145/145). Die Seed-Ausführung bleibt **blockiert**: die Sicherung ist noch nicht gelaufen und die Reaktivierung der 6 Bundeswege ist nicht freigegeben. Details unten. |
 | Phase-1-Block: Quellenpakete inventarisieren + automatische Paketzuweisung beweisen | 2026-07-25 | **Erfolgreich abgeschlossen** — beide Abnahmekriterien erfüllt und belegt; 145/145 Offline-Suiten grün; als PR #124 gemergt (`118e90c`), CI auf `main` grün, Vercel-Production `READY`. Details unten. |
@@ -275,19 +275,27 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
   Vorfall-Verhalten reproduziert; **SL-3** der Pipeline-Cron kann Folgemandate wegen
   seines äußeren 280-s-Timeouts gar nicht belegen. Neuer Ablauf IB-0…IB-5 plus
   Prüfliste L-1…L-9. **Keine Softwareänderung** — es sind Doku-Lücken.
-- **Production-Beweise:** IB-0 bestanden (Deployment `READY`, Zählerfelder in der
-  Whitelist). IB-1 strukturell nicht messbar (SL-3). **IB-2 teilweise bestanden:**
-  L-1…L-6 ✅ — der Ursachen-Fix wirkt nachweislich (`sharedSkippedSources = 134`,
-  `circuitOpenSources = 0`, `failedSources` 141 → 7, Σ `googleUrlResolution.attempted`
-  = 1 743 = Volumen **eines** Mandats). **L-7 ❌** — nur 2 von 6 Mandaten verarbeitet.
+- **Production-Beweise:** IB-0 bestanden. IB-1 strukturell nicht messbar (SL-3).
+  **IB-2 (20:00):** L-1…L-6 ✅, L-7 ❌ (nur 2 von 6 Mandaten, 244 314 ms).
+  **IB-3 (04:00):** L-1…L-7 erfüllt — **alle 6 Mandate** in 232 944 ms, kein
+  `zeitbudget`-Fehler; Σ `googleUrlResolution.attempted` = **1 745 bei sechs Mandaten**
+  statt ~6 × 1 744; Telemetrie führt `skipped-shared` als eigenen Status (134–135 Zeilen
+  je Folgemandat). **IB-4 (06:00) ❌** — Health-Report nicht ok, Webhook-Zustellung
+  `eventType: "alarm"`, `sent: true`, `status: 200`. IB-5 nicht ausgeführt.
 - **Was nicht erreicht wurde:** **F-A (P1)** `buildRollingCrawlHealth` kennt
-  `isReducedRun` nicht; ein reduzierter Lauf mit `stark-degradiert` treibt den
-  06:00-Report auf `wiederholt-degradiert` / `alarm` (mit dem ausgelieferten Code gegen
-  echte Laufdaten nachgerechnet) → L-8 vorab gescheitert. **F-B (P2)** `attempted = 10`
-  gegen `minAttempted = 10`: der Schutz greift erst bei `< 10`, verfehlt den Fall also um
-  einen Weg. **F-C (P1)** die §7-Prognose „alle 6 Mandate passen ins 240-s-Budget" ist
-  widerlegt (197 s + 47 s = 244 s); Fix D machte den Abbruch aber erstmals sichtbar
-  (`systemErrors` 65 → 66, „Zeitbudget erschoepft: 4 von 6 Mandaten nicht verarbeitet").
+  `isReducedRun` nicht (Fix C machte nur die Basislauf-Auswahl reduziert-bewusst);
+  7 der 11 Läufe im 24-h-Fenster sind bewusst reduzierte Folgeläufe → `wiederholt-degradiert`
+  → `alarm` → `report.ok = false` (`server.js:3816`). Durch Produktionsbeleg bestätigt.
+  **F-B (P2)** `attempted = 10` gegen `minAttempted = 10`: der Schutz greift erst bei `< 10`
+  und verfehlt den Fall, für den er eingeführt wurde, um einen Weg. **F-C (P1)** das
+  Zeitbudget ist **grenzwertig, nicht gelöst**: 04:00 alle 6 Mandate in 232,9 s (Reserve
+  ~7 s), 20:00 nur 2 von 6 (244,3 s) mit korrektem Systemfehler aus Fix D. **F-D (P2)**
+  das Breaker-Gedächtnis ist beim Start der Mandate 3–6 bereits offen (`observed = 0`,
+  `open = true`); ihre **eigenen** Google-Suchen werden nie versucht — für Demo-Mandate
+  folgenlos, für einen zahlenden Zweitmandanten ein Versorgungsproblem (→ OP-03/OP-04).
+- **Nebenbefund, nicht Teil des Incidents:** OP-07 ist faktisch weiter als hier in §3
+  dokumentiert — der Monitoring-Webhook **ist** konfiguriert und stellt zu (`sent: true`,
+  `status: 200`, tägliche Events seit 19.07.). Der vermisste `webhook.sent`-Beleg existiert.
 - **Tests:** Offline-Suite **147/147 grün**. Keine Codeänderung in diesem Sprint.
 - **Eingriffe:** **keine** — rein lesende `SELECT`s und Vercel-Logs; kein manueller Lauf,
   kein `force`, keine Env-, Flag-, Cron-, Migrations- oder Datenänderung.

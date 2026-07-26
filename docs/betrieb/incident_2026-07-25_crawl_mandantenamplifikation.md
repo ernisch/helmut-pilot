@@ -4,12 +4,15 @@
 deployt** · **Ursachen-Fix produktiv bewiesen (IB-2, L-1…L-6)** · Beweislauf nach IB-2
 **angehalten** — drei Befunde brauchen eine Betreiberentscheidung (§7.1, Beweisprotokoll §9.5).
 
-> **Kurzfassung des Stands (2026-07-25 20:14 UTC):** Die **Mandanten-Amplifikation ist weg**
-> und produktiv belegt: 134 geteilte Wege übersprungen, **0** `circuit-open` (vorher 130–135),
-> Fehler **141 → 7**, Google-Last **1 743 statt 2 × 1 743**. Die Falschmeldung „141 von 144"
-> kann nicht mehr entstehen. **Nicht** erreicht sind zwei Folgeziele: 4 von 6 Mandaten fallen
-> weiterhin aus dem Zeitbudget (**F-C**), und der Health-Report meldet trotz wirksamem Fix
-> `alarm` (**F-A**). Beides ist gemessen, nicht vermutet.
+> **Kurzfassung des Stands (2026-07-26 06:14 UTC):** Die **Mandanten-Amplifikation ist weg**
+> und über die **volle Kette von sechs Mandaten** produktiv belegt: 134–135 geteilte Wege je
+> Folgemandat übersprungen (eigener Telemetriestatus `skipped-shared`), Fehler **141 → 7**,
+> Google-Last **1 745 bei sechs Mandaten** statt ~6 × 1 744. Die Falschmeldung „141 von 144"
+> kann nicht mehr entstehen. **Nicht** erreicht sind die Folgeziele: der Health-Report meldet
+> trotz wirksamem Fix `alarm` (**F-A**, durch Webhook-Zustellung belegt), das Zeitbudget ist
+> grenzwertig statt gelöst (**F-C**: 04:00 alle 6 Mandate in 232,9 s, 20:00 nur 2 von 6), und
+> das Breaker-Gedächtnis nimmt den Mandaten 3–6 ihre eigenen Suchen (**F-D**). Alles gemessen,
+> nicht vermutet. Belege: [`production_beweisprotokoll.md`](production_beweisprotokoll.md) §9.4–§9.6.
 
 **Merge:** PR **#120** → `main` `9f95d87`, 2026-07-25 10:27 UTC ·
 **Production-Deployment:** `dpl_146taCPQSupxYfD3Lav1HoiVAHkP` READY 10:27 UTC, abgelöst durch
@@ -303,8 +306,8 @@ Crawl-Cron 04:00 UTC, 6 aktive Mandate:
 | 1 · Mandat 1 `gesund` | `gesund`, 145/145/0, 1 743 Auflösungen | ✅ **eingetreten** |
 | 2 · Mandate 2–6 überspringen die geteilten Wege | `sharedSkippedSources = 134`, `circuitOpenSources = 0`, Direktquellen 3/3 `ok` | ✅ **eingetreten** — aber **nicht** „0 Fehler": die 7 **mandantseigenen** Google-Wege laufen weiterhin in Timeouts, daher `stark-degradiert` statt `cooldown-reduziert` |
 | 3 · Google sieht die Last einmal | Σ `attempted` = 1 743 + 0 = **1 743** | ✅ **eingetreten** — der Ursachen-Fix wirkt |
-| 4 · Läufe 2–6 dauern Sekunden, alle 6 passen ins Budget | Mandat 2 braucht **47 s**; 197 + 47 = **244 s > 240 s**; 4 von 6 Mandaten übersprungen | ❌ **widerlegt** → Befund F-C |
-| 5 · Health-Report `aktuell-gesund` | Gegenrechnung mit dem ausgelieferten Code gegen die echten Laufdaten: `wiederholt-degradiert`, `alertLevel = alarm` | ❌ **widerlegt** → Befund F-A |
+| 4 · Läufe 2–6 dauern Sekunden, alle 6 passen ins Budget | **20:00: nein** (197 + 47 = 244 s > 240 s, 4 von 6 übersprungen). **04:00: ja** (232 944 ms, **6 von 6**, Mandate 3–6 zusammen nur 41,6 s) | ⚠️ **grenzwertig** → Befund F-C. Die Folgemandate sind tatsächlich billig geworden, die Reserve beträgt aber nur ~7 s |
+| 5 · Health-Report `aktuell-gesund` | **Produktionsbeleg:** Webhook-Zustellung 2026-07-26T06:01:24 mit `eventType: "alarm"`, `sent: true`, `status: 200`. Deckungsgleich mit der Gegenrechnung: `wiederholt-degradiert`, `alertLevel = alarm` | ❌ **widerlegt** → Befund F-A |
 
 Die Prognose unterschätzte zwei Dinge: dass die **legitime** Last von Mandat 1 die
 Egress-IP weiterhin drosselt (die eigenen Wege der Folgemandate laufen deshalb in

@@ -635,9 +635,9 @@ Incident-Dokument §11.3._
 |---|---|---|
 | IB-1 | Pipeline 16:00 | **nicht messbar** — strukturelle Beobachtungslücke, siehe 9.3. Kein Fehlschlag, kein Abbruch |
 | IB-2 | Crawl 20:00 | **teilweise bestanden** — L-1…L-6 bestanden (Ursachen-Fix bewiesen), **L-7 gescheitert**. Siehe 9.4 |
-| IB-3 | Crawl 04:00 (Folgetag) | **angehalten** — Betreiberentscheidung nötig (9.4, Befunde F-A/F-C) |
-| IB-4 | Health-Report 06:00 | **vorab rechnerisch gescheitert** (L-8) — Nachweis in 9.5 |
-| IB-5 | Lage-Check 10:00 | angehalten |
+| IB-3 | Crawl 04:00 (Folgetag) | **beobachtet, L-1…L-7 erfüllt** — alle 6 Mandate, 232 944 ms, kein `zeitbudget`-Fehler. Siehe 9.6.1/9.6.2. Formal nicht als „bestanden" gewertet, da der Rollout angehalten ist |
+| IB-4 | Health-Report 06:00 | **gescheitert (L-8)** — Produktionsbeleg: Webhook `eventType: "alarm"`, `sent: true`. Siehe 9.6.4 |
+| IB-5 | Lage-Check 10:00 | **nicht ausgeführt** — Rollout vor der Stufe angehalten |
 
 ### 9.3 · IB-1 — Pipeline-Cron 16:00 UTC · **nicht messbar** (ausgewertet 16:12 UTC)
 
@@ -810,3 +810,128 @@ Suchen bleibt unzuverlässig.
 oder F-C wäre eine Änderung außerhalb des freigegebenen Incident-Rahmens
 (Code-Hotfix, Schwellen-/Env-Änderung, Cron-/Zeitbudget-Änderung oder
 Mandats-Deaktivierung nach OP-04) und ist eine **Betreiberentscheidung**.
+
+---
+
+## 9.6 · Beweissicherung 2026-07-26 (04:00-Crawl + 06:00-Health-Report)
+
+Reine Beweissicherung bei **angehaltenem** Rollout — keine Stufe wurde als bestanden
+erklärt, nichts geändert. Ziel: die in §9.5 nur **nachgerechnete** Prognose zu F-A an der
+Realität prüfen. Deployment unverändert `dpl_AuatHn8VSaHt6yrTtimECSgXaoWb` (`9534bc0`).
+
+### 9.6.1 · Der 04:00-Crawl — **alle sechs Mandate**, Ledger über die volle Kette
+
+| Mandat | `runState` | checked | ok | failed | `circuitOpen` | `sharedSkipped` | Dauer | Google-Auflösungen |
+|---|---|---|---|---|---|---|---|---|
+| `annika-klose` | `gesund` | 145 | 145 | 0 | 0 | **0** | 167 837 ms | **1 739 / 1 745** |
+| `cem-ince` | `stark-degradiert` | 144 | 3 | 7 | 0 | **134** | 23 540 ms | 0 / 0 |
+| `helmut-kleebank` | `aggregator-gedrosselt` | 145 | 3 | **0** | **7** | **135** | 8 127 ms | 0 / 0 |
+| `max-mustermann` | `aggregator-gedrosselt` | 145 | 3 | **0** | **7** | **135** | 13 203 ms | 0 / 0 |
+| `ottilie-paola-klein-2` | `aggregator-gedrosselt` | 145 | 3 | **0** | **7** | **135** | 8 654 ms | 0 / 0 |
+| `ruppert-st-we` | `aggregator-gedrosselt` | 145 | 3 | **0** | **7** | **135** | 11 583 ms | 0 / 0 |
+
+**Telemetrie bestätigt den Ledger jetzt zeilengenau** — `skipped-shared` ist ein eigener,
+persistierter Status, nicht nur ein Zähler:
+
+| Lauf | `ok` | `empty` | `skipped-shared` | `circuit-open` | `error` |
+|---|---|---|---|---|---|
+| `raoae` (Mandat 1) | 143 | 2 | 0 | 0 | 0 |
+| `tyzvj` (Mandat 2) | 3 | 0 | **134** | 0 | 7 (6 `timeout`, 1 `http-5xx`) |
+| `4h92q` / `hqicu` / `t3zht` / `adios` | je 3 | 0 | je **135** | je 7 | **0** |
+
+Alle Läufe: Zeilen = distinct `source_id`. Zähl-Arithmetik in allen sechs Läufen
+geschlossen (z. B. `3 + 0 + 7 + 135 = 145`).
+
+**L-6 über die volle Kette:** Σ `googleUrlResolution.attempted` = 1 745 + 0 + 0 + 0 + 0 + 0
+= **1 745** bei **sechs** Mandaten. Vor dem Fix hätte dieselbe Kette ~6 × 1 744 bedeutet.
+**Die Amplifikation ist über alle sechs Mandate hinweg beseitigt.**
+
+### 9.6.2 · Korrektur an Befund F-C — die Aussage in §9.5 war zu absolut
+
+**L-7 ist an diesem Durchlauf erfüllt:** alle **6** Mandate verarbeitet, Summe der
+Laufzeiten **232 944 ms < 240 000 ms**, **kein** neuer `zeitbudget`-Systemfehler
+(`systemErrors` unverändert **66**, jüngster Eintrag weiterhin 2026-07-25T20:04:48).
+
+Damit ist F-C **nicht** „RC-4 löst sich nicht mit", sondern präzise: **das Zeitbudget ist
+grenzwertig, nicht gerissen.** Beide Durchläufe im Vergleich:
+
+| Durchlauf | Mandat 1 | Mandat 2 | Rest | Summe | Ergebnis |
+|---|---|---|---|---|---|
+| 20:00 UTC (25.07.) | 197 090 ms | 47 224 ms | — | **244 314 ms** | ❌ 4 von 6 übersprungen |
+| 04:00 UTC (26.07.) | 167 837 ms | 23 540 ms | 41 567 ms | **232 944 ms** | ✅ 6 von 6 verarbeitet |
+
+Der Unterschied liegt fast vollständig in Mandat 1 (197 s vs. 168 s) und in den Timeouts
+von Mandat 2 (47 s vs. 24 s) — beides tagesformabhängig. **Der Fix hat die Folgemandate
+tatsächlich billig gemacht** (Mandate 3–6 zusammen nur 41,6 s), aber die Reserve beträgt
+nur **~7 s von 240 s**. Ein etwas langsamerer Lauf von Mandat 1 kippt es erneut. F-C
+bleibt damit als **Betriebsrisiko** bestehen, nicht als widerlegte Fix-Wirkung.
+
+### 9.6.3 · Neuer Befund F-D — das Breaker-Gedächtnis trifft die Mandate 3–6
+
+Die vier zuletzt laufenden Mandate zeigen `circuitOpenSources = 7` bei
+`googleGate = {open:true, observed:0, breakerFailures:0}` — **`observed = 0`**, der Breaker
+war also schon **beim Start offen** (`startOpen` aus `googleBreakerMemoryActive`), geerbt
+aus dem Lauf von Mandat 2 (dort `breakerFailures = 10`).
+
+Folge: die **eigenen** ~7 Google-Wege der Mandate 3–6 werden gar nicht erst versucht.
+Diese Mandate bekommen ihre profilspezifischen Suchen **nie** — sie leben ausschließlich
+vom globalen Korpus und ihren 3 Direktquellen. Für Demo-Mandate ohne echtes Profil ist das
+folgenlos; für einen **künftigen zahlenden Zweitmandanten** wäre es ein
+Versorgungsproblem. Verschärft F-C und ist ein eigener Punkt für OP-03/OP-04.
+
+Ehrliche Einordnung: `aggregator-gedrosselt` ist hier die **richtige** Meldung — die
+Datenzufuhr dieser Mandate ist tatsächlich zentral gedrosselt. Der Zustand ist kein
+Zählfehler mehr (0 `failedSources`), sondern eine korrekt benannte reale Einschränkung.
+
+### 9.6.4 · Der 06:00-Health-Report — **F-A durch Produktionsbeleg bestätigt**
+
+Der Report lief 06:01:11 UTC (`GET /api/cron/health-report 200`); der Report-Text selbst
+wird nicht persistiert. **Direkter Beleg** aus `helmut_store` `main-auth`
+(`monitoringWebhookDelivery`):
+
+```
+at        2026-07-26T06:01:24.377Z
+eventType "alarm"
+eventId   al-2026-07-26-2caf5bac4204
+sent      true      status 200      attempts 1
+```
+
+**Der Report war nicht ok und hat Alarm ausgelöst.** Gegenrechnung mit dem
+ausgelieferten Code über die 11 Läufe, die um 06:01:11 im 24-h-Fenster standen:
+
+| Feld | Wert |
+|---|---|
+| `status` | `wiederholt-degradiert` |
+| `alertLevel` | **`alarm`** |
+| `latestState` | `aggregator-gedrosselt` |
+| `windowRuns` / `degradedRuns` / `stronglyDegradedRuns` | 11 / **7** / 3 |
+| `server.js:3816` → `alertLevel !== "alarm"` | **`false`** → `report.ok = false` |
+| Basislauf (`server.js:3666`) | `crawl-20260726040015-raoae`, `annika-klose`, `gesund`, `reduced = false` |
+
+Rechnung und Produktionsbeleg stimmen überein. **F-A ist bestätigt, nicht widerlegt.**
+Die Basislauf-Auswahl (Fix C) arbeitet korrekt — sie wählt den gesunden, nicht
+reduzierten Lauf. Der Alarm entsteht **allein** aus der rollierenden Zählung, die
+`isReducedRun` nicht kennt: 7 der 11 Läufe im Fenster sind bewusst reduzierte Folgeläufe.
+
+### 9.6.5 · Nebenbefund: OP-07 ist faktisch weiter als dokumentiert
+
+`CURRENT_STATE.md` §3 führt OP-07 mit „`HELMUT_MONITORING_WEBHOOK_URL` unset → No-Op,
+kein `webhook.sent`-Beleg". **Produktionsdaten widersprechen:** der Webhook ist
+konfiguriert und stellt zu — `sent: true`, `status: 200`, `attempts: 1`. Die
+`recentEventIds` zeigen tägliche Zustellungen seit dem 19.07. (`hb-2026-07-19`
+Heartbeat, danach `al-2026-07-20` … `al-2026-07-26`). Der in OP-07 vermisste
+`webhook.sent`-Beleg **existiert**. Nur als Beobachtung festgehalten — die
+OP-07-Statusbewertung ist eine Betreiberentscheidung, nicht Teil dieses Incidents.
+
+### 9.6.6 · Kostenwächter und Datenzufuhr
+
+| Größe | Wert | Bewertung |
+|---|---|---|
+| Abrechenbare LLM-Calls 26.07. (bis 06:14) | **13** | Grenze 85 — unauffällig |
+| Abrechenbare LLM-Calls 25.07. (Tagesabschluss) | **43** | Baseline 43–52 — **kein** Anstieg trotz 6 statt 2 verarbeiteter Mandate |
+| Skips / `daily-llm-budget-reached` | **0** | keine Budget-Berührung |
+| Neue Rohdokumente | 26.07. 44 (nur 04:00-Lauf) · 25.07. 166 (Sa) · Vor-Samstage 229 / 198 | unterer Rand der Wochenendspanne, kein Verlustsignal |
+
+Die Erwartung aus §11.5 des Incident-Dokuments ist damit **bestätigt**: die vier
+zusätzlich verarbeiteten Mandate kosten praktisch nichts, weil der Rohdokumentenbestand
+global ist und Mandat 1 die Cluster bereits verstanden hat.
