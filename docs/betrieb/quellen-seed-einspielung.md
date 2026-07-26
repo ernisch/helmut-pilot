@@ -616,19 +616,49 @@ entsprechen exakt der „vorher"-Spalte in §3:
 Seed 1 ist eine einzelne Transaktion (`begin;` … `commit;`, 6 `insert`, 0 `update`, 0 `delete`,
 0 `drop`/`truncate`; die Aktualisierungen laufen über `on conflict … do update`).
 
-**In dieser Sitzung verfügbar ist nur der MCP-Weg** — `DATABASE_URL`, `PGPASSWORD` und ein
-Supabase-CLI sind hier **nicht** gesetzt bzw. nicht installiert:
+**Der Einspielweg ist eine Betreiberhandlung** — Supabase-SQL-Editor oder lokales `psql`:
 
 ```
-mcp__Supabase__execute_sql(project_id="ddckuvvpcytqbyfmbvie",
-                           query=<Inhalt von supabase/seeds/20260713_source_architecture_seed.sql>)
+psql "<DB-Verbindung des Projekts>" -v ON_ERROR_STOP=1 \
+     -f supabase/seeds/20260713_source_architecture_seed.sql
 ```
 
-> **Ungeprüfte Grenze, ehrlich benannt:** Über diesen Weg ist bisher **nur gelesen** worden. Ob er
-> Schreibzugriffe zulässt und ob eine ~100 KB große Anweisung in einem Aufruf durchgeht, ist
-> **nicht** verifiziert — das zu testen wäre bereits ein Production-Schreibversuch gewesen.
-> Schlägt er fehl, ist der Rückfallweg der **SQL-Editor des Supabase-Projekts** oder ein lokales
-> `psql` des Betreibers mit dem DB-Passwort; beides ändert am Inhalt nichts.
+Vorher die Datei-Identität prüfen — sie muss byte-genau dem Generator entsprechen:
+
+```
+sha256sum supabase/seeds/20260713_source_architecture_seed.sql
+# Soll: d131afd04c4a36ff03f6bec6d52636e95637e7a454e30e29a017761bd60ee07a
+```
+
+Der zunächst vorgesehene MCP-Weg (`mcp__Supabase__execute_sql`) ist **verworfen** — Begründung
+direkt darunter.
+
+> **GESCHEITERT — nicht erneut versuchen (verifiziert 2026-07-26).** Dieser Weg ist für Seed 1
+> **unbrauchbar**, und zwar nicht wegen fehlender Rechte: Die Verbindung ist schreibfähig
+> (`transaction_read_only = off`, User `postgres`, `statement_timeout` 2 min) — geprüft mit einer
+> reinen Lese-Abfrage, ohne Schreibversuch.
+>
+> Der Grund ist die **Übertragung**: `execute_sql` nimmt das SQL als Aufrufparameter entgegen. Die
+> Seed-Datei hat **504 Zeilen / 99 846 Bytes** (≈150 000 Token); allein ihre ersten 190 Zeilen
+> belegen 56 000 Token. Sie müsste also vollständig durch das Modell hindurch neu erzeugt werden.
+> Damit wären die Bytes, die in Production ankommen, **modellgeneriert statt dateiidentisch** —
+> die sha256 `d131afd04c4a36ff03f6bec6d52636e95637e7a454e30e29a017761bd60ee07a` wäre nicht mehr
+> garantiert. Genau das verhindern der Generator und das Drift-Gate byte-genau; ein still
+> abweichender Wert in einem der 144 `on conflict … do update`-Sätze würde eine bestehende
+> Production-Zeile überschreiben, ohne dass eine der Prüfungen aus §6c das zwingend fängt.
+>
+> **Stückeln ist keine Lösung:** Seed 1 ist eine einzige Transaktion (`begin;` … `commit;`). Eine
+> Aufteilung auf mehrere `execute_sql`-Aufrufe gäbe die Alles-oder-nichts-Eigenschaft auf, die der
+> gesamte Rückweg voraussetzt.
+>
+> **Ebenfalls geprüft und nicht verfügbar:** kein `DATABASE_URL`, kein `PGPASSWORD`, kein
+> `SUPABASE_ACCESS_TOKEN`, kein Supabase-CLI; `.env.example` definiert gar keine DB-Verbindung
+> (der dokumentierte Weg ist `psql < …` auf der Betreibermaschine). Direkte Postgres-Ports
+> (5432, Pooler 6543) sind aus der Cloud-Sitzung **nicht erreichbar** — nur HTTPS über den Proxy.
+>
+> **Tragfähiger Weg:** der **SQL-Editor des Supabase-Projekts** (Datei-Inhalt einfügen) oder ein
+> lokales `psql` des Betreibers mit dem DB-Passwort. Beides überträgt die Datei **unverändert**.
+> Das ist kein Workaround, sondern der einzige Weg, der die Byte-Identität wahrt.
 
 ### Prüfungen unmittelbar nach der Einspielung
 
