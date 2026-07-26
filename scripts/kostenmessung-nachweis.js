@@ -167,7 +167,10 @@ function summeZeile(s) {
   const zaehlerJeTag = new Map(budgetCounters.filter((c) => c.scope === "global").map((c) => [c.day, c.used]));
   const tagesberichte = tage.map((t) => {
     const agg = costModel.aggregiere(llmUsage.filter((e) => tag(e && e.createdAt) === t));
-    return { tag: t, agg, abgleich: costModel.abgleichReservierung(zaehlerJeTag.get(t), agg.gesamt) };
+    return {
+      tag: t, agg,
+      abgleich: costModel.abgleichReservierung(zaehlerJeTag.get(t), agg.gesamt, agg.messbefunde.nichtReservierendeAufrufe)
+    };
   });
 
   // ── 2) Laufaggregation ─────────────────────────────────────────────────────
@@ -191,10 +194,19 @@ function summeZeile(s) {
     const perRunId = runId ? llmUsage.filter((e) => e && e.runId === runId) : [];
     const start = ms(run && run.startedAt), ende = ms(run && run.finishedAt);
     const weg = perRunId.length ? "laufkennung" : "zeitfenster";
+    // Wie in storage.getRunCostReport: ueberlappende Laufzeitfenster duerfen
+    // denselben Aufruf nicht zweimal zaehlen; Objektreferenzen, damit auch
+    // Eintraege ohne Id als zugeordnet gelten.
     const treffer = perRunId.length
       ? perRunId
-      : (start != null && ende != null ? llmUsage.filter((e) => { const t = ms(e && e.createdAt); return t != null && t >= start && t <= ende; }) : []);
-    for (const e of treffer) if (e && e.id) zugeordnet.add(String(e.id));
+      : (start != null && ende != null
+        ? llmUsage.filter((e) => {
+          if (zugeordnet.has(e)) return false;
+          const t = ms(e && e.createdAt);
+          return t != null && t >= start && t <= ende;
+        })
+        : []);
+    for (const e of treffer) zugeordnet.add(e);
     return {
       runId, lauftyp: (run && run.process) || null, start: (run && run.startedAt) || null,
       dauerMs: Number(run && run.durationMs) || null, verarbeitet: Number(run && run.processed) || 0,
@@ -205,7 +217,7 @@ function summeZeile(s) {
 
   const fensterStart = laufberichte.reduce((min, l) => { const t = ms(l.start); return t != null && (min == null || t < min) ? t : min; }, null);
   const unzugeordnet = costModel.aggregiere(
-    llmUsage.filter((e) => { const t = ms(e && e.createdAt); return t != null && fensterStart != null && t >= fensterStart && !(e && e.id && zugeordnet.has(String(e.id))); })
+    llmUsage.filter((e) => { const t = ms(e && e.createdAt); return t != null && fensterStart != null && t >= fensterStart && !zugeordnet.has(e); })
   );
 
   const gesamt = costModel.aggregiere(llmUsage);

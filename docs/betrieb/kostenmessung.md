@@ -1,12 +1,19 @@
 # Kostenmessung im Betrieb (Phase-1-Punkt 17)
 
-**Stand:** 2026-07-26 · **Messung:** rein lesend gegen Production · **Kanonische Stelle
-für Kostenwahrheit.** Ältere Kostenangaben in anderen Dokumenten sind nachrangig.
+**Stand:** 2026-07-26 (nach adversarialem Review von PR #136) · **Messung:** rein lesend
+gegen Production · **Kanonische Stelle für Kostenwahrheit.** Ältere Kostenangaben in
+anderen Dokumenten sind nachrangig.
 
 > **Kurz:** Helmut kann Kosten **pro Lauf** und **pro Kalendertag** belegen. Die
 > bekannten Kosten sind klein (**~0,14 USD/Betriebstag**), aber sie sind eine
 > **Untergrenze**, nicht der Gesamtwert — und die Preisbasis ist ein **unbelegter
 > Schätzwert**. Beides steht unten belegt, statt kaschiert.
+
+> **Sprintstatus: teilweise abgeschlossen.** Das Abnahmekriterium von Phase-1-Punkt 17
+> verlangt einen **vollständigen** Production-Kostennachweis; **Schätzwerte sind kein
+> solcher**. Die Auswertung ist belastbar und ehrlich — unvollständig ist die
+> *Datengrundlage* (§4). Grün wird der Punkt erst, wenn **K-1** und **K-2** geschlossen
+> sind.
 
 ---
 
@@ -104,6 +111,7 @@ heute über `userId`/`politicianId`.
 | **K-6** | **Nicht-LLM-Provider vollständig ungemessen** (Supabase, Vercel, Crawl-Volumen, Push, DIP). | §1 |
 | **K-7** | **Ringpuffer 5 000 Einträge.** Bei aktuell 2 493 noch keine Kürzung; ab 5 000 verliert der Kostenverlauf am Anfang stillschweigend Historie. | `storage.js` `writeAuthStore` |
 | **K-8** | **`llm_usage`-Tabelle ist tot** (0 Zeilen). Ihre Spalten (`prompt_tokens`, `estimated_cost`, `source_id`, …) suggerieren eine relationale Kostenwahrheit, die es nicht gibt. | Production-Zählung |
+| **K-9** | **Restrisiko der K-4-Behebung:** die Protokollierung des Diagnoseaufrufs schreibt in denselben Last-Write-Wins-Blob und vergrößert damit die Kollisionsfläche von K-1 minimal. Bewusst in Kauf genommen — eine unsichtbare Kostenquelle ist schlechter als ein selten genutzter zusätzlicher Schreibzugriff. Die Route ist secret-gated und auf 20 Aufrufe/15 min begrenzt; in Production existiert bisher **kein einziger** solcher Eintrag. Entfällt mit K-1. | `server.js` `/api/debug/pipeline-probe` |
 
 ## 5 · Kostenobergrenze — was der Deckel wirklich deckt
 
@@ -138,17 +146,28 @@ Abweisungen erzeugte Kosten (kein Provideraufruf).
    Rohnutzung eine Kostenaussage wird. Trennt strikt
    `gemessen` / `kosten-unbekannt` / `kein-provideraufruf` und
    `global` / `direkt` / `nicht-zurechenbar`. Ein unbekannter Betrag wird **nie** zu 0.
-2. **Laufkennung im Kostenlog.** `runId` wird vom Scheduler durch
-   `runUnderstandingShadow` bis in den Nutzungseintrag durchgereicht. Kosten je Lauf
-   sind damit **messbar** statt rekonstruiert. Der Altbestand bleibt rekonstruierbar
-   (Zeitfenster) und wird als solcher **gekennzeichnet**.
+2. **Laufkennung im Kostenlog.** `runId` wird an allen **drei** Cron-Kostenpfaden
+   durchgereicht — Crawl-Eager und Lage-Fold (Scheduler) sowie der dedizierte
+   **Understanding-Cron** (`/api/cron/understanding`; der fehlte zunächst und war der
+   gravierendste Review-Befund). Kosten je Lauf sind damit **messbar** statt
+   rekonstruiert. Der Altbestand bleibt rekonstruierbar (Zeitfenster) und wird als
+   solcher **gekennzeichnet**. **Noch ohne Laufkennung:** die drei
+   admin-/debug-ausgelösten Understanding-Aufrufe (`server.js` 1707, 6132, 6714) —
+   dort existiert keine Laufkennung im Scope; sie erzeugen keine Cron-Läufe.
+   Bei überlappenden Laufzeitfenstern beansprucht der zuerst gelistete Lauf einen
+   Eintrag; eine **gemessene** Zuordnung wird davon nie verdrängt.
 3. **Preisherkunft deklariert.** `llmPriceProvenance()` sagt, worauf ein Betrag beruht.
    **Kein Preis wurde geändert oder erfunden** — der Betreiber belegt die Basis über
    `HELMUT_LLM_PRICE_SOURCE`/`HELMUT_LLM_PRICE_ASOF`.
 4. **Unsichtbare Kosten sichtbar gemacht.** `/api/debug/pipeline-probe` verbrauchte
    echte Tokens **ohne** Reservierung **und ohne** Kostenlog. Der Aufruf wird jetzt als
    `callType: "pipeline-probe"` protokolliert; die Reservierung bleibt bewusst aus
-   (eine Diagnose muss gerade bei erschöpftem Budget laufen).
+   (eine Diagnose muss gerade bei erschöpftem Budget laufen). **Daraus folgen zwei
+   Regeln** (Review-Korrektur): ein solcher Aufruf verbraucht **keinen Budget-Kopfraum**,
+   den er nie reserviert hat, und er wird aus dem Reservierungsabgleich
+   herausgerechnet — sonst verwässerte er ausgerechnet den Messbefund K-1. Seine
+   **Kosten** zählen weiterhin voll. Fachlich gilt er als **global** (geteilte
+   Infrastruktur), nicht als nicht zurechenbar.
 5. **Betriebsbericht** in der bestehenden Admin-Ansicht „KI-Kosten": bekannte Kosten,
    unbekannte Anteile, abgewiesene Aufrufe, global vs. direkt, Kosten je Lauf,
    Budgetstatus in Betreibersprache.

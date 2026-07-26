@@ -249,5 +249,98 @@ check("trotz Luecke bleiben die bekannten Kosten beziffert", prodTag.gesamt.kost
 // Reales Muster der Altdaten: 100 % der Provideraufrufe ohne Laufkennung.
 check("Altbestand: Laufzuordnung 0 %", prodTag.messbefunde.laufzuordnungAnteil === 0);
 
-console.log(`\n== ERGEBNIS ==\nPASS ${pass}  FAIL ${fail}  (gesamt ${pass + fail})`);
-process.exit(fail === 0 ? 0 : 1);
+console.log("== 21) Diagnosepfad: echte Kosten, aber keine Reservierung (Review-Korrektur) ==");
+const probe = gemessen({ id: "probe-1", callType: "pipeline-probe", pipelineStep: "diagnose" });
+const pk = cm.klassifiziereEintrag(probe);
+check("Diagnose ist ein echter, gemessener Provideraufruf", pk.messstatus === "gemessen");
+check("Diagnose ist als nicht budgetwirksam markiert", pk.budgetwirksam === false);
+check("Diagnose gilt als GLOBAL, nicht als Mandanten-Messlücke", pk.zurechnung === "global");
+check("normaler Fachaufruf bleibt budgetwirksam", cm.klassifiziereEintrag(gemessen({ callType: "communicationDraft", userId: "m-1" })).budgetwirksam === true);
+const probeAgg = cm.aggregiere([gemessen({ id: "n1" }), gemessen({ id: "n2" }), probe]);
+check("Diagnosekosten zählen voll in die Summe (Kostenwahrheit)", Math.abs(probeAgg.gesamt.kostenUsd - 0.009) < 1e-9);
+check("nicht-reservierende Aufrufe werden beziffert", probeAgg.messbefunde.nichtReservierendeAufrufe === 1);
+// Ohne Abzug meldete der Abgleich faelschlich "mehr Aufrufe als Reservierungen".
+const ohneAbzug = cm.abgleichReservierung(2, probeAgg.gesamt);
+const mitAbzug = cm.abgleichReservierung(2, probeAgg.gesamt, probeAgg.messbefunde.nichtReservierendeAufrufe);
+check("ohne Abzug entstünde ein Fehlalarm", /mehr Aufrufe als Reservierungen/.test(ohneAbzug.bewertung));
+check("mit Abzug ist der Abgleich deckungsgleich", mitAbzug.bewertung === "deckungsgleich");
+check("Abzug macht den Abgleich nie negativ", cm.abgleichReservierung(0, probeAgg.gesamt, 99).protokolliert === 0);
+
+// Die letzten beiden Gruppen brauchen die (asynchronen) storage-Leser mit
+// injiziertem Store — kein Netz, keine Datenbank, keine Uhr.
+const storage2 = require("../lib/helmut/storage");
+const store = (llmUsage, processRuns = []) => async () => ({ llmUsage, processRuns });
+
+(async () => {
+  console.log("== 22) Diagnose verbraucht keinen Budget-Kopfraum, den sie nie reservierte ==");
+  check("Diagnose ist im Gate als nicht-budgetwirksam geführt", cm.istNichtReservierend("pipeline-probe") === true);
+  check("Fachaufrufe bleiben budgetwirksam", cm.istNichtReservierend("understanding") === false);
+  check("skipped-* bleibt unabhängig davon ausgenommen", cm.istUebersprungen({ callType: "skipped-understanding" }) === true);
+  const gate = await storage2.getLlmUsageBreakdownToday("2026-07-26T12:00:00.000Z", {
+    readAuth: store([
+      { id: "g1", createdAt: "2026-07-26T10:00:00.000Z", callType: "understanding", model: "gpt-5-mini", promptTokens: 10, completionTokens: 5, estimatedCost: 0.001, success: true },
+      { id: "g2", createdAt: "2026-07-26T10:00:01.000Z", callType: "pipeline-probe", model: "gpt-5-mini", promptTokens: 10, completionTokens: 5, estimatedCost: 0.001, success: true }
+    ])
+  });
+  check("Gate zählt nur den Fachaufruf (1, nicht 2)", gate.calls === 1, `calls=${gate.calls}`);
+  check("Kostenwahrheit enthält BEIDE Aufrufe", gate.kostenwahrheit.gesamt.aufrufe === 2);
+  check("Kostenwahrheit enthält die Diagnosekosten", Math.abs(gate.kostenwahrheit.gesamt.kostenUsd - 0.002) < 1e-9);
+  check("Diagnose erscheint nicht als 'nicht-zurechenbar'", gate.kostenwahrheit.jeZurechnung["nicht-zurechenbar"].aufrufe === 0);
+
+  console.log("== 23) Laufkosten: überlappende Laufzeitfenster zählen nie doppelt ==");
+  const runs = [
+    { runId: "b", process: "briefing-lage", startedAt: "2026-07-26T10:00:05.000Z", finishedAt: "2026-07-26T10:00:25.000Z", durationMs: 20000, processed: 1, status: "ok" },
+    { runId: "a", process: "understanding-eager", startedAt: "2026-07-26T10:00:00.000Z", finishedAt: "2026-07-26T10:00:30.000Z", durationMs: 30000, processed: 2, status: "ok" }
+  ];
+  const einAufruf = (over = {}) => ({ id: "x1", createdAt: "2026-07-26T10:00:10.000Z", callType: "understanding", model: "gpt-5-mini", promptTokens: 100, completionTokens: 50, estimatedCost: 0.004, success: true, runId: null, ...over });
+
+  const bericht = await storage2.getRunCostReport({ limit: 10, readAuth: store([einAufruf()], runs) });
+  const summe = bericht.laeufe.reduce((s, l) => s + l.kosten.gesamt.aufrufe, 0);
+  check("ein Aufruf in zwei Laufzeitfenstern zählt genau einmal", summe === 1, `Summe=${summe}`);
+  check("der zuerst gelistete Lauf beansprucht ihn", bericht.laeufe[0].kosten.gesamt.aufrufe === 1);
+  check("der überlappende Lauf bleibt bei 0", bericht.laeufe[1].kosten.gesamt.aufrufe === 0);
+  check("er taucht nicht zusätzlich als 'nicht zugeordnet' auf", bericht.nichtZugeordnet.gesamt.aufrufe === 0);
+  check("die Kostensumme über alle Läufe ist nicht verdoppelt",
+    Math.abs(bericht.laeufe.reduce((s, l) => s + l.kosten.gesamt.kostenUsd, 0) - 0.004) < 1e-9);
+
+  // Eintrag OHNE Id darf nicht dauerhaft als unzugeordnet gelten.
+  const ohneId2 = await storage2.getRunCostReport({ limit: 10, readAuth: store([einAufruf({ id: null })], [runs[1]]) });
+  check("Eintrag ohne Id wird korrekt einem Lauf zugeordnet", ohneId2.laeufe[0].kosten.gesamt.aufrufe === 1);
+  check("Eintrag ohne Id erscheint NICHT zusätzlich als unzugeordnet", ohneId2.nichtZugeordnet.gesamt.aufrufe === 0);
+
+  // Die exakte Zuordnung per Laufkennung darf nie von einem Zeitfenster verdrängt werden.
+  const exaktBericht = await storage2.getRunCostReport({ limit: 10, readAuth: store([einAufruf({ runId: "a" })], runs) });
+  const exakt = exaktBericht.laeufe.find((l) => l.laufkennung === "a");
+  check("gemessene Zuordnung schlägt das Zeitfenster", exakt.zuordnungExakt === true && exakt.kosten.gesamt.aufrufe === 1);
+  check("gemessene Zuordnung wird als exakt ausgewiesen", exakt.zuordnungsweg === "laufkennung");
+
+  console.log("== 24) Quelltext-Riegel: Laufkennung erreicht den Kostenlog ==");
+  // Regressionsschutz gegen genau den Review-Befund: eine Laufkennung, die im
+  // Scope liegt und fuer recordProcessRun benutzt wird, MUSS auch an den
+  // Understanding-Aufruf gehen — sonst sind die Kosten dieses Laufs nur noch
+  // ueber das Zeitfenster rekonstruierbar.
+  const fs = require("fs");
+  const path = require("path");
+  const root = path.join(__dirname, "..");
+  const src = (f) => fs.readFileSync(path.join(root, f), "utf8");
+  // Alle Aufrufe der beiden Understanding-Einstiege samt Optionsobjekt einsammeln.
+  const aufrufe = (code) => [...code.matchAll(/run(?:Pending)?UnderstandingShadow\(\s*[A-Za-z0-9_]+\s*,\s*\{([\s\S]{0,400}?)\}\s*\)/g)].map((m) => m[1]);
+  const schedulerAufrufe = aufrufe(src("lib/helmut/scheduler.js"));
+  check("scheduler.js: beide Understanding-Aufrufe gefunden", schedulerAufrufe.length === 2, `gefunden=${schedulerAufrufe.length}`);
+  check("scheduler.js: jeder Aufruf reicht runId durch", schedulerAufrufe.every((o) => /\brunId\b/.test(o)));
+  const serverSrc = src("server.js");
+  // Der dedizierte Understanding-Cron erzeugt eine eigene Laufkennung.
+  const cronBlock = serverSrc.slice(serverSrc.indexOf('"/api/cron/understanding"'), serverSrc.indexOf('"/api/cron/understanding"') + 3000);
+  check("Understanding-Cron erzeugt eine Laufkennung", /const runId = helmutRunId\("understanding-cron"/.test(cronBlock));
+  check("Understanding-Cron reicht die Laufkennung an den Kostenpfad durch",
+    /runPendingUnderstandingShadow\([\s\S]{0,200}?runId[\s\S]{0,40}?\)/.test(cronBlock));
+  check("Understanding-Cron nutzt dieselbe Kennung fuer recordProcessRun",
+    /process: "understanding-cron", runId/.test(cronBlock));
+  // Der Diagnosepfad muss protokolliert werden.
+  check("pipeline-probe wird im Kostenlog protokolliert", /callType: "pipeline-probe"/.test(serverSrc));
+  check("pipeline-probe-Protokollierung wird abgewartet (kein fire-and-forget)",
+    /await recordLlmUsage\(\{[\s\S]{0,200}?callType: "pipeline-probe"/.test(serverSrc));
+
+  console.log(`\n== ERGEBNIS ==\nPASS ${pass}  FAIL ${fail}  (gesamt ${pass + fail})`);
+  process.exit(fail === 0 ? 0 : 1);
+})();

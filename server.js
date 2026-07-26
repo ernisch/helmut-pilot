@@ -1127,7 +1127,11 @@ async function handleRequest(request, response) {
       // ZEITBUDGET (Default 240s): der serielle KI-Understanding-Loop darf die
       // Serverless-Funktion nicht über ihr Limit (300s) treiben. Rest bleibt pending
       // und wird beim nächsten Lauf nachgeholt (idempotent).
-      const result = await runPendingUnderstandingShadow(rawDocs, { budgetMs: Number(process.env.HELMUT_UNDERSTAND_BUDGET_MS || 240000) });
+      // Punkt 17 (Review-Korrektur): dieselbe Laufkennung, die recordProcessRun
+      // unten schreibt, MUSS auch in den Kostenlog. Ohne sie blieb ausgerechnet
+      // der dedizierte Understanding-Cron — ein Hauptkostenpfad — bei den Kosten
+      // je Lauf auf die Zeitfenster-Rekonstruktion angewiesen.
+      const result = await runPendingUnderstandingShadow(rawDocs, { budgetMs: Number(process.env.HELMUT_UNDERSTAND_BUDGET_MS || 240000), runId });
       const processed = (result && result.results && result.results.filter((r) => r && r.status === "saved").length) || 0;
       console.log(`[cron/understanding] rawDocs=${rawDocs.length} Ergebnis: ${JSON.stringify({ processed, result })}`);
       // P0-1: Understanding-Batch-Laufzeit persistieren (Auth-Store, scalar-only, PII-frei).
