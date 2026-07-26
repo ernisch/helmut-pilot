@@ -4,7 +4,7 @@ Diese Datei ist die **Einstiegsschicht**, kein Handbuch. Sie gibt Orientierung i
 zwei Minuten und verweist danach auf die kanonischen Dokumente. Sie wird **nur**
 geändert, wenn eine neue dauerhaft verbindliche Projektregel entsteht.
 
-**Stand:** 2026-07-25
+**Stand:** 2026-07-25 (§4.9 ergänzt: Secrets für Cloud-Sitzungen)
 
 ---
 
@@ -83,6 +83,12 @@ festgestellt wurde.
    [`docs/architecture/retired-quellenplattform-branches.md`](docs/architecture/retired-quellenplattform-branches.md).
 7. **Keine Secrets ins Repo** — auch nicht in Doku, Beispielen oder Tests.
 8. **Jede Migration braucht Rollback-SQL** im selben Verzeichnis.
+9. **Produktionsrelevante Skripte, die Secrets benötigen, müssen sowohl lokal als auch in
+   einer Claude-Code-Cloud-Sitzung lauffähig sein.** Sie lesen Secrets ausschließlich aus
+   `process.env` — kein eigenes Parsen einer `.env.local` im Code. In Cloud-Sitzungen
+   erreichen Secrets den Prozess **ausschließlich über die Claude-Code-Environment-
+   Einstellungen** (Environment → Environment Variables), **niemals über den Chat und
+   niemals über Commits**. Details/Referenz: [`docs/betrieb/env-inventar.md`](docs/betrieb/env-inventar.md) §8.
 
 ## 5 · Ohne ausdrückliche Freigabe verboten
 
