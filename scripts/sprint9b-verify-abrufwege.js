@@ -35,11 +35,11 @@ const FRESH_DAYS = Number(process.env.S9B_FRESH_DAYS || 45);
 // beschränkungen umgangen: TLS-Prüfung bleibt an, kein Captcha-Solving, keine IP-Rotation.
 const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36";
 
-// Eingrenzung des Prüfumfangs (Phase-1-Punkt 14, Neuverifikation V2). Ohne Angabe werden
-// weiterhin ALLE 25 Wege geprüft — das bisherige Verhalten bleibt der Default.
+// Eingrenzung des Prüfumfangs (Phase-1-Punkt 14, Neuverifikation V2). Ohne Angabe wird
+// weiterhin die volle Liste geprüft — das bisherige Verhalten bleibt der Default.
 // S9B_ONLY nimmt eine kommagetrennte Liste aus Gruppennamen (BE, BB, "BE+BB", BUND) und/oder
 // einzelnen legacy_source_ids (z. B. "be-landesparlament"). Vergleich case-insensitiv.
-// Zweck: eine Neuverifikation darf eng begrenzt laufen, statt 25 fremde Adressen mitzuziehen.
+// Zweck: eine Neuverifikation darf eng begrenzt laufen, statt alle Adressen mitzuziehen.
 const ONLY_RAW = String(process.env.S9B_ONLY || "").trim();
 
 function parseOnly(raw) {

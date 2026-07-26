@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-26 · **`main`-HEAD:** `ca80b2f` (Merge #131)
+**Letzte Aktualisierung:** 2026-07-26 · **`main`-HEAD:** `299470a` (Merge #133)
 
 > **Diese Datei ist der aktuelle Stand.** Bei Widerspruch zu älteren Statusdokumenten
 > gilt diese Datei. Sie enthält **keine Chronik** — Details je offenem Punkt stehen in
@@ -54,7 +54,7 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | Retention/Löschung | nur Trockenlauf; braucht verbindliche Fristen aus OP-02 | OP-12 |
 | Understanding-Gate, Cheap-Triage, Scoring, Berlin/Brandenburg | in `shadow`/`off`, Scharfschaltung ist Freigabe | OP-18, OP-21, OP-22 |
 | Pre-Seed-Sicherung + gezielter Seed-Restore (kein `drop table cascade`) — gebaut, adversarial reviewt, isoliert getestet (43/43 lokal, 41/41 in CI; `backup-export-test` 38/38; Suite 147/147) | **nie gegen Production gelaufen**; deckt nur 8 Tabellen ab und ersetzt OP-01 nicht | OP-01 |
-| **Berlin-Aktivierungsreife (Phase-1-Punkt 14)** — Gate je Land freigebbar, `manual` ist jetzt eine echte Sperre, Aktivierungs-SQL + 3 Rollback-Stufen generiert und getestet, Runbook vollständig | die **Production-Aktivierung selbst** (Neutralisierung, Berliner Landtagsprofil, Paket-/Wegstatus, Flag) und der Beweislauf über mehrere Crawls | Punkt 14 |
+| **Berlin-Aktivierungsreife (Phase-1-Punkt 14)** — Gate je Land freigebbar, `manual` ist eine echte Sperre, Aktivierungs-SQL + 3 Rollback-Stufen generiert und getestet, Runbook vollständig. **Zweiter Durchgang 2026-07-26:** Neutralität von `berlin-basis` ist jetzt eine **ausführbare Prüfung** (Code neutral, Production-Bestand **nicht** — Befund A-3 reproduziert), Wege **neu verifiziert** (Aktivierungsset 6 → **4**, zwei Wege veraltet), Lastmodell gegen gemessene Production-Zahlen korrigiert, Profilplan getestet, Aktivierung gestaffelt, Rollback gehärtet | die **Production-Aktivierung selbst** (Block A, Berliner Landtagsprofil, Paket-/Wegstatus, Flag) und der Beweislauf über mehrere Crawls | Punkt 14 |
 | OP-06 Terminales Aussortieren des Alt-Rückstands (34 Fälle, Default AUS) | Ausführung ist freigabepflichtig — **und** eine offene Fachfrage: 16 der 34 Allowlist-Einträge sind mit „außerhalb Mandat" begründet, also relativ zum Pilotmandat, geschrieben wird aber in das mandantenneutrale `knowledge_objects` (kein `tenant_id`). Ein künftiger Zweitmandant mit regionalem/EU-Schwerpunkt bekäme diese Vorgänge dauerhaft nie verstanden | OP-06 |
 
 ## 4 · Blockiert
@@ -203,6 +203,17 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
   ausgeführt hat, ist von hier aus nicht feststellbar. Die Zeilen in §4 zur
   Quellen-Seed-Einspielung sind damit **überholt** und gehören beim nächsten Seed-Sprint
   nachgezogen.
+- **Betriebszahlen, read-only gemessen am 2026-07-26 (Punkt-14-Sprint, zweiter Durchgang):**
+  **277 Rohdokumente/Tag** (1937 in 7 Tagen, 97 liefernde Quellen; je Quelle **Median 1,14/Tag**,
+  Mittel 2,85, Max 41) · nur **13 %** der Rohdokumente werden mit einem Knowledge Object verknüpft ·
+  **~40 Knowledge Objects/Tag** (32–50 über 11 volle Tage) · **LLM-Aufrufe Mittel 64/100**, am
+  2026-07-20 **100/100** (Tagesbudget einmal voll ausgeschöpft) · Pending-Rückstand **50**
+  (43 `pending` + 7 `failed`), **wächst nicht** — alle 43 stammen vom 02./03.07. ·
+  **5 Crawl-Vollrunden/Tag** (04:00, ~07:5x, 10:00, 16:00, 20:00 UTC), Wiederholungsläufe holen
+  nicht erneut ab (`skipped-shared`, 134–135 von 145 Wegen) · Originalverweis in **99,5 %**
+  aufgelöst, **0** Rohdokumente tragen noch eine `news.google.com`-URL.
+  **Damit sind zwei ältere Angaben überholt:** die „Verarbeitungskapazität ~15–20 Understandings/Tag"
+  (real ~40) und die Annahme „2 Crawl-Läufe/Tag" aus `vercel.json` (real 5).
 - **Zustand:** 0 neue `systemErrors` im dokumentierten Beweiszeitraum; Betriebsbefunde
   B1 (Google-News-Klumpenrisiko, 146 von 163 Wegen über Google) und B2
   (Understanding-Rückstand) bleiben offen. Neu belegt: jeder Cron-Lauf erscheint doppelt —
@@ -252,10 +263,13 @@ eingespielt werden kann.
 
 **Entscheidungsreif und wartend (seit 2026-07-26): die Berlin-Aktivierung.** Punkt 14 ist bis
 unmittelbar vor die erste Production-Änderung vorbereitet; jeder Eingriff ist zeilengenau benannt
-und in drei Stufen rückrollbar. Vor der Ausführung sind zwei Dinge zu klären: die in der Datenbank
-weiterhin offene Neutralisierung von `berlin-basis` (Befund A-3, Bedingung **V1**) und eine
-Neuverifikation der 6 Wege auf einem Runner mit offenem Egress (**V2**). Beides ist im Runbook
-[`betrieb/berlin-aktivierung.md`](betrieb/berlin-aktivierung.md) beschrieben.
+und in drei Stufen rückrollbar. **Bedingung V2 (Neuverifikation) ist erledigt** — sie lief am
+2026-07-26 auf einem Actions-Runner mit offenem Egress (Runs `30208901908` + `30208997672`,
+zweimal identisch) und hat das Aktivierungsset von 6 auf **4** Wege reduziert: `rp-be-landesparlament`
+(jüngstes Item **156 Tage** alt) und `rp-be-landesfraktionen` (**41 Tage**) antworten zwar mit
+HTTP 200, liefern aber nichts Aktuelles. **Offen bleibt V1**: die Neutralisierung von `berlin-basis`
+ist in der Datenbank weiterhin nicht vollzogen (Befund A-3, jetzt als ausführbare Prüfung belegt).
+Runbook: [`betrieb/berlin-aktivierung.md`](betrieb/berlin-aktivierung.md).
 
 Der **konkret vorbereitete** nächste Schritt ist die **Quellen-Seed-Einspielung** (Seeds
 `20260713` + `20260717`); sie macht die P0-2-Neutralisierung und die 6 Bundesweg-Reparaturen in
@@ -293,6 +307,7 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 
 | Sprint | Datum | Zustand |
 |---|---|---|
+| **Punkt 14 (2. Durchgang): Berlin fachlich neutralisieren, aktuell verifizieren, freigabereif machen** | 2026-07-26 | **Teilweise abgeschlossen — Aktivierungsreife für ein reduziertes Set, Production unverändert.** Neutralität ist jetzt eine **ausführbare Prüfung** über Code **und** gemessenen Datenbankbestand: Code neutral, Production **nicht** (Befund A-3 reproduziert), nach Block A neutral. Neuverifikation auf einem Runner mit offenem Egress hat **zwei Wege als veraltet entlarvt** (156 bzw. 41 Tage) — Aktivierungsset **6 → 4**. Pflichtklassen ehrlich neu gezählt: **4 eigenständig, 1 mitabgedeckt, 7 ohne Weg** (vorher „8 von 12 liefern"). Lastmodell gegen gemessene Production-Zahlen korrigiert (beide Terme der Alt-Rechnung waren falsch). Profilplan getestet, zwei Befunde (P-1, P-2). Aktivierung gestaffelt, Rollback gehärtet. **Empfehlung: Go mit Bedingungen** für das reduzierte Set; harter Blocker bleibt V1. Offline-Suite **152/152**, Browser-Smoke 32/32, `berlin-neutralitaet` 109/109 (neu), `berlin-aktivierung` 123/123. **Keine Production-Mutation.** Brandenburg unverändert und inaktiv. Details unten. |
 | **Phase-1-Punkt 14: Berlin als laufende Versorgung aktivieren** | 2026-07-26 | **Teilweise abgeschlossen — Aktivierungsreife erreicht, Production unverändert.** Berlin ist bis unmittelbar vor die erste Production-Änderung vorbereitet: Aktivierungsplan, SQL, 3 Rollback-Stufen, Runbook und 123 ausführbare Prüfungen liegen vor. **Keine** Aktivierung, kein Flag, kein SQL ausgeführt, keine Zeile verändert. Zwei echte Sperrlücken behoben (globales statt landesscharfes Gate; `activation_mode='manual'` war wirkungslos). **Empfehlung: Go mit Bedingungen** — der harte Blocker ist die in der Datenbank offene Neutralisierung von `berlin-basis` (A-3). Offline-Suite 151/151, Browser-Smoke 32/32. Brandenburg unverändert und inaktiv. Details unten. |
 | Punkt 13 — Abschlusskorrektur: Niedersachsen, nicht-anwendbar, Fraktionen | 2026-07-26 | **Erfolgreich abgeschlossen** — alle 8 Pakete abgeschlossen (7 vollständig + 1 mit belegten Ausnahmen, 0 teilweise, 0 blockiert). `regional-niedersachsen` hat eine benannte Basis aus 7 Wegen (5 Bestandsquellen + 2 amtliche), **vorbereitet und inaktiv, 0 zusätzliche Abrufe**. „Nicht anwendbar" ist gegen die amtliche Parlamentszusammensetzung überprüfbar. Fraktionssollmenge extern verankert — die Alt-Angabe „8 von 8" war fachlich falsch, richtig sind **5**. Offline-Suite 150/150. Keine Production-Änderung. Details unten. |
 | Punkt 13 — Nachtrag: Ausschuss-Sollmenge extern verankern (23 → 24) | 2026-07-26 | **Erfolgreich abgeschlossen** — der 21. Bundestag hat 24 ständige Ausschüsse (Drucksache 21/150); der Katalog führte 23 und neun Bezeichnungen der 20. Wahlperiode. Fehlend war der Ausschuss für Wahlprüfung, Immunität und Geschäftsordnung. Kanonische Quelle korrigiert (nicht der Testwert), Sollmenge extern verankert, 36 neue Prüfungen mit 6 Negativkontrollen; zusätzlich eine Lücke im Seed-Rückweg behoben. Offline-Suite 149/149. Keine Production-Änderung. Details unten. |
@@ -306,6 +321,89 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 | Merge von PR #105 — Anker-Recovery-Pfad in Production stillgelegt | 2026-07-25 | **Erfolgreich abgeschlossen** — gemergt als `43e9e35`; Stilllegung auf `main` verifiziert. |
 | Recovery-Pfad-Review + Zusammenführung von PR #105 auf die kanonische Kontextstruktur | 2026-07-25 | **Erfolgreich abgeschlossen** |
 | Kontextstruktur für Claude Code (`CLAUDE.md` + Einstiegsschicht) | 2026-07-25 | **Erfolgreich abgeschlossen** — reine Dokumentation, gemergt als PR #119 (`c6a3d40`). |
+
+**Sprint „Punkt 14 (2. Durchgang): Berlin fachlich neutralisieren, aktuell verifizieren" — Nachweis**
+
+- **Auftrag:** die offenen Bedingungen des letzten Go-/No-Go-Berichts belastbar erfüllen oder
+  objektiv als nicht erfüllbar dokumentieren — **ohne** Production-Aktivierung. **Ergebnis: erfüllt
+  für V2, V3, Last und Neutralitätsnachweis; V1 bleibt objektiv offen** (Production-Mutation).
+- **Startprüfung bestanden:** PR #133 gemergt (`merged: true`, 15:35 UTC), lokaler Stand ==
+  `origin/main` == `299470a`, Arbeitsbaum sauber, `2c77114` Vorfahre von `main`, beide
+  Pflichtchecks von #133 grün.
+- **Phase 1 — Neutralität ist jetzt ausführbar, nicht behauptet.** `seeds/berlin-neutralitaet.js`
+  prüft einen beliebigen Bestand; **derselbe** Prüfer läuft über das Code-Abbild und über den
+  gemessenen Datenbankbestand. Ergebnis: Code **neutral** (0 Verstöße, 10 Zuordnungen eingestuft) ·
+  Production-Ist **nicht neutral**, 3 benannte Verstöße (`rp-be-partei_pilot`,
+  `rp-be-fraktion_pilot`, `rp-be-person_pilot` am `is_base`-Paket) · **nach Block A neutral** — die
+  Umhängung genügt und nichts sonst. Erkennung über **zwei unabhängige Merkmale** (Herausgebertyp
+  *und* Pflichtklasse), damit eine falsch gepflegte Spalte die Prüfung nicht umgeht. Alle zehn Wege
+  sind einer der acht Kategorien zugeordnet; **keiner** blieb `unklar`.
+- **Phase 2 — die entscheidende Entdeckung: zwei Wege sind veraltet.** Die Neuverifikation lief auf
+  einem Actions-Runner mit offenem Egress (die Agenten-Sitzung selbst hat keinen, `CONNECT` → 403).
+  Dafür wurde `sprint9b-verify.yml` um eine Eingrenzung `S9B_ONLY` erweitert, damit die Prüfung eng
+  begrenzt laufen kann statt über alle 24 Wege. **Run 30208901908** (10/10, Kontroll-Abruf 200/200)
+  und **Run 30208997672** (Gegenprobe, identisch):
+
+  | Weg | HTTP | jüngstes Item | Folge |
+  |---|:--:|:--:|---|
+  | `rp-be-landesregierung` · `rp-be-regionale_leitmedien` · `rp-rbb24-politik` | 200 | **0 Tage** | aktivieren |
+  | `rp-be-staatskanzlei` | 200 | **14 Tage** | aktivieren, unter Beobachtung |
+  | `rp-be-landesfraktionen` | 200 | **41 Tage** | **gesperrt** |
+  | `rp-be-landesparlament` (kritisch) | 200 | **156 Tage** | **gesperrt** |
+
+  `rp-be-landesparlament` antwortet sauber und parst 20 Items — Telemetrie hätte ihn dauerhaft als
+  `ok` gemeldet. Neues **Frischegate** (≤ 7 frisch · ≤ 30 Beobachtung · darüber veraltet) entscheidet
+  das jetzt ausführbar. **Aktivierungsset 6 → 4.**
+- **Pflichtklassen ehrlich neu gezählt.** Die alte Zählung kannte nur „liefert/liefert nicht" und
+  zählte auch Klassen mit, die bloß als Nebenprodukt einer fremden Suchanfrage mitlaufen. Neu drei
+  Zustände: **4 eigenständig** (landesregierung, staatskanzlei, regionale_leitmedien,
+  oer_landesberichterstattung) · **1 mitabgedeckt** (ministerien) · **7 ohne liefernden Weg**.
+  **Berlin startet damit ohne jede amtliche parlamentarische Quelle** — die größte fachliche Lücke,
+  benannt statt kaschiert. Zum Vergleich: das alte 6er-Set war real 6 eigenständig + 2 mitabgedeckt,
+  die Zusage „8 von 12 liefern" verdeckte also zwei nur formal erfüllte Klassen.
+- **Phase 3 — Profilweg, zwei Befunde, kein Profil angelegt.**
+  **P-1:** die V3-Zählabfrage des Runbooks belegt keine Aktivierungsberechtigung. Sie zählt Zeilen;
+  aktivierungsberechtigt ist ein Profil erst nach `validateProfile`, und die liest die **gemappte**
+  Form. Eine rohe `mandate_profiles`-Zeile wird mitgezählt, ist aber `nicht_bereit` und trägt **0**
+  zur Referenzzählung bei — `berlin-basis` bliebe **still inaktiv**, obwohl die Prüfung 1 meldet.
+  Geschärfte Abfrage ergänzt. **P-2:** ein Berliner Profil braucht **zwei** Zeilen (`profiles` +
+  `mandate_profiles`); ohne die erste ist `impact.kannRadar` false. Das Abnahmeprofil ist als
+  **Testmandat** benannt und trägt `Fraktionslos` — keine reale Person, keine Parteibindung.
+  Rückweg beginnt mit Deaktivieren, nicht Löschen.
+- **Phase 4 — Lastmodell korrigiert, beide Terme der Alt-Rechnung waren falsch.** Gemessen statt
+  angenommen: Verarbeitung **~40 KO/Tag** (nicht 15–20) · Eingang heute **277 Rohdokumente/Tag**,
+  davon nur **13 %** mit KO verknüpft (Rohdokumente sind keine Understandings) · echte Obergrenze
+  ist das **LLM-Tagesbudget**: Mittel 64/100, am 20.07. **100/100** · **5** Crawl-Vollrunden/Tag
+  statt der angenommenen 2 (Abruflast um Faktor 2,5 unterschätzt) · Pending-Rückstand wächst nicht.
+  Berlin steuert realistisch **4,6–11,4 Dokumente/Tag** bei (**1,6–4,1 %** des Eingangs), also
+  **+1 bis +2,6 LLM-Aufrufe/Tag**. Im Mittel reicht das Budget; **am gemessenen Spitzentag nicht** —
+  beides steht so im Modell. Gewählte Gegenmaßnahme ist die **einfachste sichere**: gestaffelte
+  Aktivierung (erst 2 Direktfeeds mit 0 Google-Requests, nach einem vollen Crawl-Zyklus die 2
+  Google-Wege). **Keine** `max_items`-Änderung — der gemessene Median von 1,14 Dokumenten je Quelle
+  und Tag zeigt, dass `max_items` außerhalb des Erstlaufs nicht bindet. Keine neue Queue-Architektur.
+- **Rollback gehärtet (adversarialer Befund).** Stufe 1 und 2 setzten bisher nur das *aktuelle*
+  Aktivierungsset zurück. Nach der Reduktion 6 → 4 hätte ein Rollback genau die zwei Wege aktiv
+  gelassen, die eine ältere Planfassung scharfgeschaltet hätte — und sich trotzdem als vollständig
+  gemeldet. Beide Stufen setzen jetzt **alle 7** Wege des Basispakets zurück.
+- **Tests:** `berlin-neutralitaet` **109/109** (neu; gegen **5 gezielte Mutationen** geprüft — jede
+  wurde erkannt, 2–10 Fehlschläge je Mutation) · `berlin-aktivierung` **123/123** ·
+  `seed-drift` grün (auch die gestaffelten SQL-Blöcke sind byte-genau an den Generator gebunden) ·
+  **Offline-Suite 152/152** · **Browser-Smoke 32/32**.
+- **Nicht getan (bewusst):** keine Production-Mutation — ausschließlich `select`-Abfragen · kein
+  Flag gesetzt · kein SQL ausgeführt · kein Profil angelegt · keine Migration · keine
+  Seed-Einspielung · keine Cron-/Lock-/Telemetrie-/Secret-Änderung · Brandenburg, Niedersachsen und
+  alle Bundesquellen unverändert · kein PARDOK-Cutover · **keine Quelle erfunden** (die zwei
+  veralteten Wege wurden gesperrt, nicht durch geratene Ersatzadressen ersetzt).
+- **Verbleibende Grenzen, ehrlich:** Berlin startet ohne amtliche parlamentarische Quelle · die
+  Personenquelle `rp-be-person_pilot` steht nach Block A im Parteipaket, widerspricht aber weiterhin
+  dem Prinzip „Personenquellen entstehen zur Laufzeit aus dem Profil" (nicht geändert, weil das die
+  in Punkt 13 belegte Vollständigkeit von `die-linke-berlin` aufbrechen würde) · das Monitoring ist
+  definiert, aber nie gegen einen echten Berliner Lauf erprobt · die Verifikation ist eine
+  Momentaufnahme und gehört unmittelbar vor die Aktivierung wiederholt.
+- **Empfehlung: Go mit Bedingungen** für das reduzierte Set — Block A zuerst, Sicherung nach V6,
+  nur Stufe 1 im ersten Schritt, Neuverifikation bei mehr als 14 Tagen Abstand, und die bewusste
+  Annahme der fehlenden parlamentarischen Quelle. **Kein Go** für die zwei veralteten Wege,
+  `rp-be-plenum`, `die-linke-berlin` und jede Brandenburg-Änderung.
 
 **Sprint „Phase-1-Punkt 14: Berlin als laufende Versorgung aktivieren" — Nachweis**
 
