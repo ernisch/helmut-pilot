@@ -56,6 +56,29 @@ if (committedLand !== generatedLand || committedLandRollback !== generatedLandRo
   console.log("  -> Datei(en) veraltet. Beheben: node scripts/generate-landesmodul-seed.js && git add supabase/seeds/20260717_landesmodul_be_bb_seed*.sql");
 }
 
+// --- 2b) Berlin-Aktivierungs-SQL (20260726_berlin_aktivierung*.sql) ---------
+// Freigabepflichtiges Production-SQL; muss genauso drift-frei sein wie die Seeds, sonst
+// beschreibt das Runbook einen anderen Eingriff als die Datei, die ausgefuehrt wird.
+const berlin = require("./generate-berlin-aktivierung-sql");
+const berlinDateien = [
+  ["supabase/seeds/" + berlin.DATEI, berlin.build()],
+  ["supabase/seeds/" + berlin.DATEI_RB, berlin.buildRollback()],
+  ["supabase/seeds/" + berlin.DATEI_RB_VOLL, berlin.buildRollbackVollstaendig()]
+];
+let berlinDrift = false;
+for (const [rel, erzeugt] of berlinDateien) {
+  const ok = readCommitted(rel) === erzeugt;
+  if (!ok) berlinDrift = true;
+  check(`Berlin-Aktivierung: ${rel.split("/").pop()} == generate() (kein Drift)`, ok);
+}
+if (berlinDrift) {
+  console.log("  -> Datei(en) veraltet. Beheben: node scripts/generate-berlin-aktivierung-sql.js && git add supabase/seeds/20260726_berlin_aktivierung*.sql");
+}
+check("Berlin-Aktivierungs-Generator ist deterministisch (2. Lauf byte-identisch)",
+  berlin.build() === berlinDateien[0][1]
+  && berlin.buildRollback() === berlinDateien[1][1]
+  && berlin.buildRollbackVollstaendig() === berlinDateien[2][1]);
+
 // --- 3) Determinismus: zweiter In-Memory-Lauf liefert byte-identisches Ergebnis -----
 // (ergaenzt den Drift-Check: nicht nur "stimmt mit der Datei ueberein", sondern
 // "der Generator selbst ist stabil" — schuetzt vor nicht-deterministischen Quellen

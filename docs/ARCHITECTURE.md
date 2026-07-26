@@ -66,6 +66,13 @@ Drei sauber getrennte Ebenen (Details:
 - **Paket** (`packages`) — wofür gebündelt wird; Profile bekommen Pakete über den
   Resolver, nicht einzelne Quellen.
 
+**Landesmodule** (Berlin, Brandenburg) sind im Crawl-Plan gesperrt, bis ihr Land in
+`HELMUT_LANDESMODULE` ausdrücklich genannt ist — **je Land getrennt**, Default leer,
+fail-closed (kein Sammel-Schlüsselwort). Zusätzlich gilt: ein Abrufweg mit
+`activation_mode='manual'` wird nie automatisch abgerufen. Beide Regeln stehen im
+ausführenden Plan (`source-mode.buildRelationalCrawlPlan`), nicht in `model.isPathActive`.
+Runbook: [`betrieb/berlin-aktivierung.md`](betrieb/berlin-aktivierung.md).
+
 `HELMUT_SOURCE_MODE=on`: die relationale DB ist die aktive Wahrheit. Der hartkodierte
 Katalog `lib/helmut/sources.js` ist **nur noch Fallback** (Ladefehler/leerer Plan).
 Personenbezogene Quellen stehen **nicht** im geteilten Katalog, sondern entstehen zur

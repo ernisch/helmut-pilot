@@ -4497,6 +4497,12 @@ async function buildSourceArchitectureReport(mandateProfiles = []) {
           },
           defekteWege: plan.defekt.map((d) => d.id),
           landesmodulGesperrt: plan.ausgeschlossen.filter((a) => /landesmodul/.test(a.grund)).length,
+          manuellGesperrt: plan.ausgeschlossen.filter((a) => /manuell-gesperrt/.test(a.grund)).length,
+          // Landesmodul-Wahrheit für den Betrieb: welches Land ist freigegeben, welche Wege
+          // laufen dadurch, und welche davon sind MEHRLÄNDRIG (liefern also auch Inhalte eines
+          // nicht freigegebenen Landes). Ohne diese Zeile liesse sich "nur Berlin läuft"
+          // behaupten, obwohl über rbb24 auch Brandenburg-Inhalte ankommen.
+          landesmodule: plan.landesmodule,
           hinweis: modus === "off"
             ? "Modus off: alter Katalog ist aktive Quellenwahrheit; relationaler Plan nur Vorschau/Vergleich."
             : modus === "shadow"
