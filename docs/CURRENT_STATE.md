@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-25 · **`main`-HEAD:** `9534bc0` (Merge #127)
+**Letzte Aktualisierung:** 2026-07-26 · **`main`-HEAD:** `9f1def5` (Merge #130)
 
 > **Diese Datei ist der aktuelle Stand.** Bei Widerspruch zu älteren Statusdokumenten
 > gilt diese Datei. Sie enthält **keine Chronik** — Details je offenem Punkt stehen in
@@ -41,6 +41,7 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | Freigabevorlage Quellen-Seed-Einspielung (Soll-Zahlen, Idempotenznachweis, Go-/Stop-Kriterien) | PR #123, gemergt 2026-07-25 (`bed7f53`), CI grün |
 | **Production-Inventur aller Quellenpakete** (7 Pakete in der DB, 8 im Code-Seed seit #118; 163 Abrufwege; Ertrag/letzte Lieferung/Fehler je Paket) | `quellenarchitektur/30-paket-inventur-production.md`; PR #124, gemergt 2026-07-25 (`118e90c`), CI grün, Deployment `READY` |
 | **Automatische Profil→Paket-Zuweisung belegt** — Bund/Berlin/Brandenburg gegen den echten Production-Katalog, ohne Codeänderung; keine Mandanten-Hardcodes, Bestandsmandanten unverändert | `scripts/paketzuweisung-nachweis-test.js` 147/147, Inventur §6; PR #124, gemergt 2026-07-25 (`118e90c`) |
+| **Fachliche Vollständigkeit aller Quellenpakete belegt** (Phase-1-Punkt 13) — jedes der 8 Code-Seed-Pakete hat ein ausführbares Kriterium (Pflichtklassen + Pflicht-Herausgeberklassen + Vollzähligkeit + begründete Überschneidungen); 6 vollständig, 2 belegt teilweise; 3 Lücken behoben | `quellenarchitektur/31-paketvollstaendigkeit.md`; `scripts/paketvollstaendigkeit-test.js` 89/89, Offline-Suite 148/148; Branch `claude/helmut-phase1-punkt13-9iwu69` |
 
 ## 3 · Teilweise abgeschlossen (Code da, Abnahme fehlt)
 
@@ -194,6 +195,9 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 
 | Datum | Entscheidung |
 |---|---|
+| 2026-07-26 | **Ein ständiger Bundestagsausschuss gehört immer auch in `bund-basis`** — die Zusage „alle Ausschuesse" des neutralen Pflichtpakets ist eine Vollzähligkeitsregel und wird jetzt gezählt, nicht behauptet. Zuvor fehlte genau der Ausschuss des Pilotmandats im Pflichtpaket |
+| 2026-07-26 | **`regional-niedersachsen` bleibt „teilweise vollständig"** — die fehlenden benannten Regionalherausgeber werden **nicht** durch Anheben der Kuratierungsschwelle nachgezogen (≈ 20 zusätzliche Google-Abrufe je Crawl, verstärkt Befund B1). Kosten-/Laufzeitentscheidung des Betreibers; die Lücke ist testgesichert statt kaschiert |
+| 2026-07-26 | **Fachlich unmögliche Pflichtklassen werden ausgewiesen, nicht entfernt** — `die-linke-brandenburg` behält alle 3 Pflichtklassen; die 2 nicht besetzbaren tragen eine Begründung und halten das Paket bei „teilweise vollständig". Kriterien werden nicht abgeschwächt, um Grün zu erzeugen |
 | 2026-07-25 | **Neue dauerhafte Regel (`CLAUDE.md` §4.9):** produktionsrelevante Skripte mit Secrets müssen sowohl lokal als auch in einer Claude-Code-Cloud-Sitzung lauffähig sein. Secrets erreichen eine Cloud-Sitzung ausschließlich über die Claude-Code-Environment-Einstellungen, niemals über Chat oder Commits. Geprüft: kein Skript im Repo parst `.env.local` selbst per `dotenv` — alle lesen ausschließlich `process.env` und sind damit bereits kanalunabhängig; `docs/betrieb/env-inventar.md` §8 führt die Cloud-Environment-Variable als vierten Kanal neben Vercel, lokaler Shell/`.env.local` und GitHub Secrets |
 | 2026-07-25 | **Die 6 reparierten Bundeswege werden gestaffelt reaktiviert** — erst die 2 Direktfeeds, nach einem vollen Crawl-Zyklus die 4 Google-Wege (`betrieb/quellen-seed-einspielung.md` §6d). Umsetzung als gezieltes `update` nach dem Seed, **nicht** durch Bearbeiten der Seed-Datei: der Bund-Seed ist per Drift-Gate byte-genau an seinen Generator gebunden |
 | 2026-07-25 | Der Parallelbranch `claude/helmut-seed-review-6nocps` wird **nicht als Ganzes gemergt** — seine Doku-Fassung ist von vor den Korrekturen abgezweigt und würde die gemessenen Ist-Zahlen, die Delta-Prüflogik und die Staffelung zurückdrehen. Seine drei Code-Änderungen sind einzeln triagiert (Runbook §6d.2) |
@@ -257,6 +261,7 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 
 | Sprint | Datum | Zustand |
 |---|---|---|
+| Phase-1-Punkt 13: Vollständigkeit jedes Quellenpakets prüfen | 2026-07-26 | **Erfolgreich abgeschlossen** — Abnahmekriterium erfüllt und belegt: alle 8 Pakete haben ein ausführbares fachliches Kriterium, 6 sind vollständig, 2 belegt teilweise vollständig (kein falsches Grün), 3 Lücken behoben. `paketvollstaendigkeit-test` 89/89, Offline-Suite 148/148, Seeds byte-identisch reproduzierbar. Keine Production-Änderung, Berlin/Brandenburg unverändert vorbereitet und inaktiv. Details unten. |
 | Go-Kriterium 2 kontrolliert versuchen: Pre-Seed-Backup-Export | 2026-07-25 | **Blockiert** — `node scripts/backup-export.js --scope=seed` exakt wie angefordert ausgeführt; Abbruch vor jedem Netzwerkzugriff (Exit 2), da diese Agenten-Sitzung keine `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` und keine `.env.local` besitzt. **Kein** Production-Zugriff erfolgt. Betreiberentscheidung: Export läuft auf der Betreibermaschine mit echter `.env.local`, Manifest wird zurückgemeldet. Details unten. |
 | Review + Merge von PR #125, danach Production-Ablauf bis vor den ersten Zugriff vorbereiten | 2026-07-25 | **Teilweise abgeschlossen** — PR #125 adversarial reviewt (3 Reviewer, 20 belegte Befunde, alle behoben) und als `0d6d867` gemergt (CI auf `main` grün, Vercel-Production `READY`). Der Production-Ablauf ist vollständig vorbereitet; **kein Production-Zugriff erfolgt, keine Seeds ausgeführt**. Wartet auf die Betreiberfreigabe für den Pre-Seed-Export. Details unten. |
 | Merge #123 + Sicherung, gezielter Restore und Entscheidungsreife für die Seed-Einspielung | 2026-07-25 | **Teilweise abgeschlossen** — #123 gemergt (`bed7f53`); Backup- und Restore-Werkzeug gebaut und isoliert getestet (33/33 lokal, 31/31 in CI, Suite 145/145). Die Seed-Ausführung bleibt **blockiert**: die Sicherung ist noch nicht gelaufen und die Reaktivierung der 6 Bundeswege ist nicht freigegeben. Details unten. |
@@ -266,6 +271,109 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 | Merge von PR #105 — Anker-Recovery-Pfad in Production stillgelegt | 2026-07-25 | **Erfolgreich abgeschlossen** — gemergt als `43e9e35`; Stilllegung auf `main` verifiziert. |
 | Recovery-Pfad-Review + Zusammenführung von PR #105 auf die kanonische Kontextstruktur | 2026-07-25 | **Erfolgreich abgeschlossen** |
 | Kontextstruktur für Claude Code (`CLAUDE.md` + Einstiegsschicht) | 2026-07-25 | **Erfolgreich abgeschlossen** — reine Dokumentation, gemergt als PR #119 (`c6a3d40`). |
+
+**Sprint „Phase-1-Punkt 13: Vollständigkeit jedes Quellenpakets" — Nachweis**
+
+- **Auftrag / Abnahmekriterium:** „Jedes Quellenpaket ist fachlich vollständig und nicht nur
+  technisch angelegt." Kanonischer Nachweis:
+  [`quellenarchitektur/31-paketvollstaendigkeit.md`](quellenarchitektur/31-paketvollstaendigkeit.md).
+- **Was geprüft wurde:** alle **8** Pakete des Code-Seeds — `bund-basis`, `arbeit-und-soziales`,
+  `die-linke-bund`, `regional-niedersachsen`, `berlin-basis`, `brandenburg-basis`,
+  `die-linke-berlin`, `die-linke-brandenburg`. Personenbezogene Pakete `profil-<mandats-id>`
+  existieren bewusst nur als DB-Zeilen; die Regel dafür (nie `is_base`, nie im Code-Seed) ist
+  jetzt getestet. Je Paket erhoben: Zweck, politische Zuständigkeit, Ebene, Region, erwartete
+  Themen, Herausgeberklassen, vorhandene Wege, Paketzuordnungen, Aktivierungsstatus,
+  Einschränkungen, Tests, Recherchegrundlage.
+- **Verwendete fachliche Kriterien (jetzt ausführbar, nicht nur Fließtext):** Pflichtklassen je
+  Paket · Pflicht-**Herausgeber**klassen (`evidence_role`) · Vollzähligkeit („alle Ausschüsse",
+  „alle Fraktionen", „alle genannten Regionen") · mindestens **ein** benannter Herausgeber je
+  Paket (nicht nur Aggregatoren) · leere Platzhalter · begründete vs. unbegründete
+  Mehrfachzuordnungen · fachlich **unmögliche** Pflichtklassen getrennt von offenen Lücken ·
+  vorbereitet ≠ aktiv · Determinismus. Die Klasse eines Abrufwegs wird deterministisch aus
+  committeten Katalogmerkmalen abgeleitet (neues Modul
+  `lib/helmut/quellenarchitektur/paket-vollstaendigkeit.js`), nicht aus einer gepflegten Liste.
+- **Ergebnis: 6 vollständig · 2 teilweise vollständig · 0 blockiert.** Vollständig:
+  `bund-basis` (7/7 Klassen, 23/23 Ausschüsse, 8/8 Fraktionen), `arbeit-und-soziales` (10/10),
+  `die-linke-bund` (1/1), `berlin-basis` (**12/12**), `brandenburg-basis` (**12/12**),
+  `die-linke-berlin` (3/3).
+- **Gefundene Lücken (6, davon 3 behoben):**
+  1. **V-3 (behoben):** Das neutrale Pflicht-Basispaket enthielt nur **22 der 23** ständigen
+     Bundestagsausschüsse — es fehlte genau der Ausschuss für Arbeit und Soziales, der
+     ausschließlich im **Themenpaket** lag. Jedes andere Mandat hätte 22 von 23 bekommen, und die
+     Lücke wäre der Profilform des Pilotmandats gefolgt, obwohl `bund-basis` „alle Ausschuesse"
+     zusagt. Behoben über die Paketableitung: **+1** `package_paths`-Zeile, **0** neue Abrufwege,
+     **0** Änderung an Aktivierungsmodi.
+  2. **V-4 (behoben):** `packageKeysForSource` ordnete **jede** regionale Quelle dem
+     Niedersachsen-Paket zu. Unter der Production-Kuratierung unsichtbar, mit
+     `HELMUT_SOURCE_CURATION=off` wären es **30** fremde Regionalquellen gewesen. Die Zuordnung
+     läuft jetzt über die Regionsbegriffe der Paketdefinition; der generierte Seed ist unter
+     Production-Kuratierung dadurch **unverändert**.
+  3. **V-5 (behoben):** Die Regionsbegriffe lagen doppelt (Profil-Resolver + implizit im
+     Paketinhalt) und konnten auseinanderlaufen — jetzt eine Quelle der Wahrheit in der
+     Paketdefinition.
+  4. **V-1 (erkannt, bewusst nicht behoben):** `regional-niedersachsen` hat **0 benannte
+     regionale Herausgeber** — alle 4 Wege sind Google-News-Themensuchen (Herausgeber =
+     Aggregator, 0 journalistische und 0 amtliche Beleglage) und zusätzlich thematisch auf
+     Arbeit/Soziales gebunden, obwohl das Paket nach **Region** zugewiesen wird. Die
+     Regionalmedien der Region (Braunschweiger Zeitung, Salzgitter Zeitung, regionalHeute, HAZ,
+     Neue Presse, NDR) **liegen im Katalog**, werden aber von `keepCuratedSource` entfernt
+     (`type: "media"` erst ab `priority >= 64`, regionale Medien tragen 52–60). Das Anheben
+     dieser Schwelle wären rund **20 zusätzliche Google-News-Abrufe je Crawl** — eine Kosten-/
+     Laufzeitentscheidung und damit freigabepflichtig, zumal die Google-Konzentration (B1) der
+     wichtigste offene Architekturpunkt ist. Paket bleibt **teilweise vollständig**.
+  5. **V-2 (erkannt, als fachlich unmöglich ausgewiesen):** `die-linke-brandenburg` kann 2 seiner
+     3 Pflichtklassen nicht besetzen — Die Linke hat in der 8. Wahlperiode keine
+     Landtagsfraktion in Brandenburg und keinen MdL. Die Pflichtklassen werden **nicht** entfernt
+     (das wäre eine Abschwächung des Kriteriums); ein Ersatz aus fremder Partei ist ausgeschlossen.
+  6. **V-6 (erkannt, Umsetzung als OP-23):** Die Pflichtklassenanzeige im Admin zeigt weiterhin
+     `present: 0`. Ursache ist **nicht** fehlendes Klassen-Tagging, sondern dass
+     `buildSourceAdminReport` auf `buildFullModel()` arbeitet, das die Berlin-/Brandenburg-Wege
+     nicht kennt. Die Anzeige **untertreibt** also, erzeugt kein falsches Grün.
+- **Korrigierte Altangabe:** Die Inventur führte Berlin mit **10 von 15** und Brandenburg mit
+  **9 von 15** Pflichtklassen. Das war eine Unterzählung der Id-Namensableitung (deduplizierte
+  Rohquellen tragen nur die *erste* Klasse in ihrer Id) — die Inventur hatte das selbst als
+  „Hilfsableitung, keine Systemwahrheit" markiert. Gemessen an `covers` sind es **12/12** bzw.
+  **12/12**. Die Checklistenpunkte 6/7 bleiben trotzdem ⏳ — allein wegen der Neutralitätslücke
+  **A-3** in der Production-**Datenbank**, die nur die freigabepflichtige Seed-Einspielung schließt.
+- **Ausführbare Absicherung:** neue Suite `scripts/paketvollstaendigkeit-test.js` — **89
+  Prüfungen** in 14 Gruppen, mit **6 Negativkontrollen** (fehlender Ausschuss, undeklarierte
+  Doppelzuordnung, Paket ohne Anforderung, umbenanntes Paket, Themenbündel als Ausschuss, und ein
+  Wirksamkeitsnachweis, dass die BE/BB-Nichtaktivierungsprobe überhaupt Zähne hat). Zusätzlich ein
+  **Strukturriegel**: schlägt an, sobald der Live-Crawlpfad `packageKeysForSource` oder
+  `buildFullModel` importiert.
+- **Tests (echte Zahlen):** `paketvollstaendigkeit-test` **89/89** · `source-architecture-test`
+  **98/98** · `profile-packages-test` **69/69** · `seed-restore-test` **43/43** ·
+  `seed-drift-test` grün · **Offline-Suite 148/148 grün** (37 s). Kein Browser-Smoke nötig (keine
+  UI-Änderung). Generatorlauf wiederholt: beide Seeds byte-identisch; der Landesmodul-Seed ist
+  gegen `main` **unverändert**.
+- **Production-Sicherheitsnachweis (verifiziert, nicht behauptet):** Im Modus
+  `HELMUT_SOURCE_MODE=on` baut der Scheduler seinen Plan aus den **DB-Zeilen**
+  (`listSourceArchitectureRows` → `buildRelationalCrawlPlan`); der Fallback filtert `v1Sources`
+  direkt über `neutral`/`themeTerms`/`regional`. **Beide Pfade importieren
+  `packageKeysForSource`/`buildFullModel` nicht** — die Änderung wirkt erst mit der
+  freigabepflichtigen Seed-Einspielung. Unverändert: 5 `always_on`-Wege, 144 Katalogwege, 139
+  `auto`, 0 `dev_only`, Wegestatus, Cron, Flags, Secrets.
+- **Wirkung auf die vorbereitete Seed-Einspielung (dokumentiert, nicht ausgeführt):** Seed
+  `20260713` setzt zusätzlich `required_classes` für die vier Bundespakete (reine Metadaten, kein
+  Einfluss auf Crawl/Aktivierung/Matching) und fügt **eine** Paketzuordnung ein
+  (`pkg-bund-basis` ↔ `rp-ausschuss-arbeit-soziales`). Soll-Zahl im Seed damit **146** statt 145;
+  gegen die gemessene Production **+1** statt bisher **0**. `betrieb/quellen-seed-einspielung.md`
+  §4 ist entsprechend nachgezogen (Einfügungen Seed 1: 3, Aktualisierungen: 12).
+- **Berlin/Brandenburg nicht aktiviert — geprüft:** alle 4 Landespakete `prepared`, alle 18
+  Landeswege `needs_review` + `manual`, `aktiveAbrufwege = 0`, kein Landesweg in einem aktiven
+  Paket, ein Berliner Landtagsprofil aktiviert **0** Landeswege (bei nicht-leerer
+  Bundesaktivierung), `berlin-basis` bleibt ehrlich `requested_unsupplied`.
+- **Verbleibende Grenze (ehrlich):** Die Vollzähligkeit ist **katalogrelativ**. Bewiesen ist, dass
+  jeder ständige Ausschuss und jede Fraktion, die der Katalog kennt, im neutralen Pflichtpaket
+  liegt. **Nicht** bewiesen ist, dass der Katalog die Ausschussliste des laufenden Bundestages
+  vollständig kennt (23 Einträge) — `bundestag.de` ist aus dieser Sitzung nicht erreichbar
+  (Netzrichtlinie antwortet `403` auf `CONNECT`, dieselbe Bot-Sperre wie bei `rp-bundestag`).
+  Benannter Schritt für den Betreiber.
+- **Nicht getan (bewusst):** kein Production-Zugriff, weder lesend noch schreibend · kein Seed
+  eingespielt · keine Migration · keine Quelle aktiviert oder deaktiviert · keine neue Quelle
+  erfunden oder hinzugefügt · keine Berlin-/Brandenburg-Aktivierung · keine Cron-/Flag-/
+  Secret-Änderung · keine Änderung am Datenmodell oder an der Gesamtarchitektur · keine
+  Abschwächung eines Pflichtklassenkriteriums, um ein Paket grün zu bekommen.
 
 **Sprint „Go-Kriterium 2 kontrolliert versuchen" — Nachweis**
 

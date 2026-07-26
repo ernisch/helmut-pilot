@@ -354,7 +354,10 @@ console.log("\n== 3) Seed 1 (Bund, nach #118) ==");
 const s1 = execSql(db, loadAktuell("20260713_source_architecture_seed.sql"));
 const n1 = Object.fromEntries(TAB.map((t) => [t, (db[t] || new Map()).size]));
 console.log(`   +${s1.stats.ins} eingefuegt, ${s1.stats.upd} aktualisiert, ${s1.stats.del} geloescht`);
-check("3 · Seed 1: +2 Pakete, +1 Paketzuordnung", n1.source_packages === 8 && n1.package_paths === 164);
+// Punkt 13: Seed 1 fuegt jetzt ZWEI Paketzuordnungen ein — die bisherige
+// (fraction-linke -> die-linke-bund) plus die neue Vollzaehligkeitszuordnung
+// (ausschuss-arbeit-soziales -> bund-basis, "alle Ausschuesse" im neutralen Pflichtpaket).
+check("3 · Seed 1: +2 Pakete, +2 Paketzuordnungen", n1.source_packages === 8 && n1.package_paths === 165);
 check("3 · Seed 1: die 6 Wege stehen jetzt auf 'needs_review'",
   ["rp-bundestag", "rp-bundesregierung", "rp-die-linke", "rp-linksfraktion", "rp-ausschuss-arbeit-soziales", "rp-dgb"]
     .every((id) => db.retrieval_paths.get(id).status === "needs_review"));
@@ -373,7 +376,7 @@ check("5 · Seed 2: Partei-/Personenwege NICHT mehr im Pflicht-Basispaket",
 check("5 · Seed 2: sie haengen jetzt am optionalen Parteipaket",
   ["rp-be-partei_pilot", "rp-be-fraktion_pilot", "rp-be-person_pilot"]
     .every((p) => db.package_paths.has(`pkg-die-linke-berlin|${p}`)));
-check("5 · Gesamtzahl Zuordnungen unveraendert (4 raus, 4 rein)", n2.package_paths === 164);
+check("5 · Gesamtzahl Zuordnungen unveraendert (4 raus, 4 rein)", n2.package_paths === 165);
 
 console.log("\n== 6) Idempotenz der Seeds ==");
 const vorWdh = snapshot(db, TAB);

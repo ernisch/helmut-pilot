@@ -75,7 +75,11 @@ console.log("== Unit: Paketzuordnung ==");
 check("neutral -> bund-basis", packageKeysForSource({ neutral: true }).includes("bund-basis"));
 check("thema:social -> arbeit-und-soziales", packageKeysForSource({ themeTerms: ["soziales"] }).includes("arbeit-und-soziales"));
 check("Die Linke -> die-linke-bund", packageKeysForSource({ party: "Die Linke" }).includes("die-linke-bund"));
-check("regional trennt Thema (nur Regionalpaket)", JSON.stringify(packageKeysForSource({ regional: true, themeTerms: ["soziales"] })) === JSON.stringify(["regional-niedersachsen"]));
+check("regional trennt Thema (nur Regionalpaket)", JSON.stringify(packageKeysForSource({ regional: true, themeTerms: ["soziales"], id: "region-salzgitter-x", name: "Salzgitter Arbeit und Soziales" })) === JSON.stringify(["regional-niedersachsen"]));
+// Punkt 13: eine regionale Quelle ohne Bezug zur Region des Regionalpakets bleibt bewusst OHNE
+// Paket, statt still im Niedersachsen-Paket zu landen (mit HELMUT_SOURCE_CURATION=off waeren das
+// 30 fremde Regionen gewesen).
+check("regionale Fremdquelle -> kein Regionalpaket", packageKeysForSource({ regional: true, themeTerms: ["soziales"], id: "region-bayern-x", name: "Bayern Arbeit und Soziales" }).length === 0);
 check("demoOnly-Personenquelle '<id>-news' -> Profilpaket 'profil-<id>' (abgeleitet, kein Mandant im Code)",
   JSON.stringify(packageKeysForSource({ demoOnly: true, id: "tenant-alpha-news" })) === JSON.stringify(["profil-tenant-alpha"]));
 check("demoOnly ohne '-news'-Basis -> KEINE Paketzuordnung", packageKeysForSource({ demoOnly: true, id: "irgendwas" }).length === 0);
@@ -155,10 +159,14 @@ check("143 kuratierte Quellen im Katalog — KEINE Personenquelle (entsteht dyna
 check("alle 143 + DIP als Abrufwege abgebildet", M.retrievalPaths.length === 144);
 check("keine unzugeordnete Quelle (unmapped=0)", M.unmapped.length === 0);
 check("jeder Abrufweg traegt legacy_source_id (ID-Kompatibilitaet)", M.retrievalPaths.every((p) => !!p.legacy_source_id));
-// Ist-Zustand seit dem P8-Paketfix: fraction-linke gehoert BEWUSST zu ZWEI Paketen
-// (bund-basis als neutraler Fraktions-Suchweg + die-linke-bund als funktionierender
-// Ersatz fuer die zwei defekten Original-RSS-Wege der Partei) -> 146 Zuordnungen.
-check("jede Katalog-Quelle mind. einem Paket zugeordnet; fraction-linke bewusst in zweien (144+1)", M.packagePaths.length === 145);
+// Ist-Zustand: ZWEI Abrufwege gehoeren BEWUSST zu je zwei Paketen ->
+// 144 Wege + 2 Doppelzuordnungen = 146.
+//   - fraction-linke: bund-basis (neutraler Fraktions-Suchweg) + die-linke-bund (funktionierender
+//     Ersatz fuer die zwei defekten Original-RSS-Wege der Partei, P8-Paketfix).
+//   - ausschuss-arbeit-soziales: bund-basis (Vollzaehligkeit "alle Ausschuesse" des neutralen
+//     Pflichtpakets) + arbeit-und-soziales (Kernquelle des Fachthemas, Punkt 13).
+// Begruendung + Test: quellenarchitektur/paket-vollstaendigkeit.js, paketvollstaendigkeit-test.js.
+check("jede Katalog-Quelle mind. einem Paket zugeordnet; 2 Wege bewusst in zweien (144+2)", M.packagePaths.length === 146);
 check("fraction-linke in bund-basis UND die-linke-bund",
   M.packagePaths.some((pp) => pp.package_id === "pkg-die-linke-bund" && pp.retrieval_path_id === "rp-fraction-linke") &&
   M.packagePaths.some((pp) => pp.package_id === "pkg-bund-basis" && pp.retrieval_path_id === "rp-fraction-linke"));
@@ -167,7 +175,7 @@ console.log("== Migration: Bundesbasis nicht verloren (Bestandsschutz) ==");
 const legacyIds = new Set(M.retrievalPaths.map((p) => p.legacy_source_id));
 check("gesunde Bundesquellen erhalten (DLF/Tagesschau/BMAS)", ["deutschlandfunk-politik", "tagesschau-politik", "bmas"].every((id) => legacyIds.has(id)));
 const bundBasis = M.packagePaths.filter((pp) => pp.package_id === "pkg-bund-basis").length;
-check("Bund-Basis-Paket traegt 53 neutrale + DIP = 54 Abrufwege", bundBasis === 54);
+check("Bund-Basis-Paket traegt 53 neutrale + DIP + Fachausschuss = 55 Abrufwege", bundBasis === 55);
 check("Arbeit-und-Soziales-Paket traegt 84 Fachquellen", M.packagePaths.filter((pp) => pp.package_id === "pkg-arbeit-und-soziales").length === 84);
 check("Regional Niedersachsen = 4 Abrufwege", M.packagePaths.filter((pp) => pp.package_id === "pkg-regional-niedersachsen").length === 4);
 

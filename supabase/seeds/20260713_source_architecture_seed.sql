@@ -190,10 +190,10 @@ on conflict (id) do update set name = excluded.name, evidence_role = excluded.ev
 
 -- Quellenpakete
 insert into public.source_packages (id, key, name, purpose, status, is_base, political_level, geography_id, required_classes) values
-  ('pkg-bund-basis', 'bund-basis', 'Bund Basis', 'Neutrale bundespolitische Grundversorgung fuer JEDES Mandat (Institutionen, alle Ausschuesse, alle Fraktionen, Leitmedien, DIP).', 'active', true, 'bund', 'geo-bund', '{}'),
-  ('pkg-arbeit-und-soziales', 'arbeit-und-soziales', 'Arbeit und Soziales', 'Fachthemenpaket Arbeit- und Sozialpolitik (Fachmedien, Verbaende, Gewerkschaften, Prozess-/Radar-Quellen, Themen-Buendel). Fachthema, NICHT Region.', 'active', false, 'bund', 'geo-bund', '{}'),
-  ('pkg-die-linke-bund', 'die-linke-bund', 'Die Linke Bund', 'Partei-Direktquellen Die Linke (Bundesebene).', 'active', false, 'bund', 'geo-bund', '{}'),
-  ('pkg-regional-niedersachsen', 'regional-niedersachsen', 'Regional Niedersachsen', 'Regionale Beobachtung Niedersachsen (Salzgitter/Braunschweig/Wolfenbuettel).', 'active', false, 'land', 'geo-land-niedersachsen', '{}'),
+  ('pkg-bund-basis', 'bund-basis', 'Bund Basis', 'Neutrale bundespolitische Grundversorgung fuer JEDES Mandat (Institutionen, alle Ausschuesse, alle Fraktionen, Leitmedien, DIP).', 'active', true, 'bund', 'geo-bund', array['parlament_bund','regierung_bund','bundestagsausschuesse','bundestagsfraktionen','allgemeine_bundespolitik','leitmedien_bund','parlamentsdokumentation']::text[]),
+  ('pkg-arbeit-und-soziales', 'arbeit-und-soziales', 'Arbeit und Soziales', 'Fachthemenpaket Arbeit- und Sozialpolitik (Fachmedien, Verbaende, Gewerkschaften, Prozess-/Radar-Quellen, Themen-Buendel). Fachthema, NICHT Region.', 'active', false, 'bund', 'geo-bund', array['fachministerium','bundestagsausschuesse','fachparlamentsvorgaenge','fachmedien','verbaende_gewerkschaften','amtliche_daten','prozessquellen','themenradar','themenbuendel','mediensignale']::text[]),
+  ('pkg-die-linke-bund', 'die-linke-bund', 'Die Linke Bund', 'Partei-Direktquellen Die Linke (Bundesebene).', 'active', false, 'bund', 'geo-bund', array['parteiquellen_bund']::text[]),
+  ('pkg-regional-niedersachsen', 'regional-niedersachsen', 'Regional Niedersachsen', 'Regionale Beobachtung Niedersachsen (Salzgitter/Braunschweig/Wolfenbuettel).', 'active', false, 'land', 'geo-land-niedersachsen', array['regionalquellen']::text[]),
   ('pkg-berlin-basis', 'berlin-basis', 'Berlin Basis', 'Landespaket Berlin (Abgeordnetenhaus, Senat, Senatsverwaltungen, Fraktionen, Regionalmedien, rbb Berlin). Struktur vorbereitet — Quellen folgen nach Pruefung + Freigabe. NEUTRAL: keine Partei-/Personenquellen (siehe pkg-die-linke-berlin).', 'prepared', true, 'land', 'geo-land-berlin', array['landesparlament','plenum','ausschuesse','drucksachen','schriftliche_anfragen','gesetzgebung','landesregierung','staatskanzlei','ministerien','landesfraktionen','regionale_leitmedien','oer_landesberichterstattung']::text[]),
   ('pkg-brandenburg-basis', 'brandenburg-basis', 'Brandenburg Basis', 'Landespaket Brandenburg (Landtag, Landesregierung, Staatskanzlei, Ministerien, Fraktionen, Regionalmedien, rbb Brandenburg). Struktur vorbereitet — Quellen folgen nach Pruefung + Freigabe. NEUTRAL: keine Partei-/Personenquellen (siehe pkg-die-linke-brandenburg).', 'prepared', true, 'land', 'geo-land-brandenburg', array['landesparlament','plenum','ausschuesse','drucksachen','schriftliche_anfragen','gesetzgebung','landesregierung','staatskanzlei','ministerien','landesfraktionen','regionale_leitmedien','oer_landesberichterstattung']::text[]),
   ('pkg-die-linke-berlin', 'die-linke-berlin', 'Die Linke Berlin', 'Partei-/Fraktions-/Personenquellen Die Linke Berlin (Landesebene). Struktur vorbereitet — Quellen folgen nach Pruefung + Freigabe.', 'prepared', false, 'land', 'geo-land-berlin', array['partei_pilot','fraktion_pilot','person_pilot']::text[]),
@@ -356,6 +356,7 @@ insert into public.package_paths (package_id, retrieval_path_id) values
   ('pkg-bund-basis', 'rp-bundesregierung'),
   ('pkg-bund-basis', 'rp-bundestag'),
   ('pkg-arbeit-und-soziales', 'rp-ausschuss-arbeit-soziales'),
+  ('pkg-bund-basis', 'rp-ausschuss-arbeit-soziales'),
   ('pkg-die-linke-bund', 'rp-die-linke'),
   ('pkg-die-linke-bund', 'rp-linksfraktion'),
   ('pkg-bund-basis', 'rp-tagesschau-politik'),

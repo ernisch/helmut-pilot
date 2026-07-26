@@ -104,10 +104,16 @@ die Mengen nicht:
 
 ## 4 · Fachliche Vollständigkeit
 
-`bund-basis`, `arbeit-und-soziales`, `die-linke-bund` und `regional-niedersachsen` führen
-**keine** `required_classes`; für sie existiert kein maschinell prüfbares
-Vollständigkeitskriterium. „Fachlich vollständig" ist für diese vier Pakete **nicht
-belegt und nicht widerlegt** — das bleibt Checklistenpunkt 13.
+> **Überholt seit 2026-07-26 (Punkt-13-Sprint).** Dieser Abschnitt beschreibt den Stand der
+> Erhebung vom 25.07. Die fachliche Vollständigkeit ist seither für **alle** Pakete definiert und
+> ausführbar geprüft; die Zahlen unten (Berlin 10/15, Brandenburg 9/15) waren eine Unterzählung
+> der Id-Namensableitung — gemessen an `covers` sind es **12/12** bzw. **12/12**. Kanonisch:
+> [`31-paketvollstaendigkeit.md`](31-paketvollstaendigkeit.md).
+
+`bund-basis`, `arbeit-und-soziales`, `die-linke-bund` und `regional-niedersachsen` führten zum
+Erhebungszeitpunkt **keine** `required_classes`; für sie existierte kein maschinell prüfbares
+Vollständigkeitskriterium. „Fachlich vollständig" war für diese vier Pakete **nicht
+belegt und nicht widerlegt** — das war Checklistenpunkt 13.
 
 Die beiden Landespakete führen je **15 Pflichtklassen**. Abgeleitet aus der
 Klassenkennung der zugeordneten Wege:
@@ -221,7 +227,8 @@ Alle Abweichungen sind **Befunde dieser Inventur**, keine in diesem Sprint verur
 - Keine Aussage über **inhaltliche** Qualität der gelieferten Dokumente (Checklistenpunkte
   19–28 der Phase-1-Liste).
 - Keine Aussage zur fachlichen Vollständigkeit der vier Bundespakete (Punkt 13) — es
-  fehlt das Kriterium, nicht die Messung.
+  fehlte das Kriterium, nicht die Messung. **Seit 2026-07-26 geschlossen:**
+  [`31-paketvollstaendigkeit.md`](31-paketvollstaendigkeit.md).
 - Kein Ende-zu-Ende-Nachweis bis ins Briefing (Punkte 25–28).
 - Kein Nachweis, dass ein Landtagsprofil **versorgt** würde — Berlin/Brandenburg sind
   `prepared` und liefern nichts (Punkte 14/15).
