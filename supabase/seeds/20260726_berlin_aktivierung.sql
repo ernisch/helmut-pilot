@@ -4,7 +4,7 @@
 -- Voraussetzungen (docs/betrieb/berlin-aktivierung.md §3): V1-neutralisierung · V2-live-verifikation · V3-landtagsprofil · V4-freigabeflag · V5-paketstatus · V6-sicherung
 --
 -- Block A: Neutralisierung von berlin-basis (P0-2 / Befund A-3).
--- Block B: Aktivierung von berlin-basis + 6 Abrufwegen.
+-- Block B: Aktivierung von berlin-basis + 4 Abrufwegen.
 
 -- ============================ BLOCK A · NEUTRALISIERUNG ============================
 -- Vorher (erwartet 3 Zeilen), nachher (erwartet 0 Zeilen):
@@ -33,19 +33,32 @@ begin;
 --     Berliner Landtagsprofils (computeGlobalActivation).
 update public.source_packages set status = 'active' where key = 'berlin-basis' and status = 'prepared';
 
--- B2) Die 6 liefernden Abrufwege scharfschalten. ALLE anderen Berliner Wege bleiben
---     unverändert (needs_review + manual) — insbesondere rp-be-plenum (PARDOK, 0 Items)
---     und die 3 Wege aus Block A.
+-- B2) Die 4 liefernden Abrufwege scharfschalten — GESTAFFELT.
+--     ALLE anderen Berliner Wege bleiben unverändert (needs_review + manual):
+--     rp-be-plenum (PARDOK, strukturell 0 Items), rp-be-landesparlament und
+--     rp-be-landesfraktionen (bei der Neuverifikation 2026-07-26 veraltet) sowie die
+--     3 Wege aus Block A.
+--
+--     WICHTIG: die Stufen sind EINZELN auszuführen, nicht zusammen. Zwischen Stufe 1
+--     und Stufe 2 liegt mindestens ein vollständiger Crawl-Zyklus.
+
+-- B2.1) Direktfeeds (Tagesspiegel, rbb24) — 0 Google-Requests, beide juengstes Item 0 Tage.
+--       Weiter zur nächsten Stufe erst nach einem vollen Crawl-Zyklus (mind. 2 Laeufe) ohne neue Fehler.
 update public.retrieval_paths set status = 'healthy', activation_mode = 'auto'
-  where id in ('rp-be-landesfraktionen', 'rp-be-landesparlament', 'rp-be-landesregierung', 'rp-be-regionale_leitmedien', 'rp-be-staatskanzlei', 'rp-rbb24-politik')
+  where id in ('rp-be-regionale_leitmedien', 'rp-rbb24-politik')
+    and status = 'needs_review' and activation_mode = 'manual';
+
+-- B2.2) Amtliche Ebene ueber Google News — bringt die Google-Last, deshalb nach Stufe 1.
+update public.retrieval_paths set status = 'healthy', activation_mode = 'auto'
+  where id in ('rp-be-landesregierung', 'rp-be-staatskanzlei')
     and status = 'needs_review' and activation_mode = 'manual';
 
 commit;
 notify pgrst, 'reload schema';
 
 -- ============================ SELBSTPRÜFUNG (read-only) ===========================
--- 1) genau 6 aktive Berliner Wege:
---    select count(*) from public.retrieval_paths where id in ('rp-be-landesfraktionen', 'rp-be-landesparlament', 'rp-be-landesregierung', 'rp-be-regionale_leitmedien', 'rp-be-staatskanzlei', 'rp-rbb24-politik')
+-- 1) genau 4 aktive Berliner Wege:
+--    select count(*) from public.retrieval_paths where id in ('rp-be-landesregierung', 'rp-be-regionale_leitmedien', 'rp-be-staatskanzlei', 'rp-rbb24-politik')
 --      and status = 'healthy' and activation_mode = 'auto';
 -- 2) 0 Partei-/Fraktions-/Personenwege im Pflicht-Basispaket:
 --    select count(*) from public.package_paths where package_id = 'pkg-berlin-basis'
