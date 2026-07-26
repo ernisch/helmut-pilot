@@ -80,6 +80,28 @@ check("Berlin-Aktivierung: jeder deklarierte Ausfuehrungsschritt hat eine commit
 check("Berlin-Aktivierungs-Generator ist deterministisch (2. Lauf byte-identisch)",
   JSON.stringify(berlin.dateien()) === JSON.stringify(berlinErzeugt));
 
+// --- 2c) Abnahmeprofil-SQL (20260726_berlin_abnahmeprofil*.sql) -------------
+// Punkt 14B: Schritt 5 der Aktivierungsreihenfolge ist jetzt ebenfalls generiertes,
+// freigabepflichtiges Production-SQL — und unterliegt damit demselben Drift-Gate.
+const profil = require("./generate-berlin-abnahmeprofil-sql");
+const profilErzeugt = profil.dateien();
+const profilPlan = require("../lib/helmut/quellenarchitektur/seeds/berlin-profilplan");
+let profilDrift = false;
+for (const [name, erzeugt] of Object.entries(profilErzeugt)) {
+  const ok = readCommitted("supabase/seeds/" + name) === erzeugt;
+  if (!ok) profilDrift = true;
+  check(`Abnahmeprofil: ${name} == generate() (kein Drift)`, ok);
+}
+if (profilDrift) {
+  console.log("  -> Datei(en) veraltet. Beheben: node scripts/generate-berlin-abnahmeprofil-sql.js && git add supabase/seeds/20260726_berlin_abnahmeprofil*.sql");
+}
+check("Abnahmeprofil: jeder deklarierte Schritt hat eine committete Datei",
+  profilPlan.profilschritte().every((s) => Object.prototype.hasOwnProperty.call(profilErzeugt, s.datei))
+  && Object.keys(profilErzeugt).length === profilPlan.profilschritte().length,
+  Object.keys(profilErzeugt).join(","));
+check("Abnahmeprofil-Generator ist deterministisch (2. Lauf byte-identisch)",
+  JSON.stringify(profil.dateien()) === JSON.stringify(profilErzeugt));
+
 // --- 3) Determinismus: zweiter In-Memory-Lauf liefert byte-identisches Ergebnis -----
 // (ergaenzt den Drift-Check: nicht nur "stimmt mit der Datei ueberein", sondern
 // "der Generator selbst ist stabil" — schuetzt vor nicht-deterministischen Quellen

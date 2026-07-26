@@ -31,7 +31,7 @@ function check(name, cond, detail = "") {
 
 const ROOT = path.join(__dirname, "..");
 const SKRIPT = path.join(__dirname, "backup-export.js");
-const { SEED_SCOPE_TABLES, TABLES } = require("./backup-export.js");
+const { SEED_SCOPE_TABLES, PROFIL_SCOPE_TABLES, SCOPES, TABLES } = require("./backup-export.js");
 
 // Eine Zeile je Tabelle bauen, die zur PK-Spalte des Skripts passt.
 function zeile(tabelle, i) {
@@ -301,6 +301,46 @@ function sauberePlan(zeilenProTabelle = 3) {
     aufraeumen(ordner);
   }
 
+  // --------------------------------- 6b) Profil-Umfang (Punkt 14B) --------
+  // Der Profil-Umfang sichert genau die zwei Tabellen, die das Anlegen des Berliner
+  // Abnahmeprofils beruehrt. Bis 14B gab es dafuer KEINEN passenden Umfang: `seed` deckt
+  // sie nicht ab, `voll` zieht zusaetzlich Rohdokumente und Briefings auf die Platte.
+  console.log("\n== 6b) Profil-Export (--scope=profil) ==");
+  {
+    const plan = {};
+    for (const t of Object.keys(TABLES)) plan[t] = { zeilen: 3 };
+    const srv = await starteServer(plan, []);
+    const { code, ordner, manifest } = await laufe(srv.address().port, ["--scope=profil"]);
+    srv.close();
+
+    check("6b · art === 'pre-profil'", manifest && manifest.art === "pre-profil");
+    check("6b · genau die 2 Profiltabellen exportiert",
+      manifest && Object.keys(manifest.tabellen).length === 2
+      && manifest.tabellen.profiles === 3 && manifest.tabellen.mandate_profiles === 3);
+    check("6b · KEINE Rohdokumente/Briefings/Interaktionen im Export (Datenminimierung)",
+      manifest && !("raw_documents" in manifest.tabellen) && !("briefings" in manifest.tabellen)
+      && !("interactions" in manifest.tabellen) && !("user_notes" in manifest.tabellen));
+    check("6b · restoreReihenfolge nennt Eltern vor Kind (FK profiles <- mandate_profiles)",
+      manifest && Array.isArray(manifest.restoreReihenfolge)
+      && manifest.restoreReihenfolge[0] === "profiles" && manifest.restoreReihenfolge[1] === "mandate_profiles");
+    check("6b · vollstaendig === true und Exit-Code 0", manifest && manifest.vollstaendig === true && code === 0, `Exit ${code}`);
+    check("6b · Pruefsumme je Tabelle + Gesamtpruefsumme vorhanden",
+      manifest && manifest.pruefsummen && manifest.pruefsummen.profiles && manifest.pruefsummen.mandate_profiles
+      && typeof manifest.pruefsummeGesamt === "string" && manifest.pruefsummeGesamt.length === 64);
+    aufraeumen(ordner);
+  }
+  {
+    // Ein leerer Mandatsbestand kann den Zustand VOR dem Anlegen nicht belegen.
+    const plan = {};
+    for (const t of Object.keys(TABLES)) plan[t] = { zeilen: 0 };
+    const srv = await starteServer(plan, []);
+    const { code, ordner, manifest } = await laufe(srv.address().port, ["--scope=profil"]);
+    srv.close();
+    check("6b · leerer Profil-Export gilt NICHT als Sicherung (vollstaendig=false, Exit 1)",
+      manifest && manifest.vollstaendig === false && code === 1, `Exit ${code}`);
+    aufraeumen(ordner);
+  }
+
   // --------------------------------- 7) Jede Seed-Tabelle hat einen PK ----
   console.log("\n== 7) Struktur ==");
   check("7 · jede Tabelle aus SEED_SCOPE_TABLES hat einen Primaerschluessel in TABLES",
@@ -308,6 +348,13 @@ function sauberePlan(zeilenProTabelle = 3) {
     SEED_SCOPE_TABLES.filter((t) => !TABLES[t]).join(", "));
   check("7 · SEED_SCOPE_TABLES enthaelt genau 8 Tabellen ohne Dubletten",
     SEED_SCOPE_TABLES.length === 8 && new Set(SEED_SCOPE_TABLES).size === 8);
+  check("7 · jede Tabelle aus PROFIL_SCOPE_TABLES hat einen Primaerschluessel in TABLES",
+    PROFIL_SCOPE_TABLES.every((t) => typeof TABLES[t] === "string" && TABLES[t].length > 0),
+    PROFIL_SCOPE_TABLES.filter((t) => !TABLES[t]).join(", "));
+  check("7 · PROFIL_SCOPE_TABLES und SEED_SCOPE_TABLES ueberschneiden sich nicht",
+    PROFIL_SCOPE_TABLES.every((t) => !SEED_SCOPE_TABLES.includes(t)));
+  check("7 · Alle Umfaenge sind benannt und der Standard ist 'voll'",
+    Object.keys(SCOPES).sort().join(",") === "profil,seed,voll" && SCOPES.voll === null);
 
   console.log(`\n== Ergebnis: ${pass} PASS, ${fail} FAIL ==`);
   process.exit(fail === 0 ? 0 : 1);

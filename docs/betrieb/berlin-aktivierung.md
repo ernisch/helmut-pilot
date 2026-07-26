@@ -306,20 +306,36 @@ Ebene, deaktiviert, gelöscht und leer werden alle abgelehnt.
 
 ### 8.3 Spätere Production-Schritte und Rückweg
 
-| Schritt | mutierend |
-|---|---|
-| 1 Zeile in `profiles` (id + name) | **ja** |
-| 2 Zeile in `mandate_profiles` (Felder oben) | **ja** |
-| 3 Gegenprobe gegen das **gemappte** Profil (Zustand muss `vollstaendig` sein) | nein |
-| 4 prüfen: `required` = `bund-basis` + `berlin-basis`, kein Brandenburg-Paket | nein |
+**Seit Punkt 14B ausführbar statt beschrieben.** Bis 14A war dieser Schritt der einzige der
+neun Production-Schritte ohne eigene Datei, ohne Vor-/Nachbedingung, ohne Dry Run und ohne
+Rollback-Datei — verwiesen wurde auf „das Provisionierungswerkzeug". Jetzt gilt dieselbe
+Bauform wie für die Aktivierungs-SQL: eine Datei je Schritt, eine Transaktion je Datei,
+`raise exception` als Riegel.
 
-**Rückweg — Deaktivieren schlägt Löschen:**
-
-| Stufe | Mittel | Wirkung |
+| Schritt | Datei | mutierend |
 |---|---|---|
-| **0** | `update mandate_profiles set aktiv = false` | sofort aus der Referenzzählung, Auditspur bleibt |
-| **1** | zusätzlich `geloescht_at` setzen | unabhängig von `validateProfile` nicht mehr berechtigt |
-| **2** | `delete` in beiden Tabellen | nur nach 0/1 und nur ohne anhängende erzeugte Daten |
+| 1+2 beide Zeilen (`profiles` **und** `mandate_profiles`) in **einer** Transaktion | [`20260726_berlin_abnahmeprofil.sql`](../../supabase/seeds/20260726_berlin_abnahmeprofil.sql) | **ja** |
+| 3 Dry Run gegen den Ist-Zustand (Vor-/Nachbedingungen, Kontrollfragen) | `node scripts/berlin-abnahmeprofil-dryrun.js` | nein |
+| 4 Gegenprobe gegen das **gemappte** Profil und die Paketauflösung | derselbe Dry Run, Abschnitt „Wirkung" | nein |
+
+Warum beide Zeilen in **einer** Transaktion: getrennt ausgeführt entstünde ein Zwischenzustand
+mit `profiles`-Zeile ohne Mandat (oder umgekehrt gar nicht erst möglich, weil der Fremdschlüssel
+`mandate_profiles.user_id → profiles.id` greift). Der Zwischenzustand wäre ein Profil ohne
+Mandatsdaten — genau der Fall aus Befund P-1.
+
+**Rückweg — Deaktivieren schlägt Löschen (drei Dateien, drei Transaktionen):**
+
+| Stufe | Datei | Wirkung |
+|---|---|---|
+| **0** | [`…_rollback_stufe0.sql`](../../supabase/seeds/20260726_berlin_abnahmeprofil_rollback_stufe0.sql) | `aktiv = false` → sofort aus der Referenzzählung, Auditspur bleibt |
+| **1** | [`…_rollback_stufe1.sql`](../../supabase/seeds/20260726_berlin_abnahmeprofil_rollback_stufe1.sql) | zusätzlich `geloescht_at` → unabhängig von `validateProfile` nicht mehr berechtigt |
+| **2** | [`…_rollback_stufe2.sql`](../../supabase/seeds/20260726_berlin_abnahmeprofil_rollback_stufe2.sql) | `delete` in beiden Tabellen — **nur** nach 0 **und** 1 und **nur** ohne anhängende erzeugte Daten |
+
+**Korrektur einer bisherigen Angabe:** Die frühere Formulierung „sonst bleiben
+Fremdschlüssel-Waisen" war falsch. Gegen das Production-Schema gemessen (`pg_constraint`,
+2026-07-26) hängen **14** Tabellen mit `ON DELETE CASCADE` an `profiles(id)` — ein `delete`
+erzeugt also keine Waisen, sondern **löscht erzeugte Daten mit**. Das ist das größere Risiko,
+nicht das kleinere. Stufe 2 bricht deshalb ab, sobald auch nur eine abhängige Zeile existiert.
 
 ## 9 · Ausführung (freigabepflichtig, nicht Teil dieses Sprints)
 
@@ -328,11 +344,11 @@ Ebene, deaktiviert, gelöscht und leer werden alle abgelehnt.
 
 | Schritt | Datei / Ort | mutierend |
 |---|---|---|
-| 1 | `node scripts/backup-export.js --scope=seed` — Manifest `vollstaendig: true` | nein |
+| 1 | `node scripts/backup-export.js --scope=seed` **und** `--scope=profil` — beide Manifeste `vollstaendig: true` | nein |
 | 2 | Neuverifikation **erneut** laufen lassen, falls seit §2 mehr als 14 Tage vergangen sind | nein |
-| 3 | `node scripts/berlin-aktivierung-dryrun.js` — Dry Run **je Schritt** gegen den Ist-Zustand | nein |
+| 3 | `node scripts/berlin-aktivierung-dryrun.js` **und** `node scripts/berlin-abnahmeprofil-dryrun.js` — Dry Run **je Schritt** gegen den Ist-Zustand | nein |
 | 4 | `20260726_berlin_aktivierung_a_neutralisierung.sql` (Block A) | **ja** |
-| 5 | Berliner Abnahmeprofil anlegen (§8, **zwei** Zeilen) | **ja** |
+| 5 | `20260726_berlin_abnahmeprofil.sql` (Abnahmeprofil, §8, **zwei** Zeilen in **einer** Transaktion) | **ja** |
 | 6 | `20260726_berlin_aktivierung_b1_paketstatus.sql` (Paketstatus `active`) | **ja** |
 | 7 | `HELMUT_LANDESMODULE=berlin` setzen (**Vercel-Env**, nicht die Datei — §17 V-3) | **ja** |
 | 8 | `20260726_berlin_aktivierung_b2_stufe1.sql` (**Stufe 1**, die 2 Direktfeeds) | **ja** |
@@ -350,6 +366,11 @@ Die Reihenfolge ist bindend und seit 14A **technisch erzwungen**, nicht nur empf
   nicht überspringbar — auch nicht durch das Ausführen beider Dateien direkt hintereinander.
 - Jede Datei prüft nach ihrer Mutation die eigene Vollständigkeit; eine Teilausführung endet
   fail-closed statt in einem stillen „0 Zeilen betroffen".
+- **Seit 14B auch Schritt 5:** die Profildatei bricht ab, wenn unter der Abnahme-Id bereits ein
+  fremder Datensatz oder eine abweichende Mandatszeile steht, wenn ein **anderes** aktives
+  Landtagsmandat existiert oder wenn nach dem Anlegen nicht **genau ein** aktivierungs­berechtigtes
+  Berliner Landtagsmandat vorliegt. Damit ist auch dieser Schritt weder überspringbar noch
+  versehentlich überschreibend.
 
 Flag **vor** Stufe 2 bleibt bindend, damit der schnellste Rückweg (Rollback Stufe 0) steht, bevor
 die Google-Last dazukommt. Der Flag-Schritt steht bewusst **nach** Block A und B1 und **vor**
@@ -400,8 +421,12 @@ Sofortiger Abbruch (Rollback Stufe 0), wenn eines eintritt:
 13. zwei aufeinanderfolgende Läufe liefern über alle aktivierten Wege 0 neue Dokumente
 14. das jüngste Dokument eines aktivierten Wegs überschreitet 30 Tage
 15. der Rollback ist nicht ausführbar
+16. **(neu, 14B)** ein Cron-Lauf meldet `Zeitbudget erschoepft` (systemError) oder
+    `/api/cron/crawl` antwortet häufiger mit `504` als im Vorlauf (Ist über 7 Tage: **3**,
+    gemessen 2026-07-26, §20.5) → sofort **Rollback Ebene 0b** (Abnahmeprofil deaktivieren),
+    damit kein Bestandsmandat unversorgt aus dem Zeitbudget fällt
 
-## 12 · Rollback (fünf Ebenen, getestet)
+## 12 · Rollback (sechs Ebenen, getestet)
 
 Zwei Begriffe, die vorher denselben Namen trugen und deshalb verwechselbar waren:
 **Aktivierungs*stufe*** = welche Wege scharf sind (Stufe 1 / Stufe 2). **Rollback-*Ebene*** = wie
@@ -410,6 +435,7 @@ tief zurückgerollt wird. Seit 14A hat jede Aktivierungsstufe ihren **eigenen** 
 | Ebene | Mittel | Wirkung | Dauer |
 |---|---|---|---|
 | **0** | `HELMUT_LANDESMODULE` leeren (**Vercel-Env**) | alle Landesmodule sofort gesperrt, **kein** DB-Schreibzugriff | Sekunden |
+| **0b** | `…_berlin_abnahmeprofil_rollback_stufe0.sql` (**neu, 14B**) | Abnahmeprofil `aktiv = false` → Berlin hat **kein berechtigtes Landtagsmandat** mehr, **alle** Berliner Wege fallen aus dem Plan — **auch bei gesetztem Flag** und unabhängig vom Wegzustand | < 1 min |
 | **1** | `…_b2_stufe2_rollback.sql` | **nur Stufe 2** zurück; Stufe 1 läuft ausdrücklich weiter (Rückfall auf den bewiesenen Zustand) | < 1 min |
 | **2** | `…_b2_stufe1_rollback.sql` | **nur Stufe 1** zurück; **fail-closed, solange Stufe 2 aktiv ist** — dann erst Ebene 1 oder direkt Ebene 3 | < 1 min |
 | **3** | `…_rollback.sql` | **alle 7** Wege des Basispakets → `needs_review`/`manual`, `berlin-basis` → `prepared`; **Neutralisierung bleibt** | < 1 min |
@@ -417,6 +443,13 @@ tief zurückgerollt wird. Seit 14A hat jede Aktivierungsstufe ihren **eigenen** 
 
 **Wirkungsgarantien je Ebene (getestet, `scripts/berlin-staffelung-test.js`):**
 
+- **Ebene 0b ist allein hinreichend** und aus einer Cloud-Sitzung ausführbar (Supabase ist
+  erreichbar, die Vercel-Env nicht). Ausführbar geprüft in
+  `scripts/berlin-abnahmeprofil-test.js` §4: mit gesetztem Flag **und** scharfen Wegen fallen
+  nach Ebene 0b **0** Berliner Wege in den Plan, während die Bundesversorgung unverändert bleibt.
+  Damit gibt es **zwei** voneinander unabhängige, datenbankseitige Not-Aus-Schalter (0b und 2),
+  von denen jeder für sich jeden Berliner Abruf stoppt. Was Ebene 0b **nicht** kann: den
+  Flag-Wert zurücknehmen oder belegen — sie nimmt ihm nur die Wirkung.
 - Ebene 1 lässt Stufe 1 unverändert aktiv und den Paketstatus unverändert.
 - Ebene 2 lässt Stufe 2 **unverändert gesperrt** und den Paketstatus unverändert; sie dreht die
   Neutralisierung (Block A) **nicht** zurück — Befund A-3 kehrt nicht zurück.
@@ -1060,3 +1093,197 @@ Reihenfolge nach §9 unverändert:
 
 Erst danach gilt die unveränderte Reihenfolge: frisches Backup → Block A → Abnahmeprofil → B1 →
 Flag → Stufe 1 → ein voller Crawl-Zyklus beobachten → **erst dann** Stufe 2.
+
+## 20 · Punkt 14B (2026-07-26, 20:15–21:10 UTC) · Production-Vorbereitung · **nichts mutiert**
+
+**Auftrag:** den letzten operativen Blocker beseitigen, damit der Berliner Beweislauf **ohne
+weitere Entwicklung** starten kann. Kein Crawl, keine Aktivierung, kein Flag.
+
+> Es wurde **nichts** in Production geschrieben: kein Flag, kein Profil, kein SQL, keine Zeile,
+> kein Crawl. Alle Zahlen unten stammen aus `select`-Abfragen, read-only Werkzeugaufrufen und
+> zwei read-only Sicherungsläufen.
+
+### 20.1 Startprüfung — 5 von 6 erfüllt
+
+| # | Bedingung | Ergebnis |
+|---|---|---|
+| 1 | `main` enthält PR #139 | **ja** — `4bc58dc` (Merge #139); lokaler HEAD = `origin/main`, Diff leer |
+| 2 | Arbeitsbaum sauber | **ja** |
+| 3 | Punkt 14A in `main` | **ja** — 9 Aktivierungsdateien + `berlin-staffelung-test.js` vorhanden, Gate-Name ausschließlich `HELMUT_LANDESMODULE` |
+| 4 | Punkt 16 und 17 in `main` | **ja** — `source-failure.js` **160/160**, `cost-model.js`/`kostenmessung-test` **128/128** |
+| 5 | Keine parallele Arbeit an Berlin, Kosten oder Quellenlogik | **ja** — einzige offene Berührung bleibt PR #132 (Brandenburg, konkurrierender Gate-Name, §19.6); dieser Sprint hat #132 nicht angefasst |
+| 6 | Production-Zugänge | **teilweise** — Supabase ja (Messung, Sicherung, Dry Run gelaufen); Vercel-Env **nein**; App nur unauthentifiziert (HTTP 401) |
+
+### 20.2 Der eigentliche Befund: Schritt 5 war der einzige Schritt ohne Werkzeug
+
+Von den neun Production-Schritten aus §9 hatten acht seit 14A je eine eigene Datei, eigene Vor-
+und Nachbedingungen als `raise exception`, einen eigenen Dry Run und einen eigenen Rollback.
+**Schritt 5 — das Abnahmeprofil — hatte nichts davon.** Er stand als Prosa („zwei Zeilen") mit
+Verweis auf „das Provisionierungswerkzeug" im Runbook. Genau dieser Schritt ist aber seit dem
+zweiten Production-Anlauf die **zweite** der beiden Bedingungen, an denen der Beweislauf hängt
+(§19.5). Ein Beweislauf hätte ihn also von Hand ausführen müssen — ohne Vorbedingung, ohne
+Idempotenz, ohne Rückweg-Datei, mitten zwischen zwei fail-closed SQL-Schritten.
+
+**Behoben.** Vier generierte Dateien, Bauform identisch zu 14A/V-1:
+
+| Datei | Zweck | Riegel |
+|---|---|---|
+| `20260726_berlin_abnahmeprofil.sql` | beide Zeilen in **einer** Transaktion | 4 Vor-, 5 Nachbedingungen |
+| `…_rollback_stufe0.sql` | `aktiv = false` (Not-Aus) | 1 Vor-, 2 Nachbedingungen |
+| `…_rollback_stufe1.sql` | zusätzlich `geloescht_at` | 1 Vor-, 3 Nachbedingungen |
+| `…_rollback_stufe2.sql` | Zeilen entfernen | 3 Vor-, 3 Nachbedingungen |
+
+Quelle der Wahrheit bleibt [`seeds/berlin-profilplan.js`](../../lib/helmut/quellenarchitektur/seeds/berlin-profilplan.js);
+`scripts/generate-berlin-abnahmeprofil-sql.js` erzeugt die Dateien, der Seed-Drift-Test hält sie
+byte-genau daran.
+
+**Gegen ein echtes PostgreSQL 16 bewiesen** (`bash scripts/berlin-abnahmeprofil-pgverify.sh
+--eigenes-cluster`, **36 PASS / 0 FAIL**), unter anderem:
+
+- die drei Rückwege brechen ohne Profil ab und lassen **0** Zeilen verändert;
+- Anlegen ist **idempotent** (zweiter Lauf ohne zweite Zeile);
+- ein **fremder** Datensatz unter derselben Id bricht ab, statt überschrieben zu werden;
+- ein bereits vorhandenes **anderes** Landtagsmandat blockiert das Anlegen;
+- Stufe 2 bricht ab, solange erzeugte Daten anhängen (`ON DELETE CASCADE`);
+- der Endzustand ist **zeilengenau** der Ausgangszustand.
+
+**Read-only gegen Production** (`node scripts/berlin-abnahmeprofil-dryrun.js`, Exit 0):
+Schritt 1 ist **jetzt ausführbar** — alle 4 Vorbedingungen erfüllt, Treffer exakt **1 + 1** Zeilen,
+alle 5 Nachbedingungen nach Simulation erfüllt, Kontrollfragen durchweg **0** (fremde Profile,
+Brandenburg, fremde Landtagsmandate). Die drei Rückwege melden korrekt **NEIN** (es gibt noch
+kein Profil). Gegen den echten Resolver gerechnet: Zustand `vollstaendig`, aktivierungsberechtigt,
+`kannRadar: true`, Pflichtpakete **`bund-basis` + `berlin-basis`**, optional nur das nicht
+existierende `profil-helmut-abnahme-berlin`, Berlin wirksam **nur mit** dem Profil (`[]` → `["berlin"]`).
+
+### 20.3 Flag-Zugang — auf allen Kanälen neu gemessen, weiter negativ
+
+Nicht aus §19.4 übernommen, sondern am 2026-07-26 zwischen 20:15 und 20:30 UTC neu geprüft.
+
+| Weg zum Flag | Stand | lesbar | setzbar | rücksetzbar |
+|---|---|---|---|---|
+| Vercel-Env über REST | `VERCEL_TOKEN` **nicht gesetzt**; `api.vercel.com` und `vercel.com` proxy-gesperrt (`CONNECT` → **403**, erneut gemessen) | nein | nein | nein |
+| Vercel-Env über MCP | Server **authentifiziert** (Team `nohut`, Projekt `helmut-pilot` `prj_xbZ6…`, letztes Production-Deployment `READY`) — die Werkzeugliste enthält **kein** Environment-Werkzeug; `get_project` liefert keine Env | nein | nein | nein |
+| `helmut-flags.json` + Deploy | `HELMUT_LANDESMODULE` steht auf der Datei-Allowlist (`flags.js`), die Datei setzt es **nicht**. Ein Setzen wäre ein Merge nach `main` = Production-Deployment = Betreiberentscheidung (`CLAUDE.md` §5) und verlangt zusätzlich, zwei CI-Prüfungen umzustellen (`berlin-aktivierung-test.js` 1f und 10u) | nein | nur per Merge | nur per Merge |
+| Flag über die App lesen | `/api/health` antwortet **HTTP 401** (erneut gemessen, `x-vercel-id` `fra1`); `PILOT_SECRET`/`CRON_SECRET` nicht gesetzt | nein | – | – |
+| GitHub-Actions-Umweg | **kein** Workflow im Repo nennt `VERCEL_TOKEN`, `vercel env`, `api.vercel.com` oder `HELMUT_LANDESMODULE` (11 Workflows geprüft) | nein | nein | nein |
+| Vercel-Runtime-Logs (MCP) | lesbar — zeigen HTTP-Ebene und `console`-Ausgaben, **nicht** Umgebungsvariablen. Eine Log-Zeile mit dem Landesmodul-Sperrgrund existiert nicht (`buildRelationalCrawlPlan` protokolliert sie nicht) | nein | – | – |
+
+**Ergebnis unverändert: `HELMUT_LANDESMODULE` ist aus einer Cloud-Sitzung weder lesbar noch
+setzbar noch rücksetzbar.** Es wurde **kein** Workaround gebaut.
+
+**Kleinste notwendige Betreiberaktion** — in dieser Reihenfolge:
+
+1. **Bevorzugt (eine Aktion, ohne Merge, ohne Code):** in der Vercel-Oberfläche
+   Projekt `helmut-pilot` → Settings → Environment Variables → Production
+   `HELMUT_LANDESMODULE` = `berlin` (Wert exakt, kein Sammelwort, kein zweites Land), danach
+   Redeploy. **Rücknahme:** denselben Wert auf `off` setzen oder die Variable löschen +
+   Redeploy — ein unbekannter Wert wirkt fail-closed wie „kein Land freigegeben".
+2. **Falls die Oberfläche nicht in Frage kommt:** einer Agenten-Sitzung `VERCEL_TOKEN` über die
+   Claude-Code-Environment-Einstellungen bereitstellen **und** den Egress zu `api.vercel.com`
+   öffnen. Eines allein genügt nicht.
+3. Der Weg über `helmut-flags.json` ist möglich, aber **nicht** der kleinste: er kostet zwei
+   Merges (setzen und zurücknehmen), zwei Deployments und eine Änderung an zwei CI-Prüfungen.
+
+**Was sich gegenüber §19 ändert — und was nicht.** Rollback **Ebene 0** bleibt aus einer Sitzung
+nicht verfügbar. Neu belegt ist aber, dass sie dafür nicht die einzige schnelle Sperre ist:
+**Ebene 0b** (Abnahmeprofil deaktivieren) und **Ebene 2** (Wege zurück auf `manual`) sind beide
+datenbankseitig, aus der Sitzung ausführbar und **jede für sich hinreichend**, um jeden Berliner
+Abruf zu stoppen — auch bei gesetztem Flag (§12, ausführbar geprüft). Das ändert nichts daran,
+dass der Flag-**Wert** unlesbar bleibt: wer ihn setzt, muss ihn auch zurücknehmen können.
+
+### 20.4 Backup — Werkzeug geprüft, Lücke geschlossen, zwei frische Sicherungen
+
+**Die Lücke:** `--scope=seed` sichert die **8 Quellentabellen** — und damit **keine** der beiden
+Tabellen, die Schritt 5 mutiert (`profiles`, `mandate_profiles`). `--scope=voll` deckt sie ab,
+zieht aber zusätzlich `raw_documents`, `briefings`, `interactions` und `user_notes` auf die
+Platte und hebt genau die Datenminimierung auf, wegen der es die Teil-Umfänge gibt. Für den
+einzigen mutierenden Schritt, den dieser Sprint vorbereitet, gab es also **keine passende
+Sicherung**.
+
+**Geschlossen:** neuer Umfang `--scope=profil` (genau `profiles` + `mandate_profiles`, FK-sichere
+Restore-Reihenfolge, Manifestart `pre-profil`, dieselbe serverseitige Vollständigkeitsprobe,
+dieselbe fail-closed Bewertung). `scripts/backup-export-test.js` von 38 auf **48** Prüfungen
+erweitert — inklusive „leerer Profil-Export gilt **nicht** als Sicherung" (Exit 1).
+
+**Beide Sicherungen sind real gelaufen** (read-only, 2026-07-26, gegen `mainCommit 4bc58dc`):
+
+| Art | Tabellen | Zeilen | `vollstaendig` | `pruefsummeGesamt` |
+|---|---|---|---|---|
+| `pre-seed` | 8/8 | 50 · 73 · 64 · 163 · 9 · 165 · 18 · 18 | **true** | `49a5b92d9e27fbbd…` |
+| `pre-profil` | 2/2 | `profiles` 8 · `mandate_profiles` 8 | **true** | `0c514ace8982def1…` |
+
+**Bemerkenswert und belegend:** die Gesamtprüfsumme der Quellensicherung ist **byte-identisch**
+mit der vom 2026-07-26, 16:47 UTC (`49a5b92d…`, §19.3). Die Backup-Grundlage ist damit nicht
+mehr nur aus Zeitstempeln erschlossen, sondern **gegengerechnet**: an den acht Quellentabellen
+hat sich seither keine Zeile geändert.
+
+**Grenzen, unverändert benannt:** kein transaktionaler Snapshot (sequenzielle REST-Lesungen);
+`./backups/` ist gitignored und liegt **im Container dieser Sitzung** — beide Artefakte
+verschwinden mit ihr. Die Regel aus §19.3 gilt weiter: **vor jeder Mutation neu exportieren.**
+Neu ist, dass jetzt für beide betroffenen Tabellengruppen ein passender, geprüfter Befehl
+existiert. **Der Rückweg für Schritt 5 ist nicht der Restore, sondern die drei Rollback-Dateien**
+— zeilenscharf, fail-closed und gegen ein echtes PostgreSQL bewiesen. Die `pre-profil`-Sicherung
+ist die Beweisgrundlage für den Vorher-/Nachher-Vergleich, kein Wiederherstellungsautomat.
+`OP-01` (Supabase Pro + PITR) bleibt davon **unberührt und offen**.
+
+### 20.5 Neuer, gemessener Betriebsbefund: die Crawl-Cron läuft ins Funktionslimit
+
+Beim Prüfen des Beobachtungskanals (Vercel-Runtime-Logs, MCP) gemessen, **nicht** vorher
+dokumentiert:
+
+- In den letzten **7 Tagen** gab es **3** Antworten mit **HTTP 504** — **alle drei** auf
+  `/api/cron/crawl`, verteilt auf zwei Deployments.
+- Der Lauf um **20:00 UTC am 2026-07-26** endete mit
+  `Vercel Runtime Timeout Error: Task timed out after 300 seconds`. Im selben Lauf:
+  `eager-understanding 92371ms` für **ein** Mandat und **7** Zeitüberschreitungen auf
+  Google-News-**Profilquellen** eines weiteren Mandats.
+- Die Telemetrie desselben Laufs (`crawl-20260726200015-z3qaf`) ist trotzdem sauber: **147**
+  Zeilen = **147** distinct `source_id`, **145** `ok`, **0** `error`. Der Abrufteil lief durch;
+  überzogen hat die Weiterverarbeitung. Ein Blick allein auf `source_crawl_telemetry` hätte
+  diesen Befund **nicht** gezeigt.
+
+**Warum das für Punkt 14 zählt:** die Crons verarbeiten die aktiven Mandate **sequenziell** in
+aufsteigender Id-Reihenfolge mit hartem Zeitbudget (`runCronForTenants`). Das Abnahmeprofil wäre
+ein **7.** aktives Mandat und stünde nach Id-Sortierung an **Position 3 von 7** — es schiebt also
+**4** Bestandsmandate je eine Position nach hinten, in einer Schleife, die das Funktionslimit
+bereits erreicht. Zusätzlich erzeugt jedes aktive Mandat eigene Profilquellen: **gemessen 5
+Mandatsquellen + 1 Personenquelle = 6 zusätzliche Abrufe je Crawl-Lauf**, alle über Google News
+(verstärkt Befund **B1**). Diese 6 Abrufe entstehen, **sobald das Profil aktiv ist** — unabhängig
+vom Flag und unabhängig von jedem Berliner Abrufweg.
+
+Das ist kein Grund, den Beweislauf nicht zu fahren — aber es ist eine **Betreiberentscheidung**
+und gehört in die Abbruchkriterien:
+
+- **Neues Abbruchkriterium 16:** ein Cron-Lauf meldet `Zeitbudget erschoepft` (systemError) oder
+  `/api/cron/crawl` antwortet häufiger mit `504` als im Vorlauf → **Rollback Ebene 0b** (Profil
+  deaktivieren), damit kein Bestandsmandat unversorgt bleibt.
+- **Vor dem Beweislauf zu messen:** `504`-Rate auf `/api/cron/crawl` über 7 Tage (Ist: **3**) und
+  die Zahl der `Zeitbudget erschoepft`-Systemfehler (Ist: 0 im dokumentierten Zeitraum).
+- **Bewusst nicht getan:** die Abnahme-Id **nicht** so umbenannt, dass sie ans Ende der
+  Sortierung fällt. Das hätte zwar die Bestandsmandate nach vorn geholt, aber dafür das
+  Testmandat selbst zum wahrscheinlichsten Abschnittskandidaten gemacht — ein Beweislauf, der
+  „0 Berliner Dokumente" meldet, weil sein Mandat gar nicht verarbeitet wurde, wäre die
+  schlechtere Fehlerart. Beide Fälle sind seit dem Incident vom 2026-07-25 sichtbar
+  (systemError), keiner ist still. Die Wahl gehört dem Betreiber.
+
+### 20.6 Go-/No-Go
+
+| Voraussetzung | Stand |
+|---|---|
+| Aktivierungs-SQL (Block A, B1, Stufe 1, Stufe 2) + 4 Rollback-Dateien | **erfüllt** (14A, gegen echtes PostgreSQL bewiesen) |
+| **Abnahmeprofil ausführbar, idempotent, mit Rückweg** | **erfüllt (14B)** — 4 Dateien, 36/36 gegen echtes PostgreSQL, Dry Run gegen Production Exit 0 |
+| Sicherung für **alle** von der Reihenfolge berührten Tabellen | **erfüllt (14B)** — `--scope=seed` **und** `--scope=profil`, beide `vollstaendig: true` |
+| Rückweg aus einer Cloud-Sitzung heraus | **erfüllt** — Ebene 0b und Ebene 2, jede allein hinreichend, ausführbar geprüft |
+| Brandenburg gesperrt, Bund unberührt | **erfüllt** — Kontrollfragen in beiden Dry Runs durchweg 0 |
+| **`HELMUT_LANDESMODULE` setzbar und rücksetzbar** | **NICHT erfüllt** — Betreiberaktion, §20.3 |
+
+**Ergebnis: Go für alles, was ohne den Flag-Zugang möglich ist — No-Go für den Beweislauf
+selbst.** Von den beiden Blockern des zweiten Anlaufs ist einer beseitigt: das Abnahmeprofil ist
+kein offener Entwicklungspunkt mehr, sondern eine geprüfte Datei. Es bleibt **genau eine**
+Voraussetzung, und sie ist **keine Entwicklungsaufgabe**, sondern eine Betreiberhandlung von
+etwa einer Minute (§20.3, Weg 1).
+
+**Nach dieser einen Handlung ist der Beweislauf ohne weitere Entwicklung fahrbar:** frisches
+Backup (`--scope=seed` **und** `--scope=profil`) → beide Dry Runs → Block A → Abnahmeprofil →
+B1 → Flag ist bereits gesetzt → Stufe 1 → ein voller Crawl-Zyklus beobachten → **erst dann**
+Stufe 2.
