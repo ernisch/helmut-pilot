@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-26 · **`main`-HEAD:** `62bcb28` (Merge #136)
+**Letzte Aktualisierung:** 2026-07-26 · **`main`-HEAD:** `2f58d4c` (Merge #138)
 
 > **Diese Datei ist der aktuelle Stand.** Bei Widerspruch zu älteren Statusdokumenten
 > gilt diese Datei. Sie enthält **keine Chronik** — Details je offenem Punkt stehen in
@@ -43,6 +43,8 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | **Automatische Profil→Paket-Zuweisung belegt** — Bund/Berlin/Brandenburg gegen den echten Production-Katalog, ohne Codeänderung; keine Mandanten-Hardcodes, Bestandsmandanten unverändert | `scripts/paketzuweisung-nachweis-test.js` 147/147, Inventur §6; PR #124, gemergt 2026-07-25 (`118e90c`) |
 | **Fachliche Vollständigkeit aller Quellenpakete belegt** (Phase-1-Punkt 13) — alle **8** Pakete abgeschlossen: **7 vollständig + 1 vollständig mit belegten Ausnahmen**, 0 teilweise, 0 blockiert. Ausführbares Kriterium je Paket (Pflichtklassen · Pflicht-Herausgeberklassen · Vollzähligkeit · begründete Überschneidungen · geprüfte Nicht-Anwendbarkeit); **keine** Vollzähligkeitsregel ist mehr katalogrelativ: Ausschüsse **24/24** und Fraktionen **5/5** gegen amtliche Sollmengen. **Ausschussstruktur zusätzlich Bezeichnung für Bezeichnung gegen die amtliche Bundestagsgrundlage abgeglichen** (Anzahl, Namen, Schreibweise, Ausschussnummer, Sonderfälle, Umbenennungen): 22 von 24 stimmten, **2 amtliche Bezeichnungen korrigiert** (Nr. 4 → „Innenausschuss", Nr. 15 → „Verkehrsausschuss") | `quellenarchitektur/31-paketvollstaendigkeit.md` §2a–§2c; `bundestag-ausschuesse-test.js` 54/54, `parlamentszusammensetzung-test.js` 65/65, `paketvollstaendigkeit-test.js` 99/99, Offline-Suite 150/150, Browser-Smoke 32/32; Branch `claude/helmut-phase1-punkt13-9iwu69` |
 
+| **Punkt 14A: Berliner Aktivierung technisch abgesichert** — V-1 (Staffelung strukturell erzwungen: 9 Einzeldateien, je eine Transaktion, fail-closed `raise exception`-Riegel, Telemetriebeleg vor Stufe 2, Rollback je Stufe, Dry Run je Schritt) und V-2 (Landesmodule brauchen Freigabe **und** ein berechtigtes Landtagsmandat) | PR #138, gemergt 2026-07-26 19:14 UTC (`2f58d4c`), CI grün, Deployment `READY`. **Keine** Production-Mutation; auf `main` read-only nachgemessen: 0 Landesmodul-Wege aktiv, alle 18 Landeswege `needs_review`+`manual` |
+
 ## 3 · Teilweise abgeschlossen (Code da, Abnahme fehlt)
 
 | Punkt | Was fehlt | → OP |
@@ -55,7 +57,7 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | **Kostenmessung je Lauf und je Tag** (Phase-1-Punkt 17) — Auswertung ist belastbar und ehrlich: Beispiellauf **0,026805 USD**, Betriebstag im Mittel **0,1370 USD**, global/direkt **79 %/21 %** gemessen, unbekannte Kosten nie als 0,00; PR #136 | die **Datengrundlage** ist unvollständig: ~16 % Logverlust (K-1) · Preisbasis unbelegt (K-2) · Nicht-LLM-Provider ungemessen und ungedeckelt (K-6) · Gesamtbetrag nur **Untergrenze** · pro Mandant nur die 21 % direkt zurechenbaren Kosten (Rest bleibt global) · Ringpuffer 5 000 (K-7) | Punkt 17 · OP-03 |
 | Understanding-Gate, Cheap-Triage, Scoring, Berlin/Brandenburg | in `shadow`/`off`, Scharfschaltung ist Freigabe | OP-18, OP-21, OP-22 |
 | Pre-Seed-Sicherung + gezielter Seed-Restore (kein `drop table cascade`) — gebaut, adversarial reviewt, isoliert getestet (43/43 lokal, 41/41 in CI; `backup-export-test` 38/38; Suite 147/147). **Am 2026-07-26, 16:47 UTC erstmals real gegen Production gelaufen:** 8/8 Tabellen, 0 Fehler, `vollstaendig: true`, `pruefsummeGesamt` `49a5b92d…`, an `mainCommit 93006e8` gebunden | der **Restore** ist weiterhin nie gegen Production gelaufen; deckt nur 8 Tabellen ab und ersetzt OP-01 nicht | OP-01 |
-| **Berlin-Aktivierungsreife (Phase-1-Punkt 14)** — Gate je Land freigebbar, `manual` ist eine echte Sperre, Aktivierungs-SQL + 3 Rollback-Stufen generiert und getestet, Runbook vollständig. **Zweiter Durchgang 2026-07-26:** Neutralität von `berlin-basis` ist jetzt eine **ausführbare Prüfung** (Code neutral, Production-Bestand **nicht** — Befund A-3 reproduziert), Wege **neu verifiziert** (Aktivierungsset 6 → **4**, zwei Wege veraltet), Lastmodell gegen gemessene Production-Zahlen korrigiert, Profilplan getestet, Aktivierung gestaffelt, Rollback gehärtet. **Dritter Durchgang (Production-Sprint) 2026-07-26:** Ausgangszustand vollständig gemessen, **Sicherung real erstellt**, Dry Run gegen den Ist-Zustand bestätigt (3/3/1/2 Zeilen, 0 Bund, 0 Brandenburg). **Vierter Durchgang (Zwischensprint 14A) 2026-07-26:** die beiden Vorprüfungsbefunde sind **behoben** — **V-1** (Staffelung war nur ein Kommentar: Block A/B1/Stufe 1/Stufe 2 in einer Datei, Block B in einer Transaktion) → **9 Dateien, je eine Transaktion**, mit `raise exception`-Riegeln, Reihenfolge in beide Richtungen erzwungen, **Telemetriebeleg** für Stufe 2 (je Weg ≥2 `ok`-Läufe), Dry Run **je Schritt**, Rollback **je Stufe**; **V-2** (Landesquellenauflösung wirkte global) → Landesmodule brauchen **Freigabe UND ein berechtigtes Landtagsmandat**, und ihre Wege erscheinen nur in der Versorgung berechtigter Mandate (`planQuellenFuerProfil`). Read-only gemessen: **kein** Production-Effekt heute (0 Landesmodul-Wege aktiv, Plan unverändert 140 Wege, alle 8 Profile mit unveränderter Versorgung) | die **Production-Aktivierung selbst** — unverändert blockiert an einem fehlenden Zugang: `HELMUT_LANDESMODULE` ist aus einer Cloud-Sitzung weder lesbar noch setzbar (`berlin-aktivierung.md` §16.5). Neu benannt: 7 Restrisiken in `berlin-aktivierung.md` §18.4 | Punkt 14 |
+| **Berlin-Aktivierungsreife (Phase-1-Punkt 14)** — Gate je Land freigebbar, `manual` ist eine echte Sperre, Aktivierungs-SQL + 3 Rollback-Stufen generiert und getestet, Runbook vollständig. **Zweiter Durchgang 2026-07-26:** Neutralität von `berlin-basis` ist jetzt eine **ausführbare Prüfung** (Code neutral, Production-Bestand **nicht** — Befund A-3 reproduziert), Wege **neu verifiziert** (Aktivierungsset 6 → **4**, zwei Wege veraltet), Lastmodell gegen gemessene Production-Zahlen korrigiert, Profilplan getestet, Aktivierung gestaffelt, Rollback gehärtet. **Dritter Durchgang (Production-Sprint) 2026-07-26:** Ausgangszustand vollständig gemessen, **Sicherung real erstellt**, Dry Run gegen den Ist-Zustand bestätigt (3/3/1/2 Zeilen, 0 Bund, 0 Brandenburg). **Vierter Durchgang (Zwischensprint 14A) 2026-07-26:** die beiden Vorprüfungsbefunde sind **behoben** — **V-1** (Staffelung war nur ein Kommentar: Block A/B1/Stufe 1/Stufe 2 in einer Datei, Block B in einer Transaktion) → **9 Dateien, je eine Transaktion**, mit `raise exception`-Riegeln, Reihenfolge in beide Richtungen erzwungen, **Telemetriebeleg** für Stufe 2 (je Weg ≥2 `ok`-Läufe), Dry Run **je Schritt**, Rollback **je Stufe**; **V-2** (Landesquellenauflösung wirkte global) → Landesmodule brauchen **Freigabe UND ein berechtigtes Landtagsmandat**, und ihre Wege erscheinen nur in der Versorgung berechtigter Mandate (`planQuellenFuerProfil`). Read-only gemessen: **kein** Production-Effekt heute (0 Landesmodul-Wege aktiv, Plan unverändert 140 Wege, alle 8 Profile mit unveränderter Versorgung). **Fünfter Durchgang (zweiter Production-Anlauf) 2026-07-26, 19:15–19:30 UTC:** PR #138 ist gemergt (`2f58d4c`, CI grün, Deployment `READY`), Startprüfung **11 von 14** erfüllt, Ausgangszustand neu gemessen, alle **8** Dry-Run-Schritte grün, Suiten grün (156/156 · Berlin 126/71/109 · Mandatsgate 71 · Punkt 16 160/160 · Punkt 17 128/128). **Erneut nichts mutiert** (`berlin-aktivierung.md` §19) | die **Production-Aktivierung selbst** — jetzt an **zwei** Bedingungen blockiert. **(1)** `HELMUT_LANDESMODULE` ist aus einer Cloud-Sitzung weder lesbar noch setzbar noch rücksetzbar → Rollback Ebene 0 nicht verfügbar (§19.4). **(2) Neu:** Production führt **0 Landtagsprofile** (8 Profile, alle `bundestag`) — seit 14A/V-2 aktiviert das Flag ohne berechtigtes Landtagsmandat **0** Berliner Wege; der Beweislauf wäre auch mit Flag ein No-Op (§19.5). Restrisiken: `berlin-aktivierung.md` §18.4 | Punkt 14 |
 | **Automatische Quellenstörungs-Erkennung (Phase-1-Punkt 16)** — `source_crawl_telemetry` hat einen Lesepfad (Befund **A-6** behoben); 14 Zustandsklassen, 4 Handlungsstufen, rhythmus-bewusste Leer-/Veraltet-Schwellen, Erholungsregel, Paket-/Mandatswirkung, Meldungs-Deduplizierung; Admin-Bereich „Quellen & Watchdog” erweitert | der **Production-Beleg für 7 der 14 Klassen** (u. a. `parserfehler`, `veraltet`, `nie_erfolgreich`) — diese Fehler sind in Production real nie aufgetreten und dürfen nicht künstlich erzeugt werden; ausschließlich testbelegt | Punkt 16 |
 | OP-06 Terminales Aussortieren des Alt-Rückstands (34 Fälle, Default AUS) | Ausführung ist freigabepflichtig — **und** eine offene Fachfrage: 16 der 34 Allowlist-Einträge sind mit „außerhalb Mandat" begründet, also relativ zum Pilotmandat, geschrieben wird aber in das mandantenneutrale `knowledge_objects` (kein `tenant_id`). Ein künftiger Zweitmandant mit regionalem/EU-Schwerpunkt bekäme diese Vorgänge dauerhaft nie verstanden | OP-06 |
 
@@ -166,7 +168,7 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 
 | PR | Inhalt | Einschätzung |
 |---|---|---|
-| **#138** | **Punkt 14A: Berliner Aktivierung technisch absichern** — V-1 (Staffelung strukturell erzwungen: 9 Einzeldateien, fail-closed Riegel, Telemetriebeleg vor Stufe 2, Rollback je Stufe, Dry Run je Schritt) und V-2 (Landesmodule brauchen Freigabe **und** ein berechtigtes Landtagsmandat; Landeswege nur in der Versorgung berechtigter Mandate) | **mergefähig**, CI grün (beide Pflicht-Checks). Keine Production-Mutation, heute messbar wirkungslos (Plan vor/nach identisch: 140 aktive Wege, 0 Landeswege, 8/8 Profile unverändert). Merge = Deployment und bleibt Betreiberentscheidung |
+| #132 | Phase-1-Punkt 15: Brandenburg Activation Readiness (aktiviert nichts) | **nicht in der jetzigen Form mergen.** Basiert auf `ca80b2f` (**vor** #138) und führt ein **konkurrierendes** Gate `HELMUT_LANDESMODUL_FREIGABE` ein; `main` kennt seit 14A ausschließlich `HELMUT_LANDESMODULE`. Vor einem Merge: Gate-Name vereinheitlichen und Branch auf den Stand nach #138 heben (`berlin-aktivierung.md` §19.6). Heute wirkungslos, weil nicht gemergt |
 | #117 | WBSB-Pilotpaket + Workflow-Härtung vereinigt | **Draft, ausdrücklich nicht mergen** (öffnet nur die CI-Prüfung) |
 | #115 | Bestandsabgleich `bund-basis` + Pflichtquellen-Verifikationstest | **Draft, ausdrücklich nicht mergen** (nur um den Workflow auf einem Runner mit Egress laufen zu lassen) |
 | #112 | Geführter Erstlogin-/Onboarding-Flow (14 Screens) | manuelle Abnahme im Preview ausstehend |
@@ -226,13 +228,32 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
   Rohdokumente **1978**/7 Tage ≈ 283/Tag · Knowledge Objects **274**/7 Tage ≈ 39/Tag ·
   Originalverweis **99,5 %**. **Berlin weiterhin bei null:** 0 Rohdokumente, **0 Telemetriezeilen
   jemals**, alle 10 BE-Wege `needs_review`+`manual`, `berlin-basis` `prepared`, 0 Landtagsprofile.
-- **Zugangsgrenze einer Cloud-Sitzung (neu belegt 2026-07-26):** Supabase ist erreichbar
-  (`SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` gesetzt, Egress HTTP 200) — Messung, Backup und SQL
-  sind möglich. **Nicht** erreichbar sind Vercel-Env (`VERCEL_TOKEN` nicht gesetzt, Vercel-MCP hat
-  kein Env-Werkzeug) und die Production-App selbst (`CONNECT` → **403**, `CRON_SECRET` nicht gesetzt).
-  **Folge:** `HELMUT_LANDESMODULE` ist aus einer Cloud-Sitzung weder lesbar noch setzbar, und ein
-  Crawl ist von dort nicht auslösbar. Das blockiert jede Landesmodul-Aktivierung (Berlin wie
+- **Zugangsgrenze einer Cloud-Sitzung (präzisiert 2026-07-26, 19:15–19:30 UTC):** Supabase ist
+  erreichbar (`SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` gesetzt, Egress HTTP 200) — Messung, Backup
+  und SQL sind möglich. **Nicht** verfügbar ist die Vercel-Env: `VERCEL_TOKEN` ist nicht gesetzt,
+  der Vercel-MCP-Server ist zwar **authentifiziert** (Team `nohut`, `prj_xbZ6…`), stellt aber **kein**
+  Env-Werkzeug bereit, und `api.vercel.com`/`vercel.com` sind proxy-gesperrt (`CONNECT` → **403**) —
+  ein bereitgestelltes `VERCEL_TOKEN` allein würde deshalb **nicht** genügen, der Egress müsste
+  zusätzlich geöffnet werden.
+  **Zwei ältere Angaben sind damit überholt:** (a) die Production-App ist **erreichbar** — über
+  `web_fetch_vercel_url` (Vercel-MCP) antwortet sie mit **HTTP 401** statt des Proxy-`403`; sie ist
+  also nicht unerreichbar, sondern unauthentifiziert (`PILOT_SECRET`/`CRON_SECRET` nicht gesetzt),
+  und der Aufruf ist `GET`-only ohne eigene Header, kann also weder einen Crawl auslösen noch einen
+  geschützten Endpunkt lesen. (b) Vercel-**Runtime-Logs** sind über MCP lesbar — ein
+  Beobachtungskanal existiert, er zeigt aber HTTP-Ebene, **nicht** Umgebungsvariablen.
+  **Folge unverändert:** `HELMUT_LANDESMODULE` ist weder lesbar noch setzbar noch rücksetzbar; damit
+  ist Rollback Ebene 0 nicht verfügbar. Das blockiert jede Landesmodul-Aktivierung (Berlin wie
   Brandenburg) unabhängig vom Datenbankstand.
+- **Nachmessung 2026-07-26, 19:21–19:24 UTC (zweiter Berlin-Production-Anlauf, read-only):** Bestand
+  gegenüber 16:45–16:52 UTC **unverändert**. 9 Pakete · 163 Abrufwege · 165 Paketzuordnungen ·
+  **8 Profile, 6 aktiv, politische Ebene ausnahmslos `bundestag`** → **0 Landtagsprofile** ·
+  alle 18 Landesmodul-Wege (9 BE + `rp-rbb24-politik` + 8 BB) `needs_review`+`manual`,
+  `last_success_at` **null** · Berliner Rohdokumente und Telemetriezeilen **jemals 0** ·
+  Pending unverändert **50** (43 + 7) · LLM heute **34**/100 (Vortage 53/65/53/55) ·
+  Fehlerrate 24 h **1,1 %** (28 von 2 534), 56 `circuit-open` · `pipeline_locks` 3 Zeilen,
+  **alle abgelaufen** · letzte DB-Änderung 2026-07-26 **11:13:10 UTC** — also **vor** der Sicherung
+  von 16:47, deren Grundlage damit weiterhin gültig ist (die Exportdatei selbst lag im Container
+  jener Sitzung und existiert nicht mehr; vor jeder Mutation neu exportieren).
 - **Zustand:** 0 neue `systemErrors` im dokumentierten Beweiszeitraum; Betriebsbefunde
   B1 (Google-News-Klumpenrisiko, 146 von 163 Wegen über Google) und B2
   (Understanding-Rückstand) bleiben offen. Neu belegt: jeder Cron-Lauf erscheint doppelt —
@@ -251,6 +272,9 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 
 | Datum | Entscheidung |
 |---|---|
+| 2026-07-26 | **Der Berliner Beweislauf braucht zwei Voraussetzungen, nicht eine** — der zweite Production-Anlauf hat belegt, dass der Flag-Zugang allein nicht genügt. Seit 14A/V-2 aktiviert `HELMUT_LANDESMODULE=berlin` **ohne** ein berechtigtes Berliner Landtagsprofil **0** Wege; Production führt 0 Landtagsprofile. Ein Anlauf, der nur das Flag beschafft, endet in einem No-Op statt in einem Beweis (`berlin-aktivierung.md` §19.5) |
+| 2026-07-26 | **Ein `VERCEL_TOKEN` allein macht die Vercel-Env aus einer Cloud-Sitzung nicht erreichbar** — `api.vercel.com` und `vercel.com` sind proxy-gesperrt (`CONNECT` → 403). Die Übergabe an den Betreiber verlangt deshalb entweder das Setzen des Flags durch ihn selbst **oder** Token **und** geöffneten Egress. Die frühere Formulierung „einer Agenten-Sitzung `VERCEL_TOKEN` bereitstellen" war unvollständig (§19.4) |
+| 2026-07-26 | **Ein Backup, auf das nicht mehr zugegriffen werden kann, gilt nicht als Backup** — die Sicherung vom 16:47 UTC ist inhaltlich weiterhin gültig (die drei gebundenen Tabellen sind seit 11:13 UTC unverändert), ihre Exportdatei lag aber im Container jener Sitzung. Vor jeder künftigen Mutation wird neu exportiert, statt sich auf ein Manifest aus einer beendeten Sitzung zu berufen |
 | 2026-07-26 | **Eine gestaffelte Production-Änderung wird durch getrennte Dateien und ausführbare Riegel erzwungen, nicht durch Kommentare** (14A/V-1). Jede Stufe hat eine eigene Transaktion, eigene Vor-/Nachbedingungen als `raise exception`, einen eigenen Dry Run und einen eigenen Rollback. Die frühere Sammeldatei bleibt als **fail-closed Stop-Datei** erhalten, damit eine ältere Anleitung nichts mehr aktiviert |
 | 2026-07-26 | **Die Reihenfolge einer Staffelung wird am Betriebsbeleg geprüft, nicht am Zustand** (14A/V-1). Stufe 2 verlangt je Stufe-1-Weg mindestens **2** Läufe mit `status='ok'` in `source_crawl_telemetry`. Zwei Dateien direkt hintereinander auszuführen wäre formal „Stufe 1 zuerst“ und trotzdem genau der Lastfall, den die Staffelung verhindern soll |
 | 2026-07-26 | **Ein Landesmodul braucht Freigabe UND ein berechtigtes Landtagsmandat** (14A/V-2). Das Flag allein genügte bisher; über den zweiländrigen `rp-rbb24-politik` konnte ein **Brandenburger** Mandat bei reiner Berlin-Freigabe einen Landesweg starten. Gezählt wird über `resolveProfilePackages()` — ein **Bundestags**mandat mit `bundesland='Berlin'` berechtigt Berlin nicht (4 der 6 aktiven Production-Profile sind genau das) |
@@ -297,21 +321,33 @@ ausführen** — er ist unabhängig von allem anderen, beseitigt das größte
 Einzelrisiko und ist Voraussetzung dafür, dass die Migration aus OP-03 gefahrlos
 eingespielt werden kann.
 
-**Punkt 14 hat nach dem Zwischensprint 14A (2026-07-26) nur noch EINEN Blocker: den Zugang.**
-Die beiden technischen Vorprüfungsbefunde sind behoben — die Staffelung ist strukturell erzwungen
-(9 Einzeldateien, fail-closed Riegel, Telemetriebeleg vor Stufe 2, Rollback je Stufe) und die
-Landesmodule brauchen jetzt Freigabe **und** ein berechtigtes Landtagsmandat. Beides ohne
-Production-Effekt heute (read-only gemessen: 0 Landesmodul-Wege aktiv, Plan unverändert).
-Details und die aktualisierte Ausführungsreihenfolge: `betrieb/berlin-aktivierung.md` §9/§18.
+**Für Punkt 14 gilt: kein dritter Anlauf ohne beide Voraussetzungen.** Ein weiterer
+Production-Sprint ist erst sinnvoll, wenn (1) `HELMUT_LANDESMODULE` gesetzt **und**
+zurücknehmbar ist und (2) das Berliner Abnahmeprofil eingeplant ist — sonst wiederholt er
+nur die Messung. Beide Punkte und der genaue Übergabeweg stehen in
+[`betrieb/berlin-aktivierung.md`](betrieb/berlin-aktivierung.md) §19.8.
 
-**Zuerst nötig, damit Punkt 14 überhaupt weitergehen kann: ein Weg zum Landesmodul-Flag.**
-Der Production-Sprint vom 2026-07-26 hat alles Datenbankseitige vorbereitet und gemessen, aber
-**nicht aktiviert** — `HELMUT_LANDESMODULE` ist aus einer Cloud-Sitzung weder lesbar noch setzbar
-(`betrieb/berlin-aktivierung.md` §16.5). Der Betreiber wählt einen der beiden Wege:
-**(a)** Wert `berlin` selbst in der Vercel-Env setzen und die Aktivierung nach §16.6 begleiten, oder
-**(b)** einer Agenten-Sitzung `VERCEL_TOKEN` über die Claude-Code-Environment-Einstellungen
-bereitstellen (`CLAUDE.md` §4.9), damit der Schritt dort ausführbar wird. Ohne einen der beiden Wege
-bleibt Punkt 14 blockiert — und Punkt 15 (Brandenburg) aus demselben Grund ebenfalls.
+**Punkt 14 hat nach dem zweiten Production-Anlauf (2026-07-26) ZWEI Blocker — nicht mehr nur den
+Zugang.** Die beiden technischen Vorprüfungsbefunde sind mit PR #138 behoben und gemergt: die
+Staffelung ist strukturell erzwungen (9 Einzeldateien, fail-closed Riegel, Telemetriebeleg vor
+Stufe 2, Rollback je Stufe) und die Landesmodule brauchen jetzt Freigabe **und** ein berechtigtes
+Landtagsmandat — beides ohne Production-Effekt heute (read-only gemessen: 0 Landesmodul-Wege aktiv).
+Genau die zweite Verschärfung erzeugt aber den neuen Blocker:
+
+1. **Flag-Zugang.** `HELMUT_LANDESMODULE` ist aus einer Cloud-Sitzung weder lesbar noch setzbar noch
+   rücksetzbar → Rollback Ebene 0 nicht verfügbar (`betrieb/berlin-aktivierung.md` §19.4). Der
+   Betreiber wählt: **(a)** Wert `berlin` selbst in der Vercel-Env setzen und die Aktivierung nach
+   §19.8 begleiten, oder **(b)** einer Agenten-Sitzung `VERCEL_TOKEN` bereitstellen **und**
+   zusätzlich den Egress zu `api.vercel.com` öffnen — **(b) allein genügt nicht**, die Vercel-API
+   ist aus der Sitzung proxy-gesperrt.
+2. **Kein Berliner Landtagsprofil.** Production führt **8 Profile, alle `bundestag`** — 0
+   Landtagsprofile. Seit 14A/V-2 aktiviert das Flag ohne berechtigtes Landtagsmandat **0** Berliner
+   Wege. Ein Anlauf, der nur (1) löst, endet in einem No-Op statt in einem Beweis
+   (`betrieb/berlin-aktivierung.md` §19.5). Das Abnahmeprofil (§8.2) ist Schritt 5 der bindenden
+   Reihenfolge und darf dem Flag **nicht** vorgezogen werden.
+
+Ohne **beide** Punkte bleibt Punkt 14 blockiert — und Punkt 15 (Brandenburg) aus demselben Grund
+ebenfalls.
 
 **Ansonsten entscheidungsreif und wartend (seit 2026-07-26): die Berlin-Aktivierung.** Punkt 14 ist bis
 unmittelbar vor die erste Production-Änderung vorbereitet; jeder Eingriff ist zeilengenau benannt
@@ -361,6 +397,7 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 
 | Sprint | Datum | Zustand |
 |---|---|---|
+| **Punkt 14 (2. Production-Anlauf): Berlin Stufe 1 in Production aktivieren und beweisen** | 2026-07-26 | **Blockiert — erneut keine Production-Mutation.** **11 von 14** Startbedingungen erfüllt. Nicht erfüllt: **(8)** `HELMUT_LANDESMODULE` ist weder lesbar noch setzbar noch rücksetzbar → **Rollback Ebene 0 nicht verfügbar**, Abbruchkriterium **14** greift vor jeder Mutation; **(7)** Production-Zugänge nur teilweise; **(10)** die Backup-*Grundlage* ist gültig (die drei gebundenen Tabellen sind seit 11:13 UTC unverändert), das Backup-*Artefakt* aus der Vorsitzung existiert nicht mehr. **Neuer, zweiter Blocker:** Production führt **0 Landtagsprofile** (8 Profile, alle `bundestag`) — seit 14A/V-2 aktiviert das Flag ohne berechtigtes Landtagsmandat **0** Berliner Wege; der Beweislauf wäre auch mit Flag ein No-Op. **Zwei Zugangsangaben korrigiert:** die Production-App ist **erreichbar** (über `web_fetch_vercel_url` **HTTP 401** statt Proxy-403, also unauthentifiziert statt unerreichbar; `GET`-only ohne Header → kein Crawl auslösbar), und ein `VERCEL_TOKEN` allein würde **nicht** genügen, weil `api.vercel.com` proxy-gesperrt ist. **Erreicht:** Ausgangszustand vollständig neu gemessen · alle **8** Dry-Run-Schritte grün, Kontrollfragen durchweg **0** (Brandenburg, Bund, Partei-/Fraktions-/Personenwege, fremde Pakete) · Brandenburg und Bund nachweislich unberührt · PR #132 als konkurrierender Gate-Name erkannt. **Nicht getan:** kein `insert`/`update`/`delete`, kein Flag, kein Profil, kein Backup, kein Crawl, keine Stufe 1, keine Stufe 2, kein Rollback (keiner nötig). Beobachtete erfolgreiche Berliner Production-Läufe: **0**. Offline-Suite **156/156**; Berlin 126/71/109, Mandatsgate 71, Punkt 16 **160/160**, Punkt 17 **128/128**, Seed-Drift grün. Kanonisch: `betrieb/berlin-aktivierung.md` §19 |
 | **Phase-1-Punkt 16: Quellenfehler vollständig automatisch erkennen** | 2026-07-26 | **Teilweise abgeschlossen — Erkennung vollständig gebaut und getestet, Production lesend belegt, 7 Klassen nur testbelegt.** Befund **A-6 behoben**: `source_crawl_telemetry` (13 081 echte Laufzeilen) hatte **keinen Lesepfad**, während `retrieval_paths.last_success_at`/`last_error`/`error_streak` zu **0 von 163** befüllt sind — die Admin-Ansicht las genau die leeren Spalten und meldete **falsches Grün**. Neue zentrale, reine Klassifikation mit **14 Zustandsklassen** und **4 Handlungsstufen**, abgeleitet aus der echten Laufhistorie statt zweitgespeichert (**keine Migration, kein Production-Write**). Fünf belegte Fehlalarmbremsen: übersprungene Läufe und zentrale Drosselung sind **keine** Quellenfehler (1 736 bzw. **4 044** der 13 081 Zeilen), Leer/Veraltet brauchen **zusätzlich** eine überschrittene Lieferpause, ein Einzelausreißer wird nie hochgestuft, zu wenig Daten heißt `unbekannt`. **Production-Gegenprobe (read-only)** über 205 Quellen: 150 ohne Handlungsbedarf, 48 beobachten, 6 zeitnah, **1 akut**; **141 von 154** je gestörten Quellen hatten sich selbst erholt — ein naiver Alarm hätte 154 Meldungen erzeugt, 141 davon bereits erledigt. Deduplizierung gegen echte Daten belegt (**0** neue Meldungen bei unverändertem Zustand). `source-failure` **160/160** (neu), `admin-source-ui` **40/40** (von 20 erweitert), **Offline-Suite 153/153**, Browser-Smoke 32/32. **Keine Production-Mutation, kein Cron, kein Flag, keine Migration.** Berlin/Brandenburg unverändert (beide Pakete bleiben `unbestimmt`, keine Störung behauptet). Punkt 17 unberührt. Details unten. |
 | **Punkt 14 (Production-Sprint): Berlin Stufe 1 aktivieren** | 2026-07-26 | **Blockiert — keine Production-Mutation.** 11 von 12 Startbedingungen erfüllt; Bedingung **10** (notwendige Production-Zugänge) **nicht**: `HELMUT_LANDESMODULE` ist aus einer Cloud-Sitzung weder lesbar noch setzbar (`VERCEL_TOKEN` nicht gesetzt, Vercel-MCP ohne Env-Werkzeug), die Production-App ist nicht erreichbar (`CONNECT` → 403). Damit wäre **Rollback Stufe 0 nicht verfügbar** gewesen → Abbruchkriterium 20 greift vor jeder Mutation. **Erreicht:** vollständiger Ausgangszustand gemessen · **Sicherung erstmals real erstellt** (8/8 Tabellen, `vollstaendig: true` — schließt Go-Kriterium 2 der Seed-Einspielung) · Dry Run gegen den Ist-Zustand bestätigt (**3/3/1/2** Zeilen, **0** Bund, **0** Brandenburg) · Übergabe §16.6. **Nicht getan:** kein `insert`/`update`/`delete`, kein Flag, kein Profil, kein Crawl, keine Stufe 2. Brandenburg unverändert. Details unten. |
 | **Phase-1-Punkt 17: Echte Kostenmessung im Betrieb bestätigen** | 2026-07-26 | **Teilweise abgeschlossen** (Status nach unabhängigem adversarialem Review von PR #136 **von „erfolgreich abgeschlossen" herabgestuft**). **Was erfüllt ist:** Kosten sind **pro Lauf** und **pro Tag** mit read-only Production-Messung belegt (Beispiellauf `crawl-20260726160130-7bznw`: 147 Abrufwege, 940 neue Dokumente, 8 LLM-Aufrufe, **0,026805 USD**; Betriebstag im Mittel **0,1370 USD** über 7 volle Tage), zwei unabhängige Wege liefern identische Zahlen, unbekannte Kosten erscheinen nie als 0,00, und die Trennung global/direkt/nicht-zurechenbar ist gemessen (**79 % / 21 % / 0 %**). **Warum nicht erfolgreich abgeschlossen:** das Abnahmekriterium verlangt einen **vollständigen Production-Kostennachweis**; geliefert ist eine **Untergrenze auf unbelegter Preisbasis**. Die sechs Einschränkungen bestehen unverändert fort: ~16 % Logverlust (K-1) · Preise sind intern deklarierte Schätzwerte (K-2) · Nicht-LLM-Providerkosten ungemessen (K-6) · Gesamtbetrag nur Untergrenze · pro Mandant nur direkt zurechenbare Teilkosten (79 % bleiben global) · Ringpuffer 5 000 (K-7). Der Review fand zusätzlich **4 Code-Defekte im PR selbst**, alle behoben (siehe unten). `kostenmessung-test` **128/128**, `admin-overview` 104/104, Offline-Suite **153/153**, Browser-Smoke 32/32. **Keine Production-Mutation** — ausschließlich `select`. Details unten. |
