@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-25 · **`main`-HEAD:** `9534bc0` (Merge #127)
+**Letzte Aktualisierung:** 2026-07-26 · **`main`-HEAD:** `9f1def5` (Merge #130)
 
 > **Diese Datei ist der aktuelle Stand.** Bei Widerspruch zu älteren Statusdokumenten
 > gilt diese Datei. Sie enthält **keine Chronik** — Details je offenem Punkt stehen in
@@ -60,7 +60,7 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | Punkt | Ursache | Nächster Schritt |
 |---|---|---|
 | **OP-01** Supabase Pro + PITR | Kostenentscheidung des Betreibers (~25 $/Monat); Free-Plan = **keine Backups** | Betreiber schaltet Pro + PITR frei, dann Restore-Übung nach `betrieb/backup-restore-runbook.md` |
-| **Quellen-Seed-Einspielung** (macht P0-2 und die 6 Bundesweg-Reparaturen in der DB wirksam) | noch zwei offene Go-Kriterien: **2** die Pre-Seed-Sicherung ist **noch nicht gelaufen** · **8** die Einspielung ist nicht freigegeben. Kriterium **11** ist **entschieden**: gestaffelte Reaktivierung (§6d). **Versucht 2026-07-25:** `node scripts/backup-export.js --scope=seed` in der Agenten-Sitzung ausgeführt — Abbruch vor jedem Netzwerkzugriff (Exit 2), da `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` in dieser Umgebung nicht gesetzt sind und keine `.env.local` existiert. **Kein** Production-Zugriff erfolgt. Betreiber führt den Export selbst mit echter `.env.local` aus | Betreiber führt `node scripts/backup-export.js --scope=seed` lokal aus und teilt das Manifest (`art`, `vollstaendig`, Zeilenzahlen je Tabelle, `pruefsummeGesamt`, `mainCommit`) mit; danach Runbook `betrieb/quellen-seed-einspielung.md` §6c Schritt 6 ff. |
+| **Quellen-Seed-Einspielung** (macht P0-2 und die 6 Bundesweg-Reparaturen in der DB wirksam) | noch zwei offene Go-Kriterien: **2** die Pre-Seed-Sicherung ist **noch nicht gelaufen** · **8** die Einspielung ist nicht freigegeben. Kriterium **11** ist **entschieden**: gestaffelte Reaktivierung (§6d). **Versucht 2026-07-26:** `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` sind jetzt korrekt als Cloud-Environment-Variablen gesetzt (§4.9-Regel greift, Key verifiziert: `role=service_role`, `ref=ddckuvvpcytqbyfmbvie`, nicht abgelaufen) — trotzdem **kein** Backup zustande gekommen: `node scripts/backup-export.js --scope=seed` bricht auf allen 8 Tabellen mit `HTTP 403` ab, weil die Organisations-Egress-Policy dieser Sitzung direkten Netzzugriff auf `ddckuvvpcytqbyfmbvie.supabase.co:443` blockiert (Proxy-Log: `connect_rejected`, „policy denial"), nicht Supabase selbst. Laut Proxy-Richtlinie ausdrücklich **nicht** zu umgehen. **Kein** Production-Zugriff über dieses Skript erfolgt; das Manifest wurde als unvollständig verworfen. Vorbedingungen (main-Stand `9f1def5`, keine Seeds/`sources.js` seit dem letzten Test geändert, keine aktiven Locks, außerhalb Crawl-/Understanding-Fenster) sind geprüft und grün | Session-/Umgebungsadmin muss den Host `ddckuvvpcytqbyfmbvie.supabase.co` für die Egress-Policy dieser Art von Sitzung freigeben, **oder** der Betreiber führt `node scripts/backup-export.js --scope=seed` lokal aus; danach Manifest teilen und Runbook `betrieb/quellen-seed-einspielung.md` §6c Schritt 6 ff. |
 | **OP-02** Recht (Pilotvertrag, AVV, DSFA, Art.-9-Grundlage, Fristen) | externe Prüfung durch Anwalt/DSB steht aus | Entwürfe aus `recht/` prüfen lassen und zeichnen; blockiert OP-12 |
 | **OP-03** Zweitmandanten-Freigabepaket | Grundsatzentscheidung „DB-seitige Durchsetzung vs. dokumentierte App-Guard-Akzeptanz" fehlt (`mandantentrennung-architektur.md` bewertet die Wege) | Betreiber entscheidet einen Weg; danach Migration + Env + Probelauf |
 | **OP-04** Demo-Mandate entfernen — **Umfang korrigiert 2026-07-25:** Production führt **8 Profile, davon 6 aktiv** (nicht 1 Pilot + 2 Demo-Mandate); fünf davon tragen Klarnamen realer Abgeordneter | Production-Datenänderung, freigabepflichtig; berührt zusätzlich OP-02 (personenbezogene Daten) | je Profil entscheiden, dann über Provisionierungswerkzeug deaktivieren (`quellenarchitektur/30-paket-inventur-production.md` §5, A-1) |
@@ -257,6 +257,7 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 
 | Sprint | Datum | Zustand |
 |---|---|---|
+| Go-Kriterium 2 erneut versuchen: Pre-Seed-Backup-Export (Cloud-Session-Secrets jetzt gesetzt) | 2026-07-26 | **Blockiert** — Vorbedingungen aus Runbook §6c Schritt 1–3 geprüft und grün (`main`-HEAD `9f1def5`, seit dem letzten Test keine Änderung an Seeds/`sources.js`/Backup-Skript außer einem Kommentar, kein aktiver Lock, außerhalb Crawl-/Understanding-Fenster). `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` sind erstmals als Cloud-Environment-Variablen gesetzt und verifiziert korrekt (`role=service_role`, richtiges Projekt, nicht abgelaufen) — die §4.9-Regel greift wie vorgesehen. Trotzdem **kein Backup zustande gekommen**: `node scripts/backup-export.js --scope=seed` schlägt auf allen 8 Tabellen mit `HTTP 403` fehl. Ursache verifiziert: **nicht** Supabase/RLS, sondern die Egress-Policy dieser Sitzung blockiert den direkten Netzzugriff auf `ddckuvvpcytqbyfmbvie.supabase.co:443` (Proxy meldet `connect_rejected`/„policy denial"); der Supabase-MCP-Connector kann die DB dagegen lesen (separater Zugriffsweg), was die Diagnose eingegrenzt hat. Laut Proxy-Betriebsanleitung ist ein `403`/`407` der Egress-Policy ausdrücklich **nicht** zu umgehen, sondern zu melden. Manifest blieb `vollstaendig: false`, wurde verworfen, kein Backup-Ordner zurückgelassen. **Kein** Production-Zugriff über den Export-Weg erfolgt, keine Ersatzmaßnahme über den MCP-Connector ergriffen (identische Zurückhaltung wie im Vorsprint). Weisungsgemäß **vor Seed 1 gestoppt**. Details unten. |
 | Go-Kriterium 2 kontrolliert versuchen: Pre-Seed-Backup-Export | 2026-07-25 | **Blockiert** — `node scripts/backup-export.js --scope=seed` exakt wie angefordert ausgeführt; Abbruch vor jedem Netzwerkzugriff (Exit 2), da diese Agenten-Sitzung keine `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` und keine `.env.local` besitzt. **Kein** Production-Zugriff erfolgt. Betreiberentscheidung: Export läuft auf der Betreibermaschine mit echter `.env.local`, Manifest wird zurückgemeldet. Details unten. |
 | Review + Merge von PR #125, danach Production-Ablauf bis vor den ersten Zugriff vorbereiten | 2026-07-25 | **Teilweise abgeschlossen** — PR #125 adversarial reviewt (3 Reviewer, 20 belegte Befunde, alle behoben) und als `0d6d867` gemergt (CI auf `main` grün, Vercel-Production `READY`). Der Production-Ablauf ist vollständig vorbereitet; **kein Production-Zugriff erfolgt, keine Seeds ausgeführt**. Wartet auf die Betreiberfreigabe für den Pre-Seed-Export. Details unten. |
 | Merge #123 + Sicherung, gezielter Restore und Entscheidungsreife für die Seed-Einspielung | 2026-07-25 | **Teilweise abgeschlossen** — #123 gemergt (`bed7f53`); Backup- und Restore-Werkzeug gebaut und isoliert getestet (33/33 lokal, 31/31 in CI, Suite 145/145). Die Seed-Ausführung bleibt **blockiert**: die Sicherung ist noch nicht gelaufen und die Reaktivierung der 6 Bundeswege ist nicht freigegeben. Details unten. |
@@ -266,6 +267,51 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 | Merge von PR #105 — Anker-Recovery-Pfad in Production stillgelegt | 2026-07-25 | **Erfolgreich abgeschlossen** — gemergt als `43e9e35`; Stilllegung auf `main` verifiziert. |
 | Recovery-Pfad-Review + Zusammenführung von PR #105 auf die kanonische Kontextstruktur | 2026-07-25 | **Erfolgreich abgeschlossen** |
 | Kontextstruktur für Claude Code (`CLAUDE.md` + Einstiegsschicht) | 2026-07-25 | **Erfolgreich abgeschlossen** — reine Dokumentation, gemergt als PR #119 (`c6a3d40`). |
+
+**Sprint „Go-Kriterium 2 erneut versuchen (Cloud-Secrets gesetzt)" — Nachweis**
+
+- **Auftrag:** ausschließlich die Vorbedingungen für den Pre-Seed-Backup-Export prüfen, den Export
+  gemäß Runbook §6c ausführen, keine Seeds, kein Restore, nach erfolgreicher Validierung zwingend
+  vor Seed 1 stoppen.
+- **Vorbedingungen (Runbook §6c Schritt 1–3), alle geprüft:**
+  1. `main`-Stand: `git ls-remote origin refs/heads/main` = `9f1def5`. Diff zum zuletzt geprüften
+     Stand (`0d6d867`) enthält ausschließlich Doku-Commits (#128/#129/#130) und einen
+     Kommentar-Zusatz in `scripts/backup-export.js` (Cloud-Session-Hinweis, §4.9) — **keine**
+     Änderung an den Seeds, an `lib/helmut/sources.js` oder an der Export-/Restore-Logik.
+  2. Locks: `select * from pipeline_locks` (read-only über Supabase-MCP) → ein Eintrag
+     (`lage-briefing-…`), `expires_at` seit über 6 Stunden abgelaufen. **Kein aktiver Lock.**
+  3. Health/Zeitfenster: Sitzungszeit 2026-07-26 10:16 UTC, außerhalb der Crawl-Fenster
+     (04:00/20:00 UTC) und Understanding-Fenster (05:30/21:30 UTC). `systemErrors` (Auth-Store,
+     read-only geprüft) enthalten zwei jüngere, aber bekannte Einträge („Zeitbudget erschoepft" bei
+     `cron-lage-check` und `cron-crawl`) — selbstlimitierender Bearbeitungsrückstand, keine
+     Datenkorruption, kein Schreibkonflikt für einen rein lesenden Export. Kein akuter Vorfall.
+- **Erstmals: Zugangsdaten korrekt gesetzt.** Anders als im Vorsprint sind `SUPABASE_URL` und
+  `SUPABASE_SERVICE_ROLE_KEY` in dieser Cloud-Sitzung gesetzt (§4.9-Regel greift wie vorgesehen).
+  Der Key wurde **ohne ihn auszugeben** verifiziert (JWT-Payload dekodiert): `role: service_role`,
+  `ref: ddckuvvpcytqbyfmbvie` (= das einzige Supabase-Projekt dieses Kontos, per
+  `list_projects` gegengeprüft), `exp` weit in der Zukunft.
+- **Ausgeführt:** `node scripts/backup-export.js --scope=seed`. Ergebnis: **HTTP 403 auf allen 8
+  Tabellen**, Manifest `vollstaendig: false`, Exit-Code 1 — genau die Plausibilisierung aus PR
+  #125, Befund 1 greift korrekt (ein Teil-/Leer-Backup gilt nicht als Backup).
+- **Ursache verifiziert, nicht angenommen:** ein direkter `curl` gegen `$SUPABASE_URL` liefert
+  denselben 403 — aber als `CONNECT tunnel failed`, also vom **Session-Proxy**, nicht von
+  PostgREST/Supabase. `curl "$HTTPS_PROXY/__agentproxy/status"` bestätigt: `recentRelayFailures`
+  nennt `connect_rejected` für `ddckuvvpcytqbyfmbvie.supabase.co:443`, „gateway answered 403 to
+  CONNECT (policy denial or upstream failure)". Der Supabase-MCP-Connector konnte dieselbe
+  Datenbank in derselben Sitzung lesend erreichen (Schritt „Locks" oben) — das grenzt die Ursache
+  auf den direkten REST-Zugriffsweg dieser Shell ein, nicht auf Schlüssel oder Projekt. Die
+  Proxy-Betriebsanleitung ist hier eindeutig: ein `403`/`407` der Egress-Policy ist **nicht** zu
+  wiederholen oder zu umgehen, sondern zu melden.
+- **Keine Ersatzmaßnahme ergriffen** — dieselbe Zurückhaltung wie im Vorsprint: kein Nachbau des
+  Backups über den Supabase-MCP-Connector (andere, ungeprüfte Zeilenzahl-/Prüfsummen-/Manifest-Logik
+  als das reviewte Skript), keine Änderung an der Egress-Policy, kein Versuch, den Proxy zu umgehen.
+  Der leere Backup-Ordner wurde entfernt (kein Artefakt, das später wie ein Backup aussehen könnte).
+- **Weisungsgemäß vor Seed 1 gestoppt.** Kein Seed eingespielt, kein Restore erzeugt oder
+  ausgeführt, kein Production-Schreibzugriff, keine Secrets ausgegeben oder geändert, keine
+  Cron-/Flag-Änderung.
+- **Nächster Schritt:** entweder die Egress-Policy dieser Sitzungsart um
+  `ddckuvvpcytqbyfmbvie.supabase.co` erweitern (Betreiber/Umgebungsadmin), oder der Betreiber führt
+  den Export lokal mit echter `.env.local` aus. Erst danach Runbook §6c ab Schritt 6.
 
 **Sprint „Go-Kriterium 2 kontrolliert versuchen" — Nachweis**
 
