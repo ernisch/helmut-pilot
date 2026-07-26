@@ -61,7 +61,7 @@ check("counts: 28 Kandidat-Klassen, 0 einsatzbereit, 2 unbesetzt", rReadiness.co
 
 console.log("== View 2: Quellen und Abrufwege ==");
 const qa = rEmpty.views.quellenAbrufwege;
-check("alle 144 Abrufwege bewertet (keine Lücke)", qa.pathCount === 144);
+check("alle 145 Abrufwege bewertet (keine Lücke)", qa.pathCount === 145);
 check("nach Herausgeber gruppiert (51 Herausgeber)", qa.herausgeber.length === 51);
 check("welche Abrufwege gesund/defekt/unbekannt (drei Kübel)", typeof qa.healthCounts.gesund === "number" && typeof qa.healthCounts.defekt === "number" && typeof qa.healthCounts.unbekannt === "number");
 check("keine defekten Abrufwege mehr (P1-5: alle 6 vormals 'broken' markierten Bundeswege repariert)", qa.healthCounts.defekt === 0);
@@ -89,7 +89,7 @@ check("welche Messwerte noch nicht verfügbar: als Hinweise gelistet", pb.missin
 
 console.log("== View 5: Quellendetail ==");
 const detail = rEmpty.views.quellendetail.paths;
-check("Quellendetail je Abrufweg vorhanden (144) — KEINE Personenquelle im Katalog", detail.length === 144 && !detail.some((p) => /-news$/.test(String(p.legacy_source_id))));
+check("Quellendetail je Abrufweg vorhanden (145) — KEINE Personenquelle im Katalog", detail.length === 145 && !detail.some((p) => /-news$/.test(String(p.legacy_source_id))));
 const detailPath = detail.find((p) => p.legacy_source_id === "tagesschau-politik");
 check("Detail trägt Herausgeber/Methode/Pakete", detailPath.publisher && detailPath.method && Array.isArray(detailPath.packages));
 check("ohne Metriken: documentCount/koCount = null (nicht 0 erfunden)", detailPath.documentCount === null && detailPath.koCount === null);

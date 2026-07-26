@@ -47,6 +47,14 @@ const SECHS_WEGE = [
 // Die 2 Pakete, die Seed 1 NEU anlegt (existieren im Pre-Seed-Backup nicht).
 const NEUE_PAKETE = ["pkg-die-linke-berlin", "pkg-die-linke-brandenburg"];
 
+// Die Abrufwege, die Seed 1 NEU anlegt (existieren im Pre-Seed-Backup nicht).
+// Seit der Ausschuss-Korrektur (Punkt 13, 2026-07-26) ist das der bis dahin fehlende
+// 24. staendige Bundestagsausschuss (Wahlpruefung, Immunitaet und Geschaeftsordnung).
+// Vorher legte Seed 1 KEINEN neuen Abrufweg an — der Rueckweg deckte diesen Fall daher
+// nicht ab und liess die neue Zeile stehen (gefangen durch die Byte-Gleichheitspruefung
+// in scripts/seed-restore-test.js, Gruppe 8).
+const NEUE_WEGE = ["rp-committee-wahlpruefung"];
+
 // Genau die Pakete, deren Zuordnungen die beiden Seeds anfassen. Nur innerhalb
 // dieses Wirkbereichs darf der Restore loeschen (Review PR #125, Befund 1).
 // Alles ausserhalb — insbesondere die bei der Provisionierung entstehenden
@@ -163,6 +171,13 @@ function pruefeVorSeedZustand(tables) {
       + "— es zeigt also den Zustand NACH der Einspielung und taugt nicht als Rueckweg."
     );
   }
+  const wegeSchonDa = NEUE_WEGE.filter((id) => pfade.has(id));
+  if (wegeSchonDa.length) {
+    throw new Error(
+      `Backup enthaelt bereits die von Seed 1 angelegten Abrufwege (${wegeSchonDa.join(", ")}) `
+      + "— es zeigt also den Zustand NACH der Einspielung und taugt nicht als Rueckweg."
+    );
+  }
   // Ein leeres Backup erzeugt syntaktisch ungueltiges SQL (`not in ()`, `insert … values`
   // ohne Werte, `unnest(array[])` ohne Typ). Lieber hier klar abbrechen.
   for (const t of RESTORE_TABLES) {
@@ -215,7 +230,8 @@ function build(dir) {
   out.push(`-- Pruefsumme:  ${manifest.pruefsummeGesamt || "(keine)"}`);
   out.push("--");
   out.push("-- Setzt zurueck: 6 Abrufwege (status/method), required_classes der Landes-");
-  out.push("-- Basispakete, sowie ALLE Paketzuordnungen auf den gesicherten Stand.");
+  out.push("-- Basispakete, sowie ALLE Paketzuordnungen auf den gesicherten Stand. Entfernt");
+  out.push("-- ausserdem die von Seed 1 neu angelegten Pakete UND Abrufwege (guarded).");
   out.push("-- Fasst NUR retrieval_paths, source_packages und package_paths an.");
   out.push("-- Kein drop/truncate, keine Elterntabellen, alles in einer Transaktion.");
   out.push("");
@@ -316,6 +332,23 @@ function build(dir) {
   }
   out.push("");
 
+  // --- 5b) Die neu angelegten Abrufwege entfernen ---------------------------
+  out.push("-- 5b) Den/die von Seed 1 NEU angelegten Abrufweg(e) entfernen. Nach Schritt 4 sind");
+  out.push("--     ihre Zuordnungen im Seed-Wirkbereich bereits weg. GUARDED geloescht: nur wenn");
+  out.push("--     KEINE package_paths-Zeile sie mehr referenziert. Das schuetzt vor dem");
+  out.push("--     'on delete cascade' auf package_paths.retrieval_path_id — eine Zuordnung");
+  out.push("--     ausserhalb des Seed-Wirkbereichs (z. B. an einem 'profil-<mandats-id>'-Paket)");
+  out.push("--     wuerde sonst stillschweigend mitgeloescht.");
+  for (const id of NEUE_WEGE) {
+    if (pfadeVorher.has(id)) {
+      out.push(`-- ${id}: war bereits im Backup vorhanden -> bleibt bestehen (kein Delete).`);
+    } else {
+      out.push(`delete from public.retrieval_paths rp where rp.id = ${q(id)}`);
+      out.push("  and not exists (select 1 from public.package_paths pp where pp.retrieval_path_id = rp.id);");
+    }
+  }
+  out.push("");
+
   // --- 6) Soll-Ist-Check NACH der Aenderung --------------------------------
   out.push("-- 6) Nachher-Check: Zielzahlen muessen exakt dem Backup entsprechen, sonst");
   out.push("--    bricht die Transaktion ab und NICHTS wird geschrieben.");
@@ -323,7 +356,7 @@ function build(dir) {
   out.push("--    Zeilenzahl ueber package_paths waere nach delete+insert per Konstruktion");
   out.push("--    immer erfuellt und damit wertlos (Review PR #125, Befund 1).");
   out.push("do $$");
-  out.push("declare n_pfade int; n_pakete int; n_zuordnungen int; n_fehlend int;");
+  out.push("declare n_pfade int; n_pakete int; n_zuordnungen int; n_fehlend int; n_neue_wege int;");
   out.push("begin");
   out.push(`  select count(*) into n_pfade from public.retrieval_paths where id in (${sechs.map(q).join(", ")}) and status = 'broken';`);
   out.push(`  if n_pfade <> ${sechs.filter((id) => pfadeVorher.get(id).status === "broken").length} then`);
@@ -344,6 +377,12 @@ function build(dir) {
   out.push(`  select count(*) into n_pakete from public.source_packages where id in (${NEUE_PAKETE.map(q).join(", ")});`);
   out.push(`  if n_pakete <> ${NEUE_PAKETE.filter((id) => paketeVorher.has(id)).length} then`);
   out.push("    raise exception 'Restore-Nachpruefung: von Seed 1 angelegte Pakete noch vorhanden (%)', n_pakete;");
+  out.push("  end if;");
+  out.push("");
+  out.push("  -- Zeilenbezogen: die von Seed 1 angelegten Abrufwege duerfen nicht mehr existieren.");
+  out.push(`  select count(*) into n_neue_wege from public.retrieval_paths where id in (${NEUE_WEGE.map(q).join(", ")});`);
+  out.push(`  if n_neue_wege <> ${NEUE_WEGE.filter((id) => pfadeVorher.has(id)).length} then`);
+  out.push("    raise exception 'Restore-Nachpruefung: von Seed 1 angelegte Abrufwege noch vorhanden (%)', n_neue_wege;");
   out.push("  end if;");
   out.push("");
   out.push("  -- Zahlenprobe NUR im Seed-Wirkbereich. Global waere sie falsch: zwischen Backup");
@@ -378,4 +417,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { build, readBackup, RESTORE_TABLES, SECHS_WEGE, NEUE_PAKETE, qTextArray };
+module.exports = { build, readBackup, RESTORE_TABLES, SECHS_WEGE, NEUE_PAKETE, NEUE_WEGE, qTextArray };

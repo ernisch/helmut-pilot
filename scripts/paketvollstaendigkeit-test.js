@@ -16,7 +16,7 @@ const fs = require("fs");
 const path = require("path");
 const {
   BUND_CLASSES, PACKAGE_REQUIREMENTS, ZULAESSIGE_UEBERSCHNEIDUNGEN, MIN_NICHT_AGGREGATOR_WEGE,
-  catalogPathClasses, buildCompletenessModel, assessPackageCompleteness
+  catalogPathClasses, buildCompletenessModel, assessPackageCompleteness, pruefeAusschussSollmenge
 } = require("../lib/helmut/quellenarchitektur/paket-vollstaendigkeit");
 const {
   PACKAGE_DEFINITIONS, REGION_TERMS_BY_PACKAGE, LANDESMODUL_PFLICHTKLASSEN,
@@ -145,6 +145,11 @@ check("Themen-Buendel gelten NICHT als Ausschussquelle (Namensverankerung greift
 })());
 check("der institutionelle Ausschuss-Weg gilt als Ausschussquelle",
   catalogPathClasses(v1Sources.find((s) => s.id === "ausschuss-arbeit-soziales")).includes("bundestagsausschuesse"));
+check("die fuenf Ausschuesse ohne 'Ausschuss '-Praefix werden trotzdem erkannt (Kennung statt Name)", (() => {
+  const ohnePraefix = v1Sources.filter((s) => s.ausschussKey && !/^Ausschuss /.test(s.name));
+  return ohnePraefix.length === 5
+    && ohnePraefix.every((s) => catalogPathClasses(s).includes("bundestagsausschuesse"));
+})());
 check("keine Klasse ausserhalb des erklaerten Bundesvokabulars", (() => {
   const erlaubt = new Set(BUND_CLASSES);
   return v1Sources.every((s) => catalogPathClasses(s).every((c) => erlaubt.has(c)));
@@ -175,10 +180,14 @@ check("regional-niedersachsen wird als reine Aggregator-Beleglage ERKANNT (kein 
 // ============ 7 · Vollzaehligkeit ============
 console.log("== 7 · Vollzaehligkeit ==");
 check("alle Vollzaehligkeitsregeln erfuellt", A.pakete.every((p) => p.vollzaehligkeit.every((v) => v.erfuellt)));
-check("bund-basis enthaelt JEDEN institutionellen Bundestagsausschuss des Katalogs", (() => {
+// Sollmenge EXTERN verankert (24 staendige Ausschuesse des 21. Bundestages, Drucksache 21/150),
+// nicht aus dem Katalog abgeleitet. Ausfuehrlich: scripts/bundestag-ausschuesse-test.js.
+check("bund-basis enthaelt alle 24 staendigen Ausschuesse der 21. Wahlperiode", (() => {
   const r = byKey.get("bund-basis").vollzaehligkeit.find((v) => v.regel === "alle_institutionellen_ausschuesse");
-  return r && r.erfuellt && r.soll === 23 && r.ist === 23;
+  return r && r.erfuellt && r.soll === 24 && r.ist === 24 && r.wahlperiode === 21;
 })());
+check("die Ausschuss-Sollmenge ist NICHT katalogrelativ (Vergleich gegen den Einsetzungsbeschluss)",
+  pruefeAusschussSollmenge().vollstaendig === true && pruefeAusschussSollmenge().soll === 24);
 check("bund-basis enthaelt JEDE Bundestagsfraktion des Katalogs", (() => {
   const r = byKey.get("bund-basis").vollzaehligkeit.find((v) => v.regel === "alle_bundestagsfraktionen");
   return r && r.erfuellt && r.soll === 8 && r.ist === 8;
@@ -195,7 +204,7 @@ check("Negativkontrolle Vollzaehligkeit: fehlt ein Ausschuss, schlaegt die Regel
   };
   const p = assessPackageCompleteness(mutiert).pakete.find((x) => x.key === "bund-basis");
   return p.ergebnis !== "vollstaendig" && p.maengel.includes("vollzaehligkeit-verletzt")
-    && p.vollzaehligkeit.some((v) => v.regel === "alle_institutionellen_ausschuesse" && v.fehlend.includes("rp-committee-gesundheit"));
+    && p.vollzaehligkeit.some((v) => v.regel === "alle_institutionellen_ausschuesse" && v.fehlend.includes("gesundheit"));
 })());
 
 // ============ 8 · Ueberschneidungen ============
@@ -345,13 +354,15 @@ check("die 5 always_on-Kernwege sind unveraendert", (() => {
   const on = buildFullModel().retrievalPaths.filter((p) => p.activation_mode === "always_on").map((p) => p.legacy_source_id).sort();
   return JSON.stringify(on) === JSON.stringify(["bundesregierung", "bundestag", "deutschlandfunk-politik", "dip", "tagesschau-politik"]);
 })());
-check("kein zusaetzlicher Abrufweg entstanden (144 Bund-Katalogwege)", buildFullModel().retrievalPaths.length === 144);
-check("kein Weg hat seinen Aktivierungsmodus geaendert (139 auto, 5 always_on, 0 dev_only/manual)", (() => {
+// 145 seit der Ausschuss-Korrektur: genau EIN neuer Abrufweg (der bis dahin fehlende
+// 24. staendige Ausschuss). Belegt in scripts/bundestag-ausschuesse-test.js.
+check("genau ein zusaetzlicher Abrufweg (145 Bund-Katalogwege, vorher 144)", buildFullModel().retrievalPaths.length === 145);
+check("kein Weg hat seinen Aktivierungsmodus geaendert (140 auto, 5 always_on, 0 dev_only/manual)", (() => {
   const m = buildFullModel();
   const z = m.retrievalPaths.reduce((acc, p) => { acc[p.activation_mode] = (acc[p.activation_mode] || 0) + 1; return acc; }, {});
-  return z.auto === 139 && z.always_on === 5 && !z.dev_only && !z.manual;
+  return z.auto === 140 && z.always_on === 5 && !z.dev_only && !z.manual;
 })());
-check("Punkt 13 erzeugt genau EINE zusaetzliche Paketzuordnung (146 statt 145)", buildFullModel().packagePaths.length === 146);
+check("Punkt 13 erzeugt zwei zusaetzliche Paketzuordnungen (147 statt 145)", buildFullModel().packagePaths.length === 147);
 check("der zusaetzliche Weg im Basispaket war schon vorher katalogaktiv (kein neuer Abruf)", (() => {
   const p = buildFullModel().retrievalPaths.find((x) => x.id === "rp-ausschuss-arbeit-soziales");
   return !!p && p.activation_mode === "auto";
@@ -385,9 +396,9 @@ check("der relationale Plan wird aus DB-Zeilen gebaut (nicht aus dem Codemodell)
 console.log("== 14 · Reproduzierbarkeit ==");
 check("zwei Bewertungslaeufe liefern dasselbe Ergebnis",
   JSON.stringify(assessPackageCompleteness()) === JSON.stringify(assessPackageCompleteness()));
-check("Bestandszahlen des vereinigten Modells stimmen (144 Bund + 18 Land = 162 Wege)",
-  CM.herkunft.bundWege === 144 && CM.herkunft.landWege === 18 && CM.paths.length === 162);
-check("Zuordnungen des vereinigten Modells stimmen (146 Bund + 19 Land = 165)", CM.packagePaths.length === 165);
+check("Bestandszahlen des vereinigten Modells stimmen (145 Bund + 18 Land = 163 Wege)",
+  CM.herkunft.bundWege === 145 && CM.herkunft.landWege === 18 && CM.paths.length === 163);
+check("Zuordnungen des vereinigten Modells stimmen (147 Bund + 19 Land = 166)", CM.packagePaths.length === 166);
 check("Ergebnisverteilung: 6 vollstaendig, 2 teilweise, 0 blockiert",
   A.summary.vollstaendig === 6 && A.summary.teilweise === 2 && A.summary.blockiert === 0);
 

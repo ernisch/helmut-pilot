@@ -183,6 +183,19 @@ function execSql(db, sql) {
       continue;
     }
 
+    // GUARDED delete eines Abrufwegs: nur wenn ihn keine package_paths-Zeile mehr
+    // referenziert. Der Guard ist der Schutz gegen das 'on delete cascade' auf
+    // package_paths.retrieval_path_id — er MUSS mit ausgefuehrt werden, sonst prueft der
+    // Test eine andere Semantik als das erzeugte SQL.
+    m = clean.match(/^delete from public\.(\w+)\s+(\w+)\s*where\s*\2\.id\s*=\s*('(?:[^']|'')*')\s*and\s*not exists\s*\(select 1 from public\.(\w+)\s+(\w+) where \5\.(\w+) = \2\.id\)$/i);
+    if (m) {
+      const [, table, , idRaw, refTable, , refCol] = m;
+      const k = String(parseVal(idRaw));
+      const referenziert = db[refTable] && [...db[refTable].values()].some((r) => r[refCol] === k);
+      if (db[table] && db[table].has(k) && !referenziert) { db[table].delete(k); stats.del += 1; }
+      continue;
+    }
+
     m = clean.match(/^delete from public\.(\w+)\s*where\s*id\s*=\s*('(?:[^']|'')*')$/i);
     if (m) {
       const [, table, idRaw] = m;
@@ -357,7 +370,7 @@ console.log(`   +${s1.stats.ins} eingefuegt, ${s1.stats.upd} aktualisiert, ${s1.
 // Punkt 13: Seed 1 fuegt jetzt ZWEI Paketzuordnungen ein — die bisherige
 // (fraction-linke -> die-linke-bund) plus die neue Vollzaehligkeitszuordnung
 // (ausschuss-arbeit-soziales -> bund-basis, "alle Ausschuesse" im neutralen Pflichtpaket).
-check("3 · Seed 1: +2 Pakete, +2 Paketzuordnungen", n1.source_packages === 8 && n1.package_paths === 165);
+check("3 · Seed 1: +2 Pakete, +3 Paketzuordnungen, +1 Abrufweg", n1.source_packages === 8 && n1.package_paths === 166 && db.retrieval_paths.has("rp-committee-wahlpruefung"));
 check("3 · Seed 1: die 6 Wege stehen jetzt auf 'needs_review'",
   ["rp-bundestag", "rp-bundesregierung", "rp-die-linke", "rp-linksfraktion", "rp-ausschuss-arbeit-soziales", "rp-dgb"]
     .every((id) => db.retrieval_paths.get(id).status === "needs_review"));
@@ -376,7 +389,7 @@ check("5 · Seed 2: Partei-/Personenwege NICHT mehr im Pflicht-Basispaket",
 check("5 · Seed 2: sie haengen jetzt am optionalen Parteipaket",
   ["rp-be-partei_pilot", "rp-be-fraktion_pilot", "rp-be-person_pilot"]
     .every((p) => db.package_paths.has(`pkg-die-linke-berlin|${p}`)));
-check("5 · Gesamtzahl Zuordnungen unveraendert (4 raus, 4 rein)", n2.package_paths === 165);
+check("5 · Gesamtzahl Zuordnungen unveraendert (4 raus, 4 rein)", n2.package_paths === 166);
 
 console.log("\n== 6) Idempotenz der Seeds ==");
 const vorWdh = snapshot(db, TAB);

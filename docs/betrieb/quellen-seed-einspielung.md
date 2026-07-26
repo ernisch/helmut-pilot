@@ -150,8 +150,8 @@ Sie unterscheiden sich, und zwar erklärbar:
 | `political_entities` | 73 | 73 | 73 |
 | `publishers` | 64 | 64 | 64 |
 | `source_packages` | **7** | **9** (+2, 4 weitere aktualisiert) | 9 |
-| `retrieval_paths` | **163** | 163 (6 aktualisiert) | 163 |
-| `package_paths` | **165** | **166** (+1, siehe unten) | 166 (−4 / +4) |
+| `retrieval_paths` | **163** | **164** (+1 neu, 6 aktualisiert, 22 mit korrigiertem Namen) | 164 |
+| `package_paths` | **165** | **167** (+2, siehe unten) | 167 (−4 / +4) |
 | `path_expected_levels` | 18 | 18 | 18 |
 | `path_expected_geographies` | 18 | 18 | 18 |
 
@@ -160,11 +160,11 @@ Sie unterscheiden sich, und zwar erklärbar:
 | Nr. | Kennzahl | Soll |
 |---|---|---|
 | 4 | betroffene **Publisher** | **0** (keine neuen, keine geänderten) |
-| 5 | betroffene **Retrieval Paths** | **6** (aktualisiert; 0 neu, 0 entfernt) |
+| 5 | betroffene **Retrieval Paths** | **7** (6 aktualisiert + **1 neu**: `rp-committee-wahlpruefung`, der 24. ständige Ausschuss; 0 entfernt). Zusätzlich tragen 22 Ausschusswege im Seed die amtliche Bezeichnung der 21. WP — die `on-conflict`-Klausel aktualisiert `name` heute **nicht**, in der Datenbank bleiben die alten Namen bis zu einem eigenen gezielten `update` (siehe R-2) |
 | 6 | betroffene **Source Packages** | **8** (2 neu + 2 mit reduzierten `required_classes` + 4 Bundespakete mit erstmals gesetzten `required_classes`) |
 | 7 | **entfernte** alte Paketzuordnungen | **4** (alle aus Seed 2) |
-| 8 | **neu eingefügte** Paketzuordnungen | **5** (1 aus Seed 1 + 4 aus Seed 2) |
-| — | Gesamtzahl Einfügungen | Seed 1: **3** (2 Pakete + 1 Zuordnung) · Seed 2: **4** |
+| 8 | **neu eingefügte** Paketzuordnungen | **6** (2 aus Seed 1 + 4 aus Seed 2) |
+| — | Gesamtzahl Einfügungen | Seed 1: **5** (2 Pakete + 2 Zuordnungen + 1 Abrufweg) · Seed 2: **4** |
 | — | Gesamtzahl Aktualisierungen | Seed 1: **12** (6 Wege + 6 Pakete) · Seed 2: **0** |
 | — | Gesamtzahl Löschungen | Seed 1: **0** · Seed 2: **4** |
 
@@ -174,14 +174,21 @@ Sie unterscheiden sich, und zwar erklärbar:
 >    dieses Paket bereits **3** Zuordnungen aus, der Seed-Stand vor #118 erzeugt nur 2, die
 >    dritte ist genau diese. Der Insert läuft in `on conflict … do nothing`.
 > 2. `('pkg-bund-basis', 'rp-ausschuss-arbeit-soziales')` — **neu** (Punkt-13-Sprint,
->    2026-07-26): der Ausschuss für Arbeit und Soziales fehlte als einziger der 23 ständigen
->    Ausschüsse im neutralen Pflicht-Basispaket, obwohl dessen Zweck „alle Ausschuesse" zusagt.
->    Diese Zeile existiert in Production noch nicht und wird eingefügt. **Kein zusätzlicher
->    Abruf:** der Weg ist bereits `auto` und in Production `broken`; nach der separat
->    freigabepflichtigen Reaktivierung deckt die globale Wegededuplizierung ihn ab.
+>    2026-07-26): der Ausschuss für Arbeit und Soziales lag nicht im neutralen
+>    Pflicht-Basispaket, obwohl dessen Zweck „alle Ausschuesse" zusagt. Diese Zeile existiert in
+>    Production noch nicht und wird eingefügt. **Kein zusätzlicher Abruf:** der Weg ist bereits
+>    `auto` und in Production `broken`; nach der separat freigabepflichtigen Reaktivierung deckt
+>    die globale Wegededuplizierung ihn ab.
+> 3. `('pkg-bund-basis', 'rp-committee-wahlpruefung')` — **neu** (Ausschuss-Korrektur,
+>    2026-07-26): der 24. ständige Ausschuss (Wahlprüfung, Immunität und Geschäftsordnung) fehlte
+>    im Katalog vollständig. Diese Zeile **und** der zugehörige Abrufweg werden eingefügt.
+>    **Das ist die einzige echte Laufzeitwirkung der Korrektur:** ein zusätzlicher
+>    Google-News-Abruf je Crawl (145 → 146 Wege für ein voll versorgtes Profil, +0,7 %); die
+>    Google-Konzentration (Befund B1) steigt um einen Weg. Der Weg ist `needs_review` + `auto`,
+>    **nicht** `always_on` und **nicht** `is_critical`.
 >
-> **Gegen eine leere Datenbank** (Simulation und Offline-Test) fügt Seed 1 beide ein, also +2;
-> gegen die gemessene Production genau +1. Test und Production weichen hier bewusst voneinander ab.
+> **Gegen eine leere Datenbank** (Simulation und Offline-Test) fügt Seed 1 alle drei ein;
+> gegen die gemessene Production genau +2. Test und Production weichen hier bewusst voneinander ab.
 > Belege: `scripts/seed-restore-test.js` (43/43) und
 > [`../quellenarchitektur/31-paketvollstaendigkeit.md`](../quellenarchitektur/31-paketvollstaendigkeit.md) §7.
 >
@@ -194,6 +201,13 @@ Sie unterscheiden sich, und zwar erklärbar:
 
 **10 · Neue nicht-verpflichtende Pakete:** `die-linke-berlin` (3 Wege), `die-linke-brandenburg`
 (1 Weg). Beide `prepared`, `is_base = false`.
+
+**10b · Rückweg deckt den neuen Abrufweg ab:** `scripts/seed-restore-sql.js` entfernt
+`rp-committee-wahlpruefung` beim Restore wieder — *guarded*, also nur wenn keine
+`package_paths`-Zeile ihn mehr referenziert (Schutz gegen `on delete cascade`). Vorher legte Seed 1
+keinen neuen Abrufweg an; der Rückweg deckte diesen Fall nicht ab und hätte die Zeile stehen
+gelassen. Belegt durch `scripts/seed-restore-test.js` (43/43, Gruppe 8 „Endzustand ist
+BYTEGLEICH zum Ausgangszustand").
 
 **10a · `required_classes` der vier Bundespakete** (neu seit 2026-07-26, Punkt 13): Seed 1 setzt
 sie erstmals von `{}` auf 7 (`bund-basis`) / 10 (`arbeit-und-soziales`) / 1 (`die-linke-bund`) /

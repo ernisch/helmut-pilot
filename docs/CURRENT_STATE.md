@@ -41,7 +41,7 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | Freigabevorlage Quellen-Seed-Einspielung (Soll-Zahlen, Idempotenznachweis, Go-/Stop-Kriterien) | PR #123, gemergt 2026-07-25 (`bed7f53`), CI grün |
 | **Production-Inventur aller Quellenpakete** (7 Pakete in der DB, 8 im Code-Seed seit #118; 163 Abrufwege; Ertrag/letzte Lieferung/Fehler je Paket) | `quellenarchitektur/30-paket-inventur-production.md`; PR #124, gemergt 2026-07-25 (`118e90c`), CI grün, Deployment `READY` |
 | **Automatische Profil→Paket-Zuweisung belegt** — Bund/Berlin/Brandenburg gegen den echten Production-Katalog, ohne Codeänderung; keine Mandanten-Hardcodes, Bestandsmandanten unverändert | `scripts/paketzuweisung-nachweis-test.js` 147/147, Inventur §6; PR #124, gemergt 2026-07-25 (`118e90c`) |
-| **Fachliche Vollständigkeit aller Quellenpakete belegt** (Phase-1-Punkt 13) — jedes der 8 Code-Seed-Pakete hat ein ausführbares Kriterium (Pflichtklassen + Pflicht-Herausgeberklassen + Vollzähligkeit + begründete Überschneidungen); 6 vollständig, 2 belegt teilweise; 3 Lücken behoben | `quellenarchitektur/31-paketvollstaendigkeit.md`; `scripts/paketvollstaendigkeit-test.js` 89/89, Offline-Suite 148/148; Branch `claude/helmut-phase1-punkt13-9iwu69` |
+| **Fachliche Vollständigkeit aller Quellenpakete belegt** (Phase-1-Punkt 13) — jedes der 8 Code-Seed-Pakete hat ein ausführbares Kriterium (Pflichtklassen + Pflicht-Herausgeberklassen + Vollzähligkeit + begründete Überschneidungen); 6 vollständig, 2 belegt teilweise; 5 Lücken behoben. Die Ausschuss-Sollmenge ist **extern verankert** (24 ständige Ausschüsse des 21. Bundestages, Drucksache 21/150) — die erste Fassung war katalogrelativ und führte nur 23 | `quellenarchitektur/31-paketvollstaendigkeit.md`; `scripts/bundestag-ausschuesse-test.js` 36/36, `scripts/paketvollstaendigkeit-test.js` 91/91, Offline-Suite 149/149; Branch `claude/helmut-phase1-punkt13-9iwu69` |
 
 ## 3 · Teilweise abgeschlossen (Code da, Abnahme fehlt)
 
@@ -195,6 +195,8 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 
 | Datum | Entscheidung |
 |---|---|
+| 2026-07-26 | **Die Ausschuss-Sollmenge wird extern verankert, nicht aus dem Katalog abgeleitet** — eine katalogrelative Vollzähligkeitsprüfung ist per Konstruktion erfüllbar und hat den Fehlbestand 23 statt 24 verdeckt. Kanonische Quelle: `seeds/bundestag-ausschuesse.js` (Drucksache 21/150) |
+| 2026-07-26 | **Katalog-Ids der Ausschusswege bleiben eingefroren**, auch wo der Slug nicht mehr zum amtlichen Namen passt. Eine Id-Änderung würde beim Seed-Einspielen eine neue `retrieval_paths`-Zeile anlegen und die alte als weiter gecrawlte Waise im Pflichtpaket zurücklassen. Die fachliche Bindung läuft über `ausschussKey` |
 | 2026-07-26 | **Ein ständiger Bundestagsausschuss gehört immer auch in `bund-basis`** — die Zusage „alle Ausschuesse" des neutralen Pflichtpakets ist eine Vollzähligkeitsregel und wird jetzt gezählt, nicht behauptet. Zuvor fehlte genau der Ausschuss des Pilotmandats im Pflichtpaket |
 | 2026-07-26 | **`regional-niedersachsen` bleibt „teilweise vollständig"** — die fehlenden benannten Regionalherausgeber werden **nicht** durch Anheben der Kuratierungsschwelle nachgezogen (≈ 20 zusätzliche Google-Abrufe je Crawl, verstärkt Befund B1). Kosten-/Laufzeitentscheidung des Betreibers; die Lücke ist testgesichert statt kaschiert |
 | 2026-07-26 | **Fachlich unmögliche Pflichtklassen werden ausgewiesen, nicht entfernt** — `die-linke-brandenburg` behält alle 3 Pflichtklassen; die 2 nicht besetzbaren tragen eine Begründung und halten das Paket bei „teilweise vollständig". Kriterien werden nicht abgeschwächt, um Grün zu erzeugen |
@@ -261,6 +263,7 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 
 | Sprint | Datum | Zustand |
 |---|---|---|
+| Punkt 13 — Nachtrag: Ausschuss-Sollmenge extern verankern (23 → 24) | 2026-07-26 | **Erfolgreich abgeschlossen** — der 21. Bundestag hat 24 ständige Ausschüsse (Drucksache 21/150); der Katalog führte 23 und neun Bezeichnungen der 20. Wahlperiode. Fehlend war der Ausschuss für Wahlprüfung, Immunität und Geschäftsordnung. Kanonische Quelle korrigiert (nicht der Testwert), Sollmenge extern verankert, 36 neue Prüfungen mit 6 Negativkontrollen; zusätzlich eine Lücke im Seed-Rückweg behoben. Offline-Suite 149/149. Keine Production-Änderung. Details unten. |
 | Phase-1-Punkt 13: Vollständigkeit jedes Quellenpakets prüfen | 2026-07-26 | **Erfolgreich abgeschlossen** — Abnahmekriterium erfüllt und belegt: alle 8 Pakete haben ein ausführbares fachliches Kriterium, 6 sind vollständig, 2 belegt teilweise vollständig (kein falsches Grün), 3 Lücken behoben. `paketvollstaendigkeit-test` 89/89, Offline-Suite 148/148, Seeds byte-identisch reproduzierbar. Keine Production-Änderung, Berlin/Brandenburg unverändert vorbereitet und inaktiv. Details unten. |
 | Go-Kriterium 2 kontrolliert versuchen: Pre-Seed-Backup-Export | 2026-07-25 | **Blockiert** — `node scripts/backup-export.js --scope=seed` exakt wie angefordert ausgeführt; Abbruch vor jedem Netzwerkzugriff (Exit 2), da diese Agenten-Sitzung keine `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` und keine `.env.local` besitzt. **Kein** Production-Zugriff erfolgt. Betreiberentscheidung: Export läuft auf der Betreibermaschine mit echter `.env.local`, Manifest wird zurückgemeldet. Details unten. |
 | Review + Merge von PR #125, danach Production-Ablauf bis vor den ersten Zugriff vorbereiten | 2026-07-25 | **Teilweise abgeschlossen** — PR #125 adversarial reviewt (3 Reviewer, 20 belegte Befunde, alle behoben) und als `0d6d867` gemergt (CI auf `main` grün, Vercel-Production `READY`). Der Production-Ablauf ist vollständig vorbereitet; **kein Production-Zugriff erfolgt, keine Seeds ausgeführt**. Wartet auf die Betreiberfreigabe für den Pre-Seed-Export. Details unten. |
@@ -271,6 +274,92 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 | Merge von PR #105 — Anker-Recovery-Pfad in Production stillgelegt | 2026-07-25 | **Erfolgreich abgeschlossen** — gemergt als `43e9e35`; Stilllegung auf `main` verifiziert. |
 | Recovery-Pfad-Review + Zusammenführung von PR #105 auf die kanonische Kontextstruktur | 2026-07-25 | **Erfolgreich abgeschlossen** |
 | Kontextstruktur für Claude Code (`CLAUDE.md` + Einstiegsschicht) | 2026-07-25 | **Erfolgreich abgeschlossen** — reine Dokumentation, gemergt als PR #119 (`c6a3d40`). |
+
+**Sprint „Punkt 13 — Nachtrag: Ausschuss-Sollmenge extern verankern" — Nachweis**
+
+- **Auslöser:** externe Prüfung des Betreibers. Der 21. Deutsche Bundestag hat **24** ständige
+  Ausschüsse (Einsetzungsbeschluss vom 15.05.2025 auf Grundlage der **Drucksache 21/150** vom
+  13.05.2025). Der erste Punkt-13-Abschluss arbeitete mit **23** und war damit nur
+  **katalogrelativ** bewiesen — das genügt dem Abnahmekriterium nicht. Punkt 13 wurde
+  zwischenzeitlich auf „teilweise abgeschlossen" zurückgesetzt und ist erst mit dieser Korrektur
+  wieder grün.
+- **Der fehlende Ausschuss:** **Ausschuss für Wahlprüfung, Immunität und Geschäftsordnung**
+  (§ 128 GO-BT, 14 Mitglieder). Er war im Katalog **überhaupt nicht vorhanden** — kein Abrufweg,
+  keine Zuordnung, keine Erwähnung.
+- **Ursache der Abweichung 23 statt 24** (kein Zählfehler, sondern zwei fehlende Verankerungen):
+  1. `bundestagCommitteeSources` war eine **handgepflegte Politikfeld-Auswahl**, nie ein Abgleich
+     gegen den Einsetzungsbeschluss. Ein Ausschuss ohne Sachpolitikfeld — parlamentarische
+     Selbstorganisation — fiel durch das Raster.
+  2. Die Vollzähligkeitsregel leitete ihre Sollmenge **aus demselben Katalog** ab und war damit
+     per Konstruktion erfüllbar: 23 von 23, ohne zu wissen, dass 24 richtig ist.
+- **Zusätzlich gefunden: neun Bezeichnungen/Zuschnitte aus der 20. Wahlperiode.** Darunter zwei
+  echte Zuschnittwechsel: Bildung liegt in der 21. WP beim **Ausschuss für Bildung, Familie,
+  Senioren, Frauen und Jugend**, Forschung bildet den eigenen **Ausschuss für Forschung,
+  Technologie, Raumfahrt und Technikfolgenabschätzung**. Ebenfalls korrigiert: Landwirtschaft,
+  Ernährung und Heimat · Umwelt, Klimaschutz, Naturschutz und nukleare Sicherheit · Recht und
+  Verbraucherschutz · Digitales und Staatsmodernisierung · Wohnen, Stadtentwicklung, Bauwesen und
+  Kommunen · Sport und Ehrenamt · die Angelegenheiten der Europäischen Union · sowie die fünf
+  Kurzformen (Verteidigungs-, Finanz-, Haushalts-, Auswärtiger, Petitionsausschuss).
+- **Korrektur an der kanonischen Quelle, nicht am Testwert:**
+  - **Neu:** `lib/helmut/quellenarchitektur/seeds/bundestag-ausschuesse.js` — Wahlperiode,
+    Einsetzungsbeschluss und die 24 Ausschüsse mit stabiler Kennung, amtlicher Bezeichnung und je
+    eigenem amtlichen Fundstellenhinweis. Wird **nicht** aus dem Katalog abgeleitet.
+  - **Katalog:** alle 24 Ausschussquellen holen ihren Namen aus der Sollmenge und tragen eine
+    `ausschussKey`-Kennung; der fehlende 24. Ausschuss ist als `rp-committee-wahlpruefung`
+    ergänzt — derselbe Google-News-Suchweg wie die anderen 22, Suchbegriffe strikt aus der
+    amtlichen Bezeichnung. **Keine erfundene Quelle, keine erfundene URL.**
+  - **Katalog-Ids eingefroren**, auch wo der Slug nicht mehr passt (`committee-bildung` trägt
+    jetzt den Forschungsausschuss). Eine Id-Änderung hätte beim Seed-Einspielen eine neue
+    `retrieval_paths`-Zeile angelegt und die alte als weiter gecrawlte Waise im Pflichtpaket
+    zurückgelassen.
+  - **Erkennung umgestellt** auf `ausschussKey` statt Namensmuster `^Ausschuss ` — fünf der 24
+    amtlichen Bezeichnungen beginnen nicht mit „Ausschuss " und wären ab jetzt übersehen worden.
+  - **Vollzähligkeitsregel** prüft gegen die externe Sollmenge (24) und nennt die Wahlperiode.
+- **Zweiter behobener Defekt (durch die Korrektur aufgedeckt):** Seed 1 legt jetzt erstmals einen
+  **neuen Abrufweg** an. Der gezielte Restore (`scripts/seed-restore-sql.js`) deckte diesen Fall
+  nicht ab und hätte die Zeile stehen gelassen — gefangen von der Byte-Gleichheitsprüfung des
+  Restore-Tests, nicht von einer Annahme. Er entfernt sie jetzt *guarded* (nur wenn keine
+  `package_paths`-Zeile sie mehr referenziert, wegen `on delete cascade`), mit eigener
+  Vorprüfung und eigener Nachprüfung. Der Mini-SQL-Executor des Tests führt die neue
+  Guard-Form wirklich aus, statt sie zu überspringen.
+- **Neue extern verankerte Zusicherung:** `scripts/bundestag-ausschuesse-test.js` — **36/36**.
+  Sichert ab: Wahlperiode = 21 · Sollmenge = exakt 24 · Kennungen und amtliche Bezeichnungen
+  festgeschrieben, jede mit Fundstelle · Katalog == Sollmenge · **sechs Negativkontrollen**:
+  fehlender Ausschuss, zusätzlicher veralteter Ausschuss der 20. WP, **Tausch bei
+  Zahlengleichstand (24 bleibt 24)**, Umbenennung, Zusammenlegung, Quelle ohne Kennung — jede
+  einzeln rot. Zahlengleichheit allein rettet nirgends.
+- **Tests (echte Zahlen):** `bundestag-ausschuesse` **36/36** · `paketvollstaendigkeit`
+  **91/91** · `source-architecture` **98/98** · `profile-packages` **69/69** · `seed-restore`
+  **43/43** · `seed-drift` grün · `admin-source-report` **56/56** · `sprint6-pilot-migration`
+  **46/46** · `landesmodule-kandidaten` **77/77** · `paketzuweisung-nachweis` **147/147** ·
+  `tenant-neutrality` **39/39** · **Offline-Suite 149/149 grün**. Generatorlauf zweimal
+  wiederholt: beide Seeds byte-identisch; der Landesmodul-Seed ist gegen `main` unverändert.
+- **Ergebnis der Vollständigkeitsprüfung unverändert:** 6 vollständig · 2 belegt teilweise ·
+  0 blockiert. `bund-basis` deckt jetzt **24/24** ständige Ausschüsse ab (vorher 23/23 gegen eine
+  zu kleine Sollmenge).
+- **Production-Sicherheitsnachweis:** keine Production-Änderung, keine Migration, keine
+  Seed-Einspielung, keine Berlin-/Brandenburg-Aktivierung, keine Änderung an Cron, Locks,
+  Telemetrie, Flags oder Secrets. Die 5 `always_on`-Kernwege sind unverändert; der neue Weg ist
+  `needs_review` + `auto`, **nicht** `always_on`, **nicht** `is_critical`. Der Live-Crawlpfad baut
+  im Modus `on` weiterhin aus DB-Zeilen und importiert weder `packageKeysForSource` noch
+  `buildFullModel` (Strukturriegel im Test).
+- **Ehrlich benannte Laufzeitwirkung nach der freigabepflichtigen Seed-Einspielung:** **ein**
+  zusätzlicher Google-News-Abruf je Crawl (145 → 146 Wege für ein voll versorgtes Profil,
+  +0,7 %); die Google-Konzentration (Befund B1) steigt um einen Weg. Soll-Zahlen im Seed jetzt
+  **145** Abrufwege und **147** Zuordnungen; gegen die gemessene Production **+1** Abrufweg und
+  **+2** Zuordnungen. `betrieb/quellen-seed-einspielung.md` §4/§10b ist nachgezogen.
+- **Ehrliche Grenze:** Der **Volltext der Drucksache 21/150 wurde nicht gelesen** —
+  `bundestag.de` und `dserver.bundestag.de` sind aus der Agentensitzung nicht abrufbar (die
+  Netzrichtlinie antwortet `403` auf `CONNECT`, zusätzlich Bot-`403` auf den HTML-Seiten; dieselbe
+  Sperre wie bei `rp-bundestag`). Die 24 Bezeichnungen stammen aus amtlichen
+  Bundestagsdokumenten der 21. Wahlperiode, überwiegend aus **Ausschuss-Tagesordnungen**
+  (`bundestag.de/resource/blob/…`), die jede Bezeichnung wörtlich im Kopf tragen; jeder Eintrag
+  der Sollmenge nennt seine Fundstelle. Ein direkter Abgleich gegen 21/150 bleibt empfohlen.
+  Ebenfalls offen: die **Fraktions**vollzähligkeit (8/8) ist weiterhin katalogrelativ.
+- **Nicht getan (bewusst):** kein Production-Zugriff · kein Seed eingespielt · keine Migration ·
+  keine Quelle außer dem belegten 24. Ausschuss hinzugefügt · keine Katalog-Id geändert · keine
+  Kuratierungsschwelle angehoben · keine Berlin-/Brandenburg-Aktivierung · keine Cron-/Flag-/
+  Secret-Änderung · keine Abschwächung eines Kriteriums, um Grün zu erzeugen.
 
 **Sprint „Phase-1-Punkt 13: Vollständigkeit jedes Quellenpakets" — Nachweis**
 
@@ -363,12 +452,10 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
   Landeswege `needs_review` + `manual`, `aktiveAbrufwege = 0`, kein Landesweg in einem aktiven
   Paket, ein Berliner Landtagsprofil aktiviert **0** Landeswege (bei nicht-leerer
   Bundesaktivierung), `berlin-basis` bleibt ehrlich `requested_unsupplied`.
-- **Verbleibende Grenze (ehrlich):** Die Vollzähligkeit ist **katalogrelativ**. Bewiesen ist, dass
-  jeder ständige Ausschuss und jede Fraktion, die der Katalog kennt, im neutralen Pflichtpaket
-  liegt. **Nicht** bewiesen ist, dass der Katalog die Ausschussliste des laufenden Bundestages
-  vollständig kennt (23 Einträge) — `bundestag.de` ist aus dieser Sitzung nicht erreichbar
-  (Netzrichtlinie antwortet `403` auf `CONNECT`, dieselbe Bot-Sperre wie bei `rp-bundestag`).
-  Benannter Schritt für den Betreiber.
+- **Verbleibende Grenze (ehrlich) — inzwischen überholt:** Die Vollzähligkeit war zu diesem
+  Zeitpunkt **katalogrelativ**; bewiesen war nur, dass jeder ständige Ausschuss, den der Katalog
+  kennt, im Pflichtpaket liegt. Genau dort lag der Fehler: der Katalog kannte 23, richtig sind
+  **24**. Behoben im Nachtragssprint oben.
 - **Nicht getan (bewusst):** kein Production-Zugriff, weder lesend noch schreibend · kein Seed
   eingespielt · keine Migration · keine Quelle aktiviert oder deaktiviert · keine neue Quelle
   erfunden oder hinzugefügt · keine Berlin-/Brandenburg-Aktivierung · keine Cron-/Flag-/

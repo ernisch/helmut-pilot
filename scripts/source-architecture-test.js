@@ -154,9 +154,11 @@ check("Aggregator-Abrufwege sind googlenews_search", M.retrievalPaths.filter((p)
 
 // ============================ MIGRATION ============================
 console.log("== Migration: Katalogabbildung ==");
-check("143 kuratierte Quellen im Katalog — KEINE Personenquelle (entsteht dynamisch als '<id>-news')",
-  v1Sources.length === 143 && v1Sources.every((s) => s.type !== "person" && !s.demoOnly));
-check("alle 143 + DIP als Abrufwege abgebildet", M.retrievalPaths.length === 144);
+// 144 statt 143 seit der Ausschuss-Korrektur (Punkt 13, 2026-07-26): der bis dahin fehlende
+// 24. staendige Ausschuss (Wahlpruefung, Immunitaet und Geschaeftsordnung) ist ergaenzt.
+check("144 kuratierte Quellen im Katalog — KEINE Personenquelle (entsteht dynamisch als '<id>-news')",
+  v1Sources.length === 144 && v1Sources.every((s) => s.type !== "person" && !s.demoOnly));
+check("alle 144 + DIP als Abrufwege abgebildet", M.retrievalPaths.length === 145);
 check("keine unzugeordnete Quelle (unmapped=0)", M.unmapped.length === 0);
 check("jeder Abrufweg traegt legacy_source_id (ID-Kompatibilitaet)", M.retrievalPaths.every((p) => !!p.legacy_source_id));
 // Ist-Zustand: ZWEI Abrufwege gehoeren BEWUSST zu je zwei Paketen ->
@@ -166,7 +168,7 @@ check("jeder Abrufweg traegt legacy_source_id (ID-Kompatibilitaet)", M.retrieval
 //   - ausschuss-arbeit-soziales: bund-basis (Vollzaehligkeit "alle Ausschuesse" des neutralen
 //     Pflichtpakets) + arbeit-und-soziales (Kernquelle des Fachthemas, Punkt 13).
 // Begruendung + Test: quellenarchitektur/paket-vollstaendigkeit.js, paketvollstaendigkeit-test.js.
-check("jede Katalog-Quelle mind. einem Paket zugeordnet; 2 Wege bewusst in zweien (144+2)", M.packagePaths.length === 146);
+check("jede Katalog-Quelle mind. einem Paket zugeordnet; 2 Wege bewusst in zweien (145+2)", M.packagePaths.length === 147);
 check("fraction-linke in bund-basis UND die-linke-bund",
   M.packagePaths.some((pp) => pp.package_id === "pkg-die-linke-bund" && pp.retrieval_path_id === "rp-fraction-linke") &&
   M.packagePaths.some((pp) => pp.package_id === "pkg-bund-basis" && pp.retrieval_path_id === "rp-fraction-linke"));
@@ -175,7 +177,7 @@ console.log("== Migration: Bundesbasis nicht verloren (Bestandsschutz) ==");
 const legacyIds = new Set(M.retrievalPaths.map((p) => p.legacy_source_id));
 check("gesunde Bundesquellen erhalten (DLF/Tagesschau/BMAS)", ["deutschlandfunk-politik", "tagesschau-politik", "bmas"].every((id) => legacyIds.has(id)));
 const bundBasis = M.packagePaths.filter((pp) => pp.package_id === "pkg-bund-basis").length;
-check("Bund-Basis-Paket traegt 53 neutrale + DIP + Fachausschuss = 55 Abrufwege", bundBasis === 55);
+check("Bund-Basis-Paket traegt 54 neutrale + DIP + Fachausschuss = 56 Abrufwege", bundBasis === 56);
 check("Arbeit-und-Soziales-Paket traegt 84 Fachquellen", M.packagePaths.filter((pp) => pp.package_id === "pkg-arbeit-und-soziales").length === 84);
 check("Regional Niedersachsen = 4 Abrufwege", M.packagePaths.filter((pp) => pp.package_id === "pkg-regional-niedersachsen").length === 4);
 
