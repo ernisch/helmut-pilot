@@ -128,7 +128,7 @@ check("Landtag Brandenburg + Die Linke -> NICHT die-linke-berlin", !rBb.all.incl
   check("Landes-Parteipaket ist optional, nie Pflicht", !berlinLinke.required.includes("die-linke-berlin"));
   check("Landtag Berlin + Die Linke -> NICHT die-linke-brandenburg", !berlinLinke.all.includes("die-linke-brandenburg"));
 }
-check("nicht-sozialer Ausschuss erzeugt KEIN Fachpaket", !pp.resolveProfilePackages({ id: "t", fullName: "T", partei: "SPD", politische_ebene: "bundestag", ausschuesse: ["Ausschuss für Verkehr"], profileActive: true }).optional.includes("arbeit-und-soziales"));
+check("nicht-sozialer Ausschuss erzeugt KEIN Fachpaket", !pp.resolveProfilePackages({ id: "t", fullName: "T", partei: "SPD", politische_ebene: "bundestag", ausschuesse: ["Verkehrsausschuss"], profileActive: true }).optional.includes("arbeit-und-soziales"));
 
 // ============ 5) Fremde Regionalpakete werden NICHT zugewiesen ============
 console.log("== 5) Keine fremden Regional-/Landespakete ==");

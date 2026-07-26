@@ -149,9 +149,10 @@ Sie unterscheiden sich, und zwar erklärbar:
 | `geographies` | 50 | 50 | 50 |
 | `political_entities` | 73 | 73 | 73 |
 | `publishers` | 64 | 64 | 64 |
-| `source_packages` | **7** | **9** (+2) | 9 |
-| `retrieval_paths` | **163** | 163 (6 aktualisiert) | 163 |
-| `package_paths` | **165** | **165** (+0, siehe unten) | 165 (−4 / +4) |
+| `source_packages` | **7** | **9** (+2, 4 weitere aktualisiert) | 9 |
+| `publishers` | 64 | **71** (+7 neu, siehe 10c) | 71 |
+| `retrieval_paths` | **163** | **171** (+8 neu, 6 aktualisiert, 28 mit korrigiertem Namen) | 171 |
+| `package_paths` | **165** | **174** (+9, siehe unten) | 174 (−4 / +4) |
 | `path_expected_levels` | 18 | 18 | 18 |
 | `path_expected_geographies` | 18 | 18 | 18 |
 
@@ -160,20 +161,43 @@ Sie unterscheiden sich, und zwar erklärbar:
 | Nr. | Kennzahl | Soll |
 |---|---|---|
 | 4 | betroffene **Publisher** | **0** (keine neuen, keine geänderten) |
-| 5 | betroffene **Retrieval Paths** | **6** (aktualisiert; 0 neu, 0 entfernt) |
-| 6 | betroffene **Source Packages** | **4** (2 neu + 2 mit reduzierten `required_classes`) |
+| 5 | betroffene **Retrieval Paths** | **14** (6 aktualisiert + **8 neu**: `rp-committee-wahlpruefung` sowie die 7 benannten Niedersachsen-Wege; 0 entfernt). Zusätzlich tragen 28 Wege im Seed korrigierte amtliche Bezeichnungen (22 Ausschüsse, 6 Fraktions-/Parteiwege) — die `on-conflict`-Klausel aktualisiert `name` heute **nicht**, in der Datenbank bleiben die alten Namen bis zu einem eigenen gezielten `update` (siehe R-2) |
+| 6 | betroffene **Source Packages** | **8** (2 neu + 2 mit reduzierten `required_classes` + 4 Bundespakete mit erstmals gesetzten `required_classes`) |
 | 7 | **entfernte** alte Paketzuordnungen | **4** (alle aus Seed 2) |
-| 8 | **neu eingefügte** Paketzuordnungen | **4** (alle aus Seed 2) |
-| — | Gesamtzahl Einfügungen | Seed 1: **2** (die 2 Pakete) · Seed 2: **4** |
-| — | Gesamtzahl Aktualisierungen | Seed 1: **8** (6 Wege + 2 Pakete) · Seed 2: **0** |
+| 8 | **neu eingefügte** Paketzuordnungen | **13** (9 aus Seed 1 + 4 aus Seed 2) |
+| — | Gesamtzahl Einfügungen | Seed 1: **26** (2 Pakete + 9 Zuordnungen + 8 Abrufwege + 7 Herausgeber) · Seed 2: **4** |
+| — | Gesamtzahl Aktualisierungen | Seed 1: **12** (6 Wege + 6 Pakete) · Seed 2: **0** |
 | — | Gesamtzahl Löschungen | Seed 1: **0** · Seed 2: **4** |
 
-> **Warum Seed 1 in Production 0 statt 1 Zuordnung einfügt:** Seed 1 enthält
-> `('pkg-die-linke-bund', 'rp-fraction-linke')`. Die Inventur weist für dieses Paket bereits
-> **3** Zuordnungen aus, der Seed-Stand vor #118 erzeugt nur 2 — die dritte ist genau diese.
-> Der Insert läuft in `on conflict … do nothing` und ist damit wirkungslos. **Gegen eine leere
-> Datenbank** (also in der Simulation und im Offline-Test) fügt Seed 1 sehr wohl +1 ein; deshalb
-> weichen Test und Production hier bewusst voneinander ab.
+> **Warum Seed 1 in Production genau 1 Zuordnung einfügt:** Seed 1 enthält zwei
+> Doppelzuordnungen.
+> 1. `('pkg-die-linke-bund', 'rp-fraction-linke')` — **wirkungslos**: die Inventur weist für
+>    dieses Paket bereits **3** Zuordnungen aus, der Seed-Stand vor #118 erzeugt nur 2, die
+>    dritte ist genau diese. Der Insert läuft in `on conflict … do nothing`.
+> 2. `('pkg-bund-basis', 'rp-ausschuss-arbeit-soziales')` — **neu** (Punkt-13-Sprint,
+>    2026-07-26): der Ausschuss für Arbeit und Soziales lag nicht im neutralen
+>    Pflicht-Basispaket, obwohl dessen Zweck „alle Ausschuesse" zusagt. Diese Zeile existiert in
+>    Production noch nicht und wird eingefügt. **Kein zusätzlicher Abruf:** der Weg ist bereits
+>    `auto` und in Production `broken`; nach der separat freigabepflichtigen Reaktivierung deckt
+>    die globale Wegededuplizierung ihn ab.
+> 3. `('pkg-bund-basis', 'rp-committee-wahlpruefung')` — **neu** (Ausschuss-Korrektur,
+>    2026-07-26): der 24. ständige Ausschuss (Wahlprüfung, Immunität und Geschäftsordnung) fehlte
+>    im Katalog vollständig. Diese Zeile **und** der zugehörige Abrufweg werden eingefügt.
+>    **Das ist die einzige echte Laufzeitwirkung aller Punkt-13-Korrekturen:** ein zusätzlicher
+>    Google-News-Abruf je Crawl (145 → 146 Wege für ein voll versorgtes Profil, +0,7 %); die
+>    Google-Konzentration (Befund B1) steigt um einen Weg. Der Weg ist `needs_review` + `auto`,
+>    **nicht** `always_on` und **nicht** `is_critical`.
+> 4. **7× `('pkg-regional-niedersachsen', …)`** — die benannte Regionalbasis Niedersachsen
+>    (Landtag, Landesregierung, HAZ, NDR, Braunschweiger Zeitung, Salzgitter Zeitung,
+>    regionalHeute). Alle sieben Abrufwege werden mit `status='paused'` und
+>    `activation_mode='manual'` eingefügt und **nicht abgerufen** — drei unabhängige Riegel
+>    verhindern das (Crawler-`active`-Filter, Profilauswahl, Plan-Regel 4). **0 zusätzliche
+>    Abrufe.** Ihre Aktivierung ist eine eigene Freigabeentscheidung.
+>
+> **Gegen eine leere Datenbank** (Simulation und Offline-Test) fügt Seed 1 alle drei ein;
+> gegen die gemessene Production genau +2. Test und Production weichen hier bewusst voneinander ab.
+> Belege: `scripts/seed-restore-test.js` (43/43) und
+> [`../quellenarchitektur/31-paketvollstaendigkeit.md`](../quellenarchitektur/31-paketvollstaendigkeit.md) §7.
 >
 > Damit entfällt auch die frühere Begründung, das Partei-Paket werde „mit 0 funktionierenden Wegen
 > ausgeliefert": die Inventur (§3) weist `die-linke-bund` mit einem funktionierenden Weg und
@@ -184,6 +208,26 @@ Sie unterscheiden sich, und zwar erklärbar:
 
 **10 · Neue nicht-verpflichtende Pakete:** `die-linke-berlin` (3 Wege), `die-linke-brandenburg`
 (1 Weg). Beide `prepared`, `is_base = false`.
+
+**10b · Rückweg deckt alle neu angelegten Zeilen ab:** `scripts/seed-restore-sql.js` entfernt
+alle **8** neuen Abrufwege und **7** neuen Herausgeber beim Restore wieder — jeweils *guarded*,
+also nur wenn keine Kindzeile sie mehr referenziert (Schutz gegen `on delete cascade`). Vorher
+legte Seed 1 keine neuen Abrufwege oder Herausgeber an; der Rückweg deckte diesen Fall nicht ab
+und hätte die Zeilen stehen gelassen. Belegt durch `scripts/seed-restore-test.js` (46/46,
+Gruppe 8 „Endzustand ist BYTEGLEICH zum Ausgangszustand").
+
+**10c · Sieben neue Herausgeber:** die Herausgeber der benannten Niedersachsen-Wege
+(`landtag-niedersachsen.de`, `niedersachsen.de`, `haz.de`, `ndr.de`,
+`braunschweiger-zeitung.de`, `salzgitter-zeitung.de`, `regionalheute.de`). Der Restore entfernt
+sie *guarded* wieder — nur wenn danach kein Abrufweg sie mehr referenziert (Schutz gegen
+`ON DELETE CASCADE` auf `retrieval_paths.publisher_id`). `geographies` und `political_entities`
+werden vom Bund-Restore weiterhin **gar nicht** angefasst.
+
+**10a · `required_classes` der vier Bundespakete** (neu seit 2026-07-26, Punkt 13): Seed 1 setzt
+sie erstmals von `{}` auf 7 (`bund-basis`) / 10 (`arbeit-und-soziales`) / 1 (`die-linke-bund`) /
+1 (`regional-niedersachsen`) Klassen — reine Metadaten für die Vollständigkeitsanzeige, **ohne**
+Einfluss auf Crawl, Aktivierung oder Matching. Die `on conflict`-Klausel des Seeds führt
+`required_classes` bereits, es ist also kein neuer Schreibpfad.
 
 **11 · Wird eine Quelle automatisch aktiviert?** — **Ja, und zwar beabsichtigt.** Das ist der
 wichtigste operative Punkt dieser Vorlage und darf nicht übersehen werden:

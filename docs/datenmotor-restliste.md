@@ -350,7 +350,7 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 - **Freigabe:** **JA** (E5).
 
 #### OP-23 · Hygiene-Paket (Serie A-P3-1…A-P3-10, soweit offen)
-- **Status:** offen (Sammelposten): Briefing→Decision relational verlinken, toten V2-KI-Pfad entfernen, Einmal-Module nach `scripts/one-off/`, Dead-Code-Scan in CI, Erwähnungs-Engines konsolidieren, `decisions`/`matching_results` bereinigen/nutzen (E6), Cron-DST-Entscheid, Boot-Zeit-Env-Selbstcheck, `document_type`-Befüllung.
+- **Status:** offen (Sammelposten): Briefing→Decision relational verlinken, toten V2-KI-Pfad entfernen, Einmal-Module nach `scripts/one-off/`, Dead-Code-Scan in CI, Erwähnungs-Engines konsolidieren, `decisions`/`matching_results` bereinigen/nutzen (E6), Cron-DST-Entscheid, Boot-Zeit-Env-Selbstcheck, `document_type`-Befüllung, **Pflichtklassenanzeige im Admin an das vereinigte Paketmodell hängen** (zeigt heute `present: 0`, weil `buildSourceAdminReport` auf `buildFullModel()` arbeitet, das die Berlin-/Brandenburg-Wege nicht kennt; die echte Abdeckung ist 12/12 bzw. 12/12 — Befund V-6 in `quellenarchitektur/31-paketvollstaendigkeit.md`. Vorsicht: derselbe `catalog`-Eingang speist Aktivierung und Qualitätsbericht).
 - **Fehlender Schritt:** je Einzelpunkt kleiner PR; DST-Entscheid ist eine Zeitplan-Freigabe.
 - **Abhängigkeiten:** keine harten.
 - **Risiko:** niedrig (Hygiene), außer DST (Zeitplan).

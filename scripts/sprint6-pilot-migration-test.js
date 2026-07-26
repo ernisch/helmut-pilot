@@ -32,7 +32,7 @@ check("classifyOrphans ohne Datenkontext: nur dip", (() => { const rows = classi
 
 console.log("== Migrations-Mapper: Coverage (strukturell) ==");
 const vStruct = mm.validateMigration({ catalog: cat });
-check("144 Abrufwege (143 v1Sources + dip)", vStruct.counts.legacyIds === 144);
+check("152 Abrufwege (151 v1Sources + dip)", vStruct.counts.legacyIds === 152);
 check("keine Quelle ohne Paketzuordnung (unmapped leer)", vStruct.counts.unmappedPackages === 0 && cat.unmapped.length === 0);
 check("ohne raw_documents: availability.observedSources=false (ehrlich, nichts erfunden)", vStruct.availability.observedSources === false);
 check("strukturell verdict=ok", vStruct.verdict === "ok");

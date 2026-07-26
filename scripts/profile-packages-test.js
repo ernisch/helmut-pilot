@@ -125,13 +125,13 @@ const aVoll = pp.computeGlobalActivation({ ...base, profiles: [vollprofil] });
 const aBerlin = pp.computeGlobalActivation({ ...base, profiles: [berlinP] });
 const aBB = pp.computeGlobalActivation({ ...base, profiles: [bbP] });
 check("reines Bundestagsprofil: nur bund-basis aktiv", JSON.stringify(aReinBT.packageStatus.filter((p) => p.activation === "active").map((p) => p.key)) === JSON.stringify(["bund-basis"]));
-check("reines Bundestagsprofil: 54 Abrufwege (NICHT 144)", aReinBT.activePathCount === 54);
+check("reines Bundestagsprofil: 56 Abrufwege (NICHT 145)", aReinBT.activePathCount === 56);
 check("voll versorgtes Profil: 4 Sachpakete aktiv (KEIN Personenpaket im Code-Seed)", aVoll.packageStatus.filter((p) => p.activation === "active").length === 4);
 check("voll versorgtes Profil: kein 'profil-*'-Paket im Katalog-Seed vorhanden", aVoll.packageStatus.every((p) => !p.key.startsWith("profil-")));
-check("voll versorgtes Profil: 144 Abrufwege (alle Sachquellen, KEINE Personenquelle im Katalog)", aVoll.activePathCount === 144);
+check("voll versorgtes Profil: 145 Abrufwege (alle Sachquellen, KEINE Personenquelle im Katalog)", aVoll.activePathCount === 145);
 check("voll versorgt > reines Bundestagsprofil (mehr belegte Dimensionen)", aVoll.activePathCount > aReinBT.activePathCount);
-check("Berliner Landtag: bund-basis aktiv (54), berlin-basis requested_unsupplied", aBerlin.activePathCount === 54 && aBerlin.packageStatus.find((p) => p.key === "berlin-basis").activation === "requested_unsupplied");
-check("Brandenburger Landtag: bund-basis aktiv (54), brandenburg-basis requested_unsupplied", aBB.activePathCount === 54 && aBB.packageStatus.find((p) => p.key === "brandenburg-basis").activation === "requested_unsupplied");
+check("Berliner Landtag: bund-basis aktiv (56), berlin-basis requested_unsupplied", aBerlin.activePathCount === 56 && aBerlin.packageStatus.find((p) => p.key === "berlin-basis").activation === "requested_unsupplied");
+check("Brandenburger Landtag: bund-basis aktiv (56), brandenburg-basis requested_unsupplied", aBB.activePathCount === 56 && aBB.packageStatus.find((p) => p.key === "brandenburg-basis").activation === "requested_unsupplied");
 check("reines Bundestagsprofil aktiviert KEINE Sozial-/Linke-/Regionalquellen", ["arbeit-und-soziales", "die-linke-bund", "regional-niedersachsen"].every((k) => aReinBT.packageStatus.find((p) => p.key === k).activation !== "active"));
 
 // ============================ PERSONENPAKET-KONVENTION ============================
@@ -158,7 +158,7 @@ const synthLinks = [...M.packagePaths, { package_id: "pkg-profil-tenant-alpha", 
 const aSynth = pp.computeGlobalActivation({ packages: synthPkgs, packagePaths: synthLinks, retrievalPaths: synthPaths, profiles: [vollprofil] });
 check("existierendes DB-Personenpaket 'profil-tenant-alpha' wird fuer das Mandat aktiv",
   aSynth.packageStatus.find((p) => p.key === "profil-tenant-alpha").activation === "active");
-check("... und traegt den Personen-Abrufweg (145 = 144 Sachwege + 1 Personenweg)", aSynth.activePathCount === 145);
+check("... und traegt den Personen-Abrufweg (146 = 145 Sachwege + 1 Personenweg)", aSynth.activePathCount === 146);
 check("fremdes Mandat aktiviert das Personenpaket NICHT", (() => {
   const aFremd = pp.computeGlobalActivation({ packages: synthPkgs, packagePaths: synthLinks, retrievalPaths: synthPaths, profiles: [reinBT] });
   return aFremd.packageStatus.find((p) => p.key === "profil-tenant-alpha").activation !== "active";
