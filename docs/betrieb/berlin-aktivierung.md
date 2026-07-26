@@ -1,7 +1,9 @@
 # Berlin aktivieren — Runbook und Go-/No-Go-Grundlage
 
-**Stand:** 2026-07-26 (zweiter Durchgang) · **Sprint:** Phase-1-Punkt 14 · **Zustand:**
-aktivierungsreif **mit reduziertem Set**, **Production unverändert** · **Kanonische Daten:**
+**Stand:** 2026-07-26 (dritter Durchgang, Production-Sprint) · **Sprint:** Phase-1-Punkt 14 ·
+**Zustand:** aktivierungsreif **mit reduziertem Set**, **Sicherung erstellt**, **Production
+weiterhin unverändert** — die Aktivierung ist an einem fehlenden Zugang blockiert (**§16**) ·
+**Kanonische Daten:**
 [`seeds/berlin-aktivierung.js`](../../lib/helmut/quellenarchitektur/seeds/berlin-aktivierung.js) ·
 [`seeds/berlin-neutralitaet.js`](../../lib/helmut/quellenarchitektur/seeds/berlin-neutralitaet.js) ·
 [`seeds/berlin-profilplan.js`](../../lib/helmut/quellenarchitektur/seeds/berlin-profilplan.js)
@@ -430,7 +432,10 @@ Bedingungen, in dieser Reihenfolge:
 
 1. **Block A zuerst** (Neutralisierung). Ohne ihn ist eine Aktivierung ausgeschlossen — sie gäbe
    jedem Berliner Mandat die Quellen einer Partei und eine Personensuche.
-2. **Sicherung** nach V6 (`backup-export.js --scope=seed`, Manifest `vollstaendig: true`).
+2. ~~**Sicherung** nach V6 (`backup-export.js --scope=seed`, Manifest `vollstaendig: true`).~~
+   **Erledigt am 2026-07-26, 16:47 UTC** — 8/8 Tabellen, 0 Fehler, `vollstaendig: true`,
+   an `mainCommit 93006e8` gebunden (§16.3). Gültig, solange `retrieval_paths`,
+   `package_paths` und `source_packages` unverändert bleiben.
 3. **Nur Stufe 1** (die zwei Direktfeeds) im ersten Schritt; Stufe 2 erst nach einem sauberen
    vollen Crawl-Zyklus.
 4. **Neuverifikation wiederholen**, wenn zwischen §2 und der Ausführung mehr als 14 Tage liegen.
@@ -440,3 +445,215 @@ Bedingungen, in dieser Reihenfolge:
 **Kein Go für:** `rp-be-landesparlament`, `rp-be-landesfraktionen` (veraltet), `rp-be-plenum`
 (strukturell 0 Items), `die-linke-berlin` und seine drei Wege (Parteipaket, 2× bot-gesperrt),
 jede Brandenburg-Änderung, jede `max_items`- oder Cron-Änderung.
+
+## 16 · Ausführungsprotokoll des Production-Sprints vom 2026-07-26 (Stufe 1)
+
+**Sprintzustand: blockiert. Keine Production-Mutation erfolgt.** Ausgeführt wurden ausschließlich
+`select`-Abfragen und der read-only Backup-Export. Kein `insert`, kein `update`, kein `delete`, kein
+Flag, kein Profil, kein Crawl.
+
+### 16.1 Startbedingungen — 11 von 12 erfüllt
+
+| # | Bedingung | Ergebnis |
+|---|---|---|
+| 1 | PR #134 in `main` gemergt | **ja** — `merged: true`, 2026-07-26 16:38:41 UTC |
+| 2 | finaler PR-Commit Bestandteil von `main` | **ja** — `e2be0a4` und `5cfce6c` sind Vorfahren |
+| 3 | Pflichtprüfungen von #134 grün | **ja** — 6/6 `success`, beide Pflicht-Checks grün |
+| 4 | lokaler Stand == `origin/main` | **ja** — `93006e8` |
+| 5 | Arbeitsbaum sauber | **ja** |
+| 6 | keine neueren Berlin-Änderungen | **ja** — 0 Commits nach `93006e8`; V2-Verifikation 0 Tage alt (Grenze 14) |
+| 7 | Brandenburg vorbereitet/gesperrt und inaktiv | **ja** — `brandenburg-basis` = `prepared`, alle 9 Wege `needs_review` + `manual`, 0 BB-Profile |
+| 8 | keine laufende/teilweise Berliner Aktivierung | **ja** — alle 10 BE-Wege `needs_review` + `manual`, `berlin-basis` = `prepared`, 0 Landtagsprofile, **0** Berliner Telemetriezeilen jemals |
+| 9 | keine parallele Änderung derselben Tabellen | **ja** — letzte Konfigänderung 11:13:10 UTC, seither unverändert (Messung 16:45 UTC) |
+| 10 | **notwendige Production-Zugänge vorhanden** | **NEIN — siehe §16.5** |
+| 11 | Backup-/Aktivierungs-/Rollback-Werkzeuge auf `main` | **ja** — alle vorhanden, Backup real ausgeführt |
+| 12 | Sprint ausdrücklich freigegeben | **ja** |
+
+**Nebenbefund zu #6:** der offene **PR #132** (Brandenburg, seit 15:24 UTC) führt einen
+*konkurrierenden* Gate-Namen `HELMUT_LANDESMODUL_FREIGABE` ein, während `main` seit #133/#134
+`HELMUT_LANDESMODULE` verwendet. `main` ist maßgeblich und #132 ist nicht gemergt — vor einem
+Merge von #132 muss aber entschieden werden, welcher Gate-Name gilt, sonst entsteht ein zweites,
+womöglich abweichend benanntes Landesmodul-Gate.
+
+### 16.2 Gemessener Production-Ausgangszustand (2026-07-26, 16:45–16:52 UTC)
+
+| Bereich | Messwert |
+|---|---|
+| Pakete | **9**; `berlin-basis` `prepared`/`is_base`/**10 Wege** · `brandenburg-basis` `prepared`/9 Wege · `die-linke-berlin` `prepared`/**0 Wege** |
+| Berliner Wege | **10/10** `needs_review` + `manual`, alle `updated_at` = 2026-07-14 06:53:45 |
+| Brandenburg-Wege | **9/9** `needs_review` + `manual`, unverändert |
+| nicht-neutrale Zuordnungen | **3** — `rp-be-partei_pilot`, `rp-be-fraktion_pilot`, `rp-be-person_pilot` an `pkg-berlin-basis` (Befund **A-3** erneut bestätigt) |
+| Profile | 8 (6 aktiv), **alle `bundestag`** — **0 Landtagsprofile**, 0 Berliner Mandat |
+| `HELMUT_LANDESMODULE` | in `helmut-flags.json` **nicht gesetzt**; Vercel-Env **nicht lesbar** (§16.5) |
+| Crons | 9 Einträge in `vercel.json`, unverändert; real 5 Crawl-Vollrunden/Tag |
+| Locks | 3 Zeilen in `pipeline_locks`, **alle abgelaufen** — nichts hängt |
+| Pending-Rückstand | **50** (43 `pending` + 7 `failed`) — unverändert, wächst nicht |
+| Rohdokumente | **1978** in 7 Tagen (≈ **283/Tag**), 215 in 24 h; gesamt 8733 |
+| Knowledge Objects | 712 gesamt · **274** in 7 Tagen (≈ **39/Tag**) · 31 in 24 h |
+| LLM-Nutzung | heute **34**/100; letzte 8 Tage 34/53/65/53/55/59/**100**/88 (Mittel ≈ 63, Spitze 100 am 20.07.) |
+| Bundesversorgung | letzter Vollcrawl `crawl-20260726160130-7bznw` 16:01:32 UTC: **145 von 147** Wegen `ok`, 2 `empty`, **0 error**, 0 `circuit-open`, 940 neue Dokumente, Laufzeit **33 s** |
+| Invariante B3 | **erfüllt** — 147 Telemetriezeilen = 147 distinct `source_id` |
+| Fehlerrate 24 h | 28 Fehlerzeilen von 2534 (**1,1 %**), 56 `circuit-open`, 16 Retries |
+| Berliner Bestand | **0** Rohdokumente, **0** Telemetriezeilen, 0 Berliner Knowledge Objects aus Landesquellen |
+| Originalverweis | **99,5 %** aufgelöst (7 Tage) |
+
+### 16.3 Backup — ausgeführt und vollständig
+
+`node scripts/backup-export.js --scope=seed`, Exit **0**:
+
+- Verzeichnis `backups/2026-07-26T16-47-32-498Z/` (gitignored — Production-Daten bleiben aus dem Repo)
+- **8/8 Tabellen**, `fehler: []`, **`vollstaendig: true`**
+- Zeilen: `geographies` 50 · `political_entities` 73 · `publishers` 64 · `retrieval_paths` **163** ·
+  `source_packages` **9** · `package_paths` **165** · `path_expected_levels` 18 · `path_expected_geographies` 18
+- `pruefsummeGesamt` `49a5b92d…cc0ee`, je Tabelle eine eigene Prüfsumme
+- gebunden an `mainCommit` `93006e8cdbf71593c35c1d02b3df17c43a9f7eea`
+
+**Damit ist Go-Kriterium 2 der Seed-Einspielung erstmals erfüllt** — es war seit 2026-07-25
+blockiert, weil der damaligen Sitzung die Supabase-Zugangsdaten fehlten. Das Backup deckt
+weiterhin nur die 8 Quellentabellen ab und **ersetzt OP-01 nicht**.
+
+### 16.4 Dry Run — gegen den gemessenen Ist-Zustand, nicht gegen die Doku
+
+| # | Tabelle | Datensatz | aktuell | geplant | Grund | Rollback-Wert |
+|---|---|---|---|---|---|---|
+| A1 | `package_paths` | `pkg-die-linke-berlin` × 3 Wege | Zeile fehlt (**3**) | Zeile vorhanden | Parteipaket wird Zielort | Zeile wieder löschen |
+| A2 | `package_paths` | `pkg-berlin-basis` × dieselben 3 Wege | Zeile vorhanden (**3**) | Zeile gelöscht | Pflichtpaket neutralisieren (A-3) | Zeile wieder anlegen |
+| B1 | `source_packages` | `berlin-basis` | `prepared` (**1**) | `active` | Referenzzählung möglich machen | `prepared` |
+| B2.1 | `retrieval_paths` | `rp-be-regionale_leitmedien`, `rp-rbb24-politik` | `needs_review`/`manual` (**2**) | `healthy`/`auto` | Stufe 1, 0 Google-Requests | `needs_review`/`manual` |
+| B2.2 | `retrieval_paths` | `rp-be-landesregierung`, `rp-be-staatskanzlei` | `needs_review`/`manual` (2) | — | **Stufe 2, in diesem Sprint nicht vorgesehen** | — |
+
+**Kontrollfragen, alle 0:** getroffene Bundeswege **0** · getroffene Brandenburg-Wege **0** ·
+getroffene `pkg-brandenburg-basis`-Zeilen **0**.
+
+Die Trefferzahlen entsprechen **exakt** dem Plan (3/3/1/2). Es gibt keine unerwartete Zusatzzeile.
+`die-linke-berlin` trägt heute 0 Wege, daher legt A1 genau 3 Zeilen an und Rollback Stufe 2 ist
+zeilengenau umkehrbar — es entsteht keine Doppelzuordnung, die ein Rollback zu weit zurückdrehen
+könnte.
+
+### 16.5 Der Blocker: Riegel 1 ist aus dieser Sitzung weder lesbar noch setzbar
+
+Die Ausführungsreihenfolge in §9 verlangt in Schritt 7 `HELMUT_LANDESMODULE=berlin`. Dieser Schritt
+ist aus einer Claude-Code-Cloud-Sitzung **nicht ausführbar**:
+
+| Weg zum Flag | Stand |
+|---|---|
+| **Vercel-Env setzen** | `VERCEL_TOKEN` ist in dieser Sitzung **nicht gesetzt**; der Vercel-MCP-Server stellt **kein** Werkzeug für Environment-Variablen bereit |
+| **Vercel-Env lesen** | aus demselben Grund nicht möglich — der **aktuelle Produktionswert des Flags ist nicht feststellbar**, und Vercel-Env überstimmt `helmut-flags.json` immer |
+| **`helmut-flags.json` + Deploy** | erfordert einen Merge nach `main`; Merge = Production-Deployment und ist ausdrücklich Betreiberentscheidung (`CLAUDE.md` §5) |
+| **Crawl auslösen** | `https://helmut-pilot.vercel.app` ist aus dieser Sitzung nicht erreichbar (Proxy: `CONNECT` → **403**); `CRON_SECRET` ist nicht gesetzt |
+
+Was **verfügbar** ist: Supabase-Egress ist offen (HTTP 200), deshalb funktionieren Messung, Backup
+und — grundsätzlich — auch die SQL-Blöcke. Der Crawl-Verlauf wäre über `source_crawl_telemetry`
+sogar beobachtbar. Es fehlt ausschließlich der Schalter.
+
+**Warum daraus „keine Mutation" folgt und nicht „so weit wie möglich ausführen":**
+
+1. **Rollback Stufe 0 wäre nicht verfügbar.** Der schnellste Rückweg — Flag leeren, **ohne**
+   Schreibzugriff auf Production — setzt genau den Zugang voraus, der fehlt. Wer das Flag nicht
+   setzen kann, kann es auch nicht leeren. Damit greift Abbruchkriterium **20** („Rollback ist
+   nicht unmittelbar ausführbar") und §11 Kriterium **15** unmittelbar.
+2. **Riegel 1 ist nicht messbar.** Phase 1 verlangt „Erfasse `HELMUT_LANDESMODULE`", Phase 5
+   verlangt „Das Berlin Flag enthält kein Sammelwort und kein weiteres Land". Beides ist ohne
+   Vercel-Zugriff nicht belegbar. Eine Aktivierung, bei der einer der vier Riegel weder gelesen
+   noch gesteuert werden kann, ist ein widersprüchlicher Production-Zustand.
+3. **Vier Riegel würden zu einem.** Nach Block A + Profil + B1 + B2.1 stünde zwischen dem heutigen
+   sicheren Zustand und einem laufenden Berliner Crawl nur noch eine einzelne Env-Variable —
+   gesetzt zu unbekannter Zeit von jemandem, der die Datenbankänderungen nicht selbst begleitet
+   hat, ohne dass der erste Lauf beobachtet wird. Die bindende Reihenfolge aus §9 („Flag **vor**
+   Stufe 2, damit der schnellste Rückweg schon steht") wäre verletzt.
+4. **Der Sprintzweck wäre nicht erreichbar.** Ziel ist der erste reale Berliner Crawl **und dessen
+   Auswertung**. Ohne Flag betritt kein Berliner Weg den Plan; es gäbe keinen Lauf, keine
+   Dokumente, keinen Beweis — nur eine halb ausgeführte Production-Änderung.
+
+Deshalb: **keine Mutation, Sprint blockiert** — entsprechend der Sprintregel „fehlende
+Startbedingung → keine Production-Mutation, keine improvisierte Ersatzlösung".
+
+### 16.6 Übergabe an den Betreiber — was jetzt genau zu tun ist
+
+Das Backup (§16.3) ist gültig, solange `retrieval_paths`/`package_paths`/`source_packages`
+unverändert bleiben. Reihenfolge unverändert nach §9:
+
+1. **`HELMUT_LANDESMODULE` bereitstellen** — entweder Wert `berlin` in der Vercel-Env setzen
+   (bevorzugt: sofort wirksam, Rollback Stufe 0 ohne DB-Schreibzugriff), **oder** einer
+   Agenten-Sitzung `VERCEL_TOKEN` über die Claude-Code-Environment-Einstellungen bereitstellen
+   (`CLAUDE.md` §4.9), damit der Schritt dort ausführbar wird. Der Wert ist exakt `berlin` —
+   **kein** Sammelwort, **kein** zweites Land.
+2. **Block A** ausführen (3 Zeilen um, siehe §16.4) und Selbstprüfung 2 → 0 Zeilen.
+3. **Abnahmeprofil** anlegen (§8.2, **zwei** Zeilen).
+4. **Block B1 + B2.1** ausführen (1 + 2 Zeilen).
+5. Flag setzen, einen vollen Crawl-Zyklus nach §10 beobachten.
+6. **Block B2.2 erst danach** — Stufe 2 ist in keinem Fall Teil des ersten Schritts.
+
+Solange Schritt 1 nicht geklärt ist, sind die Schritte 2–4 **nicht** vorzuziehen: sie nehmen drei
+der vier Riegel weg, ohne dass der vierte kontrollierbar ist.
+
+## 17 · Befunde der unabhängigen Vorprüfung (2026-07-26, vor der Aktivierung)
+
+Vier Prüfer plus vier Gegenprüfer haben die Zusagen dieses Runbooks gegen den Code auf `93006e8`
+geprüft. Die vier folgenden Befunde sind **selbst nachgeprüft** und gehören vor der Aktivierung
+entschieden. Sie ändern die Empfehlung aus §15 nicht, aber sie ändern die Ausführung.
+
+### V-1 (kritisch) · Die Staffelung ist im SQL nicht erzwungen — B2.1 und B2.2 teilen eine Transaktion
+
+`20260726_berlin_aktivierung.sql` schreibt in Block B **ein** `begin;` … `commit;` um B1, B2.1
+**und** B2.2. Der Kommentar „die Stufen sind EINZELN auszuführen, nicht zusammen" ist damit die
+einzige Sperre — eine Kommentarzeile. Wer Block B als Ganzes ausführt (das ist die naheliegende
+Lesart einer Datei mit `begin`/`commit`), schaltet **alle vier** Wege auf einmal scharf, inklusive
+der zwei Google-Wege, deren ganzer Zweck es war, einen vollen Crawl-Zyklus **später** zu kommen.
+
+Die gesamte Lastbegründung aus §7.4 hängt an dieser Trennung. **Vor der Ausführung:** B2.2 in einen
+eigenen `begin`/`commit`-Block ziehen (oder in eine eigene Datei), sodass die Staffelung strukturell
+und nicht nur redaktionell besteht. Bis dahin gilt: **nur die Zeilen B1 und B2.1 einzeln ausführen**,
+niemals den Block am Stück.
+
+### V-2 (wichtig) · Das Abnahmeprofil ist kein mandantenbezogener Schalter — der Crawl-Plan ist global
+
+`loadRelationalSharedSources()` (`scheduler.js:758–773`) nimmt **keinen** Profilparameter: es baut
+**einen** Plan aus *allen* Profilen. `getSourcesForProfile()` (`scheduler.js:776–787`) mischt genau
+diesen Plan in die Quellenliste **jedes** Profils.
+
+**Folge:** ein einziges Berliner Abnahmeprofil aktiviert die Berliner Wege **systemweit**. Sobald
+Profil + Paketstatus + Wegstatus + Flag stehen, laufen die Berliner Wege im geteilten Crawl mit,
+aus dem auch der bestehende reale Pilotmandant versorgt wird. Das ist **keine** Verdrängung
+(die Bundeswege bleiben unverändert, Berlin kommt rein additiv dazu) und deckt sich mit dem
+Lastmodell in §7.3 — die Formulierung „das Profil ist der vierte Riegel" in §4 legt aber eine
+Mandantenschärfe nahe, die es auf der Crawl-Ebene nicht gibt. Mandantenscharf ist erst die
+**Auswahl stromabwärts** (Briefing, Radar), nicht der Abruf.
+
+Vor der Aktivierung ist das ausdrücklich zur Kenntnis zu nehmen: der Beweislauf findet **im
+geteilten Korpus** statt, nicht in einer isolierten Testspur.
+
+### V-3 (wichtig) · Rollback Stufe 0 wirkt nur, wenn die Freigabe über die Vercel-Env kam
+
+§9 Schritt 7 erlaubt die Freigabe wahlweise über **Vercel-Env** oder über **`helmut-flags.json` +
+Deploy**. Die Rollback-Tabelle in §12 verspricht dagegen pauschal „Stufe 0 = `HELMUT_LANDESMODULE`
+leeren (Vercel-Env), Sekunden".
+
+`flags.js:74–87` gibt `process.env` Vorrang — aber ein **leerer** Env-Wert gilt als *nicht gesetzt*
+und fällt auf die Dateiebene durch. Wurde die Freigabe also über `helmut-flags.json` erteilt, ist
+das Leeren der Env-Variable **wirkungslos**; der Dateiwert gewinnt sofort wieder. Der Rückweg wäre
+dann ein Commit + Deploy, also Minuten statt Sekunden.
+
+**Konsequenz für die Ausführung:** die Freigabe **über die Vercel-Env** erteilen, nicht über die
+Datei. Nur dann stimmt die zugesagte Rollback-Dauer, und nur dann ist Stufe 0 ohne
+Repo-Änderung erreichbar.
+
+### V-4 (Hinweis) · „öffnet ausschließlich Berlin" ist eine Spur zu stark formuliert
+
+Das Gate vergleicht mit `landesmodule.some(land => freigegeben.has(land))` (`source-mode.js:172`).
+Der zweiländrige Weg `rp-rbb24-politik` hängt in `berlin-basis` **und** `brandenburg-basis` und
+läuft deshalb schon bei reiner Berlin-Freigabe mit. Das ist die in §13 bereits benannte und bewusst
+akzeptierte Nebenwirkung — **keine** Aktivierung Brandenburgs (kein `rp-bb-*`-Weg, kein
+Brandenburg-Paket, 0 Brandenburg-Referenzen), und der Plan weist solche Wege unter
+`landesmodule.mehrlaendrig` samt Fremdland aus. Der Satz in §4 sollte trotzdem auf „öffnet
+ausschließlich Berliner Wege — zuzüglich des zweiländrigen rbb24-Wegs" geschärft werden.
+
+**Sonst bestätigt:** der Default ist leer und fail-closed · es gibt **kein** Sammel-Schlüsselwort
+(`alle`, `*`, `all`, `true`, `on` sind alle wirkungslos) · das Gate ist **Regel 1** im ausführenden
+Plan, also vor Paketstatus, Wegstatus und Referenzzählung — das leere Flag allein genügt als Sperre
+(Test 10o: Paket `active` + Wege `healthy`/`auto` + Berliner Profil + leeres Flag → **0** Berliner
+Wege) · `manual` ist als Regel 4b eine echte Sperre im ausführenden Plan · beide Rollback-Stufen
+decken jede der fünf mutierenden Anweisungen ab und nennen **keinen** `rp-bb-*`-Weg und **kein**
+`brandenburg-*`-Paket in einem ausführbaren Statement · `partei='Fraktionslos'` bindet **kein**
+Parteipaket · `bundesland='Berlin'` + `politische_ebene='landtag'` ergibt genau
+`bund-basis` + `berlin-basis` und **kein** Brandenburg-Paket.
