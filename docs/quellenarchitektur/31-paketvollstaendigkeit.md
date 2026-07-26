@@ -101,8 +101,8 @@ neutrale Fraktions-Suchweg (begründete Überschneidung, §4).
 **`regional-niedersachsen`** — siehe §5, Befund **V-1**.
 
 **`berlin-basis` / `brandenburg-basis`** — **12 von 12** neutralen Pflichtklassen besetzt.
-Das korrigiert die Inventur (dort 7/12 bzw. 8/12): die Lücke war ein Artefakt der
-Id-Namensableitung. Gemessen an `covers` deckt Berlin alle 12 mit 7 Wegen ab
+Das korrigiert beide Zahlenreihen der Inventur §4 (Ist-Stand dort 10/15 bzw. 9/15, Prognose nach
+Seed-Einspielung 7/12 bzw. 8/12): die Lücke war ein Artefakt der Id-Namensableitung. Gemessen an `covers` deckt Berlin alle 12 mit 7 Wegen ab
 (PARDOK-XML → `plenum`/`drucksachen`/`schriftliche_anfragen`/`gesetzgebung`;
 `site:parlament-berlin.de` → `landesparlament`/`ausschuesse`; Senats-Weg →
 `landesregierung`/`ministerien`), Brandenburg alle 12 mit 8 Wegen
