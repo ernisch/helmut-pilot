@@ -1,14 +1,15 @@
 # Quellen-Seeds einspielen — Freigabevorlage
 
-**Stand:** 2026-07-25 · **Code-Grundlage der Seeds:** `main` `61767a9` (Merge #118) ·
-**`main`-HEAD:** `0d6d867` (Merge #125) · **Deployment:** `READY`
+**Stand:** 2026-07-26 · **Code-Grundlage der Seeds:** `main` `61767a9` (Merge #118) ·
+**`main`-HEAD:** `9f1def5` (Merge #130) · **Deployment:** `READY`
 
 > **Status: BLOCKIERT.** Diese Vorlage ist vollständig vorbereitet, aber die Ausführung ist
-> **nicht freigegeben**. Nichts hiervon wurde ausgeführt.
+> **nicht freigegeben**. Kein Seed wurde eingespielt.
 >
-> **Offen sind noch zwei Go-Kriterien (§6), beide Betreiberhandlungen:**
-> **2** die Pre-Seed-Sicherung muss gegen Production **gelaufen** sein ·
+> **Offen ist noch genau ein Go-Kriterium (§6):**
 > **8** die Einspielung muss freigegeben sein ·
+> **2** ~~die Pre-Seed-Sicherung muss gegen Production gelaufen sein~~ — **erfüllt 2026-07-26**,
+> Backup `backups/2026-07-26T10-25-32-540Z`, `vollstaendig: true` (§6e) ·
 > **11** ~~die absichtliche Reaktivierung der 6 Bundeswege~~ — **entschieden 2026-07-25:
 > gestaffelt**, erst die 2 Direktfeeds, dann nach einem Crawl-Zyklus die 4 Google-Wege (§6d).
 >
@@ -255,7 +256,7 @@ Reparaturen (die vorher **nicht** liefen). `publishers` unverändert.
 
 | Frage | Antwort |
 |---|---|
-| Aktuelles Backup? | **Nein** — Supabase **Free-Plan**, keine automatischen Backups (`../CURRENT_STATE.md` §9) |
+| Aktuelles Backup? | **Ja, für den Seed-Umfang** — `backups/2026-07-26T10-25-32-540Z`, `vollstaendig: true`, 8/8 Tabellen (§6e). Für die **übrigen 30 Tabellen** weiterhin **nein**: Supabase **Free-Plan**, keine automatischen Backups (`../CURRENT_STATE.md` §9) |
 | PITR verfügbar? | **Nein** — Teil des offenen, **blockierten** OP-01 |
 | Restore-Prozess dokumentiert? | Ja — `backup-restore-runbook.md`; PITR-Abschnitt §3 gilt aber ausdrücklich erst **nach** dem Pro-Upgrade |
 | Restore getestet? | **Ja, isoliert** — `scripts/seed-restore-test.js`, 43/43 grün, inkl. Bytegleichheit, Idempotenz, Teilerfolg und Manipulationserkennung |
@@ -352,11 +353,11 @@ Belegt:
 | # | Kriterium | Stand |
 |---|---|---|
 | 1 | PR #118 gemergt und deployt | ✅ `61767a9`, CI grün, Vercel `READY` |
-| 2 | Backup oder PITR bestätigt | ❌ **offen** — Werkzeug steht (`--scope=seed`), der Lauf gegen Production ist noch nicht erfolgt (Betreiberzugriff) |
+| 2 | Backup oder PITR bestätigt | ✅ **erfüllt 2026-07-26** — `--scope=seed` gegen Production gelaufen, `vollstaendig: true`, 8/8 Tabellen, Prüfsummen nachgerechnet, Archiv außerhalb des Containers gesichert (§6e). **Kein PITR** — OP-01 bleibt offen |
 | 3 | Vorschau ohne unerwarteten Diff | ⚠️ **eingeschränkt** — die Simulation zeigt keinen unerwarteten Diff, aber sie trifft in Production auf einen **anderen Ausgangszustand** als angenommen (§4). Der Ist-Stand wird deshalb in Schritt 6 **gemessen**, nicht vorausgesetzt |
 | 4 | Exakte Soll-Zahlen dokumentiert | ✅ §4 — seit dem Review gegen die gemessene Inventur abgeglichen und korrigiert |
 | 5 | Rollback geprüft | ✅ **erledigt** — gezielter Restore-Generator, isoliert getestet 43/43 (§5b) |
-| 6 | Keine laufende Migration / kritische Verarbeitung | ⚠️ vor Ausführung prüfen (Crawl-Cron 04:00/20:00 UTC, Understanding 05:30/21:30) |
+| 6 | Keine laufende Migration / kritische Verarbeitung | ✅ **gemessen 2026-07-26 10:43 UTC** — 0 aktive `pipeline_locks`, 0 Wege mit `error_streak > 0`, außerhalb aller neun Cron-Fenster (§6e). Vor der tatsächlichen Ausführung erneut prüfen — der Wert ist zeitpunktbezogen |
 | 7 | Kein Konflikt mit neuen `main`-Änderungen | ✅ Stand `118e90c` (Merge #124) — #124 änderte keine Seeds, sondern lieferte die Inventur, die §4 korrigiert hat |
 | 8 | Betreiberfreigabe | ❌ **offen** |
 | 9 | Seeds einzeln ausführen | Vorgabe für die Ausführung |
@@ -554,26 +555,170 @@ R-2 braucht deshalb eine eigene Soll-Ist-Vorschau und eine eigene Freigabe. Bis 
 
 ---
 
+## 6e · Ausführungsplan Seed 1 (Stand 2026-07-26, Preflight bestanden)
+
+> Dieser Abschnitt ersetzt §6c nicht — er hält den **gemessenen Ausgangszustand** fest, gegen den
+> die Schritte 8/11/13/14 zu prüfen sind, und benennt den exakten Befehl. Alles darin ist
+> **read-only erhoben**; kein Seed wurde eingespielt.
+
+### Erfüllte Vorbedingungen
+
+| Prüfung | Ergebnis (2026-07-26, 10:25–10:45 UTC) |
+|---|---|
+| Pre-Seed-Backup gelaufen | ✅ `backups/2026-07-26T10-25-32-540Z`, `art: pre-seed`, `vollstaendig: true`, `fehler: []` |
+| Backup-Integrität | ✅ 8/8 Tabellenprüfsummen und `pruefsummeGesamt` neu berechnet und identisch; Round-Trip aus dem Archiv byte-gleich |
+| Backup außerhalb des Containers | ✅ `helmut-pre-seed-backup-2026-07-26T10-25-32-540Z.tar.gz`, SHA-256 `7d480e70a99ebcb7ef7558346acad92da6e6d9c086b67284503b2477412e4437` |
+| `mainCommit` des Backups | `9f1def58b7947b9ad08f2c6773824c69c22aa1a9` = `origin/main` zum Backup-Zeitpunkt |
+| Projekt | `ddckuvvpcytqbyfmbvie`, `ACTIVE_HEALTHY`, `eu-west-1`, Postgres 17.6 |
+| Secrets | `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` gesetzt (Cloud-Environment, CLAUDE.md §4.9) — Werte nicht ausgegeben |
+| Erreichbarkeit | HTTP 200 auf `/rest/v1/` |
+| Aktive Pipeline-Locks | **0** (die einzige Zeile `lage-briefing-…` ist seit 03:23 UTC abgelaufen) |
+| Cron-Fenster | außerhalb aller neun Einträge (nächster: 16:00 UTC Pipeline) |
+| Störungslage | **0** Abrufwege mit `error_streak > 0` |
+| Seeds unverändert seit #118 | ✅ 0 geänderte Dateien in `supabase/seeds/` zwischen `61767a9` und `origin/main` |
+| Werkzeug unverändert seit #125 | ✅ `backup-export.js` nur in Kommentaren geändert (0 Code-Zeilen), sonst keine Datei |
+| Offline-Suite | **147/147 grün** (54 s), inkl. Drift-Gate, `seed-restore-test` und `backup-export-test` |
+
+### Gemessener Ausgangszustand — Basis für alle Folgeprüfungen
+
+Über zwei unabhängige Wege erhoben (PostgREST `count=exact` **und** SQL), identisches Ergebnis:
+
+| Kennzahl | Ist | nach Seed 1 (Soll) |
+|---|---|---|
+| `retrieval_paths` | **163** | 163 (unverändert, 6 aktualisiert) |
+| `source_packages` | **7** | **9** (+2) |
+| `package_paths` | **165** | **165** (+0) |
+| `required_classes` von `pkg-berlin-basis` | **15** | **12** |
+| `required_classes` von `pkg-brandenburg-basis` | **15** | **12** |
+| Nicht-`manual`-Wege in den Landes-Basispaketen | **0** | **0** (Schritt 13) |
+
+**Vorzustand der 6 Bundeswege** — alle `status = 'broken'`, `error_streak = 0`; die `method`-Werte
+entsprechen exakt der „vorher"-Spalte in §3:
+
+| ID | `method` heute | `activation_mode` |
+|---|---|---|
+| `rp-bundestag` | `rss` | `always_on` |
+| `rp-bundesregierung` | `rss` | `always_on` |
+| `rp-die-linke` | `rss` | `auto` |
+| `rp-linksfraktion` | `rss` | `auto` |
+| `rp-ausschuss-arbeit-soziales` | `html` | `auto` |
+| `rp-dgb` | `html` | `auto` |
+
+**Zwei Annahmen der Vorlage sind jetzt am Objekt belegt** (vorher nur abgeleitet):
+
+- `pkg-die-linke-bund` führt **3** Zuordnungen (`rp-die-linke`, `rp-fraction-linke`,
+  `rp-linksfraktion`) — `rp-fraction-linke` existiert also bereits. Seed 1 fügt hier **+0** ein,
+  genau wie in §4 vorhergesagt.
+- `pkg-die-linke-berlin` / `pkg-die-linke-brandenburg` existieren **nicht** — Seed 1 legt sie neu an.
+
+### Exakter Befehl
+
+Seed 1 ist eine einzelne Transaktion (`begin;` … `commit;`, 6 `insert`, 0 `update`, 0 `delete`,
+0 `drop`/`truncate`; die Aktualisierungen laufen über `on conflict … do update`).
+
+**In dieser Sitzung verfügbar ist nur der MCP-Weg** — `DATABASE_URL`, `PGPASSWORD` und ein
+Supabase-CLI sind hier **nicht** gesetzt bzw. nicht installiert:
+
+```
+mcp__Supabase__execute_sql(project_id="ddckuvvpcytqbyfmbvie",
+                           query=<Inhalt von supabase/seeds/20260713_source_architecture_seed.sql>)
+```
+
+> **Ungeprüfte Grenze, ehrlich benannt:** Über diesen Weg ist bisher **nur gelesen** worden. Ob er
+> Schreibzugriffe zulässt und ob eine ~100 KB große Anweisung in einem Aufruf durchgeht, ist
+> **nicht** verifiziert — das zu testen wäre bereits ein Production-Schreibversuch gewesen.
+> Schlägt er fehl, ist der Rückfallweg der **SQL-Editor des Supabase-Projekts** oder ein lokales
+> `psql` des Betreibers mit dem DB-Passwort; beides ändert am Inhalt nichts.
+
+### Prüfungen unmittelbar nach der Einspielung
+
+In dieser Reihenfolge, jede einzeln (entspricht §6c Schritt 8):
+
+```sql
+-- 1) Die 2 neuen Pakete existieren   → genau 2 Zeilen
+select id from public.source_packages
+ where id in ('pkg-die-linke-berlin', 'pkg-die-linke-brandenburg');
+
+-- 2) Die 6 Wege sind reaktiviert     → alle 6 auf 'needs_review'
+select id, status, method from public.retrieval_paths
+ where id in ('rp-bundestag','rp-bundesregierung','rp-die-linke',
+              'rp-linksfraktion','rp-ausschuss-arbeit-soziales','rp-dgb') order by id;
+
+-- 3) P0-2 auf Paketebene             → beide 12 (vorher 15)
+select id, cardinality(required_classes) from public.source_packages
+ where id in ('pkg-berlin-basis','pkg-brandenburg-basis') order by id;
+
+-- 4) Deltas gegen den Ausgangszustand → 163 / 9 / 165
+select (select count(*) from public.retrieval_paths)  as wege,        -- Soll 163 (unverändert)
+       (select count(*) from public.source_packages)  as pakete,      -- Soll   9 (Basis +2)
+       (select count(*) from public.package_paths)    as zuordnungen; -- Soll 165 (Basis +0)
+
+-- 5) BE/BB-Sperre hält (§6c Schritt 13) → 0
+select count(*) from public.retrieval_paths rp
+  join public.package_paths pp on pp.retrieval_path_id = rp.id
+  join public.source_packages sp on sp.id = pp.package_id
+ where sp.key in ('berlin-basis','brandenburg-basis') and rp.activation_mode <> 'manual';
+```
+
+### Abbruchkriterien
+
+**Sofort anhalten, Seed 2 nicht starten**, wenn eine dieser Bedingungen eintritt:
+
+1. Eine der fünf Prüfungen oben liefert einen anderen Wert als das Soll.
+2. `retrieval_paths` ≠ 163 — eine Zeile ist verloren gegangen oder hinzugekommen.
+3. `package_paths` ≠ 165 — Seed 1 darf **+0** einfügen (Beleg oben).
+4. Prüfung 5 liefert > 0 — die Berlin/Brandenburg-Sperre wäre durchlässig.
+5. Der Aufruf endet mit unklarem Ausgang (Timeout, Verbindungsabbruch) → **nicht blind
+   wiederholen**, zuerst die zeilenbezogene Prüfung aus §5 fahren.
+6. Neue Commits auf `origin/main` berühren `supabase/seeds/` oder `lib/helmut/sources.js`.
+
+### Restore-Entscheidung
+
+Das Rückbau-SQL ist aus dem **echten** Backup bereits erzeugt und geprüft — es muss im Fehlerfall
+nicht erst gebaut werden:
+
+```
+node scripts/seed-restore-sql.js backups/2026-07-26T10-25-32-540Z > restore.sql
+```
+
+Am erzeugten SQL verifiziert: 926 Zeilen · **0** ausführbare `drop`/`truncate` (der einzige
+Treffer ist die Kommentarzeile „Kein drop/truncate") · genau **1** `begin;`/`commit;` ·
+**5** `raise exception` als harte Abbrüche · **3** `delete`, alle auf die 8 Seed-Pakete bzw. die
+2 neuen Pakete eingegrenzt · Elterntabellen unberührt.
+
+**Entscheidungsregel:** Bricht Seed 1 **innerhalb** der Transaktion ab, ist nichts geschrieben —
+**kein Restore nötig**, Ursache klären und neu entscheiden. Nur wenn Seed 1 durchläuft **und**
+eine der Prüfungen 1–5 fehlschlägt, wird das Restore-SQL eingespielt (Ausgabe vorher **lesen**,
+§6c Schritt 9). Ein Zustand „nur Seed 1 gelaufen" ist laut §5 unkritisch und wird vom Restore
+vollständig geheilt.
+
+**Ehrliche Grenze:** `updated_at`, `last_success_at`, `last_error` und `error_streak` stellt der
+Restore bewusst **nicht** wieder her (§5b).
+
+---
+
 ## 7 · Betreiberentscheidung
 
 ### Option A — jetzt kontrolliert ausführen
 
-**Wird nicht empfohlen.** Zwei Go-Kriterien sind offen: 2 (Backup) und 8 (Betreiberfreigabe).
+**Seit 2026-07-26 vertretbar.** Von den ursprünglich zwei offenen Go-Kriterien ist **2 (Backup)
+erfüllt**; offen ist nur noch **8 (Betreiberfreigabe)** — eine reine Entscheidung, keine Bauarbeit.
+Ausgangszustand, Befehl, Prüfungen, Abbruchkriterien und Rückweg stehen in §6e.
 
-### Option B — Ausführung blockieren ← **empfohlen**
+### Option B — Ausführung weiterhin blockieren
 
-**Kriterium 11 ist entschieden** (gestaffelt, §6d). **Offen bleiben 2 und 8** — beide sind
-Betreiberhandlungen, keine Bauarbeit. Werkzeug und Rückweg stehen bereit und sind getestet.
+**Kriterium 11 ist entschieden** (gestaffelt, §6d), **Kriterium 2 ist erfüllt** (§6e). **Offen
+bleibt allein 8.** Werkzeug und Rückweg stehen bereit und sind getestet.
 
 Konkret zu tun, in dieser Reihenfolge:
 
-1. **Pre-Seed-Backup gegen Production laufen lassen** (read-only, keine Kostenentscheidung nötig):
-   `SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… node scripts/backup-export.js --scope=seed`
-   Danach prüfen: `manifest.json` trägt `art: "pre-seed"`, `vollstaendig: true`, eine
-   `pruefsummeGesamt` und den `mainCommit`. Nur ein so markiertes Backup akzeptiert der
-   Restore-Generator.
-2. **Die Einspielung selbst freigeben** (Go-Kriterium 8).
-3. Danach Runbook §6c Schritt für Schritt — inklusive der gestaffelten Reaktivierung nach §6d.
+1. ~~**Pre-Seed-Backup gegen Production laufen lassen**~~ — **erledigt 2026-07-26** (§6e).
+   Backup `backups/2026-07-26T10-25-32-540Z`, `art: "pre-seed"`, `vollstaendig: true`,
+   `pruefsummeGesamt` und `mainCommit` vorhanden; Archiv außerhalb des Containers gesichert.
+2. **Die Einspielung selbst freigeben** (Go-Kriterium 8) — **das ist der einzige verbleibende
+   Schritt vor der Ausführung.**
+3. Danach Runbook §6c Schritt für Schritt — Ausgangszustand, Befehl, Prüfungen, Abbruchkriterien
+   und Rückweg vorbereitet in **§6e** — inklusive der gestaffelten Reaktivierung nach §6d.
 
 **Dauerhaft empfohlen, aber für diese Einspielung nicht zwingend:** OP-01 freigeben
 (Supabase Pro + PITR). Das bleibt das größte Einzelrisiko des Projekts insgesamt —

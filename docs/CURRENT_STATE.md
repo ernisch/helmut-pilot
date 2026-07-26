@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-25 · **`main`-HEAD:** `9534bc0` (Merge #127)
+**Letzte Aktualisierung:** 2026-07-26 · **`main`-HEAD:** `9f1def5` (Merge #130)
 
 > **Diese Datei ist der aktuelle Stand.** Bei Widerspruch zu älteren Statusdokumenten
 > gilt diese Datei. Sie enthält **keine Chronik** — Details je offenem Punkt stehen in
@@ -52,7 +52,7 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | Zweitmandanten-Provisionierung + Per-Mandant-Kostendeckel | Migration `20260721` nicht angewandt, `HELMUT_TENANT_LLM_CAP` AUS, DB-seitige Durchsetzung unentschieden | OP-03 |
 | Retention/Löschung | nur Trockenlauf; braucht verbindliche Fristen aus OP-02 | OP-12 |
 | Understanding-Gate, Cheap-Triage, Scoring, Berlin/Brandenburg | in `shadow`/`off`, Scharfschaltung ist Freigabe | OP-18, OP-21, OP-22 |
-| Pre-Seed-Sicherung + gezielter Seed-Restore (kein `drop table cascade`) — gebaut, adversarial reviewt, isoliert getestet (43/43 lokal, 41/41 in CI; `backup-export-test` 38/38; Suite 147/147) | **nie gegen Production gelaufen**; deckt nur 8 Tabellen ab und ersetzt OP-01 nicht | OP-01 |
+| Pre-Seed-Sicherung + gezielter Seed-Restore (kein `drop table cascade`) — gebaut, adversarial reviewt, isoliert getestet (43/43 lokal, 41/41 in CI; `backup-export-test` 38/38; Suite 147/147) | **Export ist seit 2026-07-26 gegen Production gelaufen** (`vollstaendig: true`); der **Restore** ist weiterhin nur isoliert getestet und nie gegen Production ausgeführt. Deckt nur 8 Tabellen ab und ersetzt OP-01 nicht | OP-01 |
 | OP-06 Terminales Aussortieren des Alt-Rückstands (34 Fälle, Default AUS) | Ausführung ist freigabepflichtig — **und** eine offene Fachfrage: 16 der 34 Allowlist-Einträge sind mit „außerhalb Mandat" begründet, also relativ zum Pilotmandat, geschrieben wird aber in das mandantenneutrale `knowledge_objects` (kein `tenant_id`). Ein künftiger Zweitmandant mit regionalem/EU-Schwerpunkt bekäme diese Vorgänge dauerhaft nie verstanden | OP-06 |
 
 ## 4 · Blockiert
@@ -60,7 +60,7 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | Punkt | Ursache | Nächster Schritt |
 |---|---|---|
 | **OP-01** Supabase Pro + PITR | Kostenentscheidung des Betreibers (~25 $/Monat); Free-Plan = **keine Backups** | Betreiber schaltet Pro + PITR frei, dann Restore-Übung nach `betrieb/backup-restore-runbook.md` |
-| **Quellen-Seed-Einspielung** (macht P0-2 und die 6 Bundesweg-Reparaturen in der DB wirksam) | noch zwei offene Go-Kriterien: **2** die Pre-Seed-Sicherung ist **noch nicht gelaufen** · **8** die Einspielung ist nicht freigegeben. Kriterium **11** ist **entschieden**: gestaffelte Reaktivierung (§6d). **Versucht 2026-07-25:** `node scripts/backup-export.js --scope=seed` in der Agenten-Sitzung ausgeführt — Abbruch vor jedem Netzwerkzugriff (Exit 2), da `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` in dieser Umgebung nicht gesetzt sind und keine `.env.local` existiert. **Kein** Production-Zugriff erfolgt. Betreiber führt den Export selbst mit echter `.env.local` aus | Betreiber führt `node scripts/backup-export.js --scope=seed` lokal aus und teilt das Manifest (`art`, `vollstaendig`, Zeilenzahlen je Tabelle, `pruefsummeGesamt`, `mainCommit`) mit; danach Runbook `betrieb/quellen-seed-einspielung.md` §6c Schritt 6 ff. |
+| **Quellen-Seed-Einspielung** (macht P0-2 und die 6 Bundesweg-Reparaturen in der DB wirksam) | nur noch **ein** offenes Go-Kriterium: **8** die Einspielung ist nicht freigegeben. Kriterium **2** (Pre-Seed-Sicherung) ist seit **2026-07-26 erfüllt** — der Export ist gegen Production gelaufen, `vollstaendig: true`, Archiv außerhalb des Containers gesichert. Kriterium **11** ist **entschieden**: gestaffelte Reaktivierung (§6d). Der vollständige Ausführungsplan mit gemessenem Ausgangszustand steht in `betrieb/quellen-seed-einspielung.md` §6e | **Betreiberfreigabe für Seed 1** („GO Seed 1"), danach Runbook §6c ab Schritt 7 mit den in §6e festgehaltenen Soll-Werten |
 | **OP-02** Recht (Pilotvertrag, AVV, DSFA, Art.-9-Grundlage, Fristen) | externe Prüfung durch Anwalt/DSB steht aus | Entwürfe aus `recht/` prüfen lassen und zeichnen; blockiert OP-12 |
 | **OP-03** Zweitmandanten-Freigabepaket | Grundsatzentscheidung „DB-seitige Durchsetzung vs. dokumentierte App-Guard-Akzeptanz" fehlt (`mandantentrennung-architektur.md` bewertet die Wege) | Betreiber entscheidet einen Weg; danach Migration + Env + Probelauf |
 | **OP-04** Demo-Mandate entfernen — **Umfang korrigiert 2026-07-25:** Production führt **8 Profile, davon 6 aktiv** (nicht 1 Pilot + 2 Demo-Mandate); fünf davon tragen Klarnamen realer Abgeordneter | Production-Datenänderung, freigabepflichtig; berührt zusätzlich OP-02 (personenbezogene Daten) | je Profil entscheiden, dann über Provisionierungswerkzeug deaktivieren (`quellenarchitektur/30-paket-inventur-production.md` §5, A-1) |
@@ -148,8 +148,10 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 1. **Kein Backup in Production.** Supabase Free-Plan, zentraler Blob ist
    Last-Write-Wins → ein fehlerhafter Write kann den Betriebszustand unwiederbringlich
    zerstören. Höchstes Einzelrisiko (OP-01). Für den **Seed-Sonderfall** existiert seit
-   2026-07-25 ein geprüftes Werkzeugpaar (Pre-Seed-Export + gezielter Restore, §12) —
-   das ersetzt OP-01 **nicht** und deckt nur die 8 Quellentabellen ab.
+   2026-07-25 ein geprüftes Werkzeugpaar (Pre-Seed-Export + gezielter Restore) und seit
+   **2026-07-26 eine tatsächlich gezogene Sicherung** der 8 Quellentabellen (§12) — das
+   ersetzt OP-01 **nicht**: die übrigen 30 Tabellen (u. a. `helmut_store`,
+   `knowledge_objects`, `raw_documents`, `briefings`) sind weiterhin ungesichert.
 2. **Keine rechtliche Grundlage für Verkauf.** Kein geprüfter Pilotvertrag/AVV/DSFA,
    `knowledge_objects` enthalten Art.-9-Daten (OP-02).
 3. **Sicherheits-Grundsatzentscheidung offen.** Ohne Entscheidung zu OP-03 darf kein
@@ -227,10 +229,16 @@ der Datenbank wirksam. Sie ist jetzt **vollständig entscheidungsreif**: Soll-Za
 Idempotenznachweis, Rückweg, Kontrollkarten je Abrufweg und ein 17-Schritte-Runbook stehen in
 [`betrieb/quellen-seed-einspielung.md`](betrieb/quellen-seed-einspielung.md).
 
-Sie bleibt **blockiert**, aber nur noch an zwei Betreiberhandlungen:
-1. `node scripts/backup-export.js --scope=seed` gegen Production ausführen (read-only, braucht
-   `SUPABASE_SERVICE_ROLE_KEY`) und im Manifest `vollstaendig: true` bestätigen.
-2. Die **absichtliche Reaktivierung der 6 Bundeswege** ausdrücklich mitfreigeben (§12).
+Sie bleibt **blockiert**, aber nur noch an **einer** Betreiberhandlung:
+
+- Die **Freigabe der Einspielung selbst** (Go-Kriterium 8), inklusive der **absichtlichen
+  Reaktivierung der 6 Bundeswege** — gestaffelt nach §6d.
+
+Erledigt am 2026-07-26: `node scripts/backup-export.js --scope=seed` ist gegen Production gelaufen
+(`vollstaendig: true`, 8/8 Tabellen, Prüfsummen nachgerechnet, Archiv außerhalb des Containers
+gesichert). Der Ausführungsplan für Seed 1 mit gemessenem Ausgangszustand, exaktem Befehl,
+Nachprüfungen, Abbruchkriterien und Restore-Entscheidung steht in
+[`betrieb/quellen-seed-einspielung.md`](betrieb/quellen-seed-einspielung.md) §6e.
 
 Der gezielte Restore für den Fehlerfall ist gebaut und isoliert getestet — er ersetzt OP-01
 **nicht**, deckt aber genau den Seed-Sonderfall ab.
@@ -257,6 +265,7 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 
 | Sprint | Datum | Zustand |
 |---|---|---|
+| Pre-Seed-Megasprint: Backup dauerhaft sichern, Repo-/Rollout-Status, Seed 1 vollständig vorbereiten | 2026-07-26 | **Teilweise abgeschlossen** — Go-Kriterium 2 ist **erfüllt**: der Pre-Seed-Export lief gegen Production (`vollstaendig: true`, 8/8 Tabellen), das Archiv ist aus dem ephemeren Container heraus gesichert, der Preflight ist vollständig bestanden und Seed 1 ist bis unmittelbar vor den ersten Schreibzugriff vorbereitet. **Kein Seed, kein Restore, kein Production-Schreibzugriff.** Offen bleibt allein die Betreiberfreigabe (Go-Kriterium 8). Details unten. |
 | Go-Kriterium 2 kontrolliert versuchen: Pre-Seed-Backup-Export | 2026-07-25 | **Blockiert** — `node scripts/backup-export.js --scope=seed` exakt wie angefordert ausgeführt; Abbruch vor jedem Netzwerkzugriff (Exit 2), da diese Agenten-Sitzung keine `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` und keine `.env.local` besitzt. **Kein** Production-Zugriff erfolgt. Betreiberentscheidung: Export läuft auf der Betreibermaschine mit echter `.env.local`, Manifest wird zurückgemeldet. Details unten. |
 | Review + Merge von PR #125, danach Production-Ablauf bis vor den ersten Zugriff vorbereiten | 2026-07-25 | **Teilweise abgeschlossen** — PR #125 adversarial reviewt (3 Reviewer, 20 belegte Befunde, alle behoben) und als `0d6d867` gemergt (CI auf `main` grün, Vercel-Production `READY`). Der Production-Ablauf ist vollständig vorbereitet; **kein Production-Zugriff erfolgt, keine Seeds ausgeführt**. Wartet auf die Betreiberfreigabe für den Pre-Seed-Export. Details unten. |
 | Merge #123 + Sicherung, gezielter Restore und Entscheidungsreife für die Seed-Einspielung | 2026-07-25 | **Teilweise abgeschlossen** — #123 gemergt (`bed7f53`); Backup- und Restore-Werkzeug gebaut und isoliert getestet (33/33 lokal, 31/31 in CI, Suite 145/145). Die Seed-Ausführung bleibt **blockiert**: die Sicherung ist noch nicht gelaufen und die Reaktivierung der 6 Bundeswege ist nicht freigegeben. Details unten. |
@@ -266,6 +275,64 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 | Merge von PR #105 — Anker-Recovery-Pfad in Production stillgelegt | 2026-07-25 | **Erfolgreich abgeschlossen** — gemergt als `43e9e35`; Stilllegung auf `main` verifiziert. |
 | Recovery-Pfad-Review + Zusammenführung von PR #105 auf die kanonische Kontextstruktur | 2026-07-25 | **Erfolgreich abgeschlossen** |
 | Kontextstruktur für Claude Code (`CLAUDE.md` + Einstiegsschicht) | 2026-07-25 | **Erfolgreich abgeschlossen** — reine Dokumentation, gemergt als PR #119 (`c6a3d40`). |
+
+**Sprint „Pre-Seed-Megasprint" (2026-07-26) — Nachweis**
+
+- **Auftrag:** Backup dauerhaft sichern · Repository-/Rollout-Status prüfen · Seed 1 vollständig
+  vorbereiten, aber **nicht** ausführen · dokumentieren und genau einmal stoppen.
+- **Warum der Export diesmal lief:** die Secrets `SUPABASE_URL` und `SUPABASE_SERVICE_ROLE_KEY`
+  sind inzwischen über die Claude-Code-Environment-Einstellungen gesetzt (die Regel aus
+  `CLAUDE.md` §4.9, gemergt als #130). Der am 2026-07-25 dokumentierte Abbruch (Exit 2) war
+  also keine Skriptschwäche, sondern genau die fehlende Variable — die Ursachenanalyse von
+  gestern ist damit **bestätigt**, nicht widerlegt.
+- **Backup gezogen und validiert.** `node scripts/backup-export.js --scope=seed` → 8/8 Tabellen,
+  `art: "pre-seed"`, `vollstaendig: true`, `fehler: []`, `mainCommit`
+  `9f1def58b7947b9ad08f2c6773824c69c22aa1a9`. Zeilen: `geographies` 50 · `political_entities` 73 ·
+  `publishers` 64 · `retrieval_paths` 163 · `source_packages` 7 · `package_paths` 165 ·
+  `path_expected_levels` 18 · `path_expected_geographies` 18. Alle 8 Tabellenprüfsummen und die
+  `pruefsummeGesamt` wurden **neu berechnet** und sind identisch; eine unabhängige Gegenzählung per
+  frischem `count=exact` je Tabelle bestätigt jede Zahl.
+- **Dauerhaft gesichert.** Archiv außerhalb aller Git-Pfade gepackt und über den Datei-Kanal an den
+  Betreiber ausgeliefert: `helmut-pre-seed-backup-2026-07-26T10-25-32-540Z.tar.gz`, 18 913 Bytes,
+  SHA-256 `7d480e70a99ebcb7ef7558346acad92da6e6d9c086b67284503b2477412e4437`. Round-Trip-Probe:
+  aus dem Archiv entpackt, Prüfsummen erneut nachgerechnet, `diff -r` gegen das Original **ohne
+  Abweichung**. Inhaltskontrolle vor der Auslieferung: reiner Quellenkatalog, **0** Treffer auf
+  Secret-artige Feldnamen oder JWT-/Key-Muster. `backups/` ist gitignored — **nichts davon
+  committet oder gepusht.**
+- **Repository-/Rollout-Status.** `origin/main` steht auf `9f1def5` (Merge #130) — drei
+  Doku-Merges (#128, #129, #130) über den in dieser Datei zuvor dokumentierten Stand `9534bc0`
+  hinaus. Arbeitsbaum sauber. Belegt: **0** geänderte Dateien in `supabase/seeds/` zwischen
+  `61767a9` (#118) und `origin/main`; an `scripts/`/`lib/` seit `0d6d867` (#125) genau eine Datei,
+  `backup-export.js`, und dort **0** Nicht-Kommentar-Zeilen. Offene PRs (#117, #115, #112, #111,
+  #88, #70, #8) berühren die Seeds nicht; keiner wurde angefasst.
+- **Ein Zwischenergebnis war falsches Grün und wurde korrigiert.** Drei `git diff --stat`-Prüfungen
+  meldeten zunächst „unverändert", liefen aber durch cwd-Drift **außerhalb** des Repositories über
+  nicht existierende Pfade — ein leerer Diff über einen nicht existierenden Pfad ist ebenfalls leer.
+  Erst die Wiederholung mit explizitem Repo-Pfad und einer Datei**zählung** statt eines leeren
+  `--stat` ist ein Beleg. Nebenbefund daraus: die Seeds liegen unter `supabase/seeds/`, nicht unter
+  `supabase/migrations/`.
+- **Preflight vollständig bestanden** (rein lesend, zwei unabhängige Wege — PostgREST und SQL,
+  identisches Ergebnis): Projekt `ddckuvvpcytqbyfmbvie` `ACTIVE_HEALTHY` · HTTP 200 · **0** aktive
+  `pipeline_locks` · außerhalb aller neun Cron-Fenster · **0** Wege mit `error_streak > 0` ·
+  **163 / 7 / 165** exakt wie in der Inventur · **0** Drift gegenüber dem Backup über alle
+  8 Tabellen. Zwei bisher nur abgeleitete Annahmen der Vorlage sind jetzt **am Objekt belegt**:
+  `pkg-die-linke-bund` führt bereits `rp-fraction-linke` (Seed 1 fügt also **+0** ein), und die
+  6 Bundeswege stehen alle auf `broken` mit den in §3 angegebenen `method`-Werten.
+- **Seed 1 vorbereitet, nicht ausgeführt.** Gemessener Ausgangszustand, exakter Befehl, fünf
+  Nachprüfungen, sechs Abbruchkriterien und die Restore-Entscheidungsregel stehen als neuer
+  Abschnitt **§6e** in `betrieb/quellen-seed-einspielung.md`. Das Rückbau-SQL ist aus dem **echten**
+  Backup bereits erzeugt (926 Zeilen) und am Text verifiziert: **0** ausführbare `drop`/`truncate`,
+  genau 1 `begin;`/`commit;`, 5 `raise exception`, 3 eingegrenzte `delete`.
+- **Ehrlich offen:** der MCP-Weg (`mcp__Supabase__execute_sql`) ist bisher **nur lesend** erprobt.
+  Ob er Schreibzugriffe zulässt und ob die ~100 KB große Seed-Datei in einem Aufruf durchgeht, ist
+  **nicht** verifiziert — das zu testen wäre bereits ein Production-Schreibversuch gewesen.
+  Rückfallweg: SQL-Editor des Projekts oder lokales `psql` des Betreibers.
+- **Tests:** Offline-Suite **147/147 grün** (54 s), inklusive Drift-Gate, `seed-restore-test` und
+  `backup-export-test`. Kein Browser-Smoke nötig (keine UI-Änderung).
+- **Nicht getan (bewusst):** kein Seed eingespielt · kein Restore gefahren · **kein einziger
+  Production-Schreibzugriff** · keine Migration · keine Cron-, Flag- oder Secret-Änderung · keine
+  Quelle aktiviert oder deaktiviert · kein PR gemergt, keiner erstellt · kein Deployment ·
+  `ARCHITECTURE.md` und `CLAUDE.md` unverändert (keine Architekturänderung, keine neue Dauerregel).
 
 **Sprint „Go-Kriterium 2 kontrolliert versuchen" — Nachweis**
 
