@@ -3550,7 +3550,15 @@ function recoveryGrundText(grund) {
     "v3-store-disabled": "V3-Store ist nicht aktiv.",
     "skipped-no-cluster": "Quell-Dokumente der pending-Vorgänge nicht im Zeitfenster gefunden.",
     "skipped-no-vorgang": "Pending-Einträge ohne Vorgangsbezug.",
-    "skipped-exists": "Vorgänge bereits verstanden.",
+    // Ergebnisklassen der Vorgangsbildung (Betriebsbefund B4). Das frühere
+    // pauschale „skipped-exists“ gibt es nicht mehr — es hat ein echtes Duplikat
+    // und eine reine Wortkollision in denselben Topf geworfen.
+    saved: "Neue Vorgänge verstanden.",
+    updated: "Bestehende Vorgänge mit neuen Fakten aktualisiert.",
+    merged: "Dokumente bestehenden Vorgängen zugeordnet (keine neuen Fakten).",
+    duplicate: "Vollständige Duplikate – bereits verarbeitete Dokumente.",
+    "skipped-terminal": "Bewusst ausgeschlossene Vorgänge (nicht erneut verstehen).",
+    "skipped-failed": "Vorgänge nach KI-Fehlschlag geparkt – gezielt nachholbar.",
     "skipped-budget": "Zeitbudget erreicht – Rest bleibt pending (nächster Lauf holt nach).",
     "skipped-error": "KI-Aufruf für einzelne Vorgänge fehlgeschlagen.",
     "skipped-invalid": "KI-Ergebnis war nicht schema-valide.",

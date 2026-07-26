@@ -1,10 +1,16 @@
 # Befund — warum der Anschlag auf den Berliner CSD 2026 in keiner Lage erschien
 
-**Stand:** 2026-07-26 · **Sprintzustand: erfolgreich diagnostiziert** (Verluststelle belegt,
-Reparatur bewusst nicht ausgeführt) · **Production nur lesend untersucht, nichts mutiert**
+**Stand:** 2026-07-26 (Diagnose) · **2026-07-26, Reparatursprint: §9–§13 ergänzt**
+**Sprintzustand: Reparatur umgesetzt und lokal belegt · Production-Nachweis blockiert
+(Merge/Deployment nicht freigegeben)** · **Production ausschließlich lesend berührt**
 
-> Kanonische Stelle für diesen Befund. `CURRENT_STATE.md` §3 verweist hierher und wird
-> nicht zweitverwertet. Die Reparatur ist **nicht** Teil dieses Sprints.
+> Kanonische Stelle für diesen Befund **und für seine Reparatur**. `CURRENT_STATE.md` §3
+> verweist hierher und wird nicht zweitverwertet.
+>
+> **Lesehinweis:** §1–§8 beschreiben den **Ist-Zustand vor der Reparatur** und bleiben
+> unverändert als Beweiskette erhalten. Was tatsächlich gebaut, gemessen und offen
+> geblieben ist, steht in **§9 (Reparatur)**, **§10 (verifizierter Verlustumfang)**,
+> **§11 (Kosten)**, **§12 (Production-Nachweisplan)** und **§13 (Freigabeanfrage)**.
 
 ---
 
@@ -333,10 +339,281 @@ und damit mehr KI-Aufrufe. Zwei Risiken sind vorab zu begrenzen:
    Budget-Gate greift und der stille Verlust nur die Form wechselt. Deshalb ist
    Sofortmaßnahme 3 (Relevanzsortierung) **vor** der Schwellensenkung einzuschalten.
 
-## 8 · Was dieser Sprint bewusst nicht getan hat
+## 8 · Was der Diagnosesprint bewusst nicht getan hat
 
 - **Keine** Reparatur der Vorgangsbildung — die Ursache ist bewiesen, die Reparatur ist
   eine Produkt- und Kostenentscheidung.
 - **Keine** Production-Mutation, kein Crawl, kein KI-Lauf, kein Flag verändert.
 - **Kein** Nachverstehen des verlorenen Ereignisses (das wäre ein KI-Lauf gegen Production).
 - **Keine** Berührung von Punkt 14.
+
+---
+
+# Reparatursprint (2026-07-26)
+
+## 9 · Was gebaut wurde
+
+**Leitentscheidung:** `vorgang_id` hat zwei unvereinbare Aufgaben zugleich getragen —
+**fachliche Identität** („worum geht es?") und **technische Eindeutigkeit** („gab es das
+schon?"). Genau diese Vermischung ist die Ursache. Die Reparatur trennt beides:
+
+- Die **Kennung ist ein Vorschlag**, kein Urteil.
+- Ob ein Cluster zu einem bestehenden Vorgang gehört, entscheidet ein **Belegvergleich**
+  gegen echte Kandidaten — nicht ein Zeichenkettenvergleich.
+
+Bewusst **nicht** gebaut: keine neue Tabelle, kein Event Sourcing, keine Queue, keine
+neue Relevanzmaschine, **keine Migration**. Alles nutzt bestehende Tabellen und Läufe.
+
+### 9.1 Die drei Verluststellen — was jeweils an ihre Stelle tritt
+
+| | Vorher | Jetzt |
+|---|---|---|
+| **V1** Ankerschwelle ≥ 8 Zeichen | *CSD*, *Berlin*, *Angriff*, *Merz*, *Wegner*, *Polizei* konnten **strukturell** keinen Vorgang bilden | Schwelle **5**; zusätzlich **Abkürzungen** über Großschreibung erkannt (*CSD*, *AfD*, *EuGH*) und **Jahreszahlen** als eigener Ankertyp |
+| **V2** Teilstring-Abgleich `a.includes(b)` | „menschen" traf „menschenmenge" → Anschlag + Taifun in einem Vorgang | **Beweisgewicht** statt Teilstring: Flexion = 1 (*berlin ~ berliner*), Kompositum-Wurzel und sehr langer exakter Anker = 2 (*Tariftreue* in *Tariftreuegesetz*). Zusammenführung ab **Gewicht 2 und mindestens einem nicht generischen Treffer**. Komposit-Enthalten erst ab 10 Zeichen — damit kann „menschen" nicht mehr hineingreifen |
+| **V3** Kennung = ein Wort, Treffer = Verwerfen | `vg-menschen` traf einen Altvorgang → `skipped-exists`, kein KI-Aufruf, keine Spur | Kennung **`vg-<themenwurzel>-<ereignistag>-<prüfsumme>`**; ein Treffer löst eine **Prüfung** aus, nie ein Verwerfen |
+
+Zusätzlich behoben, obwohl im Befund nur als Nebenbemerkung geführt: die Clusterbildung
+war **reihenfolgeabhängig** („erster Treffer gewinnt"). Sie läuft jetzt über
+Zusammenhangskomponenten und liefert bei gleicher Dokumentmenge immer dieselben Vorgänge.
+
+### 9.2 Vorgangsauflösung statt Zeichenkettenvergleich
+
+`resolveVorgang()` in `understanding.js`:
+
+1. Kennungsvorschlag + bis zu **drei Kandidatenpräfixe** aus den Themenwurzeln.
+2. Bestehende Vorgänge unter diesen Präfixen laden. **Altkennungen der Form `vg-<wurzel>`
+   fallen exakt auf ein solches Präfix** — sie werden dadurch fortgeschrieben statt
+   dupliziert. Deshalb ist **keine Migration nötig** und alte Daten bleiben lesbar.
+3. Je Kandidat die bereits verknüpften Rohdokumente laden und prüfen: **dieselbe Sache
+   oder nur dasselbe Wort?**
+4. Passt keiner und ist die Kennung trotzdem belegt → **technischer Konflikt**: eigene
+   Kennung bilden. Der Cluster wird **nie** verworfen.
+
+### 9.3 `skipped-exists` ist ersatzlos entfallen
+
+Es hat zwei völlig verschiedene Fälle in denselben Topf geworfen: „dasselbe Dokument
+nochmal" und „zufällig dasselbe Wort". Jeder Ausgang ist jetzt klassifiziert:
+
+| Ergebnis | Bedeutung | KI-Aufruf |
+|---|---|---|
+| `saved` | neuer Vorgang entstanden | ja |
+| `updated` | bestehender Vorgang mit **belegten neuen Fakten** fortgeschrieben, `ko_version` +1 | ja |
+| `merged` | Dokumente einem bestehenden Vorgang zugeordnet, keine neuen Fakten | nein |
+| `duplicate` | echtes vollständiges Duplikat (alle Dokumente bereits verknüpft) | nein |
+| `skipped-terminal` | bewusst und dauerhaft aussortiert (OP-06) | nein |
+| `skipped-failed` | nach KI-Fehlschlag geparkt, gezielt nachholbar | nein |
+| `skipped-budget` | Tagesbudget erschöpft → **erneut einplanen** | nein |
+| `skipped-error` / `skipped-invalid` / `skipped-store` | Fehler, geparkt und gemeldet | teilweise |
+
+**„Neue Fakten" ist belegt, nicht geraten:** mindestens ein Kernanker, den der Bestand
+nicht kennt. Eine wiederveröffentlichte Agenturmeldung erfüllt das nicht und kostet
+deshalb nichts.
+
+### 9.4 Verknüpfungsinvariante — der Endzustand ohne neue Tabelle
+
+> **Jeder Ausgang, der einen Vorgang gefunden oder gebildet hat, schreibt
+> `ko_document_links` für seine Dokumente.**
+
+Damit ist der Endzustand jedes Rohdokuments **aus Bestandsdaten ableitbar**
+(`vorgangs-lebenszyklus.js`) — verknüpft = verarbeitet, unverknüpft = offen. Genau
+deshalb braucht die Reparatur keine neue Tabelle und keine Migration.
+
+Sechs unterscheidbare Zustände, **genau einer davon unzulässig**:
+
+| Zustand | Bedeutung | gültig |
+|---|---|---|
+| `verstanden` | hängt an einem verstandenen Vorgang (`ko_version` und „später ergänzt" zeigen Erst- vs. Fortschreibung) | ja |
+| `ausgeschlossen` | hängt an einem terminal aussortierten Vorgang | ja |
+| `fehlgeschlagen` | hängt an einem nach KI-Fehlschlag geparkten Vorgang | ja |
+| `wiedervorlage` | hängt an einem vorgemerkten Vorgang | ja |
+| `offen` | noch nicht verarbeitet, innerhalb der Karenzzeit (24 h) | ja |
+| **`ohne-endzustand`** | keine Spur, Karenzzeit überschritten | **nein** |
+
+**Ehrliche Grenze, nicht kaschiert:** die feinere Unterscheidung zwischen `duplicate`,
+`merged` und `updated` liegt in der **Lauftelemetrie**, nicht am einzelnen Dokument. Sie
+wird dort nicht erfunden.
+
+### 9.5 Nachholpfad repariert
+
+Die Diagnose hielt fest: „zurückgestellte Cluster kehren nie wieder" (3 Läufe, 0
+verarbeitet). Zwei Ursachen, beide behoben:
+
+1. Zurückgestellte Cluster wurden **gar nicht vermerkt**. Jetzt bekommen sie eine
+   Vormerkung **und** ihre Dokumentverknüpfungen.
+2. Der Nachhollauf suchte den Cluster über eine **frische Neuclusterung der letzten 30
+   Tage** — die sieht eine völlig andere Dokumentmenge als der vormerkende Lauf, die
+   Kennungen trafen sich praktisch nie. Jetzt ist die **Verknüpfung** maßgeblich; die
+   Kennungssuche bleibt nur noch Rückfallebene für Alt-Vormerkungen.
+
+Dazu ein Werkzeug: `scripts/vorgangsbildung-nachholen.js` — **Vorschau ist der
+Standard**, Ausführung verlangt zusätzlich `HELMUT_NACHHOLEN_BESTAETIGT=ja`, harte
+Mengengrenze (`--max`, Standard 200, darüber **Abbruch statt Massenlauf**), idempotent,
+mandantenneutral, dupliziert strukturell nichts (verstandene und ausgeschlossene
+Dokumente sind keine Kandidaten).
+
+### 9.6 Großereignis-Vorfahrt
+
+Ein Cluster gilt als mögliches Großereignis, wenn **Sicherheits-/Opferbezug oder eine
+offizielle Reaktion** zusammentreffen mit **mehreren unabhängigen Quellen oder zeitlicher
+Verdichtung**. Solche Cluster werden **unabhängig vom Flag `HELMUT_UNDERSTANDING_PRIORITY`
+vorgezogen**. Begründung: die vollständige Relevanzsortierung ist eine freigabepflichtige
+Produktentscheidung — das Nicht-Verlieren eines tödlichen Anschlags ist keine. Ohne
+erkanntes Großereignis bleibt die Reihenfolge unverändert.
+
+### 9.7 Nebenbefund, der dabei auffiel
+
+`listRawDocuments`/`listRecentRawDocuments` wurden von PostgREST **still auf 1 000 Zeilen
+gekappt**. Aufrufe mit `limit=2000` — darunter der Recovery-Pfad und das
+Understanding-Nachladen — sahen die Hälfte nicht und hielten das Ergebnis für
+vollständig. Dieselbe Fehlerart wie B4 (stille Kappung sieht aus wie Vollständigkeit),
+deshalb im selben Sprint behoben: beide lesen jetzt seitenweise.
+
+## 10 · Verifizierter Verlustumfang
+
+Read-only gegen Production, 7 Tage (2026-07-20 bis 2026-07-26), **1 970 Rohdokumente**,
+35 rekonstruierte Crawl-Stapel, 722 bestehende Vorgänge.
+Werkzeug: `scripts/vorgangsbildung-vergleich.js` (rechnet **beide** Verfahren gegen
+dieselben Daten; die historische Fassung liegt zu Messzwecken im Skript).
+
+### 10.1 Die 47 % sind bestätigt
+
+| | Cluster | Kollisionen | betroffene Rohdokumente |
+|---|---|---|---|
+| **Altverfahren** | 1 062 | **254 = 23,9 %** | **932 = 47,3 %** |
+| **Neues Verfahren** | 1 365 | **0** | **0** |
+
+Die Diagnose nannte 21,7 % der Cluster / 47,0 % der Rohdokumente. Die
+**Dokumentenquote ist praktisch exakt bestätigt** (47,3 % statt 47,0 %); die Clusterquote
+liegt mit 23,9 % etwas höher als die geschätzten 21,7 % — die Abweichung stammt aus der
+Stapelrekonstruktion (35 Stapel über 20-Minuten-Lücken statt 15 geschätzter Stapel), nicht
+aus einer anderen Fehlermechanik.
+
+Beim neuen Verfahren schreiben **252 Cluster mit 511 Rohdokumenten einen bestehenden
+Vorgang fort**, statt ihn zu duplizieren. Diese Zahl ist eine **Untergrenze**: die Messung
+konnte je Kandidat nur die Überschrift als Beleg heranziehen, im Betrieb stehen die
+verknüpften Rohdokumente zur Verfügung.
+
+### 10.2 Endzustand je Rohdokument — der eigentliche Schock
+
+Dieselben 7 Tage, gemessen am Ist-Bestand (`scripts/vorgangsbildung-nachholen.js`):
+
+| Kategorie | Anzahl | Anteil |
+|---|---|---|
+| erfolgreich in einen Vorgang überführt | 274 | 13,9 % |
+| bewusst als Duplikat zusammengeführt | 0 | 0,0 % |
+| fachlich nachvollziehbar ausgeschlossen | 0 | 0,0 % |
+| nach KI-Fehlschlag geparkt | 0 | 0,0 % |
+| zur erneuten Verarbeitung vorgemerkt | 0 | 0,0 % |
+| noch ausstehend (Karenzzeit 24 h) | 192 | 9,7 % |
+| **ohne nachvollziehbaren Endzustand** | **1 504** | **76,3 %** |
+
+- Ältestes Dokument ohne Endzustand: **161 h alt** (2026-07-20 04:01 UTC).
+- Verarbeitungsdauer Rohdokument → Vorgang: **Median 2 min**, Mittel 428 min, **Max 112 h**
+  (274 Fälle gemessen). Der große Abstand zwischen Median und Mittel zeigt: entweder ein
+  Dokument wird sofort verstanden — oder tagelang nicht.
+- Quellen: 97 liefernde Abrufwege; Mandant: **keiner** — `raw_documents`,
+  `knowledge_objects` und `ko_document_links` tragen kein `tenant_id`, der Verlust liegt
+  oberhalb jeder Mandantenauswahl und trifft alle 6 aktiven Mandate gleich.
+
+**Die 47 % waren also die Untergrenze, nicht die Gesamtzahl.** 47,3 % gehen auf die
+Kennungskollision zurück; der Rest auf zurückgestellte Cluster ohne Vormerkung und auf
+Cluster, die kein Lauf je erreicht hat. Beide Wege sind mit dieser Reparatur geschlossen.
+
+## 11 · Kosten — ehrlich gerechnet
+
+KI-Aufrufe entstehen nur für **neue** Vorgänge und für Aktualisierungen mit belegten
+neuen Fakten. Fortgeschriebene und doppelte Cluster kosten nichts.
+
+| | Obergrenze KI-Aufrufe / Tag |
+|---|---|
+| Altverfahren | **115** |
+| Neues Verfahren | **159** (+38 %) |
+| Tagesbudget | **100** (Reserve 30) |
+
+**Der Engpass bestand schon vorher** — der Bedarf lag mit 115 bereits über dem Budget.
+Die Reparatur erzeugt ihn nicht, sie macht ihn **sichtbar**: was nicht in den Tag passt,
+endet als `skipped-budget` — protokolliert, gezählt und gezielt nachholbar, statt lautlos
+zu verschwinden. Damit entscheidet die **Reihenfolge** über Qualität. Deshalb die
+Großereignis-Vorfahrt (§9.6); die vollständige Relevanzsortierung (OP-14,
+`HELMUT_UNDERSTANDING_PRIORITY`) bleibt freigabepflichtig und ist die naheliegende
+nächste Entscheidung.
+
+Real gemessen wurden zuletzt **64 Aufrufe/Tag im Mittel** (Spitze 100 am 20.07.) — das
+tatsächliche Nadelöhr ist heute das **Zeitbudget je Lauf**, nicht das Tagesbudget.
+
+## 12 · Production-Nachweisplan (vorbereitet, **nicht** ausgeführt)
+
+Alle bisherigen Messungen sind **ausschließlich lesend** erfolgt. Der eigentliche
+Nachweis verlangt einen Deploy und ist damit freigabepflichtig.
+
+**Reihenfolge:**
+
+| # | Schritt | Art | Abbruchkriterium |
+|---|---|---|---|
+| 1 | PR mergen → automatisches Deployment | Freigabe | CI nicht grün |
+| 2 | `vorgangsbildung-nachholen.js --tage=2` (Messung) | read-only | — |
+| 3 | Nächsten regulären Crawl-Cron abwarten (kein manueller Anstoß) | passiv | — |
+| 4 | `vorgangsbildung-nachholen.js --tage=1` erneut | read-only | Anteil „ohne Endzustand" **nicht** gesunken |
+| 5 | `vorgangsbildung-vergleich.js --tage=1` | read-only | Kollisionen > 0 |
+| 6 | CSD-Fenster gezielt prüfen (SQL, siehe unten) | read-only | — |
+| 7 | Erst danach, separat freizugeben: `--vorschau --ausfuehren` für den Altbestand | **Write + Kosten** | > 200 Kandidaten oder LLM-Verbrauch > 80/100 |
+
+**Was der Nachweis zeigen muss** (jede Zeile prüfbar, keine Behauptung):
+
+1. Die vier CSD-Rohdokumente bilden **einen** Vorgang mit Kennung `vg-csd-2026072…`.
+2. Zu diesem Vorgang existiert ein Knowledge Object (`status='neu'`,
+   `understanding_status='complete'`).
+3. Alle beteiligten Rohdokumente tragen einen `ko_document_links`-Eintrag auf dieses KO.
+4. Die Relevanzbewertung läuft (`decisions`/`matching_results` für die 6 aktiven Mandate).
+5. Die Lage des Folgetags enthält den Vorgang (`briefings.payload` → `vorgang_ids`).
+6. Das Briefing enthält ihn ebenfalls.
+7. **Kein** Rohdokument des Fensters steht auf `ohne-endzustand`.
+8. Es entsteht **kein** zweiter Vorgang zum selben Ereignis (Duplikatprüfung über das
+   Themenwurzel-Präfix).
+9. Bestehende Vorgänge und Mandate sind unverändert (Zeilenzahlen `profiles`,
+   `mandate_profiles`, `knowledge_objects` vor/nach).
+10. Die Telemetrie zeigt den vollständigen Weg (`processRuns.ergebnisse`,
+    `.aufloesungen`, `.gruppen`, `.dokumenteOhneEndzustand`).
+11. Die stille Verlustquote im kontrollierten Zeitraum ist **null** — jeder Ausgang trägt
+    eine Klasse.
+
+**Messbefehle** (alle read-only, in dieser Reihenfolge):
+
+```
+HELMUT_V3_STORE=1 node scripts/vorgangsbildung-nachholen.js --tage=2
+HELMUT_V3_STORE=1 node scripts/vorgangsbildung-vergleich.js --tage=2
+```
+
+```sql
+-- CSD-Fenster: entstand ein Vorgang, und hängen die Rohdokumente daran?
+select k.vorgang_id, k.status, k.understanding_status, k.ko_version,
+       count(l.raw_document_id) as verknuepfte_dokumente
+from knowledge_objects k
+left join ko_document_links l on l.knowledge_object_id = k.id
+where k.vorgang_id like 'vg-csd%'
+group by 1,2,3,4;
+```
+
+**Automatischer Abbruch:** Der reguläre Lauf ist durch das bestehende Zeitbudget
+(90 s im Crawl, 240 s im Cron) und das fail-closed Tagesbudget begrenzt; ein Nachholauf
+bricht bei mehr als `--max` Kandidaten von selbst ab. Es ist **kein** zusätzlicher
+Not-Aus nötig — und es wird **kein** Cron verändert.
+
+## 13 · Offene Freigabe
+
+Der Sprint endet hier, weil der nächste Schritt eine Production-Änderung ist.
+
+| Frage | Antwort |
+|---|---|
+| **Welche Production-Änderung ist nötig?** | Merge des PR nach `main` → automatisches Vercel-Deployment. **Keine** Migration, **keine** Datenänderung, **kein** Flag, **kein** Cron |
+| **Welche Daten sind betroffen?** | Ab dem Deploy schreiben die regulären Läufe zusätzliche `ko_document_links` und legen für zurückgestellte Cluster `knowledge_objects` mit `status='pending'` an. Bestehende Vorgänge werden **nicht** verändert; ein bestehender Vorgang kann fortgeschrieben werden (`ko_version` +1), wenn belegt neue Fakten eintreffen |
+| **Welche Rückfallmöglichkeit gibt es?** | Rollback über `betrieb/deploy-rollback.md` (Vercel-Redeploy des Vorgängers). Die geschriebenen Verknüpfungen bleiben — sie sind **additiv und harmlos**: das Altverfahren liest `ko_document_links` nicht für seine Entscheidung. Vorgemerkte `pending`-Vorgänge sind für Nutzer unsichtbar (`status='pending'` ist vom Matching ausgeschlossen) |
+| **Welche Prüfungen liegen vor?** | Offline-Suite **160/160**, Browser-Smoke **32/32**, drei neue Suiten (Identität 52, Lebenszyklus 55, CSD-Regression 38 Assertions); **CI grün** auf PR **#143** (beide Pflicht-Checks, Run `30221808173`); Production-Messung read-only nach §10/§11 |
+| **Welches Testfenster?** | Die 24 h nach dem Deploy — ein regulärer Crawl-Zyklus, ohne manuellen Anstoß |
+| **Wie wird Erfolg gemessen?** | Anteil „ohne Endzustand" im 24-h-Fenster **< 5 %** (heute 76,3 %); Kollisionen **0**; der CSD-Vorgang existiert mit allen verknüpften Rohdokumenten |
+| **Wann wird abgebrochen?** | Wenn nach dem ersten vollständigen Zyklus der Anteil „ohne Endzustand" **nicht** gesunken ist, oder der LLM-Tagesverbrauch **100/100** erreicht und `skipped-budget` über 30 % der Cluster liegt → Rollback und Entscheidung über OP-14 (Relevanzsortierung) bzw. Budgeterhöhung **vor** einem zweiten Anlauf |
+
+**Getrennt freizugeben** (nicht Teil dieser Anfrage): das Nachholen des **Altbestands**
+(1 504 Rohdokumente ohne Endzustand). Das kostet KI-Aufrufe in erheblichem Umfang und ist
+eine eigene Kostenentscheidung. Das Werkzeug bricht bei mehr als 200 Kandidaten
+absichtlich ab.

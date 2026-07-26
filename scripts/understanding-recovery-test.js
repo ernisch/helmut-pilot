@@ -26,7 +26,13 @@ const doc = (id, title, summary = "", source_name = "Quelle") => ({ id, title, s
   const docs = [doc("d1", "Neues Tariftreuegesetz beschlossen", "Details zum Tariftreuegesetz")];
   const a = rec.assessCandidate(cand, docs, {});
   check("1 · eindeutige Rekonstruktion -> klasse=eindeutig", a.klasse === "eindeutig", JSON.stringify(a));
-  check("1 · abgeleitete id trifft die gespeicherte (idMatch)", a.idMatch === true && a.derivedIds.includes("vg-tariftreuegesetz"));
+  // Seit Betriebsbefund B4 traegt eine neu abgeleitete Kennung Ereignistag und
+  // Ankerpruefsumme (`vg-<wurzel>[-<tag>]-<summe>`); gespeicherte Altkennungen
+  // bestehen nur aus der Wurzel. Massgeblich ist deshalb die gemeinsame
+  // Themenwurzel, nicht die identische Zeichenkette.
+  check("1 · abgeleitete id trifft die gespeicherte ueber die Themenwurzel (idMatch)",
+    a.idMatch === true && a.derivedIds.some((id) => id.startsWith("vg-tariftreuegesetz")),
+    JSON.stringify(a.derivedIds));
   check("1 · Empfehlung recovery", a.empfehlung === "recovery");
 })();
 

@@ -122,12 +122,35 @@ Laufzeit aus dem Profil (`scheduler.personNewsSource`, id `<mandats-id>-news`).
 | Abruf, Feed-Parsing, Retry | `crawler.js`, `google-news-hardening.js` |
 | Lauf-Orchestrierung, Locks, Telemetrie | `scheduler.js`, `source-telemetry.js`, `crawl-run-state.js` |
 | Dedup + Fundstellen | `dedup.js`, `quellenarchitektur/dedup-global.js` |
+| **Vorgangsidentität (Anker, Cluster, Kennung)** | `vorgang-identity.js` |
 | Verstehen (LLM) | `understanding.js`, `quellenarchitektur/understanding-gate.js`, `ai.js` |
+| **Endzustand je Rohdokument + Watchdog** | `vorgangs-lebenszyklus.js` |
 | Kostendeckel (fail-closed) | `llm-budget.js` |
 | Amtliche Vorgänge | `dip.js`, `quellenarchitektur/pardok-parser.js`, `pardok-dispatch.js` |
 
 Alle Läufe sind über **atomare, fail-closed Locks** (`pipeline_locks`) gegen
 Doppelstart geschützt. Ein bewusster Doppelstart in Production ist **verboten**.
+
+### 7a · Vorgangsidentität (seit 2026-07-26, Betriebsbefund B4)
+
+**Fachliche Identität und technische Eindeutigkeit sind getrennt.** Vorher war die
+`vorgang_id` beides zugleich — ein einzelnes Titelwort, das gleichzeitig das Thema
+benannte *und* als Idempotenzschlüssel diente. Traf dieses Wort einen älteren,
+fachfremden Vorgang, galt ein neues Ereignis als „schon verstanden" und
+verschwand ohne Spur ([`befund-csd-2026-vorgangsverlust.md`](befund-csd-2026-vorgangsverlust.md)).
+
+| Baustein | Wo | Regel |
+|---|---|---|
+| **Kennung** `vg-<themenwurzel>-<ereignistag>-<prüfsumme>` | `vorgang-identity.js` | Ein **Vorschlag**, kein Urteil. Drei unabhängige Bestandteile → zwei verschiedene Ereignisse treffen sich praktisch nie |
+| **Zugehörigkeit** | `understanding.js` → `resolveVorgang()` | Entscheidet am **Beleg** (Ankerüberdeckung, Zeitfenster, Jahres-/Datumskonflikt) gegen Kandidaten unter den Themenwurzel-Präfixen — nicht am Zeichenkettenvergleich |
+| **Altkennungen** | dasselbe Präfix | `vg-<wurzel>` fällt exakt auf das Präfix und wird **fortgeschrieben**, nicht dupliziert. Deshalb keine Migration |
+| **Verknüpfungsinvariante** | `ko_document_links` | Jeder Ausgang, der einen Vorgang gefunden oder gebildet hat, schreibt die Verknüpfung. Damit ist der Endzustand jedes Rohdokuments **ableitbar** — ohne neue Tabelle |
+
+Eine gleiche Kennung bedeutet **nie** „ignoriere das neue Rohdokument". Die
+Ergebnisklassen sind `saved` · `updated` · `merged` · `duplicate` ·
+`skipped-terminal` · `skipped-failed` · `skipped-budget` · `skipped-error` ·
+`skipped-invalid` · `skipped-store`. Ein pauschales `skipped-exists` gibt es
+nicht mehr.
 
 ## 8 · Briefing, Lage, Radar, Büro
 
