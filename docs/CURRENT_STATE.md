@@ -528,6 +528,13 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
   Anbieter die Kosten treiben, und welche Kosten später einem Mandanten zugerechnet werden
   können — ohne Production-Mutation. **Ergebnis: erfüllt.** Kanonische Stelle:
   [`betrieb/kostenmessung.md`](betrieb/kostenmessung.md).
+- **Branch/Commit/PR:** `claude/helmut-cost-measurement-4ietbr` · `0f415df` · **PR #136**
+  (offen, wartet auf Review und Betreiberfreigabe — nicht selbst gemergt).
+  Geänderte Dateien: `lib/helmut/cost-model.js` (neu) · `lib/helmut/storage.js` ·
+  `lib/helmut/understanding.js` · `lib/helmut/scheduler.js` · `server.js` · `client.js` ·
+  `scripts/kostenmessung-nachweis.js` (neu) · `scripts/kostenmessung-test.js` (neu) ·
+  `scripts/admin-overview-test.js` · `docs/betrieb/kostenmessung.md` (neu) ·
+  `docs/betrieb/env-inventar.md` · `docs/roadmap/phase_1_checkliste.md` · diese Datei.
 - **Startprüfung:** Arbeitsbaum sauber, Stand == `origin/main` == `93006e8` (Merge #134).
   **Punkt 16 ist NICHT gemergt** (Checkliste ⏳, Befund A-6 offen, kein Branch, kein PR,
   kein Commit). Der Betreiber hat das Git-Gate nach Vorlage des Befunds ausdrücklich
