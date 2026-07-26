@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-26 · **`main`-HEAD:** `299470a` (Merge #133)
+**Letzte Aktualisierung:** 2026-07-26 · **`main`-HEAD:** `93006e8` (Merge #134)
 
 > **Diese Datei ist der aktuelle Stand.** Bei Widerspruch zu älteren Statusdokumenten
 > gilt diese Datei. Sie enthält **keine Chronik** — Details je offenem Punkt stehen in
@@ -53,8 +53,8 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | Zweitmandanten-Provisionierung + Per-Mandant-Kostendeckel | Migration `20260721` nicht angewandt, `HELMUT_TENANT_LLM_CAP` AUS, DB-seitige Durchsetzung unentschieden | OP-03 |
 | Retention/Löschung | nur Trockenlauf; braucht verbindliche Fristen aus OP-02 | OP-12 |
 | Understanding-Gate, Cheap-Triage, Scoring, Berlin/Brandenburg | in `shadow`/`off`, Scharfschaltung ist Freigabe | OP-18, OP-21, OP-22 |
-| Pre-Seed-Sicherung + gezielter Seed-Restore (kein `drop table cascade`) — gebaut, adversarial reviewt, isoliert getestet (43/43 lokal, 41/41 in CI; `backup-export-test` 38/38; Suite 147/147) | **nie gegen Production gelaufen**; deckt nur 8 Tabellen ab und ersetzt OP-01 nicht | OP-01 |
-| **Berlin-Aktivierungsreife (Phase-1-Punkt 14)** — Gate je Land freigebbar, `manual` ist eine echte Sperre, Aktivierungs-SQL + 3 Rollback-Stufen generiert und getestet, Runbook vollständig. **Zweiter Durchgang 2026-07-26:** Neutralität von `berlin-basis` ist jetzt eine **ausführbare Prüfung** (Code neutral, Production-Bestand **nicht** — Befund A-3 reproduziert), Wege **neu verifiziert** (Aktivierungsset 6 → **4**, zwei Wege veraltet), Lastmodell gegen gemessene Production-Zahlen korrigiert, Profilplan getestet, Aktivierung gestaffelt, Rollback gehärtet | die **Production-Aktivierung selbst** (Block A, Berliner Landtagsprofil, Paket-/Wegstatus, Flag) und der Beweislauf über mehrere Crawls | Punkt 14 |
+| Pre-Seed-Sicherung + gezielter Seed-Restore (kein `drop table cascade`) — gebaut, adversarial reviewt, isoliert getestet (43/43 lokal, 41/41 in CI; `backup-export-test` 38/38; Suite 147/147). **Am 2026-07-26, 16:47 UTC erstmals real gegen Production gelaufen:** 8/8 Tabellen, 0 Fehler, `vollstaendig: true`, `pruefsummeGesamt` `49a5b92d…`, an `mainCommit 93006e8` gebunden | der **Restore** ist weiterhin nie gegen Production gelaufen; deckt nur 8 Tabellen ab und ersetzt OP-01 nicht | OP-01 |
+| **Berlin-Aktivierungsreife (Phase-1-Punkt 14)** — Gate je Land freigebbar, `manual` ist eine echte Sperre, Aktivierungs-SQL + 3 Rollback-Stufen generiert und getestet, Runbook vollständig. **Zweiter Durchgang 2026-07-26:** Neutralität von `berlin-basis` ist jetzt eine **ausführbare Prüfung** (Code neutral, Production-Bestand **nicht** — Befund A-3 reproduziert), Wege **neu verifiziert** (Aktivierungsset 6 → **4**, zwei Wege veraltet), Lastmodell gegen gemessene Production-Zahlen korrigiert, Profilplan getestet, Aktivierung gestaffelt, Rollback gehärtet. **Dritter Durchgang (Production-Sprint) 2026-07-26:** Ausgangszustand vollständig gemessen, **Sicherung real erstellt**, Dry Run gegen den Ist-Zustand bestätigt (3/3/1/2 Zeilen, 0 Bund, 0 Brandenburg) | die **Production-Aktivierung selbst** — blockiert an einem fehlenden Zugang: `HELMUT_LANDESMODULE` ist aus einer Cloud-Sitzung weder lesbar noch setzbar (`berlin-aktivierung.md` §16.5) | Punkt 14 |
 | OP-06 Terminales Aussortieren des Alt-Rückstands (34 Fälle, Default AUS) | Ausführung ist freigabepflichtig — **und** eine offene Fachfrage: 16 der 34 Allowlist-Einträge sind mit „außerhalb Mandat" begründet, also relativ zum Pilotmandat, geschrieben wird aber in das mandantenneutrale `knowledge_objects` (kein `tenant_id`). Ein künftiger Zweitmandant mit regionalem/EU-Schwerpunkt bekäme diese Vorgänge dauerhaft nie verstanden | OP-06 |
 
 ## 4 · Blockiert
@@ -62,7 +62,7 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | Punkt | Ursache | Nächster Schritt |
 |---|---|---|
 | **OP-01** Supabase Pro + PITR | Kostenentscheidung des Betreibers (~25 $/Monat); Free-Plan = **keine Backups** | Betreiber schaltet Pro + PITR frei, dann Restore-Übung nach `betrieb/backup-restore-runbook.md` |
-| **Quellen-Seed-Einspielung** (macht P0-2 und die 6 Bundesweg-Reparaturen in der DB wirksam) | noch zwei offene Go-Kriterien: **2** die Pre-Seed-Sicherung ist **noch nicht gelaufen** · **8** die Einspielung ist nicht freigegeben. Kriterium **11** ist **entschieden**: gestaffelte Reaktivierung (§6d). **Versucht 2026-07-25:** `node scripts/backup-export.js --scope=seed` in der Agenten-Sitzung ausgeführt — Abbruch vor jedem Netzwerkzugriff (Exit 2), da `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` in dieser Umgebung nicht gesetzt sind und keine `.env.local` existiert. **Kein** Production-Zugriff erfolgt. Betreiber führt den Export selbst mit echter `.env.local` aus | Betreiber führt `node scripts/backup-export.js --scope=seed` lokal aus und teilt das Manifest (`art`, `vollstaendig`, Zeilenzahlen je Tabelle, `pruefsummeGesamt`, `mainCommit`) mit; danach Runbook `betrieb/quellen-seed-einspielung.md` §6c Schritt 6 ff. |
+| **Quellen-Seed-Einspielung** (macht P0-2 und die 6 Bundesweg-Reparaturen in der DB wirksam) | **Go-Kriterium 2 ist seit 2026-07-26, 16:47 UTC erfüllt** — die Pre-Seed-Sicherung ist gelaufen (`vollstaendig: true`, 8/8 Tabellen, `mainCommit 93006e8`). Offen ist nur noch Go-Kriterium **8**: die Einspielung ist nicht freigegeben. Kriterium **11** ist **entschieden**: gestaffelte Reaktivierung (§6d). **Erledigt 2026-07-26:** derselbe Aufruf lief in der Cloud-Sitzung durch (Exit 0), weil `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` diesmal über die Claude-Code-Environment-Einstellungen gesetzt waren und der Supabase-Egress offen ist. Der Versuch vom 2026-07-25 war nur an fehlenden Zugangsdaten gescheitert, nicht am Werkzeug | Betreiber gibt die Einspielung frei; danach Runbook `betrieb/quellen-seed-einspielung.md` §6c Schritt 6 ff. Die Sicherung liegt vor und ist gültig, solange `retrieval_paths`/`package_paths`/`source_packages` unverändert bleiben |
 | **OP-02** Recht (Pilotvertrag, AVV, DSFA, Art.-9-Grundlage, Fristen) | externe Prüfung durch Anwalt/DSB steht aus | Entwürfe aus `recht/` prüfen lassen und zeichnen; blockiert OP-12 |
 | **OP-03** Zweitmandanten-Freigabepaket | Grundsatzentscheidung „DB-seitige Durchsetzung vs. dokumentierte App-Guard-Akzeptanz" fehlt (`mandantentrennung-architektur.md` bewertet die Wege) | Betreiber entscheidet einen Weg; danach Migration + Env + Probelauf |
 | **OP-04** Demo-Mandate entfernen — **Umfang korrigiert 2026-07-25:** Production führt **8 Profile, davon 6 aktiv** (nicht 1 Pilot + 2 Demo-Mandate); fünf davon tragen Klarnamen realer Abgeordneter | Production-Datenänderung, freigabepflichtig; berührt zusätzlich OP-02 (personenbezogene Daten) | je Profil entscheiden, dann über Provisionierungswerkzeug deaktivieren (`quellenarchitektur/30-paket-inventur-production.md` §5, A-1) |
@@ -214,6 +214,22 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
   aufgelöst, **0** Rohdokumente tragen noch eine `news.google.com`-URL.
   **Damit sind zwei ältere Angaben überholt:** die „Verarbeitungskapazität ~15–20 Understandings/Tag"
   (real ~40) und die Annahme „2 Crawl-Läufe/Tag" aus `vercel.json` (real 5).
+- **Nachmessung 2026-07-26, 16:45–16:52 UTC (Production-Sprint, read-only):** Bestand stabil.
+  Letzter Vollcrawl `crawl-20260726160130-7bznw` (16:01:32 UTC): **145 von 147** Wegen `ok`, 2 `empty`,
+  **0 error**, 0 `circuit-open`, 940 neue Rohdokumente, Laufzeit **33 s** · Invariante **B3 erfüllt**
+  (147 Telemetriezeilen = 147 distinct `source_id`) · Fehlerrate 24 h **1,1 %** (28 von 2534), 56
+  `circuit-open`, 16 Retries · `pipeline_locks` 3 Zeilen, **alle abgelaufen** (nichts hängt) ·
+  Pending unverändert **50** · LLM heute **34**/100 (8-Tage-Mittel ≈ 63, Spitze 100 am 20.07.) ·
+  Rohdokumente **1978**/7 Tage ≈ 283/Tag · Knowledge Objects **274**/7 Tage ≈ 39/Tag ·
+  Originalverweis **99,5 %**. **Berlin weiterhin bei null:** 0 Rohdokumente, **0 Telemetriezeilen
+  jemals**, alle 10 BE-Wege `needs_review`+`manual`, `berlin-basis` `prepared`, 0 Landtagsprofile.
+- **Zugangsgrenze einer Cloud-Sitzung (neu belegt 2026-07-26):** Supabase ist erreichbar
+  (`SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` gesetzt, Egress HTTP 200) — Messung, Backup und SQL
+  sind möglich. **Nicht** erreichbar sind Vercel-Env (`VERCEL_TOKEN` nicht gesetzt, Vercel-MCP hat
+  kein Env-Werkzeug) und die Production-App selbst (`CONNECT` → **403**, `CRON_SECRET` nicht gesetzt).
+  **Folge:** `HELMUT_LANDESMODULE` ist aus einer Cloud-Sitzung weder lesbar noch setzbar, und ein
+  Crawl ist von dort nicht auslösbar. Das blockiert jede Landesmodul-Aktivierung (Berlin wie
+  Brandenburg) unabhängig vom Datenbankstand.
 - **Zustand:** 0 neue `systemErrors` im dokumentierten Beweiszeitraum; Betriebsbefunde
   B1 (Google-News-Klumpenrisiko, 146 von 163 Wegen über Google) und B2
   (Understanding-Rückstand) bleiben offen. Neu belegt: jeder Cron-Lauf erscheint doppelt —
@@ -225,6 +241,8 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 
 | Datum | Entscheidung |
 |---|---|
+| 2026-07-26 | **Eine Landesmodul-Aktivierung wird nicht begonnen, solange das Freigabeflag nicht auch zurückgenommen werden kann.** Der Production-Sprint hätte Block A, Testprofil und Stufe 1 rein datenbankseitig ausführen können — er hat es nicht getan. Ohne Vercel-Zugang ist Rollback **Stufe 0** (Flag leeren, ohne DB-Schreibzugriff) nicht verfügbar, und Riegel 1 ist nicht einmal auslesbar. Drei von vier Riegeln zu entfernen, während der vierte weder messbar noch steuerbar ist, ist kein zulässiger Zwischenzustand |
+| 2026-07-26 | **Die Pre-Seed-Sicherung ist erstmals real gelaufen** (8/8 Tabellen, `vollstaendig: true`). Damit ist belegt, dass produktionsrelevante Skripte in einer Cloud-Sitzung lauffähig sind, sobald die Secrets über die Environment-Einstellungen bereitstehen (`CLAUDE.md` §4.9) — der Fehlschlag vom 2026-07-25 lag an fehlenden Zugangsdaten, nicht am Werkzeug |
 | 2026-07-26 | **Vorbereitete Pflichtquellen statt globaler Kuratierungsschwelle** — `regional-niedersachsen` bekommt seine benannte Basis über 7 gezielt gebundene Wege im Zustand `paused`/`manual` + `active: false`. Das Anheben der Kuratierungsschwelle (rund 20 zusätzliche Google-Abrufe je Crawl) ist damit **nicht** nötig; die Aktivierung bleibt eine eigene Freigabeentscheidung |
 | 2026-07-26 | **„Fachlich nicht anwendbar" ist nur mit überprüfbarer Voraussetzung zulässig** — stabile Kennung, politische Begründung, Wahlperiode, amtlicher Beleg und eine Prüfung gegen `seeds/parlamentszusammensetzung.js`. Eine unbestätigte Ausnahme lässt die Klasse als offene Lücke stehen; Freitext genügt nicht mehr |
 | 2026-07-26 | **Auch die Fraktionssollmenge wird extern verankert** — die Alt-Zählung „8 von 8" war fachlich falsch (FDP und BSW nicht im 21. Bundestag, SSW ohne Fraktionsstatus). Richtig sind 5 Fraktionen. Die drei Quellen bleiben erhalten, werden aber als `parteien_ohne_fraktionsstatus` geführt |
@@ -261,15 +279,26 @@ ausführen** — er ist unabhängig von allem anderen, beseitigt das größte
 Einzelrisiko und ist Voraussetzung dafür, dass die Migration aus OP-03 gefahrlos
 eingespielt werden kann.
 
-**Entscheidungsreif und wartend (seit 2026-07-26): die Berlin-Aktivierung.** Punkt 14 ist bis
+**Zuerst nötig, damit Punkt 14 überhaupt weitergehen kann: ein Weg zum Landesmodul-Flag.**
+Der Production-Sprint vom 2026-07-26 hat alles Datenbankseitige vorbereitet und gemessen, aber
+**nicht aktiviert** — `HELMUT_LANDESMODULE` ist aus einer Cloud-Sitzung weder lesbar noch setzbar
+(`betrieb/berlin-aktivierung.md` §16.5). Der Betreiber wählt einen der beiden Wege:
+**(a)** Wert `berlin` selbst in der Vercel-Env setzen und die Aktivierung nach §16.6 begleiten, oder
+**(b)** einer Agenten-Sitzung `VERCEL_TOKEN` über die Claude-Code-Environment-Einstellungen
+bereitstellen (`CLAUDE.md` §4.9), damit der Schritt dort ausführbar wird. Ohne einen der beiden Wege
+bleibt Punkt 14 blockiert — und Punkt 15 (Brandenburg) aus demselben Grund ebenfalls.
+
+**Ansonsten entscheidungsreif und wartend (seit 2026-07-26): die Berlin-Aktivierung.** Punkt 14 ist bis
 unmittelbar vor die erste Production-Änderung vorbereitet; jeder Eingriff ist zeilengenau benannt
 und in drei Stufen rückrollbar. **Bedingung V2 (Neuverifikation) ist erledigt** — sie lief am
 2026-07-26 auf einem Actions-Runner mit offenem Egress (Runs `30208901908` + `30208997672`,
 zweimal identisch) und hat das Aktivierungsset von 6 auf **4** Wege reduziert: `rp-be-landesparlament`
 (jüngstes Item **156 Tage** alt) und `rp-be-landesfraktionen` (**41 Tage**) antworten zwar mit
 HTTP 200, liefern aber nichts Aktuelles. **Offen bleibt V1**: die Neutralisierung von `berlin-basis`
-ist in der Datenbank weiterhin nicht vollzogen (Befund A-3, jetzt als ausführbare Prüfung belegt).
-Runbook: [`betrieb/berlin-aktivierung.md`](betrieb/berlin-aktivierung.md).
+ist in der Datenbank weiterhin nicht vollzogen (Befund A-3, am 2026-07-26 um 16:45 UTC erneut
+gemessen). Der Dry Run des Production-Sprints hat belegt, dass Block A exakt 3 + 3 Zeilen berührt
+und **keinen** Bundes- oder Brandenburg-Datensatz.
+Runbook: [`betrieb/berlin-aktivierung.md`](betrieb/berlin-aktivierung.md), Ausführungsprotokoll §16.
 
 Der **konkret vorbereitete** nächste Schritt ist die **Quellen-Seed-Einspielung** (Seeds
 `20260713` + `20260717`); sie macht die P0-2-Neutralisierung und die 6 Bundesweg-Reparaturen in
@@ -307,6 +336,7 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 
 | Sprint | Datum | Zustand |
 |---|---|---|
+| **Punkt 14 (Production-Sprint): Berlin Stufe 1 aktivieren** | 2026-07-26 | **Blockiert — keine Production-Mutation.** 11 von 12 Startbedingungen erfüllt; Bedingung **10** (notwendige Production-Zugänge) **nicht**: `HELMUT_LANDESMODULE` ist aus einer Cloud-Sitzung weder lesbar noch setzbar (`VERCEL_TOKEN` nicht gesetzt, Vercel-MCP ohne Env-Werkzeug), die Production-App ist nicht erreichbar (`CONNECT` → 403). Damit wäre **Rollback Stufe 0 nicht verfügbar** gewesen → Abbruchkriterium 20 greift vor jeder Mutation. **Erreicht:** vollständiger Ausgangszustand gemessen · **Sicherung erstmals real erstellt** (8/8 Tabellen, `vollstaendig: true` — schließt Go-Kriterium 2 der Seed-Einspielung) · Dry Run gegen den Ist-Zustand bestätigt (**3/3/1/2** Zeilen, **0** Bund, **0** Brandenburg) · Übergabe §16.6. **Nicht getan:** kein `insert`/`update`/`delete`, kein Flag, kein Profil, kein Crawl, keine Stufe 2. Brandenburg unverändert. Details unten. |
 | **Punkt 14 (2. Durchgang): Berlin fachlich neutralisieren, aktuell verifizieren, freigabereif machen** | 2026-07-26 | **Teilweise abgeschlossen — Aktivierungsreife für ein reduziertes Set, Production unverändert.** Neutralität ist jetzt eine **ausführbare Prüfung** über Code **und** gemessenen Datenbankbestand: Code neutral, Production **nicht** (Befund A-3 reproduziert), nach Block A neutral. Neuverifikation auf einem Runner mit offenem Egress hat **zwei Wege als veraltet entlarvt** (156 bzw. 41 Tage) — Aktivierungsset **6 → 4**. Pflichtklassen ehrlich neu gezählt: **4 eigenständig, 1 mitabgedeckt, 7 ohne Weg** (vorher „8 von 12 liefern"). Lastmodell gegen gemessene Production-Zahlen korrigiert (beide Terme der Alt-Rechnung waren falsch). Profilplan getestet, zwei Befunde (P-1, P-2). Aktivierung gestaffelt, Rollback gehärtet. **Empfehlung: Go mit Bedingungen** für das reduzierte Set; harter Blocker bleibt V1. Offline-Suite **152/152**, Browser-Smoke 32/32, `berlin-neutralitaet` 109/109 (neu), `berlin-aktivierung` 123/123. **Keine Production-Mutation.** Brandenburg unverändert und inaktiv. Details unten. |
 | **Phase-1-Punkt 14: Berlin als laufende Versorgung aktivieren** | 2026-07-26 | **Teilweise abgeschlossen — Aktivierungsreife erreicht, Production unverändert.** Berlin ist bis unmittelbar vor die erste Production-Änderung vorbereitet: Aktivierungsplan, SQL, 3 Rollback-Stufen, Runbook und 123 ausführbare Prüfungen liegen vor. **Keine** Aktivierung, kein Flag, kein SQL ausgeführt, keine Zeile verändert. Zwei echte Sperrlücken behoben (globales statt landesscharfes Gate; `activation_mode='manual'` war wirkungslos). **Empfehlung: Go mit Bedingungen** — der harte Blocker ist die in der Datenbank offene Neutralisierung von `berlin-basis` (A-3). Offline-Suite 151/151, Browser-Smoke 32/32. Brandenburg unverändert und inaktiv. Details unten. |
 | Punkt 13 — Abschlusskorrektur: Niedersachsen, nicht-anwendbar, Fraktionen | 2026-07-26 | **Erfolgreich abgeschlossen** — alle 8 Pakete abgeschlossen (7 vollständig + 1 mit belegten Ausnahmen, 0 teilweise, 0 blockiert). `regional-niedersachsen` hat eine benannte Basis aus 7 Wegen (5 Bestandsquellen + 2 amtliche), **vorbereitet und inaktiv, 0 zusätzliche Abrufe**. „Nicht anwendbar" ist gegen die amtliche Parlamentszusammensetzung überprüfbar. Fraktionssollmenge extern verankert — die Alt-Angabe „8 von 8" war fachlich falsch, richtig sind **5**. Offline-Suite 150/150. Keine Production-Änderung. Details unten. |
@@ -321,6 +351,52 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 | Merge von PR #105 — Anker-Recovery-Pfad in Production stillgelegt | 2026-07-25 | **Erfolgreich abgeschlossen** — gemergt als `43e9e35`; Stilllegung auf `main` verifiziert. |
 | Recovery-Pfad-Review + Zusammenführung von PR #105 auf die kanonische Kontextstruktur | 2026-07-25 | **Erfolgreich abgeschlossen** |
 | Kontextstruktur für Claude Code (`CLAUDE.md` + Einstiegsschicht) | 2026-07-25 | **Erfolgreich abgeschlossen** — reine Dokumentation, gemergt als PR #119 (`c6a3d40`). |
+
+**Sprint „Punkt 14 (Production-Sprint): Berlin Stufe 1 aktivieren" — Nachweis**
+
+- **Auftrag:** die vorbereitete erste Berliner Aktivierungsstufe in Production ausführen und den
+  ersten realen Crawl belegen. **Ergebnis: blockiert vor der ersten Mutation.**
+- **Startprüfung: 11 von 12 erfüllt.** #134 gemergt (`merged: true`, 16:38:41 UTC), `e2be0a4` und
+  `5cfce6c` Vorfahren von `main`, alle **6** Checks `success` (beide Pflicht-Checks grün), lokal ==
+  `origin/main` == `93006e8`, Arbeitsbaum sauber, 0 Commits nach #134, V2-Verifikation **0 Tage** alt.
+  Gemessen und bestätigt: Brandenburg `prepared` + 9/9 Wege `manual` + 0 BB-Profile · keine laufende
+  Berliner Aktivierung (10/10 BE-Wege `manual`, **0 Berliner Telemetriezeilen jemals**) · keine
+  parallele Änderung (letzte Konfigänderung 11:13:10 UTC, seither unverändert).
+- **Die fehlende Bedingung (10):** Supabase ist erreichbar (Egress HTTP 200) — Messung, Backup und
+  SQL wären möglich. **Nicht** erreichbar: Vercel-Env (`VERCEL_TOKEN` nicht gesetzt; der
+  Vercel-MCP-Server stellt **kein** Werkzeug für Environment-Variablen bereit) und die Production-App
+  (`CONNECT` → **403**, `CRON_SECRET` nicht gesetzt). `HELMUT_LANDESMODULE` ist damit weder **lesbar**
+  noch **setzbar**, und ein Crawl nicht auslösbar.
+- **Warum das die Mutation ausschließt** (und nicht nur den Crawl): der schnellste Rückweg —
+  Rollback **Stufe 0**, Flag leeren **ohne** DB-Schreibzugriff — setzt genau diesen Zugang voraus.
+  Wer das Flag nicht setzen kann, kann es auch nicht leeren. Abbruchkriterium **20** („Rollback ist
+  nicht unmittelbar ausführbar") wäre ab der ersten Mutation dauerhaft erfüllt gewesen. Zusätzlich
+  ist Riegel 1 nicht messbar, und nach Block A + Profil + Stufe 1 stünde nur noch eine einzelne,
+  von hier aus unsichtbare Env-Variable zwischen dem sicheren Zustand und einem unbeobachteten
+  Berliner Crawl. Die bindende Reihenfolge „Flag **vor** Stufe 2" wäre verletzt.
+- **Trotzdem erreicht — die Sicherung.** `node scripts/backup-export.js --scope=seed` lief zum
+  **ersten Mal real gegen Production** (Exit 0): **8/8 Tabellen**, `fehler: []`,
+  **`vollstaendig: true`**, `pruefsummeGesamt` `49a5b92d…cc0ee`, gebunden an `mainCommit 93006e8`;
+  163 `retrieval_paths`, 165 `package_paths`, 9 `source_packages`. Verzeichnis `backups/…` ist
+  gitignored — Production-Daten kommen nicht ins Repo. **Damit ist Go-Kriterium 2 der
+  Quellen-Seed-Einspielung erfüllt**, das seit 2026-07-25 offen war. Der Fehlschlag von damals lag
+  an fehlenden Zugangsdaten, nicht am Werkzeug.
+- **Dry Run gegen den gemessenen Ist-Zustand** (nicht gegen die Doku): A1 **3** · A2 **3** ·
+  B1 **1** · B2.1 **2** Zeilen — exakt der Plan. Kontrollfragen alle **0**: kein Bundesweg, kein
+  Brandenburg-Weg, keine `pkg-brandenburg-basis`-Zeile betroffen. `die-linke-berlin` trägt heute
+  **0** Wege, daher legt A1 genau 3 Zeilen an und Rollback Stufe 2 bleibt zeilengenau umkehrbar.
+- **Ausgangszustand (16:45–16:52 UTC), vollständig in §9 und im Runbook §16.2.** Kernwerte:
+  Bundesversorgung gesund (letzter Vollcrawl 145/147 `ok`, 0 Fehler, 33 s) · Invariante B3 erfüllt
+  (147 = 147) · Locks 3 Zeilen, **alle abgelaufen** · Pending unverändert **50** · LLM heute 34/100 ·
+  Rohdokumente ≈ 283/Tag · KO ≈ 39/Tag · Originalverweis 99,5 % · Berlin bei **null**.
+- **Nebenbefund, entscheidungsrelevant:** der offene **PR #132** (Brandenburg) führt einen
+  konkurrierenden Gate-Namen `HELMUT_LANDESMODUL_FREIGABE` ein, während `main` seit #133/#134
+  `HELMUT_LANDESMODULE` verwendet. `main` ist maßgeblich und #132 ist nicht gemergt — vor einem Merge
+  von #132 muss entschieden werden, welcher Name gilt, sonst entstehen zwei Landesmodul-Gates.
+- **Nicht getan (bewusst):** kein `insert`/`update`/`delete` · kein Flag gesetzt · kein Profil
+  angelegt · kein SQL-Block ausgeführt · kein Crawl ausgelöst · **keine Stufe 2** · keine Migration ·
+  keine Seed-Einspielung · keine Cron-/Lock-/Scheduler-/Secret-Änderung · Brandenburg, Bund,
+  Niedersachsen und alle Bestandsmandanten unverändert · kein Rollback nötig (nichts zu rollen).
 
 **Sprint „Punkt 14 (2. Durchgang): Berlin fachlich neutralisieren, aktuell verifizieren" — Nachweis**
 
