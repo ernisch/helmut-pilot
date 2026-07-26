@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-26 · **`main`-HEAD:** `9f1def5` (Merge #130)
+**Letzte Aktualisierung:** 2026-07-26 · **`main`-HEAD:** `ca80b2f` (Merge #131)
 
 > **Diese Datei ist der aktuelle Stand.** Bei Widerspruch zu älteren Statusdokumenten
 > gilt diese Datei. Sie enthält **keine Chronik** — Details je offenem Punkt stehen in
@@ -53,6 +53,7 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | Zweitmandanten-Provisionierung + Per-Mandant-Kostendeckel | Migration `20260721` nicht angewandt, `HELMUT_TENANT_LLM_CAP` AUS, DB-seitige Durchsetzung unentschieden | OP-03 |
 | Retention/Löschung | nur Trockenlauf; braucht verbindliche Fristen aus OP-02 | OP-12 |
 | Understanding-Gate, Cheap-Triage, Scoring, Berlin/Brandenburg | in `shadow`/`off`, Scharfschaltung ist Freigabe | OP-18, OP-21, OP-22 |
+| **Brandenburg Activation Readiness (Phase-1-Punkt 15)** — Gate je Bundesland freigebbar, 4 Stellschrauben benannt, Rollback lokal byte-genau nachgewiesen, Runbook `betrieb/landesmodul-aktivierung.md` | Production-Aktivierung **blockiert bis Berlin zuerst aktiviert, stabil bewiesen und vom Betreiber ausdrücklich bestätigt ist**; zusätzlich offen: LLM-Budgetentscheidung (R-1) und ein Brandenburger Landtagsprofil in Production (B-5) | OP-21 |
 | Pre-Seed-Sicherung + gezielter Seed-Restore (kein `drop table cascade`) — gebaut, adversarial reviewt, isoliert getestet (43/43 lokal, 41/41 in CI; `backup-export-test` 38/38; Suite 147/147) | **nie gegen Production gelaufen**; deckt nur 8 Tabellen ab und ersetzt OP-01 nicht | OP-01 |
 | OP-06 Terminales Aussortieren des Alt-Rückstands (34 Fälle, Default AUS) | Ausführung ist freigabepflichtig — **und** eine offene Fachfrage: 16 der 34 Allowlist-Einträge sind mit „außerhalb Mandat" begründet, also relativ zum Pilotmandat, geschrieben wird aber in das mandantenneutrale `knowledge_objects` (kein `tenant_id`). Ein künftiger Zweitmandant mit regionalem/EU-Schwerpunkt bekäme diese Vorgänge dauerhaft nie verstanden | OP-06 |
 
@@ -176,6 +177,9 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 - **Datenbank:** Supabase **Free-Plan** — keine Backups, kein PITR (OP-01).
 - **Flags:** `HELMUT_SOURCE_MODE=on` · `HELMUT_UNDERSTANDING_GATE=shadow` ·
   `HELMUT_PARDOK_DISPATCH=shadow` · Scoring `off` · Berlin/Brandenburg inaktiv.
+  Seit Punkt 15 existiert `HELMUT_LANDESMODUL_FREIGABE` (Allowlist in `lib/helmut/flags.js`),
+  ist aber **nicht gesetzt** — weder in `helmut-flags.json` noch in Vercel. Nicht gesetzt =
+  kein Landesmodul freigegeben; Wildcards wirken fail-closed.
 - **Crons:** 9 Vercel-Cron-Einträge (Crawl 04:00/20:00, Understanding 05:30/21:30,
   Morgenbriefing 05:00, Lage-Briefing 05:45, Health-Report 06:00, Lage-Check 10:00,
   Pipeline 16:00 UTC) — siehe `vercel.json`.
@@ -195,6 +199,10 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 
 | Datum | Entscheidung |
 |---|---|
+| 2026-07-26 | **Landesmodule werden JE BUNDESLAND freigegeben, nicht gemeinsam** — das bisherige Gate war unbedingt und kannte kein einzelnes Land; die verbindliche Reihenfolge „Berlin zuerst, Brandenburg später" war damit technisch **nicht ausführbar**. Neuer Schalter `HELMUT_LANDESMODUL_FREIGABE` (Komma-Liste, Default leer, keine Wildcard). Er ist eine **Erlaubnis, kein Auslöser**: alle normalen Regeln gelten unverändert weiter |
+| 2026-07-26 | **`activation_mode='manual'` und `status='needs_review'` werden für Landeswege zu echten Sperren** — die Inventur-Doku behauptete bereits, `manual` werde „nie automatisch abgerufen"; `model.isPathActive` prüft aber nur `paused`/`archived`/`dev_only`. Code und Doku widersprachen sich. Die Sperre wird **nur im Landesmodul-Gate** durchgesetzt, nicht global in `isPathActive` — der aktive Bundes-Crawlpfad bleibt unangetastet (0 Verhaltensänderung: alle 18 `manual`-Wege in Production sind Landeswege) |
+| 2026-07-26 | **Eine Landesmodul-Aktivierung ist keine reine Datenänderung** — Paketstatus und Wegstatus allein bewirken nichts. Sie besteht aus **vier** Stellschrauben: Landtagsprofil · Paketstatus · Wegabnahme · Landesfreigabe. Ohne Profil des Landes bleibt das Paket trotz `status='active'` technisch inaktiv (`refCount 0`) — Production führt heute ausschließlich Bundestagsprofile |
+| 2026-07-26 | **`path_expected_geographies` des geteilten rbb24-Wegs wird NICHT nachgezogen** — der Weg trägt nur `geo-land-berlin`, gehört aber beiden Ländern. Das Feld hat **keinen Laufzeitkonsumenten** (die politische Ebene entsteht in der KO-Klassifikation), und der Seed ist ein generiertes, mit Berlin geteiltes Artefakt. Als Einschränkung dokumentiert statt einen Konflikt mit dem parallelen Berlin-Branch zu erzeugen |
 | 2026-07-26 | **Vorbereitete Pflichtquellen statt globaler Kuratierungsschwelle** — `regional-niedersachsen` bekommt seine benannte Basis über 7 gezielt gebundene Wege im Zustand `paused`/`manual` + `active: false`. Das Anheben der Kuratierungsschwelle (rund 20 zusätzliche Google-Abrufe je Crawl) ist damit **nicht** nötig; die Aktivierung bleibt eine eigene Freigabeentscheidung |
 | 2026-07-26 | **„Fachlich nicht anwendbar" ist nur mit überprüfbarer Voraussetzung zulässig** — stabile Kennung, politische Begründung, Wahlperiode, amtlicher Beleg und eine Prüfung gegen `seeds/parlamentszusammensetzung.js`. Eine unbestätigte Ausnahme lässt die Klasse als offene Lücke stehen; Freitext genügt nicht mehr |
 | 2026-07-26 | **Auch die Fraktionssollmenge wird extern verankert** — die Alt-Zählung „8 von 8" war fachlich falsch (FDP und BSW nicht im 21. Bundestag, SSW ohne Fraktionsstatus). Richtig sind 5 Fraktionen. Die drei Quellen bleiben erhalten, werden aber als `parteien_ohne_fraktionsstatus` geführt |
@@ -267,6 +275,7 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 
 | Sprint | Datum | Zustand |
 |---|---|---|
+| **Phase-1-Punkt 15: Brandenburg Activation Readiness** | 2026-07-26 | **Teilweise abgeschlossen — Activation Readiness erreicht, wartet auf stabilen Berlin-Nachweis und ausdrückliche Production-Freigabe.** 5 belegte Befunde gefunden, 4 behoben, 1 bewusst als Einschränkung dokumentiert. Der schwerste: die verbindliche Reihenfolge „Berlin zuerst" war **technisch nicht ausführbar** — das Landesmodul-Gate kannte kein einzelnes Bundesland. `brandenburg-aktivierung-test` **98/98**, Offline-Suite **151/151**. **Keine Production-Änderung.** Details unten. |
 | Punkt 13 — Abschlusskorrektur: Niedersachsen, nicht-anwendbar, Fraktionen | 2026-07-26 | **Erfolgreich abgeschlossen** — alle 8 Pakete abgeschlossen (7 vollständig + 1 mit belegten Ausnahmen, 0 teilweise, 0 blockiert). `regional-niedersachsen` hat eine benannte Basis aus 7 Wegen (5 Bestandsquellen + 2 amtliche), **vorbereitet und inaktiv, 0 zusätzliche Abrufe**. „Nicht anwendbar" ist gegen die amtliche Parlamentszusammensetzung überprüfbar. Fraktionssollmenge extern verankert — die Alt-Angabe „8 von 8" war fachlich falsch, richtig sind **5**. Offline-Suite 150/150. Keine Production-Änderung. Details unten. |
 | Punkt 13 — Nachtrag: Ausschuss-Sollmenge extern verankern (23 → 24) | 2026-07-26 | **Erfolgreich abgeschlossen** — der 21. Bundestag hat 24 ständige Ausschüsse (Drucksache 21/150); der Katalog führte 23 und neun Bezeichnungen der 20. Wahlperiode. Fehlend war der Ausschuss für Wahlprüfung, Immunität und Geschäftsordnung. Kanonische Quelle korrigiert (nicht der Testwert), Sollmenge extern verankert, 36 neue Prüfungen mit 6 Negativkontrollen; zusätzlich eine Lücke im Seed-Rückweg behoben. Offline-Suite 149/149. Keine Production-Änderung. Details unten. |
 | Phase-1-Punkt 13: Vollständigkeit jedes Quellenpakets prüfen | 2026-07-26 | **Erfolgreich abgeschlossen** — Abnahmekriterium erfüllt und belegt: alle 8 Pakete haben ein ausführbares fachliches Kriterium, 6 sind vollständig, 2 belegt teilweise vollständig (kein falsches Grün), 3 Lücken behoben. `paketvollstaendigkeit-test` 89/89, Offline-Suite 148/148, Seeds byte-identisch reproduzierbar. Keine Production-Änderung, Berlin/Brandenburg unverändert vorbereitet und inaktiv. Details unten. |
@@ -279,6 +288,96 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 | Merge von PR #105 — Anker-Recovery-Pfad in Production stillgelegt | 2026-07-25 | **Erfolgreich abgeschlossen** — gemergt als `43e9e35`; Stilllegung auf `main` verifiziert. |
 | Recovery-Pfad-Review + Zusammenführung von PR #105 auf die kanonische Kontextstruktur | 2026-07-25 | **Erfolgreich abgeschlossen** |
 | Kontextstruktur für Claude Code (`CLAUDE.md` + Einstiegsschicht) | 2026-07-25 | **Erfolgreich abgeschlossen** — reine Dokumentation, gemergt als PR #119 (`c6a3d40`). |
+
+**Sprint „Phase-1-Punkt 15: Brandenburg Activation Readiness" — Nachweis**
+
+- **Auftrag:** Brandenburg vollständig bis zur Activation Readiness vorbereiten und
+  **unmittelbar vor** jeder echten Production-Aktivierung stoppen. Berlin bleibt unverändert
+  (eigener Branch/Thread).
+- **Branch:** `claude/brandenburg-activation-readiness-4yqw0e` · **PR:** #132 ·
+  Basis: `ca80b2f` (Merge #131). Eingangstor geprüft: PR #131 ist in `main`, `3fa5cc8` ist
+  Vorfahre (`git merge-base --is-ancestor`), Punkt-13-Inhalt liegt inhaltlich vor
+  (`31-paketvollstaendigkeit.md`, `paket-vollstaendigkeit.js`, `parlamentszusammensetzung.js`,
+  3940 Zeilen in `9f1def5..ca80b2f`).
+
+- **Ausgangslage bestätigt:** `brandenburg-basis` 8 eigene Wege + 1 geteilter, **12/12**
+  Pflichtklassen · `die-linke-brandenburg` 1 von 3 Klassen besetzt, **2 geprüft nicht
+  anwendbar** · beide Pakete `prepared` · alle 9 Wege `needs_review` + `manual` · **0 aktiv**.
+
+- **Befund B-1 (kritisch, behoben) — die vorgeschriebene Reihenfolge war nicht ausführbar.**
+  Das Landesmodul-Gate in `source-mode.js` war unbedingt und kannte **kein einzelnes
+  Bundesland**: es sperrte Berlin und Brandenburg gemeinsam, vor jeder Paket-/Statusprüfung.
+  Jede Öffnung für Berlin hätte Brandenburg mitfreigegeben. Behoben durch ein Gate **je Land**
+  (`HELMUT_LANDESMODUL_FREIGABE`, Default leer, keine Wildcard, fail-closed).
+- **Befund B-2 (behoben) — eine reine Datenänderung war wirkungslos.** Paket auf `active` und
+  Wege auf `healthy` zu setzen ergab weiterhin **0** Brandenburg-Wege; das Gate sitzt im Code.
+  Ein Runbook, das nur Seeds/Status beschreibt, wäre falsch gewesen. Jetzt benannt und getestet.
+- **Befund B-3 (behoben) — Code und Doku widersprachen sich.** `30-paket-inventur-production.md`
+  sagt seit 2026-07-25 zu, `activation_mode='manual'` werde „nie automatisch abgerufen".
+  `model.isPathActive` prüft aber nur `paused`/`archived`/`dev_only`: **7 von 8** Brandenburg-Wegen
+  galten bei aktivem Paket als aktiv, trotz `needs_review` **und** `manual`. Die Tiefenverteidigung
+  war faktisch **eins** (das harte Gate), nicht drei. Jetzt sind `manual` und `needs_review` im
+  Landesmodul-Gate eigenständige Sperren — **bewusst nicht global** in `isPathActive`, damit der
+  aktive Bundes-Crawlpfad unberührt bleibt (0 Verhaltensänderung: alle 18 `manual`-Wege in
+  Production sind Landeswege).
+- **Befund B-4 (behoben) — Lücke im Gate.** `die-linke-brandenburg`/`die-linke-berlin` waren nur
+  über den Id-Präfix `rp-bb-`/`rp-be-` erfasst, **nicht** über den Paketschlüssel. Ein künftiger
+  Landesweg mit abweichender Id wäre durchgefallen. Gate prüft jetzt Id **und** Legacy-Id **und**
+  Paketschlüssel.
+- **Befund B-5 (dokumentiert) — die vierte, unbekannte Stellschraube.** Ohne ein **Brandenburger
+  Landtagsprofil** bleibt das Paket trotz `status='active'` technisch inaktiv (`refCount 0`).
+  Production führt 8 Profile, davon 6 aktiv — **alle Bundestagsebene**. Eine Aktivierung ohne
+  neues Profil wäre ein reiner No-Op gewesen. Als Schritt 1 des Runbooks aufgenommen.
+- **Bewusst NICHT geändert (Einschränkung E-3):** `rp-rbb24-politik` trägt in
+  `path_expected_geographies` nur `geo-land-berlin`, gehört aber beiden Ländern. Das Feld hat
+  **keinen Laufzeitkonsumenten** in `lib/`, `server.js`, `client.js` — die politische Ebene
+  entsteht in der KO-Klassifikation. Eine Korrektur hätte den generierten, mit Berlin geteilten
+  Seed verändert und nur Konfliktfläche zum parallelen Berlin-Branch erzeugt, ohne Wirkung.
+
+- **Last und Kosten (gerechnet):** +8 Wege je Lauf (bei Berlin-zuerst; der geteilte rbb24-Weg
+  läuft dann schon) · **6 von 8 über Google News** · `max_items` 16 → max. **128** Rohkandidaten
+  je Lauf · 2 Crawl-Läufe/Tag → max. **16 Wegabrufe** und **256 Rohkandidaten/Tag** · Retries
+  max. 2 je Google-Weg, hart gedeckelt auf **12 je Lauf** · Timeout 7 s · geschätzte zusätzliche
+  Laufzeit ~20–30 s (Function-Limit 300 s) · **direkte externe Kosten 0 €** (alle 9 Endpunkte
+  unbezahlt). **R-1:** neue Dokumente konkurrieren um dasselbe LLM-Tagesbudget (100 + 30 Reserve);
+  ein Per-Mandant-Deckel existiert, ist aber AUS (OP-03) — vor Aktivierung zu entscheiden.
+  **R-2:** +6 Google-Wege verstärken Befund B1 (146 von 163 Wegen laufen bereits über Google);
+  der Cooldown wirkt quellenübergreifend und kann Bundeswege mitziehen.
+
+- **Technische Eignung:** nicht neu gemessen — der Egress dieser Sitzung erreicht **keine**
+  externe Domain (curl-Code 000, auch `de.wikipedia.org`). Grundlage ist der datierte
+  Ground-Truth-Record aus Sprint 9B (2026-07-14, Run 29297142235, GitHub-Actions-Runner mit
+  offenem Egress): **8 von 9** Brandenburg-Wegen `geeignet`, **1** `geeignet mit Einschränkung`
+  (`bb-partei_pilot`, HTTP 429 Bot-Sperre — **nicht** umgangen). Kein `ablehnen`, kein
+  `nicht_verifizierbar`. Dieselbe Egress-Sperre verhinderte auch die Live-Gegenprobe der
+  Brandenburger Parlamentszusammensetzung; das ist als `pruefvorbehalt` im Datensatz vermerkt.
+- **Parlamentarische Ausnahme:** unverändert bestätigt (Die Linke ist in der 8. WP nicht im
+  Landtag Brandenburg). Neu ist die **Zeitachse**: `geprueft_am`, `pruefart` und `pruefvorbehalt`
+  am Parlamentsdatensatz, `pruefstand()` meldet Alter und Fälligkeit (Horizont **180 Tage**).
+  Bewusst **kein** zeitgesteuerter Testfehler — Fälligkeit wird berichtet, nicht erzwungen; der
+  harte Driftschutz (Rückkehr der Partei → Ausnahme unbestätigt → Paket „teilweise" → rot)
+  bestand bereits und ist getestet.
+
+- **Tests (echte Zahlen):** `brandenburg-aktivierung` **98/98** (neu) ·
+  `paketvollstaendigkeit` **99/99** · `parlamentszusammensetzung` **65/65** ·
+  `source-mode` **43/43** · `profile-packages` **69/69** · `flags` **26/26** ·
+  `landesmodule-kandidaten` **77/77** · `landesmodul-seed` grün · `seed-drift` grün ·
+  `source-architecture` **99/99** · `paketzuweisung-nachweis` **147/147** ·
+  `admin-source-report` **56/56** · **Offline-Suite 151/151 grün** ·
+  **Browser-/Mobile-Smoke 32/32 grün**. Seeds byte-identisch reproduzierbar (Generator
+  zweimal gelaufen, `seed-drift` grün) — **kein Seed wurde verändert**.
+
+- **Production-Sicherheitsnachweis:** keine Production-Änderung · keine Migration · keine
+  Seed-Einspielung · keine Aktivierung · **Berlin unverändert** (kein Berlin-Paket, kein
+  Berlin-Weg, keine Berlin-Doku angefasst) · aktive Bundestagsquellen unverändert · Cem und
+  aktive Mandantenlogik unverändert · keine Änderung an Crons, Locks, Telemetrie oder Secrets ·
+  `helmut-flags.json` **unverändert** (der neue Schlüssel steht nur auf der Allowlist, ohne Wert).
+- **Nicht getan (bewusst):** kein Merge · kein Deployment · kein Production-Beweislauf · kein
+  Production-Profil angelegt · keine Quelle erfunden · keine Anforderung abgeschwächt, um Grün
+  zu erzeugen · keine globale Änderung an `model.isPathActive`.
+- **Nächster Schritt:** PR #132 prüfen und mergen · Berlin aktivieren und stabil nachweisen ·
+  Betreiber bestätigt den Berlin-Nachweis ausdrücklich · **danach** ein getrennter
+  Brandenburg-Aktivierungssprint nach [`betrieb/landesmodul-aktivierung.md`](betrieb/landesmodul-aktivierung.md).
 
 **Sprint „Punkt 13 — Abschlusskorrektur: Niedersachsen, nicht-anwendbar, Fraktionen" — Nachweis**
 

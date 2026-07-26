@@ -67,6 +67,16 @@ Geografien.**
 ² *vorbereitet* = `activation_mode='manual'` in einem `prepared`-Paket, wird nie
 automatisch abgerufen · ³ *deaktiviert* = `status='broken'`, wird bewusst nicht abgerufen.
 
+> **Präzisierung 2026-07-26 (Phase-1-Punkt 15):** Die Zusage in ² war zum Zeitpunkt der
+> Inventur **nicht durchgesetzt**. `model.isPathActive` prüft nur `paused`/`archived`/
+> `dev_only` — `manual` und `needs_review` blockten nichts; getragen wurde die Aussage
+> allein vom harten Landesmodul-Gate. Seit Punkt 15 sind beide im Landesmodul-Gate
+> (`source-mode.js`, Regeln 1b/1c) **eigenständige Sperren**. Die Durchsetzung gilt
+> ausdrücklich **nur für Landeswege** — global bleibt `isPathActive` unverändert, damit der
+> aktive Bundes-Crawlpfad nicht berührt wird. Da alle 18 `manual`-Wege Landeswege sind, ist
+> die Aussage jetzt für den gesamten Bestand wahr. Beleg: `scripts/brandenburg-aktivierung-test.js`
+> Gruppe 3; Verfahren: [`../betrieb/landesmodul-aktivierung.md`](../betrieb/landesmodul-aktivierung.md).
+
 Gesamtverteilung der 163 Abrufwege: **5 `always_on`** (2 davon `broken`) · **140 `auto`**
 (4 davon `broken`) · **18 `manual`** (alle Landesmodul-Wege; ein Weg hängt in beiden
 Landespaketen → 19 Zuordnungen) · **0 `dev_only`**.
