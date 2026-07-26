@@ -1,8 +1,10 @@
 # Berlin aktivieren — Runbook und Go-/No-Go-Grundlage
 
-**Stand:** 2026-07-26 (dritter Durchgang, Production-Sprint) · **Sprint:** Phase-1-Punkt 14 ·
+**Stand:** 2026-07-26 (vierter Durchgang, Zwischensprint 14A) · **Sprint:** Phase-1-Punkt 14 / 14A ·
 **Zustand:** aktivierungsreif **mit reduziertem Set**, **Sicherung erstellt**, **Production
-weiterhin unverändert** — die Aktivierung ist an einem fehlenden Zugang blockiert (**§16**) ·
+weiterhin unverändert** — die Aktivierung ist an einem fehlenden Zugang blockiert (**§16**);
+die beiden Vorprüfungsbefunde **V-1** (Staffelung) und **V-2** (globale Landesquellenauflösung)
+sind in **§18** behoben ·
 **Kanonische Daten:**
 [`seeds/berlin-aktivierung.js`](../../lib/helmut/quellenarchitektur/seeds/berlin-aktivierung.js) ·
 [`seeds/berlin-neutralitaet.js`](../../lib/helmut/quellenarchitektur/seeds/berlin-neutralitaet.js) ·
@@ -134,12 +136,23 @@ Berlin läuft erst, wenn **alle vier** offen sind. Jeder einzelne genügt, um es
 | # | Riegel | Ort | Zustand heute |
 |---|---|---|---|
 | 1 | **Landesmodul-Freigabe** `HELMUT_LANDESMODULE` | Vercel-Env oder `helmut-flags.json`; gelesen in `source-mode.js` | **leer** = jedes Landesmodul gesperrt |
+| 1b | **Berechtigtes Landesmandat** (seit 14A) | `laenderMitBerechtigtemMandat()` in `source-mode.js`, Regel 1 des Plans | **0** Landtagsprofile → Berlin bleibt gesperrt, auch mit gesetztem Flag |
 | 2 | **Paketstatus** `berlin-basis` | `source_packages.status` | `prepared` → `computeGlobalActivation` aktiviert nicht |
 | 3 | **Wegstatus** je Abrufweg | `retrieval_paths.activation_mode` | alle 10 auf `manual` → Plan-Regel 4b schließt aus |
 | 4 | **Profil-Referenz** | `mandate_profiles` | 0 Landtagsprofile → Referenzzählung ergibt 0 |
 
-Das Gate wirkt **je Land getrennt**. `HELMUT_LANDESMODULE=berlin` öffnet ausschließlich Berlin.
-Es gibt bewusst **kein** Sammel-Schlüsselwort (`alle`, `*` sind wirkungslos).
+Das Gate wirkt **je Land getrennt**. `HELMUT_LANDESMODULE=berlin` öffnet ausschließlich Berliner
+Wege — **zuzüglich des zweiländrigen `rp-rbb24-politik`**, der in beiden Landespaketen hängt und
+seine Brandenburg-Inhalte mitbringt (§13, Befund V-4; der Plan weist ihn unter
+`landesmodule.mehrlaendrig` samt Fremdland aus). Es gibt bewusst **kein** Sammel-Schlüsselwort
+(`alle`, `*`, `all`, `true`, `on` sind alle wirkungslos).
+
+**Riegel 1 und 1b sind seit 14A UND-verknüpft** (Befund V-2): Freigabe **und** mindestens ein
+aktivierungsberechtigtes Landtagsmandat dieses Landes. Vorher genügte das Flag — dadurch konnte
+ein **Brandenburger** Mandat den zweiländrigen rbb24-Weg unter reiner Berlin-Freigabe starten.
+Der Plan weist beide Bedingungen jetzt getrennt aus (`landesmodule.freigegeben`,
+`landesmodule.mitBerechtigtemMandat`, `landesmodule.wirksam`, `landesmodule.freigegebenOhneMandat`),
+damit ein gesetztes Flag ohne Mandat nicht wie eine Aktivierung aussieht.
 
 ## 5 · Pflichtklassen — mit Tiefe statt binär
 
@@ -180,6 +193,15 @@ Es gibt **zwei** Auswahlpfade, beide geprüft:
   die Riegel 1–4.
 - **Fallback** (leerer Plan / Ladefehler): der alte Katalog `lib/helmut/sources.js`. Er enthält
   **keine** Berliner Landesmodulquelle — Berlin kann über den Fallback technisch nicht laufen.
+  **Seit 14A ist das zusätzlich eine Sperre, nicht nur Datenlage:** `getSourcesForProfile` filtert
+  auch im Fallback jede Quelle mit Landespräfix gegen die Landesberechtigung des Profils
+  (`landesmodulQuelleGesperrt`). Vorher hätte eine später ergänzte `be-`-Katalogquelle das Gate
+  im Fallback umgangen.
+
+**Wichtig — und bis 14A missverständlich:** diese Tabelle beschreibt die **Paketauflösung**, nicht
+eine Mandantentrennung des Abrufs. Was global bleibt und was mandatsbezogen ist, steht in
+**§18.2**. Kurzfassung: Bundes-/neutrale Wege werden geteilt abgerufen und landen in einem
+**gemeinsamen Rohkorpus**; nur die **Landesmodul**-Wege sind mandatsbezogen.
 
 ## 7 · Last und Verarbeitungskapazität — gegen gemessene Zahlen
 
@@ -300,20 +322,38 @@ Ebene, deaktiviert, gelöscht und leer werden alle abgelehnt.
 
 ## 9 · Ausführung (freigabepflichtig, nicht Teil dieses Sprints)
 
+**Seit 14A: eine Datei je Schritt.** Die frühere Sammeldatei `20260726_berlin_aktivierung.sql` ist
+**stillgelegt** — sie mutiert nichts mehr und bricht mit `raise exception` ab (Befund V-1, §18.1).
+
 | Schritt | Datei / Ort | mutierend |
 |---|---|---|
 | 1 | `node scripts/backup-export.js --scope=seed` — Manifest `vollstaendig: true` | nein |
 | 2 | Neuverifikation **erneut** laufen lassen, falls seit §2 mehr als 14 Tage vergangen sind | nein |
-| 3 | **Block A** aus `supabase/seeds/20260726_berlin_aktivierung.sql` (Neutralisierung) | **ja** |
-| 4 | Selbstprüfung 2 aus derselben Datei → 0 Zeilen | nein |
+| 3 | `node scripts/berlin-aktivierung-dryrun.js` — Dry Run **je Schritt** gegen den Ist-Zustand | nein |
+| 4 | `20260726_berlin_aktivierung_a_neutralisierung.sql` (Block A) | **ja** |
 | 5 | Berliner Abnahmeprofil anlegen (§8, **zwei** Zeilen) | **ja** |
-| 6 | **Block B1 + B2.1** (Paketstatus + die 2 Direktfeeds) | **ja** |
-| 7 | `HELMUT_LANDESMODULE=berlin` setzen (Vercel-Env oder `helmut-flags.json` + Deploy) | **ja** |
-| 8 | einen vollen Crawl-Zyklus beobachten (§10) | nein |
-| 9 | **Block B2.2** (die 2 Google-Wege) — erst wenn Schritt 8 sauber war | **ja** |
+| 6 | `20260726_berlin_aktivierung_b1_paketstatus.sql` (Paketstatus `active`) | **ja** |
+| 7 | `HELMUT_LANDESMODULE=berlin` setzen (**Vercel-Env**, nicht die Datei — §17 V-3) | **ja** |
+| 8 | `20260726_berlin_aktivierung_b2_stufe1.sql` (**Stufe 1**, die 2 Direktfeeds) | **ja** |
+| 9 | `node scripts/berlin-aktivierung-dryrun.js --schritt=S2` — muss weiter **NEIN** melden | nein |
+| 10 | einen vollen Crawl-Zyklus beobachten (§10), mindestens 2 Läufe je Weg mit `ok` | nein |
+| 11 | `20260726_berlin_aktivierung_b2_stufe2.sql` (**Stufe 2**) — der Telemetriebeleg lässt sie vorher nicht zu | **ja** |
 
-Die Reihenfolge ist bindend: Flag **vor** Stufe 2, damit der schnellste Rückweg schon steht,
-bevor die Google-Last dazukommt.
+Die Reihenfolge ist bindend und seit 14A **technisch erzwungen**, nicht nur empfohlen:
+
+- Schritt 6 bricht ab, solange Block A nicht gelaufen ist.
+- Schritt 8 bricht ab, solange Block A oder Block B1 fehlt **oder** Stufe 2 nicht vollständig
+  gesperrt ist.
+- Schritt 11 bricht ab, solange Stufe 1 nicht **vollständig aktiv** ist **und** je Stufe-1-Weg
+  mindestens **2** Läufe mit `status='ok'` in `source_crawl_telemetry` stehen. Damit ist Schritt 10
+  nicht überspringbar — auch nicht durch das Ausführen beider Dateien direkt hintereinander.
+- Jede Datei prüft nach ihrer Mutation die eigene Vollständigkeit; eine Teilausführung endet
+  fail-closed statt in einem stillen „0 Zeilen betroffen".
+
+Flag **vor** Stufe 2 bleibt bindend, damit der schnellste Rückweg (Rollback Stufe 0) steht, bevor
+die Google-Last dazukommt. Der Flag-Schritt steht bewusst **nach** Block A und B1 und **vor**
+Stufe 1: erst dann ist er der letzte fehlende Riegel, und ohne berechtigtes Abnahmeprofil (Schritt 5)
+wäre er ohnehin wirkungslos (Riegel 1b).
 
 ## 10 · Monitoring des ersten Laufs
 
@@ -360,25 +400,40 @@ Sofortiger Abbruch (Rollback Stufe 0), wenn eines eintritt:
 14. das jüngste Dokument eines aktivierten Wegs überschreitet 30 Tage
 15. der Rollback ist nicht ausführbar
 
-## 12 · Rollback (drei Stufen, getestet)
+## 12 · Rollback (fünf Ebenen, getestet)
 
-| Stufe | Mittel | Wirkung | Dauer |
+Zwei Begriffe, die vorher denselben Namen trugen und deshalb verwechselbar waren:
+**Aktivierungs*stufe*** = welche Wege scharf sind (Stufe 1 / Stufe 2). **Rollback-*Ebene*** = wie
+tief zurückgerollt wird. Seit 14A hat jede Aktivierungsstufe ihren **eigenen** Rollback.
+
+| Ebene | Mittel | Wirkung | Dauer |
 |---|---|---|---|
-| **0** | `HELMUT_LANDESMODULE` leeren (Vercel-Env) | alle Landesmodule sofort gesperrt, **kein** DB-Schreibzugriff | Sekunden |
-| **1** | `20260726_berlin_aktivierung_rollback.sql` | **alle 7** Wege des Basispakets → `needs_review`/`manual`, `berlin-basis` → `prepared`; **Neutralisierung bleibt** | < 1 min |
-| **2** | `20260726_berlin_aktivierung_rollback_vollstaendig.sql` | zusätzlich Block A zurück → exakt der gemessene Ist-Zustand vom 2026-07-26, **inklusive Befund A-3** | < 1 min |
+| **0** | `HELMUT_LANDESMODULE` leeren (**Vercel-Env**) | alle Landesmodule sofort gesperrt, **kein** DB-Schreibzugriff | Sekunden |
+| **1** | `…_b2_stufe2_rollback.sql` | **nur Stufe 2** zurück; Stufe 1 läuft ausdrücklich weiter (Rückfall auf den bewiesenen Zustand) | < 1 min |
+| **2** | `…_b2_stufe1_rollback.sql` | **nur Stufe 1** zurück; **fail-closed, solange Stufe 2 aktiv ist** — dann erst Ebene 1 oder direkt Ebene 3 | < 1 min |
+| **3** | `…_rollback.sql` | **alle 7** Wege des Basispakets → `needs_review`/`manual`, `berlin-basis` → `prepared`; **Neutralisierung bleibt** | < 1 min |
+| **4** | `…_rollback_vollstaendig.sql` | zusätzlich Block A zurück → exakt der gemessene Ist-Zustand vom 2026-07-26, **inklusive Befund A-3** | < 1 min |
 
-**Gehärtet in diesem Durchgang:** Stufe 1 und 2 setzen jetzt **alle sieben** Wege des Basispakets
-zurück, nicht nur das aktuelle Aktivierungsset. Ein Rollback, der nur die heute aktivierten 4 Wege
-zurücknimmt, ließe genau die Wege aktiv, die eine **ältere** Planfassung (6 Wege) scharfgeschaltet
-hat — und hätte sich trotzdem als vollständig gemeldet.
+**Wirkungsgarantien je Ebene (getestet, `scripts/berlin-staffelung-test.js`):**
 
-**Was der Rollback nicht tut:** bereits erzeugte Berliner Rohdokumente, Knowledge Objects und
+- Ebene 1 lässt Stufe 1 unverändert aktiv und den Paketstatus unverändert.
+- Ebene 2 lässt Stufe 2 **unverändert gesperrt** und den Paketstatus unverändert; sie dreht die
+  Neutralisierung (Block A) **nicht** zurück — Befund A-3 kehrt nicht zurück.
+- Ebene 2 ist bei aktiver Stufe 2 **nicht ausführbar**: sonst liefe die Google-Last weiter, während
+  die Direktfeeds, die sie rechtfertigen sollten, abgeschaltet sind.
+- Ebene 3 und 4 setzen **alle sieben** Wege des Basispakets zurück, nicht nur das aktuelle
+  Aktivierungsset — sonst bliebe ein von einer **älteren** Planfassung (6 Wege) scharfgeschalteter
+  Weg aktiv und der Rollback hätte sich trotzdem als vollständig gemeldet.
+- Ebene 4 stellt den Ausgangszustand **zeilengenau** her und ist idempotent.
+
+**Was kein Rollback tut:** bereits erzeugte Berliner Rohdokumente, Knowledge Objects und
 Telemetriezeilen werden **nicht** gelöscht. Die Auditspur bleibt vollständig.
 
-**Testnachweis:** `node scripts/berlin-aktivierung-test.js` führt das **committete** SQL gegen eine
-Speicherdatenbank aus und prüft Anwendung, Idempotenz und beide Rollback-Stufen; Stufe 2 wird
-zeilengenau gegen den Ausgangszustand verglichen. Der Mini-SQL-Ausführer bricht bei jeder ihm
+**Testnachweis:** `node scripts/berlin-staffelung-test.js` führt die **committeten** Schrittdateien
+in der vorgesehenen Reihenfolge gegen eine Speicherdatenbank aus — inklusive der fail-closed
+Riegel, aller Rollback-Ebenen und des Falls „ein Operator führt alle 9 Dateien am Stück aus"
+(Endzustand: der Ausgangszustand). `node scripts/berlin-aktivierung-test.js` prüft zusätzlich
+Idempotenz und die Zeichenketten-Invarianten. Der Mini-SQL-Ausführer bricht bei jeder ihm
 unbekannten Statementform hart ab.
 
 ## 13 · Was Brandenburg und der Bund betrifft
@@ -593,7 +648,13 @@ Vier Prüfer plus vier Gegenprüfer haben die Zusagen dieses Runbooks gegen den 
 geprüft. Die vier folgenden Befunde sind **selbst nachgeprüft** und gehören vor der Aktivierung
 entschieden. Sie ändern die Empfehlung aus §15 nicht, aber sie ändern die Ausführung.
 
-### V-1 (kritisch) · Die Staffelung ist im SQL nicht erzwungen — B2.1 und B2.2 teilen eine Transaktion
+> **Stand nach Zwischensprint 14A (2026-07-26):** **V-1 und V-2 sind behoben** (§18). **V-3** ist
+> als bindende Ausführungsregel in §9 Schritt 7 übernommen (Freigabe über die Vercel-Env, nicht
+> über die Datei) — die Ursache selbst (leerer Env-Wert fällt auf die Dateiebene durch) bleibt
+> bestehen und ist ein offenes Restrisiko. **V-4** ist in §4 nachgeschärft. Die Befundtexte unten
+> bleiben als Beleg unverändert stehen.
+
+### V-1 (kritisch, **behoben in §18.1**) · Die Staffelung ist im SQL nicht erzwungen — B2.1 und B2.2 teilen eine Transaktion
 
 `20260726_berlin_aktivierung.sql` schreibt in Block B **ein** `begin;` … `commit;` um B1, B2.1
 **und** B2.2. Der Kommentar „die Stufen sind EINZELN auszuführen, nicht zusammen" ist damit die
@@ -606,7 +667,7 @@ eigenen `begin`/`commit`-Block ziehen (oder in eine eigene Datei), sodass die St
 und nicht nur redaktionell besteht. Bis dahin gilt: **nur die Zeilen B1 und B2.1 einzeln ausführen**,
 niemals den Block am Stück.
 
-### V-2 (wichtig) · Das Abnahmeprofil ist kein mandantenbezogener Schalter — der Crawl-Plan ist global
+### V-2 (wichtig, **behoben in §18.2**) · Das Abnahmeprofil ist kein mandantenbezogener Schalter — der Crawl-Plan ist global
 
 `loadRelationalSharedSources()` (`scheduler.js:758–773`) nimmt **keinen** Profilparameter: es baut
 **einen** Plan aus *allen* Profilen. `getSourcesForProfile()` (`scheduler.js:776–787`) mischt genau
@@ -657,3 +718,162 @@ decken jede der fünf mutierenden Anweisungen ab und nennen **keinen** `rp-bb-*`
 `brandenburg-*`-Paket in einem ausführbaren Statement · `partei='Fraktionslos'` bindet **kein**
 Parteipaket · `bundesland='Berlin'` + `politische_ebene='landtag'` ergibt genau
 `bund-basis` + `berlin-basis` und **kein** Brandenburg-Paket.
+
+## 18 · Zwischensprint 14A (2026-07-26) · V-1 und V-2 technisch behoben
+
+**Production wurde in 14A nicht verändert.** Es wurde kein Flag gesetzt, kein SQL ausgeführt, keine
+Zeile geschrieben, kein Crawl ausgelöst, kein Testprofil angelegt. Alle Production-Zahlen dieses
+Abschnitts stammen aus `select`-Abfragen.
+
+### 18.1 V-1 · Die Staffelung ist jetzt strukturell, nicht redaktionell
+
+**Was falsch war.** `20260726_berlin_aktivierung.sql` enthielt Block A, B1, Stufe 1 und Stufe 2 in
+einer Datei — Block B sogar in **einer** Transaktion (`begin` … B1 … B2.1 … B2.2 … `commit`). Die
+einzige Sperre war der Kommentar „die Stufen sind EINZELN auszuführen". Wer die Datei am Stück
+ausführte, schaltete alle vier Wege scharf, inklusive der zwei Google-Wege, deren ganzer Zweck es
+war, einen vollen Crawl-Zyklus **später** zu kommen. Die gesamte Lastbegründung aus §7.4 hing an
+dieser Trennung.
+
+**Was jetzt gilt — 9 Dateien, je eine Transaktion:**
+
+| # | Datei | Wirkung | Rollback |
+|---|---|---|---|
+| — | `20260726_berlin_aktivierung.sql` | **stillgelegt**: mutiert nichts, bricht mit `raise exception` ab und nennt die Einzelschritte | — |
+| 1 | `20260726_berlin_aktivierung_a_neutralisierung.sql` | Block A: 3 Partei-/Fraktions-/Personenwege von `berlin-basis` nach `die-linke-berlin` | Ebene 4 |
+| 2 | `20260726_berlin_aktivierung_b1_paketstatus.sql` | `berlin-basis` `prepared` → `active` | Ebene 3 |
+| 3 | `20260726_berlin_aktivierung_b2_stufe1.sql` | **Stufe 1**: `rp-be-regionale_leitmedien`, `rp-rbb24-politik` | Ebene 2 |
+| 4 | `20260726_berlin_aktivierung_b2_stufe2.sql` | **Stufe 2**: `rp-be-landesregierung`, `rp-be-staatskanzlei` | Ebene 1 |
+| 5 | `20260726_berlin_aktivierung_b2_stufe1_rollback.sql` | nur Stufe 1 zurück | — |
+| 6 | `20260726_berlin_aktivierung_b2_stufe2_rollback.sql` | nur Stufe 2 zurück | — |
+| 7 | `20260726_berlin_aktivierung_rollback.sql` | alle Stufen zurück, Paket `prepared` | — |
+| 8 | `20260726_berlin_aktivierung_rollback_vollstaendig.sql` | zusätzlich Block A zurück | — |
+
+**Die vier Eigenschaften, die die Trennung tragen:**
+
+1. **Getrennte Dateien und getrennte Transaktionen.** Stufe 1 nennt in ihrem Mutationsteil keinen
+   Weg aus Stufe 2 und umgekehrt (geprüft als Mengengleichheit über die tatsächlich genannten
+   `rp-…`-Kennungen, nicht als Kommentarzusage).
+2. **Vor- und Nachbedingungen als `raise exception`.** Jeder Schritt trägt ausführbare Riegel:
+   Verletzung → Abbruch → Rollback der eigenen Transaktion. Kein stilles „0 Zeilen betroffen", das
+   wie Erfolg aussieht. Jeder Schritt prüft **nach** seiner Mutation die eigene Vollständigkeit;
+   eine Teilausführung (1 von 2 Wegen getroffen) bricht ab.
+3. **Reihenfolge in beide Richtungen erzwungen.** Stufe 1 verlangt eine **vollständig gesperrte**
+   Stufe 2; Stufe 2 verlangt eine **vollständig aktive** Stufe 1. Rollback Stufe 1 verlangt eine
+   gesperrte Stufe 2.
+4. **Telemetriebeleg statt Reihenfolgevertrauen.** Stufe 2 verlangt zusätzlich je Stufe-1-Weg
+   mindestens **2** Läufe mit `status='ok'` in `source_crawl_telemetry`. Ohne diesen Riegel wäre
+   „erst Stufe 1, dann Stufe 2" auch erfüllt, wenn ein Operator beide Dateien in derselben Minute
+   ausführt — genau der Lastfall, den die Staffelung verhindern soll. Abgefragt wird die
+   **Quellenkennung** (`be-regionale_leitmedien`, `rbb24-politik`), nicht die Abrufweg-Id, weil
+   `source_crawl_telemetry.source_id` die Crawler-Quellen-Id trägt.
+
+**Eine Quelle für SQL, Dry Run und Test.** Reihenfolge, Bedingungen und berührte Wege stehen
+deklarativ in `seeds/berlin-aktivierung.js` (`ausfuehrungsschritte()`). Der Generator rendert daraus
+das SQL, der Dry Run wertet dieselben Bedingungen gegen den Ist-Zustand aus, der Test führt sie
+gegen eine Speicherdatenbank aus. Der Seed-Drift-Test bindet alle 9 committeten Dateien byte-genau
+an den Generator. Staffelung im SQL und Staffelung im Test können damit nicht auseinanderlaufen.
+
+**Dry Run je Stufe.** `node scripts/berlin-aktivierung-dryrun.js [--schritt=S1|S2|…] [--json]` —
+strikt read-only, Secrets nur aus `process.env` (`CLAUDE.md` §4.9), ohne Datenbankzugang Exit 2 mit
+„nicht prüfbar" statt eines grünen Ergebnisses. Je Schritt: Vorbedingungen mit Ist-Wert, die genau
+getroffenen Zeilen namentlich, die Nachbedingung nach Simulation und die Kontrollfragen
+(Brandenburg / Bund / Partei-Wege / fremde Pakete — alle 0 erwartet).
+
+**Gemessen am 2026-07-26 gegen Production (read-only):** Schritt A ist ausführbar (3 Zeilen am
+Pflichtpaket, wie dokumentiert), Schritt B1, Stufe 1 und Stufe 2 sind **nicht** ausführbar und
+melden genau die fehlende Bedingung. Alle Kontrollfragen 0.
+
+**Gegen ein echtes PostgreSQL ausgeführt — nicht nur simuliert.** Die Offline-Suite prüft die
+Staffelung gegen eine Speicherdatenbank; ihr Mini-SQL-Ausführer kann kein PL/pgSQL und könnte
+deshalb nicht belegen, dass die Riegel gültige Syntax sind, dass `raise exception` die Transaktion
+wirklich abbricht und dass dabei **0** Zeilen verändert bleiben.
+`bash scripts/berlin-staffelung-pgverify.sh --eigenes-cluster` legt ein Wegwerf-Cluster an, spielt
+den gemessenen Ist-Zustand ein und führt die **committeten** Dateien in der vorgesehenen Reihenfolge
+aus. Ergebnis am 2026-07-26 gegen **PostgreSQL 16.13**: **35/35 grün** — die vier verfrühten
+Aufrufe brechen mit benannter Bedingung ab und lassen den Zustand *zeilengenau* unverändert; Stufe 2
+scheitert am Telemetriebeleg, auch mit einem Lauf je Weg, und läuft erst mit zwei; die Rollbacks je
+Stufe wirken getrennt; der vollständige Rückweg stellt den Ausgangszustand zeilengenau her und ist
+idempotent. Das Skript ist **nicht** Teil der Offline-Suite (es braucht ein lokales PostgreSQL) und
+berührt Production nicht.
+
+### 18.2 V-2 · Das tatsächliche Modell: globaler Crawl, mandatsbezogene Landesmodule
+
+**Was falsch war.** `loadRelationalSharedSources()` nahm **keinen** Profilparameter. Sie baute einen
+globalen Plan aus *allen* Profilen, und `getSourcesForProfile()` mischte genau diesen Plan in die
+Quellenliste **jedes** Profils. Daraus folgten zwei getrennte Fehler:
+
+- **(a) Das Landesmodul-Gate hing allein am Betreiberflag.** Ein gesetztes Flag ließ die Wege eines
+  Landes laufen, sobald irgendein aktives Paket sie referenzierte — unabhängig davon, ob es ein
+  Mandat dieses Landes gibt. Beim zweiländrigen `rp-rbb24-politik` (hängt in `berlin-basis` **und**
+  `brandenburg-basis`) genügte dafür ein **Brandenburger** Mandat bei reiner Berlin-Freigabe.
+- **(b) Ein einziges Berliner Landtagsmandat hätte die Berliner Wege in den Abruf jedes
+  Bundestagsmandats gelegt.** Das Abnahmeprofil war damit kein mandantenbezogener Schalter.
+
+**Das Modell, ehrlich benannt.** Es gibt zwei Ebenen, und nur eine davon ist mandatsscharf:
+
+| Ebene | Was passiert | Trennung |
+|---|---|---|
+| **Globaler Crawl + gemeinsamer Rohkorpus** | Ein Abrufweg läuft systemweit genau **einmal** (Referenzzählung statt Kopien). Die Ergebnisse landen in `raw_documents` und `knowledge_objects` — **beide ohne `tenant_id`** | **keine Mandantentrennung, bewusst.** 100 Mandate mit demselben Paket erzeugen genau einen Abruf |
+| **Mandatsbezogene Relevanz, Zuordnung und Ausspielung** | Briefing, Lage, Radar, Büro wählen je Mandat aus dem gemeinsamen Korpus | **hier** ist es mandatsscharf — über Relevanz, nicht über Paketzugehörigkeit |
+| **Landesmodul-Versorgung** (Ausnahme, seit 14A) | Landesmodul-Wege erscheinen nur in der Versorgung der Mandate, die ein berechtigtes Landesmandat tragen | mandatsbezogen auf der **Abruf**-Ebene |
+
+**Die minimale Korrektur — zwei Stellen, kein Pipeline-Neubau:**
+
+1. **Mandatsbindung des Gates** (`source-mode.js`, Regel 1 des Plans). Ein Landesmodul ist
+   **wirksam** nur, wenn sein Land *ausdrücklich freigegeben* ist **und** mindestens ein
+   *aktivierungsberechtigtes* Landtagsmandat dieses Landes existiert. Gezählt wird über
+   `resolveProfilePackages()` — also genau die Logik, die auch die Referenzzählung benutzt, nicht
+   über ein Profilfeld. Folgen: ein **Bundestags**mandat mit `bundesland='Berlin'` berechtigt Berlin
+   **nicht** (gemessen 2026-07-26: **4 der 6** aktiven Production-Profile sind genau das); ein
+   deaktiviertes, gelöschtes oder unvollständiges Profil zählt nicht; ein mehrländriger Weg braucht
+   ein Land, das **beides** ist — freigegeben und bemandatiert. Der Ausschlussgrund nennt getrennt,
+   welche der beiden Bedingungen fehlt.
+2. **Profilbezogene Landesmodul-Versorgung** (`planQuellenFuerProfil`, aufgerufen von
+   `loadRelationalSharedSources(profile)`). Der Plan bleibt global; nur die Landesmodul-Wege werden
+   auf die Länder des jeweiligen Profils eingeschränkt. Die **Vereinigung** über alle berechtigten
+   Profile ergibt wieder exakt `plan.aktiv` — es fällt also kein Weg aus dem Gesamtcrawl heraus, er
+   läuft nur im Lauf des Mandats, das ihn berechtigt (testgesichert).
+
+Zusätzlich greift der Landesriegel jetzt auch im **Fallback**-Pfad (§6), damit die Sperre nicht von
+der Datenlage des alten Katalogs abhängt.
+
+**Ausdrücklich NICHT geändert** — und das ist eine Entscheidung, keine Auslassung: die
+**allgemeine** Paketberechtigung je Profil. Heute erhält jedes Mandat alle global aktiven Bundes-,
+Partei-, Themen- und Regionalwege im Abruf. Read-only gemessen am 2026-07-26 würde eine
+profilbezogene Einschränkung **5 von 6** aktiven Profilen betreffen (−6 bis −88 von 140 Wegen, u. a.
+82 Wege des Pakets `arbeit-und-soziales`). Das ist eine Produktentscheidung über die Versorgung
+bestehender Mandate, kein Sicherheitsdefekt — **und sie würde keine Isolation herstellen**, weil
+Rohkorpus und Knowledge Objects ohnehin mandantenneutral sind. Sie gehört zu OP-03, nicht zu 14A.
+
+### 18.3 Was ein Berliner Testprofil künftig wirklich beweist
+
+| Beweist es | Beweist es **nicht** |
+|---|---|
+| dass die Paketauflösung ein Berliner Landtagsmandat auf `bund-basis` + `berlin-basis` (+ ggf. `die-linke-berlin`) abbildet | dass Berliner Inhalte von anderen Mandanten getrennt verarbeitet werden — der Rohkorpus ist **gemeinsam** |
+| dass die Berliner Wege ohne dieses Profil **nicht** laufen (Riegel 1b) | dass ein Bundestagsmandant keine Berliner Knowledge Objects sehen kann — das entscheidet die **Relevanzauswahl**, nicht der Abruf |
+| dass die Berliner Wege **nur** in der Versorgung dieses Profils erscheinen | dass die Berliner Last einem Mandanten zugerechnet würde — die Kostenmessung weist geteilte Arbeit als **global** aus (Punkt 17) |
+| dass die 4 Wege real liefern und die Kette bis zur Klassifikation `land`/`geo-land-berlin` trägt | dass eine parlamentarische Vorgangsverfolgung existiert — 7 von 12 Pflichtklassen haben **keinen** liefernden Weg (§5) |
+
+Der Beweislauf findet also **im geteilten Korpus** statt, nicht in einer isolierten Testspur. Das ist
+seit 14A nicht mehr nur ein Hinweis, sondern die dokumentierte Zusage — und §18.2 nennt die
+Stelle, an der Mandatsschärfe tatsächlich besteht.
+
+### 18.4 Verbleibende Risiken nach 14A
+
+| # | Risiko | Warum es bleibt |
+|---|---|---|
+| R-1 | **`HELMUT_LANDESMODULE` ist aus einer Cloud-Sitzung weder lesbar noch setzbar** | unverändert der Blocker aus §16.5; 14A hat daran nichts geändert und konnte es nicht |
+| R-2 | Rollback Ebene 0 wirkt nur, wenn die Freigabe über die **Vercel-Env** kam (§17 V-3) | In 14A gegen `flags.js:74–87` nachgeprüft und **bestätigt**: ein leerer Env-Wert gilt als *nicht gesetzt* und fällt auf die Dateiebene durch. Teilweise abgesichert — die Offline-Suite schlägt fehl, sobald `helmut-flags.json` ein Landesmodul setzt (`berlin-aktivierung-test` 1f/10u), der Dateiweg ist also CI-gesperrt. Nicht abgesichert ist eine Freigabe, die den CI-Riegel bewusst entfernt; deshalb bleibt §9 Schritt 7 bindend |
+| R-3 | Der zweiländrige `rp-rbb24-politik` bringt Brandenburg-Inhalte in den Berliner Rohstrom | bewusst akzeptiert (§13); der Plan weist ihn aus. Keine Aktivierung Brandenburgs |
+| R-4 | Der gemeinsame Rohkorpus bleibt ohne `tenant_id` | Architekturentscheidung, gehört zu OP-03. 14A dokumentiert sie, statt sie zu verdecken |
+| R-5 | Berlin startet **ohne amtliche parlamentarische Quelle** (7 von 12 Pflichtklassen ohne Weg) | §5; unabhängig von 14A |
+| R-6 | Der Telemetriebeleg für Stufe 2 prüft `status='ok'`, nicht die **Frische** der Dokumente | ein erreichbarer, aber veralteter Weg könnte den Beleg formal erfüllen. §10 verlangt die Frischeprüfung als Beobachtung; sie ist **nicht** im SQL-Riegel |
+| R-7 | Die allgemeine Paketberechtigung je Profil bleibt offen (§18.2) | Produktentscheidung, gehört zu OP-03 |
+| R-8 | **Berliner Dokumente können in der Ausspielung anderer Mandate erscheinen** | Folge von R-4: der Korpus ist gemeinsam, die Auswahl läuft über Relevanz. **4 der 6** aktiven Production-Profile sind Bundestagsmandate mit `bundesland='Berlin'` — regionale Relevanz kann Berliner Landesinhalte dort plausibel nach oben holen, obwohl sie Berlin nicht als eigene Versorgung erhalten. 14A verhindert den **Abruf** durch fremde Mandate, nicht die **Sichtbarkeit** im gemeinsamen Korpus. §10 beobachtet den Effekt über den Anteil `decision_level='land'`; der Nachweis der mandatsbezogenen Auswahl ist Phase-1-Punkt 28 |
+
+### 18.5 Was 14A nicht angefasst hat
+
+Kosten- und Budgetlogik aus Punkt 17 (`cost-model.js`, `llm_usage`, Reservierungen, Preistabelle,
+Kostenaggregation) · Quellenstörungs-Klassifikation aus Punkt 16 (`source-failure.js`,
+`source_crawl_telemetry` als Schreibpfad) · Brandenburg (kein Datensatz, kein Statement) · aktive
+Bundesquellen · Crons · Secrets · Locks · Feature-Flags · Production-Daten.
