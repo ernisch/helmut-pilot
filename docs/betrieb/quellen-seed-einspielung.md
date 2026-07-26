@@ -3,15 +3,24 @@
 **Stand:** 2026-07-26 · **Code-Grundlage der Seeds:** `main` `61767a9` (Merge #118) ·
 **`main`-HEAD:** `9f1def5` (Merge #130) · **Deployment:** `READY`
 
-> **Status: BLOCKIERT.** Diese Vorlage ist vollständig vorbereitet, aber die Ausführung ist
-> **nicht freigegeben**. Kein Seed wurde eingespielt.
+> **Status: SEED 1 IN PRODUCTION, STAFFELUNG STUFE 1 LÄUFT.** Seed 1 wurde am **2026-07-26** vom
+> Betreiber im Supabase-SQL-Editor eingespielt und vollständig nachgeprüft — **kein Rollback
+> nötig**. Unmittelbar danach wurde die Staffelung Stufe 1 (§6d) ausgeführt:
+> `rp-bundestag`/`rp-linksfraktion` laufen, die vier Google-Wege sind bewusst auf `broken`
+> zurückgestellt. **Seed 2 wurde nicht eingespielt** — es folgt frühestens nach der
+> Stufe-2-Entscheidung.
 >
-> **Offen ist noch genau ein Go-Kriterium (§6):**
-> **8** die Einspielung muss freigegeben sein ·
-> **2** ~~die Pre-Seed-Sicherung muss gegen Production gelaufen sein~~ — **erfüllt 2026-07-26**,
-> Backup `backups/2026-07-26T10-25-32-540Z`, `vollstaendig: true` (§6e) ·
-> **11** ~~die absichtliche Reaktivierung der 6 Bundeswege~~ — **entschieden 2026-07-25:
-> gestaffelt**, erst die 2 Direktfeeds, dann nach einem Crawl-Zyklus die 4 Google-Wege (§6d).
+> **Alle drei ursprünglichen Go-Kriterien sind erfüllt:** **2** Pre-Seed-Sicherung — erfüllt
+> 2026-07-26, Backup `backups/2026-07-26T10-25-32-540Z`, `vollstaendig: true` · **8**
+> Betreiberfreigabe — erteilt („GO Seed 1", 2026-07-26) · **11** gestaffelte Reaktivierung —
+> entschieden 2026-07-25, Stufe 1 seit 2026-07-26 in Production (§6d).
+>
+> **Nächster Kontrollpunkt:** Beweislauf des Crawl-Crons **20:00 UTC, 2026-07-26** (§6e „Beweislauf").
+> **Stufe 2 bleibt bis zur erfolgreichen Auswertung ausdrücklich gesperrt** — Seed 1 darf bis dahin
+> **nicht erneut** eingespielt werden, sonst setzt die `on conflict … do update`-Klausel die vier
+> zurückgestellten Wege stillschweigend wieder auf `needs_review` und hebt die Staffelung auf.
+> Ebenfalls weiterhin offen: OP-01 (kein PITR) und die Fachentscheidung zu
+> `rp-ausschuss-arbeit-soziales` (§6d.1).
 >
 > Werkzeug und Rückweg sind gebaut und isoliert getestet (§5b, 43/43 grün).
 >
@@ -359,9 +368,9 @@ Belegt:
 | 5 | Rollback geprüft | ✅ **erledigt** — gezielter Restore-Generator, isoliert getestet 43/43 (§5b) |
 | 6 | Keine laufende Migration / kritische Verarbeitung | ✅ **gemessen 2026-07-26 10:43 UTC** — 0 aktive `pipeline_locks`, 0 Wege mit `error_streak > 0`, außerhalb aller neun Cron-Fenster (§6e). Vor der tatsächlichen Ausführung erneut prüfen — der Wert ist zeitpunktbezogen |
 | 7 | Kein Konflikt mit neuen `main`-Änderungen | ✅ Stand `118e90c` (Merge #124) — #124 änderte keine Seeds, sondern lieferte die Inventur, die §4 korrigiert hat |
-| 8 | Betreiberfreigabe | ❌ **offen** |
-| 9 | Seeds einzeln ausführen | Vorgabe für die Ausführung |
-| 10 | Nach jedem Seed Soll-Ist-Vergleich | Vorgabe (Prüfabfragen in §5) |
+| 8 | Betreiberfreigabe | ✅ **erteilt 2026-07-26** — „GO Seed 1" für Seed 1, „GO Staffelung Stufe 1" für §6d. **Seed 2 hat keine eigene Freigabe erhalten** und ist nicht eingespielt |
+| 9 | Seeds einzeln ausführen | ✅ **eingehalten** — nur Seed 1 lief, Seed 2 wurde nicht angefasst |
+| 10 | Nach jedem Seed Soll-Ist-Vergleich | ✅ **durchgeführt** — Nachprüfung nach Seed 1 vollständig bestanden, zusätzlich per vollständigem zeilenweisem Drift-Vergleich verifiziert (§6e „Ergebnis") |
 | 11 | Keine automatische Quellenaktivierung | ✅ **entschieden** — §4 Punkt 11: 6 Wege werden absichtlich wieder ausführbar, aber **gestaffelt** in zwei Stufen (§6d). Betreiberentscheidung vom 2026-07-25 |
 | 12 | Keine Crawl-Amplifikation | ✅ durch #120 abgedeckt |
 | 13 | Keine mandantenübergreifende Fehlzuordnung | ✅ §4 Punkt 12 |
@@ -725,31 +734,91 @@ vollständig geheilt.
 **Ehrliche Grenze:** `updated_at`, `last_success_at`, `last_error` und `error_streak` stellt der
 Restore bewusst **nicht** wieder her (§5b).
 
+### Ergebnis (2026-07-26) — Seed 1 ausgeführt, Nachprüfung bestanden
+
+**Erledigt vom Betreiber im Supabase-SQL-Editor** (der oben skizzierte MCP-Weg war zuvor als
+Sackgasse verifiziert worden — siehe die durchgestrichene Passage weiter oben in diesem
+Abschnitt). Alle fünf Nachprüfungen bestanden:
+
+| # | Prüfung | Ergebnis |
+|---|---|---|
+| 1 | 2 neue Pakete | ✅ `pkg-die-linke-berlin`, `pkg-die-linke-brandenburg`, beide `prepared`, 0 Wege |
+| 2 | 6 Wege reaktiviert | ✅ alle `needs_review`, `error_streak = 0` |
+| 3 | `required_classes` | ✅ Berlin **12**, Brandenburg **12** (vorher 15/15) |
+| 4 | Deltas | ✅ **163 / 9 / 165** — exakt wie vorhergesagt |
+| 5 | BE/BB-Sperre | ✅ **0** nicht-`manual`-Wege |
+
+**Zusätzlich verifiziert:** ein vollständiger zeilenweiser Vergleich zweier read-only
+`--scope=seed`-Exporte (vor/nach) über alle 8 Tabellen ergab **2 neue Zeilen, 0 entfernte,
+15 geänderte Felder** — passend zu den 6 Wegen (`status`/`method`) und 2 Basispaketen
+(`required_classes`), plus **einer zusätzlichen, im Text nicht vorab benannten** `purpose`-Änderung
+an `pkg-regional-niedersachsen` (Klarname-Entfernung — Mandantenneutralität, fachlich erwünscht,
+ohne Verhaltenswirkung, durch die `on-conflict`-Spaltenliste §2 gedeckt). Die übrigen 157
+Abrufwege blieben byte-identisch.
+
+**Kein Abbruchkriterium ausgelöst. Kein Restore nötig.**
+
+### Staffelung Stufe 1 — ausgeführt (2026-07-26)
+
+Unmittelbar nach der Nachprüfung von Seed 1 wurde das SQL aus §6d **wortgetreu aus diesem Runbook
+extrahiert** (nicht neu formuliert) und ausgeführt. Preflight unmittelbar davor: 0 aktive Locks,
+163/9/165, `required_classes` 12/12, BE/BB-Sperre 0 — Seed-1-Abnahmekriterien weiterhin erfüllt.
+
+Ergebnis, per zweitem zeilenweisem Drift-Vergleich verifiziert — **genau 4 geänderte Felder,
+0 neue, 0 entfernte Zeilen**, ausschließlich `retrieval_paths.status`:
+
+| Weg | `status` | Crawl 20:00 UTC 2026-07-26 |
+|---|---|---|
+| `rp-bundestag` | `needs_review` | läuft |
+| `rp-linksfraktion` | `needs_review` | läuft |
+| `rp-bundesregierung` | `broken` | zurückgestellt |
+| `rp-die-linke` | `broken` | zurückgestellt |
+| `rp-ausschuss-arbeit-soziales` | `broken` | zurückgestellt |
+| `rp-dgb` | `broken` | zurückgestellt |
+
+163/9/165, `required_classes` 12/12 und die BE/BB-Sperre blieben dabei unverändert.
+
+**Sperre bis zum Beweislauf:** Seed 1 darf **nicht erneut** eingespielt werden, solange diese
+Aufteilung gilt — die `on conflict … do update`-Klausel würde die vier zurückgestellten Wege
+stillschweigend wieder auf `needs_review` setzen und die Staffelung aufheben (Reihenfolge-Falle,
+oben in §6d beschrieben).
+
+**Nächster Kontrollpunkt: Beweislauf des Crawl-Crons 20:00 UTC, 2026-07-26.** Erfolgskriterien und
+Abbruchkriterien stehen in §6b („Stopbedingung je Weg") und §6d; zusammengefasst:
+
+- **Erfolg:** `rp-bundestag` und `rp-linksfraktion` liefern Items > 0 ohne Fehler in
+  `source_crawl_telemetry`; keine Telemetriezeile für die vier zurückgestellten Wege; keine neuen
+  `systemErrors`.
+- **Abbruch:** ein laufender Weg meldet 2 aufeinanderfolgende Fehler/Timeouts oder liefert
+  dauerhaft 0 Items (Rücksetzweg: `update … set status='broken'` je Weg-ID) · einer der vier
+  zurückgestellten Wege erscheint dennoch in der Telemetrie · ein BE/BB-Weg erscheint im aktiven
+  Plan · Health verschlechtert sich.
+
+**Stufe 2 bleibt bis zur erfolgreichen Auswertung dieses Beweislaufs ausdrücklich gesperrt.**
+Zusätzlich vor Stufe 2 zu klären: die Fachentscheidung zu `rp-ausschuss-arbeit-soziales` (§6d.1).
+
+**Weiterhin offen, durch diesen Sprint unverändert:** OP-01 (Supabase Pro + PITR — nur die 8
+Seed-Tabellen sind gesichert, die übrigen 30 nicht) und die Fachentscheidung zu
+`rp-ausschuss-arbeit-soziales` (§6d.1/§6d.3).
+
 ---
 
-## 7 · Betreiberentscheidung
+## 7 · Betreiberentscheidung — Stand nach Ausführung (2026-07-26)
 
-### Option A — jetzt kontrolliert ausführen
+**Erledigt:** Seed 1 eingespielt und vollständig nachgeprüft, Staffelung Stufe 1 ausgeführt und
+verifiziert. Kein Rollback nötig. Details: §6e „Ergebnis".
 
-**Seit 2026-07-26 vertretbar.** Von den ursprünglich zwei offenen Go-Kriterien ist **2 (Backup)
-erfüllt**; offen ist nur noch **8 (Betreiberfreigabe)** — eine reine Entscheidung, keine Bauarbeit.
-Ausgangszustand, Befehl, Prüfungen, Abbruchkriterien und Rückweg stehen in §6e.
+**Nächste anstehende Entscheidung — nicht mehr „ob Seed 1", sondern „ob Stufe 2":**
 
-### Option B — Ausführung weiterhin blockieren
+1. **Jetzt:** den Beweislauf des Crawl-Crons **20:00 UTC, 2026-07-26** abwarten und auswerten
+   (Erfolgs-/Abbruchkriterien in §6e „Staffelung Stufe 1").
+2. **Danach:** die Fachentscheidung zu `rp-ausschuss-arbeit-soziales` treffen (§6d.1) — anhand der
+   dann vorliegenden Telemetrie zu `rp-bundestag`/`presse/hib/rss`.
+3. **Erst danach:** Stufe 2 freigeben (§6d, „Stufe 2") — die vier zurückgestellten Google-Wege auf
+   `needs_review` zurücksetzen, ggf. `rp-ausschuss-arbeit-soziales` ausgenommen.
+4. **Seed 2** (`20260717_landesmodul_be_bb_seed.sql`) hat weiterhin **keine eigene Freigabe**
+   erhalten und ist nicht eingespielt — eine eigene Entscheidung, unabhängig von Stufe 2.
 
-**Kriterium 11 ist entschieden** (gestaffelt, §6d), **Kriterium 2 ist erfüllt** (§6e). **Offen
-bleibt allein 8.** Werkzeug und Rückweg stehen bereit und sind getestet.
-
-Konkret zu tun, in dieser Reihenfolge:
-
-1. ~~**Pre-Seed-Backup gegen Production laufen lassen**~~ — **erledigt 2026-07-26** (§6e).
-   Backup `backups/2026-07-26T10-25-32-540Z`, `art: "pre-seed"`, `vollstaendig: true`,
-   `pruefsummeGesamt` und `mainCommit` vorhanden; Archiv außerhalb des Containers gesichert.
-2. **Die Einspielung selbst freigeben** (Go-Kriterium 8) — **das ist der einzige verbleibende
-   Schritt vor der Ausführung.**
-3. Danach Runbook §6c Schritt für Schritt — Ausgangszustand, Befehl, Prüfungen, Abbruchkriterien
-   und Rückweg vorbereitet in **§6e** — inklusive der gestaffelten Reaktivierung nach §6d.
-
-**Dauerhaft empfohlen, aber für diese Einspielung nicht zwingend:** OP-01 freigeben
-(Supabase Pro + PITR). Das bleibt das größte Einzelrisiko des Projekts insgesamt —
-**die Kostenentscheidung liegt ausschließlich beim Betreiber.**
+**Dauerhaft empfohlen, unverändert durch diesen Sprint:** OP-01 freigeben (Supabase Pro + PITR).
+Das bleibt das größte Einzelrisiko des Projekts insgesamt — die Kostenentscheidung liegt
+ausschließlich beim Betreiber.

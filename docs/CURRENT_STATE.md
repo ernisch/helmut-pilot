@@ -1,6 +1,7 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-26 · **`main`-HEAD:** `9f1def5` (Merge #130)
+**Letzte Aktualisierung:** 2026-07-26 · **`main`-HEAD:** `9f1def5` (Merge #130) ·
+**Production-Datenstand:** Seed 1 + Staffelung Stufe 1 seit 2026-07-26 eingespielt (kein Code-Merge)
 
 > **Diese Datei ist der aktuelle Stand.** Bei Widerspruch zu älteren Statusdokumenten
 > gilt diese Datei. Sie enthält **keine Chronik** — Details je offenem Punkt stehen in
@@ -41,6 +42,8 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | Freigabevorlage Quellen-Seed-Einspielung (Soll-Zahlen, Idempotenznachweis, Go-/Stop-Kriterien) | PR #123, gemergt 2026-07-25 (`bed7f53`), CI grün |
 | **Production-Inventur aller Quellenpakete** (7 Pakete in der DB, 8 im Code-Seed seit #118; 163 Abrufwege; Ertrag/letzte Lieferung/Fehler je Paket) | `quellenarchitektur/30-paket-inventur-production.md`; PR #124, gemergt 2026-07-25 (`118e90c`), CI grün, Deployment `READY` |
 | **Automatische Profil→Paket-Zuweisung belegt** — Bund/Berlin/Brandenburg gegen den echten Production-Katalog, ohne Codeänderung; keine Mandanten-Hardcodes, Bestandsmandanten unverändert | `scripts/paketzuweisung-nachweis-test.js` 147/147, Inventur §6; PR #124, gemergt 2026-07-25 (`118e90c`) |
+| **Pre-Seed-Sicherung gegen Production gezogen** — `--scope=seed`, 8/8 Tabellen, `vollstaendig: true`, Prüfsummen nachgerechnet, Archiv außerhalb des Containers gesichert (SHA-256 `7d480e70…`) | 2026-07-26, `backups/2026-07-26T10-25-32-540Z`; Runbook §6e |
+| **Seed 1 (`20260713_source_architecture_seed.sql`) in Production eingespielt** — P0-2 auf Paketebene und die 6 Bundesweg-Reparaturen sind in der Datenbank wirksam | 2026-07-26 durch den Betreiber im Supabase-SQL-Editor; Nachprüfung vollständig bestanden, **kein Rollback nötig** (Runbook §6e „Ergebnis") |
 
 ## 3 · Teilweise abgeschlossen (Code da, Abnahme fehlt)
 
@@ -52,7 +55,8 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | Zweitmandanten-Provisionierung + Per-Mandant-Kostendeckel | Migration `20260721` nicht angewandt, `HELMUT_TENANT_LLM_CAP` AUS, DB-seitige Durchsetzung unentschieden | OP-03 |
 | Retention/Löschung | nur Trockenlauf; braucht verbindliche Fristen aus OP-02 | OP-12 |
 | Understanding-Gate, Cheap-Triage, Scoring, Berlin/Brandenburg | in `shadow`/`off`, Scharfschaltung ist Freigabe | OP-18, OP-21, OP-22 |
-| Pre-Seed-Sicherung + gezielter Seed-Restore (kein `drop table cascade`) — gebaut, adversarial reviewt, isoliert getestet (43/43 lokal, 41/41 in CI; `backup-export-test` 38/38; Suite 147/147) | **Export ist seit 2026-07-26 gegen Production gelaufen** (`vollstaendig: true`); der **Restore** ist weiterhin nur isoliert getestet und nie gegen Production ausgeführt. Deckt nur 8 Tabellen ab und ersetzt OP-01 nicht | OP-01 |
+| Pre-Seed-Sicherung + gezielter Seed-Restore (kein `drop table cascade`) — gebaut, adversarial reviewt, isoliert getestet (43/43 lokal, 41/41 in CI; `backup-export-test` 38/38; Suite 147/147) | **Export ist seit 2026-07-26 gegen Production gelaufen** (`vollstaendig: true`) und **wurde nicht gebraucht** — Seed 1 ist ohne Abweichung durchgelaufen. Der **Restore** bleibt nur isoliert getestet und ist nie gegen Production ausgeführt worden. Deckt nur 8 Tabellen ab und ersetzt OP-01 nicht | OP-01 |
+| Quellen-Seed-Einspielung, Stufe 1 der gestaffelten Reaktivierung (§6d) — Seed 1 in Production, `rp-bundestag`/`rp-linksfraktion` reaktiviert | fehlt: der **Beweislauf** des Crawl-Crons 20:00 UTC 2026-07-26 und danach die Entscheidung über Stufe 2 (§6d.1, §6d.2) | OP-15 |
 | OP-06 Terminales Aussortieren des Alt-Rückstands (34 Fälle, Default AUS) | Ausführung ist freigabepflichtig — **und** eine offene Fachfrage: 16 der 34 Allowlist-Einträge sind mit „außerhalb Mandat" begründet, also relativ zum Pilotmandat, geschrieben wird aber in das mandantenneutrale `knowledge_objects` (kein `tenant_id`). Ein künftiger Zweitmandant mit regionalem/EU-Schwerpunkt bekäme diese Vorgänge dauerhaft nie verstanden | OP-06 |
 
 ## 4 · Blockiert
@@ -60,7 +64,7 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | Punkt | Ursache | Nächster Schritt |
 |---|---|---|
 | **OP-01** Supabase Pro + PITR | Kostenentscheidung des Betreibers (~25 $/Monat); Free-Plan = **keine Backups** | Betreiber schaltet Pro + PITR frei, dann Restore-Übung nach `betrieb/backup-restore-runbook.md` |
-| **Quellen-Seed-Einspielung** (macht P0-2 und die 6 Bundesweg-Reparaturen in der DB wirksam) | nur noch **ein** offenes Go-Kriterium: **8** die Einspielung ist nicht freigegeben. Kriterium **2** (Pre-Seed-Sicherung) ist seit **2026-07-26 erfüllt** — der Export ist gegen Production gelaufen, `vollstaendig: true`, Archiv außerhalb des Containers gesichert. Kriterium **11** ist **entschieden**: gestaffelte Reaktivierung (§6d). Der vollständige Ausführungsplan mit gemessenem Ausgangszustand steht in `betrieb/quellen-seed-einspielung.md` §6e | **Betreiberfreigabe für Seed 1** („GO Seed 1"), danach Runbook §6c ab Schritt 7 mit den in §6e festgehaltenen Soll-Werten |
+| **Stufe 2 der gestaffelten Reaktivierung** (die 4 zurückgestellten Google-Wege) | **ausdrücklich gesperrt**, bis der Beweislauf des Crawl-Crons 20:00 UTC 2026-07-26 ausgewertet ist (§6d) — Seed 1 und Stufe 1 sind bereits in Production. **Seed 1 darf bis zur Auswertung nicht erneut eingespielt werden**: seine `on conflict … do update`-Klausel würde die 4 zurückgestellten Wege stillschweigend wieder auf `needs_review` setzen und die Staffelung aufheben. Zusätzlich offen: die Fachentscheidung zu `rp-ausschuss-arbeit-soziales` (§6d.1) | Telemetrie nach 20:00 UTC auswerten (§6b Stopbedingung je Weg), danach Stufe 2 freigeben oder `rp-ausschuss-arbeit-soziales` bewusst aussparen |
 | **OP-02** Recht (Pilotvertrag, AVV, DSFA, Art.-9-Grundlage, Fristen) | externe Prüfung durch Anwalt/DSB steht aus | Entwürfe aus `recht/` prüfen lassen und zeichnen; blockiert OP-12 |
 | **OP-03** Zweitmandanten-Freigabepaket | Grundsatzentscheidung „DB-seitige Durchsetzung vs. dokumentierte App-Guard-Akzeptanz" fehlt (`mandantentrennung-architektur.md` bewertet die Wege) | Betreiber entscheidet einen Weg; danach Migration + Env + Probelauf |
 | **OP-04** Demo-Mandate entfernen — **Umfang korrigiert 2026-07-25:** Production führt **8 Profile, davon 6 aktiv** (nicht 1 Pilot + 2 Demo-Mandate); fünf davon tragen Klarnamen realer Abgeordneter | Production-Datenänderung, freigabepflichtig; berührt zusätzlich OP-02 (personenbezogene Daten) | je Profil entscheiden, dann über Provisionierungswerkzeug deaktivieren (`quellenarchitektur/30-paket-inventur-production.md` §5, A-1) |
@@ -180,11 +184,15 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 - **Crons:** 9 Vercel-Cron-Einträge (Crawl 04:00/20:00, Understanding 05:30/21:30,
   Morgenbriefing 05:00, Lage-Briefing 05:45, Health-Report 06:00, Lage-Check 10:00,
   Pipeline 16:00 UTC) — siehe `vercel.json`.
-- **Quellen (read-only gemessen 2026-07-25):** 7 Pakete in der DB (die zwei Landes-Partei-Pakete
-  aus #118 existieren bisher nur im Code-Seed) · 163 Abrufwege · 145 modell-aktiv ·
-  138 real gecrawlt (6 defekte Wege ohne Abruf, DIP eigener Pfad) · 19 Berlin-/Brandenburg-Wege
-  hart gesperrt · 8 Mandatsprofile, davon 6 aktiv, alle Bundestagsebene.
-  Details: `quellenarchitektur/30-paket-inventur-production.md`.
+- **Quellen (read-only gemessen 2026-07-25, Pakete/Wege-Status seither durch Seed 1 + Stufe 1
+  verändert):** 163 Abrufwege · 8 Mandatsprofile, davon 6 aktiv, alle Bundestagsebene ·
+  19 Berlin-/Brandenburg-Wege hart gesperrt (unverändert). **Seit 2026-07-26:** 9 Pakete in der DB
+  (die zwei Landes-Partei-Pakete aus #118 sind jetzt eingespielt, beide `prepared`) ·
+  `rp-bundestag`/`rp-linksfraktion` reaktiviert (`needs_review`) · `rp-bundesregierung`,
+  `rp-die-linke`, `rp-ausschuss-arbeit-soziales`, `rp-dgb` bewusst auf `broken` zurückgestellt
+  (Stufe 2 gesperrt, §6d). Die Zahlen „145 modell-aktiv / 138 real gecrawlt" der Inventur vom
+  2026-07-25 sind mit dem Beweislauf 20:00 UTC neu zu erheben.
+  Details: `quellenarchitektur/30-paket-inventur-production.md`, `betrieb/quellen-seed-einspielung.md` §6e.
 - **Zustand:** 0 neue `systemErrors` im dokumentierten Beweiszeitraum; Betriebsbefunde
   B1 (Google-News-Klumpenrisiko, 146 von 163 Wegen über Google) und B2
   (Understanding-Rückstand) bleiben offen. Neu belegt: jeder Cron-Lauf erscheint doppelt —
@@ -265,7 +273,8 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 
 | Sprint | Datum | Zustand |
 |---|---|---|
-| Seed 1 einspielen (Freigabe „GO Seed 1" erteilt) | 2026-07-26 | **Blockiert** — Ausführung aus der Cloud-Sitzung **nicht möglich**, ohne die Byte-Identität der Seed-Datei aufzugeben. Der einzige schreibfähige Kanal (`mcp__Supabase__execute_sql`) nimmt das SQL als Aufrufparameter; die Datei hat 504 Zeilen / 99 846 Bytes (≈150 k Token) und müsste modellgeneriert übertragen werden. Kein `DATABASE_URL`/`PGPASSWORD`, Postgres-Ports nicht erreichbar. **Kein Schreibzugriff erfolgt** — belegt: `max(updated_at)` unverändert 2026-07-14 / 2026-07-13. Einspielung gehört in den Supabase-SQL-Editor oder lokales `psql`. Details: `betrieb/quellen-seed-einspielung.md` §6e |
+| Staffelung Stufe 1 ausführen (Freigabe „GO Staffelung Stufe 1" erteilt) | 2026-07-26 | **Erfolgreich abgeschlossen** — das dokumentierte §6d-SQL wortgetreu ausgeführt (aus dem Runbook extrahiert, keine Neuformulierung). `rp-bundestag`/`rp-linksfraktion` bleiben `needs_review`, die vier Google-Wege (`rp-bundesregierung`, `rp-die-linke`, `rp-ausschuss-arbeit-soziales`, `rp-dgb`) auf `broken` zurückgestellt. Vollständiger zeilenweiser Drift-Vergleich (2 read-only Exporte vor/nach): **genau 4 geänderte Felder, 0 neue, 0 entfernte Zeilen**, ausschließlich `retrieval_paths.status`. 163/9/165, `required_classes` 12/12 und die BE/BB-Sperre unverändert. **Kein Rollback nötig.** Nächster Kontrollpunkt: Beweislauf 20:00 UTC. Details unten |
+| Seed 1 einspielen (Freigabe „GO Seed 1" erteilt) | 2026-07-26 | **Erfolgreich abgeschlossen** — der Betreiber hat Seed 1 im Supabase-SQL-Editor eingespielt (der Cloud-seitige MCP-Weg war zuvor als Sackgasse verifiziert und dokumentiert worden, s. u.). Nachprüfung vollständig bestanden: `retrieval_paths` 163, `source_packages` **9** (+2), `package_paths` 165 (+0), die 2 neuen Pakete `pkg-die-linke-berlin`/`pkg-die-linke-brandenburg` `prepared`, `required_classes` Berlin/Brandenburg **12/12**, alle 6 Wege auf `needs_review`. Vollständiger zeilenweiser Drift-Vergleich (Export vor/nach Seed 1): 2 neue Zeilen, 0 entfernte, 15 geänderte Felder — zusätzlich zum dokumentierten Umfang eine fachlich erwünschte `purpose`-Textänderung an `pkg-regional-niedersachsen` (Klarname-Entfernung), die restlichen 157 Abrufwege byte-identisch. **Kein Rollback nötig.** Details unten |
 | Pre-Seed-Megasprint: Backup dauerhaft sichern, Repo-/Rollout-Status, Seed 1 vollständig vorbereiten | 2026-07-26 | **Teilweise abgeschlossen** — Go-Kriterium 2 ist **erfüllt**: der Pre-Seed-Export lief gegen Production (`vollstaendig: true`, 8/8 Tabellen), das Archiv ist aus dem ephemeren Container heraus gesichert, der Preflight ist vollständig bestanden und Seed 1 ist bis unmittelbar vor den ersten Schreibzugriff vorbereitet. **Kein Seed, kein Restore, kein Production-Schreibzugriff.** Offen bleibt allein die Betreiberfreigabe (Go-Kriterium 8). Details unten. |
 | Go-Kriterium 2 kontrolliert versuchen: Pre-Seed-Backup-Export | 2026-07-25 | **Blockiert** — `node scripts/backup-export.js --scope=seed` exakt wie angefordert ausgeführt; Abbruch vor jedem Netzwerkzugriff (Exit 2), da diese Agenten-Sitzung keine `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` und keine `.env.local` besitzt. **Kein** Production-Zugriff erfolgt. Betreiberentscheidung: Export läuft auf der Betreibermaschine mit echter `.env.local`, Manifest wird zurückgemeldet. Details unten. |
 | Review + Merge von PR #125, danach Production-Ablauf bis vor den ersten Zugriff vorbereiten | 2026-07-25 | **Teilweise abgeschlossen** — PR #125 adversarial reviewt (3 Reviewer, 20 belegte Befunde, alle behoben) und als `0d6d867` gemergt (CI auf `main` grün, Vercel-Production `READY`). Der Production-Ablauf ist vollständig vorbereitet; **kein Production-Zugriff erfolgt, keine Seeds ausgeführt**. Wartet auf die Betreiberfreigabe für den Pre-Seed-Export. Details unten. |
@@ -276,6 +285,67 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 | Merge von PR #105 — Anker-Recovery-Pfad in Production stillgelegt | 2026-07-25 | **Erfolgreich abgeschlossen** — gemergt als `43e9e35`; Stilllegung auf `main` verifiziert. |
 | Recovery-Pfad-Review + Zusammenführung von PR #105 auf die kanonische Kontextstruktur | 2026-07-25 | **Erfolgreich abgeschlossen** |
 | Kontextstruktur für Claude Code (`CLAUDE.md` + Einstiegsschicht) | 2026-07-25 | **Erfolgreich abgeschlossen** — reine Dokumentation, gemergt als PR #119 (`c6a3d40`). |
+
+**Sprint „Seed 1 + Staffelung Stufe 1 in Production" (2026-07-26) — Nachweis**
+
+- **Cloud-seitiger Einspielweg als Sackgasse verifiziert und dokumentiert.** Der einzige aus dieser
+  Sitzung schreibfähige Kanal (`mcp__Supabase__execute_sql`) nimmt SQL als Aufrufparameter entgegen.
+  Seed 1 hat 503 Zeilen / 99 846 Bytes (≈150 000 Token); eine Übertragung hätte die Datei durchs
+  Modell neu erzeugen müssen — die vom Generator und Drift-Gate garantierte Byte-Identität
+  (`sha256 d131afd0…`) wäre nicht mehr gesichert gewesen. Kein `DATABASE_URL`/`PGPASSWORD`, kein
+  Supabase-CLI, Postgres-Ports aus der Sitzung nicht erreichbar. **Kein Schreibversuch unternommen.**
+  Stattdessen die geprüfte Datei unverändert als Artefakt an den Betreiber ausgeliefert
+  (SHA-256 gegengeprüft, Git-Blob-Identität mit `origin/main` bestätigt).
+- **Seed 1 vom Betreiber im Supabase-SQL-Editor eingespielt** (2026-07-26). Nachprüfung anhand der
+  in Runbook §6e festgehaltenen Soll-Werte, alle bestanden:
+
+  | Kennzahl | Ist nach Seed 1 | Soll |
+  |---|---|---|
+  | `retrieval_paths` | 163 | 163 |
+  | `source_packages` | **9** | 9 (+2) |
+  | `package_paths` | 165 | 165 (+0) |
+  | neue Pakete `pkg-die-linke-berlin`/`-brandenburg` | beide `prepared`, 0 zugeordnete Wege | 2, `prepared` |
+  | `required_classes` Berlin-/Brandenburg-Basis | **12 / 12** | 12 / 12 |
+  | die 6 Bundeswege | alle `needs_review`, `error_streak=0` | alle `needs_review` |
+  | BE/BB-Sperre | 0 nicht-`manual`-Wege | 0 |
+  | aktive Pipeline-Locks | 0 | 0 |
+
+  **Vollständiger zeilenweiser Drift-Vergleich** (zwei read-only `--scope=seed`-Exporte vor/nach,
+  alle 8 Tabellen, `updated_at` ausgenommen — der Trigger bumpt es bei jedem `on conflict`-Update
+  unabhängig vom fachlichen Inhalt): **2 neue Zeilen, 0 entfernte, 15 geänderte Felder.** Die
+  übrigen 157 Abrufwege sind byte-identisch geblieben — das war das eigentliche Risiko der
+  `on conflict … do update`-Klausel, die alle 144 Seed-Wege berührt. Eine Abweichung zur
+  ursprünglichen Vorlage, nicht zu den Daten: neben den dokumentierten 4 Paketen wurde zusätzlich
+  der `purpose`-Text von `pkg-regional-niedersachsen` aktualisiert (Klarname des Piloten entfernt,
+  Mandantenneutralität) — fachlich erwünscht, durch die `on-conflict`-Spaltenliste gedeckt (§2 der
+  Vorlage), ohne Verhaltenswirkung. **Kein Rollback erforderlich.**
+- **Staffelung Stufe 1 ausgeführt** (2026-07-26, unmittelbar danach). Preflight unmittelbar vor der
+  Änderung: 0 aktive Locks, 163/9/165, `required_classes` 12/12, BE/BB-Sperre 0, alle 6 Wege
+  weiterhin `needs_review`. Das in §6d dokumentierte SQL wurde **wortgetreu aus dem Runbook
+  extrahiert** (nicht neu formuliert) und ausgeführt: `update … set status='broken'` auf die vier
+  Google-Wege. Validierung per zweitem zeilenweisem Drift-Vergleich: **genau 4 geänderte Felder,
+  0 neue, 0 entfernte Zeilen**, ausschließlich `retrieval_paths.status`. Aktiver Zustand:
+
+  | Weg | `status` | Crawl 20:00 UTC |
+  |---|---|---|
+  | `rp-bundestag` | `needs_review` | läuft |
+  | `rp-linksfraktion` | `needs_review` | läuft |
+  | `rp-bundesregierung` | `broken` | zurückgestellt |
+  | `rp-die-linke` | `broken` | zurückgestellt |
+  | `rp-ausschuss-arbeit-soziales` | `broken` | zurückgestellt |
+  | `rp-dgb` | `broken` | zurückgestellt |
+
+- **Sperre bis zum Beweislauf:** Seed 1 darf **nicht erneut** eingespielt werden, solange Stufe 1
+  gilt — seine `on conflict … do update`-Klausel würde die vier zurückgestellten Wege
+  stillschweigend wieder auf `needs_review` setzen und die Staffelung aufheben.
+- **Nächster Kontrollpunkt:** der Beweislauf des Crawl-Crons **20:00 UTC, 2026-07-26**. Erfolg
+  erfordert Telemetrie mit Items > 0 für beide laufenden Wege, keine Telemetrie für die vier
+  zurückgestellten, und keinen neuen `systemError`. Erst danach wird über Stufe 2 entschieden —
+  inklusive der offenen Fachfrage zu `rp-ausschuss-arbeit-soziales` (§6d.1).
+- **Weiterhin offen, unverändert durch diesen Sprint:** OP-01 (kein PITR, nur die 8
+  Seed-Tabellen sind gesichert) und die Fachentscheidung zu `rp-ausschuss-arbeit-soziales`.
+- **Nicht getan (bewusst):** kein weiterer Seed, keine Aktivierung von Stufe 2, kein Restore
+  (nicht nötig — keine Abnahmekriterien verletzt), kein Deployment, kein Merge, kein PR.
 
 **Sprint „Pre-Seed-Megasprint" (2026-07-26) — Nachweis**
 
