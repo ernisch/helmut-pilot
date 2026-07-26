@@ -389,6 +389,21 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
   Bundesversorgung gesund (letzter Vollcrawl 145/147 `ok`, 0 Fehler, 33 s) · Invariante B3 erfüllt
   (147 = 147) · Locks 3 Zeilen, **alle abgelaufen** · Pending unverändert **50** · LLM heute 34/100 ·
   Rohdokumente ≈ 283/Tag · KO ≈ 39/Tag · Originalverweis 99,5 % · Berlin bei **null**.
+- **Unabhängige Vorprüfung (8 Prüfer, je Thema ein Gegenprüfer) — vier belegte Befunde**, alle
+  selbst am Code nachgeprüft, in `betrieb/berlin-aktivierung.md` §17:
+  **V-1 (kritisch)** die Staffelung ist im SQL **nicht erzwungen** — B1, B2.1 und B2.2 stehen in
+  **einer** Transaktion; wer Block B am Stück ausführt, schaltet auch die zwei Google-Wege scharf,
+  auf deren Verzögerung die gesamte Lastbegründung beruht ·
+  **V-2** das Abnahmeprofil ist **kein mandantenbezogener Schalter**: `loadRelationalSharedSources`
+  baut **einen globalen** Plan ohne Profilparameter, der in die Quellenliste **jedes** Profils
+  gemischt wird — der Beweislauf fände im geteilten Korpus statt, nicht in einer isolierten Testspur ·
+  **V-3** Rollback **Stufe 0 wirkt nur**, wenn die Freigabe über die **Vercel-Env** kam: ein leerer
+  Env-Wert gilt als nicht gesetzt und fällt auf `helmut-flags.json` zurück ·
+  **V-4** „öffnet ausschließlich Berlin" ist zu stark — der zweiländrige `rp-rbb24-politik` läuft mit
+  (bekannte, in §13 akzeptierte Nebenwirkung, **keine** Brandenburg-Aktivierung).
+  **Bestätigt** wurden: fail-closed Default, kein Sammel-Schlüsselwort, Gate als Regel 1 vor allen
+  anderen Prüfungen, `manual` als echte Sperre, vollständige Rollback-Abdeckung ohne jeden
+  `rp-bb-*`/`brandenburg-*`-Bezug, `Fraktionslos` ohne Parteibindung.
 - **Nebenbefund, entscheidungsrelevant:** der offene **PR #132** (Brandenburg) führt einen
   konkurrierenden Gate-Namen `HELMUT_LANDESMODUL_FREIGABE` ein, während `main` seit #133/#134
   `HELMUT_LANDESMODULE` verwendet. `main` ist maßgeblich und #132 ist nicht gemergt — vor einem Merge

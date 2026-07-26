@@ -586,3 +586,74 @@ unverändert bleiben. Reihenfolge unverändert nach §9:
 
 Solange Schritt 1 nicht geklärt ist, sind die Schritte 2–4 **nicht** vorzuziehen: sie nehmen drei
 der vier Riegel weg, ohne dass der vierte kontrollierbar ist.
+
+## 17 · Befunde der unabhängigen Vorprüfung (2026-07-26, vor der Aktivierung)
+
+Vier Prüfer plus vier Gegenprüfer haben die Zusagen dieses Runbooks gegen den Code auf `93006e8`
+geprüft. Die vier folgenden Befunde sind **selbst nachgeprüft** und gehören vor der Aktivierung
+entschieden. Sie ändern die Empfehlung aus §15 nicht, aber sie ändern die Ausführung.
+
+### V-1 (kritisch) · Die Staffelung ist im SQL nicht erzwungen — B2.1 und B2.2 teilen eine Transaktion
+
+`20260726_berlin_aktivierung.sql` schreibt in Block B **ein** `begin;` … `commit;` um B1, B2.1
+**und** B2.2. Der Kommentar „die Stufen sind EINZELN auszuführen, nicht zusammen" ist damit die
+einzige Sperre — eine Kommentarzeile. Wer Block B als Ganzes ausführt (das ist die naheliegende
+Lesart einer Datei mit `begin`/`commit`), schaltet **alle vier** Wege auf einmal scharf, inklusive
+der zwei Google-Wege, deren ganzer Zweck es war, einen vollen Crawl-Zyklus **später** zu kommen.
+
+Die gesamte Lastbegründung aus §7.4 hängt an dieser Trennung. **Vor der Ausführung:** B2.2 in einen
+eigenen `begin`/`commit`-Block ziehen (oder in eine eigene Datei), sodass die Staffelung strukturell
+und nicht nur redaktionell besteht. Bis dahin gilt: **nur die Zeilen B1 und B2.1 einzeln ausführen**,
+niemals den Block am Stück.
+
+### V-2 (wichtig) · Das Abnahmeprofil ist kein mandantenbezogener Schalter — der Crawl-Plan ist global
+
+`loadRelationalSharedSources()` (`scheduler.js:758–773`) nimmt **keinen** Profilparameter: es baut
+**einen** Plan aus *allen* Profilen. `getSourcesForProfile()` (`scheduler.js:776–787`) mischt genau
+diesen Plan in die Quellenliste **jedes** Profils.
+
+**Folge:** ein einziges Berliner Abnahmeprofil aktiviert die Berliner Wege **systemweit**. Sobald
+Profil + Paketstatus + Wegstatus + Flag stehen, laufen die Berliner Wege im geteilten Crawl mit,
+aus dem auch der bestehende reale Pilotmandant versorgt wird. Das ist **keine** Verdrängung
+(die Bundeswege bleiben unverändert, Berlin kommt rein additiv dazu) und deckt sich mit dem
+Lastmodell in §7.3 — die Formulierung „das Profil ist der vierte Riegel" in §4 legt aber eine
+Mandantenschärfe nahe, die es auf der Crawl-Ebene nicht gibt. Mandantenscharf ist erst die
+**Auswahl stromabwärts** (Briefing, Radar), nicht der Abruf.
+
+Vor der Aktivierung ist das ausdrücklich zur Kenntnis zu nehmen: der Beweislauf findet **im
+geteilten Korpus** statt, nicht in einer isolierten Testspur.
+
+### V-3 (wichtig) · Rollback Stufe 0 wirkt nur, wenn die Freigabe über die Vercel-Env kam
+
+§9 Schritt 7 erlaubt die Freigabe wahlweise über **Vercel-Env** oder über **`helmut-flags.json` +
+Deploy**. Die Rollback-Tabelle in §12 verspricht dagegen pauschal „Stufe 0 = `HELMUT_LANDESMODULE`
+leeren (Vercel-Env), Sekunden".
+
+`flags.js:74–87` gibt `process.env` Vorrang — aber ein **leerer** Env-Wert gilt als *nicht gesetzt*
+und fällt auf die Dateiebene durch. Wurde die Freigabe also über `helmut-flags.json` erteilt, ist
+das Leeren der Env-Variable **wirkungslos**; der Dateiwert gewinnt sofort wieder. Der Rückweg wäre
+dann ein Commit + Deploy, also Minuten statt Sekunden.
+
+**Konsequenz für die Ausführung:** die Freigabe **über die Vercel-Env** erteilen, nicht über die
+Datei. Nur dann stimmt die zugesagte Rollback-Dauer, und nur dann ist Stufe 0 ohne
+Repo-Änderung erreichbar.
+
+### V-4 (Hinweis) · „öffnet ausschließlich Berlin" ist eine Spur zu stark formuliert
+
+Das Gate vergleicht mit `landesmodule.some(land => freigegeben.has(land))` (`source-mode.js:172`).
+Der zweiländrige Weg `rp-rbb24-politik` hängt in `berlin-basis` **und** `brandenburg-basis` und
+läuft deshalb schon bei reiner Berlin-Freigabe mit. Das ist die in §13 bereits benannte und bewusst
+akzeptierte Nebenwirkung — **keine** Aktivierung Brandenburgs (kein `rp-bb-*`-Weg, kein
+Brandenburg-Paket, 0 Brandenburg-Referenzen), und der Plan weist solche Wege unter
+`landesmodule.mehrlaendrig` samt Fremdland aus. Der Satz in §4 sollte trotzdem auf „öffnet
+ausschließlich Berliner Wege — zuzüglich des zweiländrigen rbb24-Wegs" geschärft werden.
+
+**Sonst bestätigt:** der Default ist leer und fail-closed · es gibt **kein** Sammel-Schlüsselwort
+(`alle`, `*`, `all`, `true`, `on` sind alle wirkungslos) · das Gate ist **Regel 1** im ausführenden
+Plan, also vor Paketstatus, Wegstatus und Referenzzählung — das leere Flag allein genügt als Sperre
+(Test 10o: Paket `active` + Wege `healthy`/`auto` + Berliner Profil + leeres Flag → **0** Berliner
+Wege) · `manual` ist als Regel 4b eine echte Sperre im ausführenden Plan · beide Rollback-Stufen
+decken jede der fünf mutierenden Anweisungen ab und nennen **keinen** `rp-bb-*`-Weg und **kein**
+`brandenburg-*`-Paket in einem ausführbaren Statement · `partei='Fraktionslos'` bindet **kein**
+Parteipaket · `bundesland='Berlin'` + `politische_ebene='landtag'` ergibt genau
+`bund-basis` + `berlin-basis` und **kein** Brandenburg-Paket.
