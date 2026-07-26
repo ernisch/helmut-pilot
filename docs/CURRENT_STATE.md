@@ -162,10 +162,11 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
    Branch Protection; Aktivierungsstand ist nicht verifiziert (OP-11,
    `betrieb/branch-protection.md`).
 
-## 8 · Offene Pull Requests (Stand 2026-07-25)
+## 8 · Offene Pull Requests (Stand 2026-07-26)
 
 | PR | Inhalt | Einschätzung |
 |---|---|---|
+| **#138** | **Punkt 14A: Berliner Aktivierung technisch absichern** — V-1 (Staffelung strukturell erzwungen: 9 Einzeldateien, fail-closed Riegel, Telemetriebeleg vor Stufe 2, Rollback je Stufe, Dry Run je Schritt) und V-2 (Landesmodule brauchen Freigabe **und** ein berechtigtes Landtagsmandat; Landeswege nur in der Versorgung berechtigter Mandate) | **mergefähig**, CI grün (beide Pflicht-Checks). Keine Production-Mutation, heute messbar wirkungslos (Plan vor/nach identisch: 140 aktive Wege, 0 Landeswege, 8/8 Profile unverändert). Merge = Deployment und bleibt Betreiberentscheidung |
 | #117 | WBSB-Pilotpaket + Workflow-Härtung vereinigt | **Draft, ausdrücklich nicht mergen** (öffnet nur die CI-Prüfung) |
 | #115 | Bestandsabgleich `bund-basis` + Pflichtquellen-Verifikationstest | **Draft, ausdrücklich nicht mergen** (nur um den Workflow auf einem Runner mit Egress laufen zu lassen) |
 | #112 | Geführter Erstlogin-/Onboarding-Flow (14 Screens) | manuelle Abnahme im Preview ausstehend |
