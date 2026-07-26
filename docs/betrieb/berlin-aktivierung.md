@@ -783,6 +783,19 @@ getroffenen Zeilen namentlich, die Nachbedingung nach Simulation und die Kontrol
 Pflichtpaket, wie dokumentiert), Schritt B1, Stufe 1 und Stufe 2 sind **nicht** ausführbar und
 melden genau die fehlende Bedingung. Alle Kontrollfragen 0.
 
+**Gegen ein echtes PostgreSQL ausgeführt — nicht nur simuliert.** Die Offline-Suite prüft die
+Staffelung gegen eine Speicherdatenbank; ihr Mini-SQL-Ausführer kann kein PL/pgSQL und könnte
+deshalb nicht belegen, dass die Riegel gültige Syntax sind, dass `raise exception` die Transaktion
+wirklich abbricht und dass dabei **0** Zeilen verändert bleiben.
+`bash scripts/berlin-staffelung-pgverify.sh --eigenes-cluster` legt ein Wegwerf-Cluster an, spielt
+den gemessenen Ist-Zustand ein und führt die **committeten** Dateien in der vorgesehenen Reihenfolge
+aus. Ergebnis am 2026-07-26 gegen **PostgreSQL 16.13**: **35/35 grün** — die vier verfrühten
+Aufrufe brechen mit benannter Bedingung ab und lassen den Zustand *zeilengenau* unverändert; Stufe 2
+scheitert am Telemetriebeleg, auch mit einem Lauf je Weg, und läuft erst mit zwei; die Rollbacks je
+Stufe wirken getrennt; der vollständige Rückweg stellt den Ausgangszustand zeilengenau her und ist
+idempotent. Das Skript ist **nicht** Teil der Offline-Suite (es braucht ein lokales PostgreSQL) und
+berührt Production nicht.
+
 ### 18.2 V-2 · Das tatsächliche Modell: globaler Crawl, mandatsbezogene Landesmodule
 
 **Was falsch war.** `loadRelationalSharedSources()` nahm **keinen** Profilparameter. Sie baute einen
