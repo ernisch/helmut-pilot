@@ -20,7 +20,8 @@
 
 const {
   WAHLPERIODE, EINSETZUNGSBESCHLUSS, STAENDIGE_AUSSCHUESSE, VERALTETE_AUSSCHUSSNAMEN,
-  AUSSCHUSS_KEYS, AUSSCHUSS_NAMEN, validateSollmenge, ausschussByKey, vergleicheMitSollmenge
+  AUSSCHUSS_KEYS, AUSSCHUSS_NAMEN, validateSollmenge, ausschussByKey, vergleicheMitSollmenge,
+  AMTLICHE_BEZEICHNUNGSFORM, ausschussByNummer, veralteteBezeichnung
 } = require("../lib/helmut/quellenarchitektur/seeds/bundestag-ausschuesse");
 const {
   katalogAusschuesse, pruefeAusschussSollmenge, istInstitutionellerAusschuss,
@@ -204,6 +205,100 @@ check("der neue Weg ueberlebt die Kuratierung (sonst waere die Abdeckung nur auf
   v1Sources.some((s) => s.id === "committee-wahlpruefung"));
 check("Ausschussquellen erhoehen die Google-Konzentration um genau 1 Weg (24 statt 23)",
   v1Sources.filter((s) => s.ausschussKey).length === 24);
+
+// ============ 6 · Amtliche Bezeichnung, Schreibweise und Ausschussnummer ============
+// Diese Gruppe existiert wegen eines konkreten Fundes: die Sollmenge trug fuer zwei Ausschuesse
+// eine Bezeichnung, die nicht die amtliche der 21. WP ist ("Ausschuss für Inneres und Heimat" ist
+// die Bezeichnung der 20. WP, "Ausschuss für Verkehr" war gar keine amtliche Bezeichnung).
+// Die Anzahl war dabei richtig — genau deshalb pruefen wir hier Bezeichnungen, nicht Zahlen.
+console.log("== 6 · amtliche Bezeichnung, Schreibweise, Nummer ==");
+
+check("Ausschuss Nr. 4 heisst amtlich „Innenausschuss“ (nicht „Ausschuss für Inneres und Heimat“)",
+  ausschussByNummer(4) && ausschussByNummer(4).name === "Innenausschuss"
+  && ausschussByNummer(4).key === "inneres-heimat");
+check("Ausschuss Nr. 15 heisst amtlich „Verkehrsausschuss“ (nicht „Ausschuss für Verkehr“)",
+  ausschussByNummer(15) && ausschussByNummer(15).name === "Verkehrsausschuss"
+  && ausschussByNummer(15).key === "verkehr");
+check("die stabile Kennung wird bei einer Umbenennung NICHT mitgezogen (inneres-heimat bleibt)",
+  AUSSCHUSS_KEYS.includes("inneres-heimat") && !!ausschussByKey("inneres-heimat"));
+
+check("beide fruehere Bezeichnungen sind als veraltet BELEGT hinterlegt (Negativkontrolle nutzbar)", (() => {
+  const innen = veralteteBezeichnung("Ausschuss für Inneres und Heimat");
+  const verkehr = veralteteBezeichnung("Ausschuss für Verkehr und digitale Infrastruktur");
+  return innen && innen.wahlperiode === 20 && /ausschuesse20/.test(innen.beleg)
+    && verkehr && verkehr.wahlperiode === 19 && /ausschuesse19/.test(verkehr.beleg);
+})());
+check("Negativkontrolle: die frueheren Bezeichnungen stehen NICHT in der aktuellen Sollmenge",
+  !AUSSCHUSS_NAMEN.includes("Ausschuss für Inneres und Heimat")
+  && !AUSSCHUSS_NAMEN.includes("Ausschuss für Verkehr und digitale Infrastruktur")
+  && !AUSSCHUSS_NAMEN.includes("Ausschuss für Verkehr"));
+check("Negativkontrolle: faellt der Katalog auf die 20.-WP-Bezeichnung zurueck, wird das als Umbenennung rot", (() => {
+  const rueckfall = KATALOG_IST.map((a) =>
+    a.key === "inneres-heimat" ? { ...a, name: "Ausschuss für Inneres und Heimat" } : a);
+  const r = vergleicheMitSollmenge(rueckfall);
+  return rueckfall.length === 24 && !r.vollstaendig
+    && r.abweichenderName.length === 1
+    && r.abweichenderName[0].key === "inneres-heimat"
+    && r.abweichenderName[0].soll === "Innenausschuss"
+    && !!veralteteBezeichnung(r.abweichenderName[0].ist);
+})());
+
+check("alle 24 Ausschuesse tragen eine Nummer 1..24, lueckenlos und eindeutig", (() => {
+  const n = STAENDIGE_AUSSCHUESSE.map((a) => a.nummer);
+  return n.length === 24 && new Set(n).size === 24
+    && n.every((x) => Number.isInteger(x) && x >= 1 && x <= 24);
+})());
+check("Nummer und Listenposition stimmen ueberein (zwei unabhaengige Zugriffe kreuzgeprueft)",
+  AUSSCHUSS_KEYS.every((key, i) => ausschussByNummer(i + 1) && ausschussByNummer(i + 1).key === key));
+check("Negativkontrolle: eine Nummer, die nicht zur Position passt, macht validateSollmenge rot", (() => {
+  // Gleiche Regel wie in validateSollmenge, auf einer umsortierten Kopie: ein Vertauschen
+  // von Kultur und Medien (22) und Tourismus (23) ohne Nummernpflege muss auffallen.
+  const kopie = STAENDIGE_AUSSCHUESSE.slice();
+  const i22 = kopie.findIndex((a) => a.nummer === 22);
+  const i23 = kopie.findIndex((a) => a.nummer === 23);
+  [kopie[i22], kopie[i23]] = [kopie[i23], kopie[i22]];
+  return kopie.some((a, i) => a.nummer !== i + 1);
+})());
+check("Ausschussnummer 22 ist Kultur und Medien (amtliches Dokumentpraefix PA22)",
+  ausschussByNummer(22).key === "kultur-medien"
+  && /PA22/.test(ausschussByNummer(22).beleg));
+check("Ausschussnummer 13 ist Bildung/Familie (amtliches Dokumentpraefix a13)",
+  ausschussByNummer(13).key === "bildung-familie-senioren-frauen-jugend"
+  && /a13/.test(ausschussByNummer(13).beleg));
+
+check("Schreibweise: jede Bezeichnung hat amtliche Form (\"Ausschuss für …\" | \"…ausschuss\" | Auswärtiger Ausschuss)",
+  AUSSCHUSS_NAMEN.every((n) => AMTLICHE_BEZEICHNUNGSFORM.test(n)));
+check("Negativkontrolle: die Formpruefung weist falsche Schreibweisen ab",
+  !AMTLICHE_BEZEICHNUNGSFORM.test("Innen-Ausschuss")
+  && !AMTLICHE_BEZEICHNUNGSFORM.test("ausschuss für Inneres")
+  && !AMTLICHE_BEZEICHNUNGSFORM.test("Ausschuss Inneres")
+  && !AMTLICHE_BEZEICHNUNGSFORM.test("Innenausschuss ")
+  && AMTLICHE_BEZEICHNUNGSFORM.test("Innenausschuss")
+  && AMTLICHE_BEZEICHNUNGSFORM.test("Verkehrsausschuss")
+  && AMTLICHE_BEZEICHNUNGSFORM.test("Auswärtiger Ausschuss")
+  && AMTLICHE_BEZEICHNUNGSFORM.test("Ausschuss für die Angelegenheiten der Europäischen Union"));
+
+check("kein AKTUELLER Ausschuss wird mit einer Webarchiv-Seite einer aelteren WP belegt",
+  STAENDIGE_AUSSCHUESSE.every((a) => !/webarchiv/i.test(a.beleg)));
+check("jede veraltete Bezeichnung ist einer FRUEHEREN Wahlperiode zugeordnet und belegt",
+  VERALTETE_AUSSCHUSSNAMEN.every((v) => v.wahlperiode < WAHLPERIODE && !!v.beleg && !!v.name));
+
+check("die Abrufgrenze des Drucksachen-Volltextes ist als Datum hinterlegt, nicht nur als Prosa",
+  EINSETZUNGSBESCHLUSS.volltext_abrufbar === false
+  && /2100150\.pdf$/.test(EINSETZUNGSBESCHLUSS.volltext_fundstelle)
+  && EINSETZUNGSBESCHLUSS.belege.length >= 3);
+check("die 21. WP setzt genau EINEN Ausschuss weniger ein als die 20. (25 -> 24, amtlich)",
+  EINSETZUNGSBESCHLUSS.vorherige_wahlperiode.wahlperiode === 20
+  && EINSETZUNGSBESCHLUSS.vorherige_wahlperiode.staendige_ausschuesse === 25
+  && EINSETZUNGSBESCHLUSS.staendige_ausschuesse === 24
+  && EINSETZUNGSBESCHLUSS.vorherige_wahlperiode.staendige_ausschuesse - EINSETZUNGSBESCHLUSS.staendige_ausschuesse === 1);
+
+check("die korrigierten Bezeichnungen kommen im Katalog an (Abrufweg-Namen folgen der Sollmenge)", (() => {
+  const M = buildFullModel();
+  const innen = M.retrievalPaths.find((p) => p.id === "rp-committee-inneres");
+  const verkehr = M.retrievalPaths.find((p) => p.id === "rp-committee-verkehr");
+  return innen && innen.name === "Innenausschuss" && verkehr && verkehr.name === "Verkehrsausschuss";
+})());
 
 console.log(`\n== Ergebnis: ${pass} PASS, ${fail} FAIL ==`);
 process.exit(fail > 0 ? 1 : 0);

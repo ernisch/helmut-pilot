@@ -1,6 +1,6 @@
 # Fachliche Paketvollständigkeit — Nachweis (Phase-1-Punkt 13)
 
-**Erhebung:** 2026-07-26 · **Korrekturen:** Ausschuss-Sollmenge (§2a) und Abschlusskorrektur Niedersachsen / nicht-anwendbar / Fraktionen (§2b), beide 2026-07-26 · **Grundlage:** `main` `9f1def5` (Merge #130) + Arbeitsbranch
+**Erhebung:** 2026-07-26 · **Korrekturen:** Ausschuss-Sollmenge (§2a), Abschlusskorrektur Niedersachsen / nicht-anwendbar / Fraktionen (§2b) und **Vollabgleich der Ausschussstruktur gegen die amtliche Bundestagsgrundlage (§2c)**, alle 2026-07-26 · **Grundlage:** `main` `9f1def5` (Merge #130) + Arbeitsbranch
 `claude/helmut-phase1-punkt13-9iwu69` · **Methode:** rein lesend gegen den committeten Code,
 **kein** Production-Zugriff, **keine** Datenänderung
 
@@ -150,6 +150,11 @@ Kopf tragen, sowie die kanonischen Ausschussseiten. Jeder Eintrag der Sollmenge 
 Fundstelle. **Empfehlung:** die Liste beim nächsten Zugang zu `dserver.bundestag.de` einmal
 direkt gegen den Volltext von 21/150 abgleichen.
 
+> **Nachgezogen in §2c.** Diese Empfehlung wurde umgesetzt, soweit ohne den Volltext möglich — und
+> hat **zwei falsche Bezeichnungen und eine falsche Reihenfolge** gefunden. Die Anzahl war die
+> ganze Zeit richtig. Siehe [§2c](#2c--vollabgleich-der-ausschussstruktur-gegen-die-amtliche-bundestagsgrundlage).
+> Der Volltextabgleich bleibt als einzige offene Restprüfung bestehen.
+
 ## 2b · Abschlusskorrektur: Niedersachsen, „nicht anwendbar" und die Fraktionssollmenge
 
 Der erste Abschluss ließ drei Punkte offen. Alle drei sind jetzt behoben — jeweils an der
@@ -265,6 +270,132 @@ Einordnung ändert sich. `parteien_ohne_fraktionsstatus` ist eine **zusätzliche
 Pflichtklasse von `bund-basis`. Alle 8 `fraction-*`-Wege behalten `activation_mode: "auto"` und
 `status: "needs_review"` — 0 zusätzliche und 0 entfallene Abrufe.
 
+## 2c · Vollabgleich der Ausschussstruktur gegen die amtliche Bundestagsgrundlage
+
+§2a hatte die **Anzahl** extern verankert (24) und selbst empfohlen, die **Bezeichnungen** noch
+einmal direkt gegen die amtliche Grundlage abzugleichen. Genau das ist hier geschehen — und der
+Abgleich hat zwei Fehler gefunden. Das ist der Kernbefund dieses Nachtrags:
+
+> **Die richtige Anzahl beweist nicht die richtige Struktur.** Die Sollmenge führte 24 von 24
+> Ausschüssen und war trotzdem bei 2 Bezeichnungen falsch. Eine reine Zählprüfung hätte das
+> nie gefunden.
+
+### Verwendete amtliche Primärquelle
+
+In der vom Betreiber vorgegebenen Reihenfolge geprüft:
+
+| Rang | Quelle | Ergebnis |
+|---|---|---|
+| 1 | **Drucksache 21/150** (Volltext, `dserver.bundestag.de/btd/21/001/2100150.pdf`) | **nicht abrufbar** — HTTP `403` auf jedem Pfad; DIP ist eine JavaScript-Anwendung und liefert kein Dokument |
+| 2 | **Amtliche Bundestagsseiten zum Einsetzungsbeschluss** — `textarchiv/2025/kw20-de-einsetzung-ausschuesse-1064982`, `presse/hib/kurzmeldungen-1065308`, `textarchiv/2025/kw33-ausschuesse-erklaertext-1104972` | **verwendet.** Diese Seiten zählen **alle 24 Ausschüsse in der Reihenfolge des Beschlusses mit ihren Mitgliederzahlen** auf — damit Anzahl, Bezeichnungen und Nummerierung |
+| 3 | **Kanonische Ausschussseiten der 21. WP** (`bundestag.de/inneres`, `bundestag.de/ausschuesse/verkehr`, `…/umwelt`, `…/forschung`) | **verwendet** zur Bestätigung der amtlichen Einzelbezeichnung |
+| 4 | **Ausschuss-Tagesordnungen der 21. WP** (`bundestag.de/resource/blob/…`) | **verwendet** — tragen die Bezeichnung wörtlich im Kopf; je Sollmengen-Eintrag als Fundstelle hinterlegt |
+| 5 | **Webarchiv der 19./20. WP** (`bundestag.de/webarchiv/…`) | **verwendet, aber ausschließlich als Negativbeleg** für frühere Bezeichnungen |
+
+**Keine Drittquelle** ist eingeflossen — keine Presseartikel, keine Wikipedia, keine
+Abgeordnetenportale. Alle Fundstellen liegen auf `bundestag.de`.
+
+**Konnte die Primärquelle vollständig geprüft werden?** Der **Volltext der Drucksache 21/150 nicht**
+— diese Grenze bleibt und ist jetzt als **Datum** in der Sollmenge hinterlegt
+(`EINSETZUNGSBESCHLUSS.volltext_abrufbar: false` mit Fundstelle), nicht nur als Prosa, und ist
+getestet. **Anzahl, Bezeichnungen, Schreibweise und Reihenfolge konnten vollständig geprüft
+werden**, weil die amtlichen Beschlussseiten (Rang 2) den Beschlussinhalt vollständig aufzählen und
+jede Einzelbezeichnung zusätzlich über Rang 3/4 belegt ist.
+
+### Gefundene Unterschiede
+
+| Nr. | Vorher (Repository) | Amtlich (21. WP) | Art des Fehlers |
+|---|---|---|---|
+| **4** | „Ausschuss für Inneres und Heimat" | **„Innenausschuss"** | **Bezeichnung einer früheren Wahlperiode.** `webarchiv/…/ausschuesse20/a04_inneres` trägt genau diesen Titel — es war die Bezeichnung der **20.** WP |
+| **15** | „Ausschuss für Verkehr" | **„Verkehrsausschuss"** | **Nie eine amtliche Bezeichnung.** Eine verkürzte Eigenbildung; die 19. WP hieß „Ausschuss für Verkehr und digitale Infrastruktur", die 21. heißt „Verkehrsausschuss" |
+
+Der Innenausschuss zeigt, warum das wahlperiodengenau gepflegt werden muss:
+**18. WP „Innenausschuss" → 19./20. WP „Ausschuss für Inneres und Heimat" → 21. WP wieder
+„Innenausschuss"**. Eine Bezeichnung „von früher" kann also zufällig wieder richtig werden — und
+genau deshalb ist sie ohne Wahlperiodenbezug kein Beleg.
+
+**Zusätzlich korrigiert: die Reihenfolge.** Die Sollmenge behauptete im Kommentar, ihre Reihenfolge
+sei die amtliche Ausschussnummerierung, prüfte das aber nicht — und für die Positionen **20–24** war
+sie tatsächlich falsch (Tourismus und Kultur/Medien vertauscht, Europa an falscher Stelle). Amtlich:
+20 Europäische Union · 21 Digitales und Staatsmodernisierung · 22 Kultur und Medien · 23 Tourismus ·
+24 Wohnen. Die Nummer ist jetzt **Daten statt Kommentar** (`nummer` je Eintrag) und wird geprüft.
+Unabhängig bestätigt durch die amtlichen Dokumentpräfixe der 21. WP: `PA22_to14-pdf.pdf` für Kultur
+und Medien (= Nr. 22) und `a13-28-TO.pdf` für Bildung/Familie (= Nr. 13).
+
+### Was **nicht** abwich
+
+- **Anzahl: 24** — bestätigt, dazu amtlich mitberichtet, dass die 21. WP **einen Ausschuss weniger**
+  einsetzt als die 20. (25 → 24). Beides ist jetzt in der Sollmenge hinterlegt und getestet.
+- **Die anderen 22 Bezeichnungen** — Wort für Wort bestätigt, einschließlich der Stolperstellen:
+  „Ausschuss für **Landwirtschaft, Ernährung** und Heimat" (nicht „Ernährung, Landwirtschaft"),
+  „Ausschuss für **die** Angelegenheiten der Europäischen Union" (mit Artikel), „Ausschuss für
+  Umwelt, Klimaschutz, Naturschutz und **nukleare Sicherheit**", „Ausschuss für Forschung,
+  Technologie, **Raumfahrt** und Technikfolgenabschätzung".
+- **Sonderfälle** — die 7 Ausschüsse ohne `Ausschuss `-Präfix (Petitions-, Auswärtiger, Innen-,
+  Finanz-, Haushalts-, Verteidigungs-, Verkehrsausschuss) werden weiter über die **Kennung**
+  erkannt, nicht über den Namen. Genau dieser Entwurf hat die Korrektur schadlos aufgenommen: aus 5
+  wurden 7 Kompositum-Namen, ohne dass eine Klassenzuordnung brach.
+- **Zusammenlegungen / neu eingerichtete / weggefallene Ausschüsse** — die vier belegten
+  Umbenennungen bzw. Neuzuschnitte gegenüber der 20. WP stehen als Negativkontrollen in
+  `VERALTETE_AUSSCHUSSNAMEN` (Ernährung/Landwirtschaft, Digitales, Inneres und Heimat, Verkehr und
+  digitale Infrastruktur). Ein Rückfall auf eine dieser Bezeichnungen macht die Prüfung rot, **auch
+  wenn die Anzahl 24 bleibt**.
+
+### Was geändert wurde
+
+| Ebene | Änderung |
+|---|---|
+| Kanonische Sollmenge | `seeds/bundestag-ausschuesse.js`: 2 Bezeichnungen korrigiert · `nummer` (1–24) je Eintrag ergänzt und Positionen 20–24 in die amtliche Ordnung gebracht · Fundstellen der beiden Einträge auf die kanonischen Ausschussseiten der 21. WP umgestellt · 2 weitere veraltete Bezeichnungen als Negativbelege ergänzt · Abrufgrenze und 25→24-Delta als Daten hinterlegt · die Formprüfung akzeptiert jetzt strukturell `Ausschuss für …` \| `…ausschuss` \| `Auswärtiger Ausschuss` statt einer wachsenden Namensliste |
+| Paketdefinition, Abrufwege, Herausgeber-Mapping, Vollständigkeitsmatrix | **keine Änderung nötig.** Die Bindung läuft über `ausschussKey`, der Name wird aus der Sollmenge gezogen — die Korrektur ist an genau **einer** Stelle passiert und im Katalog angekommen. Die Kennung `inneres-heimat` bleibt **absichtlich** stehen: eine stabile Kennung, die bei jeder Umbenennung mitwandert, wäre keine |
+| Generierter Seed | `20260713_source_architecture_seed.sql`: **2 Zeilen**, nur das Namensfeld von `rp-committee-inneres` und `rp-committee-verkehr`. **0** neue Abrufwege · **0** neue Herausgeber · **0** neue Zuordnungen · **0** Änderung an Id, URL, Suchbegriffen, `status`, `activation_mode`, `is_critical`. Der Landesmodul-Seed ist **byte-identisch unverändert** |
+| Tests | `bundestag-ausschuesse-test.js` **36 → 54** Prüfungen (Gruppe 6, s. §6c) · `paketvollstaendigkeit-test.js`: die Sonderfall-Prüfung von 5 auf 7 nachgezogen **und** um die namentliche Liste erweitert, damit sie nicht nur zählt · `paketzuweisung-nachweis-test.js`: Profil-Ausschussname auf die amtliche Bezeichnung gebracht |
+
+### 6c · Zusicherung: Bezeichnung, Schreibweise, Nummer (18 Prüfungen)
+
+Neue Gruppe 6 in `scripts/bundestag-ausschuesse-test.js`. Sie prüft **keine Zählwerte**:
+
+- Nr. 4 heißt „Innenausschuss", Nr. 15 „Verkehrsausschuss" — namentlich festgenagelt.
+- Die stabile Kennung `inneres-heimat` überlebt die Umbenennung.
+- **Negativkontrolle:** fällt der Katalog auf „Ausschuss für Inneres und Heimat" zurück, erscheint
+  das als `abweichenderName` **mit** Nachweis, dass die Bezeichnung einer früheren WP gehört.
+- Nummern 1–24 lückenlos und eindeutig; Nummer und Listenposition über zwei unabhängige Zugriffe
+  kreuzgeprüft; ein Vertauschen ohne Nummernpflege fällt auf.
+- Nr. 22 = Kultur und Medien und Nr. 13 = Bildung/Familie, jeweils gegen das amtliche
+  Dokumentpräfix (`PA22`, `a13`).
+- Schreibweise strukturell geprüft, mit Negativkontrollen gegen `Innen-Ausschuss`,
+  `ausschuss für Inneres`, `Ausschuss Inneres` und einen Leerzeichen-Rest.
+- **Kein aktueller Ausschuss darf mit einer Webarchiv-Seite belegt sein**; jede veraltete
+  Bezeichnung muss einer WP < 21 zugeordnet und belegt sein.
+- Die Abrufgrenze des Drucksachen-Volltextes ist als Datum hinterlegt (nicht als Prosa) und
+  mindestens 3 amtliche Belege sind eingetragen.
+- 25 → 24: genau ein Ausschuss weniger als in der 20. WP.
+- Die korrigierten Bezeichnungen kommen im Katalog an (`rp-committee-inneres` heißt
+  „Innenausschuss").
+
+### Bewertung
+
+Für die **Anzahl** und für **22 der 24 Bezeichnungen** gilt: die im Repository verwendete
+Ausschussstruktur stimmt mit der amtlichen Bundestagsgrundlage überein. Für **2 Bezeichnungen und
+die Reihenfolge der Positionen 20–24** galt das **nicht** — sie sind korrigiert. **Nach der
+Korrektur stimmt die im Repository verwendete Ausschussstruktur — Anzahl, amtliche Bezeichnungen,
+Schreibweise und Ausschussnummerierung — vollständig mit der amtlichen Bundestagsgrundlage
+überein**, mit der einen benannten Grenze, dass der Volltext der Drucksache 21/150 aus dieser
+Umgebung nicht abrufbar war und der Abgleich deshalb auf den amtlichen Beschlussseiten,
+Ausschussseiten und Tagesordnungen des Bundestages beruht.
+
+### Nebenbefund außerhalb dieses Themas (nicht geändert)
+
+`seeds/entities.js` führt die Bundestagsausschüsse **ein zweites Mal** als
+`political_entities`-Zeilen (`committee-bt-*`) — mit **23** Einträgen und teils Bezeichnungen der
+20. WP („Ernährung und Landwirtschaft", „Digitales", „Bauen und Wohnen", „Bildung und Forschung",
+„Klima und Umwelt", „Inneres und Heimat"). Diese Zeilen gehören **nicht** zum Paket- und
+Herausgebermodell (kein `political_entity_id` an Herausgebern oder Abrufwegen); sie versorgen die
+**Radar-/Matching**-Schicht (`radarState.js`), und ihr `canonical_key` wird aus dem Namen abgeleitet
+(`normalizeCommittee`). Eine Umbenennung würde dort Matching-Verhalten ändern und liegt damit
+außerhalb von Punkt 13. **Bewusst nicht geändert, hier benannt statt stillschweigend gelassen** —
+nächster sinnvoller Schritt ist ein eigener kleiner Sprint, der diese Zeilen aus
+`seeds/bundestag-ausschuesse.js` ableitet, statt sie parallel zu pflegen.
+
 ## 3 · Vollständigkeitsmatrix
 
 **8 Pakete im Code-Seed** (7 in der Production-DB — die zwei Landes-Parteipakete aus #118 warten
@@ -342,7 +473,7 @@ strikte Trennung Region ↔ Fachthema ist gemessen intakt.
 |---|---|---|---|
 | **V-1** | **behoben (§2b.1)** — vormals: **`regional-niedersachsen` hatte keinen benannten regionalen Herausgeber.** Alle 4 Abrufwege sind Google-News-**Themensuchen** ohne `site:`-Filter → Herausgeber ist der Aggregator. 0 journalistische, 0 amtliche Beleglage. Zusätzlich sind alle 4 Wege thematisch auf Arbeit/Soziales gebunden, obwohl das Paket nach **Region** zugewiesen wird — ein Mandat derselben Region mit anderem Schwerpunkt erhält eine thematisch fremde Regionalversorgung. Die regionalen Herausgeber der Region **sind** im Katalog vorhanden (Braunschweiger Zeitung, Salzgitter Zeitung, regionalHeute, HAZ, Neue Presse, NDR), werden aber von der Kuratierung entfernt: `keepCuratedSource` lässt `type: "media"` erst ab `priority >= 64` durch, regionale Medien tragen 52–60 | `lib/helmut/sources.js` (`regionalSources`, `stateAndConstituencySources`, `keepCuratedSource`); Rollenmessung im vereinigten Modell | **Behoben — ohne Crawl-Kosten.** Statt die Kuratierungsschwelle global anzuheben (das wären rund 20 zusätzliche Google-News-Abrufe je Crawl gewesen), wurden **genau 7** Wege gezielt an das Paket gebunden und **vorbereitet inaktiv** gehalten (`paused`/`manual`, `active: false`). 5 davon sind Bestandsquellen, 2 sind die im Katalog fehlende amtliche Landesebene. Die Aktivierung bleibt eine eigene Freigabeentscheidung |
 | **V-2** | **präzisiert (§2b.2)** — **`die-linke-brandenburg` kann 2 seiner 3 Pflichtklassen nicht besetzen.** `fraktion_pilot` und `person_pilot` existieren fachlich nicht: Die Linke hat in der 8. Wahlperiode keine Landtagsfraktion in Brandenburg (LTW 22.09.2024 unter 5 %), und es gibt keinen MdL der Partei | `seeds/landesmodule-kandidaten.js`, `unbesetztePilotklasse()`-Begründungen | **Als „fachlich nicht anwendbar" ausgewiesen — und jetzt überprüfbar.** Die Pflichtklassen werden **nicht** entfernt; jede Ausnahme trägt stabile Kennung, politische Begründung, Wahlperiode, amtlichen Beleg und eine gegen die kanonische Parlamentszusammensetzung geprüfte Voraussetzung. Ergebnis: „vollständig mit belegten Ausnahmen". Ein Ersatz aus fremder Partei ist ausgeschlossen |
-| **V-3** | **Das neutrale Pflicht-Basispaket enthielt nur 22 der 23 ständigen Bundestagsausschüsse des Katalogs.** Genau der Ausschuss für Arbeit und Soziales fehlte — er lag ausschließlich im **Themenpaket** `arbeit-und-soziales`, das ein Mandat nur bei passendem Profil erhält. Jedes andere Mandat hätte 22 von 23 Ausschüssen bekommen, und die Lücke wäre der Profilform des Pilotmandanten gefolgt, obwohl `bund-basis` „alle Ausschuesse" zusagt | `packageKeysForSource`; Vollzähligkeitsregel `alle_institutionellen_ausschuesse` | **Behoben.** Ein institutioneller Ausschussweg gehört jetzt immer auch in `bund-basis`. Wirkung: **+1** `package_paths`-Zeile, **0** neue Abrufwege, **0** Änderung an Aktivierungsmodi. Der Weg war schon vorher katalogaktiv (`auto`) — es entsteht **kein** zusätzlicher Abruf |
+| **V-3** | **Das neutrale Pflicht-Basispaket enthielt nur 22 der 23 ständigen Bundestagsausschüsse des Katalogs** (Katalogstand *bei Entdeckung*; die Sollmenge ist inzwischen auf die amtlichen **24** korrigiert, §2a, und die Bezeichnungen gegen die amtliche Grundlage abgeglichen, §2c). Genau der Ausschuss für Arbeit und Soziales fehlte — er lag ausschließlich im **Themenpaket** `arbeit-und-soziales`, das ein Mandat nur bei passendem Profil erhält. Jedes andere Mandat hätte 22 von 23 Ausschüssen bekommen, und die Lücke wäre der Profilform des Pilotmandanten gefolgt, obwohl `bund-basis` „alle Ausschuesse" zusagt | `packageKeysForSource`; Vollzähligkeitsregel `alle_institutionellen_ausschuesse` | **Behoben.** Ein institutioneller Ausschussweg gehört jetzt immer auch in `bund-basis`. Wirkung: **+1** `package_paths`-Zeile, **0** neue Abrufwege, **0** Änderung an Aktivierungsmodi. Der Weg war schon vorher katalogaktiv (`auto`) — es entsteht **kein** zusätzlicher Abruf |
 | **V-4** | **Jede regionale Quelle landete im Niedersachsen-Paket**, unabhängig von ihrer echten Region. Unter der Production-Kuratierung fiel das nicht auf (nur Niedersachsen-Quellen überleben), mit `HELMUT_SOURCE_CURATION=off` wären es **30 fremde Regionen** in einem Niedersachsen-Paket gewesen | `packageKeysForSource` (alt: `if (source.regional) keys.push("regional-niedersachsen")`) | **Behoben.** Die Zuordnung läuft über die Regionsbegriffe der Paketdefinition; eine regionale Quelle ohne Regionsbezug bleibt bewusst ohne Paket. Der generierte Seed ist unter Production-Kuratierung **unverändert** (0 Diff-Zeilen aus dieser Änderung) |
 | **V-5** | **Die Regionsbegriffe lagen doppelt** — einmal im Profil-Resolver, einmal implizit im Paketinhalt. Zuweisung und Paketinhalt konnten auseinanderlaufen | `profile-packages.js` vs. `seeds/packages.js` | **Behoben.** Eine Quelle der Wahrheit: `REGION_TERMS_BY_PACKAGE` in der Paketdefinition; der Resolver liest sie von dort |
 | **V-6** | **Der Admin-Report weist Pflichtklassen als `present: 0` aus.** Ursache ist nicht fehlendes Tagging (das gibt es jetzt), sondern dass der Report auf `buildFullModel()` arbeitet, das für Berlin/Brandenburg keine Wege kennt | `admin-report.js` §Länder | **Erkannt, Kommentar korrigiert, Umsetzung als OP-23 vermerkt.** Der `catalog`-Eingang speist auch Aktivierung und Qualitätsbericht — 18 vorbereitete Landeswege würden dort Kennzahlen verschieben. Die Anzeige **untertreibt**, erzeugt also kein falsches Grün |
@@ -407,11 +538,17 @@ kommen gegenüber der bisherigen Vorschau **genau zwei** Effekte hinzu:
 1. `required_classes` wird für die vier Bundespakete gesetzt (`on conflict … do update`) — von
    `{}` auf 7 / 10 / 1 / 1 Klassen. Reine Metadaten für die Vollständigkeitsanzeige; **kein**
    Einfluss auf Crawl, Aktivierung oder Matching.
-2. **Metadaten ohne Laufzeitwirkung:** korrigierte `name`-Werte für 22 Ausschuss- und 6
-   Fraktions-/Parteiwege sowie ein präzisierter `purpose` bei `regional-niedersachsen`. Die
-   `on-conflict`-Klausel des Seeds aktualisiert `name` heute **nicht** — die Datenbank behält die
-   alten Bezeichnungen bis zu einem eigenen gezielten `update` (siehe R-2). `purpose` **wird**
-   aktualisiert.
+2. **Metadaten ohne Laufzeitwirkung:** korrigierte `name`-Werte für **23** Ausschuss- und **6**
+   Fraktions-/Parteiwege (**29** insgesamt) sowie ein präzisierter `purpose` bei
+   `regional-niedersachsen`. Die `on-conflict`-Klausel des Seeds aktualisiert `name` heute
+   **nicht** — die Datenbank behält die alten Bezeichnungen bis zu einem eigenen gezielten
+   `update` (siehe R-2). `purpose` **wird** aktualisiert.
+   *Gemessen, nicht geschätzt:* Vergleich der `retrieval_paths`-Namen im Seed auf `main` (`9f1def5`,
+   144 Wege) gegen diesen Branch (152 Wege) — 8 neue Wege, 29 geänderte Namen. Die
+   Bezeichnungskorrektur aus §2c ändert diese **Anzahl nicht** (`rp-committee-inneres` und
+   `rp-committee-verkehr` waren bereits unter den 29), sondern nur zwei Zielwerte:
+   „Ausschuss für Inneres und Heimat" → **„Innenausschuss"**, „Ausschuss für Verkehr" →
+   **„Verkehrsausschuss"**. Frühere Angabe „22 Ausschusswege" war um eins zu niedrig.
 3. **+9** `package_paths`-Zeilen: `pkg-bund-basis` ↔ `rp-ausschuss-arbeit-soziales` ·
    `pkg-bund-basis` ↔ `rp-committee-wahlpruefung` · **7×** `pkg-regional-niedersachsen` ↔ die
    benannten Niedersachsen-Wege.
@@ -451,10 +588,21 @@ Alle übrigen Soll-Zahlen des Runbooks bleiben unverändert.
   geprüft werden kann: ob die laufende Wahlperiode *heute noch* die 21. bzw. 8. ist. Das ist eine
   externe Tatsache und braucht eine bewusste Nachprüfung.
 - **Der Volltext der Drucksache 21/150 wurde nicht gelesen.** Die Sollmenge stützt sich auf
-  amtliche Bundestagsdokumente der 21. Wahlperiode (Ausschuss-Tagesordnungen, kanonische
-  Ausschussseiten), weil `bundestag.de`/`dserver.bundestag.de` aus dieser Sitzung nicht abrufbar
-  sind. Jeder Eintrag nennt seine Fundstelle; ein direkter Abgleich gegen 21/150 bleibt
-  empfohlen (§9).
+  amtliche Bundestagsdokumente der 21. Wahlperiode (die drei Beschlussseiten, kanonische
+  Ausschussseiten, Ausschuss-Tagesordnungen), weil `bundestag.de`/`dserver.bundestag.de` aus dieser
+  Sitzung nicht abrufbar sind. Jeder Eintrag nennt seine Fundstelle; ein direkter Abgleich gegen
+  21/150 bleibt empfohlen (§9). **Diese Grenze ist jetzt maschinenlesbar** hinterlegt
+  (`EINSETZUNGSBESCHLUSS.volltext_abrufbar: false`) und getestet — sie kann nicht stillschweigend
+  vergessen werden. §2c zeigt allerdings, wie weit der Abgleich ohne den Volltext trägt: Anzahl,
+  alle 24 Bezeichnungen, Schreibweise und Nummerierung waren prüfbar — und zwei Bezeichnungen
+  waren falsch.
+- **Die Ausschussstruktur ist nur für die 21. Wahlperiode belegt.** Die amtliche Nummerierung ist
+  **nicht** über Wahlperioden hinweg gültig (Tourismus war in der 20. WP Nr. 20, in der 21. ist er
+  Nr. 23), und Bezeichnungen wandern zurück und vor (Innenausschuss: 18. → 19./20. → 21.). Eine
+  Bezeichnung „von früher" ist deshalb nie ein Beleg für heute.
+- **`seeds/entities.js` ist nicht Teil dieses Nachweises.** Die dortigen 23 `committee-bt-*`
+  `political_entities` tragen teils Bezeichnungen der 20. WP. Sie versorgen die Radar-/Matching-
+  Schicht, nicht das Paket-/Herausgebermodell, und wurden bewusst nicht geändert (§2c, Nebenbefund).
 - **Kein Nachweis für Production-Zeilen.** Bewertet ist der Code-Seed (8 Pakete). Die
   Production-DB führt 7 Pakete + ein personenbezogenes; die Angleichung ist die
   freigabepflichtige Seed-Einspielung.
@@ -467,25 +615,28 @@ Alle übrigen Soll-Zahlen des Runbooks bleiben unverändert.
 
 | Schritt | Art | Zuständig |
 |---|---|---|
-| Sollmenge einmal direkt gegen den Volltext der Drucksache 21/150 abgleichen (Bezeichnungen und Reihenfolge) | externe Primärquelle, read-only | Betreiber (Netzzugang zu `dserver.bundestag.de`) |
+| Sollmenge einmal direkt gegen den **Volltext** der Drucksache 21/150 abgleichen — **einzige offene Restprüfung** der Ausschussstruktur. Anzahl, alle 24 Bezeichnungen, Schreibweise und Nummerierung sind in §2c gegen die amtlichen Beschluss- und Ausschussseiten abgeglichen | externe Primärquelle, read-only | Betreiber (Netzzugang zu `dserver.bundestag.de`) |
+| `committee-bt-*`-Entitäten in `seeds/entities.js` aus `seeds/bundestag-ausschuesse.js` ableiten statt parallel pflegen (23 Zeilen, teils 20.-WP-Bezeichnungen) | Code, berührt Radar-/Matching-Verhalten — eigener Sprint | frei planbar |
 | Aktivierung der benannten Niedersachsen-Basis (7 Wege, dann +7 Abrufe je Crawl) | Kosten-/Laufzeitentscheidung | freigabepflichtig |
-| Amtliche Namen der 22 Ausschuss- und 6 Fraktionswege in die Datenbank nachziehen (`on-conflict` aktualisiert `name` nicht) | gezieltes `update`, siehe R-2 | freigabepflichtig |
-| `regional-niedersachsen` mit benannten regionalen Herausgebern versorgen (Kuratierungsschwelle oder gezielte Ausnahme) | Kosten-/Laufzeitentscheidung, ≈ 20 zusätzliche Abrufe je Crawl | Betreiber |
+| Amtliche Namen der **23** Ausschuss- und **6** Fraktionswege in die Datenbank nachziehen (`on-conflict` aktualisiert `name` nicht) | gezieltes `update`, siehe R-2 | freigabepflichtig |
+| ~~`regional-niedersachsen` über eine höhere Kuratierungsschwelle versorgen (≈ 20 zusätzliche Abrufe je Crawl)~~ | **entfallen** — durch die 7 gezielt gebundenen, vorbereiteten Wege in §2b.1 ersetzt; die Schwelle bleibt unangetastet | — |
 | Pflichtklassenanzeige im Admin an das vereinigte Modell hängen | Code, OP-23 | frei planbar |
 | Seed `20260713` einspielen, damit `required_classes` und die Ausschusszuordnung in der DB wirken | Production-Datenänderung | freigabepflichtig |
 
 ## 10 · Reproduktion
 
 ```
-node scripts/bundestag-ausschuesse-test.js          # 36/36 — Ausschuss-Sollmenge (extern verankert)
+node scripts/bundestag-ausschuesse-test.js          # 54/54 — Ausschuss-Sollmenge: Anzahl, Bezeichnung, Nummer
 node scripts/parlamentszusammensetzung-test.js      # 65/65 — Fraktionen + nicht-anwendbar
 node scripts/paketvollstaendigkeit-test.js          # 99/99 — fachliche Vollständigkeit
-node scripts/source-architecture-test.js            # 98/98 — relationales Fundament
+node scripts/source-architecture-test.js            # 99/99 — relationales Fundament
 node scripts/profile-packages-test.js               # 69/69 — Profil -> Paket
+node scripts/paketzuweisung-nachweis-test.js        # 147/147 — Profil -> Paket gegen den echten Katalog
 node scripts/seed-drift-test.js                     # Seed == Generator
-node scripts/seed-restore-test.js                   # 43/43 — Seed-Wirkung + Rückweg
+node scripts/seed-restore-test.js                   # 46/46 — Seed-Wirkung + Rückweg
 node scripts/generate-source-architecture-seed.js   # danach: git diff == leer
-node scripts/run-offline-tests.js                   # gesamte Offline-Suite
+node scripts/run-offline-tests.js                   # 150/150 Suiten
+node scripts/browser-smoke-test.js                  # 32/32 — Pflicht-CI-Gate
 ```
 
 Die Bewertung ist auch direkt abfragbar, ohne Datenbank und ohne Netz:

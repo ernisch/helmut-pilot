@@ -41,7 +41,7 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | Freigabevorlage Quellen-Seed-Einspielung (Soll-Zahlen, Idempotenznachweis, Go-/Stop-Kriterien) | PR #123, gemergt 2026-07-25 (`bed7f53`), CI grün |
 | **Production-Inventur aller Quellenpakete** (7 Pakete in der DB, 8 im Code-Seed seit #118; 163 Abrufwege; Ertrag/letzte Lieferung/Fehler je Paket) | `quellenarchitektur/30-paket-inventur-production.md`; PR #124, gemergt 2026-07-25 (`118e90c`), CI grün, Deployment `READY` |
 | **Automatische Profil→Paket-Zuweisung belegt** — Bund/Berlin/Brandenburg gegen den echten Production-Katalog, ohne Codeänderung; keine Mandanten-Hardcodes, Bestandsmandanten unverändert | `scripts/paketzuweisung-nachweis-test.js` 147/147, Inventur §6; PR #124, gemergt 2026-07-25 (`118e90c`) |
-| **Fachliche Vollständigkeit aller Quellenpakete belegt** (Phase-1-Punkt 13) — alle **8** Pakete abgeschlossen: **7 vollständig + 1 vollständig mit belegten Ausnahmen**, 0 teilweise, 0 blockiert. Ausführbares Kriterium je Paket (Pflichtklassen · Pflicht-Herausgeberklassen · Vollzähligkeit · begründete Überschneidungen · geprüfte Nicht-Anwendbarkeit); **keine** Vollzähligkeitsregel ist mehr katalogrelativ: Ausschüsse **24/24** und Fraktionen **5/5** gegen amtliche Sollmengen | `quellenarchitektur/31-paketvollstaendigkeit.md`; `bundestag-ausschuesse-test.js` 36/36, `parlamentszusammensetzung-test.js` 65/65, `paketvollstaendigkeit-test.js` 99/99, Offline-Suite 150/150; Branch `claude/helmut-phase1-punkt13-9iwu69` |
+| **Fachliche Vollständigkeit aller Quellenpakete belegt** (Phase-1-Punkt 13) — alle **8** Pakete abgeschlossen: **7 vollständig + 1 vollständig mit belegten Ausnahmen**, 0 teilweise, 0 blockiert. Ausführbares Kriterium je Paket (Pflichtklassen · Pflicht-Herausgeberklassen · Vollzähligkeit · begründete Überschneidungen · geprüfte Nicht-Anwendbarkeit); **keine** Vollzähligkeitsregel ist mehr katalogrelativ: Ausschüsse **24/24** und Fraktionen **5/5** gegen amtliche Sollmengen. **Ausschussstruktur zusätzlich Bezeichnung für Bezeichnung gegen die amtliche Bundestagsgrundlage abgeglichen** (Anzahl, Namen, Schreibweise, Ausschussnummer, Sonderfälle, Umbenennungen): 22 von 24 stimmten, **2 amtliche Bezeichnungen korrigiert** (Nr. 4 → „Innenausschuss", Nr. 15 → „Verkehrsausschuss") | `quellenarchitektur/31-paketvollstaendigkeit.md` §2a–§2c; `bundestag-ausschuesse-test.js` 54/54, `parlamentszusammensetzung-test.js` 65/65, `paketvollstaendigkeit-test.js` 99/99, Offline-Suite 150/150, Browser-Smoke 32/32; Branch `claude/helmut-phase1-punkt13-9iwu69` |
 
 ## 3 · Teilweise abgeschlossen (Code da, Abnahme fehlt)
 
@@ -198,6 +198,7 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 | 2026-07-26 | **Vorbereitete Pflichtquellen statt globaler Kuratierungsschwelle** — `regional-niedersachsen` bekommt seine benannte Basis über 7 gezielt gebundene Wege im Zustand `paused`/`manual` + `active: false`. Das Anheben der Kuratierungsschwelle (rund 20 zusätzliche Google-Abrufe je Crawl) ist damit **nicht** nötig; die Aktivierung bleibt eine eigene Freigabeentscheidung |
 | 2026-07-26 | **„Fachlich nicht anwendbar" ist nur mit überprüfbarer Voraussetzung zulässig** — stabile Kennung, politische Begründung, Wahlperiode, amtlicher Beleg und eine Prüfung gegen `seeds/parlamentszusammensetzung.js`. Eine unbestätigte Ausnahme lässt die Klasse als offene Lücke stehen; Freitext genügt nicht mehr |
 | 2026-07-26 | **Auch die Fraktionssollmenge wird extern verankert** — die Alt-Zählung „8 von 8" war fachlich falsch (FDP und BSW nicht im 21. Bundestag, SSW ohne Fraktionsstatus). Richtig sind 5 Fraktionen. Die drei Quellen bleiben erhalten, werden aber als `parteien_ohne_fraktionsstatus` geführt |
+| 2026-07-26 | **Die amtliche Bezeichnung wird je Ausschuss belegt, nicht aus der Anzahl geschlossen** — die Sollmenge hatte mit 24 die richtige Anzahl und trotzdem für 2 Ausschüsse die falsche Bezeichnung („Ausschuss für Inneres und Heimat" ist die der 20. WP, „Ausschuss für Verkehr" war nie amtlich). Die Sollmenge trägt jetzt zusätzlich die **amtliche Ausschussnummer**; kein aktueller Ausschuss darf mit einer Webarchiv-Seite einer älteren Wahlperiode belegt werden |
 | 2026-07-26 | **Die Ausschuss-Sollmenge wird extern verankert, nicht aus dem Katalog abgeleitet** — eine katalogrelative Vollzähligkeitsprüfung ist per Konstruktion erfüllbar und hat den Fehlbestand 23 statt 24 verdeckt. Kanonische Quelle: `seeds/bundestag-ausschuesse.js` (Drucksache 21/150) |
 | 2026-07-26 | **Katalog-Ids der Ausschusswege bleiben eingefroren**, auch wo der Slug nicht mehr zum amtlichen Namen passt. Eine Id-Änderung würde beim Seed-Einspielen eine neue `retrieval_paths`-Zeile anlegen und die alte als weiter gecrawlte Waise im Pflichtpaket zurücklassen. Die fachliche Bindung läuft über `ausschussKey` |
 | 2026-07-26 | **Ein ständiger Bundestagsausschuss gehört immer auch in `bund-basis`** — die Zusage „alle Ausschuesse" des neutralen Pflichtpakets ist eine Vollzähligkeitsregel und wird jetzt gezählt, nicht behauptet. Zuvor fehlte genau der Ausschuss des Pilotmandats im Pflichtpaket |
@@ -495,10 +496,12 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
   vorbereitet ≠ aktiv · Determinismus. Die Klasse eines Abrufwegs wird deterministisch aus
   committeten Katalogmerkmalen abgeleitet (neues Modul
   `lib/helmut/quellenarchitektur/paket-vollstaendigkeit.js`), nicht aus einer gepflegten Liste.
-- **Ergebnis: 6 vollständig · 2 teilweise vollständig · 0 blockiert.** Vollständig:
-  `bund-basis` (7/7 Klassen, 23/23 Ausschüsse, 8/8 Fraktionen), `arbeit-und-soziales` (10/10),
-  `die-linke-bund` (1/1), `berlin-basis` (**12/12**), `brandenburg-basis` (**12/12**),
-  `die-linke-berlin` (3/3).
+- **Zwischenergebnis dieses ersten Sprints — inzwischen überholt:** 6 vollständig · 2 teilweise ·
+  0 blockiert, mit `bund-basis` als „7/7 Klassen, 23/23 Ausschüsse, 8/8 Fraktionen".
+  **Beide Zählwerte waren falsch** (richtig: 24 Ausschüsse, 5 Fraktionen) — sie stammten aus einer
+  katalogrelativen Prüfung. Der **aktuelle** Stand steht in der Tabelle in §2 und im kanonischen
+  Nachweis `quellenarchitektur/31-paketvollstaendigkeit.md`: **7 vollständig + 1 vollständig mit
+  belegten Ausnahmen**, Ausschüsse **24/24**, Fraktionen **5/5**.
 - **Gefundene Lücken (6, davon 3 behoben):**
   1. **V-3 (behoben):** Das neutrale Pflicht-Basispaket enthielt nur **22 der 23** ständigen
      Bundestagsausschüsse — es fehlte genau der Ausschuss für Arbeit und Soziales, der
@@ -523,11 +526,17 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
      (`type: "media"` erst ab `priority >= 64`, regionale Medien tragen 52–60). Das Anheben
      dieser Schwelle wären rund **20 zusätzliche Google-News-Abrufe je Crawl** — eine Kosten-/
      Laufzeitentscheidung und damit freigabepflichtig, zumal die Google-Konzentration (B1) der
-     wichtigste offene Architekturpunkt ist. Paket bleibt **teilweise vollständig**.
+     wichtigste offene Architekturpunkt ist. Paket blieb zunächst **teilweise vollständig** —
+     **überholt:** im Abschlusssprint über 2 benannte amtliche + 5 wiederverwendete Bestandsquellen
+     geschlossen, ohne Schwellenanhebung und ohne Aktivierung (§2b.1 des Nachweises).
   5. **V-2 (erkannt, als fachlich unmöglich ausgewiesen):** `die-linke-brandenburg` kann 2 seiner
      3 Pflichtklassen nicht besetzen — Die Linke hat in der 8. Wahlperiode keine
      Landtagsfraktion in Brandenburg und keinen MdL. Die Pflichtklassen werden **nicht** entfernt
      (das wäre eine Abschwächung des Kriteriums); ein Ersatz aus fremder Partei ist ausgeschlossen.
+     **Überholt:** die Nicht-Anwendbarkeit ist jetzt nicht mehr Fließtext, sondern eine überprüfbare
+     Ausnahme mit stabiler Kennung, Wahlperiode, amtlichem Beleg und Voraussetzungsprüfung gegen
+     `seeds/parlamentszusammensetzung.js` (§2b.2) — Ergebniskategorie
+     `vollstaendig_mit_belegten_ausnahmen`.
   6. **V-6 (erkannt, Umsetzung als OP-23):** Die Pflichtklassenanzeige im Admin zeigt weiterhin
      `present: 0`. Ursache ist **nicht** fehlendes Klassen-Tagging, sondern dass
      `buildSourceAdminReport` auf `buildFullModel()` arbeitet, das die Berlin-/Brandenburg-Wege
@@ -544,11 +553,12 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
   Wirksamkeitsnachweis, dass die BE/BB-Nichtaktivierungsprobe überhaupt Zähne hat). Zusätzlich ein
   **Strukturriegel**: schlägt an, sobald der Live-Crawlpfad `packageKeysForSource` oder
   `buildFullModel` importiert.
-- **Tests (echte Zahlen):** `paketvollstaendigkeit-test` **89/89** · `source-architecture-test`
-  **98/98** · `profile-packages-test` **69/69** · `seed-restore-test` **43/43** ·
-  `seed-drift-test` grün · **Offline-Suite 148/148 grün** (37 s). Kein Browser-Smoke nötig (keine
-  UI-Änderung). Generatorlauf wiederholt: beide Seeds byte-identisch; der Landesmodul-Seed ist
-  gegen `main` **unverändert**.
+- **Tests dieses ersten Sprints (echte Zahlen, seither gewachsen):** `paketvollstaendigkeit-test`
+  **89/89** · `source-architecture-test` **98/98** · `profile-packages-test` **69/69** ·
+  `seed-restore-test` **43/43** · `seed-drift-test` grün · **Offline-Suite 148/148 grün** (37 s).
+  Kein Browser-Smoke nötig (keine UI-Änderung). Generatorlauf wiederholt: beide Seeds
+  byte-identisch; der Landesmodul-Seed ist gegen `main` **unverändert**. Aktuelle Zahlen nach den
+  drei Folgesprints: siehe Tabelle §2 (Zeile Punkt 13).
 - **Production-Sicherheitsnachweis (verifiziert, nicht behauptet):** Im Modus
   `HELMUT_SOURCE_MODE=on` baut der Scheduler seinen Plan aus den **DB-Zeilen**
   (`listSourceArchitectureRows` → `buildRelationalCrawlPlan`); der Fallback filtert `v1Sources`

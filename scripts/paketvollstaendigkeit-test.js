@@ -155,9 +155,19 @@ check("Themen-Buendel gelten NICHT als Ausschussquelle (Namensverankerung greift
 })());
 check("der institutionelle Ausschuss-Weg gilt als Ausschussquelle",
   catalogPathClasses(v1Sources.find((s) => s.id === "ausschuss-arbeit-soziales")).includes("bundestagsausschuesse"));
-check("die fuenf Ausschuesse ohne 'Ausschuss '-Praefix werden trotzdem erkannt (Kennung statt Name)", (() => {
+// 7 der 24 amtlichen Bezeichnungen beginnen NICHT mit "Ausschuss ": Petitionsausschuss,
+// Auswärtiger Ausschuss, Innenausschuss, Finanzausschuss, Haushaltsausschuss,
+// Verteidigungsausschuss, Verkehrsausschuss. Genau deshalb ist `istInstitutionellerAusschuss`
+// kennungsbasiert und nicht namensbasiert. (Vorher 5: die Korrektur der amtlichen Bezeichnungen
+// von Innen- und Verkehrsausschuss hat zwei weitere Kompositum-Namen hinzugefuegt.)
+check("die 7 Ausschuesse ohne 'Ausschuss '-Praefix werden trotzdem erkannt (Kennung statt Name)", (() => {
   const ohnePraefix = v1Sources.filter((s) => s.ausschussKey && !/^Ausschuss /.test(s.name));
-  return ohnePraefix.length === 5
+  const namen = ohnePraefix.map((s) => s.name).sort();
+  return ohnePraefix.length === 7
+    && JSON.stringify(namen) === JSON.stringify([
+      "Auswärtiger Ausschuss", "Finanzausschuss", "Haushaltsausschuss", "Innenausschuss",
+      "Petitionsausschuss", "Verkehrsausschuss", "Verteidigungsausschuss"
+    ])
     && ohnePraefix.every((s) => catalogPathClasses(s).includes("bundestagsausschuesse"));
 })());
 check("keine Klasse ausserhalb des erklaerten Bundesvokabulars", (() => {
