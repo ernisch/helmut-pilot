@@ -257,6 +257,61 @@ function laufKennzahlen(lauf) {
   const verletzt = k.filter((x) => String(x.urteil).startsWith("VERLETZT"));
   const unbekannt = k.filter((x) => String(x.urteil).startsWith("unbekannt") || x.urteil === "nicht_aus_db_messbar");
 
+  // ---- END-TO-END-KETTE ---------------------------------------------------------------------
+  // Quellen-Telemetrie allein beweist Punkt 14 NICHT. Der Auftrag verlangt die ganze Kette:
+  // Rohdokument -> Knowledge Object -> Vorgang -> Lage/Briefing des Berliner Abnahmeprofils.
+  // Jede Stufe wird EINZELN gemessen; eine Stufe ohne Datengrundlage bleibt `unbelegt`.
+  const ABNAHME_ID = "helmut-abnahme-berlin";
+  const beDocIds = berlinDocs.map((d) => d.id);
+  let koLinks = [], beKos = [], beBriefings = [], abnahmeMandat = [];
+  if (beDocIds.length) {
+    // In Blöcken abfragen: die `in.()`-Liste hat eine praktische Längengrenze.
+    for (let i = 0; i < beDocIds.length; i += 100) {
+      const teil = beDocIds.slice(i, i + 100);
+      koLinks = koLinks.concat(await select(
+        `ko_document_links?select=knowledge_object_id,raw_document_id,created_at&raw_document_id=in.(${teil.join(",")})&limit=5000`
+      ));
+    }
+    const koIds = [...new Set(koLinks.map((l) => l.knowledge_object_id))];
+    for (let i = 0; i < koIds.length; i += 50) {
+      const teil = koIds.slice(i, i + 50);
+      beKos = beKos.concat(await select(
+        `knowledge_objects?select=id,vorgang_id,understanding_status,decision_level,affected_geographies,created_at,policy_field&id=in.(${teil.join(",")})&limit=5000`
+      ));
+    }
+  }
+  beBriefings = await select(`briefings?select=id,user_id,slot,generated_at&user_id=eq.${ABNAHME_ID}&limit=100`);
+  abnahmeMandat = await select(`mandate_profiles?select=user_id,aktiv,geloescht_at,politische_ebene,bundesland&user_id=eq.${ABNAHME_ID}`);
+
+  const verknuepfteDocIds = new Set(koLinks.map((l) => l.raw_document_id));
+  const vorgaenge = [...new Set(beKos.map((k) => k.vorgang_id).filter(Boolean))];
+  const endeZuEnde = {
+    "1_berlinerRohdokumente": berlinDocs.length,
+    "2_davonMitKnowledgeObjectVerknuepft": verknuepfteDocIds.size,
+    "2b_ohneKnowledgeObject": berlinDocs.length - verknuepfteDocIds.size,
+    "3_knowledgeObjectsAusBerlinerDokumenten": beKos.length,
+    "4_vorgaenge": vorgaenge.length,
+    "4b_vorgangIds": vorgaenge.slice(0, 25),
+    "5_koMitEbeneLand": beKos.filter((k) => k.decision_level === "land").length,
+    "5b_koMitGeografieBerlin": beKos.filter((k) =>
+      Array.isArray(k.affected_geographies) && k.affected_geographies.some((g) => /berlin/i.test(String(g)))).length,
+    "6_abnahmeprofilMandatAktiv": abnahmeMandat.length === 1
+      && abnahmeMandat[0].aktiv === true && !abnahmeMandat[0].geloescht_at,
+    "7_lageFuerAbnahmeprofil": beBriefings.filter((b) => b.slot === "lage").length,
+    "7b_briefingsFuerAbnahmeprofil": beBriefings.map((b) => `${b.slot}@${b.generated_at}`),
+    "8_verlustzustaende": {
+      hinweis: "`skipped-exists` und `skipped-no-cluster` stehen NUR in den Vercel-Runtime-Logs, "
+        + "nicht in der Datenbank (Befund B4). Aus der DB messbar ist ausschliesslich die Luecke "
+        + "'Berliner Rohdokument ohne Knowledge-Object-Verknuepfung'.",
+      berlinerDokumenteOhneKo: berlinDocs.length - verknuepfteDocIds.size
+    },
+    urteil: berlinDocs.length === 0 ? "unbelegt — keine Berliner Rohdokumente"
+      : (verknuepfteDocIds.size === 0 ? "unbelegt — Rohdokumente da, aber kein Knowledge Object"
+        : (vorgaenge.length === 0 ? "unbelegt — Knowledge Objects da, aber kein Vorgang"
+          : (beBriefings.length === 0 ? "teilweise — Vorgang da, aber keine Lage/kein Briefing fuer das Abnahmeprofil"
+            : "vollstaendig belegt")))
+  };
+
   const ohneRohzeilen = (l) => { if (!l) return null; const { rows, ...rest } = l; return rest; };
 
   const ergebnis = {
@@ -271,6 +326,7 @@ function laufKennzahlen(lauf) {
     okLaeufeJeStufe1Quelle: okJeStufe1Quelle,
     stufe2TelemetriebelegErfuellt: stufe2Freigegeben,
     berlinerRohdokumenteGesamt: berlinDocs.length,
+    endeZuEnde,
     rueckstand, llmHeute: heuteBudget, aktiveLocks,
     abbruchkriterien: k,
     zusammenfassung: {
@@ -296,6 +352,12 @@ function laufKennzahlen(lauf) {
     console.log(`\n--- Vollcrawls mit Berliner Zeilen: ${mitBerlin.length}`);
     console.log(`--- ok-Laeufe je Stufe-1-Quelle: ${JSON.stringify(okJeStufe1Quelle)} -> Stufe 2 ${stufe2Freigegeben ? "waere freigegeben" : "bleibt gesperrt"}`);
     console.log(`--- Berliner Rohdokumente gesamt: ${berlinDocs.length} · Rueckstand ${rueckstand} · LLM heute ${heuteBudget} · aktive Locks ${aktiveLocks}\n`);
+    console.log("--- Ende-zu-Ende-Kette (Rohdokument -> KO -> Vorgang -> Lage/Briefing)");
+    for (const [k, val] of Object.entries(endeZuEnde)) {
+      if (k === "urteil") continue;
+      console.log(`    ${k}: ${typeof val === "object" ? JSON.stringify(val) : val}`);
+    }
+    console.log(`    URTEIL: ${endeZuEnde.urteil}\n`);
     console.log("--- Abbruchkriterien (§11)");
     for (const x of k) {
       console.log(`  ${String(x.nr).padStart(2)} ${x.urteil.padEnd(34)} ${x.titel}`);
