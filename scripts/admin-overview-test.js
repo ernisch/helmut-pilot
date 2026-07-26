@@ -256,5 +256,59 @@ const errView = api.uebersicht();
 check("H1 Endpoint-Fehler als ruhige Notiz mit Retry", errView.includes("data-adm-retry=\"daily\""));
 check("H2 Uebrige Karten bleiben nutzbar (Budget sichtbar)", errView.includes("KI heute"));
 
+// ── K) Kostenwahrheit im Betriebsbericht (Phase-1-Punkt 17) ──────────────────
+// Der Betreiber ist NICHT technisch. Die Ansicht muss deshalb ohne Fachwissen
+// beantworten: Was ist sicher bekannt? Was ist unbekannt? Was war kostenlos?
+api.clearData();
+api.setData("budget", {
+  day: "2026-07-26", calls: 30, errors: 1, skips: 4, remaining: 70, limit: 100,
+  estimatedCostUsd: 0.0756, byTenant: {}, skipsByReason: {},
+  kostenwahrheit: {
+    gesamt: { aufrufe: 34, gemessen: 29, kostenUnbekannt: 1, keinProvideraufruf: 4, kostenUsd: 0.0756, inputTokens: 102365, outputTokens: 24997 },
+    jeZurechnung: {
+      global: { aufrufe: 24, gemessen: 24, kostenUnbekannt: 0, keinProvideraufruf: 0, kostenUsd: 0.06, inputTokens: 90000, outputTokens: 20000 },
+      direkt: { aufrufe: 6, gemessen: 5, kostenUnbekannt: 1, keinProvideraufruf: 0, kostenUsd: 0.0156, inputTokens: 12365, outputTokens: 4997 },
+      "nicht-zurechenbar": { aufrufe: 4, gemessen: 0, kostenUnbekannt: 0, keinProvideraufruf: 4, kostenUsd: 0, inputTokens: 0, outputTokens: 0 }
+    },
+    unbekannteGruende: { "Provider hat keine Nutzung gemeldet (fehlgeschlagener Aufruf)": 1 },
+    messvollstaendigkeit: "teilweise gemessen",
+    budgetstatus: "Budget frei",
+    klartext: "Bekannte Kosten: 0.0756 USD · zusaetzlich 1 Aufruf(e) mit unbekannten Kosten",
+    preisbasis: { waehrung: "USD", herkunft: "unbelegt-schaetzwert", quelle: null, stand: null, hinweis: "…" },
+    verteilungsgrundlage: { hinweis: "Globale Kosten werden NICHT verteilt." }
+  }
+});
+api.setData("runCosts", {
+  laeufe: [
+    { laufkennung: "crawl-20260726160130-7bznw", lauftyp: "understanding-eager", start: "2026-07-26T16:03:36.000Z", dauerMs: 96006, verarbeiteteEinheiten: 24, zuordnungsweg: "laufkennung", zuordnungExakt: true,
+      kosten: { gesamt: { aufrufe: 8, gemessen: 8, kostenUnbekannt: 0, keinProvideraufruf: 0, kostenUsd: 0.026805, inputTokens: 35080, outputTokens: 9017 } } },
+    { laufkennung: "lage-20260726100107-24czh", lauftyp: "understanding-lage", start: "2026-07-26T10:02:32.000Z", dauerMs: 70022, verarbeiteteEinheiten: 90, zuordnungsweg: "zeitfenster", zuordnungExakt: false,
+      kosten: { gesamt: { aufrufe: 5, gemessen: 4, kostenUnbekannt: 1, keinProvideraufruf: 0, kostenUsd: 0.015024, inputTokens: 21710, outputTokens: 4798 } } }
+  ]
+});
+const kostenwahrheitView = api.kosten();
+check("K1 Bekannte Kosten werden als solche benannt", kostenwahrheitView.includes("Bekannte Kosten heute"));
+check("K2 Unbekannte Kosten erscheinen als eigene Groesse, nicht als 0,00", kostenwahrheitView.includes("Aufrufe mit unbekannten Kosten") && kostenwahrheitView.includes("Betrag NICHT enthalten"));
+check("K3 Kein Gesamtbetrag behauptet, solange Unbekanntes besteht", kostenwahrheitView.includes("unbekannten Kosten") && !kostenwahrheitView.includes("Gesamtkosten heute"));
+check("K4 Abgewiesene Aufrufe sind ausdruecklich kostenlos, nicht ungemessen", kostenwahrheitView.includes("nachweislich 0,00"));
+check("K5 Messvollstaendigkeit in Betreibersprache", kostenwahrheitView.includes("teilweise gemessen"));
+check("K6 Budgetstatus in Betreibersprache", kostenwahrheitView.includes("Budget frei"));
+check("K7 Unbelegte Preisbasis wird als Warnung gezeigt, nicht verschwiegen", kostenwahrheitView.includes("Preisbasis: unbelegter Schätzwert"));
+check("K8 Global und direkt zurechenbar getrennt ausgewiesen", kostenwahrheitView.includes("Global (geteilt)") && kostenwahrheitView.includes("Direkt zurechenbar"));
+check("K9 Noch nicht zurechenbare Kosten sichtbar", kostenwahrheitView.includes("Noch nicht zurechenbar"));
+check("K10 Grund der unbekannten Kosten wird genannt", kostenwahrheitView.includes("Provider hat keine Nutzung gemeldet"));
+check("K11 Keine erfundene Verteilung globaler Kosten", kostenwahrheitView.includes("NICHT verteilt"));
+check("K12 Ungemessene Fremdanbieter werden benannt statt als 0 gefuehrt", kostenwahrheitView.includes("Nicht erfasst und nicht gedeckelt") && kostenwahrheitView.includes("unbekannt</em>, nicht null"));
+check("K13 Kosten je Lauf sichtbar mit Laufkennung", kostenwahrheitView.includes("crawl-20260726160130-7bznw") && kostenwahrheitView.includes("Kosten je Lauf"));
+check("K14 Gemessene Laufzuordnung als 'gemessen' markiert", kostenwahrheitView.includes(">gemessen<"));
+check("K15 Rekonstruierte Laufzuordnung als solche markiert (nie als gemessen)", kostenwahrheitView.includes(">rekonstruiert<"));
+check("K16 Lauf mit unbekanntem Anteil zeigt ihn neben dem Betrag", kostenwahrheitView.includes("+ 1 unbekannt"));
+// Fehlender Block darf die Ansicht nicht zerstoeren (aeltere Server-Antwort).
+api.setData("budget", { day: "2026-07-26", calls: 3, errors: 0, skips: 0, remaining: 97, limit: 100, estimatedCostUsd: 0.01, byTenant: {}, skipsByReason: {} });
+api.setData("runCosts", null);
+const kostenOhneBlock = api.kosten();
+check("K17 Ohne Kostenwahrheit-Block bleibt die Ansicht nutzbar", kostenOhneBlock.includes("Tagesbudget (heute)") && kostenOhneBlock.includes("Kostenwahrheit nicht geladen"));
+check("K18 Ohne Laufkosten bleibt die Ansicht nutzbar", kostenOhneBlock.includes("Laufkosten nicht geladen"));
+
 console.log(`\n${failed === 0 ? "ALLE GRÜN" : failed + " FEHLGESCHLAGEN"} — ${passed}/${passed + failed} Admin-Render-Assertions`);
 process.exit(failed > 0 ? 1 : 0);

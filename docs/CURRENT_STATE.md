@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-26 · **`main`-HEAD:** `1ac89d9` (Merge #135)
+**Letzte Aktualisierung:** 2026-07-26 · **`main`-HEAD:** `4aa15de` (Merge #137)
 
 > **Diese Datei ist der aktuelle Stand.** Bei Widerspruch zu älteren Statusdokumenten
 > gilt diese Datei. Sie enthält **keine Chronik** — Details je offenem Punkt stehen in
@@ -52,6 +52,7 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | `source_id`-Dubletten-Fix | Live-Nachweis „Telemetriezeilen = distinct `source_id`" | OP-19 |
 | Zweitmandanten-Provisionierung + Per-Mandant-Kostendeckel | Migration `20260721` nicht angewandt, `HELMUT_TENANT_LLM_CAP` AUS, DB-seitige Durchsetzung unentschieden | OP-03 |
 | Retention/Löschung | nur Trockenlauf; braucht verbindliche Fristen aus OP-02 | OP-12 |
+| **Kostenmessung je Lauf und je Tag** (Phase-1-Punkt 17) — Auswertung ist belastbar und ehrlich: Beispiellauf **0,026805 USD**, Betriebstag im Mittel **0,1370 USD**, global/direkt **79 %/21 %** gemessen, unbekannte Kosten nie als 0,00; PR #136 | die **Datengrundlage** ist unvollständig: ~16 % Logverlust (K-1) · Preisbasis unbelegt (K-2) · Nicht-LLM-Provider ungemessen und ungedeckelt (K-6) · Gesamtbetrag nur **Untergrenze** · pro Mandant nur die 21 % direkt zurechenbaren Kosten (Rest bleibt global) · Ringpuffer 5 000 (K-7) | Punkt 17 · OP-03 |
 | Understanding-Gate, Cheap-Triage, Scoring, Berlin/Brandenburg | in `shadow`/`off`, Scharfschaltung ist Freigabe | OP-18, OP-21, OP-22 |
 | Pre-Seed-Sicherung + gezielter Seed-Restore (kein `drop table cascade`) — gebaut, adversarial reviewt, isoliert getestet (43/43 lokal, 41/41 in CI; `backup-export-test` 38/38; Suite 147/147). **Am 2026-07-26, 16:47 UTC erstmals real gegen Production gelaufen:** 8/8 Tabellen, 0 Fehler, `vollstaendig: true`, `pruefsummeGesamt` `49a5b92d…`, an `mainCommit 93006e8` gebunden | der **Restore** ist weiterhin nie gegen Production gelaufen; deckt nur 8 Tabellen ab und ersetzt OP-01 nicht | OP-01 |
 | **Berlin-Aktivierungsreife (Phase-1-Punkt 14)** — Gate je Land freigebbar, `manual` ist eine echte Sperre, Aktivierungs-SQL + 3 Rollback-Stufen generiert und getestet, Runbook vollständig. **Zweiter Durchgang 2026-07-26:** Neutralität von `berlin-basis` ist jetzt eine **ausführbare Prüfung** (Code neutral, Production-Bestand **nicht** — Befund A-3 reproduziert), Wege **neu verifiziert** (Aktivierungsset 6 → **4**, zwei Wege veraltet), Lastmodell gegen gemessene Production-Zahlen korrigiert, Profilplan getestet, Aktivierung gestaffelt, Rollback gehärtet. **Dritter Durchgang (Production-Sprint) 2026-07-26:** Ausgangszustand vollständig gemessen, **Sicherung real erstellt**, Dry Run gegen den Ist-Zustand bestätigt (3/3/1/2 Zeilen, 0 Bund, 0 Brandenburg) | die **Production-Aktivierung selbst** — blockiert an einem fehlenden Zugang: `HELMUT_LANDESMODULE` ist aus einer Cloud-Sitzung weder lesbar noch setzbar (`berlin-aktivierung.md` §16.5) | Punkt 14 |
@@ -236,6 +237,13 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
   (Understanding-Rückstand) bleiben offen. Neu belegt: jeder Cron-Lauf erscheint doppelt —
   ein vollständiger Lauf und ~3 min später eine Wiederholung mit `circuit-open` auf fast
   allen Wegen (3 988 Telemetriezeilen gesamt) → gehört zu OP-15.
+- **Kosten (read-only gemessen 2026-07-26):** bekannte LLM-Kosten **0,1370 USD/Betriebstag**
+  im Mittel (7 volle Tage, Spanne 0,118–0,150; 30-Tage-Hochrechnung ≈ 4,11 USD) · einziger
+  bepreister Provider ist `gpt-5-mini` · **79 % global / 21 % direkt mandantenzurechenbar** ·
+  die Zahl ist eine **Untergrenze** (~16 % der Protokolleinträge gehen unter Parallelität
+  verloren) und beruht auf einer **unbelegten** Preisbasis · Supabase, Vercel, Crawl-Volumen,
+  Push und DIP sind ungemessen **und ungedeckelt**. Vollständig:
+  [`betrieb/kostenmessung.md`](betrieb/kostenmessung.md).
 - **Nicht angewandte Migration:** `20260721` (DB-Härtung) — gehört zu OP-03.
 
 ## 10 · Letzte wichtige Entscheidungen
@@ -244,6 +252,9 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 |---|---|
 | 2026-07-26 | **Eine Landesmodul-Aktivierung wird nicht begonnen, solange das Freigabeflag nicht auch zurückgenommen werden kann.** Der Production-Sprint hätte Block A, Testprofil und Stufe 1 rein datenbankseitig ausführen können — er hat es nicht getan. Ohne Vercel-Zugang ist Rollback **Stufe 0** (Flag leeren, ohne DB-Schreibzugriff) nicht verfügbar, und Riegel 1 ist nicht einmal auslesbar. Drei von vier Riegeln zu entfernen, während der vierte weder messbar noch steuerbar ist, ist kein zulässiger Zwischenzustand |
 | 2026-07-26 | **Die Pre-Seed-Sicherung ist erstmals real gelaufen** (8/8 Tabellen, `vollstaendig: true`). Damit ist belegt, dass produktionsrelevante Skripte in einer Cloud-Sitzung lauffähig sind, sobald die Secrets über die Environment-Einstellungen bereitstehen (`CLAUDE.md` §4.9) — der Fehlschlag vom 2026-07-25 lag an fehlenden Zugangsdaten, nicht am Werkzeug |
+| 2026-07-26 | **Unbekannte Kosten werden nie zu 0,00 addiert** — `0,00` ist ausschließlich zulässig, wenn nachweislich **kein** Provideraufruf stattfand. Der Kostenkern trennt dauerhaft `gemessen` / `kosten-unbekannt` / `kein-provideraufruf`; die Altsummen (`getLlmUsageToday`, `getLlmCostSince`) bleiben unverändert bestehen, sind aber ausdrücklich **nicht** die ehrliche Wahrheit |
+| 2026-07-26 | **Preise werden deklariert, nicht korrigiert** — die Preistabelle bleibt unverändert (eine Preisrecherche oder ein aus dem Gedächtnis gesetzter Preis wäre schlechter als ein deklarierter Schätzwert). Stattdessen trägt jede Kostenangabe ihre Herkunft; belegt wird sie vom Betreiber über `HELMUT_LLM_PRICE_SOURCE`. Solange sie unbelegt ist, gilt ein Betrag als **berechnet**, nicht als Providerkosten |
+| 2026-07-26 | **Globale Kosten werden nicht auf Mandanten verteilt** — gemessen sind 79 % geteilte Arbeit; jede Verteilungsformel ohne gemessene Bezugsgröße wäre eine erfundene Wahrheit. Ausgewiesen wird nur die Bemessungsgrundlage (direkt zurechenbar · global · noch nicht zurechenbar) |
 | 2026-07-26 | **Vorbereitete Pflichtquellen statt globaler Kuratierungsschwelle** — `regional-niedersachsen` bekommt seine benannte Basis über 7 gezielt gebundene Wege im Zustand `paused`/`manual` + `active: false`. Das Anheben der Kuratierungsschwelle (rund 20 zusätzliche Google-Abrufe je Crawl) ist damit **nicht** nötig; die Aktivierung bleibt eine eigene Freigabeentscheidung |
 | 2026-07-26 | **„Fachlich nicht anwendbar" ist nur mit überprüfbarer Voraussetzung zulässig** — stabile Kennung, politische Begründung, Wahlperiode, amtlicher Beleg und eine Prüfung gegen `seeds/parlamentszusammensetzung.js`. Eine unbestätigte Ausnahme lässt die Klasse als offene Lücke stehen; Freitext genügt nicht mehr |
 | 2026-07-26 | **Auch die Fraktionssollmenge wird extern verankert** — die Alt-Zählung „8 von 8" war fachlich falsch (FDP und BSW nicht im 21. Bundestag, SSW ohne Fraktionsstatus). Richtig sind 5 Fraktionen. Die drei Quellen bleiben erhalten, werden aber als `parteien_ohne_fraktionsstatus` geführt |
@@ -339,6 +350,7 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 |---|---|---|
 | **Phase-1-Punkt 16: Quellenfehler vollständig automatisch erkennen** | 2026-07-26 | **Teilweise abgeschlossen — Erkennung vollständig gebaut und getestet, Production lesend belegt, 7 Klassen nur testbelegt.** Befund **A-6 behoben**: `source_crawl_telemetry` (13 081 echte Laufzeilen) hatte **keinen Lesepfad**, während `retrieval_paths.last_success_at`/`last_error`/`error_streak` zu **0 von 163** befüllt sind — die Admin-Ansicht las genau die leeren Spalten und meldete **falsches Grün**. Neue zentrale, reine Klassifikation mit **14 Zustandsklassen** und **4 Handlungsstufen**, abgeleitet aus der echten Laufhistorie statt zweitgespeichert (**keine Migration, kein Production-Write**). Fünf belegte Fehlalarmbremsen: übersprungene Läufe und zentrale Drosselung sind **keine** Quellenfehler (1 736 bzw. **4 044** der 13 081 Zeilen), Leer/Veraltet brauchen **zusätzlich** eine überschrittene Lieferpause, ein Einzelausreißer wird nie hochgestuft, zu wenig Daten heißt `unbekannt`. **Production-Gegenprobe (read-only)** über 205 Quellen: 150 ohne Handlungsbedarf, 48 beobachten, 6 zeitnah, **1 akut**; **141 von 154** je gestörten Quellen hatten sich selbst erholt — ein naiver Alarm hätte 154 Meldungen erzeugt, 141 davon bereits erledigt. Deduplizierung gegen echte Daten belegt (**0** neue Meldungen bei unverändertem Zustand). `source-failure` **160/160** (neu), `admin-source-ui` **40/40** (von 20 erweitert), **Offline-Suite 153/153**, Browser-Smoke 32/32. **Keine Production-Mutation, kein Cron, kein Flag, keine Migration.** Berlin/Brandenburg unverändert (beide Pakete bleiben `unbestimmt`, keine Störung behauptet). Punkt 17 unberührt. Details unten. |
 | **Punkt 14 (Production-Sprint): Berlin Stufe 1 aktivieren** | 2026-07-26 | **Blockiert — keine Production-Mutation.** 11 von 12 Startbedingungen erfüllt; Bedingung **10** (notwendige Production-Zugänge) **nicht**: `HELMUT_LANDESMODULE` ist aus einer Cloud-Sitzung weder lesbar noch setzbar (`VERCEL_TOKEN` nicht gesetzt, Vercel-MCP ohne Env-Werkzeug), die Production-App ist nicht erreichbar (`CONNECT` → 403). Damit wäre **Rollback Stufe 0 nicht verfügbar** gewesen → Abbruchkriterium 20 greift vor jeder Mutation. **Erreicht:** vollständiger Ausgangszustand gemessen · **Sicherung erstmals real erstellt** (8/8 Tabellen, `vollstaendig: true` — schließt Go-Kriterium 2 der Seed-Einspielung) · Dry Run gegen den Ist-Zustand bestätigt (**3/3/1/2** Zeilen, **0** Bund, **0** Brandenburg) · Übergabe §16.6. **Nicht getan:** kein `insert`/`update`/`delete`, kein Flag, kein Profil, kein Crawl, keine Stufe 2. Brandenburg unverändert. Details unten. |
+| **Phase-1-Punkt 17: Echte Kostenmessung im Betrieb bestätigen** | 2026-07-26 | **Teilweise abgeschlossen** (Status nach unabhängigem adversarialem Review von PR #136 **von „erfolgreich abgeschlossen" herabgestuft**). **Was erfüllt ist:** Kosten sind **pro Lauf** und **pro Tag** mit read-only Production-Messung belegt (Beispiellauf `crawl-20260726160130-7bznw`: 147 Abrufwege, 940 neue Dokumente, 8 LLM-Aufrufe, **0,026805 USD**; Betriebstag im Mittel **0,1370 USD** über 7 volle Tage), zwei unabhängige Wege liefern identische Zahlen, unbekannte Kosten erscheinen nie als 0,00, und die Trennung global/direkt/nicht-zurechenbar ist gemessen (**79 % / 21 % / 0 %**). **Warum nicht erfolgreich abgeschlossen:** das Abnahmekriterium verlangt einen **vollständigen Production-Kostennachweis**; geliefert ist eine **Untergrenze auf unbelegter Preisbasis**. Die sechs Einschränkungen bestehen unverändert fort: ~16 % Logverlust (K-1) · Preise sind intern deklarierte Schätzwerte (K-2) · Nicht-LLM-Providerkosten ungemessen (K-6) · Gesamtbetrag nur Untergrenze · pro Mandant nur direkt zurechenbare Teilkosten (79 % bleiben global) · Ringpuffer 5 000 (K-7). Der Review fand zusätzlich **4 Code-Defekte im PR selbst**, alle behoben (siehe unten). `kostenmessung-test` **128/128**, `admin-overview` 104/104, Offline-Suite **153/153**, Browser-Smoke 32/32. **Keine Production-Mutation** — ausschließlich `select`. Details unten. |
 | **Punkt 14 (2. Durchgang): Berlin fachlich neutralisieren, aktuell verifizieren, freigabereif machen** | 2026-07-26 | **Teilweise abgeschlossen — Aktivierungsreife für ein reduziertes Set, Production unverändert.** Neutralität ist jetzt eine **ausführbare Prüfung** über Code **und** gemessenen Datenbankbestand: Code neutral, Production **nicht** (Befund A-3 reproduziert), nach Block A neutral. Neuverifikation auf einem Runner mit offenem Egress hat **zwei Wege als veraltet entlarvt** (156 bzw. 41 Tage) — Aktivierungsset **6 → 4**. Pflichtklassen ehrlich neu gezählt: **4 eigenständig, 1 mitabgedeckt, 7 ohne Weg** (vorher „8 von 12 liefern"). Lastmodell gegen gemessene Production-Zahlen korrigiert (beide Terme der Alt-Rechnung waren falsch). Profilplan getestet, zwei Befunde (P-1, P-2). Aktivierung gestaffelt, Rollback gehärtet. **Empfehlung: Go mit Bedingungen** für das reduzierte Set; harter Blocker bleibt V1. Offline-Suite **152/152**, Browser-Smoke 32/32, `berlin-neutralitaet` 109/109 (neu), `berlin-aktivierung` 123/123. **Keine Production-Mutation.** Brandenburg unverändert und inaktiv. Details unten. |
 | **Phase-1-Punkt 14: Berlin als laufende Versorgung aktivieren** | 2026-07-26 | **Teilweise abgeschlossen — Aktivierungsreife erreicht, Production unverändert.** Berlin ist bis unmittelbar vor die erste Production-Änderung vorbereitet: Aktivierungsplan, SQL, 3 Rollback-Stufen, Runbook und 123 ausführbare Prüfungen liegen vor. **Keine** Aktivierung, kein Flag, kein SQL ausgeführt, keine Zeile verändert. Zwei echte Sperrlücken behoben (globales statt landesscharfes Gate; `activation_mode='manual'` war wirkungslos). **Empfehlung: Go mit Bedingungen** — der harte Blocker ist die in der Datenbank offene Neutralisierung von `berlin-basis` (A-3). Offline-Suite 151/151, Browser-Smoke 32/32. Brandenburg unverändert und inaktiv. Details unten. |
 | Punkt 13 — Abschlusskorrektur: Niedersachsen, nicht-anwendbar, Fraktionen | 2026-07-26 | **Erfolgreich abgeschlossen** — alle 8 Pakete abgeschlossen (7 vollständig + 1 mit belegten Ausnahmen, 0 teilweise, 0 blockiert). `regional-niedersachsen` hat eine benannte Basis aus 7 Wegen (5 Bestandsquellen + 2 amtliche), **vorbereitet und inaktiv, 0 zusätzliche Abrufe**. „Nicht anwendbar" ist gegen die amtliche Parlamentszusammensetzung überprüfbar. Fraktionssollmenge extern verankert — die Alt-Angabe „8 von 8" war fachlich falsch, richtig sind **5**. Offline-Suite 150/150. Keine Production-Änderung. Details unten. |
@@ -510,6 +522,129 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
   angelegt · kein SQL-Block ausgeführt · kein Crawl ausgelöst · **keine Stufe 2** · keine Migration ·
   keine Seed-Einspielung · keine Cron-/Lock-/Scheduler-/Secret-Änderung · Brandenburg, Bund,
   Niedersachsen und alle Bestandsmandanten unverändert · kein Rollback nötig (nichts zu rollen).
+**Sprint „Phase-1-Punkt 17: Echte Kostenmessung im Betrieb bestätigen" — Nachweis**
+
+- **Auftrag:** belegen, was ein Lauf und was ein Betriebstag kostet, welche Prozesse und
+  Anbieter die Kosten treiben, und welche Kosten später einem Mandanten zugerechnet werden
+  können — ohne Production-Mutation. **Ergebnis: teilweise erfüllt.** Kanonische Stelle:
+  [`betrieb/kostenmessung.md`](betrieb/kostenmessung.md).
+- **Statusbewertung (adversarialer Review, 2026-07-26).** Der Sprint war zunächst als
+  *erfolgreich abgeschlossen* geführt. Das war **zu großzügig**: das Abnahmekriterium
+  verlangt einen vollständigen Production-Kostennachweis, und Schätzwerte sind kein
+  solcher. Belegt sind Kosten je Lauf und je Tag als **Untergrenze** auf **unbelegter**
+  Preisbasis; die Kosten je Mandant decken nur die 21 % direkt zurechenbaren Aufrufe ab.
+  Korrekter Zustand: **teilweise abgeschlossen**. Die Messung selbst ist belastbar und
+  ehrlich — unvollständig ist die *Datengrundlage*, nicht die Auswertung.
+- **Vier Code-Defekte, die der Review im PR selbst fand — alle behoben und mutationsgeprüft:**
+  1. **R-1 (hoch):** Der dedizierte **Understanding-Cron** (`/api/cron/understanding`,
+     ein Hauptkostenpfad) reichte die Laufkennung **nicht** an den Kostenlog durch,
+     obwohl sie im Scope lag und für `recordProcessRun` benutzt wurde. Die zentrale
+     Zusage des PR („Laufkennung erreicht den Kostenlog") galt damit nur für 2 der
+     Aufrufstellen. Behoben; ein **Quelltext-Riegel** verhindert den Rückfall.
+  2. **R-2 (mittel):** Der neu protokollierte Diagnoseaufruf `pipeline-probe` zählte als
+     *billable* und verbrauchte dadurch **Budget-Kopfraum, den er nie reservierte** —
+     eine ungewollte Verhaltensänderung gegenüber `main`, die im Extremfall echte
+     Fachaufrufe verdrängt hätte. Zusätzlich verfälschte er den Reservierungsabgleich,
+     also genau den Messbefund K-1. Jetzt aus dem Gate **und** aus dem Abgleich
+     ausgenommen; seine **Kosten** bleiben vollständig in der Kostenwahrheit.
+  3. **R-3 (mittel):** Derselbe Diagnosepfad wurde als `nicht-zurechenbar` geführt und
+     täuschte damit eine **Mandanten-Messlücke vor, die es nicht gibt**. Diagnose ist
+     geteilte Infrastruktur → `global`.
+  4. **R-4 (niedrig, latent):** `getRunCostReport` konnte denselben Aufruf **zwei
+     Läufen** zurechnen, wenn sich Laufzeitfenster überlappen (heute durch den globalen
+     Understanding-Lock 0 Fälle bei 51 Läufen, konstruktiv aber möglich). Zusätzlich
+     galt ein Eintrag **ohne Id** dauerhaft als unzugeordnet. Beides behoben; die
+     exakte Zuordnung per Laufkennung wird dabei nie von einem Zeitfenster verdrängt.
+- **Branch/Commit/PR:** `claude/helmut-cost-measurement-4ietbr` · **PR #136**, auf
+  `4aa15de` rebased (Basis enthält Punkt 16 und den Berliner Production-Sprint)
+  (offen, wartet auf Review und Betreiberfreigabe — nicht selbst gemergt).
+  Geänderte Dateien: `lib/helmut/cost-model.js` (neu) · `lib/helmut/storage.js` ·
+  `lib/helmut/understanding.js` · `lib/helmut/scheduler.js` · `server.js` · `client.js` ·
+  `scripts/kostenmessung-nachweis.js` (neu) · `scripts/kostenmessung-test.js` (neu) ·
+  `scripts/admin-overview-test.js` · `docs/betrieb/kostenmessung.md` (neu) ·
+  `docs/betrieb/env-inventar.md` · `docs/roadmap/phase_1_checkliste.md` · diese Datei.
+- **Startprüfung (bei Sprintbeginn):** Arbeitsbaum sauber, Stand == `origin/main` ==
+  `93006e8` (Merge #134). **Punkt 16 war zu diesem Zeitpunkt nicht gemergt** (Checkliste
+  ⏳, Befund A-6 offen, kein Branch, kein PR, kein Commit). Der Betreiber hat das Git-Gate
+  nach Vorlage dieses Befunds ausdrücklich freigegeben, weil damit **keine**
+  Punkt-16-Telemetriearbeit existierte, die überschrieben werden konnte.
+  `source_crawl_telemetry` und die Pfad-Statusmaschine wurden deshalb **bewusst nicht
+  angefasst**; der Berlin-Sprint blieb unverändert.
+- **Nachtrag 2026-07-26: Punkt 16 ist inzwischen gemergt** (PR #137, `4aa15de`), ebenso
+  der Berliner Production-Sprint (PR #135). Der Punkt-17-Branch wurde auf diesen Stand
+  **rebased**; die Zusage von oben hat gehalten und ist nachgeprüft:
+  `lib/helmut/quellenarchitektur/`, `scripts/source-failure-test.js`,
+  `docs/betrieb/quellenstoerungen.md`, `scripts/admin-source-ui-test.js`, `supabase/`,
+  `vercel.json` und `helmut-flags.json` haben gegenüber `main` **0 Zeilen Diff**.
+  Punkt 16 wurde an **einer** Stelle textlich berührt — der gemeinsamen
+  `require("./lib/helmut/storage")`-Importzeile in `server.js`, an die beide Sprints
+  angehängt haben. Aufgelöst als **Vereinigung** (79 Namen, keine Doublette):
+  `listSourceCrawlTelemetry` aus Punkt 16 **und** `getRunCostReport`,
+  `llmPriceProvenance`, `recordLlmUsage` aus Punkt 17. `source-failure-test` 160/160
+  nach dem Rebase unverändert grün.
+- **Zentraler Befund — die Kostenquelle war nicht die, die die Doku annahm.** Die
+  relationale Tabelle `llm_usage` hat in Production **0 Zeilen**; die tatsächliche
+  Kosten-/Auditquelle ist der `llmUsage`-Ring im Auth-Store-Blob (2 493 Einträge). Der
+  Alt-Beleg in der Phase-1-Checkliste („Tages-/Laufkosten über `llm_usage`") war damit
+  sachlich falsch.
+- **Kosten je Lauf waren nicht messbar, nur rekonstruierbar.** `runId` war in **0 von
+  1 290** Einträgen gesetzt — obwohl `source_crawl_telemetry.run_id` und
+  `processRuns.runId` dieselbe Kennung seit jeher tragen. Der Sprint reicht die Kennung
+  jetzt vom Scheduler bis in den Kostenlog durch; der Altbestand bleibt über das
+  Zeitfenster rekonstruierbar und wird **als rekonstruiert gekennzeichnet** (0 mehrdeutige
+  Zuordnungen bei 337 von 611 eindeutig zuordenbaren Alteinträgen).
+- **Der ehrliche Kern:** `lib/helmut/cost-model.js` (rein, ohne I/O) trennt
+  `gemessen` / `kosten-unbekannt` / `kein-provideraufruf` und
+  `global` / `direkt` / `nicht-zurechenbar`. Die Altsummen rechneten einen als
+  `"unknown"` protokollierten Betrag still als **0,00** — genau das ist jetzt
+  ausgeschlossen. `0,00` erscheint nur noch, wo nachweislich **kein** Provideraufruf
+  stattfand (1 277 von 2 493 Einträgen — abgewiesene und übersprungene Aufrufe).
+- **Kostenwahrheit statt Scheingenauigkeit.** Die Preistabelle ist im Code selbst als
+  „Schaetzwerte" deklariert, ohne Quelle und ohne Stand. **Kein Preis wurde geändert oder
+  erfunden** (Preisrecherche war ausgeschlossen); stattdessen trägt jede Kostenangabe ihre
+  Herkunft mit (`llmPriceProvenance()`), und der Betreiber belegt die Basis über
+  `HELMUT_LLM_PRICE_SOURCE`/`HELMUT_LLM_PRICE_ASOF`.
+- **Gemessene Kostenobergrenze, ehrlich abgegrenzt.** Der Deckel ist atomar und
+  fail-closed und hat real gegriffen (2026-07-20: Zähler 100/100, **34** Abweisungen
+  `daily-llm-budget-reached` + **4** über die Understanding-Reserve, alle ohne Kosten).
+  Er **zählt aber Aufrufe, kein Geld**; Reservierungen werden bewusst nie freigegeben
+  (misst also Reservierungen, keine bestätigten Kosten); der Per-Mandant-Deckel ist AUS
+  (OP-03); und **alle Nicht-LLM-Kosten liegen außerhalb** — Supabase, Vercel,
+  Crawl-Volumen, Push und DIP sind ungemessen und ungedeckelt (offene Kostenexposition).
+- **Sicherheitsbefund behoben:** `/api/debug/pipeline-probe` sendete einen echten,
+  token-verbrauchenden Azure-Aufruf **ohne** Reservierung **und ohne** Kostenlog — die
+  einzige Stelle mit vollständig unsichtbaren Kosten. Der Aufruf wird jetzt als
+  `callType: "pipeline-probe"` protokolliert; die Reservierung bleibt bewusst aus (eine
+  Diagnose muss gerade bei erschöpftem Budget laufen — dieselbe Begründung wie beim
+  `budgetExempt`-Pfad des KO-Backfills). Die Route ist secret-gated und auf 20 Aufrufe
+  je 15 min limitiert; der volle Antwort-Body wird weiterhin **nicht** persistiert.
+- **Betriebsnachweis, zweifach gedeckt.** Dieselben Zahlen entstehen unabhängig über
+  read-only SQL gegen Production **und** über `scripts/kostenmessung-nachweis.js`
+  (0,075587 / 0,125336 / 0,149161 USD für den 26./25./24.07.). Das Skript läuft live
+  (Secrets nur aus `process.env`, Abbruch mit Exit 2 **vor** jedem Netzzugriff) oder
+  offline gegen einen Auszug. Der verwendete Produktionsauszug wurde pseudonymisiert und
+  **nicht** ins Repository übernommen.
+- **Tests:** `kostenmessung-test` **128/128** (neu; 24 Prüfgruppen, u. a. kein falsches
+  0,00 · Doppelzählung · Retry als echter Zusatzverbrauch · parallele Einträge ·
+  Reservierungsabgleich in beide Richtungen · fehlende Preise · Währung · abgebrochene
+  Läufe · Preisherkunft · Diagnose ohne Budgetwirkung · überlappende Laufzeitfenster ·
+  Quelltext-Riegel für die Laufkennung) · `admin-overview` **104/104** (vorher 86) ·
+  **Offline-Suite 153/153** (vorher 152/152) · **Browser-Smoke 32/32**.
+  Die drei Review-Korrekturen sind **mutationsgeprüft**: jede der drei gezielten
+  Rückmutationen (Doppelzähl-Sperre entfernt · Diagnose wieder budgetwirksam ·
+  Laufkennung im Cron entfernt) wurde von der Suite erkannt.
+  Zwei eigene Defekte fanden die Tests bereits vor dem ersten Commit
+  (`Number(null) === 0` ließ einen fehlenden Zähler als „deckungsgleich" erscheinen;
+  ein `= {}`-Default griff bei `null` nicht) — beide behoben.
+- **Nicht getan (bewusst):** keine Production-Mutation · keine Migration · kein Flag ·
+  kein Cron · kein Secret · keine Quelle, kein Paket, kein Abrufweg · **kein zweites
+  Abrechnungssystem** (die vorhandene Telemetrie wurde erweitert, keine neue Tabelle) ·
+  **keine Verteilung globaler Kosten** auf Mandanten · **keine Preisrecherche** und keine
+  aus dem Gedächtnis gesetzten Preise · Punkt-16-Gebiet unberührt.
+- **Verbleibende Grenzen, ehrlich:** die bekannten Kosten sind wegen K-1 eine
+  **Untergrenze** · die Euro-Größe ist wegen K-2 eine berechnete, keine belegte ·
+  zwischengespeicherte und Reasoning-Tokens werden nicht gelesen (K-3) · Azure und OpenAI
+  sind im Log nicht unterscheidbar (K-5) · **Kosten je Mandant bleiben bis OP-03 offen**.
 
 **Sprint „Punkt 14 (2. Durchgang): Berlin fachlich neutralisieren, aktuell verifizieren" — Nachweis**
 
