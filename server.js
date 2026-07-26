@@ -929,14 +929,48 @@ async function handleRequest(request, response) {
           });
         }
       }
-      const overallOk = reports.every((r) => r.ok);
-      const combinedText = reports.map((r) => r.text).filter(Boolean).join("\n\n");
+      // --- Watchdog Vorgangsbildung (Betriebsbefund B4, Phase 10) ------------
+      // MANDANTENNEUTRAL und deshalb GENAU EINMAL je Lauf, nicht je Mandat:
+      // raw_documents/knowledge_objects/ko_document_links tragen kein tenant_id.
+      // Gemessen wird ein kurzes Fenster (48 h) — die Frage lautet "arbeitet die
+      // Vorgangsbildung JETZT sauber?", nicht "gibt es historischen Rueckstand?".
+      // Der Altbestand wird ueber scripts/vorgangsbildung-nachholen.js abgearbeitet.
+      // Fail-safe: ein Fehler hier darf den Health-Report nie zu Fall bringen.
+      const vorgangsWatchdog = await (async () => {
+        try {
+          const lz = require("./lib/helmut/vorgangs-lebenszyklus");
+          const storageMod = require("./lib/helmut/storage");
+          const [docs, links, kos] = await Promise.all([
+            storageMod.listRawDocuments({ days: 2, limit: 2000 }).catch(() => []),
+            storageMod.listKoDocumentLinks({ limit: 4000 }).catch(() => []),
+            storageMod.listKnowledgeObjectStates({ limit: 4000 }).catch(() => [])
+          ]);
+          if (!Array.isArray(docs) || !docs.length) return null;
+          const bewertung = lz.assessLifecycle({ rawDocs: docs, links, kos, now: Date.now() });
+          return { ...lz.watchdogVorgangsbildung(bewertung), fensterTage: 2 };
+        } catch (error) {
+          console.error("[health-report] Vorgangs-Watchdog fehlgeschlagen (ignoriert):", error && error.message);
+          return null;
+        }
+      })();
+
+      // Nur ein ALARM macht den Gesamtbericht rot. Eine Warnung wird sichtbar
+      // gemacht, loest aber keinen Alarmkanal aus — sonst wuerde ein einzelnes
+      // verwaistes Dokument den Betreiber jede Nacht wecken.
+      const watchdogAlarm = Boolean(vorgangsWatchdog && vorgangsWatchdog.zustand === "alarm");
+      const overallOk = reports.every((r) => r.ok) && !watchdogAlarm;
+      const combinedText = [
+        ...reports.map((r) => r.text).filter(Boolean),
+        vorgangsWatchdog && vorgangsWatchdog.zustand !== "ok" && vorgangsWatchdog.zustand !== "unbekannt"
+          ? `Vorgangsbildung (${vorgangsWatchdog.fensterTage} Tage): ${vorgangsWatchdog.zustand.toUpperCase()}\n${vorgangsWatchdog.meldungen.map((m) => `- ${m}`).join("\n")}`
+          : null
+      ].filter(Boolean).join("\n\n");
       const kanaele = {
         whatsapp: { konfiguriert: Boolean(String(process.env.CALLMEBOT_PHONE || "").trim() && String(process.env.CALLMEBOT_APIKEY || "").trim()) },
         webhook: { konfiguriert: Boolean(String(process.env.HELMUT_MONITORING_WEBHOOK_URL || "").trim()) }
       };
       if (dryRun) {
-        return { dryRun: true, ok: overallOk, tenants: tenantIds.length, text: combinedText, kanaele, reports };
+        return { dryRun: true, ok: overallOk, tenants: tenantIds.length, text: combinedText, kanaele, reports, vorgangsWatchdog };
       }
       // EINE aggregierte Nachricht je Kanal (Alarm feuert, wenn IRGENDEIN Mandat nicht ok ist).
       // Härtungs-Sprint: Zustand/Blocker/rollierende Crawl-Sicht des SCHLECHTESTEN
@@ -948,8 +982,14 @@ async function handleRequest(request, response) {
       const aggregate = {
         ok: overallOk, text: combinedText,
         state: leadReport.state, severity: leadReport.severity,
-        healthBlockers: reports.flatMap((r) => r.healthBlockers || []),
-        healthWarnings: reports.flatMap((r) => r.healthWarnings || []),
+        healthBlockers: [
+          ...reports.flatMap((r) => r.healthBlockers || []),
+          ...(watchdogAlarm ? ["vorgangsbildung-ohne-endzustand"] : [])
+        ],
+        healthWarnings: [
+          ...reports.flatMap((r) => r.healthWarnings || []),
+          ...(vorgangsWatchdog && vorgangsWatchdog.zustand === "warnung" ? ["vorgangsbildung-rueckstand"] : [])
+        ],
         rollingCrawl: worstRolling,
         overdueCrons: reports.flatMap((r) => r.overdueCrons || []),
         googleUrlResolutionRate: reports.map((r) => r.googleUrlResolutionRate).filter((x) => x != null).sort((a, b) => a - b)[0] ?? null
@@ -976,7 +1016,7 @@ async function handleRequest(request, response) {
           path: "/api/cron/health-report"
         }).catch(() => {});
       }
-      return { ok: overallOk, tenants: tenantIds.length, text: combinedText, delivery, webhook, reports };
+      return { ok: overallOk, tenants: tenantIds.length, text: combinedText, delivery, webhook, reports, vorgangsWatchdog };
     });
   }
 
@@ -1132,7 +1172,10 @@ async function handleRequest(request, response) {
       // der dedizierte Understanding-Cron — ein Hauptkostenpfad — bei den Kosten
       // je Lauf auf die Zeitfenster-Rekonstruktion angewiesen.
       const result = await runPendingUnderstandingShadow(rawDocs, { budgetMs: Number(process.env.HELMUT_UNDERSTAND_BUDGET_MS || 240000), runId });
-      const processed = (result && result.results && result.results.filter((r) => r && r.status === "saved").length) || 0;
+      // "processed" zaehlt jetzt auch Aktualisierungen bestehender Vorgaenge —
+      // vorher zaehlte nur `saved`, wodurch ein Nachholauf, der ausschliesslich
+      // bestehende Vorgaenge fortgeschrieben hat, als "0 verarbeitet" erschien.
+      const processed = (result && result.results && result.results.filter((r) => r && (r.status === "saved" || r.status === "updated")).length) || 0;
       console.log(`[cron/understanding] rawDocs=${rawDocs.length} Ergebnis: ${JSON.stringify({ processed, result })}`);
       // P0-1: Understanding-Batch-Laufzeit persistieren (Auth-Store, scalar-only, PII-frei).
       await recordProcessRun({
@@ -1143,7 +1186,8 @@ async function handleRequest(request, response) {
         deferred: result && result.deferred,
         skippedStore: result && result.counts && result.counts["skipped-store"],
         reason: result && result.reason,
-        status: result && result.skipped ? "skipped" : "ok"
+        status: result && result.skipped ? "skipped" : "ok",
+        telemetrie: result && result.telemetrie
       }).catch(() => {});
       return { ok: true, rawDocsLoaded: rawDocs.length, processed, result, recovery };
     });
