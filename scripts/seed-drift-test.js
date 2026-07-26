@@ -59,25 +59,26 @@ if (committedLand !== generatedLand || committedLandRollback !== generatedLandRo
 // --- 2b) Berlin-Aktivierungs-SQL (20260726_berlin_aktivierung*.sql) ---------
 // Freigabepflichtiges Production-SQL; muss genauso drift-frei sein wie die Seeds, sonst
 // beschreibt das Runbook einen anderen Eingriff als die Datei, die ausgefuehrt wird.
+// 14A: aus einer Sammeldatei + 2 Rollbacks sind 9 Dateien geworden (je Ausfuehrungsschritt
+// eine). Der Drift-Check laeuft ueber die vollstaendige Menge, damit keine Datei durchfaellt.
 const berlin = require("./generate-berlin-aktivierung-sql");
-const berlinDateien = [
-  ["supabase/seeds/" + berlin.DATEI, berlin.build()],
-  ["supabase/seeds/" + berlin.DATEI_RB, berlin.buildRollback()],
-  ["supabase/seeds/" + berlin.DATEI_RB_VOLL, berlin.buildRollbackVollstaendig()]
-];
+const berlinErzeugt = berlin.dateien();
+const berlinSeed = require("../lib/helmut/quellenarchitektur/seeds/berlin-aktivierung");
 let berlinDrift = false;
-for (const [rel, erzeugt] of berlinDateien) {
-  const ok = readCommitted(rel) === erzeugt;
+for (const [name, erzeugt] of Object.entries(berlinErzeugt)) {
+  const ok = readCommitted("supabase/seeds/" + name) === erzeugt;
   if (!ok) berlinDrift = true;
-  check(`Berlin-Aktivierung: ${rel.split("/").pop()} == generate() (kein Drift)`, ok);
+  check(`Berlin-Aktivierung: ${name} == generate() (kein Drift)`, ok);
 }
 if (berlinDrift) {
   console.log("  -> Datei(en) veraltet. Beheben: node scripts/generate-berlin-aktivierung-sql.js && git add supabase/seeds/20260726_berlin_aktivierung*.sql");
 }
+check("Berlin-Aktivierung: jeder deklarierte Ausfuehrungsschritt hat eine committete Datei",
+  berlinSeed.ausfuehrungsschritte().every((s) => Object.prototype.hasOwnProperty.call(berlinErzeugt, s.datei))
+  && Object.keys(berlinErzeugt).length === berlinSeed.ausfuehrungsschritte().length + 1,
+  Object.keys(berlinErzeugt).join(","));
 check("Berlin-Aktivierungs-Generator ist deterministisch (2. Lauf byte-identisch)",
-  berlin.build() === berlinDateien[0][1]
-  && berlin.buildRollback() === berlinDateien[1][1]
-  && berlin.buildRollbackVollstaendig() === berlinDateien[2][1]);
+  JSON.stringify(berlin.dateien()) === JSON.stringify(berlinErzeugt));
 
 // --- 3) Determinismus: zweiter In-Memory-Lauf liefert byte-identisches Ergebnis -----
 // (ergaenzt den Drift-Check: nicht nur "stimmt mit der Datei ueberein", sondern

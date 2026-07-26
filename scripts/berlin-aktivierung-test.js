@@ -433,8 +433,17 @@ check("6r Globale URL-Dedup: derselbe Weg erscheint auch bei zwei Berliner Profi
 
 // ── Mini-SQL-Executor: führt GENAU die Statementformen aus, die der Generator erzeugt.
 // Jede unbekannte Form ist ein harter Fehler — der Test darf nichts stillschweigend überspringen.
+//
+// RIEGEL-BLÖCKE (14A): der Generator schreibt Vor-/Nachbedingungen als `do $$ … $$;`-Blöcke.
+// Ein Mini-Executor kann kein PL/pgSQL. Er zählt sie deshalb und übergibt die SEMANTIK an
+// B.pruefeBedingung — dieselbe deklarative Liste, aus der der Generator das SQL erzeugt
+// (scripts/berlin-staffelung-test.js prüft Anzahl und Wirkung je Schritt).
+function riegelBloecke(sql) {
+  return (sql.match(/do \$\$[\s\S]*?\$\$;/g) || []);
+}
 function miniSql(db, sql) {
-  const statements = sql
+  const ohneRiegel = sql.replace(/do \$\$[\s\S]*?\$\$;/g, "");
+  const statements = ohneRiegel
     .split("\n").filter((l) => !/^\s*--/.test(l)).join("\n")
     .split(";").map((s) => s.replace(/\s+/g, " ").trim()).filter(Boolean);
   let angewandt = 0, uebersprungen = 0;
@@ -481,9 +490,12 @@ function miniSql(db, sql) {
 function rollbackTests() {
   const seedDir = path.join(__dirname, "..", "supabase", "seeds");
   const lies = (f) => fs.readFileSync(path.join(seedDir, f), "utf8");
-  const sqlAktivierung = lies("20260726_berlin_aktivierung.sql");
-  const sqlRb1 = lies("20260726_berlin_aktivierung_rollback.sql");
-  const sqlRb2 = lies("20260726_berlin_aktivierung_rollback_vollstaendig.sql");
+  // 14A: die Sammeldatei ist stillgelegt; die Aktivierung besteht aus 4 Einzelschritten.
+  // Der Test führt sie in der vorgesehenen Reihenfolge aus — genau wie ein Operator.
+  const sqlStop = lies(B.DATEI_STOP);
+  const sqlAktivierung = [B.DATEI_A, B.DATEI_B1, B.DATEI_S1, B.DATEI_S2].map(lies).join("\n");
+  const sqlRb1 = lies(B.DATEI_RB_ALLE);
+  const sqlRb2 = lies(B.DATEI_RB_VOLL);
 
   // Ausgangs-DB = gemessener Production-Ist (2026-07-26).
   const frischeDb = () => ({
@@ -555,9 +567,18 @@ function rollbackTests() {
   check("10p Rollback löscht keine Dokumente (kein delete auf raw_documents/knowledge_objects)",
     !/delete\s+from\s+public\.(raw_documents|knowledge_objects|source_crawl_telemetry)/i.test(sqlRb1 + sqlRb2));
 
+  // --- 14A: die stillgelegte Sammeldatei mutiert nichts mehr ---
+  check("10p1 Die frühere Sammeldatei enthält KEIN mutierendes Statement mehr (V-1 fail-closed)",
+    !/^\s*(update|insert|delete)\b/im.test(sqlStop.split("\n").filter((l) => !/^\s*--/.test(l)).join("\n")));
+  check("10p2 Die stillgelegte Sammeldatei bricht ausdrücklich ab und nennt die Einzelschritte",
+    /raise exception 'STILLGELEGT/.test(sqlStop) && sqlStop.includes(B.DATEI_S1) && sqlStop.includes(B.DATEI_S2));
+  check("10p3 Ihre Ausführung ändert im Mini-Executor keine Zeile",
+    (() => { const d = frischeDb(); const v = bild(d); miniSql(d, sqlStop); return bild(d) === v; })());
+
   // --- Nicht-Berührung als Zeichenketten-Invariante über AUSFÜHRBARES SQL ---
   const ausfuehrbar = (s) => s.split("\n").filter((l) => !/^\s*--/.test(l)).join("\n");
-  const alleAusfuehrbar = [sqlAktivierung, sqlRb1, sqlRb2].map(ausfuehrbar).join("\n");
+  const alleAusfuehrbar = [sqlStop, sqlAktivierung, sqlRb1, sqlRb2,
+    lies(B.DATEI_S1_RB), lies(B.DATEI_S2_RB)].map(ausfuehrbar).join("\n");
   check("10q Kein ausführbares Statement nennt einen Brandenburg-Bezeichner",
     !/rp-bb-|brandenburg/i.test(alleAusfuehrbar));
   check("10r Kein ausführbares Statement nennt eine Bundesquelle oder ein Bundespaket",

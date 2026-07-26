@@ -105,3 +105,29 @@ verdrahtet" galt für den Vor-Cutover-Stand von Sprint 4.
 (global-once). Die Paketzuweisung entscheidet damit, **was überhaupt gecrawlt wird** — nicht,
 welche Dokumente ein einzelnes Mandat sieht. Die mandatsbezogene Auswahl entsteht erst im
 Matching/Briefing und ist ein eigener, noch offener Nachweis (Phase-1-Punkt 28).
+
+## Landesmodule: die eine Ausnahme von „global-once" (Punkt 14A, 2026-07-26)
+
+Global-once gilt für Bundes- und neutrale Wege weiterhin unverändert. **Landesmodul-Wege sind
+davon ausgenommen**, in zwei Richtungen:
+
+1. **Aktivierung braucht ein Mandat, nicht nur ein Flag.** Ein Landesmodul ist **wirksam** nur,
+   wenn sein Land in `HELMUT_LANDESMODULE` *ausdrücklich freigegeben* ist **und**
+   `laenderMitBerechtigtemMandat()` mindestens ein aktivierungsberechtigtes Landtagsmandat dieses
+   Landes findet. Gezählt wird über `resolveProfilePackages()` — dieselbe Auflösung wie in der
+   Referenzzählung, **nicht** über ein Profilfeld. Folge: ein **Bundestags**mandat mit
+   `bundesland='Berlin'` berechtigt Berlin **nicht**. Vorher genügte das Flag; ein zweiländriger Weg
+   (`rp-rbb24-politik` hängt in `berlin-basis` **und** `brandenburg-basis`) konnte dadurch über ein
+   **Brandenburger** Mandat bei reiner Berlin-Freigabe laufen.
+2. **Versorgung ist mandatsbezogen.** `planQuellenFuerProfil(plan, profil)` schränkt die
+   Landesmodul-Wege des globalen Plans auf die Länder des jeweiligen Profils ein
+   (`scheduler.loadRelationalSharedSources(profile)`). Die **Vereinigung** über alle berechtigten
+   Profile ergibt wieder exakt `plan.aktiv` — global-once bleibt also gewahrt, der Weg läuft nur im
+   Lauf des Mandats, das ihn berechtigt.
+
+Der Plan weist beide Bedingungen getrennt aus (`landesmodule.freigegeben`,
+`.mitBerechtigtemMandat`, `.wirksam`, `.freigegebenOhneMandat`, `.bemandatiertOhneFreigabe`), damit
+ein gesetztes Flag ohne berechtigtes Mandat nicht wie eine Aktivierung aussieht.
+
+Betriebsdetails, Ausführungsreihenfolge und Rollback:
+[`../betrieb/berlin-aktivierung.md`](../betrieb/berlin-aktivierung.md) §4/§18.
