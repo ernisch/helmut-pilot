@@ -350,7 +350,11 @@ check("1 · Partei-/Personenwege haengen am PFLICHT-Basispaket",
 console.log("\n== 2) Pre-Seed-Backup erzeugen (Format wie backup-export.js --scope=seed) ==");
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), "preseed-"));
 const manifest = { art: "pre-seed", erstellt: new Date().toISOString(), mainCommit: "test-fixture", quelle: "fixture", tabellen: {}, pruefsummen: {}, fehler: [] };
-for (const t of ["retrieval_paths", "source_packages", "package_paths"]) {
+// `publishers` wird MITGESICHERT, aber nicht zurueckgeschrieben: der Restore braucht die
+// gesicherte Herausgeberliste nur, um zu entscheiden, ob ein von Seed 1 neu angelegter
+// Herausgeber guarded entfernt werden darf (LESE_TABLES in seed-restore-sql.js). Der echte
+// `backup-export.js --scope=seed` sichert diese Tabelle ohnehin.
+for (const t of ["retrieval_paths", "source_packages", "package_paths", "publishers"]) {
   const rows = [...db[t].values()];
   const json = JSON.stringify(rows);
   fs.writeFileSync(path.join(dir, `${t}.json`), json);
@@ -360,8 +364,8 @@ for (const t of ["retrieval_paths", "source_packages", "package_paths"]) {
 manifest.vollstaendig = true;
 manifest.pruefsummeGesamt = crypto.createHash("sha256").update(JSON.stringify(manifest.pruefsummen)).digest("hex");
 fs.writeFileSync(path.join(dir, "manifest.json"), JSON.stringify(manifest, null, 2));
-check("2 · Backup enthaelt die 3 veraenderten Tabellen + Pruefsummen + Pre-Seed-Kennzeichnung",
-  manifest.art === "pre-seed" && Object.keys(manifest.pruefsummen).length === 3 && !!manifest.pruefsummeGesamt);
+check("2 · Backup enthaelt die 3 veraenderten Tabellen + publishers (nur lesend) + Pruefsummen + Pre-Seed-Kennzeichnung",
+  manifest.art === "pre-seed" && Object.keys(manifest.pruefsummen).length === 4 && !!manifest.pruefsummeGesamt);
 
 console.log("\n== 3) Seed 1 (Bund, nach #118) ==");
 const s1 = execSql(db, loadAktuell("20260713_source_architecture_seed.sql"));
@@ -370,7 +374,14 @@ console.log(`   +${s1.stats.ins} eingefuegt, ${s1.stats.upd} aktualisiert, ${s1.
 // Punkt 13: Seed 1 fuegt jetzt ZWEI Paketzuordnungen ein — die bisherige
 // (fraction-linke -> die-linke-bund) plus die neue Vollzaehligkeitszuordnung
 // (ausschuss-arbeit-soziales -> bund-basis, "alle Ausschuesse" im neutralen Pflichtpaket).
-check("3 · Seed 1: +2 Pakete, +3 Paketzuordnungen, +1 Abrufweg", n1.source_packages === 8 && n1.package_paths === 166 && db.retrieval_paths.has("rp-committee-wahlpruefung"));
+// Seed 1 fuegt jetzt 8 neue Abrufwege ein: den 24. Ausschuss + die 7 benannten
+// Niedersachsen-Pflichtwege (alle status 'paused' -> kein Abruf).
+check("3 · Seed 1: +2 Pakete, +10 Paketzuordnungen, +8 Abrufwege", n1.source_packages === 8 && n1.package_paths === 173
+  && db.retrieval_paths.has("rp-committee-wahlpruefung") && db.retrieval_paths.has("rp-nds-landtag"));
+check("3 · Seed 1: die 7 benannten Niedersachsen-Wege sind 'paused' (kein Abruf)",
+  ["rp-nds-landtag", "rp-nds-landesregierung", "rp-news-haz", "rp-news-ndr",
+   "rp-news-braunschweiger-zeitung", "rp-news-salzgitter-zeitung", "rp-news-regionalheute"]
+    .every((id) => db.retrieval_paths.get(id).status === "paused" && db.retrieval_paths.get(id).activation_mode === "manual"));
 check("3 · Seed 1: die 6 Wege stehen jetzt auf 'needs_review'",
   ["rp-bundestag", "rp-bundesregierung", "rp-die-linke", "rp-linksfraktion", "rp-ausschuss-arbeit-soziales", "rp-dgb"]
     .every((id) => db.retrieval_paths.get(id).status === "needs_review"));
@@ -389,7 +400,7 @@ check("5 · Seed 2: Partei-/Personenwege NICHT mehr im Pflicht-Basispaket",
 check("5 · Seed 2: sie haengen jetzt am optionalen Parteipaket",
   ["rp-be-partei_pilot", "rp-be-fraktion_pilot", "rp-be-person_pilot"]
     .every((p) => db.package_paths.has(`pkg-die-linke-berlin|${p}`)));
-check("5 · Gesamtzahl Zuordnungen unveraendert (4 raus, 4 rein)", n2.package_paths === 166);
+check("5 · Gesamtzahl Zuordnungen unveraendert (4 raus, 4 rein)", n2.package_paths === 173);
 
 console.log("\n== 6) Idempotenz der Seeds ==");
 const vorWdh = snapshot(db, TAB);
@@ -409,8 +420,23 @@ check("7 · Restore enthaelt KEIN drop/truncate", !/drop\s+table|truncate/i.test
 check("7 · Restore laeuft in einer Transaktion", /^begin;/m.test(restoreSql) && /^commit;/m.test(restoreSql));
 check("7 · Restore hat Vorher- UND Nachher-Check mit hartem Abbruch",
   (restoreSql.match(/raise exception/g) || []).length >= 3);
-check("7 · Restore fasst keine Elterntabellen an (publishers/political_entities/geographies)",
-  !/delete from public\.(publishers|political_entities|geographies)/i.test(restoreSql));
+// Elterntabellen: geographies und political_entities werden GAR NICHT angefasst. `publishers`
+// darf ausschliesslich GUARDED geloescht werden — ein ungeschuetztes Delete koennte wegen
+// ON DELETE CASCADE auf retrieval_paths.publisher_id fremde Abrufwege mitreissen. Praezisiert
+// statt aufgeweicht: die Invariante lautet jetzt "kein UNGESCHUETZTES Elterndelete".
+check("7 · Restore fasst geographies/political_entities gar nicht an",
+  !/delete from public\.(political_entities|geographies)/i.test(restoreSql));
+check("7 · jedes publishers-Delete ist GUARDED (not exists auf retrieval_paths)", (() => {
+  const dels = restoreSql.split("\n").filter((l) => /^delete from public\.publishers/i.test(l.trim()));
+  if (!dels.length) return false;
+  // Jedem Delete muss unmittelbar die Guard-Zeile folgen.
+  const zeilen = restoreSql.split("\n");
+  return dels.every((d) => {
+    const i = zeilen.findIndex((z) => z.trim() === d.trim());
+    return i >= 0 && /not exists \(select 1 from public\.retrieval_paths rp where rp\.publisher_id = p\.id\)/i.test(zeilen[i + 1] || "");
+  });
+})());
+check("7 · kein publishers-Delete ohne Guard", !/delete from public\.publishers[^;]*;/i.test(restoreSql.replace(/delete from public\.publishers[^;]*not exists[^;]*;/gi, "")));
 const rst = execSql(db, restoreSql);
 console.log(`   +${rst.stats.ins} eingefuegt, ${rst.stats.upd} aktualisiert, ${rst.stats.del} geloescht`);
 
@@ -515,6 +541,10 @@ console.log("\n== 15) Regression: Eingangspruefungen des Generators ==");
 
 // Hilfsfunktion: schreibt ein Backup-Verzeichnis aus beliebigen Tabellen.
 function schreibeBackup(tabellen, patch = {}) {
+  // `publishers` gehoert zu LESE_TABLES: der echte Export (--scope=seed) sichert sie immer.
+  // Fehlt sie im Aufruf, wird der Vor-Seed-Bestand ergaenzt — so bleiben die Regressionsfaelle
+  // auf ihren eigentlichen Prueffall fokussiert.
+  if (!tabellen.publishers) tabellen = { ...tabellen, publishers: roh("publishers") };
   const d = fs.mkdtempSync(path.join(os.tmpdir(), "regress-"));
   const mf = { art: "pre-seed", erstellt: new Date().toISOString(), mainCommit: "test", quelle: "fixture",
     tabellen: {}, pruefsummen: {}, fehler: [], vollstaendig: true };
@@ -550,7 +580,8 @@ const roh = (t) => [...basis[t].values()].map((r) => ({ ...r }));
   const d = schreibeBackup({
     retrieval_paths: [...nachSeed.retrieval_paths.values()],
     source_packages: [...nachSeed.source_packages.values()],
-    package_paths: [...nachSeed.package_paths.values()]
+    package_paths: [...nachSeed.package_paths.values()],
+    publishers: [...nachSeed.publishers.values()]
   });
   const msg = wirft(d);
   check("15a · Zu spaet gezogenes Backup (nach Seed 1) wird abgewiesen",

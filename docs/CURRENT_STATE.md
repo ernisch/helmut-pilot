@@ -41,7 +41,7 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | Freigabevorlage Quellen-Seed-Einspielung (Soll-Zahlen, Idempotenznachweis, Go-/Stop-Kriterien) | PR #123, gemergt 2026-07-25 (`bed7f53`), CI grün |
 | **Production-Inventur aller Quellenpakete** (7 Pakete in der DB, 8 im Code-Seed seit #118; 163 Abrufwege; Ertrag/letzte Lieferung/Fehler je Paket) | `quellenarchitektur/30-paket-inventur-production.md`; PR #124, gemergt 2026-07-25 (`118e90c`), CI grün, Deployment `READY` |
 | **Automatische Profil→Paket-Zuweisung belegt** — Bund/Berlin/Brandenburg gegen den echten Production-Katalog, ohne Codeänderung; keine Mandanten-Hardcodes, Bestandsmandanten unverändert | `scripts/paketzuweisung-nachweis-test.js` 147/147, Inventur §6; PR #124, gemergt 2026-07-25 (`118e90c`) |
-| **Fachliche Vollständigkeit aller Quellenpakete belegt** (Phase-1-Punkt 13) — jedes der 8 Code-Seed-Pakete hat ein ausführbares Kriterium (Pflichtklassen + Pflicht-Herausgeberklassen + Vollzähligkeit + begründete Überschneidungen); 6 vollständig, 2 belegt teilweise; 5 Lücken behoben. Die Ausschuss-Sollmenge ist **extern verankert** (24 ständige Ausschüsse des 21. Bundestages, Drucksache 21/150) — die erste Fassung war katalogrelativ und führte nur 23 | `quellenarchitektur/31-paketvollstaendigkeit.md`; `scripts/bundestag-ausschuesse-test.js` 36/36, `scripts/paketvollstaendigkeit-test.js` 91/91, Offline-Suite 149/149; Branch `claude/helmut-phase1-punkt13-9iwu69` |
+| **Fachliche Vollständigkeit aller Quellenpakete belegt** (Phase-1-Punkt 13) — alle **8** Pakete abgeschlossen: **7 vollständig + 1 vollständig mit belegten Ausnahmen**, 0 teilweise, 0 blockiert. Ausführbares Kriterium je Paket (Pflichtklassen · Pflicht-Herausgeberklassen · Vollzähligkeit · begründete Überschneidungen · geprüfte Nicht-Anwendbarkeit); **keine** Vollzähligkeitsregel ist mehr katalogrelativ: Ausschüsse **24/24** und Fraktionen **5/5** gegen amtliche Sollmengen | `quellenarchitektur/31-paketvollstaendigkeit.md`; `bundestag-ausschuesse-test.js` 36/36, `parlamentszusammensetzung-test.js` 65/65, `paketvollstaendigkeit-test.js` 99/99, Offline-Suite 150/150; Branch `claude/helmut-phase1-punkt13-9iwu69` |
 
 ## 3 · Teilweise abgeschlossen (Code da, Abnahme fehlt)
 
@@ -195,6 +195,9 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 
 | Datum | Entscheidung |
 |---|---|
+| 2026-07-26 | **Vorbereitete Pflichtquellen statt globaler Kuratierungsschwelle** — `regional-niedersachsen` bekommt seine benannte Basis über 7 gezielt gebundene Wege im Zustand `paused`/`manual` + `active: false`. Das Anheben der Kuratierungsschwelle (rund 20 zusätzliche Google-Abrufe je Crawl) ist damit **nicht** nötig; die Aktivierung bleibt eine eigene Freigabeentscheidung |
+| 2026-07-26 | **„Fachlich nicht anwendbar" ist nur mit überprüfbarer Voraussetzung zulässig** — stabile Kennung, politische Begründung, Wahlperiode, amtlicher Beleg und eine Prüfung gegen `seeds/parlamentszusammensetzung.js`. Eine unbestätigte Ausnahme lässt die Klasse als offene Lücke stehen; Freitext genügt nicht mehr |
+| 2026-07-26 | **Auch die Fraktionssollmenge wird extern verankert** — die Alt-Zählung „8 von 8" war fachlich falsch (FDP und BSW nicht im 21. Bundestag, SSW ohne Fraktionsstatus). Richtig sind 5 Fraktionen. Die drei Quellen bleiben erhalten, werden aber als `parteien_ohne_fraktionsstatus` geführt |
 | 2026-07-26 | **Die Ausschuss-Sollmenge wird extern verankert, nicht aus dem Katalog abgeleitet** — eine katalogrelative Vollzähligkeitsprüfung ist per Konstruktion erfüllbar und hat den Fehlbestand 23 statt 24 verdeckt. Kanonische Quelle: `seeds/bundestag-ausschuesse.js` (Drucksache 21/150) |
 | 2026-07-26 | **Katalog-Ids der Ausschusswege bleiben eingefroren**, auch wo der Slug nicht mehr zum amtlichen Namen passt. Eine Id-Änderung würde beim Seed-Einspielen eine neue `retrieval_paths`-Zeile anlegen und die alte als weiter gecrawlte Waise im Pflichtpaket zurücklassen. Die fachliche Bindung läuft über `ausschussKey` |
 | 2026-07-26 | **Ein ständiger Bundestagsausschuss gehört immer auch in `bund-basis`** — die Zusage „alle Ausschuesse" des neutralen Pflichtpakets ist eine Vollzähligkeitsregel und wird jetzt gezählt, nicht behauptet. Zuvor fehlte genau der Ausschuss des Pilotmandats im Pflichtpaket |
@@ -263,6 +266,7 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 
 | Sprint | Datum | Zustand |
 |---|---|---|
+| Punkt 13 — Abschlusskorrektur: Niedersachsen, nicht-anwendbar, Fraktionen | 2026-07-26 | **Erfolgreich abgeschlossen** — alle 8 Pakete abgeschlossen (7 vollständig + 1 mit belegten Ausnahmen, 0 teilweise, 0 blockiert). `regional-niedersachsen` hat eine benannte Basis aus 7 Wegen (5 Bestandsquellen + 2 amtliche), **vorbereitet und inaktiv, 0 zusätzliche Abrufe**. „Nicht anwendbar" ist gegen die amtliche Parlamentszusammensetzung überprüfbar. Fraktionssollmenge extern verankert — die Alt-Angabe „8 von 8" war fachlich falsch, richtig sind **5**. Offline-Suite 150/150. Keine Production-Änderung. Details unten. |
 | Punkt 13 — Nachtrag: Ausschuss-Sollmenge extern verankern (23 → 24) | 2026-07-26 | **Erfolgreich abgeschlossen** — der 21. Bundestag hat 24 ständige Ausschüsse (Drucksache 21/150); der Katalog führte 23 und neun Bezeichnungen der 20. Wahlperiode. Fehlend war der Ausschuss für Wahlprüfung, Immunität und Geschäftsordnung. Kanonische Quelle korrigiert (nicht der Testwert), Sollmenge extern verankert, 36 neue Prüfungen mit 6 Negativkontrollen; zusätzlich eine Lücke im Seed-Rückweg behoben. Offline-Suite 149/149. Keine Production-Änderung. Details unten. |
 | Phase-1-Punkt 13: Vollständigkeit jedes Quellenpakets prüfen | 2026-07-26 | **Erfolgreich abgeschlossen** — Abnahmekriterium erfüllt und belegt: alle 8 Pakete haben ein ausführbares fachliches Kriterium, 6 sind vollständig, 2 belegt teilweise vollständig (kein falsches Grün), 3 Lücken behoben. `paketvollstaendigkeit-test` 89/89, Offline-Suite 148/148, Seeds byte-identisch reproduzierbar. Keine Production-Änderung, Berlin/Brandenburg unverändert vorbereitet und inaktiv. Details unten. |
 | Go-Kriterium 2 kontrolliert versuchen: Pre-Seed-Backup-Export | 2026-07-25 | **Blockiert** — `node scripts/backup-export.js --scope=seed` exakt wie angefordert ausgeführt; Abbruch vor jedem Netzwerkzugriff (Exit 2), da diese Agenten-Sitzung keine `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` und keine `.env.local` besitzt. **Kein** Production-Zugriff erfolgt. Betreiberentscheidung: Export läuft auf der Betreibermaschine mit echter `.env.local`, Manifest wird zurückgemeldet. Details unten. |
@@ -274,6 +278,115 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 | Merge von PR #105 — Anker-Recovery-Pfad in Production stillgelegt | 2026-07-25 | **Erfolgreich abgeschlossen** — gemergt als `43e9e35`; Stilllegung auf `main` verifiziert. |
 | Recovery-Pfad-Review + Zusammenführung von PR #105 auf die kanonische Kontextstruktur | 2026-07-25 | **Erfolgreich abgeschlossen** |
 | Kontextstruktur für Claude Code (`CLAUDE.md` + Einstiegsschicht) | 2026-07-25 | **Erfolgreich abgeschlossen** — reine Dokumentation, gemergt als PR #119 (`c6a3d40`). |
+
+**Sprint „Punkt 13 — Abschlusskorrektur: Niedersachsen, nicht-anwendbar, Fraktionen" — Nachweis**
+
+- **Auslöser:** drei offene Punkte des vorigen Abschlusses. Punkt 13 war damit **nicht** vollständig
+  abgeschlossen: `regional-niedersachsen` hatte keine benannten Herausgeber, die beiden nicht
+  erfüllbaren Pflichtklassen von `die-linke-brandenburg` waren nur als Freitext begründet, und die
+  Fraktionsvollzähligkeit war weiterhin katalogrelativ — derselbe Fehlermodus wie bei den
+  Ausschüssen.
+- **Ergebnis: alle 8 Pakete liegen in einer abgeschlossenen Kategorie** — **7 vollständig** +
+  **1 vollständig mit belegten Ausnahmen**, **0 teilweise**, **0 blockiert**.
+
+  | Paket | Ergebnis |
+  |---|---|
+  | `bund-basis` | vollständig (7/7 Klassen · 24/24 Ausschüsse · **5/5 Fraktionen**) |
+  | `arbeit-und-soziales` | vollständig (10/10) |
+  | `die-linke-bund` | vollständig (1/1) |
+  | `regional-niedersachsen` | **vollständig (6/6)** — benannte Basis vorbereitet und inaktiv |
+  | `berlin-basis` · `brandenburg-basis` | vollständig (je 12/12) |
+  | `die-linke-berlin` | vollständig (3/3) |
+  | `die-linke-brandenburg` | **vollständig mit belegten Ausnahmen** (1/3 besetzt, 2 geprüft nicht anwendbar) |
+
+- **Teil A — `regional-niedersachsen` fachlich repariert, ohne Crawl-Kosten.** Ursache des Befunds:
+  die Regionalmedien der Region **lagen im Katalog**, wurden aber von `keepCuratedSource` entfernt
+  (`media` erst ab `priority >= 64`, regionale Medien tragen 52–60). Die Sollmenge unterscheidet
+  jetzt sechs Klassen; erfüllt durch **7 benannte Wege**, davon **5 Bestandsquellen** (HAZ, NDR,
+  Braunschweiger Zeitung, Salzgitter Zeitung, regionalHeute — identische URL und Query, nur
+  angereichert) und **2 neu angelegte** für die im Katalog fehlende amtliche Landesebene
+  (`landtag-niedersachsen.de`, `niedersachsen.de`, beide `site:`-gebunden; ein Direktfeed-Pfad ist
+  von hier aus nicht verifizierbar und wäre geraten). Beleglage jetzt **2 amtlich · 5
+  journalistisch · 4 Aggregator** statt 0 · 0 · 4.
+  **Nicht aktiviert — drei unabhängige, getestete Riegel:** der Crawler ruft nur Quellen mit
+  `active` ab · die Profilauswahl des Fallback-Pfads schließt `active === false` aus · der
+  relationale Plan schließt `status='paused'` aus (Regel 4). Gemessen: Fallback **0 von 7**,
+  relationaler Plan **0 von 7** (Grund `nicht-reaktiviert (status=paused)`). Der `purpose` trennt
+  jetzt Region von Fachthema.
+- **Teil B — „nicht anwendbar" ist überprüfbar statt Freitext.** Jede Ausnahme trägt stabile
+  Kennung, politische Begründung, Wahlperiode, Geltungsbereich, amtlichen Beleg **und** eine
+  `voraussetzung`, die gegen die kanonische Parlamentszusammensetzung geprüft wird. Amtliche
+  Grundlage: Landtag Brandenburg, 8. Wahlperiode — 4 Fraktionen (SPD 32, AfD 30, BSW 14, CDU 12);
+  alle weiteren Landeslisten blieben unberücksichtigt, darunter Die Linke (Landeswahlleiterin,
+  Endergebnis LTW 22.09.2024 + Landtagshandbuch 8. WP). Neue vierte Ergebniskategorie
+  `vollstaendig_mit_belegten_ausnahmen`; eine **unbestätigte** Ausnahme erzeugt
+  `nicht-anwendbar-unbegruendet` und lässt die Klasse als offene Lücke stehen, eine Ausnahme für
+  eine besetzte Klasse `nicht-anwendbar-ohne-not`. Kehrt die Partei in den Landtag zurück, wird die
+  Ausnahme unbegründet und die Prüfung verlangt eine bewusste Aktualisierung.
+- **Teil C — Fraktionssollmenge extern verankert, und die Alt-Angabe war falsch.** Gemessen wurde
+  „8 von 8 Fraktionen". Fachlich richtig sind **5**: FDP (4,3 %) und BSW (4,97 %) sind im
+  21. Bundestag **nicht vertreten**, der SSW hat mit **einem** Mandat keinen Fraktionsstatus
+  (Minderheitenpartei, von der Fünf-Prozent-Hürde befreit). Amtliche Grundlage: Sitzverteilung des
+  21. Deutschen Bundestages (630 Sitze) — CDU 164 + CSU 44 = 208 · AfD 152 · SPD 120 ·
+  Bündnis 90/Die Grünen 85 · Die Linke 64 · SSW 1. **Keine Quelle entfernt:** die drei Quellen
+  bleiben im Katalog und im Pflicht-Basispaket, tragen aber jetzt die Klasse
+  `parteien_ohne_fraktionsstatus` (zusätzlich, nicht Pflicht). Alle 8 `fraction-`Wege behalten
+  Status und Aktivierungsmodus — **0 zusätzliche und 0 entfallene Abrufe**.
+- **Weitere gefundene Fehler (in diesem Sprint behoben):**
+  1. **Eigene Fehlannahme korrigiert:** ich hatte die Inaktivität zunächst auf einen `active`-Filter
+     in `scheduler.js` gestützt, der dort tatsächlich `selectLageCheckSources` betrifft.
+     `sourceAllowedForProfile` prüfte `active` **nicht**. Die eigentliche Garantie lag beim
+     Crawler-Filter (`sources.filter((source) => source.active)`), es wäre also kein Abruf
+     entstanden — die Wege hätten aber in der Profilauswahl gestanden. Riegel ergänzt und alle drei
+     strukturell getestet.
+  2. **Der gezielte Seed-Restore deckte neue Herausgeber nicht ab.** Seed 1 legt jetzt 7 neue
+     `publishers`-Zeilen an; ohne Erweiterung wären sie nach einem Restore als Waisen
+     stehengeblieben (gefangen von der Byte-Gleichheitsprüfung, Gruppe 8). Sie werden jetzt
+     *guarded* entfernt — nur wenn kein Abrufweg sie mehr referenziert. Die Invariante des Tests
+     wurde dabei **präzisiert, nicht aufgeweicht**: `geographies`/`political_entities` werden gar
+     nicht angefasst, jedes `publishers`-Delete muss die `not exists`-Absicherung tragen.
+  3. **Der Mini-SQL-Executor** des Restore-Tests führt die neue Guard-Form wirklich aus, statt sie
+     zu überspringen; das Backup-Fixture sichert `publishers` mit (wie der echte Export).
+- **Neue ausführbare Zusicherungen:** `scripts/parlamentszusammensetzung-test.js` — **65/65** in
+  7 Gruppen mit **15 Negativkontrollen**: fehlende Fraktion · zusätzliche nicht vertretene Partei ·
+  Mandat ohne Fraktionsstatus als Fraktion · **Tausch bei Zahlengleichstand (5 bleibt 5)** ·
+  Umbenennung · **falscher politischer Typ** · Eintrag ohne stabile Kennung · doppelte Kennung ·
+  unbekanntes Parlament · Ausnahme für eine Partei **mit** Fraktion · falsche Wahlperiode · bloßer
+  Freitext · fehlender Beleg · unbekannte Prüfart · missbräuchliche Ausnahme rettet kein Paket.
+  Dazu die drei Inaktivitäts-Riegel und die Wahlperioden-Konsistenz beider Sollmengen.
+  In `paketvollstaendigkeit-test.js` neu: rein aggregatorbasiertes Regionalpaket wird abgelehnt ·
+  fehlender Wahlkreis-Herausgeber wird erkannt · fehlende amtliche Ebene wird erkannt · die
+  7 benannten Wege sind vorbereitet · Niedersachsen ist nicht aktiviert (mit Wirksamkeitsnachweis).
+- **Tests (echte Zahlen):** `parlamentszusammensetzung` **65/65** · `paketvollstaendigkeit`
+  **99/99** · `bundestag-ausschuesse` **36/36** · `source-architecture` **99/99** ·
+  `profile-packages` **69/69** · `seed-restore` **46/46** · `seed-drift` grün ·
+  `admin-source-report` **56/56** · `sprint6-pilot-migration` **46/46** ·
+  `landesmodule-kandidaten` **77/77** · `paketzuweisung-nachweis` **147/147** ·
+  `tenant-neutrality` **39/39** · **Offline-Suite 150/150 grün**. Generatorlauf zweimal
+  wiederholt: beide Seeds byte-identisch; der Landesmodul-Seed ist gegen `main` unverändert.
+- **Production-Sicherheitsnachweis:** keine Production-Änderung, keine Migration, keine
+  Seed-Einspielung, keine Aktivierung, keine Änderung an Cron, Locks, Telemetrie, Flags oder
+  Secrets. Die 5 `always_on`-Kernwege sind unverändert. Berlin/Brandenburg: alle 4 Landespakete
+  `prepared`, alle 18 Landeswege `needs_review` + `manual`, **0 aktiv**, im Plan mit
+  `landesmodul-gesperrt` ausgeschlossen. Niedersachsen: 7 Wege `paused` + `manual`, **0 aktiv**.
+- **Wirkung einer späteren freigegebenen Seed-Einspielung, getrennt betrachtet:** Metadaten
+  (`required_classes`, `purpose`, 28 korrigierte Namen — `name` wird von der `on-conflict`-Klausel
+  gar nicht aktualisiert) = **0 Laufzeitwirkung** · **+9** Paketzuordnungen = 0 · **+8** Abrufwege,
+  davon 7 dauerhaft `paused` = **+1 Abruf je Crawl** (der 24. ständige Ausschuss; 145 → 146 Wege,
+  +0,7 %) · **+7** Herausgeber = 0. Der Restore dreht alles zurück, Wege und Herausgeber jeweils
+  guarded. Runbook §4/§10a–§10c nachgezogen.
+- **Verbleibende Grenzen (unverändert ehrlich benannt):** der Volltext der Drucksache 21/150 wurde
+  nicht gelesen (`bundestag.de`/`dserver.bundestag.de` aus dieser Sitzung nicht abrufbar, `403` auf
+  `CONNECT`) — die 24 Ausschussbezeichnungen stammen aus amtlichen Ausschuss-Tagesordnungen der
+  21. WP, jeder Eintrag nennt seine Fundstelle · ob die laufende Wahlperiode **heute noch** die 21.
+  bzw. 8. ist, kann offline nicht geprüft werden; ein Wechsel macht die Prüfungen rot statt still
+  falsch · die Aktivierung der benannten Niedersachsen-Basis (+7 Abrufe je Crawl) und das
+  Nachziehen der amtlichen Namen in die Datenbank bleiben freigabepflichtig.
+- **Nicht getan (bewusst):** kein Production-Zugriff · kein Seed eingespielt · keine Migration ·
+  keine Quelle erfunden (die 2 neuen Wege nutzen verifizierte amtliche Domains über den bereits
+  verwendeten Suchweg) · keine Quelle entfernt · keine Kuratierungsschwelle global angehoben ·
+  keine Aktivierung von Niedersachsen, Berlin oder Brandenburg · keine Cron-/Lock-/Telemetrie-/
+  Flag-/Secret-Änderung · keine Anforderung entfernt, um einen grünen Test zu erzeugen.
 
 **Sprint „Punkt 13 — Nachtrag: Ausschuss-Sollmenge extern verankern" — Nachweis**
 
@@ -355,7 +468,8 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
   Bundestagsdokumenten der 21. Wahlperiode, überwiegend aus **Ausschuss-Tagesordnungen**
   (`bundestag.de/resource/blob/…`), die jede Bezeichnung wörtlich im Kopf tragen; jeder Eintrag
   der Sollmenge nennt seine Fundstelle. Ein direkter Abgleich gegen 21/150 bleibt empfohlen.
-  Ebenfalls offen: die **Fraktions**vollzähligkeit (8/8) ist weiterhin katalogrelativ.
+  **Überholt:** die damals noch katalogrelative Fraktionsvollzähligkeit ist im Abschlusssprint
+  oben extern verankert — und die Angabe „8/8" war fachlich falsch (richtig: 5).
 - **Nicht getan (bewusst):** kein Production-Zugriff · kein Seed eingespielt · keine Migration ·
   keine Quelle außer dem belegten 24. Ausschuss hinzugefügt · keine Katalog-Id geändert · keine
   Kuratierungsschwelle angehoben · keine Berlin-/Brandenburg-Aktivierung · keine Cron-/Flag-/

@@ -16,7 +16,8 @@ const fs = require("fs");
 const path = require("path");
 const {
   BUND_CLASSES, PACKAGE_REQUIREMENTS, ZULAESSIGE_UEBERSCHNEIDUNGEN, MIN_NICHT_AGGREGATOR_WEGE,
-  catalogPathClasses, buildCompletenessModel, assessPackageCompleteness, pruefeAusschussSollmenge
+  catalogPathClasses, buildCompletenessModel, assessPackageCompleteness,
+  pruefeAusschussSollmenge, pruefeFraktionsSollmenge
 } = require("../lib/helmut/quellenarchitektur/paket-vollstaendigkeit");
 const {
   PACKAGE_DEFINITIONS, REGION_TERMS_BY_PACKAGE, LANDESMODUL_PFLICHTKLASSEN,
@@ -50,10 +51,19 @@ const ERWARTETE_PAKETE = [
 
 // Pakete, die BLEIBEN duerfen, ohne "vollstaendig" zu sein — mit belegtem Grund. Jede andere
 // Abweichung von "vollstaendig" ist ein Fehler.
-const ZUGELASSEN_UNVOLLSTAENDIG = {
-  "regional-niedersachsen": "nur-aggregator-beleglage",
-  "die-linke-brandenburg": "pflichtklasse-fachlich-unmoeglich"
+// Pakete, die "vollstaendig mit belegten Ausnahmen" sein duerfen — mit den Klassen, deren
+// Ausnahme belegt ist. Jedes andere Ergebnis als 'vollstaendig' oder
+// 'vollstaendig_mit_belegten_ausnahmen' ist ein Fehler (Punkt-13-Abnahme).
+const ZUGELASSEN_MIT_AUSNAHMEN = {
+  "die-linke-brandenburg": ["fraktion_pilot", "person_pilot"]
 };
+const ABGESCHLOSSEN = new Set(["vollstaendig", "vollstaendig_mit_belegten_ausnahmen"]);
+
+// Die 7 BENANNTEN Pflichtwege des Regionalpakets Niedersachsen (vorbereitet, status 'paused').
+const NDS_BENANNT = [
+  "rp-nds-landtag", "rp-nds-landesregierung", "rp-news-haz", "rp-news-ndr",
+  "rp-news-braunschweiger-zeitung", "rp-news-salzgitter-zeitung", "rp-news-regionalheute"
+];
 
 // ============ 1 · Kein erwartetes Paket fehlt, keines kommt still dazu ============
 console.log("== 1 · Paketbestand ==");
@@ -172,9 +182,63 @@ check("arbeit-und-soziales hat amtliche, interessengebundene, Daten- und journal
 })());
 check("Parteipakete haben eine Primaerquelle des Eigeninteresses (nicht nur Aggregator)",
   ["die-linke-bund", "die-linke-berlin", "die-linke-brandenburg"].every((k) => (byKey.get(k).rollen.direct_interest || 0) > 0));
-check("regional-niedersachsen wird als reine Aggregator-Beleglage ERKANNT (kein falsches Gruen)", (() => {
+check("regional-niedersachsen hat benannte Herausgeber (amtlich UND journalistisch)", (() => {
   const p = byKey.get("regional-niedersachsen");
-  return p.nichtAggregatorWege < MIN_NICHT_AGGREGATOR_WEGE && p.maengel.includes("nur-aggregator-beleglage") && p.ergebnis !== "vollstaendig";
+  return p.nichtAggregatorWege >= MIN_NICHT_AGGREGATOR_WEGE
+    && (p.rollen.official_primary || 0) >= 1 && (p.rollen.journalistic || 0) >= 1;
+})());
+check("regional-niedersachsen: alle 6 Pflichtklassen besetzt, keine Ausnahme noetig", (() => {
+  const p = byKey.get("regional-niedersachsen");
+  return p.pflichtklassen.length === 6 && p.fehlend.length === 0 && p.unmoeglich.length === 0;
+})());
+check("Negativkontrolle: ein rein aggregatorbasiertes Regionalpaket wird abgelehnt", (() => {
+  const benannt = new Set(NDS_BENANNT);
+  const mutiert = {
+    ...CM,
+    packagePaths: CM.packagePaths.filter((pp) => !(pp.package_id === "pkg-regional-niedersachsen" && benannt.has(pp.retrieval_path_id)))
+  };
+  const p = assessPackageCompleteness(mutiert).pakete.find((x) => x.key === "regional-niedersachsen");
+  return !ABGESCHLOSSEN.has(p.ergebnis)
+    && p.maengel.includes("nur-aggregator-beleglage")
+    && p.maengel.includes("regionspaket-ohne-amtliche-oder-journalistische-beleglage");
+})());
+check("Negativkontrolle: fehlender benannter Regionalherausgeber der Wahlkreisregion wird erkannt", (() => {
+  const wk = new Set(["rp-news-braunschweiger-zeitung", "rp-news-salzgitter-zeitung", "rp-news-regionalheute"]);
+  const mutiert = {
+    ...CM,
+    packagePaths: CM.packagePaths.filter((pp) => !(pp.package_id === "pkg-regional-niedersachsen" && wk.has(pp.retrieval_path_id)))
+  };
+  const p = assessPackageCompleteness(mutiert).pakete.find((x) => x.key === "regional-niedersachsen");
+  return !ABGESCHLOSSEN.has(p.ergebnis) && p.fehlend.includes("wahlkreismedien");
+})());
+check("Negativkontrolle: ohne amtliche Ebene ist das Regionalpaket nicht abgeschlossen", (() => {
+  const amtlich = new Set(["rp-nds-landtag", "rp-nds-landesregierung"]);
+  const mutiert = {
+    ...CM,
+    packagePaths: CM.packagePaths.filter((pp) => !(pp.package_id === "pkg-regional-niedersachsen" && amtlich.has(pp.retrieval_path_id)))
+  };
+  const p = assessPackageCompleteness(mutiert).pakete.find((x) => x.key === "regional-niedersachsen");
+  return !ABGESCHLOSSEN.has(p.ergebnis)
+    && p.fehlend.includes("landesparlament") && p.fehlend.includes("landesregierung")
+    && p.maengel.includes("regionspaket-ohne-amtliche-oder-journalistische-beleglage");
+})());
+check("die 7 benannten Niedersachsen-Wege sind vorbereitet und werden NICHT abgerufen", (() => {
+  const p = byKey.get("regional-niedersachsen");
+  const benannt = NDS_BENANNT.map((id) => CM.paths.find((x) => x.id === id)).filter(Boolean);
+  return benannt.length === 7
+    && benannt.every((x) => x.status === "paused" && x.activation_mode === "manual")
+    && p.wegeVorbereitet === 7 && p.wegeAktivierbar === 4;
+})());
+check("Niedersachsen ist NICHT aktiviert: kein benannter Weg im aktiven Plan (Probe hat Zaehne)", (() => {
+  const profil = { id: "tenant-gamma", name: "Testprofil Gamma", politische_ebene: "bundestag", aktiv: true, wahlkreis: "Salzgitter", partei: "SPD" };
+  const akt = computeGlobalActivation({
+    profiles: [profil], packages: PACKAGE_DEFINITIONS,
+    packagePaths: CM.packagePaths, retrievalPaths: CM.paths
+  });
+  const aktiv = new Set(akt.activePathIds);
+  // Wirksamkeitsnachweis: das Regionalpaket IST aktiv (die Themensuchen laufen), die benannte
+  // Basis aber nicht — sonst waere die Aussage trivial erfuellt.
+  return aktiv.has("rp-region-salzgitter-arbeit-soziales") && NDS_BENANNT.every((id) => !aktiv.has(id));
 })());
 
 // ============ 7 · Vollzaehligkeit ============
@@ -188,10 +252,12 @@ check("bund-basis enthaelt alle 24 staendigen Ausschuesse der 21. Wahlperiode", 
 })());
 check("die Ausschuss-Sollmenge ist NICHT katalogrelativ (Vergleich gegen den Einsetzungsbeschluss)",
   pruefeAusschussSollmenge().vollstaendig === true && pruefeAusschussSollmenge().soll === 24);
-check("bund-basis enthaelt JEDE Bundestagsfraktion des Katalogs", (() => {
+check("bund-basis enthaelt alle 5 Fraktionen der 21. Wahlperiode (extern verankert)", (() => {
   const r = byKey.get("bund-basis").vollzaehligkeit.find((v) => v.regel === "alle_bundestagsfraktionen");
-  return r && r.erfuellt && r.soll === 8 && r.ist === 8;
+  return r && r.erfuellt && r.soll === 5 && r.ist === 5 && r.wahlperiode === 21;
 })());
+check("die Fraktions-Sollmenge ist NICHT katalogrelativ (Vergleich gegen die Sitzverteilung)",
+  pruefeFraktionsSollmenge().vollstaendig === true && pruefeFraktionsSollmenge().soll === 5);
 check("regional-niedersachsen deckt jede im Zweck genannte Region ab", (() => {
   const r = byKey.get("regional-niedersachsen").vollzaehligkeit.find((v) => v.regel === "alle_genannten_regionen");
   return r && r.erfuellt && r.soll === 4;
@@ -296,23 +362,21 @@ check("die Referenz auf ein vorbereitetes Pflichtpaket bleibt ehrlich unversorgt
 
 // ============ 11 · Unvollstaendiges kann nicht als vollstaendig gelten ============
 console.log("== 11 · Kein falsches Gruen ==");
-check("nur die belegt unvollstaendigen Pakete sind nicht 'vollstaendig'", (() => {
-  const nichtVoll = A.pakete.filter((p) => p.ergebnis !== "vollstaendig").map((p) => p.key).sort();
-  return JSON.stringify(nichtVoll) === JSON.stringify(Object.keys(ZUGELASSEN_UNVOLLSTAENDIG).sort());
+check("KEIN Paket ist 'teilweise' oder 'blockiert' (Punkt-13-Abnahme)",
+  A.pakete.every((p) => ABGESCHLOSSEN.has(p.ergebnis)) && A.summary.teilweise === 0 && A.summary.blockiert === 0);
+check("nur die zugelassenen Pakete tragen belegte Ausnahmen", (() => {
+  const mitAusnahmen = A.pakete.filter((p) => p.ergebnis === "vollstaendig_mit_belegten_ausnahmen").map((p) => p.key).sort();
+  return JSON.stringify(mitAusnahmen) === JSON.stringify(Object.keys(ZUGELASSEN_MIT_AUSNAHMEN).sort());
 })());
-check("jedes nicht vollstaendige Paket nennt genau den zugelassenen Mangel",
-  A.pakete.filter((p) => p.ergebnis !== "vollstaendig").every((p) => p.maengel.includes(ZUGELASSEN_UNVOLLSTAENDIG[p.key])));
-check("ein Paket mit Maengeln kann nie 'vollstaendig' sein", A.pakete.every((p) => (p.maengel.length === 0) === (p.ergebnis === "vollstaendig")));
-check("fachlich unmoegliche Pflichtklassen sind begruendet und zaehlen NICHT als erledigt", (() => {
-  const p = byKey.get("die-linke-brandenburg");
-  return p.unmoeglich.length === 2
-    && p.unmoeglich.every((u) => typeof u.grund === "string" && u.grund.length > 40)
-    && p.vorhandeneKlassen.length === 1
-    && p.ergebnis === "teilweise";
-})());
+check("jede belegte Ausnahme betrifft genau die zugelassene Klasse",
+  A.pakete.filter((p) => p.unmoeglich.length).every((p) =>
+    JSON.stringify(p.unmoeglich.map((u) => u.klasse).sort()) === JSON.stringify(ZUGELASSEN_MIT_AUSNAHMEN[p.key].slice().sort())));
+check("ein Paket mit Maengeln kann nie abgeschlossen sein", A.pakete.every((p) => (p.maengel.length === 0) === ABGESCHLOSSEN.has(p.ergebnis)));
+check("kein Paket traegt eine unbegruendete oder ueberfluessige Ausnahme",
+  A.pakete.every((p) => p.unbegruendeteAusnahmen.length === 0 && p.ueberfluessigeAusnahmen.length === 0));
 check("jedes Paket mit Einschraenkungen fuehrt sie ausgeschrieben",
   A.pakete.every((p) => p.einschraenkungen.every((e) => typeof e === "string" && e.length > 30)));
-check("regional-niedersachsen dokumentiert seine drei belegten Grenzen", byKey.get("regional-niedersachsen").einschraenkungen.length === 3);
+check("regional-niedersachsen dokumentiert seine vier belegten Grenzen", byKey.get("regional-niedersachsen").einschraenkungen.length === 4);
 check("Negativkontrolle: ein Paket ohne fachliche Anforderung gilt als 'blockiert'", (() => {
   const mutiert = {
     ...CM,
@@ -356,13 +420,14 @@ check("die 5 always_on-Kernwege sind unveraendert", (() => {
 })());
 // 145 seit der Ausschuss-Korrektur: genau EIN neuer Abrufweg (der bis dahin fehlende
 // 24. staendige Ausschuss). Belegt in scripts/bundestag-ausschuesse-test.js.
-check("genau ein zusaetzlicher Abrufweg (145 Bund-Katalogwege, vorher 144)", buildFullModel().retrievalPaths.length === 145);
-check("kein Weg hat seinen Aktivierungsmodus geaendert (140 auto, 5 always_on, 0 dev_only/manual)", (() => {
+check("152 Bund-Katalogwege (144 vor Punkt 13 + 24. Ausschuss + 7 benannte Niedersachsen-Wege)", buildFullModel().retrievalPaths.length === 152);
+check("Aktivierungsmodi: 140 auto, 5 always_on, 7 manual (vorbereitet), 0 dev_only", (() => {
   const m = buildFullModel();
   const z = m.retrievalPaths.reduce((acc, p) => { acc[p.activation_mode] = (acc[p.activation_mode] || 0) + 1; return acc; }, {});
-  return z.auto === 140 && z.always_on === 5 && !z.dev_only && !z.manual;
+  // Die 7 "manual"-Wege sind die vorbereitete Niedersachsen-Basis (zusaetzlich status paused).
+  return z.auto === 140 && z.always_on === 5 && z.manual === 7 && !z.dev_only;
 })());
-check("Punkt 13 erzeugt zwei zusaetzliche Paketzuordnungen (147 statt 145)", buildFullModel().packagePaths.length === 147);
+check("Punkt 13 erzeugt 9 zusaetzliche Paketzuordnungen (154 statt 145)", buildFullModel().packagePaths.length === 154);
 check("der zusaetzliche Weg im Basispaket war schon vorher katalogaktiv (kein neuer Abruf)", (() => {
   const p = buildFullModel().retrievalPaths.find((x) => x.id === "rp-ausschuss-arbeit-soziales");
   return !!p && p.activation_mode === "auto";
@@ -396,11 +461,12 @@ check("der relationale Plan wird aus DB-Zeilen gebaut (nicht aus dem Codemodell)
 console.log("== 14 · Reproduzierbarkeit ==");
 check("zwei Bewertungslaeufe liefern dasselbe Ergebnis",
   JSON.stringify(assessPackageCompleteness()) === JSON.stringify(assessPackageCompleteness()));
-check("Bestandszahlen des vereinigten Modells stimmen (145 Bund + 18 Land = 163 Wege)",
-  CM.herkunft.bundWege === 145 && CM.herkunft.landWege === 18 && CM.paths.length === 163);
-check("Zuordnungen des vereinigten Modells stimmen (147 Bund + 19 Land = 166)", CM.packagePaths.length === 166);
-check("Ergebnisverteilung: 6 vollstaendig, 2 teilweise, 0 blockiert",
-  A.summary.vollstaendig === 6 && A.summary.teilweise === 2 && A.summary.blockiert === 0);
+check("Bestandszahlen des vereinigten Modells stimmen (152 Bund + 18 Land = 170 Wege)",
+  CM.herkunft.bundWege === 152 && CM.herkunft.landWege === 18 && CM.paths.length === 170);
+check("Zuordnungen des vereinigten Modells stimmen (154 Bund + 19 Land = 173)", CM.packagePaths.length === 173);
+check("Ergebnisverteilung: 7 vollstaendig, 1 mit belegten Ausnahmen, 0 teilweise, 0 blockiert",
+  A.summary.vollstaendig === 7 && A.summary.vollstaendigMitAusnahmen === 1
+  && A.summary.teilweise === 0 && A.summary.blockiert === 0 && A.summary.abgeschlossen === 8);
 
 console.log(`\n== Ergebnis: ${pass} PASS, ${fail} FAIL ==`);
 process.exit(fail > 0 ? 1 : 0);

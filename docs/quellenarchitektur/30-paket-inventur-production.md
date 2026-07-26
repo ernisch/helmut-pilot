@@ -105,10 +105,10 @@ die Mengen nicht:
 ## 4 · Fachliche Vollständigkeit
 
 > **Überholt seit 2026-07-26 (Punkt-13-Sprint).** Zusätzlich gilt: die in §2/§3 genannten
-> Bestandszahlen des **Code-Seeds** sind seit der Ausschuss-Korrektur höher (145 statt 144
-> Abrufwege, 147 statt 146 Paketzuordnungen) — der 21. Bundestag hat 24 statt der bis dahin
-> geführten 23 ständigen Ausschüsse. Die **Production-Zahlen** dieser Inventur (163 Abrufwege,
-> 165 Zuordnungen) bleiben gültig, weil Seeds nicht automatisch eingespielt werden.
+> Bestandszahlen des **Code-Seeds** sind nach den Punkt-13-Korrekturen höher: **58** Herausgeber,
+> **152** Abrufwege, **154** Paketzuordnungen (24 statt 23 ständige Ausschüsse; 7 benannte, dauerhaft
+> `paused` gehaltene Niedersachsen-Wege). Die **Production-Zahlen** dieser Inventur (64 Herausgeber,
+> 163 Abrufwege, 165 Zuordnungen) bleiben gültig, weil Seeds nicht automatisch eingespielt werden.
 > Dieser Abschnitt beschreibt den Stand der
 > Erhebung vom 25.07. Die fachliche Vollständigkeit ist seither für **alle** Pakete definiert und
 > ausführbar geprüft; die Zahlen unten (Berlin 10/15, Brandenburg 9/15) waren eine Unterzählung
