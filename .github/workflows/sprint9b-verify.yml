@@ -28,6 +28,10 @@ on:
         description: "HTTP-Timeout je Abruf in ms — Default 12000"
         required: false
         default: "12000"
+      only:
+        description: "Pruefumfang eingrenzen: Gruppen (BE, BB, BE+BB, BUND) und/oder legacy_source_ids, kommagetrennt. Leer = alle Wege."
+        required: false
+        default: ""
   # Zusaetzlich bei einem Pull Request, der die 9B-Dateien betrifft: GitHub fuehrt dann die
   # YAML AUS DEM PR-HEAD aus (kein main-Merge noetig) — auf einem Runner mit offenem Egress,
   # sodass die echten oeffentlichen Adressen tatsaechlich geprueft werden. KEIN Deployment,
@@ -78,6 +82,8 @@ jobs:
           # Bei pull_request-Läufen existiert kein inputs-Kontext -> explizite Defaults.
           S9B_FRESH_DAYS: ${{ inputs.fresh_days || '45' }}
           S9B_TIMEOUT_MS: ${{ inputs.timeout_ms || '12000' }}
+          # Leer bei pull_request-Laeufen -> voller Umfang wie bisher.
+          S9B_ONLY: ${{ inputs.only || '' }}
         run: node scripts/sprint9b-verify-abrufwege.js --out sprint9b-report.json
 
       # Lesbare Zusammenfassung erzeugen + in die GitHub-Job-Summary schreiben.

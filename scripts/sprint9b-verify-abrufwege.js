@@ -35,6 +35,33 @@ const FRESH_DAYS = Number(process.env.S9B_FRESH_DAYS || 45);
 // beschränkungen umgangen: TLS-Prüfung bleibt an, kein Captcha-Solving, keine IP-Rotation.
 const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36";
 
+// Eingrenzung des Prüfumfangs (Phase-1-Punkt 14, Neuverifikation V2). Ohne Angabe wird
+// weiterhin die volle Liste geprüft — das bisherige Verhalten bleibt der Default.
+// S9B_ONLY nimmt eine kommagetrennte Liste aus Gruppennamen (BE, BB, "BE+BB", BUND) und/oder
+// einzelnen legacy_source_ids (z. B. "be-landesparlament"). Vergleich case-insensitiv.
+// Zweck: eine Neuverifikation darf eng begrenzt laufen, statt alle Adressen mitzuziehen.
+const ONLY_RAW = String(process.env.S9B_ONLY || "").trim();
+
+function parseOnly(raw) {
+  return String(raw || "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+}
+
+// Reine Filterlogik (offline testbar). Leere Auswahl -> unveränderte Liste.
+// Ein Auswahlbegriff ohne Treffer ist ein FEHLER (er würde sonst still eine leere oder zu
+// kleine Prüfmenge erzeugen und als "verifiziert" durchgehen).
+function filterWege(wege, raw) {
+  const only = parseOnly(raw);
+  if (!only.length) return { wege, only, unbekannt: [] };
+  const treffer = new Set();
+  const unbekannt = [];
+  for (const begriff of only) {
+    const passend = wege.filter((w) => String(w.gruppe).toLowerCase() === begriff || String(w.id).toLowerCase() === begriff);
+    if (!passend.length) { unbekannt.push(begriff); continue; }
+    for (const w of passend) treffer.add(w.id);
+  }
+  return { wege: wege.filter((w) => treffer.has(w.id)), only, unbekannt };
+}
+
 // ---------------------------------------------------------------------------
 // Wege-Liste (25) aus den Seeds zusammenstellen — keine hartkodierten URLs.
 // ---------------------------------------------------------------------------
@@ -265,12 +292,25 @@ function applyEgressGate(rows, controlOk, controlStatuses) {
 // Orchestrierung
 // ---------------------------------------------------------------------------
 async function run() {
-  const wege = buildWege();
+  const alleWege = buildWege();
+  const auswahl = filterWege(alleWege, ONLY_RAW);
+  if (auswahl.unbekannt.length) {
+    console.error(`S9B_ONLY enthaelt unbekannte Begriffe: ${auswahl.unbekannt.join(", ")}`);
+    console.error(`Erlaubt sind Gruppen (BE, BB, BE+BB, BUND) und legacy_source_ids: ${alleWege.map((w) => w.id).join(", ")}`);
+    process.exit(2);
+  }
+  const wege = auswahl.wege;
   const outIdx = process.argv.indexOf("--out");
   const outPath = outIdx > -1 ? process.argv[outIdx + 1] : null;
 
   console.log("=== Sprint 9B — echte technische Verifikation der Abrufwege ===");
-  console.log(`Wege: ${wege.length} (19 BE/BB + 6 Bund) · Timeout ${TIMEOUT_MS}ms · aktuell ≤ ${FRESH_DAYS} Tage`);
+  // Umfangszeile aus den Daten ableiten statt zu behaupten (die Alt-Zeile nannte fest
+  // "19 BE/BB + 6 Bund"; real sind es 18 Landeswege nach Dedup).
+  const jeGruppe = alleWege.reduce((a, w) => { a[w.gruppe] = (a[w.gruppe] || 0) + 1; return a; }, {});
+  const umfang = auswahl.only.length
+    ? `eingegrenzt auf ${auswahl.only.join(", ")}`
+    : Object.entries(jeGruppe).map(([g, n]) => `${n} ${g}`).join(" + ");
+  console.log(`Wege: ${wege.length} von ${alleWege.length} (${umfang}) · Timeout ${TIMEOUT_MS}ms · aktuell ≤ ${FRESH_DAYS} Tage`);
   console.log("HINWEIS: echte Außen-Abrufe. In gesperrter Egress-Umgebung -> alle 'nicht_verifizierbar'.\n");
 
   // Kontroll-Abruf zuerst: klärt, ob Egress überhaupt möglich ist.
@@ -306,7 +346,7 @@ async function run() {
   }
 
   if (outPath) {
-    fs.writeFileSync(outPath, JSON.stringify({ generatedAt: new Date().toISOString(), fresh_days: FRESH_DAYS, egressOffen: controlOk, controlStatuses, rows, zaehl, verifiziert, total: rows.length }, null, 2));
+    fs.writeFileSync(outPath, JSON.stringify({ generatedAt: new Date().toISOString(), fresh_days: FRESH_DAYS, only: auswahl.only, gesamtWege: alleWege.length, egressOffen: controlOk, controlStatuses, rows, zaehl, verifiziert, total: rows.length }, null, 2));
     console.log(`\nJSON-Report: ${outPath}`);
   }
   return rows;
@@ -316,4 +356,4 @@ if (require.main === module) {
   run().catch((e) => { console.error(e); process.exit(1); });
 }
 
-module.exports = { buildWege, httpProbe, probeToVerdict, newestItemDate, countXmlRecords, looksHtml, controlOkFromProbes, applyEgressGate };
+module.exports = { buildWege, filterWege, parseOnly, httpProbe, probeToVerdict, newestItemDate, countXmlRecords, looksHtml, controlOkFromProbes, applyEgressGate };

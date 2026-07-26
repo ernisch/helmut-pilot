@@ -7,9 +7,9 @@
 -- Befunds A-3 (Partei-/Fraktions-/Personenwege am Pflicht-Basispaket). Nur nutzen,
 -- wenn die Umhängung selbst Schaden angerichtet hat; sonst genügt Stufe 1.
 begin;
--- B rückwärts:
+-- B rückwärts (alle Wege des Basispakets, siehe Stufe 1):
 update public.retrieval_paths set status = 'needs_review', activation_mode = 'manual'
-  where id in ('rp-be-landesfraktionen', 'rp-be-landesparlament', 'rp-be-landesregierung', 'rp-be-regionale_leitmedien', 'rp-be-staatskanzlei', 'rp-rbb24-politik');
+  where id in ('rp-be-landesfraktionen', 'rp-be-landesparlament', 'rp-be-landesregierung', 'rp-be-plenum', 'rp-be-regionale_leitmedien', 'rp-be-staatskanzlei', 'rp-rbb24-politik');
 update public.source_packages set status = 'prepared' where key = 'berlin-basis';
 -- A rückwärts:
 insert into public.package_paths (package_id, retrieval_path_id) values

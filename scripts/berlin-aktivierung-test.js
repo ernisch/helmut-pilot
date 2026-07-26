@@ -282,7 +282,8 @@ const aktivierte = wege.filter((w) => w.aktiviert);
 check("6a Plan kennt genau 10 Berliner Wege (7 Basis + 3 Partei)", wege.length === 10);
 check("6b Jeder Weg ist entweder im Aktivierungsset oder hat einen benannten Nicht-Grund",
   wege.every((w) => w.aktiviert || w.nichtAktiviertGrund), wege.filter((w) => !w.aktiviert && !w.nichtAktiviertGrund).map((w) => w.id).join(","));
-check("6c Aktivierungsset = 6 Wege", aktivierte.length === 6);
+check("6c Aktivierungsset = 4 Wege (von 6 auf 4 reduziert: 2 Wege bei der Neuverifikation 2026-07-26 veraltet)",
+  aktivierte.length === 4);
 check("6d Jeder aktivierte Weg hat eine absolute https-URL", aktivierte.every((w) => /^https:\/\/[^\s]+$/.test(w.url)));
 check("6e Jeder aktivierte Weg hat einen Parser, und der passt zur Methode",
   aktivierte.every((w) => (w.method === "googlenews_search" && w.parser === "googlenews-batchexecute")
@@ -296,8 +297,9 @@ check("6g Domains sind die erwarteten Berliner bzw. Aggregator-Domains",
   }));
 check("6h Jeder Weg trägt politische Ebene 'land' und Geografie 'geo-land-berlin'",
   wege.every((w) => w.political_level === "land" && w.geography_id === "geo-land-berlin"));
-check("6i Jeder aktivierte Weg hat ein Live-Urteil und keines ist 'ablehnen'/'nicht_verifizierbar'",
-  aktivierte.every((w) => w.liveUrteil === "geeignet"));
+check("6i Jeder aktivierte Weg traegt eine AKTUELLE Verifikation mit Urteil 'geeignet'",
+  aktivierte.every((w) => (B.VERIFIKATION_20260726[w.id] || {}).urteil === "geeignet"),
+  aktivierte.filter((w) => (B.VERIFIKATION_20260726[w.id] || {}).urteil !== "geeignet").map((w) => w.id).join(","));
 check("6j Die beiden bot-gesperrten Wege (429) sind NICHT im Aktivierungsset",
   wege.filter((w) => w.eingeschraenkt).every((w) => !w.aktiviert));
 check("6k Herausgeber und Belegrolle sind je Weg gesetzt",
@@ -308,21 +310,25 @@ check("6m Zu jedem Weg existiert eine benannte Einschränkung (auch zu den unbes
   wege.every((w) => B.EINSCHRAENKUNGEN.some((e) => e.weg === w.id) || B.UMHAENGUNG.wege.includes(w.id)));
 check("6n Jede Einschränkung nennt Ausfallform, Monitoring-Signal und Alternative",
   B.EINSCHRAENKUNGEN.every((e) => e.ausfallform && e.monitoring && e.alternative));
-check("6o Pflichtklassen ehrlich: 8 von 12 liefernd, 4 nur vorbereitet, 0 ohne Weg",
+check("6o Pflichtklassen ehrlich: 5 von 12 liefernd, 7 nur vorbereitet, 0 ohne Weg",
   (() => {
     const a = B.pflichtklassenAbdeckung(wege);
-    return a.basisGesamt === 12 && a.basisLiefernd.length === 8 && a.basisNurVorbereitet.length === 4 && a.basisOhneWeg.length === 0;
+    return a.basisGesamt === 12 && a.basisLiefernd.length === 5 && a.basisNurVorbereitet.length === 7 && a.basisOhneWeg.length === 0;
   })());
-check("6p Die 4 nicht liefernden Klassen sind genau die PARDOK-Klassen",
+// Die 7 nicht liefernden Klassen sind die 4 PARDOK-Klassen PLUS die 3, die an den zwei
+// veralteten Wegen hingen (landesparlament + ausschuesse an rp-be-landesparlament,
+// landesfraktionen an rp-be-landesfraktionen). Ein Weg, dessen juengstes Item Monate alt ist,
+// zaehlt hier NICHT als liefernd — das ist der Unterschied zwischen erreichbar und liefernd.
+check("6p Die 7 nicht liefernden Klassen sind die PARDOK-Klassen plus die 3 veralteten",
   gleich(B.pflichtklassenAbdeckung(wege).basisNurVorbereitet.slice().sort(),
-    ["drucksachen", "gesetzgebung", "plenum", "schriftliche_anfragen"]));
+    ["ausschuesse", "drucksachen", "gesetzgebung", "landesfraktionen", "landesparlament", "plenum", "schriftliche_anfragen"]));
 check("6q Der relationale Plan hält für jeden aktiven Weg die Crawler-Quelle mit URL bereit (Originalabruf nachvollziehbar)",
   pAktiv.aktiv.filter((a) => berlinIds.includes(a.id)).every((a) => a.source && (a.source.rssUrl || a.source.url)));
 check("6r Globale URL-Dedup: derselbe Weg erscheint auch bei zwei Berliner Profilen genau einmal",
   (() => {
     const pl = plan({ berlinAktiv: true, neutralisiert: true, profiles: [P_BERLIN_CDU, { ...P_BERLIN_LINKE }], env: { HELMUT_LANDESMODULE: "berlin" } });
     const ids = aktivIds(pl).filter((id) => berlinIds.includes(id));
-    return ids.length === new Set(ids).size && ids.length === 6;
+    return ids.length === new Set(ids).size && ids.length === 4;
   })());
 
 // ══ 7) PARDOK-Invariante + Fehlerisolation + Leerzustand ═════════════════════════════════════
@@ -401,19 +407,22 @@ check("6r Globale URL-Dedup: derselbe Weg erscheint auch bei zwei Berliner Profi
 
   // ══ 9) Lastprognose ═══════════════════════════════════════════════════════════════════════
   const last = B.lastprognose(wege);
-  check("9a Wege je Lauf = 6 (4 Google-News + 2 Direktfeeds)",
-    last.wegeProLauf === 6 && last.davonGoogleNews === 4 && last.davonDirektfeeds === 2);
-  check("9b Untergrenze der Abrufe je Lauf = 1 je Weg", last.abrufeProLaufMin === 6);
+  check("9a Wege je Lauf = 4 (2 Google-News + 2 Direktfeeds)",
+    last.wegeProLauf === 4 && last.davonGoogleNews === 2 && last.davonDirektfeeds === 2);
+  check("9b Untergrenze der Abrufe je Lauf = 1 je Weg", last.abrufeProLaufMin === 4);
   check("9c Obergrenze je Lauf ist aus max_items und der URL-Auflösung abgeleitet (nicht geraten)",
-    last.abrufeProLaufMax === 6 + 4 * 16 * 3 && last.abrufeProLaufMax === 198);
-  check("9d Tageswerte folgen den 2 Crawl-Crons aus vercel.json",
-    last.abrufeProTagMin === 12 && last.abrufeProTagMax === 396);
+    last.abrufeProLaufMax === 4 + 2 * 16 * 3 && last.abrufeProLaufMax === 100);
+  // KORREKTUR: die Alt-Annahme "2 Crawl-Crons aus vercel.json" war falsch. Gemessen laufen
+  // real 5 Vollrunden je Tag (04:00, ~07:5x, 10:00, 16:00, 20:00 UTC) — die Alt-Rechnung
+  // unterschaetzte die Abruflast um den Faktor 2,5.
+  check("9d Tageswerte folgen den 5 GEMESSENEN Vollrunden, nicht den 2 Crawl-Crons",
+    last.abrufeProTagMin === 20 && last.abrufeProTagMax === 500);
   check("9e Der Crawl selbst löst 0 LLM-Aufrufe aus (Kosten entstehen erst im Understanding)",
     last.llmCallsDurchCrawl === 0);
   check("9f Dokument-Obergrenze ist begrenzt und benannt",
-    last.dokumenteProLaufMax === 96 && last.dokumenteProTagMax === 192);
+    last.dokumenteProLaufMax === 64 && last.dokumenteProTagMax === 320);
   check("9g Alle Annahmen sind mitgeliefert (nachrechenbar)",
-    last.annahmen.maxItemsJeWeg === 16 && last.annahmen.crawlLaeufeProTag === 2 && last.annahmen.crawlNebenlaufigkeit === 20);
+    last.annahmen.maxItemsJeWeg === 16 && last.annahmen.crawlLaeufeProTag === 5 && last.annahmen.crawlNebenlaufigkeit === 20);
 
   // ══ 10) Rollback: das committete SQL wirklich ausführen ═══════════════════════════════════
   rollbackTests();
@@ -500,9 +509,9 @@ function rollbackTests() {
     db.package_paths.filter((pp) => pp.package_id === B.BASISPAKET_ID && B.UMHAENGUNG.wege.includes(pp.retrieval_path_id)).length === 0);
   check("10c Nach Block A: alle 3 Wege hängen am Parteipaket",
     B.UMHAENGUNG.wege.every((w) => db.package_paths.some((pp) => pp.package_id === B.PARTEIPAKET_ID && pp.retrieval_path_id === w)));
-  check("10d Nach Block B: genau 6 Berliner Wege healthy+auto",
-    db.retrieval_paths.filter((p) => p.status === "healthy" && p.activation_mode === "auto" && B.AKTIVIERUNGSSET.includes(p.id)).length === 6
-    && db.retrieval_paths.filter((p) => p.id.startsWith("rp-be-") && p.status === "healthy").length === 5);
+  check("10d Nach Block B: genau 4 Berliner Wege healthy+auto",
+    db.retrieval_paths.filter((p) => p.status === "healthy" && p.activation_mode === "auto" && B.AKTIVIERUNGSSET.includes(p.id)).length === 4
+    && db.retrieval_paths.filter((p) => p.id.startsWith("rp-be-") && p.status === "healthy").length === 3);
   check("10e Nach Block B: berlin-basis ist 'active', brandenburg-basis unverändert 'prepared'",
     db.source_packages.find((p) => p.key === "berlin-basis").status === "active"
     && db.source_packages.find((p) => p.key === "brandenburg-basis").status === "prepared");
@@ -582,8 +591,8 @@ function adversarialBefunde() {
   const quellen = pAktiv.aktiv.filter((a) => berlinIds.includes(a.id)).map((a) => ({ id: a.id, src: a.source }));
   const googleWege = B.berlinWegeAusSeed().filter((w) => w.aktiviert && w.method === "googlenews_search").map((w) => w.id);
   const direktWege = B.berlinWegeAusSeed().filter((w) => w.aktiviert && w.method !== "googlenews_search").map((w) => w.id);
-  check("11a Alle 4 Berliner Google-News-Wege werden vom Google-Gate erkannt (Drossel/Retry/Breaker greifen)",
-    googleWege.length === 4 && googleWege.every((id) => isGoogleNewsSource((quellen.find((q) => q.id === id) || {}).src || {})),
+  check("11a Alle 2 Berliner Google-News-Wege werden vom Google-Gate erkannt (Drossel/Retry/Breaker greifen)",
+    googleWege.length === 2 && googleWege.every((id) => isGoogleNewsSource((quellen.find((q) => q.id === id) || {}).src || {})),
     googleWege.filter((id) => !isGoogleNewsSource((quellen.find((q) => q.id === id) || {}).src || {})).join(","));
   check("11b Die 2 Berliner Direktfeeds laufen NICHT über das Google-Gate (Provider-Trennung bleibt)",
     direktWege.length === 2 && direktWege.every((id) => !isGoogleNewsSource((quellen.find((q) => q.id === id) || {}).src || {})));

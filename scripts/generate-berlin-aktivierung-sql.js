@@ -13,8 +13,9 @@
 //             hängt die 3 Partei-/Fraktions-/Personenwege von berlin-basis nach
 //             die-linke-berlin um. Ohne Block A bekäme JEDES Berliner Landtagsmandat
 //             zwingend die Quellen EINER Partei.
-//   Block B — AKTIVIERUNG: berlin-basis -> 'active' und die 6 liefernden Wege ->
-//             status='healthy', activation_mode='auto'.
+//   Block B — AKTIVIERUNG: berlin-basis -> 'active' und die liefernden Wege des
+//             Aktivierungssets -> status='healthy', activation_mode='auto'. Gestaffelt in
+//             zwei einzeln auszufuehrende Teilblöcke (erst Direktfeeds, dann Google-Wege).
 //
 // ROLLBACK (drei Stufen, absteigende Eingriffstiefe):
 //   Stufe 0  Flag  HELMUT_LANDESMODULE  leeren  -> wirkt sofort, KEIN DB-Schreibzugriff.
@@ -88,12 +89,23 @@ function build() {
   out.push("--     Berliner Landtagsprofils (computeGlobalActivation).");
   out.push(`update public.source_packages set status = 'active' where key = ${q(B.BASISPAKET_KEY)} and status = 'prepared';`);
   out.push("");
-  out.push(`-- B2) Die ${aktiv.length} liefernden Abrufwege scharfschalten. ALLE anderen Berliner Wege bleiben`);
-  out.push("--     unverändert (needs_review + manual) — insbesondere rp-be-plenum (PARDOK, 0 Items)");
-  out.push("--     und die 3 Wege aus Block A.");
-  out.push("update public.retrieval_paths set status = 'healthy', activation_mode = 'auto'");
-  out.push(`  where id in (${idListe(aktiv)})`);
-  out.push("    and status = 'needs_review' and activation_mode = 'manual';");
+  out.push(`-- B2) Die ${aktiv.length} liefernden Abrufwege scharfschalten — GESTAFFELT.`);
+  out.push("--     ALLE anderen Berliner Wege bleiben unverändert (needs_review + manual):");
+  out.push("--     rp-be-plenum (PARDOK, strukturell 0 Items), rp-be-landesparlament und");
+  out.push("--     rp-be-landesfraktionen (bei der Neuverifikation 2026-07-26 veraltet) sowie die");
+  out.push("--     3 Wege aus Block A.");
+  out.push("--");
+  out.push("--     WICHTIG: die Stufen sind EINZELN auszuführen, nicht zusammen. Zwischen Stufe 1");
+  out.push("--     und Stufe 2 liegt mindestens ein vollständiger Crawl-Zyklus.");
+  for (const stufe of B.AKTIVIERUNGSSTUFEN) {
+    const ids = stufe.wege.slice().sort();
+    out.push("");
+    out.push(`-- B2.${stufe.stufe}) ${stufe.grund}`);
+    if (stufe.weiterErst && stufe.weiterErst !== "—") out.push(`--       Weiter zur nächsten Stufe erst ${stufe.weiterErst}.`);
+    out.push("update public.retrieval_paths set status = 'healthy', activation_mode = 'auto'");
+    out.push(`  where id in (${idListe(ids)})`);
+    out.push("    and status = 'needs_review' and activation_mode = 'manual';");
+  }
   out.push("");
   out.push("commit;");
   out.push("notify pgrst, 'reload schema';");
@@ -114,24 +126,36 @@ function build() {
   return out.join("\n");
 }
 
+// Alle Berliner Wege des Basispakets — nicht nur die aktuell aktivierten. Der Rollback muss den
+// GEMESSENEN Ausgangszustand (alle needs_review/manual) wiederherstellen, auch wenn zuvor eine
+// ältere oder nur teilweise ausgeführte Aktivierung lief. Ein Rollback, der ausschließlich das
+// heutige Aktivierungsset zurücksetzt, ließe genau die Wege aktiv, die ein früherer Lauf
+// scharfgeschaltet hat — und würde als "vollständig zurückgerollt" gemeldet.
+function alleBerlinerWege() {
+  return B.berlinWegeAusSeed().map((w) => w.id).filter((id) => !B.UMHAENGUNG.wege.includes(id)).sort();
+}
+
 // Stufe 1: dreht NUR Block B zurück (Betriebs-Abbruch). Neutralisierung bleibt.
 function buildRollback() {
-  const aktiv = B.berlinWegeAusSeed().filter((w) => w.aktiviert).map((w) => w.id).sort();
+  const zurueck = alleBerlinerWege();
   const out = [];
   out.push(...kopf("Berlin-Aktivierung · ROLLBACK Stufe 1 (nur Block B)"));
   out.push("--");
   out.push("-- Stoppt die Berliner Versorgung und lässt die Neutralisierung (Block A) bestehen.");
   out.push("-- SCHNELLER Weg ohne DB-Schreibzugriff: HELMUT_LANDESMODULE leeren (Stufe 0).");
   out.push("-- Bereits erzeugte Berliner Dokumente werden NICHT gelöscht (Audit-Spur bleibt).");
+  out.push("--");
+  out.push(`-- Setzt ALLE ${zurueck.length} Wege des Berliner Basispakets zurück, nicht nur das aktuelle`);
+  out.push("-- Aktivierungsset — sonst bliebe ein von einer früheren Fassung aktivierter Weg stehen.");
   out.push("begin;");
   out.push("update public.retrieval_paths set status = 'needs_review', activation_mode = 'manual'");
-  out.push(`  where id in (${idListe(aktiv)});`);
+  out.push(`  where id in (${idListe(zurueck)});`);
   out.push(`update public.source_packages set status = 'prepared' where key = ${q(B.BASISPAKET_KEY)};`);
   out.push("commit;");
   out.push("notify pgrst, 'reload schema';");
   out.push("");
   out.push("-- Prüfung: 0 Zeilen erwartet.");
-  out.push(`-- select id, status, activation_mode from public.retrieval_paths where id in (${idListe(aktiv)})`);
+  out.push(`-- select id, status, activation_mode from public.retrieval_paths where id in (${idListe(zurueck)})`);
   out.push("--   and (status <> 'needs_review' or activation_mode <> 'manual');");
   out.push("");
   return out.join("\n");
@@ -139,7 +163,7 @@ function buildRollback() {
 
 // Stufe 2: Block B + Block A zurück -> exakt der gemessene Ist-Zustand vom 2026-07-26.
 function buildRollbackVollstaendig() {
-  const aktiv = B.berlinWegeAusSeed().filter((w) => w.aktiviert).map((w) => w.id).sort();
+  const zurueck = alleBerlinerWege();
   const out = [];
   out.push(...kopf("Berlin-Aktivierung · ROLLBACK Stufe 2 (Block B + Block A)"));
   out.push("--");
@@ -147,9 +171,9 @@ function buildRollbackVollstaendig() {
   out.push("-- Befunds A-3 (Partei-/Fraktions-/Personenwege am Pflicht-Basispaket). Nur nutzen,");
   out.push("-- wenn die Umhängung selbst Schaden angerichtet hat; sonst genügt Stufe 1.");
   out.push("begin;");
-  out.push("-- B rückwärts:");
+  out.push("-- B rückwärts (alle Wege des Basispakets, siehe Stufe 1):");
   out.push("update public.retrieval_paths set status = 'needs_review', activation_mode = 'manual'");
-  out.push(`  where id in (${idListe(aktiv)});`);
+  out.push(`  where id in (${idListe(zurueck)});`);
   out.push(`update public.source_packages set status = 'prepared' where key = ${q(B.BASISPAKET_KEY)};`);
   out.push("-- A rückwärts:");
   out.push("insert into public.package_paths (package_id, retrieval_path_id) values");
