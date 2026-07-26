@@ -1,10 +1,11 @@
 # Berlin aktivieren — Runbook und Go-/No-Go-Grundlage
 
-**Stand:** 2026-07-26 (vierter Durchgang, Zwischensprint 14A) · **Sprint:** Phase-1-Punkt 14 / 14A ·
-**Zustand:** aktivierungsreif **mit reduziertem Set**, **Sicherung erstellt**, **Production
-weiterhin unverändert** — die Aktivierung ist an einem fehlenden Zugang blockiert (**§16**);
-die beiden Vorprüfungsbefunde **V-1** (Staffelung) und **V-2** (globale Landesquellenauflösung)
-sind in **§18** behoben ·
+**Stand:** 2026-07-26 (fünfter Durchgang, zweiter Production-Anlauf) · **Sprint:** Phase-1-Punkt 14 / 14A ·
+**Zustand:** aktivierungsreif **mit reduziertem Set**, **Production weiterhin unverändert** — die
+Aktivierung ist an **zwei** Startbedingungen blockiert: dem fehlenden Flag-Zugang (**§19.4**) und
+dem fehlenden Berliner Landtagsprofil (**§19.5**, seit 14A entscheidend). Die beiden
+Vorprüfungsbefunde **V-1** (Staffelung) und **V-2** (globale Landesquellenauflösung) sind in
+**§18** behoben; der aktuelle Anlauf ist in **§19** protokolliert ·
 **Kanonische Daten:**
 [`seeds/berlin-aktivierung.js`](../../lib/helmut/quellenarchitektur/seeds/berlin-aktivierung.js) ·
 [`seeds/berlin-neutralitaet.js`](../../lib/helmut/quellenarchitektur/seeds/berlin-neutralitaet.js) ·
@@ -587,6 +588,12 @@ könnte.
 
 ### 16.5 Der Blocker: Riegel 1 ist aus dieser Sitzung weder lesbar noch setzbar
 
+> **In zwei Punkten überholt — aktueller Stand ist §19.4.** Die Kernaussage (Flag nicht lesbar,
+> nicht setzbar, nicht rücksetzbar) gilt unverändert. Überholt sind: die Zeile „Production-App
+> nicht erreichbar" (sie ist **erreichbar**, antwortet aber **401** — siehe §19.4) und die Annahme,
+> ein bereitgestelltes `VERCEL_TOKEN` genüge (die Vercel-API ist zusätzlich proxy-gesperrt).
+> Seit 14A kommt ein **zweiter**, unabhängiger Blocker hinzu: §19.5.
+
 Die Ausführungsreihenfolge in §9 verlangt in Schritt 7 `HELMUT_LANDESMODULE=berlin`. Dieser Schritt
 ist aus einer Claude-Code-Cloud-Sitzung **nicht ausführbar**:
 
@@ -624,6 +631,10 @@ Deshalb: **keine Mutation, Sprint blockiert** — entsprechend der Sprintregel �
 Startbedingung → keine Production-Mutation, keine improvisierte Ersatzlösung".
 
 ### 16.6 Übergabe an den Betreiber — was jetzt genau zu tun ist
+
+> **Ergänzt und geschärft in §19.8.** Schritt 1 dieser Liste ist unvollständig: der Weg
+> „`VERCEL_TOKEN` bereitstellen" verlangt zusätzlich einen geöffneten Egress, und die Liste nennt
+> das fehlende **Landtagsprofil** noch nicht als eigenständige Voraussetzung.
 
 Das Backup (§16.3) ist gültig, solange `retrieval_paths`/`package_paths`/`source_packages`
 unverändert bleiben. Reihenfolge unverändert nach §9:
@@ -877,3 +888,175 @@ Kosten- und Budgetlogik aus Punkt 17 (`cost-model.js`, `llm_usage`, Reservierung
 Kostenaggregation) · Quellenstörungs-Klassifikation aus Punkt 16 (`source-failure.js`,
 `source_crawl_telemetry` als Schreibpfad) · Brandenburg (kein Datensatz, kein Statement) · aktive
 Bundesquellen · Crons · Secrets · Locks · Feature-Flags · Production-Daten.
+
+## 19 · Zweiter Production-Anlauf (2026-07-26, 19:15–19:30 UTC) · **erneut blockiert, nichts mutiert**
+
+**Auftrag:** der echte Berliner Production-Beweislauf für Phase-1-Punkt 14 auf Basis des gemergten
+PR #138 (14A). **Ergebnis: keine Production-Mutation.** Zwei voneinander unabhängige
+Startbedingungen sind nicht erfüllt — die bekannte (§19.4) und eine neue, die den Sprint auch dann
+gestoppt hätte, wenn die erste wegfiele (§19.5).
+
+> Es wurde **nichts** geschrieben: kein Flag, kein SQL, keine Zeile, kein Profil, kein Crawl.
+> Alle Zahlen unten stammen aus `select`-Abfragen und aus read-only Werkzeugaufrufen.
+
+### 19.1 Startprüfung — 11 von 14 erfüllt
+
+| # | Bedingung | Ergebnis |
+|---|---|---|
+| 1 | `main` enthält PR #138 | **ja** — `2f58d4c` (Merge #138, 2026-07-26 19:14:40 UTC) |
+| 2 | Lokaler Stand = sauberes `origin/main` | **ja** — HEAD = `origin/main` = `2f58d4c`, Diff leer |
+| 3 | Arbeitsbaum sauber | **ja** |
+| 4 | Pflichtchecks von #138 grün | **ja** — `CI — Offline-Suite + Browser-Smoke` `success` auf `2f58d4c` |
+| 5 | Punkt 16 und 17 in `main` | **ja** — `quellenarchitektur/source-failure.js` (160/160) und `cost-model.js` (128/128) vorhanden und grün |
+| 6 | Keine parallele Arbeit an Berlin-Dateien | **ja** — alle drei älteren Berlin-Branches sind vollständig in `main` (`ahead=0`); einzige offene Berührung ist PR #132 (Brandenburg), siehe §19.6 |
+| 7 | Production-Zugänge verfügbar | **teilweise** — Supabase ja; Vercel-Env **nein**; App nur unauthentifiziert lesbar |
+| 8 | `HELMUT_LANDESMODULE` lesbar, setzbar, sofort rücksetzbar | **NEIN** — §19.4 |
+| 9 | Kein konkurrierender oder alter Gate-Name | **ja** — `main` kennt genau `HELMUT_LANDESMODULE` (`flags.js:38`, `source-mode.js:112`); `helmut-flags.json` enthält **keinen** Landesmodul-Schlüssel |
+| 10 | Backup-Grundlage gültig | **Grundlage ja, Artefakt nein** — §19.3 |
+| 11 | Brandenburg vollständig gesperrt | **ja** — alle 8 `rp-bb-*` Wege `needs_review`+`manual`, `brandenburg-basis` `prepared` |
+| 12 | Bundestagsversorgung gesund | **ja** — §19.2 |
+| 13 | Keine aktiven oder hängenden Pipeline-Locks | **ja** — 3 Zeilen, **alle abgelaufen** |
+| 14 | Dry Runs aller geplanten Schritte grün | **ja** — §19.3 |
+
+### 19.2 Gemessener Production-Ausgangszustand (2026-07-26, 19:21–19:24 UTC, read-only)
+
+| Größe | Wert |
+|---|---|
+| Pakete / Abrufwege / Paketzuordnungen | **9** / **163** / **165** |
+| Mandatsprofile | **8**, davon **6 aktiv** — politische Ebene **ausnahmslos `bundestag`** |
+| **Landtagsprofile** | **0** (entscheidend, §19.5) |
+| `berlin-basis` | `prepared`, **10** Wege — trägt weiterhin `rp-be-partei_pilot`, `rp-be-fraktion_pilot`, `rp-be-person_pilot` (**Befund A-3 offen**) |
+| `brandenburg-basis` | `prepared`, **9** Wege |
+| Alle 18 Landesmodul-Wege (9 BE + `rp-rbb24-politik` + 8 BB) | `needs_review` + `manual`, `last_success_at` **null**, `error_streak` **0** |
+| Berliner Rohdokumente **jemals** | **0** |
+| Berliner Telemetriezeilen **jemals** | **0** |
+| Letzter Vollcrawl | `crawl-20260726160130-7bznw`, 16:05:17 UTC — **147 Zeilen = 147 distinct `source_id`** (Invariante **B3 erfüllt**), **145 ok**, 2 `empty`, **0 error**, 0 `circuit-open`, **940** neue Rohdokumente |
+| Fehlerrate 24 h | **1,1 %** (28 `error` von 2 534 Telemetriezeilen), 56 `circuit-open` |
+| Rohdokumente / Knowledge Objects 24 h | 215 / 31 |
+| Pending-Rückstand | **50** (43 `pending` + 7 `failed`, 0 `failed-final`) — **unverändert** |
+| LLM-Tagesverbrauch | heute **34**/100; Vortage 53 · 65 · 53 · 55 — **kein** Tag am Deckel |
+| `pipeline_locks` | 3 Zeilen, **alle abgelaufen** (`global-understanding`, `crawl-cem-ince`, `lage-briefing-…`) |
+
+Der Bestand ist gegenüber der Messung vom 16:45–16:52 UTC **unverändert**. Die Datenbank wurde
+zuletzt am 2026-07-26 11:13:10 UTC verändert (`retrieval_paths`) — also **vor** der Sicherung.
+
+### 19.3 Backup und Dry Runs
+
+**Backup-Grundlage: gültig. Backup-Artefakt: nicht mehr vorhanden.** Die Sicherung vom
+2026-07-26, 16:47 UTC (8/8 Tabellen, `vollstaendig: true`, `pruefsummeGesamt 49a5b92d…`) ist an
+`retrieval_paths` / `package_paths` / `source_packages` gebunden. Gemessen: letzte Änderung
+`retrieval_paths` **11:13:10**, `package_paths` **2026-07-14**, `source_packages` **11:07:48** —
+alle **vor** 16:47, die Grundlage trägt also weiterhin. Die Exportdatei selbst lag jedoch im
+Container jener Sitzung und existiert nicht mehr. **Vor einer künftigen Mutation ist
+`node scripts/backup-export.js --scope=seed` erneut auszuführen** — ein Backup, auf das man nicht
+zugreifen kann, ist kein Backup. In diesem Sprint wurde keiner erstellt, weil nichts mutiert wurde.
+
+**Dry Run (`node scripts/berlin-aktivierung-dryrun.js`, alle 8 Schritte, Exit 0):**
+
+| Schritt | Jetzt ausführbar | Belegte Wirkung |
+|---|---|---|
+| A · Neutralisierung | **JA** | Zuordnung **+3/−3**, 0 Wege, 0 Paketstatus |
+| B1 · Paketstatus | **NEIN** | Block A fehlt (`zuordnung ist=3 erlaubt=[0]`) |
+| S1 · Stufe 1 | **NEIN** | Block A **und** B1 fehlen; Wegzustand korrekt bei 2 gesperrten Wegen |
+| S2 · Stufe 2 | **NEIN** | Paket nicht `active` · Stufe 1 nicht aktiv · **Telemetriebeleg fehlt für beide Wege** |
+| S1-RB / S2-RB / RB-ALLE / RB-VOLL | **JA** | 2 / 2 / 7 / 7 Wege, Endzustand = Ausgangszustand |
+
+**Kontrollfragen in allen 8 Schritten `0`:** Brandenburg · Bund · Partei-/Fraktions-/Personenwege ·
+fremde Pakete · fremde Zuordnung. Der Stufe-2-Riegel greift nachweislich am **Betriebsbeleg**, nicht
+nur an der Reihenfolge — genau wie in 14A zugesagt.
+
+### 19.4 Blocker 1 · Der Flag-Zugang — erneut geprüft, auf **allen** Kanälen negativ
+
+§16.5 wurde nicht übernommen, sondern neu gemessen. Zwei Zeilen sind gegenüber §16.5 **präziser**:
+
+| Weg zum Flag | Stand 2026-07-26, 19:15–19:30 UTC |
+|---|---|
+| Vercel-Env **setzen/lesen** über REST | `VERCEL_TOKEN` **nicht gesetzt** — **und** `api.vercel.com` sowie `vercel.com` sind aus dieser Sitzung proxy-gesperrt (`CONNECT` → **403**). **Neu und wichtig:** ein bereitgestelltes `VERCEL_TOKEN` allein würde hier **nicht** genügen; der Egress müsste zusätzlich geöffnet werden |
+| Vercel-Env über **MCP** | Der Vercel-MCP-Server ist **authentifiziert** (Team `nohut`, Projekt `helmut-pilot` `prj_xbZ6…`) — stellt aber **kein** Werkzeug für Environment-Variablen bereit; `get_project` liefert keine Env |
+| `helmut-flags.json` + Deploy | erfordert Merge nach `main` = Production-Deployment = Betreiberentscheidung (`CLAUDE.md` §5). Zusätzlich ist der Dateiweg CI-gesperrt |
+| Flag über die App **lesen** | jeder Endpunkt antwortet **401**, auch `/api/health` und `/api/ai/status`; `PILOT_SECRET`/`CRON_SECRET` nicht gesetzt |
+| Crawl auslösen | `/api/cron/*` schützt sich selbst (`authorizeCron`, fail-closed) und verlangt `CRON_SECRET` |
+| GitHub-Actions-Umweg | **kein** Workflow im Repo setzt Vercel-Env (11 Workflows geprüft) |
+
+**Zwei neue Befunde, die §16.5 korrigieren — ohne den Blocker aufzulösen:**
+
+1. **Die Production-App ist erreichbar.** Über `web_fetch_vercel_url` (Vercel-MCP) antwortet
+   `https://helmut-pilot.vercel.app` mit **HTTP 401** statt des Proxy-`403`. §16.5 führte die App
+   als „nicht erreichbar"; richtig ist: **erreichbar, aber unauthentifiziert**. Der Aufruf ist
+   `GET`-only ohne eigene Header — er kann `CRON_SECRET` nicht tragen und deshalb **weder** einen
+   Crawl auslösen **noch** einen geschützten Endpunkt lesen.
+2. **Ein Beobachtungskanal existiert.** Vercel-Runtime-Logs sind über MCP lesbar (Status, Pfad,
+   Deployment). Sie zeigen HTTP-Ebene, **nicht** den Wert von Umgebungsvariablen.
+
+**Ergebnis unverändert:** `HELMUT_LANDESMODULE` ist **weder lesbar noch setzbar noch rücksetzbar**.
+Damit ist **Rollback Ebene 0** — der einzige Rückweg ohne Schreibzugriff auf Production — nicht
+verfügbar. Das ist Abbruchkriterium **14** des Sprintauftrags und §11 Kriterium **15**.
+
+### 19.5 Blocker 2 · **Ohne Landtagsprofil aktiviert das Flag nichts** (neu)
+
+Seit 14A/V-2 ist ein Landesmodul nur wirksam, wenn **Freigabe UND ein berechtigtes
+Landtagsmandat** vorliegen. Production führt **8 Profile, alle mit `politische_ebene='bundestag'`**
+— **0 Landtagsprofile**.
+
+Daraus folgt eine Aussage, die vor 14A so nicht galt: **selbst mit korrekt gesetztem
+`HELMUT_LANDESMODULE=berlin` und vollständig ausgeführten Blöcken A, B1 und Stufe 1 würden
+`0` Berliner Wege in den Crawl-Plan gelangen** und `0` Berliner Rohdokumente entstehen. Der Sprint
+könnte seinen Zweck — erster realer Berliner Crawl **und dessen Auswertung** — auch mit Flag nicht
+erreichen, solange das Abnahmeprofil (§8.2) fehlt.
+
+Das Abnahmeprofil ist eine **Production-Datenänderung** und steht in der bindenden Reihenfolge aus
+§9 an Schritt 5 — **vor** dem Flag. Es vorzuziehen ist nach §16.6 ausdrücklich unzulässig, solange
+der Flag-Zugang ungeklärt ist: es nähme einen weiteren Riegel weg, ohne dass der letzte
+kontrollierbar wäre. Deshalb wurde auch dieser Schritt **nicht** ausgeführt.
+
+### 19.6 Hinweis zu PR #132 (Brandenburg) — konkurrierender Gate-Name
+
+PR #132 ist offen, basiert auf `ca80b2f` (**vor** #138) und führt ein Gate namens
+**`HELMUT_LANDESMODUL_FREIGABE`** ein. `main` kennt seit 14A ausschließlich
+**`HELMUT_LANDESMODULE`**. Für den heutigen Production-Zustand ist das **wirkungslos** (nicht
+gemergt, Startprüfung 9 ist erfüllt), aber ein Merge von #132 in der jetzigen Form brächte **zwei
+konkurrierende Gate-Namen** in eine Codebasis. **Vor einem Merge von #132 ist der Gate-Name auf
+`HELMUT_LANDESMODULE` zu vereinheitlichen und der Branch auf den Stand nach #138 zu heben.**
+Dieser Sprint hat #132 nicht angefasst.
+
+### 19.7 Tests (echte Zahlen, vor der geplanten Ausführung gefahren)
+
+| Suite | Ergebnis |
+|---|---|
+| `run-offline-tests.js` (kanonisch) | **156/156 Suiten grün**, 0 FAIL, 41 s |
+| `berlin-aktivierung-test.js` | **126 PASS / 0 FAIL** |
+| `berlin-staffelung-test.js` | **71 PASS / 0 FAIL** |
+| `berlin-neutralitaet-test.js` | **109 PASS / 0 FAIL** |
+| `landesmodul-mandatsgate-test.js` | **71 PASS / 0 FAIL** |
+| `landesmodul-seed-test.js` | grün (18 Wege) |
+| `source-failure-test.js` (**Punkt 16**) | **160/160** |
+| `kostenmessung-test.js` (**Punkt 17**) | **128 PASS / 0 FAIL** |
+| `kosten-limits-test.js` | **20 PASS / 0 FAIL** |
+| `seed-drift-test.js` | grün — Seeds byte-genau am Generator |
+| `source-mode-test.js` · `profile-packages-test.js` · `flags-test.js` | 43/43 · 69/69 · 26/26 |
+
+Browser-Smoke wurde **nicht** gefahren: es wurde kein Code geändert.
+
+### 19.8 Ergebnis und Übergabe
+
+**Sprintzustand: blockiert.** Kein Schritt der Production-Reihenfolge wurde ausgeführt; ein Rollback
+war folglich nicht nötig und hat nicht stattgefunden. Stufe 1 ist **nicht** aktiv, Stufe 2 ist
+**nicht** aktiviert und bleibt gesperrt. Beobachtete erfolgreiche Berliner Production-Läufe: **0**.
+
+Damit die nächste Sitzung den Beweislauf tatsächlich fahren kann, sind **beide** Punkte nötig —
+Reihenfolge nach §9 unverändert:
+
+1. **Flag-Zugang herstellen.** Entweder der Betreiber setzt `HELMUT_LANDESMODULE=berlin` selbst in
+   der Vercel-Env (bevorzugt: Rollback Ebene 0 bleibt ohne DB-Schreibzugriff verfügbar), **oder**
+   einer Agenten-Sitzung wird `VERCEL_TOKEN` über die Claude-Code-Environment-Einstellungen
+   bereitgestellt **und** der Egress zu `api.vercel.com` geöffnet — beides zusammen, eines allein
+   genügt nicht (§19.4). Wert exakt `berlin`, kein Sammelwort, kein zweites Land.
+2. **Abnahmeprofil einplanen.** Ohne ein berechtigtes Berliner Landtagsprofil (§8.2) bleibt die
+   Aktivierung auch mit Flag ein No-Op (§19.5). Es ist Schritt 5 der Reihenfolge und wird **nach**
+   Block A und **vor** dem Flag angelegt.
+3. Zusätzlich hilfreich: `CRON_SECRET`, damit der erste Lauf gezielt ausgelöst statt auf den
+   04:00/20:00-UTC-Cron gewartet werden muss. **Nicht** zwingend — die Beobachtung eines
+   natürlichen Laufs ist gleichwertig und kostenneutral.
+
+Erst danach gilt die unveränderte Reihenfolge: frisches Backup → Block A → Abnahmeprofil → B1 →
+Flag → Stufe 1 → ein voller Crawl-Zyklus beobachten → **erst dann** Stufe 2.
