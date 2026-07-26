@@ -1,13 +1,17 @@
 # Quellen-Seeds einspielen — Freigabevorlage
 
-**Stand:** 2026-07-25 · **Code-Grundlage der Seeds:** `main` `61767a9` (Merge #118) ·
-**`main`-HEAD:** `0d6d867` (Merge #125) · **Deployment:** `READY`
+**Stand:** 2026-07-26 · **Code-Grundlage der Seeds:** `main` `61767a9` (Merge #118) ·
+**`main`-HEAD:** `9f1def5` (Merge #130) · **Deployment:** `READY`
+
+> Die Seed-Dateien sind seit `c28e9a6` **byte-identisch** unverändert (geprüft 2026-07-26 per
+> `sha256sum`); die `main`-Bewegung seit `0d6d867` betrifft ausschließlich Dokumentation.
 
 > **Status: BLOCKIERT.** Diese Vorlage ist vollständig vorbereitet, aber die Ausführung ist
 > **nicht freigegeben**. Nichts hiervon wurde ausgeführt.
 >
 > **Offen sind noch zwei Go-Kriterien (§6), beide Betreiberhandlungen:**
-> **2** die Pre-Seed-Sicherung muss gegen Production **gelaufen** sein ·
+> **2** die Pre-Seed-Sicherung muss gegen Production **gelaufen** sein — Versuch am 2026-07-26
+> fail-closed gescheitert, drei Zugangsblocker, **kein** Production-Zugriff erfolgt (§6e) ·
 > **8** die Einspielung muss freigegeben sein ·
 > **11** ~~die absichtliche Reaktivierung der 6 Bundeswege~~ — **entschieden 2026-07-25:
 > gestaffelt**, erst die 2 Direktfeeds, dann nach einem Crawl-Zyklus die 4 Google-Wege (§6d).
@@ -421,8 +425,9 @@ kein Gesamt-Rollback nötig.
 | 1 | `main`-Stand verifizieren | `git ls-remote origin refs/heads/main` = erwarteter Commit; Seeds unverändert seit dem Test |
 | 2 | Locks und laufende Prozesse | `select * from pipeline_locks;` → keine aktiven Crawl-/Understanding-Locks |
 | 3 | Production-Health | Health-Report ohne Störung; **nicht** im Crawl-Fenster (04:00/20:00 UTC) starten |
+| 3b | **Zugangsdaten inhaltlich prüfen**, nicht nur auf Vorhandensein (Lehre aus dem Versuch 2026-07-26, §6e) | `SUPABASE_URL` ist die **reine** Projekt-URL (`https://<ref>.supabase.co`) — **ohne** Pfadanteil wie `/rest/v1/…`; die Skripte hängen `/rest/v1/<tabelle>` selbst an · `SUPABASE_SERVICE_ROLE_KEY` ist ein **Service-Role**-Key (`sb_secret_…` bzw. JWT mit `role: service_role`) — ein `sb_publishable_…`-Key ist der **öffentliche** Key, umgeht RLS **nicht** und liefert auf den 8 Quellentabellen HTTP 200 mit `[]` · in einer Cloud-Sitzung zusätzlich: der Supabase-Host muss in der Netzwerk-Egress-Allowlist der Umgebung stehen |
 | 4 | **Pre-Seed-Backup** | `SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… node scripts/backup-export.js --scope=seed` |
-| 5 | Backup-Integrität | `manifest.json`: `art: "pre-seed"`, `vollstaendig: true`, `pruefsummeGesamt` vorhanden, `mainCommit` = Schritt 1 |
+| 5 | Backup-Integrität | `manifest.json`: `art: "pre-seed"`, **`vollstaendig: true`**, `mainCommit` = Schritt 1, `fehler: []`, und **je Tabelle** ein Eintrag in `tabellen` **und** `pruefsummen` (8/8). **`pruefsummeGesamt` allein beweist nichts** — das Feld wird auch bei 0 exportierten Tabellen gesetzt und ist dann `sha256("{}")` = `44136fa355b3…` (belegt 2026-07-26, §6e). Einziges tragendes Kriterium ist `vollstaendig: true` |
 | 6 | **Ist-Stand messen und notieren** | Die drei Zahlen **aufschreiben**, nicht gegen eine Doku-Zahl abgleichen — sie driften (siehe §4). `select (select count(*) from retrieval_paths) as wege, (select count(*) from source_packages) as pakete, (select count(*) from package_paths) as zuordnungen;` · Erwartung laut Inventur: **163 / 7 / 165**. Weicht es ab: **kein automatischer Stop**, aber die Abweichung erklären (neue Provisionierung?) und die notierten Werte als Basis für Schritt 8/11/12 verwenden |
 | 7 | **Seed 1 einzeln** | `20260713_source_architecture_seed.sql` einspielen |
 | 8 | Seed 1 prüfen (zeilenbezogen) | `select id from source_packages where id in ('pkg-die-linke-berlin','pkg-die-linke-brandenburg');` → **2 Zeilen** · `select id, status from retrieval_paths where id in (…die 6…);` → alle `needs_review` · `select cardinality(required_classes) from source_packages where id='pkg-berlin-basis';` → **12** · Pakete = Basis aus Schritt 6 **+2**, Zuordnungen = Basis **+0** |
@@ -551,6 +556,35 @@ R-2 braucht deshalb eine eigene Soll-Ist-Vorschau und eine eigene Freigabe. Bis 
    dokumentiert, aber nie ausgelesen worden. Das braucht einen Lauf mit offenem Egress und danach
    eine Änderung in `lib/helmut/sources.js` — eigener Sprint. Bis dahin bleiben beide
    Google-abhängig.
+
+---
+
+## 6e · Versuch des Pre-Seed-Exports am 2026-07-26 — drei Zugangsblocker
+
+Der Export wurde in einer Claude-Code-Cloud-Sitzung genau nach §6c Schritt 4 ausgeführt und ist
+**fail-closed gescheitert**: Exit 1, `vollstaendig: false`, 0/8 Tabellen, 8 Fehler, keine einzige
+Datendatei. Das erzeugte Verzeichnis war als Sicherung unbrauchbar und wurde entfernt.
+**Go-Kriterium 2 bleibt offen.** Drei voneinander unabhängige Ursachen — alle drei sind
+Betreiberhandlungen, keine Bauarbeit:
+
+1. **Netzwerk-Egress.** Jede Anfrage endet im Agent-Proxy mit `HTTP 403 · Host not in allowlist:
+   <ref>.supabase.co`. Es hat **kein Paket** Supabase erreicht — folglich **kein**
+   Production-Zugriff. Der Supabase-Host muss in den Egress-Einstellungen der Cloud-Umgebung
+   freigegeben werden.
+2. **`SUPABASE_URL` trägt einen Pfadanteil** (`…supabase.co/rest/v1/export`) statt der reinen
+   Projekt-URL. Die Skripte hängen `/rest/v1/<tabelle>` selbst an; damit entsteht ein
+   doppelter Pfad. Auch bei offenem Egress wäre der Export so gescheitert.
+3. **`SUPABASE_SERVICE_ROLE_KEY` enthält einen `sb_publishable_…`-Key**, also den **öffentlichen**
+   Key — keinen Service-Role-Key. Er umgeht RLS nicht. Auf allen 8 Quellentabellen ist RLS aktiv
+   **ohne Policy**, der Export hätte also HTTP 200 mit `[]` geliefert. Genau diesen Fall fängt die
+   Plausibilisierung in `backup-export.js` seit dem Review von PR #125 ab — ein leeres Backup
+   kann nicht mehr als `vollstaendig: true` durchlaufen.
+
+**Vorhandensein ≠ Brauchbarkeit.** Beide Variablen *waren* gesetzt; eine reine
+Existenzprüfung hätte grün gemeldet. Deshalb steht die inhaltliche Prüfung jetzt als
+§6c Schritt 3b **vor** dem Export.
+
+Werkzeugstand unverändert belegt: `node scripts/backup-export-test.js` → **38 PASS, 0 FAIL**.
 
 ---
 
