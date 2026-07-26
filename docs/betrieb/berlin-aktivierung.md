@@ -1518,3 +1518,32 @@ Production-Läufe: **0**.
 **Punkt 14 ist damit nicht abgeschlossen.** Was sich geändert hat: er hängt zum ersten Mal nicht
 mehr an einer Freigabe oder an fehlender Entwicklung, sondern nur noch **am Zeitablauf des
 Crawls**.
+
+### 21.9 Vorabprüfungen vor dem ersten Berliner Lauf (2026-07-26, 21:30–21:45 UTC)
+
+Drei Dinge, die **vor** dem 04:00-Lauf geprüft wurden, damit ein Fehlschlag später nicht
+falsch zugeordnet wird.
+
+**1 · Erster Cron mit 7 Mandaten ist sauber durchgelaufen.** `/api/cron/understanding` um
+**21:30:02 UTC**, **HTTP 200**, auf dem Redeploy `dpl_7443DBt1…`: `processed: 0`, `pending: 43`,
+alle Einträge `skipped-no-cluster` (Alt-Bestand vom 02./03.07.). Kein Timeout, kein `504`, keine
+LLM-Kosten (Zähler unverändert 49/100), keine neuen Locks. Das siebte Mandat hat den
+Understanding-Pfad nicht gesprengt — der erste echte Datenpunkt gegen Abbruchkriterium 16.
+
+**2 · Der Telemetriebeleg für Stufe 2 ist erfüllbar.** Das war nicht selbstverständlich: **keiner**
+der vier Berliner Wege existiert im Legacy-Katalog (`getSources()`, 151 Quellen) — sie liefen nie.
+Die Crawler-Quelle wird also rein aus `retrieval_paths` gebaut. Entscheidend ist dann
+`toCrawlerSource`: `id: path.legacy_source_id || path.id`. Da `legacy_source_id` gesetzt ist
+(`be-regionale_leitmedien`, `rbb24-politik`), schreibt `buildSourceTelemetryRows` genau die
+Kennungen, die die Stufe-2-Vorbedingung sucht. **Hätte der Weg keine `legacy_source_id`, wäre der
+Riegel dauerhaft unerfüllbar gewesen** — und das wäre erst nach zwei Crawl-Zyklen aufgefallen.
+
+**3 · `empty` kann Stufe 2 nicht freischalten.** Die Vorbedingung zählt
+`count(distinct run_id)` mit `status = 'ok'` je Quelle und verlangt **≥ 2**. Zwei Zeilen im
+**selben** Lauf genügen nicht, `empty` zählt nicht mit. Das ist technisch erzwungen, keine
+Auslegungsfrage.
+
+**Nicht möglich war eine Vorab-Validierung der beiden Feeds selbst:** `tagesspiegel.de` und
+`rbb24.de` sind aus der Agenten-Sitzung proxy-gesperrt (`CONNECT` → **403**; die Allowlist deckt
+Supabase, GitHub und Paketquellen ab). Das ist eine Sandbox-Grenze, kein Production-Befund — der
+Crawl läuft auf Vercel mit offenem Egress. Ob die Feeds liefern, entscheidet der 04:00-Lauf.
