@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-25 · **`main`-HEAD:** `9534bc0` (Merge #127)
+**Letzte Aktualisierung:** 2026-07-26 · **`main`-HEAD:** `9f1def5` (Merge #130)
 
 > **Diese Datei ist der aktuelle Stand.** Bei Widerspruch zu älteren Statusdokumenten
 > gilt diese Datei. Sie enthält **keine Chronik** — Details je offenem Punkt stehen in
@@ -60,7 +60,7 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | Punkt | Ursache | Nächster Schritt |
 |---|---|---|
 | **OP-01** Supabase Pro + PITR | Kostenentscheidung des Betreibers (~25 $/Monat); Free-Plan = **keine Backups** | Betreiber schaltet Pro + PITR frei, dann Restore-Übung nach `betrieb/backup-restore-runbook.md` |
-| **Quellen-Seed-Einspielung** (macht P0-2 und die 6 Bundesweg-Reparaturen in der DB wirksam) | noch zwei offene Go-Kriterien: **2** die Pre-Seed-Sicherung ist **noch nicht gelaufen** · **8** die Einspielung ist nicht freigegeben. Kriterium **11** ist **entschieden**: gestaffelte Reaktivierung (§6d). **Versucht 2026-07-25:** `node scripts/backup-export.js --scope=seed` in der Agenten-Sitzung ausgeführt — Abbruch vor jedem Netzwerkzugriff (Exit 2), da `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` in dieser Umgebung nicht gesetzt sind und keine `.env.local` existiert. **Kein** Production-Zugriff erfolgt. Betreiber führt den Export selbst mit echter `.env.local` aus | Betreiber führt `node scripts/backup-export.js --scope=seed` lokal aus und teilt das Manifest (`art`, `vollstaendig`, Zeilenzahlen je Tabelle, `pruefsummeGesamt`, `mainCommit`) mit; danach Runbook `betrieb/quellen-seed-einspielung.md` §6c Schritt 6 ff. |
+| **Quellen-Seed-Einspielung** (macht P0-2 und die 6 Bundesweg-Reparaturen in der DB wirksam) | noch zwei offene Go-Kriterien: **2** die Pre-Seed-Sicherung ist **noch nicht gelaufen** · **8** die Einspielung ist nicht freigegeben. Kriterium **11** ist **entschieden**: gestaffelte Reaktivierung (§6d). **Versucht 2026-07-25:** `node scripts/backup-export.js --scope=seed` in der Agenten-Sitzung ausgeführt — Abbruch vor jedem Netzwerkzugriff (Exit 2), da `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` in dieser Umgebung nicht gesetzt sind und keine `.env.local` existiert. **Kein** Production-Zugriff erfolgt. Betreiber führt den Export selbst mit echter `.env.local` aus. **Erneut geprüft 2026-07-26** (nach der neuen Regel `CLAUDE.md` §4.9): in der Cloud-Sitzung sind `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` **weiterhin nicht** als `process.env` vorhanden (auch kein ähnlich benannter Eintrag, keine `.env.local`). Der Export wurde deshalb **gar nicht erst gestartet** — kein Production-Zugriff | Betreiber hinterlegt beide Werte in den Claude-Code-Environment-Einstellungen (`betrieb/env-inventar.md` §8) **oder** führt `node scripts/backup-export.js --scope=seed` lokal aus und teilt das Manifest (`art`, `vollstaendig`, Zeilenzahlen je Tabelle, `pruefsummeGesamt`, `mainCommit`) mit; danach Runbook `betrieb/quellen-seed-einspielung.md` §6c Schritt 6 ff. |
 | **OP-02** Recht (Pilotvertrag, AVV, DSFA, Art.-9-Grundlage, Fristen) | externe Prüfung durch Anwalt/DSB steht aus | Entwürfe aus `recht/` prüfen lassen und zeichnen; blockiert OP-12 |
 | **OP-03** Zweitmandanten-Freigabepaket | Grundsatzentscheidung „DB-seitige Durchsetzung vs. dokumentierte App-Guard-Akzeptanz" fehlt (`mandantentrennung-architektur.md` bewertet die Wege) | Betreiber entscheidet einen Weg; danach Migration + Env + Probelauf |
 | **OP-04** Demo-Mandate entfernen — **Umfang korrigiert 2026-07-25:** Production führt **8 Profile, davon 6 aktiv** (nicht 1 Pilot + 2 Demo-Mandate); fünf davon tragen Klarnamen realer Abgeordneter | Production-Datenänderung, freigabepflichtig; berührt zusätzlich OP-02 (personenbezogene Daten) | je Profil entscheiden, dann über Provisionierungswerkzeug deaktivieren (`quellenarchitektur/30-paket-inventur-production.md` §5, A-1) |
@@ -257,6 +257,7 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 
 | Sprint | Datum | Zustand |
 |---|---|---|
+| Secret-Verfügbarkeit prüfen, dann Pre-Seed-Backup-Export (Wiederholung nach §4.9) | 2026-07-26 | **Blockiert** — Prüfung durchgeführt: weder `SUPABASE_URL` noch `SUPABASE_SERVICE_ROLE_KEY` liegen in dieser Cloud-Sitzung als `process.env` vor. Damit war die Vorbedingung des Auftrags nicht erfüllt; der Export wurde **nicht gestartet**, kein Production-Zugriff, keine Seeds. Details unten. |
 | Go-Kriterium 2 kontrolliert versuchen: Pre-Seed-Backup-Export | 2026-07-25 | **Blockiert** — `node scripts/backup-export.js --scope=seed` exakt wie angefordert ausgeführt; Abbruch vor jedem Netzwerkzugriff (Exit 2), da diese Agenten-Sitzung keine `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` und keine `.env.local` besitzt. **Kein** Production-Zugriff erfolgt. Betreiberentscheidung: Export läuft auf der Betreibermaschine mit echter `.env.local`, Manifest wird zurückgemeldet. Details unten. |
 | Review + Merge von PR #125, danach Production-Ablauf bis vor den ersten Zugriff vorbereiten | 2026-07-25 | **Teilweise abgeschlossen** — PR #125 adversarial reviewt (3 Reviewer, 20 belegte Befunde, alle behoben) und als `0d6d867` gemergt (CI auf `main` grün, Vercel-Production `READY`). Der Production-Ablauf ist vollständig vorbereitet; **kein Production-Zugriff erfolgt, keine Seeds ausgeführt**. Wartet auf die Betreiberfreigabe für den Pre-Seed-Export. Details unten. |
 | Merge #123 + Sicherung, gezielter Restore und Entscheidungsreife für die Seed-Einspielung | 2026-07-25 | **Teilweise abgeschlossen** — #123 gemergt (`bed7f53`); Backup- und Restore-Werkzeug gebaut und isoliert getestet (33/33 lokal, 31/31 in CI, Suite 145/145). Die Seed-Ausführung bleibt **blockiert**: die Sicherung ist noch nicht gelaufen und die Reaktivierung der 6 Bundeswege ist nicht freigegeben. Details unten. |
@@ -266,6 +267,32 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 | Merge von PR #105 — Anker-Recovery-Pfad in Production stillgelegt | 2026-07-25 | **Erfolgreich abgeschlossen** — gemergt als `43e9e35`; Stilllegung auf `main` verifiziert. |
 | Recovery-Pfad-Review + Zusammenführung von PR #105 auf die kanonische Kontextstruktur | 2026-07-25 | **Erfolgreich abgeschlossen** |
 | Kontextstruktur für Claude Code (`CLAUDE.md` + Einstiegsschicht) | 2026-07-25 | **Erfolgreich abgeschlossen** — reine Dokumentation, gemergt als PR #119 (`c6a3d40`). |
+
+**Sprint „Secret-Verfügbarkeit prüfen, dann Pre-Seed-Backup-Export" (2026-07-26) — Nachweis**
+
+- **Auftrag:** ausschließlich prüfen, ob `SUPABASE_URL` und `SUPABASE_SERVICE_ROLE_KEY` als
+  `process.env` verfügbar sind; **nur wenn ja** den Backup-Export ausführen, Manifest und
+  Integrität validieren und danach vor Seed 1 stoppen. Keine Seeds.
+- **Prüfergebnis:** `SUPABASE_URL` **nicht gesetzt**, `SUPABASE_SERVICE_ROLE_KEY` **nicht gesetzt**.
+  Zusätzlich gegengeprüft: in `process.env` existiert **kein** Eintrag, dessen Name `SUPA`,
+  `SERVICE_ROLE`, `POSTGRES` oder `DATABASE` enthält; im Projektverzeichnis liegt nur
+  `.env.example`, keine `.env.local`.
+- **Folge:** Die Vorbedingung war nicht erfüllt, deshalb wurde `scripts/backup-export.js`
+  **nicht aufgerufen**. Es gibt kein Manifest und keine Integritätsprüfung zu berichten —
+  weder `vollstaendig`, noch Zeilenzahlen, noch `pruefsummeGesamt`.
+- **Kein Ersatzweg genutzt:** der Supabase-MCP-Connector war in dieser Sitzung verfügbar, wurde
+  aber bewusst **nicht** verwendet — der Auftrag knüpft die Ausführung ausdrücklich an die
+  `process.env`-Verfügbarkeit, und ein anderer Zugangsweg wäre eine nicht beauftragte
+  Production-Berührung.
+- **Erkenntnis für den nächsten Versuch:** Die neue Regel `CLAUDE.md` §4.9 ist erfüllbar — das
+  Skript liest die Zugangsdaten ausschließlich aus `process.env`
+  (`scripts/backup-export.js:159-160`). Es fehlt allein die **Hinterlegung der beiden Werte in
+  den Claude-Code-Environment-Einstellungen** (Environment → Environment Variables,
+  `betrieb/env-inventar.md` §8). Danach ist der Export in einer Cloud-Sitzung ohne
+  Codeänderung lauffähig. Ein dritter Versuch ohne diese Hinterlegung endet identisch.
+- **Nicht getan (bewusst):** kein Production-Zugriff, weder lesend noch schreibend · kein Export ·
+  kein Seed · kein Restore · keine Migration · keine Secrets gelesen, gesetzt oder rotiert ·
+  keine Cron-/Flag-/Quellenänderung · kein Merge.
 
 **Sprint „Go-Kriterium 2 kontrolliert versuchen" — Nachweis**
 
