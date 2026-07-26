@@ -555,19 +555,33 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
      Understanding-Lock 0 Fälle bei 51 Läufen, konstruktiv aber möglich). Zusätzlich
      galt ein Eintrag **ohne Id** dauerhaft als unzugeordnet. Beides behoben; die
      exakte Zuordnung per Laufkennung wird dabei nie von einem Zeitfenster verdrängt.
-- **Branch/Commit/PR:** `claude/helmut-cost-measurement-4ietbr` · `0f415df` · **PR #136**
+- **Branch/Commit/PR:** `claude/helmut-cost-measurement-4ietbr` · **PR #136**, auf
+  `4aa15de` rebased (Basis enthält Punkt 16 und den Berliner Production-Sprint)
   (offen, wartet auf Review und Betreiberfreigabe — nicht selbst gemergt).
   Geänderte Dateien: `lib/helmut/cost-model.js` (neu) · `lib/helmut/storage.js` ·
   `lib/helmut/understanding.js` · `lib/helmut/scheduler.js` · `server.js` · `client.js` ·
   `scripts/kostenmessung-nachweis.js` (neu) · `scripts/kostenmessung-test.js` (neu) ·
   `scripts/admin-overview-test.js` · `docs/betrieb/kostenmessung.md` (neu) ·
   `docs/betrieb/env-inventar.md` · `docs/roadmap/phase_1_checkliste.md` · diese Datei.
-- **Startprüfung:** Arbeitsbaum sauber, Stand == `origin/main` == `93006e8` (Merge #134).
-  **Punkt 16 ist NICHT gemergt** (Checkliste ⏳, Befund A-6 offen, kein Branch, kein PR,
-  kein Commit). Der Betreiber hat das Git-Gate nach Vorlage des Befunds ausdrücklich
-  freigegeben, weil damit **keine** Punkt-16-Telemetriearbeit existiert, die überschrieben
-  werden könnte. `source_crawl_telemetry` und die Pfad-Statusmaschine wurden deshalb
-  **bewusst nicht angefasst**; der Berlin-Sprint ist unverändert.
+- **Startprüfung (bei Sprintbeginn):** Arbeitsbaum sauber, Stand == `origin/main` ==
+  `93006e8` (Merge #134). **Punkt 16 war zu diesem Zeitpunkt nicht gemergt** (Checkliste
+  ⏳, Befund A-6 offen, kein Branch, kein PR, kein Commit). Der Betreiber hat das Git-Gate
+  nach Vorlage dieses Befunds ausdrücklich freigegeben, weil damit **keine**
+  Punkt-16-Telemetriearbeit existierte, die überschrieben werden konnte.
+  `source_crawl_telemetry` und die Pfad-Statusmaschine wurden deshalb **bewusst nicht
+  angefasst**; der Berlin-Sprint blieb unverändert.
+- **Nachtrag 2026-07-26: Punkt 16 ist inzwischen gemergt** (PR #137, `4aa15de`), ebenso
+  der Berliner Production-Sprint (PR #135). Der Punkt-17-Branch wurde auf diesen Stand
+  **rebased**; die Zusage von oben hat gehalten und ist nachgeprüft:
+  `lib/helmut/quellenarchitektur/`, `scripts/source-failure-test.js`,
+  `docs/betrieb/quellenstoerungen.md`, `scripts/admin-source-ui-test.js`, `supabase/`,
+  `vercel.json` und `helmut-flags.json` haben gegenüber `main` **0 Zeilen Diff**.
+  Punkt 16 wurde an **einer** Stelle textlich berührt — der gemeinsamen
+  `require("./lib/helmut/storage")`-Importzeile in `server.js`, an die beide Sprints
+  angehängt haben. Aufgelöst als **Vereinigung** (79 Namen, keine Doublette):
+  `listSourceCrawlTelemetry` aus Punkt 16 **und** `getRunCostReport`,
+  `llmPriceProvenance`, `recordLlmUsage` aus Punkt 17. `source-failure-test` 160/160
+  nach dem Rebase unverändert grün.
 - **Zentraler Befund — die Kostenquelle war nicht die, die die Doku annahm.** Die
   relationale Tabelle `llm_usage` hat in Production **0 Zeilen**; die tatsächliche
   Kosten-/Auditquelle ist der `llmUsage`-Ring im Auth-Store-Blob (2 493 Einträge). Der
