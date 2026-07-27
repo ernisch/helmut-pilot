@@ -1631,3 +1631,207 @@ Netz-Guard. Derselbe Aufruf ohne diese Variablen ist **166/166 grün** (54 s).
 
 **Regel für künftige Nachweissitzungen:** die Offline-Suite gehört ohne Production-Secrets
 in der Umgebung gefahren, sonst ist ihr Ergebnis nicht aussagekräftig.
+
+---
+
+## 18 · Restlauf für die zwei offenen Dokumente — **gescheitert und zurückgerollt** (2026-07-27, 10:47 UTC)
+
+**Sprintzustand: gescheitert und zurückgerollt.** Der Versuch, die beiden aus §17.6
+offenen Rohdokumente nachzuholen, hat **denselben Schaden reproduziert wie Anlauf 2** —
+über einen **anderen** Mechanismus. Er ist vollständig zurückgenommen; Production steht
+wieder exakt auf dem Stand nach §17. Der Lauf hat dafür einen **neuen, klar belegten
+Resolver-Defekt** freigelegt: **B4-4**.
+
+### 18.1 Ausgangslage und Vorprüfung
+
+Ziel waren genau zwei Kennungen, beide seit §17.6 unverändert auf `ohne-endzustand`:
+
+| Rohdokument | Titel |
+|---|---|
+| `rd-8c977d6b13fbfd7f2fb9dcc892ed9cf8e61b12ab12aa74687c0fb6e91a01fde9` | „Kai Wegner zu queeren Rechten im Grundgesetz … - Tagesspiegel" |
+| `rd-d982a68f16eaeb3a7248eeda5e0bdd617fc73dd64bad69b8ff3b9499e9a736e1` | „Reaktionen auf Anschlag - Härtere Gangart gegen Islamisten gefordert" |
+
+Alle 15 Vorprüfpunkte erfüllt: Production auf `27d7787` (PR #147), Deployment
+`dpl_AQJU4Db1R95Gywc4bgT62oTrseDg` `READY` · Schreibgate `ok: true` · Azure bereit ·
+**0** aktive Locks · kein paralleler Lauf · beide Kennungen vorhanden, **0** Verknüpfungen,
+Vorschau exakt diese zwei · `vg-csd-20260727-12aae0` bei **27** · `vg-angriffen` bei **1** ·
+LLM **50/100**.
+
+Das Sitzungs-Schutzlimit wurde **nur für diesen einen Befehl** als Präfix auf **55**
+gesetzt (`HELMUT_MAX_LLM_CALLS_PER_DAY=55 node …`) — nicht exportiert, nicht persistiert,
+keine Vercel-Env berührt. Bindend blieb ohnehin `--ids` mit maximal zwei Clustern.
+
+### 18.2 Zwei Fehlstarts ohne Schreibwirkung — und ein falsches Grün
+
+Die ersten beiden Startversuche (10:46:46 und 10:47:29 UTC) endeten **ohne jede
+Schreibwirkung**, weil der Lesepfad an einer Namensauflösung scheiterte:
+
+```
+[v3Store] listRawDocuments fehlgeschlagen: Supabase storage failed (503): DNS resolution failure
+```
+
+Read-only gegengemessen: `knowledge_objects` 1 140, `ko_document_links` 4 141, 0 neue
+Verknüpfungen, 0 veränderte Objekte, LLM unverändert 50 — **nichts passiert**.
+
+**Das ist trotzdem ein Befund**, und zwar einer gegen CLAUDE.md §4.4: nach dem
+fehlgeschlagenen Lesevorgang meldete das Werkzeug
+
+> `Nichts nachzuholen — kein Dokument ohne gueltigen Endzustand im Fenster.`
+
+und beendete sich mit **Exit 0**. Eine leere Kandidatenliste aus einem **gescheiterten**
+Lesevorgang ist aber nicht dasselbe wie „es gibt nichts zu tun". Hier war es folgenlos,
+weil ohne Kandidaten nichts geschrieben wird; als **Statusaussage** ist es falsches Grün.
+Ein Lesefehler auf der Kandidatenquelle muss fail-closed abbrechen, nicht Vollzug melden.
+→ **offener Punkt, in diesem Sprint bewusst nicht behoben** (keine Codeänderung erlaubt).
+
+### 18.3 Der ausgeführte Lauf
+
+```
+HELMUT_MAX_LLM_CALLS_PER_DAY=55 HELMUT_NACHHOLEN_BESTAETIGT=ja \
+node scripts/vorgangsbildung-nachholen.js \
+  --tage=3 --karenz=0 --max=400 --vorschau --ausfuehren --ids=<2 Kennungen>
+```
+
+Lauf `nachhol-20260727104750`, **10:47:50 – 10:48:24 UTC** (30 s):
+`cluster 2 · verarbeitet 2 · saved 2 · aufloesungen {bestand: 1, neu: 1}`.
+
+Beide Dokumente bekamen einen Endzustand — **aber keines davon im CSD-Vorgang**:
+
+| Rohdokument | Ziel | Bewertung |
+|---|---|---|
+| Wegner / queere Rechte | **`vg-tagesspiegel-20260519-f29ebd`** — der vorgemerkte Vorgang mit *Bielefelder SPD-Brief* und *sechs Millionen Pflegebedürftige* | **falsche Zusammenführung.** Der Vorgang wuchs 2 → 3 Dokumente, sein Inhalt wurde mit dem Wegner-Text **überschrieben**, `status` sprang `pending` → **`neu`** (für Mandanten sichtbar), `understanding_status` → `complete` |
+| Islamisten-Reaktionen | **`vg-islamisten-20260726-0ab9e8`** neu angelegt, 1 Dokument | fachlich korrekt, aber **nicht** der CSD-Vorgang |
+
+`vg-csd-20260727-12aae0` blieb bei **27** Dokumenten — es wuchs **nicht**.
+
+**Damit ist Abbruchkriterium „ein fachfremder Vorgang wächst" eingetreten** — und zwar
+exakt derselbe Vorgang, derselbe Überschreibvorgang und dasselbe Sichtbarwerden wie in
+§15.4. Der Lauf wurde nicht fortgesetzt.
+
+### 18.4 B4-4 — der Herausgebername zählt als spezifischer Beweis
+
+Die Ursache ist **nicht** B4-3 (die Flexionsregel greift korrekt) und **nicht** B4-2
+(kein Magnet). Sie ist neu und an den echten Daten nachgerechnet:
+
+```
+Kern des Bestandsvorgangs (Bielefeld + Pflege):
+  [… "spd", "streiten", "tagesspiegel", "union", "wütenden" …]
+anchorOverlap(Wegner, Kern):
+  treffer            ["diesen", "tagesspiegel"]
+  familien           diesen (generisch, Stärke 1) · tagesspiegel (SPEZIFISCH, Stärke 2)
+  spezifischeFamilien 1 · gewichtSpezifisch 2 · noetig 2   -> angenommen
+istGenerisch("tagesspiegel") = false
+```
+
+**Alle drei Titel enden auf „ - Tagesspiegel".** Google-News-Titel tragen den
+Herausgebernamen als Suffix. Dieser Name ist kein Ereignisbegriff, steht folglich in
+**keiner** generischen Familie, ist lang genug für Stärke **2** — und erfüllt
+`MIN_BEWEISGEWICHT = 2` damit **im Alleingang**. Der einzige weitere Treffer („diesen")
+ist ein Füllwort.
+
+**Warum Riegel 3 nicht half:** die Ein-Dokument-Regel aus B4-3 greift nur bei
+`altDocs.length <= 1`. Der Bestandsvorgang trug **2** verknüpfte Dokumente (bei
+`source_document_count` 1) und galt damit als etabliert — es blieben nur die 2 Punkte
+Familiengewicht, die der Herausgebername allein liefert.
+
+**Die Tragweite ist größer als dieser eine Fall:** jeder Vorgang, dessen Bestand
+mindestens zwei Artikel desselben Mediums enthält, zieht damit **beliebige weitere
+Artikel desselben Mediums** an, unabhängig vom Thema. Dass der Vorgang selbst
+`vg-**tagesspiegel**-…` heißt, zeigt denselben Fehler bereits eine Stufe früher: schon
+die Themenwurzel wurde aus dem Zeitungsnamen gebildet.
+
+**Warum die 19 CSD-Dokumente aus §17 davon nicht betroffen sind:** ihr Cluster trug
+starke thematische Anker (`berlin`, `csd`, …), traf den CSD-Vorgang und stammt aus
+**6 verschiedenen** Quellen. Der Nachweis aus §17 bleibt gültig.
+
+**Nicht behoben.** Eine Resolver-Änderung war in diesem Auftrag ausdrücklich verboten.
+B4-4 ist damit **in Production aktiv**.
+
+### 18.5 Rückweg — ausgeführt und gegengemessen
+
+Der dokumentierte Rückweg aus §15.7, eingegrenzt auf das Laufzeitfenster **und** die zwei
+Kennungen, sodass keine Zeile eines anderen Laufs erfasst werden konnte:
+
+```sql
+begin;
+delete from ko_document_links
+ where created_at >= '2026-07-27T10:47:00Z'
+   and raw_document_id in ('rd-8c977d6b…', 'rd-d982a68f…');
+delete from knowledge_objects where id = 'ko-vg-islamisten-20260726-0ab9e8';
+update knowledge_objects
+   set status='pending', understanding_status='pending',
+       was_ist_passiert=null, understanding_model=null
+ where id = 'ko-vg-tagesspiegel-20260519-f29ebd';
+commit;
+```
+
+| Größe | vor dem Lauf | nach dem Lauf | nach dem Rückweg |
+|---|---|---|---|
+| `knowledge_objects` | 1 140 | 1 141 | **1 140** |
+| `ko_document_links` | 4 141 | 4 143 | **4 141** |
+| `status='pending'` | 426 | 425 | **426** |
+| `vg-tagesspiegel-…f29ebd` Dokumente | 2 | 3 | **2** |
+| `vg-islamisten-…0ab9e8` | existiert nicht | 1 Dokument | **existiert nicht** |
+| `vg-csd-20260727-12aae0` | 27 | 27 | **27** |
+| `vg-angriffen` | 1 | 1 | **1** |
+| Ziel-IDs mit Verknüpfung | 0 | 2 | **0** |
+| `raw_documents` | 8 929 | 8 929 | **8 929** |
+
+`vg-tagesspiegel-…f29ebd` steht wieder auf `pending`/`pending`, Inhalt `null`, Modell
+`null` — für Mandanten wieder unsichtbar.
+
+**Zwei Nebenwirkungen sind nicht rücknehmbar** und werden hier ausdrücklich benannt statt
+weggerechnet:
+
+1. **2 LLM-Aufrufe** (Tagesbudget 50 → **52**). Verbraucht ist verbraucht.
+2. Das `updated_at` von `ko-vg-tagesspiegel-…f29ebd` steht jetzt auf 10:48:09 statt
+   04:06:06 — dieselbe bekannte Grenze wie in §15.7.
+
+**Production-Nettowirkung dieses Sprints: 0 veränderte Zeilen**, plus die zwei genannten
+Nebenwirkungen.
+
+### 18.6 Zweiter Werkzeugbefund: der Lauf fehlt in der Telemetrie
+
+Der Lauf `nachhol-20260727104750` hat fachlich nach Production geschrieben und
+2 LLM-Aufrufe verbraucht — steht aber **nicht** in `processRuns`. Gemessen: der
+Auth-Store wurde um **10:48:24 UTC** geschrieben, `processRuns` enthält weiterhin
+**148** Einträge, und der einzige `nachhol-`Lauf darin ist der von **10:29**. Die
+Obergrenze (300) ist nicht erreicht, es liegt also **keine** Ringpuffer-Kappung vor.
+
+Die Ursache ist **nicht** geklärt — naheliegend ist ein Zusammenhang mit den
+Leseausfällen aus §18.2 (der Schreibvorgang setzt auf einer zuvor gelesenen Liste auf).
+**Das ist dieselbe Klasse von Blindstelle, die das Storage-Gate schließen sollte**, nur
+über einen anderen Weg: nicht falsches Backend, sondern ein fehlgeschlagener Lesevorgang.
+Ein Production-Schreiblauf, der in keiner Lauftelemetrie erscheint, ist für den Betreiber
+unsichtbar. → **offener Punkt.**
+
+### 18.7 Abnahme gegen die 10 Erfolgskriterien
+
+| # | Kriterium | Ergebnis |
+|---|---|---|
+| 1 | exakt zwei IDs verarbeitet | **erfüllt** |
+| 2 | beide mit gültigem Endzustand | erfüllt im Lauf — **durch den Rückweg aufgehoben** |
+| 3 | beide verknüpft | erfüllt im Lauf — **durch den Rückweg aufgehoben** |
+| 4 | beide einem fachlich passenden **CSD**-Vorgang | **verletzt** — keines der beiden |
+| 5 | bevorzugt `vg-csd-20260727-12aae0` wächst | **verletzt** — blieb bei 27 |
+| 6 | `vg-angriffen` unverändert | **erfüllt** |
+| 7 | kein fachfremder Vorgang wächst | **verletzt** — `vg-tagesspiegel-…f29ebd` 2 → 3 |
+| 8 | kein Duplikat-Vorgang ohne fachliche Rechtfertigung | erfüllt — `vg-islamisten` beschreibt ein eigenes Geschehen |
+| 9 | kein Datensatz außerhalb der zwei IDs verändert | **verletzt** — ein unbeteiligter Vorgang überschrieben |
+| 10 | höchstens zwei zusätzliche LLM-Aufrufe | **erfüllt** — genau 2 |
+
+**4 von 10 verletzt** → gescheitert, Rückweg ausgeführt.
+
+### 18.8 Was daraus folgt
+
+1. **B4-4 zuerst beheben** — Herausgeber-/Mediennamen dürfen kein spezifischer Beleg
+   sein. Der naheliegende Weg (Analogie zu B4-3) ist eine **aufgezählte** Liste von
+   Herausgebernamen, die wie die generischen Ereignisfamilien **0** zum geforderten
+   Gewicht beitragen; zusätzlich gehört der Herausgebername aus der **Themenwurzel** der
+   `vorgang_id` heraus. Beides ist **nicht** Teil dieses Sprints.
+2. **Erst danach** die zwei Dokumente erneut nachholen. Vorher ist jeder weitere Versuch
+   ein bekannter Fehlschlag.
+3. Die zwei Werkzeugbefunde (§18.2 falsches Grün nach Lesefehler, §18.6 fehlende
+   Lauftelemetrie) sind eigenständig und unabhängig von B4-4 zu beheben.
+4. **Unverändert gültig:** der Nachweis aus §17. Der Berliner CSD hat weiterhin seinen
+   verstandenen Vorgang mit 27 Rohdokumenten.
