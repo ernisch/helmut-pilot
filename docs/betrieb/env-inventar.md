@@ -107,6 +107,7 @@ weg, App läuft; fail-closed = Zugriff/Aktion wird verweigert) · Rotationsbedar
 | `HELMUT_SOURCE_TARGET` / `HELMUT_SOURCE_CURATION` | O | Katalog-Kuratierung (Alt-Katalog-Pfad). | crawler.js · alle · Default greift · — |
 | `HELMUT_GOOGLE_NEWS_MAX_ITEMS` · `HELMUT_DIRECT_RSS_MAX_ITEMS` · `HELMUT_PERSON_NEWS_MAX_ITEMS` · `HELMUT_PROFILE_NEWS_MAX_ITEMS` · `HELMUT_TOPIC_RADAR_MAX_ITEMS` | O | Item-Caps je Quellart. | crawler.js · alle · Default greift · — |
 | `HELMUT_CRAWL_MAX_CANDIDATES` · `HELMUT_CRAWL_LAZY_BUDGET_MS` · `HELMUT_CRAWL_UNDERSTAND_BUDGET_MS` · `HELMUT_UNDERSTAND_BUDGET_MS` · `HELMUT_LAGE_UNDERSTAND_BUDGET_MS` | O | Zeit-/Mengenbudgets der Pipeline. | scheduler.js/understanding.js · alle · Default greift · — |
+| `HELMUT_CRAWL_GESAMTBUDGET_MS` | O | **Gesamt-Zeitbudget eines `runSourceCrawl`-Laufs, Default 240000 (80 % von `maxDuration` 300 s).** Die Einzelbudgets oben werden daraus als `min(eigenes Budget, Restzeit)` abgeleitet — vorher begrenzte nichts die **Summe**, und der Lauf riss das Funktionslimit, bevor er seine Telemetrie schreiben konnte (Betriebsbefund 2026-07-27). Kleiner setzen = früher abbrechen, größer setzen = Timeout-Risiko. | scheduler.js · alle · Default greift · — |
 | `DIP_WAHLPERIODE` (Default 21) · `HELMUT_DIP_PRIMARY` · `DIP_CACHE_MS` | O | DIP-Verhalten. | dip.js · alle · Default greift · — |
 | `AUTO_REFRESH_ON_READ` | O | Lazy-Refresh beim Lesen. | server.js · alle · Default greift · — |
 | `HELMUT_MANUAL_RUN_MIN_INTERVAL_MS` | O | Drossel für manuelle Läufe. | server.js · alle · Default greift · — |

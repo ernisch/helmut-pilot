@@ -541,7 +541,11 @@ async function handleRequest(request, response) {
         };
       }
       // Betreiber-Override wie bei /api/crawl/run (siehe dort).
-      return runSourceCrawl(politicianId, { force: forcedPipeline });
+      // ZEITBUDGET (Betriebsbefund 2026-07-27): auch dieser manuelle Pfad lief ohne
+      // Zeitgrenze und endete am 2026-07-26, 22:09 UTC mit HTTP 504 nach 300s.
+      // Gleiche Grenze wie die Crons; runSourceCrawl ist intern selbst budgetiert.
+      return withTimeout(runSourceCrawl(politicianId, { force: forcedPipeline }), 280000, "pipeline-run")
+        .catch((error) => ({ ok: false, bounded: true, reason: "pipeline-run-timeout", error: error && error.message }));
     });
   }
 
@@ -800,7 +804,22 @@ async function handleRequest(request, response) {
   if (url.pathname === "/api/cron/crawl") {
     if (!authorizeCron(request, url, response)) return;
     // Mandate kommen aus der Datenbank (kein Request-/Code-Default): siehe runCronForTenants.
-    return handleAsync(response, () => runCronForTenants("crawl", (tenantId) => runSourceCrawl(tenantId)));
+    // ZEITBUDGET (Betriebsbefund 2026-07-27): dieser Pfad war der EINZIGE Cron ohne
+    // jede Zeitgrenze — sein Geschwisterpfad /api/cron/pipeline hat beide seit je.
+    // Folge: am 2026-07-27, 04:01 UTC endete er mit HTTP 504 nach 300s, und die
+    // Quellen-Telemetrie am Ende von runSourceCrawl wurde nie geschrieben. Jetzt
+    // identisch begrenzt: der Cron antwortet IMMER, der interne Fortschritt ist
+    // idempotent und selbst zeitbudgetiert.
+    return handleAsync(response, async () => {
+      const t0 = Date.now();
+      const result = await withTimeout(
+        runCronForTenants("crawl", (tenantId) => runSourceCrawl(tenantId), { deadlineMs: 270000 }),
+        280000,
+        "cron-crawl"
+      ).catch((error) => ({ ok: false, bounded: true, reason: "crawl-timeout", error: error && error.message }));
+      console.log(`[cron/crawl] ${Date.now() - t0}ms tenants=${result && result.tenants} bounded=${Boolean(result && result.bounded)}`);
+      return result;
+    });
   }
 
   if (url.pathname === "/api/cron/morning-briefing") {
