@@ -868,3 +868,202 @@ Der Sprint endet hier, weil der nächste Schritt eine Production-Änderung ist.
 (1 504 Rohdokumente ohne Endzustand). Das kostet KI-Aufrufe in erheblichem Umfang und ist
 eine eigene Kostenentscheidung. Das Werkzeug bricht bei mehr als 200 Kandidaten
 absichtlich ab.
+
+## 14 · Production-Nachweis Anlauf 1 — abgebrochen vor jeder Mutation (2026-07-27, 07:17 UTC)
+
+Dokumentiert auf dem **nicht gemergten** Branch `claude/berlin-csd-production-proof-h3cz7l`
+(Commit `6a36b86`). Kurzfassung: Startprüfung erfüllt, Ausgangszustand gemessen, alle
+read-only Schritte des §12-Plans ausgeführt, **vor dem ersten Schreibzugriff angehalten** —
+Blocker 1 war ein fehlender KI-Schlüssel in der Cloud-Sitzung. Die dortigen Zahlen sind
+Ausgangswerte für Anlauf 2 und werden hier nicht wiederholt.
+
+## 15 · Production-Nachweis Anlauf 2 — **ausgeführt und gescheitert** (2026-07-27, 08:41 UTC)
+
+**Sprintzustand: gescheitert.** Der genehmigte Schritt wurde ausgeführt. Er hat den
+CSD-Vorgang **nicht** gebildet, sondern **19 CSD-Rohdokumente einem fachfremden
+Bestandsvorgang zugeschlagen** und einen zweiten, unbeteiligten Vorgang inhaltlich
+überschrieben. Damit sind die Abnahmekriterien „kein Magnet-Vorgang / keine falsche
+Zusammenführung" und „keine unbeteiligten Datensätze verändert" **verletzt**.
+Der Lauf hat einen **neuen, vorher unbekannten Resolver-Defekt** freigelegt: **B4-3**.
+
+### 15.1 Preflight (alle 10 Punkte vor dem Schreibzugriff geprüft)
+
+| # | Prüfung | Ergebnis |
+|---|---|---|
+| 1 | Deployter Production-Commit | `a05f273` (Merge #146), Deployment `dpl_9yhd4xbnnWm6oA3WVzbPXC5BpAL9`, `READY`, 07:51 UTC — **enthält #145** (`d33f540` ist Vorfahr) |
+| 2 | CSD-Datenlage | 26 Rohdokumente 25.–27.07., davon **21 ohne gültigen Endzustand**, 5 bereits verknüpft |
+| 3 | Warum unsichtbar | `vorgang_id like 'vg-csd%'` = **0**; kein KO, kein Vorgang, keine Lage |
+| 4 | Vorgesehener Befehl | `vorgangsbildung-nachholen.js --ausfuehren` mit expliziter ID-Liste |
+| 5 | Erwarteter Schreibumfang | `knowledge_objects` (1–2 Zeilen), `ko_document_links` (≤21) |
+| 6 | Zielumfang eingrenzbar | ja — 21 namentlich genannte Kennungen |
+| 7 | LLM-Budget | 38/100 verbraucht (05:46 UTC), Reserve 30 frei |
+| 8 | Azure erreichbar | ja, über `ai.js`/Responses API auf `gpt-5-mini` verifiziert |
+| 9 | Locks/Crons | beide `pipeline_locks`-Zeilen **abgelaufen** (22:24 und 04:16 UTC), nächster Cron 10:00 UTC |
+| 10 | Rückweg | gezieltes Löschen genau der geschriebenen Zeilen (§15.7) |
+
+**Arbeitsstand = Production-Stand:** lokaler Checkout `a05f273`, Arbeitsbaum sauber,
+Flag-Datei identisch (`HELMUT_UNDERSTANDING_GATE=shadow`) — es lief kein anderer Code
+als der deployte.
+
+**Werkzeugbefund am Rande (nicht ursächlich):** `--max` kappt den Kandidatenpool
+**vor** dem `--ids`-Filter. Mit dem Standard 200 fielen 3 der 21 CSD-Dokumente heraus,
+weil 310 Dokumente im 3-Tage-Fenster ohne Endzustand sind. Deshalb `--max=400`; die
+verarbeitete Menge blieb exakt die 21 genannten Kennungen.
+
+### 15.2 Vorher-Zustand (T0 = 2026-07-27 08:40:27 UTC)
+
+`knowledge_objects` **982** · `ko_document_links` **3 217** · `raw_documents` **8 837** ·
+`profiles` **9** · `mandate_profiles` **9** · `briefings` **64** · `status='pending'` **277** ·
+`understanding_status='failed'` **7** · `vorgang_id like 'vg-csd%'` **0** ·
+LLM-Tagesbudget **38/100** · Magnete **15** von 31 Vorgängen mit ≥ 10 Dokumenten.
+
+Fenster 3 Tage: 660 Rohdokumente, davon **310 (47,0 %) ohne gültigen Endzustand**,
+178 verstanden, 52 vorgemerkt, 120 in Karenz. Watchdog **ALARM**.
+
+### 15.3 Ausgeführter Schritt (genau einer)
+
+```
+HELMUT_V3_STORE=1 HELMUT_NACHHOLEN_BESTAETIGT=ja \
+node scripts/vorgangsbildung-nachholen.js \
+  --tage=3 --karenz=0 --max=400 --vorschau --ausfuehren --ids=<21 CSD-Kennungen>
+```
+
+Lauf `nachhol-20260727084121`, 08:41:23 – 08:42:08 UTC (45 s), 21 Rohdokumente durch
+`runUnderstandingShadow()` — dieselbe Funktion, die auch der Crawl-Cron ruft.
+
+Ergebnis: **3 Cluster** · `saved` 2 · `skipped-error` 1 · Auflösungen **Bestand 2, neu 1** ·
+vorgemerkt 0 · zurückgestellt 0. Ein Cluster brach mit
+`[understanding] update-error: vg-angriffen OpenAI request timeout` ab (20 s Zeitgrenze).
+
+### 15.4 Nachher-Zustand — was tatsächlich geschrieben wurde
+
+`knowledge_objects` 982 → **983** · `ko_document_links` 3 217 → **3 238 (+21)** ·
+`status='pending'` 277 → **276** · `raw_documents`, `profiles`, `mandate_profiles`,
+`briefings`, `understanding_status='failed'` **unverändert**.
+
+| Vorgang | Was er ist | Was der Lauf tat | Bewertung |
+|---|---|---|---|
+| `vg-angriffen` (`ko-vg-angriffen`) | Bestandsvorgang vom 23.07., **1** Dokument: *„Iran-Krieg — Trump droht Iran wegen Huthi-Angriffen auf saudische Schiffe"* | **+19 CSD-Rohdokumente** verknüpft (08:41:23), Inhalt **nicht** aktualisiert (KI-Timeout) → 20 Dokumente, `ko_version` 1, `source_document_count` 1, Überschrift weiterhin Iran | **falsche Zusammenführung.** Die 19 CSD-Dokumente gelten dadurch als „verstanden" und werden vom regulären Lauf **nie wieder** angefasst |
+| `vg-tagesspiegel-20260519-f29ebd` | am 27.07. 04:06 **vorgemerkter** Vorgang, 2 fachfremde Dokumente (Bielefeld, Pflegebedürftige) | **+1 Dokument** (*„Kai Wegner zu queeren Rechten im Grundgesetz"*), `status` **pending → neu**, `was_ist_passiert` mit **Wegner-Inhalt überschrieben**, `understanding_status` → `complete` | **falsche Zusammenführung** und Veränderung eines unbeteiligten Datensatzes; der Vorgang ist jetzt für Mandanten **sichtbar** |
+| `vg-islamisten-20260726-0ab9e8` | **neu angelegt** 08:42:08 | 1 Dokument (*„Reaktionen auf Anschlag — Härtere Gangart gegen Islamisten gefordert"*), `neu`/`complete` | fachlich korrekt, aber **nicht** der CSD-Vorgang |
+
+**`vorgang_id like 'vg-csd%'` ist weiterhin 0.** Der Anschlag hat nach dem Lauf
+**keinen** eigenen Vorgang.
+
+**Audit-Blindstelle, dabei aufgefallen:** die Inhaltsaktualisierung setzt `updated_at`
+**nicht** neu (`ko-vg-tagesspiegel-…` trägt weiter 04:06:06). Eine Abfrage
+„geänderte Zeilen seit T0" findet solche Änderungen deshalb **nicht** — sie war nur
+über den Zählerabgleich `pending` 277 → 276 auffindbar.
+
+### 15.5 Ursache — Befund B4-3 (isoliert, nicht vermutet)
+
+Gegen die echten Production-Daten nachgerechnet (read-only, `sameVorgang()`):
+
+```
+Kernanker Bestand vg-angriffen : ["angriffen","droht","huthi","krieg","saudische","schiffe","trump","wegen"]
+Kernanker CSD-Cluster (24 Dok) : ["angriff","angriffen","berlin","berliner","berlins","csd"]
+Überdeckung: 2 Treffer ("angriff", "angriffen"), beide als SPEZIFISCH gewertet, Gewicht 2
+Nötig: min(MIN_BEWEISGEWICHT=2, ceil(8/2)=4) = 2   →   2 ≥ 2   →   „gleicher Vorgang"
+```
+
+Zwei Fehler wirken zusammen:
+
+1. **`angriff`/`angriffen` steht nicht in `GENERISCHE_ANKER`.** Ein alltägliches
+   Ereignissubstantiv trägt damit eine fachliche Identität — dieselbe Klasse Fehler wie
+   `menschen` in B4, nur ein anderes Wort.
+2. **Zwei Flexionsformen desselben Wortstamms zählen als zwei unabhängige Belege.**
+   `MIN_BEWEISGEWICHT=2` ist damit von **einem einzigen** Wort erfüllbar. Die
+   Gewichtung sollte je Wortstamm einmal zählen.
+
+**Warum #145 das nicht abgefangen hat:** die Härtung wurde gegen die **Magnete**
+validiert (12 von 12 blockiert). Magnet = ≥ 10 Dokumente und Kohärenz < 0,6. `vg-angriffen`
+hatte **ein** Dokument und war in keiner Analyse. Ein Ein-Dokument-Vorgang hat einen
+kleinen, vollständig spezifischen Kern — und ist damit **leichter** zu treffen als ein
+Magnet, nicht schwerer. Der Riegel „Magnet hat Kernanker = 0" greift hier prinzipiell nicht.
+
+**Zweiter Befund: die Magnet-Analyse ist gegen diesen Fall blind.** Nach dem Lauf steht
+`vg-angriffen` mit **20 Dokumenten, Kohärenz 0,95, Risiko „—"** in der Auswertung, also
+als **unauffällig**. 19 von 20 Dokumenten bilden ja einen sauberen Cluster; das eine
+fachfremde Dokument ist die Minderheit. Eine frische Fehlzuordnung in einen **kleinen**
+Vorgang ist über die Kohärenz **nicht** erkennbar. Zahl der Magnete unverändert 15.
+
+### 15.6 Telemetrie und Kosten — und warum sie nicht in Production stehen
+
+| | Wert |
+|---|---|
+| KI-Aufrufe | **3** über `gpt-5-mini` (Azure, Responses API): 2 erfolgreich, 1 Timeout nach 20 146 ms |
+| Tokens | 5 327 + 5 428 (erfolgreiche Aufrufe), fehlgeschlagener Aufruf unbekannt |
+| Kosten | **0,006272 USD** belegt, plus ein unbekannter Betrag für den Timeout |
+| Lauftelemetrie | vollständig: `processed` 3, `cluster` 3, `gruppen.fehlgeschlagen` 1, `aufloesungen {bestand:2, neu:1}`, `dokumenteOhneEndzustand` 0, `grossereignisse` 1 |
+
+**Diese Zahlen liegen NICHT in Production.** `useSupabase()` verlangt
+`HELMUT_STORAGE_BACKEND=supabase`; in der Cloud-Sitzung ist die Variable nicht gesetzt.
+Folge: die **fachlichen** Tabellen (`raw_documents`, `knowledge_objects`,
+`ko_document_links`) wurden über das eigene `HELMUT_V3_STORE`-Gate **in Production**
+geschrieben, das **Kosten- und Telemetrieprotokoll** (`llmUsage`, `processRuns`, der
+Budgetzähler) dagegen in **lokale Dateien**. Belegt: `llm_usage` **0** neue Zeilen,
+`llm_budget_counters` unverändert **38/100** (`updated_at` 05:46 UTC), `helmut_store`
+seit 06:00:52 UTC nicht angefasst.
+
+**Das ist ein eigener Betriebsbefund:** ein Nachhollauf aus einer Cloud-Sitzung
+verändert Production-Daten, erscheint aber in **keiner** Kostenauswertung und in **keiner**
+Lauftelemetrie des Betreibers. Das Budget-Gate rechnete gegen einen **lokalen** Zähler
+(Schutzlimit 50/Tag, weil `HELMUT_MAX_LLM_CALLS_PER_DAY` nicht gesetzt ist) — der
+Production-Deckel war an diesem Lauf nicht beteiligt.
+
+### 15.7 Rückweg (vorbereitet, **nicht** ausgeführt — freigabepflichtig)
+
+Rücknahme genau der 22 Änderungen dieses Laufs, nichts sonst:
+
+```sql
+-- 1. die 21 in diesem Lauf geschriebenen Verknüpfungen
+delete from ko_document_links where created_at >= '2026-07-27T08:41:21Z';
+-- 2. den neu angelegten Vorgang
+delete from knowledge_objects where id = 'ko-vg-islamisten-20260726-0ab9e8';
+-- 3. den überschriebenen Bestandsvorgang zurück auf "vorgemerkt"
+update knowledge_objects
+   set status = 'pending', understanding_status = 'pending',
+       was_ist_passiert = null, understanding_model = null
+ where id = 'ko-vg-tagesspiegel-20260519-f29ebd';
+```
+
+Sollwerte danach: `knowledge_objects` **982**, `ko_document_links` **3 217**,
+`status='pending'` **277**. Die 21 CSD-Rohdokumente stehen dann wieder auf
+`ohne-endzustand` — exakt der Ausgangszustand.
+
+**Ehrliche Einschränkung zu Schritt 3:** die Feldwerte des vorgemerkten Vorgangs
+**vor** dem Lauf sind nicht rekonstruierbar (`updated_at` wurde nicht fortgeschrieben,
+§15.4). Vergleichbare vorgemerkte Vorgänge tragen `status='pending'`,
+`understanding_status='pending'`, leeres `was_ist_passiert` und `understanding_model=null`;
+die Überschrift ist bei diesem Datensatz schon jetzt leer. Schritt 3 stellt den
+**Zustand**, nicht bitgenau den Datensatz wieder her.
+
+### 15.8 Abnahmekriterien
+
+| # | Kriterium | Status |
+|---|---|---|
+| 1 | CSD-Fall eindeutig identifiziert | **erfüllt** — 26 Dokumente, 21 im Zielumfang |
+| 2 | Reparierter Code in Production aktiv | **erfüllt** — `a05f273` ⊇ #145, Deployment `READY` |
+| 3 | Azure über `gpt-5-mini` | **erfüllt** — 2 von 3 Aufrufen erfolgreich, 1 Timeout |
+| 4 | Minimaler gezielter Schritt | **erfüllt** — genau ein Lauf, exakt 21 Kennungen |
+| 5 | Fachlich korrekter Vorgang entsteht | **verletzt** — kein `vg-csd…`; ein korrekter Nebenvorgang mit 1 Dokument |
+| 6 | Kein Magnet, keine falsche Zusammenführung | **verletzt** — 19 Dokumente an `vg-angriffen`, 1 an `vg-tagesspiegel-…` |
+| 7 | Kein Duplikat | **erfüllt** — kein zweiter Vorgang zum selben Ereignis |
+| 8 | Über Production-Lesewege sichtbar | **verletzt** — kein CSD-Vorgang vorhanden |
+| 9 | Telemetrie/Status/Kosten plausibel | **teilweise** — vollständig, aber lokal statt in Production (§15.6) |
+| 10 | Keine unbeteiligten Datensätze verändert | **verletzt** — zwei fachfremde Bestandsvorgänge verändert |
+
+### 15.9 Nächste Schritte in dieser Reihenfolge
+
+1. **Freigabe für den Rückweg** (§15.7) — bis dahin bleiben 19 CSD-Dokumente
+   fälschlich als „verstanden" an einem Iran-Vorgang.
+2. **B4-3 beheben**, bevor irgendein weiterer Nachhollauf startet: Wortstamm-Gewichtung
+   (Flexionsformen zählen einmal) und `angriff*` in `GENERISCHE_ANKER`. Regressionstest
+   mit genau diesem Fall — CSD-Cluster gegen einen Ein-Dokument-Bestandsvorgang mit
+   generischem Ereignissubstantiv.
+3. **Magnet-Analyse ergänzen** um eine Prüfung „frisch hinzugekommene Dokumente teilen
+   den Kern des Bestands", die auch bei hoher Kohärenz greift.
+4. **`HELMUT_STORAGE_BACKEND=supabase`** in den Environment-Einstellungen setzen, bevor
+   ein Werkzeug aus einer Cloud-Sitzung erneut Production schreibt — sonst bleibt jeder
+   Lauf kosten- und telemetrieblind.
+5. Erst danach den CSD-Nachweis erneut ansetzen.
