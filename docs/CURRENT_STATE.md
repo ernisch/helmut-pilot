@@ -188,11 +188,13 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
    Branch Protection; Aktivierungsstand ist nicht verifiziert (OP-11,
    `betrieb/branch-protection.md`).
 
-## 8 · Offene Pull Requests (Stand 2026-07-26)
+## 8 · Offene Pull Requests (Stand 2026-07-27)
 
 | PR | Inhalt | Einschätzung |
 |---|---|---|
-| **#142** | **Phase-1-Punkt 14 (3. Production-Anlauf): Berlin aktiviert und zurückgerollt** — Ausführungsprotokoll, Abbruch, Rollback, Ist-Zustand, neues Auswertungswerkzeug | **mergefähig und vorrangig.** Ohne ihn behaupten Runbook-Kopfzeile und `CURRENT_STATE` einen Production-Zustand, den es nicht mehr gibt. Reine Doku-/Werkzeug-Arbeit (`git revert` genügt), keine Architekturänderung. Enthält den Merge von `746eaf9` (#143) als Basisaktualisierung. Branch `claude/berlin-production-activation-sc838w` |
+| **#146** | **Phase-1-Punkt 18: wiederholbare Production-Inventur aller Quellenpakete** — Werkzeug `scripts/paket-inventur.js`, reine Logik `quellenarchitektur/paket-inventur.js`, additive Admin-Karte, kanonische Doku neu gefasst | **mergefähig.** Rein lesend und additiv (`git revert` genügt); Server-Block ist fail-safe (Fehler → Karte entfällt, Rest intakt). Production-Nachweis **erbracht** (read-only, reproduzierbar). Vier neue Befunde nur beobachtet, nichts korrigiert. Merge = Deployment und bleibt Betreiberentscheidung. Branch `claude/phase1-point18-production-inventory-l60wzr` |
+| ~~#142~~ | Phase-1-Punkt 14 (3. Production-Anlauf): Berlin aktiviert und zurückgerollt | **gemergt** (`bc333cb`) |
+| ~~#144~~ | Pipeline-Zeitbudget: Crawl kann das 300-s-Funktionslimit nicht mehr reißen | **gemergt** (`719df29`); Production-Nachweis steht aus — der Crawl steht seit 2026-07-26 20:03 UTC (§9) |
 | ~~#143~~ | Reparatur der Vorgangsbildung (Betriebsbefund B4) | **gemergt** 2026-07-26, ~22:05 UTC (`746eaf9`), Deployment `dpl_8ot9fCnko…` `READY`. **Wichtig für Punkt 14:** der erste Lauf auf diesem Stand (`/api/pipeline/run`, manuell, 22:09:52 UTC) endete mit **HTTP 504** nach 300 s — 336 Cluster gegenüber 91 im Lauf davor. Siehe `berlin-aktivierung.md` §22 |
 | ~~#140~~ | Phase-1-Punkt 14B: Berliner Abnahmeprofil ausführbar vorbereiten | **gemergt** 2026-07-26, 20:47:03 UTC (`b83d33f`) |
 | #132 | Phase-1-Punkt 15: Brandenburg Activation Readiness (aktiviert nichts) | **nicht in der jetzigen Form mergen.** Basiert auf `ca80b2f` (**vor** #138) und führt ein **konkurrierendes** Gate `HELMUT_LANDESMODUL_FREIGABE` ein; `main` kennt seit 14A ausschließlich `HELMUT_LANDESMODULE`. Vor einem Merge: Gate-Name vereinheitlichen und Branch auf den Stand nach #138 heben (`berlin-aktivierung.md` §19.6). Heute wirkungslos, weil nicht gemergt |
