@@ -408,6 +408,17 @@ function gueltigeAnalyse() {
   check("8 · 8.6 seine Dokumente bekommen trotzdem einen Endzustand",
     z6.verknuepft.length === 1, JSON.stringify(z6.verknuepft));
 
+  // 8.7 Audit-Blindstelle: jede geschriebene Analyse traegt einen frischen
+  // Zeitstempel. Ohne ihn findet die Abfrage "welche Zeilen hat dieser Lauf
+  // veraendert?" eine Inhaltsaktualisierung NICHT — genau daran ist die
+  // Nachvollziehbarkeit des CSD-Nachweislaufs gescheitert (§15.4 des Befunds).
+  check("8 · 8.7 ein neu angelegter Vorgang traegt einen Aenderungszeitstempel",
+    z1.gespeichert.length === 1 && Number.isFinite(Date.parse(z1.gespeichert[0].updated_at)),
+    JSON.stringify(z1.gespeichert.map((k) => k.updated_at)));
+  check("8 · 8.7 auch eine INHALTSAKTUALISIERUNG setzt ihn neu",
+    z5.gespeichert.length === 1 && Number.isFinite(Date.parse(z5.gespeichert[0].updated_at)),
+    JSON.stringify(z5.gespeichert.map((k) => k.updated_at)));
+
   // =======================================================================
   // 9 · TELEMETRIE DER ABLEHNUNGEN
   // =======================================================================
