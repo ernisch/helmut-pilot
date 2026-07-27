@@ -7,7 +7,7 @@
 |---|---|
 | **Werkzeug** | `node scripts/paket-inventur.js` (rein lesend) · `--json` für die vollständige Fassung |
 | **Reine Logik** | [`lib/helmut/quellenarchitektur/paket-inventur.js`](../../lib/helmut/quellenarchitektur/paket-inventur.js) |
-| **Testsuite** | `scripts/paket-inventur-test.js` (160 Assertions) · `scripts/admin-source-ui-test.js` (E/F-Block) |
+| **Testsuite** | `scripts/paket-inventur-test.js` (162 Assertions) · `scripts/admin-source-ui-test.js` (E/F-Block) |
 | **Im Betrieb sichtbar** | Admin → **Quellen & Watchdog** → Karte „Paket-Inventur" |
 | **Letzte Production-Erhebung** | 2026-07-27, 07:30 UTC (§5) |
 
@@ -200,7 +200,7 @@ freigabepflichtig.
 | 6 | Unbekanntes bleibt unbekannt | Gruppe 6 — ohne Telemetrie, bei zu dünner Datenlage und bei 0 Ertrag wird **nie** `gesund` gemeldet |
 | 7 | Ausgabe reproduzierbar | Gruppe 7 · **gegen Production**: zwei Läufe mit `--stand=…` byte-identisch (289 526 Bytes) |
 | 8 | Zahlen = tatsächliche Datenquelle | Gruppe 8 · **gegen Production per SQL gegengeprüft**: 9 / 163 / 165, und 140 + 4 + 19 = 163 |
-| 9 | Bestehende Tests bleiben grün | Offline-Suite **162/162**, Browser-Smoke **32/32** |
+| 9 | Bestehende Tests bleiben grün | Offline-Suite **163/163**, Browser-Smoke **32/32**, CI-Gate auf PR #146 grün (`Syntax + Offline-Suiten`, `Browser-/Mobile-Smoke (Chromium)`) |
 | 10 | Abnahmekriterium gegen echte Production-Daten | §5/§6 — vollständig aus dem Production-Lauf erzeugt |
 
 ## 8 · Was diese Inventur **nicht** belegt
