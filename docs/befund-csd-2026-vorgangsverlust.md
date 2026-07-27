@@ -1421,3 +1421,221 @@ Die Reihenfolge aus §15.10 bleibt, drei ihrer fünf Punkte sind jetzt erledigt.
 **Abbruchkriterien:** eine neue Übernahme oder ein neuer Magnet · ein Vorgang mit
 `vorgang_id`, der nicht zum CSD gehört, wächst · `updated_at` zeigt Änderungen an Zeilen
 außerhalb der erwarteten Menge · LLM-Budget erreicht 100/100.
+
+---
+
+## 17 · NEUER BEFUND B4-4 — der **Herausgebername** stiftet Vorgangsidentität (2026-07-27)
+
+> **Status:** im Code behoben und offline belegt · **keine** Production-Mutation ·
+> Branch `claude/b4-4-publisher-identity-hotfix-k03z30`.
+> Der Befund entstand beim Abschlusslauf zu B4-3; Production ist zu diesem Zeitpunkt
+> bereits vollständig zurückgerollt (Nettowirkung 0, §15.9).
+
+### 17.1 Der Fehler in einem Satz
+
+Das Dokument **„Kai Wegner zu queeren Rechten … - Tagesspiegel"** wurde einem fachfremden
+Vorgang zugeschlagen, weil `tagesspiegel` als ganz normaler Anker galt — und mit
+13 Zeichen über `STRONG_ANCHOR_LEN` sogar als **starker** Beleg (Gewicht 2). Damit war
+`MIN_BEWEISGEWICHT=2` **allein durch den gemeinsamen Herausgeber** erfüllt: der
+Zielvorgang enthielt bereits mehrere Tagesspiegel-Artikel.
+
+**Zwei Texte wurden zu einem Vorgang, weil sie in derselben Zeitung standen.**
+
+### 17.2 Wie der Name überhaupt in die Anker kommt — der vollständige Weg
+
+| Station | Was passiert | Trägt sie den Herausgebernamen in die Identität? |
+|---|---|---|
+| Google-News-RSS | Titel hat die Form `<Schlagzeile> - <Herausgeber>` | **ja** — der Suffix steht im Titeltext |
+| `parseRssItems` (`crawler.js`) | liest `<title>` und `<source>` getrennt | nein (Parser ist korrekt) |
+| `normalizeRawItem` | speichert `title` **unverändert**, `source_name` aus `<source>` | **ja**, über `title` |
+| `raw_documents.summary` | bei Google-News-Feeds fast immer leer (gemessen: 8 von 1 000 gefüllt) | praktisch nein |
+| `raw_documents.url` / `canonical_url` | Anker werden **nie** aus URLs gebildet — geprüft | nein |
+| `docAnchors()` | `anchorTokens(title + summary)` | **ja — hier entstand der Defekt** |
+| `matchStaerke()` | exakter Treffer ≥ 12 Zeichen → Gewicht 2; exakte Abkürzung 3–4 Zeichen → Gewicht 2 | **ja, zweiter Weg** |
+| `topicRoots()` / `deriveVorgangId()` | wählt den häufigsten nicht-generischen Ankerstamm | **ja, dritter Weg** — daher `vg-tagesspiegel-…`, `vg-zeitung-…` |
+| `sameVorgang()` | vergleicht Kern gegen Kern | erbt den Defekt aus `docAnchors` |
+
+**Der zweite Weg ist der unauffälligere.** `isAcronym()` erkennt 3–6 Zeichen mit ≥ 2
+Großbuchstaben als Abkürzung. `DIE ZEIT`, `WELT`, `BILD`, `FAZ` erfüllen das — und eine
+exakt gleiche Abkürzung galt als **starker** Beleg. Sogar der Artikel **„DIE"** wurde so
+zu einem starken Identitätsanker: der Kern des Production-Vorgangs
+`vg-zeit-20260311-030001` (26 Dokumente) lautet `["bundesregierung", "die", "zeit"]`.
+
+### 17.3 Die Lösung — zwei unabhängige Riegel, neues Modul `lib/helmut/herausgeber.js`
+
+**Leitgedanke:** *Ein Herausgebername in Herausgeberposition beschreibt die **Herkunft**,
+nicht das Ereignis.* Jedes Dokument desselben Feeds trägt ihn — er kann strukturell
+nichts unterscheiden und darf deshalb nie Identität stiften.
+
+**Riegel 1 — strukturell, ohne jede Wortliste.** Der Titel wird vor der Ankerbildung um
+seinen **belegten** Herausgebersuffix gekürzt. „Belegt" heißt: das letzte Segment deckt
+sich mit den Herausgeberangaben **desselben Dokuments** oder ist strukturell als
+Herausgeberbezeichnung erkennbar. Sechs Belegarten, jede einzeln benannt und in der
+Entscheidungsspur sichtbar:
+
+| Belegart | Beispiel | Production-Häufigkeit (1 000 Dokumente) |
+|---|---|---|
+| `quellenname` | `… - IG Metall` bei `source_name = "IG Metall"` | 262 |
+| `host` | `… - Tagesspiegel` bei `tagesspiegel.de` | 147 |
+| `domainform` | `… - SZ.de`, `… - Vietnam.vn` | 118 |
+| `gattung` | `… - Frankfurter Rundschau` (≤ 3 Wörter) | 47 |
+| `medienname` | `… - DER SPIEGEL` | 37 |
+| `quellenname-teil` | `… - Tagesschau` bei `source_name = "Tagesschau Politik"` | 20 |
+| `titel-ist-herausgeber` | `CDU/CSU-Fraktion … - CDU/CSU-Fraktion …` | 2 |
+
+Dieser Riegel wirkt auch für Herausgeber, die in **keiner** Liste stehen — belegt gegen
+`Vietnam.vn`, `Hasepost`, `Sozialverband VdK Nord e.V.`, `bundesregierung.de`.
+
+**Riegel 2 — aufgezählt.** Bekannte Medien-, Agentur- und Plattformnamen sowie die
+Gattungswörter des Verlagswesens (`Zeitung`, `Rundschau`, `Redaktion`, `Morgenpost` …)
+gelten **überall** als nicht-spezifisch: auch mitten im Text, auch in einer
+KI-formulierten Überschrift, auch in Abkürzungsschreibweise. Wirkung an genau einer
+Stelle im Code (`istGenerisch`): 0 Beitrag zum geforderten Beweisgewicht, keine
+Themenwurzel einer Kennung, keine Bezugsgröße im Kernvergleich.
+
+**Nachtrag aus der Production-Analyse:** kurze Funktionswörter (`die`, `der`, `das`,
+`und`, `für`, `mit` …) sind jetzt ebenfalls generisch. Sie kamen ausschließlich über die
+Abkürzungsregel in die Ankermenge — und zwar aus Zeitungsnamen.
+
+### 17.4 Verworfene Alternativen (damit sie nicht erneut probiert werden)
+
+- **„Das letzte Segment nach ` - ` immer abschneiden."** **Gemessen falsch:** 613 von
+  1 000 Production-Titeln haben so ein Segment, aber viele davon sind der **echte
+  Schlagzeilenrumpf hinter einer Dachzeile** — etwa „Nach Angriff auf CSD in Berlin -
+  Neuköllns Integrationsbeauftragte fordert entschlosseneres Vorgehen". Blindes
+  Abschneiden hätte hier den gesamten Sachgehalt gelöscht.
+- **„Alle Tokens des Quellennamens aus den Ankern entfernen."** Überschießend: die Quelle
+  „Deutscher Bundestag" nähme jedem ihrer Dokumente den Anker `bundestag` — auch wenn er
+  inhaltlich in der Schlagzeile steht. Dokumente derselben Sache hätten je nach Herkunft
+  verschiedene Ankermengen, echte Zusammenführungen zerfielen. Entfernt wird deshalb
+  **nur, was in Herausgeberposition steht**.
+- **„Sperrliste von Domains."** Deckt nur die bekannten Häuser ab und veraltet still.
+- **`if wort == "tagesspiegel"`.** Löst genau einen Fall und keine Fehlerklasse.
+
+### 17.5 Bewusste Grenze, ehrlich benannt
+
+Ein Artikel, der **tatsächlich von einem Medienhaus handelt** („Tagesspiegel-Redaktion
+streikt"), verliert diesen Namen als Identitätsbeleg. Das ist die richtige Richtung des
+Fehlers: der Vorgang entsteht dann über die übrigen Sachanker oder eben getrennt — er
+entsteht nie **falsch vereinigt**.
+
+Die Liste ist deshalb **zweigeteilt**. Immer wirksam sind nur Namen, bei denen die
+Herausgeberlesart in politischer Berichterstattung eindeutig dominiert — dazu gehören
+bewusst auch `Spiegel`, `Focus`, `Stern` und `Merkur`; der Preis ist, dass diese Wörter
+in ihrer seltenen Sachbedeutung keine Zusammenführung mehr allein tragen können.
+Mehrdeutige Titelnamen (`Blick`, `Krone`, `Standard`, `Post`, `Bote`, `Echo`, `Express`,
+`Kurier`, `Heute`, `Morgen`) stehen dagegen **nicht** in der immer wirksamen Liste: sie
+dürfen einen Suffix *bestätigen*, verlieren mitten im Text aber ihren Sachgehalt nicht.
+
+`zeit`, `welt` und `bild` stehen in der immer wirksamen Liste, **kosten dort aber
+nichts**: mit vier Zeichen liegen sie unter `ANCHOR_MIN_LEN` und können in
+Kleinschreibung strukturell gar kein Anker werden. Sie erscheinen ausschließlich in
+Großschreibung — also als Zeitungsname.
+
+### 17.6 Read-only Production-Analyse (`scripts/herausgeber-identitaet-analyse.js`)
+
+Ausschließlich lesend, kein KI-Aufruf, keine Kosten, keine Mutation. Gemessen am
+2026-07-27 gegen den Production-Bestand.
+
+| Frage | Messwert |
+|---|---|
+| **F1** Vorgangskennungen mit Herausgeber-Themenwurzel | **20 von 1 140 (1,8 %)** — u. a. `tagesschau` (5), `zeit` (2), `tagesspiegel` (2), `handelsblatt` (2), `zeitung`, `morgenpost`, `anzeiger` |
+| **F2** Rohdokumente (14 Tage) mit Herausgebername unter den Ankern | **524 von 1 000 (52,4 %)** |
+| **F2** Rohdokumente mit belegtem Herausgebersuffix | **615 von 1 000** |
+| **F2** häufigste dadurch entfernte Anker | `deutscher` 32 · `bundestag` 31 · `die` 26 · `faz` 26 · `zeit` 25 · `zeitung` 22 · `handelsblatt` 21 · `rundschau` 20 |
+| **F3** Vorgänge (≥ 2 Dokumente) geprüft | **206** |
+| **F3** davon mit Herausgebername im spezifischen Kern | **130 (63 %)** |
+| **F3** davon **nur** durch Herausgebernamen zusammengehalten | **8** |
+| **F3** davon ohne jeden Sachkern nach der Kürzung | **7** — sie können strukturell nichts mehr anziehen |
+| **F4** geprüfte Dokument-zu-Vorgang-Zuordnungen | **3 005** |
+| **F4** heute nicht mehr getragen | **189 (6,3 %)** |
+| **F4** davon **allein** durch den Herausgebernamen belegt | **172 (5,7 % aller Zuordnungen, 91 % der Änderungen)** |
+| **F4** neu getragen (vorher abgelehnt) | **8** |
+
+**Antwort auf die Frage „sind bestehende Vorgänge durch Mediennamen entstanden?" — ja,
+belegbar.** Die zwei größten Fälle:
+
+| Vorgang | Dokumente | spezifischer Kern (alt) | Inhalt |
+|---|---|---|---|
+| `vg-bundesregierung-20260128-43922a` | **52** | `["bundesregierung"]` | Krankenversicherung, Asylsystem, Haushalt 2027, Tourismusstrategie, Kindergeld, BAföG, Wohngeld, Stromversorgung — alle aus `bundesregierung.de` |
+| `vg-bundesregierung-20260527-43922a` | **48** | `["bundesregierung"]` | dieselbe Bauart |
+| `vg-zeit-20260311-030001` | **26** | `["bundesregierung", "die", "zeit"]` | Kern **vollständig** aus Herausgeber- und Funktionswörtern |
+| `vg-bundestag-20200703-29b3ce` | **20** | `["bundestag", "deutscher"]` | Kern neu: **leer** |
+| `vg-sozialverband-20260506-24e5f7` | **12** | `["sozialverband", "vdk"]` | Kern neu: **leer** |
+
+**Einzelprüfung der 17 Zuordnungen, die *nicht* allein am Herausgebernamen hingen**
+(6 von 17 im Detail nachgesehen): 5 sind **korrekte Trennungen** — darunter ein Vorgang,
+dessen Bestandskern `["asteroiden", "chinesische", "raumfahrt", "sonde", "tianwen"]`
+lautet und der Mutterschutzmeldungen aufnahm, sowie ein Vorgang, der den türkischen
+Außenminister mit der Schuldenbremse verband. **Ein** Fall ist eine plausibel richtige,
+jetzt verlorene Zuordnung: `vg-koalition-20251128-09e59e` — „Koalition ringt um
+Kompromiss bei Rente" hängt nur noch an `koalition` (Gewicht 1), weil `rente` und
+`rentenpaket` die Präfixgrenze reißen. Der ehrliche Preis liegt damit zwischen
+**1 von 3 005 (0,03 %)** — belegt nachgeprüft — und **17 von 3 005 (0,57 %)**, wenn man
+alle nicht einzeln geprüften Fälle als Verlust rechnet.
+
+**Nicht bereinigt:** die 8 durch Herausgebernamen zusammengehaltenen Bestandsvorgänge
+bleiben unverändert. Ihre Bereinigung wäre ein Production-Schreibzugriff mit KI-Kosten
+und braucht eine eigene Freigabe. Die neue Regel verhindert nur, dass sie **weiter
+wachsen** — sieben von ihnen haben nach der Kürzung keinen Sachkern mehr und nehmen
+damit strukturell nichts mehr auf.
+
+### 17.7 Tests
+
+| Suite | Ergebnis |
+|---|---|
+| `herausgeber-identitaet-test.js` (**neu**) | **109/109** Assertions |
+| `vorgangsidentitaet-test.js` | 67/67 (unverändert) |
+| `vorgangs-beweisfamilien-test.js` (B4-3) | 103/103 (unverändert) |
+| `vorgangs-resolver-test.js` (B4-2) | 54/54 (unverändert) |
+| `vorgangs-uebernahme-analyse-test.js` | 35/35 (unverändert) |
+| `vorgangsbildung-verlust-test.js` (CSD-Regression) | grün (unverändert) |
+| **Offline-Suite gesamt** | **167/167** (Baseline 166 + 1 neue) |
+| **Browser-/Mobile-Smoke** | **32/32** |
+
+Die neue Suite deckt die im Auftrag geforderten Fälle einzeln ab: Tagesspiegel · Spiegel ·
+ZEIT · Welt · Focus · taz · Bild · FAZ · SZ · Handelsblatt · MDR · NDR · WDR · BR · rbb ·
+dpa · Reuters · AP · AFP · Euronews · Politico · Correctiv · Google-News-Suffix eines
+**unbekannten** Herausgebers · mehrere Artikel desselben Mediums · mehrere Medien über
+dasselbe Ereignis · gleiches Thema trotz verschiedener Medien · verschiedene Themen trotz
+gleichen Mediums.
+
+### 17.8 Mutationsprobe (`scripts/herausgeber-mutationsprobe.js`)
+
+Wiederholbar statt einmalig: das Werkzeug legt für jede Mutation einen temporären Abzug
+von `lib/` an, mutiert **nur dort** und führt die Suite aus. Die Arbeitskopie des Repos
+wird nie verändert.
+
+| Mutation | Ergebnis |
+|---|---|
+| M1 · Titelsuffix nicht mehr abschneiden (der Originaldefekt) | **rot** (26 Assertions) |
+| M2 · Mediennamen wieder als spezifisch werten | **rot** (27) |
+| M3 · Gattungswörter des Verlagswesens nicht mehr erkennen | **rot** (3) |
+| M4 · Suffixbeleg über den Quellennamen abschalten | **rot** (4) |
+| M5 · Domainform im Suffix nicht mehr als Beleg zählen | **rot** (2) |
+| M6 · Wortgrenze des schwächsten Suffixbelegs aufheben | **rot** (2) |
+| M7 · Längenschranke beim Teilnamen aufheben | **rot** (1) |
+
+**7 von 7 erkannt.** M6 und M7 wurden **erst durch die Probe abgesichert**: M6 überlebte
+im ersten Durchgang, weil die Suite keine Dachzeile mit vier bis sechs Wörtern und einem
+Verlagswort kannte. Der Test wurde ergänzt, nicht die Mutation entfernt.
+
+### 17.9 Zwei Defekte, die der Test selbst gefunden hat
+
+1. **Zweistellige Quellenkürzel belegten jeden Suffix.** `source_name = "FR"` steckt als
+   Buchstabenfolge in `frankfurterrundschau` — die Teilnamensregel hätte damit jede
+   Kürzung „belegt". Behoben: **beide** Seiten brauchen ≥ 4 Zeichen (M7 sichert das ab).
+2. **Titel, die nur aus dem Herausgebernamen bestehen**, behielten Anker. In Production
+   real vorhanden. Behoben: bleibt nach der Kürzung genau der Quellenname stehen, ist der
+   Rumpf leer — das Dokument bekommt keine Anker und kann sich an keinen fremden Vorgang
+   anhängen (fail closed).
+
+### 17.10 Was dieser Sprint bewusst **nicht** getan hat
+
+- **Keine** Production-Mutation, **keine** Migration, **kein** Flag verändert, **kein**
+  Deployment, **kein** Merge, **kein** Nachhollauf.
+- **Keine** Bereinigung der 8 herausgebergetragenen Bestandsvorgänge (eigene Freigabe).
+- **Keine** Änderung an gespeicherten Titeln. Die Kürzung wirkt ausschließlich in der
+  Ankerbildung; Anzeige, Briefing und Beleglinks bleiben unverändert.
+- **Kein** Stemmer und keine allgemeine Wortartlogik — dieselbe Entscheidung wie bei
+  B4-3 (§16.1).
