@@ -746,6 +746,110 @@ selbst ist davon **nicht** blockiert — die Kandidatenpräfixe des CSD-Clusters
 geprüft. Drei CSD-Dokumente hängen allerdings bereits an `vg-zeitung-…` und stehen
 dem Nachweis deshalb nicht zur Verfügung (§13a).
 
+## 12c · B4-2 behoben — Resolver gegen Magnet-Vorgänge gehärtet (2026-07-27)
+
+### Ursache, eindeutig nachgewiesen
+
+Die Altfassung von `sameVorgang()` fragte: *„gibt es **irgendein** Dokumentpaar,
+das dasselbe Ereignis beschreibt?"* — ein **Existenzquantor**. Damit wächst die
+Trefferwahrscheinlichkeit **linear mit der Größe des Bestands**: ein Vorgang mit
+13 gemischten Dokumenten passt zu fast jedem neuen Cluster, und **jede Aufnahme
+macht ihn anziehender**. Das ist keine Vermutung — es ist die einzige Erklärung,
+die zu allen Messwerten passt:
+
+| Prüfung | Ergebnis |
+|---|---|
+| Zerfallen die Dokumente eines Magneten bei Neuclusterung? | ja, `vg-zeitung-…`: 65 Dokumente → **16 Cluster** |
+| Ist die Clusterregel also schuld? | **nein** — sie trennt korrekt |
+| Wuchs der Magnet über Läufe? | ja: 13 Verknüpfungen (26.07. 22:14) → 65 (27.07. 04:05) |
+| Fehlten Veröffentlichungszeiten? | nein, 0 von 65 |
+
+Die **transitive Kette** über Läufe ist damit der Wachstumspfad, und der
+Einzeltreffer ist die Tür, durch die sie läuft.
+
+### Magnet-Analyse (36 Production-Vorgänge mit ≥ 6 Dokumenten, read-only)
+
+Werkzeug: `scripts/vorgangs-magnet-analyse.js`. **Objektive Definition statt Bauchgefühl:**
+man gibt die Dokumente eines Vorgangs erneut in die (nachweislich gesunde)
+Clusterfunktion. Ein echtes Ereignis bleibt **ein** Cluster; ein Magnet zerfällt.
+
+> **Kohärenz** = größtes Cluster / alle Dokumente · **Magnet** = ≥ 10 Dokumente **und** Kohärenz < 0,6
+
+| | Magnete (12) | gesunde Vorgänge (24) |
+|---|---|---|
+| Kohärenz | **0,07 – 0,55** | **0,67 – 1,00** |
+| Kernanker | **0 – 2, ganz überwiegend 0** | **2 – 8** |
+| Dokumente (Mittel) | 71,3 | 17,6 |
+| Themenvielfalt (Mittel) | 31,2 Cluster | 2,8 Cluster |
+| größter | **400** (`vg-regierung`) | — |
+| kleinster Magnet | 10 | — |
+
+Zwischen 0,55 und 0,67 liegt **kein einziger** Vorgang — die Schwelle 0,6 trennt in
+einer echten Lücke der Verteilung, nicht an einem geratenen Punkt.
+
+**Der entscheidende Befund:** *jeder* Magnet hat **keinen Kern** — seine Dokumente
+teilen keinen Anker. Genau daran ist er erkennbar, und genau das macht ihn
+unschädlich.
+
+### Umgesetzte Lösung
+
+> **Verglichen wird KERN gegen KERN, nicht Dokument gegen Dokument.**
+> Ein Vorgang, dessen Dokumente nichts gemeinsam haben, **hat keinen Kern** — und
+> kann deshalb strukturell nichts mehr anziehen. **Der Magnet wird durch seine
+> eigene Heterogenität unschädlich.**
+
+Fünf Prüfungen in dieser Reihenfolge, jede mit eigener Begründung in der Spur:
+
+| # | Riegel | Ablehnungsgrund |
+|---|---|---|
+| 1 | Größe: ein Vorgang mit ≥ 60 Dokumenten nimmt nichts mehr auf | `vorgang-voll` |
+| 2 | Der Bestand muss einen Kern haben | `bestand-ohne-kern` |
+| 3 | Der neue Cluster muss einen Kern haben | `cluster-ohne-kern` |
+| 4 | Fortschreibungsfenster 14 Tage · kein Jahreskonflikt | `vorgang-zu-alt` · `jahreskonflikt` |
+| 5 | Kernüberdeckung ≥ `min(2, ⌈Kern/2⌉)`, mindestens ein nicht generischer Treffer | `kernueberdeckung-zu-schwach` |
+
+Die Anforderung in Schritt 5 **skaliert mit der Kerngröße**. Ein fester Wert wäre
+in beide Richtungen falsch: bei zwei Kernankern würde jede echte Fortschreibung
+abgelehnt, bei sechs würde ein einziger Treffer („berlin") jedes Berliner Thema
+anziehen — der Magnet in klein.
+
+**Verworfene Alternativen** (im Code dokumentiert, damit sie nicht erneut probiert
+werden): Mehrheitsentscheidung über Dokumentpaare (zu streng für laufende
+Ereignisse — späte Reaktionen passen sprachlich nicht zu frühen Tatmeldungen) ·
+reine Größenobergrenze (begrenzt den Schaden, behebt die Ursache nicht) ·
+semantische Ähnlichkeit über Embeddings (teuer, nicht deterministisch, nicht
+offline testbar — und für diesen Fehler nicht nötig).
+
+### Nachvollziehbarkeit
+
+Jede Entscheidung liefert eine **vollständige Spur**: verglichene Dokumente,
+beide Kerne, Überdeckung mit Gewicht und geforderter Schwelle, erfüllte und
+fehlende Kriterien. Auch **Ablehnungen** werden protokolliert — `resolveVorgang()`
+sammelt sie je geprüftem Kandidaten und legt sie ans Ergebnis.
+
+### Production-Validierung (read-only, 2026-07-27)
+
+Der echte CSD-Cluster (16 Dokumente) gegen die 25 größten Vorgänge:
+
+| | Ergebnis |
+|---|---|
+| Magnete geprüft | **12** |
+| davon vom neuen Resolver blockiert | **12 von 12** |
+| Vorgänge, die den CSD-Cluster aufnehmen würden | **keiner** |
+| unter dem ALTEN Resolver hätten ihn gezogen | **3** (`vg-regierung`, `vg-zeitung-…`, `vg-verkehrsminister`) |
+
+Beide Riegel greifen unabhängig: alle 12 Magnete haben **Kernanker = 0**, elf von
+ihnen zusätzlich ≥ 60 Dokumente. Die 13 gesunden Vorgänge lehnen den CSD-Cluster
+mit `kein-spezifischer-kerntreffer` ab — inhaltlich korrekt, sie handeln von
+etwas anderem.
+
+### Was bewusst NICHT getan wurde
+
+**Keine Bereinigung bestehender Magnete.** Das Werkzeug diagnostiziert
+ausschließlich. Die 12 bestehenden Magnete bleiben, wie sie sind — sie können nur
+nichts mehr anziehen. Eine Bereinigung (Auftrennen in echte Vorgänge) wäre ein
+Production-Schreibzugriff mit KI-Kosten und ist eine eigene Freigabeentscheidung.
+
 ## 13 · Offene Freigabe
 
 Der Sprint endet hier, weil der nächste Schritt eine Production-Änderung ist.
