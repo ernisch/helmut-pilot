@@ -1421,3 +1421,213 @@ Die Reihenfolge aus §15.10 bleibt, drei ihrer fünf Punkte sind jetzt erledigt.
 **Abbruchkriterien:** eine neue Übernahme oder ein neuer Magnet · ein Vorgang mit
 `vorgang_id`, der nicht zum CSD gehört, wächst · `updated_at` zeigt Änderungen an Zeilen
 außerhalb der erwarteten Menge · LLM-Budget erreicht 100/100.
+
+---
+
+## 17 · Production-Nachweis Anlauf 3 — **ausgeführt, fachlich bestanden, durch das Kostenlimit unvollständig** (2026-07-27, 10:29 UTC)
+
+**Sprintzustand: teilweise abgeschlossen.** Der Hotfix B4-3 hat in Production genau das
+getan, was er sollte: **19 von 21** Zielrohdokumenten landeten im **fachlich richtigen**
+CSD-Vorgang, **kein** fachfremder Vorgang ist gewachsen, **kein** unbeteiligter Datensatz
+wurde verändert. Nicht erreicht wurde die Vollständigkeit: **2** Dokumente blieben
+unverarbeitet, weil das LLM-Schutzlimit der Sitzung griff. Es wurde **nicht**
+zurückgerollt — kein Abbruchkriterium ist eingetreten, und der geschriebene Zustand ist
+der gewünschte.
+
+### 17.1 Lageänderung gegenüber §15/§16: der CSD-Vorgang existierte bereits
+
+Um **10:03:19 UTC** legte der **reguläre** Lauf — der erste nach dem Deployment von
+PR #147 (`27d7787`, Deployment `dpl_AQJU4Db1R95Gywc4bgT62oTrseDg` `READY` 09:59:52 UTC) —
+den Vorgang **`vg-csd-20260727-12aae0`** an: 8 Dokumente, `pending`/`pending`, noch ohne
+KI-Inhalt. Damit ist die Vorbedingung aus §15.1 („`vorgang_id like 'vg-csd%'` = 0")
+überholt — und zwar im guten Sinn: der reparierte Resolver bildet den CSD-Fall im
+Normalbetrieb selbst, statt ihn einem Fremdvorgang zuzuschlagen.
+
+Der Nachweis lief deshalb gegen ein verändertes Erfolgskriterium: **der bestehende
+Vorgang soll wachsen**, nicht ein neuer entstehen.
+
+### 17.2 Startprüfung (10:21–10:28 UTC, vollständig read-only)
+
+| # | Prüfung | Ergebnis |
+|---|---|---|
+| 1 | Deployter Production-Commit | `27d7787` (Merge #147), Deployment `READY` 09:59:52 UTC — lokaler `HEAD` **identisch** |
+| 2 | Aktive `pipeline_locks` | **0** (letzter Lock `global-understanding` abgelaufen 10:14:57 UTC) |
+| 3 | Betriebsruhe | letzte Schreibspur 10:04:50 UTC — **~24 Minuten** ruhig; nächster Cron 16:00 UTC |
+| 4 | Schreibgate | `ok: true`, Fachtabellen **und** Betriebsdaten auf `supabase`, kein Widerspruch |
+| 5 | Azure | `isAiEnabled()` `true`, Modell `gpt-5-mini` |
+| 6 | Zielmenge | **21** Kennungen, alle vorhanden, alle mit **0** bestehenden Verknüpfungen |
+| 7 | Vorschau | exakt die 21 angeforderten, alle `ohne-endzustand`, 0 unbekannt, 0 Dubletten, 0 fremd |
+
+**Zur Herkunft der 21 Kennungen — eine Lücke dieses Befunds:** §15 nennt sie „21
+namentlich genannte Kennungen", **listet sie aber nirgends auf**; im ganzen Repository
+steht keine einzige davon. Sie mussten aus der dokumentierten Auswahlregel rekonstruiert
+werden (§15.1 Punkt 2): CSD-/Christopher-Street-Rohdokumente vom 25.–27.07., erfasst
+**vor** 08:41 UTC, ohne gültigen Endzustand — 24 CSD-betitelte plus die zwei in §15.4
+namentlich genannten ohne „CSD" im Titel = **26**, davon **5** bereits verknüpft = **21**.
+Das reproduziert die Befundzahl exakt. **Konsequenz für künftige Nachweise:** eine
+Zielmenge gehört als Kennungsliste in den Befund, nicht als Beschreibung.
+
+### 17.3 Vorher-Zustand (T0 = 2026-07-27 10:23:41 UTC)
+
+`knowledge_objects` **1 140** · `ko_document_links` **4 122** · `raw_documents` **8 929** ·
+`status='pending'` **427** · `understanding_status='failed'` **7** · `profiles` **9** ·
+`vorgang_id like 'vg-csd%'` **1** · LLM-Tagesbudget **49/100** ·
+`vg-csd-20260727-12aae0` **8** Dokumente · `vg-angriffen` **1** Dokument ·
+alle 21 Ziel-IDs mit **0** Verknüpfungen.
+
+Zwischen T0 und dem Lauf: **0** neue Verknüpfungen, **0** neue Rohdokumente, **0** neue
+Knowledge Objects — der Ausgangszustand war bis zum Schreibzugriff eingefroren.
+
+### 17.4 Ausgeführter Schritt (genau einer)
+
+```
+HELMUT_NACHHOLEN_BESTAETIGT=ja \
+node scripts/vorgangsbildung-nachholen.js \
+  --tage=3 --karenz=0 --max=400 --vorschau --ausfuehren --ids=<21 CSD-Kennungen>
+```
+
+Lauf `nachhol-20260727102907`, **10:29:11 – 10:29:31 UTC** (20,7 s), 21 Rohdokumente durch
+die normale Vorgangsbildung.
+
+```
+cluster 3 · processed 3 · saved 1 · skipped-budget 2
+aufloesungen {bestand: 2, neu: 1} · vorgemerkt 0 · zurueckgestellt 0
+grossereignisse 1 · dokumenteOhneEndzustand 2 · status ok
+```
+
+### 17.5 Nachher-Zustand — was tatsächlich geschrieben wurde
+
+| Größe | T0 | danach | Δ |
+|---|---|---|---|
+| `knowledge_objects` | 1 140 | **1 140** | **0** |
+| `ko_document_links` | 4 122 | **4 141** | **+19** |
+| `raw_documents` | 8 929 | 8 929 | 0 |
+| `status='pending'` | 427 | 426 | −1 |
+| `understanding_status='failed'` | 7 | 7 | 0 |
+| Vorgänge `vg-csd%` | 1 | **1** | 0 |
+| `vg-csd-20260727-12aae0` Dokumente | 8 | **27** | **+19** |
+| `vg-angriffen` Dokumente | 1 | **1** | **0** |
+| LLM-Tagesbudget | 49/100 | **50/100** | **+1** |
+
+**Alle 19 neuen Verknüpfungen zeigen auf genau einen Vorgang** —
+`ko-vg-csd-20260727-12aae0`, geschrieben in einer einzigen Sekunde (10:29:28.86).
+
+**Genau ein Knowledge Object wurde verändert:** derselbe CSD-Vorgang, von
+`pending`/`pending` mit leerem Inhalt auf `neu`/`complete`, `understanding_model`
+`gpt-5-mini`, 413 Zeichen Inhalt, `updated_at` 10:29:28. Der Inhalt trifft das Ereignis:
+Fahrzeug in die Menschenmenge, mindestens eine Tote, mutmaßlich islamistischer
+Tatverdächtiger, später bei einem Polizeieinsatz erschossen, Reaktionen der Politik.
+
+**Die vier zuvor beschädigten Vorgänge sind unberührt** (`updated_at` unverändert):
+`vg-angriffen` 23.07. 16:03 · `vg-tagesspiegel-20260519-f29ebd` 27.07. 04:06 (weiterhin
+`pending`, unsichtbar) · `vg-zeitung-20260428-f362cc` 26.07. 22:14 · `vg-dobrindt`
+26.07. 20:04. `ko-vg-islamisten-20260726-0ab9e8` existiert weiterhin nicht — der Rückweg
+vom Vormittag hält.
+
+**Magnet-Analyse nach dem Lauf** (read-only): `vg-csd-20260727-12aae0` — 27 Dokumente,
+Kohärenz **0,96**, 2 Cluster, 4 Kernanker, 6 Quellen, 2,1 Tage → **unauffällig**.
+**0 Magnete · 0 Übernahmen · 0 gespalten.**
+
+### 17.6 Warum 2 Dokumente offen blieben — das Kostenlimit, nicht der Resolver
+
+Der Lauf bildete **3** Cluster. Der erste (19 Dokumente) wurde verstanden und
+geschrieben. Für die beiden anderen (je 1 Dokument) meldete das Budget-Gate
+`skipped-budget`:
+
+```
+[llm-budget] HELMUT_MAX_LLM_CALLS_PER_DAY ist nicht gesetzt —
+             Schutzlimit 50 Calls/Tag aktiv (fail-closed statt unbegrenzt).
+```
+
+Production stand vor dem Lauf bei **49** Aufrufen; der erste Cluster verbrauchte den
+50. — danach war das **Sitzungs-Schutzlimit** erreicht. Das Production-Tagesbudget
+(100 + Reserve 30) war mit 50/100 **nicht** ausgeschöpft. Es hat also nicht der
+Kostendeckel des Betriebs gegriffen, sondern der konservative Standardwert, den das
+Werkzeug ohne gesetztes `HELMUT_MAX_LLM_CALLS_PER_DAY` annimmt.
+
+Offen geblieben sind:
+
+| Rohdokument | Titel |
+|---|---|
+| `rd-8c977d6b13fb…` | „Kai Wegner zu queeren Rechten im Grundgesetz" |
+| `rd-d982a68f16ea…` | „Reaktionen auf Anschlag — Härtere Gangart gegen Islamisten gefordert" |
+
+Beide stehen **unverändert** auf `ohne-endzustand` mit 0 Verknüpfungen — genau wie vor
+dem Lauf. Es ist **kein** Schaden entstanden, aber auch kein Fortschritt: der reguläre
+Lauf holt sie nicht nach (er verarbeitet nur Dokumente seines eigenen Crawls). Sie
+brauchen einen zweiten, ebenso eng begrenzten Nachhollauf mit erhöhtem
+`HELMUT_MAX_LLM_CALLS_PER_DAY` — das ist eine **Betreiberentscheidung**, weil es eine
+Kostengrenze anhebt.
+
+**Nebenbefund:** die beiden Cluster hätten laut `aufloesungen` einmal einen
+**Bestandsvorgang** und einmal einen **neuen** Vorgang ergeben. Welchen Bestandsvorgang,
+ist nicht feststellbar — es wurde nichts geschrieben. Vor dem Nachholen dieser zwei
+Dokumente ist die Vorschau erneut zu prüfen.
+
+### 17.7 Abnahme gegen die 12 Kriterien
+
+| # | Kriterium | Ergebnis |
+|---|---|---|
+| 1 | alle 21 mit gültigem Endzustand | **nicht erfüllt** — 19 von 21 |
+| 2 | alle 21 verknüpft | **nicht erfüllt** — 19 von 21 |
+| 3 | ausschließlich fachlich passender CSD-Vorgang | **erfüllt** |
+| 4 | bevorzugt `vg-csd-20260727-12aae0` wächst | **erfüllt** — 8 → 27 |
+| 5 | kein Iran-/Huthi-/Nahost-/fachfremder Vorgang wächst | **erfüllt** |
+| 6 | `vg-angriffen` wächst nicht | **erfüllt** — 1 → 1, `updated_at` vom 23.07. |
+| 7 | kein fachfremder Vorgang überschrieben | **erfüllt** — genau 1 verändertes KO |
+| 8 | kein zweiter doppelter CSD-Vorgang | **erfüllt** — `knowledge_objects` unverändert 1 140 |
+| 9 | keine Ziel-ID unverknüpft | **nicht erfüllt** — 2 offen |
+| 10 | nichts außerhalb der 21 verändert | **erfüllt** |
+| 11 | Telemetrie und Kosten nur diesem Lauf entsprechend | **erfüllt** |
+| 12 | vollständig dokumentiert | **erfüllt** (dieser Abschnitt) |
+
+**9 von 12 erfüllt.** Die drei offenen sind **dieselbe** Ursache: das Kostenlimit, nicht
+die Vorgangsbildung.
+
+### 17.8 Das Storage-Gate hat seinen Zweck erfüllt — belegt
+
+Der entscheidende Unterschied zu Anlauf 2 (§15.6): dort landeten Fachtabellen in
+Production und Kosten/Telemetrie in lokalen Dateien. Diesmal:
+
+- `llm_budget_counters` global **49 → 50** in **Production** (Anlauf 2: unverändert 38),
+- Lauftelemetrie `nachhol-20260727102907` liegt in **Production** (`helmut_store`,
+  `main-auth`, `processRuns`), vollständig mit Ergebnisgruppen und Dauer,
+- das Werkzeug meldete vor dem ersten Schreibzugriff:
+  „Schreibgate: Fachtabellen und Betriebsdaten beide auf Production (Backend supabase)."
+
+**Ehrliche Grenze:** `llm_usage` hat für den 27.07. **0** Zeilen — nicht nur für diesen
+Lauf, sondern für den ganzen Tag. Ein Kostenbetrag in USD ist für diesen Lauf deshalb
+**nicht** belegbar; belastbar ist nur der Zähler **1 Aufruf**. Das ist der bekannte
+Logverlust **K-1** aus Punkt 17, nicht ein Defekt dieses Laufs.
+
+### 17.9 Kein Rückweg ausgeführt — Begründung
+
+Keines der Abbruchkriterien ist eingetreten: kein fachfremder Vorgang gewachsen,
+`vg-angriffen` unverändert, nichts an Iran/Huthi/Nahost gehängt, keine fremde ID
+verarbeitet, kein Lock-Konflikt (0 aktive Locks vor, während und nach dem Lauf), das
+Schreibgate hielt, nichts außerhalb der 21 geschrieben, kein Duplikat-Vorgang.
+
+Der geschriebene Zustand ist der **gewünschte**: der Anschlag auf den Berliner CSD hat
+seit 10:29 UTC erstmals einen **verstandenen** Vorgang mit 27 belegten Rohdokumenten.
+Ein Rückweg würde ihn zerstören. **Production-Nettowirkung: +19 Verknüpfungen und ein
+von `pending` auf `complete` gehobener CSD-Vorgang — sonst nichts.**
+
+### 17.10 Was als Nächstes ansteht
+
+1. **Betreiberentscheidung:** die zwei offenen Dokumente über einen zweiten eng
+   begrenzten Nachhollauf mit angehobenem `HELMUT_MAX_LLM_CALLS_PER_DAY` nachholen —
+   oder bewusst offen lassen.
+2. Weiterhin **offen und getrennt freizugeben:** die Bereinigung der Magnete und
+   Übernahmen im Bestand (§12b/§12c, §16) und das Nachholen des Altbestands.
+3. Die Zielmenge künftiger Nachweise als **Kennungsliste** im Befund führen (§17.2).
+
+### 17.11 Werkzeugbefund am Rande: die Offline-Suite in einer Sitzung mit Production-Secrets
+
+`node scripts/run-offline-tests.js` meldete in dieser Sitzung **152/166** — 14 rote
+Suiten. Ursache ist **nicht** eine Regression, sondern die Sitzungsumgebung: mit
+gesetztem `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY`/`HELMUT_STORAGE_BACKEND=supabase`
+greifen Suiten, die den lokalen Dateispeicher erwarten, gegen Supabase und laufen in den
+Netz-Guard. Derselbe Aufruf ohne diese Variablen ist **166/166 grün** (54 s).
+
+**Regel für künftige Nachweissitzungen:** die Offline-Suite gehört ohne Production-Secrets
+in der Umgebung gefahren, sonst ist ihr Ergebnis nicht aussagekräftig.
