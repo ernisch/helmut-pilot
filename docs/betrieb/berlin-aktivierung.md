@@ -1,19 +1,27 @@
 # Berlin aktivieren — Runbook und Go-/No-Go-Grundlage
 
-**Stand:** 2026-07-26 (fünfter Durchgang, zweiter Production-Anlauf) · **Sprint:** Phase-1-Punkt 14 / 14A ·
-**Zustand:** aktivierungsreif **mit reduziertem Set**, **Production weiterhin unverändert** — die
-Aktivierung ist an **zwei** Startbedingungen blockiert: dem fehlenden Flag-Zugang (**§19.4**) und
-dem fehlenden Berliner Landtagsprofil (**§19.5**, seit 14A entscheidend). Die beiden
-Vorprüfungsbefunde **V-1** (Staffelung) und **V-2** (globale Landesquellenauflösung) sind in
-**§18** behoben; der aktuelle Anlauf ist in **§19** protokolliert ·
+**Stand:** 2026-07-26 (siebter Durchgang, **dritter Production-Anlauf — ausgeführt**) ·
+**Sprint:** Phase-1-Punkt 14 / 14A / 14B ·
+**Zustand:** **Berlin ist wieder vollständig inaktiv — aktiviert und zurückgerollt am selben Abend.**
+Die Schritte 4–8 der Reihenfolge (§9) wurden am 2026-07-26 zwischen **21:01:08 und 21:02:48 UTC**
+ausgeführt, nachdem der Betreiber `HELMUT_LANDESMODULE=berlin` gesetzt und Production neu deployt
+hatte (§21). Um **22:09:52 UTC** trat **Abbruchkriterium 16** ein; der Rollback lief um
+**22:43:06 (Ebene 0b)** und **22:43:23 UTC (Ebene 2)**. Gemessener Endzustand: **0 berechtigte
+Berliner Mandate, 0 aktive Berliner Wege.** Stufe 2 war **nie** aktiviert. Abbruchprotokoll und
+Ursachenanalyse: **§22** ·
 **Kanonische Daten:**
 [`seeds/berlin-aktivierung.js`](../../lib/helmut/quellenarchitektur/seeds/berlin-aktivierung.js) ·
 [`seeds/berlin-neutralitaet.js`](../../lib/helmut/quellenarchitektur/seeds/berlin-neutralitaet.js) ·
 [`seeds/berlin-profilplan.js`](../../lib/helmut/quellenarchitektur/seeds/berlin-profilplan.js)
 
-> **Diese Datei beschreibt einen Eingriff, der noch nicht stattgefunden hat.**
-> Es wurde **nichts** in Production aktiviert, kein Flag gesetzt, kein SQL ausgeführt, keine Zeile
-> geschrieben. Alle Production-Zahlen stammen aus `select`-Abfragen. Brandenburg wurde nicht berührt.
+> **Achtung — diese Datei beschreibt einen ausgeführten und wieder zurückgerollten Eingriff.**
+> Der frühere Hinweis „es wurde nichts in Production aktiviert" gilt seit dem 2026-07-26,
+> 21:01 UTC nicht mehr. Ausgeführt wurden: Block A (Neutralisierung), das Abnahmeprofil,
+> Block B1 (Paketstatus) und **Stufe 1** (2 Direktfeeds) — **Stufe 2 nie**. Nach dem Eintritt von
+> Abbruchkriterium 16 wurde um 22:43 UTC auf **Ebene 0b und Ebene 2** zurückgerollt.
+> **Brandenburg wurde zu keinem Zeitpunkt berührt** (§21.4, §22.4). Die Abschnitte §0–§20
+> beschreiben den Stand **vor** dem Eingriff; §21 protokolliert die Aktivierung, **§22** den
+> Abbruch, den Rollback und die Ursachenanalyse. **§22 ist der aktuelle Stand.**
 
 ---
 
@@ -1287,3 +1295,416 @@ etwa einer Minute (§20.3, Weg 1).
 Backup (`--scope=seed` **und** `--scope=profil`) → beide Dry Runs → Block A → Abnahmeprofil →
 B1 → Flag ist bereits gesetzt → Stufe 1 → ein voller Crawl-Zyklus beobachten → **erst dann**
 Stufe 2.
+
+## 21 · Dritter Production-Anlauf (2026-07-26, 20:49–21:30 UTC) · **ausgeführt bis Stufe 1**
+
+**Auftrag:** der echte Berliner Production-Beweislauf. **Ergebnis: die Aktivierung ist gefahren** —
+Schritte 4 bis 8 der Reihenfolge aus §9. **Stufe 2 ist nicht gefahren** und ist weiterhin
+fail-closed gesperrt. Der Crawl-Beweis selbst steht noch aus (§21.7).
+
+> Was dieser Abschnitt **nicht** behauptet: dass Berlin bereits Daten liefert. Zum Zeitpunkt der
+> Niederschrift gab es **0** Berliner Telemetriezeilen und **0** Berliner Rohdokumente — der
+> nächste Crawl läuft erst um **04:00 UTC**. Alles, was hier grün steht, ist gemessen; alles
+> Ausstehende steht als ausstehend.
+
+### 21.1 Startprüfung — 14 von 14 erfüllt (erstmals)
+
+| # | Bedingung | Ergebnis |
+|---|---|---|
+| 1 | `main` enthält PR #138–#141 | **ja** — `b83d33f` (Merge #140, 20:47:03 UTC); #139 `4bc58dc`, #141 `8085745`, #138 `2f58d4c` |
+| 2 | Lokaler Stand = sauberes `origin/main` | **ja** — HEAD = `origin/main` = `b83d33f`, `ahead=0 behind=0` |
+| 3 | Arbeitsbaum sauber | **ja** |
+| 4 | Offline-Suite grün **vor** dem Eingriff | **ja** — **158/158** Suiten, 0 FAIL, 40 s |
+| 5 | Punkt 16 und 17 in `main` | **ja** — unverändert seit §20.1 |
+| 6 | Keine parallele Arbeit an Berlin | **ja** — einzige offene Berührung bleibt PR #132 (Brandenburg, §19.6), nicht angefasst |
+| 7 | Supabase-Zugang | **ja** — Messung, Sicherung, SQL |
+| 8 | **`HELMUT_LANDESMODULE` gesetzt** | **ja, durch den Betreiber** — §21.2 |
+| 9 | Kein konkurrierender Gate-Name | **ja** — `helmut-flags.json` enthält weiterhin **keinen** Landesmodul-Schlüssel (nur `HELMUT_UNDERSTANDING_GATE`, `HELMUT_PARDOK_DISPATCH`, `HELMUT_SOURCE_MODE`); kein Workflow nennt das Gate |
+| 10 | Backup-Grundlage **und** Artefakt | **ja** — §21.3 |
+| 11 | Brandenburg vollständig gesperrt | **ja** — 8/8 `rp-bb-*` `needs_review`+`manual`, `brandenburg-basis` `prepared` |
+| 12 | Bundestagsversorgung gesund | **ja** — letzter Vollcrawl 145 `ok`, **0 error** |
+| 13 | Keine aktiven Pipeline-Locks | **ja** — 2 Zeilen, **beide abgelaufen** |
+| 14 | Dry Runs aller Schritte grün | **ja** — beide Skripte Exit 0, §21.3 |
+
+### 21.2 Der Blocker ist gefallen — und was daran belegt ist
+
+Der Flag-Zugang wurde vor dem Eingriff **erneut auf allen sechs Kanälen gemessen** (20:50–20:52
+UTC), nicht aus §20.3 übernommen. Ergebnis unverändert negativ: `VERCEL_TOKEN` nicht gesetzt ·
+`api.vercel.com` und `vercel.com` proxy-gesperrt (`CONNECT` → **403**) · Vercel-MCP ohne
+Environment-Werkzeug · App `HTTP 401` · `helmut-flags.json` ohne Landesmodul-Schlüssel ·
+kein Workflow.
+
+**Der Betreiber hat daraufhin selbst gehandelt** (§20.3, Weg 1) und die Ausführung freigegeben.
+
+**Was davon belegbar ist — und was nicht.** Der Flag-**Wert** ist aus einer Cloud-Sitzung
+weiterhin **nicht lesbar**; diese Grenze besteht unverändert. Belegt ist der **Redeploy**:
+
+| Beleg | Wert |
+|---|---|
+| Deployment | `dpl_7443DBt1eXj6G9r7BdCsrMqpZtUT`, Ziel `production`, Status `READY` |
+| Zeitpunkt | 2026-07-26, **20:58:57 UTC** |
+| Art | `action: "redeploy"`, `originalDeploymentId: dpl_4Wg1Th4fjMvDsLNAFCng6AzqRhLG` |
+| Commit | `b83d33f` — **identisch** zum vorherigen Production-Deployment |
+
+Ein Redeploy **desselben Commits ohne Git-Push** ist genau die Signatur einer
+Umgebungsvariablen-Änderung: ein Codewechsel hätte einen neuen Commit, ein Rollback einen
+älteren. Das ist ein **starkes Indiz**, kein Wertbeleg. **Der einzige harte Beweis für den
+Flag-Wert ist die Telemetrie des ersten Crawl-Laufs** — erscheinen die beiden Berliner Quellen
+dort, war das Flag gesetzt; erscheinen sie nicht, war es das nicht. Diese Unterscheidung ist
+tragfähig, weil der Plan ohne Flag nachweislich **0** Berliner Wege enthält (§21.5).
+
+**Rollback Ebene 0 bleibt aus einer Sitzung nicht verfügbar.** Der schnelle Rückweg dieses
+Sprints ist deshalb **Ebene 0b** (Abnahmeprofil deaktivieren) bzw. **Ebene 2** (Wege auf
+`manual`) — beide datenbankseitig, beide read-only geprüft ausführbar, jede für sich hinreichend.
+
+### 21.3 Sicherung und Dry Runs — vor jeder Mutation
+
+**Zwei frische Sicherungen**, beide `vollstaendig: true`, beide an `mainCommit b83d33f` gebunden:
+
+| Art | Zeitpunkt | Tabellen | Zeilen | `pruefsummeGesamt` |
+|---|---|---|---|---|
+| `pre-seed` | 20:52:18 UTC | 8/8 | 50 · 73 · 64 · 163 · 9 · 165 · 18 · 18 | `49a5b92d9e27fbbd…` |
+| `pre-profil` | 20:53:18 UTC | 2/2 | `profiles` 8 · `mandate_profiles` 8 | `0c514ace8982def1…` |
+
+**Beide Prüfsummen sind byte-identisch mit denen aus §20.4** — die Datenbank war zwischen 14B und
+diesem Sprint an den gesicherten Tabellen unverändert. Das ist gegengerechnet, nicht aus
+Zeitstempeln erschlossen. Letzte DB-Änderung vor dem Eingriff: `retrieval_paths` 11:13:10 UTC.
+
+**Grenze unverändert:** `./backups/` ist gitignored und liegt im Container dieser Sitzung. Der
+vorgesehene Rückweg ist **nicht** der Restore, sondern die zeilenscharfen Rollback-Dateien.
+
+**Dry Runs vor dem Eingriff, beide Exit 0** (`berlin-aktivierung-dryrun.js`,
+`berlin-abnahmeprofil-dryrun.js`): A **JA** (+3/−3 Zuordnung) · Abnahmeprofil **JA** (1+1 Zeilen,
+4/4 Vor-, 5/5 Nachbedingungen) · B1 **NEIN** (Block A fehlt) · S1 **NEIN** · S2 **NEIN**
+(Paketstatus · Stufe 1 · **Telemetriebeleg**). Kontrollfragen in allen Schritten **0**.
+
+**Der Ausführungskanal wurde vorher geprüft, nicht angenommen.** Vor der ersten Mutation lief ein
+Riegeltest gegen dieselbe Verbindung: eine Transaktion mit `do $$`-Block und `raise exception`
+bricht ab und lässt **0** Zeilen zurück (auf einer `temp table`, ohne Production-Bezug). Ohne
+diesen Test wäre unklar geblieben, ob die fail-closed Riegel über diesen Kanal überhaupt greifen.
+
+> **Abweichung, die zu nennen ist:** `berlin-abnahmeprofil-pgverify.sh` und
+> `berlin-staffelung-pgverify.sh` liefen gegen **PostgreSQL 16.13**. Production ist
+> **PostgreSQL 17.6**. Die verwendeten Konstrukte (`do $$`, `raise exception`, `on conflict`,
+> `array[…]::text[]`) verhalten sich in beiden Versionen gleich, und alle Vor-/Nachbedingungen
+> haben in Production real gegriffen — die Beweise wurden aber nicht auf der Zielversion geführt.
+
+### 21.4 Ausführung — vier Schritte, je eine Transaktion
+
+Jede Datei einzeln, in der bindenden Reihenfolge aus §9, mit Verifikation nach jedem Schritt.
+
+| Schritt | Datei | Zeitpunkt (UTC) | Wirkung, nachgemessen |
+|---|---|---|---|
+| **4 · Block A** | `…_a_neutralisierung.sql` | **21:01:08** | `berlin-basis` **10 → 7** Wege · `die-linke-berlin` **0 → 3** · Summe `package_paths` **165 unverändert** (+3/−3) |
+| **5 · Abnahmeprofil** | `…_berlin_abnahmeprofil.sql` | **21:01:52** | `profiles` 8 → **9** · `mandate_profiles` 8 → **9** · aktive Mandate 6 → **7** · Landtagsprofile 0 → **1** |
+| **6 · Block B1** | `…_b1_paketstatus.sql` | **21:02:11** | `berlin-basis` `prepared` → **`active`** |
+| **7 · Flag** | Vercel-Env | **20:58:57** (Betreiber) | Redeploy `READY`, §21.2 |
+| **8 · Stufe 1** | `…_b2_stufe1.sql` | **21:02:48** | `rp-be-regionale_leitmedien` und `rp-rbb24-politik` → **`healthy`/`auto`** |
+
+**Was Stufe 1 konkret ist — zwei amtliche RSS-Direktfeeds, keine Suchmaschine:**
+
+| Weg | Herausgeber | Abrufweg | URL |
+|---|---|---|---|
+| `rp-be-regionale_leitmedien` | Tagesspiegel | `rss` | `https://www.tagesspiegel.de/contentexport/feed/berlin` |
+| `rp-rbb24-politik` | rbb24 | `rss` | `https://www.rbb24.de/politik/index.xml/feed=rss.xml` |
+
+Die zwei Google-News-Suchwege (`rp-be-landesregierung`, `rp-be-staatskanzlei`) sind **Stufe 2**
+und stehen unverändert auf `needs_review`/`manual`.
+
+**Zustand nach allen vier Schritten, vollständig nachgemessen (21:03 UTC):**
+
+| Größe | Wert | Vorher |
+|---|---|---|
+| Abrufwege gesamt / Paketzuordnungen / Pakete | **163** / **165** / **9** | 163 / 165 / 9 — **unverändert** |
+| `berlin-basis` | **`active`**, 7 Wege | `prepared`, 10 Wege |
+| `bund-basis` | `active`, **54** Wege | `active`, 54 — **unverändert** |
+| `brandenburg-basis` | **`prepared`**, 9 Wege | `prepared`, 9 — **unverändert** |
+| `rp-bb-*` Wege | **8/8** `needs_review`+`manual` | 8/8 — **unverändert** |
+| Berliner Wege scharf | **2** (Stufe 1) | 0 |
+| Stufe-2-Wege gesperrt | **2/2** | 2/2 |
+| Bundestagsprofile | **8** | 8 — **unverändert** |
+| Berliner Telemetriezeilen / Rohdokumente | **0 / 0** | 0 / 0 |
+
+**Brandenburg ist nachweislich nicht berührt.** Kein Brandenburger Paket, Weg, Profil oder
+Mandat hat sich verändert. `rp-rbb24-politik` läuft über die **Berliner** Referenz mit und
+bringt damit auch Brandenburg-**Inhalte** in den Rohstrom — das ist die in §13 benannte,
+bewusst akzeptierte Nebenwirkung eines Zwei-Länder-Senders, **keine** Aktivierung Brandenburgs.
+
+### 21.5 Der Crawl-Plan, gegen echte Production-Daten gerechnet
+
+Nicht behauptet, sondern mit dem **echten** Resolver gegen die **mutierten** Production-Daten
+gerechnet (`buildRelationalCrawlPlan` mit `listFullProfiles` + `getSources` +
+`listSourceArchitectureRows`, read-only):
+
+| | **ohne** Flag | **mit** `HELMUT_LANDESMODULE=berlin` |
+|---|---|---|
+| freigegebene Landesmodule | – | `berlin` |
+| Länder mit berechtigtem Mandat | `berlin` | `berlin` |
+| **wirksame** Landesmodule | **keine** | **`berlin`** |
+| Wege im Plan | **140** | **142** |
+| Berliner Wege im Plan | **0** | `rp-be-regionale_leitmedien`, `rp-rbb24-politik` |
+| Brandenburger Wege im Plan | **0** | **0** |
+
+**Damit ist V-2 an echten Daten belegt.** Die Versorgung **je Profil** gerechnet: alle **8**
+Bestandsmandate erhalten **140 Quellen mit und ohne Flag** — auch die fünf Bundestagsmandate mit
+`bundesland = Berlin` bekommen **0** Berliner Wege, weil ihre politische Ebene `bundestag` ist.
+Nur das Abnahmeprofil (Ebene `Land`, Berlin) geht **140 → 142**.
+
+> **Methodischer Hinweis, der beim ersten Versuch schiefging.** Eine erste, selbst gebaute
+> Nachrechnung meldete „0 Berliner Wege trotz Profil" und hätte fast als Befund gegolten. Ursache
+> war **das Prüfskript, nicht Production**: es fütterte den Resolver mit einem verkürzten
+> Profilobjekt und las ohne `HELMUT_V3_STORE`/`HELMUT_PROFILE_DB_MODE` den **Blob** statt der
+> Datenbank — 8 statt 9 Profile. Wer den Plan nachrechnet, muss **denselben Lesepfad** benutzen
+> wie die Anwendung, sonst misst er sein eigenes Modell.
+
+### 21.6 Auswertungswerkzeug — §10 und §11 sind jetzt ausführbar
+
+Go-/No-Go-Kriterium **5** führte bisher „**Monitoring nur definiert**, nie gegen einen echten
+Berliner Lauf erprobt" als offene Lücke. Ein Beweislauf, dessen Abbruchkriterien von Hand
+nachgerechnet werden, ist nicht reproduzierbar.
+
+**Neu: `scripts/berlin-beweislauf-auswertung.js`** — strikt read-only, misst je Kriterium aus §11
+einen Ist-Wert gegen den Vorlauf und urteilt **je Kriterium** `GRUEN` / `VERLETZT` /
+`unbekannt`, statt eine Gesamtnote zu behaupten. Exit 1, sobald **ein** Kriterium verletzt ist.
+
+**Zwei Ehrlichkeitsregeln sind eingebaut:**
+
+- Ein Kriterium ohne Datengrundlage endet als **`unbekannt`**, nie als grün.
+- **Kriterium 16** (Zeitbudget / `504`) meldet ausdrücklich **`nicht_aus_db_messbar`**. Es liegt
+  auf HTTP-Ebene und steht nur in den Vercel-Runtime-Logs. Genau dieser Befund (§20.5) wäre einer
+  reinen Telemetriebetrachtung entgangen — das Werkzeug behauptet deshalb nicht, ihn zu prüfen.
+  Auch **Kriterium 6** misst nur den längsten **Einzelabruf**, nicht die Funktionslaufzeit; das
+  steht als Hinweis in der Ausgabe.
+
+**Erster Lauf (Referenzmessung vor dem ersten Berliner Crawl):** **9 grün · 0 verletzt ·
+7 unbekannt oder nicht messbar** — die 7 sind genau die, die einen Berliner Lauf voraussetzen.
+Urteil: `NOCH KEIN BERLINER LAUF — Beweis steht aus`.
+
+### 21.7 Was noch aussteht — der Beweis selbst
+
+**Der Crawl-Beweis ist nicht erbracht.** Zum Ende dieses Sprints:
+
+| Nachweis aus dem Sprintauftrag | Stand |
+|---|---|
+| Berliner Quellen laufen | **offen** — 0 Telemetriezeilen, nächster Crawl **04:00 UTC** |
+| Bundestagsquellen unverändert | **belegt** für den Plan (140 → 140 je Bestandsmandat); der Lauf-Beleg kommt mit demselben Crawl |
+| Brandenburg weiterhin inaktiv | **belegt** (§21.4) |
+| keine Doppelverarbeitung · keine Fehler · keine Rate-Limits | **offen** — braucht den Lauf |
+| Kosten plausibel · Telemetrie plausibel | **offen** — braucht den Lauf |
+| Knowledge Objects · Vorgänge · Lage · Briefing | **offen** — Understanding läuft 05:30 UTC, Briefing 05:00 UTC |
+| Rollback weiterhin möglich | **belegt** — Ebene 0b und 2 read-only als ausführbar geprüft |
+
+**Zeitrechnung, damit niemand eine schnellere Abnahme erwartet.** `/api/cron/crawl` läuft laut
+`vercel.json` um **04:00** und **20:00 UTC**. Stufe 2 verlangt **je Stufe-1-Weg mindestens 2
+Läufe mit `status='ok'`** — der Riegel ist SQL-seitig und nicht überspringbar. Der zweite Lauf
+kann frühestens mit dem nächsten Vollcrawl entstehen. **Stufe 2 ist damit an diesem Kalendertag
+nicht erreichbar.** §10 empfiehlt zusätzlich **3 Tage = 6 Läufe je Stufe** als
+Beobachtungsdauer; ein Weg gilt erst als tragfähig, wenn er in **4 von 6** Läufen `ok` liefert
+**und** neue Dokumente beisteuert.
+
+**Nächste Schritte, in dieser Reihenfolge:**
+
+1. Nach dem 04:00-UTC-Lauf `node scripts/berlin-beweislauf-auswertung.js` — **zuerst**
+   Kriterium 16 über die Vercel-Runtime-Logs prüfen (`504` auf `/api/cron/crawl`, Vorlauf 24 h:
+   **1**, 7 Tage: **3**), das Werkzeug kann es nicht.
+2. Bei **jedem** verletzten Kriterium: sofort **Rollback Ebene 0b**
+   (`…_abnahmeprofil_rollback_stufe0.sql`) — kein Workaround, kein Nachjustieren.
+3. Erst nach **zwei** belegten `ok`-Läufen je Stufe-1-Weg und grüner Auswertung:
+   `…_b2_stufe2.sql`. Der Telemetrieriegel lässt es vorher nicht zu.
+
+### 21.8 Ergebnis
+
+**Sprintzustand: teilweise abgeschlossen.** Die Aktivierung ist ausgeführt und vollständig
+verifiziert; der Betriebsbeweis steht aus. Ein Rollback war nicht nötig und hat nicht
+stattgefunden. Stufe 2 ist **nicht** aktiviert. Beobachtete erfolgreiche Berliner
+Production-Läufe: **0**.
+
+**Punkt 14 ist damit nicht abgeschlossen.** Was sich geändert hat: er hängt zum ersten Mal nicht
+mehr an einer Freigabe oder an fehlender Entwicklung, sondern nur noch **am Zeitablauf des
+Crawls**.
+
+### 21.9 Vorabprüfungen vor dem ersten Berliner Lauf (2026-07-26, 21:30–21:45 UTC)
+
+Drei Dinge, die **vor** dem 04:00-Lauf geprüft wurden, damit ein Fehlschlag später nicht
+falsch zugeordnet wird.
+
+**1 · Erster Cron mit 7 Mandaten ist sauber durchgelaufen.** `/api/cron/understanding` um
+**21:30:02 UTC**, **HTTP 200**, auf dem Redeploy `dpl_7443DBt1…`: `processed: 0`, `pending: 43`,
+alle Einträge `skipped-no-cluster` (Alt-Bestand vom 02./03.07.). Kein Timeout, kein `504`, keine
+LLM-Kosten (Zähler unverändert 49/100), keine neuen Locks. Das siebte Mandat hat den
+Understanding-Pfad nicht gesprengt — der erste echte Datenpunkt gegen Abbruchkriterium 16.
+
+**2 · Der Telemetriebeleg für Stufe 2 ist erfüllbar.** Das war nicht selbstverständlich: **keiner**
+der vier Berliner Wege existiert im Legacy-Katalog (`getSources()`, 151 Quellen) — sie liefen nie.
+Die Crawler-Quelle wird also rein aus `retrieval_paths` gebaut. Entscheidend ist dann
+`toCrawlerSource`: `id: path.legacy_source_id || path.id`. Da `legacy_source_id` gesetzt ist
+(`be-regionale_leitmedien`, `rbb24-politik`), schreibt `buildSourceTelemetryRows` genau die
+Kennungen, die die Stufe-2-Vorbedingung sucht. **Hätte der Weg keine `legacy_source_id`, wäre der
+Riegel dauerhaft unerfüllbar gewesen** — und das wäre erst nach zwei Crawl-Zyklen aufgefallen.
+
+**3 · `empty` kann Stufe 2 nicht freischalten.** Die Vorbedingung zählt
+`count(distinct run_id)` mit `status = 'ok'` je Quelle und verlangt **≥ 2**. Zwei Zeilen im
+**selben** Lauf genügen nicht, `empty` zählt nicht mit. Das ist technisch erzwungen, keine
+Auslegungsfrage.
+
+**Nicht möglich war eine Vorab-Validierung der beiden Feeds selbst:** `tagesspiegel.de` und
+`rbb24.de` sind aus der Agenten-Sitzung proxy-gesperrt (`CONNECT` → **403**; die Allowlist deckt
+Supabase, GitHub und Paketquellen ab). Das ist eine Sandbox-Grenze, kein Production-Befund — der
+Crawl läuft auf Vercel mit offenem Egress. Ob die Feeds liefern, entscheidet der 04:00-Lauf.
+
+## 22 · Abbruch und Rollback (2026-07-26, 22:09–22:50 UTC) · **Punkt 14 blockiert**
+
+**Ergebnis: Abbruchkriterium 16 ist eingetreten, der Rollback ist ausgeführt, Berlin ist wieder
+vollständig inaktiv.** Der Beweislauf hat den ersten Berliner Crawl **nie erreicht** — der Abbruch
+kam vor dem 04:00-UTC-Lauf.
+
+### 22.1 Was passiert ist — Zeitleiste
+
+| UTC | Ereignis |
+|---|---|
+| 21:02:48 | Stufe 1 scharf (§21.4). Berlin aktiv, Stufe 2 gesperrt. |
+| 21:30:02 | `/api/cron/understanding` **HTTP 200**, `processed: 0`, kein Timeout. Erster Cron mit 7 Mandaten — unauffällig (§21.9). |
+| **22:05:34** | **PR #143 wird nach `main` gemergt und deployt** (`746eaf92`, Deployment `dpl_8ot9fCnko…`, `READY`): die Reparatur der Vorgangsbildung (B4), **3 449 Zeilen**, darunter `understanding.js` (567 Zeilen geändert), zwei neue Module, `scheduler.js`, `storage.js`, `server.js`. **Nicht Teil dieses Sprints.** |
+| 22:09:51 | `[pipelineLock:atomic] fail-closed: Supabase storage timed out after 10000ms` auf `/rest/v1/rpc/helmut_acquire_pipeline_lock`. |
+| **22:09:52** | **`GET /api/pipeline/run` → HTTP 504**, `Vercel Runtime Timeout Error: Task timed out after 300 seconds`. Manuell ausgelöst aus einer eingeloggten Admin-Sitzung, **nicht** von einem Cron. |
+| 22:43:06 | **Rollback Ebene 0b** — Abnahmeprofil deaktiviert. |
+| 22:43:23 | **Rollback Ebene 2** — beide Stufe-1-Wege zurück auf `needs_review`/`manual`. |
+
+**Der Lauf selbst, aus den Runtime-Logs:**
+
+```
+[runSourceCrawl] lazy-understanding 23134ms clusters=336 processed=336 deferred=0
+[understanding-gate:shadow] cluster=336 verstehen=166 zurueckstellen=137 parken=33
+Vercel Runtime Timeout Error: Task timed out after 300 seconds
+```
+
+**Wirkung in der Datenbank:** 46 Rohdokumente (**0 davon Berlin**), **184 Knowledge Objects**
+(8 `complete`, **176 `pending`**), 2 Briefings, **0 Telemetriezeilen**. Der Pending-Rückstand
+sprang von **50 auf 226** (219 + 7) — damit ist **auch Abbruchkriterium 9 verletzt**. LLM-Zähler
+49 → 60.
+
+**Der Befund war nur über die HTTP-Ebene sichtbar.** `source_crawl_telemetry` enthält zu diesem
+Lauf **keine einzige Zeile** — eine reine Telemetriebetrachtung hätte gemeldet „seit 20:00 UTC ist
+nichts passiert". Genau dafür steht die Regel „HTTP zuerst" (§20.5, Kriterium 16).
+
+### 22.2 Ursache — was Berlin war und was nicht
+
+**Ehrliche Zuordnung: Berlin ist sehr wahrscheinlich nicht die Ursache.** Vier Belege:
+
+1. **Timeouts sind älter als Berlin.** Der Lauf um **20:00:14 UTC** endete ebenfalls mit `504`
+   nach 300 s — mit **6** Mandaten, **bevor** das Abnahmeprofil existierte. In 12 Stunden gab es
+   genau **zwei** `504`: einen vor und einen nach der Aktivierung.
+2. **Die Last ist um den Faktor 3,7 gesprungen — an der Verarbeitung, nicht am Abruf.** 336 Cluster
+   gegenüber 91 im Lauf davor, 166 „verstehen"-Entscheidungen gegenüber 19. Das ist die erklärte
+   Wirkung von **#143**, dessen eigene Kostenschätzung 115 → 159 KI-Aufrufe pro Tag bei einem
+   Tagesbudget von 100 nennt.
+3. **Berlin hat in diesem Lauf nichts beigetragen.** 0 Berliner Rohdokumente, 0 Berliner
+   Telemetriezeilen. Berlins gesamter Beitrag wären 2 RSS-Direktfeeds plus 6 Profilquellen des
+   Abnahmemandats gewesen — das erklärt keinen Sprung von 91 auf 336 Cluster.
+4. **Der Auslöser war ein manueller Vollpipeline-Lauf**, kein Cron, vier Minuten nach dem Deployment
+   eines großen Umbaus derselben Pipeline.
+
+**Was sich trotzdem nicht sauber trennen lässt:** der Lauf brach ab, **bevor** Telemetrie
+geschrieben wurde. Ob die beiden Berliner Wege im Plan standen und abgerufen wurden, ist deshalb
+**nicht feststellbar**. Damit bleibt auch die Kernfrage offen, die dieser Beweislauf klären
+sollte: **ob `HELMUT_LANDESMODULE=berlin` in Production tatsächlich wirkt.** Belegt ist weiterhin
+nur der Redeploy (§21.2), nicht der Flag-Wert.
+
+**Warum trotzdem zurückgerollt wurde.** Die Anweisung war unbedingt: bei einem Zeitlimit-Fehlschlag
+sofort zurückrollen, kein Workaround, keine Laufzeitoptimierung. Dazu kommt ein sachlicher Grund —
+seit 22:05 läuft in Production ein **großer, frisch deployter Umbau genau der Pipeline**, auf der
+der Beweislauf aufsetzt. Ein Berliner Betriebsnachweis auf einem Stand, der sich mitten im Sprint
+ändert, misst ein bewegliches Ziel und wäre wertlos. Die Startbedingung „keine parallelen
+Änderungen an Berlin, Quellenauflösung oder Kostenlogik" war um 21:32 UTC noch erfüllt und um
+22:05 UTC nicht mehr.
+
+### 22.3 Rollback — ausgeführt und nachgemessen
+
+Zwei Ebenen, je eine Transaktion, beide fail-closed:
+
+| Ebene | Datei | UTC | Wirkung |
+|---|---|---|---|
+| **0b** | `…_berlin_abnahmeprofil_rollback_stufe0.sql` | **22:43:06** | Abnahmemandat `aktiv = false`; Zeile bleibt als Auditspur |
+| **2** | `…_berlin_aktivierung_b2_stufe1_rollback.sql` | **22:43:23** | `rp-be-regionale_leitmedien` und `rp-rbb24-politik` → `needs_review`/`manual` |
+
+**Endzustand, gemessen:**
+
+| Größe | Wert |
+|---|---|
+| Berechtigte Berliner Landtagsmandate | **0** |
+| Aktive Berliner Wege | **0** — alle **10** `needs_review`+`manual` |
+| Brandenburg | **8/8** `manual`, `brandenburg-basis` `prepared` |
+| Aktive Mandate | zurück auf **6** |
+| Bundestagsprofile / `bund-basis` | **8** / `active`, **54** Wege — unverändert |
+| `berlin-basis` | `active`, **7** Wege (Block A und B1 bleiben, siehe unten) |
+
+**Gegen den echten Resolver nachgerechnet** — mit **gesetztem** Flag `HELMUT_LANDESMODULE=berlin`:
+`laenderMitBerechtigtemMandat: []`, wirksame Landesmodule **keine**, **0 Berliner Wege im Plan**,
+140 Wege gesamt — **identisch zum Zustand ohne Flag**. Berlin kann also auch bei gesetztem Flag
+keinen Abruf mehr erzeugen.
+
+**Bewusst nicht zurückgerollt: Block A und B1.** `berlin-basis` bleibt `active` und neutral
+(7 Wege, ohne Partei-/Fraktions-/Personenwege). Beides erzeugt **keinen** Abruf, solange kein
+berechtigtes Berliner Mandat existiert — und Block A schließt den Befund **A-3**, der seit dem
+25.07. offen war. Ihn zurückzudrehen hieße, eine Korrektur ohne Not rückgängig zu machen.
+Ebene 3 und 4 stehen unverändert bereit, falls der Betreiber auch das will.
+
+### 22.4 Sicherheits- und Neutralitätsprüfung nach dem Rollback
+
+| Prüfung | Ergebnis |
+|---|---|
+| Bundestagsmandate unverändert | **ja** — 8 Profile, Versorgung je Mandat unverändert 140 Quellen |
+| Brandenburg `prepared` und vollständig `manual` | **ja** — 8/8, 0 Brandenburger Landtagsmandate |
+| Keine zweite Region aktiviert | **ja** |
+| Keine hartkodierte Abnahmeprofil-Id in aktiver Produktlogik | **ja, mit genauer Angabe:** `server.js` und `client.js` enthalten die Id **nicht**. In `lib/` gibt es **genau einen** Treffer — `quellenarchitektur/seeds/berlin-profilplan.js:37` (`PROFIL_ID`). Dieses Modul ist reine Seed-/Plandatenhaltung und wird **ausschließlich** von Skripten geladen (Generator, Dry Run, drei Testsuiten); kein Laufzeitpfad (`scheduler.js`, `storage.js`, `source-mode.js`, `server.js`) importiert es. Die Mandatsbindung entsteht weiterhin zur Laufzeit aus dem Profil, nicht aus einer Id im Code |
+| Keine Pilotmandant-Abhängigkeit entstanden | **ja** — das Abnahmemandat trägt `partei = 'Fraktionslos'` und bindet an kein Parteipaket |
+| Fremde Profile verändert | **nein** — die Kontrollfragen der Rollback-Dateien meldeten durchweg 0 |
+| Hängende Locks | **0 aktiv** (nachgemessen nach dem Rollback) |
+| Offline-Suite auf dem vereinigten Stand | **160/160 grün** |
+
+**Ein Nebenschaden bleibt und gehört benannt:** der Pending-Rückstand steht bei **226** statt 50.
+Er stammt aus dem abgebrochenen `/api/pipeline/run` auf dem #143-Stand, **nicht** aus Berlin, und
+wird durch den Rollback **nicht** abgebaut. Das ist ein Betriebsbefund für #143, kein Punkt-14-Befund.
+
+### 22.5 Was dieser Sprint belegt hat — und was nicht
+
+**Belegt:**
+
+- Die Aktivierungsreihenfolge funktioniert in Production: vier Schritte, je eine Transaktion, jede
+  Vor- und Nachbedingung hat real gegriffen (§21.4).
+- Die Mandatsbindung aus **V-2** wirkt an echten Daten: alle 8 Bestandsmandate blieben bei 140
+  Quellen, auch die fünf Bundestagsmandate mit `bundesland = Berlin` (§21.5).
+- **Der Rückweg funktioniert unter Druck.** Beide datenbankseitigen Not-Aus-Wege waren aus einer
+  Cloud-Sitzung heraus ausführbar und haben Berlin in **17 Sekunden** vollständig stillgelegt —
+  ohne die Vercel-Env, ohne Betreiberzugriff, ohne Bestandsmandate zu berühren. Das war bis heute
+  nur getestet, jetzt ist es real belegt.
+- **Befund A-3 ist geschlossen** — `berlin-basis` ist auch in der Datenbank neutral.
+- Die Regel „HTTP zuerst" hat sich als richtig erwiesen: der Abbruch war **ausschließlich** über
+  die Runtime-Logs sichtbar.
+
+**Nicht belegt — und damit der Grund, warum Punkt 14 offen bleibt:**
+
+- **Kein einziger Berliner Crawl.** 0 Telemetriezeilen, 0 Rohdokumente, 0 Knowledge Objects,
+  0 Vorgänge, keine Lage, kein Briefing für das Abnahmeprofil.
+- **Die Wirksamkeit von `HELMUT_LANDESMODULE=berlin` in Production ist weiterhin unbewiesen.**
+- Stufe 2 wurde **nie** aktiviert.
+- Ende-zu-Ende-Kette: **Stufe 1 von 7 unbelegt** (`unbelegt — keine Berliner Rohdokumente`).
+
+### 22.6 Was als Nächstes nötig ist
+
+**Reihenfolge, bewusst so:**
+
+1. **Erst #143 in Ruhe beweisen.** Der Umbau der Vorgangsbildung ist live, sein erster Lauf ist ins
+   Zeitlimit gelaufen und hat 176 `pending` hinterlassen. Solange dieser Stand nicht stabil ist,
+   misst jeder Berliner Beweislauf ein bewegliches Ziel. Das ist **kein** Punkt-14-Thema.
+2. **Dann das Zeitbudget klären.** Zwei `504` in 12 Stunden auf einem 300-s-Limit sind unabhängig
+   von Berlin ein Betriebsrisiko (OP-15/B1). Auch das ist ausdrücklich **nicht** Punkt 14.
+3. **Erst danach Berlin erneut aktivieren.** Alle Werkzeuge stehen und sind jetzt real erprobt:
+   9 Aktivierungsdateien, 4 Profildateien, 6 Rollback-Ebenen, zwei Dry Runs,
+   `berlin-beweislauf-auswertung.js`. Die Reihenfolge aus §9 gilt unverändert. Neu hinzugekommen
+   ist eine Startbedingung: **kein frisch deploytes Pipeline-Update und kein manueller
+   Vollpipeline-Lauf während des Beobachtungsfensters.**
+
+**Sprintzustand: blockiert.** Nicht gescheitert — die Aktivierung selbst lief fehlerfrei und ist
+sauber zurückgenommen. Blockiert, weil der Betriebsnachweis eine stabile Pipeline braucht, die es
+seit 22:05 UTC nicht mehr gibt.

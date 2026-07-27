@@ -395,7 +395,9 @@ const seed = buildLandesmodulSeed();
 
 console.log(`\n== Ergebnis: ${passed} PASS, ${failed} FAIL ==`);
 if (failed === 0) {
-  console.log("berlin-basis ist im Code neutral; der gemessene Production-Bestand ist es NICHT (Befund A-3).");
+  console.log("berlin-basis ist im Code neutral. Der Fixture-Bestand PRODUCTION_IST_20260726 ist es NICHT —");
+  console.log("das ist der Stand VOR dem Eingriff und reproduziert Befund A-3 absichtlich weiter.");
+  console.log("In Production ist A-3 seit 2026-07-26, 21:01 UTC geschlossen (Block A, berlin-aktivierung.md §21.4).");
   console.log("Aktivierungsset auf 4 aktuell verifizierte Wege reduziert. Brandenburg unveraendert.");
 }
 process.exit(failed > 0 ? 1 : 0);
