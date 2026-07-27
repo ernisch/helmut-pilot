@@ -1053,17 +1053,74 @@ die Überschrift ist bei diesem Datensatz schon jetzt leer. Schritt 3 stellt den
 | 9 | Telemetrie/Status/Kosten plausibel | **teilweise** — vollständig, aber lokal statt in Production (§15.6) |
 | 10 | Keine unbeteiligten Datensätze verändert | **verletzt** — zwei fachfremde Bestandsvorgänge verändert |
 
-### 15.9 Nächste Schritte in dieser Reihenfolge
+### 15.9 Rückweg ausgeführt und verifiziert (2026-07-27, 08:56 UTC)
 
-1. **Freigabe für den Rückweg** (§15.7) — bis dahin bleiben 19 CSD-Dokumente
-   fälschlich als „verstanden" an einem Iran-Vorgang.
-2. **B4-3 beheben**, bevor irgendein weiterer Nachhollauf startet: Wortstamm-Gewichtung
+Der Betreiber hat die vollständige Rücknahme freigegeben; sie ist ausgeführt. Umfang
+exakt wie in §15.7, zusätzlich auf das Laufzeitfenster **08:41:21 – 08:42:10 UTC** und
+die **drei** betroffenen Vorgangskennungen eingegrenzt — es konnte damit keine Zeile
+eines anderen Laufs erfasst werden.
+
+| Kennzahl | vorher (T0) | nach dem Lauf | nach der Rücknahme |
+|---|---|---|---|
+| `knowledge_objects` | 982 | 983 | **982** |
+| `ko_document_links` | 3 217 | 3 238 | **3 217** |
+| `status='pending'` | 277 | 276 | **277** |
+| `understanding_status='failed'` | 7 | 7 | **7** |
+| `profiles` / `mandate_profiles` | 9 / 9 | 9 / 9 | **9 / 9** |
+| Dokumente an `vg-angriffen` | 1 | 20 | **1** |
+| `vorgang_id like 'vg-csd%'` | 0 | 0 | **0** |
+
+`vg-angriffen` trägt wieder ausschließlich sein Iran-Dokument, Überschrift und Inhalt
+waren nie verändert. `vg-tagesspiegel-20260519-f29ebd` steht wieder auf
+`pending`/`pending` mit leerem Inhalt und seinen ursprünglichen 2 Dokumenten, ist also
+für Mandanten wieder unsichtbar. Der neu angelegte Vorgang ist entfernt. Die 21
+CSD-Rohdokumente stehen wieder auf `ohne-endzustand` und bleiben für einen korrigierten
+Anlauf verfügbar. **Netto-Bilanz des Sprints in Production: 0 veränderte Zeilen.**
+
+**Nicht bitgenau wiederhergestellt** (bewusst und dokumentiert): die Feldwerte des
+vorgemerkten Vorgangs vor dem Lauf sind nicht rekonstruierbar (§15.7). Wiederhergestellt
+ist der **Zustand** anhand des Musters vergleichbarer vorgemerkter Vorgänge.
+
+**Beobachtung, nicht von diesem Sprint verursacht:** um **08:52:46 UTC** hat ein
+**regulärer** Crawl begonnen (Lock `crawl-annika-klose`), um **08:55:02 UTC** ein
+`global-understanding`-Lauf; bis 08:54:04 sind **53** neue Rohdokumente eingegangen.
+Beide Läufe begannen **nach** dem Nachhollauf und **vor** der Rücknahme, haben zum
+Zeitpunkt der Kontrollmessung aber **keine** Verknüpfung geschrieben (jüngste
+`ko_document_links`-Zeile 05:31:26 UTC). Die Rücknahme war auf Fenster und Kennungen
+eingegrenzt und konnte diese Läufe nicht berühren. **Offenes Risiko:** B4-3 ist in
+Production weiterhin aktiv — trifft ein neues CSD-Dokument aus dem laufenden Crawl auf
+`vg-angriffen`, entsteht dieselbe Fehlzuordnung im Regelbetrieb erneut.
+`source_crawl_telemetry` hat heute weiterhin **0** Zeilen.
+
+**Abgrenzung der Messzeitpunkte (wichtig für die Nachprüfbarkeit):** die Kontrollmessung
+der Rücknahme (Tabelle oben) stammt von **08:56:0x UTC**; zu diesem Zeitpunkt hatte der
+reguläre Lauf noch nichts geschrieben. Bereits **08:56:44 UTC** hat er seine erste
+Verknüpfung geschrieben, und um **08:57:04 UTC** stand Production bei
+`knowledge_objects` **986**, `ko_document_links` **3 493** (+276), LLM-Budget **43/100**,
+1 aktiver Lock. **Diese Änderungen stammen sämtlich aus dem regulären Betrieb, nicht aus
+diesem Sprint** — die Aussage „netto 0 veränderte Zeilen" bezieht sich ausschließlich auf
+die von diesem Sprint verursachten Zeilen, die vollständig zurückgenommen sind.
+`vg-angriffen` trägt auch nach diesem Lauf weiterhin **1** Dokument, und
+`vorgang_id like 'vg-csd%'` ist weiterhin **0**.
+
+**Beobachtung mit Handlungsbedarf, unabhängig von diesem Sprint:** im selben regulären
+Lauf ist die Zahl der Vorgänge mit ≥ 10 Dokumenten von **31 auf 35** und die Zahl der
+**Magnete von 15 auf 19** gestiegen. Der Magnet-Riegel aus #145 verhindert also nicht,
+dass im Regelbetrieb neue inkohärente Sammelvorgänge entstehen. Das ist mit den Zahlen
+dieses Sprints belegt, aber **nicht** weiter untersucht — eigener Befund für den
+nächsten Sprint.
+
+### 15.10 Nächste Schritte in dieser Reihenfolge
+
+1. **B4-3 beheben**, bevor irgendein weiterer Nachhollauf startet: Wortstamm-Gewichtung
    (Flexionsformen zählen einmal) und `angriff*` in `GENERISCHE_ANKER`. Regressionstest
    mit genau diesem Fall — CSD-Cluster gegen einen Ein-Dokument-Bestandsvorgang mit
    generischem Ereignissubstantiv.
-3. **Magnet-Analyse ergänzen** um eine Prüfung „frisch hinzugekommene Dokumente teilen
+2. **Magnet-Analyse ergänzen** um eine Prüfung „frisch hinzugekommene Dokumente teilen
    den Kern des Bestands", die auch bei hoher Kohärenz greift.
-4. **`HELMUT_STORAGE_BACKEND=supabase`** in den Environment-Einstellungen setzen, bevor
+3. **`HELMUT_STORAGE_BACKEND=supabase`** in den Environment-Einstellungen setzen, bevor
    ein Werkzeug aus einer Cloud-Sitzung erneut Production schreibt — sonst bleibt jeder
    Lauf kosten- und telemetrieblind.
+4. **`--max` im Nachhol-Werkzeug korrigieren:** der `--ids`-Filter muss **vor** der
+   Mengenkappung greifen, sonst ist eine namentlich genannte Menge unvollständig.
 5. Erst danach den CSD-Nachweis erneut ansetzen.
