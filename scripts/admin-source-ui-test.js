@@ -186,5 +186,86 @@ const leerView = api.render();
 check("D1 Ohne Telemetrie: ehrlicher Hinweis statt erfundener Zahlen", leerView.includes("es wird keine Quellenstörung behauptet"));
 check("D2 Ohne Telemetrie: keine Störungstabelle", !leerView.includes("Störungen mit Auswirkung"));
 
+// E) Punkt 18: Paket-Inventur im Admin-Bereich.
+// Die Inventur ist die Antwort auf „funktioniert die politische Versorgung eines
+// Mandats?" — sie muss je Paket EINEN Zustand zeigen, leere/ausgefallene Pakete
+// sichtbar lassen und eine veraltete Datengrundlage als solche kennzeichnen.
+api.clearData();
+api.setUser({ id: "admin1", role: "admin" });
+api.setData("sources", {
+  ...basis,
+  paketInventur: {
+    erhobenAm: "2026-07-27T06:00:00.000Z",
+    fensterTage: 14,
+    summe: { pakete: 4, abrufwege: 20, wegeEingeplant: 12, wegeDefekt: 3, wegeAusgeschlossen: 5, zustand: { gesund: 1, eingeschraenkt: 1, ausgefallen: 1, inaktiv: 1, unbekannt: 0 } },
+    datenalter: { juengsteZeileAt: "2026-07-25T20:00:00.000Z", alterStunden: 34, veraltet: true, hinweis: "Die jüngste Telemetriezeile ist 34 Stunden alt — die Inventur beschreibt NICHT den Zustand von jetzt, sondern den des letzten Laufs." },
+    letzterLauf: { runId: "crawl-testlauf", endetAt: "2026-07-25T20:00:00.000Z", alterStunden: 34, quellenMitVersuch: 12, gefunden: 400, neu: 120 },
+    letzterLaufHinweis: null,
+    datengrundlage: { landesmodule: { hinweis: "Kein Land hat ein aktivierungsberechtigtes Landtagsmandat — die Landesmodule sind unabhängig vom Freigabe-Flag inaktiv (aus der Datenbank belegt)." } },
+    laufzeitquellen: 3,
+    pakete: [
+      { key: "paket-defekt", name: "Ausgefallenes Paket", ebene: "bund", region: "Bund", istBasispaket: false, dbStatus: "active",
+        zustand: "ausgefallen", zustandGrund: "Kein eingeplanter Abrufweg liefert (2 gestört, 0 ohne Laufdaten von 2).",
+        aktivierung: { paketAktivierung: "active", refCount: 1, ausfuehrbar: true, begruendung: "…" },
+        abrufwege: { gesamt: 2, eingeplant: 2, defekt: 0, ausgeschlossen: 0, wirksam: 0, gestoert: 2, unbekannt: 0, ausschlussgruende: {} },
+        ertrag: { betriebszeitraum: { tage: 14, gefunden: 0, neu: 0, wegeMitLieferung: 0 }, messbar: true, grund: null },
+        letzteLieferung: null,
+        fehler: { stufen: { akut: 1 }, akut: [], zeitnah: [], strukturell: [] },
+        flags: { ohneLieferungJemals: true, ertragNullImFenster: true } },
+      { key: "paket-eingeschraenkt", name: "Teilweise gestörtes Paket", ebene: "bund", region: "Bund", istBasispaket: true, dbStatus: "active",
+        zustand: "eingeschraenkt", zustandGrund: "Versorgung läuft, aber eingeschränkt: 1 zugeordnete Wege defekt und dauerhaft ausgeschlossen.",
+        aktivierung: { paketAktivierung: "active", refCount: 6, ausfuehrbar: true, begruendung: "…" },
+        abrufwege: { gesamt: 8, eingeplant: 7, defekt: 1, ausgeschlossen: 0, wirksam: 7, gestoert: 0, unbekannt: 0, ausschlussgruende: {} },
+        ertrag: { betriebszeitraum: { tage: 14, gefunden: 900, neu: 400, wegeMitLieferung: 7 }, messbar: true, grund: null },
+        letzteLieferung: { at: "2026-07-25T20:00:00.000Z", quelle: "q1", grundlage: "Bewertungsfenster" },
+        fehler: { stufen: {}, akut: [], zeitnah: [], strukturell: [] },
+        flags: { defekteWege: true } },
+      { key: "paket-gesund", name: "Gesundes Paket", ebene: "land", region: "Niedersachsen", istBasispaket: false, dbStatus: "active",
+        zustand: "gesund", zustandGrund: "Alle 3 eingeplanten Abrufwege liefern störungsfrei; 54 neue Dokumente im Betriebszeitraum.",
+        aktivierung: { paketAktivierung: "active", refCount: 1, ausfuehrbar: true, begruendung: "…" },
+        abrufwege: { gesamt: 3, eingeplant: 3, defekt: 0, ausgeschlossen: 0, wirksam: 3, gestoert: 0, unbekannt: 0, ausschlussgruende: {} },
+        ertrag: { betriebszeitraum: { tage: 14, gefunden: 300, neu: 54, wegeMitLieferung: 3 }, messbar: true, grund: null },
+        letzteLieferung: { at: "2026-07-25T20:00:00.000Z", quelle: "q2", grundlage: "Bewertungsfenster" },
+        fehler: { stufen: {}, akut: [], zeitnah: [], strukturell: [] }, flags: {} },
+      { key: "paket-inaktiv", name: "Gesperrtes Landespaket", ebene: "land", region: "Berlin", istBasispaket: true, dbStatus: "active",
+        zustand: "inaktiv", zustandGrund: "Kein Abrufweg ist eingeplant — bewusst: landesmodul-gesperrt.",
+        aktivierung: { paketAktivierung: "inactive", refCount: 0, ausfuehrbar: false, begruendung: "…" },
+        abrufwege: { gesamt: 7, eingeplant: 0, defekt: 0, ausgeschlossen: 7, wirksam: 0, gestoert: 0, unbekannt: 0, ausschlussgruende: { "landesmodul-gesperrt": 7 } },
+        ertrag: { betriebszeitraum: { tage: 14, gefunden: 0, neu: 0, wegeMitLieferung: 0 }, messbar: false, grund: "Kein Abrufweg dieses Pakets hat im Betriebszeitraum eine Telemetriezeile geschrieben." },
+        letzteLieferung: null,
+        fehler: { stufen: {}, akut: [], zeitnah: [], strukturell: [] },
+        flags: { ohneEingeplanteWege: true, ohneTelemetrie: true, ohneLieferungJemals: true } }
+    ]
+  }
+});
+const invView = api.render();
+check("E1 Inventur-Karte erscheint", invView.includes("Paket-Inventur"));
+check("E2 alle fünf Zustände als Zähler sichtbar",
+  invView.includes("Gesund") && invView.includes("Eingeschränkt") && invView.includes("Ausgefallen") && invView.includes("Inaktiv") && invView.includes("Unbekannt"));
+check("E3 jedes Paket erscheint genau einmal",
+  ["paket-defekt", "paket-eingeschraenkt", "paket-gesund", "paket-inaktiv"]
+    .every((k) => invView.split(k).length === 2));
+check("E4 Zustand steht als Text, nicht nur als Farbe", invView.includes(">ausgefallen<") && invView.includes(">inaktiv<"));
+check("E5 Zustand ist begründet", invView.includes("Kein eingeplanter Abrufweg liefert"));
+check("E6 'nie geliefert' wird ausdrücklich benannt", invView.includes("<strong>nie</strong>"));
+check("E7 Kennzeichen für leere Pakete sichtbar", invView.includes("ohne verwertbare Telemetrie") && invView.includes("kein Weg eingeplant"));
+check("E8 eingeplant/gesamt statt bloßer Datensatzzahl", invView.includes("7 / 8") && invView.includes("0 / 7"));
+check("E9 veraltete Datengrundlage wird hervorgehoben",
+  invView.includes("adm-note--bad") && invView.includes("NICHT den Zustand von jetzt"));
+check("E10 letzter Volllauf mit Alter genannt", invView.includes("crawl-testlauf") && invView.includes("vor 34 h"));
+check("E11 Landesmodul-Lage im Klartext", invView.includes("unabhängig vom Freigabe-Flag inaktiv"));
+check("E12 Aktivierung meint 'ausführbar', nicht 'vorhanden'",
+  invView.includes("nicht ausführbar") && invView.includes("tatsächlich eingeplant und ausführbar"));
+check("E13 Reproduktionsweg wird genannt", invView.includes("scripts/paket-inventur.js"));
+check("E14 Störungsblock bleibt daneben bestehen (rein additiv)", invView.includes("Abrufwege nach Status"));
+
+// F) Ohne Inventur-Daten entfällt die Karte, ohne den Rest zu beschädigen.
+api.clearData();
+api.setUser({ id: "admin1", role: "admin" });
+api.setData("sources", { ...basis, paketInventur: null });
+const ohneInv = api.render();
+check("F1 Ohne Inventur keine Karte", !ohneInv.includes("Paket-Inventur"));
+check("F2 Ohne Inventur bleibt der Rest der Ansicht intakt", ohneInv.includes("Abrufwege nach Status") && ohneInv.includes("Quellen-Architektur"));
+
 console.log(`\n${failed === 0 ? "ALLE GRÜN" : failed + " FEHLGESCHLAGEN"} — ${passed}/${passed + failed} Quellen-UI-Assertions`);
 process.exit(failed > 0 ? 1 : 0);

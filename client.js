@@ -1544,6 +1544,35 @@ function admStufeChip(stufe) {
   return meta ? admChip(meta[1], meta[0]) : admChip("unknown", stufe || ADM_DASH);
 }
 
+// Punkt 18: der EINE Zustand je Quellenpaket. „unbekannt" ist bewusst KEIN
+// gruener Ton — eine Inventur, die Unbekanntes gruen faerbt, ist gefaehrlicher
+// als gar keine.
+const ADM_PAKET_ZUSTAND = {
+  gesund: ["gesund", "ok"],
+  eingeschraenkt: ["eingeschränkt", "warn"],
+  ausgefallen: ["ausgefallen", "bad"],
+  inaktiv: ["inaktiv", "paused"],
+  unbekannt: ["unbekannt", "unknown"]
+};
+function admPaketZustandChip(zustand) {
+  const meta = ADM_PAKET_ZUSTAND[zustand];
+  return meta ? admChip(meta[1], meta[0]) : admChip("unknown", zustand || ADM_DASH);
+}
+// Kennzeichen, die ein Paket nicht verschwinden lassen duerfen (Auftrag Punkt 18 §4).
+function admPaketFlagTexte(flags) {
+  if (!flags) return [];
+  const out = [];
+  if (flags.ohneAbrufwege) out.push("ohne Abrufwege");
+  if (flags.ohneEingeplanteWege) out.push("kein Weg eingeplant");
+  if (flags.ohneTelemetrie) out.push("ohne verwertbare Telemetrie");
+  if (flags.ohneLieferungJemals) out.push("nie geliefert");
+  else if (flags.ohneLieferungImFenster) out.push("keine Lieferung im Zeitraum");
+  if (flags.ertragNullImFenster && !flags.ohneLieferungImFenster) out.push("0 neue Dokumente");
+  if (flags.angefordertUnversorgt) out.push("angefordert, aber unversorgt");
+  if (flags.defekteWege) out.push("defekte Wege");
+  return out;
+}
+
 // Auswirkung in EINEM verstaendlichen Satz — politische Versorgung zuerst,
 // technische Details bleiben in der Detailzeile.
 function admWirkungText(w) {
@@ -2685,6 +2714,60 @@ function renderAdmQuellen() {
     }
   }
 
+  // --- Punkt 18: Production-Inventur aller Quellenpakete --------------------
+  // Eine Zeile je Paket: was ist es, laeuft es wirklich, was bringt es, wann kam
+  // zuletzt etwas an, was ist kaputt. Die vollstaendige Fassung inklusive
+  // Wegeliste liefert `node scripts/paket-inventur.js`.
+  const pin = (src && src.paketInventur) || null;
+  let inventurCard = "";
+  if (pin) {
+    const zs = (pin.summe && pin.summe.zustand) || {};
+    const inventurTiles = admTiles([
+      admTile("Gesund", admNum(zs.gesund), "vollständig eingeplant, störungsfrei, mit Ertrag"),
+      admTile("Eingeschränkt", admNum(zs.eingeschraenkt), "liefert, aber nicht vollständig"),
+      admTile("Ausgefallen", admNum(zs.ausgefallen), "sollte liefern, liefert nachweislich nicht"),
+      admTile("Inaktiv", admNum(zs.inaktiv), "bewusst nicht in Betrieb"),
+      admTile("Unbekannt", admNum(zs.unbekannt), "eingeplant, aber ohne belastbare Daten"),
+      admTile("Abrufwege eingeplant", `${admNum(pin.summe && pin.summe.wegeEingeplant)} / ${admNum(pin.summe && pin.summe.abrufwege)}`, `${admNum(pin.summe && pin.summe.wegeDefekt)} defekt · ${admNum(pin.summe && pin.summe.wegeAusgeschlossen)} ausgeschlossen`)
+    ].join(""));
+
+    const inventurRows = (Array.isArray(pin.pakete) ? pin.pakete : []).map((p) => {
+      const flagTexte = admPaketFlagTexte(p.flags);
+      const aw = p.abrufwege || {};
+      const be = (p.ertrag && p.ertrag.betriebszeitraum) || {};
+      return `
+        <tr>
+          <td data-label="Paket"><strong>${escapeHtml(p.key || "")}</strong><div class="adm-cell-sub">${escapeHtml(p.name || "")}${p.istBasispaket ? " · Pflicht-Basispaket" : ""}</div></td>
+          <td data-label="Zustand">${admPaketZustandChip(p.zustand)}<div class="adm-cell-sub">${escapeHtml(p.zustandGrund || "")}</div></td>
+          <td data-label="Einordnung">${escapeHtml(p.ebene || ADM_DASH)}<div class="adm-cell-sub">${escapeHtml(p.region || ADM_DASH)} · DB ${escapeHtml(p.dbStatus || ADM_DASH)}</div></td>
+          <td data-label="Abrufwege">${admNum(aw.eingeplant)} / ${admNum(aw.gesamt)}<div class="adm-cell-sub">${aw.defekt > 0 ? `<span class="adm-val-bad">${admNum(aw.defekt)} defekt</span> · ` : ""}${admNum(aw.ausgeschlossen)} ausgeschlossen${aw.gestoert > 0 ? ` · <span class="adm-val-bad">${admNum(aw.gestoert)} gestört</span>` : ""}</div></td>
+          <td data-label="Aktivierung">${escapeHtml((p.aktivierung && p.aktivierung.paketAktivierung) || ADM_DASH)}<div class="adm-cell-sub">${admNum(p.aktivierung && p.aktivierung.refCount)} Mandat(e) · ${p.aktivierung && p.aktivierung.ausfuehrbar ? "ausführbar" : "nicht ausführbar"}</div></td>
+          <td data-label="Ertrag">${admNum(be.neu)} neu<div class="adm-cell-sub">${admNum(be.gefunden)} gefunden · ${admNum(be.wegeMitLieferung)} Wege liefern</div></td>
+          <td data-label="Letzte Lieferung">${p.letzteLieferung && p.letzteLieferung.at ? escapeHtml(admDateTime(p.letzteLieferung.at)) : "<strong>nie</strong>"}<div class="adm-cell-sub">${flagTexte.length ? escapeHtml(flagTexte.join(" · ")) : ""}</div></td>
+        </tr>`;
+    }).join("");
+
+    const alter = pin.datenalter || {};
+    const lauf = pin.letzterLauf;
+    const inventurNoten = [
+      alter.veraltet
+        ? `<p class="adm-note adm-note--bad">${escapeHtml(alter.hinweis || "")}</p>`
+        : `<p class="adm-note">${escapeHtml(alter.hinweis || "")}</p>`,
+      lauf
+        ? `<p class="adm-note">Letzter vollständiger Crawl-Lauf <strong>${escapeHtml(lauf.runId || "")}</strong> (${escapeHtml(admDateTime(lauf.endetAt))}, vor ${admNum(lauf.alterStunden)} h): ${admNum(lauf.quellenMitVersuch)} Quellen versucht, ${admNum(lauf.gefunden)} Dokumente gefunden, ${admNum(lauf.neu)} davon neu.</p>`
+        : `<p class="adm-note adm-note--bad">${escapeHtml(pin.letzterLaufHinweis || "Kein vollständiger Crawl-Lauf im Betriebszeitraum.")}</p>`,
+      pin.datengrundlage && pin.datengrundlage.landesmodule
+        ? `<p class="adm-note">Landesmodule: ${escapeHtml(pin.datengrundlage.landesmodule.hinweis || "")}</p>`
+        : "",
+      `<p class="adm-note">„Aktiviert" heißt hier <strong>tatsächlich eingeplant und ausführbar</strong>, nicht „Datensatz vorhanden". Unbekannte Werte werden nie als gesund geführt. Vollständige Fassung inklusive Wegeliste: <code>node scripts/paket-inventur.js</code>.</p>`
+    ].join("");
+
+    inventurCard = admCard("Paket-Inventur", `Alle Quellenpakete aus dem echten Betrieb — Bewertungszeitraum ${admNum(pin.fensterTage)} Tage`,
+      inventurRows
+        ? `${inventurTiles}${admTableShell("qw-inventur", ["Paket", "Zustand", "Einordnung", "Abrufwege", "Aktivierung", "Ertrag", "Letzte Lieferung"], inventurRows)}${inventurNoten}`
+        : `${admEmpty("Keine Quellenpakete in der relationalen Datenbank.")}${inventurNoten}`);
+  }
+
   const publisherList = (src && Array.isArray(src.herausgeber) ? src.herausgeber : []);
   const publisherRows = publisherList.map((p) => {
     const wege = Array.isArray(p.wege) ? p.wege : [];
@@ -2710,6 +2793,7 @@ function renderAdmQuellen() {
     ${admEndpointNote("sources", "Quellenstatus konnte nicht geladen werden")}
     ${admEndpointNote("crawl", "Crawl-Statistik konnte nicht geladen werden")}
     ${src && !src.verfuegbar ? admCard("Quellen-Architektur", undefined, admEmpty(src.hinweis || "Relationale Quellen-Tabellen nicht erreichbar — keine erfundenen Kennzahlen.")) : `
+    ${inventurCard}
     ${stoerungCards}
     ${admCard("Abrufwege nach Status", "Konfigurierter Status aus den relationalen Quellen-Tabellen (retrieval_paths.status) — nicht das beobachtete Laufverhalten", statusTiles)}
     ${admCard("Quellen-Architektur", undefined, archTiles)}

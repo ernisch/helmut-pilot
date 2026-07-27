@@ -78,6 +78,13 @@ Katalog `lib/helmut/sources.js` ist **nur noch Fallback** (Ladefehler/leerer Pla
 Personenbezogene Quellen stehen **nicht** im geteilten Katalog, sondern entstehen zur
 Laufzeit aus dem Profil (`scheduler.personNewsSource`, id `<mandats-id>-news`).
 
+**Betriebssicht auf dieselben Daten** (abgeleitet, ohne eigene Speicherung):
+`quellenarchitektur/paket-inventur.js` führt Bestand, Crawl-Plan, Referenzzählung und die
+Punkt-16-Störungserkennung zu **einer Zeile je Paket** zusammen und leitet daraus genau
+einen Zustand ab (gesund · eingeschränkt · ausgefallen · inaktiv · unbekannt). Ausführbar
+über `scripts/paket-inventur.js`, sichtbar im Admin unter „Quellen & Watchdog". Kanonisch:
+[`quellenarchitektur/30-paket-inventur-production.md`](quellenarchitektur/30-paket-inventur-production.md).
+
 ## 4 · Mandantenmodell
 
 - Ein Mandant = ein Mandat = `politicianId` (= `user_id` in allen Tabellen).
@@ -212,6 +219,7 @@ audit/                                        # historische Auditberichte (kein 
 | **Backend / API** | betroffene Route in `server.js` (per `Grep` auf den Pfad), zugehöriges `lib/helmut/*.js`, `storage.js` nur für den konkreten Zugriff |
 | **Datenmodell / Migration** | `supabase/migrations/` (letzte Dateien), `storage.js`, zugehöriges Rollback-SQL |
 | **Quellen** | [`quellenarchitektur/02-zielarchitektur.md`](quellenarchitektur/02-zielarchitektur.md), [`quellenarchitektur/07-paketaktivierung-profil-resolver.md`](quellenarchitektur/07-paketaktivierung-profil-resolver.md), `lib/helmut/quellenarchitektur/{source-mode,catalog,profile-packages}.js`, betroffene `seeds/*.js`, `scripts/source-architecture-test.js` |
+| **„Läuft die Versorgung wirklich?"** | `node scripts/paket-inventur.js` (rein lesend, Ist-Zustand je Paket), [`quellenarchitektur/30-paket-inventur-production.md`](quellenarchitektur/30-paket-inventur-production.md), `lib/helmut/quellenarchitektur/{paket-inventur,source-failure}.js` |
 | **UI** | betroffene `render…View()` in `client.js`, Token-/Light-Mode-Block in `styles.css`, `scripts/*-ui-test.js`, `scripts/browser-smoke-test.js`, [`admin-neuaufbau-2026-07.md`](admin-neuaufbau-2026-07.md) für Admin-Designentscheidungen |
 | **Understanding / KI** | `understanding.js`, `ai.js`, `llm-budget.js`, `quellenarchitektur/understanding-gate.js` |
 | **Sicherheit / Mandanten** | [`quellenarchitektur/05-sicherheitsmodell-rls.md`](quellenarchitektur/05-sicherheitsmodell-rls.md), [`sprint1-sicherheit/01-zugriffsmatrix.md`](sprint1-sicherheit/01-zugriffsmatrix.md), `tenant-context.js`, `auth.js`, `scripts/cross-tenant-security-test.js` |
