@@ -6,10 +6,9 @@ entdeckten Werkzeugdefekte (`CURRENT_STATE.md`,
 
 **Stand:** 2026-07-27 · Sprint „Werkzeug-Härtung W-1 + W-2" (PR #152 gemergt,
 `54e9c12`) · **Phase B:** Migration angewendet und verifiziert (§14) ·
-**Phase C:** Flag aktiviert, Dual-Write-Smoke über den echten Production-Pfad
-bestanden (§15) — offen ist **nur noch** der Nachweis an einem echten
-regulären Cron-Lauf (§15.5). Sprintstatus deshalb weiterhin
-**teilweise abgeschlossen**.
+**Phase C:** Flag aktiviert, Dual-Write bewiesen, echter Production-Lauf
+`crawl-20260727160048-ct8lt` relational gespeichert und erhalten (§15) ·
+**Sprintstatus: erfolgreich abgeschlossen** (alle 15 Erfolgskriterien, §15.6).
 
 ---
 
@@ -476,35 +475,95 @@ nach dem zweiten, unabhängigen Schreibvorgang unverändert in `process_runs`.
 Auf dem Blob-Pfad hätte ein zweiter Writer ihn überschreiben können; relational
 stehen beide Läufe nebeneinander.
 
-### 15.5 Echter regulärer Production-Lauf — ZEITLICH OFFEN
+### 15.5 Echter regulärer Production-Lauf — ERBRACHT (16:00 UTC)
 
-Zum Messzeitpunkt **14:36 UTC** hatte seit der Flag-Aktivierung (14:23:14 UTC)
-**noch kein** regulärer Production-Lauf stattgefunden: `process_runs` enthielt
-unverändert die **2** Smoke-Zeilen, **0** neue seit 14:30; letzte
-`source_crawl_telemetry` 10:04:50, letztes Rohdokument 10:03:19, letzte
-KO-Änderung 12:36:58, 0 aktive Locks, LLM-Zähler 55.
+Bis **14:36 UTC** hatte seit der Flag-Aktivierung kein Regellauf stattgefunden
+(`process_runs` unverändert 2 Smoke-Zeilen). **Es wurde nichts künstlich
+gestartet** — ein erzwungener Crawl hätte KI-Budget verbraucht und wäre kein
+Beleg für den unbeeinflussten Regelbetrieb gewesen. Gewartet wurde auf den
+regulären `/api/cron/pipeline`.
 
-Der nächste reguläre Lauf ist **`/api/cron/pipeline` um 16:00 UTC**
-(→ `runSourceCrawl` → `recordProcessRun` mit Prozess `understanding-eager`).
-**Es wurde nichts künstlich gestartet** — ein erzwungener Crawl würde KI-Budget
-verbrauchen und wäre kein Beleg für den unbeeinflussten Regelbetrieb.
+**Der Lauf ist da und relational gespeichert:**
 
-Nachzuweisen bleibt: Run-ID ermitteln · relational vorhanden · Start/Ende/
-Status/Kennzahlen plausibel · Zeile nach späteren Writes **erhalten** ·
-Abgleich mit `source_crawl_telemetry` (gleiche `run_id`), Locks, Budget und
-Fachtelemetrie · Blob-Spiegel trägt denselben Lauf.
+| Feld | Wert |
+|---|---|
+| `run_id` | **`crawl-20260727160048-ct8lt`** |
+| `process` | `understanding-eager` |
+| `status` | **success** |
+| `started_at` → `finished_at` | 16:03:09.619 → **16:04:44.040** |
+| `duration_ms` | **94 420** |
+| `processed_count` / `deferred_count` | 4 / 527 |
+| `mode` / `location` | `full` / **`fra1`** |
+| `backend` | `supabase` |
+| `commit_ref` | **`54e9c12a6c38fb3e3e6afd8101f85d4ac60c11a4`** |
+| `telemetrie` | cluster 531 · dokumente 942 · `saved` 3 · `skipped-error` 1 · aufloesungen `{neu: 2, bestand: 2}` · vorgemerkt 53 · grossereignisse 5 · dokumenteOhneEndzustand 843 |
 
-### 15.6 Erfolgskriterien-Stand
+**Das ist zugleich der Wirksamkeitsbeweis des Flags** (Kriterium 3). Zwei Felder
+schließen aus, dass die Zeile aus dieser Sitzung stammt: `location` ist
+**`fra1`** — die Vercel-Region; alle Sitzungs-Smokes tragen `cloud-sitzung`.
+Und `commit_ref` ist exakt der **deployte** Commit `54e9c12`. Der Schreibvorgang
+kam also aus der Production-Runtime. Wäre `HELMUT_PROCESS_RUNS_RELATIONAL` dort
+nicht gesetzt, hätte `recordProcessRun` den relationalen Pfad übersprungen und
+es gäbe keine Zeile. Der Flag-**Wert** bleibt aus einer Sitzung unlesbar — seine
+**Wirkung** ist damit belegt.
 
-**Erfüllt:** Deployment READY (1) · Migration aktiv (2) · Smoke erzeugt genau
-eine relationale Zeile (4) · Idempotenz (5) · Dual-Read (6) · Blob-Historie
-lesbar (7) · keine Fachdatenänderung (8) · kein KI-Aufruf (9) · kein
-Last-Write-Wins-Verlust auf dem neuen Pfad erkennbar (12) · kein Rückweg nötig (13).
+**Abgleich mit der übrigen Telemetrie (alles konsistent):**
 
-**Offen:** Wirksamkeit des Flags im Regelbetrieb (3, nur über §15.5 endgültig
-belegbar) · echter Production-Lauf relational sichtbar (10) · dieser Lauf nach
-späteren Writes erhalten (11).
+- `source_crawl_telemetry`: **147 Zeilen mit derselben `run_id`**,
+  **147 verschiedene `source_id`** — ein realer Voll-Crawl, geschrieben 16:04:50.
+- `pipeline_locks`: `crawl-cem-ince` ab 16:04:50 (regulär, lief zum Messzeitpunkt
+  noch), `global-understanding` ab 16:05:26 — beide passend zum Lauf.
+- Fachwirkung des Laufs: **+101** Rohdokumente (bis 16:05:20), **+51**
+  Knowledge Objects (1 142 → 1 193), **+153** Verknüpfungen (4 143 → 4 296),
+  LLM-Zähler **55 → 60**. Das sind die Effekte des **echten Crawls**,
+  nicht des Smokes — der Smoke hat nachweislich nichts davon verursacht (§15.4).
+- Blob-Spiegel: trägt denselben Lauf (`blob_traegt_cronlauf: 1`), Ring
+  149 → **151** (Abnahme-Smoke + Cron-Lauf).
+- Dual-Read: **152 = 3 relational + 149 Blob**; der Cron-Lauf steht in **beiden**
+  Quellen, erscheint aber **genau 1×** — die Dedup greift auch hier.
 
-**Sprintstatus bleibt daher `teilweise abgeschlossen`.** Er wird erst auf
-`erfolgreich abgeschlossen` gesetzt, wenn 3, 10 und 11 belegt sind — ein
-vorheriges Umstellen wäre falsches Grün.
+**Erhalt nach späteren Writes (Kriterium 11) — in beide Richtungen belegt:**
+
+1. *Der Cron-Lauf überlebt spätere Writes.* Nach dem Schreiben der Zeile um
+   16:04:44 folgten 147 Telemetriezeilen (16:04:50), ein Lock-Erwerb (16:04:50),
+   Rohdokumente bis 16:05:20 und KO-Aktualisierungen. **Vier** unabhängige
+   Messungen um **16:15:24**, **16:16**, **16:17:54** und — nach Freigabe
+   sämtlicher Locks — **16:20:12** zeigen die Zeile unverändert, bei
+   durchgehend **0 Dubletten**.
+2. *Frühere Läufe überleben den Cron-Lauf.* Beide Smoke-Zeilen (14:07 und 14:29)
+   stehen nach dem kompletten 16:00-Cron unverändert da — obwohl dieser einen
+   **eigenen** `process_runs`-Write ausführte und den Auth-Blob mehrfach per
+   Lese-Ändere-Schreibe anfasste (5 LLM-Aufrufe je `recordLlmUsage`). Genau
+   diese Konstellation hat vor der Härtung Läufe vernichtet.
+
+**Kein Last-Write-Wins-Verlust auf dem neuen Pfad**, kein Abbruchkriterium,
+**kein Rückweg genutzt**.
+
+### 15.6 Erfolgskriterien — alle 15 erfüllt
+
+| # | Kriterium | Beleg |
+|---|---|---|
+| 1 | Production-Deployment READY | `dpl_AfputRmtSgFGp7P4bTokBg37rMhP`, 14:23:14 UTC (§15.1) |
+| 2 | Migration korrekt aktiv | angewendet 14:03 UTC, registriert `20260727140343`, Schema unverändert (§14.2/§14.3, §15.1) |
+| 3 | Production-Flag wirksam | Cron-Zeile mit `location fra1` + `commit_ref 54e9c12` (§15.5) |
+| 4 | Smoke erzeugt genau eine relationale Zeile | `abnahme-20260727142935` → 1 Zeile (§15.4) |
+| 5 | Idempotenz bewiesen | 3 Schreibvorgänge (`running`→`success`→Wdh.) → 1 Zeile, 0 Dubletten |
+| 6 | Dual-Read funktioniert | 152 = 3 relational + 149 Blob, Treffer je Lauf genau 1× |
+| 7 | historische Blob-Läufe lesbar | 149 Alt-Einträge unverändert, ältester `crawl-20260716160030-z34lk` |
+| 8 | keine Fachdaten durch den Smoke verändert | KO/Links/Rohdok je 0 neu/geändert im Smoke-Fenster (§15.4) |
+| 9 | kein KI-Aufruf durch den Smoke | LLM-Zähler 55 → 55 im Smoke-Fenster |
+| 10 | echter Production-Lauf relational | `crawl-20260727160048-ct8lt` (§15.5) |
+| 11 | dieser Lauf nach späteren Writes erhalten | 3 Messungen 16:15–16:18, beidseitig belegt (§15.5) |
+| 12 | kein Last-Write-Wins-Verlust erkennbar | 3 relationale Zeilen nebeneinander, keine überschrieben |
+| 13 | kein Rückweg nötig | kein Abbruchkriterium eingetreten |
+| 14 | Dokumentation aktualisiert | dieser Abschnitt, `CURRENT_STATE`, `ARCHITECTURE` §6 |
+| 15 | CI der Doku-PR grün | PR #153, beide Pflicht-Checks `success` |
+
+**Sprintstatus: erfolgreich abgeschlossen.**
+
+**Rückweg (unverändert verfügbar, nicht genutzt):**
+`HELMUT_PROCESS_RUNS_RELATIONAL=off` + Redeploy → der Code fällt fail-safe auf
+den Blob zurück; der Blob-Spiegel enthält alle Abschluss-Einträge, nur reine
+`running`-Startbelege existieren ausschließlich relational. Die Migration wird
+dafür **nicht** zurückgerollt (`…_rollback.sql` existiert, ist aber nicht der
+betriebliche Rückweg).
