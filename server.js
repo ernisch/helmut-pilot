@@ -5046,6 +5046,63 @@ async function buildAdminSourcesStatus() {
     stoerungen = null;
   }
 
+  // --- Punkt 18: Production-Inventur aller Quellenpakete -------------------
+  // Fuehrt die vier bereits vorhandenen Wahrheiten zu EINER Paketzeile zusammen:
+  // Bestand (relationale Tabellen) · tatsaechliche Einplanung (Crawl-Plan) ·
+  // Aktivierung (Referenzzaehlung ueber die echten Profile) · Laufverhalten
+  // (Punkt 16 aus source_crawl_telemetry). Rein lesend, rein additiv, ohne
+  // zweite Datenhaltung. Jeder Fehler -> null -> die Sektion entfaellt.
+  let paketInventur = null;
+  try {
+    const { buildPaketInventur } = require("./lib/helmut/quellenarchitektur/paket-inventur");
+    const voll = buildPaketInventur({
+      packages: (rows && rows.packages) || [],
+      packagePaths: (rows && rows.packagePaths) || [],
+      retrievalPaths: (rows && rows.retrievalPaths) || [],
+      geographies: (rows && rows.geographies) || [],
+      profiles: Array.isArray(mandate) ? mandate : [],
+      telemetrie
+    });
+    // Fuer die Anzeige verdichten: die vollstaendige Wegeliste je Paket waere ein
+    // Vielfaches der uebrigen Antwort und steht im Betriebsskript zur Verfuegung
+    // (`node scripts/paket-inventur.js --json`).
+    paketInventur = {
+      erhobenAm: voll.erhobenAm,
+      fensterTage: voll.fensterTage,
+      summe: voll.summe,
+      datenalter: voll.datenalter,
+      letzterLauf: voll.letzterLauf,
+      letzterLaufHinweis: voll.letzterLaufHinweis,
+      datengrundlage: voll.datengrundlage,
+      laufzeitquellen: voll.laufzeitquellen.length,
+      pakete: voll.pakete.map((p) => ({
+        key: p.key, name: p.name, ebene: p.ebene,
+        region: p.region ? (p.region.name || p.region.id) : null,
+        istBasispaket: p.istBasispaket, dbStatus: p.dbStatus,
+        zustand: p.zustand, zustandGrund: p.zustandGrund,
+        aktivierung: {
+          paketAktivierung: p.aktivierung.paketAktivierung,
+          refCount: p.aktivierung.refCount,
+          ausfuehrbar: p.aktivierung.ausfuehrbar,
+          begruendung: p.aktivierung.begruendung
+        },
+        abrufwege: {
+          gesamt: p.abrufwege.gesamt, eingeplant: p.abrufwege.eingeplant,
+          defekt: p.abrufwege.defekt, ausgeschlossen: p.abrufwege.ausgeschlossen,
+          wirksam: p.abrufwege.wirksam, gestoert: p.abrufwege.gestoert, unbekannt: p.abrufwege.unbekannt,
+          ausschlussgruende: p.abrufwege.ausschlussgruende
+        },
+        ertrag: { letzterLauf: p.ertrag.letzterLauf, betriebszeitraum: p.ertrag.betriebszeitraum, messbar: p.ertrag.messbar, grund: p.ertrag.grund },
+        letzteLieferung: p.letzteLieferung,
+        fehler: { stufen: p.fehler.stufen, akut: p.fehler.akut, zeitnah: p.fehler.zeitnah, strukturell: p.fehler.strukturell },
+        flags: p.flags
+      }))
+    };
+  } catch (error) {
+    console.error("[admin] Paket-Inventur fehlgeschlagen (ignoriert):", error && error.message);
+    paketInventur = null;
+  }
+
   return {
     generatedAt: new Date().toISOString(),
     verfuegbar: Boolean(rows && Array.isArray(rows.retrievalPaths)),
@@ -5055,6 +5112,7 @@ async function buildAdminSourcesStatus() {
     problematischeWege,
     herausgeber,
     stoerungen,
+    paketInventur,
     googleNews,
     letzterShadowLauf: shadow
       ? {

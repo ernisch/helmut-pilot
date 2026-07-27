@@ -1,7 +1,7 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-27 (Stabilisierungssprint Pipeline-Zeitbudget) ·
-**`main`-HEAD:** `bc333cb` (Merge #142)
+**Letzte Aktualisierung:** 2026-07-27 (Phase-1-Punkt 18: wiederholbare Paket-Inventur) ·
+**`main`-HEAD:** `719df29` (Merge #144)
 
 > **Offener Production-Befund seit 2026-07-26, 22:05 UTC:** der Crawl läuft ins
 > 300-s-Funktionslimit (zwei belegte `504`, einer davon der reguläre 04:00-Cron **ohne jeden
@@ -54,11 +54,13 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | **Anker-Recovery-Pfad (F-3) technisch stillgelegt** — Workflow entfernt, Execute-Skript ohne DB-/KI-/Write-Pfad, `RECOVERY_ALLOWLIST` leer, namensunabhängiger CI-Riegel | PR #105, gemergt 2026-07-25 (`43e9e35`); auf `main` verifiziert: Workflow weg, Allowlist `[]`, 0 `require` im Execute-Skript |
 | `failed-final` wird im Pending-Filter und in `understandOneCluster` terminal behandelt („nie wieder") | PR #105 |
 | Freigabevorlage Quellen-Seed-Einspielung (Soll-Zahlen, Idempotenznachweis, Go-/Stop-Kriterien) | PR #123, gemergt 2026-07-25 (`bed7f53`), CI grün |
-| **Production-Inventur aller Quellenpakete** (7 Pakete in der DB, 8 im Code-Seed seit #118; 163 Abrufwege; Ertrag/letzte Lieferung/Fehler je Paket) | `quellenarchitektur/30-paket-inventur-production.md`; PR #124, gemergt 2026-07-25 (`118e90c`), CI grün, Deployment `READY` |
+| ~~Production-Inventur aller Quellenpakete (Handerhebung 2026-07-25)~~ — **abgelöst am 2026-07-27** durch die wiederholbare Inventur (Punkt 18, unten). Die Handerhebung bleibt als Beleg erhalten (Befunde A-1…A-8) | PR #124, gemergt 2026-07-25 (`118e90c`); Inhalt jetzt `quellenarchitektur/30-paket-inventur-production.md` §9 |
 | **Automatische Profil→Paket-Zuweisung belegt** — Bund/Berlin/Brandenburg gegen den echten Production-Katalog, ohne Codeänderung; keine Mandanten-Hardcodes, Bestandsmandanten unverändert | `scripts/paketzuweisung-nachweis-test.js` 147/147, Inventur §6; PR #124, gemergt 2026-07-25 (`118e90c`) |
 | **Fachliche Vollständigkeit aller Quellenpakete belegt** (Phase-1-Punkt 13) — alle **8** Pakete abgeschlossen: **7 vollständig + 1 vollständig mit belegten Ausnahmen**, 0 teilweise, 0 blockiert. Ausführbares Kriterium je Paket (Pflichtklassen · Pflicht-Herausgeberklassen · Vollzähligkeit · begründete Überschneidungen · geprüfte Nicht-Anwendbarkeit); **keine** Vollzähligkeitsregel ist mehr katalogrelativ: Ausschüsse **24/24** und Fraktionen **5/5** gegen amtliche Sollmengen. **Ausschussstruktur zusätzlich Bezeichnung für Bezeichnung gegen die amtliche Bundestagsgrundlage abgeglichen** (Anzahl, Namen, Schreibweise, Ausschussnummer, Sonderfälle, Umbenennungen): 22 von 24 stimmten, **2 amtliche Bezeichnungen korrigiert** (Nr. 4 → „Innenausschuss", Nr. 15 → „Verkehrsausschuss") | `quellenarchitektur/31-paketvollstaendigkeit.md` §2a–§2c; `bundestag-ausschuesse-test.js` 54/54, `parlamentszusammensetzung-test.js` 65/65, `paketvollstaendigkeit-test.js` 99/99, Offline-Suite 150/150, Browser-Smoke 32/32; Branch `claude/helmut-phase1-punkt13-9iwu69` |
 
 | **Punkt 14A: Berliner Aktivierung technisch abgesichert** — V-1 (Staffelung strukturell erzwungen: 9 Einzeldateien, je eine Transaktion, fail-closed `raise exception`-Riegel, Telemetriebeleg vor Stufe 2, Rollback je Stufe, Dry Run je Schritt) und V-2 (Landesmodule brauchen Freigabe **und** ein berechtigtes Landtagsmandat) | PR #138, gemergt 2026-07-26 19:14 UTC (`2f58d4c`), CI grün, Deployment `READY`. **Keine** Production-Mutation; auf `main` read-only nachgemessen: 0 Landesmodul-Wege aktiv, alle 18 Landeswege `needs_review`+`manual` |
+
+| **Punkt 18: Production-Inventur aller Quellenpakete ist ein Werkzeug, keine Tabelle** — die Inventur vom 2026-07-25 war eine Handerhebung und veraltete still; genau der Fehlermodus, den sie aufdecken soll. Jetzt: `node scripts/paket-inventur.js` führt die **vier bereits vorhandenen** Wahrheiten zu **einer Paketzeile** zusammen (Bestand · Crawl-Plan = tatsächliche Einplanung · Referenzzählung über die echten Profile · Punkt-16-Laufverhalten aus `source_crawl_telemetry`) und leitet daraus **genau einen** Zustand ab: gesund · eingeschränkt · ausgefallen · inaktiv · unbekannt. Kein zweites Inventursystem, keine zweite Datenhaltung, Punkt 16 unverändert. Neu ist die Trennung der **zwei Achsen** je Abrufweg — `planzustand` (eingeplant/defekt/ausgeschlossen **mit Grund**) und Punkt-16-Laufklasse; ohne sie sah ein bewusst abgeschalteter `broken`-Weg wie ein Datenloch aus. „Aktiviert" heißt hier **eingeplant und ausführbar**, nicht „Datensatz vorhanden". Unbekanntes wird nie grün; Pakete ohne Abrufwege, ohne Lieferung oder ohne verwertbare Telemetrie tragen eigene Kennzeichen. Rein additiv auch im Admin (`sources.paketInventur` + Karte „Paket-Inventur"). **Production-Nachweis erbracht** (read-only, 2026-07-27 07:30 UTC, §9) | `quellenarchitektur/30-paket-inventur-production.md` (kanonisch, neu gefasst); `paket-inventur-test.js` **160/160**, `admin-source-ui-test.js` 40 → **56/56**, Offline-Suite **162/162**, Browser-Smoke **32/32**; Reproduzierbarkeit **gegen Production** belegt (zwei Läufe mit `--stand=…` byte-identisch, 289 526 Bytes); Zahlen per SQL gegengeprüft (9 Pakete · 163 Wege · 165 Zuordnungen; 140 + 4 + 19 = 163). Branch `claude/phase1-point18-production-inventory-l60wzr`. **Keine** Production-Mutation, **keine** Migration, **kein** Flag verändert. Der Admin-Teil ist getestet, aber **noch nicht deployt** (Merge = Deployment, freigabepflichtig) — der Production-Nachweis läuft über das Betriebsskript |
 
 | **Punkt 14B: Berliner Abnahmeprofil ist ausführbar statt beschrieben** — Schritt 5 der Aktivierungsreihenfolge war der einzige der 9 Production-Schritte ohne Datei, ohne Vor-/Nachbedingung, ohne Dry Run und ohne Rollback-Datei. Jetzt: **4 generierte SQL-Dateien** (anlegen + Rollback Stufe 0/1/2), fail-closed, idempotent, drift-gebunden; read-only **Dry Run gegen Production**; neuer Backup-Umfang `--scope=profil` für die beiden Tabellen, die der Schritt mutiert | `berlin-abnahmeprofil-pgverify.sh` **36/36 gegen echtes PostgreSQL 16**, `berlin-abnahmeprofil-test.js` **78/78**, `backup-export-test.js` 38 → **48/48**, Offline-Suite **157/157**, Browser-Smoke 32/32, Dry Run gegen Production Exit 0. **Keine** Production-Mutation. Branch `claude/helmut-production-berlin-prep-l0lfbg`, Details `betrieb/berlin-aktivierung.md` §20 |
 
@@ -294,6 +296,33 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
   Backup-Grundlage ist damit **gegengerechnet** statt aus Zeitstempeln erschlossen; und
   `pre-profil` **2/2** (`profiles` 8, `mandate_profiles` 8), `pruefsummeGesamt` `0c514ace…`.
   Beide Artefakte liegen im Container dieser Sitzung — vor jeder Mutation neu exportieren.
+- **Paket-Inventur 2026-07-27, 07:30 UTC (Punkt 18, read-only, reproduzierbar):** **9 Pakete ·
+  163 Abrufwege · 165 Zuordnungen · 0 verwaiste Zuordnungen · 0 Abrufwege ohne Paket ·
+  9 Profile, davon 6 aktivierungsberechtigt.** Wege: **140 eingeplant · 4 defekt · 19 ausgeschlossen**
+  (18 Landesmodul + 1 DIP-API). Paketzustände: **1 gesund · 3 eingeschränkt · 1 ausgefallen ·
+  4 inaktiv · 0 unbekannt.** Ertrag 14 Tage: 86 485 gefunden, **47 344 neu** über 182 Quellen.
+  Vier neue Befunde, alle **beobachtet, nichts korrigiert**
+  (Details: [`quellenarchitektur/30-paket-inventur-production.md`](quellenarchitektur/30-paket-inventur-production.md) §6):
+  **(B-1)** `berlin-basis` steht weiterhin auf **`status='active'`** (`updated_at` 26.07. 21:02:11 =
+  Block B1) — die ausgeführten Rollback-Ebenen 0b und 2 setzen den Paketstatus laut Runbook
+  ausdrücklich **nicht** zurück. Heute folgenlos (0 berechtigte Berliner Mandate, alle 7 Wege
+  gesperrt), aber eine der zwei Sicherungsschichten für Berlin ist damit verbraucht; die
+  Rückstellung auf `prepared` wäre eine **freigabepflichtige** Production-Datenänderung.
+  **(B-2)** `profil-<mandats-id>` ist das einzige **ausgefallene** Paket: sein Katalogweg teilt sich
+  die `source_id` mit der Laufzeit-Personensuche, beide sind in der Telemetrie nicht unterscheidbar
+  (Klasse `instabil`, 21 Ausfälle, letzte Lieferung 17.07.) → verschärft **A-5**, berührt **OP-19**.
+  **(B-3) neu und gewichtig:** von **42** Laufzeit-Personensuchen haben **29 im Betriebszeitraum nie
+  geliefert**; der letzte Volllauf enthielt **7 von 42** — alle von **einem** Mandat. Damit erhält
+  **eines von sechs** aktivierungsberechtigten Mandaten seine personenbezogene Beobachtung, die
+  übrigen stützen sich allein auf die geteilten Bundespakete. Dominante Ursache ist `circuit-open`
+  (zentrale Drosselung, kein Quellendefekt) → **OP-15**. **(B-4)** 11 von 82 eingeplanten Wegen in
+  `arbeit-und-soziales` sind `instabil`, ausnahmslos Google-News-Bündelsuchen → **OP-15**.
+  **Bestätigt:** Befund **A-4** ist von 2 auf **1** defekten `always_on`-Weg geschrumpft
+  (`bundesregierung`; `bundestag` und `linksfraktion` liefern wieder — die Stufe-1-Reaktivierung
+  vom 26.07. wirkt). **Ebenfalls bestätigt:** der Crawl steht seit **2026-07-26 20:03:55 UTC** —
+  die Inventur erkennt das automatisch (jüngste Telemetriezeile 11,4 h alt gegen eine
+  rhythmus-abgeleitete Erwartung von 8 h) und meldet ausdrücklich, dass sie **nicht** den Zustand
+  von jetzt beschreibt.
 - **Nachmessung 2026-07-26 (Reparatursprint Vorgangsbildung, read-only):** erstmals wurde der
   **Endzustand jedes Rohdokuments** gemessen statt nur die Verknüpfungsquote. 7 Tage, **1 970
   Rohdokumente**, 97 liefernde Quellen: **13,9 % verstanden · 9,7 % offen in der Karenzzeit ·

@@ -11878,6 +11878,9 @@ summary:focus-visible {
 /* Notizen / Leerzustaende */
 .adm-note { font-size: 12.5px; color: var(--muted-2); line-height: 1.6; margin: 10px 0 0; }
 .adm-note--warn { color: var(--watch); }
+/* Punkt 18: veraltete Datengrundlage / fehlender Volllauf — muss auffallen,
+   sonst liest sich eine Inventur von gestern wie eine Aussage ueber jetzt. */
+.adm-note--bad { color: var(--danger); font-weight: 560; }
 .adm-note--currency {
   margin: 0; padding: 11px 14px; border: 1px solid color-mix(in srgb, var(--watch) 35%, transparent);
   border-radius: 12px; background: color-mix(in srgb, var(--watch) 7%, transparent); color: var(--muted-2);
