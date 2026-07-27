@@ -42,7 +42,8 @@
 //                 gilt erst nach dieser Zeit als Rueckstand. 0 = keine Karenz.
 //                 Wirkt NUR in diesem Werkzeug (siehe parseArgs).
 //   --max=N       Obergrenze der Kandidaten (Standard 200) — darueber Abbruch
-//   --ids=a,b     nur diese Rohdokument-Kennungen
+//   --ids=a,b     NUR diese Rohdokument-Kennungen. Wirkt VOR jeder Mengenkappung;
+//                 ein Lauf mit dieser Option verarbeitet ausschliesslich sie.
 //   --vorgang=id  nur Kandidaten dieses Vorgangs
 //   --vorschau    Nachhol-Kandidaten ermitteln (schreibt nichts)
 //   --ausfuehren  tatsaechlich nachholen (zusaetzlich HELMUT_NACHHOLEN_BESTAETIGT=ja)
@@ -69,7 +70,9 @@ const TAGE_STANDARD = 7;
 function parseArgs(argv) {
   const a = {
     tage: TAGE_STANDARD, max: MAX_STANDARD, json: false, vorschau: false, ausfuehren: false,
-    ids: [], vorgang: null, limit: 4000,
+    // null = Option nicht gesetzt. Eine LEERE Liste ist etwas anderes als "kein
+    // Filter" und wird deshalb als Fehler behandelt (siehe unten).
+    ids: null, idsRoh: 0, idsDoppelt: [], vorgang: null, limit: 4000,
     // null = Standard des Lebenszyklus-Moduls (24 h) unveraendert uebernehmen.
     karenz: null
   };
@@ -90,13 +93,76 @@ function parseArgs(argv) {
     else if (name === "json") a.json = true;
     else if (name === "vorschau") a.vorschau = true;
     else if (name === "ausfuehren") a.ausfuehren = true;
-    else if (name === "ids") a.ids = String(wert || "").split(",").map((s) => s.trim()).filter(Boolean);
+    else if (name === "ids") {
+      // SICHERE BEHANDLUNG LEERER/DOPPELTER KENNUNGEN (Hotfix B4-3, Phase 5):
+      // `--ids=` (leer) sah bisher aus wie "kein Filter" und haette einen
+      // gezielten Lauf still zu einem Massenlauf gemacht. Das ist jetzt ein
+      // Abbruch. Dubletten werden entfernt und benannt, nicht doppelt gezaehlt.
+      const roh = String(wert || "").split(",").map((x) => x.trim()).filter(Boolean);
+      if (!roh.length) {
+        console.error("--ids wurde ohne verwertbare Kennung angegeben. Das waere ein Massenlauf statt");
+        console.error("eines gezielten Laufs — Abbruch. Entweder Kennungen nennen oder --ids weglassen.");
+        process.exit(2);
+      }
+      const gesehen = new Set();
+      const doppelt = [];
+      const eindeutig = [];
+      for (const id of roh) {
+        if (gesehen.has(id)) { doppelt.push(id); continue; }
+        gesehen.add(id);
+        eindeutig.push(id);
+      }
+      a.ids = eindeutig;
+      a.idsRoh = roh.length;
+      a.idsDoppelt = [...new Set(doppelt)];
+    }
     else if (name === "vorgang") a.vorgang = String(wert || "").trim() || null;
     else { console.error(`Unbekanntes Argument: --${name}`); process.exit(2); }
   }
   // `--ausfuehren` impliziert die Kandidatenermittlung.
   if (a.ausfuehren) a.vorschau = true;
   return a;
+}
+
+// --- Kandidatenauswahl (reine Logik, deshalb einzeln testbar) ---------------
+// DIE REIHENFOLGE IST SICHERHEITSRELEVANT (Hotfix B4-3, Phase 5).
+// Bisher wurde die Kandidatenliste ZUERST auf `--max`+1 gekappt und ERST DANACH
+// nach `--ids` gefiltert. Bei einem Rueckstand von ueber tausend Dokumenten traf
+// die Kappung also irgendwelche 201 — und von 21 gezielt angeforderten Kennungen
+// ueberlebten nur die, die zufaellig darunter lagen. Ein "gezielter" Lauf
+// verarbeitete damit stillschweigend eine andere Menge als angefordert, ohne dass
+// die Ausgabe das erkennen liess.
+//
+// GARANTIEN DIESER FUNKTION:
+//   1. `ids` wirkt auf die VOLLSTAENDIGE Liste, vor jeder Mengenbegrenzung.
+//   2. Sind `ids` gesetzt, enthaelt das Ergebnis ausschliesslich diese Kennungen.
+//   3. Nicht auffindbare Kennungen werden benannt statt verschwiegen.
+//   4. `fremd` ist der Riegel: alles, was trotz `ids` im Pool laege. Er muss
+//      immer leer sein — ist er es nicht, bricht der Aufrufer ab.
+//   5. Die Mengenkappung wird nur BEWERTET (`ueberMax`), nicht angewandt: eine
+//      stille Kuerzung ist genau der Fehler, um den es hier geht.
+function waehleNachholKandidaten(alleKandidaten = [], { ids = null, vorgang = null, max = MAX_STANDARD } = {}) {
+  const alle = (Array.isArray(alleKandidaten) ? alleKandidaten : []).filter(Boolean);
+  const gewuenscht = ids ? new Set(ids) : null;
+  let kandidaten = alle;
+  const unbekannt = [];
+
+  if (gewuenscht) {
+    const istKandidat = new Set(alle.map((k) => k.id));
+    kandidaten = alle.filter((k) => gewuenscht.has(k.id));
+    for (const id of ids) if (!istKandidat.has(id)) unbekannt.push(id);
+  }
+  if (vorgang) kandidaten = kandidaten.filter((k) => k.vorgangId === vorgang);
+
+  const auswahl = kandidaten.map((k) => k.id);
+  return {
+    gesamt: alle.length,
+    kandidaten,
+    ids: auswahl,
+    unbekannt,
+    fremd: gewuenscht ? auswahl.filter((id) => !gewuenscht.has(id)) : [],
+    ueberMax: kandidaten.length > max
+  };
 }
 
 function pct(n, gesamt) { return gesamt ? `${(Math.round((n / gesamt) * 1000) / 10).toFixed(1)} %` : "—"; }
@@ -174,27 +240,52 @@ async function main() {
   }
 
   // --- Nachhol-Kandidaten ---------------------------------------------------
-  let kandidaten = lebenszyklus.nachholKandidaten(bewertung, { limit: args.max + 1 }).kandidaten;
-  if (args.ids.length) {
-    const gewuenscht = new Set(args.ids);
-    kandidaten = kandidaten.filter((k) => gewuenscht.has(k.id));
-    const unbekannt = args.ids.filter((id) => !kandidaten.some((k) => k.id === id));
-    if (unbekannt.length) console.log(`Hinweis: ${unbekannt.length} angefragte Kennung(en) sind KEIN Nachhol-Kandidat (bereits verarbeitet, ausgeschlossen oder nicht im Fenster): ${unbekannt.slice(0, 10).join(", ")}`);
+  // Vollstaendige Liste holen (KEINE Kappung hier — siehe waehleNachholKandidaten).
+  const alleKandidaten = lebenszyklus.nachholKandidaten(bewertung, { limit: Number.MAX_SAFE_INTEGER }).kandidaten;
+  if (args.ids && args.idsDoppelt.length) {
+    console.log(`Hinweis: ${args.idsDoppelt.length} doppelte Kennung(en) entfernt (${args.idsRoh} angegeben, ${args.ids.length} eindeutig): ${args.idsDoppelt.slice(0, 10).join(", ")}`);
   }
-  if (args.vorgang) {
-    kandidaten = kandidaten.filter((k) => k.vorgangId === args.vorgang);
+  const auswahl = waehleNachholKandidaten(alleKandidaten, { ids: args.ids, vorgang: args.vorgang, max: args.max });
+  const kandidaten = auswahl.kandidaten;
+  if (auswahl.unbekannt.length) {
+    console.log(`Hinweis: ${auswahl.unbekannt.length} von ${args.ids.length} angefragten Kennung(en) sind KEIN Nachhol-Kandidat`);
+    console.log(`(bereits verarbeitet, bewusst ausgeschlossen oder ausserhalb des ${args.tage}-Tage-Fensters): ${auswahl.unbekannt.slice(0, 20).join(", ")}`);
   }
 
   const docById = new Map(docs.map((d) => [d.id, d]));
   const nachzuholen = kandidaten.map((k) => docById.get(k.id)).filter(Boolean);
+  const zuSchreibendeIds = nachzuholen.map((d) => d.id);
 
-  console.log(`\nNACHHOLEN — Vorschau (${args.tage} Tage${args.vorgang ? `, Vorgang ${args.vorgang}` : ""}${args.ids.length ? `, ${args.ids.length} Kennungen` : ""})\n`);
-  console.log(`Kandidaten: ${nachzuholen.length} (Obergrenze --max=${args.max})`);
+  console.log(`\nNACHHOLEN — Vorschau (${args.tage} Tage${args.vorgang ? `, Vorgang ${args.vorgang}` : ""}${args.ids ? `, ${args.ids.length} Kennungen` : ""})\n`);
+  console.log(`Nachholbare Dokumente im Fenster insgesamt: ${auswahl.gesamt}`);
+  console.log(`Davon fuer diesen Lauf ausgewaehlt: ${nachzuholen.length} (Obergrenze --max=${args.max})`);
   const nachZustand = kandidaten.reduce((m, k) => { m[k.zustand] = (m[k.zustand] || 0) + 1; return m; }, {});
   for (const [z, n] of Object.entries(nachZustand)) console.log(`  ${z}: ${n}`);
 
-  if (nachzuholen.length > args.max) {
-    console.error(`\nABBRUCH: ${nachzuholen.length} Kandidaten ueberschreiten die Obergrenze von ${args.max}.`);
+  // HARTER RIEGEL fuer den gezielten Lauf: im Pool darf ausschliesslich liegen,
+  // was ausdruecklich angefordert wurde. Nach der Auswahl oben kann das nicht mehr
+  // eintreten — genau deshalb steht die Pruefung hier: sie faengt jede kuenftige
+  // Umstellung ab, die die Reihenfolge erneut verdreht.
+  const fremd = [...auswahl.fremd, ...(args.ids ? zuSchreibendeIds.filter((id) => !args.ids.includes(id)) : [])];
+  if (fremd.length) {
+    console.error(`\nABBRUCH: ${fremd.length} nicht angeforderte Dokument(e) waeren im Kandidatenpool gelandet.`);
+    console.error(`Betroffen: ${[...new Set(fremd)].slice(0, 20).join(", ")}`);
+    console.error("Ein gezielter Lauf darf ausschliesslich die genannten Kennungen verarbeiten.");
+    process.exit(4);
+  }
+
+  // Die VORSCHAU nennt jede Kennung, die geschrieben wuerde — nicht nur ihre
+  // Anzahl. Ohne diese Liste war "21 Kandidaten" nicht gegen "welche 21?" pruefbar.
+  if (zuSchreibendeIds.length) {
+    console.log(`\nDiese ${zuSchreibendeIds.length} Rohdokument(e) wuerden verarbeitet:`);
+    for (const k of kandidaten) {
+      if (!docById.has(k.id)) continue;
+      console.log(`  ${k.id}  ${k.zustand}${k.vorgangId ? `  -> ${k.vorgangId}` : ""}`);
+    }
+  }
+
+  if (auswahl.ueberMax || nachzuholen.length > args.max) {
+    console.error(`\nABBRUCH: ${kandidaten.length} Kandidaten ueberschreiten die Obergrenze von ${args.max}.`);
     console.error("Das ist ein Befund, kein Auftrag. Zuerst die Ursache klaeren (Messung oben), dann");
     console.error("bewusst mit einem hoeheren --max und einem engeren --tage-Fenster wiederholen.");
     process.exit(4);
@@ -203,7 +294,7 @@ async function main() {
   if (!args.ausfuehren) {
     console.log("\nVORSCHAU — es wurde NICHTS geschrieben und KEIN KI-Aufruf ausgeloest.");
     console.log("Zum tatsaechlichen Nachholen zusaetzlich: --ausfuehren und HELMUT_NACHHOLEN_BESTAETIGT=ja");
-    if (args.json) console.log(JSON.stringify({ ...ausgabe, kandidaten: kandidaten.slice(0, 200) }, null, 2));
+    if (args.json) console.log(JSON.stringify({ ...ausgabe, kandidatenGesamt: auswahl.gesamt, ausgewaehlt: zuSchreibendeIds, kandidaten: kandidaten.slice(0, 200) }, null, 2));
     return process.exit(0);
   }
 
@@ -216,6 +307,15 @@ async function main() {
     console.log("\nNichts nachzuholen — kein Dokument ohne gueltigen Endzustand im Fenster.");
     return process.exit(0);
   }
+
+  // FAIL-CLOSED-GATE vor dem ersten fachlichen und dem ersten KI-Schreibzugriff
+  // (Hotfix B4-3, Phase 6). Ohne HELMUT_STORAGE_BACKEND=supabase gingen die
+  // Fachtabellen nach Production, waehrend LLM-Budget, LLM-Nutzungslog und
+  // Lauftelemetrie lokal landen — der Kostendeckel startet dann bei 0.
+  // Die Vorschau oben ist davon bewusst NICHT betroffen.
+  const { erzwingeSchreibgate } = require(path.join(root, "lib/helmut/production-schreibgate.js"));
+  const gate = erzwingeSchreibgate(process.env, { zweck: "Nachholen der Vorgangsbildung" });
+  console.log(`\nSchreibgate: Fachtabellen und Betriebsdaten beide auf Production (Backend ${gate.backend}).`);
 
   // Ausfuehrung ueber den NORMALEN Verarbeitungsweg (kein Sonderpfad, keine
   // zweite Vorgangslogik): dieselbe Funktion, die auch der Crawl-Cron ruft.
@@ -254,4 +354,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { parseArgs, MAX_STANDARD, TAGE_STANDARD };
+module.exports = { parseArgs, waehleNachholKandidaten, MAX_STANDARD, TAGE_STANDARD };

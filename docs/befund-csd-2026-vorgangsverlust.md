@@ -1,9 +1,13 @@
 # Befund — warum der Anschlag auf den Berliner CSD 2026 in keiner Lage erschien
 
-**Stand:** 2026-07-26 (Diagnose) · **Reparatursprint: §9–§13** · **Qualitätssprint: §12a**
-**Sprintzustand: Reparatur in Production (PR #143 gemergt, Deployment `READY`) ·
-lesender Nachweis erbracht · CSD-Nachholen freigabepflichtig und noch nicht ausgeführt**
-**Production wurde ausschließlich lesend berührt.**
+**Stand:** 2026-07-27 · **Diagnose: §1–§8** · **Reparatursprint: §9–§13** ·
+**Qualitätssprint: §12a** · **B4-2: §12b/§12c** · **gescheiterter Nachweislauf: §14/§15** ·
+**Hotfix B4-3: §16**
+**Sprintzustand (2026-07-27, Hotfix B4-3): teilweise abgeschlossen.** B4, B4-2 und B4-3
+sind im Code behoben und offline belegt; der **Production-Nachweis** steht für B4-3 aus
+und ist freigabepflichtig (Merge = Deployment). Der Nachweislauf vom 2026-07-27 ist
+**gescheitert und vollständig zurückgenommen** (§15).
+**In diesem Hotfix-Sprint wurde Production ausschließlich lesend berührt.**
 
 > Kanonische Stelle für diesen Befund **und für seine Reparatur**. `CURRENT_STATE.md` §3
 > verweist hierher und wird nicht zweitverwertet.
@@ -868,3 +872,552 @@ Der Sprint endet hier, weil der nächste Schritt eine Production-Änderung ist.
 (1 504 Rohdokumente ohne Endzustand). Das kostet KI-Aufrufe in erheblichem Umfang und ist
 eine eigene Kostenentscheidung. Das Werkzeug bricht bei mehr als 200 Kandidaten
 absichtlich ab.
+
+## 14 · Production-Nachweis Anlauf 1 — abgebrochen vor jeder Mutation (2026-07-27, 07:17 UTC)
+
+Dokumentiert auf dem **nicht gemergten** Branch `claude/berlin-csd-production-proof-h3cz7l`
+(Commit `6a36b86`). Kurzfassung: Startprüfung erfüllt, Ausgangszustand gemessen, alle
+read-only Schritte des §12-Plans ausgeführt, **vor dem ersten Schreibzugriff angehalten** —
+Blocker 1 war ein fehlender KI-Schlüssel in der Cloud-Sitzung. Die dortigen Zahlen sind
+Ausgangswerte für Anlauf 2 und werden hier nicht wiederholt.
+
+## 15 · Production-Nachweis Anlauf 2 — **ausgeführt und gescheitert** (2026-07-27, 08:41 UTC)
+
+**Sprintzustand: gescheitert.** Der genehmigte Schritt wurde ausgeführt. Er hat den
+CSD-Vorgang **nicht** gebildet, sondern **19 CSD-Rohdokumente einem fachfremden
+Bestandsvorgang zugeschlagen** und einen zweiten, unbeteiligten Vorgang inhaltlich
+überschrieben. Damit sind die Abnahmekriterien „kein Magnet-Vorgang / keine falsche
+Zusammenführung" und „keine unbeteiligten Datensätze verändert" **verletzt**.
+Der Lauf hat einen **neuen, vorher unbekannten Resolver-Defekt** freigelegt: **B4-3**.
+
+### 15.1 Preflight (alle 10 Punkte vor dem Schreibzugriff geprüft)
+
+| # | Prüfung | Ergebnis |
+|---|---|---|
+| 1 | Deployter Production-Commit | `a05f273` (Merge #146), Deployment `dpl_9yhd4xbnnWm6oA3WVzbPXC5BpAL9`, `READY`, 07:51 UTC — **enthält #145** (`d33f540` ist Vorfahr) |
+| 2 | CSD-Datenlage | 26 Rohdokumente 25.–27.07., davon **21 ohne gültigen Endzustand**, 5 bereits verknüpft |
+| 3 | Warum unsichtbar | `vorgang_id like 'vg-csd%'` = **0**; kein KO, kein Vorgang, keine Lage |
+| 4 | Vorgesehener Befehl | `vorgangsbildung-nachholen.js --ausfuehren` mit expliziter ID-Liste |
+| 5 | Erwarteter Schreibumfang | `knowledge_objects` (1–2 Zeilen), `ko_document_links` (≤21) |
+| 6 | Zielumfang eingrenzbar | ja — 21 namentlich genannte Kennungen |
+| 7 | LLM-Budget | 38/100 verbraucht (05:46 UTC), Reserve 30 frei |
+| 8 | Azure erreichbar | ja, über `ai.js`/Responses API auf `gpt-5-mini` verifiziert |
+| 9 | Locks/Crons | beide `pipeline_locks`-Zeilen **abgelaufen** (22:24 und 04:16 UTC), nächster Cron 10:00 UTC |
+| 10 | Rückweg | gezieltes Löschen genau der geschriebenen Zeilen (§15.7) |
+
+**Arbeitsstand = Production-Stand:** lokaler Checkout `a05f273`, Arbeitsbaum sauber,
+Flag-Datei identisch (`HELMUT_UNDERSTANDING_GATE=shadow`) — es lief kein anderer Code
+als der deployte.
+
+**Werkzeugbefund am Rande (nicht ursächlich):** `--max` kappt den Kandidatenpool
+**vor** dem `--ids`-Filter. Mit dem Standard 200 fielen 3 der 21 CSD-Dokumente heraus,
+weil 310 Dokumente im 3-Tage-Fenster ohne Endzustand sind. Deshalb `--max=400`; die
+verarbeitete Menge blieb exakt die 21 genannten Kennungen.
+
+### 15.2 Vorher-Zustand (T0 = 2026-07-27 08:40:27 UTC)
+
+`knowledge_objects` **982** · `ko_document_links` **3 217** · `raw_documents` **8 837** ·
+`profiles` **9** · `mandate_profiles` **9** · `briefings` **64** · `status='pending'` **277** ·
+`understanding_status='failed'` **7** · `vorgang_id like 'vg-csd%'` **0** ·
+LLM-Tagesbudget **38/100** · Magnete **15** von 31 Vorgängen mit ≥ 10 Dokumenten.
+
+Fenster 3 Tage: 660 Rohdokumente, davon **310 (47,0 %) ohne gültigen Endzustand**,
+178 verstanden, 52 vorgemerkt, 120 in Karenz. Watchdog **ALARM**.
+
+### 15.3 Ausgeführter Schritt (genau einer)
+
+```
+HELMUT_V3_STORE=1 HELMUT_NACHHOLEN_BESTAETIGT=ja \
+node scripts/vorgangsbildung-nachholen.js \
+  --tage=3 --karenz=0 --max=400 --vorschau --ausfuehren --ids=<21 CSD-Kennungen>
+```
+
+Lauf `nachhol-20260727084121`, 08:41:23 – 08:42:08 UTC (45 s), 21 Rohdokumente durch
+`runUnderstandingShadow()` — dieselbe Funktion, die auch der Crawl-Cron ruft.
+
+Ergebnis: **3 Cluster** · `saved` 2 · `skipped-error` 1 · Auflösungen **Bestand 2, neu 1** ·
+vorgemerkt 0 · zurückgestellt 0. Ein Cluster brach mit
+`[understanding] update-error: vg-angriffen OpenAI request timeout` ab (20 s Zeitgrenze).
+
+### 15.4 Nachher-Zustand — was tatsächlich geschrieben wurde
+
+`knowledge_objects` 982 → **983** · `ko_document_links` 3 217 → **3 238 (+21)** ·
+`status='pending'` 277 → **276** · `raw_documents`, `profiles`, `mandate_profiles`,
+`briefings`, `understanding_status='failed'` **unverändert**.
+
+| Vorgang | Was er ist | Was der Lauf tat | Bewertung |
+|---|---|---|---|
+| `vg-angriffen` (`ko-vg-angriffen`) | Bestandsvorgang vom 23.07., **1** Dokument: *„Iran-Krieg — Trump droht Iran wegen Huthi-Angriffen auf saudische Schiffe"* | **+19 CSD-Rohdokumente** verknüpft (08:41:23), Inhalt **nicht** aktualisiert (KI-Timeout) → 20 Dokumente, `ko_version` 1, `source_document_count` 1, Überschrift weiterhin Iran | **falsche Zusammenführung.** Die 19 CSD-Dokumente gelten dadurch als „verstanden" und werden vom regulären Lauf **nie wieder** angefasst |
+| `vg-tagesspiegel-20260519-f29ebd` | am 27.07. 04:06 **vorgemerkter** Vorgang, 2 fachfremde Dokumente (Bielefeld, Pflegebedürftige) | **+1 Dokument** (*„Kai Wegner zu queeren Rechten im Grundgesetz"*), `status` **pending → neu**, `was_ist_passiert` mit **Wegner-Inhalt überschrieben**, `understanding_status` → `complete` | **falsche Zusammenführung** und Veränderung eines unbeteiligten Datensatzes; der Vorgang ist jetzt für Mandanten **sichtbar** |
+| `vg-islamisten-20260726-0ab9e8` | **neu angelegt** 08:42:08 | 1 Dokument (*„Reaktionen auf Anschlag — Härtere Gangart gegen Islamisten gefordert"*), `neu`/`complete` | fachlich korrekt, aber **nicht** der CSD-Vorgang |
+
+**`vorgang_id like 'vg-csd%'` ist weiterhin 0.** Der Anschlag hat nach dem Lauf
+**keinen** eigenen Vorgang.
+
+**Audit-Blindstelle, dabei aufgefallen:** die Inhaltsaktualisierung setzt `updated_at`
+**nicht** neu (`ko-vg-tagesspiegel-…` trägt weiter 04:06:06). Eine Abfrage
+„geänderte Zeilen seit T0" findet solche Änderungen deshalb **nicht** — sie war nur
+über den Zählerabgleich `pending` 277 → 276 auffindbar.
+
+### 15.5 Ursache — Befund B4-3 (isoliert, nicht vermutet)
+
+Gegen die echten Production-Daten nachgerechnet (read-only, `sameVorgang()`):
+
+```
+Kernanker Bestand vg-angriffen : ["angriffen","droht","huthi","krieg","saudische","schiffe","trump","wegen"]
+Kernanker CSD-Cluster (24 Dok) : ["angriff","angriffen","berlin","berliner","berlins","csd"]
+Überdeckung: 2 Treffer ("angriff", "angriffen"), beide als SPEZIFISCH gewertet, Gewicht 2
+Nötig: min(MIN_BEWEISGEWICHT=2, ceil(8/2)=4) = 2   →   2 ≥ 2   →   „gleicher Vorgang"
+```
+
+Zwei Fehler wirken zusammen:
+
+1. **`angriff`/`angriffen` steht nicht in `GENERISCHE_ANKER`.** Ein alltägliches
+   Ereignissubstantiv trägt damit eine fachliche Identität — dieselbe Klasse Fehler wie
+   `menschen` in B4, nur ein anderes Wort.
+2. **Zwei Flexionsformen desselben Wortstamms zählen als zwei unabhängige Belege.**
+   `MIN_BEWEISGEWICHT=2` ist damit von **einem einzigen** Wort erfüllbar. Die
+   Gewichtung sollte je Wortstamm einmal zählen.
+
+**Warum #145 das nicht abgefangen hat:** die Härtung wurde gegen die **Magnete**
+validiert (12 von 12 blockiert). Magnet = ≥ 10 Dokumente und Kohärenz < 0,6. `vg-angriffen`
+hatte **ein** Dokument und war in keiner Analyse. Ein Ein-Dokument-Vorgang hat einen
+kleinen, vollständig spezifischen Kern — und ist damit **leichter** zu treffen als ein
+Magnet, nicht schwerer. Der Riegel „Magnet hat Kernanker = 0" greift hier prinzipiell nicht.
+
+**Zweiter Befund: die Magnet-Analyse ist gegen diesen Fall blind.** Nach dem Lauf steht
+`vg-angriffen` mit **20 Dokumenten, Kohärenz 0,95, Risiko „—"** in der Auswertung, also
+als **unauffällig**. 19 von 20 Dokumenten bilden ja einen sauberen Cluster; das eine
+fachfremde Dokument ist die Minderheit. Eine frische Fehlzuordnung in einen **kleinen**
+Vorgang ist über die Kohärenz **nicht** erkennbar. Zahl der Magnete unverändert 15.
+
+### 15.6 Telemetrie und Kosten — und warum sie nicht in Production stehen
+
+| | Wert |
+|---|---|
+| KI-Aufrufe | **3** über `gpt-5-mini` (Azure, Responses API): 2 erfolgreich, 1 Timeout nach 20 146 ms |
+| Tokens | 5 327 + 5 428 (erfolgreiche Aufrufe), fehlgeschlagener Aufruf unbekannt |
+| Kosten | **0,006272 USD** belegt, plus ein unbekannter Betrag für den Timeout |
+| Lauftelemetrie | vollständig: `processed` 3, `cluster` 3, `gruppen.fehlgeschlagen` 1, `aufloesungen {bestand:2, neu:1}`, `dokumenteOhneEndzustand` 0, `grossereignisse` 1 |
+
+**Diese Zahlen liegen NICHT in Production.** `useSupabase()` verlangt
+`HELMUT_STORAGE_BACKEND=supabase`; in der Cloud-Sitzung ist die Variable nicht gesetzt.
+Folge: die **fachlichen** Tabellen (`raw_documents`, `knowledge_objects`,
+`ko_document_links`) wurden über das eigene `HELMUT_V3_STORE`-Gate **in Production**
+geschrieben, das **Kosten- und Telemetrieprotokoll** (`llmUsage`, `processRuns`, der
+Budgetzähler) dagegen in **lokale Dateien**. Belegt: `llm_usage` **0** neue Zeilen,
+`llm_budget_counters` unverändert **38/100** (`updated_at` 05:46 UTC), `helmut_store`
+seit 06:00:52 UTC nicht angefasst.
+
+**Das ist ein eigener Betriebsbefund:** ein Nachhollauf aus einer Cloud-Sitzung
+verändert Production-Daten, erscheint aber in **keiner** Kostenauswertung und in **keiner**
+Lauftelemetrie des Betreibers. Das Budget-Gate rechnete gegen einen **lokalen** Zähler
+(Schutzlimit 50/Tag, weil `HELMUT_MAX_LLM_CALLS_PER_DAY` nicht gesetzt ist) — der
+Production-Deckel war an diesem Lauf nicht beteiligt.
+
+### 15.7 Rückweg (vorbereitet, **nicht** ausgeführt — freigabepflichtig)
+
+Rücknahme genau der 22 Änderungen dieses Laufs, nichts sonst:
+
+```sql
+-- 1. die 21 in diesem Lauf geschriebenen Verknüpfungen
+delete from ko_document_links where created_at >= '2026-07-27T08:41:21Z';
+-- 2. den neu angelegten Vorgang
+delete from knowledge_objects where id = 'ko-vg-islamisten-20260726-0ab9e8';
+-- 3. den überschriebenen Bestandsvorgang zurück auf "vorgemerkt"
+update knowledge_objects
+   set status = 'pending', understanding_status = 'pending',
+       was_ist_passiert = null, understanding_model = null
+ where id = 'ko-vg-tagesspiegel-20260519-f29ebd';
+```
+
+Sollwerte danach: `knowledge_objects` **982**, `ko_document_links` **3 217**,
+`status='pending'` **277**. Die 21 CSD-Rohdokumente stehen dann wieder auf
+`ohne-endzustand` — exakt der Ausgangszustand.
+
+**Ehrliche Einschränkung zu Schritt 3:** die Feldwerte des vorgemerkten Vorgangs
+**vor** dem Lauf sind nicht rekonstruierbar (`updated_at` wurde nicht fortgeschrieben,
+§15.4). Vergleichbare vorgemerkte Vorgänge tragen `status='pending'`,
+`understanding_status='pending'`, leeres `was_ist_passiert` und `understanding_model=null`;
+die Überschrift ist bei diesem Datensatz schon jetzt leer. Schritt 3 stellt den
+**Zustand**, nicht bitgenau den Datensatz wieder her.
+
+### 15.8 Abnahmekriterien
+
+| # | Kriterium | Status |
+|---|---|---|
+| 1 | CSD-Fall eindeutig identifiziert | **erfüllt** — 26 Dokumente, 21 im Zielumfang |
+| 2 | Reparierter Code in Production aktiv | **erfüllt** — `a05f273` ⊇ #145, Deployment `READY` |
+| 3 | Azure über `gpt-5-mini` | **erfüllt** — 2 von 3 Aufrufen erfolgreich, 1 Timeout |
+| 4 | Minimaler gezielter Schritt | **erfüllt** — genau ein Lauf, exakt 21 Kennungen |
+| 5 | Fachlich korrekter Vorgang entsteht | **verletzt** — kein `vg-csd…`; ein korrekter Nebenvorgang mit 1 Dokument |
+| 6 | Kein Magnet, keine falsche Zusammenführung | **verletzt** — 19 Dokumente an `vg-angriffen`, 1 an `vg-tagesspiegel-…` |
+| 7 | Kein Duplikat | **erfüllt** — kein zweiter Vorgang zum selben Ereignis |
+| 8 | Über Production-Lesewege sichtbar | **verletzt** — kein CSD-Vorgang vorhanden |
+| 9 | Telemetrie/Status/Kosten plausibel | **teilweise** — vollständig, aber lokal statt in Production (§15.6) |
+| 10 | Keine unbeteiligten Datensätze verändert | **verletzt** — zwei fachfremde Bestandsvorgänge verändert |
+
+### 15.9 Rückweg ausgeführt und verifiziert (2026-07-27, 08:56 UTC)
+
+Der Betreiber hat die vollständige Rücknahme freigegeben; sie ist ausgeführt. Umfang
+exakt wie in §15.7, zusätzlich auf das Laufzeitfenster **08:41:21 – 08:42:10 UTC** und
+die **drei** betroffenen Vorgangskennungen eingegrenzt — es konnte damit keine Zeile
+eines anderen Laufs erfasst werden.
+
+| Kennzahl | vorher (T0) | nach dem Lauf | nach der Rücknahme |
+|---|---|---|---|
+| `knowledge_objects` | 982 | 983 | **982** |
+| `ko_document_links` | 3 217 | 3 238 | **3 217** |
+| `status='pending'` | 277 | 276 | **277** |
+| `understanding_status='failed'` | 7 | 7 | **7** |
+| `profiles` / `mandate_profiles` | 9 / 9 | 9 / 9 | **9 / 9** |
+| Dokumente an `vg-angriffen` | 1 | 20 | **1** |
+| `vorgang_id like 'vg-csd%'` | 0 | 0 | **0** |
+
+`vg-angriffen` trägt wieder ausschließlich sein Iran-Dokument, Überschrift und Inhalt
+waren nie verändert. `vg-tagesspiegel-20260519-f29ebd` steht wieder auf
+`pending`/`pending` mit leerem Inhalt und seinen ursprünglichen 2 Dokumenten, ist also
+für Mandanten wieder unsichtbar. Der neu angelegte Vorgang ist entfernt. Die 21
+CSD-Rohdokumente stehen wieder auf `ohne-endzustand` und bleiben für einen korrigierten
+Anlauf verfügbar. **Netto-Bilanz des Sprints in Production: 0 veränderte Zeilen.**
+
+**Nicht bitgenau wiederhergestellt** (bewusst und dokumentiert): die Feldwerte des
+vorgemerkten Vorgangs vor dem Lauf sind nicht rekonstruierbar (§15.7). Wiederhergestellt
+ist der **Zustand** anhand des Musters vergleichbarer vorgemerkter Vorgänge.
+
+**Beobachtung, nicht von diesem Sprint verursacht:** um **08:52:46 UTC** hat ein
+**regulärer** Crawl begonnen (Lock `crawl-annika-klose`), um **08:55:02 UTC** ein
+`global-understanding`-Lauf; bis 08:54:04 sind **53** neue Rohdokumente eingegangen.
+Beide Läufe begannen **nach** dem Nachhollauf und **vor** der Rücknahme, haben zum
+Zeitpunkt der Kontrollmessung aber **keine** Verknüpfung geschrieben (jüngste
+`ko_document_links`-Zeile 05:31:26 UTC). Die Rücknahme war auf Fenster und Kennungen
+eingegrenzt und konnte diese Läufe nicht berühren. **Offenes Risiko:** B4-3 ist in
+Production weiterhin aktiv — trifft ein neues CSD-Dokument aus dem laufenden Crawl auf
+`vg-angriffen`, entsteht dieselbe Fehlzuordnung im Regelbetrieb erneut.
+`source_crawl_telemetry` hat heute weiterhin **0** Zeilen.
+
+**Abgrenzung der Messzeitpunkte (wichtig für die Nachprüfbarkeit):** die Kontrollmessung
+der Rücknahme (Tabelle oben) stammt von **08:56:0x UTC**; zu diesem Zeitpunkt hatte der
+reguläre Lauf noch nichts geschrieben. Bereits **08:56:44 UTC** hat er seine erste
+Verknüpfung geschrieben, und um **08:57:04 UTC** stand Production bei
+`knowledge_objects` **986**, `ko_document_links` **3 493** (+276), LLM-Budget **43/100**,
+1 aktiver Lock. **Diese Änderungen stammen sämtlich aus dem regulären Betrieb, nicht aus
+diesem Sprint** — die Aussage „netto 0 veränderte Zeilen" bezieht sich ausschließlich auf
+die von diesem Sprint verursachten Zeilen, die vollständig zurückgenommen sind.
+`vg-angriffen` trägt auch nach diesem Lauf weiterhin **1** Dokument, und
+`vorgang_id like 'vg-csd%'` ist weiterhin **0**.
+
+**Beobachtung mit Handlungsbedarf, unabhängig von diesem Sprint:** im selben regulären
+Lauf ist die Zahl der Vorgänge mit ≥ 10 Dokumenten von **31 auf 35** und die Zahl der
+**Magnete von 15 auf 19** gestiegen. Der Magnet-Riegel aus #145 verhindert also nicht,
+dass im Regelbetrieb neue inkohärente Sammelvorgänge entstehen. Das ist mit den Zahlen
+dieses Sprints belegt, aber **nicht** weiter untersucht — eigener Befund für den
+nächsten Sprint.
+
+### 15.10 Nächste Schritte in dieser Reihenfolge
+
+1. **B4-3 beheben**, bevor irgendein weiterer Nachhollauf startet: Wortstamm-Gewichtung
+   (Flexionsformen zählen einmal) und `angriff*` in `GENERISCHE_ANKER`. Regressionstest
+   mit genau diesem Fall — CSD-Cluster gegen einen Ein-Dokument-Bestandsvorgang mit
+   generischem Ereignissubstantiv.
+2. **Magnet-Analyse ergänzen** um eine Prüfung „frisch hinzugekommene Dokumente teilen
+   den Kern des Bestands", die auch bei hoher Kohärenz greift.
+3. **`HELMUT_STORAGE_BACKEND=supabase`** in den Environment-Einstellungen setzen, bevor
+   ein Werkzeug aus einer Cloud-Sitzung erneut Production schreibt — sonst bleibt jeder
+   Lauf kosten- und telemetrieblind.
+4. **`--max` im Nachhol-Werkzeug korrigieren:** der `--ids`-Filter muss **vor** der
+   Mengenkappung greifen, sonst ist eine namentlich genannte Menge unvollständig.
+5. Erst danach den CSD-Nachweis erneut ansetzen.
+
+---
+
+## 16 · B4-3 behoben — Beweisfamilien statt Rohwortzahl (Hotfix 2026-07-27)
+
+**Sprintzustand: teilweise abgeschlossen.** Der Defekt aus §15.5 ist geschlossen,
+offline vollständig belegt und read-only gegen Production gegengerechnet. Offen bleibt
+der **Production-Nachweis** — er verlangt Merge + Deployment und ist freigabepflichtig.
+**Production wurde in diesem Sprint ausschließlich lesend berührt.** Kein Merge, kein
+Deployment, keine Migration, kein Flag, kein erneuter CSD-Nachhollauf.
+
+### 16.1 Die Entscheidung vor der Implementierung
+
+Vier Fragen mussten beantwortet sein, bevor eine Zeile Code entstand.
+
+| Frage | Antwort |
+|---|---|
+| **Was ist eine unabhängige Beweisfamilie?** | Eine Menge von Ankern, die **dieselbe Sache** benennen — entweder weil sie einander direkt matchen (Flexion, Kompositum) oder weil sie in einer **ausdrücklich aufgezählten** Tabelle stehen. Zwei Schreibweisen sind **ein** Beleg, nie zwei |
+| **Was zählt als generisch?** | Die 15 im Auftrag genannten Ereignisfamilien (Angriff, Anschlag, Treffen, Gespräch, Debatte, Streit, Kritik, Forderung, Entscheidung, Protest, Demonstration, Wahl, Abstimmung, Konflikt, Krise) plus Vorwurf/Warnung, dazu Funktionswörter ab 5 Zeichen („wegen", „gegen", „während" …). **Nicht** erweitert wurde die Liste um Sachbegriffe |
+| **Welche Kombination beweist eine Zusammenführung?** | Mindestens **eine** spezifische Familie **und** ein Familiengewicht der spezifischen Familien ≥ `min(2, ⌈spezifischer Kern / 2⌉)`. Ein sehr starker Einzelbeleg (Kompositumwurzel, ≥ 12 Zeichen exakt, exakte Abkürzung) wiegt 2 und genügt allein |
+| **Welche Kombination muss abgelehnt werden?** | Evidenz aus **nur einer** Familie · **nur** generischen Familien · Flexionsformen **derselben** Familie · ein Ein-Dokument-Vorgang mit weniger als **zwei** spezifischen Familien |
+
+**Die verbindliche Produktentscheidung wurde eingehalten:** es gibt **keine allgemeine
+deutsche Stammwortlogik**. Ein Stemmer zöge „Wahlkampf", „Wahlrecht" und „Auswahl"
+zusammen und erzeugte eine neue, schwerer auffindbare Fehlerklasse. Stattdessen steht
+jede Zuordnung einzeln in `FAMILIEN_DEFINITION` und ist damit prüfbar. Was nicht in der
+Tabelle steht, bleibt getrennt — **im Zweifel getrennt, nie zusammengezogen**.
+
+**Bewusst offen gelassen:** „treffen" und „getroffen" bleiben **zwei** Familien. Die
+Normalisierung kann „ein Treffen" und „getroffen werden" nicht sicher unterscheiden.
+Beide sind generisch und können deshalb ohnehin keine Zusammenführung allein tragen.
+
+### 16.2 Warum eine Abkürzungsregel dazugehört
+
+`STRONG_ANCHOR_LEN` ist 12 Zeichen. Damit wäre **„CSD" ein schwächerer Beleg als ein
+beliebiges zwölfbuchstabiges Wort** — und der CSD-Vorgang zerfiele, sobald „Angriff"
+als generisch nicht mehr trägt (gemessen: das Dokument „Wegner nach CSD-Vorfall …"
+verlöre seine einzige Kante). Ein Anker mit 3–4 Zeichen kann **strukturell** nur eine
+Abkürzung sein: normale Wörter brauchen 5 Zeichen, Jahreszahlen werden vorher abgefangen.
+Eine exakt gleiche Abkürzung zählt deshalb als starker Beleg — **außer** bei
+Allerweltskürzeln (Parteien, Fraktionen, Sender, Agenturen, Staatenblöcke). „Beide
+Meldungen nennen die SPD" darf nie allein eine Vorgangsidentität beweisen.
+
+### 16.3 Ein-Dokument-Vorgänge — die eigentliche Angriffsfläche
+
+`coreAnchors()` nimmt bei **einem** Dokument alles auf, was in ihm vorkommt: die
+Hälfte-Schwelle ist bei n = 1 immer erfüllt. Der „Kern" eines Ein-Dokument-Vorgangs ist
+also nicht das gemeinsame Thema mehrerer Meldungen, sondern das **vollständige Vokabular
+eines einzelnen Textes**, inklusive Füllwörtern. Genau daran wurde `vg-angriffen` zum
+Sammelbecken.
+
+**Read-only in Production gemessen (2026-07-27):** von **986** Knowledge Objects haben
+**735 genau ein Dokument** — **74,6 %**. Die Fehlerklasse betraf also nicht einen
+Einzelfall, sondern drei Viertel des Bestands. Allein auf der Familie „angriff" liegen
+**sechs** solcher Ein-Dokument-Vorgänge:
+
+```
+vg-angriffen            Iran-Krieg — Trump droht Iran wegen Huthi-Angriffen auf saudische Schiffe
+vg-großangriff          Ukraine-Krieg — Russischer Großangriff auf Kiew
+vg-raketenangriff       Ukraine-Krieg — Russischer Raketenangriff auf Kiew
+vg-vergeltungsangriffe  Nahost — USA starten Vergeltungsangriffe gegen Iran
+vg-angriffe             Fünfter Tag in Folge — Weitere US-Angriffe gegen den Iran
+vg-luftangriffen        Krieg — Iran meldet mehr als 30 Tote bei US-Luftangriffen
+```
+
+Für solche Vorgänge gilt jetzt **fail closed**: zwei unabhängige spezifische Familien,
+Evidenz nicht überwiegend generisch, kein Datumskonflikt. Sonst **keine** Zusammenführung.
+
+### 16.4 Was bei Ablehnung und bei Fehlern geschieht
+
+Geprüft am Code und in `scripts/vorgangs-beweisfamilien-test.js` §8:
+
+| Fall | Verhalten | Beleg |
+|---|---|---|
+| Resolver lehnt ab | Der Cluster bildet einen **eigenen** Vorgang; alle Rohdokumente werden verknüpft | 8.1 |
+| Azure-Timeout | `skipped-error`, Vorgang geparkt, Dokumente verknüpft → gezielt nachholbar | 8.2 |
+| Budget erschöpft | `skipped-budget`, **bewusst keine** Verknüpfung → bleibt Nachholkandidat | 8.3 |
+| Fehler bei einer Aktualisierung | Bestand **unangetastet**, nicht geparkt, neues Dokument verknüpft | 8.4 |
+| Erneuter Lauf | läuft durch, `ko_version` +1 statt Überschreiben | 8.5 |
+| Terminal aussortiert | bleibt terminal, **kein** KI-Aufruf, Dokumente bekommen trotzdem einen Endzustand | 8.6 |
+
+**Zu Abnahmekriterium „kein Bestandsvorgang wird vor erfolgreichem Understanding
+überschrieben": geprüft und erfüllt.** `understandUpdate()` ruft `deps.save(ko)` erst
+**nach** erfolgreichem KI-Lauf **und** bestandener Schemaprüfung; bei Timeout, Budgetstopp
+oder ungültiger Antwort bleibt der Bestand unverändert und wird **nicht** geparkt. Ein
+Stop-Gate war deshalb nicht nötig.
+
+**Neu geschlossen — die Audit-Blindstelle aus §15.4:** `assembleKnowledgeObject` setzt
+`updated_at` jetzt bei jedem Schreibvorgang. Ohne diesen Zeitstempel war eine
+Inhaltsaktualisierung über „welche Zeilen hat dieser Lauf verändert?" **nicht auffindbar**
+— genau daran wäre auch die Abnahme des nächsten Nachweises gescheitert. Die Spalte
+existiert und steht bereits in der Schreib-Projektion: **keine Migration**.
+
+### 16.5 Telemetrie der Ablehnungen
+
+Bisher trug allein der `saved`-Zweig die Kandidatenspuren — ausgerechnet die Fälle, in
+denen der Resolver eine Zusammenführung **verhindert** hat, waren unsichtbar. Jetzt trägt
+**jeder** Ausgang `resolverGeprueft`, `resolverAbgelehnt` und `resolverAblehnungsgruende`;
+die Lauftelemetrie fasst sie unter `telemetrie.resolver` zusammen. Nur Kennungen, Zahlen
+und Grundklassen — kein Dokumenttext, keine KI-Ausgabe.
+
+### 16.6 Magnet-Analyse — warum sie blind war und was sie jetzt sieht
+
+Ihr Maß ist die **Kohärenz**: der Anteil des größten Clusters. `vg-angriffen` bestand nach
+dem Fehlgriff aus 1 Huthi- und 19 CSD-Dokumenten; die 19 sind untereinander hochkohärent,
+also 19/20 = **0,95** — weit über der Magnetschwelle 0,6. Beide Kennzahlen der alten
+Definition zeigten **nach oben** statt nach unten.
+
+Ein Magnet zerfällt in **viele** Cluster. Eine **Übernahme** zerfällt in genau **zwei**:
+einen winzigen Ursprung und einen großen fremden Block. Gemessen wird deshalb zusätzlich
+das Verhältnis zum **Ursprung** (dem Cluster mit dem ältesten Dokument): großer, in sich
+kohärenter Fremdblock · winziger Ursprung · **keine** gemeinsame spezifische Beweisfamilie.
+Dazu zwei unabhängige Indikatoren: `gespalten` und `evidenzUeberwiegendGenerisch`.
+
+**An Production kalibriert, nicht geraten:** ein Fremdblock zählt nur dann als kohärent,
+wenn er einen **eigenen Kern** hat. Ohne diese Bedingung bekam jeder große Magnet
+zusätzlich das Etikett „Übernahme", weil das Sicherheitsventil in `clusterRawDocuments`
+Scheiben ohne gemeinsamen Anker erzeugt. **Ein falsches Etikett ist so schädlich wie ein
+fehlendes** — die Zahl sank dadurch von 14 auf 9.
+
+Read-only gemessen (2026-07-27, 40 Vorgänge mit ≥ 6 Dokumenten):
+
+| Klasse | Zahl |
+|---|---|
+| Magnet | 20 |
+| Übernahme | 9 |
+| gespalten (ohne Magnet/Übernahme) | 1 |
+| unauffällig | 17 |
+
+Der rekonstruierte CSD/Huthi-Fall wird erkannt (`uebernahme`, Risiko **hoch**,
+Kohärenz 0,95), **ohne** dass echte Großvorgänge oder ein Vorgang mit legitimer
+thematischer Entwicklung markiert werden — beides ist als Gegenprobe getestet.
+Die Analyse bleibt **read-only**.
+
+### 16.7 Nachholskript und Storage-Gate
+
+**`--ids` wirkte erst nach der Mengenkappung** (§15.1 nennt das als „Werkzeugbefund am
+Rande"; es war eine Fehlerquelle erster Ordnung). Der Aufruf holte 201 von über tausend
+Kandidaten und filterte **danach** auf die 21 angeforderten Kennungen — welche 21 übrig
+blieben, entschied die Kappung. Jetzt: **vollständige Liste → Auswahl → erst dann
+Mengenbewertung**, in der reinen, einzeln testbaren Funktion `waehleNachholKandidaten`.
+Dazu: `--ids=` (leer) bricht ab statt still zum Massenlauf zu werden · Dubletten werden
+entfernt und benannt · unbekannte Kennungen werden benannt · die Vorschau nennt **jede**
+Kennung, die geschrieben würde · ein harter Riegel bricht ab, falls je ein nicht
+angefordertes Dokument im Pool läge · die Mengengrenze wird **bewertet**, nie still
+angewandt.
+
+**Gegenprobe im Test:** mit vorgezogener Kappung hätten **0 von 21** Kennungen überlebt.
+
+**Das Storage-Gate** (`lib/helmut/production-schreibgate.js`) schließt §15.6. Zwei
+unabhängige Schalter lesen dieselben Zugangsdaten: Fachtabellen hängen an
+`HELMUT_V3_STORE`, Betriebsdaten (LLM-Budget, LLM-Nutzungslog, Lauftelemetrie) an
+`HELMUT_STORAGE_BACKEND`. **Das ist mehr als ein Telemetrieverlust:** das LLM-Tagesbudget
+wird aus dem Betriebsspeicher geseedet. Fällt der auf den lokalen Dateispeicher zurück,
+startet der Zähler bei **null** — der fail-closed Kostendeckel ist wirkungslos. Der
+Schreiblauf bricht jetzt **vor** dem ersten fachlichen und dem ersten KI-Schreibzugriff
+ab und benennt Variable, Problem und Wirkung. Kein stiller Fallback, keine
+Umgehungsoption. **Read-only-Vorschauen laufen unverändert ohne das Gate.**
+
+### 16.8 Read-only Production-Vergleich — was die neue Regel gekostet hätte
+
+Werkzeug: `scripts/vorgangs-resolver-vergleich.js`. Je Vorgang wird jedes Dokument
+einzeln gegen die übrigen Dokumente desselben Vorgangs gestellt und mit **beiden**
+Regelfassungen bewertet. Die Altfassung steht als Messkopie im Skript, damit der
+Vergleich nicht gegen eine geschönte Rekonstruktion läuft.
+
+| Ergebnis | Zahl | Anteil |
+|---|---|---|
+| geprüfte Vorgänge / Zuordnungen | 177 / **2 482** | — |
+| beide Fassungen tragen | 425 | 17,1 % |
+| beide lehnen ab | 2 021 | 81,4 % |
+| **nur ALT trug → neu verhindert** | **35** | **1,4 %** |
+| nur NEU trägt | 1 | 0,0 % |
+
+Ablehnungsgründe der neuen Regel: `kernueberdeckung-zu-schwach` 19 ·
+`einzelvorgang-zu-wenig-familien` 15 · `kein-spezifischer-kerntreffer` 1.
+
+**Die 35 aufgeschlüsselt — ohne diese Aufschlüsselung wäre die Zahl wertlos:**
+
+- **12** liegen in Vorgängen, die die Analyse **selbst als defekt** ausweist. Größter
+  Einzelfall: `vg-deutsch-20250212-0c5a3a` („Ausschuss für Tourismus — DIHK"), 24
+  Dokumente, verbunden ausschließlich über „bundestag"/„deutschen" — alt 14, neu 2. Das
+  ist **der Zweck der Reparatur**, kein Verlust.
+- **23** liegen in unauffälligen Vorgängen. Von Hand durchgesehen:
+  - **Richtig abgelehnt** (verschiedene Sachverhalte, die ein Wort teilen):
+    `vg-verfassung` (AfD-Debatte **vs.** Verfassungsreform im Senegal) ·
+    `vg-sozialausschuss` (Kreistag Unterallgäu **vs.** Kreistag Ostallgäu) ·
+    `vg-staatssekretärin` (Tschan bei G7 **vs.** Griese trifft Korea) ·
+    `vg-kandidaten` (Parität in Listen **vs.** Rückzug eines SPD-Kandidaten) ·
+    `vg-nussbaum`, `vg-mitreden`, `vg-arbeitsrecht`, `vg-sozialausgaben`.
+  - **Plausibel richtige Zuordnungen, die verloren gingen** — etwa **10 bis 12**,
+    also rund **0,4–0,5 %** aller geprüften Zuordnungen. Darunter vier
+    Bürgergeld-Meldungen (gemeinsam nur „bürgergeld", 10 Zeichen → Gewicht 1),
+    `vg-koalitionsausschuss` (zwei Meldungen über dieselbe Sitzung) und
+    `vg-sicherheitsrat`.
+
+**Bewertung: vertretbar.** Rund 0,4–0,5 % potenziell verlorene richtige Zuordnungen
+stehen gegen eine Fehlerklasse, die 19 Dokumente in einen fachfremden Vorgang geschoben
+und dadurch **null** Knowledge Objects zu einem tödlichen Anschlag erzeugt hat. Die
+verlorenen Dokumente **verschwinden nicht** — sie bilden einen eigenen Vorgang und bleiben
+sichtbar und nachholbar.
+
+**Geprüfte und verworfene Abschwächung:** `STRONG_ANCHOR_LEN` von 12 auf 10 zu senken
+würde die vier Bürgergeld-Fälle zurückholen — aber auch „verfassung" (10 Zeichen) allein
+ausreichen lassen und damit die Zusammenführung von AfD-Debatte und Senegal-Verfassungs-
+reform **wiederherstellen**. Der Tausch ist schlecht und wurde nicht gemacht.
+
+### 16.9 Ehrliche Grenze der Production-Gegenprobe
+
+**Die exakte Konstellation aus §15.5 ist heute nicht mehr reproduzierbar**, und das wird
+hier ausdrücklich gesagt statt kaschiert. Gegen die aktuellen Daten gemessen:
+
+- `vg-angriffen` steht wieder bei **1 Dokument** (der Rückweg aus §15.9 hat gewirkt).
+- Die 33 heute vorhandenen CSD-Rohdokumente ergeben **einen** Cluster mit dem Kern
+  `["berlin","berliner","csd"]` — die Familie „angriff" erreicht die Hälfte-Schwelle
+  **nicht** mehr, weil die späteren Meldungen von „Anschlag" sprechen.
+- Folge: **beide** Regelfassungen lehnen heute ab. Auch dokumentweise geprüft: 0 von 33.
+- Über den gesamten Rohbestand (1 002 Dokumente, 4 Tage) trägt **kein einziges** Dokument
+  zwei Formen derselben generischen Familie — die Bedingung entsteht erst auf
+  **Cluster**ebene, und alle Kurzfassungen sind leer.
+
+Der Nachweis „reproduzierbar rot, nach dem Fix grün" ruht deshalb auf den in §15.5
+**dokumentierten echten Kernen**, die in `scripts/vorgangs-beweisfamilien-test.js` §1
+nachgebaut sind. Dass diese Nachbildung scharf ist, wurde **mutationsgeprüft**: fünf
+einzelne Rücknahmen des Fixes machen die Suite jeweils rot (§16.10).
+
+Von 177 Vorgängen mit ≥ 2 Dokumenten trägt heute noch **einer** einen Kern mit zwei Formen
+derselben generischen Familie (`vg-sozialabbau`: „demonstranten"/„demonstrieren").
+
+### 16.10 Tests
+
+| Suite | Ergebnis |
+|---|---|
+| `vorgangs-beweisfamilien-test.js` (neu) | **103** Assertions |
+| `vorgangs-uebernahme-analyse-test.js` (neu) | **35** Assertions |
+| `nachhol-schreibgate-test.js` (neu) | **52** Assertions |
+| `vorgangs-resolver-test.js` (aus #145) | 54 — unverändert grün |
+| `vorgangsidentitaet-test.js` | 67 — unverändert grün |
+| `vorgangs-lebenszyklus-test.js` | 81 — unverändert grün |
+| `vorgangsbildung-verlust-test.js` (CSD-Regression) | unverändert grün |
+| **Offline-Suite gesamt** | **166/166** (Baseline 163 + 3 neue) |
+| **Browser-/Mobile-Smoke** | **32/32** |
+
+**Mutationsproben** — jede einzelne Rücknahme des Fixes macht die neue Suite rot:
+
+| Mutation | Ergebnis |
+|---|---|
+| Rohgewicht statt Familiengewicht (der Originaldefekt) | **rot** |
+| Familie „angriff" nicht mehr generisch | **rot** (8 Assertions) |
+| Ein-Dokument-Regel abgeschaltet | **rot** (2 Assertions) |
+| Familiengruppierung abgeschaltet | **rot** (13 Assertions) |
+| Riegel „spezifische Familie nötig" entfernt | **rot** (4 Assertions) |
+
+Eine sechste Probe (`o.spezifisch` statt `o.spezifischeFamilien`) blieb grün. Sie ist
+**logisch äquivalent** — ein spezifischer Rohtreffer impliziert immer eine spezifische
+Familie und umgekehrt; über 100 Wortpaare gegengeprüft, 0 Abweichungen. Kein Defekt,
+sondern eine Mutation ohne Bedeutungsunterschied.
+
+### 16.11 Was für den nächsten CSD-Nachweis gilt
+
+Die Reihenfolge aus §15.10 bleibt, drei ihrer fünf Punkte sind jetzt erledigt.
+
+| # | Schritt | Stand |
+|---|---|---|
+| 1 | Resolver-Defekt B4-3 beheben | **erledigt** (§16.1–§16.5) |
+| 2 | `--ids` vor der Mengenkappung | **erledigt** (§16.7) |
+| 3 | `HELMUT_STORAGE_BACKEND=supabase` erzwingen | **erledigt als Gate** (§16.7); der **Wert** muss weiterhin vom Betreiber in den Environment-Einstellungen gesetzt werden |
+| 4 | Merge + Deployment dieses PR | **offen, freigabepflichtig** |
+| 5 | CSD-Nachweis erneut ansetzen | **offen** |
+
+**Exakte Schritte für den erneuten Nachweis** (erst nach Merge- und Deployment-Freigabe):
+
+1. Deployten Commit prüfen: er muss diesen PR enthalten.
+2. `HELMUT_STORAGE_BACKEND=supabase`, `HELMUT_V3_STORE=1`, `SUPABASE_URL`,
+   `SUPABASE_SERVICE_ROLE_KEY` in den **Environment-Einstellungen** setzen (nie im Chat,
+   nie im Commit). Das Gate bricht sonst **vor** dem ersten Schreibzugriff ab.
+3. Ausgangszustand messen und festhalten: `knowledge_objects`, `ko_document_links`,
+   `status='pending'`, LLM-Tagesbudget, `vorgang_id like 'vg-csd%'`.
+4. `node scripts/vorgangs-magnet-analyse.js --alle` **vorher** laufen lassen und die
+   Zahlen (Magnete · Übernahmen · gespalten) festhalten.
+5. **Vorschau** mit den namentlich genannten Kennungen fahren. Die Ausgabe listet jetzt
+   **jede** Kennung, die geschrieben würde — diese Liste gegen die angeforderte prüfen.
+6. Erst dann `--ausfuehren` mit `HELMUT_NACHHOLEN_BESTAETIGT=ja`.
+7. Nachher-Zustand messen. **Neu belastbar:** `updated_at > T0` findet jetzt jede
+   inhaltlich veränderte Zeile — damit ist „keine unbeteiligten Datensätze verändert"
+   erstmals direkt prüfbar statt nur über Zählerabgleich.
+8. Magnet-Analyse **erneut** laufen lassen. Abbruchkriterium: eine **neue** Übernahme
+   oder ein neuer Magnet.
+9. `telemetrie.resolver` des Laufs auswerten: geprüfte Kandidaten, Ablehnungen, Gründe.
+
+**Abbruchkriterien:** eine neue Übernahme oder ein neuer Magnet · ein Vorgang mit
+`vorgang_id`, der nicht zum CSD gehört, wächst · `updated_at` zeigt Änderungen an Zeilen
+außerhalb der erwarteten Menge · LLM-Budget erreicht 100/100.

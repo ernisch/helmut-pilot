@@ -48,13 +48,44 @@ const MAGNET_MAX_KOHAERENZ = 0.6;
 // Nur noch fuer die Ausgabe: ab wie vielen Clustern ein Vorgang auffaellt.
 const MAGNET_MIN_CLUSTER = 3;
 
+// ---------------------------------------------------------------------------
+// ZWEITE FEHLERKLASSE: DIE UEBERNAHME (Hotfix B4-3, 2026-07-27)
+// ---------------------------------------------------------------------------
+// WARUM DIE OBIGE DEFINITION BLIND WAR — belegt am Production-Fall:
+// `vg-angriffen` bestand aus EINEM Dokument ueber Trumps Drohung an den Iran
+// wegen Huthi-Angriffen. Beim Nachholen kamen 19 Berliner CSD-Dokumente hinzu.
+// Die Kohaerenz dieses Vorgangs betraegt danach 19/20 = 0,95 — er sieht nach der
+// Magnet-Definition KERNGESUND aus. Der Grund: die 19 neuen Dokumente sind
+// UNTEREINANDER hochkohaerent, sie passen nur nicht zu dem einen Dokument, das
+// den Vorgang begruendet hat. Ein Magnet zerfaellt in viele Cluster; eine
+// Uebernahme zerfaellt in GENAU ZWEI — einen winzigen Ursprung und einen grossen
+// fremden Block. Beide Kennzahlen der alten Definition (Kohaerenz, Themenvielfalt)
+// zeigen dabei nach oben statt nach unten.
+//
+// GEMESSEN WIRD DESHALB ZUSAETZLICH DAS VERHAELTNIS ZUM URSPRUNG:
+//   Ursprungsgruppe = das Cluster, das das AELTESTE Dokument enthaelt. Es ist der
+//                     Vorgang, wie er einmal gemeint war.
+//   Fremdblock      = das groesste Cluster, das NICHT die Ursprungsgruppe ist.
+// Eine Uebernahme liegt vor, wenn der Fremdblock gross ist, der Ursprung winzig,
+// und beide keine einzige gemeinsame SPEZIFISCHE Beweisfamilie teilen.
+const UEBERNAHME_MIN_FREMDBLOCK = 5;   // Dokumente im fremden Block
+const UEBERNAHME_MAX_URSPRUNG = 2;     // Dokumente in der Ursprungsgruppe
+const UEBERNAHME_MIN_VERHAELTNIS = 3;  // Fremdblock mindestens 3x so gross
+// Ab dieser Groesse gilt eine Gruppe als eigenstaendiger, in sich kohaerenter
+// Block — darunter ist "zerfaellt in zwei Gruppen" ein normaler Grenzfall.
+const GESPALTEN_MIN_GRUPPE = 3;
+// Scan-Untergrenze des Werkzeugs. Sie ist NIEDRIGER als MAGNET_MIN_DOKUMENTE,
+// weil eine Uebernahme schon bei 1 + 5 = 6 Dokumenten vollstaendig ausgepraegt
+// ist. Die Magnet-DEFINITION bleibt unveraendert bei 10.
+const ANALYSE_MIN_DOKUMENTE = 6;
+
 function parseArgs(argv) {
-  const a = { ab: MAGNET_MIN_DOKUMENTE, json: false, vorgang: null, limit: 60, alle: false };
+  const a = { ab: ANALYSE_MIN_DOKUMENTE, json: false, vorgang: null, limit: 60, alle: false };
   for (const arg of argv.slice(2)) {
     const m = /^--([a-z]+)(?:=(.*))?$/.exec(arg);
     if (!m) { console.error(`Unbekanntes Argument: ${arg}`); process.exit(2); }
     const [, name, wert] = m;
-    if (name === "ab") a.ab = Math.max(2, Number(wert) || MAGNET_MIN_DOKUMENTE);
+    if (name === "ab") a.ab = Math.max(2, Number(wert) || ANALYSE_MIN_DOKUMENTE);
     else if (name === "limit") a.limit = Math.max(1, Number(wert) || 60);
     else if (name === "json") a.json = true;
     else if (name === "alle") a.alle = true;
@@ -62,6 +93,14 @@ function parseArgs(argv) {
     else { console.error(`Unbekanntes Argument: --${name}`); process.exit(2); }
   }
   return a;
+}
+
+// Teilen zwei Dokumentgruppen ueberhaupt ein Thema? Gemessen an ihren KERNEN und
+// ausschliesslich an SPEZIFISCHEN Beweisfamilien — zwei Gruppen, die nur
+// "Angriff" gemeinsam haben, teilen kein Thema (das ist genau der B4-3-Fall).
+function gemeinsameSpezifischeFamilien(kernA = [], kernB = []) {
+  if (!kernA.length || !kernB.length) return 0;
+  return V.anchorOverlap(kernA, kernB).spezifischeFamilien;
 }
 
 // Bewertung EINES Vorgangs aus seinen verknuepften Rohdokumenten. Reine Logik —
@@ -76,6 +115,90 @@ function bewerteVorgang(vorgangId, dokumente = [], meta = {}) {
 
   const kohaerenz = docs.length ? groesstesCluster / docs.length : 0;
   const magnet = docs.length >= MAGNET_MIN_DOKUMENTE && kohaerenz < MAGNET_MAX_KOHAERENZ;
+
+  // --- Gruppenanalyse: Ursprung gegen Fremdblock --------------------------
+  const zeitVon = (d) => {
+    const t = Date.parse(d.published_at || d.created_at || "");
+    return Number.isFinite(t) ? t : Number.MAX_SAFE_INTEGER;
+  };
+  const gruppen = cluster.map((c, i) => ({
+    index: i,
+    dokumente: c.documents.length,
+    kern: V.coreAnchors(c.documents.map((d) => V.docAnchors(d))),
+    aeltestes: Math.min(...c.documents.map(zeitVon))
+  }));
+  // Ursprungsgruppe = die Gruppe mit dem aeltesten Dokument. Sie ist der Vorgang,
+  // wie er einmal gemeint war — nicht die groesste, sondern die erste.
+  const ursprung = gruppen.slice().sort((a, b) => (a.aeltestes - b.aeltestes) || (a.index - b.index))[0] || null;
+  const fremdKandidaten = gruppen.filter((g) => !ursprung || g.index !== ursprung.index);
+  const fremd = fremdKandidaten.slice().sort((a, b) => (b.dokumente - a.dokumente) || (a.index - b.index))[0] || null;
+
+  const gruppenBefund = {
+    gruppen: gruppen.length,
+    ursprungDokumente: ursprung ? ursprung.dokumente : 0,
+    ursprungKern: ursprung ? ursprung.kern.slice(0, 5) : [],
+    fremdblockDokumente: fremd ? fremd.dokumente : 0,
+    fremdblockKern: fremd ? fremd.kern.slice(0, 5) : [],
+    gemeinsameFamilien: ursprung && fremd ? gemeinsameSpezifischeFamilien(fremd.kern, ursprung.kern) : null
+  };
+
+  // Der fremde Block ist in sich kohaerent und gross genug. "Kohaerent" verlangt
+  // AUSDRUECKLICH einen eigenen KERN — read-only an Production gemessen
+  // (2026-07-27) war genau das der Unterschied: bei einem echten Magneten liefert
+  // das Sicherheitsventil in clusterRawDocuments Scheiben OHNE gemeinsamen Anker.
+  // Ohne diese Bedingung wuerde jeder grosse Magnet zusaetzlich als "Uebernahme"
+  // etikettiert — ein falsches Etikett ist genauso schaedlich wie ein fehlendes.
+  const fremdblockKohaerent = Boolean(fremd)
+    && fremd.dokumente >= UEBERNAHME_MIN_FREMDBLOCK
+    && fremd.kern.length >= 1;
+  // … teilt aber keine einzige spezifische Beweisfamilie mit dem Ursprung.
+  // Auch der Ursprung braucht einen Kern: ohne ihn ist "passt nicht" keine
+  // Aussage ueber Themen, sondern nur ueber fehlende Daten.
+  const passtNichtZumUrsprung = fremdblockKohaerent
+    && Boolean(ursprung) && ursprung.kern.length >= 1
+    && gruppenBefund.gemeinsameFamilien === 0;
+  // … und der Ursprung ist winzig gegenueber dem, was ihn ueberwachsen hat.
+  const ursprungUeberwachsen = Boolean(ursprung) && fremdblockKohaerent
+    && ursprung.dokumente <= UEBERNAHME_MAX_URSPRUNG
+    && fremd.dokumente >= UEBERNAHME_MIN_VERHAELTNIS * ursprung.dokumente;
+  const uebernahme = passtNichtZumUrsprung && ursprungUeberwachsen;
+
+  // Unabhaengiger Befund: der Vorgang besteht aus zwei oder mehr in sich
+  // kohaerenten, aber gegenseitig unvereinbaren Gruppen — auch dann, wenn keine
+  // davon winzig ist. Ein Vorgang soll GENAU EIN Ereignis abbilden.
+  const grosseGruppen = gruppen.filter((g) => g.dokumente >= GESPALTEN_MIN_GRUPPE);
+  let unvereinbarePaare = 0;
+  for (let i = 0; i < grosseGruppen.length; i += 1) {
+    for (let j = i + 1; j < grosseGruppen.length; j += 1) {
+      if (gemeinsameSpezifischeFamilien(grosseGruppen[i].kern, grosseGruppen[j].kern) === 0) unvereinbarePaare += 1;
+    }
+  }
+  const gespalten = grosseGruppen.length >= 2 && unvereinbarePaare >= 1;
+
+  // Stammt die Evidenz, die den Fremdblock ueberhaupt an den Ursprung binden
+  // koennte, ueberwiegend aus generischen Familien? Das ist die Signatur des
+  // B4-3-Falls: gemeinsam war ausschliesslich die Familie "angriff".
+  const bruecke = ursprung && fremd && ursprung.kern.length && fremd.kern.length
+    ? V.anchorOverlap(fremd.kern, ursprung.kern) : null;
+  const evidenzUeberwiegendGenerisch = Boolean(bruecke)
+    && bruecke.generischeFamilien >= 1 && bruecke.spezifischeFamilien === 0;
+
+  const begruendung = [];
+  if (magnet) begruendung.push(`zerfaellt in ${cluster.length} Cluster, Kohaerenz ${Math.round(kohaerenz * 100) / 100} < ${MAGNET_MAX_KOHAERENZ}`);
+  if (uebernahme) {
+    begruendung.push(
+      `Uebernahme: der urspruengliche Vorgang hat ${gruppenBefund.ursprungDokumente} Dokument(e), `
+      + `ein fremder, in sich kohaerenter Block hat ${gruppenBefund.fremdblockDokumente} — ohne eine einzige `
+      + "gemeinsame spezifische Beweisfamilie."
+    );
+  } else if (passtNichtZumUrsprung) {
+    begruendung.push(`ein Block aus ${gruppenBefund.fremdblockDokumente} Dokumenten passt nicht zum urspruenglichen Bestand.`);
+  }
+  if (gespalten) begruendung.push(`${grosseGruppen.length} in sich kohaerente Gruppen, davon ${unvereinbarePaare} Paar(e) ohne gemeinsames Thema.`);
+  if (evidenzUeberwiegendGenerisch) {
+    begruendung.push(`die Verbindung zum Ursprung besteht ausschliesslich aus generischen Familien (${(bruecke.familien.map((f) => f.schluessel)).slice(0, 4).join(", ")}).`);
+  }
+
   // Risiko: wie stark zieht dieser Vorgang weiter an? Ein kernloser, grosser,
   // themenvielfaeltiger Vorgang trifft im alten Resolver fast jeden neuen Cluster.
   let risiko = "keins";
@@ -84,6 +207,10 @@ function bewerteVorgang(vorgangId, dokumente = [], meta = {}) {
     else if (docs.length >= 20 || cluster.length >= 5) risiko = "mittel";
     else risiko = "niedrig";
   }
+  // Eine Uebernahme ist unabhaengig vom Magnet-Risiko IMMER ein Befund: der
+  // Vorgang liefert heute eine falsche Lage aus, egal wie kohaerent er wirkt.
+  if (uebernahme) risiko = "hoch";
+  else if (gespalten && risiko === "keins") risiko = "mittel";
 
   return {
     vorgangId,
@@ -97,6 +224,18 @@ function bewerteVorgang(vorgangId, dokumente = [], meta = {}) {
     quellen: quellen.size,
     zeitspanneTage: zeiten.length >= 2 ? Math.round((Math.max(...zeiten) - Math.min(...zeiten)) / 86400000 * 10) / 10 : 0,
     magnet,
+    // --- Hotfix B4-3: die zweite Fehlerklasse ---
+    uebernahme,
+    gespalten,
+    fremdblockKohaerent,
+    passtNichtZumUrsprung,
+    ursprungUeberwachsen,
+    evidenzUeberwiegendGenerisch,
+    unvereinbarePaare,
+    gruppenBefund,
+    // Ein Vorgang ist auffaellig, wenn IRGENDEINE der Fehlerklassen greift.
+    auffaellig: Boolean(magnet || uebernahme || gespalten),
+    begruendung,
     risiko,
     ...meta
   };
@@ -148,7 +287,9 @@ async function main() {
   }
 
   const magnete = befunde.filter((b) => b.magnet);
-  const gesund = befunde.filter((b) => !b.magnet);
+  const uebernahmen = befunde.filter((b) => b.uebernahme);
+  const gespaltene = befunde.filter((b) => b.gespalten && !b.uebernahme && !b.magnet);
+  const gesund = befunde.filter((b) => !b.auffaellig);
   const zahl = (liste, feld) => liste.map((b) => b[feld]).filter((x) => Number.isFinite(x));
   const mittel = (arr) => (arr.length ? Math.round((arr.reduce((a, b) => a + b, 0) / arr.length) * 10) / 10 : 0);
 
@@ -156,11 +297,17 @@ async function main() {
     gemessenAm: new Date().toISOString(),
     definition: {
       magnet: `>= ${MAGNET_MIN_DOKUMENTE} Dokumente UND Kohaerenz < ${MAGNET_MAX_KOHAERENZ}`,
+      uebernahme: `Ursprungsgruppe <= ${UEBERNAHME_MAX_URSPRUNG} Dokumente, fremder Block >= ${UEBERNAHME_MIN_FREMDBLOCK} `
+        + `und >= ${UEBERNAHME_MIN_VERHAELTNIS}x so gross, OHNE gemeinsame spezifische Beweisfamilie`,
+      gespalten: `>= 2 Gruppen mit je >= ${GESPALTEN_MIN_GRUPPE} Dokumenten ohne gemeinsames Thema`,
       themenvielfalt: "Anzahl Cluster, in die die Dokumente eines Vorgangs zerfallen",
       kohaerenz: "Anteil des groessten Clusters an allen Dokumenten (1,0 = ein Ereignis)"
     },
     geprueft: befunde.length,
     magnete: magnete.length,
+    uebernahmen: uebernahmen.length,
+    gespaltene: gespaltene.length,
+    auffaellig: befunde.filter((b) => b.auffaellig).length,
     gesund: gesund.length,
     kennzahlen: {
       dokumenteMittelMagnet: mittel(zahl(magnete, "dokumente")),
@@ -172,7 +319,9 @@ async function main() {
       kernankerMittelMagnet: mittel(zahl(magnete, "kernanker")),
       kernankerMittelGesund: mittel(zahl(gesund, "kernanker")),
       nachtraeglichGewachsen: magnete.filter((m) => m.nachtraeglichGewachsen).length,
-      risiko: magnete.reduce((m, b) => { m[b.risiko] = (m[b.risiko] || 0) + 1; return m; }, {})
+      uebernahmenNachtraeglichGewachsen: uebernahmen.filter((m) => m.nachtraeglichGewachsen).length,
+      evidenzNurGenerisch: befunde.filter((b) => b.evidenzUeberwiegendGenerisch).length,
+      risiko: befunde.filter((b) => b.auffaellig).reduce((m, b) => { m[b.risiko] = (m[b.risiko] || 0) + 1; return m; }, {})
     },
     befunde: befunde.sort((a, b) => b.dokumente - a.dokumente)
   };
@@ -181,7 +330,7 @@ async function main() {
 
   console.log(`\nMAGNET-ANALYSE (read-only) — ${ergebnis.geprueft} Vorgaenge mit >= ${args.ab} Dokumenten\n`);
   console.log(`Definition: ${ergebnis.definition.magnet}\n`);
-  console.log(`Magnete: ${ergebnis.magnete} · unauffaellig: ${ergebnis.gesund}`);
+  console.log(`Magnete: ${ergebnis.magnete} · Uebernahmen: ${ergebnis.uebernahmen} · gespalten: ${ergebnis.gespaltene} · unauffaellig: ${ergebnis.gesund}`);
   const k = ergebnis.kennzahlen;
   console.log(`  Dokumente je Vorgang     Magnet ${k.dokumenteMittelMagnet} · gesund ${k.dokumenteMittelGesund}`);
   console.log(`  Themenvielfalt           Magnet ${k.themenvielfaltMittelMagnet} · gesund ${k.themenvielfaltMittelGesund}`);
@@ -189,13 +338,34 @@ async function main() {
   console.log(`  groesster Magnet: ${k.groesster} Dokumente · kleinster: ${k.kleinsterMagnet}`);
   console.log(`  nachtraeglich gewachsen: ${k.nachtraeglichGewachsen} von ${ergebnis.magnete}`);
   console.log(`  Risiko: ${JSON.stringify(k.risiko)}`);
-  console.log("\nVorgang                                  Dok  Cluster  Kohaerenz  Kern  Quellen  Tage  Risiko");
+  console.log("\nVorgang                                  Dok  Cluster  Kohaerenz  Kern  Quellen  Tage  Befund");
   for (const b of ergebnis.befunde) {
+    // Mehrere Befunde koennen gleichzeitig zutreffen — dann werden auch beide
+    // genannt. Nur den "staerksten" zu zeigen, verschweigt einen echten Befund.
+    const teile = [];
+    if (b.magnet) teile.push("MAGNET");
+    if (b.uebernahme) teile.push("UEBERNAHME");
+    if (b.gespalten) teile.push("GESPALTEN");
+    const klasse = teile.length ? `${teile.join("+")}/${b.risiko}` : "-";
     console.log(
       `${b.vorgangId.slice(0, 40).padEnd(40)} ${String(b.dokumente).padStart(4)} ${String(b.themenvielfalt).padStart(8)} `
       + `${String(b.kohaerenz).padStart(10)} ${String(b.kernanker).padStart(5)} ${String(b.quellen).padStart(8)} `
-      + `${String(b.zeitspanneTage).padStart(5)}  ${b.magnet ? b.risiko.toUpperCase() : "-"}`
+      + `${String(b.zeitspanneTage).padStart(5)}  ${klasse}`
     );
+  }
+  // Begruendung je auffaelligem Vorgang — ein Risikoindikator ohne nachvollziehbaren
+  // Grund waere genau das "falsche Rot", das dem falschen Gruen entspricht.
+  const mitGrund = ergebnis.befunde.filter((b) => b.auffaellig && b.begruendung.length);
+  if (mitGrund.length) {
+    console.log("\nBEGRUENDUNGEN:");
+    for (const b of mitGrund) {
+      console.log(`  ${b.vorgangId}`);
+      for (const g of b.begruendung) console.log(`    - ${g}`);
+      if (b.uebernahme) {
+        console.log(`    Ursprungskern:  ${JSON.stringify(b.gruppenBefund.ursprungKern)}`);
+        console.log(`    Fremdblockkern: ${JSON.stringify(b.gruppenBefund.fremdblockKern)}`);
+      }
+    }
   }
   console.log("\nKEINE Bereinigung durchgefuehrt — dieses Werkzeug diagnostiziert ausschliesslich.");
   return process.exit(0);
@@ -205,4 +375,8 @@ if (require.main === module) {
   main().catch((e) => { console.error("Fehler:", e && e.message); process.exit(1); });
 }
 
-module.exports = { parseArgs, bewerteVorgang, MAGNET_MIN_DOKUMENTE, MAGNET_MAX_KOHAERENZ, MAGNET_MIN_CLUSTER };
+module.exports = {
+  parseArgs, bewerteVorgang, gemeinsameSpezifischeFamilien,
+  MAGNET_MIN_DOKUMENTE, MAGNET_MAX_KOHAERENZ, MAGNET_MIN_CLUSTER, ANALYSE_MIN_DOKUMENTE,
+  UEBERNAHME_MIN_FREMDBLOCK, UEBERNAHME_MAX_URSPRUNG, UEBERNAHME_MIN_VERHAELTNIS, GESPALTEN_MIN_GRUPPE
+};
