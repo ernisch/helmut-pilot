@@ -119,12 +119,13 @@ einen Zustand ab (gesund · eingeschränkt · ausgefallen · inaktiv · unbekann
   JSON-Blob (`helmut_store`, Zeilen `main`, `main-auth`, `main-p-<id>`).
   Der Blob ist **Last-Write-Wins** — dort ist das Verlustrisiko (→ OP-01).
   **Belegt am 2026-07-27 (Befund W-2):** parallele Auth-Store-Writer überschreiben
-  einander die Prozess-Lauftelemetrie (`processRuns`). Relationales Ziel
-  `public.process_runs` (atomarer Upsert je `(run_id, process)`) ist seit
-  2026-07-27 in Production **angelegt und verifiziert**; die Dual-Write-Aktivierung
-  (`HELMUT_PROCESS_RUNS_RELATIONAL`) steht noch aus, bis dahin schreibt der Code
-  den Blob idempotent mit sichtbaren Fehlern und liest dual
-  (`betrieb/befund-werkzeug-haertung-w1-w2.md` §14).
+  einander die Prozess-Lauftelemetrie (`processRuns`). Deshalb ist die
+  **kanonische Lauftelemetrie seit 2026-07-27 relational**: `public.process_runs`,
+  atomarer Upsert je `(run_id, process)` (Migration angewendet 14:03 UTC,
+  `HELMUT_PROCESS_RUNS_RELATIONAL=on` seit 14:23 UTC). Der Blob wird als
+  Spiegel weitergeschrieben (idempotent, Fehler sichtbar), gelesen wird **dual**
+  — relational hat Vorrang, der Blob-Altbestand bleibt ohne Datenmigration
+  lesbar (`betrieb/befund-werkzeug-haertung-w1-w2.md` §14/§15).
 - Lebenszyklus-Lesepfade (`listRawDocuments`, `listRecentRawDocuments`,
   `listKoDocumentLinks`, `listKnowledgeObjectStates`) werfen bei technischen
   Fehlern einen typisierten `StorageReadError` (Quelle + Fehlerklasse) statt

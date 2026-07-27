@@ -5,8 +5,11 @@ entdeckten Werkzeugdefekte (`CURRENT_STATE.md`,
 [`../befund-csd-2026-vorgangsverlust.md`](../befund-csd-2026-vorgangsverlust.md) §18).
 
 **Stand:** 2026-07-27 · Sprint „Werkzeug-Härtung W-1 + W-2" (PR #152 gemergt,
-`54e9c12`) · **Phase B ausgeführt:** Migration angewendet und verifiziert,
-Telemetrie-Smoke bestanden, **Flag-Aktivierung offen** (§14)
+`54e9c12`) · **Phase B:** Migration angewendet und verifiziert (§14) ·
+**Phase C:** Flag aktiviert, Dual-Write-Smoke über den echten Production-Pfad
+bestanden (§15) — offen ist **nur noch** der Nachweis an einem echten
+regulären Cron-Lauf (§15.5). Sprintstatus deshalb weiterhin
+**teilweise abgeschlossen**.
 
 ---
 
@@ -164,14 +167,14 @@ Freigabepunkt 4.
 | Phase | Zustand | Verlustrisiko |
 |---|---|---|
 | 1 | Blob only — idempotent, Fehler sichtbar | Last-Write-Wins bleibt (dokumentiert) |
-| **1b (heute)** | **Migration angewandt, Flag AUS** — Tabelle existiert und ist bewiesen bespielbar, Production-Crons schreiben aber weiter Blob-only | wie Phase 1 (Last-Write-Wins besteht fort) |
-| 2 (nach Flag-Aktivierung) | relational kanonisch + Blob-Spiegel; Dual-Read bevorzugt relational | keines für Läufe (relational); Spiegel best effort, Ausfall sichtbar |
+| 1b | Migration angewandt, Flag AUS | wie Phase 1 (Last-Write-Wins besteht fort) |
+| **2 (seit 2026-07-27, 14:23 UTC)** | **Flag AN** — relational kanonisch + Blob-Spiegel; Dual-Read bevorzugt relational | keines für Läufe (relational); Spiegel best effort, Ausfall sichtbar |
 | 3/4 (je eigene Freigabe) | Lesepfad nur relational · Blob-Key abschalten | keines |
 
-Der aktuelle Zustand **1b** ist ausdrücklich ein Zwischenstand, kein Ziel: die
-Tabelle steht, der Verlust besteht bis zur Flag-Aktivierung aber unverändert
-fort. „Best Effort" ist kein Endzustand der kanonischen Production-Lauf-
-telemetrie — Phase 2 ist der nächste und letzte fehlende Freigabeschritt (§14.4).
+Phase 2 ist seit dem Redeploy um 14:23 UTC aktiv und über den echten
+Dual-Write-Pfad bewiesen (§15). „Best Effort" ist kein Endzustand der
+kanonischen Production-Lauftelemetrie — Phase 3/4 bleiben eigene
+Freigabeschritte, sind aber **nicht** Voraussetzung für die Verlustfreiheit.
 
 ## 11 · Read-only Production-Befund (2026-07-27, nach 12:37 UTC)
 
@@ -301,7 +304,12 @@ Kein anderes SQL, keine Datenmigration.
   **Kein neuer WARN/ERROR**; der einzige WARN (`extension_in_public: vector`)
   ist Bestand und unabhängig.
 
-### 14.4 Flag-Aktivierung — NICHT ausgeführt (offener Betreiberschritt)
+### 14.4 Flag-Aktivierung — in Phase B nicht ausführbar (inzwischen erledigt, §15)
+
+> **Nachtrag:** der Betreiber hat das Flag am 2026-07-27 selbst gesetzt und
+> Production neu deployt (§15.1). Der folgende Abschnitt dokumentiert, **warum**
+> dieser Schritt nicht aus der Sitzung heraus möglich war — die Einschränkung
+> gilt unverändert für künftige Env-Änderungen.
 
 `HELMUT_PROCESS_RUNS_RELATIONAL=on` konnte **nicht** gesetzt werden:
 
@@ -316,12 +324,11 @@ Kein anderes SQL, keine Datenmigration.
   `lib/helmut/flags.js`. Ein Dateieintrag wäre wirkungslos, ihn wirksam zu
   machen wäre eine Code-Änderung samt Merge — außerhalb dieser Freigabe.
 
-**Folge:** Production-Crons schreiben weiterhin Blob-only; der
-Last-Write-Wins-Verlust besteht bis zum Umlegen des Schalters fort.
+**Folge (Stand Phase B):** Production-Crons schrieben weiterhin Blob-only.
 **Erforderliche Betreiberaktion:** in Vercel (Projekt `helmut-pilot`, Team
 `nohut`) `HELMUT_PROCESS_RUNS_RELATIONAL=on` für Production setzen und
-redeployen. Danach ist Phase 2 aktiv; ein Rückweg ist jederzeit derselbe
-Schalter auf `off`.
+redeployen — **am 2026-07-27 um 14:23 UTC erfolgt** (§15.1). Ein Rückweg ist
+jederzeit derselbe Schalter auf `off`.
 
 ### 14.5 Telemetrie-Smoke (14:06:58–14:07:00 UTC) — bestanden
 
@@ -380,7 +387,7 @@ Blob-Seite des Smokes liegt nachweislich in der lokalen Datei (1 Eintrag).
 > gemessen ist der Wert byte-identisch. Der Unterschied ist hier festgehalten,
 > damit er nicht erneut als Veränderung fehlgedeutet wird.
 
-### 14.7 Nebenbefund: Migrationsliste war falsch
+### 14.7 Nebenbefund: Migrationsliste war falsch (Teil von Phase B)
 
 Beim Lesen der Migrationshistorie zeigte sich, dass
 `20260721_security_advisor_hardening` **angewendet ist** (registriert
@@ -391,3 +398,113 @@ sechs von der Migration adressierten Funktionen (`helmut_set_updated_at`,
 `helmut_acquire_pipeline_lock`, `helmut_release_pipeline_lock`,
 `helmut_ensure_profile`) tragen in Production `search_path=public, pg_temp`.
 Beide Dokumente sind korrigiert. **Offen ist damit nur noch `20260720`.**
+
+---
+
+## 15 · Phase C — Abnahme nach der Flag-Aktivierung (2026-07-27)
+
+Der Betreiber hat `HELMUT_PROCESS_RUNS_RELATIONAL=on` gesetzt und Production
+neu deployt. Diese Abnahme prüft, ob die relationale Lauftelemetrie im echten
+Betrieb wirkt. **Ergebnis: Phasen 1–4 der Abnahme vollständig bestanden; offen
+ist ausschließlich der Nachweis an einem echten regulären Cron-Lauf (§15.5).**
+
+### 15.1 Deployment (14:23 UTC) — erfüllt
+
+| Prüfung | Ergebnis |
+|---|---|
+| Neues Production-Deployment | **`dpl_AfputRmtSgFGp7P4bTokBg37rMhP`**, target `production`, **READY**, erstellt **14:23:14 UTC** |
+| Auslöser | `action: "redeploy"` auf `originalDeploymentId dpl_C2ErVsq7sEWyFb3xJTughKx43K5y`, **derselbe** Commit — Signatur einer reinen Env-Änderung |
+| Deployter Commit | `54e9c12` = Merge-Commit von PR #152, enthält #152 vollständig |
+| CI des deployten Commits | Workflow-Lauf **30272642696** (`push` auf `main`), **completed/success** |
+| Migration weiterhin registriert | ja (`20260727140343`) |
+| Schema unverändert | Tabelle da · RLS aktiv · **0** Policies · **0** Rechte für anon/authenticated/PUBLIC · PK `(run_id, process)` · 1 CHECK · 3 Indizes · 22 Spalten |
+
+**Ehrliche Grenze:** der Flag-**Wert** ist aus einer Sitzung nicht lesbar
+(Vercel-Env ist „sensitive"). Der Redeploy belegt, *dass* die Konfiguration
+geändert wurde, nicht *was*. Die Wirksamkeit ist deshalb über das tatsächliche
+Verhalten zu beweisen — §15.3/§15.4 belegen den Codepfad, §15.5 steht für den
+Beweis im unbeeinflussten Regelbetrieb aus.
+
+### 15.2 Sicherheitsgates + Ausgangsmessung (14:28 UTC)
+
+0 aktive `pipeline_locks` · kein Crawl (letztes Rohdokument 10:03:19, letzte
+`source_crawl_telemetry` 10:04:50) · kein Lage-/Understanding-Lauf (letzte
+KO-Änderung 12:36:58) · Schreibgate konsistent · nächster regulärer Cron
+**16:00 UTC** (`/api/cron/pipeline`).
+
+Ausgangszahlen: `process_runs` **1** · Blob-`processRuns` **149** ·
+`knowledge_objects` **1 142** · `ko_document_links` **4 143** ·
+`raw_documents` **8 929** · LLM-Zähler heute **55** · aktive Locks **0**.
+**Blob-Prüfsumme der 149 Bestandseinträge:** `6e76e22fe8bba22afe70556ad4df5f51`.
+
+### 15.3 Smoke über den ECHTEN Production-Pfad (14:29:35–14:29:41 UTC)
+
+Anders als in Phase B **ohne lokale Umgehung**: `HELMUT_PROCESS_RUNS_RELATIONAL=on`
+**und** `HELMUT_STORAGE_BACKEND=supabase` → voller Dual-Write wie in Production,
+inklusive Blob-Spiegel. Dokumentierter Smoke-Pfad unverändert genutzt
+(`storage.recordProcessRunStart` + `storage.recordProcessRun`), **keine neue
+Testfunktion**. Kein Crawl, kein KI-Aufruf, keine fachliche Datenänderung.
+
+Run-ID **`abnahme-20260727142935`**, Prozess `telemetrie-smoke`, drei
+Schreibvorgänge auf **eine** Kennung: Startbeleg `running` → Abschluss
+`success` → identische Wiederholung. Alle drei: `ok: true`,
+`gespeichert {relational: true, blob: true}`, `fehler: []`.
+
+### 15.4 Verifikation — alle zwölf Punkte erfüllt
+
+| # | Kriterium | Ergebnis |
+|---|---|---|
+| 1 | genau eine relationale Zeile | **1** |
+| 2 | keine Dublette | **0** |
+| 3 | Start-/Endzeit | `started_at` 14:29:35.921 · `finished_at` 14:29:41.082 · `duration_ms` **5 161** |
+| 4 | Status | **success** (aus `running` fortgeschrieben — eine Zeile, kein zweiter Datensatz) |
+| 5 | Process-Typ | `telemetrie-smoke` |
+| 6 | Dual-Read: Blob-Historie **und** neuer Lauf | **151 = 2 relational + 149 Blob**; der neue Lauf steht durch den Dual-Write in **beiden** Quellen, erscheint aber **genau 1×** — die Dedup über `(runId, process)` greift |
+| 7 | abgeschaltete relationale Lesestrecke | **150** über den Blob-Spiegel; der **nur relationale** Phase-B-Lauf ist dort **unsichtbar** — der relationale Pfad liefert nachweislich Daten, die der Blob nicht hat |
+| 8 | kein Verlust/Überschreiben anderer relationaler Runs | `phase-b-20260727140658` **unverändert vorhanden**, gesamt **2** Zeilen |
+| 9 | Blob-Altbestand unverändert | 149 → **150** (neuer Eintrag vorangestellt); Prüfsumme der übrigen 149 = `6e76e22fe8bba22afe70556ad4df5f51` — **byte-identisch zur Ausgangsmessung** |
+| 10 | keine Änderung an Fachtabellen | KO **1 142** · Links **4 143** · Rohdok **8 929**; seit Baseline **0** geändert/neu |
+| 11 | kein LLM-Budgetverbrauch | **55 → 55** |
+| 12 | keine neuen Locks | **0** |
+
+`backend` der neuen Zeile steht auf **`supabase`** (die Phase-B-Zeile trägt
+`local` — dort lief die Blob-Seite bewusst lokal). **Kein Abbruchkriterium
+eingetreten, kein Rückweg genutzt.**
+
+**Stärkster Einzelbeweis gegen Last-Write-Wins:** der Smoke aus Phase B steht
+nach dem zweiten, unabhängigen Schreibvorgang unverändert in `process_runs`.
+Auf dem Blob-Pfad hätte ein zweiter Writer ihn überschreiben können; relational
+stehen beide Läufe nebeneinander.
+
+### 15.5 Echter regulärer Production-Lauf — ZEITLICH OFFEN
+
+Zum Messzeitpunkt **14:36 UTC** hatte seit der Flag-Aktivierung (14:23:14 UTC)
+**noch kein** regulärer Production-Lauf stattgefunden: `process_runs` enthielt
+unverändert die **2** Smoke-Zeilen, **0** neue seit 14:30; letzte
+`source_crawl_telemetry` 10:04:50, letztes Rohdokument 10:03:19, letzte
+KO-Änderung 12:36:58, 0 aktive Locks, LLM-Zähler 55.
+
+Der nächste reguläre Lauf ist **`/api/cron/pipeline` um 16:00 UTC**
+(→ `runSourceCrawl` → `recordProcessRun` mit Prozess `understanding-eager`).
+**Es wurde nichts künstlich gestartet** — ein erzwungener Crawl würde KI-Budget
+verbrauchen und wäre kein Beleg für den unbeeinflussten Regelbetrieb.
+
+Nachzuweisen bleibt: Run-ID ermitteln · relational vorhanden · Start/Ende/
+Status/Kennzahlen plausibel · Zeile nach späteren Writes **erhalten** ·
+Abgleich mit `source_crawl_telemetry` (gleiche `run_id`), Locks, Budget und
+Fachtelemetrie · Blob-Spiegel trägt denselben Lauf.
+
+### 15.6 Erfolgskriterien-Stand
+
+**Erfüllt:** Deployment READY (1) · Migration aktiv (2) · Smoke erzeugt genau
+eine relationale Zeile (4) · Idempotenz (5) · Dual-Read (6) · Blob-Historie
+lesbar (7) · keine Fachdatenänderung (8) · kein KI-Aufruf (9) · kein
+Last-Write-Wins-Verlust auf dem neuen Pfad erkennbar (12) · kein Rückweg nötig (13).
+
+**Offen:** Wirksamkeit des Flags im Regelbetrieb (3, nur über §15.5 endgültig
+belegbar) · echter Production-Lauf relational sichtbar (10) · dieser Lauf nach
+späteren Writes erhalten (11).
+
+**Sprintstatus bleibt daher `teilweise abgeschlossen`.** Er wird erst auf
+`erfolgreich abgeschlossen` gesetzt, wenn 3, 10 und 11 belegt sind — ein
+vorheriges Umstellen wäre falsches Grün.
