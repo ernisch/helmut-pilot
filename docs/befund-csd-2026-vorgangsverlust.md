@@ -1,8 +1,9 @@
 # Befund — warum der Anschlag auf den Berliner CSD 2026 in keiner Lage erschien
 
-**Stand:** 2026-07-26 (Diagnose) · **2026-07-26, Reparatursprint: §9–§13 ergänzt**
-**Sprintzustand: Reparatur umgesetzt und lokal belegt · Production-Nachweis blockiert
-(Merge/Deployment nicht freigegeben)** · **Production ausschließlich lesend berührt**
+**Stand:** 2026-07-26 (Diagnose) · **Reparatursprint: §9–§13** · **Qualitätssprint: §12a**
+**Sprintzustand: Reparatur in Production (PR #143 gemergt, Deployment `READY`) ·
+lesender Nachweis erbracht · CSD-Nachholen freigabepflichtig und noch nicht ausgeführt**
+**Production wurde ausschließlich lesend berührt.**
 
 > Kanonische Stelle für diesen Befund **und für seine Reparatur**. `CURRENT_STATE.md` §3
 > verweist hierher und wird nicht zweitverwertet.
@@ -10,7 +11,8 @@
 > **Lesehinweis:** §1–§8 beschreiben den **Ist-Zustand vor der Reparatur** und bleiben
 > unverändert als Beweiskette erhalten. Was tatsächlich gebaut, gemessen und offen
 > geblieben ist, steht in **§9 (Reparatur)**, **§10 (verifizierter Verlustumfang)**,
-> **§11 (Kosten)**, **§12 (Production-Nachweisplan)** und **§13 (Freigabeanfrage)**.
+> **§11 (Kosten)**, **§12 (Production-Nachweisplan)**, **§12a (drei Korrekturen aus dem
+> lesenden Nachweis)** und **§13 (Freigabeanfrage)**.
 
 ---
 
@@ -598,6 +600,79 @@ group by 1,2,3,4;
 (90 s im Crawl, 240 s im Cron) und das fail-closed Tagesbudget begrenzt; ein Nachholauf
 bricht bei mehr als `--max` Kandidaten von selbst ab. Es ist **kein** zusätzlicher
 Not-Aus nötig — und es wird **kein** Cron verändert.
+
+## 12a · Drei Korrekturen aus dem lesenden Production-Nachweis (2026-07-26)
+
+Der lesende Nachweis nach dem Merge von #143 hat drei Mängel sichtbar gemacht, die
+**vor** dem CSD-Nachholen behoben wurden. Kein Architektursprint, keine neue Funktion.
+
+### K-1 · Karenzzeit konfigurierbar (`--karenz=<stunden>`)
+
+Die feste 24-Stunden-Karenz beantwortet die Frage „ist dieses Rohdokument schon zu
+lange unverarbeitet?". Für den laufenden Betrieb ist sie richtig. Für das **gezielte**
+Nachholen eines bekannten Verlustfalls ist sie falsch: dort ist bereits belegt, dass
+die Pipeline an den Dokumenten vorbeigelaufen ist und **nicht mehr auf sie
+zurückkommt** — der reguläre Lauf verarbeitet ausschließlich Dokumente seines
+**eigenen** Crawls. Am CSD-Fall blockierte die Karenz 16 von 20 Dokumenten.
+
+Standard bleibt **24 h**. Die Option wirkt **ausschließlich** im Nachhol-Werkzeug;
+Watchdog und normale Verarbeitung bleiben unberührt. Eine abweichende Karenz wird in
+der Ausgabe benannt, nicht stillschweigend angewandt.
+
+### K-2 · Dokumentauswahl für den KI-Prompt
+
+Der Prompt fasst 12 Dokumente. **Welche** zwölf, entschied bisher die
+Cluster-Reihenfolge — und die ist nach Dokumentkennung sortiert, also nach einem
+Inhalts-Hash. Am echten CSD-Stapel (16 Meldungen) fiel dadurch ausgerechnet die
+**Terror-Einordnung** heraus.
+
+Geprüft wurden vier Strategien am echten Production-Stapel:
+
+| Strategie | Schlüsselfakten im Prompt | abgedeckte Anker |
+|---|---|---|
+| alt (Dokumentkennung) | 5 / 6 — ohne Terror-Einordnung | 59 |
+| neueste zuerst | 5 / 6 — ohne Landesreaktion | 58 |
+| älteste zuerst | 5 / 6 — ohne „Täter erschossen" | 66 |
+| **neu: Faktenabdeckung + feste Endpunkte** | **6 / 6** | **69** |
+
+**„Neueste zuerst" ist also nicht optimal** — die neuesten Meldungen eines laufenden
+Ereignisses sind überwiegend Reaktionen; Tathergang und Opferzahl stehen in den frühen.
+Gewählt wurde: ältestes und neuestes Dokument gesetzt, der Rest gierig nach **neuen
+Fakten** (unbekannte Anker **und** unbekannte Zahlen), Ausgabe chronologisch. Zahlen
+zählen dabei **nur** für diese Auswahl, nie für die Vorgangsidentität — dort würden sie
+über Prozentwerte und Beträge fachfremde Dokumente verbinden.
+
+**Verworfen, weil messbar schlechter:** zusätzlich eine zeitliche Streuung über gleich
+breite Abschnitte zu erzwingen. Sie zog Dokumente aus dünnen Frühabschnitten herein und
+verdrängte aus der dichten Nachmittagsstunde die Terror-Einordnung — 5/6 statt 6/6.
+
+### K-3 · Telemetrie-Aggregation und zwei gleichartige Fehler
+
+`aggregateVorgangsbildung` filterte auf `understanding-lagecheck`; geschrieben wird
+`understanding-lage`. `understanding-nachhol` fehlte ganz. **Beide Lauftypen fielen
+still aus den Tageskennzahlen.**
+
+Bei der gezielten Suche nach derselben Fehlerklasse — ein Wert wird geschrieben, aber
+woanders unter anderem Namen erwartet — fanden sich **zwei weitere**:
+
+| | Fehler | Wirkung |
+|---|---|---|
+| K-3a | `aggregateVorgangsbildung` filterte auf eine Namensliste | Lage- und Nachhol-Läufe unsichtbar |
+| K-3b | `ERGEBNISGRUPPEN` kannte `skipped-no-cluster` / `skipped-no-vorgang` nicht | zwei Ergebnisklassen des Nachholpfads fielen in „unbekannt" — genau der stille Sammelzustand, gegen den B4 antrat |
+| K-3c | `server.js` zählte `verarbeitet = counts.saved` | ein Lauf, der nur bestehende Vorgänge fortschrieb (`updated`/`merged`), meldete „nichts verarbeitet" und löste dazu die teure Diagnose über 6 000 Rohdokumente aus |
+
+Alle drei behoben. Die Namensliste ist durch ein **Präfix** ersetzt (`understanding-`),
+das bei einem neuen Lauftyp nicht erneut auseinanderlaufen kann.
+
+**Weitere Inkonsistenzen dieser Art wurden gesucht und nicht gefunden.** Geprüft
+wurden: alle `process:`-Namen gegen alle Filterstellen, alle im Code vergebenen
+Ergebnisklassen gegen `ERGEBNISGRUPPEN`, alle Konsumenten von `counts.*` und
+`.status ===` in `server.js`, `scheduler.js` und `client.js`.
+
+Gegen ein Wiederauftreten wirken jetzt **zwei Strukturtests**, die den Quelltext
+gegen die Zuordnungstabellen prüfen statt Beispiele durchzuspielen: jede im Code
+vergebene Ergebnisklasse muss in `ERGEBNISGRUPPEN` stehen, und jeder geschriebene
+`understanding-*`-Lauftyp muss von der Aggregation erfasst werden.
 
 ## 13 · Offene Freigabe
 

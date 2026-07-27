@@ -3564,6 +3564,7 @@ function recoveryGrundText(grund) {
     "skipped-invalid": "KI-Ergebnis war nicht schema-valide.",
     "skipped-store": "Ergebnis konnte nicht gespeichert werden.",
     "cluster-error": "Fehler bei einzelnen Vorgängen.",
+    "nur-duplikate": "Alle gefundenen Dokumente waren bereits verarbeitet – nichts Neues zu tun.",
     "keine-verarbeitung": "Es wurde nichts verarbeitet."
   };
   return map[String(grund || "")] || `Grund: ${escapeHtml(String(grund || "unbekannt"))}`;

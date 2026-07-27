@@ -1771,13 +1771,26 @@ async function handleRequest(request, response) {
       } catch (_) { /* fail-safe: Lock-Aufraeumen darf die Antwort nie verhindern */ }
       const nachher = await koCounts();
       const counts = (result && result.counts) || {};
-      const verarbeitet = dsNum(counts.saved);
+      // Seit der Reparatur der Vorgangsbildung (B4) ist `saved` nur EINER von
+      // mehreren erfolgreichen Ausgaengen: ein Lauf kann bestehende Vorgaenge
+      // fortschreiben (`updated`) oder Dokumente an einen bestehenden Vorgang
+      // haengen (`merged`). Zaehlte man weiter nur `saved`, meldete ausgerechnet
+      // ein erfolgreicher Nachhollauf "nichts verarbeitet" — und loeste dazu die
+      // teure Diagnose ueber 6 000 Rohdokumente aus.
+      const verarbeitet = dsNum(counts.saved) + dsNum(counts.updated) + dsNum(counts.merged);
+      const duplikate = dsNum(counts.duplicate);
       // Klassifikation fuer die UI (keine Secrets): uebersprungen (gar nicht gelaufen)
       // / erfolgreich (>=1 verarbeitet) / nichts-verarbeitet (lief, aber 0 -> Grund).
       let ergebnis, grund = null;
       let diagnoseFelder = null;
       if (result && result.skipped) { ergebnis = "uebersprungen"; grund = result.reason || "skipped"; }
       else if (verarbeitet > 0) { ergebnis = "erfolgreich"; }
+      else if (duplikate > 0) {
+        // Alles war bereits verarbeitet. Das ist ein ehrliches Ergebnis und kein
+        // Anlass fuer die teure Ursachendiagnose.
+        ergebnis = "nichts-verarbeitet";
+        grund = "nur-duplikate";
+      }
       else {
         ergebnis = "nichts-verarbeitet";
         // EHRLICHER GRUND: nicht pauschal 'Zeitfenster'. Die bestehende Read-only-Diagnose
