@@ -227,6 +227,20 @@ check("B3c eine Institutionsbezeichnung OHNE Region stiftet keine Geografie (kei
     && C.bezeichnungNenntGeografie("Berliner Senat", { name: "Berlin" }) === true;
 })());
 
+check("B3e ein Beleg muss INNERHALB EINES Feldes stehen (keine zufällige Feldnachbarschaft)", (() => {
+  // "Landtag" als Ausschusseintrag und "Brandenburg" als getrennte Ortsnennung
+  // ergäben in einem zusammengeklebten Text die Phrase "landtag brandenburg",
+  // obwohl niemand sie geschrieben hat — dieselbe Fehlerart wie B4-3/B4-4.
+  const getrennt = C.classifyKnowledgeObject(
+    { mentioned_committees: ["Landtag"], mentioned_locations: ["Brandenburg"] }, {}, { jetzt: T1 }
+  );
+  const zusammen = C.classifyKnowledgeObject(
+    { headline: "Landtag Brandenburg beschließt Schulgesetz" }, {}, { jetzt: T1 }
+  );
+  return getrennt.affected_geographies.length === 0
+    && ids(zusammen.affected_geographies).join() === "geo-land-brandenburg";
+})());
+
 check("B3d jede erkannte Institutionsphrase nennt ihre Region mit (Aufbaubedingung des Index)",
   C.SUBNATIONALE_INSTITUTIONSPHRASEN.length > 0
   && C.SUBNATIONALE_INSTITUTIONSPHRASEN.every((e) => e.phrase.includes(C.normText(e.geo.name))));

@@ -68,8 +68,15 @@ const MUTATIONEN = [
     name: "M4c · Landesinstitution im Fliesstext nicht mehr auswerten",
     beschreibung: "Der haeufigste reale Fall faellt weg: \"Abgeordnetenhaus von Berlin beschliesst …\" in der Schlagzeile bliebe geografisch unbelegt (verbindlicher Testfall 1).",
     datei: CLS,
-    von: "  for (const g of geografienAusText(koHaystack(ko))) {",
+    von: "  for (const g of geografienAusText(ko)) {",
     nach: "  for (const g of []) {"
+  },
+  {
+    name: "M4d · Feldgrenze aufheben: Belege duerfen wieder ueber Felder hinweg entstehen",
+    beschreibung: "Ein Ausschusseintrag \"Landtag\" neben einer getrennten Ortsnennung \"Brandenburg\" ergaebe die Phrase \"landtag brandenburg\" - dieselbe zufaellige Nachbarschaft, die B4-3/B4-4 verursacht hat.",
+    datei: CLS,
+    von: "  for (const feld of GEO_TEXTFELDER) {\n    const text = normText(ko[feld]);",
+    nach: "  for (const feld of [\"__alles\"]) {\n    const text = koHaystack(ko);"
   },
   {
     name: "M5 · Gleich starke Nachweise verdraengen statt zu ergaenzen",
