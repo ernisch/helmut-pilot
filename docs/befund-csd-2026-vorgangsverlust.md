@@ -1639,3 +1639,216 @@ Verlagswort kannte. Der Test wurde ergänzt, nicht die Mutation entfernt.
   Ankerbildung; Anzeige, Briefing und Beleglinks bleiben unverändert.
 - **Kein** Stemmer und keine allgemeine Wortartlogik — dieselbe Entscheidung wie bei
   B4-3 (§16.1).
+
+---
+
+## 18 · B4-4 in Production nachgewiesen — die zwei verbliebenen CSD-Dokumente (2026-07-27, 12:15 UTC)
+
+> **Sprintzustand: teilweise abgeschlossen.** Der **B4-4-Nachweis selbst ist erbracht** —
+> der Herausgebername erzeugt in Production keine Vorgangsidentität mehr. Unvollständig
+> ist die Verarbeitung: eines der beiden Dokumente lief in einen Azure-Zeitüberlauf und
+> steht klassifiziert auf `fehlgeschlagen` (verknüpft, wiedervorlagefähig).
+> **Kein Rückweg nötig** — kein Abbruchkriterium ist eingetreten.
+
+### 18.1 Deployment-Nachweis (Phase 1, lesend)
+
+| Prüfung | Beleg |
+|---|---|
+| PR #149 in `main` gemergt | Merge-Commit **`ad0cf999667a59661cbc7e56c62086b7ecad0844`** |
+| Production läuft auf diesem Commit | Vercel `dpl_8oC6U67Kvx8UxwZrHBDR3CMASp5t`, `target: production`, `githubCommitSha: ad0cf999…`, `githubCommitRef: main` |
+| Deployment-Zustand | **`READY`**, erstellt 2026-07-27 **12:03:43 UTC** |
+| Pflicht-CI-Checks für diesen Commit | Run 30264349009 — `Syntax + Offline-Suiten` **success**, `Browser-/Mobile-Smoke (Chromium)` **success** |
+| B4-4-Code im deployten Baum | `git ls-tree ad0cf99` führt `lib/helmut/herausgeber.js` (Blob `268aa80c`, 354 Zeilen) und `lib/helmut/vorgang-identity.js` (Blob `028e8b99`) mit den drei Wirkstellen: Zeile 49 `require("./herausgeber")`, 287 `istHerausgeberAnker(a)`, 348 `titelRumpf(doc)` |
+| Arbeitskopie = deployter Stand | lokaler `HEAD` = `ad0cf99`, Arbeitsbaum sauber |
+
+**Grenze, ehrlich benannt:** die deployte Anwendung konnte **nicht** direkt abgefragt
+werden — die Egress-Regel dieser Sitzung verweigert `helmut-pilot.vercel.app`
+(`403 zu CONNECT`). Der Nachweis läuft deshalb über die Vercel-Deployment-Metadaten
+(Commit-SHA + `READY` + `target: production`) und den Git-Baum dieses Commits, nicht über
+die ausgelieferte Asset-Version.
+
+### 18.2 Sicherheitsgates unmittelbar vor dem Lauf (Phase 2)
+
+| # | Prüfung | Ergebnis |
+|---|---|---|
+| 1 | `HELMUT_STORAGE_BACKEND` | `supabase` |
+| 2 | `HELMUT_V3_STORE` | `1` |
+| 3 | `pruefeSchreibgate()` | **`ok: true`** (Fachtabellen und Betriebsdaten beide auf Production, 0 Fehler) |
+| 4 | Azure-Konfiguration | `AZURE_OPENAI_ENDPOINT` + `AZURE_OPENAI_KEY` gesetzt |
+| 5 | `isAiEnabled()` | **`true`**, Modell `gpt-5-mini` |
+| 6 | aktive `pipeline_locks` | **0** |
+| 7 | paralleler Lauf | keiner — letztes Rohdokument 10:03:19, letzte KO-Änderung 10:48:09, nächster Cron 16:00 UTC |
+| 8 | beide Ziel-IDs vorhanden | ja |
+| 9 | bestehende `ko_document_links` je Ziel-ID | **0** |
+| 10 | Endzustand je Ziel-ID | beide **`ohne-endzustand`** |
+| 11 | `vg-csd-20260727-12aae0` | 27 Dokumente, `neu`/`complete`, „Anschlag auf CSD in Berlin mit Todesopfer und mehreren Verletzten" |
+| 12 | `vg-tagesspiegel-20260519-f29ebd` | 2 Dokumente, `pending`/`pending`, Inhalt leer — der zurückgerollte Ausgangszustand |
+| 13 | `vg-angriffen` | 1 Dokument, `ko_version 1`, `updated_at 2026-07-23` — unverändert |
+| 14 | Tagesbudget | `llm_budget_counters` global **52** verbraucht |
+
+**Zum Sitzungs-Schutzlimit:** `HELMUT_MAX_LLM_CALLS_PER_DAY` ist in dieser Sitzung nicht
+gesetzt, `llmDailyCallLimit()` fällt deshalb auf das Schutzlimit **50** zurück. Bei 52
+verbrauchten Aufrufen hätte `reserveLlmCall()` den Lauf sofort mit `skipped-budget`
+abgewiesen — derselbe Riegel, an dem Anlauf 3 die zwei Dokumente liegen ließ. Er wurde
+**ausschließlich als Präfix an genau diesen einen Befehl** auf `55` gesetzt
+(52 + 2 = 54 ≤ 55). **Kein Export, keine Persistenz, keine Vercel-Env-Änderung, kein
+Repo-Eintrag.** Das Production-Tagesbudget (100) und die Reserve blieben unangetastet.
+
+### 18.3 Trockenlauf des Resolvers gegen die echten Daten (read-only, vor dem Lauf)
+
+`resolveVorgang()` mit den echten Lese-Deps, ohne KI und ohne Write:
+
+```
+rd-8c977d6b13f…  "Kai Wegner zu queeren Rechten im Grundgesetz … - Tagesspiegel"
+  entfernt: ["Tagesspiegel"]   Beleg: host   (source_name ist NULL, url = tagesspiegel.de)
+  Anker:    ["wegner","queeren","rechten","grundgesetz","bundestag","gerade","diesen",
+             "zeiten","klares","bekenntnis","abgeben"]
+  Kandidatenpraefixe: ["vg-grundgesetz","vg-bekenntnis","vg-bundestag"]
+  8 Kandidaten geprueft, alle abgelehnt  ->  resolution "neu"
+```
+
+**Das ist der Kern des Nachweises.** Vor B4-4 lautete die Themenwurzel dieses Dokuments
+`tagesspiegel`; der Fremdvorgang `vg-tagesspiegel-20260519-f29ebd` wurde damit überhaupt
+erst als Kandidat geladen und dann über `gewichtSpezifisch 2` angenommen. Jetzt taucht
+das Präfix `vg-tagesspiegel` **gar nicht mehr in der Kandidatensuche auf** — der Fehler
+ist eine Stufe vor dem Beweisvergleich abgeschnitten.
+
+Bemerkenswert: `source_name` ist bei **beiden** Zieldokumenten `NULL`. Der stärkste
+Suffixbeleg (`quellenname`) stand also nicht zur Verfügung; getragen hat der
+**strukturelle Host-Vergleich**. Genau dafür ist die Belegart `host` da.
+
+### 18.4 Vorschau (Phase 3)
+
+`--ids=<zwei vollständige Kennungen> --karenz=0 --tage=7 --vorschau`
+
+| Prüfung | Ergebnis |
+|---|---|
+| ausgewählte IDs | **exakt 2** |
+| unbekannte IDs | 0 |
+| Dubletten | 0 |
+| fremde IDs | 0 |
+| Mengenkappung | ohne Wirkung auf die Zielmenge (`--ids` greift vor der Kappung; 1 560 Kandidaten im Fenster, `--max=200`, ausgewählt 2) |
+| KI-Aufruf | keiner |
+| Schreibzugriff | keiner |
+
+Ohne `--karenz=0` wären beide Dokumente durch die 24-Stunden-Karenz blockiert gewesen
+(sie sind 16 bzw. 20 Stunden alt). Die Option wirkt ausschließlich in diesem Werkzeug.
+
+### 18.5 Der Lauf (Phase 4)
+
+`runId` **`nachhol-20260727121511`**, 12:15:11–12:15:52 UTC, Dauer **39 s**.
+
+```
+Schreibgate: Fachtabellen und Betriebsdaten beide auf Production (Backend supabase).
+[understanding-gate:shadow] {"cluster":2,"entscheidungen":{"verstehen":1,"parken":1},"blockiert":0}
+[understanding] skipped-error: vg-grundgesetz-20260725-15b616 OpenAI request timeout
+Ergebnis: cluster 2 · verarbeitet 2 · zurueckgestellt 0 · vorgemerkt 0
+          ergebnisse {"saved":1,"skipped-error":1} · aufloesungen {"neu":2}
+```
+
+**Beide Cluster wurden als `neu` aufgelöst** — kein einziger Bestandsvorgang wurde
+angenommen.
+
+### 18.6 Zielzustand je Dokument
+
+| Rohdokument | Zielvorgang | Zustand | Warum fachlich passend |
+|---|---|---|---|
+| `rd-8c977d6b…` „Kai Wegner zu queeren Rechten im Grundgesetz …" | **`vg-grundgesetz-20260725-15b616`** (neu) | `pending`/`failed`, 1 Dokument, 1 Verknüpfung | Eigener Vorgang zur Debatte um eine **Grundgesetzergänzung** — das Thema des Textes. Der Bezug zum Berliner Anschlag ist politisch vorhanden, im Text aber nicht als Anker belegt |
+| `rd-d982a68f…` „Reaktionen auf Anschlag - Härtere Gangart gegen Islamisten gefordert" | **`vg-islamisten-20260726-0ab9e8`** (neu) | `neu`/`complete`, 1 Dokument, 1 Verknüpfung | Eigener Vorgang zur **innenpolitischen Reaktion**; die KI-Fassung trifft den Text („Nach einem Anschlag fordern mehrere Stimmen eine härtere Gangart gegen islamistische Strukturen in Deutschland.") |
+
+**Ehrliche Einordnung der Trennung:** beide Dokumente hätten thematisch an den
+CSD-Vorgang angeschlossen werden können — der Auftrag lässt eine getrennte Zuordnung
+ausdrücklich zu, wenn es verschiedene politische Vorgänge sind. Der Resolver konnte den
+Bezug gar nicht herstellen: der Titel des Deutschlandfunk-Beitrags nennt weder „CSD" noch
+„Berlin", seine Kurzfassung ist leer. Das ist die richtige Fehlerrichtung — **getrennt
+statt falsch vereinigt**. Ein Duplikat des CSD-Vorgangs ist keiner der beiden: dieser
+trägt 27 Dokumente zum Anschlag selbst.
+
+### 18.7 Vorher/Nachher — vollständig gegengemessen
+
+| Größe | vorher (12:14 UTC) | nachher (12:16 UTC) | Δ |
+|---|---|---|---|
+| `knowledge_objects` | 1 140 | **1 142** | +2 (genau die zwei neuen Vorgänge) |
+| `ko_document_links` | 4 141 | **4 143** | +2 (genau die zwei Zieldokumente) |
+| `status='pending'` | 426 | **427** | +1 (der geparkte Grundgesetz-Vorgang) |
+| `status='failed-final'` | 0 | **0** | 0 |
+| `raw_documents` | 8 929 | 8 929 | 0 |
+| aktive `pipeline_locks` | 0 | **0** | 0 |
+| LLM-Zähler (global, Tag) | 52 | **54** | **+2** |
+| **`vg-csd-20260727-12aae0`** | 27 Dok., `neu`/`complete`, `updated_at 10:29:28` | **27 Dok., unverändert, `updated_at 10:29:28`** | **0** |
+| **`vg-tagesspiegel-20260519-f29ebd`** | 2 Dok., `pending`/`pending`, Inhalt leer, `updated_at 10:48:09` | **2 Dok., unverändert, `updated_at 10:48:09`** | **0** |
+| **`vg-angriffen`** | 1 Dok., `updated_at 2026-07-23` | **1 Dok., unverändert** | **0** |
+
+**Veränderungen außerhalb der Zielmenge: keine.** Gegengeprüft über Zeitfenster:
+seit 12:14 UTC **2** neue Knowledge Objects, **2** geänderte (dieselben zwei), **2** neue
+Verknüpfungen, **0** neue Rohdokumente, **0** neue Telemetriezeilen.
+
+**Magnet-Analyse als Gegenprobe** (read-only, nach dem Lauf): `vg-csd-20260727-12aae0`
+steht bei **Kohärenz 0,96** mit 4 Kernankern und Befund `-` (unauffällig). Die beiden
+neuen Vorgänge tragen je 1 Dokument und erscheinen nicht in der Auswertung (Schwelle
+≥ 6 Dokumente). Die im Bestand ausgewiesenen 39 Magnete und 19 Übernahmen sind der
+**bekannte Altbestand** — von diesem Lauf ist keiner gewachsen und keiner entstanden.
+
+### 18.8 Abnahme gegen die zwölf Erfolgskriterien
+
+| # | Kriterium | Ergebnis |
+|---|---|---|
+| 1 | exakt die zwei Ziel-IDs verarbeitet | **erfüllt** |
+| 2 | beide erhalten einen gültigen Endzustand | **teilweise** — beide haben `ohne-endzustand` verlassen; `rd-d982a68f…` ist verstanden, `rd-8c977d6b…` steht klassifiziert auf `fehlgeschlagen` und bleibt Wiedervorlagekandidat |
+| 3 | beide verknüpft | **erfüllt** (+2 `ko_document_links`) |
+| 4 | keine Zuordnung allein durch Herausgeber-/Plattformnamen | **erfüllt** — beide Auflösungen `neu`, 8 bzw. 0 Kandidaten geprüft, keiner angenommen |
+| 5 | Wegner-Dokument **nicht** an `vg-tagesspiegel-20260519-f29ebd` | **erfüllt** — das Präfix erscheint nicht einmal mehr in der Kandidatensuche |
+| 6 | Fremdvorgang wächst nicht, wird nicht überschrieben | **erfüllt** — 2 Dokumente, `updated_at` unverändert |
+| 7 | `vg-angriffen` unverändert | **erfüllt** |
+| 8 | kein fachfremder Vorgang gewachsen | **erfüllt** |
+| 9 | nichts außerhalb der Zielmenge verändert | **erfüllt** |
+| 10 | kein Duplikat-Vorgang ohne fachliche Rechtfertigung | **erfüllt** (§18.6) |
+| 11 | höchstens zwei zusätzliche LLM-Aufrufe | **erfüllt** — exakt 2 (52 → 54) |
+| 12 | fachlicher Zielzustand nachvollziehbar | **erfüllt** (§18.6) |
+
+**Abbruchkriterien: keines eingetreten. Kein Rückweg ausgeführt und keiner nötig.**
+
+### 18.9 Was offen bleibt
+
+Das Wegner-Dokument ist **zugeordnet und verknüpft**, sein Vorgang aber inhaltlich leer
+(`understanding_status = failed`, Überschrift = Rohtitel). Ursache ist ein
+**Azure-Zeitüberlauf**, kein Vorgangsbildungsfehler — die Identitätsentscheidung war
+bereits gefallen und ist korrekt. Der Vorgang ist regulärer Wiedervorlagekandidat; das
+Nachhol-Werkzeug führt ihn nach dem Lauf als `fehlgeschlagen -> vg-grundgesetz-20260725-15b616`.
+Eine Wiedervorlage war in diesem Sprint **nicht erlaubt** (genau ein Lauf) und wurde
+deshalb nicht ausgeführt.
+
+### 18.10 Die zwei Werkzeugbefunde
+
+**W-1 · Falsches Grün nach Lesefehler — bestätigt, unverändert vorhanden.**
+Auf dem deployten Commit fängt `listRawDocuments` (`storage.js`) jeden Fehler ab, loggt
+`[v3Store] listRawDocuments fehlgeschlagen: …` und liefert **`[]`**. Der Aufrufer in
+`vorgangsbildung-nachholen.js` unterscheidet „leer" nicht von „Lesefehler" — ein DNS-
+oder Netzfehler führt damit zu 0 Kandidaten, der Meldung „Nichts nachzuholen" und
+**Exit 0**. In diesem Lauf trat der Fall **nicht** ein (1 560 Kandidaten gelesen); der
+Befund ist durch Codeinspektion belegt, nicht durch Beobachtung. Nicht repariert
+(auftragsgemäß).
+
+**W-2 · Fehlende Lauftelemetrie — reproduziert und um die Ursache geschärft.**
+`processRuns` liegt in der Store-Zeile **`main-auth`** (nicht `main`). Dort stehen
+weiterhin **148** Einträge, der jüngste ist `nachhol-20260727102907` mit
+`finishedAt 10:29:31`. Gesucht und **nicht gefunden**: `nachhol-20260727121511` (dieser
+Lauf) und `nachhol-20260727104750` (der zurückgerollte Restlauf) — beide **0** Treffer,
+obwohl beide nach Production geschrieben haben.
+
+Neu und belastbar: `main-auth.updated_at` steht auf **12:15:54**, also **innerhalb**
+dieses Laufs. Die Zeile **wurde** geschrieben — der `recordProcessRun`-Eintrag ist darin
+nur nicht enthalten. Das ist das Muster eines **Last-Write-Wins-Verlusts** auf dem
+zentralen 140-KB-Blob: ein späterer Schreibvorgang desselben Laufs (LLM-Nutzungslog)
+überschreibt die Zeile mit einer Kopie, die den kurz zuvor angehängten Lauf nicht kennt.
+Der Aufruf ist zusätzlich mit `.catch(() => {})` abgesichert, ein Fehler bliebe also
+ohnehin unsichtbar. Damit ist es dasselbe Grundrisiko, das `CURRENT_STATE.md` §7 als
+höchstes Einzelrisiko führt. Nicht repariert (auftragsgemäß).
+
+### 18.11 Hinweis zur Dokumentnummerierung
+
+Der offene **PR #148** trägt auf seinem Branch ebenfalls einen Abschnitt **§17** dieser
+Datei (Anlauf 3 und der zurückgerollte Restlauf). Auf `main` ist §17 der **B4-4-Hotfix**
+aus PR #149. Beim Merge von #148 entsteht daher ein Konflikt in dieser Datei; die beiden
+Abschnitte sind inhaltlich verschieden und beide zu erhalten — der ältere gehört vor den
+B4-4-Hotfix, dieser Abschnitt bleibt der letzte.
