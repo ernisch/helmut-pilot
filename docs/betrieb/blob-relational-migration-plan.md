@@ -17,7 +17,7 @@
 | `pipelineLocks` (Auth-Blob) | `public.pipeline_locks` (+ atomare Funktionen) | `20260719_pipeline_lock_atomic.sql` | vorbereitet (P0-4) |
 | `llmUsage` / Budget-Zähler (Auth-Blob) | `public.llm_usage` / `public.llm_budget_counters` | bereits angewendet (`20260717`) / vorhanden | teils aktiv |
 | Pro-Quellenabruf-Telemetrie | `public.source_crawl_telemetry` | `20260718_source_crawl_telemetry.sql` | vorbereitet (P0-1) |
-| Prozess-Laufzeit-Ring `processRuns` (Auth-Blob) | (bleibt vorerst Auth-Blob; klein, unkritisch) | — | belassen |
+| Prozess-Laufzeit-Ring `processRuns` (Auth-Blob) | `public.process_runs` (Upsert auf `(run_id, process)`) | `20260727_process_runs_relational.sql` | **vorbereitet** (W-2) — die frühere Einstufung „klein, unkritisch" ist durch Befund W-2 **widerlegt**: der Blob verliert parallele Läufe per Last-Write-Wins (`befund-werkzeug-haertung-w1-w2.md`) |
 
 ## Übergang in 4 Phasen (jede Phase = eigener Freigabepunkt)
 
@@ -64,6 +64,12 @@ Retention (`HELMUT_CRAWL_RUN_RETENTION`) ohnehin natürlich verdrängt — es gi
 1. Migration `20260720_crawl_runs_relational.sql` auf Production anwenden.
 2. `HELMUT_CRAWL_RUNS_RELATIONAL=on` (Phase 2 Dual-Write).
 3. Nach Messzeitraum: Phase 3 (Lesepfad) und Phase 4 (Blob-Abschaltung) je separat.
+4. **W-2:** Migration `20260727_process_runs_relational.sql` auf Production anwenden
+   und `HELMUT_PROCESS_RUNS_RELATIONAL=on` setzen (Phase 2 Dual-Write; der
+   Dual-Read im Code bevorzugt relational automatisch). Ohne beides bleibt der
+   Blob-Pfad aktiv — seit der Werkzeug-Härtung idempotent und mit sichtbaren
+   Fehlern, aber weiterhin Last-Write-Wins-verlustbehaftet (dokumentierte
+   Übergangsphase, **kein Dauerzustand**).
 
 ## Rollback
 

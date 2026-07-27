@@ -118,8 +118,18 @@ einen Zustand ab (gesund · eingeschränkt · ausgefallen · inaktiv · unbekann
 - Zwei Speicherformen nebeneinander: relationale Tabellen **und** ein zentraler
   JSON-Blob (`helmut_store`, Zeilen `main`, `main-auth`, `main-p-<id>`).
   Der Blob ist **Last-Write-Wins** — dort ist das Verlustrisiko (→ OP-01).
+  **Belegt am 2026-07-27 (Befund W-2):** parallele Auth-Store-Writer überschreiben
+  einander die Prozess-Lauftelemetrie (`processRuns`). Relationales Ziel
+  `public.process_runs` (atomarer Upsert je `(run_id, process)`) ist vorbereitet;
+  bis zur Freigabe schreibt der Code den Blob idempotent mit sichtbaren Fehlern
+  und liest dual (`betrieb/befund-werkzeug-haertung-w1-w2.md`).
+- Lebenszyklus-Lesepfade (`listRawDocuments`, `listRecentRawDocuments`,
+  `listKoDocumentLinks`, `listKnowledgeObjectStates`) werfen bei technischen
+  Fehlern einen typisierten `StorageReadError` (Quelle + Fehlerklasse) statt
+  still `[]`/Teilmengen zu liefern (Befund W-1). `[]` heißt ausschließlich
+  „erfolgreich gelesen, null Zeilen".
 - Migrationen: `supabase/migrations/`. **Jede Migration hat eine
-  `…_rollback.sql`-Datei.** Nicht angewandt: `20260720`, `20260721`.
+  `…_rollback.sql`-Datei.** Nicht angewandt: `20260720`, `20260721`, `20260727`.
 
 ## 7 · Crawler und Verarbeitung
 
