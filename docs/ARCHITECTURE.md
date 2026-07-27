@@ -149,9 +149,15 @@ verschwand ohne Spur ([`befund-csd-2026-vorgangsverlust.md`](befund-csd-2026-vor
 | Baustein | Wo | Regel |
 |---|---|---|
 | **Kennung** `vg-<themenwurzel>-<ereignistag>-<prüfsumme>` | `vorgang-identity.js` | Ein **Vorschlag**, kein Urteil. Drei unabhängige Bestandteile → zwei verschiedene Ereignisse treffen sich praktisch nie |
-| **Zugehörigkeit** | `understanding.js` → `resolveVorgang()` | Entscheidet am **Beleg** (Ankerüberdeckung, Zeitfenster, Jahres-/Datumskonflikt) gegen Kandidaten unter den Themenwurzel-Präfixen — nicht am Zeichenkettenvergleich |
+| **Zugehörigkeit** | `understanding.js` → `resolveVorgang()` | Entscheidet am **Beleg** gegen Kandidaten unter den Themenwurzel-Präfixen — nicht am Zeichenkettenvergleich |
+| **Vergleichsmaßstab** (seit 2026-07-27) | `vorgang-identity.js` → `sameVorgang()` | **Kern gegen Kern**, nicht Dokument gegen Dokument. Der Kern eines Vorgangs sind die Anker, die mindestens die Hälfte seiner Dokumente teilen. **Ein Vorgang ohne Kern nimmt nichts mehr auf** — damit kann ein thematisch gemischter Vorgang nicht weiter wachsen (Betriebsbefund B4-2). Zweiter, unabhängiger Riegel: ≥ 60 Dokumente = keine Aufnahme mehr |
 | **Altkennungen** | dasselbe Präfix | `vg-<wurzel>` fällt exakt auf das Präfix und wird **fortgeschrieben**, nicht dupliziert. Deshalb keine Migration |
 | **Verknüpfungsinvariante** | `ko_document_links` | Jeder Ausgang, der einen Vorgang gefunden oder gebildet hat, schreibt die Verknüpfung. Damit ist der Endzustand jedes Rohdokuments **ableitbar** — ohne neue Tabelle |
+
+Ein Vorgang bildet **genau ein politisches Ereignis** ab. Ob er das noch tut, ist
+messbar: seine Dokumente erneut clustern. Ein echter Vorgang bleibt **ein** Cluster
+(Kohärenz ≥ 0,67 gemessen), ein „Magnet" zerfällt in viele (≤ 0,55). Diagnose:
+`scripts/vorgangs-magnet-analyse.js` (rein lesend, bereinigt nichts).
 
 Eine gleiche Kennung bedeutet **nie** „ignoriere das neue Rohdokument". Die
 Ergebnisklassen sind `saved` · `updated` · `merged` · `duplicate` ·

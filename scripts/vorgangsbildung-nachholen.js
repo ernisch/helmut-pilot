@@ -33,7 +33,20 @@
 //   node scripts/vorgangsbildung-nachholen.js --vorschau           # Nachhol-Vorschau
 //   node scripts/vorgangsbildung-nachholen.js --ids=rd-1,rd-2 --vorschau
 //   node scripts/vorgangsbildung-nachholen.js --vorgang=vg-csd-20260725-c5fa87 --vorschau
+//   node scripts/vorgangsbildung-nachholen.js --tage=3 --karenz=0 --vorschau
 //   HELMUT_NACHHOLEN_BESTAETIGT=ja node scripts/vorgangsbildung-nachholen.js --vorschau --ausfuehren
+//
+// Optionen:
+//   --tage=N      Betrachtungsfenster in Tagen (Standard 7)
+//   --karenz=H    Karenzzeit in Stunden (Standard 24). Ein unverknuepftes Dokument
+//                 gilt erst nach dieser Zeit als Rueckstand. 0 = keine Karenz.
+//                 Wirkt NUR in diesem Werkzeug (siehe parseArgs).
+//   --max=N       Obergrenze der Kandidaten (Standard 200) — darueber Abbruch
+//   --ids=a,b     nur diese Rohdokument-Kennungen
+//   --vorgang=id  nur Kandidaten dieses Vorgangs
+//   --vorschau    Nachhol-Kandidaten ermitteln (schreibt nichts)
+//   --ausfuehren  tatsaechlich nachholen (zusaetzlich HELMUT_NACHHOLEN_BESTAETIGT=ja)
+//   --json        Maschinenlesbare Ausgabe
 
 const path = require("path");
 const root = path.join(__dirname, "..");
@@ -42,8 +55,24 @@ const lebenszyklus = require(path.join(root, "lib/helmut/vorgangs-lebenszyklus.j
 const MAX_STANDARD = 200;
 const TAGE_STANDARD = 7;
 
+// `--karenz=<stunden>` — WARUM ES DIESE OPTION GIBT:
+// Die Karenzzeit (Standard 24 h) beantwortet die Frage "ist dieses Rohdokument
+// schon zu lange unverarbeitet?". Fuer den laufenden Betrieb ist sie richtig: ein
+// frisch eingesammeltes Dokument ist noch kein Rueckstand. Fuer das GEZIELTE
+// Nachholen eines bekannten Verlustfalls ist sie falsch — dort weiss der
+// Betreiber bereits, dass die Pipeline an den Dokumenten vorbeigelaufen ist und
+// nicht mehr auf sie zurueckkommt (belegt am CSD-2026-Fall: der reguläre Lauf
+// verarbeitet nur Dokumente seines EIGENEN Crawls).
+// Die Option wirkt AUSSCHLIESSLICH in diesem Werkzeug. Der Watchdog im
+// Health-Report und jede normale Verarbeitung nutzen unveraendert den Standard
+// aus lib/helmut/vorgangs-lebenszyklus.js.
 function parseArgs(argv) {
-  const a = { tage: TAGE_STANDARD, max: MAX_STANDARD, json: false, vorschau: false, ausfuehren: false, ids: [], vorgang: null, limit: 4000 };
+  const a = {
+    tage: TAGE_STANDARD, max: MAX_STANDARD, json: false, vorschau: false, ausfuehren: false,
+    ids: [], vorgang: null, limit: 4000,
+    // null = Standard des Lebenszyklus-Moduls (24 h) unveraendert uebernehmen.
+    karenz: null
+  };
   for (const arg of argv.slice(2)) {
     const m = /^--([a-z]+)(?:=(.*))?$/.exec(arg);
     if (!m) { console.error(`Unbekanntes Argument: ${arg}`); process.exit(2); }
@@ -51,6 +80,13 @@ function parseArgs(argv) {
     if (name === "tage") a.tage = Math.max(1, Number(wert) || TAGE_STANDARD);
     else if (name === "max") a.max = Math.max(1, Number(wert) || MAX_STANDARD);
     else if (name === "limit") a.limit = Math.max(100, Number(wert) || 4000);
+    else if (name === "karenz") {
+      // 0 ist ein gueltiger, ausdruecklicher Wert ("keine Karenz") — deshalb wird
+      // hier streng geprueft statt mit `|| Standard` zu arbeiten.
+      const n = Number(wert);
+      if (!Number.isFinite(n) || n < 0) { console.error("--karenz erwartet eine Zahl >= 0 (Stunden)."); process.exit(2); }
+      a.karenz = n;
+    }
     else if (name === "json") a.json = true;
     else if (name === "vorschau") a.vorschau = true;
     else if (name === "ausfuehren") a.ausfuehren = true;
@@ -91,11 +127,21 @@ async function main() {
   // ehrlich als "ohne Endzustand" gefuehrt statt stillschweigend als "offen".
   const docs = (rawDocs || []).map((d) => ({ ...d, created_at: d.created_at || d.retrieved_at || d.published_at || null }));
 
-  const bewertung = lebenszyklus.assessLifecycle({ rawDocs: docs, links, kos, now });
+  const karenzStunden = args.karenz == null ? lebenszyklus.KARENZ_STUNDEN : args.karenz;
+  const bewertung = lebenszyklus.assessLifecycle({ rawDocs: docs, links, kos, now, karenzStunden });
   const watchdog = lebenszyklus.watchdogVorgangsbildung(bewertung);
+  // Eine abweichende Karenz veraendert die Bedeutung ALLER Zahlen darunter.
+  // Sie wird deshalb ausgegeben, nicht stillschweigend angewandt.
+  if (args.karenz != null && args.karenz !== lebenszyklus.KARENZ_STUNDEN) {
+    console.log(`\nHINWEIS: Karenzzeit auf ${karenzStunden} h gesetzt (Standard ${lebenszyklus.KARENZ_STUNDEN} h).`);
+    console.log("Dokumente, die noch in Arbeit sein koennten, zaehlen damit als Rueckstand.");
+    console.log("Nur fuer gezieltes Nachholen bekannter Verlustfaelle verwenden — der Watchdog");
+    console.log("im Health-Report und die normale Verarbeitung bleiben beim Standard.");
+  }
 
   const ausgabe = {
     zeitraumTage: args.tage,
+    karenzStunden,
     gemessenAm: new Date(now).toISOString(),
     rohdokumente: bewertung.gesamt,
     zustaende: bewertung.zustaende,
@@ -116,7 +162,7 @@ async function main() {
     console.log(`  bewusst ausgeschlossen                     : ${bewertung.zustaende[Z.AUSGESCHLOSSEN]}  ${pct(bewertung.zustaende[Z.AUSGESCHLOSSEN], g)}`);
     console.log(`  nach KI-Fehlschlag geparkt                 : ${bewertung.zustaende[Z.FEHLGESCHLAGEN]}  ${pct(bewertung.zustaende[Z.FEHLGESCHLAGEN], g)}`);
     console.log(`  zur erneuten Verarbeitung vorgemerkt       : ${bewertung.zustaende[Z.WIEDERVORLAGE]}  ${pct(bewertung.zustaende[Z.WIEDERVORLAGE], g)}`);
-    console.log(`  offen innerhalb der Karenzzeit (${bewertung.karenzStunden} h)      : ${bewertung.zustaende[Z.OFFEN]}  ${pct(bewertung.zustaende[Z.OFFEN], g)}`);
+    console.log(`  offen innerhalb der Karenzzeit (${bewertung.karenzStunden} h)${" ".repeat(Math.max(0, 6 - String(bewertung.karenzStunden).length))}: ${bewertung.zustaende[Z.OFFEN]}  ${pct(bewertung.zustaende[Z.OFFEN], g)}`);
     console.log(`  OHNE gueltigen Endzustand                  : ${bewertung.zustaende[Z.OHNE_ENDZUSTAND]}  ${pct(bewertung.zustaende[Z.OHNE_ENDZUSTAND], g)}`);
     console.log(`\nAeltestes Dokument ohne Endzustand: ${bewertung.aeltestesOhneEndzustand ? `${bewertung.aeltestesOhneEndzustand.id} (${iso(bewertung.aeltestesOhneEndzustand.created_at)})` : "keines"}`);
     const d = bewertung.verarbeitungsdauer;
