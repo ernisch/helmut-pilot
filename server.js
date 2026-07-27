@@ -840,16 +840,21 @@ async function handleRequest(request, response) {
         return { available: Boolean(briefing && briefing.available), pushSkipped: Boolean(push && push.skipped), pushReason: (push && push.reason) || null };
       }, { deadlineMs: 240000 });
       // P0-1: Lauf-Kennzahlen persistieren (Zaehler/Status, KEIN Briefingtext).
-      await recordProcessRun({
+      // W-2: kanonische Zustaende (failed/success statt error/ok/empty; der
+      // erfolgreiche Leerlauf bleibt success mit reason "keine-mandate") und
+      // kein `.catch(() => {})` mehr — Telemetriefehler werden ausgewiesen.
+      const morningTelemetrie = await recordProcessRun({
         process: "briefing-morning", runId: helmutRunId("briefing-morning", t0), mode: "cron", location: helmutExecLocation(),
         startedAt: new Date(t0).toISOString(), finishedAt: new Date().toISOString(),
         durationMs: Date.now() - t0,
         processed: (summary.results || []).filter((r) => r && r.available).length,
+        zielmenge: Number(summary.tenants) || 0,
+        reason: summary.tenants ? (summary.reason || null) : "keine-mandate",
         status: (summary.ok === false || ((summary.results || []).length > 0 && (summary.results || []).every((r) => r && r.failed)))
-          ? "error" : (summary.tenants ? "ok" : "empty")
-      }).catch(() => {});
-      console.log(`[cron/morning-briefing] ${Date.now() - t0}ms tenants=${summary.tenants} reason=${summary.reason || "ok"}`);
-      return summary;
+          ? "failed" : "success"
+      });
+      console.log(`[cron/morning-briefing] ${Date.now() - t0}ms tenants=${summary.tenants} reason=${summary.reason || "ok"}${morningTelemetrie.ok ? "" : " LAUFTELEMETRIE-NICHT-GESPEICHERT"}`);
+      return { ...summary, lauftelemetrie: { gespeichert: morningTelemetrie.ok, vollstaendig: morningTelemetrie.vollstaendig, fehler: morningTelemetrie.fehler } };
     });
   }
 
@@ -1107,14 +1112,20 @@ async function handleRequest(request, response) {
         }
       }
       // P0-1: echte Lage-Briefing-Vorwaerm-Laufzeit persistieren (Zaehler/Status, kein Text).
-      await recordProcessRun({
+      // W-2: kein `.catch(() => {})` mehr — recordProcessRun wirft nicht, sondern
+      // liefert ein Ergebnis; ein Telemetriefehler wird im Abschlussstatus ausgewiesen.
+      const lageTelemetrie = await recordProcessRun({
         process: "briefing-lage", runId: lageBriefingRunId, mode: "cron", location: helmutExecLocation(),
         startedAt: new Date(lageBriefingStartMs).toISOString(), finishedAt: new Date().toISOString(),
         durationMs: Date.now() - lageBriefingStartMs,
         processed: results.length, deferred: skipped,
-        status: "ok"
-      }).catch(() => {});
-      return { prewarmed: results.length, uebersprungen: skipped, results };
+        zielmenge: profiles.length,
+        status: "success"
+      });
+      return {
+        prewarmed: results.length, uebersprungen: skipped, results,
+        lauftelemetrie: { gespeichert: lageTelemetrie.ok, vollstaendig: lageTelemetrie.vollstaendig, fehler: lageTelemetrie.fehler }
+      };
     });
   }
 
@@ -1197,7 +1208,9 @@ async function handleRequest(request, response) {
       const processed = (result && result.results && result.results.filter((r) => r && (r.status === "saved" || r.status === "updated")).length) || 0;
       console.log(`[cron/understanding] rawDocs=${rawDocs.length} Ergebnis: ${JSON.stringify({ processed, result })}`);
       // P0-1: Understanding-Batch-Laufzeit persistieren (Auth-Store, scalar-only, PII-frei).
-      await recordProcessRun({
+      // W-2: kein `.catch(() => {})` mehr — Telemetriefehler werden strukturiert
+      // geloggt (recordProcessRun intern) und hier im Abschlussstatus ausgewiesen.
+      const cronTelemetrie = await recordProcessRun({
         process: "understanding-cron", runId, mode: "cron", location: helmutExecLocation(),
         startedAt: new Date(understandingStartMs).toISOString(), finishedAt: new Date().toISOString(),
         durationMs: Date.now() - understandingStartMs,
@@ -1205,10 +1218,14 @@ async function handleRequest(request, response) {
         deferred: result && result.deferred,
         skippedStore: result && result.counts && result.counts["skipped-store"],
         reason: result && result.reason,
-        status: result && result.skipped ? "skipped" : "ok",
+        zielmenge: rawDocs.length,
+        status: result && result.skipped ? "blocked" : "success",
         telemetrie: result && result.telemetrie
-      }).catch(() => {});
-      return { ok: true, rawDocsLoaded: rawDocs.length, processed, result, recovery };
+      });
+      return {
+        ok: true, rawDocsLoaded: rawDocs.length, processed, result, recovery,
+        lauftelemetrie: { gespeichert: cronTelemetrie.ok, vollstaendig: cronTelemetrie.vollstaendig, fehler: cronTelemetrie.fehler }
+      };
     });
   }
 
