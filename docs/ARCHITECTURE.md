@@ -130,6 +130,7 @@ einen Zustand ab (gesund · eingeschränkt · ausgefallen · inaktiv · unbekann
 | Lauf-Orchestrierung, Locks, Telemetrie | `scheduler.js`, `source-telemetry.js`, `crawl-run-state.js` |
 | Dedup + Fundstellen | `dedup.js`, `quellenarchitektur/dedup-global.js` |
 | **Vorgangsidentität (Anker, Cluster, Kennung)** | `vorgang-identity.js` |
+| **Herausgebererkennung (Herkunft ≠ Beleg)** | `herausgeber.js` |
 | Verstehen (LLM) | `understanding.js`, `quellenarchitektur/understanding-gate.js`, `ai.js` |
 | **Endzustand je Rohdokument + Watchdog** | `vorgangs-lebenszyklus.js` |
 | Kostendeckel (fail-closed) | `llm-budget.js` |
@@ -151,6 +152,7 @@ verschwand ohne Spur ([`befund-csd-2026-vorgangsverlust.md`](befund-csd-2026-vor
 | **Kennung** `vg-<themenwurzel>-<ereignistag>-<prüfsumme>` | `vorgang-identity.js` | Ein **Vorschlag**, kein Urteil. Drei unabhängige Bestandteile → zwei verschiedene Ereignisse treffen sich praktisch nie |
 | **Zugehörigkeit** | `understanding.js` → `resolveVorgang()` | Entscheidet am **Beleg** gegen Kandidaten unter den Themenwurzel-Präfixen — nicht am Zeichenkettenvergleich |
 | **Vergleichsmaßstab** (seit 2026-07-27) | `vorgang-identity.js` → `sameVorgang()` | **Kern gegen Kern**, nicht Dokument gegen Dokument. Der Kern eines Vorgangs sind die Anker, die mindestens die Hälfte seiner Dokumente teilen. **Ein Vorgang ohne Kern nimmt nichts mehr auf** — damit kann ein thematisch gemischter Vorgang nicht weiter wachsen (Betriebsbefund B4-2). Zweiter, unabhängiger Riegel: ≥ 60 Dokumente = keine Aufnahme mehr |
+| **Herkunft ist kein Beleg** (seit 2026-07-27) | `herausgeber.js` → `titelRumpf()`, `istHerausgeberAnker()` | Ein **Herausgebername** darf niemals Identität stiften. Zwei unabhängige Riegel: (1) strukturell — der **belegte** Titelsuffix (`… - Tagesspiegel`) wird vor der Ankerbildung entfernt, belegt durch die Herausgeberangaben **desselben** Dokuments oder eine erkennbare Herausgeberform; (2) aufgezählt — Medien-, Agentur-, Plattform- und Verlagsgattungsnamen sind überall nicht-spezifisch. Blindes Abschneiden des letzten Titelsegments wäre falsch (Dachzeilen), deshalb die Belegpflicht (Betriebsbefund B4-4) |
 | **Altkennungen** | dasselbe Präfix | `vg-<wurzel>` fällt exakt auf das Präfix und wird **fortgeschrieben**, nicht dupliziert. Deshalb keine Migration |
 | **Verknüpfungsinvariante** | `ko_document_links` | Jeder Ausgang, der einen Vorgang gefunden oder gebildet hat, schreibt die Verknüpfung. Damit ist der Endzustand jedes Rohdokuments **ableitbar** — ohne neue Tabelle |
 
