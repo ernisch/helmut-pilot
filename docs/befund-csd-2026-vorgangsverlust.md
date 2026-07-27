@@ -868,3 +868,126 @@ Der Sprint endet hier, weil der nächste Schritt eine Production-Änderung ist.
 (1 504 Rohdokumente ohne Endzustand). Das kostet KI-Aufrufe in erheblichem Umfang und ist
 eine eigene Kostenentscheidung. Das Werkzeug bricht bei mehr als 200 Kandidaten
 absichtlich ab.
+
+## 14 · Production-Nachweis: Anlauf 1 abgebrochen vor jeder Mutation (2026-07-27)
+
+**Sprintzustand: blockiert.** Der Nachweis nach §12 wurde begonnen und **vor dem
+ersten Schreibzugriff** angehalten. **Keine** Production-Mutation, **keine**
+Migration, **kein** Flag, **kein** Cron verändert. Alle Zahlen unten sind
+read-only gemessen.
+
+### 14.1 Startprüfung (erfüllt)
+
+| Prüfung | Ergebnis |
+|---|---|
+| `main`-HEAD | `d33f540` (Merge #145) |
+| CI auf #145 | beide Pflicht-Checks `success` (Run `30244383597`) |
+| Production-Deployment | `dpl_4Xs1HMDC8J7krc6TwmvDFPNj2Pyo`, Commit `d33f540`, `READY`, **07:13:00 UTC** |
+| Offline-Suite lokal | **162/162** grün (42 s) |
+
+### 14.2 Ausgangsmessung (2026-07-27, 07:17 UTC)
+
+`knowledge_objects` **982** (705 `neu`/`complete` · 277 `pending` · 270
+`understanding_status=pending` · 7 `failed`) · distinct `vorgang_id` **982** ·
+`ko_document_links` **3 217** · `raw_documents` **8 837** · `profiles` **9** ·
+`mandate_profiles` **9**.
+
+**`vorgang_id like 'vg-csd%'` → 0.** Der Anschlag auf den Berliner CSD hat zwei
+Tage nach dem Ereignis weiterhin **keinen** Vorgang in Production. **Keines** der
+13 Lage-Briefings vom 26./27.07. enthält die Zeichenkette „CSD".
+
+### 14.3 Read-only-Schritte des Nachweisplans (§12 Schritte 2, 5, 6 ausgeführt)
+
+`vorgangsbildung-nachholen.js --tage=2` (Messung, 421 Rohdokumente):
+
+| Endzustand | Anteil |
+|---|---|
+| verstanden | 113 · 26,8 % |
+| vorgemerkt | 38 · 9,0 % |
+| offen in Karenz (24 h) | 148 · 35,2 % |
+| **ohne gültigen Endzustand** | **122 · 29,0 %** |
+
+Watchdog **ALARM**, ältestes betroffenes Dokument 48 h alt. Gegenüber 76,3 %
+über 7 Tage vor der Reparatur eine Verbesserung, aber **nicht** die in §13
+genannte Erfolgsschwelle < 5 % — was zu erwarten ist, weil auf dem reparierten
+Stand **noch kein einziger regulärer Lauf** stattgefunden hat (§14.4, Blocker 2).
+
+`vorgangsbildung-vergleich.js --tage=2` (421 Rohdokumente, 11 Stapel):
+
+| | ALT | NEU |
+|---|---|---|
+| Cluster | 259 | 333 |
+| Kollisionen mit Bestand | **81 (31,3 %)** | **0 (0 %)** |
+| betroffene Rohdokumente | **191 (45,4 %)** | **0 (0 %)** |
+| KI-Obergrenze je Tag | 89 | 126 |
+
+Unter den belegten Alt-Kollisionen steht der CSD-Fall wörtlich:
+`vg-hunderttausende` (Bestand seit 2026-07-20) → „48. Parade – *Haltung ist hot*:
+Hunderttausende zu CSD-Demonstration in Berlin erwartet".
+
+`vorgangs-magnet-analyse.js` (read-only): **31** Vorgänge mit ≥ 10 Dokumenten,
+davon **15 Magnete** (12 Risiko HOCH, 3 MITTEL; in §12c waren es 12 — die
+Differenz stammt aus den Läufen zwischen #143 und #145). Größter Magnet
+`vg-regierung` mit **400** Dokumenten, Kohärenz 0,15, Kernanker 0. Die Magnete
+bleiben bestehen und können nichts mehr anziehen; ihre Bereinigung ist weiterhin
+eine eigene Freigabe.
+
+**Vorbelastung, die der Nachweis berücksichtigen muss:** drei CSD-Rohdokumente
+hängen bereits in Magneten (`vg-zeitung-20260428-f362cc` 65 Dok. ×2,
+`vg-verkehrsminister` 48 Dok. ×1), ein weiteres an `vg-dobrindt`. Das ist
+Alt-Schaden aus der Zeit **vor** dem Resolver-Fix, keine neue Fehlzuordnung.
+
+### 14.4 Die drei Blocker
+
+**Blocker 1 — kein KI-Schlüssel in der Cloud-Sitzung (hart).**
+`ai.isAiEnabled()` verlangt `OPENAI_API_KEY` **oder**
+`AZURE_OPENAI_KEY` + `AZURE_OPENAI_ENDPOINT`. In dieser Sitzung ist **keiner**
+gesetzt (`SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` dagegen schon).
+Ein `--ausfuehren` würde deshalb **nicht** folgenlos scheitern: der Aufruf
+`deps.requestUnderstanding(...)` wirft, der `catch`-Zweig in
+`understandOneCluster` ruft `markFailed()` — der CSD-Vorgang würde als
+`understanding_status='failed'` **geparkt** und die 19 Rohdokumente über
+`ko_document_links` an dieses fehlgeschlagene KO gebunden. Für geparkte Vorgänge
+gilt „kein automatischer Neuversuch"; ein Operator müsste den Status von Hand
+zurücksetzen. **Der Lauf wurde deshalb nicht gestartet.**
+
+**Blocker 2 — Telemetrie ist blind, kein regulärer Lauf auf dem reparierten Stand.**
+Letzte Zeile in `source_crawl_telemetry`: **2026-07-26, 20:03:55 UTC**. #144
+(Zeitbudget) wurde erst **06:35:50 UTC** deployt, #145 um **07:13:00 UTC** —
+beide **nach** dem 04:00-Crawl. Der erste reguläre Lauf auf dem reparierten Stand
+ist der **20:00-UTC-Crawl**. Damit ist Nachweispunkt 10 („Telemetrie zeigt den
+vollständigen Ablauf") heute **nicht erfüllbar**, und §12 Schritt 3 („nächsten
+regulären Crawl-Cron abwarten, kein manueller Anstoß") ist noch offen. Zusätzlich
+gilt die nach dem Berlin-Abbruch festgelegte Startbedingung: *kein frisch
+deploytes Pipeline-Update im Beobachtungsfenster* — der Nachweis begann 12 Minuten
+nach dem #145-Deployment.
+
+**Blocker 3 — Lage und Briefing entstehen erst durch spätere Crons.**
+Nachweispunkte 8 und 9 hängen an Lage-Check (10:00 UTC), Lage-Briefing (05:45 UTC)
+und Morgenbriefing (05:00 UTC). Frühester vollständiger Beweis ist damit der
+**Folgetag**, nicht derselbe Tag.
+
+### 14.5 Genau beschriebener Schreibzugriff (wartet auf Freigabe)
+
+Read-only ermittelt mit
+`--karenz=0 --tage=3 --vorschau --ids=<24 CSD-Kennungen>`:
+
+| Frage | Antwort |
+|---|---|
+| **Was wird geschrieben?** | Der Nachholauf schickt die CSD-Rohdokumente durch die **normale** Vorgangsbildung: ein Knowledge Object je gebildetem Cluster plus je Rohdokument eine Verknüpfung |
+| **Welche Tabellen?** | `knowledge_objects` (insert/update) und `ko_document_links` (insert). Beide **mandantenneutral** — keine mandantenbezogene Tabelle wird gelesen oder geschrieben |
+| **Wie viele Datensätze?** | **19** Nachhol-Kandidaten (alle `ohne-endzustand`) von 24 angefragten Kennungen; 5 sind kein Kandidat, weil sie bereits einen Endzustand tragen. Erwartet: **1** neues KO (der Anschlag), **19** neue `ko_document_links`. **Ehrliche Einschränkung:** ob die vier Dokumente vom 25.07. (CSD-*Parade*, vor der Tat) fachlich einen **zweiten** Cluster bilden, entscheidet die Clusterfunktion erst zur Laufzeit. Zwei Vorgänge wären inhaltlich richtig, würden aber von der Erwartung „genau ein neuer Vorgang" abweichen und sind vorab **nicht** belegbar |
+| **KI-Kosten** | bis zu 2 Understanding-Aufrufe gegen das Tagesbudget 100 |
+| **Rückfallmöglichkeit** | Die geschriebenen Zeilen sind **additiv**: ein neues KO und neue Verknüpfungen. Rücknahme durch gezieltes Löschen genau dieser Zeilen (`vorgang_id like 'vg-csd%'` und die zugehörigen Links) — bestehende Vorgänge, Profile und Mandate werden nicht angefasst. Zusätzlich existiert der Werkzeug-Riegel: Vorschau ist Standard, `--ausfuehren` verlangt `HELMUT_NACHHOLEN_BESTAETIGT=ja`, harte Mengengrenze `--max` |
+| **Was NICHT Teil dieser Anfrage ist** | das Nachholen des Altbestands (122 Dokumente ohne Endzustand im 2-Tage-Fenster, 308 im 3-Tage-Fenster) und die Bereinigung der 15 Magnete |
+
+### 14.6 Nächste Schritte in dieser Reihenfolge
+
+1. Betreiber setzt `OPENAI_API_KEY` (oder `AZURE_OPENAI_KEY` + `AZURE_OPENAI_ENDPOINT`)
+   in den **Claude-Code-Environment-Einstellungen** (CLAUDE.md §4.9 — niemals über
+   Chat oder Commit).
+2. Den regulären **20:00-UTC-Crawl** abwarten. Abnahme: `source_crawl_telemetry`
+   bekommt wieder Zeilen, kein `504`, kein hängender Lock. Erst damit ist #144
+   in Production belegt und Nachweispunkt 10 überhaupt erfüllbar.
+3. Erst danach den CSD-Nachholauf mit Freigabe ausführen (§14.5).
+4. Lage-Check und Morgenbriefing des Folgetags gegen Nachweispunkt 8/9 prüfen.

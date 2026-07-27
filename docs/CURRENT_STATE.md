@@ -2,13 +2,28 @@
 
 **Letzte Aktualisierung:** 2026-07-27 (Reparatursprint Vorgangsbildung B4 · Berliner Beweislauf und
 Rollback · lesender Production-Nachweis zu #143 · Qualitätssprint · Stabilisierungssprint
-Pipeline-Zeitbudget) · **`main`-HEAD:** `719df29` (Merge #144)
+Pipeline-Zeitbudget · **CSD-Production-Nachweis Anlauf 1 abgebrochen**) ·
+**`main`-HEAD:** `d33f540` (Merge #145)
+
+> **CSD-Production-Nachweis, Anlauf 1 vom 2026-07-27: abgebrochen vor jeder Mutation.**
+> Startprüfung erfüllt (CI grün, Deployment `d33f540` `READY` um 07:13 UTC, Offline-Suite
+> lokal 162/162), read-only-Schritte des Nachweisplans ausgeführt — **kein** Schreibzugriff.
+> Drei Blocker: (1) **kein KI-Schlüssel** in der Cloud-Sitzung, ein `--ausfuehren` würde den
+> CSD-Vorgang als `failed` **parken** statt ihn zu bilden; (2) **Telemetrie blind**, der erste
+> reguläre Lauf auf dem reparierten Stand ist erst der 20:00-UTC-Crawl → Nachweispunkt 10
+> heute unerfüllbar; (3) Lage/Briefing entstehen erst durch Crons des Folgetags.
+> Vollständig mit Zahlen, Schreibumfang und Rückfallweg:
+> [`befund-csd-2026-vorgangsverlust.md`](befund-csd-2026-vorgangsverlust.md) §14.
+> **`vorgang_id like 'vg-csd%'` ist weiterhin 0**, und keines der 13 Lage-Briefings vom
+> 26./27.07. enthält „CSD" — der Betriebsfehler ist unverändert live.
 
 > **Offener Production-Befund seit 2026-07-26, 22:05 UTC:** der Crawl läuft ins
 > 300-s-Funktionslimit (zwei belegte `504`, einer davon der reguläre 04:00-Cron **ohne jeden
-> Berlin-Bezug**). **Folge: `source_crawl_telemetry` bekommt seit dem 26.07., 20:00:47 UTC keine
+> Berlin-Bezug**). **Folge: `source_crawl_telemetry` bekommt seit dem 26.07., 20:03:55 UTC keine
 > neue Zeile** — Punkt 16 ist blind, Invariante B3 nicht messbar, und der Stufe-2-Riegel von
-> Punkt 14 ist unerfüllbar. Ursache bewiesen, Reparatur in **PR #144 gemergt** (`719df29`):
+> Punkt 14 ist unerfüllbar. Ursache bewiesen, Reparatur in **PR #144 gemergt** und um
+> **2026-07-27, 06:35:50 UTC deployt** — also **nach** dem 04:00-Crawl. **Die Reparatur ist
+> damit noch durch keinen einzigen regulären Lauf belegt;** erster Test ist der 20:00-UTC-Crawl:
 > [`betrieb/incident_2026-07-27_crawl_zeitlimit.md`](betrieb/incident_2026-07-27_crawl_zeitlimit.md).
 
 > **Berlin wurde am 2026-07-26 erstmals aktiviert — und noch am selben Abend zurückgerollt.**
@@ -88,6 +103,7 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 
 | Punkt | Ursache | Nächster Schritt |
 |---|---|---|
+| **CSD-Production-Nachweis (B4/B4-2)** — Anlauf 1 am 2026-07-27 abgebrochen, **ohne jede Mutation** | drei Blocker: **kein KI-Schlüssel** in der Cloud-Sitzung (`--ausfuehren` würde den CSD-Vorgang als `understanding_status='failed'` parken statt ihn zu bilden) · **Telemetrie blind** seit 26.07. 20:03:55 UTC, erster regulärer Lauf auf dem reparierten Stand ist der 20:00-UTC-Crawl → Nachweispunkt 10 unerfüllbar · Lage/Briefing entstehen erst durch Crons des Folgetags. Read-only belegt: `vg-csd%` **0**, 19 Nachhol-Kandidaten, ALT 45,4 % Kollisionen vs. NEU **0 %**, 15 Magnete (größter 400 Dok.) | 1. Betreiber setzt `OPENAI_API_KEY` (oder `AZURE_OPENAI_KEY`+`AZURE_OPENAI_ENDPOINT`) über die Claude-Code-Environment-Einstellungen · 2. 20:00-UTC-Crawl abwarten und Telemetrie prüfen · 3. CSD-Nachholauf mit Freigabe (Umfang in [`befund-csd-2026-vorgangsverlust.md`](befund-csd-2026-vorgangsverlust.md) §14.5) · 4. Lage/Briefing des Folgetags prüfen |
 | **OP-01** Supabase Pro + PITR | Kostenentscheidung des Betreibers (~25 $/Monat); Free-Plan = **keine Backups** | Betreiber schaltet Pro + PITR frei, dann Restore-Übung nach `betrieb/backup-restore-runbook.md` |
 | **Quellen-Seed-Einspielung** (macht P0-2 und die 6 Bundesweg-Reparaturen in der DB wirksam) | **Go-Kriterium 2 ist seit 2026-07-26, 16:47 UTC erfüllt** — die Pre-Seed-Sicherung ist gelaufen (`vollstaendig: true`, 8/8 Tabellen, `mainCommit 93006e8`). Offen ist nur noch Go-Kriterium **8**: die Einspielung ist nicht freigegeben. Kriterium **11** ist **entschieden**: gestaffelte Reaktivierung (§6d). **Erledigt 2026-07-26:** derselbe Aufruf lief in der Cloud-Sitzung durch (Exit 0), weil `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` diesmal über die Claude-Code-Environment-Einstellungen gesetzt waren und der Supabase-Egress offen ist. Der Versuch vom 2026-07-25 war nur an fehlenden Zugangsdaten gescheitert, nicht am Werkzeug | Betreiber gibt die Einspielung frei; danach Runbook `betrieb/quellen-seed-einspielung.md` §6c Schritt 6 ff. Die Sicherung liegt vor und ist gültig, solange `retrieval_paths`/`package_paths`/`source_packages` unverändert bleiben |
 | **OP-02** Recht (Pilotvertrag, AVV, DSFA, Art.-9-Grundlage, Fristen) | externe Prüfung durch Anwalt/DSB steht aus | Entwürfe aus `recht/` prüfen lassen und zeichnen; blockiert OP-12 |
