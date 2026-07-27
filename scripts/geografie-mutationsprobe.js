@@ -58,6 +58,20 @@ const MUTATIONEN = [
     nach: "  if (!geo) return null;"
   },
   {
+    name: "M4b · Zweite Schranke aufheben: Bezeichnung muss die Region nicht mehr nennen",
+    beschreibung: "Ein regionloses \"Senatskanzlei\" wuerde wieder Berlin stiften — eine Hamburger Meldung landete in Berlin (erfundene Zuordnung, Regel 3).",
+    datei: CLS,
+    von: "  return !!(b && g && b.includes(g));",
+    nach: "  return !!(b && g);"
+  },
+  {
+    name: "M4c · Landesinstitution im Fliesstext nicht mehr auswerten",
+    beschreibung: "Der haeufigste reale Fall faellt weg: \"Abgeordnetenhaus von Berlin beschliesst …\" in der Schlagzeile bliebe geografisch unbelegt (verbindlicher Testfall 1).",
+    datei: CLS,
+    von: "  for (const g of geografienAusText(koHaystack(ko))) {",
+    nach: "  for (const g of []) {"
+  },
+  {
     name: "M5 · Gleich starke Nachweise verdraengen statt zu ergaenzen",
     beschreibung: "Eine zweite, gleich gut belegte Region wuerde die erste loeschen, statt neben ihr zu stehen (Regel 6).",
     datei: GEO,

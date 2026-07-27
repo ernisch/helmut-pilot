@@ -207,9 +207,40 @@ check("B3 subnationale Institution ist ein inhaltlicher Nachweis (Abgeordnetenha
   return ids(r.affected_geographies).join() === "geo-land-berlin" && r.affected_geographies[0].herkunft === "inhalt";
 })());
 
+check("B3b eine Landesinstitution im FLIESSTEXT ist ebenso ein Nachweis (häufigster realer Fall)", (() => {
+  const r = C.classifyKnowledgeObject({
+    headline: "Abgeordnetenhaus von Berlin beschließt Nachtragshaushalt",
+    was_ist_passiert: "Das Abgeordnetenhaus hat den Nachtragshaushalt beschlossen.",
+    mentioned_locations: ["Berlin"]
+  }, {}, { jetzt: T1 });
+  return r.decision_level === "land" && ids(r.affected_geographies).join() === "geo-land-berlin";
+})());
+
+check("B3c eine Institutionsbezeichnung OHNE Region stiftet keine Geografie (kein erfundener Ort)", (() => {
+  // "Senatskanzlei" ist im Katalog an Berlin gebunden. Ohne die zweite Schranke
+  // würde eine Hamburger oder Bremer Meldung nach Berlin verschoben.
+  const ausListe = C.classifyKnowledgeObject({ mentioned_organizations: ["Senatskanzlei"] }, {}, { jetzt: T1 });
+  const ausText = C.classifyKnowledgeObject({ headline: "Senatskanzlei legt Konzept vor" }, {}, { jetzt: T1 });
+  return ausListe.affected_geographies.length === 0
+    && ausText.affected_geographies.length === 0
+    && C.bezeichnungNenntGeografie("Senatskanzlei", { name: "Berlin" }) === false
+    && C.bezeichnungNenntGeografie("Berliner Senat", { name: "Berlin" }) === true;
+})());
+
+check("B3d jede erkannte Institutionsphrase nennt ihre Region mit (Aufbaubedingung des Index)",
+  C.SUBNATIONALE_INSTITUTIONSPHRASEN.length > 0
+  && C.SUBNATIONALE_INSTITUTIONSPHRASEN.every((e) => e.phrase.includes(C.normText(e.geo.name))));
+
 check("B4 BUNDESinstitution erzeugt KEINE Geografie (sonst wäre es die Ebene durch die Hintertür)", (() => {
   const r = C.classifyKnowledgeObject({ mentioned_organizations: ["Deutscher Bundestag", "Bundesregierung"] }, {}, { jetzt: T1 });
-  return r.affected_geographies.length === 0;
+  // Zusätzlich die Schranke SELBST prüfen, nicht nur ihre heutige Wirkung: der
+  // Bundesausschluss ist eine eigene, ausdrückliche Regel und darf nicht
+  // stillschweigend davon abhängen, dass zufällig kein Bundes-Entitätsname den
+  // Wortbestandteil "Deutschland" trägt.
+  return r.affected_geographies.length === 0
+    && C.subnationaleGeografieVonEntitaet("parliament-bundestag") === null
+    && C.subnationaleGeografieVonEntitaet("government-bund") === null
+    && C.subnationaleGeografieVonEntitaet("parliament-berlin-agh") !== null;
 })());
 
 check("B5 Partei mit Landesbezug ist ein Akteur, keine betroffene Geografie", (() => {
