@@ -93,7 +93,10 @@ festgestellt wurde.
 ## 5 · Ohne ausdrückliche Freigabe verboten
 
 - Merge nach `main` (Merge = **Production-Deployment**) und jedes Deployment
-- Anwenden einer Migration auf Production (aktuell offen: `20260720`, `20260721`, `20260727`)
+- Anwenden einer Migration auf Production (aktuell offen: nur noch `20260720`;
+  `20260727` ist am 2026-07-27 freigegeben und angewendet, `20260721` war
+  bereits seit 2026-07-16 angewendet — die frühere Angabe war falsch, in
+  Production gegengeprüft)
 - Jede Änderung an Production-Daten (auch Löschen von Demo-Mandaten)
 - Setzen, Ändern oder Rotieren von Secrets und Vercel-Env-Variablen
 - Scharfschalten von Feature-Flags (`helmut-flags.json` oder Vercel-Env)
