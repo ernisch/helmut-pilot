@@ -23,7 +23,7 @@
 | Gate-Telemetrie | `gate_shadow_events` | nein (technisch) | **90 Tage** | Purge nach Alter |
 | Crawl-Läufe | `crawl_runs` (Stufe 2) / Blob `crawlRuns` | nein (technisch) | **180 Tage** | Ring-gedeckelt / Purge |
 | Fehler-Metadaten | Auth-Blob `systemErrors` | nein (nur Metadaten) | **90 Tage** | Ring-gedeckelt (≤500) |
-| Prozess-Laufzeit | Auth-Blob `processRuns` | nein (technisch) | **90 Tage** | Ring-gedeckelt (≤300) |
+| Prozess-Laufzeit | Auth-Blob `processRuns` / `process_runs` (W-2, Migration `20260727`, freigabepflichtig) | nein (technisch) | **90 Tage** | Ring-gedeckelt (≤300) / Purge nach Alter |
 | Kosten/Audit | Auth-Blob `llmUsage` | nein | **365 Tage** | Ring-gedeckelt (≤5000) |
 | Nutzer-Ausgabe | `briefings` (payload) | **JA (politisches Profil)** | **90 Tage** | nutzergebunden löschbar (`deleteProfileDataV3`) |
 

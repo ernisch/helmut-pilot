@@ -48,6 +48,19 @@
 //   --vorschau    Nachhol-Kandidaten ermitteln (schreibt nichts)
 //   --ausfuehren  tatsaechlich nachholen (zusaetzlich HELMUT_NACHHOLEN_BESTAETIGT=ja)
 //   --json        Maschinenlesbare Ausgabe
+//
+// Exit-Codes (W-1/W-2, Werkzeug-Haertung 2026-07-27):
+//   0  Erfolg — auch der ERFOLGREICHE Leerlauf ("Nichts nachzuholen" nach
+//      gelungenem Read mit null Kandidaten)
+//   1  unerwarteter Fehler (main().catch)
+//   2  Argumentfehler
+//   3  Konfiguration unvollstaendig (v3-Store nicht bereit)
+//   4  Mengen-/Fremd-Riegel hat abgebrochen
+//   5  HELMUT_NACHHOLEN_BESTAETIGT fehlt
+//   6  TECHNISCHER LESEFEHLER (DNS/Timeout/Auth/Storage) — niemals als
+//      "nichts nachzuholen" gedeutet; kein KI-Aufruf, kein Schreibzugriff
+//   7  fachlich gelaufen, aber Lauftelemetrie NICHT gespeichert (Befund W-2:
+//      ein Production-Lauf darf nicht unsichtbar werden)
 
 const path = require("path");
 const root = path.join(__dirname, "..");
@@ -182,11 +195,30 @@ async function main() {
   }
 
   const now = Date.now();
-  const [rawDocs, links, kos] = await Promise.all([
-    storage.listRawDocuments({ days: args.tage, limit: args.limit }),
-    storage.listKoDocumentLinks({ limit: Math.max(4000, args.limit) }),
-    storage.listKnowledgeObjectStates({ limit: 4000 })
-  ]);
+  // W-1 (Werkzeug-Haertung): ein technischer Lesefehler (DNS, Timeout, Auth,
+  // Storage) ist KEIN leeres Ergebnis. storage wirft dafuer einen typisierten
+  // StorageReadError — hier wird er zu einem harten Abbruch mit Exit 6, BEVOR
+  // irgendeine Bewertung, ein KI-Aufruf oder ein Schreibzugriff stattfindet.
+  // "Nichts nachzuholen" (Exit 0) gibt es ausschliesslich nach einem
+  // ERFOLGREICHEN Read mit null Kandidaten.
+  let rawDocs, links, kos;
+  try {
+    [rawDocs, links, kos] = await Promise.all([
+      storage.listRawDocuments({ days: args.tage, limit: args.limit }),
+      storage.listKoDocumentLinks({ limit: Math.max(4000, args.limit) }),
+      storage.listKnowledgeObjectStates({ limit: 4000 })
+    ]);
+  } catch (error) {
+    if (error && error.name === "StorageReadError") {
+      console.error("\nLESEFEHLER — Abbruch vor jeder Bewertung, vor jedem KI-Aufruf und vor jedem Schreibzugriff.");
+      console.error(`Quelle: ${error.quelle} · Fehlerklasse: ${error.fehlerklasse}`);
+      console.error(error.message);
+      console.error("Dieser Zustand bedeutet NICHT \"nichts nachzuholen\" — die Abfrage selbst ist gescheitert.");
+      console.error("Erst die Stoerung beheben (Netz/DNS/Zugangsdaten/Storage), dann den Aufruf wiederholen.");
+      return process.exit(6);
+    }
+    throw error;
+  }
 
   // listRawDocuments liefert created_at nicht mit — fuer die Karenzzeit ist der
   // Zeitstempel aber notwendig. Ersatzweise published_at, sonst wird das Dokument
@@ -323,28 +355,91 @@ async function main() {
   const runId = `nachhol-${new Date(now).toISOString().replace(/[^0-9]/g, "").slice(0, 14)}`;
   console.log(`\nAUSFUEHRUNG (runId ${runId}) — ${nachzuholen.length} Rohdokumente durch die normale Vorgangsbildung.`);
   const start = Date.now();
+
+  // W-2: Startbeleg (status=running, nur relational, No-Op ohne Freigabe) —
+  // ein hart sterbender Lauf hinterlaesst damit eine sichtbare Spur statt
+  // spurlos zu verschwinden. Ein Fehler hier bricht die fachliche Arbeit nicht
+  // ab, wird aber benannt (der Abschluss-Upsert heilt die Zeile ohnehin).
+  const startBeleg = await storage.recordProcessRunStart({
+    process: "understanding-nachhol", runId, mode: "manuell", location: "skript",
+    startedAt: new Date(start).toISOString(), zielmenge: nachzuholen.length
+  });
+  if (startBeleg && startBeleg.ok === false) {
+    console.error("WARNUNG: Startbeleg der Lauftelemetrie nicht gespeichert (Details oben) — der Lauf faehrt fort.");
+  }
+
   const ergebnis = await runUnderstandingShadow(nachzuholen, { runId });
   const dauerMs = Date.now() - start;
 
-  await storage.recordProcessRun({
+  // W-2: KEIN `.catch(() => {})` mehr — das Ergebnis des Telemetrie-Schreibens
+  // ist Teil des Abschlussstatus dieses Werkzeugs.
+  const zaehlung = zaehleErgebnisse(ergebnis && ergebnis.counts);
+  const laufStatus = leiteLaufstatusAb(ergebnis, zaehlung);
+  const telemetrie = await storage.recordProcessRun({
     process: "understanding-nachhol", runId, mode: "manuell", location: "skript",
     startedAt: new Date(start).toISOString(), finishedAt: new Date().toISOString(),
     durationMs: dauerMs,
     processed: ergebnis && ergebnis.processed, deferred: ergebnis && ergebnis.deferred,
-    reason: ergebnis && ergebnis.reason, status: ergebnis && ergebnis.skipped ? "skipped" : "ok",
+    reason: ergebnis && ergebnis.reason, status: laufStatus,
+    zielmenge: nachzuholen.length,
+    gespeichert: zaehlung.gespeichert, uebersprungen: zaehlung.uebersprungen,
+    fehlgeschlagen: zaehlung.fehlgeschlagen,
     telemetrie: ergebnis && ergebnis.telemetrie
-  }).catch(() => {});
+  });
 
-  console.log(`\nErgebnis nach ${Math.round(dauerMs / 1000)} s:`);
+  console.log(`\nErgebnis nach ${Math.round(dauerMs / 1000)} s (Laufstatus ${laufStatus}):`);
   console.log(JSON.stringify({
     cluster: ergebnis && ergebnis.clusters, verarbeitet: ergebnis && ergebnis.processed,
     zurueckgestellt: ergebnis && ergebnis.deferred, vorgemerkt: ergebnis && ergebnis.vorgemerkt,
     ergebnisse: ergebnis && ergebnis.counts, aufloesungen: ergebnis && ergebnis.telemetrie && ergebnis.telemetrie.aufloesungen,
-    grund: ergebnis && ergebnis.reason
+    grund: ergebnis && ergebnis.reason,
+    lauftelemetrie: {
+      gespeichert: telemetrie.ok, vollstaendig: telemetrie.vollstaendig,
+      backends: telemetrie.gespeichert, fehler: telemetrie.fehler
+    }
   }, null, 2));
   console.log("\nErgebnispruefung: denselben Aufruf ohne --vorschau erneut starten — die Zahl der");
   console.log("Dokumente ohne gueltigen Endzustand muss gesunken sein.");
+
+  if (!telemetrie.ok) {
+    console.error("\nTELEMETRIEFEHLER: die fachliche Verarbeitung oben ist gelaufen, ihr Lauf wurde");
+    console.error("aber NICHT in der Lauftelemetrie (processRuns) gespeichert. Dieser Lauf ist damit");
+    console.error(`fuer Betrieb/Admin unsichtbar, bis er nachgetragen ist (runId ${runId}).`);
+    console.error("Der Lauf selbst wird NICHT wiederholt — ein zweiter Aufruf waere idempotent, kostet");
+    console.error("aber KI-Budget. Erst den Telemetrie-Speicher pruefen, dann ggf. nur den Eintrag nachtragen.");
+    return process.exit(7);
+  }
+  if (!telemetrie.vollstaendig) {
+    console.error("\nHINWEIS: der kanonische Telemetriepfad hat gespeichert, der Spiegelpfad nicht");
+    console.error("(Details im JSON oben unter lauftelemetrie.fehler).");
+  }
   return process.exit(0);
+}
+
+// --- W-2: Abschlussbewertung (pure Logik, einzeln testbar) -------------------
+// Zaehlt die Ergebnisklassen von runUnderstandingShadow in die drei
+// Pflichtzaehler des Laufberichts. Unbekannte Klassen zaehlen als
+// "uebersprungen" — nie als Erfolg.
+function zaehleErgebnisse(counts = {}) {
+  let gespeichert = 0, fehlgeschlagen = 0, uebersprungen = 0;
+  for (const [klasse, wert] of Object.entries(counts && typeof counts === "object" ? counts : {})) {
+    const n = Number(wert) || 0;
+    if (klasse === "saved" || klasse === "updated" || klasse === "merged") gespeichert += n;
+    else if (klasse === "skipped-error" || klasse === "cluster-error" || klasse === "skipped-invalid") fehlgeschlagen += n;
+    else uebersprungen += n;
+  }
+  return { gespeichert, fehlgeschlagen, uebersprungen };
+}
+
+// Leitet den kanonischen Laufstatus ab (running/success/partial/failed/blocked/
+// rolled_back — hier die vier, die ein Nachhollauf annehmen kann). Ein Lauf, der
+// gar nicht arbeiten durfte (Budget/Lock/Flag), ist "blocked" — kein Erfolg.
+function leiteLaufstatusAb(ergebnis, zaehlung) {
+  if (ergebnis && ergebnis.skipped) return "blocked";
+  const z = zaehlung || zaehleErgebnisse(ergebnis && ergebnis.counts);
+  if (z.fehlgeschlagen > 0 && z.gespeichert > 0) return "partial";
+  if (z.fehlgeschlagen > 0) return "failed";
+  return "success";
 }
 
 if (require.main === module) {
@@ -354,4 +449,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { parseArgs, waehleNachholKandidaten, MAX_STANDARD, TAGE_STANDARD };
+module.exports = { parseArgs, waehleNachholKandidaten, zaehleErgebnisse, leiteLaufstatusAb, MAX_STANDARD, TAGE_STANDARD };
