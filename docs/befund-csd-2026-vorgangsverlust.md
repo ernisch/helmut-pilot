@@ -1852,3 +1852,206 @@ Datei (Anlauf 3 und der zurückgerollte Restlauf). Auf `main` ist §17 der **B4-
 aus PR #149. Beim Merge von #148 entsteht daher ein Konflikt in dieser Datei; die beiden
 Abschnitte sind inhaltlich verschieden und beide zu erhalten — der ältere gehört vor den
 B4-4-Hotfix, dieser Abschnitt bleibt der letzte.
+
+---
+
+## 19 · Abschluss — das Wegner-Dokument ist verstanden (2026-07-27, 12:36 UTC)
+
+> **Sprintzustand: erfolgreich abgeschlossen.** Alle 14 Erfolgskriterien erfüllt.
+> **Kein Rückweg nötig.** Damit ist der **gesamte B4-4-/CSD-Production-Nachweis
+> vollständig**: beide aus Anlauf 3 verbliebenen Rohdokumente tragen jetzt einen
+> gültigen Endzustand, keines wurde über einen Herausgebernamen fehlzugeordnet.
+
+### 19.1 Deployment (Phase 1, lesend)
+
+| Prüfung | Beleg |
+|---|---|
+| PR #149 weiterhin in `main` | `ad0cf99` ist Vorfahr von `origin/main` |
+| PR #150 gemergt | Merge-Commit **`c85167eef5bf55cc6592efea6866a5ae8f299854`** |
+| Production-Deployment | `dpl_4DQkazAyLMDxeC2ZBZQLkzPj3r5N`, `target: production`, **`READY`**, 12:28:48 UTC, Commit `c85167ee…` |
+| Pflicht-CI-Checks | Run 30266069845 — `Syntax + Offline-Suiten` **success**, `Browser-/Mobile-Smoke` **success** |
+| B4-4-Code im deployten Baum | `herausgeber.js` Blob `268aa80c` und `vorgang-identity.js` Blob `028e8b99` — byte-identisch zu `ad0cf99`; Wirkstellen Zeile 49/287/348 |
+
+### 19.2 Der Wiedervorlagepfad — warum der allgemeine Nachholpfad allein nicht reicht
+
+`understandOneCluster()` enthält einen ausdrücklichen Riegel gegen automatische
+Wiederholungen:
+
+```js
+// Geparkter Vorgang (KI-Fehlschlag): kein automatischer Neuversuch, aber die
+// Dokumente bekommen einen sichtbaren Endzustand und sind gezielt nachholbar.
+if (existing.understanding_status === "failed") {
+  await verknuepfe(existing.id, clusterDocs);
+  return { vorgangId, status: "skipped-failed", … };
+}
+```
+
+Ein Nachhollauf über diesen Vorgang hätte also `skipped-failed` ergeben — **ohne
+KI-Aufruf und ohne Inhalt**. Der Code benennt die Gegenmaßnahme selbst: *„ein Operator
+kann `understanding_status` zuruecksetzen, um erneut zu versuchen."*
+
+Von den drei dafür vorhandenen Production-Pfaden ist genau **einer** zulässig:
+
+| Pfad | Wirkung | Bewertung |
+|---|---|---|
+| `POST /api/admin/recovery/reset-failed` → `bulkResetUnderstandingFailed()` | PATCH auf **alle** `understanding_status=eq.failed` | **unzulässig** — zum Messzeitpunkt **8** betroffene Vorgänge, also weit über der Zielmenge. Zusätzlich aus dieser Sitzung nicht erreichbar (Egress-Regel verweigert `helmut-pilot.vercel.app`) |
+| `lib/helmut/ko-recovery.js` (P1-4) | begrenzter Auto-Retry über **alle** failed KOs | **unzulässig** — braucht das Flag `HELMUT_FAILED_KO_RECOVERY` (in diesem Sprint verboten) und wirkt ebenfalls auf alle 8 |
+| **`storage.resetUnderstandingToPending(vorgangId)`** | konditionaler PATCH `vorgang_id=eq.<Ziel>` **und** `understanding_status=eq.failed` | **gewählt** — bestehende, in `server.js:1177` verdrahtete Production-Primitive, trifft strukturell **höchstens eine Zeile**, idempotent, umkehrbar |
+
+**Gegengemessen:** vor dem Reset **8** Vorgänge mit `understanding_status='failed'`, danach
+**7** — die übrigen sieben blieben unberührt. Der Zielvorgang stand danach auf
+`pending`/`pending`.
+
+Der Lebenszyklus stuft das Dokument dadurch von `fehlgeschlagen` auf `wiedervorlage` —
+beides ist in `NACHHOLBARE_ZUSTAENDE`, das Dokument bleibt also über `--ids` auswählbar.
+
+### 19.3 Trockenlauf vor dem Schreibzugriff (read-only)
+
+`resolveVorgang()` mit den echten Lese-Deps, ohne KI, ohne Write:
+
+```
+Cluster: 1 · Dokumente: 1
+Abgeleitete Kennung : vg-grundgesetz-20260725-15b616
+Erwartete Kennung   : vg-grundgesetz-20260725-15b616      identisch: true
+AUFLOESUNG: resolution=bestand · begruendung=dokumente:kernueberdeckung
+  JA  vg-grundgesetz-20260725-15b616   spezFamilien 10 · gewichtSpez 10 · noetig 2
+Neuer Vorgang wuerde entstehen: false
+```
+
+Damit war **vor** dem Schreibzugriff bewiesen: die Kennung ist deterministisch dieselbe,
+der bestehende Vorgang wird als Kandidat gefunden und angenommen, ein zweiter Vorgang
+kann nicht entstehen. Die Verknüpfung kann sich strukturell nicht verdoppeln —
+`saveKoDocumentLinks` schreibt per `v3Upsert` auf den zusammengesetzten Schlüssel
+`knowledge_object_id,raw_document_id`.
+
+### 19.4 Sicherheitsgates und Vorschau
+
+| # | Prüfung | Ergebnis |
+|---|---|---|
+| 1–2 | `HELMUT_STORAGE_BACKEND=supabase`, `HELMUT_V3_STORE=1` | erfüllt |
+| 3 | `pruefeSchreibgate()` | **`ok: true`** |
+| 4–5 | Azure gesetzt, `isAiEnabled()` | **`true`**, `gpt-5-mini` |
+| 6–7 | aktive Locks · paralleler Lauf | **0** · keiner (letzte KO-Änderung 12:15:52, nächster Cron 16:00 UTC) |
+| 8–10 | Ziel-ID vorhanden · **genau ein** Link · Link zeigt nur auf `vg-grundgesetz-20260725-15b616` | erfüllt |
+| 11 | Zielvorgang | `pending`/`failed` |
+| 12 | zweiter Grundgesetz-Vorgang | **keiner** (genau 1) |
+| 13–14 | `vg-tagesspiegel-20260519-f29ebd` · `vg-angriffen` | unverändert |
+| 15 | Tagesbudget | 54 verbraucht |
+
+**Vorschau:** exakt 1 Kennung, Zustand `fehlgeschlagen -> vg-grundgesetz-20260725-15b616`,
+kein KI-Aufruf, kein Schreibzugriff. Nach dem Reset zeigte dieselbe Vorschau
+`wiedervorlage` auf denselben Zielvorgang.
+
+**Sitzungsriegel:** `HELMUT_MAX_LLM_CALLS_PER_DAY` ist nicht gesetzt (Schutzlimit 50) bei
+54 verbrauchten Aufrufen. Er wurde **ausschließlich als Präfix an genau den einen
+Schreibbefehl** auf **55** gesetzt — der kleinstmögliche Wert, der exakt einen weiteren
+Aufruf zulässt und einen zweiten sicher blockiert (`54 < 55` erlaubt, danach `55 < 55`
+verweigert). Kein Export, keine Persistenz, keine Vercel-Env; Production-Budget (100) und
+Reserve unverändert.
+
+### 19.5 Der Lauf
+
+`runId` **`nachhol-20260727123643`**, 12:36:43–12:36:58 UTC, **16 s**.
+
+```
+[understanding-gate:shadow] {"cluster":1,"entscheidungen":{"verstehen":1},"blockiert":0}
+Ergebnis: cluster 1 · verarbeitet 1 · zurueckgestellt 0 · vorgemerkt 0
+          ergebnisse {"saved":1} · aufloesungen {"bestand":1}
+```
+
+`aufloesungen: {"bestand": 1}` — der **bestehende** Vorgang wurde weiterverwendet.
+
+### 19.6 Vorher/Nachher
+
+| Größe | vor dem Reset | nach dem Lauf | Δ |
+|---|---|---|---|
+| `knowledge_objects` | 1 142 | **1 142** | **0** |
+| `ko_document_links` | 4 143 | **4 143** | **0** |
+| `status='pending'` | 427 | **426** | −1 |
+| `understanding_status='failed'` | 8 | **7** | −1 |
+| `failed-final` | 0 | 0 | 0 |
+| Vorgänge `vg-grundgesetz%` | 1 | **1** | **0** |
+| Links des Zieldokuments | 1 | **1** | **0** |
+| LLM-Zähler (global, Tag) | 54 | **55** | **+1** |
+| aktive Locks | 0 | 0 | 0 |
+
+**Zielvorgang `vg-grundgesetz-20260725-15b616`:**
+
+| Feld | vorher | nachher |
+|---|---|---|
+| `status` | `pending` | **`neu`** |
+| `understanding_status` | `failed` | **`complete`** |
+| `ko_version` | 1 | 1 |
+| `understanding_model` | — | `gpt-5-mini` |
+| `was_ist_passiert` | leer | „Kai Wegner forderte im Bundestag ein klares Bekenntnis zu queeren Rechten im Grundgesetz und betonte die Rolle des Parlaments in der Debatte." |
+| `warum_wichtig` | leer | „Verändert die öffentliche Debatte über Verfassungsfragen zu sexueller und geschlechtlicher Gleichstellung …" |
+| `wer_ist_betroffen` | leer | „Bundestag, Fraktionen, queere Interessenvertretungen und betroffene Wählergruppen." |
+| `handlungsempfehlung` | leer | „Kurzfristig interne Abstimmung mit Fraktion und Fachreferat …" |
+| `display_summary` | leer | gefüllt · `confidence_score` 75 · `zeitdruck` mittel · `best_source_url` gesetzt |
+| Dokumente | 1 | **1** |
+
+**Lebenszyklus:** das Dokument ist **kein Nachhol-Kandidat mehr** (Vorschau danach: 0
+ausgewählt, Rückstand im Fenster 1 559 → 1 558). Sein Zustand ist `verstanden`.
+
+**Unverändert geblieben:** `vg-csd-20260727-12aae0` (27 Dokumente, `updated_at` 10:29:28),
+`vg-tagesspiegel-20260519-f29ebd` (2 Dokumente, `pending`/`pending`, `updated_at`
+10:48:09), `vg-angriffen` (1 Dokument, `updated_at` 2026-07-23),
+`vg-islamisten-20260726-0ab9e8` (1 Dokument, `updated_at` 12:15:52).
+
+**Veränderungen außerhalb der Zielmenge: keine.** Seit 12:36:30 UTC: **1** geändertes
+Knowledge Object (der Zielvorgang), **0** neue Knowledge Objects, **0** neue
+Verknüpfungen, **0** neue Rohdokumente.
+
+### 19.7 Ehrliche Einschränkung: `headline` und `display_title` sind leer
+
+Der Vorgang trägt alle Analysefelder, aber **keinen Titel**. Das ist **kein Fehler dieses
+Laufs**, sondern die dokumentierte Qualitätsregel: `sanitizeDisplayTitle()` **verwirft**
+einen Modelltitel bei schlechter Qualität (Fragment, Ellipse, schwaches Schlusswort),
+statt ihn abzuschneiden, und weder `headline` noch `display_title` sind im Schema
+verpflichtend — „ein einzelnes schwaches UI-Feld darf nie die gesamte Analyse zu Fall
+bringen" (`understanding-schema.js`). Vor dem Lauf stand in `headline` der **Rohtitel**
+als Platzhalter aus `markFailed`; er ist jetzt durch die geprüfte KI-Fassung ersetzt, die
+in diesem Fall leer blieb. Die Anzeige greift auf `display_summary` zurück, das gefüllt
+ist. Kein Handlungsbedarf in diesem Sprint, aber ein benannter Qualitätspunkt.
+
+### 19.8 Abnahme gegen die vierzehn Erfolgskriterien
+
+| # | Kriterium | Ergebnis |
+|---|---|---|
+| 1 | exakt die eine Ziel-ID verarbeitet | **erfüllt** |
+| 2 | höchstens ein zusätzlicher LLM-Aufruf | **erfüllt** — exakt 1 (54 → 55) |
+| 3 | `vg-grundgesetz-20260725-15b616` weiterverwendet | **erfüllt** (`aufloesungen: {"bestand": 1}`) |
+| 4 | kein neuer/doppelter Grundgesetz-Vorgang | **erfüllt** — 1 Vorgang, `knowledge_objects` unverändert |
+| 5 | Link nicht verdoppelt | **erfüllt** — 1 Link, `ko_document_links` unverändert |
+| 6 | gültiger fachlicher Inhalt | **erfüllt** (Titelfelder siehe §19.7) |
+| 7 | Status/Understanding-Status gültiger Endzustand | **erfüllt** — `neu`/`complete`, Lebenszyklus `verstanden` |
+| 8 | Dokument fachlich korrekt beschrieben | **erfüllt** |
+| 9 | `vg-tagesspiegel-20260519-f29ebd` unverändert | **erfüllt** |
+| 10 | `vg-angriffen` unverändert | **erfüllt** |
+| 11 | `vg-csd-20260727-12aae0` unverändert | **erfüllt** |
+| 12 | kein fachfremder Vorgang gewachsen/überschrieben | **erfüllt** |
+| 13 | nichts außerhalb der Ziel-ID verändert | **erfüllt** |
+| 14 | kein Rückweg notwendig | **erfüllt** |
+
+### 19.9 Production-Nettowirkung dieses Sprints
+
+Zwei Schreibvorgänge, beide auf **dieselbe eine Zeile**:
+`understanding_status failed → pending` (Reset) und die inhaltliche Aktualisierung durch
+den Lauf (`pending → complete`, `status neu`). Dazu **1** LLM-Aufruf. Keine neuen Zeilen,
+keine gelöschten Zeilen, keine zweite Kennung. **Dokumentierter Rückweg, nicht gebraucht:**
+`resetUnderstandingToPending` ist über `markUnderstandingFailed(vorgangId)` umkehrbar.
+
+### 19.10 Gesamtstand des B4-4-/CSD-Nachweises
+
+| Rohdokument | Vorgang | Zustand |
+|---|---|---|
+| `rd-d982a68f…` „Reaktionen auf Anschlag …" | `vg-islamisten-20260726-0ab9e8` | **verstanden** (12:15 UTC) |
+| `rd-8c977d6b…` „Kai Wegner zu queeren Rechten … - Tagesspiegel" | `vg-grundgesetz-20260725-15b616` | **verstanden** (12:36 UTC) |
+
+Beide Dokumente sind zugeordnet, verknüpft und verstanden; **keines** wurde über einen
+Herausgebernamen fehlzugeordnet. Die 21 Rohdokumente aus Anlauf 3 sind damit vollständig
+abgearbeitet. **Der B4-4-/Berliner-CSD-Production-Nachweis ist abgeschlossen.**
+
+**Weiterhin offen und ausdrücklich nicht Teil dieses Sprints:** die Bereinigung der
+herausgebergetragenen Altvorgänge (§17.6), die zwei Werkzeugbefunde W-1 und W-2 (§18.10)
+sowie die verbleibenden **7** Vorgänge mit `understanding_status='failed'`.
