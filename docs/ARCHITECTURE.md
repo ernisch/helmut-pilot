@@ -182,6 +182,28 @@ Ergebnisklassen sind `saved` · `updated` · `merged` · `duplicate` ·
 `skipped-invalid` · `skipped-store`. Ein pauschales `skipped-exists` gibt es
 nicht mehr.
 
+### 7b · Politische Ebene: einmal ermitteln, dauerhaft wiederverwenden (seit 2026-07-27)
+
+**Die politische Entscheidungsebene eines Vorgangs ist ein gespeicherter Zustand,
+kein Rechenergebnis je Lauf.** Vorher leitete *jede* Assemblierung sie vollständig
+neu ab — auch die Aktualisierung eines bereits verstandenen Vorgangs, die den
+gespeicherten Wert nicht einmal las. Ein einmal belegt als `bund` erkannter Vorgang
+konnte dadurch auf `unknown` zurückfallen, sobald die neue Dokumentmenge kein
+Institutionssignal mehr trug.
+
+| Baustein | Wo | Regel |
+|---|---|---|
+| **Gedächtnis** | `quellenarchitektur/ebenen-gedaechtnis.js` → `entscheideEbene()` | Rein und deterministisch. Ist eine Ebene ermittelt, wird sie **wiederverwendet**; neu berechnet wird nur, was noch nicht ermittelt ist |
+| **Fail closed** | dieselbe Funktion | Eine ermittelte Ebene wird **nie** durch `unknown` ersetzt. `unknown` ist keine Ebene, sondern die ehrliche Aussage „nicht ermittelt" |
+| **Monotonie** | Herkunftsrang `deriver` < `ki` | Nur eine **höherwertige** Herkunft darf eine ermittelte Ebene ersetzen. Damit ändert sich die Ebene höchstens **einmal** und flackert nie zwischen zwei Läufen |
+| **Nachweis im Datensatz** | `classification_confidence` (jsonb) | `level_quelle` · `level_ermittelt_am` · `level_wiederverwendet`. **Keine neue Spalte, keine Migration** — Alt-Zeilen ohne diese Schlüssel gelten als Herkunft `deriver` |
+| **Bestandszugang** | `storage.listKnowledgeObjectsByVorgangPrefix()` | Die Kandidatenprojektion liest `decision_level`/`political_level`/`classification_confidence` mit; ohne sie hätte der häufigste Aktualisierungspfad nichts zum Wiederverwenden |
+| **Ehrliche Abdeckung** | `storage.getClassificationCoverage()` | Gezählt wird die **ermittelte** Ebene (ohne `unknown`). `decision_level` ist seit Sprint 2 nie `null`, die alte Zählung `not.is.null` meldete deshalb strukturell ~100 % — falsches Grün |
+
+Kostenwirkung: **null zusätzliche KI-Aufrufe**. Der Deriver ist rein regelbasiert;
+gespart wird nicht Rechenzeit, sondern die bereits bezahlte Ermittlung, die vorher
+bei jeder Aktualisierung verworfen wurde.
+
 ## 8 · Briefing, Lage, Radar, Büro
 
 | Bereich | Backend | Client |

@@ -3908,7 +3908,9 @@ async function buildHealthReport(politicianId) {
       : `🧮 KI-Budget: ${budget.calls} Calls · Skips ${budget.skips} (kein Limit gesetzt)`,
     ...(idle.idle ? [`🕳️ Leerlauf: neue Dokumente, aber 0 verstanden (Budget übersprang Arbeit) ⚠️`] : []),
     // P1-6: Klassifikationsabdeckung (WARN-only, steigt mit dem Backfill P1-1).
-    ...(coverage.available ? [`🏷️ Klassifikationsabdeckung: ${Math.round((coverage.levelCoverage || 0) * 100)}% mit Ebene (${coverage.withLevel}/${coverage.total})${coverage.warn ? " ⚠️ niedrig" : ""}`] : []),
+    // SPRINT 19: gemeldet wird die ERMITTELTE Ebene (ohne 'unknown'), sonst wäre
+    // die Zeile strukturell immer 100 % — die Spalte ist nie leer.
+    ...(coverage.available ? [`🏷️ Klassifikationsabdeckung: ${Math.round((coverage.establishedLevelCoverage != null ? coverage.establishedLevelCoverage : coverage.levelCoverage || 0) * 100)}% mit ermittelter Ebene (${coverage.withEstablishedLevel != null ? coverage.withEstablishedLevel : coverage.withLevel}/${coverage.total})${coverage.unknownLevel != null ? ` · ${coverage.unknownLevel} unbestimmt` : ""}${coverage.warn ? " ⚠️ niedrig" : ""}`] : []),
     engagement
   ].join("\n");
 
