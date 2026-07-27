@@ -674,6 +674,78 @@ gegen die Zuordnungstabellen prüfen statt Beispiele durchzuspielen: jede im Cod
 vergebene Ergebnisklasse muss in `ERGEBNISGRUPPEN` stehen, und jeder geschriebene
 `understanding-*`-Lauftyp muss von der Aggregation erfasst werden.
 
+## 12b · NEUER BEFUND B4-2 — der Vorgang wächst unbegrenzt („Magnet-Vorgang")
+
+**Eine Aussage aus §9 war falsch und wird hiermit widerrufen.** Dort steht, die
+Clusterbildung sei „gegen Digest-Cluster abgesichert". Das Sicherheitsventil
+(`MAX_CLUSTER_DOKUMENTE = 60`) begrenzt einen Cluster **innerhalb eines Laufs** —
+es begrenzt aber **nicht**, wie viele Dokumente ein bestehender Vorgang über die
+Vorgangsauflösung **über Läufe hinweg** einsammelt. Genau das passiert in Production.
+
+### Beleg
+
+`vg-zeitung-20260428-f362cc`, entstanden im ersten Lauf nach dem #143-Deployment:
+
+| Lauf | neue Verknüpfungen | Dokumente ohne Veröffentlichungszeit |
+|---|---|---|
+| 2026-07-26 22:14 UTC | 13 | 0 |
+| 2026-07-27 04:05 UTC | **52** | 0 |
+| **Summe** | **65** | — |
+
+Inhalt dieses **einen** Vorgangs: Armutsgefährdung in Anhalt-Bitterfeld ·
+Sportfördergesetz · Emissionshandel · Pflegereform · Rücktritt des
+Bundesverkehrsministers · Bürgergeld-Sanktionen · eine vietnamesische
+Gewerkschaftswahl · **und der Anschlag auf den Berliner CSD**.
+
+### Mechanismus (isoliert, nicht vermutet)
+
+Dieselben 65 Dokumente durch die aktuelle Clusterfunktion gegeben ergeben
+**16 getrennte Cluster** (größter: 30 Dokumente) mit 16 verschiedenen Kennungen.
+**Die Clusterregel ist also gesund.** Der Fehler sitzt in der Vorgangsauflösung:
+
+> `sameVorgang()` gilt als erfüllt, sobald **ein einziges** Dokumentpaar dasselbe
+> Ereignis beschreibt. Ein Vorgang mit bereits 13 thematisch gemischten Dokumenten
+> findet für fast jeden neuen Cluster irgendein passendes Paar — und **jede
+> Aufnahme macht ihn anziehender**. Der Effekt ist selbstverstärkend: 13 → 65 in
+> einem einzigen Lauf.
+
+Der Ereignistag `20260428` und die Themenwurzel `zeitung` (aus Herausgeber-Zusätzen
+wie „ZFK – Zeitung für kommunale Wirtschaft") zeigen zusätzlich, dass ein einzelnes
+Dokument mit alter Veröffentlichungszeit und ein Herausgebername als Themenwurzel
+den Startpunkt eines solchen Vorgangs bilden können.
+
+### Einordnung
+
+- **Nicht neu durch #143:** Digest-Vorgänge gab es vorher schon, teils größer
+  (`vg-regierung` 676 Dokumente vom 07.07., `vg-ausschuss` 223, `vg-fraktion` 181).
+- **Aber von #143 nicht behoben, und die gegenteilige Aussage in §9 war falsch.**
+  Nach dem Deployment entstanden `vg-bundestagsfraktion-…` (120), 
+  `vg-bundesregierung-…` (93), `vg-bundestag-…` (78), `vg-zeitung-…` (65),
+  `vg-fraktion-…` (60).
+- **Kein stiller Verlust:** die Dokumente sind verknüpft und haben einen
+  Endzustand. Der Schaden ist **Qualität**, nicht Verlust — ein Knowledge Object
+  aus 65 fachfremden Dokumenten ist als politische Lage wertlos, und sein Prompt
+  sieht ohnehin nur 12 davon.
+
+### Erforderliche Korrektur (bewusst NICHT in diesem Sprint)
+
+Sie berührt die Kernregel der Zusammenführung und verändert die Kostenstruktur
+(mehr Vorgänge → mehr KI-Aufrufe). Sie braucht dieselbe Messung wie §11 und ist
+damit ein eigener Sprint. Zwei naheliegende Ansätze:
+
+1. **Beleg gegen den Kern statt gegen ein Einzeldokument:** ein Cluster gehört nur
+   dann zu einem Vorgang, wenn er dessen **Kernanker** trifft — nicht irgendein
+   Dokument darin.
+2. **Harte Obergrenze auch in der Auflösung:** ein Vorgang, der
+   `MAX_CLUSTER_DOKUMENTE` erreicht hat, nimmt nichts mehr auf; neue Cluster bilden
+   einen eigenen Vorgang.
+
+**Empfohlene Reihenfolge:** B4-2 vor dem Nachholen des Altbestands. Der CSD-Nachweis
+selbst ist davon **nicht** blockiert — die Kandidatenpräfixe des CSD-Clusters
+(`vg-csd`, `vg-berlin`, `vg-angriff`) erreichen keinen der Magnet-Vorgänge; das wurde
+geprüft. Drei CSD-Dokumente hängen allerdings bereits an `vg-zeitung-…` und stehen
+dem Nachweis deshalb nicht zur Verfügung (§13a).
+
 ## 13 · Offene Freigabe
 
 Der Sprint endet hier, weil der nächste Schritt eine Production-Änderung ist.
