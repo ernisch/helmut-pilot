@@ -32,6 +32,21 @@ const args = process.argv.slice(2);
 const alsJson = args.includes("--json");
 const vorlaufArg = (args.find((a) => a.startsWith("--vorlauf=")) || "").split("=")[1] || "";
 
+// SPRINT 20 — Geografien sind OBJEKTE, keine Textwerte.
+// `affected_geographies`/`mentioned_geographies` sind jsonb-Listen der Form
+// {name, level, geography_id}. Jede Pruefung, die sie per `String(g)` oder
+// Regex auf dem Rohwert behandelt, trifft immer "[object Object]" und meldet
+// strukturell 0 Treffer. Diese Hilfsfunktion prueft die kanonische ID (fuehrend)
+// und faellt fuer unaufgeloeste Eintraege auf den Namen zurueck.
+function geografieTrifft(liste, geographyId, namensMuster) {
+  if (!Array.isArray(liste)) return false;
+  return liste.some((g) => {
+    if (!g || typeof g !== "object") return false;
+    if (geographyId && String(g.geography_id || "") === geographyId) return true;
+    return !!(namensMuster && g.name && namensMuster.test(String(g.name)));
+  });
+}
+
 function baseUrl() { return String(process.env.SUPABASE_URL || "").replace(/\/+$/, ""); }
 function serviceKey() {
   return process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SECRET_KEY || "";
@@ -293,8 +308,13 @@ function laufKennzahlen(lauf) {
     "4_vorgaenge": vorgaenge.length,
     "4b_vorgangIds": vorgaenge.slice(0, 25),
     "5_koMitEbeneLand": beKos.filter((k) => k.decision_level === "land").length,
-    "5b_koMitGeografieBerlin": beKos.filter((k) =>
-      Array.isArray(k.affected_geographies) && k.affected_geographies.some((g) => /berlin/i.test(String(g)))).length,
+    // SPRINT 20 — KORRIGIERTE KENNZAHL. Vorher stand hier `/berlin/i.test(String(g))`.
+    // `affected_geographies` ist eine Liste von OBJEKTEN {name, level, geography_id};
+    // `String({...})` ergibt immer "[object Object]" und trifft nie. Die Kennzahl
+    // meldete deshalb strukturell 0 — unabhaengig davon, wie viele Vorgaenge
+    // tatsaechlich Berlin als betroffene Geografie tragen. Gezaehlt wird jetzt ueber
+    // die kanonische ID (fuehrend) mit Namensrueckfall fuer unaufgeloeste Eintraege.
+    "5b_koMitGeografieBerlin": beKos.filter((k) => geografieTrifft(k.affected_geographies, "geo-land-berlin", /berlin/i)).length,
     "6_abnahmeprofilMandatAktiv": abnahmeMandat.length === 1
       && abnahmeMandat[0].aktiv === true && !abnahmeMandat[0].geloescht_at,
     "7_lageFuerAbnahmeprofil": beBriefings.filter((b) => b.slot === "lage").length,

@@ -364,6 +364,27 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 - **Parallelisierbarkeit:** sehr gut (unabhängige Einzel-PRs).
 - **Freigabe:** überwiegend **NEIN** (Code-Hygiene via normalem PR-Prozess); **JA** nur für DST/Cron und Datenbereinigungen.
 
+#### OP-24 · Geografie des Altbestands nachklassifizieren (neu, Sprint 20)
+- **Status:** offen. Sprint 20 hat den **Schreibpfad** korrigiert: eine betroffene Geografie
+  entsteht nur noch aus Nachweisen, nie aus `decision_level`. Der **Altbestand ist bewusst
+  unangetastet geblieben** (Sprintregel 12).
+- **Belegter Ist-Zustand** (read-only gemessen am 2026-07-27, 1 193 Knowledge Objects,
+  vollständiger Seitenlauf): **552** Vorgänge tragen eine gespeicherte „betroffene Geografie".
+  Davon **481 = Deutschland** (`geo-bund`), darunter **451 von 451** Bundesvorgängen
+  (ausnahmslos) und **30 von 60** Landesvorgängen (dort war Deutschland der verbotene
+  Ersatzwert für eine unbekannte Landesgeografie). **37** Einträge lauten „Europäische Union"
+  **ohne kanonische ID**. **0 von 1 193** Vorgängen haben mehr als eine betroffene Region.
+  Damit sind **518 von 552 (93,8 %)** reine Ebenen-Ableitungen, die restlichen **34** stammen
+  aus bloßen Ortsnennungen — **kein einziger** Wert beruht auf einem geografischen Nachweis.
+- **Fehlender Schritt:** ein kostenneutraler, rein deterministischer Nachlauf, der die
+  Ebenen-Ableitungen entfernt und nur belegte Regionen stehen lässt. Alt-Einträge tragen keine
+  Herkunft und gelten deshalb als `bestand-alt` — sie sind von jedem echten Nachweis (Rang
+  ≥ `ki`) korrigierbar, gehen aber ohne Nachweis nicht verloren (fail closed).
+- **Abhängigkeiten:** Sprint 20 muss gemergt und deployt sein.
+- **Risiko:** mittel — es ist ein **Production-Schreiblauf** über den Bestand. Ohne KI-Kosten
+  möglich (der Deriver ist rein), aber Vorher/Nachher-Messung und Rückweg sind Pflicht.
+- **Freigabe:** **JA** (Production-Datenänderung).
+
 ---
 
 ## 7 · Historisch markierte Dokumente

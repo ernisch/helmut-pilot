@@ -55,7 +55,13 @@ function classifyItem(it) {
   const c = classification.classifyKnowledgeObject(koLike);
   return {
     decision_level: c.decision_level, level_quelle: "inhalt-deriver",
-    geografie: (c.affected_geographies[0] || {}).geography_id || null, wahlperiode: null,
+    // SPRINT 20: `geografie` bleibt das Alt-Einzelfeld (Vergleichbarkeit mit dem
+    // autoritativen Zweig oben), `geografien` traegt die vollstaendige Liste —
+    // ein Vorgang kann mehrere Regionen betreffen und darf im Schattenlauf nicht
+    // stillschweigend auf eine reduziert werden.
+    geografie: (c.affected_geographies[0] || {}).geography_id || null,
+    geografien: c.affected_geographies.map((g) => g.geography_id || g.name),
+    wahlperiode: null,
     entitaeten: c.decision_entities, event_type: c.event_type
   };
 }

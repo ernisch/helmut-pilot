@@ -28,10 +28,20 @@ check("Landtag+Bundesland -> land", c.deriveDecisionLevel({ mentioned_organizati
 check("EU-Kommission -> eu", c.deriveDecisionLevel({ mentioned_organizations: ["Europäische Kommission"] }).level === "eu");
 check("leeres KO -> unknown (NICHT automatisch bund)", (() => { const d = c.deriveDecisionLevel({}); return d.level === "unknown" && d.confidence === "unknown"; })());
 check("nur Bundesland-Ort ohne Institution -> unknown (kein Bund)", c.deriveDecisionLevel({ mentioned_locations: ["Bayern"] }).level === "unknown");
-check("unknown-KO erfasst dennoch Land-Bezug (related_levels/affected)", (() => {
+// SPRINT 20 — ANGEPASST, weil die alte Erwartung den Defekt festschrieb.
+// Vorher wurde hier geprueft, dass eine blosse ORTSNENNUNG ("Bayern") als
+// BETROFFENE Geografie gespeichert wird. Genau das ist die Vermischung, die
+// Sprint 20 aufloest (Regel 5): eine Erwaehnung ist kein Beleg fuer Betroffenheit.
+// Der Land-BEZUG bleibt erhalten — er steht jetzt dort, wo er hingehoert:
+// in related_levels und in mentioned_geographies.
+check("unknown-KO erfasst Land-Bezug in related_levels + ERWAEHNTER Geografie", (() => {
   const r = c.classifyKnowledgeObject({ mentioned_locations: ["Bayern"] });
-  return r.decision_level === "unknown" && r.related_levels.includes("land") && r.affected_geographies.some((g) => g.name === "Bayern");
+  return r.decision_level === "unknown"
+    && r.related_levels.includes("land")
+    && r.mentioned_geographies.some((g) => g.geography_id === "geo-land-bayern");
 })());
+check("blosse Ortsnennung wird NICHT zur betroffenen Geografie (Sprint 20)",
+  c.classifyKnowledgeObject({ mentioned_locations: ["Bayern"] }).affected_geographies.length === 0);
 check("classification_confidence.level = unknown bei unknown-Ebene", c.classifyKnowledgeObject({ mentioned_locations: ["Bayern"] }).classification_confidence.level === "unknown");
 check("'eu' matcht NICHT als Substring in 'Deutschland'", c.deriveDecisionLevel({ mentioned_locations: ["Deutschland"], ausschuesse: ["Finanzen"] }).level === "bund");
 check("related_levels leer bei reinem Bund-KO", (() => { const r = c.classifyKnowledgeObject({ ausschuesse: ["Finanzen"], mentioned_locations: ["Deutschland"] }); return r.related_levels.length === 0; })());
@@ -89,7 +99,17 @@ const ko = u.assembleKnowledgeObject(aiResult, { documents: [{}, {}] }, "vorgang
 check("decision_level gesetzt (nie leer)", ko.decision_level === "bund");
 check("political_level gespiegelt (Alt-Spalte)", ko.political_level === "bund");
 check("event_type gesetzt", ko.event_type === "gesetzentwurf");
-check("affected_geographies gesetzt", Array.isArray(ko.affected_geographies) && ko.affected_geographies[0].geography_id === "geo-bund");
+// SPRINT 20 — ANGEPASST, weil die alte Erwartung den Defekt festschrieb.
+// Vorher: "affected_geographies[0].geography_id === 'geo-bund'" fuer ein Bundes-KO.
+// Dieses Deutschland kam AUSSCHLIESSLICH aus decision_level === 'bund' — es war
+// keine Aussage ueber das WO, sondern eine ueber das WER (Regel 1/3). Erwartet
+// wird jetzt: die Struktur existiert, Deutschland steht als ERWAEHNUNG dort, wo
+// es belegt ist, und wird nicht als Betroffenheit erfunden.
+check("affected_geographies ist eine Liste (Mehrfachzuordnung moeglich)", Array.isArray(ko.affected_geographies));
+check("kein Deutschland-Ersatzwert aus der Ebene (Sprint 20)",
+  !ko.affected_geographies.some((g) => g.geography_id === "geo-bund"));
+check("erwaehntes Deutschland bleibt als Erwaehnung erhalten",
+  ko.mentioned_geographies.some((g) => g.geography_id === "geo-bund"));
 check("decision_entities aufgeloest", ko.decision_entities.some((e) => e.entity_id === "ministry-bmas"));
 check("related_entities aufgeloest", ko.related_entities.some((e) => e.entity_id === "party-spd"));
 check("classification_confidence dimensioniert", ko.classification_confidence && ko.classification_confidence.level === "high");

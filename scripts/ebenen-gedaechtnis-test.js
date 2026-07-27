@@ -131,8 +131,16 @@ check("B4 Herkunft/Zeitpunkt/Wiederverwendung stehen im classification_confidenc
   b3.classification_confidence.level_quelle === "deriver"
   && b3.classification_confidence.level_ermittelt_am === T0
   && b3.classification_confidence.level_wiederverwendet === true);
-check("B5 Folgefelder bleiben zur wiederverwendeten Ebene KONSISTENT (affected = Deutschland, related ohne bund)",
-  b3.affected_geographies.length === 1 && b3.affected_geographies[0].geography_id === "geo-bund"
+// SPRINT 20 — ANGEPASST. Die alte Erwartung lautete "affected = Deutschland" und
+// schrieb damit genau die Vermischung fest, die Sprint 20 aufloest: aus der
+// (wiederverwendeten) Ebene 'bund' wurde eine Geografie ERZEUGT. Ebene und
+// Geografie sind jetzt getrennt — die Ebene bleibt wiederverwendet 'bund', die
+// Geografie bleibt ehrlich UNBEKANNT, weil dieses KO keinen einzigen
+// geografischen Nachweis traegt.
+check("B5 Folgefelder konsistent: Ebene 'bund' wiederverwendet, Geografie bleibt UNBEKANNT",
+  b3.decision_level === "bund"
+  && b3.affected_geographies.length === 0
+  && b3.classification_confidence.geography === "unknown"
   && !b3.related_levels.includes("bund"));
 
 const b6 = C.classifyKnowledgeObject(koOhneSignal, {}, { bestand: bestand("bund"), jetzt: T1 });

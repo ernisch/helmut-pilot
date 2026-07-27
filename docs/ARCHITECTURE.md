@@ -204,6 +204,40 @@ Kostenwirkung: **null zusätzliche KI-Aufrufe**. Der Deriver ist rein regelbasie
 gespart wird nicht Rechenzeit, sondern die bereits bezahlte Ermittlung, die vorher
 bei jeder Aktualisierung verworfen wurde.
 
+### 7c · Geografie: eine eigene Frage, nicht die Kehrseite der Ebene (seit 2026-07-27)
+
+**Die politische Ebene beantwortet, WER entscheidet. Die Geografie beantwortet, WO
+es wirkt. Beides ist getrennt.** Ein Vorgang darf die Ebene `land` tragen und
+geografisch unbekannt bleiben. Vorher erzeugte `classification.deriveAffected­Geographies(level, …)`
+die betroffene Geografie **ausschließlich aus der Ebene**: `bund` → Deutschland,
+`eu` → Europäische Union, `land` ohne erkanntes Bundesland → **ebenfalls
+Deutschland**; eine bloße Ortsnennung galt als Betroffenheit, und mehr als eine
+Region war strukturell ausgeschlossen.
+
+**Drei fachliche Bedeutungen auf den vorhandenen Strukturen** — keine neue Tabelle,
+keine neue Spalte, keine zweite Geografiestruktur:
+
+| Bedeutung | Wo gespeichert | Regel |
+|---|---|---|
+| **betroffene** Geografie | `knowledge_objects.affected_geographies` (jsonb[]) | Nur aus Nachweisen. Mehrere Regionen sind zulässig |
+| **erwähnte** Geografie | `knowledge_objects.mentioned_geographies` (jsonb[]) | Nennung im Text. Wird **nie** zur Betroffenheit befördert |
+| **Quellen**geografie | bleibt kanonisch am Abrufweg (`source_packages.geography_id` / `path_expected_geographies`); am Vorgang nur als **Indiz** in `classification_confidence.geography_indizien` | Strukturell davon ausgeschlossen, eine betroffene Geografie zu werden |
+
+| Baustein | Wo | Regel |
+|---|---|---|
+| **Gedächtnis** | `quellenarchitektur/geografie-gedaechtnis.js` → `entscheideGeografien()` | Rein und deterministisch. Der Resolver **kennt `decision_level` nicht** — aus der Ebene kann damit keine Geografie entstehen |
+| **Herkunftsrang** | `parser` > `amtlich` > `inhalt` > `ki` > `erwaehnung` > `quelle` | Nur eine **höherwertige** Herkunft darf eine gespeicherte Region ersetzen; gleich starke Nachweise werden **vereinigt** (mehrere betroffene Regionen) |
+| **Fail closed** | dieselbe Funktion | Eine ermittelte Region wird **nie** durch leer/unbekannt ersetzt |
+| **Inhaltlicher Nachweis** | `classification.subnationaleGeografieVonEntitaet()` | Nur **subnationale** Entscheidungskörper (Abgeordnetenhaus, Senat, Landtag, Staatskanzlei) stiften Geografie. **Bundesinstitutionen ausdrücklich nicht** — sonst wäre es wieder die Ableitung aus der Ebene |
+| **Nachweis im Datensatz** | `classification_confidence` (jsonb) | `geography_quelle` · `geography_ermittelt_am` · `geography_wiederverwendet` · `geography_indizien`; je Eintrag zusätzlich `herkunft`. Alt-Zeilen ohne Herkunft gelten als `bestand-alt` |
+| **Bestandszugang** | `storage.listKnowledgeObjectsByVorgangPrefix()` | Liest zusätzlich `affected_geographies`/`mentioned_geographies`; ohne sie könnte der häufigste Aktualisierungspfad nichts wiederverwenden |
+| **Ehrliche Abdeckung** | `storage.getClassificationCoverage()` | `affectedGeographyCoverage` zählt die **nicht-leere** Zuordnung (`neq.[]`); die Spalte hat Default `'[]'` und ist nie `null` |
+| **Trennung im Matching** | `geografie-gedaechtnis.betroffeneRegionen()` / `.erwaehnteRegionen()` | Lesehilfen. Gewichtungen und Scoring bleiben **unverändert** |
+
+Kostenwirkung: **null zusätzliche KI-Aufrufe**. `affected_geographies` steht seit
+Sprint 2 im Antwortschema des ohnehin stattfindenden Understanding-Calls und wurde
+bisher schlicht verworfen.
+
 ## 8 · Briefing, Lage, Radar, Büro
 
 | Bereich | Backend | Client |
