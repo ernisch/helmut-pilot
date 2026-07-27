@@ -684,7 +684,11 @@ async function dataStatusResilienceChecks() {
 
   // Understanding-Lauf-Fix (Server): WEITES Rohdokument-Fenster fuer den Recovery-Lauf,
   // damit die Quell-Dokumente aelterer pending-Vorgaenge gefunden werden (sonst 0 verarbeitet).
-  const ruBlock = serverSrc.slice(serverSrc.indexOf("/api/admin/recovery/run-understanding"), serverSrc.indexOf("/api/admin/recovery/run-understanding") + 7000);
+  // Fenstergroesse: die Route selbst ist rund 9 100 Zeichen lang (bis zur naechsten
+  // `url.pathname === "/api/..."`-Verzweigung). Ein zu knappes Fenster liess
+  // Pruefmarken am Ende der Route stillschweigend herausfallen und den Test
+  // fehlschlagen, obwohl der Code stimmte — deshalb 9 000 statt 7 000.
+  const ruBlock = serverSrc.slice(serverSrc.indexOf("/api/admin/recovery/run-understanding"), serverSrc.indexOf("/api/admin/recovery/run-understanding") + 9000);
   check("Recovery: run-understanding nutzt WEITES Rohdokument-Fenster (2000, 90)",
     /listRecentRawDocuments\(\s*2000\s*,\s*90\s*\)/.test(ruBlock));
   // Lock-Vorrang: der Lock wird VOR dem Lauf geprueft (vor runPendingUnderstandingShadow)

@@ -244,6 +244,83 @@ check("9 · jedes Dokument landet in genau einem Cluster (nichts geht verloren, 
   vieleCluster.reduce((s, c) => s + c.documents.length, 0) === viele.length
     && new Set(vieleCluster.flatMap((c) => c.documents.map((x) => x.id))).size === viele.length);
 
+// =========================================================================
+// 10 · Dokumentauswahl fuer den KI-Prompt
+// =========================================================================
+// Belegter Anlass (Production-Nachweis zu B4): der Prompt fasst 12 Dokumente,
+// ausgewaehlt wurde nach Dokumentkennung — also nach einem Inhalts-Hash. Bei
+// einem 16-Meldungen-Ereignis fiel dadurch die Terror-Einordnung heraus.
+const ereignis = [
+  d("e01", "Fahrzeug faehrt in Menschenmenge am Rand des CSD in Berlin", "2026-07-25T21:44:00Z", "sz"),
+  d("e02", "Berliner Polizei bricht CSD ab, mehrere Verletzte", "2026-07-25T22:10:00Z", "tagesschau"),
+  d("e03", "CSD Berlin: eine Tote und 16 Verletzte bestaetigt", "2026-07-26T04:01:00Z", "dlf"),
+  d("e04", "Wegner nach Angriff auf den CSD: Attacke auf eine freie Stadt", "2026-07-26T09:12:00Z", "tagesschau"),
+  d("e05", "Angriff auf CSD Berlin: Tatverdaechtiger polizeibekannter Islamist", "2026-07-26T16:05:00Z", "tagesschau"),
+  d("e06", "Dobrindt spricht von islamistischem Terroranschlag auf den CSD", "2026-07-26T16:06:00Z", "dlf"),
+  d("e07", "Trauer in der queeren Community nach der Gewalttat", "2026-07-26T16:30:00Z", "dlf"),
+  d("e08", "CDU fordert haerteres Strafmass nach dem Angriff auf den CSD", "2026-07-26T17:00:00Z", "cdu"),
+  d("e09", "Linksfraktion: Queeres Leben muss vor Angriffen geschuetzt werden", "2026-07-26T17:10:00Z", "linke"),
+  d("e10", "Bundeskanzler Merz beschwoert Zusammenhalt nach dem CSD-Anschlag", "2026-07-26T18:00:00Z", "tagesschau"),
+  d("e11", "Tatverdaechtiger bei Polizeieinsatz erschossen", "2026-07-26T20:01:00Z", "dlf"),
+  d("e12", "CSD-Anschlag: Bundespraesident kuendigt Gedenkveranstaltung an", "2026-07-26T20:30:00Z", "tagesschau"),
+  d("e13", "Angriff auf CSD in Berlin - was bisher bekannt ist", "2026-07-26T21:00:00Z", "sz"),
+  d("e14", "CSD-Angriff: Generalbundesanwalt uebernimmt die Ermittlungen", "2026-07-26T21:30:00Z", "dlf"),
+  d("e15", "Berlin: Gedenken am Ort des Angriffs auf den CSD", "2026-07-26T22:00:00Z", "tagesschau"),
+  d("e16", "Angriff auf CSD in Berlin - was bisher bekannt ist", "2026-07-26T22:10:00Z", "rnd")  // Wiederveroeffentlichung
+];
+const auswahl = V.selectPromptDocuments(ereignis, 12);
+check("10 · die Auswahl haelt die Obergrenze ein", auswahl.length === 12, `${auswahl.length}`);
+check("10 · sie ist chronologisch geordnet (die KI liest die Entwicklung in der Reihenfolge)",
+  auswahl.every((doc, i) => i === 0 || Date.parse(doc.published_at) >= Date.parse(auswahl[i - 1].published_at)));
+check("10 · das AELTESTE Dokument ist gesetzt (der Ereigniskern)", auswahl[0].id === "e01");
+check("10 · das NEUESTE Dokument ist gesetzt (der aktuelle Stand)", auswahl[auswahl.length - 1].id === "e16");
+check("10 · die Terror-Einordnung ist enthalten (der Fall, der den Fehler zeigte)",
+  auswahl.some((doc) => doc.id === "e06"), auswahl.map((x) => x.id).join(","));
+
+// EHRLICHE GRENZE, hier ausdruecklich geprueft statt behauptet: die Auswahl
+// garantiert KEIN bestimmtes Dokument. Sie maximiert die Faktenabdeckung. Eine
+// knappe Faktenmeldung, deren Wortlaut sich mit einer frueheren fast deckt, kann
+// hinter einer sprachlich reicheren Reaktion landen. Was garantiert IST:
+// eine eigene Zahl verschafft einem Dokument Vorrang vor einem sonst gleichen
+// ohne Zahl — genau der Fall "korrigierte Opferzahl".
+(() => {
+  const basis = [
+    d("z0", "Explosion am Hauptbahnhof Dortmund, Bereich gesperrt", "2026-07-20T10:00:00Z"),
+    d("z1", "Explosion am Hauptbahnhof Dortmund: Ermittlungen dauern an", "2026-07-20T11:00:00Z"),
+    d("z2", "Explosion am Hauptbahnhof Dortmund: Ermittlungen laufen weiter", "2026-07-20T12:00:00Z"),
+    d("z3", "Explosion am Hauptbahnhof Dortmund: 14 Verletzte bestaetigt", "2026-07-20T12:30:00Z"),
+    d("z4", "Explosion am Hauptbahnhof Dortmund: Lage unveraendert", "2026-07-20T13:00:00Z")
+  ];
+  const drei = V.selectPromptDocuments(basis, 3).map((x) => x.id);
+  check("10 · eine Meldung MIT eigener Zahl schlaegt die wortgleiche ohne Zahl",
+    drei.includes("z3"), drei.join(","));
+})();
+check("10 · die Auswahl ist deterministisch", JSON.stringify(V.selectPromptDocuments(ereignis, 12).map((x) => x.id)) === JSON.stringify(auswahl.map((x) => x.id)));
+check("10 · und unabhaengig von der Eingangsreihenfolge",
+  JSON.stringify(V.selectPromptDocuments(ereignis.slice().reverse(), 12).map((x) => x.id).sort())
+    === JSON.stringify(auswahl.map((x) => x.id).sort()));
+check("10 · passt alles hinein, wird nichts weggelassen",
+  V.selectPromptDocuments(ereignis.slice(0, 5), 12).length === 5);
+check("10 · ein leerer Cluster ergibt eine leere Auswahl", V.selectPromptDocuments([], 12).length === 0);
+
+// Die eigentliche Gueteprobe: mehr Faktenabdeckung als die naheliegenden Strategien.
+const abdeckung = (liste) => new Set(liste.flatMap((doc) => V.docAnchors(doc))).size;
+const nachZeit = (liste, absteigend) => liste.slice().sort((a, b) =>
+  (absteigend ? -1 : 1) * (Date.parse(a.published_at) - Date.parse(b.published_at)));
+const neuesteZuerst = nachZeit(ereignis, true).slice(0, 12);
+const aeltesteZuerst = nachZeit(ereignis, false).slice(0, 12);
+const nachKennung = ereignis.slice().sort((a, b) => a.id.localeCompare(b.id)).slice(0, 12);
+check("10 · deckt mehr Fakten ab als 'neueste zuerst'",
+  abdeckung(auswahl) > abdeckung(neuesteZuerst), `${abdeckung(auswahl)} vs ${abdeckung(neuesteZuerst)}`);
+check("10 · deckt mehr Fakten ab als 'aelteste zuerst'",
+  abdeckung(auswahl) > abdeckung(aeltesteZuerst), `${abdeckung(auswahl)} vs ${abdeckung(aeltesteZuerst)}`);
+check("10 · deckt mehr Fakten ab als die alte Auswahl nach Dokumentkennung",
+  abdeckung(auswahl) > abdeckung(nachKennung), `${abdeckung(auswahl)} vs ${abdeckung(nachKennung)}`);
+check("10 · 'neueste zuerst' verliert nachweislich den Ereigniskern",
+  !neuesteZuerst.some((doc) => doc.id === "e01"));
+check("10 · eine reine Wiederveroeffentlichung verdraengt kein neues Faktum",
+  !auswahl.some((doc) => doc.id === "e13") || !auswahl.some((doc) => doc.id === "e16") || auswahl.some((doc) => doc.id === "e06"));
+
 console.log(`\n${n - fail}/${n} Assertions erfolgreich.`);
 if (fail) console.log(`\nFEHLGESCHLAGEN: ${fail}`);
 process.exit(fail === 0 ? 0 : 1);

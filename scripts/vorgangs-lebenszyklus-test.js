@@ -8,12 +8,12 @@
 //   Verarbeitungsausgang ist klassifiziert und zaehlbar, und was nicht
 //   abgeschlossen ist, muss gezielt und idempotent nachholbar sein.
 
+const fs = require("fs");
+const path = require("path");
 const L = require("../lib/helmut/vorgangs-lebenszyklus");
 const { buildOutcomeTelemetry, ERGEBNISGRUPPEN, understandOneCluster } = require("../lib/helmut/understanding");
-const { aggregateVorgangsbildung, sanitizeProcessRun } = (() => {
-  const s = require("../lib/helmut/storage");
-  return { aggregateVorgangsbildung: s.aggregateVorgangsbildung, sanitizeProcessRun: null };
-})();
+const { aggregateVorgangsbildung, istVorgangsbildungsLauf } = require("../lib/helmut/storage");
+const { parseArgs: nachholArgs } = require("../scripts/vorgangsbildung-nachholen");
 
 let fail = 0;
 let n = 0;
@@ -139,12 +139,63 @@ check("5 · die namentliche Meldung ist gekappt, die Gesamtzahl bleibt ehrlich",
   vieleBewertung.ohneEndzustandIds.length === L.MAX_GEMELDETE_IDS && vieleBewertung.ohneEndzustandGesamt === 5000);
 
 // =========================================================================
+// 5b · Karenzzeit — konfigurierbar, Standard unveraendert
+// =========================================================================
+// Ein Dokument von vor 10 h: mit Standard-Karenz offen, mit 0 h ein Rueckstand.
+const frisch = { id: "k1", created_at: vorStunden(10) };
+check("5b · Standard-Karenz (24 h) laesst ein 10 h altes Dokument als offen gelten",
+  L.classifyDocument(frisch, [], { now: JETZT }).zustand === L.ZUSTAND.OFFEN);
+check("5b · `--karenz=0` macht dasselbe Dokument zum Rueckstand",
+  L.classifyDocument(frisch, [], { now: JETZT, karenzStunden: 0 }).zustand === L.ZUSTAND.OHNE_ENDZUSTAND);
+check("5b · eine laengere Karenz (48 h) entlastet umgekehrt",
+  L.classifyDocument({ id: "k2", created_at: vorStunden(30) }, [], { now: JETZT, karenzStunden: 48 }).zustand === L.ZUSTAND.OFFEN);
+check("5b · der Modul-Standard bleibt bei 24 h (Rueckwaertskompatibilitaet)", L.KARENZ_STUNDEN === 24);
+
+const bewKarenz0 = L.assessLifecycle({ rawDocs, links, kos, now: JETZT, karenzStunden: 0 });
+check("5b · ohne Karenz werden zuvor 'offene' Dokumente zu Nachhol-Kandidaten",
+  bewKarenz0.zustaende[L.ZUSTAND.OFFEN] === 0
+    && bewKarenz0.zustaende[L.ZUSTAND.OHNE_ENDZUSTAND] === bewertung.zustaende[L.ZUSTAND.OHNE_ENDZUSTAND] + bewertung.zustaende[L.ZUSTAND.OFFEN],
+  JSON.stringify(bewKarenz0.zustaende));
+check("5b · verstandene Dokumente bleiben auch ohne Karenz unangetastet",
+  bewKarenz0.zustaende[L.ZUSTAND.VERSTANDEN] === bewertung.zustaende[L.ZUSTAND.VERSTANDEN]);
+check("5b · die verwendete Karenz wird im Ergebnis mitgefuehrt (nicht still angewandt)",
+  bewKarenz0.karenzStunden === 0 && bewertung.karenzStunden === 24);
+
+// Argumentauswertung des Werkzeugs
+const args = (...a) => nachholArgs(["node", "skript", ...a]);
+check("5b · ohne Angabe bleibt die Karenz null -> Modul-Standard gilt", args().karenz === null);
+check("5b · `--karenz=0` wird als gueltige 0 erkannt (nicht als 'fehlt')", args("--karenz=0").karenz === 0);
+check("5b · `--karenz=72` wird uebernommen", args("--karenz=72").karenz === 72);
+check("5b · alle uebrigen Voreinstellungen sind unveraendert",
+  args().tage === 7 && args().max === 200 && args().vorschau === false && args().ausfuehren === false);
+check("5b · `--ausfuehren` impliziert weiterhin die Kandidatenermittlung", args("--ausfuehren").vorschau === true);
+
+// =========================================================================
 // 6 · Lauftelemetrie — jeder Ausgang klassifiziert und zaehlbar
 // =========================================================================
 const alleStatus = Object.keys(ERGEBNISGRUPPEN);
 check("6 · `skipped-exists` ist keine Ergebnisklasse mehr", !alleStatus.includes("skipped-exists"));
 check("6 · alle Ergebnisklassen sind einer Gruppe zugeordnet (keine offene Kategorie)",
   alleStatus.every((s) => typeof ERGEBNISGRUPPEN[s] === "string" && ERGEBNISGRUPPEN[s].length > 0));
+
+// STRUKTURTEST gegen genau die Fehlerklasse, die beim Production-Nachweis auffiel:
+// eine Ergebnisklasse wird im Code zurueckgegeben, fehlt aber in der Zuordnung —
+// und faellt damit still in "unbekannt". Der Test liest die tatsaechlich im
+// Quelltext vergebenen Status und vergleicht sie mit der Zuordnungstabelle.
+(() => {
+  const quelle = fs.readFileSync(path.join(__dirname, "..", "lib/helmut/understanding.js"), "utf8");
+  const vergeben = new Set();
+  // Nur Zuweisungen an das Feld `status` — sowohl direkt als auch als Ternaer.
+  for (const m of quelle.matchAll(/status:\s*"([a-z-]+)"/g)) vergeben.add(m[1]);
+  for (const m of quelle.matchAll(/status:\s*[^,\n]*?\?\s*"([a-z-]+)"\s*:\s*"([a-z-]+)"/g)) { vergeben.add(m[1]); vergeben.add(m[2]); }
+  // Zustandswerte des Knowledge Objects sind KEINE Ergebnisklassen des Laufs.
+  for (const kein of ["complete", "neu", "pending", "failed", "failed-final"]) vergeben.delete(kein);
+  const fehlend = [...vergeben].filter((s) => !ERGEBNISGRUPPEN[s]).sort();
+  check("6 · JEDE im Code vergebene Ergebnisklasse ist in ERGEBNISGRUPPEN zugeordnet",
+    fehlend.length === 0, fehlend.length ? `nicht zugeordnet: ${fehlend.join(", ")}` : `${vergeben.size} geprueft`);
+  check("6 · die Zuordnung enthaelt die Ergebnisse des Pending-Pfads",
+    ERGEBNISGRUPPEN["skipped-no-cluster"] === "erneut" && ERGEBNISGRUPPEN["skipped-no-vorgang"] === "fehlgeschlagen");
+})();
 
 const clusters = [
   { documents: [{ id: "a" }, { id: "b" }] },
@@ -191,6 +242,34 @@ const laeufe = [
 ];
 const agg = aggregateVorgangsbildung(laeufe, { tage: 3650 });
 check("7 · fremde Prozesse fliessen nicht in die Kennzahlen ein", agg.gesamt.cluster === 23, `cluster=${agg.gesamt.cluster}`);
+
+// Der beim Production-Nachweis gefundene Fehler: die Aggregation filterte auf
+// `understanding-lagecheck`, geschrieben wird aber `understanding-lage`;
+// `understanding-nachhol` fehlte ganz. Beide Lauftypen fielen still heraus.
+(() => {
+  const geschrieben = ["understanding-eager", "understanding-lage", "understanding-cron", "understanding-nachhol"];
+  for (const p of geschrieben) {
+    check(`7 · Lauftyp "${p}" zaehlt in die Kennzahlen`, istVorgangsbildungsLauf({ process: p }) === true);
+  }
+  for (const p of ["crawl", "briefing-lage", "briefing-morning", "understanding", null, undefined]) {
+    check(`7 · fremder Lauftyp "${p}" zaehlt NICHT`, istVorgangsbildungsLauf({ process: p }) === false);
+  }
+  // Gegenprobe an echten Daten statt an der Hilfsfunktion allein.
+  const mitLage = aggregateVorgangsbildung([
+    { process: "understanding-lage", createdAt: "2026-07-26T10:00:00Z", cluster: 5, gruppen: { verarbeitet: 5 } },
+    { process: "understanding-nachhol", createdAt: "2026-07-26T11:00:00Z", cluster: 3, gruppen: { verarbeitet: 3 } }
+  ], { tage: 3650 });
+  check("7 · Lage- UND Nachhol-Laeufe erscheinen in der Tagesauswertung",
+    mitLage.gesamt.laeufe === 2 && mitLage.gesamt.cluster === 8 && mitLage.gesamt.gruppen.verarbeitet === 8,
+    JSON.stringify(mitLage.gesamt.gruppen));
+  // Strukturell: jeder im Code geschriebene Prozessname muss erfasst werden.
+  const src = ["lib/helmut/scheduler.js", "server.js", "scripts/vorgangsbildung-nachholen.js"]
+    .map((f) => fs.readFileSync(path.join(__dirname, "..", f), "utf8")).join("\n");
+  const namen = new Set([...src.matchAll(/process:\s*"(understanding-[a-z]+)"/g)].map((m) => m[1]));
+  const nichtErfasst = [...namen].filter((p) => !istVorgangsbildungsLauf({ process: p }));
+  check("7 · JEDER im Code geschriebene understanding-Lauftyp wird erfasst",
+    nichtErfasst.length === 0, nichtErfasst.length ? nichtErfasst.join(", ") : `${namen.size} geprueft: ${[...namen].join(", ")}`);
+})();
 check("7 · die Kennzahlen liegen je TAG vor", agg.jeTag.length === 2 && agg.jeTag[0].tag === "2026-07-26", JSON.stringify(agg.jeTag.map((x) => x.tag)));
 check("7 · je Tag werden Laeufe, Cluster und Gruppen summiert",
   agg.jeTag[0].laeufe === 2 && agg.jeTag[0].cluster === 15 && agg.jeTag[0].gruppen.verarbeitet === 9, JSON.stringify(agg.jeTag[0].gruppen));
