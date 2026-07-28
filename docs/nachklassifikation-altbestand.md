@@ -1,7 +1,8 @@
 # Nachklassifikation des Altbestands (Sprint 21, OP-24)
 
-**Stand:** 2026-07-28 · **Zustand:** technische Vorbereitung vollständig,
-**Production-Schreiblauf ausstehend (freigabepflichtig)**
+**Stand:** 2026-07-28 · **Zustand:** **Stufe 1 (kontrollierter Probelauf über 12 Objekte)
+erfolgreich ausgeführt** · vollständiger Schreiblauf über Umfang B weiterhin
+**gesperrt (freigabepflichtig)** — Protokoll in §13
 
 Kanonisches Dokument zu OP-24. Der Sprintstatus steht in
 [`CURRENT_STATE.md`](CURRENT_STATE.md) §12, der offene Punkt in
@@ -334,3 +335,258 @@ dieser Reihenfolge:
 
 Ohne diese Freigabe wird der Prozess **nicht** im Schreibmodus gegen Production
 ausgeführt.
+
+---
+
+## 13 · Stufe 1: kontrollierter Production-Probelauf (2026-07-28)
+
+**Freigabeumfang:** ausschließlich ein kleiner, kontrollierter Probelauf. Der
+vollständige Lauf über Umfang B (740 Vorgänge) war **nicht** freigegeben und ist
+**nicht** gelaufen. Schritt 3 der Freigabeliste in §12 ist damit erledigt,
+Schritt 4 (Hauptlauf) weiterhin gesperrt.
+
+### 13.1 · Startprüfung (9 von 9 erfüllt)
+
+| # | Prüfung | Ergebnis |
+|---|---|---|
+| 1 | Arbeitsbaum sauber | ✔ `git status` leer |
+| 2 | Lokaler Stand = `main` | ✔ `git rev-list --left-right --count origin/main...HEAD` → `0 0` |
+| 3 | PR #156 in `main` | ✔ `f59bc7c` ist `main`-HEAD |
+| 4 | Production trägt den #156-Stand | ✔ Deployment `dpl_ERm1PDWzUY9xSFUnTDrVcbLmZcem`, `READY`, `target: production`, Commit `f59bc7ca…`. **Zusätzlich durch einen echten Production-Lauf belegt:** `crawl-20260728075825-6a3xv` (08:00:36–08:02:20 UTC) trägt `commit_ref f59bc7ca…` |
+| 5 | Kein paralleler Sprint an Classification/Understanding/Storage/Nachklassifikation | ✔ nur zwei Branches am Remote: `main` und der Doku-Branch dieses Auftrags |
+| 6 | Kein laufender regulärer Prozess auf denselben Objekten | **zunächst NICHT erfüllt** — siehe 13.2 |
+| 7 | Vorschaumodus ohne Schreibzugriff | ✔ zwei Vorschauläufe, `max(updated_at)` blieb bei `08:02:08.534+00` |
+| 8 | Production-Zahlen ≈ dokumentierter Ausgangszustand | ✔ mit erklärten Abweichungen, siehe 13.3 |
+| 9 | Schalter und Riegel aus dem echten Code gelesen | ✔ `scripts/nachklassifikation.js` (Exit-Codes, `--ids`-Reihenfolge, Kollisionsprüfung) und `lib/helmut/production-schreibgate.js` (vier Pflichtvariablen) |
+
+### 13.2 · Der Lauf wurde verzögert, nicht erzwungen
+
+Zu Beginn (07:58 UTC) lief ein **realer Crawl** mit anschließendem
+`understanding-eager` — belegt durch 41 neue Rohdokumente in 15 Minuten und die
+Sperren `crawl-annika-klose` und `global-understanding`. Damit war Startprüfung 6
+verletzt. Es wurde **nicht** geschrieben, sondern gewartet: rein lesende
+Beobachtung im Minutentakt bis **drei aufeinanderfolgende ruhige Messungen**
+(keine neuen Rohdokumente, keine Wissensobjekt-Änderung, **0** aktive Sperren)
+vorlagen — erreicht um **08:18:50 UTC**. Der reguläre Lauf endete um 08:02:20,
+die letzte Sperre lief um 08:17:26 aus. Der Probelauf fiel damit in ein freies
+Fenster; der nächste Cron war erst 10:00 UTC.
+
+### 13.3 · Phase 1 — frische Gesamtvorschau (rein lesend, 08:19 UTC)
+
+| Kennzahl | Sprintbericht (2026-07-28, 00:21) | frische Vorschau | Bewertung |
+|---|---:|---:|---|
+| gelesen | 1 230 | **1 249** | +19 durch regulären Betrieb |
+| unverstanden, ausgeschlossen | 490 | **482** | 8 wurden zwischenzeitlich verstanden |
+| geplant | 740 | **767** | +27 |
+| unverändert | 0 | **27** | **exakt die 27 neuen Objekte** |
+| Schreibvorgänge | 740 | **740** | unverändert |
+| Geografien entfernt | 570 | **570** | ✔ identisch |
+| Geografie-Beleg gestärkt | 2 | **2** | ✔ identisch |
+| Ebenen / Entitäten korrigiert | 0 / 0 | **0 / 0** | ✔ identisch |
+| manuelle Prüffälle | 0 | **0** | ✔ identisch |
+| erwartete KI-Aufrufe / Kosten | 0 / 0,00 USD | **0 / 0,00 USD** | ✔ identisch |
+| Fehlerklassen (sicher) | 6 | **6** | ✔ identisch |
+
+**Alle sechs sicheren Geografie-Fehlerklassen sind zahlengleich geblieben:**
+471 · 30 · 37 · 32 · 2 · 738. Die Abweichungen betreffen ausschließlich neu
+hinzugekommene Objekte und sind vollständig erklärt:
+
+* Die **27** zusätzlich geplanten Objekte tragen alle ein `updated_at` **ab
+  2026-07-28 04:02** — sie wurden also vom **reparierten Sprint-20-Schreibpfad**
+  angelegt und sind bereits korrekt. Der Plan lässt alle 27 unverändert.
+* Neu erscheint die Klasse `geo-belegt-geschuetzt` mit **8** Objekten. Das ist
+  kein Fehler, sondern der Beweis, dass die Schutzregel greift: diese Einträge
+  tragen eine echte Herkunft (`ki`) und werden deshalb **nie** angefasst.
+* `fachgebiet-fehlt-ki` 567 → 594 (+27): dieselben neuen Objekte, die noch keine
+  Fachgebiete haben. Wird nur **gemeldet**, nie geschrieben.
+
+**Keine unerklärte Abweichung.** Die Vorschau hat nichts geschrieben —
+`max(updated_at)` über `knowledge_objects` blieb vorher wie nachher
+`2026-07-28 08:02:08.534+00`.
+
+### 13.4 · Phase 2 — die Stichprobe (12 Objekte, alle 6 Klassen)
+
+Auswahlregel, deterministisch und rein lesend: je Klasse die Objekte, an denen
+die Klasse **eindeutig** ablesbar ist (bei den Geografieklassen darf die ehrliche
+Konfidenz mitlaufen — sie ist die unvermeidliche Folge jeder Geografiekorrektur;
+bei der Konfidenzklasse musste sie die **einzige** Änderung sein), Vorrang für
+Objekte ohne gemeldeten KI-Bedarf, dann nach `id`.
+
+| # | Objekt-ID | Fehlerklasse | Ebene | alter Geo-Wert | neuer Geo-Wert | Herkunft vorher → nachher | Konfidenz vorher → nachher | DB-Änderungen |
+|---|---|---|---|---|---|---|---|---:|
+| 1 | `ko-vg-0362b11ce5daab502d72b364` | `geo-ebenen-ableitung-bund` | bund | `[geo-bund]` | `[]` | `bestand-alt` → – | low → unknown | 1 |
+| 2 | `ko-vg-abgeordnete` | `geo-ebenen-ableitung-bund` | bund | `[geo-bund]` | `[]` | `bestand-alt` → – | medium → unknown | 1 |
+| 3 | `ko-vg-sofortprogramm` | `geo-ersatzwert-land` | land | `[geo-bund]` | `[]` | `bestand-alt` → – | medium → unknown | 1 |
+| 4 | `ko-vg-1801c18ffb22a9a233b50ef6` | `geo-ersatzwert-land` | land | `[geo-bund]` | `[]` | `bestand-alt` → – | medium → unknown | 1 |
+| 5 | `ko-vg-emissionshandel` | `geo-eu-nicht-kanonisch` | eu | `[Europäische Union]` | `[]` | `bestand-alt` → – | medium → unknown | 1 |
+| 6 | `ko-vg-hrvatskoj` | `geo-eu-nicht-kanonisch` | eu | `[Europäische Union]` | `[]` | `bestand-alt` → – | medium → unknown | 1 |
+| 7 | `ko-vg-98322cf41431d3597751f368` | `geo-erwaehnung-als-betroffenheit` | land | `[geo-land-sachsen]` | `[]` | `bestand-alt` → – | medium → unknown | 1 |
+| 8 | `ko-vg-fußfesseln` | `geo-erwaehnung-als-betroffenheit` | land | `[geo-land-bremen]` | `[]` | `bestand-alt` → – | medium → unknown | 1 |
+| 9 | `ko-vg-brandenburg` | `geo-beleg-ergaenzt` | land | `[geo-land-brandenburg]` | `[geo-land-brandenburg]` | `bestand-alt` → **`inhalt`** | medium → medium | 1 |
+| 10 | `ko-vg-12e77972ea2b5cf97b937eb5` | `geo-beleg-ergaenzt` | land | `[geo-land-berlin]` | `[geo-land-berlin]` | `bestand-alt` → **`inhalt`** | medium → medium | 1 |
+| 11 | `ko-vg-1ec5990cf61fd0115b2ca1b5` | `konfidenz-geografie-ehrlich` | unknown | `[]` | `[]` | – | low → unknown | 1 |
+| 12 | `ko-vg-5d41e785c81b83bb016628c2` | `konfidenz-geografie-ehrlich` | unknown | `[]` | `[]` | – | medium → unknown | 1 |
+
+**Mandant:** entfällt als Auswahlachse — `knowledge_objects` trägt bewusst kein
+`user_id`/`tenant_id`; ein Vorgang wird global genau einmal verstanden (§10).
+Es wurde **keine** Mandantenbegrenzung gesetzt, die Auswahl ist mandantenneutral.
+
+**Warum jede Änderung deterministisch sicher ist:** Zeilen 1–8 entfernen einen
+Wert, der (a) **keine** echte Herkunft trägt (nur `bestand-alt`, Rang 2) und für
+den (b) die erneute Nachweissuche **keinen** Beleg findet — die beiden
+Bedingungen aus §3, beide erfüllt. Zeilen 9–10 entfernen **nichts**: dort steigt
+nur die Herkunft einer bereits vorhandenen Region auf `inhalt`, weil ein
+subnationaler Nachweis existiert (die Region wird dadurch dauerhaft geschützt).
+Zeilen 11–12 fassen ausschließlich die Kennzahl an, kein einziges Geografie-Feld.
+Keine Zeile braucht einen KI-Aufruf; **0** manuelle Prüffälle in der Stichprobe.
+
+**DSGVO:** Es sind keine Prosafelder, Dokumenttexte oder Personennamen
+übernommen. Die Kennungen sind Themenwurzel-Slugs aus `vorgang_id`; das Protokoll
+läuft durch `maskiereProtokoll` (§8).
+
+### 13.5 · Phase 3 — letzte Sicherheitsprüfung (08:24 UTC)
+
+* Alle 12 Objekte erneut gelesen: `updated_at` **unverändert** gegenüber der
+  Auswahl → **0** Objekte auszuschließen.
+* Vorschau **begrenzt auf genau die 12 IDs**: 12 geplant, 12 Schreibvorgänge,
+  `nichtGefunden: []`, 8 Geografien entfernt, 2 Belege gestärkt, 0 Ebenen,
+  0 Entitäten, 0 manuell, **0 KI-Aufrufe**.
+* Kein KI-Pfad geladen: der Modulgraph des Schreibpfads (16 Module) enthält
+  **kein** `ai.js`, `llm-budget.js` oder `llm-usage.js`; die beiden Sprint-21-
+  Dateien enthalten **keine** statische KI-Referenz.
+* Umgebung ruhig: **0** aktive Sperren, **0** neue Rohdokumente in 10 Minuten.
+* Ausgangsfingerabdruck über **alle 1 237 übrigen** Wissensobjekte gebildet:
+  `f277c07bf90d7cb8cda84d7e23904cfd`.
+
+### 13.6 · Phase 4 — der Schreiblauf
+
+```
+--ids=<12 Kennungen> --max=12 --batch=12 --fehlerquote=0 --ausfuehren
++ HELMUT_NACHKLASSIFIKATION_BESTAETIGT=ja  + Production-Schreibgate (4 von 4)
+```
+
+**2026-07-28, 08:25:13–08:25:21 UTC (8 s), Exit 0.**
+
+| Größe | Wert |
+|---|---:|
+| geplant | 12 |
+| verarbeitet | 12 |
+| **geschrieben** | **12** |
+| Fehler | **0** |
+| Kollisionen | **0** |
+| abgebrochen | **nein** |
+| KI-Aufrufe | **0** |
+
+### 13.7 · Phase 5 — vollständiger Readback
+
+Jedes Objekt wurde unmittelbar danach vollständig neu aus Production gelesen und
+**Spalte für Spalte** gegen den Vorher-Abzug und die Vorschau verglichen.
+
+| Beweisfrage | Ergebnis |
+|---|---|
+| Jede Änderung entspricht exakt der Vorschau | **12 von 12**, **0** Abweichungen |
+| Belegte Geografie verloren | **0** |
+| Nicht geplante Geografie ergänzt | **0** |
+| Politische Ebene verändert (`decision_level`/`political_level`) | **0** |
+| Fachgebiete (`tags`/`policy_field`) oder Entitäten verändert | **0** |
+| Andere Felder verändert | **0** — geändert wurden ausschließlich `affected_geographies`, `mentioned_geographies`, `classification_confidence` |
+| Andere Objekte verändert | **0** — Fingerabdruck der 1 237 übrigen Objekte **identisch** (`f277c07b…` vorher wie nachher) |
+| Mandantentrennung verletzt | **nein** — geschrieben wurde nur in die mandantenneutrale Tabelle `knowledge_objects`; `decisions` und Profile unberührt |
+| KI-Kosten entstanden | **0,00 USD** — `llm_usage` **0** Zeilen, `llm_budget_counters` Fingerabdruck **identisch** (`b1d60047…`) |
+
+Der Nachweis der Änderung steht additiv in `classification_confidence`:
+`nachklassifikation_am = 2026-07-28T08:25:17.061Z` und
+`nachklassifikation_klassen` mit genau den Klassen aus der Vorschau.
+
+### 13.8 · Phase 6 — Idempotenz
+
+Neue Vorschau, begrenzt auf genau die 12 bearbeiteten IDs:
+
+| Erwartung | Ergebnis |
+|---|---:|
+| weitere sichere Änderungen | **0** |
+| geplante Schreibvorgänge | **0** (12 unverändert, 0 Batches) |
+| KI-Aufrufe | **0** |
+| manuelle Prüffälle | **0** |
+
+Verbleibend werden nur noch **Meldungen** ausgewiesen: `geo-belegt-geschuetzt` 2,
+`fachgebiet-fehlt-ki` 2, `ebene-unbestimmt-ki` 2. Die erste Zahl ist das
+gewünschte Ergebnis: die beiden gestärkten Regionen gelten jetzt als **belegt und
+geschützt**. Ein zweiter Schreibmoduslauf wurde **nicht** ausgeführt.
+
+### 13.9 · Phase 7 — Auswirkungen (rein lesend)
+
+| Prüfung | Ergebnis |
+|---|---|
+| Objekte weiterhin abrufbar | **12 von 12** über `getKnowledgeObjectById` |
+| Matching unverändert plausibel | `matchProfileToKnowledgeObjects` gegen **alle 8** echten Production-Profile fehlerfrei, 80 Treffer auf der Stichprobe. **Strukturell abgesichert:** `matching.js` liest `tags`, `policy_field`, `regions`, `mentioned_locations`, `embedding` u. a. — **keines** der drei geänderten Felder |
+| Briefings weiterhin abrufbar | 8 Profile geprüft, **0 Fehler**; 3 tragen ein Briefing, 5 nicht (unveränderter Bestandszustand). **71** Briefings insgesamt, letztes 08:16:31 — **0** neue seit dem Lauf |
+| Fehlermeldungen / auffällige Telemetrie | **0** fehlgeschlagene Läufe in 3 h. Alle 293 Telemetriezeilen stammen aus 08:02–08:16, also **vor** dem Schreiblauf; der Lauf selbst erzeugt **keine** Telemetriezeile |
+| Normaler Betrieb | läuft weiter: **0** aktive Sperren, Crons unberührt, nächster Cron 10:00 UTC |
+
+Es wurden **keine** Briefings erzeugt und **keine** regulären Verarbeitungsläufe
+für diesen Test gestartet.
+
+### 13.10 · Befund N-1: der Lauf schreibt `updated_at` nicht fort
+
+**Belegt an allen 12 Objekten:** `updated_at` ist vorher wie nachher identisch,
+obwohl der Datensatz nachweislich geändert wurde. `saveKnowledgeObjectEnrichment`
+setzt die Spalte nicht, und es gibt keinen DB-Trigger.
+
+**Bewertung: kein Defekt, aber vor dem Hauptlauf zu wissen.**
+
+* Es ist **kein neues Verhalten** von Sprint 21 — die Funktion wird seit dem
+  `ko-enrichment`-Pfad so benutzt.
+* Die **Kollisionsprüfung bleibt wirksam**: sie schützt gegen die *reguläre*
+  Verarbeitung, und die setzt `updated_at` sehr wohl (belegt an den 27 heute neu
+  geschriebenen Objekten). Genau dieser Fall wird weiterhin erkannt.
+* Die **Nachvollziehbarkeit ist gegeben**, nur an anderer Stelle:
+  `classification_confidence.nachklassifikation_am` und
+  `nachklassifikation_klassen` werden geschrieben und sind auswertbar.
+* Der Nebeneffekt ist eher erwünscht: eine Nachklassifikation lässt einen Vorgang
+  **nicht** künstlich frisch aussehen und stört keine nach `updated_at`
+  sortierende Lage- oder Briefing-Logik.
+* **Konsequenz für den Hauptlauf:** nach 740 Korrekturen zeigt keine
+  `updated_at`-basierte Sicht, dass etwas geändert wurde. Wer den Umfang
+  gegenmessen will, muss `classification_confidence.nachklassifikation_am`
+  auswerten, nicht `updated_at`.
+
+Ein Codefehler wurde **nicht** gefunden; es war **keine** Codeänderung nötig.
+
+### 13.11 · Was Stufe 1 beweist — und was nicht
+
+**Bewiesen:** der reale Production-Schreibpfad entspricht der Vorschau exakt, für
+**alle sechs** sicheren Fehlerklassen, ohne Streuverlust auf andere Felder oder
+Objekte, ohne KI-Kosten, idempotent und ohne Betriebsstörung.
+
+**Nicht bewiesen:** das Verhalten **unter Menge**. Der Probelauf umfasste 12 von
+740 Objekten in einem Batch und 8 Sekunden. Offen bleiben damit das Verhalten
+über 30 Batches, eine Kollision mit einem parallel laufenden regulären Prozess
+(im Probelauf gab es **0**) und der Rückweg, der weiterhin **nie** gegen
+Production gelaufen ist (OP-01, bekanntes Altrisiko).
+
+### 13.12 · Nächste erforderliche Freigabe
+
+Der vollständige Lauf bleibt **gesperrt**. Erbeten wird genau eine Entscheidung:
+
+> **Umfang B** (Geografie **und** ehrliche Konfidenz, 740 Objekte, 30 Batches à
+> 25, 0 KI-Aufrufe, 0,00 USD) freigeben — oder **Umfang A** (nur Geografie, 572
+> Objekte), womit 166 Objekte weiterhin `geography: "medium"` behaupten, ohne
+> eine belegte Region zu tragen.
+
+Vor dem Hauptlauf unverändert nötig: frische Sicherung mit notierter Prüfsumme
+(§11), ein freies Zeitfenster ohne laufenden Crawl/Understanding-Lauf (die
+Wartepflicht aus 13.2 gilt weiter), danach zweiter Vorschaulauf und lesende
+Gegenprobe.
+
+### 13.13 · Branch, PR, Tests
+
+* Branch `claude/sprint-21-production-pilot-enef9l`, **PR #157** — **reine
+  Dokumentation**, kein Anwendungscode.
+* **CI-Gate grün: beide Pflicht-Checks** — `Syntax + Offline-Suiten` und
+  `Browser-/Mobile-Smoke (Chromium)`, Lauf `30343049294`.
+* Offline-Suite in dieser Sitzung **158/172** — identische **14**
+  netz-/DB-abhängige Vorbefunde wie im Sprintbericht (Zugangsdaten gesetzt, der
+  Netz-Guard greift). Verbindlich ist der CI-Lauf ohne Secrets.
+* Es wurde **kein** Code geändert, daher **keine** neue Testabdeckung nötig und
+  **kein** Fehlerkorrektur-PR erforderlich.

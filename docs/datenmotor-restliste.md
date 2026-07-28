@@ -365,10 +365,11 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 - **Freigabe:** überwiegend **NEIN** (Code-Hygiene via normalem PR-Prozess); **JA** nur für DST/Cron und Datenbereinigungen.
 
 #### OP-24 · Geografie des Altbestands nachklassifizieren (neu, Sprint 20)
-- **Status:** **technisch vorbereitet, Production-Schreiblauf ausstehend** (Sprint 21,
-  2026-07-28). Der Prozess ist gebaut, getestet (101/101 · 21/21 Mutationen rot) und
-  read-only gegen Production vermessen; er ist **nie** im Schreibmodus gelaufen.
-  Kanonisch: [`nachklassifikation-altbestand.md`](nachklassifikation-altbestand.md).
+- **Status:** **Stufe 1 (Probelauf) erfolgreich, vollständiger Schreiblauf ausstehend**
+  (Sprint 21, 2026-07-28). Der Prozess ist gebaut, getestet (101/101 · 21/21 Mutationen rot),
+  read-only gegen Production vermessen **und am 2026-07-28, 08:25:13–08:25:21 UTC erstmals
+  im Schreibmodus gegen Production gelaufen — begrenzt auf 12 namentlich genannte Objekte**.
+  Kanonisch: [`nachklassifikation-altbestand.md`](nachklassifikation-altbestand.md) §13.
   Sprint 20 hat den **Schreibpfad** korrigiert: eine betroffene Geografie
   entsteht nur noch aus Nachweisen, nie aus `decision_level`. Der **Altbestand ist bewusst
   unangetastet geblieben** (Sprintregel 12).
@@ -391,7 +392,27 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   entfernen** (471 Bundes-Ableitung · 30 Ersatzwert `land` · 37 nicht-kanonische EU · 32
   Ortsnennung) und **2** Belege stärken. **0** manuelle Prüffälle, **0** KI-Aufrufe,
   **0,00 USD**. Die Zahlen reproduzieren die Sprint-19/20-Messung exakt (78 · 30 · 37 · 34).
-- **Fehlender Schritt:** **nur noch der freigegebene Production-Schreiblauf.** Alt-Einträge
+- **Stufe 1 ausgeführt (2026-07-28, Probelauf über 12 Objekte):** Startprüfung 9/9 (der Lauf
+  wurde **verzögert**, weil um 07:58 UTC ein realer Crawl + `understanding-eager` lief;
+  geschrieben wurde erst nach drei ruhigen Messungen). Frische Gesamtvorschau: 1 249 gelesen,
+  482 unverstandene ausgeschlossen, 767 geplant, 740 Schreibvorgänge — **alle sechs sicheren
+  Fehlerklassen zahlengleich** zum Sprintbericht (471 · 30 · 37 · 32 · 2 · 738), die
+  Abweichungen sind ausschließlich 27 neue, vom reparierten Sprint-20-Pfad bereits korrekt
+  geschriebene Objekte. Stichprobe: **12 Objekte, 2 je Klasse, alle 6 Klassen**, 0 manuelle
+  Fälle. Ergebnis: **12 geplant, 12 geschrieben, 0 Fehler, 0 Kollisionen**, 8 s.
+  Readback vollständig: **0 Abweichungen von der Vorschau**, **0** belegte Geografien
+  verloren, **0** ungeplant ergänzt, **0** Ebenen/Fachgebiete/Entitäten verändert, nur
+  3 Spalten berührt, Fingerabdruck der **1 237 übrigen** Objekte **identisch**,
+  `llm_usage` **0** Zeilen und Budgetzähler unverändert → **0 KI-Aufrufe, 0,00 USD**.
+  Idempotenz: zweiter Vorschaulauf meldet **0** Schreibvorgänge. Matching (8 echte Profile),
+  Briefings und Betrieb stabil. **Befund N-1:** der Lauf schreibt `updated_at` **nicht** fort
+  (Verhalten von `saveKnowledgeObjectEnrichment`, kein Defekt) — der Nachweis steht in
+  `classification_confidence.nachklassifikation_am`; wer den Hauptlauf gegenmessen will,
+  darf **nicht** `updated_at` benutzen.
+- **Fehlender Schritt:** **nur noch der freigegebene vollständige Production-Schreiblauf**
+  (Umfang B, 740 Objekte, 30 Batches — oder Umfang A, 572). Stufe 1 hat die Korrektheit des
+  Schreibpfads belegt, **nicht** das Verhalten unter Menge (30 Batches statt 1) und nicht den
+  Rückweg (nie gegen Production gelaufen, OP-01). Alt-Einträge
   tragen keine Herkunft und gelten als `bestand-alt` — sie sind von jedem echten Nachweis
   (Rang ≥ `ki`) korrigierbar, gehen aber ohne Nachweis nicht verloren (fail closed).
 - **Abhängigkeiten:** Sprint 20 ist gemergt (#155) und deployt. Sprint 21 muss gemergt sein.
@@ -401,7 +422,8 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Dämpfend: `affected_geographies` und `political_level` haben heute **keinen**
   Laufzeitkonsumenten — `matching.js` liest beide nicht.
 - **Freigabe:** **JA** (Production-Datenänderung) — Freigabeschritte in §12 des kanonischen
-  Dokuments.
+  Dokuments. Schritt 3 (Probelauf) ist **erledigt**; offen ist genau eine Entscheidung:
+  **Umfang A oder B** für den Hauptlauf (§13.12).
 
 ---
 
