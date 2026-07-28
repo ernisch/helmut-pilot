@@ -220,14 +220,20 @@ Drei Maßnahmen, alle rein und getestet:
 |---|---|
 | `nachklassifikation-test.js` (neu) | **101/101** — enthält die 20 im Auftrag verbindlich geforderten Fälle einzeln und benannt |
 | `nachklassifikation-mutationsprobe.js` (neu) | **21 von 21 Mutationen rot** |
-| Offline-Suite `run-offline-tests.js` | **158/172** gegen die Basislinie **157/171** desselben Arbeitsbaums — **identische 14 Vorbefunde**, also +1 Suite, +1 grün, **keine Verschlechterung** |
-| Browser-Smoke | **nicht gefahren** — keine UI-Änderung |
+| Offline-Suite `run-offline-tests.js` (lokal) | **158/172** gegen die Basislinie **157/171** desselben Arbeitsbaums — **identische 14 Vorbefunde**, also +1 Suite, +1 grün, **keine Verschlechterung** |
+| **CI-Gate (verbindliche Abnahme)** | **beide Pflicht-Checks grün** — `Syntax + Offline-Suiten` und `Browser-/Mobile-Smoke (Chromium)`, Lauf `30317133853`, Commit `8d8ae3e` |
+| Browser-Smoke lokal | **nicht gefahren** — keine UI-Änderung; im CI läuft er trotzdem und ist grün |
 
 > **Zur Zahl 158/172:** in dieser Sitzung sind Production-Zugangsdaten gesetzt;
 > 14 netz-/DB-abhängige Suiten scheitern deshalb am Netz-Guard des Runners. Die
 > **Abnahmezahl ist der CI-Lauf ohne Secrets**, nicht dieser lokale Wert. Die
 > Basislinie wurde im selben Arbeitsbaum durch Entfernen der neuen Dateien
 > gemessen und ergab dieselben 14 Fehlschläge.
+>
+> **Ehrliche Einschränkung:** die *Einzelzahl* der CI-Suiten konnte aus dieser
+> Sitzung nicht gelesen werden — der Log-Host von GitHub Actions ist über den
+> Agent-Proxy gesperrt (`CONNECT tunnel failed, 403`). Belegt ist der
+> **Ausgang** beider Pflicht-Checks (`conclusion: success`), nicht die Zahl.
 
 ### 9.1 · Idempotenz an echten Production-Daten
 
