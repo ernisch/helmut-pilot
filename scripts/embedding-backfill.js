@@ -195,7 +195,10 @@ async function main() {
       console.log(`fremde Modelle/Rezepte: ${befund.fremdeModelle.length} · fehlgeschlagen: ${befund.fehlgeschlageneZeilen.length} · doppelte Aktive: ${befund.doppelteAktive.length}`);
       console.log(`ERGEBNIS: ${befund.ok ? "BESTANDEN" : "NICHT BESTANDEN"} · Protokoll: ${pfad}`);
     }
-    process.exit(befund.ok ? 0 : 8);
+    // Exitcode setzen statt process.exit(): ein sofortiger Abbruch schneidet
+    // umfangreiche Ausgaben (--json) auf einer Pipe ab, bevor stdout geleert ist.
+    process.exitCode = befund.ok ? 0 : 8;
+    return;
   }
 
   // --- Dry-Run (Standard) ---
@@ -203,7 +206,8 @@ async function main() {
     const ergebnis = await backfill.fuehreBackfillAus(deps, { ...cfg, dryRun: true });
     if (!ergebnis.ok) {
       console.error(`Dry-Run nicht möglich (${ergebnis.phase}): ${(ergebnis.fehler || []).join("; ")}`);
-      process.exit(ergebnis.phase === "grenzen" ? 3 : ergebnis.phase === "schema" ? 4 : 1);
+      process.exitCode = ergebnis.phase === "grenzen" ? 3 : ergebnis.phase === "schema" ? 4 : 1;
+      return;
     }
     const b = ergebnis.bericht;
     if (args.json) console.log(JSON.stringify({ modus: "dry-run", tokenLimit: ergebnis.tokenLimit, bericht: b }, null, 2));
@@ -245,10 +249,11 @@ async function main() {
   if (!ergebnis.bericht) {
     console.error(`ABBRUCH (${ergebnis.phase}): ${(ergebnis.fehler || []).join("; ")}`);
     console.error(`Protokoll: ${pfad}`);
-    process.exit(ergebnis.phase === "grenzen" ? 3
+    process.exitCode = ergebnis.phase === "grenzen" ? 3
       : ergebnis.phase === "schema" ? 4
         : ergebnis.phase === "lock" || ergebnis.phase === "fremdsperren" ? 5
-          : ergebnis.phase === "provider" ? 2 : 1);
+          : ergebnis.phase === "provider" ? 2 : 1;
+    return;
   }
   const b = ergebnis.bericht;
   if (args.json) console.log(JSON.stringify(protokoll, null, 2));
@@ -262,7 +267,7 @@ async function main() {
     console.log(`Protokoll: ${pfad}`);
     console.log(`\nNachprüfung: node scripts/embedding-backfill.js --pruefen`);
   }
-  process.exit(ergebnis.ok ? 0 : 7);
+  process.exitCode = ergebnis.ok ? 0 : 7;
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+main().catch((e) => { console.error(e); process.exitCode = 1; });
