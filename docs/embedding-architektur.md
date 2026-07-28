@@ -1,7 +1,8 @@
-# Embedding-Architektur — Befund, Datenvertrag und Zielmodell (Sprint 22A)
+# Embedding-Architektur — Befund, Datenvertrag und Zielmodell (Sprint 22A/22B)
 
-**Stand:** 2026-07-28 · **Sprint 22A** (Analyse + additive Verträge, kein Backfill,
-keine Production-Änderung) · Roadmap-Bezug: [`roadmap/phase_1_checkliste.md`](roadmap/phase_1_checkliste.md)
+**Stand:** 2026-07-28 · **Sprint 22A** (Analyse + additive Verträge) · **Sprint 22B**
+(Qualitätsvergleich vorbereitet, §13 — kein Backfill, keine Production-Änderung) ·
+Roadmap-Bezug: [`roadmap/phase_1_checkliste.md`](roadmap/phase_1_checkliste.md)
 Punkt 22 („Embeddings vollständig speichern und prüfen").
 **Achtung Nummernkollision:** Roadmap-**Punkt 22** (Embeddings) ist **nicht**
 `OP-22` der Restliste (Scoring-Scharfschaltung) — die beiden sind unabhängig.
@@ -169,6 +170,9 @@ konstruktiv keine Neuerzeugung auslösen (nicht im Eingang enthalten).
 
 ## 8 · Kostenmodell (parametrisiert, Basis: echter Bestand)
 
+> **Aktualisierung Sprint 22B:** reale Messwerte und belegte Preise stehen in
+> §13.5 — die dortigen Zahlen ersetzen die Schätzwerte dieses Abschnitts.
+
 Gemessen: kanonischer Kerntext Ø **427** Zeichen (max 1 185), Entitäten Ø
 **383** Zeichen → Eingang Ø ≈ **800 Zeichen ≈ 200–270 Tokens** (deutsch,
 konservativ ~4 Zeichen/Token; Rechenwert T̄ = 250).
@@ -254,3 +258,168 @@ begrenzter Testlauf (z. B. 50 Objekte) mit Qualitätsvergleich Merkmalsvektor vs
 semantisch am Duplikat-/Wiedererkennungsfall (dem stärksten Nutzenkandidaten,
 §4). **Kein** Umbau des produktiven Matchings in 22B. Vorher zu klären ist
 keine kritische Blockade; die vier Freigaben aus §11 fallen in 22B selbst an.
+
+---
+
+## 13 · Sprint 22B — Qualitätsvergleich vorbereitet (2026-07-28)
+
+Alle Arbeiten offline/additiv; **kein Production-Write, keine Migration
+angewendet, kein KI-Aufruf, Matching unverändert.** Der kostenpflichtige
+Testlauf wartet auf Betreiberfreigabe (§13.6).
+
+### 13.1 Testmenge und Goldstandard
+
+[`../scripts/fixtures/embedding-testset-22b.json`](../scripts/fixtures/embedding-testset-22b.json):
+**56 Wissensobjekte** (read-only aus Production exportiert, ~14:30 UTC) über
+alle 15 geforderten Fallgruppen, darunter die dokumentierten Problemumgebungen
+B4-3 (Iran-/„Angriffe"-Vokabularcluster) und B4-4 (CSD-/Wegner-Cluster,
+Befundakte §15–§19), 4 exakte Headline-Duplikatpaare, die
+Mindestlohn-Mehrfachvorgangsfamilie, Aktualisierungsketten, Berlin (6),
+Brandenburg (1 — einziges echtes Landes-Objekt im verstandenen Bestand,
+dokumentierte Bestandsgrenze), Ebene `unknown` (2), korrigierte Geografien (8)
+und 9 Negativkontrollen. **Goldstandard: 47 Paare** in 7 Klassen, je mit
+Begründung, **vor** jeder Modellauswertung fixiert (nicht nachträglich
+anpassbar). Neuer Bestandsbefund: **238 der 772** verstandenen Objekte haben
+eine leere `headline` (236 bleiben über den Kerntext berechtigt) — kein
+Rezeptfehler, aber der `titel:`-Teil des Eingangs fehlt dort.
+
+### 13.2 Legacy-Basislinie (Merkmalsvektor gegen Goldstandard)
+
+Werkzeug [`../scripts/embedding-quality-eval.js`](../scripts/embedding-quality-eval.js);
+Reproduzierbarkeit erneut bewiesen (56/56 Production-Vektoren lokal exakt,
+max. Abweichung 4,25e-8). Ergebnis:
+
+- **Rangqualität:** Rang 1 in 20/38, Top-5 in 33/38 Positiv-Richtungen,
+  mittlerer Rang 4,4 — wortnahe Duplikate findet der Merkmalsvektor gut.
+- **Bewiesene Schwächen (erwartetes Muster):** gleiche Vorgänge mit anderer
+  Formulierung fallen durch — GVK-Duplikat Kosinus **0,059** (Rang 42),
+  CSD-Anschlag↔Folgeberichterstattung **0,269** (Rang 21), Serienende Iran
+  **0,177** (Rang 24), Petition **0,228**. Gleichzeitig liegen
+  Negativkontrollen **über** echten Duplikaten (Mieten-Berlin↔Pflegeheim-Berlin
+  **0,429**; Merz-„Angriff"↔Militärangriff **0,362**) — Merkmalsüberlappung,
+  nicht Bedeutung.
+- **Kein tragfähiger Einzelschwellenwert:** 0,35 → Trefferquote 68 % bei
+  Präzision 0,87; 0,45 → Präzision 1,0 bei Trefferquote **26 %**. Der
+  Zielkonflikt (mehr Beziehungen ↔ mehr Fehlverknüpfungen ↔ Prüfaufwand) ist
+  in der Schwellentabelle des Werkzeugs dokumentiert.
+
+### 13.3 Modell, Provider, Dimension (Empfehlung)
+
+**Empfehlung: `text-embedding-3-small` über Azure OpenAI, Dimension 256
+(nativer `dimensions`-Parameter), Rezept `ko-kanon-1`, eine Shadow-Struktur.**
+
+| Variante | Bewertung |
+|---|---|
+| **text-embedding-3-small (Azure OpenAI)** — empfohlen | multilingual (gutes Deutsch), 8 191 Token Eingang (reicht: max. Eingang 370 Tokens), Batch, native Dimensionswahl 256–1536; **Betrieb: bestehender Helmut-KI-Provider** (Understanding läuft über `AZURE_OPENAI_ENDPOINT`) → kein neuer Vertrag, kein neuer Secret-Ort, bestehende AVV-/Datenschutzlage; Listenpreis (OpenAI) **0,02 USD/1 M Tokens**, Batch 0,01 |
+| text-embedding-3-large | 6,5× Preis (0,13 USD/1 M), besserer MTEB-Schnitt; für kurze deutsche Verwaltungs-/Politiktexte kein belegter Bedarf — erst erwägen, wenn `small` im Testlauf versagt |
+| jina-embeddings-v3 (Jina AI, Berlin) | EU-Anbieter, stark multilingual, Matryoshka 32–1024, 8 192 Kontext — die echte Option, falls die Datenschutzentscheidung gegen US-Cloud-Verarbeitung fällt; aber neuer Vertrag, neuer Secret-Ort, neuer Betriebsweg; Preisstruktur (Token-Bundles ~0,045–0,05 USD/1 M) offiziell nicht je Modell ausgewiesen |
+| lokales Modell | weiterhin abgelehnt (§7: Serverless ohne GPU, Betriebslast; Kosten sind kein Argument) |
+
+Preise extern belegt (2026-07, mehrere unabhängige Quellen); der konkrete
+**Azure**-Preis und die Existenz eines Embedding-Deployments im bestehenden
+Azure-Ressourcenbereich sind **vor** dem Testlauf gegenzuprüfen →
+Freigabepunkt. Dimension: **eine** Dimension (256) für den Shadow-Vergleich;
+ein Mehr-Dimensionen-Vergleich ist erst gerechtfertigt, wenn 256 im Testlauf
+qualitativ versagt (Vermeidung von Variantenkombinatorik). 256 hält die
+Speicher-/Indexlast klein (772 Vektoren ≈ 0,8 MiB; 1536 ≈ 4,6 MiB).
+
+### 13.4 Offline-Shadow-Pipeline und Werkzeuge (additiv, 0 Netz, 0 DB)
+
+- [`../lib/helmut/embedding-shadow-pipeline.js`](../lib/helmut/embedding-shadow-pipeline.js):
+  Berechtigung → kanonischer Eingang → Hash → Batches (Batchgröße, hartes
+  Objekt- **und** Tokenlimit, fail-closed; `maxObjekte: 0` = nichts) →
+  injizierter Provider → Vektorvalidierung (Dimension, NaN/∞, leer, Nullvektor)
+  → lokale Ablage (`shadow-store/`, gitignored; Datenvertrag = Shadow-Tabelle)
+  mit Status/Fehler/Versuchszähler/Zeiten; idempotent, wiederaufnehmbar,
+  Versuchsdeckel 3, Abbruch nach 2 Fehlbatches in Folge; ohne injizierten
+  Provider ist **nur** der Dry-Run möglich. Ein Fehlschlag hinterlässt nie
+  einen nutzbaren Vektor und berührt nie das Wissensobjekt.
+- [`../scripts/embedding-shadow-pipeline-test.js`](../scripts/embedding-shadow-pipeline-test.js):
+  **31 Prüfungen** — alle 20 Pflichtprüfungen des Sprintauftrags + 8
+  Fehlerszenarien (Timeout, unvollständige Antwort, Teilbatch, Hashwechsel,
+  Doppelstart, Versuchsdeckel, persistente Wiederaufnahme, Fixture-Integrität).
+- [`../scripts/embedding-testlauf.js`](../scripts/embedding-testlauf.js):
+  Testlauf-CLI, Default Dry-Run; echter Lauf **nur** mit
+  `--echt --freigabe erteilt` + Secrets aus `process.env` (Weg A: bestehendes
+  Azure-Endpoint-Paar + `HELMUT_EMBEDDING_DEPLOYMENT`; Weg B:
+  OpenAI-kompatible API). Harte Limits 80 Objekte / 60 000 Tokens.
+- [`../scripts/embedding-quality-eval.js`](../scripts/embedding-quality-eval.js):
+  identische Metriken für Legacy und Semantik (`--semantik <ablage>`).
+- Migrationsentwurf geschärft: Primärschlüssel jetzt
+  `(knowledge_object_id, embedding_kind, model, dim, recipe_version)` —
+  „genau ein aktiver Vektor je Objekt+Modell+Dimension+Rezept", Modellwechsel
+  ohne Datenverlust abbildbar; zusätzlich Status-Index. Rollback unverändert
+  vollständig (`drop table`).
+
+### 13.5 Kostenmodell (real gemessen, ersetzt die Schätzwerte aus §8)
+
+Realer kanonischer Eingang über alle **772** berechtigten Objekte: Ø **144**
+Tokens (Median 133, p90 206, max 370) — die 22A-Schätzung T̄=250 war
+konservativ zu hoch. Bei 0,02 USD/1 M (small):
+
+| Größe | Tokens | Kosten (small) |
+|---|---|---|
+| Testlauf (56 Objekte) | 8 621 | **≈ 0,0002 USD** |
+| Altbestand einmalig (772) | 110 992 | **≈ 0,0022 USD** |
+| je 100 neue Objekte | ~14 400 | ≈ 0,0003 USD |
+| vollständige Neuerzeugung/Modellwechsel | wie Altbestand | ≈ 0,0022 USD (large: 0,0144) |
+
+**Budgettrennung:** eigener Zähler, getrennt vom Understanding-Budget.
+Vorschlag Sicherheitsdeckel (Freigabe ausstehend): **50 000 Tokens/Tag** und
+**1 USD/Monat absolut**, fail-closed — großzügig gegen den realen Bedarf,
+hart gegen Fehlprogrammierung. Bestehende Budgets unverändert.
+
+### 13.6 Freigabepaket externer Testlauf (STOPP — wartet auf Betreiber)
+
+1. Provider **Azure OpenAI** (bestehender Vertrag) · Modell
+   **text-embedding-3-small** · Dimension **256** · Rezept `ko-kanon-1`.
+2. **56 Objekte**, ~**8 621 Tokens**, Kosten **≈ 0,0002 USD** (unter 1 Cent).
+3. Gesendet wird je Objekt **nur** der kanonische Eingang: Titel, Vorgang,
+   Bedeutung, Ereignistyp, Akteurs-/Institutionsnamen — alles aus öffentlichen
+   Quellen abgeleitete, mandantenlose Verstehens-Ergebnisse; **keine**
+   Nutzer-/Mandats-/Matchingdaten. Datenschutz: identische Verarbeitungslage
+   wie das bestehende Understanding (gleicher Azure-Tenant); bei Weg B
+   (direkter OpenAI-/Fremdanbieter) wäre die AVV-Lage neu zu bewerten.
+4. Rückfallstrategie: Fehlversuche bleiben lokal in `shadow-store/` markiert,
+   Wiederaufnahme = gleicher Aufruf; kein Rollback nötig (keine DB berührt).
+5. Ablauf nach Freigabe: `HELMUT_EMBEDDING_DEPLOYMENT` in der
+   Cloud-Session-Umgebung setzen (Environment-Einstellungen, nie Chat/Commit),
+   dann `node scripts/embedding-testlauf.js --echt --freigabe erteilt`,
+   anschließend `node scripts/embedding-quality-eval.js --semantik
+   shadow-store/embedding-testlauf-22b.json`.
+6. **Es werden keine Production-Daten geschrieben** (Ablage lokal, gitignored).
+7. Offene Gegenprüfungen vor Freigabe: Azure-Preis + vorhandenes/anzulegendes
+   Embedding-Deployment (eine Azure-Konfigurationsänderung wäre selbst
+   freigabepflichtig).
+
+**Ergebnis der Gegenprüfung (2026-07-28, ~12:45 UTC, Betreiberfreigabe für den
+Testlauf lag vor):** Der bestehende Azure-Ressourcenbereich
+(`AZURE_OPENAI_ENDPOINT`) enthält per Data-Plane-Abfrage genau **ein**
+Deployment: `gpt-5-mini` (Understanding). **Kein Embedding-Deployment
+vorhanden → Testlauf gemäß Auflage gestoppt, bevor irgendein Modellaufruf
+erfolgte** (0 Aufrufe, 0 Tokens, 0,00 USD). Es wurde kein Deployment angelegt
+und keine Azure-Einstellung geändert. Nebenbefund behoben: das Testlauf-CLI
+erwartete `AZURE_OPENAI_API_KEY`, die Repo-Konvention ist `AZURE_OPENAI_KEY`
+(`lib/helmut/ai.js`) — korrigiert, mit Fallback. **Nächster Schritt für den
+Testlauf (erneute Freigabe nötig):** im bestehenden Azure-Ressourcenbereich
+ein Deployment für `text-embedding-3-small` anlegen (Betreiber, Azure-Portal),
+dann `HELMUT_EMBEDDING_DEPLOYMENT=<name>` in den Cloud-Session-
+Environment-Einstellungen setzen und
+`node scripts/embedding-testlauf.js --echt --freigabe erteilt` ausführen.
+Alternative ohne Azure-Änderung: Weg B (OpenAI-kompatible API) — braucht ein
+neues Secret und damit ebenfalls eine Freigabe.
+
+### 13.7 Produktbewertung und Berlin/Brandenburg (Stand vor dem Testlauf)
+
+Die Legacy-Basislinie **bestätigt** die §4-Einschätzung: klarer erwartbarer
+Semantik-Mehrwert nur bei **Duplikaterkennung** und **Vorgangs-Wiedererkennung**
+(die Fehlklassen der Basislinie sind genau die B4-artigen Fälle); Briefing,
+Mandatsmatching und Quellenklassifikation behalten den Merkmalsvektor bzw.
+strukturierte Daten. Der endgültige Nachweis braucht den Testlauf. Empfohlene
+Zielarchitektur bleibt die Mischlösung: Legacy-Matching unverändert, Semantik
+nur additiv für Duplikat/Gedächtnis, strukturierte Felder als harte Filter.
+Berlin/Brandenburg: der Eingang ist ebenen-, geografie- und mandantenfrei
+(hash-stabil getestet, Prüfungen 19/20 + 17/17b) — dieselben Vektoren tragen
+Bund, Berlin, Brandenburg und künftige Länder ohne Neuerzeugung; Geografie
+bleibt strukturierter Filter; Profilvektoren bleiben getrennt und
+mandantenspezifisch; kein Mandant ist hartkodiert (testgesichert).

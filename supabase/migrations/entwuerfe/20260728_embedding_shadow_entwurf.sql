@@ -23,8 +23,13 @@
 --    damit ein Modellvergleich ohne Schemaänderung möglich ist; die
 --    Pflichtprüfung der Dimension läuft über die Spalte dim + CHECK.
 
+-- Sprint-22B-Schärfung: Eindeutigkeit gilt je (Objekt, Art, Modell, Dimension,
+-- Rezept) — nicht nur je Objekt. Damit ist ein kontrollierter Modell-/
+-- Dimensionswechsel abbildbar (alter und neuer Vektor koexistieren, bis der
+-- alte gezielt entfernt wird), ohne die "genau ein aktiver Vektor je
+-- Objekt+Modell+Dimension+Rezept"-Garantie zu verlieren.
 create table if not exists public.knowledge_object_embeddings (
-  knowledge_object_id text primary key
+  knowledge_object_id text not null
     references public.knowledge_objects(id) on delete cascade,
   embedding_kind text not null default 'semantic_text'
     check (embedding_kind in ('semantic_text')),
@@ -40,8 +45,13 @@ create table if not exists public.knowledge_object_embeddings (
   attempt_count integer not null default 0,
   last_attempt_at timestamptz,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  primary key (knowledge_object_id, embedding_kind, model, dim, recipe_version)
 );
+
+-- Statusabfragen des Backfills (ausstehend/fehlgeschlagen zuerst) ohne Vollscan.
+create index if not exists knowledge_object_embeddings_status_idx
+  on public.knowledge_object_embeddings (status);
 
 comment on table public.knowledge_object_embeddings is
   'Shadow-Tabelle für semantische Text-Embeddings (Sprint 22A-Entwurf). Mandantenlos. Ersetzt NICHT knowledge_objects.embedding (deterministischer Merkmalsvektor).';
