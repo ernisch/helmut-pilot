@@ -674,6 +674,61 @@ ausschließlich aus den Environment-Einstellungen.
 — entfernt Tabelle + Renew-RPC vollständig; kein bestehendes Objekt betroffen;
 Shadow-Embeddings sind jederzeit reproduzierbar.
 
-### 14.6 Ergebnis des Production-Laufs
+### 14.6 Ergebnis des Production-Laufs (2026-07-28, 14:56–14:59 UTC) — erfolgreich
 
-*Noch nicht ausgeführt — wartet auf Gate 2 (Merge + ausdrückliche Freigabe).*
+Gate 1 (Merge PR #165, `main` = `ce5e3b8`, beide Pflicht-Checks grün, Deployment
+`dpl_CDfzvCaanmYsiZG62n9hKUaYLbCC` `READY`) und Gate 2 (ausdrückliche
+Betreiberfreigabe für alle sechs Schritte) lagen vor. Ablauf exakt nach §14.5.
+
+**Ausgangszustand (14:56 UTC, read-only):** 1 501 Wissensobjekte, 772 verstanden,
+**772 berechtigt**, 729 unverstanden ausgeschlossen; Legacy-Vektoren 773,
+`matching_results` 287 (jüngste 08:16 UTC), Briefings 71, `llm_usage` heute 0,
+Crawl-Telemetrie 14 379 Zeilen (jüngste 10:02 UTC), **0 aktive Sperren**,
+Fingerabdruck aller `knowledge_objects` (id+updated_at) `f56283f567d992a6…`.
+
+| Schritt | Ergebnis |
+|---|---|
+| Migration angewendet (`20260728_embedding_shadow`) | erfolgreich, Tabelle leer angelegt |
+| Schema/RLS verifiziert | 19 Spalten · `rowsecurity=true` · **0 Policies** · Grants nur `postgres`+`service_role` (kein anon/authenticated/public) · 3 Indizes (PK, Teilindex `…_active_uidx`, Status) · 1 Trigger · 1 Fremdschlüssel · `helmut_renew_pipeline_lock` vorhanden, **0** Fremd-Grants |
+| **Canary 56 Objekte** | **56/56 berechnet, 0 Fehler**, 2 API-Aufrufe, 8 621 Tokens (Provider: 10 433), ≈ 0,0002 USD |
+| Canary validiert | **BESTANDEN** — 56/56 aktuell, 0 Dimensionsfehler/Wertfehler/Hash-Abweichungen/fremde Modelle/doppelte Aktive |
+| Restbestand Etappe 1 (`--max-objekte=300`) | **300 berechnet, 0 Fehler**, 6 Batches, **56 als aktuell übersprungen** → Wiederaufnahme in Production belegt |
+| Restbestand Etappe 2 | **416 berechnet, 0 Fehler**, 9 Batches, **356 als aktuell übersprungen** |
+| Abdeckungsprüfung gesamt | **BESTANDEN** — berechtigt **772**, mit aktuellem Embedding **772**, alle Negativlisten **0** |
+| **Idempotenz-Zweitlauf** | **0 geplant · 0 API-Aufrufe · 0 Writes · 772 übersprungen** |
+
+**Summe:** **772 von 772 berechtigten Objekten** eingebettet, **0 fehlgeschlagen,
+0 Wiederholungen** (`attempt_count` = 1 bei allen 772), **17 API-Aufrufe**,
+**110 992 Tokens** nach eigener Schätzung / **133 277 Tokens** providergemeldet,
+**≈ 0,0022 USD** (Rechenbasis 0,02 USD/1 M; die Provider-Ist-Menge liegt ~20 %
+über der Schätzung — die konservative Schätzung bleibt für die Limitprüfung
+maßgeblich, weil sie *vor* dem Aufruf feststeht; auf Ist-Basis wären es
+≈ 0,0027 USD, weiterhin weit unter allen Deckeln).
+
+**Datenqualität in Production gegengemessen:** 772 Zeilen · 772 `status='aktuell'` ·
+772 `is_active` · **1** Modellgeneration (`text-embedding-3-small` · dim 256 ·
+`ko-kanon-1` · `azure-openai` · Deployment `text-embedding-3-small` ·
+API-Version `2024-10-21`) · **0** falsche Dimensionen · **0** fehlende Vektoren ·
+**0** Nullvektoren · **0** Fehlerzeilen · Input-Tokens-Summe 110 992.
+
+**Unverändert geblieben (Vorher/Nachher identisch gemessen):** `knowledge_objects`
+1 501 / verstanden 772 / Legacy-Vektoren 773 / **Fingerabdruck `f56283f567d992a6…`
+byte-identisch**; `matching_results` 287 mit unveränderter jüngster Zeile
+(08:16 UTC); `profile_embeddings` 7; Briefings 71; `llm_usage` heute **0**
+(keine Understanding-Kosten); Crawl-Telemetrie 14 379 Zeilen, jüngste 10:02 UTC;
+Sperren nach dem Lauf **0 aktiv** (eigenes Lock sauber freigegeben). **Kein
+Rollback nötig**, keine automatische Duplikatzusammenführung, keine semantische
+Produktfunktion aktiviert, kein Flag, kein Cron, kein Secret, keine Vercel-Variable
+verändert.
+
+**Werkzeugbefund W-3 (im Lauf gefunden und behoben):** das CLI beendete sich mit
+`process.exit()` unmittelbar nach der Ausgabe — bei großem `--json`-Umfang auf
+einer Pipe wurde stdout abgeschnitten (das Ergebnis selbst war korrekt und im
+Laufprotokoll vollständig). Behoben durch `process.exitCode` + `return`; die
+vollständige JSON-Ausgabe ist gegengeprüft. Kein Datenrisiko, keine Auswirkung
+auf die Läufe oben.
+
+**Laufprotokolle** (maschinenlesbar, lokal/gitignored):
+`shadow-store/embedding-backfill-2026-07-28T14-57-31-211Z.json` (Canary),
+`…T14-58-19-587Z.json` (Etappe 1), `…T14-58-47-135Z.json` (Etappe 2),
+`…T14-59-11-226Z.json` (Idempotenz) sowie die `embedding-pruefung-*.json`.
