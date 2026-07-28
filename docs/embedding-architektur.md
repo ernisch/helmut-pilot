@@ -1,7 +1,8 @@
-# Embedding-Architektur — Befund, Datenvertrag und Zielmodell (Sprint 22A/22B)
+# Embedding-Architektur — Befund, Datenvertrag und Zielmodell (Sprint 22A/22B/22C1)
 
 **Stand:** 2026-07-28 · **Sprint 22A** (Analyse + additive Verträge) · **Sprint 22B**
-(Qualitätsvergleich vorbereitet, §13 — kein Backfill, keine Production-Änderung) ·
+(Qualitätsvergleich ausgeführt, §13) · **Sprint 22C1** (Production-Shadow-Struktur +
+Backfill-Pipeline, §14 — Migration und Backfill bleiben je einzeln freigabepflichtig) ·
 Roadmap-Bezug: [`roadmap/phase_1_checkliste.md`](roadmap/phase_1_checkliste.md)
 Punkt 22 („Embeddings vollständig speichern und prüfen").
 **Achtung Nummernkollision:** Roadmap-**Punkt 22** (Embeddings) ist **nicht**
@@ -140,10 +141,11 @@ strukturierte Filter; ihre spätere Korrektur (z. B. die 599/78-Nachpflege)
 
 ## 6 · Datenvertrag und Veraltet-Erkennung
 
-Metadaten je Embedding (Shadow-Tabelle, Entwurf
-[`../supabase/migrations/entwuerfe/20260728_embedding_shadow_entwurf.sql`](../supabase/migrations/entwuerfe/20260728_embedding_shadow_entwurf.sql)):
-Vektor · `embedding_kind` · `model` · `provider` · `dim` · `recipe_version` ·
-`input_hash` · `created_at`/`updated_at` · `status`
+Metadaten je Embedding (Shadow-Tabelle, seit 22C1 finalisiert:
+[`../supabase/migrations/20260728_embedding_shadow.sql`](../supabase/migrations/20260728_embedding_shadow.sql),
+freigabepflichtig, §14): Vektor · `embedding_kind` · `model` · `model_version` ·
+`provider` · `deployment` · `api_version` · `dim` · `recipe_version` ·
+`input_hash` · `input_tokens` · `is_active` · `created_at`/`updated_at` · `status`
 (`ausstehend`/`aktuell`/`fehlgeschlagen`) · `last_error` · `attempt_count` ·
 `last_attempt_at`.
 
@@ -499,3 +501,179 @@ unverändert: Mischlösung (Legacy-Matching unverändert, Semantik additiv für
 Duplikat/Gedächtnis), keine automatische Ableitung einer Produktionsschwelle
 aus 19 Positivpaaren — vor einer scharfgeschalteten Schwelle ist eine größere
 Stichprobe nötig.
+
+---
+
+## 14 · Sprint 22C1 — Production-Shadow-Struktur und Backfill-Pipeline (2026-07-28)
+
+Alle Arbeiten additiv; **keine Migration angewendet, kein Production-Write, kein
+KI-Aufruf, Matching unverändert.** Migration (Gate 2, Schritt 1) und Backfill
+(Gate 2, Schritte 2–3) bleiben je einzeln freigabepflichtig (§11).
+
+### 14.1 Finalisierte Shadow-Migration
+
+Der 22A-Entwurf wurde aus `supabase/migrations/entwuerfe/` nach
+[`../supabase/migrations/20260728_embedding_shadow.sql`](../supabase/migrations/20260728_embedding_shadow.sql)
+überführt und production-bereit gemacht (Rollback:
+`20260728_embedding_shadow_rollback.sql`, gleiches Verzeichnis):
+
+- **Vollständiger Datenvertrag** je Zeile: zusätzlich zu 22B jetzt
+  `model_version` (null, solange der Provider sie nicht zuverlässig meldet),
+  `deployment` (Azure-Deploymentname), `api_version`, `input_tokens`
+  (deterministische Schätzung ~4 Zeichen/Token — identisch zur Limit-Prüfung;
+  providergemeldete Ist-Tokens stehen je Lauf im Protokoll) und `is_active`.
+- **Genau eine aktive Repräsentation je Wissensobjekt**, DB-erzwungen:
+  Teilindex `knowledge_object_embeddings_active_uidx` auf
+  `(knowledge_object_id, embedding_kind) where is_active`. Der Primärschlüssel
+  `(Objekt, Art, Modell, Dimension, Rezept)` erlaubt weiterhin koexistierende
+  Modellgenerationen — ein Modellwechsel muss die alte Generation ausdrücklich
+  deaktivieren (sonst laut scheiternder Insert), alte Versionen bleiben
+  nachvollziehbar erhalten.
+- **RLS aktiv, keine Policies, Default-Grants explizit entzogen** (kein
+  anon-/authenticated-Zugriff, keine öffentliche Schreibpolicy); nur
+  `service_role` schreibt kontrolliert. `updated_at`-Trigger über die
+  bestehende Konvention `helmut_set_updated_at`.
+- **Neue RPC `helmut_renew_pipeline_lock`** (Familie 20260719): verlängert
+  einen gehaltenen Lock token-gebunden, nie nach Ablauf; Grants entzogen,
+  `search_path` fixiert. Acquire/Release bleiben unverändert.
+- **Kein ivfflat/HNSW** — bei < 2 000 Zeilen ist exakte Suche ausreichend;
+  ein approximativer Index kommt erst bei gemessenem Bedarf.
+- Nicht destruktiv: keine bestehende Tabelle/Spalte/Funktion verändert;
+  Rollback ist vollständig (Tabelle + Renew-RPC).
+
+### 14.2 Production-Backfill-Pipeline
+
+[`../lib/helmut/embedding-backfill.js`](../lib/helmut/embedding-backfill.js)
+(einziger Schreibpfad in die Shadow-Tabelle, alle Netz-/DB-Zugriffe injizierbar)
++ CLI [`../scripts/embedding-backfill.js`](../scripts/embedding-backfill.js):
+
+- **Vier Betriebsarten:** Dry-Run (Default, read-only), `--vermessen`
+  (Bestandsaufnahme mit JS-exakter Vertragsberechtigung), `--pruefen`
+  (Abdeckungs-/Integritätsprüfung gegen die Abnahmekriterien),
+  `--echt --freigabe erteilt` (freigabepflichtiger Schreiblauf; zusätzlich
+  Production-Schreibgate fail-closed).
+- **Harte Obergrenzen, fail-closed und nicht überschreibbar:** ≤ 1 000
+  Objekte, ≤ 200 000 Tokens, ≤ 0,05 USD, Batch ≤ 50, Parallelität exakt 1.
+  Höhere Werte werden abgelehnt, nicht gekappt; das Kostenlimit wird
+  zusätzlich in ein Tokenlimit übersetzt (das strengere gewinnt).
+- **Eigenes Lock `semantic_embedding_backfill`** (nie der Crawl-/
+  Understanding-Lock): atomarer Erwerb fail-closed, TTL (Default 10 min),
+  Erneuerung nach jedem Batch; scheitert die Erneuerung, bricht der Lauf
+  kontrolliert ab. Aktive fremde Sperren verhindern den Start.
+- **Idempotenz/Wiederaufnahme:** Zustand ausschließlich in der Shadow-Tabelle
+  (`input_hash`+Modell+Dimension+Rezept+Status); Skip bei aktuellem Hash,
+  Neuerzeugung nur bei geändertem Eingang, Versuchsdeckel 3 je Objekt und
+  Eingang; ein identischer Zweitlauf erzeugt 0 API-Aufrufe und 0 Writes.
+- **Validierung vor jedem Schreiben:** Dimension, leere Vektoren, NaN/∞;
+  ein Fehlschlag hinterlässt nie einen nutzbaren Vektor (Zeile
+  `fehlgeschlagen` + `last_error`), Teilbatch-Antworten werden sicher
+  verarbeitet, knowledge_objects wird ausschließlich GELESEN (nur
+  Eingangs-/Berechtigungsfelder — nicht einmal der Legacy-Vektor).
+- **Budgettrennung (Phase-5-Entscheidung):** Das bestehende Budget-System
+  (`helmut_reserve_llm_call`, `llm_usage`, Tenant-Budgets) ist auf
+  mandantenbezogene Understanding-Aufrufe zugeschnitten — Wissensobjekt-
+  Embeddings sind mandantenlos und laufen bewusst NICHT darüber (kein
+  Verbrauch von Understanding-Kopfraum, Lehre aus Punkt-17-Defekt). Statt
+  eines zweiten parallelen Budgetsystems gilt: Tokenwahrheit je Objekt in
+  der Shadow-Tabelle (`input_tokens`), je Lauf im maschinenlesbaren
+  Protokoll (`shadow-store/embedding-backfill-*.json`, gitignored; Schätzung
+  + providergemeldete Ist-Tokens getrennt ausgewiesen) — ein späterer
+  regulärer Embedding-Tagesdeckel ist daraus ableitbar. Bestehende
+  Production-Budgets und Vercel-Variablen bleiben unverändert.
+- Ein Embedding-Fehler löst strukturell NIE eine Understanding-Analyse aus
+  (kein Import von ai.js/understanding.js — testgesichert).
+
+### 14.3 Tests
+
+[`../scripts/embedding-backfill-test.js`](../scripts/embedding-backfill-test.js)
+**40/40**: Migration/Rollback statisch (FK, RLS, Revokes, Teilindex, PK,
+Nicht-Destruktivität, Renew-RPC), harte Grenzen einzeln, Kostenlimit→
+Tokenlimit, Dry-Run-Default, Freigabeflagge (CLI-Kindprozess, Exit 2),
+Objekt-/Token-/Kostenlimit im Lauf, Batchgröße, strukturelle Parallelität 1,
+Lock-Lebenszyklus (Erwerb/Konflikt/DB-Fehler/Verlust/fremde Sperre),
+Abbruch+Wiederaufnahme, Idempotenz (0 Aufrufe/0 Writes), Hashwechsel,
+Dimension/leer/NaN/∞, Teilbatch, Timeout/Netzfehler, Versuchsdeckel,
+Modellversionsmischung, Berechtigungsklassen, Geografie-Hash-Stabilität,
+Mandantenneutralität, Legacy-Unantastbarkeit, kein Merge-Pfad,
+Abdeckungsprüfung positiv/negativ. Bestehende Suiten unverändert grün
+(Pipeline 31/31, Vertrag 43/43). Offline-Gesamtlauf **176/176** (in
+CI-Umgebung; mit gesetzten Cloud-Session-Env-Vars greift der dokumentierte
+Netz-Guard-Vorbefund). Zwei sprintbedingte Testpflege-Änderungen:
+`env-inventar-test` verlangte die Doku der neuen Embedding-Variablen
+(ergänzt in `betrieb/env-inventar.md`), der D7-Datumsriegel in
+`geografie-gedaechtnis-test` nimmt die geografie-freie Embedding-Migration
+jetzt namentlich aus.
+
+### 14.4 Production-Bestand (read-only nachgemessen, 2026-07-28 ~14:30 UTC)
+
+Identisch zu §2 (Bestand heute stabil): 1 501 Objekte, 772 verstanden,
+**772 berechtigt** (JS-exakt nach Datenvertrag, deckungsgleich mit der
+SQL-Näherung), 0 inhaltsleer, 0 unter 60 Zeichen Kerntext, 599 ohne
+Fachgebiet und 78 mit Ebene `unknown` (beide berechtigt), 729 unverstanden
+(720 pending + 9 failed) ausgeschlossen, 0 aussortiert, 0 zusammengeführt
+(die Spalten `merged_into`/`superseded_by` existieren im Schema nicht —
+der Vertrag prüft sie defensiv für die Zukunft). Geografie (verstanden):
+11 mit belegter betroffener Geografie (Berlin 2 · Brandenburg 1), Ebene
+bund 501 · international 66 · land 61 · eu 37 · kommune 29. Legacy-Vektoren
+773 (772 verstanden + 1 dokumentierter CSD-Rest), Profilvektoren 7,
+`matching_results` 287 (jüngste 08:16 UTC). Shadow-Tabelle existiert nicht
+(Migration nicht angewendet), Lock-RPCs vorhanden, 0 aktive Sperren,
+pgvector 0.8.0. **Dry-Run-Vorschau:** 772 geplant, 16 Batches (≤ 50),
+110 992 Tokens ≈ **0,0022 USD**; Canary (56 Fixture-IDs): 2 Batches,
+8 621 Tokens ≈ 0,0002 USD. Azure-Deployment `text-embedding-3-small`
+existiert (Data-Plane-Abfrage, Status `succeeded`).
+
+### 14.5 Runbook Production-Ablauf (erst nach Gate-2-Freigabe)
+
+Reihenfolge verbindlich; **bei jedem Fehler sofort stoppen** (§11-Stoppliste
+des Sprintauftrags). Alle Befehle laufen in der Cloud-Session mit Secrets
+ausschließlich aus den Environment-Einstellungen.
+
+1. **Zustand erfassen (read-only):**
+   `node scripts/embedding-backfill.js --vermessen --json` — erwartete
+   Größenordnung ~772 berechtigte (tatsächliche Zahl zählt); zusätzlich
+   Matching-/Briefing-/Crawl-Referenzwerte notieren (`matching_results`-Zahl
+   + jüngster Zeitstempel, Briefing-Anzahl, jüngste Crawl-Telemetrie).
+2. **Ruhefenster prüfen:** `pipeline_locks` leer (keine aktive fremde
+   Sperre), kein laufender Crawl/Understanding — das CLI erzwingt das
+   zusätzlich selbst (Phase `fremdsperren`).
+3. **Migration anwenden** (`supabase/migrations/20260728_embedding_shadow.sql`).
+4. **Schema/RLS verifizieren:** Tabelle existiert, `rowsecurity=true`,
+   0 Policies, Grants nur service_role/postgres, Teilindex + Status-Index
+   + Trigger vorhanden, `helmut_renew_pipeline_lock` vorhanden und für
+   public/anon/authenticated entzogen.
+5. **Canary (56 bekannte Testobjekte):**
+   `node scripts/embedding-backfill.js --echt --freigabe erteilt --nur-testbestand`
+   — Fixture bleibt unverändert (das CLI liest die IDs, embeddet den
+   aktuellen Production-Stand dieser Objekte; der fixierte Goldstandard
+   wird nicht angefasst).
+6. **Canary validieren:**
+   `node scripts/embedding-backfill.js --pruefen --ids=<56er-Liste>` bzw.
+   `--nur-testbestand`-Sicht: 56/56 aktuell, Dimension 256, endliche Werte,
+   ein Modell/Rezept, Hash-Treffer, 0 Fehler.
+7. Bei jedem Canary-Fehler: STOPP (Analyse vor Fortsetzung; Rollback nur
+   bei tatsächlichem kritischem Fehler — Fehlzeilen selbst sind
+   wiederaufnehmbar und kein Rollback-Grund).
+8. **Restbestand:** `node scripts/embedding-backfill.js --echt --freigabe erteilt`
+   (Batch ≤ 50, Parallelität 1; Fortschritt je Batch im Protokoll).
+9. **Nach jedem Paket** (macht das CLI selbst): Fortschritt, Tokenstand,
+   Fehlerzahl; Limit-Überschreitung bricht fail-closed ab.
+10. **Abdeckung prüfen:** `node scripts/embedding-backfill.js --pruefen --json`
+    → `ok: true`, `mitAktuellemEmbedding == berechtigt`, alle Negativlisten leer.
+11. **Idempotenz-Zweitlauf:** identischer Aufruf wie Schritt 8 → Protokoll
+    zeigt `apiAufrufe: 0`, `geschriebeneZeilen: 0`, `geplant: 0`.
+12. **Unverändertheit beweisen:** `matching_results` (Zahl + jüngster
+    Zeitstempel unverändert bzw. nur regulär fortgeschrieben), Briefings
+    unverändert, `llm_usage` heute unverändert (0 zusätzliche
+    Understanding-Aufrufe), Crawl-/Understanding-Telemetrie stabil,
+    `knowledge_objects` unberührt (Fingerabdruck/Zeitstempel).
+13. **Dokumentieren:** Ist-Tokens, Ist-Kosten, Protokollpfade, Ergebnis in
+    `CURRENT_STATE.md` + §14.6.
+
+**Rollback** (nur bei kritischem Fehler): `20260728_embedding_shadow_rollback.sql`
+— entfernt Tabelle + Renew-RPC vollständig; kein bestehendes Objekt betroffen;
+Shadow-Embeddings sind jederzeit reproduzierbar.
+
+### 14.6 Ergebnis des Production-Laufs
+
+*Noch nicht ausgeführt — wartet auf Gate 2 (Merge + ausdrückliche Freigabe).*
