@@ -77,7 +77,11 @@ const RESTORE_ORDER = [
   "daily_tasks", "communication_drafts", "user_notes", "priority_changes",
   // Betriebs-/Zählertabellen (keine FKs). llm_budget_counters gehört dazu,
   // damit der LLM-Tageszähler nach einem Restore nicht bei 0 beginnt.
-  "llm_usage", "pipeline_locks", "llm_budget_counters"
+  // source_crawl_telemetry + process_runs: OP-01-Befund 2026-07-28 — beide
+  // Tabellen (Migrationen 20260718/20260727, keine FKs) fehlten in Export UND
+  // Restore-Reihenfolge; ein Voll-Backup deckte nur 38 von 40 Tabellen ab.
+  "llm_usage", "pipeline_locks", "llm_budget_counters",
+  "source_crawl_telemetry", "process_runs"
 ];
 
 // Selbstreferenzielle Tabellen: Spalte, über die Zeilen auf Eltern derselben

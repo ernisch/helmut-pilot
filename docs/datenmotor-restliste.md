@@ -163,12 +163,25 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 ### P0 — Verkaufsblocker
 
 #### OP-01 · Supabase Pro + Point-in-Time-Recovery (früher FA-7) — DRINGEND
-- **Status:** offen; Free-Plan = keine Backups; zentraler Blob ist Last-Write-Wins (irreversibler Totalverlust möglich). Übergangs-Runbook (manueller Export) existiert.
-- **Fehlender Schritt:** Supabase-Dashboard → Billing → Pro (~25 $/Monat) → PITR aktivieren; danach eine Restore-Übung nach `docs/betrieb/backup-restore-runbook.md` dokumentieren.
+- **Status:** **teilweise abgeschlossen (2026-07-28): Sicherung und isolierter Restore bewiesen, Tarifentscheidung für PITR ausstehend.**
+  Der kostenfreie Teil ist vollständig: aktuelle Production-Vollsicherung (40/40 Tabellen, 74 844
+  Datensätze, Prüfsumme `c63f1d95…`, gitignored, gebunden an `main` `0f8d33a`) **und** ein praktisch
+  durchgeführter, feld- und mengenmäßig bewiesener Restore in eine isolierte lokale PostgreSQL —
+  18/18 Prüfungen inkl. funktionaler Mandantentrennung (RLS-Probe), Policies/Trigger/Funktionen
+  gegen die Production-Strukturreferenz und pgvector-Matching; RTO gemessen (Export 50 s, Restore+
+  Beweis 20 s). Dabei geschlossen: Backup-Deckungslücke (38→40 Tabellen — `source_crawl_telemetry`,
+  `process_runs` fehlten). Beleg: [`betrieb/restore-uebung-2026-07-28.md`](betrieb/restore-uebung-2026-07-28.md),
+  Werkzeuge `scripts/restore-verify-local.js` (+ Test), Runbook §0/3c/3d aktualisiert (RPO/RTO/Datenklassen).
+  Free-Plan-Grenze bleibt: **RPO bis 24 h**, kein echter Snapshot, kein PITR.
+- **Fehlender Schritt:** Betreiberentscheidung Supabase-Dashboard → Billing → Pro (~25 $/Monat) →
+  PITR aktivieren; danach eine PITR-Restore-Übung dokumentieren (Runbook §3). Zusätzlich offen
+  (klein, kein Blocker): belegten Schema-Drift Repo↔Production bereinigen
+  (`scripts/produktions-strukturreferenz.json` → `schemaDrift`; Migration oder schema.sql-Angleich).
 - **Abhängigkeiten:** keine.
-- **Risiko bei Nichtstun:** hoch — ein einziger fehlerhafter Blob-Write vernichtet den Betriebszustand unwiederbringlich; verkaufs-/pilotkritisch.
+- **Risiko bei Nichtstun:** mittel (vorher hoch) — der Rückweg existiert und ist geübt, aber bis zu
+  24 h Datenverlust bleiben möglich; für zahlende Mandanten nicht ausreichend.
 - **Parallelisierbarkeit:** vollständig parallel zu allem.
-- **Freigabe:** **JA** (Kosten, Betreiber-Dashboard).
+- **Freigabe:** **JA** (Kosten, Betreiber-Dashboard) — genau diese eine Entscheidung steht aus.
 
 #### OP-02 · Rechtliche Festlegungen (früher FA-9): Pilotvereinbarung, AVV, DSFA, Art.-9-Grundlage, Retention-Fristen
 - **Status:** offen; vollständige Entwürfe liegen unter `docs/recht/` (+ DSFA-Vorprüfung, Datenklassen-Matrix mit `knowledge_objects` als Art.-9-Daten).
