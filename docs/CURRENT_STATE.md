@@ -147,7 +147,8 @@ Erfolgskriterien erfüllt**) ·
 > werden vom Advisory-Lock serialisiert; Endzustand **0 Invariantenverletzungen**.
 > **Tests:** neue Suite `matching-audit-test.js` **178/178** · **Offline-Suite 177/177** ·
 > Gegenbeweis auf unverändertem `main` **176/176** · Legacy-Gegenbeweis erneut **253
-> identisch, 0 abweichend**.
+> identisch, 0 abweichend** · **CI-Gate grün: beide Pflicht-Checks** (Lauf `30392456786`
+> auf dem Korrekturstand `69d8eda`).
 > **Die Migration wurde nicht nur statisch geprüft, sondern in einer isolierten lokalen
 > PostgreSQL wirklich angewendet:** leere Struktur ✅, zweiter Lauf derselben Migration ✅,
 > Bestand mit 246 Ergebniszeilen **byte-identisch vorher/nachher** (alle 14 neuen Spalten leer,
