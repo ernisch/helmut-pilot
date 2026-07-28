@@ -36,10 +36,17 @@
 --  * KEINE Snapshots: keine Artikeltexte, keine Vektoren, keine Profilkopien
 --    je Ergebnis. Nachvollziehbarkeit entsteht aus Hashes + kompakter
 --    Rangliste.
---  * KEINE SECURITY-DEFINER-Funktion: die Veröffentlichungsreihenfolge
---    (Ergebnisse → Ablösung → Laufabschluss) garantiert die einzige harte
---    Invariante („kein vollständiger Lauf ohne veröffentlichte Projektion")
---    ohne zusätzliche privilegierte Fläche.
+--  * ECHTE TRANSAKTION statt Schreibreihenfolge: Laufabschluss,
+--    Ergebnisprojektion und Ablösung passieren in EINEM Aufruf
+--    (helmut_publish_matching_run, §3) und damit in EINER Transaktion.
+--    Eine bloße Reihenfolge unabhängiger Schreibvorgänge wäre NICHT atomar:
+--    matching_results wird in place überschrieben, ein Abbruch nach dem
+--    Ergebnis-Upsert hätte den letzten vollständigen Stand also bereits
+--    zerstört, ganz gleich in welcher Reihenfolge die Laufzeile folgt.
+--  * KEINE SECURITY-DEFINER-Funktion: die Publish-Funktion läuft als
+--    SECURITY INVOKER mit den Rechten des Aufrufers (service_role) — sie
+--    schafft keine neue privilegierte Fläche, sondern nur eine
+--    Transaktionsgrenze.
 --
 -- DSGVO: matching_runs ist mandantengebunden (user_id, FK auf profiles mit
 -- ON DELETE CASCADE) und enthält ausschließlich öffentliche politische
@@ -282,5 +289,243 @@ comment on column public.matching_results.begruendung is
   'Deterministische Kurzbegruendung aus belegten Signalen (lib/helmut/matching-begruendung.js, ohne KI). NULL, wenn kein Signal belegt ist — es wird nichts erfunden. Wird in Sprint 23B-1 gespeichert, aber NICHT angezeigt (sichtbare Erklaerung: Sprint 23C).';
 comment on column public.matching_results.berechnet_am is
   'Zeitpunkt der letzten Berechnung. Behebt den Befund, dass created_at beim ERSTEN Auftreten des Paares einfriert und spaetere Neuberechnungen unsichtbar bleiben (Sprint 23A §5.4).';
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 3 · Atomare Veröffentlichung
+-- ═══════════════════════════════════════════════════════════════════════════
+-- WARUM eine Datenbankfunktion nötig ist (und eine Schreibreihenfolge NICHT
+-- genügt): matching_results wird per Upsert IN PLACE überschrieben. Sobald der
+-- Ergebnis-Upsert gelandet ist, sind die vorherigen Werte weg — unabhängig
+-- davon, was danach mit der Laufzeile geschieht. Drei aufeinanderfolgende,
+-- unabhängige Schreibvorgänge könnten also sehr wohl einen Zustand
+-- hinterlassen, in dem die operative Projektion bereits ersetzt ist, der Lauf
+-- aber nie vollständig wurde. Genau das ist verboten.
+--
+-- Die Funktion fasst die drei Schritte in EINEN Aufruf und damit in EINE
+-- Transaktion: entweder ist der Lauf vollständig UND die Projektion
+-- veröffentlicht UND die Ablösung markiert — oder nichts davon.
+
+create or replace function public.helmut_publish_matching_run(
+  p_run_id text,
+  p_user_id text,
+  p_results jsonb,
+  p_abgeloest_am timestamptz default now()
+)
+returns jsonb
+language plpgsql
+-- BEWUSST SECURITY INVOKER (Default): der Aufrufer ist service_role und hat auf
+-- beiden Tabellen ohnehin alle Rechte. Die Funktion soll ausschliesslich eine
+-- Transaktionsgrenze ziehen, KEINE Rechte verleihen.
+as $$
+declare
+  v_run public.matching_runs%rowtype;
+  v_anzahl integer;
+  v_abgeloest integer := 0;
+begin
+  if p_user_id is null or btrim(p_user_id) = '' then
+    raise exception 'helmut_publish_matching_run: kein Mandant uebergeben'
+      using errcode = 'invalid_parameter_value';
+  end if;
+  if p_run_id is null or btrim(p_run_id) = '' then
+    raise exception 'helmut_publish_matching_run: keine Laufkennung uebergeben'
+      using errcode = 'invalid_parameter_value';
+  end if;
+  if p_results is null or jsonb_typeof(p_results) <> 'array' then
+    raise exception 'helmut_publish_matching_run: p_results muss ein jsonb-Array sein'
+      using errcode = 'invalid_parameter_value';
+  end if;
+
+  -- Serialisiert Veroeffentlichungen DESSELBEN Mandanten innerhalb der
+  -- Datenbank — unabhaengig von der App-seitigen Sperre und ohne eine fremde
+  -- Tabelle zu sperren. Wird beim Commit oder Rollback automatisch frei.
+  perform pg_advisory_xact_lock(hashtext('helmut_matching_publish:' || p_user_id));
+
+  -- Nur ein LAUFENDER Lauf des richtigen Mandanten darf veroeffentlicht werden.
+  -- Damit ist ausgeschlossen, dass ein fehlgeschlagener Lauf nachtraeglich
+  -- wiederbelebt oder ein bereits vollstaendiger Lauf erneut veroeffentlicht
+  -- wird. Eine fremde Laufkennung findet schlicht keine Zeile.
+  select * into v_run
+    from public.matching_runs
+   where id = p_run_id and user_id = p_user_id
+     for update;
+  if not found then
+    raise exception 'helmut_publish_matching_run: Lauf % fuer Mandant % nicht gefunden', p_run_id, p_user_id
+      using errcode = 'no_data_found';
+  end if;
+  if v_run.status <> 'laufend' then
+    raise exception 'helmut_publish_matching_run: Lauf % ist im Zustand %, nur ein laufender Lauf ist veroeffentlichbar', p_run_id, v_run.status
+      using errcode = 'check_violation';
+  end if;
+
+  -- Mandantenpruefung JEDER Ergebniszeile. Ein gemischter Stapel wird
+  -- abgelehnt, bevor irgendetwas geschrieben wird.
+  if exists (select 1 from jsonb_array_elements(p_results) e
+              where coalesce(e->>'user_id', '') <> p_user_id) then
+    raise exception 'helmut_publish_matching_run: mandantenuebergreifender Schreibversuch blockiert (erwartet %)', p_user_id
+      using errcode = 'check_violation';
+  end if;
+  if exists (select 1 from jsonb_array_elements(p_results) e
+              where coalesce(e->>'run_id', '') <> p_run_id) then
+    raise exception 'helmut_publish_matching_run: Ergebniszeile verweist auf einen fremden Lauf'
+      using errcode = 'check_violation';
+  end if;
+  if exists (select 1 from jsonb_array_elements(p_results) e
+              where coalesce(btrim(e->>'id'), '') = ''
+                 or coalesce(btrim(e->>'knowledge_object_id'), '') = '') then
+    raise exception 'helmut_publish_matching_run: Ergebniszeile ohne Kennung oder Wissensobjekt'
+      using errcode = 'check_violation';
+  end if;
+
+  v_anzahl := jsonb_array_length(p_results);
+
+  -- Abloesung VOR dem Schreiben zaehlen: die Zaehler der Laufzeile muessen
+  -- feststehen, bevor sie auf 'vollstaendig' geht (danach ist sie
+  -- unveraenderlich).
+  if v_anzahl > 0 then
+    select count(*) into v_abgeloest
+      from public.matching_results m
+     where m.user_id = p_user_id
+       and m.aktuell
+       and not exists (select 1 from jsonb_array_elements(p_results) e
+                        where e->>'knowledge_object_id' = m.knowledge_object_id);
+  end if;
+
+  -- SCHRITT 1 (innerhalb der Transaktion ZUERST): Lauf abschliessen.
+  -- Die Reihenfolge INNERHALB der Transaktion ist frei waehlbar, weil ohnehin
+  -- alles gemeinsam sichtbar wird. Der Abschluss steht zuerst, damit der
+  -- Riegel helmut_matching_result_run_complete (unten) bei jeder einzelnen
+  -- Ergebniszeile bereits einen vollstaendigen Lauf vorfindet.
+  update public.matching_runs
+     set status = 'vollstaendig',
+         beendet_am = now(),
+         veroeffentlicht = v_anzahl,
+         abgeloest = v_abgeloest
+   where id = p_run_id and user_id = p_user_id;
+
+  -- SCHRITT 2: operative Projektion schreiben. created_at bleibt bewusst
+  -- unangetastet (bestehendes Verhalten: friert beim ERSTEN Auftreten ein).
+  if v_anzahl > 0 then
+    insert into public.matching_results as m (
+      id, user_id, knowledge_object_id, vorgang_id, similarity, rank,
+      matched_features, filters, run_id, profil_hash, ko_eingabe_hash, ko_version,
+      engine_version, rezept_version, vektor_version, eingabe_fingerabdruck,
+      berechnet_am, aktuell, abgeloest_am, signale, begruendung, updated_at)
+    select
+      e->>'id',
+      e->>'user_id',
+      e->>'knowledge_object_id',
+      e->>'vorgang_id',
+      nullif(e->>'similarity', '')::numeric,
+      nullif(e->>'rank', '')::integer,
+      case when jsonb_typeof(e->'matched_features') = 'array' then e->'matched_features' else '[]'::jsonb end,
+      case when jsonb_typeof(e->'filters') = 'object' then e->'filters' else '{}'::jsonb end,
+      e->>'run_id',
+      e->>'profil_hash',
+      e->>'ko_eingabe_hash',
+      nullif(e->>'ko_version', '')::integer,
+      e->>'engine_version',
+      e->>'rezept_version',
+      e->>'vektor_version',
+      e->>'eingabe_fingerabdruck',
+      nullif(e->>'berechnet_am', '')::timestamptz,
+      true,
+      null,
+      case when jsonb_typeof(e->'signale') = 'object' then e->'signale' else '{}'::jsonb end,
+      e->>'begruendung',
+      nullif(e->>'updated_at', '')::timestamptz
+    from jsonb_array_elements(p_results) e
+    on conflict (id) do update set
+      user_id = excluded.user_id,
+      knowledge_object_id = excluded.knowledge_object_id,
+      vorgang_id = excluded.vorgang_id,
+      similarity = excluded.similarity,
+      rank = excluded.rank,
+      matched_features = excluded.matched_features,
+      filters = excluded.filters,
+      run_id = excluded.run_id,
+      profil_hash = excluded.profil_hash,
+      ko_eingabe_hash = excluded.ko_eingabe_hash,
+      ko_version = excluded.ko_version,
+      engine_version = excluded.engine_version,
+      rezept_version = excluded.rezept_version,
+      vektor_version = excluded.vektor_version,
+      eingabe_fingerabdruck = excluded.eingabe_fingerabdruck,
+      berechnet_am = excluded.berechnet_am,
+      aktuell = true,
+      abgeloest_am = null,
+      signale = excluded.signale,
+      begruendung = excluded.begruendung,
+      updated_at = excluded.updated_at;
+
+    -- SCHRITT 3: abgeloeste Zeilen markieren. Es wird NIE geloescht.
+    update public.matching_results m
+       set aktuell = false,
+           abgeloest_am = coalesce(p_abgeloest_am, now())
+     where m.user_id = p_user_id
+       and m.aktuell
+       and not exists (select 1 from jsonb_array_elements(p_results) e
+                        where e->>'knowledge_object_id' = m.knowledge_object_id);
+  end if;
+
+  return jsonb_build_object(
+    'run_id', p_run_id,
+    'status', 'vollstaendig',
+    'veroeffentlicht', v_anzahl,
+    'abgeloest', v_abgeloest
+  );
+end;
+$$;
+
+alter function public.helmut_publish_matching_run(text, text, jsonb, timestamptz)
+  set search_path = public, pg_temp;
+revoke all on function public.helmut_publish_matching_run(text, text, jsonb, timestamptz)
+  from public, anon, authenticated;
+do $$
+begin
+  if exists (select 1 from pg_roles where rolname = 'service_role') then
+    execute 'grant execute on function public.helmut_publish_matching_run(text, text, jsonb, timestamptz) to service_role';
+  end if;
+end $$;
+
+comment on function public.helmut_publish_matching_run(text, text, jsonb, timestamptz) is
+  'Atomare Veroeffentlichung eines Matching-Laufs (Sprint 23B-1): Laufabschluss, Ergebnisprojektion und Abloesung in EINER Transaktion. Nur ein laufender Lauf des uebergebenen Mandanten ist veroeffentlichbar; jede Ergebniszeile wird auf Mandant und Laufkennung geprueft. SECURITY INVOKER — die Funktion verleiht keine Rechte, sie zieht nur eine Transaktionsgrenze. service_role umgeht RLS ohnehin; die Mandantentrennung erzwingen die Pruefungen in dieser Funktion UND die App-Guards.';
+
+-- ── Riegel: die operative Projektion zeigt nur auf vollständige Läufe ───────
+-- Damit ist datenbankseitig ausgeschlossen, dass eine matching_results-Zeile
+-- auf einen laufenden oder fehlgeschlagenen Lauf verweist — die Anforderung
+-- gilt also nicht nur „laut Code", sondern ist erzwungen.
+-- Feuert nur bei INSERT und bei einem UPDATE, das run_id ausdruecklich setzt.
+-- Der Legacy-Pfad (ohne Auditpersistenz) schreibt kein run_id: dort endet der
+-- Riegel sofort mit NULL und aendert nichts am Verhalten.
+create or replace function public.helmut_matching_result_run_complete()
+returns trigger
+language plpgsql
+as $$
+declare
+  v_status text;
+begin
+  if new.run_id is null then
+    return new;
+  end if;
+  select status into v_status from public.matching_runs where id = new.run_id;
+  if v_status is null then
+    raise exception 'matching_results: unbekannte Laufkennung %', new.run_id
+      using errcode = 'foreign_key_violation';
+  end if;
+  if v_status <> 'vollstaendig' then
+    raise exception 'matching_results.run_id % zeigt auf einen Lauf im Zustand % — die operative Projektion darf ausschliesslich auf einen vollstaendig veroeffentlichten Lauf verweisen', new.run_id, v_status
+      using errcode = 'check_violation';
+  end if;
+  return new;
+end;
+$$;
+
+alter function public.helmut_matching_result_run_complete() set search_path = public, pg_temp;
+revoke all on function public.helmut_matching_result_run_complete() from public, anon, authenticated;
+
+drop trigger if exists matching_results_run_complete on public.matching_results;
+create trigger matching_results_run_complete
+  before insert or update of run_id on public.matching_results
+  for each row execute function public.helmut_matching_result_run_complete();
 
 commit;
