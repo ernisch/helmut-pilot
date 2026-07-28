@@ -578,3 +578,15 @@ Vor dem Hauptlauf unverändert nötig: frische Sicherung mit notierter Prüfsumm
 (§11), ein freies Zeitfenster ohne laufenden Crawl/Understanding-Lauf (die
 Wartepflicht aus 13.2 gilt weiter), danach zweiter Vorschaulauf und lesende
 Gegenprobe.
+
+### 13.13 · Branch, PR, Tests
+
+* Branch `claude/sprint-21-production-pilot-enef9l`, **PR #157** — **reine
+  Dokumentation**, kein Anwendungscode.
+* **CI-Gate grün: beide Pflicht-Checks** — `Syntax + Offline-Suiten` und
+  `Browser-/Mobile-Smoke (Chromium)`, Lauf `30343049294`.
+* Offline-Suite in dieser Sitzung **158/172** — identische **14**
+  netz-/DB-abhängige Vorbefunde wie im Sprintbericht (Zugangsdaten gesetzt, der
+  Netz-Guard greift). Verbindlich ist der CI-Lauf ohne Secrets.
+* Es wurde **kein** Code geändert, daher **keine** neue Testabdeckung nötig und
+  **kein** Fehlerkorrektur-PR erforderlich.

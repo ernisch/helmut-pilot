@@ -39,6 +39,8 @@ Deployment `dpl_ERm1PDWzUY9xSFUnTDrVcbLmZcem` `READY`, zusätzlich durch den Pro
 > **nicht** fort — kein Defekt und kein neues Verhalten, aber der Hauptlauf ist deshalb über
 > `classification_confidence.nachklassifikation_am` gegenzumessen, nicht über `updated_at`.
 > **Keine Codeänderung nötig, keine Migration, kein Flag, kein Cron, kein Lock verändert.**
+> Branch `claude/sprint-21-production-pilot-enef9l`, **PR #157** (reine Doku), **CI-Gate grün:
+> beide Pflicht-Checks**, Lauf `30343049294`.
 > **Der vollständige Lauf über Umfang B (740 Objekte) bleibt gesperrt** und braucht eine neue
 > ausdrückliche Freigabe (A oder B). Vollständiges Protokoll:
 > [`nachklassifikation-altbestand.md`](nachklassifikation-altbestand.md) §13.
