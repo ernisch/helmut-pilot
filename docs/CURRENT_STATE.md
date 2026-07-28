@@ -34,14 +34,17 @@ Werkzeug-Härtung W-1+W-2 gemergt (#152) · **W-2 erfolgreich abgeschlossen:
 Migration `20260727` angewendet, Flag aktiv, echter Production-Lauf
 `crawl-20260727160048-ct8lt` relational gespeichert und erhalten — alle 15
 Erfolgskriterien erfüllt**) ·
-**`main`-HEAD:** `ce5e3b8` (Merge #165, in Production ausgerollt — Deployment
-`dpl_CDfzvCaanmYsiZG62n9hKUaYLbCC` `READY`, `target: production`; davor `77e4de3` = Merge #164,
-`7e881b8` = Merge #163)
+**`main`-HEAD:** `51a533d` (Merge #166, in Production ausgerollt — Deployment
+`dpl_E9JKeXKhd2b5mK2QJDNuRSquXJGg` `READY`, `target: production`; davor `ce5e3b8` = Merge #165,
+`77e4de3` = Merge #164)
 
 > **Sprint 22C1 am 2026-07-28 ausgeführt — ERFOLGREICH ABGESCHLOSSEN. Beide Gates
 > passiert: PR #165 gemergt (`ce5e3b8`, beide Pflicht-Checks grün, Deployment
 > `dpl_CDfzvCaanmYsiZG62n9hKUaYLbCC` `READY`), Production-Freigabe für alle sechs
-> Schritte erteilt, Runbook 14:56–14:59 UTC vollständig durchlaufen.**
+> Schritte erteilt, Runbook 14:56–14:59 UTC vollständig durchlaufen. Die
+> Abschlussdokumentation ist mit **PR #166** gemergt (`51a533d`, 15:52 UTC, beide
+> Pflicht-Checks grün, Deployment `dpl_E9JKeXKhd2b5mK2QJDNuRSquXJGg` `READY`) —
+> damit ist auch das letzte Abnahmekriterium (Projektstatus aktualisiert) erfüllt.**
 > **Production-Ergebnis:** Shadow-Migration angewendet und verifiziert (19 Spalten,
 > RLS aktiv, **0 Policies**, Grants nur `postgres`/`service_role`, Teilindex für die
 > Ein-Aktiv-Garantie, Renew-RPC ohne Fremd-Grants); **Canary 56/56 fehlerfrei**;
@@ -547,6 +550,7 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 
 | PR | Inhalt | Einschätzung |
 |---|---|---|
+| ~~#166~~ | **Sprint 22C1 abgeschlossen: Production-Backfill ausgeführt und belegt** — Protokoll §14.6 (Migration angewendet und verifiziert, Canary 56/56, 772/772 eingebettet, Idempotenz 0 Aufrufe/0 Writes, Vorher/Nachher-Nachweise), Roadmap-Punkt 22 auf erfüllt, Werkzeugbefund W-3 behoben (`process.exitCode` statt `process.exit()`) | **gemergt** 2026-07-28, 15:52 UTC (`51a533d`), beide Pflicht-Checks grün (Lauf `30371556515`), in Production ausgerollt (Deployment `dpl_E9JKeXKhd2b5mK2QJDNuRSquXJGg` `READY`). Der Production-Zustand war zum Merge-Zeitpunkt bereits hergestellt — der PR selbst änderte keine Production-Daten |
 | ~~#165~~ | **Sprint 22C1: Production-Shadow-Struktur + Backfill-Pipeline für semantische Embeddings** — finalisierte Migration `20260728_embedding_shadow.sql` (+ Rollback, aus `entwuerfe/` überführt), Renew-Lock-RPC, Backfill-Lib+CLI mit harten fail-closed Deckeln und eigenem Lock, Testsuite 40/40, Env-Inventar + D7-Testpflege, Doku §14 inkl. Production-Runbook | **gemergt** 2026-07-28 (`ce5e3b8`), beide Pflicht-Checks grün (Lauf `30367524365`), in Production ausgerollt (Deployment `dpl_CDfzvCaanmYsiZG62n9hKUaYLbCC` `READY`). Danach auf ausdrückliche Freigabe: **Migration angewendet + Backfill 772/772 erfolgreich** (§14.6). Der Merge selbst änderte keine Production-Daten |
 | ~~#164~~ | **Sprint 22B: Embedding-Testlauf ausgeführt, Qualitätsvergleich dokumentiert** — reine Doku (§13.6/§13.8) | **gemergt** 2026-07-28, 13:13 UTC (`77e4de3`), beide Pflicht-Checks grün, in Production ausgerollt (Deployment `dpl_9Kt9LpvYPCRNxeK4MhycsQmH8k29` `READY`). Damit ist Sprint 22B **erfolgreich abgeschlossen** |
 | ~~#163~~ | **Doku: PR #162 nach Merge nachgetragen** (nur Statuspflege) | **gemergt** 2026-07-28 (`7e881b8`) |
