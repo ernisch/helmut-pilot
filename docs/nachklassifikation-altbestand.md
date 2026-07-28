@@ -750,3 +750,12 @@ Laufs): der Rückweg ist nie gegen Production gelaufen (OP-01).
 
 **Kein Codefehler gefunden, keine Codeänderung nötig, keine Migration, kein Flag,
 kein Cron, kein Lock, keine Quelle, kein Mandantenprofil verändert.**
+
+### 14.11 · Branch, PR, CI
+
+* Branch `claude/helmut-sprint-21-production-0vgv2r`, **PR #158** — reine Dokumentation.
+* **CI-Gate grün: beide Pflicht-Checks** — `Syntax + Offline-Suiten` und
+  `Browser-/Mobile-Smoke (Chromium)`, Lauf `30346007213`, Commit `97c1c57`.
+* Offline-Suite in dieser Sitzung **158/172** — identische 14 netz-/DB-abhängige
+  Vorbefunde (Production-Zugangsdaten gesetzt, Netz-Guard greift). Verbindlich ist
+  der grüne CI-Lauf ohne Secrets.
