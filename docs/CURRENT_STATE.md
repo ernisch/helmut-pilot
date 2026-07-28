@@ -1,9 +1,11 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-28 (**Sprint 22B: Embedding-Qualitätsvergleich
-vollständig vorbereitet — Testmenge, Goldstandard, Legacy-Basislinie, Offline-Pipeline,
-Modell-/Kostenentscheidung; teilweise abgeschlossen, kostenpflichtiger Testlauf wartet
-auf Freigabe** · **Sprint 22A: Embedding-Architektur bewiesen —
+**Letzte Aktualisierung:** 2026-07-28 (**Sprint 22B: externer Testlauf ausgeführt und
+Qualitätsvergleich vorliegend — semantisches Embedding (Azure `text-embedding-3-small`)
+schlägt den Legacy-Merkmalsvektor deutlich (Top-5 38/38 vs. 33/38, mittlerer Rang 1,2
+vs. 4,4, praktikabler Einzelschwellenwert bei 0,75–0,80: Präzision 1,00/Trefferquote
+0,95); erfolgreich abgeschlossen als Analyse-Sprint, Production-Umsetzung bleibt
+freigabepflichtig (§11 der Architekturdoku)** · **Sprint 22A: Embedding-Architektur bewiesen —
 das „embedding" ist ein deterministischer Merkmalsvektor, kein semantisches Embedding;
 Datenvertrag + Shadow-Entwurf liegen vor, keine Production-Änderung** ·
 **OP-01-Sprint: Production-Sicherung und isolierter
@@ -108,6 +110,29 @@ Erfolgskriterien erfüllt**) ·
 > `text-embedding-3-small`-Deployment an + setzt `HELMUT_EMBEDDING_DEPLOYMENT`
 > in den Session-Environment-Einstellungen, dann erneute Freigabe des Laufs
 > (Details: `embedding-architektur.md` §13.6).
+>
+> **Nachtrag (~13:04 UTC): Deployment angelegt, Env gesetzt, Testlauf
+> ausgeführt und ausgewertet — erfolgreich abgeschlossen.** Betreiber hat das
+> `text-embedding-3-small`-Deployment angelegt und `HELMUT_EMBEDDING_DEPLOYMENT`
+> in den Cloud-Session-Environment-Einstellungen gesetzt; die frühere Freigabe
+> galt weiter. Dry-Run zuerst (56 geplant, 3 Batches, 8 621 Tokens, ≈0,0002 USD),
+> danach `--echt --freigabe erteilt`: **56/56 Objekte berechnet, 0
+> fehlgeschlagen, 8 621 Tokens, ≈0,0002 USD, 0 Abbrüche**, Ablage ausschließlich
+> lokal (`shadow-store/`, gitignored) — **kein Production-Write.**
+> **Qualitätsvergleich gegen den 47-Paar-Goldstandard:** das semantische
+> Embedding schlägt den Legacy-Merkmalsvektor deutlich — Top-5-Trefferquote
+> **38/38 vs. 33/38**, mittlerer Rang **1,2 vs. 4,4**, Rang-1-Trefferquote
+> **33/38 vs. 20/38**. Alle vier bekannten B4-Problemfälle (CSD-Folge,
+> GVK-Duplikat, Iran-Serienende, Petition) springen von Rang 21–42 auf Rang 1.
+> Beim Legacy-Vektor gibt es **keinen** tragfähigen Einzelschwellenwert
+> (Präzision 1,0 nur bei Trefferquote 21–26 %); semantisch ist bei Schwelle
+> 0,75–0,80 Präzision 1,00 bei Trefferquote 0,95 erreichbar. **Kein
+> Production-Write, keine Migration, kein Flag, Matching unverändert.**
+> Vollständige Zahlen: [`embedding-architektur.md`](embedding-architektur.md)
+> §13.8. **Nächster Schritt:** Produktentscheidung, ob/wann ein
+> semantisches Embedding produktiv wird (§11: Migration, Modell-/Provider-
+> Aktivierung, Backfill, Matching-Änderung sind je einzeln freigabepflichtig) —
+> kein automatischer Anschluss an diesen Sprint.
 >
 > **Sprint 22A am 2026-07-28 ausgeführt — erfolgreich abgeschlossen (Analyse-Sprint,
 > keine Production-Änderung).** Zentrale Produktfrage beantwortet und **bewiesen**: das
