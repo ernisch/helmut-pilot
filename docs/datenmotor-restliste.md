@@ -365,7 +365,11 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 - **Freigabe:** überwiegend **NEIN** (Code-Hygiene via normalem PR-Prozess); **JA** nur für DST/Cron und Datenbereinigungen.
 
 #### OP-24 · Geografie des Altbestands nachklassifizieren (neu, Sprint 20)
-- **Status:** offen. Sprint 20 hat den **Schreibpfad** korrigiert: eine betroffene Geografie
+- **Status:** **technisch vorbereitet, Production-Schreiblauf ausstehend** (Sprint 21,
+  2026-07-28). Der Prozess ist gebaut, getestet (101/101 · 21/21 Mutationen rot) und
+  read-only gegen Production vermessen; er ist **nie** im Schreibmodus gelaufen.
+  Kanonisch: [`nachklassifikation-altbestand.md`](nachklassifikation-altbestand.md).
+  Sprint 20 hat den **Schreibpfad** korrigiert: eine betroffene Geografie
   entsteht nur noch aus Nachweisen, nie aus `decision_level`. Der **Altbestand ist bewusst
   unangetastet geblieben** (Sprintregel 12).
 - **Belegter Ist-Zustand** (read-only gemessen am 2026-07-27, 1 193 Knowledge Objects,
@@ -376,14 +380,28 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   **ohne kanonische ID**. **0 von 1 193** Vorgängen haben mehr als eine betroffene Region.
   Damit sind **518 von 552 (93,8 %)** reine Ebenen-Ableitungen, die restlichen **34** stammen
   aus bloßen Ortsnennungen — **kein einziger** Wert beruht auf einem geografischen Nachweis.
-- **Fehlender Schritt:** ein kostenneutraler, rein deterministischer Nachlauf, der die
-  Ebenen-Ableitungen entfernt und nur belegte Regionen stehen lässt. Alt-Einträge tragen keine
-  Herkunft und gelten deshalb als `bestand-alt` — sie sind von jedem echten Nachweis (Rang
-  ≥ `ki`) korrigierbar, gehen aber ohne Nachweis nicht verloren (fail closed).
-- **Abhängigkeiten:** Sprint 20 muss gemergt und deployt sein.
+- **Erledigt in Sprint 21:** der kostenneutrale, rein deterministische Nachlauf existiert
+  (`lib/helmut/quellenarchitektur/nachklassifikation.js` + `scripts/nachklassifikation.js`).
+  Vorschau ist Standard; Schreiben verlangt `--ausfuehren` **und**
+  `HELMUT_NACHKLASSIFIKATION_BESTAETIGT=ja` **und** das Production-Schreibgate.
+  Begrenzbar nach IDs, Zeitraum, Mandant, **Fehlerklasse** und Menge. Idempotenz an allen
+  **740** verstandenen Production-Objekten bewiesen (Lauf 2 und 3 schreiben **0**).
+- **Read-only Production-Vorschau (2026-07-28):** 1 230 Objekte gelesen, **490 unverstandene
+  hart ausgeschlossen**, **740** geplant. Sicher automatisch korrigierbar: **570 Geografien
+  entfernen** (471 Bundes-Ableitung · 30 Ersatzwert `land` · 37 nicht-kanonische EU · 32
+  Ortsnennung) und **2** Belege stärken. **0** manuelle Prüffälle, **0** KI-Aufrufe,
+  **0,00 USD**. Die Zahlen reproduzieren die Sprint-19/20-Messung exakt (78 · 30 · 37 · 34).
+- **Fehlender Schritt:** **nur noch der freigegebene Production-Schreiblauf.** Alt-Einträge
+  tragen keine Herkunft und gelten als `bestand-alt` — sie sind von jedem echten Nachweis
+  (Rang ≥ `ki`) korrigierbar, gehen aber ohne Nachweis nicht verloren (fail closed).
+- **Abhängigkeiten:** Sprint 20 ist gemergt (#155) und deployt. Sprint 21 muss gemergt sein.
 - **Risiko:** mittel — es ist ein **Production-Schreiblauf** über den Bestand. Ohne KI-Kosten
-  möglich (der Deriver ist rein), aber Vorher/Nachher-Messung und Rückweg sind Pflicht.
-- **Freigabe:** **JA** (Production-Datenänderung).
+  (der Deriver ist rein). Vorher/Nachher-Messung und Rückweg liegen vor
+  ([`nachklassifikation-altbestand.md`](nachklassifikation-altbestand.md) §11/§12).
+  Dämpfend: `affected_geographies` und `political_level` haben heute **keinen**
+  Laufzeitkonsumenten — `matching.js` liest beide nicht.
+- **Freigabe:** **JA** (Production-Datenänderung) — Freigabeschritte in §12 des kanonischen
+  Dokuments.
 
 ---
 
