@@ -420,8 +420,9 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 - **Fehlender Schritt:** **erledigt am 2026-07-28** — der vollständige Schreiblauf (Umfang B)
   ist gelaufen und hat auch das Verhalten **unter Menge** belegt (30 Batches, 728 Objekte,
   3 min 20 s, 0 Fehler). Nicht belegt bleibt allein der Rückweg (nie gegen Production
-  gelaufen, OP-01 — er wurde nicht gebraucht). Formal abgeschlossen ist der Punkt mit dem
-  Merge des Dokumentations-PR.
+  gelaufen, OP-01 — er wurde nicht gebraucht). **Formal abgeschlossen: der
+  Dokumentations-PR #158 ist am 2026-07-28, 09:25 UTC gemergt** (`0f8d33a`, beide
+  Pflicht-Checks grün) und in Production ausgerollt.
 - **Abhängigkeiten:** Sprint 20 ist gemergt (#155) und deployt. Sprint 21 muss gemergt sein.
 - **Risiko:** mittel — es ist ein **Production-Schreiblauf** über den Bestand. Ohne KI-Kosten
   (der Deriver ist rein). Vorher/Nachher-Messung und Rückweg liegen vor
