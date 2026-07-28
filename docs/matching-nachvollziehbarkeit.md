@@ -1182,7 +1182,7 @@ select count(*) from information_schema.tables
 
 | # | Schritt | Freigabe | Rückweg |
 |---|---|---|---|
-| 1 | PR prüfen und mergen (Merge = Deployment) | Betreiber | `git revert` / Instant Rollback |
+| 1 | **PR #169** prüfen und mergen (Merge = Deployment) | Betreiber | `git revert` / Instant Rollback |
 | 2 | Vorabprüfung §21.1 ausführen | — (nur lesend) | — |
 | 3 | Migration `20260728_matching_audit.sql` anwenden | **eigene Freigabe** | `20260728_matching_audit_rollback.sql` |
 | 4 | Verifikation §21.3 ausführen | — (nur lesend) | — |
