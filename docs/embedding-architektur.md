@@ -392,6 +392,23 @@ hart gegen Fehlprogrammierung. Bestehende Budgets unverändert.
    Embedding-Deployment (eine Azure-Konfigurationsänderung wäre selbst
    freigabepflichtig).
 
+**Ergebnis der Gegenprüfung (2026-07-28, ~12:45 UTC, Betreiberfreigabe für den
+Testlauf lag vor):** Der bestehende Azure-Ressourcenbereich
+(`AZURE_OPENAI_ENDPOINT`) enthält per Data-Plane-Abfrage genau **ein**
+Deployment: `gpt-5-mini` (Understanding). **Kein Embedding-Deployment
+vorhanden → Testlauf gemäß Auflage gestoppt, bevor irgendein Modellaufruf
+erfolgte** (0 Aufrufe, 0 Tokens, 0,00 USD). Es wurde kein Deployment angelegt
+und keine Azure-Einstellung geändert. Nebenbefund behoben: das Testlauf-CLI
+erwartete `AZURE_OPENAI_API_KEY`, die Repo-Konvention ist `AZURE_OPENAI_KEY`
+(`lib/helmut/ai.js`) — korrigiert, mit Fallback. **Nächster Schritt für den
+Testlauf (erneute Freigabe nötig):** im bestehenden Azure-Ressourcenbereich
+ein Deployment für `text-embedding-3-small` anlegen (Betreiber, Azure-Portal),
+dann `HELMUT_EMBEDDING_DEPLOYMENT=<name>` in den Cloud-Session-
+Environment-Einstellungen setzen und
+`node scripts/embedding-testlauf.js --echt --freigabe erteilt` ausführen.
+Alternative ohne Azure-Änderung: Weg B (OpenAI-kompatible API) — braucht ein
+neues Secret und damit ebenfalls eine Freigabe.
+
 ### 13.7 Produktbewertung und Berlin/Brandenburg (Stand vor dem Testlauf)
 
 Die Legacy-Basislinie **bestätigt** die §4-Einschätzung: klarer erwartbarer

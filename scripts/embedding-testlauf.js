@@ -11,7 +11,8 @@
 //
 // Secrets kommen ausschließlich aus process.env (CLAUDE.md §4.9):
 //   Weg A (bevorzugt, bestehender Provider): AZURE_OPENAI_ENDPOINT,
-//     AZURE_OPENAI_API_KEY, HELMUT_EMBEDDING_DEPLOYMENT (Azure-Deploymentname)
+//     AZURE_OPENAI_KEY (Repo-Konvention, lib/helmut/ai.js),
+//     HELMUT_EMBEDDING_DEPLOYMENT (Azure-Deploymentname)
 //   Weg B (OpenAI-kompatible API): HELMUT_EMBEDDING_API_BASE,
 //     HELMUT_EMBEDDING_API_KEY
 //
@@ -38,7 +39,7 @@ const MAX_TOKENS = 60000;
 
 function azureProvider() {
   const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
-  const key = process.env.AZURE_OPENAI_API_KEY;
+  const key = process.env.AZURE_OPENAI_KEY || process.env.AZURE_OPENAI_API_KEY;
   const deployment = process.env.HELMUT_EMBEDDING_DEPLOYMENT;
   if (!endpoint || !key || !deployment) return null;
   const url = `${endpoint.replace(/\/$/, "")}/openai/deployments/${deployment}/embeddings?api-version=2024-10-21`;
@@ -109,7 +110,7 @@ async function main() {
 
   const provider = azureProvider() || openaiKompatibelProvider();
   if (!provider) {
-    console.error("\nSTOPP: keine Provider-Secrets in process.env (Weg A: AZURE_OPENAI_ENDPOINT + AZURE_OPENAI_API_KEY + HELMUT_EMBEDDING_DEPLOYMENT · Weg B: HELMUT_EMBEDDING_API_BASE + HELMUT_EMBEDDING_API_KEY).");
+    console.error("\nSTOPP: keine Provider-Secrets in process.env (Weg A: AZURE_OPENAI_ENDPOINT + AZURE_OPENAI_KEY + HELMUT_EMBEDDING_DEPLOYMENT · Weg B: HELMUT_EMBEDDING_API_BASE + HELMUT_EMBEDDING_API_KEY).");
     process.exit(2);
   }
 

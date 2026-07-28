@@ -96,9 +96,18 @@ Erfolgskriterien erfüllt**) ·
 > identisch rot — Umgebungs-Vorbefund; Abnahmezahl ist das CI-Gate). **Kein
 > Production-Write, keine Migration, kein KI-Aufruf, kein Flag, Matching unverändert.**
 > Kanonisch: [`embedding-architektur.md`](embedding-architektur.md) §13 (inkl.
-> Freigabepaket §13.6). **Nächster Schritt:** Betreiberfreigabe für den ~0,0002-USD-
-> Testlauf (plus Azure-Preis-/Deployment-Gegenprüfung), danach Auswertung und
-> 22C-Entscheidung.
+> Freigabepaket §13.6).
+>
+> **Nachtrag (~12:45 UTC): Betreiberfreigabe für den Testlauf wurde erteilt** —
+> die auferlegte Deployment-Gegenprüfung ergab jedoch: der bestehende
+> Azure-Ressourcenbereich enthält **nur** `gpt-5-mini`, **kein
+> Embedding-Deployment** → Testlauf gemäß Auflage **gestoppt, bevor ein
+> Modellaufruf erfolgte** (0 Aufrufe, 0,00 USD; kein Deployment angelegt, keine
+> Azure-Einstellung geändert). Nebenbefund behoben: Testlauf-CLI nutzt jetzt die
+> Repo-Konvention `AZURE_OPENAI_KEY`. **Nächster Schritt:** Betreiber legt ein
+> `text-embedding-3-small`-Deployment an + setzt `HELMUT_EMBEDDING_DEPLOYMENT`
+> in den Session-Environment-Einstellungen, dann erneute Freigabe des Laufs
+> (Details: `embedding-architektur.md` §13.6).
 >
 > **Sprint 22A am 2026-07-28 ausgeführt — erfolgreich abgeschlossen (Analyse-Sprint,
 > keine Production-Änderung).** Zentrale Produktfrage beantwortet und **bewiesen**: das
