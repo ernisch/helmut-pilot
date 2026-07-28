@@ -1,6 +1,12 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-28 (**Sprint 22C1 erfolgreich abgeschlossen: PR #165 gemergt,
+**Letzte Aktualisierung:** 2026-07-28 (**Sprint 23A erfolgreich abgeschlossen: Matching-Bestand
+vollständig verifiziert, Architekturentscheidung für 23B getroffen — Production nur lesend,
+keine Produktlogik verändert. Kernbefund: `matching_results` speichert je Mandant×Vorgang
+GENAU EINE Zeile, wird bei jedem Lauf überschrieben, kennt weder Lauf-ID noch Profil-/
+Vorgangsstand noch Rezeptversion; `created_at` friert beim ERSTEN Auftreten ein — alte
+Ergebnisse sind nicht reproduzierbar, Briefings verweisen auf kein Ergebnis. Kanonisch:**
+[`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md)) · (**Sprint 22C1 erfolgreich abgeschlossen: PR #165 gemergt,
 Shadow-Migration in Production angewendet, RLS/Zugriffsschutz verifiziert, alle 772 berechtigten
 Wissensobjekte semantisch eingebettet — 0 Fehler, 0 Wiederholungen, 17 API-Aufrufe, ≈0,0022 USD,
 Canary 56/56, Wiederaufnahme und Idempotenz (0 Aufrufe/0 Writes) in Production bewiesen, Matching/
@@ -37,6 +43,87 @@ Erfolgskriterien erfüllt**) ·
 **`main`-HEAD:** `51a533d` (Merge #166, in Production ausgerollt — Deployment
 `dpl_E9JKeXKhd2b5mK2QJDNuRSquXJGg` `READY`, `target: production`; davor `ce5e3b8` = Merge #165,
 `77e4de3` = Merge #164)
+
+> **Sprint 23A am 2026-07-28 ausgeführt — ERFOLGREICH ABGESCHLOSSEN (Bestandsaufnahme;
+> Production ausschließlich lesend, keine Produktlogik, kein Schema, keine Daten verändert).**
+> Startprüfung vollständig: `main` = `51a533d` (Merge **PR #166**), Arbeitsbranch deckungsgleich,
+> 10 offene PRs geprüft — konkrete Überschneidung nur bei **#112** (Onboarding verändert, wie
+> Mandatsprofile entstehen → berührt den Profilhash von 23B) sowie Textkonflikte in
+> `CURRENT_STATE.md` mit #167/#159/#148; **kein PR angefasst**.
+> **Verifizierter Ist-Zustand:** Einstiegspunkt ist `matching.js:runMatchingShadow`, aufgerufen an
+> **genau zwei** Stellen in `scheduler.js` (Crawl-Pfad Z. 409, Lage-Pfad Z. 577) → **4 Läufe je
+> Mandant und Tag** (Crons 04/10/16/20 UTC, durch das Stundenhistogramm der Daten bestätigt).
+> **Einziger Konsument** ist `lage.js:325` — und auch nur, solange `HELMUT_SCORING_MODE` aus ist
+> (OP-22); **Radar liest die Ergebnisse nicht** (`rankForRadar` wird im Produktcode nirgends
+> aufgerufen). **Schema** identisch zum Repo, kein Drift: 9 Spalten, PK `id`, 2 FKs mit
+> `ON DELETE CASCADE`, **kein eindeutiger Index auf (user_id, knowledge_object_id)** — die
+> Eindeutigkeit ist reine Codekonvention (`mr-<mandant>-<vorgang>`), hält aber 287/287.
+> **Schreibpfad:** Bulk-Upsert auf `id` → **vollständiges Überschreiben**, **kein DELETE**, keine
+> Retention, **keine Lauf-ID**, **kein `updated_at`**; `created_at` bleibt auf dem ERSTEN
+> Auftreten des Paares stehen. **Empirischer Beweis:** `profile_embeddings.updated_at` von
+> `annika-klose` steht auf **28.07. 16:04:32 UTC** (dieses Feld setzt `saveProfileEmbedding` bei
+> jedem Lauf explizit), die jüngste `matching_results.created_at` desselben Mandanten auf
+> **08:02** — der 16:04-Lauf schrieb 20 Zeilen und hinterließ **keine sichtbare Spur**.
+> **Production-Zahlen (read-only):** 10 Mandanten · 9 Mandatsprofile (6 aktiv) · 1 507
+> Wissensobjekte (776 verstanden) · **287** `matching_results` auf **7** Mandanten und 181
+> Vorgängen · 7 Profilvektoren · 71 Briefings · 976 Decisions · 772 semantische Embeddings ·
+> 685 Byte/Zeile · DB 64 MB. **Sauber:** 0 Duplikate, 0 Waisen, 0 fehlende Scores, 0 Ergebnisse
+> ohne Profil/Vorgang, 0 abweichende Kennungen. **Nicht sauber:** **64 Zeilen tragen Rang 20**
+> (je Lauf wird jeder Rang genau einmal vergeben) — der direkte Abdruck vermischter
+> Generationen; der Lesepfad sortiert folgerichtig nach `created_at`, **nicht** nach `rank`.
+> **Erklärbarkeit heute: 225 von 287 Zeilen (78,4 %) haben leere `matched_features`**; von 79
+> Einzeltreffern sind 55 „Partei", nur 12 „Ausschuss" und 8 „Thema". `filters` ist **287/287
+> leer** — im Produktionspfad wird nie gefiltert und kein Schwellenwert angewendet (gespeicherte
+> Ähnlichkeiten reichen bis **−0,0735**). **Versionierung: nichts davon existiert** — kein
+> Profilstand, kein Vorgangsstand, keine Rezept-/Vektorversion, kein Berechnungszeitpunkt am
+> Ergebnis; `profile_hash` existiert nur einmal je Mandant und wird mitüberschrieben,
+> `ko_version` (1 505 × v1, 2 × v2) wird nicht mitgeführt. **Alte Ergebnisse sind nicht
+> reproduzierbar.** **Briefing-Befund:** der Payload enthält **nur** `generatedAt`, `koSetHash`,
+> `model`, `paragraphs`, `wordCount` — **keine Vorgangskennungen, kein Verweis auf ein
+> Matching-Ergebnis**; `koSetHash` ist eine Einwegfunktion. Zeilenkennung ist
+> `bf-<mandant>-lage-<tag>` mit Upsert → **ein neuer Matching-Lauf kann ein Tagesbriefing
+> rückwirkend überschreiben**, der alte Text ist dann verloren. **Mandantentrennung:** RLS aktiv,
+> **eine** Policy `tenant_isolation` nur für `authenticated`; **`service_role` umgeht RLS
+> vollständig** — durchsetzend ist allein die App-Seite, und die ist für beide Zugriffsfunktionen
+> geprüft (`assertTenant` + Pflichtfilter bzw. `assertTenantRows`). Kein ungefilterter Pfad
+> gefunden. **Befund M-6 (Hygiene, nicht akut):** `anon`/`authenticated` halten auf allen älteren
+> V3-Tabellen den Supabase-Standardrechtesatz inkl. **`TRUNCATE`** (RLS greift bei `TRUNCATE`
+> nicht) — über das API nicht erreichbar, aber inkonsistent zur gehärteten
+> `knowledge_object_embeddings`. **Befund M-3 (schwerwiegendster inhaltlicher Befund):** nach
+> einer Profil- oder Vorgangsänderung bleiben alte Ergebnisse **unverändert und stillschweigend
+> falsch zugeordnet** stehen. **Semantik-Abgrenzung bestätigt:** `knowledge_object_embeddings`
+> wird ausschließlich von `embedding-backfill.js` und dessen Test berührt — **null Einfluss** auf
+> `matching_results`; für Punkt 23 ist **keine** Änderung daran nötig. **Keine feste Bindung an
+> den Pilotmandanten in aktiver Logik** (einziger Treffer: ein Kommentar in `source-mode.js`).
+> **Entscheidung für 23B: Variante B+** — neue schmale Lauftabelle `matching_runs` (mit kompakter
+> Rangliste je Lauf = die eigentliche Historie), **additive** Spalten auf `matching_results`
+> (Lauf-ID, Profilhash, Vorgangs-Eingabehash, `ko_version`, Rezept-/Vektorversion,
+> `berechnet_am`, `aktuell`/`abgeloest_am`, Signale, Begründung, Eingabefingerabdruck) plus
+> erstmals ein **echter** eindeutiger Index `(user_id, knowledge_object_id)`; Briefing-Anbindung
+> **ohne Migration** im vorhandenen `payload`-jsonb + schmale Archivtabelle `briefing_versionen`.
+> Idempotenz über einen Eingabefingerabdruck: ein identischer Zweitlauf erzeugt **0 Zeilen und
+> genau 1 UPDATE** (heute: 20 UPDATEs) — die Schreiblast **sinkt**. **Verworfen:** A (der PK
+> erzwingt eine Zeile je Paar → Historie unmöglich), C (20 Zeilen je Lauf ≈ 2,2 Mio./Jahr bei 100
+> Profilen für zu >90 % identische Daten), D (protokolliert nur, *dass* gerechnet wurde).
+> **Bewusst nicht gespeichert:** Artikeltexte, Vektoren je Ergebnis, Profilkopien,
+> Zwischenschritte, verworfene Kandidaten, KI-Erklärungen — sowie fachlicher/geografischer/
+> institutioneller Teilscore, weil sie im Rezept **nicht existieren** (leere Spalten wären
+> falsches Grün). **Kostenschätzung:** +0 Zeilen einmalig, ~1,0–1,2 kB je Ergebnis, ~1,5–2,0 kB
+> je Lauf, ~20 MB/Jahr bei 10 Profilen, ~200 MB/Jahr bei 100 Profilen (dann Retention nötig),
+> **0,00 USD zusätzliche KI-Kosten**. **23C-Erklärung definiert** (1–2 Sätze, deterministisch aus
+> `matched_features`, Reihenfolge Ausschuss → Thema → Wahlkreis → Partei, ohne Belege **kein**
+> Satz statt Erfindung, sichtbar in der Vorgangskarte, **nicht** im KI-Narrativ) — heute für
+> 20 von 287 Zeilen politisch aussagekräftig belegbar; das ist der ehrliche Ausgangswert.
+> **Tests:** Offline-Suite **176/176** in bereinigter Umgebung (Zweitlauf; im Erstlauf 175/176 —
+> `werkzeug-lesefehler-test` einzeln 43/0, Parallellast-Flake). Mit den Sitzungs-Secrets
+> `HELMUT_STORAGE_BACKEND`/`HELMUT_V3_STORE`/`SUPABASE_URL` meldet derselbe Aufruf 162/176 —
+> **bekanntes Umgebungsmuster**, gegenbewiesen durch `git status` = leer (kein Byte Code
+> geändert). **Kein Production-Write, keine Migration, kein Flag, kein Cron, kein Secret, keine
+> Vercel-Variable, kein KI-Aufruf, kein Merge, kein Deployment.** Vollständig:
+> [`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md).
+> **Nächster Schritt: Sprint 23B-1** (Migration + Rollback, `matching-contract.js`, Laufzeile,
+> Sperre `matching-<mandant>` **auch im Lage-Pfad**, Idempotenz, Tests T-1…T-7) — die Migration
+> ist freigabepflichtig.
 
 > **Sprint 22C1 am 2026-07-28 ausgeführt — ERFOLGREICH ABGESCHLOSSEN. Beide Gates
 > passiert: PR #165 gemergt (`ce5e3b8`, beide Pflicht-Checks grün, Deployment
@@ -548,6 +635,14 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 
 ## 8 · Offene Pull Requests (Stand 2026-07-28)
 
+> **Konfliktprüfung für Roadmap-Punkt 23 (Sprint 23A, 2026-07-28):** alle 10 offenen PRs geprüft,
+> **keiner angefasst**. Fachlich relevant ist nur **#112** (Onboarding verändert, wie
+> Mandatsprofile entstehen und geschrieben werden → berührt den Profilhash von 23B; der Hash wird
+> deshalb bewusst herkunftsunabhängig definiert). **#167/#159/#148** ändern ebenfalls
+> `CURRENT_STATE.md` → reine Markdown-Textkonflikte, keine fachliche Kollision. #132/#88 berühren
+> `source-mode.js` bzw. `scheduler.js`, nicht den Matching-Pfad. #117/#115/#111/#70 ohne Bezug.
+> Einzelbewertung: [`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md) §2.
+
 | PR | Inhalt | Einschätzung |
 |---|---|---|
 | ~~#166~~ | **Sprint 22C1 abgeschlossen: Production-Backfill ausgeführt und belegt** — Protokoll §14.6 (Migration angewendet und verifiziert, Canary 56/56, 772/772 eingebettet, Idempotenz 0 Aufrufe/0 Writes, Vorher/Nachher-Nachweise), Roadmap-Punkt 22 auf erfüllt, Werkzeugbefund W-3 behoben (`process.exitCode` statt `process.exit()`) | **gemergt** 2026-07-28, 15:52 UTC (`51a533d`), beide Pflicht-Checks grün (Lauf `30371556515`), in Production ausgerollt (Deployment `dpl_E9JKeXKhd2b5mK2QJDNuRSquXJGg` `READY`). Der Production-Zustand war zum Merge-Zeitpunkt bereits hergestellt — der PR selbst änderte keine Production-Daten |
@@ -883,6 +978,11 @@ Parallel möglich, ohne Freigabe:
 3. **Phase-1-Checkliste** fortführen: [`roadmap/phase_1_checkliste.md`](roadmap/phase_1_checkliste.md)
    ist die operative Wahrheit; nächster nicht-freigabepflichtiger Block sind die Punkte 19–23
    (Ebenen-/Geografie-/Embedding-Vollständigkeit, Matching-Nachvollziehbarkeit).
+   **Punkt 23 steht seit 2026-07-28 auf ⏳**: Sprint 23A hat den Ist-Zustand vollständig
+   verifiziert und die Architekturentscheidung für 23B getroffen
+   ([`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md)). Der Anschluss
+   **23B-1** ist bis zur Migration vorbereitbar, ohne Production zu berühren; die Migration
+   selbst ist freigabepflichtig.
    **Punkt 19 ist seit 2026-07-27 auf ⏳**: die Ebene wird jetzt dauerhaft gespeichert und
    wiederverwendet (`ARCHITECTURE.md` §7b), inhaltlich fehlen aber noch **78** verstandene
    Vorgänge ohne ermittelte Ebene. Ihre Nachklassifikation gehört fachlich zu **Punkt 21** und
@@ -897,6 +997,7 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 
 | Sprint | Datum | Zustand |
 |---|---|---|
+| **Sprint 23A: Matching-Bestand und Auditgrundlage verifizieren** | 2026-07-28 | **Erfolgreich abgeschlossen (Bestandsaufnahme; Production ausschließlich lesend, 21 reine `SELECT`-Abfragen, kein Byte Code geändert — `git status` leer).** Alle 20 Abnahmekriterien erfüllt. **Ist-Zustand belegt:** Einstieg `matching.js:runMatchingShadow`, zwei Aufrufstellen in `scheduler.js` → 4 Läufe je Mandant/Tag (04/10/16/20 UTC, durch das Stundenhistogramm bestätigt); einziger Konsument `lage.js:325`, und nur solange `HELMUT_SCORING_MODE` aus ist (OP-22); **Radar liest die Ergebnisse nicht**. Schema ohne Drift (9 Spalten, PK `id`, 2 FKs mit CASCADE), **kein eindeutiger Index auf (user_id, knowledge_object_id)** — Eindeutigkeit ist Codekonvention, hält 287/287. Schreibpfad = Bulk-Upsert auf `id`: **vollständiges Überschreiben, kein DELETE, keine Retention, keine Lauf-ID, kein `updated_at`**, `created_at` friert beim ERSTEN Auftreten ein (empirisch bewiesen: `annika-klose` 16:04:32-Lauf schrieb 20 Zeilen und hinterließ 0 Spuren). **Zahlen:** 10 Mandanten · 9 Mandatsprofile (6 aktiv) · 1 507 KOs (776 verstanden) · **287** Ergebnisse auf 7 Mandanten/181 Vorgängen · 71 Briefings · 976 Decisions · 685 B/Zeile · DB 64 MB. 0 Duplikate/Waisen/fehlende Scores — aber **64 Zeilen mit Rang 20** (vermischte Generationen) und **225 von 287 (78,4 %) ohne jedes `matched_feature`**; `filters` 287/287 leer, Ähnlichkeiten bis **−0,0735** (kein Schwellenwert im Produktionspfad). **Versionierung existiert nicht** → alte Ergebnisse **nicht reproduzierbar**. **Briefings** speichern nur `koSetHash` (Einwegfunktion), **keine Vorgangskennungen, keinen Ergebnisverweis**; Upsert auf `bf-<mandant>-lage-<tag>` → ein neuer Lauf kann ein Tagesbriefing **rückwirkend überschreiben**. **RLS aktiv, aber `service_role` umgeht sie vollständig** — durchsetzend ist allein die App-Seite (für beide Zugriffsfunktionen geprüft, kein ungefilterter Pfad). Befund **M-3** (nach Profil-/Vorgangsänderung bleiben Ergebnisse stillschweigend falsch zugeordnet), Befund **M-6** (`TRUNCATE`-Recht für `anon`/`authenticated` auf allen älteren V3-Tabellen; RLS greift bei `TRUNCATE` nicht, über das API aber nicht erreichbar). **Semantik-Abgrenzung bestätigt:** semantische Embeddings haben **null** Einfluss, `knowledge_object_embeddings` braucht für Punkt 23 **keine** Änderung. **Entscheidung 23B: Variante B+** (neue Lauftabelle `matching_runs` mit kompakter Rangliste, additive Spalten + echter Unique-Index, Briefing-Anbindung ohne Migration im jsonb, Archivtabelle `briefing_versionen`, Idempotenz per Eingabefingerabdruck → identischer Zweitlauf **0 Zeilen/1 UPDATE** statt 20). Verworfen: A (PK erzwingt eine Zeile je Paar), C (≈2,2 Mio. Zeilen/Jahr bei 100 Profilen), D (kein Ergebnisbezug). Kostenschätzung ~20 MB/Jahr bei 10 Profilen, ~200 MB/Jahr bei 100 (dann Retention), **0,00 USD KI**. 23C-Erklärung definiert (deterministisch, ohne Beleg **kein** Satz — heute nur 20 von 287 Zeilen aussagekräftig belegbar). Tests: **Offline-Suite 176/176** (bereinigte Umgebung, Zweitlauf; Erstlauf 175/176 = Parallellast-Flake, Suite einzeln 43/0; mit Sitzungs-Secrets 162/176 = bekanntes Umgebungsmuster). **Kein Production-Write, keine Migration, kein Flag/Cron/Secret, kein KI-Aufruf, kein Merge.** Kanonisch: [`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md). Nächster Schritt: **Sprint 23B-1** (Migration freigabepflichtig) |
 | **Sprint 22C1: Semantische Embeddings — Production-Shadow-Struktur + kontrollierter Backfill** | 2026-07-28 | **Erfolgreich abgeschlossen — beide Gates passiert, alle 20 Production-Abnahmekriterien erfüllt.** PR **#165 gemergt** (`ce5e3b8`, beide Pflicht-Checks grün, Deployment `READY`); danach auf ausdrückliche Freigabe der Production-Ablauf 14:56–14:59 UTC: **Migration angewendet und verifiziert** (RLS aktiv, 0 Policies, Grants nur `postgres`/`service_role`, Teilindex für die Ein-Aktiv-Garantie, Renew-RPC ohne Fremd-Grants), **Canary 56/56 fehlerfrei**, Restbestand in zwei Etappen (300 + 416) mit belegter **Wiederaufnahme**, Abdeckungsprüfung **BESTANDEN: 772 von 772 berechtigten Objekten** mit aktuellem Embedding (alle Negativlisten 0), **Idempotenz-Zweitlauf 0 API-Aufrufe / 0 Writes**. **17 API-Aufrufe, 110 992 Tokens (Schätzung) / 133 277 (providergemeldet), ≈ 0,0022 USD, 0 Fehler, 0 Wiederholungen.** Ein Modell/Rezept/Dimension über alle Zeilen, 0 Dimensions-/Wert-/Hashfehler. **Unverändert:** `knowledge_objects`-Fingerabdruck byte-identisch, Legacy-Vektoren 773, `matching_results` 287, Briefings 71, `llm_usage` heute 0, Crawl-Telemetrie stabil, 0 aktive Sperren. Kein Rollback nötig, **keine semantische Produktfunktion aktiviert**, keine Duplikatzusammenführung. Werkzeugbefund W-3 (abgeschnittene `--json`-Ausgabe auf Pipe) im Lauf behoben. Belege: [`embedding-architektur.md`](embedding-architektur.md) §14.6. Zuvor geliefert: finalisierte Shadow-Migration `20260728_embedding_shadow.sql` mit vollständigem Rollback (alle 16 Datenvertragsfelder, genau eine aktive Repräsentation je Objekt DB-erzwungen, RLS ohne Policies + Revokes, Renew-Lock-RPC, kein ANN-Index), Backfill `lib/helmut/embedding-backfill.js` + CLI `scripts/embedding-backfill.js` (Dry-Run-Default, `--vermessen`/`--pruefen` read-only, echter Lauf nur `--echt --freigabe erteilt` + Schreibgate, harte fail-closed Deckel ≤ 1 000 Objekte/≤ 200 000 Tokens/≤ 0,05 USD/Batch ≤ 50/Parallelität 1, eigenes Lock `semantic_embedding_backfill` mit TTL+Erneuerung, idempotent + wiederaufnehmbar, maschinenlesbares Protokoll), Budgettrennung ohne zweites Budgetsystem (Tokenwahrheit je Zeile + Laufprotokoll, bestehende Budgets unverändert). Production read-only nachgemessen: **772 berechtigte** Objekte (JS-exakt = SQL-Näherung), Dry-Run 16 Batches/110 992 Tokens ≈ **0,0022 USD**, Canary-Dry-Run 56 Objekte/8 621 Tokens. Tests: `embedding-backfill-test.js` **40/40** (neu), Bestand 31/31 + 43/43, **Offline-Suite 176/176** (CI-Umgebung; `main`-Gegenlauf 175/175). Runbook: `embedding-architektur.md` §14.5. Roadmap-Punkt 22 bleibt ⏳ bis zum bewiesenen Production-Backfill |
 | **Sprint 22A: Embedding-Architektur verstehen, bereinigen, Zielmodell festlegen** | 2026-07-28 | **Erfolgreich abgeschlossen (Analyse + additive Verträge; bewusst ohne Backfill und ohne Production-Änderung).** Bewiesen: `knowledge_objects.embedding` ist ein **deterministischer 256-dim Merkmalsvektor** (Token-Hash, `matching.js`), kein semantisches Embedding — 3 Production-Vektoren exakt lokal reproduziert. Production read-only vermessen: 1 501 KOs, 772/772 verstandene mit Vektor, 0 Dimensionsfehler/Nullvektoren/ungültige Werte; **599 ohne Fachgebiet und 78 mit Ebene `unknown` sind KEINE Blocker** (nicht Teil des kanonischen Eingangs `ko-kanon-1`); 729 unverstandene ausgeschlossen; Profilvektoren 7/10; pgvector-Shadow-Matching läuft aktiv (287 `matching_results`, Befund E-1: Env-Inventar ohne Prod-Vermerk). Geliefert: `lib/helmut/embedding-contract.js` (Eingang/Hash/Berechtigung/Validierung/Veraltet-Erkennung/idempotente Planung), `embedding-contract-test.js` **43/43**, Shadow-Migrations-**Entwurf** mit Rollback (`supabase/migrations/entwuerfe/`, nicht freigegeben), kanonische Doku [`embedding-architektur.md`](embedding-architektur.md) inkl. parametrisiertem Kostenmodell (~0,19 M Tokens Altbestand ≈ 0,19 × P USD bei P = Preis/1 M Tokens), Backfill-Sicherheitsmodell und Mandantenneutralität (kein Mandanten-Hardcode, testgesichert). Offline-Suite: **171/174** mit bereinigter Env (3 Vorbefunde, auch auf unverändertem `main` rot: `privacy-vollstaendigkeit`, `provision-tenant`, `tenant-neutrality` — Befund E-2, fachfremd, nicht angefasst); mit Sitzungs-Secrets 160/174 (Netz-Guard, bekanntes Muster). Roadmap Punkt 22 → ⏳. Nächster Schritt: **Sprint 22B** (Freigaben: Shadow-Migration, Modell/Provider, Testlauf-Kosten) |
 | **Sprint 21: Altbestand kontrolliert nachklassifizieren (OP-24)** | 2026-07-28 | **Teilweise abgeschlossen — Production-Nachklassifikation erfolgreich, Dokumentationsmerge ausstehend.** **Hauptlauf (Umfang B) am 2026-07-28, 09:03:49–09:07:09 UTC: 728 von 728 Objekten geschrieben, 30 Batches, 0 Fehler, 0 Kollisionen, Readback 728/728 exakt wie geplant, Fingerabdruck der 521 übrigen identisch, Idempotenz 0 Restschreibvorgänge, 0 KI-Aufrufe/0,00 USD — Protokoll [`nachklassifikation-altbestand.md`](nachklassifikation-altbestand.md) §14. Nach dem Merge des Doku-PR **#158** darf der Sprint als erfolgreich abgeschlossen markiert werden.** **Stufe-1-Protokoll: [`nachklassifikation-altbestand.md`](nachklassifikation-altbestand.md) §13** — am 2026-07-28, 08:25:13–08:25:21 UTC wurden **12 namentlich ausgewählte** Wissensobjekte (2 je Klasse, alle **6** sicheren Klassen) in Production korrigiert: 12 geplant, **12 geschrieben, 0 Fehler, 0 Kollisionen**, Readback **0 Abweichungen**, **0** belegte Geografien verloren, **0** andere Objekte verändert (Fingerabdruck der 1 237 übrigen identisch), **0 KI-Aufrufe / 0,00 USD**, Idempotenz bestätigt. **Der Rest des Sprints (Vorbereitung) blieb ohne Production-Mutation.** Gebaut ist ein kontrollierter, wiederholbarer Nachlauf über den Wissensobjektbestand: neues reines Planungsmodul `quellenarchitektur/nachklassifikation.js` (es schreibt nichts, es baut einen **Plan**) plus Werkzeug `scripts/nachklassifikation.js`. **Die zentrale Sicherheitsregel:** ein Altwert wird nur entfernt, wenn er **keine** echte Herkunft trägt (nur `bestand-alt`, Rang 2) **und** die erneute deterministische Nachweissuche für genau diese Geografie **keinen** Beleg findet. Alles andere bleibt stehen und wird zur manuellen Prüfung gemeldet — fail closed. **Kosten: 0 KI-Aufrufe, 0,00 USD** — die Nachweissuche benutzt `classification.sammleGeografieKandidaten`, also **denselben Code wie der Schreibpfad**; es entsteht keine zweite, parallele Klassifikationslogik. **Read-only Production-Vorschau (2026-07-28):** **1 230** Wissensobjekte gelesen, davon **490 unverstandene (`pending`/`failed`) hart ausgeschlossen**, **740** verstandene geplant. Sicher automatisch korrigierbar: **570 Geografien entfernen** — **471** Deutschland aus der Bundesebene, **30** Deutschland als verbotener Ersatzwert bei Ebene `land`, **37** nicht-kanonische „Europäische Union", **32** bloße Ortsnennungen (die nach `mentioned_geographies` wandern) — und **2** Belege stärken. **0** manuelle Prüffälle, **0** Ebenen- und **0** Entitätsänderungen. **Die Zahlen reproduzieren die Sprint-19/20-Messung exakt:** 78 unbestimmte Ebenen (Sprint 19: **78**), 30 Ersatzwerte (Sprint 20: **30** von 60), 37 EU-Einträge (Sprint 20: **37**), und 32 + 2 heute belegte = **34** aus Ortsnennungen (Sprint 20: **34**). **Zwei Befunde aus der Vorschau haben den Umfang verändert.** (1) Der erste Lauf las **1 000** statt 1 230 Objekte: ein einzelner PostgREST-Aufruf kappt still bei 1 000 Zeilen — exakt der Fehlermodus W-1, der im Repo schon einmal die Hälfte eines Bestands unsichtbar gemacht hat. Neu deshalb `storage.listKnowledgeObjectsSeitenweise` (seitenweise, `order` auf der **stabilen** Spalte `id`, wirft bei Lesefehlern statt Leerstand zu melden), und der Bericht weist aus, wenn die Leseobergrenze erreicht wurde. (2) **Alle 490 Objekte ohne `decision_level` sind `pending`/`failed`** — nie verstanden, ohne Inhalt außer einer Schlagzeile. Da die Ebene seit Sprint 19 **monoton** ist, würde eine daraus abgeleitete Ebene zum „ermittelten" Wert und wäre später nur noch per KI korrigierbar: **eine Vermutung würde zum Gedächtnis.** Deshalb harter Ausschluss. **Idempotenz an echten Production-Daten bewiesen** (rein lesend, Schreibvorgang im Speicher simuliert): über **alle 740** Objekte schreibt Lauf 1 740, **Lauf 2 und Lauf 3 schreiben 0**, und **0** Geografien mit echter Herkunft gehen verloren. **Zwei freigabefähige Umfänge:** A nur Geografie (**572** Schreibvorgänge, 23 Batches, 168 Objekte unverändert) oder B zusätzlich die ehrliche Geografie-Konfidenz (**740**, 30 Batches) — ohne B behaupten **166** Objekte weiterhin `geography: "medium"`, obwohl sie **keine** belegte Region tragen (falsches Grün). Neu dafür `--klassen=` als Positivliste: eine klassenweise Freigabe ist damit **strukturell erzwingbar**. **Ehrliche Grenze:** die ursprüngliche KI-Antwort (`ai.affected_geographies`) hat der alte Schreibpfad verworfen; sie ist nicht rekonstruierbar. Objekte, deren Region nur die KI kennen könnte, bleiben danach **ehrlich ohne** betroffene Geografie statt mit einer falschen. **Tragweite ehrlich benannt:** `affected_geographies` und `political_level` haben heute **keinen** Laufzeitkonsumenten — `matching.js` liest beides nicht; der Gewinn ist Datenintegrität, das Risiko einer stillen Matching-/Scoring-Änderung ist strukturell ausgeschlossen. **Nicht angefasst:** Fachgebiete (`tags`/`policy_field` — zuständig ist der bestehende `ko-enrichment`-Pfad, 567 Objekte nur **gemeldet**), `related_levels`, `event_type`, Quellen, Pakete, Crons, Locks, Mandantenprofile. **Keine** Migration, **keine** neue Spalte, **kein** Flag. **Tests:** neue Suite `nachklassifikation-test.js` **101/101** (die 20 im Auftrag verbindlich geforderten Fälle einzeln und benannt), Mutationsprobe **21 von 21 rot**, Offline-Suite **158/172** gegen die im selben Arbeitsbaum gemessene Basislinie **157/171** — **identische 14 Vorbefunde** (netz-/DB-abhängige Suiten scheitern in dieser Sitzung am Netz-Guard, weil Zugangsdaten gesetzt sind), also **+1 Suite, +1 grün, keine Verschlechterung**; die Abnahmezahl ist der CI-Lauf ohne Secrets. Browser-Smoke lokal nicht gefahren (keine UI-Änderung), im CI aber grün. **CI-Gate grün: beide Pflicht-Checks** (`Syntax + Offline-Suiten`, `Browser-/Mobile-Smoke (Chromium)`), Lauf `30317133853`, Commit `8d8ae3e`; die Einzelzahl der CI-Suiten war aus der Sitzung nicht lesbar (Actions-Log-Host proxy-gesperrt) — belegt ist der Ausgang, nicht die Zahl. Branch `claude/sprint-21-reclassification-rawkji`, **PR #156**. Kanonisch: [`nachklassifikation-altbestand.md`](nachklassifikation-altbestand.md) |
