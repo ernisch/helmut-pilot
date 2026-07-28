@@ -27,8 +27,8 @@ Werkzeug-Härtung W-1+W-2 gemergt (#152) · **W-2 erfolgreich abgeschlossen:
 Migration `20260727` angewendet, Flag aktiv, echter Production-Lauf
 `crawl-20260727160048-ct8lt` relational gespeichert und erhalten — alle 15
 Erfolgskriterien erfüllt**) ·
-**`main`-HEAD:** `b273877` (Merge #161, in Production ausgerollt — Deployment
-`dpl_ECKRnJRxNocyfPttwrh4Kw3ZQpA1` `READY`, `target: production`; davor `1226232` = Merge #160)
+**`main`-HEAD:** `b6ca441` (Merge #162, in Production ausgerollt — Deployment
+`dpl_8YEqNJbcatonqZULweseyuRCCv7X` `READY`, `target: production`; davor `b273877` = Merge #161)
 
 > **OP-01-Sprint am 2026-07-28, 09:32–10:10 UTC ausgeführt — teilweise abgeschlossen:
 > Sicherung und isolierter Restore bewiesen, Tarifentscheidung für PITR ausstehend.**
@@ -438,7 +438,7 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 
 | PR | Inhalt | Einschätzung |
 |---|---|---|
-| **#162** | **Sprint 22B: Embedding-Qualitätsvergleich vorbereitet** — Testmenge+Goldstandard (56 Objekte/47 Paare), Legacy-Basislinie, Offline-Shadow-Pipeline (31/31), Testlauf-CLI mit Freigabe-Riegel, Auswertungswerkzeug, Kostenmodell real, Migrationsentwurf geschärft (weiter nicht angewendet), Doku §13 | **mergefähig nach Review** — additiv/offline, kein Laufzeitpfad berührt, Matching byte-identisch, keine Migration angewendet, kein KI-Aufruf. Rollback per `git revert`. **CI-Gate grün: beide Pflicht-Checks** (Lauf `30359322991`). Branch `claude/sprint-22b-embedding-quality-2ah9u6` |
+| ~~#162~~ | **Sprint 22B: Embedding-Qualitätsvergleich vorbereitet** — Testmenge+Goldstandard (56 Objekte/47 Paare), Legacy-Basislinie, Offline-Shadow-Pipeline (31/31), Testlauf-CLI mit Freigabe-Riegel, Auswertungswerkzeug, Kostenmodell real, Migrationsentwurf geschärft (weiter nicht angewendet), Doku §13 inkl. Testlauf-Stopp (kein Azure-Embedding-Deployment) | **gemergt** 2026-07-28 (`b6ca441`), beide Pflicht-Checks grün (Lauf `30360250937`), in Production ausgerollt (Deployment `dpl_8YEqNJbcatonqZULweseyuRCCv7X` `READY`). Der Merge ändert keine Production-Daten (additive Offline-Module). Sprint 22B bleibt **teilweise abgeschlossen**, bis der freigegebene Testlauf nach Anlage des Embedding-Deployments ausgeführt und ausgewertet ist |
 | ~~#161~~ | **Sprint 22A: Embedding-Architektur bewiesen, Datenvertrag und Zielmodell festgelegt** — kanonische Doku `embedding-architektur.md`, Offline-Modul `embedding-contract.js` (nirgends eingebunden), Testsuite 43/43, Shadow-Migrations-**Entwurf** (nicht angewendet), Roadmap-/Statuspflege | **gemergt** 2026-07-28, 11:11 UTC (`b273877`), beide Pflicht-Checks grün, Deployment `dpl_ECKRnJRxNocyfPttwrh4Kw3ZQpA1` `READY` |
 | ~~#160~~ | **OP-01-Sprint: Sicherung + isolierter Rückweg bewiesen** — Werkzeug `restore-verify-local.js` (+46er-Testsuite), Strukturreferenz mit belegtem Schema-Drift, Export auf 40 Tabellen erweitert, Runbook §0/3c/3d, Beweisdokument `restore-uebung-2026-07-28.md` | **gemergt** 2026-07-28 (`1226232`), in Production ausgerollt (Deployment `dpl_DVxGNjzq6btxGiMUq3rAxfKt4aUv` `READY`) |
 | ~~#158~~ | **Sprint 21 Hauptlauf: vollständiger Production-Schreiblauf Umfang B ausgeführt und belegt** — Protokoll §14 im kanonischen Dokument, CURRENT_STATE, OP-24 auf „inhaltlich erledigt" | **gemergt** 2026-07-28, 09:25 UTC (`0f8d33a`), reine Dokumentation |
