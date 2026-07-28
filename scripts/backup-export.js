@@ -92,7 +92,14 @@ const TABLES = {
   path_expected_topics: "retrieval_path_id,topic",
   path_expected_entities: "retrieval_path_id,entity_id",
   document_findings: "raw_document_id,source_id,original_url",
-  gate_shadow_events: "id"
+  gate_shadow_events: "id",
+  // OP-01-Befund 2026-07-28: diese beiden Tabellen existierten in Production
+  // (Migrationen 20260718 + 20260727), fehlten aber im Export — ein "Voll"-Backup
+  // deckte nur 38 von 40 Tabellen ab. Bei jeder neuen Migration mit CREATE TABLE
+  // MUSS diese Liste (und RESTORE_ORDER in restore-drill.js) nachgezogen werden;
+  // restore-verify-local-test.js prueft die Deckung gegen die Strukturreferenz.
+  source_crawl_telemetry: "id",
+  process_runs: "run_id,process"
 };
 
 const PAGE_SIZE = 1000;

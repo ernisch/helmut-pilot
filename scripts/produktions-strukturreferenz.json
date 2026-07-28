@@ -1,0 +1,100 @@
+{
+  "_zweck": "Struktur-Referenz der Production-Datenbank fuer den isolierten Restore-Test (scripts/restore-verify-local.js). Nur Objektnamen aus dem Postgres-Katalog — keine Inhalte, keine personenbezogenen Daten, keine Secrets. Bei jeder angewendeten Migration mit Strukturaenderung nachziehen (Erhebungs-SQL: docs/betrieb/backup-restore-runbook.md Abschnitt 3c).",
+  "erhoben": "2026-07-28",
+  "quelle": "ddckuvvpcytqbyfmbvie",
+  "postgresVersion": "17.6",
+  "pgvectorVersion": "0.8.0",
+  "angewendeteMigrationenOhne": ["20260720_crawl_runs_relational.sql"],
+  "tabellen": [
+    "briefings", "communication_drafts", "daily_tasks", "decisions",
+    "document_findings", "electoral_districts", "gate_shadow_events",
+    "geographies", "helmut_store", "interactions", "knowledge_objects",
+    "ko_document_links", "ko_relations", "llm_budget_counters", "llm_usage",
+    "mandate_profiles", "matching_results", "matching_weights",
+    "office_outputs", "package_paths", "path_expected_entities",
+    "path_expected_geographies", "path_expected_levels", "path_expected_topics",
+    "personalized_recommendations", "pipeline_locks", "political_entities",
+    "political_items", "priority_changes", "process_runs",
+    "profile_embeddings", "profiles", "publishers", "raw_documents",
+    "retrieval_paths", "source_crawl_telemetry", "source_packages", "sources",
+    "topic_memory", "user_notes"
+  ],
+  "rlsAktivAufAllenTabellen": true,
+  "policies": [
+    "briefings:tenant_isolation",
+    "communication_drafts:tenant_isolation",
+    "daily_tasks:tenant_isolation",
+    "decisions:tenant_isolation",
+    "helmut_store:tenant_isolation_select",
+    "interactions:tenant_isolation",
+    "knowledge_objects:shared_read",
+    "ko_document_links:shared_read",
+    "ko_relations:shared_read",
+    "llm_usage:tenant_isolation",
+    "mandate_profiles:tenant_isolation",
+    "matching_results:tenant_isolation",
+    "matching_weights:tenant_isolation",
+    "office_outputs:tenant_isolation",
+    "personalized_recommendations:tenant_isolation",
+    "political_items:tenant_isolation",
+    "priority_changes:tenant_isolation",
+    "profile_embeddings:tenant_isolation",
+    "profiles:tenant_isolation",
+    "raw_documents:shared_read",
+    "sources:shared_read",
+    "topic_memory:tenant_isolation",
+    "user_notes:tenant_isolation"
+  ],
+  "trigger": [
+    "briefings:helmut_ensure_profile_trg",
+    "decisions:helmut_ensure_profile_trg",
+    "electoral_districts:set_updated_at",
+    "geographies:set_updated_at",
+    "helmut_store:helmut_store_set_updated_at",
+    "interactions:helmut_ensure_profile_trg",
+    "matching_results:helmut_ensure_profile_trg",
+    "office_outputs:helmut_ensure_profile_trg",
+    "political_entities:set_updated_at",
+    "profile_embeddings:helmut_ensure_profile_trg",
+    "publishers:set_updated_at",
+    "retrieval_paths:set_updated_at",
+    "source_packages:set_updated_at",
+    "topic_memory:helmut_ensure_profile_trg"
+  ],
+  "funktionen": [
+    "helmut_acquire_pipeline_lock",
+    "helmut_current_tenant",
+    "helmut_ensure_profile",
+    "helmut_release_pipeline_lock",
+    "helmut_reserve_llm_call",
+    "helmut_set_updated_at",
+    "match_knowledge_objects"
+  ],
+  "identitySpalten": ["gate_shadow_events.id", "source_crawl_telemetry.id"],
+  "schemaDrift": {
+    "_hinweis": "Belegter Drift zwischen Repo-Schema (schema.sql + Migrationen) und Production, spaltengenau erhoben am 2026-07-28. restore-verify-local.js wendet die Korrekturen nach dem Schema-Aufbau an, damit das Restore-Ziel der Production entspricht und KEIN Feld still verloren geht. Langfristige Bereinigung (Migration bzw. schema.sql-Angleich) ist ein dokumentierter offener Punkt (OP-01-Restliste).",
+    "notNullEntfernen": [
+      "knowledge_objects.action_items",
+      "knowledge_objects.action_items_struct"
+    ],
+    "spaltenErgaenzen": [
+      { "tabelle": "profiles", "spalte": "committee", "typ": "text" },
+      { "tabelle": "profiles", "spalte": "committees", "typ": "text[]" },
+      { "tabelle": "profiles", "spalte": "constituency", "typ": "text" },
+      { "tabelle": "profiles", "spalte": "embedding", "typ": "vector(256)" },
+      { "tabelle": "profiles", "spalte": "faction", "typ": "text" },
+      { "tabelle": "profiles", "spalte": "focustopics", "typ": "text[]" },
+      { "tabelle": "profiles", "spalte": "location", "typ": "text" },
+      { "tabelle": "profiles", "spalte": "party", "typ": "text" },
+      { "tabelle": "profiles", "spalte": "role", "typ": "text" },
+      { "tabelle": "profiles", "spalte": "state", "typ": "text" },
+      { "tabelle": "topic_memory", "spalte": "vorgang_id", "typ": "text" }
+    ],
+    "nurImRepoNichtInProduction": [
+      "llm_usage.pipeline_step",
+      "llm_usage.profile_id",
+      "llm_usage.run_id",
+      "llm_usage.tenant_id"
+    ]
+  }
+}

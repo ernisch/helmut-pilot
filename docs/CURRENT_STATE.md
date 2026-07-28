@@ -1,6 +1,8 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-28 (**Sprint 21 Hauptlauf: vollständiger Production-Schreiblauf
+**Letzte Aktualisierung:** 2026-07-28 (**OP-01-Sprint: Production-Sicherung und isolierter
+Rückweg bewiesen — teilweise abgeschlossen, nur die Pro/PITR-Tarifentscheidung steht aus** ·
+**Sprint 21 Hauptlauf: vollständiger Production-Schreiblauf
 Umfang B ausgeführt — 728 von 728 Objekten korrigiert, 0 Fehler, 0 Kollisionen, Idempotenz 0,
 OP-24 inhaltlich erledigt** · **Sprint 21 Stufe 1: kontrollierter Production-Probelauf
 über 12 Objekte erfolgreich ausgeführt** ·
@@ -21,6 +23,38 @@ Migration `20260727` angewendet, Flag aktiv, echter Production-Lauf
 Erfolgskriterien erfüllt**) ·
 **`main`-HEAD:** `88582c1` (Merge #157, in Production ausgerollt —
 Deployment `dpl_AcQywjJ4LRzbWFE28zPMiHvbJ3P1` `READY`, `target: production`)
+
+> **OP-01-Sprint am 2026-07-28, 09:32–10:10 UTC ausgeführt — teilweise abgeschlossen:
+> Sicherung und isolierter Restore bewiesen, Tarifentscheidung für PITR ausstehend.**
+> Production ausschließlich **lesend** angefasst. Tarif gegengeprüft (**Free-Plan**, keine
+> nativen Backups, kein PITR; einziges Projekt `ddckuvvpcytqbyfmbvie`, PG 17.6). Danach:
+> **(1)** Deckungslücke geschlossen — `source_crawl_telemetry` (14 289 Zeilen) und
+> `process_runs` fehlten in Export **und** Restore-Reihenfolge, ein „Voll“-Backup deckte
+> **38 von 40** Tabellen; **(2)** vollständige Production-Sicherung erstellt: **40/40
+> Tabellen, 74 844 Datensätze, 56 MB in 50 s**, Prüfsumme `c63f1d95…`, gebunden an `main`
+> `0f8d33a`, gitignored unter `backups/`, Ruhefenster belegt (0 Locks, 0 laufende Prozesse);
+> **(3)** Rückweg praktisch bewiesen: neues Werkzeug `scripts/restore-verify-local.js`
+> stellt das Backup in eine **isolierte lokale PostgreSQL** her (Production ist als Ziel
+> konstruktionsbedingt verweigert — Host-Guards, Freigabe-Schalter, Prüfsummen-Pflicht,
+> nie in eine bestehende DB) und beweist: **18/18 Prüfungen** — Zeilenzahlen 40/40 exakt,
+> PK-Mengen byte-identisch, 90 feldgenaue Stichproben, alle 60 `knowledge_objects`-Spalten
+> mengenidentisch (Sprint-19–21-Felder erhalten, Nachklassifikation **740/740**), Policies
+> 23/23 · Trigger 14/14 · Funktionen 7/7 gegen die neue Production-Strukturreferenz, RLS
+> überall aktiv, **Mandantentrennung funktional belegt** (RLS-Probe als `authenticated`
+> mit JWT-Claim: je Mandant nur eigene Zeilen, Kreuzprobe 0, ohne Claim 0),
+> `match_knowledge_objects` mit echtem Embedding, Trigger-Probe in Rollback-Transaktion.
+> **RTO gemessen: Export 50 s, Restore+Beweis 20 s** (Schema 2 s · Import 6 s · Prüfung 12 s);
+> Drill-DB danach gelöscht (PII). **Befund B-2:** spaltengenau belegter Schema-Drift
+> Repo↔Production (NOT-NULL bei `knowledge_objects.action_items*`, 10 Alt-Spalten in
+> `profiles` + `topic_memory.vorgang_id` nur in Production, 4 `llm_usage`-Spalten nur im
+> Repo) — dokumentiert und im Drill automatisch korrigiert (`scripts/
+> produktions-strukturreferenz.json` → `schemaDrift`), dauerhafte Bereinigung offen.
+> RPO/RTO/Datenklassen jetzt verbindlich im Runbook §0; Automatisierung bewertet (§3d:
+> Export bleibt bewusst manuell — kein neuer Secret-Ort, keine neue Infrastruktur).
+> **Kein Production-Write, keine Migration, kein Flag, kein Cron, keine Kosten.**
+> Offen bleibt genau **eine Betreiberentscheidung**: Supabase Pro (~25 $/Monat) + PITR
+> (RPO 24 h → Minuten). Beleg: [`betrieb/restore-uebung-2026-07-28.md`](betrieb/restore-uebung-2026-07-28.md),
+> Runbook [`betrieb/backup-restore-runbook.md`](betrieb/backup-restore-runbook.md).
 
 > **Sprint 21, Stufe 1 am 2026-07-28, 08:25:13–08:25:21 UTC ausgeführt — erfolgreich.**
 > Erster **Schreiblauf** der Nachklassifikation gegen Production, begrenzt auf **12 namentlich
@@ -190,7 +224,7 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 | Retention/Löschung | nur Trockenlauf; braucht verbindliche Fristen aus OP-02 | OP-12 |
 | **Kostenmessung je Lauf und je Tag** (Phase-1-Punkt 17) — Auswertung ist belastbar und ehrlich: Beispiellauf **0,026805 USD**, Betriebstag im Mittel **0,1370 USD**, global/direkt **79 %/21 %** gemessen, unbekannte Kosten nie als 0,00; PR #136 | die **Datengrundlage** ist unvollständig: ~16 % Logverlust (K-1) · Preisbasis unbelegt (K-2) · Nicht-LLM-Provider ungemessen und ungedeckelt (K-6) · Gesamtbetrag nur **Untergrenze** · pro Mandant nur die 21 % direkt zurechenbaren Kosten (Rest bleibt global) · Ringpuffer 5 000 (K-7) | Punkt 17 · OP-03 |
 | Understanding-Gate, Cheap-Triage, Scoring, Berlin/Brandenburg | in `shadow`/`off`, Scharfschaltung ist Freigabe | OP-18, OP-21, OP-22 |
-| Pre-Seed-Sicherung + gezielter Seed-Restore (kein `drop table cascade`) — gebaut, adversarial reviewt, isoliert getestet (43/43 lokal, 41/41 in CI; `backup-export-test` 38/38; Suite 147/147). **Am 2026-07-26, 16:47 UTC erstmals real gegen Production gelaufen:** 8/8 Tabellen, 0 Fehler, `vollstaendig: true`, `pruefsummeGesamt` `49a5b92d…`, an `mainCommit 93006e8` gebunden | der **Restore** ist weiterhin nie gegen Production gelaufen; deckt nur 8 Tabellen ab und ersetzt OP-01 nicht | OP-01 |
+| Pre-Seed-Sicherung + gezielter Seed-Restore (kein `drop table cascade`) — gebaut, adversarial reviewt, isoliert getestet (43/43 lokal, 41/41 in CI; `backup-export-test` 38/38; Suite 147/147). **Am 2026-07-26, 16:47 UTC erstmals real gegen Production gelaufen:** 8/8 Tabellen, 0 Fehler, `vollstaendig: true`, `pruefsummeGesamt` `49a5b92d…`, an `mainCommit 93006e8` gebunden | der **Restore** ist weiterhin nie gegen Production gelaufen (bewusst — freigabepflichtig); der **isolierte Voll-Rückweg ist seit 2026-07-28 bewiesen** (40 Tabellen, `betrieb/restore-uebung-2026-07-28.md`); der Seed-Restore deckt weiterhin nur seine 8 Tabellen ab | OP-01 |
 | **Berlin-Aktivierungsreife (Phase-1-Punkt 14)** — Gate je Land freigebbar, `manual` ist eine echte Sperre, Aktivierungs-SQL + 3 Rollback-Stufen generiert und getestet, Runbook vollständig. **Zweiter Durchgang 2026-07-26:** Neutralität von `berlin-basis` ist jetzt eine **ausführbare Prüfung** (Code neutral, Production-Bestand **nicht** — Befund A-3 reproduziert), Wege **neu verifiziert** (Aktivierungsset 6 → **4**, zwei Wege veraltet), Lastmodell gegen gemessene Production-Zahlen korrigiert, Profilplan getestet, Aktivierung gestaffelt, Rollback gehärtet. **Dritter Durchgang (Production-Sprint) 2026-07-26:** Ausgangszustand vollständig gemessen, **Sicherung real erstellt**, Dry Run gegen den Ist-Zustand bestätigt (3/3/1/2 Zeilen, 0 Bund, 0 Brandenburg). **Vierter Durchgang (Zwischensprint 14A) 2026-07-26:** die beiden Vorprüfungsbefunde sind **behoben** — **V-1** (Staffelung war nur ein Kommentar: Block A/B1/Stufe 1/Stufe 2 in einer Datei, Block B in einer Transaktion) → **9 Dateien, je eine Transaktion**, mit `raise exception`-Riegeln, Reihenfolge in beide Richtungen erzwungen, **Telemetriebeleg** für Stufe 2 (je Weg ≥2 `ok`-Läufe), Dry Run **je Schritt**, Rollback **je Stufe**; **V-2** (Landesquellenauflösung wirkte global) → Landesmodule brauchen **Freigabe UND ein berechtigtes Landtagsmandat**, und ihre Wege erscheinen nur in der Versorgung berechtigter Mandate (`planQuellenFuerProfil`). Read-only gemessen: **kein** Production-Effekt heute (0 Landesmodul-Wege aktiv, Plan unverändert 140 Wege, alle 8 Profile mit unveränderter Versorgung). **Fünfter Durchgang (zweiter Production-Anlauf) 2026-07-26, 19:15–19:30 UTC:** PR #138 ist gemergt (`2f58d4c`, CI grün, Deployment `READY`), Startprüfung **11 von 14** erfüllt, Ausgangszustand neu gemessen, alle **8** Dry-Run-Schritte grün, Suiten grün (156/156 · Berlin 126/71/109 · Mandatsgate 71 · Punkt 16 160/160 · Punkt 17 128/128). **Erneut nichts mutiert** (`berlin-aktivierung.md` §19). **Sechster Durchgang (Vorbereitungssprint 14B) 2026-07-26, 20:15–21:10 UTC:** der zweite Blocker ist **beseitigt** — das Abnahmeprofil ist keine Entwicklungsaufgabe mehr, sondern **4 geprüfte SQL-Dateien** (anlegen + 3 Rückwege), gegen ein echtes PostgreSQL 16 bewiesen (36/36) und read-only gegen Production trockengefahren (Schritt 1 **jetzt ausführbar**: 4/4 Vorbedingungen, Treffer 1+1 Zeilen, 5/5 Nachbedingungen, Kontrollfragen 0). Zusätzlich: **zwei frische Sicherungen** (`pre-seed` 8/8 und der neue Umfang `pre-profil` 2/2, beide `vollstaendig: true`) und der Nachweis, dass **zwei** DB-seitige Not-Aus-Schalter (Profil deaktivieren · Wege auf `manual`) **jeder für sich** jeden Berliner Abruf stoppen — auch bei gesetztem Flag. **Erneut nichts mutiert** (§20). **Siebter Durchgang (dritter Production-Anlauf) 2026-07-26, 20:49–21:30 UTC — erstmals AUSGEFÜHRT:** der Betreiber hat `HELMUT_LANDESMODULE=berlin` gesetzt und Production neu deployt (Redeploy `dpl_7443DBt1…`, 20:58:57 UTC, `action: "redeploy"` auf **demselben** Commit `b83d33f` — starkes Indiz für eine Env-Änderung, **kein** Wertbeleg; der Flag-Wert bleibt aus einer Sitzung unlesbar). Startprüfung erstmals **14 von 14**. Zwei frische Sicherungen (`pre-seed` `49a5b92d…` 8/8, `pre-profil` `0c514ace…` 2/2, beide **byte-identisch** zu 14B → DB nachweislich unverändert), beide Dry Runs Exit 0, Ausführungskanal vorab per Riegeltest geprüft (`raise exception` bricht ab, 0 Zeilen). Dann **vier Mutationen, je eine Transaktion**: Block A 21:01:08 (`berlin-basis` **10 → 7** Wege, `die-linke-berlin` **0 → 3**, Summe 165 unverändert → **Befund A-3 in der DB geschlossen**) · Abnahmeprofil 21:01:52 (Profile 8 → **9**, aktive Mandate 6 → **7**, Landtagsprofile 0 → **1**, kein Klarname, Partei `Fraktionslos`) · B1 21:02:11 (`prepared` → **`active`**) · **Stufe 1** 21:02:48 (`rp-be-regionale_leitmedien` + `rp-rbb24-politik` → `healthy`/`auto`; beides **RSS-Direktfeeds**, keine Suchmaschine). Gegen den echten Resolver mit den mutierten Daten gerechnet: Plan **140 → 142**, genau die 2 Stufe-1-Wege, **0** Brandenburg; **alle 8 Bestandsmandate unverändert bei 140 Quellen** — auch die fünf Bundestagsmandate mit `bundesland=Berlin` erhalten **0** Berliner Wege (V-2 an echten Daten belegt). Neu: `scripts/berlin-beweislauf-auswertung.js` macht §10/§11 ausführbar (Referenzmessung **9 grün · 0 verletzt · 7 unbekannt**) und meldet Kriterium 16 ehrlich als `nicht_aus_db_messbar`. Suite **158/158** vor dem Eingriff (§21). **Abbruch und Rollback am selben Abend (§22):** um **22:05:34 UTC** wurde **PR #143** (Reparatur der Vorgangsbildung, 3 449 Zeilen an `understanding.js`, `scheduler.js`, `storage.js`, `server.js`) nach `main` gemergt und deployt — **nach** meiner Startprüfung um 21:32. Vier Minuten später endete ein **manuell** ausgelöster `GET /api/pipeline/run` um **22:09:52 UTC** mit **HTTP 504** (`Task timed out after 300 seconds`), dazu ein fail-closed Lock-Timeout und **0 Telemetriezeilen** bei 46 geschriebenen Rohdokumenten. Damit war **Abbruchkriterium 16** eingetreten (und über den Pending-Sprung 50 → 226 auch Kriterium 9). **Rollback ausgeführt:** Ebene **0b** um 22:43:06, Ebene **2** um 22:43:23 UTC. Endzustand nachgemessen: **0 berechtigte Berliner Mandate, 0 aktive Berliner Wege**, Brandenburg 8/8 gesperrt, Bund unverändert, Suite **160/160**. **Ursache sehr wahrscheinlich nicht Berlin:** der 20:00-Lauf lief bereits mit 6 Mandaten **vor** der Aktivierung ins selbe Limit, die Clusterlast sprang von **91 auf 336** (die erklärte Wirkung von #143), und Berlin steuerte **0** Dokumente bei | der **Betriebsnachweis** vollständig: **0** Berliner Telemetriezeilen und Rohdokumente **jemals**, 0 Knowledge Objects, 0 Vorgänge, keine Lage, kein Briefing. **Stufe 2 wurde nie aktiviert.** Vor allem offen bleibt die Kernfrage: **ob `HELMUT_LANDESMODULE=berlin` in Production wirkt, ist unbewiesen** — belegt ist nur der Redeploy, nicht der Flag-Wert; der eine Lauf mit aktivem Berlin brach ab, **bevor** Telemetrie geschrieben wurde. **Nächste Schritte in dieser Reihenfolge:** erst #143 stabilisieren (176 neue `pending`), dann das 300-s-Zeitbudget klären (OP-15/B1), **erst danach** Berlin erneut aktivieren. Neue Startbedingung: kein frisch deploytes Pipeline-Update und kein manueller Vollpipeline-Lauf im Beobachtungsfenster | Punkt 14 |
 | **Automatische Quellenstörungs-Erkennung (Phase-1-Punkt 16)** — `source_crawl_telemetry` hat einen Lesepfad (Befund **A-6** behoben); 14 Zustandsklassen, 4 Handlungsstufen, rhythmus-bewusste Leer-/Veraltet-Schwellen, Erholungsregel, Paket-/Mandatswirkung, Meldungs-Deduplizierung; Admin-Bereich „Quellen & Watchdog” erweitert | der **Production-Beleg für 7 der 14 Klassen** (u. a. `parserfehler`, `veraltet`, `nie_erfolgreich`) — diese Fehler sind in Production real nie aufgetreten und dürfen nicht künstlich erzeugt werden; ausschließlich testbelegt | Punkt 16 |
 | OP-06 Terminales Aussortieren des Alt-Rückstands (34 Fälle, Default AUS) | Ausführung ist freigabepflichtig — **und** eine offene Fachfrage: 16 der 34 Allowlist-Einträge sind mit „außerhalb Mandat" begründet, also relativ zum Pilotmandat, geschrieben wird aber in das mandantenneutrale `knowledge_objects` (kein `tenant_id`). Ein künftiger Zweitmandant mit regionalem/EU-Schwerpunkt bekäme diese Vorgänge dauerhaft nie verstanden | OP-06 |
@@ -220,7 +254,7 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 
 | Punkt | Ursache | Nächster Schritt |
 |---|---|---|
-| **OP-01** Supabase Pro + PITR | Kostenentscheidung des Betreibers (~25 $/Monat); Free-Plan = **keine Backups** | Betreiber schaltet Pro + PITR frei, dann Restore-Übung nach `betrieb/backup-restore-runbook.md` |
+| **OP-01** Supabase Pro + PITR | Kostenentscheidung des Betreibers (~25 $/Monat); Free-Plan = **keine nativen Backups, kein PITR**. Der kostenfreie Teil ist seit 2026-07-28 erledigt: Vollsicherung (40/40 Tabellen) + bewiesener isolierter Restore (18/18 Prüfungen, `betrieb/restore-uebung-2026-07-28.md`); Restrisiko ist das RPO von bis zu 24 h | Betreiber schaltet Pro + PITR frei, dann PITR-Restore-Übung nach `betrieb/backup-restore-runbook.md` §3 |
 | **Quellen-Seed-Einspielung** (macht P0-2 und die 6 Bundesweg-Reparaturen in der DB wirksam) | **Go-Kriterium 2 ist seit 2026-07-26, 16:47 UTC erfüllt** — die Pre-Seed-Sicherung ist gelaufen (`vollstaendig: true`, 8/8 Tabellen, `mainCommit 93006e8`). Offen ist nur noch Go-Kriterium **8**: die Einspielung ist nicht freigegeben. Kriterium **11** ist **entschieden**: gestaffelte Reaktivierung (§6d). **Erledigt 2026-07-26:** derselbe Aufruf lief in der Cloud-Sitzung durch (Exit 0), weil `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` diesmal über die Claude-Code-Environment-Einstellungen gesetzt waren und der Supabase-Egress offen ist. Der Versuch vom 2026-07-25 war nur an fehlenden Zugangsdaten gescheitert, nicht am Werkzeug | Betreiber gibt die Einspielung frei; danach Runbook `betrieb/quellen-seed-einspielung.md` §6c Schritt 6 ff. Die Sicherung liegt vor und ist gültig, solange `retrieval_paths`/`package_paths`/`source_packages` unverändert bleiben |
 | **OP-02** Recht (Pilotvertrag, AVV, DSFA, Art.-9-Grundlage, Fristen) | externe Prüfung durch Anwalt/DSB steht aus | Entwürfe aus `recht/` prüfen lassen und zeichnen; blockiert OP-12 |
 | **OP-03** Zweitmandanten-Freigabepaket | Grundsatzentscheidung „DB-seitige Durchsetzung vs. dokumentierte App-Guard-Akzeptanz" fehlt (`mandantentrennung-architektur.md` bewertet die Wege) | Betreiber entscheidet einen Weg; danach Migration + Env + Probelauf |
@@ -306,11 +340,13 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 
 ## 7 · Aktuelle Blocker (zusammengefasst)
 
-1. **Kein Backup in Production.** Supabase Free-Plan, zentraler Blob ist
-   Last-Write-Wins → ein fehlerhafter Write kann den Betriebszustand unwiederbringlich
-   zerstören. Höchstes Einzelrisiko (OP-01). Für den **Seed-Sonderfall** existiert seit
-   2026-07-25 ein geprüftes Werkzeugpaar (Pre-Seed-Export + gezielter Restore, §12) —
-   das ersetzt OP-01 **nicht** und deckt nur die 8 Quellentabellen ab.
+1. **Kein natives Backup/PITR in Production (Free-Plan).** Seit 2026-07-28 deutlich
+   entschärft: es existiert eine aktuelle, geprüfte Vollsicherung (40/40 Tabellen,
+   74 844 Datensätze, Prüfsumme `c63f1d95…`) **und** der Rückweg ist in einer isolierten
+   lokalen PostgreSQL praktisch bewiesen (18/18 Prüfungen inkl. Mandantentrennung,
+   `betrieb/restore-uebung-2026-07-28.md`). Restrisiko: **RPO bis 24 h** (kein PITR,
+   kein transaktionaler Snapshot) — die Pro/PITR-Kostenentscheidung bleibt offen (OP-01).
+   Der Seed-Sonderfall (§12) deckt weiterhin nur die 8 Quellentabellen ab.
 2. **Keine rechtliche Grundlage für Verkauf.** Kein geprüfter Pilotvertrag/AVV/DSFA,
    `knowledge_objects` enthalten Art.-9-Daten (OP-02).
 3. **Sicherheits-Grundsatzentscheidung offen.** Ohne Entscheidung zu OP-03 darf kein
@@ -349,7 +385,10 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 
 - **Deployment:** Vercel, Region `fra1`, Projekt `helmut-pilot`; Deploy erfolgt
   automatisch beim Merge nach `main`. Rollback: `betrieb/deploy-rollback.md`.
-- **Datenbank:** Supabase **Free-Plan** — keine Backups, kein PITR (OP-01).
+- **Datenbank:** Supabase **Free-Plan** — keine nativen Backups, kein PITR (OP-01;
+  Tarif am 2026-07-28 via Management-API gegengeprüft). Seit 2026-07-28: tägliche
+  manuelle Vollsicherung möglich und geübt (40 Tabellen, `backup-restore-runbook.md` §1/3c),
+  isolierter Rückweg bewiesen.
 - **Flags:** `HELMUT_SOURCE_MODE=on` · `HELMUT_UNDERSTANDING_GATE=shadow` ·
   `HELMUT_PARDOK_DISPATCH=shadow` · Scoring `off` · **`HELMUT_LANDESMODULE=berlin` ist seit
   2026-07-26, ~20:58 UTC gesetzt** (Redeploy belegt, Wert aus einer Cloud-Sitzung nicht lesbar) —
@@ -577,10 +616,13 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 
 ## 11 · Nächster sinnvoller Sprint
 
-**Empfehlung: OP-01 (Supabase Pro + PITR) als Betreiber-Freigabe einholen und
-ausführen** — er ist unabhängig von allem anderen, beseitigt das größte
-Einzelrisiko und ist Voraussetzung dafür, dass die Migration aus OP-03 gefahrlos
-eingespielt werden kann.
+**Empfehlung: die eine offene OP-01-Betreiberentscheidung einholen — Supabase Pro
+(~25 $/Monat) + PITR aktivieren.** Der kostenfreie Teil von OP-01 ist seit
+2026-07-28 erledigt (Vollsicherung + bewiesener isolierter Rückweg, RTO gemessen);
+was fehlt, ist ausschließlich die Kostenfreigabe im Supabase-Dashboard (Billing →
+Pro → PITR), danach eine PITR-Restore-Übung nach Runbook §3. Bis dahin gilt der
+tägliche manuelle Export (Runbook §1, 5 Minuten) als Betreiber-Routine —
+insbesondere **vor jeder Migration** (OP-03/OP-17).
 
 **Für Punkt 14 gilt nach dem Vorbereitungssprint 14B: es fehlt genau EINE Voraussetzung, und sie
 ist keine Entwicklungsaufgabe.** Von den beiden Blockern des zweiten Anlaufs ist der zweite
