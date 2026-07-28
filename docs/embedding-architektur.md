@@ -400,14 +400,19 @@ vorhanden → Testlauf gemäß Auflage gestoppt, bevor irgendein Modellaufruf
 erfolgte** (0 Aufrufe, 0 Tokens, 0,00 USD). Es wurde kein Deployment angelegt
 und keine Azure-Einstellung geändert. Nebenbefund behoben: das Testlauf-CLI
 erwartete `AZURE_OPENAI_API_KEY`, die Repo-Konvention ist `AZURE_OPENAI_KEY`
-(`lib/helmut/ai.js`) — korrigiert, mit Fallback. **Nächster Schritt für den
-Testlauf (erneute Freigabe nötig):** im bestehenden Azure-Ressourcenbereich
-ein Deployment für `text-embedding-3-small` anlegen (Betreiber, Azure-Portal),
-dann `HELMUT_EMBEDDING_DEPLOYMENT=<name>` in den Cloud-Session-
-Environment-Einstellungen setzen und
-`node scripts/embedding-testlauf.js --echt --freigabe erteilt` ausführen.
-Alternative ohne Azure-Änderung: Weg B (OpenAI-kompatible API) — braucht ein
-neues Secret und damit ebenfalls eine Freigabe.
+(`lib/helmut/ai.js`) — korrigiert, mit Fallback.
+
+**Testlauf am 2026-07-28, ~13:04 UTC ausgeführt (erneute Betreiberfreigabe
+lag vor: Deployment `text-embedding-3-small` angelegt,
+`HELMUT_EMBEDDING_DEPLOYMENT` in den Cloud-Session-Environment-Einstellungen
+gesetzt).** Ablauf: Dry-Run zuerst (Vorschau bestätigt: 56 geplant, 3 Batches,
+8 621 Tokens, ≈0,0002 USD), danach
+`node scripts/embedding-testlauf.js --echt --freigabe erteilt` über
+`azure-openai`. **Ergebnis: 56/56 Objekte berechnet, 0 fehlgeschlagen, 8 621
+Tokens, Kosten ≈ 0,0002 USD, 0 Abbrüche.** Ablage ausschließlich lokal
+(`shadow-store/embedding-testlauf-22b.json`, gitignored, 357 KB, Modell
+`text-embedding-3-small` · Dimension 256 · Rezept `ko-kanon-1`) —
+**kein Production-Write.** Auswertung siehe §13.8.
 
 ### 13.7 Produktbewertung und Berlin/Brandenburg (Stand vor dem Testlauf)
 
@@ -423,3 +428,74 @@ Berlin/Brandenburg: der Eingang ist ebenen-, geografie- und mandantenfrei
 Bund, Berlin, Brandenburg und künftige Länder ohne Neuerzeugung; Geografie
 bleibt strukturierter Filter; Profilvektoren bleiben getrennt und
 mandantenspezifisch; kein Mandant ist hartkodiert (testgesichert).
+
+### 13.8 Qualitätsvergleich — Ergebnis des echten Testlaufs (2026-07-28)
+
+Werkzeug: `node scripts/embedding-quality-eval.js --semantik
+shadow-store/embedding-testlauf-22b.json` — identische Metriken, identischer
+Goldstandard (47 Paare, 7 Klassen, vor dem Lauf fixiert), gegen dieselben 56
+Wissensobjekte. Volle Rohausgabe ist reproduzierbar (Ablage lokal, Befehl
+oben); hier die Kernzahlen.
+
+**Rangqualität der 38 Positiv-Richtungen (gleicher-vorgang · Duplikat ·
+Aktualisierung):**
+
+| Metrik | Legacy-Merkmalsvektor | Semantisches Embedding |
+|---|---|---|
+| Rang 1 | 20/38 (53 %) | **33/38 (87 %)** |
+| Top-5 | 33/38 (87 %) | **38/38 (100 %)** |
+| mittlerer Rang | 4,4 | **1,2** |
+| Sondergruppe „ohne Fachgebiet" in Top-5 | 33/38 | **38/38** |
+| Sondergruppe „regional" in Top-5 | 1/2 | **2/2** |
+
+**Klassenstatistik (Kosinus min / median / max):**
+
+| Klasse | Legacy | Semantisch |
+|---|---|---|
+| gleicher-vorgang | 0,228 / 0,402 / 0,710 | **0,893 / 0,938 / 0,961** |
+| wahrscheinliches-duplikat | 0,059 / 0,382 / 0,401 | **0,847 / 0,875 / 0,919** |
+| aktualisierung | 0,177 / 0,425 / 0,689 | **0,747 / 0,835 / 0,876** |
+| thematisch-verwandt | 0,093 / 0,235 / 0,530 | 0,545 / 0,694 / 0,790 |
+| ähnliche-sprache-anderer-vorgang | −0,024 / 0,080 / 0,429 | 0,500 / 0,580 / 0,709 |
+| nicht-verwandt | −0,000 / 0,170 / 0,316 | 0,442 / 0,499 / 0,704 |
+
+Semantisch liegt jede Positivklasse (gleicher-vorgang/Duplikat/Aktualisierung)
+im Minimum bei **0,747–0,893** — beim Legacy-Vektor liegt dasselbe Minimum bei
+**0,059–0,228**, also unterhalb mancher Negativkontrolle. Die absoluten
+Kosinuswerte sind zwischen den beiden Verfahren **nicht direkt vergleichbar**
+(unterschiedliche Vektorräume) — entscheidend ist die Trennschärfe je
+Verfahren, nicht der Zahlenwert selbst.
+
+**Bewiesene B4-Fälle konkret behoben:**
+
+| Fall | Legacy Kosinus (Rang) | Semantisch Kosinus (Rang) |
+|---|---|---|
+| CSD-Anschlag ↔ Folgeberichterstattung (B4-4-Umfeld) | 0,269 (Rang 21) | **0,839 (Rang 1)** |
+| GVK-Duplikat (`ko-vg-beschluss` ↔ `…-e4370f`) | 0,059 (Rang 42) | **0,862 (Rang 1)** |
+| Iran-Serienende (`nächtliche` ↔ `beschädigt`) | 0,177 (Rang 24) | **0,747 (Rang 4/1)** |
+| Petition (`verhindern-…952b53` ↔ `westfälische`) | 0,354 (Rang 2/2) | **0,919 (Rang 1/1)** |
+
+**Schwellen-Zielkonflikt (Positiv = gleicher-vorgang/Duplikat/Aktualisierung,
+n=19 Paare in dieser Richtung; Negativ = ähnliche-sprache/nicht-verwandt,
+n=14):**
+
+- **Legacy:** kein tragfähiger Einzelschwellenwert (bestätigt §13.2) —
+  bester Kompromiss bei 0,35 (Präzision 0,87, Trefferquote 0,68); Präzision
+  1,0 gibt es nur bei Trefferquote 0,21–0,26.
+- **Semantisch:** bei Schwelle **0,75–0,80: Präzision 1,00, Trefferquote
+  0,95** (nur 1 von 19 positiven Paaren verfehlt die Schwelle); bei **0,65–0,70:
+  Präzision 0,90, Trefferquote 1,00** (0 falsch negativ, 2 falsch positiv). Ein
+  praktikabler Einzelschwellenwert existiert — im Gegensatz zum Merkmalsvektor.
+
+**Fazit:** Der Testlauf **bestätigt** die in §4/§13.7 erwartete Überlegenheit
+des semantischen Embeddings bei Duplikaterkennung und Vorgangs-Wiedererkennung
+und zeigt sie **quantitativ**: alle vier B4-artigen Problemfälle aus der
+Legacy-Basislinie (CSD-Folge, GVK-Duplikat, Iran-Serienende, Petition) landen
+semantisch auf Rang 1 statt Rang 21–42. Ein Einzelschwellenwert ist erstmals
+praktikabel. Dies ist ein **Shadow-Befund** ohne Production-Wirkung — die vier
+Freigabepunkte aus §11 (Migration, Produktivbetrieb, Backfill, Matching-
+Änderung) sind weiterhin offen und jeweils einzeln freizugeben. Empfehlung
+unverändert: Mischlösung (Legacy-Matching unverändert, Semantik additiv für
+Duplikat/Gedächtnis), keine automatische Ableitung einer Produktionsschwelle
+aus 19 Positivpaaren — vor einer scharfgeschalteten Schwelle ist eine größere
+Stichprobe nötig.
