@@ -1,7 +1,8 @@
 # ARCHITECTURE — Systemkarte Helmut
 
 **Letzte Aktualisierung:** 2026-07-28 (§7d ergänzt: Matching-Auditpersistenz,
-Roadmap-Punkt 23) · **verankert auf `main` @ `53893fa`**
+Roadmap-Punkt 23; Migrationsstand nach Production-Anwendung von
+`20260728_matching_audit` nachgezogen) · **verankert auf `main` @ `b1d450c`**
 
 > **Zweck:** Orientierung, welche Datei für welche Aufgabe zuständig ist. **Keine**
 > Erklärung jeder Datei. Diese Datei wird nur aktualisiert, wenn sich die Architektur
@@ -133,10 +134,11 @@ einen Zustand ab (gesund · eingeschränkt · ausgefallen · inaktiv · unbekann
   still `[]`/Teilmengen zu liefern (Befund W-1). `[]` heißt ausschließlich
   „erfolgreich gelesen, null Zeilen".
 - Migrationen: `supabase/migrations/`. **Jede Migration hat eine
-  `…_rollback.sql`-Datei.** Nicht angewandt: **`20260720`** und
-  **`20260728_matching_audit`** (Sprint 23B-1, freigabepflichtig)
+  `…_rollback.sql`-Datei.** Nicht angewandt: **nur noch `20260720`**
   (`20260727` angewendet am 2026-07-27; `20260728_embedding_shadow` angewendet am
-  2026-07-28; `20260721` bereits seit 2026-07-16 — die frühere Angabe war falsch
+  2026-07-28; `20260728_matching_audit` (Sprint 23B-1) angewendet am 2026-07-28,
+  20:20:57 UTC, Rollout-Grenze `HELMUT_MATCHING_AUDIT` weiterhin nicht aktiviert;
+  `20260721` bereits seit 2026-07-16 — die frühere Angabe war falsch
   und ist in Production gegengeprüft).
 
 ## 7 · Crawler und Verarbeitung
@@ -267,9 +269,12 @@ ein Ergebnis von gestern war weder erklärbar noch reproduzierbar
 
 **Rollout-Grenze:** `HELMUT_MATCHING_AUDIT`, **Default AUS**. Ohne das Flag ist der
 gesamte Auditpfad inert — keine Sperre, kein Lese- oder Schreibzugriff, keine neue
-Fehlerquelle, byte-identische Ergebniszeilen. Migration
-`20260728_matching_audit.sql` (+ Rollback) ist **freigabepflichtig und noch nicht
-angewendet**.
+Fehlerquelle, byte-identische Ergebniszeilen. Migration `20260728_matching_audit.sql`
+(+ Rollback) wurde am 2026-07-28, 20:20:57 UTC in Production angewendet und
+vollständig verifiziert (287 Ergebniszeilen byte-identisch, `matching_runs` mit
+0 Zeilen); **das Flag selbst ist weiterhin nicht gesetzt** — die Auditpersistenz
+ist noch nicht aktiv. Details:
+[`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md) §21.6.
 
 Kostenwirkung: **null zusätzliche KI-Aufrufe.** Die Schreiblast **sinkt** — ein
 identischer Zweitlauf schrieb bisher 20 wirkungslose UPDATEs, jetzt eines.

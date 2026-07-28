@@ -748,9 +748,12 @@ Alle Production-Abfragen dieses Sprints waren reine `SELECT`-Anweisungen über
 
 # Teil B — Sprint 23B-1: die umgesetzte Auditpersistenz
 
-**Stand:** 2026-07-28 · Sprint 23B-1 (Umsetzung, **nachgeschärft**) · Basis `main` = `53893fa` (Merge PR #168)
-**Zustand:** implementiert, offline und gegen eine echte PostgreSQL bewiesen,
-**Migration NICHT angewendet**, Rollout-Grenze **AUS**.
+**Stand:** 2026-07-28 · Sprint 23B-1 (Umsetzung, nachgeschärft, **PR gemergt, Migration in Production
+angewendet**) · Basis `main` = `b1d450c` (Merge PR #169)
+**Zustand:** implementiert, offline und gegen eine echte PostgreSQL bewiesen. **Migration am
+2026-07-28, 20:20:57 UTC in Production angewendet und vollständig verifiziert** (§21.6). Rollout-Grenze
+`HELMUT_MATCHING_AUDIT` existiert weiterhin nicht in Vercel — **die Auditpersistenz ist noch nicht
+aktiv**. Sprint bleibt teilweise abgeschlossen bis zur getrennten Flag-Freigabe.
 
 > **Nachschärfung 2026-07-28 (Betreibereinwand, §16.1):** Die erste Fassung
 > veröffentlichte in drei aufeinanderfolgenden Schreibvorgängen. Das war
@@ -1344,6 +1347,73 @@ select m.id, m.run_id, r.status
 
 Sicherung vor einem Struktur-Rollback:
 `\copy (select * from public.matching_runs) to 'matching_runs.csv' csv header`
+
+### 21.6 Ausgeführt — Production-Nachweis (2026-07-28)
+
+**Schritt 1 (Merge) und Schritt 3 (Migration) aus §21.2 sind ausgeführt. Schritt 5 (Flag) ist
+es ausdrücklich nicht.**
+
+**PR #169 gemergt** — Merge-Commit `b1d450c`, `main`-HEAD seither auf diesem Stand.
+
+**Migration angewendet:** `supabase/migrations/20260728_matching_audit.sql`, ausschließlich
+diese eine Datei, am **2026-07-28, 20:20:57 UTC**. Erst nach bestätigtem Ruhefenster: ein erster
+Anlauf um 20:09 UTC wurde verworfen, weil die Sperren `crawl-cem-ince` (bis 20:19:29 UTC) und
+`global-understanding` (bis 20:16:08 UTC) aus dem laufenden 20:00-UTC-Cron noch aktiv waren.
+Erneute Prüfung um 20:19:30 UTC: 0 aktive Pipeline-Sperren, 0 laufende Fremdprozesse, 0 Sperren
+auf `matching_results`.
+
+**Vorher/Nachher — byte-genau:**
+
+| Größe | Vorher | Nachher |
+|---|---|---|
+| Zeilen `matching_results` | 287 | **287** — unverändert |
+| Fingerabdruck | `be4670c61235c908559853a6f6fc6c8c` | **`be4670c61235c908559853a6f6fc6c8c`** — identisch |
+| Spalten `matching_results` | 9 | **23** (+14 additiv, kein Backfill) |
+| `matching_runs` | existiert nicht | existiert, **0 Zeilen** |
+
+**Verifikation §21.3, alle 18 Prüfungen wie erwartet:**
+
+| # | Prüfung | Ist |
+|---|---|---|
+| a | `matching_runs` existiert | 1 |
+| b | 14 neue Spalten auf `matching_results` | 14 |
+| c | Spalten `matching_results` gesamt | 23 |
+| d | RLS auf `matching_runs` aktiv | `true` |
+| e | genau eine passende SELECT-Policy für `authenticated` | `matching_runs_tenant_read [SELECT] authenticated` |
+| f | `anon` besitzt Zugriff | **keinen** |
+| g | `authenticated` besitzt Zugriff | **ausschließlich `SELECT`** |
+| h | `service_role` besitzt die benötigten Rechte | ja — volle Rechte über die Supabase-Default-Privilegien, empirisch bestätigt |
+| i | `helmut_publish_matching_run` ausführbar durch | **ausschließlich `postgres` und `service_role`** |
+| j | SECURITY-Modus der drei neuen Funktionen | **alle `SECURITY INVOKER`** |
+| k | Indizes | `matching_runs`: 4 (PK, `fingerprint_uidx`, `offen_idx`, `user_idx`) · `matching_results`: 5 (+2 neue) |
+| l | Trigger | `matching_results`: `helmut_ensure_profile_trg` (Bestand) + `matching_results_run_complete` (neu) · `matching_runs`: `matching_runs_immutable` |
+| m | die 287 bestehenden Zeilen | unverändert |
+| n | alle bestehenden Ergebnisse `aktuell=true` | 287 von 287 |
+| o | alle bestehenden Ergebnisse `run_id=NULL` | 287 von 287 |
+| p | Referenzfingerabdruck | weiterhin exakt `be4670c61235c908559853a6f6fc6c8c` |
+| q | Ergebniszeilen mit `run_id` auf unvollständigem Lauf | **0** |
+| r | Zeilen in `matching_runs` | **0** |
+
+**Production-Fehler:** keine. Die Postgres-Logs im Migrationsfenster (20:19–20:23 UTC) zeigen
+4 Einträge, alle `LOG` — kein `ERROR`/`WARNING`/`FATAL`. Der Security-Advisor meldet nach der
+Migration dieselben 19 Bestandsbefunde wie vorher (18× RLS-ohne-Policy auf Alttabellen, 1×
+`vector`-Extension im `public`-Schema) — `matching_runs` erzeugt **keinen** neuen Befund.
+
+**Unverändert gegengemessen:** `knowledge_object_embeddings` 772 · `briefings` 71 ·
+`profile_embeddings` 7 (gegenüber der Vorprüfung planmäßig gewachsen durch den regulären Betrieb:
+`decisions` und `knowledge_objects`, nicht durch die Migration).
+
+**Rollback:** nicht ausgeführt, **nicht notwendig** — alle Verifikationen bestanden.
+
+**Flag-Zustand danach:** `HELMUT_MATCHING_AUDIT` existiert **weiterhin nicht** in Vercel (vom
+Betreiber bestätigt) und wurde in diesem Schritt **nicht** gesetzt. Die Auditpersistenz ist damit
+**weiterhin nicht aktiv** — `matching_runs` bleibt bei 0 Zeilen, bis die getrennte Flag-Freigabe
+(Schritt 5 aus §21.2) erteilt und ein kontrollierter Production-Beweislauf gefahren wird.
+
+**Sprintstatus bleibt teilweise abgeschlossen.** Roadmap-Punkt 23 bleibt offen/in Arbeit — die
+Abnahme verlangt zusätzlich die Flag-Aktivierung und den Idempotenz-Beweis in Production.
+Briefing-Historisierung bleibt Sprint 23B-2, die sichtbare Erklärung bleibt Sprint 23C, Befund
+M-7 (200er-Ladefenster, §15.2) bleibt unverändert außerhalb dieses Sprints.
 
 ## 22 · Was dieser Sprint bewusst NICHT enthält
 
