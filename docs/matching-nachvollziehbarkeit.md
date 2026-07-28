@@ -748,8 +748,18 @@ Alle Production-Abfragen dieses Sprints waren reine `SELECT`-Anweisungen über
 
 # Teil B — Sprint 23B-1: die umgesetzte Auditpersistenz
 
-**Stand:** 2026-07-28 · Sprint 23B-1 (Umsetzung) · Basis `main` = `53893fa` (Merge PR #168)
-**Zustand:** implementiert, offline bewiesen, **Migration NICHT angewendet**, Rollout-Grenze **AUS**.
+**Stand:** 2026-07-28 · Sprint 23B-1 (Umsetzung, **nachgeschärft**) · Basis `main` = `53893fa` (Merge PR #168)
+**Zustand:** implementiert, offline und gegen eine echte PostgreSQL bewiesen,
+**Migration NICHT angewendet**, Rollout-Grenze **AUS**.
+
+> **Nachschärfung 2026-07-28 (Betreibereinwand, §16.1):** Die erste Fassung
+> veröffentlichte in drei aufeinanderfolgenden Schreibvorgängen. Das war
+> **nicht atomar** — ein Abbruch dazwischen ersetzte die operative Projektion,
+> ohne den Lauf abzuschließen, und hinterließ Ergebniszeilen, die auf einen
+> unvollständigen Lauf zeigten. Der letzte vollständige Stand war damit
+> verloren, nicht erhalten. Die Veröffentlichung ist jetzt **eine echte
+> Datenbanktransaktion**; ein datenbankseitiger Riegel schließt zusätzlich aus,
+> dass eine Ergebniszeile je auf einen unvollständigen Lauf verweist.
 
 Teil A (§1–§13) bleibt unverändert der belegte Ist-Zustand aus Sprint 23A. Teil B
 beschreibt, was daraus gebaut wurde.
@@ -933,39 +943,109 @@ UPDATEs** ohne inhaltliche Änderung (§4.3g). Mit aktivierter Auditpersistenz s
 
 ## 16 · Atomizität, Parallelität, Abbruch
 
-### 16.1 Veröffentlichungsreihenfolge — die Atomizitätsgarantie
+### 16.1 Korrigierter Befund: eine Reihenfolge ist nicht atomar
+
+> **Diese Fassung korrigiert einen Fehler der ersten Umsetzung.** Ursprünglich
+> bestand die Veröffentlichung aus drei aufeinanderfolgenden, unabhängigen
+> Schreibvorgängen (Projektion → Ablösung → Laufabschluss). Die Begründung
+> lautete: weil der Abschluss zuletzt kommt, könne es nie einen vollständigen
+> Lauf ohne Projektion geben. **Das war richtig, aber es war die falsche
+> Invariante.**
+>
+> `matching_results` wird per Upsert **in place** überschrieben. Sobald der
+> Ergebnis-Upsert gelandet ist, sind die vorherigen Werte weg — unabhängig
+> davon, was danach mit der Laufzeile passiert. Ein Abbruch zwischen Schritt 2
+> und Schritt 4 hinterließ also einen Zustand, in dem
+>
+> - die operative Projektion bereits ersetzt war,
+> - der zugehörige Lauf aber `laufend` oder `fehlgeschlagen` blieb,
+> - und damit Ergebniszeilen auf einen unvollständigen Lauf zeigten.
+>
+> Der letzte vollständige Stand war in diesem Fall **verloren**, nicht erhalten.
+> Genau das ist unzulässig: `matching_results` ist die aktuelle operative
+> Produktprojektion und darf ausschließlich auf einen vollständig
+> veröffentlichten Lauf verweisen. Eine bloße Reihenfolge unabhängiger
+> Schreibvorgänge gilt nicht als atomar.
+
+### 16.2 Die Korrektur: eine echte Transaktion
+
+Die Veröffentlichung ist jetzt **ein einziger Aufruf** und damit **eine
+Transaktion**: `public.helmut_publish_matching_run(p_run_id, p_user_id,
+p_results, p_abgeloest_am)`.
 
 ```
-1. Laufzeile anlegen            status = 'laufend'
-2. Projektion schreiben         EIN Bulk-Upsert (wie bisher)
-3. abgelöste Zeilen markieren   aktuell = false
-4. Laufzeile abschließen        status = 'vollstaendig'   ← ZULETZT
+1. Laufzeile anlegen      status = 'laufend'   ← veröffentlicht NICHTS
+2. Zeilen bauen           rein, ohne Datenbank
+3. VERÖFFENTLICHEN        EIN Aufruf = EINE Transaktion:
+                            a) Advisory-Lock je Mandant
+                            b) Lauf unter Zeilensperre lesen und prüfen
+                               (muss 'laufend' sein und dem Mandanten gehören)
+                            c) jede Ergebniszeile auf Mandant und Lauf prüfen
+                            d) Lauf auf 'vollstaendig' setzen
+                            e) Projektion schreiben
+                            f) abgelöste Zeilen markieren
 ```
 
-Weil Schritt 4 zuletzt kommt, kann es **niemals** eine vollständige Laufzeile ohne
-veröffentlichte Projektion geben. Ein Abbruch an jeder Stelle lässt die Zeile auf
-`laufend` oder `fehlgeschlagen` stehen — beides gilt nie als aktueller Stand und nie
-als idempotenter Treffer. Der letzte vollständige Stand bleibt unberührt.
+**Entweder alles oder nichts.** Bricht irgendetwas ab — Netzwerk, Prozess,
+Constraint, Bug —, rollt die Datenbank die gesamte Transaktion zurück: der Lauf
+bleibt `laufend`, die Projektion bleibt **byte-identisch** die vorherige.
 
-### 16.2 Warum **keine** Datenbankfunktion
+Schritt (d) steht bewusst **vor** (e). Innerhalb einer Transaktion ist die
+Reihenfolge ohnehin gleichgültig, aber so findet der Riegel aus §16.2.1 bei
+jeder einzelnen Ergebniszeile bereits einen vollständigen Lauf vor.
 
-Geprüft und verworfen. Eine `SECURITY DEFINER`-Funktion hätte eine neue
-privilegierte Fläche geschaffen, ohne die eine harte Invariante zu verbessern:
+#### 16.2.1 Der Riegel — datenbankseitig, nicht nur laut Code
 
-1. Die Ergebnisprojektion ist bereits **ein einziger** atomarer Bulk-Upsert.
-2. Die Invariante „kein vollständiger Lauf ohne Projektion" folgt allein aus der
-   Reihenfolge.
-3. `service_role` umgeht RLS ohnehin — eine Funktion hätte die Mandantentrennung
-   nicht verbessert; die liegt app-seitig.
+Trigger `matching_results_run_complete` (`before insert or update of run_id`):
+trägt eine Ergebniszeile ein `run_id`, muss der referenzierte Lauf
+`vollstaendig` sein. Sonst wird der Schreibvorgang abgelehnt.
 
-Die Migration enthält deshalb **keine** `SECURITY DEFINER`-Funktion (testgesichert,
-T16i). Die einzige neue Funktion ist der Unveränderlichkeits-Trigger — `security
-invoker`, mit festem `search_path`, ohne Grants für `public`/`anon`/`authenticated`.
+Damit ist die Anforderung **strukturell** erfüllt und nicht nur durch
+Anwendungslogik zugesichert. Der Legacy-Pfad (ohne Auditpersistenz) schreibt
+kein `run_id`; dort endet der Riegel sofort und ändert nichts am Verhalten.
 
-**Ehrliche Restgrenze:** eine Ergebniszeile kann auf einen Lauf zeigen, der später
-`fehlgeschlagen` wird. Das ist kein Defekt, sondern die Aussage „dieser Wert stammt
-aus einem Lauf, der nicht sauber zu Ende kam" — genau die Information, die heute
-fehlt.
+#### 16.2.2 Warum eine Datenbankfunktion — und warum sie unbedenklich ist
+
+Die Sprintvorgabe erlaubte eine Datenbankfunktion nur, wenn sie für die
+Atomizität **wirklich** nötig ist. Sie ist es (§16.1). Die Auflagen sind
+eingehalten:
+
+| Auflage | Umsetzung |
+|---|---|
+| keine unnötige `SECURITY DEFINER`-Funktion | **`SECURITY INVOKER`** (Default). Die Funktion zieht nur eine Transaktionsgrenze und verleiht **keine** Rechte |
+| Tenant und Profil innerhalb der Funktion validieren | `p_user_id` ist Pflicht; der Lauf wird über `(id, user_id)` gelesen; **jede** Ergebniszeile wird auf `user_id` und `run_id` geprüft |
+| fremde Tenant-Daten ablehnen | fremder Mandant → Lauf „nicht gefunden"; gemischter Stapel → harter Abbruch, bevor irgendetwas geschrieben ist |
+| nur die notwendigen Tabellen verändern | ausschließlich `matching_runs` und `matching_results` |
+| Suchpfad sicher setzen | `set search_path = public, pg_temp` |
+| Berechtigungen minimal | `revoke all from public, anon, authenticated`; `grant execute` nur an `service_role` |
+| `service_role`-Bypass ehrlich dokumentieren | steht als Kommentar in der Funktion: `service_role` umgeht RLS; durchsetzend sind die Prüfungen **in** der Funktion **und** die App-Guards davor |
+
+**Zusätzliche Zustandsprüfung:** nur ein Lauf im Zustand `laufend` ist
+veröffentlichbar. Ein bereits vollständiger Lauf kann nicht erneut
+veröffentlicht werden, ein fehlgeschlagener nicht wiederbelebt.
+
+**Parallelität in der Datenbank:** `pg_advisory_xact_lock` je Mandant
+serialisiert gleichzeitige Veröffentlichungen desselben Mandanten — unabhängig
+von der App-Sperre und ohne eine fremde Tabelle zu sperren. Er wird bei Commit
+**und** bei Rollback automatisch frei.
+
+#### 16.2.3 Die geltenden Invarianten
+
+| Invariante | Wie sie erzwungen wird |
+|---|---|
+| Keine `matching_results`-Zeile verweist auf einen `laufend`/`fehlgeschlagen`-Lauf | Trigger `matching_results_run_complete` |
+| Ein Abbruch lässt den vorherigen vollständigen Stand **byte-identisch** | Transaktions-Rollback |
+| Laufstatus, Projektion und Ablösung werden gemeinsam sichtbar | eine Transaktion |
+| Ein vollständiger Lauf kann nicht erneut veröffentlicht werden | Zustandsprüfung unter `for update` |
+| Ein abgeschlossener Lauf wird nie mehr fachlich verändert | Trigger `matching_runs_immutable` |
+
+**Was ausdrücklich KEINE Invariante ist:** „jeder vollständige Lauf hat
+Ergebniszeilen, die auf ihn zeigen". Ein älterer vollständiger Lauf verliert
+seine Zeilen, sobald ein neuerer Lauf dieselben Paare überschreibt — das ist
+der normale Generationswechsel. Seine Historie bleibt in
+`matching_runs.ergebnis` vollständig erhalten. (Die frühere Fassung dieses
+Dokuments führte die Umkehrung als Prüfabfrage — das war falsch und ist in
+§21.4 korrigiert.)
 
 ### 16.3 Sperre
 
@@ -1001,9 +1081,15 @@ sichtbar bleibt, dass jemand den Lauf angefasst hat.
 
 | Zeitpunkt | Verhalten |
 |---|---|
-| Auditfehler **vor** der Veröffentlichung | Der Lauf wird **abgebrochen**. Es wird nichts veröffentlicht; der letzte vollständige Stand bleibt unberührt. Der Fehler geht an den bestehenden `recordPipelineError`-Pfad des Schedulers |
-| Auditfehler **nach** der Veröffentlichung | Die Ergebnisse stehen (Verhalten wie bisher), der Lauf wird `fehlgeschlagen` mit Fehlertext |
-| Auch das Markieren scheitert | Die Zeile bleibt `laufend` — ebenfalls „nicht aktuell", also sicher |
+| Fehler beim Anlegen der Laufzeile | Der Lauf wird **abgebrochen**. Es ist nichts geschehen — die Laufzeile veröffentlicht nichts |
+| Fehler beim Bauen der Zeilen | dito; die Laufzeile wird `fehlgeschlagen` markiert, veröffentlicht wurde nichts |
+| Fehler **in** der Veröffentlichung — an JEDER Stelle | Die Datenbank rollt die **gesamte** Transaktion zurück. Die vorherige vollständige Generation bleibt **byte-identisch** die aktuelle. Die Laufzeile wird `fehlgeschlagen` markiert |
+| Auch das Markieren scheitert | Die Zeile bleibt `laufend` — ebenfalls „nicht veröffentlicht", also sicher |
+
+Es gibt **keinen** Zeitpunkt mehr, an dem die Projektion ersetzt ist, der Lauf
+aber nicht vollständig — genau das war der Fehler der ersten Fassung (§16.1).
+Der Fehler geht in allen Fällen an den bestehenden `recordPipelineError`-Pfad
+des Schedulers.
 
 Ein Auditfehler verändert **nie** einen Ähnlichkeitswert, einen Rang, ein
 `matched_feature` oder die Kandidatenauswahl.
@@ -1235,10 +1321,16 @@ select id, user_id, status, kandidaten, berechnet, veroeffentlicht, abgeloest,
 select count(*) as laeufe, sum(wiederholungen) as wiederholungen
   from public.matching_runs where user_id = '<mandant>';
 
--- Es darf keinen vollständigen Lauf ohne Projektion geben (erwartet 0 Zeilen).
-select r.id from public.matching_runs r
- where r.status='vollstaendig'
-   and not exists (select 1 from public.matching_results m where m.run_id = r.id);
+-- HARTE INVARIANTE (erwartet 0 Zeilen): keine Ergebniszeile darf auf einen
+-- laufenden oder fehlgeschlagenen Lauf verweisen.
+select m.id, m.run_id, r.status
+  from public.matching_results m
+  join public.matching_runs r on r.id = m.run_id
+ where r.status <> 'vollstaendig';
+
+-- NICHT als Fehler werten: ein aelterer vollstaendiger Lauf ohne verbleibende
+-- Ergebniszeilen. Das ist der normale Generationswechsel — seine Historie steht
+-- in matching_runs.ergebnis. (Die frueher hier stehende Umkehrung war falsch.)
 ```
 
 ### 21.5 Rollback
@@ -1271,7 +1363,7 @@ Sicherung vor einem Struktur-Rollback:
 
 | Suite | Ergebnis |
 |---|---|
-| `scripts/matching-audit-test.js` (**neu**) | **137/137** |
+| `scripts/matching-audit-test.js` (**neu**, T1–T18 + **A1–A8 Atomizität**) | **178/178** |
 | Offline-Suite `run-offline-tests.js` | **177/177** in 58 s |
 | Gegenbeweis auf unverändertem `origin/main` (`53893fa`, eigener Worktree) | **176/176** |
 | Legacy-Gegenbeweis Branch ↔ `main` (Merkmalsvektoren, Kosinuswerte, Ranking, `matched_features`, geschriebene Zeilen, Rückgabewert über 60 Wissensobjekte, 4 Grenzwerte, 4 Filterkombinationen) | **253 identisch, 0 abweichend** |
@@ -1298,13 +1390,14 @@ die Migration nutzt keine versionsabhängigen Konstrukte).
 | Prüfung | Ergebnis |
 |---|---|
 | Migration läuft durch | ✅ |
+| Publish-Funktion und Riegel angelegt | ✅ (`helmut_publish_matching_run`, `matching_results_run_complete`) |
 | **Zweiter Lauf derselben Migration** läuft ebenfalls durch | ✅ (alle Objekte `if not exists`) |
 | Struktur | `matching_runs` **1** · neue Spalten **14** · Gesamtspalten `matching_results` **23** (9 + 14) |
 | RLS | aktiv, **genau eine** Policy: `matching_runs_tenant_read`, `SELECT`, `{authenticated}` |
 | Grants | `authenticated: SELECT` — sonst nichts. `anon` **gar nicht** vorhanden |
 | Indizes | `matching_runs`: PK, `_user_idx`, `_fingerprint_uidx`, `_offen_idx` · `matching_results`: + `_tenant_ko_uidx`, `_run_idx` |
 | Trigger | `matching_runs_immutable` |
-| `SECURITY DEFINER`-Funktionen | **0** |
+| `SECURITY DEFINER`-Funktionen | **0** — alle drei neuen Funktionen sind `SECURITY INVOKER` |
 
 **Verhalten gegen echte Constraints** (11 Prüfungen, alle wie entworfen):
 
@@ -1353,11 +1446,35 @@ Transaktion liegt, bleibt danach **`matching_runs` = 0 Tabellen, `run_id` = 0
 Spalten**. Es entsteht kein Halbzustand. Genau deshalb steht die Vorabprüfung
 in §21.1.
 
+**Atomizität gegen die echte Datenbank** (eigene Testdatenbank, alle Abbrüche
+real erzwungen — nicht simuliert):
+
+| # | Prüfung | Ergebnis |
+|---|---|---|
+| P1 | erfolgreiche Veröffentlichung | Lauf `vollstaendig`, 2 Zeilen, `veroeffentlicht=2` — konsistent in einem Aufruf |
+| P2 | Ergebniszeile auf einen **laufenden** Lauf schreiben | **abgelehnt**: „zeigt auf einen Lauf im Zustand laufend" |
+| P3 | **Abbruch MITTEN in der Veröffentlichung** (FK-Verletzung bei der zweiten Zeile) | Projektion **vorher wie nachher identisch** (`ko-1` weiterhin `0.4200`, `run_id` weiterhin der alte Lauf); der neue Lauf blieb `laufend` — **nicht** `vollstaendig` |
+| P4 | fremder Mandant · fremde Zeile im Stapel · fremde Laufkennung · bereits vollständiger Lauf | **alle vier abgelehnt**, Bestand unverändert |
+| P5 | Ablösung | alte Zeile **bleibt erhalten** mit `aktuell=false` + `abgeloest_am`, neue Zeile aktuell |
+| P6 | **zwei gleichzeitige Veröffentlichungen** desselben Mandanten (zwei Prozesse) | vom Advisory-Lock serialisiert, beide sauber `vollstaendig`, kein Widerspruch |
+| P7 | **Invariante** über den Endzustand | **0 Verletzungen** — keine Ergebniszeile verweist auf einen unvollständigen Lauf |
+| P8 | Legacy-Pfad (ohne `run_id`) | unverändert schreibbar, `run_id` NULL, Riegel greift nicht |
+
+**Mutationstest der Suite** (Gegenprobe, dass die neuen Tests wirklich greifen):
+wird im In-Memory-Doppel der Datenbank das Transaktions-Rollback der Projektion
+entfernt — also exakt das alte, nicht-atomare Design nachgebaut —, schlagen
+**10** Prüfungen fehl, darunter „KEINE Ergebniszeile verweist auf einen
+laufenden oder fehlgeschlagenen Lauf" mit dem konkreten Gegenbeispiel. Mit der
+Korrektur sind es **0**. Die A-Gruppe ist damit nachweislich wirksam und nicht
+bloß grün.
+
 **Rollback:** auf der Bestands-DB ausgeführt → `matching_runs` weg, Spalten
-**23 → 9**, Triggerfunktion weg, nur die drei ursprünglichen
-`matching_results`-Indizes übrig, Datenfingerabdruck **unverändert
-`246 | 6feaa1b1…`**. Danach ließ sich die Migration **erneut** anwenden, ohne dass
-sich der Datenbestand veränderte.
+**23 → 9**, alle **drei** neuen Funktionen weg, beide neuen Trigger weg, nur die
+drei ursprünglichen `matching_results`-Indizes übrig, Datenfingerabdruck
+**unverändert `246 | 6feaa1b1…`**. Danach ließ sich die Migration **erneut**
+anwenden, ohne dass sich der Datenbestand veränderte. In der Atomizitäts-Datenbank
+zusätzlich gegengemessen: nach dem Rollback **0 Tabellen / 9 Spalten / 0 Funktionen
+/ 0 Trigger**, und die Legacy-Zeile (ohne `run_id`) überlebt unverändert.
 
 ## 24 · Geänderte und neue Dateien
 
