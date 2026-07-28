@@ -42,6 +42,10 @@ const ohneSqlKommentare = (src) => String(src).replace(/^[ \t]*--.*$/gm, " ").re
 // Zusaetzlich Zeichenketten entfernen: `comment on … is '…'` ist ausfuehrbares
 // SQL, aber reine Dokumentation — es fasst keine Tabelle an.
 const nurAnweisungen = (src) => ohneSqlKommentare(src).replace(/'(?:[^']|'')*'/g, "''");
+// Nur das, was die Migration BEIM ANWENDEN tut. Funktionsrümpfe ($$ … $$) sind
+// Laufzeitlogik und werden hier bewusst ausgeblendet — sonst zaehlte ein
+// UPDATE innerhalb der Publish-Funktion faelschlich als Backfill.
+const nurDdl = (src) => nurAnweisungen(src).replace(/\$\$[\s\S]*?\$\$/g, " ");
 
 const MIGRATION = lies("supabase/migrations/20260728_matching_audit.sql");
 const ROLLBACK = lies("supabase/migrations/20260728_matching_audit_rollback.sql");
@@ -69,10 +73,10 @@ function makeDb() {
     runs: new Map(),
     results: new Map(),
     locks: new Map(),
-    zaehler: { insertRun: 0, patchRun: 0, saveResults: 0, supersede: 0, lockAcquire: 0, findRun: 0 },
+    zaehler: { insertRun: 0, patchRun: 0, saveResults: 0, publish: 0, lockAcquire: 0, findRun: 0 },
     lockFehlschlagFuer: null,
     insertFehler: null,
-    supersedeFehler: null,
+    publishFehler: null,
     uhr: 0,
     lauf: 0
   };
@@ -149,21 +153,81 @@ function makeDb() {
       return { ...db.runs.get(id) };
     },
 
-    markSuperseded: ({ userId, keepKnowledgeObjectIds = [], abgeloestAm }) => {
-      db.zaehler.supersede += 1;
-      if (db.supersedeFehler) throw new Error(db.supersedeFehler);
-      if (!userId) throw new Error("[tenant-guard] markMatchingResultsSuperseded: kein Mandant");
-      const keep = new Set(keepKnowledgeObjectIds);
-      if (!keep.size) return { abgeloest: 0, skipped: "leere-trefferliste" };
-      let n = 0;
-      for (const [id, row] of db.results) {
-        if (row.user_id !== userId) continue;
-        if (row.aktuell === false) continue;
-        if (keep.has(row.knowledge_object_id)) continue;
-        db.results.set(id, { ...row, aktuell: false, abgeloest_am: abgeloestAm });
-        n += 1;
+    // ATOMARE Veroeffentlichung — bildet helmut_publish_matching_run nach,
+    // INKLUSIVE Transaktionssemantik: vor dem ersten Schreiben wird ein
+    // Schnappschuss gezogen; jeder Fehler an JEDER Stelle stellt ihn
+    // vollstaendig wieder her. Damit prueft die Suite genau das, was die
+    // Datenbank zusichert — nicht nur die Aufrufreihenfolge im Anwendungscode.
+    // `db.publishFehler` setzt den Abbruchpunkt: 'vor' | 'mitten' | 'nach'.
+    publishRun: ({ runId, userId, rows = [], abgeloestAm }) => {
+      db.zaehler.publish += 1;
+      const snapRuns = new Map([...db.runs].map(([k, v]) => [k, { ...v }]));
+      const snapResults = new Map([...db.results].map(([k, v]) => [k, { ...v }]));
+      try {
+        if (db.publishFehler === "vor") throw new Error("Abbruch VOR dem Schreiben (simuliert)");
+        if (!userId) throw new Error("[tenant-guard] publishMatchingRun: kein Mandant");
+        const lauf = db.runs.get(runId);
+        // Nur ein LAUFENDER Lauf des richtigen Mandanten ist veroeffentlichbar.
+        if (!lauf || lauf.user_id !== userId) {
+          throw new Error(`publish: Lauf ${runId} fuer Mandant ${userId} nicht gefunden`);
+        }
+        if (lauf.status !== contract.RUN_STATUS.LAUFEND) {
+          throw new Error(`publish: Lauf ${runId} ist im Zustand ${lauf.status}`);
+        }
+        for (const r of rows) {
+          if (!r || r.user_id !== userId) throw new Error("[tenant-guard] CROSS_TENANT_WRITE");
+          if (r.run_id !== runId) throw new Error("publish: Zeile verweist auf fremden Lauf");
+          if (!r.id || !r.knowledge_object_id) throw new Error("publish: Zeile ohne Kennung");
+        }
+        const keep = new Set(rows.map((r) => r.knowledge_object_id));
+        let abgeloest = 0;
+        if (rows.length) {
+          for (const row of db.results.values()) {
+            if (row.user_id === userId && row.aktuell !== false && !keep.has(row.knowledge_object_id)) abgeloest += 1;
+          }
+        }
+        // Schritt 1: Lauf abschliessen (damit der Riegel unten greifen kann).
+        db.runs.set(runId, {
+          ...lauf, status: contract.RUN_STATUS.VOLLSTAENDIG,
+          beendet_am: db.jetzt().toISOString(), veroeffentlicht: rows.length, abgeloest
+        });
+        // Schritt 2: Projektion schreiben — mit Riegel matching_results_run_complete.
+        rows.forEach((r, i) => {
+          if (db.publishFehler === "mitten" && i === Math.floor(rows.length / 2)) {
+            throw new Error("Abbruch WAEHREND der Ergebnisschreibung (simuliert)");
+          }
+          if (r.run_id) {
+            const ziel = db.runs.get(r.run_id);
+            if (!ziel) throw new Error(`matching_results: unbekannte Laufkennung ${r.run_id}`);
+            if (ziel.status !== contract.RUN_STATUS.VOLLSTAENDIG) {
+              throw new Error(`matching_results.run_id ${r.run_id} zeigt auf einen Lauf im Zustand ${ziel.status}`);
+            }
+          }
+          const alt = db.results.get(r.id);
+          db.results.set(r.id, {
+            ...(alt || {}), ...r, aktuell: true, abgeloest_am: null,
+            created_at: (alt && alt.created_at) || db.jetzt().toISOString()
+          });
+        });
+        if (db.publishFehler === "nach") {
+          throw new Error("Abbruch NACH der Ergebnisschreibung, vor dem Commit (simuliert)");
+        }
+        // Schritt 3: Abloesung — es wird NIE geloescht.
+        if (rows.length) {
+          for (const [id, row] of db.results) {
+            if (row.user_id !== userId) continue;
+            if (row.aktuell === false) continue;
+            if (keep.has(row.knowledge_object_id)) continue;
+            db.results.set(id, { ...row, aktuell: false, abgeloest_am: abgeloestAm });
+          }
+        }
+        return { runId, status: contract.RUN_STATUS.VOLLSTAENDIG, veroeffentlicht: rows.length, abgeloest };
+      } catch (e) {
+        // ROLLBACK der gesamten Transaktion.
+        db.runs = snapRuns;
+        db.results = snapResults;
+        throw e;
       }
-      return { abgeloest: n };
     },
 
     profileBelongsToTenant: (profileId, tenantId) => String(profileId) === String(tenantId)
@@ -183,7 +247,7 @@ function makeDb() {
   db.audit = {
     acquireRunLock: (t) => auditModul.acquireRunLock(t, db.deps),
     releaseRunLock: (t) => auditModul.releaseRunLock(t, db.deps),
-    auditRun: (input, publish) => auditModul.auditRun(input, publish, db.deps)
+    auditRun: (input) => auditModul.auditRun(input, db.deps)
   };
 
   return db;
@@ -364,7 +428,7 @@ const lauf = (db, opts, input = {}) =>
   const db5 = makeDb();
   const gut = await lauf(db5, { profile: profilA });
   const standNachGut = j([...db5.results.values()]);
-  db5.supersedeFehler = "Ablösung fehlgeschlagen (simuliert)";
+  db5.publishFehler = "nach";
   let fehlerGeworfen = false;
   try {
     await lauf(db5, {
@@ -372,20 +436,21 @@ const lauf = (db, opts, input = {}) =>
       treffer: [{ id: "ko-rente", vorgang_id: "vg-rente", similarity: 0.9 }, TREFFER[1]]
     });
   } catch (_) { fehlerGeworfen = true; }
-  db5.supersedeFehler = null;
+  db5.publishFehler = null;
 
   const fehlLauf = [...db5.runs.values()].find((r) => r.status === contract.RUN_STATUS.FEHLGESCHLAGEN);
-  check("T5a ein Auditfehler nach der Veroeffentlichung wird sichtbar gemeldet", fehlerGeworfen === true);
+  check("T5a ein Fehler in der Veroeffentlichung wird sichtbar gemeldet", fehlerGeworfen === true);
   check("T5b der Lauf steht auf fehlgeschlagen und traegt den Fehlertext",
     !!fehlLauf && typeof fehlLauf.fehler === "string" && fehlLauf.fehler.length > 0);
   check("T5c der letzte VOLLSTAENDIGE Lauf bleibt unveraendert erhalten",
     db5.runs.get(gut.audit.runId).status === contract.RUN_STATUS.VOLLSTAENDIG
     && db5.runs.get(gut.audit.runId).eingabe_fingerabdruck === gut.audit.fingerprint);
   // Ein fehlgeschlagener Lauf zaehlt NIE als idempotenter Treffer.
-  const nachFehler = db5.deps.findCompletedRun({
-    userId: "mandant-alpha", fingerprint: fehlLauf.eingabe_fingerabdruck
-  });
-  check("T5d ein fehlgeschlagener Lauf gilt NIE als vollstaendiger Treffer", nachFehler === null);
+  const nachFehler = fehlLauf
+    ? db5.deps.findCompletedRun({ userId: "mandant-alpha", fingerprint: fehlLauf.eingabe_fingerabdruck })
+    : "kein-fehlgeschlagener-Lauf-vorhanden";
+  check("T5d ein fehlgeschlagener Lauf gilt NIE als vollstaendiger Treffer", nachFehler === null,
+    j(nachFehler));
   // Ein 'laufend' stehengebliebener Lauf ebenfalls nicht.
   db5.runs.set("mrun-haenger", {
     id: "mrun-haenger", user_id: "mandant-alpha", status: contract.RUN_STATUS.LAUFEND,
@@ -439,8 +504,9 @@ const lauf = (db, opts, input = {}) =>
   let fremdesProfilAbgelehnt = false, fehlerCode = null;
   try {
     await auditModul.auditRun({
-      ...basis, tenantId: "mandant-alpha", mandateProfileId: "mandant-beta"
-    }, async () => ({ veroeffentlicht: 1 }), db8.deps);
+      ...basis, tenantId: "mandant-alpha", mandateProfileId: "mandant-beta",
+      buildRows: () => []
+    }, db8.deps);
   } catch (e) { fremdesProfilAbgelehnt = true; fehlerCode = e.code; }
   check("T8a eine fremde Profilkennung wird hart abgelehnt", fremdesProfilAbgelehnt === true);
   check("T8b die Ablehnung traegt den Mandanten-Fehlercode", fehlerCode === "CROSS_TENANT_WRITE");
@@ -449,7 +515,7 @@ const lauf = (db, opts, input = {}) =>
 
   let ohneMandant = false;
   try {
-    await auditModul.auditRun({ ...basis, tenantId: "" }, async () => ({ veroeffentlicht: 0 }), db8.deps);
+    await auditModul.auditRun({ ...basis, tenantId: "", buildRows: () => [] }, db8.deps);
   } catch (_) { ohneMandant = true; }
   check("T8d ein Lauf ohne Mandant wird abgelehnt", ohneMandant === true);
 
@@ -522,10 +588,11 @@ const lauf = (db, opts, input = {}) =>
   });
   const dbAn = makeDb();
   const anRows = [];
-  const resAn = await matching.runMatchingShadow({ profile: profilA }, {
-    ...laufDeps(dbAn, { profile: profilA, auditAn: true }),
-    saveMatchingResults: (rows) => { anRows.push(...rows); return dbAn.saveResults(rows); }
-  });
+  const echterPublish = dbAn.deps.publishRun;
+  dbAn.deps.publishRun = (p) => { anRows.push(...p.rows); return echterPublish(p); };
+  const resAn = await matching.runMatchingShadow({ profile: profilA },
+    laufDeps(dbAn, { profile: profilA, auditAn: true }));
+  dbAn.deps.publishRun = echterPublish;
 
   check("T11a Kandidaten, Aehnlichkeiten, Raenge, matched_features und Kennungen sind identisch",
     j(nurLegacy(ausRows)) === j(nurLegacy(anRows)),
@@ -539,6 +606,9 @@ const lauf = (db, opts, input = {}) =>
     && resAus.saved === resAn.saved && j(resAus.filters) === j(resAn.filters));
   check("T11e kein Schwellenwert wird eingefuehrt (Rangliste unbeschnitten)",
     anRows.length === 2 && dbAn.runs.get(resAn.audit.runId).schwellenwerte.schwelle === null);
+  check("T11g der Auditpfad ruft saveMatchingResults NICHT mehr auf (nur die atomare Veroeffentlichung)",
+    dbAn.zaehler.saveResults === 0 && dbAn.zaehler.publish === 1,
+    j({ save: dbAn.zaehler.saveResults, publish: dbAn.zaehler.publish }));
   check("T11f die Audit-Erweiterung sitzt NACH der Zeilenbildung",
     SRC_MATCHING.indexOf("const rows = (search.results || []).map")
     < SRC_MATCHING.indexOf("// ── Mit Auditpersistenz"));
@@ -671,10 +741,10 @@ const lauf = (db, opts, input = {}) =>
     && !/add column (?!if not exists)/.test(MIGRATION));
   check("T16d die Migration ist NICHT destruktiv",
     !/drop table|drop column|truncate|delete from|alter column [a-z_]+ type|alter column [a-z_]+ set not null/i
-      .test(ohneSqlKommentare(MIGRATION)));
-  check("T16e keine bestehende Ergebniszeile wird veraendert (kein Backfill)",
-    !/update public\.matching_results/i.test(ohneSqlKommentare(MIGRATION))
-    && !/insert into public\.matching_results/i.test(ohneSqlKommentare(MIGRATION)));
+      .test(nurDdl(MIGRATION)));
+  check("T16e die Migration selbst veraendert keine bestehende Ergebniszeile (kein Backfill)",
+    !/update public\.matching_results/i.test(nurDdl(MIGRATION))
+    && !/insert into public\.matching_results/i.test(nurDdl(MIGRATION)));
   check("T16f der eindeutige Index auf der operativen Identitaet ist angelegt",
     /create unique index if not exists matching_results_tenant_ko_uidx[\s\S]*\(user_id, knowledge_object_id\)/.test(MIGRATION));
   check("T16g die Idempotenz ist als Teilindex datenbankseitig erzwungen",
@@ -775,6 +845,240 @@ const lauf = (db, opts, input = {}) =>
     /isFlagOn\(process\.env\.HELMUT_MATCHING_AUDIT\) && v3StoreReady\(\)/.test(lies("lib/helmut/storage.js")));
   check("T18h HELMUT_SCORING_MODE wird von diesem Sprint nicht angefasst",
     !/HELMUT_SCORING_MODE/.test(SRC_MATCHING + SRC_AUDIT + SRC_CONTRACT + MIGRATION));
+
+  // ═════════════════════════════════════════════════════════════════════════
+  // A — ATOMIZITÄT DER VERÖFFENTLICHUNG
+  //
+  // Nachgereichte Verschärfung: matching_results ist die aktuelle operative
+  // Produktprojektion und darf AUSSCHLIESSLICH auf einen vollständig
+  // veröffentlichten Lauf zeigen. Eine blosse Schreibreihenfolge genügt dafür
+  // nicht — matching_results wird in place überschrieben, ein Abbruch nach dem
+  // Ergebnis-Upsert hätte den letzten vollständigen Stand also bereits
+  // zerstört. Diese Gruppe prüft die Transaktionsgarantie an jedem Abbruchpunkt.
+  // ═════════════════════════════════════════════════════════════════════════
+
+  // Gemeinsame Ausgangslage: ein vollständiger Lauf ist veröffentlicht.
+  async function mitStand() {
+    const d = makeDb();
+    const erst = await lauf(d, { profile: profilA });
+    return {
+      db: d,
+      erst,
+      stand: j([...d.results.values()].sort((a, b) => (a.id < b.id ? -1 : 1))),
+      laeufe: d.runs.size
+    };
+  }
+  // Ein zweiter Lauf mit anderem Eingang, damit er wirklich veröffentlichen will.
+  const ANDERER_EINGANG = {
+    profile: profilA,
+    treffer: [{ id: "ko-rente", vorgang_id: "vg-rente", similarity: 0.77 }, TREFFER[1]]
+  };
+  const zeigtNurAufVollstaendige = (d) =>
+    [...d.results.values()].every((r) => {
+      if (!r.run_id) return true;
+      const lz = d.runs.get(r.run_id);
+      return !!lz && lz.status === contract.RUN_STATUS.VOLLSTAENDIG;
+    });
+
+  // ── A1 · Abbruch VOR der Ergebnisschreibung ───────────────────────────────
+  {
+    const { db: d, erst, stand, laeufe } = await mitStand();
+    d.insertFehler = "Laufzeile nicht schreibbar (simuliert)";
+    let geworfen = false;
+    try { await lauf(d, ANDERER_EINGANG); } catch (_) { geworfen = true; }
+    d.insertFehler = null;
+    check("A1a Abbruch vor der Ergebnisschreibung wird gemeldet", geworfen === true);
+    check("A1b die Projektion ist byte-identisch unveraendert",
+      j([...d.results.values()].sort((a, b) => (a.id < b.id ? -1 : 1))) === stand);
+    check("A1c es entsteht keine zusaetzliche Laufzeile", d.runs.size === laeufe);
+    check("A1d die vorherige vollstaendige Generation ist weiterhin die aktuelle",
+      d.runs.get(erst.audit.runId).status === contract.RUN_STATUS.VOLLSTAENDIG
+      && [...d.results.values()].every((r) => r.run_id === erst.audit.runId && r.aktuell === true));
+    check("A1e es wurde ueberhaupt nicht veroeffentlicht", d.zaehler.publish === 1);
+  }
+
+  // ── A2 · Abbruch WÄHREND der Ergebnisschreibung ───────────────────────────
+  {
+    const { db: d, erst, stand } = await mitStand();
+    d.publishFehler = "mitten";
+    let geworfen = false;
+    try { await lauf(d, ANDERER_EINGANG); } catch (_) { geworfen = true; }
+    d.publishFehler = null;
+    check("A2a Abbruch mitten in der Ergebnisschreibung wird gemeldet", geworfen === true);
+    check("A2b die Transaktion wurde vollstaendig zurueckgerollt — keine halb geschriebene Projektion",
+      j([...d.results.values()].sort((a, b) => (a.id < b.id ? -1 : 1))) === stand);
+    check("A2c der abgebrochene Lauf ist NICHT vollstaendig",
+      [...d.runs.values()].filter((r) => r.status === contract.RUN_STATUS.VOLLSTAENDIG).length === 1);
+    check("A2d die vorherige vollstaendige Generation bleibt aktuell",
+      [...d.results.values()].every((r) => r.run_id === erst.audit.runId && r.aktuell === true));
+    check("A2e keine Ergebniszeile verweist auf einen unvollstaendigen Lauf", zeigtNurAufVollstaendige(d));
+  }
+
+  // ── A3 · Abbruch NACH der Ergebnisschreibung, vor dem Laufabschluss ───────
+  // Der kritische Fall aus dem Einwand: genau hier hätte eine blosse
+  // Schreibreihenfolge den alten Stand bereits verloren.
+  {
+    const { db: d, erst, stand } = await mitStand();
+    d.publishFehler = "nach";
+    let geworfen = false;
+    try { await lauf(d, ANDERER_EINGANG); } catch (_) { geworfen = true; }
+    d.publishFehler = null;
+    check("A3a Abbruch nach der Ergebnisschreibung wird gemeldet", geworfen === true);
+    check("A3b der bisherige vollstaendige Stand ist VOLLSTAENDIG erhalten (byte-identisch)",
+      j([...d.results.values()].sort((a, b) => (a.id < b.id ? -1 : 1))) === stand,
+      "die Projektion wurde trotz Rollback veraendert");
+    check("A3c keine Aehnlichkeit wurde durch den abgebrochenen Lauf ueberschrieben",
+      [...d.results.values()].find((r) => r.knowledge_object_id === "ko-rente").similarity === 0.42);
+    check("A3d der abgebrochene Lauf steht auf fehlgeschlagen",
+      [...d.runs.values()].some((r) => r.status === contract.RUN_STATUS.FEHLGESCHLAGEN));
+    check("A3e die vorherige Generation ist weiterhin die aktuelle",
+      [...d.results.values()].every((r) => r.run_id === erst.audit.runId && r.aktuell === true));
+    check("A3f keine Ergebniszeile verweist auf den fehlgeschlagenen Lauf", zeigtNurAufVollstaendige(d));
+  }
+
+  // ── A4 · Fehler BEIM Laufabschluss ────────────────────────────────────────
+  // Laufabschluss und Projektion sind derselbe Aufruf — ein Fehler dabei kann
+  // die Projektion konstruktiv nicht halb aktualisiert hinterlassen.
+  {
+    const { db: d, erst, stand } = await mitStand();
+    d.publishFehler = "vor"; // scheitert, bevor irgendetwas geschrieben ist
+    let geworfen = false;
+    try { await lauf(d, ANDERER_EINGANG); } catch (_) { geworfen = true; }
+    d.publishFehler = null;
+    check("A4a ein Fehler beim Laufabschluss wird gemeldet", geworfen === true);
+    check("A4b Laufabschluss und Projektion sind EIN Aufruf — kein Zwischenzustand",
+      j([...d.results.values()].sort((a, b) => (a.id < b.id ? -1 : 1))) === stand
+      && [...d.runs.values()].filter((r) => r.status === contract.RUN_STATUS.VOLLSTAENDIG).length === 1);
+    check("A4c der letzte vollstaendige Lauf ist unveraendert",
+      d.runs.get(erst.audit.runId).veroeffentlicht === 2
+      && d.runs.get(erst.audit.runId).status === contract.RUN_STATUS.VOLLSTAENDIG);
+  }
+
+  // ── A5 · Parallele Veröffentlichung desselben Profils ─────────────────────
+  {
+    const { db: d, erst, stand } = await mitStand();
+    // (a) App-Sperre: ein zweiter Lauf desselben Profils kommt gar nicht erst durch.
+    d.locks.set(auditModul.lockName("mandant-alpha"), true);
+    const parallel = await lauf(d, ANDERER_EINGANG);
+    d.locks.delete(auditModul.lockName("mandant-alpha"));
+    check("A5a die App-Sperre weist den parallelen Lauf desselben Profils ab",
+      parallel.skipped === true && parallel.reason === "matching-locked");
+    check("A5b der parallele Lauf veroeffentlicht nichts",
+      j([...d.results.values()].sort((a, b) => (a.id < b.id ? -1 : 1))) === stand);
+
+    // (b) Zweite Verteidigung IN der Datenbank: derselbe Lauf kann nicht zweimal
+    //     veroeffentlicht werden — der zweite Versuch findet ihn nicht mehr als
+    //     'laufend' vor (Zustandspruefung unter Zeilensperre).
+    let zweitVeroeffentlichung = false;
+    try {
+      await d.deps.publishRun({
+        runId: erst.audit.runId, userId: "mandant-alpha",
+        rows: [{ id: "mr-x", user_id: "mandant-alpha", knowledge_object_id: "ko-rente", run_id: erst.audit.runId }],
+        abgeloestAm: "2026-07-28T12:30:00.000Z"
+      });
+    } catch (_) { zweitVeroeffentlichung = true; }
+    check("A5c ein bereits vollstaendiger Lauf kann nicht erneut veroeffentlicht werden",
+      zweitVeroeffentlichung === true);
+    check("A5d auch dieser Versuch hat nichts veraendert",
+      j([...d.results.values()].sort((a, b) => (a.id < b.id ? -1 : 1))) === stand);
+
+    // (c) Zwei echte Läufe nacheinander bleiben widerspruchsfrei: die Projektion
+    //     gehoert danach genau EINEM vollstaendigen Lauf.
+    const zweit = await lauf(d, ANDERER_EINGANG);
+    check("A5e nach zwei Laeufen gehoert die aktuelle Projektion genau einem vollstaendigen Lauf",
+      [...d.results.values()].filter((r) => r.aktuell).every((r) => r.run_id === zweit.audit.runId)
+      && d.runs.get(zweit.audit.runId).status === contract.RUN_STATUS.VOLLSTAENDIG);
+    check("A5f der aeltere vollstaendige Lauf bleibt als Historie erhalten",
+      d.runs.get(erst.audit.runId).status === contract.RUN_STATUS.VOLLSTAENDIG);
+  }
+
+  // ── A6 · Nach JEDEM Fehler bleibt die vorherige vollständige Generation aktuell
+  {
+    for (const punkt of ["vor", "mitten", "nach"]) {
+      const { db: d, erst, stand } = await mitStand();
+      d.publishFehler = punkt;
+      try { await lauf(d, ANDERER_EINGANG); } catch (_) { /* erwartet */ }
+      d.publishFehler = null;
+      const aktuelle = [...d.results.values()].filter((r) => r.aktuell);
+      check(`A6 Abbruchpunkt '${punkt}': vorherige vollstaendige Generation bleibt aktuell`,
+        j([...d.results.values()].sort((a, b) => (a.id < b.id ? -1 : 1))) === stand
+        && aktuelle.length === 2
+        && aktuelle.every((r) => r.run_id === erst.audit.runId)
+        && zeigtNurAufVollstaendige(d));
+    }
+    // Auch der Abbruch vor dem Anlegen der Laufzeile.
+    const { db: d, erst, stand } = await mitStand();
+    d.insertFehler = "Laufzeile nicht schreibbar (simuliert)";
+    try { await lauf(d, ANDERER_EINGANG); } catch (_) { /* erwartet */ }
+    d.insertFehler = null;
+    check("A6 Abbruchpunkt 'Laufzeile': vorherige vollstaendige Generation bleibt aktuell",
+      j([...d.results.values()].sort((a, b) => (a.id < b.id ? -1 : 1))) === stand
+      && [...d.results.values()].every((r) => r.run_id === erst.audit.runId && r.aktuell));
+  }
+
+  // ── A7 · Keine matching_results-Zeile verweist auf laufend/fehlgeschlagen ──
+  {
+    const d = makeDb();
+    await lauf(d, { profile: profilA });
+    for (const punkt of ["vor", "mitten", "nach"]) {
+      d.publishFehler = punkt;
+      try { await lauf(d, ANDERER_EINGANG); } catch (_) { /* erwartet */ }
+      d.publishFehler = null;
+    }
+    d.insertFehler = "Laufzeile nicht schreibbar (simuliert)";
+    try { await lauf(d, ANDERER_EINGANG); } catch (_) { /* erwartet */ }
+    d.insertFehler = null;
+    const zustaende = [...d.runs.values()].map((r) => r.status);
+    check("A7a die Testlage enthaelt tatsaechlich fehlgeschlagene Laeufe",
+      zustaende.includes(contract.RUN_STATUS.FEHLGESCHLAGEN), j(zustaende));
+    check("A7b KEINE Ergebniszeile verweist auf einen laufenden oder fehlgeschlagenen Lauf",
+      zeigtNurAufVollstaendige(d),
+      j([...d.results.values()].map((r) => [r.id, r.run_id, d.runs.get(r.run_id) && d.runs.get(r.run_id).status])));
+    check("A7c der Riegel ist datenbankseitig verankert, nicht nur im Code",
+      /create trigger matching_results_run_complete[\s\S]*before insert or update of run_id on public\.matching_results/
+        .test(nurAnweisungen(MIGRATION))
+      && /zeigt auf einen Lauf im Zustand/.test(MIGRATION));
+    // Gegenprobe: ein direkter Schreibversuch auf einen laufenden Lauf wird abgelehnt.
+    let riegelGreift = false;
+    d.runs.set("mrun-offen", {
+      id: "mrun-offen", user_id: "mandant-alpha", mandate_profile_id: "mandant-alpha",
+      status: contract.RUN_STATUS.LAUFEND, eingabe_fingerabdruck: "fp-offen"
+    });
+    try {
+      d.deps.publishRun({
+        runId: "mrun-offen", userId: "mandant-alpha",
+        rows: [{ id: "mr-y", user_id: "mandant-alpha", knowledge_object_id: "ko-klima", run_id: "mrun-anderer" }]
+      });
+    } catch (_) { riegelGreift = true; }
+    check("A7d eine Zeile mit fremder/unvollstaendiger Laufkennung wird abgelehnt", riegelGreift === true);
+  }
+
+  // ── A8 · Ein erfolgreicher Lauf veröffentlicht konsistent ─────────────────
+  {
+    const d = makeDb();
+    const erfolg = await lauf(d, { profile: profilA });
+    const lz = d.runs.get(erfolg.audit.runId);
+    const zeilen = [...d.results.values()];
+    check("A8a der Lauf ist vollstaendig und traegt ein Ende",
+      lz.status === contract.RUN_STATUS.VOLLSTAENDIG && !!lz.beendet_am);
+    check("A8b Laufzaehler und tatsaechliche Projektion stimmen ueberein",
+      lz.veroeffentlicht === zeilen.length && zeilen.length === 2);
+    check("A8c die Rangliste des Laufs deckt sich mit der Projektion",
+      j(lz.ergebnis.map((e) => e.ko_id).sort())
+      === j(zeilen.map((r) => r.knowledge_object_id).sort()));
+    check("A8d jede Ergebniszeile verweist auf genau diesen vollstaendigen Lauf",
+      zeilen.every((r) => r.run_id === erfolg.audit.runId && r.aktuell === true));
+    check("A8e die Versionsangaben stehen an Lauf UND Projektion konsistent",
+      zeilen.every((r) => r.rezept_version === lz.rezept_version
+        && r.vektor_version === lz.vektor_version
+        && r.engine_version === lz.engine_version
+        && r.eingabe_fingerabdruck === lz.eingabe_fingerabdruck
+        && r.profil_hash === lz.profil_hash));
+    check("A8f die Veroeffentlichung war EIN einziger Aufruf",
+      d.zaehler.publish === 1 && d.zaehler.saveResults === 0);
+    check("A8g der Laufabschluss ist kein eigener Schreibvorgang mehr",
+      d.zaehler.patchRun === 0, `patchRun=${d.zaehler.patchRun}`);
+  }
 
   // ═════════════════════════════════════════════════════════════════════════
   // Z — Mandantenneutralität, Vollständigkeit, Vertragsdetails
