@@ -1,8 +1,8 @@
 # Nachklassifikation des Altbestands (Sprint 21, OP-24)
 
-**Stand:** 2026-07-28 · **Zustand:** **Stufe 1 (kontrollierter Probelauf über 12 Objekte)
-erfolgreich ausgeführt** · vollständiger Schreiblauf über Umfang B weiterhin
-**gesperrt (freigabepflichtig)** — Protokoll in §13
+**Stand:** 2026-07-28 · **Zustand:** **vollständiger Production-Schreiblauf über Umfang B
+ausgeführt und bewiesen** (728 Objekte, 0 Fehler, 0 Kollisionen, Idempotenz 0) —
+Protokoll in §14 · Stufe-1-Probelauf in §13
 
 Kanonisches Dokument zu OP-24. Der Sprintstatus steht in
 [`CURRENT_STATE.md`](CURRENT_STATE.md) §12, der offene Punkt in
@@ -16,8 +16,9 @@ Sprint 20 hat den **Schreibpfad** repariert: eine betroffene Geografie entsteht
 nur noch aus Nachweisen, nie aus der politischen Ebene. Der **Altbestand** blieb
 bewusst unangetastet und trägt die alten Fehler weiter. Sprint 21 baut den
 Nachlauf, der diese Altfehler entfernt — **ohne** den Bestand pauschal zu
-überschreiben und **ohne** einen einzigen KI-Aufruf. Der Lauf selbst ist noch
-nicht gefahren; er braucht eine ausdrückliche Freigabe.
+überschreiben und **ohne** einen einzigen KI-Aufruf. Der Lauf ist inzwischen
+vollständig gefahren: Probelauf (§13) und freigegebener Hauptlauf über
+Umfang B (§14), beide bewiesen.
 
 ## 2 · Der Ausgangsbefund
 
@@ -567,6 +568,9 @@ Production gelaufen ist (OP-01, bekanntes Altrisiko).
 
 ### 13.12 · Nächste erforderliche Freigabe
 
+> **Überholt am 2026-07-28:** die Freigabe für **Umfang B** wurde erteilt, der Hauptlauf ist
+> ausgeführt und bewiesen — siehe §14. Dieser Abschnitt bleibt als historischer Stand erhalten.
+
 Der vollständige Lauf bleibt **gesperrt**. Erbeten wird genau eine Entscheidung:
 
 > **Umfang B** (Geografie **und** ehrliche Konfidenz, 740 Objekte, 30 Batches à
@@ -590,3 +594,159 @@ Gegenprobe.
   Netz-Guard greift). Verbindlich ist der CI-Lauf ohne Secrets.
 * Es wurde **kein** Code geändert, daher **keine** neue Testabdeckung nötig und
   **kein** Fehlerkorrektur-PR erforderlich.
+
+---
+
+## 14 · Stufe 2: vollständiger Production-Schreiblauf, Umfang B (2026-07-28)
+
+**Freigabe:** ausdrücklich erteilt für den verbleibenden Umfang B (Geografie **und**
+ehrliche Konfidenz). Nicht freigegeben und nicht ausgeführt: KI-Aufrufe, unverstandene/
+`pending`/`failed`-Objekte, Ebenen-/Fachgebiets-/Entitätsänderungen, manuelle Prüffälle,
+Migrationen, Cron-/Lock-/Budget-/Quellen-/Profil-/Matching-Änderungen, neue Briefings,
+Anwendungscode.
+
+### 14.1 · Startprüfung (12 von 12 erfüllt)
+
+| # | Prüfung | Ergebnis |
+|---|---|---|
+| 1 | Arbeitsbaum sauber | ✔ `git status` leer |
+| 2 | Lokaler Stand = `main` | ✔ `rev-list --count origin/main...HEAD` → `0 0` (`88582c1`) |
+| 3 | PR #156 und #157 in `main` | ✔ beide `merge-base --is-ancestor` |
+| 4 | Production auf `main`-Stand | ✔ Deployment `dpl_AcQywjJ4LRzbWFE28zPMiHvbJ3P1` `READY`, `target: production`, Commit `88582c1` |
+| 5 | Nachklassifikationsprozess = getesteter Stand | ✔ kein Diff zu #156, kein Codeeingriff seitdem |
+| 6 | Kein paralleler Sprint (Understanding/Classification/Storage/Nachklassifikation) | ✔ Remote nur `main` + dieser Doku-Branch; offene PRs (#148/#132/#117/#115/#112/#111/#88/#70/#8) berühren den Pfad nicht |
+| 7 | Kein Crawl/Understanding/Schreibprozess | ✔ letztes Rohdokument 08:02:59 UTC (~55 min alt), `max(updated_at)` 08:02:08, nächster Cron 10:00 UTC |
+| 8 | Keine aktiven Sperren | ✔ 0 in `pipeline_locks` (Tabelle) und 0 im Auth-Store |
+| 9 | Verbindung/Sicherheitsparameter aus dem Code | ✔ `production-schreibgate.js` (4 Pflichtvariablen gesetzt), `storage.js`-Pfade |
+| 10 | Vorschau schreibt nichts | ✔ `max(updated_at)` vor wie nach der Vorschau `08:02:08.534` |
+| 11 | 12 Probelaufobjekte unverändert erkannt | ✔ alle 12 in der frischen Vorschau `unveraendert: true`; genau 12 Objekte trugen die Markierung |
+| 12 | Keine unbekannten/manuellen Fälle im Schreibumfang | ✔ 0 manuelle Fälle; Schreiblauf zusätzlich per `--klassen`-Positivliste (6 Klassen) und `--ids` (728 Kennungen) strukturell begrenzt |
+
+### 14.2 · Phase 1 — frische Gesamtvorschau (rein lesend, 08:59 UTC)
+
+| Kennzahl | Wert | Bewertung |
+|---|---:|---|
+| gelesen | **1 249** | wie Stufe 1 |
+| unverstanden, ausgeschlossen | **482** | identisch |
+| geplant | **767** | identisch |
+| unverändert | **39** | = 27 bereits korrekte neue Objekte + **die 12 Probelaufobjekte** |
+| **Schreibvorgänge** | **728** | exakt 740 − 12, wie im Auftrag erwartet |
+| erwartete Batches (à 25) | **30** | |
+| Geografien entfernt | **562** | 570 − 8 (Probelauf) |
+| Geografie-Beleg gestärkt | **0** | beide bereits in Stufe 1 erledigt |
+| Ebenen / Fachgebiete / Entitäten | **0 / 0 / 0** | |
+| manuelle Prüffälle | **0** | |
+| erwartete KI-Aufrufe / Kosten | **0 / 0,00 USD** | |
+
+Fehlerklassen (sicher): 469 · 28 · 35 · 30 · 0 · 728 — jede Differenz zur Stufe-1-Vorschau
+ist exakt die Probelaufmenge (2 je Klasse; Konfidenzklasse −10, weil 2 Probelaufobjekte
+`medium → medium` behielten). `geo-belegt-geschuetzt` 8 → **10** = die zwei in Stufe 1
+gestärkten Belege. **Keine neue Fehlerklasse, keine unerklärte Abweichung.**
+
+### 14.3 · Phase 2 — wiederherstellbare Sicherung (09:02 UTC)
+
+Eigene Sicherung unmittelbar vor dem Lauf (JSONL, `backups/sprint21-hauptlauf-20260728/`,
+gitignored — Backups werden nie committet): je Objekt die Klassifikationsspalten
+(`affected_geographies`, `mentioned_geographies`, `classification_confidence` mit allen
+Herkunfts-/Zeitangaben und Nachklassifikationsmarkierungen, Ebene, `related_levels`,
+`event_type`, `tags`, `policy_field`, Entitäten, `understanding_status`,
+`confidence_score`, `created_at`, `updated_at`), der geplante Patch, Mandant als
+expliziter Nullwert (die Tabelle ist mandantenneutral, §10) und eine SHA-256-Prüfsumme
+je Objekt. **Keine Prosafelder, keine Dokumenttexte.** Kopfzeile mit Zeitpunkt, Commit
+`88582c1…`, Deployment `dpl_AcQywjJ4LRzbWFE28zPMiHvbJ3P1` und Gesamtprüfsumme.
+
+| Prüfung | Ergebnis |
+|---|---|
+| Objekte gesichert | **728**, IDs eindeutig, **identisch** mit der Vorschau-Schreibmenge (0 fehlend, 0 zusätzlich) |
+| Prüfsummen je Zeile | **728 von 728 gültig**, 0 Fehler |
+| Gesamtprüfsumme reproduzierbar | ✔ `5b2ba8d105e0e1116804613d0ee6c3695f5d31d1baacc14258f8067a8847a5b5` |
+| Rückweg | Restore = PATCH derselben drei Spalten je ID aus `zustand` — eindeutig in den vorhandenen Rückweg überführbar; **nicht ausgeführt** (Rückweg bleibt gegen Production ungetestet, OP-01) |
+
+Zusätzlich Fingerabdruck über die **521 nicht ausgewählten** Objekte gebildet:
+`64044fbf4595393596ea3cd31df7dd23` (MD5 über SHA-256 je vollständiger Zeile, sortiert).
+
+### 14.4 · Phase 3 — letzte Kollisionsprüfung (09:02:57 UTC)
+
+Alle 728 Objekte erneut gelesen und per Prüfsumme gegen die Sicherung verglichen:
+**0 Kollisionen**. 0 aktive Sperren (Tabelle + Store), kein neues Rohdokument,
+`max(updated_at)` unverändert. Modulgraph des Schreibpfads (18 Module) enthält
+**kein** `ai.js`, `llm-budget.js`, `llm-usage.js`. Erst danach wurde geschrieben.
+
+### 14.5 · Phase 4 — der Schreiblauf
+
+```
+--ids=<728 gesicherte Kennungen> --max=900 --batch=25 --fehlerquote=0
+--klassen=<die 6 sicheren Klassen> --ausfuehren
++ HELMUT_NACHKLASSIFIKATION_BESTAETIGT=ja + Production-Schreibgate (4 von 4)
+```
+
+**2026-07-28, 09:03:49–09:07:09 UTC (3 min 20 s), Exit 0.**
+
+| Größe | Wert |
+|---|---:|
+| geplant | 728 |
+| verarbeitet | 728 |
+| **geschrieben** | **728** |
+| Batches | **30** |
+| Fehler | **0** |
+| Kollisionen | **0** |
+| abgebrochen | **nein** |
+| KI-Aufrufe | **0** |
+
+### 14.6 · Phase 5 — vollständiger Readback (09:08 UTC)
+
+Alle 728 Objekte erneut gelesen, je Objekt Sicherung / geplanter Patch / Ist verglichen:
+
+| Beweisfrage | Ergebnis |
+|---|---|
+| Ist = Plan (alle Patchfelder, Konfidenz ohne den laufzeitgebundenen Zeitstempel) | **728 von 728**, 0 Abweichungen |
+| `nachklassifikation_am` im Lauffenster 09:03–09:08 | **728 von 728** |
+| Belegte Geografie verloren | **0** |
+| Ungeplante Geografie ergänzt | **0** |
+| Geografie-Einträge entfernt | **562** (exakt wie Vorschau) |
+| Ebene/Fachgebiete/Entitäten/übrige Klassifikationsfelder verändert | **0** — alle geschützten Felder byte-gleich zur Sicherung |
+| Klassenverteilung Ist (aus `nachklassifikation_klassen`) | 469 · 28 · 35 · 30 · 728 — **identisch zur Vorschau** |
+| `updated_at` fortgeschrieben | **0 von 728** — Befund N-1 bestätigt; Erfolgsnachweis über `nachklassifikation_am`, Prüfsummen und Feldvergleich, nicht über `updated_at` |
+
+### 14.7 · Phase 6 — tabellenweiter Unversehrtheitsnachweis
+
+| Beweisfrage | Ergebnis |
+|---|---|
+| Fingerabdruck der 521 nicht ausgewählten Objekte | vorher wie nachher **`64044fbf…`** — identisch |
+| Neue Objekte während des Laufs | **0** (Bestand 1 249 vorher wie nachher) |
+| Objekte mit `nachklassifikation_am` | **740 = 12 (Probelauf) + 728 (Hauptlauf)** — exakt |
+| Zusätzliche unerwartete Markierungen | **0** |
+| KI-Kosten | **0,00 USD** — `llm_usage` heute **0** Zeilen (vor wie nach dem Lauf) |
+
+### 14.8 · Phase 7 — Idempotenz (09:09 UTC)
+
+Vollständige frische Production-Vorschau: **767 geplant, 767 unverändert,
+0 Schreibvorgänge, 0 Batches, 0 KI-Aufrufe, 0 manuelle Prüffälle.** Verbleibend nur
+Meldungen: `fachgebiet-fehlt-ki` 594, `ebene-unbestimmt-ki` 78, `geo-belegt-geschuetzt` 10.
+Kein neuer Befund, kein zweiter Schreibmoduslauf.
+
+### 14.9 · Phase 8 — Auswirkungen (rein lesend)
+
+| Prüfung | Ergebnis |
+|---|---|
+| Matching | `matchProfileToKnowledgeObjects` gegen **alle 8** echten Production-Profile fehlerfrei. Strukturell: `matching.js` liest **keines** der drei geänderten Felder |
+| Briefings | **71** vorher wie nachher, letztes 08:16:31 UTC (**vor** dem Lauf), je Profil abrufbar (8 von 8, HTTP 200) — **0 neue** erzeugt |
+| Fehlgeschlagene Läufe (3 h) | **0** (1 regulärer Lauf, erfolgreich) |
+| Telemetrie | alle 293 Zeilen aus 08:02–08:16, **vor** dem Lauf; keine neuen Fehler |
+| Sperren / hängende Prozesse | **0** |
+| Erreichbarkeit | Stichprobe 3 von 3 über `getKnowledgeObjectById` (zusätzlich: alle 728 im Readback vollständig gelesen) |
+| Mandantentrennung | ✔ nur die mandantenneutrale Tabelle `knowledge_objects` beschrieben; `decisions`/Profile unberührt |
+| Regional zugeordnete Vorgänge | **573 → 11** (562 erfundene Einträge entfernt; verbleibend die belegten/geschützten) — geplante Wirkung des Sprints |
+
+Kein Crawl, kein Understanding-Lauf, kein Briefing für diese Prüfung gestartet.
+
+### 14.10 · Was der Hauptlauf beweist
+
+Der reale Production-Schreibpfad entspricht der Vorschau exakt — jetzt auch **unter
+Menge** (30 Batches, 728 Objekte, 3 min 20 s), ohne Fehler, ohne Kollision, ohne
+Streuverlust, ohne KI-Kosten, idempotent, ohne Betriebsstörung. **OP-24 ist damit
+inhaltlich erledigt.** Weiterhin offen (bekanntes Altrisiko, **kein** neues Risiko dieses
+Laufs): der Rückweg ist nie gegen Production gelaufen (OP-01).
+
+**Kein Codefehler gefunden, keine Codeänderung nötig, keine Migration, kein Flag,
+kein Cron, kein Lock, keine Quelle, kein Mandantenprofil verändert.**
