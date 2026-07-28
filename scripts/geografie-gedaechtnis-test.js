@@ -514,7 +514,11 @@ check("D7 keine neue Spalte, keine neue Tabelle, keine neue Migration", (() => {
   // 20260728_embedding_shadow* ist die geografie-freie Embedding-Shadow-Tabelle
   // aus Sprint 22C1 (Geografie ist dort ausdrücklich NICHT Teil des Eingangs,
   // testgesichert in embedding-contract-test.js / embedding-backfill-test.js I2).
-  const fremdeSprints = /^20260728_embedding_shadow(_rollback)?\.sql$/;
+  // 20260728_matching_audit* ist die geografie-freie Matching-Auditstruktur aus
+  // Sprint 23B-1: sie speichert Kennungen, Hashes und Ränge; eine geografische
+  // Dimension existiert im Rezept legacy_relevance_v1 nicht und bekommt deshalb
+  // ausdrücklich KEINE Spalte (testgesichert in matching-audit-test.js T15f).
+  const fremdeSprints = /^20260728_(embedding_shadow|matching_audit)(_rollback)?\.sql$/;
   return !migrationen.some((f) => !fremdeSprints.test(f) && /2026072[89]|20260730|geograf/i.test(f));
 })());
 
