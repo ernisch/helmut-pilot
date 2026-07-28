@@ -1277,7 +1277,7 @@ Sicherung vor einem Struktur-Rollback:
 | Legacy-Gegenbeweis Branch ↔ `main` (Merkmalsvektoren, Kosinuswerte, Ranking, `matched_features`, geschriebene Zeilen, Rückgabewert über 60 Wissensobjekte, 4 Grenzwerte, 4 Filterkombinationen) | **253 identisch, 0 abweichend** |
 | Browser-Smoke | lokal **nicht nötig** (keine UI-Änderung); im CI-Gate dennoch grün |
 | **Migration in isolierter PostgreSQL angewendet** (§23.1) | leere Struktur ✅ · Wiederholung ✅ · Bestand mit 246 Zeilen **byte-identisch** ✅ · 11 Constraint-/Trigger-Prüfungen ✅ · 9 RLS-Rollenprüfungen ✅ · Duplikat → fail-closed ohne Halbzustand ✅ · Rollback vollständig ✅ |
-| CI-Gate (PR #169, Lauf `30389260233`) | **beide Pflicht-Checks grün** — `Syntax + Offline-Suiten` und `Browser-/Mobile-Smoke (Chromium)` |
+| CI-Gate (PR #169) | **beide Pflicht-Checks grün** — `Syntax + Offline-Suiten` und `Browser-/Mobile-Smoke (Chromium)`; zuletzt Lauf `30389914420` auf dem Codestand `3ff2f18`, davor Lauf `30389260233` |
 
 Zwei sprintbedingte Testpflege-Änderungen, beide dokumentiert:
 

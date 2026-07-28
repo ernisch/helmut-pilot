@@ -104,7 +104,7 @@ Erfolgskriterien erfüllt**) ·
 > 0 Abweichungen.**
 > **Tests:** neue Suite `matching-audit-test.js` **137/137** · **Offline-Suite 177/177** in 58 s ·
 > Gegenbeweis auf unverändertem `main` **176/176** · **CI-Gate von PR #169: beide Pflicht-Checks
-> grün** (Lauf `30389260233`).
+> grün** (Lauf `30389914420` auf dem Codestand `3ff2f18`; davor `30389260233`).
 > **Die Migration wurde nicht nur statisch geprüft, sondern in einer isolierten lokalen
 > PostgreSQL wirklich angewendet:** leere Struktur ✅, zweiter Lauf derselben Migration ✅,
 > Bestand mit 246 Ergebniszeilen **byte-identisch vorher/nachher** (alle 14 neuen Spalten leer,
