@@ -365,11 +365,19 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 - **Freigabe:** überwiegend **NEIN** (Code-Hygiene via normalem PR-Prozess); **JA** nur für DST/Cron und Datenbereinigungen.
 
 #### OP-24 · Geografie des Altbestands nachklassifizieren (neu, Sprint 20)
-- **Status:** **Stufe 1 (Probelauf) erfolgreich, vollständiger Schreiblauf ausstehend**
-  (Sprint 21, 2026-07-28). Der Prozess ist gebaut, getestet (101/101 · 21/21 Mutationen rot),
-  read-only gegen Production vermessen **und am 2026-07-28, 08:25:13–08:25:21 UTC erstmals
-  im Schreibmodus gegen Production gelaufen — begrenzt auf 12 namentlich genannte Objekte**.
-  Kanonisch: [`nachklassifikation-altbestand.md`](nachklassifikation-altbestand.md) §13.
+- **Status:** **inhaltlich erledigt — vollständiger Production-Schreiblauf (Umfang B) am
+  2026-07-28, 09:03:49–09:07:09 UTC ausgeführt und bewiesen.** Nach dem Stufe-1-Probelauf
+  (12 Objekte, 08:25 UTC) hat der freigegebene Hauptlauf die verbleibenden **728** Objekte in
+  **30 Batches** korrigiert: **0 Fehler, 0 Kollisionen, Readback 728/728 exakt wie die
+  Vorschau, 0 belegte Geografien verloren, Fingerabdruck der 521 übrigen Objekte identisch,
+  Idempotenzvorschau 0 Restschreibvorgänge, 0 KI-Aufrufe / 0,00 USD.** Damit sind alle
+  erfundenen Ebenen-Ableitungen entfernt und alle Geografie-Konfidenzen ehrlich
+  (regional zugeordnete Vorgänge 573 → 11, verbleibend nur belegte/geschützte).
+  Der Prozess ist gebaut, getestet (101/101 · 21/21 Mutationen rot) und bleibt für künftige
+  Bestandsfehler wiederholbar (Vorschau als Standard). Offen bleibt **nur** das bekannte
+  Altrisiko OP-01: der Rückweg ist nie gegen Production gelaufen (er wurde nicht gebraucht).
+  Kanonisch: [`nachklassifikation-altbestand.md`](nachklassifikation-altbestand.md) §14
+  (Hauptlauf) und §13 (Probelauf).
   Sprint 20 hat den **Schreibpfad** korrigiert: eine betroffene Geografie
   entsteht nur noch aus Nachweisen, nie aus `decision_level`. Der **Altbestand ist bewusst
   unangetastet geblieben** (Sprintregel 12).
@@ -409,21 +417,19 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   (Verhalten von `saveKnowledgeObjectEnrichment`, kein Defekt) — der Nachweis steht in
   `classification_confidence.nachklassifikation_am`; wer den Hauptlauf gegenmessen will,
   darf **nicht** `updated_at` benutzen.
-- **Fehlender Schritt:** **nur noch der freigegebene vollständige Production-Schreiblauf**
-  (Umfang B, 740 Objekte, 30 Batches — oder Umfang A, 572). Stufe 1 hat die Korrektheit des
-  Schreibpfads belegt, **nicht** das Verhalten unter Menge (30 Batches statt 1) und nicht den
-  Rückweg (nie gegen Production gelaufen, OP-01). Alt-Einträge
-  tragen keine Herkunft und gelten als `bestand-alt` — sie sind von jedem echten Nachweis
-  (Rang ≥ `ki`) korrigierbar, gehen aber ohne Nachweis nicht verloren (fail closed).
+- **Fehlender Schritt:** **erledigt am 2026-07-28** — der vollständige Schreiblauf (Umfang B)
+  ist gelaufen und hat auch das Verhalten **unter Menge** belegt (30 Batches, 728 Objekte,
+  3 min 20 s, 0 Fehler). Nicht belegt bleibt allein der Rückweg (nie gegen Production
+  gelaufen, OP-01 — er wurde nicht gebraucht). Formal abgeschlossen ist der Punkt mit dem
+  Merge des Dokumentations-PR.
 - **Abhängigkeiten:** Sprint 20 ist gemergt (#155) und deployt. Sprint 21 muss gemergt sein.
 - **Risiko:** mittel — es ist ein **Production-Schreiblauf** über den Bestand. Ohne KI-Kosten
   (der Deriver ist rein). Vorher/Nachher-Messung und Rückweg liegen vor
   ([`nachklassifikation-altbestand.md`](nachklassifikation-altbestand.md) §11/§12).
   Dämpfend: `affected_geographies` und `political_level` haben heute **keinen**
   Laufzeitkonsumenten — `matching.js` liest beide nicht.
-- **Freigabe:** **JA** (Production-Datenänderung) — Freigabeschritte in §12 des kanonischen
-  Dokuments. Schritt 3 (Probelauf) ist **erledigt**; offen ist genau eine Entscheidung:
-  **Umfang A oder B** für den Hauptlauf (§13.12).
+- **Freigabe:** war erforderlich und **wurde erteilt** (Umfang B, 2026-07-28) — der Hauptlauf
+  ist damit ausgeführt (§14 des kanonischen Dokuments). Keine weitere Freigabe offen.
 
 ---
 
