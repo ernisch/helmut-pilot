@@ -1,6 +1,7 @@
 # ARCHITECTURE — Systemkarte Helmut
 
-**Letzte Aktualisierung:** 2026-07-25 · **verankert auf `main` @ `035898b`**
+**Letzte Aktualisierung:** 2026-07-28 (§7d ergänzt: Matching-Auditpersistenz,
+Roadmap-Punkt 23) · **verankert auf `main` @ `53893fa`**
 
 > **Zweck:** Orientierung, welche Datei für welche Aufgabe zuständig ist. **Keine**
 > Erklärung jeder Datei. Diese Datei wird nur aktualisiert, wenn sich die Architektur
@@ -132,9 +133,11 @@ einen Zustand ab (gesund · eingeschränkt · ausgefallen · inaktiv · unbekann
   still `[]`/Teilmengen zu liefern (Befund W-1). `[]` heißt ausschließlich
   „erfolgreich gelesen, null Zeilen".
 - Migrationen: `supabase/migrations/`. **Jede Migration hat eine
-  `…_rollback.sql`-Datei.** Nicht angewandt: **nur noch `20260720`**
-  (`20260727` angewendet am 2026-07-27; `20260721` bereits seit 2026-07-16 —
-  die frühere Angabe war falsch und ist in Production gegengeprüft).
+  `…_rollback.sql`-Datei.** Nicht angewandt: **`20260720`** und
+  **`20260728_matching_audit`** (Sprint 23B-1, freigabepflichtig)
+  (`20260727` angewendet am 2026-07-27; `20260728_embedding_shadow` angewendet am
+  2026-07-28; `20260721` bereits seit 2026-07-16 — die frühere Angabe war falsch
+  und ist in Production gegengeprüft).
 
 ## 7 · Crawler und Verarbeitung
 
@@ -238,6 +241,38 @@ keine neue Spalte, keine zweite Geografiestruktur:
 Kostenwirkung: **null zusätzliche KI-Aufrufe**. `affected_geographies` steht seit
 Sprint 2 im Antwortschema des ohnehin stattfindenden Understanding-Calls und wurde
 bisher schlicht verworfen.
+
+### 7d · Matching: Ergebnis und Herleitung sind getrennt (seit 2026-07-28, Roadmap-Punkt 23)
+
+**Ein Matching-Ergebnis beantwortet „was gilt jetzt". Ein Matching-Lauf beantwortet
+„wie kam es dazu". Beides steht in getrennten Tabellen.** Vorher gab es nur die
+erste Frage: `matching_results` wurde bei jedem Lauf überschrieben, ohne Lauf-ID,
+ohne Profil- oder Vorgangsstand, ohne Rezeptversion und ohne Berechnungszeitpunkt —
+ein Ergebnis von gestern war weder erklärbar noch reproduzierbar
+([`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md)).
+
+| Baustein | Wo | Regel |
+|---|---|---|
+| **Operative Projektion** | `matching_results` | Unverändert der einzige Lesepfad des Produkts (`lage.js`). Bestehende Spalten, Kennung `mr-<mandant>-<vorgang>` und Schreibpfad sind **nicht** angetastet; ergänzt sind nur additive Auditspalten. Aus der Trefferliste gefallene Zeilen werden `aktuell=false` statt gelöscht |
+| **Auditprotokoll** | `matching_runs` (neu) | Eine Zeile je **verändertem** Lauf, append-only. Nach `status='vollstaendig'` **fachlich unveränderlich** (Trigger `helmut_matching_run_immutable`). Von keinem Produktpfad gelesen |
+| **Drei Versionsachsen** | `engine_version` · `rezept_version` · `vektor_version` | WER gerechnet hat · NACH WELCHER Regel · MIT WELCHER Vektordarstellung. Getrennt, damit ein späterer Algorithmuswechsel alte Ergebnisse nicht überschreibt und nicht mit ihnen verwechselt werden kann |
+| **Datenvertrag** | `matching-contract.js` | Rein: kanonische Serialisierung, Eingabehash je Wissensobjekt, **Eingabefingerabdruck**, deterministische Rangliste. Kennt kein Matching-Verfahren |
+| **Audit-Schnittstelle** | `matching-audit.js` | **Algorithmusunabhängig.** Nimmt eine fachliche Laufbeschreibung entgegen und erledigt Sperre, Idempotenz, Laufzeile, Veröffentlichung, Fehlerzustand. Eine künftige Matching-Engine benutzt dieselbe Schnittstelle |
+| **Begründung** | `matching-begruendung.js` | Deterministisch, **ohne KI**, höchstens zwei Gründe, feste Priorität (Ausschuss → Thema → Wahlkreis → Partei). **Ohne Beleg kein Satz** (`null`). Wird gespeichert, aber noch nicht angezeigt |
+| **Idempotenz** | Eingabefingerabdruck + Teilindex | Identischer fachlicher Eingang → **keine** neue Generation, **0** Schreibvorgänge auf der Projektion, genau **1** UPDATE am Lauf. Datenbankseitig erzwungen (`where status='vollstaendig'`) |
+| **Atomizität** | `helmut_publish_matching_run` (`SECURITY INVOKER`) | Laufabschluss, Projektion und Ablösung sind **ein Aufruf und damit eine Transaktion** — entweder alles oder nichts. Eine bloße Schreibreihenfolge genügt **nicht**: `matching_results` wird in place überschrieben, ein Abbruch nach dem Upsert hätte den letzten vollständigen Stand bereits zerstört. Die Funktion validiert Mandant, Lauf und jede Zeile selbst und serialisiert je Mandant über einen Advisory-Lock |
+| **Projektions-Riegel** | Trigger `matching_results_run_complete` | Eine Ergebniszeile mit `run_id` darf **nur** auf einen `vollstaendig`-Lauf verweisen — datenbankseitig erzwungen, nicht bloß im Code zugesichert. Ohne Auditpersistenz (`run_id` NULL) greift er nicht |
+| **Sperre** | `pipeline_locks`, `matching-<mandant>` | Kein zweites Sperrsystem. Schließt die Lücke, dass der **Lage-Pfad** bisher ungesperrt matchte. Unterschiedliche Profile laufen weiter parallel |
+| **Semantik-Trennung** | testgesichert | `knowledge_object_embeddings` wird **nicht** gelesen; `legacy_relevance_v1` ≠ `ko-kanon-1`; semantische Ähnlichkeit ist **kein** Relevanzsignal |
+
+**Rollout-Grenze:** `HELMUT_MATCHING_AUDIT`, **Default AUS**. Ohne das Flag ist der
+gesamte Auditpfad inert — keine Sperre, kein Lese- oder Schreibzugriff, keine neue
+Fehlerquelle, byte-identische Ergebniszeilen. Migration
+`20260728_matching_audit.sql` (+ Rollback) ist **freigabepflichtig und noch nicht
+angewendet**.
+
+Kostenwirkung: **null zusätzliche KI-Aufrufe.** Die Schreiblast **sinkt** — ein
+identischer Zweitlauf schrieb bisher 20 wirkungslose UPDATEs, jetzt eines.
 
 ## 8 · Briefing, Lage, Radar, Büro
 
