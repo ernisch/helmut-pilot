@@ -1,0 +1,3942 @@
+{
+ "titel": "Sprint 22B — repräsentative Testmenge + Goldstandard für den Embedding-Qualitätsvergleich",
+ "erstellt": "2026-07-28",
+ "herkunft": "read-only Export aller 772 verstandenen Wissensobjekte aus Production (~14:30 UTC); Auswahl über exakte Headline-Duplikate, lokale Token-Überlappung (Jaccard), dokumentierte B4-3-/B4-4-Fälle (Befundakte CSD), Regional-, Ebenen- und Geografie-Fallgruppen. Keine Production-Änderung.",
+ "goldstandard_regel": "Der Goldstandard wurde am 2026-07-28 VOR jeder Modellauswertung festgelegt und darf nicht nachträglich an Modellergebnisse angepasst werden.",
+ "klassen": [
+  "gleicher-vorgang",
+  "wahrscheinliches-duplikat",
+  "aktualisierung",
+  "thematisch-verwandt",
+  "aehnliche-sprache-anderer-vorgang",
+  "nicht-verwandt",
+  "unklar"
+ ],
+ "fallgruppen_legende": {
+  "1": "bestätigte/sehr wahrscheinliche Duplikate",
+  "2": "derselbe Vorgang, stark unterschiedliche Formulierung",
+  "3": "verwandt, aber eindeutig verschieden",
+  "4": "sehr ähnliche Texte, unterschiedliche politische Handlung",
+  "5": "Aktualisierungen desselben Vorgangs",
+  "6": "verschiedene Verfahrensstufen desselben Vorhabens",
+  "7": "gleiche Akteure, unterschiedliche Themen",
+  "8": "gleiches Thema, unterschiedliche Akteure",
+  "9": "Bundestags-/Bundesvorgänge",
+  "10": "Berliner Vorgänge",
+  "11": "Brandenburger Vorgänge",
+  "12": "Vorgänge ohne Fachgebiet",
+  "13": "politische Ebene unknown",
+  "14": "korrigierte Geografie (Sprint 20/21)",
+  "15": "negative Kontrolle: ähnliches Vokabular, andere Bedeutung"
+ },
+ "hinweise": [
+  "Brandenburg ist im verstandenen Bestand nur mit einem echten Landes-Objekt vertreten (ko-vg-brandenburg) — die übrigen Brandenburg-Treffer sind Bundes-Sammelvorgänge; dokumentierte Bestandsgrenze, kein Auswahlfehler.",
+  "238 der 772 verstandenen Objekte haben eine leere headline (236 davon trotzdem berechtigt über den Kerntext); die Testmenge enthält bewusst mehrere solcher Objekte.",
+  "ko-vg-tagesspiegel-20260519-f29ebd (B4-4-Restfall) ist NICHT enthalten: understanding_status ist nicht complete, damit nicht embedding-berechtigt."
+ ],
+ "objekte": [
+  {
+   "fallgruppen": [
+    1,
+    2,
+    9,
+    12
+   ],
+   "id": "ko-vg-netzpolitik",
+   "vorgang_id": "vg-netzpolitik",
+   "headline": "Geheimdienstreform: Zeitenwende für Spione",
+   "display_title": "Bund beschliesst umfassende Reform der Nachrichtendienste",
+   "was_ist_passiert": "Bundesregierung/Parlament haben eine umfassende Reform der Nachrichtendienste angekündigt bzw. diskutiert, die Aufgaben, Befugnisse und Strukturen der Inlands- und Auslandsdienste verändert. Kritik und Warnungen aus Datenschutz- und Bürgerrechtskreisen wurden öffentlich geäußert; Debatten über Kontrolle, Transparenz und rechtliche Grenzen begleiten den Reformprozess.",
+   "warum_wichtig": "Reform verändert Überwachungsbefugnisse und Kontrollmechanismen, was direkte Auswirkungen auf Grundrechte, Koalitionsmehrheiten und die Arbeit im Innen- bzw. Geheimdienstausschuss hat. Das Mandat ist in parlamentarischer Kontrolle und parlamentarischer Debatte unmittelbar betroffen.",
+   "event_type": "gesetzentwurf",
+   "decision_entities": [
+    {
+     "name": "Geheimdienstausschuss",
+     "type": "committee",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "Bundesministerium des Innern und für Heimat",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "Bundesministerium der Justiz und für Verbraucherschutz",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "Bundesregierung",
+     "type": "government",
+     "entity_id": "government-bund",
+     "confidence": "high"
+    }
+   ],
+   "parteien": [
+    "Bundesregierung"
+   ],
+   "ausschuesse": [
+    "Geheimdienstausschuss"
+   ],
+   "mentioned_parties": [],
+   "mentioned_committees": [],
+   "mentioned_locations": [],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "bund",
+   "created_at": "2026-07-17T07:35:07.962297+00:00"
+  },
+  {
+   "fallgruppen": [
+    1,
+    2,
+    9,
+    12
+   ],
+   "id": "ko-vg-geheimdienstreform",
+   "vorgang_id": "vg-geheimdienstreform",
+   "headline": "Geheimdienstreform: Zeitenwende für Spione",
+   "display_title": "Bund regelt Geheimdienste umfassend neu",
+   "was_ist_passiert": "Eine Reform der deutschen Geheimdienste wurde veröffentlicht und als grundlegende Neuordnung beschrieben.",
+   "warum_wichtig": "Reform verändert Befugnisse und Kontrolle der Nachrichtendienste; relevant für Sicherheits-, Innen- und Parlamentarische Aufsichtsthemen des Mandats.",
+   "event_type": "gesetzentwurf",
+   "decision_entities": [
+    {
+     "name": "Parlamentarische Kontrollgremien",
+     "type": "committee",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "Bundesministerium des Innern und für Heimat",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "Bundesregierung",
+     "type": "government",
+     "entity_id": "government-bund",
+     "confidence": "high"
+    }
+   ],
+   "parteien": [
+    "Bundesregierung"
+   ],
+   "ausschuesse": [
+    "Parlamentarische Kontrollgremien"
+   ],
+   "mentioned_parties": [],
+   "mentioned_committees": [],
+   "mentioned_locations": [],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "bund",
+   "created_at": "2026-07-21T04:03:05.216881+00:00"
+  },
+  {
+   "fallgruppen": [
+    1,
+    9,
+    12
+   ],
+   "id": "ko-vg-verhindern-20260707-952b53",
+   "vorgang_id": "vg-verhindern-20260707-952b53",
+   "headline": "SPD will Kürzungen in der Pflege verhindern",
+   "display_title": "SPD fordert Erhalt der Pflegeausgaben",
+   "was_ist_passiert": "Die SPD hat öffentlich erklärt, Kürzungen in der Pflege zu verhindern und sich gegen geplante Ausgabenkürzungen im Pflegesektor positioniert.",
+   "warum_wichtig": "Direkte Auswirkung auf Sozialhaushalt und Pflegeversorgungsqualität; potenzielle Konflikte in Haushaltsdebatten und Koalitionsverhältnissen.",
+   "event_type": "sonstiges",
+   "decision_entities": [],
+   "related_entities": [
+    {
+     "name": "SPD",
+     "type": "party",
+     "entity_id": "party-spd",
+     "confidence": "high"
+    }
+   ],
+   "parteien": [
+    "SPD"
+   ],
+   "ausschuesse": [],
+   "mentioned_parties": [
+    "SPD"
+   ],
+   "mentioned_committees": [],
+   "mentioned_locations": [],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "bund",
+   "created_at": "2026-07-27T04:06:18.488262+00:00"
+  },
+  {
+   "fallgruppen": [
+    1,
+    9,
+    12
+   ],
+   "id": "ko-vg-westfälische",
+   "vorgang_id": "vg-westfälische",
+   "headline": "SPD will Kürzungen in der Pflege verhindern",
+   "display_title": "SPD fordert Verhinderung von Pflegekürzungen",
+   "was_ist_passiert": "Die SPD hat öffentlich erklärt, dass sie Kürzungen in der Pflege ablehnen und solche Einsparungen verhindern will.",
+   "warum_wichtig": "Betrifft Sozialpolitik und Gesundheitspolitik sowie mögliche Haushaltsentscheidungen und die Arbeit des Gesundheitsausschusses.",
+   "event_type": "unknown",
+   "decision_entities": [
+    {
+     "name": "Ausschuss für Gesundheit",
+     "type": "committee",
+     "entity_id": "committee-bt-gesundheit",
+     "confidence": "medium"
+    },
+    {
+     "name": "Bundesministerium für Gesundheit",
+     "type": "ministry",
+     "entity_id": "ministry-bmg",
+     "confidence": "high"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "SPD",
+     "type": "party",
+     "entity_id": "party-spd",
+     "confidence": "high"
+    }
+   ],
+   "parteien": [
+    "SPD"
+   ],
+   "ausschuesse": [
+    "Gesundheitsausschuss"
+   ],
+   "mentioned_parties": [
+    "SPD"
+   ],
+   "mentioned_committees": [
+    "Gesundheitsausschuss"
+   ],
+   "mentioned_locations": [],
+   "tags": [
+    "Pflege",
+    "Sozialpolitik",
+    "Gesundheitspolitik",
+    "Haushaltsentscheidungen",
+    "Pflegeeinrichtungen"
+   ],
+   "policy_field": [
+    "Gesundheit"
+   ],
+   "political_level": "bund",
+   "created_at": "2026-07-09T04:02:47.72493+00:00"
+  },
+  {
+   "fallgruppen": [
+    1,
+    12
+   ],
+   "id": "ko-vg-generalsekretär",
+   "vorgang_id": "vg-generalsekretär",
+   "headline": "Guterres besucht Syrien",
+   "display_title": "UN‑Generalsekretär besucht Syrien",
+   "was_ist_passiert": "Der UN-Generalsekretär António Guterres hat Damaskus besucht. Es ist der erste Besuch eines amtierenden UN-Generalsekretärs in Syrien seit mehr als 15 Jahren.",
+   "warum_wichtig": "Der Besuch signalisiert eine mögliche Neuaufnahme diplomatischer Kontakte mit der syrischen Regierung und kann internationale Vermittlungsbemühungen sowie Sanktionen und humanitäre Zugänge beeinflussen. Für außen- und sicherheitspolitische Positionierung von Abgeordneten verändert sich die Debattenlage zu Syrien.",
+   "event_type": "sonstiges",
+   "decision_entities": [],
+   "related_entities": [
+    {
+     "name": "Vereinte Nationen",
+     "type": "organization",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "parteien": [],
+   "ausschuesse": [],
+   "mentioned_parties": [],
+   "mentioned_committees": [],
+   "mentioned_locations": [
+    "Damaskus",
+    "Syrien"
+   ],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "international",
+   "created_at": "2026-07-25T16:04:42.923779+00:00"
+  },
+  {
+   "fallgruppen": [
+    1,
+    12
+   ],
+   "id": "ko-vg-generalsekretärs",
+   "vorgang_id": "vg-generalsekretärs",
+   "headline": "Guterres besucht Damaskus",
+   "display_title": "UN-Generalsekretär besucht Damaskus",
+   "was_ist_passiert": "UN-Generalsekretär António Guterres hat Damaskus besucht. Es ist der erste Besuch eines UN-Generalsekretärs in Syrien seit mehr als 15 Jahren.",
+   "warum_wichtig": "Erstmals seit langer Zeit offizieller UN-Kontakt auf höchster Ebene mit der syrischen Führung; kann Einfluss auf diplomatische Initiative, humanitäre Zugänge und Mandatsfragen haben.",
+   "event_type": "sonstiges",
+   "decision_entities": [
+    {
+     "name": "Auswärtiges Amt",
+     "type": "ministry",
+     "entity_id": "ministry-auswaertiges-amt",
+     "confidence": "high"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "Vereinte Nationen",
+     "type": "organization",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "parteien": [],
+   "ausschuesse": [],
+   "mentioned_parties": [],
+   "mentioned_committees": [],
+   "mentioned_locations": [
+    "Damaskus, Syrien"
+   ],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "international",
+   "created_at": "2026-07-26T04:03:00.304855+00:00"
+  },
+  {
+   "fallgruppen": [
+    1,
+    7,
+    12
+   ],
+   "id": "ko-vg-möglichkeiten",
+   "vorgang_id": "vg-möglichkeiten",
+   "headline": "BMAS veroeffentlicht Statement zur Behinderung",
+   "display_title": "BMAS veroeffentlicht Stellungnahme zu Behinderung und Teilhabe",
+   "was_ist_passiert": "Das Bundesministerium für Arbeit und Soziales (BMAS) hat am 6. Juli 2026 eine Stellungnahme mit dem Titel \"Behinderung bedeutet andere Wege, aber nicht weniger Möglichkeiten\" veroeffentlicht.",
+   "warum_wichtig": "Relevanz fuer Sozial- und Teilhabepolitik; mögliche Auswirkungen auf Diskurs zu Inklusion und Leistungsschutz. Thema berührt Ausschuss- und Wahlkreisinteressen bei sozialpolitischen Vorhaben.",
+   "event_type": "bericht",
+   "decision_entities": [
+    {
+     "name": "Bundesministerium für Arbeit und Soziales",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "Bundesministerium für Arbeit und Soziales",
+     "type": "ministry",
+     "entity_id": "ministry-bmas",
+     "confidence": "high"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "Bundesregierung",
+     "type": "government",
+     "entity_id": "government-bund",
+     "confidence": "high"
+    },
+    {
+     "name": "Sozialverbände",
+     "type": "organization",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "parteien": [
+    "Bundesregierung"
+   ],
+   "ausschuesse": [],
+   "mentioned_parties": [],
+   "mentioned_committees": [],
+   "mentioned_locations": [],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "bund",
+   "created_at": "2026-07-19T16:04:59.607858+00:00"
+  },
+  {
+   "fallgruppen": [
+    1,
+    12
+   ],
+   "id": "ko-vg-möglichkeiten-20260706-c99e6b",
+   "vorgang_id": "vg-möglichkeiten-20260706-c99e6b",
+   "headline": "",
+   "display_title": "",
+   "was_ist_passiert": "Das Bundesministerium für Arbeit und Soziales (BMAS) veröffentlichte am 6. Juli 2026 eine Stellungnahme/Veröffentlichung mit dem Titel ‚Behinderung bedeutet andere Wege, aber nicht weniger Möglichkeiten‘.",
+   "warum_wichtig": "BMAS setzt eine öffentliche thematische Priorität auf Inklusion/Behinderungspolitik; dies kann Debatten über Förderprogramme, Barrierefreiheit und Budgetverteilung anstoßen und hat direkten Bezug zu sozialpolitischen Initiativen des Bundestags.",
+   "event_type": "bericht",
+   "decision_entities": [
+    {
+     "name": "Bundesministerium für Arbeit und Soziales",
+     "type": "ministry",
+     "entity_id": "ministry-bmas",
+     "confidence": "high"
+    }
+   ],
+   "related_entities": [],
+   "parteien": [],
+   "ausschuesse": [],
+   "mentioned_parties": [],
+   "mentioned_committees": [],
+   "mentioned_locations": [],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "bund",
+   "created_at": "2026-07-27T04:06:17.924889+00:00"
+  },
+  {
+   "fallgruppen": [
+    1,
+    15,
+    12
+   ],
+   "id": "ko-vg-bedeutet",
+   "vorgang_id": "vg-bedeutet",
+   "headline": "Hamas-Führung gewählt; BMAS veröffentlicht Inklusionskommunikation",
+   "display_title": "Hamas wählt neuen Führer; BMAS veröffentlicht Inklusionsposition",
+   "was_ist_passiert": "Zwei Meldungen: Das Bundesministerium für Arbeit und Soziales (BMAS) veröffentlichte am 6. Juli 2026 eine Erklärung zum Thema Behinderung mit dem Titel ‚Behinderung bedeutet andere Wege, aber nicht weniger Möglichkeiten‘. Am 21. Juli 2026 berichtete die Tagesschau über die Wahl eines neuen Führers der Hamas und analysierte die politischen Folgen.",
+   "warum_wichtig": "Sicherheits- und außenpolitische Risiken durch Führungswechsel bei Hamas betreffen außenpolitische Debatten und mögliche sicherheitspolitische Reaktionen. BMAS-Kommunikation zur Inklusion tangiert Binnenpolitik, Soziales und die Positionierung in Sozial- und Behindertenpolitik des Mandats.",
+   "event_type": "sonstiges",
+   "decision_entities": [
+    {
+     "name": "Ausschuss für Auswärtiges",
+     "type": "committee",
+     "entity_id": "committee-bt-auswaertiges",
+     "confidence": "medium"
+    },
+    {
+     "name": "Ausschuss für Arbeit und Soziales",
+     "type": "committee",
+     "entity_id": "committee-bt-arbeit-soziales",
+     "confidence": "high"
+    },
+    {
+     "name": "Bundesministerium für Arbeit und Soziales",
+     "type": "ministry",
+     "entity_id": "ministry-bmas",
+     "confidence": "high"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "Bundesregierung",
+     "type": "government",
+     "entity_id": "government-bund",
+     "confidence": "high"
+    },
+    {
+     "name": "Hamas",
+     "type": "organization",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "parteien": [
+    "Bundesregierung"
+   ],
+   "ausschuesse": [
+    "Auswärtiger Ausschuss",
+    "Ausschuss für Arbeit und Soziales"
+   ],
+   "mentioned_parties": [],
+   "mentioned_committees": [],
+   "mentioned_locations": [],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "bund",
+   "created_at": "2026-07-21T20:04:30.248911+00:00"
+  },
+  {
+   "fallgruppen": [
+    1,
+    4,
+    12
+   ],
+   "id": "ko-vg-beschluss",
+   "vorgang_id": "vg-beschluss",
+   "headline": "GVK-Reform Beschluss (Phoenix.de)",
+   "display_title": "Bund beschliesst Reform der Grundsicherung (GVK)",
+   "was_ist_passiert": "Es liegt ein Beschluss zur Reform der Grundsicherung/gesetzlichen Vorgaben (GVK-Reform) vor, veröffentlicht am 6. Juli 2026 auf Phoenix.de.",
+   "warum_wichtig": "Reform ändert Leistungs- und Verwaltungsregeln für Grundsicherung; beeinflusst Sozialpolitik, Haushaltsbelastung und kommunale Umsetzung für dieses Mandat unmittelbar.",
+   "event_type": "bericht",
+   "decision_entities": [
+    {
+     "name": "Ausschuss für Arbeit und Soziales",
+     "type": "committee",
+     "entity_id": "committee-bt-arbeit-soziales",
+     "confidence": "medium"
+    },
+    {
+     "name": "Bundesministerium für Arbeit und Soziales",
+     "type": "ministry",
+     "entity_id": "ministry-bmas",
+     "confidence": "high"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "SPD",
+     "type": "party",
+     "entity_id": "party-spd",
+     "confidence": "high"
+    },
+    {
+     "name": "CDU/CSU",
+     "type": "party",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "Bündnis 90/Die Grünen",
+     "type": "party",
+     "entity_id": "party-gruene",
+     "confidence": "high"
+    },
+    {
+     "name": "FDP",
+     "type": "party",
+     "entity_id": "party-fdp",
+     "confidence": "high"
+    }
+   ],
+   "parteien": [
+    "SPD",
+    "CDU/CSU",
+    "Bündnis 90/Die Grünen"
+   ],
+   "ausschuesse": [
+    "Sozialausschuss"
+   ],
+   "mentioned_parties": [
+    "FDP"
+   ],
+   "mentioned_committees": [],
+   "mentioned_locations": [],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "bund",
+   "created_at": "2026-07-22T04:02:37.783376+00:00"
+  },
+  {
+   "fallgruppen": [
+    1,
+    4,
+    12
+   ],
+   "id": "ko-vg-beschluss-20260706-e4370f",
+   "vorgang_id": "vg-beschluss-20260706-e4370f",
+   "headline": "GVK-Reform Beschluss",
+   "display_title": "Bundestag beschliesst Reform der Geschäftsverteilungsklausel",
+   "was_ist_passiert": "Ein Beschluss zur Reform der Geschäftsverteilungsklausel (GVK) wurde gefasst, laut Bericht auf Phoenix.de am 6. Juli 2026.",
+   "warum_wichtig": "Ändert Zuständigkeits- und Verfahrensregeln, kann Ausschusszuständigkeiten und Gesetzgebungsprozesse im Bundestag beeinflussen.",
+   "event_type": "sonstiges",
+   "decision_entities": [
+    {
+     "name": "Betroffene Bundestagsausschüsse",
+     "type": "committee",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "Bundesministerien (betroffen)",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "Fraktionen des Bundestages",
+     "type": "party",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "parteien": [
+    "Fraktionen des Bundestages"
+   ],
+   "ausschuesse": [
+    "Betroffene Bundestagsausschüsse"
+   ],
+   "mentioned_parties": [],
+   "mentioned_committees": [],
+   "mentioned_locations": [],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "bund",
+   "created_at": "2026-07-27T04:06:17.731892+00:00"
+  },
+  {
+   "fallgruppen": [
+    1,
+    7,
+    9,
+    12
+   ],
+   "id": "ko-vg-mitglieds",
+   "vorgang_id": "vg-mitglieds",
+   "headline": "",
+   "display_title": "",
+   "was_ist_passiert": "Der Bundesrat hat einen Vorschlag zur Berufung eines Mitglieds in den Verwaltungsrat der Bundesagentur für Arbeit eingebracht.",
+   "warum_wichtig": "Ändert die Besetzung eines zentralen Aufsichtsgremiums der Arbeitsverwaltung. Betroffen sind Arbeitsmarktpolitik und Haushaltskontrolle; mögliche politische Interessenvertretung kann sich verschieben.",
+   "event_type": "personalie",
+   "decision_entities": [
+    {
+     "name": "Bundesministerium für Arbeit und Soziales",
+     "type": "ministry",
+     "entity_id": "ministry-bmas",
+     "confidence": "high"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "Bundesrat",
+     "type": "parliament",
+     "entity_id": "parliament-bundesrat",
+     "confidence": "high"
+    },
+    {
+     "name": "Bundesagentur für Arbeit",
+     "type": "authority",
+     "entity_id": "authority-bundesagentur-arbeit",
+     "confidence": "high"
+    }
+   ],
+   "parteien": [
+    "Bundesrat"
+   ],
+   "ausschuesse": [],
+   "mentioned_parties": [],
+   "mentioned_committees": [],
+   "mentioned_locations": [],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "bund",
+   "created_at": "2026-07-19T04:01:50.269696+00:00"
+  },
+  {
+   "fallgruppen": [
+    1,
+    9
+   ],
+   "id": "ko-vg-verwaltungsrates",
+   "vorgang_id": "vg-verwaltungsrates",
+   "headline": "Bundesrat schlägt Mitglied für Verwaltungsrat der Bundesagentur für Arbeit vor",
+   "display_title": "",
+   "was_ist_passiert": "Der Bundesrat hat einen Vorschlag für die Berufung eines Mitglieds in den Verwaltungsrat der Bundesagentur für Arbeit eingebracht.",
+   "warum_wichtig": "Verwaltungsrat entscheidet über Arbeitsmarktsteuerung und Budgetfragen; Bundesrat beeinflusst personelle Besetzung. Änderung kann Einfluss auf Arbeitsmarktpolitik und Kontrolle der Bundesagentur haben.",
+   "event_type": "unknown",
+   "decision_entities": [
+    {
+     "name": "Bundesministerium für Arbeit und Soziales",
+     "type": "ministry",
+     "entity_id": "ministry-bmas",
+     "confidence": "high"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "Bundesrat (Länderkammer)",
+     "type": "party",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "Bundesrat",
+     "type": "parliament",
+     "entity_id": "parliament-bundesrat",
+     "confidence": "high"
+    },
+    {
+     "name": "Bundesagentur für Arbeit",
+     "type": "authority",
+     "entity_id": "authority-bundesagentur-arbeit",
+     "confidence": "high"
+    }
+   ],
+   "parteien": [
+    "Bundesrat (Länderkammer)"
+   ],
+   "ausschuesse": [],
+   "mentioned_parties": [
+    "Bundesrat"
+   ],
+   "mentioned_committees": [],
+   "mentioned_locations": [],
+   "tags": [
+    "Bundesagentur für Arbeit",
+    "Verwaltungsrat",
+    "Arbeitsmarktsteuerung",
+    "Budgetfragen"
+   ],
+   "policy_field": [],
+   "political_level": "bund",
+   "created_at": "2026-07-12T04:02:38.492048+00:00"
+  },
+  {
+   "fallgruppen": [
+    1,
+    2,
+    7,
+    9
+   ],
+   "id": "ko-vg-eigenverantwortung",
+   "vorgang_id": "vg-eigenverantwortung",
+   "headline": "",
+   "display_title": null,
+   "was_ist_passiert": "Das Bundesministerium für Arbeit und Soziales (BMAS) hat am 01.07.2026 ein Papier mit dem Titel 'Verbindlichkeit, Eigenverantwortung und Mitwirkung stärken' veröffentlicht, das Vorschläge zur Stärkung von Verbindlichkeit, Eigenverantwortung und Mitwirkung in einem Politikfeld darlegt.",
+   "warum_wichtig": "Das Papier signalisiert eine mögliche politische Initiative des BMAS, die Auswirkungen auf Rechts- und Verwaltungspraxis sowie auf Betroffene in Sozial- und Arbeitsfragen haben kann; es kann Gesetzes- oder Verordnungsänderungen vorbereiten und Debatten über staatliche Steuerung versus individuelle Verantwortung anstoßen.",
+   "event_type": "verordnung",
+   "decision_entities": [
+    {
+     "name": "Ausschuss für Arbeit und Soziales",
+     "type": "committee",
+     "entity_id": "committee-bt-arbeit-soziales",
+     "confidence": "high"
+    },
+    {
+     "name": "Ausschuss für Haushalt",
+     "type": "committee",
+     "entity_id": "committee-bt-haushalt",
+     "confidence": "medium"
+    },
+    {
+     "name": "Bundesministerium für Arbeit und Soziales (BMAS)",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "SPD",
+     "type": "party",
+     "entity_id": "party-spd",
+     "confidence": "high"
+    },
+    {
+     "name": "CDU/CSU",
+     "type": "party",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "Bündnis 90/Die Grünen",
+     "type": "party",
+     "entity_id": "party-gruene",
+     "confidence": "high"
+    },
+    {
+     "name": "FDP",
+     "type": "party",
+     "entity_id": "party-fdp",
+     "confidence": "high"
+    },
+    {
+     "name": "Die Linke",
+     "type": "party",
+     "entity_id": "party-linke",
+     "confidence": "high"
+    },
+    {
+     "name": "Bundesministerium für Arbeit und Soziales (BMAS)",
+     "type": "organization",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "parteien": [
+    "SPD",
+    "CDU/CSU",
+    "BÜNDNIS 90/DIE GRÜNEN",
+    "FDP",
+    "DIE LINKE"
+   ],
+   "ausschuesse": [
+    "Ausschuss für Arbeit und Soziales",
+    "Haushaltsausschuss"
+   ],
+   "mentioned_parties": [
+    "SPD",
+    "CDU/CSU",
+    "BÜNDNIS 90/DIE GRÜNEN",
+    "FDP",
+    "DIE LINKE"
+   ],
+   "mentioned_committees": [
+    "Ausschuss für Arbeit und Soziales",
+    "Haushaltsausschuss"
+   ],
+   "mentioned_locations": [],
+   "tags": [
+    "Verbindlichkeit",
+    "Eigenverantwortung",
+    "Mitwirkung"
+   ],
+   "policy_field": [
+    "Arbeit und Soziales",
+    "Haushalt"
+   ],
+   "political_level": "bund",
+   "created_at": "2026-07-02T20:01:46.175077+00:00"
+  },
+  {
+   "fallgruppen": [
+    1,
+    2,
+    9,
+    12
+   ],
+   "id": "ko-vg-verbindlichkeit",
+   "vorgang_id": "vg-verbindlichkeit",
+   "headline": "",
+   "display_title": "BMAS stärkt Verbindlichkeit und Mitwirkung in Arbeitsregeln",
+   "was_ist_passiert": "Das Bundesministerium für Arbeit und Soziales (BMAS) hat Vorschläge veröffentlicht, die Verbindlichkeit, Eigenverantwortung und Mitwirkung in einem Regelungsbereich zu stärken.",
+   "warum_wichtig": "Änderung der Regelungshoheit kann Rechtsfolgen für Arbeitgeber- und Arbeitnehmerpflichten haben und betrifft Gesetzgebungs- und Ausschussarbeit im Sozial- und Arbeitsbereich.",
+   "event_type": "bericht",
+   "decision_entities": [
+    {
+     "name": "Ausschuss für Arbeit und Soziales",
+     "type": "committee",
+     "entity_id": "committee-bt-arbeit-soziales",
+     "confidence": "high"
+    },
+    {
+     "name": "Bundesministerium für Arbeit und Soziales",
+     "type": "ministry",
+     "entity_id": "ministry-bmas",
+     "confidence": "high"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "SPD",
+     "type": "party",
+     "entity_id": "party-spd",
+     "confidence": "high"
+    },
+    {
+     "name": "CDU/CSU",
+     "type": "party",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "Bündnis 90/Die Grünen",
+     "type": "party",
+     "entity_id": "party-gruene",
+     "confidence": "high"
+    },
+    {
+     "name": "FDP",
+     "type": "party",
+     "entity_id": "party-fdp",
+     "confidence": "high"
+    },
+    {
+     "name": "Sozialpartner",
+     "type": "organization",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "parteien": [
+    "SPD",
+    "CDU/CSU",
+    "Bündnis 90/Die Grünen"
+   ],
+   "ausschuesse": [
+    "Ausschuss für Arbeit und Soziales"
+   ],
+   "mentioned_parties": [
+    "FDP"
+   ],
+   "mentioned_committees": [],
+   "mentioned_locations": [],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "bund",
+   "created_at": "2026-07-21T20:02:30.652678+00:00"
+  },
+  {
+   "fallgruppen": [
+    1,
+    8,
+    12
+   ],
+   "id": "ko-vg-schwerbehinderte",
+   "vorgang_id": "vg-schwerbehinderte",
+   "headline": "Petition fordert abschlagsfreie Rente für schwerbehinderte Menschen ab 60",
+   "display_title": "",
+   "was_ist_passiert": "Eine Online-Petition verlangt abschlagsfreie Altersrente für schwerbehinderte Menschen ab 60 Jahren. Die Petition wurde auf Ihre-Vorsorge.de veröffentlicht und richtet sich an politische Entscheidungsträger.",
+   "warum_wichtig": "Betrifft Rentenpolitik und Behindertenpolitik; kann Druck auf Gesetzgeber und Koalitionsverhandlungen erhöhen. Relevanz für sozialpolitische Profilierung und Wahlkreisthemen.",
+   "event_type": "unknown",
+   "decision_entities": [
+    {
+     "name": "Bundesministerium für Arbeit und Soziales",
+     "type": "ministry",
+     "entity_id": "ministry-bmas",
+     "confidence": "high"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "Ihre-Vorsorge.de",
+     "type": "organization",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "parteien": [],
+   "ausschuesse": [],
+   "mentioned_parties": [],
+   "mentioned_committees": [],
+   "mentioned_locations": [],
+   "tags": [
+    "abschlagsfreie Rente",
+    "Altersrente ab 60",
+    "Rentenpolitik",
+    "Behindertenpolitik"
+   ],
+   "policy_field": [],
+   "political_level": "bund",
+   "created_at": "2026-07-12T04:02:15.290868+00:00"
+  },
+  {
+   "fallgruppen": [
+    1,
+    12
+   ],
+   "id": "ko-vg-schwerbehinderte-20240724-194064",
+   "vorgang_id": "vg-schwerbehinderte-20240724-194064",
+   "headline": "Petition: Abschlagsfreie Rente für schwerbehinderte Menschen ab 60",
+   "display_title": "",
+   "was_ist_passiert": "Eine Online-Petition mit dem Titel \"Abschlagsfreie Rente für schwerbehinderte Menschen ab 60\" wurde veröffentlicht und öffentlich zugänglich gemacht.",
+   "warum_wichtig": "Thema berührt Alters- und Sozialpolitik sowie Rentenausgaben. Forderung könnte Druck auf Gesetzgeber und zuständige Ministerien erhöhen und öffentliche Debatte über Rentenansprüche Schwerbehinderter anstoßen.",
+   "event_type": "sonstiges",
+   "decision_entities": [
+    {
+     "name": "Bundesministerium für Arbeit und Soziales",
+     "type": "ministry",
+     "entity_id": "ministry-bmas",
+     "confidence": "high"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "Ihre-Vorsorge.de",
+     "type": "organization",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "parteien": [],
+   "ausschuesse": [],
+   "mentioned_parties": [],
+   "mentioned_committees": [],
+   "mentioned_locations": [],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "bund",
+   "created_at": "2026-07-27T20:04:16.692461+00:00"
+  },
+  {
+   "fallgruppen": [
+    1,
+    8,
+    9,
+    12
+   ],
+   "id": "ko-vg-höchstarbeitszeit",
+   "vorgang_id": "vg-höchstarbeitszeit",
+   "headline": "",
+   "display_title": "CDU/CSU fordert wöchentliche statt tägliche Höchstarbeitszeit",
+   "was_ist_passiert": "Die CDU hat Vorschläge für flexiblere Arbeitszeiten angekündigt, darunter die Einführung einer wöchentlichen statt täglichen Höchstarbeitszeit.",
+   "warum_wichtig": "Ändert den regulatorischen Rahmen für Arbeitszeit und Arbeits- und Gesundheitsschutz; betrifft Arbeitsmarktpolitik und Arbeitgeber/Arbeitnehmerrechte.",
+   "event_type": "sonstiges",
+   "decision_entities": [
+    {
+     "name": "Bundesministerium für Arbeit und Soziales",
+     "type": "ministry",
+     "entity_id": "ministry-bmas",
+     "confidence": "high"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "CDU/CSU",
+     "type": "party",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "parteien": [
+    "CDU/CSU"
+   ],
+   "ausschuesse": [],
+   "mentioned_parties": [
+    "CDU/CSU"
+   ],
+   "mentioned_committees": [],
+   "mentioned_locations": [],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "bund",
+   "created_at": "2026-07-17T10:03:29.717214+00:00"
+  },
+  {
+   "fallgruppen": [
+    1,
+    9,
+    12
+   ],
+   "id": "ko-vg-höchstarbeitszeit-20250110-694cd6",
+   "vorgang_id": "vg-höchstarbeitszeit-20250110-694cd6",
+   "headline": "",
+   "display_title": "CDU fordert wöchentliche statt tägliche Höchstarbeitszeit",
+   "was_ist_passiert": "Die CDU fordert flexiblere Regelungen zur Arbeitszeit: sie schlägt vor, die Höchstarbeitszeit wöchentlich statt täglich zu bemessen und allgemein flexiblere Arbeitszeitmodelle zu ermöglichen.",
+   "warum_wichtig": "Änderung berührt Arbeits- und Sozialpolitik sowie Arbeitgeber- und Arbeitnehmerrechte. Könnte Gesetzesinitiative oder politische Debatte über Arbeitszeitgrenzen und Kontrolle auslösen.",
+   "event_type": "sonstiges",
+   "decision_entities": [
+    {
+     "name": "Ausschuss für Arbeit und Soziales",
+     "type": "committee",
+     "entity_id": "committee-bt-arbeit-soziales",
+     "confidence": "medium"
+    },
+    {
+     "name": "Bundesministerium für Arbeit und Soziales",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "CDU/CSU",
+     "type": "party",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "parteien": [
+    "CDU/CSU"
+   ],
+   "ausschuesse": [
+    "Ausschuss für Arbeit und Soziales"
+   ],
+   "mentioned_parties": [
+    "CDU/CSU"
+   ],
+   "mentioned_committees": [],
+   "mentioned_locations": [],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "bund",
+   "created_at": "2026-07-28T04:03:58.637754+00:00"
+  },
+  {
+   "fallgruppen": [
+    8,
+    9,
+    14
+   ],
+   "id": "ko-vg-arbeitszeit-20250326-408ac1",
+   "vorgang_id": "vg-arbeitszeit-20250326-408ac1",
+   "headline": "",
+   "display_title": "",
+   "was_ist_passiert": "Die FDP hat Vorschläge zur Änderung des Arbeitszeitgesetzes und zur Reform der Arbeitszeiterfassung eingebracht. Die Vorschläge stoßen auf breite Skepsis bei Gewerkschaften und anderen Parteien; es gab öffentliche Proteste und Kritik. Unternehmen sehen durch neue Vorgaben zur Erfassung praktische Herausforderungen.",
+   "warum_wichtig": "Änderungen am Arbeitszeitgesetz betreffen Arbeitsmarktregeln, Betriebsabläufe und Koalitionsdebatten. Das Thema zieht starken Widerstand der Gewerkschaften und breite öffentliche Aufmerksamkeit an.",
+   "event_type": "gesetzentwurf",
+   "decision_entities": [
+    {
+     "name": "Bundesministerium für Arbeit und Soziales",
+     "type": "ministry",
+     "entity_id": "ministry-bmas",
+     "confidence": "high"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "FDP",
+     "type": "party",
+     "entity_id": "party-fdp",
+     "confidence": "high"
+    },
+    {
+     "name": "SPD",
+     "type": "party",
+     "entity_id": "party-spd",
+     "confidence": "high"
+    },
+    {
+     "name": "Deutscher Gewerkschaftsbund",
+     "type": "union",
+     "entity_id": "union-dgb",
+     "confidence": "high"
+    },
+    {
+     "name": "Gewerkschaften",
+     "type": "organization",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "parteien": [
+    "FDP"
+   ],
+   "ausschuesse": [],
+   "mentioned_parties": [
+    "SPD"
+   ],
+   "mentioned_committees": [],
+   "mentioned_locations": [],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "bund",
+   "created_at": "2026-07-28T04:03:59.451918+00:00"
+  },
+  {
+   "fallgruppen": [
+    1,
+    9,
+    12
+   ],
+   "id": "ko-vg-pressemitteilungen-20130301-9919af-2",
+   "vorgang_id": "vg-pressemitteilungen-20130301-9919af-2",
+   "headline": "",
+   "display_title": "Bundesrat fordert flächendeckenden Mindestlohn",
+   "was_ist_passiert": "Der Bundesrat hat sich für einen flächendeckenden Mindestlohn ausgesprochen und eine entsprechende Forderung in einer Pressemitteilung veröffentlicht.",
+   "warum_wichtig": "Ändert die bundespolitische Debatte zum Arbeitsmarkt und betrifft Arbeitsmarkt- sowie Sozialpolitik. Kann Gesetzesinitiativen und Koalitionsverhandlungen beeinflussen.",
+   "event_type": "sonstiges",
+   "decision_entities": [
+    {
+     "name": "Bundesministerium für Arbeit und Soziales",
+     "type": "ministry",
+     "entity_id": "ministry-bmas",
+     "confidence": "high"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "Bundesrat",
+     "type": "parliament",
+     "entity_id": "parliament-bundesrat",
+     "confidence": "high"
+    }
+   ],
+   "parteien": [
+    "Bundesrat"
+   ],
+   "ausschuesse": [],
+   "mentioned_parties": [],
+   "mentioned_committees": [],
+   "mentioned_locations": [],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "bund",
+   "created_at": "2026-07-28T04:03:36.592883+00:00"
+  },
+  {
+   "fallgruppen": [
+    1,
+    9,
+    12
+   ],
+   "id": "ko-vg-pressemitteilungen-20130301-9919af-3",
+   "vorgang_id": "vg-pressemitteilungen-20130301-9919af-3",
+   "headline": "",
+   "display_title": "Bundesrat fordert flächendeckenden Mindestlohn",
+   "was_ist_passiert": "Der Bundesrat hat in einer Pressemitteilung seine Forderung nach einem flächendeckenden Mindestlohn bekräftigt.",
+   "warum_wichtig": "Der Vorstoß verändert die Debatte um Lohnschutz und Arbeitsmarktregulierung auf Bundesebene und kann Gesetzgebungsdruck auf die Bundesregierung erhöhen. Dies betrifft Sozial- und Arbeitsmarktpolitik des Mandats.",
+   "event_type": "sonstiges",
+   "decision_entities": [
+    {
+     "name": "Bundesministerium für Arbeit und Soziales",
+     "type": "ministry",
+     "entity_id": "ministry-bmas",
+     "confidence": "high"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "Bundesrat",
+     "type": "parliament",
+     "entity_id": "parliament-bundesrat",
+     "confidence": "high"
+    }
+   ],
+   "parteien": [],
+   "ausschuesse": [],
+   "mentioned_parties": [],
+   "mentioned_committees": [],
+   "mentioned_locations": [],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "bund",
+   "created_at": "2026-07-28T08:02:08.642481+00:00"
+  },
+  {
+   "fallgruppen": [
+    1,
+    9,
+    12
+   ],
+   "id": "ko-vg-pressemitteilungen-20130301-9919af-4",
+   "vorgang_id": "vg-pressemitteilungen-20130301-9919af-4",
+   "headline": "Bundesrat fordert flächendeckenden Mindestlohn",
+   "display_title": "Bundesrat fordert flächendeckenden Mindestlohn",
+   "was_ist_passiert": "Der Bundesrat hat in einer Pressemitteilung den flächendeckenden Mindestlohn gefordert.",
+   "warum_wichtig": "Bundesrat signalisiert politische Mobilisierung gegenwärtiger Lohnpolitik und erhöht Druck auf Bundesregierung und Bundestag; betrifft Arbeitsmarkt- und Sozialpolitik des Mandatsbereichs.",
+   "event_type": "sonstiges",
+   "decision_entities": [],
+   "related_entities": [
+    {
+     "name": "Bundesrat",
+     "type": "parliament",
+     "entity_id": "parliament-bundesrat",
+     "confidence": "high"
+    }
+   ],
+   "parteien": [
+    "Bundesrat"
+   ],
+   "ausschuesse": [],
+   "mentioned_parties": [],
+   "mentioned_committees": [],
+   "mentioned_locations": [],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "bund",
+   "created_at": "2026-07-28T10:04:09.619363+00:00"
+  },
+  {
+   "fallgruppen": [
+    1,
+    9,
+    12
+   ],
+   "id": "ko-vg-pressemitteilungen-20130301-feeed1",
+   "vorgang_id": "vg-pressemitteilungen-20130301-feeed1",
+   "headline": "",
+   "display_title": "Bundesrat fordert Einführung eines flächendeckenden Mindestlohns",
+   "was_ist_passiert": "Der Bundesrat hat sich für die Einführung eines flächendeckenden Mindestlohns ausgesprochen und entsprechende Forderungen in einer Pressemitteilung veröffentlicht.",
+   "warum_wichtig": "Verändert die bundespolitische Debatte zur Lohnpolitik; betrifft Gesetzgebung und Zuständigkeiten des Bundestags sowie Arbeitsmarkt- und Sozialpolitik des Mandats.",
+   "event_type": "sonstiges",
+   "decision_entities": [],
+   "related_entities": [
+    {
+     "name": "Bundesrat",
+     "type": "parliament",
+     "entity_id": "parliament-bundesrat",
+     "confidence": "high"
+    }
+   ],
+   "parteien": [
+    "Bundesrat"
+   ],
+   "ausschuesse": [],
+   "mentioned_parties": [],
+   "mentioned_committees": [],
+   "mentioned_locations": [],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "bund",
+   "created_at": "2026-07-26T22:13:23.84401+00:00"
+  },
+  {
+   "fallgruppen": [
+    1,
+    2,
+    6,
+    9
+   ],
+   "id": "ko-vg-koalitionsausschuss",
+   "vorgang_id": "vg-koalitionsausschuss",
+   "headline": "",
+   "display_title": "",
+   "was_ist_passiert": "Der Koalitionsausschuss hat sich in einer Nachtsitzung auf ein Reformpaket geeinigt, das Änderungen bei der Reichensteuer, eine Pflicht zur Krankmeldung und verlängerte Sonntagsverkaufszeiten für Bäckereien umfasst.",
+   "warum_wichtig": "Die Einigung betrifft zentrale steuer- und arbeitsrechtliche Regelungen sowie Ladenschlusszeiten und steht für eine bedeutende politische Umsetzung innerhalb der Regierungskoalition.",
+   "event_type": "unknown",
+   "decision_entities": [
+    {
+     "name": "Ausschuss für Finanzen",
+     "type": "committee",
+     "entity_id": "committee-bt-finanzen",
+     "confidence": "medium"
+    },
+    {
+     "name": "Ausschuss für Arbeit und Soziales",
+     "type": "committee",
+     "entity_id": "committee-bt-arbeit-soziales",
+     "confidence": "high"
+    },
+    {
+     "name": "Ausschuss für Wirtschaft und Energie",
+     "type": "committee",
+     "entity_id": "committee-bt-wirtschaft",
+     "confidence": "medium"
+    },
+    {
+     "name": "Bundesfinanzministerium",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "Bundesministerium für Arbeit und Soziales",
+     "type": "ministry",
+     "entity_id": "ministry-bmas",
+     "confidence": "high"
+    },
+    {
+     "name": "Bundesministerium fuer Wirtschaft und Klimaschutz",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "Koalitionsausschuss",
+     "type": "committee",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "CDU/CSU",
+     "type": "party",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "SPD",
+     "type": "party",
+     "entity_id": "party-spd",
+     "confidence": "high"
+    },
+    {
+     "name": "FDP",
+     "type": "party",
+     "entity_id": "party-fdp",
+     "confidence": "high"
+    },
+    {
+     "name": "Bündnis 90/Die Grünen",
+     "type": "party",
+     "entity_id": "party-gruene",
+     "confidence": "high"
+    },
+    {
+     "name": "Bäckerhandwerk",
+     "type": "organization",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "parteien": [
+    "CDU/CSU",
+    "SPD",
+    "FDP",
+    "Grüne"
+   ],
+   "ausschuesse": [
+    "Finanzausschuss",
+    "Ausschuss fuer Arbeit und Soziales",
+    "Wirtschaftsausschuss"
+   ],
+   "mentioned_parties": [
+    "CDU/CSU",
+    "SPD",
+    "FDP",
+    "Grüne"
+   ],
+   "mentioned_committees": [
+    "Koalitionsausschuss"
+   ],
+   "mentioned_locations": [
+    "Berlin"
+   ],
+   "tags": [
+    "Reichensteuer",
+    "Sonntagsverkaufszeiten",
+    "Arbeitsrecht"
+   ],
+   "policy_field": [
+    "Finanzen",
+    "Arbeit und Soziales",
+    "Wirtschaft"
+   ],
+   "political_level": "bund",
+   "created_at": "2026-07-07T04:03:14.019475+00:00"
+  },
+  {
+   "fallgruppen": [
+    1,
+    2,
+    6,
+    9,
+    12
+   ],
+   "id": "ko-vg-koalitionsausschuss-20250903-61fa1e",
+   "vorgang_id": "vg-koalitionsausschuss-20250903-61fa1e",
+   "headline": "",
+   "display_title": "",
+   "was_ist_passiert": "Der Koalitionsausschuss von CDU/CSU und SPD hat sich nach intensiven Beratungen auf ein Reformpaket geeinigt, das Maßnahmen zu Reichensteuer, Krankmeldungspflicht, Sonntagsöffnungen und umfangreichen Änderungen in den Bereichen Rente, Gesundheit und Pflege umfasst. In der Pflege schlagen die Unionsparteien eine stärkere Belastung Vermögender vor; die SPD zeigt sich grundsätzlich offen, fordert jedoch Klärungen und sieht erheblichen Klärungsbedarf.",
+   "warum_wichtig": "Die Einigung verändert die steuer- und sozialpolitische Agenda der Koalition und bringt konkrete Reformvorhaben in Pflege, Rente und Gesundheit auf den Regierungstisch. Für Abgeordnete im Sozial- und Gesundheitsausschuss verschiebt dies Fristen, Abstimmungsdruck und mögliche Oppositionslinien.",
+   "event_type": "sonstiges",
+   "decision_entities": [
+    {
+     "name": "Ausschuss für Arbeit und Soziales",
+     "type": "committee",
+     "entity_id": "committee-bt-arbeit-soziales",
+     "confidence": "medium"
+    },
+    {
+     "name": "Ausschuss für Gesundheit",
+     "type": "committee",
+     "entity_id": "committee-bt-gesundheit",
+     "confidence": "medium"
+    },
+    {
+     "name": "Ausschuss für Finanzen",
+     "type": "committee",
+     "entity_id": "committee-bt-finanzen",
+     "confidence": "medium"
+    },
+    {
+     "name": "Bundesministerium für Gesundheit",
+     "type": "ministry",
+     "entity_id": "ministry-bmg",
+     "confidence": "high"
+    },
+    {
+     "name": "Bundesministerium für Arbeit und Soziales",
+     "type": "ministry",
+     "entity_id": "ministry-bmas",
+     "confidence": "high"
+    },
+    {
+     "name": "Bundesministerium der Finanzen",
+     "type": "ministry",
+     "entity_id": "ministry-bmf",
+     "confidence": "high"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "SPD",
+     "type": "party",
+     "entity_id": "party-spd",
+     "confidence": "high"
+    },
+    {
+     "name": "CDU",
+     "type": "party",
+     "entity_id": "party-cdu",
+     "confidence": "high"
+    },
+    {
+     "name": "CSU",
+     "type": "party",
+     "entity_id": "party-csu",
+     "confidence": "high"
+    },
+    {
+     "name": "Koalitionsausschuss",
+     "type": "organization",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "parteien": [
+    "SPD",
+    "CDU",
+    "CSU"
+   ],
+   "ausschuesse": [
+    "Sozialausschuss",
+    "Gesundheitsausschuss",
+    "Finanzausschuss"
+   ],
+   "mentioned_parties": [],
+   "mentioned_committees": [],
+   "mentioned_locations": [],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "bund",
+   "created_at": "2026-07-27T20:04:20.859521+00:00"
+  },
+  {
+   "fallgruppen": [
+    5,
+    6,
+    9,
+    12
+   ],
+   "id": "ko-vg-reform-20260628-62377c",
+   "vorgang_id": "vg-reform-20260628-62377c",
+   "headline": "Schwarz-Rot einigen sich auf Reformpaket; Debatten zu Rente, Haushalt und Wohnungsbau laufen",
+   "display_title": "",
+   "was_ist_passiert": "Bundesregierung und Koalition haben ein Reformpaket vereinbart, das Maßnahmen zu Sozialbetrug, Steuern, Arbeitsmarkt und Wohnungsbau umfasst. Zeitgleich laufen Debatten und Kritik zur Rentenreform, zum Entwurf des Doppelhaushalts 2027/28 und zu geplanten Rüstungsbeschaffungen; zudem fordern Oppositionsparteien öffentlichkeitswirksame Auftritte und Duelle.",
+   "warum_wichtig": "Das Paket verändert Haushalts- und Sozialpolitik mit direkten Finanzwirkungen und öffnet Angriffsflächen in Rente und Haushalt. Entscheidungen beeinflussen Ressortzustimmung, Fraktionslinien und mediale Debatten im Bundestag.",
+   "event_type": "bericht",
+   "decision_entities": [
+    {
+     "name": "Ausschuss für Haushalt",
+     "type": "committee",
+     "entity_id": "committee-bt-haushalt",
+     "confidence": "medium"
+    },
+    {
+     "name": "Bundesministerium der Finanzen",
+     "type": "ministry",
+     "entity_id": "ministry-bmf",
+     "confidence": "high"
+    },
+    {
+     "name": "Bundesministerium für Arbeit und Soziales",
+     "type": "ministry",
+     "entity_id": "ministry-bmas",
+     "confidence": "high"
+    },
+    {
+     "name": "Bundesministerium für Wohnen, Stadtentwicklung und Bauwesen",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "Bundesministerium der Verteidigung",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "Enquete-Kommission Corona",
+     "type": "committee",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "Bundesministerium für wirtschaftliche Zusammenarbeit und Entwicklung",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "CDU/CSU",
+     "type": "party",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "SPD",
+     "type": "party",
+     "entity_id": "party-spd",
+     "confidence": "high"
+    },
+    {
+     "name": "BSW",
+     "type": "party",
+     "entity_id": "party-bsw",
+     "confidence": "high"
+    },
+    {
+     "name": "Bündnis 90/Die Grünen",
+     "type": "party",
+     "entity_id": "party-gruene",
+     "confidence": "high"
+    },
+    {
+     "name": "AfD",
+     "type": "party",
+     "entity_id": "party-afd",
+     "confidence": "high"
+    },
+    {
+     "name": "Deutscher Gewerkschaftsbund",
+     "type": "union",
+     "entity_id": "union-dgb",
+     "confidence": "high"
+    },
+    {
+     "name": "TKMS Group",
+     "type": "organization",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "parteien": [
+    "CDU/CSU",
+    "SPD"
+   ],
+   "ausschuesse": [
+    "Haushaltsausschuss"
+   ],
+   "mentioned_parties": [
+    "BSW",
+    "BÜNDNIS 90/DIE GRÜNEN",
+    "AfD"
+   ],
+   "mentioned_committees": [
+    "Enquete-Kommission Corona"
+   ],
+   "mentioned_locations": [
+    "Brandenburg",
+    "Frankreich",
+    "Sachsen"
+   ],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "bund",
+   "created_at": "2026-07-27T08:56:23.945662+00:00"
+  },
+  {
+   "fallgruppen": [
+    5,
+    6,
+    9,
+    12
+   ],
+   "id": "ko-vg-reform-20260630-036836",
+   "vorgang_id": "vg-reform-20260630-036836",
+   "headline": "Bundesregierung/Parlament: Vielzahl finanzieller und sicherheitspolitischer Gesetzes- und Haushaltsvorlagen und Debatten",
+   "display_title": "",
+   "was_ist_passiert": "Mehrere bundespolitische Vorlagen und Debatten wurden öffentlich: Entwürfe zum Doppelhaushalt 2027/28 und Einzelhaushalt 2027 mit hohen Rüstungsausgaben, ein Reformpaket zur Rente und steuerpolitische Diskussionen, ein Gesetzentwurf zur Ausweitung von Befugnissen für Verfassungsschutz und BND sowie Einzelentscheidungen zur Marine-Beschaffung. Parallel gibt es Unsicherheiten um das GKV-Spargesetz und Kritik von Oppositionsfraktionen sowie mediale Debatten um Parteipositionen.",
+   "warum_wichtig": "Die Vorlagen verändern Haushaltsprioritäten (starke Aufwuchs bei Verteidigung) und Grundrechts-/Sicherheitsbefugnisse, beeinflussen Sozialpolitik (Rente, GKV) und Wahlkampfpositionen; das kann Mehrheiten und öffentliche Wahrnehmung in laufenden parlamentarischen Entscheidungen verschieben.",
+   "event_type": "gesetzentwurf",
+   "decision_entities": [
+    {
+     "name": "Ausschuss für Haushalt",
+     "type": "committee",
+     "entity_id": "committee-bt-haushalt",
+     "confidence": "medium"
+    },
+    {
+     "name": "Ausschuss für Inneres und Heimat",
+     "type": "committee",
+     "entity_id": "committee-bt-inneres",
+     "confidence": "medium"
+    },
+    {
+     "name": "Bundesministerium der Verteidigung",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "Bundesministerium des Innern und für Heimat",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "Bundesministerium für Arbeit und Soziales",
+     "type": "ministry",
+     "entity_id": "ministry-bmas",
+     "confidence": "high"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "CDU/CSU",
+     "type": "party",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "SPD",
+     "type": "party",
+     "entity_id": "party-spd",
+     "confidence": "high"
+    },
+    {
+     "name": "Bündnis 90/Die Grünen",
+     "type": "party",
+     "entity_id": "party-gruene",
+     "confidence": "high"
+    },
+    {
+     "name": "Die Linke",
+     "type": "party",
+     "entity_id": "party-linke",
+     "confidence": "high"
+    },
+    {
+     "name": "Deutscher Bundestag",
+     "type": "parliament",
+     "entity_id": "parliament-bundestag",
+     "confidence": "high"
+    },
+    {
+     "name": "TKMS Group",
+     "type": "organization",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "parteien": [
+    "CDU/CSU",
+    "SPD",
+    "BÜNDNIS 90/DIE GRÜNEN"
+   ],
+   "ausschuesse": [
+    "Haushaltsausschuss",
+    "Innenausschuss"
+   ],
+   "mentioned_parties": [
+    "Die Linke"
+   ],
+   "mentioned_committees": [
+    "Haushaltsausschuss"
+   ],
+   "mentioned_locations": [
+    "Deutschland",
+    "Brandenburg",
+    "Frankreich"
+   ],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "bund",
+   "created_at": "2026-07-27T10:03:18.007738+00:00"
+  },
+  {
+   "fallgruppen": [
+    3,
+    9,
+    12
+   ],
+   "id": "ko-vg-reform-20260722-fe2830",
+   "vorgang_id": "vg-reform-20260722-fe2830",
+   "headline": "",
+   "display_title": "",
+   "was_ist_passiert": "Mehrere Berichte thematisieren laufende Belastungen und Reformvorhaben im Gesundheits-, Pflege- und Justizbereich sowie Debatten zu Arbeitszeitregelungen und Wehrdienst. Themen reichen von Krankenhausfinanzen in Rheinland-Pfalz, Sorge um Psychotherapie-Versorgung und Pflegegradfragen bis zu geplanten Reformen bei Arbeitszeiterfassung und Justiz (Geschworenen).",
+   "warum_wichtig": "Reformen und Versorgungslücken betreffen Kernbereiche sozialer Sicherung und Rechtsstaat; sie können Wählergruppen mobilisieren, Haushaltsrisiken erhöhen und parlamentarische Debatten prägen.",
+   "event_type": "sonstiges",
+   "decision_entities": [
+    {
+     "name": "Ausschuss für Gesundheit",
+     "type": "committee",
+     "entity_id": "committee-bt-gesundheit",
+     "confidence": "medium"
+    },
+    {
+     "name": "Bundesministerium für Gesundheit",
+     "type": "ministry",
+     "entity_id": "ministry-bmg",
+     "confidence": "high"
+    },
+    {
+     "name": "Bundesministerium für Arbeit und Soziales",
+     "type": "ministry",
+     "entity_id": "ministry-bmas",
+     "confidence": "high"
+    },
+    {
+     "name": "Bundesministerium der Justiz",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "CDU",
+     "type": "party",
+     "entity_id": "party-cdu",
+     "confidence": "high"
+    },
+    {
+     "name": "SPD",
+     "type": "party",
+     "entity_id": "party-spd",
+     "confidence": "high"
+    },
+    {
+     "name": "Bündnis 90/Die Grünen",
+     "type": "party",
+     "entity_id": "party-gruene",
+     "confidence": "high"
+    },
+    {
+     "name": "FDP",
+     "type": "party",
+     "entity_id": "party-fdp",
+     "confidence": "high"
+    },
+    {
+     "name": "Ifo Institut",
+     "type": "organization",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "Berliner CSD-Verein",
+     "type": "organization",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "parteien": [
+    "CDU",
+    "SPD"
+   ],
+   "ausschuesse": [
+    "Gesundheitsausschuss"
+   ],
+   "mentioned_parties": [
+    "Grüne",
+    "FDP"
+   ],
+   "mentioned_committees": [],
+   "mentioned_locations": [
+    "Rheinland-Pfalz",
+    "Berlin",
+    "Bordeaux",
+    "Frankreich",
+    "Bremen"
+   ],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "bund",
+   "created_at": "2026-07-27T20:03:41.261538+00:00"
+  },
+  {
+   "fallgruppen": [
+    3,
+    8,
+    9,
+    12,
+    14
+   ],
+   "id": "ko-vg-pflegereform-20250707-4f7500",
+   "vorgang_id": "vg-pflegereform-20250707-4f7500",
+   "headline": "Debatte um Finanzierungsmodelle in Pflegereform mit SPD-Kritik an Vorschlägen zur Einbeziehung von Vermögen",
+   "display_title": "",
+   "was_ist_passiert": "Bundespolitische Debatten um eine Pflegereform eskalieren: CDU/Union schlägt stärkere Einbeziehung von Vermögen, insbesondere Wohneigentum, zur Pflegefinanzierung vor. SPD und Grüne sowie Teile der SPD-Bundestagsfraktion und einzelne SPD-Politiker kritisieren diese Vorschläge und fordern stattdessen Stärkung solidarischer Finanzierungswege und Deckel für Eigenanteile. Verschiedene Landesvertreter und Expertinnen äußern zusätzliche Kritik und fordern Nachbesserungen; es gab Protestaktionen vor Ort gegen mögliche Kürzungen.",
+   "warum_wichtig": "Änderungen bei der Pflegefinanzierung beeinflussen direkte Kostenverteilung für Pflegebedürftige und Anknüpfpunkte für soziale und regionalpolitische Konflikte. Das Thema berührt Wählergruppen (Ältere, Eigentümer, Kinder pflegebedürftiger Eltern) und kann Koalitionsgespräche und parlamentarische Mehrheiten prägen.",
+   "event_type": "sonstiges",
+   "decision_entities": [
+    {
+     "name": "Bundesministerium für Gesundheit",
+     "type": "ministry",
+     "entity_id": "ministry-bmg",
+     "confidence": "high"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "SPD",
+     "type": "party",
+     "entity_id": "party-spd",
+     "confidence": "high"
+    },
+    {
+     "name": "Bündnis 90/Die Grünen",
+     "type": "party",
+     "entity_id": "party-gruene",
+     "confidence": "high"
+    },
+    {
+     "name": "CDU/CSU",
+     "type": "party",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "CSU",
+     "type": "party",
+     "entity_id": "party-csu",
+     "confidence": "high"
+    },
+    {
+     "name": "Sofort (Organisation?)",
+     "type": "party",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "SPD-Bundestagsfraktion",
+     "type": "parliamentary_group",
+     "entity_id": "group-bt-spd",
+     "confidence": "high"
+    },
+    {
+     "name": "Sofort",
+     "type": "organization",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "parteien": [
+    "SPD",
+    "Bündnis 90/Die Grünen",
+    "CDU/CSU"
+   ],
+   "ausschuesse": [],
+   "mentioned_parties": [
+    "SPD",
+    "Grüne",
+    "CDU/CSU",
+    "CSU",
+    "Sofort (Organisation?)"
+   ],
+   "mentioned_committees": [],
+   "mentioned_locations": [
+    "Berlin",
+    "Thüringen",
+    "Strausberg"
+   ],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "bund",
+   "created_at": "2026-07-28T04:04:00.99768+00:00"
+  },
+  {
+   "fallgruppen": [
+    3,
+    10,
+    12,
+    14
+   ],
+   "id": "ko-vg-12e77972ea2b5cf97b937eb5",
+   "vorgang_id": "vg-12e77972ea2b5cf97b937eb5",
+   "headline": "Pflegeheimkosten in Berlin steigen binnen Jahresfrist um ~300 Euro",
+   "display_title": "Berliner Senat reagiert auf Anstieg der Pflegeheimkosten",
+   "was_ist_passiert": "In Berlin sind die Kosten für Pflegeheime im Vergleich zum Vorjahr durchschnittlich um rund 300 Euro pro Monat gestiegen, berichtet die B.Z.",
+   "warum_wichtig": "Erhöhte Pflegekosten belasten einkommensschwache Pflegebedürftige und kommunale Budgets; Thema kreuzt Sozial- und Gesundheitspolitik des Mandatsbereichs.",
+   "event_type": "bericht",
+   "decision_entities": [
+    {
+     "name": "Ausschuss für Arbeit und Soziales",
+     "type": "committee",
+     "entity_id": "committee-bt-arbeit-soziales",
+     "confidence": "medium"
+    },
+    {
+     "name": "Ausschuss für Gesundheit",
+     "type": "committee",
+     "entity_id": "committee-bt-gesundheit",
+     "confidence": "medium"
+    },
+    {
+     "name": "Senatsverwaltung für Gesundheit und Pflege",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "SPD",
+     "type": "party",
+     "entity_id": "party-spd",
+     "confidence": "high"
+    },
+    {
+     "name": "CDU",
+     "type": "party",
+     "entity_id": "party-cdu",
+     "confidence": "high"
+    },
+    {
+     "name": "Bündnis 90/Die Grünen",
+     "type": "party",
+     "entity_id": "party-gruene",
+     "confidence": "high"
+    }
+   ],
+   "parteien": [
+    "SPD",
+    "CDU",
+    "Grüne"
+   ],
+   "ausschuesse": [
+    "Sozialausschuss",
+    "Gesundheitsausschuss"
+   ],
+   "mentioned_parties": [
+    "SPD",
+    "CDU",
+    "Grüne"
+   ],
+   "mentioned_committees": [
+    "Sozialausschuss",
+    "Gesundheitsausschuss"
+   ],
+   "mentioned_locations": [
+    "Berlin"
+   ],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "land",
+   "created_at": "2026-07-21T20:03:42.232039+00:00"
+  },
+  {
+   "fallgruppen": [
+    3,
+    7,
+    8,
+    9,
+    12
+   ],
+   "id": "ko-vg-rentenreform-20240927-525316",
+   "vorgang_id": "vg-rentenreform-20240927-525316",
+   "headline": "",
+   "display_title": "SPD-Bundestagsfraktion veröffentlicht Position zur Rentenreform",
+   "was_ist_passiert": "Die SPD-Bundestagsfraktion hat eine Veröffentlichung zur Bedeutung der Rentenreform veröffentlicht.",
+   "warum_wichtig": "Die Fraktion positioniert sich öffentlich zur Rentenreform und beeinflusst die laufende Debatte über Sozial- und Finanzpolitik. Das Thema kann Mehrheiten und öffentliche Wahrnehmung vor parlamentarischen Entscheidungen verschieben.",
+   "event_type": "bericht",
+   "decision_entities": [],
+   "related_entities": [
+    {
+     "name": "SPD",
+     "type": "party",
+     "entity_id": "party-spd",
+     "confidence": "high"
+    }
+   ],
+   "parteien": [
+    "SPD"
+   ],
+   "ausschuesse": [],
+   "mentioned_parties": [
+    "SPD"
+   ],
+   "mentioned_committees": [],
+   "mentioned_locations": [],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "bund",
+   "created_at": "2026-07-27T20:04:16.915916+00:00"
+  },
+  {
+   "fallgruppen": [
+    5,
+    12
+   ],
+   "id": "ko-vg-luftangriffen",
+   "vorgang_id": "vg-luftangriffen",
+   "headline": "US-Luftangriffe in Iran gemeldet",
+   "display_title": "",
+   "was_ist_passiert": "Berichte melden, dass US-Luftangriffe im Iran mehr als 30 Tote verursacht haben.",
+   "warum_wichtig": "Gewalteskalation zwischen den USA und Iran kann regionale Stabilität gefährden und Diplomatie sowie Sicherheitsprioritäten des Bundestags beeinflussen.",
+   "event_type": "sonstiges",
+   "decision_entities": [
+    {
+     "name": "Ausschuss für Auswärtiges",
+     "type": "committee",
+     "entity_id": "committee-bt-auswaertiges",
+     "confidence": "medium"
+    },
+    {
+     "name": "Ausschuss für Verteidigung",
+     "type": "committee",
+     "entity_id": "committee-bt-verteidigung",
+     "confidence": "medium"
+    },
+    {
+     "name": "Auswärtiges Amt",
+     "type": "ministry",
+     "entity_id": "ministry-auswaertiges-amt",
+     "confidence": "high"
+    },
+    {
+     "name": "Bundesministerium der Verteidigung",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "US State Department",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "CDU/CSU",
+     "type": "party",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "SPD",
+     "type": "party",
+     "entity_id": "party-spd",
+     "confidence": "high"
+    },
+    {
+     "name": "Bündnis 90/Die Grünen",
+     "type": "party",
+     "entity_id": "party-gruene",
+     "confidence": "high"
+    },
+    {
+     "name": "Republikaner (USA)",
+     "type": "party",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "US-Streitkräfte",
+     "type": "organization",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "parteien": [
+    "CDU/CSU",
+    "SPD",
+    "Bündnis 90/Die Grünen"
+   ],
+   "ausschuesse": [
+    "Auswärtiger Ausschuss",
+    "Verteidigungsausschuss"
+   ],
+   "mentioned_parties": [
+    "Republikaner (USA)"
+   ],
+   "mentioned_committees": [],
+   "mentioned_locations": [
+    "Iran"
+   ],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "international",
+   "created_at": "2026-07-15T10:02:45.877172+00:00"
+  },
+  {
+   "fallgruppen": [
+    5,
+    12
+   ],
+   "id": "ko-vg-angriffe",
+   "vorgang_id": "vg-angriffe",
+   "headline": "US führt weitere Angriffe gegen Iran durch (Tag 5)",
+   "display_title": "USA führen fortgesetzte Angriffe gegen Ziele im Iran",
+   "was_ist_passiert": "Berichte melden am fünften Tag in Folge weitere US-Militärangriffe gegen Ziele im Iran.",
+   "warum_wichtig": "Hat außenpolitische Folgen für Sicherheits- und Verteidigungsfragen; kann Debatten im Bereich Bundespolitik zu Bündnisverpflichtungen und Risikoverlagerungen anstoßen.",
+   "event_type": "sonstiges",
+   "decision_entities": [
+    {
+     "name": "Ausschuss für Auswärtiges",
+     "type": "committee",
+     "entity_id": "committee-bt-auswaertiges",
+     "confidence": "medium"
+    },
+    {
+     "name": "Ausschuss für Verteidigung",
+     "type": "committee",
+     "entity_id": "committee-bt-verteidigung",
+     "confidence": "medium"
+    },
+    {
+     "name": "Auswärtiges Amt",
+     "type": "ministry",
+     "entity_id": "ministry-auswaertiges-amt",
+     "confidence": "high"
+    },
+    {
+     "name": "Bundesministerium der Verteidigung",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "CDU/CSU",
+     "type": "party",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "SPD",
+     "type": "party",
+     "entity_id": "party-spd",
+     "confidence": "high"
+    },
+    {
+     "name": "Bündnis 90/Die Grünen",
+     "type": "party",
+     "entity_id": "party-gruene",
+     "confidence": "high"
+    },
+    {
+     "name": "US-Streitkräfte",
+     "type": "organization",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "parteien": [
+    "CDU/CSU",
+    "SPD",
+    "Bündnis 90/Die Grünen"
+   ],
+   "ausschuesse": [
+    "Auswärtiger Ausschuss",
+    "Verteidigungsausschuss"
+   ],
+   "mentioned_parties": [],
+   "mentioned_committees": [],
+   "mentioned_locations": [
+    "Iran",
+    "USA",
+    "Region Naher Osten"
+   ],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "international",
+   "created_at": "2026-07-16T20:02:59.412488+00:00"
+  },
+  {
+   "fallgruppen": [
+    5,
+    12
+   ],
+   "id": "ko-vg-nächtliche",
+   "vorgang_id": "vg-nächtliche",
+   "headline": "US setzt Angriffe gegen Iran fort",
+   "display_title": "",
+   "was_ist_passiert": "Berichten zufolge hat die US-Armee in der Nacht weitere Angriffe gegen Ziele im Iran durchgeführt.",
+   "warum_wichtig": "Militärische Aktionen der USA gegen den Iran können regionale Spannungen verschärfen und Auswirkungen auf deutsche Außen- und Sicherheitspolitik sowie Energie- und Handelssicherheit haben.",
+   "event_type": "sonstiges",
+   "decision_entities": [
+    {
+     "name": "Ausschuss für Auswärtiges",
+     "type": "committee",
+     "entity_id": "committee-bt-auswaertiges",
+     "confidence": "medium"
+    },
+    {
+     "name": "Ausschuss für Verteidigung",
+     "type": "committee",
+     "entity_id": "committee-bt-verteidigung",
+     "confidence": "medium"
+    },
+    {
+     "name": "Auswärtiges Amt",
+     "type": "ministry",
+     "entity_id": "ministry-auswaertiges-amt",
+     "confidence": "high"
+    },
+    {
+     "name": "Bundesministerium der Verteidigung",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "CDU/CSU",
+     "type": "party",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "SPD",
+     "type": "party",
+     "entity_id": "party-spd",
+     "confidence": "high"
+    },
+    {
+     "name": "Bündnis 90/Die Grünen",
+     "type": "party",
+     "entity_id": "party-gruene",
+     "confidence": "high"
+    },
+    {
+     "name": "FDP",
+     "type": "party",
+     "entity_id": "party-fdp",
+     "confidence": "high"
+    },
+    {
+     "name": "Die Linke",
+     "type": "party",
+     "entity_id": "party-linke",
+     "confidence": "high"
+    },
+    {
+     "name": "US Army",
+     "type": "organization",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "parteien": [
+    "CDU/CSU",
+    "SPD",
+    "Grüne",
+    "FDP",
+    "Die Linke"
+   ],
+   "ausschuesse": [
+    "Auswärtiger Ausschuss",
+    "Verteidigungsausschuss"
+   ],
+   "mentioned_parties": [],
+   "mentioned_committees": [],
+   "mentioned_locations": [
+    "Iran"
+   ],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "international",
+   "created_at": "2026-07-24T04:03:06.143885+00:00"
+  },
+  {
+   "fallgruppen": [
+    5,
+    12
+   ],
+   "id": "ko-vg-beschädigt",
+   "vorgang_id": "vg-beschädigt",
+   "headline": "Krieg am Persischen Golf: Zweite Nacht ohne US-Angriff; Iran stellt Attacken ebenfalls ein",
+   "display_title": "",
+   "was_ist_passiert": "Im Persischen Golf hat es eine zweite Nacht ohne US-Luftangriffe gegeben. Der Iran hat nach Berichten seine Angriffe ebenfalls eingestellt. Ein Tanker wurde beschädigt.",
+   "warum_wichtig": "Direkte Deeskalation verringert akute Gefährdungsschritte und beeinflusst EU-Außen- und Sicherheitsdebatten. Ereignis kann kurzfristig außenpolitische Reaktionen und parlamentarische Initiativen auslösen.",
+   "event_type": "sonstiges",
+   "decision_entities": [
+    {
+     "name": "Ausschuss für Auswärtiges",
+     "type": "committee",
+     "entity_id": "committee-bt-auswaertiges",
+     "confidence": "medium"
+    },
+    {
+     "name": "Auswärtiges Amt",
+     "type": "ministry",
+     "entity_id": "ministry-auswaertiges-amt",
+     "confidence": "high"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "Bundesregierung",
+     "type": "government",
+     "entity_id": "government-bund",
+     "confidence": "high"
+    }
+   ],
+   "parteien": [
+    "Bundesregierung"
+   ],
+   "ausschuesse": [
+    "Auswärtiger Ausschuss"
+   ],
+   "mentioned_parties": [],
+   "mentioned_committees": [],
+   "mentioned_locations": [
+    "Persischer Golf"
+   ],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "international",
+   "created_at": "2026-07-26T20:03:26.975611+00:00"
+  },
+  {
+   "fallgruppen": [
+    4,
+    3,
+    12
+   ],
+   "id": "ko-vg-angriffen",
+   "vorgang_id": "vg-angriffen",
+   "headline": "US-Präsident droht Iran nach Huthi-Angriffen auf saudische Schiffe",
+   "display_title": "US-Präsident droht Iran nach Angriffen auf saudische Schiffe",
+   "was_ist_passiert": "US-Präsident Trump hat dem Iran mit Konsequenzen gedroht, nachdem die Huthi-Rebellen Angriffe auf saudische Schiffe verübt haben.",
+   "warum_wichtig": "Erhöhtes Risiko regionaler Eskalation und internationale Spannungen; mögliche Einbindung der Bundesaußen- und Sicherheitspolitik; beeinflusst Debatten zu Seehandel und Bündnisverpflichtungen.",
+   "event_type": "sonstiges",
+   "decision_entities": [
+    {
+     "name": "Ausschuss für Auswärtiges",
+     "type": "committee",
+     "entity_id": "committee-bt-auswaertiges",
+     "confidence": "medium"
+    },
+    {
+     "name": "Auswärtiges Amt",
+     "type": "ministry",
+     "entity_id": "ministry-auswaertiges-amt",
+     "confidence": "high"
+    },
+    {
+     "name": "Bundesministerium der Verteidigung",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "CDU/CSU",
+     "type": "party",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "SPD",
+     "type": "party",
+     "entity_id": "party-spd",
+     "confidence": "high"
+    },
+    {
+     "name": "Bündnis 90/Die Grünen",
+     "type": "party",
+     "entity_id": "party-gruene",
+     "confidence": "high"
+    },
+    {
+     "name": "Huthi-Bewegung",
+     "type": "party",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "Saudi-Arabien",
+     "type": "party",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "Huthi-Rebellen",
+     "type": "organization",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "parteien": [
+    "CDU/CSU",
+    "SPD",
+    "Die Grünen"
+   ],
+   "ausschuesse": [
+    "Auswärtiger Ausschuss"
+   ],
+   "mentioned_parties": [
+    "Huthi-Bewegung",
+    "Saudi-Arabien"
+   ],
+   "mentioned_committees": [],
+   "mentioned_locations": [
+    "Saudi-Arabien",
+    "Persischer Golf",
+    "Iran"
+   ],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "international",
+   "created_at": "2026-07-23T16:03:39.498704+00:00"
+  },
+  {
+   "fallgruppen": [
+    4,
+    3,
+    12
+   ],
+   "id": "ko-vg-attackieren",
+   "vorgang_id": "vg-attackieren",
+   "headline": "US-Luftschlag gegen iranisch-nahen Ziele nach Angriff im Roten Meer",
+   "display_title": "USA führen Angriffe auf iranisch-nahe Ziele nach Huthi-Angriff",
+   "was_ist_passiert": "Das US-Militär hat erneut Ziele beschossen, die dem iranischen Einfluss zugerechnet werden. Zuvor hatten Huthi-Rebellen einen saudischen Tanker im Roten Meer angegriffen.",
+   "warum_wichtig": "Gefährdet regionale Stabilität und deutsche Sicherheitsinteressen; kann Bundestagsdebatte über Rüstungsexporte und Bündnisverpflichtungen auslösen.",
+   "event_type": "sonstiges",
+   "decision_entities": [
+    {
+     "name": "Auswärtiges Amt",
+     "type": "ministry",
+     "entity_id": "ministry-auswaertiges-amt",
+     "confidence": "high"
+    },
+    {
+     "name": "Bundesministerium der Verteidigung",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "CDU/CSU",
+     "type": "party",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "SPD",
+     "type": "party",
+     "entity_id": "party-spd",
+     "confidence": "high"
+    },
+    {
+     "name": "Bündnis 90/Die Grünen",
+     "type": "party",
+     "entity_id": "party-gruene",
+     "confidence": "high"
+    },
+    {
+     "name": "US-Militär",
+     "type": "organization",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "Huthi-Rebellen",
+     "type": "organization",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "Saudi-Arabien",
+     "type": "organization",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "parteien": [
+    "CDU/CSU",
+    "SPD",
+    "Grüne"
+   ],
+   "ausschuesse": [],
+   "mentioned_parties": [],
+   "mentioned_committees": [],
+   "mentioned_locations": [
+    "Rotes Meer"
+   ],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "international",
+   "created_at": "2026-07-23T04:03:37.874438+00:00"
+  },
+  {
+   "fallgruppen": [
+    3,
+    8,
+    12
+   ],
+   "id": "ko-vg-militärbündnis",
+   "vorgang_id": "vg-militärbündnis",
+   "headline": "Militärbündnis greift Huthi im Jemen an nach Angriff auf saudisches Schiff",
+   "display_title": "",
+   "was_ist_passiert": "Nach einem Angriff auf ein saudisches Handelsschiff hat ein von Saudi-Arabien geführtes Militärbündnis Vergeltungsangriffe gegen Huthi-Stellungen im Jemen durchgeführt.",
+   "warum_wichtig": "Deutet auf Eskalation in der Region und mögliche Auswirkungen auf Handel, Sicherheit und deutsche außenpolitische Positionierung hin.",
+   "event_type": "sonstiges",
+   "decision_entities": [
+    {
+     "name": "Auswärtiges Amt",
+     "type": "ministry",
+     "entity_id": "ministry-auswaertiges-amt",
+     "confidence": "high"
+    },
+    {
+     "name": "Bundesministerium der Verteidigung",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "CDU/CSU",
+     "type": "party",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "SPD",
+     "type": "party",
+     "entity_id": "party-spd",
+     "confidence": "high"
+    },
+    {
+     "name": "FDP",
+     "type": "party",
+     "entity_id": "party-fdp",
+     "confidence": "high"
+    },
+    {
+     "name": "Die Linke",
+     "type": "party",
+     "entity_id": "party-linke",
+     "confidence": "high"
+    },
+    {
+     "name": "Bündnis 90/Die Grünen",
+     "type": "party",
+     "entity_id": "party-gruene",
+     "confidence": "high"
+    },
+    {
+     "name": "Saudi-Arabien",
+     "type": "party",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "Huthi-Bewegung",
+     "type": "organization",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "parteien": [
+    "CDU/CSU",
+    "SPD",
+    "FDP",
+    "Die Linke",
+    "Bündnis 90/Die Grünen"
+   ],
+   "ausschuesse": [],
+   "mentioned_parties": [
+    "Saudi-Arabien"
+   ],
+   "mentioned_committees": [],
+   "mentioned_locations": [
+    "Jemen",
+    "Rotes Meer",
+    "Saudi-Arabien"
+   ],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "international",
+   "created_at": "2026-07-25T04:04:49.742713+00:00"
+  },
+  {
+   "fallgruppen": [
+    15,
+    12
+   ],
+   "id": "ko-vg-frachtschiff",
+   "vorgang_id": "vg-frachtschiff",
+   "headline": "Iran beschuldigt Ukraine des Angriffs auf Frachtschiff im Kaspischen Meer",
+   "display_title": "Iran erhebt Vorwurf gegen Ukraine nach Angriff auf Frachtschiff",
+   "was_ist_passiert": "Im Kaspischen Meer wurde ein Frachtschiff angegriffen. Iran erhebt Vorwürfe gegen die Ukraine und macht sie für den Angriff verantwortlich.",
+   "warum_wichtig": "Internationale Sicherheitslage in einer geopolitisch sensiblen Region verschärft sich; mögliche Auswirkungen auf diplomatische Beziehungen und regionale Stabilität sind zu erwarten.",
+   "event_type": "sonstiges",
+   "decision_entities": [
+    {
+     "name": "Auswärtiges Amt",
+     "type": "ministry",
+     "entity_id": "ministry-auswaertiges-amt",
+     "confidence": "high"
+    },
+    {
+     "name": "Verteidigungsministerium",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "Betreiber des Frachtschiffs",
+     "type": "organization",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "parteien": [],
+   "ausschuesse": [],
+   "mentioned_parties": [],
+   "mentioned_committees": [],
+   "mentioned_locations": [
+    "Kaspisches Meer"
+   ],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "international",
+   "created_at": "2026-07-26T07:56:29.478057+00:00"
+  },
+  {
+   "fallgruppen": [
+    15,
+    12
+   ],
+   "id": "ko-vg-betroffen",
+   "vorgang_id": "vg-betroffen",
+   "headline": "Merz-Angriff auf Verkehrsminister provoziert öffentliche Debatte",
+   "display_title": "",
+   "was_ist_passiert": "In einem öffentlichen Streit kritisierte Friedrich Merz den Umgang von Bundesverkehrsminister Andreas Scheuer/Ministerium (je nach Quelle) mit Verkehrsfragen; zugleich gab es Berichte über geplante Änderungen beim Krankengeld ab 2027 für bestimmte Betroffene.",
+   "warum_wichtig": "Konflikt zwischen führendem Politiker und Bundesminister erzeugt mediale Aufmerksamkeit und kann parlamentarische Debatten über Verkehrs- und Sozialpolitik befeuern. Betroffene Gesundheitsleistungsänderungen haben soziale Auswirkungen und könnten Oppositionsnarrative stärken.",
+   "event_type": "sonstiges",
+   "decision_entities": [
+    {
+     "name": "Bundesverkehrsministerium",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "Bundesministerium für Gesundheit",
+     "type": "ministry",
+     "entity_id": "ministry-bmg",
+     "confidence": "high"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "CDU/CSU",
+     "type": "party",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "SPD",
+     "type": "party",
+     "entity_id": "party-spd",
+     "confidence": "high"
+    },
+    {
+     "name": "Bündnis 90/Die Grünen",
+     "type": "party",
+     "entity_id": "party-gruene",
+     "confidence": "high"
+    }
+   ],
+   "parteien": [
+    "CDU/CSU",
+    "SPD"
+   ],
+   "ausschuesse": [],
+   "mentioned_parties": [
+    "Grüne"
+   ],
+   "mentioned_committees": [],
+   "mentioned_locations": [],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "bund",
+   "created_at": "2026-07-25T04:02:26.274439+00:00"
+  },
+  {
+   "fallgruppen": [
+    15,
+    12
+   ],
+   "id": "ko-vg-cybersicherheit",
+   "vorgang_id": "vg-cybersicherheit",
+   "headline": "",
+   "display_title": "Experten warnt vor hochgefährlichem KI-Hackerangriff",
+   "was_ist_passiert": "Ein Experte bezeichnete einen KI-gestützten Hackerangriff als \"hochgefährlich für die globale Cybersicherheit\" und warnte vor erheblichen Risiken.",
+   "warum_wichtig": "KI-basierte Angriffe verändern die Gefährdungslage im Bereich Cyber/IT-Sicherheit und können Kritische Infrastruktur und staatliche Systeme erreichen. Das Thema berührt sicherheitspolitische Zuständigkeiten und mögliche Gesetzes- bzw. Handlungsbedarfe.",
+   "event_type": "bericht",
+   "decision_entities": [
+    {
+     "name": "Bundesministerium des Innern und für Heimat",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "Bundesministerium der Verteidigung",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "Bundesministerium für Wirtschaft und Klima",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "related_entities": [],
+   "parteien": [],
+   "ausschuesse": [],
+   "mentioned_parties": [],
+   "mentioned_committees": [],
+   "mentioned_locations": [],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "bund",
+   "created_at": "2026-07-22T20:04:53.081233+00:00"
+  },
+  {
+   "fallgruppen": [
+    1,
+    15,
+    12
+   ],
+   "id": "ko-vg-raketenangriff",
+   "vorgang_id": "vg-raketenangriff",
+   "headline": "Russischer Raketenangriff auf Kiew",
+   "display_title": "",
+   "was_ist_passiert": "Russland führte einen Raketenangriff auf Ziele in Kiew durch, es gab Berichte über Schäden und Verletzte.",
+   "warum_wichtig": "Konflikteskalation in Europas Sicherheitspolitik. Betifft außen- und sicherheitspolitische Entscheidungen sowie Unterstützungslinien gegenüber der Ukraine.",
+   "event_type": "protest",
+   "decision_entities": [
+    {
+     "name": "Auswärtiges Amt",
+     "type": "ministry",
+     "entity_id": "ministry-auswaertiges-amt",
+     "confidence": "high"
+    },
+    {
+     "name": "Bundesministerium der Verteidigung",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "related_entities": [],
+   "parteien": [],
+   "ausschuesse": [],
+   "mentioned_parties": [],
+   "mentioned_committees": [],
+   "mentioned_locations": [
+    "Kiew",
+    "Ukraine",
+    "Russland"
+   ],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "international",
+   "created_at": "2026-07-19T04:02:36.032932+00:00"
+  },
+  {
+   "fallgruppen": [
+    1,
+    15,
+    12
+   ],
+   "id": "ko-vg-großangriff",
+   "vorgang_id": "vg-großangriff",
+   "headline": "Russischer Großangriff auf Kiew; Ukraine beschießt Ölanlagen",
+   "display_title": "Russland führt Großangriff auf Kiew; Ukraine greift Ölanlagen an",
+   "was_ist_passiert": "Russland hat einen großangelegten Angriff auf Kiew durchgeführt. In der Folge hat die Ukraine nach Berichten Ölanlagen beschossen.",
+   "warum_wichtig": "Erhöhte militärische Eskalation in und um Kiew kann Folgen für Sicherheits- und Energiepolitik haben. Relevanz für Außen- und Sicherheitspolitik sowie humanitäre Unterstützung und Energieversorgung.",
+   "event_type": "sonstiges",
+   "decision_entities": [
+    {
+     "name": "Auswärtiges Amt",
+     "type": "ministry",
+     "entity_id": "ministry-auswaertiges-amt",
+     "confidence": "high"
+    },
+    {
+     "name": "Bundesministerium für Verteidigung",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "related_entities": [],
+   "parteien": [],
+   "ausschuesse": [],
+   "mentioned_parties": [],
+   "mentioned_committees": [],
+   "mentioned_locations": [
+    "Kiew",
+    "Ukraine"
+   ],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "international",
+   "created_at": "2026-07-19T16:03:30.072097+00:00"
+  },
+  {
+   "fallgruppen": [
+    3,
+    12
+   ],
+   "id": "ko-vg-russische",
+   "vorgang_id": "vg-russische",
+   "headline": "Russischer Raketenangriff auf Rüstungsmesse nahe Kiew",
+   "display_title": "",
+   "was_ist_passiert": "Russland hat nach Berichten einen Raketenangriff auf eine Rüstungsmesse in der Nähe von Kiew durchgeführt. Zeitgleich wurde bekannt, dass die russische Zentralbank den Leitzins erneut gesenkt hat.",
+   "warum_wichtig": "Angriff auf zivile und wirtschaftliche Veranstaltung in Kriegsgebiet erhöht Sicherheits- und Außenpolitikdruck. Ökonomische Maßnahme Russlands könnte Sanktionseffekt und Mobilisierungsdynamik beeinflussen.",
+   "event_type": "sonstiges",
+   "decision_entities": [
+    {
+     "name": "Ausschuss für Auswärtiges",
+     "type": "committee",
+     "entity_id": "committee-bt-auswaertiges",
+     "confidence": "medium"
+    },
+    {
+     "name": "Ausschuss für Verteidigung",
+     "type": "committee",
+     "entity_id": "committee-bt-verteidigung",
+     "confidence": "medium"
+    },
+    {
+     "name": "Auswärtiges Amt",
+     "type": "ministry",
+     "entity_id": "ministry-auswaertiges-amt",
+     "confidence": "high"
+    },
+    {
+     "name": "Bundesministerium der Verteidigung",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "Zentralbank Russland",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "Bundestag-Fraktionen",
+     "type": "party",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "Russland",
+     "type": "party",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "Ukraine",
+     "type": "party",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "Rüstungsmesse",
+     "type": "organization",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "parteien": [
+    "Bundestag-Fraktionen"
+   ],
+   "ausschuesse": [
+    "Auswärtiger Ausschuss",
+    "Verteidigungsausschuss"
+   ],
+   "mentioned_parties": [
+    "Russland",
+    "Ukraine"
+   ],
+   "mentioned_committees": [],
+   "mentioned_locations": [
+    "Kiew",
+    "Russland"
+   ],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "eu",
+   "created_at": "2026-07-24T20:04:39.181337+00:00"
+  },
+  {
+   "fallgruppen": [
+    5,
+    3,
+    10,
+    12,
+    14
+   ],
+   "id": "ko-vg-csd-20260727-12aae0",
+   "vorgang_id": "vg-csd-20260727-12aae0",
+   "headline": "Anschlag auf CSD in Berlin mit Todesopfer und mehreren Verletzten",
+   "display_title": "Anschlag auf CSD in Berlin erschüttert Demonstrationsteilnehmer",
+   "was_ist_passiert": "Bei einer Christopher-Street-Day-Demonstration in Berlin fuhr ein Fahrzeug in eine Menschenmenge; dabei wurde mindestens eine Person getötet und mehrere verletzt. Die Polizei identifizierte einen Tatverdächtigen mit mutmaßlichem islamistischem Hintergrund; der Verdächtige wurde später bei einem Polizeieinsatz erschossen. Behörden und führende Politiker verurteilten die Tat und betonten Schutz und Zusammenhalt.",
+   "warum_wichtig": "Gewalttat mit Todesfolge auf einer Großveranstaltung verändert Sicherheitslage und Debatte zu Extremismus und Schutz von queeren Veranstaltungen. Betroffene Debatten: öffentliche Sicherheit, Extremismusbekämpfung, Schutz von Minderheiten und Versammlungsfreiheit.",
+   "event_type": "sonstiges",
+   "decision_entities": [
+    {
+     "name": "Bundesministerium des Innern und für Heimat (BMI)",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "Bundesministerium des Innern und für Heimat",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "SPD",
+     "type": "party",
+     "entity_id": "party-spd",
+     "confidence": "high"
+    },
+    {
+     "name": "CDU/CSU",
+     "type": "party",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "Bündnis 90/Die Grünen",
+     "type": "party",
+     "entity_id": "party-gruene",
+     "confidence": "high"
+    },
+    {
+     "name": "Die Linke",
+     "type": "party",
+     "entity_id": "party-linke",
+     "confidence": "high"
+    },
+    {
+     "name": "AfD",
+     "type": "party",
+     "entity_id": "party-afd",
+     "confidence": "high"
+    },
+    {
+     "name": "Polizei",
+     "type": "organization",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "CSD-Organisation",
+     "type": "organization",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "parteien": [
+    "SPD",
+    "CDU/CSU",
+    "Bündnis 90/Die Grünen",
+    "Die Linke"
+   ],
+   "ausschuesse": [],
+   "mentioned_parties": [
+    "AfD"
+   ],
+   "mentioned_committees": [],
+   "mentioned_locations": [
+    "Berlin"
+   ],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "bund",
+   "created_at": "2026-07-27T10:03:19.153261+00:00"
+  },
+  {
+   "fallgruppen": [
+    5,
+    3,
+    10,
+    12,
+    14
+   ],
+   "id": "ko-vg-csd-20260727-d31580",
+   "vorgang_id": "vg-csd-20260727-d31580",
+   "headline": "",
+   "display_title": "Bundespolitiker fordern Maßnahmen nach Anschlag auf CSD",
+   "was_ist_passiert": "Bei einem Anschlag auf den Berliner CSD gab es intensive Medien- und Politikberichterstattung. Sicherheitsbehörden filmten den mutmaßlichen Täter kurz vor dem Anschlag; der Beschuldigte war zuvor als 'Hochrisiko-Person' eingestuft worden und war im Mai aus der Untersuchungshaft entlassen worden. Politische Forderungen reichen von Verfassungsänderungen zum Diskriminierungsschutz für queere Menschen bis zu strengeren Maßnahmen gegen Gefährder (z. B. Fußfessel). Zivilgesellschaftliche Akteure warnen vor Spaltung und Hass gegen Musliminnen und Muslime.",
+   "warum_wichtig": "Thema berührt Innere Sicherheit, Justizentscheidungen und Minderheitenschutz zugleich und kann öffentliche Debatten über Überwachung, Haftpraxis und Verfassungsschutz verändern. Es betrifft unmittelbar die Gesetzgebungs- und Kontrollarbeit sowie Kommunikationslage für Abgeordnete mit sicherheitspolitischem oder gleichstellungspolitischem Profil.",
+   "event_type": "sonstiges",
+   "decision_entities": [
+    {
+     "name": "Ausschuss für Inneres und Heimat",
+     "type": "committee",
+     "entity_id": "committee-bt-inneres",
+     "confidence": "medium"
+    },
+    {
+     "name": "Ausschuss für Recht",
+     "type": "committee",
+     "entity_id": "committee-bt-recht",
+     "confidence": "medium"
+    },
+    {
+     "name": "Bundesministerium des Innern",
+     "type": "ministry",
+     "entity_id": "ministry-bmi",
+     "confidence": "high"
+    },
+    {
+     "name": "Bundesministerium der Justiz",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "SPD",
+     "type": "party",
+     "entity_id": "party-spd",
+     "confidence": "high"
+    },
+    {
+     "name": "CDU/CSU",
+     "type": "party",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "Berliner CSD-Verein",
+     "type": "organization",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "parteien": [
+    "SPD",
+    "CDU/CSU"
+   ],
+   "ausschuesse": [
+    "Innenausschuss",
+    "Rechtsausschuss"
+   ],
+   "mentioned_parties": [],
+   "mentioned_committees": [],
+   "mentioned_locations": [
+    "Berlin"
+   ],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "bund",
+   "created_at": "2026-07-27T16:04:31.462707+00:00"
+  },
+  {
+   "fallgruppen": [
+    3,
+    10,
+    12
+   ],
+   "id": "ko-vg-c454d110ae69321124017522",
+   "vorgang_id": "vg-c454d110ae69321124017522",
+   "headline": "Queere Räume in Berlin unter Druck (CSD 2026)",
+   "display_title": "Berlin fordert Schutzmaßnahmen für queere Räume",
+   "was_ist_passiert": "Berichterstattung beim CSD 2026 in Berlin weist darauf hin, dass queere Räume in der Stadt unter Druck geraten. Die Meldung thematisiert Bedrohungen und Herausforderungen für Veranstaltungsorte und Schutzräume queerer Communities.",
+   "warum_wichtig": "Verändert das lokale politische Handlungsfeld zu Sicherheit und Kultur; betrifft Koalitions- und sicherheitspolitische Debatten im Wahlkreis. Kann direkte Nachfrage an Innen- und Kulturpolitik auslösen und öffentliche Mobilisierung verstärken.",
+   "event_type": "protest",
+   "decision_entities": [
+    {
+     "name": "Senatsverwaltung für Inneres (Berlin)",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "Senatsverwaltung für Kultur und Europa (Berlin)",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "SPD",
+     "type": "party",
+     "entity_id": "party-spd",
+     "confidence": "high"
+    },
+    {
+     "name": "Die Linke",
+     "type": "party",
+     "entity_id": "party-linke",
+     "confidence": "high"
+    },
+    {
+     "name": "Bündnis 90/Die Grünen",
+     "type": "party",
+     "entity_id": "party-gruene",
+     "confidence": "high"
+    }
+   ],
+   "parteien": [
+    "SPD",
+    "Die Linke",
+    "Bündnis 90/Die Grünen"
+   ],
+   "ausschuesse": [],
+   "mentioned_parties": [
+    "SPD",
+    "Die Linke",
+    "Bündnis 90/Die Grünen"
+   ],
+   "mentioned_committees": [],
+   "mentioned_locations": [
+    "Berlin"
+   ],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "land",
+   "created_at": "2026-07-25T07:34:46.142484+00:00"
+  },
+  {
+   "fallgruppen": [
+    3,
+    9,
+    12
+   ],
+   "id": "ko-vg-grundgesetz-20260725-15b616",
+   "vorgang_id": "vg-grundgesetz-20260725-15b616",
+   "headline": "",
+   "display_title": "",
+   "was_ist_passiert": "Kai Wegner forderte im Bundestag ein klares Bekenntnis zu queeren Rechten im Grundgesetz und betonte die Rolle des Parlaments in der Debatte.",
+   "warum_wichtig": "Verändert die öffentliche Debatte über Verfassungsfragen zu sexueller und geschlechtlicher Gleichstellung; kann Gesetzesinitiativen und Fraktionspositionen beeinflussen.",
+   "event_type": "sonstiges",
+   "decision_entities": [
+    {
+     "name": "Ausschuss für Recht",
+     "type": "committee",
+     "entity_id": "committee-bt-recht",
+     "confidence": "medium"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "CDU/CSU",
+     "type": "party",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "SPD",
+     "type": "party",
+     "entity_id": "party-spd",
+     "confidence": "high"
+    },
+    {
+     "name": "Bündnis 90/Die Grünen",
+     "type": "party",
+     "entity_id": "party-gruene",
+     "confidence": "high"
+    },
+    {
+     "name": "FDP",
+     "type": "party",
+     "entity_id": "party-fdp",
+     "confidence": "high"
+    },
+    {
+     "name": "Die Linke",
+     "type": "party",
+     "entity_id": "party-linke",
+     "confidence": "high"
+    },
+    {
+     "name": "Deutscher Bundestag",
+     "type": "parliament",
+     "entity_id": "parliament-bundestag",
+     "confidence": "high"
+    }
+   ],
+   "parteien": [
+    "CDU/CSU"
+   ],
+   "ausschuesse": [
+    "Rechtsausschuss"
+   ],
+   "mentioned_parties": [
+    "SPD",
+    "Grüne",
+    "FDP",
+    "Linke"
+   ],
+   "mentioned_committees": [
+    "Rechtsausschuss"
+   ],
+   "mentioned_locations": [],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "bund",
+   "created_at": "2026-07-27T12:15:36.308449+00:00"
+  },
+  {
+   "fallgruppen": [
+    10,
+    12
+   ],
+   "id": "ko-vg-bürgermeisterin",
+   "vorgang_id": "vg-bürgermeisterin",
+   "headline": "CDU äußert Sorge vor linker Berliner Bürgermeisterin",
+   "display_title": "CDU warnt vor Linksruck in Berlin",
+   "was_ist_passiert": "Die CDU hat öffentlich erklärt, sie fürchte ein 'rotes Berlin' und eine linke Bürgermeisterin.",
+   "warum_wichtig": "Verändert die öffentliche Darstellung der Wahlkampfagenda in Berlin und signalisiert Polarisierung zwischen Parteien. Beeinflusst mögliche Koalitions- und Mobilisierungsstrategien relevant für bundes- und landespolitische Akteure.",
+   "event_type": "sonstiges",
+   "decision_entities": [],
+   "related_entities": [
+    {
+     "name": "CDU",
+     "type": "party",
+     "entity_id": "party-cdu",
+     "confidence": "high"
+    }
+   ],
+   "parteien": [
+    "CDU"
+   ],
+   "ausschuesse": [],
+   "mentioned_parties": [],
+   "mentioned_committees": [],
+   "mentioned_locations": [
+    "Berlin"
+   ],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "land",
+   "created_at": "2026-07-15T07:30:20.370416+00:00"
+  },
+  {
+   "fallgruppen": [
+    15,
+    10,
+    12
+   ],
+   "id": "ko-vg-ausnahme",
+   "vorgang_id": "vg-ausnahme",
+   "headline": "Mietenentwicklung: Bundesweite Preissteigerung mit Ausnahme Berlin",
+   "display_title": "Bundesweite Mieten steigen, Berlin bildet Ausnahme",
+   "was_ist_passiert": "Medienberichte fassen zusammen, dass die Mieten in Deutschland bundesweit stark gestiegen sind, während Berlin eine Ausnahme bildet.",
+   "warum_wichtig": "Wohnkosten betreffen Wählerinnen und Wähler direkt und beeinflussen Haushaltsbelastung sowie städtische Politik. Das Thema kann kurzfristig kommunalpolitische und bundespolitische Forderungen auslösen.",
+   "event_type": "bericht",
+   "decision_entities": [
+    {
+     "name": "Bundesministerium für Wohnen, Stadtentwicklung und Bauwesen",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "SPD",
+     "type": "party",
+     "entity_id": "party-spd",
+     "confidence": "high"
+    },
+    {
+     "name": "CDU/CSU",
+     "type": "party",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "Bündnis 90/Die Grünen",
+     "type": "party",
+     "entity_id": "party-gruene",
+     "confidence": "high"
+    }
+   ],
+   "parteien": [
+    "SPD",
+    "CDU/CSU",
+    "Bündnis 90/Die Grünen"
+   ],
+   "ausschuesse": [],
+   "mentioned_parties": [
+    "SPD",
+    "CDU/CSU",
+    "Bündnis 90/Die Grünen"
+   ],
+   "mentioned_committees": [],
+   "mentioned_locations": [
+    "Deutschland",
+    "Berlin"
+   ],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "bund",
+   "created_at": "2026-07-22T20:02:54.732238+00:00"
+  },
+  {
+   "fallgruppen": [
+    11,
+    14
+   ],
+   "id": "ko-vg-brandenburg",
+   "vorgang_id": "vg-brandenburg",
+   "headline": "Ausschüsse tagen zu Naturschutz und Lausitz im Landtag Brandenburg",
+   "display_title": "",
+   "was_ist_passiert": "Im Landtag Brandenburg haben mehrere Ausschüsse Sitzungen zu Themen von Naturschutz bis Lausitz abgehalten. Die Beratungen umfassten Umwelt- und Regionalfragen, entsprechend beteiligten Ausschüsse kamen zusammen.",
+   "warum_wichtig": "Betrifft ressortübergreifende Gesetzes- und Förderentscheidungen für Brandenburg; Ergebnis kann Ausschuss- und Fraktionsarbeit des Landtags unmittelbar beeinflussen. Deine Themenfelder (Umwelt/Regionale Entwicklung) sind direkt berührt.",
+   "event_type": "unknown",
+   "decision_entities": [
+    {
+     "name": "Ausschuss für Klima und Umwelt",
+     "type": "committee",
+     "entity_id": "committee-bt-klima-umwelt",
+     "confidence": "medium"
+    },
+    {
+     "name": "Regionalausschuss/Lausitz",
+     "type": "committee",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "Ministerium für Infrastruktur und Landesplanung Brandenburg",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "Ministerium für Landwirtschaft, Umwelt und Klimaschutz Brandenburg",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "CDU",
+     "type": "party",
+     "entity_id": "party-cdu",
+     "confidence": "high"
+    },
+    {
+     "name": "SPD",
+     "type": "party",
+     "entity_id": "party-spd",
+     "confidence": "high"
+    },
+    {
+     "name": "AfD",
+     "type": "party",
+     "entity_id": "party-afd",
+     "confidence": "high"
+    },
+    {
+     "name": "Bündnis 90/Die Grünen",
+     "type": "party",
+     "entity_id": "party-gruene",
+     "confidence": "high"
+    },
+    {
+     "name": "FDP",
+     "type": "party",
+     "entity_id": "party-fdp",
+     "confidence": "high"
+    },
+    {
+     "name": "Landtag Brandenburg",
+     "type": "parliament",
+     "entity_id": "parliament-brandenburg-landtag",
+     "confidence": "high"
+    }
+   ],
+   "parteien": [
+    "CDU",
+    "SPD",
+    "AfD",
+    "Bündnis 90/Die Grünen",
+    "FDP"
+   ],
+   "ausschuesse": [
+    "Umweltausschuss",
+    "Regionalausschuss/Lausitz"
+   ],
+   "mentioned_parties": [
+    "CDU",
+    "SPD",
+    "AfD",
+    "Bündnis 90/Die Grünen",
+    "FDP"
+   ],
+   "mentioned_committees": [
+    "Umweltausschuss",
+    "Regionalausschuss/Lausitz"
+   ],
+   "mentioned_locations": [
+    "Brandenburg",
+    "Lausitz"
+   ],
+   "tags": [
+    "Naturschutz",
+    "Lausitz",
+    "Regionale Entwicklung",
+    "Förderentscheidungen"
+   ],
+   "policy_field": [
+    "Umwelt"
+   ],
+   "political_level": "land",
+   "created_at": "2026-07-11T04:02:29.973811+00:00"
+  },
+  {
+   "fallgruppen": [
+    13,
+    15
+   ],
+   "id": "ko-vg-1ec5990cf61fd0115b2ca1b5",
+   "vorgang_id": "vg-1ec5990cf61fd0115b2ca1b5",
+   "headline": "Reform der MDR sollte so schnell wie möglich kommen",
+   "display_title": "Forderung nach beschleunigter MDR-Reform",
+   "was_ist_passiert": "Ein Beitrag fordert eine zügige Reform der Medizinprodukteverordnung (MDR).",
+   "warum_wichtig": "Beschleunigte MDR-Reform betrifft Gesundheitsversorgung und Zulassungsprozesse; hat Einfluss auf regulatorische Praxis und Interessen von Herstellern und Patienten.",
+   "event_type": "verordnung",
+   "decision_entities": [
+    {
+     "name": "Bundesgesundheitsministerium",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "kma Online",
+     "type": "organization",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "parteien": [],
+   "ausschuesse": [],
+   "mentioned_parties": [],
+   "mentioned_committees": [],
+   "mentioned_locations": [],
+   "tags": [
+    "Medizinprodukteverordnung",
+    "Zulassungsprozesse",
+    "Gesundheitsversorgung",
+    "Regulatorische Praxis"
+   ],
+   "policy_field": [],
+   "political_level": "unknown",
+   "created_at": "2026-07-12T04:03:09.003309+00:00"
+  },
+  {
+   "fallgruppen": [
+    13,
+    7
+   ],
+   "id": "ko-vg-66c64f40cf53a2c94343a4ae",
+   "vorgang_id": "vg-66c64f40cf53a2c94343a4ae",
+   "headline": "",
+   "display_title": "CDU verlangt Aufklärung zu schleppendem Baufortschritt",
+   "was_ist_passiert": "Die CDU hat eine Anfrage eingereicht, in der kritisiert wird, dass ein Bauprojekt (fertiggestellt nur 900 Meter in 13 Jahren) nur sehr langsam voranschreitet.",
+   "warum_wichtig": "Betrifft öffentliche Infrastruktur- bzw. Bauprojektkontrolle und die parlamentarische Aufsicht über kommunale/öffentliche Vorhaben.",
+   "event_type": "unknown",
+   "decision_entities": [],
+   "related_entities": [
+    {
+     "name": "CDU",
+     "type": "party",
+     "entity_id": "party-cdu",
+     "confidence": "high"
+    }
+   ],
+   "parteien": [
+    "CDU"
+   ],
+   "ausschuesse": [],
+   "mentioned_parties": [
+    "CDU"
+   ],
+   "mentioned_committees": [],
+   "mentioned_locations": [],
+   "tags": [
+    "Öffentliche Infrastruktur",
+    "Parlamentarische Kontrolle",
+    "Kommunale Verwaltung"
+   ],
+   "policy_field": [],
+   "political_level": "unknown",
+   "created_at": "2026-07-09T04:03:59.757689+00:00"
+  },
+  {
+   "fallgruppen": [
+    14
+   ],
+   "id": "ko-vg-gehaltsaffäre-20240613-905012",
+   "vorgang_id": "vg-gehaltsaffäre-20240613-905012",
+   "headline": "Weil vor U-Ausschuss zu Gehaltsaffäre um Büroleiterin",
+   "display_title": "Weil sagt im Untersuchungsausschuss zur Gehaltsaffäre aus",
+   "was_ist_passiert": "Niedersachsens Ministerpräsident Stephan Weil ist vor einem Untersuchungsausschuss erschienen, um zu einer Gehaltsaffäre rund um seine Büroleiterin auszusagen.",
+   "warum_wichtig": "Ein amtierender Ministerpräsident hat im Parlament zu einer persönlichen Personal- und Haushaltsaffäre ausgesagt; das kann Vertrauensfragen und parlamentarische Konsequenzen auslösen.",
+   "event_type": "anhoerung",
+   "decision_entities": [
+    {
+     "name": "Untersuchungsausschuss (Niedersachsen)",
+     "type": "committee",
+     "entity_id": null,
+     "confidence": "low"
+    },
+    {
+     "name": "Ministerpräsidentenbüro Niedersachsen",
+     "type": "ministry",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "related_entities": [
+    {
+     "name": "SPD",
+     "type": "party",
+     "entity_id": "party-spd",
+     "confidence": "high"
+    },
+    {
+     "name": "CDU",
+     "type": "party",
+     "entity_id": "party-cdu",
+     "confidence": "high"
+    },
+    {
+     "name": "Landtag Niedersachsen",
+     "type": "organization",
+     "entity_id": null,
+     "confidence": "low"
+    }
+   ],
+   "parteien": [
+    "SPD",
+    "CDU"
+   ],
+   "ausschuesse": [
+    "Untersuchungsausschuss (Niedersachsen)"
+   ],
+   "mentioned_parties": [],
+   "mentioned_committees": [],
+   "mentioned_locations": [
+    "Niedersachsen"
+   ],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "land",
+   "created_at": "2026-07-27T20:04:16.021573+00:00"
+  },
+  {
+   "fallgruppen": [
+    14,
+    15
+   ],
+   "id": "ko-vg-gleichstellung-20241119-66f115",
+   "vorgang_id": "vg-gleichstellung-20241119-66f115",
+   "headline": "",
+   "display_title": "Kreisausschuss tagt zu Sozial- und Gesundheitsfragen",
+   "was_ist_passiert": "Der Ausschuss für Soziales, Familie, Gesundheit, Gleichstellung und Inklusion des Kreises Steinburg hat eine Sitzung abgehalten.",
+   "warum_wichtig": "Sitzung lokalpolitischer Gremien kann Entscheidungen zu Sozial- und Gesundheitsfragen in der Kreisverwaltung auslösen und betrifft kommunale Leistungsangebote.",
+   "event_type": "sonstiges",
+   "decision_entities": [
+    {
+     "name": "Ausschuss für Arbeit und Soziales",
+     "type": "committee",
+     "entity_id": "committee-bt-arbeit-soziales",
+     "confidence": "medium"
+    }
+   ],
+   "related_entities": [],
+   "parteien": [],
+   "ausschuesse": [
+    "Ausschuss für Soziales, Familie, Gesundheit, Gleichstellung und Inklusion"
+   ],
+   "mentioned_parties": [],
+   "mentioned_committees": [],
+   "mentioned_locations": [
+    "Kreis Steinburg"
+   ],
+   "tags": [],
+   "policy_field": [],
+   "political_level": "kommune",
+   "created_at": "2026-07-28T04:03:57.91229+00:00"
+  }
+ ],
+ "goldstandard": [
+  {
+   "a": "ko-vg-netzpolitik",
+   "b": "ko-vg-geheimdienstreform",
+   "klasse": "gleicher-vorgang",
+   "begruendung": "Identische Headline 'Geheimdienstreform: Zeitenwende für Spione'; dieselbe Reform, die W-Texte sind deutlich unterschiedlich formuliert (Fallgruppe 2)."
+  },
+  {
+   "a": "ko-vg-verhindern-20260707-952b53",
+   "b": "ko-vg-westfälische",
+   "klasse": "wahrscheinliches-duplikat",
+   "begruendung": "Identische Headline, identische SPD-Positionierung gegen Pflegekürzungen; zweimal aus verschiedenen Quellen/Crawls entstanden (07-09 und 07-27)."
+  },
+  {
+   "a": "ko-vg-generalsekretär",
+   "b": "ko-vg-generalsekretärs",
+   "klasse": "gleicher-vorgang",
+   "begruendung": "Guterres-Besuch in Damaskus, nahezu identischer Inhalt (Syrien vs. Damaskus in der Headline)."
+  },
+  {
+   "a": "ko-vg-möglichkeiten",
+   "b": "ko-vg-möglichkeiten-20260706-c99e6b",
+   "klasse": "gleicher-vorgang",
+   "begruendung": "Dieselbe BMAS-Stellungnahme vom 6. Juli 2026; das zweite Objekt hat eine leere Headline (realer Grenzfall für den kanonischen Eingang)."
+  },
+  {
+   "a": "ko-vg-beschluss",
+   "b": "ko-vg-beschluss-20260706-e4370f",
+   "klasse": "wahrscheinliches-duplikat",
+   "begruendung": "Derselbe Phoenix-Bericht vom 6. Juli zum GVK-Beschluss; das Verstehen hat die Abkürzung GVK unterschiedlich aufgelöst (Grundsicherung vs. Geschäftsverteilungsklausel) — sehr ähnliche Texte, unterschiedliche Bedeutungszuschreibung (Fallgruppe 4)."
+  },
+  {
+   "a": "ko-vg-mitglieds",
+   "b": "ko-vg-verwaltungsrates",
+   "klasse": "gleicher-vorgang",
+   "begruendung": "Identischer Bundesrats-Vorschlag zur Berufung in den BA-Verwaltungsrat; ein Objekt ohne Headline."
+  },
+  {
+   "a": "ko-vg-eigenverantwortung",
+   "b": "ko-vg-verbindlichkeit",
+   "klasse": "gleicher-vorgang",
+   "begruendung": "Dasselbe BMAS-Papier 'Verbindlichkeit, Eigenverantwortung und Mitwirkung stärken' vom 01.07.2026; stark unterschiedliche Formulierung, ein Objekt ohne Headline (Fallgruppe 2)."
+  },
+  {
+   "a": "ko-vg-schwerbehinderte",
+   "b": "ko-vg-schwerbehinderte-20240724-194064",
+   "klasse": "gleicher-vorgang",
+   "begruendung": "Dieselbe Online-Petition (abschlagsfreie Rente ab 60 für schwerbehinderte Menschen)."
+  },
+  {
+   "a": "ko-vg-höchstarbeitszeit",
+   "b": "ko-vg-höchstarbeitszeit-20250110-694cd6",
+   "klasse": "gleicher-vorgang",
+   "begruendung": "Dieselbe CDU/CSU-Forderung (wöchentliche statt tägliche Höchstarbeitszeit)."
+  },
+  {
+   "a": "ko-vg-pressemitteilungen-20130301-9919af-2",
+   "b": "ko-vg-pressemitteilungen-20130301-9919af-3",
+   "klasse": "gleicher-vorgang",
+   "begruendung": "Dieselbe Bundesrats-Pressemitteilung zum flächendeckenden Mindestlohn (Vorgangsfamilie -2/-3/-4)."
+  },
+  {
+   "a": "ko-vg-pressemitteilungen-20130301-9919af-3",
+   "b": "ko-vg-pressemitteilungen-20130301-9919af-4",
+   "klasse": "gleicher-vorgang",
+   "begruendung": "Dieselbe Bundesrats-Pressemitteilung, dritte Ausprägung derselben Familie."
+  },
+  {
+   "a": "ko-vg-pressemitteilungen-20130301-9919af-2",
+   "b": "ko-vg-pressemitteilungen-20130301-feeed1",
+   "klasse": "gleicher-vorgang",
+   "begruendung": "Gleiche Pressemitteilung, getrennt entstandener Vorgang (feeed1) — bekannter Mehrfachvorgang."
+  },
+  {
+   "a": "ko-vg-koalitionsausschuss",
+   "b": "ko-vg-koalitionsausschuss-20250903-61fa1e",
+   "klasse": "wahrscheinliches-duplikat",
+   "begruendung": "Gleiche Nachtsitzungs-Einigung (Reichensteuer, Krankmeldungspflicht, Sonntagsöffnung); zweites Objekt mit erweitertem Themenumfang; beide ohne Headline."
+  },
+  {
+   "a": "ko-vg-raketenangriff",
+   "b": "ko-vg-großangriff",
+   "klasse": "wahrscheinliches-duplikat",
+   "begruendung": "Beide vom 19.07.: russischer (Groß-)Angriff auf Kiew; das zweite Objekt enthält zusätzlich den ukrainischen Gegenschlag."
+  },
+  {
+   "a": "ko-vg-luftangriffen",
+   "b": "ko-vg-angriffe",
+   "klasse": "aktualisierung",
+   "begruendung": "Laufende US-Angriffsserie gegen Iran: Meldung 15.07. → 'Tag 5' am 16.07."
+  },
+  {
+   "a": "ko-vg-angriffe",
+   "b": "ko-vg-nächtliche",
+   "klasse": "aktualisierung",
+   "begruendung": "Dieselbe Angriffsserie, Fortsetzungsmeldung (16.07. → 24.07.)."
+  },
+  {
+   "a": "ko-vg-nächtliche",
+   "b": "ko-vg-beschädigt",
+   "klasse": "aktualisierung",
+   "begruendung": "Dieselbe Serie: Fortsetzung → 'zweite Nacht ohne US-Angriff' (Ende der Serie, 26.07.)."
+  },
+  {
+   "a": "ko-vg-csd-20260727-12aae0",
+   "b": "ko-vg-csd-20260727-d31580",
+   "klasse": "aktualisierung",
+   "begruendung": "CSD-Anschlag → politische Reaktionen und Folgeberichterstattung desselben Vorgangs (dokumentierte B4-Umgebung, Befundakte CSD)."
+  },
+  {
+   "a": "ko-vg-reform-20260628-62377c",
+   "b": "ko-vg-reform-20260630-036836",
+   "klasse": "aktualisierung",
+   "begruendung": "Dieselbe Reformpaket-/Haushaltsdebatte als Sammelvorgang, zwei Tage später; Verfahrensfortschritt (Fallgruppe 6), Abgrenzung bei Sammelobjekten unscharf."
+  },
+  {
+   "a": "ko-vg-raketenangriff",
+   "b": "ko-vg-russische",
+   "klasse": "thematisch-verwandt",
+   "begruendung": "Gleicher Krieg, aber anderes Einzelereignis (Kiew 19.07. vs. Rüstungsmesse 24.07.)."
+  },
+  {
+   "a": "ko-vg-höchstarbeitszeit",
+   "b": "ko-vg-arbeitszeit-20250326-408ac1",
+   "klasse": "thematisch-verwandt",
+   "begruendung": "Gleiches Thema Arbeitszeitflexibilisierung, andere Akteure (CDU vs. FDP) und andere Vorschläge (Fallgruppe 8)."
+  },
+  {
+   "a": "ko-vg-verhindern-20260707-952b53",
+   "b": "ko-vg-pflegereform-20250707-4f7500",
+   "klasse": "thematisch-verwandt",
+   "begruendung": "Beide Pflegefinanzierungsdebatte; SPD-Einzelposition vs. breite Kontroverse um Vermögenseinbeziehung."
+  },
+  {
+   "a": "ko-vg-csd-20260727-12aae0",
+   "b": "ko-vg-c454d110ae69321124017522",
+   "klasse": "thematisch-verwandt",
+   "begruendung": "Gleicher Kontext CSD 2026 Berlin, anderer Gegenstand (Anschlag vs. Druck auf queere Räume)."
+  },
+  {
+   "a": "ko-vg-csd-20260727-12aae0",
+   "b": "ko-vg-grundgesetz-20260725-15b616",
+   "klasse": "thematisch-verwandt",
+   "begruendung": "Queere-Rechte-Debatte (Wegner im Bundestag) vs. Anschlag auf CSD; dokumentierter B4-4-Fall (Wegner-Dokument, Befundakte §17–§19)."
+  },
+  {
+   "a": "ko-vg-grundgesetz-20260725-15b616",
+   "b": "ko-vg-c454d110ae69321124017522",
+   "klasse": "thematisch-verwandt",
+   "begruendung": "Queere Rechte im Bundestag vs. queere Räume in Berlin — verwandt, aber verschiedene Vorgänge und Ebenen."
+  },
+  {
+   "a": "ko-vg-militärbündnis",
+   "b": "ko-vg-attackieren",
+   "klasse": "thematisch-verwandt",
+   "begruendung": "Beides Reaktionen auf Huthi-Angriffe auf saudische Schiffe, aber andere Akteure (saudisch geführtes Bündnis vs. US) und andere Operationen (Fallgruppe 8)."
+  },
+  {
+   "a": "ko-vg-rentenreform-20240927-525316",
+   "b": "ko-vg-reform-20260628-62377c",
+   "klasse": "thematisch-verwandt",
+   "begruendung": "Rentenreform-Thema, aber SPD-Fraktionsposition 2024 vs. Koalitionspaket 2026."
+  },
+  {
+   "a": "ko-vg-12e77972ea2b5cf97b937eb5",
+   "b": "ko-vg-verhindern-20260707-952b53",
+   "klasse": "thematisch-verwandt",
+   "begruendung": "Pflegekosten-Thema, andere Ebene und anderer Gegenstand (Berliner Heimkosten vs. SPD-Bundesposition)."
+  },
+  {
+   "a": "ko-vg-12e77972ea2b5cf97b937eb5",
+   "b": "ko-vg-pflegereform-20250707-4f7500",
+   "klasse": "thematisch-verwandt",
+   "begruendung": "Pflegekosten/Pflegefinanzierung, Landes-Beobachtung vs. Bundesdebatte."
+  },
+  {
+   "a": "ko-vg-schwerbehinderte",
+   "b": "ko-vg-rentenreform-20240927-525316",
+   "klasse": "thematisch-verwandt",
+   "begruendung": "Rentenpolitik, andere Akteure und Instrumente (Petition vs. Fraktionsposition, Fallgruppe 8)."
+  },
+  {
+   "a": "ko-vg-frachtschiff",
+   "b": "ko-vg-attackieren",
+   "klasse": "aehnliche-sprache-anderer-vorgang",
+   "begruendung": "Beide 'Angriff auf Schiff', aber Kaspisches Meer/Ukraine-Vorwurf vs. Rotes Meer/US-Reaktion — exakt das B4-3-Vokabularmuster ('angriff'/'angriffen')."
+  },
+  {
+   "a": "ko-vg-frachtschiff",
+   "b": "ko-vg-militärbündnis",
+   "klasse": "aehnliche-sprache-anderer-vorgang",
+   "begruendung": "Schiffsangriffs-Vokabular, völlig verschiedene Konflikte."
+  },
+  {
+   "a": "ko-vg-betroffen",
+   "b": "ko-vg-angriffe",
+   "klasse": "aehnliche-sprache-anderer-vorgang",
+   "begruendung": "'Merz-Angriff' (rhetorisch, Innenpolitik) vs. Militärangriff — gleiches Wort, andere Bedeutung."
+  },
+  {
+   "a": "ko-vg-cybersicherheit",
+   "b": "ko-vg-angriffe",
+   "klasse": "aehnliche-sprache-anderer-vorgang",
+   "begruendung": "'Hackerangriff' vs. Militärangriff — gleiches Wortfeld, anderes Politikfeld."
+  },
+  {
+   "a": "ko-vg-raketenangriff",
+   "b": "ko-vg-luftangriffen",
+   "klasse": "aehnliche-sprache-anderer-vorgang",
+   "begruendung": "'Angriff auf'-Vokabular, aber Kiew/Russland vs. Iran/US — verschiedene Konflikte."
+  },
+  {
+   "a": "ko-vg-ausnahme",
+   "b": "ko-vg-12e77972ea2b5cf97b937eb5",
+   "klasse": "aehnliche-sprache-anderer-vorgang",
+   "begruendung": "Beide 'Kosten steigen' + Berlin-Bezug, aber Mietmarkt (bundesweit, Berlin als Ausnahme) vs. Pflegeheimkosten (Berlin)."
+  },
+  {
+   "a": "ko-vg-gleichstellung-20241119-66f115",
+   "b": "ko-vg-brandenburg",
+   "klasse": "aehnliche-sprache-anderer-vorgang",
+   "begruendung": "Beide 'Ausschüsse tagen' — aber Kreis Steinburg (kommune) vs. Landtag Brandenburg (land); Verwechslungsgefahr über Gremien-Vokabular."
+  },
+  {
+   "a": "ko-vg-brandenburg",
+   "b": "ko-vg-12e77972ea2b5cf97b937eb5",
+   "klasse": "nicht-verwandt",
+   "begruendung": "Landtags-Naturschutzsitzung vs. Berliner Pflegeheimkosten."
+  },
+  {
+   "a": "ko-vg-gehaltsaffäre-20240613-905012",
+   "b": "ko-vg-gleichstellung-20241119-66f115",
+   "klasse": "nicht-verwandt",
+   "begruendung": "Niedersächsischer U-Ausschuss vs. Kreisausschusssitzung Steinburg."
+  },
+  {
+   "a": "ko-vg-1ec5990cf61fd0115b2ca1b5",
+   "b": "ko-vg-reform-20260628-62377c",
+   "klasse": "nicht-verwandt",
+   "begruendung": "'Reform'-Vokabular, aber Medizinprodukteverordnung (MDR) vs. Koalitions-Reformpaket."
+  },
+  {
+   "a": "ko-vg-66c64f40cf53a2c94343a4ae",
+   "b": "ko-vg-bürgermeisterin",
+   "klasse": "nicht-verwandt",
+   "begruendung": "Gleicher Akteur CDU, völlig verschiedene Themen (Baufortschritt-Anfrage vs. Berliner Wahlkampfsorge) — Fallgruppe 7."
+  },
+  {
+   "a": "ko-vg-möglichkeiten",
+   "b": "ko-vg-eigenverantwortung",
+   "klasse": "nicht-verwandt",
+   "begruendung": "Gleicher Akteur BMAS, zwei verschiedene Papiere (Inklusions-Statement vs. Mitwirkungs-Papier) — Fallgruppe 7."
+  },
+  {
+   "a": "ko-vg-mitglieds",
+   "b": "ko-vg-möglichkeiten",
+   "klasse": "nicht-verwandt",
+   "begruendung": "Gleicher BMAS-Kontext, aber Personalie BA-Verwaltungsrat vs. Inklusions-Statement — Fallgruppe 7."
+  },
+  {
+   "a": "ko-vg-bürgermeisterin",
+   "b": "ko-vg-c454d110ae69321124017522",
+   "klasse": "nicht-verwandt",
+   "begruendung": "Beides Berliner Landespolitik, aber Wahlkampf vs. queere Räume."
+  },
+  {
+   "a": "ko-vg-angriffen",
+   "b": "ko-vg-attackieren",
+   "klasse": "unklar",
+   "begruendung": "Beide 23.07., Reaktion auf denselben Huthi-Angriff auf saudische Schiffe: Drohung (Trump) vs. Luftschlag (US-Militär) — sehr ähnliche Texte, unterschiedliche politische Handlung (Fallgruppe 4); ob ein oder zwei Vorgänge, ist fachlich strittig."
+  },
+  {
+   "a": "ko-vg-bedeutet",
+   "b": "ko-vg-möglichkeiten",
+   "klasse": "unklar",
+   "begruendung": "Mischobjekt (Hamas-Meldung + dieselbe BMAS-Stellungnahme) — Teilduplikat; saubere Zuordnung erfordert Objektaufspaltung."
+  },
+  {
+   "a": "ko-vg-koalitionsausschuss",
+   "b": "ko-vg-reform-20260628-62377c",
+   "klasse": "unklar",
+   "begruendung": "Inhaltlich dieselbe Einigung (Reformpaket), aber widersprüchliche Vorgangsdaten (2025-09 vs. 2026-06) aus der Datumsextraktion; Verfahrensstufen-Verhältnis unscharf (Fallgruppe 6)."
+  }
+ ]
+}

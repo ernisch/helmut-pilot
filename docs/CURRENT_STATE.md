@@ -1,6 +1,9 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-28 (**Sprint 22A: Embedding-Architektur bewiesen —
+**Letzte Aktualisierung:** 2026-07-28 (**Sprint 22B: Embedding-Qualitätsvergleich
+vollständig vorbereitet — Testmenge, Goldstandard, Legacy-Basislinie, Offline-Pipeline,
+Modell-/Kostenentscheidung; teilweise abgeschlossen, kostenpflichtiger Testlauf wartet
+auf Freigabe** · **Sprint 22A: Embedding-Architektur bewiesen —
 das „embedding" ist ein deterministischer Merkmalsvektor, kein semantisches Embedding;
 Datenvertrag + Shadow-Entwurf liegen vor, keine Production-Änderung** ·
 **OP-01-Sprint: Production-Sicherung und isolierter
@@ -24,8 +27,8 @@ Werkzeug-Härtung W-1+W-2 gemergt (#152) · **W-2 erfolgreich abgeschlossen:
 Migration `20260727` angewendet, Flag aktiv, echter Production-Lauf
 `crawl-20260727160048-ct8lt` relational gespeichert und erhalten — alle 15
 Erfolgskriterien erfüllt**) ·
-**`main`-HEAD:** `1226232` (Merge #160; davor `88582c1` = Merge #157, in Production
-ausgerollt — Deployment `dpl_AcQywjJ4LRzbWFE28zPMiHvbJ3P1` `READY`, `target: production`)
+**`main`-HEAD:** `b273877` (Merge #161, in Production ausgerollt — Deployment
+`dpl_ECKRnJRxNocyfPttwrh4Kw3ZQpA1` `READY`, `target: production`; davor `1226232` = Merge #160)
 
 > **OP-01-Sprint am 2026-07-28, 09:32–10:10 UTC ausgeführt — teilweise abgeschlossen:
 > Sicherung und isolierter Restore bewiesen, Tarifentscheidung für PITR ausstehend.**
@@ -59,6 +62,44 @@ ausgerollt — Deployment `dpl_AcQywjJ4LRzbWFE28zPMiHvbJ3P1` `READY`, `target: p
 > (RPO 24 h → Minuten). Beleg: [`betrieb/restore-uebung-2026-07-28.md`](betrieb/restore-uebung-2026-07-28.md),
 > Runbook [`betrieb/backup-restore-runbook.md`](betrieb/backup-restore-runbook.md).
 
+> **Sprint 22B am 2026-07-28 ausgeführt — teilweise abgeschlossen (alle Offline-Arbeiten
+> fertig, der kostenpflichtige externe Testlauf wartet definitionsgemäß auf
+> Betreiberfreigabe).** Startprüfung vollständig (PR #161 gemergt, beide Pflicht-Checks
+> grün, `main` = `b273877`, Deployment `dpl_ECKRnJRxNocyfPttwrh4Kw3ZQpA1` `READY`, keine
+> neueren Embedding-Änderungen). **Geliefert (additiv, offline, Production nur lesend):**
+> **(1)** Testmenge **56 Objekte** über alle 15 Fallgruppen inkl. B4-3-/B4-4-Umgebungen +
+> **Goldstandard 47 Paare** in 7 Klassen, vor jeder Modellauswertung fixiert
+> (`scripts/fixtures/embedding-testset-22b.json`); Nebenbefund: 238/772 verstandene
+> Objekte ohne `headline` (236 bleiben berechtigt). **(2)** Legacy-Basislinie gegen den
+> Goldstandard (`embedding-quality-eval.js`; 56/56 Production-Vektoren lokal exakt
+> reproduziert): wortnahe Duplikate gut (Top-5 33/38), aber gleiche Vorgänge mit anderer
+> Formulierung fallen durch (GVK-Duplikat Kosinus 0,059; CSD-Folge 0,269) und
+> Negativkontrollen liegen über echten Duplikaten (0,429) — **kein tragfähiger
+> Einzelschwellenwert** (0,45 → Präzision 1,0 bei Trefferquote 26 %). **(3)**
+> Offline-Shadow-Pipeline (`lib/helmut/embedding-shadow-pipeline.js`, injizierter
+> Provider, lokale Ablage `shadow-store/`, harte Objekt-/Tokenlimits fail-closed,
+> idempotent, wiederaufnehmbar, Versuchsdeckel) mit Testsuite **31/31** (alle 20
+> Pflichtprüfungen + 8 Fehlerszenarien). **(4)** Modell-/Providerentscheidung:
+> **Azure OpenAI `text-embedding-3-small`, dim 256, Rezept `ko-kanon-1`** (bestehender
+> Helmut-Provider; Alternativen 3-large und jina-embeddings-v3 bewertet; lokal weiterhin
+> abgelehnt); Preise extern belegt (0,02 USD/1M), Azure-Preis+Deployment = Freigabepunkt.
+> **(5)** Kostenmodell real: Ø **144 Tokens/Objekt**, Testlauf 8 621 Tokens ≈
+> **0,0002 USD**, Altbestand 772 Objekte ≈ **0,0022 USD**; Deckel-Vorschlag 50 k
+> Tokens/Tag + 1 USD/Monat, getrennt vom Understanding-Budget. **(6)**
+> Migrationsentwurf geschärft (PK jetzt Objekt+Art+Modell+Dim+Rezept, Status-Index),
+> weiterhin **nicht angewendet**. **(7)** Testlauf-CLI `embedding-testlauf.js`:
+> Dry-Run Default, echter Lauf nur mit `--echt --freigabe erteilt` + Env-Secrets.
+> Berlin/Brandenburg geprüft (Eingang ebenen-/geografie-/mandantenfrei, hash-stabil
+> getestet; Brandenburg im Bestand nur 1 echtes Landes-Objekt — dokumentierte Grenze).
+> Offline-Suite **171/175** (die 3 E-2-Vorbefunde + `profile-db-test` nur bei gesetzten
+> Sitzungs-Env-Vars `HELMUT_STORAGE_BACKEND`/`HELMUT_V3_STORE`, auf unverändertem `main`
+> identisch rot — Umgebungs-Vorbefund; Abnahmezahl ist das CI-Gate). **Kein
+> Production-Write, keine Migration, kein KI-Aufruf, kein Flag, Matching unverändert.**
+> Kanonisch: [`embedding-architektur.md`](embedding-architektur.md) §13 (inkl.
+> Freigabepaket §13.6). **Nächster Schritt:** Betreiberfreigabe für den ~0,0002-USD-
+> Testlauf (plus Azure-Preis-/Deployment-Gegenprüfung), danach Auswertung und
+> 22C-Entscheidung.
+>
 > **Sprint 22A am 2026-07-28 ausgeführt — erfolgreich abgeschlossen (Analyse-Sprint,
 > keine Production-Änderung).** Zentrale Produktfrage beantwortet und **bewiesen**: das
 > „embedding" in `knowledge_objects.embedding vector(256)` ist ein **deterministischer
@@ -388,9 +429,10 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 
 | PR | Inhalt | Einschätzung |
 |---|---|---|
-| **#161** | **Sprint 22A: Embedding-Architektur bewiesen, Datenvertrag und Zielmodell festgelegt** — kanonische Doku `embedding-architektur.md`, Offline-Modul `embedding-contract.js` (nirgends eingebunden), Testsuite 43/43, Shadow-Migrations-**Entwurf** (nicht angewendet), Roadmap-/Statuspflege | **mergefähig nach Review** — reine Doku + additives Offline-Modul, kein Laufzeitpfad berührt, Matching byte-identisch, keine Migration angewendet. Rollback per `git revert`. Branch `claude/helmut-sprint-22a-embedding-qrk7bl` |
-| **#160** | **OP-01-Sprint: Sicherung + isolierter Rückweg bewiesen** — Werkzeug `restore-verify-local.js` (+46er-Testsuite), Strukturreferenz mit belegtem Schema-Drift, Export auf 40 Tabellen erweitert, Runbook §0/3c/3d, Beweisdokument `restore-uebung-2026-07-28.md` | **mergefähig nach Review** — Werkzeuge + Doku, kein App-Laufzeitpfad berührt; der Merge ändert keine Production-Daten. Rollback per `git revert`. Branch `claude/helmut-production-recovery-z4ou3j` |
-| **#158** | **Sprint 21 Hauptlauf: vollständiger Production-Schreiblauf Umfang B ausgeführt und belegt** — Protokoll §14 im kanonischen Dokument, CURRENT_STATE, OP-24 auf „inhaltlich erledigt" | **reine Dokumentation** — kein Code, keine Migration, kein Flag. Der dokumentierte Production-Lauf ist bereits ausgeführt und bewiesen (728/728, 0 Fehler, Idempotenz 0). Rollback per `git revert`. Branch `claude/helmut-sprint-21-production-0vgv2r` |
+| offen | **Sprint 22B: Embedding-Qualitätsvergleich vorbereitet** — Testmenge+Goldstandard (56 Objekte/47 Paare), Legacy-Basislinie, Offline-Shadow-Pipeline (31/31), Testlauf-CLI mit Freigabe-Riegel, Auswertungswerkzeug, Kostenmodell real, Migrationsentwurf geschärft (weiter nicht angewendet), Doku §13 | **mergefähig nach Review** — additiv/offline, kein Laufzeitpfad berührt, Matching byte-identisch, keine Migration angewendet, kein KI-Aufruf. Rollback per `git revert`. Branch `claude/sprint-22b-embedding-quality-2ah9u6` |
+| ~~#161~~ | **Sprint 22A: Embedding-Architektur bewiesen, Datenvertrag und Zielmodell festgelegt** — kanonische Doku `embedding-architektur.md`, Offline-Modul `embedding-contract.js` (nirgends eingebunden), Testsuite 43/43, Shadow-Migrations-**Entwurf** (nicht angewendet), Roadmap-/Statuspflege | **gemergt** 2026-07-28, 11:11 UTC (`b273877`), beide Pflicht-Checks grün, Deployment `dpl_ECKRnJRxNocyfPttwrh4Kw3ZQpA1` `READY` |
+| ~~#160~~ | **OP-01-Sprint: Sicherung + isolierter Rückweg bewiesen** — Werkzeug `restore-verify-local.js` (+46er-Testsuite), Strukturreferenz mit belegtem Schema-Drift, Export auf 40 Tabellen erweitert, Runbook §0/3c/3d, Beweisdokument `restore-uebung-2026-07-28.md` | **gemergt** 2026-07-28 (`1226232`), in Production ausgerollt (Deployment `dpl_DVxGNjzq6btxGiMUq3rAxfKt4aUv` `READY`) |
+| ~~#158~~ | **Sprint 21 Hauptlauf: vollständiger Production-Schreiblauf Umfang B ausgeführt und belegt** — Protokoll §14 im kanonischen Dokument, CURRENT_STATE, OP-24 auf „inhaltlich erledigt" | **gemergt** 2026-07-28, 09:25 UTC (`0f8d33a`), reine Dokumentation |
 | ~~#156~~ | **Sprint 21: Altbestand kontrolliert nachklassifizieren (OP-24)** — reines Planungsmodul `nachklassifikation.js` (baut einen Plan, schreibt nichts) plus Werkzeug mit Vorschau als Standard; Schreiben verlangt `--ausfuehren` **und** `HELMUT_NACHKLASSIFIKATION_BESTAETIGT=ja` **und** das Production-Schreibgate; begrenzbar nach IDs, Zeitraum, Mandant, Fehlerklasse und Menge; seitenweiser Lesepfad gegen die stille PostgREST-Kappung | **gemergt** 2026-07-28 (`f59bc7c`), in Production ausgerollt (Deployment `dpl_ERm1PDWzUY9xSFUnTDrVcbLmZcem`). **Keine Migration, keine neue Spalte, kein Flag, kein Cron, kein Lock, kein zusätzlicher KI-Aufruf, keine Matching-/Scoring-Änderung.** Der Merge allein ändert **keine** Production-Daten — das Werkzeug läuft nur, wenn es jemand aufruft. Rollback per `git revert`. Offline **158/172** gegen Basislinie **157/171** (identische 14 Vorbefunde), `nachklassifikation-test` **101/101**, **21/21 Mutationen rot**, Idempotenz an allen 740 Production-Objekten bewiesen. **CI-Gate grün (beide Pflicht-Checks, Lauf `30317133853`).** Branch `claude/sprint-21-reclassification-rawkji` |
 | ~~#155~~ | **Sprint 20: Geografie dauerhaft und nachvollziehbar speichern** — neues reines Modul `geografie-gedaechtnis.js`; die betroffene Geografie entsteht nicht mehr aus `decision_level`, sondern ausschließlich aus Nachweisen (Herkunftsrang `parser` > `amtlich` > `inhalt` > `ki` > `erwaehnung` > `quelle`); Quellengeografie ist strukturell vom Betroffensein ausgeschlossen; mehrere betroffene Regionen sind möglich; fail closed gegen leer/unbekannt; zwei korrigierte Kennzahlen | **mergefähig, aber Merge = Deployment.** **Keine Migration, keine neue Spalte, kein Flag, kein Schema, kein zusätzlicher KI-Aufruf, keine Änderung an Cronjobs/Crawlern/Budget/Locks/Matchinggewichten/aktiven Quellen.** Additiv: Herkunft je Eintrag + `geography_*`-Schlüssel im bestehenden jsonb `classification_confidence`. Rollback per `git revert`. **CI-Gate grün: Offline-Suite 171/171, Browser-/Mobile-Smoke 32/32** (Lauf `30299183808`, Commit `f4d6648`). `geografie-gedaechtnis-test` **61/61**, **11/11 Mutationen rot**, Production read-only gegengemessen. Branch `claude/sprint-20-geography-storage-vuhqcn`, **PR #155** |
 | ~~#154~~ | **Sprint 19: politische Ebene dauerhaft speichern** — neues reines Modul `ebenen-gedaechtnis.js` (Wiederverwendung statt Neuberechnung, fail closed gegen `unknown`, monoton), Einbindung in `classifyKnowledgeObject`/`assembleKnowledgeObject`/`understandUpdate`, Klassifikationsspalten in der Kandidatenprojektion, ehrliche Abdeckungskennzahl | **mergefähig, aber Merge = Deployment.** **Keine Migration, kein Flag, kein Schema, kein zusätzlicher KI-Aufruf, keine Änderung an Cronjobs/Crawlern/Budget/`process_runs`/W-1/W-2.** Additiv: die Herkunft der Ebene wandert in das bestehende jsonb `classification_confidence`. Rollback per `git revert`. Offline **156/170** (Basislinie **155/169** — identische 14 Vorbefunde, +1 neue Suite grün), Browser-Smoke **32/32**, `ebenen-gedaechtnis-test` **41/41**, **7/7 Mutationen rot**, Production read-only gegengemessen. Branch `claude/politische-ebene-speichern-e7ad56` |
