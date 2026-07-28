@@ -508,7 +508,14 @@ check("D6 Scoring-Gewichtungen und Matchinglogik sind unverändert (Regel 14)", 
 
 check("D7 keine neue Spalte, keine neue Tabelle, keine neue Migration", (() => {
   const migrationen = fs.readdirSync(path.join(__dirname, "..", "supabase", "migrations"));
-  return !migrationen.some((f) => /2026072[89]|20260730|geograf/i.test(f));
+  // Der Riegel prüft den FEATURE-Bezug (Sprint 20 brauchte keine Migration).
+  // Migrationen ANDERER, dokumentierter Sprints im selben Datumsfenster werden
+  // namentlich ausgenommen statt den Riegel datumsblind scheitern zu lassen:
+  // 20260728_embedding_shadow* ist die geografie-freie Embedding-Shadow-Tabelle
+  // aus Sprint 22C1 (Geografie ist dort ausdrücklich NICHT Teil des Eingangs,
+  // testgesichert in embedding-contract-test.js / embedding-backfill-test.js I2).
+  const fremdeSprints = /^20260728_embedding_shadow(_rollback)?\.sql$/;
+  return !migrationen.some((f) => !fremdeSprints.test(f) && /2026072[89]|20260730|geograf/i.test(f));
 })());
 
 // ══════════════════════════════════════════════════════════════════════════════
