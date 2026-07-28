@@ -1,6 +1,14 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-28 (**Sprint 23A erfolgreich abgeschlossen: Matching-Bestand
+**Letzte Aktualisierung:** 2026-07-28 (**Sprint 23B-1 teilweise abgeschlossen: algorithmusunabhängige
+Matching-Auditpersistenz gebaut und offline bewiesen — neue append-only Tabelle `matching_runs`
+(nach Abschluss unveränderlich), 14 additive Spalten auf `matching_results`, getrennte Engine-/
+Rezept-/Vektorversion, stabiler Eingabefingerabdruck (identischer Lauf: 0 statt 20 Schreibvorgänge),
+Ablösung statt Löschung, Sperre auch im bisher ungesperrten Lage-Pfad, deterministische Begründung
+ohne KI. Legacy-Matching fachlich unverändert (253 Vergleiche gegen `main`, 0 Abweichungen).
+Migration `20260728_matching_audit` FREIGABEPFLICHTIG und NICHT angewendet, Flag `HELMUT_MATCHING_AUDIT`
+Default AUS, kein Production-Write. Abnahme offen: Merge, Migration, Aktivierung.**) ·
+(**Sprint 23A erfolgreich abgeschlossen: Matching-Bestand
 vollständig verifiziert, Architekturentscheidung für 23B getroffen — Production nur lesend,
 keine Produktlogik verändert. Kernbefund: `matching_results` speichert je Mandant×Vorgang
 GENAU EINE Zeile, wird bei jedem Lauf überschrieben, kennt weder Lauf-ID noch Profil-/
@@ -40,9 +48,94 @@ Werkzeug-Härtung W-1+W-2 gemergt (#152) · **W-2 erfolgreich abgeschlossen:
 Migration `20260727` angewendet, Flag aktiv, echter Production-Lauf
 `crawl-20260727160048-ct8lt` relational gespeichert und erhalten — alle 15
 Erfolgskriterien erfüllt**) ·
-**`main`-HEAD:** `51a533d` (Merge #166, in Production ausgerollt — Deployment
-`dpl_E9JKeXKhd2b5mK2QJDNuRSquXJGg` `READY`, `target: production`; davor `ce5e3b8` = Merge #165,
-`77e4de3` = Merge #164)
+**`main`-HEAD:** `53893fa` (Merge #168 = Sprint-23A-Dokumentation; davor `5528fd8` = Merge #167,
+`51a533d` = Merge #166, in Production ausgerollt — Deployment
+`dpl_E9JKeXKhd2b5mK2QJDNuRSquXJGg` `READY`, `target: production`)
+
+> **Sprint 23B-1 am 2026-07-28 ausgeführt — TEILWEISE ABGESCHLOSSEN (Umsetzung fertig und
+> offline bewiesen; Production-Abnahme steht definitionsgemäß aus: Merge, Migration und
+> Aktivierung sind je eine eigene Freigabeentscheidung).**
+> **Startprüfung vollständig:** Arbeitsbaum sauber, Branch `claude/matching-audit-persistence-lw4vab`
+> auf `origin/main` = `53893fa`, **PR #166 in `main`**, **Sprint 23A in `main`** (alle drei
+> Nachweise vorhanden: `matching-nachvollziehbarkeit.md`, Abschlussstatus hier, Roadmap-Punkt 23
+> auf ⏳). *Erster Anlauf dieses Threads wurde am Start Gate gestoppt, weil 23A noch nicht gemergt
+> war — nach dem Merge von **PR #168** wurde das Gate erneut und vollständig durchlaufen.*
+> **Konfliktprüfung:** 9 offene PRs (#159, #148, #132, #117, #115, #112, #111, #88, #70) —
+> unverändertes Bild gegenüber 23A, kein PR angefasst. Einzige fachliche Berührung bleibt **#112**
+> (Onboarding verändert, *wie* Mandatsprofile entstehen); **aufgelöst statt umgangen**: der
+> Profilhash kommt aus `matching.profileHash(profile)` und hängt ausschließlich an den
+> Profilmerkmalen, **nicht** an der Herkunft (Blob vs. SQL) — die Reihenfolge der beiden PRs ist
+> damit gleichgültig. Kein Konflikt, der eine sichere additive Umsetzung verhindert.
+>
+> **Geliefert (additiv, Production nur gelesen — genauer: in diesem Sprint gar nicht angefasst):**
+> **(1)** Migration `supabase/migrations/20260728_matching_audit.sql` + vollständiges Rollback:
+> neue Tabelle **`matching_runs`** (append-only, FK auf `profiles` mit `ON DELETE CASCADE`,
+> Trigger `helmut_matching_run_immutable` friert einen `vollstaendig`-Lauf fachlich ein — nur
+> `wiederholungen`/`letzter_lauf_at`/`wiederaufnahme_am`/`fehler` bleiben fortschreibbar),
+> **14 additive Spalten** auf `matching_results` (alle NULL-fähig, **kein Backfill**), echter
+> eindeutiger Index `(user_id, knowledge_object_id)` (Codekonvention wird zur DB-Zusicherung;
+> Production hat 0 Duplikate, Vorabprüfung im Runbook), **Teilindex
+> `(user_id, eingabe_fingerabdruck) where status='vollstaendig'`** = datenbankseitig erzwungene
+> Idempotenz, RLS aktiv, **keine `SECURITY DEFINER`-Funktion**. **(2)** Drei kleine Module:
+> `matching-contract.js` (kanonische Serialisierung, Eingabehash je Wissensobjekt,
+> Eingabefingerabdruck, deterministische Rangliste mit byte-stabiler Tie-Break-Regel — bewusst
+> **kein** `localeCompare`), `matching-audit.js` (**algorithmusunabhängige** Audit-Schnittstelle:
+> Sperre, Idempotenz, Laufzeile, Veröffentlichung, Fehlerzustand — kennt kein Matching-Verfahren
+> und keine Embeddings), `matching-begruendung.js` (deterministische Kurzbegründung, **0 KI**,
+> max. 2 Gründe, Priorität Ausschuss → Thema → Wahlkreis → Partei, **ohne Beleg `null`**).
+> **(3)** Anbindung des Legacy-Matchings hinter der Rollout-Grenze **`HELMUT_MATCHING_AUDIT`
+> (Default AUS)**: aus = kein Zugriff auf `matching_runs`, keine Sperre, keine Audit-Spalten,
+> keine neue Fehlerquelle, byte-identische Zeilen. An = ein Lauf wird protokolliert, ein
+> **identischer** Zweitlauf schreibt **0 Ergebniszeilen statt bisher 20 wirkungsloser UPDATEs**
+> (die Schreiblast sinkt), aus der Trefferliste gefallene Zeilen werden `aktuell=false` **statt
+> gelöscht**, und der bisher **ungesperrte Lage-Pfad** nimmt dieselbe Sperre `matching-<mandant>`
+> wie der Crawl-Pfad (bestehende `pipeline_locks`, kein zweites Sperrsystem).
+>
+> **Bewiesene Zusicherungen (offline, In-Memory-Nachbildung inkl. Teilindex und Trigger):**
+> Idempotenz · Historisierung bei Profil-, Vorgangs- und Rezeptwechsel · Unveränderlichkeit
+> abgeschlossener Läufe · `partial`/`failed` ersetzen den letzten vollständigen Stand nie ·
+> Parallelität (gleiches Profil abgewiesen, verschiedene Profile parallel) · Ablehnung fremder
+> Mandanten/Profile mit `CROSS_TENANT_WRITE` · RLS/Grants statisch · **Abbruch vor der
+> Veröffentlichung lässt den bisherigen Stand byte-identisch** · Reihenfolgeunabhängigkeit ·
+> Begründungsdeterminismus · keine Begründung ohne Beleg · Semantiktrennung.
+> **Legacy-Stabilität gegengeprüft gegen unverändertes `origin/main` in einem eigenen Worktree:
+> 253 Vergleiche (Merkmalsvektoren, Kosinuswerte, Ranking, `matched_features`, geschriebene
+> Ergebniszeilen, Rückgabewert; 60 Wissensobjekte, 4 Grenzwerte, 4 Filterkombinationen) —
+> 0 Abweichungen.**
+> **Tests:** neue Suite `matching-audit-test.js` **137/137** · **Offline-Suite 177/177** in 58 s ·
+> Gegenbeweis auf unverändertem `main` **176/176** · Browser-Smoke nicht gefahren (keine
+> UI-Änderung). Zwei sprintbedingte Testpflege-Änderungen dokumentiert: D7-Datumsriegel in
+> `geografie-gedaechtnis-test` nimmt die geografiefreie Auditmigration namentlich aus,
+> `env-inventar.md` um `HELMUT_MATCHING_AUDIT` ergänzt.
+>
+> **Gemessene Größen (statt geschätzt):** Laufzeile **8 070 B roh / ~2 539 B komprimiert**
+> (Faktor 4,4), Zusatz je Ergebniszeile **713 B**; **10 Profile ≈ 28 MB/Jahr**, **100 Profile
+> ≈ 278 MB/Jahr** (dann Retention nötig — eigener Schritt). **Zusätzliche KI-Kosten: 0,00 USD.**
+> *Korrektur zu 23A §10.5: dort waren 1,5–2,0 kB je Laufzeile geschätzt; real ist es mehr, weil
+> die umgesetzte Rangliste `result_id`, `ko_eingabe_hash`, `signale` und `begruendung` trägt.*
+>
+> **Bewusst NICHT umgesetzt (je mit Begründung in §22 der Doku):** Briefing-Historisierung
+> (→ 23B-2) · sichtbare Nutzererklärung (→ 23C) · semantische Produktfunktion (→ 22C2) ·
+> `HELMUT_SCORING_MODE` unverändert · Spalten für fachlichen/geografischen/institutionellen
+> Teilscore (existieren im Rezept nicht — kein falsches Grün) · `ausschlussgruende` (die RPC
+> verwirft keinen Kandidaten, die Spalte wäre dauerhaft leer; **Abweichung von 23A §10.3,
+> begründet**) · NOT-NULL-Verschärfung (braucht eigenen Production-Beweis) · **Revoke der
+> `TRUNCATE`-Rechte (Befund M-6) — eigener Security-Sprint**, weil es eine Rechteänderung in
+> Production ist und `listMatchingResults` im Tenant-JWT-Modus als `authenticated` liest.
+> **Neuer Befund M-7:** `runMatchingShadow` lädt für die `matched_features` nur ein Fenster von
+> 200 Wissensobjekten — das ist die wahrscheinlichste Erklärung für die 78,4 % leeren
+> `matched_features`. **Nicht behoben**, weil eine Änderung das fachliche Ergebnis veränderte;
+> die Auditpersistenz geht damit ehrlich um (`ko_eingabe_hash` bleibt dann `null`).
+>
+> **Kein Production-Write, keine Migration angewendet, kein KI-Aufruf, kein Flag/Cron/Secret/
+> Vercel-Variable verändert, keine Nutzeroberfläche berührt, kein fremder PR angefasst,
+> kein Merge.**
+> **Nächster Schritt:** Gate 1 = Merge des PR (Betreiberentscheidung). Danach Gate 2 =
+> ausdrückliche Freigabe für genau die Migration `20260728_matching_audit` (Vorabprüfung,
+> Reihenfolge, Verifikationsabfragen und Rückweg stehen in
+> [`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md) §21). Gate 3 =
+> Aktivierung von `HELMUT_MATCHING_AUDIT`. **Schritt 3 vor Schritt 2 ist verboten.**
+> Kanonisch: [`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md) Teil B (§14–§24).
 
 > **Sprint 23A am 2026-07-28 ausgeführt — ERFOLGREICH ABGESCHLOSSEN (Bestandsaufnahme;
 > Production ausschließlich lesend, keine Produktlogik, kein Schema, keine Daten verändert).**
@@ -645,6 +738,7 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 
 | PR | Inhalt | Einschätzung |
 |---|---|---|
+| **#PRNUM** | **Sprint 23B-1: algorithmusunabhängige Matching-Auditpersistenz** — neue Tabelle `matching_runs` (append-only, nach Abschluss per Trigger unveränderlich), 14 additive Spalten auf `matching_results`, Migration `20260728_matching_audit` + Rollback (**freigabepflichtig, NICHT angewendet**), drei kleine Module (`matching-contract` / `matching-audit` / `matching-begruendung`), Anbindung des Legacy-Matchings hinter `HELMUT_MATCHING_AUDIT` (**Default AUS**), neue Suite 137/137, Offline-Suite 177/177 | **offen** — Merge ist Betreiberentscheidung. Legacy-Matching fachlich unverändert (253 Vergleiche gegen `main`, 0 Abweichungen). Kein Production-Write, keine UI-Änderung. Nach dem Merge folgen zwei getrennte Freigaben: Migration, danach Flag |
 | ~~#166~~ | **Sprint 22C1 abgeschlossen: Production-Backfill ausgeführt und belegt** — Protokoll §14.6 (Migration angewendet und verifiziert, Canary 56/56, 772/772 eingebettet, Idempotenz 0 Aufrufe/0 Writes, Vorher/Nachher-Nachweise), Roadmap-Punkt 22 auf erfüllt, Werkzeugbefund W-3 behoben (`process.exitCode` statt `process.exit()`) | **gemergt** 2026-07-28, 15:52 UTC (`51a533d`), beide Pflicht-Checks grün (Lauf `30371556515`), in Production ausgerollt (Deployment `dpl_E9JKeXKhd2b5mK2QJDNuRSquXJGg` `READY`). Der Production-Zustand war zum Merge-Zeitpunkt bereits hergestellt — der PR selbst änderte keine Production-Daten |
 | ~~#165~~ | **Sprint 22C1: Production-Shadow-Struktur + Backfill-Pipeline für semantische Embeddings** — finalisierte Migration `20260728_embedding_shadow.sql` (+ Rollback, aus `entwuerfe/` überführt), Renew-Lock-RPC, Backfill-Lib+CLI mit harten fail-closed Deckeln und eigenem Lock, Testsuite 40/40, Env-Inventar + D7-Testpflege, Doku §14 inkl. Production-Runbook | **gemergt** 2026-07-28 (`ce5e3b8`), beide Pflicht-Checks grün (Lauf `30367524365`), in Production ausgerollt (Deployment `dpl_CDfzvCaanmYsiZG62n9hKUaYLbCC` `READY`). Danach auf ausdrückliche Freigabe: **Migration angewendet + Backfill 772/772 erfolgreich** (§14.6). Der Merge selbst änderte keine Production-Daten |
 | ~~#164~~ | **Sprint 22B: Embedding-Testlauf ausgeführt, Qualitätsvergleich dokumentiert** — reine Doku (§13.6/§13.8) | **gemergt** 2026-07-28, 13:13 UTC (`77e4de3`), beide Pflicht-Checks grün, in Production ausgerollt (Deployment `dpl_9Kt9LpvYPCRNxeK4MhycsQmH8k29` `READY`). Damit ist Sprint 22B **erfolgreich abgeschlossen** |
@@ -997,6 +1091,7 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 
 | Sprint | Datum | Zustand |
 |---|---|---|
+| **Sprint 23B-1: algorithmusunabhängige Matching-Auditpersistenz** | 2026-07-28 | **Teilweise abgeschlossen (Umsetzung fertig und offline bewiesen; Production-Abnahme steht aus — Merge, Migration und Flag sind je eine eigene Freigabeentscheidung).** Start Gate im zweiten Anlauf vollständig passiert (erster Anlauf gestoppt, weil Sprint 23A noch nicht gemergt war; nach **PR #168** erneut geprüft). **Geliefert:** `matching_runs` als append-only Auditprotokoll mit DB-Trigger gegen jede fachliche Änderung eines abgeschlossenen Laufs · 14 additive, NULL-fähige Spalten auf `matching_results` **ohne Backfill** · echter Unique-Index `(user_id, knowledge_object_id)` · **Teilindex auf (user_id, eingabe_fingerabdruck) where status='vollstaendig'** = datenbankseitig erzwungene Idempotenz · getrennte `engine_version` / `rezept_version` / `vektor_version` · stabiler Eingabefingerabdruck (unabhängig von Lauf-ID, Zeit, Auslöser und Eingabereihenfolge) · Ablösung (`aktuell=false`) **statt Löschung** · Sperre `matching-<mandant>` über die bestehende `pipeline_locks`-Infrastruktur, **erstmals auch im Lage-Pfad** · deterministische Kurzbegründung **ohne KI** (max. 2 Gründe, ohne Beleg `null`). **Drei Laufzustände statt fünf**, begründet: `partial` ist durch `laufend` abgedeckt (die Projektion wird in EINEM Bulk-Upsert geschrieben), `cancelled` erzeugt bewusst gar keine Zeile. **Keine `SECURITY DEFINER`-Funktion** — die Atomizität folgt aus der Reihenfolge (Abschluss zuletzt). **Legacy unverändert:** 253 Vergleiche gegen unverändertes `origin/main` (Merkmalsvektoren, Kosinuswerte, Ranking, `matched_features`, geschriebene Zeilen, Rückgabewert) → **0 Abweichungen**. **Tests:** neue Suite **137/137**, Offline-Suite **177/177**, Gegenbeweis auf `main` **176/176**, Browser-Smoke nicht nötig (keine UI-Änderung). **Gemessen:** Laufzeile 8 070 B roh / ~2 539 B komprimiert, +713 B je Ergebniszeile, ~28 MB/Jahr bei 10 Profilen, ~278 MB/Jahr bei 100 (dann Retention); **0,00 USD zusätzliche KI-Kosten**; identischer Lauf schreibt **0 statt 20** Ergebniszeilen. **Neuer Befund M-7** (200er-Ladefenster erklärt die 78,4 % leeren `matched_features`) — bewusst **nicht** behoben, weil es das fachliche Ergebnis veränderte. **Kein Production-Write, keine Migration angewendet, kein Flag/Cron/Secret/Vercel-Variable, keine UI, kein fremder PR, kein Merge.** Kanonisch: [`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md) Teil B. Nächster Schritt: Merge, danach Freigabe der Migration, danach Freigabe des Flags |
 | **Sprint 23A: Matching-Bestand und Auditgrundlage verifizieren** | 2026-07-28 | **Erfolgreich abgeschlossen (Bestandsaufnahme; Production ausschließlich lesend, 21 reine `SELECT`-Abfragen, kein Byte Code geändert — `git status` leer).** Alle 20 Abnahmekriterien erfüllt. **Ist-Zustand belegt:** Einstieg `matching.js:runMatchingShadow`, zwei Aufrufstellen in `scheduler.js` → 4 Läufe je Mandant/Tag (04/10/16/20 UTC, durch das Stundenhistogramm bestätigt); einziger Konsument `lage.js:325`, und nur solange `HELMUT_SCORING_MODE` aus ist (OP-22); **Radar liest die Ergebnisse nicht**. Schema ohne Drift (9 Spalten, PK `id`, 2 FKs mit CASCADE), **kein eindeutiger Index auf (user_id, knowledge_object_id)** — Eindeutigkeit ist Codekonvention, hält 287/287. Schreibpfad = Bulk-Upsert auf `id`: **vollständiges Überschreiben, kein DELETE, keine Retention, keine Lauf-ID, kein `updated_at`**, `created_at` friert beim ERSTEN Auftreten ein (empirisch bewiesen: `annika-klose` 16:04:32-Lauf schrieb 20 Zeilen und hinterließ 0 Spuren). **Zahlen:** 10 Mandanten · 9 Mandatsprofile (6 aktiv) · 1 507 KOs (776 verstanden) · **287** Ergebnisse auf 7 Mandanten/181 Vorgängen · 71 Briefings · 976 Decisions · 685 B/Zeile · DB 64 MB. 0 Duplikate/Waisen/fehlende Scores — aber **64 Zeilen mit Rang 20** (vermischte Generationen) und **225 von 287 (78,4 %) ohne jedes `matched_feature`**; `filters` 287/287 leer, Ähnlichkeiten bis **−0,0735** (kein Schwellenwert im Produktionspfad). **Versionierung existiert nicht** → alte Ergebnisse **nicht reproduzierbar**. **Briefings** speichern nur `koSetHash` (Einwegfunktion), **keine Vorgangskennungen, keinen Ergebnisverweis**; Upsert auf `bf-<mandant>-lage-<tag>` → ein neuer Lauf kann ein Tagesbriefing **rückwirkend überschreiben**. **RLS aktiv, aber `service_role` umgeht sie vollständig** — durchsetzend ist allein die App-Seite (für beide Zugriffsfunktionen geprüft, kein ungefilterter Pfad). Befund **M-3** (nach Profil-/Vorgangsänderung bleiben Ergebnisse stillschweigend falsch zugeordnet), Befund **M-6** (`TRUNCATE`-Recht für `anon`/`authenticated` auf allen älteren V3-Tabellen; RLS greift bei `TRUNCATE` nicht, über das API aber nicht erreichbar). **Semantik-Abgrenzung bestätigt:** semantische Embeddings haben **null** Einfluss, `knowledge_object_embeddings` braucht für Punkt 23 **keine** Änderung. **Entscheidung 23B: Variante B+** (neue Lauftabelle `matching_runs` mit kompakter Rangliste, additive Spalten + echter Unique-Index, Briefing-Anbindung ohne Migration im jsonb, Archivtabelle `briefing_versionen`, Idempotenz per Eingabefingerabdruck → identischer Zweitlauf **0 Zeilen/1 UPDATE** statt 20). Verworfen: A (PK erzwingt eine Zeile je Paar), C (≈2,2 Mio. Zeilen/Jahr bei 100 Profilen), D (kein Ergebnisbezug). Kostenschätzung ~20 MB/Jahr bei 10 Profilen, ~200 MB/Jahr bei 100 (dann Retention), **0,00 USD KI**. 23C-Erklärung definiert (deterministisch, ohne Beleg **kein** Satz — heute nur 20 von 287 Zeilen aussagekräftig belegbar). Tests: **Offline-Suite 176/176** (bereinigte Umgebung, Zweitlauf; Erstlauf 175/176 = Parallellast-Flake, Suite einzeln 43/0; mit Sitzungs-Secrets 162/176 = bekanntes Umgebungsmuster). **Kein Production-Write, keine Migration, kein Flag/Cron/Secret, kein KI-Aufruf, kein Merge.** Kanonisch: [`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md). Nächster Schritt: **Sprint 23B-1** (Migration freigabepflichtig) |
 | **Sprint 22C1: Semantische Embeddings — Production-Shadow-Struktur + kontrollierter Backfill** | 2026-07-28 | **Erfolgreich abgeschlossen — beide Gates passiert, alle 20 Production-Abnahmekriterien erfüllt.** PR **#165 gemergt** (`ce5e3b8`, beide Pflicht-Checks grün, Deployment `READY`); danach auf ausdrückliche Freigabe der Production-Ablauf 14:56–14:59 UTC: **Migration angewendet und verifiziert** (RLS aktiv, 0 Policies, Grants nur `postgres`/`service_role`, Teilindex für die Ein-Aktiv-Garantie, Renew-RPC ohne Fremd-Grants), **Canary 56/56 fehlerfrei**, Restbestand in zwei Etappen (300 + 416) mit belegter **Wiederaufnahme**, Abdeckungsprüfung **BESTANDEN: 772 von 772 berechtigten Objekten** mit aktuellem Embedding (alle Negativlisten 0), **Idempotenz-Zweitlauf 0 API-Aufrufe / 0 Writes**. **17 API-Aufrufe, 110 992 Tokens (Schätzung) / 133 277 (providergemeldet), ≈ 0,0022 USD, 0 Fehler, 0 Wiederholungen.** Ein Modell/Rezept/Dimension über alle Zeilen, 0 Dimensions-/Wert-/Hashfehler. **Unverändert:** `knowledge_objects`-Fingerabdruck byte-identisch, Legacy-Vektoren 773, `matching_results` 287, Briefings 71, `llm_usage` heute 0, Crawl-Telemetrie stabil, 0 aktive Sperren. Kein Rollback nötig, **keine semantische Produktfunktion aktiviert**, keine Duplikatzusammenführung. Werkzeugbefund W-3 (abgeschnittene `--json`-Ausgabe auf Pipe) im Lauf behoben. Belege: [`embedding-architektur.md`](embedding-architektur.md) §14.6. Zuvor geliefert: finalisierte Shadow-Migration `20260728_embedding_shadow.sql` mit vollständigem Rollback (alle 16 Datenvertragsfelder, genau eine aktive Repräsentation je Objekt DB-erzwungen, RLS ohne Policies + Revokes, Renew-Lock-RPC, kein ANN-Index), Backfill `lib/helmut/embedding-backfill.js` + CLI `scripts/embedding-backfill.js` (Dry-Run-Default, `--vermessen`/`--pruefen` read-only, echter Lauf nur `--echt --freigabe erteilt` + Schreibgate, harte fail-closed Deckel ≤ 1 000 Objekte/≤ 200 000 Tokens/≤ 0,05 USD/Batch ≤ 50/Parallelität 1, eigenes Lock `semantic_embedding_backfill` mit TTL+Erneuerung, idempotent + wiederaufnehmbar, maschinenlesbares Protokoll), Budgettrennung ohne zweites Budgetsystem (Tokenwahrheit je Zeile + Laufprotokoll, bestehende Budgets unverändert). Production read-only nachgemessen: **772 berechtigte** Objekte (JS-exakt = SQL-Näherung), Dry-Run 16 Batches/110 992 Tokens ≈ **0,0022 USD**, Canary-Dry-Run 56 Objekte/8 621 Tokens. Tests: `embedding-backfill-test.js` **40/40** (neu), Bestand 31/31 + 43/43, **Offline-Suite 176/176** (CI-Umgebung; `main`-Gegenlauf 175/175). Runbook: `embedding-architektur.md` §14.5. Roadmap-Punkt 22 bleibt ⏳ bis zum bewiesenen Production-Backfill |
 | **Sprint 22A: Embedding-Architektur verstehen, bereinigen, Zielmodell festlegen** | 2026-07-28 | **Erfolgreich abgeschlossen (Analyse + additive Verträge; bewusst ohne Backfill und ohne Production-Änderung).** Bewiesen: `knowledge_objects.embedding` ist ein **deterministischer 256-dim Merkmalsvektor** (Token-Hash, `matching.js`), kein semantisches Embedding — 3 Production-Vektoren exakt lokal reproduziert. Production read-only vermessen: 1 501 KOs, 772/772 verstandene mit Vektor, 0 Dimensionsfehler/Nullvektoren/ungültige Werte; **599 ohne Fachgebiet und 78 mit Ebene `unknown` sind KEINE Blocker** (nicht Teil des kanonischen Eingangs `ko-kanon-1`); 729 unverstandene ausgeschlossen; Profilvektoren 7/10; pgvector-Shadow-Matching läuft aktiv (287 `matching_results`, Befund E-1: Env-Inventar ohne Prod-Vermerk). Geliefert: `lib/helmut/embedding-contract.js` (Eingang/Hash/Berechtigung/Validierung/Veraltet-Erkennung/idempotente Planung), `embedding-contract-test.js` **43/43**, Shadow-Migrations-**Entwurf** mit Rollback (`supabase/migrations/entwuerfe/`, nicht freigegeben), kanonische Doku [`embedding-architektur.md`](embedding-architektur.md) inkl. parametrisiertem Kostenmodell (~0,19 M Tokens Altbestand ≈ 0,19 × P USD bei P = Preis/1 M Tokens), Backfill-Sicherheitsmodell und Mandantenneutralität (kein Mandanten-Hardcode, testgesichert). Offline-Suite: **171/174** mit bereinigter Env (3 Vorbefunde, auch auf unverändertem `main` rot: `privacy-vollstaendigkeit`, `provision-tenant`, `tenant-neutrality` — Befund E-2, fachfremd, nicht angefasst); mit Sitzungs-Secrets 160/174 (Netz-Guard, bekanntes Muster). Roadmap Punkt 22 → ⏳. Nächster Schritt: **Sprint 22B** (Freigaben: Shadow-Migration, Modell/Provider, Testlauf-Kosten) |

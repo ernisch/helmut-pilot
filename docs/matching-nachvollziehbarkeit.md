@@ -3,9 +3,16 @@
 **Kanonische Quelle** für den Ist-Zustand des produktiven Matchings, die
 Architekturentscheidung für Sprint 23B und die geplante Nutzererklärung (23C).
 
-**Stand:** 2026-07-28 · Sprint 23A (Bestandsaufnahme, **keine** Verhaltensänderung)
-**Basis:** `main` = `51a533d` (Merge PR #166) · Production read-only vermessen am
-2026-07-28, ca. 17:00–17:30 UTC
+**Stand:** 2026-07-28 · **Teil A** = Sprint 23A (Bestandsaufnahme) · **Teil B** =
+Sprint 23B-1 (umgesetzte Auditpersistenz, Migration **nicht** angewendet,
+Rollout-Grenze **AUS**)
+**Basis:** Teil A `main` = `51a533d` (Merge PR #166), Production read-only vermessen
+am 2026-07-28, ca. 17:00–17:30 UTC · Teil B `main` = `53893fa` (Merge PR #168)
+
+> **Aufbau:** §1–§13 sind der belegte **Ist-Zustand** aus Sprint 23A und bleiben
+> unverändert. §14–§24 (Teil B) beschreiben die in Sprint 23B-1 gebaute Lösung,
+> die Production-Reihenfolge und den Rückweg. Wo Teil B von der Empfehlung aus
+> §10 abweicht, ist das dort ausdrücklich benannt und begründet.
 
 > **Abgrenzung:** Roadmap-**Punkt 23** (dieses Dokument) ≠ **OP-23** aus
 > [`datenmotor-restliste.md`](datenmotor-restliste.md). Ebenso: Roadmap-Punkt 22
@@ -736,3 +743,558 @@ Alle Production-Abfragen dieses Sprints waren reine `SELECT`-Anweisungen über
 
 **0** schreibende Anweisungen · **0** Migrationen · **0** DDL · **0** KI-Aufrufe ·
 **0** Änderungen an Flags, Cron, Secrets oder Vercel-Variablen.
+
+---
+
+# Teil B — Sprint 23B-1: die umgesetzte Auditpersistenz
+
+**Stand:** 2026-07-28 · Sprint 23B-1 (Umsetzung) · Basis `main` = `53893fa` (Merge PR #168)
+**Zustand:** implementiert, offline bewiesen, **Migration NICHT angewendet**, Rollout-Grenze **AUS**.
+
+Teil A (§1–§13) bleibt unverändert der belegte Ist-Zustand aus Sprint 23A. Teil B
+beschreibt, was daraus gebaut wurde.
+
+## 14 · Was gebaut wurde
+
+### 14.1 Die zwei Rollen
+
+| | `matching_results` | `matching_runs` |
+|---|---|---|
+| Frage | **„Was gilt jetzt?"** | **„Wie kam es dazu?"** |
+| Rolle | operative Projektion — der einzige Lesepfad des Produkts (`lage.js:325`) | Auditprotokoll — von keinem Produktpfad gelesen |
+| Lebensdauer | eine Zeile je (Mandant, Wissensobjekt), wird fortgeschrieben | eine Zeile je **verändertem** Lauf, append-only |
+| Änderbarkeit | wie bisher | nach `status='vollstaendig'` **fachlich unveränderlich** (DB-Trigger) |
+| Gelöscht wird | nie (nur DSGVO) | nie (nur DSGVO) |
+
+Der entscheidende Punkt: **die Projektion bleibt kompatibel.** Alle bestehenden
+Spalten, die Kennungslogik `mr-<mandant>-<vorgang>` und der Schreibpfad sind
+unverändert. Ein Leser, der die Auditspalten nicht kennt, merkt von diesem Sprint
+nichts.
+
+### 14.2 Laufzustände — drei statt fünf, begründet
+
+Die Sprintvorgabe nannte fünf Kandidaten (`running`, `completed`, `partial`,
+`failed`, `cancelled`) und verlangte ausdrücklich, unnötige Zustände zu vermeiden.
+Umgesetzt sind **drei**:
+
+| Zustand | Bedeutung | Warum er gebraucht wird |
+|---|---|---|
+| `laufend` | gestartet, Ausgang unbekannt | Ein Absturz hinterlässt genau diesen Zustand. Er gilt **nie** als aktuell und **nie** als idempotenter Treffer |
+| `vollstaendig` | abgeschlossen, unveränderlich | der einzige Zustand, gegen den Idempotenz prüft |
+| `fehlgeschlagen` | mit dokumentiertem Fehler beendet | trennt „abgestürzt" von „bekannt gescheitert" und trägt den Fehlertext |
+
+**`partial` entfällt**, weil die Ergebnisprojektion in **einem** Bulk-Upsert
+geschrieben wird — ein echter Teilzustand der Projektion existiert nicht. Ein Lauf,
+der nach dem Schreiben abbricht, bleibt auf `laufend` bzw. wird `fehlgeschlagen`;
+beides bedeutet bereits „nicht aktuell". Ein zusätzlicher Wert hätte dieselbe
+Wirkung gehabt und nur die Auswertung verkompliziert.
+
+**`cancelled` entfällt**, weil ein übersprungener Lauf (Sperre gehalten oder
+identischer Eingang) **gar keine Zeile erzeugt**: es wurde nichts berechnet, was zu
+protokollieren wäre. Das hält die Tabelle frei von Leerlaufzeilen — bei vier Läufen
+je Mandant und Tag wären das sonst überwiegend Leerzeilen.
+
+Ein `vollstaendig`-Lauf ist per Trigger `helmut_matching_run_immutable` eingefroren.
+Fortschreibbar bleiben ausschließlich `wiederholungen`, `letzter_lauf_at`,
+`wiederaufnahme_am` und `fehler` — genau die technischen Metadaten für Wiederholung,
+Wiederaufnahme und nachträgliche Fehlerdokumentation.
+
+### 14.3 Was `matching_results` bekommt — und was bewusst nicht
+
+**Ergänzt (14 Spalten, alle additiv, alle NULL-fähig, kein Backfill):**
+`run_id` · `profil_hash` · `ko_eingabe_hash` · `ko_version` · `engine_version` ·
+`rezept_version` · `vektor_version` · `eingabe_fingerabdruck` · `berechnet_am` ·
+`aktuell` · `abgeloest_am` · `signale` · `begruendung` · `updated_at`.
+
+**Bewusst NICHT ergänzt** — jede Ablehnung mit Grund:
+
+| Gefordert zu bewerten | Entscheidung | Grund |
+|---|---|---|
+| fachlicher / geografischer / institutioneller Teilscore | **nein** | existiert im Rezept `legacy_relevance_v1` nicht (§4.4). Eine Spalte, die immer NULL ist, behauptet eine Berechnung, die nie stattfindet — falsches Grün |
+| `ausschlussgruende` | **nein** (Abweichung von §10.3) | die RPC `match_knowledge_objects` liefert die Top-N unbedingt; app-seitig wird **kein** Kandidat verworfen. Die Spalte wäre dauerhaft leer. Sie kommt, wenn tatsächlich gefiltert wird |
+| `mandate_profile_id` an der Ergebniszeile | **nein** | heute identisch mit `user_id`; die Profilkennung steht an der **Laufzeile**. Keine redundante Identitätskopie |
+| `tenant_id` | **nein** | `user_id` **ist** die kanonische Mandantenkennung |
+| `updated_at`-**Trigger** | **nein** | ein Trigger hätte das Verhalten der bestehenden Tabelle verändert. `updated_at` setzt ausschließlich der Auditpfad explizit; ohne Auditpersistenz bleibt es NULL — ehrlich statt heimlich |
+| NOT-NULL auf `user_id`/`knowledge_object_id` | **vertagt** | Production hat 0 NULL-Werte (§5.2), aber eine Verschärfung an einer laufend beschriebenen Tabelle braucht einen eigenen Production-Beweis. Stattdessen greift der neue eindeutige Index; die Verschärfung ist als späterer Schritt notiert (§15.5) |
+
+`eingabe_fingerabdruck` **bleibt** an der Ergebniszeile, obwohl er für alle 20 Zeilen
+eines Laufs gleich ist: `run_id` trägt `ON DELETE SET NULL`, damit eine DSGVO-Löschung
+der Historie die Projektion nicht mitreißt. Der Fingerabdruck überlebt das und
+identifiziert die Generation weiterhin. Das ist der klare Zweck, der die Redundanz
+rechtfertigt.
+
+### 14.4 Die kompakte Rangliste
+
+`matching_runs.ergebnis` speichert je Treffer genau neun Felder:
+`ko_id` · `vorgang_id` · `result_id` · `rank` · `similarity` · `signale` ·
+`ko_eingabe_hash` · `ko_version` · `begruendung`.
+
+**Nicht gespeichert:** Artikeltexte, Vektoren, Profilkopien, Zwischenrechenschritte,
+verworfene Kandidaten (es gibt keine), KI-Erklärungen.
+
+`result_id` wird bewusst mitgeführt, obwohl es aus `mr-<user_id>-<ko_id>` ableitbar
+wäre: Sprint 23A hat belegt, dass diese Eindeutigkeit bis heute nur eine
+**Codekonvention** ist. Ein Audit, das von einer Konvention abhängt, ist kein Audit.
+
+**Deterministische Speicherreihenfolge:** `rank` aufsteigend, bei gleichem oder
+fehlendem Rang `similarity` absteigend, dann `ko_id` byte-stabil aufsteigend.
+Bewusst **kein** `localeCompare` — dessen Ergebnis hängt von der Locale der
+Laufzeitumgebung ab und könnte denselben Eingang in zwei Umgebungen unterschiedlich
+sortieren.
+
+**Diese Regel verändert das Produkt-Ranking nicht.** Der ausgelieferte Rang steht
+unverändert in `matching_results.rank` und entsteht weiterhin ausschließlich im
+Matching. Die Tie-Break-Regel legt nur fest, in welcher Reihenfolge bereits vergebene
+Ränge **gespeichert** werden, damit zwei Läufe mit identischem Ergebnis ein
+byte-identisches `jsonb` erzeugen.
+
+## 15 · Der Eingabefingerabdruck
+
+Definiert in `lib/helmut/matching-contract.js`. Er beantwortet genau eine Frage:
+*Ist das fachlich derselbe Eingang wie beim letzten vollständigen Lauf?*
+
+### 15.1 Kanonische Serialisierung
+
+```
+sha256( canonicalJson({
+  schema:          "matching-audit-1",
+  tenant:          <Mandant>,
+  profil:          <Mandatsprofil>,
+  profil_hash:     <Profilstand>,
+  engine:          <Engine-Version>,
+  rezept:          <Rezeptversion>,
+  vektor:          <Vektorversion>,
+  schwellenwerte:  { match_count, schwelle, filter },
+  kandidaten_hash: sha256( rezept + "\n" + sortiert( "<ko_id>|<sim4>|<ko_eingabe_hash>" ) )
+}) )
+```
+
+`canonicalJson` sortiert Objektschlüssel byte-stabil aufsteigend, normalisiert
+`NaN`/`Infinity` zu `null` und lässt `undefined` weg. Ähnlichkeiten gehen als
+`toFixed(4)` ein — dieselbe Rundung wie im produktiven Pfad, ohne Float-Formatdrift.
+
+### 15.2 Warum die Kandidatenmenge **zwei** Merkmale je Treffer trägt
+
+- **Ähnlichkeit:** erkennt jede Änderung am Wissensobjekt, die das Ergebnis
+  beeinflusst — auch dann, wenn das Objekt nicht im geladenen Fenster lag.
+- **Eingabehash:** `sha256(Rezeptversion + sortierte, deduplizierte Merkmalstoken)`.
+  Gehasht wird **genau der Eingang des Rezepts**. Eine Umsortierung, eine Dublette
+  oder ein Feld, das gar nicht ins Rezept eingeht, erzeugt deshalb **keinen** neuen
+  Hash; eine fachlich wirksame Änderung zwingend einen.
+
+**Befund M-7 (neu, ehrlich benannt):** `runMatchingShadow` lädt für die
+`matched_features` nur ein Fenster von 200 Wissensobjekten
+(`listKnowledgeObjects({limit: 200})`). Liegt ein Treffer nicht darin, ist das
+Objekt leer — das ist die wahrscheinlichste Erklärung für die 78,4 % leeren
+`matched_features` aus §5.3. Für die Auditpersistenz heißt das: `ko_eingabe_hash`
+bleibt in diesem Fall `null`, und die Änderungserkennung trägt allein die
+Ähnlichkeit. Das ist ehrlicher als ein Hash über ein leeres Objekt. **M-7 wird in
+diesem Sprint nicht behoben** — eine Änderung am Ladefenster würde `matched_features`
+verändern und damit das fachliche Ergebnis (ausdrücklich ausgeschlossen).
+
+### 15.3 Was der Fingerabdruck **nicht** enthält
+
+Lauf-ID · Zeitstempel · Auslöser · Pipeline-Laufkennung · Zähler ·
+Eingabereihenfolge. Testgesichert (T13f).
+
+### 15.4 Idempotenz
+
+Vor jedem Schreibvorgang wird der letzte **vollständige** Lauf desselben Mandanten
+mit demselben Fingerabdruck gesucht.
+
+| Fall | Wirkung |
+|---|---|
+| Treffer | **0** neue Laufzeilen · **0** Schreibvorgänge auf `matching_results` · `berechnet_am`/`updated_at` unverändert · genau **1** UPDATE (`wiederholungen += 1`, `letzter_lauf_at`) |
+| kein Treffer | neue Laufzeile, neue Generation |
+| Treffer ist `laufend` oder `fehlgeschlagen` | **kein** Treffer — ein abgebrochener Lauf darf keinen unvollständigen Stand zementieren |
+
+Das ist zugleich **datenbankseitig erzwungen**: der Teilindex
+`matching_runs_fingerprint_uidx (user_id, eingabe_fingerabdruck) where status =
+'vollstaendig'` macht eine zweite vollständige Generation zum selben Eingang
+unmöglich. Bewusst als Teilindex — sonst blockierte ein einziger abgestürzter Lauf
+jede Wiederholung.
+
+**Wirkung auf die Schreiblast:** heute schreibt ein identischer Zweitlauf **20
+UPDATEs** ohne inhaltliche Änderung (§4.3g). Mit aktivierter Auditpersistenz sind es
+**0**. Die Schreiblast sinkt.
+
+### 15.5 Historisierung
+
+- Ein geänderter Profilstand, ein geänderter relevanter Wissensobjektstand, eine neue
+  Rezept-, Engine- oder Vektorversion erzeugen jeweils einen neuen Fingerabdruck →
+  eine neue, nachvollziehbare Generation.
+- Alte `vollstaendig`-Läufe bleiben **byte-identisch** erhalten (Trigger).
+- Aus der Trefferliste gefallene Ergebniszeilen werden **nicht gelöscht**, sondern
+  auf `aktuell = false` + `abgeloest_am` gesetzt. Damit hört der Bestand auf,
+  Generationen stillschweigend zu vermischen (§1, Punkt 3) — ohne eine einzige Zeile
+  zu verlieren.
+- **Befund M-3 wird damit auditierbar:** man sieht, welche Ergebnisse gegen welchen
+  Profilstand entstanden sind.
+
+## 16 · Atomizität, Parallelität, Abbruch
+
+### 16.1 Veröffentlichungsreihenfolge — die Atomizitätsgarantie
+
+```
+1. Laufzeile anlegen            status = 'laufend'
+2. Projektion schreiben         EIN Bulk-Upsert (wie bisher)
+3. abgelöste Zeilen markieren   aktuell = false
+4. Laufzeile abschließen        status = 'vollstaendig'   ← ZULETZT
+```
+
+Weil Schritt 4 zuletzt kommt, kann es **niemals** eine vollständige Laufzeile ohne
+veröffentlichte Projektion geben. Ein Abbruch an jeder Stelle lässt die Zeile auf
+`laufend` oder `fehlgeschlagen` stehen — beides gilt nie als aktueller Stand und nie
+als idempotenter Treffer. Der letzte vollständige Stand bleibt unberührt.
+
+### 16.2 Warum **keine** Datenbankfunktion
+
+Geprüft und verworfen. Eine `SECURITY DEFINER`-Funktion hätte eine neue
+privilegierte Fläche geschaffen, ohne die eine harte Invariante zu verbessern:
+
+1. Die Ergebnisprojektion ist bereits **ein einziger** atomarer Bulk-Upsert.
+2. Die Invariante „kein vollständiger Lauf ohne Projektion" folgt allein aus der
+   Reihenfolge.
+3. `service_role` umgeht RLS ohnehin — eine Funktion hätte die Mandantentrennung
+   nicht verbessert; die liegt app-seitig.
+
+Die Migration enthält deshalb **keine** `SECURITY DEFINER`-Funktion (testgesichert,
+T16i). Die einzige neue Funktion ist der Unveränderlichkeits-Trigger — `security
+invoker`, mit festem `search_path`, ohne Grants für `public`/`anon`/`authenticated`.
+
+**Ehrliche Restgrenze:** eine Ergebniszeile kann auf einen Lauf zeigen, der später
+`fehlgeschlagen` wird. Das ist kein Defekt, sondern die Aussage „dieser Wert stammt
+aus einem Lauf, der nicht sauber zu Ende kam" — genau die Information, die heute
+fehlt.
+
+### 16.3 Sperre
+
+Eine Sperre `matching-<mandant>` über die **bestehende** `pipeline_locks`-Infrastruktur
+(kein zweites Sperrsystem), TTL 5 Minuten.
+
+- Sie schließt die in Sprint 23A belegte Lücke, dass der **Lage-Pfad** — anders als
+  der Crawl-Pfad — ungesperrt matcht (§4.3h).
+- Unterschiedliche Profile tragen unterschiedliche Sperrnamen und laufen weiterhin
+  parallel.
+- Ein abgelaufener Lock blockiert nichts dauerhaft (TTL).
+- Ein Lock-Verlust kann **keinen** unvollständigen Lauf als aktuell veröffentlichen:
+  `vollstaendig` wird zuletzt geschrieben, und der Teilindex verhindert eine zweite
+  vollständige Generation zum selben Eingang.
+- Der Sperrname enthält ausschließlich die übergebene Mandantenkennung — **keine
+  feste Bindung an einen konkreten Mandanten** (testgesichert, T6c).
+
+**Wichtig:** Die Sperre wird **nur im Auditpfad** genommen. Ohne die Rollout-Grenze
+bleibt das heutige Parallelverhalten unverändert — das Schließen der Lücke in
+Production ist damit an dieselbe Freigabeentscheidung gebunden wie die
+Auditpersistenz selbst. Die Stärke der Sperre hängt an `HELMUT_ATOMIC_LOCK`
+(atomar = fail-closed, Blob-Fallback = fail-open).
+
+### 16.4 Wiederaufnahme
+
+Ein auf `laufend` stehengebliebener Lauf wird **nicht** automatisch fortgesetzt. Er
+wird beim nächsten regulären Lauf schlicht überholt, weil er nie als idempotenter
+Treffer zählt. Neu rechnen kostet 0 KI und 0 USD; einen Teilzustand zu raten wäre
+das größere Risiko. `markResumed()` setzt lediglich `wiederaufnahme_am`, damit
+sichtbar bleibt, dass jemand den Lauf angefasst hat.
+
+### 16.5 Fehlerpolitik — Datenintegrität vor falschem Grün
+
+| Zeitpunkt | Verhalten |
+|---|---|
+| Auditfehler **vor** der Veröffentlichung | Der Lauf wird **abgebrochen**. Es wird nichts veröffentlicht; der letzte vollständige Stand bleibt unberührt. Der Fehler geht an den bestehenden `recordPipelineError`-Pfad des Schedulers |
+| Auditfehler **nach** der Veröffentlichung | Die Ergebnisse stehen (Verhalten wie bisher), der Lauf wird `fehlgeschlagen` mit Fehlertext |
+| Auch das Markieren scheitert | Die Zeile bleibt `laufend` — ebenfalls „nicht aktuell", also sicher |
+
+Ein Auditfehler verändert **nie** einen Ähnlichkeitswert, einen Rang, ein
+`matched_feature` oder die Kandidatenauswahl.
+
+## 17 · Mandantentrennung, RLS, Berechtigungen
+
+### 17.1 Identitätsmodell
+
+Sprint 23A hat belegt: **Mandantenkennung und Profilkennung sind dieselbe
+Zeichenkette** (`mandate_profiles.PK = user_id = profiles.id`). Eine eigene Profil-ID
+existiert nicht.
+
+Die kleinste additive Lösung, umgesetzt:
+
+- `user_id` bleibt die **kanonische** Kennung und trägt den FK auf `profiles`
+  (`ON DELETE CASCADE`).
+- `matching_runs.mandate_profile_id` existiert als **eigene Spalte** mit heute
+  demselben Wert — damit eine spätere Trennung die Historie nicht migrieren muss.
+  Bewusst **ohne** FK auf `mandate_profiles`: ein Auditfehler darf einen regulären
+  Matching-Lauf nicht gefährden.
+- Die Zugehörigkeitsprüfung sitzt in einem **ersetzbaren Haken**
+  (`profileBelongsToTenant`), nicht als feste Gleichheitsannahme im Schreibpfad.
+  Sobald Profile eigene Kennungen bekommen, wird dort ein Resolver eingehängt — die
+  Auditstruktur selbst bleibt unverändert.
+- An `matching_results` wird **keine** zweite Identität eingeführt.
+
+### 17.2 RLS
+
+| Rolle | Zugriff auf `matching_runs` |
+|---|---|
+| `anon` | **kein Grant, keine Policy** → nichts |
+| `authenticated` | **nur `SELECT`**, Policy `matching_runs_tenant_read` gegen `helmut_current_tenant()` → ausschließlich eigene Läufe. Kein INSERT/UPDATE/DELETE, **kein TRUNCATE** |
+| `service_role` | **umgeht RLS vollständig** (BYPASSRLS) |
+
+Das ist **strenger** als `matching_results` (dort hat `authenticated` `ALL`) und
+vermeidet den TRUNCATE-Befund **M-6** auf der neuen Tabelle von vornherein.
+
+**Ausdrücklich:** Die Behauptung, `matching_runs` sei durch RLS geschützt, wäre
+falsch. Der gesamte produktive Zugriff läuft über `service_role`. Durchsetzend sind
+allein die App-Guards — `assertTenant`/`assertTenantRows` **plus** ein
+verpflichtender `user_id=eq.<mandant>`-Filter in **jeder** der drei neuen
+Zugriffsfunktionen. Zusätzlich lehnt die Audit-Schnittstelle eine fremde
+Profilkennung mit `CROSS_TENANT_WRITE` ab, bevor irgendetwas geschrieben wird.
+
+### 17.3 Befund M-6 (TRUNCATE-Grant) — bewusst **nicht** in dieser Migration
+
+Sprint 23A hat belegt, dass `anon` und `authenticated` auf `matching_results` — wie
+auf allen älteren V3-Tabellen — `TRUNCATE` besitzen, und zugleich, dass **keine über
+das API erreichbare Lücke** besteht (PostgREST bietet kein `TRUNCATE`, der anonyme
+Schlüssel ist ein JWT und kein Datenbankpasswort).
+
+Die Revokes sind hier **nicht** enthalten. Begründung:
+
+1. Es ist eine **Rechteänderung in Production**, also eine eigene
+   Freigabeentscheidung — sie gehört nicht in eine Migration, die sonst rein additiv
+   ist.
+2. `listMatchingResults` läuft über `tenantRequest`, das im Tenant-JWT-Modus als
+   `authenticated` liest. Ein zu breiter Revoke träfe damit einen **aktiven**
+   Lesepfad. Ein Revoke ausschließlich auf `TRUNCATE` wäre sicher — aber er
+   verwischt den Rollback dieser Migration.
+3. Die neue Tabelle erbt den Befund nicht.
+
+**Empfehlung: eigener kleiner Security-Sprint** über alle älteren V3-Tabellen
+gemeinsam, mit eigenem Rollback. Fertige, ungeprüfte Anweisung zum Kopieren:
+
+```sql
+-- NICHT AUSFÜHREN ohne eigene Freigabe und eigenen Rollback-Plan.
+revoke truncate on table public.matching_results from anon, authenticated;
+```
+
+## 18 · Deterministische Kurzbegründung
+
+`lib/helmut/matching-begruendung.js` — reine Funktion, **0 KI, 0 Netz, 0 Zufall**.
+
+**Priorität** (die ersten zwei vorhandenen gewinnen):
+`ausschuss` → `thema` → `wahlkreis` → `partei`.
+
+Partei steht zuletzt, weil sie 55 von 79 heutigen Merkmalstreffern stellt (§5.3) und
+die Begründung sonst dominieren würde, ohne etwas Entscheidungsrelevantes zu sagen.
+Ist Partei der **einzige** Beleg, wird sie genannt.
+
+**Beispiel:** `Betrifft deinen Ausschuss Arbeit und Soziales und deinen Schwerpunkt Rente.`
+
+**Feste Regeln:** höchstens zwei Gründe · keine Zahlen, keine Scores, kein Rang,
+keine Wörter wie „Ähnlichkeit"/„Vektor"/„Matching"/„Score" · identische Signale
+erzeugen exakt denselben Satz.
+
+**Ohne Beleg: `null`, kein Satz.** Nicht „ehrliche neutrale Formulierung" — die
+bestehende Produktlogik (Belegpflicht, `START_HERE.md` §5.2) verlangt einen ehrlichen
+Leerzustand statt einer Ersatzformulierung, und ein Platzhaltersatz an jeder zweiten
+Karte wäre Lärm ohne Aussage. Heute beträfe das **78,4 %** der Zeilen (§5.3) — das ist
+der ehrliche Ausgangszustand und ein messbares Qualitätsziel für spätere Sprints.
+
+Die Begründung wird in diesem Sprint **gespeichert, aber nicht angezeigt**. Die
+sichtbare Ausspielung an der Vorgangskarte ist Sprint 23C.
+
+## 19 · Semantik-Abgrenzung — bewiesen
+
+| Regel | Nachweis |
+|---|---|
+| `knowledge_object_embeddings` wird von keinem neuen Modul gelesen | T12a/T12a2 (statisch, kommentarbereinigt) |
+| Die Migration fasst die Tabelle nicht an | T12b (statisch, ohne Zeichenketten) |
+| `rezept_version` ≠ Embedding-Datenvertrag | T12c: `legacy_relevance_v1` ≠ `ko-kanon-1` |
+| Der 256-dim Merkmalsvektor heißt ehrlich Legacy-Vektorversion | T12d: `feature-hash-256-v1` |
+| Engine-, Rezept- und Vektorversion sind drei getrennte Werte | T12e |
+| Semantische Ähnlichkeit ist kein gespeichertes Relevanzsignal | T12f |
+| Die Eingabehashes beider Rezepte sind eigenständig | T12g |
+
+**Sprint 22C2 bleibt ein eigener, freigabepflichtiger Sprint.** `HELMUT_SCORING_MODE`
+ist in diesem Sprint nicht angefasst (T18h).
+
+## 20 · Kosten und Datenmenge — gemessen, nicht geschätzt
+
+Gemessen an production-nahen Kennungslängen (Muster aus §5) mit 20 verschiedenen
+Einträgen und der real gemessenen Belegquote von 21,6 % (§5.3):
+
+| Größe | Wert |
+|---|---|
+| Ranglisteneintrag mit Beleg (Signale + Begründung) | **471 B** |
+| Ranglisteneintrag ohne Beleg | **345 B** |
+| Rangliste (20 Einträge), roh | **7 148 B** |
+| Rangliste, pglz-nahe Kompression | **1 617 B** (Faktor 4,4) |
+| Laufkopf ohne Rangliste | **922 B** |
+| **Laufzeile gesamt** | **8 070 B roh / ~2 539 B komprimiert** |
+| Zusatz je `matching_results`-Zeile | **713 B** (heute 685 B → künftig ~1,4 kB) |
+
+| Szenario | Laufzeilen | Speicher/Jahr |
+|---|---|---|
+| **10 Profile** (~3 veränderte Läufe/Tag/Profil) | 30/Tag ≈ 10 950/Jahr | **88 MB roh / ~28 MB komprimiert** |
+| **100 Profile** | 300/Tag ≈ 109 500/Jahr | **884 MB roh / ~278 MB komprimiert** |
+
+**Korrektur zu Sprint 23A §10.5:** dort waren ~1,5–2,0 kB je Laufzeile geschätzt.
+Real sind es ~2,5 kB komprimiert bzw. 8,1 kB roh, weil die umgesetzte Rangliste mehr
+Auditfelder trägt als die Skizze (`result_id`, `ko_eingabe_hash`, `signale`,
+`begruendung`). Die Größenordnung bei 10 Profilen (28 statt 20 MB/Jahr) bleibt
+unkritisch; bei 100 Profilen bestätigt sich die Retention-Empfehlung deutlicher als
+gedacht.
+
+| Frage | Antwort |
+|---|---|
+| Schreibvorgänge bei **verändertem** Lauf | 1 INSERT + 1 Bulk-Upsert (wie heute) + 1 PATCH (Ablösung) + 1 PATCH (Abschluss) |
+| Schreibvorgänge bei **identischem** Lauf | **1 UPDATE**, sonst nichts. Heute: 20 UPDATEs — die Last **sinkt** |
+| Indexkosten | 2 neue Indizes auf `matching_runs` (klein), 1 Teilindex, 2 auf `matching_results` (287 Zeilen) |
+| Auswirkung auf Supabase | DB heute 64 MB, Free-Tier-Grenze 500 MB → bei 7–10 Profilen unkritisch |
+| Volltexte / Vektoren je Ergebnis | **keine** |
+| **Zusätzliche KI-Kosten** | **0,00 USD** — kein einziger neuer Modellaufruf |
+| Retention | **noch nicht** eingeführt. Nötig ab ~100 Profilen; dann eigener freigabepflichtiger Schritt (Vorschlag: 90 Tage vollständig, danach Kopf ohne `ergebnis`) |
+
+## 21 · Production: Reihenfolge, Verifikation, Rollback
+
+> **STOPPPUNKT.** Bis hierher ist **nichts** in Production geschehen: keine
+> Migration angewendet, kein Datensatz geschrieben, kein Flag gesetzt, keine
+> Vercel-Variable, kein Cron. Alles Folgende passiert **erst nach ausdrücklicher
+> Freigabe** und Schritt für Schritt.
+
+### 21.1 Vorabprüfung (rein lesend, muss VOR der Migration laufen)
+
+```sql
+-- (1) MUSS 0 Zeilen liefern — sonst schlägt der eindeutige Index fehl (fail-closed).
+select user_id, knowledge_object_id, count(*)
+  from public.matching_results group by 1,2 having count(*) > 1;
+
+-- (2) Bestandsgrößen für den Vorher/Nachher-Vergleich.
+select count(*) as ergebnisse,
+       count(*) filter (where user_id is null)            as ohne_mandant,
+       count(*) filter (where knowledge_object_id is null) as ohne_vorgang,
+       max(created_at)                                     as juengste
+  from public.matching_results;
+
+-- (3) Die neuen Objekte dürfen noch nicht existieren.
+select count(*) from information_schema.tables
+ where table_schema='public' and table_name='matching_runs';   -- erwartet 0
+```
+
+### 21.2 Reihenfolge
+
+| # | Schritt | Freigabe | Rückweg |
+|---|---|---|---|
+| 1 | PR prüfen und mergen (Merge = Deployment) | Betreiber | `git revert` / Instant Rollback |
+| 2 | Vorabprüfung §21.1 ausführen | — (nur lesend) | — |
+| 3 | Migration `20260728_matching_audit.sql` anwenden | **eigene Freigabe** | `20260728_matching_audit_rollback.sql` |
+| 4 | Verifikation §21.3 ausführen | — (nur lesend) | — |
+| 5 | `HELMUT_MATCHING_AUDIT` setzen (Vercel-Env) | **eigene Freigabe** | Variable entziehen |
+| 6 | Einen reellen Lauf beobachten, dann Idempotenz-Zweitlauf gegenmessen | — | Variable entziehen |
+
+**Schritt 5 vor Schritt 3 ist verboten** — ohne die Migration schlagen die
+Audit-Schreibvorgänge fehl und brechen den Lauf ab (Fehlerpolitik §16.5).
+
+### 21.3 Verifikation nach der Migration (rein lesend)
+
+```sql
+-- Struktur: erwartet 1 / 14 / 23
+select count(*) from information_schema.tables
+ where table_schema='public' and table_name='matching_runs';
+select count(*) from information_schema.columns
+ where table_schema='public' and table_name='matching_results'
+   and column_name in ('run_id','profil_hash','ko_eingabe_hash','ko_version',
+     'engine_version','rezept_version','vektor_version','eingabe_fingerabdruck',
+     'berechnet_am','aktuell','abgeloest_am','signale','begruendung','updated_at');
+select count(*) from information_schema.columns
+ where table_schema='public' and table_name='matching_results';
+
+-- Zugriffsschutz: RLS an, genau 1 Policy, Grants nur SELECT für authenticated
+select relrowsecurity from pg_class where relname='matching_runs';
+select policyname, cmd, roles from pg_policies where tablename='matching_runs';
+select grantee, privilege_type from information_schema.role_table_grants
+ where table_name='matching_runs' order by 1,2;
+
+-- Indizes und Trigger: erwartet 4 Indizes (inkl. PK) und 1 Trigger
+select indexname from pg_indexes where tablename='matching_runs' order by 1;
+select tgname from pg_trigger where tgrelid='public.matching_runs'::regclass and not tgisinternal;
+
+-- Bestand unverändert: dieselben Zahlen wie in §21.1 (2), aktuell überall true
+select count(*) as ergebnisse, count(*) filter (where aktuell) as aktuell,
+       count(*) filter (where run_id is not null) as mit_lauf   -- erwartet 0
+  from public.matching_results;
+```
+
+### 21.4 Nach der Aktivierung gegenmessen
+
+```sql
+-- Ein Lauf muss genau eine vollständige Zeile erzeugt haben.
+select id, user_id, status, kandidaten, berechnet, veroeffentlicht, abgeloest,
+       wiederholungen, jsonb_array_length(ergebnis) as rangliste
+  from public.matching_runs order by gestartet_am desc limit 5;
+
+-- Idempotenz: nach einem zweiten Lauf mit identischem Eingang MUSS
+-- wiederholungen steigen, ohne dass eine neue Zeile entsteht.
+select count(*) as laeufe, sum(wiederholungen) as wiederholungen
+  from public.matching_runs where user_id = '<mandant>';
+
+-- Es darf keinen vollständigen Lauf ohne Projektion geben (erwartet 0 Zeilen).
+select r.id from public.matching_runs r
+ where r.status='vollstaendig'
+   and not exists (select 1 from public.matching_results m where m.run_id = r.id);
+```
+
+### 21.5 Rollback
+
+| Situation | Rückweg | Datenverlust |
+|---|---|---|
+| Nach dem Merge, vor der Migration | `git revert` oder Instant Rollback | keiner |
+| Nach der Migration, vor der Aktivierung | Struktur kann **stehen bleiben** (niemand liest oder schreibt sie), oder `20260728_matching_audit_rollback.sql` | keiner |
+| Nach der Aktivierung, Problem im Betrieb | **Zuerst `HELMUT_MATCHING_AUDIT` entziehen.** Das allein ist ein vollständiger funktionaler Rückweg: der Lauf verhält sich sofort wieder wie vorher | keiner |
+| Struktur muss weg | Flag entziehen, **dann** Rollback-SQL | `matching_runs` und die Werte der 14 additiven Spalten gehen verloren. **Die operative Projektion bleibt vollständig unberührt** |
+
+Sicherung vor einem Struktur-Rollback:
+`\copy (select * from public.matching_runs) to 'matching_runs.csv' csv header`
+
+## 22 · Was dieser Sprint bewusst NICHT enthält
+
+| Nicht enthalten | Wohin es gehört |
+|---|---|
+| Briefing-Historisierung (`auswahl`/`matchingRunId` im Payload, `briefing_versionen`) | **Sprint 23B-2** |
+| Sichtbare Nutzererklärung an der Vorgangskarte | **Sprint 23C** |
+| Produktnutzung semantischer Embeddings | **Sprint 22C2** (eigene Freigabe) |
+| Scharfschalten von `HELMUT_SCORING_MODE` | **OP-22** |
+| Behebung von **M-7** (200er-Ladefenster → leere `matched_features`) | eigener Sprint — verändert das fachliche Ergebnis |
+| Revoke der `TRUNCATE`-Rechte (**M-6**) | eigener Security-Sprint (§17.3) |
+| NOT-NULL-Verschärfung auf `matching_results` | nach einem Production-Beweis (§14.3) |
+| Retention für `matching_runs` | ab ~100 Profilen (§20) |
+| Automatische Duplikaterkennung | ausdrücklich ausgeschlossen |
+
+## 23 · Testnachweis
+
+| Suite | Ergebnis |
+|---|---|
+| `scripts/matching-audit-test.js` (**neu**) | **137/137** |
+| Offline-Suite `run-offline-tests.js` | **177/177** in 58 s |
+| Gegenbeweis auf unverändertem `origin/main` (`53893fa`, eigener Worktree) | **176/176** |
+| Legacy-Gegenbeweis Branch ↔ `main` (Merkmalsvektoren, Kosinuswerte, Ranking, `matched_features`, geschriebene Zeilen, Rückgabewert über 60 Wissensobjekte, 4 Grenzwerte, 4 Filterkombinationen) | **253 identisch, 0 abweichend** |
+| Browser-Smoke | **nicht gefahren** — keine UI-Änderung in diesem Sprint |
+
+Zwei sprintbedingte Testpflege-Änderungen, beide dokumentiert:
+
+- `scripts/geografie-gedaechtnis-test.js` D7: die geografiefreie Migration
+  `20260728_matching_audit*` wird — wie zuvor die Embedding-Shadow-Migration —
+  **namentlich** vom Datumsriegel ausgenommen.
+- `docs/betrieb/env-inventar.md`: `HELMUT_MATCHING_AUDIT` ergänzt (der
+  Inventar-Test erzwingt die Dokumentation jeder produktiven Variablen).
+
+## 24 · Geänderte und neue Dateien
+
+**Neu:** `supabase/migrations/20260728_matching_audit.sql` ·
+`supabase/migrations/20260728_matching_audit_rollback.sql` ·
+`lib/helmut/matching-contract.js` · `lib/helmut/matching-audit.js` ·
+`lib/helmut/matching-begruendung.js` · `scripts/matching-audit-test.js`
+
+**Geändert:** `lib/helmut/matching.js` (Auditpfad hinter der Rollout-Grenze) ·
+`lib/helmut/storage.js` (Flag, drei Zugriffsfunktionen, additive Spalten im
+Ergebnis-Upsert, DSGVO-Liste) · `lib/helmut/scheduler.js` (nur Herkunftsangaben
+durchgereicht) · `scripts/geografie-gedaechtnis-test.js` (D7-Ausnahme) ·
+`docs/betrieb/env-inventar.md` · dieses Dokument · `docs/CURRENT_STATE.md` ·
+`docs/ARCHITECTURE.md` · `docs/roadmap/phase_1_checkliste.md`
