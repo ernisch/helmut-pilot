@@ -226,7 +226,8 @@ ausgerollt — Deployment `dpl_E9JKeXKhd2b5mK2QJDNuRSquXJGg` `READY`, `target: p
 > bleibt offen/in Arbeit**. Briefing-Historisierung bleibt **Sprint 23B-2**, die sichtbare
 > Nutzererklärung bleibt **Sprint 23C**, der Befund zum 200er-Wissensobjekt-Ladefenster (M-7)
 > bleibt unverändert außerhalb dieses Sprints. Vollständiger Nachweis:
-> [`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md) §21.6.
+> [`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md) §21.6. Doku-Nachtrag als
+> **PR #170**, CI-Gate grün (Lauf `30397010300`), noch nicht gemergt.
 
 > **Sprint 23A am 2026-07-28 ausgeführt — ERFOLGREICH ABGESCHLOSSEN (Bestandsaufnahme;
 > Production ausschließlich lesend, keine Produktlogik, kein Schema, keine Daten verändert).**
