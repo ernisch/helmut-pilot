@@ -1275,7 +1275,9 @@ Sicherung vor einem Struktur-Rollback:
 | Offline-Suite `run-offline-tests.js` | **177/177** in 58 s |
 | Gegenbeweis auf unverändertem `origin/main` (`53893fa`, eigener Worktree) | **176/176** |
 | Legacy-Gegenbeweis Branch ↔ `main` (Merkmalsvektoren, Kosinuswerte, Ranking, `matched_features`, geschriebene Zeilen, Rückgabewert über 60 Wissensobjekte, 4 Grenzwerte, 4 Filterkombinationen) | **253 identisch, 0 abweichend** |
-| Browser-Smoke | **nicht gefahren** — keine UI-Änderung in diesem Sprint |
+| Browser-Smoke | lokal **nicht nötig** (keine UI-Änderung); im CI-Gate dennoch grün |
+| **Migration in isolierter PostgreSQL angewendet** (§23.1) | leere Struktur ✅ · Wiederholung ✅ · Bestand mit 246 Zeilen **byte-identisch** ✅ · 11 Constraint-/Trigger-Prüfungen ✅ · 9 RLS-Rollenprüfungen ✅ · Duplikat → fail-closed ohne Halbzustand ✅ · Rollback vollständig ✅ |
+| CI-Gate (PR #169, Lauf `30389260233`) | **beide Pflicht-Checks grün** — `Syntax + Offline-Suiten` und `Browser-/Mobile-Smoke (Chromium)` |
 
 Zwei sprintbedingte Testpflege-Änderungen, beide dokumentiert:
 
@@ -1284,6 +1286,78 @@ Zwei sprintbedingte Testpflege-Änderungen, beide dokumentiert:
   **namentlich** vom Datumsriegel ausgenommen.
 - `docs/betrieb/env-inventar.md`: `HELMUT_MATCHING_AUDIT` ergänzt (der
   Inventar-Test erzwingt die Dokumentation jeder produktiven Variablen).
+
+### 23.1 Migration in einer isolierten Testdatenbank ausgeführt
+
+Nicht nur statisch geprüft, sondern **wirklich angewendet** — lokale PostgreSQL
+16.13, drei Wegwerf-Datenbanken, kein Production-Kontakt (Production ist PG 17.6;
+die Migration nutzt keine versionsabhängigen Konstrukte).
+
+**Leere Struktur:**
+
+| Prüfung | Ergebnis |
+|---|---|
+| Migration läuft durch | ✅ |
+| **Zweiter Lauf derselben Migration** läuft ebenfalls durch | ✅ (alle Objekte `if not exists`) |
+| Struktur | `matching_runs` **1** · neue Spalten **14** · Gesamtspalten `matching_results` **23** (9 + 14) |
+| RLS | aktiv, **genau eine** Policy: `matching_runs_tenant_read`, `SELECT`, `{authenticated}` |
+| Grants | `authenticated: SELECT` — sonst nichts. `anon` **gar nicht** vorhanden |
+| Indizes | `matching_runs`: PK, `_user_idx`, `_fingerprint_uidx`, `_offen_idx` · `matching_results`: + `_tenant_ko_uidx`, `_run_idx` |
+| Trigger | `matching_runs_immutable` |
+| `SECURITY DEFINER`-Funktionen | **0** |
+
+**Verhalten gegen echte Constraints** (11 Prüfungen, alle wie entworfen):
+
+| # | Prüfung | Ergebnis |
+|---|---|---|
+| B1 | `laufend` → `vollstaendig` | erlaubt |
+| B2 | `ergebnis` eines abgeschlossenen Laufs ändern | **abgelehnt** (Trigger) |
+| B3 | Status weg von `vollstaendig` | **abgelehnt** (Trigger) |
+| B4 | `wiederholungen`/`letzter_lauf_at`/`wiederaufnahme_am`/`fehler` fortschreiben | erlaubt |
+| B5 | zweiter **vollständiger** Lauf mit gleichem Fingerabdruck | **abgelehnt** (`matching_runs_fingerprint_uidx`) |
+| B6 | **laufender** Lauf mit gleichem Fingerabdruck | erlaubt — ein Absturz blockiert keine Wiederholung |
+| B7 | Status `partial` einfügen | **abgelehnt** (Check-Constraint) |
+| B8 | `vollstaendig` ohne `beendet_am` | **abgelehnt** (`matching_runs_abschluss_ck`) |
+| B9 | zweite Zeile für dasselbe (Mandant, Wissensobjekt) | **abgelehnt** (`matching_results_tenant_ko_uidx`) |
+| B10 | Ablösung | Zeile bleibt vollständig erhalten, nur `aktuell=false` + `abgeloest_am` |
+| B11 | DSGVO: Mandant löschen | Laufhistorie kaskadiert mit |
+
+**Mandantentrennung mit echten Rollen** (`set local role`, Claim über
+`helmut_current_tenant()`):
+
+| # | Prüfung | Ergebnis |
+|---|---|---|
+| R1 | `authenticated`, Claim Mandant A | sieht **nur** den eigenen Lauf |
+| R2 | `authenticated`, Claim Mandant B (Kreuzprobe) | sieht **nur** den eigenen Lauf |
+| R3 | `authenticated` **ohne** Claim | sieht **nichts** |
+| R4 | `authenticated` schreibt einen eigenen Lauf | **permission denied** |
+| R5 | `authenticated` schreibt einen **fremden** Lauf | **permission denied** |
+| R6 | `authenticated` `TRUNCATE` | **permission denied** |
+| R7 | `authenticated` `UPDATE`/`DELETE` | **permission denied** |
+| R8 | `anon` liest | **permission denied** |
+| R9 | Eigner (BYPASSRLS-Analogie zu `service_role`) | sieht **alles** — genau das, was §17.2 ehrlich benennt |
+
+**Bestehende Struktur mit Daten** (246 Ergebniszeilen über 7 Mandanten):
+
+| Prüfung | Ergebnis |
+|---|---|
+| Fingerabdruck über `id`+`similarity`+`rank`+`matched_features`+`created_at` **vor** der Migration | `246 \| 6feaa1b1…` |
+| … **nach** der Migration | `246 \| 6feaa1b1…` — **byte-identisch** |
+| Alle 14 neuen Spalten leer | **246 von 246** (ehrlich: „vor der Auditpersistenz berechnet") |
+| `aktuell` | **246 von 246** auf `true` (Default) |
+
+**Fail-closed bei einem Duplikat:** eine Testdatenbank mit einem echten
+`(user_id, knowledge_object_id)`-Duplikat lässt die Migration mit
+`could not create unique index` scheitern — und weil alles in **einer**
+Transaktion liegt, bleibt danach **`matching_runs` = 0 Tabellen, `run_id` = 0
+Spalten**. Es entsteht kein Halbzustand. Genau deshalb steht die Vorabprüfung
+in §21.1.
+
+**Rollback:** auf der Bestands-DB ausgeführt → `matching_runs` weg, Spalten
+**23 → 9**, Triggerfunktion weg, nur die drei ursprünglichen
+`matching_results`-Indizes übrig, Datenfingerabdruck **unverändert
+`246 | 6feaa1b1…`**. Danach ließ sich die Migration **erneut** anwenden, ohne dass
+sich der Datenbestand veränderte.
 
 ## 24 · Geänderte und neue Dateien
 

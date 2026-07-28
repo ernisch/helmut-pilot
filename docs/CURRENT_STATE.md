@@ -103,8 +103,19 @@ Erfolgskriterien erfüllt**) ·
 > Ergebniszeilen, Rückgabewert; 60 Wissensobjekte, 4 Grenzwerte, 4 Filterkombinationen) —
 > 0 Abweichungen.**
 > **Tests:** neue Suite `matching-audit-test.js` **137/137** · **Offline-Suite 177/177** in 58 s ·
-> Gegenbeweis auf unverändertem `main` **176/176** · Browser-Smoke nicht gefahren (keine
-> UI-Änderung). Zwei sprintbedingte Testpflege-Änderungen dokumentiert: D7-Datumsriegel in
+> Gegenbeweis auf unverändertem `main` **176/176** · **CI-Gate von PR #169: beide Pflicht-Checks
+> grün** (Lauf `30389260233`).
+> **Die Migration wurde nicht nur statisch geprüft, sondern in einer isolierten lokalen
+> PostgreSQL wirklich angewendet:** leere Struktur ✅, zweiter Lauf derselben Migration ✅,
+> Bestand mit 246 Ergebniszeilen **byte-identisch vorher/nachher** (alle 14 neuen Spalten leer,
+> `aktuell` überall `true`), **11** Constraint-/Trigger-Prüfungen (abgeschlossener Lauf
+> unveränderlich, zweiter vollständiger Lauf mit gleichem Fingerabdruck abgelehnt, laufender
+> Lauf erlaubt, `partial` als Status abgelehnt, Ablösung ohne Löschung, DSGVO-Kaskade), **9**
+> RLS-Rollenprüfungen mit echten Rollen (Mandant A sieht nur eigene Läufe, Kreuzprobe, ohne
+> Claim nichts, `authenticated` darf weder schreiben noch truncaten, `anon` gar nichts, Eigner
+> sieht alles = die ehrlich benannte `service_role`-Analogie), **Duplikat → fail-closed ohne
+> Halbzustand**, **Rollback vollständig** (23 → 9 Spalten, Daten unverändert) und danach erneut
+> anwendbar. Details: §23.1 der Doku. Zwei sprintbedingte Testpflege-Änderungen dokumentiert: D7-Datumsriegel in
 > `geografie-gedaechtnis-test` nimmt die geografiefreie Auditmigration namentlich aus,
 > `env-inventar.md` um `HELMUT_MATCHING_AUDIT` ergänzt.
 >
