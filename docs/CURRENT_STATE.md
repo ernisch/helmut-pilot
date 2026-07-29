@@ -15,7 +15,8 @@ idempotent. **0 KI-Aufrufe, 0,00 USD, keine Migration, kein Flag, keine UI-Ände
 Production-Datenänderung.** Erwartete Abdeckung nach kontrollierter Neuberechnung: **63 → 191 von
 271 Zeilen (23,2 % → 70,5 %)**, im sichtbaren 12er-Lagefenster **46 → 71 von 84 (54,8 % → 84,5 %)**.
 Tests: neue Suite **60/60**, Offline-Suite **180/180** (Ausgangsmessung 179/179), Browser-Smoke
-**32/32**, **externe Mutationsprobe gegen den alten 200er-Stand: 11 Fehlschläge**. **Zwei neue
+**32/32**, **externe Mutationsprobe gegen den alten 200er-Stand: 11 Fehlschläge**, **CI-Gate grün —
+beide Pflicht-Checks** (Lauf `30450796962`). **Zwei neue
 Befunde** aus der rein lesenden Restanalyse: **M-8** — `match_knowledge_objects` kennt keinen
 Schwellenwert, **40** aktuelle Zeilen tragen eine Ähnlichkeit ≤ 0 (min −0,0735) auf den Rängen
 1–20, sind also reine Auffüllung; **M-9** — ein Mandatsprofil ohne Partei/Ausschuss/Schwerpunkt kann
@@ -191,6 +192,8 @@ Merge #169 = Sprint 23B-1, Matching-Auditpersistenz, `53893fa` = Merge #168 = Sp
 > **externe Mutationsprobe:** der Schreibpfad wurde testweise auf die alte 200er-Zeile
 > zurückgesetzt — die neue Suite meldet dann **11 Fehlschläge** und Exit-Code 1, während
 > Abschnitt B (Scores/Ränge) korrekt grün bleibt. Danach Mutation entfernt und erneut grün.
+> **CI-Gate grün:** beide Pflicht-Checks — `Syntax + Offline-Suiten` und
+> `Browser-/Mobile-Smoke (Chromium)`, Lauf `30450796962` auf `4626767`.
 >
 > **Rein lesende Restanalyse (`scripts/matching-erklaerungsluecke-analyse.js`, schreibt nichts):**
 > von den 208 unbelegten Zeilen gewinnen **128** einen Beleg, **80** bleiben ehrlich leer →

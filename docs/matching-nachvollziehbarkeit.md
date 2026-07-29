@@ -2220,6 +2220,9 @@ entfernt und die Gesamtsuite erneut grün gefahren.
 **11 Fehlschläge**. Alle Läufe ohne gesetzte Supabase-/Azure-Variablen, damit die
 Cloud-Sitzung dieselbe Ausgangslage hat wie das CI-Gate.
 
+**CI-Gate grün:** beide Pflicht-Checks — `Syntax + Offline-Suiten` (Erfolg) und
+`Browser-/Mobile-Smoke (Chromium)` (Erfolg), Lauf `30450796962` auf Commit `4626767`.
+
 ## 38 · Die verbleibenden unbelegten Treffer — rein lesende Analyse
 
 Erhoben mit `scripts/matching-erklaerungsluecke-analyse.js` (**schreibt nichts**, nur
