@@ -44,17 +44,29 @@ const ERKLAERTE_FELDER = new Set([
   "VkDat", "HNr", "Jg", "FundSt", "BText"
 ]);
 
+// LEISTUNG (im CI zweimal hart aufgefallen, beide Laeufe abgebrochen): ein nicht-greediges
+// `([\s\S]*?)` laeuft bei FEHLENDEM Feld jede Startposition des Blocks ab — quadratisch pro
+// Record und bei ~42 000 Records praktisch endlos. Deshalb: (a) billige Vorpruefung mit
+// `indexOf`, bevor ueberhaupt ein Regex laeuft, (b) Regexe zwischenspeichern statt je Aufruf neu
+// zu kompilieren.
+const RE_CACHE = new Map();
+function reFuer(name, flags) {
+  const key = `${name}|${flags}`;
+  let re = RE_CACHE.get(key);
+  if (!re) { re = new RegExp(`<(?:[\\w.-]+:)?${name}(?:\\s[^>]*)?>([\\s\\S]*?)</(?:[\\w.-]+:)?${name}>`, flags); RE_CACHE.set(key, re); }
+  return re;
+}
+function hatTag(xml, name) { return xml.indexOf(`<${name}`) !== -1; }
 function feld(xml, name) {
-  const m = new RegExp(`<(?:[\\w.-]+:)?${name}(?:\\s[^>]*)?>([\\s\\S]*?)</(?:[\\w.-]+:)?${name}>`, "i").exec(xml);
+  if (!hatTag(xml, name)) return null;
+  const re = reFuer(name, "i");
+  const m = re.exec(xml);
   return m ? m[1].replace(/\s+/g, " ").trim() : null;
 }
-function alleFelder(xml, name) {
-  const out = []; const re = new RegExp(`<(?:[\\w.-]+:)?${name}(?:\\s[^>]*)?>([\\s\\S]*?)</(?:[\\w.-]+:)?${name}>`, "gi");
-  let m; while ((m = re.exec(xml)) !== null) out.push(m[1].replace(/\s+/g, " ").trim());
-  return out;
-}
 function bloecke(xml, tag, limit) {
-  const re = new RegExp(`<(?:[\\w.-]+:)?${tag}(?:\\s[^>]*)?>[\\s\\S]*?</(?:[\\w.-]+:)?${tag}>`, "g");
+  if (!hatTag(xml, tag)) return [];
+  const re = reFuer(tag, "g");
+  re.lastIndex = 0;
   const out = []; let m;
   while ((m = re.exec(xml)) !== null) { out.push(m[0]); if (limit && out.length >= limit) break; }
   return out;
