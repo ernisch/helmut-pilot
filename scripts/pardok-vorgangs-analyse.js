@@ -152,10 +152,17 @@ function analysiere(rohBody) {
   // Nur ueber den gelesenen Ausschnitt aussagekraeftig -> als Ausschnittszahl ausgewiesen.
   const dokumenteImBody = (body.match(/<(?:[\w.-]+:)?Dokument(?:\s[^>]*)?>/g) || []).length;
   const vorgaengeImBody = (body.match(/<(?:[\w.-]+:)?Vorgang(?:\s[^>]*)?>/g) || []).length;
-  // Dokumente, die NICHT in einem Vorgang stecken: Rest nach Entfernen aller Vorgangsbloecke.
-  let rest = body;
-  for (const v of vorgaenge) rest = rest.replace(v, "");
-  r.dokumenteOhneVorgangsrahmen = (rest.match(/<(?:[\w.-]+:)?Dokument(?:\s[^>]*)?>/g) || []).length;
+  // Dokumente OHNE Vorgangsrahmen = alle im Ausschnitt minus die in Vorgaengen enthaltenen.
+  // BEWUSST per Subtraktion statt per Entfernen der Bloecke: ein `replace` je Vorgang waere auf
+  // einer 48-MB-Datei mit ~42 000 Vorgaengen quadratisch und laeuft praktisch nie durch (im ersten
+  // CI-Lauf genau daran haengen geblieben und abgebrochen).
+  const dokumenteInVorgaengen = vorgaenge.reduce(
+    (n, v) => n + ((v.match(/<(?:[\w.-]+:)?Dokument(?:\s[^>]*)?>/g) || []).length), 0);
+  r.dokumenteInVorgaengen = dokumenteInVorgaengen;
+  // Nur aussagekraeftig, wenn ALLE Vorgaenge des Ausschnitts gelesen wurden (kein Record-Cap).
+  r.dokumenteOhneVorgangsrahmen = vorgaenge.length >= MAX_RECORDS
+    ? null
+    : Math.max(0, dokumenteImBody - dokumenteInVorgaengen);
   r.ausschnitt = { dokumenteImBody, vorgaengeImBody };
   return r;
 }
@@ -216,6 +223,7 @@ async function run() {
       console.log(`  Dokumente je Vorgang:     ${JSON.stringify(r.dokumenteJeVorgang)}  (max ${r.maxDokumenteJeVorgang})`);
       console.log(`  eindeutige DBID:          ${r.eindeutigeDbid}   ohne DBID: ${r.dokumenteOhneDbid}`);
       console.log(`  DBID unter MEHREREN VNr:  ${r.dbidMitMehrerenVnr} ${r.beispieleDbidMehrfach.length ? JSON.stringify(r.beispieleDbidMehrfach) : ""}`);
+      console.log(`  Dokumente in Vorgaengen:  ${r.dokumenteInVorgaengen}   ohne Vorgangsrahmen: ${r.dokumenteOhneVorgangsrahmen === null ? "(nicht messbar: Record-Cap erreicht)" : r.dokumenteOhneVorgangsrahmen}`);
       console.log(`--- Feldnamen ---`);
       console.log(`  unerklaerte Felder:       ${Object.keys(r.unerklaerteFelder).length ? JSON.stringify(r.unerklaerteFelder) : "(keine)"}`);
       console.log(`  Felder eines Beispiel-Vorgangs: ${JSON.stringify(r.beispielVorgangFelder)}`);
