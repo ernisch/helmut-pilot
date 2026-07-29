@@ -2565,3 +2565,252 @@ Mandanten mit 12 von 12 erklärten Vorgängen erfüllt, für die übrigen sechs 
 wenn sie ebenfalls gelaufen sind. Der Punkt wird geschlossen, sobald die Abdeckung über
 alle Mandanten nachgemessen wurde — nicht vorher. **M-8** (fehlender Schwellenwert)
 bleibt in diesem Sprint unangetastet.
+
+---
+
+# TEIL E — Sprint M-8: Relevanzschwelle für Matching-Ergebnisse (2026-07-29)
+
+> **Zustand:** teilweise abgeschlossen. Analyse vollständig, Regel entschieden,
+> Prototyp offline gebaut und bewiesen — **Aktivierung steht aus und ist
+> freigabepflichtig.** Keine Production-Änderung in diesem Sprint.
+
+## 42 · Der Befund in einem Satz
+
+`match_knowledge_objects` liefert die Top-N **unbedingt**: kein Mindestwert, keine
+relative Schwelle, kein nachgelagerter Filter. Je Mandant entstehen deshalb immer
+genau 20 Ergebniszeilen — auch dann, wenn nur drei davon einen fachlichen Bezug zum
+Mandat haben. Der Rest ist Auffüllung, und Auffüllung sieht in der Lage genauso aus
+wie ein echter Treffer.
+
+## 43 · Das heutige technische Verhalten (Phase 1)
+
+| Frage | Antwort | Beleg |
+|---|---|---|
+| Wo entsteht die Kandidatenmenge? | SQL-Funktion `public.match_knowledge_objects` (pgvector, `stable`, SECURITY INVOKER) | `supabase/schema.sql:562` |
+| Was bestimmt Ähnlichkeit und Reihenfolge? | `1 - (ko.embedding <=> query_embedding)`, sortiert nach `embedding <=> query_embedding` | `supabase/schema.sql:573–584` |
+| Gibt es einen Mindestwert? | **Nein.** Die einzige Begrenzung ist `limit greatest(1, match_count)` | ebd. |
+| Gibt es eine relative Schwelle? | **Nein.** | ebd. |
+| Gibt es einen nachgelagerten Filter? | **Nein.** Der Schreibpfad übernimmt jeden Treffer 1:1 | `lib/helmut/matching.js` (`runMatchingCore`) |
+| Wie viele Treffer je Mandant? | `input.limit \|\| 20` — produktiv wird `limit` nirgends gesetzt, also **immer 20** | `matching.js:451`, `scheduler.js:412`, `scheduler.js:588` |
+| Werden Filter übergeben? | **Nein.** `filters` ist in beiden produktiven Aufrufern `undefined`, die harten SQL-Filter (Partei/Ausschuss/Region) sind damit alle `null` | ebd. |
+| Welche Nutzerpfade lesen das? | `lage.js:336` (`listMatchingResults`, Fenster **12**) → Lage-Karten **und** das daraus erzeugte Briefing-Narrativ | `lib/helmut/lage.js` |
+| Was passiert bei nur drei belastbaren Treffern? | Es werden trotzdem **20** Zeilen gespeichert und bis zu **12** angezeigt | Messung §44 |
+
+**Zwei Eigenheiten des Lesepfads, die für jede Gate-Entscheidung zählen:**
+
+1. Das sichtbare 12er-Fenster ist **nicht** nach Rang oder Ähnlichkeit sortiert,
+   sondern nach `created_at.desc` — und `created_at` friert beim **ersten** Auftreten
+   einer Zeile ein (Sprint 23A). Der Nutzer sieht also die zwölf **zuletzt neu
+   aufgetauchten** Treffer, nicht die zwölf besten. Beispiel: der stärkste
+   gespeicherte Treffer eines Mandanten (0,4085) liegt **außerhalb** des Fensters.
+2. Ein Riegel im **Schreibpfad** lässt das Fenster deshalb nicht schrumpfen: es füllt
+   sich aus den verbliebenen älteren Zeilen. Ein Riegel in der **Anzeige** würde es
+   schrumpfen. Der hier gebaute Riegel sitzt bewusst im Schreibpfad.
+
+## 44 · Reale Verteilung in Production (Phase 2, rein lesend)
+
+Erhoben am 2026-07-29 über `matching_results` mit `aktuell = true` (271 Zeilen,
+7 Mandanten) und über die RPC selbst. Werkzeug:
+`scripts/matching-schwellenwert-analyse.js` (schreibt nichts, startet kein Matching,
+0 KI). Personenbezogene Inhalte werden bewusst nicht wiedergegeben.
+
+### 44.1 Gespeicherter Bestand
+
+| Mandant | Zeilen | < 0 | = 0 | > 0 | min | median | max | ≤ 0 im 12er-Fenster |
+|---|---|---|---|---|---|---|---|---|
+| A | 77 | 4 | 2 | 71 | −0,0735 | 0,1705 | 0,3525 | 0 |
+| B | 20 | 0 | 0 | 20 | 0,2237 | 0,2486 | 0,4085 | 0 |
+| C | 30 | 0 | 0 | 30 | 0,2228 | 0,2587 | 0,3064 | 0 |
+| D | 46 | 0 | 18 | 28 | 0,0000 | 0,2234 | 0,3542 | 0 |
+| E | 31 | 0 | 0 | 31 | 0,2126 | 0,2534 | 0,3682 | 0 |
+| F | 47 | 0 | 19 | 28 | 0,0000 | 0,2302 | 0,3969 | 0 |
+| **P** (Platzhalterprofil) | 20 | 0 | 20 | 0 | 0,0000 | 0,0000 | 0,0000 | **12** |
+
+**Korrektur zur bisherigen Angabe:** die Restanalyse aus Sprint 23C-2A nannte **40**
+Zeilen mit Ähnlichkeit ≤ 0 — das war eine Stichprobe (40 von 80 betrachteten
+unbelegten Treffern). Über den **gesamten** aktuellen Bestand sind es **63 von 271
+(23,2 %)**. **Keine** dieser 63 Zeilen trägt ein `matched_feature`.
+
+**Die 63 Zeilen sind Alt-Bestand, kein laufender Zustand.** Sie stammen ausnahmslos
+aus dem jeweils **ersten** Lauf eines Mandanten (15.07. · 17.07. · 19.07. · 20.07.),
+also aus der Zeit, in der das Profil noch leer bzw. der Wissensbestand noch dünn war.
+Da die Ablösung (`aktuell=false`) erst seit dem 29.07. greift, stehen sie weiterhin
+auf `aktuell = true`. **In keinem sichtbaren 12er-Fenster eines gepflegten Mandanten
+steht heute eine Zeile mit Ähnlichkeit ≤ 0** — der niedrigste sichtbare Wert liegt bei
+0,2094. Nur beim Platzhalterprofil besteht das gesamte Fenster aus Nullen.
+
+### 44.2 Die heutige Kandidatenkurve (die RPC, jetzt gemessen)
+
+| Mandant | Rang 1 | Rang 5 | Rang 10 | Rang 12 | Rang 20 | ≤ 0 im Top-20 | mit Beleg |
+|---|---|---|---|---|---|---|---|
+| A | 0,3525 | 0,2677 | 0,2617 | 0,2565 | 0,2329 | 0 | 18/20 |
+| B | 0,3994 | 0,2819 | 0,2585 | 0,2418 | 0,2211 | 0 | 20/20 |
+| C | 0,3177 | 0,2681 | 0,2636 | 0,2614 | 0,2527 | 0 | 20/20 |
+| D | 0,4319 | 0,3162 | 0,2616 | 0,2594 | 0,2308 | 0 | 20/20 |
+| E | 0,3920 | 0,3150 | 0,2861 | 0,2738 | 0,2453 | 0 | 20/20 |
+| F | 0,3969 | 0,3244 | 0,2970 | 0,2951 | 0,2774 | 0 | 20/20 |
+| **P** (Platzhalter) | 0,3162 | 0,2673 | 0,1961 | 0,1925 | 0,1768 | 0 | **0/20** |
+
+**Vier Befunde, die die Entscheidung tragen:**
+
+1. **Auffüllung mit Ähnlichkeit ≤ 0 gibt es heute nicht mehr.** Das gesamte Top-20
+   aller sechs gepflegten Mandanten liegt in **[0,2211 … 0,4319]**. Ein absoluter
+   Schwellenwert bis 0,20 entfernt **nichts**.
+2. **Ein Schwellenwert, der etwas entfernt, entfernt das Falsche.** Ab 0,22 beginnt er
+   zu greifen; bei 0,25 verliert Mandant B **zehn von zwanzig** Treffern — alle davon
+   belegt.
+3. **Die Ähnlichkeit trennt belegbar von unbelegbar nicht.** Bei Mandant A liegen die
+   beiden unbelegbaren Treffer bei **0,2487** und **0,2741** — **über** dem Median
+   (0,2617) seiner achtzehn belegten Treffer. Es gibt keinen Wert, der die beiden
+   entfernt, ohne die Mehrzahl der guten mitzunehmen.
+4. **Ein Platzhalterprofil erzeugt normal aussehendes Rauschen.** Zwei verschiedene
+   Platzhaltermandate liefern ein **byte-identisches** Top-20 im Band 0,1768…0,3162 —
+   mitten im Band der echten Mandate — mit **null** belegbarem Bezug. Ein globaler
+   Schwellenwert ließe dieses Rauschen durch und schnitte zugleich Substanz weg. Er
+   behandelt dünne und gepflegte Profile also genau falsch herum.
+
+### 44.3 Zusammenhang Ähnlichkeit ↔ erklärbarer Profilbezug
+
+Zusätzlich geprüft, ob ein Merkmalsriegel belastbare Treffer verlieren würde: gezählt
+wurden Treffer **ohne** `matched_feature`, die ein anderes belegbares Signal tragen
+(namentliche Erwähnung des Mandats, betroffene Geografie trifft die Profilregion).
+Ergebnis über alle acht geprüften Profile: **0 Treffer im gesamten Top-20**. Der
+gemessene Verlust eines Merkmalsriegels ist damit **null**.
+
+## 45 · Vergleich der Gate-Varianten (Phase 3)
+
+Zahlen = sichtbare Vorgänge je Mandant aus der heutigen Kandidatenkurve.
+
+| Variante | A | B | C | D | E | F | **P** | Bewertung |
+|---|---|---|---|---|---|---|---|---|
+| **A · kein Gate (heute)** | 20 | 20 | 20 | 20 | 20 | 20 | **20** | Falsch-Positive bleiben; Platzhalterprofil bekommt 20 erfundene Vorgänge |
+| **B · absolut 0,05–0,20** | 20 | 20 | 20 | 20 | 20 | 20 | **20** | wirkungslos — reine Beruhigungspille (falsches Grün) |
+| **B · absolut 0,22** | 20 | 20 | 20 | 20 | 20 | 20 | **8** | schneidet Rauschen nur teilweise, gepflegte Profile zufällig |
+| **B · absolut 0,25** | 12 | **10** | 20 | 13 | 16 | 20 | **7** | verliert belegte Treffer; Platzhalter bleibt sichtbar → **schädlich** |
+| **C · relativ 0,5–0,7 × bester** | 20…13 | 20…**6** | 20 | 20…**6** | 20…11 | 20…19 | 20…8 | instabil: hängt am besten Treffer des Tages, schwankt lauf zu lauf |
+| **D · Schwelle **und** Merkmal** | **18** | 20 | 20 | 20 | 20 | 20 | **0** | trifft genau das Richtige; die Schwelle selbst ist dabei wirkungslos |
+| **E · min 3 / max 12** | 12 | 12 | 12 | 12 | 12 | 12 | **8** | füllt Platzhalterprofile künstlich auf → verstößt gegen die Belegpflicht |
+| **F · Plausibilitätsriegel (Ähnlichkeit > 0)** | 20 | 20 | 20 | 20 | 20 | 20 | **20** | wirkungslos, weil heute nichts mehr ≤ 0 entsteht |
+| **G · belegter Profilbezug, ohne Schwelle** | **18** | 20 | 20 | 20 | 20 | 20 | **0** | **identisch mit D, ohne willkürliche Zahl** |
+
+Bewertung entlang der acht geforderten Kriterien:
+
+| Kriterium | B/C/E (Schwellen) | **G (Belegpflicht)** |
+|---|---|---|
+| Falsch-Positive | bleiben (Rauschen liegt im selben Band) | verschwinden vollständig |
+| Verlust echter Treffer | real (bis 10 von 20) | gemessen **0** |
+| Sichtbare Vorgänge je Mandant | 6–20, unvorhersehbar | 18–20 bei gepflegten Profilen |
+| Briefing | Grundlage schwankt mit dem Tagesbestwert | Grundlage wird kleiner, aber begründbar |
+| Neue/dünne Profile | werden **nicht** geschützt | Lage bleibt leer statt erfunden |
+| Erklärbarkeit | „Ähnlichkeit unter 0,22" sagt dem Nutzer nichts | jeder Vorgang trägt seinen Grund |
+| Stabilität über Läufe | C schwankt konstruktionsbedingt | deterministisch |
+| Eignung Cem / Berlin / Brandenburg | eine globale Zahl behandelt Ebenen ungleich | ebenenunabhängig — Merkmale gelten überall |
+
+## 46 · Empfohlene Produktregel
+
+> **Kein Ähnlichkeitsschwellenwert. Belegpflicht statt Zahl:** Veröffentlicht wird
+> nur, was dem Mandat gegenüber begründbar ist — ein Treffer braucht eine
+> Überschneidung in Partei, Ausschuss, Wahlkreis oder Schwerpunkt
+> (`matched_features`). Es wird **nichts** aufgefüllt und **keine** Mindestmenge
+> erzwungen.
+
+Der Riegel benutzt exakt dieselbe Quelle, aus der `matching-begruendung.js` den
+sichtbaren Satz baut. Damit gilt die Invariante: **was veröffentlicht wird, ist
+erklärbar — und was erklärbar ist, wird veröffentlicht.** Riegel und Anzeige können
+nicht auseinanderlaufen.
+
+**Verhältnis zur Empfehlung aus Sprint 23C-2A (§39.1).** Dort wurde ein
+Erklärbarkeits-Gate **abgelehnt**. Das war auf der damaligen Datengrundlage richtig
+und ist es heute nicht mehr — die Grundlage hat sich messbar geändert:
+
+| | Sprint 23C-2A (§39.1) | Sprint M-8 (§45) |
+|---|---|---|
+| Bewertet wurde | der **gespeicherte Alt-Bestand**, dessen Erklärungen der M-7-Fehler zerstört hatte | die **heutige Kandidatenkurve** nach der M-7-Behebung |
+| Kosten bei gepflegtem Profil | „ein Vorgang weniger" (geschätzt am kaputten Bestand) | 0 bis 2 von 20, gemessen |
+| Wirkung beim Platzhalterprofil | „leert die Lage vollständig" → als Schaden bewertet | dasselbe Ergebnis → als **richtig** bewertet, weil das Rauschen nachweislich beliebig ist (zwei Mandate, identische Trefferliste) |
+| Ort des Riegels | Anzeige/Abfrage → Fenster schrumpft | **Schreibpfad** → Fenster füllt sich aus dem Bestand |
+
+Der Unterschied ist kein Meinungswechsel, sondern der Wegfall der Voraussetzung:
+§39.1 argumentierte, ein Gate würde M-8 **verstecken**. Der hier gebaute Riegel
+**ist** die Antwort auf M-8.
+
+## 47 · Was umgesetzt wurde (Phase 4) — hinter einem Flag, Default AUS
+
+| Datei | Änderung |
+|---|---|
+| `lib/helmut/matching-relevanz.js` | **neu** — reines Modul: `relevanzGateAktiv`, `hatBelegtenBezug`, `wendeRelevanzGateAn`. 0 KI, 0 Netz, 0 Datenbank, 0 Zufall |
+| `lib/helmut/matching.js` | Riegel im Schreibpfad **nach** der fertigen Trefferliste; Riegel aus ⇒ byte-identisch zu vorher |
+| `lib/helmut/storage.js` | `matchingRelevanzGateEnabled()` (Flag `HELMUT_MATCHING_RELEVANZ_GATE`, Default AUS) |
+| `scripts/matching-relevanz-gate-test.js` | **neu** — 40 Prüfungen |
+| `scripts/matching-schwellenwert-analyse.js` | **neu** — rein lesendes Analysewerkzeug (Wiederholbarkeit der Messung) |
+| `docs/betrieb/env-inventar.md` | neues Flag dokumentiert |
+
+**Was der Riegel ausdrücklich nicht tut:** er berechnet nichts neu. Ähnlichkeit, Rang,
+Reihenfolge, Ergebniskennung und `matched_features` entstehen unverändert oberhalb
+seiner Zeile. Der Rang wird bewusst **nicht** neu vergeben — er bleibt die Position in
+der Kandidatenliste, es entstehen also Ranglücken. Kein Backfill aus tieferen Rängen,
+keine Mindestmenge, keine Migration, keine Änderung am Vertrag
+(`matching-contract.js`) und damit **kein** veränderter Eingabefingerabdruck für Läufe
+ohne Riegel. Im Auditprotokoll wird die Wirkung ehrlich sichtbar: `kandidaten` = 20,
+`berechnet`/`veroeffentlicht` = was den Riegel passiert hat.
+
+### 47.1 Tests und Gegenbeweis
+
+- Neue Suite `matching-relevanz-gate-test.js`: **40/40** — Default AUS · negative
+  Ähnlichkeit · Ähnlichkeit 0 · wenige starke Treffer (keine Auffüllung) · viele
+  starke Treffer (kein Verlust) · Platzhalterprofil (ehrlicher Leerzustand) · stabile
+  Reihenfolge und unveränderte Ränge/Ähnlichkeiten/Kennungen · Idempotenz ·
+  Mandantentrennung.
+- Offline-Gesamtsuite: **181/181** grün (Ausgangsmessung auf demselben Stand ohne die
+  Änderung: 180/180). *In dieser Cloud-Sitzung sind Production-Secrets gesetzt; damit
+  laufen 14 Suiten in den Netz-Guard — mit und ohne diese Änderung identisch
+  (166/180 → 167/181). Unter CI-Bedingungen (ohne Secrets) sind es 181/181.*
+- Browser-/Mobile-Smoke: **32/32** (keine UI-Änderung).
+- **Mutationsprobe:** wird der Riegel auf das heutige Top-N-Verhalten zurückgesetzt
+  (`const zeilen = liste;`), fallen **15 der 40** Prüfungen. Die Suite erkennt das
+  heutige Verhalten also nachweislich.
+
+## 48 · Risiken, Gegenargumente und Rückweg
+
+1. **Der Riegel räumt den Alt-Bestand nicht auf.** Er verhindert neue unbelegte
+   Zeilen. Bestehende werden erst beim nächsten Lauf des Mandanten abgelöst — und das
+   nur, wenn dieser Lauf **mindestens eine** Zeile veröffentlicht
+   (`helmut_publish_matching_run` löst bei `v_anzahl = 0` nichts ab). Beim
+   Platzhalterprofil bleibt die alte Rausch-Lage deshalb **stehen**. Dort hilft nur
+   Profilpflege bzw. die Klärung über **OP-04** — nicht dieser Riegel.
+2. **Erste Aktivierung ist nicht idempotenz-neutral.** Der Kandidatenhash entsteht aus
+   der veröffentlichten Rangliste; eine kleinere Liste ist ein anderer Lauf. Der erste
+   Lauf nach Aktivierung schreibt also neu. Das ist korrekt, aber es ist eine sichtbare
+   Änderung an Lage und Briefing.
+3. **Die Beleglage ist enger als die Realität.** `matched_features` kennt heute nur
+   Partei, Ausschuss, Wahlkreis und Schwerpunkt — **nicht** namentliche Erwähnung und
+   **nicht** betroffene Geografie. Gemessen kostet das derzeit 0 Treffer (§44.3), aber
+   der Riegel macht diese Lücke wirksam. Der saubere Folgeschritt ist, beide Signale zu
+   echten `matched_features` zu machen (additiv, ohne Schwellenwert).
+4. **Ein Mandant kann sichtbar weniger Vorgänge haben als ein anderer.** Genau das ist
+   beabsichtigt — es ist der ehrliche Zustand, nicht ein Defekt.
+5. **Landtagsebene ist nicht in Production belegt.** Das einzige Landtagsprofil
+   (`politische_ebene = landtag`) existiert nur relational und ist über den produktiven
+   Profil-Lesepfad **nicht** erreichbar; es hat null `matching_results`. Die Aussage
+   „ebenenunabhängig" ist deshalb **hergeleitet** (der Riegel prüft Labels, keine
+   Zahlen), nicht gemessen. Vor einer Landesaktivierung ist sie nachzumessen.
+6. **Rückweg:** Flag `HELMUT_MATCHING_RELEVANZ_GATE` leeren bzw. auf `off` +
+   Redeploy — der nächste Lauf schreibt wieder die vollen Top-20. Keine Migration,
+   kein Schema, kein Datenverlust: es wird nie gelöscht, nur abgelöst. Ein
+   `git revert` des Commits ist ebenso vollständig, weil der Riegel eine einzige
+   Stelle im Schreibpfad ist.
+
+## 49 · Entscheidung und nächster Schritt
+
+**Entscheidung: M-8 umsetzen — aber als Belegpflicht, nicht als Schwellenwert.** Ein
+Ähnlichkeitsschwellenwert wird auf Basis dieser Messung **abgelehnt**: unterhalb von
+0,22 wirkungslos, oberhalb schädlich, und in keinem Bereich in der Lage, Rauschen von
+Substanz zu trennen.
+
+**Nächster kleinster Beweisschritt (freigabepflichtig):** `HELMUT_MATCHING_RELEVANZ_GATE`
+für **einen** gepflegten Mandanten in Production aktivieren, den nächsten **regulären**
+Lauf abwarten (kein manueller Lauf) und gegenmessen: veröffentlichte Zeilen,
+Belegquote, sichtbares 12er-Fenster, abgelöste Zeilen, 0 KI-Aufrufe. Erwartung nach
+§44.2: 18–20 von 20 veröffentlicht, Belegquote **100 %**. Da das Flag pro Deployment
+und nicht pro Mandant wirkt, ist die mandantenweise Erprobung nur über die Reihenfolge
+der Cron-Läufe (Befund **B5**) möglich — oder es wird direkt für alle aktiviert.

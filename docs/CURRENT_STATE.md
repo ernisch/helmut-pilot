@@ -1,6 +1,43 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-29 (**Sprint 23C-2A: Befund M-7 behoben — die Erklärung wird
+**Letzte Aktualisierung:** 2026-07-29 (**Sprint M-8: Relevanzschwelle analysiert — Ergebnis:
+KEIN Ähnlichkeitsschwellenwert, sondern Belegpflicht. TEILWEISE ABGESCHLOSSEN, Aktivierung
+freigabepflichtig, keine Production-Änderung.** Rein lesend gemessen (271 aktuelle `matching_results`
+über 7 Mandanten + die RPC selbst, Werkzeug `scripts/matching-schwellenwert-analyse.js`, 0 KI,
+0 Schreibzugriff): **Korrektur der bisherigen Zahl — es sind 63 von 271 Zeilen (23,2 %) mit
+Ähnlichkeit ≤ 0, nicht 40**; die 40 waren eine Stichprobe (40 von 80 betrachteten unbelegten
+Treffern). Diese 63 Zeilen stammen **ausnahmslos aus dem jeweils ersten Lauf eines Mandanten**
+(15./17./19./20.07., Profil bzw. Wissensbestand noch leer) und stehen nur deshalb noch auf
+`aktuell=true`, weil die Ablösung erst seit dem 29.07. greift. **In keinem sichtbaren 12er-Fenster
+eines gepflegten Mandanten steht heute eine Zeile mit Ähnlichkeit ≤ 0** (niedrigster sichtbarer Wert
+0,2094). **Das heutige Top-20 aller sechs gepflegten Mandanten liegt vollständig in
+[0,2211 … 0,4319]** — ein absoluter Schwellenwert bis 0,20 entfernt **nichts**, ab 0,22 entfernt er
+belegte Treffer (bei 0,25 verliert ein Mandant 10 von 20). **Die Ähnlichkeit trennt belegbar von
+unbelegbar nicht:** bei einem Mandanten liegen die beiden unbelegbaren Treffer (0,2487/0,2741)
+**über** dem Median seiner 18 belegten (0,2617). **Zwei Platzhalterprofile erzeugen ein
+byte-identisches, vollständig unbelegbares Top-20 im Band 0,1768…0,3162** — mitten im Band der
+echten Mandate; ein globaler Schwellenwert ließe dieses Rauschen durch und schnitte zugleich
+Substanz weg. **Empfohlene Regel: veröffentlicht wird nur, was begründbar ist** (belegtes
+`matched_feature`), **ohne jede Auffüllung und ohne Mindestmenge** — Wirkung gemessen: 20→20 bei
+fünf Mandanten, 20→18 bei einem, 20→**0** beim Platzhalterprofil; Verlust echter Treffer durch
+zusätzliche Signale (Namensnennung/Geografie) gemessen **0**. **Das korrigiert die Empfehlung aus
+§39.1** (dort wurde ein Erklärbarkeits-Gate abgelehnt) — die Grundlage hat sich mit der M-7-Behebung
+messbar geändert; Details und Gegenüberstellung in Teil E §46. **Umgesetzt: nur offline, hinter dem
+neuen Flag `HELMUT_MATCHING_RELEVANZ_GATE`, DEFAULT AUS** — aus = byte-identisch zum bisherigen
+Verhalten. Keine Migration, kein manueller Lauf, keine KI (0,00 USD), keine Änderung an
+Production-Daten, Flags, Cron, Embeddings, Profilen oder Briefing-Texten. Ränge, Ähnlichkeiten,
+Reihenfolge und Ergebniskennungen bleiben unangetastet, der Rang wird bewusst **nicht** neu vergeben.
+Tests: neue Suite **40/40**, Offline-Suite **181/181** unter CI-Bedingungen (Ausgang 180/180),
+Browser-Smoke **32/32**, **Mutationsprobe gegen das heutige Top-N-Verhalten: 15 von 40 Prüfungen
+fallen**. Offene Risiken ehrlich benannt: der Riegel räumt den Alt-Bestand **nicht** auf (bei
+0 veröffentlichten Zeilen löst `helmut_publish_matching_run` nichts ab → beim Platzhalterprofil
+bleibt die Rausch-Lage stehen, das löst nur Profilpflege/**OP-04**), die erste Aktivierung ist nicht
+idempotenz-neutral, und für die **Landtagsebene existiert kein Production-Beleg** (das einzige
+Landtagsprofil ist über den produktiven Profil-Lesepfad nicht erreichbar und hat 0
+`matching_results`). Nächster kleinster Beweisschritt: Flag für einen gepflegten Mandanten
+aktivieren und den nächsten **regulären** Lauf gegenmessen. Details:
+[`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md) Teil E, §42–§49.) ·
+(**Sprint 23C-2A: Befund M-7 behoben — die Erklärung wird
 jetzt gegen das TATSÄCHLICHE Wissensobjekt gebildet.** Der Schreibpfad lud für die
 Merkmalsauflösung ein Fenster von 200 nach Änderungszeit sortierten Wissensobjekten, während die
 Vektorsuche über alle **1 702** läuft; jeder Treffer außerhalb dieses Fensters wurde gegen ein
@@ -127,7 +164,8 @@ Werkzeug-Härtung W-1+W-2 gemergt (#152) · **W-2 erfolgreich abgeschlossen:
 Migration `20260727` angewendet, Flag aktiv, echter Production-Lauf
 `crawl-20260727160048-ct8lt` relational gespeichert und erhalten — alle 15
 Erfolgskriterien erfüllt**) ·
-**`main`-HEAD:** `bb539b1` (Merge #174 = Sprint 23C-2A, Erklärungsabdeckung; in Production ausgerollt — Deployment `dpl_7NwHyiwYuECi4y2RXaoRQCCmjdo5`, `target: production`, `READY` 2026-07-29 12:19:17 UTC. Davor `387b1a5` (Merge #171 = Sprint 23C, sichtbare Relevanzerklärung; in Production
+**`main`-HEAD:** `e1b7a7e` (Merge #175 = Doku-Nachtrag zum Production-Nachweis von Sprint 23C-2A;
+reine Dokumentation, kein Code). Davor `bb539b1` (Merge #174 = Sprint 23C-2A, Erklärungsabdeckung; in Production ausgerollt — Deployment `dpl_7NwHyiwYuECi4y2RXaoRQCCmjdo5`, `target: production`, `READY` 2026-07-29 12:19:17 UTC. Davor `387b1a5` (Merge #171 = Sprint 23C, sichtbare Relevanzerklärung; in Production
 ausgerollt — Deployment `dpl_4tyHsdwjCYEHwGMz6zAAcsAvMmUC`, `target: production`, `READY`,
 am 2026-07-29 rein lesend geprüft. Davor `a53e37b` = Merge #173, `24b436e` = Merge #172 = Hotfix
 Aktualitätsfilter, `5c254c4` = Merge #170 = Doku-Nachtrag zur angewendeten Migration; davor `b1d450c` =
