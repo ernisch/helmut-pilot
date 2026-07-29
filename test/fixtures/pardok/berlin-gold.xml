@@ -96,4 +96,43 @@
     <Titel>Kleine Anfrage ohne Datum</Titel>
     <DokNr>19/3000</DokNr>
   </Dokument>
+  <!-- ===========================================================================================
+       8 + 9: ECHTE Records aus der Struktur-Sonde vom 26.07.2026 (GitHub-Actions-Lauf 30209973678,
+       Live-Datei pardok-wp19.xml, Records #200 und #400) — verbatim uebernommen, nichts ergaenzt.
+       Zweck (Roadmap-Punkt 24):
+         · #8 belegt die Klasse ANTWORT und zeigt, dass <DokTyp*> VOR <DokArt*> ausgewertet werden
+           muss: DokArtL sagt "Plenarprotokoll" (Sitzung), DokTypL sagt "Antwort". Ueber die
+           Dokumentart allein waere dieses Dokument still falsch klassifiziert.
+         · #8 traegt AUSSERDEM dieselbe LokURL wie Record 2 (p19-002-wp.pdf) bei anderer DBID —
+           der reale Fall "zwei Dokumente, eine Fundstelle/URL". Sie duerfen NICHT verschmelzen.
+         · #9 ist ein zweites Sitzungsdokument mit <Abstract> (Feldquote 34 % laut Sonde).
+       =========================================================================================== -->
+  <Dokument>
+    <DBID>D-351603</DBID>
+    <ReihNr>0002</ReihNr>
+    <DHerk>BLN</DHerk><DHerkL>Berlin</DHerkL>
+    <Wp>19</Wp>
+    <DokArt>PlPr</DokArt><DokArtL>Plenarprotokoll</DokArtL>
+    <DokTyp>a</DokTyp><DokTypL>Antwort</DokTypL>
+    <DokNr>19/2</DokNr>
+    <DokDat>18.11.2021</DokDat>
+    <Sb>43-44</Sb>
+    <Urheber>Kalayci, Dilek (SenGPG)</Urheber>
+    <Redner>Kalayci, Dilek (SenGPG)</Redner>
+    <Redner>Ziller, Stefan (Gr&#xFC;ne)</Redner>
+    <LokURL>https://pardok.parlament-berlin.de/starweb/adis/citat/VT/19/PlenarPr/p19-002-wp.pdf</LokURL>
+  </Dokument>
+  <Dokument>
+    <DBID>D-357045</DBID>
+    <ReihNr>0005</ReihNr>
+    <DHerk>BLN</DHerk><DHerkL>Berlin</DHerkL>
+    <Wp>19</Wp>
+    <DokArt>PlPr</DokArt><DokArtL>Plenarprotokoll</DokArtL>
+    <DokTyp>Behandlung im Plenum</DokTyp><DokTypL>Behandlung im Plenum</DokTypL>
+    <DokNr>19/10</DokNr>
+    <DokDat>07.04.2022</DokDat>
+    <Sb>712</Sb>
+    <Abstract>Ergebnis S. 722Es wurden nicht gew&#xE4;hlt:auf Vorschlag der AfD-Fraktion:Herr Abg. Marc Vallendar als MitgliedHerr Abg. Thorsten Wei&#xDF; als stellvertretendes Mitglied</Abstract>
+    <LokURL>https://pardok.parlament-berlin.de/starweb/adis/citat/VT/19/PlenarPr/p19-010-wp.pdf</LokURL>
+  </Dokument>
 </Export>

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  Helmut — Grenzfall-Fixture Berlin fuer die Dokumentklassifizierung (Roadmap-Punkt 24).
+
+  ACHTUNG — DIESE DATEI IST KEIN QUELLENBELEG.
+  berlin-gold.xml enthaelt Records aus dem echten PARDOK-Export. Diese Datei dagegen enthaelt
+  ZUSAMMENGESETZTE Records und dient ausschliesslich dem Nachweis, dass sich der Parser bei
+  schwierigen und bei VERAENDERTEN Formaten fail closed verhaelt. Aus dieser Datei darf KEINE
+  Aussage darueber abgeleitet werden, was die Quelle tatsaechlich liefert.
+
+  Belegquelle fuer die als "belegter Feldwert" markierten Werte: Struktur-Sonde vom 26.07.2026
+  (GitHub-Actions-Lauf 30209973678) gegen https://www.parlament-berlin.de/opendata/pardok-wp19.xml.
+-->
+<Export aktualisiert="2026-07-26T16:15:19">
+  <!-- B1: BELEGTE Feldwerte "SchrAnfr"/"Schriftliche Anfrage" — aber OHNE die langen L-Felder,
+       also nur die Kurzcodes (Formatdrift: Quelle liefert L-Felder nicht mehr). DBID/DokNr/Datum
+       sind zusammengesetzt. Erwartung: Klasse `anfrage` weiterhin, ueber den Kurzcode. -->
+  <Dokument>
+    <DBID>D-900001</DBID>
+    <DHerk>BLN</DHerk><DHerkL>Berlin</DHerkL>
+    <Wp>19</Wp>
+    <DokArt>Drs</DokArt>
+    <DokTyp>SchrAnfr</DokTyp>
+    <Titel>Nur Kurzcodes, keine L-Felder</Titel>
+    <DokNr>19/9001</DokNr>
+    <DokDat>01.03.2026</DokDat>
+  </Dokument>
+
+  <!-- B2: VOLLSTAENDIG ZUSAMMENGESETZTER Typwert, der in keiner Tabelle steht.
+       Erwartung: Klasse `unbekannt`, KEINE Ersatzklasse, keine stille Einordnung als Drucksache. -->
+  <Dokument>
+    <DBID>D-900002</DBID>
+    <DHerk>BLN</DHerk><DHerkL>Berlin</DHerkL>
+    <Wp>19</Wp>
+    <DokArt>ZzTest</DokArt><DokArtL>Voellig neue Dokumentart</DokArtL>
+    <DokTyp>ZzTyp</DokTyp><DokTypL>Voellig neuer Dokumenttyp</DokTypL>
+    <Titel>Eintrag mit unbekanntem Typ</Titel>
+    <DokNr>19/9002</DokNr>
+    <DokDat>02.03.2026</DokDat>
+  </Dokument>
+
+  <!-- B3: GAR KEIN Typfeld. Erwartung: `unbekannt` mit Herkunft `kein-typfeld`. -->
+  <Dokument>
+    <DBID>D-900003</DBID>
+    <DHerk>BLN</DHerk><DHerkL>Berlin</DHerkL>
+    <Wp>19</Wp>
+    <Titel>Eintrag ganz ohne Typangabe</Titel>
+    <DokNr>19/9003</DokNr>
+    <DokDat>03.03.2026</DokDat>
+  </Dokument>
+
+  <!-- B4: amtliche Bezeichnung "Grosse Anfrage" — in der belegten Stichprobe NICHT beobachtet,
+       aber eine echte parlamentarische Bezeichnung. Erwartung: Klasse `anfrage` ueber die
+       nachrangige Auffangebene, ausgewiesen als klasse_quelle = "amtliche-bezeichnung"
+       (also ausdruecklich NICHT als laenderspezifisch belegt). -->
+  <Dokument>
+    <DBID>D-900004</DBID>
+    <DHerk>BLN</DHerk><DHerkL>Berlin</DHerkL>
+    <Wp>19</Wp>
+    <DokArt>Drs</DokArt><DokArtL>Drucksache</DokArtL>
+    <DokTyp>GrAnfr</DokTyp><DokTypL>Gro&#xDF;e Anfrage</DokTypL>
+    <Titel>Grosse Anfrage zur Verkehrswende</Titel>
+    <DokNr>19/9004</DokNr>
+    <DokDat>04.03.2026</DokDat>
+  </Dokument>
+
+  <!-- B5 + B6: ZWEI IDENTISCHE Records (gleiche DBID, gleiche Felder) — der Fall
+       "dasselbe Dokument ueber zwei Fundstellen". Erwartung: EIN Dokument mit ZWEI Fundstellen,
+       keine Dublette im Bestand. -->
+  <Dokument>
+    <DBID>D-900005</DBID>
+    <DHerk>BLN</DHerk><DHerkL>Berlin</DHerkL>
+    <Wp>19</Wp>
+    <DokArt>Drs</DokArt><DokArtL>Drucksache</DokArtL>
+    <DokTyp>SchrAnfr</DokTyp><DokTypL>Schriftliche Anfrage</DokTypL>
+    <Titel>Zweimal gefunden, ein Dokument</Titel>
+    <DokNr>19/9005</DokNr>
+    <DokDat>05.03.2026</DokDat>
+    <LokURL>https://pardok.parlament-berlin.de/starweb/adis/citat/VT/19/SchrAnfr/S19-9005.pdf</LokURL>
+  </Dokument>
+  <Dokument>
+    <DBID>D-900005</DBID>
+    <DHerk>BLN</DHerk><DHerkL>Berlin</DHerkL>
+    <Wp>19</Wp>
+    <DokArt>Drs</DokArt><DokArtL>Drucksache</DokArtL>
+    <DokTyp>SchrAnfr</DokTyp><DokTypL>Schriftliche Anfrage</DokTypL>
+    <Titel>Zweimal gefunden, ein Dokument</Titel>
+    <DokNr>19/9005</DokNr>
+    <DokDat>05.03.2026</DokDat>
+    <LokURL>https://pardok.parlament-berlin.de/starweb/adis/citat/VT/19/SchrAnfr/S19-9005.pdf</LokURL>
+  </Dokument>
+</Export>

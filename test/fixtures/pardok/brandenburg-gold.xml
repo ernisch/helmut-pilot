@@ -92,6 +92,40 @@
       <DokDat>01.03.2019</DokDat>
     </Dokument>
   </Vorgang>
+  <!-- ===========================================================================================
+       H: ECHTER Record aus der Struktur-Sonde vom 26.07.2026 (GitHub-Actions-Lauf 30209973678,
+       Live-Datei exportWP8.xml, Record #1) — verbatim uebernommen, nichts ergaenzt.
+       Zweck (Roadmap-Punkt 24): dieser Vorgang traegt DIESELBE VNr wie der delete-Stub A oben.
+       Beide stehen so nebeneinander im echten Export (Records #0 und #1). Der Stub darf den
+       vollstaendigen Eintrag weder verdraengen noch verdoppeln: genau EIN Dokument, stabile
+       Identitaet. Zusaetzlich belegt der Record zwei LokURL (pdf + docx) und einen Vorgang vom
+       Typ "Sonstiges", dessen Dokument trotzdem sauber als Sitzungsdokument klassifiziert wird.
+       =========================================================================================== -->
+  <Vorgang>
+    <VNr>V-369325</VNr>
+    <ReihNr>0000</ReihNr>
+    <VTyp>Sonstiges</VTyp><VTypL>Sonstiges</VTypL>
+    <VSys>1100</VSys><VSysL>Parlament</VSysL>
+    <VIR>-</VIR>
+    <Nebeneintrag><ReihNr>558088</ReihNr><Desk>Alterspr&#xE4;sident</Desk></Nebeneintrag>
+    <Dokument>
+      <ReihNr>0001</ReihNr>
+      <DHerk>BRA</DHerk><DHerkL>Brandenburg</DHerkL>
+      <Wp>8</Wp>
+      <DokArt>PlPr</DokArt><DokArtL>Plenarprotokoll</DokArtL>
+      <Desk>Plenarsitzung</Desk>
+      <Titel>Begr&#xFC;&#xDF;ung und Rede des Alterspr&#xE4;sidenten</Titel>
+      <DokNr>08/1</DokNr>
+      <DokDat>17.10.2024</DokDat>
+      <Sb>3-5</Sb>
+      <Su>16</Su>
+      <Urheber>Landtag</Urheber>
+      <Redner>Simon, Reinhard (BSW)</Redner>
+      <LokURL>https://www.parlamentsdokumentation.brandenburg.de/starweb/LBB/ELVIS/parladoku/w8/plpr/1.pdf</LokURL>
+      <LokURL>https://www.parlamentsdokumentation.brandenburg.de/starweb/LBB/ELVIS/parladoku/w8/plpr/1.docx</LokURL>
+      <FundSt>Brandenburg -  Plenarprotokoll 8/1, Einl 8/1, BePr 8/1</FundSt>
+    </Dokument>
+  </Vorgang>
   <!-- G: Dokument ohne Datum (missing date) -->
   <Vorgang>
     <VNr>V-380500</VNr>

@@ -15,12 +15,12 @@ function fx(name) { return fs.readFileSync(path.join(__dirname, "..", "test", "f
 // ============================ BERLIN Gold-Fixture ============================
 const be = P.parsePardokDocumentsFromString(fx("berlin-gold.xml"), { land: "berlin", sourceUrl: "https://www.parlament-berlin.de/opendata/pardok-wp19.xml" });
 const bd = be.documents;
-check("BE: 8 Dokumente geparst", bd.length === 8 && be.stats.geparst === 8);
-check("BE: jedes Dokument hat externe_id (DBID)", bd.every((d) => d.externe_id && d.externe_id.startsWith("D-")) && be.stats.mitExterneId === 8);
+check("BE: 10 Dokumente geparst", bd.length === 10 && be.stats.geparst === 10);
+check("BE: jedes Dokument hat externe_id (DBID)", bd.every((d) => d.externe_id && d.externe_id.startsWith("D-")) && be.stats.mitExterneId === 10);
 check("BE: 0 Platzhalter", be.stats.platzhalter === 0);
 check("BE: 5 Dokumente mit Titel (Drs/VO/Antr/KlAnfr)", be.stats.mitTitel === 5);
 check("BE: formatTitel-Erkennung 5/5 = 100%", be.stats.formatTitelVorhanden === 5 && be.stats.formatTitelErkannt === 5);
-check("BE: titellose Typen bleiben titel=null (PlPr/GVBl/APr)", bd.filter((d) => d.titel === null).length === 3);
+check("BE: titellose Typen bleiben titel=null (PlPr/GVBl/APr/Antwort)", bd.filter((d) => d.titel === null).length === 5);
 const beByNr = Object.fromEntries(bd.map((d) => [d.externe_id, d]));
 check("BE: Datum als ISO geparst (09.11.2021 -> 2021-11-09)", beByNr["D-351758"].veroeffentlichungsdatum === "2021-11-09");
 check("BE: fehlendes Datum bleibt null", beByNr["D-360003"].veroeffentlichungsdatum === null);
@@ -39,13 +39,19 @@ check("BE-adv: gleicher Titel (Haushaltsplan) -> 2 unterschiedliche Fingerabdrue
 // ============================ BRANDENBURG Gold-Fixture ============================
 const bb = P.parsePardokDocumentsFromString(fx("brandenburg-gold.xml"), { land: "brandenburg", sourceUrl: "https://www.parlamentsdokumentation.brandenburg.de/opendata/exportWP8.xml" });
 const cd = bb.documents;
-check("BB: 7 Roh-Vorgaenge, 1 delete-Stub, 1 ohne Dokument", bb.stats.rohRecords === 7 && bb.stats.deleteStubs === 1 && bb.stats.ohneDokument === 1);
-check("BB: 6 Dokumente geparst (inkl. Multi-Dok-Vorgang)", cd.length === 6 && bb.stats.geparst === 6);
-check("BB: delete-Stub erzeugt KEIN Dokument", !cd.some((d) => d.vorgangsnummer === "V-369325"));
-check("BB: jedes Dokument hat externe_id (VNr#ReihNr)", cd.every((d) => /^V-\d+#/.test(d.externe_id)) && bb.stats.mitExterneId === 6);
+check("BB: 8 Roh-Vorgaenge, 1 delete-Stub, 1 ohne Dokument", bb.stats.rohRecords === 8 && bb.stats.deleteStubs === 1 && bb.stats.ohneDokument === 1);
+check("BB: 7 Dokumente geparst (inkl. Multi-Dok-Vorgang)", cd.length === 7 && bb.stats.geparst === 7);
+// Der echte Export fuehrt V-369325 ZWEIMAL: einmal als delete-Stub, einmal als vollstaendigen
+// Eintrag (Sonde 26.07.2026, Records #0 und #1). Der Stub selbst erzeugt kein Dokument und darf
+// den vollstaendigen Eintrag weder verdraengen noch verdoppeln -> genau EIN Dokument.
+check("BB: delete-Stub erzeugt KEIN Dokument (Stub allein)",
+  P.parseBrandenburgVorgang("<Vorgang><VNr>V-369325</VNr><VFunktion>delete</VFunktion></Vorgang>").documents.length === 0);
+check("BB: delete-Stub + vollstaendiger Eintrag gleicher VNr -> genau EIN Dokument",
+  cd.filter((d) => d.vorgangsnummer === "V-369325").length === 1);
+check("BB: jedes Dokument hat externe_id (VNr#ReihNr)", cd.every((d) => /^V-\d+#/.test(d.externe_id)) && bb.stats.mitExterneId === 7);
 check("BB: 0 Platzhalter", bb.stats.platzhalter === 0);
-check("BB: externe_id eindeutig (kein Kollisions-Sammelcluster)", new Set(cd.map((d) => d.externe_id)).size === 6 && new Set(cd.map((d) => d.inhaltsfingerabdruck)).size === 6);
-check("BB: 4 Dokumente mit Titel", bb.stats.mitTitel === 4 && bb.stats.formatTitelErkannt === 4 && bb.stats.formatTitelVorhanden === 4);
+check("BB: externe_id eindeutig (kein Kollisions-Sammelcluster)", new Set(cd.map((d) => d.externe_id)).size === 7 && new Set(cd.map((d) => d.inhaltsfingerabdruck)).size === 7);
+check("BB: 5 Dokumente mit Titel", bb.stats.mitTitel === 5 && bb.stats.formatTitelErkannt === 5 && bb.stats.formatTitelVorhanden === 5);
 const bbById = Object.fromEntries(cd.map((d) => [d.externe_id, d]));
 check("BB: Multi-Dok-Vorgang V-370081 -> 2 unterscheidbare Dokumente (ReihNr)", !!bbById["V-370081#r0001"] && !!bbById["V-370081#r0002"] &&
   bbById["V-370081#r0001"].inhaltsfingerabdruck !== bbById["V-370081#r0002"].inhaltsfingerabdruck);
@@ -63,7 +69,7 @@ check("BB-adv: <Wp>-Feld hat Vorrang vor DokNr-Praefix (08/30 -> WP7, nicht 8)",
 
 // ============================ Dedup + Fundstellen ============================
 const dd = P.dedupToDocuments([...bd, ...cd], "pardok-test");
-check("Dedup: keine Falsch-Zusammenfuehrung (14 rein -> 14 Dokumente)", dd.anzahl === 14 && dd.mehrfach === 0);
+check("Dedup: keine Falsch-Zusammenfuehrung (17 rein -> 17 Dokumente)", dd.anzahl === 17 && dd.mehrfach === 0);
 check("Dedup: kein Platzhalter-Sammelcluster", dd.dokumente.every((d) => d.fundstellen_anzahl === 1));
 // Zwei IDENTISCHE Records (gleiche externe_id) -> EIN Dokument mit 2 Fundstellen
 const twice = [P.parseBerlinDokument(fx("berlin-gold.xml").match(/<Dokument>[\s\S]*?<\/Dokument>/)[0]), P.parseBerlinDokument(fx("berlin-gold.xml").match(/<Dokument>[\s\S]*?<\/Dokument>/)[0])];
