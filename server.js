@@ -11,8 +11,11 @@ const { validateProfile } = require("./lib/helmut/profile-validation");
 const sourceSafety = require("./lib/helmut/sourceSafety");
 const { runLageCheck, runSourceCrawl } = require("./lib/helmut/scheduler");
 const { buildLearningProfile } = require("./lib/helmut/learning");
-const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, listFailedKnowledgeObjects, resetUnderstandingToPending, markUnderstandingTerminal, getUnderstandingRetries, saveUnderstandingRetries, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, getLlmUsageBreakdownToday, getRunCostReport, llmPriceProvenance, recordLlmUsage, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getClassificationCoverage, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState, tenantJwtModeEnabled, saveKnowledgeObjectEnrichment, profileDbModeEnabled, profileDbExclusiveEnabled, getProfileTelemetry, getProfileFromDb, diagnoseTenantJwt, recordProcessRun, listProcessRuns, saveMonitoringDeliveryState, getMonitoringDeliveryState, getLlmCostSince, getAdminCostsPerUser, listSourceArchitectureRows, getSourceModeShadowLastRun, listSourceCrawlTelemetry } = require("./lib/helmut/storage");
+const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, listFailedKnowledgeObjects, resetUnderstandingToPending, markUnderstandingTerminal, getUnderstandingRetries, saveUnderstandingRetries, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, getLlmUsageBreakdownToday, getRunCostReport, llmPriceProvenance, recordLlmUsage, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getClassificationCoverage, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState, tenantJwtModeEnabled, saveKnowledgeObjectEnrichment, profileDbModeEnabled, profileDbExclusiveEnabled, getProfileTelemetry, getProfileFromDb, diagnoseTenantJwt, recordProcessRun, listProcessRuns, saveMonitoringDeliveryState, getMonitoringDeliveryState, getLlmCostSince, getAdminCostsPerUser, listSourceArchitectureRows, getSourceModeShadowLastRun, listSourceCrawlTelemetry, readCronFairnessState, saveCronFairnessState } = require("./lib/helmut/storage");
 const llmBudgetLib = require("./lib/helmut/llm-budget");
+// OP-25: faire Mandantenreihenfolge der Mehrmandanten-Crons (Rotation nach aeltestem
+// Versuch statt alphabetisch). Reine Planung + Ausfuehrungsschleife, offline testbar.
+const cronFairness = require("./lib/helmut/cron-fairness");
 
 // P0-1: technischer Ausfuehrungsort + Laufkennung fuer Prozess-Laufzeit-Telemetrie
 // (Cron-Understanding, Briefing-Aufbau). Reine technische Metadaten, nie PII.
@@ -6067,6 +6070,18 @@ function sendMandateSelectionRequired(response, mandates = []) {
 // Ladestoerung der Mandantenliste -> ok:false + Systemfehler (von 0-Mandate
 // unterscheidbar). Isolation: jedes Mandat in eigenem try/catch — ein fehlerhaftes
 // Mandat stoppt die anderen nicht; ein hartes Zeitbudget sorgt fuer eine Antwort.
+//
+// FAIRNESS (OP-25, Sprint 2026-07-29): die Schleife lief bisher in der ALPHABETISCHEN
+// Reihenfolge von listActiveTenantIds gegen dieses harte Zeitbudget — bei knapper
+// Laufzeit fiel damit IMMER dasselbe Mandat aus (belegt: 2026-07-24 vier von sechs
+// Mandaten über Tage nie gecrawlt; 2026-07-29 nur eines von sieben bis zur
+// Matching-Stufe). Die Reihenfolge kommt jetzt aus `cron-fairness.planTenantOrder`:
+// ältester letzter VERSUCH zuerst, Mandate ohne Versuch ganz vorn, Kennung nur noch
+// als letzter Gleichstandsentscheid. Der Versuch wird VOR der Verarbeitung persistent
+// vermerkt (eigene helmut_store-Zeile, keine Migration) — daraus folgt die
+// nachrechenbare Obergrenze ceil(n/k). Nicht begonnene Mandate werden NICHT als
+// versucht vermerkt und bleiben deshalb im naechsten Lauf vorn.
+// `HELMUT_CRON_FAIRNESS=off` ist der Rueckweg auf das alte Verhalten ohne Codeaenderung.
 async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000 } = {}) {
   const startedMs = Date.now();
   const { tenantIds, reason } = await tenantContext.resolveCronTenants();
@@ -6081,22 +6096,53 @@ async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000 } = 
     }
     return { ok: !ladeStoerung, skipped: true, reason, tenants: 0, results: [] };
   }
-  const deadline = startedMs + deadlineMs;
-  const results = [];
-  for (const tenantId of tenantIds) {
-    if (Date.now() > deadline) {
-      results.push({ politicianId: tenantId, skipped: true, reason: "zeitbudget" });
-      continue;
+  const fairnessAn = cronFairness.fairnessEnabled();
+  const lauf = await cronFairness.runTenantsFairly({
+    cronName,
+    // Fairness aus -> exakt die alte alphabetische Reihenfolge (ids.sort()) und kein
+    // Zustands-IO. Der Rueckweg ist damit eine Env-Variable, kein Deployment.
+    reihenfolge: fairnessAn ? "fair" : "unveraendert",
+    tenantIds,
+    perTenant: async (tenantId) => {
+      try {
+        return await perTenant(tenantId);
+      } catch (error) {
+        // Fehler-Isolation: nur DIESES Mandat scheitert; Fehler wird protokolliert.
+        console.error(`[cron/${cronName}] Mandant ${tenantId} fehlgeschlagen (isoliert):`, error && error.message);
+        throw error;
+      }
+    },
+    runId: helmutRunId(`cron-${cronName}`, startedMs),
+    deadlineMs,
+    startedMs,
+    staleMs: cronFairness.staleClaimMs(),
+    reserveMs: cronFairness.tenantReserveMs(),
+    loadState: async () => {
+      if (!fairnessAn) return {};
+      const gelesen = await readCronFairnessState();
+      if (!gelesen.ok) throw new Error(gelesen.fehler || "fairnesszustand-nicht-lesbar");
+      return gelesen.state;
+    },
+    saveState: async (patch) => {
+      if (!fairnessAn) return;
+      const geschrieben = await saveCronFairnessState(patch);
+      if (!geschrieben.ok) throw new Error(geschrieben.fehler || "fairnesszustand-nicht-schreibbar");
     }
-    try {
-      const result = await perTenant(tenantId);
-      results.push({ politicianId: tenantId, ...(result && typeof result === "object" ? result : { result }) });
-    } catch (error) {
-      // Fehler-Isolation: nur DIESES Mandat scheitert; Fehler wird protokolliert.
-      console.error(`[cron/${cronName}] Mandant ${tenantId} fehlgeschlagen (isoliert):`, error && error.message);
-      results.push({ politicianId: tenantId, error: error && error.message, failed: true });
-    }
-  }
+  });
+  const results = lauf.results;
+  const fairness = lauf.fairness;
+  // BEOBACHTBARKEIT je Mandat (OP-25): eine Zeile, aus der hervorgeht, wer geplant,
+  // begonnen, erfolgreich, fehlgeschlagen und wer aus Zeitmangel NICHT begonnen wurde —
+  // plus das voraussichtlich naechste Mandat. Ein global gruener Lauf kann damit nicht
+  // mehr verbergen, dass einzelne Mandate wiederholt nicht verarbeitet wurden.
+  console.log(`[cron/${cronName}/fairness] geplant=${fairness.geplant.join(",") || "-"}`
+    + ` begonnen=${fairness.begonnen.join(",") || "-"}`
+    + ` erfolgreich=${fairness.erfolgreich.length} fehlgeschlagen=${fairness.fehlgeschlagen.length}`
+    + ` zeitbudget=${fairness.zeitbudget.join(",") || "-"}`
+    + ` laeuftBereits=${fairness.laeuftBereits.join(",") || "-"}`
+    + ` naechstes=${fairness.naechstesMandat || "-"}`
+    + ` obergrenzeLaeufe=${fairness.obergrenzeLaeufe}`
+    + ` zustand=${fairnessAn ? (fairness.zustandGeladen && !fairness.zustandFehler ? "ok" : "gestoert") : "aus"}`);
   // SICHTBARKEIT (Incident 2026-07-25): vom Zeitbudget abgeschnittene Mandate
   // standen bisher nur im Antwort-Body, den niemand liest — vier aktive Mandate
   // wurden dadurch über Tage NIE gecrawlt, ohne jedes Signal. Ein Systemfehler
@@ -6106,11 +6152,31 @@ async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000 } = 
     console.error(`[cron/${cronName}] Zeitbudget erschoepft — ${budgetSkipped.length} von ${tenantIds.length} Mandaten NICHT verarbeitet.`);
     await accounts.recordSystemError({
       scope: `cron-${cronName}`,
-      message: `Zeitbudget erschoepft: ${budgetSkipped.length} von ${tenantIds.length} Mandaten nicht verarbeitet.`,
+      // Die Kennungen gehoeren in die Meldung: ohne sie war nicht erkennbar, ob es
+      // immer dieselben Mandate trifft — genau das war der Kern von OP-25.
+      message: `Zeitbudget erschoepft: ${budgetSkipped.length} von ${tenantIds.length} Mandaten nicht verarbeitet`
+        + ` (${budgetSkipped.map((r) => r.politicianId).join(", ")}). Naechster Lauf beginnt mit ${fairness.naechstesMandat || "unbekannt"}.`,
       path: `/api/cron/${cronName}`
     }).catch(() => {});
   }
-  return { ok: true, tenants: tenantIds.length, durationMs: Date.now() - startedMs, results, budgetSkipped: budgetSkipped.length };
+  // Ein nicht speicherbarer Fairnesszustand hebt die Garantie auf — das darf nicht
+  // still bleiben (CLAUDE.md §4.4). Der Lauf selbst bleibt davon unberuehrt.
+  if (fairnessAn && (!fairness.zustandGeladen || fairness.zustandFehler)) {
+    console.error(`[cron/${cronName}] Fairnesszustand gestoert: ${fairness.zustandFehler || "nicht lesbar"}`);
+    await accounts.recordSystemError({
+      scope: `cron-${cronName}`,
+      message: `Fairnesszustand nicht nutzbar (${fairness.zustandFehler || "nicht lesbar"}) — Reihenfolge ohne Verlaufswissen, keine Fairnessgarantie.`,
+      path: `/api/cron/${cronName}`
+    }).catch(() => {});
+  }
+  return {
+    ok: true,
+    tenants: tenantIds.length,
+    durationMs: Date.now() - startedMs,
+    results,
+    budgetSkipped: budgetSkipped.length,
+    fairness
+  };
 }
 
 // Cron-Autorisierung — FAIL CLOSED.

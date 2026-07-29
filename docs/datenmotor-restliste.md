@@ -450,7 +450,26 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   ist damit ausgeführt (§14 des kanonischen Dokuments). Keine weitere Freigabe offen.
 
 #### OP-25 · Crawl-Zeitdeckelung: je Lauf wird nur ein Teil der Mandanten erreicht (neu, Sprint 23B-1; Prioritätsklasse P1)
-- **Status:** offen, **Ursache belegt, Umfang noch nicht vermessen** (2026-07-29, Befund B5).
+- **Status (2026-07-29, Sprint OP-25-Fairness):** **Teilstück (b) umgesetzt, Production-Nachweis
+  offen.** Der Kernbefund wurde gegen `main` nach PR #178 (`51732e2`) **bestätigt**:
+  `listActiveTenantIds` endete auf `ids.sort()` (alphabetisch), `runCronForTenants` lief seriell
+  gegen `Date.now() > deadline`, und es gab **keinen** persistenten Fortschritt je Mandat — die
+  Verdrängung traf also strukturell immer dieselben Mandate. Präzisierung zum Auftrag: „4 von 6"
+  ist der Messwert vom **2026-07-24**; am **2026-07-29** waren es **6 von 7**.
+  **Jetzt:** faire Rotation nach dem ältesten letzten **Versuch**
+  ([`lib/helmut/cron-fairness.js`](../lib/helmut/cron-fairness.js)), Versuch **vor** der
+  Verarbeitung persistiert (eigene `helmut_store`-Zeile — **keine Migration**, keine RLS-Änderung,
+  kein Freigabegate), nachrechenbare Obergrenze **ceil(n/k)** reguläre Läufe, Beobachtbarkeit je
+  Mandat (`[cron/*/fairness]` + `fairness` im Antwortkörper), `systemError` mit **Kennungen** der
+  nicht verarbeiteten Mandate. Rückweg: `HELMUT_CRON_FAIRNESS=off`. Tests: neue Suite **118/118**,
+  Offline-Suite **169/183** (Baseline `main` 168/182 — dieselben 14 umgebungsbedingten
+  Fehlschläge), Browser-Smoke **32/32**, Mutationsprobe **7 von 7 rot**. **0 KI, 0,00 USD, keine
+  Migration, keine Cron-/Budgetänderung, kein Production-Zugriff.** Kanonisch:
+  [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md). **Offen bleiben:** (a) die Messung, wie
+  viele Mandate je Lauf real die Matching-Stufe erreichen, (c) ein Abdeckungsalarm über mehrere
+  Läufe hinweg (der Einzellauf meldet jetzt, die Serie noch nicht) — und der **reguläre
+  Production-Nachweis** nach Merge.
+- **Ausgangsbefund (2026-07-29, vor diesem Sprint):** **Ursache belegt, Umfang noch nicht vermessen** (Befund B5).
   Der Crawl-Cron endet reproduzierbar nach ~280 s mit `bounded=true`
   (`[cron/crawl] 280001ms tenants=undefined bounded=true`, gemessen 28.07. 04:00, 28.07. 20:00
   und 29.07. 04:00). Er verarbeitet die Mandanten nacheinander und bricht am Zeitlimit ab —
@@ -462,10 +481,13 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   und war bisher nur unsichtbar, weil Matching vor Sprint 23B-1 keine Spur hinterließ.
 - **Fehlender Schritt:** (a) messen, wie viele der aktiven Mandanten je Lauf tatsächlich
   bis zur Matching-Stufe kommen (die 4 Cron-Läufe/Tag über eine Woche auswerten, jetzt
-  erstmals über `matching_runs` möglich); (b) entscheiden, ob das Zeitbudget besser verteilt
-  wird (Rotation der Mandantenreihenfolge statt fester Reihenfolge), der Crawl je Mandant
-  läuft oder die Google-News-Wartezeiten gesenkt werden (Berührung mit OP-15);
-  (c) Abdeckungsalarm, damit ein dauerhaft übersprungener Mandant auffällt statt still zu bleiben.
+  erstmals über `matching_runs` möglich) — **offen**; (b) ~~entscheiden, ob das Zeitbudget besser
+  verteilt wird (Rotation der Mandantenreihenfolge statt fester Reihenfolge)~~ — **erledigt
+  2026-07-29: Rotation umgesetzt** (Reihenfolge nach ältestem Versuch, persistent, ohne Migration;
+  Zeitbudget, Cron-Zeiten und Google-Wartezeiten **unverändert** — die Berührung mit OP-15 wurde
+  bewusst nicht angefasst); (c) Abdeckungsalarm über eine **Serie** von Läufen, damit ein dauerhaft
+  übersprungener Mandant auffällt statt still zu bleiben — **offen** (der Einzellauf meldet seit
+  diesem Sprint Kennungen, die Serienauswertung fehlt).
 - **Abhängigkeiten:** OP-15 (Google-News-Klumpenrisiko/Härtung — die Timeouts fressen das
   Budget), OP-21 (die 2 × `504` vom 26.07. sind Ausdruck desselben Limits), OP-07 (Alarmweg).
 - **Risiko:** **hoch für den Zweitmandanten.** Mit einem zahlenden Zweitmandanten teilen sich

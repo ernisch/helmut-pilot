@@ -9,6 +9,12 @@
 > diese Datei. Nummerierung und Abnahmekriterien sind identisch mit der Excel — Punkt 25
 > ist im Repository mandantenneutral formuliert (`START_HERE.md` §5.4).
 >
+> **Verwechslungsgefahr (2026-07-29):** „Punkt 25" bezeichnet hier den **Ende-zu-Ende-Test für
+> den Pilotmandanten** (Zeile 25). Ein Sprintauftrag vom 2026-07-29 nennt die **Cron-Fairness**
+> ebenfalls „Roadmap Punkt 25" — gemeint ist dort **OP-25** der
+> [`../datenmotor-restliste.md`](../datenmotor-restliste.md). Die beiden Punkte haben nichts
+> miteinander zu tun; Zeile 25 bleibt von jenem Sprint unberührt.
+>
 > **Ein Punkt ist nur grün, wenn sein Abnahmekriterium vollständig und nachvollziehbar
 > erfüllt ist.** Code oder Datenbankzeilen allein genügen nicht.
 
@@ -56,7 +62,7 @@
 | 26 | Tests | Ende-zu-Ende-Test für Berliner Profil durchführen | ☐ | Das Berliner Profil erhält überwiegend passende Berliner Landespolitik | blockiert durch Punkt 14 — es existiert kein Landtagsprofil und keine Berliner Lieferung |
 | 27 | Tests | Ende-zu-Ende-Test für Brandenburger Profil durchführen | ☐ | Das Brandenburger Profil erhält überwiegend passende Brandenburger Landespolitik | blockiert durch Punkt 15 |
 | 28 | Tests | Inhaltliche Trennung Bund, Berlin und Brandenburg beweisen | ☐ | Die drei Profile erhalten nachweisbar unterschiedliche und passende Inhalte | blockiert durch Punkte 14/15. Zusätzlich offen: im Modus `on` crawlen alle Mandate **eine** gemeinsame Vereinigungsmenge; die Trennung entsteht erst im Matching und ist nicht belegt |
-| 29 | Betrieb | Fehlerpfade und Wiederholungen prüfen | ☐ | Timeouts, Limits, fehlerhafte Inhalte und Wiederholungen funktionieren kontrolliert | offen; Befund A-7 (Doppelläufe mit `circuit-open`) gehört hierher und zu OP-15 |
+| 29 | Betrieb | Fehlerpfade und Wiederholungen prüfen | ☐ | Timeouts, Limits, fehlerhafte Inhalte und Wiederholungen funktionieren kontrolliert | offen; Befund A-7 (Doppelläufe mit `circuit-open`) gehört hierher und zu OP-15. **Teilvorleistung 2026-07-29 (Sprint OP-25):** das Zeitlimit der Mehrmandanten-Crons verdrängt nicht mehr immer dieselben Mandate — faire Rotation nach ältestem Versuch, Wiederaufnahme an der Mandatsgrenze, Garantie ceil(n/k), Fehler einzelner Mandate blockieren die übrigen nicht, nicht begonnene Mandate bleiben vorn. Offline belegt (118/118), **Production-Nachweis offen**. Kanonisch: [`../betrieb/cron-fairness.md`](../betrieb/cron-fairness.md) |
 | 30 | Abnahme | Phase 1 offiziell abnehmen | ☐ | Der gesamte Datenmotor arbeitet automatisch, stabil und ohne manuelle Eingriffe | erst nach 1–29 |
 
 ---
