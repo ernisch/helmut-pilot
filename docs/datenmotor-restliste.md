@@ -207,6 +207,16 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 - **Parallelisierbarkeit:** vollständig parallel.
 - **Freigabe:** **JA** (Production-Datenänderung).
 
+#### OP-25 · Mandanten-Fairness im Cron-Zeitbudget (neu, Roadmap-Analyse 24–30, 2026-07-29)
+- **Status:** **offen — pilotblockierend.** `runCronForTenants` (`server.js:6070–6114`) verarbeitet die aktiven Mandate **seriell** in einer **alphabetisch festen** Reihenfolge (`lib/helmut/tenant-context.js:78`, `ids.sort()`) gegen eine **harte Deadline** (270 s). Reicht das Budget nicht, erhalten die verbleibenden Mandate `skipped: "zeitbudget"` — es gibt **keine Rotation, keinen Nachholpfad, keine Priorisierung nach Wartezeit**. Die Benachteiligung ist damit **deterministisch**, nicht zufällig: derselbe Mandant fällt bei jedem knappen Lauf aus. Der Ausfall wird seit dem Incident nur noch **sichtbar** gemacht (systemError, `server.js:6100–6112`) — das war die damalige Reparatur, sie behebt die Ursache nicht.
+- **Belegt eingetreten:** am 2026-07-25 wurden **4 von 6 aktiven Mandaten nie gecrawlt** ([`betrieb/incident_2026-07-25_crawl_mandantenamplifikation.md`](betrieb/incident_2026-07-25_crawl_mandantenamplifikation.md) §RC-4).
+- **Warum pilotblockierend:** der Ende-zu-Ende-Nachweis für den Pilotmandanten (Phase-1-Punkt 25) misst ohne diese Reparatur nur den Beobachtungstag — nicht die Zusicherung, dass der Mandant *jeden* Tag erreicht wird. Ein Briefing, das ausbleibt, weil der Mandant übersprungen wurde, ist aus Nutzersicht ein Produktausfall.
+- **Fehlender Schritt:** rotierender Startindex **oder** Vorrang für den am längsten nicht verarbeiteten Mandanten (persistierter „zuletzt verarbeitet"-Zeitpunkt), plus ein Nachholpfad für abgeschnittene Mandate, plus ein Offline-Test, der das Abschneiden erzwingt und die Rotation über mehrere Läufe prüft.
+- **Abhängigkeiten:** keine. Additiv, kein Schema, kein Deploy-Risiko über den normalen PR-Prozess hinaus.
+- **Risiko:** niedrig — reine Reihenfolgen-/Auswahllogik im Cron; Rückweg trivial.
+- **Parallelisierbarkeit:** eigenständig; sollte **vor** dem Beweislauf zu Punkt 25 liegen.
+- **Freigabe:** **NEIN** (Code über den normalen PR-Prozess).
+
 ### P1 — Betriebsreife
 
 #### OP-05 · Understanding-Recovery der bestätigten Alt-Fälle ausführen (Stand korrigiert 2026-07-18)
@@ -348,6 +358,15 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 - **Risiko:** mittel — Force-Push bricht offene Checkouts; mit Backup beherrschbar.
 - **Parallelisierbarkeit:** eigenes Wartungsfenster.
 - **Freigabe:** **JA** (Historie-Rewrite).
+
+#### OP-26 · Offline-Suite in Claude-Cloud-Sitzungen nicht reproduzierbar (neu, Roadmap-Analyse 24–30, 2026-07-29)
+- **Status:** offen. `CLAUDE.md` §4.9 verlangt, dass produktionsrelevante Skripte ihre Secrets aus `process.env` lesen und in Cloud-Sitzungen lauffähig sind; §6 macht `node scripts/run-offline-tests.js` zum Pflichtlauf vor jedem PR. Beides zusammen kollidiert: **sind die Supabase-Secrets in der Sitzung gesetzt, scheitern 14 Suiten (163/177)** — sie prüfen „kein Supabase-Kontext im Testprozess" als **Sicherheitszusicherung** und schlagen fehl, sobald ein Kontext existiert (Beispiel: `drei-profile-e2e-test.js`, Prüfblock 10, „KEINE Production-Gefahr"). Ohne die Secrets bleiben **4** Fehler (173/177, `privacy-vollstaendigkeit`, `profile-db`, `provision-tenant`, `tenant-neutrality`) — diese brauchen weitere Umgebung (u. a. Blob-Token). Für `main` sind 177/177 dokumentiert.
+- **Warum das zählt:** der Pflichtlauf ist in genau der Umgebung unbrauchbar, in der §4.9 das Arbeiten mit Secrets ausdrücklich vorsieht. Die Folge ist entweder ein Fehlalarm (14 rote Suiten ohne Defekt) oder — gefährlicher — Gewöhnung an rote Läufe.
+- **Fehlender Schritt:** der Runner neutralisiert die Umgebung für die Testprozesse selbst (er erzwingt den Netz-Guard bereits — die Secret-Neutralisierung gehört an dieselbe Stelle), **oder** die betroffenen Suiten prüfen „kein DB-Zugriff" statt „keine DB-Konfiguration". Erste Variante ist die kleinere Änderung und hält die Sicherheitszusicherung der Suiten unverändert. Danach die 4 Restfehler getrennt bewerten.
+- **Abhängigkeiten:** keine.
+- **Risiko:** niedrig — betrifft ausschließlich den Testlauf, keine Produktlogik. Achtung: die Neutralisierung darf den Netz-Guard nicht schwächen.
+- **Parallelisierbarkeit:** vollständig parallel.
+- **Freigabe:** **NEIN** (Test-Werkzeug über den normalen PR-Prozess).
 
 ### P3 — Spätere Erweiterungen
 

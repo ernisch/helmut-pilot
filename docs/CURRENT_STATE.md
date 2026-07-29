@@ -1,6 +1,10 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-28 (**Sprint 23B-1: PR #169 gemergt (`b1d450c`) und Migration
+**Letzte Aktualisierung:** 2026-07-29 (**Analyse-Sprint „Roadmap-Punkte 24–30": erfolgreich
+abgeschlossen — reine Analyse, kein Production-Zugriff, keine Produktlogik geändert. Die
+Abnahmekriterien der sieben offenen Phase-1-Punkte sind gegen `main` geprüft und bewertet;
+zwei neue offene Punkte entstanden, **OP-25 pilotblockierend**. Kanonisch:
+[`roadmap/analyse-punkte-24-30.md`](roadmap/analyse-punkte-24-30.md)) · (2026-07-28: **Sprint 23B-1: PR #169 gemergt (`b1d450c`) und Migration
 `20260728_matching_audit` in Production angewendet und vollständig verifiziert.** Algorithmusunabhängige
 Matching-Auditpersistenz: neue append-only Tabelle `matching_runs` (nach Abschluss per Trigger
 unveränderlich), 14 additive Spalten auf `matching_results`, getrennte Engine-/Rezept-/Vektorversion,
@@ -62,6 +66,57 @@ Erfolgskriterien erfüllt**) ·
 **`main`-HEAD:** `b1d450c` (Merge #169 = Sprint 23B-1, Matching-Auditpersistenz; davor `53893fa` =
 Merge #168 = Sprint-23A-Dokumentation, `5528fd8` = Merge #167, `51a533d` = Merge #166, in Production
 ausgerollt — Deployment `dpl_E9JKeXKhd2b5mK2QJDNuRSquXJGg` `READY`, `target: production`)
+
+> **Analyse-Sprint „Roadmap-Punkte 24–30" am 2026-07-29 ausgeführt — ERFOLGREICH ABGESCHLOSSEN
+> (Analyse-Sprint: Ergebnis ist ein Dokument, kein Code).**
+> **Auftrag:** die sieben offenen Phase-1-Punkte 24–30 kritisch bewerten — eigentliches
+> Produktziel, tatsächlich nötiger Nachweis, Pilotblocker ja/nein, Production-Beweis nötig
+> ja/nein, Aufwand.
+> **Vorgehen:** read-only gegen `main` = `b1d450c`; Code gelesen, Offline-Suiten ausgeführt;
+> **kein** Production-Zugriff, **keine** Aktivierung, **kein** Seed, **keine** Produktlogik
+> geändert. Ergebnis: [`roadmap/analyse-punkte-24-30.md`](roadmap/analyse-punkte-24-30.md).
+>
+> **Die drei belastbaren Befunde:**
+> **(1) Neuer Pilotblocker OP-25 — Mandanten-Fairness.** `runCronForTenants`
+> (`server.js:6070–6114`) verarbeitet die Mandate seriell in **alphabetisch fester**
+> Reihenfolge (`tenant-context.js:78`) gegen eine harte Deadline; abgeschnittene Mandate
+> werden **nur protokolliert, nie nachgeholt**, und es gibt keine Rotation. Die
+> Benachteiligung ist damit deterministisch. Am 2026-07-25 real eingetreten: **4 von 6
+> aktiven Mandaten über Tage nie gecrawlt**. Konsequenz für die Roadmap: der
+> Ende-zu-Ende-Nachweis (Punkt 25) misst ohne diese Reparatur nur den Beobachtungstag —
+> **OP-25 gehört vor den Beweislauf.**
+> **(2) Punkt 24 ist falsch benannt.** Der PARDOK-**Parser** ist für beide Länder grün
+> (Gold-Fixtures + adversariale Fälle, eigener Lauf), auch Brandenburg — die ältere
+> Einschätzung „Brandenburg unvollständig" ist überholt. Der fehlende Livepfad ist **kein
+> Defekt, sondern ein gewollter Riegel**: `on`/`live` fallen im Dispatcher bewusst auf `off`
+> zurück (`pardok-dispatch.js:38,41`). Empfehlung: Trennung in **24A Parservertrag**
+> (nahezu erfüllt) und **24B Ingestionsbereitschaft** (Dokumentation, kein Production-Lauf).
+> **(3) Punkte 26/27/28 brauchen für Phase 1 keine Landesaktivierung.** Die Restliste führt
+> die Aktivierung selbst als **P3** (OP-21); ein Production-E2E würde genau den Systemzustand
+> verändern, in dem Punkt 25 bewiesen werden soll. Empfehlung: isolierte, realitätsnahe
+> Nachweise mit echten amtlichen Quelldokumenten — für Punkt 28 durch **Erweiterung des
+> bestehenden `drei-profile-e2e-test.js` um die Landesdimension** (die Mandantentrennung ist
+> dort bereits mit 94 Assertions belegt, nur nicht die Ebenen-/Landestrennung).
+>
+> **Zwei weitere belegte Grenzen, die den Ende-zu-Ende-Nachweis prägen:** das Matching sieht
+> höchstens die **200 zuletzt aktualisierten** Wissensobjekte (`matching.js:461`,
+> `storage.js:2293`) — bei 1 193 Objekten in Production ~17 %, und das Fenster ist eine
+> Anzahl, keine Zeitspanne; und ohne aktives `HELMUT_MATCHING_AUDIT` trägt kein Ergebnis eine
+> Lauf-ID, womit die geforderte Rückverfolgung „Briefing → Matchinglauf" **heute nicht
+> führbar** ist (Punkt 25 hängt insofern an Punkt 23).
+>
+> **Zweiter neuer Punkt: OP-26 (P2).** Die kanonische Offline-Suite ist in einer
+> Claude-Cloud-Sitzung nicht reproduzierbar: **mit** gesetzten Supabase-Secrets **163/177**
+> (14 Suiten prüfen „kein Supabase-Kontext" als Sicherheitszusicherung), **ohne** sie
+> **173/177**; für `main` sind 177/177 dokumentiert. Das kollidiert direkt mit `CLAUDE.md`
+> §4.9 ↔ §6. **Keine dieser 14 Abweichungen ist ein Produktdefekt** — aber der Pflichtlauf ist
+> in der vorgesehenen Arbeitsumgebung unbrauchbar.
+>
+> **Nächster sinnvoller Schritt:** OP-25 bauen (additiv, ~1 Tag, keine Freigabe nötig), danach
+> die Flag-Freigabe für Punkt 23 und erst dann der natürliche Beweislauf für Punkt 25. Offen
+> als **Betreiberentscheidung**: ob Punkt 30 in **1a „Bundesdatenmotor abgenommen"** und
+> **1b „Landesbetrieb abgenommen"** geteilt wird — ohne diese Entscheidung bleiben 24/26/27/28
+> dauerhaft ☐, obwohl die Arbeit dahinter erledigt sein kann.
 
 > **Sprint 23B-1 am 2026-07-28 ausgeführt — TEILWEISE ABGESCHLOSSEN (Umsetzung fertig und
 > offline bewiesen; Production-Abnahme steht definitionsgemäß aus: Merge, Migration und
