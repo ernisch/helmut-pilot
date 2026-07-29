@@ -5243,6 +5243,47 @@ function vsheetStatusHtml(v) {
   return `<div class="vsheet-status"><span class="vsheet-status-dot ${dot}" aria-hidden="true"></span><span>${escapeHtml(label)}</span></div>`;
 }
 
+// „Warum für dich relevant?" (Sprint 23C) — die persönliche Relevanz.
+//
+// ZEIGT NUR AN. Der Satz und die Belege kommen fertig geprüft vom Server
+// (lib/helmut/matching-erklaerung.js) aus den bereits gespeicherten
+// Matching-Belegen. Hier wird NICHTS berechnet, NICHTS abgeleitet, NICHTS
+// ergänzt und kein KI-Aufruf ausgelöst.
+//
+// ZWEI EBENEN, nicht mehr: ein Hauptsatz (immer sichtbar) und die Belege
+// (aufklappbar, per <details> — nativ, ohne zusätzliches JS, auf dem Telefon
+// mit einem Daumen bedienbar und für Screenreader korrekt).
+//
+// EHRLICHKEIT: Fehlt die Erklärung oder ist sie unbelegt, liefert der Server
+// `null` und dieser Abschnitt entfällt ERSATZLOS. Es gibt bewusst keinen
+// Platzhaltertext, der einen Bezug behauptet — lieber gar keine Aussage als
+// eine erfundene (START_HERE.md §5.2).
+function vsheetRelevanzHtml(v) {
+  const r = v && v.relevanz;
+  if (!r || typeof r !== "object") return "";
+  const satz = lageField(r.satz);
+  if (!satz) return "";
+  // Defensiv gegen fehlerhafte Serverantworten: nur Objekte mit Text, hart auf
+  // vier begrenzt (der Server begrenzt bereits, der Client verlässt sich nicht
+  // darauf) — eine lange Liste würde aus der Antwort einen Bericht machen.
+  const belege = (Array.isArray(r.belege) ? r.belege : [])
+    .map((b) => lageField(b && b.text))
+    .filter(Boolean)
+    .slice(0, 4);
+  return `
+    <section class="vsheet-sec">
+      <h3 class="vsheet-h">Warum für dich relevant?</h3>
+      <p class="vsheet-relevanz">${escapeHtml(satz)}</p>
+      ${belege.length ? `
+      <details class="vsheet-belege">
+        <summary>Belege ansehen</summary>
+        <ul>
+          ${belege.map((t) => `<li>${escapeHtml(t)}</li>`).join("")}
+        </ul>
+      </details>` : ""}
+    </section>`;
+}
+
 // Rendert den kompletten Sheet-Inhalt (8 Abschnitte, leere ausgeblendet) aus den
 // bereits vorhandenen Kartendaten — keinerlei Neuberechnung/Fetch/KI.
 function vsheetContentHtml(v) {
@@ -5261,6 +5302,11 @@ function vsheetContentHtml(v) {
   // pathologisches Splitten — es wird KEIN Inhalt erzeugt oder gekürzt.
   const warumSrc = lageHumanize(lageField(v.whyRelevant) || lageField(v.summary && v.summary.warumWichtig));
   const warumPoints = warumSrc ? vsheetSentences(warumSrc, 40) : [];
+  // (3a) Warum für DICH relevant — Sprint 23C. Bewusst VOR "Warum wichtig?":
+  // "Warum wichtig?" ist die allgemeinpolitische Einordnung des Vorgangs,
+  // dieser Abschnitt ist die persönliche Antwort auf "Was hat das mit meinem
+  // Mandat zu tun?" — und die interessiert eine Abgeordnete zuerst.
+  const relevanz = vsheetRelevanzHtml(v);
   // (4) Empfehlung — bestehendes recommendation (Fallback: handlungsempfehlung).
   const reco = lageHumanize(lageField(v.recommendation) || lageField(v.empfehlung));
   // (5) Betroffene
@@ -5268,7 +5314,7 @@ function vsheetContentHtml(v) {
   // (7) Chronologie — bereits in der Karte vorhanden (buildChronology), keine Neuberechnung.
   const chrono = Array.isArray(v.chronologie) ? v.chronologie : [];
 
-  const hasBody = kurz || warumPoints.length || reco || betroffene || sourcesSorted.length || chrono.length;
+  const hasBody = kurz || relevanz || warumPoints.length || reco || betroffene || sourcesSorted.length || chrono.length;
 
   return `
     <header class="vsheet-head">
@@ -5286,6 +5332,8 @@ function vsheetContentHtml(v) {
       <p class="vsheet-lede">${escapeHtml(kurz)}</p>
       ${vsheetStatusHtml(v)}
     </section>` : vsheetStatusHtml(v) ? `<section class="vsheet-sec">${vsheetStatusHtml(v)}</section>` : ""}
+
+    ${relevanz}
 
     ${warumPoints.length ? `
     <section class="vsheet-sec">
