@@ -503,9 +503,11 @@ vor einer Aktivierung ist das zu prüfen, nicht danach.
 - **Mutationsprobe: 6 von 6 Mutationen machen die Suite rot** — Konfliktschranke entfernt (2 rot) ·
   Platzhalterschranke entfernt (2) · Bezug aus `DokNr` erfunden (7) · Kennung nicht normalisiert (3) ·
   Bezug als `cluster_id` geschrieben (3) · Dedup-Regel 0 ausgeschaltet (10).
-- Gesamt-Offline-Suite **168/182**, identisch zum Ausgangsstand auf `main` (Baseline im Worktree
-  gegengeprüft): dieselben 14 Suiten scheitern, alle an fehlendem DB-/Netzzugang in der lokalen
-  Sitzung — **keine** durch diesen Sprint. Browser-/Mobile-Smoke **32/32**.
+- Gesamt-Offline-Suite **182/182 grün im CI** (Lauf `30494735859`, Commit `70e746d`, 42 s) —
+  **beide Pflicht-Checks grün**: `Syntax + Offline-Suiten` und `Browser-/Mobile-Smoke (Chromium)`.
+  In dieser Sitzung lokal **168/182**; die 14 Abweichungen sind **umgebungsbedingt** (kein DB-/
+  Netzzugang) und **identisch zum im Worktree gegengeprüften Ausgangsstand auf `main`** — also
+  keine durch diesen Sprint. Browser-/Mobile-Smoke **32/32** lokal und im CI.
 - Bei H8f wurde eine Schranke ergänzt: der Nachweis brach unter Mutation mit `TypeError` ab statt
   rot zu werden, wodurch alle nachfolgenden Zeilen still ausfielen.
 
