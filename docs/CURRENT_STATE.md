@@ -1,6 +1,31 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-29 (**Sprint 23C auf `main` = `a53e37b` rebasiert — PR #171
+**Letzte Aktualisierung:** 2026-07-29 (**Sprint 23C-2A: Befund M-7 behoben — die Erklärung wird
+jetzt gegen das TATSÄCHLICHE Wissensobjekt gebildet.** Der Schreibpfad lud für die
+Merkmalsauflösung ein Fenster von 200 nach Änderungszeit sortierten Wissensobjekten, während die
+Vektorsuche über alle **1 702** läuft; jeder Treffer außerhalb dieses Fensters wurde gegen ein
+**leeres** Objekt ausgewertet und blieb ohne `matched_features`, `signale` und `begruendung`.
+Behoben durch **gebündeltes Laden nach Kennung** (`storage.listKnowledgeObjectsByIds`, eine Anfrage
+je 100 Kennungen — bei 20 Treffern genau **eine**, kein N+1, 20 statt 200 gelesene Zeilen).
+**Kandidaten, Ähnlichkeiten, Ränge, Reihenfolge und Ergebniskennungen bleiben byte-identisch**
+(Abschnitt B der neuen Suite). **Keine Versionsanhebung nötig und bewusst keine vorgenommen:** der
+Eingabefingerabdruck ändert sich von allein und exakt bei den betroffenen Läufen, weil
+`ko_eingabe_hash` von `null` auf einen echten Hash wechselt — nicht betroffene Läufe bleiben
+idempotent. **0 KI-Aufrufe, 0,00 USD, keine Migration, kein Flag, keine UI-Änderung, keine
+Production-Datenänderung.** Erwartete Abdeckung nach kontrollierter Neuberechnung: **63 → 191 von
+271 Zeilen (23,2 % → 70,5 %)**, im sichtbaren 12er-Lagefenster **46 → 71 von 84 (54,8 % → 84,5 %)**.
+Tests: neue Suite **60/60**, Offline-Suite **180/180** (Ausgangsmessung 179/179), Browser-Smoke
+**32/32**, **externe Mutationsprobe gegen den alten 200er-Stand: 11 Fehlschläge**, **CI-Gate grün —
+beide Pflicht-Checks** (Lauf `30450796962`). **Zwei neue
+Befunde** aus der rein lesenden Restanalyse: **M-8** — `match_knowledge_objects` kennt keinen
+Schwellenwert, **40** aktuelle Zeilen tragen eine Ähnlichkeit ≤ 0 (min −0,0735) auf den Rängen
+1–20, sind also reine Auffüllung; **M-9** — ein Mandatsprofil ohne Partei/Ausschuss/Schwerpunkt kann
+konstruktionsbedingt nie einen Beleg erzeugen (ein Mandant, 20 von 20 Zeilen).
+**Produktempfehlung: KEIN Erklärbarkeits-Gate** — es entfernte bei gepflegten Profilen genau einen
+Vorgang und leerte beim Platzhalterprofil die Lage vollständig; erst M-8/M-9 und das semantische
+Matching lösen, was ein Gate nur verstecken würde. **PR #174 offen, nicht gemergt.** Details:
+[`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md) Teil D, §34–§40.) ·
+(**Sprint 23C auf `main` = `a53e37b` rebasiert — PR #171
 enthält jetzt ausschließlich die sichtbare Erklärung.** Die in der ersten Fassung enthaltene
 Änderung an `lib/helmut/storage.js` (Aktualitätsfilter) ist inhaltsgleich über den Hotfix
 **PR #172** in `main` und wurde beim Rebase **entfernt** — `storage.js` ist jetzt byte-identisch
@@ -102,12 +127,99 @@ Werkzeug-Härtung W-1+W-2 gemergt (#152) · **W-2 erfolgreich abgeschlossen:
 Migration `20260727` angewendet, Flag aktiv, echter Production-Lauf
 `crawl-20260727160048-ct8lt` relational gespeichert und erhalten — alle 15
 Erfolgskriterien erfüllt**) ·
-**`main`-HEAD:** `5c254c4` (Merge #170 = Doku-Nachtrag zur angewendeten Migration; davor `b1d450c` =
+**`main`-HEAD:** `387b1a5` (Merge #171 = Sprint 23C, sichtbare Relevanzerklärung; in Production
+ausgerollt — Deployment `dpl_4tyHsdwjCYEHwGMz6zAAcsAvMmUC`, `target: production`, `READY`,
+am 2026-07-29 rein lesend geprüft. Davor `a53e37b` = Merge #173, `24b436e` = Merge #172 = Hotfix
+Aktualitätsfilter, `5c254c4` = Merge #170 = Doku-Nachtrag zur angewendeten Migration; davor `b1d450c` =
 Merge #169 = Sprint 23B-1, Matching-Auditpersistenz, `53893fa` = Merge #168 = Sprint-23A-Dokumentation,
 `5528fd8` = Merge #167, `51a533d` = Merge #166, in Production ausgerollt — Deployment
 `dpl_ChLoTuKztU1B835PfckELKp8doMZ` (Redeploy von `dpl_7kag3HkqK61KTRAu2y9jBUFhxBo1`) `READY`
 2026-07-28, 20:56:48 UTC, `target: production`; dieser Redeploy trägt zugleich
 `HELMUT_MATCHING_AUDIT=on`)
+
+> **Sprint 23C-2A am 2026-07-29 ausgeführt — TEILWEISE ABGESCHLOSSEN (Umsetzung fertig und
+> offline vollständig bewiesen; Production ausschließlich lesend geprüft, **PR #174** offen, Merge und
+> Abnahme stehen aus).**
+> **Startprüfung:** Arbeitsbaum sauber, Branch `claude/matching-explanation-coverage-cnzjgy` auf
+> `origin/main` = `387b1a5`. **PR #171 ist in `main`** (Merge-Commit `387b1a5`), das zugehörige
+> **Production-Deployment `dpl_4tyHsdwjCYEHwGMz6zAAcsAvMmUC` ist `READY`** (`target: production`,
+> Commit `387b1a5`) — beide Startbedingungen erfüllt. Bestand gegengemessen (rein lesend):
+> **271** aktuelle `matching_results` über **7** Mandanten, **63** mit Beleg, **208** ohne —
+> exakt die Ausgangsmessung des Sprintauftrags.
+>
+> **Der Fehler (M-7), in einem Satz:** die Vektorsuche läuft über **alle 1 702** Wissensobjekte,
+> die Merkmalsauflösung danach lud aber nur ein Fenster der **200 zuletzt geänderten**
+> (`listKnowledgeObjects({limit:200})`, `matching.js:461`). Jeder Treffer außerhalb dieses
+> Fensters wurde gegen ein **leeres Objekt** ausgewertet und blieb ohne `matched_features`,
+> `signale` und `begruendung` — obwohl Ausschuss, Partei, Wahlkreis und Schwerpunkt tatsächlich
+> übereinstimmten. Der Verlust entstand im **Schreibpfad**, nicht in der Anzeige; die Oberfläche
+> aus PR #171 hat immer korrekt gearbeitet.
+>
+> **Geliefert (zwei Produktionsdateien, additiv):** **(1)** neuer, gebündelter Lesezugriff
+> `storage.listKnowledgeObjectsByIds(ids)` — **eine** PostgREST-Anfrage je 100 Kennungen
+> (`id=in.(…)`), bei der produktiven Trefferzahl 20 also genau **eine**; dieselbe Leseprojektion
+> wie bisher; dedupliziert und byte-stabil sortiert (deterministisch); **mandantenneutral**
+> (`knowledge_objects` trägt kein `user_id` — die Mandantengrenze liegt eine Ebene höher und
+> bleibt unverändert); **fail closed und laut** (ein echter Lesefehler wirft `StorageReadError`,
+> statt still als „nichts gefunden" zu erscheinen — genau diese Verwechslung **ist** M-7).
+> **(2)** `matching.js` lädt die Trefferobjekte über ihre Kennungen statt über das Fenster.
+> Die Änderung liegt **hinter** der Trefferbestimmung und **vor** der Ergebnisprojektion: sie
+> liest, sie wählt nicht aus, sie bewertet nicht neu.
+>
+> **Warum kein größeres Limit:** `listKnowledgeObjects` liefert die zuletzt **geänderten**
+> Objekte, die Trefferliste folgt der **Ähnlichkeit** — beide Ordnungen sind unabhängig. Jedes
+> feste N ist nur eine Wette auf zufällige Überlappung, sie wird mit jedem neuen Wissensobjekt
+> unwahrscheinlicher und bricht **still**. Ein Fenster von 2 000 wäre zudem in die bekannte
+> stille 1 000-Zeilen-Kappung von PostgREST gelaufen (Nebenbefund W-1) und hätte die zehnfache
+> Lesemenge verursacht. Das Laden nach Kennung ist das einzige konstruktionsbedingt korrekte
+> **und** zugleich das billigste Verfahren: **20 statt 200** gelesene Zeilen je Lauf.
+>
+> **Versionsentscheidung — bewusst KEINE Anhebung.** Der Eingabefingerabdruck trägt je Kandidat
+> `id | Ähnlichkeit | ko_eingabe_hash`. Für einen Treffer außerhalb des Fensters war dieser Hash
+> `null`, nach der Behebung ist er echt: der Fingerabdruck ändert sich damit **von allein und
+> exakt bei den betroffenen Läufen**, der bestehende Idempotenzriegel lässt dort genau eine neue
+> Generation zu. Läufe, deren Treffer schon im Fenster lagen, behalten ihren Fingerabdruck und
+> bleiben idempotent. Eine Versionsanhebung hätte dagegen **jeden** Lauf **jedes** Mandanten neu
+> erzeugt und außerdem etwas Falsches behauptet: Rezept, Engine und Vektor rechnen exakt wie
+> vorher — sie bekommen nur endlich ihren tatsächlichen Eingang zu sehen.
+>
+> **Tests:** neue Suite `matching-erklaerungsabdeckung-test.js` **60/60** (Abschnitte: Fehler +
+> Gegenprobe · Unveränderlichkeit von Scores/Rängen/Kennungen · Bündelung ohne N+1 · **11
+> Prüfungen gegen ein echtes lokales PostgREST-Doppel**, inkl. 150 Kennungen → 2 Anfragen und
+> HTTP 500 → `StorageReadError` · Fail-closed · Mandantengrenze · 0 KI · Fingerabdruck und
+> Idempotenz · Oberfläche ohne UI-Änderung · Mutation). **Offline-Suite 180/180** gegen eine
+> Ausgangsmessung von **179/179** auf unverändertem Stand · **Browser-/Mobile-Smoke 32/32** ·
+> **externe Mutationsprobe:** der Schreibpfad wurde testweise auf die alte 200er-Zeile
+> zurückgesetzt — die neue Suite meldet dann **11 Fehlschläge** und Exit-Code 1, während
+> Abschnitt B (Scores/Ränge) korrekt grün bleibt. Danach Mutation entfernt und erneut grün.
+> **CI-Gate grün:** beide Pflicht-Checks — `Syntax + Offline-Suiten` und
+> `Browser-/Mobile-Smoke (Chromium)`, Lauf `30450796962` auf `4626767`.
+>
+> **Rein lesende Restanalyse (`scripts/matching-erklaerungsluecke-analyse.js`, schreibt nichts):**
+> von den 208 unbelegten Zeilen gewinnen **128** einen Beleg, **80** bleiben ehrlich leer →
+> erwartete Abdeckung **191/271 = 70,5 %**; im sichtbaren 12er-Lagefenster **46 → 71 von 84
+> (54,8 % → 84,5 %)**, für jeden Mandanten mit gepflegtem Profil **11–12 von 12**.
+> Die 80 zerfallen in: **20** bei einem Mandanten mit Platzhalterprofil (kein Beleg möglich,
+> Befund **M-9**), **7** Wissensobjekte ohne eigene Merkmale, **73** mit beidseitigen, aber
+> wirklich nicht überschneidenden Merkmalen. **40 der 80 tragen eine Ähnlichkeit ≤ 0**
+> (min −0,0735) auf den Rängen **1–20** — sie stehen nur im Ergebnis, weil die RPC die Top-N
+> **unbedingt** liefert (Befund **M-8**); die übrigen 40 werden ausschließlich von
+> Wortüberschneidung getragen. Geprüft und **ohne Treffer**: namentliche Erwähnung (0),
+> betroffene Geografie (0), erwähnte Geografie (0) — es gibt in diesem Rest **keine billige
+> zweite Ernte**.
+>
+> **Produktempfehlung: KEIN Erklärbarkeits-Gate**, unbelegte Treffer sichtbar lassen (= der
+> heutige, in PR #171 umgesetzte Zustand: ohne Beleg kein Abschnitt, kein Ersatztext). Ein Gate
+> entfernte bei gepflegten Profilen genau **einen** Vorgang, leerte beim Platzhalterprofil die
+> Lage aber **vollständig** — und es verstecke M-8, statt ihn zu beheben. Reihenfolge stattdessen:
+> diesen Fix ausrollen → Profilpflege/OP-04 → Schwellenwert für die RPC (eigener,
+> freigabepflichtiger Sprint, verändert Kandidaten und Ränge) → semantisches Matching (22C2).
+>
+> **Nicht angefasst:** `knowledge_object_embeddings`, semantisches Matching, Briefing-Logik,
+> Cron, Budgets, Flags, Schema, Migrationen, `client.js`/`styles.css`, Lesepfad,
+> `matching-audit.js`/`matching-contract.js`/`matching-begruendung.js`/`matching-erklaerung.js`.
+> **Kein Production-Write, keine Migration, kein Deployment, kein Merge, keine Neuberechnung.**
+> Kanonisch: [`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md) Teil D (§34–§40).
 
 > **Sprint 23B-1 am 2026-07-28/29 ausgeführt — ERFOLGREICH ABGESCHLOSSEN (Umsetzung offline
 > bewiesen; alle drei Freigabegates einzeln erteilt und ausgeführt: Merge → Migration →
@@ -936,6 +1048,7 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 
 | PR | Inhalt | Einschätzung |
 |---|---|---|
+| **#174** | **Sprint 23C-2A: Erklärungsabdeckung im Matching-Schreibpfad (Befund M-7)** — der Schreibpfad löste die Merkmale gegen ein Fenster der 200 zuletzt geänderten Wissensobjekte auf, während die Vektorsuche über alle 1 702 läuft; jeder Treffer außerhalb blieb ohne `matched_features`/`signale`/`begruendung`. Jetzt gebündeltes Laden nach Kennung (`storage.listKnowledgeObjectsByIds`, eine Anfrage je 100 Kennungen, kein N+1, 20 statt 200 gelesene Zeilen, tenant-sicher, deterministisch, fail closed). Scores, Ränge, Reihenfolge und Ergebniskennungen byte-identisch; **keine** Versionsanhebung nötig. Neue Suite **60/60**, Offline **180/180** (Ausgang 179/179), Browser **32/32**, externe Mutationsprobe **11 Fehlschläge**. Keine Migration, kein Flag, keine UI-Änderung, 0,00 USD | **offen — Merge ist eine Freigabeentscheidung.** Keine fachliche Vorbedingung offen (PR #171 ist in `main` und ausgerollt). Erwartete Wirkung: Erklärungsabdeckung 23,2 % → 70,5 % im Bestand, 54,8 % → 84,5 % im sichtbaren Lagefenster — ohne Neuberechnung, allein durch die nächsten regulären Läufe |
 | ~~#169~~ | **Sprint 23B-1: algorithmusunabhängige Matching-Auditpersistenz** — neue Tabelle `matching_runs` (append-only, nach Abschluss per Trigger unveränderlich), 14 additive Spalten auf `matching_results`, Migration `20260728_matching_audit` + Rollback, drei kleine Module (`matching-contract` / `matching-audit` / `matching-begruendung`), atomare Veröffentlichung (`helmut_publish_matching_run`, SECURITY INVOKER), Anbindung des Legacy-Matchings hinter `HELMUT_MATCHING_AUDIT` (**Default AUS**), neue Suite 178/178, Offline-Suite 177/177 | **gemergt** (`b1d450c`). **Migration am 28.07.2026, 20:20:57 UTC in Production angewendet und vollständig verifiziert** (287→287 Zeilen byte-identisch, Fingerabdruck unverändert, RLS/Grants/Funktionen/Trigger korrekt, 0 Production-Fehler, Rollback nicht nötig). **Gate 3 inzwischen ebenfalls erteilt:** `HELMUT_MATCHING_AUDIT=on` (nur Production) seit 28.07. ~20:55 UTC, erster Auditlauf 29.07. 04:05 UTC, Idempotenz 08:07:20 UTC bewiesen — Sprint 23B-1 damit erfolgreich abgeschlossen |
 | ~~#170~~ | **Doku-Nachtrag: Production-Migration `20260728_matching_audit` angewendet und verifiziert** — reine Statuspflege (CURRENT_STATE, `matching-nachvollziehbarkeit.md` §21.6, Roadmap-Punkt 23, ARCHITECTURE §7d) | **gemergt** 2026-07-28, 20:37 UTC (`5c254c4`), beide Pflicht-Checks grün (Lauf `30397010300`), in Production ausgerollt (Deployment `dpl_7kag3HkqK61KTRAu2y9jBUFhxBo1` `READY`, später als `dpl_ChLoTuKztU1B835PfckELKp8doMZ` mit gesetztem Flag neu ausgerollt). Änderte keine Production-Daten |
 | ~~#166~~ | **Sprint 22C1 abgeschlossen: Production-Backfill ausgeführt und belegt** — Protokoll §14.6 (Migration angewendet und verifiziert, Canary 56/56, 772/772 eingebettet, Idempotenz 0 Aufrufe/0 Writes, Vorher/Nachher-Nachweise), Roadmap-Punkt 22 auf erfüllt, Werkzeugbefund W-3 behoben (`process.exitCode` statt `process.exit()`) | **gemergt** 2026-07-28, 15:52 UTC (`51a533d`), beide Pflicht-Checks grün (Lauf `30371556515`), in Production ausgerollt (Deployment `dpl_E9JKeXKhd2b5mK2QJDNuRSquXJGg` `READY`). Der Production-Zustand war zum Merge-Zeitpunkt bereits hergestellt — der PR selbst änderte keine Production-Daten |
@@ -1208,6 +1321,17 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 
 ## 11 · Nächster sinnvoller Sprint
 
+> **Nachtrag 2026-07-29 (Sprint 23C-2A):** Für Roadmap-Punkt 23 ist der nächste Schritt keine
+> Entwicklung mehr, sondern eine **Freigabeentscheidung**: Merge von PR #171 (sichtbare Erklärung,
+> bereits in `main`) ist erfolgt, offen ist der Merge von **PR #174** (Sprint 23C-2A, Erklärungsabdeckung).
+> Danach steigt die Abdeckung **ohne weiteren Eingriff** mit den regulären Crawl-Läufen — wegen
+> Befund **B5** (Crawl-Zeitlimit) und **B6** (kein Einzelmandanten-Einstieg) über mehrere Tage
+> statt auf einen Schlag. Erst danach ist zu entscheiden, ob **M-8** (fehlender Schwellenwert der
+> RPC — 40 aktuelle Zeilen mit Ähnlichkeit ≤ 0) als eigener, freigabepflichtiger Sprint angegangen
+> wird; er verändert Kandidatenmenge und Ränge und ist deshalb **keine** Fehlerbehebung mehr,
+> sondern eine Produktentscheidung. **M-9** (Mandatsprofil ohne Partei/Ausschuss/Schwerpunkt)
+> ist Betriebsarbeit und hängt an **OP-04**.
+
 **Empfehlung: die eine offene OP-01-Betreiberentscheidung einholen — Supabase Pro
 (~25 $/Monat) + PITR aktivieren.** Der kostenfreie Teil von OP-01 ist seit
 2026-07-28 erledigt (Vollsicherung + bewiesener isolierter Rückweg, RTO gemessen);
@@ -1298,6 +1422,7 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 
 | Sprint | Datum | Zustand |
 |---|---|---|
+| **Sprint 23C-2A: Erklärungsabdeckung im Matching-Schreibpfad reparieren (Befund M-7)** | 2026-07-29 | **Teilweise abgeschlossen (Umsetzung fertig und offline vollständig bewiesen; Production ausschließlich lesend geprüft, **PR #174** offen — nicht gemergt).** Der Schreibpfad löst die Merkmale eines Treffers jetzt gegen das **tatsächlich zugehörige** Wissensobjekt auf: gebündeltes Laden nach Kennung (`storage.listKnowledgeObjectsByIds`, eine Anfrage je 100 Kennungen, kein N+1, 20 statt 200 gelesene Zeilen) statt eines Fensters der 200 zuletzt geänderten Objekte. **Kandidaten, Ähnlichkeiten, Ränge, Reihenfolge und Ergebniskennungen byte-identisch.** Keine Versionsanhebung — der Fingerabdruck ändert sich von allein und nur bei den betroffenen Läufen (`ko_eingabe_hash` `null` → echt). Tests: neue Suite **60/60**, Offline **180/180** (Ausgang 179/179), Browser **32/32**, externe Mutationsprobe **11 Fehlschläge**. Rein lesende Restanalyse: **63 → 191 von 271** erwartete Abdeckung (23,2 % → 70,5 %), sichtbares Lagefenster **46 → 71 von 84**. Neue Befunde **M-8** (RPC ohne Schwellenwert: 40 Zeilen mit Ähnlichkeit ≤ 0 auf den Rängen 1–20) und **M-9** (Platzhalterprofil kann nie belegen). Empfehlung: **kein Erklärbarkeits-Gate**. **Offen:** Merge von PR #174 und Production-Abnahme (Freigabeentscheidung). |
 | **Sprint 23C: „Warum ist das relevant?“ produktseitig umsetzen** | 2026-07-29 | **Teilweise abgeschlossen (implementiert, offline und im Browser bewiesen, PR #171 offen — nicht gemergt).** **Auf `main` = `a53e37b` rebasiert.** Verbleibende Funktion: **„Warum für dich relevant?“** in der Vorgangs-Detailansicht — ein deterministischer Hauptsatz plus zwei bis vier aufklappbare Belege (`<details>`, nativ, kein zusätzliches JavaScript), ausschließlich aus bereits persistierten Feldern (`begruendung`, `signale`, ersatzweise `matched_features`). **Phase-1-Audit (read-only):** einziger produktiver Leser von `matching_results` ist `storage.listMatchingResults`, einziger Konsument `lage.js:325`, Auslieferung im Lage-Payload von `/api/app/start`; **Radar liest die Ergebnisse nicht** (der Entwurf in §11 der Matching-Doku war insoweit unzutreffend); vor diesem Sprint erreichte **kein einziges Feld** der Ergebniszeile den Browser — `lage.js` nutzte nur `knowledge_object_id` und verwarf `signale`/`begruendung`. **Der in diesem Sprint gefundene Lesepfadfehler wurde getrennt als Hotfix PR #172 ausgeliefert** und ist beim Rebase aus diesem PR **entfernt** worden; `storage.js` ist byte-identisch mit `main`. **Korrektur zur ersten Fassung:** dort stand „latent, kein Nutzer betroffen“ — das galt nur vor der Flag-Aktivierung; mit `HELMUT_MATCHING_AUDIT=on` und 19 abgelösten Zeilen war der Befund **aktiv**. **Geliefert:** neues Modul `matching-erklaerung.js` (rein lesend, 0 KI/DB/Netz/Zufall, Weißliste auf vier Signalarten, Rückgabe nur `{satz, belege}` oder `null`) · `lage.js` führt die Erklärung mit und reicht sie als `relevanz` an der Vorgangskarte durch · `client.js` rendert den Abschnitt vor „Warum wichtig?“ · `styles.css` mit bestehenden Tokens. **Bewusste Abweichung vom Entwurf (§11):** Anzeige **nur** in der Detailansicht, **nicht** auf der Lage-Karte — die Karte trägt bereits drei Zeilen mit gemessenen Zeichenbudgets und Line-Clamps, eine vierte hätte verdrängt oder abgeschnitten; die zweistufige Form passt nicht in eine geclampte Karussellkarte; die Karte ist der Einstieg, ein Tippen öffnet das Sheet. Kleinste Lösung: ein Anzeigeort, keine neue Karte, kein Navigationspunkt, keine neue Designabstraktion. **Ehrlichkeit:** ohne Beleg **kein Abschnitt** — der im Auftrag vorgeschlagene Fallbacksatz („Helmut hat einen Bezug zu deinem Profil erkannt…“) wurde **bewusst nicht** übernommen, weil eine Legacy-Zeile ohne `matched_features` gerade **nicht** belegt, dass ein Bezug erkannt wurde; das wäre eine erfundene Begründung. **Abdeckung am 2026-07-29 rein lesend gemessen (271 aktuelle Zeilen: 251 Altzeilen, 20 Auditzeilen):** verwertbare `begruendung` 3 (1,1 %) · verwertbare `signale` 3 (1,1 %) · verwertbare `matched_features` 63 (23,2 %) · **kein Beleg 208 (76,8 %)** · **UI zeigt Erklärung bei 63 (23,2 %)**. Der scheinbare Widerspruch „`signale` bei 20/20 Auditzeilen“ löst sich auf: strukturell ja, **verwertbar nur bei 3** — bei 17 der 20 enthält `signale` ausschließlich `legacy_vektor` (den Rohwert, der bewusst nie angezeigt wird). `signale` wird aus `matched_features` abgeleitet und kann nie mehr Belege enthalten als diese. **Der `matched_features`-Fallback greift vollständig:** 60 von 60 Zeilen ohne `signale`, aber mit Merkmalen werden erklärt (100 %); nur zwei Rohformen im Bestand (leeres Array 208, `Array<type+value>` 63). **Ursache der Lücke ist Befund M-7, belegt:** read-only Nachrechnung der 208 leeren Zeilen gegen die gespeicherten KOs (141) und Profile (7) ergibt **128 Zeilen, die Merkmale hätten** (Verlust durch das 200er-Ladefenster in `matching.js:461` — die Vektorsuche läuft über alle 1 507 KOs, die Merkmalsauflösung nur über 200; ein Treffer außerhalb wird gegen `{}` gematcht) und **80 echt ohne Überschneidung**. **Ein rein darstellender Fix kann die Abdeckung nicht verbessern** (geprüft): aus `signale` ist nichts zu holen, der Fallback greift schon zu 100 %, und eine Neuberechnung zur Anzeigezeit nutzte das *heutige* Profil statt des Laufzeitstands (Befund M-3) — der gezeigte Grund wäre dann nicht mehr nachweislich der Grund des Rankings und verdeckte M-7 zusätzlich (falsches Grün). **23,2 % ist die ehrliche Obergrenze ohne M-7; mit behobenem M-7 wären 191/271 = 70,5 % erreichbar, ohne eine Zeile Anzeigecode zu ändern.** **Korrektur:** die früher hier geführten 78,4 % stammten aus Sprint 23A (225/287) und waren nicht der heutige Stand; gemessen sind es 76,8 % (208/271). Details: [`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md) §33. **Strukturell nichts Technisches sichtbar** (Weißliste statt Verbotsliste): keine Hashes, Kennungen, Versionen, Rohvektoren, `similarity`/`rank`/ `legacy_vektor` — **keine einzige Ziffer**. **Tests:** neue Suite **64/64** (Modul A1–A24, Vorbedingung im Lesepfad B1–B5, Serverpfad C1–C13, echte Client-Renderer im `vm` D1–D16, Nichtregression E1–E6) · **Offline-Suite 179/179** in bereinigter Umgebung · **Browser-/Mobile-Smoke 32/32** · Chromium-Sichtprüfung 390×844 (kein horizontaler Überlauf, Belege zugeklappt, Trefferfläche 32 px, vier Belege ohne Textüberlauf) · **CI-Gate grün, beide Pflicht-Checks**. **Nicht enthalten:** keine Änderung am Lesepfad, keine Migration, kein Flag, keine Cron-/Env-Änderung, kein Production-Zugriff, keine Matchingänderung, keine Embeddings, kein LLM-Aufruf. Kanonisch: [`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md) Teil C (§26–§32). **Merge-Bedingung:** die ursprüngliche Sperre ist mit PR #173 (23B-1 abgeschlossen) und PR #172 (Hotfix in `main`) **erfüllt** — es bestehen keine fachlichen Vorbedingungen mehr, der Merge ist nur noch eine Freigabeentscheidung des Betreibers |
 | **Hotfix: abgelöste Matching-Ergebnisse aus aktiven Nutzerpfaden ausschließen** | 2026-07-29 | **Teilweise abgeschlossen (Fix fertig, offline bewiesen und als PR geliefert; Merge/Deployment sind Freigabeentscheidungen und sind bewusst nicht erfolgt).** **Anlass:** `HELMUT_MATCHING_AUDIT` ist in Production **aktiv**; erster Lauf **290 Zeilen — 271 `aktuell=true`, 19 `aktuell=false`** (die 19 bei `annika-klose`). Der in Sprint 23C gefundene Lesepfadfehler ist damit **kein latenter Befund, sondern ein aktiver Pilotblocker**. **Fehler:** `storage.listMatchingResults` filterte nicht auf `aktuell`; einziger produktiver Konsument ist `lage.js:325` („Aktuelle Lage", mittelbar das Briefing-Narrativ) → abgelöste Ergebnisse konnten als aktuelle Lage erscheinen **und** aktuelle Vorgänge aus dem `limit` verdrängen. **Fix (eine Datei, 2 Stellen):** `includeAbgeloest = false` als Default-Parameter, im Endpoint zusätzlich `&aktuell=is.true`. Filter greift **serverseitig vor `limit`** (PostgREST: where → order → limit), **Sortierung unverändert** `created_at.desc`, **keine Zeile gelöscht**, Historienzugang über `includeAbgeloest: true` erhalten, Mandantenfilter unverändert Pflicht. **Nicht angefasst:** Matching-Berechnung, Scores, Ränge, `matched_features`, `matching_runs`, Audit-Publikation, Cron, Understanding, Briefing-Erzeugung, 23C-UI-Erklärung, Schema, Migrationen, Env. **Tests:** neue Suite `matching-aktualitaet-test.js` **29/29** (Standardpfad · Limit-Verdrängung inkl. Gegenprobe · Historienzugang · Tenant-Isolation · Sortierung · Lage-Nutzerpfad · Legacy `run_id=NULL` · keine Schreiboperation · kein KI-Aufruf); **Mutationsprobe gegen den unkorrigierten Stand: 7 Fehlschläge** (der Test greift wirklich). Offline-Suite **175/178** gegen **174/177** auf unverändertem `main` (`5c254c4`) — **identische 3 Vorbefunde** (`privacy-vollstaendigkeit`, `provision-tenant`, `tenant-neutrality`, Befund E-2), also 0 Regressionen. Browser-/Mobile-Smoke **32/32**, Secret-Scan 0 Treffer. **Keine Production-Daten geändert, kein Production-Lauf ausgelöst, kein Flag/Cron/Secret angefasst, 0 KI-Kosten** — der Idempotenznachweis von Sprint 23B bleibt unberührt. **Roadmap-Punkt 23 bleibt offen.** **Auswirkung auf PR #171:** der dort enthaltene Aktualitätsfix ist jetzt doppelt vorhanden und wird nach dem Merge dieses Hotfixes aus #171 entfernt bzw. auf ihn aufgebaut; **#171 bleibt ungemergt, bis Sprint 23B abgeschlossen ist**. **Nächster Schritt:** Merge-Freigabe außerhalb eines aktiven Cron-/Matching-/Understanding-Fensters |
 | **Sprint 23B-1: algorithmusunabhängige Matching-Auditpersistenz** | 2026-07-28/29 | **Erfolgreich abgeschlossen — alle drei Freigabegates einzeln erteilt und ausgeführt (Merge → Migration → Aktivierung), Production-Abnahme inklusive Idempotenznachweis erbracht.** Start Gate im zweiten Anlauf vollständig passiert (erster Anlauf gestoppt, weil Sprint 23A noch nicht gemergt war; nach **PR #168** erneut geprüft). **Geliefert:** `matching_runs` als append-only Auditprotokoll mit DB-Trigger gegen jede fachliche Änderung eines abgeschlossenen Laufs · 14 additive, NULL-fähige Spalten auf `matching_results` **ohne Backfill** · echter Unique-Index `(user_id, knowledge_object_id)` · **Teilindex auf (user_id, eingabe_fingerabdruck) where status='vollstaendig'** = datenbankseitig erzwungene Idempotenz · getrennte `engine_version` / `rezept_version` / `vektor_version` · stabiler Eingabefingerabdruck (unabhängig von Lauf-ID, Zeit, Auslöser und Eingabereihenfolge) · Ablösung (`aktuell=false`) **statt Löschung** · Sperre `matching-<mandant>` über die bestehende `pipeline_locks`-Infrastruktur, **erstmals auch im Lage-Pfad** · deterministische Kurzbegründung **ohne KI** (max. 2 Gründe, ohne Beleg `null`). **Drei Laufzustände statt fünf**, begründet: `partial` ist durch `laufend` abgedeckt (die Projektion wird in EINEM Bulk-Upsert geschrieben), `cancelled` erzeugt bewusst gar keine Zeile. **Nach Betreibereinwand nachgeschärft:** die ursprüngliche Schreibreihenfolge war nicht atomar; jetzt EIN Aufruf = EINE Transaktion (`helmut_publish_matching_run`, SECURITY INVOKER) plus Trigger, der `matching_results.run_id` auf vollständige Läufe beschränkt. **Legacy unverändert:** 253 Vergleiche gegen unverändertes `origin/main` (Merkmalsvektoren, Kosinuswerte, Ranking, `matched_features`, geschriebene Zeilen, Rückgabewert) → **0 Abweichungen**. **Tests:** neue Suite **178/178** (inkl. A1–A8 Atomizität; Mutationstest belegt ihre Wirksamkeit mit 10 Fehlschlägen gegen das alte Design), Offline-Suite **177/177**, Gegenbeweis auf `main` **176/176**, Browser-Smoke nicht nötig (keine UI-Änderung). **Gemessen:** Laufzeile 8 070 B roh / ~2 539 B komprimiert, +713 B je Ergebniszeile, ~28 MB/Jahr bei 10 Profilen, ~278 MB/Jahr bei 100 (dann Retention); **0,00 USD zusätzliche KI-Kosten**; identischer Lauf schreibt **0 statt 20** Ergebniszeilen. **Neuer Befund M-7** (200er-Ladefenster erklärt die 78,4 % leeren `matched_features`) — bewusst **nicht** behoben, weil es das fachliche Ergebnis veränderte, und bleibt außerhalb dieses Sprints. **Nachtrag 2026-07-28: PR #169 gemergt (`b1d450c`); Migration `20260728_matching_audit` um 20:20:57 UTC nach bestätigtem Ruhefenster in Production angewendet und vollständig verifiziert** — 287→287 Zeilen byte-identisch (Fingerabdruck `be4670c61235c908559853a6f6fc6c8c` unverändert), `matching_results` jetzt 23 Spalten (14 additiv, kein Backfill), `matching_runs` existiert mit 0 Zeilen, 0 Zeilen mit `run_id` auf unvollständigem Lauf, RLS/Grants/Funktionen (alle SECURITY INVOKER)/Trigger/Indizes korrekt, `anon` ohne Zugriff, `authenticated` nur SELECT, `helmut_publish_matching_run` nur für `postgres`/`service_role`, 0 Production-Fehler, Rollback nicht nötig. **Nachtrag 2026-07-29 — Gate 3 erteilt und ausgeführt:** Doku-PR **#170 gemergt** (`5c254c4`, Lauf `30397010300` grün); `HELMUT_MATCHING_AUDIT` am 28.07. ~20:55 UTC in Vercel **nur für Production** auf **`on`** gesetzt, wirksam mit Redeploy `dpl_ChLoTuKztU1B835PfckELKp8doMZ` (`READY` 20:56:48 UTC, keine Build-Fehler). **Erster Production-Auditlauf 29.07. 04:05:07–04:05:08 UTC** (1 041 ms), ausgelöst vom regulären `/api/cron/crawl` — **kein manueller Lauf**: `mrun-annika-klose-20260729040507-32c822e0`, Mandant `annika-klose`, Status `vollstaendig`, 20 Kandidaten/berechnet/veröffentlicht, 19 abgelöst, `matching_results` **287 → 290** (17 wiederverwendet, 3 neu, 19 abgelöst), **nichts gelöscht**, 251 Fremdzeilen unberührt, Ränge lückenlos 1–20, Altschema-Kennungen erhalten, Lauf-`ergebnis` 20/20 deckungsgleich mit der Projektion. **Idempotenz in Production bewiesen 29.07. 08:07:20 UTC:** identischer Eingabefingerabdruck (`d396c545…c8ac`) → **keine neue Laufzeile**, `wiederholungen` **0 → 1**, `letzter_lauf_at` gesetzt, `matching_results` **vollständig unverändert** (`updated_at` bleibt 04:05:08) — und das **trotz 179 neuer Wissensobjekte** zwischen den Läufen. **0 zusätzliche KI-Aufrufe, 0,00 USD**, 0 Production-Fehler zu `matching_runs`/`matching_results`/`helmut_publish_matching_run`, `knowledge_object_embeddings` unverändert (772), Rollback nicht nötig, Flag bleibt aktiv. **Zwei neue Befunde aus dem Beweislauf** (nicht Sprintumfang): der Crawl läuft reproduzierbar in sein 280-s-Zeitlimit und erreicht je Lauf nur einen Teil der Mandanten (**auch schon vor der Aktivierung**, kein Flag-Effekt) → **OP-25**; und es gibt **keinen produktiv verwendeten Einstieg** für isoliertes Matching eines einzelnen Mandanten → **OP-26** (deshalb wurde der Idempotenznachweis an einem regulären Lauf beobachtet statt manuell erzwungen). **Roadmap-Punkt 23 bleibt offen**, weil **Sprint 23C** (sichtbare Nutzererklärung) fehlt; Briefing-Historisierung bleibt Sprint 23B-2; M-7 bleibt außerhalb. Kanonisch: [`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md) Teil B §21.6 und §25. **Nächster Schritt:** Sprint 23B-2 oder 23C |
