@@ -2075,7 +2075,7 @@ durch bessere Daten).
 
 > **Stand 2026-07-29.** Umsetzung offline vollständig bewiesen, Production ausschließlich
 > **lesend** geprüft. Kein Production-Write, keine Migration, kein Flag, kein Cron, kein
-> Deployment, kein Merge. Branch `claude/matching-explanation-coverage-cnzjgy`.
+> Deployment, kein Merge. Branch `claude/matching-explanation-coverage-cnzjgy`, **PR #174** (offen).
 
 ## 34 · Der Fehler in einfachen Worten
 
@@ -2383,7 +2383,7 @@ Env-Variable.**
 
 | Schritt | Wer | Wirkung | Prüfung |
 |---|---|---|---|
-| 1. Merge des PR (= Deployment) | Betreiber | **sofort keine** — die Behebung wirkt erst beim nächsten Matchinglauf | Deployment `READY` |
+| 1. Merge von **PR #174** (= Deployment) | Betreiber | **sofort keine** — die Behebung wirkt erst beim nächsten Matchinglauf | Deployment `READY` |
 | 2. nächster regulärer Crawl-Cron | automatisch | betroffene Mandanten: neuer Fingerabdruck → **eine** neue Generation, alte Zeilen `aktuell=false` (**nichts gelöscht**); nicht betroffene: idempotent, 0 Schreibvorgänge | `matching_runs`: neue Zeilen `vollstaendig`; 0 Zeilen auf unvollständigem Lauf |
 | 3. Abnahme (rein lesend) | Betreiber/Claude | Erklärungsabdeckung neu messen | `node scripts/matching-erklaerungsluecke-analyse.js` |
 
