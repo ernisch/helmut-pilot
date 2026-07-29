@@ -1867,9 +1867,10 @@ trägt keinen einzigen Merkmalstreffer. Der Satz behauptete also genau das, was 
 nicht hergeben, und wäre damit eine erfundene Relevanzbegründung. Das schließen
 `START_HERE.md` §5.2 und die bereits in `matching-begruendung.js` festgeschriebene
 Belegpflicht aus. Der ehrliche Fallback ist **Schweigen**: kein Abschnitt, keine
-Behauptung. Das betrifft heute **78,4 %** der Zeilen (Sprint 23A) — die Erklärung
-erscheint anfangs also bei einer Minderheit der Vorgänge. Das ist der ehrliche Zustand
-und ein messbares Qualitätsziel für spätere Sprints, kein Anlass für einen Ersatztext.
+Behauptung. Das betrifft **76,8 %** der aktuellen Zeilen — an Production gemessen, nicht
+aus Sprint 23A übernommen (§33). Die Erklärung erscheint also bei einer Minderheit der
+Vorgänge. Das ist der ehrliche Zustand und ein messbares Qualitätsziel, kein Anlass für
+einen Ersatztext.
 
 ## 28 · Umsetzung
 
@@ -1961,3 +1962,109 @@ Migrationen · `matching.js` · `matching-audit.js` · `matching-contract.js` ·
 `matching-begruendung.js` · `scheduler.js` · Cron · Flags · Env · `ARCHITECTURE.md`
 (die Architektur hat sich nicht geändert) · `CLAUDE.md` (keine neue dauerhafte
 Projektregel).
+
+## 33 · Gemessene Abdeckung der Erklärung (2026-07-29, rein lesend)
+
+Erhoben **ausschließlich lesend** (`GET /rest/v1/...`, kein Schreibzugriff, kein RPC,
+keine Änderung an Matching, Scores, Rängen oder Production-Daten) auf allen Zeilen mit
+`aktuell = true`. Die Erklärung wurde mit der echten Funktion
+`matching-erklaerung.erklaerungAusErgebnis` nachgestellt.
+
+**Bestand:** **271** aktuelle Zeilen — **251** Altzeilen (`run_id IS NULL`) und
+**20** Auditzeilen aus dem ersten Production-Auditlauf.
+
+| Beleg | alle (271) | Altzeilen (251) | Auditzeilen (20) |
+|---|---|---|---|
+| verwertbare `begruendung` | 3 (1,1 %) | 0 (0,0 %) | 3 (15,0 %) |
+| verwertbare `signale` | 3 (1,1 %) | 0 (0,0 %) | 3 (15,0 %) |
+| verwertbare `matched_features` | 63 (23,2 %) | 60 (23,9 %) | 3 (15,0 %) |
+| **kein** Beleg | 208 (76,8 %) | 191 (76,1 %) | 17 (85,0 %) |
+| **UI zeigt eine Erklärung** | **63 (23,2 %)** | 60 (23,9 %) | 3 (15,0 %) |
+
+### 33.1 · Der scheinbare Widerspruch „`signale` bei 20/20"
+
+Beides stimmt, es sind zwei verschiedene Aussagen:
+
+- **Strukturell** trägt jede der 20 Auditzeilen ein `signale`-Objekt — die Spalte ist
+  nie leer.
+- **Verwertbar** ist es nur bei **3** Zeilen. Die vorkommenden Schlüssel über alle 271
+  Zeilen sind: `legacy_vektor` **20×**, `partei` **3×**, `ausschuss` **2×**. Bei **17**
+  der 20 Auditzeilen enthält `signale` **ausschließlich** `legacy_vektor` — den rohen
+  Ähnlichkeitswert, der bewusst **nie** angezeigt wird (keine Zahl, kein Score).
+
+`signale` entsteht in `matching-begruendung.buildSignals(matchedFeatures, similarity)`
+**aus** `matched_features`. Es kann deshalb nie mehr Belege enthalten als diese —
+`legacy_vektor` ist der einzige Zusatz, und der ist nicht anzeigbar. Sind die
+`matched_features` leer, ist `signale` bis auf die Zahl ebenfalls leer.
+
+**Korrektur zur früheren Angabe:** die 78,4 % stammten aus Sprint 23A (225 von 287
+Zeilen) und wurden hier fälschlich als heutiger Stand geführt. Gemessen sind es
+**76,8 %** (208 von 271).
+
+### 33.2 · Wird der `matched_features`-Fallback erreicht?
+
+**Ja, vollständig.** **60** Zeilen haben kein verwertbares `signale`, aber
+`matched_features` — **60 von 60 (100 %)** werden über den Fallback erklärt. Die
+gespeicherte Rohform ist exakt die erwartete: `[{"type":"partei","value":"CDU/CSU"}]`.
+Über alle 271 Zeilen gibt es genau zwei Ausprägungen: **leeres Array (208)** und
+`Array<type+value>` **(63)** — keine unbekannte dritte Form, an der der Fallback
+stillschweigend scheitern könnte.
+
+### 33.3 · Ursache der 208 leeren Zeilen — Befund M-7, belegt
+
+Die 208 leeren Zeilen wurden read-only nachgerechnet: die **gespeicherten** Wissensobjekte
+(141, alle auffindbar) und die **gespeicherten** Mandatsprofile (7, alle ladbar) wurden
+durch dieselbe reine Funktion `matchProfileToKnowledgeObjects` geschickt.
+
+| Ergebnis | Zeilen |
+|---|---|
+| hätten Merkmale — **Verlust durch M-7** | **128** |
+| echt ohne Überschneidung — korrekt leer | **80** |
+| nicht bewertbar | 0 |
+
+Beispiele verlorener Merkmale:
+`[{"type":"ausschuss","value":"Arbeit und Soziales"}]` ·
+`[{"type":"partei","value":"Die Linke"},{"type":"ausschuss","value":"Arbeit und Soziales"},{"type":"thema","value":"Gesundheit"}]`
+
+**Mechanismus** (`matching.js:461`): Die pgvector-Suche läuft über **alle** Wissensobjekte
+(1 507), die Merkmalsauflösung danach aber nur über ein Fenster von **200**:
+
+```js
+const kos = await deps.listKnowledgeObjects({ limit: 200 });
+const byId = new Map(...);
+const ko = byId.get(hit.id) || {};        // Treffer ausserhalb des Fensters -> {}
+matched_features: matchedFeatures(pf, knowledgeObjectFeatures(ko))   // -> []
+```
+
+Liegt ein Treffer außerhalb des Fensters, wird gegen ein **leeres** Objekt gematcht und
+`matched_features` bleibt leer — obwohl echte Überschneidungen bestehen. Der Verlust
+entsteht im **Schreibpfad**, nicht in der Anzeige.
+
+### 33.4 · Kann ein rein darstellender Fix die Abdeckung verbessern?
+
+**Nein.** Drei Wege wurden geprüft:
+
+1. **Mehr aus `signale` holen** — unmöglich. `signale` ist aus `matched_features`
+   abgeleitet und enthält darüber hinaus nur `legacy_vektor` (nicht anzeigbar). Potenzial: **0 Zeilen**.
+2. **Fallback reparieren** — nicht nötig, er greift bereits zu 100 % (§33.2).
+3. **Merkmale zur Anzeigezeit neu berechnen** (Profil + KO liegen in `lage.js` vor) —
+   technisch möglich, **fachlich abzulehnen**. Die Neuberechnung nutzt das **heutige**
+   Profil, während die Ergebniszeile gegen den Profilstand **zum Laufzeitpunkt** entstand
+   (Befund **M-3**). Der angezeigte Grund wäre dann nicht mehr nachweislich der Grund, aus
+   dem der Vorgang gerankt wurde — eine unbelegte Begründung. Außerdem verdeckte es M-7,
+   statt es zu beheben: die Auditzeile bliebe leer, die Oberfläche sähe vollständig aus
+   (falsches Grün). Beides widerspricht `START_HERE.md` §5.2/§5.3.
+
+**Fazit:** Die Grenze liegt in den **Daten**, nicht in der Darstellung. Ohne Behebung von
+**M-7** — einer Änderung am Matching-Schreibpfad, in diesem Sprint ausdrücklich
+ausgeschlossen — ist **23,2 %** die ehrliche Obergrenze. Mit behobenem M-7 wären
+**(63 + 128) / 271 = 191/271 = 70,5 %** erreichbar, ohne eine Zeile Anzeigecode zu ändern.
+
+### 33.5 · Folge für Roadmap-Punkt 23
+
+Sprint 23C erfüllt seinen eigenen Zweck — die Erklärung ist korrekt, ehrlich und für
+jeden belegten Vorgang sichtbar. Das Abnahmekriterium von **Punkt 23** („Es ist
+nachvollziehbar, warum ein Vorgang zu einem Profil passt") ist bei **23,2 %** sichtbarer
+Abdeckung jedoch **nicht** erfüllt. Punkt 23 bleibt offen; der nächste Schritt ist
+**M-7**, danach ein **Sprint 23C-2** ohne Anzeigeänderung (die Abdeckung steigt allein
+durch bessere Daten).
