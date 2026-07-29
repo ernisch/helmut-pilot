@@ -328,7 +328,8 @@ keine Vollzähligkeit.
 
 ## B.9 Tests
 
-- `scripts/landesparser-klassen-test.js` — **116/116 grün**, Berlin und Brandenburg getrennt
+- `scripts/landesparser-klassen-test.js` — **116/116 grün** *(Stand dieses Durchgangs; aktueller
+  Stand **141/141**, siehe Teil C.7)*, Berlin und Brandenburg getrennt
   nachgewiesen: Klassenvertrag · Pflichtklassen je Land · Länderspezifik (die Typtabellen sind
   nachweislich verschieden) · kanonischer Vertrag (alle neun Informationen) · fail closed bei
   unbekannten/fehlenden Typen · fehlende Felder · Identität und Dubletten · Dokument ≠ Vorgang ·
@@ -349,11 +350,13 @@ keine Vollzähligkeit.
 
 ## B.10 Verbleibende Risiken
 
-1. **Vollzähligkeit des Berliner Vorgangs nicht belegt:** die Sonde kürzt Beispiel-Records bei
-   1 800 Zeichen, `V-351039` kann real weitere `<Dokument>` tragen. Der Bezug selbst ist belegt,
-   die Anzahl der Dokumente je Vorgang ist es nicht.
+1. ~~**Vollzähligkeit des Berliner Vorgangs nicht belegt:** die Sonde kürzt Beispiel-Records bei
+   1 800 Zeichen.~~ **GESCHLOSSEN in Teil C.2** — die Verteilung ist gemessen: 1…75 Dokumente je
+   Vorgang, häufigster Fall 2 (17 407 Vorgänge).
 2. **Stichprobe statt Vollerhebung:** die Typtabellen stützen sich auf 500 (Struktur) bzw. 800 (Verteilung) Records je Quelle — nicht auf die vollen 47 417 bzw. 9 092 Records. Neue
    Typwerte sind möglich — sie fallen fail closed als `unbekannt` auf, statt still falsch zu werden.
+   *Teilweise verkleinert durch Teil C.2: die **Struktur** ist für Brandenburg vollständig und für
+   Berlin über 41 853 Vorgänge erhoben. Die **Typtabellen** stützen sich unverändert auf Stichproben.*
 3. **Kein Production-Beweis** und keiner möglich, solange die Wege bewusst inaktiv sind.
 4. **Befund 24-2 ist behoben, aber nur im Code bewiesen** — ein Production-Beleg ist nicht möglich, solange die Wege inaktiv sind. `shadow-ingest.js` (Diagnoseskript, nie im Produktivpfad) reicht die externe Kennung nicht durch und profitiert deshalb nicht von Regel 0.
 5. **Wahlperiode in der Quell-URL** (`wp19`/`WP8`) — unverändert aus Teil A.
