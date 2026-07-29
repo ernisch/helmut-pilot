@@ -1762,3 +1762,309 @@ keine zusätzlichen KI-Kosten (§25.4) · Dokumentation vollständig.
 Mandatsträger noch **unsichtbar**. Erst **Sprint 23C** (sichtbare Nutzererklärung, §11)
 erfüllt den Punkt; **Sprint 23B-2** (Briefing-Historisierung) bleibt ebenfalls offen.
 Der Befund zum 200er-Ladefenster (**M-7**, §15.2) bleibt unverändert außerhalb.
+
+---
+
+# Teil C — Sprint 23C: die sichtbare Relevanzerklärung
+
+**Stand:** 2026-07-29 · **Sprintzustand: teilweise abgeschlossen** — implementiert,
+offline und im Browser bewiesen, **PR #171 offen und noch nicht gemergt**.
+
+**Verhältnis zum Hotfix (§26).** Der Aktualitätsfilter auf `matching_results` wurde in
+diesem Sprint **gefunden**, aber **nicht** hier ausgeliefert: mit der Aktivierung von
+`HELMUT_MATCHING_AUDIT` wurde er vom latenten zum **aktiven** Pilotblocker und ging
+deshalb als eigener, kleiner Hotfix (**PR #172**, gemergt) voraus. Sprint 23C ändert den
+Lesepfad **nicht mehr** und baut nur noch auf ihm auf.
+
+## 26 · Der tatsächliche Nutzerlesepfad (Read-only-Audit)
+
+Vollständig nachgezeichnet, ohne Production zu berühren:
+
+| Frage | Befund |
+|---|---|
+| Wo wird `matching_results` geschrieben? | `storage.saveMatchingResults` (Legacy) und `storage.publishMatchingRun` → RPC `helmut_publish_matching_run` (Auditpfad). Aufrufer: `matching.js:runMatchingCore` |
+| Wo wird gelesen? | **Genau eine** produktive Funktion: `storage.listMatchingResults` |
+| Welche API liefert an den Client? | Kein eigener Endpoint. Einziger Konsument ist `lage.js:loadRankedVorgaenge` (`lage.js:325`), Auslieferung im Lage-Payload von `/api/app/start` |
+| Welche UI zeigt gematchte Vorgänge? | Lage-Karussell (`renderVorgangCard`) und die Vorgangs-Detailansicht als Bottom Sheet (`vsheetContentHtml`) |
+| Welche Felder erreichten den Browser? | **Keine.** `lage.js` nutzte aus der Ergebniszeile ausschließlich `knowledge_object_id` als Auswahlschlüssel und verwarf jedes andere Feld |
+| Wurden `signale`/`begruendung` übertragen? | **Nein** — sie wurden gelesen (`select=*`), aber nie weitergereicht |
+| Tenant-/Rollenfilter? | `assertTenant` + zwingender `user_id=eq.<mandant>`-Filter; kein Rollenfilter (die Lage ist keine rollenabhängige Sicht) |
+| Mobil und Desktop? | Dieselbe Oberfläche, ein Code-Pfad; mobil greifen kürzere Zeichenbudgets und Line-Clamps auf der Karte |
+| Ähnliche Erklärungskomponenten? | Ja: „Warum wichtig?" — das ist aber `knowledge_objects.why_relevant`, eine **allgemeinpolitische, mandantenunabhängige** Einordnung aus dem Verstehensschritt, **nicht** die persönliche Relevanz |
+| Tests auf diesem Pfad? | `lage-cacheonly-test.js`, `tenant-guard-test.js`, `radar-scan-limit-test.js`, `scoring-integration-test.js` — alle mit `listMatchingResults` als Attrappe; **kein** Test deckte `aktuell` ab (das holt `matching-aktualitaet-test.js` aus PR #172 nach) |
+
+**Radar liest `matching_results` nicht** (bestätigt Sprint 23A). Der Entwurf in §11
+(„Vorgangskarte in Lage **und Radar**") war insoweit unzutreffend — über Radar war die
+Erklärung nie erreichbar.
+
+**Zum Pilotblocker:** gefunden in diesem Sprint, ausgeliefert als **PR #172**. Die
+frühere Einschätzung dieses Sprints, der Befund sei „latent, kein Nutzer betroffen",
+galt nur für den Stand vor der Flag-Aktivierung. Mit `HELMUT_MATCHING_AUDIT=on` und
+19 abgelösten Zeilen aus dem ersten Production-Lauf war er **aktiv**. Die vollständige
+Analyse steht im Hotfix-Eintrag in `CURRENT_STATE.md`; Sprint 23C setzt ihn voraus.
+
+## 27 · Produkt- und UX-Vertrag
+
+**Die Frage, die beantwortet wird:** „Warum ist dieser Vorgang für **mich** relevant?" —
+nicht „wie hat das System gerechnet?".
+
+**Zwei Ebenen, nicht mehr.**
+
+1. **Hauptsatz**, immer sichtbar: ein deterministischer Satz mit höchstens zwei
+   politischen Gründen (`Betrifft deinen Ausschuss Arbeit und Soziales und deinen
+   Schwerpunkt Rente.`).
+2. **Belege**, zugeklappt: zwei bis vier kurze Zeilen in Du-Form
+   (`Dein Ausschuss: Arbeit und Soziales`), nativ per `<details>` — ohne zusätzliches
+   JavaScript, mit einem Daumen bedienbar, für Screenreader korrekt.
+
+**Wo sie erscheint: in der Vorgangs-Detailansicht, nicht auf der Karte.**
+Abweichung vom Entwurf in §11, begründet:
+
+- Die Lage-Karte trägt bereits drei Zeilen (Kurzfassung / Warum wichtig? / Empfehlung)
+  mit **gemessenen** Zeichenbudgets und CSS-Line-Clamps. Eine vierte Zeile hätte
+  entweder eine bestehende verdrängt oder auf kurzen Viewports abgeschnitten gerendert.
+- Die zweistufige Form (Satz + aufklappbare Belege) ist auf einer geclampten
+  Karussellkarte nicht darstellbar.
+- Die Karte ist der Einstieg: ein Tippen öffnet die Detailansicht. Der Weg zur
+  Erklärung ist genau eine Geste lang.
+- **Radar entfällt** — es liest die Ergebnisse nicht (§26).
+
+Das ist die kleinste Lösung mit dem größten Nutzwert: **ein** Anzeigeort, **keine** neue
+Karte, **kein** neuer Navigationspunkt, **keine** neue Designabstraktion.
+
+**Platzierung im Sheet:** unmittelbar **vor** „Warum wichtig?". Die persönliche Relevanz
+(„was hat das mit meinem Mandat zu tun?") interessiert eine Abgeordnete vor der
+allgemeinpolitischen Einordnung. Beide Abschnitte bleiben sichtbar getrennt und sind an
+der Überschrift unterscheidbar: **„Warum für dich relevant?"** (persönlich,
+deterministisch, aus dem Matching) gegenüber **„Warum wichtig?"** (allgemein, aus dem
+Verstehensschritt).
+
+**Was nie sichtbar wird** — strukturell, per Weißliste statt Verbotsliste: Hashes,
+Fingerabdrücke, Lauf- und Datenbankkennungen, Engine-/Rezept-/Vektorversionen,
+Rohvektoren, `similarity`, `rank`, `legacy_vektor`, interne Pipeline-Begriffe. Gelesen
+werden ausschließlich die vier Signalarten `ausschuss`, `thema`, `wahlkreis`, `partei`;
+alles andere kann nicht in die Ausgabe geraten, weil es nie gelesen wird. Der Nutzer
+sieht **keine einzige Ziffer**.
+
+### 27.1 · Fallbacks
+
+| Fall | Verhalten |
+|---|---|
+| 1 · `begruendung` **und** `signale` vorhanden | Gespeicherter Satz 1:1, Belege aus `signale` |
+| 2 · nur `signale` | Satz deterministisch aus denselben Signalen abgeleitet (`matching-begruendung.js`, identische Bausteine) |
+| 3 · nur `begruendung`, kein Beleg | **Kein Abschnitt.** Ein Satz ohne Beleg verstößt gegen die Belegpflicht |
+| 4 · Legacy-Zeile, `run_id = NULL` | Belege und Satz aus den seit jeher gespeicherten `matched_features` — kein Backfill, keine Migration |
+| 5 · keine belastbare Erklärung | **Kein Abschnitt, ersatzlos.** Kein Platzhaltertext |
+| 6 · `aktuell = false` | Zwei Riegel: der Lesepfad liefert die Zeile nicht mehr (Hotfix aus PR #172), und das Modul verweigert die Erklärung zusätzlich |
+| 7 · unvollständig/ungültig (kaputtes JSON, Zahlen, Arrays, überlange Werte) | `null` statt Fehler; Werte werden bereinigt und hart begrenzt (Belege 80 Zeichen, Satz 240) |
+
+**Zu Fall 5, ausdrücklich:** Der Sprintauftrag schlug den Satz „Helmut hat einen Bezug zu
+deinem Profil erkannt. Die konkreten Belege werden für dieses ältere Ergebnis noch nicht
+angezeigt." als möglichen ehrlichen Fallback vor — mit dem Vorbehalt, ihn nur bei Passung
+zu übernehmen. **Er wurde nicht übernommen.** Begründung: Bei einer Legacy-Zeile ohne
+`matched_features` ist gerade **nicht** belegt, dass ein Bezug erkannt wurde — die Zeile
+trägt keinen einzigen Merkmalstreffer. Der Satz behauptete also genau das, was die Daten
+nicht hergeben, und wäre damit eine erfundene Relevanzbegründung. Das schließen
+`START_HERE.md` §5.2 und die bereits in `matching-begruendung.js` festgeschriebene
+Belegpflicht aus. Der ehrliche Fallback ist **Schweigen**: kein Abschnitt, keine
+Behauptung. Das betrifft **76,8 %** der aktuellen Zeilen — an Production gemessen, nicht
+aus Sprint 23A übernommen (§33). Die Erklärung erscheint also bei einer Minderheit der
+Vorgänge. Das ist der ehrliche Zustand und ein messbares Qualitätsziel, kein Anlass für
+einen Ersatztext.
+
+## 28 · Umsetzung
+
+**Neues Modul `lib/helmut/matching-erklaerung.js`** — die einzige Stelle, die aus einer
+gespeicherten Ergebniszeile eine für Menschen bestimmte Erklärung macht. Rein lesend:
+kein KI-Aufruf, keine Datenbankabfrage, kein Netz, kein Zufall, keine Zeitabhängigkeit.
+Rückgabe ist ausschließlich `{ satz, belege:[{art,text}] }` oder `null`.
+
+**Es wird nichts neu berechnet.** Der Satz kommt aus der persistierten Spalte
+`begruendung`; nur wenn diese fehlt (Fälle 2 und 4), wird er **serverseitig** aus
+denselben persistierten Signalen abgeleitet — mit dem bereits vorhandenen
+deterministischen Modul aus Sprint 23B-1, nicht mit einer zweiten Logik. Auf dem Client
+wird **keine** fachliche Erklärung berechnet; `client.js` zeigt nur an und escaped.
+
+**Bewusst nicht enthalten:** keine Änderung am Lesepfad (die liegt im Hotfix PR #172),
+keine neue Tabelle, keine Migration, kein neues Feature-Flag, keine neue Matchinglogik,
+keine Änderung an Scores, Rängen, Filtern oder `matched_features`, keine Nutzung von
+`knowledge_object_embeddings`, kein neuer Endpoint, kein neuer Navigationspunkt, keine
+Änderung an `HELMUT_MATCHING_AUDIT`.
+
+## 29 · Testnachweis
+
+**Neue Suite `scripts/matching-erklaerung-test.js` — 64/64.** Vier Schichten:
+Erklärungsmodul (A1–A24), Vorbedingung im Lesepfad (B1–B5), Serverpfad (C1–C13),
+Oberfläche mit den echten Renderern aus `client.js` im `vm`-Kontext (D1–D16),
+Nichtregression (E1–E6).
+
+Die fünf B-Prüfungen ändern den Lesepfad nicht — sie sichern den Hotfix aus PR #172 als
+**Vorbedingung** der Erklärung ab: fiele der Aktualitätsfilter, zeigte die Erklärung
+Gründe zu einem Vorgang, der gar nicht mehr aktuell ist. Der Fix selbst ist durch
+`scripts/matching-aktualitaet-test.js` (29/29) abgedeckt.
+
+| Gefordert | Abgedeckt durch |
+|---|---|
+| aktuelles Ergebnis mit vollständiger Begründung | A1, A2, C2 |
+| aktuelles Ergebnis nur mit Signalen | A3, A4 |
+| Legacy-Ergebnis `run_id = NULL` | A6, C9 |
+| `aktuell=false` erscheint nicht im Nutzerpfad | A9, B1, C1 |
+| Tenant A sieht keine Erklärung von Tenant B | B2, B5, C12, C13 |
+| technische Auditfelder nicht sichtbar | A20, A21, A22, C6, D10 |
+| ungültige/überlange Signale sicher behandelt | A10–A19, D7, D8, D9 |
+| keine Erklärung wird erfunden | A5, A7, A8, A23, A24, C3, D5 |
+| mobile Darstellung | D13–D16 + Browser-Smoke + Sichtprüfung bei 390×844 |
+| Nutzerpfad ohne Auditdaten funktioniert weiter | C8, C10, C11, D12 |
+| Scores und Reihenfolgen unverändert | B3, C4, E5 |
+| keine zusätzlichen LLM-Aufrufe | E1, E2, E4 |
+
+**Gesamtlauf nach dem Rebase auf `main` (`a53e37b`):** siehe `CURRENT_STATE.md`
+(Sprinttabelle) — Offline-Suite, Browser-/Mobile-Smoke und CI-Gate mit den dort
+genannten Zahlen. Zusätzliche Sichtprüfung im echten Chromium bei 390×844 gegen die
+echte `styles.css`: kein horizontaler Überlauf, Hauptsatz ohne Interaktion lesbar,
+Belege zugeklappt (`checkVisibility()` = `false`), Trefferfläche des Aufklappers 32 px
+hoch, aufgeklappt vier Belege ohne Textüberlauf.
+
+## 30 · Was Sprint 23C nach dem Rebase noch enthält
+
+Nach der Auslieferung des Hotfixes (PR #172) und dem Abschluss von Sprint 23B-1
+(PR #173) besteht PR #171 **ausschließlich** aus der sichtbaren Erklärung:
+
+- **neu** `lib/helmut/matching-erklaerung.js` — Erklärung aus gespeicherten Feldern
+- **neu** `scripts/matching-erklaerung-test.js` — 64 Prüfungen
+- **geändert** `lib/helmut/lage.js` — Erklärung mitführen, `relevanz` an der Karte
+- **geändert** `client.js` — `vsheetRelevanzHtml` + Einbindung im Sheet
+- **geändert** `styles.css` — `.vsheet-relevanz`, `.vsheet-belege`
+- **geändert** Dokumentation
+
+**Nicht mehr enthalten:** die Änderung an `lib/helmut/storage.js`. Sie war in der ersten
+Fassung dieses PR enthalten und ist inzwischen inhaltsgleich über PR #172 in `main` —
+beim Rebase wurde die Doppelung entfernt, `storage.js` ist jetzt byte-identisch mit
+`main`.
+
+## 31 · Merge-Bedingung
+
+Die ursprüngliche Sperre („nicht mergen, bis Sprint 23B-1 abgeschlossen ist") ist mit
+PR #173 **erfüllt**: Flag aktiv, erster Production-Auditlauf und Idempotenz bewiesen,
+Sprint 23B-1 steht auf „erfolgreich abgeschlossen". Auch der Hotfix (PR #172) ist in
+`main`. Damit bestehen **keine fachlichen Vorbedingungen mehr**; der Merge ist nur noch
+eine Freigabeentscheidung des Betreibers (Merge = Production-Deployment).
+
+## 32 · Geänderte und neue Dateien (Sprint 23C)
+
+**Neu:** `lib/helmut/matching-erklaerung.js` · `scripts/matching-erklaerung-test.js`
+
+**Geändert:** `lib/helmut/lage.js` · `client.js` · `styles.css` · dieses Dokument ·
+`docs/CURRENT_STATE.md` · `docs/roadmap/phase_1_checkliste.md`
+
+**Nicht angefasst:** `lib/helmut/storage.js` (nach dem Rebase identisch mit `main`) ·
+Migrationen · `matching.js` · `matching-audit.js` · `matching-contract.js` ·
+`matching-begruendung.js` · `scheduler.js` · Cron · Flags · Env · `ARCHITECTURE.md`
+(die Architektur hat sich nicht geändert) · `CLAUDE.md` (keine neue dauerhafte
+Projektregel).
+
+## 33 · Gemessene Abdeckung der Erklärung (2026-07-29, rein lesend)
+
+Erhoben **ausschließlich lesend** (`GET /rest/v1/...`, kein Schreibzugriff, kein RPC,
+keine Änderung an Matching, Scores, Rängen oder Production-Daten) auf allen Zeilen mit
+`aktuell = true`. Die Erklärung wurde mit der echten Funktion
+`matching-erklaerung.erklaerungAusErgebnis` nachgestellt.
+
+**Bestand:** **271** aktuelle Zeilen — **251** Altzeilen (`run_id IS NULL`) und
+**20** Auditzeilen aus dem ersten Production-Auditlauf.
+
+| Beleg | alle (271) | Altzeilen (251) | Auditzeilen (20) |
+|---|---|---|---|
+| verwertbare `begruendung` | 3 (1,1 %) | 0 (0,0 %) | 3 (15,0 %) |
+| verwertbare `signale` | 3 (1,1 %) | 0 (0,0 %) | 3 (15,0 %) |
+| verwertbare `matched_features` | 63 (23,2 %) | 60 (23,9 %) | 3 (15,0 %) |
+| **kein** Beleg | 208 (76,8 %) | 191 (76,1 %) | 17 (85,0 %) |
+| **UI zeigt eine Erklärung** | **63 (23,2 %)** | 60 (23,9 %) | 3 (15,0 %) |
+
+### 33.1 · Der scheinbare Widerspruch „`signale` bei 20/20"
+
+Beides stimmt, es sind zwei verschiedene Aussagen:
+
+- **Strukturell** trägt jede der 20 Auditzeilen ein `signale`-Objekt — die Spalte ist
+  nie leer.
+- **Verwertbar** ist es nur bei **3** Zeilen. Die vorkommenden Schlüssel über alle 271
+  Zeilen sind: `legacy_vektor` **20×**, `partei` **3×**, `ausschuss` **2×**. Bei **17**
+  der 20 Auditzeilen enthält `signale` **ausschließlich** `legacy_vektor` — den rohen
+  Ähnlichkeitswert, der bewusst **nie** angezeigt wird (keine Zahl, kein Score).
+
+`signale` entsteht in `matching-begruendung.buildSignals(matchedFeatures, similarity)`
+**aus** `matched_features`. Es kann deshalb nie mehr Belege enthalten als diese —
+`legacy_vektor` ist der einzige Zusatz, und der ist nicht anzeigbar. Sind die
+`matched_features` leer, ist `signale` bis auf die Zahl ebenfalls leer.
+
+**Korrektur zur früheren Angabe:** die 78,4 % stammten aus Sprint 23A (225 von 287
+Zeilen) und wurden hier fälschlich als heutiger Stand geführt. Gemessen sind es
+**76,8 %** (208 von 271).
+
+### 33.2 · Wird der `matched_features`-Fallback erreicht?
+
+**Ja, vollständig.** **60** Zeilen haben kein verwertbares `signale`, aber
+`matched_features` — **60 von 60 (100 %)** werden über den Fallback erklärt. Die
+gespeicherte Rohform ist exakt die erwartete: `[{"type":"partei","value":"CDU/CSU"}]`.
+Über alle 271 Zeilen gibt es genau zwei Ausprägungen: **leeres Array (208)** und
+`Array<type+value>` **(63)** — keine unbekannte dritte Form, an der der Fallback
+stillschweigend scheitern könnte.
+
+### 33.3 · Ursache der 208 leeren Zeilen — Befund M-7, belegt
+
+Die 208 leeren Zeilen wurden read-only nachgerechnet: die **gespeicherten** Wissensobjekte
+(141, alle auffindbar) und die **gespeicherten** Mandatsprofile (7, alle ladbar) wurden
+durch dieselbe reine Funktion `matchProfileToKnowledgeObjects` geschickt.
+
+| Ergebnis | Zeilen |
+|---|---|
+| hätten Merkmale — **Verlust durch M-7** | **128** |
+| echt ohne Überschneidung — korrekt leer | **80** |
+| nicht bewertbar | 0 |
+
+Beispiele verlorener Merkmale:
+`[{"type":"ausschuss","value":"Arbeit und Soziales"}]` ·
+`[{"type":"partei","value":"Die Linke"},{"type":"ausschuss","value":"Arbeit und Soziales"},{"type":"thema","value":"Gesundheit"}]`
+
+**Mechanismus** (`matching.js:461`): Die pgvector-Suche läuft über **alle** Wissensobjekte
+(1 507), die Merkmalsauflösung danach aber nur über ein Fenster von **200**:
+
+```js
+const kos = await deps.listKnowledgeObjects({ limit: 200 });
+const byId = new Map(...);
+const ko = byId.get(hit.id) || {};        // Treffer ausserhalb des Fensters -> {}
+matched_features: matchedFeatures(pf, knowledgeObjectFeatures(ko))   // -> []
+```
+
+Liegt ein Treffer außerhalb des Fensters, wird gegen ein **leeres** Objekt gematcht und
+`matched_features` bleibt leer — obwohl echte Überschneidungen bestehen. Der Verlust
+entsteht im **Schreibpfad**, nicht in der Anzeige.
+
+### 33.4 · Kann ein rein darstellender Fix die Abdeckung verbessern?
+
+**Nein.** Drei Wege wurden geprüft:
+
+1. **Mehr aus `signale` holen** — unmöglich. `signale` ist aus `matched_features`
+   abgeleitet und enthält darüber hinaus nur `legacy_vektor` (nicht anzeigbar). Potenzial: **0 Zeilen**.
+2. **Fallback reparieren** — nicht nötig, er greift bereits zu 100 % (§33.2).
+3. **Merkmale zur Anzeigezeit neu berechnen** (Profil + KO liegen in `lage.js` vor) —
+   technisch möglich, **fachlich abzulehnen**. Die Neuberechnung nutzt das **heutige**
+   Profil, während die Ergebniszeile gegen den Profilstand **zum Laufzeitpunkt** entstand
+   (Befund **M-3**). Der angezeigte Grund wäre dann nicht mehr nachweislich der Grund, aus
+   dem der Vorgang gerankt wurde — eine unbelegte Begründung. Außerdem verdeckte es M-7,
+   statt es zu beheben: die Auditzeile bliebe leer, die Oberfläche sähe vollständig aus
+   (falsches Grün). Beides widerspricht `START_HERE.md` §5.2/§5.3.
+
+**Fazit:** Die Grenze liegt in den **Daten**, nicht in der Darstellung. Ohne Behebung von
+**M-7** — einer Änderung am Matching-Schreibpfad, in diesem Sprint ausdrücklich
+ausgeschlossen — ist **23,2 %** die ehrliche Obergrenze. Mit behobenem M-7 wären
+**(63 + 128) / 271 = 191/271 = 70,5 %** erreichbar, ohne eine Zeile Anzeigecode zu ändern.
+
+### 33.5 · Folge für Roadmap-Punkt 23
+
+Sprint 23C erfüllt seinen eigenen Zweck — die Erklärung ist korrekt, ehrlich und für
+jeden belegten Vorgang sichtbar. Das Abnahmekriterium von **Punkt 23** („Es ist
+nachvollziehbar, warum ein Vorgang zu einem Profil passt") ist bei **23,2 %** sichtbarer
+Abdeckung jedoch **nicht** erfüllt. Punkt 23 bleibt offen; der nächste Schritt ist
+**M-7**, danach ein **Sprint 23C-2** ohne Anzeigeänderung (die Abdeckung steigt allein
+durch bessere Daten).

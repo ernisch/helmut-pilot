@@ -11038,6 +11038,41 @@ body:has(.lage2) {
   border-radius: 50%; background: var(--muted-2);
 }
 
+/* (3a) Warum für dich relevant (Sprint 23C) — die persönliche Relevanz.
+   Ein ruhiger Hauptsatz, keine eigene Karte, kein Alarm, keine Zahl. Bewusst
+   dieselbe Typografie wie "Warum wichtig?", damit der Abschnitt sich einfügt
+   statt zu dominieren; die Belege liegen darunter und sind zugeklappt. */
+.vsheet-relevanz { margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--text); }
+
+/* Belege — zweite Ebene, nativ per <details>. Zugeklappt ist nur eine ruhige
+   Zeile sichtbar; aufgeklappt stehen max. vier kurze Belege untereinander. */
+.vsheet-belege { margin-top: 12px; }
+.vsheet-belege > summary {
+  cursor: pointer; list-style: none; display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12.5px; font-weight: 600; color: var(--muted);
+  /* Daumengerechte Trefferfläche auf dem Telefon, ohne den Abstand zu sprengen. */
+  padding: 6px 0; min-height: 32px;
+}
+.vsheet-belege > summary::-webkit-details-marker { display: none; }
+.vsheet-belege > summary::after {
+  content: ""; width: 5px; height: 5px; margin-left: 2px;
+  border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg) translate(-1px, -1px); transition: transform .18s ease;
+}
+.vsheet-belege[open] > summary::after { transform: rotate(-135deg) translate(-1px, -1px); }
+.vsheet-belege > summary:focus-visible { outline: 2px solid var(--muted-2); outline-offset: 3px; border-radius: 6px; }
+.vsheet-belege ul {
+  margin: 4px 0 0; padding: 0; list-style: none;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.vsheet-belege li {
+  position: relative; padding-left: 20px; font-size: 13.5px; line-height: 1.5; color: var(--muted);
+}
+.vsheet-belege li::before {
+  content: ""; position: absolute; left: 3px; top: 8px; width: 4px; height: 4px;
+  border-radius: 50%; background: var(--muted-2);
+}
+
 /* (4) Empfehlung — dezent hervorgehoben, aber VOLLSTÄNDIG (kein Line-Clamp, kein
    abgeschnittener Satz). Kompakt/ruhig durch dezenten Grund & kleine Schrift,
    nicht durch Kürzung; wächst mit dem Text, das Sheet scrollt. */
