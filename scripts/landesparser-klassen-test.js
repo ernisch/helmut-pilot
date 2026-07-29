@@ -92,8 +92,12 @@ check("B6 Dokumenttyp schlaegt Dokumentart (PlPr + 'Antwort' -> antwort, NICHT s
 check("B7 alle Berliner Klassen laenderspezifisch belegt (keine Auffangebene noetig)",
   beDocs.every((d) => d.dokumentklasse_quelle === "land-doktyp" || d.dokumentklasse_quelle === "land-dokart"));
 check("B8 kein Berliner Gold-Dokument bleibt unbekannt", !beVerteilung.unbekannt);
-check("B9 Berlin liefert nachweislich KEINEN Vorgangsbezug (nichts erfunden)",
-  beDocs.every((d) => d.vorgangsnummer === null) && K.VORGANGSBEZUG.berlin.verfuegbar === false);
+// KORREKTUR (Restpunkt 1): die frueher hier stehende Aussage "Berlin liefert keinen
+// Vorgangsbezug" ist durch den Sondenlauf 30483735900 WIDERLEGT — siehe Teil B2. Diese flache
+// Gold-Fixture enthaelt keinen <Vorgang>-Rahmen, deshalb bleibt der Bezug HIER leer; erfunden
+// wird er nicht.
+check("B9 ohne Vorgangsrahmen bleibt der Bezug leer — und wird nicht erfunden",
+  beDocs.every((d) => d.vorgangsnummer === null) && K.VORGANGSBEZUG.berlin.verfuegbar === true);
 
 // ============================ TEIL C — BRANDENBURG, Pflichtklassen ===========================
 console.log("\n--- C · Brandenburg (parldok, Landtag) ---");
@@ -159,6 +163,39 @@ check("C2: Klasse TAGESORDNUNG ist fuer Brandenburg belegt (Dokumentart 'Einladu
 check("C2: benannte, aber fachlich nicht einzuordnende Arten werden `sonstiges`, nicht geraten",
   ["Information", "Frühwarndokument", "Gutachten", "Zuschrift"]
     .every((a) => K.klassifiziereDokument({ land: "brandenburg", dokumentart: a }).dokumentklasse === "sonstiges"));
+
+// ===================== TEIL B2 — Berliner VORGANGSBEZUG (Restpunkt 1) ========================
+// Belegt durch den Sondenlauf 30483735900 vom 29.07.2026 (PP_RECORD_TAG=Vorgang). Die frueher
+// hier notierte Aussage "Berlin liefert keinen Vorgangsbezug" ist damit WIDERLEGT.
+console.log("\n--- B2 · Berlin ist vorgangsstrukturiert (Sondenlauf 29.07.2026) ---");
+const beV = P.parsePardokDocumentsFromString(fx("berlin-vorgang-gold.xml"), { land: "berlin" });
+const beVDocs = beV.documents;
+const beVById = Object.fromEntries(beVDocs.map((d) => [d.externe_id, d]));
+check("B2-1 Berlin fuehrt einen belegten Vorgangsbezug (VNr + VTypL)",
+  beVById["D-351040"].vorgangsnummer === "V-351039" && beVById["D-351040"].vorgangstyp === "Debatte"
+  && K.VORGANGSBEZUG.berlin.verfuegbar === true);
+check("B2-2 delete-Stubs erzeugen kein Dokument (Berlin hat sie wie Brandenburg)",
+  beV.stats.deleteStubs === 2 && beVDocs.length === 3);
+check("B2-3 delete-Stub + vollstaendiger Eintrag derselben VNr -> genau EIN Vorgangsbezug",
+  beVDocs.filter((d) => d.vorgangsnummer === "V-351039").length === 2
+  && new Set(beVDocs.filter((d) => d.vorgangsnummer === "V-351039").map((d) => d.externe_id)).size === 2);
+check("B2-4 EIN Berliner Vorgang traegt MEHRERE Dokumentklassen (Drucksache + Sitzung)",
+  beVById["D-351040"].dokumentklasse === "drucksache" && beVById["D-351042"].dokumentklasse === "sitzung");
+check("B2-5 die Dokumentidentitaet bleibt die DBID, nicht die Vorgangsnummer",
+  beVDocs.every((d) => /^D-\d+$/.test(d.externe_id))
+  && new Set(beVDocs.map((d) => d.inhaltsfingerabdruck)).size === beVDocs.length);
+check("B2-6 Klasse ANFRAGE auch ueber den belegten Typ 'Muendliche Anfrage' (MdlAnfr)",
+  beVById["D-351617"].dokumentklasse === "anfrage" && beVById["D-351617"].dokumentklasse_quelle === "land-doktyp"
+  && beVById["D-351617"].dokumenttyp === "M\u00fcndliche Anfrage");
+check("B2-7 der Vorgang bleibt BEZUG — keine Dokumentklasse `vorgang`, keine cluster_id",
+  beVDocs.every((d) => d.dokumentklasse !== "vorgang")
+  && beVDocs.every((d) => K.zuRohdokument(d, kontextFuer("berlin")).cluster_id === null));
+check("B2-8 flache Berliner Exporte bleiben lesbar (Rueckwaertskompatibilitaet des Adapters)",
+  beDocs.length === 10 && beDocs.every((d) => d.vorgangsnummer === null));
+check("B2-9 DREI eigenstaendige Dokumente teilen dieselbe PDF-Adresse (Adresse != Identitaet)",
+  [beById["D-351042"], beById["D-351603"], beVById["D-351617"]]
+    .every((d) => (d.originaladresse || "").endsWith("p19-002-wp.pdf"))
+  && new Set([beById["D-351042"], beById["D-351603"], beVById["D-351617"]].map((d) => d.inhaltsfingerabdruck)).size === 3);
 
 // =========================== TEIL D — Laenderspezifik statt Textmuster =======================
 console.log("\n--- D · Berlin und Brandenburg werden getrennt behandelt ---");
@@ -302,16 +339,53 @@ check("H6 Rohdokument-id ist deterministisch aus dem content_hash abgeleitet",
 check("H7 gleiche DokNr in unterschiedlichen Wahlperioden bleibt getrennt (BB 08/30 in WP8 und WP7)",
   bbById["V-369657#r0001"].drucksachennummer === bbById["V-250100#r0001"].drucksachennummer
   && bbById["V-369657#r0001"].inhaltsfingerabdruck !== bbById["V-250100#r0001"].inhaltsfingerabdruck);
-// BEFUND, NICHT SOLLZUSTAND: die globale News-Dedup gruppiert ZUERST nach kanonischer URL. Fuer
-// PARDOK ist die URL kein Identitaetsmerkmal (ein Protokoll-PDF traegt viele Eintraege). Dieser
-// Test haelt den Befund fest: PARDOK-Dokumente duerfen NICHT ueber die URL-Dedup laufen, ihre
-// Identitaet ist die externe Kennung (content_hash). Faellt der Test, wurde die Dedup geaendert —
-// dann ist eine bewusste Entscheidung noetig, kein stilles Durchrutschen.
-const globalGemischt = D.mergeIntoDocuments(geteilteUrl.map((d) => ({
-  id: d.externe_id, title: d.titel || d.dokumentart, url: d.originaladresse, publishedAt: d.veroeffentlichungsdatum, sourceId: "be-plenum"
-})));
-check("H8 BEFUND: die URL-erste Global-Dedup wuerde beide zu EINEM Dokument verschmelzen — PARDOK darf sie nicht nutzen",
-  globalGemischt.length === 1);
+// BEHOBEN (Restpunkt 2): die globale Dedup gruppierte ZUERST nach kanonischer URL und danach nach
+// Titel-Fingerabdruck. Beides ist fuer PARDOK falsch — ein Protokoll-PDF traegt viele Eintraege,
+// und mehrere Drucksachen koennen denselben Titel haben. Gemessen am Berliner Gold-Bestand:
+// 10 eigenstaendige Rohdokumente -> 8 Dokumente (2 Verluste). Jetzt gilt Regel 0: Identitaet aus
+// Herausgeber + externer Kennung + Dokumenttyp; die Adresse ist nur noch Rueckfall.
+function alsDedupItem(rd) {
+  return {
+    id: rd.id, sourceId: rd.source_id, title: rd.title, url: rd.url, originalUrl: rd.canonical_url,
+    publishedAt: rd.published_at, linkType: rd.link_type, confidence: rd.confidence, summary: rd.summary,
+    externe_id: rd.raw.externe_id, publisher_id: rd.publisher_id, document_type: rd.document_type
+  };
+}
+const dedupItems = beRoh.map(alsDedupItem);
+const globalMerged = D.mergeIntoDocuments(dedupItems);
+check("H8 BEHOBEN: 10 eigenstaendige Rohdokumente bleiben 10 Dokumente (vorher 8)",
+  dedupItems.length === 10 && globalMerged.length === 10);
+check("H8b geteilte PDF-Adresse fuehrt NICHT mehr zusammen",
+  globalMerged.filter((m) => (m.canonical_url || "").endsWith("p19-002-wp.pdf")).length === 2);
+check("H8c gleicher Titel bei unterschiedlicher Kennung fuehrt NICHT mehr zusammen",
+  globalMerged.filter((m) => m.title === "Haushaltsplan 2024/2025").length === 2);
+check("H8d jedes Dokument mit eigener Kennung traegt seine Identitaet",
+  globalMerged.every((m) => m.external_identity && m.external_identity.includes("|")));
+// Folgelauf gegen den Bestand: frueher wurde das Antwort-Dokument GAR NICHT gespeichert, sondern
+// als Fundstelle an das Protokoll gehaengt (persists 0). Jetzt eigenstaendig — und beim zweiten
+// Mal idempotent.
+const protokollItem = dedupItems.find((i) => i.externe_id === "D-351042");
+const antwortItem = dedupItems.find((i) => i.externe_id === "D-351603");
+const lauf1 = D.planDedupWrites([protokollItem], []);
+const bestand1 = lauf1.persists.map((d) => ({ id: d.id, content_fingerprint: d.content_fingerprint, canonical_target_url: d.canonical_url }));
+const lauf2 = D.planDedupWrites([antwortItem], bestand1);
+check("H8e Folgelauf: das Antwort-Dokument wird eigenstaendig gespeichert (vorher: verworfen)",
+  lauf2.persists.length === 1 && Object.keys(lauf2.countIncrements).length === 0);
+const bestand2 = [...bestand1, ...lauf2.persists.map((d) => ({ id: d.id, content_fingerprint: d.content_fingerprint, canonical_target_url: d.canonical_url }))];
+const lauf3 = D.planDedupWrites([antwortItem], bestand2);
+check("H8f erneuter Lauf ist idempotent: keine Dublette, Fundstelle am EIGENEN Dokument",
+  lauf3.persists.length === 0 && Object.keys(lauf3.countIncrements)[0] === lauf2.persists[0].id);
+// RUECKWAERTSKOMPATIBILITAET: Items OHNE externe Kennung (alle heutigen Quellen inkl. Bund)
+// laufen unveraendert ueber die Adress-/Titelregeln.
+const bundOhneKennung = [
+  { id: "b1", sourceId: "general-hib", title: "Rentenpaket im Bundestag beschlossen", url: "https://bundestag.example.invalid/a", publishedAt: "2026-07-20T08:00:00Z" },
+  { id: "b2", sourceId: "committee-arbeit", title: "Rentenpaket im Bundestag beschlossen", url: "https://bundestag.example.invalid/a", publishedAt: "2026-07-20T09:00:00Z" }
+];
+check("H8g Bund ohne externe Kennung: ein Artikel ueber zwei Wege bleibt EIN Dokument + 2 Fundstellen",
+  (() => { const m = D.mergeIntoDocuments(bundOhneKennung);
+    return m.length === 1 && m[0].finding_count === 2 && m[0].external_identity === null; })());
+check("H8h externalIdentity ist null ohne externe Kennung (Regel 0 bleibt fuer Bestandsquellen inert)",
+  D.externalIdentity(bundOhneKennung[0]) === null && D.externalIdentity({ externe_id: "D-1", sourceId: "be-plenum" }) !== null);
 
 // ========================= TEIL I — Dokument und Vorgang bleiben getrennt ====================
 console.log("\n--- I · Dokumentklassifizierung != Vorgangsbildung ---");
@@ -372,14 +446,35 @@ check("K3 alle in der Bundesstichprobe vorkommenden Dokumentarten waren bereits 
   && BUND_STICHPROBE.every((r) => r.document_type === null || BUND_TYPEN_VORHER.has(r.document_type)));
 check("K4 die Klassifizierung ist an das Land gebunden und laesst Bundesdokumente unberuehrt",
   K.klassifiziereDokument({ land: null, dokumenttyp: "Drucksache" }).dokumentklasse === "unbekannt");
+// Restpunkt 3: die drei ergaenzten Dokumenttypen greifen AUSSCHLIESSLICH fuer Landesdokumente.
+// Grund: die aktive DIP-Bundestagsquelle setzt document_type aus der API; ihr Wertevokabular ist
+// offline nicht pruefbar, eine Production-Abfrage ist nicht freigegeben.
+const landTypen = [...G.LANDESPARLAMENT_DOC_TYPES];
+check("K5 die drei ergaenzten Typen stehen NICHT in der globalen Liste",
+  landTypen.length === 3 && landTypen.every((t) => !G.OFFICIAL_DOC_TYPES.has(t)));
+check("K6 ohne Landessignal bleibt ein solcher Typ WIRKUNGSLOS (kein amtliche-dokumentart)",
+  G.assessDocument({ id: "x1", content_hash: "h", title: "Ein Vorgang aus dem Bundestag", summary: "",
+    source_id: "dip", document_type: "Schriftliche Anfrage", published_at: "2020-01-01T00:00:00Z" },
+    { now: JETZT }).reason !== "amtliche-dokumentart");
+check("K7 MIT Landessignal greift er (politische_ebene = land)",
+  G.assessDocument({ id: "x2", content_hash: "h", title: "Ein Berliner Vorgang", summary: "",
+    source_id: "irgendein-weg", document_type: "Schriftliche Anfrage", published_at: "2020-01-01T00:00:00Z",
+    politische_ebene: "land" }, { now: JETZT }).reason === "amtliche-dokumentart");
+check("K8 Landessignal auch ueber Herkunft (BLN/BRA) und be-/bb-Abrufweg",
+  G.istLandesdokument({ herkunft: "BLN" }) && G.istLandesdokument({ herkunft: "BRA" })
+  && G.istLandesdokument({ source_id: "be-plenum" }) && G.istLandesdokument({ source_id: "bb-plenum" }));
+check("K9 KEINE reale Bundes-Stichprobenquelle wird faelschlich als Landesdokument erkannt",
+  BUND_STICHPROBE.every((r) => !G.istLandesdokument(r)));
+check("K10 die Begrenzung kostet keinen zusaetzlichen KI-Aufruf im Bund: Entscheidungen unveraendert",
+  BUND_STICHPROBE.every((r) => G.assessDocument(r, { now: Date.parse("2026-07-14T12:00:00Z") }).decision === r.sqlgate));
 
 // ==================== TEIL L — Determinismus, Isolation, kein Netz ==========================
 console.log("\n--- L · Determinismus und Isolation ---");
-const lauf1 = JSON.stringify(beDocs.map((d) => K.zuRohdokument(d, kontextFuer("berlin"))));
-const lauf2 = JSON.stringify(P.parsePardokDocumentsFromString(fx("berlin-gold.xml"), {
+const determLauf1 = JSON.stringify(beDocs.map((d) => K.zuRohdokument(d, kontextFuer("berlin"))));
+const determLauf2 = JSON.stringify(P.parsePardokDocumentsFromString(fx("berlin-gold.xml"), {
   land: "berlin", sourceUrl: "https://www.parlament-berlin.de/opendata/pardok-wp19.xml"
 }).documents.map((d) => K.zuRohdokument(d, kontextFuer("berlin"))));
-check("L1 zweimal derselbe Lauf -> byte-identisches Ergebnis", lauf1 === lauf2);
+check("L1 zweimal derselbe Lauf -> byte-identisches Ergebnis", determLauf1 === determLauf2);
 const quellen = ["../lib/helmut/quellenarchitektur/pardok-parser.js", "../lib/helmut/quellenarchitektur/pardok-dokumentklassen.js"]
   .map((p) => fs.readFileSync(path.join(__dirname, p), "utf8"));
 check("L2 weder Parser noch Klassifizierung binden Netz-, DB- oder KI-Module ein",

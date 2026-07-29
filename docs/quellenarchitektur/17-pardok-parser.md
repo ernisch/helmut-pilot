@@ -22,7 +22,7 @@ Feldannahme erzwungen (getrennte Adapter).
 |---|---|---|
 | Root | `<Export aktualisiert=...>` | `<Export aktualisiert=...>` |
 | Namespaces | keine | keine |
-| Record-Element | **flaches** `<Dokument>` | `<Vorgang>` (verschachteltes `<Dokument>`) |
+| Record-Element | ~~flaches `<Dokument>`~~ → **`<Vorgang>`** (verschachteltes `<Dokument>`; korrigiert 29.07.2026, Teil B.7) | `<Vorgang>` (verschachteltes `<Dokument>`) |
 | Externe ID | `<DBID>` (z. B. `D-351040`, 100%) | **kein DBID** → `VNr` + Dokument-`ReihNr` |
 | Besonderheit | Titel nur bei ~38% (viele Typen formatbedingt titellos) | ~47% `<VFunktion>delete</VFunktion>`-Stubs (Tombstones); Vorgang hat oft **mehrere** `<Dokument>` |
 | Größe | >48 MB (~47k Dokumente) | ~12 MB (~9k Vorgänge) |
@@ -42,7 +42,7 @@ kein Netz/DB/LLM. Extrahierte 12 Felder (fehlend → `null`, **nichts erfunden**
 12. `inhaltsfingerabdruck` (stabil, **titel-unabhängig**).
 
 **Getrennte Adapter:**
-- **Berlin** (`parseBerlinDokument`): iteriert flache `<Dokument>`; `externe_id = DBID`.
+- **Berlin** (`parseBerlinVorgang` → `parseBerlinDokument`): iteriert `<Vorgang>`, überspringt `VFunktion=delete`-Stubs, erzeugt je verschachteltem `<Dokument>` ein Dokument; `externe_id = DBID`; flache Exporte bleiben über `fallbackRecordTag` lesbar (Teil B.7).
 - **Brandenburg** (`parseBrandenburgVorgang`): überspringt `VFunktion=delete`-Stubs und
   dokumentlose Vorgänge; erzeugt je verschachteltem `<Dokument>` ein Dokument;
   `externe_id = VNr#ReihNr` (eindeutig pro Dokument-Position).
@@ -194,13 +194,13 @@ Antwort auf eine Anfrage still ein reines Sitzungsdokument geworden.
 | Klasse | Berlin (PARDOK) | Brandenburg (parldok) |
 |---|---|---|
 | Drucksache | ✅ `Drs`/`Verordnung`/`Antrag` | ✅ `Drs`/`Gesetzentwurf`/`Unterrichtung`, auch ohne `DokTyp` |
-| Anfrage | ✅ `Schriftliche Anfrage`, `Kleine Anfrage` | ✅ `Kleine Anfrage` |
+| Anfrage | ✅ `Schriftliche Anfrage`, `Kleine Anfrage`, `Mündliche Anfrage` | ✅ `Kleine Anfrage` |
 | Antwort | ✅ `DokTypL = Antwort` (`D-351603`) | ❌ **fachliche Ausnahme** — kein eigener Typwert in der Stichprobe; Antworten erscheinen als eigenständige Drucksache und bleiben ehrlich `drucksache` |
 | Sitzung | ✅ Plenar- + Ausschussprotokoll, `Behandlung im Plenum`, `Ausschussberatung` | ✅ Plenarprotokoll, Ausschussprotokoll, Präsidiumsprotokoll |
 | Tagesordnung/Termin | ❌ **fachliche Ausnahme** — über 800 gemessene Records führt Berlin genau vier Dokumentarten, keine davon ist eine Tagesordnung | ✅ Dokumentart **`Einladung`** (11 von 816) — die Einladung zur Sitzung trägt die Tagesordnung |
 | Pressemitteilung | ❌ **fachliche Ausnahme** — kommt über die Presse-/Medienwege des Landesmoduls | ❌ dito |
 | Sonstiges | ✅ Gesetz- und Verordnungsblatt | ✅ GVBl, `Information`, `Frühwarndokument`, `Gutachten`, `Zuschrift` |
-| Parlamentarischer Vorgang | **als Bezug: nein** (siehe B.7) | **als Bezug: ja** — `VNr` + `VTypL` |
+| Parlamentarischer Vorgang | **als Bezug: ja** — `VNr`/`VID` + `VTypL` (belegt 29.07.2026, siehe B.7) | **als Bezug: ja** — `VNr` + `VTypL` |
 
 Alle Ausnahmen sind in `KLASSEN_AUSNAHMEN` maschinenlesbar hinterlegt (Land, Klasse, Grund,
 Beleg, Ersatzweg) und werden von der Testsuite gegen den Klassenvertrag geprüft. Sie werden
@@ -227,7 +227,7 @@ Informationen bleiben erhalten:
 `document_type` trägt bewusst die **amtliche Bezeichnung**, weil das Understanding-Gate genau
 darauf prüft; die normalisierte Klasse steht daneben im bereits vorhandenen `raw`-jsonb.
 
-## B.6 Zwei Befunde im bestehenden Bestand
+## B.6 Befunde im bestehenden Bestand
 
 **Befund 24-1 — „Schriftliche Anfrage" war dem Understanding-Gate unbekannt.**
 `OFFICIAL_DOC_TYPES` kannte `kleine anfrage` und `grosse anfrage`, aber **nicht**
@@ -238,28 +238,86 @@ Berliner Dokument fiel aus der amtlichen Erkennung in den Stichwort-/Alterspfad 
 in den aktiven Bundesquellen vor (gegen die reale Production-Stichprobe geprüft, 42/42
 Gate-Entscheidungen unverändert).
 
-**Befund 24-2 — die globale Dedup identifiziert über die URL, PARDOK darf das nicht.**
-`dedup-global.mergeIntoDocuments` gruppiert zuerst nach kanonischer URL (Regel A). Für PARDOK ist
-die URL **kein** Identitätsmerkmal: ein Plenarprotokoll-PDF trägt viele Einträge. Real belegt:
-`D-351042` (Plenarprotokoll) und `D-351603` (Antwort) zeigen auf **dieselbe** PDF-Adresse
-`p19-002-wp.pdf`. Der Test hält fest, dass die URL-erste Dedup beide zu **einem** Dokument
-verschmelzen würde. Die globale Dedup-Architektur wurde bewusst **nicht** geändert; verbindlich
-ist stattdessen: **PARDOK-Dokumente werden über `content_hash` (externe Kennung) identifiziert,
-nie über die URL.** Für einen späteren Cutover ist das eine harte Vorbedingung — `shadow-ingest.js`
-(Diagnoseskript, nie im Produktivpfad) verletzt sie heute.
+**Befund 24-2 — die globale Dedup identifizierte über die URL. BEHOBEN.**
+`dedup-global.mergeIntoDocuments` gruppierte zuerst nach kanonischer URL (Regel A) und danach nach
+Titel-Fingerabdruck (Regel B). Beides ist für PARDOK falsch. **Gemessen statt vermutet** — der
+Berliner Gold-Bestand durch den echten Schreibpfad (`persistRawDocumentsDeduped` → `planDedupWrites`
+→ `mergeIntoDocuments`, verdrahtet in `scheduler.js:202`):
 
-## B.7 Offene, ehrlich benannte Lücke: Berliner Vorgangsbezug
+| Fall | vorher | nachher |
+|---|---|---|
+| Batch: 10 eigenständige Rohdokumente | **8 Dokumente — 2 Verluste** | 10 Dokumente |
+| davon durch geteilte PDF-Adresse (`D-351042` + `D-351603`) | zusammengeführt | getrennt |
+| davon durch gleichen Titel (`Haushaltsplan 2024/2025`, zwei Drucksachennummern) | zusammengeführt | getrennt |
+| Folgelauf gegen den Bestand: Antwort-Dokument | **`persists: 0`** — als Fundstelle an ein fremdes Dokument gehängt, nie gespeichert | eigenständig gespeichert |
+| erneuter Lauf desselben Dokuments | – | idempotent, Fundstelle am **eigenen** Dokument |
 
-Die Sonde zählt im Berliner Export **41 854 `<Vorgang>`-Elemente neben 47 417 `<Dokument>`**. Die
-Sonde wählt automatisch das häufigste Element (`<Dokument>`), weshalb die **Feldstruktur des
-Berliner `<Vorgang>` in keinem gespeicherten Beleg dokumentiert ist**. Der Parser liest deshalb
-ausschließlich `<Dokument>` und führt für Berlin **keinen** Vorgangsbezug — geraten wird nichts.
+Die drei Dokumente `D-351042`, `D-351603` und `D-351617` teilen sogar **dieselbe** Adresse.
 
-Der Schritt, der die Lücke schließt, ist vorbereitet: `scripts/pardok-structure-probe.js`
-akzeptiert jetzt `PP_RECORD_TAG=Vorgang`. Ein Lauf des Workflows `pardok-parser.yml` mit dieser
-Variable (nur lesende XML-Abrufe, keine Secrets, keine DB, kein LLM) liefert das Feld-Inventar und
-verbatim Beispiel-Records des Berliner `<Vorgang>`. Aus der Arbeitsumgebung ist das nicht
-möglich — der Egress zu beiden Hosts ist gesperrt.
+**Kleinste additive Lösung, ohne Migration:** neue **Regel 0** vor A/B/C — Identität aus
+**Herausgeber + externer Kennung + Dokumenttyp** (`externalIdentity`). Trägt ein Item keine externe
+Kennung, gilt unverändert A/B/C mit der Adresse als Rückfall. Ein Dokument mit eigener Kennung wird
+weder über Adresse noch über Titel eingesammelt, und sein Adress-Rückfall gegen den Bestand ist in
+`planDedupWrites` abgeschaltet. Die Identität reist im **bestehenden** Feld `content_fingerprint`
+(Präfix `ident:`) — **keine neue Spalte, keine Migration**.
+
+**Rückwärtskompatibel:** heute trägt **keine** Quelle eine externe Kennung, auch keine
+Bundesquelle — Regel 0 ist dort strukturell inert. Im Test abgesichert: ein Bundesartikel über zwei
+Wege bleibt **ein** Dokument mit **zwei** Fundstellen.
+
+**Befund 24-4 — die Gate-Ergänzung wäre global gewesen. BEGRENZT.**
+Die drei ergänzten Dokumenttypen standen zunächst in `OFFICIAL_DOC_TYPES` und hätten damit für
+**jede** Quelle gegriffen. Die Prüfung des Wirkungsbereichs ergab: die **aktive
+DIP-Bundestagsquelle** setzt `document_type` aus der API (`scheduler.js:161` →
+`dip.js:46`: `drucksachetyp || dokumentart`). Welche Werte dieses Vokabular vollständig enthält,
+ist **offline nicht prüfbar**, und eine Production-Abfrage ist nicht freigegeben. Ein zusätzlicher
+Treffer hätte dort `zurückstellen` → `verstehen` verschoben — also **einen zusätzlichen KI-Aufruf
+je betroffenem Dokument**.
+
+Deshalb liegen die drei Typen jetzt in einer eigenen Menge `LANDESPARLAMENT_DOC_TYPES` und greifen
+**ausschließlich** für Dokumente mit Landessignal (`politische_ebene = land`, Herkunft `BLN`/`BRA`
+oder Abrufweg-Präfix `be-`/`bb-`). Für den Bund ist die Änderung damit **strukturell** wirkungslos,
+nicht nur empirisch. Im Test abgesichert: keine der 42 realen Bundes-Stichprobenzeilen wird als
+Landesdokument erkannt, und alle 42 Gate-Entscheidungen bleiben unverändert.
+
+## B.7 GESCHLOSSEN: Berlin ist ebenfalls vorgangsstrukturiert
+
+**Die frühere Aussage in diesem Abschnitt — „Berlin liefert keinen Vorgangsbezug" — ist widerlegt.**
+
+Der Sondenlauf **`30483735900` vom 29.07.2026** mit `PP_RECORD_TAG=Vorgang` (nur lesende Abrufe,
+keine Secrets, keine DB, kein LLM) hat die fehlende Struktur belegt:
+
+| Feld | Quote | Beispiel |
+|---|---|---|
+| `<VNr>` | **100 %** | `V-351039` |
+| `<VID>` | **100 %** | `V-351039` (im Beispiel identisch mit `VNr`) |
+| `<VFunktion>` | 50 % | `delete` — dieselbe Tombstone-Form wie Brandenburg |
+| `<VTyp>` / `<VTypL>` | 46 % | `Debatte`, `Anfrage` |
+| verschachteltes `<Dokument>` | 50 % | mit `<DBID>` |
+
+**Verknüpfung Vorgang ↔ Dokumente:** Vorgang `V-351039` trägt die Drucksache `D-351040`
+(Verordnung) **und** das Plenarprotokoll `D-351042` — also zwei Dokumente **unterschiedlicher
+Klasse** in einem Vorgang. Genau die Trennung, die Punkt 24 verlangt.
+
+**Belastbare externe Identität:** unverändert die **`<DBID>`** des Dokuments. Der Vorgang liefert
+nur den **Bezug** (`vorgangsnummer`, `vorgangstyp`) — es wird kein Vorgangsobjekt gebildet und
+weiterhin nie `cluster_id` gesetzt.
+
+**Parser:** neuer Adapter `parseBerlinVorgang` (spiegelt Brandenburg, behält aber die DBID als
+Dokumentidentität). `LAND_CONFIG.berlin.recordTag` ist jetzt `Vorgang`; `fallbackRecordTag`
+`Dokument` hält flache Exporte und Ausschnitte weiter lesbar — die bestehende flache Gold-Fixture
+liefert unverändert 10 Dokumente. `feedBlock` erkennt die Form am Block selbst, damit String- und
+Streaming-Pfad identisch arbeiten.
+
+**Zwei weitere belegte Befunde aus demselben Lauf:**
+- Dokumenttyp **`MdlAnfr` / „Mündliche Anfrage"** — neu als belegter Berliner Typ aufgenommen.
+- **Drei** eigenständige Dokumente (`D-351042`, `D-351603`, `D-351617`) tragen **dieselbe**
+  PDF-Adresse `p19-002-wp.pdf`. Die Adresse ist für PARDOK endgültig kein Identitätsmerkmal.
+
+**Fixture:** `test/fixtures/pardok/berlin-vorgang-gold.xml`, verbatim aus dem Lauf. **Ehrliche
+Grenze:** die Sonde kürzt jeden Beispiel-Record bei 1 800 Zeichen — `V-351039` ist mit den beiden
+dokumentierten Dokumenten abgebildet und **kann real weitere enthalten**. Die Fixture behauptet
+keine Vollzähligkeit.
 
 ## B.8 Fixtures
 
@@ -270,27 +328,31 @@ möglich — der Egress zu beiden Hosts ist gesperrt.
 
 ## B.9 Tests
 
-- `scripts/landesparser-klassen-test.js` — **94/94 grün**, Berlin und Brandenburg getrennt
+- `scripts/landesparser-klassen-test.js` — **116/116 grün**, Berlin und Brandenburg getrennt
   nachgewiesen: Klassenvertrag · Pflichtklassen je Land · Länderspezifik (die Typtabellen sind
   nachweislich verschieden) · kanonischer Vertrag (alle neun Informationen) · fail closed bei
   unbekannten/fehlenden Typen · fehlende Felder · Identität und Dubletten · Dokument ≠ Vorgang ·
   vollständiger Offline-Weg bis ins Understanding-Gate · Rückwärtskompatibilität Bund ·
   Determinismus und Isolation · beide Plenumswege bleiben `needs_review`/`manual` · **und die real
   gemessene Dokumentart-Verteilung beider Quellen** (Teil C2).
-- **Mutationsprobe: 9 von 9 Mutationen machen die Suite rot** (Dokumentart vor Dokumenttyp 9 ·
+- **Mutationsprobe: 14 von 14 Mutationen machen die Suite rot** (Dokumentart vor Dokumenttyp 9 ·
   fail closed aufgeweicht 4 · Vorgangsbildung im Parserpfad 1 · abgeleiteter Titel nicht markiert 2 ·
   unbekanntes Land geraten 2 · „Schriftliche Anfrage" wieder entfernt 1 · brandenburgischer
   Typwert entfernt 1 · Brandenburgs `Ausschussprotokoll` entfernt 1 · Brandenburgs `Einladung`
-  entfernt 2).
+  entfernt 2 · Dedup-Regel 0 ausgeschaltet 5 · Adress-Rückfall für Identitätsdokumente wieder
+  aktiviert 1 · Gate-Begrenzung entfernt 1 · Berliner Vorgangsbezug verworfen 2 · Berliner
+  delete-Stubs nicht übersprungen 1).
 - Regression: `pardok-parser-test.js`, `pardok-gate-test.js`, `pardok-dispatch-test.js`,
   `pardok-dispatch-smoke-test.js`, `shadow-ingest-test.js` grün; Gesamt-Offline-Suite
   **182/182** (Ausgang 181/181), Browser-/Mobile-Smoke **32/32**.
 
 ## B.10 Verbleibende Risiken
 
-1. **Berliner Vorgangsbezug fehlt** (B.7) — Weg zur Schließung steht, braucht einen Lauf mit Netz.
+1. **Vollzähligkeit des Berliner Vorgangs nicht belegt:** die Sonde kürzt Beispiel-Records bei
+   1 800 Zeichen, `V-351039` kann real weitere `<Dokument>` tragen. Der Bezug selbst ist belegt,
+   die Anzahl der Dokumente je Vorgang ist es nicht.
 2. **Stichprobe statt Vollerhebung:** die Typtabellen stützen sich auf 500 (Struktur) bzw. 800 (Verteilung) Records je Quelle — nicht auf die vollen 47 417 bzw. 9 092 Records. Neue
    Typwerte sind möglich — sie fallen fail closed als `unbekannt` auf, statt still falsch zu werden.
 3. **Kein Production-Beweis** und keiner möglich, solange die Wege bewusst inaktiv sind.
-4. **Befund 24-2** bleibt als Vorbedingung für den Cutover bestehen.
+4. **Befund 24-2 ist behoben, aber nur im Code bewiesen** — ein Production-Beleg ist nicht möglich, solange die Wege inaktiv sind. `shadow-ingest.js` (Diagnoseskript, nie im Produktivpfad) reicht die externe Kennung nicht durch und profitiert deshalb nicht von Regel 0.
 5. **Wahlperiode in der Quell-URL** (`wp19`/`WP8`) — unverändert aus Teil A.
