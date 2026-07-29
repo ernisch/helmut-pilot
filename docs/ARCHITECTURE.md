@@ -137,7 +137,8 @@ einen Zustand ab (gesund · eingeschränkt · ausgefallen · inaktiv · unbekann
   `…_rollback.sql`-Datei.** Nicht angewandt: **nur noch `20260720`**
   (`20260727` angewendet am 2026-07-27; `20260728_embedding_shadow` angewendet am
   2026-07-28; `20260728_matching_audit` (Sprint 23B-1) angewendet am 2026-07-28,
-  20:20:57 UTC, Rollout-Grenze `HELMUT_MATCHING_AUDIT` weiterhin nicht aktiviert;
+  20:20:57 UTC, Rollout-Grenze `HELMUT_MATCHING_AUDIT` seit 2026-07-28, ~20:55 UTC
+  **in Production aktiv**;
   `20260721` bereits seit 2026-07-16 — die frühere Angabe war falsch
   und ist in Production gegengeprüft).
 
@@ -272,9 +273,13 @@ gesamte Auditpfad inert — keine Sperre, kein Lese- oder Schreibzugriff, keine 
 Fehlerquelle, byte-identische Ergebniszeilen. Migration `20260728_matching_audit.sql`
 (+ Rollback) wurde am 2026-07-28, 20:20:57 UTC in Production angewendet und
 vollständig verifiziert (287 Ergebniszeilen byte-identisch, `matching_runs` mit
-0 Zeilen); **das Flag selbst ist weiterhin nicht gesetzt** — die Auditpersistenz
-ist noch nicht aktiv. Details:
-[`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md) §21.6.
+0 Zeilen). **In Production steht das Flag seit 2026-07-28, ~20:55 UTC auf `on`**
+(nur dort; Preview und Development bleiben aus) — die Auditpersistenz ist **aktiv**.
+Erster Auditlauf 2026-07-29, 04:05 UTC; **Idempotenz in Production bewiesen** um
+08:07:20 UTC (identischer Eingabefingerabdruck → keine neue Laufzeile,
+`wiederholungen` 0 → 1, Projektion unverändert). Rückweg unverändert: Wert auf `off`
+plus Redeploy. Details:
+[`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md) §21.6 und §25.
 
 Kostenwirkung: **null zusätzliche KI-Aufrufe.** Die Schreiblast **sinkt** — ein
 identischer Zweitlauf schrieb bisher 20 wirkungslose UPDATEs, jetzt eines.

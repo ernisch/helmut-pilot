@@ -3,16 +3,18 @@
 **Kanonische Quelle** für den Ist-Zustand des produktiven Matchings, die
 Architekturentscheidung für Sprint 23B und die geplante Nutzererklärung (23C).
 
-**Stand:** 2026-07-28 · **Teil A** = Sprint 23A (Bestandsaufnahme) · **Teil B** =
-Sprint 23B-1 (umgesetzte Auditpersistenz, Migration **nicht** angewendet,
-Rollout-Grenze **AUS**)
+**Stand:** 2026-07-29 · **Teil A** = Sprint 23A (Bestandsaufnahme) · **Teil B** =
+Sprint 23B-1 (umgesetzte Auditpersistenz, Migration **angewendet**, Rollout-Grenze
+`HELMUT_MATCHING_AUDIT` **AN in Production**, Erstlauf und Idempotenz **bewiesen**)
 **Basis:** Teil A `main` = `51a533d` (Merge PR #166), Production read-only vermessen
-am 2026-07-28, ca. 17:00–17:30 UTC · Teil B `main` = `53893fa` (Merge PR #168)
+am 2026-07-28, ca. 17:00–17:30 UTC · Teil B `main` = `5c254c4` (Merge PR #170)
 
 > **Aufbau:** §1–§13 sind der belegte **Ist-Zustand** aus Sprint 23A und bleiben
 > unverändert. §14–§24 (Teil B) beschreiben die in Sprint 23B-1 gebaute Lösung,
-> die Production-Reihenfolge und den Rückweg. Wo Teil B von der Empfehlung aus
-> §10 abweicht, ist das dort ausdrücklich benannt und begründet.
+> die Production-Reihenfolge und den Rückweg. **§25 ist der Production-Beweislauf**
+> (Aktivierung, erster Auditlauf, Idempotenznachweis) und schließt Sprint 23B-1 ab.
+> Wo Teil B von der Empfehlung aus §10 abweicht, ist das dort ausdrücklich benannt
+> und begründet.
 
 > **Abgrenzung:** Roadmap-**Punkt 23** (dieses Dokument) ≠ **OP-23** aus
 > [`datenmotor-restliste.md`](datenmotor-restliste.md). Ebenso: Roadmap-Punkt 22
@@ -1560,3 +1562,203 @@ Ergebnis-Upsert, DSGVO-Liste) · `lib/helmut/scheduler.js` (nur Herkunftsangaben
 durchgereicht) · `scripts/geografie-gedaechtnis-test.js` (D7-Ausnahme) ·
 `docs/betrieb/env-inventar.md` · dieses Dokument · `docs/CURRENT_STATE.md` ·
 `docs/ARCHITECTURE.md` · `docs/roadmap/phase_1_checkliste.md`
+
+---
+
+## 25 · Production-Beweislauf: Aktivierung, Erstlauf, Idempotenz
+
+Dieser Abschnitt schließt Sprint 23B-1 ab. §21.6 belegt die **Migration**, §25 belegt
+die **Inbetriebnahme**. Alles hier Beschriebene ist an Production gemessen, nicht
+geschätzt. Die Reihenfolge folgt den drei getrennt erteilten Freigaben.
+
+### 25.1 Gate 3 — die Aktivierung
+
+**Wert.** `matchingAuditEnabled()` (`storage.js:2355`) liest **direkt** `process.env`:
+
+```js
+function matchingAuditEnabled() {
+  return isFlagOn(process.env.HELMUT_MATCHING_AUDIT) && v3StoreReady();
+}
+function isFlagOn(value) {                                    // storage.js:785
+  return ["1", "true", "on", "yes"].includes(String(value || "").trim().toLowerCase());
+}
+```
+
+Aktivierend sind also `1`, `true`, `on`, `yes` (Groß-/Kleinschreibung egal, Rand-
+leerzeichen werden entfernt). Gesetzt wurde die Hausschreibweise **`on`**.
+`helmut-flags.json` ist **nicht** beteiligt: `HELMUT_MATCHING_AUDIT` steht nicht in
+`FILE_FLAG_ALLOWLIST` (`flags.js:31`), und `flags.js` schreibt nie nach `process.env`.
+Die Vercel-Variable ist der einzige Hebel.
+
+**Ausführung.** Am **2026-07-28, ~20:55 UTC** in Vercel **ausschließlich für die
+Umgebung Production** gesetzt; Preview und Development bleiben aus. Wirksam wurde sie
+mit dem Redeploy `dpl_ChLoTuKztU1B835PfckELKp8doMZ` (Commit `5c254c4`, Redeploy von
+`dpl_7kag3HkqK61KTRAu2y9jBUFhxBo1`), `READY` **20:56:48 UTC**, ohne Build-Fehler. Eine
+Vercel-Env-Änderung wirkt **erst nach einem Redeploy** — das ist zugleich der Rückweg.
+
+**Prüfungen unmittelbar nach dem Redeploy — alle sieben grün:** Deployment `READY` ·
+Basis `5c254c4` (enthält PR #169 und #170) · keine Build-Fehler · keine neuen
+Runtime-Fehler · `matching_runs` **0 Zeilen** · `matching_results` **287 Zeilen** ·
+**0** Zeilen auf einem unvollständigen Lauf. Zusätzlich: Fingerabdruck
+`be4670c61235c908559853a6f6fc6c8c` unverändert, `knowledge_object_embeddings` 772,
+0 Sperren, 0 laufende Prozesse.
+
+**Eine ehrliche Grenze:** Vercel-Umgebungsvariablen sind aus einer Cloud-Sitzung nicht
+lesbar. Dass das Flag gesetzt und wirksam ist, ist **nicht** an der Variablen belegt,
+sondern an ihrer **Wirkung** — der ersten Zeile in `matching_runs`. Bis zum ersten Lauf
+war die Aktivierung unbewiesen, und genau so wurde sie auch berichtet.
+
+### 25.2 Der erste Production-Auditlauf
+
+Ausgelöst vom **regulären** `/api/cron/crawl` um 04:01:08 UTC — **kein manueller Lauf**.
+
+| Größe | Wert |
+|---|---|
+| Lauf-ID | `mrun-annika-klose-20260729040507-32c822e0` |
+| Mandant | `annika-klose` |
+| Zeitraum | 2026-07-29, **04:05:07 → 04:05:08 UTC** (**1 041 ms**) |
+| Auslöser / Herkunft | `crawl` · `pipeline_run_id = crawl-20260729040110-0zay2` |
+| Status | **`vollstaendig`**, `beendet_am` gesetzt, `fehler = NULL` |
+| Versionsachsen | `legacy-shadow-1` / `legacy_relevance_v1` / `feature-hash-256-v1` |
+| Zähler | `kandidaten` = `berechnet` = `veroeffentlicht` = **20**, `abgeloest` = **19** |
+| Schwellenwerte | `{"filter": {}, "schwelle": null, "match_count": 20}` |
+| `ergebnis` | 20 Einträge |
+
+**Wirkung auf die Projektion.** `matching_results` **287 → 290**. Für `annika-klose`:
+36 → 39 Zeilen = **17 wiederverwendet** (in place aktualisiert) + **3 neu** +
+**19 abgelöst**. Abgelöst heißt `aktuell = false` mit gesetztem `abgeloest_am` —
+**gelöscht wurde nichts**. Die 251 Zeilen der übrigen sechs Mandanten sind
+**vollständig unberührt**: 0 mit `updated_at`, 0 mit `berechnet_am`, 0 mit
+`aktuell = false`.
+
+**Invarianten nach dem Lauf — alle acht wie zugesichert:**
+
+| Invariante | Ist |
+|---|---|
+| Läufe gesamt / vollständig / `laufend` / `fehlgeschlagen` | 1 / 1 / **0** / **0** |
+| Vollständige Läufe ohne `beendet_am` | **0** |
+| Ergebniszeilen mit `run_id` auf nicht vollständigem Lauf | **0** |
+| Abgelöste Zeilen ohne `abgeloest_am` | **0** |
+| Aktive Matching-Sperren nach Prozessende | **0** |
+| Aktuelle Zeilen, die auf den Lauf zeigen | **20/20** |
+| Lauf-`ergebnis` deckungsgleich mit der Projektion (`result_id`+`rank`+`similarity`) | **20/20** |
+| Gesamtzahl `matching_results` gesunken | **nein** (287 → 290) |
+
+**Legacy-Stabilität.** Ränge lückenlos **1–20** · alle Kennungen weiter im Altschema
+`mr-annika-klose-*` · `similarity` und `matched_features` bei 20/20 gesetzt ·
+`created_at` der 17 wiederverwendeten Zeilen liegt weiterhin **vor** dem Lauf (friert
+ein wie im Altverhalten, §5) · Fingerabdruck der 270 unberührten Zeilen:
+**`7837ae7f3dbceba9f5e6e30e8586adb9`** (neuer Referenzwert). `begruendung` ist bei
+**3 von 20** Zeilen gefüllt, `signale` bei **20 von 20** — genau die Belegpflicht aus
+§18: ohne Beleg kein Satz.
+
+### 25.3 Der Idempotenznachweis
+
+**2026-07-29, 08:07:20 UTC.** Ein regulärer zweiter Lauf für denselben Mandanten
+(`/api/cron/pipeline`, Crawl 08:03:23 UTC, eager-understanding 08:05:38–08:07:19) traf
+auf einen **identischen Eingabefingerabdruck**:
+
+```
+d396c545431210e1cef4ebb8e12c4d7ad4ec75a8103e289ce38fb13b62bcc8ac
+```
+
+| Erwartung | Ist |
+|---|---|
+| Keine neue Zeile in `matching_runs` | ✅ weiterhin **1** Zeile |
+| Derselbe vollständige Lauf wird wiederverwendet | ✅ `mrun-annika-klose-20260729040507-32c822e0` |
+| `wiederholungen` erhöht sich um exakt 1 | ✅ **0 → 1** |
+| `letzter_lauf_at` wird aktualisiert | ✅ **08:07:20 UTC** |
+| Keine neue Ergebniszeile, keine Löschung | ✅ 290 → **290**, annika 39 → **39** |
+| `run_id`, Rang, `similarity`, `matched_features`, `aktuell` unverändert | ✅ |
+| `updated_at` unverändert | ✅ bleibt **04:05:08** |
+| 0 Ergebniszeilen auf unvollständigem Lauf | ✅ |
+| 0 zusätzliche KI-Aufrufe, Token, Kosten | ✅ |
+
+Damit ist die in §15 versprochene Idempotenz **in Production** belegt: ein identischer
+Lauf kostet **ein UPDATE statt 20 Ergebniszeilen**.
+
+**Der aussagekräftigste Teil des Nachweises:** zwischen beiden Läufen entstanden
+**179 neue Wissensobjekte** (1 523 → 1 702). Der Fingerabdruck blieb trotzdem gleich,
+weil keines davon die Kandidatenmenge dieses Mandanten veränderte. Der Fingerabdruck
+reagiert also auf **fachliche Änderung**, nicht auf Bestandswachstum — genau die
+Eigenschaft, die §15.3 fordert. Ein Fingerabdruck, der bei jedem neuen Objekt kippt,
+hätte die Idempotenz nutzlos gemacht.
+
+**Warum kein manueller Zweitlauf.** Der Nachweis wurde an einem **regulären** Lauf
+beobachtet, nicht erzwungen. Grund ist Befund **M-9** (§25.5): es gibt keinen
+produktiv verwendeten Einstieg, um Matching für genau einen Mandanten isoliert
+auszuführen. Jeder manuelle Versuch hätte neuen Code gebraucht — und wäre damit kein
+Nachweis am Produktivpfad gewesen.
+
+### 25.4 Fehler und Kosten
+
+**Fehler: keine.** Postgres-Logs seit der Aktivierung: 38 Einträge im Fenster, davon
+**1 `ERROR`** — `column "purpose" does not exist`, eine fehlerhafte Prüfabfrage aus der
+Beweissitzung selbst, kein Anwendungsfehler. **Kein** Fehler zu `matching_runs`,
+`matching_results` oder `helmut_publish_matching_run`. Vercel-Runtime-Fehler: **0** in
+24 Stunden. *Grenze: die Log-Schnittstelle liefert maximal 100 Einträge; das Fenster
+seit der Aktivierung ist damit vollständig abgedeckt, ältere Zeiträume nicht.*
+
+**Kosten: 0,00 USD.** `llm_usage` weist im Fenster 04:00–04:05 **0 Aufrufe, 0 Token,
+0 USD** aus — identisch zum Vergleichsfenster des Vortags **vor** der Aktivierung, und
+0 Aufrufe im Auditfenster selbst. Strukturell erwartbar: `matching-audit.js`,
+`matching-contract.js` und `matching-begruendung.js` rufen kein Modell auf (§18, §19).
+`knowledge_object_embeddings` unverändert bei **772** — die semantischen Embeddings
+sind am produktiven Matching weiterhin **nicht** beteiligt.
+
+### 25.5 Zwei neue Befunde
+
+Beide stammen aus dem Beweislauf, gehören **nicht** zum Sprintumfang und verändern
+nichts am fachlichen Matching.
+
+**M-8 · Der Crawl deckelt die Auditabdeckung.** Der Crawl-Cron endet reproduzierbar in
+seinem Zeitlimit:
+
+```
+29.07. 04:00 UTC  [cron/crawl]    280002ms tenants=undefined bounded=true
+28.07. 20:00 UTC  [cron/crawl]    280001ms tenants=undefined bounded=true
+28.07. 04:00 UTC  [cron/crawl]    280001ms tenants=undefined bounded=true
+```
+
+Die beiden 28.07.-Läufe liegen **vor** der Flag-Aktivierung — das Zeitlimit ist also
+**kein Effekt der Auditpersistenz**, sondern Bestandsverhalten. Folge: ein Lauf
+erreicht nur einen Teil der Mandanten, und die Auditabdeckung hängt daran. Im
+Erstlauf wurde `annika-klose` vollständig verarbeitet; `cem-ince` wurde als nächster
+begonnen, erreichte die Matching-Stufe aber nicht mehr — belegt über
+`profile_embeddings`, weil `saveProfileEmbedding` der **erste** Schritt von
+`runMatchingCore` ist (`matching.js:445`) und dort für `cem-ince` weiterhin der
+28.07. steht. Genau so soll es aussehen: ein Mandant, der die Stufe nicht erreicht,
+hinterlässt **keine** Laufzeile, **keinen** halben Zustand und **keinen** Fehler.
+Aufgenommen als **OP-25**.
+
+**M-9 · Matching ist nicht einzeln auslösbar.** `runMatchingShadow` hat genau zwei
+produktive Aufrufer: `scheduler.js:412` (in `runSourceCrawl`) und `scheduler.js:588`
+(in `runLageCheck`, das ab `scheduler.js:629` **selbst crawlt**). Es gibt **keine**
+HTTP-Route in `server.js`, **kein** npm-Skript und **keinen** Workflow, der nur
+Matching ausführt; die einzigen weiteren Aufrufer sind zwei Testskripte mit
+hartkodierten Kunstmandanten und gestubbter Datenbank. Matching ist damit betrieblich
+nur als Anhängsel eines Vollcrawls auslösbar — ein einzelner Mandant lässt sich weder
+gezielt neu matchen noch gezielt nachziehen. Zusammen mit M-8 heißt das: wer heute
+hinter der Abdeckung zurückfällt, hat keinen Weg nach vorn außer dem nächsten
+Vollcrawl. Aufgenommen als **OP-26**.
+
+### 25.6 Was nicht verändert wurde
+
+Kein Code, kein Commit am Produktivpfad, keine Migration, keine Cron-Konfiguration,
+keine Scores, Ränge, Kandidaten oder `matched_features`, kein manueller Lauf, keine
+Datenkorrektur, kein Rollback. `knowledge_object_embeddings` unverändert. Der Rückweg
+bleibt unverändert verfügbar: `HELMUT_MATCHING_AUDIT` auf `off` plus Redeploy führt in
+Sekunden zum Legacy-Pfad zurück (§21.5); die strukturelle Rücknahme über
+`20260728_matching_audit_rollback.sql` bleibt freigabepflichtig und war **nicht** nötig.
+
+### 25.7 Sprintzustand
+
+**Sprint 23B-1 ist erfolgreich abgeschlossen.** Alle sechs Bedingungen sind erfüllt:
+erster Production-Auditlauf bewiesen (§25.2) · atomare Veröffentlichung bewiesen
+(§16, §23.1, §25.2) · Idempotenz bewiesen (§25.3) · keine Legacy-Regression (§25.2) ·
+keine zusätzlichen KI-Kosten (§25.4) · Dokumentation vollständig.
+
+**Roadmap-Punkt 23 bleibt offen.** Die Herleitung ist jetzt gespeichert, aber für den
+Mandatsträger noch **unsichtbar**. Erst **Sprint 23C** (sichtbare Nutzererklärung, §11)
+erfüllt den Punkt; **Sprint 23B-2** (Briefing-Historisierung) bleibt ebenfalls offen.
+Der Befund zum 200er-Ladefenster (**M-7**, §15.2) bleibt unverändert außerhalb.

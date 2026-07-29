@@ -14,7 +14,7 @@
 
 | | |
 |---|---|
-| **Stand / Prüfdatum** | **2026-07-18** (Basisstand 2026-07-17, re-verankert 2026-07-22, siehe Banner; OP-05/06/08/13/14 nachgezogen durch den Pending/Understanding/KO-Sprint — Belege: `docs/betrieb/datenmotor_sprint_pending_understanding_ko.md`) |
+| **Stand / Prüfdatum** | **2026-07-29** (Basisstand 2026-07-17, re-verankert 2026-07-22, siehe Banner; OP-05/06/08/13/14 nachgezogen durch den Pending/Understanding/KO-Sprint — Belege: `docs/betrieb/datenmotor_sprint_pending_understanding_ko.md`; §4 und §6 nachgezogen durch Sprint 23B-1 — neue Befunde **B5**/**B6** und neue Punkte **OP-25**/**OP-26**. *Die übrigen Abschnitte tragen weiterhin den Stand 2026-07-18 und wurden in diesem Sprint nicht nachgemessen.*) |
 | **Geprüfter Stand** | historisch `main`-HEAD `ca7e404` (Merge PR #102); Re-Anker (siehe Banner) `d6d9063` (#113); seither weiter nachgezogen (Pending/Understanding/KO-Sprint + Recovery-Stilllegung PR #105, Kontextstruktur PR #119, Doku-Nachzug PR #121) — **aktuell `045393c` (#121)** |
 | **Grundlagen** | PR #95–#102, `docs/betrieb/production_beweisprotokoll.md` (inkl. §7 Google-News-Härtung), `docs/betrieb/google_news_haertung.md`, `docs/betrieb/health_report_rollierend.md`, `docs/betrieb/f5_freigabe.md`, `docs/helmut_datenmotor_thread2_handoff.md` §0a, `docs/quellenarchitektur/00-master-status.md` (Nachtrag 2026-07-17), Audit-Serie |
 
@@ -132,6 +132,8 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 | **B3** — Quellenzahl mandats-/profilabhängig (Demo-/Testmandat-Lauf: 139 statt 145 Quellen) | neu aus PR-#102-Analyse; feste Referenz „145" gilt nicht mehr — harte Invariante künftig `Zeilenzahl = distinct source_id` | OP-19 |
 | Katalog-Dublette der Personen-News-Quelle (2 Abrufe/Crawl) | Ursache präzisiert (id-Kollision, nicht statischer Katalog); `source_id`-Dedup durch PR #102 umgesetzt + offline getestet; Live-Nachweis offen | OP-19 |
 | **B4** — Vorgangsbildung verwirft Ereignisse lautlos bei `vorgang_id`-Kollision (Diagnose-Sprint 2026-07-26, CSD-2026-Fall) | **Ursache bewiesen, Reparatur umgesetzt, Production-Nachweis offen.** Diagnose: `deriveVorgangId()` reduzierte einen Cluster auf **ein einzelnes Wort**; traf dieses Wort ein bestehendes, thematisch fremdes KO, verwarf `understandOneCluster` den Cluster über `skipped-exists` — kein KI-Aufruf, kein `ko_document_links`-Eintrag, kein Fehler, kein Protokolleintrag. **Reparatursprint 2026-07-26:** fachliche Identität und technische Eindeutigkeit sind getrennt (Kennung = Vorschlag, Zugehörigkeit = Belegvergleich gegen echte Kandidaten), `skipped-exists` ist ersatzlos entfallen, jeder Ausgang ist klassifiziert, jeder verarbeitete Cluster schreibt `ko_document_links` (Endzustand ohne neue Tabelle ableitbar), zurückgestellte Cluster werden vorgemerkt **und** verknüpft, der Nachhollauf bildet Cluster aus den Verknüpfungen statt aus einer Neuclusterung. **Verlustumfang read-only verifiziert (7 Tage, 1 970 Rohdokumente): 47,3 % durch Kennungskollision — die 47 % sind bestätigt; der Gesamtverlust ist mit 76,3 % ohne nachvollziehbaren Endzustand deutlich höher.** Neues Verfahren: 0 Kollisionen, 252 Cluster schreiben einen Bestand fort. Kosten: Obergrenze 115 → 159 KI-Aufrufe/Tag bei Budget 100 — der Engpass bestand vorher, wird jetzt sichtbar und nachholbar. Details, Nachweisplan und Freigabeanfrage: [`befund-csd-2026-vorgangsverlust.md`](befund-csd-2026-vorgangsverlust.md) §9–§13 | **OP-14 wird durch den Kostenbefund dringlich** (Reihenfolge entscheidet jetzt über Qualität). Offen: Merge/Deployment + 24-h-Nachweis; **getrennt** freizugeben das Nachholen des Altbestands (1 504 Dokumente, Kostenentscheidung) |
+| **B5** — Crawl läuft reproduzierbar in sein **280-Sekunden-Zeitlimit** und erreicht je Lauf nur einen Teil der Mandanten (Sprint 23B-1, 2026-07-29) | **Belegt und quantifiziert.** Protokollzeile `[cron/crawl] 280001ms tenants=undefined bounded=true` am **28.07. 04:00**, **28.07. 20:00** und **29.07. 04:00** — die ersten beiden liegen **vor** der Aktivierung von `HELMUT_MATCHING_AUDIT`, das Zeitlimit ist also **kein** Effekt der Auditpersistenz, sondern Bestandsverhalten. Empirisch: der 29.07.-Lauf verarbeitete `annika-klose` vollständig, begann `cem-ince` und erreichte dessen Matching-Stufe nicht mehr (belegt über `profile_embeddings`, das im Matching **zuerst** geschrieben wird). Folgen: die Auditabdeckung, die mandatsindividuelle Personenversorgung und jede gezielte Nachholung hängen an diesem Deckel. Verwandt mit den 2 × `504` vom 26.07. (OP-21) und mit dem Google-News-Klumpenrisiko (OP-15) — die Erklärung „Breaker" ist damit **nicht vollständig** | **OP-25**, OP-15, OP-21 |
+| **B6** — kein produktiv verwendeter Einstieg für Matching **eines einzelnen Mandanten** (Sprint 23B-1, 2026-07-29) | **Belegt.** `runMatchingShadow` hat genau zwei produktive Aufrufer: `scheduler.js:412` (in `runSourceCrawl`) und `scheduler.js:588` (in `runLageCheck`, das ab `scheduler.js:629` selbst crawlt). Keine HTTP-Route in `server.js`, kein npm-Skript, kein Workflow; die einzigen weiteren Aufrufer sind zwei Testskripte mit hartkodierten Kunstmandanten und gestubbter Datenbank. Folge: Matching ist nur als Anhängsel eines Vollcrawls auslösbar — ein Mandant, der wegen B5 zurückfällt, hat keinen Weg nach vorn außer dem nächsten Vollcrawl; gezielte Nachprüfung, Nachholung und Reparatur je Mandant sind nicht möglich. Praktische Auswirkung bereits eingetreten: der Idempotenznachweis für Sprint 23B-1 musste an einem regulären Lauf **beobachtet** statt gezielt erzeugt werden | **OP-26** |
 
 ## 5 · Deaktivierte Funktionen / nicht angewandte Migrationen (vollständig)
 
@@ -443,6 +445,56 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Laufzeitkonsumenten — `matching.js` liest beide nicht.
 - **Freigabe:** war erforderlich und **wurde erteilt** (Umfang B, 2026-07-28) — der Hauptlauf
   ist damit ausgeführt (§14 des kanonischen Dokuments). Keine weitere Freigabe offen.
+
+#### OP-25 · Crawl-Zeitdeckelung: je Lauf wird nur ein Teil der Mandanten erreicht (neu, Sprint 23B-1; Prioritätsklasse P1)
+- **Status:** offen, **Ursache belegt, Umfang noch nicht vermessen** (2026-07-29, Befund B5).
+  Der Crawl-Cron endet reproduzierbar nach ~280 s mit `bounded=true`
+  (`[cron/crawl] 280001ms tenants=undefined bounded=true`, gemessen 28.07. 04:00, 28.07. 20:00
+  und 29.07. 04:00). Er verarbeitet die Mandanten nacheinander und bricht am Zeitlimit ab —
+  die zuletzt begonnenen Mandanten laufen ins Leere. Belegt am 29.07.: `annika-klose`
+  vollständig verarbeitet, `cem-ince` begonnen, Matching-Stufe nicht mehr erreicht
+  (`profile_embeddings` für `cem-ince` steht weiter auf dem 28.07.).
+- **Wichtig zur Einordnung:** **kein** Effekt der Matching-Auditpersistenz — zwei der drei
+  Messungen liegen **vor** der Aktivierung von `HELMUT_MATCHING_AUDIT`. Das Verhalten ist alt
+  und war bisher nur unsichtbar, weil Matching vor Sprint 23B-1 keine Spur hinterließ.
+- **Fehlender Schritt:** (a) messen, wie viele der aktiven Mandanten je Lauf tatsächlich
+  bis zur Matching-Stufe kommen (die 4 Cron-Läufe/Tag über eine Woche auswerten, jetzt
+  erstmals über `matching_runs` möglich); (b) entscheiden, ob das Zeitbudget besser verteilt
+  wird (Rotation der Mandantenreihenfolge statt fester Reihenfolge), der Crawl je Mandant
+  läuft oder die Google-News-Wartezeiten gesenkt werden (Berührung mit OP-15);
+  (c) Abdeckungsalarm, damit ein dauerhaft übersprungener Mandant auffällt statt still zu bleiben.
+- **Abhängigkeiten:** OP-15 (Google-News-Klumpenrisiko/Härtung — die Timeouts fressen das
+  Budget), OP-21 (die 2 × `504` vom 26.07. sind Ausdruck desselben Limits), OP-07 (Alarmweg).
+- **Risiko:** **hoch für den Zweitmandanten.** Mit einem zahlenden Zweitmandanten teilen sich
+  mehr Mandate dasselbe 280-s-Budget; heute fällt der Ausfall niemandem auf, weil er keine
+  Fehlermeldung erzeugt. Ein Mandant kann tagelang ohne frische Lage bleiben, ohne dass
+  irgendwo Rot leuchtet — genau das „falsche Grün", das CLAUDE.md §4.4 verbietet.
+- **Parallelisierbarkeit:** (a) sofort und rein lesend; (b)/(c) danach.
+- **Freigabe:** **NEIN** für die Messung (a) — rein lesend. **JA** für jede Änderung an
+  Zeitbudget, Cron-Zeiten oder Cron-Reihenfolge (CLAUDE.md §5).
+
+#### OP-26 · Matching ist nicht für einen einzelnen Mandanten auslösbar (neu, Sprint 23B-1; Prioritätsklasse P2)
+- **Status:** offen, **belegt** (2026-07-29, Befund B6). `runMatchingShadow` hat genau zwei
+  produktive Aufrufer — `scheduler.js:412` (in `runSourceCrawl`) und `scheduler.js:588`
+  (in `runLageCheck`, das ab `scheduler.js:629` selbst crawlt). Keine HTTP-Route, kein
+  npm-Skript, kein Workflow. Matching ist damit ausschließlich als Anhängsel eines
+  Vollcrawls auslösbar.
+- **Fehlender Schritt:** einen schmalen, mandantenscharfen Einstieg schaffen, der **nur**
+  matcht — ohne Crawl, ohne Understanding, ohne KI, ohne Briefing. Naheliegend als
+  Admin-Route mit Mandantenparameter oder als Betriebsskript; in beiden Fällen mit
+  Sperre (`matching-<mandant>`, existiert bereits) und Auditprotokoll (`matching_runs`,
+  existiert bereits) — die Bausteine sind seit Sprint 23B-1 da, es fehlt nur der Aufruf.
+- **Abhängigkeiten:** keine harten. Praktisch sinnvoll **zusammen mit OP-25**, weil ein
+  einzeln nachziehbarer Mandant genau die Reparatur für die Deckelung wäre.
+- **Risiko:** mittel. Ohne diesen Einstieg gibt es keine gezielte Nachprüfung, keine
+  Nachholung für einen zurückgefallenen Mandanten und keinen kontrollierten Beweislauf.
+  Bereits eingetreten: der Idempotenznachweis für Sprint 23B-1 musste an einem regulären
+  Lauf **beobachtet** werden, statt gezielt erzeugt zu werden
+  ([`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md) §25.3/§25.5).
+- **Parallelisierbarkeit:** unabhängig, kleiner Umfang.
+- **Freigabe:** **NEIN** für Bau und Test über den normalen PR-Weg. **JA**, sobald der
+  Einstieg gegen Production ausgeführt wird — er schreibt `profile_embeddings` und
+  `matching_results` und ist damit eine Änderung an Production-Daten (CLAUDE.md §5).
 
 ---
 
