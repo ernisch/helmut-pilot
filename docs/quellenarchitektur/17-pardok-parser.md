@@ -357,3 +357,159 @@ keine Vollzähligkeit.
 3. **Kein Production-Beweis** und keiner möglich, solange die Wege bewusst inaktiv sind.
 4. **Befund 24-2 ist behoben, aber nur im Code bewiesen** — ein Production-Beleg ist nicht möglich, solange die Wege inaktiv sind. `shadow-ingest.js` (Diagnoseskript, nie im Produktivpfad) reicht die externe Kennung nicht durch und profitiert deshalb nicht von Regel 0.
 5. **Wahlperiode in der Quell-URL** (`wp19`/`WP8`) — unverändert aus Teil A.
+
+---
+
+# Teil C — Vorgangsbezug: Kardinalität und Kennungsstabilität (Abschlusssprint Punkt 24, 2026-07-29)
+
+## C.1 Was Teil B offen ließ
+
+Teil B.7 hat belegt, **dass** der Berliner Export `<Vorgang>`-Elemente führt, und den Bezug
+implementiert. Belegt war er an **einem** Record (`V-351039`). Damit war die entscheidende Frage
+offen: eine Struktur-Sonde liefert ein **Feld-Inventar** — sie kann sagen, welche Felder vorkommen,
+aber nicht, **wie** Vorgänge und Dokumente zueinander stehen. Ohne diese Antwort war
+`vorgangsnummer` am Dokument eine Setzung mit Beispielcharakter:
+
+> Wäre die Beziehung **n:m** — dasselbe Dokument unter mehreren Vorgängen — dann wäre ein
+> einzelner `vorgangsnummer`-Wert am Dokument eine **willkürliche Auswahl** und damit genau die Art
+> stiller Falschaussage, die dieses Projekt nicht produzieren darf.
+
+## C.2 Messung
+
+Werkzeug: `scripts/pardok-vorgangs-analyse.js` — **Diagnosewerkzeug, bewusst kein `*-test.js`**,
+damit der Offline-Runner es nicht einsammelt und die Offline-Suite netzfrei bleibt. Nur lesende
+HTTPS-Abrufe, keine DB, kein LLM, keine Secrets, keine Production-Berührung. Beide Länder laufen
+durch **dieselbe** Analyse, damit Unterschiede gemessen statt angenommen werden.
+
+Läufe: **`30493097161`** (Berlin) und **`30493614179`** (Berlin + Brandenburg), beide 29.07.2026.
+
+| Kennzahl | Berlin `pardok-wp19.xml` | Brandenburg `exportWP8.xml` |
+|---|---|---|
+| gelesener Umfang | 50 331 363 B — **am 48-MiB-Cap abgeschnitten** | 12 155 513 B — **vollständig** |
+| `<Vorgang>` gelesen | 41 853 | 9 092 |
+| davon `delete`-Stubs | 20 939 | 4 341 |
+| vollständige Vorgänge | 20 914 | 4 751 |
+| vollständige Vorgänge **ohne** `<Dokument>` | 0 | 0 |
+| `<Dokument>` gesamt | 47 415 | 8 133 |
+| `<VNr>` vorhanden | **41 853/41 853 (100 %)** | **8 681/9 092 — 411 ohne** |
+| `<VID>` vorhanden | 41 853/41 853 (100 %) | **0/9 092 — existiert dort nicht** |
+| `VNr` ≠ `VID` | **0** | nicht anwendbar (kein `VID`) |
+| `VNr` Platzhalterwert (`-`) | 0 | 0 |
+| `VNr` außerhalb der Form `V-<Ziffern>` | 0 | 0 |
+| `VNr` mehrfach als vollständiger Record | 0 | 0 |
+| `<VTyp>`/`<VTypL>` vorhanden | 20 310/41 853 | 4 340/9 092 |
+| Dokumente je Vorgang | 1…**75** (häufigster Fall 2: 17 407 Vorgänge) | 1…**33** (häufigster Fall 1: 2 596) |
+| `<DBID>` je Dokument | **47 415/47 415, alle eindeutig** | **0/8 133 — existiert dort nicht** |
+| **dieselbe `DBID` unter mehreren `VNr`** | **0** | nicht messbar (keine `DBID`) |
+| Dokumente ohne Vorgangsrahmen | 2 (Abschnitt endet im Cap) | 0 |
+| unerklärte Feldnamen | keine | **`NrInN` (3×)** |
+
+## C.3 Antworten
+
+1. **Welche Felder identifizieren einen Vorgang?** `<VNr>`. In Berlin zusätzlich `<VID>`, dort in
+   41 853 von 41 853 Fällen **identisch** — eine zweite, bestätigende Kennung, keine eigene.
+2. **Welche Felder verbinden Dokumente mit einem Vorgang?** **Keine.** Die Verbindung entsteht
+   ausschließlich aus der **Verschachtelung** (`<Dokument>` innerhalb `<Vorgang>`). In keinem der
+   beiden Exporte gibt es ein Verweisfeld am Dokument — das Feld-Inventar beider Läufe enthält
+   keines.
+3. **Gibt es eine stabile externe Vorgangskennung?** **Berlin: ja.** `VNr` ist flächendeckend,
+   formstabil, ohne Platzhalter und ohne Mehrfachvergabe. **Brandenburg: überwiegend** — 411 von
+   4 751 vollständigen Vorgängen (**8,7 %**) tragen keinen verwertbaren `VNr`-Wert.
+4. **Kann dasselbe Dokument mehreren Vorgängen zugeordnet sein?** **Berlin: nein — belegt.** Über
+   47 415 Dokumente hinweg erscheint keine `DBID` unter mehr als einer `VNr`. Die Beziehung ist
+   **1:n, nicht n:m**. Damit ist genau **ein** Vorgang je Dokument definiert, und `vorgangsnummer`
+   ist keine Auswahl. **Brandenburg: strukturell 1:n** (jedes Dokument liegt in genau einem
+   Vorgangsrahmen, 0 ohne), **aber nicht über eine Dokumentkennung nachprüfbar** — siehe C.6.
+5. **Ist ein sicherer deterministischer Vorgangsbezug ableitbar?** Ja, für die Fälle mit
+   verwertbarer Kennung — als **unveränderte Übernahme** der `VNr` des umschließenden Vorgangs.
+   Nichts wird berechnet, zusammengesetzt oder geraten.
+6. **Lässt er sich im bestehenden kanonischen Vertrag abbilden?** Ja, unverändert: `vorgangsnummer`
+   und `vorgangstyp` im bereits vorhandenen `raw`-jsonb. **Keine neue Spalte, keine Migration,
+   keine parallele Vorgangsstruktur, weiterhin nie `cluster_id`.**
+7. **Widersprüchliche oder instabile Kennungen?** Auf echten Daten **keine**. Beide denkbaren
+   Fehlformen sind trotzdem abgesichert (C.4), weil sie sonst still zu einer falschen Aussage
+   führen würden.
+
+## C.4 Umsetzung — kleinste additive Ergänzung
+
+Das **Mapping selbst existierte schon** (Teil B.7). Die Messung hat es nachträglich als zulässig
+belegt und zwei Schranken begründet. Ergänzt wurde deshalb nur `vorgangsKennung()` in
+`pardok-parser.js`, gemeinsam für beide Länder:
+
+- **Widerspruch `VNr` ≠ `VID` → kein Bezug.** Der vorherige `VNr || VID`-Rückfall hätte
+  willkürlich `VNr` gewählt und einen Bezug behauptet, dessen Kennung die Quelle selbst uneinheitlich
+  führt. Auf echten Daten greift die Schranke **nie** (0 von 41 853; Brandenburg hat kein `VID`).
+- **Platzhalter → kein Bezug.** Der Export benutzt einen blossen Bindestrich belegt als **Leerwert**
+  (`<VIR>-</VIR>`). Als Kennung genommen, hätte `-` alle betroffenen Dokumente unter einen
+  gemeinsamen **Schein-Vorgang** gehängt — genau der Sammelcluster, der ausgeschlossen ist.
+- **Sichtbar gezählt:** `stats.kennungKonflikt` und `stats.mitVorgangsbezug`. Ein Formatwechsel der
+  Quelle läuft damit nicht still durch (kein falsches Grün).
+
+Fail closed heißt hier durchgängig: **kein Bezug (`null`), nicht ein geratener Bezug.** Das Dokument
+bleibt in jedem dieser Fälle lesbar und behält seine eigene Identität.
+
+## C.5 Wechselwirkung mit der globalen Dublettenerkennung — Vorbedingung für einen Cutover
+
+Die globale URL-basierte Dublettenerkennung wurde **nicht** angefasst (ausdrücklich außerhalb des
+Auftrags). Geprüft wurde nur, **ob** sie den neuen Vorgangsbezug verfälschen kann. Sie kann:
+
+> Zwei Dokumente **eines** Vorgangs tragen in Berlin belegt dieselbe Protokoll-PDF-Adresse. Nach
+> Regel A (kanonische URL) verschmelzen sie — der Vorgang verliert eines seiner Dokumente, und der
+> Bezug des verlorenen Dokuments verschwindet mit ihm.
+
+**Aktuell abgefangen** durch die in Teil B ergänzte **Regel 0** (Herausgeber + externe Kennung +
+Dokumenttyp **vor** der Adresse). Test `M10c` weist die Ursache direkt nach: ohne externe Kennung
+führt die Adressregel dieselben zwei Dokumente auf **eines** zusammen. **Vorbedingung für einen
+späteren Cutover:** jeder Weg, der PARDOK-Dokumente in die globale Dedup gibt, muss die externe
+Kennung **durchreichen**. `shadow-ingest.js` tut das nicht (Diagnoseskript, nie im Produktivpfad) —
+vor einer Aktivierung ist das zu prüfen, nicht danach.
+
+## C.6 Offen, unklar, nicht aus den Daten interpretierbar
+
+1. **Brandenburg hat keine Dokumentkennung.** `<DBID>` kommt dort in 8 133 von 8 133 Dokumenten
+   **nicht** vor. Die n:m-Frage ist für Brandenburg deshalb **nicht über eine Kennung prüfbar**:
+   die Identität ist konstruktionsbedingt `VNr#ReihNr` (also je Vorgang), und zwei inhaltlich
+   identische Kopien unter zwei Vorgängen wären als zwei Dokumente nicht erkennbar. Strukturell
+   liegt jedes Dokument in genau einem Vorgang (0 ohne Rahmen) — mehr ist nicht belegt.
+2. **411 Brandenburger Vorgänge ohne verwertbare `VNr`.** Dieselbe Anzahl fehlt auch bei
+   `<VTyp>` (4 340 von 4 751 vollständigen Vorgängen haben einen Typ). Die Korrelation ist
+   gemessen; **die Ursache ist nicht bestimmt** und wird hier nicht geraten. Behandlung: fail
+   closed, Dokument bleibt lesbar, Bezug `null`.
+3. **`NrInN` (3 Vorkommen, Brandenburg)** — unerklärter Feldname. Es wird **keine** Bedeutung aus
+   dem Namen abgeleitet, das Feld wird nicht gelesen.
+4. **Berlin ist nicht vollständig erhoben.** Der Export ist größer als das 48-MiB-Lesecap; gemessen
+   sind die ersten 41 853 Vorgänge einer unbekannten Gesamtzahl. Die 2 Dokumente „ohne
+   Vorgangsrahmen" sind der am Cap abgeschnittene letzte Record, kein Strukturbefund. Risiko 1 aus
+   B.10 (Vollzähligkeit je Vorgang) ist damit **geschlossen** — die Verteilung ist gemessen —,
+   Risiko 2 (Stichprobe) für Brandenburg ebenfalls, für Berlin **verkleinert, nicht beseitigt**.
+5. **Kein Production-Beweis**, unverändert und weiterhin keiner möglich, solange BE/BB bewusst
+   inaktiv sind (`needs_review` + `manual`, per Test `L4` festgenagelt).
+
+## C.7 Tests
+
+- `scripts/landesparser-klassen-test.js` — **141/141 grün** (vorher 116), neuer **Teil M**:
+  stabile externe Vorgangskennung · Widerspruch → fail closed **und gezählt** · Platzhalter → kein
+  Schein-Vorgang · Bezug nur aus Verschachtelung · genau ein Bezug je Dokument · ein Vorgang mit
+  mehreren Dokumenten eigener Identität · kein Dokument mit zwei Bezügen · fehlender Bezug (der
+  gemessene Brandenburg-Fall) · `VID`-Rückfall · nichts erfunden · deterministische Normalisierung ·
+  `delete`-Stubs · bestehender kanonischer Vertrag ohne neue Spalte · keine `cluster_id` ·
+  Wechselwirkung mit der Adressregel inklusive **Ursachennachweis** · netzfrei.
+- Fixture `test/fixtures/pardok/vorgangsbezug-grenzfaelle.xml` — **kein Quellenbeleg für
+  Feldinhalte**; je Record ausgewiesen, ob der **Fall** gemessen vorkommt (M-A, M-E) oder als
+  Schranke gegen Formatdrift steht (M-B, M-C, M-D, M-F).
+- **Mutationsprobe: 6 von 6 Mutationen machen die Suite rot** — Konfliktschranke entfernt (2 rot) ·
+  Platzhalterschranke entfernt (2) · Bezug aus `DokNr` erfunden (7) · Kennung nicht normalisiert (3) ·
+  Bezug als `cluster_id` geschrieben (3) · Dedup-Regel 0 ausgeschaltet (10).
+- Gesamt-Offline-Suite **168/182**, identisch zum Ausgangsstand auf `main` (Baseline im Worktree
+  gegengeprüft): dieselben 14 Suiten scheitern, alle an fehlendem DB-/Netzzugang in der lokalen
+  Sitzung — **keine** durch diesen Sprint. Browser-/Mobile-Smoke **32/32**.
+- Bei H8f wurde eine Schranke ergänzt: der Nachweis brach unter Mutation mit `TypeError` ab statt
+  rot zu werden, wodurch alle nachfolgenden Zeilen still ausfielen.
+
+## C.8 Bewusst nicht enthalten
+
+Keine Aktivierung von Berlin oder Brandenburg · keine Migration · keine neue Spalte · keine globale
+Vorgangsarchitektur · **kein Umbau der globalen Dublettenerkennung** (nur die Wechselwirkung
+gemessen und dokumentiert) · keine Änderung an aktiven Bundestagsquellen, Crons, Feature-Flags,
+Secrets oder am KI-Budget · keine Deutung von `NrInN` · keine Erklärung für die 411 Brandenburger
+Vorgänge ohne Kennung.

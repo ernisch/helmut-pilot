@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  Helmut — Grenzfall-Fixture fuer den VORGANGSBEZUG (Roadmap-Punkt 24, Abschlusssprint).
+
+  ACHTUNG — DIESE DATEI IST KEIN QUELLENBELEG FUER FELDINHALTE.
+  Die Kennzahlen stehen in docs/quellenarchitektur/17-pardok-parser.md Teil C und stammen aus der
+  Vorgangs-Analyse (GitHub-Actions-Lauf 30493097161 fuer Berlin, 30493614179 fuer beide Laender).
+  Hier geht es ausschliesslich um das VERHALTEN des Parsers in den Faellen, die die Messung als
+  vorhanden bzw. als nicht vorkommend ausgewiesen hat. Je Record ist ausgewiesen, ob der FALL
+  gemessen ist und ob die FELDWERTE zusammengesetzt sind.
+
+  Zwei Klassen von Faellen:
+    (a) GEMESSEN VORHANDEN  — der Parser muss sie korrekt behandeln, weil sie real auftreten.
+    (b) GEMESSEN NICHT VORHANDEN — Schranken gegen Formatdrift. Sie duerfen NICHT still zu einem
+        geratenen Vorgangsbezug fuehren. Genau dafuer stehen sie hier.
+-->
+<Export aktualisiert="2026-07-29T22:00:00">
+
+  <!-- M-A (Brandenburg-Form) · FALL GEMESSEN VORHANDEN: 411 von 4 751 vollstaendigen Vorgaengen
+       des WP8-Exports tragen KEINEN verwertbaren <VNr>-Wert, haben aber Dokumente (Lauf
+       30493614179). Erwartung: KEIN Vorgangsbezug (fail closed), Dokument bleibt trotzdem lesbar
+       und erhaelt seine Identitaet aus der DokNr. Feldwerte zusammengesetzt. -->
+  <Vorgang>
+    <ReihNr>0000</ReihNr>
+    <VTyp>Bericht</VTyp>
+    <VTypL>Bericht</VTypL>
+    <Dokument>
+      <ReihNr>0001</ReihNr>
+      <DHerk>BRA</DHerk>
+      <DHerkL>Brandenburg</DHerkL>
+      <Wp>8</Wp>
+      <DokArt>Drs</DokArt>
+      <DokArtL>Drucksache</DokArtL>
+      <DokTyp>Bericht</DokTyp>
+      <DokTypL>Bericht</DokTypL>
+      <Titel>Bericht ohne verwertbare Vorgangsnummer</Titel>
+      <DokNr>08/9411</DokNr>
+      <DokDat>12.05.2026</DokDat>
+      <LokURL>https://www.parlamentsdokumentation.brandenburg.de/starweb/LBB/ELVIS/parladoku/w8/drs/ab_9400/9411.pdf</LokURL>
+    </Dokument>
+  </Vorgang>
+
+  <!-- M-B (Berlin-Form) · FALL GEMESSEN NICHT VORHANDEN: in 41 853 Berliner Vorgaengen stimmten
+       <VNr> und <VID> ausnahmslos ueberein (0 Abweichungen, Lauf 30493097161). Ein Widerspruch
+       waere also ein FORMATWECHSEL der Quelle. Erwartung: kein Vorgangsbezug, statt willkuerlich
+       eine der beiden Kennungen zu waehlen — und der Fall wird gezaehlt, nicht verschwiegen. -->
+  <Vorgang>
+    <VNr>V-800001</VNr>
+    <VID>V-800002</VID>
+    <ReihNr>0000</ReihNr>
+    <VTyp>Debatte</VTyp>
+    <VTypL>Debatte</VTypL>
+    <Dokument>
+      <DBID>D-800003</DBID>
+      <DHerk>BLN</DHerk>
+      <DHerkL>Berlin</DHerkL>
+      <Wp>19</Wp>
+      <DokArt>Drs</DokArt>
+      <DokArtL>Drucksache</DokArtL>
+      <DokTyp>Antr</DokTyp>
+      <DokTypL>Antrag</DokTypL>
+      <Titel>Antrag mit widerspruechlicher Vorgangskennung</Titel>
+      <DokNr>19/0801</DokNr>
+      <DokDat>13.05.2026</DokDat>
+    </Dokument>
+  </Vorgang>
+
+  <!-- M-C (Berlin-Form) · FALL GEMESSEN NICHT VORHANDEN bei <VNr> (0 Platzhalterwerte in beiden
+       Laendern), aber der Export benutzt einen blossen Bindestrich BELEGT als LEERWERT an <VIR>
+       (siehe Gold-Fixtures). Wuerde "-" als Kennung durchgehen, haengten ALLE betroffenen
+       Dokumente an einem gemeinsamen Schein-Vorgang. Erwartung: kein Vorgangsbezug. -->
+  <Vorgang>
+    <VNr>-</VNr>
+    <ReihNr>0000</ReihNr>
+    <VIR>-</VIR>
+    <Dokument>
+      <DBID>D-800004</DBID>
+      <DHerk>BLN</DHerk>
+      <DHerkL>Berlin</DHerkL>
+      <Wp>19</Wp>
+      <DokArt>Drs</DokArt>
+      <DokArtL>Drucksache</DokArtL>
+      <Titel>Erste Drucksache mit Platzhalter-Vorgangsnummer</Titel>
+      <DokNr>19/0802</DokNr>
+      <DokDat>13.05.2026</DokDat>
+    </Dokument>
+  </Vorgang>
+  <Vorgang>
+    <VNr>-</VNr>
+    <ReihNr>0000</ReihNr>
+    <Dokument>
+      <DBID>D-800005</DBID>
+      <DHerk>BLN</DHerk>
+      <DHerkL>Berlin</DHerkL>
+      <Wp>19</Wp>
+      <DokArt>Drs</DokArt>
+      <DokArtL>Drucksache</DokArtL>
+      <Titel>Zweite Drucksache mit Platzhalter-Vorgangsnummer</Titel>
+      <DokNr>19/0803</DokNr>
+      <DokDat>13.05.2026</DokDat>
+    </Dokument>
+  </Vorgang>
+
+  <!-- M-D (Berlin-Form) · FALL GEMESSEN NICHT VORHANDEN: <VID> ohne <VNr> kam nicht vor (VNr in
+       41 853/41 853). Der Rueckfall auf VID ist deshalb eine Schranke, kein Normalweg — er greift
+       nur, wenn VID die EINZIGE Kennung ist, und kann dann nicht widersprechen. -->
+  <Vorgang>
+    <VID>V-800006</VID>
+    <ReihNr>0000</ReihNr>
+    <VTypL>Anfrage</VTypL>
+    <Dokument>
+      <DBID>D-800007</DBID>
+      <DHerk>BLN</DHerk>
+      <DHerkL>Berlin</DHerkL>
+      <Wp>19</Wp>
+      <DokArt>Drs</DokArt>
+      <DokArtL>Drucksache</DokArtL>
+      <DokTyp>SchrAnfr</DokTyp>
+      <DokTypL>Schriftliche Anfrage</DokTypL>
+      <Titel>Schriftliche Anfrage nur mit VID</Titel>
+      <DokNr>19/0804</DokNr>
+      <DokDat>14.05.2026</DokDat>
+    </Dokument>
+  </Vorgang>
+
+  <!-- M-E (Berlin-Form) · FALL GEMESSEN VORHANDEN: EIN Vorgang mit MEHREREN Dokumenten ist der
+       Normalfall (17 407 Vorgaenge mit genau 2, max. 75). Hier zeigen beide Dokumente zusaetzlich
+       auf DIESELBE PDF-Adresse — das kommt in der Quelle vor (Protokoll-PDF, siehe berlin-gold).
+       Erwartung: zwei eigenstaendige Dokumente, gleicher Vorgangsbezug, KEINE Zusammenfuehrung
+       durch die adressbasierte globale Dedup. -->
+  <Vorgang>
+    <VNr>V-800008</VNr>
+    <VID>V-800008</VID>
+    <ReihNr>0000</ReihNr>
+    <VTyp>Debatte</VTyp>
+    <VTypL>Debatte</VTypL>
+    <Dokument>
+      <DBID>D-800009</DBID>
+      <DHerk>BLN</DHerk>
+      <DHerkL>Berlin</DHerkL>
+      <Wp>19</Wp>
+      <DokArt>PlPr</DokArt>
+      <DokArtL>Plenarprotokoll</DokArtL>
+      <DokNr>19/0805</DokNr>
+      <DokDat>15.05.2026</DokDat>
+      <LokURL>https://www.parlament-berlin.de/adosservice/19/Haupt/plen/p19-800.pdf</LokURL>
+    </Dokument>
+    <Dokument>
+      <DBID>D-800010</DBID>
+      <DHerk>BLN</DHerk>
+      <DHerkL>Berlin</DHerkL>
+      <Wp>19</Wp>
+      <DokArt>Drs</DokArt>
+      <DokArtL>Drucksache</DokArtL>
+      <DokTyp>AntrAnfr</DokTyp>
+      <DokTypL>Antwort auf eine Anfrage</DokTypL>
+      <Titel>Antwort im selben Protokoll</Titel>
+      <DokNr>19/0806</DokNr>
+      <DokDat>15.05.2026</DokDat>
+      <LokURL>https://www.parlament-berlin.de/adosservice/19/Haupt/plen/p19-800.pdf</LokURL>
+    </Dokument>
+  </Vorgang>
+
+  <!-- M-F (Berlin-Form) · Kennung mit Zeilenumbruch und Mehrfach-Leerzeichen. Erwartung:
+       deterministisch auf denselben Wert normalisiert wie ohne Umbruch — nicht als zweiter,
+       abweichender Vorgang gefuehrt. -->
+  <Vorgang>
+    <VNr>
+      V-800011
+    </VNr>
+    <VID>V-800011</VID>
+    <ReihNr>0000</ReihNr>
+    <Dokument>
+      <DBID>D-800012</DBID>
+      <DHerk>BLN</DHerk>
+      <DHerkL>Berlin</DHerkL>
+      <Wp>19</Wp>
+      <DokArt>Drs</DokArt>
+      <DokArtL>Drucksache</DokArtL>
+      <Titel>Drucksache mit umgebrochener Vorgangsnummer</Titel>
+      <DokNr>19/0807</DokNr>
+      <DokDat>16.05.2026</DokDat>
+    </Dokument>
+  </Vorgang>
+
+</Export>
