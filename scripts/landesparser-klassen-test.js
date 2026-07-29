@@ -122,6 +122,44 @@ check("C8 Klasse ANTWORT fuer Brandenburg als begruendete Ausnahme dokumentiert 
   K.KLASSEN_AUSNAHMEN.some((a) => a.land === "brandenburg" && a.klasse === "antwort" && a.grund && a.beleg)
   && !bbVerteilung.antwort);
 
+// ============ TEIL C2 — GEMESSENE Dokumentart-Verteilung deckt die Tabellen ab ===============
+// Die Gold-Fixtures zeigen nur, was in ihnen steht. Diese Prüfung geht gegen die REAL GEMESSENE
+// Verteilung aus dem Shadow-Lauf 30481670298 vom 29.07.2026 (je 800 Records aus den Live-Dateien)
+// und stellt sicher, dass JEDE dort vorkommende Dokumentart eine belegte Landeszuordnung hat.
+// Genau diese Prüfung hat den Befund erzeugt, dass Brandenburg ELF Dokumentarten führt (Berlin
+// nur vier) — ohne sie wären 290 von 816 Dokumenten (35,5 %) fälschlich `unbekannt` geblieben.
+console.log("\n--- C2 · Gemessene Dokumentart-Verteilung (800 Records je Quelle, 29.07.2026) ---");
+const GEMESSEN = {
+  berlin: { "Drucksache": 534, "Plenarprotokoll": 206, "Ausschussprotokoll": 34, "Gesetz- und Verordnungsblatt": 26 },
+  brandenburg: {
+    "Drucksache": 411, "Ausschussprotokoll": 221, "Plenarprotokoll": 70, "Unterrichtung": 34,
+    "Präsidiumsprotokoll": 28, "Information": 22, "Einladung": 11, "Frühwarndokument": 10,
+    "Gesetz- und Verordnungsblatt": 6, "Zuschrift": 2, "Gutachten": 1
+  }
+};
+for (const land of ["berlin", "brandenburg"]) {
+  const arten = Object.keys(GEMESSEN[land]);
+  const offen = arten.filter((a) => {
+    const r = K.klassifiziereDokument({ land, dokumentart: a });
+    return r.dokumentklasse === "unbekannt" || r.klasse_quelle !== "land-dokart";
+  });
+  const gesamt = Object.values(GEMESSEN[land]).reduce((a, b) => a + b, 0);
+  check(`C2-${land}: alle ${arten.length} gemessenen Dokumentarten sind laenderspezifisch belegt (${gesamt} Dokumente)`,
+    offen.length === 0);
+  if (offen.length) console.log(`      ungedeckt: ${offen.join(", ")}`);
+}
+check("C2-vergleich: Brandenburg fuehrt deutlich mehr Dokumentarten als Berlin (11 vs. 4)",
+  Object.keys(GEMESSEN.brandenburg).length === 11 && Object.keys(GEMESSEN.berlin).length === 4);
+check("C2: Klasse TAGESORDNUNG ist fuer Brandenburg belegt (Dokumentart 'Einladung'), fuer Berlin nicht",
+  K.klassifiziereDokument({ land: "brandenburg", dokumentart: "Einladung" }).dokumentklasse === "tagesordnung"
+  && K.klassifiziereDokument({ land: "brandenburg", dokumentart: "Einladung" }).klasse_quelle === "land-dokart"
+  && K.klassifiziereDokument({ land: "berlin", dokumentart: "Einladung" }).klasse_quelle !== "land-dokart"
+  && K.KLASSEN_AUSNAHMEN.some((a) => a.land === "berlin" && a.klasse === "tagesordnung")
+  && !K.KLASSEN_AUSNAHMEN.some((a) => a.land === "brandenburg" && a.klasse === "tagesordnung"));
+check("C2: benannte, aber fachlich nicht einzuordnende Arten werden `sonstiges`, nicht geraten",
+  ["Information", "Frühwarndokument", "Gutachten", "Zuschrift"]
+    .every((a) => K.klassifiziereDokument({ land: "brandenburg", dokumentart: a }).dokumentklasse === "sonstiges"));
+
 // =========================== TEIL D — Laenderspezifik statt Textmuster =======================
 console.log("\n--- D · Berlin und Brandenburg werden getrennt behandelt ---");
 check("D1 Berlin kennt den Typwert 'SchrAnfr', Brandenburg NICHT (eigene Tabellen)",
@@ -136,8 +174,15 @@ check("D4 die Typtabellen der beiden Laender sind nicht identisch",
 check("D5 getrennte Geografie/Ebene bleibt erhalten",
   beDocs.every((d) => d.geografie === "geo-land-berlin" && d.politische_ebene === "land")
   && bbDocs.every((d) => d.geografie === "geo-land-brandenburg" && d.politische_ebene === "land"));
-check("D6 Ausnahmen sind je Land dokumentiert (Tagesordnung/Termin fuer BEIDE Laender)",
-  ["berlin", "brandenburg"].every((l) => K.KLASSEN_AUSNAHMEN.some((a) => a.land === l && a.klasse === "tagesordnung" && a.grund && a.beleg)));
+// Korrektur einer Annahme, die die Verteilungsmessung widerlegt hat: Tagesordnung ist NUR fuer
+// Berlin eine Ausnahme. Pressemitteilung ist es fuer beide Laender — dort ist die Ausnahme echt.
+check("D6 Ausnahmen sind je Land dokumentiert (Pressemitteilung fuer BEIDE Laender)",
+  ["berlin", "brandenburg"].every((l) => K.KLASSEN_AUSNAHMEN.some((a) => a.land === l && a.klasse === "pressemitteilung" && a.grund && a.beleg)));
+check("D6b Ausnahmen sind NICHT pauschal: Tagesordnung nur fuer Berlin, Antwort nur fuer Brandenburg",
+  K.KLASSEN_AUSNAHMEN.some((a) => a.land === "berlin" && a.klasse === "tagesordnung")
+  && !K.KLASSEN_AUSNAHMEN.some((a) => a.land === "brandenburg" && a.klasse === "tagesordnung")
+  && K.KLASSEN_AUSNAHMEN.some((a) => a.land === "brandenburg" && a.klasse === "antwort")
+  && !K.KLASSEN_AUSNAHMEN.some((a) => a.land === "berlin" && a.klasse === "antwort"));
 check("D7 keine Ausnahme ohne registrierten Beleg",
   K.KLASSEN_AUSNAHMEN.every((a) => Object.prototype.hasOwnProperty.call(K.BELEGE, a.beleg)));
 check("D8 keine Ausnahme behauptet eine Klasse, die es im Vertrag nicht gibt",

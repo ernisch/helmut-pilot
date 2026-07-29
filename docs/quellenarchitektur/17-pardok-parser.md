@@ -142,6 +142,32 @@ XML-Abrufe) — je 500 Records aus `pardok-wp19.xml` (47 417 `<Dokument>`) und `
 Gold-Fixtures um **drei echte Records** erweitert (Berlin `D-351603`, `D-357045`; Brandenburg
 `V-369325`). Es wurde **kein** Feldwert erfunden.
 
+
+**Nachgemessen am 29.07.2026 (Lauf `30481670298`, je 800 Records, 5 Wiederholungen byte-identisch).**
+Dieser Lauf bestätigt alle drei in die Gold-Fixtures übernommenen Records verbatim und liefert
+zusätzlich die **Dokumentart-Verteilung**, die die Typtabellen tragen muss:
+
+| | Berlin (800 Records) | Brandenburg (800 Vorgänge → 816 Dokumente) |
+|---|---|---|
+| Dokumentarten | **4** | **11** |
+| Verteilung | Drucksache 534 · Plenarprotokoll 206 · Ausschussprotokoll 34 · GVBl 26 | Drucksache 411 · Ausschussprotokoll 221 · Plenarprotokoll 70 · Unterrichtung 34 · Präsidiumsprotokoll 28 · Information 22 · Einladung 11 · Frühwarndokument 10 · GVBl 6 · Zuschrift 2 · Gutachten 1 |
+
+**Befund 24-3 — die Brandenburg-Tabelle war unvollständig, und die Messung hat es gezeigt.** Die
+erste Fassung stützte sich allein auf die 500-Record-Struktur-Sonde und deckte für Brandenburg nur
+`Drucksache` und `Plenarprotokoll` ab. Gegen die gemessene Verteilung wären **290 von 816
+Dokumenten (35,5 %)** fälschlich `unbekannt` geblieben — allein `Ausschussprotokoll` sind 221.
+Ergänzt wurden neun belegte Dokumentarten. **Ebenfalls korrigiert:** die zuerst notierte Ausnahme
+„Brandenburg liefert keine Tagesordnung" ist **falsch** — die Dokumentart `Einladung` (11 Treffer)
+trägt die Tagesordnung. Die Ausnahme gilt nur für Berlin. Das ist genau der Unterschied, den eine
+gemeinsame Textmuster-Lösung eingeebnet hätte.
+
+Benannte, aber fachlich nicht sicher einzuordnende Arten (`Information`, `Frühwarndokument`,
+`Gutachten`, `Zuschrift`) werden bewusst `sonstiges` — der Wert ist belegt beobachtet, es wäre
+aber geraten, ihn zur Drucksache, Anfrage oder Sitzung zu erklären.
+
+Die Verteilung ist als Prüfung verankert (`landesparser-klassen-test.js`, Teil C2): jede gemessene
+Dokumentart muss eine **länderspezifisch belegte** Zuordnung haben, sonst wird der Test rot.
+
 ## B.3 Kanonische Dokumentklassen
 
 `lib/helmut/quellenarchitektur/pardok-dokumentklassen.js` — rein, deterministisch, ohne Uhr
@@ -167,13 +193,13 @@ Antwort auf eine Anfrage still ein reines Sitzungsdokument geworden.
 
 | Klasse | Berlin (PARDOK) | Brandenburg (parldok) |
 |---|---|---|
-| Drucksache | ✅ `Drs`/`Verordnung`/`Antrag` | ✅ `Drs`/`Gesetzentwurf`, auch ohne `DokTyp` |
+| Drucksache | ✅ `Drs`/`Verordnung`/`Antrag` | ✅ `Drs`/`Gesetzentwurf`/`Unterrichtung`, auch ohne `DokTyp` |
 | Anfrage | ✅ `Schriftliche Anfrage`, `Kleine Anfrage` | ✅ `Kleine Anfrage` |
 | Antwort | ✅ `DokTypL = Antwort` (`D-351603`) | ❌ **fachliche Ausnahme** — kein eigener Typwert in der Stichprobe; Antworten erscheinen als eigenständige Drucksache und bleiben ehrlich `drucksache` |
-| Sitzung | ✅ Plenar- + Ausschussprotokoll, `Behandlung im Plenum`, `Ausschussberatung` | ✅ Plenarprotokoll |
-| Tagesordnung/Termin | ❌ **fachliche Ausnahme** — der Export ist eine Dokumentendatenbank, keine Terminliste | ❌ **fachliche Ausnahme** — „Einl" erscheint nur in `<FundSt>`, nicht als Dokumentart |
+| Sitzung | ✅ Plenar- + Ausschussprotokoll, `Behandlung im Plenum`, `Ausschussberatung` | ✅ Plenarprotokoll, Ausschussprotokoll, Präsidiumsprotokoll |
+| Tagesordnung/Termin | ❌ **fachliche Ausnahme** — über 800 gemessene Records führt Berlin genau vier Dokumentarten, keine davon ist eine Tagesordnung | ✅ Dokumentart **`Einladung`** (11 von 816) — die Einladung zur Sitzung trägt die Tagesordnung |
 | Pressemitteilung | ❌ **fachliche Ausnahme** — kommt über die Presse-/Medienwege des Landesmoduls | ❌ dito |
-| Sonstiges | ✅ Gesetz- und Verordnungsblatt | – (in der Stichprobe nicht beobachtet) |
+| Sonstiges | ✅ Gesetz- und Verordnungsblatt | ✅ GVBl, `Information`, `Frühwarndokument`, `Gutachten`, `Zuschrift` |
 | Parlamentarischer Vorgang | **als Bezug: nein** (siehe B.7) | **als Bezug: ja** — `VNr` + `VTypL` |
 
 Alle Ausnahmen sind in `KLASSEN_AUSNAHMEN` maschinenlesbar hinterlegt (Land, Klasse, Grund,
@@ -244,16 +270,18 @@ möglich — der Egress zu beiden Hosts ist gesperrt.
 
 ## B.9 Tests
 
-- `scripts/landesparser-klassen-test.js` — **88/88 grün**, Berlin und Brandenburg getrennt
+- `scripts/landesparser-klassen-test.js` — **94/94 grün**, Berlin und Brandenburg getrennt
   nachgewiesen: Klassenvertrag · Pflichtklassen je Land · Länderspezifik (die Typtabellen sind
   nachweislich verschieden) · kanonischer Vertrag (alle neun Informationen) · fail closed bei
   unbekannten/fehlenden Typen · fehlende Felder · Identität und Dubletten · Dokument ≠ Vorgang ·
   vollständiger Offline-Weg bis ins Understanding-Gate · Rückwärtskompatibilität Bund ·
-  Determinismus und Isolation · beide Plenumswege bleiben `needs_review`/`manual`.
-- **Mutationsprobe: 7 von 7 Mutationen machen die Suite rot** (Dokumentart vor Dokumenttyp 9 ·
+  Determinismus und Isolation · beide Plenumswege bleiben `needs_review`/`manual` · **und die real
+  gemessene Dokumentart-Verteilung beider Quellen** (Teil C2).
+- **Mutationsprobe: 9 von 9 Mutationen machen die Suite rot** (Dokumentart vor Dokumenttyp 9 ·
   fail closed aufgeweicht 4 · Vorgangsbildung im Parserpfad 1 · abgeleiteter Titel nicht markiert 2 ·
   unbekanntes Land geraten 2 · „Schriftliche Anfrage" wieder entfernt 1 · brandenburgischer
-  Typwert entfernt 1).
+  Typwert entfernt 1 · Brandenburgs `Ausschussprotokoll` entfernt 1 · Brandenburgs `Einladung`
+  entfernt 2).
 - Regression: `pardok-parser-test.js`, `pardok-gate-test.js`, `pardok-dispatch-test.js`,
   `pardok-dispatch-smoke-test.js`, `shadow-ingest-test.js` grün; Gesamt-Offline-Suite
   **182/182** (Ausgang 181/181), Browser-/Mobile-Smoke **32/32**.
@@ -261,7 +289,7 @@ möglich — der Egress zu beiden Hosts ist gesperrt.
 ## B.10 Verbleibende Risiken
 
 1. **Berliner Vorgangsbezug fehlt** (B.7) — Weg zur Schließung steht, braucht einen Lauf mit Netz.
-2. **Stichprobe statt Vollerhebung:** die Typtabellen stützen sich auf 500 Records je Quelle. Neue
+2. **Stichprobe statt Vollerhebung:** die Typtabellen stützen sich auf 500 (Struktur) bzw. 800 (Verteilung) Records je Quelle — nicht auf die vollen 47 417 bzw. 9 092 Records. Neue
    Typwerte sind möglich — sie fallen fail closed als `unbekannt` auf, statt still falsch zu werden.
 3. **Kein Production-Beweis** und keiner möglich, solange die Wege bewusst inaktiv sind.
 4. **Befund 24-2** bleibt als Vorbedingung für den Cutover bestehen.
