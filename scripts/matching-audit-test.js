@@ -301,7 +301,9 @@ function laufDeps(db, { profile, kos = [koRente, koKlima], treffer = TREFFER, au
     getProfile: () => profile,
     saveProfileEmbedding: () => ({ saved: true }),
     matchByEmbedding: () => ({ results: treffer }),
-    listKnowledgeObjects: () => kos,
+    // Sprint 23C-2A: der Schreibpfad laedt die Wissensobjekte der Trefferliste
+    // gebuendelt ueber ihre Kennungen (vorher: Fenster ueber den Gesamtbestand).
+    listKnowledgeObjectsByIds: (ids) => kos.filter((k) => ids.includes(k.id)),
     saveMatchingResults: (rows) => db.saveResults(rows),
     auditEnabled: () => auditAn,
     audit: () => db.audit

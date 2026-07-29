@@ -1604,7 +1604,8 @@ async function c7aMatchingChecks() {
     enabled: () => true,
     saveProfileEmbedding: () => ({ saved: true }),
     matchByEmbedding: () => ({ results: [{ id: "ko-a", vorgang_id: "vg-rente", similarity: 0.9 }] }),
-    listKnowledgeObjects: () => [koRente, koKlima],
+    // Sprint 23C-2A: gebuendelter Lesezugriff nach Kennung statt Fensterlauf.
+    listKnowledgeObjectsByIds: (ids) => [koRente, koKlima].filter((k) => ids.includes(k.id)),
     saveMatchingResults: (rows) => { savedRows.push(...rows); return { saved: rows.length }; }
   });
   check("C7a Runner: 1 gespeicherte Match-Zeile mit matched_features, nutzergebunden + vorgang_id",

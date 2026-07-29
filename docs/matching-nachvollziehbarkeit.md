@@ -2068,3 +2068,359 @@ nachvollziehbar, warum ein Vorgang zu einem Profil passt") ist bei **23,2 %** si
 Abdeckung jedoch **nicht** erfüllt. Punkt 23 bleibt offen; der nächste Schritt ist
 **M-7**, danach ein **Sprint 23C-2** ohne Anzeigeänderung (die Abdeckung steigt allein
 durch bessere Daten).
+
+---
+
+# TEIL D — Sprint 23C-2A: Erklärungsabdeckung im Schreibpfad reparieren (Befund M-7)
+
+> **Stand 2026-07-29.** Umsetzung offline vollständig bewiesen, Production ausschließlich
+> **lesend** geprüft. Kein Production-Write, keine Migration, kein Flag, kein Cron, kein
+> Deployment, kein Merge. Branch `claude/matching-explanation-coverage-cnzjgy`.
+
+## 34 · Der Fehler in einfachen Worten
+
+Helmut sucht die passenden Vorgänge über den **gesamten** Wissensbestand — am 29.07.2026
+sind das **1 702** Wissensobjekte. Direkt danach wollte er zu jedem gefundenen Vorgang
+sagen, *warum* er passt. Dafür holte er sich aber nicht die gefundenen Vorgänge, sondern
+schlicht **die 200 zuletzt geänderten** Objekte und suchte die Treffer darin.
+
+Wer nicht in diesen 200 lag, wurde gegen ein **leeres Objekt** verglichen. Das Ergebnis
+war zwangsläufig „keine Gemeinsamkeit" — obwohl in Wahrheit Ausschuss, Partei, Wahlkreis
+und Schwerpunkt übereinstimmten. Der Vorgang blieb im Ergebnis, mit richtigem Rang und
+richtiger Ähnlichkeit, aber **ohne jede Begründung**.
+
+Der Verlust entstand also **nicht** in der Anzeige, sondern beim Schreiben. Die
+Oberfläche aus Sprint 23C (PR #171) hat immer korrekt gearbeitet: sie zeigt nur, was
+belegt ist — und es war nichts belegt.
+
+**Gemessen (Production, 2026-07-29, rein lesend):** 271 aktuelle Ergebniszeilen, davon
+63 mit sichtbarem Beleg. Von den 208 unbelegten Zeilen hätten **128** einen echten
+Beleg getragen, wenn das richtige Wissensobjekt geladen worden wäre.
+
+## 35 · Die gewählte Lösung
+
+Eine Zeile Ursache, eine Zeile Behebung:
+
+```js
+// vorher (lib/helmut/matching.js)
+const kos = await deps.listKnowledgeObjects({ limit: 200 });
+
+// nachher
+const trefferIds = [...new Set((search.results || []).map((h) => String(h.id)).filter(Boolean))];
+const kos = await deps.listKnowledgeObjectsByIds(trefferIds);
+```
+
+Dahinter steht ein neuer, gebündelter Lesezugriff `storage.listKnowledgeObjectsByIds(ids)`:
+
+- **eine** PostgREST-Anfrage je 100 Kennungen (`id=in.("…","…")`), bei der produktiven
+  Trefferzahl von 20 also genau **eine** Anfrage — **kein N+1**;
+- **dieselbe Leseprojektion** wie der bisherige Lesepfad (`V3_KO_READ_SELECT`), damit ein
+  Treffer, der schon vorher im Fenster lag, **exakt dieselben** Merkmale bekommt;
+- **deterministisch**: Kennungen werden dedupliziert und byte-stabil sortiert, zwei Läufe
+  mit derselben Trefferliste erzeugen dieselbe Anfrage;
+- **mandantenneutral**: `knowledge_objects` trägt kein `user_id` (ein Vorgang wird global
+  genau einmal verstanden) — die Mandantengrenze liegt eine Ebene höher und bleibt
+  unverändert: die Kennungen stammen ausschließlich aus der Trefferliste **dieses**
+  Mandanten;
+- **fail closed und laut**: ein echter Lesefehler wird geworfen (`StorageReadError`)
+  statt still als „nichts gefunden" zu erscheinen. Genau diese Verwechslung von
+  *nicht geladen* mit *nichts gefunden* **ist** M-7. Ein wirklich verschwundenes
+  Wissensobjekt fehlt dagegen einfach — dann bleibt der Beleg leer und es wird nichts
+  erfunden.
+
+### 35.1 Warum **nicht** einfach das Limit erhöhen
+
+`listKnowledgeObjects({limit:N})` liefert die N **zuletzt geänderten** Objekte. Die
+Trefferliste des Matchings folgt aber der **Ähnlichkeit**. Beide Ordnungen haben
+nichts miteinander zu tun — ein größeres N ist deshalb nur die Wette, dass sie sich
+zufällig überlappen:
+
+| | 200er-Fenster | größeres Fenster (z. B. 2 000) | Laden nach Kennung |
+|---|---|---|---|
+| korrekt bei 1 702 Objekten | nein | zufällig ja | **ja, konstruktionsbedingt** |
+| korrekt bei 20 000 Objekten | nein | nein | **ja** |
+| gelesene Zeilen je Lauf | 200 | 2 000 | **20** |
+| PostgREST-Kappung bei 1 000 Zeilen | — | **still** (Nebenbefund W-1) | nicht anwendbar |
+| Fehlerbild beim Überschreiten | still leer | still leer | existiert nicht |
+
+Ein höheres Limit hätte den Fehler **verdeckt statt behoben**, wäre teurer geworden
+(zehnfache Lesemenge je Lauf) und wäre bei der bekannten stillen 1 000-Zeilen-Kappung
+von PostgREST erneut in dasselbe Fehlerbild gelaufen. Das Laden nach Kennung ist
+zugleich das **billigste** Verfahren: 20 statt 200 Zeilen je Lauf.
+
+### 35.2 Was ausdrücklich **nicht** angefasst wurde
+
+Kandidatenauswahl · Ähnlichkeiten · Ränge · Reihenfolge · Ergebniskennungen · Filter ·
+`matching_runs` · die Veröffentlichungstransaktion · der Lesepfad · die Oberfläche ·
+`knowledge_object_embeddings` · semantisches Matching · Briefing-Logik · Cron · Budgets ·
+Flags · Schema · Migrationen. Die Änderung liegt **hinter** der Trefferbestimmung und
+**vor** der Ergebnisprojektion; sie liest, sie wählt nicht aus und sie bewertet nicht neu.
+
+## 36 · Versionsentscheidung: **keine** Anhebung — und warum das die richtige ist
+
+Die Ausgangsfrage lautete: muss `rezept_version` (oder eine andere Versionsachse)
+steigen, damit der bestehende Idempotenzriegel eine neue Generation zulässt?
+
+**Antwort: nein.** Der Fingerabdruck erledigt das bereits — und zwar **genauer**, als
+eine Versionsanhebung es könnte.
+
+`computeCandidateSetHash` trägt je Kandidat `id | Ähnlichkeit | ko_eingabe_hash`
+(§15.2). Für einen Treffer außerhalb des alten Fensters war `ko_eingabe_hash` **null**
+(im Hash als `-`), weil es kein Objekt zu hashen gab. Nach der Behebung steht dort ein
+echter Hash. Daraus folgt zwingend:
+
+| Fall | `ko_eingabe_hash` vorher → nachher | Fingerabdruck | Folge |
+|---|---|---|---|
+| Treffer lag **außerhalb** des Fensters | `null` → echter Hash | **ändert sich** | neue Generation zulässig — genau hier nötig |
+| Treffer lag **innerhalb** des Fensters | Hash → derselbe Hash | **identisch** | bleibt idempotent, kein unnötiger Generationswechsel |
+
+Eine Versionsanhebung hätte dagegen **jeden** Lauf **jedes** Mandanten neu erzeugt,
+auch die, an denen sich nachweislich nichts ändert. Und sie hätte etwas Falsches
+behauptet: das Rezept `legacy_relevance_v1` rechnet nach der Behebung **exakt wie
+vorher** — es bekommt nur endlich seinen tatsächlichen Eingang zu sehen. Dasselbe gilt
+für `legacy-shadow-1` (Engine) und `feature-hash-256-v1` (Vektor). Eine Versionsnummer
+zu erhöhen, ohne dass sich das Verfahren geändert hat, wäre eine falsche Aussage im
+Auditprotokoll — dieselbe Kategorie Fehler, die §16.1 schon einmal korrigieren musste.
+
+Beides ist getestet: der betroffene Lauf bekommt einen neuen Fingerabdruck (G4), der
+nicht betroffene behält seinen (G5), und nach der einmaligen Korrektur ist wieder alles
+idempotent (G6–G8). Zusätzlich sichern G1–G3 die drei Versionswerte gegen eine
+versehentliche Anhebung ab.
+
+## 37 · Testnachweis
+
+**Neue Suite `scripts/matching-erklaerungsabdeckung-test.js` — 60/60.** Sie ist rein
+offline (0 KI, 0 externes Netz, 0 Production-Zugriff); Abschnitt C2 spricht bewusst ein
+**lokales HTTP-Doppel auf 127.0.0.1** an, weil sich die tatsächlich gebaute
+PostgREST-Anfrage sonst nur behaupten, aber nicht beweisen ließe.
+
+| Abschnitt | Was bewiesen wird |
+|---|---|
+| **A (5)** | Treffer außerhalb des alten Fensters trägt jetzt seine 4 echten Merkmale; Treffer *innerhalb* bleibt unverändert; ein Treffer **ohne** echte Überschneidung bleibt leer |
+| **B (8)** | Kandidatenzahl, Reihenfolge, Ähnlichkeiten, Ränge, Ergebniskennungen, **jedes** nicht-erklärende Feld und der Rückgabewert sind zwischen altem und neuem Verhalten **byte-identisch** |
+| **C (5)** | genau **ein** Ladeaufruf für alle Treffer, mit allen Kennungen, Dubletten einmal; kein N+1; leere Trefferliste erzeugt nichts |
+| **C2 (11)** | gegen ein echtes PostgREST-Doppel: 1 Anfrage für 3 Kennungen · `id=in.("…")` exakt · `limit` = Anzahl der Kennungen · fehlendes Objekt fehlt einfach · gleiche Projektion · **150 Kennungen → 2 Anfragen** (Stapel zu 100) · byte-identische Anfrage bei gleicher Menge · leere Menge = 0 Anfragen · **HTTP 500 wirft `StorageReadError`** · nicht bereiter Store wirft ebenfalls |
+| **D (8)** | verschwundenes Wissensobjekt: `matched_features` leer, `begruendung` `null`, `signale` ohne fachlichen Beleg, `ko_eingabe_hash` `null` — der Treffer verschwindet deswegen **nicht**; der zuvor unbelegte Treffer trägt jetzt eine belegte Begründung ohne jede Ziffer |
+| **E (5)** | jede Zeile trägt den eigenen Mandanten, Kennungen bleiben mandantengebunden, der Stapel-Lesezugriff fragt nur Kennungen der **eigenen** Trefferliste, `assertTenantRows` lehnt fremde Zeilen weiterhin ab |
+| **F (3)** | kein KI-Modul im Schreibpfad, kein LLM-Pfad im neuen Lesezugriff, im gesamten Lauf kein KI-Modul geladen — **0,00 USD** |
+| **G (9)** | Rezept-/Engine-/Vektorversion unverändert; neuer Fingerabdruck **nur** beim betroffenen Lauf; unveränderter beim nicht betroffenen; danach wieder idempotent (0 Ergebniszeilen, `wiederholungen` 0 → 1, gleiche Lauf-ID); weiterhin genau **eine** Sperre je Mandant |
+| **H (4)** | die Oberfläche aus PR #171 zeigt die neu gewonnenen Belege **ohne eine Zeile UI-Änderung**; vorher kein Abschnitt, jetzt Satz + 2–4 Belege, ohne Ziffer; unbelegter Treffer bleibt ohne Abschnitt |
+| **I (2)** | interne Mutationsprobe: alle 4 Kernaussagen scheitern gegen das alte Verhalten, die Kandidaten/Ränge bleiben dabei gleich |
+
+**Externe Mutationsprobe (der eigentliche Gegenbeweis).** Der Schreibpfad wurde
+testweise auf die alte Zeile `listKnowledgeObjects({ limit: 200 })` zurückgesetzt und
+die neue Suite erneut gefahren: **11 Fehlschläge, Exit-Code 1** (A1, A2, C1, C2, C4,
+D6, D7, E3, G4, H2, H3). Der gesamte Abschnitt **B blieb dabei grün** — genau richtig:
+er misst die *Unveränderlichkeit* von Scores und Rängen und darf deshalb nicht
+zwischen altem und neuem Verhalten unterscheiden. Anschließend wurde die Mutation
+entfernt und die Gesamtsuite erneut grün gefahren.
+
+**Gesamtstand:** Offline-Suite **180/180** (Ausgangsmessung auf unverändertem Stand:
+**179/179**) · Browser-/Mobile-Smoke **32/32** · neue Suite **60/60** · Mutationsprobe
+**11 Fehlschläge**. Alle Läufe ohne gesetzte Supabase-/Azure-Variablen, damit die
+Cloud-Sitzung dieselbe Ausgangslage hat wie das CI-Gate.
+
+## 38 · Die verbleibenden unbelegten Treffer — rein lesende Analyse
+
+Erhoben mit `scripts/matching-erklaerungsluecke-analyse.js` (**schreibt nichts**, nur
+`listMatchingResults` / `listKnowledgeObjectsSeitenweise` / `getProfile`; kein Matching
+gestartet, keine KI, keine Datenänderung). Die Merkmale wurden mit denselben reinen
+Funktionen nachgerechnet, die auch der Schreibpfad verwendet.
+
+**Bestand:** 271 aktuelle Zeilen über 7 Mandanten.
+
+| | Zeilen |
+|---|---|
+| mit sichtbarem Beleg (heute) | 63 (23,2 %) |
+| ohne Beleg | 208 (76,8 %) |
+| … davon gewinnen durch die Behebung | **128** |
+| … davon bleiben ehrlich leer | **80** |
+| Wissensobjekt nicht mehr auffindbar | 0 |
+| **erwartete Abdeckung nach Neuberechnung** | **191/271 = 70,5 %** |
+
+### 38.1 Warum die 80 leer bleiben
+
+| Ursache | Zeilen |
+|---|---|
+| **Profil ohne Partei, ohne Ausschuss, ohne Schwerpunkt** — Beleg konstruktionsbedingt unmöglich | **20** |
+| Wissensobjekt trägt selbst gar keine Merkmale | 7 |
+| beide Seiten besetzt, aber wirklich keine Überschneidung | 73 |
+
+Die 20 gehören **vollständig zu einem einzigen Mandanten**, dessen Mandatsprofil außer
+einem Platzhalter (`Noch offen` als Region) nichts enthält. Dort ist nicht die Datenlage
+der begrenzende Faktor, sondern die **Profilpflege**. Für dieses Mandat kann Helmut
+heute grundsätzlich keine belegte Relevanz zeigen — egal wie gut das Matching wird.
+
+### 38.2 Werden sie allein vom Legacy-Vektor getragen? **Nein — schlimmer.**
+
+| | Zeilen |
+|---|---|
+| gespeicherte Ähnlichkeit **≤ 0** | **40** |
+| Ähnlichkeit > 0 (nur Wortüberschneidung möglich) | 40 |
+| Spanne der Ähnlichkeit (min / median / max) | **−0,0735 / 0,0000 / 0,2741** |
+| Rangspanne dieser Zeilen | **1–20** |
+
+**Die Hälfte dieser Treffer wird von gar nichts getragen.** 40 der 80 haben eine
+Ähnlichkeit von **null oder negativ** — sie stehen nur deshalb im Ergebnis, weil die RPC
+`match_knowledge_objects` die Top-N **unbedingt** liefert (kein Schwellenwert, §4.4).
+Sie sind reine Auffüllung auf die geforderten 20 Kandidaten.
+
+Die anderen 40 haben eine positive Ähnlichkeit. Da nachweislich **kein** Label
+(Partei/Ausschuss/Region/Thema) übereinstimmt, kann diese Ähnlichkeit nur aus
+`inhalt:`-Worttoken stammen — also aus **Wortüberschneidung im Freitext**, nicht aus
+Bedeutung (§19). Das ist genau die Grenze des Merkmalsvektors und einem Mandatsträger
+gegenüber nicht belegbar.
+
+Und: diese Zeilen liegen **nicht** nur am Ende der Liste. Ihre Ränge reichen von **1 bis
+20** — eine unbelegte Zeile kann heute an erster Stelle stehen.
+
+### 38.3 Gibt es andere belastbare, heute ungespeicherte Signale? **Praktisch nein.**
+
+| geprüftes Signal | Treffer im leeren Rest |
+|---|---|
+| namentliche Erwähnung des Mandats (`mentioned_mps`/`mentioned_people`) | **0** |
+| betroffene Geografie trifft die Profilregion (`affected_geographies`) | **0** |
+| erwähnte Geografie trifft die Profilregion (`mentioned_geographies`) | **0** |
+| Wissensobjekt nennt ein Ministerium (`ministerien`) | 49 |
+
+Die 49 Ministeriumsnennungen sind **kein** verwertbares Signal: das Mandatsprofil kennt
+keine Ministeriumsdimension, es gäbe also nichts, womit man sie überschneiden könnte.
+Sie zu zeigen wäre eine Behauptung („betrifft das BMAS"), keine Begründung
+(„betrifft **dich**, weil …"). Es gibt in diesem Rest also **keine billige zweite
+Ernte** — die Grenze ist echt.
+
+### 38.4 Wirkung eines Erklärbarkeits-Gates auf die sichtbare Lage
+
+Entscheidend ist nicht der Gesamtbestand, sondern das **sichtbare Fenster**: `lage.js`
+zeigt `HELMUT_LAGE_MAX_VORGAENGE` = **12** Vorgänge je Mandant, und bei ausgeschaltetem
+`HELMUT_SCORING_MODE` (dokumentierter Default) **wählt** `matching_results` diese
+Vorgänge aus (`lage.js:336–347`) — es sortiert sie nicht nur.
+
+*Ehrliche Grenze dieser Aussage:* der tatsächliche Wert von `HELMUT_SCORING_MODE` in
+Vercel ist aus einer Cloud-Sitzung **nicht lesbar**; zugrunde gelegt ist der
+dokumentierte Default „off" (`env-inventar.md` §123). Stünde er auf `on`, würde die Lage
+über `scoring.rankForLage` gebildet und `matching_results` wäre am **Auswahlpfad gar
+nicht beteiligt** — ein Erklärbarkeits-Gate hätte dann von vornherein keine Wirkung auf
+die Lage, und die Empfehlung in §39.1 gälte erst recht.
+
+Die Mandanten sind hier als A–G geführt (`START_HERE.md` §3: Mandatsidentitäten werden in
+der Doku bewusst nicht geführt). Die Zuordnung erzeugt jederzeit reproduzierbar
+`node scripts/matching-erklaerungsluecke-analyse.js`.
+
+| Mandant | Fenster | erklärt **heute** | erklärt **nach der Behebung** | fiele bei einem Gate weg |
+|---|---|---|---|---|
+| A | 12 | 4 | **11** | 1 |
+| B | 12 | 3 | **12** | 0 |
+| C *(Platzhalterprofil)* | 12 | 0 | **0** | **12** |
+| D | 12 | 12 | **12** | 0 |
+| E | 12 | 7 | **12** | 0 |
+| F | 12 | 11 | **12** | 0 |
+| G | 12 | 9 | **12** | 0 |
+| **Summe** | **84** | **46 (54,8 %)** | **71 (84,5 %)** | **13** |
+
+Über den ganzen Bestand je Mandant (nicht nur das Fenster): 55,8 % · 100 % · 0 % ·
+93,3 % · 73,9 % · 100 % · 74,5 % erklärte Zeilen nach der Behebung.
+
+**Lesart:** Für **jeden** Mandanten mit gepflegtem Profil bringt allein die Behebung von
+M-7 das sichtbare Fenster auf **11 bis 12 von 12** erklärten Vorgängen. Ein Gate würde
+dort **einen einzigen** Vorgang zusätzlich entfernen. Beim Mandanten mit dem
+Platzhalterprofil würde es die Lage **vollständig leeren**.
+
+### 38.5 Zwei neue Befunde
+
+- **M-8 — die RPC kennt keinen Schwellenwert, das Ergebnis enthält Auffüllung.**
+  `match_knowledge_objects` liefert die Top-N unbedingt. Gemessen: **40** aktuelle
+  Ergebniszeilen mit Ähnlichkeit ≤ 0 (minimal −0,0735), verteilt über die Ränge 1–20.
+  Das ist **kein** Erklärbarkeitsproblem, sondern ein Problem der Kandidatenqualität:
+  Helmut zeigt Vorgänge, für die es keinen Anlass gibt. Ein Schwellenwert ist eine
+  Produktentscheidung (er verändert Kandidatenmenge und Ränge) und gehört deshalb
+  **nicht** in diesen Sprint.
+- **M-9 — ein Mandatsprofil ohne Partei, Ausschuss und Schwerpunkt kann nie eine
+  belegte Relevanz erzeugen.** Betrifft aktuell einen Mandanten mit 20 von 20 unbelegten
+  Zeilen. Wirksamster Hebel dort ist die Profilpflege (bzw. die Klärung, ob es sich um
+  ein Demo-Mandat handelt → **OP-04**), nicht das Matching.
+
+## 39 · Produktempfehlung und Rollout
+
+### 39.1 Empfehlung zum Erklärbarkeits-Gate: **kein Gate — sichtbar lassen, ohne Erklärung**
+
+Das ist zugleich der heutige Zustand (PR #171 blendet den Abschnitt ohne Beleg
+vollständig aus, ohne Ersatztext). Begründung:
+
+1. **Der Nutzen wäre fast null.** Nach der Behebung sind im sichtbaren Fenster 11–12 von
+   12 Vorgängen erklärt. Ein Gate entfernte bei gepflegten Profilen **einen** Vorgang.
+2. **Der Schaden wäre groß.** Beim Mandanten mit unvollständigem Profil bliebe die Lage
+   **leer**. „Vorgang ohne Begründung" ist unbefriedigend; „gar keine Lage" ist
+   unbrauchbar — und Helmuts Aufgabe ist die Morgenlage, nicht der Beweis.
+3. **Ein Gate behandelte das falsche Problem.** Die verbleibenden Zeilen sind nicht
+   *falsch*, sie sind *unbelegt*. Dass 40 von ihnen eine Ähnlichkeit ≤ 0 tragen, ist
+   Befund **M-8** — eine Sache des fehlenden Schwellenwerts, nicht der Erklärung. Ein
+   Gate würde diesen Befund **verstecken** statt beheben (falsches Grün).
+4. **Ehrlichkeit ist bereits umgesetzt.** Kein Ersatztext, keine erfundene Begründung —
+   der Abschnitt entfällt schlicht. Das entspricht `START_HERE.md` §5.2/§5.3.
+
+**Stattdessen, in dieser Reihenfolge:**
+
+| Schritt | Wirkung | Charakter |
+|---|---|---|
+| 1. Diesen Sprint ausrollen (M-7) | 23,2 % → **70,5 %** Bestand, 54,8 % → **84,5 %** sichtbares Fenster | Fehlerbehebung, keine Produktentscheidung |
+| 2. Profilpflege / OP-04 klären (M-9) | +20 Zeilen möglich, betrifft genau ein Mandat | Betrieb, keine Codeänderung |
+| 3. Schwellenwert für `match_knowledge_objects` (M-8) | entfernt Auffüllung mit Ähnlichkeit ≤ 0 | **verändert Kandidaten und Ränge → eigener Sprint, freigabepflichtig** |
+| 4. Semantisches Matching (22C2) | hebt die *echte* Trefferqualität, nicht nur die Erklärung | freigabepflichtig |
+
+Über ein Gate wäre — wenn überhaupt — erst **nach** Schritt 3 und 4 zu entscheiden, wenn
+die Kandidatenmenge selbst belastbar ist. Ein technischer Hinweis für später: ein Gate
+müsste in die **Abfrage** (`listMatchingResults`), nicht in die Anzeige — sonst
+schrumpfte das 12er-Fenster, statt sich mit erklärten Vorgängen aufzufüllen.
+
+### 39.2 Production-Rolloutplan mit Rückweg
+
+**Voraussetzungen (geprüft):** PR #171 ist in `main` (`387b1a5`), das zugehörige
+Production-Deployment `dpl_4tyHsdwjCYEHwGMz6zAAcsAvMmUC` ist **READY**;
+`HELMUT_MATCHING_AUDIT` ist in Production aktiv; Migration `20260728_matching_audit` ist
+angewendet. **Diese Änderung braucht keine Migration, kein neues Flag und keine
+Env-Variable.**
+
+| Schritt | Wer | Wirkung | Prüfung |
+|---|---|---|---|
+| 1. Merge des PR (= Deployment) | Betreiber | **sofort keine** — die Behebung wirkt erst beim nächsten Matchinglauf | Deployment `READY` |
+| 2. nächster regulärer Crawl-Cron | automatisch | betroffene Mandanten: neuer Fingerabdruck → **eine** neue Generation, alte Zeilen `aktuell=false` (**nichts gelöscht**); nicht betroffene: idempotent, 0 Schreibvorgänge | `matching_runs`: neue Zeilen `vollstaendig`; 0 Zeilen auf unvollständigem Lauf |
+| 3. Abnahme (rein lesend) | Betreiber/Claude | Erklärungsabdeckung neu messen | `node scripts/matching-erklaerungsluecke-analyse.js` |
+
+**Erwartung für Schritt 3:** die Abdeckung steigt für jeden Mandanten, der seit dem
+Deployment gelaufen ist. Wegen Befund **B5** (Crawl-Zeitlimit) und **B6** (kein
+Einzelmandanten-Einstieg) erreicht **nicht jeder Lauf jeden Mandanten** — die Abdeckung
+steigt deshalb über mehrere Tage, nicht auf einen Schlag. Das ist zu erwarten und **kein
+Fehler**; ein gezieltes Nachziehen ist ohne OP-26 nicht möglich.
+
+**Mengengerüst:** je betroffenem Mandanten entstehen einmalig bis zu 20 zusätzliche
+Zeilen (die alte Generation bleibt als `aktuell=false` erhalten) — bei 7 Mandanten also
+höchstens ~140 Zeilen. Zusätzliche KI-Kosten: **0,00 USD**. Die Lesemenge je Lauf
+**sinkt** von 200 auf 20 Zeilen.
+
+**Rückweg:** Revert des Merge-Commits. Danach schreibt der nächste Lauf wieder das alte
+Verhalten. Es geht **nichts verloren**: kein Schema, kein Flag, keine Migration ist
+beteiligt, und die abgelösten Zeilen bleiben mit `aktuell=false` erhalten. Ein
+Wiederherstellen einer älteren Generation wäre ein reiner `UPDATE` auf `aktuell` und
+bliebe eine getrennte, freigabepflichtige Production-Datenänderung.
+
+**Ausdrücklich nicht Teil des Rollouts:** kein manueller Matchinglauf, keine
+Neuberechnung bestehender Zeilen, keine Migration, keine Flagänderung, keine
+Cron-Änderung, keine Production-Datenänderung.
+
+## 40 · Geänderte und neue Dateien (Sprint 23C-2A)
+
+| Datei | Art | Inhalt |
+|---|---|---|
+| `lib/helmut/storage.js` | geändert | neuer Lesezugriff `listKnowledgeObjectsByIds` (+ Export) |
+| `lib/helmut/matching.js` | geändert | Trefferobjekte gebündelt nach Kennung laden statt Fensterlauf; neue Abhängigkeit in `defaultDeps` |
+| `scripts/matching-erklaerungsabdeckung-test.js` | **neu** | 60 Prüfungen (Fehler, Unveränderlichkeit, Bündelung, Fail-closed, Mandant, Kosten, Fingerabdruck, Oberfläche, Mutation) |
+| `scripts/matching-erklaerungsluecke-analyse.js` | **neu** | rein lesende Analyse der Erklärungsabdeckung (schreibt nichts) |
+| `scripts/matching-audit-test.js` | geändert | Testdoppel auf den gebündelten Lesezugriff umgestellt |
+| `scripts/p1-security-check.js` | geändert | dito |
+| `docs/CURRENT_STATE.md`, `docs/roadmap/phase_1_checkliste.md`, `docs/datenmotor-restliste.md`, diese Datei | geändert | Statusfortschreibung |
+
+Nicht geändert: `client.js`, `styles.css`, `server.js`, `lib/helmut/lage.js`,
+`lib/helmut/matching-erklaerung.js`, `lib/helmut/matching-audit.js`,
+`lib/helmut/matching-contract.js`, `lib/helmut/matching-begruendung.js`,
+`supabase/migrations/*`, `helmut-flags.json`, Cron-Konfiguration.
