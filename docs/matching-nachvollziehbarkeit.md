@@ -2427,3 +2427,141 @@ Nicht geändert: `client.js`, `styles.css`, `server.js`, `lib/helmut/lage.js`,
 `lib/helmut/matching-erklaerung.js`, `lib/helmut/matching-audit.js`,
 `lib/helmut/matching-contract.js`, `lib/helmut/matching-begruendung.js`,
 `supabase/migrations/*`, `helmut-flags.json`, Cron-Konfiguration.
+
+## 41 · Production-Nachweis Sprint 23C-2A (2026-07-29, rein lesend erhoben)
+
+> **PR #174 gemergt (`bb539b1`), ausgerollt und in Production nachgewiesen.**
+> Kein manueller Lauf, keine Migration, kein Flag, keine Cron-Änderung, keine
+> Datenänderung. Alle Zahlen unten stammen aus `SELECT`-Abfragen, Vercel-/
+> Postgres-Logs und einem lesenden Analyselauf.
+
+### 41.1 Deployment
+
+`dpl_7NwHyiwYuECi4y2RXaoRQCCmjdo5` · `target: production` · **READY** ·
+Commit `bb539b1` (Merge PR #174) · erstellt **2026-07-29 12:19:17 UTC**.
+
+### 41.2 Der erste reguläre Matching-Lauf mit korrigiertem Code
+
+Ausgelöst vom regulären **`/api/cron/pipeline` um 16:00 UTC** (`server.js:871` →
+`runCronForTenants` → `runSourceCrawl` → `runMatchingShadow`) — **kein manueller Lauf**.
+
+| Feld | Wert |
+|---|---|
+| Lauf | `mrun-annika-klose-20260729160408-5293c9ec` |
+| Zeit | 16:04:08.392 → 16:04:09.466 UTC (**1 074 ms**) |
+| Auslöser / Pipeline | `crawl` / `crawl-20260729160012-x0ni0` |
+| Status | **`vollstaendig`**, `fehler = NULL` |
+| Kandidaten / berechnet / veröffentlicht | **20 / 20 / 20** |
+| abgelöst | **0** (dieselben 20 Wissensobjekte erneut getroffen → Aktualisierung an Ort und Stelle) |
+| Versionsachsen | `legacy-shadow-1` / `legacy_relevance_v1` / `feature-hash-256-v1` — **unverändert** |
+| Eingabefingerabdruck | `cb3b436a…` (vorher `d396c545…`) |
+
+Der Fingerabdruck hat sich **genau wie vorhergesagt** geändert, ohne dass eine
+Versionsachse angehoben wurde (§36): `ko_eingabe_hash` wechselte von `null` auf einen
+echten Hash, und das allein genügt dem bestehenden Idempotenzriegel, um eine neue
+Generation zuzulassen.
+
+### 41.3 Invarianten (alle geprüft, alle grün)
+
+| Prüfung | Ergebnis |
+|---|---|
+| Läufe gesamt / `vollstaendig` | 2 / 2 |
+| `laufend` · `fehlgeschlagen` | **0 · 0** |
+| vollständige Läufe ohne `beendet_am` | **0** |
+| Ergebniszeilen auf einem unvollständigen Lauf | **0** |
+| `matching_results` gesamt vorher → nachher | **290 → 290** (nichts gelöscht, nichts hinzugefügt) |
+| `aktuell` · `abgeloest` | 271 · 19 (unverändert) |
+| abgelöste Zeilen ohne `abgeloest_am` | **0** |
+| `knowledge_object_embeddings` | **772**, Fingerabdruck `b2b4b7e9ab312749e4584f9d060374d2` — **identisch** |
+| `llm_usage` am Lauftag | **0 Aufrufe, 0,000000 USD** |
+
+### 41.4 Scores, Ähnlichkeiten, Ränge, Ergebniskennungen — unverändert
+
+Der Kernfingerabdruck über `id | knowledge_object_id | similarity | rank` aller
+aktuellen Zeilen des betroffenen Mandanten ist **vorher und nachher identisch**:
+
+```
+8a3975a5486fbdbe4790083875cbc1cf   (vor dem Lauf, 12:25 UTC)
+8a3975a5486fbdbe4790083875cbc1cf   (nach dem Lauf, 16:16 UTC)
+```
+
+20 Zeilen, Ränge **1–20 lückenlos**, genau ein Lauf. Die Behebung hat damit in
+Production **keine einzige** Ergebniskennung, keine Ähnlichkeit und keinen Rang
+verändert — exakt das, was Abschnitt B der Offline-Suite vorhergesagt hat.
+
+### 41.5 Was hinzugekommen ist: der Beleg
+
+| Feld | vorher | nachher |
+|---|---|---|
+| Zeilen mit `matched_features` | 3 von 20 | **20 von 20** |
+| Zeilen mit `begruendung` | 3 von 20 | **20 von 20** |
+| Zeilen mit `ko_eingabe_hash` | 3 von 20 | **20 von 20** |
+
+`signale` trägt jetzt neben `legacy_vektor` die politischen Schlüssel
+(`ausschuss`, `partei`, `thema`, `wahlkreis`). Beispiele aus dem Lauf, wörtlich
+gespeichert und ohne eine einzige Ziffer:
+
+- Rang 1 — *„Betrifft deinen Ausschuss Gesundheit und deinen Schwerpunkt Pflege."*
+  (3 Merkmale: Ausschuss, Partei, Thema)
+- Rang 7 — *„Betrifft deinen Ausschuss Gesundheit und deinen Wahlkreis Berlin…"*
+  (3 Merkmale: Ausschuss, Partei, Wahlkreis)
+- Rang 9 — *„Betrifft deine Partei SPD."* (1 Merkmal)
+
+Rang 1 ist der aussagekräftigste Fall: dieselbe Zeile stand vorher **unbelegt** an
+erster Stelle der Lage — mit identischem Rang und identischer Ähnlichkeit, aber
+ohne jede Begründung.
+
+### 41.6 Erklärungsabdeckung
+
+| | vor dem Lauf | nach dem Lauf |
+|---|---|---|
+| betroffener Mandant | 3 von 20 (15,0 %) | **20 von 20 (100 %)** |
+| dessen sichtbares 12er-Lagefenster | 3 von 12 | **12 von 12** |
+| Gesamtbestand (7 Mandanten) | 63 von 271 (23,2 %) | **80 von 271 (29,5 %)** |
+
+**Die Vorhersage ist punktgenau eingetroffen.** Die lesende Analyse vom Vormittag
+hatte für diesen Mandanten „17 gewinnen, 0 bleiben leer" projiziert — real wurden es
+**genau 17** zusätzlich belegte Zeilen. Das stützt die Projektion für die übrigen
+Mandanten (§38): erwartete Endabdeckung **191 von 271 (70,5 %)**.
+
+**Warum der Gesamtwert erst bei 29,5 % liegt — ehrlich benannt:** der 16:00-Cron hat
+**genau einen** Mandanten erreicht. Das ist kein Fehler dieses Sprints, sondern die
+bekannten Befunde **B5** (Crawl läuft in sein 280-s-Zeitlimit) und **B6** (Matching ist
+für einen einzelnen Mandanten nicht auslösbar). Die Abdeckung steigt daher über die
+kommenden regulären Läufe (04:00 · 10:00 · 16:00 · 20:00 UTC, je ein bis zwei
+Mandanten), nicht auf einen Schlag. Ein gezieltes Nachziehen wäre ein manueller Lauf
+und ist ausdrücklich nicht erfolgt.
+
+### 41.7 Logs und Sperren
+
+- **Vercel-Runtime seit dem Deployment:** 9 Fehlergruppen, **alle bekannte
+  Bestandsklassen** — Google-News-Timeouts/`HTTP 503` (7) und OpenAI-Understanding-
+  Timeouts (2). **Keine einzige** stammt aus dem Matching-Pfad: kein
+  `matching-shadow`, kein `listKnowledgeObjectsByIds`, kein `StorageReadError`, kein
+  Fehler aus `helmut_publish_matching_run`. Alle Stapelspuren zeigen auf
+  `crawlSource`/`crawlAllSources` bzw. Understanding.
+- **Postgres im Laufzeitfenster (16:01:40–16:06:40 UTC):** 2 Einträge, beide reguläre
+  `LOG checkpoint`. **0 `ERROR`.** Die 11 `ERROR` im 24-h-Fenster stammen
+  ausnahmslos aus **eigenen lesenden Probeabfragen dieser Sitzung** mit falschen
+  Spaltennamen (`cost_usd`, `modell`, `name`, `key`) — keine Anwendungsfehler.
+- **`pipeline_locks`:** **keine** `matching-<mandant>`-Sperre mehr vorhanden — die
+  Matching-Sperre wurde sauber freigegeben. Verbleibend: `global-understanding`
+  (16:04:47, **abgelaufen** 16:14:47) und `crawl-cem-ince` (16:04:13, TTL bis
+  16:19:13) — beides Sperren des **Crawl**-Pfads, nicht des Matchings, und beide
+  laufen regulär per TTL ab.
+
+### 41.8 Bewertung
+
+Der Fix ist in Production **wirksam und nebenwirkungsfrei**: die Erklärung entsteht
+jetzt gegen das tatsächliche Wissensobjekt, während Kandidaten, Ähnlichkeiten, Ränge
+und Ergebniskennungen nachweislich unangetastet bleiben, nichts gelöscht wird, keine
+KI-Kosten entstehen und keine neue Fehlerklasse auftritt.
+
+**Sprint 23C-2A: erfolgreich abgeschlossen.**
+
+**Roadmap-Punkt 23 bleibt ⏳ offen** — bewusst. Das Abnahmekriterium („Es ist
+nachvollziehbar, warum ein Vorgang zu einem Profil passt") ist für den neu gerechneten
+Mandanten mit 12 von 12 erklärten Vorgängen erfüllt, für die übrigen sechs aber erst,
+wenn sie ebenfalls gelaufen sind. Der Punkt wird geschlossen, sobald die Abdeckung über
+alle Mandanten nachgemessen wurde — nicht vorher. **M-8** (fehlender Schwellenwert)
+bleibt in diesem Sprint unangetastet.
