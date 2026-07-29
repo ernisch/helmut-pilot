@@ -15,6 +15,10 @@ on:
         description: "Max. zu parsende Records je Quelle im Shadow-Test — Default 800"
         required: false
         default: "800"
+      record_tag:
+        description: "Record-Element der Struktur-Sonde erzwingen (leer = automatisch das haeufigste). 'Vorgang' belegt die Berliner Vorgangsstruktur (Roadmap-Punkt 24)."
+        required: false
+        default: ""
   pull_request:
     paths:
       - ".github/workflows/pardok-parser.yml"
@@ -64,7 +68,12 @@ jobs:
           fi
 
       # Struktur-Sonde: reale XML-Struktur beider Quellen ins Log + Artefakt.
+      # PP_RECORD_TAG erzwingt ein Record-Element (Default leer = haeufigstes). Nur so ist die
+      # Berliner <Vorgang>-Struktur belegbar — die Sonde waehlt sonst automatisch <Dokument>.
       - name: Struktur-Sonde (be-plenum + bb-plenum)
+        env:
+          PP_RECORD_TAG: ${{ inputs.record_tag }}
+          PP_SAMPLES: ${{ inputs.record_tag && '8' || '5' }}
         run: node scripts/pardok-structure-probe.js --out pardok-structure.json
 
       # Shadow-Parser-Test: echter Parser gegen echte XML, Metriken. Nur wenn vorhanden (Commit 2).

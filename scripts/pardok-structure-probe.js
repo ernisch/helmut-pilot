@@ -46,7 +46,15 @@ function recordCandidates(body) {
   for (const c of cands) { const n = (body.match(new RegExp(`<${c}(?:\\s[^>]*)?>`, "g")) || []).length; if (n) counts[c] = n; }
   return counts;
 }
+// Standard: das haeufigste Record-Element (ohne Root). PP_RECORD_TAG erzwingt ein anderes.
+// Hintergrund (Roadmap-Punkt 24): der Berliner Export enthaelt NEBEN 47 417 <Dokument> auch
+// 41 854 <Vorgang>. Die Sonde waehlt automatisch <Dokument> — die Feldstruktur des Berliner
+// <Vorgang> ist deshalb bis heute unbelegt, und der Parser fuehrt fuer Berlin bewusst KEINEN
+// Vorgangsbezug (nichts erfinden). Mit `PP_RECORD_TAG=Vorgang` laesst sich genau diese Luecke
+// in einem Lauf mit Netzzugang schliessen, ohne den Standardpfad zu veraendern.
 function chooseRecordTag(counts, root) {
+  const erzwungen = String(process.env.PP_RECORD_TAG || "").trim();
+  if (erzwungen) return erzwungen;
   const entries = Object.entries(counts).filter(([t]) => !root || t !== root.name).sort((a, b) => b[1] - a[1]);
   return entries.length ? entries[0][0] : null;
 }

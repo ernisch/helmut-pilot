@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  Helmut — Grenzfall-Fixture fuer die Dokumentklassifizierung (Roadmap-Punkt 24).
+
+  ACHTUNG — DIESE DATEI IST KEIN QUELLENBELEG.
+  Die Gold-Fixtures (berlin-gold.xml / brandenburg-gold.xml) enthalten Records aus den echten
+  Exporten. Diese Datei dagegen enthaelt ZUSAMMENGESETZTE Records. Sie dient ausschliesslich dem
+  Nachweis, dass der Parser sich bei schwierigen und bei VERAENDERTEN Formaten fail closed verhaelt.
+  Aus dieser Datei darf KEINE Aussage darueber abgeleitet werden, was die Quellen tatsaechlich
+  liefern. Je Record ist ausgewiesen, welche Feldwerte belegt sind und was zusammengesetzt wurde.
+
+  Belegquelle fuer die als "belegter Feldwert" markierten Werte: Struktur-Sonde vom 26.07.2026
+  (GitHub-Actions-Lauf 30209973678) gegen pardok-wp19.xml bzw. exportWP8.xml.
+-->
+<Export aktualisiert="2026-07-26T16:15:19">
+  <!-- G1 (Brandenburg-Form): DokTyp-Kurzcode "Antr mit Wahlvorschl" / DokTypL "Antrag" sind
+       BELEGTE Feldwerte der parldok-Sonde (Feld-Inventar DokTyp 46 %, Beispielwert). VNr, DokNr,
+       DokDat und LokURL sind ZUSAMMENGESETZT. Erwartung: Klasse `drucksache` ueber die
+       brandenburgische Typtabelle — ein Kurzcode ohne Berliner Entsprechung. -->
+  <Vorgang>
+    <VNr>V-900001</VNr>
+    <VTyp>Sonstiges</VTyp><VTypL>Sonstiges</VTypL>
+    <Dokument>
+      <ReihNr>0001</ReihNr>
+      <DHerk>BRA</DHerk><DHerkL>Brandenburg</DHerkL>
+      <Wp>8</Wp>
+      <DokArt>Drs</DokArt><DokArtL>Drucksache</DokArtL>
+      <DokTyp>Antr mit Wahlvorschl</DokTyp><DokTypL>Antrag</DokTypL>
+      <DokNr>08/9001</DokNr>
+      <DokDat>01.11.2024</DokDat>
+    </Dokument>
+  </Vorgang>
+
+  <!-- G2 (Brandenburg-Form): VOLLSTAENDIG ZUSAMMENGESETZTER Typwert, der in keiner Tabelle steht
+       (Formatdrift/neuer Typ der Quelle). Erwartung: Klasse `unbekannt`, KEINE Ersatzklasse. -->
+  <Vorgang>
+    <VNr>V-900002</VNr>
+    <VTyp>Sonstiges</VTyp><VTypL>Sonstiges</VTypL>
+    <Dokument>
+      <ReihNr>0001</ReihNr>
+      <DHerk>BRA</DHerk><DHerkL>Brandenburg</DHerkL>
+      <Wp>8</Wp>
+      <DokArt>ZzTest</DokArt><DokArtL>Voellig neue Dokumentart</DokArtL>
+      <DokTyp>ZzTyp</DokTyp><DokTypL>Voellig neuer Dokumenttyp</DokTypL>
+      <Titel>Eintrag mit unbekanntem Typ</Titel>
+      <DokNr>08/9002</DokNr>
+      <DokDat>02.11.2024</DokDat>
+    </Dokument>
+  </Vorgang>
+
+  <!-- G3 (Brandenburg-Form): GAR KEIN Typfeld (weder DokArt noch DokTyp).
+       Erwartung: Klasse `unbekannt` mit Herkunft `kein-typfeld`, Identitaet trotzdem stabil. -->
+  <Vorgang>
+    <VNr>V-900003</VNr>
+    <VTyp>Sonstiges</VTyp><VTypL>Sonstiges</VTypL>
+    <Dokument>
+      <ReihNr>0001</ReihNr>
+      <DHerk>BRA</DHerk><DHerkL>Brandenburg</DHerkL>
+      <Wp>8</Wp>
+      <Titel>Eintrag ganz ohne Typangabe</Titel>
+      <DokNr>08/9003</DokNr>
+      <DokDat>03.11.2024</DokDat>
+    </Dokument>
+  </Vorgang>
+
+  <!-- G4 (Brandenburg-Form): Vorgang mit ZWEI Dokumenten unterschiedlicher Klasse
+       (Anfrage + Antwort-Drucksache). Beleg dafuer, dass ein Vorgang mehrere Dokumentklassen
+       traegt und die Dokumentklassifizierung ihn NICHT zu einem Vorgangsobjekt zusammenzieht.
+       Die Typwerte "Kleine Anfrage"/"Drucksache" sind belegt, die Nummern zusammengesetzt. -->
+  <Vorgang>
+    <VNr>V-900004</VNr>
+    <VTyp>Anfrage</VTyp><VTypL>Anfrage</VTypL>
+    <Nebeneintrag><ReihNr>900100</ReihNr><Desk>Verkehr</Desk></Nebeneintrag>
+    <Dokument>
+      <ReihNr>0001</ReihNr>
+      <DHerk>BRA</DHerk><DHerkL>Brandenburg</DHerkL>
+      <Wp>8</Wp>
+      <DokArt>Drs</DokArt><DokArtL>Drucksache</DokArtL>
+      <DokTyp>KlAnfr</DokTyp><DokTypL>Kleine Anfrage</DokTypL>
+      <Titel>Zustand der Landesstrassen</Titel>
+      <DokNr>08/9004</DokNr>
+      <DokDat>04.11.2024</DokDat>
+    </Dokument>
+    <Dokument>
+      <ReihNr>0002</ReihNr>
+      <DHerk>BRA</DHerk><DHerkL>Brandenburg</DHerkL>
+      <Wp>8</Wp>
+      <DokArt>Drs</DokArt><DokArtL>Drucksache</DokArtL>
+      <Titel>Antwort der Landesregierung zum Zustand der Landesstrassen</Titel>
+      <DokNr>08/9005</DokNr>
+      <DokDat>18.11.2024</DokDat>
+    </Dokument>
+  </Vorgang>
+</Export>

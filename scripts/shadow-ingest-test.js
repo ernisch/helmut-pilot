@@ -43,7 +43,10 @@ check("isolationSelfCheck direkt ok", isolationSelfCheck().ok === true);
 check("Modus = shadow-only ohne Prod-Write/LLM", /shadow-only/.test(rep.modus) && /kein LLM/.test(rep.modus));
 
 // --- 2. Aufbereitung ---
-check("Items roh = 14 PARDOK + 4 RSS = 18", rep.itemsRoh === 18);
+// Zahl aus den Fixtures ABGELEITET statt fest verdrahtet (Roadmap-Punkt 24 hat die
+// Gold-Fixtures um belegte echte Records erweitert; eine feste Zahl waere sofort veraltet).
+const PARDOK_ITEMS = be.length + bb.length;
+check(`Items roh = ${PARDOK_ITEMS} PARDOK + 4 RSS = ${PARDOK_ITEMS + 4}`, rep.itemsRoh === PARDOK_ITEMS + 4);
 check("Dokumente nach globalem Merge < Items (Fundstellen-Merge greift)", rep.dokumente < rep.itemsNachDedupL1);
 check("mindestens 1 Dokument mit Mehrfach-Fundstellen (Bund-Story ueber 2 Wege)", rep.mehrfachFundstellen >= 1);
 
@@ -53,7 +56,7 @@ check("PARDOK-Berlin-Dokument: Ebene 'land' aus Quelle (autoritativ)", beDoc.dec
 check("PARDOK-Berlin-Dokument: Geografie geo-land-berlin", beDoc.geografie === "geo-land-berlin");
 const bbDoc = rep.documents.find((d) => d.externe_id === bb.find((x) => x.geografie === "geo-land-brandenburg").externe_id);
 check("PARDOK-Brandenburg-Dokument: Geografie geo-land-brandenburg", bbDoc.geografie === "geo-land-brandenburg");
-check("Ebenen-Verteilung: >=14 land (alle PARDOK-Dokumente)", (rep.klassifikationEbenen.land || 0) >= 14);
+check(`Ebenen-Verteilung: >=${PARDOK_ITEMS} land (alle PARDOK-Dokumente)`, (rep.klassifikationEbenen.land || 0) >= PARDOK_ITEMS);
 
 // --- 4. Klassifikation: Inhalts-Deriver fuer RSS ---
 const bundDoc = rep.documents.find((d) => /Rentenpaket/.test(d.titel || ""));
