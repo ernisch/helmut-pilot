@@ -1,6 +1,6 @@
 "use strict";
 
-// Helmut — Berliner PARDOK-<Vorgang>-Analyse (Roadmap-Punkt 24, Abschlussschritt).
+// Helmut — PARDOK-<Vorgang>-Analyse Berlin + Brandenburg (Roadmap-Punkt 24, Abschlussschritt).
 // =============================================================================================
 // WOFUER: Die Struktur-Sonde (pardok-structure-probe.js) liefert ein FELD-INVENTAR und
 // Beispiel-Records. Sie kann damit sagen, WELCHE Felder vorkommen — aber nicht, WIE Vorgaenge und
@@ -18,6 +18,11 @@
 // Frage 4 entscheidet, ob ein DETERMINISTISCHER Bezug ueberhaupt zulaessig ist: waere die
 // Beziehung n:m, waere `vorgangsnummer` am Dokument eine willkuerliche Auswahl — also genau die
 // Art stiller Falschaussage, die dieses Projekt nicht produzieren darf.
+//
+// BEIDE LAENDER laufen durch dieselbe Analyse. Berlin und Brandenburg werden im Parser getrennt
+// behandelt; welche Unterschiede es bei Kennungen und Kardinalitaet WIRKLICH gibt, darf nicht
+// angenommen werden. Insbesondere ist <VID> in Brandenburg bisher nirgends belegt — ob es dort
+// fehlt oder nur nicht aufgefallen ist, entscheidet die Messung, nicht eine Vermutung.
 //
 // DIAGNOSEWERKZEUG, KEIN TEST. Bewusst NICHT `*-test.js` benannt: der Offline-Runner sammelt
 // diese Datei damit nicht ein, und die Offline-Suite bleibt netzfrei. Nur LESENDE HTTPS-Abrufe,
@@ -88,6 +93,9 @@ function analysiere(rohBody) {
     ohneDokument: 0,
     mitDokument: 0,
     vnrVorhanden: 0, vidVorhanden: 0, vnrGleichVid: 0, vnrUngleichVid: 0, beispieleVnrUngleichVid: [],
+    // Der Export benutzt einen blossen Bindestrich als LEERWERT (belegt an <VIR>-</VIR>). Ob das
+    // auch bei <VNr> vorkommt, entscheidet, ob die Kennung gegen Platzhalter abgesichert sein muss.
+    vnrPlatzhalter: 0, vnrFormFremd: 0, beispieleVnrFormFremd: [],
     vtypVorhanden: 0,
     ohneVnr: 0, beispieleOhneVnr: 0,
     dokumenteGesamt: 0, dokumenteOhneDbid: 0,
@@ -120,6 +128,11 @@ function analysiere(rohBody) {
     const vid = feld(v, "VID");
     if (vnr) r.vnrVorhanden += 1; else r.ohneVnr += 1;
     if (vid) r.vidVorhanden += 1;
+    if (vnr && /^[-–—.\s]*$/.test(vnr)) r.vnrPlatzhalter += 1;
+    else if (vnr && !/^V-\d+$/.test(vnr)) {
+      r.vnrFormFremd += 1;
+      if (r.beispieleVnrFormFremd.length < 5) r.beispieleVnrFormFremd.push(vnr);
+    }
     if (vnr && vid) { if (vnr === vid) r.vnrGleichVid += 1; else { r.vnrUngleichVid += 1; if (r.beispieleVnrUngleichVid.length < 5) r.beispieleVnrUngleichVid.push({ vnr, vid }); } }
     if (feld(v, "VTypL") || feld(v, "VTyp")) r.vtypVorhanden += 1;
 
@@ -182,7 +195,11 @@ function analysiere(rohBody) {
 function bewerte(r) {
   const b = [];
   b.push(["VNr als externe Vorgangskennung vorhanden", r.vnrVorhanden === r.vorgaengeGelesen]);
-  b.push(["VNr und VID stimmen immer ueberein", r.vnrUngleichVid === 0 && r.vidVorhanden > 0]);
+  b.push(["VNr ohne Platzhalter- und ohne Fremdformwerte", r.vnrPlatzhalter === 0 && r.vnrFormFremd === 0]);
+  // Getrennt bewerten: "kein Widerspruch" gilt auch, wenn es gar kein VID gibt. Nur beides
+  // zusammen belegt eine ZWEITE, uebereinstimmende Kennung — sonst waere das falsches Gruen.
+  b.push(["VNr und VID widersprechen sich nie", r.vnrUngleichVid === 0]);
+  b.push(["VID ueberhaupt vorhanden (sonst ist VNr die einzige Kennung)", r.vidVorhanden > 0]);
   b.push(["kein Vorgang ohne Kennung", r.ohneVnr === 0]);
   b.push(["jedes Dokument traegt eine DBID", r.dokumenteOhneDbid === 0]);
   b.push(["EIN Vorgang kann MEHRERE Dokumente tragen", r.maxDokumenteJeVorgang > 1]);
@@ -190,59 +207,74 @@ function bewerte(r) {
   return b;
 }
 
+// Eine Quelle analysieren und den Befund ausgeben. Beide Laender laufen durch DIESELBE Analyse —
+// Unterschiede zwischen Berlin und Brandenburg werden damit gemessen statt angenommen.
+async function analysiereQuelle(weg, land) {
+  console.log(`\n=== ${land} · ${weg.id} ===`);
+  console.log(`Status ${weg.status}/${weg.activation_mode} (bleibt unveraendert) · URL: ${weg.url}`);
+  const abschnitt = { land, weg: weg.id, quelle: weg.url, status: `${weg.status}/${weg.activation_mode}` };
+
+  const probe = await httpProbe(weg.url);
+  abschnitt.http = { status: probe.status, bytes: Buffer.byteLength(String(probe.body || ""), "utf8"), truncated: !!probe.truncated };
+  console.log(`HTTP ${probe.status} · ${abschnitt.http.bytes} Bytes${probe.truncated ? " · TRUNKIERT (Byte-Cap)" : ""}\n`);
+  if (probe.error || !probe.body) {
+    abschnitt.fehler = probe.error || "leerer Body";
+    console.log(`FEHLER: ${abschnitt.fehler}`);
+    return abschnitt;
+  }
+
+  const r = analysiere(String(probe.body));
+  abschnitt.analyse = r;
+  console.log(`--- Mengen ---`);
+  console.log(`  <Vorgang> gelesen:        ${r.vorgaengeGelesen}  (im Ausschnitt: ${r.ausschnitt.vorgaengeImBody} Vorgang / ${r.ausschnitt.dokumenteImBody} Dokument)`);
+  console.log(`  delete-Stubs:             ${r.deleteStubs}`);
+  console.log(`  ohne <Dokument>:          ${r.ohneDokument}`);
+  console.log(`  mit <Dokument>:           ${r.mitDokument}   Dokumente gesamt: ${r.dokumenteGesamt}`);
+  console.log(`--- Kennungen ---`);
+  console.log(`  <VNr> vorhanden:          ${r.vnrVorhanden}/${r.vorgaengeGelesen}   ohne VNr: ${r.ohneVnr}`);
+  console.log(`  <VID> vorhanden:          ${r.vidVorhanden}/${r.vorgaengeGelesen}`);
+  console.log(`  VNr == VID:               ${r.vnrGleichVid}   VNr != VID: ${r.vnrUngleichVid} ${r.beispieleVnrUngleichVid.length ? JSON.stringify(r.beispieleVnrUngleichVid) : ""}`);
+  console.log(`  VNr Platzhalter ("-"):    ${r.vnrPlatzhalter}   Form != V-<Ziffern>: ${r.vnrFormFremd} ${r.beispieleVnrFormFremd.length ? JSON.stringify(r.beispieleVnrFormFremd) : ""}`);
+  console.log(`  <VTyp*> vorhanden:        ${r.vtypVorhanden}/${r.vorgaengeGelesen}`);
+  console.log(`  eindeutige VNr (vollst.): ${r.eindeutigeVnr}   VNr mehrfach vollstaendig: ${r.vnrMehrfachVollstaendig} ${r.beispieleVnrMehrfach.length ? JSON.stringify(r.beispieleVnrMehrfach) : ""}`);
+  console.log(`--- Vorgang <-> Dokument ---`);
+  console.log(`  Dokumente je Vorgang:     ${JSON.stringify(r.dokumenteJeVorgang)}  (max ${r.maxDokumenteJeVorgang})`);
+  console.log(`  eindeutige DBID:          ${r.eindeutigeDbid}   ohne DBID: ${r.dokumenteOhneDbid}`);
+  console.log(`  DBID unter MEHREREN VNr:  ${r.dbidMitMehrerenVnr} ${r.beispieleDbidMehrfach.length ? JSON.stringify(r.beispieleDbidMehrfach) : ""}`);
+  console.log(`  Dokumente in Vorgaengen:  ${r.dokumenteInVorgaengen}   ohne Vorgangsrahmen: ${r.dokumenteOhneVorgangsrahmen === null ? "(nicht messbar: Record-Cap erreicht)" : r.dokumenteOhneVorgangsrahmen}`);
+  console.log(`--- Feldnamen ---`);
+  console.log(`  unerklaerte Felder:       ${Object.keys(r.unerklaerteFelder).length ? JSON.stringify(r.unerklaerteFelder) : "(keine)"}`);
+  console.log(`  Felder eines Beispiel-Vorgangs: ${JSON.stringify(r.beispielVorgangFelder)}`);
+  console.log(`\n--- Bewertung ---`);
+  abschnitt.bewertung = {};
+  for (const [name, ok] of bewerte(r)) { console.log(`  ${ok ? "JA " : "NEIN"}  ${name}`); abschnitt.bewertung[name] = ok; }
+  return abschnitt;
+}
+
 async function run() {
   const outIdx = process.argv.indexOf("--out");
   const outPath = outIdx > -1 ? process.argv[outIdx + 1] : null;
   const seed = buildLandesmodulSeed();
-  const weg = seed.retrievalPaths.find((p) => p.legacy_source_id === "be-plenum");
+  const wege = [
+    { land: "berlin", weg: seed.retrievalPaths.find((p) => p.legacy_source_id === "be-plenum") },
+    { land: "brandenburg", weg: seed.retrievalPaths.find((p) => p.legacy_source_id === "bb-plenum") }
+  ].filter((w) => w.weg);
 
-  console.log("=== Berliner PARDOK-<Vorgang>-Analyse (Roadmap-Punkt 24) ===");
-  console.log(`Abrufweg: ${weg.id} · Status ${weg.status}/${weg.activation_mode} (bleibt unveraendert)`);
-  console.log(`URL: ${weg.url}`);
-  console.log("Nur lesend · kein Storage · keine DB · kein LLM · keine Secrets\n");
+  console.log("=== PARDOK-<Vorgang>-Analyse BE + BB (Roadmap-Punkt 24) ===");
+  console.log("Nur lesend · kein Storage · keine DB · kein LLM · keine Secrets");
+  console.log(`Record-Cap je Quelle: ${MAX_RECORDS}`);
 
   const kontroll = [];
   for (const cu of CONTROL_URLS) kontroll.push(await httpProbe(cu));
   const egress = controlOkFromProbes(kontroll);
   console.log(`Kontroll-Abruf: ${CONTROL_URLS.map((u, i) => `${new URL(u).hostname}=${kontroll[i].error ? kontroll[i].error : "HTTP " + kontroll[i].status}`).join(" · ")} -> Egress ${egress ? "OFFEN" : "GESPERRT"}`);
 
-  const bericht = { generatedAt: new Date().toISOString(), egressOffen: egress, quelle: weg.url, maxRecords: MAX_RECORDS };
+  const bericht = { generatedAt: new Date().toISOString(), egressOffen: egress, maxRecords: MAX_RECORDS, laender: [] };
   if (!egress) {
     bericht.hinweis = "Egress gesperrt — keine Analyse, kein erfundenes Ergebnis.";
     console.log(`\n${bericht.hinweis}`);
   } else {
-    const probe = await httpProbe(weg.url);
-    bericht.http = { status: probe.status, bytes: Buffer.byteLength(String(probe.body || ""), "utf8"), truncated: !!probe.truncated };
-    console.log(`HTTP ${probe.status} · ${bericht.http.bytes} Bytes${probe.truncated ? " · TRUNKIERT (Byte-Cap)" : ""}\n`);
-    if (probe.error || !probe.body) {
-      bericht.fehler = probe.error || "leerer Body";
-      console.log(`FEHLER: ${bericht.fehler}`);
-    } else {
-      const r = analysiere(String(probe.body));
-      bericht.analyse = r;
-      console.log(`--- Mengen ---`);
-      console.log(`  <Vorgang> gelesen:        ${r.vorgaengeGelesen}  (im Ausschnitt: ${r.ausschnitt.vorgaengeImBody} Vorgang / ${r.ausschnitt.dokumenteImBody} Dokument)`);
-      console.log(`  delete-Stubs:             ${r.deleteStubs}`);
-      console.log(`  ohne <Dokument>:          ${r.ohneDokument}`);
-      console.log(`  mit <Dokument>:           ${r.mitDokument}   Dokumente gesamt: ${r.dokumenteGesamt}`);
-      console.log(`--- Kennungen ---`);
-      console.log(`  <VNr> vorhanden:          ${r.vnrVorhanden}/${r.vorgaengeGelesen}   ohne VNr: ${r.ohneVnr}`);
-      console.log(`  <VID> vorhanden:          ${r.vidVorhanden}/${r.vorgaengeGelesen}`);
-      console.log(`  VNr == VID:               ${r.vnrGleichVid}   VNr != VID: ${r.vnrUngleichVid} ${r.beispieleVnrUngleichVid.length ? JSON.stringify(r.beispieleVnrUngleichVid) : ""}`);
-      console.log(`  <VTyp*> vorhanden:        ${r.vtypVorhanden}/${r.vorgaengeGelesen}`);
-      console.log(`  eindeutige VNr (vollst.): ${r.eindeutigeVnr}   VNr mehrfach vollstaendig: ${r.vnrMehrfachVollstaendig} ${r.beispieleVnrMehrfach.length ? JSON.stringify(r.beispieleVnrMehrfach) : ""}`);
-      console.log(`--- Vorgang <-> Dokument ---`);
-      console.log(`  Dokumente je Vorgang:     ${JSON.stringify(r.dokumenteJeVorgang)}  (max ${r.maxDokumenteJeVorgang})`);
-      console.log(`  eindeutige DBID:          ${r.eindeutigeDbid}   ohne DBID: ${r.dokumenteOhneDbid}`);
-      console.log(`  DBID unter MEHREREN VNr:  ${r.dbidMitMehrerenVnr} ${r.beispieleDbidMehrfach.length ? JSON.stringify(r.beispieleDbidMehrfach) : ""}`);
-      console.log(`  Dokumente in Vorgaengen:  ${r.dokumenteInVorgaengen}   ohne Vorgangsrahmen: ${r.dokumenteOhneVorgangsrahmen === null ? "(nicht messbar: Record-Cap erreicht)" : r.dokumenteOhneVorgangsrahmen}`);
-      console.log(`--- Feldnamen ---`);
-      console.log(`  unerklaerte Felder:       ${Object.keys(r.unerklaerteFelder).length ? JSON.stringify(r.unerklaerteFelder) : "(keine)"}`);
-      console.log(`  Felder eines Beispiel-Vorgangs: ${JSON.stringify(r.beispielVorgangFelder)}`);
-      console.log(`\n--- Bewertung ---`);
-      bericht.bewertung = {};
-      for (const [name, ok] of bewerte(r)) { console.log(`  ${ok ? "JA " : "NEIN"}  ${name}`); bericht.bewertung[name] = ok; }
-    }
+    for (const { land, weg } of wege) bericht.laender.push(await analysiereQuelle(weg, land));
   }
   if (outPath) { fs.writeFileSync(outPath, JSON.stringify(bericht, null, 2)); console.log(`\nJSON: ${outPath}`); }
   return bericht;
