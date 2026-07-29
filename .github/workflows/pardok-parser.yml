@@ -15,6 +15,10 @@ on:
         description: "Max. zu parsende Records je Quelle im Shadow-Test — Default 800"
         required: false
         default: "800"
+      vorgangs_records:
+        description: "Anzahl <Vorgang>-Records fuer die Berliner Vorgangs-Analyse — Default 4000"
+        required: false
+        default: "4000"
       record_tag:
         description: "Record-Element der Struktur-Sonde erzwingen (leer = automatisch das haeufigste). 'Vorgang' belegt die Berliner Vorgangsstruktur (Roadmap-Punkt 24)."
         required: false
@@ -23,6 +27,7 @@ on:
     paths:
       - ".github/workflows/pardok-parser.yml"
       - "scripts/pardok-structure-probe.js"
+      - "scripts/pardok-vorgangs-analyse.js"
       - "scripts/pardok-parser-test.js"
       - "scripts/pardok-shadow-test.js"
       - "lib/helmut/quellenarchitektur/pardok-parser.js"
@@ -76,6 +81,16 @@ jobs:
           PP_SAMPLES: ${{ inputs.record_tag && '8' || '5' }}
         run: node scripts/pardok-structure-probe.js --out pardok-structure.json
 
+      # Berliner <Vorgang>-Analyse (Roadmap-Punkt 24 Abschluss): beantwortet die Kardinalitaets-
+      # und Kennungsstabilitaetsfragen, die das Feld-Inventar nicht beantworten kann — vor allem,
+      # ob DASSELBE Dokument unter MEHREREN Vorgaengen auftaucht. Nur lesende Abrufe, keine DB,
+      # kein LLM, keine Secrets. Laeuft auf PRs automatisch (Beleg am PR) und per Dispatch.
+      - name: Berliner Vorgangs-Analyse (Kardinalitaet + Kennungsstabilitaet)
+        if: hashFiles('scripts/pardok-vorgangs-analyse.js') != ''
+        env:
+          PVA_RECORDS: ${{ inputs.vorgangs_records || '4000' }}
+        run: node scripts/pardok-vorgangs-analyse.js --out pardok-vorgangs-analyse.json
+
       # Shadow-Parser-Test: echter Parser gegen echte XML, Metriken. Nur wenn vorhanden (Commit 2).
       - name: Shadow-Parser-Test (echte XML, DB-frei)
         env:
@@ -112,5 +127,6 @@ jobs:
           path: |
             pardok-structure.json
             pardok-shadow.json
+            pardok-vorgangs-analyse.json
           if-no-files-found: warn
           retention-days: 30

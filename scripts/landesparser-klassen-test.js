@@ -374,7 +374,11 @@ check("H8e Folgelauf: das Antwort-Dokument wird eigenstaendig gespeichert (vorhe
 const bestand2 = [...bestand1, ...lauf2.persists.map((d) => ({ id: d.id, content_fingerprint: d.content_fingerprint, canonical_target_url: d.canonical_url }))];
 const lauf3 = D.planDedupWrites([antwortItem], bestand2);
 check("H8f erneuter Lauf ist idempotent: keine Dublette, Fundstelle am EIGENEN Dokument",
-  lauf3.persists.length === 0 && Object.keys(lauf3.countIncrements)[0] === lauf2.persists[0].id);
+  // `lauf2.persists.length === 1` steht hier als Schranke, nicht als Wiederholung von H8e: ohne
+  // sie bricht der Lauf bei einem Regressionsfall mit einem TypeError ab, statt die Zeile rot zu
+  // faerben — und alle nachfolgenden Nachweise fielen still aus (im Mutationstest aufgefallen).
+  lauf3.persists.length === 0 && lauf2.persists.length === 1
+  && Object.keys(lauf3.countIncrements)[0] === lauf2.persists[0].id);
 // RUECKWAERTSKOMPATIBILITAET: Items OHNE externe Kennung (alle heutigen Quellen inkl. Bund)
 // laufen unveraendert ueber die Adress-/Titelregeln.
 const bundOhneKennung = [
@@ -484,6 +488,126 @@ check("L3 die Klassifizierung schreibt nichts (rein)",
 // Sicherheitsnetz zum Sprintauftrag: die beiden Plenumswege bleiben unaktiviert.
 check("L4 be-plenum und bb-plenum bleiben `needs_review` + `manual` (keine Aktivierung)",
   ["be-plenum", "bb-plenum"].every((id) => WEG[id].status === "needs_review" && WEG[id].activation_mode === "manual"));
+
+// ============ TEIL M — VORGANGSBEZUG: Kardinalitaet, Kennungsstabilitaet, fail closed ========
+// Grundlage: Vorgangs-Analyse gegen die ECHTEN Exporte (scripts/pardok-vorgangs-analyse.js).
+//   Berlin      Lauf 30493097161 — 41 853 <Vorgang> / 47 415 <Dokument> (erste 48 MiB des Exports)
+//   Berlin + BB Lauf 30493614179 — Brandenburg WP8 vollstaendig: 9 092 <Vorgang> / 8 133 <Dokument>
+// Kennzahlen und offene Punkte: docs/quellenarchitektur/17-pardok-parser.md Teil C.
+//
+// Die Tests hier pruefen NICHT die Messung nach (das kann offline niemand), sondern das VERHALTEN
+// des Parsers in genau den Faellen, die die Messung als vorhanden bzw. als nicht vorkommend
+// ausgewiesen hat. Beide Laender getrennt.
+console.log("\n--- M · Vorgangsbezug: Kardinalitaet, Kennungsstabilitaet, fail closed ---");
+const mXml = fx("vorgangsbezug-grenzfaelle.xml");
+const mBe = P.parsePardokDocumentsFromString(mXml, { land: "berlin" });
+const mBb = P.parsePardokDocumentsFromString(mXml, { land: "brandenburg" });
+const mBeById = Object.fromEntries(mBe.documents.map((d) => [d.externe_id, d]));
+
+// 1 · Stabile externe Vorgangskennung. Berlin: VNr in 41 853/41 853, Form immer V-<Ziffern>,
+// 0 Platzhalter. Brandenburg: VNr in 8 681/9 092 — also NICHT flaechendeckend (siehe M6).
+check("M1 der Vorgangsbezug ist die externe Kennung der Quelle, unveraendert uebernommen",
+  mBeById["D-800009"].vorgangsnummer === "V-800008"
+  && [...beVDocs, ...bbDocs].filter((d) => d.vorgangsnummer).every((d) => /^V-\d+$/.test(d.vorgangsnummer)));
+
+// 2 · Widerspruechliche Kennungen -> fail closed. Gemessen 0 Faelle (BE: 0 von 41 853 Abweichungen
+// VNr/VID; BB: kein <VID> vorhanden, also kein Widerspruch moeglich).
+check("M2 VNr != VID -> KEIN Vorgangsbezug (keine willkuerliche Auswahl) und sichtbar gezaehlt",
+  mBeById["D-800003"].vorgangsnummer === null && mBe.stats.kennungKonflikt === 1
+  && mBb.stats.kennungKonflikt === 1);
+check("M2b das Dokument bleibt trotz verworfener Vorgangskennung lesbar und eigenstaendig",
+  mBeById["D-800003"].externe_id === "D-800003" && mBeById["D-800003"].platzhalter === false
+  && mBeById["D-800003"].dokumentklasse === "drucksache");
+
+// 3 · Platzhalterwert. Der Export fuehrt einen blossen Bindestrich als LEERWERT (belegt an <VIR>).
+check("M3 Platzhalter \"-\" ist KEINE Kennung -> kein Vorgangsbezug, kein Schein-Vorgang",
+  mBeById["D-800004"].vorgangsnummer === null && mBeById["D-800005"].vorgangsnummer === null);
+check("M3b zwei Dokumente mit Platzhalter-Kennung fallen NICHT zu einem Sammelcluster zusammen",
+  mBeById["D-800004"].inhaltsfingerabdruck !== mBeById["D-800005"].inhaltsfingerabdruck
+  && P.dedupToDocuments([mBeById["D-800004"], mBeById["D-800005"]], "be-plenum").anzahl === 2);
+
+// 4 · Verbindung Dokument -> Vorgang. Sie entsteht AUSSCHLIESSLICH aus der Verschachtelung; ein
+// Verweisfeld am Dokument gibt es in keinem der beiden Exporte (Feld-Inventar beider Laeufe).
+check("M4 der Bezug entsteht aus der Verschachtelung: flache Dokumente haben KEINEN Vorgang",
+  beDocs.every((d) => d.vorgangsnummer === null) && beDocs.length === 10);
+check("M4b jedes Dokument traegt GENAU EINEN Vorgangsbezug (Skalar, keine Liste)",
+  [...beVDocs, ...bbDocs, ...mBe.documents].every((d) => d.vorgangsnummer === null || typeof d.vorgangsnummer === "string"));
+
+// 5 · Kardinalitaet 1:n. Gemessen BE: 1..75 Dokumente je Vorgang (17 407 mit genau 2); BB: 1..33.
+// UND: keine <DBID> unter mehreren <VNr> (BE, 47 415 Dokumente) -> die Auswahl ist nicht willkuerlich.
+check("M5 EIN Vorgang traegt MEHRERE Dokumente mit gleichem Bezug und eigener Identitaet",
+  mBeById["D-800009"].vorgangsnummer === mBeById["D-800010"].vorgangsnummer
+  && mBeById["D-800009"].externe_id !== mBeById["D-800010"].externe_id
+  && mBeById["D-800009"].inhaltsfingerabdruck !== mBeById["D-800010"].inhaltsfingerabdruck);
+check("M5b kein Dokument taucht mit ZWEI verschiedenen Vorgangsbezuegen auf (1:n, nicht n:m)",
+  (() => {
+    const zuVnr = new Map();
+    for (const d of [...beVDocs, ...bbDocs, ...bbG, ...mBe.documents]) {
+      if (!d.vorgangsnummer) continue;
+      if (!zuVnr.has(d.externe_id)) zuVnr.set(d.externe_id, new Set());
+      zuVnr.get(d.externe_id).add(d.vorgangsnummer);
+    }
+    return [...zuVnr.values()].every((s) => s.size === 1);
+  })());
+
+// 6 · Fehlender Bezug. GEMESSENER Regelfall in Brandenburg: 411 von 4 751 vollstaendigen
+// Vorgaengen haben Dokumente, aber keinen verwertbaren <VNr>-Wert (8,7 %).
+check("M6 Vorgang ohne verwertbare Kennung -> Bezug null, Dokument bleibt lesbar",
+  mBb.documents.some((d) => d.externe_id === "bra:08/9411#r0001" && d.vorgangsnummer === null
+    && d.titel === "Bericht ohne verwertbare Vorgangsnummer"));
+check("M6b Berlin: nur VID vorhanden -> VID ist die Kennung (Rueckfall, kein Normalweg)",
+  mBeById["D-800007"].vorgangsnummer === "V-800006");
+check("M6c ein fehlender Bezug wird NIE aus Titel, Adresse oder DokNr erfunden",
+  mBb.documents.filter((d) => !d.vorgangsnummer).every((d) => d.vorgangsnummer === null)
+  && mBe.documents.filter((d) => !d.vorgangsnummer).length === 4);
+
+// 7 · Deterministische Normalisierung.
+check("M7 Zeilenumbruch/Mehrfach-Leerzeichen in der Kennung wird deterministisch normalisiert",
+  mBeById["D-800012"].vorgangsnummer === "V-800011");
+check("M7b zweimal derselbe Lauf -> byte-identische Vorgangsbezuege",
+  JSON.stringify(P.parsePardokDocumentsFromString(mXml, { land: "berlin" }).documents.map((d) => d.vorgangsnummer))
+  === JSON.stringify(mBe.documents.map((d) => d.vorgangsnummer)));
+
+// 8 · delete-Stubs. BE 20 939 von 41 853, BB 4 341 von 9 092 — beide Exporte fuehren Tombstones.
+check("M8 delete-Stubs erzeugen weder Dokument noch Vorgangsbezug",
+  beV.stats.deleteStubs === 2 && bb.stats.deleteStubs === 1
+  && beVDocs.length === 3 && bbDocs.length === 7);
+
+// 9 · Der Bezug bleibt im BESTEHENDEN kanonischen Vertrag. Keine neue Struktur, kein Vorgangsobjekt.
+const mRoh = mBe.documents.map((d) => K.zuRohdokument(d, kontextFuer("berlin")));
+check("M9 der Vorgangsbezug landet im bestehenden `raw`-Feld, nicht in einer neuen Spalte",
+  mRoh.every((r) => Object.keys(r).every((k) => V3_SPALTEN.has(k)))
+  && mRoh.find((r) => r.raw.externe_id === "D-800009").raw.vorgangsnummer === "V-800008");
+check("M9b kein Rohdokument bekommt eine cluster_id — der Bezug ist KEINE Vorgangsbildung",
+  mRoh.every((r) => r.cluster_id === null));
+check("M9c keine Dokumentklasse `vorgang`, auch nicht bei mehrdokumentigen Vorgaengen",
+  mBe.documents.every((d) => d.dokumentklasse !== "vorgang" && d.dokumentklasse !== "unbekannt"));
+
+// 10 · WECHSELWIRKUNG mit der unveraenderten globalen Dedup (Vorbedingung fuer einen Cutover).
+// Regel A gruppiert nach kanonischer URL. Zwei Dokumente EINES Vorgangs koennen dieselbe
+// Protokoll-Adresse tragen — ohne Regel 0 (externe Kennung) verschmelzen sie, und der Vorgang
+// verliert eines seiner Dokumente. Genau das wird hier gemessen, nicht behauptet.
+const mDedupItems = mRoh.map(alsDedupItem);
+const mMerged = D.mergeIntoDocuments(mDedupItems);
+check("M10 acht eigenstaendige Rohdokumente bleiben acht Dokumente (Regel 0 greift vor Adresse)",
+  mDedupItems.length === 8 && mMerged.length === 8);
+check("M10b zwei Dokumente EINES Vorgangs mit IDENTISCHER Adresse verschmelzen nicht",
+  mMerged.filter((m) => (m.canonical_url || "").endsWith("p19-800.pdf")).length === 2);
+check("M10c ohne externe Kennung WUERDE die Adressregel sie zusammenfuehren (Nachweis der Ursache)",
+  D.mergeIntoDocuments(mDedupItems.map((i) => ({ ...i, externe_id: null })))
+    .filter((m) => (m.canonical_url || "").endsWith("p19-800.pdf")).length === 1);
+check("M10d Dokumente mit verworfener Vorgangskennung behalten je eigene Identitaet",
+  new Set(mMerged.map((m) => m.external_identity)).size === 8);
+
+// 11 · Kein Netz, keine DB, kein LLM in diesem Nachweis.
+check("M11 die Vorgangsbezug-Fixture ist eine Datei im Repo, kein Abruf",
+  fs.existsSync(path.join(__dirname, "..", "test", "fixtures", "pardok", "vorgangsbezug-grenzfaelle.xml")));
+check("M11b die Fixture ist als KEIN QUELLENBELEG fuer Feldinhalte gekennzeichnet",
+  /KEIN QUELLENBELEG/.test(mXml));
+// 12 · Die Analyse selbst ist ein Diagnosewerkzeug und darf die Offline-Suite nicht ans Netz haengen.
+check("M12 die Vorgangs-Analyse heisst NICHT `*-test.js` (Offline-Runner sammelt sie nicht ein)",
+  fs.existsSync(path.join(__dirname, "pardok-vorgangs-analyse.js"))
+  && !fs.existsSync(path.join(__dirname, "pardok-vorgangs-analyse-test.js")));
 
 console.log(`\nBerlin-Klassenverteilung:      ${JSON.stringify(beVerteilung)}`);
 console.log(`Brandenburg-Klassenverteilung: ${JSON.stringify(bbVerteilung)}`);
