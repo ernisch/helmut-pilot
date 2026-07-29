@@ -335,6 +335,7 @@ keine Vollzähligkeit.
   vollständiger Offline-Weg bis ins Understanding-Gate · Rückwärtskompatibilität Bund ·
   Determinismus und Isolation · beide Plenumswege bleiben `needs_review`/`manual` · **und die real
   gemessene Dokumentart-Verteilung beider Quellen** (Teil C2).
+- **CI-Gate grün, beide Pflicht-Checks** (Lauf `30484947476`, finaler Commit `4906122`).
 - **Mutationsprobe: 14 von 14 Mutationen machen die Suite rot** (Dokumentart vor Dokumenttyp 9 ·
   fail closed aufgeweicht 4 · Vorgangsbildung im Parserpfad 1 · abgeleiteter Titel nicht markiert 2 ·
   unbekanntes Land geraten 2 · „Schriftliche Anfrage" wieder entfernt 1 · brandenburgischer
