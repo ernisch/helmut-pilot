@@ -1,6 +1,56 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-30 (**Sprint OP-25, letzte Vorprüfung vor der Mergefreigabe:
+**Letzte Aktualisierung:** 2026-07-30 (**Sprint Punkt 26A: Berliner Ende-zu-Ende-Repository-Vertrag.
+26A ERFOLGREICH ABGESCHLOSSEN — Checklisten-Punkt 26 gesamt bleibt ⏳, weil 26B (regulärer
+Production-Nachweis) offen und durch Punkt 14 blockiert ist.** **Verbindliche Definition geklärt:**
+„Roadmap Punkt 26" ist Zeile 26 der [`roadmap/phase_1_checkliste.md`](roadmap/phase_1_checkliste.md)
+(Ende-zu-Ende-Test Berliner Profil) — **nicht** OP-26 der Restliste (Matching-Einzelauslösung,
+anderes Thema); die im Auftrag genannte `docs/roadmap/analyse-punkte-24-30.md` **existiert nicht im
+Repository** (dokumentierter Widerspruch, kein Blocker). Der Punkt ist geschnitten in **26A**
+(deterministischer Offline-Repository-Vertrag, dieser Sprint) und **26B** (Production-Nachweis,
+nicht begonnen). **Vorbedingung bestätigt:** PR #179 (OP-25 Cron-Fairness) ist gemergt, `main`
+`30c86cf` enthält `51f2ae8` und den Nachfix `9454d8e`; Arbeitsbaum sauber. **Umsetzung:** neue Suite
+`scripts/berlin-e2e-vertrag-test.js` (**76/76**) + `scripts/berlin-e2e-mutationsprobe.js`
+(**10/10 Mutationen rot**, Konvention wie `geografie-mutationsprobe.js`). Der Vertrag führt echte
+Gold-Records (Waffengebührenordnung **V-351039** als relevanter Fall, „Chaos am BER" als
+irrelevanter Berliner Fall, BB **V-369657** „Straf- und Gewalttaten" als thematisch ähnliche
+Brandenburg-Kontrolle, ein klar markiertes synthetisches Bundes-Kontrolldokument) durch die
+**echten Produktionsfunktionen**: `pardok-parser` → `zuRohdokument` (Herkunft BLN, Ebene land,
+Geografie, Vorgangsbezug, Regel-0-Identität) → `runUnderstandingShadow` (echte Orchestrierung,
+Resolver, `assembleKnowledgeObject` inkl. Ebenen-/Geografie-Gedächtnis und Merkmalsvektor) →
+`runMatchingShadow` mit **echtem `matching-audit`** (Audit AN wie in Production seit 2026-07-28,
+M8 nachweislich AUS) → persistierte `matching_results` samt Begründung/Signalen → sichtbare
+Erklärung (`matching-erklaerung`, Belegpflicht) → `decisions` → Lage-Auswahl
+(`loadRankedVorgaenge`/`koToVorgangCard`/`selectLageVorgaenge`) mit Original-PDF als sichtbarer
+Quelle. Testdoubles klar begrenzt und dokumentiert: deterministische LLM-Fixture-Analysen,
+In-Memory-Store mit PostgREST-Vertragsgrenzen (Mandantenfilter, `aktuell`, Tenant-Guards, atomare
+Publish-Semantik nach `matching-audit-test.js`), dokumentgetreue Offline-Replik der RPC
+`match_knowledge_objects`. **Bewiesen (Auszug):** Rang 1 + Belege Ausschuss/Thema/Region für das
+richtige Profil · Erklärung deckungsgleich mit gespeicherten Gründen, ohne Beleg `null` ·
+Entscheidung „Sofort reagieren" nur beim richtigen Mandanten, irrelevanter Berliner Vorgang
+„Ignorieren", derselbe Vorgang beim Kontrollprofil „Ignorieren" · Bund bleibt `bund`, Brandenburg
+bleibt Brandenburg — nichts davon wird Berliner Landesvorgang · Cross-Tenant-Schreibversuch und
+fremde Profilkennung werden hart abgelehnt · Idempotenz beider Stufen (Understanding `duplicate:4`,
+0 Schreibvorgänge; Matching `idempotent`, `wiederholungen 1`, Projektion byte-identisch) ·
+erzwungener Störfall erzeugt `skipped-error`/`fehlgeschlagen` statt falschem Grün, ein
+`failed`-Vorgang erreicht das Matching strukturell nie, ein Publish-Abbruch lässt die vorherige
+Generation intakt. **Erkenntnis (dokumentiert, bewusst nicht „gefixt"):** `assembleKnowledgeObject`
+übernimmt keine `tags` aus der Analyse (Whitelist) — die Themen-Dimension eines Wissensobjekts
+entsteht im aktiven Pfad ausschließlich aus den Ausschüssen (`derivePolicyFields`, bekanntes
+P1-1-Verhalten); das Berliner Testprofil trägt deshalb den Schwerpunkt „Inneres". **Strukturbefund
+(bestätigt, kein neuer):** der Live-Cutover Berlin → Pipeline existiert nicht —
+`pardokDispatch` liefert in jedem Modus `items: []`; 26B braucht Punkt 14 (Berliner Lieferung)
+plus den freigabepflichtigen Dispatch-Cutover. Tests: neue Suite **76/76**, Mutationsprobe
+**10 von 10 rot**, Offline-Suite lokal **170/184** gegen Basislinie `main` **169/183** (die
+**+1** ist die neue Suite; **dieselben 14** umgebungsbedingten Fehlschläge, kein Regress),
+Browser-Smoke **32/32**. **Keine Migration, kein neuer Schalter, keine Aktivierung (Berlin,
+Brandenburg, M8 unverändert aus), keine Cron-/Budget-/Quellenänderung, 0 KI-Aufrufe, 0,00 USD,
+kein Production-Zugriff, keine realen Testmandate angelegt.** Der Merge hat keine unmittelbare
+Production-Wirkung (nur Tests + Doku). **Offen:** 26B; die fünf weiteren realen Testmandate
+bleiben unangelegt; der reguläre OP-25-Production-Nachweis bleibt ein getrenntes Thema und war
+für diesen Sprint keine Voraussetzung. Kanonisch: Checklisten-Zeile 26 in
+[`roadmap/phase_1_checkliste.md`](roadmap/phase_1_checkliste.md) + Kopfkommentar der Suite.) ·
+(**Sprint OP-25, letzte Vorprüfung vor der Mergefreigabe:
 EIN ECHTER FEHLER GEFUNDEN UND BEHOBEN.** Die Betreiberfrage war präzise und traf einen realen
 Defekt: der Fairnessvermerk entsteht **vor** der Verarbeitung, die Sperre `crawl-<mandat>` erst
 **in** `runSourceCrawl` — und `runSourceCrawl` **wirft** bei verweigerter Sperre nicht, sondern
