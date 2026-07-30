@@ -1,6 +1,48 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-30 (**Sprint Punkt 26A: Berliner Ende-zu-Ende-Repository-Vertrag.
+**Letzte Aktualisierung:** 2026-07-30 (**Sprint OP-25, regulärer Production-Nachweis, 1. Durchgang:
+BLOCKIERT — das Beobachtungsfenster enthält 0 reguläre Läufe, weil zwischen dem Production-Deployment
+des PR-179-Merges (READY 2026-07-30 06:27:19 UTC) und dem Sprintende (~07:20 UTC) kein regulärer
+fairness-relevanter Cron-Termin lag. Keine Production-Änderung; ausschließlich lesende Zugriffe.**
+**Startprüfung vollständig bestanden:** Arbeitsbaum sauber, HEAD = `origin/main` `fc3c4cc`; PR #179
+vollständig in `main` (Merge `30c86cf` inkl. `51f2ae8` und Nachfix `9454d8e`), PR #180 vollständig in
+`main`; Production-Deployment des PR-179-Merges (`dpl_9PvfRQV4…`, Commit `30c86cf`) READY 06:27:19 UTC;
+aktuell aktives Production-Deployment `dpl_BMg9y9J8…` (Commit `fc3c4cc` = PR-180-Merge, seit ~07:03 UTC)
+unterscheidet sich von `30c86cf` ausschließlich in Doku/Tests — **die Fairnesslogik ist seit dem
+PR-179-Merge unverändert deployt**, kein späteres Production-Deployment. Cron-Zeiten unverändert
+(`vercel.json`-Diff seit `51732e2` leer; fairness-relevante Termine UTC: 04:00 crawl, 05:00
+morning-briefing, 10:00 lage-check, 16:00 pipeline, 20:00 crawl), Laufzeitbudgets unverändert (270 s
+crawl/pipeline, 240 s Default), Kostenbudgets unverändert, keine Env-/Secret-/Flag-Änderung, keine
+neuen Mandate angelegt oder aktiviert, Berlin/Brandenburg (`HELMUT_PARDOK_DISPATCH=shadow`, kein
+Live-Cutover) und M8 (`HELMUT_MATCHING_RELEVANZ_GATE`, Default aus, nicht gesetzt) unverändert aus.
+**Kernbefund — doppelt belegt, rein lesend:** (1) die Runtime-Logs beider Production-Deployments
+zeigen seit 06:27 UTC ausschließlich je einen `GET /` (06:27:31 / 07:03:44) und **keinen einzigen
+`/api/cron/*`-Aufruf** — auch keinen Watchdog- oder manuellen Lauf; (2) die Fairness-Zeile
+`main-cron-fairness` **existiert in `helmut_store` noch nicht** (auch keine Zeile mit anderem
+Store-Präfix) — sie entsteht erst mit dem ersten fairen Lauf; ihr Fehlen ist der erwartete ehrliche
+Leerzustand, kein Fehler. Ergänzend belegt: **n = 6 aktive Mandate**, in beiden Profilquellen
+deckungsgleich (SQL: `mandate_profiles.aktiv=true` ∧ nicht gelöscht; Blob: `profileActive` nicht
+`false`; eine Identitätszeile ohne Mandatssatz fällt heraus; das Berliner Abnahmeprofil ist
+deaktiviert) — Klarnamen bewusst nicht dokumentiert; der nie freigegebene `crawl-<mandat>`-Lock des
+Vor-Deployment-Laufs von 04:05:04 UTC ist 04:20:04 UTC regulär abgelaufen und blockiert nichts.
+**In diesem Sprint nicht prüfbar (ehrlich offen):** Reihenfolge-, Beginn-, k-, k=0-, Rotations-,
+Kapazitäts- und Aktualitätsnachweis — jede dieser Fragen braucht mindestens die Läufe eines vollen
+Tageszyklus (10/16/20/04 UTC); die vollständige Rotation braucht bei n=6 je nach k bis zu 6 reguläre
+Läufe; ein k=0-Lauf ist nur dokumentierbar, falls er real auftritt (sonst gilt weiter nur der
+Offline-Beweis aus PR #179, kein realer Production-Beweis). Einzige direkte Restunsicherheit zur
+Aktivität: `HELMUT_CRON_FAIRNESS` ist default-an und steht nicht in der Datei-Flag-Allowlist; ein
+`off` in der Vercel-Env ließe sich rein lesend nicht ausschließen (kein Env-Lesezugriff in diesem
+Sprint) — es gab keine Env-Änderung, und der erste reguläre Lauf beweist die Aktivität über die
+`[cron/*/fairness]`-Protokollzeile bzw. die Store-Zeile. **Die fünf weiteren realen Testmandate
+bleiben gesperrt** (Folgeregel [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) §9 unverändert
+gültig; Entscheidung erst datenbasiert nach erbrachtem Nachweis). **0 KI-Aufrufe, 0,00 USD, keine
+Production-Schreibzugriffe** (nur SELECT auf `helmut_store`, `profiles`/`mandate_profiles` [nur
+id + Lifecycle-Felder], `pipeline_locks` sowie Vercel-Deployment-Metadaten und Runtime-Logs).
+Nächster regulärer fairness-relevanter Termin (nur Information, keine Überwachungszusage): 10:00 UTC
+lage-check; nach dem 04:00-Lauf des Folgetags sind erstmals vier reguläre Läufe auswertbar.
+**Nächster Schritt:** denselben Nachweis in einem neuen Sprint wiederholen, sobald reguläre Läufe
+vorliegen. Branch `claude/op-25-production-nachweis-ktwnke` (nur Doku), PR #181.) ·
+(**Sprint Punkt 26A: Berliner Ende-zu-Ende-Repository-Vertrag.
 26A ERFOLGREICH ABGESCHLOSSEN — Checklisten-Punkt 26 gesamt bleibt ⏳, weil 26B (regulärer
 Production-Nachweis) offen und durch Punkt 14 blockiert ist.** **Verbindliche Definition geklärt:**
 „Roadmap Punkt 26" ist Zeile 26 der [`roadmap/phase_1_checkliste.md`](roadmap/phase_1_checkliste.md)
