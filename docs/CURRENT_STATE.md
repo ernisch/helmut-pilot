@@ -44,7 +44,7 @@ Migration, kein Backfill, keine Datenkorrektur, keine manuellen Läufe, keine En
 Lock-/Budget-/Quellen-Änderung, Berlin/Brandenburg/M8 unverändert AUS, keine neuen Mandate,
 keine Production-Daten im Repository; Checkliste Zeile 29 unangetastet (der Statuswechsel
 offen→teilweise gehört zu PR #187); 25B/OP-25/Punkt 27 unberührt. **Branch
-`claude/p29-fehlerpfade-schliessen-wpxb1h`, PR siehe Fix-Doku (offen, NICHT gemergt).**
+`claude/p29-fehlerpfade-schliessen-wpxb1h`, PR #188 (offen, NICHT gemergt).**
 **Nächster Schritt:** Betreiberentscheidung über den Merge dieses Fix-PRs (unabhängig von 25B und
 PR #187 mergefähig; Empfehlung: VOR PR #187 mergen, dann dort B9/C9/D9 + Befundprobe anpassen),
 danach 29B rein lesend. Kanonisch:

@@ -221,7 +221,8 @@ unverändert AUS · keine neuen Mandate · keine Production-Daten im Repository
 ## 7 · Status und nächster Schritt
 
 **Punkt 29 bleibt ⏳ teilweise:** 29A erfüllt (PR #187, offen), die vier
-Fix-Sprints P29-1…P29-4 sind mit diesem PR **gebaut und offline belegt**;
+Fix-Sprints P29-1…P29-4 sind mit **PR #188** (dieser Fix-PR, Branch
+`claude/p29-fehlerpfade-schliessen-wpxb1h`) **gebaut und offline belegt**;
 **29B bleibt offen**, bis nach Merge + Deployment natürliche reguläre
 Production-Läufe rein lesend geprüft wurden (Fragenkatalog: §2 je Befund +
 29A-Doku §6). **Nächster Schritt:** Betreiberentscheidung über den Merge dieses
