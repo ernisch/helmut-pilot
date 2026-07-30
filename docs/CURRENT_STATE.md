@@ -1,6 +1,78 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-30 (**Sprint Matchingfix Befund 27A-1: Ausschussbeleg nur bei
+**Letzte Aktualisierung:** 2026-07-30 (**Sprint Production-Messung Befund 27A-2: erhalten
+Bundestagsprofile falsche Ausschussbelege aus Landesvorgängen? TEILWEISE ABGESCHLOSSEN — die
+Messung ist vollständig und eindeutig, aber zwei Abnahmestücke fehlen (siehe unten): der
+persistierte Nachweis NACH dem Deployment und die Startzusage „Deployment READY".**
+**Ergebnis: Befund 27A-2 ist BESTÄTIGT.** An echten Production-Daten erhalten **4 von 6**
+aktiven Bundestagsprofilen einen Ausschussbeleg aus einem Landesvorgang: **14 qualifizierte
+Profil-Objekt-Paare** über **9 Wissensobjekte** und **3 geteilte normalisierte
+Ausschusstoken** (`gesundheit`, `arbeit-und-soziales`, `finanzen`). **Einordnung: Kategorie 2
+„bestätigt, aber latent"** — strikt nach der Beweisregel des Sprints, und damit
+**konservativer als die Datenlage**: seit dem Merge von PR #183 (11:01:58 UTC) gab es
+**keinen** regulären Matchinglauf (letzter 07:56:55 UTC), der Nachweis nach dem Deployment ist
+deshalb **nicht verfügbar** — nicht negativ. Der Fehler ist aber **bereits in aktiven
+Production-Daten materialisiert**: **5** `matching_results`-Zeilen mit `aktuell=true` tragen
+heute eine falsche Ausschussbehauptung samt gespeicherter Begründung (z. B. „Betrifft deinen
+Ausschuss Arbeit und Soziales und deine Partei Die Linke." auf **Rang 1**), und **10**
+`decisions`-Zeilen stammen aus genau diesen Paaren. **Dass das Deployment daran nichts
+geändert haben kann, ist gemessen, nicht angenommen:** über 6 aktive Bundestagsprofile ×
+1 806 Wissensobjekte = **10 836 Paare** sind die `matched_features` auf `d9006c1` (vor dem
+27A-1-Fix) und auf `94f73e4` (`main`) **byte-identisch — 10 836 gleich, 0 abweichend**; das
+bestätigt unabhängig die Zusage aus §50.4. **URSACHE (gemessen):** `normalizeCommittee` faltet
+„Gesundheit" (Bundestag) und „Gesundheitsausschuss (Landtag)" auf denselben Stamm
+`gesundheit`, ebenso „Arbeit und Soziales" und „Sozialausschuss Kreistag Ostallgäu" auf
+`arbeit-und-soziales`; der 27A-1-Riegel `ausschussBelegZulaessig` gibt für ein Bundesprofil
+sofort `true` zurück (`pz.ebene !== "land"` → „unbestimmt → unverändert"). **WIRKUNG (lokale
+schreibfreie Gegenprobe mit echten Production-Eingaben, nur der Beleg entfällt):** Score
+**−34 in allen 14 Fällen** (Ausschussgewicht in `decisions.js`), **13 von 14** wechseln die
+Entscheidungsstufe, in **5 von 14** ist der fremde Ausschuss der **einzige** Beleg (dort
+entfällt die sichtbare Erklärung ganz und M8 würde die Zeile entfernen). **Ähnlichkeit, Rang
+und Top-N-Schnitt bleiben unberührt** — der Rang entsteht aus der Vektorsuche,
+`matched_features` werden danach berechnet. **Gegenprobe gegen echte Production-Wirkung:** für
+**10** der 14 Paare existiert eine `decisions`-Zeile; in **allen 10** stimmt der gespeicherte
+Score **exakt** mit der lokalen Rechnung überein — **9** davon hätten ohne den falschen Beleg
+eine andere Stufe, darunter **6** heutige „Sofort reagieren". **NICHT PRÜFBAR in dieser
+Sitzung (ehrlich benannt):** die Startzusage „Production-Deployment READY". Vercel-Werkzeuge
+fehlen, `helmut-pilot.vercel.app` ist durch die Egress-Policy gesperrt (Proxy `403` auf
+`CONNECT`), das GitHub-Token hat weder `deployments`- noch `statuses`-Leserecht (je `403`).
+Belegt ist nur: PR #183 gemergt, `94f73e4` = `origin/main` = Branchbasis; jüngste
+Lauftelemetrie (`process_runs.commit_ref`, 07:55 UTC) zeigt noch `5d475e6`. **Kein Hinweis auf
+ein fehlgeschlagenes Deployment — aber auch kein Nachweis für `READY`.** Für die Messung
+folgenlos (0 von 10 836 Abweichungen). **Startprüfung sonst bestanden:** Arbeitsbaum sauber,
+Branch `claude/befund-27a-2-messung-43ka47` vom aktuellen `main` `94f73e4`, PR #183
+vollständig in `main`, keine neuere überschneidende Matchingarbeit (offene PRs #117/#132/#148/
+#159 betreffen Quellenpakete, Landesmodul-Aktivierung und Doku), Punkt 27A laut Hauptstand
+erfolgreich abgeschlossen, Punkt 27 gesamt weiterhin ⏳, Befund 27A-2 offen, OP-25 und OP-27
+unverändert. **KEIN FIX — bewusst:** keine Änderung an Merkmalsvektoren, keine neue
+Rezeptversion, keine Migration, kein Backfill, keine Flagänderung, keine Aktivierung (Berlin,
+Brandenburg, M8 unverändert AUS), keine Cron-/Budget-/Quellen-/Env-Änderung, **0 KI-Aufrufe,
+0,00 USD**, ausschließlich lesende Production-Zugriffe (nur HTTPS-`GET`, keine RPC, keine
+Datenbankfunktion). **Neu im Repository:** `scripts/befund-27a2-production-messung.js`
+(rein lesend, technischer Schreibschutz: genau eine HTTP-Funktion mit `GET`-Literal,
+eingefrorene Tabellen-Allowlist ohne `/rest/v1/rpc/`, kein `storage.js` im Prozess, Secrets
+nur aus `process.env`, Mandanten und Laufkennungen nur pseudonymisiert) und
+`scripts/befund-27a2-schreibschutz-test.js`, der das offline beweist. **Tests (real
+ermittelt):** Schreibschutzsuite **48/48** · `matching-ausschuss-zustaendigkeit-test`
+**54/54** · `matching-erklaerung-test` **64/64** · Brandenburg-Vertrag **98/98** und
+Mutationsprobe **16/16 rot** · Berlin-Vertrag **76/76** und Mutationsprobe **10/10 rot** ·
+Offline-Suite lokal **173/187** gegen Basislinie `main` `94f73e4` **172/186** — die **+1** ist
+die neue Suite, die Fehlschlagliste ist **byte-identisch** (14 umgebungsbedingte Fehlschläge,
+kein Regress) · Browser-/Mobile-Smoke **32/32** · **CI-Gate grün (maßgeblich laut `CLAUDE.md`
+§6): Offline-Suite 187/187 und Browser-/Mobile-Smoke 32/32**, Lauf `30539215650` auf Commit
+`3767b12`. **Statusgrenzen eingehalten:** Punkt 27A
+bleibt erfolgreich abgeschlossen (die Messung widerlegt keines seiner Abnahmekriterien,
+sondern bestätigt §50.4), Punkt 27 gesamt bleibt ⏳, 27B bleibt durch Punkt 15 blockiert,
+OP-25 und OP-27 unverändert, M8 bleibt AUS. **Rückweg:** `git revert` — es gibt keinen
+Datenstand, der zurückzudrehen wäre. **Nächster Schritt:** Betreiberentscheidung über die
+Fixvariante (§50.5 Variante 3, jetzt beziffert in §51.9) und ein **getrennter Fix-Sprint**;
+danach dieselbe Messung als Abnahme wiederholen (`scripts/befund-27a2-production-messung.js`).
+Geänderte Dateien: `scripts/befund-27a2-production-messung.js` (neu),
+`scripts/befund-27a2-schreibschutz-test.js` (neu), `docs/matching-nachvollziehbarkeit.md`
+(§51 neu, §50.5 Nachtrag), `docs/CURRENT_STATE.md`. Branch
+`claude/befund-27a-2-messung-43ka47`, PR #184 (offen, nicht gemergt). Kanonisch:
+[`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md) §51.) ·
+(**Sprint Matchingfix Befund 27A-1: Ausschussbeleg nur bei
 passendem Zuständigkeitsraum. ERFOLGREICH ABGESCHLOSSEN — damit ist auch Punkt 27A erfolgreich
 abgeschlossen; Checklisten-Punkt 27 gesamt bleibt ⏳, weil 27B weiterhin durch Punkt 15 blockiert
 ist.** **Verbindliche Abgrenzung:** dieser Sprint betrifft **Zeile 27** der
@@ -1611,6 +1683,7 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 
 | PR | Inhalt | Einschätzung |
 |---|---|---|
+| **#184** | **Befund 27A-2: Production-Messung (rein lesend)** — kein Fix. Neu: `scripts/befund-27a2-production-messung.js` (technischer Schreibschutz: eine HTTP-Funktion mit `GET`-Literal, eingefrorene Tabellen-Allowlist ohne `/rest/v1/rpc/`, kein `storage.js` im Prozess, Pseudonymisierung ohne Klartextschalter), `scripts/befund-27a2-schreibschutz-test.js` (**48/48**) und §51 der Matching-Doku. Gemessen: **14** falsche Ausschussbelege bei **4 von 6** aktiven Bundestagsprofilen über **9** Landesvorgänge; Score **−34** in allen Fällen, **13 von 14** wechseln die Entscheidungsstufe, **5** hängen allein am falschen Beleg. `matched_features` auf `d9006c1` und `94f73e4` über **10 836** Paare byte-identisch. Offline **173/187** (Basislinie 172/186, Fehlschlagliste byte-identisch), Browser **32/32** | **offen, nicht gemergt** — reine Messung + Doku + zwei Skripte, kein Production-Bezug beim Merge. Der **Fix** ist ein getrennter, freigabepflichtiger Sprint (Variante 3 in `matching-nachvollziehbarkeit.md` §50.5, beziffert in §51.9) |
 | **OP-25-Fairness** (PR-Nummer siehe Branch `claude/helmut-roadmap-25-cron-fairness-g8qjcx`) | **Faire Mandantenreihenfolge der Mehrmandanten-Crons (OP-25)** — `runCronForTenants` lief seriell in **alphabetischer** Reihenfolge gegen ein hartes Zeitbudget; dieselben Mandate fielen deshalb wiederholt aus (belegt 2026-07-24: 4 von 6; 2026-07-29: 1 von 7 erreichte die Matching-Stufe). Jetzt Rotation nach dem **ältesten letzten Versuch** (`lib/helmut/cron-fairness.js`), Versuch **vor** der Verarbeitung persistiert in einer **eigenen `helmut_store`-Zeile** — **keine Migration**, keine RLS-Änderung, kein Flag-Gate; Garantie **ceil(n/k)**; Beobachtbarkeit je Mandat; `systemError` nennt jetzt die Kennungen. Neue Suite **176/176**, Mutationsprobe **9/9 rot**, Offline **169/183** (Baseline `main` 168/182, dieselben 14 umgebungsbedingten Fehlschläge), Browser **32/32**. Keine Cron-/Budget-/Flagänderung, kein Production-Zugriff | **offen, nicht gemergt** — Merge ist eine Freigabeentscheidung und gleichzeitig die Aktivierung (der Fix wirkt ohne Flag). Rückweg: `HELMUT_CRON_FAIRNESS=off`. **Production-Nachweis danach offen** (vier reguläre Läufe beobachten), deshalb bleibt OP-25 bis dahin teilweise abgeschlossen |
 | **#178** | **Roadmap-Punkt 24 (Abschluss): Vorgangsbezug messen statt annehmen** — der Bezug war an **einem** Record belegt; gemessen sind jetzt 41 853 Berliner `<Vorgang>` / 47 415 `<Dokument>` und der Brandenburger WP8-Export **vollständig** (9 092 / 8 133). **Kernbefund 1:n, nicht n:m** (0 `DBID` unter mehreren `VNr`) — damit ist `vorgangsnummer` am Dokument keine willkürliche Auswahl. Ergänzt nur `vorgangsKennung()` mit zwei Fail-closed-Schranken (Widerspruch `VNr`≠`VID`, Platzhalter `-`) plus zwei Zähler; beide greifen auf echten Daten nie. Keine neue Spalte, keine Migration, **kein Umbau der globalen Dublettenerkennung** — nur deren Wechselwirkung gemessen (Ursachennachweis `M10c`) und als Cutover-Vorbedingung dokumentiert. Tests 141/141, Mutationsprobe 6/6 rot, **Offline-Suite 182/182 im CI, beide Pflicht-Checks grün** (Lauf `30494735859`), Browser-Smoke 32/32. **Offen, nicht gemergt.** | **Merge-Empfehlung: ja.** Reine Parser-/Test-/Doku-Änderung an zwei **inaktiven** Wegen; auf echten Daten ergebnisneutral (Gold-Fixtures unverändert 10/3/7 Dokumente). Keine Aktivierung, keine Migration, kein Flag, kein Cron, kein Secret, keine Production-Berührung |
 | **#177** | **Roadmap-Punkt 24: Dokumentklassen und Rohdokument-Vertrag für die Landtags-Parser Berlin/Brandenburg** — acht kanonische Klassen mit getrennten Typtabellen je Land, fail closed auf `unbekannt`, Abbildung auf die bestehenden `raw_documents`-Spalten (keine Migration), `vorgang` bewusst KEINE Dokumentklasse. Drei Befunde: **24-1** das Understanding-Gate kannte „Schriftliche Anfrage" nicht (behoben, rein additiv, 42/42 Bundes-Entscheidungen unverändert) · **24-2** die globale Dedup identifiziert über die URL — für PARDOK falsch, Architektur bewusst nicht geändert · **24-3** Brandenburg führt 11 Dokumentarten, Berlin nur 4 (gemessen je 800 Records); ohne die Ergänzung wären 35,5 % der Brandenburger Dokumente fälschlich `unbekannt` geblieben, und die Annahme „Brandenburg liefert keine Tagesordnung" war falsch. Keine Aktivierung, keine Migration, keine Production-Änderung | **offen** — Merge ist eine Freigabeentscheidung. **CI-Gate grün: beide Pflicht-Checks** (Lauf `30482172757`, Offline-Suite **182/182**, Browser-Smoke **32/32**). Roadmap-Punkt 24 steht nach dem 2. Durchgang auf ✅ (Vorgangsstruktur belegt, Identitätskollision behoben, Gate-Änderung begrenzt) |

@@ -2979,6 +2979,12 @@ unverändert bleiben; beides zugleich ist nicht möglich.
 
 **Empfehlung: Variante 2** — messen, bevor an aktiven Bundesergebnissen etwas geändert wird.
 
+> **Nachtrag 2026-07-30:** Variante 2 ist **ausgeführt**. Die Messung steht in **§51**; die
+> Aussage „offline nicht bestimmbar" oben gilt damit nur noch für den Stand vor dieser
+> Messung. Gemessen: **14** falsche Ausschussbelege bei **4** von 6 aktiven
+> Bundestagsprofilen über **9** Landesvorgänge. Damit ist Variante 3 nicht mehr blind,
+> sondern beziffert (§51.9).
+
 ### 50.6 · Verbleibende Restunschärfen (benannt, nicht kaschiert)
 
 1. **Landtagsprofil ohne `bundesland`** behält das alte Verhalten (falsche Belege bleiben
@@ -3016,3 +3022,260 @@ Beide Pflicht-Checks sind grün; die 14 lokalen Fehlschläge sind ausschließlic
 **Rückweg:** `git revert` der drei Commits. Die Änderung ist eine einzige Bedingung in
 `matchedFeatures` plus zwei reine Ableitungsfunktionen; es gibt keinen Datenstand, der
 zurückzudrehen wäre (nichts wird gelöscht, nichts migriert). Ein Redeploy genügt.
+
+---
+
+## 51 · Befund 27A-2: Production-Messung (2026-07-30, rein lesend)
+
+**Auftrag:** ausschließlich messen, ob aktive Bundestagsprofile in Production durch
+Landesvorgänge falsche Ausschussbelege erhalten können. **Kein Fix**, keine
+Merkmalsvektor-, Rezept-, Flag- oder Datenänderung. Der Fix ist ein getrennter Sprint.
+
+### 51.1 · Ergebnis
+
+**Befund 27A-2 ist bestätigt.** An echten Production-Daten erhalten **4 von 6** aktiven
+Bundestagsprofilen einen Ausschussbeleg aus einem Landesvorgang. Gemessen wurden
+**14 qualifizierte Profil-Objekt-Paare** über **9 Wissensobjekte** und **3 geteilte
+normalisierte Ausschusstoken** (`gesundheit`, `arbeit-und-soziales`, `finanzen`).
+
+**Einordnung: Kategorie 2 — „bestätigt, aber latent".** Diese Einordnung folgt strikt der
+Beweisregel des Sprints („ein historischer Treffer vor PR #183 ist kein aktueller
+Nachweis"). Sie ist **konservativer als die Datenlage**, und dieser Unterschied wird hier
+ausdrücklich benannt statt geglättet:
+
+- Seit dem Merge von PR #183 (2026-07-30 **11:01:58 UTC**) gab es **keinen** abgeschlossenen
+  regulären Matchinglauf; der letzte lag um **07:56:55 UTC**. Der persistierte Nachweis
+  **nach** dem Deployment ist damit **nicht verfügbar** — nicht negativ.
+- Der Fehler ist aber **bereits in aktiven Production-Daten materialisiert**: **5** Zeilen in
+  `matching_results` mit `aktuell = true` tragen heute einen falschen Ausschussbeleg samt
+  sichtbarer Begründung, und **10** Zeilen in `decisions` sind aus genau diesen Paaren
+  entstanden. Diese Zeilen stammen aus Läufen **vor** dem Deployment.
+- Dass das Deployment daran nichts geändert haben kann, ist **gemessen**, nicht angenommen:
+  über den **gesamten** Bestand — 6 aktive Bundestagsprofile × 1 806 Wissensobjekte =
+  **10 836 Paare** — sind die `matched_features` auf dem Stand `d9006c1` (vor dem 27A-1-Fix)
+  und auf `94f73e4` (`main`, deployter Stand) **byte-identisch: 10 836 gleich, 0 abweichend**.
+  Das bestätigt zugleich unabhängig die Zusage aus §50.4.
+
+Der nächste reguläre Lauf (Cron `pipeline`, 16:00 UTC) macht daraus ohne weiteren
+Erkenntnisgewinn Kategorie 1.
+
+### 51.2 · Was in dieser Sitzung nicht prüfbar war (ehrliche Grenze)
+
+Die Startprüfung verlangt „Deployment `READY`". Das ließ sich hier **nicht** belegen:
+Vercel-Werkzeuge sind in dieser Sitzung nicht verfügbar, `helmut-pilot.vercel.app` ist durch
+die Egress-Policy gesperrt (Proxy-Antwort `403` auf `CONNECT`, in `recentRelayFailures`
+protokolliert), und das GitHub-Token trägt weder `deployments`- noch `statuses`-Leserecht
+(je `403 Resource not accessible by integration`). Belegt ist nur: PR #183 ist gemergt
+(`94f73e4` = `origin/main` = Branchbasis), und die jüngste Lauftelemetrie
+(`process_runs.commit_ref`, 07:55 UTC) zeigt noch `5d475e6`. **Es gibt keinen Hinweis auf ein
+fehlgeschlagenes Deployment — es gibt aber auch keinen Nachweis dafür, dass es `READY` ist.**
+Für diese Messung ist das folgenlos: die 0-von-10 836-Abweichung oben zeigt, dass das
+Bundesverhalten auf beiden Ständen identisch ist.
+
+### 51.3 · Datenbasis (Phase 1, rein lesend)
+
+| Größe | Wert | Quelle / Filter |
+|---|---|---|
+| `mandate_profiles` gesamt | 9 | `select=…&order=user_id.asc` |
+| aktive Profile (`aktiv=true`, `geloescht_at is null`) | 6 | alle `politische_ebene='bundestag'` |
+| davon mit mindestens einer Ausschussangabe | 6 | `ausschuesse` |
+| aktive Landtagsprofile | 0 | das Berliner Abnahmeprofil ist `aktiv=false` |
+| `knowledge_objects` gesamt | 1 806 | — |
+| davon `decision_level='land'` | 69 | `decision_level=eq.land` |
+| davon mit Ausschussangabe (`ausschuesse` + `mentioned_committees`) | 16 | — |
+| Landesobjekte mit auflösbarem Bundesland (`affected_geographies`) | 9 | TH 2 · NW/RP/SN/BY/NI/BE/BB je 1 |
+| Landesobjekte ohne auflösbares Bundesland | 60 | Geografie leer oder nicht im Seed |
+| geteilte normalisierte Ausschusstoken (Bundesprofil ↔ Landesobjekt) | 3 | `gesundheit`, `arbeit-und-soziales`, `finanzen` |
+| geprüfte Paare gesamt | 10 836 | 6 Profile × 1 806 Objekte |
+| Paare mit Ausschussbeleg (alle Ebenen) | 276 | — |
+| **davon qualifiziert (Bundesprofil × `decision_level='land'`)** | **14** | Messdefinition §51.5 |
+
+Die Ebenenverteilung aller Wissensobjekte: `bund` 602 · `land` 69 · `eu` 39 ·
+`international` 68 · `unknown` 78 · ohne Wert 920 · `kommunal` 0.
+
+**Angrenzend, bewusst nicht klassifiziert:** dieselbe Rechnung liefert **9** Paare über
+6 Objekte mit `decision_level='eu'` und **2** Paare über 1 Objekt mit
+`decision_level='international'`, die ebenfalls einen Ausschussbeleg tragen. Ob das falsch
+ist, hängt an der Frage, wie ein EU-Ausschussbezug eines Bundesmandats zu werten ist — das
+ist **nicht** Befund 27A-2 und wurde hier weder gemessen noch bewertet.
+
+### 51.4 · Persistierter Bestand (Phase 2, strikt getrennt)
+
+`matching_results`: **290** Zeilen, Zeitfenster `2026-07-15T04:03:36Z` … `2026-07-30T07:56:55Z`,
+`aktuell=true` 214 · `aktuell=false` 76. Drei Laufkennungen, davon zwei mit Auditkopf
+(`matching_runs`, beide `status='vollstaendig'`, Auslöser `crawl`):
+
+| Lauf (pseudonymisiert) | beendet (UTC) | Kandidaten / veröffentlicht | Lage zum Deployment |
+|---|---|---|---|
+| `mrun-BT-01-20260729160408-…` | 2026-07-29 16:04:09 | 20 / 20 | **vor** dem Merge |
+| `mrun-BT-02-20260730075654-…` | 2026-07-30 07:56:55 | 20 / 20 | **vor** dem Merge |
+| *(nach dem Merge)* | — | — | **kein Lauf** |
+
+**44** Ergebniszeilen tragen einen `ausschuss`-Beleg; davon hängen **39** an Wissensobjekten
+mit `decision_level='bund'` und **5** an solchen mit `decision_level='land'`. Alle 5 sind
+`aktuell=true`, tragen eine gespeicherte Begründung und sind damit heute sichtbar:
+
+| Profil | Wissensobjekt | Rang | Ähnlichkeit | gespeicherte Begründung |
+|---|---|---|---|---|
+| BT-01 | `ko-vg-12e77972ea2b5cf97b937eb5` | 10 | 0,2486 | „Betrifft deinen Ausschuss Gesundheit und deinen Wahlkreis Berlin." |
+| BT-01 | `ko-vg-sofortprogramm` | 8 | 0,2644 | „Betrifft deinen Ausschuss Gesundheit und deine Partei SPD." |
+| BT-01 | `ko-vg-westfalica` | 15 | 0,2368 | „Betrifft deinen Ausschuss Gesundheit und deinen Wahlkreis Berlin." |
+| BT-02 | `ko-vg-12e77972ea2b5cf97b937eb5` | 15 | 0,2436 | „Betrifft deinen Ausschuss Arbeit und Soziales und deinen Schwerpunkt Gesundheit." |
+| BT-02 | `ko-vg-4273502e6c0b9060188ec490` | **1** | 0,3525 | „Betrifft deinen Ausschuss Arbeit und Soziales und deine Partei Die Linke." |
+
+**Nach dem Deployment gibt es keine solche Zeile — weil es überhaupt keinen Lauf gibt.**
+
+### 51.5 · Messdefinition und Beweisstärke je Fall
+
+Ein falscher Ausschussbeleg zählt nur, wenn **alle** Bedingungen erfüllt sind: aktives Profil
+institutionell Bundestag · Wissensobjekt nach **belegter** Ebene/Geografie/Herausgeberstruktur
+einem Landesparlament zugehörig · geteilter normalisierter Ausschusstoken · dieser Token wird
+als **Mitgliedschaft** gewertet · die institutionelle Zuständigkeit stimmt tatsächlich nicht
+überein. Fehlende Zuständigkeitsdaten werden **nicht** durch Vermutung ergänzt.
+
+| Wissensobjekt | Ausschussangabe des Vorgangs | Beweisstärke der Landeszugehörigkeit | Paare |
+|---|---|---|---|
+| `ko-vg-millionendefizite` | „Gesundheitsausschuss (Landtag)" | **doppelt**: Ebene `land` **und** die Bezeichnung nennt den Landtag | 2 |
+| `ko-vg-4273502e6c0b9060188ec490` | „Landtagsausschuss Familie, Soziales und Jugend" | **doppelt**: Ebene `land` **und** Bezeichnung nennt den Landtag | 1 |
+| `ko-vg-sozialausschuss` | „Sozialausschuss Kreistag Ostallgäu", „Sozialausschuss Unterallgäu" | **doppelt**: Ebene `land` **und** Bezeichnung nennt Kreistage (noch unterhalb der Landesebene) | 1 |
+| `ko-vg-12e77972ea2b5cf97b937eb5` | „Sozialausschuss", „Gesundheitsausschuss" | Ebene `land` **und** belegte Geografie `geo-land-berlin` | 3 |
+| `ko-vg-westfalica` | „Gesundheitsausschuss" | nur belegte Ebene `land` (Geografie nicht auflösbar) | 2 |
+| `ko-vg-sofortprogramm` | „Gesundheitsausschuss", „Umwelt- und Naturschutzausschuss" | nur belegte Ebene `land` | 2 |
+| `ko-vg-kostenexplosion` | „Haushalts- und Finanzausschuss" | nur belegte Ebene `land` | 1 |
+| `ko-vg-versprechen` | „Haushalts- und Finanzausschuss", „Kontrollausschuss/Untersuchungsausschuss" | nur belegte Ebene `land` | 1 |
+| `ko-vg-allgaeuer` | „Sozialausschuss", „Inklusionsbeirat" | nur belegte Ebene `land` | 1 |
+
+**4 Paare** sind doppelt belegt (Ebene **und** Institutionsname), **3** über Ebene und belegte
+Geografie, **7** allein über die belegte Ebene. **Kein einziger** der neun Vorgänge nennt
+einen Bundestagsausschuss; einen „Gesundheitsausschuss (Landtag)" oder einen „Sozialausschuss
+Kreistag Ostallgäu" gibt es im Bundestag nicht.
+
+**Benannte Unschärfe:** `decision_level` ist eine von der Understanding-Stufe **abgeleitete**
+Klassifikation, kein amtliches Feld. Für die sieben Fälle mit ausschließlich diesem Beleg
+hängt die Einordnung daran. Für die vier doppelt belegten Fälle trägt der Institutionsname
+den Beweis unabhängig davon — sie allein genügen, um den Befund zu bestätigen.
+
+### 51.6 · Kausalitätsnachweis
+
+1. **Welcher Token geteilt wird.** `normalizeCommittee` baut „Gesundheit" (Bundestag) und
+   „Gesundheitsausschuss (Landtag)" über den Synonymschlüssel `gesundheit` auf **denselben**
+   Stamm ab; ebenso „Arbeit und Soziales" und „Sozialausschuss Kreistag Ostallgäu" auf
+   `arbeit-und-soziales` sowie „Finanzen" und „Haushalts- und Finanzausschuss" auf `finanzen`.
+2. **Warum die Institutionen nicht identisch sind.** Siehe §51.5: Landtags- und
+   Kreistagsgremien gegen Bundestagsausschüsse. Ein Ausschussname trägt strukturell keinen
+   Hinweis auf sein Parlament (§50.1) — die Kollision ist aus dem Namen allein nicht
+   auflösbar und darf laut Produktregel auch nicht geraten werden.
+3. **Wo der Token eingeht.** Zweifach. (a) In den Merkmalsvektor:
+   `profileWeightedTokens`/`knowledgeObjectWeightedTokens` erzeugen `ausschuss:<slug>` mit
+   Gewicht 3 — das ist die **erlaubte** fachliche Nähe und bleibt unangetastet. (b) In den
+   **Beleg**: `matchedFeatures` → `overlapLabels(pf.committees, kf.committees, slugCommittee)`.
+   Der 27A-1-Riegel davor, `ausschussBelegZulaessig`, gibt für ein Bundesprofil sofort `true`
+   zurück (`pz.ebene !== "land"` → „unbestimmt → unverändert"). **Genau hier entsteht 27A-2.**
+4. **Score oder sichtbarer Beleg?** Beides. `matched_features` speist `signale`,
+   `begruendung` (persistiert), die sichtbare Erklärung (`matching-erklaerung`), das
+   Entscheidungsgewicht (`decisions.js`: `ausschuss` 34) und den M8-Riegel. Gerendert ergibt
+   das den Hauptsatz „Betrifft deinen Ausschuss Gesundheit …" **und** den Beleg
+   „Dein Ausschuss: Gesundheit" — eine konkrete **Mitgliedschaftsbehauptung**, nicht bloß
+   ein Themenbezug.
+5. **Wäre die Ausgabe ohne das Ausschussmerkmal anders?** Ja, in **allen 14** Fällen. Die
+   Gegenprobe (nur der Beleg entfällt, Merkmalsvektor und Ähnlichkeit unverändert) senkt den
+   Entscheidungsscore um **exakt 34** Punkte — in **13 von 14** Fällen über eine
+   Entscheidungsschwelle hinweg.
+6. **Bleibt der Landesvorgang legitim relevant?** In **9 von 14** Fällen ja: Partei,
+   Wahlkreis oder Schwerpunkt tragen weiter (das Politikfeld aus `derivePolicyFields` bleibt
+   als `thema` erhalten). In **5 von 14** Fällen ist der fremde Ausschuss der **einzige**
+   Beleg — dort bliebe ohne ihn ein ehrlicher Leerzustand.
+7. **Könnte der falsche Beleg allein eine Entscheidung oder den M8-Riegel kippen?** Ja,
+   beides — belegt in §51.7.
+
+### 51.7 · Wirkung auf Score, Rang, Begründung, Entscheidung und M8
+
+Lokale Wiederholung (Phase 3) mit den echten Production-Eingaben und den reinen
+Matchingfunktionen aus `main`, vollständig schreibfrei, ohne KI und ohne Netz während der
+Berechnung. Alle 14 qualifizierten Paare:
+
+| Profil | Wissensobjekt | Token | Ähnl. | Score mit → ohne | Entscheidung mit → ohne | M8 mit → ohne |
+|---|---|---|---|---|---|---|
+| BT-01 | `…12e77972…` | `gesundheit` | 0,2486 | 94 → 60 | Sofort reagieren → Sofort reagieren | ja → ja |
+| BT-01 | `…millionendefizite` | `gesundheit` | 0,1126 | 49 → 15 | Beobachten → **Ignorieren** | ja → **nein** |
+| BT-01 | `…sofortprogramm` | `gesundheit` | 0,2644 | 74 → 40 | Sofort reagieren → **Beobachten** | ja → ja |
+| BT-01 | `…westfalica` | `gesundheit` | 0,2368 | 90 → 56 | Sofort reagieren → **Beobachten** | ja → ja |
+| BT-02 | `…12e77972…` | `arbeit-und-soziales` | 0,2436 | 64 → 30 | Sofort reagieren → **Ignorieren** | ja → ja |
+| BT-02 | `…4273502e…` | `arbeit-und-soziales` | 0,3525 | 76 → 42 | Sofort reagieren → **Beobachten** | ja → ja |
+| BT-02 | `…allgaeuer` | `arbeit-und-soziales` | 0,0884 | 52 → 18 | Beobachten → **Ignorieren** | ja → **nein** |
+| BT-02 | `…sozialausschuss` | `arbeit-und-soziales` | 0,2033 | 55 → 21 | Beobachten → **Ignorieren** | ja → **nein** |
+| BT-03 | `…kostenexplosion` | `finanzen` | 0,1953 | 73 → 39 | Sofort reagieren → **Ignorieren** | ja → ja |
+| BT-03 | `…versprechen` | `finanzen` | 0,2270 | 73 → 39 | Sofort reagieren → **Ignorieren** | ja → ja |
+| BT-05 | `…12e77972…` | `gesundheit` | 0,1938 | 71 → 37 | Sofort reagieren → **Ignorieren** | ja → ja |
+| BT-05 | `…millionendefizite` | `gesundheit` | 0,1114 | 49 → 15 | Beobachten → **Ignorieren** | ja → **nein** |
+| BT-05 | `…sofortprogramm` | `gesundheit` | 0,1365 | 49 → 15 | Beobachten → **Ignorieren** | ja → **nein** |
+| BT-05 | `…westfalica` | `gesundheit` | 0,2030 | 67 → 33 | Sofort reagieren → **Ignorieren** | ja → ja |
+
+- **Score:** Delta **immer exakt 34** (das Ausschussgewicht in `decisions.js`).
+- **Ähnlichkeit und Rang:** **unverändert**. Der Rang entsteht in `runMatchingCore` aus der
+  Reihenfolge der pgvector-Suche (`rank: i + 1`), `matched_features` werden **danach**
+  berechnet. Ein Eingriff auf Belegebene verschiebt daher keinen Rang und keinen Top-N-Schnitt.
+- **Begründung und sichtbare Erklärung:** in allen 14 Fällen anders; in 5 Fällen entfällt sie
+  ganz (`null` — die Oberfläche blendet den Abschnitt aus, sie erfindet keinen Ersatztext).
+- **Entscheidung:** 13 von 14 Fällen wechseln die Stufe.
+- **M8 (`HELMUT_MATCHING_RELEVANZ_GATE`, in Production unverändert AUS, hier nur lokal als
+  reine Funktion mit ausdrücklichen Testeingaben ausgewertet):** heute passieren alle 14
+  Zeilen den Riegel; **5** davon ausschließlich wegen des falschen Ausschussbelegs.
+- **Rückkopplung auf den echten Bestand:** für **10** der 14 Paare existiert eine
+  `decisions`-Zeile in Production. In **allen 10** stimmt der dort gespeicherte Score
+  **exakt** mit der lokalen Wiederholung überein (94/49/90/64/52/76/73/49/67/71). Damit ist
+  belegt, dass die Gegenprobe denselben Pfad rechnet wie Production — und dass **9** dieser
+  10 gespeicherten Entscheidungen ohne den falschen Beleg eine andere Stufe hätten, darunter
+  **6**, die heute „Sofort reagieren" sagen.
+
+### 51.8 · Datenschutz und Nachweis der Schreibfreiheit
+
+- **Nur lesende Zugriffe.** Ausschließlich HTTPS-`GET` gegen PostgREST. Keine
+  Datenbankfunktion/RPC (auch keine lesende), keine Migration, kein Backfill, kein manueller
+  Mandats-, Matching- oder Crawllauf, keine Vercel-, Env-, Flag-, Cron- oder Budgetänderung,
+  keine neuen Mandate, **0 KI-Aufrufe, 0,00 USD**. Berlin, Brandenburg und M8 unverändert AUS.
+- **Werkzeug mit technischem Schreibschutz:** `scripts/befund-27a2-production-messung.js` hat
+  genau **eine** HTTP-Funktion, deren Methode ein `GET`-Literal ist, eine eingefrorene
+  Tabellen-Allowlist ohne `/rest/v1/rpc/`, lädt `storage.js` nicht und liest Secrets nur aus
+  `process.env`. Bewiesen offline durch `scripts/befund-27a2-schreibschutz-test.js`
+  (**48/48**, Abschnitte A–F).
+- **Datenminimierung:** Mandanten und Laufkennungen erscheinen ausschließlich pseudonymisiert
+  (`BT-01` …); das Werkzeug bietet bewusst **keinen** Klartextschalter. Im Repository liegen
+  keine Production-Snapshots, keine Überschriften, keine Rohtexte, keine personenbezogenen
+  Profildaten und keine Secrets. Die dokumentierten Kennungen (`ko-vg-…`) sind technische
+  Objektkennungen ohne Personenbezug.
+
+### 51.9 · Was diese Messung **nicht** belegt
+
+1. Kein Nachweis **nach** dem Deployment (§51.2) — nur der Nachweis, dass das Deployment das
+   Bundesverhalten nicht ändern kann.
+2. Keine Aussage über EU-/international-Ebene (§51.3) und keine über Vorgänge ohne belegte
+   Ebene: dort tragen **0** der 920 + 78 Objekte überhaupt eine Ausschussangabe, die Frage
+   stellt sich heute also nicht — sie kann sich mit neuen Daten stellen.
+3. Keine Aussage darüber, wie viele Landesvorgänge **künftig** entstehen. Die 69 Landesobjekte
+   sind Nebenprodukt des Bundes-Crawls; mit einer Landesaktivierung würde die Zahl steigen.
+4. Keine Bewertung der Fixvarianten über §50.5 hinaus — die dortige Kostenschätzung ist durch
+   diese Messung jetzt jedoch **quantifiziert**: Variante 3 („symmetrisch verschärfen")
+   entfernt heute **14** Belege bei **4** von 6 aktiven Mandaten, ändert **13** Entscheidungs-
+   stufen und würde bei aktivem M8 **5** Zeilen aus der Lage nehmen. Migration, Backfill und
+   neue Rezeptversion bleiben dabei unnötig (`matched_features` ist der einzige Eingriffspunkt).
+
+### 51.10 · Testnachweis
+
+| Nachweis | Ergebnis |
+|---|---|
+| `scripts/befund-27a2-schreibschutz-test.js` (neu) | **48/48** |
+| `scripts/matching-ausschuss-zustaendigkeit-test.js` | **54/54** |
+| `scripts/matching-erklaerung-test.js` | **64/64** |
+| `scripts/brandenburg-e2e-vertrag-test.js` | **98/98** |
+| `scripts/brandenburg-e2e-mutationsprobe.js` | **16/16 rot** |
+| `scripts/berlin-e2e-vertrag-test.js` | **76/76** |
+| `scripts/berlin-e2e-mutationsprobe.js` | **10/10 rot** |
+| `node scripts/run-offline-tests.js` (lokal) | **173/187** gegen Basislinie `main` `94f73e4` **172/186** — die **+1** ist die neue Suite; die Fehlschlagliste ist **byte-identisch** (14 umgebungsbedingte Fehlschläge, kein Regress) |
+| `node scripts/browser-smoke-test.js` (lokal) | **32/32** |
+| **CI-Gate** `Syntax + Offline-Suiten` (maßgeblich, `CLAUDE.md` §6) | **187/187** — Lauf `30539215650`, Commit `3767b12` |
+| **CI-Gate** `Browser-/Mobile-Smoke (Chromium)` | **32/32** — derselbe Lauf |
+
+Beide Pflicht-Checks sind grün. Die 14 lokalen Fehlschläge sind ausschließlich umgebungsbedingt
+(Production-Secrets in der Sitzung gesetzt) und existieren im CI nicht.
+
