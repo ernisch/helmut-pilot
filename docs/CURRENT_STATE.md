@@ -1,6 +1,84 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-30 (**Sprint Production-Messung Befund 27A-2: erhalten
+**Letzte Aktualisierung:** 2026-07-30 (**Sprint Fix Befund 27A-2: symmetrische Ausschuss-Zuständigkeit.
+TEILWEISE ABGESCHLOSSEN — der Fix ist gebaut, offline und an echten Production-Eingaben belegt;
+was fehlt, ist Betreiberentscheidung, Merge und der Production-Nachweis nach dem ersten regulären
+Lauf.** **URSACHE (belegt):** die 27A-1-Regel war einseitig — `ausschussBelegZulaessig` gab für ein
+BUNDESprofil sofort `true` zurück (`pz.ebene !== "land"` → „unbestimmt → unverändert"), während
+`normalizeCommittee` Gremiennamen verschiedener Institutionen auf denselben Stamm faltet
+(„Gesundheit" ↔ „Gesundheitsausschuss (Landtag)" → `gesundheit`). **FIX (umgesetzte Variante 3,
+§50.5/§51.9):** die Prüfung ist jetzt **symmetrisch** — ein Bundesmandat erhält bei einem
+Wissensobjekt der Ebene `land`/`kommune` **keinen** Ausschussbeleg mehr; die Landesseite bleibt
+byte-identisch. `decision_level` ist auf beiden Seiten das führende Feld, die Geografie präzisiert
+nur das Bundesland. Zwei Zeilen in `lib/helmut/matching.js`, `matched_features` bleibt der einzige
+Eingriffspunkt. **WIRKUNG, an echten Production-Daten rein lesend gemessen (dieselbe Messung wie
+PR #184, jetzt mit Vorher/Nachher in EINEM Lauf):** über 6 aktive Bundestagsprofile × 1 806
+Wissensobjekte = **10 836 Paare** fallen die **14** bekannten qualifizierten falschen Belege auf
+**0**; insgesamt entfallen **16** Belege (**14** Ebene `land` + **2** Ebene `kommune` —
+Kreistagsausschüsse, die §51.3 nicht mitgezählt hatte, weil dort „kommunal 0" steht und die
+Ebenensumme 1 776 statt 1 806 ergibt: **Korrektur**, es gibt **30** `kommune`-Objekte); **0** neue
+Belege; in **10 836 von 10 836** Paaren ist außer dem Ausschussbeleg **alles byte-identisch**;
+Score-Delta **ausschließlich 34**; **13 von 14** wechseln die Entscheidungsstufe; **7** der 16
+bleiben ohne jeden Beleg. **Gegenprobe gegen den echten Bestand:** für **10** der 14 Paare
+existiert eine `decisions`-Zeile, in **allen 10** stimmt der gespeicherte Score **exakt** mit der
+lokalen Vorher-Rechnung überein — **9** wechseln die Stufe, **7** stehen heute auf „Sofort
+reagieren", **6** davon nicht mehr. **Ähnlichkeit, Kandidatenrang und Top-N-Schnitt unverändert**
+(sie entstehen vor `matched_features`; offline mit identischen Ranglisten gegengeprüft), ebenso
+`normalizeCommittee`/`slugCommittee`, Merkmalsvektoren, `profileHash`, Eingabefingerabdruck und
+Rezeptversion — **deshalb keine Migration, kein Backfill, keine neue Rezeptversion.**
+**BEWEIS STATT BEHAUPTUNG:** die **regelfreie** Bundestagsprojektion ist byte-identisch zum Stand
+`d9006c1` (`48d761b7…bee387`) — außerhalb der Regel hat sich nichts bewegt; der neue Stand ist als
+zweiter Hash verankert (`3367bfba…955640`); auf `d9006c1` liefert der Druckmodus für beide Zeilen
+`48d761b7…`. Der Unterschied ist als **vollständige Liste** verankert (4 Wegfälle im Golden-Satz,
+0 neue Belege). **EINE BENANNTE ABWEICHUNG von der wörtlichen Sprintregel (§52.6):** bei einer
+**gar nicht belegten** Ebene bleibt es auf der Bundesseite beim alten Verhalten. Striktes
+fail-closed machte `radar-committee-evidence-test.js` an **4** Stellen rot — genau dort, wo ein
+**echter** Bundestagsausschuss wörtlich im Inhalt steht. Das hätte richtige Belege entfernt oder
+vier Fixtures einer fremden Vertragssuite an den Code angepasst; beides wäre falsch.
+Production-Wirkung dieser Ausnahme heute: **0 Paare**. Striktes fail-closed wäre eine Zeile —
+Betreiberentscheidung, durch Mutation **N9** gegen stilles Einziehen gesichert.
+**NEBENBEFUND GETRENNT UND GESTOPPT (§52.7):** die **9** EU- und **2** internationalen Paare mit
+Ausschussbeleg bleiben unverändert. Gemessen an den echten Gremiennamen nennen sie **teils echte
+Bundestagsausschüsse** („Ausschuss für Arbeit und Soziales", „Auswärtiger Ausschuss"), **teils
+fremde Gremien** („Europäischer Ausschuss für soziale Rechte") — die Ebene allein trennt das nicht,
+eine Verschärfung braucht eine neue fachliche Entscheidung und würde richtige Belege entfernen.
+**PRODUCTION-WIRKUNG DES MERGES, ehrlich:** ein Merge ändert **keine** bestehenden Daten. Die **5**
+heute sichtbaren `matching_results`-Zeilen mit falschem Beleg und die **10** daraus entstandenen
+`decisions` **bleiben zunächst stehen**; ersetzt werden sie durch den **normalen Betrieb** (nächster
+regulärer Matchinglauf des Mandanten, Cron `pipeline` 16:00 UTC bzw. `crawl` 20:00/04:00 UTC).
+**Bis dahin kann der Bundestagspilot weiterhin falsche sichtbare Ergebnisse enthalten** — inklusive
+„Betrifft deinen Ausschuss Arbeit und Soziales …" auf Rang 1. Manueller Lauf, Backfill und
+Datenbereinigung sind **möglich, aber ausdrücklich NICHT Bestandteil dieses Sprints** und
+freigabepflichtig. **Tests (real ermittelt):** `matching-ausschuss-zustaendigkeit-test` **85/85**
+(von 54) · neue `scripts/befund-27a2-mutationsprobe.js` **9/9 Mutationen rot** (N1 = Rückkehr zur
+Bundes-Sonderbehandlung → 17 Assertionen rot) · Schreibschutzsuite **54/54** (von 48; F1–F5 vom
+Befundzeugen zum Fixzeugen umgedreht) · `matching-erklaerung-test` **64/64** ·
+`radar-committee-evidence-test` **25/25 ohne Fixture-Anpassung** · Brandenburg-Vertrag **98/98** und
+Mutationsprobe **17/17 rot** (neu M17) · Berlin-Vertrag **76/76** und Mutationsprobe **10/10 rot** ·
+Offline-Suite lokal **173/187** gegen Basislinie `main` `4d69380` **173/187**, Fehlschlagliste
+**byte-identisch** (14 umgebungsbedingte Fehlschläge, kein Regress) · Browser-/Mobile-Smoke
+**32/32**. **Beobachtung ohne Erklärung, nicht kaschiert:** ein einzelner Referenzlauf der
+**Berliner** Mutationsprobe war rot (1 Assertion), fünf folgende Läufe grün (je 10/10); Verdacht ist
+die `Date.now()`-Sperr-TTL im gemeinsamen `e2e-vertrag-geruest.js` unter Last, belegt ist das nicht.
+**Sicherheitsgrenzen eingehalten:** ausschließlich lesende Production-Zugriffe (HTTPS-`GET`, keine
+RPC), **0 KI-Aufrufe, 0,00 USD**, keine Migration, kein Backfill, keine Datenkorrektur, kein
+manueller Lauf, kein Crawl, keine Env-/Flag-/Cron-/Budgetänderung, Berlin, Brandenburg und **M8
+unverändert AUS**, keine neuen Mandate, keine Production-Rohdaten im Repository. **Statusgrenzen:**
+Punkt 27A bleibt erfolgreich abgeschlossen (der Fix verletzt keines seiner Abnahmekriterien; die
+Zusage aus §50.4 gilt jetzt als „regelfrei byte-identisch" plus verankertem neuen Stand), Punkt 27
+gesamt bleibt ⏳, 27B bleibt durch Punkt 15 blockiert, OP-25 und OP-27 unverändert. **Rückweg:**
+`git revert` + Redeploy — es gibt keinen Datenstand, der zurückzudrehen wäre. **Nächster Schritt:**
+Betreiberentscheidung über den Merge (er verändert sichtbare Bundestagsergebnisse) und danach die
+Messung als Abnahme wiederholen (`node scripts/befund-27a2-production-messung.js` → erwartet
+„QUALIFIZIERTE Faelle NACHHER: 0" **und** eine `matching_results`-Zeile aus einem Lauf **nach** dem
+Deployment). Geänderte Dateien: `lib/helmut/matching.js`,
+`scripts/matching-ausschuss-zustaendigkeit-test.js`, `scripts/befund-27a2-mutationsprobe.js` (neu),
+`scripts/befund-27a2-production-messung.js`, `scripts/befund-27a2-schreibschutz-test.js`,
+`scripts/brandenburg-e2e-mutationsprobe.js`, `docs/matching-nachvollziehbarkeit.md` (§52 neu),
+`docs/roadmap/phase_1_checkliste.md`, `docs/CURRENT_STATE.md`. Branch
+`claude/fix-befund-27a-2-k8lazs`, PR siehe unten. Kanonisch:
+[`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md) §52.) ·
+(**Sprint Production-Messung Befund 27A-2: erhalten
 Bundestagsprofile falsche Ausschussbelege aus Landesvorgängen? TEILWEISE ABGESCHLOSSEN — die
 Messung ist vollständig und eindeutig, aber zwei Abnahmestücke fehlen (siehe unten): der
 persistierte Nachweis NACH dem Deployment und die Startzusage „Deployment READY".**

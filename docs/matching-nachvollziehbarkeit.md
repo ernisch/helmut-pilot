@@ -3279,3 +3279,278 @@ Berechnung. Alle 14 qualifizierten Paare:
 Beide Pflicht-Checks sind grün. Die 14 lokalen Fehlschläge sind ausschließlich umgebungsbedingt
 (Production-Secrets in der Sitzung gesetzt) und existieren im CI nicht.
 
+
+---
+
+## 52 · Befund 27A-2: der Fix (2026-07-30, symmetrische Zuständigkeitsprüfung)
+
+**Auftrag:** den in §51 bestätigten Fehler beheben — aktive Bundestagsprofile erhalten bei
+Landesvorgängen eine fremde Ausschussmitgliedschaft als konkreten Beleg. Umgesetzt ist die
+in §50.5/§51.9 dokumentierte **Variante 3** („symmetrisch verschärfen"). **Kein
+Production-Schreibzugriff, keine Migration, kein Backfill, keine Datenkorrektur, kein
+manueller Lauf, keine Aktivierung.**
+
+### 52.1 · Die Ursache in einem Satz
+
+`normalizeCommittee` faltet Gremiennamen verschiedener Institutionen auf denselben Stamm
+(§51.6), und der 27A-1-Riegel `ausschussBelegZulaessig` gab für ein **Bundes**profil sofort
+`true` zurück (`pz.ebene !== "land"` → „unbestimmt → unverändert"). Die 27A-1-Regel war also
+**einseitig**: sie prüfte nur die Landesseite. Genau diese Sonderbehandlung ist der Fehler —
+nicht die Namensfaltung, die als fachliche Ähnlichkeit erlaubt ist und bleibt.
+
+### 52.2 · Die Regel, jetzt symmetrisch
+
+> Eine Ausschussüberschneidung gilt nur dann als **Mitgliedschaftsbeleg**, wenn der
+> institutionelle Zuständigkeitsraum des Profils **positiv belegt** zu dem des Vorgangs passt.
+> Ist die **Profilseite** unbestimmt, bleibt das Verhalten unverändert — dort ist nichts
+> entscheidbar.
+
+`decision_level` ist auf beiden Seiten das **führende** Feld; die Geografie präzisiert nur,
+*welches* Bundesland innerhalb der Landesebene gemeint ist. Es entsteht **keine** neue
+Datenquelle, **keine** neue Spalte, **kein** Raten aus Namen.
+
+**Verhaltensmatrix** (`ausschussBelegZulaessig`, alle zehn vom Sprint verlangten Fälle):
+
+| # | Profil | Vorgang | Ausschussbeleg | Zweig |
+|---|---|---|---|---|
+| 1 | Bundestag | Ebene `bund` | **ja** | Bund |
+| 2 | Bundestag | Ebene `land` / `kommune` | **nein** (der behobene Fehler) | Bund |
+| 3 | Landtag + Bundesland | Ebene `bund` | **nein** | Land (27A-1) |
+| 4 | Landtag + Bundesland | dasselbe Bundesland belegt | **ja** | Land (27A-1) |
+| 5 | Landtag + Bundesland | anderes Bundesland belegt | **nein** | Land (27A-1) |
+| 6 | Landtag + Bundesland | Ebene fehlt / `unknown` | **nein** (fail-closed) | Land (27A-1) |
+| 6 | Bundestag | Ebene fehlt / `unknown` | **unverändert (ja)** — benannte Ausnahme, §52.6 | Bund |
+| 7 | Landtag + Bundesland | Ebene `land`, Geografie leer | **nein** (fail-closed) | Land |
+| 7 | Bundestag | Ebene `land`, Geografie leer | **nein** | Bund |
+| 8 | Bundestag | Ebene `bund` **+** betroffenes Bundesland | **ja** — die Ebene führt | Bund |
+| 8 | Landtag + Bundesland | Ebene `bund` **+** eigenes Bundesland | **nein** — die Ebene führt | Land |
+| 9 | beide | gleichnamiges Gremium, anderer Raum | **nein**, deterministisch | beide |
+| 10 | Bundestag | belegter, aber unlesbarer Ebenenwert (z. B. `kommunal`) | **nein** (fail-closed) | Bund |
+| 10 | Landtag + Bundesland | belegter, aber unlesbarer Ebenenwert | **nein** (fail-closed) | Land |
+| — | Mandatsebene fehlt | beliebig | unverändert | Kopf |
+| — | Landtag, Bundesland **fehlt** | beliebig | unverändert | Land (27A-1) |
+| — | Bundestag | Ebene `eu` / `international` | **unverändert (ja)** | Nebenbefund §52.7 |
+
+Die Regel **entfernt nur** Belege, sie fügt nie einen hinzu — offline und an 10 836 echten
+Production-Paaren geprüft (§52.4).
+
+### 52.3 · Was der Fix **nicht** anfasst
+
+Unverändert und deshalb **ohne Migration, Backfill, neue Rezeptversion oder Neuberechnung
+gespeicherter Vektoren** — jeder Punkt einzeln getestet:
+
+- `normalizeCommittee` / `slugCommittee` / `committeeMatchKey` und damit **Merkmalsvektor,
+  Kosinus-Ähnlichkeit, Kandidatenrang und Top-N-Schnitt**. Der Rang entsteht in
+  `runMatchingCore` aus der Reihenfolge der pgvector-Suche, `matched_features` werden
+  **danach** berechnet — ein Eingriff auf Belegebene kann keinen Rang verschieben.
+- `profileHash`, `computeKnowledgeObjectInputHash` und der **Eingabefingerabdruck** eines
+  Laufs (und damit die Idempotenz). Die Mandatsebene ist kein Token; sie geht in keine der
+  fingerabdruckbildenden Dimensionen ein.
+- `derivePolicyFields`: das aus dem Ausschuss abgeleitete **Politikfeld** bleibt. Trägt das
+  Profil den Schwerpunkt, bleibt der fachliche Bezug als `thema` sichtbar.
+- `passesFilters` / `filter_committees` (harter Suchfilter, in Production nicht gesetzt),
+  `scoring.js` (`proximityScore` vergleicht die volle Bezeichnung), `radarState`
+  (eigener, kollisionssicherer Pfad über `committeeMatchKey`).
+- Die **Landesseite** aus 27A-1: byte-identisch. Berlin-Vertrag 76/76 und
+  Brandenburg-Vertrag 98/98 bleiben ohne jede Fixture-Anpassung grün.
+
+`matched_features` ist weiterhin der **einzige** Eingriffspunkt. Von dort wirkt die Korrektur
+auf `signale`, die persistierte Begründung, die sichtbare Erklärung, das Entscheidungsgewicht
+(`decisions.js`: `ausschuss` 34) und den M8-Riegel.
+
+### 52.4 · Golden Regression an den echten Production-Messfällen
+
+Dasselbe schreibfreie Werkzeug aus §51 (`scripts/befund-27a2-production-messung.js`,
+Schreibschutz offline bewiesen) rechnet jetzt **in einem Lauf beide Stände**: „vorher" ist die
+echte `matchedFeatures`-Funktion mit **unbestimmtem** Zuständigkeitsraum auf beiden Seiten —
+das ist exakt das Verhalten von `main` vor dem Fix, weil die 27A-1-Regel für Bundesprofile
+inert war. Lauf am 2026-07-30, ausschließlich HTTPS-`GET`, 0 KI-Aufrufe, 0,00 USD:
+
+| Größe | vorher | nachher |
+|---|---|---|
+| geprüfte Paare (6 aktive Bundestagsprofile × 1 806 Wissensobjekte) | 10 836 | 10 836 |
+| Paare mit Ausschussbeleg (alle Ebenen) | **276** | **260** |
+| **qualifizierte Fälle** (Bundesprofil × `decision_level='land'`) | **14** | **0** |
+| betroffene Wissensobjekte / Profile | 9 / 4 | — |
+| geteilte normalisierte Token | `gesundheit`, `arbeit-und-soziales`, `finanzen` | — |
+| NEU entstandene Ausschussbelege | — | **0** |
+| Paare, in denen sich außer dem Ausschussbeleg **nichts** geändert hat | — | **10 836 / 10 836** |
+| Score-Delta der entfallenen Belege | — | **ausschließlich 34** |
+| Fälle mit anderer Entscheidungsstufe | — | **13 von 14** |
+| Fälle, in denen der Ausschuss der **einzige** Beleg war | 5 von 14 | — |
+
+**Abgleich mit dem echten Bestand:** für **10** der 14 Paare existiert eine `decisions`-Zeile.
+In **allen 10** stimmt der gespeicherte Score **exakt** mit der lokalen Vorher-Rechnung überein
+(94/49/90/64/76/52/73/71/49/67) — die Gegenprobe rechnet damit belegt denselben Pfad wie
+Production. **9** dieser 10 wechseln durch den Fix die Stufe; **7** stehen heute auf „Sofort
+reagieren", **6** davon nicht mehr (94 → 60 bleibt „Sofort reagieren", weil Partei und
+Wahlkreis den Fall unabhängig tragen).
+
+**Ähnlichkeit und Rang:** unverändert. Die Ähnlichkeit stammt aus dem gespeicherten
+Merkmalsvektor (`ko.embedding`), der Rang aus der Reihenfolge der pgvector-Suche; beide
+entstehen **vor** `matched_features`. Offline zusätzlich gegengeprüft: dieselbe Kandidatenmenge
+liefert mit und ohne wirksame Regel byte-identische Ranglisten, auch bei geschnittenem Top-N.
+
+### 52.5 · Zwei Fälle mehr als gemessen — und die Korrektur an §51.3
+
+Der Fix entfernt **16** Belege, nicht 14: **14** bei Wissensobjekten der Ebene `land` und **2**
+bei Ebene **`kommune`** („Sozialausschuss Kreistag Ostallgäu" und „Ausschuss für Soziales,
+Familie, Gesundheit, Gleichstellung und Inklusion" gegen den Bundestagsausschuss „Arbeit und
+Soziales"). Fachlich ist das dieselbe Fehlerklasse — ein Kreistagsausschuss ist noch weniger
+ein Bundestagsausschuss als ein Landtagsausschuss.
+
+**Korrektur:** die Ebenenverteilung in §51.3 führt „`kommunal` 0" und summiert sich auf 1 776
+statt 1 806. Der kanonische Wert heißt `kommune`, und es gibt **30** solche Objekte. Die
+27A-2-Messung hatte sie deshalb nicht mitgezählt. Der Befund selbst (14 qualifizierte Paare
+nach der dortigen Messdefinition `decision_level='land'`) bleibt davon unberührt.
+
+**Kein** Beleg entfällt bei Objekten ohne Ebene oder mit `unknown` — dort trägt, wie in §51.9
+festgehalten, kein Objekt eine Ausschussangabe.
+
+### 52.6 · Die eine benannte Abweichung: fehlende Ebene ist auf der Bundesseite **nicht** fail-closed
+
+Der Sprintauftrag verlangt wörtlich, dass *fehlende, widersprüchliche oder mehrdeutige
+Zuständigkeitsdaten keinen Ausschussbeleg erzeugen*. Für **widersprüchliche**, **mehrdeutige**
+und **belegt-aber-unlesbare** Angaben ist das umgesetzt (Matrix §52.2, Fälle 8/9/10). Für eine
+**gar nicht belegte** Ebene ist es auf der **Bundesseite** bewusst **nicht** umgesetzt: dort
+bleibt das Verhalten unverändert.
+
+**Warum:** die erste Umsetzung war strikt fail-closed. Sie machte
+`scripts/radar-committee-evidence-test.js` an **vier** Stellen rot (Fälle 1, 1b, 6c, 8) — genau
+den Zusicherungen, die einen **echten** Bundestagsausschuss belegen: der volle Ausschussname
+steht wörtlich im Inhalt, kein widersprechender Institutionsmarker. Solche Treffer sind
+**richtig**; sie zu entfernen, weil ein *anderes* Feld (`decision_level`) leer ist, widerspricht
+der Sprintregel „echte Ausschusstreffer innerhalb desselben Parlaments müssen erhalten bleiben"
+und der Auflage, die aktive Bundestagsprojektion außer den falschen Belegen unverändert zu
+lassen. Die Alternative wäre gewesen, vier Fixtures einer fremden, bestehenden Vertragssuite
+umzuschreiben, damit sie zum neuen Code passen — das wäre Anpassung des Beweises an den Code
+gewesen, nicht umgekehrt.
+
+**Was das kostet und was nicht:**
+
+- **Production heute: 0 Paare.** Kein Objekt ohne belegte Ebene trägt eine Ausschussangabe
+  (§51.9, in der Fix-Messung erneut bestätigt: die Wegfälle verteilen sich ausschließlich auf
+  `land` 14 und `kommune` 2).
+- Die Regel fügt auch hier **nie** einen Beleg hinzu.
+- Sie ist **symmetrisch im Prinzip**: „unbestimmte Seite → nichts entscheidbar → unverändert"
+  gilt schon für ein Profil ohne Mandatsebene und für ein Landesmandat ohne Bundesland.
+- **Offen für den Betreiber:** striktes fail-closed wäre **eine Zeile**
+  (`if (!kz.ebene) return true;` entfernen). Dass diese Zeile nicht still verschwindet oder
+  still einzieht, sichert Mutation **N9** ab.
+
+### 52.7 · Nebenbefund EU/international: technisch geprüft, bewusst **nicht** entschieden
+
+§51.3 nennt zusätzlich **9** Paare über 6 Objekte mit `decision_level='eu'` und **2** Paare
+über 1 Objekt mit `international`, die einen Ausschussbeleg tragen. Der Sprint verlangt, sie
+technisch zu prüfen und nur dann mitzunehmen, wenn dieselbe kleine Regel sie **eindeutig**
+richtig behandelt. Das ist **nicht** der Fall — gemessen an den echten Gremiennamen:
+
+| Ebene | Ausschussangabe des Vorgangs | Bewertung |
+|---|---|---|
+| `eu` | „Ausschuss für Arbeit und Soziales", „Auswärtiger Ausschuss", „Ausschuss für Europäische Union" | **echte Bundestagsausschüsse** — der Beleg ist hier richtig |
+| `eu` | „Europäischer Ausschuss für soziale Rechte" | **fremdes Gremium** — der Beleg wäre falsch |
+| `eu` / `international` | „Gesundheitsausschuss", „Sozialausschuss", „Umweltausschuss", „Europaausschuss" | aus dem Namen **nicht entscheidbar** |
+
+Die Ebene allein trennt das nicht: ein EU-Vorgang kann sehr wohl im zuständigen
+**Bundestags**ausschuss beraten werden. Eine Verschärfung würde hier **richtige** Belege
+entfernen und braucht eine neue fachliche Entscheidung über institutionelle Beziehungen —
+deshalb bleibt das Verhalten für `eu`/`international` **unverändert**, und nur dieser Teil ist
+gestoppt. Der Ist-Stand ist als Vertrag festgeschrieben (Abschnitt J der Suite) und gegen
+stilles Wegfallen durch eine Mutation gesichert (N6). **Offene Frage für den Betreiber:** wie
+ist ein EU-/internationaler Ausschussbezug eines Bundesmandats zu werten?
+
+### 52.8 · Benannte Restunschärfen
+
+1. **Fehlende Ebene ist auf der Bundesseite nicht fail-closed** (§52.6). Trägt ein Objekt
+   künftig eine Ausschussangabe ohne ermittelte Ebene, bleibt der Beleg — auch wenn das Gremium
+   in Wahrheit ein Landtagsausschuss wäre. Heute betrifft das **0** Objekte. Das ist die eine
+   benannte Abweichung von der wörtlichen Sprintregel und eine offene Betreiberentscheidung.
+2. **Ein `land`-Vorgang, der einen echten Bundestagsausschuss nennt**, verliert für ein
+   Bundesmandat den Beleg. Heute gemessen: **keiner** der neun Landesvorgänge nennt einen
+   Bundestagsausschuss. Der fachliche Bezug bleibt über `thema` möglich.
+3. **Das Thema trägt seltener als erhofft.** Von den 16 entfallenen Belegen behalten **9**
+   mindestens einen anderen Beleg (Partei/Wahlkreis/Thema), aber nur **1** einen `thema`-Beleg:
+   das aus dem Ausschuss abgeleitete Politikfeld trifft nur, wenn das Profil genau diesen
+   Schwerpunkt führt. **7** Paare bleiben ohne jeden Beleg — dort entfällt die sichtbare
+   Erklärung, und bei aktivem M8 würde die Zeile aus der Lage fallen.
+4. **Die Ähnlichkeit trennt die Ebenen nicht** (wie §50.6 Punkt 3 für die Länder). Ein
+   Landesvorgang bleibt für ein Bundesprofil messbar ähnlich und kann in der Kandidatenliste
+   stehen — ohne Beleg, ohne Begründung, ohne Gewicht.
+5. **Kein Production-Beweis nach dem Deployment.** Dieser Sprint belegt den Fix offline und an
+   echten Production-**Eingaben**, nicht an einem regulären Lauf mit dem neuen Code.
+
+### 52.9 · Production-Wirkung des Merges (ehrlich abgegrenzt)
+
+1. Ein Merge verändert **nicht** rückwirkend Daten. Er ändert nur, was **künftige** reguläre
+   Matchingläufe berechnen.
+2. Die **5** heute sichtbaren `matching_results`-Zeilen mit falschem Ausschussbeleg (§51.4) und
+   die **10** daraus entstandenen `decisions`-Zeilen **bleiben zunächst bestehen**.
+3. Ersetzt werden sie durch den **normalen Betrieb**: der nächste reguläre Matchinglauf des
+   jeweiligen Mandanten schreibt eine neue Generation und setzt die alte auf `aktuell=false`
+   (Cron `pipeline` 16:00 UTC bzw. `crawl` 20:00/04:00 UTC).
+4. Bis dahin kann der Bundestagspilot **weiterhin falsche sichtbare Ergebnisse** enthalten —
+   inklusive Sätzen wie „Betrifft deinen Ausschuss Arbeit und Soziales …" auf Rang 1.
+5. Ein **manueller Lauf, ein Backfill oder eine Datenbereinigung wären möglich, sind aber
+   ausdrücklich NICHT Bestandteil dieses Sprints** und freigabepflichtig.
+6. Sichtbare Folge nach dem ersten regulären Lauf: **16** Belege weniger, **13** der 14
+   bekannten Fälle auf einer anderen Entscheidungsstufe, **7** Fälle ohne sichtbare Erklärung.
+   Das ist eine gewollte, belegte Verbesserung — und eine **sichtbare** Änderung an Lage und
+   Briefing.
+7. **M8 bleibt AUS.** Wäre es an, fielen die 7 belegfreien Zeilen aus der Lage.
+
+### 52.10 · Mutationsprobe
+
+Neu: `scripts/befund-27a2-mutationsprobe.js` (9 Mutationen, alle in `lib/helmut/matching.js`,
+jede einzeln gegen `scripts/matching-ausschuss-zustaendigkeit-test.js`):
+
+| Mutation | Rücknahme | erkannt |
+|---|---|---|
+| N1 | **Rückkehr zur bisherigen Bundes-Sonderbehandlung** (`return kz.ebene === "bund"` → `return true`) | **17 Assertionen rot** |
+| N2 | der gesamte Bundeszweig entfällt (`if (pz.ebene === "bund")` → `false`) | 17 rot |
+| N3 | die Aufrufstelle in `matchedFeatures` entfällt | 35 rot |
+| N4 | die Regel sagt im Kopf immer ja | 36 rot |
+| N5 | der Landeszweig verlangt kein passendes Bundesland mehr (27A-1 zurück) | 16 rot |
+| N6 | der bewusst unveränderte EU-Nebenbefund verschwindet still | 3 rot |
+| N7 | die Ebenenableitung des Wissensobjekts behauptet immer `bund` | 28 rot |
+| N8 | die Mandatsebene „Bundestag" wird nicht mehr erkannt | 17 rot |
+| N9 | die benannte Ausnahme für unbelegte Ebenen wird still zu fail-closed (§52.6) | 6 rot |
+
+**9 von 9 erkannt.** Damit ist konkret belegt: wird der Fix entfernt **oder** wieder durch die
+Bundes-Sonderbehandlung ersetzt — an der Regel, an ihrer Aufrufstelle oder an einer der beiden
+Zuständigkeitsableitungen —, wird der Vertrag rot. Die Brandenburg-Probe wächst um **M17**
+(Landeszweig ohne Bundeslandprüfung) auf **17/17 rot**.
+
+### 52.11 · Testnachweis (alle Zahlen real ermittelt)
+
+| Nachweis | Ergebnis |
+|---|---|
+| `scripts/matching-ausschuss-zustaendigkeit-test.js` (54 → **85**) | **85/85** |
+| `scripts/befund-27a2-mutationsprobe.js` (neu) | **9/9 Mutationen rot** |
+| `scripts/radar-committee-evidence-test.js` (unverändert, ohne Fixture-Anpassung) | **25/25** |
+| `scripts/befund-27a2-schreibschutz-test.js` (48 → **54**) | **54/54** |
+| `scripts/matching-erklaerung-test.js` | **64/64** |
+| `scripts/brandenburg-e2e-vertrag-test.js` | **98/98** |
+| `scripts/brandenburg-e2e-mutationsprobe.js` (16 → **17**) | **17/17 rot** |
+| `scripts/berlin-e2e-vertrag-test.js` | **76/76** |
+| `scripts/berlin-e2e-mutationsprobe.js` | **10/10 rot** |
+| lokale Wiederholung der Production-Messung | 14 → **0** qualifizierte Fälle, 0 neue Belege |
+| `node scripts/run-offline-tests.js` (lokal) | **173/187** gegen Basislinie `main` `4d69380` **173/187** — Fehlschlagliste byte-identisch (14 umgebungsbedingte Fehlschläge, kein Regress); keine neue Suite, weil die Mutationsprobe bewusst nicht auf `-test.js` endet |
+| `node scripts/browser-smoke-test.js` (lokal) | **32/32** |
+
+**Verankerte Haschwerte** (Abschnitt 0 der Suite): die **regelfreie** Bundestagsprojektion ist
+byte-identisch zum Stand `d9006c1`
+(`48d761b7033ecc92721d4566de5975b5f4525e4df7b085bf8621823d60bee387`) — außerhalb der Regel hat
+sich nichts bewegt; die Projektion **mit** Regel ist als neuer Stand verankert
+(`3367bfbadcf54cf755ebb65e6541f30c3b32c913881a257cdd34618179955640`). Gegengeprüft: auf
+`d9006c1` liefert der Druckmodus für **beide** Zeilen `48d761b7…`. Der Unterschied zwischen
+beiden Ständen ist als vollständige Liste verankert — genau **4** Wegfälle im Golden-Satz,
+**0** neue Belege, alles andere byte-identisch.
+
+**Beobachtung ohne Erklärung (nicht kaschiert):** ein einzelner Referenzlauf der **Berliner**
+Mutationsprobe war rot (1 Assertion), vier unmittelbar folgende Läufe grün (je 10/10). Der
+Direktlauf der Suite war in beiden Umgebungsvarianten grün. Naheliegender Verdacht ist die
+`Date.now()`-basierte Sperr-TTL im gemeinsamen `e2e-vertrag-geruest.js` unter Last; belegt ist
+das **nicht**. Die Berliner Suite ist von diesem Sprint fachlich nicht berührt.
+
+**Rückweg:** `git revert` der Commits, Redeploy. Es gibt keinen Datenstand, der
+zurückzudrehen wäre — nichts wird gelöscht, nichts migriert.
