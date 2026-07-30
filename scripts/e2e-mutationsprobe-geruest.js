@@ -38,7 +38,10 @@ function kopiereVerzeichnis(quelle, ziel) {
   }
 }
 
-function baueAbzug(suite) {
+// zusatzdateien: repo-relative Pfade, die eine Suite ZUSAETZLICH braucht
+// (z. B. scripts/fixtures/test-profiles.js beim 25A-Vertrag). Rueckwaerts-
+// kompatibel: ohne Angabe ist der Abzug byte-identisch zum bisherigen Verhalten.
+function baueAbzug(suite, zusatzdateien = []) {
   const basis = fs.mkdtempSync(path.join(os.tmpdir(), "helmut-e2e-mutation-"));
   kopiereVerzeichnis(path.join(ROOT, "lib"), path.join(basis, "lib"));
   kopiereVerzeichnis(path.join(ROOT, "test", "fixtures", "pardok"), path.join(basis, "test", "fixtures", "pardok"));
@@ -49,6 +52,12 @@ function baueAbzug(suite) {
   for (const datei of ["helmut-flags.json"]) {
     const q = path.join(ROOT, datei);
     if (fs.existsSync(q)) fs.copyFileSync(q, path.join(basis, datei));
+  }
+  for (const rel of zusatzdateien) {
+    const q = path.join(ROOT, rel);
+    const z = path.join(basis, rel);
+    fs.mkdirSync(path.dirname(z), { recursive: true });
+    fs.copyFileSync(q, z);
   }
   return basis;
 }
@@ -65,10 +74,10 @@ function fuehreSuiteAus(basis, suite) {
 
 // mutationen: [{ name, beschreibung, datei, von, nach }] — jede Mutation nimmt GENAU EINE
 // Garantie zurueck; `von` muss in `datei` genau einmal vorkommen.
-function fuehreMutationsprobe({ titel, suite, mutationen }) {
+function fuehreMutationsprobe({ titel, suite, mutationen, zusatzdateien = [] }) {
   const verbose = process.argv.includes("--verbose");
 
-  const referenz = baueAbzug(suite);
+  const referenz = baueAbzug(suite, zusatzdateien);
   const rLauf = fuehreSuiteAus(referenz, suite);
   fs.rmSync(referenz, { recursive: true, force: true });
   console.log(`\n${titel} — Suite: scripts/${suite}\n`);
@@ -82,7 +91,7 @@ function fuehreMutationsprobe({ titel, suite, mutationen }) {
   let ueberlebt = 0;
   const zeilen = [];
   for (const m of mutationen) {
-    const basis = baueAbzug(suite);
+    const basis = baueAbzug(suite, zusatzdateien);
     const ziel = path.join(basis, m.datei);
     const inhalt = fs.readFileSync(ziel, "utf8");
     if (!inhalt.includes(m.von)) {
