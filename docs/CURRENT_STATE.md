@@ -1,6 +1,72 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-30 (**Sprint Fix Befund 27A-2: symmetrische Ausschuss-Zuständigkeit
+**Letzte Aktualisierung:** 2026-07-30 (**Sprint Phase-1-Punkt 25 — Ende-zu-Ende-Nachweis für den
+Pilotmandanten (Bund), geschnitten in 25A (deterministischer Repository-E2E-Vertrag) und 25B
+(regulärer Production-Nachweis nach PR #185). TEILWEISE ABGESCHLOSSEN — 25A vollständig erfüllt,
+25B wartet auf den ersten regulären Lauf nach dem Deployment.** **Wichtige Statuskorrektur zum
+Block darunter: PR #184 (11:54:27 UTC) und PR #185 (13:21:45 UTC) sind am 2026-07-30 GEMERGT;
+`main` = `cf290ab`.** **25A:** neuer Vertrag `scripts/pilot-e2e-vertrag-test.js` (**96/96**,
+identisch mit und ohne Production-Secrets, deterministisch über 3 Läufe) führt ein synthetisches,
+klar markiertes Bundesdokument durch die **echten Produktionsfunktionen** DIP-Normalisierung →
+Crawl-Item → DSGVO-minimiertes Rohdokument (Regel-0-Identität) → `runUnderstandingShadow` →
+aktiver Matching-Pfad (echtes `matching-audit`, Audit AN wie Production, **M8 AUS**) →
+persistierte Begründung/Signale → sichtbare Erklärung → Entscheidung → Lage-Auswahl. Alle 10
+Pflichtfälle des Sprintauftrags abgedeckt: echter Ausschussbezug (Bund) · thematische Nähe ohne
+Ausschuss · Landes- und Kommunalvorgang mit ähnlich benanntem Ausschuss (Stamm
+`arbeit-und-soziales` — Regression zu Befund 27A-2: **kein** Ausschussbeleg, Thema bleibt,
+kontrafaktisch bewiesen, dass der entfallene Beleg (34) die Stufe kippen würde) · Irrelevanz →
+„Ignorieren" · fehlende/unbekannte Ebene und unvollständige Institutionsangabe fail-closed ·
+doppelte Verarbeitung idempotent (Understanding `duplicate:7`, Matching-Fingerabdruck, genau 1
+aktuelle Zeile je Vorgang) · Zweitmandant getrennt · unberechtigter Zugriff abgelehnt (ohne
+Mandant, Cross-Tenant-Write, fremde Profilkennung `CROSS_TENANT_WRITE`) · Störfall ohne
+falsches Grün (KI-Fehler → `failed`, Publish-Abbruch → alte Generation bleibt).
+**Mutationsprobe `scripts/pilot-e2e-mutationsprobe.js`: 10/10 rot** — alle 6 Pflichtmutationen
+(Zuständigkeit umgangen · Mandantenfilter entfernt · Irrelevanz zugelassen · Stufe falsch ·
+Begründung verliert Pflichtbeleg · Doppelverarbeitung sichtbar) plus 4 unabhängige Zweitwege,
+jede gegen Produktionsdateien; das gemeinsame Probe-Gerüst wurde rückwärtskompatibel um
+`zusatzdateien` erweitert (Berlin 10/10 rot und Brandenburg 17/17 rot nachgemessen, unverändert).
+**Nutzerpfad belegt** (Route `/api/app/start` → `briefing.lageBriefing` bzw. `/api/lage/briefing`;
+Persistenz `matching_results`/`knowledge_objects`/`ko_document_links`/`matching_runs`/`decisions`;
+Filter, Sortierung, Frische-/Störungssignale, Mobile via Browser-Smoke 32/32). **Neue benannte
+Beobachtung B25-1:** die Lage sortiert nach Merkmalsähnlichkeit, nicht nach Entscheidungsstufe —
+ein merkmalsarmer Landes-Kurztext mit gleichem Ausschuss-Stamm kann vor dem dringlichen
+Bundesfall stehen; Belege und Dringlichkeit bleiben korrekt, der Vertrag pinnt das ehrlich
+(E4/E4b/I11); eine Sortierungsänderung wäre ein eigener freigabepflichtiger Sprint (verwandt mit
+M-8). **25B, bereits vorweggenommen (rein lesend):** Wiederholung der PR-184-Messung nach dem
+Merge — **qualifizierte falsche Ausschussbelege NACHHER = 0** (VORHER 14), 16 entfallen
+(14 `land` + 2 `kommune`), 0 neu, **10 836/10 836** Paare sonst byte-identisch, Score-Delta
+ausschließlich 34, `decisions`-Abgleich 10/10 exakt; die **5** aktuellen Zeilen mit falschem Beleg
+stammen sämtlich aus Läufen **vor** dem Merge (07:56:55 bzw. 16:04 UTC). **25B noch offen:**
+Deployment-`READY`-Beleg (Vercel-Zugriff fehlt in dieser Sitzung — dieselbe Grenze wie PR #184;
+Ersatzweg: Lauftelemetrie des ersten Laufs nach dem Merge) und mindestens eine
+`matching_results`-Zeile aus einem **regulären, vollständig abgeschlossenen** Lauf des aktiven
+Pilotmandanten nach dem Deployment — nächste reguläre Termine laut aktiver `vercel.json`:
+`pipeline` 16:00 UTC, `crawl` 20:00/04:00 UTC. **Kein manueller Lauf, kein neuer Cron/Trigger,
+keine automatische Überwachung behauptet.** **Tests (real ermittelt):** neuer Vertrag **96/96** ·
+neue Probe **10/10 rot** · Ausschuss-Zuständigkeit 86/86 · Erklärung 64/64 + Abdeckung 60/60 ·
+Entscheidungen 38/38 · Audit 178/178 · M8-Gate 40/40 · Radar-Ausschussbeleg 30/30 ·
+Drei-Profile-E2E 94/94 · Mandantentrennung 14/14 + Tenant-Guard 37/37 + Cross-Tenant 43/43 ·
+Lage 138/138 + 6/6 + 9/9 · Berlin 76/76 + 10/10 rot · Brandenburg 98/98 + 17/17 rot ·
+Befund-27A2-Probe 9/9 rot · Offline-Suite **ohne** Secrets (maßgeblich, bildet CI nach)
+**184/188** gegen Basislinie `origin/main` `cf290ab` **183/187** mit **byte-identischer**
+Fehlschlagliste (privacy-vollstaendigkeit, profile-db, provision-tenant, tenant-neutrality —
+umgebungsbedingt, im CI grün); mit Secrets 174/188 (dieselben 14 bekannten, nicht aussagekräftig) ·
+Browser-/Mobile-Smoke **32/32**. **Sicherheitsgrenzen eingehalten:** ausschließlich lesende
+Production-Zugriffe (HTTPS-`GET` der schreibgeschützten Messdatei), 0 KI-Aufrufe, 0,00 USD, keine
+Migration, kein Backfill, keine Datenkorrektur, kein manueller Lauf, keine Env-/Flag-/Cron-/
+Budgetänderung, Berlin/Brandenburg/M8 unverändert AUS, keine neuen Mandate, keine
+Production-Rohdaten im Repository (Fixtures künstlich, `.example`-Domänen). **Statusgrenzen:**
+Checkliste Zeile 25 jetzt ⏳ (25A erfüllt, 25B offen — ✅ erst nach 25B); Punkt 27A bleibt
+erfolgreich abgeschlossen, Punkt 27 gesamt bleibt ⏳, 27B bleibt durch Punkt 15 blockiert;
+OP-25 (Cron-Fairness) getrennt und unverändert; M8 AUS. **Nächster Schritt:** Merge-Entscheidung
+über den 25A-PR (nur Tests + Doku, keine Produktionswirkung), danach Folgeauftrag 25B nach
+[`roadmap/punkt-25-e2e-nachweis.md`](roadmap/punkt-25-e2e-nachweis.md) §6 (rein lesend, nach dem
+ersten regulären Lauf des Pilotmandanten). Geänderte Dateien: `scripts/pilot-e2e-vertrag-test.js`
+(neu), `scripts/pilot-e2e-mutationsprobe.js` (neu), `scripts/e2e-mutationsprobe-geruest.js`
+(additiv `zusatzdateien`), `docs/roadmap/punkt-25-e2e-nachweis.md` (neu, kanonisch),
+`docs/roadmap/phase_1_checkliste.md` (Zeile 25 ⏳), `docs/CURRENT_STATE.md`. Branch
+`claude/phase-1-punkt-25-e2e-bcsru5`, PR folgt (Nummer wird nach Eröffnung hier nachgetragen).) ·
+(**Sprint Fix Befund 27A-2: symmetrische Ausschuss-Zuständigkeit
 — inklusive Nachtrag „fehlende Ebene fail-closed". TEILWEISE ABGESCHLOSSEN — der Fix ist gebaut,
 offline und an echten Production-Eingaben belegt, die im ersten Durchgang benannte Abweichung ist
 im Nachtrag GESCHLOSSEN; was fehlt, ist Betreiberentscheidung, Merge und der Production-Nachweis
