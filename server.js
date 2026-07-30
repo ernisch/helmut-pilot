@@ -840,7 +840,18 @@ async function handleRequest(request, response) {
           .catch((error) => ({ available: false, reason: "build-timeout", error: error && error.message, items: [], personalizedRecommendations: [], personMentions: [] }));
         const push = await withTimeout(sendBriefingReadyPush(briefing, profile), 30000, "cron-briefing-push")
           .catch((error) => ({ ok: false, reason: "push-timeout", error: error && error.message }));
-        return { available: Boolean(briefing && briefing.available), pushSkipped: Boolean(push && push.skipped), pushReason: (push && push.reason) || null };
+        // P29-1: ein Timeout ist KEIN Erfolg. Der Befund wird in die Mandats-
+        // antwort gehoben, damit die Fairness-Buchfuehrung ihn sieht
+        // (cron-fairness.ergebnisFehlgeschlagen): kein erfundener letzter
+        // Erfolg, keine faelschlich zurueckgesetzte Fehlerserie.
+        const buildTimeout = Boolean(briefing && briefing.reason === "build-timeout");
+        const pushTimeout = Boolean(push && push.ok === false && push.reason === "push-timeout");
+        return {
+          available: Boolean(briefing && briefing.available),
+          pushSkipped: Boolean(push && push.skipped),
+          pushReason: (push && push.reason) || null,
+          ...(buildTimeout || pushTimeout ? { ok: false, bounded: true, reason: buildTimeout ? "build-timeout" : "push-timeout" } : {})
+        };
       }, { deadlineMs: 240000 });
       // P0-1: Lauf-Kennzahlen persistieren (Zaehler/Status, KEIN Briefingtext).
       // W-2: kanonische Zustaende (failed/success statt error/ok/empty; der
@@ -1066,7 +1077,16 @@ async function handleRequest(request, response) {
           .catch((error) => ({ status: "stable", bounded: true, reason: "lage-check-timeout", error: error && error.message }));
         const push = await withTimeout(sendLageChangePush(lageCheck, profile), 30000, "cron-lage-push")
           .catch((error) => ({ ok: false, reason: "push-timeout", error: error && error.message }));
-        return { lageCheck, push };
+        // P29-1: der innere Timeout maskiert sich fuer die PUSH-Logik bewusst als
+        // status:'stable' (kein Push auf unbekannter Lage) — fuer die Fairness-
+        // Buchfuehrung wird er hier als Fehler ausgewiesen statt als Erfolg gebucht.
+        const lageTimeout = Boolean(lageCheck && lageCheck.bounded === true);
+        const pushTimeout = Boolean(push && push.ok === false && push.reason === "push-timeout");
+        return {
+          lageCheck,
+          push,
+          ...(lageTimeout || pushTimeout ? { ok: false, bounded: true, reason: lageTimeout ? (lageCheck.reason || "lage-check-timeout") : "push-timeout" } : {})
+        };
       }, { deadlineMs: 240000 }), 280000, "cron-lage-check-gesamt")
         .catch((error) => ({ ok: false, bounded: true, reason: "lage-check-timeout", error: error && error.message }));
       console.log(`[cron/lage-check] ${Date.now() - t0}ms tenants=${summary && summary.tenants} bounded=${Boolean(summary && summary.bounded)}`);
