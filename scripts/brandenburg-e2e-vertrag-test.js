@@ -140,15 +140,18 @@ LAUF.zweitprofil = PROFIL_B.id;
 // sondern durch die Institutionsnennungen im Text — genau wie im echten Pfad
 // (classification.deriveDecisionLevel / geografienAusText).
 //
-// BEWUSSTE ENTSCHEIDUNG zu den Kontrollfaellen: die Analysen der Kontrolldokumente nennen
-// KEINEN Ausschuss. Grund ist eine reale Produkteigenschaft, kein Testtrick:
-// normalizeCommittee faltet "Ausschuss fuer Inneres und Kommunales" (Brandenburg) UND
-// "Ausschuss fuer Inneres, Sicherheit und Ordnung" (Berlin) auf denselben Merkmalsstamm
-// "inneres" — eine Ausschussnennung im Berliner Kontrollfall erzeugte also einen ECHTEN
-// Ausschuss-Beleg ueber die Landesgrenze hinweg. Dieser Vertrag prueft die
-// LANDES-Trennung (Ebene/Geografie/Priorisierung), nicht die Ausschussnormalisierung;
-// das Verhalten selbst ist dokumentiert (matching.js normalizeCommittee) und bleibt
-// unveraendert.
+// BEFUND 27A-1 — REALER FEHLER im aktiven Matching (Einstufung korrigiert 2026-07-30):
+// normalizeCommittee (matching.js) faltet "Ausschuss fuer Inneres und Kommunales"
+// (Brandenburg) UND "Ausschuss fuer Inneres, Sicherheit und Ordnung" (Berlin) auf
+// denselben Merkmalsstamm "inneres" — ein Berliner Vorgang kann beim Brandenburger
+// Profil einen FALSCHEN Ausschussbeleg erhalten (und umgekehrt), sobald die Analyse den
+// fremden Landesausschuss nennt. Die Kontrollfall-Analysen nennen deshalb bewusst KEINEN
+// Ausschuss: der Vertrag VERMEIDET den Fehler, statt ihn zu beweisen. Er belegt damit
+// zuverlaessig Ebene/Geografie/Priorisierung/Mandantentrennung, aber noch NICHT die
+// vollstaendige fachliche Trennung der Landesmandate auf Ausschussebene. Nach dem
+// getrennten Matchingfix ist HIER eine Regressionserwartung zu ergaenzen: fremder
+// Landesausschuss in der Analyse -> KEIN ausschuss-Beleg beim Brandenburger Profil.
+// Solange gilt 27A als teilweise abgeschlossen (docs/CURRENT_STATE.md, Befund 27A-1).
 const AI_FIXTURES = [
   {
     marker: "Straf- und Gewalttaten",
