@@ -1,6 +1,92 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-30 (**Sprint OP-25, regulärer Production-Nachweis, 1. Durchgang:
+**Letzte Aktualisierung:** 2026-07-30 (**Sprint Punkt 27A: Brandenburger Ende-zu-Ende-Repository-Vertrag.
+27A TEILWEISE ABGESCHLOSSEN — Korrektur vom 2026-07-30 (Betreiberentscheidung): der Vertrag selbst
+steht (86/86, Mutationsprobe 14/14 rot), aber der dabei dokumentierte Befund **27A-1** ist ein
+REALER FEHLER im aktiven Matching (Ausschussnormalisierungs-Kollision, Details unten) — die
+vollständige fachliche Trennung der Landesmandate auf Ausschussebene ist damit noch nicht
+abgenommen. Der Matchingfix wird in einem getrennten Folgesprint umgesetzt; erst danach (plus
+Regressionserwartung im Vertrag) kann 27A als erfolgreich abgeschlossen gelten. Checklisten-Punkt
+27 gesamt bleibt ⏳; 27B (regulärer Production-Nachweis) bleibt offen und durch Punkt 15 blockiert.** **Verbindliche Definition:** „Punkt 27"
+ist Zeile 27 der [`roadmap/phase_1_checkliste.md`](roadmap/phase_1_checkliste.md) (E2E-Test
+Brandenburger Profil) — **nicht** OP-27 der Restliste (Production-Aktivierung des M8-Relevanzriegels;
+Status dort unverändert, `HELMUT_MATCHING_RELEVANZ_GATE` bleibt AUS, der Riegel wurde weder aktiviert
+noch analysiert noch erweitert). **Startprüfung bestanden:** Arbeitsbaum sauber, HEAD = `origin/main`
+= `5d475e6` (erwarteter Mindeststand, geprüft), PR #180 (`fc3c4cc`) und #181 (`5d475e6`) vollständig
+in `main`; keine neue Arbeit zu Punkt 27/Brandenburg; `docs/roadmap/analyse-punkte-24-30.md` existiert
+weiterhin nicht (dokumentierter Widerspruch, kein Blocker). **PR #132 gezielt geprüft, nicht
+verwendet:** sein Gate `HELMUT_LANDESMODUL_FREIGABE` ist auf `main` vollständig durch
+`HELMUT_LANDESMODULE` (14A) ersetzt (0 Treffer in aktivem Code); die für Punkt 27 relevante
+Erkenntnis B-5 (ohne Brandenburger Landtagsprofil bleibt jede Aktivierung ein No-Op) ist
+Punkt-15-/27B-Vorbedingung und bleibt in der PR-Tabelle dokumentiert; PR weder gemergt noch
+geschlossen (getrennte Betreiberentscheidung). **Umsetzung:** neue Suite
+`scripts/brandenburg-e2e-vertrag-test.js` (**86/86**) + `scripts/brandenburg-e2e-mutationsprobe.js`
+(**14/14 Mutationen rot**, davon 4 Brandenburg-spezifisch: BB-Typtabelle vergisst die Kleine Anfrage ·
+`vorgangsKennung` liefert keinen Bezug mehr · delete-Stubs werden wieder Inhalt · unbelegte
+Fremdtreffer bleiben in der Entscheidungsliste). **Wiederverwendung aus 26A bewusst NUR als
+technisches Testgerüst:** `scripts/e2e-vertrag-geruest.js` (Zählwerk, Fixture-Understanding,
+In-Memory-Store mit PostgREST-Vertragsgrenzen, Audit-Doppel auf echtem `matching-audit`, atomare
+Publish-Semantik) + `scripts/e2e-mutationsprobe-geruest.js` (Abzug/Ausführung/Auswertung); Berlin und
+Brandenburg behalten getrennte Profile, Gold-Records, Analyse-Fixtures und Assertions; **kein
+Produktionscode geändert, kein generisches Länder-Framework**; der Berliner Vertrag ist nach der
+Umstellung unverändert gültig (**76/76**, Mutationsprobe **10/10 rot**, Einstieg
+`scripts/berlin-e2e-vertrag-test.js` unverändert). Der Vertrag führt echte Gold-Records (BB
+**V-369657** Kleine Anfrage „Straf- und Gewalttaten" als relevanter Hauptfall · **V-369325**
+Plenarprotokoll der konstituierenden Sitzung als fachlich irrelevante Kontrolle, zugleich
+delete-Stub-Paar · **V-370081** Gesetzentwurf Kommunalverfassung regional passend/fachfremd, als
+Mehrdokument-Vorgang Beweis „Dokument ≠ Vorgang" · BLN **V-351039** Waffengebührenordnung als
+thematisch ähnliche Berlin-Kontrolle · klar markiertes synthetisches Bundes-Kontrolldokument) durch
+die **echten Produktionsfunktionen**: `pardok-parser` → `zuRohdokument` (Herkunft **BRA**, Ebene
+land, Geografie Brandenburg, Vorgangsbezug, Regel-0-Identität) → `runUnderstandingShadow` →
+`runMatchingShadow` mit echtem `matching-audit` (Audit AN wie Production, **M8 nachweislich AUS**) →
+persistierte `matching_results` samt Begründung/Signalen → sichtbare Erklärung
+(`matching-erklaerung`, Belegpflicht) → `decisions` → Lage-Auswahl mit Original-PDF des Landtags
+Brandenburg als sichtbarer Quelle. **Bewiesen (Auszug):** Vorgangsbezug ohne `VID`/`DBID` (externe
+Kennung VNr+ReihNr), 0 Kennungskonflikte, ehrliche Stub-/Leer-Zähler · Regel 0 hält zwei echte
+Records mit derselben Protokoll-PDF auseinander · Rang 1 + Belege Ausschuss („Inneres und
+Kommunales")/Thema/Region beim richtigen Profil · Erklärung deckungsgleich mit gespeicherten
+Gründen; die Berliner Kontrollzeile ohne Beleg liefert `null` statt einer erfundenen Erklärung ·
+Entscheidung „Sofort reagieren" nur beim richtigen Mandanten; konstituierende Sitzung „Ignorieren";
+Kommunalverfassung kein „Sofort reagieren"; **gemessen:** der thematisch ähnliche Berliner Fall
+trägt beim Brandenburger Profil eine **negative** Merkmalsähnlichkeit (−0,1539) ohne Beleg und
+erreicht die Entscheidungsliste gar nicht · Berlin bleibt `land`+Berlin, Bund bleibt `bund` —
+nichts wird Brandenburger Landesvorgang · Cross-Tenant-Schreibversuch und fremde Profilkennung
+werden hart abgelehnt · Idempotenz beider Stufen (Understanding `duplicate:5`, 0 Schreibvorgänge;
+Matching `idempotent`, Projektion byte-identisch) · erzwungener Störfall erzeugt
+`skipped-error`/`fehlgeschlagen` statt falschem Grün, ein `failed`-Vorgang erreicht das Matching
+strukturell nie, ein Publish-Abbruch lässt die vorherige Generation intakt. **Damit ist die bisher
+nur hergeleitete Ebenen-Unabhängigkeit des aktiven Matchings erstmals für ein Brandenburger
+Landtagsprofil offline gemessen** ([`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md)
+§48.5 — der Production-Nachweis bleibt 27B). **Befund 27A-1 — REALER FEHLER im aktiven Matching
+(gefunden, in diesem Sprint bewusst NICHT behoben):** `normalizeCommittee` faltet den
+Brandenburger „Ausschuss für Inneres und Kommunales" und den Berliner „Ausschuss für Inneres,
+Sicherheit und Ordnung" auf denselben Merkmalsstamm `inneres`. Dadurch kann ein **Berliner**
+Vorgang beim **Brandenburger** Profil einen **falschen Ausschussbeleg** erhalten (und umgekehrt),
+sobald die Analyse den fremden Landesausschuss nennt — der Beleg speist `matched_features`,
+Begründung, sichtbare Erklärung und über das Ausschussgewicht (34) auch die Entscheidung. Der
+Vertrag **vermeidet** den Fehler derzeit, indem die Kontrollfall-Fixtures bewusst keinen Ausschuss
+nennen (im Suitenkopf als Befund markiert). Er beweist deshalb **zuverlässig**: Erhaltung von
+Ebene und Geografie über den gesamten Pfad, Priorisierung des relevanten Falls, Belegpflicht der
+Erklärung, Mandantentrennung, Idempotenz und Fehlerpfade — aber noch **NICHT** die vollständige
+fachliche Trennung der Landesmandate auf Ausschussebene. **Fehlende Abnahme für 27A:** ein
+Vertragsnachweis, dass ein fremder Landesvorgang **mit** Ausschussnennung beim Brandenburger
+Profil keinen Ausschussbeleg erhält — möglich erst nach dem getrennten Matchingfix (dann als
+Regressionserwartung in Vertrag und Mutationsprobe zu ergänzen). Tests:
+neue Suite **86/86**, Mutationsprobe **14/14 rot**, Berlin **76/76** + **10/10 rot**, Offline-Suite
+lokal **171/185** gegen Basislinie `main` (unveränderter Worktree `5d475e6`) **170/184** — die
+**+1** ist die neue Suite, die **14** Fehlschläge sind **byte-identisch** dieselben
+umgebungsbedingten wie auf `main` (kein Regress), Browser-Smoke **32/32**. **Keine Migration, kein
+neuer Schalter, keine Aktivierung (Berlin, Brandenburg, M8 unverändert aus), keine
+Cron-/Budget-/Quellenänderung, 0 KI-Aufrufe, 0,00 USD, kein Production-Zugriff, keine realen
+Testmandate angelegt.** Der Merge hat keine unmittelbare Production-Wirkung (nur Tests + Doku).
+**Offen:** der Matchingfix zu Befund 27A-1 samt Regressionserwartung im Vertrag (getrennter
+Folgesprint; erst damit wird 27A erfolgreich abgeschlossen); 27B (blockiert durch Punkt 15 und den
+freigabepflichtigen Dispatch-Cutover — `pardokDispatch` liefert strukturell `items: []`); der
+OP-25-Production-Nachweis und OP-27 bleiben
+getrennte, unangetastete Themen. Branch `claude/brandenburg-offline-repo-contract-bs10y0`, PR #182.
+Kanonisch: Checklisten-Zeile 27 in [`roadmap/phase_1_checkliste.md`](roadmap/phase_1_checkliste.md)
++ Kopfkommentar der Suite.) ·
+(**Sprint OP-25, regulärer Production-Nachweis, 1. Durchgang:
 BLOCKIERT — das Beobachtungsfenster enthält 0 reguläre Läufe, weil zwischen dem Production-Deployment
 des PR-179-Merges (READY 2026-07-30 06:27:19 UTC) und dem Sprintende (~07:20 UTC) kein regulärer
 fairness-relevanter Cron-Termin lag. Keine Production-Änderung; ausschließlich lesende Zugriffe.**
