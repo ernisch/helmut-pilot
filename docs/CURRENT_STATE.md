@@ -50,6 +50,12 @@ Gegenprobe mit `bund`, 14e zeigt, dass die Entscheidung schon in `matchedFeature
 die 16 entfallenen Belege verteilen sich weiterhin ausschließlich auf `land` (14) und `kommune`
 (2); kein Objekt ohne belegte Ebene trägt überhaupt eine Ausschussangabe. **Es geht kein echter
 Beleg verloren.** Mutation **N9** ist umgedreht: sie baut die Lücke wieder ein und wird erkannt.
+**Zwei Vertragssuiten brauchten dieselbe Fixture-Korrektur**, die zweite
+(`drei-profile-e2e-test.js`, drei Bundes-KOs ohne Ebene) fiel **erst im CI** auf — und damit eine
+**methodische Lücke, die hier benannt wird:** der Vergleich „Fehlschlagliste byte-identisch zur
+Basislinie" ist blind für Regressionen *innerhalb* von Suiten, die lokal ohnehin umgebungsbedingt
+fehlschlagen. Maßgeblich ist deshalb ab jetzt der lokale Lauf **ohne** Production-Secrets
+(`env -u SUPABASE_URL -u SUPABASE_SERVICE_ROLE_KEY`), weil er die CI-Umgebung nachbildet.
 **NEBENBEFUND GETRENNT UND GESTOPPT (§52.7):** die **9** EU- und **2** internationalen Paare mit
 Ausschussbeleg bleiben unverändert. Gemessen an den echten Gremiennamen nennen sie **teils echte
 Bundestagsausschüsse** („Ausschuss für Arbeit und Soziales", „Auswärtiger Ausschuss"), **teils
@@ -68,10 +74,16 @@ Bundes-Sonderbehandlung → 21 Assertionen rot; N9 = fehlende Ebene wieder zugel
 Befundzeugen zum Fixzeugen umgedreht) · `matching-erklaerung-test` **64/64** ·
 `radar-committee-evidence-test` **30/30** (Ebenen jetzt ausdrücklich, neuer Fall 14) · Brandenburg-Vertrag **98/98** und
 Mutationsprobe **17/17 rot** (neu M17) · Berlin-Vertrag **76/76** und Mutationsprobe **10/10 rot** ·
-Offline-Suite lokal **173/187** gegen Basislinie `main` `4d69380` **173/187**, Fehlschlagliste
-**byte-identisch** (14 umgebungsbedingte Fehlschläge, kein Regress) · Browser-/Mobile-Smoke
+`drei-profile-e2e-test` **94/94** (Fixtures korrigiert, Assertionen unverändert) ·
+Offline-Suite **ohne Production-Secrets** (bildet CI nach, maßgeblich) **183/187** gegen
+Basislinie `origin/main` **183/187** mit **identischer** Fehlschlagliste (4 Suiten brauchen hier
+Netz/DB, im CI grün); der Lauf **mit** Secrets ergibt 173/187 = Basislinie, ist für Regressionen
+aber **nicht** aussagekräftig · Browser-/Mobile-Smoke
 **32/32** · **CI-Gate grün (maßgeblich laut `CLAUDE.md` §6): Offline-Suite 187/187 und
-Browser-/Mobile-Smoke 32/32**, Lauf `30543624379` auf Commit `6a8aaec`. **Beobachtung ohne Erklärung, nicht kaschiert:** ein einzelner Referenzlauf der
+Browser-/Mobile-Smoke 32/32**, Lauf `30545738005` auf Commit `b4d4059`. **Ehrlich benannt:** der
+erste Anlauf des Nachtrags (Lauf `30545272316`, Commit `6520e09`) war **rot** — 186/187,
+`drei-profile-e2e-test.js`; genau daraus entstanden die zweite Fixture-Korrektur und die
+Methodenkorrektur oben. **Beobachtung ohne Erklärung, nicht kaschiert:** ein einzelner Referenzlauf der
 **Berliner** Mutationsprobe war rot (1 Assertion), fünf folgende Läufe grün (je 10/10); Verdacht ist
 die `Date.now()`-Sperr-TTL im gemeinsamen `e2e-vertrag-geruest.js` unter Last, belegt ist das nicht.
 **Sicherheitsgrenzen eingehalten:** ausschließlich lesende Production-Zugriffe (HTTPS-`GET`, keine

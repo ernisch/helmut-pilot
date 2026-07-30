@@ -3014,13 +3014,14 @@ unverändert bleiben; beides zugleich ist nicht möglich.
 | `scripts/berlin-e2e-mutationsprobe.js` (unverändert) | **10/10 rot** |
 | `node scripts/run-offline-tests.js` (lokal) | **172/186** gegen Basislinie `main` **171/185** — die **+1** ist die neue Suite, die **14** Fehlschläge sind dieselben umgebungsbedingten (Fehlschlagliste byte-identisch verglichen, kein Regress) |
 | `node scripts/browser-smoke-test.js` (lokal) | **32/32** |
-| **CI-Gate** `Syntax + Offline-Suiten` (maßgeblich, `CLAUDE.md` §6) | **187/187** — Lauf `30543624379`, Commit `6a8aaec` |
+| **CI-Gate** `Syntax + Offline-Suiten` (maßgeblich, `CLAUDE.md` §6) | **187/187** — Lauf `30545738005`, Commit `b4d4059` |
 | **CI-Gate** `Browser-/Mobile-Smoke (Chromium)` | **32/32** — derselbe Lauf |
 
-Beide Pflicht-Checks sind grün. Die 14 lokalen Fehlschläge sind ausschließlich umgebungsbedingt
-(Production-Secrets in dieser Sitzung gesetzt) und existieren im CI nicht — dort ist der
-`[NETZ-GUARD]` nur bei `pardok-shadow-test.js` angesprungen. Der einzige spätere Commit auf dem
-Branch dokumentiert genau dieses Ergebnis.
+Beide Pflicht-Checks sind grün; im CI ist der `[NETZ-GUARD]` nur bei `pardok-shadow-test.js`
+angesprungen. **Ehrlich benannt:** der CI-Lauf `30545272316` (Commit `6520e09`, erster Anlauf des
+Nachtrags) war **rot** — `drei-profile-e2e-test.js`, 186/187. Genau daraus entstand die
+Fixture-Korrektur und die Methodenkorrektur in §52.6. Der frühere Lauf `30543624379` (Commit
+`6a8aaec`) war grün, betraf aber noch den laxen Stand vor dem Nachtrag.
 | **CI-Gate** `Syntax + Offline-Suiten` (maßgeblich, `CLAUDE.md` §6) | **186/186** — Lauf `30534950711`, Commit `962af06` |
 | **CI-Gate** `Browser-/Mobile-Smoke (Chromium)` | **32/32** — derselbe Lauf |
 
@@ -3280,13 +3281,14 @@ Berechnung. Alle 14 qualifizierten Paare:
 | `scripts/berlin-e2e-mutationsprobe.js` | **10/10 rot** |
 | `node scripts/run-offline-tests.js` (lokal) | **173/187** gegen Basislinie `main` `94f73e4` **172/186** — die **+1** ist die neue Suite; die Fehlschlagliste ist **byte-identisch** (14 umgebungsbedingte Fehlschläge, kein Regress) |
 | `node scripts/browser-smoke-test.js` (lokal) | **32/32** |
-| **CI-Gate** `Syntax + Offline-Suiten` (maßgeblich, `CLAUDE.md` §6) | **187/187** — Lauf `30543624379`, Commit `6a8aaec` |
+| **CI-Gate** `Syntax + Offline-Suiten` (maßgeblich, `CLAUDE.md` §6) | **187/187** — Lauf `30545738005`, Commit `b4d4059` |
 | **CI-Gate** `Browser-/Mobile-Smoke (Chromium)` | **32/32** — derselbe Lauf |
 
-Beide Pflicht-Checks sind grün. Die 14 lokalen Fehlschläge sind ausschließlich umgebungsbedingt
-(Production-Secrets in dieser Sitzung gesetzt) und existieren im CI nicht — dort ist der
-`[NETZ-GUARD]` nur bei `pardok-shadow-test.js` angesprungen. Der einzige spätere Commit auf dem
-Branch dokumentiert genau dieses Ergebnis.
+Beide Pflicht-Checks sind grün; im CI ist der `[NETZ-GUARD]` nur bei `pardok-shadow-test.js`
+angesprungen. **Ehrlich benannt:** der CI-Lauf `30545272316` (Commit `6520e09`, erster Anlauf des
+Nachtrags) war **rot** — `drei-profile-e2e-test.js`, 186/187. Genau daraus entstand die
+Fixture-Korrektur und die Methodenkorrektur in §52.6. Der frühere Lauf `30543624379` (Commit
+`6a8aaec`) war grün, betraf aber noch den laxen Stand vor dem Nachtrag.
 | **CI-Gate** `Syntax + Offline-Suiten` (maßgeblich, `CLAUDE.md` §6) | **187/187** — Lauf `30539215650`, Commit `3767b12` |
 | **CI-Gate** `Browser-/Mobile-Smoke (Chromium)` | **32/32** — derselbe Lauf |
 
@@ -3450,6 +3452,7 @@ ein realer Bundesvorgang trägt seit Sprint 2/19 immer eine Ebene. Die Fixtures 
 | 1, 1b, 2, 2b, 4, 4b, 6, 6b, 6c, 7, 7b, 8, 8b, 5c | keine Ebene | `decision_level: "bund"` |
 | 3, 3b (kommunaler Kontext) | keine Ebene | `decision_level: "kommune"` |
 | 5, 5b (Landtagskontext) | keine Ebene | `decision_level: "land"` + belegte Landesgeografie |
+| `drei-profile-e2e-test.js`, alle 3 KOs | keine Ebene | `decision_level: "bund"` im `ko()`-Helfer |
 
 Keine Evidenzprüfung wurde abgeschwächt — alle 25 bisherigen Assertionen bleiben unverändert
 gültig und grün. Zwei Fälle sind sogar **strenger** geworden: 5b beweist den Landestreffer jetzt
@@ -3464,6 +3467,24 @@ Bundestagsprofil, eigener Ausschuss, voller Name wörtlich im Inhalt, kein wider
 Institutionsmarker — erhält **keinen** Ausschussbeleg, wenn die Ebene `null`, `""` oder
 `unknown` ist. 14d ist die Gegenprobe mit `bund` (Beleg), 14e zeigt, dass die Entscheidung
 schon in `matchedFeatures` fällt und nicht erst im Radar.
+
+**Eine zweite Suite brauchte dieselbe Korrektur — gefunden erst im CI.**
+`scripts/drei-profile-e2e-test.js` führt drei Fixtures, die ausdrücklich
+Bundestagsausschüsse bei der Beratung von Bundesgesetzen zeigen, aber ebenfalls kein
+`decision_level` trugen; mit der strengen Regel entfiel dort der Ausschussbeleg am **eigenen**
+Vorgang. Dieselbe Korrektur im gemeinsamen `ko()`-Helfer (`decision_level: "bund"`), keine
+Assertion geändert — **94/94** wieder grün, inklusive der Trennungszusicherungen („kein
+Ausschuss-Treffer am fremden KO").
+
+> **Methodische Lücke, benannt statt geglättet:** der bis dahin verwendete Vergleich
+> „Fehlschlagliste byte-identisch zur Basislinie" ist **blind** für Regressionen *innerhalb* von
+> Suiten, die lokal ohnehin umgebungsbedingt fehlschlagen — `drei-profile-e2e-test.js` war in
+> dieser Sitzung eine davon (Production-Secrets gesetzt). Der aussagekräftige lokale Lauf ist
+> deshalb der **ohne** Production-Secrets
+> (`env -u SUPABASE_URL -u SUPABASE_SERVICE_ROLE_KEY node scripts/run-offline-tests.js`), weil er
+> die CI-Umgebung nachbildet. So gemessen: Branch **183/187**, Basislinie `origin/main`
+> **183/187**, Fehlschlagliste identisch (vier Suiten, die in dieser Umgebung Netz/DB brauchen und
+> im CI grün sind). Diese Gegenprobe ist ab jetzt der Maßstab.
 
 **Production-Wirkung der Verschärfung: 0 zusätzliche Wegfälle** — erneut rein lesend gemessen
 (§52.4): die entfallenen Belege verteilen sich weiterhin ausschließlich auf `land` (14) und
@@ -3574,15 +3595,18 @@ Zuständigkeitsableitungen —, wird der Vertrag rot. Die Brandenburg-Probe wäc
 | `scripts/berlin-e2e-vertrag-test.js` | **76/76** |
 | `scripts/berlin-e2e-mutationsprobe.js` | **10/10 rot** |
 | lokale Wiederholung der Production-Messung | 14 → **0** qualifizierte Fälle, 0 neue Belege |
-| `node scripts/run-offline-tests.js` (lokal) | **173/187** gegen Basislinie `main` `4d69380` **173/187** — Fehlschlagliste byte-identisch (14 umgebungsbedingte Fehlschläge, kein Regress); keine neue Suite, weil die Mutationsprobe bewusst nicht auf `-test.js` endet |
+| `scripts/drei-profile-e2e-test.js` (Fixtures korrigiert, Assertionen unverändert) | **94/94** |
+| `node scripts/run-offline-tests.js` **ohne Production-Secrets** (bildet CI nach, maßgeblich) | **183/187** gegen Basislinie `origin/main` **183/187** — Fehlschlagliste **identisch** (4 Suiten brauchen in dieser Umgebung Netz/DB, im CI grün) |
+| `node scripts/run-offline-tests.js` (mit gesetzten Secrets, nur informativ) | **173/187** = Basislinie; dieser Vergleich ist für Regressionen **nicht** aussagekräftig (siehe §52.6) |
 | `node scripts/browser-smoke-test.js` (lokal) | **32/32** |
-| **CI-Gate** `Syntax + Offline-Suiten` (maßgeblich, `CLAUDE.md` §6) | **187/187** — Lauf `30543624379`, Commit `6a8aaec` |
+| **CI-Gate** `Syntax + Offline-Suiten` (maßgeblich, `CLAUDE.md` §6) | **187/187** — Lauf `30545738005`, Commit `b4d4059` |
 | **CI-Gate** `Browser-/Mobile-Smoke (Chromium)` | **32/32** — derselbe Lauf |
 
-Beide Pflicht-Checks sind grün. Die 14 lokalen Fehlschläge sind ausschließlich umgebungsbedingt
-(Production-Secrets in dieser Sitzung gesetzt) und existieren im CI nicht — dort ist der
-`[NETZ-GUARD]` nur bei `pardok-shadow-test.js` angesprungen. Der einzige spätere Commit auf dem
-Branch dokumentiert genau dieses Ergebnis.
+Beide Pflicht-Checks sind grün; im CI ist der `[NETZ-GUARD]` nur bei `pardok-shadow-test.js`
+angesprungen. **Ehrlich benannt:** der CI-Lauf `30545272316` (Commit `6520e09`, erster Anlauf des
+Nachtrags) war **rot** — `drei-profile-e2e-test.js`, 186/187. Genau daraus entstand die
+Fixture-Korrektur und die Methodenkorrektur in §52.6. Der frühere Lauf `30543624379` (Commit
+`6a8aaec`) war grün, betraf aber noch den laxen Stand vor dem Nachtrag.
 
 **Verankerte Haschwerte** (Abschnitt 0 der Suite): die **regelfreie** Bundestagsprojektion ist
 byte-identisch zum Stand `d9006c1`
