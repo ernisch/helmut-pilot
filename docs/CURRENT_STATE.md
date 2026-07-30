@@ -58,7 +58,9 @@ ermittelt):** Schreibschutzsuite **48/48** · `matching-ausschuss-zustaendigkeit
 Mutationsprobe **16/16 rot** · Berlin-Vertrag **76/76** und Mutationsprobe **10/10 rot** ·
 Offline-Suite lokal **173/187** gegen Basislinie `main` `94f73e4` **172/186** — die **+1** ist
 die neue Suite, die Fehlschlagliste ist **byte-identisch** (14 umgebungsbedingte Fehlschläge,
-kein Regress) · Browser-/Mobile-Smoke **32/32**. **Statusgrenzen eingehalten:** Punkt 27A
+kein Regress) · Browser-/Mobile-Smoke **32/32** · **CI-Gate grün (maßgeblich laut `CLAUDE.md`
+§6): Offline-Suite 187/187 und Browser-/Mobile-Smoke 32/32**, Lauf `30539215650` auf Commit
+`3767b12`. **Statusgrenzen eingehalten:** Punkt 27A
 bleibt erfolgreich abgeschlossen (die Messung widerlegt keines seiner Abnahmekriterien,
 sondern bestätigt §50.4), Punkt 27 gesamt bleibt ⏳, 27B bleibt durch Punkt 15 blockiert,
 OP-25 und OP-27 unverändert, M8 bleibt AUS. **Rückweg:** `git revert` — es gibt keinen

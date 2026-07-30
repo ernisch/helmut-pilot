@@ -3273,4 +3273,9 @@ Berechnung. Alle 14 qualifizierten Paare:
 | `scripts/berlin-e2e-mutationsprobe.js` | **10/10 rot** |
 | `node scripts/run-offline-tests.js` (lokal) | **173/187** gegen Basislinie `main` `94f73e4` **172/186** — die **+1** ist die neue Suite; die Fehlschlagliste ist **byte-identisch** (14 umgebungsbedingte Fehlschläge, kein Regress) |
 | `node scripts/browser-smoke-test.js` (lokal) | **32/32** |
+| **CI-Gate** `Syntax + Offline-Suiten` (maßgeblich, `CLAUDE.md` §6) | **187/187** — Lauf `30539215650`, Commit `3767b12` |
+| **CI-Gate** `Browser-/Mobile-Smoke (Chromium)` | **32/32** — derselbe Lauf |
+
+Beide Pflicht-Checks sind grün. Die 14 lokalen Fehlschläge sind ausschließlich umgebungsbedingt
+(Production-Secrets in der Sitzung gesetzt) und existieren im CI nicht.
 
