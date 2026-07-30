@@ -3547,7 +3547,7 @@ beiden Ständen ist als vollständige Liste verankert — genau **4** Wegfälle 
 **0** neue Belege, alles andere byte-identisch.
 
 **Beobachtung ohne Erklärung (nicht kaschiert):** ein einzelner Referenzlauf der **Berliner**
-Mutationsprobe war rot (1 Assertion), vier unmittelbar folgende Läufe grün (je 10/10). Der
+Mutationsprobe war rot (1 Assertion), fünf folgende Läufe grün (je 10/10). Der
 Direktlauf der Suite war in beiden Umgebungsvarianten grün. Naheliegender Verdacht ist die
 `Date.now()`-basierte Sperr-TTL im gemeinsamen `e2e-vertrag-geruest.js` unter Last; belegt ist
 das **nicht**. Die Berliner Suite ist von diesem Sprint fachlich nicht berührt.
