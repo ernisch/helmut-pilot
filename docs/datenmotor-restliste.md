@@ -451,8 +451,9 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 
 #### OP-25 · Crawl-Zeitdeckelung: je Lauf wird nur ein Teil der Mandanten erreicht (neu, Sprint 23B-1; Prioritätsklasse P1)
 - **Status (2026-07-30, Abschlussdurchgang):** **Repository-Umsetzung vollständig und CI-belegt,
-  Production-Nachweis offen.** Beide Pflicht-Checks grün auf `eeaa363` (Lauf `30499103799`:
-  Offline **183/183**, Browser **32/32**). Drei Nachprüfungen ergänzt: **(1)** die Garantie
+  Production-Nachweis offen.** Beide Pflicht-Checks **zweimal grün**: `eeaa363`
+  (Lauf `30499103799`) und nach der Härtung `2dc4154` (Lauf `30516881711`) — jeweils Offline
+  **183/183**, Browser **32/32**. Drei Nachprüfungen ergänzt: **(1)** die Garantie
   `ceil(n/k)` gilt **nur** für `k ≥ 1` — ein Lauf ohne Kapazität wird jetzt als solcher
   ausgewiesen (`kapazitaet`, `fortschrittsgarantie`, `ohneFortschritt`, `obergrenzeLaeufe: null`,
   wörtlicher `systemError`), schreibt **nichts** und verschiebt die Warteschlange nicht.
