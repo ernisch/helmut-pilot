@@ -14,9 +14,10 @@
 //   D  Das Laden des Moduls oeffnet keine Verbindung und laedt `storage.js`
 //      nicht — im Prozess existiert kein Schreibpfad der Anwendung.
 //   E  Reine Auswertung: `bewertePaar` rechnet mit den ECHTEN Produktions-
-//      funktionen und stellt die Gegenprobe ohne Ausschussmerkmal daneben.
-//   F  Befundzeuge 27A-2 (HEUTIGER Stand, absichtlich festgeschrieben) und
-//      Regressionszeuge 27A-1 (der bereits behobene Landesfall).
+//      funktionen, stellt die Gegenprobe ohne Ausschussmerkmal daneben und
+//      rekonstruiert den Stand VOR dem Fix (unbestimmte Zustaendigkeit).
+//   F  Fixzeuge 27A-2 (behoben: der Fall trug den Beleg vorher und traegt ihn
+//      jetzt nicht mehr) und Regressionszeuge 27A-1 (der Landesfall).
 //
 // REIN OFFLINE: 0 KI, 0 Netz, 0 Datenbank, 0 Zufall. Die Suite setzt die
 // Supabase-Umgebungsvariablen im eigenen Prozess bewusst zurueck, damit der
@@ -164,12 +165,26 @@ console.log("\nC · holen(): Ablehnung vor jedem Netzzugriff");
     && bewLand.matchedFeaturesOhne.every((f) => f.type !== "ausschuss"));
   check("E4 die Gegenprobe laesst die Aehnlichkeit unangetastet (Merkmalsvektor unberuehrt)",
     typeof bewLand.similarity === "number" && Number.isFinite(bewLand.similarity));
-  check("E5 `istQualifiziert` verlangt Bundesprofil UND Ebene land UND Ausschussbeleg",
-    w.istQualifiziert({ politische_ebene: "bundestag", aktiv: true, geloescht_at: null }, KO_LAND, bewLand) === true
-    && w.istQualifiziert({ politische_ebene: "landtag", aktiv: true, geloescht_at: null }, KO_LAND, bewLand) === false
-    && w.istQualifiziert({ politische_ebene: "bundestag", aktiv: false, geloescht_at: null }, KO_LAND, bewLand) === false
-    && w.istQualifiziert({ politische_ebene: "bundestag", aktiv: true, geloescht_at: "2026-01-01" }, KO_LAND, bewLand) === false
-    && w.istQualifiziert({ politische_ebene: "bundestag", aktiv: true, geloescht_at: null }, { ...KO_LAND, decision_level: "bund" }, bewLand) === false);
+  const BUND_AKTIV = { politische_ebene: "bundestag", aktiv: true, geloescht_at: null };
+  check("E5 `istQualifiziertVorher` verlangt Bundesprofil UND Ebene land UND Ausschussbeleg (Messdefinition)",
+    w.istQualifiziertVorher(BUND_AKTIV, KO_LAND, bewLand) === true
+    && w.istQualifiziertVorher({ politische_ebene: "landtag", aktiv: true, geloescht_at: null }, KO_LAND, bewLand) === false
+    && w.istQualifiziertVorher({ politische_ebene: "bundestag", aktiv: false, geloescht_at: null }, KO_LAND, bewLand) === false
+    && w.istQualifiziertVorher({ politische_ebene: "bundestag", aktiv: true, geloescht_at: "2026-01-01" }, KO_LAND, bewLand) === false
+    && w.istQualifiziertVorher(BUND_AKTIV, { ...KO_LAND, decision_level: "bund" }, bewLand) === false);
+  check("E5b `istQualifiziert` (NACHHER) ist fuer dasselbe Paar falsch — genau das ist die Abnahme des Fixes",
+    w.istQualifiziert(BUND_AKTIV, KO_LAND, bewLand) === false
+    && w.istQualifiziertMitBeleg(BUND_AKTIV, KO_LAND, true) === true
+    && w.istQualifiziertMitBeleg(BUND_AKTIV, KO_LAND, false) === false);
+  check("E8 die VORHER-Rekonstruktion nutzt dieselbe echte matchedFeatures-Funktion, nur mit unbestimmter Zustaendigkeit",
+    (() => {
+      const matching = require("../lib/helmut/matching");
+      const pf = matching.profileFeatures(PROFIL_BUND);
+      const kf = matching.knowledgeObjectFeatures(KO_LAND);
+      const rekonstruiert = w.belegeOhneZustaendigkeitsregel(pf, kf);
+      return JSON.stringify(rekonstruiert) === JSON.stringify(bewLand.matchedFeaturesVorher)
+        && rekonstruiert.some((f) => f.type === "ausschuss");
+    })());
   check("E6 `zuProfil` bildet politische_ebene/bundesland/ausschuesse wie storage.fromMandateProfileRow ab",
     PROFIL_BUND.parliamentType === "Bundestag" && PROFIL_BUND.state === "Berlin"
     && JSON.stringify(PROFIL_BUND.committees) === JSON.stringify(["Gesundheit"])
@@ -180,23 +195,56 @@ console.log("\nC · holen(): Ablehnung vor jedem Netzzugriff");
     && JSON.stringify(w.zuVektor([1, 2])) === "[1,2]"
     && w.zuVektor("kaputt") === null && w.zuVektor(null) === null);
 
-  console.log("\nF · Befundzeuge 27A-2 (heutiger Stand) und Regressionszeuge 27A-1");
+  console.log("\nF · Fixzeuge 27A-2 (behoben) und Regressionszeuge 27A-1");
 
-  // F1–F4 schreiben den HEUTIGEN, offenen Befund fest. Ein Fix-Sprint dreht diese
-  // Erwartungen bewusst um — dass die Suite dann rot wird, ist die Absicht.
-  check("F1 BEFUND 27A-2 (offen): das Bundesprofil erhaelt den fremden Ausschussbeleg",
-    bewLand.ausschussBeleg === true && bewLand.matchedFeatures.some((f) => f.type === "ausschuss" && f.value === "Gesundheit"),
+  // F1–F5 schrieben bis zum Fix-Sprint den OFFENEN Befund fest; sie sind bewusst
+  // umgedreht worden. Jede Zeile prueft jetzt BEIDE Staende: dass die Messung den
+  // Fehler ueberhaupt sehen kann (VORHER) und dass er weg ist (NACHHER). Ohne den
+  // Vorher-Teil waere die 0 nach dem Fix wertlos — sie koennte auch von einem
+  // kaputten Messwerkzeug kommen.
+  check("F1 FIX 27A-2: das Bundesprofil erhaelt beim Landesvorgang KEINEN Ausschussbeleg mehr",
+    bewLand.ausschussBeleg === false && !bewLand.matchedFeatures.some((f) => f.type === "ausschuss"),
     JSON.stringify(bewLand.matchedFeatures));
-  check("F2 BEFUND 27A-2: der geteilte normalisierte Token ist `gesundheit`",
-    JSON.stringify(bewLand.token) === JSON.stringify(["gesundheit"]), JSON.stringify(bewLand.token));
-  check("F3 BEFUND 27A-2: der Beleg schlaegt mit genau dem Ausschussgewicht 34 in die Entscheidung durch",
-    bewLand.scoreDelta === 34, String(bewLand.scoreDelta));
-  check("F4 BEFUND 27A-2: er erscheint als sichtbare Mitgliedschaftsbehauptung, die Gegenprobe hat keine",
-    /deinen Ausschuss Gesundheit/.test(String(bewLand.begruendung))
-    && !/Ausschuss/.test(String(bewLand.begruendungOhne || "")),
-    `${bewLand.begruendung} || ${bewLand.begruendungOhne}`);
-  check("F5 BEFUND 27A-2: ist der fremde Ausschuss der einzige Beleg, traegt allein er den M8-Riegel",
-    bewLand.m8Mit === true && bewLand.m8Ohne === false);
+  check("F1b BEFUNDZEUGE: derselbe Fall trug den Beleg vor dem Fix (das Werkzeug kann den Fehler sehen)",
+    bewLand.ausschussBelegVorher === true
+    && bewLand.matchedFeaturesVorher.some((f) => f.type === "ausschuss" && f.value === "Gesundheit"),
+    JSON.stringify(bewLand.matchedFeaturesVorher));
+  check("F2 BEFUNDZEUGE: der geteilte normalisierte Token war `gesundheit` und ist jetzt leer",
+    JSON.stringify(bewLand.tokenVorher) === JSON.stringify(["gesundheit"])
+    && JSON.stringify(bewLand.token) === JSON.stringify([]),
+    `${JSON.stringify(bewLand.tokenVorher)} -> ${JSON.stringify(bewLand.token)}`);
+  check("F3 FIX 27A-2: der entfallene Beleg trug genau das Ausschussgewicht 34 — jetzt traegt er 0",
+    bewLand.scoreDeltaVorher === 34 && bewLand.scoreDelta === 0,
+    `vorher ${bewLand.scoreDeltaVorher} / nachher ${bewLand.scoreDelta}`);
+  check("F4 FIX 27A-2: die sichtbare Mitgliedschaftsbehauptung war da und ist weg",
+    /deinen Ausschuss Gesundheit/.test(String(bewLand.begruendungVorher))
+    && !/Ausschuss/.test(String(bewLand.begruendung || "")),
+    `${bewLand.begruendungVorher} || ${bewLand.begruendung}`);
+  check("F5 FIX 27A-2: M8 trug die Zeile nur wegen des fremden Ausschusses — jetzt passiert sie den Riegel nicht",
+    bewLand.m8Vorher === true && bewLand.m8Mit === false && bewLand.m8Ohne === false);
+  check("F5b FIX 27A-2: ausser dem Ausschussbeleg aendert sich nichts, und es entsteht kein neuer Beleg",
+    bewLand.nurAusschussVeraendert === true && bewLand.neuerBeleg === false);
+  // Der KOMMUNALE Fall aus derselben Messung (Kreistagsausschuss). Er ist in
+  // §51 nicht mitgezaehlt worden (die Ebenentabelle dort fuehrt `kommune` mit 0),
+  // taucht in der Fix-Messung aber auf: 2 Paare, dieselbe Fehlerklasse.
+  const PROFIL_BUND_SOZIALES = w.zuProfil({
+    politische_ebene: "bundestag", bundesland: "Bayern", partei: "SPD",
+    wahlkreis: "Wahlkreis 217", ausschuesse: ["Arbeit und Soziales"]
+  });
+  const bewKommune = w.bewertePaar(PROFIL_BUND_SOZIALES, {
+    ...KO_LAND, id: "ko-probe-kommune", decision_level: "kommune", affected_geographies: [],
+    ausschuesse: ["Sozialausschuss Kreistag Ostallgäu"]
+  });
+  check("F5c FIX 27A-2: auch der KOMMUNALE Fall (Kreistagsausschuss) trug den Beleg und traegt ihn nicht mehr",
+    bewKommune.ausschussBelegVorher === true
+    && JSON.stringify(bewKommune.tokenVorher) === JSON.stringify(["arbeit-und-soziales"])
+    && bewKommune.ausschussBeleg === false,
+    JSON.stringify([bewKommune.tokenVorher, bewKommune.token]));
+  // Der Nebenbefund bleibt bewusst unveraendert (EU-Ebene, §52.7).
+  const bewEu = w.bewertePaar(PROFIL_BUND, { ...KO_LAND, id: "ko-probe-eu", decision_level: "eu", affected_geographies: [] });
+  check("F5d NEBENBEFUND: EU-Vorgaenge behalten fuer Bundesmandate ihr bisheriges Verhalten (getrennte Entscheidung)",
+    bewEu.ausschussBeleg === true && bewEu.ausschussBelegVorher === true,
+    JSON.stringify(bewEu.matchedFeatures));
 
   // F6/F7 sichern den bereits behobenen Befund 27A-1 (Landesprofile) ab.
   const PROFIL_BLN = w.zuProfil({ politische_ebene: "landtag", bundesland: "Berlin", ausschuesse: ["Gesundheit"] });

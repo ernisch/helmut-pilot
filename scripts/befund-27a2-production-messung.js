@@ -1,15 +1,23 @@
 "use strict";
 
-// Befund 27A-2 — rein lesende Production-Messung.
+// Befund 27A-2 — rein lesende Production-Messung (Messung UND Fix-Abnahme).
 // =============================================================================
-// WOZU: Befund 27A-2 (docs/matching-nachvollziehbarkeit.md §50.5/§51) besagt, dass
-// ein BUNDESTAGSPROFIL einen Ausschussbeleg erhaelt, wenn ein LANDESVORGANG einen
-// gleichnamigen Landes-/Kreisausschuss nennt. `normalizeCommittee` faltet beide
-// Bezeichnungen auf denselben Stamm; `ausschussBelegZulaessig` greift heute NUR
-// fuer Profile mit bestimmtem Landes-Zustaendigkeitsraum und laesst Bundesprofile
-// unveraendert durch. Dieses Werkzeug misst die Betroffenheit an echten
-// Production-Daten und macht dieselbe Messung nach einem spaeteren Fix
-// wiederholbar (Abnahme des Fix-Sprints).
+// WOZU: Befund 27A-2 (docs/matching-nachvollziehbarkeit.md §50.5/§51/§52) besagt,
+// dass ein BUNDESTAGSPROFIL einen Ausschussbeleg erhaelt, wenn ein LANDESVORGANG
+// einen gleichnamigen Landes-/Kreisausschuss nennt. `normalizeCommittee` faltet
+// beide Bezeichnungen auf denselben Stamm; `ausschussBelegZulaessig` griff vor dem
+// Fix NUR fuer Profile mit bestimmtem Landes-Zustaendigkeitsraum und liess
+// Bundesprofile unveraendert durch. Dieses Werkzeug hat die Betroffenheit an
+// echten Production-Daten gemessen (§51) und ist seit dem Fix zugleich die
+// ABNAHME (§52): es rechnet in EINEM Lauf beide Staende und stellt sie gegenueber.
+//
+// VORHER/NACHHER OHNE ZWEITEN CODESTAND: `belegeOhneZustaendigkeitsregel` ruft
+// dieselbe echte `matchedFeatures`-Funktion mit unbestimmtem Zustaendigkeitsraum
+// auf beiden Seiten auf. Die Regel antwortet dann "nichts entscheidbar ->
+// unveraendert" — das ist exakt das Verhalten von `main` vor dem Fix. Der Lauf
+// belegt damit: welche Belege entfallen, dass keiner NEU entsteht, dass sich
+// ausser dem Ausschussbeleg nichts aendert, und dass die lokale Vorher-Rechnung
+// mit den gespeicherten `decisions` uebereinstimmt.
 //
 // ── SCHREIBSCHUTZ (technisch, nicht nur zugesagt) ────────────────────────────
 // 1. Es gibt in dieser Datei GENAU EINE HTTP-Funktion (`holen`). Ihre
@@ -140,6 +148,16 @@ function zuVektor(wert) {
   return null;
 }
 
+// VORHER-Rekonstruktion (Fix-Sprint 27A-2): dieselben echten Produktionsfunktionen,
+// aber mit unbestimmtem Zustaendigkeitsraum auf BEIDEN Seiten. `ausschussBelegZulaessig`
+// antwortet dann "nichts entscheidbar -> unveraendert" und der Beleg entsteht wie vor
+// jeder Zustaendigkeitspruefung. Fuer Bundestagsprofile ist das exakt das Verhalten von
+// `main` vor diesem Fix (die 27A-1-Regel war dort inert) — damit liefert EIN Lauf den
+// Vorher/Nachher-Vergleich, ohne einen zweiten Codestand auschecken zu muessen.
+function belegeOhneZustaendigkeitsregel(pf, kf) {
+  return m.matchedFeatures({ ...pf, zustaendigkeit: null }, { ...kf, zustaendigkeit: null });
+}
+
 // Bewertet EIN Paar (Profil, Wissensobjekt) mit den echten Produktionsfunktionen
 // und stellt der Originalrechnung die Gegenprobe OHNE Ausschussmerkmal gegenueber.
 // Die Gegenprobe entfernt NUR den Beleg — Merkmalsvektor, Aehnlichkeit und die
@@ -149,7 +167,9 @@ function bewertePaar(profil, ko) {
   const pf = m.profileFeatures(profil);
   const kf = m.knowledgeObjectFeatures(ko);
   const feats = m.matchedFeatures(pf, kf);
+  const featsVorher = belegeOhneZustaendigkeitsregel(pf, kf);
   const ausschussFeats = feats.filter((f) => f.type === "ausschuss");
+  const ausschussFeatsVorher = featsVorher.filter((f) => f.type === "ausschuss");
   const featsOhne = feats.filter((f) => f.type !== "ausschuss");
 
   const kEmb = zuVektor(ko.embedding) || m.embedKnowledgeObject(ko);
@@ -157,26 +177,42 @@ function bewertePaar(profil, ko) {
 
   const sig = begruendung.buildSignals(feats, sim);
   const sigOhne = begruendung.buildSignals(featsOhne, sim);
+  const sigVorher = begruendung.buildSignals(featsVorher, sim);
   const score = decisions.scoreKnowledgeObject(ko, { similarity: sim, matched_features: feats });
   const scoreOhne = decisions.scoreKnowledgeObject(ko, { similarity: sim, matched_features: featsOhne });
+  const scoreVorher = decisions.scoreKnowledgeObject(ko, { similarity: sim, matched_features: featsVorher });
 
   // M8 ausschliesslich lokal als reine Funktion, mit ausdruecklicher Eingabe.
   const durchM8 = (liste) => relevanz.wendeRelevanzGateAn([{ id: "probe", matched_features: liste }], { aktiv: true }).zeilen.length === 1;
+
+  const ohneAusschuss = (liste) => JSON.stringify(liste.filter((f) => f.type !== "ausschuss"));
 
   return {
     profilZustaendigkeit: m.profileZustaendigkeit(profil),
     koZustaendigkeit: m.knowledgeObjectZustaendigkeit(ko),
     ausschussBeleg: ausschussFeats.length > 0,
+    ausschussBelegVorher: ausschussFeatsVorher.length > 0,
     token: [...new Set(ausschussFeats.map((f) => m.slugCommittee(f.value)))],
+    tokenVorher: [...new Set(ausschussFeatsVorher.map((f) => m.slugCommittee(f.value)))],
     similarity: sim,
     matchedFeatures: feats,
+    matchedFeaturesVorher: featsVorher,
     matchedFeaturesOhne: featsOhne,
+    // Ist ALLES ausser dem Ausschussbeleg zwischen Vorher und Nachher byte-identisch?
+    nurAusschussVeraendert: ohneAusschuss(feats) === ohneAusschuss(featsVorher),
+    // Entsteht durch die Regel irgendwo ein NEUER Ausschussbeleg? (darf nie)
+    neuerBeleg: ausschussFeats.length > ausschussFeatsVorher.length,
     begruendung: begruendung.begruendungAusSignalen(sig, feats),
+    begruendungVorher: begruendung.begruendungAusSignalen(sigVorher, featsVorher),
     begruendungOhne: begruendung.begruendungAusSignalen(sigOhne, featsOhne),
-    score, scoreOhne, scoreDelta: score - scoreOhne,
+    score, scoreOhne, scoreVorher,
+    scoreDelta: score - scoreOhne,
+    scoreDeltaVorher: scoreVorher - score,
     entscheidung: decisions.decisionFromScore(score),
+    entscheidungVorher: decisions.decisionFromScore(scoreVorher),
     entscheidungOhne: decisions.decisionFromScore(scoreOhne),
     m8Mit: durchM8(feats),
+    m8Vorher: durchM8(featsVorher),
     m8Ohne: durchM8(featsOhne)
   };
 }
@@ -187,12 +223,22 @@ function bewertePaar(profil, ko) {
 // Ausschusstoken teilen, der als Mitgliedschaft gewertet wird. Fehlende oder
 // widersprueckliche Zustaendigkeitsdaten werden NICHT ergaenzt — solche Faelle
 // zaehlen hier nicht als bestaetigt (sie erscheinen in der Spalte "unklar").
-function istQualifiziert(profilZeile, ko, bewertung) {
+function istQualifiziertMitBeleg(profilZeile, ko, hatAusschussBeleg) {
   return profilZeile.politische_ebene === "bundestag"
     && profilZeile.aktiv === true
     && !profilZeile.geloescht_at
     && ko.decision_level === "land"
-    && bewertung.ausschussBeleg === true;
+    && hatAusschussBeleg === true;
+}
+
+// NACHHER (heutiger Codestand): nach dem Fix muss das 0-mal zutreffen.
+function istQualifiziert(profilZeile, ko, bewertung) {
+  return istQualifiziertMitBeleg(profilZeile, ko, Boolean(bewertung && bewertung.ausschussBeleg));
+}
+
+// VORHER (rekonstruiert ohne Zustaendigkeitsregel): die bekannten 14 Faelle.
+function istQualifiziertVorher(profilZeile, ko, bewertung) {
+  return istQualifiziertMitBeleg(profilZeile, ko, Boolean(bewertung && bewertung.ausschussBelegVorher));
 }
 
 // ── Messlauf ─────────────────────────────────────────────────────────────────
@@ -210,26 +256,57 @@ async function messen() {
   console.log(`mandate_profiles: ${profilZeilen.length} | aktive Bundestagsprofile: ${aktiveBund.length} | davon mit Ausschuss: ${aktiveBund.filter((p) => (p.ausschuesse || []).length).length}`);
   console.log(`knowledge_objects: ${kos.length} | decision_level=land: ${landKos.length} | davon mit Ausschussangabe: ${landKos.filter((k) => [...(k.ausschuesse || []), ...(k.mentioned_committees || [])].length).length}`);
 
-  const faelle = [];
-  let paare = 0, ausschussBelegeGesamt = 0;
+  const faelle = [];            // VORHER qualifiziert = die bekannten 14
+  const faelleNachher = [];     // NACHHER qualifiziert = muss nach dem Fix leer sein
+  const entfallen = [];         // alle Paare, die durch die Regel einen Beleg verlieren
+  let paare = 0, ausschussBelegeGesamt = 0, ausschussBelegeVorher = 0;
+  let nurAusschussVeraendert = 0, neueBelege = 0;
+  const entfallenNachEbene = new Map();
   for (const zeile of aktiveBund) {
     const profil = zuProfil(zeile);
     for (const ko of kos) {
       paare += 1;
       const bewertung = bewertePaar(profil, ko);
       if (bewertung.ausschussBeleg) ausschussBelegeGesamt += 1;
-      if (istQualifiziert(zeile, ko, bewertung)) faelle.push({ profil: deckname.get(zeile.user_id), koId: ko.id, zeile, ko, bewertung });
+      if (bewertung.ausschussBelegVorher) ausschussBelegeVorher += 1;
+      if (bewertung.nurAusschussVeraendert) nurAusschussVeraendert += 1;
+      if (bewertung.neuerBeleg) neueBelege += 1;
+      const eintrag = { profil: deckname.get(zeile.user_id), koId: ko.id, zeile, ko, bewertung };
+      if (bewertung.ausschussBelegVorher && !bewertung.ausschussBeleg) {
+        entfallen.push(eintrag);
+        const ebene = ko.decision_level || "(ohne Wert)";
+        entfallenNachEbene.set(ebene, (entfallenNachEbene.get(ebene) || 0) + 1);
+      }
+      if (istQualifiziertVorher(zeile, ko, bewertung)) faelle.push(eintrag);
+      if (istQualifiziert(zeile, ko, bewertung)) faelleNachher.push(eintrag);
     }
   }
 
   console.log(`\n== ERGEBNIS ==`);
   console.log(`geprueft: ${paare} Paare (Profil x Wissensobjekt)`);
-  console.log(`Paare mit Ausschussbeleg gesamt: ${ausschussBelegeGesamt}`);
-  console.log(`davon QUALIFIZIERT (Bundestagsprofil x Wissensobjekt decision_level=land): ${faelle.length}`);
+  console.log(`Paare mit Ausschussbeleg VORHER (ohne Zustaendigkeitsregel): ${ausschussBelegeVorher}`);
+  console.log(`Paare mit Ausschussbeleg NACHHER (heutiger Codestand)      : ${ausschussBelegeGesamt}`);
+  console.log(`QUALIFIZIERTE Faelle VORHER  (Bundestagsprofil x decision_level=land): ${faelle.length}`);
+  console.log(`QUALIFIZIERTE Faelle NACHHER (Abnahme dieses Fix-Sprints: muss 0 sein): ${faelleNachher.length}`);
   console.log(`betroffene Wissensobjekte: ${new Set(faelle.map((f) => f.koId)).size} | betroffene Profile: ${new Set(faelle.map((f) => f.profil)).size}`);
-  console.log(`geteilte normalisierte Ausschusstoken: ${JSON.stringify([...new Set(faelle.flatMap((f) => f.bewertung.token))])}`);
-  console.log(`Faelle, in denen der Ausschussbeleg der EINZIGE Beleg ist (M8 wuerde sie ohne ihn entfernen): ${faelle.filter((f) => f.bewertung.m8Mit && !f.bewertung.m8Ohne).length}`);
-  console.log(`Faelle mit anderer Entscheidungsstufe ohne den Ausschussbeleg: ${faelle.filter((f) => f.bewertung.entscheidung !== f.bewertung.entscheidungOhne).length}`);
+  console.log(`geteilte normalisierte Ausschusstoken: ${JSON.stringify([...new Set(faelle.flatMap((f) => f.bewertung.tokenVorher))])}`);
+  console.log(`Faelle, in denen der Ausschussbeleg der EINZIGE Beleg war (M8 haette sie nur deshalb behalten): ${faelle.filter((f) => f.bewertung.m8Vorher && !f.bewertung.m8Mit).length}`);
+  console.log(`Faelle mit anderer Entscheidungsstufe als vorher: ${faelle.filter((f) => f.bewertung.entscheidungVorher !== f.bewertung.entscheidung).length}`);
+
+  console.log(`\n== VORHER/NACHHER-VERTRAG (Golden Regression) ==`);
+  console.log(`entfallene Ausschussbelege gesamt: ${entfallen.length}`);
+  console.log(`  nach Ebene des Wissensobjekts  : ${JSON.stringify(Object.fromEntries([...entfallenNachEbene].sort()))}`);
+  console.log(`NEU entstandene Ausschussbelege (muss 0 sein): ${neueBelege}`);
+  console.log(`Paare, in denen sich AUSSER dem Ausschussbeleg nichts geaendert hat: ${nurAusschussVeraendert}/${paare}`
+    + `${nurAusschussVeraendert === paare ? " (alle)" : " — ABWEICHUNG, siehe unten"}`);
+  const scoreDeltas = [...new Set(entfallen.map((f) => f.bewertung.scoreDeltaVorher))].sort((a, b) => a - b);
+  console.log(`Score-Delta der entfallenen Belege (erwartet ausschliesslich 34): ${JSON.stringify(scoreDeltas)}`);
+  const themaErhalten = entfallen.filter((f) => f.bewertung.matchedFeatures.some((x) => x.type === "thema")).length;
+  console.log(`entfallene Belege mit mindestens einem anderen Beleg (Partei/Wahlkreis/Thema): ${entfallen.filter((f) => f.bewertung.matchedFeatures.length > 0).length}/${entfallen.length}`);
+  console.log(`  davon mit erhaltenem THEMA-Beleg (Politikfeld aus dem Ausschuss): ${themaErhalten}/${entfallen.length}`);
+  console.log(`entfallene Belege OHNE jeden weiteren Beleg (ehrlicher Leerzustand, M8 wuerde sie entfernen): ${entfallen.filter((f) => !f.bewertung.m8Mit).length}`);
+  const aehnlichkeitGleich = entfallen.every((f) => Number.isFinite(f.bewertung.similarity));
+  console.log(`Aehnlichkeit aller entfallenen Faelle weiter berechenbar und unveraendert (kein Vektoreingriff): ${aehnlichkeitGleich}`);
 
   for (const f of faelle) {
     const b = f.bewertung;
@@ -237,13 +314,46 @@ async function messen() {
     console.log(`  Zustaendigkeit Profil/KO : ${JSON.stringify(b.profilZustaendigkeit)} / ${JSON.stringify(b.koZustaendigkeit)}`);
     console.log(`  Ausschuesse Profil       : ${JSON.stringify(f.zeile.ausschuesse)}`);
     console.log(`  Ausschuesse Wissensobjekt: ${JSON.stringify([...new Set([...(f.ko.ausschuesse || []), ...(f.ko.mentioned_committees || [])])])}`);
-    console.log(`  geteilter Token          : ${JSON.stringify(b.token)}`);
-    console.log(`  Aehnlichkeit             : ${b.similarity}`);
-    console.log(`  matched_features MIT/OHNE: ${JSON.stringify(b.matchedFeatures)} / ${JSON.stringify(b.matchedFeaturesOhne)}`);
-    console.log(`  Begruendung MIT          : ${b.begruendung}`);
-    console.log(`  Begruendung OHNE         : ${b.begruendungOhne}`);
-    console.log(`  Score/Entscheidung       : MIT ${b.score} "${b.entscheidung}" | OHNE ${b.scoreOhne} "${b.entscheidungOhne}" | Delta ${b.scoreDelta}`);
-    console.log(`  M8 (nur lokal, AN)       : MIT ${b.m8Mit} | OHNE ${b.m8Ohne}`);
+    console.log(`  geteilter Token VORHER   : ${JSON.stringify(b.tokenVorher)} | NACHHER: ${JSON.stringify(b.token)}`);
+    console.log(`  Aehnlichkeit             : ${b.similarity} (unveraendert — sie entsteht aus dem Merkmalsvektor, nicht aus dem Beleg)`);
+    console.log(`  matched_features VORHER  : ${JSON.stringify(b.matchedFeaturesVorher)}`);
+    console.log(`  matched_features NACHHER : ${JSON.stringify(b.matchedFeatures)}`);
+    console.log(`  Begruendung VORHER       : ${b.begruendungVorher}`);
+    console.log(`  Begruendung NACHHER      : ${b.begruendung}`);
+    console.log(`  Score/Entscheidung       : VORHER ${b.scoreVorher} "${b.entscheidungVorher}" | NACHHER ${b.score} "${b.entscheidung}" | Delta ${b.scoreDeltaVorher}`);
+    console.log(`  M8 (nur lokal, AN)       : VORHER ${b.m8Vorher} | NACHHER ${b.m8Mit}`);
+  }
+
+  // Nebenbefund (§52.7): Ausschussbelege an Wissensobjekten, deren Ebene NICHT
+  // `land` und NICHT `bund` ist. Die Regel laesst EU/international bewusst
+  // unveraendert; die Ausschussbezeichnungen werden hier zur fachlichen
+  // Bewertung ausgegeben (oeffentliche Gremiennamen, keine Rohtexte).
+  console.log(`\n== NEBENBEFUND: Ausschussbelege ausserhalb von bund/land (bewusst unveraendert) ==`);
+  const nebenEbenen = new Map();
+  for (const zeile of aktiveBund) {
+    const profil = zuProfil(zeile);
+    for (const ko of kos) {
+      const ebene = ko.decision_level || "(ohne Wert)";
+      if (ebene === "bund" || ebene === "land") continue;
+      const b = bewertePaar(profil, ko);
+      if (!b.ausschussBelegVorher) continue;
+      if (!nebenEbenen.has(ebene)) nebenEbenen.set(ebene, []);
+      nebenEbenen.get(ebene).push({
+        profil: deckname.get(zeile.user_id), koId: ko.id,
+        profilAusschuesse: zeile.ausschuesse || [],
+        koAusschuesse: [...new Set([...(ko.ausschuesse || []), ...(ko.mentioned_committees || [])])],
+        token: b.tokenVorher, nachher: b.ausschussBeleg
+      });
+    }
+  }
+  if (!nebenEbenen.size) console.log("  keine");
+  for (const [ebene, liste] of [...nebenEbenen].sort()) {
+    console.log(`  Ebene ${ebene}: ${liste.length} Paare, ${new Set(liste.map((x) => x.koId)).size} Wissensobjekte`);
+    for (const x of liste) {
+      console.log(`    ${x.profil} x ${x.koId} | Token ${JSON.stringify(x.token)} | Beleg nachher: ${x.nachher}`);
+      console.log(`      Profil-Ausschuesse: ${JSON.stringify(x.profilAusschuesse)}`);
+      console.log(`      KO-Ausschuesse    : ${JSON.stringify(x.koAusschuesse)}`);
+    }
   }
 
   // Persistierter Bestand: welche gespeicherten Ergebniszeilen tragen den Beleg?
@@ -259,11 +369,35 @@ async function messen() {
     console.log(`  ${deckname.get(r.user_id)} x ${r.knowledge_object_id} | rang ${r.rank} | sim ${r.similarity} | aktuell ${r.aktuell} | lauf ${laufDeckname(r.run_id, r.user_id)} | berechnet ${r.berechnet_am}`);
     console.log(`     begruendung: ${r.begruendung}`);
   }
+
+  // Rueckkopplung auf den echten Bestand: stimmt die lokale VORHER-Rechnung mit
+  // den gespeicherten Entscheidungen ueberein? Nur dann rechnet die Gegenprobe
+  // denselben Pfad wie Production — und nur dann ist die NACHHER-Aussage belastbar.
+  const gespeicherteEntscheidungen = await holenAlle("/rest/v1/decisions?select=user_id,knowledge_object_id,score,decision&order=knowledge_object_id.asc");
+  const schluessel = (u, k) => `${u}::${k}`;
+  const bestand = new Map(gespeicherteEntscheidungen.map((d) => [schluessel(d.user_id, d.knowledge_object_id), d]));
+  let gefunden = 0, scoreGleich = 0, stufeWechselt = 0, sofortHeute = 0;
+  console.log(`\n== ABGLEICH MIT GESPEICHERTEN ENTSCHEIDUNGEN (decisions) ==`);
+  for (const f of faelle) {
+    const d = bestand.get(schluessel(f.zeile.user_id, f.koId));
+    if (!d) continue;
+    gefunden += 1;
+    const b = f.bewertung;
+    const passt = Number(d.score) === Number(b.scoreVorher);
+    if (passt) scoreGleich += 1;
+    if (d.decision !== b.entscheidung) stufeWechselt += 1;
+    if (d.decision === "Sofort reagieren") sofortHeute += 1;
+    console.log(`  ${f.profil} x ${f.koId} | gespeichert ${d.score} "${d.decision}" | lokal VORHER ${b.scoreVorher} "${b.entscheidungVorher}" ${passt ? "(identisch)" : "(ABWEICHUNG)"} | NACHHER ${b.score} "${b.entscheidung}"`);
+  }
+  console.log(`  Paare mit gespeicherter Entscheidung: ${gefunden}/${faelle.length} | Score identisch zur lokalen VORHER-Rechnung: ${scoreGleich}/${gefunden}`);
+  console.log(`  davon wechselt die Stufe durch den Fix: ${stufeWechselt} | heute auf "Sofort reagieren": ${sofortHeute}`);
 }
 
 module.exports = {
   ERLAUBTE_TABELLEN, HTTP_METHODE, pfadErlaubt, holen,
-  zuProfil, zuVektor, bewertePaar, istQualifiziert
+  zuProfil, zuVektor, bewertePaar,
+  belegeOhneZustaendigkeitsregel,
+  istQualifiziertMitBeleg, istQualifiziert, istQualifiziertVorher
 };
 
 if (require.main === module) {
