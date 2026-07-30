@@ -702,6 +702,89 @@ const SECHS = ["anna-a", "bela-b", "cem-c", "dora-d", "emil-e", "frida-f"];
       F.normalizeState({ version: 9, crons: {} }).version === 9);
   }
 
+  // ═══ 18b2) Verweigerte Mandatssperre ist KEINE Verarbeitung ═══════════════════════════════
+  abschnitt("18b2) Verweigerte Sperre crawl-<mandat>: kein Erfolg, keine Kapazitaet");
+  {
+    // AUSGANGSLAGE: der Fairnessvermerk wird VOR der Verarbeitung geschrieben, die Sperre
+    // `crawl-<mandat>` erst in runSourceCrawl. Ueberlappen zwei Laeufe, kann Lauf B ein
+    // Mandat also registrieren und erst danach an der Sperre abgewiesen werden. runSourceCrawl
+    // WIRFT dabei nicht, sondern liefert `{ skipped: true, reason: "already running" }`.
+    // Das darf nicht als Verarbeitung zaehlen.
+    const uhr = makeUhr();
+    const ablage = makeAblage({}, uhr);
+    // Reihenfolge bei leerem Zustand ermitteln, damit der Test das erste Mandat kennt.
+    const plan0 = F.planTenantOrder({ cronName: "crawl", tenantIds: SECHS, state: {}, nowMs: uhr.now() });
+    const abgewiesen = plan0.order[0];
+    const echtVerarbeitet = [];
+    const r = await F.runTenantsFairly({
+      cronName: "crawl", tenantIds: SECHS, runId: "lauf-B",
+      deadlineMs: 110000, reserveMs: 0, startedMs: uhr.now(), now: uhr.now,
+      loadState: ablage.load, saveState: ablage.save,
+      perTenant: async (id) => {
+        if (id === abgewiesen) return { skipped: true, reason: "already running" };
+        uhr.vor(60000);
+        echtVerarbeitet.push(id);
+        return { ok: true };
+      }
+    });
+    const f = r.fairness;
+    const eintrag = F.entryOf(F.normalizeState(ablage.dump()), "crawl", abgewiesen);
+    check("(1) zaehlt NICHT als begonnene Mandatsverarbeitung",
+      !f.begonnen.includes(abgewiesen), f.begonnen.join(","));
+    check("(2) erhoeht die gemessene Kapazitaet k NICHT",
+      f.kapazitaet === echtVerarbeitet.length, `k=${f.kapazitaet}, echt=${echtVerarbeitet.length}`);
+    check("(3) schiebt den Fairnesszustand nicht mit einem erfundenen Erfolg nach hinten",
+      eintrag && eintrag.letzterErfolgAt === null && eintrag.erfolge === 0 && eintrag.status !== "erfolgreich",
+      JSON.stringify(eintrag));
+    check("(3b) und wird auch nicht als Fehler verbucht (nichts ist fehlgeschlagen)",
+      eintrag && eintrag.letzterFehlerAt === null && eintrag.fehler === 0 && eintrag.fehlerSerie === 0,
+      JSON.stringify(eintrag));
+    check("(4) verfaelscht die Obergrenze ceil(n/k) nicht",
+      f.obergrenzeLaeufe === F.fairnessBound(f.aktive, echtVerarbeitet.length),
+      `${f.obergrenzeLaeufe} vs ${F.fairnessBound(f.aktive, echtVerarbeitet.length)}`);
+    check("(5) andere wartende Mandate werden dadurch NICHT spaeter verarbeitet (Platz wird genutzt)",
+      echtVerarbeitet.length === 2, echtVerarbeitet.join(","));
+    check("(6) wird NICHT als Erfolg protokolliert", !f.erfolgreich.includes(abgewiesen), f.erfolgreich.join(","));
+    check("(6b) wird NICHT als Fehlschlag protokolliert", !f.fehlgeschlagen.includes(abgewiesen), f.fehlgeschlagen.join(","));
+    check("(6c) ist eindeutig als verweigerte/bereits laufende Verarbeitung beobachtbar",
+      f.laeuftBereits.includes(abgewiesen) && Array.isArray(f.lockVerweigert) && f.lockVerweigert.includes(abgewiesen),
+      JSON.stringify({ laeuftBereits: f.laeuftBereits, lockVerweigert: f.lockVerweigert }));
+    check("Der Aufrufer sieht die Originalantwort weiter unveraendert (kein Bruch fuer Bestandscode)",
+      (r.results.find((x) => x.politicianId === abgewiesen) || {}).reason === "already running",
+      JSON.stringify(r.results.find((x) => x.politicianId === abgewiesen)));
+    // Ein DRITTER ueberlappender Lauf darf das Mandat weiterhin nicht anfassen.
+    const plan2 = F.planTenantOrder({ cronName: "crawl", tenantIds: SECHS, state: ablage.dump(), nowMs: uhr.now() });
+    check("Innerhalb der Frist bleibt das Mandat fuer weitere Laeufe gesperrt",
+      !plan2.order.includes(abgewiesen) && plan2.blockiert.some((b) => b.politicianId === abgewiesen),
+      plan2.order.join(","));
+    // Nach Ablauf der Frist ist es wieder planbar — und steht vor den zwischenzeitlich
+    // erfolgreich verarbeiteten Mandaten, weil sein Versuchszeitpunkt aelter ist.
+    uhr.setzen(uhr.now() + F.DEFAULT_STALE_CLAIM_MS + 1000);
+    const plan3 = F.planTenantOrder({ cronName: "crawl", tenantIds: SECHS, state: ablage.dump(), nowMs: uhr.now() });
+    check("Nach Ablauf der Frist ist es wieder planbar", plan3.order.includes(abgewiesen), plan3.order.join(","));
+    check("Und es steht vor den zwischenzeitlich verarbeiteten Mandaten",
+      echtVerarbeitet.every((id) => plan3.order.indexOf(abgewiesen) < plan3.order.indexOf(id)),
+      plan3.order.join(","));
+    // Vertrag zum Scheduler: genau diese Zeichenkette wird erkannt.
+    check("Der erkannte Grund entspricht dem, was runSourceCrawl wirklich liefert",
+      /return \{ skipped: true, reason: "already running" \};/
+        .test(fs.readFileSync(path.join(ROOT, "lib", "helmut", "scheduler.js"), "utf8")));
+    check("Ein anderer 'skipped'-Grund gilt weiterhin als normaler Versuch (z. B. deaktiviertes Profil)",
+      await (async () => {
+        const u2 = makeUhr();
+        const a2 = makeAblage({}, u2);
+        const r2 = await F.runTenantsFairly({
+          cronName: "morning-briefing", tenantIds: ["nur-einer"], runId: "l",
+          deadlineMs: 240000, reserveMs: 0, startedMs: u2.now(), now: u2.now,
+          loadState: a2.load, saveState: a2.save,
+          perTenant: async () => ({ skipped: true, reason: "profil-deaktiviert" })
+        });
+        return r2.fairness.begonnen.includes("nur-einer")
+          && r2.fairness.erfolgreich.includes("nur-einer")
+          && r2.fairness.lockVerweigert.length === 0;
+      })());
+  }
+
   // ═══ 18c) Die eigentliche Sperre gegen Doppelverarbeitung eines Mandats ═══════════════════
   abschnitt("18c) Sperre crawl-<mandat> — Reichweite, Dauer, Verhalten am Abbruch");
   {
@@ -818,6 +901,8 @@ const SECHS = ["anna-a", "bela-b", "cem-c", "dora-d", "emil-e", "frida-f"];
         [["    const registrierung = await speichern(\n      claimPatch({ cronName, tenantId, runId, nowMs: versuchMs, vorher }),\n      { pruefen: true }\n    );", "    const registrierung = { ok: true, remote: null };"]]],
       ["Ein laufender Versuch blockiert nichts mehr (Ueberlappungsschutz weg)", "ueberlappung",
         [["    if (laufend) blockiert.push({ ...kandidat, grund: \"laeuft-bereits\" });\n    else planbar.push(kandidat);", "    planbar.push(kandidat);"]]],
+      ["Eine verweigerte Sperre gilt wieder als Erfolg", "sperre",
+        [["    if (erfolg && sperreVerweigert(ergebnis)) {", "    if (false) {"]]],
       ["Der Wettlauf gegen einen fremden Halter wird ignoriert", "wettlauf",
         [["    const fremd = registriert ? fremderHalter(zustand, cronName, tenantId, runId, now(), staleMs) : null;", "    const fremd = null;"]]],
       ["Ein Lauf ohne Kapazitaet meldet trotzdem eine Garantie", "kapazitaet",
@@ -907,7 +992,32 @@ const SECHS = ["anna-a", "bela-b", "cem-c", "dora-d", "emil-e", "frida-f"];
     check("Ausgangslage: der echte Code behauptet bei k=0 keine Garantie",
       (await kapazitaetGelogen(F)) === false);
 
+    // Probe G — eine verweigerte Sperre darf nie als Verarbeitung durchgehen.
+    async function sperreZaehltAlsErfolg(mod) {
+      const uhr = makeUhr();
+      let roh = {};
+      const r = await mod.runTenantsFairly({
+        cronName: "crawl", tenantIds: ["anna-a", "bela-b"], runId: "lauf-B",
+        deadlineMs: 240000, reserveMs: 0, startedMs: uhr.now(), now: uhr.now,
+        loadState: async () => JSON.parse(JSON.stringify(roh)),
+        saveState: async (patch) => { roh = mod.mergeState(roh, patch, { nowMs: uhr.now() }); return { ok: true }; },
+        perTenant: async (id) => {
+          if (id === "anna-a") return { skipped: true, reason: "already running" };
+          uhr.vor(1000);
+          return { ok: true };
+        }
+      });
+      const e = mod.entryOf(mod.normalizeState(roh), "crawl", "anna-a");
+      return r.fairness.begonnen.includes("anna-a")
+        || r.fairness.erfolgreich.includes("anna-a")
+        || Boolean(e && e.letzterErfolgAt);
+    }
+
+    check("Ausgangslage: eine verweigerte Sperre zaehlt nicht als Verarbeitung",
+      (await sperreZaehltAlsErfolg(F)) === false);
+
     const proben = {
+      sperre: sperreZaehltAlsErfolg,
       garantie: verletztGarantie,
       registrierung: async (mod) => !(await versuchVorVerarbeitung(mod)),
       ueberlappung: ueberlappungOffen,
@@ -1075,8 +1185,48 @@ const SECHS = ["anna-a", "bela-b", "cem-c", "dora-d", "emil-e", "frida-f"];
     check("Die Protokollzeile weist Kapazitaet und fehlende Garantie aus",
       /kapazitaet=\$\{fairness\.kapazitaet\}/.test(serverSrc)
       && /keine-garantie/.test(serverSrc));
+    check("Die Protokollzeile weist eine verweigerte Sperre getrennt aus",
+      /sperreVerweigert=\$\{\(fairness\.lockVerweigert \|\| \[\]\)\.join\(","\) \|\| "-"\}/.test(serverSrc));
     check("Begruendung dokumentiert, warum ok:true bleibt (kein Watchdog-Fehlalarm)",
       /Watchdog\s*\n?\s*\/\/ fehlalarmieren/.test(serverSrc) || /fehlalarmieren/.test(serverSrc));
+  }
+
+  // ═══ 19e) Der Schalter: Default AN und was der Merge sofort bewirkt ═══════════════════════
+  abschnitt("19e) HELMUT_CRON_FAIRNESS — Default und Merge-Wirkung");
+  {
+    check("OHNE gesetzte Umgebungsvariable ist die Fairness AKTIV",
+      F.fairnessEnabled({}) === true && F.fairnessEnabled({ HELMUT_CRON_FAIRNESS: "" }) === true
+      && F.fairnessEnabled({ HELMUT_CRON_FAIRNESS: "   " }) === true);
+    check("Nur 'off'/'false'/'0' schalten ab (auch mit Grossschreibung und Leerzeichen)",
+      F.fairnessEnabled({ HELMUT_CRON_FAIRNESS: "off" }) === false
+      && F.fairnessEnabled({ HELMUT_CRON_FAIRNESS: " OFF " }) === false
+      && F.fairnessEnabled({ HELMUT_CRON_FAIRNESS: "false" }) === false
+      && F.fairnessEnabled({ HELMUT_CRON_FAIRNESS: "0" }) === false);
+    check("Jeder andere Wert laesst sie aktiv (kein stilles Abschalten durch Tippfehler)",
+      F.fairnessEnabled({ HELMUT_CRON_FAIRNESS: "on" }) === true
+      && F.fairnessEnabled({ HELMUT_CRON_FAIRNESS: "aus" }) === true
+      && F.fairnessEnabled({ HELMUT_CRON_FAIRNESS: "nein" }) === true);
+    // Der Schalter ist NICHT ueber helmut-flags.json steuerbar — die Datei hat eine feste
+    // Allowlist. Der Rueckweg laeuft ausschliesslich ueber die Vercel-Env.
+    const flagsSrc = fs.readFileSync(path.join(ROOT, "lib", "helmut", "flags.js"), "utf8");
+    check("Der Schalter steht NICHT in der Datei-Flag-Allowlist (nur Vercel-Env wirkt)",
+      /FILE_FLAG_ALLOWLIST/.test(flagsSrc) && !/HELMUT_CRON_FAIRNESS/.test(flagsSrc));
+    // Wirkung des Merges: server.js liest den Schalter und waehlt danach die Reihenfolge.
+    const serverSrc = fs.readFileSync(path.join(ROOT, "server.js"), "utf8");
+    check("server.js leitet den Schalter in die Reihenfolge (Merge = Aktivierung)",
+      /const fairnessAn = cronFairness\.fairnessEnabled\(\);/.test(serverSrc)
+      && /reihenfolge: fairnessAn \? "fair" : "unveraendert"/.test(serverSrc));
+    check("Ohne Schalter wird der Zustand gelesen UND geschrieben (Production-Wirkung ab Merge)",
+      /if \(!fairnessAn\) return \{\};[\s\S]{0,200}readCronFairnessState\(\)/.test(serverSrc)
+      && /if \(!fairnessAn\) return null;[\s\S]{0,400}saveCronFairnessState\(patch, \{ pruefen \}\)/.test(serverSrc));
+    // Und der Rueckweg stellt wirklich den Altzustand her: uebergebene Reihenfolge, kein IO.
+    const uhrAus = makeUhr();
+    const ablageAus = makeAblage({}, uhrAus);
+    const lAus = await lauf({ ablage: ablageAus, uhr: uhrAus, tenants: SECHS, standardKosten: 60000, deadlineMs: 110000, reihenfolge: "unveraendert" });
+    check("Rueckweg: alphabetische Reihenfolge, 0 Schreibvorgaenge, kein Fairnesszustand",
+      lAus.begonnen.join(",") === "anna-a,bela-b" && ablageAus.schreibvorgaenge === 0
+      && Object.keys(F.normalizeState(ablageAus.dump()).crons).length === 0,
+      `${lAus.begonnen.join(",")} / ${ablageAus.schreibvorgaenge}`);
   }
 
   // ═══ 20) Sicherheitsgrenzen dieses Sprints ══════════════════════════════════════════════

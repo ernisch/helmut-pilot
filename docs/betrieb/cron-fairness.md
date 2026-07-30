@@ -142,12 +142,59 @@ nachweislich aktiv. Ein **atomarer Mandatsclaim in der Fairnessschicht ist desha
 erforderlich**; er würde eine bereits vorhandene, bewiesene Sperre verdoppeln. Keine Queue,
 keine Parallelisierung, keine Architekturänderung.
 
-**Zweite Schranke — die Fairnessschicht (neu, ergänzend):** vor der Sperre steht jetzt der
+**Zweite Schranke — die Fairnessschicht (ergänzend):** vor der Sperre steht der
 `laufend`-Vermerk. Er verhindert, dass ein überlappender Lauf ein Mandat überhaupt beginnt, und
 er macht den Fall sichtbar (`laeuft-bereits`). Zusätzlich wird der Versuchsvermerk nach dem
 Schreiben **gegengelesen**: gewinnt dort eine fremde Laufkennung, lässt dieser Lauf das Mandat
 aus (`cron-fairness.fremderHalter`). Das ist eine unabhängige zweite Schranke, **kein Ersatz**
 für die Sperre — sie ist ein Read-modify-write und für sich allein nicht atomar.
+
+### 3a.1 · Die Reihenfolge Vermerk → Sperre, und was sie bedeutet
+
+Der Fairnessvermerk entsteht **vor** der Verarbeitung, die Sperre `crawl-<mandat>` erst **in**
+`runSourceCrawl`. Zwischen beiden liegt ein Fenster, und die zweite Schranke schließt es **nicht
+vollständig**:
+
+- Hat Lauf A sein `laufend` geschrieben, **bevor** Lauf B geplant hat, wird B das Mandat gar
+  nicht einplanen (`planTenantOrder` → `blockiert`).
+- Claimt A **nachdem** B geplant hat, greift `fremderHalter` **nicht**: Bs eigener Vermerk ist
+  der jüngere und führt daher die Verschmelzung. B ruft dann `perTenant` auf — und läuft dort in
+  die Sperre.
+
+**Genau dieser Pfad war bis 2026-07-30 falsch verbucht.** `runSourceCrawl` **wirft** bei
+verweigerter Sperre nicht, sondern liefert `{ skipped: true, reason: "already running" }`. Die
+Ausführungsschleife sah darin einen erfolgreichen Rückgabewert und schrieb einen **erfundenen
+Erfolg**: Erfolgszeitpunkt gesetzt, Erfolgszähler erhöht, Fehlerserie auf 0 zurück, das Mandat in
+`begonnen` und damit in der Kapazität `k` — die gemeldete Obergrenze `ceil(n/k)` war dadurch zu
+optimistisch, und `fairness.erfolgreich` nannte ein Mandat, das dieser Lauf nie angefasst hat.
+
+**Behoben.** Eine verweigerte Sperre wird jetzt erkannt (`sperreVerweigert`) und behandelt als
+das, was sie ist:
+
+| Anforderung | Verhalten |
+|---|---|
+| zählt nicht als begonnene Verarbeitung | `begonnen` wird zurückgenommen |
+| erhöht `k` nicht | `kapazitaet = begonnen.size` → das Mandat fehlt darin |
+| kein erfundener Erfolg, kein erfundener Fehler | **kein** Abschluss-Schreibvorgang: `letzterErfolgAt`/`erfolge` unverändert, `letzterFehlerAt`/`fehler`/`fehlerSerie` unverändert |
+| verfälscht `ceil(n/k)` nicht | die Obergrenze wird aus der echten Kapazität gerechnet |
+| verzögert andere Mandate nicht | es wurde keine Laufzeit verbraucht, und der frei gebliebene Platz wird im selben Lauf genutzt |
+| nicht als normaler Versuch protokolliert | eigener Ausgang; sichtbar in `fairness.lockVerweigert` (Teilmenge von `laeuftBereits`) und in der Protokollzeile als `sperreVerweigert=…` |
+
+**Was bewusst bleibt:** der bereits geschriebene **Versuchsvermerk** (`laufend`, aus dem Claim)
+lässt sich nicht zurücknehmen — die Verschmelzung ist monoton, ein älterer Zeitstempel kann einen
+jüngeren nicht überschreiben. Das ist kein Schaden, sondern nützlich: der Vermerk hält das Mandat
+für **weitere** überlappende Läufe gesperrt und läuft nach `HELMUT_CRON_FAIRNESS_STALE_MS`
+kontrolliert ab. Danach steht das Mandat wieder **vorn**, weil sein Versuchszeitpunkt der älteste
+ist — getestet. Einzige Unschärfe: der Zähler `versuche` enthält diesen nicht ausgeführten
+Versuch mit; er ist reine Telemetrie und beeinflusst die Reihenfolge nicht.
+
+**Nur diese eine Zeichenkette** wird als Verweigerung gedeutet (`already running`, exakt so von
+`runSourceCrawl` geliefert); ein Vertragstest schlägt fehl, falls sie sich ändert. Andere
+`skipped`-Gründe (etwa `profil-deaktiviert`) bleiben **normale Versuche** — dort hat der Lauf das
+Mandat besucht und es gab nichts zu tun.
+
+Belege: `scripts/cron-fairness-test.js` §18b2 (15 Prüfungen, jede der sechs Anforderungen
+einzeln) plus eine Mutationsprobe, die das alte Verhalten rot werden lässt.
 
 **Nebenbefund, ehrlich benannt:** der Lauf vom **2026-07-30, 04:05:04 UTC** hat seine Sperre
 `crawl-<mandat>` **nie freigegeben** — der Prozess wurde am Zeitlimit beendet, während er das
@@ -217,6 +264,7 @@ etwa wenn das Laden der Mandantenliste in Blob-Timeouts lief):**
 | **Prozessabbruch nach Registrierung** | Mandat bleibt `laufend`, wird nach der Frist kontrolliert erneut zugelassen und zählt bis dahin als versucht. |
 | **Prozessabbruch nach einem fertigen Mandat** | Der Abschluss ist persistiert; der nächste Lauf setzt an der **Mandatsgrenze** fort, nicht von vorn. |
 | **Überlappende Läufe** | Ein als `laufend` vermerktes Mandat wird vom zweiten Lauf nicht begonnen, sondern als `laeuft-bereits` ausgewiesen; verliert er den Wettlauf erst beim Registrieren, erkennt er den fremden Halter und lässt das Mandat aus. Der **harte** Riegel bleibt der bestehende Lock `crawl-<mandat>` — atomar, fail-closed und in Production nachweislich aktiv (§3a). |
+| **Sperre verweigert** (der andere Lauf hat das Mandat schon) | Keine Verarbeitung, kein Erfolg, kein Fehler, nicht in der Kapazität `k`, kein Abschluss-Schreibvorgang — sichtbar als `lockVerweigert` / `sperreVerweigert=…`. Der Versuchsvermerk bleibt `laufend` und läuft über die Frist ab; danach steht das Mandat wieder vorn (§3a.1). |
 | **Neues Mandat** | Kein Versuch = ältester Versuch → **Rang 1** im ersten Lauf danach. |
 | **Deaktiviertes Mandat** | Steht nicht in der aktiven Liste → wird nicht geplant. Sein Verlauf bleibt erhalten. |
 | **Reaktiviertes Mandat** | Kommt mit dem ältesten Versuch zurück → steht vorn. |
@@ -228,16 +276,17 @@ Jeder Lauf schreibt **eine** Protokollzeile — kein neuer Admin-Bereich, keine 
 
 ```
 [cron/crawl/fairness] geplant=a,b,c,d,e,f begonnen=c,d erfolgreich=1 fehlgeschlagen=1
-                      zeitbudget=e,f laeuftBereits=- naechstes=e kapazitaet=2
-                      obergrenzeLaeufe=3 zustand=ok
+                      zeitbudget=e,f laeuftBereits=- sperreVerweigert=- naechstes=e
+                      kapazitaet=2 obergrenzeLaeufe=3 zustand=ok
 ```
 
 Bei einem Lauf ohne Kapazität steht dort `kapazitaet=0 obergrenzeLaeufe=keine-garantie`.
 
 Dieselben Angaben liegen im Antwortkörper des Crons unter `fairness` (`aktive`, `geplant`,
 `begonnen`, `erfolgreich`, `fehlgeschlagen`, `zeitbudget`, `laeuftBereits`, `wartend[]` mit
-`letzterVersuchAt` / `letzterErfolgAt` / `wartetMs` / `fehlerSerie`, `naechstesMandat`,
-`kapazitaet`, `fortschrittsgarantie`, `ohneFortschritt`, `obergrenzeLaeufe`, `zustandGeladen`) —
+`letzterVersuchAt` / `letzterErfolgAt` / `wartetMs` / `fehlerSerie`, `lockVerweigert`,
+`naechstesMandat`, `kapazitaet`, `fortschrittsgarantie`, `ohneFortschritt`, `obergrenzeLaeufe`,
+`zustandGeladen`) —
 plus die beiden Kurzflaggen `fairnessGestoert` und `ohneFortschritt` auf oberster Ebene.
 
 Zwei Meldewege bleiben laut, statt still zu bleiben:

@@ -471,6 +471,20 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Mutationsprobe **9 von 9 rot**. **Frischer Beleg, dass der Fehler bis zuletzt auftrat:** der
   Lauf vom 2026-07-30, 04:05:04 UTC gab seine Sperre nie frei — Prozessende am Zeitlimit beim
   **zweiten** Mandat der alphabetischen Reihenfolge, gleiches Muster wie am 29.07.
+- **Nachtrag 2026-07-30 (Vorprüfung Mergefreigabe): ein echter Fehler gefunden und behoben.**
+  Der Fairnessvermerk entsteht **vor** der Verarbeitung, die Sperre `crawl-<mandat>` erst **in**
+  `runSourceCrawl` — und die **wirft** bei verweigerter Sperre nicht, sondern liefert
+  `{ skipped: true, reason: "already running" }`. Die Schleife wertete das als Erfolg und schrieb
+  einen **erfundenen Erfolg**, zählte das Mandat in die Kapazität `k` und machte die gemeldete
+  Obergrenze `ceil(n/k)` **zu optimistisch**. `fremderHalter` deckt diesen Pfad **nicht** ab (der
+  eigene, jüngere Vermerk führt die Verschmelzung). Jetzt: kein `begonnen`, nicht in `k`, **kein**
+  Abschluss-Schreibvorgang, eigener sichtbarer Ausgang (`lockVerweigert` / `sperreVerweigert=…`).
+  Der Versuchsvermerk bleibt `laufend`, sperrt weitere überlappende Läufe und läuft nach 30 min ab.
+  Tests **201/201**, Mutationsprobe **10 von 10 rot**. Details:
+  [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) §3a.1.
+- **Aktivierung:** `HELMUT_CRON_FAIRNESS` ist **ohne gesetzte Variable aktiv** (nur `off`/`false`/`0`
+  schalten ab) und **nicht** über `helmut-flags.json` steuerbar — der Merge verändert damit
+  unmittelbar das Production-Verhalten, der Rückweg läuft ausschließlich über die Vercel-Env.
 - **Verbindliche Folgeregel:** **weitere reale Testmandate erst nach Merge UND erbrachtem
   regulärem Production-Nachweis.** Die Rotation verteilt den Rückstand gleichmäßig, sie
   vergrößert das Zeitbudget nicht: bei `n` Mandaten und `k` begonnenen je Lauf steigt der Abstand

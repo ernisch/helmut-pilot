@@ -6145,6 +6145,10 @@ async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000 } = 
     + ` erfolgreich=${fairness.erfolgreich.length} fehlgeschlagen=${fairness.fehlgeschlagen.length}`
     + ` zeitbudget=${fairness.zeitbudget.join(",") || "-"}`
     + ` laeuftBereits=${fairness.laeuftBereits.join(",") || "-"}`
+    // Von der SPERRE abgewiesen (ein anderer Lauf hatte das Mandat) — kein Erfolg, kein
+    // Fehler, nicht in der Kapazitaet. Getrennt sichtbar, weil nur hier ein Versuchsvermerk
+    // ohne Abschluss zurueckbleibt.
+    + ` sperreVerweigert=${(fairness.lockVerweigert || []).join(",") || "-"}`
     + ` naechstes=${fairness.naechstesMandat || "-"}`
     + ` kapazitaet=${fairness.kapazitaet}`
     + ` obergrenzeLaeufe=${fairness.obergrenzeLaeufe === null ? "keine-garantie" : fairness.obergrenzeLaeufe}`
