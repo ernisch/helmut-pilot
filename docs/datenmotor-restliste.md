@@ -450,8 +450,33 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   ist damit ausgeführt (§14 des kanonischen Dokuments). Keine weitere Freigabe offen.
 
 #### OP-25 · Crawl-Zeitdeckelung: je Lauf wird nur ein Teil der Mandanten erreicht (neu, Sprint 23B-1; Prioritätsklasse P1)
-- **Status (2026-07-29, Sprint OP-25-Fairness):** **Teilstück (b) umgesetzt, Production-Nachweis
-  offen.** Der Kernbefund wurde gegen `main` nach PR #178 (`51732e2`) **bestätigt**:
+- **Status (2026-07-30, Abschlussdurchgang):** **Repository-Umsetzung vollständig und CI-belegt,
+  Production-Nachweis offen.** Beide Pflicht-Checks grün auf `eeaa363` (Lauf `30499103799`:
+  Offline **183/183**, Browser **32/32**). Drei Nachprüfungen ergänzt: **(1)** die Garantie
+  `ceil(n/k)` gilt **nur** für `k ≥ 1` — ein Lauf ohne Kapazität wird jetzt als solcher
+  ausgewiesen (`kapazitaet`, `fortschrittsgarantie`, `ohneFortschritt`, `obergrenzeLaeufe: null`,
+  wörtlicher `systemError`), schreibt **nichts** und verschiebt die Warteschlange nicht.
+  **(2)** Der Überlappungsschutz ist bewiesen: `crawl-<mandat>` wird als erste Anweisung in
+  `runSourceCrawl` erworben (TTL 15 min), ist **atomar und fail-closed** und in Production
+  **nachweislich aktiv** — rein lesend geprüft, die Lock-Zeilen des regulären 04:00-Crawls vom
+  2026-07-30 tragen einen Token, den nur die atomare RPC schreibt. Ein atomarer Mandatsclaim in
+  der Fairnessschicht ist damit **nicht erforderlich**. **Dabei korrigiert:**
+  [`betrieb/env-inventar.md`](betrieb/env-inventar.md) behauptete, Migration `20260719` sei „NICHT
+  auf Prod angewendet" und der Modus sei fail-open — **falsch**; FT2-2 dieser Liste und
+  `CLAUDE.md` §5 hatten recht. **(3)** Die Persistenz ist gehärtet: Lesefehler → kein
+  Schreibvorgang, neuere Schemaversion → kein Schreibvorgang, Versuchsvermerk wird gegengelesen
+  und begrenzt wiederholt, korrupte Einträge blockieren niemanden. Tests **176/176**,
+  Mutationsprobe **9 von 9 rot**. **Frischer Beleg, dass der Fehler bis zuletzt auftrat:** der
+  Lauf vom 2026-07-30, 04:05:04 UTC gab seine Sperre nie frei — Prozessende am Zeitlimit beim
+  **zweiten** Mandat der alphabetischen Reihenfolge, gleiches Muster wie am 29.07.
+- **Verbindliche Folgeregel:** **weitere reale Testmandate erst nach Merge UND erbrachtem
+  regulärem Production-Nachweis.** Die Rotation verteilt den Rückstand gleichmäßig, sie
+  vergrößert das Zeitbudget nicht: bei `n` Mandaten und `k` begonnenen je Lauf steigt der Abstand
+  zwischen zwei Versuchen desselben Mandats auf `ceil(n/k)` Läufe. `k` ist in Production noch
+  **unvermessen** — ein Lauf am 2026-07-30 endete bereits beim zweiten Mandat am Zeitlimit.
+  Begründung und Rechenweg: [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) §9.
+- **Status (2026-07-29, Sprint OP-25-Fairness, 1. Durchgang):** **Teilstück (b) umgesetzt,
+  Production-Nachweis offen.** Der Kernbefund wurde gegen `main` nach PR #178 (`51732e2`) **bestätigt**:
   `listActiveTenantIds` endete auf `ids.sort()` (alphabetisch), `runCronForTenants` lief seriell
   gegen `Date.now() > deadline`, und es gab **keinen** persistenten Fortschritt je Mandat — die
   Verdrängung traf also strukturell immer dieselben Mandate. Präzisierung zum Auftrag: „4 von 6"
@@ -461,9 +486,9 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Verarbeitung persistiert (eigene `helmut_store`-Zeile — **keine Migration**, keine RLS-Änderung,
   kein Freigabegate), nachrechenbare Obergrenze **ceil(n/k)** reguläre Läufe, Beobachtbarkeit je
   Mandat (`[cron/*/fairness]` + `fairness` im Antwortkörper), `systemError` mit **Kennungen** der
-  nicht verarbeiteten Mandate. Rückweg: `HELMUT_CRON_FAIRNESS=off`. Tests: neue Suite **118/118**,
+  nicht verarbeiteten Mandate. Rückweg: `HELMUT_CRON_FAIRNESS=off`. Tests: neue Suite **176/176**,
   Offline-Suite **169/183** (Baseline `main` 168/182 — dieselben 14 umgebungsbedingten
-  Fehlschläge), Browser-Smoke **32/32**, Mutationsprobe **7 von 7 rot**. **0 KI, 0,00 USD, keine
+  Fehlschläge), Browser-Smoke **32/32**, Mutationsprobe **9 von 9 rot**. **0 KI, 0,00 USD, keine
   Migration, keine Cron-/Budgetänderung, kein Production-Zugriff.** Kanonisch:
   [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md). **Offen bleiben:** (a) die Messung, wie
   viele Mandate je Lauf real die Matching-Stufe erreichen, (c) ein Abdeckungsalarm über mehrere

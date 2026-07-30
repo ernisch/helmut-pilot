@@ -406,6 +406,43 @@ const SECHS = ["anna-a", "bela-b", "cem-c", "dora-d", "emil-e", "frida-f"];
       F.DEFAULT_TENANT_RESERVE_MS === 15000 && F.DEFAULT_TENANT_RESERVE_MS < 240000);
   }
 
+  // ═══ 12b) Lauf OHNE Kapazität (k = 0) — keine Fortschrittsgarantie ════════════════════════
+  abschnitt("12b) k = 0: Lauf ohne Fortschritt");
+  {
+    // Realistischer Auslöser: der Lauf betritt die Schleife mit weniger Restlaufzeit als
+    // die Reserve (z. B. weil das Laden der Mandantenliste in Blob-Timeouts lief). Dann
+    // wird KEIN Mandat begonnen — und für diesen Lauf gibt es keine Garantie.
+    const uhr = makeUhr();
+    const ablage = makeAblage({}, uhr);
+    const l = await lauf({ ablage, uhr, tenants: SECHS, standardKosten: 60000, deadlineMs: 10000, reserveMs: 15000 });
+    check("Kein Mandat wird begonnen", l.begonnen.length === 0, l.begonnen.join(","));
+    check("Der Lauf weist Kapazitaet 0 aus", l.fairness.kapazitaet === 0, String(l.fairness.kapazitaet));
+    check("Der Lauf weist AUSDRUECKLICH keine Fortschrittsgarantie aus",
+      l.fairness.fortschrittsgarantie === false && l.fairness.ohneFortschritt === true,
+      JSON.stringify({ g: l.fairness.fortschrittsgarantie, o: l.fairness.ohneFortschritt }));
+    check("Die Obergrenze ist null statt einer erfundenen Zahl (JSON-ehrlich)",
+      l.fairness.obergrenzeLaeufe === null, String(l.fairness.obergrenzeLaeufe));
+    check("fairnessBound(n,0) ist unendlich — die Formel behauptet keine Grenze", F.fairnessBound(6, 0) === Infinity);
+    check("Alle sechs Mandate melden 'zeitbudget'", l.fairness.zeitbudget.length === 6, l.fairness.zeitbudget.join(","));
+    check("KEIN Mandat wird als versucht vermerkt", ablage.schreibvorgaenge === 0, String(ablage.schreibvorgaenge));
+    check("Der Zustand bleibt unveraendert (leer)", Object.keys(F.normalizeState(ablage.dump()).crons).length === 0);
+    // Entscheidend: ein k=0-Lauf darf die Warteschlange NICHT verschieben — der nächste
+    // Lauf mit Kapazität beginnt genau dort, wo dieser Lauf beginnen wollte.
+    // Im SELBEN Zeitfenster geprueft (der Losentscheid je 6-h-Fenster ist sonst ein
+    // anderer): der Folgelauf beginnt genau dort, wo dieser Lauf beginnen wollte.
+    const geplantVorher = l.fairness.geplant.slice(0, 2);
+    uhr.vor(60000);
+    const l2 = await lauf({ ablage, uhr, tenants: SECHS, standardKosten: 60000, deadlineMs: 110000 });
+    check("Der Folgelauf holt genau die Mandate nach, die vorn standen",
+      l2.begonnen.slice().sort().join(",") === geplantVorher.slice().sort().join(","),
+      `${geplantVorher} -> ${l2.begonnen}`);
+    // Und bei 0 aktiven Mandaten ist ein Lauf ohne Begonnene KEIN Fehlerfall.
+    const leer = await lauf({ ablage, uhr, tenants: [], deadlineMs: 240000 });
+    check("0 aktive Mandate sind kein 'ohneFortschritt' (nichts zu tun ist kein Rueckstand)",
+      leer.fairness.ohneFortschritt === false && leer.fairness.obergrenzeLaeufe === 0,
+      JSON.stringify({ o: leer.fairness.ohneFortschritt, g: leer.fairness.obergrenzeLaeufe }));
+  }
+
   // ═══ 13) Stabiler Gleichstandsentscheid ═════════════════════════════════════════════════
   abschnitt("13) Stabiler Gleichstandsentscheid");
   {
@@ -578,6 +615,125 @@ const SECHS = ["anna-a", "bela-b", "cem-c", "dora-d", "emil-e", "frida-f"];
       F.entryOf(F.withoutTenant({ version: 1, crons: { crawl: { "weg-du": { status: "erfolgreich", letzterVersuchAt: new Date(BASIS_MS).toISOString() } } } }, "weg-du"), "crawl", "weg-du") === null);
   }
 
+  // ═══ 18b) Ueberlappende Laeufe: fremder Halter, korrupte und alte Zustaende ════════════════
+  abschnitt("18b) Fremder Halter, korrupte Eintraege, Schemaversion");
+  {
+    const nowMs = BASIS_MS;
+    const laufend = (runId, alterMs) => ({
+      version: 1,
+      crons: { crawl: { "anna-a": { status: "laufend", letzterVersuchAt: new Date(nowMs - alterMs).toISOString(), letzteLaufkennung: runId, versuche: 1 } } }
+    });
+    check("Ein FRISCHER fremder Versuch wird als fremder Halter erkannt",
+      F.fremderHalter(laufend("lauf-A", 5000), "crawl", "anna-a", "lauf-B", nowMs) === "lauf-A");
+    check("Der EIGENE Versuch ist kein fremder Halter",
+      F.fremderHalter(laufend("lauf-B", 5000), "crawl", "anna-a", "lauf-B", nowMs) === null);
+    check("Ein VERALTETER fremder Versuch blockiert nicht mehr",
+      F.fremderHalter(laufend("lauf-A", F.DEFAULT_STALE_CLAIM_MS + 1000), "crawl", "anna-a", "lauf-B", nowMs) === null);
+    check("Ein abgeschlossener Versuch ist kein Halter",
+      F.fremderHalter({ version: 1, crons: { crawl: { "anna-a": { status: "erfolgreich", letzterVersuchAt: new Date(nowMs - 1000).toISOString(), letzteLaufkennung: "lauf-A" } } } },
+        "crawl", "anna-a", "lauf-B", nowMs) === null);
+
+    // Registriert ein ueberlappender Lauf DAZWISCHEN, gibt die Ablage den Fernstand
+    // zurueck — dieser Lauf verarbeitet das Mandat dann NICHT.
+    {
+      const uhr = makeUhr();
+      let raw = {};
+      const begonnen = [];
+      const r = await F.runTenantsFairly({
+        cronName: "crawl", tenantIds: ["anna-a", "bela-b"], runId: "lauf-B",
+        deadlineMs: 240000, reserveMs: 0, startedMs: uhr.now(), now: uhr.now,
+        loadState: async () => JSON.parse(JSON.stringify(raw)),
+        saveState: async (patch, { pruefen = false } = {}) => {
+          raw = F.mergeState(raw, patch, { nowMs: uhr.now() });
+          // Wettlauf: genau beim Registrieren von 'anna-a' war ein anderer Lauf schneller.
+          if (pruefen && patch.crons.crawl && patch.crons.crawl["anna-a"]) {
+            raw = F.mergeState(raw, {
+              version: 1,
+              crons: { crawl: { "anna-a": { status: "laufend", letzterVersuchAt: new Date(uhr.now() + 1).toISOString(), letzteLaufkennung: "lauf-A", versuche: 2 } } }
+            }, { nowMs: uhr.now() });
+          }
+          return { ok: true, state: JSON.parse(JSON.stringify(raw)) };
+        },
+        perTenant: async (id) => { begonnen.push(id); uhr.vor(1000); return { ok: true }; }
+      });
+      check("Verliert dieser Lauf den Wettlauf, verarbeitet er das Mandat NICHT",
+        !begonnen.includes("anna-a"), begonnen.join(","));
+      check("Er meldet es als 'laeuft-bereits'", r.fairness.laeuftBereits.includes("anna-a"), JSON.stringify(r.fairness.laeuftBereits));
+      check("Und verarbeitet die uebrigen Mandate trotzdem", begonnen.includes("bela-b"), begonnen.join(","));
+      check("Es zaehlt nicht als begonnen (Kapazitaet bleibt ehrlich)",
+        r.fairness.begonnen.join(",") === "bela-b", r.fairness.begonnen.join(","));
+    }
+
+    // Korrupte Eintraege duerfen die uebrigen Mandate nicht blockieren.
+    {
+      const kaputt = {
+        version: 1,
+        crons: {
+          crawl: {
+            "anna-a": "das ist kein objekt",
+            "bela-b": null,
+            "cem-c": { status: "voelliger-unsinn", letzterVersuchAt: "kein datum", versuche: -7, erfolge: "viele", fehlerSerie: {} },
+            "dora-d": { status: "erfolgreich", letzterVersuchAt: new Date(nowMs - 1000).toISOString(), versuche: 3 }
+          },
+          "kaputter-cron": "auch kein objekt"
+        }
+      };
+      const p = F.planTenantOrder({ cronName: "crawl", tenantIds: SECHS, state: kaputt, nowMs });
+      check("Ein korrupter Eintrag blockiert die anderen Mandate nicht (alle 6 geplant)",
+        p.order.length === 6, p.order.join(","));
+      check("Das Mandat mit dem juengsten gueltigen Versuch steht HINTEN",
+        p.order[p.order.length - 1] === "dora-d", p.order.join(","));
+      check("Korrupte Werte werden gesaeubert statt uebernommen",
+        F.normalizeEntry({ status: "unsinn", versuche: -7, erfolge: "viele", fehlerSerie: {}, letzterVersuchAt: "kein datum" }).status === null
+        && F.normalizeEntry({ versuche: -7 }).versuche === 0
+        && F.normalizeEntry({ erfolge: "viele" }).erfolge === 0);
+      check("Ein kaputter Cron-Block macht den Zustand nicht unbrauchbar",
+        Object.keys(F.normalizeState(kaputt).crons).includes("crawl"));
+      check("Unbekannte Felder werden nicht durchgereicht (Weissliste)",
+        F.normalizeEntry({ status: "erfolgreich", fremdesFeld: "x" }).fremdesFeld === undefined);
+    }
+
+    // Schemaversion: eine NEUERE Ablageform darf ein alter Codestand nicht zurueckdrehen.
+    check("stateVersion liest die Ablageform (null bei Altbestand)",
+      F.stateVersion({ version: 2 }) === 2 && F.stateVersion({}) === null && F.stateVersion(null) === null);
+    check("Verschmelzen behaelt die HOEHERE Version",
+      F.mergeState({ version: 5, crons: {} }, { version: 1, crons: {} }).version === 5);
+    check("normalizeState dreht eine hoehere Version nicht zurueck",
+      F.normalizeState({ version: 9, crons: {} }).version === 9);
+  }
+
+  // ═══ 18c) Die eigentliche Sperre gegen Doppelverarbeitung eines Mandats ═══════════════════
+  abschnitt("18c) Sperre crawl-<mandat> — Reichweite, Dauer, Verhalten am Abbruch");
+  {
+    const schedulerSrc = fs.readFileSync(path.join(ROOT, "lib", "helmut", "scheduler.js"), "utf8");
+    const storageSrc = fs.readFileSync(path.join(ROOT, "lib", "helmut", "storage.js"), "utf8");
+    check("Die Sperre ist MANDATSSCHARF (crawl-<mandat>), nicht global",
+      /const lockName = `crawl-\$\{politicianId\}`;/.test(schedulerSrc));
+    check("Sie wird als ERSTES erworben — vor jeder Arbeit am Mandat",
+      /const lockName = `crawl-\$\{politicianId\}`;\s*\n\s*const locked = await acquirePipelineLock\(lockName, 15 \* 60 \* 1000\);/.test(schedulerSrc));
+    check("Wird sie verweigert, verarbeitet dieser Lauf das Mandat NICHT",
+      /if \(!locked\) \{[\s\S]{0,220}return \{ skipped: true, reason: "already running" \};/.test(schedulerSrc));
+    check("Ihre Dauer ist 15 Minuten — laenger als das Funktionslimit (300 s)",
+      /acquirePipelineLock\(lockName, 15 \* 60 \* 1000\)/.test(schedulerSrc));
+    check("Sie wird im finally freigegeben (kein Leck im Normalfall)",
+      /finally \{[\s\S]{0,400}await releasePipelineLock\(lockName\);/.test(schedulerSrc));
+    check("Der atomare Pfad ist EIN Upsert und bei DB-Fehler fail-closed",
+      /rpc\/helmut_acquire_pipeline_lock/.test(storageSrc)
+      && /\[pipelineLock:atomic\] fail-closed/.test(storageSrc)
+      && /return false;\s*\n\s*\}\s*\n\}/.test(storageSrc));
+    check("Die Freigabe ist an den Halter gebunden (kein fremdes Release nach TTL)",
+      /rpc\/helmut_release_pipeline_lock/.test(storageSrc) && /p_token: token/.test(storageSrc));
+    // Prozessabbruch: die Sperre bleibt bis zum Ablauf stehen — genau deshalb wird ein
+    // zweiter, ueberlappender Lauf dasselbe Mandat nicht anfassen.
+    check("Beim Prozessabbruch bleibt die Sperre bis zum Ablauf bestehen (TTL raeumt auf)",
+      /TTL raeumt auf/.test(storageSrc));
+    // Die Fairnessschicht ist die ZWEITE Schranke und ersetzt die Sperre nicht.
+    check("Die Fairnessschicht nennt sich ausdruecklich NICHT Ersatz der Sperre",
+      /Kein Ersatz fuer die Sperre `crawl-<mandat>`/.test(fs.readFileSync(path.join(ROOT, "lib", "helmut", "cron-fairness.js"), "utf8")));
+    check("Ein vom Lock abgewiesenes Mandat gilt als versucht (der andere Lauf bedient es)",
+      /reason: "already running"/.test(schedulerSrc));
+  }
+
   // ═══ 19) Mutationsprobe: faengt diese Suite die Fairnesslogik wirklich ab? ═══════════════
   abschnitt("19) Mutationsprobe der zentralen Fairnesslogik");
   {
@@ -656,12 +812,17 @@ const SECHS = ["anna-a", "bela-b", "cem-c", "dora-d", "emil-e", "frida-f"];
         [["    if (a.los !== b.los) return a.los - b.los;", "    if (false) return a.los - b.los;"],
           ["const diff = msOf(a.letzterVersuchAt) - msOf(b.letzterVersuchAt);", "const diff = 0;"]]],
       ["Der Versuch wird ueberhaupt nicht mehr vermerkt", "garantie",
-        [["    const registriert = await speichern(claimPatch({ cronName, tenantId, runId, nowMs: versuchMs, vorher }));", "    const registriert = true;"],
+        [["    const registrierung = await speichern(\n      claimPatch({ cronName, tenantId, runId, nowMs: versuchMs, vorher }),\n      { pruefen: true }\n    );", "    const registrierung = { ok: true, remote: null };"],
           ["    await speichern(finishPatch({", "    if (false) await speichern(finishPatch({"]]],
       ["Der Versuch wird erst NACH der Verarbeitung vermerkt", "registrierung",
-        [["    const registriert = await speichern(claimPatch({ cronName, tenantId, runId, nowMs: versuchMs, vorher }));", "    const registriert = true;"]]],
+        [["    const registrierung = await speichern(\n      claimPatch({ cronName, tenantId, runId, nowMs: versuchMs, vorher }),\n      { pruefen: true }\n    );", "    const registrierung = { ok: true, remote: null };"]]],
       ["Ein laufender Versuch blockiert nichts mehr (Ueberlappungsschutz weg)", "ueberlappung",
         [["    if (laufend) blockiert.push({ ...kandidat, grund: \"laeuft-bereits\" });\n    else planbar.push(kandidat);", "    planbar.push(kandidat);"]]],
+      ["Der Wettlauf gegen einen fremden Halter wird ignoriert", "wettlauf",
+        [["    const fremd = registriert ? fremderHalter(zustand, cronName, tenantId, runId, now(), staleMs) : null;", "    const fremd = null;"]]],
+      ["Ein Lauf ohne Kapazitaet meldet trotzdem eine Garantie", "kapazitaet",
+        [["  const ohneFortschritt = planung.planbar > 0 && kapazitaet === 0;", "  const ohneFortschritt = false;"],
+          ["      fortschrittsgarantie: Number.isFinite(grenze) && kapazitaet > 0,", "      fortschrittsgarantie: true,"]]],
       ["Nicht begonnene Mandate werden trotzdem als versucht vermerkt", "zeitbudget",
         [["      results.push({ politicianId: tenantId, skipped: true, reason: \"zeitbudget\" });",
           "      await speichern(claimPatch({ cronName, tenantId, runId, nowMs: now(), vorher: entryOf(zustand, cronName, tenantId) }));\n      results.push({ politicianId: tenantId, skipped: true, reason: \"zeitbudget\" });"]]]
@@ -704,11 +865,55 @@ const SECHS = ["anna-a", "bela-b", "cem-c", "dora-d", "emil-e", "frida-f"];
     check("Ausgangslage: nicht begonnene Mandate bleiben ohne Versuchsvermerk",
       (await zeitbudgetFaelschtVersuch(F)) === false);
 
+    // Probe E — verliert dieser Lauf den Wettlauf um ein Mandat, darf er es nicht anfassen.
+    async function wettlaufIgnoriert(mod) {
+      const uhr = makeUhr();
+      let raw = {};
+      const begonnen = [];
+      await mod.runTenantsFairly({
+        cronName: "crawl", tenantIds: ["anna-a", "bela-b"], runId: "lauf-B",
+        deadlineMs: 240000, reserveMs: 0, startedMs: uhr.now(), now: uhr.now,
+        loadState: async () => JSON.parse(JSON.stringify(raw)),
+        saveState: async (patch, { pruefen = false } = {}) => {
+          raw = mod.mergeState(raw, patch, { nowMs: uhr.now() });
+          if (pruefen && patch.crons.crawl && patch.crons.crawl["anna-a"]) {
+            raw = mod.mergeState(raw, {
+              version: 1,
+              crons: { crawl: { "anna-a": { status: "laufend", letzterVersuchAt: new Date(uhr.now() + 1).toISOString(), letzteLaufkennung: "lauf-A", versuche: 2 } } }
+            }, { nowMs: uhr.now() });
+          }
+          return { ok: true, state: JSON.parse(JSON.stringify(raw)) };
+        },
+        perTenant: async (id) => { begonnen.push(id); uhr.vor(1000); return { ok: true }; }
+      });
+      return begonnen.includes("anna-a"); // true = Doppelverarbeitung moeglich
+    }
+
+    // Probe F — ein Lauf ohne Kapazitaet darf keine Garantie behaupten.
+    async function kapazitaetGelogen(mod) {
+      const uhr = makeUhr();
+      const r = await mod.runTenantsFairly({
+        cronName: "crawl", tenantIds: SECHS, deadlineMs: 10000, reserveMs: 15000,
+        startedMs: uhr.now(), now: uhr.now,
+        loadState: async () => ({}), saveState: async () => ({ ok: true }),
+        perTenant: async () => { uhr.vor(60000); return { ok: true }; }
+      });
+      return r.fairness.begonnen.length === 0
+        && (r.fairness.fortschrittsgarantie === true || r.fairness.ohneFortschritt === false);
+    }
+
+    check("Ausgangslage: der echte Code laesst den Wettlauf-Verlierer aussetzen",
+      (await wettlaufIgnoriert(F)) === false);
+    check("Ausgangslage: der echte Code behauptet bei k=0 keine Garantie",
+      (await kapazitaetGelogen(F)) === false);
+
     const proben = {
       garantie: verletztGarantie,
       registrierung: async (mod) => !(await versuchVorVerarbeitung(mod)),
       ueberlappung: ueberlappungOffen,
-      zeitbudget: zeitbudgetFaelschtVersuch
+      zeitbudget: zeitbudgetFaelschtVersuch,
+      wettlauf: wettlaufIgnoriert,
+      kapazitaet: kapazitaetGelogen
     };
     for (const [name, probe, paare] of mutationen) {
       let rot = false;
@@ -732,7 +937,13 @@ const SECHS = ["anna-a", "bela-b", "cem-c", "dora-d", "emil-e", "frida-f"];
     check("saveCronFairnessState bricht bei nicht lesbarem Stand ab, statt zu ueberschreiben",
       /if \(!aktuell\.ok\) return \{ ok: false, fehler: aktuell\.fehler \|\| "zustand-nicht-lesbar", gelesen: false \};/.test(storageQuelle));
     check("readCronFairnessState wirft nie (Fairness ist kein Ausfallgrund)",
-      /async function readCronFairnessState\(\)[\s\S]{0,900}catch \(error\) \{\s*\n\s*return \{ ok: false, state: normalizeState\(\{\}\)/.test(storageQuelle));
+      /async function readCronFairnessState\(deps = \{\}\)[\s\S]{0,1400}catch \(error\) \{\s*\n\s*return \{ ok: false, state: normalizeState\(\{\}\)/.test(storageQuelle));
+    check("saveCronFairnessState schreibt keinen aelteren Codestand ueber eine NEUERE Ablageform",
+      /aktuell\.version > FAIRNESS_VERSION/.test(storageQuelle)
+      && /zustand-neuere-version/.test(storageQuelle));
+    check("Der Versuchsvermerk wird nach dem Schreiben gegengelesen (kein stiller Verlust)",
+      /if \(!pruefen \|\| !erwartet\.length\)/.test(storageQuelle)
+      && /eigener-eintrag-ueberschrieben/.test(storageQuelle));
     check("Die Ablage ist eine EIGENE helmut_store-Zeile (keine neue Tabelle, keine Migration)",
       /const CRON_FAIRNESS_STORE_SUFFIX = "cron-fairness";/.test(storageQuelle)
       && /\/rest\/v1\/helmut_store\?id=eq\.\$\{encodeURIComponent\(cronFairnessRowId\(\)\)\}/.test(storageQuelle)
@@ -743,6 +954,129 @@ const SECHS = ["anna-a", "bela-b", "cem-c", "dora-d", "emil-e", "frida-f"];
       /const fairness = await deleteCronFairnessTenant\(politicianId\);/.test(storageQuelle)
       && /const fairness = await deleteCronFairnessTenant\(uid\);/.test(storageQuelle)
       && /v3\.ok && auth\.ok && fairness\.ok/.test(storageQuelle));
+  }
+
+  // ═══ 19c) Echte Ablage gegen einen gleichzeitigen Schreiber ═══════════════════════════════
+  abschnitt("19c) Gleichzeitige Schreibzugriffe verlieren keine Eintraege");
+  {
+    // Gegen die ECHTEN Funktionen aus storage.js, mit injizierter Anfrage-Funktion
+    // (`deps.request`) — kein Netz, keine Datenbank, kein Secret. Dummy-Werte nur, damit
+    // storage.useSupabase() den relationalen Zweig waehlt.
+    const storage = require(path.join(ROOT, "lib", "helmut", "storage.js"));
+    const alt = {
+      backend: process.env.HELMUT_STORAGE_BACKEND,
+      url: process.env.SUPABASE_URL,
+      key: process.env.SUPABASE_SERVICE_ROLE_KEY
+    };
+    process.env.HELMUT_STORAGE_BACKEND = "supabase";
+    process.env.SUPABASE_URL = "http://127.0.0.1:1/nicht-erreichbar";
+    process.env.SUPABASE_SERVICE_ROLE_KEY = "attrappe-kein-secret";
+    try {
+      // Attrappe der Zeile helmut_store/<storeId>-cron-fairness.
+      function attrappe({ nachSchreiben = null, leseFehler = null } = {}) {
+        const st = { row: null, lesen: 0, schreiben: 0 };
+        st.request = async (endpoint, options = {}) => {
+          if (!options.method || options.method === "GET") {
+            st.lesen += 1;
+            if (leseFehler) throw new Error(leseFehler);
+            return st.row ? [{ data: st.row }] : [];
+          }
+          if (options.method === "POST") {
+            st.schreiben += 1;
+            st.row = JSON.parse(options.body).data;
+            // Ein gleichzeitiger Lauf schreibt DIREKT NACH uns und traegt unseren
+            // Eintrag nicht mit — der klassische verlorene Schreibvorgang.
+            if (nachSchreiben) nachSchreiben(st);
+            return null;
+          }
+          throw new Error(`unerwartete Methode ${options.method}`);
+        };
+        return st;
+      }
+
+      const fremderStand = {
+        version: 1,
+        crons: { crawl: { "fremd-mandat": { status: "laufend", letzterVersuchAt: new Date(BASIS_MS).toISOString(), letzteLaufkennung: "lauf-fremd", versuche: 1 } } }
+      };
+      let einmal = true;
+      const ablage = attrappe({
+        nachSchreiben: (st) => {
+          if (!einmal) return;
+          einmal = false;
+          st.row = JSON.parse(JSON.stringify(fremderStand)); // unser Eintrag ist weg
+        }
+      });
+      const patch = F.claimPatch({ cronName: "crawl", tenantId: "eigen-mandat", runId: "lauf-eigen", nowMs: BASIS_MS });
+      const ergebnis = await storage.saveCronFairnessState(patch, { nowMs: BASIS_MS, pruefen: true, deps: { request: ablage.request } });
+      check("Der ueberschriebene Versuchsvermerk wird erkannt und wiederholt",
+        ergebnis.ok === true && ergebnis.versuche === 2, JSON.stringify({ ok: ergebnis.ok, versuche: ergebnis.versuche, fehler: ergebnis.fehler }));
+      check("Der eigene Eintrag steht danach in der Ablage",
+        F.entryOf(F.normalizeState(ablage.row), "crawl", "eigen-mandat") !== null);
+      check("Der Eintrag des gleichzeitigen Laufs ist NICHT verloren",
+        F.entryOf(F.normalizeState(ablage.row), "crawl", "fremd-mandat") !== null,
+        JSON.stringify(ablage.row));
+      check("Der zurueckgegebene Fernstand traegt beide Eintraege (fremder Halter sichtbar)",
+        F.entryOf(ergebnis.state, "crawl", "eigen-mandat") !== null
+        && F.entryOf(ergebnis.state, "crawl", "fremd-mandat") !== null);
+
+      // Dauerhafter Wettlauf: nach begrenzten Versuchen ehrlich aufgeben statt endlos.
+      const dauerhaft = attrappe({ nachSchreiben: (st) => { st.row = JSON.parse(JSON.stringify(fremderStand)); } });
+      const verloren = await storage.saveCronFairnessState(patch, { nowMs: BASIS_MS, pruefen: true, maxVersuche: 2, deps: { request: dauerhaft.request } });
+      check("Ein dauerhafter Wettlauf endet nach begrenzten Versuchen mit ok:false",
+        verloren.ok === false && verloren.konflikt === true, JSON.stringify(verloren));
+      check("Er laeuft dabei nicht endlos (genau 2 Schreibversuche)", dauerhaft.schreiben === 2, String(dauerhaft.schreiben));
+
+      // Lesefehler -> KEIN Schreibvorgang (bestehende Eintraege bleiben unberuehrt).
+      const kaputtesLesen = attrappe({ leseFehler: "blob-timeout" });
+      kaputtesLesen.row = JSON.parse(JSON.stringify(fremderStand));
+      const nichtGeschrieben = await storage.saveCronFairnessState(patch, { nowMs: BASIS_MS, pruefen: true, deps: { request: kaputtesLesen.request } });
+      check("Bei Lesefehler wird NICHT geschrieben", nichtGeschrieben.ok === false && kaputtesLesen.schreiben === 0,
+        JSON.stringify({ ok: nichtGeschrieben.ok, schreiben: kaputtesLesen.schreiben }));
+      check("Die bestehenden Eintraege bleiben dabei unveraendert",
+        F.entryOf(F.normalizeState(kaputtesLesen.row), "crawl", "fremd-mandat") !== null);
+
+      // Neuere Schemaversion -> KEIN Schreibvorgang (Rollout mit zwei Codestaenden).
+      const neuer = attrappe({});
+      neuer.row = { version: F.FAIRNESS_VERSION + 1, crons: { crawl: { "fremd-mandat": { status: "erfolgreich", letzterVersuchAt: new Date(BASIS_MS).toISOString() } } } };
+      const abgelehnt = await storage.saveCronFairnessState(patch, { nowMs: BASIS_MS, deps: { request: neuer.request } });
+      check("Ein aelterer Codestand ueberschreibt eine NEUERE Ablageform nicht",
+        abgelehnt.ok === false && /neuere-version/.test(String(abgelehnt.fehler)) && neuer.schreiben === 0,
+        JSON.stringify({ ok: abgelehnt.ok, fehler: abgelehnt.fehler, schreiben: neuer.schreiben }));
+
+      // Abschluss-Schreibvorgang wird bewusst NICHT gegengelesen (ein verlorener
+      // Abschluss laeuft ueber die Frist ab) — das haelt die Zahl der Anfragen klein.
+      const ohnePruefung = attrappe({});
+      await storage.saveCronFairnessState(
+        F.finishPatch({ cronName: "crawl", tenantId: "eigen-mandat", runId: "lauf-eigen", erfolg: true, startedMs: BASIS_MS, nowMs: BASIS_MS + 1000 }),
+        { nowMs: BASIS_MS + 1000, deps: { request: ohnePruefung.request } }
+      );
+      check("Der Abschluss braucht genau ein Lesen und ein Schreiben (keine Gegenpruefung)",
+        ohnePruefung.lesen === 1 && ohnePruefung.schreiben === 1,
+        JSON.stringify({ lesen: ohnePruefung.lesen, schreiben: ohnePruefung.schreiben }));
+    } finally {
+      if (alt.backend === undefined) delete process.env.HELMUT_STORAGE_BACKEND; else process.env.HELMUT_STORAGE_BACKEND = alt.backend;
+      if (alt.url === undefined) delete process.env.SUPABASE_URL; else process.env.SUPABASE_URL = alt.url;
+      if (alt.key === undefined) delete process.env.SUPABASE_SERVICE_ROLE_KEY; else process.env.SUPABASE_SERVICE_ROLE_KEY = alt.key;
+    }
+  }
+
+  // ═══ 19d) Der Lauf sieht bei gestoerter Buchfuehrung NICHT sauber aus ═════════════════════
+  abschnitt("19d) Schreibfehler macht den Lauf nicht falsch gruen");
+  {
+    const serverSrc = fs.readFileSync(path.join(ROOT, "server.js"), "utf8");
+    check("Ein gestoerter Fairnesszustand erzeugt einen eigenen systemError",
+      /Fairnesszustand nicht nutzbar[\s\S]{0,120}keine Fairnessgarantie/.test(serverSrc));
+    check("Er steht zusaetzlich als eigenes Feld in der Antwort",
+      /fairnessGestoert: Boolean\(fairnessAn && \(!fairness\.zustandGeladen \|\| fairness\.zustandFehler\)\)/.test(serverSrc));
+    check("Ein Lauf ohne Fortschritt (k=0) steht ebenfalls in der Antwort",
+      /ohneFortschritt: Boolean\(fairness\.ohneFortschritt\)/.test(serverSrc));
+    check("Der Fall k=0 wird im systemError ausdruecklich benannt",
+      /KEIN Mandat begonnen[\s\S]{0,200}KEINE Fairnessgarantie/.test(serverSrc));
+    check("Die Protokollzeile weist Kapazitaet und fehlende Garantie aus",
+      /kapazitaet=\$\{fairness\.kapazitaet\}/.test(serverSrc)
+      && /keine-garantie/.test(serverSrc));
+    check("Begruendung dokumentiert, warum ok:true bleibt (kein Watchdog-Fehlalarm)",
+      /Watchdog\s*\n?\s*\/\/ fehlalarmieren/.test(serverSrc) || /fehlalarmieren/.test(serverSrc));
   }
 
   // ═══ 20) Sicherheitsgrenzen dieses Sprints ══════════════════════════════════════════════

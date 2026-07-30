@@ -6123,10 +6123,15 @@ async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000 } = 
       if (!gelesen.ok) throw new Error(gelesen.fehler || "fairnesszustand-nicht-lesbar");
       return gelesen.state;
     },
-    saveState: async (patch) => {
-      if (!fairnessAn) return;
-      const geschrieben = await saveCronFairnessState(patch);
+    saveState: async (patch, { pruefen = false } = {}) => {
+      if (!fairnessAn) return null;
+      // `pruefen` (nur beim Registrieren eines Versuchs) laesst die Ablage nach dem
+      // Schreiben gegenlesen und begrenzt wiederholen — ein ueberlappender Lauf kann
+      // den eigenen Eintrag damit nicht still ueberschreiben. Der zurueckgegebene
+      // FERNSTAND macht einen fremden Halter fuer den Aufrufer sichtbar.
+      const geschrieben = await saveCronFairnessState(patch, { pruefen });
       if (!geschrieben.ok) throw new Error(geschrieben.fehler || "fairnesszustand-nicht-schreibbar");
+      return geschrieben;
     }
   });
   const results = lauf.results;
@@ -6141,7 +6146,8 @@ async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000 } = 
     + ` zeitbudget=${fairness.zeitbudget.join(",") || "-"}`
     + ` laeuftBereits=${fairness.laeuftBereits.join(",") || "-"}`
     + ` naechstes=${fairness.naechstesMandat || "-"}`
-    + ` obergrenzeLaeufe=${fairness.obergrenzeLaeufe}`
+    + ` kapazitaet=${fairness.kapazitaet}`
+    + ` obergrenzeLaeufe=${fairness.obergrenzeLaeufe === null ? "keine-garantie" : fairness.obergrenzeLaeufe}`
     + ` zustand=${fairnessAn ? (fairness.zustandGeladen && !fairness.zustandFehler ? "ok" : "gestoert") : "aus"}`);
   // SICHTBARKEIT (Incident 2026-07-25): vom Zeitbudget abgeschnittene Mandate
   // standen bisher nur im Antwort-Body, den niemand liest — vier aktive Mandate
@@ -6154,8 +6160,15 @@ async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000 } = 
       scope: `cron-${cronName}`,
       // Die Kennungen gehoeren in die Meldung: ohne sie war nicht erkennbar, ob es
       // immer dieselben Mandate trifft — genau das war der Kern von OP-25.
-      message: `Zeitbudget erschoepft: ${budgetSkipped.length} von ${tenantIds.length} Mandaten nicht verarbeitet`
-        + ` (${budgetSkipped.map((r) => r.politicianId).join(", ")}). Naechster Lauf beginnt mit ${fairness.naechstesMandat || "unbekannt"}.`,
+      // UND: der Fall k=0 (kein einziges Mandat begonnen) wird ausdruecklich benannt.
+      // Fuer diesen Lauf gibt es KEINE Fortschrittsgarantie — das darf nicht in einer
+      // Zahl untergehen, die wie eine Teilverarbeitung aussieht.
+      message: fairness.ohneFortschritt
+        ? `KEIN Mandat begonnen (0 von ${tenantIds.length}) — Lauf ohne Fortschritt,`
+          + ` fuer diesen Lauf gilt KEINE Fairnessgarantie. Restlaufzeit reichte nicht fuer das erste Mandat`
+          + ` (${budgetSkipped.map((r) => r.politicianId).join(", ")}). Naechster Lauf beginnt mit ${fairness.naechstesMandat || "unbekannt"}.`
+        : `Zeitbudget erschoepft: ${budgetSkipped.length} von ${tenantIds.length} Mandaten nicht verarbeitet`
+          + ` (${budgetSkipped.map((r) => r.politicianId).join(", ")}). Naechster Lauf beginnt mit ${fairness.naechstesMandat || "unbekannt"}.`,
       path: `/api/cron/${cronName}`
     }).catch(() => {});
   }
@@ -6169,12 +6182,19 @@ async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000 } = 
       path: `/api/cron/${cronName}`
     }).catch(() => {});
   }
+  // `ok` bleibt die Aussage ueber die VERARBEITUNG (der Cron hat geantwortet und die
+  // Mandate isoliert abgearbeitet) — sie auf false zu setzen, weil die Buchfuehrung
+  // stoerte, wuerde einen erfolgreichen Crawl als Ausfall melden und den Watchdog
+  // fehlalarmieren. Die Stoerung steht deshalb als EIGENES Feld daneben, zusaetzlich
+  // zum Systemfehler und zur Fehlerzeile im Protokoll: der Lauf sieht nicht sauber aus.
   return {
     ok: true,
     tenants: tenantIds.length,
     durationMs: Date.now() - startedMs,
     results,
     budgetSkipped: budgetSkipped.length,
+    fairnessGestoert: Boolean(fairnessAn && (!fairness.zustandGeladen || fairness.zustandFehler)),
+    ohneFortschritt: Boolean(fairness.ohneFortschritt),
     fairness
   };
 }
