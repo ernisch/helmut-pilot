@@ -1,6 +1,6 @@
 "use strict";
 
-// Befund 27A-1 — Ausschussbeleg nur bei passendem Zustaendigkeitsraum.
+// Befund 27A-1 UND 27A-2 — Ausschussbeleg nur bei passendem Zustaendigkeitsraum.
 // =============================================================================
 // DER FEHLER (gemessen vor dem Fix, reproduzierbar mit dieser Suite auf dem
 // Stand `d9006c1`): `normalizeCommittee` faltet den Brandenburger "Ausschuss fuer
@@ -14,17 +14,35 @@
 // "Sofort reagieren" fuer ein Mandat, das mit dem Vorgang institutionell nichts
 // zu tun hat. `committeeMatchKey` loest das NICHT (Abschnitt A beweist das).
 //
-// DIE REGEL (Produktregel des Sprints): ein politisches FACHGEBIET darf
-// laenderuebergreifend aehnlich sein — eine konkrete AUSSCHUSSMITGLIEDSCHAFT
-// gilt nur als Beleg, wenn Ausschuss und institutioneller Zustaendigkeitsraum
-// zusammenpassen. Fuer ein Landesmandat heisst das: das Bundesland des Vorgangs
-// muss POSITIV belegt dasselbe sein (fail-closed).
+// BEFUND 27A-2 (in Production gemessen, §51; in diesem Sprint behoben, §52):
+// DIESELBE Kollision faltet auch ueber die politischen EBENEN. Ein
+// BUNDESTAGSprofil erhielt einen Ausschussbeleg, wenn ein LANDES- oder
+// KOMMUNALvorgang einen gleichnamigen Landtags-/Kreistagsausschuss nannte
+// ("Gesundheit" gegen "Gesundheitsausschuss (Landtag)", "Arbeit und Soziales"
+// gegen "Sozialausschuss Kreistag Ostallgaeu"). Gemessen: 14 qualifizierte Paare
+// bei 4 von 6 aktiven Bundestagsprofilen, 13 davon mit anderer
+// Entscheidungsstufe, 5 ohne jeden weiteren Beleg.
 //
-// GELTUNGSBEREICH: die Verschaerfung greift ausschliesslich fuer Profile mit
-// eindeutiger LANDES-Mandatsebene. Bundes- und unbestimmte Profile verhalten
-// sich byte-identisch wie vorher (Abschnitt F beweist das) — eine Verschaerfung
-// dort veraenderte aktive Bundestagsergebnisse und ist eine getrennte
-// Betreiberentscheidung (docs/matching-nachvollziehbarkeit.md §50, Befund 27A-2).
+// DIE REGEL (Produktregel des Sprints): ein politisches FACHGEBIET darf
+// ebenen- und laenderuebergreifend aehnlich sein — eine konkrete
+// AUSSCHUSSMITGLIEDSCHAFT gilt nur als Beleg, wenn Ausschuss und institutioneller
+// Zustaendigkeitsraum zusammenpassen. Die Pruefung ist SYMMETRISCH:
+//   * Landesmandat -> das Bundesland des Vorgangs muss POSITIV belegt dasselbe
+//     sein (fail-closed),
+//   * Bundesmandat -> die Ebene des Vorgangs muss POSITIV `bund` sein
+//     (fail-closed; Landes-/Kommunalvorgang -> kein Beleg).
+//
+// GELTUNGSBEREICH: die Pruefung greift nur, wenn die PROFILSEITE bestimmt ist.
+// Profile ohne belegte Mandatsebene und Landesmandate ohne belegtes Bundesland
+// verhalten sich byte-identisch wie vorher (Abschnitt F beweist das). Auf der
+// VORGANGSSEITE ist die Pruefung dagegen auf beiden Ebenen gleich streng: eine
+// fehlende, leere oder `unknown` Ebene erzeugt KEINEN Ausschussbeleg (G8/G11b).
+// BEWUSST NICHT ENTSCHIEDEN: EU-/internationale Vorgaenge behalten fuer
+// Bundesmandate ihr bisheriges Verhalten — dort nennen die echten
+// Production-Daten teils ECHTE Bundestagsausschuesse ("Ausschuss fuer Arbeit und
+// Soziales", "Auswaertiger Ausschuss"), teils fremde Gremien ("Europaeischer
+// Ausschuss fuer soziale Rechte"). Die Ebene allein trennt das nicht; das ist ein
+// getrennter Nebenbefund (§52.7), Abschnitt J schreibt den Ist-Stand fest.
 //
 // REIN OFFLINE: 0 KI, 0 Netz, 0 Datenbank, 0 Zufall. Es werden die ECHTEN
 // Produktionsfunktionen geprueft (matching, matching-begruendung,
@@ -45,19 +63,33 @@ function check(name, cond, detail = "") {
 }
 function abschnitt(titel) { console.log(`\n== ${titel} ==`); }
 
-// ═══ 0 · BUNDESTAGSPROJEKTION: byte-identisch zum Stand VOR dem Fix ═════════
-// Der Vergleichswert ist KEIN "so ist es jetzt"-Schnappschuss, sondern auf dem
-// Stand VOR dem Fix erhoben (`main` = d9006c1). Er beweist damit genau die
-// Sprintauflage "aktive Bundestagsprofile bleiben unveraendert" — und nicht nur
-// Stabilitaet ab heute.
+// ═══ 0 · BUNDESTAGSPROJEKTION: zwei verankerte Haschwerte ═══════════════════
+// Nach dem 27A-2-Fix ist die Bundestagsprojektion NICHT mehr byte-identisch zum
+// Altstand — genau das ist der Zweck des Sprints. Statt den Nachweis aufzugeben,
+// wird er GETEILT:
 //
-// SO WURDE ER ERHOBEN (reproduzierbar):
+//   0a  REGELFREIE Projektion == `GOLDEN_BUND_HASH` (auf `d9006c1` erhoben).
+//       Dieselben Profile OHNE belegte Mandatsebene: der Zustaendigkeitsraum ist
+//       unbestimmt, die Regel antwortet "nichts entscheidbar -> unveraendert",
+//       die Projektion ist also die des Altstands. Diese Zusicherung beweist:
+//       AUSSERHALB der Regel hat sich seit `d9006c1` nichts bewegt — nicht
+//       Vektor, nicht Hash, nicht Rang, nicht Rezeptversion, nicht Entscheidung.
+//       Sie ist eine exakte Rekonstruktion, keine Annaeherung: die Mandatsebene
+//       geht nachweislich nicht in Vektor/Hash/Filter ein (H1/H2).
+//   0b  Projektion MIT Regel == `GOLDEN_BUND_FIX_HASH` (nach dem Fix erhoben).
+//       Sie friert das NEUE Bundesverhalten ein: jede kuenftige Abweichung ist
+//       freigabepflichtig.
+//   0c–0e  Der Unterschied zwischen beiden ist AUSSCHLIESSLICH der Wegfall von
+//       Ausschussbelegen — namentlich verankert, kein neuer Beleg, sonst nichts.
+//
+// SO WURDEN SIE ERHOBEN (reproduzierbar):
 //     git archive d9006c1 | tar -x -C /tmp/basis
 //     cp scripts/matching-ausschuss-zustaendigkeit-test.js /tmp/basis/scripts/
 //     cd /tmp/basis && HELMUT_GOLDEN_PRINT=1 node scripts/matching-ausschuss-zustaendigkeit-test.js
-// Dieser Block laeuft ABSICHTLICH als Erstes und benutzt ausschliesslich
-// Funktionen, die es auf BEIDEN Staenden gibt — im Druckmodus endet er vor jeder
-// Nutzung der neuen Regel und ist deshalb auf dem Altstand ausfuehrbar.
+// Auf dem Altstand sind BEIDE gedruckten Werte gleich (die Regel greift dort fuer
+// Bundesprofile nicht) — deshalb ist `GOLDEN_BUND_HASH` dort belegt. Dieser Block
+// laeuft ABSICHTLICH als Erstes und benutzt ausschliesslich Funktionen, die es auf
+// BEIDEN Staenden gibt; im Druckmodus endet er vor jeder Nutzung der neuen Regel.
 //
 // Enthalten sind alle Faelle, die in Production real vorkommen: Bundesvorgaenge,
 // Landesvorgaenge (Nachrichten ueber Landespolitik), kommunale Vorgaenge und
@@ -116,10 +148,18 @@ const GOLDEN_KOS = [
   goldenKo("land-ohne-geo", { headline: "Landesinnenausschuss tagt", ebene: "land",
     ausschuesse: ["Ausschuss für Inneres und Heimat"], text: "Der Innenausschuss des Landtags tagt." })
 ];
-function goldenProjektion() {
+// Dieselben Profile OHNE belegte Mandatsebene -> Zustaendigkeitsraum unbestimmt
+// -> die Regel ist inert -> Verhalten des Altstands (siehe Blockkopf).
+const GOLDEN_BUND_PROFILE_REGELFREI = GOLDEN_BUND_PROFILE.map((p) => {
+  const q = { ...p };
+  delete q.politicalLevel;
+  delete q.parliamentType;
+  return q;
+});
+function goldenProjektion(profile = GOLDEN_BUND_PROFILE) {
   const vertrag = require("../lib/helmut/matching-contract");
   const raus = {};
-  for (const p of GOLDEN_BUND_PROFILE) {
+  for (const p of profile) {
     const rezept = vertrag.LEGACY_RECIPE_VERSION;
     raus[p.id] = {
       profil_hash: m.profileHash(p),
@@ -143,17 +183,66 @@ function goldenProjektion() {
   raus.__ko_vektoren = Object.fromEntries(GOLDEN_KOS.map((k) => [k.id, m.embedKnowledgeObject(k)]));
   return JSON.stringify(raus, null, 1);
 }
-// Auf dem Stand d9006c1 (VOR dem Fix) erhoben — siehe Anleitung oben.
+// Auf dem Stand d9006c1 (VOR dem 27A-1-Fix) erhoben — siehe Anleitung oben.
 const GOLDEN_BUND_HASH = "48d761b7033ecc92721d4566de5975b5f4525e4df7b085bf8621823d60bee387";
+// Nach dem 27A-2-Fix erhoben. Friert das NEUE Bundesverhalten ein.
+// Gegengeprueft: auf `d9006c1` liefert der Druckmodus fuer BEIDE Zeilen
+// `48d761b7…` (die Regel existierte dort nicht) — die regelfreie Rekonstruktion
+// in 0a ist damit nicht nur behauptet, sondern am Altstand belegt.
+const GOLDEN_BUND_FIX_HASH = "3d4e22226e55e2c5e84a4050260272eabbc94a57dfd8b98a8be3022538412e20";
+const hash = (s) => crypto.createHash("sha256").update(s).digest("hex");
 if (process.env.HELMUT_GOLDEN_PRINT) {
-  process.stdout.write(`${crypto.createHash("sha256").update(goldenProjektion()).digest("hex")}\n`);
+  process.stdout.write(`regelfrei ${hash(goldenProjektion(GOLDEN_BUND_PROFILE_REGELFREI))}\n`);
+  process.stdout.write(`mit-regel ${hash(goldenProjektion(GOLDEN_BUND_PROFILE))}\n`);
   process.exit(0);
 }
-abschnitt("0 · Bundestagsprojektion byte-identisch zum Stand vor dem Fix");
-const goldenIst = crypto.createHash("sha256").update(goldenProjektion()).digest("hex");
-check("0a (Pflicht 5) volle Projektion fuer Bundes-/ebenenlose Profile ist byte-identisch zum Stand d9006c1",
-  goldenIst === GOLDEN_BUND_HASH,
-  `erwartet ${GOLDEN_BUND_HASH}, gemessen ${goldenIst} — Bundesverhalten hat sich geaendert, das ist FREIGABEPFLICHTIG`);
+abschnitt("0 · Bundestagsprojektion: Altstand rekonstruiert + neues Verhalten verankert");
+const goldenRegelfrei = hash(goldenProjektion(GOLDEN_BUND_PROFILE_REGELFREI));
+const goldenMitRegel = hash(goldenProjektion(GOLDEN_BUND_PROFILE));
+check("0a (Pflicht 24) regelfreie Projektion ist byte-identisch zum Stand d9006c1 — ausser der Regel hat sich nichts bewegt",
+  goldenRegelfrei === GOLDEN_BUND_HASH,
+  `erwartet ${GOLDEN_BUND_HASH}, gemessen ${goldenRegelfrei} — es hat sich etwas AUSSERHALB der Zustaendigkeitsregel geaendert, das ist FREIGABEPFLICHTIG`);
+check("0b Projektion MIT Regel ist byte-identisch zum verankerten Stand nach dem 27A-2-Fix",
+  goldenMitRegel === GOLDEN_BUND_FIX_HASH,
+  `erwartet ${GOLDEN_BUND_FIX_HASH}, gemessen ${goldenMitRegel} — das Bundesverhalten hat sich geaendert, das ist FREIGABEPFLICHTIG`);
+
+// 0c–0e: der Unterschied zwischen beiden Staenden, Paar fuer Paar. Verankert ist
+// die VOLLSTAENDIGE Liste der Wegfaelle — nicht nur ihre Anzahl. Ein zusaetzlicher
+// oder fehlender Wegfall macht die Suite rot.
+const GOLDEN_ERWARTETE_WEGFAELLE = [
+  ["gb-1", "land-bayern-soziales", "Ausschuss für Arbeit und Soziales"],   // Landtag Bayern
+  ["gb-1", "unknown-soziales", "Ausschuss für Arbeit und Soziales"],       // Ebene unbelegt -> fail-closed
+  ["gb-2", "land-berlin-inneres", "Innenausschuss"],                       // Abgeordnetenhaus Berlin
+  ["gb-2", "land-bb-inneres", "Innenausschuss"],                           // Landtag Brandenburg
+  ["gb-2", "land-ohne-geo", "Innenausschuss"]                              // Ebene land, Geografie leer
+];
+function goldenDiff() {
+  const raus = { wegfaelle: [], neue: [], restGleich: 0, paare: 0 };
+  for (const p of GOLDEN_BUND_PROFILE) {
+    const pf = m.profileFeatures(p);
+    const pfRegelfrei = { ...pf, zustaendigkeit: null };
+    for (const k of GOLDEN_KOS) {
+      const kf = m.knowledgeObjectFeatures(k);
+      const mitRegel = m.matchedFeatures(pf, kf);
+      const regelfrei = m.matchedFeatures(pfRegelfrei, { ...kf, zustaendigkeit: null });
+      const aus = (fs) => fs.filter((f) => f.type === "ausschuss").map((f) => f.value);
+      const rest = (fs) => JSON.stringify(fs.filter((f) => f.type !== "ausschuss"));
+      raus.paare += 1;
+      if (rest(mitRegel) === rest(regelfrei)) raus.restGleich += 1;
+      for (const v of aus(regelfrei)) if (!aus(mitRegel).includes(v)) raus.wegfaelle.push([p.id, k.id, v]);
+      for (const v of aus(mitRegel)) if (!aus(regelfrei).includes(v)) raus.neue.push([p.id, k.id, v]);
+    }
+  }
+  return raus;
+}
+const gDiff = goldenDiff();
+check("0c genau die verankerten Ausschussbelege entfallen — vollstaendige Liste, nicht nur die Anzahl",
+  JSON.stringify(gDiff.wegfaelle) === JSON.stringify(GOLDEN_ERWARTETE_WEGFAELLE),
+  JSON.stringify(gDiff.wegfaelle));
+check("0d (Pflicht 15/16/17) kein Paar GEWINNT einen Ausschussbeleg — die Regel entfernt nur",
+  gDiff.neue.length === 0, JSON.stringify(gDiff.neue));
+check("0e (Pflicht 24) in ALLEN Paaren ist alles ausser dem Ausschussbeleg byte-identisch",
+  gDiff.restGleich === gDiff.paare, `${gDiff.restGleich}/${gDiff.paare}`);
 
 // ── Testprofile ──────────────────────────────────────────────────────────────
 // Feldform wie storage.fromMandateProfileRow (politische_ebene -> parliamentType/
@@ -258,6 +347,56 @@ const KO_WIDERSPRUCH = ko("widerspruch", {
   decision_level: "bund", affected_geographies: [geo("Brandenburg", "geo-land-brandenburg")],
   ausschuesse: [BB_AUSSCHUSS], mentioned_committees: [BB_AUSSCHUSS], mentioned_locations: ["Brandenburg"]
 });
+// ── Befund 27A-2: die Bundesseite ────────────────────────────────────────────
+// Landesvorgang, der einen gleichnamigen LANDES-Ausschuss nennt. Der reale
+// gemessene Fall: Bundestagsausschuss "Gesundheit" gegen "Gesundheitsausschuss
+// (Landtag)" — beide falten auf `gesundheit`.
+const BT_GESUNDHEIT = "Gesundheit";                                           // Bundestag
+const LAND_GESUNDHEIT = "Gesundheitsausschuss (Landtag)";                     // Landtag
+const KREIS_SOZIAL = "Sozialausschuss Kreistag Ostallgäu";                    // Kreistag
+const BT_SOZIALES = "Ausschuss für Arbeit und Soziales";                      // Bundestag
+
+const PROFIL_BUND_GESUNDHEIT = Object.freeze({
+  id: "t-zust-bt-gesundheit", fullName: "Testmandat Bund (Gesundheit)",
+  party: "Fraktionslos", politicalLevel: "Bund", parliamentType: "Bundestag",
+  state: "Berlin", constituency: "Wahlkreis 84 (Test)",
+  committees: [BT_GESUNDHEIT], focusTopics: []
+});
+const PROFIL_BUND_SOZIALES = Object.freeze({
+  id: "t-zust-bt-soziales", fullName: "Testmandat Bund (Arbeit und Soziales)",
+  party: "Fraktionslos", politicalLevel: "Bund", parliamentType: "Bundestag",
+  state: "Bayern", constituency: "Wahlkreis 217 (Test)",
+  committees: [BT_SOZIALES], focusTopics: []
+});
+// Landesvorgang mit Landesausschuss (der gemessene 27A-2-Fall). `zeitdruck` und
+// `source_document_count` sind bewusst so gesetzt, dass die Entscheidung dieselben
+// Zahlen ergibt wie der real gemessene Production-Fall (Score 49 -> 15, §51.7).
+const KO_LAND_GESUNDHEIT = ko("land-gesundheit", {
+  headline: "Kliniken im Land melden Millionendefizite",
+  decision_level: "land", affected_geographies: [geo("Rheinland-Pfalz", "geo-land-rheinland-pfalz")],
+  ausschuesse: [LAND_GESUNDHEIT], mentioned_committees: [LAND_GESUNDHEIT], mentioned_locations: ["Mainz"],
+  zeitdruck: "Haushaltsberatung laeuft", source_document_count: 2
+});
+const SIM_LAND_GESUNDHEIT = 0.1126;   // gemessene Aehnlichkeit des Realfalls
+// KOMMUNALvorgang mit Kreistagsausschuss (in Production ebenfalls gemessen).
+const KO_KOMMUNE_SOZIAL = ko("kommune-sozial", {
+  headline: "Kreistag berät die Sozialumlage",
+  decision_level: "kommune", affected_geographies: [],
+  ausschuesse: [KREIS_SOZIAL], mentioned_committees: [KREIS_SOZIAL]
+});
+// Bundesvorgang mit ECHTEM Bundestagsausschuss — muss belegbar bleiben.
+const KO_BUND_GESUNDHEIT = ko("bund-gesundheit", {
+  headline: "Bundestag berät die Apothekenreform",
+  decision_level: "bund", affected_geographies: [],
+  ausschuesse: [BT_GESUNDHEIT], mentioned_committees: [BT_GESUNDHEIT]
+});
+// EU-Vorgang, der einen ECHTEN Bundestagsausschuss nennt — offener Nebenbefund.
+const KO_EU_SOZIALES = ko("eu-soziales", {
+  headline: "EU-Richtlinie zur Plattformarbeit",
+  decision_level: "eu", affected_geographies: [],
+  ausschuesse: [BT_SOZIALES], mentioned_committees: [BT_SOZIALES]
+});
+
 // Fremdes Land NUR ueber die Kommune belegt (Bezirk/Kommune -> Land ueber den Seed).
 const KO_BLN_BEZIRK = ko("bln-bezirk", {
   headline: "Neukölln verstärkt den Ordnungsdienst",
@@ -442,25 +581,40 @@ check("E3 M8 (aktiv) laesst den echten eigenen Landesvorgang weiterhin durch",
 check("E4 M8 bleibt Default AUS — diese Suite aktiviert nichts",
   relevanz.relevanzGateAktiv(process.env) === false && !process.env.HELMUT_MATCHING_RELEVANZ_GATE);
 
-// ═══ F · Pflichtregression 5: Bundesmatching unveraendert ═══════════════════
-abschnitt("F · Bundes- und unbestimmte Profile bleiben unveraendert");
-check("F1 (Pflicht 5) Bundestagssynonyme funktionieren weiter: 'Sozialausschuss' belegt 'Arbeit und Soziales'",
+// ═══ F · Bundesseite: echter Bundesausschuss bleibt, fremder faellt weg ═════
+abschnitt("F · Bundesmandate (Befund 27A-2) — symmetrische Gegenrichtung");
+check("F1 (Pflicht 6) Bundestagssynonyme funktionieren im BUNDESKONTEXT weiter: 'Sozialausschuss' belegt 'Arbeit und Soziales'",
   (() => {
     const p = { ...PROFIL_BUND, committees: ["Sozialausschuss"], focusTopics: [] };
-    const k = ko("bt-soziales", { decision_level: "bund", ausschuesse: ["Ausschuss für Arbeit und Soziales"] });
+    const k = ko("bt-soziales", { decision_level: "bund", ausschuesse: [BT_SOZIALES] });
     return feats(p, k).some((f) => f.type === "ausschuss");
   })());
-check("F2 Bundesprofil x Bundesvorgang: Ausschussbeleg unveraendert vorhanden",
-  hatAusschuss(PROFIL_BUND, KO_BUND), JSON.stringify(feats(PROFIL_BUND, KO_BUND)));
-check("F3 Bundesprofil x Vorgang ohne belegte Zustaendigkeit: Verhalten unveraendert (kein neuer Wegfall)",
-  hatAusschuss(PROFIL_BUND, KO_OHNE_ZUSTAENDIGKEIT));
-check("F4 Bundesprofil x fremdem Landesvorgang: bewusst UNVERAENDERT (Befund 27A-2, getrennte Betreiberentscheidung)",
-  hatAusschuss(PROFIL_BUND, KO_BLN) === true,
-  "eine Verschaerfung hier wuerde aktive Bundestagsergebnisse veraendern");
-check("F5 Profil ohne Mandatsebene: Verhalten unveraendert (Ebene ist nicht belegt)",
+check("F2 (Pflicht 3) Bundesprofil x Bundesvorgang: Ausschussbeleg unveraendert vorhanden",
+  hatAusschuss(PROFIL_BUND, KO_BUND) && hatAusschuss(PROFIL_BUND_GESUNDHEIT, KO_BUND_GESUNDHEIT),
+  JSON.stringify(feats(PROFIL_BUND, KO_BUND)));
+// Symmetrisch zu G1 (Landesseite): eine unbelegte Ebene beweist keine
+// Bundeszustaendigkeit. Der Beleg entfaellt deshalb auch hier — der fachliche
+// Bezug bleibt ueber `thema` moeglich (§52.6).
+check("F3 (Pflicht 18) Bundesprofil x Vorgang OHNE belegte Zustaendigkeit -> KEIN Beleg (fail-closed, symmetrisch zu G1)",
+  !hatAusschuss(PROFIL_BUND, KO_OHNE_ZUSTAENDIGKEIT), JSON.stringify(feats(PROFIL_BUND, KO_OHNE_ZUSTAENDIGKEIT)));
+check("F4 (Pflicht 1) Bundesprofil x LANDESvorgang mit gleichnamigem Landesausschuss -> KEIN Ausschussbeleg (Befund 27A-2 behoben)",
+  !hatAusschuss(PROFIL_BUND, KO_BLN)
+  && !hatAusschuss(PROFIL_BUND_GESUNDHEIT, KO_LAND_GESUNDHEIT),
+  JSON.stringify([feats(PROFIL_BUND, KO_BLN), feats(PROFIL_BUND_GESUNDHEIT, KO_LAND_GESUNDHEIT)]));
+check("F4b (Pflicht 1) der gemessene Realfall: 'Gesundheit' (Bundestag) x 'Gesundheitsausschuss (Landtag)' faltet weiter, belegt aber nicht",
+  m.slugCommittee(BT_GESUNDHEIT) === m.slugCommittee(LAND_GESUNDHEIT)
+  && !hatAusschuss(PROFIL_BUND_GESUNDHEIT, KO_LAND_GESUNDHEIT),
+  `${m.slugCommittee(BT_GESUNDHEIT)} / ${m.slugCommittee(LAND_GESUNDHEIT)}`);
+check("F4c (Pflicht 1) auch der KOMMUNALE Fall: 'Arbeit und Soziales' x 'Sozialausschuss Kreistag Ostallgäu' -> kein Beleg",
+  m.slugCommittee(BT_SOZIALES) === m.slugCommittee(KREIS_SOZIAL)
+  && !hatAusschuss(PROFIL_BUND_SOZIALES, KO_KOMMUNE_SOZIAL),
+  `${m.slugCommittee(BT_SOZIALES)} / ${m.slugCommittee(KREIS_SOZIAL)}`);
+check("F5 Profil ohne Mandatsebene: Verhalten unveraendert (Ebene ist nicht belegt, nichts entscheidbar)",
   hatAusschuss(PROFIL_OHNE_EBENE, KO_BLN) && hatAusschuss(PROFIL_OHNE_EBENE, KO_OHNE_ZUSTAENDIGKEIT));
 check("F6 die Regel entfernt AUSSCHLIESSLICH Ausschussbelege — sie fuegt nie einen hinzu",
-  [[PROFIL_BB, KO_BLN], [PROFIL_BLN, KO_BB], [PROFIL_BUND, KO_BLN], [PROFIL_OHNE_EBENE, KO_BB]]
+  [[PROFIL_BB, KO_BLN], [PROFIL_BLN, KO_BB], [PROFIL_BUND, KO_BLN], [PROFIL_OHNE_EBENE, KO_BB],
+   [PROFIL_BUND_GESUNDHEIT, KO_LAND_GESUNDHEIT], [PROFIL_BUND_GESUNDHEIT, KO_BUND_GESUNDHEIT],
+   [PROFIL_BUND_SOZIALES, KO_KOMMUNE_SOZIAL], [PROFIL_BUND_SOZIALES, KO_EU_SOZIALES]]
     .every(([p, k]) => {
       const mitRegel = feats(p, k).filter((f) => f.type === "ausschuss").length;
       const ohneRegel = m.matchedFeatures(
@@ -469,6 +623,20 @@ check("F6 die Regel entfernt AUSSCHLIESSLICH Ausschussbelege — sie fuegt nie e
       ).filter((f) => f.type === "ausschuss").length;
       return mitRegel <= ohneRegel;
     }));
+// Pflicht 2 in der Gegenrichtung: ein LANDESprofil darf umgekehrt keinen
+// BUNDESausschuss als Mitgliedschaft belegen. Das deckt 27A-1 schon ab (G4/G5),
+// hier explizit mit gleichnamigem Bundestagsausschuss.
+check("F7 (Pflicht 2) Landesprofil x BUNDESvorgang mit gleichnamigem Bundesausschuss -> KEIN Ausschussbeleg",
+  !hatAusschuss({ ...PROFIL_BB, committees: [BT_SOZIALES] },
+    ko("bund-soziales-f7", { decision_level: "bund", ausschuesse: [BT_SOZIALES] })));
+// Pflicht 5: zwei verschiedene Landesparlamente mit gleichnamigem Ausschuss.
+check("F8 (Pflicht 5) zwei unterschiedliche Landesparlamente mit gleichnamigem Ausschuss -> kein Beleg in BEIDE Richtungen",
+  !hatAusschuss(PROFIL_BB, { ...KO_BLN, ausschuesse: [BB_AUSSCHUSS], mentioned_committees: [BB_AUSSCHUSS] })
+  && !hatAusschuss(PROFIL_BLN, { ...KO_BB, ausschuesse: [BLN_AUSSCHUSS], mentioned_committees: [BLN_AUSSCHUSS] }));
+// Pflicht 4: echter Treffer im eigenen Parlament bleibt — beide Ebenen.
+check("F9 (Pflicht 4) echter Treffer im EIGENEN Parlament bleibt erhalten (Land und Bund)",
+  hatAusschuss(PROFIL_BB, KO_BB) && hatAusschuss(PROFIL_BLN, KO_BLN)
+  && hatAusschuss(PROFIL_BUND, KO_BUND) && hatAusschuss(PROFIL_BUND_GESUNDHEIT, KO_BUND_GESUNDHEIT));
 
 // ═══ G · Pflichtregression 11: fehlend / widersprüchlich / mehrdeutig ═══════
 abschnitt("G · Fehlende, widersprüchliche und mehrdeutige Zustaendigkeit");
@@ -488,6 +656,72 @@ check("G4 Widerspruch Ebene bund + Landesgeografie -> die uebergeordnete Ebene g
   !hatAusschuss(PROFIL_BB, KO_WIDERSPRUCH), JSON.stringify(feats(PROFIL_BB, KO_WIDERSPRUCH)));
 check("G5 Landesmandat x EU-/internationalem Vorgang -> kein Landesausschussbeleg",
   ["eu", "international"].every((e) => !hatAusschuss(PROFIL_BB, { ...KO_BB, decision_level: e })));
+// ── Dieselben drei Grenzfaelle auf der BUNDESseite (Pflicht 18/19/20) ────────
+check("G8 (Pflicht 18) Bundesmandat x Vorgang mit fehlender/leerer/unbekannter Ebene -> KEIN Beleg (fail-closed)",
+  [undefined, null, "", "   ", "unknown", "UNKNOWN"].every((e) =>
+    !hatAusschuss(PROFIL_BUND_GESUNDHEIT, { ...KO_BUND_GESUNDHEIT, decision_level: e, affected_geographies: [] })),
+  JSON.stringify(feats(PROFIL_BUND_GESUNDHEIT, { ...KO_BUND_GESUNDHEIT, decision_level: "unknown" })));
+check("G8c (Pflicht 7) der fachliche Bezug bleibt auch dort als THEMA erhalten — nur die Mitgliedschaft entfaellt",
+  (() => {
+    const p = { ...PROFIL_BUND_GESUNDHEIT, focusTopics: ["Gesundheit"] };
+    const k = { ...KO_LAND_GESUNDHEIT, decision_level: "unknown", affected_geographies: [] };
+    const f = feats(p, k);
+    return f.some((x) => x.type === "thema") && !f.some((x) => x.type === "ausschuss");
+  })());
+check("G8b (Pflicht 18) auf der LANDESseite bleibt fehlende Zustaendigkeit fail-closed (27A-1 unveraendert)",
+  !hatAusschuss(PROFIL_BB, KO_OHNE_ZUSTAENDIGKEIT)
+  && !hatAusschuss(PROFIL_BB, { ...KO_BB, decision_level: "unknown", affected_geographies: [] }));
+check("G9 (Pflicht 19) Bundesmandat x Widerspruch (Ebene bund + betroffenes Bundesland) -> Ebene fuehrt, Beleg bleibt",
+  hatAusschuss(PROFIL_BUND_GESUNDHEIT, { ...KO_BUND_GESUNDHEIT, affected_geographies: [geo("Berlin", "geo-land-berlin")] }));
+check("G10 (Pflicht 19) Bundesmandat x Widerspruch (Ebene land + Geografie Deutschland) -> Ebene fuehrt, kein Beleg",
+  !hatAusschuss(PROFIL_BUND_GESUNDHEIT, {
+    ...KO_BUND_GESUNDHEIT, decision_level: "land",
+    affected_geographies: [{ name: "Deutschland", level: "bund", geography_id: "geo-bund", herkunft: "inhalt" }]
+  }));
+check("G11 (Pflicht 10/20) eine BELEGTE, aber unlesbare Ebenenangabe ist kein Beleg (fail-closed, deterministisch)",
+  ["Landtag", "kommunal", "landkreis", "bundesweit", "irgendwas"].every((e) =>
+    !hatAusschuss(PROFIL_BUND_GESUNDHEIT, { ...KO_BUND_GESUNDHEIT, decision_level: e })),
+  JSON.stringify(["kommunal", "bundesweit"].map((e) => feats(PROFIL_BUND_GESUNDHEIT, { ...KO_BUND_GESUNDHEIT, decision_level: e }))));
+check("G11b (Pflicht 6/10) unbelegte und unlesbare Ebene verhalten sich GLEICH — kein Beleg, kein Sonderpfad",
+  [undefined, null, "", "   ", "unknown", "kommunal", "irgendwas"].every((e) =>
+    m.ausschussBelegZulaessig({ ebene: "bund", land: null }, m.knowledgeObjectZustaendigkeit({ decision_level: e })) === false));
+check("G12 (Pflicht 20) MEHRDEUTIGE Institution: derselbe Ausschussname entscheidet je Zustaendigkeitsraum — und immer gleich",
+  (() => {
+    // Ein und derselbe Name ("Gesundheit"/"Gesundheitsausschuss") gegen drei
+    // Zustaendigkeitsraeume. Der NAME entscheidet nie mit, nur der Raum.
+    const bund = hatAusschuss(PROFIL_BUND_GESUNDHEIT, KO_BUND_GESUNDHEIT);
+    const land = hatAusschuss(PROFIL_BUND_GESUNDHEIT, KO_LAND_GESUNDHEIT);
+    const kommune = hatAusschuss(PROFIL_BUND_GESUNDHEIT, { ...KO_LAND_GESUNDHEIT, decision_level: "kommune" });
+    const nochmal = JSON.stringify(feats(PROFIL_BUND_GESUNDHEIT, KO_LAND_GESUNDHEIT))
+      === JSON.stringify(feats(PROFIL_BUND_GESUNDHEIT, KO_LAND_GESUNDHEIT));
+    return bund === true && land === false && kommune === false && nochmal;
+  })());
+check("G13 die Regel ist eine reine Funktion und deckt alle zehn Faelle des Sprints deterministisch ab",
+  (() => {
+    const pB = { ebene: "bund", land: null };
+    const pL = { ebene: "land", land: "geo-land-berlin" };
+    const faelle = [
+      [pB, { ebene: "bund", laender: [] }, true],                                  // 1 Bund x Bund
+      [pB, { ebene: "land", laender: ["geo-land-berlin"] }, false],                // 2 Bund x Land
+      [pL, { ebene: "bund", laender: [] }, false],                                 // 3 Land x Bund
+      [pL, { ebene: "land", laender: ["geo-land-berlin"] }, true],                  // 4 Land x eigenes Parlament
+      [pL, { ebene: "land", laender: ["geo-land-bayern"] }, false],                 // 5 Land x anderes Parlament
+      [pB, { ebene: null, laender: [] }, false],                                   // 6 fehlende Ebene (Bund): fail-closed
+      [pL, { ebene: null, laender: [] }, false],                                   // 6 fehlende Ebene (Land): fail-closed
+      [pL, { ebene: "land", laender: [] }, false],                                 // 7 fehlende Geografie
+      [pB, { ebene: "land", laender: [] }, false],                                 // 7 fehlende Geografie (Bund)
+      [pB, { ebene: "kommune", laender: [] }, false],                               // 2 Bund x Kommune
+      [pB, { ebene: "bund", laender: ["geo-land-berlin"] }, true],                  // 8 Widerspruch: Ebene fuehrt
+      [pL, { ebene: "bund", laender: ["geo-land-berlin"] }, false],                 // 8 Widerspruch: Ebene fuehrt
+      [pB, { ebene: "quatsch", laender: [] }, false],                              // 10 belegt, aber unlesbar
+      [pB, { ebene: "eu", laender: [] }, true],                                    // Nebenbefund, unveraendert
+      [pB, null, false], [pL, null, false],                                        // gar keine Angabe
+      [{ ebene: null, land: null }, { ebene: "land", laender: [] }, true],          // Profil unbestimmt
+      [{ ebene: "land", land: null }, { ebene: "land", laender: [] }, true]         // Landesmandat ohne Bundesland
+    ];
+    return faelle.every(([p, k, erwartet]) => m.ausschussBelegZulaessig(p, k) === erwartet
+      && m.ausschussBelegZulaessig(p, k) === m.ausschussBelegZulaessig(p, k));
+  })());
 check("G6 die Regel ist rein und mutiert ihre Eingaben nicht",
   (() => {
     const vorher = JSON.stringify([KO_BLN, PROFIL_BB]);
@@ -526,6 +760,119 @@ check("H5 Rangfolge: der fremde Vorgang bleibt in der Kandidatenliste, aber ohne
     .map((x) => [x.knowledge_object_id, x.rank, x.similarity, x.matched_features.map((f) => f.type)])));
 check("H6 der harte Ausschussfilter (passesFilters) bleibt unangetastet — er ist eine Suchvorgabe, kein Beleg",
   m.passesFilters(m.knowledgeObjectFeatures(KO_BLN), { committees: [BB_AUSSCHUSS] }) === true);
+// Pflicht 21/22: Profilhash und Eingabefingerabdruck bleiben unveraendert.
+// Der Eingabefingerabdruck eines Wissensobjekts entsteht in runMatchingCore aus
+// `computeKnowledgeObjectInputHash(knowledgeObjectWeightedTokens(ko), rezept)`.
+// Die gewichteten Token werden AUSSCHLIESSLICH aus den vier Merkmalsdimensionen
+// (Partei/Ausschuss/Region/Thema) und den Inhaltstoken gebildet — der
+// Zustaendigkeitsraum reist als eigenes Feld daneben. Beweis in zwei Schritten:
+// die Dimensionen sind identisch (H7) und der daraus gebildete Vektor ist
+// identisch (H3) — damit ist auch der Fingerabdruck identisch.
+check("H7 (Pflicht 21/22) Profilhash und alle fingerabdruckbildenden Dimensionen sind von Ebene/Geografie unabhaengig",
+  (() => {
+    const ohneZust = (o) => { const kopie = { ...o }; delete kopie.zustaendigkeit; return JSON.stringify(kopie); };
+    const koA = m.knowledgeObjectFeatures(KO_LAND_GESUNDHEIT);
+    const koB = m.knowledgeObjectFeatures({ ...KO_LAND_GESUNDHEIT, decision_level: "bund", affected_geographies: [] });
+    return m.profileHash(PROFIL_BUND_GESUNDHEIT)
+        === m.profileHash({ ...PROFIL_BUND_GESUNDHEIT, politicalLevel: undefined, parliamentType: undefined })
+      && ohneZust(koA) === ohneZust(koB)
+      && JSON.stringify(koA.zustaendigkeit) !== JSON.stringify(koB.zustaendigkeit);
+  })());
+check("H8 (Pflicht 15/16/17) Kandidatenliste, Aehnlichkeit und Top-N-Schnitt eines BUNDESprofils sind unveraendert",
+  (() => {
+    // Dieselbe Kandidatenmenge, einmal mit und einmal ohne wirksame Regel
+    // (Profil ohne Mandatsebene = regelfrei). Rang, Aehnlichkeit, Reihenfolge und
+    // Schnitt muessen identisch sein — nur die Belege duerfen sich unterscheiden.
+    const kandidaten = [KO_BUND_GESUNDHEIT, KO_LAND_GESUNDHEIT, KO_KOMMUNE_SOZIAL, KO_BLN, KO_BUND];
+    const ohne = { ...PROFIL_BUND_GESUNDHEIT, politicalLevel: undefined, parliamentType: undefined };
+    const proj = (p, limit) => m.matchProfileToKnowledgeObjects(p, kandidaten, { limit })
+      .map((r) => [r.knowledge_object_id, r.rank, r.similarity]);
+    return JSON.stringify(proj(PROFIL_BUND_GESUNDHEIT, 10)) === JSON.stringify(proj(ohne, 10))
+      && JSON.stringify(proj(PROFIL_BUND_GESUNDHEIT, 2)) === JSON.stringify(proj(ohne, 2));
+  })(),
+  JSON.stringify(m.matchProfileToKnowledgeObjects(PROFIL_BUND_GESUNDHEIT,
+    [KO_BUND_GESUNDHEIT, KO_LAND_GESUNDHEIT, KO_KOMMUNE_SOZIAL, KO_BLN, KO_BUND], { limit: 10 })
+    .map((r) => [r.knowledge_object_id, r.rank, r.similarity])));
+
+// ═══ I · Bundesseite ueber den GANZEN Pfad (Pflicht 8-14) ═══════════════════
+// Derselbe Nachweis wie D/E, aber fuer den 27A-2-Fall: der fremde Ausschuss darf
+// in KEINER nachgelagerten Ausgabe mehr auftauchen.
+abschnitt("I · Bundesmandat x Landesvorgang: kein Ausschuss in Signal, Begruendung, Erklaerung, Entscheidung, M8");
+const featsBundFremd = feats(PROFIL_BUND_GESUNDHEIT, KO_LAND_GESUNDHEIT);
+const signaleBundFremd = begruendung.buildSignals(featsBundFremd, SIM_LAND_GESUNDHEIT);
+check("I1 (Pflicht 8) `matched_features` traegt keinen Ausschuss mehr",
+  !featsBundFremd.some((f) => f.type === "ausschuss"), JSON.stringify(featsBundFremd));
+check("I2 (Pflicht 9) die gespeicherten `signale` tragen keinen Ausschussschluessel",
+  !Object.prototype.hasOwnProperty.call(signaleBundFremd, "ausschuss"), JSON.stringify(signaleBundFremd));
+check("I3 (Pflicht 10) die persistierte Begruendung nennt den fremden Ausschuss nicht",
+  !/Ausschuss|Gesundheit/.test(String(begruendung.begruendungAusSignalen(signaleBundFremd, featsBundFremd) || "")),
+  String(begruendung.begruendungAusSignalen(signaleBundFremd, featsBundFremd)));
+check("I4 (Pflicht 11) die sichtbare Erklaerung fuehrt keinen Ausschussbeleg (und erfindet keinen Ersatz)",
+  (() => {
+    const e = erklaerung.erklaerungAusErgebnis({ signale: signaleBundFremd, matched_features: featsBundFremd, similarity: SIM_LAND_GESUNDHEIT });
+    return e === null || (!e.belege.some((b) => b.art === "ausschuss") && !/Ausschuss/.test(e.satz));
+  })(),
+  JSON.stringify(erklaerung.erklaerungAusErgebnis({ signale: signaleBundFremd, matched_features: featsBundFremd })));
+check("I5 (Pflicht 12/13) kein Entscheidungsgewicht: Score 49 -> 15 (Delta genau 34), Stufe wechselt — wie im Realfall gemessen",
+  (() => {
+    const regelfrei = m.matchedFeatures(
+      { ...m.profileFeatures(PROFIL_BUND_GESUNDHEIT), zustaendigkeit: null },
+      { ...m.knowledgeObjectFeatures(KO_LAND_GESUNDHEIT), zustaendigkeit: null }
+    );
+    const mit = decisions.scoreKnowledgeObject(KO_LAND_GESUNDHEIT, { similarity: SIM_LAND_GESUNDHEIT, matched_features: regelfrei });
+    const ohne = decisions.scoreKnowledgeObject(KO_LAND_GESUNDHEIT, { similarity: SIM_LAND_GESUNDHEIT, matched_features: featsBundFremd });
+    return regelfrei.some((f) => f.type === "ausschuss")
+      && mit === 49 && ohne === 15 && mit - ohne === 34
+      && decisions.decisionFromScore(mit) === "Beobachten"
+      && decisions.decisionFromScore(ohne) === "Ignorieren";
+  })(),
+  JSON.stringify([decisions.scoreKnowledgeObject(KO_LAND_GESUNDHEIT, { similarity: SIM_LAND_GESUNDHEIT, matched_features: featsBundFremd })]));
+check("I6 (Pflicht 14) M8 (aktiv) laesst die Zeile nicht mehr durch — allein der fremde Ausschuss trug sie",
+  (() => {
+    const g = relevanz.wendeRelevanzGateAn([{ id: "i6", matched_features: featsBundFremd }], { aktiv: true });
+    return featsBundFremd.length === 0 && g.zeilen.length === 0 && g.verworfen === 1;
+  })(), JSON.stringify(featsBundFremd));
+check("I7 die echte Bundesmitgliedschaft bleibt ueber den ganzen Pfad erhalten",
+  (() => {
+    const f = feats(PROFIL_BUND_GESUNDHEIT, KO_BUND_GESUNDHEIT);
+    const s = begruendung.buildSignals(f, 0.4);
+    const e = erklaerung.erklaerungAusErgebnis({ signale: s, matched_features: f, similarity: 0.4 });
+    const d = decisions.decideForUser(PROFIL_BUND_GESUNDHEIT, [KO_BUND_GESUNDHEIT], { userId: PROFIL_BUND_GESUNDHEIT.id })[0];
+    return Array.isArray(s.ausschuss)
+      && /deinen Ausschuss Gesundheit/.test(String(begruendung.begruendungAusSignalen(s, f)))
+      && e && e.belege.some((b) => b.art === "ausschuss")
+      && d && (d.matched_features || []).some((x) => x.type === "ausschuss")
+      && relevanz.wendeRelevanzGateAn([{ id: "i7", matched_features: f }], { aktiv: true }).zeilen.length === 1;
+  })());
+check("I8 (Pflicht 7) thematische Gemeinsamkeit wirkt weiter als THEMA — wenn das Profil den Schwerpunkt traegt",
+  (() => {
+    // derivePolicyFields leitet aus "Gesundheitsausschuss (Landtag)" das Politikfeld
+    // "Gesundheit" ab. Traegt das Profil diesen Schwerpunkt, bleibt der fachliche
+    // Bezug als `thema` sichtbar — nur eben nicht als Mitgliedschaft.
+    const p = { ...PROFIL_BUND_GESUNDHEIT, focusTopics: ["Gesundheit"] };
+    const f = feats(p, KO_LAND_GESUNDHEIT);
+    return f.some((x) => x.type === "thema" && x.value === "Gesundheit")
+      && !f.some((x) => x.type === "ausschuss");
+  })(), JSON.stringify(feats({ ...PROFIL_BUND_GESUNDHEIT, focusTopics: ["Gesundheit"] }, KO_LAND_GESUNDHEIT)));
+
+// ═══ J · Nebenbefund EU/international: Ist-Stand festgeschrieben ═════════════
+// BEWUSST UNVERAENDERT. In den echten Production-Daten nennen EU-/internationale
+// Vorgaenge teils ECHTE Bundestagsausschuesse ("Ausschuss fuer Arbeit und
+// Soziales", "Auswaertiger Ausschuss"), teils fremde Gremien ("Europaeischer
+// Ausschuss fuer soziale Rechte"). Die Ebene allein trennt das nicht — eine
+// Verschaerfung braeuchte eine neue fachliche Entscheidung ueber institutionelle
+// Beziehungen und wuerde hier auch ECHTE Belege entfernen. Diese Zusicherung ist
+// der Ist-Stand, KEINE Aussage darueber, dass er richtig ist (§52.7).
+abschnitt("J · Nebenbefund EU/international (getrennte Entscheidung, Verhalten unveraendert)");
+check("J1 Bundesmandat x EU-Vorgang mit ECHTEM Bundestagsausschuss: Beleg bleibt (sonst verloere man einen richtigen Beleg)",
+  hatAusschuss(PROFIL_BUND_SOZIALES, KO_EU_SOZIALES), JSON.stringify(feats(PROFIL_BUND_SOZIALES, KO_EU_SOZIALES)));
+check("J2 Bundesmandat x internationalem Vorgang: Verhalten ebenfalls unveraendert",
+  hatAusschuss(PROFIL_BUND_SOZIALES, { ...KO_EU_SOZIALES, decision_level: "international" }));
+check("J3 die Ausnahme gilt NUR fuer Bundesmandate — ein Landesmandat verliert den Beleg weiterhin (G5)",
+  !hatAusschuss(PROFIL_BB, { ...KO_BB, decision_level: "eu" }));
+check("J4 die Ausnahme ist auf eu/international begrenzt und weitet sich nicht auf land/kommune aus",
+  !hatAusschuss(PROFIL_BUND_SOZIALES, { ...KO_EU_SOZIALES, decision_level: "land" })
+  && !hatAusschuss(PROFIL_BUND_SOZIALES, { ...KO_EU_SOZIALES, decision_level: "kommune" }));
 
 console.log(`\n${passed} bestanden, ${failed} fehlgeschlagen`);
 process.exit(failed ? 1 : 0);
