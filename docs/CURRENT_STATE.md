@@ -1,7 +1,100 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-30 (**Sprint Punkt 27A: Brandenburger Ende-zu-Ende-Repository-Vertrag.
-27A TEILWEISE ABGESCHLOSSEN — Korrektur vom 2026-07-30 (Betreiberentscheidung): der Vertrag selbst
+**Letzte Aktualisierung:** 2026-07-30 (**Sprint Matchingfix Befund 27A-1: Ausschussbeleg nur bei
+passendem Zuständigkeitsraum. ERFOLGREICH ABGESCHLOSSEN — damit ist auch Punkt 27A erfolgreich
+abgeschlossen; Checklisten-Punkt 27 gesamt bleibt ⏳, weil 27B weiterhin durch Punkt 15 blockiert
+ist.** **Verbindliche Abgrenzung:** dieser Sprint betrifft **Zeile 27** der
+[`roadmap/phase_1_checkliste.md`](roadmap/phase_1_checkliste.md) — **nicht** OP-27 der Restliste
+(M8-Aktivierung) und **nicht** OP-25; beide bleiben unangetastet, `HELMUT_MATCHING_RELEVANZ_GATE`
+unverändert AUS. **Startprüfung bestanden:** Arbeitsbaum sauber, HEAD = `origin/main` = `d9006c1`
+(Merge PR #182, vollständig in `main` inklusive `edf2258`/`ceaca8c`), Branch
+`claude/matching-befund-27a-9gycsj` vom aktuellen `main`; keine neuere überschneidende
+Matchingarbeit (offene PRs #117/#132 betreffen Quellenpakete bzw. das ersetzte
+`HELMUT_LANDESMODULE`-Gate); Punkt 27A laut Hauptstand teilweise abgeschlossen; OP-25 und OP-27
+getrennt und unverändert. **URSACHE (gemessen, nicht vermutet):** `normalizeCommittee` baut
+Ausschussnamen auf einen Synonymstamm ab; der Brandenburger „Ausschuss für Inneres und Kommunales"
+UND der Berliner „Ausschuss für Inneres, Sicherheit und Ordnung" enthalten beide den Schlüssel
+`inneres` und fallen deshalb auf **denselben** Stamm. **`committeeMatchKey` war ausdrücklich keine
+Lösung** — es korrigiert nur die Reihenfolge des Substring-Fallbacks und liefert für beide Namen
+ebenfalls `inneres` (gegengeprüft). Ein Ausschussname trägt strukturell **keinen** Hinweis auf sein
+Parlament. Reproduziert mit den echten Produktionsfunktionen auf `d9006c1`: ein Berliner Vorgang
+erhielt beim Brandenburger Profil `matched_features` `ausschuss: „Ausschuss für Inneres und
+Kommunales"`, die sichtbare Behauptung **„Betrifft deinen Ausschuss Ausschuss für Inneres und
+Kommunales und deinen Schwerpunkt Inneres."** und über das Ausschussgewicht (34) **Score 62 →
+„Sofort reagieren"**. **FIX (kleinste robuste Korrektur, eine Bedingung + zwei reine
+Ableitungen):** aus **bereits belegten** Feldern entsteht je Seite ein **institutioneller
+Zuständigkeitsraum** — Profil aus `mandate_profiles.politische_ebene` + `.bundesland`, Vorgang aus
+`decision_level` (Sprint 2/19) + `affected_geographies` (Sprint 20, Kommune/Bezirk über den
+kanonischen Geografie-Seed auf ihr Bundesland aufgelöst; `mentioned_geographies` zählt bewusst
+nicht — erwähnt ist nicht zuständig). Regel: **eine Ausschussüberschneidung gilt nur dann als
+Mitgliedschaftsbeleg, wenn das Profil einen bestimmten Landes-Zuständigkeitsraum hat und der
+Vorgang positiv demselben Bundesland zugeordnet ist** (fail-closed: fremdes Land, übergeordnete
+Ebene `bund`/`eu`/`international` oder fehlende Zuständigkeit → kein Beleg; mehrdeutige Angaben mit
+dem eigenen Land → Beleg bleibt). Die Regel **entfernt nur** Belege, sie fügt nie einen hinzu
+(getestet). **WIRKUNG ÜBER DEN GANZEN PFAD:** `matched_features` ist der einzige Eingriffspunkt,
+von dort wirkt die Korrektur auf gespeicherte `signale`, gespeicherte Begründung, sichtbare
+Erklärung, Belege der Lage-Karte, Entscheidungsgewicht (`decisions.js` ausschuss 34) und den
+M8-Riegel (eine Zeile, deren **einziger** Beleg der fremde Ausschuss war, passiert ihn nicht mehr).
+**BEWUSST UNVERÄNDERT — deshalb keine Migration, kein Backfill, keine neue Rezeptversion:**
+`normalizeCommittee`/`slugCommittee` und damit Merkmalsvektor, Kosinus-Ähnlichkeit, Rangfolge,
+Top-N-Schnitt, `profileHash`, `computeKnowledgeObjectInputHash` und der Eingabefingerabdruck
+bleiben **byte-identisch**; der Token `ausschuss:inneres` steht weiter in beiden Vektoren — das ist
+die laut Produktregel **erlaubte fachliche Ähnlichkeit** und bleibt als `thema`-Beleg („Inneres",
+aus `derivePolicyFields`) sichtbar. Ebenfalls unangetastet: der harte Ausschussfilter
+(`passesFilters`/`filter_committees`, in Production nicht gesetzt) und `scoring.js`
+(`proximityScore` vergleicht die volle Bezeichnung, die beiden Innenausschüsse kollidieren dort
+gar nicht). **BUNDESTAGSPROFILE UNVERÄNDERT — gemessen, nicht behauptet:** die **volle** Projektion
+(Rang, Ähnlichkeit, `matched_features`, `signale`, Begründung, KO-Eingabehash, Profilhash,
+Merkmalsvektoren, Rezept-/Vektorversion, abgeleitete Entscheidung) für drei Bundesprofile und ein
+Profil ohne Mandatsebene gegen neun Vorgänge (Bund/Land/Kommune/ohne Ebene, mit und ohne
+Ausschussnennung) ist vor und nach der Änderung **byte-identisch** (sha256
+`48d761b7…bee387`, erhoben auf dem Stand `d9006c1` **vor** dem Fix und als Golden-Hash im
+Repository verankert). **Der Merge verändert kein Production-Verhalten:** die Regel greift nur bei
+Profilen mit bestimmtem Landes-Zuständigkeitsraum, und in Production existiert kein solches
+aktives Profil (Berliner Abnahmeprofil deaktiviert; Berlin/Brandenburg liefern strukturell nichts,
+`pardokDispatch` → `items: []`). **VERTRAG BEWEIST DEN FALL JETZT, statt ihn zu vermeiden:** der
+27A-Vertrag führt einen zweiten **echten** Berliner Gold-Record (**V-351616** „Pyrotechnik an
+Silvester", eigener Vorgang) durch denselben Produktionspfad; dessen Analyse nennt ausdrücklich den
+**realen** Berliner Innenausschuss. Bewiesen beim Brandenburger Profil: kein Ausschussbeleg (F11),
+Fachgebiet bleibt als `thema` (F12), kein Ausschusssignal und keine Ausschussbegründung in der
+Persistenz (F13), sichtbare Erklärung ohne Ausschussbeleg (F14), eigener Ausschuss unbeschädigt
+(F15), Rangfolge unverändert (F16), M8 nicht allein wegen des falschen Ausschusses passiert (F17),
+kein Ausschussgewicht in der Entscheidung (I8/I9), sichtbare Karte ohne fremde
+Mitgliedschaftsbehauptung (J7b). **OFFEN, FREIGABEPFLICHTIG — Befund 27A-2:** ein
+**Bundestags**profil erhält weiterhin einen Ausschussbeleg, wenn ein **Landes**vorgang den
+gleichnamigen Landesausschuss nennt (gemessen). Fachlich dieselbe Fehlerklasse, hier bewusst
+**nicht** behoben, weil die Verschärfung aktive Bundestagsergebnisse verändern würde und die
+Betroffenheit offline nicht bestimmbar ist. Drei Varianten samt Kosten in
+[`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md) §50.5; **Empfehlung: erst rein
+lesend in Production messen** (wie viele `ausschuss`-Belege aktiver Bundesprofile hängen an
+Wissensobjekten mit `decision_level <> 'bund'`), dann entscheiden. Weitere benannte
+Restunschärfen: Landtagsprofil ohne `bundesland` behält das alte Verhalten (in
+`profile-validation.js` ohnehin `requiredMissing`; die Alternative hätte Fall 5b von
+`radar-committee-evidence-test.js` gebrochen), Vorgang ohne belegte Zuständigkeit verliert für
+Landesmandate den Ausschussbeleg (gewollter ehrlicher Leerzustand), die **Ähnlichkeit** trennt die
+Länder weiterhin nicht (§50.6). **Tests (real ermittelt):** neue Suite
+`scripts/matching-ausschuss-zustaendigkeit-test.js` **54/54** · 27A-Vertrag **98/98** (von 86/86) ·
+27A-Mutationsprobe **16/16 rot** (von 14/14; neu **M15/M16** = Rücknahme der Zuständigkeitsprüfung
+auf zwei unabhängige Weisen, beide machen den Vertrag rot) · Berliner Vertrag **76/76** und Berliner
+Mutationsprobe **10/10 rot** **unverändert** (damit ist „echter Treffer im eigenen Parlament bleibt
+erhalten" end-to-end und ohne Fixture-Anpassung belegt) · Offline-Suite lokal **172/186** gegen
+Basislinie `main` `d9006c1` **171/185** — die **+1** ist die neue Suite, die **14** Fehlschläge sind
+**dieselben** umgebungsbedingten (Fehlschlagliste byte-identisch verglichen, kein Regress) ·
+Browser-/Mobile-Smoke **32/32** · **CI-Gate grün (maßgeblich laut `CLAUDE.md` §6): Offline-Suite 186/186 und Browser-/Mobile-Smoke 32/32**, Lauf `30534950711` auf Commit `962af06`; der Lauf `30534821817` (Commit `fdb68eb`, vollständiger Fix + Doku) war ebenfalls grün. **Keine Migration, kein Backfill, kein neuer Schalter, keine
+Aktivierung (Berlin, Brandenburg, M8 unverändert aus), keine Cron-/Budget-/Quellen-/Env-Änderung,
+0 KI-Aufrufe, 0,00 USD, kein Production-Zugriff, keine realen Testmandate.** **Rückweg:**
+`git revert` der Commits, Redeploy — es gibt keinen Datenstand, der zurückzudrehen wäre.
+**Nächster Schritt:** Betreiberentscheidung zu **Befund 27A-2** (Empfehlung: lesende
+Production-Messung); 27B bleibt durch Punkt 15 blockiert. Geänderte Dateien:
+`lib/helmut/matching.js`, `scripts/matching-ausschuss-zustaendigkeit-test.js` (neu),
+`scripts/brandenburg-e2e-vertrag-test.js`, `scripts/brandenburg-e2e-mutationsprobe.js`,
+`docs/matching-nachvollziehbarkeit.md` (§50), `docs/roadmap/phase_1_checkliste.md`,
+`docs/CURRENT_STATE.md`. Branch `claude/matching-befund-27a-9gycsj`, PR #183. Kanonisch:
+[`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md) §50 + Checklisten-Zeile 27.) ·
+(**Sprint Punkt 27A: Brandenburger Ende-zu-Ende-Repository-Vertrag.
+27A TEILWEISE ABGESCHLOSSEN — dieser Status ist durch den Folgesprint oben ÜBERHOLT: Befund 27A-1
+ist behoben, 27A ist erfolgreich abgeschlossen. Der folgende Block bleibt als Sprintprotokoll
+unverändert stehen. — Korrektur vom 2026-07-30 (Betreiberentscheidung): der Vertrag selbst
 steht (86/86, Mutationsprobe 14/14 rot), aber der dabei dokumentierte Befund **27A-1** ist ein
 REALER FEHLER im aktiven Matching (Ausschussnormalisierungs-Kollision, Details unten) — die
 vollständige fachliche Trennung der Landesmandate auf Ausschussebene ist damit noch nicht
