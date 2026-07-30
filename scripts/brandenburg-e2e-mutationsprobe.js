@@ -12,11 +12,14 @@
 // Der technische Unterbau (Abzug, Ausfuehrung, Auswertung) liegt im gemeinsamen
 // e2e-mutationsprobe-geruest.js; die MUTATIONEN hier sind Brandenburg-spezifisch
 // (M2/M3/M4/M13) plus die Kerngarantien des Pfads, erneut gegen DIESE Suite bewiesen.
+// M15/M16 sichern die Regression zu Befund 27A-1 ab: wird die Zustaendigkeitspruefung
+// des Ausschussbelegs entfernt (auf zwei unabhaengige Weisen), MUSS der Vertrag rot
+// werden — sonst waere der Fix nicht durch den Vertrag gedeckt.
 //
 // Aufruf:  node scripts/brandenburg-e2e-mutationsprobe.js [--verbose]
 // Exit 0 nur, wenn JEDE Mutation die Suite rot macht.
 //
-// BEWUSST NICHT im Offline-Runner: die Probe fuehrt die Suite (13+1)x aus — sie ist
+// BEWUSST NICHT im Offline-Runner: die Probe fuehrt die Suite (15+1)x aus — sie ist
 // ein gezielter Beweislauf je Sprint, kein Dauertest. (Der Runner sammelt nur
 // *-test.js ein; diese Datei endet absichtlich auf -mutationsprobe.js.)
 
@@ -125,6 +128,25 @@ const MUTATIONEN = [
     datei: MATCHING,
     von: "    if (similarity < threshold && !matched.length) continue;",
     nach: "    if (false) continue;"
+  },
+  {
+    // Regression zu Befund 27A-1. Wird die Zustaendigkeitspruefung entfernt, faellt der
+    // Vertrag exakt in den behobenen Fehler zurueck: der Berliner Innenausschuss wird als
+    // Brandenburger Ausschussmitgliedschaft belegt, begruendet, erklaert und gewichtet.
+    name: "M15 · Zustaendigkeitspruefung des Ausschussbelegs entfaellt (Befund 27A-1 zurueck)",
+    beschreibung: "Ohne ausschussBelegZulaessig erhielte der fremde Landesvorgang mit echter Ausschussnennung wieder einen falschen Ausschussbeleg samt Begruendung, Signal, Erklaerung und Entscheidungsgewicht (F11/F13/F14/I8).",
+    datei: MATCHING,
+    von: "  if (ausschussBelegZulaessig(pf && pf.zustaendigkeit, kf && kf.zustaendigkeit)) {",
+    nach: "  if (true) {"
+  },
+  {
+    // Zweite, unabhaengige Ruecknahme: die Regel bleibt aufgerufen, liefert aber immer
+    // "zulaessig". Faengt eine Umgehung, die nur die Bedingung, nicht den Aufruf trifft.
+    name: "M16 · Zustaendigkeitsregel sagt immer ja (Ruecknahme in der Regel selbst)",
+    beschreibung: "Die Regel selbst erlaubt jeden Ausschussbeleg — derselbe Fehler, an anderer Stelle eingebaut (F11/F12/I8).",
+    datei: MATCHING,
+    von: "  if (!pz || pz.ebene !== \"land\" || !pz.land) return true;           // unbestimmt -> unveraendert",
+    nach: "  return true;"
   },
   {
     name: "M14 · Erklaerung ohne Beleg erfindet einen Ersatztext",

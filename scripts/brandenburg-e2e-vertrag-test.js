@@ -140,18 +140,20 @@ LAUF.zweitprofil = PROFIL_B.id;
 // sondern durch die Institutionsnennungen im Text — genau wie im echten Pfad
 // (classification.deriveDecisionLevel / geografienAusText).
 //
-// BEFUND 27A-1 — REALER FEHLER im aktiven Matching (Einstufung korrigiert 2026-07-30):
+// BEFUND 27A-1 — BEHOBEN im Folgesprint (2026-07-30), hier als REGRESSION verankert:
 // normalizeCommittee (matching.js) faltet "Ausschuss fuer Inneres und Kommunales"
-// (Brandenburg) UND "Ausschuss fuer Inneres, Sicherheit und Ordnung" (Berlin) auf
-// denselben Merkmalsstamm "inneres" — ein Berliner Vorgang kann beim Brandenburger
-// Profil einen FALSCHEN Ausschussbeleg erhalten (und umgekehrt), sobald die Analyse den
-// fremden Landesausschuss nennt. Die Kontrollfall-Analysen nennen deshalb bewusst KEINEN
-// Ausschuss: der Vertrag VERMEIDET den Fehler, statt ihn zu beweisen. Er belegt damit
-// zuverlaessig Ebene/Geografie/Priorisierung/Mandantentrennung, aber noch NICHT die
-// vollstaendige fachliche Trennung der Landesmandate auf Ausschussebene. Nach dem
-// getrennten Matchingfix ist HIER eine Regressionserwartung zu ergaenzen: fremder
-// Landesausschuss in der Analyse -> KEIN ausschuss-Beleg beim Brandenburger Profil.
-// Solange gilt 27A als teilweise abgeschlossen (docs/CURRENT_STATE.md, Befund 27A-1).
+// (Brandenburg) UND "Ausschuss fuer Inneres, Sicherheit und Ordnung" (Berlin) weiterhin
+// auf denselben Merkmalsstamm "inneres" — das ist die ERLAUBTE fachliche Aehnlichkeit
+// (der Merkmalsvektor bleibt bewusst unveraendert). Was behoben ist: eine solche
+// Ueberschneidung gilt nur noch als AUSSCHUSSMITGLIEDSCHAFT, wenn der institutionelle
+// Zustaendigkeitsraum passt (matching.ausschussBelegZulaessig).
+// Der Vertrag vermeidet den Fall nicht mehr, sondern BEWEIST ihn: der zusaetzliche echte
+// Berliner Gold-Record V-351616 ("Pyrotechnik an Silvester", Abschnitt F11-F14) nennt
+// ausdruecklich den REALEN Berliner Innenausschuss. Erwartung beim Brandenburger Profil:
+// KEIN ausschuss-Beleg, KEINE Ausschussbegruendung, kein Ausschussgewicht — aber das
+// gemeinsame Fachgebiet bleibt als thema-Beleg sichtbar. Die Mutationsprobe M15 nimmt
+// genau diese Pruefung zurueck und muss den Vertrag rot machen.
+// Regeldetails + verbleibende Restunschaerfe: docs/matching-nachvollziehbarkeit.md §50.
 const AI_FIXTURES = [
   {
     marker: "Straf- und Gewalttaten",
@@ -243,6 +245,35 @@ const AI_FIXTURES = [
       display_title: "Berlin ordnet Waffen-Gebühren neu",
       display_summary: "Die Senatsverwaltung für Inneres hat die Waffengebührenordnung vorgelegt; das Abgeordnetenhaus hat sie im Plenum behandelt.",
       why_relevant: "Berliner Landesrecht; die Zuständigkeit liegt beim Abgeordnetenhaus von Berlin, nicht im Landtag Brandenburg.",
+      recommendation: "Nur beobachten.",
+      display_category: "Inneres Berlin",
+      risk_level: "low", opportunity_level: "low"
+    }
+  },
+  {
+    // FREMDER LANDESFALL MIT ECHTER AUSSCHUSSNENNUNG (Regression zu Befund 27A-1).
+    // Echter Berliner Gold-Record V-351616 (Muendliche Anfrage). Die Analyse nennt den
+    // REALEN Innenausschuss des Abgeordnetenhauses von Berlin — genau die Konstellation,
+    // die vor dem Fix beim Brandenburger Profil einen falschen Ausschussbeleg erzeugte.
+    marker: "Pyrotechnik",
+    result: {
+      headline: "Berlin debattiert die Silvesterlage",
+      was_ist_passiert: "Im Abgeordnetenhaus von Berlin ist eine Mündliche Anfrage zur Pyrotechnik an Silvester gestellt worden. Der Ausschuss für Inneres, Sicherheit und Ordnung des Abgeordnetenhauses von Berlin befasst sich mit den Einsatzzahlen; die Senatsverwaltung für Inneres soll berichten.",
+      warum_wichtig: "Die Silvesterlage ist ein zentrales Thema der inneren Sicherheit im Land Berlin.",
+      wer_ist_betroffen: "Polizei, Feuerwehr und Rettungsdienste in Berlin.",
+      handlungsempfehlung: "Kein eigener Handlungsbedarf; die Zuständigkeit liegt beim Abgeordnetenhaus von Berlin.",
+      parteien: [], ausschuesse: ["Ausschuss für Inneres, Sicherheit und Ordnung"],
+      ministerien: ["Senatsverwaltung für Inneres"],
+      risiken: [], chancen: [],
+      mentioned_people: [], mentioned_mps: [], mentioned_parties: [],
+      mentioned_committees: ["Ausschuss für Inneres, Sicherheit und Ordnung"],
+      mentioned_ministries: ["Senatsverwaltung für Inneres"],
+      mentioned_locations: ["Berlin"], mentioned_organizations: [],
+      tags: ["Innere Sicherheit"],
+      zeitdruck: "niedrig", confidence_score: 64,
+      display_title: "Berlin debattiert die Silvesterlage",
+      display_summary: "Eine Mündliche Anfrage im Abgeordnetenhaus von Berlin fragt nach der Pyrotechnik an Silvester.",
+      why_relevant: "Berliner Landesangelegenheit; zuständig ist der Innenausschuss des Abgeordnetenhauses von Berlin, nicht der Landtag Brandenburg.",
       recommendation: "Nur beobachten.",
       display_category: "Inneres Berlin",
       risk_level: "low", opportunity_level: "low"
@@ -360,9 +391,17 @@ function neuerStore() {
   check("B12 Berliner Kontrolldokument geparst (Waffengebührenordnung, drucksache, Ebene land, Geografie Berlin)",
     Boolean(beWaffenRoh) && beWaffenRoh.politische_ebene === "land" && /berlin/i.test(String(beWaffenRoh.geografie || ""))
       && beWaffenRoh.vorgangsnummer === "V-351039");
+  // ZWEITES Berliner Kontrolldokument (Regression zu Befund 27A-1): eigener Vorgang,
+  // dessen Analyse den REALEN Berliner Innenausschuss nennt.
+  const bePyroRoh = beVorgang.documents.find((d) => /Pyrotechnik/i.test(d.titel || ""));
+  check("B13 zweites Berliner Kontrolldokument geparst (Mündliche Anfrage V-351616, eigener Vorgang, Ebene land, Geografie Berlin)",
+    Boolean(bePyroRoh) && bePyroRoh.dokumentklasse === "anfrage" && bePyroRoh.vorgangsnummer === "V-351616"
+      && bePyroRoh.politische_ebene === "land" && /berlin/i.test(String(bePyroRoh.geografie || ""))
+      && bePyroRoh.vorgangsnummer !== beWaffenRoh.vorgangsnummer,
+    JSON.stringify(bePyroRoh && { ext: bePyroRoh.externe_id, vnr: bePyroRoh.vorgangsnummer, kl: bePyroRoh.dokumentklasse }));
   LAUF.eingangsdokumente = bb.documents.length + beVorgang.documents.length;
 
-  if (!relevantRoh || !irrelevantRoh || !kommunalRoh || !kommunalPlprRoh || !beWaffenRoh) {
+  if (!relevantRoh || !irrelevantRoh || !kommunalRoh || !kommunalPlprRoh || !beWaffenRoh || !bePyroRoh) {
     console.error("\nABBRUCH: Pflicht-Fixturedokumente fehlen — keine weiteren Stufen pruefbar (kein falsches Gruen).");
     console.log(`\n${stand.passed} bestanden, ${stand.failed + 1} fehlgeschlagen`);
     process.exit(1);
@@ -379,6 +418,7 @@ function neuerStore() {
   const rohKommunal = K.zuRohdokument(kommunalRoh, kontextBB);
   const rohKommunalPlpr = K.zuRohdokument(kommunalPlprRoh, kontextBB);
   const rohBE = K.zuRohdokument(beWaffenRoh, kontextBE);
+  const rohBEPyro = K.zuRohdokument(bePyroRoh, kontextBE);
 
   check("C1 relevantes Rohdokument traegt stabile Identitaet + Fingerabdruck",
     /^raw-[0-9a-f]{16}$/.test(String(rohRelevant.id)) && Boolean(rohRelevant.content_hash));
@@ -417,10 +457,10 @@ function neuerStore() {
 
   // Regel 0 (Punkt 24): externe Identitaet Herausgeber+Kennung+Typ.
   const identitaet = (d) => DG.externalIdentity({ ...d, externe_id: d.raw && d.raw.externe_id }) || `${d.source_id}|${d.content_hash}`;
-  const eingabe = [rohRelevant, rohKommunal, rohIrrelevant, rohBE, bundRoh];
+  const eingabe = [rohRelevant, rohKommunal, rohIrrelevant, rohBE, rohBEPyro, bundRoh];
   const identitaeten = eingabe.map(identitaet);
-  check("C7 Regel 0: fuenf Eingabedokumente -> fuenf unterscheidbare globale Identitaeten",
-    new Set(identitaeten).size === 5, identitaeten.join(" · "));
+  check("C7 Regel 0: sechs Eingabedokumente -> sechs unterscheidbare globale Identitaeten",
+    new Set(identitaeten).size === 6, identitaeten.join(" · "));
   check("C8 Regel 0 idempotent: gleiche Eingabe -> gleiche Identitaet",
     identitaet(rohRelevant) === identitaeten[0]);
   // Brandenburg-Falle aus Punkt 24: V-369400 und V-369325 zeigen auf DIESELBE Protokoll-PDF.
@@ -437,23 +477,25 @@ function neuerStore() {
   abschnitt("D · Understanding (echte Orchestrierung, Fixture-Analysen)");
   const store = neuerStore();
   const u1 = await understanding.runUnderstandingShadow(eingabe, store.api);
-  check("D1 fuenf Cluster, fuenf verarbeitet, keine Zurueckstellung",
-    u1.clusters === 5 && u1.processed === 5 && u1.deferred === 0, JSON.stringify(u1.counts));
-  check("D2 alle fuenf Vorgaenge gespeichert (status saved)",
-    (u1.counts.saved || 0) === 5, JSON.stringify(u1.counts));
+  check("D1 sechs Cluster, sechs verarbeitet, keine Zurueckstellung",
+    u1.clusters === 6 && u1.processed === 6 && u1.deferred === 0, JSON.stringify(u1.counts));
+  check("D2 alle sechs Vorgaenge gespeichert (status saved)",
+    (u1.counts.saved || 0) === 6, JSON.stringify(u1.counts));
   check("D3 Telemetrie weist jeden Endzustand aus (kein globales Pauschal-Gruen)",
-    u1.telemetrie && u1.telemetrie.dokumente === 5 && u1.telemetrie.dokumenteOhneEndzustand === 0
-      && u1.telemetrie.gruppen && u1.telemetrie.gruppen.verarbeitet === 5);
+    u1.telemetrie && u1.telemetrie.dokumente === 6 && u1.telemetrie.dokumenteOhneEndzustand === 0
+      && u1.telemetrie.gruppen && u1.telemetrie.gruppen.verarbeitet === 6);
 
   const kos = [...store.knowledgeObjects.values()];
   const koRelevant = kos.find((k) => /Straf- und Gewalttaten/i.test(k.headline || ""));
   const koKommunal = kos.find((k) => /Kommunalverfassung/i.test(k.headline || ""));
   const koIrrelevant = kos.find((k) => /Alterspräsident/i.test(k.headline || ""));
   const koBE = kos.find((k) => /Waffenrecht neu/i.test(k.headline || ""));
+  const koBEPyro = kos.find((k) => /Silvesterlage/i.test(k.headline || ""));
   const koBund = kos.find((k) => /Waffengesetzes/i.test(k.headline || ""));
-  check("D4 fuenf getrennte Vorgaenge — keine Vermischung Bund/Berlin/Brandenburg",
-    kos.length === 5 && Boolean(koRelevant) && Boolean(koKommunal) && Boolean(koIrrelevant) && Boolean(koBE) && Boolean(koBund)
-      && new Set(kos.map((k) => k.vorgang_id)).size === 5,
+  check("D4 sechs getrennte Vorgaenge — keine Vermischung Bund/Berlin/Brandenburg",
+    kos.length === 6 && Boolean(koRelevant) && Boolean(koKommunal) && Boolean(koIrrelevant)
+      && Boolean(koBE) && Boolean(koBEPyro) && Boolean(koBund)
+      && new Set(kos.map((k) => k.vorgang_id)).size === 6,
     JSON.stringify(kos.map((k) => k.headline)));
   LAUF.vorgaenge = kos.length; LAUF.verstanden = kos.filter((k) => k.understanding_status === "complete").length;
 
@@ -468,9 +510,15 @@ function neuerStore() {
     koBE && koBE.decision_level === "land" && /berlin/i.test(geoNamen(koBE)) && !/brandenburg/i.test(geoNamen(koBE)), geoNamen(koBE));
   check("D8 Bundes-Kontrollvorgang: Ebene bund, keine Brandenburger Geografie",
     koBund && koBund.decision_level === "bund" && !/brandenburg/i.test(geoNamen(koBund)), koBund && `${koBund.decision_level}|${geoNamen(koBund)}`);
+  check("D8b zweiter Berliner Kontrollvorgang: bleibt land + Geografie Berlin, nennt den REALEN Berliner Innenausschuss",
+    koBEPyro && koBEPyro.decision_level === "land" && /berlin/i.test(geoNamen(koBEPyro))
+      && !/brandenburg/i.test(geoNamen(koBEPyro))
+      && (koBEPyro.ausschuesse || []).includes("Ausschuss für Inneres, Sicherheit und Ordnung")
+      && (koBEPyro.mentioned_committees || []).includes("Ausschuss für Inneres, Sicherheit und Ordnung"),
+    JSON.stringify(koBEPyro && { dl: koBEPyro.decision_level, geo: geoNamen(koBEPyro), aus: koBEPyro.ausschuesse }));
   check("D9 Merkmalsvektor (Repraesentation fuer das aktive Matching) ist persistiert",
     kos.every((k) => Array.isArray(k.embedding) && k.embedding.length === matching.EMBEDDING_DIM));
-  LAUF.embeddingStatus = `feature-vektor ${matching.EMBEDDING_DIM}d bei ${kos.filter((k) => Array.isArray(k.embedding)).length}/5`;
+  LAUF.embeddingStatus = `feature-vektor ${matching.EMBEDDING_DIM}d bei ${kos.filter((k) => Array.isArray(k.embedding)).length}/6`;
 
   // Der Understanding-Pfad minimiert Rohzeilen erneut (toRawDocumentRow, DSGVO) und vergibt
   // dabei die Dedup-Identitaet rd-<hash> — Provenienz ist deshalb ueber die Originaladresse
@@ -488,30 +536,30 @@ function neuerStore() {
   abschnitt("E · Idempotente Wiederholung (Understanding)");
   const vorher = JSON.stringify([...store.knowledgeObjects.values()].map((k) => [k.id, k.ko_version, k.updated_at]).sort());
   const u2 = await understanding.runUnderstandingShadow(eingabe, store.api);
-  check("E1 identischer Zweitlauf: alle fuenf Cluster als Duplikat erkannt, kein KI-Aufruf noetig",
-    (u2.counts.duplicate || 0) === 5 && (u2.counts.saved || 0) === 0, JSON.stringify(u2.counts));
+  check("E1 identischer Zweitlauf: alle sechs Cluster als Duplikat erkannt, kein KI-Aufruf noetig",
+    (u2.counts.duplicate || 0) === 6 && (u2.counts.saved || 0) === 0, JSON.stringify(u2.counts));
   check("E2 Zweitlauf veraendert keinen gespeicherten Vorgang (Version + Zeitstempel unveraendert)",
     JSON.stringify([...store.knowledgeObjects.values()].map((k) => [k.id, k.ko_version, k.updated_at]).sort()) === vorher);
-  check("E3 keine fachlich falschen Doppelungen (weiter genau 5 Vorgaenge)",
-    store.knowledgeObjects.size === 5);
-  LAUF.wiederholung = "duplicate:5, neue Schreibvorgaenge: 0";
+  check("E3 keine fachlich falschen Doppelungen (weiter genau 6 Vorgaenge)",
+    store.knowledgeObjects.size === 6);
+  LAUF.wiederholung = "duplicate:6, neue Schreibvorgaenge: 0";
 
   // ═══ F · Aktives Matching (Audit AN wie Production, M8 AUS) ═══
   abschnitt("F · Aktiver Matching-Pfad (Audit AN, M8 AUS) + Persistenz");
   const m1 = await matching.runMatchingShadow({ profile: PROFIL_A, ausloeser: "e2e-vertrag" }, store.matchingOverrides);
   check("F1 Matching-Lauf vollstaendig (Audit-Laufzeile, kein Skip)",
-    m1 && !m1.skipped && m1.audit && m1.audit.status === contract.RUN_STATUS.VOLLSTAENDIG && m1.saved === 5,
+    m1 && !m1.skipped && m1.audit && m1.audit.status === contract.RUN_STATUS.VOLLSTAENDIG && m1.saved === 6,
     JSON.stringify(m1));
   check("F2 M8 aus: nichts verworfen, veroeffentlicht == Kandidaten",
-    m1.verworfen === 0 && m1.veroeffentlicht === m1.candidates && m1.candidates === 5);
+    m1.verworfen === 0 && m1.veroeffentlicht === m1.candidates && m1.candidates === 6);
 
   const rowsA = store.api.listMatchingResults({ userId: PROFIL_A.id, limit: 50 });
   const rowRelevant = rowsA.find((r) => r.knowledge_object_id === koRelevant.id);
   const rowKommunal = rowsA.find((r) => r.knowledge_object_id === koKommunal.id);
   const rowIrrelevant = rowsA.find((r) => r.knowledge_object_id === koIrrelevant.id);
   const rowBE = rowsA.find((r) => r.knowledge_object_id === koBE.id);
-  check("F3 fuenf persistierte Ergebniszeilen fuer Profil A, alle aktuell, alle mit Laufbezug",
-    rowsA.length === 5 && rowsA.every((r) => r.user_id === PROFIL_A.id && r.aktuell === true && r.run_id === m1.audit.runId));
+  check("F3 sechs persistierte Ergebniszeilen fuer Profil A, alle aktuell, alle mit Laufbezug",
+    rowsA.length === 6 && rowsA.every((r) => r.user_id === PROFIL_A.id && r.aktuell === true && r.run_id === m1.audit.runId));
   check("F4 der relevante Brandenburger Vorgang traegt Rang 1 (staerkster belegter Bezug zum Profil)",
     rowRelevant && rowRelevant.rank === 1,
     JSON.stringify(rowsA.map((r) => [r.knowledge_object_id, r.rank, r.similarity])));
@@ -544,6 +592,44 @@ function neuerStore() {
       && matchingErklaerung.erklaerungAusErgebnis(rowBE) === null,
     JSON.stringify(rowBE && rowBE.matched_features));
 
+  // ── Regression zu Befund 27A-1: fremder Landesvorgang MIT echter Ausschussnennung ──
+  // Vor dem Fix trug diese Zeile den Beleg ausschuss "Ausschuss fuer Inneres und
+  // Kommunales" (gemessen), obwohl der genannte Ausschuss der des Abgeordnetenhauses
+  // von Berlin ist. Der Merkmalsvektor bleibt bewusst unveraendert — die fachliche
+  // Naehe darf laenderuebergreifend bestehen, die MITGLIEDSCHAFT nicht.
+  const rowBEPyro = rowsA.find((r) => r.knowledge_object_id === koBEPyro.id);
+  check("F11 fremder Landesvorgang mit echter Ausschussnennung: KEIN Ausschussbeleg beim Brandenburger Profil",
+    rowBEPyro && !(rowBEPyro.matched_features || []).some((f) => f.type === "ausschuss"),
+    JSON.stringify(rowBEPyro && rowBEPyro.matched_features));
+  check("F12 dasselbe Fachgebiet bleibt als THEMA belegt — nur nicht als Ausschussmitgliedschaft",
+    rowBEPyro && (rowBEPyro.matched_features || []).some((f) => f.type === "thema" && /Inneres/.test(String(f.value))),
+    JSON.stringify(rowBEPyro && rowBEPyro.matched_features));
+  check("F13 gespeicherte Signale und Begruendung nennen den fremden Ausschuss nicht",
+    rowBEPyro && rowBEPyro.signale && !Object.prototype.hasOwnProperty.call(rowBEPyro.signale, "ausschuss")
+      && typeof rowBEPyro.begruendung === "string" && !/Ausschuss/.test(rowBEPyro.begruendung),
+    JSON.stringify(rowBEPyro && { signale: rowBEPyro.signale, begruendung: rowBEPyro.begruendung }));
+  check("F14 sichtbare Erklaerung fuehrt keinen Ausschussbeleg und behauptet keine fremde Mitgliedschaft",
+    (() => {
+      const e = matchingErklaerung.erklaerungAusErgebnis(rowBEPyro);
+      return e && !e.belege.some((b) => b.art === "ausschuss") && !/Ausschuss/.test(e.satz);
+    })(),
+    JSON.stringify(matchingErklaerung.erklaerungAusErgebnis(rowBEPyro)));
+  check("F15 der ECHTE eigene Ausschuss bleibt beim Brandenburger Vorgang belegt (kein Kollateralschaden)",
+    rowRelevant && (rowRelevant.matched_features || []).some((f) => f.type === "ausschuss" && /Inneres und Kommunales/.test(String(f.value))));
+  check("F16 Rangfolge: der eigene Landesvorgang steht weiter vor dem fremden Landesvorgang",
+    rowRelevant && rowBEPyro && rowRelevant.rank < rowBEPyro.rank,
+    JSON.stringify([["eigen", rowRelevant && rowRelevant.rank, rowRelevant && rowRelevant.similarity],
+      ["fremd", rowBEPyro && rowBEPyro.rank, rowBEPyro && rowBEPyro.similarity]]));
+  // M8 bleibt AUS; hier wird nur nachgewiesen, dass der falsche Ausschuss den Riegel
+  // nicht mehr allein oeffnen kann — geprueft an der ECHTEN gespeicherten Zeile.
+  check("F17 M8 (hypothetisch aktiv) laesst diese Zeile nicht mehr allein wegen des fremden Ausschusses passieren",
+    (() => {
+      const nurAusschuss = (rowBEPyro.matched_features || []).filter((f) => f.type === "ausschuss");
+      const g = matchingRelevanz.wendeRelevanzGateAn([{ ...rowBEPyro, matched_features: nurAusschuss }], { aktiv: true });
+      return nurAusschuss.length === 0 && g.zeilen.length === 0 && g.verworfen === 1
+        && matchingRelevanz.relevanzGateAktiv(process.env) === false;
+    })());
+
   // ═══ G · Idempotenz des Matchings (Audit-Fingerabdruck) ═══
   abschnitt("G · Idempotente Wiederholung (Matching)");
   const publishesVorher = store.zaehler.publish;
@@ -562,8 +648,8 @@ function neuerStore() {
     store.api.listMatchingResults({ userId: PROFIL_B.id, limit: 50 }).length === 0);
   const mB = await matching.runMatchingShadow({ profile: PROFIL_B, ausloeser: "e2e-vertrag" }, store.matchingOverrides);
   const rowsB = store.api.listMatchingResults({ userId: PROFIL_B.id, limit: 50 });
-  check("H2 eigener Lauf des Zweitprofils schreibt ausschliesslich eigene Zeilen",
-    mB.audit && rowsB.length === 5 && rowsB.every((r) => r.user_id === PROFIL_B.id));
+  check("H2 eigener Lauf des Zweitprofils schreibt ausschliesslich eigene Zeilen (6 Zeilen)",
+    mB.audit && rowsB.length === 6 && rowsB.every((r) => r.user_id === PROFIL_B.id));
   check("H3 Zeilen von Profil A bleiben unveraendert dem Mandanten A zugeordnet",
     store.api.listMatchingResults({ userId: PROFIL_A.id, limit: 50 }).every((r) => r.user_id === PROFIL_A.id));
   check("H4 der relevante Brandenburger Treffer traegt beim Berliner Zweitprofil KEINEN einzigen Beleg",
@@ -595,12 +681,14 @@ function neuerStore() {
     enabled: () => true, getProfile: store.api.getProfile,
     listKnowledgeObjects: store.api.listKnowledgeObjects, saveDecisions: store.api.saveDecisions
   });
-  // GEMESSEN: der thematisch aehnliche Berliner Vorgang traegt beim Brandenburger Profil
-  // eine NEGATIVE Merkmalsaehnlichkeit (−0,1539) und keinen Beleg — der aktive
-  // Entscheidungspfad (matchProfileToKnowledgeObjects, similarity < 0 ohne Beleg) laesst
-  // ihn gar nicht erst in die Kandidatenliste. 4 von 5 Vorgaengen erhalten eine Entscheidung.
-  check("I1 Entscheidungslauf fuer Profil A erzeugt Entscheidungen (4 von 5 — der Berliner Fall faellt vorher heraus)",
-    d1 && !d1.skipped && d1.saved === 4, JSON.stringify(d1));
+  // GEMESSEN: die Berliner Waffengebuehrenordnung (ohne Ausschussnennung) traegt beim
+  // Brandenburger Profil eine NEGATIVE Merkmalsaehnlichkeit (−0,1539) und keinen Beleg —
+  // der aktive Entscheidungspfad (matchProfileToKnowledgeObjects, similarity < 0 ohne
+  // Beleg) laesst sie gar nicht erst in die Kandidatenliste. Der zweite Berliner Vorgang
+  // (Silvesterlage) teilt das Fachgebiet und bleibt deshalb mit seinem thema-Beleg in der
+  // Liste — aber ohne Ausschussgewicht (I8). 5 von 6 Vorgaengen erhalten eine Entscheidung.
+  check("I1 Entscheidungslauf fuer Profil A erzeugt Entscheidungen (5 von 6 — der unbelegte Berliner Fall faellt vorher heraus)",
+    d1 && !d1.skipped && d1.saved === 5, JSON.stringify(d1));
   const decA = [...store.decisions.values()].filter((d) => d.user_id === PROFIL_A.id);
   const decRelevant = decA.find((d) => d.knowledge_object_id === koRelevant.id);
   const decKommunal = decA.find((d) => d.knowledge_object_id === koKommunal.id);
@@ -621,6 +709,18 @@ function neuerStore() {
   check("I6 thematisch aehnlicher Berliner Vorgang: erreicht die Entscheidungsliste des Brandenburger Profils NICHT (negative Aehnlichkeit, kein Beleg — keine erfundene Relevanz)",
     decBE === undefined,
     JSON.stringify(decBE && { score: decBE.score, decision: decBE.decision }));
+  // Regression zu Befund 27A-1 im ENTSCHEIDUNGSPFAD: vor dem Fix hob das Ausschussgewicht
+  // (decisions.js: ausschuss 34) einen fremden Landesvorgang mit Ausschussnennung auf
+  // Score 62 -> "Sofort reagieren" (gemessen). Ohne den falschen Beleg bleibt nur das
+  // Fachgebiet — der Vorgang ist sichtbar, aber keine Handlungsaufforderung.
+  const decBEPyro = decA.find((d) => d.knowledge_object_id === koBEPyro.id);
+  check("I8 fremder Landesvorgang mit echter Ausschussnennung: KEIN Ausschussgewicht, kein Sofort reagieren",
+    decBEPyro && decBEPyro.decision !== "Sofort reagieren" && decBEPyro.score < 60
+      && !(decBEPyro.matched_features || []).some((f) => f.type === "ausschuss"),
+    JSON.stringify(decBEPyro && { score: decBEPyro.score, decision: decBEPyro.decision, feats: decBEPyro.matched_features }));
+  check("I9 der eigene Landesvorgang bleibt deutlich hoeher bewertet als der fremde",
+    decRelevant && decBEPyro && decRelevant.score > decBEPyro.score,
+    JSON.stringify([decRelevant && decRelevant.score, decBEPyro && decBEPyro.score]));
   // Begruendetes Ignorieren beim falschen Mandanten: derselbe Brandenburger Vorgang.
   const decB = decisions.decideForUser(PROFIL_B, store.api.listKnowledgeObjects(), { userId: PROFIL_B.id });
   const decBRelevant = decB.find((d) => d.knowledge_object_id === koRelevant.id);
@@ -651,22 +751,34 @@ function neuerStore() {
     karteRelevant && karteRelevant.relevanz && karteRelevant.relevanz.belege.some((b) => /Inneres und Kommunales/.test(b.text)));
   check("J7 Berliner und Bundes-Kontrollvorgaenge erscheinen NICHT als Brandenburger Landesvorgang",
     (() => {
-      const kBE = auswahl.find((c) => c.id === koBE.vorgang_id);
+      const bleibtBerlin = (ko) => {
+        const karte = auswahl.find((c) => c.id === ko.vorgang_id);
+        return !karte || (ko.decision_level === "land" && /berlin/i.test(geoNamen(ko)) && !/brandenburg/i.test(geoNamen(ko)));
+      };
       const kBund = auswahl.find((c) => c.id === koBund.vorgang_id);
-      const beOk = !kBE || (koBE.decision_level === "land" && /berlin/i.test(geoNamen(koBE)) && !/brandenburg/i.test(geoNamen(koBE)));
       const bundOk = !kBund || (koBund.decision_level === "bund" && !/brandenburg/i.test(geoNamen(koBund)));
-      return beOk && bundOk;
+      return bleibtBerlin(koBE) && bleibtBerlin(koBEPyro) && bundOk;
     })());
+  check("J7b sichtbare Karte des fremden Landesvorgangs behauptet KEINE Brandenburger Ausschussmitgliedschaft",
+    (() => {
+      const karte = auswahl.find((c) => c.id === koBEPyro.vorgang_id);
+      if (!karte) return true;                       // erscheint gar nicht -> ebenfalls kein falscher Beleg
+      const belege = (karte.relevanz && karte.relevanz.belege) || [];
+      return !belege.some((b) => b.art === "ausschuss") && !/Inneres und Kommunales/.test(JSON.stringify(karte.relevanz || {}));
+    })(),
+    JSON.stringify((auswahl.find((c) => c.id === koBEPyro.vorgang_id) || {}).relevanz));
   check("J8 Rangfolge: der relevante Brandenburger Vorgang steht vor Kontroll- und Fremdfaellen",
     (() => {
       const pos = (ko) => ranked.findIndex((k) => k.id === ko.id);
       const posRel = pos(koRelevant);
       return posRel !== -1
-        && [koKommunal, koIrrelevant, koBE].every((ko) => pos(ko) === -1 || posRel < pos(ko));
+        && [koKommunal, koIrrelevant, koBE, koBEPyro].every((ko) => pos(ko) === -1 || posRel < pos(ko));
     })(), JSON.stringify(ranked.map((k) => k.id)));
   LAUF.briefingAuswahl = auswahl.map((c) => c.id);
   LAUF.kontrollfaelleAusgeschlossen = [
-    `berlin:${koBE.vorgang_id}=geografie-berlin`, `bund:${koBund.vorgang_id}=ebene-bund`,
+    `berlin:${koBE.vorgang_id}=geografie-berlin`,
+    `berlin-mit-ausschussnennung:${koBEPyro.vorgang_id}=kein-ausschussbeleg-fremder-zustaendigkeitsraum`,
+    `bund:${koBund.vorgang_id}=ebene-bund`,
     `irrelevant:${koIrrelevant.vorgang_id}=ignorieren`, `fachfremd:${koKommunal.vorgang_id}=kein-sofort-reagieren`
   ];
 
@@ -683,7 +795,7 @@ function neuerStore() {
   };
   const uStoer = await understanding.runUnderstandingShadow(eingabe, stoerApi);
   check("K1 gestoerter Zwischenschritt erzeugt einen klaren Fehlerstatus (skipped-error)",
-    (uStoer.counts["skipped-error"] || 0) === 1 && (uStoer.counts.saved || 0) === 4, JSON.stringify(uStoer.counts));
+    (uStoer.counts["skipped-error"] || 0) === 1 && (uStoer.counts.saved || 0) === 5, JSON.stringify(uStoer.counts));
   check("K2 Telemetrie meldet den Fehlschlag samt Vorgang — kein globales Pauschal-Gruen",
     uStoer.telemetrie.gruppen.fehlgeschlagen === 1 && uStoer.telemetrie.auffaelligkeiten.length >= 1);
   const koGestoert = [...stoerStore.knowledgeObjects.values()].find((k) => k.understanding_status === "failed");
@@ -713,7 +825,7 @@ function neuerStore() {
   // ═══ L · Keine Production-Abhaengigkeit ═══
   abschnitt("L · Keine Production-Abhaengigkeit");
   check("L1 kein einziger echter KI-Aufruf (alle Analysen aus Fixtures)",
-    fixture.anzahlAufrufe() >= 5 && typeof fixtureUnderstanding === "function");
+    fixture.anzahlAufrufe() >= 6 && typeof fixtureUnderstanding === "function");
   check("L2 keine Supabase-Env noetig (Test lief ohne SUPABASE_URL/SERVICE_ROLE)",
     true, "Netz-Guard des Runners blockiert zusaetzlich jeden externen Zugriff");
   check("L3 keine mandantenfremden Storage-Zugriffe protokolliert",
