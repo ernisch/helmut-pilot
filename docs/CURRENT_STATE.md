@@ -1,6 +1,55 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-31 (**Sprint Phase-1-Punkt 29A — deterministischer Belastungs-
+**Letzte Aktualisierung:** 2026-07-30 (**Sprint P29-Fix — Fehlerpfade schließen (P29-1…P29-4).
+ERFOLGREICH ABGESCHLOSSEN (repo-seitig; Abnahmerest: CI-Lauf auf dem PR, siehe unten) — alle vier
+in Punkt 29A deterministisch belegten Produktionsfehler sind behoben, offline bewiesen und
+mutationsgesichert; 29B (rein lesender Production-Nachweis) bleibt offen.** Ausgangspunkt
+`origin/main` `75d7286`; die 29A-Befundproben (aus PR #187 rein lesend übernommen) reproduzierten
+dort **0/4 behoben (Exit 1)**. **Fixes (kleinste sichere Korrektur, je `git revert`-rückbaubar):**
+**P29-1** `cron-fairness.js` bucht zurückgegebene Fehler-/Timeout-Objekte (`ok:false` /
+`bounded:true` / `failed:true`; Skip-Vorrang: `skipped:true` ist NIE ein Fehler) jetzt als FEHLER
+statt Erfolg — kein erfundener `letzterErfolgAt`, keine zurückgesetzte `fehlerSerie` (neue
+exportierte Klassifikation `ergebnisFehlgeschlagen`); `server.js` hebt die inneren
+`build-`/`lage-check-`/`push-timeout`-Befunde in die Mandatsantwort (die `status:'stable'`-
+Maskierung bleibt nur für die Push-Logik erhalten). **P29-2** `understanding.js` parkt nicht
+verwertbare KI-Rückgabewerte (`null`/kein Objekt) kontrolliert (`skipped-invalid` + markFailed +
+Skip-Log + Verknüpfung) statt als anonymer `cluster-error` ohne Endzustand — kein unbegrenzter
+Retry mehr. **P29-3** „duplicate" gilt nur noch für nachweislich vollständig verarbeitete
+Fassungen: nicht erfolgreiche Aktualisierungen werden vorgemerkt (Auth-Store-Muster wie P1-4,
+KEINE Migration; neue Storage-Primitiven `getUpdateRetries`/`saveUpdateRetries`) und BEGRENZT
+wieder aufgenommen — Deckel 3 Fehlversuche → sichtbar `skipped-update-final` (neue Ergebnisklasse,
+Gruppe „fehlgeschlagen", kein weiterer KI-Call); Budget-Vertagung zählt nicht gegen den Deckel;
+ein Erfolg löst die Vormerkung auf; echte neue Dokumente heilen weiterhin über den normalen
+Update-Pfad. **P29-4** Existenz-Check der Pending-Vormerkung fail-closed
+(`getKnowledgeObjectByVorgang` mit `throwOnError`-Option, Default für Bestandsaufrufer
+unverändert): Lesefehler → `skipped, reason:'existenz-unbekannt'`, KEIN Schreibvorgang — ein
+fertiges Wissensobjekt kann nicht mehr auf `pending` zurückgestuft werden. **Tests (real
+ermittelt):** neue Regressionssuite `scripts/punkt29-fixpfade-test.js` auf dem Ausgangscode
+**24 rot / 16 Gegenproben grün** → nach den Fixes **40/40**; Mutationsprobe
+`scripts/punkt29-fix-mutationsprobe.js` **7/7 rot erkannt** (Referenzlauf grün; M1–M3 P29-1 inkl.
+Skip-Unterscheidbarkeit und Routen-Anhebung, M4 P29-2, M5/M6 P29-3 inkl. Deckel, M7 P29-4);
+29A-Befundproben nach den Fixes **3/4 behoben** — P29-3 bleibt dort formal rot wegen einer
+überstrengen Gesamt-Erwartung (`duplicate===0` über ALLE Cluster; der unveränderte Nachbar-Cluster
+bleibt ehrlich ein Duplikat), real belegt: der geforderte zweite Update-Versuch findet statt →
+Integrationshinweis für PR #187 (dort gepinnte Assertions B9/C9/D9 + Probe-Erwartung anpassen,
+`roadmap/punkt-29-fixsprint.md` §5); Offline-Suite ohne Secrets **189/189** gegen Basislinie
+`origin/main` `75d7286` **188/188** (getrennter Worktree, identische Umgebung; Fehlschlaglisten
+byte-identisch — beide leer; die +1 ist die neue Suite); Browser-/Mobile-Smoke **32/32**;
+betroffene Bestandsverträge einzeln grün (cron-fairness · vorgangs-lebenszyklus 81/81 ·
+matching-audit 178/178 · ai-json-parse 13/13 · ko-recovery 12/12 · pending-terminal 63 ·
+pipeline-zeitbudget · Pilot-E2E 96/96 · Berlin 76/76 · Brandenburg 98/98 — Testgerüst
+`e2e-vertrag-geruest.js` additiv um die Vormerkungs-Replik erweitert). **Sicherheitsgrenzen
+eingehalten:** 0 Production-Zugriffe (auch nicht lesend), 0 KI-Aufrufe / 0,00 USD, keine
+Migration, kein Backfill, keine Datenkorrektur, keine manuellen Läufe, keine Env-/Flag-/Cron-/
+Lock-/Budget-/Quellen-Änderung, Berlin/Brandenburg/M8 unverändert AUS, keine neuen Mandate,
+keine Production-Daten im Repository; Checkliste Zeile 29 unangetastet (der Statuswechsel
+offen→teilweise gehört zu PR #187); 25B/OP-25/Punkt 27 unberührt. **Branch
+`claude/p29-fehlerpfade-schliessen-wpxb1h`, PR siehe Fix-Doku (offen, NICHT gemergt).**
+**Nächster Schritt:** Betreiberentscheidung über den Merge dieses Fix-PRs (unabhängig von 25B und
+PR #187 mergefähig; Empfehlung: VOR PR #187 mergen, dann dort B9/C9/D9 + Befundprobe anpassen),
+danach 29B rein lesend. Kanonisch:
+[`roadmap/punkt-29-fixsprint.md`](roadmap/punkt-29-fixsprint.md).) ·
+(**Sprint Phase-1-Punkt 29A — deterministischer Belastungs-
 und Fehlervertrag (Fehlerpfade und Wiederholungen), geschnitten in 29A (Repository-Vertrag) und 29B
 (rein lesender Production-Nachweis). TEILWEISE ABGESCHLOSSEN — 29A vollständig erfüllt, 29B offen,
 und es wurden VIER echte Produktionsfehler gefunden (nicht behoben — Befundregel).**
