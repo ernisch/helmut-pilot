@@ -154,20 +154,29 @@ function bewerte(bedingungen, db) {
   }
 
   const lebt = (r) => r.aktiv !== false && !r.geloescht_at;
-  // LASTFOLGE (Punkt 14B): die Crons verarbeiten die aktiven Mandate SEQUENZIELL in
-  // aufsteigender Id-Reihenfolge (tenant-context.listActiveTenantIds -> server.runCronForTenants).
-  // Wer spaeter in dieser Reihenfolge steht, faellt zuerst aus dem Zeitbudget. Ein zusaetzliches
-  // Mandat schiebt also alle nachfolgenden Bestandsmandate eine Position nach hinten. Die Zahl
-  // steht hier, damit dieser Effekt VOR der Ausfuehrung sichtbar ist statt hinterher.
+  // LASTFOLGE (Punkt 14B, aktualisiert 2026-07-29 / OP-25): die Crons verarbeiten die aktiven
+  // Mandate weiterhin SEQUENZIELL gegen ein hartes Zeitbudget — aber NICHT mehr in
+  // aufsteigender Id-Reihenfolge. Die Reihenfolge kommt aus `lib/helmut/cron-fairness.js`
+  // (aeltester letzter Versuch zuerst, Mandate ohne Versuch vorn, Kennung nur als letzter
+  // Gleichstandsentscheid). Eine feste Position gibt es damit nicht mehr; ein zusaetzliches
+  // Mandat schiebt niemanden dauerhaft nach hinten, es senkt die Frequenz ALLER Mandate
+  // gleichmaessig: bei n aktiven Mandaten und k begonnenen Mandaten je Lauf wird jedes Mandat
+  // spaetestens im ceil(n/k)-ten regulaeren Lauf begonnen. Die Zahl steht hier, damit dieser
+  // Effekt VOR der Ausfuehrung sichtbar ist statt hinterher.
   const aktiveIds = db.mandate_profiles.filter(lebt).map((r) => r.user_id).sort();
+  const nachher = aktiveIds.includes(P.PROFIL_ID) ? aktiveIds.length : aktiveIds.length + 1;
   const lastfolge = {
     aktiveMandateHeute: aktiveIds.length,
-    positionDesAbnahmeprofils: aktiveIds.filter((id) => id < P.PROFIL_ID).length + 1,
-    danachVon: aktiveIds.length + 1,
-    bestandsmandateDieNachHintenRuecken: aktiveIds.filter((id) => id > P.PROFIL_ID).length,
-    hinweis: "Sequenzielle Cron-Schleife mit Zeitbudget. Ein vom Budget abgeschnittenes Mandat "
-      + "erzeugt einen systemError (server.js, seit dem Incident 2026-07-25) — es faellt also auf, "
-      + "aber es faellt aus."
+    aktiveMandateNachher: nachher,
+    // Kein Rangversprechen mehr: die Reihenfolge rotiert. Was steigt, ist der Abstand
+    // zwischen zwei Versuchen desselben Mandats.
+    obergrenzeLaeufeVorher: aktiveIds.length,
+    obergrenzeLaeufeNachher: nachher,
+    hinweis: "Sequenzielle Cron-Schleife mit Zeitbudget, faire Rotation nach aeltestem Versuch "
+      + "(OP-25). Ein vom Budget abgeschnittenes Mandat erzeugt einen systemError (server.js, seit "
+      + "dem Incident 2026-07-25) und steht im naechsten Lauf VORN — es faellt also auf und wird "
+      + "nachgeholt statt dauerhaft verdraengt. Die Werte sind Obergrenzen bei k=1 begonnenem "
+      + "Mandat je Lauf (ceil(n/k)); bei mehr Kapazitaet je Lauf sinken sie entsprechend."
   };
   const ausgangslage = {
     profile: db.profiles.length,

@@ -167,9 +167,17 @@ function check(name, cond, detail = "") {
     && !serverSource.includes("HELMUT_MORNING_PUSH_ALL_PROFILES"));
   check("morning-briefing ueberspringt deaktivierte Profile (val.disabled)",
     /morning-briefing[\s\S]{0,1200}val\.disabled/.test(serverSource));
+  // Seit OP-25 liegen Schleife, Isolation und Zeitbudget in lib/helmut/cron-fairness.js
+  // (offline testbar); server.js delegiert dorthin und reicht das Budget durch.
+  const fairnessSource = fs.readFileSync(path.join(root, "lib", "helmut", "cron-fairness.js"), "utf8");
   check("runCronForTenants isoliert jedes Mandat (try/catch) und hat ein Zeitbudget (deadline)",
-    /runCronForTenants[\s\S]{0,1500}try \{[\s\S]{0,400}catch \(error\)/.test(serverSource)
-    && /runCronForTenants[\s\S]{0,900}deadline/.test(serverSource));
+    /runCronForTenants[\s\S]{0,3000}cronFairness\.runTenantsFairly\(/.test(serverSource)
+    && /runCronForTenants[\s\S]{0,3000}deadlineMs/.test(serverSource)
+    && /try \{[\s\S]{0,400}await perTenant\(tenantId\)[\s\S]{0,400}catch \(error\)/.test(fairnessSource)
+    && /const deadline = startedMs \+ deadlineMs;/.test(fairnessSource));
+  check("Ein Mandat, das aus Zeitmangel nicht begann, gilt NICHT als versucht (Fairness, OP-25)",
+    /reason: "zeitbudget"/.test(fairnessSource)
+    && /Nicht begonnene Mandate werden NICHT als versucht/.test(fairnessSource));
   check("Mandatsbezogene Crons brauchen KEINE mandantenspezifische Env-Variable",
     !/HELMUT_PILOT_TENANT_ID|HELMUT_CRON_MULTI_TENANT|HELMUT_MORNING_PUSH_ALL_PROFILES/.test(serverSource));
   check("Cron-Zeiten unveraendert (vercel.json nicht angefasst)",

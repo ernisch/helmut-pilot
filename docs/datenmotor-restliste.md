@@ -450,7 +450,67 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   ist damit ausgeführt (§14 des kanonischen Dokuments). Keine weitere Freigabe offen.
 
 #### OP-25 · Crawl-Zeitdeckelung: je Lauf wird nur ein Teil der Mandanten erreicht (neu, Sprint 23B-1; Prioritätsklasse P1)
-- **Status:** offen, **Ursache belegt, Umfang noch nicht vermessen** (2026-07-29, Befund B5).
+- **Status (2026-07-30, Abschlussdurchgang):** **Repository-Umsetzung vollständig und CI-belegt,
+  Production-Nachweis offen.** **Jeder Commit des Branches hat das CI-Gate grün passiert** —
+  beide Pflicht-Checks, jeweils Offline **183/183** und Browser **32/32** (`eeaa363` Lauf
+  `30499103799` · `2dc4154` Lauf `30516881711` · `ee1bce4` Lauf `30517066137` · `a251d91` Lauf
+  `30517190157`). Drei Nachprüfungen ergänzt: **(1)** die Garantie
+  `ceil(n/k)` gilt **nur** für `k ≥ 1` — ein Lauf ohne Kapazität wird jetzt als solcher
+  ausgewiesen (`kapazitaet`, `fortschrittsgarantie`, `ohneFortschritt`, `obergrenzeLaeufe: null`,
+  wörtlicher `systemError`), schreibt **nichts** und verschiebt die Warteschlange nicht.
+  **(2)** Der Überlappungsschutz ist bewiesen: `crawl-<mandat>` wird als erste Anweisung in
+  `runSourceCrawl` erworben (TTL 15 min), ist **atomar und fail-closed** und in Production
+  **nachweislich aktiv** — rein lesend geprüft, die Lock-Zeilen des regulären 04:00-Crawls vom
+  2026-07-30 tragen einen Token, den nur die atomare RPC schreibt. Ein atomarer Mandatsclaim in
+  der Fairnessschicht ist damit **nicht erforderlich**. **Dabei korrigiert:**
+  [`betrieb/env-inventar.md`](betrieb/env-inventar.md) behauptete, Migration `20260719` sei „NICHT
+  auf Prod angewendet" und der Modus sei fail-open — **falsch**; FT2-2 dieser Liste und
+  `CLAUDE.md` §5 hatten recht. **(3)** Die Persistenz ist gehärtet: Lesefehler → kein
+  Schreibvorgang, neuere Schemaversion → kein Schreibvorgang, Versuchsvermerk wird gegengelesen
+  und begrenzt wiederholt, korrupte Einträge blockieren niemanden. Tests **176/176**,
+  Mutationsprobe **9 von 9 rot**. **Frischer Beleg, dass der Fehler bis zuletzt auftrat:** der
+  Lauf vom 2026-07-30, 04:05:04 UTC gab seine Sperre nie frei — Prozessende am Zeitlimit beim
+  **zweiten** Mandat der alphabetischen Reihenfolge, gleiches Muster wie am 29.07.
+- **Nachtrag 2026-07-30 (Vorprüfung Mergefreigabe): ein echter Fehler gefunden und behoben.**
+  Der Fairnessvermerk entsteht **vor** der Verarbeitung, die Sperre `crawl-<mandat>` erst **in**
+  `runSourceCrawl` — und die **wirft** bei verweigerter Sperre nicht, sondern liefert
+  `{ skipped: true, reason: "already running" }`. Die Schleife wertete das als Erfolg und schrieb
+  einen **erfundenen Erfolg**, zählte das Mandat in die Kapazität `k` und machte die gemeldete
+  Obergrenze `ceil(n/k)` **zu optimistisch**. `fremderHalter` deckt diesen Pfad **nicht** ab (der
+  eigene, jüngere Vermerk führt die Verschmelzung). Jetzt: kein `begonnen`, nicht in `k`, **kein**
+  Abschluss-Schreibvorgang, eigener sichtbarer Ausgang (`lockVerweigert` / `sperreVerweigert=…`).
+  Der Versuchsvermerk bleibt `laufend`, sperrt weitere überlappende Läufe und läuft nach 30 min ab.
+  Tests **201/201**, Mutationsprobe **10 von 10 rot**. Details:
+  [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) §3a.1.
+- **Aktivierung:** `HELMUT_CRON_FAIRNESS` ist **ohne gesetzte Variable aktiv** (nur `off`/`false`/`0`
+  schalten ab) und **nicht** über `helmut-flags.json` steuerbar — der Merge verändert damit
+  unmittelbar das Production-Verhalten, der Rückweg läuft ausschließlich über die Vercel-Env.
+- **Verbindliche Folgeregel:** **weitere reale Testmandate erst nach Merge UND erbrachtem
+  regulärem Production-Nachweis.** Die Rotation verteilt den Rückstand gleichmäßig, sie
+  vergrößert das Zeitbudget nicht: bei `n` Mandaten und `k` begonnenen je Lauf steigt der Abstand
+  zwischen zwei Versuchen desselben Mandats auf `ceil(n/k)` Läufe. `k` ist in Production noch
+  **unvermessen** — ein Lauf am 2026-07-30 endete bereits beim zweiten Mandat am Zeitlimit.
+  Begründung und Rechenweg: [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) §9.
+- **Status (2026-07-29, Sprint OP-25-Fairness, 1. Durchgang):** **Teilstück (b) umgesetzt,
+  Production-Nachweis offen.** Der Kernbefund wurde gegen `main` nach PR #178 (`51732e2`) **bestätigt**:
+  `listActiveTenantIds` endete auf `ids.sort()` (alphabetisch), `runCronForTenants` lief seriell
+  gegen `Date.now() > deadline`, und es gab **keinen** persistenten Fortschritt je Mandat — die
+  Verdrängung traf also strukturell immer dieselben Mandate. Präzisierung zum Auftrag: „4 von 6"
+  ist der Messwert vom **2026-07-24**; am **2026-07-29** waren es **6 von 7**.
+  **Jetzt:** faire Rotation nach dem ältesten letzten **Versuch**
+  ([`lib/helmut/cron-fairness.js`](../lib/helmut/cron-fairness.js)), Versuch **vor** der
+  Verarbeitung persistiert (eigene `helmut_store`-Zeile — **keine Migration**, keine RLS-Änderung,
+  kein Freigabegate), nachrechenbare Obergrenze **ceil(n/k)** reguläre Läufe, Beobachtbarkeit je
+  Mandat (`[cron/*/fairness]` + `fairness` im Antwortkörper), `systemError` mit **Kennungen** der
+  nicht verarbeiteten Mandate. Rückweg: `HELMUT_CRON_FAIRNESS=off`. Tests: neue Suite **176/176**,
+  Offline-Suite **169/183** (Baseline `main` 168/182 — dieselben 14 umgebungsbedingten
+  Fehlschläge), Browser-Smoke **32/32**, Mutationsprobe **9 von 9 rot**. **0 KI, 0,00 USD, keine
+  Migration, keine Cron-/Budgetänderung, kein Production-Zugriff.** Kanonisch:
+  [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md). **Offen bleiben:** (a) die Messung, wie
+  viele Mandate je Lauf real die Matching-Stufe erreichen, (c) ein Abdeckungsalarm über mehrere
+  Läufe hinweg (der Einzellauf meldet jetzt, die Serie noch nicht) — und der **reguläre
+  Production-Nachweis** nach Merge.
+- **Ausgangsbefund (2026-07-29, vor diesem Sprint):** **Ursache belegt, Umfang noch nicht vermessen** (Befund B5).
   Der Crawl-Cron endet reproduzierbar nach ~280 s mit `bounded=true`
   (`[cron/crawl] 280001ms tenants=undefined bounded=true`, gemessen 28.07. 04:00, 28.07. 20:00
   und 29.07. 04:00). Er verarbeitet die Mandanten nacheinander und bricht am Zeitlimit ab —
@@ -462,10 +522,13 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   und war bisher nur unsichtbar, weil Matching vor Sprint 23B-1 keine Spur hinterließ.
 - **Fehlender Schritt:** (a) messen, wie viele der aktiven Mandanten je Lauf tatsächlich
   bis zur Matching-Stufe kommen (die 4 Cron-Läufe/Tag über eine Woche auswerten, jetzt
-  erstmals über `matching_runs` möglich); (b) entscheiden, ob das Zeitbudget besser verteilt
-  wird (Rotation der Mandantenreihenfolge statt fester Reihenfolge), der Crawl je Mandant
-  läuft oder die Google-News-Wartezeiten gesenkt werden (Berührung mit OP-15);
-  (c) Abdeckungsalarm, damit ein dauerhaft übersprungener Mandant auffällt statt still zu bleiben.
+  erstmals über `matching_runs` möglich) — **offen**; (b) ~~entscheiden, ob das Zeitbudget besser
+  verteilt wird (Rotation der Mandantenreihenfolge statt fester Reihenfolge)~~ — **erledigt
+  2026-07-29: Rotation umgesetzt** (Reihenfolge nach ältestem Versuch, persistent, ohne Migration;
+  Zeitbudget, Cron-Zeiten und Google-Wartezeiten **unverändert** — die Berührung mit OP-15 wurde
+  bewusst nicht angefasst); (c) Abdeckungsalarm über eine **Serie** von Läufen, damit ein dauerhaft
+  übersprungener Mandant auffällt statt still zu bleiben — **offen** (der Einzellauf meldet seit
+  diesem Sprint Kennungen, die Serienauswertung fehlt).
 - **Abhängigkeiten:** OP-15 (Google-News-Klumpenrisiko/Härtung — die Timeouts fressen das
   Budget), OP-21 (die 2 × `504` vom 26.07. sind Ausdruck desselben Limits), OP-07 (Alarmweg).
 - **Risiko:** **hoch für den Zweitmandanten.** Mit einem zahlenden Zweitmandanten teilen sich

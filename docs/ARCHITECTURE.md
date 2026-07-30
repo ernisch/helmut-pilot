@@ -118,7 +118,10 @@ einen Zustand ab (gesund · eingeschränkt · ausgefallen · inaktiv · unbekann
   aber **funktional inert**. Durchsetzend sind `assertTenant`/`assertTenantRows`
   (`storage.js`) plus ein verpflichtender `user_id=eq.<tenant>`-Filter.
 - Zwei Speicherformen nebeneinander: relationale Tabellen **und** ein zentraler
-  JSON-Blob (`helmut_store`, Zeilen `main`, `main-auth`, `main-p-<id>`).
+  JSON-Blob (`helmut_store`, Zeilen `main`, `main-auth`, `main-p-<id>`; seit 2026-07-29
+  zusätzlich die **kleine, eigenständige** Zeile `main-cron-fairness` mit dem
+  Fairnesszustand der Crons — nur Scheduler-Metadaten, genau ein Schreiber, monotone
+  Verschmelzung, deshalb **nicht** vom Last-Write-Wins-Risiko unten betroffen, §7).
   Der Blob ist **Last-Write-Wins** — dort ist das Verlustrisiko (→ OP-01).
   **Belegt am 2026-07-27 (Befund W-2):** parallele Auth-Store-Writer überschreiben
   einander die Prozess-Lauftelemetrie (`processRuns`). Deshalb ist die
@@ -146,6 +149,7 @@ einen Zustand ab (gesund · eingeschränkt · ausgefallen · inaktiv · unbekann
 
 | Schritt | Modul |
 |---|---|
+| **Mandantenreihenfolge der Crons (fair, persistent)** | `cron-fairness.js` |
 | Plan bauen (relational vs. Katalog) | `quellenarchitektur/source-mode.js` |
 | Abruf, Feed-Parsing, Retry | `crawler.js`, `google-news-hardening.js` |
 | Lauf-Orchestrierung, Locks, Telemetrie | `scheduler.js`, `source-telemetry.js`, `crawl-run-state.js` |
@@ -159,6 +163,18 @@ einen Zustand ab (gesund · eingeschränkt · ausgefallen · inaktiv · unbekann
 
 Alle Läufe sind über **atomare, fail-closed Locks** (`pipeline_locks`) gegen
 Doppelstart geschützt. Ein bewusster Doppelstart in Production ist **verboten**.
+
+**Mandantenreihenfolge (seit 2026-07-29, OP-25).** Die mandantenbezogenen Crons verarbeiten die
+aktiven Mandate **seriell** gegen ein hartes Zeitbudget — die Reihenfolge war deshalb
+sicherheitsrelevant und ist es weiterhin. Sie folgt nicht mehr der Kennung (`ids.sort()`), sondern
+dem **ältesten letzten Versuch** (`cron-fairness.js`): Mandate ohne Versuch zuerst, Losentscheid bei
+Gleichstand, Kennung nur als letzter Entscheid. Der Versuch wird **vor** der Verarbeitung
+persistiert, Erfolg/Fehler/Dauer danach — daraus folgt die Obergrenze **ceil(n/k)** reguläre Läufe,
+solange ein Lauf mindestens **k ≥ 1** Mandate beginnen kann (bei `k = 0` gibt es für diesen Lauf
+keine Fortschrittsgarantie; er wird als solcher ausgewiesen).
+Zustandsablage ist eine **eigene** `helmut_store`-Zeile `main-cron-fairness` (§6), bewusst getrennt
+vom Last-Write-Wins-Blob und ohne eigene Tabelle. Kanonisch:
+[`betrieb/cron-fairness.md`](betrieb/cron-fairness.md).
 
 ### 7a · Vorgangsidentität (seit 2026-07-26, Betriebsbefund B4)
 

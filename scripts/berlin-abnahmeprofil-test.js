@@ -324,17 +324,26 @@ const FLAG_BE = { HELMUT_LANDESMODULE: "berlin" };
   check("7f Nach Rückweg Stufe 0 zählt es nicht mehr als Cron-Mandant",
     tenantContext.isActiveMandate({ id: P.PROFIL_ID, aktiv: false }) === false
     && tenantContext.isActiveMandate({ id: P.PROFIL_ID, aktiv: true, geloescht_at: "2026-07-26T20:00:00Z" }) === false);
-  // Die Crons verarbeiten Mandate SEQUENZIELL in aufsteigender Id-Reihenfolge mit hartem
-  // Zeitbudget. Ein zusätzliches Mandat schiebt alle nachfolgenden nach hinten — deshalb ist
-  // die Reihenfolge kein Detail, sondern ein Lastthema (§20.6 des Runbooks).
+  // Die Crons verarbeiten Mandate SEQUENZIELL mit hartem Zeitbudget. Ein zusätzliches Mandat
+  // teilt sich dasselbe Budget — die Reihenfolge ist deshalb kein Detail, sondern ein
+  // Lastthema (§20.6 des Runbooks). Seit OP-25 (2026-07-29) ist die Position NICHT mehr
+  // alphabetisch fest, sondern folgt dem ältesten letzten Versuch (`cron-fairness.js`):
+  // ein zusätzliches Mandat verschiebt niemanden dauerhaft nach hinten, es senkt die
+  // Frequenz aller Mandate gleichmäßig (Obergrenze ceil(n/k) reguläre Läufe).
   const serverText = fs.readFileSync(path.join(__dirname, "..", "server.js"), "utf8");
+  const fairnessText = fs.readFileSync(path.join(__dirname, "..", "lib", "helmut", "cron-fairness.js"), "utf8");
   check("7g Die Cron-Schleife ist sequenziell und zeitbudgetiert",
     /runCronForTenants\(cronName, perTenant, \{ deadlineMs = \d+ \}/.test(serverText)
-    && /reason: "zeitbudget"/.test(serverText));
+    && /cronFairness\.runTenantsFairly\(/.test(serverText)
+    && /reason: "zeitbudget"/.test(fairnessText)
+    && /for \(const kandidat of planung\.plan\)/.test(fairnessText));
   check("7h Ein vom Zeitbudget abgeschnittenes Mandat erzeugt einen systemError (nicht still)",
     /Zeitbudget erschoepft/.test(serverText) && /recordSystemError/.test(serverText));
-  check("7i Die Mandatsreihenfolge ist deterministisch sortiert (Position ist vorhersagbar)",
+  check("7i Die Mandatsliste ist deterministisch sortiert (reproduzierbare Eingabemenge)",
     /return ids\.sort\(\);/.test(fs.readFileSync(path.join(__dirname, "..", "lib", "helmut", "tenant-context.js"), "utf8")));
+  check("7j Die Verarbeitungsreihenfolge ist NICHT mehr alphabetisch, sondern fair rotiert",
+    /planTenantOrder/.test(fairnessText) && /letzterVersuchAt/.test(fairnessText)
+    && /a\.politicianId < b\.politicianId/.test(fairnessText));
 }
 
 // ══ 8) Mandantenneutralität (CLAUDE.md §4.2) ═════════════════════════════════════════════════
