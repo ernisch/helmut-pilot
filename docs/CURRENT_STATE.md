@@ -76,7 +76,7 @@ Deployment). Geänderte Dateien: `lib/helmut/matching.js`,
 `scripts/befund-27a2-production-messung.js`, `scripts/befund-27a2-schreibschutz-test.js`,
 `scripts/brandenburg-e2e-mutationsprobe.js`, `docs/matching-nachvollziehbarkeit.md` (§52 neu),
 `docs/roadmap/phase_1_checkliste.md`, `docs/CURRENT_STATE.md`. Branch
-`claude/fix-befund-27a-2-k8lazs`, PR siehe unten. Kanonisch:
+`claude/fix-befund-27a-2-k8lazs`, **PR #185 (offen, nicht gemergt)**. Kanonisch:
 [`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md) §52.) ·
 (**Sprint Production-Messung Befund 27A-2: erhalten
 Bundestagsprofile falsche Ausschussbelege aus Landesvorgängen? TEILWEISE ABGESCHLOSSEN — die
