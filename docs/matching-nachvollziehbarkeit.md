@@ -2814,3 +2814,201 @@ Belegquote, sichtbares 12er-Fenster, abgelöste Zeilen, 0 KI-Aufrufe. Erwartung 
 §44.2: 18–20 von 20 veröffentlicht, Belegquote **100 %**. Da das Flag pro Deployment
 und nicht pro Mandant wirkt, ist die mandantenweise Erprobung nur über die Reihenfolge
 der Cron-Läufe (Befund **B5**) möglich — oder es wird direkt für alle aktiviert.
+
+---
+
+## 50 · Befund 27A-1: Ausschussbeleg nur bei passendem Zuständigkeitsraum
+
+**Stand:** 2026-07-30 · Sprint „Matchingfix für Befund 27A-1" · Branch
+`claude/matching-befund-27a-9gycsj` · **kein Production-Zugriff, keine Migration,
+kein Backfill, keine Aktivierung.**
+
+> **Abgrenzung:** dieser Abschnitt gehört zu **Roadmap-Punkt 27A**
+> ([`roadmap/phase_1_checkliste.md`](roadmap/phase_1_checkliste.md), Zeile 27), **nicht** zu
+> OP-27 der Restliste (M8-Aktivierung). `HELMUT_MATCHING_RELEVANZ_GATE` bleibt unverändert
+> **AUS**; §42–§49 sind von diesem Sprint nicht berührt.
+
+### 50.1 · Die Ursache, gemessen
+
+`normalizeCommittee` baut den Ausschussnamen auf einen Synonymstamm ab. Beide
+Innenausschüsse enthalten den Schlüssel `inneres` und fallen deshalb auf **denselben**
+Stamm:
+
+| Eingabe | `normalizeCommittee` | `committeeMatchKey` |
+|---|---|---|
+| „Ausschuss für Inneres und Kommunales" (Landtag Brandenburg) | `inneres` | `inneres` |
+| „Ausschuss für Inneres, Sicherheit und Ordnung" (Abgeordnetenhaus Berlin) | `inneres` | `inneres` |
+
+**`committeeMatchKey` war ausdrücklich keine Lösung** (§24 der
+[Radar-Diagnose](quellenarchitektur/24-radar-ausschuss-reiter-diagnose.md) behandelt einen
+anderen Fehler): es korrigiert nur die *Reihenfolge* des Substring-Fallbacks und liefert für
+beide Namen ebenfalls `inneres`. Gemessen mit den echten Produktionsfunktionen, Stand
+`d9006c1`, Brandenburger Testprofil gegen einen Berliner Vorgang mit echter Ausschussnennung:
+
+```
+matched_features : [{ausschuss, "Ausschuss für Inneres und Kommunales"}, {thema, "Inneres"}]
+begruendung      : "Betrifft deinen Ausschuss Ausschuss für Inneres und Kommunales
+                    und deinen Schwerpunkt Inneres."
+Entscheidung     : score 62 -> "Sofort reagieren"
+```
+
+Ein Ausschussname trägt **strukturell keinen** Hinweis auf sein Parlament. Die Kollision ist
+aus dem Namen allein nicht auflösbar — und darf laut Produktregel auch **nicht** aus ähnlich
+klingenden Namen geraten werden.
+
+### 50.2 · Die Regel
+
+Ein politisches **Fachgebiet** darf länderübergreifend ähnlich sein. Eine konkrete
+**Ausschussmitgliedschaft** ist an eine Institution gebunden. Deshalb:
+
+> Eine Ausschussüberschneidung gilt nur dann als **Mitgliedschaftsbeleg**, wenn das Profil
+> einen **bestimmten** Zuständigkeitsraum eines Landesparlaments hat (Mandatsebene `landtag`
+> **und** belegtes Bundesland) **und** der Vorgang **positiv** demselben Bundesland
+> zugeordnet ist.
+
+Beide Zuständigkeitsräume entstehen aus **bereits belegten** Feldern — keine neue Datenquelle,
+keine neue Spalte, kein Raten:
+
+| Seite | Quelle | Ergebnis |
+|---|---|---|
+| Profil | `mandate_profiles.politische_ebene` (→ `parliamentType`/`politicalLevel`) + `.bundesland` (→ `state`) | `{ebene, land}` |
+| Vorgang | `knowledge_objects.decision_level` (Sprint 2/19, nie leer) + `affected_geographies` (Sprint 20, ehrlich leer) | `{ebene, laender[]}` |
+
+Kommunen/Bezirke werden über den kanonischen Geografie-Seed
+(`quellenarchitektur/seeds/geographies.js`) auf ihr Bundesland aufgelöst — der Seed bleibt die
+einzige Stelle, an der die 16 Bundesländer gepflegt werden. `mentioned_geographies` zählt
+bewusst **nicht**: erwähnt ist nicht zuständig.
+
+**Verhaltensmatrix** (`ausschussBelegZulaessig`):
+
+| Profil | Vorgang | Ausschussbeleg |
+|---|---|---|
+| Landtag + Bundesland belegt | dasselbe Bundesland belegt (Ebene `land`/`kommune`/unbestimmt) | **ja** |
+| Landtag + Bundesland belegt | anderes Bundesland belegt | **nein** (der behobene Fehler) |
+| Landtag + Bundesland belegt | Ebene `bund`/`eu`/`international` | **nein** |
+| Landtag + Bundesland belegt | keine Zuständigkeit belegt | **nein** (fail-closed) |
+| Landtag + Bundesland belegt | mehrdeutig, eigenes Land **enthalten** | **ja** |
+| Landtag, Bundesland **fehlt** | beliebig | unverändert |
+| Bundestag | beliebig | unverändert |
+| Mandatsebene fehlt | beliebig | unverändert |
+
+Die Regel **entfernt nur** Belege, sie fügt nie einen hinzu (getestet).
+
+### 50.3 · Wo die Änderung wirkt — und wo bewusst nicht
+
+`matched_features` ist der einzige Eingriffspunkt. Von dort aus wirkt die Korrektur auf
+**alles**, was daraus entsteht:
+
+- `matching-begruendung.buildSignals` → das persistierte Feld `signale` trägt keinen
+  Ausschussschlüssel mehr,
+- `matching-begruendung.begruendungAusSignalen` → die gespeicherte Kurzbegründung nennt den
+  fremden Ausschuss nicht,
+- `matching-erklaerung` → die sichtbare Erklärung und die Belege der Lage-Karte,
+- `decisions.js` (`FEATURE_WEIGHTS.ausschuss = 34`) → das Entscheidungsgewicht,
+- `matching-relevanz` (**M8**) → eine Zeile, deren *einziger* Beleg der fremde Ausschuss war,
+  passiert den Riegel nicht mehr,
+- `radarState` (Segment `committee`) → es bekommt nur noch Merkmale, die den Beleg tragen.
+
+**Bewusst unverändert** (und deshalb ohne Migration, Backfill, neue Rezeptversion oder
+Neuberechnung gespeicherter Vektoren):
+
+- `normalizeCommittee` / `slugCommittee` und damit `knowledgeObjectWeightedTokens` /
+  `profileWeightedTokens`: der Merkmalsvektor, die Kosinus-Ähnlichkeit, die Rangfolge und der
+  Top-N-Schnitt bleiben **byte-identisch**. Der Token `ausschuss:inneres` steht weiterhin in
+  beiden Vektoren — das ist die **erlaubte fachliche Nähe**, nicht der Fehler.
+- `profileHash` und `computeKnowledgeObjectInputHash`: unverändert, also auch der
+  Eingabefingerabdruck eines Laufs und die Idempotenz.
+- `derivePolicyFields`: das aus dem Ausschuss abgeleitete Politikfeld bleibt — der fremde
+  Landesvorgang trägt weiterhin den Beleg `thema: "Inneres"`. Genau so verlangt es die
+  Produktregel („thematische Gemeinsamkeiten dürfen weiterhin als Thema erscheinen").
+- `passesFilters` / `filter_committees` in der RPC: ein vom Aufrufer gesetzter **harter
+  Suchfilter** ist keine Belegaussage. In Production wird er **nicht gesetzt**
+  (`scheduler.js` übergibt keine `filters`) — er ist dort inert.
+- `scoring.js` (`proximityScore`): vergleicht Ausschussnamen über `slug()` der **vollen**
+  Bezeichnung, nicht über den Synonymstamm. Die beiden Innenausschüsse überschneiden sich dort
+  gar nicht — kein Handlungsbedarf, keine Änderung.
+
+### 50.4 · Bundestagsprofile: byte-identisch, gemessen
+
+Die Regel greift ausschließlich bei Profilen mit **bestimmtem Landes**-Zuständigkeitsraum. In
+Production existiert kein solches aktives Profil (das Berliner Abnahmeprofil ist deaktiviert,
+§48.5; Berlin/Brandenburg liefern strukturell nichts — `pardokDispatch` gibt `items: []`).
+**Der Merge verändert damit kein Production-Verhalten.**
+
+Belegt statt behauptet: die **volle** Projektion — Rang, Ähnlichkeit, `matched_features`,
+`signale`, `begruendung`, KO-Eingabehash, Profilhash, Merkmalsvektoren, Rezept-/Vektorversion
+und die abgeleitete Entscheidung — für drei Bundesprofile und ein Profil ohne Mandatsebene
+gegen neun Vorgänge (Bund/Land/Kommune/ohne Ebene, mit und ohne Ausschussnennung) ist vor und
+nach der Änderung **byte-identisch**:
+
+```
+sha256 (Stand d9006c1, VOR dem Fix) = 48d761b7033ecc92721d4566de5975b5f4525e4df7b085bf8621823d60bee387
+sha256 (Stand nach dem Fix)         = 48d761b7033ecc92721d4566de5975b5f4525e4df7b085bf8621823d60bee387
+```
+
+Der Vergleichswert ist im Repository verankert (`scripts/matching-ausschuss-zustaendigkeit-test.js`,
+Abschnitt 0) — er ist **auf dem Altstand erhoben**, nicht heute, und der Erhebungsweg steht
+reproduzierbar im Kopf des Abschnitts. Weicht das Bundesverhalten künftig ab, wird die Suite rot.
+
+### 50.5 · Befund 27A-2 (offen, freigabepflichtig): der ebenenübergreifende Restfall
+
+Ein **Bundestagsprofil** erhält weiterhin einen Ausschussbeleg, wenn ein **Landesvorgang** den
+gleichnamigen Landesausschuss nennt (gemessen: „Ausschuss für Inneres und Heimat" gegen einen
+Berliner Vorgang mit dem Berliner Innenausschuss). Fachlich ist das dieselbe Fehlerklasse.
+
+**Warum in diesem Sprint bewusst nicht behoben:** die Verschärfung würde **aktive**
+Bundestagsergebnisse verändern — Production führt Landesvorgänge (Nachrichten über
+Landespolitik) und Vorgänge ohne ermittelte Ebene. Wie viele Belege betroffen wären, ist
+**offline nicht bestimmbar** und wurde in diesem Sprint auch nicht gemessen (kein
+Production-Zugriff). Der Sprintauftrag verlangt ausdrücklich, dass aktive Bundestagsprofile
+unverändert bleiben; beides zugleich ist nicht möglich.
+
+**Kleinste sichere Varianten für die Betreiberentscheidung:**
+
+1. **So lassen** (heutiger Stand). Kosten: der Restfall bleibt für Bundesmandate offen.
+   Wirkung auf Production: keine.
+2. **Erst messen, dann entscheiden.** Rein lesende Production-Messung: wie viele aktuelle
+   `matching_results`-Zeilen aktiver Bundesprofile tragen einen `ausschuss`-Beleg, dessen
+   Wissensobjekt `decision_level <> 'bund'` hat? Kosten: ein lesender Sprint, 0 KI, 0 USD.
+   Danach ist die Entscheidung datenbasiert.
+3. **Symmetrisch verschärfen** (`UEBERGEORDNETE_EBENEN`-Prüfung auch für Bundesprofile:
+   Landesvorgang → kein Bundesausschussbeleg). Kosten: die nächsten regulären Läufe schreiben
+   für betroffene Mandanten eine neue Generation mit weniger Belegen; bei aktivem M8 könnten
+   Zeilen wegfallen. Keine Migration, kein Backfill — aber eine **sichtbare** Änderung an Lage
+   und Briefing und damit freigabepflichtig.
+
+**Empfehlung: Variante 2** — messen, bevor an aktiven Bundesergebnissen etwas geändert wird.
+
+### 50.6 · Verbleibende Restunschärfen (benannt, nicht kaschiert)
+
+1. **Landtagsprofil ohne `bundesland`** behält das alte Verhalten (falsche Belege bleiben
+   möglich). Ein solches Profil ist in `profile-validation.js` `requiredMissing` und kann kein
+   Landespaket aktivieren. Die Alternative (fail-closed) hätte eine bestehende Zusage von
+   `radar-committee-evidence-test.js` (Fall 5b) gebrochen, ohne einen realen Fall zu gewinnen.
+2. **Vorgang ohne belegte Zuständigkeit** verliert für Landesmandate seinen Ausschussbeleg
+   (fail-closed). Das ist gewollt — es ist der ehrliche Leerzustand —, kostet aber echte
+   Treffer, solange die Geografie-Ermittlung eines Vorgangs leer bleibt. Der fachliche Bezug
+   bleibt über `thema` erhalten.
+3. **Die Ähnlichkeit trennt die Länder nicht.** Ein Berliner Innenausschuss-Vorgang bleibt für
+   ein Brandenburger Profil messbar ähnlich und kann in der Kandidatenliste stehen (ohne
+   Beleg, ohne Begründung, ohne Gewicht). Das ist die erlaubte fachliche Nähe; eine Trennung
+   im Vektor würde gespeicherte Merkmalsvektoren aller Wissensobjekte ändern und bräuchte
+   Backfill **und** neue Rezeptversion — bewusst nicht getan.
+4. **Kein Production-Beweis.** Alles hier ist offline gemessen. Der Production-Nachweis für
+   Landesmandate bleibt 27B und ist durch Punkt 15 blockiert.
+
+### 50.7 · Testnachweis
+
+| Nachweis | Ergebnis |
+|---|---|
+| `scripts/matching-ausschuss-zustaendigkeit-test.js` (neu) | **54/54** |
+| `scripts/brandenburg-e2e-vertrag-test.js` (erweitert, 86 → 98) | **98/98** |
+| `scripts/brandenburg-e2e-mutationsprobe.js` (14 → 16 Mutationen) | **16/16 rot** |
+| `scripts/berlin-e2e-vertrag-test.js` (unverändert) | **76/76** |
+| `scripts/berlin-e2e-mutationsprobe.js` (unverändert) | **10/10 rot** |
+| `node scripts/run-offline-tests.js` | **172/186** gegen Basislinie `main` **171/185** — die **+1** ist die neue Suite, die **14** Fehlschläge sind dieselben umgebungsbedingten (identische Liste, kein Regress) |
+| `node scripts/browser-smoke-test.js` | **32/32** |
+
+**Rückweg:** `git revert` der drei Commits. Die Änderung ist eine einzige Bedingung in
+`matchedFeatures` plus zwei reine Ableitungsfunktionen; es gibt keinen Datenstand, der
+zurückzudrehen wäre (nichts wird gelöscht, nichts migriert). Ein Redeploy genügt.
