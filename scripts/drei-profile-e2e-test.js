@@ -103,6 +103,14 @@ function ko(overrides) {
   return {
     status: "update",
     understanding_status: "complete",
+    // Alle drei Vorgaenge sind ausdruecklich BUNDESvorgaenge (Bundestagsausschuesse
+    // beraten Bundesgesetze). Seit Befund 27A-2 (docs/matching-nachvollziehbarkeit.md
+    // §52) gilt eine Ausschussueberschneidung nur als MITGLIEDSCHAFT, wenn die
+    // Zustaendigkeit des Vorgangs positiv zum Mandat passt — fuer ein
+    // Bundestagsmandat also `decision_level: "bund"`. Ein realer Bundesvorgang
+    // traegt diese Ebene seit Sprint 2/19 immer; die Fixtures fuehren sie deshalb
+    // jetzt ausdruecklich, statt sie offen zu lassen.
+    decision_level: "bund",
     zeitdruck: "mittel",
     source_document_count: 3,
     confidence_score: 82,
