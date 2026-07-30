@@ -12,9 +12,12 @@
 // Der technische Unterbau (Abzug, Ausfuehrung, Auswertung) liegt im gemeinsamen
 // e2e-mutationsprobe-geruest.js; die MUTATIONEN hier sind Brandenburg-spezifisch
 // (M2/M3/M4/M13) plus die Kerngarantien des Pfads, erneut gegen DIESE Suite bewiesen.
-// M15/M16 sichern die Regression zu Befund 27A-1 ab: wird die Zustaendigkeitspruefung
-// des Ausschussbelegs entfernt (auf zwei unabhaengige Weisen), MUSS der Vertrag rot
-// werden — sonst waere der Fix nicht durch den Vertrag gedeckt.
+// M15/M16/M17 sichern die Regression zu Befund 27A-1 ab: wird die
+// Zustaendigkeitspruefung des Ausschussbelegs entfernt (auf drei unabhaengige
+// Weisen — Aufruf, Regelkopf, Landeszweig), MUSS der Vertrag rot werden — sonst
+// waere der Fix nicht durch den Vertrag gedeckt. Die BUNDESseite (Befund 27A-2)
+// deckt dieser Vertrag nicht ab (das Brandenburger Profil ist ein Landesmandat);
+// dafuer gibt es `scripts/befund-27a2-mutationsprobe.js`.
 //
 // Aufruf:  node scripts/brandenburg-e2e-mutationsprobe.js [--verbose]
 // Exit 0 nur, wenn JEDE Mutation die Suite rot macht.
@@ -145,8 +148,17 @@ const MUTATIONEN = [
     name: "M16 · Zustaendigkeitsregel sagt immer ja (Ruecknahme in der Regel selbst)",
     beschreibung: "Die Regel selbst erlaubt jeden Ausschussbeleg — derselbe Fehler, an anderer Stelle eingebaut (F11/F12/I8).",
     datei: MATCHING,
-    von: "  if (!pz || pz.ebene !== \"land\" || !pz.land) return true;           // unbestimmt -> unveraendert",
+    von: "  if (!pz || !pz.ebene) return true;                                 // Profilebene unbelegt -> nichts entscheidbar",
     nach: "  return true;"
+  },
+  {
+    // Dritte Ruecknahme, gezielt auf den LANDES-Zweig: die Regel bleibt aufgerufen
+    // und greift, aber ihre Landespruefung wird bedingungslos wahr.
+    name: "M17 · Landeszweig der Zustaendigkeitsregel verlangt kein passendes Bundesland mehr",
+    beschreibung: "Der Berliner Vorgang wuerde beim Brandenburger Profil wieder als eigene Ausschussmitgliedschaft gelten (F11/F13/F14/I8).",
+    datei: MATCHING,
+    von: "    return Array.isArray(kz.laender) && kz.laender.includes(pz.land);",
+    nach: "    return true;"
   },
   {
     name: "M14 · Erklaerung ohne Beleg erfindet einen Ersatztext",
