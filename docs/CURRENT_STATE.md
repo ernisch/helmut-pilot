@@ -80,7 +80,7 @@ Mutationsprobe **10/10 rot** **unverändert** (damit ist „echter Treffer im ei
 erhalten" end-to-end und ohne Fixture-Anpassung belegt) · Offline-Suite lokal **172/186** gegen
 Basislinie `main` `d9006c1` **171/185** — die **+1** ist die neue Suite, die **14** Fehlschläge sind
 **dieselben** umgebungsbedingten (Fehlschlagliste byte-identisch verglichen, kein Regress) ·
-Browser-/Mobile-Smoke **32/32**. **Keine Migration, kein Backfill, kein neuer Schalter, keine
+Browser-/Mobile-Smoke **32/32** · **CI-Gate grün (maßgeblich laut `CLAUDE.md` §6): Offline-Suite 186/186 und Browser-/Mobile-Smoke 32/32**, Lauf `30534950711` auf Commit `962af06`; der Lauf `30534821817` (Commit `fdb68eb`, vollständiger Fix + Doku) war ebenfalls grün. **Keine Migration, kein Backfill, kein neuer Schalter, keine
 Aktivierung (Berlin, Brandenburg, M8 unverändert aus), keine Cron-/Budget-/Quellen-/Env-Änderung,
 0 KI-Aufrufe, 0,00 USD, kein Production-Zugriff, keine realen Testmandate.** **Rückweg:**
 `git revert` der Commits, Redeploy — es gibt keinen Datenstand, der zurückzudrehen wäre.

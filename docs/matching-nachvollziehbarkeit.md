@@ -3006,8 +3006,12 @@ unverändert bleiben; beides zugleich ist nicht möglich.
 | `scripts/brandenburg-e2e-mutationsprobe.js` (14 → 16 Mutationen) | **16/16 rot** |
 | `scripts/berlin-e2e-vertrag-test.js` (unverändert) | **76/76** |
 | `scripts/berlin-e2e-mutationsprobe.js` (unverändert) | **10/10 rot** |
-| `node scripts/run-offline-tests.js` | **172/186** gegen Basislinie `main` **171/185** — die **+1** ist die neue Suite, die **14** Fehlschläge sind dieselben umgebungsbedingten (identische Liste, kein Regress) |
-| `node scripts/browser-smoke-test.js` | **32/32** |
+| `node scripts/run-offline-tests.js` (lokal) | **172/186** gegen Basislinie `main` **171/185** — die **+1** ist die neue Suite, die **14** Fehlschläge sind dieselben umgebungsbedingten (Fehlschlagliste byte-identisch verglichen, kein Regress) |
+| `node scripts/browser-smoke-test.js` (lokal) | **32/32** |
+| **CI-Gate** `Syntax + Offline-Suiten` (maßgeblich, `CLAUDE.md` §6) | **186/186** — Lauf `30534950711`, Commit `962af06` |
+| **CI-Gate** `Browser-/Mobile-Smoke (Chromium)` | **32/32** — derselbe Lauf |
+
+Beide Pflicht-Checks sind grün; die 14 lokalen Fehlschläge sind ausschließlich umgebungsbedingt (fehlende Supabase-Env in dieser Sitzung) und existieren im CI nicht. Auch der Lauf `30534821817` (Commit `fdb68eb`, vollständiger Fix + Doku) war grün.
 
 **Rückweg:** `git revert` der drei Commits. Die Änderung ist eine einzige Bedingung in
 `matchedFeatures` plus zwei reine Ableitungsfunktionen; es gibt keinen Datenstand, der
