@@ -12,7 +12,7 @@
 // die Suite rot werden. Genau das prueft N1; N6 baut denselben Rueckschritt an
 // anderer Stelle ein. Die uebrigen Mutationen sichern die Nachbarschaft ab:
 // Aufrufstelle, Regelkopf, Landeszweig (Befund 27A-1), der bewusst unveraenderte
-// EU-Nebenbefund, die benannte Ausnahme fuer unbelegte Ebenen und die beiden
+// EU-Nebenbefund, die Strenge bei unbelegter Ebene und die beiden
 // Zustaendigkeitsableitungen.
 //
 // ARBEITSWEISE (Konvention wie brandenburg-e2e-mutationsprobe.js): die
@@ -94,11 +94,14 @@ const MUTATIONEN = [
     nach: "  ;"
   },
   {
-    name: "N9 · Die benannte Ausnahme fuer UNBELEGTE Ebenen wird still zu fail-closed",
-    beschreibung: "Bundesmandate verloeren den Ausschussbeleg auch bei Vorgaengen ohne belegte Ebene — eine Verschaerfung, die echte Bundestagsbelege des Altbestands entfernt (F3/G8/G11b/G13). Sie ist eine Betreiberentscheidung und darf nicht unbemerkt einziehen.",
+    // Umgedreht im Nachtrag vom 2026-07-30: fehlende/unbekannte Ebenen sind jetzt
+    // fail-closed. Die Mutation baut die frueher benannte Ausnahme WIEDER EIN und
+    // muss dabei auffallen — sonst koennte die Luecke still zurueckkehren.
+    name: "N9 · Fehlende/unbekannte Vorgangsebene wird wieder zugelassen",
+    beschreibung: "Ein Bundesmandat bekaeme bei einem Vorgang ohne belegte Ebene wieder einen Ausschussbeleg — genau die Luecke, die der Nachtrag geschlossen hat (0b/0c/F3/G8/G8c/G11b/G13; radar-committee-evidence 14/14b/14c/14e).",
     datei: MATCHING,
-    von: "    if (!kz.ebene) return true;                                      // Ebene unbelegt -> nichts entscheidbar",
-    nach: "    ;"
+    von: "    if (SUPRANATIONALE_EBENEN.has(kz.ebene)) return true;            // offener Nebenbefund (§52.7), bewusst unveraendert",
+    nach: "    if (!kz.ebene) return true;\n    if (SUPRANATIONALE_EBENEN.has(kz.ebene)) return true;"
   }
 ];
 

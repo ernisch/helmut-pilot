@@ -34,7 +34,9 @@
 //
 // GELTUNGSBEREICH: die Pruefung greift nur, wenn die PROFILSEITE bestimmt ist.
 // Profile ohne belegte Mandatsebene und Landesmandate ohne belegtes Bundesland
-// verhalten sich byte-identisch wie vorher (Abschnitt F beweist das).
+// verhalten sich byte-identisch wie vorher (Abschnitt F beweist das). Auf der
+// VORGANGSSEITE ist die Pruefung dagegen auf beiden Ebenen gleich streng: eine
+// fehlende, leere oder `unknown` Ebene erzeugt KEINEN Ausschussbeleg (G8/G11b).
 // BEWUSST NICHT ENTSCHIEDEN: EU-/internationale Vorgaenge behalten fuer
 // Bundesmandate ihr bisheriges Verhalten — dort nennen die echten
 // Production-Daten teils ECHTE Bundestagsausschuesse ("Ausschuss fuer Arbeit und
@@ -187,7 +189,7 @@ const GOLDEN_BUND_HASH = "48d761b7033ecc92721d4566de5975b5f4525e4df7b085bf862182
 // Gegengeprueft: auf `d9006c1` liefert der Druckmodus fuer BEIDE Zeilen
 // `48d761b7…` (die Regel existierte dort nicht) — die regelfreie Rekonstruktion
 // in 0a ist damit nicht nur behauptet, sondern am Altstand belegt.
-const GOLDEN_BUND_FIX_HASH = "3367bfbadcf54cf755ebb65e6541f30c3b32c913881a257cdd34618179955640";
+const GOLDEN_BUND_FIX_HASH = "3d4e22226e55e2c5e84a4050260272eabbc94a57dfd8b98a8be3022538412e20";
 const hash = (s) => crypto.createHash("sha256").update(s).digest("hex");
 if (process.env.HELMUT_GOLDEN_PRINT) {
   process.stdout.write(`regelfrei ${hash(goldenProjektion(GOLDEN_BUND_PROFILE_REGELFREI))}\n`);
@@ -207,10 +209,9 @@ check("0b Projektion MIT Regel ist byte-identisch zum verankerten Stand nach dem
 // 0c–0e: der Unterschied zwischen beiden Staenden, Paar fuer Paar. Verankert ist
 // die VOLLSTAENDIGE Liste der Wegfaelle — nicht nur ihre Anzahl. Ein zusaetzlicher
 // oder fehlender Wegfall macht die Suite rot.
-// `unknown-soziales` steht bewusst NICHT hier: bei unbelegter Ebene bleibt das
-// Verhalten unveraendert (siehe Kommentar an `ausschussBelegZulaessig`, G8).
 const GOLDEN_ERWARTETE_WEGFAELLE = [
   ["gb-1", "land-bayern-soziales", "Ausschuss für Arbeit und Soziales"],   // Landtag Bayern
+  ["gb-1", "unknown-soziales", "Ausschuss für Arbeit und Soziales"],       // Ebene unbelegt -> fail-closed
   ["gb-2", "land-berlin-inneres", "Innenausschuss"],                       // Abgeordnetenhaus Berlin
   ["gb-2", "land-bb-inneres", "Innenausschuss"],                           // Landtag Brandenburg
   ["gb-2", "land-ohne-geo", "Innenausschuss"]                              // Ebene land, Geografie leer
@@ -591,14 +592,11 @@ check("F1 (Pflicht 6) Bundestagssynonyme funktionieren im BUNDESKONTEXT weiter: 
 check("F2 (Pflicht 3) Bundesprofil x Bundesvorgang: Ausschussbeleg unveraendert vorhanden",
   hatAusschuss(PROFIL_BUND, KO_BUND) && hatAusschuss(PROFIL_BUND_GESUNDHEIT, KO_BUND_GESUNDHEIT),
   JSON.stringify(feats(PROFIL_BUND, KO_BUND)));
-// Bewusste Ausnahme (§52.6, Kommentar an der Regel): OHNE belegte Ebene ist auch
-// auf der Bundesseite nichts entscheidbar — dieses Wissensobjekt nennt sogar einen
-// LANDESausschuss, und der Beleg bleibt trotzdem. Genau das ist der Preis der
-// Ausnahme, und er ist benannt: ein Wegfall entfernte umgekehrt ECHTE
-// Bundestagsbelege des Altbestands still (radar-committee-evidence 1/1b/6c/8).
-// In Production betrifft beides heute 0 Paare.
-check("F3 Bundesprofil x Vorgang OHNE belegte Zustaendigkeit: Verhalten unveraendert (nichts entscheidbar)",
-  hatAusschuss(PROFIL_BUND, KO_OHNE_ZUSTAENDIGKEIT), JSON.stringify(feats(PROFIL_BUND, KO_OHNE_ZUSTAENDIGKEIT)));
+// Symmetrisch zu G1 (Landesseite): eine unbelegte Ebene beweist keine
+// Bundeszustaendigkeit. Der Beleg entfaellt deshalb auch hier — der fachliche
+// Bezug bleibt ueber `thema` moeglich (§52.6).
+check("F3 (Pflicht 18) Bundesprofil x Vorgang OHNE belegte Zustaendigkeit -> KEIN Beleg (fail-closed, symmetrisch zu G1)",
+  !hatAusschuss(PROFIL_BUND, KO_OHNE_ZUSTAENDIGKEIT), JSON.stringify(feats(PROFIL_BUND, KO_OHNE_ZUSTAENDIGKEIT)));
 check("F4 (Pflicht 1) Bundesprofil x LANDESvorgang mit gleichnamigem Landesausschuss -> KEIN Ausschussbeleg (Befund 27A-2 behoben)",
   !hatAusschuss(PROFIL_BUND, KO_BLN)
   && !hatAusschuss(PROFIL_BUND_GESUNDHEIT, KO_LAND_GESUNDHEIT),
@@ -659,11 +657,17 @@ check("G4 Widerspruch Ebene bund + Landesgeografie -> die uebergeordnete Ebene g
 check("G5 Landesmandat x EU-/internationalem Vorgang -> kein Landesausschussbeleg",
   ["eu", "international"].every((e) => !hatAusschuss(PROFIL_BB, { ...KO_BB, decision_level: e })));
 // ── Dieselben drei Grenzfaelle auf der BUNDESseite (Pflicht 18/19/20) ────────
-check("G8 (Pflicht 18) Bundesmandat x Vorgang mit fehlender/unbekannter Ebene -> Verhalten unveraendert, deterministisch",
-  hatAusschuss(PROFIL_BUND_GESUNDHEIT, { ...KO_BUND_GESUNDHEIT, decision_level: "unknown", affected_geographies: [] })
-  && hatAusschuss(PROFIL_BUND_GESUNDHEIT, { ...KO_BUND_GESUNDHEIT, decision_level: undefined, affected_geographies: [] })
-  && hatAusschuss(PROFIL_BUND_GESUNDHEIT, { ...KO_BUND_GESUNDHEIT, decision_level: "", affected_geographies: [] }),
+check("G8 (Pflicht 18) Bundesmandat x Vorgang mit fehlender/leerer/unbekannter Ebene -> KEIN Beleg (fail-closed)",
+  [undefined, null, "", "   ", "unknown", "UNKNOWN"].every((e) =>
+    !hatAusschuss(PROFIL_BUND_GESUNDHEIT, { ...KO_BUND_GESUNDHEIT, decision_level: e, affected_geographies: [] })),
   JSON.stringify(feats(PROFIL_BUND_GESUNDHEIT, { ...KO_BUND_GESUNDHEIT, decision_level: "unknown" })));
+check("G8c (Pflicht 7) der fachliche Bezug bleibt auch dort als THEMA erhalten — nur die Mitgliedschaft entfaellt",
+  (() => {
+    const p = { ...PROFIL_BUND_GESUNDHEIT, focusTopics: ["Gesundheit"] };
+    const k = { ...KO_LAND_GESUNDHEIT, decision_level: "unknown", affected_geographies: [] };
+    const f = feats(p, k);
+    return f.some((x) => x.type === "thema") && !f.some((x) => x.type === "ausschuss");
+  })());
 check("G8b (Pflicht 18) auf der LANDESseite bleibt fehlende Zustaendigkeit fail-closed (27A-1 unveraendert)",
   !hatAusschuss(PROFIL_BB, KO_OHNE_ZUSTAENDIGKEIT)
   && !hatAusschuss(PROFIL_BB, { ...KO_BB, decision_level: "unknown", affected_geographies: [] }));
@@ -678,10 +682,9 @@ check("G11 (Pflicht 10/20) eine BELEGTE, aber unlesbare Ebenenangabe ist kein Be
   ["Landtag", "kommunal", "landkreis", "bundesweit", "irgendwas"].every((e) =>
     !hatAusschuss(PROFIL_BUND_GESUNDHEIT, { ...KO_BUND_GESUNDHEIT, decision_level: e })),
   JSON.stringify(["kommunal", "bundesweit"].map((e) => feats(PROFIL_BUND_GESUNDHEIT, { ...KO_BUND_GESUNDHEIT, decision_level: e }))));
-check("G11b (Pflicht 6) eine LEERE Ebenenangabe ist keine Angabe -> unveraendert (nicht dasselbe wie G11)",
-  ["", "   ", null, undefined, "unknown", "UNKNOWN"].every((e) =>
-    hatAusschuss(PROFIL_BUND_GESUNDHEIT, { ...KO_BUND_GESUNDHEIT, decision_level: e })),
-  JSON.stringify(feats(PROFIL_BUND_GESUNDHEIT, { ...KO_BUND_GESUNDHEIT, decision_level: "   " })));
+check("G11b (Pflicht 6/10) unbelegte und unlesbare Ebene verhalten sich GLEICH — kein Beleg, kein Sonderpfad",
+  [undefined, null, "", "   ", "unknown", "kommunal", "irgendwas"].every((e) =>
+    m.ausschussBelegZulaessig({ ebene: "bund", land: null }, m.knowledgeObjectZustaendigkeit({ decision_level: e })) === false));
 check("G12 (Pflicht 20) MEHRDEUTIGE Institution: derselbe Ausschussname entscheidet je Zustaendigkeitsraum — und immer gleich",
   (() => {
     // Ein und derselbe Name ("Gesundheit"/"Gesundheitsausschuss") gegen drei
@@ -703,7 +706,7 @@ check("G13 die Regel ist eine reine Funktion und deckt alle zehn Faelle des Spri
       [pL, { ebene: "bund", laender: [] }, false],                                 // 3 Land x Bund
       [pL, { ebene: "land", laender: ["geo-land-berlin"] }, true],                  // 4 Land x eigenes Parlament
       [pL, { ebene: "land", laender: ["geo-land-bayern"] }, false],                 // 5 Land x anderes Parlament
-      [pB, { ebene: null, laender: [] }, true],                                    // 6 fehlende Ebene (Bund): unveraendert
+      [pB, { ebene: null, laender: [] }, false],                                   // 6 fehlende Ebene (Bund): fail-closed
       [pL, { ebene: null, laender: [] }, false],                                   // 6 fehlende Ebene (Land): fail-closed
       [pL, { ebene: "land", laender: [] }, false],                                 // 7 fehlende Geografie
       [pB, { ebene: "land", laender: [] }, false],                                 // 7 fehlende Geografie (Bund)
@@ -712,7 +715,7 @@ check("G13 die Regel ist eine reine Funktion und deckt alle zehn Faelle des Spri
       [pL, { ebene: "bund", laender: ["geo-land-berlin"] }, false],                 // 8 Widerspruch: Ebene fuehrt
       [pB, { ebene: "quatsch", laender: [] }, false],                              // 10 belegt, aber unlesbar
       [pB, { ebene: "eu", laender: [] }, true],                                    // Nebenbefund, unveraendert
-      [pB, null, true], [pL, null, false],                                         // gar keine Angabe
+      [pB, null, false], [pL, null, false],                                        // gar keine Angabe
       [{ ebene: null, land: null }, { ebene: "land", laender: [] }, true],          // Profil unbestimmt
       [{ ebene: "land", land: null }, { ebene: "land", laender: [] }, true]         // Landesmandat ohne Bundesland
     ];

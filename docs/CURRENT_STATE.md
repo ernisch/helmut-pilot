@@ -1,9 +1,10 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-30 (**Sprint Fix Befund 27A-2: symmetrische Ausschuss-Zuständigkeit.
-TEILWEISE ABGESCHLOSSEN — der Fix ist gebaut, offline und an echten Production-Eingaben belegt;
-was fehlt, ist Betreiberentscheidung, Merge und der Production-Nachweis nach dem ersten regulären
-Lauf.** **URSACHE (belegt):** die 27A-1-Regel war einseitig — `ausschussBelegZulaessig` gab für ein
+**Letzte Aktualisierung:** 2026-07-30 (**Sprint Fix Befund 27A-2: symmetrische Ausschuss-Zuständigkeit
+— inklusive Nachtrag „fehlende Ebene fail-closed". TEILWEISE ABGESCHLOSSEN — der Fix ist gebaut,
+offline und an echten Production-Eingaben belegt, die im ersten Durchgang benannte Abweichung ist
+im Nachtrag GESCHLOSSEN; was fehlt, ist Betreiberentscheidung, Merge und der Production-Nachweis
+nach dem ersten regulären Lauf.** **URSACHE (belegt):** die 27A-1-Regel war einseitig — `ausschussBelegZulaessig` gab für ein
 BUNDESprofil sofort `true` zurück (`pz.ebene !== "land"` → „unbestimmt → unverändert"), während
 `normalizeCommittee` Gremiennamen verschiedener Institutionen auf denselben Stamm faltet
 („Gesundheit" ↔ „Gesundheitsausschuss (Landtag)" → `gesundheit`). **FIX (umgesetzte Variante 3,
@@ -28,15 +29,27 @@ reagieren", **6** davon nicht mehr. **Ähnlichkeit, Kandidatenrang und Top-N-Sch
 Rezeptversion — **deshalb keine Migration, kein Backfill, keine neue Rezeptversion.**
 **BEWEIS STATT BEHAUPTUNG:** die **regelfreie** Bundestagsprojektion ist byte-identisch zum Stand
 `d9006c1` (`48d761b7…bee387`) — außerhalb der Regel hat sich nichts bewegt; der neue Stand ist als
-zweiter Hash verankert (`3367bfba…955640`); auf `d9006c1` liefert der Druckmodus für beide Zeilen
-`48d761b7…`. Der Unterschied ist als **vollständige Liste** verankert (4 Wegfälle im Golden-Satz,
-0 neue Belege). **EINE BENANNTE ABWEICHUNG von der wörtlichen Sprintregel (§52.6):** bei einer
-**gar nicht belegten** Ebene bleibt es auf der Bundesseite beim alten Verhalten. Striktes
-fail-closed machte `radar-committee-evidence-test.js` an **4** Stellen rot — genau dort, wo ein
-**echter** Bundestagsausschuss wörtlich im Inhalt steht. Das hätte richtige Belege entfernt oder
-vier Fixtures einer fremden Vertragssuite an den Code angepasst; beides wäre falsch.
-Production-Wirkung dieser Ausnahme heute: **0 Paare**. Striktes fail-closed wäre eine Zeile —
-Betreiberentscheidung, durch Mutation **N9** gegen stilles Einziehen gesichert.
+zweiter Hash verankert (`3d4e2222…412e20`); auf `d9006c1` liefert der Druckmodus für beide Zeilen
+`48d761b7…`. Der Unterschied ist als **vollständige Liste** verankert (5 Wegfälle im Golden-Satz,
+0 neue Belege). **NACHTRAG 2026-07-30 — die benannte Abweichung ist GESCHLOSSEN (§52.6):** für ein
+belegtes Bundestagsprofil entsteht eine Ausschussmitgliedschaft jetzt **nur** bei **positiv als
+`bund` belegter** Vorgangsebene; **fehlende, leere und `unknown`** Ebenen sind fail-closed, ebenso
+belegte, aber unlesbare Angaben. Damit ist die Vorgangsseite auf beiden Ebenen gleich streng.
+**Der Grund für den ersten, laxen Stand lag in Fixtures, nicht in der Regel:** vier Zusicherungen
+von `radar-committee-evidence-test.js` (1/1b/6c/8) trugen **gar keine** `decision_level`-Angabe,
+sollten aber echte **Bundes**vorgänge darstellen — ein realer Bundesvorgang trägt seit Sprint 2/19
+immer eine Ebene. Die Fixtures sind deshalb **fachlich korrigiert** (Bundesfälle `bund`,
+kommunale Fälle `kommune`, Landesfälle `land` samt belegter Landesgeografie), **keine
+Evidenzprüfung wurde abgeschwächt** — alle 25 bisherigen Assertionen bleiben gültig und grün, zwei
+davon sind **strenger** geworden (5b beweist den Landestreffer jetzt über eine positiv belegte
+Zuständigkeit statt über den inerten Pfad; 5c wird zusätzlich von der Regel abgelehnt). `ebene` ist
+im Testgerüst **Pflichtfeld**. **Neu und eigenständig: Fall 14** (5 Assertionen) — derselbe
+perfekte Positivfall wie 1/8 erhält bei Ebene `null`/`""`/`unknown` **keinen** Beleg, 14d ist die
+Gegenprobe mit `bund`, 14e zeigt, dass die Entscheidung schon in `matchedFeatures` fällt.
+**Production-Wirkung der Verschärfung: 0 zusätzliche Wegfälle** — erneut rein lesend gemessen:
+die 16 entfallenen Belege verteilen sich weiterhin ausschließlich auf `land` (14) und `kommune`
+(2); kein Objekt ohne belegte Ebene trägt überhaupt eine Ausschussangabe. **Es geht kein echter
+Beleg verloren.** Mutation **N9** ist umgedreht: sie baut die Lücke wieder ein und wird erkannt.
 **NEBENBEFUND GETRENNT UND GESTOPPT (§52.7):** die **9** EU- und **2** internationalen Paare mit
 Ausschussbeleg bleiben unverändert. Gemessen an den echten Gremiennamen nennen sie **teils echte
 Bundestagsausschüsse** („Ausschuss für Arbeit und Soziales", „Auswärtiger Ausschuss"), **teils
@@ -49,11 +62,11 @@ regulärer Matchinglauf des Mandanten, Cron `pipeline` 16:00 UTC bzw. `crawl` 20
 **Bis dahin kann der Bundestagspilot weiterhin falsche sichtbare Ergebnisse enthalten** — inklusive
 „Betrifft deinen Ausschuss Arbeit und Soziales …" auf Rang 1. Manueller Lauf, Backfill und
 Datenbereinigung sind **möglich, aber ausdrücklich NICHT Bestandteil dieses Sprints** und
-freigabepflichtig. **Tests (real ermittelt):** `matching-ausschuss-zustaendigkeit-test` **85/85**
+freigabepflichtig. **Tests (real ermittelt):** `matching-ausschuss-zustaendigkeit-test` **86/86**
 (von 54) · neue `scripts/befund-27a2-mutationsprobe.js` **9/9 Mutationen rot** (N1 = Rückkehr zur
-Bundes-Sonderbehandlung → 17 Assertionen rot) · Schreibschutzsuite **54/54** (von 48; F1–F5 vom
+Bundes-Sonderbehandlung → 21 Assertionen rot; N9 = fehlende Ebene wieder zugelassen → 7 rot) · Schreibschutzsuite **54/54** (von 48; F1–F5 vom
 Befundzeugen zum Fixzeugen umgedreht) · `matching-erklaerung-test` **64/64** ·
-`radar-committee-evidence-test` **25/25 ohne Fixture-Anpassung** · Brandenburg-Vertrag **98/98** und
+`radar-committee-evidence-test` **30/30** (Ebenen jetzt ausdrücklich, neuer Fall 14) · Brandenburg-Vertrag **98/98** und
 Mutationsprobe **17/17 rot** (neu M17) · Berlin-Vertrag **76/76** und Mutationsprobe **10/10 rot** ·
 Offline-Suite lokal **173/187** gegen Basislinie `main` `4d69380` **173/187**, Fehlschlagliste
 **byte-identisch** (14 umgebungsbedingte Fehlschläge, kein Regress) · Browser-/Mobile-Smoke
