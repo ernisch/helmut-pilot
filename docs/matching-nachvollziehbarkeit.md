@@ -3014,6 +3014,13 @@ unverändert bleiben; beides zugleich ist nicht möglich.
 | `scripts/berlin-e2e-mutationsprobe.js` (unverändert) | **10/10 rot** |
 | `node scripts/run-offline-tests.js` (lokal) | **172/186** gegen Basislinie `main` **171/185** — die **+1** ist die neue Suite, die **14** Fehlschläge sind dieselben umgebungsbedingten (Fehlschlagliste byte-identisch verglichen, kein Regress) |
 | `node scripts/browser-smoke-test.js` (lokal) | **32/32** |
+| **CI-Gate** `Syntax + Offline-Suiten` (maßgeblich, `CLAUDE.md` §6) | **187/187** — Lauf `30543624379`, Commit `6a8aaec` |
+| **CI-Gate** `Browser-/Mobile-Smoke (Chromium)` | **32/32** — derselbe Lauf |
+
+Beide Pflicht-Checks sind grün. Die 14 lokalen Fehlschläge sind ausschließlich umgebungsbedingt
+(Production-Secrets in dieser Sitzung gesetzt) und existieren im CI nicht — dort ist der
+`[NETZ-GUARD]` nur bei `pardok-shadow-test.js` angesprungen. Der einzige spätere Commit auf dem
+Branch dokumentiert genau dieses Ergebnis.
 | **CI-Gate** `Syntax + Offline-Suiten` (maßgeblich, `CLAUDE.md` §6) | **186/186** — Lauf `30534950711`, Commit `962af06` |
 | **CI-Gate** `Browser-/Mobile-Smoke (Chromium)` | **32/32** — derselbe Lauf |
 
@@ -3273,6 +3280,13 @@ Berechnung. Alle 14 qualifizierten Paare:
 | `scripts/berlin-e2e-mutationsprobe.js` | **10/10 rot** |
 | `node scripts/run-offline-tests.js` (lokal) | **173/187** gegen Basislinie `main` `94f73e4` **172/186** — die **+1** ist die neue Suite; die Fehlschlagliste ist **byte-identisch** (14 umgebungsbedingte Fehlschläge, kein Regress) |
 | `node scripts/browser-smoke-test.js` (lokal) | **32/32** |
+| **CI-Gate** `Syntax + Offline-Suiten` (maßgeblich, `CLAUDE.md` §6) | **187/187** — Lauf `30543624379`, Commit `6a8aaec` |
+| **CI-Gate** `Browser-/Mobile-Smoke (Chromium)` | **32/32** — derselbe Lauf |
+
+Beide Pflicht-Checks sind grün. Die 14 lokalen Fehlschläge sind ausschließlich umgebungsbedingt
+(Production-Secrets in dieser Sitzung gesetzt) und existieren im CI nicht — dort ist der
+`[NETZ-GUARD]` nur bei `pardok-shadow-test.js` angesprungen. Der einzige spätere Commit auf dem
+Branch dokumentiert genau dieses Ergebnis.
 | **CI-Gate** `Syntax + Offline-Suiten` (maßgeblich, `CLAUDE.md` §6) | **187/187** — Lauf `30539215650`, Commit `3767b12` |
 | **CI-Gate** `Browser-/Mobile-Smoke (Chromium)` | **32/32** — derselbe Lauf |
 
@@ -3540,6 +3554,13 @@ Zuständigkeitsableitungen —, wird der Vertrag rot. Die Brandenburg-Probe wäc
 | lokale Wiederholung der Production-Messung | 14 → **0** qualifizierte Fälle, 0 neue Belege |
 | `node scripts/run-offline-tests.js` (lokal) | **173/187** gegen Basislinie `main` `4d69380` **173/187** — Fehlschlagliste byte-identisch (14 umgebungsbedingte Fehlschläge, kein Regress); keine neue Suite, weil die Mutationsprobe bewusst nicht auf `-test.js` endet |
 | `node scripts/browser-smoke-test.js` (lokal) | **32/32** |
+| **CI-Gate** `Syntax + Offline-Suiten` (maßgeblich, `CLAUDE.md` §6) | **187/187** — Lauf `30543624379`, Commit `6a8aaec` |
+| **CI-Gate** `Browser-/Mobile-Smoke (Chromium)` | **32/32** — derselbe Lauf |
+
+Beide Pflicht-Checks sind grün. Die 14 lokalen Fehlschläge sind ausschließlich umgebungsbedingt
+(Production-Secrets in dieser Sitzung gesetzt) und existieren im CI nicht — dort ist der
+`[NETZ-GUARD]` nur bei `pardok-shadow-test.js` angesprungen. Der einzige spätere Commit auf dem
+Branch dokumentiert genau dieses Ergebnis.
 
 **Verankerte Haschwerte** (Abschnitt 0 der Suite): die **regelfreie** Bundestagsprojektion ist
 byte-identisch zum Stand `d9006c1`

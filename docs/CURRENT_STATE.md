@@ -57,7 +57,8 @@ Befundzeugen zum Fixzeugen umgedreht) · `matching-erklaerung-test` **64/64** ·
 Mutationsprobe **17/17 rot** (neu M17) · Berlin-Vertrag **76/76** und Mutationsprobe **10/10 rot** ·
 Offline-Suite lokal **173/187** gegen Basislinie `main` `4d69380` **173/187**, Fehlschlagliste
 **byte-identisch** (14 umgebungsbedingte Fehlschläge, kein Regress) · Browser-/Mobile-Smoke
-**32/32**. **Beobachtung ohne Erklärung, nicht kaschiert:** ein einzelner Referenzlauf der
+**32/32** · **CI-Gate grün (maßgeblich laut `CLAUDE.md` §6): Offline-Suite 187/187 und
+Browser-/Mobile-Smoke 32/32**, Lauf `30543624379` auf Commit `6a8aaec`. **Beobachtung ohne Erklärung, nicht kaschiert:** ein einzelner Referenzlauf der
 **Berliner** Mutationsprobe war rot (1 Assertion), fünf folgende Läufe grün (je 10/10); Verdacht ist
 die `Date.now()`-Sperr-TTL im gemeinsamen `e2e-vertrag-geruest.js` unter Last, belegt ist das nicht.
 **Sicherheitsgrenzen eingehalten:** ausschließlich lesende Production-Zugriffe (HTTPS-`GET`, keine
