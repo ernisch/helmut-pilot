@@ -1,10 +1,12 @@
 # CURRENT STATE — Helmut
 
 **Letzte Aktualisierung:** 2026-07-30 (**Sprint OP-25, Abschlussdurchgang: CI-Gate grün, drei
-Nachprüfungen belegt.** Beide Pflicht-Checks **zweimal grün**: auf `eeaa363` (Lauf `30499103799`)
-und nach der Härtung auf `2dc4154` (Lauf `30516881711`) — jeweils Offline-Suite **183/183** und
-Browser-/Mobile-Smoke **32/32**. Der Doku-Nachtrag darüber ändert ausschließlich Markdown und
-trägt nur diese beiden Laufnummern nach. Danach die drei vom Betreiber
+Nachprüfungen belegt.** **Jeder Commit dieses Branches hat das CI-Gate grün passiert** — beide
+Pflicht-Checks, jeweils Offline-Suite **183/183** und Browser-/Mobile-Smoke **32/32**:
+`eeaa363` (Lauf `30499103799`) · `2dc4154` (Härtung, Lauf `30516881711`) · `ee1bce4`
+(Doku, Lauf `30517066137`) · `a251d91` (Wortlaut, Lauf `30517190157`) sowie der Lauf dieses
+Doku-Nachtrags. Der lokale Wert **169/183** enthält 14 umgebungsbedingte Fehlschläge, die auf
+unverändertem `main` identisch rot sind — maßgeblich ist laut `CLAUDE.md` §6 die CI-Zahl. Danach die drei vom Betreiber
 verlangten Nachprüfungen — jede führte zu einer echten Nachbesserung, keine war reine Bestätigung:
 **(1) Garantie präzisiert.** `ceil(n/k)` gilt **nur** für Läufe mit `k ≥ 1`. Der Fall `k = 0`
 (die Restlaufzeit reicht nicht einmal für das erste Mandat) trägt **keine** Fortschrittsgarantie
