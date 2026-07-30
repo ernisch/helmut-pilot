@@ -41,7 +41,7 @@ id + Lifecycle-Felder], `pipeline_locks` sowie Vercel-Deployment-Metadaten und R
 Nächster regulärer fairness-relevanter Termin (nur Information, keine Überwachungszusage): 10:00 UTC
 lage-check; nach dem 04:00-Lauf des Folgetags sind erstmals vier reguläre Läufe auswertbar.
 **Nächster Schritt:** denselben Nachweis in einem neuen Sprint wiederholen, sobald reguläre Läufe
-vorliegen. Branch `claude/op-25-production-nachweis-ktwnke` (nur Doku), PR siehe Branchstatus.) ·
+vorliegen. Branch `claude/op-25-production-nachweis-ktwnke` (nur Doku), PR #181.) ·
 (**Sprint Punkt 26A: Berliner Ende-zu-Ende-Repository-Vertrag.
 26A ERFOLGREICH ABGESCHLOSSEN — Checklisten-Punkt 26 gesamt bleibt ⏳, weil 26B (regulärer
 Production-Nachweis) offen und durch Punkt 14 blockiert ist.** **Verbindliche Definition geklärt:**
