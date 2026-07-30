@@ -65,7 +65,8 @@ ersten regulären Lauf des Pilotmandanten). Geänderte Dateien: `scripts/pilot-e
 (neu), `scripts/pilot-e2e-mutationsprobe.js` (neu), `scripts/e2e-mutationsprobe-geruest.js`
 (additiv `zusatzdateien`), `docs/roadmap/punkt-25-e2e-nachweis.md` (neu, kanonisch),
 `docs/roadmap/phase_1_checkliste.md` (Zeile 25 ⏳), `docs/CURRENT_STATE.md`. Branch
-`claude/phase-1-punkt-25-e2e-bcsru5`, PR folgt (Nummer wird nach Eröffnung hier nachgetragen).) ·
+`claude/phase-1-punkt-25-e2e-bcsru5`, **PR #186 (offen, nicht gemergt)**. Kanonisch:
+[`roadmap/punkt-25-e2e-nachweis.md`](roadmap/punkt-25-e2e-nachweis.md).) ·
 (**Sprint Fix Befund 27A-2: symmetrische Ausschuss-Zuständigkeit
 — inklusive Nachtrag „fehlende Ebene fail-closed". TEILWEISE ABGESCHLOSSEN — der Fix ist gebaut,
 offline und an echten Production-Eingaben belegt, die im ersten Durchgang benannte Abweichung ist
