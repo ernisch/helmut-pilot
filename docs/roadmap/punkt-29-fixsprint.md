@@ -191,6 +191,7 @@ Befunde bestehen auf `main`).
 | Mutationsprobe `punkt29-fix-mutationsprobe.js` | **7/7 rot erkannt** (Referenzlauf grün) |
 | Offline-Suite ohne Production-Secrets (maßgeblich, bildet CI nach) | **189/189** — Basislinie `origin/main` `75d7286` im getrennten Worktree, identische Umgebung: **188/188**; Fehlschlagliste **byte-identisch (beide leer)** — die in 25A/29A dokumentierten 4 umgebungsbedingten Fehlschläge treten in dieser Cloud-Umgebung nicht auf; die +1 ist die neue Suite |
 | Browser-/Mobile-Smoke | **32/32** |
+| CI auf PR #188 (Head `20eb13b`, Run 30564617564) | **vollständig grün** — Pflicht-Checks „Syntax + Offline-Suiten" ✅ und „Browser-/Mobile-Smoke (Chromium)" ✅ (2026-07-30 17:09 UTC) |
 
 ## 5 · Abweichung zur 29A-Befundprobe P29-3 (Integrationshinweis für PR #187)
 

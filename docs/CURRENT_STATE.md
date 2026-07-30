@@ -1,7 +1,7 @@
 # CURRENT STATE — Helmut
 
 **Letzte Aktualisierung:** 2026-07-30 (**Sprint P29-Fix — Fehlerpfade schließen (P29-1…P29-4).
-ERFOLGREICH ABGESCHLOSSEN (repo-seitig; Abnahmerest: CI-Lauf auf dem PR, siehe unten) — alle vier
+ERFOLGREICH ABGESCHLOSSEN — alle vier
 in Punkt 29A deterministisch belegten Produktionsfehler sind behoben, offline bewiesen und
 mutationsgesichert; 29B (rein lesender Production-Nachweis) bleibt offen.** Ausgangspunkt
 `origin/main` `75d7286`; die 29A-Befundproben (aus PR #187 rein lesend übernommen) reproduzierten
@@ -44,7 +44,8 @@ Migration, kein Backfill, keine Datenkorrektur, keine manuellen Läufe, keine En
 Lock-/Budget-/Quellen-Änderung, Berlin/Brandenburg/M8 unverändert AUS, keine neuen Mandate,
 keine Production-Daten im Repository; Checkliste Zeile 29 unangetastet (der Statuswechsel
 offen→teilweise gehört zu PR #187); 25B/OP-25/Punkt 27 unberührt. **Branch
-`claude/p29-fehlerpfade-schliessen-wpxb1h`, PR #188 (offen, NICHT gemergt).**
+`claude/p29-fehlerpfade-schliessen-wpxb1h`, PR #188 (offen, NICHT gemergt); CI auf dem PR
+vollständig grün (beide Pflicht-Checks, 2026-07-30 17:09 UTC).**
 **Nächster Schritt:** Betreiberentscheidung über den Merge dieses Fix-PRs (unabhängig von 25B und
 PR #187 mergefähig; Empfehlung: VOR PR #187 mergen, dann dort B9/C9/D9 + Befundprobe anpassen),
 danach 29B rein lesend. Kanonisch:
