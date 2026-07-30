@@ -1,6 +1,76 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-30 (**Sprint Matchingfix Befund 27A-1: Ausschussbeleg nur bei
+**Letzte Aktualisierung:** 2026-07-30 (**Sprint Production-Messung Befund 27A-2: erhalten
+Bundestagsprofile falsche Ausschussbelege aus Landesvorgängen? TEILWEISE ABGESCHLOSSEN — die
+Messung ist vollständig und eindeutig, aber zwei Abnahmestücke fehlen (siehe unten): der
+persistierte Nachweis NACH dem Deployment und die Startzusage „Deployment READY".**
+**Ergebnis: Befund 27A-2 ist BESTÄTIGT.** An echten Production-Daten erhalten **4 von 6**
+aktiven Bundestagsprofilen einen Ausschussbeleg aus einem Landesvorgang: **14 qualifizierte
+Profil-Objekt-Paare** über **9 Wissensobjekte** und **3 geteilte normalisierte
+Ausschusstoken** (`gesundheit`, `arbeit-und-soziales`, `finanzen`). **Einordnung: Kategorie 2
+„bestätigt, aber latent"** — strikt nach der Beweisregel des Sprints, und damit
+**konservativer als die Datenlage**: seit dem Merge von PR #183 (11:01:58 UTC) gab es
+**keinen** regulären Matchinglauf (letzter 07:56:55 UTC), der Nachweis nach dem Deployment ist
+deshalb **nicht verfügbar** — nicht negativ. Der Fehler ist aber **bereits in aktiven
+Production-Daten materialisiert**: **5** `matching_results`-Zeilen mit `aktuell=true` tragen
+heute eine falsche Ausschussbehauptung samt gespeicherter Begründung (z. B. „Betrifft deinen
+Ausschuss Arbeit und Soziales und deine Partei Die Linke." auf **Rang 1**), und **10**
+`decisions`-Zeilen stammen aus genau diesen Paaren. **Dass das Deployment daran nichts
+geändert haben kann, ist gemessen, nicht angenommen:** über 6 aktive Bundestagsprofile ×
+1 806 Wissensobjekte = **10 836 Paare** sind die `matched_features` auf `d9006c1` (vor dem
+27A-1-Fix) und auf `94f73e4` (`main`) **byte-identisch — 10 836 gleich, 0 abweichend**; das
+bestätigt unabhängig die Zusage aus §50.4. **URSACHE (gemessen):** `normalizeCommittee` faltet
+„Gesundheit" (Bundestag) und „Gesundheitsausschuss (Landtag)" auf denselben Stamm
+`gesundheit`, ebenso „Arbeit und Soziales" und „Sozialausschuss Kreistag Ostallgäu" auf
+`arbeit-und-soziales`; der 27A-1-Riegel `ausschussBelegZulaessig` gibt für ein Bundesprofil
+sofort `true` zurück (`pz.ebene !== "land"` → „unbestimmt → unverändert"). **WIRKUNG (lokale
+schreibfreie Gegenprobe mit echten Production-Eingaben, nur der Beleg entfällt):** Score
+**−34 in allen 14 Fällen** (Ausschussgewicht in `decisions.js`), **13 von 14** wechseln die
+Entscheidungsstufe, in **5 von 14** ist der fremde Ausschuss der **einzige** Beleg (dort
+entfällt die sichtbare Erklärung ganz und M8 würde die Zeile entfernen). **Ähnlichkeit, Rang
+und Top-N-Schnitt bleiben unberührt** — der Rang entsteht aus der Vektorsuche,
+`matched_features` werden danach berechnet. **Gegenprobe gegen echte Production-Wirkung:** für
+**10** der 14 Paare existiert eine `decisions`-Zeile; in **allen 10** stimmt der gespeicherte
+Score **exakt** mit der lokalen Rechnung überein — **9** davon hätten ohne den falschen Beleg
+eine andere Stufe, darunter **6** heutige „Sofort reagieren". **NICHT PRÜFBAR in dieser
+Sitzung (ehrlich benannt):** die Startzusage „Production-Deployment READY". Vercel-Werkzeuge
+fehlen, `helmut-pilot.vercel.app` ist durch die Egress-Policy gesperrt (Proxy `403` auf
+`CONNECT`), das GitHub-Token hat weder `deployments`- noch `statuses`-Leserecht (je `403`).
+Belegt ist nur: PR #183 gemergt, `94f73e4` = `origin/main` = Branchbasis; jüngste
+Lauftelemetrie (`process_runs.commit_ref`, 07:55 UTC) zeigt noch `5d475e6`. **Kein Hinweis auf
+ein fehlgeschlagenes Deployment — aber auch kein Nachweis für `READY`.** Für die Messung
+folgenlos (0 von 10 836 Abweichungen). **Startprüfung sonst bestanden:** Arbeitsbaum sauber,
+Branch `claude/befund-27a-2-messung-43ka47` vom aktuellen `main` `94f73e4`, PR #183
+vollständig in `main`, keine neuere überschneidende Matchingarbeit (offene PRs #117/#132/#148/
+#159 betreffen Quellenpakete, Landesmodul-Aktivierung und Doku), Punkt 27A laut Hauptstand
+erfolgreich abgeschlossen, Punkt 27 gesamt weiterhin ⏳, Befund 27A-2 offen, OP-25 und OP-27
+unverändert. **KEIN FIX — bewusst:** keine Änderung an Merkmalsvektoren, keine neue
+Rezeptversion, keine Migration, kein Backfill, keine Flagänderung, keine Aktivierung (Berlin,
+Brandenburg, M8 unverändert AUS), keine Cron-/Budget-/Quellen-/Env-Änderung, **0 KI-Aufrufe,
+0,00 USD**, ausschließlich lesende Production-Zugriffe (nur HTTPS-`GET`, keine RPC, keine
+Datenbankfunktion). **Neu im Repository:** `scripts/befund-27a2-production-messung.js`
+(rein lesend, technischer Schreibschutz: genau eine HTTP-Funktion mit `GET`-Literal,
+eingefrorene Tabellen-Allowlist ohne `/rest/v1/rpc/`, kein `storage.js` im Prozess, Secrets
+nur aus `process.env`, Mandanten und Laufkennungen nur pseudonymisiert) und
+`scripts/befund-27a2-schreibschutz-test.js`, der das offline beweist. **Tests (real
+ermittelt):** Schreibschutzsuite **48/48** · `matching-ausschuss-zustaendigkeit-test`
+**54/54** · `matching-erklaerung-test` **64/64** · Brandenburg-Vertrag **98/98** und
+Mutationsprobe **16/16 rot** · Berlin-Vertrag **76/76** und Mutationsprobe **10/10 rot** ·
+Offline-Suite lokal **173/187** gegen Basislinie `main` `94f73e4` **172/186** — die **+1** ist
+die neue Suite, die Fehlschlagliste ist **byte-identisch** (14 umgebungsbedingte Fehlschläge,
+kein Regress) · Browser-/Mobile-Smoke **32/32**. **Statusgrenzen eingehalten:** Punkt 27A
+bleibt erfolgreich abgeschlossen (die Messung widerlegt keines seiner Abnahmekriterien,
+sondern bestätigt §50.4), Punkt 27 gesamt bleibt ⏳, 27B bleibt durch Punkt 15 blockiert,
+OP-25 und OP-27 unverändert, M8 bleibt AUS. **Rückweg:** `git revert` — es gibt keinen
+Datenstand, der zurückzudrehen wäre. **Nächster Schritt:** Betreiberentscheidung über die
+Fixvariante (§50.5 Variante 3, jetzt beziffert in §51.9) und ein **getrennter Fix-Sprint**;
+danach dieselbe Messung als Abnahme wiederholen (`scripts/befund-27a2-production-messung.js`).
+Geänderte Dateien: `scripts/befund-27a2-production-messung.js` (neu),
+`scripts/befund-27a2-schreibschutz-test.js` (neu), `docs/matching-nachvollziehbarkeit.md`
+(§51 neu, §50.5 Nachtrag), `docs/CURRENT_STATE.md`. Branch
+`claude/befund-27a-2-messung-43ka47`. Kanonisch:
+[`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md) §51.) ·
+(**Sprint Matchingfix Befund 27A-1: Ausschussbeleg nur bei
 passendem Zuständigkeitsraum. ERFOLGREICH ABGESCHLOSSEN — damit ist auch Punkt 27A erfolgreich
 abgeschlossen; Checklisten-Punkt 27 gesamt bleibt ⏳, weil 27B weiterhin durch Punkt 15 blockiert
 ist.** **Verbindliche Abgrenzung:** dieser Sprint betrifft **Zeile 27** der
