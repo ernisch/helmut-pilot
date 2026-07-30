@@ -592,8 +592,11 @@ check("F2 (Pflicht 3) Bundesprofil x Bundesvorgang: Ausschussbeleg unveraendert 
   hatAusschuss(PROFIL_BUND, KO_BUND) && hatAusschuss(PROFIL_BUND_GESUNDHEIT, KO_BUND_GESUNDHEIT),
   JSON.stringify(feats(PROFIL_BUND, KO_BUND)));
 // Bewusste Ausnahme (§52.6, Kommentar an der Regel): OHNE belegte Ebene ist auch
-// auf der Bundesseite nichts entscheidbar. Ein Wegfall entfernte echte
-// Bundestagsbelege des Altbestands still; in Production betrifft es 0 Paare.
+// auf der Bundesseite nichts entscheidbar — dieses Wissensobjekt nennt sogar einen
+// LANDESausschuss, und der Beleg bleibt trotzdem. Genau das ist der Preis der
+// Ausnahme, und er ist benannt: ein Wegfall entfernte umgekehrt ECHTE
+// Bundestagsbelege des Altbestands still (radar-committee-evidence 1/1b/6c/8).
+// In Production betrifft beides heute 0 Paare.
 check("F3 Bundesprofil x Vorgang OHNE belegte Zustaendigkeit: Verhalten unveraendert (nichts entscheidbar)",
   hatAusschuss(PROFIL_BUND, KO_OHNE_ZUSTAENDIGKEIT), JSON.stringify(feats(PROFIL_BUND, KO_OHNE_ZUSTAENDIGKEIT)));
 check("F4 (Pflicht 1) Bundesprofil x LANDESvorgang mit gleichnamigem Landesausschuss -> KEIN Ausschussbeleg (Befund 27A-2 behoben)",

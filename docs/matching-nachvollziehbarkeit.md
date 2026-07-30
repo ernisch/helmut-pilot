@@ -3431,6 +3431,10 @@ gewesen, nicht umgekehrt.
 - **Production heute: 0 Paare.** Kein Objekt ohne belegte Ebene trägt eine Ausschussangabe
   (§51.9, in der Fix-Messung erneut bestätigt: die Wegfälle verteilen sich ausschließlich auf
   `land` 14 und `kommune` 2).
+- **Der Preis, klar benannt:** die Ausnahme lässt bei unbelegter Ebene auch einen *falschen*
+  Beleg stehen — nennt ein solches Objekt einen Landtagsausschuss, bleibt er als Mitgliedschaft
+  sichtbar. Ohne belegte Ebene ist beides nicht unterscheidbar; die Wahl ist, welchen Fehler man
+  in Kauf nimmt. Heute tritt keiner von beiden auf (0 Paare).
 - Die Regel fügt auch hier **nie** einen Beleg hinzu.
 - Sie ist **symmetrisch im Prinzip**: „unbestimmte Seite → nichts entscheidbar → unverändert"
   gilt schon für ein Profil ohne Mandatsebene und für ein Landesmandat ohne Bundesland.
