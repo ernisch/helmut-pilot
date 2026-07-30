@@ -74,7 +74,8 @@ function neuerStore(opts) {
     locks: new Map(),                 // name -> bis (ms)
     zaehler: { publish: 0, saveMatching: 0, saveKo: 0 },
     publishFehler: null,
-    fremdzugriffe: []                 // Protokoll unerwarteter/mandantenfremder Zugriffe
+    fremdzugriffe: [],                // Protokoll unerwarteter/mandantenfremder Zugriffe
+    updateVormerkungen: {}            // P29-3: Auth-Store-Replik (vorgangId -> Fehlversuche)
   };
 
   const tenantGuard = (rows, fn) => {
@@ -123,6 +124,10 @@ function neuerStore(opts) {
       st.knowledgeObjects.set(id, { ...ko, status: "pending", understanding_status: "failed", ...meta });
       return { saved: true };
     },
+    // P29-3: Vormerkung gescheiterter/vertagter Aktualisierungen — dieselbe
+    // Vertragsgrenze wie storage.getUpdateRetries/saveUpdateRetries (Auth-Store).
+    readUpdateRetries: () => ({ ...st.updateVormerkungen }),
+    writeUpdateRetries: (map) => { st.updateVormerkungen = { ...(map || {}) }; return true; },
     modelName: () => "e2e-fixture-modell",
     logSkip: () => {},
     gateMode: () => "off",             // aktiver Production-Default (Gate nicht scharf)
