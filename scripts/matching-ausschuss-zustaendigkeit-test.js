@@ -288,9 +288,40 @@ check("A2 committeeMatchKey loest die Laenderkollision NICHT (war kein Fix)",
   `${m.committeeMatchKey(BB_AUSSCHUSS)} / ${m.committeeMatchKey(BLN_AUSSCHUSS)}`);
 check("A3 slugCommittee (Ranking/Vektor) bleibt unveraendert kollidierend — fachliche Aehnlichkeit ist erlaubt",
   m.slugCommittee(BB_AUSSCHUSS) === m.slugCommittee(BLN_AUSSCHUSS));
-check("A4 der Ausschuss-Token steht deshalb weiterhin in BEIDEN Merkmalsvektoren (Ranking unangetastet)",
-  m.embedKnowledgeObject(KO_BLN).length === m.EMBEDDING_DIM
-  && JSON.stringify(m.embedKnowledgeObject(KO_BLN)) === JSON.stringify(m.embedKnowledgeObject(KO_BLN)));
+// A4 prueft die Aussage aus docs/matching-nachvollziehbarkeit.md §50.3 — "der Token
+// ausschuss:inneres steht weiterhin in BEIDEN Vektoren" — an ISOLIERTEN Minimaleingaben:
+// das Profil traegt NUR den Brandenburger Ausschuss, das Wissensobjekt NUR den Berliner.
+// Das Wissensobjekt traegt zusaetzlich ein neutrales `tags`-Thema, damit derivePolicyFields
+// NICHT greift; sonst waere nicht unterscheidbar, ob eine gemeinsame Dimension vom Ausschuss
+// oder vom daraus abgeleiteten Politikfeld stammt.
+//
+// Vorgehen: `embed` normiert den Vektor, ein zusaetzlicher Token verschiebt deshalb ALLE
+// belegten Komponenten. Traegerdimension des Ausschusses ist darum die Differenz gegen das
+// LEERE Profil (Nullvektor) — dort ist es genau eine Komponente. Diese eine Dimension muss
+// im Wissensobjektvektor ebenfalls belegt sein, mit demselben Vorzeichen (gleicher Token ->
+// gleicher Hash), und beim Entfernen des Ausschusses aus dem Wissensobjekt wieder auf 0
+// fallen. Die Assertion wird damit ROT, sobald die gemeinsame Ausschussdimension in einem
+// der beiden Vektoren fehlt oder auseinanderfaellt.
+check("A4 der Ausschuss-Token belegt in BEIDEN Merkmalsvektoren dieselbe Dimension (Ranking unangetastet)",
+  (() => {
+    const profilNurAusschuss = m.embedProfile({ committees: [BB_AUSSCHUSS] });
+    const profilLeer = m.embedProfile({});
+    const koMitAusschuss = m.embedKnowledgeObject({ id: "a4", tags: ["Neutrales Testthema"], ausschuesse: [BLN_AUSSCHUSS] });
+    const koOhneAusschuss = m.embedKnowledgeObject({ id: "a4", tags: ["Neutrales Testthema"] });
+    if ([profilNurAusschuss, profilLeer, koMitAusschuss, koOhneAusschuss].some((v) => v.length !== m.EMBEDDING_DIM)) return false;
+    const traeger = [];
+    for (let i = 0; i < profilNurAusschuss.length; i += 1) {
+      if (profilNurAusschuss[i] !== profilLeer[i]) traeger.push(i);
+    }
+    if (traeger.length !== 1) return false;                      // Profil belegt genau eine Ausschussdimension
+    const i = traeger[0];
+    return koMitAusschuss[i] !== 0                               // dieselbe Dimension im Wissensobjekt belegt
+      && Math.sign(koMitAusschuss[i]) === Math.sign(profilNurAusschuss[i])   // gleicher Token -> gleiches Vorzeichen
+      && koOhneAusschuss[i] === 0                                // ohne den Ausschuss faellt genau sie weg
+      && m.cosineSimilarity(profilNurAusschuss, koMitAusschuss) > 0
+      && m.cosineSimilarity(profilNurAusschuss, koOhneAusschuss) === 0;
+  })(),
+  "gemeinsame Ausschussdimension fehlt in einem der beiden Merkmalsvektoren");
 
 // ═══ B · Zustaendigkeitsraum: deterministische Ableitung ════════════════════
 abschnitt("B · Zustaendigkeitsraum aus belegten Feldern (nichts erfunden)");
