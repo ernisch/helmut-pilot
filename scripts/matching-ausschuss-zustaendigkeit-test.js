@@ -36,12 +36,124 @@ const erklaerung = require("../lib/helmut/matching-erklaerung");
 const relevanz = require("../lib/helmut/matching-relevanz");
 const decisions = require("../lib/helmut/decisions");
 
+const crypto = require("crypto");
+
 let passed = 0, failed = 0;
 function check(name, cond, detail = "") {
   if (cond) { passed += 1; console.log(`PASS  ${name}`); }
   else { failed += 1; console.log(`FAIL  ${name}${detail ? "  — " + String(detail).slice(0, 300) : ""}`); }
 }
 function abschnitt(titel) { console.log(`\n== ${titel} ==`); }
+
+// ═══ 0 · BUNDESTAGSPROJEKTION: byte-identisch zum Stand VOR dem Fix ═════════
+// Der Vergleichswert ist KEIN "so ist es jetzt"-Schnappschuss, sondern auf dem
+// Stand VOR dem Fix erhoben (`main` = d9006c1). Er beweist damit genau die
+// Sprintauflage "aktive Bundestagsprofile bleiben unveraendert" — und nicht nur
+// Stabilitaet ab heute.
+//
+// SO WURDE ER ERHOBEN (reproduzierbar):
+//     git archive d9006c1 | tar -x -C /tmp/basis
+//     cp scripts/matching-ausschuss-zustaendigkeit-test.js /tmp/basis/scripts/
+//     cd /tmp/basis && HELMUT_GOLDEN_PRINT=1 node scripts/matching-ausschuss-zustaendigkeit-test.js
+// Dieser Block laeuft ABSICHTLICH als Erstes und benutzt ausschliesslich
+// Funktionen, die es auf BEIDEN Staenden gibt — im Druckmodus endet er vor jeder
+// Nutzung der neuen Regel und ist deshalb auf dem Altstand ausfuehrbar.
+//
+// Enthalten sind alle Faelle, die in Production real vorkommen: Bundesvorgaenge,
+// Landesvorgaenge (Nachrichten ueber Landespolitik), kommunale Vorgaenge und
+// Vorgaenge ohne ermittelte Ebene/Geografie — jeweils mit und ohne
+// Ausschussnennung. Verglichen wird die VOLLE Projektion: Rang, Aehnlichkeit,
+// matched_features, Signale, Begruendung, KO-Eingabehash, Profilhash,
+// Merkmalsvektoren, Rezept-/Vektorversion und die abgeleitete Entscheidung.
+const GOLDEN_BUND_PROFILE = [
+  { id: "gb-1", fullName: "Testmandat Bund A", party: "SPD", faction: "SPD",
+    politicalLevel: "Bund", parliamentType: "Bundestag", state: "Niedersachsen",
+    constituency: "Wahlkreis 50", committees: ["Ausschuss für Arbeit und Soziales"],
+    focusTopics: ["Rente", "Arbeitsmarkt"], regionalInterests: ["Salzgitter"] },
+  { id: "gb-2", fullName: "Testmandat Bund B", party: "CDU",
+    politicalLevel: "Bund", parliamentType: "Bundestag", state: "Bayern",
+    constituency: "Wahlkreis 217", committees: ["Innenausschuss", "Ausschuss für Inneres und Heimat"],
+    focusTopics: ["Innere Sicherheit"], regionalInterests: ["München"] },
+  { id: "gb-3", fullName: "Testmandat Bund C (ohne Ausschuss)", party: "Die Linke",
+    politicalLevel: "Bund", parliamentType: "Bundestag", state: "Berlin",
+    constituency: "Wahlkreis 84", committees: [], focusTopics: ["Wohnen"] },
+  { id: "gb-4", fullName: "Testmandat ohne Mandatsebene", party: "SPD",
+    state: "Brandenburg", committees: ["Ausschuss für Inneres und Kommunales"],
+    focusTopics: ["Inneres"] }
+];
+function goldenKo(id, o) {
+  return {
+    id, vorgang_id: `vg-${id}`, ko_version: 1, status: "neu", understanding_status: "complete",
+    headline: o.headline, was_ist_passiert: o.text, warum_wichtig: o.text,
+    parteien: o.parteien || [], mentioned_parties: o.parteien || [],
+    ausschuesse: o.ausschuesse || [], mentioned_committees: o.ausschuesse || [],
+    mentioned_locations: o.orte || [],
+    affected_geographies: o.geo || [], mentioned_geographies: o.geo || [],
+    decision_level: o.ebene || "unknown", tags: [], policy_field: []
+  };
+}
+const gGeo = (name, id, level) => ({ name, level, geography_id: id, herkunft: "inhalt" });
+const GOLDEN_KOS = [
+  goldenKo("bund-soziales", { headline: "Bundestag berät Rentenpaket", ebene: "bund",
+    ausschuesse: ["Ausschuss für Arbeit und Soziales"], parteien: ["SPD"], text: "Der Bundestag berät das Rentenpaket." }),
+  goldenKo("bund-inneres", { headline: "Bund ändert das Waffengesetz", ebene: "bund",
+    ausschuesse: ["Ausschuss für Inneres und Heimat"], text: "Die Bundesregierung legt einen Entwurf vor." }),
+  goldenKo("bund-ohne-ausschuss", { headline: "Haushalt 2027 im Kabinett", ebene: "bund",
+    text: "Das Kabinett beschließt den Haushalt." }),
+  goldenKo("land-berlin-inneres", { headline: "Berlin debattiert Silvesterlage", ebene: "land",
+    geo: [gGeo("Berlin", "geo-land-berlin", "land")], orte: ["Berlin"],
+    ausschuesse: ["Ausschuss für Inneres, Sicherheit und Ordnung"], text: "Das Abgeordnetenhaus von Berlin berät." }),
+  goldenKo("land-bb-inneres", { headline: "Brandenburg legt Fallzahlen vor", ebene: "land",
+    geo: [gGeo("Brandenburg", "geo-land-brandenburg", "land")], orte: ["Brandenburg"],
+    ausschuesse: ["Ausschuss für Inneres und Kommunales"], text: "Der Landtag Brandenburg berät." }),
+  goldenKo("land-bayern-soziales", { headline: "Bayern ändert Sozialgesetz", ebene: "land",
+    geo: [gGeo("Bayern", "geo-land-bayern", "land")], orte: ["München"],
+    ausschuesse: ["Sozialausschuss"], text: "Der Landtag Bayern berät." }),
+  goldenKo("unknown-soziales", { headline: "Sozialausschuss berät Rente",
+    ausschuesse: ["Ausschuss für Arbeit und Soziales"], text: "Der Ausschuss berät die Rente." }),
+  goldenKo("kommune-salzgitter", { headline: "Salzgitter beschließt Wohnungsbau", ebene: "kommune",
+    orte: ["Salzgitter"], ausschuesse: ["Ausschuss für Bauen und Wohnen"], text: "Der Rat beschließt." }),
+  goldenKo("land-ohne-geo", { headline: "Landesinnenausschuss tagt", ebene: "land",
+    ausschuesse: ["Ausschuss für Inneres und Heimat"], text: "Der Innenausschuss des Landtags tagt." })
+];
+function goldenProjektion() {
+  const vertrag = require("../lib/helmut/matching-contract");
+  const raus = {};
+  for (const p of GOLDEN_BUND_PROFILE) {
+    const rezept = vertrag.LEGACY_RECIPE_VERSION;
+    raus[p.id] = {
+      profil_hash: m.profileHash(p),
+      profil_vektor: m.embedProfile(p),
+      rezept_version: rezept,
+      vektor_version: vertrag.legacyVectorVersion(m.EMBEDDING_DIM),
+      projektion: m.matchProfileToKnowledgeObjects(p, GOLDEN_KOS, { limit: 20 }).map((r) => {
+        const k = GOLDEN_KOS.find((x) => x.id === r.knowledge_object_id);
+        const signale = begruendung.buildSignals(r.matched_features, r.similarity);
+        return {
+          ...r, signale,
+          begruendung: begruendung.begruendungAusSignalen(signale, r.matched_features),
+          ko_eingabe_hash: vertrag.computeKnowledgeObjectInputHash(m.knowledgeObjectWeightedTokens
+            ? m.knowledgeObjectWeightedTokens(k) : [], rezept)
+        };
+      }),
+      entscheidungen: decisions.decideForUser(p, GOLDEN_KOS, { userId: p.id })
+        .map((d) => ({ ko: d.knowledge_object_id, score: d.score, decision: d.decision, priority_type: d.priority_type, feats: d.matched_features }))
+    };
+  }
+  raus.__ko_vektoren = Object.fromEntries(GOLDEN_KOS.map((k) => [k.id, m.embedKnowledgeObject(k)]));
+  return JSON.stringify(raus, null, 1);
+}
+// Auf dem Stand d9006c1 (VOR dem Fix) erhoben — siehe Anleitung oben.
+const GOLDEN_BUND_HASH = "48d761b7033ecc92721d4566de5975b5f4525e4df7b085bf8621823d60bee387";
+if (process.env.HELMUT_GOLDEN_PRINT) {
+  process.stdout.write(`${crypto.createHash("sha256").update(goldenProjektion()).digest("hex")}\n`);
+  process.exit(0);
+}
+abschnitt("0 · Bundestagsprojektion byte-identisch zum Stand vor dem Fix");
+const goldenIst = crypto.createHash("sha256").update(goldenProjektion()).digest("hex");
+check("0a (Pflicht 5) volle Projektion fuer Bundes-/ebenenlose Profile ist byte-identisch zum Stand d9006c1",
+  goldenIst === GOLDEN_BUND_HASH,
+  `erwartet ${GOLDEN_BUND_HASH}, gemessen ${goldenIst} — Bundesverhalten hat sich geaendert, das ist FREIGABEPFLICHTIG`);
 
 // ── Testprofile ──────────────────────────────────────────────────────────────
 // Feldform wie storage.fromMandateProfileRow (politische_ebene -> parliamentType/
