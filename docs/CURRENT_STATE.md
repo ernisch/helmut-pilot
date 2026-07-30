@@ -67,7 +67,7 @@ Cron-/Budget-/Quellenänderung, 0 KI-Aufrufe, 0,00 USD, kein Production-Zugriff,
 Testmandate angelegt.** Der Merge hat keine unmittelbare Production-Wirkung (nur Tests + Doku).
 **Offen:** 27B (blockiert durch Punkt 15 und den freigabepflichtigen Dispatch-Cutover —
 `pardokDispatch` liefert strukturell `items: []`); der OP-25-Production-Nachweis und OP-27 bleiben
-getrennte, unangetastete Themen. Branch `claude/brandenburg-offline-repo-contract-bs10y0`.
+getrennte, unangetastete Themen. Branch `claude/brandenburg-offline-repo-contract-bs10y0`, PR #182.
 Kanonisch: Checklisten-Zeile 27 in [`roadmap/phase_1_checkliste.md`](roadmap/phase_1_checkliste.md)
 + Kopfkommentar der Suite.) ·
 (**Sprint OP-25, regulärer Production-Nachweis, 1. Durchgang:
