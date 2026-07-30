@@ -169,7 +169,9 @@ aktiven Mandate **seriell** gegen ein hartes Zeitbudget — die Reihenfolge war 
 sicherheitsrelevant und ist es weiterhin. Sie folgt nicht mehr der Kennung (`ids.sort()`), sondern
 dem **ältesten letzten Versuch** (`cron-fairness.js`): Mandate ohne Versuch zuerst, Losentscheid bei
 Gleichstand, Kennung nur als letzter Entscheid. Der Versuch wird **vor** der Verarbeitung
-persistiert, Erfolg/Fehler/Dauer danach — daraus folgt die Obergrenze **ceil(n/k)** reguläre Läufe.
+persistiert, Erfolg/Fehler/Dauer danach — daraus folgt die Obergrenze **ceil(n/k)** reguläre Läufe,
+solange ein Lauf mindestens **k ≥ 1** Mandate beginnen kann (bei `k = 0` gibt es für diesen Lauf
+keine Fortschrittsgarantie; er wird als solcher ausgewiesen).
 Zustandsablage ist eine **eigene** `helmut_store`-Zeile `main-cron-fairness` (§6), bewusst getrennt
 vom Last-Write-Wins-Blob und ohne eigene Tabelle. Kanonisch:
 [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md).

@@ -65,8 +65,9 @@ getrennt danach. **Persistenz ohne Migration:** eine **eigene Zeile** im bestehe
 W-2), keine neue Tabelle, **keine RLS-Änderung** (die `helmut_store`-Policy matcht nur `main-p-`,
 jede andere Zeile ist für `anon`/`authenticated` implizit gesperrt), kein Freigabegate — der Fix
 wirkt mit dem Deployment. **Fairnessgarantie:** bei `n` planbaren Mandaten und mindestens `k`
-begonnenen Mandaten je Lauf wird jedes Mandat spätestens im **ceil(n/k)**-ten regulären Lauf
-begonnen; deterministisch bewiesen für n=1…9 × k=1…4. **Nicht begonnene Mandate werden NICHT als
+begonnenen Mandaten (**k ≥ 1**) je Lauf wird jedes Mandat spätestens im **ceil(n/k)**-ten
+regulären Lauf begonnen; deterministisch bewiesen für n=1…9 × k=1…4. Für `k = 0` gilt sie nicht —
+siehe Abschlussdurchgang oben. **Nicht begonnene Mandate werden NICHT als
 versucht vermerkt** und bleiben deshalb vorn; ein abgebrochener Lauf setzt an der Mandatsgrenze
 fort; ein `laufend` gebliebener Versuch wird nach 30 min kontrolliert erneut zugelassen; ein
 dauerhaft scheiterndes Mandat rutscht wie jedes andere nach hinten und blockiert niemanden.

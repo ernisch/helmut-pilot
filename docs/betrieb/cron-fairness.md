@@ -1,6 +1,6 @@
 # Faire Mandantenreihenfolge der Mehrmandanten-Crons (OP-25)
 
-**Stand:** 2026-07-29 · **Kanonisch für:** Reihenfolge, Fairnessgarantie, Beobachtbarkeit und
+**Stand:** 2026-07-30 · **Kanonisch für:** Reihenfolge, Fairnessgarantie, Beobachtbarkeit und
 Wiederaufnahme in `runCronForTenants` · **Code:** [`lib/helmut/cron-fairness.js`](../../lib/helmut/cron-fairness.js),
 `server.js` (`runCronForTenants`), `lib/helmut/storage.js` (`readCronFairnessState` /
 `saveCronFairnessState` / `deleteCronFairnessTenant`) · **Tests:** `scripts/cron-fairness-test.js`
@@ -157,8 +157,10 @@ OP-25 zum Zeitpunkt dieses Sprints in Production weiterhin auftrat**.
 
 ## 4 · Die Fairnessgarantie
 
-> Werden je regulärem Lauf mindestens **k** Mandate **begonnen**, dann wird bei **n** planbaren
-> Mandaten jedes Mandat spätestens im **ceil(n / k)**-ten Lauf begonnen.
+> Werden je regulärem Lauf mindestens **k ≥ 1** Mandate **begonnen**, dann wird bei **n**
+> planbaren Mandaten jedes Mandat spätestens im **ceil(n / k)**-ten Lauf begonnen.
+>
+> Für Läufe mit **k = 0** gilt sie **nicht** — siehe unten.
 
 **Warum:** begonnene Mandate erhalten einen frischen Versuchszeitpunkt und stehen damit strikt
 hinter jedem nicht begonnenen Mandat. Die je Lauf begonnenen `k` Mandate waren die `k` mit dem
