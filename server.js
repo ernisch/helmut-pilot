@@ -6270,11 +6270,27 @@ async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000, run
 // `runCronForTenants(cronName, (t) => runSourceCrawl(t), { deadlineMs, runId })`. Es gibt in
 // diesem Zweig kein zusaetzliches IO, keine zusaetzliche Abfrage, keinen zusaetzlichen Zustand.
 // Vertragstest: `scripts/cron-globalphase-test.js` Abschnitt „Flaggrenze".
+//
+// OP-25 K2.1 ERGAENZT den Einsprung um einen DRITTEN Pfad. Die Wahl trifft
+// `cronGlobalphase.waehleCronPfad()` an genau einer Stelle (fail closed, Default `alt`):
+//   `alt`         — unveraendert der heutige Produktionspfad,
+//   `globalphase` — K1 (globale Buendelung; durch K2 als nicht aktivierungsfaehig belegt),
+//   `kontext`     — K2.1 (globaler Abruf, kontextgebundene Vorgangsbildung).
+// Sind BEIDE Flaggen gesetzt, gewinnt der Altpfad — eine widerspruechliche Konfiguration darf
+// nie stillschweigend einen Schattenpfad scharf schalten.
 function cronSchwererPfad(cronName, { deadlineMs, runId, startedMs }) {
-  if (!cronGlobalphase.globalPhaseEnabled()) {
+  const wahl = cronGlobalphase.waehleCronPfad();
+  if (wahl.widerspruch) {
+    console.error(`[cron/${cronName}/pfadwahl] HELMUT_CRON_GLOBALPHASE UND HELMUT_CRON_GLOBALABRUF`
+      + " sind gleichzeitig gesetzt — die Absicht ist nicht eindeutig. Es laeuft der ALTPFAD.");
+  }
+  if (wahl.pfad === "alt") {
     return runCronForTenants(cronName, (tenantId) => runSourceCrawl(tenantId), { deadlineMs, runId });
   }
-  return runCronMitGlobalerPhase(cronName, { deadlineMs, runId, startedMs });
+  return runCronMitGlobalerPhase(cronName, {
+    deadlineMs, runId, startedMs,
+    buendelung: wahl.pfad === "kontext" ? "kontext" : "global"
+  });
 }
 
 // Der neue Ablauf. Er aendert WEDER Cron-Zeiten NOCH Zeitbudgets: `deadlineMs` ist unveraendert
@@ -6282,7 +6298,7 @@ function cronSchwererPfad(cronName, { deadlineMs, runId, startedMs }) {
 // Die Mandatsphase laeuft durch die UNVERAENDERTE Fairnessschleife `runCronForTenants`, damit
 // Reihenfolge, Losentscheid, Sperren, Laufdatensatz (R-6) und Fehlerisolation exakt gleich
 // bleiben — nur die Arbeit je Mandat ist eine andere.
-async function runCronMitGlobalerPhase(cronName, { deadlineMs = 270000, runId = null, startedMs = null } = {}) {
+async function runCronMitGlobalerPhase(cronName, { deadlineMs = 270000, runId = null, startedMs = null, buendelung = "global" } = {}) {
   const start = Number(startedMs) || Date.now();
   const laufkennung = runId || helmutRunId(`cron-${cronName}`, start);
   const { tenantIds } = await tenantContext.resolveCronTenants();
@@ -6328,7 +6344,8 @@ async function runCronMitGlobalerPhase(cronName, { deadlineMs = 270000, runId = 
     tenantIds: reihenfolge,
     budgetMs: aufteilung.globalMs,
     startedMs: globalStart,
-    runId: `${laufkennung}-global`
+    runId: `${laufkennung}-global`,
+    buendelung
   }).catch((error) => ({
     datenstand: cronGlobalphase.datenstandVersiegeln(
       cronGlobalphase.datenstandNeu({ laufId: `${laufkennung}-global`, startAt: globalStart, mandate: tenantIds.length }),

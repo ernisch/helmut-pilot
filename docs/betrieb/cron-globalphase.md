@@ -1,7 +1,19 @@
-# OP-25 K1 — Globale Erfassung und mandatsbezogene Projektion
+# OP-25 K1/K2 — Globale Erfassung und mandatsbezogene Projektion
 
-**Kanonische Dokumentation des Schattenpfads.** Stand: **2026-07-31**.
-Zustand: **im Repository umgesetzt, offline bewiesen, in Production NICHT aktiviert.**
+**Kanonische Dokumentation des K1-Schattenpfads.** Stand: **2026-07-31** (K2 ergänzt: §8a;
+K2.1-Hinweis ergänzt). Zustand: **im Repository umgesetzt, offline bewiesen, in Production
+NICHT aktiviert.**
+**K2-Ergebnis: Befund K1-1 bleibt bestehen und ist breiter als in §8 beschrieben — §8a.**
+
+> **Stand nach K2.1 (2026-07-31), verbindlich:** Der hier beschriebene Pfad
+> (`HELMUT_CRON_GLOBALPHASE`, globale Bündelung) ist **nicht aktivierungsfähig** und bleibt
+> **AUS**. Der Nachfolger ist **OP-25 K2.1** — globaler Abruf mit **kontextgebundener**
+> Vorgangsbildung, eigenes Flag `HELMUT_CRON_GLOBALABRUF`, kanonisch dokumentiert in
+> [`vorgangskontext.md`](vorgangskontext.md). Er löst Option **M1** aus §8a.5 ein: der
+> Kapazitätsgewinn stammt aus dem Abruf und bleibt erhalten, die Vorgangsbildung bleibt die
+> heutige. Dieses Dokument bleibt gültig als Beschreibung des K1-Vertrags, als Beleg für
+> Befund K1-1 und als Vergleichsmaßstab. Sind **beide** Flaggen gesetzt, läuft der
+> **Altpfad**.
 
 > **Flaggrenze, verbindlich:** `HELMUT_CRON_GLOBALPHASE` ist **Default AUS**. Ohne
 > ausdrücklich gesetzten Wert (`on`/`true`/`1`/`an`) läuft ausschließlich der bisherige
@@ -286,12 +298,117 @@ den amtlichen Weg und über die Personensuche eines Mandats kommen):
 **Was trotzdem bleibt:** der **Suffix der Vorgangskennung** kann sich unterscheiden, und der
 Vorgang entsteht sofort vollständig statt in zwei Schritten. Beides ist schon heute nicht
 stabil — welches Mandat welchen Ausschnitt einsammelt, hängt an der Rotation und am
-Gedächtnis geteilter Wege. Die globale Bündelung ist die **kanonisch richtige** („ein
-Vorgang = ein Wissensobjekt"); sie ist aber eine Änderung, und deshalb liegt sie hinter dem
-Flag und braucht vor einer Aktivierung eine ausdrückliche Freigabe.
+Gedächtnis geteilter Wege.
 
-**Diese Frage ist der Kern der K2-Abnahme.** Sie ist mit K1 nicht entschieden und wird hier
-nicht entschieden.
+> **Nachtrag K2 (2026-07-31): die obige Bewertung ist zu eng.** Sie stimmt für den hier
+> gemessenen Fall, gilt aber **nicht allgemein**. Punkt 1 (gemeinsames Suchpräfix) trifft in
+> anderen Fällen nachweislich **nicht** zu, und der Satz „die globale Bündelung ist die
+> kanonisch richtige" ist **nicht belegt** — er wurde in §8a widerlegt. Die vier Zusagen
+> „kein Dokument verloren", „kein zweiter Vorgang je Dokument", „keine Mehrkosten" und
+> „Resolver bleibt anschlussfähig" gelten weiterhin und sind jetzt einzeln bewiesen.
+
+---
+
+## 8a · **K2-Ergebnis: K1-1 bleibt bestehen und ist breiter als beschrieben**
+
+**Kanonische Nachweise:** `scripts/globalphase-buendelung-test.js` (56/56) und
+`scripts/globalphase-buendelung-mutationsprobe.js` (15/15 rot). Beide fahren den **echten**
+Produktionscode (`clusterRawDocuments`, `deriveVorgangId`, `candidatePrefixes`, `sameVorgang`,
+`resolveVorgang`, `understandOneCluster`, Schemaprüfung) gegen dreizehn konstruierte
+Fallfamilien; nur der KI-Aufruf ist ein Testdouble.
+
+### 8a.1 Die Ursache: zwei verschiedene Regime
+
+Helmut entscheidet „gehört zusammen" an **zwei** Stellen — mit **sehr** unterschiedlicher
+Strenge:
+
+| | **loses Regime** — innerhalb eines Batches | **strenges Regime** — zwischen Batches/Läufen |
+|---|---|---|
+| Wer entscheidet | `clusterRawDocuments` → `docsShareEvent` | `resolveVorgang` → `candidatePrefixes` **und** `sameVorgang` |
+| Kriterium | **eine einzige** paarweise Kante, **transitiv** wirksam (A~B, B~C ⇒ ein Vorgang) | gemeinsame **Themenwurzel** als Suchpräfix, danach **Kern gegen Kern** |
+| Wirkung | verbindet leicht | trennt schnell — oft schon, weil kein Kandidat gefunden wird |
+
+**Die globale Bündelung verschiebt eine große Dokumentmenge vom strengen ins lose Regime.**
+Betroffen ist genau das, was heute in **getrennten** Batches liegt: Dokumente
+**mandatseigener** Quellen — Personen-, Partei- und Ausschussquellen. Nach der K1-Messung
+sind das **58 von 196** Wegen der Vereinigung bei acht Profilen. Dokumente **geteilter**
+Quellen sind nicht betroffen: sie liegen schon heute vollständig im Batch des **ersten**
+Mandats (globale Rohdokument-Entdoppelung) — im Test belegt (3.2).
+
+Der unbequeme Teil, ebenfalls gemessen (Test 7.4): in genau den Fällen, die der alte Pfad
+heute trennt, würde `sameVorgang` sie **zusammenführen**. Der heutige Schutz ist also **nicht**
+der Belegvergleich, sondern die **Enge der Präfixsuche**.
+
+### 8a.2 Drei Teilbefunde, jeder einzeln belegt
+
+| Teilbefund | Was passiert | Beleg |
+|---|---|---|
+| **K1-1a — Zusammenführung** | Fachlich **verschiedene** Vorgänge landen global in **einem** Vorgang. Ursache: Formular-/Floskelvokabular („Antrag", „Drucksache", „Fraktion", „beantragt", „betrifft", „Abgeordnete", „besucht", „Anhörung", „Sachverständigen", „Tagesordnung") trägt heute volles Beweisgewicht | Test 6.1/6.2, Familien **F9** (zwei MdB, zwei Ereignisse), **F11** (zwei Parteien, zwei Themen), **F4** (zwei Drucksachen) |
+| **K1-1b — Trennung** | Die Kernanker-Nachprüfung in `clusterRawDocuments` ist **nicht monoton**: ein größerer Batch kann ein Dokument aus seiner bisherigen Gruppe **herauslösen**. Die globale Bündelung **trennt** damit auch, was mandatsweise **ein** Vorgang war | Test 4.2/6.4, Familie **F13** (`m1+m2` → `m1` allein, `m2` wandert zum größeren Cluster) |
+| **K1-1c — Kette** | `x~y` und `y~z` bei `x!~z`: global entsteht **ein** Vorgang aus drei Dokumenten. Heute verhindert die Batchgrenze das, sobald `z` einem anderen Mandat gehört | Test 1.3/6.3, Familie **F12** |
+
+**Bilanz über die dreizehn Familien:** sechs Familien zeigen eine abweichende Gruppierung —
+**eine** fachlich besser (F7: zwei Parteiquellen zur **selben** Debatte werden korrekt
+zusammengeführt), **vier** fachlich schlechter (F4, F9, F11, F12), **eine** nur anders (F13).
+Und eine ehrliche Gegenprobe: **F10** (zwei verschiedene Ausschüsse, gleiches Formular)
+verschmilzt in **beiden** Pfaden. **Der Fehler ist also Bestand — K1 macht ihn nur breiter
+wirksam.**
+
+### 8a.3 Was trotzdem gilt — die bewiesenen Garantien
+
+| Zusage | Beleg |
+|---|---|
+| **Kein Dokument geht verloren** — `clusterRawDocuments` ist eine Partition, auch bei feindlichen Eingaben (leer, ohne Zeitangabe, nur Jahreszahlen, nur Füllwörter) | 2.1–2.3, 5.7 |
+| **Jedes Dokument bekommt in beiden Pfaden genau eine Verknüpfung** (Verknüpfungsinvariante) | 2.4 |
+| **Kein Dokument hängt an zwei Vorgängen, keine doppelten Vorgänge** | 2.5, 4.6 |
+| **Kein Wissensobjekt verschwindet** — jeder Cluster führt zu einem Vorgang | 4.5 |
+| **Keine Mehrkosten** — die globale Bündelung braucht in keiner Familie mehr KI-Aufrufe (gemessen: 24 → 14) | 4.7, 4.7b |
+| **Mandantentrennung unverändert** — Wissensobjekte tragen keinen Mandantenbezug | 4.8 |
+| **Kennungsformat und Resolver-Anschluss bleiben** (`vg-<wurzel>-<tag>-<prüfsumme>`, Präfixsuche findet sie) | 4.9, 4.10 |
+| **Reihenfolgeunabhängig** — 120 Dokumentpermutationen, Quellenreihenfolge auf/ab, Mandatsreihenfolge vor/zurück: identische Bündelung | 5.1–5.3 |
+| **Sicherheitsventil greift** — 90 zusammenhängende Dokumente ergeben nie einen Cluster über `MAX_CLUSTER_DOKUMENTE` | 5.9 |
+
+Ein **Nebenbefund zugunsten von K1**: der **alte** Pfad ist von der **Mandatsreihenfolge**
+abhängig (Familien F3, F7, F13 — Test 5.4), der neue in keiner Familie. „Heute ist es stabil"
+stimmt also nicht.
+
+### 8a.4 Fachliche Bewertung — was das für Lage, Briefing und Entscheidungen heißt
+
+Technisch ist nichts verloren. **Fachlich schon:** ein verschmolzener Vorgang ist **ein**
+Wissensobjekt mit **einer** Überschrift, **einer** Empfehlung und **einer** Entscheidung. Bei
+Familie F9 entstehen aus **zwei** politischen Vorgängen genau **ein** Wissensobjekt (Test 6.8)
+— beide Dokumente hängen daran (6.9), aber der zweite Vorgang hat danach keine eigene
+Entscheidung mehr. Das ist genau die Fehlerklasse **„Digest-Cluster"**, die als **F-3** schon
+einmal einen Production-Rückrollfall verursacht hat (Betriebsbefund B4).
+
+Der schärfste Fall sind **Personenquellen**: sie sind je Mandat eigenständig
+(`<mandats-id>-news`) und treffen heute nie aufeinander. Global tun sie es. **Kein
+Datenschutz- oder Mandantentrennungsproblem** — der Rohkorpus und die Wissensobjekte sind
+schon heute mandantenneutral, es kommt kein Datum hinzu, das nicht schon gespeichert würde.
+Aber die **Vorgangsidentität** eines Mandats kann von der Personenquelle eines anderen
+Mandats mitbestimmt werden, und das ist eine sichtbare Nutzerwirkung.
+
+**Skalierung:** die Zahl der erstmals gegeneinander bewerteten Dokumentpaare wächst
+**quadratisch** mit der Mandatszahl. Die Bündelung wird mit mehr Mandaten nicht stabiler,
+sondern anders (Test 5.10).
+
+**Bewertung, ehrlich:** **fachlich noch nicht akzeptabel** — nicht wegen eines Verlusts,
+sondern wegen des Verlusts an **Entscheidungsschärfe** in einem Produkt, dessen Kernversprechen
+„Entscheidungen statt Daten" ist (`START_HERE.md` §5.1). Die Aktivierung sollte deshalb
+**nicht** allein auf Kapazitätsgewinn gestützt werden.
+
+### 8a.5 Optionen für eine spätere Aktivierung (nicht umgesetzt, Entscheidung offen)
+
+| # | Option | Wirkung | Preis |
+|---|---|---|---|
+| **M1** ✅ | **Bündelung je Herkunftsmandat behalten**, nur den **Abruf** global machen. **In K2.1 umgesetzt** ([`vorgangskontext.md`](vorgangskontext.md)) — allerdings nicht je *Herkunftsmandat*, sondern je **Sichtbarkeitsmenge**: der kleinere und fachlich genauere Kontext, weil geteilte Quellen dadurch **einen** Kontext bilden statt je Mandat dupliziert zu werden | K1-1 entfällt vollständig — die Vorgangsbildung bleibt exakt die heutige | Der Kapazitätsgewinn bleibt fast ganz erhalten: er stammt aus dem Abruf (**1 162 → 196** Wege). Kosten: mehr Understanding-Batches, also wieder die heutige Zahl KI-Aufrufe (kein Regress, aber kein Gewinn) |
+| **M2** | **Formularvokabular nachschärfen** — eine rein **aufgezählte** Wortliste in `GENERISCHE_ANKER`, im Stil der bestehenden Hotfixes B4-3/B4-4 (keine Stammwortlogik) | **Gemessen** (Test 8.3, 32 Wörter): korrekte Trennung **7/12 → 11/12**, und **kein** fachlich zusammengehöriger Fall wird auseinandergerissen (8.4). Wirkt auch im **alten** Pfad, verbessert also heute schon | Ändert die **aktive** Vorgangsbildung **sofort und ohne Flag** → freigabepflichtig (`CLAUDE.md` §5), eigener Sprint mit eigenem Production-Nachweis. **In diesem Sprint bewusst nicht umgesetzt** |
+| **M3** | **Global bündeln und akzeptieren** | Kanonisch „ein Vorgang = ein Wissensobjekt" — aber nur dort, wo `docsShareEvent` recht hat | Nimmt K1-1a/b/c in Kauf; nach 8a.4 nicht empfohlen, solange M2 offen ist |
+| **M4** | Höheres Beweisgewicht **nur** für Kanten über Mandatsgrenzen | zielgenau | Neue geratene Schwelle, zweiter Identitätsbegriff — **verworfen**, widerspricht der Leitentscheidung von `vorgang-identity.js` |
+
+**Empfohlene Reihenfolge:** erst **M2** (verbessert beide Pfade und ist einzeln nachweisbar),
+danach K1-1 erneut messen, **dann** über die Aktivierung entscheiden. **Bis dahin bleibt
+`HELMUT_CRON_GLOBALPHASE` AUS.**
 
 ---
 
@@ -311,9 +428,14 @@ nicht entschieden.
 
 ## 10 · Was für K2 nötig wäre — und ob K3 wahrscheinlich wird
 
+> **Stand nach K2 (2026-07-31):** Punkt 1 ist **bearbeitet, aber nicht erledigt** — K1-1 ist
+> jetzt vollständig bewertet (§8a) und **bleibt bestehen**. Die Entscheidung darüber (Optionen
+> §8a.5) steht beim Betreiber aus; bis dahin bleibt das Flag AUS. Die Punkte 2–5 sind
+> unverändert offen.
+
 **K2 (Aktivierung, freigabepflichtig)** braucht mindestens:
 
-1. eine Betreiberentscheidung zu **Befund K1-1** (§8),
+1. eine Betreiberentscheidung zu **Befund K1-1** (§8/§8a),
 2. eine Aktivierung **nur** über die Vercel-Env, mit sofortigem Rückweg (Variable auf `off`),
 3. einen rein lesenden Production-Nachweis über mindestens 24 h reguläre Kadenz:
    `[cron/*/globalphase]`-Zeile je Lauf, Datenstand `abgeschlossen`, `k = n`,
@@ -335,7 +457,7 @@ höchstens sechs Mandate aktiv sind, reicht K1 nach dem Modell aus.
 
 | # | Risiko | Bewertung |
 |---|---|---|
-| R1 | **Befund K1-1** (§8) verändert Vorgangskennungen | Freigabefrage, nicht mit K1 entschieden. Ohne Flag ohne Wirkung |
+| R1 | **Befund K1-1** (§8/§8a) verändert **nicht nur Kennungen, sondern die Dokumentpartition** — in beide Richtungen (K1-1a Zusammenführung, K1-1b Trennung, K1-1c Kette) | **Nach K2 vollständig bewertet und bestehend geblieben.** Kein Datenverlust, keine Mehrkosten, keine Mandantentrennungsfrage — aber Verlust an Entscheidungsschärfe (§8a.4). Freigabefrage, ohne Flag ohne Wirkung. Optionen in §8a.5, empfohlen: erst **M2** |
 | R2 | Die globale Phase ist ein **einzelner Engpass**: fällt sie aus, ruht der ganze Lauf | bewusst so — eine Projektion auf gescheiterter Erfassung wäre schlimmer. Sichtbar als `systemError` + `ohneFortschritt` |
 | R3 | Der globale Crawl-Lauf (`mode: "global"`, `politicianId: null`) erscheint in Admin-Ansichten, die den letzten Lauf zeigen | nur bei aktivem Flag; `mode: "global"` hält ihn ausdrücklich aus der Cooldown-Logik des Altpfads heraus |
 | R4 | Die Orchestrierung liegt vorübergehend **doppelt** vor | bewusst: der Altpfad darf für diesen Sprint nicht angefasst werden. Rückbau in K2 |

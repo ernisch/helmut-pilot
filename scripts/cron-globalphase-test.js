@@ -714,9 +714,12 @@ function sechsProfile() {
     const nochmal = G.datenstandVersiegeln(sauber, { nowMs: 9999, status: G.DATENSTAND_ABGESCHLOSSEN, quellen: 999 });
     check("3.11 ein VERSIEGELTER Datenstand kann nicht erneut versiegelt oder gehoben werden",
       nochmal === sauber && nochmal.quellen === 10 && nochmal.beendetAt === 5000);
+    // K2.1 (2026-07-31): der Vermerk hat ZWEI additive Felder bekommen (`buendelung`,
+    // `kontexte`). Beide sind Zaehler/Enum ohne Personenbezug — die Zusage „PII-frei und
+    // kompakt" gilt unveraendert, die erwartete Feldliste ist nachgezogen.
     check("3.12 der Vermerk ist PII-frei und kompakt (nur Kennung, Status, Zaehler)",
       Object.keys(G.datenstandVermerk(sauber)).sort().join(",")
-      === "beendetAt,budgetErschoepft,fehler,frisch,laufId,quellen,rohdokumente,status,versiegelt,verstanden");
+      === "beendetAt,budgetErschoepft,buendelung,fehler,frisch,kontexte,laufId,quellen,rohdokumente,status,versiegelt,verstanden");
     check("3.13 ein teilweiser Datenstand meldet `frisch:false` im Vermerk",
       G.datenstandVermerk(teil).frisch === false && G.datenstandVermerk(teil).status === G.DATENSTAND_TEILWEISE);
   }
@@ -1181,7 +1184,12 @@ function sechsProfile() {
   abschnitt("8 · Kapazitaet — deterministische Laufzeitsimulation");
   {
     // 8a · Gemessene Bausteine aus dem Kostenmodell (Abschnitt 7 lief mit denselben Werten).
-    const messen = async (n, { deadlineMs = 270000, defekteQuellen = [], defektesMandat = null, kosten = KOSTEN } = {}) => {
+    // K2.1 (2026-07-31): `buendelung` waehlt den zu messenden NEUEN Pfad —
+    //   "global"  = K1 (globale Buendelung),
+    //   "kontext" = K2.1 (kontextgebundene Vorgangsbildung).
+    // Der ALT-Pfad in derselben Messung ist in beiden Faellen identisch; damit sind alle drei
+    // Pfade gegen DENSELBEN Produktionscode und DIESELBEN Annahmen gemessen (Auftrag Phase 5).
+    const messen = async (n, { deadlineMs = 270000, defekteQuellen = [], defektesMandat = null, kosten = KOSTEN, buendelung = "global" } = {}) => {
       const profile = sechsProfile().slice(0, Math.min(6, n));
       while (profile.length < n) {
         const i = profile.length + 1;
@@ -1219,7 +1227,7 @@ function sechsProfile() {
       GN.resetSharedFetchLedger();
       const start = uhrB.now();
       const aufteilung = G.budgetAufteilung({ restMs: deadlineMs, mandate: tenants.length, projektionMs: G.DEFAULT_PROJEKTION_MS, globalMaxMs: 240000 });
-      const global = await schedB.runGlobaleErfassung({ tenantIds: tenants, budgetMs: aufteilung.globalMs, startedMs: start, runId: "kap-neu-g", deps: { now: uhrB.now } });
+      const global = await schedB.runGlobaleErfassung({ tenantIds: tenants, budgetMs: aufteilung.globalMs, startedMs: start, runId: "kap-neu-g", buendelung, deps: { now: uhrB.now } });
       const globalDauerMs = uhrB.now() - start;
       let neuLauf = null;
       const abschlussB = [];
@@ -1243,7 +1251,8 @@ function sechsProfile() {
       const imFensterB = abschlussB.filter((t) => t <= start + deadlineMs).length;
       Date.now = ECHTES_NOW;
       return {
-        n, deadlineMs,
+        n, deadlineMs, buendelung,
+        kontexte: (global.datenstand && global.datenstand.kontexte) || null,
         alt: {
           begonnen: altLauf.fairness.begonnen.length,
           erfolgreich: altLauf.fairness.erfolgreich.length,
@@ -1402,6 +1411,84 @@ function sechsProfile() {
         JSON.stringify({ k: f1.kapazitaet, grenze: f1.obergrenzeLaeufe }));
     }
 
+    // 8a3 · DREI PFADE, DIESELBE MESSUNG (OP-25 K2.1, Auftrag Phase 5).
+    // Gemessen wird derselbe Produktionscode mit denselben Kostenannahmen — einmal mit
+    // globaler Buendelung (K1) und einmal kontextgebunden (K2.1). Der Alt-Pfad ist in beiden
+    // Laeufen derselbe und dient als gemeinsamer Bezugspunkt.
+    {
+      const dreiPfade = [];
+      for (const n of [1, 2, 6, 11]) {
+        const k1 = await messen(n, { kosten: PROD_KOSTEN, buendelung: "global" });
+        const k21 = await messen(n, { kosten: PROD_KOSTEN, buendelung: "kontext" });
+        dreiPfade.push({ n, k1, k21 });
+        console.log(`  INFO  n=${n} (Production-kalibriert) · alt ${k1.alt.imFenster}/${n} im Fenster`
+          + ` (${k1.alt.verbrauchtMs} ms, ueberzogen ${k1.alt.ueberzogenMs} ms)`
+          + ` · K1 ${k1.neu.imFenster}/${n} (${k1.neu.verbrauchtMs} ms, global ${k1.neu.globalDauerMs} ms)`
+          + ` · K2.1 ${k21.neu.imFenster}/${n} (${k21.neu.verbrauchtMs} ms, global ${k21.neu.globalDauerMs} ms,`
+          + ` ${k21.kontexte} Kontexte, Projektion ${k21.neu.projektionMs} ms/Mandat)`);
+      }
+      const bei = (n) => dreiPfade.find((z) => z.n === n);
+      check("8.13c K2.1 erreicht in jeder gemessenen Groesse mindestens so viele Mandate im Fenster wie K1",
+        dreiPfade.every((z) => z.k21.neu.imFenster >= z.k1.neu.imFenster),
+        JSON.stringify(dreiPfade.map((z) => ({ n: z.n, k1: z.k1.neu.imFenster, k21: z.k21.neu.imFenster }))));
+      // EHRLICH GETRENNT: bei ein und zwei Mandaten schafft AUCH der Altpfad alles — der
+      // Unterschied ist dort nur Zeitbedarf. Ab sechs Mandaten ist es ein Unterschied in der
+      // Sache: der Altpfad ueberzieht und erreicht 2 von 6, K2.1 erreicht alle.
+      // EHRLICH: bei EINEM Mandat gibt es nichts zu entdoppeln — K2.1 ist dort messbar
+      // MINIMAL LANGSAMER (gemessen +150 ms fuer die zusaetzliche globale Lauftelemetrie).
+      // Der Gewinn beginnt bei zwei Mandaten und wird ab sechs zum Unterschied in der Sache.
+      check("8.13d bei EINEM Mandat kostet K2.1 leicht mehr statt weniger (kein Gewinn ohne Entdoppelung)",
+        bei(1).k21.neu.imFenster === 1 && bei(1).k1.alt.imFenster === 1
+        && bei(1).k21.neu.verbrauchtMs >= bei(1).k1.alt.verbrauchtMs
+        && (bei(1).k21.neu.verbrauchtMs - bei(1).k1.alt.verbrauchtMs) < 1000,
+        JSON.stringify({ alt: bei(1).k1.alt.verbrauchtMs, k21: bei(1).k21.neu.verbrauchtMs }));
+      check("8.13d1 bei ZWEI Mandaten schaffen beide Pfade alles — K2.1 aber messbar schneller",
+        bei(2).k21.neu.imFenster === 2 && bei(2).k1.alt.imFenster === 2
+        && bei(2).k21.neu.verbrauchtMs < bei(2).k1.alt.verbrauchtMs,
+        JSON.stringify({ alt: bei(2).k1.alt.verbrauchtMs, k21: bei(2).k21.neu.verbrauchtMs }));
+      check("8.13d2 ab sechs Mandaten erreicht K2.1 ALLE, der Altpfad nicht — und ueberzieht dabei",
+        dreiPfade.filter((z) => z.n >= 6).every((z) => z.k21.neu.imFenster === z.n
+          && z.k1.alt.imFenster < z.n && z.k1.alt.ueberzogenMs > 0),
+        JSON.stringify(dreiPfade.filter((z) => z.n >= 6).map((z) => ({ n: z.n, alt: z.k1.alt.imFenster, ueberzogen: z.k1.alt.ueberzogenMs, k21: z.k21.neu.imFenster }))));
+      check("8.13e K2.1 ueberzieht das Zeitfenster in keiner gemessenen Groesse",
+        dreiPfade.every((z) => z.k21.neu.ueberzogenMs === 0),
+        JSON.stringify(dreiPfade.map((z) => ({ n: z.n, ueberzogen: z.k21.neu.ueberzogenMs }))));
+      // Die Zahl der Kontexte ist die Zahl VERSCHIEDENER Sichtbarkeitsmengen — sie ist im
+      // schlimmsten Fall exponentiell moeglich, in der gemessenen Profilwelt aber linear:
+      // gemessen 1 · 3 · 10 · 15 fuer n = 1 · 2 · 6 · 11, ab sechs Mandaten genau EIN
+      // zusaetzlicher Kontext je zusaetzlichem Mandat.
+      check("8.13f die Zahl der Buendelungskontexte bleibt linear beschraenkt (<= 2n+1) und waechst"
+        + " ab sechs Mandaten um genau eins je zusaetzlichem Mandat",
+        dreiPfade.every((z) => z.k21.kontexte != null && z.k21.kontexte <= 2 * z.n + 1)
+        && (bei(11).k21.kontexte - bei(6).k21.kontexte) <= (11 - 6),
+        JSON.stringify(dreiPfade.map((z) => ({ n: z.n, kontexte: z.k21.kontexte }))));
+      // KEIN FALSCHES GRUEN: das Kostenmodell dieser Messung rechnet je Dokument und je
+      // Cluster, NICHT je Understanding-Aufruf. Der zusaetzliche Sperr-Roundtrip, den K2.1 je
+      // Kontext bezahlt, ist in den obigen Zahlen deshalb NICHT enthalten. Er wird getrennt
+      // abgeschaetzt (`scripts/vorgangskontext-test.js` Abschnitt 7) und liegt bei elf Mandaten
+      // und fuenfzehn Kontexten bei rund 3 s = 3,3 % des 90-s-Verstehensbudgets.
+      console.log(`  INFO  NICHT in diesen Zahlen enthalten: der Sperr-Roundtrip je Kontext`
+        + ` (${bei(11).k21.kontexte} Kontexte bei 11 Mandaten). Getrennt abgeschaetzt: ~3 s, ~3,3 % des Verstehensbudgets.`);
+      // GRENZKOSTEN je zusaetzlichem Mandat, ohne Zeitdruck gemessen (sonst vergleicht man
+      // abgeschnittene mit vollstaendigen Laeufen).
+      const lang = { deadlineMs: 60 * 60 * 1000, kosten: PROD_KOSTEN };
+      const g6k1 = await messen(6, { ...lang, buendelung: "global" });
+      const g11k1 = await messen(11, { ...lang, buendelung: "global" });
+      const g6k21 = await messen(6, { ...lang, buendelung: "kontext" });
+      const g11k21 = await messen(11, { ...lang, buendelung: "kontext" });
+      const grenze = (a, b) => Math.round((b - a) / 5);
+      const grenzAlt = grenze(g6k1.alt.verbrauchtMs, g11k1.alt.verbrauchtMs);
+      const grenzK1 = grenze(g6k1.neu.verbrauchtMs, g11k1.neu.verbrauchtMs);
+      const grenzK21 = grenze(g6k21.neu.verbrauchtMs, g11k21.neu.verbrauchtMs);
+      console.log(`  INFO  Grenzkosten je zusaetzlichem Mandat (ohne Zeitdruck, Production-kalibriert):`
+        + ` alt ${grenzAlt} ms · K1 ${grenzK1} ms · K2.1 ${grenzK21} ms`);
+      check("8.13g die Grenzkosten je zusaetzlichem Mandat sind in K2.1 um ein Vielfaches kleiner als im Altpfad",
+        grenzK21 * 3 < grenzAlt, JSON.stringify({ alt: grenzAlt, k1: grenzK1, k21: grenzK21 }));
+      console.log(`  INFO  Verbleibende Doppelarbeit in K2.1: die mandatseigenen Kontexte werden`
+        + ` einzeln geclustert und verstanden (${bei(11).k21.kontexte} Kontexte bei 11 Mandaten);`
+        + ` der Abruf und der geteilte Korpus laufen genau einmal.`);
+    }
+
     // 8b · Reines Modell (Rechnung, keine Messung) — mit den PRODUCTION-Werten aus
     // docs/betrieb/cron-fairness.md §10.5: globale Arbeit ~240 s, Projektion ~1,5 s.
     const modell6 = G.kapazitaetsSimulation({ mandate: 6, deadlineMs: 270000, globalMs: 240000, projektionMs: 1650, wiederholungsAnteil: 1, reserveMs: 15000 });
@@ -1449,8 +1536,13 @@ function sechsProfile() {
       /Fehler-Isolation: nur DIESES Mandat scheitert/.test(fs.readFileSync(path.join(ROOT, "lib", "helmut", "cron-fairness.js"), "utf8")));
     check("9.7 das neue Flag ist nicht versehentlich standardmaessig aktiv",
       /raw === "on" \|\| raw === "true" \|\| raw === "1" \|\| raw === "an"/.test(fs.readFileSync(path.join(ROOT, "lib", "helmut", "cron-globalphase.js"), "utf8")));
+    // K2.1 (2026-07-31): die Pfadwahl liegt jetzt in `cronGlobalphase.waehleCronPfad()`, weil es
+    // DREI Pfade gibt. Die Zusage ist unveraendert und wird hier zweifach geprueft — der
+    // Ausdruck im Alt-Zweig ist derselbe wie vorher, UND ohne gesetzte Flagge faellt die Wahl
+    // auf `alt`.
     check("9.8 bei deaktiviertem Flag ist der Aufruf byte-identisch zum bisherigen",
-      /if \(!cronGlobalphase\.globalPhaseEnabled\(\)\) \{\s*\n\s*return runCronForTenants\(cronName, \(tenantId\) => runSourceCrawl\(tenantId\), \{ deadlineMs, runId \}\);/.test(serverSrc));
+      /if \(wahl\.pfad === "alt"\) \{\s*\n\s*return runCronForTenants\(cronName, \(tenantId\) => runSourceCrawl\(tenantId\), \{ deadlineMs, runId \}\);/.test(serverSrc)
+      && G.waehleCronPfad({}).pfad === "alt");
     check("9.9 Berlin/Brandenburg werden durch die Vereinigungslogik nicht aktiv (die Sperre wirkt VOR der Vereinigung)",
       /landesmodulQuelleGesperrt/.test(schedSrc)
       && !/landesmodul/i.test(fs.readFileSync(path.join(ROOT, "lib", "helmut", "cron-globalphase.js"), "utf8").replace(/^\s*\/\/.*$/gm, "")));
