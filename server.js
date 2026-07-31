@@ -815,12 +815,21 @@ async function handleRequest(request, response) {
     // idempotent und selbst zeitbudgetiert.
     return handleAsync(response, async () => {
       const t0 = Date.now();
+      // R-6: die Laufkennung entsteht HIER, damit der Timeout-Catch denselben Lauf
+      // vermerken kann, den runCronForTenants persistent fortschreibt.
+      const laufId = helmutRunId("cron-crawl", t0);
       const result = await withTimeout(
-        runCronForTenants("crawl", (tenantId) => runSourceCrawl(tenantId), { deadlineMs: 270000 }),
+        runCronForTenants("crawl", (tenantId) => runSourceCrawl(tenantId), { deadlineMs: 270000, runId: laufId }),
         280000,
         "cron-crawl"
-      ).catch((error) => ({ ok: false, bounded: true, reason: "crawl-timeout", error: error && error.message }));
-      console.log(`[cron/crawl] ${Date.now() - t0}ms tenants=${result && result.tenants} bounded=${Boolean(result && result.bounded)}`);
+      ).catch(async (error) => {
+        const vermerk = await markiereAeusseresCronTimeout("crawl", laufId, t0);
+        return {
+          ok: false, bounded: true, reason: "crawl-timeout", error: error && error.message,
+          lauf: { laufId, timeoutVermerkGespeichert: Boolean(vermerk && vermerk.ok) }
+        };
+      });
+      console.log(`[cron/crawl] ${Date.now() - t0}ms tenants=${result && result.tenants} bounded=${Boolean(result && result.bounded)} lauf=${laufId}`);
       return result;
     });
   }
@@ -881,12 +890,19 @@ async function handleRequest(request, response) {
     return handleAsync(response, async () => {
       const t0 = Date.now();
       // Mandate aus der Datenbank; hartes Gesamtbudget 280s < maxDuration 300s.
+      const laufId = helmutRunId("cron-pipeline", t0);
       const result = await withTimeout(
-        runCronForTenants("pipeline", (tenantId) => runSourceCrawl(tenantId), { deadlineMs: 270000 }),
+        runCronForTenants("pipeline", (tenantId) => runSourceCrawl(tenantId), { deadlineMs: 270000, runId: laufId }),
         280000,
         "cron-pipeline"
-      ).catch((error) => ({ ok: false, bounded: true, reason: "pipeline-timeout", error: error && error.message }));
-      console.log(`[cron/pipeline] ${Date.now() - t0}ms tenants=${result && result.tenants} bounded=${Boolean(result && result.bounded)}`);
+      ).catch(async (error) => {
+        const vermerk = await markiereAeusseresCronTimeout("pipeline", laufId, t0);
+        return {
+          ok: false, bounded: true, reason: "pipeline-timeout", error: error && error.message,
+          lauf: { laufId, timeoutVermerkGespeichert: Boolean(vermerk && vermerk.ok) }
+        };
+      });
+      console.log(`[cron/pipeline] ${Date.now() - t0}ms tenants=${result && result.tenants} bounded=${Boolean(result && result.bounded)} lauf=${laufId}`);
       return result;
     });
   }
@@ -1069,6 +1085,7 @@ async function handleRequest(request, response) {
       // Mandate aus der Datenbank; je Mandat Check + Push, isoliert und zeitbudgetiert.
       // Aeusseres Gesamt-Timeout 280s < maxDuration 300s: die Antwort kommt IMMER,
       // auch wenn ein einzelner Mandats-Check sein Einzelbudget ausschoepft.
+      const laufId = helmutRunId("cron-lage-check", t0);
       const summary = await withTimeout(runCronForTenants("lage-check", async (tenantId) => {
         const profile = await activeProfile(tenantId);
         const val = validateProfile(profile);
@@ -1087,9 +1104,15 @@ async function handleRequest(request, response) {
           push,
           ...(lageTimeout || pushTimeout ? { ok: false, bounded: true, reason: lageTimeout ? (lageCheck.reason || "lage-check-timeout") : "push-timeout" } : {})
         };
-      }, { deadlineMs: 240000 }), 280000, "cron-lage-check-gesamt")
-        .catch((error) => ({ ok: false, bounded: true, reason: "lage-check-timeout", error: error && error.message }));
-      console.log(`[cron/lage-check] ${Date.now() - t0}ms tenants=${summary && summary.tenants} bounded=${Boolean(summary && summary.bounded)}`);
+      }, { deadlineMs: 240000, runId: laufId }), 280000, "cron-lage-check-gesamt")
+        .catch(async (error) => {
+          const vermerk = await markiereAeusseresCronTimeout("lage-check", laufId, t0);
+          return {
+            ok: false, bounded: true, reason: "lage-check-timeout", error: error && error.message,
+            lauf: { laufId, timeoutVermerkGespeichert: Boolean(vermerk && vermerk.ok) }
+          };
+        });
+      console.log(`[cron/lage-check] ${Date.now() - t0}ms tenants=${summary && summary.tenants} bounded=${Boolean(summary && summary.bounded)} lauf=${laufId}`);
       return summary;
     });
   }
@@ -6102,8 +6125,12 @@ function sendMandateSelectionRequired(response, mandates = []) {
 // nachrechenbare Obergrenze ceil(n/k). Nicht begonnene Mandate werden NICHT als
 // versucht vermerkt und bleiben deshalb im naechsten Lauf vorn.
 // `HELMUT_CRON_FAIRNESS=off` ist der Rueckweg auf das alte Verhalten ohne Codeaenderung.
-async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000 } = {}) {
+async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000, runId = null } = {}) {
   const startedMs = Date.now();
+  // R-6: die Laufkennung kommt jetzt von AUSSEN, wenn der Aufrufer sie kennt. Nur so kann
+  // ein aeusserer Timeout-Catch (Promise.race, der NIE zurueckkehrt) genau DIESEN Lauf
+  // vermerken statt versehentlich den vorherigen.
+  const laufkennung = runId || helmutRunId(`cron-${cronName}`, startedMs);
   const { tenantIds, reason } = await tenantContext.resolveCronTenants();
   if (!tenantIds.length) {
     // EHRLICHER Grund statt pauschalem "nicht konfiguriert": eine Ladestoerung
@@ -6132,7 +6159,7 @@ async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000 } = 
         throw error;
       }
     },
-    runId: helmutRunId(`cron-${cronName}`, startedMs),
+    runId: laufkennung,
     deadlineMs,
     startedMs,
     staleMs: cronFairness.staleClaimMs(),
@@ -6172,6 +6199,12 @@ async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000 } = 
     + ` naechstes=${fairness.naechstesMandat || "-"}`
     + ` kapazitaet=${fairness.kapazitaet}`
     + ` obergrenzeLaeufe=${fairness.obergrenzeLaeufe === null ? "keine-garantie" : fairness.obergrenzeLaeufe}`
+    // R-6: Laufkennung + persistierter Laufzustand. Sie verbinden diese Zeile mit dem
+    // Laufdatensatz in der Ablage — und machen im Protokoll sichtbar, dass die Zeile nicht
+    // mehr die einzige vollstaendige Quelle ist. FEHLT die Zeile (aeusseres Zeitlimit),
+    // traegt der Laufdatensatz denselben Stand.
+    + ` lauf=${fairness.laufId || "-"}`
+    + ` laufzustand=${fairness.laufStatus || "-"}`
     + ` zustand=${fairnessAn ? (fairness.zustandGeladen && !fairness.zustandFehler ? "ok" : "gestoert") : "aus"}`);
   // SICHTBARKEIT (Incident 2026-07-25): vom Zeitbudget abgeschnittene Mandate
   // standen bisher nur im Antwort-Body, den niemand liest — vier aktive Mandate
@@ -6221,6 +6254,40 @@ async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000 } = 
     ohneFortschritt: Boolean(fairness.ohneFortschritt),
     fairness
   };
+}
+
+// R-6 (Beobachtbarkeitsluecke bei aeusserem Timeout): `withTimeout` ist ein `Promise.race`
+// und BEENDET die urspruengliche Promise nicht. Greift das aeussere Zeitlimit, kehrt
+// `runCronForTenants` NIE zurueck — kein Log, kein Systemfehler, kein Antwortkoerper.
+//
+// Dieser Vermerk behauptet deshalb NICHT, dass der Lauf beendet sei. Er haelt genau EINE
+// Tatsache fest: "zum Zeitpunkt X hatte der Lauf <laufId> noch nicht zurueckgegeben."
+// Schreibt die weiterlaufende Promise danach doch noch ihren Abschluss, hebt der (monotone
+// Verschmelzung, LAUF_RANG) den Zustand — der Timeout-Zeitpunkt bleibt daneben stehen.
+//
+// Hart begrenzt und wirft nie: dieser Pfad laeuft bei ~280 s eines 300-s-Fensters. Ein
+// haengender Vermerk darf die Antwort nicht kosten.
+async function markiereAeusseresCronTimeout(cronName, laufId, startedMs) {
+  if (!cronFairness.fairnessEnabled()) return { ok: false, uebersprungen: true, grund: "fairness-aus" };
+  try {
+    const vermerk = await withTimeout(
+      saveCronFairnessState(cronFairness.laufTimeoutPatch({
+        cronName, laufId, startAt: startedMs, nowMs: Date.now()
+      })),
+      5000,
+      `cron-${cronName}-timeoutvermerk`
+    );
+    if (!vermerk || !vermerk.ok) {
+      console.error(`[cron/${cronName}] Timeoutvermerk NICHT gespeichert: ${(vermerk && vermerk.fehler) || "unbekannt"}`);
+      return { ok: false, fehler: (vermerk && vermerk.fehler) || "unbekannt" };
+    }
+    console.error(`[cron/${cronName}] aeusseres Zeitlimit — Laufdatensatz ${laufId} als abgebrochen vermerkt`
+      + " (der Lauf selbst kann intern weiterlaufen).");
+    return { ok: true };
+  } catch (error) {
+    console.error(`[cron/${cronName}] Timeoutvermerk fehlgeschlagen: ${error && error.message}`);
+    return { ok: false, fehler: error && error.message };
+  }
 }
 
 // Cron-Autorisierung — FAIL CLOSED.

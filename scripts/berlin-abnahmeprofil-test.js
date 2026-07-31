@@ -333,7 +333,9 @@ const FLAG_BE = { HELMUT_LANDESMODULE: "berlin" };
   const serverText = fs.readFileSync(path.join(__dirname, "..", "server.js"), "utf8");
   const fairnessText = fs.readFileSync(path.join(__dirname, "..", "lib", "helmut", "cron-fairness.js"), "utf8");
   check("7g Die Cron-Schleife ist sequenziell und zeitbudgetiert",
-    /runCronForTenants\(cronName, perTenant, \{ deadlineMs = \d+ \}/.test(serverText)
+    // Die Signatur traegt seit R-6 zusaetzlich eine optionale Laufkennung (reine
+    // Beobachtbarkeit) — das Zeitbudget selbst ist unveraendert.
+    /runCronForTenants\(cronName, perTenant, \{ deadlineMs = \d+(, runId = null)? \}/.test(serverText)
     && /cronFairness\.runTenantsFairly\(/.test(serverText)
     && /reason: "zeitbudget"/.test(fairnessText)
     && /for \(const kandidat of planung\.plan\)/.test(fairnessText));

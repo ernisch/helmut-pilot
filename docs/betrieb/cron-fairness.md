@@ -1,11 +1,13 @@
 # Faire Mandantenreihenfolge der Mehrmandanten-Crons (OP-25)
 
-**Stand:** 2026-07-31 (§10 neu: regulärer Production-Nachweis — **teilweise bestanden**;
-Fairness korrekt, Kapazität unzureichend; neuer Befund R-6) · **Kanonisch für:** Reihenfolge,
-Fairnessgarantie, Beobachtbarkeit und
+**Stand:** 2026-07-31 (§11 neu: **R-6 behoben** — Laufprotokoll, Telemetrievertrag bei
+Zeitüberschreitung; §10 regulärer Production-Nachweis — **teilweise bestanden**, Fairness
+korrekt, Kapazität unzureichend) · **Kanonisch für:** Reihenfolge, Fairnessgarantie,
+Beobachtbarkeit, **Laufprotokoll/Telemetrievertrag** und
 Wiederaufnahme in `runCronForTenants` · **Code:** [`lib/helmut/cron-fairness.js`](../../lib/helmut/cron-fairness.js),
-`server.js` (`runCronForTenants`), `lib/helmut/storage.js` (`readCronFairnessState` /
-`saveCronFairnessState` / `deleteCronFairnessTenant`) · **Tests:** `scripts/cron-fairness-test.js`
+`server.js` (`runCronForTenants`, `markiereAeusseresCronTimeout`), `lib/helmut/storage.js`
+(`readCronFairnessState` / `saveCronFairnessState` / `deleteCronFairnessTenant`) ·
+**Tests:** `scripts/cron-fairness-test.js`
 
 > **Nummerierung:** Der Sprintauftrag nennt diesen Punkt „Roadmap Punkt 25". Gemeint ist
 > **OP-25** aus [`../datenmotor-restliste.md`](../datenmotor-restliste.md). Zeile 25 der
@@ -67,7 +69,9 @@ weiterhin vorn.
 ## 3 · Wo der Zustand liegt — und warum ohne Migration
 
 Eine **eigene Zeile** im bereits existierenden `helmut_store`: `<storeId>-cron-fairness`
-(lokal: `.helmut-data/cron-fairness.json`).
+(lokal: `.helmut-data/cron-fairness.json`). Sie trägt zwei getrennte Bereiche:
+`crons[<cron>][<mandat>]` = **Buchführung je Mandat** (bewegt die Rotation) und seit
+2026-07-31 `laeufe[<cron>]` = **Laufdatensatz** (reine Beobachtbarkeit, bewegt nichts, §11).
 
 - **Keine neue Tabelle, keine Migration, kein Freigabegate.** Der Fix wirkt mit dem Deployment.
 - **Keine RLS-Änderung.** Die Policy auf `helmut_store` matcht ausschließlich das Präfix
@@ -237,9 +241,11 @@ etwa wenn das Laden der Mandantenliste in Blob-Timeouts lief):**
    dort nicht von „unbekannt" zu unterscheiden); der `systemError` benennt den Fall wörtlich:
    *„KEIN Mandat begonnen (0 von n) — Lauf ohne Fortschritt, für diesen Lauf gilt KEINE
    Fairnessgarantie."*
-3. **Kein Schaden an der Rotation:** ein `k = 0`-Lauf schreibt **nichts** — die Warteschlange
-   bleibt unverändert, und der nächste Lauf mit Kapazität beginnt genau dort, wo dieser
-   beginnen wollte.
+3. **Kein Schaden an der Rotation:** ein `k = 0`-Lauf schreibt **nichts an der Buchführung je
+   Mandat** — die Warteschlange bleibt unverändert, und der nächste Lauf mit Kapazität beginnt
+   genau dort, wo dieser beginnen wollte. (Seit R-6 schreibt er sehr wohl seinen
+   **Laufdatensatz**, §11 — der bewegt die Rotation nicht, macht den Leerlauf aber sichtbar,
+   statt ihn spurlos zu lassen. Beides wird getrennt getestet, §12b.)
 4. **Deterministisch getestet:** `scripts/cron-fairness-test.js` §12b (acht Prüfungen, u. a.
    0 Schreibvorgänge, unveränderter Zustand, Nachholen im Folgelauf) plus eine Mutationsprobe,
    die eine erfundene Garantie bei `k = 0` rot werden lässt.
@@ -263,8 +269,9 @@ etwa wenn das Laden der Mandantenliste in Blob-Timeouts lief):**
 | **Einzelnes Mandat scheitert** | Fehler bleibt isoliert (nur dieses Mandat), der Versuch zählt, Status/Fehlerzeitpunkt/Fehlerserie werden getrennt dokumentiert. Es blockiert niemanden — es rutscht wie jedes verarbeitete Mandat nach hinten. |
 | **Mandat scheitert dauerhaft** | Wird weiter versucht (kein stilles Ausschließen), verdrängt aber niemanden. `fehlerSerie` macht die Dauerstörung sichtbar. |
 | **Mandat frisst das ganze Budget** | Es wird registriert, verbraucht seinen Lauf und steht danach hinten. Die übrigen Mandate kommen in den Folgeläufen dran. |
-| **Prozessabbruch nach Registrierung** | Mandat bleibt `laufend`, wird nach der Frist kontrolliert erneut zugelassen und zählt bis dahin als versucht. |
-| **Prozessabbruch nach einem fertigen Mandat** | Der Abschluss ist persistiert; der nächste Lauf setzt an der **Mandatsgrenze** fort, nicht von vorn. |
+| **Prozessabbruch nach Registrierung** | Mandat bleibt `laufend`, wird nach der Frist kontrolliert erneut zugelassen und zählt bis dahin als versucht. Im **Laufdatensatz** (§11) steht es als `begonnen` **ohne Abschluss** — sichtbar abgebrochen, nie als Erfolg. |
+| **Prozessabbruch nach einem fertigen Mandat** | Der Abschluss ist persistiert; der nächste Lauf setzt an der **Mandatsgrenze** fort, nicht von vorn. Der Laufdatensatz bleibt `laufend` und wird nach der Frist als `abgebrochen` **abgeleitet** (§11.3). |
+| **Äußeres Zeitlimit (`withTimeout`, 280 s)** | `runCronForTenants` kehrt nie zurück, die Telemetriezeile entfällt — der bereits fortgeschriebene **Laufdatensatz** trägt Planung und alle bisherigen Ausgänge, der Catch vermerkt zusätzlich `aeusseresTimeoutAt` (§11). Läuft die Promise intern weiter, hebt ihr Abschluss den Zustand. |
 | **Überlappende Läufe** | Ein als `laufend` vermerktes Mandat wird vom zweiten Lauf nicht begonnen, sondern als `laeuft-bereits` ausgewiesen; verliert er den Wettlauf erst beim Registrieren, erkennt er den fremden Halter und lässt das Mandat aus. Der **harte** Riegel bleibt der bestehende Lock `crawl-<mandat>` — atomar, fail-closed und in Production nachweislich aktiv (§3a). |
 | **Sperre verweigert** (der andere Lauf hat das Mandat schon) | Keine Verarbeitung, kein Erfolg, kein Fehler, nicht in der Kapazität `k`, kein Abschluss-Schreibvorgang — sichtbar als `lockVerweigert` / `sperreVerweigert=…`. Der Versuchsvermerk bleibt `laufend` und läuft über die Frist ab; danach steht das Mandat wieder vorn (§3a.1). |
 | **Neues Mandat** | Kein Versuch = ältester Versuch → **Rang 1** im ersten Lauf danach. |
@@ -279,10 +286,15 @@ Jeder Lauf schreibt **eine** Protokollzeile — kein neuer Admin-Bereich, keine 
 ```
 [cron/crawl/fairness] geplant=a,b,c,d,e,f begonnen=c,d erfolgreich=1 fehlgeschlagen=1
                       zeitbudget=e,f laeuftBereits=- sperreVerweigert=- naechstes=e
-                      kapazitaet=2 obergrenzeLaeufe=3 zustand=ok
+                      kapazitaet=2 obergrenzeLaeufe=3 lauf=cron-crawl-20260731040100-x7k2q
+                      laufzustand=teilweise zustand=ok
 ```
 
 Bei einem Lauf ohne Kapazität steht dort `kapazitaet=0 obergrenzeLaeufe=keine-garantie`.
+
+`lauf=` und `laufzustand=` verbinden die Zeile mit dem **Laufdatensatz** in der Ablage (§11).
+**Diese Zeile ist seit 2026-07-31 nicht mehr die einzige vollständige Quelle** — fehlt sie
+(äußeres Zeitlimit, Prozessabbruch), trägt der Laufdatensatz denselben Stand.
 
 Dieselben Angaben liegen im Antwortkörper des Crons unter `fairness` (`aktive`, `geplant`,
 `begonnen`, `erfolgreich`, `fehlgeschlagen`, `zeitbudget`, `laeuftBereits`, `wartend[]` mit
@@ -323,7 +335,7 @@ verarbeitet wurden.
 | **R-3** | Der `laufend`-Vermerk ist ein Read-modify-write, kein atomarer Claim. | **Kein Blocker, kein Handlungsbedarf** — der harte, atomare Riegel gegen Doppelverarbeitung ist `crawl-<mandat>` und in Production nachweislich aktiv (§3a). Der Vermerk ist die zweite, ergänzende Schranke; das Fenster für einen verlorenen Vermerk ist auf Lesen→Schreiben begrenzt, wird gegengelesen und wiederholt, und die Folge wäre ein doppelter **Versuch**, kein Datenschaden. |
 | **R-5** | `/api/cron/morning-briefing` hat **keine** eigene Sperre je Mandat (kein Crawl darin). Überlappen zwei Läufe dieses Crons, ist der `laufend`-Vermerk die einzige Schranke. | **Vorbestehend, von diesem Sprint nicht verschlechtert** — vorher gab es dort *überhaupt* keine Schranke. Folge einer Überlappung: ein doppelt gebautes Briefing und ggf. ein doppelter Push, kein Datenschaden (0 KI im Briefing-Aufbau). Regulär nicht auslösbar: der Cron läuft 1×/Tag und ist auf 240 s begrenzt. Kleinste Nachbesserung, falls gewünscht: in `runCronForTenants` den bereits vorhandenen `acquirePipelineLock("cron-<cron>-<mandat>")` um jedes Mandat legen — **bewusst nicht in diesem Sprint**, weil es jedem Mandat je Lauf eine zusätzliche Sperroperation aufbürdet und der Crawl-Pfad sie doppelt hätte. |
 | **R-4** | **Production-Nachweis erbracht, aber nur teilweise bestanden** (2026-07-31, §10). Die Fairnesslogik selbst arbeitet in Production nachweislich korrekt; ein **vollständiger** Zyklus gelang nur beim leichtesten Cron. | Siehe §10. Die frühere Erwartung „über vier reguläre Läufe (04/10/16/20 UTC) sind **alle** aktiven Mandate mindestens einmal begonnen" ist **fachlich falsch** und hiermit korrigiert: der Fairnesszustand ist **je Cron getrennt** (`data.crons[<cronName>]`), jeder Cron rotiert seinen **eigenen** Zyklus. Vier Läufe verschiedener Crons ergeben deshalb keinen gemeinsamen Zyklus. OP-25 bleibt **teilweise abgeschlossen**. |
-| **R-6** | **Beobachtbarkeitslücke bei äußerem Timeout** (neu, 2026-07-31, §10.4). Endet `crawl`/`pipeline` im äußeren `withTimeout(…, 280000)`, kehrt `runCronForTenants` nie zurück — die `[cron/*/fairness]`-Zeile wird **nie geschrieben**. Sichtbar bleibt nur `tenants=undefined bounded=true`. | Die Buchführung selbst bleibt korrekt (der persistente Zustand ist vor der Verarbeitung geschrieben und belegt Versuch/Erfolg je Mandat). Verloren geht die **Telemetrie**: `geplant`, `begonnen`, `zeitbudget`, `kapazitaet`, `obergrenzeLaeufe`, `sperreVerweigert` sind für genau die Läufe unsichtbar, die sie am dringendsten bräuchten. Betroffen 3 von 5 gewerteten Läufen. Behebbar ohne Fairnessänderung (Telemetrie vor der Deadline ausgeben oder das äußere Zeitlimit über das innere heben) — **eigener Sprint, hier nicht umgesetzt**. |
+| **R-6** | **Beobachtbarkeitslücke bei äußerem Timeout** (2026-07-31, §10.4). Endet `crawl`/`pipeline` im äußeren `withTimeout(…, 280000)`, kehrt `runCronForTenants` nie zurück — die `[cron/*/fairness]`-Zeile wurde **nie geschrieben**. Sichtbar blieb nur `tenants=undefined bounded=true`. Betroffen 3 von 5 gewerteten Läufen. | **BEHOBEN im Code (2026-07-31, §11), Production-Nachweis steht aus.** Der Fortschritt wird jetzt bei **jedem Mandatsübergang** persistent fortgeschrieben (Laufdatensatz in derselben `helmut_store`-Zeile), und der äußere Catch vermerkt die Tatsache des Zeitlimits. Die Telemetriezeile darf fehlen, ohne dass Wissen verloren geht. Weder Reihenfolge noch `k` noch ceil(n/k) noch ein Zeitbudget wurden verändert. |
 
 ## 9 · Verbindliche Folgeregel: weitere Testmandate
 
@@ -494,3 +506,135 @@ Begründung — die Fairness ist **nicht** das Problem, die Kapazität ist es:
 Aufteilung des Crawls in mehrere Cron-Slots, Parallelisierung je Mandat, Verkürzung der
 Google-News-Timeouts (OP-15) oder eine eigene Verarbeitungsstufe außerhalb des 300-s-Fensters.
 Erst danach ist die Frage „wie viele Mandate verträgt der Betrieb?" datenbasiert neu zu stellen.
+
+---
+
+## 11 · Telemetrievertrag bei Zeitüberschreitung (R-6, behoben 2026-07-31)
+
+**Was dieser Abschnitt regelt:** was nach einem Mehrmandantenlauf **garantiert** in der Ablage
+steht — auch dann, wenn der Lauf nie zurückkehrt. **Was er ausdrücklich nicht ändert:**
+Reihenfolge, Fairnessgarantie, `k`, `ceil(n/k)`, Zeitbudgets, Cron-Zeiten, Kosten.
+
+### 11.1 · Die Ursache, im Code belegt
+
+| # | Belegte Ursache | Belegstelle |
+|---|---|---|
+| 1 | `withTimeout` ist ein `Promise.race`. Es **beendet die ursprüngliche Promise nicht** — Node kennt kein Cancel. Greift das äußere Zeitlimit, kehrt `runCronForTenants` **nie** zurück; alles danach (Telemetriezeile, `systemError`, Antwortkörper) entfällt. | `server.js` `withTimeout` |
+| 2 | Die **10 s Differenz** (270 000 innen / 280 000 außen) reichen prinzipiell nicht: die innere Deadline ist ein **START**-Gatter (`if (now() + reserveMs > deadline) … continue`), kein **STOPP**-Gatter. Ein bei 269 s begonnenes Mandat darf beliebig lange weiterlaufen — `runSourceCrawl` hat sein eigenes, unabhängiges Budget. Die Überschreitung ist nach oben offen. | `cron-fairness.js` `runTenantsFairly`, Test §21.1 (gemessen: > 400 s über der Deadline) |
+| 3 | Ein **`finally` allein hätte nicht gereicht.** Bei einem echten Plattformabbruch (Vercel beendet/friert die Instanz) läuft die Ereignisschleife nicht weiter: `finally`, `process.on`, Abschlusscode entfallen. Auch die Freigabe der Sperre `crawl-<mandat>` im `finally` von `runSourceCrawl` ist deshalb schon heute nicht garantiert (die TTL räumt auf). | `scheduler.js` `finally`, §3a |
+
+Daraus folgt die Entwurfsregel: **kein Vertrag darf an Abschlusscode am Laufende hängen.**
+
+### 11.2 · Was jetzt wann persistent geschrieben wird
+
+Derselbe Zustand (`helmut_store`-Zeile `<storeId>-cron-fairness`) trägt zusätzlich einen
+kompakten **Laufdatensatz je Cron** unter `laeufe[<cron>]`. **Keine neue Tabelle, keine
+Migration, keine RLS-Änderung, kein zweites System.**
+
+| Zeitpunkt | Was geschrieben wird | Zusätzliches IO |
+|---|---|---|
+| **Laufbeginn** (nach der Planung, vor dem ersten Mandat) | `laufId`, `startAt`, `aktive`, `geplant[]`, `blockiert[]` (mit Ausgang `laeuft-bereits`), `zustandGeladen`/`zustandFehler`, Status `laufend` | **1 Schreibvorgang** |
+| **Vor jedem Mandat** (mit dem Versuchsvermerk) | Ausgang `begonnen` | **0** — huckepack auf den Claim |
+| **Nach jedem Mandat** (mit dem Abschluss) | Ausgang `erfolgreich` / `fehlgeschlagen` | **0** — huckepack auf den Abschluss |
+| **Verweigerte Sperre** | Ausgang `sperre-verweigert` — **nur** `laeufe`, der Mandatseintrag bleibt unberührt (kein erfundener Erfolg, kein erfundener Fehler, §3a.1) | 1, nur bei Überlappung |
+| **Fremder Halter** | Ausgang `laeuft-bereits` | 1, nur bei Überlappung |
+| **Laufende** | Status `abgeschlossen`/`teilweise`, `beendetAt`, `kapazitaet`, `obergrenzeLaeufe`, `naechstesMandat`, `zeitbudget[]` | **1 Schreibvorgang** |
+| **Äußeres Zeitlimit** (Catch in der Route) | `aeusseresTimeoutAt` + Status `abgebrochen` — **nur wenn der Datensatz noch `laufend` ist** | 1, nur im Timeoutfall |
+
+Zusatzkosten im Normalfall: **2 kleine Schreibvorgänge je Lauf** auf einer ~4-KB-Zeile
+(≈ 0,04 % des Zeitbudgets). **Kein KI-Aufruf, keine Kostenwirkung, kein zusätzliches Budget.**
+
+### 11.3 · Der Vertrag
+
+> Nach **jedem** Mandatsübergang existiert ein persistenter Stand, aus dem sich der Ausgang
+> **jedes geplanten Mandats** eindeutig einer dieser Klassen zuordnen lässt:
+> `begonnen` (ohne Abschluss) · `erfolgreich` · `fehlgeschlagen` · `laeuft-bereits` ·
+> `sperre-verweigert` · `zeitbudget` · **kein Ausgang = nicht begonnen**.
+
+`cron-fairness.rekonstruiereLauf(state, cronName)` rechnet daraus die vollständige
+Telemetriezeile nach — einschließlich `kapazitaet` (= Anzahl der Mandate mit Ausgang
+`begonnen`/`erfolgreich`/`fehlgeschlagen`) und `obergrenzeLaeufe` (= `ceil(n/k)`).
+Getestet wird beides **gegeneinander**: für einen vollständigen Lauf müssen Rekonstruktion
+und gemeldete Telemetrie identisch sein (§21.2).
+
+**Laufzustand — eindeutig ableitbar:**
+
+| Zustand | Wann | Wie erkannt |
+|---|---|---|
+| `laufend` | Lauf schreibt noch fort | Status `laufend`, `standAt` jünger als `HELMUT_CRON_FAIRNESS_STALE_MS` (30 min) |
+| `abgeschlossen` | jedes geplante Mandat kam zu einem Ausgang, keines fiel dem Zeitbudget zum Opfer | `beendetAt` gesetzt |
+| `teilweise` | Lauf regulär beendet, aber ≥ 1 geplantes Mandat aus **Zeitmangel** nicht begonnen | `beendetAt` gesetzt + `zeitbudget[]` nicht leer |
+| `abgebrochen` | äußeres Zeitlimit **oder** Prozessabbruch | entweder `aeusseresTimeoutAt` gesetzt, **oder** Status `laufend` **und** `standAt` älter als die Frist — **abgeleitet, nicht behauptet** |
+
+**Warum ein Prozessabbruch keinen erfundenen Erfolg erzeugen kann:** ein Abschluss entsteht
+**nur** durch einen Schreibvorgang. Bleibt er aus, bleibt der Datensatz `laufend` — und ein
+veraltetes `laufend` **ist** die Abbruchmeldung. Es gibt keinen Pfad, auf dem Abwesenheit von
+Information zu „fertig" wird.
+
+**Warum der äußere Catch nichts erfindet:** `laufTimeoutPatch` hält **eine** Tatsache fest —
+„zum Zeitpunkt X hatte der Lauf noch nicht zurückgegeben." Er behauptet nicht, dass die
+Promise beendet wurde. Läuft sie intern weiter und schreibt später ihren Abschluss, **hebt
+dieser den Zustand** (monotone Rangfolge `laufend < abgebrochen < teilweise/abgeschlossen`),
+und `aeusseresTimeoutAt` bleibt als Tatsache daneben stehen.
+
+### 11.4 · Warum diese Ablage — und nicht `process_runs`
+
+| Kandidat | Bewertung |
+|---|---|
+| **Fairnesszeile `<storeId>-cron-fairness`** (gewählt) | Existiert, ein Schreiber, ~4 KB, monotone Verschmelzung, Versionsschranke, DSGVO-Löschung bereits verdrahtet. Der Laufdatensatz steht **neben** derselben Buchführung, die er beschreibt — **keine zweite, konkurrierende Wahrheit.** |
+| `process_runs` (relational) | **Nicht nutzbar ohne Freigabe:** kanonisch nur bei `HELMUT_PROCESS_RUNS_RELATIONAL` (Default **AUS**); Flags scharfzuschalten ist freigabepflichtig (`CLAUDE.md` §5). |
+| `process_runs` (Blob-Rückfallpfad) | Schreibt den **Auth-Blob** — genau der Last-Write-Wins-Pfad (Befund **W-2**) und 1,24 MB je Schreibvorgang **mitten im geschützten Zeitbudget**. Aus demselben Grund schon in §7 verworfen. |
+| **Beide kombiniert** | Erzeugt zwei Quellen für dieselbe Aussage. Ausdrücklich vermieden. |
+| Neue Tabelle | Migration = Freigabegate; der Fix wäre bis dahin wirkungslos. Unnötig, weil die vorhandene Ablage den Vertrag trägt. |
+
+### 11.5 · Wachstumsgrenzen (der Zustand ist eine Notiz, kein Archiv)
+
+- **Genau ein** Laufdatensatz je Cron — der letzte. 40 Läufe hinterlassen einen (Test §21.10).
+- Höchstens `MAX_LAUF_CRONS = 12` Datensätze; die ältesten fallen weg.
+- Höchstens `MAX_LAUF_MANDATE = 200` Kennungen je Datensatz.
+- Datensätze, die seit `LAUF_RETENTION_MS` (14 Tage) niemand fortschreibt, fallen weg.
+- Gemessen: **< 8 KB** bei 6 Mandaten und 40 Läufen.
+- **DSGVO:** `withoutTenant` entfernt die Kennung eines Mandats auch aus `geplant`,
+  `blockiert` und `ausgaenge`. Inhalt bleiben ausschließlich pseudonyme Kennungen,
+  Zeitstempel, Zähler und Statuswörter — keine Inhalte, keine PII, keine Roh-Fehlertexte.
+
+### 11.6 · Der Preis: eine erhöhte Schemaversion
+
+`FAIRNESS_VERSION` steigt von **1 auf 2**. Das ist **Pflicht**, nicht Kosmetik: ein Codestand
+der Version 1 kennt `laeufe` nicht und würde den Bereich beim Verschmelzen **still verwerfen**
+(Weißliste in `normalizeState`) — genau dagegen wirkt Schranke 2 in `saveCronFairnessState`.
+
+**Folge im Rolloutfenster:** läuft während des Deployments noch eine Instanz mit Version 1 und
+startet dort ein Cron, **verweigert sie den Schreibvorgang** (`zustand-neuere-version-2`). Das
+ist der bereits getestete Fail-safe-Pfad: der Lauf verarbeitet weiter, meldet
+`fairnessGestoert: true`, schreibt einen `systemError` und `zustand=gestoert` ins Protokoll.
+Die Rotation bleibt unbeschädigt (nicht begonnene Mandate bleiben vorn). **Laut und begrenzt**
+ist hier bewusst besser als **still und dauerhaft** (`CLAUDE.md` §4.4).
+
+### 11.7 · Was dieser Sprint ausdrücklich NICHT tut
+
+Reihenfolge, Losentscheid, `k`, `ceil(n/k)`, Rotation, Zeitbudgets (270 000 / 240 000 ms),
+äußere Zeitlimits (280 000 ms), Funktionslimit (300 s), Cron-Zeiten, Kostenbudgets, Quellen,
+Flags, Mandatszahl — **alles unverändert.** Der **Kapazitätsblocker aus §10.5/§10.7 bleibt
+vollständig offen**; dieser Sprint macht ihn nur zuverlässig **messbar**, er behebt ihn nicht.
+
+### 11.8 · Späterer Production-Nachweis (rein lesend, nach einem Merge)
+
+**Noch nicht durchgeführt.** Zu beobachten sind die reguläre Kadenz aus `vercel.json` —
+`crawl` 04:00/20:00 UTC · `morning-briefing` 05:00 · `lage-check` 10:00 · `pipeline` 16:00 —
+über **mindestens 24 h nach einem `READY`-Deployment**, davon mindestens **ein Lauf mit
+äußerem Zeitlimit** (bei `crawl`/`pipeline` derzeit der Regelfall, 3 von 5).
+
+| # | Prüfpunkt | Quelle (rein lesend) |
+|---|---|---|
+| 1 | Persistenter Fortschritt stimmt mit den sichtbaren Mandatsausgängen überein | `SELECT data FROM helmut_store WHERE id='<storeId>-cron-fairness'` → `laeufe[<cron>]` gegen `crons[<cron>]` |
+| 2 | Ein Lauf mit äußerem Zeitlimit bleibt vollständig rekonstruierbar | Runtime-Log `[cron/*] …ms tenants=undefined bounded=true lauf=<laufId>` → derselbe `laufId` im Laufdatensatz, mit `aeusseresTimeoutAt` und vollständigem `geplant`/`ausgaenge` |
+| 3 | Kein erfundener Erfolg | kein Mandat trägt `erfolgreich`, dessen Mandatseintrag kein `letzterErfolgAt` mit dieser Laufkennung hat |
+| 4 | Kein Verlust der Fairnessrotation | Reihenfolge weiterhin nicht alphabetisch; nicht begonnene Mandate rücken im Folgelauf vor; `ceil(n/k)` stimmt mit `kapazitaet` |
+| 5 | Keine neuen Locks oder Laufzeitfehler | Vercel-Runtime-Logs: keine neuen DB-/Sperr-/Fairnessfehler, `zustand=ok`; `pipeline_locks` unauffällig |
+| 6 | `crawl`, `pipeline`, `lage-check` liefern nachvollziehbare Zustände | je Cron genau ein Laufdatensatz mit Status `abgeschlossen`, `teilweise` oder `abgebrochen` — **nie** ein dauerhaft veraltetes `laufend` ohne ableitbaren Abbruch |
+| 7 | Kein Wachstum der Zeile | Länge von `data` bleibt in derselben Größenordnung (~4–8 KB) |
+
+**Erwartete Abweichung, die kein Fehler ist:** im ersten Lauf nach dem Deployment kann
+`zustand=gestoert` / `zustand-neuere-version-2` auftreten, falls parallel noch eine
+Vorgänger-Instanz einen Cron bedient (§11.6). Einmalig und auf das Rolloutfenster begrenzt.
