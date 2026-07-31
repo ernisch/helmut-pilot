@@ -2,10 +2,16 @@
 
 **Kanonische Nachweisdokumentation.** Stand: **2026-07-31** (25A-Sprint plus
 Production-Nachprüfungen vom 30./31.07.).
-Zustand: **teilweise abgeschlossen** — 25A vollständig belegt; von den 17
-Abnahmekriterien für 25B sind **16 erfüllt**, das Deployment-`READY` ist inzwischen
-belegt. Offen ist allein ein regulärer Lauf **des Pilotmandanten** mit veränderter
-Eingabe — blockiert durch **Befund B25-2** (§6c): der Fix von PR #185 verändert nur
+Zustand: **ERFOLGREICH ABGESCHLOSSEN (2026-07-31)** — 25A und 25B vollständig
+belegt, **alle 17 Abnahmekriterien erfüllt**. Der lange offene Punkt (ein regulärer
+Lauf **des Pilotmandanten** mit verändertem Eingabefingerabdruck) ist am
+**2026-07-31 um 16:04:28 UTC** eingetreten, nachdem die Rezeptanhebung aus PR #190
+den in **Befund B25-2** (§6c) beschriebenen Idempotenz-Riegel gelöst hat. Nachweis
+rein lesend: [`../../scripts/punkt25b-production-nachweis.js`](../../scripts/punkt25b-production-nachweis.js)
+— **23 von 23 Prüfungen grün** (§6d).
+
+**Historische Einordnung** (der Absatz darunter beschreibt den Stand VOR dem
+2026-07-31 und bleibt als Beleg stehen): der Fix von PR #185 veränderte nur
 `matched_features`, und die gehen bewusst nicht in den Idempotenz-Fingerabdruck ein,
 weshalb der Pilotlauf am 30.07. um 20:04 UTC idempotent blieb und die falschen
 Alt-Zeilen (inkl. Rang 1) stehen ließ.
@@ -19,9 +25,10 @@ kanonisch begründet und deterministisch belegt in
 sich der Eingabefingerabdruck **jedes** Mandanten genau einmal; der nächste
 **reguläre** Lauf rechnet neu und löst die falschen Alt-Zeilen ab, danach ist wieder
 alles idempotent. **Kein manueller Lauf, kein Backfill, kein Schreibzugriff.**
-**25B bleibt offen** — der rein lesende Nachweis am tatsächlich erfolgten regulären
-Lauf des Pilotmandanten steht weiterhin aus (§6b/§6-Folgeauftrag); er ist jetzt
-allerdings terminlich absehbar statt unbestimmt.
+**Nachtrag 2026-07-31, 16:05 UTC: 25B ist damit ERFÜLLT.** Der reguläre `crawl`-Cron
+erreichte den Pilotmandanten um **16:04:28 UTC** — knapp 5½ Stunden nach dem
+Deployment — und rechnete ihn wie vorhergesagt **genau einmal** neu. Messung und
+Kriterienabgleich: §6d.
 
 ---
 
@@ -227,13 +234,14 @@ ausschließlich 34 · `decisions`-Abgleich 10/10 exakt.
 | Keine Production-Schreibzugriffe durch den Nachweis | ✅ ausschließlich `GET` |
 | **Lauf gehört zum aktiven Pilotmandanten** | ❌ **offen** — der Lauf gehört einem anderen Mandanten (OP-25-Rotation) |
 
-### 6b · Was noch fehlt
+### 6b · Der zuletzt offene Beleg — jetzt erbracht
 
-Genau ein Beleg: **ein vollständig abgeschlossener regulärer Lauf des
+Genau ein Beleg fehlte: **ein vollständig abgeschlossener regulärer Lauf des
 Pilotmandanten nach dem Deployment**, mit Ablösung seiner **2** falschen Alt-Zeilen
 (darunter der **Rang-1**-Fall „Betrifft deinen Ausschuss Arbeit und Soziales und
 deine Partei Die Linke." auf einem Vorgang der Ebene `land`) und 0 neuen falschen
-Belegen.
+Belegen. **Am 2026-07-31 um 16:04:28 UTC ist er eingetreten** — die Rang-1-Karte
+trägt jetzt „Betrifft deine Partei Die Linke.". Vollständige Messung: §6d.
 
 Stand der 5 falschen Alt-Zeilen (alle `aktuell=true`, alle vor dem Deployment
 gerechnet, **unverändert sichtbar**): 2 beim Pilotmandanten (Ränge 1 und 15,
@@ -309,6 +317,61 @@ ob weiter abgewartet wird oder ob eine der freigabepflichtigen Optionen die
 Neuberechnung auslösen soll. Ohne diese Entscheidung ist ein Abschlusstermin für
 25B nicht zusagbar.
 
+### 6d · Der erbrachte Nachweis (2026-07-31, rein lesend)
+
+**Werkzeug:** [`../../scripts/punkt25b-production-nachweis.js`](../../scripts/punkt25b-production-nachweis.js).
+Schreibschutz strukturell wie bei der 27A-2-Messung: genau **eine** HTTP-Funktion mit
+GET-**Literal**, Pfad-Allowlist ohne `rpc`, `storage.js` wird nicht geladen. Mandanten
+pseudonymisiert (`BT-01`…), keine Klarnamen, keine Rohtexte. **0 KI-Aufrufe, 0,00 USD,
+kein manueller Lauf, kein Trigger, kein Schreibzugriff.**
+
+**Zeitachse (alles UTC):** Merge PR #190 `bd7c889` → Deployment
+`dpl_BK8WrEEPw3HxmXJfu2pT2eNSNGLv` (production, `helmut-pilot.vercel.app`, `fra1`)
+**READY 10:43:27** → Vorher-Messung 11:05 → regulärer `crawl`-Cron **16:04:28**
+(Ende 16:04:29) → Nachweis-Messung 16:07.
+
+**Vorher/Nachher am Pilotmandanten (BT-02):**
+
+| | vorher (11:05 UTC) | nachher (16:07 UTC) |
+|---|---|---|
+| Rezeptversion der Zeilen | `legacy_relevance_v1` | **`legacy_relevance_v2`** |
+| Eingabefingerabdruck | `160cd166…` | **`56d40016…`** (gewechselt) |
+| Laufzeile | 2026-07-30 07:56:54, `wiederholungen=1` (idempotent — genau B25-2) | 2026-07-31 16:04:28, **`wiederholungen=0`, 20 Zeilen veröffentlicht** |
+| falsche Ausschussbelege | **2** (Rang 1 und 15, Vorgangsebene `land`, „Arbeit und Soziales") | **0** |
+| Rang-1-Begründung | „Betrifft deinen Ausschuss Arbeit und Soziales und deine Partei Die Linke." | **„Betrifft deine Partei Die Linke."** |
+
+**23 von 23 Prüfungen grün** — regulärer Cron-Auslöser · vollständig abgeschlossen ·
+aktives Bundestagsmandat · **echte neue Generation** (nicht `wiederholungen+1`) ·
+Zeitreihenfolge Deployment < Start < Ende · Rezeptversion angehoben ·
+Fingerabdruckwechsel · Engine-/Vektorversion **unverändert** · Laufkennung an jeder
+Zeile · Lauffingerabdruck an jeder Zeile · Mandantenzuordnung · Ränge 1–20 lückenlos ·
+je Vorgang genau **eine** aktuelle Zeile · `berechnet_am` im Laufzeitraum ·
+**kein falscher Ausschussbeleg** (je Zeile mit der echten `ausschussBelegZulaessig`
+nachgerechnet, 0 von 20) · kein Beleg bei fehlender/unbekannter Ebene (fail-closed) ·
+sichtbare Erklärung deckt sich je Beleg nach **Art und Wert** mit den persistierten
+Merkmalen · Belegpflicht · Begründung persistiert · Signale persistiert ·
+Entscheidungen vorhanden und mandantenrein (322) · Lauf ohne Fehlereintrag.
+
+**Bestandswirkung:** im **gesamten** Production-Bestand jetzt **0** falsche
+Ausschussbelege. Alt-Zeilen sind **abgelöst, nicht gelöscht** (BT-02: 57 abgelöst,
+20 aktuell) — die Historie bleibt prüfbar.
+
+**Ehrliche Korrektur zur früheren Zählung:** §6b nannte **5** falsche Belege
+(2 Pilot + 3 zweiter Mandant). Zum Messzeitpunkt 11:05 UTC waren es nur noch **2** —
+die 3 des zweiten Mandanten hatte ein natürlicher Lauf am 30.07. um 16:04 UTC bereits
+abgelöst. Die Zahl 5 galt am 31.07. um 00:45 UTC und war zum Zeitpunkt der
+Rezeptanhebung überholt.
+
+**Zwei benannte Nebenbeobachtungen (kein Mangel dieses Nachweises):**
+- **B25-3:** Zwei aktive Bundestagsprofile (`BT-05`, `BT-06`) tragen 47 bzw. 30
+  aktuelle Zeilen **ohne** `rezept_version` und ohne Laufzeile — Altbestand aus der
+  Zeit vor der Auditpersistenz (`matching_runs` hat erst 6 Zeilen). Sie tragen
+  **keine** falschen Ausschussbelege. Sie werden bei ihrem nächsten regulären Lauf
+  regulär neu gerechnet; ein Backfill ist dafür nicht nötig und wurde nicht gemacht.
+- Die Rezeptanhebung wirkt **je Mandant genau einmal**; zum Messzeitpunkt standen
+  **5 von 6** Profilen noch auf dem alten Stand und werden bei ihrem jeweils nächsten
+  regulären Lauf nachgezogen. Das ist der vorhergesagte, erwünschte Verlauf.
+
 ## 7 · Sicherheitsgrenzen, Datenschutz, unveränderte Bereiche
 
 - **Keine Änderung an aktiver Produktionslogik, Datenmodell, Migration, Cron,
@@ -369,8 +432,18 @@ Neuberechnung auslösen soll. Ohne diese Entscheidung ist ein Abschlusstermin f�
    Die verworfenen Alternativen bleiben dokumentiert: weiter abwarten (Termin nicht
    zusagbar) · gezielter Neulauf des Piloten (manueller Lauf) · Backfill
    (Production-Schreibzugriff) — **keine davon wurde ausgeführt oder vorbereitet.**
-2. Sobald eine echte neue Generation des Piloten vorliegt: Folgeauftrag 25B aus §6
-   ausführen (rein lesend). **Erst danach darf Zeile 25 auf ✅ gehen** — die
-   restlichen 16 Kriterien sind bereits belegt.
+2. ~~Sobald eine echte neue Generation des Piloten vorliegt: Folgeauftrag 25B aus §6
+   ausführen (rein lesend).~~ — **erledigt am 2026-07-31, 16:04:28 UTC** (§6d):
+   23 von 23 Prüfungen grün, alle 17 Abnahmekriterien erfüllt. **Checklisten-Zeile 25
+   steht auf ✅**; Stand der Phase-1-Checkliste damit 14 ✅ · 12 ⏳ · 4 ☐.
 3. Unabhängig davon: PR #187 (Punkt 29A) wartet vereinbarungsgemäß auf den
    25B-Abschluss und ist danach auf den neuen `main` zu rebasen.
+
+3. **Punkt 25 ist abgeschlossen.** Offen bleiben getrennt davon: **29B** (rein
+   lesender Production-Nachweis der Fehlerpfade, wartet auf natürlich auftretende
+   Fehlerzustände — künstliche Fehler sind verboten), die Nachziehung der übrigen
+   **5 von 6** Mandanten auf die neue Rezeptversion durch ihre jeweils nächsten
+   regulären Läufe (kein Handlungsbedarf, nur Beobachtung) sowie die benannten
+   Beobachtungen **B25-1** (Lage-Sortierung nach Ähnlichkeit statt Entscheidungsstufe),
+   **B25-3** (Altbestand ohne Rezeptversion, §6d) und **B25-F1** (flatternde
+   `werkzeug-lesefehler-test.js` unter Last).

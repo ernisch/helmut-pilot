@@ -275,13 +275,25 @@ const ok = (b) => (b ? "✅" : "❌");
     pruefe("Kein Ausschussbeleg bei fehlender/unbekannter Vorgangsebene (fail-closed)", ohneEbene.length === 0, `${ohneEbene.length}`);
 
     // Sichtbare Erklaerung == persistierte Felder (deterministisch nachgerechnet).
+    // `belege` sind Objekte { art, text } — jeder sichtbare Beleg muss ein
+    // persistiertes Merkmal DERSELBEN Art haben und dessen Wert im Text tragen.
+    // Damit kann die Oberflaeche keinen Bezug zeigen, der nicht in den Daten steht.
     const erklaerungOk = laufZeilen.every((r) => {
       const e = erklaerung.erklaerungAusErgebnis(r);
       if (!e) return true;
-      const belegWerte = (r.matched_features || []).map((f) => String(f && f.value));
-      return (e.belege || []).every((b) => belegWerte.some((v) => String(b).includes(v) || v.includes(String(b))));
+      const merkmale = r.matched_features || [];
+      return (e.belege || []).every((b) => {
+        const text = String((b && b.text) || "");
+        return merkmale.some((f) => f && f.type === (b && b.art) && text.includes(String(f.value)));
+      });
     });
-    pruefe("Sichtbare Erklaerung deckt sich mit den persistierten Merkmalen", erklaerungOk);
+    pruefe("Sichtbare Erklaerung deckt sich mit den persistierten Merkmalen (Art und Wert je Beleg)", erklaerungOk);
+    // Gegenrichtung: eine Erklaerung ohne jeden Beleg darf es nicht geben
+    // (Belegpflicht — dann liefert erklaerungAusErgebnis `null`).
+    pruefe("Belegpflicht: keine Erklaerung ohne Beleg", laufZeilen.every((r) => {
+      const e = erklaerung.erklaerungAusErgebnis(r);
+      return e === null || (Array.isArray(e.belege) && e.belege.length > 0);
+    }));
     pruefe("Jede Zeile traegt eine persistierte Begruendung oder ehrlich keine",
       laufZeilen.every((r) => r.begruendung === null || typeof r.begruendung === "string"));
     pruefe("Signale sind persistiert", laufZeilen.every((r) => r.signale && typeof r.signale === "object"));
