@@ -3625,3 +3625,130 @@ das **nicht**. Die Berliner Suite ist von diesem Sprint fachlich nicht berührt.
 
 **Rückweg:** `git revert` der Commits, Redeploy. Es gibt keinen Datenstand, der
 zurückzudrehen wäre — nichts wird gelöscht, nichts migriert.
+
+---
+
+## 53 · Rezeptversion `legacy_relevance_v1` → `v2` (Befund B25-2, 2026-07-31)
+
+**Kanonisch für die Anhebung.** Basis: `main` = `071f91c` (Merge PR #188),
+Production-Deployment `dpl_3LESACWZLhCYGis6Zh5ckRMMpRov` **READY** 01:37:56 UTC.
+Nachweisvertrag: [`scripts/matching-rezeptversion-v2-test.js`](../scripts/matching-rezeptversion-v2-test.js) — **39/39**.
+
+### 53.1 Warum die Anhebung fachlich richtig ist
+
+Die Versionsachse ist in `matching-contract.js` definiert als
+*„`rezept_version` — NACH WELCHER Regel (Merkmale, Gewichte, Auswahl)"*.
+
+Der 27A-2-Fix (§52) hat genau diese Regel geändert: `ausschussBelegZulaessig`
+entscheidet, **welche Merkmale überhaupt als Ausschussmitgliedschaft zählen**, und
+gibt seither für ein Bundesmandat bei einem Vorgang der Ebene `land`/`kommune`
+`false` zurück, wo vorher `true` stand. **Dieselbe Eingabe erzeugt seither ein
+anderes Ergebnis** (`matched_features`, Signale, Begründung, Entscheidungsgewicht
+34). Das ist per Definition dieser Achse eine Rezeptänderung.
+
+Die Anhebung war in PR #185 unterblieben. Ihr Fehlen ist die belegte Ursache von
+**Befund B25-2** ([`roadmap/punkt-25-e2e-nachweis.md`](roadmap/punkt-25-e2e-nachweis.md) §6c):
+`matched_features` gehen bewusst **nicht** in `computeInputFingerprint` ein, also
+löste der Fix keine Neuberechnung aus — vor dem Fix gerechnete Zeilen tragen
+weiterhin falsche Ausschussbelege, sichtbar bis hinauf auf **Rang 1** des
+Pilotmandanten. Ein Zeitpunkt für eine Ablösung „von selbst" war nicht zusagbar.
+
+### 53.2 Abgrenzung zur Gegenentscheidung in §36 (kein Widerspruch)
+
+§36 hat eine Anhebung **abgelehnt** — für einen **anderen** Fix:
+
+| | §36 (Erklärungsabdeckung, Befund M-7) | §53 (Zuständigkeitsregel, Befund 27A-2) |
+|---|---|---|
+| Was sich änderte | das **Ladefenster** — das Rezept sah seinen Eingang nicht | die **Regel selbst** |
+| Gleiche Eingabe, gleiches Ergebnis? | **ja** — das Rezept rechnete exakt wie vorher | **nein** — anderes Ergebnis |
+| Fingerabdruck reagiert von allein? | **ja**, über `ko_eingabe_hash` `null` → echter Hash | **nein**, `matched_features` gehen nicht ein |
+| Anhebung wäre … | eine **falsche** Aussage im Auditprotokoll | die **richtige** Aussage; sie zu unterlassen ist die falsche |
+
+Beide Entscheidungen folgen derselben Regel: *die Version sagt die Wahrheit über das
+Verfahren.* In §36 hieß das nicht anheben, hier heißt es anheben. Ohne Anhebung
+wären alte und neue Ergebnisse in derselben Tabelle nicht mehr trennbar — genau
+der Zustand, den §4.5 (i) als „stärksten Einzelgrund für 23B" benennt.
+
+### 53.3 Umfang der Änderung
+
+**Eine Zeile Produktionscode:** `LEGACY_RECIPE_VERSION` in
+`lib/helmut/matching-contract.js`. **Nur die Rezeptachse** — `LEGACY_ENGINE_VERSION`
+(`legacy-shadow-1`), `legacyVectorVersion` (`feature-hash-256-v1`) und
+`AUDIT_SCHEMA_VERSION` (`matching-audit-1`) bleiben unverändert (A3/A4 des
+Vertrags). Keine Migration, kein Backfill, kein Datenmodell, kein Flag, kein Cron.
+
+### 53.4 Was deterministisch bewiesen ist
+
+| # | Aussage | Beleg |
+|---|---|---|
+| 1 | Die neue Rezeptversion **verändert den Eingabefingerabdruck** | B1–B5: an allen drei Stellen, an denen die Version eingeht (Eingabehash je Objekt · Kandidatenhash · Feld `rezept` im kanonischen Objekt); bei sonst identischer Laufbeschreibung |
+| 2 | Bestehende Ergebnisse werden **beim nächsten regulären Lauf neu berechnet** | C1–C7 am echten `runMatchingShadow` mit echtem `matching-audit`: Altstand unter v1 → **Gegenprobe C2**: ohne Anhebung bleibt der Folgelauf idempotent (= B25-2) → mit Anhebung **nicht** idempotent, neue Generation, alle Zeilen tragen v2, je Vorgang genau **eine** aktuelle Zeile |
+| 3 | Die **Ausschussbelege folgen der korrigierten Logik** | E1–E6: Bund × Bundesvorgang → Beleg; Bund × Landesvorgang mit gleichem Ausschuss-Stamm → **kein** Beleg; fachlicher Bezug bleibt als `thema`; Begründung behauptet keine Mitgliedschaft; E5 zeigt, dass die **Regel** unter v1 identisch war — die Anhebung ändert sie nicht, sie macht die Ablösung möglich |
+| 4 | Ein identischer Folgelauf ist **wieder idempotent** | D1–D4: zweiter und dritter Lauf unter v2 idempotent, 0 Ergebniszeilen, nur `wiederholungen` steigt → die Anhebung wirkt **genau einmal je Mandant** |
+| 5 | **Keine Regression für andere Mandanten** | F1–F6: zweiter Mandant ebenfalls genau einmal neu gerechnet; **Feld-für-Feld byte-identisch** außer Versions-/Laufmetadaten; Ähnlichkeit und Rang unverändert (**die Kartenreihenfolge kippt nicht**); Mandantentrennung; danach idempotent. Zusätzlich Golden-Satz **0a3**: der Unterschied v1→v2 liegt ausschließlich in `rezept_version` und `ko_eingabe_hash` |
+
+**Golden-Anker versionsexplizit:** Die Bundestagsprojektion trägt `rezept_version`
+und den davon abgeleiteten `ko_eingabe_hash`, ihre Hashes ändern sich durch die
+Anhebung zwangsläufig. Damit der Wächter „außerhalb der Regel hat sich nichts
+bewegt" **nicht verlorengeht**, gelten die ursprünglichen Anker
+(`48d761b7…` / `3d4e2222…`) unverändert weiter — nachgerechnet unter `v1`
+(0a/0b) — und die v2-Stände sind zusätzlich verankert (0a2). Die Anker wurden
+also **nicht** neu gesetzt, sondern ergänzt.
+
+### 53.5 Kosten, sichtbare Wirkung, Rückweg
+
+**Kosten: 0 KI-Aufrufe, 0,00 USD.** Matching ist ein reiner Rechenpfad; im
+gesamten Vertragslauf wird kein KI-Modul geladen (G1/G2). Die einmalige
+Neuberechnung kostet je Mandant einen Matchinglauf innerhalb eines ohnehin
+stattfindenden regulären Crons — **kein zusätzlicher Lauf, kein manueller Lauf**.
+
+**Schreibvolumen, einmalig:** 6 aktive Bundestagsprofile × je 1 `matching_runs`-Zeile
++ je bis zu 20 `matching_results`-Zeilen (Top-N) = **≤ 126 Zeilen**, verteilt über
+die reguläre Rotation (OP-25). Danach ist jeder Mandant wieder idempotent.
+
+**Sichtbare Wirkung:** Die **5** heute noch sichtbaren falschen Ausschussbelege
+werden abgelöst — 2 beim Pilotmandanten (darunter die **Rang-1**-Karte „Betrifft
+deinen Ausschuss … " auf einem Vorgang der Ebene `land`), 3 bei einem zweiten
+Mandanten. Für die betroffenen Paare sinkt der Score um **34**; nach der Messung zu
+§51 wechselt die Mehrzahl davon die Entscheidungsstufe (13 von 14 der damals
+qualifizierten Fälle). **Ähnlichkeit, Rang und damit die Kartenreihenfolge bleiben
+unverändert** (F3) — es verschwinden Belege und Dringlichkeit, keine Karten.
+
+**Rückweg — belegt, nicht behauptet (H1–H3):** `git revert` der Anhebung. Der
+nächste Lauf findet dann wieder den **alten v1-Lauf** in der append-only-Historie,
+ist damit **idempotent** und erzeugt keine dritte Generation. **Der Rückweg macht
+die Korrektur nicht rückgängig:** bereits neu gerechnete Zeilen behalten ihre
+korrigierten Werte. Er stoppt also nur weitere Neuberechnungen und beschädigt
+nichts. Ein Zurückdrehen der Daten selbst wäre ein Backfill — bewusst nicht
+Gegenstand dieses Sprints.
+
+### 53.6 CI
+
+**Beide Pflicht-Checks grün** auf PR #190, Lauf `30597982288` (2026-07-31, 02:04 UTC):
+`Syntax + Offline-Suiten` ✅ · `Browser-/Mobile-Smoke (Chromium)` ✅.
+Damit ist auch belegt, dass der lokale Fehlschlag `p1-security-check.js`
+**umgebungsbedingt** war: er tritt im CI nicht auf und trat lokal bei
+**identischem Code** in zwei Verzeichnissen mit unterschiedlichen Fehlschlaglisten
+auf.
+
+**Ehrlich benannt: ein Neulauf war nötig.** Der erste CI-Lauf des reinen
+**Doku**-Commits (`c7d212a`) war rot — `werkzeug-lesefehler-test.js`, 42 PASS / 1 FAIL.
+Der Commit davor (`bc65ed3`) war mit **identischem Produktionscode** grün, und der
+Doku-Commit ändert keine Zeile Code; die Suite prüft Storage-Werkzeuge und hat mit
+der Rezeptversion fachlich nichts zu tun. Lokal **6 von 6** Läufen grün (43/43),
+zuvor flatterte dieselbe Suite bereits einmal auf der **Basislinie** `origin/main`.
+Sie startet Kindprozesse gegen lokale HTTP-Doppel und misst deren Exit-Codes — das
+ist lastempfindlich. Nach `rerun_failed_jobs` grün.
+
+**Benannte Beobachtung B25-F1** (kein Befund dieses PRs, kein Fix hier):
+`werkzeug-lesefehler-test.js` ist unter Last flatteranfällig — dasselbe Muster wie
+**B29-F1** (`berlin-e2e-vertrag-test.js`). Beide gehören in eine eigene kleine
+Aufgabe „lastfeste Testdoppel", nicht in diesen Sprint.
+
+### 53.7 Was dieser Sprint NICHT tut
+
+Kein manueller Lauf · kein Backfill · kein Production-Schreibzugriff · keine
+Datenkorrektur · keine Migration · keine Sonderbehandlung des Pilotmandanten (die
+Anhebung wirkt mandantenneutral für **alle**) · keine künstlichen Fehler für 29B ·
+keine Änderung an Cron, Flags, Budget, Quellen oder Env · Berlin/Brandenburg/M8
+unverändert AUS · kein Merge.
