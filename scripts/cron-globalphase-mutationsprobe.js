@@ -123,9 +123,11 @@ const PROBEN = [
   {
     name: "M8 · das alte Verhalten aendert sich bei deaktiviertem Flag",
     invariante: "ohne Flag exakt der bisherige Aufruf",
+    // K2.1 (2026-07-31): die Pfadwahl liegt jetzt in `waehleCronPfad()`. Die Mutation ist
+    // dieselbe geblieben — der Alt-Zweig fuehrt statt `runSourceCrawl` die globale Phase aus.
     mutiere: (b) => ersetze(b, "server.js",
-      "  if (!cronGlobalphase.globalPhaseEnabled()) {\n    return runCronForTenants(cronName, (tenantId) => runSourceCrawl(tenantId), { deadlineMs, runId });\n  }",
-      "  if (!cronGlobalphase.globalPhaseEnabled()) {\n    return runCronMitGlobalerPhase(cronName, { deadlineMs, runId, startedMs });\n  }")
+      "  if (wahl.pfad === \"alt\") {\n    return runCronForTenants(cronName, (tenantId) => runSourceCrawl(tenantId), { deadlineMs, runId });\n  }",
+      "  if (wahl.pfad === \"alt\") {\n    return runCronMitGlobalerPhase(cronName, { deadlineMs, runId, startedMs });\n  }")
   },
   {
     name: "M9 · die Landesmodulsperre wird bei der Vereinigung umgangen",
