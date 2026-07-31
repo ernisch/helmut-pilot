@@ -183,6 +183,16 @@ function goldenProjektion(profile = GOLDEN_BUND_PROFILE) {
   raus.__ko_vektoren = Object.fromEntries(GOLDEN_KOS.map((k) => [k.id, m.embedKnowledgeObject(k)]));
   return JSON.stringify(raus, null, 1);
 }
+// Die Projektion traegt `rezept_version` und den davon abgeleiteten
+// `ko_eingabe_hash` — eine Anhebung der Rezeptversion veraendert die Hashes
+// deshalb zwangslaeufig. Damit der eigentliche Waechter ("ausser der Regel hat
+// sich nichts bewegt") dabei NICHT verlorengeht, sind die Anker seit der
+// Anhebung v1 -> v2 VERSIONSEXPLIZIT: die urspruenglichen, auf `d9006c1` bzw.
+// nach dem 27A-2-Fix erhobenen Werte gelten unveraendert weiter, wenn man die
+// Projektion unter `legacy_relevance_v1` rechnet. Sie sind damit weiterhin ein
+// echter Beweis und nicht bloss neu gesetzt.
+const REZEPT_V1 = "legacy_relevance_v1";
+const REZEPT_V2 = "legacy_relevance_v2";
 // Auf dem Stand d9006c1 (VOR dem 27A-1-Fix) erhoben — siehe Anleitung oben.
 const GOLDEN_BUND_HASH = "48d761b7033ecc92721d4566de5975b5f4525e4df7b085bf8621823d60bee387";
 // Nach dem 27A-2-Fix erhoben. Friert das NEUE Bundesverhalten ein.
@@ -190,21 +200,50 @@ const GOLDEN_BUND_HASH = "48d761b7033ecc92721d4566de5975b5f4525e4df7b085bf862182
 // `48d761b7…` (die Regel existierte dort nicht) — die regelfreie Rekonstruktion
 // in 0a ist damit nicht nur behauptet, sondern am Altstand belegt.
 const GOLDEN_BUND_FIX_HASH = "3d4e22226e55e2c5e84a4050260272eabbc94a57dfd8b98a8be3022538412e20";
+// Dieselben zwei Projektionen unter der angehobenen Rezeptversion (Befund B25-2).
+const GOLDEN_BUND_HASH_V2 = "63702986f63552ef88b6f89b4a067da655078907a2346c12255287de3243b7fa";
+const GOLDEN_BUND_FIX_HASH_V2 = "f9edea49acf09583d76a1797a097ed0808f41c5104b6affb5e4f80fd06b3c5fd";
 const hash = (s) => crypto.createHash("sha256").update(s).digest("hex");
+// Die Projektion liest die Rezeptversion zur Laufzeit aus der Vertragskonstante.
+// Sie hier voruebergehend zu setzen ist der einzige Weg, den Stand VOR der
+// Anhebung im selben Prozess zu rechnen — der Produktionspfad bleibt unberuehrt.
+function projektionMitRezept(profile, rezept) {
+  const vertrag = require("../lib/helmut/matching-contract");
+  const vorher = vertrag.LEGACY_RECIPE_VERSION;
+  vertrag.LEGACY_RECIPE_VERSION = rezept;
+  try { return goldenProjektion(profile); } finally { vertrag.LEGACY_RECIPE_VERSION = vorher; }
+}
 if (process.env.HELMUT_GOLDEN_PRINT) {
   process.stdout.write(`regelfrei ${hash(goldenProjektion(GOLDEN_BUND_PROFILE_REGELFREI))}\n`);
   process.stdout.write(`mit-regel ${hash(goldenProjektion(GOLDEN_BUND_PROFILE))}\n`);
   process.exit(0);
 }
 abschnitt("0 · Bundestagsprojektion: Altstand rekonstruiert + neues Verhalten verankert");
+const goldenRegelfreiV1 = hash(projektionMitRezept(GOLDEN_BUND_PROFILE_REGELFREI, REZEPT_V1));
+const goldenMitRegelV1 = hash(projektionMitRezept(GOLDEN_BUND_PROFILE, REZEPT_V1));
 const goldenRegelfrei = hash(goldenProjektion(GOLDEN_BUND_PROFILE_REGELFREI));
 const goldenMitRegel = hash(goldenProjektion(GOLDEN_BUND_PROFILE));
-check("0a (Pflicht 24) regelfreie Projektion ist byte-identisch zum Stand d9006c1 — ausser der Regel hat sich nichts bewegt",
-  goldenRegelfrei === GOLDEN_BUND_HASH,
-  `erwartet ${GOLDEN_BUND_HASH}, gemessen ${goldenRegelfrei} — es hat sich etwas AUSSERHALB der Zustaendigkeitsregel geaendert, das ist FREIGABEPFLICHTIG`);
-check("0b Projektion MIT Regel ist byte-identisch zum verankerten Stand nach dem 27A-2-Fix",
-  goldenMitRegel === GOLDEN_BUND_FIX_HASH,
-  `erwartet ${GOLDEN_BUND_FIX_HASH}, gemessen ${goldenMitRegel} — das Bundesverhalten hat sich geaendert, das ist FREIGABEPFLICHTIG`);
+check("0a (Pflicht 24) regelfreie Projektion ist unter v1 byte-identisch zum Stand d9006c1 — ausser der Regel hat sich nichts bewegt",
+  goldenRegelfreiV1 === GOLDEN_BUND_HASH,
+  `erwartet ${GOLDEN_BUND_HASH}, gemessen ${goldenRegelfreiV1} — es hat sich etwas AUSSERHALB der Zustaendigkeitsregel geaendert, das ist FREIGABEPFLICHTIG`);
+check("0b Projektion MIT Regel ist unter v1 byte-identisch zum verankerten Stand nach dem 27A-2-Fix",
+  goldenMitRegelV1 === GOLDEN_BUND_FIX_HASH,
+  `erwartet ${GOLDEN_BUND_FIX_HASH}, gemessen ${goldenMitRegelV1} — das Bundesverhalten hat sich geaendert, das ist FREIGABEPFLICHTIG`);
+check("0a2 dieselben Projektionen unter der angehobenen Rezeptversion v2 sind ebenfalls verankert",
+  goldenRegelfrei === GOLDEN_BUND_HASH_V2 && goldenMitRegel === GOLDEN_BUND_FIX_HASH_V2,
+  `regelfrei ${goldenRegelfrei} / mit-regel ${goldenMitRegel} — FREIGABEPFLICHTIG`);
+// Der eigentliche Beweis, dass die Anhebung fachlich folgenlos ist: der
+// Unterschied zwischen beiden Staenden liegt AUSSCHLIESSLICH in der Rezeptversion
+// selbst und im davon abgeleiteten Eingabehash. Aehnlichkeit, Rang, Merkmale,
+// Signale, Begruendung, Entscheidungen, Vektoren und Profilhash sind identisch.
+{
+  const nurVersionsfelder = (text) => JSON.parse(text.replace(
+    /"(rezept_version|ko_eingabe_hash)": "[^"]*"/g, '"$1": "<versionsabhaengig>"'));
+  check("0a3 der Unterschied v1 -> v2 liegt AUSSCHLIESSLICH in rezept_version und ko_eingabe_hash",
+    JSON.stringify(nurVersionsfelder(projektionMitRezept(GOLDEN_BUND_PROFILE, REZEPT_V1)))
+      === JSON.stringify(nurVersionsfelder(projektionMitRezept(GOLDEN_BUND_PROFILE, REZEPT_V2))),
+    "die Anhebung haette fachliche Wirkung — das waere ein Fehler und ist FREIGABEPFLICHTIG");
+}
 
 // 0c–0e: der Unterschied zwischen beiden Staenden, Paar fuer Paar. Verankert ist
 // die VOLLSTAENDIGE Liste der Wegfaelle — nicht nur ihre Anzahl. Ein zusaetzlicher

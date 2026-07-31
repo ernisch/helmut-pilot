@@ -629,7 +629,7 @@ const lauf = (db, opts, input = {}) =>
     !/knowledge_object_embeddings/.test(nurAnweisungen(MIGRATION))
     && !/knowledge_object_embeddings/.test(nurAnweisungen(ROLLBACK)));
   check("T12c die Rezeptversion des Legacy-Pfades ist nicht der Embedding-Datenvertrag",
-    contract.LEGACY_RECIPE_VERSION === "legacy_relevance_v1"
+    contract.LEGACY_RECIPE_VERSION === "legacy_relevance_v2"
     && contract.LEGACY_RECIPE_VERSION !== require("../lib/helmut/embedding-contract").RECIPE_VERSION);
   check("T12d der 256-dim Merkmalsvektor wird ehrlich als Legacy-Vektorversion gefuehrt",
     contract.legacyVectorVersion(256) === "feature-hash-256-v1");

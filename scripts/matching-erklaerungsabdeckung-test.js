@@ -513,10 +513,15 @@ const ersteAnfrage = (r) => (Array.isArray(r.ladeProtokoll[0]) ? r.ladeProtokoll
   console.log("\n== G · Fingerabdruck und Idempotenz ==");
   // ═════════════════════════════════════════════════════════════════════════
 
-  // Die Versionsachsen sind BEWUSST unveraendert: das Rezept rechnet nach dem
-  // Fix exakt wie vorher, es bekommt nur endlich seinen Eingang zu sehen.
-  check("G1 Rezeptversion unveraendert (kein unnoetiger Generationswechsel fuer alle)",
-    contract.LEGACY_RECIPE_VERSION === "legacy_relevance_v1", contract.LEGACY_RECIPE_VERSION);
+  // DIESER Fix (Erklaerungsabdeckung, Befund M-7) hebt BEWUSST keine Version an:
+  // das Rezept rechnet danach exakt wie vorher, es bekommt nur endlich seinen
+  // Eingang zu sehen — eine Anhebung waere hier eine falsche Aussage im
+  // Auditprotokoll (§36). Der Wert `legacy_relevance_v2` stammt aus einer
+  // ANDEREN, spaeteren Entscheidung: die Zulaessigkeitsregel fuer Ausschussbelege
+  // (Befund 27A-2) rechnet bei gleicher Eingabe anders, dort ist die Anhebung
+  // die fachlich richtige Aussage (scripts/matching-rezeptversion-v2-test.js).
+  check("G1 dieser Fix erzwingt keinen Generationswechsel — die Rezeptversion ist die des 27A-2-Stands",
+    contract.LEGACY_RECIPE_VERSION === "legacy_relevance_v2", contract.LEGACY_RECIPE_VERSION);
   check("G2 Engineversion unveraendert",
     contract.LEGACY_ENGINE_VERSION === "legacy-shadow-1", contract.LEGACY_ENGINE_VERSION);
   check("G3 Vektorversion unveraendert",
