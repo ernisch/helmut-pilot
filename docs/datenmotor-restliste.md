@@ -563,7 +563,7 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   erfundenen Erfolg erzeugen (ein veraltetes `laufend` **ist** die Abbruchmeldung). **Reihenfolge,
   `k`, `ceil(n/k)`, Zeitbudgets, Cron-Zeiten und Kosten unverändert** (vertragsgetestet).
   Tests: cron-fairness **285/285** (vorher 201/201), Mutationsprobe **15/15 rot** (5 neu),
-  Offline-Suite **176/190** ohne Delta zur Basislinie `main` `4df9cf19`, Smoke **32/32**.
+  Offline-Suite **177/191** ohne Delta zur Basislinie `main` `bd7c889`, Smoke **32/32**.
   **0 KI, 0,00 USD.** Kanonisch inkl. Nachweisverfahren:
   [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) **§11** (§11.8 = späterer Nachweis).
   **Der Kapazitätsblocker bleibt unverändert offen** — er war ausdrücklich nicht Gegenstand.
