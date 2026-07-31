@@ -43,6 +43,13 @@ function makeAblage(initial = {}, uhr) {
     leseFehler: null,
     schreibFehler: null,
     schreibvorgaenge: 0,
+    // R-6: getrennt gezaehlt, weil beide Bereiche eine andere Bedeutung haben.
+    // `crons` = Buchfuehrung je Mandat (bewegt die Rotation) · `laeufe` = Laufprotokoll
+    // (reine Beobachtbarkeit, bewegt NICHTS). Ein k=0-Lauf darf das eine schreiben und
+    // das andere nicht.
+    mandatsSchreibvorgaenge: 0,
+    laufSchreibvorgaenge: 0,
+    patches: [],
     dump: () => JSON.parse(JSON.stringify(roh)),
     load: async () => {
       if (st.leseFehler) throw new Error(st.leseFehler);
@@ -50,6 +57,9 @@ function makeAblage(initial = {}, uhr) {
     },
     save: async (patch) => {
       st.schreibvorgaenge += 1;
+      if (patch && patch.crons && Object.keys(patch.crons).length) st.mandatsSchreibvorgaenge += 1;
+      if (patch && patch.laeufe && Object.keys(patch.laeufe).length) st.laufSchreibvorgaenge += 1;
+      st.patches.push(JSON.parse(JSON.stringify(patch)));
       if (st.schreibFehler) throw new Error(st.schreibFehler);
       roh = F.mergeState(roh, patch, { nowMs: uhr.now() });
     }
@@ -424,8 +434,23 @@ const SECHS = ["anna-a", "bela-b", "cem-c", "dora-d", "emil-e", "frida-f"];
       l.fairness.obergrenzeLaeufe === null, String(l.fairness.obergrenzeLaeufe));
     check("fairnessBound(n,0) ist unendlich — die Formel behauptet keine Grenze", F.fairnessBound(6, 0) === Infinity);
     check("Alle sechs Mandate melden 'zeitbudget'", l.fairness.zeitbudget.length === 6, l.fairness.zeitbudget.join(","));
-    check("KEIN Mandat wird als versucht vermerkt", ablage.schreibvorgaenge === 0, String(ablage.schreibvorgaenge));
+    // R-6 (praezisiert): frueher galt hier "0 Schreibvorgaenge". Seit dem Laufprotokoll
+    // schreibt auch ein k=0-Lauf — aber AUSSCHLIESSLICH in den Laufbereich. Die Rotation
+    // bleibt unberuehrt; genau das wird jetzt getrennt geprueft statt pauschal.
+    check("KEIN Mandat wird als versucht vermerkt (keine Schreibvorgaenge an der Buchfuehrung)",
+      ablage.mandatsSchreibvorgaenge === 0, String(ablage.mandatsSchreibvorgaenge));
     check("Der Zustand bleibt unveraendert (leer)", Object.keys(F.normalizeState(ablage.dump()).crons).length === 0);
+    // ... und der Lauf ist trotzdem persistent belegt: ein Lauf ohne Fortschritt darf nicht
+    // unsichtbar bleiben, nur weil er nichts bewegt hat.
+    {
+      const rekonstruiert = F.rekonstruiereLauf(ablage.dump(), "crawl", { nowMs: uhr.now() });
+      check("Der Lauf ohne Kapazitaet ist persistent rekonstruierbar",
+        Boolean(rekonstruiert) && rekonstruiert.kapazitaet === 0 && rekonstruiert.ohneFortschritt === true,
+        JSON.stringify(rekonstruiert && { k: rekonstruiert.kapazitaet, o: rekonstruiert.ohneFortschritt }));
+      check("Alle sechs Mandate sind persistent als NICHT begonnen erkennbar",
+        rekonstruiert && rekonstruiert.nichtBegonnen.length === 6 && rekonstruiert.begonnen.length === 0,
+        rekonstruiert && rekonstruiert.nichtBegonnen.join(","));
+    }
     // Entscheidend: ein k=0-Lauf darf die Warteschlange NICHT verschieben — der nächste
     // Lauf mit Kapazität beginnt genau dort, wo dieser Lauf beginnen wollte.
     // Im SELBEN Zeitfenster geprueft (der Losentscheid je 6-h-Fenster ist sonst ein
@@ -874,8 +899,11 @@ const SECHS = ["anna-a", "bela-b", "cem-c", "dora-d", "emil-e", "frida-f"];
         now: uhr.now,
         loadState: async () => ({}),
         saveState: async (patch) => {
+          // Nur die Buchfuehrung je Mandat interessiert hier. Das Laufprotokoll (`laeufe`)
+          // schreibt zusaetzlich davor/danach — es bewegt die Rotation nicht und darf die
+          // Reihenfolgeprobe deshalb nicht verwaessern.
           const eintrag = patch && patch.crons && patch.crons.crawl && patch.crons.crawl["anna-a"];
-          ablauf.push(`save:${eintrag ? eintrag.status : "?"}`);
+          if (eintrag) ablauf.push(`save:${eintrag.status}`);
         },
         perTenant: async () => { ablauf.push("verarbeitung"); uhr.vor(1000); return { ok: true }; }
       });
@@ -894,11 +922,17 @@ const SECHS = ["anna-a", "bela-b", "cem-c", "dora-d", "emil-e", "frida-f"];
       ["Gleichstand entscheidet wieder das Alphabet", "garantie",
         [["    if (a.los !== b.los) return a.los - b.los;", "    if (false) return a.los - b.los;"],
           ["const diff = msOf(a.letzterVersuchAt) - msOf(b.letzterVersuchAt);", "const diff = 0;"]]],
+      // Die beiden Registrierungsproben setzen an den PATCH-BAUERN an statt an der
+      // Formatierung der Aufrufstelle: dadurch bleiben sie stabil, wenn die Schleife
+      // umgestellt wird (R-6 hat genau das getan).
       ["Der Versuch wird ueberhaupt nicht mehr vermerkt", "garantie",
-        [["    const registrierung = await speichern(\n      claimPatch({ cronName, tenantId, runId, nowMs: versuchMs, vorher }),\n      { pruefen: true }\n    );", "    const registrierung = { ok: true, remote: null };"],
-          ["    await speichern(finishPatch({", "    if (false) await speichern(finishPatch({"]]],
+        [["function claimPatch({ cronName, tenantId, runId = null, nowMs = Date.now(), vorher = null } = {}) {",
+          "function claimPatch({ cronName, tenantId, runId = null, nowMs = Date.now(), vorher = null } = {}) {\n  if (true) return {};"],
+          ["  const alt = vorher ? normalizeEntry(vorher) : null;\n  const abschluss = new Date(nowMs).toISOString();",
+            "  const alt = vorher ? normalizeEntry(vorher) : null;\n  const abschluss = new Date(nowMs).toISOString();\n  if (true) return { abschluss };"]]],
       ["Der Versuch wird erst NACH der Verarbeitung vermerkt", "registrierung",
-        [["    const registrierung = await speichern(\n      claimPatch({ cronName, tenantId, runId, nowMs: versuchMs, vorher }),\n      { pruefen: true }\n    );", "    const registrierung = { ok: true, remote: null };"]]],
+        [["function claimPatch({ cronName, tenantId, runId = null, nowMs = Date.now(), vorher = null } = {}) {",
+          "function claimPatch({ cronName, tenantId, runId = null, nowMs = Date.now(), vorher = null } = {}) {\n  if (true) return {};"]]],
       ["Ein laufender Versuch blockiert nichts mehr (Ueberlappungsschutz weg)", "ueberlappung",
         [["    if (laufend) blockiert.push({ ...kandidat, grund: \"laeuft-bereits\" });\n    else planbar.push(kandidat);", "    planbar.push(kandidat);"]]],
       ["Eine verweigerte Sperre gilt wieder als Erfolg", "sperre",
@@ -910,8 +944,100 @@ const SECHS = ["anna-a", "bela-b", "cem-c", "dora-d", "emil-e", "frida-f"];
           ["      fortschrittsgarantie: Number.isFinite(grenze) && kapazitaet > 0,", "      fortschrittsgarantie: true,"]]],
       ["Nicht begonnene Mandate werden trotzdem als versucht vermerkt", "zeitbudget",
         [["      results.push({ politicianId: tenantId, skipped: true, reason: \"zeitbudget\" });",
-          "      await speichern(claimPatch({ cronName, tenantId, runId, nowMs: now(), vorher: entryOf(zustand, cronName, tenantId) }));\n      results.push({ politicianId: tenantId, skipped: true, reason: \"zeitbudget\" });"]]]
+          "      await speichern(claimPatch({ cronName, tenantId, runId, nowMs: now(), vorher: entryOf(zustand, cronName, tenantId) }));\n      results.push({ politicianId: tenantId, skipped: true, reason: \"zeitbudget\" });"]]],
+      // ── R-6: die vier Ruecknahmen, die den neuen Telemetrievertrag brechen wuerden ──────
+      ["R-6: die Planung wird nicht mehr vorab persistiert", "abbruch",
+        [["  await speichern(laufStartPatch({", "  if (false) await speichern(laufStartPatch({"]]],
+      ["R-6: der Mandatsausgang wird nicht mehr laufend mitgeschrieben", "abbruch",
+        [["        ...laufAusgangPatch({ cronName, laufId, startAt: startedMs, tenantId, ausgang: AUSGANG_BEGONNEN, nowMs: versuchMs })",
+          "        ...({})"]]],
+      ["R-6: ein Prozessabbruch wird nicht mehr als solcher erkannt", "abbruchStatus",
+        [["  return nowMs - standMs >= staleMs ? LAUF_ABGEBROCHEN : LAUF_LAUFEND;", "  return LAUF_LAUFEND;"]]],
+      ["R-6: die verweigerte Sperre verschwindet aus dem Laufprotokoll", "sperreProtokoll",
+        [["      await speichern(laufAusgangPatch({\n        cronName, laufId, startAt: startedMs, tenantId, ausgang: AUSGANG_SPERRE_VERWEIGERT, nowMs: now()\n      }));", ""]]],
+      ["R-6: der Timeout-Vermerk ueberschreibt einen echten Abschluss", "timeoutVermerk",
+        [["  const fuehrt = LAUF_RANG[b.status] >= LAUF_RANG[a.status] ? b : a;", "  const fuehrt = b;"]]]
     ];
+
+    // Probe H (R-6) — nach einem Prozessabbruch mitten im Lauf muss der Fortschritt
+    // vollstaendig aus der Ablage rekonstruierbar sein. `true` = Mutation erkannt.
+    async function abbruchNichtRekonstruierbar(mod) {
+      const uhr = makeUhr();
+      let roh = {};
+      let losGeht = null;
+      let erreicht = null;
+      const haenger = new Promise((res) => { losGeht = res; });
+      const beim = new Promise((res) => { erreicht = res; });
+      const ordnung = mod.planTenantOrder({ cronName: "crawl", tenantIds: SECHS, state: {}, nowMs: uhr.now() }).order;
+      const p = mod.runTenantsFairly({
+        cronName: "crawl", tenantIds: SECHS, runId: "probe-abbruch",
+        deadlineMs: 900000, reserveMs: 0, startedMs: uhr.now(), now: uhr.now,
+        loadState: async () => JSON.parse(JSON.stringify(roh)),
+        saveState: async (patch) => { roh = mod.mergeState(roh, patch, { nowMs: uhr.now() }); return { ok: true }; },
+        perTenant: async (id) => {
+          if (id === ordnung[2]) { erreicht(); await haenger; return { ok: true }; }
+          uhr.vor(1000);
+          return { ok: true };
+        }
+      });
+      p.catch(() => {});
+      await beim;
+      const r = mod.rekonstruiereLauf(roh, "crawl", { nowMs: uhr.now() });
+      losGeht();
+      await p;
+      return !r || r.geplant.length !== 6 || r.erfolgreich.length !== 2
+        || r.ohneAbschluss.join(",") !== ordnung[2] || r.nichtBegonnen.length !== 3;
+    }
+
+    // Probe I (R-6) — ein `laufend`, das niemand mehr fortschreibt, IST ein Abbruch.
+    async function abbruchSiehtLaufendAus(mod) {
+      const lauf = { laufId: "x", status: "laufend", startAt: new Date(BASIS_MS).toISOString(), standAt: new Date(BASIS_MS).toISOString() };
+      return mod.laufStatus(lauf, { nowMs: BASIS_MS + mod.DEFAULT_STALE_CLAIM_MS + 1 }) !== "abgebrochen";
+    }
+
+    // Probe J (R-6) — eine verweigerte Sperre braucht einen EIGENEN persistenten Ausgang,
+    // sonst ist sie von einem Prozessabbruch mitten im Mandat nicht zu unterscheiden.
+    async function sperreOhneProtokollspur(mod) {
+      const uhr = makeUhr();
+      let roh = {};
+      const ordnung = mod.planTenantOrder({ cronName: "crawl", tenantIds: SECHS, state: {}, nowMs: uhr.now() }).order;
+      await mod.runTenantsFairly({
+        cronName: "crawl", tenantIds: SECHS, runId: "probe-sperre",
+        deadlineMs: 900000, reserveMs: 0, startedMs: uhr.now(), now: uhr.now,
+        loadState: async () => JSON.parse(JSON.stringify(roh)),
+        saveState: async (patch) => { roh = mod.mergeState(roh, patch, { nowMs: uhr.now() }); return { ok: true }; },
+        perTenant: async (id) => {
+          if (id === ordnung[1]) return { skipped: true, reason: "already running" };
+          uhr.vor(1000);
+          return { ok: true };
+        }
+      });
+      const r = mod.rekonstruiereLauf(roh, "crawl", { nowMs: uhr.now() });
+      return !r || r.sperreVerweigert.join(",") !== ordnung[1];
+    }
+
+    // Probe K (R-6) — der Vermerk des aeusseren Zeitlimits darf einen bereits geschriebenen
+    // Abschluss NICHT zurueckdrehen (die Promise kann intern fertig geworden sein).
+    async function timeoutUeberschreibtAbschluss(mod) {
+      const fertig = mod.mergeLauf(
+        { laufId: "L", status: "laufend", startAt: new Date(BASIS_MS).toISOString() },
+        mod.laufAbschlussPatch({ cronName: "c", laufId: "L", startAt: BASIS_MS, nowMs: BASIS_MS + 1000, kapazitaet: 1, obergrenzeLaeufe: 1 }).laeufe.c
+      );
+      const danach = mod.mergeLauf(
+        fertig,
+        mod.laufTimeoutPatch({ cronName: "c", laufId: "L", startAt: BASIS_MS, nowMs: BASIS_MS + 2000 }).laeufe.c
+      );
+      return danach.status !== "abgeschlossen";
+    }
+
+    check("Ausgangslage: der Fortschritt ist nach einem Abbruch rekonstruierbar",
+      (await abbruchNichtRekonstruierbar(F)) === false);
+    check("Ausgangslage: ein veralteter 'laufend'-Lauf wird als Abbruch erkannt",
+      (await abbruchSiehtLaufendAus(F)) === false);
+    check("Ausgangslage: die verweigerte Sperre hat eine eigene persistente Spur",
+      (await sperreOhneProtokollspur(F)) === false);
+    check("Ausgangslage: der Timeout-Vermerk dreht keinen Abschluss zurueck",
+      (await timeoutUeberschreibtAbschluss(F)) === false);
 
     // Probe C — Überlappungsschutz: ein als "laufend" vermerktes Mandat darf nicht begonnen werden.
     async function ueberlappungOffen(mod) {
@@ -1023,7 +1149,11 @@ const SECHS = ["anna-a", "bela-b", "cem-c", "dora-d", "emil-e", "frida-f"];
       ueberlappung: ueberlappungOffen,
       zeitbudget: zeitbudgetFaelschtVersuch,
       wettlauf: wettlaufIgnoriert,
-      kapazitaet: kapazitaetGelogen
+      kapazitaet: kapazitaetGelogen,
+      abbruch: abbruchNichtRekonstruierbar,
+      abbruchStatus: abbruchSiehtLaufendAus,
+      sperreProtokoll: sperreOhneProtokollspur,
+      timeoutVermerk: timeoutUeberschreibtAbschluss
     };
     for (const [name, probe, paare] of mutationen) {
       let rot = false;
@@ -1251,7 +1381,7 @@ const SECHS = ["anna-a", "bela-b", "cem-c", "dora-d", "emil-e", "frida-f"];
       (serverSrc.match(/deadlineMs: 240000/g) || []).length === 2);
     check("Aeussere Zeitgrenzen unveraendert (280 000 ms)", (serverSrc.match(/280000/g) || []).length >= 3);
     check("Standardbudget von runCronForTenants unveraendert (240 000 ms)",
-      /runCronForTenants\(cronName, perTenant, \{ deadlineMs = 240000 \}/.test(serverSrc));
+      /runCronForTenants\(cronName, perTenant, \{ deadlineMs = 240000, runId = null \}/.test(serverSrc));
     check("Gesamtbudget des Crawls unveraendert (240 000 ms Default)",
       /HELMUT_CRAWL_GESAMTBUDGET_MS \|\| 240000/.test(lies("lib/helmut/scheduler.js")));
 
@@ -1272,6 +1402,478 @@ const SECHS = ["anna-a", "bela-b", "cem-c", "dora-d", "emil-e", "frida-f"];
       fairnessRequires === 'require("crypto")', fairnessRequires);
     check("Kein Mandant ist im Fairnesspfad hartkodiert (CLAUDE.md §4.2)",
       !/cem|annika|klose|ince|mustermann/i.test(lies("lib/helmut/cron-fairness.js")));
+  }
+
+  // ═══ 21) R-6: Laufprotokoll — Fortschritt bleibt bei Zeitüberschreitung rekonstruierbar ═══
+  //
+  // BEFUND R-6 (Production-Nachweis OP-25 §10.4): endet `crawl`/`pipeline` im ÄUSSEREN
+  // `withTimeout(…, 280000)`, kehrt `runCronForTenants` nie zurück — die Zeile
+  // `[cron/*/fairness]` wird nie geschrieben. Betroffen 3 von 5 gewerteten Läufen.
+  //
+  // Diese Sektion prüft den neuen Vertrag: nach JEDEM Mandatsübergang existiert ein
+  // persistenter, rekonstruierbarer Stand; ein äußeres Zeitlimit verdeckt nichts; ein
+  // Prozessabbruch erzeugt keinen erfundenen Erfolg; Reihenfolge, `k` und ceil(n/k) bleiben
+  // unverändert.
+  abschnitt("21) R-6: Laufprotokoll bei Zeitüberschreitung und Prozessabbruch");
+  {
+    const VIER = SECHS.slice(0, 4);
+
+    // Ein Lauf, der in EINEM Mandat hängen bleibt — genau die Lage, die den äußeren
+    // `Promise.race` auslöst. `beimHaenger` macht den Moment DETERMINISTISCH greifbar:
+    // kein Wanduhr-Timer, keine Flakiness.
+    function haengenderLauf({ ablage, uhr, tenants, haengtBei, cronName = "crawl", runId = "lauf-haenger", kosten = 60000, deadlineMs = 240000, ergebnisse = {} }) {
+      let haengerLosgelassen = null;
+      let haengerErreicht = null;
+      const haenger = new Promise((res) => { haengerLosgelassen = res; });
+      const beimHaenger = new Promise((res) => { haengerErreicht = res; });
+      const promise = F.runTenantsFairly({
+        cronName,
+        tenantIds: tenants,
+        runId,
+        deadlineMs,
+        reserveMs: 0,
+        startedMs: uhr.now(),
+        now: uhr.now,
+        loadState: ablage.load,
+        saveState: ablage.save,
+        perTenant: async (id) => {
+          if (id === haengtBei) { haengerErreicht(id); await haenger; return { ok: true }; }
+          uhr.vor(kosten);
+          if (ergebnisse[id] instanceof Error) throw ergebnisse[id];
+          return ergebnisse[id] || { ok: true };
+        }
+      });
+      promise.catch(() => {});
+      return { promise, beimHaenger, weiterlaufen: haengerLosgelassen };
+    }
+
+    // ── 21.1 · Ursache im Code belegt ──────────────────────────────────────────────────────
+    {
+      const serverSrc = fs.readFileSync(path.join(ROOT, "server.js"), "utf8");
+      const fairnessSrc = fs.readFileSync(path.join(ROOT, "lib", "helmut", "cron-fairness.js"), "utf8");
+      // (a) `withTimeout` ist ein Promise.race — es BEENDET die urspruengliche Promise nicht.
+      check("Ursache 1: withTimeout ist ein Promise.race und beendet die Promise nicht",
+        /function withTimeout\(promise, maxMs, label = "operation"\) \{\s*\n\s*return Promise\.race\(\[/.test(serverSrc));
+      // (b) Die innere Deadline ist ein START-Gatter, kein STOPP-Gatter — deshalb reichen
+      //     10 s Differenz nicht. Belegt am Verhalten, nicht an einer Behauptung:
+      const uhr = makeUhr();
+      const ablage = makeAblage({}, uhr);
+      const l = await lauf({
+        ablage, uhr, tenants: VIER, deadlineMs: 100000, reserveMs: 0,
+        // Das erste Mandat startet innerhalb des Budgets und laeuft weit darueber hinaus.
+        kosten: { [F.planTenantOrder({ cronName: "crawl", tenantIds: VIER, state: {}, nowMs: uhr.now() }).order[0]]: 500000 },
+        standardKosten: 1000
+      });
+      const ueberzogenMs = (uhr.now() - BASIS_MS) - 100000;
+      check("Ursache 2: die innere Deadline ist ein START-Gatter — ein begonnenes Mandat zieht sie beliebig weit ueber",
+        ueberzogenMs >= 400000, `${ueberzogenMs} ms ueber der Deadline`);
+      check("Ursache 2b: die Restzeitpruefung steht VOR dem Mandat, es gibt keine danach",
+        /if \(now\(\) \+ reserveMs > deadline\) \{[\s\S]{0,200}continue;/.test(fairnessSrc)
+        && l.fairness.zeitbudget.length === 3, l.fairness.zeitbudget.join(","));
+      // (c) Kein `finally` traegt den Vertrag: der Vermerk entsteht LAUFEND, nicht am Ende.
+      check("Ursache 3: der Vertrag haengt nicht an Abschlusscode (kein finally in runTenantsFairly)",
+        !/\}\s*finally\s*\{/.test(fairnessSrc.slice(fairnessSrc.indexOf("async function runTenantsFairly"))));
+    }
+
+    // ── 21.2 · (1) Vollstaendiger Lauf ohne Timeout, (6) Erfolg, (7) Fehler,
+    //              (8) strukturiertes Timeout-Objekt, (18) keine erfundenen Erfolge ────────
+    {
+      const uhr = makeUhr();
+      const ablage = makeAblage({}, uhr);
+      const l = await lauf({
+        ablage, uhr, tenants: VIER, deadlineMs: 600000, reserveMs: 0, standardKosten: 10000,
+        runId: "lauf-vollstaendig",
+        fehler: new Set([VIER[2]])
+      });
+      const r = F.rekonstruiereLauf(ablage.dump(), "crawl", { nowMs: uhr.now() });
+      check("(1) Vollstaendiger Lauf: Laufdatensatz ist abgeschlossen", r.status === "abgeschlossen", r.status);
+      check("(1) Vollstaendiger Lauf: kein Mandat bleibt ohne Ausgang",
+        r.nichtBegonnen.length === 0 && r.ohneAbschluss.length === 0,
+        JSON.stringify({ n: r.nichtBegonnen, o: r.ohneAbschluss }));
+      check("(6) Ein erfolgreich abgeschlossenes Mandat steht als 'erfolgreich' in der Ablage",
+        r.erfolgreich.length === 3, r.erfolgreich.join(","));
+      check("(7) Ein werfendes Mandat steht als 'fehlgeschlagen' — nicht als Erfolg",
+        r.fehlgeschlagen.join(",") === VIER[2] && !r.erfolgreich.includes(VIER[2]),
+        `${r.fehlgeschlagen} / ${r.erfolgreich}`);
+      check("(19) Rekonstruktion und gemeldete Telemetrie stimmen ueberein",
+        r.kapazitaet === l.fairness.kapazitaet
+        && r.obergrenzeLaeufe === l.fairness.obergrenzeLaeufe
+        && r.geplant.join(",") === l.fairness.geplant.join(",")
+        && r.erfolgreich.slice().sort().join(",") === l.fairness.erfolgreich.slice().sort().join(",")
+        && r.fehlgeschlagen.slice().sort().join(",") === l.fairness.fehlgeschlagen.slice().sort().join(",")
+        && r.zeitbudget.slice().sort().join(",") === l.fairness.zeitbudget.slice().sort().join(",")
+        && r.naechstesMandat === l.fairness.naechstesMandat,
+        JSON.stringify({ rekonstruiert: r.kapazitaet, gemeldet: l.fairness.kapazitaet }));
+      check("(19) Der Lauf meldet dieselbe Kapazitaet, die er persistiert hat",
+        r.gemeldeteKapazitaet === r.kapazitaet && r.gemeldeteObergrenzeLaeufe === r.obergrenzeLaeufe,
+        JSON.stringify({ g: r.gemeldeteKapazitaet, r: r.kapazitaet }));
+    }
+    {
+      // (8) Ein ZURUECKGEGEBENES Timeout-Objekt (P29-1) ist kein Erfolg — auch nicht im Protokoll.
+      const uhr = makeUhr();
+      const ablage = makeAblage({}, uhr);
+      await F.runTenantsFairly({
+        cronName: "crawl", tenantIds: [VIER[0]], runId: "lauf-timeoutobjekt",
+        deadlineMs: 600000, reserveMs: 0, startedMs: uhr.now(), now: uhr.now,
+        loadState: ablage.load, saveState: ablage.save,
+        perTenant: async () => { uhr.vor(1000); return { ok: false, bounded: true, reason: "crawl-timeout" }; }
+      });
+      const r = F.rekonstruiereLauf(ablage.dump(), "crawl", { nowMs: uhr.now() });
+      check("(8) Ein zurueckgegebenes Timeout-Objekt steht als 'fehlgeschlagen', nie als Erfolg",
+        r.fehlgeschlagen.join(",") === VIER[0] && r.erfolgreich.length === 0,
+        `${r.fehlgeschlagen} / ${r.erfolgreich}`);
+      check("(18) Kein erfundener Erfolg: die Buchfuehrung traegt keinen letzten Erfolg",
+        F.entryOf(F.normalizeState(ablage.dump()), "crawl", VIER[0]).letzterErfolgAt === null);
+    }
+
+    // ── 21.3 · (2) Inneres Zeitbudget erreicht, (13) kein Mandat begonnen ──────────────────
+    {
+      const uhr = makeUhr();
+      const ablage = makeAblage({}, uhr);
+      await lauf({ ablage, uhr, tenants: SECHS, deadlineMs: 110000, reserveMs: 0, standardKosten: 60000, runId: "lauf-budget" });
+      const r = F.rekonstruiereLauf(ablage.dump(), "crawl", { nowMs: uhr.now() });
+      check("(2) Zeitbudget erreicht: der Lauf ist persistent 'teilweise'", r.status === "teilweise", r.status);
+      check("(2) Nicht begonnene Mandate sind eindeutig als nicht begonnen erkennbar",
+        r.nichtBegonnen.length === 4 && r.begonnen.length === 2
+        && r.nichtBegonnen.every((id) => !r.begonnen.includes(id)),
+        `${r.nichtBegonnen.join(",")} vs ${r.begonnen.join(",")}`);
+      check("(2) Ein nicht begonnenes Mandat ist weder Erfolg noch Fehler",
+        r.nichtBegonnen.every((id) => !r.erfolgreich.includes(id) && !r.fehlgeschlagen.includes(id)));
+    }
+
+    // ── 21.4 · (3) Aeusserer Timeout VOR der Rueckkehr, (4) Promise laeuft weiter,
+    //              (14) Teilverarbeitung mit anschliessendem Timeout ──────────────────────
+    {
+      const uhr = makeUhr();
+      const ablage = makeAblage({}, uhr);
+      const h = haengenderLauf({ ablage, uhr, tenants: VIER, haengtBei: null, runId: "lauf-timeout" });
+      // Kein Haenger gesetzt -> Ersatz: neuen Lauf mit echtem Haenger im ZWEITEN Mandat.
+      await h.promise;
+      const uhr2 = makeUhr();
+      const ablage2 = makeAblage({}, uhr2);
+      const reihenfolge = F.planTenantOrder({ cronName: "crawl", tenantIds: VIER, state: {}, nowMs: uhr2.now() }).order;
+      const h2 = haengenderLauf({ ablage: ablage2, uhr: uhr2, tenants: VIER, haengtBei: reihenfolge[1], runId: "lauf-timeout", kosten: 30000 });
+      await h2.beimHaenger; // ab hier haengt der Lauf — genau die Lage des Production-Befunds
+
+      const vorVermerk = F.rekonstruiereLauf(ablage2.dump(), "crawl", { nowMs: uhr2.now() });
+      check("(3) Bereits bekannte Ergebnisse sind VOR dem Timeout persistent",
+        vorVermerk.erfolgreich.join(",") === reihenfolge[0] && vorVermerk.ohneAbschluss.join(",") === reihenfolge[1],
+        JSON.stringify({ e: vorVermerk.erfolgreich, o: vorVermerk.ohneAbschluss }));
+      check("(3) Auch die Planung ist persistent — nicht erst am Laufende",
+        vorVermerk.geplant.join(",") === reihenfolge.join(","), vorVermerk.geplant.join(","));
+
+      // Das tut markiereAeusseresCronTimeout in server.js: NUR die Tatsache vermerken.
+      uhr2.vor(1000);
+      await ablage2.save(F.laufTimeoutPatch({ cronName: "crawl", laufId: "lauf-timeout", startAt: BASIS_MS, nowMs: uhr2.now() }));
+      const nachVermerk = F.rekonstruiereLauf(ablage2.dump(), "crawl", { nowMs: uhr2.now() });
+      check("(3) Der Timeout-Vermerk setzt den Lauf auf 'abgebrochen'",
+        nachVermerk.status === "abgebrochen" && nachVermerk.grund === "aeusseres-timeout",
+        `${nachVermerk.status}/${nachVermerk.grund}`);
+      check("(3) Der Timeout LOESCHT und VERDECKT keine bereits bekannten Ergebnisse",
+        nachVermerk.erfolgreich.join(",") === reihenfolge[0]
+        && nachVermerk.geplant.join(",") === reihenfolge.join(",")
+        && nachVermerk.ohneAbschluss.join(",") === reihenfolge[1],
+        JSON.stringify(nachVermerk.erfolgreich));
+      check("(3) Der Vermerk behauptet KEINEN Abschluss (kein beendetAt, keine gemeldete Kapazitaet)",
+        nachVermerk.beendetAt === null && nachVermerk.gemeldeteKapazitaet === null && nachVermerk.vollstaendig === false);
+
+      // (4) Die urspruengliche Promise laeuft weiter — Promise.race beendet sie nicht.
+      h2.weiterlaufen();
+      await h2.promise;
+      const danach = F.rekonstruiereLauf(ablage2.dump(), "crawl", { nowMs: uhr2.now() });
+      check("(4) Laeuft die Promise nach dem Timeout weiter, hebt ihr Abschluss den Laufzustand",
+        danach.status === "abgeschlossen" && danach.beendetAt !== null, danach.status);
+      check("(4) Die TATSACHE des aeusseren Zeitlimits bleibt trotzdem erhalten",
+        danach.aeusseresTimeoutAt !== null, String(danach.aeusseresTimeoutAt));
+      check("(4) Ein Nachzuegler kann keinen Ausgang zurueckdrehen",
+        danach.erfolgreich.length === 4 && danach.ohneAbschluss.length === 0,
+        JSON.stringify({ e: danach.erfolgreich.length, o: danach.ohneAbschluss.length }));
+    }
+    {
+      // (14) Teilverarbeitung + Timeout: die Teilmenge bleibt exakt und vollstaendig lesbar.
+      const uhr = makeUhr();
+      const ablage = makeAblage({}, uhr);
+      const reihenfolge = F.planTenantOrder({ cronName: "crawl", tenantIds: SECHS, state: {}, nowMs: uhr.now() }).order;
+      const h = haengenderLauf({ ablage, uhr, tenants: SECHS, haengtBei: reihenfolge[2], runId: "lauf-teil", kosten: 40000 });
+      await h.beimHaenger;
+      uhr.vor(500);
+      await ablage.save(F.laufTimeoutPatch({ cronName: "crawl", laufId: "lauf-teil", startAt: BASIS_MS, nowMs: uhr.now() }));
+      const r = F.rekonstruiereLauf(ablage.dump(), "crawl", { nowMs: uhr.now() });
+      check("(14) Teilverarbeitung + Timeout: 2 fertig, 1 ohne Abschluss, 3 nie begonnen",
+        r.erfolgreich.length === 2 && r.ohneAbschluss.length === 1 && r.nichtBegonnen.length === 3,
+        JSON.stringify({ e: r.erfolgreich, o: r.ohneAbschluss, n: r.nichtBegonnen }));
+      check("(14) Die Kapazitaet k ist aus den Zwischenstaenden rekonstruierbar",
+        r.kapazitaet === 3 && r.obergrenzeLaeufe === F.fairnessBound(6, 3), `${r.kapazitaet}/${r.obergrenzeLaeufe}`);
+    }
+
+    // ── 21.5 · (5) Prozessabbruch VOR der finalen Zusammenfassung ─────────────────────────
+    {
+      const uhr = makeUhr();
+      const ablage = makeAblage({}, uhr);
+      const reihenfolge = F.planTenantOrder({ cronName: "crawl", tenantIds: VIER, state: {}, nowMs: uhr.now() }).order;
+      // Abbruch im DRITTEN Mandat: zwei sind fertig, eines haengt, eines wurde nie begonnen.
+      const h = haengenderLauf({ ablage, uhr, tenants: VIER, haengtBei: reihenfolge[2], runId: "lauf-abbruch", kosten: 20000 });
+      await h.beimHaenger;
+      // Ab hier: Instanz weg. KEIN weiterer Schreibvorgang, kein finally, kein Vermerk.
+      const sofort = F.rekonstruiereLauf(ablage.dump(), "crawl", { nowMs: uhr.now() });
+      check("(5) Direkt nach dem Abbruch steht der Lauf auf 'laufend' — nicht auf abgeschlossen",
+        sofort.status === "laufend" && sofort.beendetAt === null, sofort.status);
+      check("(5) Prozessabbruch erzeugt KEINEN erfundenen erfolgreichen Gesamtzustand",
+        sofort.erfolgreich.length === 2 && sofort.ohneAbschluss.join(",") === reihenfolge[2]
+        && sofort.vollstaendig === false,
+        JSON.stringify({ e: sofort.erfolgreich, o: sofort.ohneAbschluss }));
+      check("(5) Das nie begonnene Mandat bleibt eindeutig als nicht begonnen erkennbar",
+        sofort.nichtBegonnen.join(",") === reihenfolge[3], sofort.nichtBegonnen.join(","));
+      // Nach der Frist ist der Abbruch eindeutig ABLEITBAR — ohne dass jemand ihn schrieb.
+      const spaeter = F.rekonstruiereLauf(ablage.dump(), "crawl", { nowMs: uhr.now() + F.DEFAULT_STALE_CLAIM_MS + 1 });
+      check("(5) Nach der Frist wird der Abbruch abgeleitet (laufend + veraltet = abgebrochen)",
+        spaeter.status === "abgebrochen" && spaeter.gemeldeterStatus === "laufend",
+        `${spaeter.status}/${spaeter.gemeldeterStatus}`);
+      check("(5) Der Zustand ist nach dem Abbruch vollstaendig rekonstruierbar",
+        spaeter.geplant.join(",") === reihenfolge.join(",") && spaeter.kapazitaet === 3
+        && spaeter.aktive === 4,
+        JSON.stringify({ g: spaeter.geplant, k: spaeter.kapazitaet }));
+      // (15) Wiederaufnahme: der naechste regulaere Lauf setzt an der Mandatsgrenze fort —
+      // das NIE begonnene Mandat steht vorn (kein Versuch = aeltester Versuch).
+      uhr.setzen(BASIS_MS + F.DEFAULT_STALE_CLAIM_MS + 60000);
+      const l2 = await lauf({ ablage, uhr, tenants: VIER, deadlineMs: 600000, reserveMs: 0, standardKosten: 5000, runId: "lauf-danach" });
+      check("(15) Wiederaufnahme: das nie begonnene Mandat steht im Folgelauf VORN",
+        l2.begonnen[0] === reihenfolge[3], l2.begonnen.join(","));
+      check("(15) Das abgebrochene Mandat wird nach der Frist wieder zugelassen (kein dauerhaftes 'laufend')",
+        l2.begonnen.includes(reihenfolge[2]), l2.begonnen.join(","));
+      const r2 = F.rekonstruiereLauf(ablage.dump(), "crawl", { nowMs: uhr.now() });
+      check("(15) Der Folgelauf ersetzt den Laufdatensatz vollstaendig (genau EIN Lauf je Cron)",
+        r2.laufId === "lauf-danach" && r2.status === "abgeschlossen"
+        && Object.keys(F.normalizeState(ablage.dump()).laeufe).length === 1,
+        r2.laufId);
+    }
+
+    // ── 21.6 · (9) Verweigerter Mandatslock ──────────────────────────────────────────────
+    {
+      const uhr = makeUhr();
+      const ablage = makeAblage({}, uhr);
+      const reihenfolge = F.planTenantOrder({ cronName: "crawl", tenantIds: VIER, state: {}, nowMs: uhr.now() }).order;
+      await F.runTenantsFairly({
+        cronName: "crawl", tenantIds: VIER, runId: "lauf-sperre",
+        deadlineMs: 600000, reserveMs: 0, startedMs: uhr.now(), now: uhr.now,
+        loadState: ablage.load, saveState: ablage.save,
+        perTenant: async (id) => {
+          uhr.vor(1000);
+          if (id === reihenfolge[1]) return { skipped: true, reason: "already running" };
+          return { ok: true };
+        }
+      });
+      const r = F.rekonstruiereLauf(ablage.dump(), "crawl", { nowMs: uhr.now() });
+      check("(9) Ein verweigerter Lock bleibt eindeutig von Erfolg und Fehler getrennt",
+        r.sperreVerweigert.join(",") === reihenfolge[1]
+        && !r.erfolgreich.includes(reihenfolge[1]) && !r.fehlgeschlagen.includes(reihenfolge[1]),
+        JSON.stringify({ s: r.sperreVerweigert, e: r.erfolgreich }));
+      check("(9) Ein verweigerter Lock zaehlt NICHT zur Kapazitaet k",
+        r.kapazitaet === 3 && !r.begonnen.includes(reihenfolge[1]), `${r.kapazitaet}`);
+      check("(9) Der verweigerte Lock bleibt auch persistent kein Abschluss am Mandatseintrag",
+        F.entryOf(F.normalizeState(ablage.dump()), "crawl", reihenfolge[1]).status === "laufend"
+        && F.entryOf(F.normalizeState(ablage.dump()), "crawl", reihenfolge[1]).letzterErfolgAt === null);
+      // Und der Sonderfall bleibt vom Prozessabbruch unterscheidbar: 'sperre-verweigert'
+      // ist ein EIGENER Ausgang, 'begonnen' waere der Abbruch.
+      check("(9) Sperre verweigert ist von 'begonnen ohne Abschluss' unterscheidbar",
+        r.ohneAbschluss.length === 0, r.ohneAbschluss.join(","));
+    }
+
+    // ── 21.7 · (10) Zustand nicht lesbar, (11) Zustand nicht schreibbar ──────────────────
+    {
+      const uhr = makeUhr();
+      const ablage = makeAblage({}, uhr);
+      ablage.leseFehler = "zeile-nicht-lesbar";
+      const l = await lauf({ ablage, uhr, tenants: VIER, deadlineMs: 600000, reserveMs: 0, standardKosten: 5000, runId: "lauf-lesefehler" });
+      check("(10) Nicht lesbarer Zustand: der Lauf laeuft weiter und meldet die Stoerung",
+        l.zustandGeladen === false && Boolean(l.fairness.zustandFehler), String(l.fairness.zustandFehler));
+      const r = F.rekonstruiereLauf(ablage.dump(), "crawl", { nowMs: uhr.now() });
+      check("(10) Der Laufdatensatz weist die Stoerung ehrlich aus statt sie zu verschweigen",
+        r && r.zustandGeladen === false && Boolean(r.zustandFehler), JSON.stringify(r && r.zustandFehler));
+    }
+    {
+      const uhr = makeUhr();
+      const ablage = makeAblage({}, uhr);
+      ablage.schreibFehler = "zeile-nicht-schreibbar";
+      const l = await lauf({ ablage, uhr, tenants: VIER, deadlineMs: 600000, reserveMs: 0, standardKosten: 5000, runId: "lauf-schreibfehler" });
+      check("(11) Nicht schreibbarer Zustand: der Lauf bleibt fail-safe und meldet die Stoerung",
+        l.results.filter((x) => x && !x.skipped).length === 4 && Boolean(l.fairness.zustandFehler),
+        String(l.fairness.zustandFehler));
+      check("(11) Ohne Schreibvorgang entsteht KEIN Laufdatensatz — kein erfundener Stand",
+        F.rekonstruiereLauf(ablage.dump(), "crawl", { nowMs: uhr.now() }) === null);
+    }
+
+    // ── 21.8 · (12) Zwei ueberlappende Laeufe ────────────────────────────────────────────
+    {
+      const uhr = makeUhr();
+      const ablage = makeAblage({}, uhr);
+      // Lauf A haengt im ersten Mandat; Lauf B startet spaeter und laeuft durch.
+      const reihenfolge = F.planTenantOrder({ cronName: "crawl", tenantIds: VIER, state: {}, nowMs: uhr.now() }).order;
+      const a = haengenderLauf({ ablage, uhr, tenants: VIER, haengtBei: reihenfolge[0], runId: "lauf-A" });
+      await a.beimHaenger;
+      uhr.vor(30000);
+      await lauf({ ablage, uhr, tenants: VIER, deadlineMs: 600000, reserveMs: 0, standardKosten: 2000, runId: "lauf-B" });
+      const nachB = F.rekonstruiereLauf(ablage.dump(), "crawl", { nowMs: uhr.now() });
+      check("(12) Der juengere Lauf besitzt den Laufdatensatz", nachB.laufId === "lauf-B", nachB.laufId);
+      check("(12) Genau EIN Laufdatensatz je Cron — die Ueberlappung verdoppelt nichts",
+        Object.keys(F.normalizeState(ablage.dump()).laeufe).length === 1);
+      // Der Nachzuegler A schliesst spaeter ab — er darf B NICHT ueberschreiben.
+      a.weiterlaufen();
+      await a.promise;
+      const nachA = F.rekonstruiereLauf(ablage.dump(), "crawl", { nowMs: uhr.now() });
+      check("(12) Ein Nachzuegler des aelteren Laufs ueberschreibt den juengeren Datensatz nicht",
+        nachA.laufId === "lauf-B" && nachA.startAt === nachB.startAt, nachA.laufId);
+      check("(12) Die Buchfuehrung je Mandat bleibt davon unberuehrt (monotone Verschmelzung)",
+        VIER.every((id) => F.entryOf(F.normalizeState(ablage.dump()), "crawl", id) !== null));
+    }
+
+    // ── 21.9 · (16) Reihenfolge, (17) k und ceil(n/k) unveraendert ──────────────────────
+    {
+      // Der Laufbereich darf die Planung NICHT beeinflussen: identischer Zustand mit und
+      // ohne `laeufe` muss dieselbe Reihenfolge ergeben.
+      const nowMs = BASIS_MS;
+      const basis = { version: 1, crons: { crawl: Object.fromEntries(SECHS.map((id, i) => [id, { status: "erfolgreich", letzterVersuchAt: new Date(nowMs - (i + 1) * 3600000).toISOString(), versuche: 1 }])) } };
+      const mitLauf = F.mergeState(basis, F.laufStartPatch({
+        cronName: "crawl", laufId: "egal", startAt: nowMs, nowMs, aktive: 6, geplant: SECHS, blockiert: []
+      }), { nowMs });
+      const ohne = F.planTenantOrder({ cronName: "crawl", tenantIds: SECHS, state: basis, nowMs });
+      const mit = F.planTenantOrder({ cronName: "crawl", tenantIds: SECHS, state: mitLauf, nowMs });
+      check("(16) Der Laufbereich veraendert die Fairnessreihenfolge nicht",
+        ohne.order.join(",") === mit.order.join(","), `${ohne.order} vs ${mit.order}`);
+      check("(16) Auch Blockierung und Planbarkeit bleiben identisch",
+        ohne.planbar === mit.planbar && ohne.blockiert.length === mit.blockiert.length);
+      // (17) k und ceil(n/k): unveraenderte Definition, unveraendertes Ergebnis.
+      let alleGleich = true;
+      for (let n = 1; n <= 9; n += 1) {
+        for (let k = 0; k <= 4; k += 1) {
+          const erwartet = k <= 0 ? Infinity : Math.ceil(n / k);
+          if (F.fairnessBound(n, k) !== erwartet) alleGleich = false;
+        }
+      }
+      check("(17) fairnessBound bleibt exakt ceil(n/k) (und Infinity bei k=0)", alleGleich);
+      const uhr = makeUhr();
+      const ablage = makeAblage({}, uhr);
+      const l = await lauf({ ablage, uhr, tenants: SECHS, deadlineMs: 110000, reserveMs: 0, standardKosten: 60000, runId: "lauf-k" });
+      const r = F.rekonstruiereLauf(ablage.dump(), "crawl", { nowMs: uhr.now() });
+      check("(17) k zaehlt weiterhin genau die BEGONNENEN Mandate — Rekonstruktion identisch",
+        l.fairness.kapazitaet === 2 && r.kapazitaet === 2 && r.obergrenzeLaeufe === 3,
+        JSON.stringify({ k: l.fairness.kapazitaet, rk: r.kapazitaet, g: r.obergrenzeLaeufe }));
+    }
+
+    // ── 21.10 · (20) Kein unkontrolliertes Wachstum ─────────────────────────────────────
+    {
+      const uhr = makeUhr();
+      const ablage = makeAblage({}, uhr);
+      for (let i = 0; i < 40; i += 1) {
+        uhr.vor(3600000);
+        await lauf({ ablage, uhr, tenants: SECHS, deadlineMs: 600000, reserveMs: 0, standardKosten: 1000, runId: `lauf-${i}` });
+      }
+      const zustand = F.normalizeState(ablage.dump());
+      check("(20) 40 Laeufe hinterlassen genau EINEN Laufdatensatz je Cron",
+        Object.keys(zustand.laeufe).length === 1 && zustand.laeufe.crawl.laufId === "lauf-39",
+        Object.keys(zustand.laeufe).join(","));
+      const groesse = JSON.stringify(zustand).length;
+      check("(20) Der Zustand bleibt klein (< 8 KB bei 6 Mandaten und 40 Laeufen)",
+        groesse < 8192, `${groesse} Bytes`);
+      // Cron-Deckel: ein fehlerhafter/fremder Patch kann den Bereich nicht aufblaehen.
+      let viele = zustand;
+      for (let i = 0; i < F.MAX_LAUF_CRONS + 8; i += 1) {
+        viele = F.mergeState(viele, F.laufStartPatch({
+          cronName: `cron-${i}`, laufId: `x-${i}`, startAt: uhr.now() + i, nowMs: uhr.now() + i, aktive: 1, geplant: ["a"], blockiert: []
+        }), { nowMs: uhr.now() + i });
+      }
+      check("(20) Der Laufbereich ist auf MAX_LAUF_CRONS gedeckelt",
+        Object.keys(viele.laeufe).length === F.MAX_LAUF_CRONS, String(Object.keys(viele.laeufe).length));
+      // Mandatsdeckel je Lauf.
+      const vieleMandate = F.normalizeLauf({
+        laufId: "x", geplant: Array.from({ length: F.MAX_LAUF_MANDATE + 50 }, (_, i) => `m-${i}`),
+        ausgaenge: Object.fromEntries(Array.from({ length: F.MAX_LAUF_MANDATE + 50 }, (_, i) => [`m-${i}`, "erfolgreich"]))
+      });
+      check("(20) Geplante Mandate und Ausgaenge sind je Lauf gedeckelt",
+        vieleMandate.geplant.length === F.MAX_LAUF_MANDATE
+        && Object.keys(vieleMandate.ausgaenge).length === F.MAX_LAUF_MANDATE);
+      // Zeitbasierte Retention: ein Datensatz, den niemand fortschreibt, faellt weg.
+      const alt = F.mergeState({}, F.laufStartPatch({
+        cronName: "crawl", laufId: "uralt", startAt: BASIS_MS, nowMs: BASIS_MS, aktive: 1, geplant: ["a"], blockiert: []
+      }), { nowMs: BASIS_MS });
+      const nachRetention = F.mergeState(alt, {}, { nowMs: BASIS_MS + F.LAUF_RETENTION_MS + 1 });
+      check("(20) Alte Laufdatensaetze fallen zeitbasiert weg",
+        Object.keys(nachRetention.laeufe).length === 0);
+      // Unbekannte Felder und Statuswoerter werden verworfen (Weissliste).
+      const schmutzig = F.normalizeLauf({ laufId: "x", status: "erfunden", ausgaenge: { a: "erfunden", b: "erfolgreich" }, fremd: "weg" });
+      check("(20) Unbekannte Statuswoerter und Felder werden verworfen",
+        schmutzig.status === "laufend" && !("fremd" in schmutzig)
+        && Object.keys(schmutzig.ausgaenge).join(",") === "b");
+    }
+
+    // ── 21.11 · Verschmelzungsregeln punktgenau ─────────────────────────────────────────
+    {
+      const a = { laufId: "L1", status: "laufend", startAt: new Date(BASIS_MS).toISOString(), standAt: new Date(BASIS_MS).toISOString(), ausgaenge: { x: "erfolgreich" } };
+      const zurueck = F.mergeLauf(a, { laufId: "L1", status: "laufend", ausgaenge: { x: "begonnen" } });
+      check("Ein Ausgang faellt nie von 'erfolgreich' auf 'begonnen' zurueck", zurueck.ausgaenge.x === "erfolgreich");
+      const abgebrochen = F.mergeLauf(a, F.laufTimeoutPatch({ cronName: "c", laufId: "L1", startAt: BASIS_MS, nowMs: BASIS_MS + 1000 }).laeufe.c);
+      check("Ein Timeout-Vermerk hebt 'laufend' auf 'abgebrochen'", abgebrochen.status === "abgebrochen");
+      const wiederFertig = F.mergeLauf(abgebrochen, F.laufAbschlussPatch({ cronName: "c", laufId: "L1", startAt: BASIS_MS, nowMs: BASIS_MS + 2000, kapazitaet: 1, obergrenzeLaeufe: 1 }).laeufe.c);
+      check("Ein echter Abschluss hebt 'abgebrochen' — die Timeout-Tatsache bleibt",
+        wiederFertig.status === "abgeschlossen" && wiederFertig.aeusseresTimeoutAt !== null && wiederFertig.grund === null);
+      const nichtZurueck = F.mergeLauf(wiederFertig, F.laufTimeoutPatch({ cronName: "c", laufId: "L1", startAt: BASIS_MS, nowMs: BASIS_MS + 3000 }).laeufe.c);
+      check("Ein spaeterer Timeout-Vermerk kann einen Abschluss NICHT zurueckdrehen",
+        nichtZurueck.status === "abgeschlossen");
+      const ohneKennung = F.normalizeLauf({ status: "abgeschlossen" });
+      check("Ein Laufdatensatz ohne Laufkennung wird verworfen (kein herrenloser Stand)", ohneKennung === null);
+    }
+
+    // ── 21.12 · Vertrag in server.js ────────────────────────────────────────────────────
+    {
+      const serverSrc = fs.readFileSync(path.join(ROOT, "server.js"), "utf8");
+      check("Alle drei aeusseren Zeitlimits vermerken den Abbruch persistent",
+        (serverSrc.match(/markiereAeusseresCronTimeout\("(crawl|pipeline|lage-check)"/g) || []).length === 3,
+        String((serverSrc.match(/markiereAeusseresCronTimeout\(/g) || []).length));
+      check("Der Vermerk benutzt laufTimeoutPatch und behauptet keinen Abschluss",
+        /cronFairness\.laufTimeoutPatch\(\{/.test(serverSrc)
+        && !/laufAbschlussPatch/.test(serverSrc));
+      check("Der Vermerk ist hart begrenzt (er laeuft bei ~280 s eines 300-s-Fensters)",
+        /`cron-\$\{cronName\}-timeoutvermerk`/.test(serverSrc)
+        && /saveCronFairnessState\(cronFairness\.laufTimeoutPatch\([\s\S]{0,300}\),\s*\n\s*5000,/.test(serverSrc));
+      check("Die Laufkennung kommt aus der Route, damit der Vermerk denselben Lauf trifft",
+        (serverSrc.match(/runId: laufId/g) || []).length === 3
+        && (serverSrc.match(/const laufId = helmutRunId\("cron-(crawl|pipeline|lage-check)"/g) || []).length === 3);
+      check("Die Protokollzeile verbindet Log und Ablage (Laufkennung + Laufzustand)",
+        /lauf=\$\{fairness\.laufId \|\| "-"\}/.test(serverSrc)
+        && /laufzustand=\$\{fairness\.laufStatus \|\| "-"\}/.test(serverSrc));
+      check("Der Vermerk respektiert den Rueckweg HELMUT_CRON_FAIRNESS=off",
+        /async function markiereAeusseresCronTimeout[\s\S]{0,200}if \(!cronFairness\.fairnessEnabled\(\)\) return/.test(serverSrc));
+      // Der Sprint erhoeht KEINE Grenze (die Budgets selbst prueft §20).
+      check("Kein neues/erhoehtes Zeitlimit: die vier 280 000-ms-Grenzen bleiben unveraendert",
+        (serverSrc.match(/280000/g) || []).length === 4, String((serverSrc.match(/280000/g) || []).length));
+      check("Kein neues Zeitbudget: 270 000 / 240 000 ms bleiben unveraendert",
+        (serverSrc.match(/deadlineMs: 270000/g) || []).length === 2
+        && (serverSrc.match(/deadlineMs: 240000/g) || []).length === 2);
+      // Die Schemaversion MUSS erhoeht sein, sonst loescht ein alter Codestand den Bereich.
+      check("Die Schemaversion ist auf 2 erhoeht (Schutz gegen aeltere Codestaende)",
+        F.FAIRNESS_VERSION === 2, String(F.FAIRNESS_VERSION));
+      check("Jeder Laufpatch traegt die Schemaversion",
+        F.laufStartPatch({ cronName: "c", laufId: "L", startAt: BASIS_MS, nowMs: BASIS_MS }).version === 2
+        && F.laufTimeoutPatch({ cronName: "c", laufId: "L", startAt: BASIS_MS, nowMs: BASIS_MS }).version === 2
+        && F.laufAbschlussPatch({ cronName: "c", laufId: "L", startAt: BASIS_MS, nowMs: BASIS_MS }).version === 2);
+    }
+
+    // ── 21.13 · DSGVO: die Loeschung erfasst auch die Laufspur ──────────────────────────
+    {
+      const uhr = makeUhr();
+      const ablage = makeAblage({}, uhr);
+      await lauf({ ablage, uhr, tenants: VIER, deadlineMs: 600000, reserveMs: 0, standardKosten: 1000, runId: "lauf-dsgvo" });
+      const bereinigt = F.withoutTenant(ablage.dump(), VIER[0]);
+      check("DSGVO: die Loeschung entfernt das Mandat auch aus dem Laufdatensatz",
+        !bereinigt.laeufe.crawl.geplant.includes(VIER[0])
+        && !(VIER[0] in bereinigt.laeufe.crawl.ausgaenge)
+        && !(VIER[0] in bereinigt.crons.crawl),
+        JSON.stringify(bereinigt.laeufe.crawl.geplant));
+      check("DSGVO: die uebrigen Mandate bleiben unberuehrt",
+        bereinigt.laeufe.crawl.geplant.length === 3 && Object.keys(bereinigt.crons.crawl).length === 3);
+      check("DSGVO: der Laufbereich traegt nur Kennungen, Zeitstempel, Zaehler, Statuswoerter",
+        !/[A-Za-zÄÖÜäöüß]{4,}\s+[A-Za-zÄÖÜäöüß]{4,}/.test(JSON.stringify(bereinigt.laeufe)));
+    }
   }
 
   console.log(`\n== ERGEBNIS ==\nPASS ${pass}  FAIL ${fail}  (gesamt ${pass + fail})`);
