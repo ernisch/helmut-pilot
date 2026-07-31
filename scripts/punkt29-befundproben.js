@@ -156,8 +156,19 @@ function probe(name, soll, detail = "") {
     };
     const u1 = await understanding.runUnderstandingShadow(rohUpdate, api);
     const u2 = await understanding.runUnderstandingShadow(rohUpdate, api);
+    // Praezisierte Erwartung (2026-07-31): frueher stand hier zusaetzlich
+    // (u2.counts.duplicate || 0) === 0. Das war UEBERSTRENG und fachlich falsch:
+    // der Bestand enthaelt 2 Cluster, nur EINES wird aktualisiert. Das andere ist
+    // beim identischen Neustart voellig zu Recht ein 'duplicate' — genau dafuer ist
+    // die Duplikaterkennung da. Die Bedingung haette also auch nach einem korrekten
+    // Fix niemals gruen werden koennen. Geprueft wird jetzt, was der Befund
+    // tatsaechlich verlangt: der GESCHEITERTE Cluster wird erneut versucht und
+    // taucht sichtbar wieder auf, statt stillschweigend als Duplikat zu enden.
     probe("P29-3 nach einer gescheiterten Aktualisierung fuehrt der identische Neustart zu einem ZWEITEN Update-Versuch (kein stilles 'duplicate')",
-      (u1.counts["skipped-error"] || 0) === 1 && updateVersuche >= 2 && (u2.counts.duplicate || 0) === 0,
+      (u1.counts["skipped-error"] || 0) === 1
+        && updateVersuche >= 2
+        && (u2.counts["skipped-error"] || 0) === 1
+        && (u2.counts.duplicate || 0) === 1,
       `heutige Versuche: ${updateVersuche}, zweiter Lauf: ${JSON.stringify(u2.counts)}`);
   }
 

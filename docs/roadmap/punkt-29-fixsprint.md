@@ -187,13 +187,63 @@ Befunde bestehen auf `main`).
 | 29A-Befundproben (PR #187, rein lesend übernommen) auf `main` `75d7286` | **0/4 behoben, Exit 1** (Reproduktion) |
 | Neue Regressionssuite `punkt29-fixpfade-test.js` auf `main`-Code | **24 FAIL / 16 PASS** (rot — Befundstand; die 16 PASS sind die Gegenproben des Bestandsverhaltens) |
 | Neue Regressionssuite nach den Fixes | **40/40** |
-| 29A-Befundproben nach den Fixes | **3/4 behoben** — P29-1/-2/-4 grün; P29-3 bleibt dort formal rot wegen einer überstrengen Erwartung der Probe, siehe §5 |
+| 29A-Befundproben nach den Fixes (erster Stand) | **3/4 behoben** — P29-3 formal rot wegen der überstrengen Probenerwartung, seit §5a korrigiert |
 | Mutationsprobe `punkt29-fix-mutationsprobe.js` | **7/7 rot erkannt** (Referenzlauf grün) |
-| Offline-Suite ohne Production-Secrets (maßgeblich, bildet CI nach) | **189/189** — Basislinie `origin/main` `75d7286` im getrennten Worktree, identische Umgebung: **188/188**; Fehlschlagliste **byte-identisch (beide leer)** — die in 25A/29A dokumentierten 4 umgebungsbedingten Fehlschläge treten in dieser Cloud-Umgebung nicht auf; die +1 ist die neue Suite |
 | Browser-/Mobile-Smoke | **32/32** |
-| CI auf PR #188 (Head `20eb13b`, Run 30564617564) | **vollständig grün** — Pflicht-Checks „Syntax + Offline-Suiten" ✅ und „Browser-/Mobile-Smoke (Chromium)" ✅ (2026-07-30 17:09 UTC) |
+| CI auf PR #188 (Head `20eb13b`, Run 30564617564) | **vollständig grün** — beide Pflicht-Checks ✅ (2026-07-30 17:09 UTC) |
 
-## 5 · Abweichung zur 29A-Befundprobe P29-3 (Integrationshinweis für PR #187)
+**Nach der Integration in den 29A-Vertrag (2026-07-31, Rebase auf `main` `cb10d76`) neu gemessen:**
+
+| Lauf | Ergebnis |
+|---|---|
+| 29A-Fehlervertrag `punkt29-fehlervertrag-test.js` | **80/80** (79 + neuer Fall C9b) |
+| 29A-Mutationsprobe `punkt29-mutationsprobe.js` | **12/12 rot** — M12 wird wieder erkannt (vor C9b überlebte sie) |
+| 29A-Befundproben `punkt29-befundproben.js` | **4/4 behoben, Exit 0** |
+| Fix-Regressionssuite `punkt29-fixpfade-test.js` | **40/40** |
+| Fix-Mutationsprobe `punkt29-fix-mutationsprobe.js` | **7/7 rot** |
+| Offline-Suite ohne Production-Secrets (maßgeblich, bildet CI nach) | **186/190** gegen Basislinie `origin/main` `cb10d76` **185/189**, Fehlschlagliste **identisch** (privacy-vollstaendigkeit, profile-db, provision-tenant, tenant-neutrality — umgebungsbedingt, im CI grün); Suiten-Delta genau **+1** = `punkt29-fixpfade-test.js` |
+| E2E-Mutationsproben Pilot / Berlin / Brandenburg | **10/10 · 10/10 · 17/17 rot** (nach der Ankerreparatur aus §5a; davor Exit 2, sie liefen gar nicht) |
+| E2E-Verträge Pilot / Berlin / Brandenburg | **96/96 · 76/76 · 98/98** |
+| Bestandsverträge einzeln | cron-fairness 201/201 · vorgangs-lebenszyklus 81/81 · matching-audit 178/178 · matching-aktualitaet 29/29 · pending-terminal 63/63 · ko-recovery 12/12 · ai-json-parse 13/13 · nachhol-schreibgate 52/52 · understanding-recovery 57/57 · understanding-gate grün |
+| Browser-/Mobile-Smoke | **32/32** |
+
+**Benannte Beobachtung B29-F1 (kein Befund dieses PRs):** `berlin-e2e-vertrag-test.js`
+ist **unter hoher Parallellast flaky** — Fall **J8** („Rangfolge: der relevante Berliner
+Vorgang steht vor dem irrelevanten") schlug in einem Lauf fehl, während fünf weitere
+Node-Prozesse liefen. Der Fehlschlag trat **auf `main` `cb10d76` ebenso auf** (isoliert
+reproduziert: 75/76) und ist damit **nicht** von diesem PR verursacht. Ohne Parallellast
+4/4 grün auf beiden Ständen. Nicht in diesem PR behoben — eine eigene, kleine Aufgabe.
+
+## 5 · Abweichung zur 29A-Befundprobe P29-3 — **erledigt am 2026-07-31**
+
+> **Integration abgeschlossen (Etappe 2, Rebase auf `main` `cb10d76`).** PR #187 ist
+> gemergt; die hier angekündigten Anpassungen sind in **diesem** PR vollzogen — siehe
+> §5a. Der Abschnitt darunter bleibt als Begründung erhalten.
+
+### 5a · Was tatsächlich angepasst wurde
+
+| Stelle | vorher | jetzt |
+|---|---|---|
+| `punkt29-befundproben.js` P29-3 | `duplicate === 0` über **alle** Cluster (unerfüllbar streng) | `updateVersuche >= 2` **und** `u2['skipped-error'] === 1` **und** `u2.duplicate === 1` — geprüft wird der geforderte zweite Update-Versuch; der **unveränderte** Nachbarcluster darf zulässig `duplicate` sein |
+| `punkt29-fehlervertrag-test.js` **B9** | pinnte: zurückgegebenes Timeout zählt als **Erfolg**, Fehlerserie 0 | fordert: wird als **Fehler** gebucht, `letzterErfolgAt === null`, Fehlerserie läuft weiter |
+| `punkt29-fehlervertrag-test.js` **C9** | pinnte: `null` endet als `cluster-error` **ohne** failed-Parkung | fordert: `skipped-invalid` **mit** markFailed, Begründung und Endzustand; `cluster-error === 0` |
+| `punkt29-fehlervertrag-test.js` **D9** | pinnte: kein zweiter Update-Versuch, `skipped-error === 0` im zweiten Lauf | fordert: `updateVersucht === 2`, zweiter Lauf zeigt `skipped-error === 1`; die **4 unveränderten** Cluster bleiben zulässige Duplikate (`duplicate === 4`) |
+| `punkt29-fehlervertrag-test.js` **C9b** (neu) | — | Fehlerisolation je Cluster, ausgelöst über einen ungeschützten Speicherfehler (`deps.save` wirft) |
+| `pilot-/berlin-/brandenburg-e2e-mutationsprobe.js` | Ankertext über 3 Zeilen inkl. `return … "duplicate" …` | Anker auf die stabile Zeile `if (!neueDocs.length) {` verkürzt |
+
+**Zwei Regressionen, die dabei aufgefallen sind und hier behoben wurden:**
+
+1. **Deckungslücke (von der 29A-Mutationsprobe aufgedeckt).** Nach dem P29-2-Fix läuft
+   der `null`-Rückgabewert sauber innen über `skipped-invalid` — damit lief **kein Test
+   mehr** durch den `cluster-error`-Catch, der die Fehlerisolation je Cluster absichert.
+   Mutation **M12 überlebte**. Geschlossen durch den neuen Fall **C9b**; die Probe
+   erkennt M12 wieder (12/12).
+2. **Drei veraltete Mutationsproben.** Der P29-3-Fix hat den `duplicate`-Block
+   umgeschrieben; die Ankertexte der Pilot-/Berlin-/Brandenburg-Proben passten nicht
+   mehr, die Proben brachen mit **Exit 2 („Probe ist veraltet")** ab und liefen gar
+   nicht. Anker verkürzt, alle drei laufen wieder (**10/10 · 10/10 · 17/17 rot**).
+
+### 5b · Ursprüngliche Begründung (unverändert)
 
 Die SOLL-Erwartung der 29A-Befundprobe P29-3 verlangt im zweiten Lauf
 `duplicate === 0` **über alle Cluster**. Das ist unerfüllbar streng: die
@@ -202,13 +252,9 @@ Probe-Fixture enthält einen zweiten, **unveränderten** Cluster
 bleibt (jede andere Klassifikation wäre falsch oder ein unnötiger KI-Call).
 Mit den Fixes zeigt die Probe real: `Versuche: 2` (der geforderte zweite
 Update-Versuch findet statt) und `zweiter Lauf: { duplicate: 1, skipped-error: 1 }`
-— das Duplikat ist der unberührte Nachbar. **Beim Merge von PR #187 nach diesem
-Fix-PR müssen dort angepasst werden:** (a) die P29-3-Erwartung der Befundprobe
-(nur der gescheiterte Vorgang darf nicht `duplicate` sein), (b) die gepinnten
-Assertions **B9/C9/D9** des Fehlervertrags (sie pinnen das alte Fehlverhalten
-und werden nach den Fixes rot — gewollt, der Fix ist sichtbar). Die
-Merge-Reihenfolge ist vom Betreiber vorgegeben: **PR #187 nicht vor 25B**;
-dieser Fix-PR ist unabhängig davon mergefähig.
+— das Duplikat ist der unberührte Nachbar. Beide Anpassungen (Befundprobe **und**
+die gepinnten Assertions B9/C9/D9) sind mit §5a **vollzogen**; die Befundproben
+stehen jetzt auf **4/4 behoben (Exit 0)**.
 
 ## 6 · Sicherheitsgrenzen (eingehalten)
 
@@ -221,11 +267,18 @@ unverändert AUS · keine neuen Mandate · keine Production-Daten im Repository
 
 ## 7 · Status und nächster Schritt
 
-**Punkt 29 bleibt ⏳ teilweise:** 29A erfüllt (PR #187, offen), die vier
-Fix-Sprints P29-1…P29-4 sind mit **PR #188** (dieser Fix-PR, Branch
-`claude/p29-fehlerpfade-schliessen-wpxb1h`) **gebaut und offline belegt**;
-**29B bleibt offen**, bis nach Merge + Deployment natürliche reguläre
-Production-Läufe rein lesend geprüft wurden (Fragenkatalog: §2 je Befund +
-29A-Doku §6). **Nächster Schritt:** Betreiberentscheidung über den Merge dieses
-Fix-PRs (unabhängig von 25B/PR #187 mergefähig; empfohlen VOR PR #187, dann
-dort B9/C9/D9 + Befundprobe P29-3 anpassen — §5), danach 29B rein lesend.
+**Punkt 29 bleibt ⏳ teilweise:** 29A ist erfüllt und **gemergt** (PR #187, in `main`
+seit `cb10d76`), die vier Fix-Sprints P29-1…P29-4 sind mit **PR #188** (dieser
+Fix-PR, Branch `claude/p29-fehlerpfade-schliessen-wpxb1h`, rebasiert auf `cb10d76`)
+**gebaut, offline belegt und in den 29A-Vertrag integriert** (§5a).
+
+**29B bleibt offen** — und daran ändert dieser PR nichts. Ein Punkt über
+„kontrolliert funktionierende Fehlerpfade" wird erst grün, wenn das korrigierte
+Verhalten an **echten regulären Läufen** rein lesend belegt ist. Künstliche Fehler
+in Production sind verboten ([`../betrieb/quellenstoerungen.md`](../betrieb/quellenstoerungen.md) §11),
+also ist 29B davon abhängig, dass die betreffenden Fehlerzustände **natürlich**
+auftreten. Tritt ein benötigter Zustand im Beobachtungsfenster nicht auf, wird 29B
+ehrlich als blockiert oder teilweise abgeschlossen geführt — **nicht** als erfüllt.
+
+**Nächster Schritt:** Betreiberentscheidung über den Merge dieses Fix-PRs
+(Merge = Production-Deployment). Danach 29B rein lesend an regulären Läufen.

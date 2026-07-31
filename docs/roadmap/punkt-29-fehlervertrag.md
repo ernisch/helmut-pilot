@@ -128,13 +128,24 @@ GENAU die vom Auftrag geforderte Lücke in die **Produktionsdatei** ein:
 | M11 | harte Deadline ignoriert | `understanding.js` Vormerk-Deadline entfernt | ✓ |
 | M12 | gesunder Pfad unnötig mit abgebrochen | `understanding.js` Cluster-Fehlerisolation entfernt | ✓ |
 
-## 5 · Befunde — echte Produktionsfehler (gefunden, NICHT behoben)
+## 5 · Befunde — echte Produktionsfehler (gefunden in 29A, **behoben in PR #188**)
 
-Nach der Befundregel des Sprints: deterministisch reproduziert
-([`scripts/punkt29-befundproben.js`](../../scripts/punkt29-befundproben.js), der „rote
-Regressionstest" — **erwartungsgemäß Exit 1, 4/4 rot**, bewusst NICHT im
-Offline-Runner), das heutige Verhalten im Vertrag **gepinnt** (B9/C9/D9), **keine**
-Korrektur in diesem Sprint (jede Korrektur verändert aktive Produktionslogik).
+> **Statusänderung 2026-07-31.** Alle vier Befunde sind im getrennten Fix-Sprint
+> **PR #188** behoben; kanonisch dort: [`punkt-29-fixsprint.md`](punkt-29-fixsprint.md).
+> Die Befundproben stehen jetzt auf **4/4 behoben (Exit 0)**, die zuvor gepinnten
+> Assertions **B9/C9/D9** fordern das **korrigierte** Verhalten (Umstellung
+> dokumentiert in `punkt-29-fixsprint.md` §5a); neu hinzugekommen ist **C9b**
+> (Fehlerisolation je Cluster), weil der P29-2-Fix die alte Abdeckung dieses Pfades
+> entfallen ließ. **Punkt 29 bleibt trotzdem ⏳** — 29B (Production-Nachweis an
+> natürlich auftretenden Fehlerzuständen) ist unverändert offen.
+>
+> Die Beschreibungen unten bleiben als **Befundbelege** stehen: sie dokumentieren
+> Ursache und Wirkung im Zustand **vor** dem Fix und sind die Abnahmegrundlage.
+
+Nach der Befundregel des Sprints wurden sie deterministisch reproduziert
+([`scripts/punkt29-befundproben.js`](../../scripts/punkt29-befundproben.js)) und in
+29A bewusst **nicht** korrigiert — die Korrektur war ein eigener,
+freigabepflichtiger Sprint (PR #188).
 
 ### P29-1 · Fairness verbucht zurückgegebene Fehler-/Timeout-Objekte als Erfolg
 
@@ -396,13 +407,16 @@ drei-profile-e2e · pilot-/berlin-/brandenburg-e2e-vertrag · matching-relevanz-
 > **Unverändert:** 29A ändert weiterhin keine Zeile Produktionscode, löst keinen Lauf
 > aus und berührt die 25B-Wartesituation nicht. Punkt 29 bleibt **⏳ teilweise**.
 
-**Punkt 29: ⏳ teilweise** — 29A erfüllt (79/79 + 12/12 Mutationen + Bestand),
-29B (rein lesender Production-Nachweis, §6) offen; zusätzlich stehen die
-Fix-Sprints zu P29-1…P29-4 aus (eigene, freigabepflichtige Aufträge — ein Punkt
-über „kontrolliert funktionierende Fehlerpfade" kann nicht vollständig grün sein,
-solange vier belegte Fehlerpfad-Befunde offen sind).
+**Punkt 29: ⏳ teilweise** — 29A erfüllt und gemergt (jetzt **80/80** inkl. C9b +
+**12/12** Mutationen + Bestand); die vier Befunde P29-1…P29-4 sind in **PR #188**
+behoben und offline belegt (Befundproben **4/4**). **29B (rein lesender
+Production-Nachweis, §6) bleibt offen** — und ist der einzige verbleibende Grund,
+warum die Zeile nicht grün ist: ein Punkt über „kontrolliert funktionierende
+Fehlerpfade" wird erst grün, wenn das korrigierte Verhalten an **echten regulären
+Läufen** belegt ist. Künstliche Fehler in Production sind verboten
+([`../betrieb/quellenstoerungen.md`](../betrieb/quellenstoerungen.md) §11); tritt ein
+benötigter Fehlerzustand nicht natürlich auf, wird 29B ehrlich als blockiert oder
+teilweise abgeschlossen geführt, **nicht** als erfüllt.
 
-**Nächster Schritt:** Merge-Entscheidung über den 29A-PR (nur Tests + Doku, keine
-Produktionswirkung). Danach: Betreiberentscheidung über die
-Reihenfolge der Fix-Sprints (Empfehlung: P29-2 und P29-4 zuerst — kleinste
-Eingriffe, klarste Wirkung), dann 29B nach §6.
+**Nächster Schritt:** Merge-Entscheidung über den Fix-PR #188 (Merge =
+Production-Deployment, freigabepflichtig). Danach 29B nach §6.

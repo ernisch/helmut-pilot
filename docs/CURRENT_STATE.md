@@ -1,9 +1,43 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-30 (**Sprint P29-Fix — Fehlerpfade schließen (P29-1…P29-4).
-ERFOLGREICH ABGESCHLOSSEN — alle vier
+**Letzte Aktualisierung:** 2026-07-31 (**Sprint P29-Fix — Fehlerpfade schließen (P29-1…P29-4).
+ERFOLGREICH ABGESCHLOSSEN (repo-seitig) — alle vier
 in Punkt 29A deterministisch belegten Produktionsfehler sind behoben, offline bewiesen und
-mutationsgesichert; 29B (rein lesender Production-Nachweis) bleibt offen.** Ausgangspunkt
+mutationsgesichert; 29B (rein lesender Production-Nachweis) bleibt offen.**
+**Nachtrag 2026-07-31 (Etappe 2 des Integrationssprints): auf `main` `cb10d76` (= Merge PR #187)
+rebasiert und in den jetzt gemergten 29A-Vertrag integriert.** Konflikt in `CURRENT_STATE.md` von
+Hand gelöst (P29-Fix-Block vorn, 29A-Block vollständig erhalten). **Assertions an die korrigierte
+Produktionslogik angepasst:** **B9** fordert jetzt, dass ein zurückgegebenes Timeout-Objekt als
+FEHLER gebucht wird (`letzterErfolgAt === null`, Fehlerserie läuft weiter) statt als Erfolg ·
+**C9** fordert `skipped-invalid` MIT markFailed, Begründung und Endzustand (`cluster-error === 0`)
+statt des anonymen `cluster-error` · **D9** fordert den zweiten Update-Versuch
+(`updateVersucht === 2`, zweiter Lauf zeigt `skipped-error === 1`) und lässt die **4 unveränderten**
+Cluster ausdrücklich als zulässige Duplikate zu. **Überstrenge P29-3-Befundprobe korrigiert:** die
+frühere Bedingung `duplicate === 0` über ALLE Cluster war fachlich falsch und hätte auch nach einem
+korrekten Fix nie grün werden können — geprüft wird jetzt der tatsächlich geforderte erneute
+Updateversuch (`updateVersuche >= 2`, `skipped-error === 1`), während der unveränderte Nachbarcluster
+zulässig `duplicate` bleibt; Befundproben stehen damit auf **4/4 behoben, Exit 0**.
+**Zwei Regressionen dabei gefunden und behoben:** (1) **Deckungslücke** — nach dem P29-2-Fix lief
+kein Test mehr durch den `cluster-error`-Catch, der die Fehlerisolation je Cluster absichert;
+Mutation **M12 überlebte**. Geschlossen durch den neuen Vertragsfall **C9b** (ausgelöst über einen
+ungeschützten Speicherfehler), Probe erkennt M12 wieder → **12/12**. (2) **Drei veraltete
+Mutationsproben** — der P29-3-Fix hat den `duplicate`-Block umgeschrieben, dadurch brachen die
+Pilot-/Berlin-/Brandenburg-Proben mit **Exit 2 („Probe ist veraltet")** ab und liefen gar nicht;
+Anker auf die stabile Zeile `if (!neueDocs.length) {` verkürzt, alle drei laufen wieder.
+**Tests nach der Integration (real ermittelt):** 29A-Vertrag **80/80** · 29A-Mutationsprobe
+**12/12 rot** · Befundproben **4/4 behoben** · Fixpfade **40/40** · Fix-Mutationsprobe **7/7 rot** ·
+Offline-Suite ohne Secrets **186/190** gegen Basislinie `main` `cb10d76` **185/189** mit identischer
+Fehlschlagliste (4 umgebungsbedingte Suiten), Delta genau **+1** (`punkt29-fixpfade-test.js`) ·
+E2E-Proben Pilot/Berlin/Brandenburg **10/10 · 10/10 · 17/17 rot** · E2E-Verträge **96/96 · 76/76 ·
+98/98** · cron-fairness **201/201** · matching-audit **178/178** · vorgangs-lebenszyklus **81/81** ·
+pending-terminal **63/63** · ko-recovery **12/12** · ai-json-parse **13/13** · nachhol-schreibgate
+**52/52** · understanding-recovery **57/57** · Browser-/Mobile-Smoke **32/32**.
+**Benannte Beobachtung B29-F1 (kein Befund dieses PRs):** `berlin-e2e-vertrag-test.js` ist unter
+hoher Parallellast flaky (Fall J8, Rangfolge) — der Fehlschlag trat **auch auf `main` `cb10d76`**
+isoliert auf (75/76) und ist nicht von diesem PR verursacht; ohne Parallellast 4/4 grün auf beiden
+Ständen. Nicht behoben, eigene kleine Aufgabe. **Punkt 29 bleibt ⏳ teilweise; 29B unverändert
+offen** (Production-Nachweis an natürlich auftretenden Fehlerzuständen, künstliche Fehler in
+Production verboten). Ausgangspunkt
 `origin/main` `75d7286`; die 29A-Befundproben (aus PR #187 rein lesend übernommen) reproduzierten
 dort **0/4 behoben (Exit 1)**. **Fixes (kleinste sichere Korrektur, je `git revert`-rückbaubar):**
 **P29-1** `cron-fairness.js` bucht zurückgegebene Fehler-/Timeout-Objekte (`ok:false` /
