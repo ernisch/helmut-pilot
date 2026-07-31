@@ -176,6 +176,17 @@ Zustandsablage ist eine **eigene** `helmut_store`-Zeile `main-cron-fairness` (§
 vom Last-Write-Wins-Blob und ohne eigene Tabelle. Kanonisch:
 [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md).
 
+**Globale Erfassung vs. mandatsbezogene Projektion (OP-25 K1, gebaut 2026-07-31 — DORMANT).**
+Der heute laufende Weg startet je Mandat einen **vollständigen** Ablauf, obwohl Abruf,
+Rohdokumente und Verstehen mandantenneutral sind: der Rohkorpus (`raw_documents`) und die
+Wissensobjekte tragen keinen Mandantenbezug, nur Matching und Entscheidungen sind Projektionen.
+Der getrennte Weg — globale Erfassung **einmal** je Lauf, danach je Mandat nur die Projektion —
+ist gebaut (`cron-globalphase.js`, `scheduler.runGlobaleErfassung` / `runMandatsProjektion`),
+liegt aber hinter `HELMUT_CRON_GLOBALPHASE` und ist **Default AUS und in Production nicht
+gesetzt**. **Die aktive Architektur ist damit unverändert `runSourceCrawl` je Mandat**; dieser
+Abschnitt beschreibt nur, wo der dormante Weg liegt. Kanonisch:
+[`betrieb/cron-globalphase.md`](betrieb/cron-globalphase.md).
+
 ### 7a · Vorgangsidentität (seit 2026-07-26, Betriebsbefund B4)
 
 **Fachliche Identität und technische Eindeutigkeit sind getrennt.** Vorher war die
