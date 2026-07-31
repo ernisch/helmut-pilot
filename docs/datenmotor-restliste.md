@@ -567,6 +567,54 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   **0 KI, 0,00 USD.** Kanonisch inkl. Nachweisverfahren:
   [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) **§11** (§11.8 = späterer Nachweis).
   **Der Kapazitätsblocker bleibt unverändert offen** — er war ausdrücklich nicht Gegenstand.
+- **Status K1 (2026-07-31, Sprint „Globale Erfassung und mandatsbezogene Projektion trennen"):
+  IM REPOSITORY UMGESETZT als SCHATTENPFAD, in Production NICHT aktiviert.** **Bestandsprüfung
+  gegen `main`:** von den zwölf Schritten in `runSourceCrawl` sind **fünf global** (Abruf,
+  Rohitems, Rohdokumente, Lazy-/Eager-Understanding) und werden je Mandat **wiederholt**; nur
+  Matching, Entscheidungen und die Mandatstelemetrie sind echte Projektionen. Der Rohkorpus
+  (`raw_documents`) und die Wissensobjekte tragen **keinen** Mandantenbezug — die
+  Ausgangsthese ist damit bestätigt, aber zu grob: das prozessweite Gedächtnis geteilter
+  Abrufwege entdoppelt schon heute einen Teil, teuer bleibt die Wiederholung von Quellenplan,
+  eigenen Abrufwegen, Dedup, Clustering und einem **eigenen 90-s-Verstehensbudget je Mandat**.
+  **Umsetzung:** neues Modul `lib/helmut/cron-globalphase.js` (Vereinigungsmenge,
+  Budgetaufteilung, Datenstandsvertrag, Kapazitätsmodell — rein, IO-frei) plus
+  `scheduler.runGlobaleErfassung` / `scheduler.runMandatsProjektion`. **`runSourceCrawl` bleibt
+  unangetastet.** **Flaggrenze:** `HELMUT_CRON_GLOBALPHASE`, **Default AUS**, fail closed
+  (nur `on`/`true`/`1`/`an` schalten ein), **nicht** über `helmut-flags.json` setzbar — die
+  Aktivierung ist ausschließlich eine Vercel-Env-Entscheidung. **Ohne Flag ist der Aufruf
+  byte-identisch zum bisherigen** (Quelltextvertrag + Mutationsprobe M8). **Vereinigungsmenge
+  bewiesen** gegen das **echte** relationale Seed-Modell (Modus `on` wie Production) mit acht
+  Profilen, darunter je ein Berliner und ein Brandenburger Landtagsprofil: Vollständigkeit,
+  jede Kennung genau einmal, alle acht Personenquellen erhalten, **0 Berliner und 0
+  Brandenburger Landeswege**, keine manuellen, keine deaktivierten Wege, kein DIP-Weg im
+  Quellencrawl. Gemessen: **1 162 Einzelplan-Wege → 196 in der Vereinigung** (966 geplante
+  Abrufe weniger je Lauf). **Kapazität (deterministische Laufzeitsimulation, beide Pfade am
+  echten Produktionscode):** production-kalibriert erreicht der **alte** Pfad bei sechs
+  Mandaten **2 von 6** im 270-s-Fenster und überzieht es um 37,6 s, der **neue** **6 von 6**
+  ohne Überziehung; bei elf Mandaten **2 von 11** gegen **11 von 11**. Grenzkosten je
+  zusätzlichem Mandat **32 920 ms → 6 620 ms**. **Modellrechnung** mit den Production-Werten
+  (globale Arbeit 240 s, Projektion 1,65 s): n=6 **1/6 → 6/6**, n=11 **1/11 → 10/11** — bei elf
+  Mandaten bleibt je Lauf **eines** übrig (`ceil(11/10) = 2` Läufe). **Drei Unterschiede
+  benannt und bewertet, keiner weggeredet:** **K1-1** die Vorgangskennung hängt an der
+  Bündelung (global 1 Cluster statt 2 mit anderen Kennungen; der Resolver hält beide für
+  denselben Vorgang, kein Dokument geht verloren) · **K1-3** das 90-s-Verstehensbudget gilt
+  künftig je **Lauf** statt je **Mandat** (der Rest bleibt zurückgestellt und wird vom
+  dedizierten Understanding-Cron geholt) · **K1-4** im alten Pfad matcht ein früh
+  verarbeitetes Mandat gegen einen **unvollständigen** Korpus; im neuen sehen alle denselben.
+  Nach zwei Läufen sind beide Pfade **feldgleich** (Rohdokumente, Wissensobjekte, Matching,
+  Scores, Entscheidungen, Mandantentrennung, KI-Aufrufe). **Zwei Bestandsbefunde nebenbei
+  belegt:** `crawlAllSources` kennt **keine** Deadline (im neuen Pfad durch stufenweisen Abruf
+  begrenzt, `crawler.js` unverändert) und `budgetMs = 0` bedeutet in `runUnderstandingShadow`
+  „**kein** Limit" statt „keine Zeit" (im neuen Pfad ehrlich übersprungen; `runSourceCrawl`
+  bewusst nicht angefasst). **Tests:** neue Suite **169/169**, Mutationsprobe **17/17 rot**,
+  Offline-Suite **178/192** gegen Basislinie `origin/main` `61a0947` **177/191** mit
+  **identischer** Fehlschlagliste (Delta genau +1 = die neue Suite), Browser-/Mobile-Smoke
+  **32/32**, `cron-fairness` **285/285**, `punkt29-fehlervertrag` **80/80**,
+  `pipeline-zeitbudget` **21/21**, `source-architecture` **99/99**. **0 KI-Aufrufe, 0,00 USD,
+  keine Migration, kein Production-Zugriff, keine Cron-/Budget-/Quellen-/Flagänderung, Berlin/
+  Brandenburg/M8/Testmandate unverändert AUS.** **Der Kapazitätsblocker ist damit NICHT
+  geschlossen** — er ist gelöst *gebaut*, aber nicht *aktiviert*. Kanonisch:
+  [`betrieb/cron-globalphase.md`](betrieb/cron-globalphase.md).
 - **Ausgangsbefund (2026-07-29, vor diesem Sprint):** **Ursache belegt, Umfang noch nicht vermessen** (Befund B5).
   Der Crawl-Cron endet reproduzierbar nach ~280 s mit `bounded=true`
   (`[cron/crawl] 280001ms tenants=undefined bounded=true`, gemessen 28.07. 04:00, 28.07. 20:00

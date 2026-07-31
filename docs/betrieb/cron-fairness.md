@@ -339,6 +339,15 @@ verarbeitet wurden.
 
 ## 9 · Verbindliche Folgeregel: weitere Testmandate
 
+> **Nachtrag 2026-07-31 (OP-25 K1): Die Sperre bleibt unverändert bestehen.** Der
+> Kapazitätsblocker aus §10.5/§10.7 ist inzwischen **im Repository adressiert** — als
+> **Schattenpfad hinter einem Feature-Flag, das in Production NICHT gesetzt ist**:
+> [`cron-globalphase.md`](cron-globalphase.md). Die globale Datenerfassung läuft dort einmal
+> je Lauf, danach folgen nur noch die mandatsbezogenen Projektionen (≈ 1,05 s je Mandat,
+> Production gemessen). **Solange das Flag aus ist, gilt jede Zahl dieses Dokuments
+> unverändert** — insbesondere `k` und `ceil(n/k)`. Eine Lockerung der Sperre setzt Merge,
+> Aktivierung **und** einen eigenen Production-Nachweis voraus (K2).
+
 > **Stand 2026-07-31 (§10): Die Sperre bleibt bestehen — jetzt aus einem gemessenen Grund.**
 > Der Nachweis ist erbracht, `k` ist gemessen, und das Ergebnis trägt die Aktivierung **nicht**:
 > im schweren Datenpfad (`crawl`/`pipeline`) wird ein Mandat real nur alle **1,5–3 Tage**
@@ -638,3 +647,29 @@ vollständig offen**; dieser Sprint macht ihn nur zuverlässig **messbar**, er b
 **Erwartete Abweichung, die kein Fehler ist:** im ersten Lauf nach dem Deployment kann
 `zustand=gestoert` / `zustand-neuere-version-2` auftreten, falls parallel noch eine
 Vorgänger-Instanz einen Cron bedient (§11.6). Einmalig und auf das Rolloutfenster begrenzt.
+
+---
+
+## 12 · Verhältnis zu OP-25 K1 (Globalphase)
+
+Dieses Dokument beschreibt, **wer wann drankommt** (Fairness) und **wie ein Lauf beobachtbar
+bleibt** (R-6). Es beschreibt **nicht**, wie viel Arbeit in einen Lauf passt — das ist der
+Kapazitätsblocker aus §10.5/§10.7.
+
+Der Kapazitätsblocker wird in [`cron-globalphase.md`](cron-globalphase.md) adressiert:
+**globale Erfassung einmal je Lauf, danach nur noch mandatsbezogene Projektionen.**
+
+**Abgrenzung, verbindlich:**
+
+- K1 ändert **nichts** an der Fairnesslogik. Die Mandatsphase läuft durch **dieselbe**
+  `runCronForTenants` → `cron-fairness.runTenantsFairly` — Reihenfolge, Losentscheid, Sperren,
+  Laufdatensatz, Fehlerisolation und `ceil(n/k)` sind unverändert. Nur die **Arbeit je Mandat**
+  ist eine andere (Matching + Entscheidungen statt vollständiger Crawl).
+- K1 ändert **kein** Zeitbudget. Es **teilt** das bestehende Laufbudget zwischen globaler
+  Phase und Mandatsphase auf; die globale Phase erhält höchstens `HELMUT_CRAWL_GESAMTBUDGET_MS`
+  und nie weniger als 50 % der Restzeit.
+- K1 ist **Default AUS** (`HELMUT_CRON_GLOBALPHASE`) und in Production **nicht gesetzt**.
+  **Alle Messwerte dieses Dokuments — `k`, `ceil(n/k)`, die Kapazitätszahlen aus §10.5, die
+  Hochrechnung aus §10.6 und die Testmandat-Sperre aus §9 — gelten unverändert weiter.**
+- Der Production-Nachweis aus §11.8 (R-6) ist **unabhängig** vom K1-Nachweis und muss zuerst
+  erbracht werden: er misst den heutigen Pfad.
