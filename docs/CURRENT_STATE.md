@@ -1,6 +1,62 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-31 (**Sprint P29-Fix — Fehlerpfade schließen (P29-1…P29-4).
+**Letzte Aktualisierung:** 2026-07-31 (**Sprint B25-2-Auflösung — Matching-Rezeptversion
+`legacy_relevance_v1` → `v2`. ERFOLGREICH ABGESCHLOSSEN (repo-seitig; Merge und damit die
+Wirkung stehen beim Betreiber).** **Ausgangslage belegt:** `origin/main` = `071f91c`
+(Merge PR #188), Production-Deployment `dpl_3LESACWZLhCYGis6Zh5ckRMMpRov`, Commit `071f91c`,
+Ziel `production`, Alias `helmut-pilot.vercel.app`, Region `fra1` — Push 01:37:41 → Build
+01:37:45 → **`READY` 01:37:56 UTC** (rein lesend über die Vercel-Deployment-API).
+**Befund:** Die Ausschussbeleg-Regel (`ausschussBelegZulaessig`, Befund 27A-2/PR #185)
+entscheidet, WELCHE Merkmale als Ausschussmitgliedschaft zählen; sie gibt seit dem Fix bei
+gleicher Eingabe ein anderes Ergebnis (`matched_features`, Signale, Begründung, Gewicht 34).
+Nach der Definition der Versionsachse (`rezept_version` = „nach welcher Regel: Merkmale,
+Gewichte, Auswahl") ist das eine **Rezeptänderung** — die Anhebung war in PR #185 unterblieben
+und ist die belegte Ursache von **Befund B25-2**: `matched_features` gehen bewusst nicht in
+`computeInputFingerprint` ein, deshalb wurde nie neu gerechnet und die falschen Belege blieben
+sichtbar (inkl. **Rang 1** des Piloten). **Abgrenzung zur Gegenentscheidung §36** (dort wurde
+eine Anhebung zu Recht abgelehnt): dort rechnete das Rezept nach dem Fix exakt wie vorher und
+sah nur seinen Eingang nicht — hier rechnet die Regel selbst anders. **Fix: eine Zeile
+Produktionscode** (`lib/helmut/matching-contract.js`), nur die Rezeptachse; Engine
+(`legacy-shadow-1`), Vektor (`feature-hash-256-v1`) und Auditschema (`matching-audit-1`)
+unverändert. Keine Migration, kein Backfill, kein Flag, kein Cron. **Deterministisch bewiesen**
+(neuer Vertrag `scripts/matching-rezeptversion-v2-test.js`, **39/39**, am echten
+`runMatchingShadow` mit echtem `matching-audit`): (1) der Eingabefingerabdruck ändert sich an
+allen drei Stellen, an denen die Version eingeht; (2) der nächste **reguläre** Lauf rechnet neu
+— mit **Gegenprobe**, dass er ohne die Anhebung idempotent bliebe (= B25-2); (3) die
+Ausschussbelege folgen der korrigierten Logik (Bund × Landesvorgang mit gleichem
+Ausschuss-Stamm → kein Beleg, Thema bleibt), und die Anhebung ändert die **Regel** nicht;
+(4) der identische Folgelauf ist wieder idempotent — die Anhebung wirkt **genau einmal je
+Mandant**; (5) keine Regression für andere Mandanten: Feld-für-Feld byte-identisch außer
+Versions-/Laufmetadaten, **Ähnlichkeit und Rang unverändert — die Kartenreihenfolge kippt
+nicht**, Mandantentrennung gewahrt. **Golden-Anker versionsexplizit ergänzt statt neu gesetzt:**
+`48d761b7…`/`3d4e2222…` gelten unter `v1` unverändert weiter (0a/0b), die v2-Stände sind
+zusätzlich verankert (0a2), und **0a3** beweist, dass der Unterschied v1→v2 ausschließlich in
+`rezept_version` und `ko_eingabe_hash` liegt. **Kosten: 0 KI-Aufrufe, 0,00 USD** (Matching ist
+ein reiner Rechenpfad); einmalig ≤ 126 Zeilen (6 Profile × 1 Laufzeile + je bis zu 20
+Ergebniszeilen), verteilt über die ohnehin stattfindende reguläre Rotation — **kein
+zusätzlicher, kein manueller Lauf**. **Sichtbare Wirkung:** die 5 heute noch sichtbaren
+falschen Ausschussbelege werden abgelöst (2 Pilot inkl. Rang-1-Karte, 3 zweiter Mandant),
+Score −34, überwiegend Wechsel der Entscheidungsstufe; es verschwinden Belege und Dringlichkeit,
+keine Karten. **Rückweg belegt (H1–H3):** `git revert` → der nächste Lauf findet den alten
+v1-Lauf in der append-only-Historie, bleibt idempotent, erzeugt keine dritte Generation; bereits
+korrigierte Zeilen behalten ihre korrigierten Werte — der Rückweg beschädigt nichts und macht
+die Korrektur nicht rückgängig. **Tests (real ermittelt):** neuer Vertrag **39/39** ·
+Ausschuss-Zuständigkeit **88/88** (2 neue Anker-Assertions) · Audit **178/178** ·
+Erklärungsabdeckung **60/60** · Offline-Suite ohne Secrets **190/191** gegen Basislinie
+`origin/main` **im selben Verzeichnis** 188/190 bzw. 189/190 — gemeinsamer Fehlschlag
+`p1-security-check.js` auf **beiden** Ständen (umgebungsbedingt: bei **identischem Code** in
+zwei Verzeichnissen unterschiedliche Fehlschlaglisten reproduziert; `werkzeug-lesefehler-test.js`
+zusätzlich nur auf der Basislinie, flatternd), Suiten-Delta genau **+1** (der neue Vertrag) ·
+Browser-/Mobile-Smoke **32/32** (allein gelaufen; ein früherer 19/3-Lauf war Parallellast, vgl.
+B29-F1). **Grenzen eingehalten:** kein manueller Lauf, kein Backfill, kein
+Production-Schreibzugriff (nur lesende Deployment-API), keine Sonderbehandlung des
+Pilotmandanten, keine künstlichen Fehler für 29B, kein Merge; Berlin/Brandenburg/M8 unverändert
+AUS. **Statusgrenzen: 25B und 29B bleiben offen** — beide warten weiterhin auf ihre regulären,
+rein lesenden Production-Nachweise; Checkliste unverändert. **Nächster Schritt:**
+Merge-Entscheidung des Betreibers, danach 25B rein lesend am ersten regulären Pilotlauf nach
+dem Deployment. Branch `claude/p25b-rezeptversion-anheben`. Kanonisch:
+[`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md) §53.) ·
+(**Sprint P29-Fix — Fehlerpfade schließen (P29-1…P29-4).
 ERFOLGREICH ABGESCHLOSSEN (repo-seitig) — alle vier
 in Punkt 29A deterministisch belegten Produktionsfehler sind behoben, offline bewiesen und
 mutationsgesichert; 29B (rein lesender Production-Nachweis) bleibt offen.**

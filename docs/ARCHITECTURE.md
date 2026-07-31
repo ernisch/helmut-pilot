@@ -282,7 +282,7 @@ ein Ergebnis von gestern war weder erklärbar noch reproduzierbar
 | **Atomizität** | `helmut_publish_matching_run` (`SECURITY INVOKER`) | Laufabschluss, Projektion und Ablösung sind **ein Aufruf und damit eine Transaktion** — entweder alles oder nichts. Eine bloße Schreibreihenfolge genügt **nicht**: `matching_results` wird in place überschrieben, ein Abbruch nach dem Upsert hätte den letzten vollständigen Stand bereits zerstört. Die Funktion validiert Mandant, Lauf und jede Zeile selbst und serialisiert je Mandant über einen Advisory-Lock |
 | **Projektions-Riegel** | Trigger `matching_results_run_complete` | Eine Ergebniszeile mit `run_id` darf **nur** auf einen `vollstaendig`-Lauf verweisen — datenbankseitig erzwungen, nicht bloß im Code zugesichert. Ohne Auditpersistenz (`run_id` NULL) greift er nicht |
 | **Sperre** | `pipeline_locks`, `matching-<mandant>` | Kein zweites Sperrsystem. Schließt die Lücke, dass der **Lage-Pfad** bisher ungesperrt matchte. Unterschiedliche Profile laufen weiter parallel |
-| **Semantik-Trennung** | testgesichert | `knowledge_object_embeddings` wird **nicht** gelesen; `legacy_relevance_v1` ≠ `ko-kanon-1`; semantische Ähnlichkeit ist **kein** Relevanzsignal |
+| **Semantik-Trennung** | testgesichert | `knowledge_object_embeddings` wird **nicht** gelesen; `legacy_relevance_v2` ≠ `ko-kanon-1`; semantische Ähnlichkeit ist **kein** Relevanzsignal (Rezeptversion seit 2026-07-31 auf `v2`, Begründung: [`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md) §53) |
 
 **Rollout-Grenze:** `HELMUT_MATCHING_AUDIT`, **Default AUS**. Ohne das Flag ist der
 gesamte Auditpfad inert — keine Sperre, kein Lese- oder Schreibzugriff, keine neue

@@ -8,7 +8,20 @@ belegt. Offen ist allein ein regulärer Lauf **des Pilotmandanten** mit verände
 Eingabe — blockiert durch **Befund B25-2** (§6c): der Fix von PR #185 verändert nur
 `matched_features`, und die gehen bewusst nicht in den Idempotenz-Fingerabdruck ein,
 weshalb der Pilotlauf am 30.07. um 20:04 UTC idempotent blieb und die falschen
-Alt-Zeilen (inkl. Rang 1) stehen ließ. **Betreiberentscheidung nötig.**
+Alt-Zeilen (inkl. Rang 1) stehen ließ.
+
+**Stand 2026-07-31 zu B25-2: die Blockade ist auf der Codeseite aufgelöst.** Von den
+in §6c aufgezählten Optionen ist **(b) Rezeptversion anheben** umgesetzt —
+`legacy_relevance_v1` → `v2`, eine Zeile in `lib/helmut/matching-contract.js`,
+kanonisch begründet und deterministisch belegt in
+[`../matching-nachvollziehbarkeit.md`](../matching-nachvollziehbarkeit.md) §53
+(Nachweisvertrag `scripts/matching-rezeptversion-v2-test.js`, 39/39). Damit ändert
+sich der Eingabefingerabdruck **jedes** Mandanten genau einmal; der nächste
+**reguläre** Lauf rechnet neu und löst die falschen Alt-Zeilen ab, danach ist wieder
+alles idempotent. **Kein manueller Lauf, kein Backfill, kein Schreibzugriff.**
+**25B bleibt offen** — der rein lesende Nachweis am tatsächlich erfolgten regulären
+Lauf des Pilotmandanten steht weiterhin aus (§6b/§6-Folgeauftrag); er ist jetzt
+allerdings terminlich absehbar statt unbestimmt.
 
 ---
 
@@ -345,14 +358,17 @@ Neuberechnung auslösen soll. Ohne diese Entscheidung ist ein Abschlusstermin f�
 
 ## 10 · Nächster Schritt
 
-1. **Betreiberentscheidung zu Befund B25-2** (§6c): Der Pilotmandant rechnet ohne
-   Eingabeänderung nicht neu; seine 2 falschen Ausschussbelege — darunter die
-   **Rang-1**-Karte — bleiben bis dahin sichtbar. Zur Wahl stehen: weiter abwarten
-   (25B bleibt offen, Termin nicht zusagbar) · Rezeptversion anheben (erzwingt
-   Neuberechnung aller Mandanten, breite sichtbare Wirkung) · gezielter Neulauf des
-   Piloten (manueller Lauf, freigabepflichtig) · Backfill der betroffenen Zeilen
-   (Production-Schreibzugriff, freigabepflichtig). **Keine dieser Optionen wurde
-   ausgeführt oder vorbereitet.**
+1. ~~**Betreiberentscheidung zu Befund B25-2**~~ — **erledigt (2026-07-31):** Option
+   (b) **Rezeptversion anheben** ist umgesetzt (`legacy_relevance_v1` → `v2`,
+   [`../matching-nachvollziehbarkeit.md`](../matching-nachvollziehbarkeit.md) §53).
+   Der Eingabefingerabdruck jedes Mandanten ändert sich damit **genau einmal**; der
+   nächste reguläre Lauf löst die falschen Alt-Zeilen ab — inklusive der
+   **Rang-1**-Karte des Piloten. Wirkung mandantenneutral (keine Sonderbehandlung),
+   Ähnlichkeit und Rang unverändert, Kosten 0,00 USD, Rückweg `git revert` (macht
+   die Korrektur nicht rückgängig, stoppt nur weitere Neuberechnungen).
+   Die verworfenen Alternativen bleiben dokumentiert: weiter abwarten (Termin nicht
+   zusagbar) · gezielter Neulauf des Piloten (manueller Lauf) · Backfill
+   (Production-Schreibzugriff) — **keine davon wurde ausgeführt oder vorbereitet.**
 2. Sobald eine echte neue Generation des Piloten vorliegt: Folgeauftrag 25B aus §6
    ausführen (rein lesend). **Erst danach darf Zeile 25 auf ✅ gehen** — die
    restlichen 16 Kriterien sind bereits belegt.
