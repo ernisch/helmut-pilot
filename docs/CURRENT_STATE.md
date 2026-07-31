@@ -48,7 +48,9 @@ Erklärungsabdeckung **60/60** · Offline-Suite ohne Secrets **190/191** gegen B
 zwei Verzeichnissen unterschiedliche Fehlschlaglisten reproduziert; `werkzeug-lesefehler-test.js`
 zusätzlich nur auf der Basislinie, flatternd), Suiten-Delta genau **+1** (der neue Vertrag) ·
 Browser-/Mobile-Smoke **32/32** (allein gelaufen; ein früherer 19/3-Lauf war Parallellast, vgl.
-B29-F1). **Grenzen eingehalten:** kein manueller Lauf, kein Backfill, kein
+B29-F1). **CI auf PR #190 vollständig grün** (Lauf `30597982288`, 02:04 UTC: beide
+Pflicht-Checks ✅) — `p1-security-check.js` läuft dort durch und ist damit als
+umgebungsbedingt bestätigt. **Grenzen eingehalten:** kein manueller Lauf, kein Backfill, kein
 Production-Schreibzugriff (nur lesende Deployment-API), keine Sonderbehandlung des
 Pilotmandanten, keine künstlichen Fehler für 29B, kein Merge; Berlin/Brandenburg/M8 unverändert
 AUS. **Statusgrenzen: 25B und 29B bleiben offen** — beide warten weiterhin auf ihre regulären,

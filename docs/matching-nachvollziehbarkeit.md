@@ -3722,7 +3722,16 @@ korrigierten Werte. Er stoppt also nur weitere Neuberechnungen und beschädigt
 nichts. Ein Zurückdrehen der Daten selbst wäre ein Backfill — bewusst nicht
 Gegenstand dieses Sprints.
 
-### 53.6 Was dieser Sprint NICHT tut
+### 53.6 CI
+
+**Beide Pflicht-Checks grün** auf PR #190, Lauf `30597982288` (2026-07-31, 02:04 UTC):
+`Syntax + Offline-Suiten` ✅ · `Browser-/Mobile-Smoke (Chromium)` ✅.
+Damit ist auch belegt, dass der lokale Fehlschlag `p1-security-check.js`
+**umgebungsbedingt** war: er tritt im CI nicht auf und trat lokal bei
+**identischem Code** in zwei Verzeichnissen mit unterschiedlichen Fehlschlaglisten
+auf.
+
+### 53.7 Was dieser Sprint NICHT tut
 
 Kein manueller Lauf · kein Backfill · kein Production-Schreibzugriff · keine
 Datenkorrektur · keine Migration · keine Sonderbehandlung des Pilotmandanten (die
