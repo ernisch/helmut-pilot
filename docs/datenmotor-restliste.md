@@ -510,6 +510,41 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   viele Mandate je Lauf real die Matching-Stufe erreichen, (c) ein Abdeckungsalarm über mehrere
   Läufe hinweg (der Einzellauf meldet jetzt, die Serie noch nicht) — und der **reguläre
   Production-Nachweis** nach Merge.
+- **Status (2026-07-31, 2. Durchgang — regulärer Production-Nachweis, rein lesend): TEILWEISE
+  BESTANDEN. OP-25 bleibt teilweise abgeschlossen.** Beobachtungsfenster 30.07. 06:27:19 UTC
+  (Deployment `READY`, Commit `30c86cf`) → 31.07. 08:00 UTC; **5 reguläre fairness-relevante
+  Läufe** gewertet, 1 Lauf (30.07. 07:52 `pipeline`) als **nicht regulär** ausgeschlossen (kein
+  Cron-Termin). **Die Fairnesslogik arbeitet korrekt:** Reihenfolge nachweislich **nicht
+  alphabetisch** und je Lauf verschieden; nicht begonnene Mandate rückten im Folgelauf vor
+  (`crawl` 20:00 → M-1/M-6, `crawl` 04:00 → M-4/M-2); **kein erfundener Erfolg** (das jeweils
+  zweite begonnene Mandat trägt `versuche=1, erfolge=0` ohne `letzterErfolgAt`, obwohl der Lauf
+  global HTTP 200 meldete); `ceil(n/k)` stimmt mit den gemeldeten Werten überein (`k=1` →
+  `obergrenzeLaeufe=6`; `k=6` → `1`); persistenter Zustand über **drei Commits** und 22 Stunden
+  erhalten; **kein `k=0`** (min. `k=1`); **keine** neuen Runtime-/DB-/Lock-/Fairnessfehler
+  (`zustand=ok` überall); der Zeitbudget-Abschnitt wird **gemeldet** statt still grün zu bleiben.
+  **Nicht bestanden:** ein **vollständiger Fairnesszyklus** gelang nur beim leichtesten Cron
+  (`morning-briefing`, `k=6`, 6/6 in einem Lauf, 13 596 ms). Im schweren Pfad: `crawl` 4/6,
+  `pipeline` 4/6, `lage-check` 1/6. **Wichtige Korrektur einer bisherigen Erwartung:** der
+  Fairnesszustand ist **je Cron getrennt** (`data.crons[<cronName>]`) — „über vier Läufe
+  verschiedener Crons sind alle Mandate begonnen" war fachlich falsch. **Gemessene Kapazität bei
+  n = 6:** min `k` = **1** (`lage-check`), typisch **2 begonnen / 1 erfolgreich** (`crawl`,
+  `pipeline`), max **6** (`morning-briefing`). Daraus real: ein Mandat wird im `crawl` alle
+  **1,5 Tage begonnen** und alle **3 Tage erfolgreich** verarbeitet, im `lage-check` alle
+  **6 Tage**. **Hochrechnung (keine Messung) bei n = 11:** `crawl` 3 bzw. 5,5 Tage, `pipeline`
+  6 bzw. 11 Tage, `lage-check` 11 Tage. **Neuer Befund R-6 (Beobachtbarkeitslücke):** endet
+  `crawl`/`pipeline` im äußeren `withTimeout(…, 280000)` (innere Deadline 270 000 ms), kehrt
+  `runCronForTenants` nie zurück — die `[cron/*/fairness]`-Zeile wird **nie geschrieben**
+  (`tenants=undefined bounded=true`). Betroffen **3 von 5** gewerteten Läufen; `k` musste dort
+  aus dem persistenten Zustand rekonstruiert werden. Die Buchführung bleibt korrekt, nur die
+  Telemetrie fehlt — behebbar ohne Fairnessänderung, **eigener Sprint**. **ENTSCHEIDUNG zu den
+  fünf weiteren realen Testmandaten: NICHT aktivieren** (auch nicht einzeln). Vorbereiten ist
+  erlaubt. Begründung: nicht die Fairness, sondern die **Kapazität** ist der Blocker — schon bei
+  sechs Mandaten ist die Datengrundlage je Mandat 1–3 Tage alt; das täglich erzeugte
+  `morning-briefing` baut auf genau diesen Daten auf. Voraussetzung für eine spätere Aktivierung
+  ist ein höheres `k` im schweren Pfad (mehr Cron-Slots, Parallelisierung, kürzere
+  Google-News-Timeouts → OP-15, oder eine Stufe außerhalb des 300-s-Fensters). Rein lesend
+  erhoben, **0 KI, 0,00 USD**, keine Production-Schreibzugriffe, kein manueller Lauf, Mandate nur
+  pseudonymisiert. Kanonisch: [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) **§10**.
 - **Ausgangsbefund (2026-07-29, vor diesem Sprint):** **Ursache belegt, Umfang noch nicht vermessen** (Befund B5).
   Der Crawl-Cron endet reproduzierbar nach ~280 s mit `bounded=true`
   (`[cron/crawl] 280001ms tenants=undefined bounded=true`, gemessen 28.07. 04:00, 28.07. 20:00

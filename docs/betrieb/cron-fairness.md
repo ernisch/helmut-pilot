@@ -1,6 +1,8 @@
 # Faire Mandantenreihenfolge der Mehrmandanten-Crons (OP-25)
 
-**Stand:** 2026-07-30 · **Kanonisch für:** Reihenfolge, Fairnessgarantie, Beobachtbarkeit und
+**Stand:** 2026-07-31 (§10 neu: regulärer Production-Nachweis — **teilweise bestanden**;
+Fairness korrekt, Kapazität unzureichend; neuer Befund R-6) · **Kanonisch für:** Reihenfolge,
+Fairnessgarantie, Beobachtbarkeit und
 Wiederaufnahme in `runCronForTenants` · **Code:** [`lib/helmut/cron-fairness.js`](../../lib/helmut/cron-fairness.js),
 `server.js` (`runCronForTenants`), `lib/helmut/storage.js` (`readCronFairnessState` /
 `saveCronFairnessState` / `deleteCronFairnessTenant`) · **Tests:** `scripts/cron-fairness-test.js`
@@ -320,9 +322,17 @@ verarbeitet wurden.
 | **R-2** | `/api/cron/health-report` iteriert Mandate **ohne** Deadline. | Rein lesend, keine Verdrängung möglich — kein Fairnessproblem, deshalb bewusst unverändert. |
 | **R-3** | Der `laufend`-Vermerk ist ein Read-modify-write, kein atomarer Claim. | **Kein Blocker, kein Handlungsbedarf** — der harte, atomare Riegel gegen Doppelverarbeitung ist `crawl-<mandat>` und in Production nachweislich aktiv (§3a). Der Vermerk ist die zweite, ergänzende Schranke; das Fenster für einen verlorenen Vermerk ist auf Lesen→Schreiben begrenzt, wird gegengelesen und wiederholt, und die Folge wäre ein doppelter **Versuch**, kein Datenschaden. |
 | **R-5** | `/api/cron/morning-briefing` hat **keine** eigene Sperre je Mandat (kein Crawl darin). Überlappen zwei Läufe dieses Crons, ist der `laufend`-Vermerk die einzige Schranke. | **Vorbestehend, von diesem Sprint nicht verschlechtert** — vorher gab es dort *überhaupt* keine Schranke. Folge einer Überlappung: ein doppelt gebautes Briefing und ggf. ein doppelter Push, kein Datenschaden (0 KI im Briefing-Aufbau). Regulär nicht auslösbar: der Cron läuft 1×/Tag und ist auf 240 s begrenzt. Kleinste Nachbesserung, falls gewünscht: in `runCronForTenants` den bereits vorhandenen `acquirePipelineLock("cron-<cron>-<mandat>")` um jedes Mandat legen — **bewusst nicht in diesem Sprint**, weil es jedem Mandat je Lauf eine zusätzliche Sperroperation aufbürdet und der Crawl-Pfad sie doppelt hätte. |
-| **R-4** | **Production-Nachweis offen.** Die Wirkung ist offline und gegen den echten Cron-Pfad (lokaler Speicher) belegt, aber noch nicht an einem regulären Production-Lauf. | Erst nach Merge/Deployment beobachtbar: erwartet werden über vier reguläre Läufe (04/10/16/20 UTC) **alle** aktiven Mandate mindestens einmal begonnen, mit `[cron/*/fairness]`-Zeilen als Beleg. Bis dahin bleibt OP-25 **teilweise abgeschlossen**. |
+| **R-4** | **Production-Nachweis erbracht, aber nur teilweise bestanden** (2026-07-31, §10). Die Fairnesslogik selbst arbeitet in Production nachweislich korrekt; ein **vollständiger** Zyklus gelang nur beim leichtesten Cron. | Siehe §10. Die frühere Erwartung „über vier reguläre Läufe (04/10/16/20 UTC) sind **alle** aktiven Mandate mindestens einmal begonnen" ist **fachlich falsch** und hiermit korrigiert: der Fairnesszustand ist **je Cron getrennt** (`data.crons[<cronName>]`), jeder Cron rotiert seinen **eigenen** Zyklus. Vier Läufe verschiedener Crons ergeben deshalb keinen gemeinsamen Zyklus. OP-25 bleibt **teilweise abgeschlossen**. |
+| **R-6** | **Beobachtbarkeitslücke bei äußerem Timeout** (neu, 2026-07-31, §10.4). Endet `crawl`/`pipeline` im äußeren `withTimeout(…, 280000)`, kehrt `runCronForTenants` nie zurück — die `[cron/*/fairness]`-Zeile wird **nie geschrieben**. Sichtbar bleibt nur `tenants=undefined bounded=true`. | Die Buchführung selbst bleibt korrekt (der persistente Zustand ist vor der Verarbeitung geschrieben und belegt Versuch/Erfolg je Mandat). Verloren geht die **Telemetrie**: `geplant`, `begonnen`, `zeitbudget`, `kapazitaet`, `obergrenzeLaeufe`, `sperreVerweigert` sind für genau die Läufe unsichtbar, die sie am dringendsten bräuchten. Betroffen 3 von 5 gewerteten Läufen. Behebbar ohne Fairnessänderung (Telemetrie vor der Deadline ausgeben oder das äußere Zeitlimit über das innere heben) — **eigener Sprint, hier nicht umgesetzt**. |
 
 ## 9 · Verbindliche Folgeregel: weitere Testmandate
+
+> **Stand 2026-07-31 (§10): Die Sperre bleibt bestehen — jetzt aus einem gemessenen Grund.**
+> Der Nachweis ist erbracht, `k` ist gemessen, und das Ergebnis trägt die Aktivierung **nicht**:
+> im schweren Datenpfad (`crawl`/`pipeline`) wird ein Mandat real nur alle **1,5–3 Tage**
+> erfolgreich verarbeitet, im `lage-check` nur alle **6 Tage**. Bei elf Mandaten würden daraus
+> 3–5,5 bzw. 11 Tage. Die Fairness funktioniert; die **Kapazität** reicht nicht.
+> Details und Hochrechnung: §10.5/§10.6.
 
 **Weitere reale Testmandate dürfen erst angelegt/aktiviert werden, wenn der Merge erfolgt **und**
 der reguläre Production-Nachweis erbracht ist** — also nachweislich alle aktiven Mandate über die
@@ -339,3 +349,148 @@ unvermessenen Rückstand vergrößern und den Nachweis selbst verfälschen.
 
 Nach dem Nachweis liefert die Protokollzeile `kapazitaet=` genau die Zahl, mit der sich die
 Obergrenze für jede geplante Mandatszahl vorher ausrechnen lässt.
+
+---
+
+## 10 · Regulärer Production-Nachweis (2026-07-31, rein lesend)
+
+**Ergebnis in einem Satz:** Die Fairnesslogik arbeitet in Production nachweislich korrekt —
+Reihenfolge, Nachholen, ehrliche Fehlermeldung und persistenter Zustand sind belegt. **Ein
+vollständiger Fairnesszyklus gelang aber nur beim leichtesten Cron** (`morning-briefing`); in
+den schweren Datenpfaden reicht die Kapazität nicht. **OP-25 bleibt teilweise abgeschlossen.**
+
+Alle Angaben stammen aus rein lesenden Zugriffen (Vercel-Deployment-Metadaten und Runtime-Logs,
+`SELECT` auf `helmut_store`, `mandate_profiles`, `process_runs`, `pipeline_locks`). **Mandate
+erscheinen ausschließlich pseudonymisiert** (`M-1` … `M-6`); die Zuordnung zu Klarnamen wird
+bewusst nicht dokumentiert (`CLAUDE.md` §4.2).
+
+### 10.1 · Vorprüfung
+
+| # | Prüfpunkt | Ergebnis |
+|---|---|---|
+| 1 | PR #179 gemergt | ✅ Merge-Commit `30c86cf` |
+| 2 | `main` enthält `9454d8e` | ✅ per `git merge-base --is-ancestor` bestätigt (Nachfix „verweigerte Mandatssperre galt als erfolgreiche Verarbeitung") |
+| 3 | Deployment `READY` | ✅ `dpl_9PvfRQV4…` (Commit `30c86cf`), **READY 2026-07-30 06:27:19 UTC** |
+| 4 | Deployment vor den gewerteten Läufen aktiv | ✅ alle gewerteten Läufe ab 10:00 UTC am 30.07.; die Fairnesslogik war seither in **jedem** Production-Deployment enthalten (`75d7286`, `071f91c` u. a.) |
+| 5 | Arbeitsbaum sauber | ✅ |
+| 6 | M8 deaktiviert | ✅ `HELMUT_MATCHING_RELEVANZ_GATE` nicht gesetzt (Default aus) |
+| 7 | Berlin deaktiviert | ✅ `HELMUT_PARDOK_DISPATCH=shadow`, kein Live-Cutover |
+| 8 | Brandenburg deaktiviert | ✅ wie 7 |
+| 9 | Aktive Bundestagsquellen unverändert | ✅ keine Quellenänderung im Fenster |
+| 10 | Budgets unverändert | ✅ keine Änderung |
+| 11 | Cron-Zeiten/Frequenzen unverändert | ✅ `vercel.json` im Fenster unverändert |
+| 12 | `HELMUT_CRON_FAIRNESS` nicht auf `off` | ✅ **positiv belegt**: die Protokollzeilen zeigen `zustand=ok`, und die Reihenfolge weicht nachweislich von der alphabetischen ab (§10.3) — bei `off` wäre sie exakt alphabetisch |
+
+### 10.2 · Beobachtungsfenster und gewertete Läufe
+
+**Fenster:** 2026-07-30 06:27:19 UTC (Deployment `READY`) → 2026-07-31 08:00 UTC.
+
+Fairness-relevante Crons (über `runCronForTenants`): `crawl` 04:00/20:00 · `morning-briefing`
+05:00 · `lage-check` 10:00 · `pipeline` 16:00 UTC.
+
+| # | Cron | Start UTC | Commit | n | **k** | erfolgreich | Obergrenze | Telemetriezeile |
+|---|---|---|---|---|---|---|---|---|
+| 1 | `lage-check` | 30.07. 10:00:31 | (Deployment `dpl_B1rqpr7v…`) | 6 | **1** | 1 | 6 | ✅ vollständig |
+| 2 | `pipeline` | 30.07. 16:01:01 | `75d7286` | 6 | **2** | 1 | — | ❌ fehlt (R-6) |
+| 3 | `crawl` | 30.07. 20:00:30 | `75d7286` | 6 | **2** | 1 | — | ❌ fehlt (R-6) |
+| 4 | `crawl` | 31.07. 04:01:04 | `071f91c` | 6 | **2** | 1 | — | ❌ fehlt (R-6) |
+| 5 | `morning-briefing` | 31.07. 05:00:50 | `071f91c` | 6 | **6** | **6** | **1** | ✅ vollständig |
+
+Für die Läufe 2–4 ist `k` aus dem **persistenten Zustand** rekonstruiert (je zwei
+Versuchsvermerke mit dem Laufzeitstempel), nicht aus einer Telemetriezeile — die fehlt dort
+(R-6). Das ist eine Rekonstruktion aus Primärdaten, keine Schätzung.
+
+**Nicht gewertet:** 30.07. **07:52:56** `GET /api/cron/pipeline` — dieser Zeitpunkt entspricht
+**keinem** Cron-Eintrag in `vercel.json` (`pipeline` = 16:00 UTC). Der Lauf war damit nicht
+regulär und zählt nicht als Nachweis. Seine Wirkung auf den Zustand ist real und wird
+ausgewiesen: er trug für `pipeline` die Versuchsvermerke von `M-1` (Erfolg) und `M-4` (ohne
+Abschluss) ein.
+
+### 10.3 · Die zentralen Nachweisfragen
+
+| # | Frage | Antwort mit Production-Beleg |
+|---|---|---|
+| 1 | Alle aktiven, planbaren Mandate mindestens einmal **begonnen**? | **Nur beim `morning-briefing`.** Dort 6 von 6 in einem Lauf. `crawl` 4 von 6, `pipeline` 4 von 6, `lage-check` 1 von 6. |
+| 2 | Benachteiligung nach Kennung/Alphabet? | **Nein.** Alphabetisch wäre `M-2, M-1, M-5, M-3, M-6, M-4`. Beobachtet: `lage-check` `M-1, M-2, M-5, M-6, M-3, M-4`; `morning-briefing` `M-3, M-6, M-1, M-2, M-5, M-4`. Beide weichen ab und unterscheiden sich voneinander. |
+| 3 | Blieben nicht begonnene Mandate vorne? | **Ja.** `crawl` 20:00 begann mit `M-1`/`M-6`; der Folgelauf 04:00 begann mit `M-4`/`M-2` — also mit noch nicht versuchten, nicht erneut mit `M-1`. Ebenso `pipeline`: 07:52 `M-1`/`M-4`, 16:00 `M-3`/`M-5`. |
+| 4 | Verweigerter Lock aus `begonnen`/`k` entfernt? | **Nicht beobachtbar** — `sperreVerweigert=-` in beiden vollständigen Telemetriezeilen; der Fall trat im Fenster **nicht auf**. Es gilt weiter nur der Offline-Beweis aus PR #179 (`9454d8e`). |
+| 5 | Verweigerter Lock nur als `lockVerweigert` sichtbar? | wie 4 — nicht aufgetreten. |
+| 6 | Kein erfundener Erfolg? | **Ja, belegt.** In `crawl` und `pipeline` trägt jeweils das zweite begonnene Mandat `versuche=1, erfolge=0` und **kein** `letzterErfolgAt` — obwohl der Lauf global mit HTTP 200 endete. |
+| 7 | Erfolgszeitpunkt/Fehlerstatus bei verweigertem Lock unverändert? | wie 4 — nicht aufgetreten. |
+| 8 | Blockierte ein fehlerhaftes Mandat andere? | **Nicht beobachtbar** — im Fenster trat **kein** Mandatsfehler auf (`fehlgeschlagen=0`, `fehlerSerie=0` bei allen). Die Isolation bleibt offline belegt. |
+| 9 | Fairnesszustand über Läufe **und Deployments** erhalten? | **Ja.** Die Zeile `main-cron-fairness` trägt Einträge aus Läufen unter mindestens drei verschiedenen Commits (`75d7286`, `071f91c` und dem Stand vom 30.07. vormittags) und über 22 Stunden hinweg. |
+| 10 | Trat `k = 0` auf? | **Nein.** Kleinstes beobachtetes `k` ist **1** (`lage-check`). |
+| 11 | Falls ja: keine Garantie behauptet? | entfällt (10). Der Pfad bleibt offline belegt. |
+| 12 | Reihenfolge = ältester letzter Versuch? | **Ja**, soweit prüfbar: beim `morning-briefing` standen die im `crawl`/`pipeline` zuletzt versuchten Mandate hinten, die länger nicht versuchten vorn. |
+| 13 | `ceil(n / k)` mit den realen Läufen vereinbar? | **Ja.** `lage-check`: `k=1`, gemeldet `obergrenzeLaeufe=6` = `ceil(6/1)`. `morning-briefing`: `k=6`, gemeldet `1` = `ceil(6/6)`. Beide stimmen mit der Formel überein. |
+| 14 | Stille Teilerfolge / global grüne Läufe mit ausgelassenen Mandaten? | **Nein — der Fall tritt auf, wird aber gemeldet.** Der `lage-check` endete mit HTTP 200, verarbeitete aber nur 1 von 6; die Protokollzeile `[cron/lage-check] Zeitbudget erschoepft — 5 von 6 Mandaten NICHT verarbeitet.` und ein Systemfehler machen das sichtbar. Genau das war das Ziel von OP-25. |
+| 15 | Neue Runtime-/DB-/Lock-/Fairness-Fehler? | **Keine neuen.** Beobachtet: Google-News-Timeouts/`503` (Bestandsbefund OP-15), ein `OpenAI request timeout` im Understanding, das bekannte 280-s-Zeitlimit (Befund **B5**). Keine Datenbank-, Sperr- oder Fairnessfehler; `zustand=ok` in allen Telemetriezeilen. **Neu ist die Beobachtbarkeitslücke R-6** (§10.4). |
+
+### 10.4 · Neuer Befund R-6: Telemetrieverlust bei äußerem Timeout
+
+`/api/cron/crawl` und `/api/cron/pipeline` umschließen `runCronForTenants` mit
+`withTimeout(…, 280000)`, während die **innere** Deadline bei 270 000 ms liegt. Läuft die
+Verarbeitung über 280 s, greift der äußere Timeout — `runCronForTenants` kehrt **nie** zurück,
+und die Zeile `[cron/*/fairness]` wird nie geschrieben. Im Protokoll bleibt nur
+`[cron/crawl] 280003ms tenants=undefined bounded=true` (`tenants=undefined`, weil das
+Ersatzobjekt aus dem `.catch()` kein `tenants` trägt).
+
+**Betroffen: 3 von 5 gewerteten Läufen.** Die Buchführung selbst bleibt korrekt — der
+Versuchsvermerk wird **vor** der Verarbeitung persistiert, der Erfolg getrennt danach; deshalb
+ließ sich `k` aus dem Zustand rekonstruieren. Verloren geht ausschließlich die Telemetrie.
+Behebbar ohne Änderung der Fairnesslogik; **eigener Sprint, hier nicht umgesetzt.**
+
+### 10.5 · Gemessene Kapazität
+
+| Größe | Wert (gemessen) |
+|---|---|
+| Aktive Mandate `n` | **6** (`mandate_profiles.aktiv = true`) |
+| Minimales `k` | **1** (`lage-check`) |
+| Typisches `k` im schweren Pfad | **2 begonnen, davon 1 erfolgreich** (`crawl`, `pipeline`) |
+| Maximales `k` | **6** (`morning-briefing`, 13 596 ms für alle sechs ≈ 2,3 s/Mandat) |
+
+**Reale Obergrenzen bei `n = 6`** (Läufe → Zeit, aus den gemessenen `k` und der aktiven
+Cron-Frequenz):
+
+| Cron | Frequenz | `k` | Läufe bis jedes Mandat **begonnen** | Zeit | Läufe bis **erfolgreich** | Zeit |
+|---|---|---|---|---|---|---|
+| `morning-briefing` | 1×/Tag | 6 | **1** | < 1 Tag | 1 | < 1 Tag |
+| `crawl` | 2×/Tag | 2 | 3 | **1,5 Tage** | 6 | **3 Tage** |
+| `pipeline` | 1×/Tag | 2 | 3 | **3 Tage** | 6 | **6 Tage** |
+| `lage-check` | 1×/Tag | 1 | 6 | **6 Tage** | 6 | **6 Tage** |
+
+### 10.6 · Hochrechnung auf elf Mandate (klar getrennt: Rechnung, keine Messung)
+
+Unter der Annahme, dass `k` durch das Zeitbudget bestimmt bleibt (also **nicht** mit `n` wächst):
+
+| Cron | `k` | Läufe bis begonnen | Zeit | Läufe bis erfolgreich | Zeit |
+|---|---|---|---|---|---|
+| `morning-briefing` | 11 (≈ 25 s bei 240 s Budget) | 1 | < 1 Tag | 1 | < 1 Tag |
+| `crawl` | 2 | 6 | **3 Tage** | 11 | **5,5 Tage** |
+| `pipeline` | 2 | 6 | **6 Tage** | 11 | **11 Tage** |
+| `lage-check` | 1 | 11 | **11 Tage** | 11 | **11 Tage** |
+
+### 10.7 · Produktbewertung und Entscheidung zu den fünf Testmandaten
+
+**Empfehlung: die fünf weiteren realen Testmandate jetzt NICHT aktivieren.** Sie dürfen
+vorbereitet, aber nicht aktiviert werden. Auch die Aktivierung **eines** weiteren Mandats wird
+nicht empfohlen, solange der Kapazitätsbefund offen ist.
+
+Begründung — die Fairness ist **nicht** das Problem, die Kapazität ist es:
+
+1. Schon bei sechs Mandaten wird der schwere Datenpfad je Mandat nur alle **1,5 Tage begonnen**
+   und alle **3 Tage erfolgreich** abgeschlossen. Für Lage, Radar und Matching heißt das:
+   die Datengrundlage eines Mandats ist im Mittel **1–3 Tage alt**.
+2. Das `morning-briefing` läuft zwar täglich für alle sechs — es **baut aber auf genau diesen
+   Daten auf**. Ein täglich frisch erzeugtes Briefing über drei Tage alte Vorgänge ist für einen
+   politischen KI-Stabschef nicht ausreichend aktuell (`START_HERE.md` §1: „Was steht heute an?").
+3. Bei elf Mandaten verdoppelt sich der Abstand auf **3 bzw. 5,5 Tage** im `crawl` und auf
+   **11 Tage** im `lage-check`. Das ist kein Fairness-, sondern ein **Produktproblem**.
+4. **Es entsteht damit ein neuer Kapazitätsblocker, obwohl die Fairness korrekt funktioniert.**
+   Er ist die direkte Fortsetzung von Befund **B5** (280-s-Zeitlimit) und gehört fachlich zu
+   OP-25/OP-15/OP-21.
+
+**Voraussetzung für eine spätere Aktivierung:** `k` im schweren Pfad muss steigen — z. B. durch
+Aufteilung des Crawls in mehrere Cron-Slots, Parallelisierung je Mandat, Verkürzung der
+Google-News-Timeouts (OP-15) oder eine eigene Verarbeitungsstufe außerhalb des 300-s-Fensters.
+Erst danach ist die Frage „wie viele Mandate verträgt der Betrieb?" datenbasiert neu zu stellen.

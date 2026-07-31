@@ -63,6 +63,74 @@ rein lesenden Production-Nachweise; Checkliste unverändert. **Nächster Schritt
 Merge-Entscheidung des Betreibers, danach 25B rein lesend am ersten regulären Pilotlauf nach
 dem Deployment. Branch `claude/p25b-rezeptversion-anheben`. Kanonisch:
 [`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md) §53.) ·
+(**Sprint OP-25, regulärer Production-Nachweis, 2. Durchgang —
+rein lesend, kein Code, keine Production-Änderung. TEILWEISE ABGESCHLOSSEN: die Fairnesslogik
+arbeitet in Production nachweislich korrekt, ein VOLLSTÄNDIGER Fairnesszyklus gelang aber nur beim
+leichtesten Cron. Die fünf weiteren realen Testmandate bleiben GESPERRT — aus einem jetzt
+gemessenen Kapazitätsgrund.** **Nicht mit Phase-1-Punkt 25 verwechseln** (Ende-zu-Ende-Test
+Pilotmandant, Zeile 25 der Checkliste) — anderer Punkt, hier unberührt. **Vorprüfung vollständig
+bestanden (12/12):** PR #179 gemergt (Merge `30c86cf`), `main` enthält `9454d8e` (per
+`git merge-base --is-ancestor` bestätigt), Deployment `dpl_9PvfRQV4…` **READY 2026-07-30 06:27:19
+UTC** und vor allen gewerteten Läufen aktiv, Arbeitsbaum sauber, M8/Berlin/Brandenburg unverändert
+AUS, Quellen/Budgets/Cron-Zeiten unverändert, `HELMUT_CRON_FAIRNESS` **positiv als aktiv belegt**
+(`zustand=ok` in den Telemetriezeilen **und** nachweislich nicht-alphabetische Reihenfolge — bei
+`off` wäre sie exakt alphabetisch). **Beobachtungsfenster:** 30.07. 06:27:19 UTC → 31.07. 08:00 UTC.
+**Fünf reguläre fairness-relevante Läufe gewertet:** `lage-check` 30.07. 10:00:31 (**k=1**, 1/6
+erfolgreich, `obergrenzeLaeufe=6`) · `pipeline` 30.07. 16:01:01 (**k=2**, 1 erfolgreich) · `crawl`
+30.07. 20:00:30 (**k=2**, 1 erfolgreich) · `crawl` 31.07. 04:01:04 (**k=2**, 1 erfolgreich) ·
+`morning-briefing` 31.07. 05:00:50 (**k=6**, **6/6 erfolgreich**, `obergrenzeLaeufe=1`, 13 596 ms).
+**Nicht gewertet:** 30.07. 07:52:56 `pipeline` — entspricht **keinem** Cron-Eintrag in
+`vercel.json` (pipeline = 16:00 UTC), also kein regulärer Lauf; seine Wirkung auf den Zustand ist
+ausgewiesen. **Was korrekt funktioniert (belegt):** Reihenfolge **nicht alphabetisch** und je Lauf
+verschieden (alphabetisch wäre `M-2,M-1,M-5,M-3,M-6,M-4`; beobachtet `M-1,M-2,M-5,M-6,M-3,M-4`
+bzw. `M-3,M-6,M-1,M-2,M-5,M-4`) · nicht begonnene Mandate rückten im Folgelauf vor · **kein
+erfundener Erfolg** (das jeweils zweite begonnene Mandat trägt `versuche=1, erfolge=0` **ohne**
+`letzterErfolgAt`, obwohl der Lauf global HTTP 200 meldete) · `ceil(n/k)` stimmt exakt mit den
+gemeldeten Werten · persistenter Zustand über **drei Commits** und 22 Stunden erhalten · **kein
+`k=0`** (min. `k=1`) · **keine** neuen Runtime-/DB-/Lock-/Fairnessfehler · der Zeitbudget-Abschnitt
+wird **gemeldet** statt still grün zu bleiben (`[cron/lage-check] Zeitbudget erschoepft — 5 von 6
+Mandaten NICHT verarbeitet.` + Systemfehler). **Nicht in Production beobachtbar** (trat nicht auf,
+gilt weiter nur offline belegt): `lockVerweigert` (`sperreVerweigert=-` überall), Fehlerisolation
+bei Mandatsfehlern (`fehlgeschlagen=0` überall), `k=0`. **NICHT BESTANDEN:** ein vollständiger
+Fairnesszyklus gelang nur beim `morning-briefing` (6/6); `crawl` 4/6, `pipeline` 4/6, `lage-check`
+1/6. **Wichtige Korrektur einer bisherigen Erwartung (R-4):** der Fairnesszustand ist **je Cron
+getrennt** (`data.crons[<cronName>]`) — die Zusage „über vier Läufe (04/10/16/20 UTC) sind alle
+Mandate begonnen" war fachlich falsch, jeder Cron rotiert seinen **eigenen** Zyklus.
+**NEUER BEFUND R-6 (Beobachtbarkeitslücke):** endet `crawl`/`pipeline` im äußeren
+`withTimeout(…, 280000)` bei innerer Deadline 270 000 ms, kehrt `runCronForTenants` **nie** zurück
+— die `[cron/*/fairness]`-Zeile wird **nie geschrieben**, sichtbar bleibt nur
+`tenants=undefined bounded=true`. Betroffen **3 von 5** gewerteten Läufen; `k` musste dort aus dem
+persistenten Zustand **rekonstruiert** werden (Primärdaten, keine Schätzung). Die Buchführung
+selbst bleibt korrekt — behebbar ohne Fairnessänderung, **eigener Sprint, hier nicht umgesetzt**.
+**GEMESSENE KAPAZITÄT (n = 6 aktive Mandate):** min `k` = **1** (`lage-check`), typisch **2
+begonnen / 1 erfolgreich** (`crawl`, `pipeline`), max **6** (`morning-briefing`, ≈ 2,3 s/Mandat).
+Real heißt das: ein Mandat wird im `crawl` alle **1,5 Tage begonnen** und alle **3 Tage
+erfolgreich** verarbeitet, im `pipeline` alle 3 bzw. 6 Tage, im `lage-check` alle **6 Tage**; nur
+das `morning-briefing` erreicht alle sechs **täglich**. **HOCHRECHNUNG (Rechnung, keine Messung)
+bei n = 11:** `crawl` 3 bzw. 5,5 Tage · `pipeline` 6 bzw. 11 Tage · `lage-check` **11 Tage** ·
+`morning-briefing` weiterhin täglich. **ENTSCHEIDUNG zu den fünf weiteren realen Testmandaten:
+NICHT aktivieren — auch nicht einzeln.** Vorbereiten ist erlaubt. Begründung: **nicht die
+Fairness, sondern die Kapazität ist der Blocker.** Schon bei sechs Mandaten ist die
+Datengrundlage je Mandat 1–3 Tage alt; das täglich erzeugte `morning-briefing` baut auf genau
+diesen Daten auf — ein frisches Briefing über drei Tage alte Vorgänge erfüllt „Was steht heute
+an?" (`START_HERE.md` §1) nicht. Es entsteht damit ein **neuer Kapazitätsblocker, obwohl die
+Fairness korrekt funktioniert**; er ist die direkte Fortsetzung von Befund **B5** (280-s-Limit)
+und gehört fachlich zu OP-25/OP-15/OP-21. Voraussetzung für eine spätere Aktivierung: höheres `k`
+im schweren Pfad (mehr Cron-Slots, Parallelisierung je Mandat, kürzere Google-News-Timeouts →
+OP-15, oder eine Stufe außerhalb des 300-s-Fensters). **Sicherheitsgrenzen eingehalten:**
+ausschließlich lesende Zugriffe (Vercel-Deployment-Metadaten und Runtime-Logs, `SELECT` auf
+`helmut_store`, `mandate_profiles`, `process_runs`, `pipeline_locks`), **0 KI-Aufrufe, 0,00 USD**,
+keine Production-Schreibzugriffe, kein manueller Cron-Lauf, keine Migration, keine Env-/Budget-/
+Cron-/Quellenänderung, keine Aktivierung von M8/Berlin/Brandenburg, keine neuen Testmandate,
+keine Testdaten in Production, keine Überwachungszusage. **Mandate erscheinen in Doku und
+Ausgaben ausschließlich pseudonymisiert** (`M-1` … `M-6`); die Zuordnung zu Klarnamen wird bewusst
+nicht dokumentiert (`CLAUDE.md` §4.2). **Statusgrenzen:** OP-25 bleibt **teilweise abgeschlossen**;
+Phase-1-Punkt 25 (25B), Punkt 27, OP-15, OP-21, OP-27 und M8 unverändert. **Nächster Schritt:**
+Betreiberentscheidung über den Kapazitätspfad (R-6-Fix und `k`-Erhöhung sind getrennte Sprints);
+die Testmandat-Sperre aus [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) §9 bleibt gültig.
+Geänderte Dateien: `docs/betrieb/cron-fairness.md` (§10 neu, R-4 korrigiert, R-6 neu, §9-Hinweis),
+`docs/datenmotor-restliste.md` (OP-25-Status), `docs/CURRENT_STATE.md`. Branch
+`claude/op-25-production-nachweis-2` (nur Doku), PR folgt.) ·
 (**Sprint P29-Fix — Fehlerpfade schließen (P29-1…P29-4).
 ERFOLGREICH ABGESCHLOSSEN (repo-seitig) — alle vier
 in Punkt 29A deterministisch belegten Produktionsfehler sind behoben, offline bewiesen und
