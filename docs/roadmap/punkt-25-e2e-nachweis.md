@@ -1,14 +1,18 @@
 # Punkt 25 — Ende-zu-Ende-Nachweis für den Pilotmandanten (Bund)
 
-**Kanonische Nachweisdokumentation.** Stand: **2026-07-31** (25A-Sprint plus
-Production-Nachprüfungen vom 30./31.07.).
+**Kanonische Nachweisdokumentation.** Stand: **2026-07-31, 04:35 UTC** (25A-Sprint
+plus Production-Nachprüfungen vom 30./31.07.).
 Zustand: **teilweise abgeschlossen** — 25A vollständig belegt; von den 17
-Abnahmekriterien für 25B sind **16 erfüllt**, das Deployment-`READY` ist inzwischen
-belegt. Offen ist allein ein regulärer Lauf **des Pilotmandanten** mit veränderter
-Eingabe — blockiert durch **Befund B25-2** (§6c): der Fix von PR #185 verändert nur
-`matched_features`, und die gehen bewusst nicht in den Idempotenz-Fingerabdruck ein,
-weshalb der Pilotlauf am 30.07. um 20:04 UTC idempotent blieb und die falschen
-Alt-Zeilen (inkl. Rang 1) stehen ließ. **Betreiberentscheidung nötig.**
+Abnahmekriterien für 25B sind **16 erfüllt** (Deployment-`READY` belegt, §6a).
+**Der Fix aus PR #185 ist in Production wirksam bewiesen** (§6a2): ein zweiter
+Mandant rechnete am 31.07. um 04:05 UTC regulär neu, **alle 3** seiner falschen
+Ausschussbelege verschwanden, **14** echte Bundes-Ausschussbelege blieben erhalten —
+Gesamtbestand der falschen Belege **5 → 2**. Offen ist allein derselbe Nachweis
+**beim Pilotmandanten**; dessen Lauf blieb am 30.07. um 20:04 UTC idempotent
+(**Befund B25-2**, §6c: der Fix verändert nur `matched_features`, die bewusst nicht
+in den Idempotenz-Fingerabdruck eingehen). Seine **2** falschen Belege — darunter
+Rang 1 — bleiben bis zur ersten Eingabeänderung sichtbar.
+**Betreiberentscheidung nötig.**
 
 ---
 
@@ -214,6 +218,39 @@ ausschließlich 34 · `decisions`-Abgleich 10/10 exakt.
 | Keine Production-Schreibzugriffe durch den Nachweis | ✅ ausschließlich `GET` |
 | **Lauf gehört zum aktiven Pilotmandanten** | ❌ **offen** — der Lauf gehört einem anderen Mandanten (OP-25-Rotation) |
 
+### 6a2 · Wirksamkeit in Production BEWIESEN — zweiter Lauf, 2026-07-31 04:05 UTC
+
+Der zweite reguläre Lauf nach dem Deployment (2026-07-31, **04:05:02,154 → 04:05:03 UTC**,
+Auslöser `crawl`, Status `vollstaendig`, 20 veröffentlicht / 1 abgelöst,
+`wiederholungen` **0** = echte neue Generation) gehört **ebenfalls nicht** dem
+Piloten — aber er gehört dem Mandanten, der **3 der 5** falschen Alt-Zeilen trug.
+Damit ist die Ablösung erstmals an echten Production-Daten belegt, nicht nur
+gerechnet:
+
+| früher falsche Zeile (Ebene `land`) | Begründung **vorher** | Begründung **jetzt** |
+|---|---|---|
+| `ko-vg-…b937eb5` (Rang 10 → 11) | „Betrifft deinen Ausschuss **Gesundheit** und deinen Wahlkreis Berlin." | „Betrifft deinen Wahlkreis Berlin und deine Partei SPD." |
+| `ko-vg-sofortprogramm` (Rang 8 → 9) | „Betrifft deinen Ausschuss **Gesundheit** und deine Partei SPD." | „Betrifft deine Partei SPD." |
+| `ko-vg-westfalica` (Rang 15 → 16) | „Betrifft deinen Ausschuss **Gesundheit** und deinen Wahlkreis Berlin." | „Betrifft deinen Wahlkreis Berlin und deine Partei SPD." |
+
+Die Wissensobjekte nennen weiterhin „Gesundheitsausschuss" bzw.
+„Sozialausschuss"/„Umwelt- und Naturschutzausschuss" — der Beleg entfällt, weil ihre
+Ebene `land` ist. **Kein Kollateralschaden:** von den 20 Zeilen des Laufs tragen
+**14** weiterhin einen Ausschussbeleg — **alle** bei Wissensobjekten der Ebene
+`bund`. Echte Bundestags-Ausschussbelege bleiben also vollständig erhalten; nur die
+institutionell unzulässigen verschwinden. Jede Zeile wurde zusätzlich mit der echten
+Produktionsfunktion `ausschussBelegZulaessig` nachgerechnet; Ränge lückenlos,
+Zeitreihenfolge korrekt, sichtbare Erklärung deckungsgleich mit der persistierten
+Begründung.
+
+**Gesamtbestand der falschen Ausschussbelege: 5 → 2.** Die verbleibenden **2**
+gehören dem Pilotmandanten (Ränge 1 und 15, gerechnet 2026-07-30 07:56:55 UTC).
+
+**Was das für 25B bedeutet:** Der Fix aus PR #185 ist damit **in Production
+wirksam bewiesen** — an echten Daten, an einem echten Mandanten, im regulären
+Betrieb, ohne jeden Eingriff. Was für den formalen Abschluss von 25B fehlt, ist
+ausschließlich die Wiederholung desselben Vorgangs **beim Pilotmandanten**.
+
 ### 6b · Was noch fehlt
 
 Genau ein Beleg: **ein vollständig abgeschlossener regulärer Lauf des
@@ -222,10 +259,11 @@ Pilotmandanten nach dem Deployment**, mit Ablösung seiner **2** falschen Alt-Ze
 deine Partei Die Linke." auf einem Vorgang der Ebene `land`) und 0 neuen falschen
 Belegen.
 
-Stand der 5 falschen Alt-Zeilen (alle `aktuell=true`, alle vor dem Deployment
-gerechnet, **unverändert sichtbar**): 2 beim Pilotmandanten (Ränge 1 und 15,
-gerechnet 2026-07-30 07:56:55 UTC), 3 bei einem zweiten Mandanten (Ränge 8, 10, 15,
-gerechnet 2026-07-29 16:04:09 UTC).
+Stand der falschen Alt-Zeilen (Stand 2026-07-31, 04:35 UTC): **5 → 2**. Die 3 Zeilen
+des zweiten Mandanten sind durch dessen regulären Lauf am 31.07. 04:05 UTC
+**abgelöst** (§6a2). Verblieben sind die **2** Zeilen des Pilotmandanten
+(Ränge 1 und 15, gerechnet 2026-07-30 07:56:55 UTC, `aktuell=true`, weiterhin
+sichtbar).
 
 ### 6c · Befund B25-2 — warum das nicht von selbst passiert (belegt, freigabepflichtig)
 
@@ -265,7 +303,16 @@ Fingerabdruck trotz 179 neuer Wissensobjekte) spricht für hohe Stabilität der 
 
 **B25-2 ist kein Fehler des Fixes**, sondern die dokumentierte Kehrseite der
 Idempotenz aus Sprint 23B-1 (Schreibersparnis) in Kombination mit einem Fix, der
-nur die Ergebnisseite betrifft. Die Behebung erfordert eine **Betreiberentscheidung**
+nur die Ergebnisseite betrifft.
+
+**Bestätigt durch den direkten Kontrast (2026-07-31):** Derselbe Fix, dieselbe
+Codebasis, zwei Mandanten, zwei Ergebnisse — der zweite Mandant hatte eine
+Eingabeänderung (1 Kandidat abgelöst, `wiederholungen` 0), rechnete deshalb neu, und
+**alle 3** seiner falschen Belege verschwanden (§6a2). Der Pilot hatte keine
+Eingabeänderung, blieb idempotent, und seine **2** falschen Belege blieben stehen.
+Damit ist B25-2 nicht mehr nur aus dem Vertrag hergeleitet, sondern an zwei echten
+Production-Läufen gegeneinander belegt: **die Ablösung hängt allein an der
+Eingabeänderung, nicht am Fix.** Die Behebung erfordert eine **Betreiberentscheidung**
 und einen getrennten, freigabepflichtigen Sprint; Optionen (nicht bewertet, nicht
 umgesetzt): (a) weiter abwarten und 25B offen lassen, (b) Rezeptversion anheben —
 erzwingt Neuberechnung **aller** Mandanten, verändert sichtbare Ergebnisse breit,

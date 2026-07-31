@@ -1,6 +1,41 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-31 (**Sprint P29-Fix — Fehlerpfade schließen (P29-1…P29-4).
+**Letzte Aktualisierung:** 2026-07-31 (**Nachprüfung Punkt 25B, zweiter Durchgang — rein lesend,
+kein Code, keine Production-Änderung. ERGEBNIS: der Fix aus PR #185 ist in Production WIRKSAM
+BEWIESEN; 25B bleibt formal offen, weil der Nachweis noch nicht beim Pilotmandanten selbst
+erbracht ist.** **Zweiter regulärer Lauf nach dem Deployment (2026-07-31, 04:05:02,154 →
+04:05:03 UTC, Auslöser `crawl`, Status `vollstaendig`, 20 veröffentlicht / 1 abgelöst,
+`wiederholungen` 0 = echte neue Generation):** er gehört wiederum **nicht** dem Piloten, aber
+dem Mandanten, der **3 der 5** falschen Alt-Zeilen trug — und **alle 3 sind abgelöst**:
+„Betrifft deinen Ausschuss **Gesundheit** und deinen Wahlkreis Berlin." → „Betrifft deinen
+Wahlkreis Berlin und deine Partei SPD." (Rang 10→11) · „… Ausschuss **Gesundheit** und deine
+Partei SPD." → „Betrifft deine Partei SPD." (Rang 8→9) · dritter Fall analog (Rang 15→16). Die
+Wissensobjekte nennen weiterhin „Gesundheitsausschuss"/„Sozialausschuss" — der Beleg entfällt,
+weil ihre Ebene `land` ist. **Kein Kollateralschaden:** **14 von 20** Zeilen behalten ihren
+Ausschussbeleg, **alle** bei Ebene `bund`; echte Bundestagsbelege bleiben vollständig erhalten,
+**0** neue falsche Belege. Jede Zeile zusätzlich mit der echten Produktionsfunktion
+`ausschussBelegZulaessig` nachgerechnet; Ränge lückenlos, Zeitreihenfolge korrekt, sichtbare
+Erklärung deckungsgleich mit der persistierten Begründung. **Gesamtbestand falscher
+Ausschussbelege: 5 → 2**, beide beim Pilotmandanten (Ränge 1 und 15, gerechnet 30.07. 07:56:55
+UTC). **BEFUND B25-2 an zwei echten Läufen gegeneinander belegt:** derselbe Fix, dieselbe
+Codebasis, zwei Mandanten, zwei Ergebnisse — der zweite Mandant hatte eine Eingabeänderung,
+rechnete neu und wurde sauber; der Pilot hatte keine, blieb am 30.07. um 20:04 UTC idempotent und
+behielt seine falschen Belege. Die Ablösung hängt damit **allein an der Eingabeänderung, nicht am
+Fix**. **Stand der 17 Abnahmekriterien: 16 erfüllt**; offen bleibt allein die Zugehörigkeit eines
+solchen Laufs zum Pilotmandanten. **Gegenprobe nach dem Merge von PR #188** (der `understanding.js`
+verändert und dabei den N10-Anker der 25A-Mutationsprobe nachgezogen hat): `pilot-e2e-vertrag-test`
+**96/96**, `pilot-e2e-mutationsprobe` **10/10 rot** — der 25A-Vertrag trägt auf dem neuen `main`
+unverändert. **Sicherheitsgrenzen:** ausschließlich lesende Zugriffe (HTTPS-`GET`), 0 KI-Aufrufe,
+0,00 USD, kein manueller Lauf, kein neuer Cron/Trigger, keine Migration, kein Backfill, keine
+Datenkorrektur, Berlin/Brandenburg/M8 unverändert AUS, Mandanten in allen Ausgaben
+pseudonymisiert. **Statusgrenzen:** Zeile 25 bleibt ⏳; Punkt 27A erfolgreich abgeschlossen,
+Punkt 27 gesamt ⏳, 27B durch Punkt 15 blockiert; OP-25 unverändert; M8 AUS. **Nächster Schritt:**
+Betreiberentscheidung zu B25-2 (abwarten · Rezeptversion anheben · gezielter Neulauf · Backfill —
+nichts davon ausgeführt oder vorbereitet); der Wirksamkeitsnachweis selbst ist erbracht.
+Geänderte Dateien: `docs/roadmap/punkt-25-e2e-nachweis.md` (§6a2 neu, §6b/§6c ergänzt),
+`docs/roadmap/phase_1_checkliste.md`, `docs/CURRENT_STATE.md`. Branch
+`claude/phase-1-punkt-25-e2e-bcsru5` (frisch von `071f91c`), PR folgt.) ·
+(**Sprint P29-Fix — Fehlerpfade schließen (P29-1…P29-4).
 ERFOLGREICH ABGESCHLOSSEN (repo-seitig) — alle vier
 in Punkt 29A deterministisch belegten Produktionsfehler sind behoben, offline bewiesen und
 mutationsgesichert; 29B (rein lesender Production-Nachweis) bleibt offen.**
