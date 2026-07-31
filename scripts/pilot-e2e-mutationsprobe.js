@@ -125,8 +125,8 @@ const MUTATIONEN = [
     name: "N10 · Understanding-Duplikate gelten wieder als neue Arbeit",
     beschreibung: "Ein identischer Zweitlauf wuerde dieselben Vorgaenge erneut anfassen — Idempotenz des Understandings gebrochen (D1/D2).",
     datei: UNDERSTANDING,
-    von: "      if (!neueDocs.length) {\n        return { vorgangId, status: \"duplicate\", documents: clusterDocs.length, ...spur };\n      }",
-    nach: "      if (false) {\n        return { vorgangId, status: \"duplicate\", documents: clusterDocs.length, ...spur };\n      }"
+    von: "      if (!neueDocs.length) {",
+    nach: "      if (false) {"
   }
 ];
 

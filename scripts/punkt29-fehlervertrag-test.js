@@ -287,10 +287,11 @@ const langsam = (ms, fn) => async (...args) => {
       eGesund && eGesund.status === fairness.STATUS_ERFOLG && eGesund.erfolge === 1);
   }
 
-  // B9 — BEFUND P29-1 (heutiges Verhalten GEPINNT, Soll-Erwartung in punkt29-befundproben.js):
-  // ein von perTenant ZURUECKGEGEBENES Timeout-/Fehlerobjekt (so liefern es die
-  // Cron-Routen, z. B. server.js:840/1066 build-timeout/lage-check-timeout) wird
-  // als ERFOLG verbucht — letzter Erfolg gesetzt, Fehlerserie zurueck auf 0.
+  // B9 — BEFUND P29-1 BEHOBEN (Fix-Sprint, PR #188): ein von perTenant
+  // ZURUECKGEGEBENES Timeout-/Fehlerobjekt (so liefern es die Cron-Routen, z. B.
+  // server.js build-timeout/lage-check-timeout) wird als FEHLER gebucht — kein
+  // erfundener letzter Erfolg, die Fehlerserie laeuft ehrlich weiter.
+  // Vorher pinnte diese Stelle das fehlerhafte Altverhalten (Erfolg, Serie 0).
   {
     const env = fairnessUmgebung();
     // Vorgeschichte: das Mandat hat eine echte Fehlerserie.
@@ -305,8 +306,9 @@ const langsam = (ms, fn) => async (...args) => {
       perTenant: async () => ({ ok: false, bounded: true, reason: "crawl-timeout" })
     });
     const e = eintrag(env, "p29-crawl", "m1");
-    check("B9 BEFUND P29-1 gepinnt: zurueckgegebenes Timeout-Objekt zaehlt HEUTE als Erfolg (letzterErfolgAt gesetzt, Fehlerserie 0) — Fix ist eigener Sprint",
-      e && e.status === fairness.STATUS_ERFOLG && e.letzterErfolgAt !== null && e.fehlerSerie === 0 && e.erfolge === 1,
+    check("B9 BEFUND P29-1 behoben: zurueckgegebenes Timeout-Objekt wird als FEHLER gebucht (kein letzterErfolgAt, Fehlerserie laeuft weiter)",
+      e && e.status === fairness.STATUS_FEHLER && e.letzterErfolgAt === null
+        && e.fehlerSerie === 2 && e.erfolge === 0 && e.fehler === 2,
       JSON.stringify(e));
   }
 
@@ -431,14 +433,51 @@ const langsam = (ms, fn) => async (...args) => {
       JSON.stringify(u.results.filter((r) => r.status === "skipped-invalid")));
   }
   {
-    // C9 — BEFUND P29-2 (heutiges Verhalten GEPINNT): nicht verwertbarer
-    // KI-Rueckgabewert null (Pflichtfall B.11) endet als cluster-error OHNE
-    // markFailed — kein failed-Zustand, Dokumente ohne Endzustand.
+    // C9 — BEFUND P29-2 BEHOBEN (Fix-Sprint, PR #188): ein nicht verwertbarer
+    // KI-Rueckgabewert null (Pflichtfall B.11; parseJsonText("null") wirft nicht)
+    // wird kontrolliert als 'skipped-invalid' geparkt — mit markFailed, Skip-Log
+    // und Endzustand. Kein anonymer cluster-error, kein unbegrenzter Retry mehr.
+    // Vorher pinnte diese Stelle das fehlerhafte Altverhalten (cluster-error ohne
+    // failed-Parkung). Der gesunde Rest des Laufs bleibt unberuehrt (saved === 5).
     const { s, u } = await defekterLauf("null", null);
-    check("C9 BEFUND P29-2 gepinnt: KI-Rueckgabewert null endet HEUTE als cluster-error OHNE failed-Parkung (sichtbar in Gruppe 'fehlgeschlagen', aber ohne Endzustand) — Fix ist eigener Sprint",
-      (u.counts["cluster-error"] || 0) === 1 && (u.telemetrie.gruppen.fehlgeschlagen || 0) === 1
-        && ![...s.knowledgeObjects.values()].some((k) => k.understanding_status === "failed")
+    check("C9 BEFUND P29-2 behoben: KI-Rueckgabewert null wird als 'skipped-invalid' mit failed-Parkung und Begruendung geparkt (Endzustand erreicht)",
+      (u.counts["skipped-invalid"] || 0) === 1
+        && (u.counts["cluster-error"] || 0) === 0
+        && u.results.some((r) => r.status === "skipped-invalid" && Array.isArray(r.errors) && r.errors.length > 0)
+        && [...s.knowledgeObjects.values()].some((k) => k.understanding_status === "failed")
         && (u.counts.saved || 0) === 5,
+      JSON.stringify(u.counts));
+  }
+  {
+    // C9b — FEHLERISOLATION je Cluster (Pflichtkonstellation "ein defekter
+    // Datensatz blockiert nicht"), NEU 2026-07-31.
+    // Warum neu: bis zum P29-Fix wurde der Fail-safe-Rahmen um understandOneCluster
+    // ueber C9 mitgeprueft — der nicht verwertbare KI-Rueckgabewert lief dort in
+    // den 'cluster-error'-Zweig. Seit dem Fix wird genau dieser Fall sauber INNEN
+    // als 'skipped-invalid' geparkt, damit lief kein Test mehr durch den Catch.
+    // Die 29A-Mutationsprobe hat das aufgedeckt (M12 ueberlebte). Ausgeloest wird
+    // der Zweig jetzt ueber einen ungeschuetzten Speicherfehler (deps.save wirft) —
+    // ein realistischer Store-Ausfall mitten im Batch.
+    const s = neuerStore();
+    const echterSave = s.api.save;
+    let sabotiert = 0;
+    const api = {
+      ...s.api,
+      save: async (ko) => {
+        if (String(ko && ko.headline).includes("Tarifbindung")) {
+          sabotiert += 1;
+          throw new Error("simulierter Speicherfehler mitten im Batch");
+        }
+        return echterSave(ko);
+      }
+    };
+    const roh = dedup.dedupeRawDocuments(ITEMS_GESUND.map(dedup.toRawDocumentRow).filter(Boolean));
+    const u = await understanding.runUnderstandingShadow(roh, api);
+    check("C9b Fehlerisolation: ein geworfener Cluster wird als 'cluster-error' aufgefangen und reisst den Batch NICHT mit (die uebrigen 4 laufen durch)",
+      sabotiert === 1
+        && (u.counts["cluster-error"] || 0) === 1
+        && (u.counts.saved || 0) === 4
+        && (u.telemetrie.gruppen.fehlgeschlagen || 0) === 1,
       JSON.stringify(u.counts));
   }
 
@@ -556,8 +595,14 @@ const langsam = (ms, fn) => async (...args) => {
       JSON.stringify({ frisch: frisch.blockiert.length, spaeter: spaeter.plan.length }));
   }
 
-  // D9 — BEFUND P29-3 (heutiges Verhalten GEPINNT): gescheiterte Aktualisierung
-  // wird beim naechsten identischen Lauf als 'duplicate' gewertet.
+  // D9 — BEFUND P29-3 BEHOBEN (Fix-Sprint, PR #188): eine gescheiterte
+  // Aktualisierung wird vorgemerkt und beim identischen Neustart ERNEUT versucht,
+  // statt stillschweigend als 'duplicate' zu enden. Der Wiederaufnahmeversuch ist
+  // begrenzt (Deckel 3, danach sichtbar 'skipped-update-final' ohne weiteren
+  // KI-Call — eigene Faelle in scripts/punkt29-fixpfade-test.js).
+  // Bewusst NICHT geprueft wird "gar keine Duplikate": die vier UNVERAENDERTEN
+  // Cluster des Bestands sind beim identischen Neustart voellig zu Recht
+  // 'duplicate'. Geprueft wird, dass der GESCHEITERTE Cluster nicht darunter ist.
   {
     const s = neuerStore();
     await understanding.runUnderstandingShadow(ROH_GESUND, s.api); // Bestand: 5 complete
@@ -575,11 +620,11 @@ const langsam = (ms, fn) => async (...args) => {
     };
     const uUpdate = await understanding.runUnderstandingShadow(rohMitUpdate, api);
     const uWiederholung = await understanding.runUnderstandingShadow(rohMitUpdate, api);
-    check("D9 BEFUND P29-3 gepinnt: gescheiterte Aktualisierung (skipped-error) wird beim identischen Neustart HEUTE als 'duplicate' gewertet — kein zweiter Update-Versuch, Fix ist eigener Sprint",
-      updateVersucht === 1
+    check("D9 BEFUND P29-3 behoben: gescheiterte Aktualisierung wird beim identischen Neustart ERNEUT versucht und bleibt sichtbar (die 4 unveraenderten Cluster bleiben zulaessige Duplikate)",
+      updateVersucht === 2
         && (uUpdate.counts["skipped-error"] || 0) === 1
-        && (uWiederholung.counts.duplicate || 0) >= 1
-        && (uWiederholung.counts["skipped-error"] || 0) === 0,
+        && (uWiederholung.counts["skipped-error"] || 0) === 1
+        && (uWiederholung.counts.duplicate || 0) === 4,
       JSON.stringify({ erster: uUpdate.counts, zweiter: uWiederholung.counts }));
   }
 

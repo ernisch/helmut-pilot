@@ -94,8 +94,8 @@ const MUTATIONEN = [
     name: "M8 · Vollstaendige Duplikate gelten wieder als neue Arbeit",
     beschreibung: "Ein identischer Zweitlauf wuerde denselben Vorgang erneut anfassen — Idempotenz des Understandings gebrochen (E1/E2).",
     datei: UNDERSTANDING,
-    von: "      if (!neueDocs.length) {\n        return { vorgangId, status: \"duplicate\", documents: clusterDocs.length, ...spur };\n      }",
-    nach: "      if (false) {\n        return { vorgangId, status: \"duplicate\", documents: clusterDocs.length, ...spur };\n      }"
+    von: "      if (!neueDocs.length) {",
+    nach: "      if (false) {"
   },
   {
     name: "M9 · Matching-Idempotenz entfaellt",
