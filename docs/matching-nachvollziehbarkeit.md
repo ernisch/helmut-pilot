@@ -3731,6 +3731,20 @@ Damit ist auch belegt, dass der lokale Fehlschlag `p1-security-check.js`
 **identischem Code** in zwei Verzeichnissen mit unterschiedlichen Fehlschlaglisten
 auf.
 
+**Ehrlich benannt: ein Neulauf war nötig.** Der erste CI-Lauf des reinen
+**Doku**-Commits (`c7d212a`) war rot — `werkzeug-lesefehler-test.js`, 42 PASS / 1 FAIL.
+Der Commit davor (`bc65ed3`) war mit **identischem Produktionscode** grün, und der
+Doku-Commit ändert keine Zeile Code; die Suite prüft Storage-Werkzeuge und hat mit
+der Rezeptversion fachlich nichts zu tun. Lokal **6 von 6** Läufen grün (43/43),
+zuvor flatterte dieselbe Suite bereits einmal auf der **Basislinie** `origin/main`.
+Sie startet Kindprozesse gegen lokale HTTP-Doppel und misst deren Exit-Codes — das
+ist lastempfindlich. Nach `rerun_failed_jobs` grün.
+
+**Benannte Beobachtung B25-F1** (kein Befund dieses PRs, kein Fix hier):
+`werkzeug-lesefehler-test.js` ist unter Last flatteranfällig — dasselbe Muster wie
+**B29-F1** (`berlin-e2e-vertrag-test.js`). Beide gehören in eine eigene kleine
+Aufgabe „lastfeste Testdoppel", nicht in diesen Sprint.
+
 ### 53.7 Was dieser Sprint NICHT tut
 
 Kein manueller Lauf · kein Backfill · kein Production-Schreibzugriff · keine
