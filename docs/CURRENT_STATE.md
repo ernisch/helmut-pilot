@@ -1,6 +1,59 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-30 (**Sprint Phase-1-Punkt 25 — Ende-zu-Ende-Nachweis für den
+**Letzte Aktualisierung:** 2026-07-31 (**Nachprüfung Punkt 25B — rein lesend, kein Code, keine
+Production-Änderung. ERGEBNIS: 16 von 17 Abnahmekriterien erfüllt; 25B bleibt offen und braucht
+jetzt eine BETREIBERENTSCHEIDUNG statt weiterer Wartezeit.** **Geschlossen:** der
+Deployment-`READY`-Beleg, der in PR #184/#185 nicht erbringbar war — die Vercel-API war in dieser
+Sitzung erstmals verfügbar: `dpl_HFU8JjcREEFX4YXESsk7ua8uEhog`, Commit `cf290ab` (Merge PR #185),
+Ziel production, Alias `helmut-pilot.vercel.app`, **`READY` 2026-07-30 13:22:02 UTC** (Merge
+13:21:45 → Build 13:21:50 → READY 13:22:02); PR #186 entsprechend `dpl_HLasm9hNVti4mJLobwGGmGHP2atQ`
+(`75d7286`). **Erster regulärer Lauf nach dem Deployment vollständig geprüft** (2026-07-30,
+16:04:59,977 → 16:05:01 UTC, Auslöser `crawl`, Status `vollstaendig`, 20 veröffentlicht / 33
+abgelöst, 0 Wiederholungen): **alle inhaltlichen Kriterien erfüllt** — **0 von 20** Zeilen tragen
+überhaupt einen Ausschussbeleg, jede Zeile mit der echten Produktionsfunktion
+`ausschussBelegZulaessig` gegen die KO-Zuständigkeit nachgerechnet, sichtbare Erklärung
+deckungsgleich mit persistierter Begründung/Signalen (`erklaerungAusErgebnis`), Mandantenzuordnung,
+Ränge 1–20 lückenlos, Versionsachsen unverändert, Zeitreihenfolge Deployment 13:22:02 < Laufstart
+16:04:59 < `berechnet_am` ≤ Laufende, keine Fehlerzeile. **Einziges offenes Kriterium:** der Lauf
+gehört einem **anderen** Mandanten (OP-25-Rotation), nicht dem Piloten. **NEUER BEFUND B25-2 —
+belegt, freigabepflichtig, ändert die bisherige Erwartung:** Der Pilotmandant *war* nach dem
+Deployment dran (2026-07-30, **20:04:27 UTC**, regulärer `crawl`-Cron), der Lauf blieb aber
+**idempotent** — `wiederholungen` 0 → 1, `letzter_lauf_at` gesetzt, **keine neue Generation**, keine
+Zeile neu berechnet. **Ursache aus dem Vertrag selbst belegt** (`lib/helmut/matching-contract.js`,
+`computeInputFingerprint`/`computeCandidateSetHash`): der Idempotenzschlüssel besteht aus Mandant ·
+Profil · `profil_hash` · Engine-/Rezept-/Vektorversion · Schwellenwerte · Kandidatenhash
+(`ko_id|similarity|ko_eingabe_hash`); **`matched_features` gehen bewusst NICHT ein** — sie sind
+Ergebnis, nicht Eingang. PR #185 verändert ausschließlich `matched_features` und erzeugt deshalb
+**keinen** neuen Fingerabdruck und **keine** Neuberechnung. **Gemessen 2026-07-31, 00:45 UTC:** von
+den **20** Wissensobjekten der aktuellen Pilot-Trefferliste haben sich seit dem 07:56-Lauf **0**
+geändert (weder `ko_version` noch `updated_at`); Ähnlichkeitsschwelle Rang 20 = **0,2329**; seit dem
+letzten Pilot-Lauf sind **97** neue Wissensobjekte entstanden (davon **23** verstanden) und **101**
+geändert worden — **keines** erreicht seine Top-20. Der nächste reguläre Pilotlauf bliebe damit
+**erneut idempotent** (dasselbe Muster wie in Sprint 23B-1: identischer Fingerabdruck trotz 179
+neuer Wissensobjekte). **Konsequenz, ehrlich benannt:** die **2** falschen Ausschussbelege des
+Piloten — darunter die **Rang-1**-Karte „Betrifft deinen Ausschuss Arbeit und Soziales und deine
+Partei Die Linke." auf einem Vorgang der Ebene `land` — **bleiben sichtbar**, bis unabhängig vom Fix
+eine Eingabeänderung eintritt (neues KO über der Schwelle · Aktualisierung eines der 20 Objekte ·
+Profiländerung · Versionsanhebung). Ein Zeitpunkt ist **nicht vorhersagbar**. Insgesamt stehen
+weiterhin **5** falsche Alt-Zeilen (2 Pilot, 3 zweiter Mandant, alle vor dem Deployment gerechnet).
+**B25-2 ist kein Fehler des Fixes**, sondern die Kehrseite der Idempotenz aus Sprint 23B-1 in
+Kombination mit einem Fix, der nur die Ergebnisseite betrifft. **Optionen für die
+Betreiberentscheidung, keine davon ausgeführt oder vorbereitet:** (a) weiter abwarten, 25B bleibt
+offen · (b) Rezeptversion anheben — erzwingt Neuberechnung **aller** Mandanten mit breiter sichtbarer
+Wirkung · (c) gezielter Neulauf des Piloten (manueller Lauf, im Sprintauftrag ausdrücklich verboten)
+· (d) Backfill der betroffenen Zeilen (Production-Schreibzugriff). **Sicherheitsgrenzen
+eingehalten:** ausschließlich lesende Zugriffe (HTTPS-`GET` gegen PostgREST und die
+Vercel-Deployment-API), **0 KI-Aufrufe, 0,00 USD**, kein manueller Lauf, kein neuer Cron/Trigger,
+keine Migration, kein Backfill, keine Datenkorrektur, keine Env-/Flag-/Budgetänderung,
+Berlin/Brandenburg/M8 unverändert AUS, keine Production-Rohdaten im Repository (Mandanten in allen
+Ausgaben pseudonymisiert). **Statusgrenzen:** Zeile 25 bleibt ⏳ (25A erfüllt, 25B offen); Punkt 27A
+bleibt erfolgreich abgeschlossen, Punkt 27 gesamt ⏳, 27B durch Punkt 15 blockiert; OP-25 unverändert;
+M8 AUS. **Nächster Schritt:** Betreiberentscheidung zu B25-2; danach Folgeauftrag 25B aus
+[`roadmap/punkt-25-e2e-nachweis.md`](roadmap/punkt-25-e2e-nachweis.md) §6. **PR #187 (Punkt 29A)
+wartet vereinbarungsgemäß auf den 25B-Abschluss und ist danach zu rebasen.** Geänderte Dateien:
+`docs/roadmap/punkt-25-e2e-nachweis.md` (§6 neu gefasst, B25-2 kanonisch), `docs/roadmap/phase_1_checkliste.md`
+(Zeile 25 ergänzt), `docs/CURRENT_STATE.md`. Branch `claude/phase-1-punkt-25-e2e-bcsru5` (frisch von
+`75d7286`), PR folgt.) · (**Sprint Phase-1-Punkt 25 — Ende-zu-Ende-Nachweis für den
 Pilotmandanten (Bund), geschnitten in 25A (deterministischer Repository-E2E-Vertrag) und 25B
 (regulärer Production-Nachweis nach PR #185). TEILWEISE ABGESCHLOSSEN — 25A vollständig erfüllt,
 25B wartet auf den ersten regulären Lauf nach dem Deployment.** **Wichtige Statuskorrektur zum
