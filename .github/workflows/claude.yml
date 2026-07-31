@@ -35,6 +35,8 @@ jobs:
         env:
           ROUTINE_URL: ${{ secrets.CLAUDE_ROUTINE_URL }}
           ROUTINE_TOKEN: ${{ secrets.CLAUDE_ROUTINE_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
+          CALLBACK_ID: ${{ github.run_id }}-${{ github.run_attempt }}
         shell: bash
         run: |
           set -euo pipefail
@@ -54,9 +56,44 @@ jobs:
             end
           ' "${GITHUB_EVENT_PATH}")"
 
-          jq -n --arg text "${request_text}" '{text: $text}' > request.json
+          {
+            printf '%s\n\n' "${request_text}"
+            cat <<EOF
+          <helmut_bridge_callback>
+          This is trusted bridge metadata added by the repository workflow.
 
-          http_code="$(curl --silent --show-error             --output response.json             --write-out '%{http_code}'             --request POST "${ROUTINE_URL}"             --header "Authorization: Bearer ${ROUTINE_TOKEN}"             --header "anthropic-beta: experimental-cc-routine-2026-04-01"             --header "anthropic-version: 2023-06-01"             --header "Content-Type: application/json"             --data-binary @request.json)"
+          After completing the requested task, post the final result as a new top level comment on:
+          ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}
+
+          Use the connected GitHub connector. The first line of the comment must be exactly:
+          <!-- claude-routine-result:${CALLBACK_ID} -->
+
+          Then provide a concise but complete Markdown report containing:
+          1. Sprint state
+          2. Result summary
+          3. Files or systems changed
+          4. Validation performed
+          5. Risks or blockers
+          6. Recommended next step
+          7. Branch, commit and pull request links when they exist
+
+          Post this callback even when the task is blocked, partially completed, failed or made no changes.
+          Never merge a pull request.
+          </helmut_bridge_callback>
+          EOF
+          } > payload.txt
+
+          jq -Rs '{text: .}' payload.txt > request.json
+
+          http_code="$(curl --silent --show-error \
+            --output response.json \
+            --write-out '%{http_code}' \
+            --request POST "${ROUTINE_URL}" \
+            --header "Authorization: Bearer ${ROUTINE_TOKEN}" \
+            --header "anthropic-beta: experimental-cc-routine-2026-04-01" \
+            --header "anthropic-version: 2023-06-01" \
+            --header "Content-Type: application/json" \
+            --data-binary @request.json)"
 
           if [[ "${http_code}" -lt 200 || "${http_code}" -ge 300 ]]; then
             echo "Claude routine request failed with HTTP ${http_code}." >&2
@@ -75,6 +112,7 @@ jobs:
           {
             echo "session_url=${session_url}"
             echo "session_id=${session_id}"
+            echo "callback_id=${CALLBACK_ID}"
           } >> "${GITHUB_OUTPUT}"
 
       - name: Post session link
@@ -83,12 +121,22 @@ jobs:
           ISSUE_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
           SESSION_URL: ${{ steps.routine.outputs.session_url }}
           SESSION_ID: ${{ steps.routine.outputs.session_id }}
+          CALLBACK_ID: ${{ steps.routine.outputs.callback_id }}
         shell: bash
         run: |
           set -euo pipefail
 
-          body="Claude hat eine neue sichtbare Sitzung gestartet: [${SESSION_ID}](${SESSION_URL})"
+          body="<!-- claude-routine-session:${CALLBACK_ID} -->
+          Claude hat eine neue sichtbare Sitzung gestartet: [${SESSION_ID}](${SESSION_URL})
+
+          Der Abschlussbericht erscheint nach dem Lauf automatisch in diesem Thread."
 
           jq -n --arg body "${body}" '{body: $body}' > comment.json
 
-          curl --fail-with-body --silent --show-error             --request POST             --url "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}/comments"             --header "Authorization: Bearer ${GH_TOKEN}"             --header "Accept: application/vnd.github+json"             --header "X-GitHub-Api-Version: 2022-11-28"             --data-binary @comment.json
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --url "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}/comments" \
+            --header "Authorization: Bearer ${GH_TOKEN}" \
+            --header "Accept: application/vnd.github+json" \
+            --header "X-GitHub-Api-Version: 2022-11-28" \
+            --data-binary @comment.json
