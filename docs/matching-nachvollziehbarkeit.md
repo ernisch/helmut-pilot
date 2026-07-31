@@ -3625,3 +3625,115 @@ das **nicht**. Die Berliner Suite ist von diesem Sprint fachlich nicht berührt.
 
 **Rückweg:** `git revert` der Commits, Redeploy. Es gibt keinen Datenstand, der
 zurückzudrehen wäre — nichts wird gelöscht, nichts migriert.
+
+## 42 · Ausrollmessung und Abnahmeentscheidung (2026-07-29 bis 07-31, rein lesend)
+
+> Fünf Messungen über **40 Stunden**, ausschließlich lesend. Kein manueller Lauf, keine
+> Migration, kein Flag, keine Cron-Änderung, keine Datenänderung.
+
+### 42.1 Verlauf
+
+| Takt | Zeit (UTC) | Auslöser davor | neuer Mandant | Abdeckung aktive Mandate |
+|---|---|---|---|---|
+| 0 | 29.07. 16:33 | Deployment 12:19, `pipeline` 16:00 | **annika-klose** | 80/251 = 31,9 % |
+| 1 | 29.07. 22:39 | `crawl` 20:00 | — (idempotent) | 80/251 = 31,9 % |
+| 2 | 30.07. 10:20 | `crawl` 04:00 · App 07:52 · `lage-check` 10:00 | **cem-ince** | 84/194 = 43,3 % |
+| 3 | 30.07. 16:21 | `pipeline` 16:00 | **max-mustermann** | 96/168 = 57,1 % |
+| 4 | 30.07. 20:21 | `crawl` 20:00 | — (idempotent) | 96/168 = 57,1 % |
+| 5 | 31.07. 04:21 | `crawl` 04:00 | — (neue Generation, kein neuer Mandant) | 96/168 = 57,1 % |
+
+Der Nenner sinkt, weil jede Neuberechnung veraltete Zeilen **ablöst**: aus einem über Tage
+gewachsenen Bestand (bis zu 77 Zeilen je Mandant) wird eine saubere Generation von 20.
+
+### 42.2 Ergebnis je Mandant
+
+| Mandant | Post-Fix-Lauf | Zeilen | belegt | sichtbares 12er-Lagefenster |
+|---|---|---|---|---|
+| A | ja | 20 | **20 (100 %)** | **12/12** |
+| B | ja | 20 | **18 (90 %)** | 11/12 |
+| C | ja | 20 | **20 (100 %)** | **12/12** |
+| D | nein | 31 | 13 (41,9 %) | 11/12 |
+| E | nein | 47 | 9 (19,1 %) | 8/12 |
+| F | nein | 30 | 16 (53,3 %) | 10/12 |
+| *G — inaktives Mandat, Platzhalterprofil* | *nie erreichbar* | *20* | *0 (0 %)* | *0/12* |
+
+**Neu gerechnete Mandanten: 58 von 60 Zeilen belegt = 96,7 %**, deren Lagefenster
+**35 von 36 = 97,2 %**. Aktive Mandate insgesamt **96/168 = 57,1 %**, sichtbares
+Lagefenster über alle aktiven Mandate **64/72 = 88,9 %** (Ausgangswert 55/72 = 76,4 %).
+
+**Korrektur der früheren Projektion:** §38 hatte 70,5 % erwartet. Dieser Wert war zu
+pessimistisch, weil er über den **akkumulierten** Bestand rechnete. Real liegen die neu
+gerechneten Mandanten bei **96,7 %** — die Neuberechnung hebt nicht nur die Belegquote,
+sie räumt zugleich veraltete Zeilen ab.
+
+### 42.3 Invarianten über alle fünf Messungen
+
+Kein einziger Verstoß, zu keinem Zeitpunkt:
+
+| Prüfung | Ergebnis |
+|---|---|
+| Zeilen von vor dem Deployment | konstant **290** — **nichts gelöscht** |
+| Gesamtzeilen | 290 → 298 (8 neue aus den Neuberechnungen) |
+| abgelöste Zeilen | 19 → 110, **alle mit `abgeloest_am`**, `similarity`/`rank` erhalten |
+| Läufe `laufend` · `fehlgeschlagen` | **0 · 0** |
+| vollständige Läufe ohne `beendet_am` | **0** |
+| Ergebniszeilen auf unvollständigem Lauf | **0** |
+| `knowledge_object_embeddings` | **772**, Fingerabdruck `b2b4b7e9…` **identisch** (letzte Änderung 28.07., vor dem Deployment) |
+| `llm_usage` seit dem Deployment | **0 Aufrufe · 0,000000 USD** |
+| offene `matching-<mandant>`-Sperren | **0** |
+| Fehlergruppen aus dem Matching-Pfad | **0** |
+
+**Idempotenz in Production viermal bestätigt** (29.07. 20:04 · 30.07. 04:05 · 30.07. 20:04
+und der Erstnachweis): identischer Eingang → keine neue Laufzeile, `wiederholungen` hoch,
+**0 Ergebniszeilen geschrieben**.
+
+*Methodenhinweis:* Der Embeddings-Fingerabdruck muss **per SQL** gerechnet werden
+(`updated_at::text`). Über PostgREST-JSON entsteht ein anderes Zeitformat und damit ein
+scheinbar abweichender Hash — eine solche Scheinabweichung trat bei Takt 3 auf und wurde
+als Messfehler identifiziert, nicht als Production-Befund.
+
+### 42.4 Warum die Messung hier endet
+
+Die drei verbleibenden Mandanten hängen nicht am Fix, sondern am **Durchsatz**: der erste
+Mandant eines Laufs verbraucht rund vier der viereinhalb Minuten Zeitbudget, der zweite
+wird angefangen und abgeschnitten (belegt über die Sperren `crawl-ottilie-paola-klein-2`
+16:05, `crawl-helmut-kleebank` 20:04, `crawl-ruppert-st-we` 04:05 — jeweils ohne
+zugehörigen `matching_run`), der Rest startet nie.
+
+**OP-25 ist zwischenzeitlich behoben** (PR #179, `cron-fairness.js`): die Reihenfolge
+rotiert nach ältestem Versuch, nicht mehr alphabetisch. *Die Aussage „keine Rotation" aus
+der ersten Messung galt nur für den Stand `bb539b1` und ist überholt.* Die Rotation wirkt —
+in 40 Stunden wurden drei verschiedene Mandanten erreicht —, aber sie erhöht den Durchsatz
+nicht: pro Lauf kommt weiterhin höchstens einer durch, und mehrfach traf es einen bereits
+gerechneten.
+
+Zwei aufeinanderfolgende Läufe ohne neuen Mandanten sind deshalb der Punkt, an dem
+Weitermessen nichts mehr über die **Korrektheit** des Fixes aussagt, sondern nur noch über
+den **Durchsatz** — und der ist ein anderer offener Punkt.
+
+### 42.5 Abnahmeentscheidung
+
+**Sprint 23C-2A: ABGENOMMEN.** Der Fix ist in Production wirksam und nebenwirkungsfrei —
+an drei Mandanten mit vier veröffentlichten Generationen belegt, mit byte-identischen
+Scores und Rängen dort, wo der Kandidatensatz gleich blieb, ohne eine einzige
+Invariantenverletzung, ohne Löschung, ohne KI-Kosten und ohne neue Fehlerklasse.
+
+**Roadmap-Punkt 23: NICHT geschlossen, bleibt ⏳.** Das Abnahmekriterium („Es ist
+nachvollziehbar, warum ein Vorgang zu einem Profil passt") ist für **drei von sechs**
+aktiven Mandaten erfüllt. Der Punkt wird geschlossen, wenn auch die übrigen drei einen
+Post-Fix-Lauf hatten — **dafür ist keine Entwicklung mehr nötig, nur Durchsatz**.
+
+**Empfehlung in dieser Reihenfolge:**
+
+| Priorität | Punkt | Warum |
+|---|---|---|
+| 1 | **Cron-Durchsatz** (B5) — nicht Reihenfolge, sondern Budget | Der einzige Grund, warum Punkt 23 noch offen ist. OP-25 hat die Fairness gelöst, nicht den Deckel. |
+| 2 | **OP-04** — Platzhalter-/Demo-Mandat | Das inaktive Mandat trägt 20 dauerhaft unbelegbare Zeilen; es gehört bereinigt, nicht erklärt. |
+| 3 | **M-8** — Schwellenwert der RPC | Verändert Kandidaten und Ränge → eigener, freigabepflichtiger Sprint. **In diesem Sprint nicht angefasst.** |
+| 4 | **22C2** — semantisches Matching | Hebt die Trefferqualität selbst, nicht nur die Erklärung. |
+
+*Randnotiz zur Belegqualität:* Sprint 27A hat mit Befund **27A-2** belegt, dass die
+Ausschussnormalisierung Ausschüsse verschiedener Parlamente auf denselben Stamm falten
+kann. Ein Teil der hier gezählten Belege kann davon betroffen sein. Das berührt die
+**Qualität** einzelner Belege, nicht die Wirksamkeit von M-7 — die Zahlen oben zählen, was
+gespeichert ist, und 27A verantwortet, dass das Gespeicherte fachlich richtig ist.

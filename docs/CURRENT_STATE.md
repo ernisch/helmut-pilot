@@ -1128,8 +1128,42 @@ Merge #169 = Sprint 23B-1, Matching-Auditpersistenz, `53893fa` = Merge #168 = Sp
 2026-07-28, 20:56:48 UTC, `target: production`; dieser Redeploy trägt zugleich
 `HELMUT_MATCHING_AUDIT=on`)
 
-> **Sprint 23C-2A am 2026-07-29 ausgeführt — ERFOLGREICH ABGESCHLOSSEN (offline bewiesen, gemergt,
-> ausgerollt und in Production am ersten regulären Lauf nachgewiesen).**
+> **Nachtrag 2026-07-31 — Ausrollmessung über 40 Stunden abgeschlossen. SPRINT 23C-2A ABGENOMMEN;
+> ROADMAP-PUNKT 23 BLEIBT ⏳ OFFEN.**
+> Fünf rein lesende Messungen (29.07. 16:33 · 29.07. 22:39 · 30.07. 10:20 · 30.07. 16:21 · 30.07. 20:21 ·
+> 31.07. 04:21). **Drei von sechs aktiven Mandaten** haben einen Post-Fix-Lauf: **20/20**, **18/20** und
+> **20/20** belegte Zeilen — zusammen **58/60 = 96,7 %**, deren sichtbares 12er-Lagefenster **35/36 = 97,2 %**.
+> Über alle aktiven Mandate: Abdeckung **80/251 (31,9 %) → 96/168 (57,1 %)**, sichtbares Lagefenster
+> **55/72 (76,4 %) → 64/72 (88,9 %)**. Der Nenner sinkt, weil jede Neuberechnung veraltete Zeilen **ablöst**.
+> **Korrektur der Projektion aus §38:** die erwarteten 70,5 % waren zu pessimistisch — sie rechneten über den
+> akkumulierten Bestand; real liegen die neu gerechneten Mandanten bei **96,7 %**.
+> **Invarianten über alle fünf Messungen ohne einen einzigen Verstoß:** Zeilen von vor dem Deployment konstant
+> **290** (nichts gelöscht; Gesamt 290 → 298), abgelöste Zeilen 19 → 110 **alle mit `abgeloest_am`** und
+> erhaltenen `similarity`/`rank`, **0** laufende, **0** fehlgeschlagene Läufe, **0** vollständige ohne
+> `beendet_am`, **0** Ergebniszeilen auf unvollständigem Lauf, `knowledge_object_embeddings` **772 /
+> `b2b4b7e9…` identisch**, `llm_usage` seit dem Deployment **0 Aufrufe / 0,000000 USD**, **0** offene
+> `matching-`Sperren, **0** Fehlergruppen aus dem Matching-Pfad. **Idempotenz in Production viermal bestätigt.**
+> **Warum die Messung endet:** die drei verbleibenden Mandanten hängen nicht am Fix, sondern am **Durchsatz** —
+> der erste Mandant eines Laufs verbraucht rund vier der viereinhalb Minuten, der zweite wird angefangen und
+> abgeschnitten (belegt über die Sperren `crawl-ottilie-paola-klein-2` 16:05, `crawl-helmut-kleebank` 20:04,
+> `crawl-ruppert-st-we` 04:05 — jeweils ohne zugehörigen `matching_run`), der Rest startet nie. **OP-25 ist
+> zwischenzeitlich behoben** (PR #179, `cron-fairness.js`): die Reihenfolge rotiert nach ältestem Versuch —
+> *die frühere Aussage „keine Rotation" galt nur für den Stand `bb539b1` und ist überholt*. Die Rotation wirkt
+> (drei verschiedene Mandanten in 40 Stunden), erhöht aber den Durchsatz nicht.
+> **Abnahmeentscheidung:** Sprint **23C-2A ist abgenommen** — der Fix ist an drei Mandanten mit vier
+> veröffentlichten Generationen belegt, mit byte-identischen Scores und Rängen dort, wo der Kandidatensatz
+> gleich blieb. **Roadmap-Punkt 23 wird NICHT geschlossen**: das Abnahmekriterium ist für drei von sechs
+> aktiven Mandaten erfüllt; für den Rest ist **keine Entwicklung mehr nötig, nur Durchsatz**.
+> **Empfohlene Reihenfolge:** (1) **Cron-Durchsatz (B5)** — der einzige Grund, warum Punkt 23 noch offen ist;
+> (2) **OP-04** — das inaktive Platzhaltermandat trägt 20 dauerhaft unbelegbare Zeilen und gehört bereinigt,
+> nicht erklärt; (3) **M-8** (Schwellenwert der RPC, verändert Kandidaten und Ränge → eigener,
+> freigabepflichtiger Sprint, **hier nicht angefasst**); (4) **22C2** semantisches Matching.
+> *Randnotiz:* Befund **27A-2** (Ausschussnormalisierung faltet Ausschüsse verschiedener Parlamente zusammen)
+> kann einen Teil der gezählten Belege betreffen — das berührt die **Qualität** einzelner Belege, nicht die
+> Wirksamkeit von M-7. Kanonisch: [`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md) §42.
+
+> **Sprint 23C-2A am 2026-07-29 ausgeführt — ERFOLGREICH ABGESCHLOSSEN UND AM 31.07.2026 ABGENOMMEN
+> (offline bewiesen, gemergt, ausgerollt, in Production nachgewiesen und über 40 Stunden ausgemessen).**
 > *Der Zustand „teilweise abgeschlossen" galt bis 16:04 UTC und wurde durch den Production-Beweislauf
 > abgelöst — siehe Nachtrag unten.*
 > **Startprüfung:** Arbeitsbaum sauber, Branch `claude/matching-explanation-coverage-cnzjgy` auf
