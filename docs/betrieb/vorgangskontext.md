@@ -2,7 +2,8 @@
 
 **Kanonische Dokumentation des K2.1-Schattenpfads.** Stand: **2026-07-31**.
 Zustand: **im Repository umgesetzt, offline bewiesen, mutationsgesichert, in Production
-NICHT aktiviert.**
+NICHT aktiviert.** **PR #201**, beide Pflicht-Checks grün (Lauf `30638964148`,
+`Syntax + Offline-Suiten` **194/194 Suiten**, `Browser-/Mobile-Smoke (Chromium)`).
 
 > **Flaggrenze, verbindlich:** `HELMUT_CRON_GLOBALABRUF` ist **Default AUS**. Ohne
 > ausdrücklich gesetzten Wert (`on`/`true`/`1`/`an`) läuft ausschließlich der bisherige Pfad.

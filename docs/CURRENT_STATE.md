@@ -89,7 +89,7 @@ neuen Tabellen, Spalten oder Migrationen.** Geänderte Dateien: `lib/helmut/vorg
 `docs/datenmotor-restliste.md`, `docs/CURRENT_STATE.md` — plus die aus dem K2-Analysebranch
 übernommenen `scripts/globalphase-buendelung-test.js` und
 `scripts/globalphase-buendelung-mutationsprobe.js`. Branch
-`claude/op25-k2-secure-architecture-8hycfv`. **Der K2-Analysebranch
+`claude/op25-k2-secure-architecture-8hycfv`, **PR #201** (offen, kein Draft, **beide Pflicht-Checks gruen**: `Syntax + Offline-Suiten` **194/194 Suiten** und `Browser-/Mobile-Smoke (Chromium)`, Lauf `30638964148`). **Nicht gemergt, nicht deployt, Flag nicht gesetzt.** **Der K2-Analysebranch
 `claude/op25-k2-global-bundling-axgbaf` ist damit inhaltlich vollständig gesichert (Commit
 `553c1ed` per Cherry-Pick übernommen, Tests unverändert grün); er wird NICHT separat als PR
 geführt und bleibt nur als Beleg stehen.** **Nächster Schritt:** Merge-Entscheidung des

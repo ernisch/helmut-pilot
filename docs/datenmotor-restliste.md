@@ -717,6 +717,8 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   `cross-tenant-security` **43/43**, `source-architecture` **99/99**, `env-inventar` **38/38**.
   **0 KI-Aufrufe, 0,00 USD, keine Migration, kein Production-Zugriff, kein Flag gesetzt, keine
   Cron-/Budget-/Quellenänderung, Berlin/Brandenburg/M8/Testmandate unverändert AUS.**
+  **CI-Gate gruen: beide Pflicht-Checks** (Lauf `30638964148`, `Syntax + Offline-Suiten`
+  **194/194 Suiten**, `Browser-/Mobile-Smoke (Chromium)` gruen), **PR #201**, nicht gemergt.
   **Empfehlung: mergefähig als Schattenpfad; Aktivierung bleibt Betreiberentscheidung.**
   Kanonisch: [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md).
 - **Ausgangsbefund (2026-07-29, vor diesem Sprint):** **Ursache belegt, Umfang noch nicht vermessen** (Befund B5).
