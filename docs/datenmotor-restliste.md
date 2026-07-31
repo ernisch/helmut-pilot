@@ -132,7 +132,7 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 | **B3** — Quellenzahl mandats-/profilabhängig (Demo-/Testmandat-Lauf: 139 statt 145 Quellen) | neu aus PR-#102-Analyse; feste Referenz „145" gilt nicht mehr — harte Invariante künftig `Zeilenzahl = distinct source_id` | OP-19 |
 | Katalog-Dublette der Personen-News-Quelle (2 Abrufe/Crawl) | Ursache präzisiert (id-Kollision, nicht statischer Katalog); `source_id`-Dedup durch PR #102 umgesetzt + offline getestet; Live-Nachweis offen | OP-19 |
 | **B4** — Vorgangsbildung verwirft Ereignisse lautlos bei `vorgang_id`-Kollision (Diagnose-Sprint 2026-07-26, CSD-2026-Fall) | **Ursache bewiesen, Reparatur umgesetzt, Production-Nachweis offen.** Diagnose: `deriveVorgangId()` reduzierte einen Cluster auf **ein einzelnes Wort**; traf dieses Wort ein bestehendes, thematisch fremdes KO, verwarf `understandOneCluster` den Cluster über `skipped-exists` — kein KI-Aufruf, kein `ko_document_links`-Eintrag, kein Fehler, kein Protokolleintrag. **Reparatursprint 2026-07-26:** fachliche Identität und technische Eindeutigkeit sind getrennt (Kennung = Vorschlag, Zugehörigkeit = Belegvergleich gegen echte Kandidaten), `skipped-exists` ist ersatzlos entfallen, jeder Ausgang ist klassifiziert, jeder verarbeitete Cluster schreibt `ko_document_links` (Endzustand ohne neue Tabelle ableitbar), zurückgestellte Cluster werden vorgemerkt **und** verknüpft, der Nachhollauf bildet Cluster aus den Verknüpfungen statt aus einer Neuclusterung. **Verlustumfang read-only verifiziert (7 Tage, 1 970 Rohdokumente): 47,3 % durch Kennungskollision — die 47 % sind bestätigt; der Gesamtverlust ist mit 76,3 % ohne nachvollziehbaren Endzustand deutlich höher.** Neues Verfahren: 0 Kollisionen, 252 Cluster schreiben einen Bestand fort. Kosten: Obergrenze 115 → 159 KI-Aufrufe/Tag bei Budget 100 — der Engpass bestand vorher, wird jetzt sichtbar und nachholbar. Details, Nachweisplan und Freigabeanfrage: [`befund-csd-2026-vorgangsverlust.md`](befund-csd-2026-vorgangsverlust.md) §9–§13 | **OP-14 wird durch den Kostenbefund dringlich** (Reihenfolge entscheidet jetzt über Qualität). Offen: Merge/Deployment + 24-h-Nachweis; **getrennt** freizugeben das Nachholen des Altbestands (1 504 Dokumente, Kostenentscheidung) |
-| **B5** — Crawl läuft reproduzierbar in sein **280-Sekunden-Zeitlimit** und erreicht je Lauf nur einen Teil der Mandanten (Sprint 23B-1, 2026-07-29) | **Belegt und quantifiziert.** Protokollzeile `[cron/crawl] 280001ms tenants=undefined bounded=true` am **28.07. 04:00**, **28.07. 20:00** und **29.07. 04:00** — die ersten beiden liegen **vor** der Aktivierung von `HELMUT_MATCHING_AUDIT`, das Zeitlimit ist also **kein** Effekt der Auditpersistenz, sondern Bestandsverhalten. Empirisch: der 29.07.-Lauf verarbeitete `annika-klose` vollständig, begann `cem-ince` und erreichte dessen Matching-Stufe nicht mehr (belegt über `profile_embeddings`, das im Matching **zuerst** geschrieben wird). Folgen: die Auditabdeckung, die mandatsindividuelle Personenversorgung und jede gezielte Nachholung hängen an diesem Deckel. Verwandt mit den 2 × `504` vom 26.07. (OP-21) und mit dem Google-News-Klumpenrisiko (OP-15) — die Erklärung „Breaker" ist damit **nicht vollständig**. **Erneut bestätigt am 29.07.2026, 16:00 UTC** (Sprint 23C-2A, rein lesend): der `pipeline`-Cron erreichte die Matching-Stufe bei **genau einem** von sieben Mandanten; für `cem-ince` stand die Crawl-Sperre noch, ein Matchinglauf entstand nicht. Praktische Folge: die Erklärungsabdeckung nach der M-7-Behebung steigt über mehrere Tage statt auf einen Schlag | **OP-25**, OP-15, OP-21 |
+| **B5** — Crawl läuft reproduzierbar in sein **280-Sekunden-Zeitlimit** und erreicht je Lauf nur einen Teil der Mandanten (Sprint 23B-1, 2026-07-29) | **Belegt und quantifiziert.** Protokollzeile `[cron/crawl] 280001ms tenants=undefined bounded=true` am **28.07. 04:00**, **28.07. 20:00** und **29.07. 04:00** — die ersten beiden liegen **vor** der Aktivierung von `HELMUT_MATCHING_AUDIT`, das Zeitlimit ist also **kein** Effekt der Auditpersistenz, sondern Bestandsverhalten. Empirisch: der 29.07.-Lauf verarbeitete `annika-klose` vollständig, begann `cem-ince` und erreichte dessen Matching-Stufe nicht mehr (belegt über `profile_embeddings`, das im Matching **zuerst** geschrieben wird). Folgen: die Auditabdeckung, die mandatsindividuelle Personenversorgung und jede gezielte Nachholung hängen an diesem Deckel. Verwandt mit den 2 × `504` vom 26.07. (OP-21) und mit dem Google-News-Klumpenrisiko (OP-15) — die Erklärung „Breaker" ist damit **nicht vollständig**. **Erneut bestätigt am 29.07.2026, 16:00 UTC** (Sprint 23C-2A, rein lesend): der `pipeline`-Cron erreichte die Matching-Stufe bei **genau einem** von sieben Mandanten; für `cem-ince` stand die Crawl-Sperre noch, ein Matchinglauf entstand nicht. Praktische Folge: die Erklärungsabdeckung nach der M-7-Behebung steigt über mehrere Tage statt auf einen Schlag. **Nachtrag 2026-07-31 (R-6-Sprint):** B5 selbst ist **unverändert offen** — das 280-s-Limit besteht fort und die Kapazität wurde nicht erhöht. Behoben ist ausschließlich seine **Beobachtbarkeitsfolge**: ein am Zeitlimit endender Lauf hinterlässt jetzt einen vollständigen, persistenten Laufdatensatz statt nur `tenants=undefined bounded=true` ([`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) §11). B5 ist damit erstmals **zuverlässig messbar**, nicht gelöst | **OP-25**, OP-15, OP-21 |
 | **B6** — kein produktiv verwendeter Einstieg für Matching **eines einzelnen Mandanten** (Sprint 23B-1, 2026-07-29) | **Belegt.** `runMatchingShadow` hat genau zwei produktive Aufrufer: `scheduler.js:412` (in `runSourceCrawl`) und `scheduler.js:588` (in `runLageCheck`, das ab `scheduler.js:629` selbst crawlt). Keine HTTP-Route in `server.js`, kein npm-Skript, kein Workflow; die einzigen weiteren Aufrufer sind zwei Testskripte mit hartkodierten Kunstmandanten und gestubbter Datenbank. Folge: Matching ist nur als Anhängsel eines Vollcrawls auslösbar — ein Mandant, der wegen B5 zurückfällt, hat keinen Weg nach vorn außer dem nächsten Vollcrawl; gezielte Nachprüfung, Nachholung und Reparatur je Mandant sind nicht möglich. Praktische Auswirkung bereits eingetreten: der Idempotenznachweis für Sprint 23B-1 musste an einem regulären Lauf **beobachtet** statt gezielt erzeugt werden | **OP-26** |
 | **B7** — die Vektorsuche liefert die Top-N **ohne Schwellenwert**; ein Teil der Ergebniszeilen ist reine Auffüllung (Sprint 23C-2A, 2026-07-29; dort **M-8**) | **Belegt und quantifiziert, rein lesend.** `match_knowledge_objects` gibt unbedingt `match_count` Zeilen zurück (kein `where similarity > x`). Gemessen über alle **271** aktuellen `matching_results`: **40** Zeilen tragen eine gespeicherte Ähnlichkeit **≤ 0** (Minimum **−0,0735**), verteilt über die Ränge **1–20** — eine unbelegte, anlasslose Zeile kann heute an erster Stelle der Lage stehen. Das ist **kein** Erklärbarkeitsproblem (die Erklärung ist korrekt leer), sondern ein Problem der **Kandidatenqualität**. Eine Behebung verändert Kandidatenmenge und Ränge und ist deshalb eine **Produktentscheidung**, keine Fehlerbehebung. Nachweis: `scripts/matching-erklaerungsluecke-analyse.js`. **Nachgemessen und entschieden in Sprint M-8 (2026-07-29):** die Zahl **40** war eine Stichprobe (40 von 80 betrachteten unbelegten Treffern) — über den gesamten aktuellen Bestand sind es **63 von 271 (23,2 %)**, und alle 63 stammen aus dem jeweils **ersten** Lauf eines Mandanten; **im sichtbaren 12er-Fenster eines gepflegten Mandanten steht heute keine einzige Zeile mit Ähnlichkeit ≤ 0** (niedrigster sichtbarer Wert 0,2094). Ein Schwellenwert ist damit **das falsche Werkzeug**: bis 0,20 wirkungslos (das heutige Top-20 aller gepflegten Mandanten liegt in [0,2211 … 0,4319]), ab 0,22 schädlich, und in keinem Bereich trennscharf (unbelegbare Treffer liegen über dem Median der belegbaren). Entschiedene Regel: **Belegpflicht statt Zahl** — veröffentlicht wird nur, was ein `matched_feature` trägt; keine Auffüllung, keine Mindestmenge. Offline umgesetzt hinter `HELMUT_MATCHING_RELEVANZ_GATE` (**Default AUS**), Aktivierung freigabepflichtig. Kanonisch: [`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md) Teil E §42–§49 | **OP-27** (neu) — Aktivierungsentscheidung; verwandt mit 22C2 (semantisches Matching) |
 | **B8** — ein Mandatsprofil ohne Partei, Ausschuss und Schwerpunkt kann konstruktionsbedingt **nie** eine belegte Relevanz erzeugen (Sprint 23C-2A, 2026-07-29; dort **M-9**) | **Belegt.** Ein Mandant trägt außer einem Platzhalter (`Noch offen` als Region) keine Profilmerkmale; alle **20** seiner aktuellen Ergebniszeilen sind unbelegt und bleiben es auch nach der Behebung von M-7 — es gibt nichts, womit sich ein Wissensobjekt überschneiden könnte. Wirksamster Hebel ist die **Profilpflege** bzw. die Klärung, ob es sich um ein Demo-Mandat handelt; das Matching kann hier nichts verbessern | **OP-04** (Demo-Mandate) |
@@ -545,6 +545,182 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Google-News-Timeouts → OP-15, oder eine Stufe außerhalb des 300-s-Fensters). Rein lesend
   erhoben, **0 KI, 0,00 USD**, keine Production-Schreibzugriffe, kein manueller Lauf, Mandate nur
   pseudonymisiert. Kanonisch: [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) **§10**.
+- **Status R-6 (2026-07-31, Sprint „Zuverlässige Cron-Telemetrie bei Zeitüberschreitung"):
+  IM CODE BEHOBEN, Production-Nachweis offen.** **Ursache dreiteilig belegt:** `withTimeout` ist
+  ein `Promise.race` und beendet die ursprüngliche Promise nicht · die innere Deadline ist ein
+  **START**-Gatter, kein STOPP-Gatter (ein begonnenes Mandat überzieht sie beliebig weit —
+  offline gemessen > 400 s), deshalb kann **kein** konstanter Aufschlag die Lücke schließen ·
+  ein `finally` allein trägt bei einem Vercel-Prozessabbruch nicht. **Behebung, additiv und ohne
+  Migration:** dieselbe `helmut_store`-Zeile `<storeId>-cron-fairness` trägt zusätzlich einen
+  **Laufdatensatz je Cron** (`laeufe[<cron>]`), der bei **jedem Mandatsübergang** fortgeschrieben
+  wird — huckepack auf die ohnehin fälligen Schreibvorgänge (Zusatzkosten: 2 kleine
+  Schreibvorgänge je Lauf, ~0,04 % des Zeitbudgets). Der äußere Catch der Routen `crawl`,
+  `pipeline` und `lage-check` vermerkt **nur die Tatsache** des Zeitlimits, nie einen Abschluss;
+  ein später eintreffender echter Abschluss gewinnt. `cron-fairness.rekonstruiereLauf` rechnet
+  die vollständige Telemetriezeile inklusive `kapazitaet` und `ceil(n/k)` aus den
+  Zwischenständen nach. **Nicht begonnen, begonnen-ohne-Abschluss, erfolgreich, fehlgeschlagen,
+  verweigerte Sperre und Zeitbudget bleiben eindeutig getrennt**; ein Prozessabbruch kann keinen
+  erfundenen Erfolg erzeugen (ein veraltetes `laufend` **ist** die Abbruchmeldung). **Reihenfolge,
+  `k`, `ceil(n/k)`, Zeitbudgets, Cron-Zeiten und Kosten unverändert** (vertragsgetestet).
+  Tests: cron-fairness **285/285** (vorher 201/201), Mutationsprobe **15/15 rot** (5 neu),
+  Offline-Suite **177/191** ohne Delta zur Basislinie `main` `bd7c889`, Smoke **32/32**.
+  **0 KI, 0,00 USD.** Kanonisch inkl. Nachweisverfahren:
+  [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) **§11** (§11.8 = späterer Nachweis).
+  **Der Kapazitätsblocker bleibt unverändert offen** — er war ausdrücklich nicht Gegenstand.
+- **Status K1 (2026-07-31, Sprint „Globale Erfassung und mandatsbezogene Projektion trennen"):
+  IM REPOSITORY UMGESETZT als SCHATTENPFAD, in Production NICHT aktiviert.** **Bestandsprüfung
+  gegen `main`:** von den zwölf Schritten in `runSourceCrawl` sind **fünf global** (Abruf,
+  Rohitems, Rohdokumente, Lazy-/Eager-Understanding) und werden je Mandat **wiederholt**; nur
+  Matching, Entscheidungen und die Mandatstelemetrie sind echte Projektionen. Der Rohkorpus
+  (`raw_documents`) und die Wissensobjekte tragen **keinen** Mandantenbezug — die
+  Ausgangsthese ist damit bestätigt, aber zu grob: das prozessweite Gedächtnis geteilter
+  Abrufwege entdoppelt schon heute einen Teil, teuer bleibt die Wiederholung von Quellenplan,
+  eigenen Abrufwegen, Dedup, Clustering und einem **eigenen 90-s-Verstehensbudget je Mandat**.
+  **Umsetzung:** neues Modul `lib/helmut/cron-globalphase.js` (Vereinigungsmenge,
+  Budgetaufteilung, Datenstandsvertrag, Kapazitätsmodell — rein, IO-frei) plus
+  `scheduler.runGlobaleErfassung` / `scheduler.runMandatsProjektion`. **`runSourceCrawl` bleibt
+  unangetastet.** **Flaggrenze:** `HELMUT_CRON_GLOBALPHASE`, **Default AUS**, fail closed
+  (nur `on`/`true`/`1`/`an` schalten ein), **nicht** über `helmut-flags.json` setzbar — die
+  Aktivierung ist ausschließlich eine Vercel-Env-Entscheidung. **Ohne Flag ist der Aufruf
+  byte-identisch zum bisherigen** (Quelltextvertrag + Mutationsprobe M8). **Vereinigungsmenge
+  bewiesen** gegen das **echte** relationale Seed-Modell (Modus `on` wie Production) mit acht
+  Profilen, darunter je ein Berliner und ein Brandenburger Landtagsprofil: Vollständigkeit,
+  jede Kennung genau einmal, alle acht Personenquellen erhalten, **0 Berliner und 0
+  Brandenburger Landeswege**, keine manuellen, keine deaktivierten Wege, kein DIP-Weg im
+  Quellencrawl. Gemessen: **1 162 Einzelplan-Wege → 196 in der Vereinigung** (966 geplante
+  Abrufe weniger je Lauf). **Kapazität (deterministische Laufzeitsimulation, beide Pfade am
+  echten Produktionscode):** production-kalibriert erreicht der **alte** Pfad bei sechs
+  Mandaten **2 von 6** im 270-s-Fenster und überzieht es um 37,6 s, der **neue** **6 von 6**
+  ohne Überziehung; bei elf Mandaten **2 von 11** gegen **11 von 11**. Grenzkosten je
+  zusätzlichem Mandat **32 920 ms → 6 620 ms**. **Modellrechnung** mit den Production-Werten
+  (globale Arbeit 240 s, Projektion 1,65 s): n=6 **1/6 → 6/6**, n=11 **1/11 → 10/11** — bei elf
+  Mandaten bleibt je Lauf **eines** übrig (`ceil(11/10) = 2` Läufe). **Drei Unterschiede
+  benannt und bewertet, keiner weggeredet:** **K1-1** die Vorgangskennung hängt an der
+  Bündelung (global 1 Cluster statt 2 mit anderen Kennungen; der Resolver hält beide für
+  denselben Vorgang, kein Dokument geht verloren) · **K1-3** das 90-s-Verstehensbudget gilt
+  künftig je **Lauf** statt je **Mandat** (der Rest bleibt zurückgestellt und wird vom
+  dedizierten Understanding-Cron geholt) · **K1-4** im alten Pfad matcht ein früh
+  verarbeitetes Mandat gegen einen **unvollständigen** Korpus; im neuen sehen alle denselben.
+  Nach zwei Läufen sind beide Pfade **feldgleich** (Rohdokumente, Wissensobjekte, Matching,
+  Scores, Entscheidungen, Mandantentrennung, KI-Aufrufe). **Zwei Bestandsbefunde nebenbei
+  belegt:** `crawlAllSources` kennt **keine** Deadline (im neuen Pfad durch stufenweisen Abruf
+  begrenzt, `crawler.js` unverändert) und `budgetMs = 0` bedeutet in `runUnderstandingShadow`
+  „**kein** Limit" statt „keine Zeit" (im neuen Pfad ehrlich übersprungen; `runSourceCrawl`
+  bewusst nicht angefasst). **Tests:** neue Suite **169/169**, Mutationsprobe **17/17 rot**,
+  Offline-Suite **178/192** gegen Basislinie `origin/main` `61a0947` **177/191** mit
+  **identischer** Fehlschlagliste (Delta genau +1 = die neue Suite), Browser-/Mobile-Smoke
+  **32/32**, `cron-fairness` **285/285**, `punkt29-fehlervertrag` **80/80**,
+  `pipeline-zeitbudget` **21/21**, `source-architecture` **99/99**. **0 KI-Aufrufe, 0,00 USD,
+  keine Migration, kein Production-Zugriff, keine Cron-/Budget-/Quellen-/Flagänderung, Berlin/
+  Brandenburg/M8/Testmandate unverändert AUS.** **Der Kapazitätsblocker ist damit NICHT
+  geschlossen** — er ist gelöst *gebaut*, aber nicht *aktiviert*. Kanonisch:
+  [`betrieb/cron-globalphase.md`](betrieb/cron-globalphase.md).
+- **Status K2 (2026-07-31, Sprint „Fachliche Absicherung der globalen Bündelung"):
+  BEFUND K1-1 VOLLSTÄNDIG BEWERTET — er bleibt bestehen und ist BREITER als in K1 beschrieben.
+  Keine Aktivierung, kein Flag gesetzt, keine Production-Änderung.** Geprüft wurde nicht der
+  Kapazitätsgewinn (der gilt unverändert), sondern die Frage, ob die globale Bündelung
+  **dieselben politischen Vorgänge korrekt zusammenführt**. **Verfahren:** dreizehn konstruierte
+  Fallfamilien (identische und leicht abweichende Dokumente, gleiche und verschiedene
+  Vorgangsnummer, verschiedene Schreibweisen, mehrere Dokumente eines Vorgangs, ähnliche Titel,
+  Personen-, Partei- und Ausschussquellen zweier Mandate) laufen durch **beide** Pfade gegen den
+  **echten** Produktionscode (`clusterRawDocuments`, `deriveVorgangId`, `candidatePrefixes`,
+  `sameVorgang`, `resolveVorgang`, `understandOneCluster`, Schemaprüfung); nur der KI-Aufruf ist
+  ein Testdouble. **Ursache, mechanisch belegt:** Helmut entscheidet „gehört zusammen" in **zwei
+  Regimen** — *lose* innerhalb eines Batches (**eine** paarweise Kante, transitiv wirksam) und
+  *streng* zwischen Batches (gemeinsames Themenwurzel-**Präfix** UND `sameVorgang` Kern gegen
+  Kern). Die globale Bündelung verschiebt alle Dokumente **mandatseigener** Quellen (nach der
+  K1-Messung **58 von 196** Wegen bei acht Profilen) vom strengen ins lose Regime. Dokumente
+  **geteilter** Quellen sind nicht betroffen (sie liegen schon heute im Batch des ersten
+  Mandats — im Test belegt). **Drei Teilbefunde, jeder einzeln belegt und mutationsgesichert:**
+  **K1-1a** fachlich **verschiedene** Vorgänge verschmelzen global (Ursache: Formularvokabular
+  wie „Antrag", „Drucksache", „Fraktion", „beantragt", „Abgeordnete", „besucht", „Anhörung",
+  „Tagesordnung" trägt heute volles Beweisgewicht) · **K1-1b** die Kernanker-Nachprüfung ist
+  **nicht monoton**, die globale Bündelung **trennt** deshalb auch, was mandatsweise ein Vorgang
+  war · **K1-1c** Ketten (`x~y`, `y~z`, `x!~z`) wirken global über die Mandatsgrenze hinweg.
+  **Bilanz über 13 Familien:** 6 abweichend — 1 fachlich besser, 4 schlechter, 1 nur anders.
+  **Ehrliche Gegenprobe:** eine der Fehlverschmelzungen tritt in **beiden** Pfaden auf — der
+  Fehler ist **Bestand**, K1 macht ihn nur breiter wirksam. **Korrektur einer K1-Aussage:** die
+  §8-Bewertung („alle Kennungen teilen dasselbe Suchpräfix, `sameVorgang` hält sie für denselben
+  Vorgang") gilt für den dort gemessenen Fall, **nicht allgemein**; in den heute getrennten
+  Fällen fehlt das gemeinsame Präfix, und `sameVorgang` würde sie sogar **zusammenführen** — der
+  heutige Schutz ist die **Enge der Präfixsuche**, nicht der Belegvergleich. Der Satz „die
+  globale Bündelung ist die kanonisch richtige" ist damit **nicht belegt**. **Bewiesene
+  Garantien (unverändert gültig):** kein Dokument geht verloren (Partition, auch bei feindlichen
+  Eingaben) · jedes Dokument bekommt genau eine Verknüpfung · kein Dokument an zwei Vorgängen ·
+  keine doppelten Vorgänge · kein Wissensobjekt verschwindet · **keine** Mehrkosten (gemessen
+  24 → 14 KI-Aufrufe) · Mandantentrennung unverändert (Wissensobjekte tragen keinen
+  Mandantenbezug) · Kennungsformat und Resolver-Anschluss bleiben · reihenfolgeunabhängig (120
+  Dokumentpermutationen, Quellen- und Mandatsreihenfolge) · Sicherheitsventil greift.
+  **Nebenbefund zugunsten von K1:** der **alte** Pfad ist von der Mandatsreihenfolge abhängig,
+  der neue nicht. **Fachliche Bewertung:** technisch verlustfrei, aber ein Verlust an
+  **Entscheidungsschärfe** — ein verschmolzener Vorgang ist **ein** Wissensobjekt mit **einer**
+  Überschrift und **einer** Empfehlung, der zweite politische Vorgang hat danach keine eigene
+  Entscheidung mehr (Fehlerklasse „Digest-Cluster", vgl. Rollbackfall F-3). **Kein Datenschutz-
+  oder Mandantentrennungsproblem.** **Gemessene Option (nicht umgesetzt):** eine rein
+  **aufgezählte** Formularwortliste in `GENERISCHE_ANKER` (32 Wörter, Stil der Hotfixes
+  B4-3/B4-4) hebt die korrekte Trennung von **7/12 auf 11/12**, **ohne** einen fachlich
+  zusammengehörigen Fall auseinanderzureißen — sie wirkt auch im alten Pfad und ist damit ein
+  eigener, freigabepflichtiger Sprint (sie ändert die **aktive** Vorgangsbildung sofort und ohne
+  Flag). **Tests:** neue Suite `globalphase-buendelung-test.js` **56/56**, Mutationsprobe
+  `globalphase-buendelung-mutationsprobe.js` **15/15 rot**, Offline-Suite **179/193** gegen im
+  selben Arbeitsbaum gemessene Basislinie **178/192** mit **identischer** Fehlschlagliste (Delta
+  genau +1 = die neue Suite), Browser-/Mobile-Smoke **32/32**, `cron-globalphase` **169/169**,
+  `cron-fairness` **285/285**, `vorgangsidentitaet` **67/67**, `vorgangs-resolver` **54/54**,
+  `vorgangs-beweisfamilien` **103/103**, `vorgangs-uebernahme-analyse` **35/35**,
+  `vorgangs-lebenszyklus` **81/81**, `herausgeber-identitaet` **109/109**,
+  `vorgangsbildung-verlust` grün. **0 KI-Aufrufe, 0,00 USD, keine Produktionsdatei geändert,
+  keine Migration, kein Production-Zugriff, kein Flag gesetzt, Berlin/Brandenburg/M8/
+  Testmandate unverändert AUS.** **Empfehlung: `HELMUT_CRON_GLOBALPHASE` bleibt AUS**, bis über
+  die Optionen in [`betrieb/cron-globalphase.md`](betrieb/cron-globalphase.md) §8a.5 entschieden
+  ist. Kanonisch: dieselbe Datei, **§8a**.
+- **Status K2.1 (2026-07-31, Sprint „Globaler Abruf, kontextgebundene Vorgangsbildung"):
+  BEFUND K1-1 IST IM NEUEN PFAD AUSGESCHLOSSEN. Schattenpfad gebaut, offline bewiesen,
+  mutationsgesichert, NICHT aktiviert.** **Ursache, aus K2 übernommen und nicht neu
+  analysiert:** das *lose* Clusterregime (`clusterRawDocuments`, eine paarweise Kante genügt,
+  transitiv wirksam) entscheidet über die Vorgangsidentität, und K1 hatte es global gemacht.
+  **Lösung:** das lose Regime wird an einen **Bündelungskontext** gebunden, das *strenge*
+  Regime (`resolveVorgang`) bleibt global und unverändert. **Der Kontext ist die
+  SICHTBARKEITSMENGE** — die Menge der Mandate, deren Quellenplan ein Dokument liefert.
+  Bewusst **nicht** die Mandats-ID: Quellen, die alle Mandate erhalten, bilden dadurch
+  **einen** Kontext statt je Mandat dupliziert zu werden; mandatseigene Quellen
+  (`<mandats-id>-news`, Partei-, Ausschusssuchen) bilden automatisch je einen. Daraus folgt
+  strukturell: zwei Dokumente werden nur dann lose gebündelt, wenn **dieselben** Mandate beide
+  sehen — eine fremde Mandatsquelle kann die Vorgangsidentität also nicht verändern.
+  **Gemessenes Kernergebnis:** in **allen sechzehn** Fallfamilien (die dreizehn aus K2 plus
+  drei neue Grenzfälle) liefert der K2.1-Pfad **exakt dieselbe Vorgangsgruppierung wie der
+  heutige Altpfad** — auch in den **acht** Familien, in denen der K1-Pfad eine andere liefert
+  (F4, F7, F9, F11, F12, F13, Z1, Z3). **Ehrlich dazu:** K2.1 **verbessert** die
+  Vorgangsbildung nicht, es erhält den heutigen Stand einschließlich seiner Schwächen (F10 und
+  Z2 verschmelzen in **beiden** Pfaden falsch — Bestandsbefund, Formularvokabular, K2 §8a.2),
+  und es verzichtet auf die eine Verbesserung, die K1 gebracht hätte (F7). **Kapazität,
+  gemessen** (alle drei Pfade, derselbe Produktionscode, dieselben Annahmen, gezählt wird was
+  wirklich im 270-s-Fenster fertig wurde): n=1 **alt 1/1 · K2.1 1/1** (K2.1 ist dort **150 ms
+  langsamer** — ohne Entdoppelung kein Gewinn) · n=2 **2/2 gegen 2/2**, aber 215 320 ms gegen
+  **180 470 ms** · n=6 **alt 2/6 mit 37 585 ms Überziehung → K2.1 6/6 ohne Überziehung** ·
+  n=11 **alt 2/11 → K2.1 11/11**. Grenzkosten je zusätzlichem Mandat **66 670 ms → 7 110 ms**
+  (identisch zu K1). **Abrufwege unverändert 1 162 → 196.** **Preis, benannt:** je Kontext ein
+  zusätzlicher Sperr-Roundtrip — 15 Kontexte bei elf Mandaten, rund 3 s = **3,3 %** des
+  90-s-Verstehensbudgets; das Budget wird **geteilt, nicht erhöht**. **Flaggrenze:** neues Flag
+  `HELMUT_CRON_GLOBALABRUF`, **Default AUS**, fail closed, **nicht** über `helmut-flags.json`
+  setzbar; sind **beide** Flaggen gesetzt, läuft der **Altpfad**. `HELMUT_CRON_GLOBALPHASE`
+  wurde bewusst **nicht** weiterverwendet — seine Bedeutung schließt die als unsicher belegte
+  globale Bündelung ein. **Tests:** neue Suite `vorgangskontext-test.js` **102/102**,
+  Mutationsprobe `vorgangskontext-mutationsprobe.js` **18/18 rot**, `cron-globalphase`
+  **176/176** (um die Drei-Pfade-Kapazitätsmessung erweitert), `cron-globalphase-mutationsprobe`
+  **17/17 rot**, `globalphase-buendelung` **56/56** + **15/15 rot**, Offline-Suite **180/194**
+  gegen im eigenen Arbeitsbaum gemessene Basislinie `main` `3b72a88` **178/192** mit
+  **identischer** Fehlschlagliste (14 umgebungsbedingte Suiten, Delta genau **+2** = die zwei
+  neuen Suiten), Browser-/Mobile-Smoke **32/32**, `cron-fairness` **285/285**,
+  `punkt29-fehlervertrag` **80/80**, `pipeline-zeitbudget` **21/21**, `vorgangsidentitaet`
+  **67/67**, `vorgangs-resolver` **54/54**, `vorgangs-beweisfamilien` **103/103**,
+  `vorgangs-lebenszyklus` **81/81**, `herausgeber-identitaet` **109/109**,
+  `cross-tenant-security` **43/43**, `source-architecture` **99/99**, `env-inventar` **38/38**.
+  **0 KI-Aufrufe, 0,00 USD, keine Migration, kein Production-Zugriff, kein Flag gesetzt, keine
+  Cron-/Budget-/Quellenänderung, Berlin/Brandenburg/M8/Testmandate unverändert AUS.**
+  **CI-Gate gruen: beide Pflicht-Checks** (Lauf `30638964148`, `Syntax + Offline-Suiten`
+  **194/194 Suiten**, `Browser-/Mobile-Smoke (Chromium)` gruen), **PR #201**, nicht gemergt.
+  **Empfehlung: mergefähig als Schattenpfad; Aktivierung bleibt Betreiberentscheidung.**
+  Kanonisch: [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md).
 - **Ausgangsbefund (2026-07-29, vor diesem Sprint):** **Ursache belegt, Umfang noch nicht vermessen** (Befund B5).
   Der Crawl-Cron endet reproduzierbar nach ~280 s mit `bounded=true`
   (`[cron/crawl] 280001ms tenants=undefined bounded=true`, gemessen 28.07. 04:00, 28.07. 20:00

@@ -43,6 +43,360 @@ Rezeptversion — der vorhergesagte Verlauf, die Anhebung wirkt je Mandant genau
 Fehler sind verboten). **Nächster Schritt:** Merge-Entscheidung des Betreibers über den reinen
 Dokumentations-PR. Branch `claude/p25b-production-nachweis`. Kanonisch:
 [`roadmap/punkt-25-e2e-nachweis.md`](roadmap/punkt-25-e2e-nachweis.md) §6d.) ·
+(**Sprint OP-25 K2.1 — globaler Abruf, KONTEXTGEBUNDENE
+Vorgangsbildung. TEILWEISE ABGESCHLOSSEN: der neue Schattenpfad ist gebaut, offline bewiesen und
+mutationsgesichert; er ist in Production NICHT aktiviert, und genau das war der Auftrag.**
+**Ursache — aus K2 übernommen, nicht neu analysiert:** Helmut entscheidet „gehört zusammen" in
+ZWEI Regimen. *Lose* innerhalb eines Batches (`clusterRawDocuments`: EINE paarweise Kante genügt
+und wirkt TRANSITIV), *streng* zwischen Batches (`resolveVorgang`: Themenwurzel-Präfix UND Kern
+gegen Kern). **K1 hatte das lose Regime global gemacht** — deshalb konnten Quellen eines Mandats
+die Vorgangsidentität eines anderen verändern (Befund K1-1a/b/c). **Lösung, klein und additiv:**
+das *lose* Regime wird an einen **Bündelungskontext** gebunden, das *strenge* bleibt global und
+unverändert. **Der Kontext ist die SICHTBARKEITSMENGE** — die Menge der Mandate, deren
+Quellenplan ein Dokument liefert. **Bewusst NICHT die Mandats-ID**: Quellen, die alle Mandate
+erhalten, bilden dadurch EINEN Kontext statt je Mandat dupliziert zu werden; mandatseigene
+Quellen (`<mandats-id>-news`, Partei-, Ausschusssuchen) bilden automatisch je einen. Daraus folgt
+strukturell, nicht durch eine Regel: **werden zwei Dokumente lose gebündelt, sieht jedes Mandat,
+das das eine sieht, auch das andere.** **Phase-1-Bestandsprüfung, jeder der zwölf Schritte neu
+eingeordnet** ([`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §2) — **mit zwei
+Korrekturen an der K1-Tabelle:** Clustering und Understanding sind **nicht** „sicher global"
+(Kategorie A), sondern **zwingend kontextgebunden** (C); das Wissensobjekt ist **B**
+(mandantenneutral, aber die Kandidatensuche ist global und soll es bleiben). Kein Schritt bleibt
+„unklar". **Gemessenes Kernergebnis:** in **allen sechzehn** Fallfamilien (die dreizehn aus K2
+plus drei neue Grenzfälle: vier Mandate mit disjunkten geteilten Quellen, Personenquelle gegen
+fremde Ausschussquelle, gleicher Drucksachentyp mit anderer Nummer) liefert der K2.1-Pfad
+**exakt dieselbe Vorgangsgruppierung wie der heutige Altpfad** — auch in den **acht** Familien,
+in denen der K1-Pfad eine andere liefert (F4, F7, F9, F11, F12, F13, Z1, Z3). **Alle dreizehn
+Abnahmekriterien einzeln belegt** (Suite Abschnitt 4). **Ehrlich benannt, nicht weggeredet:**
+(1) K2.1 **verbessert** die Vorgangsbildung **nicht** — es erhält den heutigen Stand
+einschließlich seiner Schwächen: F10 (zwei verschiedene Ausschüsse, gleiches Formular) und Z2
+verschmelzen in **beiden** Pfaden falsch; das ist der Bestandsbefund „Formularvokabular" aus
+K2 §8a.2 und ausdrücklich nicht Gegenstand dieses Sprints. (2) K2.1 **verzichtet** auf die eine
+Verbesserung, die K1 gebracht hätte (F7: zwei Parteiquellen zur selben Debatte werden global
+korrekt zusammengeführt) — der bewusst gezahlte Preis für „nie loser als heute". (3) Die
+**Mandatsreihenfolge** wirkt in **genau denselben** drei Familien wie heute (F3, F7, F13) —
+Bestand des strengen Regimes, K2.1 ist nicht empfindlicher; die **Kontexteinteilung** selbst ist
+immer reihenfolgeunabhängig, die **Dokumentreihenfolge** nie wirksam. **Kapazität, gemessen**
+(alle DREI Pfade gegen denselben Produktionscode und dieselben Annahmen, deterministische
+Laufzeitsimulation, gezählt wird was WIRKLICH im 270-s-Fenster fertig wurde): **n=1 alt 1/1 ·
+K2.1 1/1 — und K2.1 ist dort 150 ms LANGSAMER** (ohne Entdoppelung gibt es nichts zu gewinnen) ·
+**n=2 beide 2/2, aber 215 320 ms gegen 180 470 ms** · **n=6 alt 2/6 mit 37 585 ms Überziehung →
+K2.1 6/6 ohne Überziehung** · **n=11 alt 2/11 → K2.1 11/11**. Grenzkosten je zusätzlichem Mandat
+**66 670 ms → 7 110 ms**, identisch zu K1. **Abrufwege unverändert 1 162 → 196** (K2.1 fasst die
+Vereinigungsmenge nicht an — dort liegt der ganze Gewinn). **Preis, benannt statt versteckt:** je
+Kontext ein zusätzlicher Sperr-Roundtrip von `runUnderstandingShadow` — **15 Kontexte bei elf
+Mandaten, rund 3 s = 3,3 % des 90-s-Verstehensbudgets**; das Budget wird über kumulative
+Stichtage **GETEILT, nicht erhöht**, und dieser Aufschlag steckt bewusst **nicht** in der
+Kapazitätstabelle (das Kostenmodell rechnet je Dokument und je Cluster, nicht je
+Understanding-Aufruf). **Flaggrenze:** **neues** Flag `HELMUT_CRON_GLOBALABRUF`, **Default AUS**,
+fail closed (nur `on`/`true`/`1`/`an` schalten ein), **nicht** über `helmut-flags.json` setzbar,
+vollständig im Env-Inventar dokumentiert. `HELMUT_CRON_GLOBALPHASE` wurde bewusst **nicht**
+weiterverwendet: seine Bedeutung schließt die als unsicher belegte globale Bündelung ein, ein
+Betreiber könnte am Namen nicht mehr erkennen, was er einschaltet. **Sind BEIDE Flaggen gesetzt,
+läuft der ALTPFAD** — fail closed bei Widerspruch, laut protokolliert. **Nicht angefasst:**
+`runSourceCrawl`, `vorgang-identity.js`, `understanding.js`, `crawler.js`, `cron-fairness.js`,
+Quellenplan, Landesmodulsperre, alle Zeitbudgets, alle Cron-Zeiten, alle Kostendeckel. Keine
+Migration, keine Warteschlange, keine neue Infrastruktur. **Tests (real ermittelt, kein Test als
+grün behauptet, der nicht lief):** neue Suite `vorgangskontext-test.js` **102/102** ·
+Mutationsprobe `vorgangskontext-mutationsprobe.js` **18/18 rot** (die dreizehn Pflichtmutationen
+des Auftrags plus fünf eigene) · `cron-globalphase-test.js` **176/176** (um die
+Drei-Pfade-Kapazitätsmessung erweitert; **zwei bestehende Zusagen mussten nachgezogen werden** —
+der Datenstandsvermerk hat zwei additive Felder, und die Pfadwahl liegt jetzt in
+`waehleCronPfad()`; beide Zusagen gelten unverändert und werden jetzt zweifach geprüft) ·
+`cron-globalphase-mutationsprobe` **17/17 rot** · `globalphase-buendelung` **56/56** +
+**15/15 rot** (K2-Analyse in diesen Branch übernommen) · Offline-Suite **180/194** gegen im
+eigenen Arbeitsbaum gemessene Basislinie `main` `3b72a88` **178/192** mit **identischer**
+Fehlschlagliste (14 umgebungsbedingte Suiten, Delta genau **+2** = die zwei neuen Suiten) ·
+Browser-/Mobile-Smoke **32/32** · `cron-fairness` **285/285** · `punkt29-fehlervertrag` **80/80** ·
+`punkt29-fix-mutationsprobe` **7/7 rot** · `pipeline-zeitbudget` **21/21** · `vorgangsidentitaet`
+**67/67** · `vorgangs-resolver` **54/54** · `vorgangs-beweisfamilien` **103/103** ·
+`vorgangs-lebenszyklus` **81/81** · `herausgeber-identitaet` **109/109** · `cross-tenant-security`
+**43/43** · `source-architecture` **99/99** · `env-inventar` **38/38** · Syntaxprüfung aller
+geänderten Dateien grün. **Sicherheitsgrenzen eingehalten:** keine Production-Schreibzugriffe,
+kein manueller Cron-Lauf, keine Migration, keine Env-/Budget-/Cron-/Zeitbudget-/Quellenänderung,
+keine Aktivierung von M8/Berlin/Brandenburg, keine neuen Testmandate, kein Merge, kein
+Deployment, **0 KI-Aufrufe, 0,00 USD. Production-Auswirkung: keine.** **Verbleibende Risiken
+(vollständig in [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §8):** kein
+Production-Nachweis · konstruierte Fallfamilien · Bestandsbefund F10/Z2 ·
+Reihenfolgeempfindlichkeit des strengen Regimes · Kontextzahl wächst mit der Mandatszahl ·
+Kapazitätsgrenze bei elf Mandaten (eines bleibt je Lauf übrig, `ceil(11/10)=2`, identisch zu K1) ·
+zwei Schattenpfade gleichzeitig im Code. **Rückbaupfad:** Flag auf `off` → sofort Altpfad ohne
+Codeänderung; Revert des PR → Pfad vollständig weg; nach erfolgreichem Nachweis kann der K1-Pfad
+entfernt werden (eigener kleiner Aufräumsprint). **Kein Datenrückbau nötig — es entstehen keine
+neuen Tabellen, Spalten oder Migrationen.** Geänderte Dateien: `lib/helmut/vorgangskontext.js`
+(neu), `lib/helmut/cron-globalphase.js`, `lib/helmut/scheduler.js`, `server.js`,
+`scripts/vorgangskontext-geruest.js` (neu), `scripts/vorgangskontext-test.js` (neu),
+`scripts/vorgangskontext-mutationsprobe.js` (neu), `scripts/cron-globalphase-test.js`,
+`scripts/cron-globalphase-mutationsprobe.js`, `docs/betrieb/vorgangskontext.md` (neu),
+`docs/betrieb/cron-globalphase.md`, `docs/betrieb/env-inventar.md`, `docs/ARCHITECTURE.md`,
+`docs/datenmotor-restliste.md`, `docs/CURRENT_STATE.md` — plus die aus dem K2-Analysebranch
+übernommenen `scripts/globalphase-buendelung-test.js` und
+`scripts/globalphase-buendelung-mutationsprobe.js`. Branch
+`claude/op25-k2-secure-architecture-8hycfv`, **PR #201** (offen, kein Draft, **beide Pflicht-Checks gruen**: `Syntax + Offline-Suiten` **194/194 Suiten** und `Browser-/Mobile-Smoke (Chromium)`, Lauf `30638964148`). **Nicht gemergt, nicht deployt, Flag nicht gesetzt.** **Der K2-Analysebranch
+`claude/op25-k2-global-bundling-axgbaf` ist damit inhaltlich vollständig gesichert (Commit
+`553c1ed` per Cherry-Pick übernommen, Tests unverändert grün); er wird NICHT separat als PR
+geführt und bleibt nur als Beleg stehen.** **Nächster Schritt:** Merge-Entscheidung des
+Betreibers; danach Aktivierung ausschließlich über die Vercel-Env und rein lesender
+Production-Nachweis über mindestens 24 h.) ·
+(**Sprint OP-25 K2 — fachliche Absicherung der globalen
+Bündelung. TEILWEISE ABGESCHLOSSEN: der Auftrag „K1-1 endgültig bewerten" ist erfüllt, die
+Bewertung fällt aber NICHT zugunsten einer Aktivierung aus — es steht jetzt eine
+Betreiberentscheidung an. Keine Aktivierung, kein Flag gesetzt, keine Production-Änderung,
+keine Produktionsdatei geändert.** **Ergebnis in einem Satz: K1-1 ist NICHT widerlegt und
+breiter als in K1 dokumentiert** — es geht nicht nur um den Suffix einer Vorgangskennung,
+sondern um die **Dokumentpartition selbst**, und die ändert sich in **beide** Richtungen.
+**Ursache, mechanisch belegt (der eigentliche Erkenntnisgewinn):** Helmut entscheidet „gehört
+zusammen" in **zwei Regimen**. *Lose* **innerhalb** eines Batches — `clusterRawDocuments` bildet
+Zusammenhangskomponenten über `docsShareEvent`, **eine einzige** paarweise Kante genügt und
+wirkt **transitiv**. *Streng* **zwischen** Batches — `resolveVorgang` sucht Kandidaten über das
+Themenwurzel-**Präfix** (`candidatePrefixes`) und prüft sie mit `sameVorgang` **Kern gegen
+Kern**. Die globale Bündelung verschiebt alle Dokumente **mandatseigener** Quellen (Personen-,
+Partei-, Ausschussquellen; nach der K1-Messung **58 von 196** Wegen bei acht Profilen) vom
+strengen in das lose Regime. Dokumente **geteilter** Quellen sind strukturell **nicht**
+betroffen — sie liegen schon heute vollständig im Batch des **ersten** Mandats (globale
+Rohdokument-Entdoppelung), im Test belegt. **Drei Teilbefunde, jeder einzeln bewiesen und
+mutationsgesichert:** **K1-1a Zusammenführung** — fachlich **verschiedene** Vorgänge landen
+global in **einem**; Ursache ist, dass Formular- und Floskelvokabular („Antrag", „Drucksache",
+„Fraktion", „beantragt", „betrifft", „Abgeordnete", „besucht", „Anhörung", „Sachverständigen",
+„Tagesordnung") heute **volles Beweisgewicht** trägt. **K1-1b Trennung** — die
+Kernanker-Nachprüfung in `clusterRawDocuments` ist **nicht monoton**: ein größerer Batch kann
+ein Dokument aus seiner bisherigen Gruppe **herauslösen**, die globale Bündelung **trennt**
+also auch, was mandatsweise ein Vorgang war. **K1-1c Kette** — `x~y` und `y~z` bei `x!~z`
+ergeben global **einen** Vorgang aus drei Dokumenten; heute verhindert das nur die Batchgrenze.
+**Bilanz über dreizehn Fallfamilien:** sechs weichen ab — **eine fachlich besser** (zwei
+Parteiquellen zur **selben** Debatte werden korrekt zusammengeführt), **vier schlechter**, **eine
+nur anders**. **Ehrliche Gegenprobe:** eine der Fehlverschmelzungen (zwei verschiedene
+Ausschüsse mit gleichem Formulartext) tritt in **beiden** Pfaden auf — **der Fehler ist
+Bestand, K1 macht ihn nur breiter wirksam.** **Korrektur einer K1-Aussage, nicht weggeredet:**
+die Bewertung in `cron-globalphase.md` §8 („alle Kennungen teilen dasselbe Suchpräfix,
+`sameVorgang` hält sie für denselben Vorgang") stimmt für den dort gemessenen Fall, gilt aber
+**nicht allgemein**; in den heute getrennten Fällen fehlt das gemeinsame Präfix — und
+`sameVorgang` würde sie sogar **zusammenführen**. Der heutige Schutz ist damit **die Enge der
+Präfixsuche, nicht der Belegvergleich**, und der Satz „die globale Bündelung ist die kanonisch
+richtige" ist **nicht belegt**. **Was unverändert gilt und jetzt einzeln bewiesen ist:** kein
+Dokument geht verloren (`clusterRawDocuments` ist eine **Partition**, auch bei feindlichen
+Eingaben: leer, ohne Zeitangabe, nur Jahreszahlen, nur Füllwörter) · jedes Dokument bekommt in
+**beiden** Pfaden genau **eine** Verknüpfung · kein Dokument hängt an zwei Vorgängen · **keine
+doppelten Vorgänge** · kein Wissensobjekt verschwindet · **keine Mehrkosten** (gemessen **24 →
+14** KI-Aufrufe) · **Mandantentrennung unverändert** (Wissensobjekte tragen keinen
+Mandantenbezug) · Kennungsformat und Resolver-Anschluss bleiben · **reihenfolgeunabhängig**
+(120 Dokumentpermutationen, Quellenreihenfolge auf/ab, Mandatsreihenfolge vor/zurück) · das
+Sicherheitsventil gegen Digest-Cluster greift (90 zusammenhängende Dokumente → nie ein Cluster
+über `MAX_CLUSTER_DOKUMENTE`). **Nebenbefund zugunsten von K1:** der **alte** Pfad ist von der
+**Mandatsreihenfolge** abhängig (drei Familien), der neue in keiner — „heute ist es stabil"
+stimmt nicht. **Fachliche Bewertung, ehrlich:** technisch verlustfrei, fachlich ein Verlust an
+**Entscheidungsschärfe** — ein verschmolzener Vorgang ist **ein** Wissensobjekt mit **einer**
+Überschrift, **einer** Empfehlung und **einer** Entscheidung; beide Dokumente hängen daran, aber
+der zweite politische Vorgang hat danach **keine eigene Entscheidung mehr**. Das ist genau die
+Fehlerklasse **„Digest-Cluster"**, die als **F-3** schon einmal einen Production-Rückrollfall
+verursacht hat. In einem Produkt, dessen Kernversprechen „Entscheidungen statt Daten" ist, ist
+das **noch nicht akzeptabel**. **Kein Datenschutz- und kein Mandantentrennungsproblem:** der
+Rohkorpus und die Wissensobjekte sind schon heute mandantenneutral, es kommt kein Datum hinzu,
+das nicht ohnehin gespeichert würde — aber die **Vorgangsidentität** eines Mandats kann von der
+Personenquelle eines **anderen** Mandats mitbestimmt werden, und das ist eine sichtbare
+Nutzerwirkung. **Skalierung:** die Zahl erstmals gegeneinander bewerteter Dokumentpaare wächst
+**quadratisch** mit der Mandatszahl. **Gemessene Option, bewusst NICHT umgesetzt:** eine rein
+**aufgezählte** Formularwortliste in `GENERISCHE_ANKER` (32 Wörter, im Stil der bestehenden
+Hotfixes B4-3/B4-4, **keine** Stammwortlogik) hebt die korrekte Trennung von **7/12 auf 11/12**
+und reißt dabei **keinen** fachlich zusammengehörigen Fall auseinander. Sie wirkt auch im
+**alten** Pfad, verbessert also heute schon — verändert aber die **aktive** Vorgangsbildung
+**sofort und ohne Flag** und ist deshalb freigabepflichtig (`CLAUDE.md` §5) und ein eigener
+Sprint mit eigenem Production-Nachweis. **Empfohlene Reihenfolge:** erst diese Nachschärfung,
+danach K1-1 erneut messen, **dann** über die Aktivierung entscheiden. **Tests (real ermittelt,
+kein Test als grün behauptet, der nicht lief):** neue Suite `globalphase-buendelung-test.js`
+**56/56** · Mutationsprobe `globalphase-buendelung-mutationsprobe.js` **15/15 rot** (drei erste
+Fassungen waren Löcher — Quellenkontext, Transitivität und Kostenzusage waren nicht abgesichert;
+alle drei nachgezogen, danach 15/15) · Offline-Suite **179/193** gegen die im selben Arbeitsbaum
+gemessene Basislinie **178/192** mit **identischer** Fehlschlagliste (14 umgebungsbedingte
+Suiten, Delta genau **+1** = die neue Suite) · Browser-/Mobile-Smoke **32/32** ·
+`cron-globalphase` **169/169** · `cron-fairness` **285/285** · `vorgangsidentitaet` **67/67** ·
+`vorgangs-resolver` **54/54** · `vorgangs-beweisfamilien` **103/103** ·
+`vorgangs-uebernahme-analyse` **35/35** · `vorgangs-lebenszyklus` **81/81** ·
+`herausgeber-identitaet` **109/109** · `vorgangsbildung-verlust` grün. **Sicherheitsgrenzen
+eingehalten:** **keine Produktionsdatei geändert** (nur zwei neue Testskripte und Dokumentation),
+keine Production-Schreibzugriffe, kein manueller Cron-Lauf, keine Migration, keine Env-/Budget-/
+Cron-/Zeitbudget-/Quellenänderung, keine Aktivierung von M8/Berlin/Brandenburg, keine neuen
+Testmandate, kein Merge, kein Deployment, **0 KI-Aufrufe, 0,00 USD**. Die laufenden
+Production-Nachweise zu OP25B, R-6 und 29B sind **unberührt**. **Statusgrenzen:** OP-25 bleibt
+**teilweise abgeschlossen**; der Kapazitätsblocker §10.5/§10.7 bleibt offen; alle Messwerte in
+[`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) §9/§10 gelten unverändert, weil das Flag
+aus ist. **Nächster Schritt:** Betreiberentscheidung zu den Optionen in
+[`betrieb/cron-globalphase.md`](betrieb/cron-globalphase.md) **§8a.5** — empfohlen: erst die
+Nachschärfung des Formularvokabulars als eigener Sprint, **danach** erneut über die Aktivierung
+entscheiden. **Empfehlung bis dahin: `HELMUT_CRON_GLOBALPHASE` bleibt AUS.** Geänderte Dateien:
+`scripts/globalphase-buendelung-test.js` (neu), `scripts/globalphase-buendelung-mutationsprobe.js`
+(neu), `docs/betrieb/cron-globalphase.md` (§8-Nachtrag, §8a neu, §10/§11 nachgezogen),
+`docs/datenmotor-restliste.md` (OP-25 Status K2), `docs/CURRENT_STATE.md`. Branch
+`claude/op25-k2-global-bundling-axgbaf`, kein PR angelegt (Merge und PR-Eröffnung bleiben
+Betreiberentscheidung).) · (**Sprint OP-25 K1 — globale Datenerfassung von der
+mandatsbezogenen Verarbeitung trennen. TEILWEISE ABGESCHLOSSEN: der Schattenpfad ist gebaut,
+offline bewiesen und mutationsgesichert; er ist in Production NICHT aktiviert, und genau das
+war der Auftrag. Der Kapazitätsblocker aus OP-25 §10.5/§10.7 ist damit gelöst GEBAUT, aber
+nicht GESCHLOSSEN.** **Ursache bestätigt und geschärft (Bestandsprüfung gegen `main`, keine
+Vermutung):** von den zwölf Schritten in `runSourceCrawl` sind **fünf fachlich global** —
+Quellenabruf, Rohitems, Rohdokumente, Lazy- und Eager-Understanding. `raw_documents` und die
+Wissensobjekte tragen **keinen** Mandantenbezug; nur Matching, Entscheidungen und die
+Mandatstelemetrie sind echte Projektionen. Die Ausgangsthese stimmt, war aber **zu grob**: das
+prozessweite Gedächtnis geteilter Abrufwege entdoppelt schon heute einen Teil. Teuer bleibt,
+was **jedes** Mandat trotzdem wiederholt: eigener Quellenplan, eigene Abrufwege, Speichern,
+Dedup, Clustern — und ein **eigenes 90-Sekunden-Verstehensbudget**. Production-Beleg (rein
+lesend, aus PR #191 übernommen und gegen den aktuellen Stand geprüft): *„der erste Mandant
+verbraucht rund vier der viereinhalb Minuten, der zweite wird angefangen und abgeschnitten, der
+Rest startet nie"*. **Lösung (klein, additiv, ohne Migration, ohne Queue):** neues Modul
+[`lib/helmut/cron-globalphase.js`](../lib/helmut/cron-globalphase.js) — Vereinigungsmenge,
+Budgetaufteilung, Datenstandsvertrag, Kapazitätsmodell, alles rein und IO-frei — plus
+`scheduler.runGlobaleErfassung` / `scheduler.runMandatsProjektion`. **`runSourceCrawl` wurde
+NICHT angefasst**; die Doppelung der Orchestrierung ist bewusst in Kauf genommen und gehört zu
+K2 zurückgebaut. Die Mandatsphase läuft durch die **unveränderte** Fairnessschleife
+`runCronForTenants` → `cron-fairness.runTenantsFairly` — Reihenfolge, Losentscheid, Sperren,
+Laufdatensatz (R-6), Fehlerisolation und `ceil(n/k)` bleiben, nur die **Arbeit je Mandat** ist
+eine andere. **Flaggrenze:** `HELMUT_CRON_GLOBALPHASE`, **Default AUS**, fail closed (nur
+`on`/`true`/`1`/`an` schalten ein, ein Tippfehler bedeutet AUS), **nicht** über
+`helmut-flags.json` setzbar — die Aktivierung ist ausschließlich eine Vercel-Env-Entscheidung
+des Betreibers. Ohne Flag ist der Aufruf **byte-identisch** zum bisherigen
+(`runCronForTenants(cronName, (t) => runSourceCrawl(t), { deadlineMs, runId })`; Quelltextvertrag
++ Mutationsprobe M8). **Vereinigungsmenge bewiesen — gegen das ECHTE relationale Seed-Modell**
+(Modus `on` wie Production, 152 Abrufwege) mit acht Profilen, darunter je ein **Berliner** und
+ein **Brandenburger** Landtagsprofil als schärfster Fall: Vollständigkeit (kein Weg verloren),
+jede Kennung genau einmal, alle acht Personenquellen erhalten, **0 Berliner und 0 Brandenburger
+Landeswege**, keine manuellen, keine deaktivierten Wege, kein DIP-Weg im Quellencrawl.
+**Gemessen: 1 162 Wege in den Einzelplänen → 196 in der Vereinigung**, also **966 geplante
+Abrufe weniger je Lauf**. Zur Reihenfolge wird **nicht** behauptet, jeder Profilplan bleibe
+vollständige Teilfolge — das ist nachweislich falsch; bewiesen wird, was gilt: mandatseigene
+Wege behalten ihre Reihenfolge, das erste Profil der **Fairnessreihenfolge** steht unverändert
+vorn, die Ordnung ist exakt „erstes Auftreten", und sie entscheidet **nicht** über die
+Versorgung, weil `crawlAllSources` keine Deadline kennt. **Kapazität, gemessen** (deterministische
+Laufzeitsimulation, **beide** Pfade am echten Produktionscode, gezählt wird was WIRKLICH im
+270-s-Fenster fertig wurde): production-kalibriert **n=6 alt 2/6 mit 37,6 s Überziehung → neu
+6/6 ohne Überziehung**; **n=11 alt 2/11 → neu 11/11**. Grenzkosten je zusätzlichem Mandat
+**32 920 ms → 6 620 ms**. **Modellrechnung** (Production-Eingangswerte: globale Arbeit 240 s,
+Projektion 1,65 s, Reserve 15 s): n=6 **1/6 → 6/6**, n=11 **1/11 → 10/11** — **bei elf Mandaten
+bleibt je Lauf eines übrig** (`ceil(11/10) = 2` Läufe); mit einer auf 200 s gedrückten globalen
+Phase reicht ein Lauf auch für elf. **Ergebnisgleichheit — drei Unterschiede einzeln benannt und
+bewertet, keiner als „erwartbar" abgehakt:** **K1-1** die Vorgangskennung hängt an der Bündelung
+(mit den echten Funktionen gemessen: global 1 Cluster, mandatsweise 2 mit anderen Kennungen);
+Bewertung: alle teilen dasselbe Suchpräfix, `sameVorgang` hält sie für **denselben** Vorgang, es
+entsteht kein zweiter Vorgang, kein Dokument geht verloren, und die globale Bündelung kostet
+**höchstens so viele** KI-Aufrufe — sie ist die kanonisch richtige, aber eine Änderung, und
+deshalb freigabepflichtig. **K1-3** das 90-s-Verstehensbudget gilt künftig je **Lauf** statt je
+**Mandat**; der Rest bleibt zurückgestellt und wird vom dedizierten Understanding-Cron (05:30 /
+21:30 UTC) geholt — das Budget wurde **nicht** erhöht. **K1-4** im alten Pfad matcht ein früh
+verarbeitetes Mandat gegen einen **unvollständigen** Korpus, im neuen sehen alle denselben. Nach
+**zwei** Läufen sind beide Pfade **feldgleich**: Rohdokumente, Fundstellen, Wissensobjekte,
+Matching-Ergebnisse, Scores, Entscheidungstypen, Prioritäten, Mandantentrennung und KI-Aufrufe
+identisch, Gesamtfingerabdruck gleich. **Zwei Bestandsbefunde nebenbei belegt und ehrlich
+benannt:** `crawlAllSources` kennt **keine** Deadline (im neuen Pfad durch stufenweisen Abruf
+begrenzt — `crawler.js` blieb unverändert), und `budgetMs = 0` bedeutet in
+`runUnderstandingShadow` „**kein** Limit" statt „keine Zeit" (im neuen Pfad ehrlich
+übersprungen; `runSourceCrawl` bewusst nicht angefasst, damit der Altpfad byte-gleich bleibt).
+**Tests (real ermittelt, kein Test als grün behauptet, der nicht lief):** neue Suite
+`cron-globalphase-test.js` **169/169** · Mutationsprobe `cron-globalphase-mutationsprobe.js`
+**17/17 rot** (die erste Fassung fand ein echtes Loch — die Budgetprüfung des Abrufs war nicht
+abgesichert; nachgezogen) · Offline-Suite **178/192** gegen Basislinie `origin/main` `61a0947`
+**177/191** mit **identischer** Fehlschlagliste (14 umgebungsbedingte Suiten, Delta genau **+1**
+= die neue Suite; Basislinie im eigenen Worktree gemessen) · Browser-/Mobile-Smoke **32/32** ·
+`cron-fairness` **285/285** · `punkt29-fehlervertrag` **80/80** · `pipeline-zeitbudget`
+**21/21** · `source-architecture` **99/99** · `cross-tenant-security` **43/43** ·
+`nachhol-schreibgate` **52/52** · `security-hardening-sql` **26/26** · Syntaxprüfung aller
+geänderten Dateien grün. **Ein währenddessen eingeführter Regressionsfehler wurde gefunden und
+behoben:** `env-inventar-test.js` schlug zunächst fehl (drei neue Env-Variablen nicht
+dokumentiert) — nachgetragen, danach 38/38. **Sicherheitsgrenzen eingehalten:** keine
+Production-Schreibzugriffe, kein manueller Cron-Lauf, keine Migration, keine Env-/Budget-/Cron-/
+Zeitbudget-/Quellenänderung, keine Aktivierung von M8/Berlin/Brandenburg, keine neuen
+Testmandate, kein Merge, kein Deployment, **0 KI-Aufrufe, 0,00 USD**. **Statusgrenzen:** OP-25
+bleibt **teilweise abgeschlossen**; die Testmandat-Sperre aus
+[`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) §9 bleibt **unverändert gültig**, alle
+dortigen Messwerte (`k`, `ceil(n/k)`, §10.5/§10.6) gelten weiter, weil das Flag aus ist. 25B,
+29B und der R-6-Nachweis sind unberührt. **Nächster Schritt:** Merge-Entscheidung des
+Betreibers; danach K2 — Entscheidung zu Befund K1-1, Aktivierung ausschließlich über die
+Vercel-Env, rein lesender Production-Nachweis über mindestens 24 h. **K3 wird wahrscheinlich
+nötig, sobald mehr als zehn Mandate aktiv sind.** **Zu PR #191/#192 (beide reine Doku, beide auf
+dem überholten Stand `071f91c`): NICHT gemergt, NICHT geschlossen.** Aus #191 wurde der
+Durchsatz-Messwert übernommen (er gilt weiter und stützt diesen Sprint); die Aussage „OP-25 ist
+zwischenzeitlich behoben" darin ist **überholt** — behoben ist die Fairness, nicht die
+Kapazität. #192 ist durch den Merge von PR #190 überholt: es führt „Rezeptversion anheben" als
+noch offene Option, während genau das gemergt wurde; sein Messwert „5 → 2 falsche
+Ausschussbelege" gilt weiter. **Empfehlung: beide nachziehen oder ersetzen, Entscheidung liegt
+beim Betreiber.** Geänderte Dateien: `lib/helmut/cron-globalphase.js` (neu),
+`lib/helmut/scheduler.js`, `server.js`, `scripts/cron-globalphase-test.js` (neu),
+`scripts/cron-globalphase-mutationsprobe.js` (neu), `docs/betrieb/cron-globalphase.md` (neu),
+`docs/betrieb/cron-fairness.md` (§9-Hinweis, §12 neu), `docs/betrieb/env-inventar.md`,
+`docs/ARCHITECTURE.md` (§7-Hinweis), `docs/datenmotor-restliste.md`, `docs/CURRENT_STATE.md`.
+Branch `claude/op25-k1-crons-capacity-pd1tvx`, **PR #200** (offen, kein Draft, **beide
+Pflicht-Checks grün**: `Syntax + Offline-Suiten` und `Browser-/Mobile-Smoke (Chromium)`, Lauf
+`30630934870`). **Nicht gemergt, nicht deployt, Flag nicht gesetzt** — Merge =
+Production-Deployment und bleibt Betreiberentscheidung.) ·
+(**Sprint R-6 — Zuverlässige Cron-Telemetrie bei
+Zeitüberschreitung. TEILWEISE ABGESCHLOSSEN: die Beobachtbarkeitslücke ist im Code behoben,
+offline bewiesen und mutationsgesichert; der rein lesende Production-Nachweis steht aus
+(Merge nötig).** **Ursache belegt (drei Teile, keine Vermutung):** (1) `withTimeout` ist ein
+`Promise.race` — es **beendet die ursprüngliche Promise nicht**; greift das äußere Zeitlimit
+(280 000 ms), kehrt `runCronForTenants` **nie** zurück und alles danach (die
+`[cron/*/fairness]`-Zeile, der Zeitbudget-`systemError`, der Antwortkörper) entfällt.
+(2) Die nominelle Differenz von 10 s zur inneren Deadline (270 000 ms) kann prinzipiell nicht
+reichen: die innere Deadline ist ein **START-Gatter**, kein STOPP-Gatter — sie wird nur **vor**
+dem Beginn eines Mandats geprüft, ein bei 269 s begonnenes Mandat läuft beliebig lange weiter
+(`runSourceCrawl` hat sein eigenes Budget). Offline gemessen: **> 400 s über der Deadline**.
+(3) Ein `finally` allein hätte **nicht** gereicht — bei einem echten Vercel-Prozessabbruch läuft
+die Ereignisschleife nicht weiter; genau deshalb ist auch die Sperrfreigabe im `finally` von
+`runSourceCrawl` schon heute nicht garantiert (die TTL räumt auf). **Behebung (klein, additiv,
+ohne Migration und ohne zweites System):** dieselbe `helmut_store`-Zeile
+`<storeId>-cron-fairness` trägt jetzt zusätzlich einen **Laufdatensatz je Cron**
+(`laeufe[<cron>]`). Er wird **nicht am Ende** geschrieben, sondern bei **jedem
+Mandatsübergang** — huckepack auf die Schreibvorgänge, die für die Buchführung ohnehin
+stattfinden (Claim/Abschluss). Zusatzkosten im Normalfall: **2 kleine Schreibvorgänge je Lauf**
+(~0,04 % des Zeitbudgets), **0 KI-Aufrufe, 0,00 USD**. Der äußere Catch der Routen `crawl`,
+`pipeline` und `lage-check` vermerkt zusätzlich **nur die Tatsache** „das äußere Zeitlimit hat
+gegriffen" (`aeusseresTimeoutAt`) — er behauptet **nicht**, dass die Promise beendet wurde;
+läuft sie intern weiter und schreibt später ihren Abschluss, **hebt dieser den Zustand**
+(monotone Rangfolge `laufend < abgebrochen < teilweise/abgeschlossen`). **Neuer Vertrag:** nach
+jedem Übergang ist der Ausgang jedes geplanten Mandats eindeutig einer Klasse zuzuordnen
+(`begonnen` ohne Abschluss · `erfolgreich` · `fehlgeschlagen` · `laeuft-bereits` ·
+`sperre-verweigert` · `zeitbudget` · **kein Ausgang = nicht begonnen**);
+`cron-fairness.rekonstruiereLauf` rechnet daraus die **vollständige** Telemetriezeile nach,
+inklusive `kapazitaet` und `ceil(n/k)`. **Kein erfundener Erfolg möglich:** ein Abschluss
+entsteht ausschließlich durch einen Schreibvorgang — bleibt er aus, bleibt der Datensatz
+`laufend`, und ein veraltetes `laufend` **ist** die Abbruchmeldung (abgeleitet, nicht
+behauptet). **Unverändert:** Reihenfolge, Losentscheid, `k`, `ceil(n/k)`, Rotation, Zeitbudgets
+(270 000/240 000 ms), äußere Zeitlimits (280 000 ms), Funktionslimit (300 s), Cron-Zeiten,
+Kostenbudgets, Quellen, Flags, Mandatszahl — durch Vertragstests gesichert. **Preis, ehrlich
+benannt:** `FAIRNESS_VERSION` steigt 1 → 2 (Pflicht — ein Codestand der Version 1 würde
+`laeufe` beim Verschmelzen **still verwerfen**). Folge: bedient während des Rollouts noch eine
+Vorgänger-Instanz einen Cron, **verweigert sie den Schreibvorgang**
+(`zustand-neuere-version-2`) → bereits getesteter Fail-safe-Pfad mit `systemError`,
+`zustand=gestoert`, unbeschädigter Rotation. Laut und auf das Rolloutfenster begrenzt statt
+still und dauerhaft (`CLAUDE.md` §4.4). **Wachstumsgrenzen:** genau **ein** Laufdatensatz je
+Cron, höchstens 12 Crons, 200 Kennungen je Datensatz, 14 Tage Retention — gemessen **< 8 KB**
+bei 6 Mandaten und 40 Läufen; DSGVO-Löschung erfasst die Laufspur mit. **Tests (real
+ermittelt):** `cron-fairness-test.js` **285/285** (vorher 201/201, **+84**), davon 15
+Mutationsproben **15/15 rot** (5 davon neu und R-6-spezifisch) · `punkt29-fehlervertrag-test.js`
+**80/80** · `punkt29-fix-mutationsprobe.js` **7/7 rot** · Offline-Suite **177/191**, exakt die
+**identische** Basislinie und Fehlschlagliste wie `main` `bd7c889` (14 umgebungsbedingte
+Suiten, kein Delta; Basislinie im eigenen Worktree auf `origin/main` gemessen) ·
+Browser-/Mobile-Smoke **32/32** · die mit `main` hinzugekommene Suite
+`matching-rezeptversion-v2-test.js` **39/39**. **Auf `origin/main` `bd7c889` rebasiert**
+(2026-07-31, nach den Merges von PR #190/#198); einziger Konflikt war der Kopfblock dieser
+Datei — von Hand aufgelöst, R-6-Block vorn, B25-2- und OP-25-Block vollständig erhalten, keine
+fachliche Änderung. Pflichtprüfungen danach **wiederholt** (Zahlen oben sind die Werte NACH dem
+Rebase). **Beobachtung B29-F1 erweitert (kein Befund dieses Sprints):** unter hoher
+Parallellast sind neben `berlin-e2e-vertrag-test.js` auch `brandenburg-e2e-vertrag-test.js`
+flaky — je einmal in vier Runner-Läufen rot, isoliert **76/0** bzw. **98/0** grün, im
+Wiederholungslauf beide wieder grün. Keine der beiden Suiten fasst dieser Sprint an. **Sicherheitsgrenzen eingehalten:** keine
+Production-Schreibzugriffe, kein manueller Cron-Lauf, keine Migration, keine Env-/Budget-/
+Cron-/Zeitbudget-/Quellenänderung, keine Aktivierung von M8/Berlin/Brandenburg, keine neuen
+Testmandate, kein Merge, kein Deployment, **0 KI, 0,00 USD**. **Der Kapazitätsblocker aus
+OP-25 §10.5/§10.7 bleibt vollständig offen** — dieser Sprint macht ihn nur zuverlässig
+**messbar**, er behebt ihn ausdrücklich nicht. **Nächster Schritt:** Merge-Entscheidung des
+Betreibers, danach der in [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) **§11.8**
+beschriebene rein lesende Production-Nachweis (mind. 24 h reguläre Kadenz, darunter mindestens
+ein Lauf mit äußerem Zeitlimit). Geänderte Dateien: `lib/helmut/cron-fairness.js`, `server.js`,
+`scripts/cron-fairness-test.js`, `scripts/berlin-abnahmeprofil-test.js`,
+`docs/betrieb/cron-fairness.md` (§11 neu, §4/§5/§6/§8 nachgezogen),
+`docs/datenmotor-restliste.md`, `docs/CURRENT_STATE.md`. Branch
+`claude/cron-telemetry-timeout-sg8emb`, **PR #199** (offen, kein Draft, `mergeable_state:
+clean`, beide Pflicht-Checks grün: `Syntax + Offline-Suiten` und
+`Browser-/Mobile-Smoke (Chromium)`, Lauf `30625243467`). **Nicht gemergt, nicht deployt** —
+Merge = Production-Deployment und bleibt Betreiberentscheidung.) ·
 (**Sprint B25-2-Auflösung — Matching-Rezeptversion
 `legacy_relevance_v1` → `v2`. ERFOLGREICH ABGESCHLOSSEN (repo-seitig; Merge und damit die
 Wirkung stehen beim Betreiber).** **Ausgangslage belegt:** `origin/main` = `071f91c`
@@ -2104,6 +2458,7 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 
 | Punkt | Was fehlt | → OP |
 |---|---|---|
+| **Zuverlässige Cron-Telemetrie bei Zeitüberschreitung (R-6)** — Laufdatensatz je Cron in der bestehenden Fairnesszeile, bei jedem Mandatsübergang fortgeschrieben; äußerer Timeout-Vermerk ohne Abschlussbehauptung; `rekonstruiereLauf` rechnet die vollständige Telemetrie nach. Ursache dreiteilig belegt (`Promise.race` beendet nichts · innere Deadline ist ein START-Gatter · `finally` trägt bei Prozessabbruch nicht) | **Nur noch Merge + rein lesender Production-Nachweis** nach [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) §11.8: mind. 24 h reguläre Kadenz, darunter **mindestens ein Lauf mit äußerem Zeitlimit**. Repository-Umsetzung vollständig: Suite **285/285**, Mutationsprobe **15/15 rot**, Offline-Suite ohne Delta zur Basislinie, Smoke **32/32**. Keine Migration, keine Konfigurationsänderung | OP-25 (R-6) |
 | **Faire Mandantenreihenfolge der Mehrmandanten-Crons** (Rotation nach ältestem Versuch, persistent, ohne Migration; Garantie ceil(n/k) für k ≥ 1, Beobachtbarkeit je Mandat) | **Nur noch Merge + regulärer Production-Lauf**: erwartet werden über die vier Läufe (04/10/16/20 UTC) alle aktiven Mandate mindestens einmal begonnen, belegt über die `[cron/*/fairness]`-Zeilen. Repository-Umsetzung vollständig: Suite **176/176**, Mutationsprobe **9/9 rot**, **CI-Gate grün** (183/183 + 32/32, Lauf `30499103799`), Überlappungsschutz und Persistenzhärtung belegt | OP-25 |
 | Google-News-Härtung (Gate/Retry/Breaker/Cooldown, Default AN) | Production-Beweislauf unter echter Drosselung | OP-15 |
 | Monitoring-Zweitkanal + Meta-Heartbeat (Sender gehärtet) | `HELMUT_MONITORING_WEBHOOK_URL` unset → No-Op, kein `webhook.sent`-Beleg | OP-07 |
@@ -2640,6 +2995,7 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 
 | Sprint | Datum | Zustand |
 |---|---|---|
+| **Sprint R-6 — Zuverlässige Cron-Telemetrie bei Zeitüberschreitung** | 2026-07-31 | **Teilweise abgeschlossen (Ursache belegt, Behebung offline bewiesen und mutationsgesichert; Production-Nachweis offen, weil er einen Merge voraussetzt).** **Ursache in drei Teilen, im Code belegt:** (1) `withTimeout` ist ein `Promise.race` und **beendet die ursprüngliche Promise nicht** — greift das äußere Zeitlimit (280 000 ms), kehrt `runCronForTenants` nie zurück und die `[cron/*/fairness]`-Zeile entsteht nie; (2) die 10 s Differenz zur inneren Deadline (270 000 ms) reichen **prinzipiell** nicht, weil die innere Deadline ein **START-Gatter** ist (`if (now() + reserveMs > deadline) … continue`) und ein einmal begonnenes Mandat sie beliebig weit überzieht — offline gemessen **> 400 s**; (3) ein `finally` allein wäre keine Lösung, weil bei einem Vercel-Prozessabbruch die Ereignisschleife nicht weiterläuft. **Behebung:** Laufdatensatz je Cron (`laeufe[<cron>]`) in derselben `helmut_store`-Zeile `<storeId>-cron-fairness` — Laufbeginn (Planung, aktive Zahl, blockierte Mandate) vor dem ersten Mandat, jeder Mandatsausgang huckepack auf Claim/Abschluss (**0 zusätzliches IO**), Abschluss am Ende; verweigerte Sperre und fremder Halter erhalten einen eigenen Ausgang, der die Buchführung je Mandat **nicht** anfasst (kein erfundener Erfolg, kein erfundener Fehler). Der äußere Catch der drei betroffenen Routen vermerkt **nur die Tatsache** `aeusseresTimeoutAt` und hebt den Status auf `abgebrochen` **nur**, solange er `laufend` ist — ein später eintreffender echter Abschluss gewinnt (monotone Rangfolge). `rekonstruiereLauf` rechnet die vollständige Telemetrie aus den Zwischenständen nach; Rekonstruktion und gemeldete Telemetrie werden im Test **gegeneinander** geprüft. **Warum ein Prozessabbruch keinen erfundenen Erfolg erzeugen kann:** ein Abschluss entsteht nur durch einen Schreibvorgang; bleibt er aus, bleibt der Datensatz `laufend`, und ein veraltetes `laufend` **ist** die Abbruchmeldung. **Bewusst nicht getan:** `process_runs` als Ablage (relational flaggegated und damit freigabepflichtig, Blob-Rückfallpfad ist genau der W-2-Last-Write-Wins-Pfad mit 1,24 MB je Schreibvorgang), zweites Telemetriesystem, neue Tabelle, Anhebung irgendeiner Zeitgrenze, Kapazitätsarbeit. **Preis:** `FAIRNESS_VERSION` 1 → 2; im Rolloutfenster kann eine Vorgänger-Instanz den Schreibvorgang verweigern (`zustand-neuere-version-2`) → getesteter Fail-safe-Pfad, laut statt still. **Tests:** cron-fairness **285/285** (+84 gegenüber 201/201), Mutationsprobe **15/15 rot** (5 neu), p29-Vertrag **80/80**, p29-Mutationsprobe **7/7 rot**, Offline-Suite **177/191** mit identischer Basislinie und Fehlschlagliste wie `main` `bd7c889` (nach dem Rebase erneut gemessen), Browser-/Mobile-Smoke **32/32**. **0 KI, 0,00 USD**, keine Migration, keine Production-Änderung, kein Merge, kein Deployment. **Der Kapazitätsblocker (OP-25 §10.5/§10.7) bleibt offen** und war ausdrücklich nicht Gegenstand. Branch `claude/cron-telemetry-timeout-sg8emb`. Kanonisch: [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) §11. |
 | **Sprint OP-25, Vorprüfung Mergefreigabe: verweigerte Mandatssperre wurde als Erfolg verbucht** | 2026-07-30 | **Teilweise abgeschlossen (Fehler gefunden und behoben, Repository-Umsetzung vollständig; Production-Nachweis offen).** Die Betreiberfrage nach der Reihenfolge „Fairnessvermerk vor Mandatslock" traf einen **realen Defekt**. Ablauf: der Vermerk entsteht vor der Verarbeitung, die Sperre `crawl-<mandat>` erst in `runSourceCrawl` — und die **wirft** bei verweigerter Sperre nicht, sondern liefert `{ skipped: true, reason: "already running" }`. Die Schleife wertete das als Erfolg und schrieb einen **erfundenen Erfolg** (Erfolgszeitpunkt, Erfolgszähler +1, Fehlerserie 0), zählte das Mandat in `begonnen` und damit in `k`, wodurch die gemeldete Obergrenze `ceil(n/k)` **zu optimistisch** wurde und `fairness.erfolgreich` ein nie angefasstes Mandat nannte. **Korrektur einer früheren Aussage dieses Sprints:** `fremderHalter` deckt diesen Pfad **nicht** ab — claimt der andere Lauf erst nach der Planung dieses Laufs, ist der eigene Vermerk der jüngere, führt die Verschmelzung, und die Prüfung greift nicht. Nur die Sperre fängt es, und deren Rückgabewert war falsch verbucht. **Fix, ohne die Sperre anzufassen:** `sperreVerweigert()` erkennt genau die Zeichenkette `already running` (Vertragstest gegen `scheduler.js`); das Mandat wird aus `begonnen` zurückgenommen, es gibt **keinen** Abschluss-Schreibvorgang (kein erfundener Erfolg, kein erfundener Fehler), und der Fall ist eindeutig beobachtbar in `fairness.lockVerweigert` (Teilmenge von `laeuftBereits`) sowie in der Protokollzeile als `sperreVerweigert=…`. Der bereits geschriebene Versuchsvermerk bleibt bewusst `laufend` — monotone Verschmelzung lässt ihn nicht zurücknehmen, er sperrt das Mandat für weitere überlappende Läufe und läuft nach 30 min ab; danach steht es wieder vorn, weil sein Versuchszeitpunkt der älteste ist (getestet). Andere `skipped`-Gründe (`profil-deaktiviert`) bleiben normale Versuche. **Zusätzlich belegt:** `HELMUT_CRON_FAIRNESS` ist ohne gesetzte Variable **aktiv**; nur `off`/`false`/`0` schalten ab, jeder andere Wert lässt es an; der Schalter steht **nicht** in der Datei-Flag-Allowlist, der Rückweg läuft nur über die Vercel-Env; der Merge verändert damit **unmittelbar** das Production-Verhalten (neue Reihenfolge + erste Schreibvorgänge in `main-cron-fairness`) — und das ist jetzt durch sieben eigene Prüfungen abgedeckt (§19e). **Tests:** Suite **201/201** (von 176), **Mutationsprobe 10 von 10 rot**, Offline-Suite **169/183** gegen Basislinie `main` **168/182**, Browser-Smoke **32/32**. Ein Einzellauf zeigte `werkzeug-lesefehler-test.js` rot (Parallellast-Flake: allein 43/0, unter dem Runner 3× grün, Wiederholung der vollen Suite wieder auf der Basislinie). **Keine Änderung an der Sperre, Cron-Zeiten, Budgets, Quellen, M8, Berlin, Brandenburg; kein Production-Zugriff, 0 KI-Aufrufe.** Kanonisch: [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) §3a.1 |
 | **Sprint OP-25, Abschlussdurchgang: CI grün, Garantie präzisiert, Überlappung bewiesen, Persistenz gehärtet** | 2026-07-30 | **Teilweise abgeschlossen (Repository-Umsetzung vollständig und CI-belegt; nur der reguläre Production-Nachweis fehlt, und der kann erst nach dem Merge entstehen).** **CI-Gate zweimal grün** — beide Pflicht-Checks auf `eeaa363` (Lauf `30499103799`) und nach der Härtung auf `2dc4154` (Lauf `30516881711`), jeweils Offline-Suite **183/183** und Browser-/Mobile-Smoke **32/32**. Drei Nachprüfungen, jede mit echter Nachbesserung: **(1) `k = 0` ist jetzt ein benannter Zustand.** `ceil(n/k)` gilt nur für Läufe mit `k ≥ 1`; ein Lauf, dessen Restlaufzeit nicht einmal für das erste Mandat reicht, trägt keine Fortschrittsgarantie und weist das aus (`kapazitaet`, `fortschrittsgarantie`, `ohneFortschritt`, `obergrenzeLaeufe: null` statt `Infinity`, `kapazitaet=0 obergrenzeLaeufe=keine-garantie` im Protokoll, wörtlicher `systemError`). Er schreibt **nichts**, die Warteschlange bleibt unverändert, der nächste Lauf holt genau dort nach — im selben Zeitfenster deterministisch getestet (§12b, 8 Prüfungen). **0 aktive Mandate** sind ausdrücklich **kein** `ohneFortschritt`. **(2) Überlappungsschutz bewiesen, ein falsches Dokument korrigiert.** Der Watchdog ruft `/api/cron/pipeline` außerplanmäßig (`workflow_dispatch`), der Pfad existiert real. Sperre `crawl-<mandat>`: erste Anweisung in `runSourceCrawl`, TTL 15 min > Funktionslimit 300 s, deckt den gesamten Mandatslauf, verweigert dem zweiten Lauf die Verarbeitung, bleibt bei Prozessabbruch bis zum Ablauf stehen, Freigabe token-gebunden. **`env-inventar.md` behauptete „Migration `20260719` NICHT auf Prod angewendet" und „Default fail-open" — beides falsch**; rein lesend gegengeprüft (0 Schreibzugriffe): beide Lock-Funktionen und `pipeline_locks.token` existieren, und die Zeilen des regulären 04:00-Crawls vom 2026-07-30 tragen einen **Token**, den ausschließlich die atomare RPC schreibt. `HELMUT_ATOMIC_LOCK` ist in Production **AN** → die Sperre ist atomar und fail-closed, **ein atomarer Mandatsclaim in der Fairnessschicht ist nicht erforderlich**, keine Queue, keine Parallelisierung, keine Architekturänderung. Inventar korrigiert (widersprach `datenmotor-restliste.md` FT2-2 und `CLAUDE.md` §5, die recht hatten). **Frischer OP-25-Beleg aus derselben Abfrage:** der 04:05:04-Lauf vom 2026-07-30 gab seine Sperre **nie** frei — Prozessende am Zeitlimit beim **zweiten** Mandat der alphabetischen Reihenfolge, gleicher Mandant und gleiches Muster wie am 29.07.; der Fehler trat bis zuletzt auf. **(3) Persistenz gehärtet — drei Schranken, jede getestet.** Lesefehler → **kein** Schreibvorgang (ein Patch trägt nur ein Mandat und hätte alle anderen Einträge gelöscht); **neuere** Schemaversion → kein Schreibvorgang (Rollout mit zwei Codeständen; das Feld `version` wird jetzt ausgewertet statt nur geschrieben); Versuchsvermerk wird nach dem Schreiben **gegengelesen** und begrenzt wiederholt (Default 3, danach ehrlich `ok:false, konflikt:true`) — gewinnt dabei ein neuerer fremder Versuch, ist nichts verloren und dieser Lauf lässt das Mandat aus. Der **Abschluss** wird bewusst nicht gegengelesen (er läuft über die Frist ab): ein Lesen, ein Schreiben, damit die Buchführung das Zeitbudget nicht auffrisst. Ein **korrupter** Eintrag (Nicht-Objekt, unbekannter Status, unlesbares Datum, negative Zähler, fremde Felder) blockiert niemanden: er wird verworfen, das Mandat gilt als „ohne Versuch", wird zuerst verarbeitet und heilt sich selbst; alle übrigen bleiben planbar. Ein gestörter Zustand erzeugt weiterhin einen eigenen `systemError` plus `fairnessGestoert: true` — `ok` bleibt bewusst `true`, weil die Verarbeitung stattfand und ein `false` einen erfolgreichen Crawl als Ausfall melden und den Watchdog fehlalarmieren würde. **Tests:** Suite **176/176** (von 118 im 1. Durchgang), **Mutationsprobe 9 von 9 rot** (neu: Wettlauf-Verlierer verarbeitet trotzdem · Lauf ohne Kapazität behauptet eine Garantie), Offline-Suite lokal **169/183** gegen Basislinie `main` **168/182** (dieselben 14 umgebungsbedingten Fehlschläge, kein Regress), Browser-Smoke **32/32**, Integrationsbeweis erneut gegen den echten Cron-Pfad. **Keine Migration, keine Cron-/Budget-/Flagänderung, keine Production-Schreibzugriffe, 0 KI-Aufrufe, 0,00 USD; M8, Berlin und Brandenburg unverändert deaktiviert, aktive Bundestagsquellen unverändert.** **Warum nicht „erfolgreich abgeschlossen":** der reguläre Production-Nachweis fehlt und kann erst nach dem Merge entstehen; die Roadmap trennt Implementierung und Nachweis, die Repository-Umsetzung selbst ist vollständig. Branch `claude/helmut-roadmap-25-cron-fairness-g8qjcx`, **PR #179**. **Nächster Schritt:** Merge-Freigabe, dann die vier regulären Läufe beobachten |
 | **Sprint OP-25, 1. Durchgang: faire Mandantenreihenfolge in den Mehrmandanten-Crons** | 2026-07-29 | **Teilweise abgeschlossen (offline vollständig belegt, PR offen, Production-Nachweis offen; keine Migration, keine Production-Änderung).** **Der Befund wurde nicht übernommen, sondern gegen `main` nach PR #178 (`51732e2`) geprüft und bestätigt:** `tenant-context.listActiveTenantIds` endete auf `ids.sort()` (**alphabetisch**), `runCronForTenants` verarbeitete seriell gegen `Date.now() > deadline`, und **kein** persistenter Fortschritt je Mandat existierte — die Verdrängung traf strukturell immer dieselben Mandate. Belege: **2026-07-24** vier von sechs Mandaten über Tage nie gecrawlt (Incident-Doku), **2026-07-28/29** drei Läufe reproduzierbar am 280-s-Limit (`bounded=true`, zwei davon **vor** `HELMUT_MATCHING_AUDIT` → kein Flag-Effekt), **2026-07-29 16:00** nur **eines von sieben** Mandaten bis zur Matching-Stufe (Befund B5). Präzisierung zum Auftrag: „4 von 6" ist der Wert vom 24.07.; am 29.07. waren es 6 von 7. **Gewählte Lösung (kleinste robuste Variante):** neues reines Modul `lib/helmut/cron-fairness.js` — Reihenfolge nach dem **ältesten letzten Versuch**, Mandate ohne Versuch vorn, Losentscheid je 6-h-Fenster bei Gleichstand, Kennung nur als letzter Entscheid; Versuch **vor** der Verarbeitung persistiert, Erfolg/Fehler/Dauer getrennt danach; Restzeitprüfung mit Reserve **vor** jedem weiteren Mandat; ein Mandat wird je Lauf höchstens einmal begonnen; ein als `laufend` vermerktes Mandat wird von einem überlappenden Lauf nicht begonnen und nach 30 min kontrolliert erneut zugelassen. **Persistenz ohne Migration:** eine **eigene Zeile** im bestehenden `helmut_store` (`<storeId>-cron-fairness`, ~4 KB, genau ein Schreiber, monotone Verschmelzung) — damit kein Last-Write-Wins-Verlust wie in Befund W-2, **keine neue Tabelle, keine RLS-Änderung** (die `helmut_store`-Policy matcht nur `main-p-`), kein Freigabegate; DSGVO-Löschung und Teardown entfernen die Spur mit, Einträge ohne Versuch verfallen nach 90 Tagen rein zeitbasiert. **Garantie:** bei `n` planbaren Mandaten und mindestens `k` begonnenen je Lauf wird jedes Mandat spätestens im **ceil(n/k)**-ten regulären Lauf begonnen — deterministisch bewiesen für n=1…9 × k=1…4; die Grenzen der Garantie (k=0, hängender Versuch, gestörte Ablage, Flag aus) sind ausdrücklich benannt. **Beobachtbarkeit ohne neue Oberfläche:** `[cron/*/fairness]`-Zeile und `fairness` im Antwortkörper (geplant · begonnen · erfolgreich · fehlgeschlagen · zeitbudget · laeuftBereits · letzter Versuch/Erfolg/Wartezeit je Mandat · nächstes Mandat · Obergrenze); der Zeitbudget-`systemError` nennt jetzt die **Kennungen** statt nur eine Anzahl, ein unbrauchbarer Fairnesszustand erzeugt einen eigenen `systemError` statt falschem Grün. **Verworfen:** neue Tabelle + atomarer Claim (freigabepflichtig → Fix wäre wirkungslos geblieben) · Zustand im Auth-/Main-Blob (W-2, 1,24 MB je Schreibvorgang) · `crawlRuns` als Verlaufsquelle (nur abgeschlossene Läufe — ein hängendes Mandat bliebe vorn) · `matching_runs` (nur Matching-Stufe, flag-gebunden) · `pipeline_locks` als Historie missbrauchen · Queue · Parallelisierung · stateless Uhr-Rotation (keine Garantie). **Tests:** neue Suite `cron-fairness-test.js` **118/118** (im Abschlussdurchgang auf 176/176 erweitert) (alle 18 geforderten Fälle einzeln benannt + Grenzbeweis + Sicherheitsgrenzen), **Mutationsprobe 7 von 7 rot**, Offline-Suite **169/183** gegen die im selben Arbeitsbaum gemessene Basislinie `main` **168/182** — **dieselben 14 umgebungsbedingten Fehlschläge**, also +1 Suite, +1 grün, kein Regress; Browser-Smoke **32/32**; Integrationsbeweis gegen den echten Cron-Pfad (lokaler Speicher, `cron-morning-briefing`-Laufkennung im persistierten Zustand). Zwei Befunde **im** Sprint gefunden und behoben: ein Merge-Fallstrick (Abschluss mit leicht früherem Startzeitstempel fiel hinter den eigenen `laufend`-Vermerk zurück) und ein fehlender Env-Inventar-Eintrag (von der bestehenden Prüfung gefangen). **0 KI-Aufrufe, 0,00 USD, keine Migration, keine Änderung an Cron-Zeiten/Frequenzen, Laufzeit- oder Kostenbudgets, keine Flag-Scharfschaltung in Production, kein Production-Zugriff; M8 unverändert deaktiviert, Berlin/Brandenburg unverändert deaktiviert, aktive Bundestagsquellen unverändert** (alle zehn Grenzen als Test verankert, §20 der Suite). Rückweg: `HELMUT_CRON_FAIRNESS=off`. **Warum nicht erfolgreich abgeschlossen:** der Merge ist gleichzeitig die Aktivierung und eine Freigabeentscheidung, und der reguläre Production-Nachweis (vier Läufe, alle aktiven Mandate mindestens einmal begonnen) fehlt. **Restlücken:** R-1 `/api/cron/lage-briefing` hat eine eigene Schleife und ist noch nicht fair · R-3 der `laufend`-Vermerk ist kein atomarer Claim (harter Riegel bleibt der Lock `crawl-<mandat>`, P0-4) · OP-25 (a) Abdeckungsmessung und (c) Abdeckungsalarm über eine Serie von Läufen bleiben offen. Branch `claude/helmut-roadmap-25-cron-fairness-g8qjcx`. Kanonisch: [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md). **Nächster Schritt:** Merge-Freigabe, dann die vier regulären Läufe beobachten |

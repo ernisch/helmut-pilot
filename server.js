@@ -9,13 +9,16 @@ const { profileCompleteness } = require("./lib/helmut/config");
 const tenantContext = require("./lib/helmut/tenant-context");
 const { validateProfile } = require("./lib/helmut/profile-validation");
 const sourceSafety = require("./lib/helmut/sourceSafety");
-const { runLageCheck, runSourceCrawl } = require("./lib/helmut/scheduler");
+const { runLageCheck, runSourceCrawl, runGlobaleErfassung, runMandatsProjektion } = require("./lib/helmut/scheduler");
 const { buildLearningProfile } = require("./lib/helmut/learning");
 const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, listFailedKnowledgeObjects, resetUnderstandingToPending, markUnderstandingTerminal, getUnderstandingRetries, saveUnderstandingRetries, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, getLlmUsageBreakdownToday, getRunCostReport, llmPriceProvenance, recordLlmUsage, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getClassificationCoverage, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState, tenantJwtModeEnabled, saveKnowledgeObjectEnrichment, profileDbModeEnabled, profileDbExclusiveEnabled, getProfileTelemetry, getProfileFromDb, diagnoseTenantJwt, recordProcessRun, listProcessRuns, saveMonitoringDeliveryState, getMonitoringDeliveryState, getLlmCostSince, getAdminCostsPerUser, listSourceArchitectureRows, getSourceModeShadowLastRun, listSourceCrawlTelemetry, readCronFairnessState, saveCronFairnessState } = require("./lib/helmut/storage");
 const llmBudgetLib = require("./lib/helmut/llm-budget");
 // OP-25: faire Mandantenreihenfolge der Mehrmandanten-Crons (Rotation nach aeltestem
 // Versuch statt alphabetisch). Reine Planung + Ausfuehrungsschleife, offline testbar.
 const cronFairness = require("./lib/helmut/cron-fairness");
+// OP-25 K1 (Schattenpfad, DEFAULT AUS): Trennung von globaler Erfassung und
+// mandatsbezogener Projektion. Ohne HELMUT_CRON_GLOBALPHASE wird davon nichts betreten.
+const cronGlobalphase = require("./lib/helmut/cron-globalphase");
 
 // P0-1: technischer Ausfuehrungsort + Laufkennung fuer Prozess-Laufzeit-Telemetrie
 // (Cron-Understanding, Briefing-Aufbau). Reine technische Metadaten, nie PII.
@@ -815,12 +818,23 @@ async function handleRequest(request, response) {
     // idempotent und selbst zeitbudgetiert.
     return handleAsync(response, async () => {
       const t0 = Date.now();
+      // R-6: die Laufkennung entsteht HIER, damit der Timeout-Catch denselben Lauf
+      // vermerken kann, den runCronForTenants persistent fortschreibt.
+      const laufId = helmutRunId("cron-crawl", t0);
+      // OP-25 K1: `cronSchwererPfad` ist ohne `HELMUT_CRON_GLOBALPHASE` exakt der bisherige
+      // Aufruf `runCronForTenants("crawl", (t) => runSourceCrawl(t), …)` — Default AUS.
       const result = await withTimeout(
-        runCronForTenants("crawl", (tenantId) => runSourceCrawl(tenantId), { deadlineMs: 270000 }),
+        cronSchwererPfad("crawl", { deadlineMs: 270000, runId: laufId, startedMs: t0 }),
         280000,
         "cron-crawl"
-      ).catch((error) => ({ ok: false, bounded: true, reason: "crawl-timeout", error: error && error.message }));
-      console.log(`[cron/crawl] ${Date.now() - t0}ms tenants=${result && result.tenants} bounded=${Boolean(result && result.bounded)}`);
+      ).catch(async (error) => {
+        const vermerk = await markiereAeusseresCronTimeout("crawl", laufId, t0);
+        return {
+          ok: false, bounded: true, reason: "crawl-timeout", error: error && error.message,
+          lauf: { laufId, timeoutVermerkGespeichert: Boolean(vermerk && vermerk.ok) }
+        };
+      });
+      console.log(`[cron/crawl] ${Date.now() - t0}ms tenants=${result && result.tenants} bounded=${Boolean(result && result.bounded)} lauf=${laufId}`);
       return result;
     });
   }
@@ -881,12 +895,20 @@ async function handleRequest(request, response) {
     return handleAsync(response, async () => {
       const t0 = Date.now();
       // Mandate aus der Datenbank; hartes Gesamtbudget 280s < maxDuration 300s.
+      const laufId = helmutRunId("cron-pipeline", t0);
+      // OP-25 K1: siehe /api/cron/crawl — ohne `HELMUT_CRON_GLOBALPHASE` unveraendert.
       const result = await withTimeout(
-        runCronForTenants("pipeline", (tenantId) => runSourceCrawl(tenantId), { deadlineMs: 270000 }),
+        cronSchwererPfad("pipeline", { deadlineMs: 270000, runId: laufId, startedMs: t0 }),
         280000,
         "cron-pipeline"
-      ).catch((error) => ({ ok: false, bounded: true, reason: "pipeline-timeout", error: error && error.message }));
-      console.log(`[cron/pipeline] ${Date.now() - t0}ms tenants=${result && result.tenants} bounded=${Boolean(result && result.bounded)}`);
+      ).catch(async (error) => {
+        const vermerk = await markiereAeusseresCronTimeout("pipeline", laufId, t0);
+        return {
+          ok: false, bounded: true, reason: "pipeline-timeout", error: error && error.message,
+          lauf: { laufId, timeoutVermerkGespeichert: Boolean(vermerk && vermerk.ok) }
+        };
+      });
+      console.log(`[cron/pipeline] ${Date.now() - t0}ms tenants=${result && result.tenants} bounded=${Boolean(result && result.bounded)} lauf=${laufId}`);
       return result;
     });
   }
@@ -1069,6 +1091,7 @@ async function handleRequest(request, response) {
       // Mandate aus der Datenbank; je Mandat Check + Push, isoliert und zeitbudgetiert.
       // Aeusseres Gesamt-Timeout 280s < maxDuration 300s: die Antwort kommt IMMER,
       // auch wenn ein einzelner Mandats-Check sein Einzelbudget ausschoepft.
+      const laufId = helmutRunId("cron-lage-check", t0);
       const summary = await withTimeout(runCronForTenants("lage-check", async (tenantId) => {
         const profile = await activeProfile(tenantId);
         const val = validateProfile(profile);
@@ -1087,9 +1110,15 @@ async function handleRequest(request, response) {
           push,
           ...(lageTimeout || pushTimeout ? { ok: false, bounded: true, reason: lageTimeout ? (lageCheck.reason || "lage-check-timeout") : "push-timeout" } : {})
         };
-      }, { deadlineMs: 240000 }), 280000, "cron-lage-check-gesamt")
-        .catch((error) => ({ ok: false, bounded: true, reason: "lage-check-timeout", error: error && error.message }));
-      console.log(`[cron/lage-check] ${Date.now() - t0}ms tenants=${summary && summary.tenants} bounded=${Boolean(summary && summary.bounded)}`);
+      }, { deadlineMs: 240000, runId: laufId }), 280000, "cron-lage-check-gesamt")
+        .catch(async (error) => {
+          const vermerk = await markiereAeusseresCronTimeout("lage-check", laufId, t0);
+          return {
+            ok: false, bounded: true, reason: "lage-check-timeout", error: error && error.message,
+            lauf: { laufId, timeoutVermerkGespeichert: Boolean(vermerk && vermerk.ok) }
+          };
+        });
+      console.log(`[cron/lage-check] ${Date.now() - t0}ms tenants=${summary && summary.tenants} bounded=${Boolean(summary && summary.bounded)} lauf=${laufId}`);
       return summary;
     });
   }
@@ -6102,8 +6131,12 @@ function sendMandateSelectionRequired(response, mandates = []) {
 // nachrechenbare Obergrenze ceil(n/k). Nicht begonnene Mandate werden NICHT als
 // versucht vermerkt und bleiben deshalb im naechsten Lauf vorn.
 // `HELMUT_CRON_FAIRNESS=off` ist der Rueckweg auf das alte Verhalten ohne Codeaenderung.
-async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000 } = {}) {
+async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000, runId = null } = {}) {
   const startedMs = Date.now();
+  // R-6: die Laufkennung kommt jetzt von AUSSEN, wenn der Aufrufer sie kennt. Nur so kann
+  // ein aeusserer Timeout-Catch (Promise.race, der NIE zurueckkehrt) genau DIESEN Lauf
+  // vermerken statt versehentlich den vorherigen.
+  const laufkennung = runId || helmutRunId(`cron-${cronName}`, startedMs);
   const { tenantIds, reason } = await tenantContext.resolveCronTenants();
   if (!tenantIds.length) {
     // EHRLICHER Grund statt pauschalem "nicht konfiguriert": eine Ladestoerung
@@ -6132,7 +6165,7 @@ async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000 } = 
         throw error;
       }
     },
-    runId: helmutRunId(`cron-${cronName}`, startedMs),
+    runId: laufkennung,
     deadlineMs,
     startedMs,
     staleMs: cronFairness.staleClaimMs(),
@@ -6172,6 +6205,12 @@ async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000 } = 
     + ` naechstes=${fairness.naechstesMandat || "-"}`
     + ` kapazitaet=${fairness.kapazitaet}`
     + ` obergrenzeLaeufe=${fairness.obergrenzeLaeufe === null ? "keine-garantie" : fairness.obergrenzeLaeufe}`
+    // R-6: Laufkennung + persistierter Laufzustand. Sie verbinden diese Zeile mit dem
+    // Laufdatensatz in der Ablage — und machen im Protokoll sichtbar, dass die Zeile nicht
+    // mehr die einzige vollstaendige Quelle ist. FEHLT die Zeile (aeusseres Zeitlimit),
+    // traegt der Laufdatensatz denselben Stand.
+    + ` lauf=${fairness.laufId || "-"}`
+    + ` laufzustand=${fairness.laufStatus || "-"}`
     + ` zustand=${fairnessAn ? (fairness.zustandGeladen && !fairness.zustandFehler ? "ok" : "gestoert") : "aus"}`);
   // SICHTBARKEIT (Incident 2026-07-25): vom Zeitbudget abgeschnittene Mandate
   // standen bisher nur im Antwort-Body, den niemand liest — vier aktive Mandate
@@ -6221,6 +6260,177 @@ async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000 } = 
     ohneFortschritt: Boolean(fairness.ohneFortschritt),
     fairness
   };
+}
+
+// =============================================================================================
+// OP-25 K1 — SCHATTENPFAD: globale Erfassung EINMAL, danach je Mandat nur die Projektion.
+// =============================================================================================
+// EINSPRUNG fuer die schweren Crons (`crawl`, `pipeline`). DEFAULT AUS:
+// ohne `HELMUT_CRON_GLOBALPHASE` ist der Rueckgabewert exakt derselbe Ausdruck wie vorher —
+// `runCronForTenants(cronName, (t) => runSourceCrawl(t), { deadlineMs, runId })`. Es gibt in
+// diesem Zweig kein zusaetzliches IO, keine zusaetzliche Abfrage, keinen zusaetzlichen Zustand.
+// Vertragstest: `scripts/cron-globalphase-test.js` Abschnitt „Flaggrenze".
+//
+// OP-25 K2.1 ERGAENZT den Einsprung um einen DRITTEN Pfad. Die Wahl trifft
+// `cronGlobalphase.waehleCronPfad()` an genau einer Stelle (fail closed, Default `alt`):
+//   `alt`         — unveraendert der heutige Produktionspfad,
+//   `globalphase` — K1 (globale Buendelung; durch K2 als nicht aktivierungsfaehig belegt),
+//   `kontext`     — K2.1 (globaler Abruf, kontextgebundene Vorgangsbildung).
+// Sind BEIDE Flaggen gesetzt, gewinnt der Altpfad — eine widerspruechliche Konfiguration darf
+// nie stillschweigend einen Schattenpfad scharf schalten.
+function cronSchwererPfad(cronName, { deadlineMs, runId, startedMs }) {
+  const wahl = cronGlobalphase.waehleCronPfad();
+  if (wahl.widerspruch) {
+    console.error(`[cron/${cronName}/pfadwahl] HELMUT_CRON_GLOBALPHASE UND HELMUT_CRON_GLOBALABRUF`
+      + " sind gleichzeitig gesetzt — die Absicht ist nicht eindeutig. Es laeuft der ALTPFAD.");
+  }
+  if (wahl.pfad === "alt") {
+    return runCronForTenants(cronName, (tenantId) => runSourceCrawl(tenantId), { deadlineMs, runId });
+  }
+  return runCronMitGlobalerPhase(cronName, {
+    deadlineMs, runId, startedMs,
+    buendelung: wahl.pfad === "kontext" ? "kontext" : "global"
+  });
+}
+
+// Der neue Ablauf. Er aendert WEDER Cron-Zeiten NOCH Zeitbudgets: `deadlineMs` ist unveraendert
+// (270 000 ms), es wird lediglich AUFGETEILT — globale Phase zuerst, Rest an die Mandatsphase.
+// Die Mandatsphase laeuft durch die UNVERAENDERTE Fairnessschleife `runCronForTenants`, damit
+// Reihenfolge, Losentscheid, Sperren, Laufdatensatz (R-6) und Fehlerisolation exakt gleich
+// bleiben — nur die Arbeit je Mandat ist eine andere.
+async function runCronMitGlobalerPhase(cronName, { deadlineMs = 270000, runId = null, startedMs = null, buendelung = "global" } = {}) {
+  const start = Number(startedMs) || Date.now();
+  const laufkennung = runId || helmutRunId(`cron-${cronName}`, start);
+  const { tenantIds } = await tenantContext.resolveCronTenants();
+  if (!tenantIds.length) {
+    // 0 Mandate ODER Ladestoerung: unveraendert der bestehende, ehrliche Pfad inklusive
+    // Systemfehler und Unterscheidung der beiden Faelle. Keine globale Phase ohne Mandate.
+    return runCronForTenants(cronName, async () => ({ skipped: true, reason: "keine-mandate" }), { deadlineMs, runId: laufkennung });
+  }
+
+  // REIHENFOLGE der globalen Phase = Fairnessreihenfolge. Bei knapper Zeit wird damit das
+  // Mandat zuerst versorgt, das am laengsten wartet. Blockierte Mandate haengen HINTEN an,
+  // fallen aber nicht heraus: ihre Quellen gehoeren in den globalen Korpus, auch wenn ihre
+  // Projektion in diesem Lauf ausfaellt (Vollstaendigkeit der Vereinigungsmenge).
+  let reihenfolge = tenantIds;
+  if (cronFairness.fairnessEnabled()) {
+    try {
+      const gelesen = await readCronFairnessState();
+      if (gelesen && gelesen.ok) {
+        const plan = cronFairness.planTenantOrder({
+          cronName, tenantIds, state: gelesen.state, nowMs: Date.now(), staleMs: cronFairness.staleClaimMs()
+        });
+        const geordnet = Array.isArray(plan && plan.order) ? plan.order : [];
+        reihenfolge = [...geordnet, ...tenantIds.filter((id) => !geordnet.includes(id))];
+      }
+    } catch (error) {
+      console.warn(`[cron/${cronName}/globalphase] Fairnessreihenfolge nicht lesbar (${error && error.message}) — uebergebene Reihenfolge.`);
+    }
+  }
+
+  // BUDGETAUFTEILUNG — keine Erhoehung. Die globale Phase bekommt hoechstens ihr bisheriges
+  // Erfassungsbudget (`HELMUT_CRAWL_GESAMTBUDGET_MS`, heute 240 000 ms) und nie mehr als die
+  // Restzeit abzueglich der Projektionsreserve; sie faellt dabei nie unter die Haelfte der
+  // Restzeit (sonst koennte eine wachsende Mandatszahl die Erfassung aushungern).
+  const aufteilung = cronGlobalphase.budgetAufteilung({
+    restMs: Math.max(0, (start + deadlineMs) - Date.now()),
+    mandate: tenantIds.length,
+    projektionMs: cronGlobalphase.projektionsBudgetMs(),
+    globalMaxMs: Number(process.env.HELMUT_CRAWL_GESAMTBUDGET_MS || 240000)
+  });
+
+  const globalStart = Date.now();
+  const global = await runGlobaleErfassung({
+    tenantIds: reihenfolge,
+    budgetMs: aufteilung.globalMs,
+    startedMs: globalStart,
+    runId: `${laufkennung}-global`,
+    buendelung
+  }).catch((error) => ({
+    datenstand: cronGlobalphase.datenstandVersiegeln(
+      cronGlobalphase.datenstandNeu({ laufId: `${laufkennung}-global`, startAt: globalStart, mandate: tenantIds.length }),
+      { nowMs: Date.now(), fehler: [{ schritt: "erfassung", grund: String((error && error.message) || "unbekannt"), fatal: true }] }
+    )
+  }));
+  const datenstand = global && global.datenstand;
+  const vermerk = cronGlobalphase.datenstandVermerk(datenstand);
+  const globalDauerMs = Date.now() - globalStart;
+  console.log(`[cron/${cronName}/globalphase] ${globalDauerMs}ms status=${vermerk.status} quellen=${vermerk.quellen}`
+    + ` rohdokumente=${vermerk.rohdokumente} verstanden=${vermerk.verstanden} frisch=${vermerk.frisch}`
+    + ` budgetGlobalMs=${aufteilung.globalMs} reserveMs=${aufteilung.projektionsReserveMs}`
+    + ` restMs=${Math.max(0, (start + deadlineMs) - Date.now())} lauf=${vermerk.laufId || "-"}`);
+
+  // KEINE PROJEKTION AUF EINEM UNBRAUCHBAREN DATENSTAND. Ein fehlgeschlagener oder ein noch
+  // nicht versiegelter globaler Lauf darf keine Mandatsprojektion erzeugen — die waere danach
+  // als „frisch gerechnet" sichtbar, obwohl ihr die Datengrundlage fehlt (CLAUDE.md §4.3/§4.4).
+  if (!cronGlobalphase.datenstandVerwendbar(datenstand)) {
+    const uebersprungen = Boolean(global && global.uebersprungen);
+    console.error(`[cron/${cronName}/globalphase] Datenstand nicht verwendbar (${vermerk.status})`
+      + ` — Mandatsphase NICHT gestartet (${tenantIds.length} Mandate).`);
+    if (!uebersprungen) {
+      await accounts.recordSystemError({
+        scope: `cron-${cronName}`,
+        message: `Globale Erfassung ${vermerk.status} — keine Mandatsprojektion in diesem Lauf`
+          + ` (${tenantIds.length} Mandate nicht aktualisiert, Lauf ${vermerk.laufId || "unbekannt"}).`,
+        path: `/api/cron/${cronName}`
+      }).catch(() => {});
+    }
+    return {
+      ok: false,
+      tenants: tenantIds.length,
+      durationMs: Date.now() - start,
+      results: [],
+      globalphase: { ...vermerk, dauerMs: globalDauerMs, uebersprungen, budget: aufteilung },
+      // Kein Mandat wurde begonnen: das ist ein Lauf OHNE Fortschritt, nicht ein stiller Erfolg.
+      ohneFortschritt: true
+    };
+  }
+
+  const restMs = Math.max(0, (start + deadlineMs) - Date.now());
+  const summary = await runCronForTenants(
+    cronName,
+    (tenantId) => runMandatsProjektion(tenantId, datenstand, { ausloeser: cronName }),
+    { deadlineMs: restMs, runId: laufkennung }
+  );
+  return {
+    ...summary,
+    durationMs: Date.now() - start,
+    globalphase: { ...vermerk, dauerMs: globalDauerMs, budget: aufteilung, restNachGlobalMs: restMs }
+  };
+}
+
+// R-6 (Beobachtbarkeitsluecke bei aeusserem Timeout): `withTimeout` ist ein `Promise.race`
+// und BEENDET die urspruengliche Promise nicht. Greift das aeussere Zeitlimit, kehrt
+// `runCronForTenants` NIE zurueck — kein Log, kein Systemfehler, kein Antwortkoerper.
+//
+// Dieser Vermerk behauptet deshalb NICHT, dass der Lauf beendet sei. Er haelt genau EINE
+// Tatsache fest: "zum Zeitpunkt X hatte der Lauf <laufId> noch nicht zurueckgegeben."
+// Schreibt die weiterlaufende Promise danach doch noch ihren Abschluss, hebt der (monotone
+// Verschmelzung, LAUF_RANG) den Zustand — der Timeout-Zeitpunkt bleibt daneben stehen.
+//
+// Hart begrenzt und wirft nie: dieser Pfad laeuft bei ~280 s eines 300-s-Fensters. Ein
+// haengender Vermerk darf die Antwort nicht kosten.
+async function markiereAeusseresCronTimeout(cronName, laufId, startedMs) {
+  if (!cronFairness.fairnessEnabled()) return { ok: false, uebersprungen: true, grund: "fairness-aus" };
+  try {
+    const vermerk = await withTimeout(
+      saveCronFairnessState(cronFairness.laufTimeoutPatch({
+        cronName, laufId, startAt: startedMs, nowMs: Date.now()
+      })),
+      5000,
+      `cron-${cronName}-timeoutvermerk`
+    );
+    if (!vermerk || !vermerk.ok) {
+      console.error(`[cron/${cronName}] Timeoutvermerk NICHT gespeichert: ${(vermerk && vermerk.fehler) || "unbekannt"}`);
+      return { ok: false, fehler: (vermerk && vermerk.fehler) || "unbekannt" };
+    }
+    console.error(`[cron/${cronName}] aeusseres Zeitlimit — Laufdatensatz ${laufId} als abgebrochen vermerkt`
+      + " (der Lauf selbst kann intern weiterlaufen).");
+    return { ok: true };
+  } catch (error) {
+    console.error(`[cron/${cronName}] Timeoutvermerk fehlgeschlagen: ${error && error.message}`);
+    return { ok: false, fehler: error && error.message };
+  }
 }
 
 // Cron-Autorisierung — FAIL CLOSED.
