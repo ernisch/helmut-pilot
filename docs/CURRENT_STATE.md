@@ -94,8 +94,10 @@ beim Betreiber.** Geänderte Dateien: `lib/helmut/cron-globalphase.js` (neu),
 `scripts/cron-globalphase-mutationsprobe.js` (neu), `docs/betrieb/cron-globalphase.md` (neu),
 `docs/betrieb/cron-fairness.md` (§9-Hinweis, §12 neu), `docs/betrieb/env-inventar.md`,
 `docs/ARCHITECTURE.md` (§7-Hinweis), `docs/datenmotor-restliste.md`, `docs/CURRENT_STATE.md`.
-Branch `claude/op25-k1-crons-capacity-pd1tvx`. **Nicht gemergt, nicht deployt, Flag nicht
-gesetzt** — Merge = Production-Deployment und bleibt Betreiberentscheidung.) ·
+Branch `claude/op25-k1-crons-capacity-pd1tvx`, **PR #200** (offen, kein Draft, **beide
+Pflicht-Checks grün**: `Syntax + Offline-Suiten` und `Browser-/Mobile-Smoke (Chromium)`, Lauf
+`30630934870`). **Nicht gemergt, nicht deployt, Flag nicht gesetzt** — Merge =
+Production-Deployment und bleibt Betreiberentscheidung.) ·
 (**Sprint R-6 — Zuverlässige Cron-Telemetrie bei
 Zeitüberschreitung. TEILWEISE ABGESCHLOSSEN: die Beobachtbarkeitslücke ist im Code behoben,
 offline bewiesen und mutationsgesichert; der rein lesende Production-Nachweis steht aus
