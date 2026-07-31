@@ -187,6 +187,20 @@ gesetzt**. **Die aktive Architektur ist damit unverändert `runSourceCrawl` je M
 Abschnitt beschreibt nur, wo der dormante Weg liegt. Kanonisch:
 [`betrieb/cron-globalphase.md`](betrieb/cron-globalphase.md).
 
+**Kontextgebundene Vorgangsbildung (OP-25 K2.1, gebaut 2026-07-31 — DORMANT).** K1 hat den
+Abruf global gemacht und damit unbeabsichtigt auch die **Vorgangsbildung**; K2 hat gemessen,
+dass genau das nicht aktivierungsfähig ist (Befund K1-1). **K2.1 trennt beides:** der Abruf
+bleibt global, das *lose* Clusterregime (§7a) wird an einen **Bündelungskontext** gebunden,
+das *strenge* Regime bleibt global und unverändert. Der Kontext ist die
+**Sichtbarkeitsmenge** — die Menge der Mandate, deren Quellenplan ein Dokument liefert;
+bewusst **nicht** die Mandats-ID, damit Quellen, die alle Mandate erhalten, **einen** Kontext
+bilden statt je Mandat dupliziert zu werden. Damit gilt strukturell: zwei Dokumente werden nur
+dann lose gebündelt, wenn **dieselben** Mandate beide sehen. Gebaut in
+`lib/helmut/vorgangskontext.js` (rein, IO-frei) plus der Option `buendelung` in
+`scheduler.runGlobaleErfassung`; liegt hinter `HELMUT_CRON_GLOBALABRUF`, **Default AUS, in
+Production nicht gesetzt**, und bei gleichzeitig gesetzten Flaggen gewinnt der **Altpfad**.
+Kanonisch: [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md).
+
 ### 7a · Vorgangsidentität (seit 2026-07-26, Betriebsbefund B4)
 
 **Fachliche Identität und technische Eindeutigkeit sind getrennt.** Vorher war die
@@ -212,7 +226,10 @@ paarweise Kante genügt und wirkt **transitiv**. *Streng* **zwischen Batches und
 beiden oberen Tabellenzeilen (Themenwurzel-Präfix, danach Kern gegen Kern). Welches Regime
 greift, hängt allein davon ab, ob zwei Dokumente **im selben Understanding-Batch** ankommen —
 also an der Cron-Struktur, nicht an der Fachlichkeit. Genau daran hängt Befund **K1-1**:
-[`betrieb/cron-globalphase.md`](betrieb/cron-globalphase.md) §8a.
+[`betrieb/cron-globalphase.md`](betrieb/cron-globalphase.md) §8a. **OP-25 K2.1** macht diese
+Batchgrenze erstmals zu einer *benannten und geprüften* Grenze statt zu einem Nebenprodukt der
+Cron-Struktur — allerdings nur im dormanten Schattenpfad, nicht im aktiven Weg:
+[`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md).
 
 Ein Vorgang bildet **genau ein politisches Ereignis** ab. Ob er das noch tut, ist
 messbar: seine Dokumente erneut clustern. Ein echter Vorgang bleibt **ein** Cluster

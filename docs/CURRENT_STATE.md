@@ -1,6 +1,101 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-31 (**Sprint OP-25 K2 — fachliche Absicherung der globalen
+**Letzte Aktualisierung:** 2026-07-31 (**Sprint OP-25 K2.1 — globaler Abruf, KONTEXTGEBUNDENE
+Vorgangsbildung. TEILWEISE ABGESCHLOSSEN: der neue Schattenpfad ist gebaut, offline bewiesen und
+mutationsgesichert; er ist in Production NICHT aktiviert, und genau das war der Auftrag.**
+**Ursache — aus K2 übernommen, nicht neu analysiert:** Helmut entscheidet „gehört zusammen" in
+ZWEI Regimen. *Lose* innerhalb eines Batches (`clusterRawDocuments`: EINE paarweise Kante genügt
+und wirkt TRANSITIV), *streng* zwischen Batches (`resolveVorgang`: Themenwurzel-Präfix UND Kern
+gegen Kern). **K1 hatte das lose Regime global gemacht** — deshalb konnten Quellen eines Mandats
+die Vorgangsidentität eines anderen verändern (Befund K1-1a/b/c). **Lösung, klein und additiv:**
+das *lose* Regime wird an einen **Bündelungskontext** gebunden, das *strenge* bleibt global und
+unverändert. **Der Kontext ist die SICHTBARKEITSMENGE** — die Menge der Mandate, deren
+Quellenplan ein Dokument liefert. **Bewusst NICHT die Mandats-ID**: Quellen, die alle Mandate
+erhalten, bilden dadurch EINEN Kontext statt je Mandat dupliziert zu werden; mandatseigene
+Quellen (`<mandats-id>-news`, Partei-, Ausschusssuchen) bilden automatisch je einen. Daraus folgt
+strukturell, nicht durch eine Regel: **werden zwei Dokumente lose gebündelt, sieht jedes Mandat,
+das das eine sieht, auch das andere.** **Phase-1-Bestandsprüfung, jeder der zwölf Schritte neu
+eingeordnet** ([`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §2) — **mit zwei
+Korrekturen an der K1-Tabelle:** Clustering und Understanding sind **nicht** „sicher global"
+(Kategorie A), sondern **zwingend kontextgebunden** (C); das Wissensobjekt ist **B**
+(mandantenneutral, aber die Kandidatensuche ist global und soll es bleiben). Kein Schritt bleibt
+„unklar". **Gemessenes Kernergebnis:** in **allen sechzehn** Fallfamilien (die dreizehn aus K2
+plus drei neue Grenzfälle: vier Mandate mit disjunkten geteilten Quellen, Personenquelle gegen
+fremde Ausschussquelle, gleicher Drucksachentyp mit anderer Nummer) liefert der K2.1-Pfad
+**exakt dieselbe Vorgangsgruppierung wie der heutige Altpfad** — auch in den **acht** Familien,
+in denen der K1-Pfad eine andere liefert (F4, F7, F9, F11, F12, F13, Z1, Z3). **Alle dreizehn
+Abnahmekriterien einzeln belegt** (Suite Abschnitt 4). **Ehrlich benannt, nicht weggeredet:**
+(1) K2.1 **verbessert** die Vorgangsbildung **nicht** — es erhält den heutigen Stand
+einschließlich seiner Schwächen: F10 (zwei verschiedene Ausschüsse, gleiches Formular) und Z2
+verschmelzen in **beiden** Pfaden falsch; das ist der Bestandsbefund „Formularvokabular" aus
+K2 §8a.2 und ausdrücklich nicht Gegenstand dieses Sprints. (2) K2.1 **verzichtet** auf die eine
+Verbesserung, die K1 gebracht hätte (F7: zwei Parteiquellen zur selben Debatte werden global
+korrekt zusammengeführt) — der bewusst gezahlte Preis für „nie loser als heute". (3) Die
+**Mandatsreihenfolge** wirkt in **genau denselben** drei Familien wie heute (F3, F7, F13) —
+Bestand des strengen Regimes, K2.1 ist nicht empfindlicher; die **Kontexteinteilung** selbst ist
+immer reihenfolgeunabhängig, die **Dokumentreihenfolge** nie wirksam. **Kapazität, gemessen**
+(alle DREI Pfade gegen denselben Produktionscode und dieselben Annahmen, deterministische
+Laufzeitsimulation, gezählt wird was WIRKLICH im 270-s-Fenster fertig wurde): **n=1 alt 1/1 ·
+K2.1 1/1 — und K2.1 ist dort 150 ms LANGSAMER** (ohne Entdoppelung gibt es nichts zu gewinnen) ·
+**n=2 beide 2/2, aber 215 320 ms gegen 180 470 ms** · **n=6 alt 2/6 mit 37 585 ms Überziehung →
+K2.1 6/6 ohne Überziehung** · **n=11 alt 2/11 → K2.1 11/11**. Grenzkosten je zusätzlichem Mandat
+**66 670 ms → 7 110 ms**, identisch zu K1. **Abrufwege unverändert 1 162 → 196** (K2.1 fasst die
+Vereinigungsmenge nicht an — dort liegt der ganze Gewinn). **Preis, benannt statt versteckt:** je
+Kontext ein zusätzlicher Sperr-Roundtrip von `runUnderstandingShadow` — **15 Kontexte bei elf
+Mandaten, rund 3 s = 3,3 % des 90-s-Verstehensbudgets**; das Budget wird über kumulative
+Stichtage **GETEILT, nicht erhöht**, und dieser Aufschlag steckt bewusst **nicht** in der
+Kapazitätstabelle (das Kostenmodell rechnet je Dokument und je Cluster, nicht je
+Understanding-Aufruf). **Flaggrenze:** **neues** Flag `HELMUT_CRON_GLOBALABRUF`, **Default AUS**,
+fail closed (nur `on`/`true`/`1`/`an` schalten ein), **nicht** über `helmut-flags.json` setzbar,
+vollständig im Env-Inventar dokumentiert. `HELMUT_CRON_GLOBALPHASE` wurde bewusst **nicht**
+weiterverwendet: seine Bedeutung schließt die als unsicher belegte globale Bündelung ein, ein
+Betreiber könnte am Namen nicht mehr erkennen, was er einschaltet. **Sind BEIDE Flaggen gesetzt,
+läuft der ALTPFAD** — fail closed bei Widerspruch, laut protokolliert. **Nicht angefasst:**
+`runSourceCrawl`, `vorgang-identity.js`, `understanding.js`, `crawler.js`, `cron-fairness.js`,
+Quellenplan, Landesmodulsperre, alle Zeitbudgets, alle Cron-Zeiten, alle Kostendeckel. Keine
+Migration, keine Warteschlange, keine neue Infrastruktur. **Tests (real ermittelt, kein Test als
+grün behauptet, der nicht lief):** neue Suite `vorgangskontext-test.js` **102/102** ·
+Mutationsprobe `vorgangskontext-mutationsprobe.js` **18/18 rot** (die dreizehn Pflichtmutationen
+des Auftrags plus fünf eigene) · `cron-globalphase-test.js` **176/176** (um die
+Drei-Pfade-Kapazitätsmessung erweitert; **zwei bestehende Zusagen mussten nachgezogen werden** —
+der Datenstandsvermerk hat zwei additive Felder, und die Pfadwahl liegt jetzt in
+`waehleCronPfad()`; beide Zusagen gelten unverändert und werden jetzt zweifach geprüft) ·
+`cron-globalphase-mutationsprobe` **17/17 rot** · `globalphase-buendelung` **56/56** +
+**15/15 rot** (K2-Analyse in diesen Branch übernommen) · Offline-Suite **180/194** gegen im
+eigenen Arbeitsbaum gemessene Basislinie `main` `3b72a88` **178/192** mit **identischer**
+Fehlschlagliste (14 umgebungsbedingte Suiten, Delta genau **+2** = die zwei neuen Suiten) ·
+Browser-/Mobile-Smoke **32/32** · `cron-fairness` **285/285** · `punkt29-fehlervertrag` **80/80** ·
+`punkt29-fix-mutationsprobe` **7/7 rot** · `pipeline-zeitbudget` **21/21** · `vorgangsidentitaet`
+**67/67** · `vorgangs-resolver` **54/54** · `vorgangs-beweisfamilien` **103/103** ·
+`vorgangs-lebenszyklus` **81/81** · `herausgeber-identitaet` **109/109** · `cross-tenant-security`
+**43/43** · `source-architecture` **99/99** · `env-inventar` **38/38** · Syntaxprüfung aller
+geänderten Dateien grün. **Sicherheitsgrenzen eingehalten:** keine Production-Schreibzugriffe,
+kein manueller Cron-Lauf, keine Migration, keine Env-/Budget-/Cron-/Zeitbudget-/Quellenänderung,
+keine Aktivierung von M8/Berlin/Brandenburg, keine neuen Testmandate, kein Merge, kein
+Deployment, **0 KI-Aufrufe, 0,00 USD. Production-Auswirkung: keine.** **Verbleibende Risiken
+(vollständig in [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §8):** kein
+Production-Nachweis · konstruierte Fallfamilien · Bestandsbefund F10/Z2 ·
+Reihenfolgeempfindlichkeit des strengen Regimes · Kontextzahl wächst mit der Mandatszahl ·
+Kapazitätsgrenze bei elf Mandaten (eines bleibt je Lauf übrig, `ceil(11/10)=2`, identisch zu K1) ·
+zwei Schattenpfade gleichzeitig im Code. **Rückbaupfad:** Flag auf `off` → sofort Altpfad ohne
+Codeänderung; Revert des PR → Pfad vollständig weg; nach erfolgreichem Nachweis kann der K1-Pfad
+entfernt werden (eigener kleiner Aufräumsprint). **Kein Datenrückbau nötig — es entstehen keine
+neuen Tabellen, Spalten oder Migrationen.** Geänderte Dateien: `lib/helmut/vorgangskontext.js`
+(neu), `lib/helmut/cron-globalphase.js`, `lib/helmut/scheduler.js`, `server.js`,
+`scripts/vorgangskontext-geruest.js` (neu), `scripts/vorgangskontext-test.js` (neu),
+`scripts/vorgangskontext-mutationsprobe.js` (neu), `scripts/cron-globalphase-test.js`,
+`scripts/cron-globalphase-mutationsprobe.js`, `docs/betrieb/vorgangskontext.md` (neu),
+`docs/betrieb/cron-globalphase.md`, `docs/betrieb/env-inventar.md`, `docs/ARCHITECTURE.md`,
+`docs/datenmotor-restliste.md`, `docs/CURRENT_STATE.md` — plus die aus dem K2-Analysebranch
+übernommenen `scripts/globalphase-buendelung-test.js` und
+`scripts/globalphase-buendelung-mutationsprobe.js`. Branch
+`claude/op25-k2-secure-architecture-8hycfv`. **Der K2-Analysebranch
+`claude/op25-k2-global-bundling-axgbaf` ist damit inhaltlich vollständig gesichert (Commit
+`553c1ed` per Cherry-Pick übernommen, Tests unverändert grün); er wird NICHT separat als PR
+geführt und bleibt nur als Beleg stehen.** **Nächster Schritt:** Merge-Entscheidung des
+Betreibers; danach Aktivierung ausschließlich über die Vercel-Env und rein lesender
+Production-Nachweis über mindestens 24 h.) ·
+(**Sprint OP-25 K2 — fachliche Absicherung der globalen
 Bündelung. TEILWEISE ABGESCHLOSSEN: der Auftrag „K1-1 endgültig bewerten" ist erfüllt, die
 Bewertung fällt aber NICHT zugunsten einer Aktivierung aus — es steht jetzt eine
 Betreiberentscheidung an. Keine Aktivierung, kein Flag gesetzt, keine Production-Änderung,

@@ -673,6 +673,52 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Testmandate unverändert AUS.** **Empfehlung: `HELMUT_CRON_GLOBALPHASE` bleibt AUS**, bis über
   die Optionen in [`betrieb/cron-globalphase.md`](betrieb/cron-globalphase.md) §8a.5 entschieden
   ist. Kanonisch: dieselbe Datei, **§8a**.
+- **Status K2.1 (2026-07-31, Sprint „Globaler Abruf, kontextgebundene Vorgangsbildung"):
+  BEFUND K1-1 IST IM NEUEN PFAD AUSGESCHLOSSEN. Schattenpfad gebaut, offline bewiesen,
+  mutationsgesichert, NICHT aktiviert.** **Ursache, aus K2 übernommen und nicht neu
+  analysiert:** das *lose* Clusterregime (`clusterRawDocuments`, eine paarweise Kante genügt,
+  transitiv wirksam) entscheidet über die Vorgangsidentität, und K1 hatte es global gemacht.
+  **Lösung:** das lose Regime wird an einen **Bündelungskontext** gebunden, das *strenge*
+  Regime (`resolveVorgang`) bleibt global und unverändert. **Der Kontext ist die
+  SICHTBARKEITSMENGE** — die Menge der Mandate, deren Quellenplan ein Dokument liefert.
+  Bewusst **nicht** die Mandats-ID: Quellen, die alle Mandate erhalten, bilden dadurch
+  **einen** Kontext statt je Mandat dupliziert zu werden; mandatseigene Quellen
+  (`<mandats-id>-news`, Partei-, Ausschusssuchen) bilden automatisch je einen. Daraus folgt
+  strukturell: zwei Dokumente werden nur dann lose gebündelt, wenn **dieselben** Mandate beide
+  sehen — eine fremde Mandatsquelle kann die Vorgangsidentität also nicht verändern.
+  **Gemessenes Kernergebnis:** in **allen sechzehn** Fallfamilien (die dreizehn aus K2 plus
+  drei neue Grenzfälle) liefert der K2.1-Pfad **exakt dieselbe Vorgangsgruppierung wie der
+  heutige Altpfad** — auch in den **acht** Familien, in denen der K1-Pfad eine andere liefert
+  (F4, F7, F9, F11, F12, F13, Z1, Z3). **Ehrlich dazu:** K2.1 **verbessert** die
+  Vorgangsbildung nicht, es erhält den heutigen Stand einschließlich seiner Schwächen (F10 und
+  Z2 verschmelzen in **beiden** Pfaden falsch — Bestandsbefund, Formularvokabular, K2 §8a.2),
+  und es verzichtet auf die eine Verbesserung, die K1 gebracht hätte (F7). **Kapazität,
+  gemessen** (alle drei Pfade, derselbe Produktionscode, dieselben Annahmen, gezählt wird was
+  wirklich im 270-s-Fenster fertig wurde): n=1 **alt 1/1 · K2.1 1/1** (K2.1 ist dort **150 ms
+  langsamer** — ohne Entdoppelung kein Gewinn) · n=2 **2/2 gegen 2/2**, aber 215 320 ms gegen
+  **180 470 ms** · n=6 **alt 2/6 mit 37 585 ms Überziehung → K2.1 6/6 ohne Überziehung** ·
+  n=11 **alt 2/11 → K2.1 11/11**. Grenzkosten je zusätzlichem Mandat **66 670 ms → 7 110 ms**
+  (identisch zu K1). **Abrufwege unverändert 1 162 → 196.** **Preis, benannt:** je Kontext ein
+  zusätzlicher Sperr-Roundtrip — 15 Kontexte bei elf Mandaten, rund 3 s = **3,3 %** des
+  90-s-Verstehensbudgets; das Budget wird **geteilt, nicht erhöht**. **Flaggrenze:** neues Flag
+  `HELMUT_CRON_GLOBALABRUF`, **Default AUS**, fail closed, **nicht** über `helmut-flags.json`
+  setzbar; sind **beide** Flaggen gesetzt, läuft der **Altpfad**. `HELMUT_CRON_GLOBALPHASE`
+  wurde bewusst **nicht** weiterverwendet — seine Bedeutung schließt die als unsicher belegte
+  globale Bündelung ein. **Tests:** neue Suite `vorgangskontext-test.js` **102/102**,
+  Mutationsprobe `vorgangskontext-mutationsprobe.js` **18/18 rot**, `cron-globalphase`
+  **176/176** (um die Drei-Pfade-Kapazitätsmessung erweitert), `cron-globalphase-mutationsprobe`
+  **17/17 rot**, `globalphase-buendelung` **56/56** + **15/15 rot**, Offline-Suite **180/194**
+  gegen im eigenen Arbeitsbaum gemessene Basislinie `main` `3b72a88` **178/192** mit
+  **identischer** Fehlschlagliste (14 umgebungsbedingte Suiten, Delta genau **+2** = die zwei
+  neuen Suiten), Browser-/Mobile-Smoke **32/32**, `cron-fairness` **285/285**,
+  `punkt29-fehlervertrag` **80/80**, `pipeline-zeitbudget` **21/21**, `vorgangsidentitaet`
+  **67/67**, `vorgangs-resolver` **54/54**, `vorgangs-beweisfamilien` **103/103**,
+  `vorgangs-lebenszyklus` **81/81**, `herausgeber-identitaet` **109/109**,
+  `cross-tenant-security` **43/43**, `source-architecture` **99/99**, `env-inventar` **38/38**.
+  **0 KI-Aufrufe, 0,00 USD, keine Migration, kein Production-Zugriff, kein Flag gesetzt, keine
+  Cron-/Budget-/Quellenänderung, Berlin/Brandenburg/M8/Testmandate unverändert AUS.**
+  **Empfehlung: mergefähig als Schattenpfad; Aktivierung bleibt Betreiberentscheidung.**
+  Kanonisch: [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md).
 - **Ausgangsbefund (2026-07-29, vor diesem Sprint):** **Ursache belegt, Umfang noch nicht vermessen** (Befund B5).
   Der Crawl-Cron endet reproduzierbar nach ~280 s mit `bounded=true`
   (`[cron/crawl] 280001ms tenants=undefined bounded=true`, gemessen 28.07. 04:00, 28.07. 20:00
