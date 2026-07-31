@@ -1,0 +1,94 @@
+name: Claude Visible Routine Bridge
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  issues:
+    types: [opened]
+
+jobs:
+  claude:
+    if: >-
+      github.actor == 'ernisch' &&
+      (
+        (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+        (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+        (github.event_name == 'issues' && (contains(github.event.issue.title, '@claude') || contains(github.event.issue.body, '@claude')))
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+
+    concurrency:
+      group: claude-routine-${{ github.repository }}-${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
+      cancel-in-progress: false
+
+    steps:
+      - name: Start visible Claude Code session
+        id: routine
+        env:
+          ROUTINE_URL: ${{ secrets.CLAUDE_ROUTINE_URL }}
+          ROUTINE_TOKEN: ${{ secrets.CLAUDE_ROUTINE_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${ROUTINE_URL}" || -z "${ROUTINE_TOKEN}" ]]; then
+            echo "Required Claude routine secrets are missing." >&2
+            exit 1
+          fi
+
+          request_text="$(jq -r '
+            if .comment then
+              .comment.body
+            elif .issue then
+              ((.issue.title // "") + "\n\n" + (.issue.body // ""))
+            else
+              ""
+            end
+          ' "${GITHUB_EVENT_PATH}")"
+
+          jq -n --arg text "${request_text}" '{text: $text}' > request.json
+
+          http_code="$(curl --silent --show-error             --output response.json             --write-out '%{http_code}'             --request POST "${ROUTINE_URL}"             --header "Authorization: Bearer ${ROUTINE_TOKEN}"             --header "anthropic-beta: experimental-cc-routine-2026-04-01"             --header "anthropic-version: 2023-06-01"             --header "Content-Type: application/json"             --data-binary @request.json)"
+
+          if [[ "${http_code}" -lt 200 || "${http_code}" -ge 300 ]]; then
+            echo "Claude routine request failed with HTTP ${http_code}." >&2
+            jq -r '.error.message // "No error message returned."' response.json >&2
+            exit 1
+          fi
+
+          session_url="$(jq -r '.claude_code_session_url // empty' response.json)"
+          session_id="$(jq -r '.claude_code_session_id // empty' response.json)"
+
+          if [[ -z "${session_url}" || -z "${session_id}" ]]; then
+            echo "Claude routine response did not contain a session URL and ID." >&2
+            exit 1
+          fi
+
+          {
+            echo "session_url=${session_url}"
+            echo "session_id=${session_id}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Post session link
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
+          SESSION_URL: ${{ steps.routine.outputs.session_url }}
+          SESSION_ID: ${{ steps.routine.outputs.session_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          body="Claude hat eine neue sichtbare Sitzung gestartet: [${SESSION_ID}](${SESSION_URL})"
+
+          jq -n --arg body "${body}" '{body: $body}' > comment.json
+
+          curl --fail-with-body --silent --show-error             --request POST             --url "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}/comments"             --header "Authorization: Bearer ${GH_TOKEN}"             --header "Accept: application/vnd.github+json"             --header "X-GitHub-Api-Version: 2022-11-28"             --data-binary @comment.json
