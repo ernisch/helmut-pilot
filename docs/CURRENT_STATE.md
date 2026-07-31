@@ -1,12 +1,24 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-30 (**Sprint Phase-1-Punkt 29A — deterministischer Belastungs-
+**Letzte Aktualisierung:** 2026-07-31 (**Sprint Phase-1-Punkt 29A — deterministischer Belastungs-
 und Fehlervertrag (Fehlerpfade und Wiederholungen), geschnitten in 29A (Repository-Vertrag) und 29B
 (rein lesender Production-Nachweis). TEILWEISE ABGESCHLOSSEN — 29A vollständig erfüllt, 29B offen,
 und es wurden VIER echte Produktionsfehler gefunden (nicht behoben — Befundregel).**
+**Nachtrag 2026-07-31 (Etappe 1 des Integrationssprints): auf `main` `1e34761` (= Merge PR #189)
+rebasiert, die Merge-Sperre „nicht vor 25B" ist AUFGEHOBEN.** Begründung, belegt: (a) **Befund
+B25-2** ([`roadmap/punkt-25-e2e-nachweis.md`](roadmap/punkt-25-e2e-nachweis.md) §6c, mit PR #189 in
+`main`) — der reguläre Pilotlauf am 2026-07-30 **20:04:27 UTC** blieb **idempotent**
+(`wiederholungen` 0 → 1, keine neue Generation), weil `matched_features` bewusst nicht in
+`computeInputFingerprint` eingehen; 25B hat damit **keinen zusagbaren Abschlusstermin**, und eine
+Sperre dagegen wäre unbefristet. (b) Der zweite Sperrgrund — Doku-Überschneidung in
+`CURRENT_STATE.md`/`phase_1_checkliste.md` mit dem 25B-Folgeauftrag — ist mit dem Merge von PR #189
+und diesem Rebase **aufgelöst** (Konflikt in `CURRENT_STATE.md` von Hand gelöst, der 25B-Block ist
+vollständig erhalten). **Unverändert:** keine Zeile Produktionscode, kein Lauf, kein
+Production-Zugriff; Punkt 29 bleibt **⏳ teilweise**; 25B bleibt offen.
 **Startprüfung bestanden:** Arbeitsbaum sauber, Branch `claude/phase-1-punkt-29a-deterministic-0v63lz`
-vom aktuellen `main` `75d7286` (= Merge PR #186), PR #185 (`cf290ab`) und PR #186 vollständig in
-`main`, Punkt 25 ⏳ (25B wartet auf den ersten regulären Lauf — von diesem Sprint NICHT berührt:
+ursprünglich vom `main` `75d7286` (= Merge PR #186), jetzt auf `1e34761` (= Merge PR #189);
+PR #185 (`cf290ab`), PR #186 und PR #189 vollständig in
+`main`, Punkt 25 ⏳ (25B offen — von diesem Sprint NICHT berührt:
 kein Lauf, kein Trigger, keine Env-/Cron-/Lock-/Budget-/Quellen-Änderung), Punkt 27 ⏳, Punkt 29
 vorher ☐, Punkt 30 blockiert, OP-25 getrennt, Berlin/Brandenburg/M8 AUS; keine überschneidende
 Arbeit an Punkt 29 (offene PRs #159/#148/#132/#117/#115/#112/#111/#88/#70/#8 betreffen andere
@@ -71,8 +83,8 @@ neuen Mandate, keine Production-Daten im Repository, 25B-Wartesituation unberüh
 **Statusgrenzen:** Checkliste Zeile 29 jetzt ⏳ (29A erfüllt; ✅ erst nach 29B UND den vier
 Fix-Sprints); Punkt 25 bleibt ⏳ (25B offen), Punkt 27 bleibt ⏳, OP-25 getrennt und unverändert
 (ihr Production-Nachweis fließt in 29B ein, wird getrennt bewertet), M8 AUS, Punkt 30 blockiert.
-**Nächster Schritt:** Merge-Entscheidung über den 29A-PR — **nicht vor Abschluss von 25B mergen**
-(Betreibervorgabe; außerdem Doku-Überschneidung mit dem 25B-Folgeauftrag). Danach
+**Nächster Schritt:** Merge-Entscheidung über den 29A-PR (Sperre gegen 25B aufgehoben — siehe
+Nachtrag oben). Danach
 Betreiberentscheidung über die Reihenfolge der Fix-Sprints (Empfehlung: P29-2/P29-4 zuerst —
 kleinste Eingriffe), dann 29B nach [`roadmap/punkt-29-fehlervertrag.md`](roadmap/punkt-29-fehlervertrag.md) §6.
 Geänderte Dateien: `scripts/punkt29-fehlervertrag-test.js` (neu),
@@ -129,8 +141,10 @@ Berlin/Brandenburg/M8 unverändert AUS, keine Production-Rohdaten im Repository 
 Ausgaben pseudonymisiert). **Statusgrenzen:** Zeile 25 bleibt ⏳ (25A erfüllt, 25B offen); Punkt 27A
 bleibt erfolgreich abgeschlossen, Punkt 27 gesamt ⏳, 27B durch Punkt 15 blockiert; OP-25 unverändert;
 M8 AUS. **Nächster Schritt:** Betreiberentscheidung zu B25-2; danach Folgeauftrag 25B aus
-[`roadmap/punkt-25-e2e-nachweis.md`](roadmap/punkt-25-e2e-nachweis.md) §6. **PR #187 (Punkt 29A)
-wartet vereinbarungsgemäß auf den 25B-Abschluss und ist danach zu rebasen.** Geänderte Dateien:
+[`roadmap/punkt-25-e2e-nachweis.md`](roadmap/punkt-25-e2e-nachweis.md) §6. ~~**PR #187 (Punkt 29A)
+wartet vereinbarungsgemäß auf den 25B-Abschluss und ist danach zu rebasen.**~~ **Überholt am
+2026-07-31:** die Sperre ist aufgehoben (Begründung im 29A-Block oben), PR #187 ist auf `1e34761`
+rebasiert. Geänderte Dateien:
 `docs/roadmap/punkt-25-e2e-nachweis.md` (§6 neu gefasst, B25-2 kanonisch), `docs/roadmap/phase_1_checkliste.md`
 (Zeile 25 ergänzt), `docs/CURRENT_STATE.md`. Branch `claude/phase-1-punkt-25-e2e-bcsru5` (frisch von
 `75d7286`), PR folgt.) · (**Sprint Phase-1-Punkt 25 — Ende-zu-Ende-Nachweis für den

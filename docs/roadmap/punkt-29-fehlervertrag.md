@@ -1,6 +1,7 @@
 # Punkt 29 — Fehlerpfade und Wiederholungen (Belastungs- und Fehlervertrag)
 
-**Stand:** 2026-07-30 · **Kanonisch für:** Checklisten-Zeile 29 (Schnitt 29A/29B, Umfang,
+**Stand:** 2026-07-31 (Rebase auf `main` `1e34761`, Merge-Sperre gegen 25B aufgehoben — §11)
+· **Kanonisch für:** Checklisten-Zeile 29 (Schnitt 29A/29B, Umfang,
 Belege, Befunde) · **Code/Tests:** [`scripts/punkt29-fehlervertrag-test.js`](../../scripts/punkt29-fehlervertrag-test.js),
 [`scripts/punkt29-mutationsprobe.js`](../../scripts/punkt29-mutationsprobe.js),
 [`scripts/punkt29-befundproben.js`](../../scripts/punkt29-befundproben.js)
@@ -34,8 +35,11 @@ Der Punkt ist — wie die Punkte 25/26/27 — geschnitten in:
   29B ist ausschließlich die rein lesende Verifikation **natürlich auftretender**
   Fehlerzustände (§6).
 
-**Abhängigkeiten:** 29A hängt an keinem anderen Punkt. 29B braucht reguläre Läufe
-(dieselbe Wartesituation wie 25B, aber ein **getrennter** Auftrag) und wird durch die
+**Abhängigkeiten:** 29A hängt an keinem anderen Punkt. 29B braucht reguläre Läufe —
+ein **getrennter** Auftrag mit einer **anderen** Wartebedingung als 25B: 25B ist durch
+Befund **B25-2** (Matching-Idempotenz, [`punkt-25-e2e-nachweis.md`](punkt-25-e2e-nachweis.md) §6c)
+an einen **veränderten Eingabefingerabdruck** gebunden, 29B dagegen an **natürlich
+auftretende Fehlerzustände**. 29B wird zudem durch die
 **Befunde P29-1…P29-4 (§5)** mitbestimmt: zwei der gefundenen Fehler betreffen genau
 die Ehrlichkeit der Lauftelemetrie, die 29B lesend prüfen würde.
 
@@ -357,8 +361,11 @@ drei-profile-e2e · pilot-/berlin-/brandenburg-e2e-vertrag · matching-relevanz-
 
 ## 10 · Verhältnis zu anderen Punkten
 
-- **Punkt 25:** bleibt teilweise abgeschlossen (25B wartet auf den ersten regulären
-  Production-Lauf). Dieser Sprint hat **nichts** an Läufen, Cron, Quellen, Locks,
+- **Punkt 25:** bleibt teilweise abgeschlossen. **Statuspräzisierung (2026-07-31, PR
+  #189):** 25B wartet nicht mehr nur „auf den ersten regulären Lauf" — der ist am
+  2026-07-30 20:04:27 UTC eingetreten und blieb **idempotent**. 25B wartet laut Befund
+  **B25-2** auf einen Lauf mit **verändertem Eingabefingerabdruck** und davor auf eine
+  Betreiberentscheidung. Dieser Sprint hat **nichts** an Läufen, Cron, Quellen, Locks,
   Budgets oder Env geändert und beeinflusst 25B nicht.
 - **Punkt 27:** bleibt ⏳ (27B durch Punkt 15 blockiert). Unberührt.
 - **OP-25 (Cron-Fairness):** getrennt und unverändert; ihr Production-Nachweis
@@ -371,6 +378,24 @@ drei-profile-e2e · pilot-/berlin-/brandenburg-e2e-vertrag · matching-relevanz-
 
 ## 11 · Status und nächster Schritt
 
+> **Aufgehobene Sperre (2026-07-31).** Frühere Fassungen dieses Abschnitts trugen die
+> Auflage „**nicht vor Abschluss von 25B mergen**". Sie ist **überholt** und wurde
+> entfernt. Zwei belegte Gründe:
+> 1. **Befund B25-2** ([`punkt-25-e2e-nachweis.md`](punkt-25-e2e-nachweis.md) §6c,
+>    mit PR **#189** in `main`): 25B hat **keinen zusagbaren Abschlusstermin** mehr.
+>    Der Fix aus PR #185 verändert nur `matched_features` — die gehen bewusst **nicht**
+>    in `computeInputFingerprint` ein, deshalb bleiben reguläre Läufe des
+>    Pilotmandanten idempotent (gemessen: Lauf 2026-07-30 20:04:27 UTC, `wiederholungen`
+>    0 → 1, keine neue Generation). Eine Merge-Sperre gegen ein Ereignis ohne
+>    vorhersagbaren Zeitpunkt wäre eine **unbefristete** Sperre.
+> 2. **Die Doku-Überschneidung ist aufgelöst.** Der zweite Sperrgrund war der
+>    Konflikt in `CURRENT_STATE.md`/`phase_1_checkliste.md` mit dem 25B-Folgeauftrag.
+>    PR #189 ist gemergt; dieser Branch ist auf `main` (`1e34761`) rebasiert und der
+>    Konflikt ist aufgelöst — der 25B-Block bleibt vollständig erhalten.
+>
+> **Unverändert:** 29A ändert weiterhin keine Zeile Produktionscode, löst keinen Lauf
+> aus und berührt die 25B-Wartesituation nicht. Punkt 29 bleibt **⏳ teilweise**.
+
 **Punkt 29: ⏳ teilweise** — 29A erfüllt (79/79 + 12/12 Mutationen + Bestand),
 29B (rein lesender Production-Nachweis, §6) offen; zusätzlich stehen die
 Fix-Sprints zu P29-1…P29-4 aus (eigene, freigabepflichtige Aufträge — ein Punkt
@@ -378,8 +403,6 @@ Fix-Sprints zu P29-1…P29-4 aus (eigene, freigabepflichtige Aufträge — ein P
 solange vier belegte Fehlerpfad-Befunde offen sind).
 
 **Nächster Schritt:** Merge-Entscheidung über den 29A-PR (nur Tests + Doku, keine
-Produktionswirkung) — **nicht vor Abschluss von 25B mergen** (Betreibervorgabe:
-der wartende 25B-Nachweis hat Vorrang; dieser PR ändert zwar keine Läufe, aber die
-Dokumentationsdateien überschneiden sich). Danach: Betreiberentscheidung über die
+Produktionswirkung). Danach: Betreiberentscheidung über die
 Reihenfolge der Fix-Sprints (Empfehlung: P29-2 und P29-4 zuerst — kleinste
 Eingriffe, klarste Wirkung), dann 29B nach §6.
