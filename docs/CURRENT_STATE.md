@@ -1,6 +1,49 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-31 (**Sprint OP-25 K2.1 — globaler Abruf, KONTEXTGEBUNDENE
+**Letzte Aktualisierung:** 2026-07-31 (**Sprint 25B — rein lesender Production-Nachweis.
+ERFOLGREICH ABGESCHLOSSEN. Punkt 25 ist damit VOLLSTÄNDIG abgeschlossen; Checklisten-Zeile 25
+steht auf ✅, Stand der Phase-1-Checkliste 14 ✅ · 12 ⏳ · 4 ☐.** Nach dem Merge von PR #190
+(Rezeptanhebung `legacy_relevance_v1`→`v2`) und dem Deployment `dpl_BK8WrEEPw3HxmXJfu2pT2eNSNGLv`
+(production, Alias `helmut-pilot.vercel.app`, **READY 10:43:27 UTC**) hat der **reguläre
+`crawl`-Cron** den Pilotmandanten am **16:04:28 UTC** erreicht — 5½ Stunden nach dem Deployment,
+ohne jeden manuellen Eingriff. **Der Lauf ist eine ECHTE neue Generation** (`wiederholungen=0`,
+20 Zeilen veröffentlicht), nicht bloß ein hochgezählter idempotenter Treffer — genau das, was
+Befund B25-2 zuvor unmöglich machte. **Vorher/Nachher am Piloten:** Rezeptversion
+`legacy_relevance_v1`→**`v2`** · Eingabefingerabdruck `160cd166…`→**`56d40016…`** ·
+**falsche Ausschussbelege 2 → 0** (Ränge 1 und 15, Vorgangsebene `land`, „Arbeit und Soziales") ·
+die **Rang-1-Karte** trägt jetzt „Betrifft deine Partei Die Linke." statt des falschen
+Ausschussbelegs. **Im gesamten Production-Bestand jetzt 0 falsche Ausschussbelege.** Alt-Zeilen
+sind **abgelöst, nicht gelöscht** (Pilot: 57 abgelöst, 20 aktuell) — die Historie bleibt prüfbar.
+**Nachweis:** neues, wiederholbares Werkzeug `scripts/punkt25b-production-nachweis.js` —
+**23 von 23 Prüfungen grün**: regulärer Cron-Auslöser · vollständig · aktives Bundestagsmandat ·
+echte neue Generation · Zeitreihenfolge Deployment < Start < Ende · Fingerabdruckwechsel ·
+Engine-/Vektorversion unverändert · Laufkennung und Lauffingerabdruck an jeder Zeile ·
+Mandantenzuordnung · Ränge 1–20 lückenlos · je Vorgang genau eine aktuelle Zeile ·
+`berechnet_am` im Laufzeitraum · **kein falscher Ausschussbeleg, je Zeile mit der echten
+`ausschussBelegZulaessig` nachgerechnet (0 von 20)** · fail-closed bei fehlender Ebene ·
+sichtbare Erklärung deckt sich je Beleg nach **Art und Wert** mit den persistierten Merkmalen ·
+Belegpflicht · Begründung und Signale persistiert · Entscheidungen mandantenrein (322) ·
+Lauf ohne Fehlereintrag. **Schreibschutz strukturell** (eine HTTP-Funktion mit GET-Literal,
+Pfad-Allowlist ohne `rpc`, kein `storage.js` im Prozess), Mandanten pseudonymisiert (`BT-01`…).
+**Grenzen eingehalten:** ausschließlich lesende Zugriffe, **0 KI-Aufrufe, 0,00 USD**, kein
+manueller Lauf, kein Trigger, kein Backfill, keine Datenkorrektur, kein Merge.
+**Ehrliche Korrektur:** die früher dokumentierten **5** falschen Belege waren zum Messzeitpunkt
+nur noch **2** — die 3 des zweiten Mandanten hatte ein natürlicher Lauf am 30.07. um 16:04 UTC
+bereits abgelöst; die Zahl 5 galt am 31.07. um 00:45 UTC und war überholt.
+**Ein Testfehler wurde dabei gefunden und behoben** (nicht in der Produktion): die erste Fassung
+der Erklärungs-Zusicherung verglich Beleg-**Objekte** `{art,text}` per `String(b)` und schlug
+deshalb bei 18 von 20 Zeilen fehl; die Produktionsdaten waren durchgehend konsistent. Die
+Prüfung ist jetzt korrekt **und strenger** (Art und Wert je Beleg) plus Belegpflicht-Gegenprobe.
+**Neue benannte Beobachtung B25-3:** zwei aktive Bundestagsprofile tragen 47 bzw. 30 aktuelle
+Zeilen **ohne** `rezept_version` und ohne Laufzeile (Altbestand vor der Auditpersistenz) — ohne
+falsche Belege; sie werden bei ihrem nächsten regulären Lauf regulär nachgezogen, **kein
+Backfill nötig**. **5 von 6** Profilen standen zum Messzeitpunkt noch auf der alten
+Rezeptversion — der vorhergesagte Verlauf, die Anhebung wirkt je Mandant genau einmal.
+**Statusgrenze: 29B bleibt offen** (wartet auf natürlich auftretende Fehlerzustände; künstliche
+Fehler sind verboten). **Nächster Schritt:** Merge-Entscheidung des Betreibers über den reinen
+Dokumentations-PR. Branch `claude/p25b-production-nachweis`. Kanonisch:
+[`roadmap/punkt-25-e2e-nachweis.md`](roadmap/punkt-25-e2e-nachweis.md) §6d.) ·
+(**Sprint OP-25 K2.1 — globaler Abruf, KONTEXTGEBUNDENE
 Vorgangsbildung. TEILWEISE ABGESCHLOSSEN: der neue Schattenpfad ist gebaut, offline bewiesen und
 mutationsgesichert; er ist in Production NICHT aktiviert, und genau das war der Auftrag.**
 **Ursache — aus K2 übernommen, nicht neu analysiert:** Helmut entscheidet „gehört zusammen" in
