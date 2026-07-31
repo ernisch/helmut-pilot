@@ -1,27 +1,22 @@
 # Punkt 25 — Ende-zu-Ende-Nachweis für den Pilotmandanten (Bund)
 
-**Kanonische Nachweisdokumentation.** Stand: **2026-07-31** (25A-Sprint plus
-Production-Nachprüfungen vom 30./31.07.).
-Zustand: **teilweise abgeschlossen** — 25A vollständig belegt; von den 17
-Abnahmekriterien für 25B sind **16 erfüllt**, das Deployment-`READY` ist inzwischen
-belegt. Offen ist allein ein regulärer Lauf **des Pilotmandanten** mit veränderter
-Eingabe — blockiert durch **Befund B25-2** (§6c): der Fix von PR #185 verändert nur
-`matched_features`, und die gehen bewusst nicht in den Idempotenz-Fingerabdruck ein,
-weshalb der Pilotlauf am 30.07. um 20:04 UTC idempotent blieb und die falschen
-Alt-Zeilen (inkl. Rang 1) stehen ließ.
+**Kanonische Nachweisdokumentation.** Stand: **2026-07-31, 16:25 UTC**.
+Zustand: **PUNKT 25 VOLLSTÄNDIG ABGESCHLOSSEN** — 25A und 25B sind beide belegt.
+**Alle 17 Abnahmekriterien für 25B sind erfüllt** (§6d, 22/22 Prüfpunkte grün).
 
-**Stand 2026-07-31 zu B25-2: die Blockade ist auf der Codeseite aufgelöst.** Von den
-in §6c aufgezählten Optionen ist **(b) Rezeptversion anheben** umgesetzt —
-`legacy_relevance_v1` → `v2`, eine Zeile in `lib/helmut/matching-contract.js`,
-kanonisch begründet und deterministisch belegt in
-[`../matching-nachvollziehbarkeit.md`](../matching-nachvollziehbarkeit.md) §53
-(Nachweisvertrag `scripts/matching-rezeptversion-v2-test.js`, 39/39). Damit ändert
-sich der Eingabefingerabdruck **jedes** Mandanten genau einmal; der nächste
-**reguläre** Lauf rechnet neu und löst die falschen Alt-Zeilen ab, danach ist wieder
-alles idempotent. **Kein manueller Lauf, kein Backfill, kein Schreibzugriff.**
-**25B bleibt offen** — der rein lesende Nachweis am tatsächlich erfolgten regulären
-Lauf des Pilotmandanten steht weiterhin aus (§6b/§6-Folgeauftrag); er ist jetzt
-allerdings terminlich absehbar statt unbestimmt.
+Der Nachweis gelang am **2026-07-31 um 16:04:28 UTC** an einem regulären `crawl`-Cron-Lauf
+des Pilotmandanten: `wiederholungen=0` (echte neue Generation), 20 Zeilen neu berechnet,
+**beide** bis dahin falschen Ausschussbelege des Piloten abgelöst — darunter der
+**Rang-1**-Fall. Der Gesamtbestand falscher Ausschussbelege ist damit **5 → 0**.
+
+**Was die Blockade gelöst hat, ehrlich benannt:** nicht der natürliche Betrieb, sondern
+Option **(b)** aus §6c — die Anhebung der Rezeptversion `legacy_relevance_v1` → `v2`
+(Commit `69350c9`, „fix(matching): Rezeptversion … (Befund B25-2)", kanonisch in
+[`../matching-nachvollziehbarkeit.md`](../matching-nachvollziehbarkeit.md) §53). **Befund
+B25-2 ist damit bestätigt und behoben:** ohne diese Versionsänderung wäre der Pilot
+weiter idempotent geblieben (gemessen: 0 von 20 Top-Wissensobjekten verändert). Der
+gewertete Lauf selbst war ein **regulärer Cron-Lauf** — kein manueller Lauf, kein
+Backfill, kein Schreibzugriff.
 
 ---
 
@@ -227,18 +222,13 @@ ausschließlich 34 · `decisions`-Abgleich 10/10 exakt.
 | Keine Production-Schreibzugriffe durch den Nachweis | ✅ ausschließlich `GET` |
 | **Lauf gehört zum aktiven Pilotmandanten** | ❌ **offen** — der Lauf gehört einem anderen Mandanten (OP-25-Rotation) |
 
-### 6b · Was noch fehlt
+### 6b · Was fehlte — **erledigt am 2026-07-31, 16:04:28 UTC** (Nachweis §6d)
 
-Genau ein Beleg: **ein vollständig abgeschlossener regulärer Lauf des
-Pilotmandanten nach dem Deployment**, mit Ablösung seiner **2** falschen Alt-Zeilen
-(darunter der **Rang-1**-Fall „Betrifft deinen Ausschuss Arbeit und Soziales und
-deine Partei Die Linke." auf einem Vorgang der Ebene `land`) und 0 neuen falschen
-Belegen.
-
-Stand der 5 falschen Alt-Zeilen (alle `aktuell=true`, alle vor dem Deployment
-gerechnet, **unverändert sichtbar**): 2 beim Pilotmandanten (Ränge 1 und 15,
-gerechnet 2026-07-30 07:56:55 UTC), 3 bei einem zweiten Mandanten (Ränge 8, 10, 15,
-gerechnet 2026-07-29 16:04:09 UTC).
+> **Historisch.** Bis zum 31.07. 16:04 UTC fehlte genau ein Beleg: ein vollständig
+> abgeschlossener regulärer Lauf **des Pilotmandanten** nach dem Deployment, mit
+> Ablösung seiner 2 falschen Alt-Zeilen (darunter der Rang-1-Fall) und 0 neuen
+> falschen Belegen. Dieser Beleg liegt seit dem 16:00-`crawl`-Cron vor — siehe §6d.
+> Der Gesamtbestand falscher Ausschussbelege ist von **5 auf 0** gefallen.
 
 ### 6c · Befund B25-2 — warum das nicht von selbst passiert (belegt, freigabepflichtig)
 
@@ -309,6 +299,58 @@ ob weiter abgewartet wird oder ob eine der freigabepflichtigen Optionen die
 Neuberechnung auslösen soll. Ohne diese Entscheidung ist ein Abschlusstermin für
 25B nicht zusagbar.
 
+### 6d · 25B ERFÜLLT — der reguläre Pilot-Lauf vom 2026-07-31, 16:04:28 UTC
+
+**Alle 17 Abnahmekriterien erfüllt; 22 von 22 Prüfpunkten grün** (rein lesend, `GET`-only,
+Mandate pseudonymisiert).
+
+**Der Lauf**
+
+| Merkmal | Wert |
+|---|---|
+| Start / Ende | **2026-07-31 16:04:28,729 → 16:04:29,734 UTC** |
+| Auslöser | `crawl` (regulärer 16:00-Cron; kein manueller, kein diagnostischer Lauf) |
+| Status | `vollstaendig` |
+| Generation | **`wiederholungen = 0`** — echte neue Generation, keine idempotente Wiederholung |
+| Veröffentlicht / abgelöst | 20 / 0 |
+| Versionen | `engine=legacy-shadow-1` · **`rezept=legacy_relevance_v2`** · `vektor=feature-hash-256-v1` |
+| Mandant | der aktive Pilotmandant |
+
+**Die Ablösung der beiden falschen Zeilen** (beide Wissensobjekte der Ebene `land`, beide
+nennen weiterhin einen gleichnamigen Landesausschuss — der Beleg entfällt, weil die Ebene
+nicht `bund` ist):
+
+| Zeile | Begründung **vorher** | Begründung **jetzt** |
+|---|---|---|
+| **Rang 1** (`ko-vg-4273…c490`, KO nennt „Landtagsausschuss Familie, Soziales und Jugend") | „Betrifft deinen **Ausschuss Arbeit und Soziales** und deine Partei Die Linke." | **„Betrifft deine Partei Die Linke."** |
+| **Rang 15** (`ko-vg-12e7…7eb5`, KO nennt „Sozialausschuss", „Gesundheitsausschuss") | „Betrifft deinen **Ausschuss Arbeit und Soziales** und deinen Schwerpunkt Gesundheit." | **„Betrifft deinen Schwerpunkt Gesundheit."** |
+
+**Kein Kollateralschaden:** von den 20 Zeilen tragen **13** weiterhin einen Ausschussbeleg —
+**alle** bei Wissensobjekten der Ebene `bund`. Ebenenverteilung des Laufs: `bund` 17,
+`land` 2, `international` 1. **0 neue falsche Belege.** Jede Zeile mit Ausschussbeleg wurde
+zusätzlich mit der echten Produktionsfunktion `ausschussBelegZulaessig` gegen die
+KO-Zuständigkeit nachgerechnet.
+
+**Weitere geprüfte Kriterien:** Ränge 1–20 lückenlos · Versionsachsen laufeinheitlich ·
+Zeitreihenfolge Deployment (13:22:02) < Laufstart (16:04:28) < `berechnet_am` ≤ Laufende ·
+sichtbare Erklärung (`erklaerungAusErgebnis`) **deckungsgleich** mit der persistierten
+Begründung · Belegpflicht gewahrt (keine erfundene Erklärung ohne Beleg) · keine Begründung
+behauptet einen Ausschuss ohne Beleg · **keine** fehlgeschlagenen oder hängenden
+Matchingläufe seit dem Deployment.
+
+**Gesamtbestand falscher Ausschussbelege: 5 → 0.** Die drei Zeilen des zweiten Mandanten
+fielen am 31.07. um 04:05 UTC (§6a2), die zwei des Piloten am 31.07. um 16:04 UTC.
+
+**Was die Blockade gelöst hat — ehrlich getrennt von der Wertung:** Der Lauf rechnete neu,
+weil die **Rezeptversion** mit Commit `69350c9` von `legacy_relevance_v1` auf `v2` angehoben
+wurde (Option **(b)** aus §6c, umgesetzt in einem parallelen Sprint, kanonisch in
+[`../matching-nachvollziehbarkeit.md`](../matching-nachvollziehbarkeit.md) §53). **Befund
+B25-2 ist damit bestätigt und behoben:** ohne diese Änderung wäre der Pilot weiter idempotent
+geblieben — noch am 31.07. um 08:15 UTC waren **0 von 20** seiner Top-Wissensobjekte verändert.
+Die Wertung als 25B-Nachweis bleibt davon unberührt: gefordert war ein **regulärer,
+vollständig abgeschlossener Lauf des Pilotmandanten nach dem Deployment**, und genau das ist
+der 16:04-Cron-Lauf. Kein manueller Lauf, kein Backfill, kein Schreibzugriff.
+
 ## 7 · Sicherheitsgrenzen, Datenschutz, unveränderte Bereiche
 
 - **Keine Änderung an aktiver Produktionslogik, Datenmodell, Migration, Cron,
@@ -369,8 +411,13 @@ Neuberechnung auslösen soll. Ohne diese Entscheidung ist ein Abschlusstermin f�
    Die verworfenen Alternativen bleiben dokumentiert: weiter abwarten (Termin nicht
    zusagbar) · gezielter Neulauf des Piloten (manueller Lauf) · Backfill
    (Production-Schreibzugriff) — **keine davon wurde ausgeführt oder vorbereitet.**
-2. Sobald eine echte neue Generation des Piloten vorliegt: Folgeauftrag 25B aus §6
-   ausführen (rein lesend). **Erst danach darf Zeile 25 auf ✅ gehen** — die
-   restlichen 16 Kriterien sind bereits belegt.
-3. Unabhängig davon: PR #187 (Punkt 29A) wartet vereinbarungsgemäß auf den
-   25B-Abschluss und ist danach auf den neuen `main` zu rebasen.
+2. ~~Sobald eine echte neue Generation des Piloten vorliegt: Folgeauftrag 25B ausführen~~
+   — **erledigt (2026-07-31, 16:04:28 UTC).** Der reguläre `crawl`-Cron-Lauf des
+   Pilotmandanten hat neu gerechnet (`wiederholungen=0`), beide falschen Belege sind
+   abgelöst, **22 von 22** Prüfpunkten grün (§6d). **Zeile 25 steht auf ✅.**
+3. **Punkt 25 ist abgeschlossen — keine offene Arbeit mehr an diesem Punkt.** Was
+   bleibt, ist reine Beobachtung im Normalbetrieb: der nächste Pilot-Lauf ist wieder
+   idempotent (der Fingerabdruck ändert sich durch die Versionsanhebung genau einmal),
+   und der Bestand falscher Ausschussbelege steht auf **0**.
+4. Unabhängig davon: PR #187 (Punkt 29A) wartete vereinbarungsgemäß auf den
+   25B-Abschluss — diese Sperre ist damit **aufgehoben**.

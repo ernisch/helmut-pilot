@@ -1,6 +1,47 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-31 (**Sprint OP-25 K2.1 — globaler Abruf, KONTEXTGEBUNDENE
+**Letzte Aktualisierung:** 2026-07-31 (**Phase-1-Punkt 25 — 25B ERFÜLLT, PUNKT 25 VOLLSTÄNDIG
+ABGESCHLOSSEN. Rein lesende Abnahme, kein Code, keine Production-Änderung.** **Nicht mit OP-25
+verwechseln** (Cron-Fairness) — anderer Punkt. **Der Nachweis:** der reguläre `crawl`-Cron-Lauf des
+Pilotmandanten am **2026-07-31, 16:04:28,729 → 16:04:29,734 UTC**, Status `vollstaendig`,
+**`wiederholungen=0`** (echte neue Generation, keine idempotente Wiederholung), 20 veröffentlicht /
+0 abgelöst, `engine=legacy-shadow-1` · `rezept=legacy_relevance_v2` · `vektor=feature-hash-256-v1`.
+**Alle 17 Abnahmekriterien erfüllt, 22 von 22 Prüfpunkten grün.** **Beide** bis dahin falschen
+Ausschussbelege des Piloten sind **abgelöst** — beide auf Wissensobjekten der Ebene `land`, die
+weiterhin einen gleichnamigen Landesausschuss nennen: **Rang 1** „Betrifft deinen **Ausschuss
+Arbeit und Soziales** und deine Partei Die Linke." → **„Betrifft deine Partei Die Linke."**;
+**Rang 15** „… **Ausschuss Arbeit und Soziales** und deinen Schwerpunkt Gesundheit." → „Betrifft
+deinen Schwerpunkt Gesundheit.". **Kein Kollateralschaden:** **13 von 20** Zeilen behalten ihren
+Ausschussbeleg, **alle** bei Ebene `bund` (Ebenenverteilung des Laufs: bund 17 · land 2 ·
+international 1); **0 neue falsche Belege**; jede Zeile mit Ausschussbeleg zusätzlich mit der
+echten Produktionsfunktion `ausschussBelegZulaessig` gegen die KO-Zuständigkeit nachgerechnet.
+Weiter belegt: Ränge 1–20 lückenlos · Versionsachsen laufeinheitlich · Zeitreihenfolge Deployment
+(13:22:02) < Laufstart (16:04:28) < `berechnet_am` ≤ Laufende · sichtbare Erklärung
+(`erklaerungAusErgebnis`) **deckungsgleich** mit der persistierten Begründung · Belegpflicht
+gewahrt · keine Begründung behauptet einen Ausschuss ohne Beleg · **keine** fehlgeschlagenen oder
+hängenden Matchingläufe seit dem Deployment. **GESAMTBESTAND falscher Ausschussbelege: 5 → 0**
+(3 Zeilen des zweiten Mandanten am 31.07. 04:05 UTC, die 2 des Piloten am 31.07. 16:04 UTC).
+**EHRLICH BENANNT — was die Blockade gelöst hat:** nicht der natürliche Betrieb, sondern die
+Anhebung der **Rezeptversion** `legacy_relevance_v1` → `v2` mit Commit `69350c9` („fix(matching):
+Rezeptversion … (Befund B25-2)") aus einem **parallelen Sprint** — das ist Option (b) aus der
+B25-2-Optionsliste. **Befund B25-2 ist damit bestätigt und behoben:** ohne diese Änderung wäre der
+Pilot weiter idempotent geblieben; noch am 31.07. um 08:15 UTC waren **0 von 20** seiner
+Top-Wissensobjekte verändert (Schwelle Rang 20 = 0,2329). Die Wertung als 25B-Nachweis bleibt
+unberührt: gefordert war ein **regulärer, vollständig abgeschlossener Lauf des Pilotmandanten nach
+dem Deployment** — genau das ist der 16:04-Cron-Lauf. **Ebenfalls ehrlich:** meine Vorhersage vom
+selben Morgen („der Pilot kommt am 16:00-Lauf voraussichtlich nicht dran") war **falsch** — er kam
+dran. **Sicherheitsgrenzen:** ausschließlich lesende Zugriffe (HTTPS-`GET`), **0 KI-Aufrufe,
+0,00 USD**, kein manueller Lauf, kein Backfill, keine Schreibzugriffe, keine Migration, keine
+Env-/Flag-/Cron-/Budgetänderung, Berlin/Brandenburg/M8 unverändert AUS, Mandate in allen Ausgaben
+pseudonymisiert. **Statusgrenzen:** Checkliste **Zeile 25 jetzt ✅** (Stand 14 ✅ · 12 ⏳ · 4 ☐);
+Punkt 27 bleibt ⏳ mit 27B durch Punkt 15 blockiert; OP-25 (Cron-Fairness) getrennt und unverändert;
+M8 AUS. **Aufgehoben:** die Merge-Sperre von PR #187 (Punkt 29A) wartete auf den 25B-Abschluss.
+**Nächster Schritt:** keine offene Arbeit an Punkt 25; PR #192 (Wirksamkeitsnachweis vom 04:05-Lauf,
+CI grün) und PR #193 (OP-25-Production-Nachweis) sind weiterhin offen und liegen beim Betreiber.
+Geänderte Dateien: `docs/roadmap/punkt-25-e2e-nachweis.md` (§6d neu, Kopf/§6b/§10 nachgezogen),
+`docs/roadmap/phase_1_checkliste.md` (Zeile 25 ✅, Zähler), `docs/CURRENT_STATE.md`. Branch
+`claude/punkt-25b-abschluss` (nur Doku), PR folgt.) ·
+(**Sprint OP-25 K2.1 — globaler Abruf, KONTEXTGEBUNDENE
 Vorgangsbildung. TEILWEISE ABGESCHLOSSEN: der neue Schattenpfad ist gebaut, offline bewiesen und
 mutationsgesichert; er ist in Production NICHT aktiviert, und genau das war der Auftrag.**
 **Ursache — aus K2 übernommen, nicht neu analysiert:** Helmut entscheidet „gehört zusammen" in
