@@ -67,7 +67,10 @@ ein Lauf mit äußerem Zeitlimit). Geänderte Dateien: `lib/helmut/cron-fairness
 `scripts/cron-fairness-test.js`, `scripts/berlin-abnahmeprofil-test.js`,
 `docs/betrieb/cron-fairness.md` (§11 neu, §4/§5/§6/§8 nachgezogen),
 `docs/datenmotor-restliste.md`, `docs/CURRENT_STATE.md`. Branch
-`claude/cron-telemetry-timeout-sg8emb`.) ·
+`claude/cron-telemetry-timeout-sg8emb`, **PR #199** (offen, kein Draft, `mergeable_state:
+clean`, beide Pflicht-Checks grün: `Syntax + Offline-Suiten` und
+`Browser-/Mobile-Smoke (Chromium)`, Lauf `30625243467`). **Nicht gemergt, nicht deployt** —
+Merge = Production-Deployment und bleibt Betreiberentscheidung.) ·
 (**Sprint B25-2-Auflösung — Matching-Rezeptversion
 `legacy_relevance_v1` → `v2`. ERFOLGREICH ABGESCHLOSSEN (repo-seitig; Merge und damit die
 Wirkung stehen beim Betreiber).** **Ausgangslage belegt:** `origin/main` = `071f91c`
