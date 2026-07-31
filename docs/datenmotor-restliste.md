@@ -721,6 +721,25 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   **194/194 Suiten**, `Browser-/Mobile-Smoke (Chromium)` gruen), **PR #201**, nicht gemergt.
   **Empfehlung: mergefähig als Schattenpfad; Aktivierung bleibt Betreiberentscheidung.**
   Kanonisch: [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md).
+- **Status K2.2 (2026-07-31, Sprint „Production-Aktivierungsfreigabe", rein lesend):
+  BLOCKIERT — nicht aktiviert, keine Production-Änderung.** **Überholt gegenüber K2.1:** PR #201
+  **ist gemergt** (14:44:53 UTC) und deployt — `dpl_BkhKkPSAMEoYPzFbSQqUebkTSGzz`, Commit
+  `255df013`, `target: production`, **`READY` 14:45:11 UTC**, kein neueres Deployment; die dort
+  genannte CI-Laufnummer `30638964148` ist überholt (Pflicht-Checks am gemergten Kopf `7b0a3e2`:
+  Lauf **`30639121215`**, beide `success`; Push-Lauf auf `main` für `255df013`: **`30639915579`
+  `success`**). **Entscheidender Befund:** dieses Deployment hat **0 reguläre Cron-Läufe**
+  ausgeführt (nächster pfadrelevanter Termin `pipeline` 16:00 UTC) — es existiert damit **keine
+  gültige Altpfad-Basislinie auf diesem Stand**, und die drei offenen Nachweise **R-6**, **25B**
+  und **29B** hängen alle an genau solchen Läufen. **R-6 wäre nach einer Aktivierung nicht mehr
+  erreichbar**: er verlangt einen Lauf am äußeren Zeitlimit, und K2.1 beseitigt gerade diese
+  Überziehung (gemessen n=6: alt 2/6 mit +37 585 ms → K2.1 6/6 ohne Überziehung). **Flaggrenze
+  repositoryseitig vollständig belegt** (Default AUS, fail closed, beide Flaggen → Altpfad,
+  `helmut-flags.json` ausgeschlossen, M18 rot); **der Wert der Vercel-Production-Env ist aus einer
+  Cloud-Sitzung nicht lesbar** (bekannte Sechs-Kanäle-Grenze) und bleibt Betreiberprüfung.
+  **Testzahlen gegen den gemergten Commit reproduziert**, Quellen (163 Wege, 9 Pakete), Budgets,
+  Cron-Zeiten sowie Berlin/Brandenburg/M8/Testmandate read-only als **unverändert** belegt.
+  **GO 12/14 · drei NO-GO-Kriterien greifen.** Aktivierungs-, Rollback- und Nachweisplan:
+  [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) **§10**.
 - **Ausgangsbefund (2026-07-29, vor diesem Sprint):** **Ursache belegt, Umfang noch nicht vermessen** (Befund B5).
   Der Crawl-Cron endet reproduzierbar nach ~280 s mit `bounded=true`
   (`[cron/crawl] 280001ms tenants=undefined bounded=true`, gemessen 28.07. 04:00, 28.07. 20:00
