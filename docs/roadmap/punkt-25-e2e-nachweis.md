@@ -1,8 +1,14 @@
 # Punkt 25 — Ende-zu-Ende-Nachweis für den Pilotmandanten (Bund)
 
-**Kanonische Nachweisdokumentation.** Stand: 2026-07-30 (Sprint Punkt 25A).
-Zustand: **teilweise abgeschlossen** — 25A vollständig belegt, 25B wartet auf den
-ersten regulären Production-Lauf nach dem Deployment von PR #185.
+**Kanonische Nachweisdokumentation.** Stand: **2026-07-31** (25A-Sprint plus
+Production-Nachprüfungen vom 30./31.07.).
+Zustand: **teilweise abgeschlossen** — 25A vollständig belegt; von den 17
+Abnahmekriterien für 25B sind **16 erfüllt**, das Deployment-`READY` ist inzwischen
+belegt. Offen ist allein ein regulärer Lauf **des Pilotmandanten** mit veränderter
+Eingabe — blockiert durch **Befund B25-2** (§6c): der Fix von PR #185 verändert nur
+`matched_features`, und die gehen bewusst nicht in den Idempotenz-Fingerabdruck ein,
+weshalb der Pilotlauf am 30.07. um 20:04 UTC idempotent blieb und die falschen
+Alt-Zeilen (inkl. Rang 1) stehen ließ. **Betreiberentscheidung nötig.**
 
 ---
 
@@ -157,59 +163,138 @@ Eine Änderung der Lage-Sortierung (z. B. Entscheidungsstufe vor Ähnlichkeit)
 wäre eine sichtbare Produktänderung → eigener, freigabepflichtiger Sprint;
 fachlich verwandt mit Befund M-8 (Top-N ohne Schwellenwert).
 
-## 6 · 25B — Production-Nachweis (Stand 2026-07-30, ~14:30 UTC)
+## 6 · 25B — Production-Nachweis (Stand 2026-07-31, 00:45 UTC)
 
-**Bereits belegt (rein lesend, `node scripts/befund-27a2-production-messung.js`,
-Wiederholung der Messung aus PR #184 nach dem Merge von PR #185, `cf290ab`,
-gemergt 13:21:45 UTC):**
+**Kurzfassung:** 25B ist **nicht abgeschlossen** und — das ist der neue, belegte
+Befund — mit reinem Abwarten regulärer Läufe **auch nicht absehbar abschließbar**.
+Von 17 Abnahmekriterien sind **16 erfüllt**; das offene ist die Zugehörigkeit des
+Post-Deployment-Laufs zum Pilotmandanten. Ursache ist **Befund B25-2** (§6c), nicht
+Zufall oder Wartezeit.
 
-- 6 aktive Bundestagsprofile × 1 806 Wissensobjekte = **10 836 Paare**.
-- **Qualifizierte falsche Ausschussbelege NACHHER: 0** (VORHER: 14) — die
-  Kern-Erwartung des Sprintauftrags ist erfüllt.
-- Belege gesamt VORHER 276 → NACHHER 260: **16 entfallen** (14 `land` + 2 `kommune`),
-  **0 neu**, in **10 836/10 836** Paaren ist außer dem Ausschussbeleg alles
-  byte-identisch, Score-Delta ausschließlich **34**, 13 Stufenwechsel,
-  Ähnlichkeit/Rang unverändert (kein Vektoreingriff).
-- Abgleich mit gespeicherten `decisions`: **10/10** Scores exakt identisch zur
-  lokalen VORHER-Rechnung; 9 wechseln durch den Fix die Stufe, 7 stehen heute auf
-  „Sofort reagieren".
-- Persistierter Bestand: 290 `matching_results`-Zeilen, davon **5 aktuelle Zeilen
-  mit qualifiziert falschem Ausschussbeleg** — alle aus Läufen **vor** dem Merge
-  (`…20260730075654…` 07:56:55 UTC und `…20260729160408…` 16:04 UTC). Erwartet:
-  sie verschwinden mit dem nächsten regulären Lauf des jeweiligen Mandanten.
-- 0 KI-Aufrufe, 0,00 USD, ausschließlich HTTPS-`GET` (technischer Schreibschutz
-  der Messdatei, offline bewiesen durch `befund-27a2-schreibschutz-test.js` 54/54).
+### 6a · Was inzwischen vollständig belegt ist
 
-**Noch offen (deshalb Punkt 25 nur teilweise abgeschlossen):**
+**Deployment `READY` — Lücke geschlossen (2026-07-30, rein lesend über die
+Vercel-Deployment-API, die in dieser Sitzung erstmals verfügbar war):**
 
-1. **Deployment `READY`** für den Merge-Commit `cf290ab`: in dieser Sitzung nicht
-   belegbar — keine Vercel-Werkzeuge, `helmut-pilot.vercel.app` durch die
-   Egress-Policy gesperrt, GitHub-Token ohne `deployments`-/`statuses`-Leserecht
-   (dieselbe dokumentierte Grenze wie in PR #184). Ersatznachweis: die
-   Lauftelemetrie (`process_runs.commit_ref` bzw. `matching_runs`) des ersten
-   Laufs nach dem Merge.
-2. **Mindestens eine `matching_results`-Zeile aus einem regulären, vollständig
-   abgeschlossenen Lauf NACH dem Deployment**, zugehörig zum aktiven
-   Pilotmandanten. Der jüngste sichtbare Lauf (07:56:55 UTC) liegt **vor** dem
-   Merge — es existiert noch kein geeigneter Lauf. **Kein manueller Lauf wurde
-   gestartet, kein Cron/Trigger eingerichtet, keine automatische Überwachung.**
+| Deployment | Commit | Ziel | Zeitachse (UTC) |
+|---|---|---|---|
+| `dpl_HFU8JjcREEFX4YXESsk7ua8uEhog` | `cf290ab` (Merge **PR #185**) | production, Alias `helmut-pilot.vercel.app` | Merge 13:21:45 → Build 13:21:50 → **`READY` 13:22:02** |
+| `dpl_HLasm9hNVti4mJLobwGGmGHP2atQ` | `75d7286` (Merge **PR #186**) | production | 14:25:00 → `READY` (nur Tests + Doku, Laufzeitlogik identisch) |
 
-**Nächste reguläre Termine (tatsächlich aktive Konfiguration, `vercel.json`):**
-`pipeline` **16:00 UTC** (erreicht je Lauf einen Mandanten, Rotation nach
-OP-25-Fairness) · `crawl` **20:00 UTC** und **04:00 UTC** · `understanding`
-21:30/05:30 UTC. Der erste Kandidat für einen qualifizierenden Lauf ist damit der
-16:00-UTC-Pipeline-Lauf am 2026-07-30, sonst 20:00 UTC (crawl) bzw. Folgetermine.
+Damit ist die in PR #184 und im ersten Durchgang benannte Grenze („Vercel-Werkzeuge
+fehlen, Egress gesperrt, Token ohne `deployments`-Recht") **aufgelöst**; die
+Startzusage „Deployment eindeutig `READY` und enthält den Merge von PR #185" ist
+belegt, nicht mehr nur plausibel.
 
-**Folgeauftrag 25B (klar umrissen):** Nach einem vollständig abgeschlossenen
-regulären Lauf des aktiven Pilotmandanten mit `berechnet_am` > Deployment-Zeitpunkt:
-(1) rein lesend prüfen, dass der Lauf regulär (Cron-Auslöser), vollständig und dem
-Pilotmandanten zugeordnet ist; (2) `node scripts/befund-27a2-production-messung.js`
-erneut ausführen — Erwartung unverändert „QUALIFIZIERTE Faelle NACHHER: 0", **und**
-die 5 falschen Alt-Zeilen des betroffenen Mandanten sind abgelöst, **0** neue
-falsche Belege, Rang/Ähnlichkeit unverändert; (3) Erscheinen/Nichterscheinen in der
-Lage samt sichtbarer Erklärung gegen die persistierten Felder prüfen; (4) zeitliche
-Reihenfolge (Deployment → Lauf → Zeilen) und Laufzuordnung dokumentieren;
-(5) keinerlei Schreibzugriffe.
+**Messung nach dem Deployment** (`node scripts/befund-27a2-production-messung.js`,
+rein lesend, HTTPS-`GET`, 0 KI-Aufrufe, 0,00 USD): 6 aktive Bundestagsprofile ×
+1 806 Wissensobjekte = **10 836 Paare** · **qualifizierte falsche Ausschussbelege
+NACHHER 0** (VORHER 14) · 16 Belege entfallen (14 `land` + 2 `kommune`) · **0 neu**
+· 10 836/10 836 Paare außerhalb des Ausschussbelegs byte-identisch · Score-Delta
+ausschließlich 34 · `decisions`-Abgleich 10/10 exakt.
+
+**Erster regulärer Lauf nach dem Deployment — vollständig geprüft
+(2026-07-30, 16:04:59,977 → 16:05:01 UTC, Auslöser `crawl`, Status `vollstaendig`,
+20 veröffentlicht / 33 abgelöst, 0 Wiederholungen):** 16 von 17 Kriterien erfüllt.
+
+| Kriterium (Sprintauftrag 25B) | Ergebnis |
+|---|---|
+| Deployment eindeutig `READY` · enthält PR-185-Merge | ✅ 13:22:02 UTC, `cf290ab` |
+| Lauf begann nach dem Deployment | ✅ 16:04:59 UTC |
+| Regulär durch den Zeitplan ausgelöst · kein manueller/nachträglicher Lauf | ✅ Cron-Auslöser, Startfenster wie am Vortag, 0 Wiederholungen |
+| Lauf vollständig abgeschlossen | ✅ `vollstaendig`, Dauer 1,15 s |
+| Neue/aktualisierte Zeilen · zugehörige Wissensobjekte · Matching-Ergebnis · Belege · Score · Signale · Entscheidung · persistierte Begründung | ✅ 20 Zeilen, alle Objekte lesbar und `complete` |
+| Sichtbare Erklärung stimmt mit den persistierten Daten überein | ✅ deterministisch nachgerechnet (`erklaerungAusErgebnis`) |
+| Korrekte Mandantenzuordnung | ✅ alle 20 Zeilen |
+| **Keine fremden Ausschussbelege** | ✅ **0 von 20** Zeilen tragen überhaupt einen Ausschussbeleg |
+| **Keine Ausschussbelege bei fehlender/unbekannter Ebene** | ✅ je Zeile mit der echten Produktionsfunktion `ausschussBelegZulaessig` nachgerechnet |
+| Keine neuen Runtime-/Datenbankfehler im Pfad | ✅ Lauf sauber abgeschlossen, keine `fehlgeschlagen`-Zeile |
+| Zeitliche Reihenfolge aller Schritte | ✅ Deployment 13:22:02 < Laufstart 16:04:59 < `berechnet_am` ≤ Laufende |
+| Eindeutige Zuordnung zum regulären Lauf | ✅ alle Zeilen tragen `run_id`, Ränge 1–20 lückenlos, Versionsachsen unverändert |
+| Keine Production-Schreibzugriffe durch den Nachweis | ✅ ausschließlich `GET` |
+| **Lauf gehört zum aktiven Pilotmandanten** | ❌ **offen** — der Lauf gehört einem anderen Mandanten (OP-25-Rotation) |
+
+### 6b · Was noch fehlt
+
+Genau ein Beleg: **ein vollständig abgeschlossener regulärer Lauf des
+Pilotmandanten nach dem Deployment**, mit Ablösung seiner **2** falschen Alt-Zeilen
+(darunter der **Rang-1**-Fall „Betrifft deinen Ausschuss Arbeit und Soziales und
+deine Partei Die Linke." auf einem Vorgang der Ebene `land`) und 0 neuen falschen
+Belegen.
+
+Stand der 5 falschen Alt-Zeilen (alle `aktuell=true`, alle vor dem Deployment
+gerechnet, **unverändert sichtbar**): 2 beim Pilotmandanten (Ränge 1 und 15,
+gerechnet 2026-07-30 07:56:55 UTC), 3 bei einem zweiten Mandanten (Ränge 8, 10, 15,
+gerechnet 2026-07-29 16:04:09 UTC).
+
+### 6c · Befund B25-2 — warum das nicht von selbst passiert (belegt, freigabepflichtig)
+
+Die frühere Erwartung dieses Dokuments, die falschen Zeilen „verschwinden mit dem
+nächsten regulären Lauf des jeweiligen Mandanten", ist **gemessen widerlegt**.
+
+Der Pilotmandant **war** nach dem Deployment dran — am 2026-07-30 um **20:04:27 UTC**
+(regulärer `crawl`-Cron). Der Lauf war **idempotent**: `wiederholungen` 0 → 1,
+`letzter_lauf_at` gesetzt, **keine neue Generation**, keine Zeile neu berechnet. Die
+falschen Belege blieben stehen.
+
+**Ursache, aus dem Vertrag selbst belegt** (`lib/helmut/matching-contract.js`
+§`computeInputFingerprint`/`computeCandidateSetHash`): Der Idempotenzschlüssel eines
+Laufs besteht aus Mandant · Mandatsprofil · `profil_hash` · Engine-/Rezept-/
+Vektorversion · Schwellenwerte · Kandidatenhash. Der Kandidatenhash wiederum aus
+`ko_id | similarity | ko_eingabe_hash` je Treffer. **`matched_features` gehen
+bewusst nicht ein** — sie sind Ergebnis, nicht Eingang. Ein Fix, der ausschließlich
+`matched_features` verändert (genau das ist PR #185, §52), erzeugt deshalb **keinen**
+neuen Fingerabdruck und löst **keine** Neuberechnung aus.
+
+**Gemessen am aktuellen Bestand (rein lesend, 2026-07-31 00:45 UTC):** von den **20**
+Wissensobjekten der aktuellen Pilot-Trefferliste haben sich seit dem Lauf vom
+07:56 UTC **0** geändert (weder `ko_version` noch `updated_at`). Die
+Ähnlichkeitsschwelle des Rang-20-Kandidaten liegt bei **0,2329**. Der nächste
+reguläre Lauf des Piloten bliebe damit **erneut idempotent** — obwohl seit dem
+letzten Lauf **97** neue Wissensobjekte entstanden sind (davon 23 verstanden) und
+101 geändert wurden: keines davon erreicht seine Top-20.
+
+**Konsequenz, ehrlich benannt:** Die falschen Ausschussbelege des Pilotmandanten —
+inklusive der Rang-1-Karte — bleiben sichtbar, bis **unabhängig vom Fix** eines
+dieser Ereignisse eintritt: ein neues verstandenes Wissensobjekt überschreitet die
+Ähnlichkeitsschwelle 0,2329 und verdrängt einen Top-20-Kandidaten · eines der 20
+bestehenden Objekte wird aktualisiert · das Mandatsprofil ändert sich
+(`profil_hash`) · Engine-, Rezept- oder Vektorversion wird angehoben. Ein Zeitpunkt
+dafür ist **nicht vorhersagbar**; die bisherige Beobachtung (Sprint 23B-1: identischer
+Fingerabdruck trotz 179 neuer Wissensobjekte) spricht für hohe Stabilität der Top-20.
+
+**B25-2 ist kein Fehler des Fixes**, sondern die dokumentierte Kehrseite der
+Idempotenz aus Sprint 23B-1 (Schreibersparnis) in Kombination mit einem Fix, der
+nur die Ergebnisseite betrifft. Die Behebung erfordert eine **Betreiberentscheidung**
+und einen getrennten, freigabepflichtigen Sprint; Optionen (nicht bewertet, nicht
+umgesetzt): (a) weiter abwarten und 25B offen lassen, (b) Rezeptversion anheben —
+erzwingt Neuberechnung **aller** Mandanten, verändert sichtbare Ergebnisse breit,
+(c) einmaliger gezielter Neulauf des Piloten (manueller Lauf — im Sprintauftrag
+ausdrücklich verboten, daher hier nicht ausgeführt), (d) Backfill der betroffenen
+Zeilen (Schreibzugriff auf Production, freigabepflichtig).
+
+**Nächste reguläre Termine (aktive `vercel.json`):** `crawl` **04:00** und
+**20:00 UTC** (Matching läuft hier mit, Auslöser `crawl`) · `pipeline` **16:00 UTC**
+· `understanding` **05:30/21:30 UTC**. Die Rotation (OP-25) verteilt die 6 aktiven
+Profile über die Läufe. **Kein manueller Lauf wurde gestartet, kein Cron/Trigger
+eingerichtet, keine automatische Überwachung behauptet.**
+
+**Folgeauftrag 25B (klar umrissen, unverändert gültig):** Sobald ein vollständig
+abgeschlossener regulärer Lauf des Pilotmandanten mit **verändertem
+Eingabefingerabdruck** (also einer echten neuen Generation, nicht nur
+`wiederholungen+1`) nach dem Deployment vorliegt: (1) rein lesend prüfen, dass der
+Lauf regulär (Cron-Auslöser), vollständig und dem Pilotmandanten zugeordnet ist;
+(2) `node scripts/befund-27a2-production-messung.js` erneut ausführen — Erwartung
+„QUALIFIZIERTE Faelle NACHHER: 0", **und** die 2 falschen Alt-Zeilen des Piloten
+sind abgelöst, **0** neue falsche Belege, Rang/Ähnlichkeit unverändert;
+(3) Erscheinen/Nichterscheinen in der Lage samt sichtbarer Erklärung gegen die
+persistierten Felder prüfen; (4) zeitliche Reihenfolge (Deployment → Lauf → Zeilen)
+und Laufzuordnung dokumentieren; (5) keinerlei Schreibzugriffe.
+
+**Vor diesem Folgeauftrag steht jedoch die Betreiberentscheidung zu B25-2** (§6c):
+ob weiter abgewartet wird oder ob eine der freigabepflichtigen Optionen die
+Neuberechnung auslösen soll. Ohne diese Entscheidung ist ein Abschlusstermin für
+25B nicht zusagbar.
 
 ## 7 · Sicherheitsgrenzen, Datenschutz, unveränderte Bereiche
 
@@ -260,7 +345,16 @@ Reihenfolge (Deployment → Lauf → Zeilen) und Laufzuordnung dokumentieren;
 
 ## 10 · Nächster Schritt
 
-1. PR dieses Sprints reviewen und mergen (nur Tests + Doku, keine Produktionswirkung).
-2. Nach dem ersten vollständig abgeschlossenen regulären Lauf des Pilotmandanten
-   (frühestens 16:00 UTC `pipeline`, sonst 20:00/04:00 UTC `crawl`): Folgeauftrag
-   25B aus §6 ausführen (rein lesend). Erst danach darf Zeile 25 auf ✅ gehen.
+1. **Betreiberentscheidung zu Befund B25-2** (§6c): Der Pilotmandant rechnet ohne
+   Eingabeänderung nicht neu; seine 2 falschen Ausschussbelege — darunter die
+   **Rang-1**-Karte — bleiben bis dahin sichtbar. Zur Wahl stehen: weiter abwarten
+   (25B bleibt offen, Termin nicht zusagbar) · Rezeptversion anheben (erzwingt
+   Neuberechnung aller Mandanten, breite sichtbare Wirkung) · gezielter Neulauf des
+   Piloten (manueller Lauf, freigabepflichtig) · Backfill der betroffenen Zeilen
+   (Production-Schreibzugriff, freigabepflichtig). **Keine dieser Optionen wurde
+   ausgeführt oder vorbereitet.**
+2. Sobald eine echte neue Generation des Piloten vorliegt: Folgeauftrag 25B aus §6
+   ausführen (rein lesend). **Erst danach darf Zeile 25 auf ✅ gehen** — die
+   restlichen 16 Kriterien sind bereits belegt.
+3. Unabhängig davon: PR #187 (Punkt 29A) wartet vereinbarungsgemäß auf den
+   25B-Abschluss und ist danach auf den neuen `main` zu rebasen.
