@@ -204,6 +204,16 @@ verschwand ohne Spur ([`befund-csd-2026-vorgangsverlust.md`](befund-csd-2026-vor
 | **Altkennungen** | dasselbe Präfix | `vg-<wurzel>` fällt exakt auf das Präfix und wird **fortgeschrieben**, nicht dupliziert. Deshalb keine Migration |
 | **Verknüpfungsinvariante** | `ko_document_links` | Jeder Ausgang, der einen Vorgang gefunden oder gebildet hat, schreibt die Verknüpfung. Damit ist der Endzustand jedes Rohdokuments **ableitbar** — ohne neue Tabelle |
 
+**Zwei Regime, nicht eines** (präzisiert 2026-07-31, OP-25 K2 — keine Verhaltensänderung,
+nur eine bisher undokumentierte Eigenschaft): Zugehörigkeit wird an **zwei** Stellen mit
+**unterschiedlicher Strenge** entschieden. *Lose* **innerhalb eines Batches** —
+`clusterRawDocuments` bildet Zusammenhangskomponenten über `docsShareEvent`, **eine einzige**
+paarweise Kante genügt und wirkt **transitiv**. *Streng* **zwischen Batches und Läufen** — die
+beiden oberen Tabellenzeilen (Themenwurzel-Präfix, danach Kern gegen Kern). Welches Regime
+greift, hängt allein davon ab, ob zwei Dokumente **im selben Understanding-Batch** ankommen —
+also an der Cron-Struktur, nicht an der Fachlichkeit. Genau daran hängt Befund **K1-1**:
+[`betrieb/cron-globalphase.md`](betrieb/cron-globalphase.md) §8a.
+
 Ein Vorgang bildet **genau ein politisches Ereignis** ab. Ob er das noch tut, ist
 messbar: seine Dokumente erneut clustern. Ein echter Vorgang bleibt **ein** Cluster
 (Kohärenz ≥ 0,67 gemessen), ein „Magnet" zerfällt in viele (≤ 0,55). Diagnose:

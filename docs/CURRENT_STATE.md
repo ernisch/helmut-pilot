@@ -1,6 +1,96 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-31 (**Sprint OP-25 K1 — globale Datenerfassung von der
+**Letzte Aktualisierung:** 2026-07-31 (**Sprint OP-25 K2 — fachliche Absicherung der globalen
+Bündelung. TEILWEISE ABGESCHLOSSEN: der Auftrag „K1-1 endgültig bewerten" ist erfüllt, die
+Bewertung fällt aber NICHT zugunsten einer Aktivierung aus — es steht jetzt eine
+Betreiberentscheidung an. Keine Aktivierung, kein Flag gesetzt, keine Production-Änderung,
+keine Produktionsdatei geändert.** **Ergebnis in einem Satz: K1-1 ist NICHT widerlegt und
+breiter als in K1 dokumentiert** — es geht nicht nur um den Suffix einer Vorgangskennung,
+sondern um die **Dokumentpartition selbst**, und die ändert sich in **beide** Richtungen.
+**Ursache, mechanisch belegt (der eigentliche Erkenntnisgewinn):** Helmut entscheidet „gehört
+zusammen" in **zwei Regimen**. *Lose* **innerhalb** eines Batches — `clusterRawDocuments` bildet
+Zusammenhangskomponenten über `docsShareEvent`, **eine einzige** paarweise Kante genügt und
+wirkt **transitiv**. *Streng* **zwischen** Batches — `resolveVorgang` sucht Kandidaten über das
+Themenwurzel-**Präfix** (`candidatePrefixes`) und prüft sie mit `sameVorgang` **Kern gegen
+Kern**. Die globale Bündelung verschiebt alle Dokumente **mandatseigener** Quellen (Personen-,
+Partei-, Ausschussquellen; nach der K1-Messung **58 von 196** Wegen bei acht Profilen) vom
+strengen in das lose Regime. Dokumente **geteilter** Quellen sind strukturell **nicht**
+betroffen — sie liegen schon heute vollständig im Batch des **ersten** Mandats (globale
+Rohdokument-Entdoppelung), im Test belegt. **Drei Teilbefunde, jeder einzeln bewiesen und
+mutationsgesichert:** **K1-1a Zusammenführung** — fachlich **verschiedene** Vorgänge landen
+global in **einem**; Ursache ist, dass Formular- und Floskelvokabular („Antrag", „Drucksache",
+„Fraktion", „beantragt", „betrifft", „Abgeordnete", „besucht", „Anhörung", „Sachverständigen",
+„Tagesordnung") heute **volles Beweisgewicht** trägt. **K1-1b Trennung** — die
+Kernanker-Nachprüfung in `clusterRawDocuments` ist **nicht monoton**: ein größerer Batch kann
+ein Dokument aus seiner bisherigen Gruppe **herauslösen**, die globale Bündelung **trennt**
+also auch, was mandatsweise ein Vorgang war. **K1-1c Kette** — `x~y` und `y~z` bei `x!~z`
+ergeben global **einen** Vorgang aus drei Dokumenten; heute verhindert das nur die Batchgrenze.
+**Bilanz über dreizehn Fallfamilien:** sechs weichen ab — **eine fachlich besser** (zwei
+Parteiquellen zur **selben** Debatte werden korrekt zusammengeführt), **vier schlechter**, **eine
+nur anders**. **Ehrliche Gegenprobe:** eine der Fehlverschmelzungen (zwei verschiedene
+Ausschüsse mit gleichem Formulartext) tritt in **beiden** Pfaden auf — **der Fehler ist
+Bestand, K1 macht ihn nur breiter wirksam.** **Korrektur einer K1-Aussage, nicht weggeredet:**
+die Bewertung in `cron-globalphase.md` §8 („alle Kennungen teilen dasselbe Suchpräfix,
+`sameVorgang` hält sie für denselben Vorgang") stimmt für den dort gemessenen Fall, gilt aber
+**nicht allgemein**; in den heute getrennten Fällen fehlt das gemeinsame Präfix — und
+`sameVorgang` würde sie sogar **zusammenführen**. Der heutige Schutz ist damit **die Enge der
+Präfixsuche, nicht der Belegvergleich**, und der Satz „die globale Bündelung ist die kanonisch
+richtige" ist **nicht belegt**. **Was unverändert gilt und jetzt einzeln bewiesen ist:** kein
+Dokument geht verloren (`clusterRawDocuments` ist eine **Partition**, auch bei feindlichen
+Eingaben: leer, ohne Zeitangabe, nur Jahreszahlen, nur Füllwörter) · jedes Dokument bekommt in
+**beiden** Pfaden genau **eine** Verknüpfung · kein Dokument hängt an zwei Vorgängen · **keine
+doppelten Vorgänge** · kein Wissensobjekt verschwindet · **keine Mehrkosten** (gemessen **24 →
+14** KI-Aufrufe) · **Mandantentrennung unverändert** (Wissensobjekte tragen keinen
+Mandantenbezug) · Kennungsformat und Resolver-Anschluss bleiben · **reihenfolgeunabhängig**
+(120 Dokumentpermutationen, Quellenreihenfolge auf/ab, Mandatsreihenfolge vor/zurück) · das
+Sicherheitsventil gegen Digest-Cluster greift (90 zusammenhängende Dokumente → nie ein Cluster
+über `MAX_CLUSTER_DOKUMENTE`). **Nebenbefund zugunsten von K1:** der **alte** Pfad ist von der
+**Mandatsreihenfolge** abhängig (drei Familien), der neue in keiner — „heute ist es stabil"
+stimmt nicht. **Fachliche Bewertung, ehrlich:** technisch verlustfrei, fachlich ein Verlust an
+**Entscheidungsschärfe** — ein verschmolzener Vorgang ist **ein** Wissensobjekt mit **einer**
+Überschrift, **einer** Empfehlung und **einer** Entscheidung; beide Dokumente hängen daran, aber
+der zweite politische Vorgang hat danach **keine eigene Entscheidung mehr**. Das ist genau die
+Fehlerklasse **„Digest-Cluster"**, die als **F-3** schon einmal einen Production-Rückrollfall
+verursacht hat. In einem Produkt, dessen Kernversprechen „Entscheidungen statt Daten" ist, ist
+das **noch nicht akzeptabel**. **Kein Datenschutz- und kein Mandantentrennungsproblem:** der
+Rohkorpus und die Wissensobjekte sind schon heute mandantenneutral, es kommt kein Datum hinzu,
+das nicht ohnehin gespeichert würde — aber die **Vorgangsidentität** eines Mandats kann von der
+Personenquelle eines **anderen** Mandats mitbestimmt werden, und das ist eine sichtbare
+Nutzerwirkung. **Skalierung:** die Zahl erstmals gegeneinander bewerteter Dokumentpaare wächst
+**quadratisch** mit der Mandatszahl. **Gemessene Option, bewusst NICHT umgesetzt:** eine rein
+**aufgezählte** Formularwortliste in `GENERISCHE_ANKER` (32 Wörter, im Stil der bestehenden
+Hotfixes B4-3/B4-4, **keine** Stammwortlogik) hebt die korrekte Trennung von **7/12 auf 11/12**
+und reißt dabei **keinen** fachlich zusammengehörigen Fall auseinander. Sie wirkt auch im
+**alten** Pfad, verbessert also heute schon — verändert aber die **aktive** Vorgangsbildung
+**sofort und ohne Flag** und ist deshalb freigabepflichtig (`CLAUDE.md` §5) und ein eigener
+Sprint mit eigenem Production-Nachweis. **Empfohlene Reihenfolge:** erst diese Nachschärfung,
+danach K1-1 erneut messen, **dann** über die Aktivierung entscheiden. **Tests (real ermittelt,
+kein Test als grün behauptet, der nicht lief):** neue Suite `globalphase-buendelung-test.js`
+**56/56** · Mutationsprobe `globalphase-buendelung-mutationsprobe.js` **15/15 rot** (drei erste
+Fassungen waren Löcher — Quellenkontext, Transitivität und Kostenzusage waren nicht abgesichert;
+alle drei nachgezogen, danach 15/15) · Offline-Suite **179/193** gegen die im selben Arbeitsbaum
+gemessene Basislinie **178/192** mit **identischer** Fehlschlagliste (14 umgebungsbedingte
+Suiten, Delta genau **+1** = die neue Suite) · Browser-/Mobile-Smoke **32/32** ·
+`cron-globalphase` **169/169** · `cron-fairness` **285/285** · `vorgangsidentitaet` **67/67** ·
+`vorgangs-resolver` **54/54** · `vorgangs-beweisfamilien` **103/103** ·
+`vorgangs-uebernahme-analyse` **35/35** · `vorgangs-lebenszyklus` **81/81** ·
+`herausgeber-identitaet` **109/109** · `vorgangsbildung-verlust` grün. **Sicherheitsgrenzen
+eingehalten:** **keine Produktionsdatei geändert** (nur zwei neue Testskripte und Dokumentation),
+keine Production-Schreibzugriffe, kein manueller Cron-Lauf, keine Migration, keine Env-/Budget-/
+Cron-/Zeitbudget-/Quellenänderung, keine Aktivierung von M8/Berlin/Brandenburg, keine neuen
+Testmandate, kein Merge, kein Deployment, **0 KI-Aufrufe, 0,00 USD**. Die laufenden
+Production-Nachweise zu OP25B, R-6 und 29B sind **unberührt**. **Statusgrenzen:** OP-25 bleibt
+**teilweise abgeschlossen**; der Kapazitätsblocker §10.5/§10.7 bleibt offen; alle Messwerte in
+[`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) §9/§10 gelten unverändert, weil das Flag
+aus ist. **Nächster Schritt:** Betreiberentscheidung zu den Optionen in
+[`betrieb/cron-globalphase.md`](betrieb/cron-globalphase.md) **§8a.5** — empfohlen: erst die
+Nachschärfung des Formularvokabulars als eigener Sprint, **danach** erneut über die Aktivierung
+entscheiden. **Empfehlung bis dahin: `HELMUT_CRON_GLOBALPHASE` bleibt AUS.** Geänderte Dateien:
+`scripts/globalphase-buendelung-test.js` (neu), `scripts/globalphase-buendelung-mutationsprobe.js`
+(neu), `docs/betrieb/cron-globalphase.md` (§8-Nachtrag, §8a neu, §10/§11 nachgezogen),
+`docs/datenmotor-restliste.md` (OP-25 Status K2), `docs/CURRENT_STATE.md`. Branch
+`claude/op25-k2-global-bundling-axgbaf`, kein PR angelegt (Merge und PR-Eröffnung bleiben
+Betreiberentscheidung).) · (**Sprint OP-25 K1 — globale Datenerfassung von der
 mandatsbezogenen Verarbeitung trennen. TEILWEISE ABGESCHLOSSEN: der Schattenpfad ist gebaut,
 offline bewiesen und mutationsgesichert; er ist in Production NICHT aktiviert, und genau das
 war der Auftrag. Der Kapazitätsblocker aus OP-25 §10.5/§10.7 ist damit gelöst GEBAUT, aber

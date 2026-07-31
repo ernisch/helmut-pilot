@@ -615,6 +615,64 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Brandenburg/M8/Testmandate unverändert AUS.** **Der Kapazitätsblocker ist damit NICHT
   geschlossen** — er ist gelöst *gebaut*, aber nicht *aktiviert*. Kanonisch:
   [`betrieb/cron-globalphase.md`](betrieb/cron-globalphase.md).
+- **Status K2 (2026-07-31, Sprint „Fachliche Absicherung der globalen Bündelung"):
+  BEFUND K1-1 VOLLSTÄNDIG BEWERTET — er bleibt bestehen und ist BREITER als in K1 beschrieben.
+  Keine Aktivierung, kein Flag gesetzt, keine Production-Änderung.** Geprüft wurde nicht der
+  Kapazitätsgewinn (der gilt unverändert), sondern die Frage, ob die globale Bündelung
+  **dieselben politischen Vorgänge korrekt zusammenführt**. **Verfahren:** dreizehn konstruierte
+  Fallfamilien (identische und leicht abweichende Dokumente, gleiche und verschiedene
+  Vorgangsnummer, verschiedene Schreibweisen, mehrere Dokumente eines Vorgangs, ähnliche Titel,
+  Personen-, Partei- und Ausschussquellen zweier Mandate) laufen durch **beide** Pfade gegen den
+  **echten** Produktionscode (`clusterRawDocuments`, `deriveVorgangId`, `candidatePrefixes`,
+  `sameVorgang`, `resolveVorgang`, `understandOneCluster`, Schemaprüfung); nur der KI-Aufruf ist
+  ein Testdouble. **Ursache, mechanisch belegt:** Helmut entscheidet „gehört zusammen" in **zwei
+  Regimen** — *lose* innerhalb eines Batches (**eine** paarweise Kante, transitiv wirksam) und
+  *streng* zwischen Batches (gemeinsames Themenwurzel-**Präfix** UND `sameVorgang` Kern gegen
+  Kern). Die globale Bündelung verschiebt alle Dokumente **mandatseigener** Quellen (nach der
+  K1-Messung **58 von 196** Wegen bei acht Profilen) vom strengen ins lose Regime. Dokumente
+  **geteilter** Quellen sind nicht betroffen (sie liegen schon heute im Batch des ersten
+  Mandats — im Test belegt). **Drei Teilbefunde, jeder einzeln belegt und mutationsgesichert:**
+  **K1-1a** fachlich **verschiedene** Vorgänge verschmelzen global (Ursache: Formularvokabular
+  wie „Antrag", „Drucksache", „Fraktion", „beantragt", „Abgeordnete", „besucht", „Anhörung",
+  „Tagesordnung" trägt heute volles Beweisgewicht) · **K1-1b** die Kernanker-Nachprüfung ist
+  **nicht monoton**, die globale Bündelung **trennt** deshalb auch, was mandatsweise ein Vorgang
+  war · **K1-1c** Ketten (`x~y`, `y~z`, `x!~z`) wirken global über die Mandatsgrenze hinweg.
+  **Bilanz über 13 Familien:** 6 abweichend — 1 fachlich besser, 4 schlechter, 1 nur anders.
+  **Ehrliche Gegenprobe:** eine der Fehlverschmelzungen tritt in **beiden** Pfaden auf — der
+  Fehler ist **Bestand**, K1 macht ihn nur breiter wirksam. **Korrektur einer K1-Aussage:** die
+  §8-Bewertung („alle Kennungen teilen dasselbe Suchpräfix, `sameVorgang` hält sie für denselben
+  Vorgang") gilt für den dort gemessenen Fall, **nicht allgemein**; in den heute getrennten
+  Fällen fehlt das gemeinsame Präfix, und `sameVorgang` würde sie sogar **zusammenführen** — der
+  heutige Schutz ist die **Enge der Präfixsuche**, nicht der Belegvergleich. Der Satz „die
+  globale Bündelung ist die kanonisch richtige" ist damit **nicht belegt**. **Bewiesene
+  Garantien (unverändert gültig):** kein Dokument geht verloren (Partition, auch bei feindlichen
+  Eingaben) · jedes Dokument bekommt genau eine Verknüpfung · kein Dokument an zwei Vorgängen ·
+  keine doppelten Vorgänge · kein Wissensobjekt verschwindet · **keine** Mehrkosten (gemessen
+  24 → 14 KI-Aufrufe) · Mandantentrennung unverändert (Wissensobjekte tragen keinen
+  Mandantenbezug) · Kennungsformat und Resolver-Anschluss bleiben · reihenfolgeunabhängig (120
+  Dokumentpermutationen, Quellen- und Mandatsreihenfolge) · Sicherheitsventil greift.
+  **Nebenbefund zugunsten von K1:** der **alte** Pfad ist von der Mandatsreihenfolge abhängig,
+  der neue nicht. **Fachliche Bewertung:** technisch verlustfrei, aber ein Verlust an
+  **Entscheidungsschärfe** — ein verschmolzener Vorgang ist **ein** Wissensobjekt mit **einer**
+  Überschrift und **einer** Empfehlung, der zweite politische Vorgang hat danach keine eigene
+  Entscheidung mehr (Fehlerklasse „Digest-Cluster", vgl. Rollbackfall F-3). **Kein Datenschutz-
+  oder Mandantentrennungsproblem.** **Gemessene Option (nicht umgesetzt):** eine rein
+  **aufgezählte** Formularwortliste in `GENERISCHE_ANKER` (32 Wörter, Stil der Hotfixes
+  B4-3/B4-4) hebt die korrekte Trennung von **7/12 auf 11/12**, **ohne** einen fachlich
+  zusammengehörigen Fall auseinanderzureißen — sie wirkt auch im alten Pfad und ist damit ein
+  eigener, freigabepflichtiger Sprint (sie ändert die **aktive** Vorgangsbildung sofort und ohne
+  Flag). **Tests:** neue Suite `globalphase-buendelung-test.js` **56/56**, Mutationsprobe
+  `globalphase-buendelung-mutationsprobe.js` **15/15 rot**, Offline-Suite **179/193** gegen im
+  selben Arbeitsbaum gemessene Basislinie **178/192** mit **identischer** Fehlschlagliste (Delta
+  genau +1 = die neue Suite), Browser-/Mobile-Smoke **32/32**, `cron-globalphase` **169/169**,
+  `cron-fairness` **285/285**, `vorgangsidentitaet` **67/67**, `vorgangs-resolver` **54/54**,
+  `vorgangs-beweisfamilien` **103/103**, `vorgangs-uebernahme-analyse` **35/35**,
+  `vorgangs-lebenszyklus` **81/81**, `herausgeber-identitaet` **109/109**,
+  `vorgangsbildung-verlust` grün. **0 KI-Aufrufe, 0,00 USD, keine Produktionsdatei geändert,
+  keine Migration, kein Production-Zugriff, kein Flag gesetzt, Berlin/Brandenburg/M8/
+  Testmandate unverändert AUS.** **Empfehlung: `HELMUT_CRON_GLOBALPHASE` bleibt AUS**, bis über
+  die Optionen in [`betrieb/cron-globalphase.md`](betrieb/cron-globalphase.md) §8a.5 entschieden
+  ist. Kanonisch: dieselbe Datei, **§8a**.
 - **Ausgangsbefund (2026-07-29, vor diesem Sprint):** **Ursache belegt, Umfang noch nicht vermessen** (Befund B5).
   Der Crawl-Cron endet reproduzierbar nach ~280 s mit `bounded=true`
   (`[cron/crawl] 280001ms tenants=undefined bounded=true`, gemessen 28.07. 04:00, 28.07. 20:00
