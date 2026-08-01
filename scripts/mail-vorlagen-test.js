@@ -40,6 +40,11 @@ const DAUER_MUSTER = new RegExp(
   + "|vierundzwanzig|drei\u00dfig|sechzig|neunzig|hundert)\\s*"
   + "(Minute|Minuten|Stunde|Stunden|Tag|Tage|Tagen|Woche|Wochen|Monat|Monate|Monaten|h|min)\\b", "i");
 
+// Der gemeinsame Hinweis beider Mails — hier bewusst als WOERTLICHE Erwartung, nicht aus
+// dem Modul importiert: sonst pruefte der Test den Wortlaut gegen sich selbst.
+const HINWEIS_BEFRISTUNG =
+  "Der Link ist nur für dich bestimmt, zeitlich begrenzt und kann nur einmal verwendet werden.";
+
 const TEST_ABSENDER = "Helmut <noreply@helmut.test>";
 const TEST_EMPFAENGER = "eva@example.org";
 const INVITE_URL = "https://helmut.example/passwort-setzen?token=einladungs-token-1";
@@ -126,8 +131,8 @@ function hrefs(html) {
   check("A Einladung: fuehrt Helmut ein, ohne etwas zu erfinden",
     einladung.text.includes("du wurdest eingeladen, Helmut zu nutzen.")
     && einladung.text.includes("politische Entwicklungen einzuordnen"));
-  check("A Einladung: Hinweistext zur Befristung ohne erfundene Zahl",
-    einladung.text.includes("Der Link ist nur für dich bestimmt und zeitlich begrenzt.")
+  check("A Einladung: Hinweistext zu Befristung und Einmaligkeit, ohne erfundene Zahl",
+    einladung.text.includes(HINWEIS_BEFRISTUNG)
     && !DAUER_MUSTER.test(einladung.text) && !DAUER_MUSTER.test(sichtbarerText(einladung.html)),
     einladung.text);
   check("A Einladung: Ignorier-Hinweis vorhanden",
@@ -155,9 +160,17 @@ function hrefs(html) {
     reset.text.includes("für deinen Helmut-Zugang wurde ein neues Passwort angefordert."));
   check("B Reset: Hinweis, dass das bisherige Passwort unveraendert bleibt",
     reset.text.includes("Dein bisheriges Passwort bleibt unverändert."));
-  check("B Reset: Befristungshinweis ohne erfundene Zahl",
-    reset.text.includes("Der Link ist nur für dich bestimmt und zeitlich begrenzt.")
+  check("B Reset: Hinweis zu Befristung und Einmaligkeit, ohne erfundene Zahl",
+    reset.text.includes(HINWEIS_BEFRISTUNG)
     && !DAUER_MUSTER.test(reset.text) && !DAUER_MUSTER.test(sichtbarerText(reset.html)), reset.text);
+  for (const [name, mail] of [["Einladung", einladung], ["Reset", reset]]) {
+    check(`B ${name}: Einmaligkeit steht in BEIDER Fassung`,
+      mail.text.includes("kann nur einmal verwendet werden")
+      && sichtbarerText(mail.html).includes("kann nur einmal verwendet werden"),
+      mail.text.slice(0, 60));
+    check(`B ${name}: der Hinweis steht wortgleich in HTML und Text`,
+      mail.text.includes(HINWEIS_BEFRISTUNG) && sichtbarerText(mail.html).includes(HINWEIS_BEFRISTUNG));
+  }
   check("B Einladung und Reset sind in beiden Fassungen verschieden",
     reset.text !== einladung.text && reset.html !== einladung.html);
 

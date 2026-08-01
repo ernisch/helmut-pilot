@@ -97,13 +97,10 @@ Zeichen, Bindestrichen und Apostrophen — sonst grüßt Helmut neutral. Diese P
 **Es wird nichts erfunden.** Keine internen Kennungen, keine Mandanten-ID, keine Rolle, kein
 Token außerhalb des Links.
 
-**Was mit dem neuen Wortlaut wegfällt — ausdrücklich benannt:** die alten Mails sagten
-zusätzlich „und funktioniert nur einmal". Der Wortlaut dieses Sprints sieht diesen Satz nicht
-vor, deshalb steht er nicht mehr in der Mail. **Technisch ist die Einmaligkeit unverändert
-erzwungen** (`accounts.verifyPasswordToken` setzt `usedAt`; ein zweiter Versuch endet mit
-410 — durch `mailpit-smoke` und `reset-timing-seitenkanal` weiterhin abgedeckt), sie wird dem
-Empfänger nur nicht mehr angekündigt. Anders als bei der Gültigkeitsdauer wäre die Aussage
-dauerhaft korrekt gewesen; sie wieder aufzunehmen ist eine reine Produktentscheidung.
+**Die Einmaligkeit steht ausdrücklich in der Mail** — und das ist belegt, nicht behauptet:
+`accounts.setPasswordWithToken` setzt `usedAt`, jeder zweite Versuch endet mit **410**.
+Anders als die Gültigkeitsdauer hängt diese Aussage an **keiner** Umgebungsvariablen und ist
+deshalb dauerhaft korrekt (abgedeckt von `mailpit-smoke` und `reset-timing-seitenkanal`).
 
 **Keine Gültigkeitsdauer im Text — das ist eine Korrektur, kein Weglassen.** Die früheren
 Fassungen behaupteten „7 Tage gültig" bzw. „1 Stunde gültig". Beides sind nur die *Defaults*
@@ -111,7 +108,8 @@ von `HELMUT_INVITE_TOKEN_TTL_MS` / `HELMUT_RESET_TOKEN_TTL_MS` (`lib/helmut/acco
 wer eine der beiden Variablen setzt, bekommt eine Mail, die den Empfänger nachweislich falsch
 informiert. Eine Zahl, die nicht dauerhaft korrekt gehalten wird, gehört nach Belegpflicht und
 „kein falsches Grün" nicht in die Mail. Der Hinweis nennt die Befristung deshalb ohne Zahl:
-*„Der Link ist nur für dich bestimmt und zeitlich begrenzt."*
+*„Der Link ist nur für dich bestimmt, zeitlich begrenzt und kann nur einmal verwendet
+werden."* — die Befristung ohne Zahl, die Einmaligkeit mit klarer Aussage.
 
 ## 5 · Sicherheit der HTML-Fassung
 

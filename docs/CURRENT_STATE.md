@@ -39,7 +39,7 @@ entfallen **Schaltfläche und Verlinkung** und die Adresse erscheint nur noch al
 sich nur der Nachrichteninhalt, nicht wann oder ob gesendet wird; die Kopfzeilen-Sperre gilt
 unverändert für Absender/Empfänger/Betreff, der HTML-Teil ist Nutzlast und wird (wie der Text)
 bewusst nicht auf CR/LF geprüft. **Tests, real gemessen:** neue Offline-Suite
-`scripts/mail-vorlagen-test.js` **143/143** (A Einladung · B Reset · C Gleichstand beider
+`scripts/mail-vorlagen-test.js` **147/147** (A Einladung · B Reset · C Gleichstand beider
 Fassungen · D Maskierung und Einschleusung · E keine externen Ressourcen · F keine internen
 Kennungen, keine Tokens in Logs · G Layoutregeln · H beide Fassungen unverändert durch Mailpit
 und Resend · I Linkprüfung fail closed) · **Mutationsprobe `scripts/mail-vorlagen-mutationsprobe.js`
@@ -83,7 +83,7 @@ Loopback-Zwang (die Zusicherung im Dateikopf war sonst nur behauptet). **Zwei Mu
 wurden dabei umformuliert statt stillschweigend entfernt:** „Linkprüfung abgeschaltet“ und
 „E-Mail als Vorname“ waren nach den neuen Wachen nicht mehr erkennbar — nicht weil ein Loch
 entstand, sondern weil jeweils eine **zweite, unabhängige** Wache greift; die Mutationen
-nehmen jetzt beide Schichten zurück. Endstand **143 Zusicherungen** und **25 Mutationen**.
+nehmen jetzt beide Schichten zurück. Endstand **147 Zusicherungen** und **26 Mutationen**.
 **Bestandssuiten:** `mailpit-transport` **119/119** (vorher 116/116) · `resend-transport`
 **201/201** (vorher 199/199) · `reset-timing-seitenkanal` **80/80** · `invite-flow` **39/39** ·
 `passwort-setzen-login-fix` **39/39** · `admin-neue-routen` **74/74** · `secret-redaction`
@@ -114,14 +114,13 @@ oder verändert**, Resend bleibt **deaktiviert**, kein Secret im Repo, keine neu
 (`package.json` bleibt `"dependencies": {}`), keine Migration, keine Änderung am Token-Verhalten,
 an der Token-Laufzeit oder an der Authentifizierung, keine UI-Änderung, der Admin-Kopierlink
 bleibt unverändert, keine Änderung an Crons, Quellen, Mandaten, Matching, Berlin, Brandenburg
-oder M8, **0 KI-Aufrufe, 0,00 USD, Production-Auswirkung: keine.** **Eine Aussage ist aus den Mails verschwunden und das wird nicht unterschlagen:** die alten
-Fassungen sagten zusätzlich „und funktioniert nur einmal“. Der vorgegebene Wortlaut dieses
-Sprints sieht den Satz nicht vor, deshalb steht er nicht mehr in der Mail. **Technisch ist
-die Einmaligkeit unverändert erzwungen** (`accounts.verifyPasswordToken` setzt `usedAt`, ein
-zweiter Versuch endet mit 410 — weiterhin von `mailpit-smoke` und
-`reset-timing-seitenkanal` abgedeckt); sie wird dem Empfänger nur nicht mehr angekündigt.
-Anders als bei der Gültigkeitsdauer wäre die Aussage dauerhaft korrekt gewesen — sie wieder
-aufzunehmen ist eine reine Produktentscheidung. **Was bewusst NICHT enthalten
+oder M8, **0 KI-Aufrufe, 0,00 USD, Production-Auswirkung: keine.** **Nachtrag auf Betreiberentscheidung:** Der Hinweis beider Mails nennt jetzt
+zusätzlich die **Einmaligkeit** — Wortlaut in beiden Fassungen wortgleich: „Der Link ist nur für
+dich bestimmt, zeitlich begrenzt und kann nur einmal verwendet werden." Das ist belegt und nicht
+behauptet: `accounts.setPasswordWithToken` setzt `usedAt`, jeder zweite Versuch endet mit **410**.
+Anders als die Gültigkeitsdauer hängt diese Aussage an **keiner** Umgebungsvariablen und ist
+deshalb dauerhaft korrekt. Die frühere Zwischenfassung ohne diesen Satz (und die damalige
+Begründung dafür) ist damit überholt. **Was bewusst NICHT enthalten
 ist:** keine Willkommensmail, keine Dunkelmodus-Fassung (der Auftrag verlangt hellen
 Hintergrund), keine Gültigkeitsdauer im Text (siehe oben), kein Vorschautext-Element.
 **Neue/geänderte Dateien:** `lib/helmut/mail-layout.js` (neu), `lib/helmut/invite-mail.js`,

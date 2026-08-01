@@ -103,8 +103,15 @@ const MUTATIONEN = [
     // Umgebungsvariable jederzeit falsch machen kann.
     name: "M9 erfundene Gueltigkeitsdauer im Hinweistext",
     datei: "lib/helmut/invite-mail.js",
-    von: "const HINWEIS_BEFRISTUNG = \"Der Link ist nur für dich bestimmt und zeitlich begrenzt.\";",
-    nach: "const HINWEIS_BEFRISTUNG = \"Der Link ist nur für dich bestimmt und 7 Tage gültig.\";"
+    von: "const HINWEIS_BEFRISTUNG = \"Der Link ist nur für dich bestimmt, zeitlich begrenzt und kann nur einmal verwendet werden.\";",
+    nach: "const HINWEIS_BEFRISTUNG = \"Der Link ist nur für dich bestimmt, 7 Tage gültig und kann nur einmal verwendet werden.\";"
+  },
+  {
+    // Die Einmaligkeit ist dauerhaft wahr und soll deshalb IN der Mail stehen.
+    name: "M26 Einmaligkeits-Aussage faellt aus dem Hinweis",
+    datei: "lib/helmut/invite-mail.js",
+    von: "const HINWEIS_BEFRISTUNG = \"Der Link ist nur für dich bestimmt, zeitlich begrenzt und kann nur einmal verwendet werden.\";",
+    nach: "const HINWEIS_BEFRISTUNG = \"Der Link ist nur für dich bestimmt und zeitlich begrenzt.\";"
   },
   {
     name: "M10 Textfassung verliert den vollstaendigen Link",
