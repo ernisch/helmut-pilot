@@ -53,7 +53,16 @@ Zustellbarkeit, Bounces, Limits — hier nichts entschieden). Geänderte/neue Da
 `scripts/mailpit-transport-test.js` (neu), `scripts/mailpit-smoke.js` (neu),
 `docs/betrieb/lokale-mailtests-mailpit.md` (neu, kanonisch), `docs/betrieb/env-inventar.md`,
 `docs/betrieb/kostenmessung.md`, `.env.example`, `package.json`, `docs/CURRENT_STATE.md`.
-Branch `claude/helmut-mailpit-local-tests-tg6a6j`. **Nächster Schritt:** Mailpit lokal starten
+Branch `claude/helmut-mailpit-local-tests-tg6a6j`, **PR #204** (offen, kein Draft, **beide
+Pflicht-Checks grün**: `Syntax + Offline-Suiten` **195/195 Suiten** und `Browser-/Mobile-Smoke
+(Chromium)` **32/32**, Lauf `30696961219`). **Ehrlich benannt:** der erste CI-Anlauf war rot —
+an **einer** fremden, bekannt zeitkritischen Suite (`werkzeug-lesefehler-test.js`, 42/43
+Zusicherungen; sie startet Kindprozesse und misst Zeitabbrüche). Lokal 5 von 5 Läufen grün, in
+CI im Wiederholungslauf grün, und sie berührt keinen Pfad dieses Sprints. **`main` selbst ist
+derzeit ebenfalls CI-rot**, allerdings an einer **anderen** Einzelsuite
+(`berlin-e2e-vertrag-test.js`, Lauf `30648111229` auf `048571e`) — beide Fehlschläge sind
+Flackern des Gates, kein Befund dieses Sprints; die Flackerneigung des Offline-Gates bleibt als
+Beobachtung offen. **Nächster Schritt:** Mailpit lokal starten
 (`mailpit`), `npm run test:mailpit-smoke` ausführen, danach Merge-Entscheidung. Kanonisch:
 [`betrieb/lokale-mailtests-mailpit.md`](betrieb/lokale-mailtests-mailpit.md).) ·
 (**Sprint 25B — rein lesender Production-Nachweis.
