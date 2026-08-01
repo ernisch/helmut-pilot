@@ -209,10 +209,21 @@ async function nachricht(id) {
     const einladung = eingang.length ? await nachricht(eingang[0].ID) : {};
     check("6 Absender korrekt", einladung.From && einladung.From.Address === "noreply@helmut.test", JSON.stringify(einladung.From));
     check("6 Empfaenger korrekt", (einladung.To || []).length === 1 && einladung.To[0].Address === ADRESSE_BEKANNT, JSON.stringify(einladung.To));
-    check("6 Betreff ist der Einladungsbetreff", einladung.Subject === "Dein Zugang zu Helmut steht bereit", einladung.Subject);
-    check("6 Text traegt die Einladungsformulierung",
-      /Zugang eingerichtet/.test(String(einladung.Text)) && /7 Tage gültig/.test(String(einladung.Text)));
-    check("6 kein HTML-Teil", !String(einladung.HTML || "").trim());
+    check("6 Betreff ist der Einladungsbetreff", einladung.Subject === "Deine Einladung zu Helmut", einladung.Subject);
+    check("6 Text traegt die Einladungsformulierung ohne erfundene Gueltigkeitsdauer",
+      /du wurdest eingeladen, Helmut zu nutzen\./.test(String(einladung.Text))
+      && /zeitlich begrenzt/.test(String(einladung.Text))
+      && !/\b\d+\s*(Tage?|Stunden?)\b/.test(String(einladung.Text)));
+    // Seit dem HTML-Mail-Sprint ist die Nachricht mehrteilig: Mailpit muss BEIDE Teile
+    // ausliefern. Das ist der echte Ende-zu-Ende-Nachweis, dass der HTML-Teil ankommt.
+    check("6 HTML-Teil ist vorhanden und ein vollstaendiges Dokument",
+      String(einladung.HTML || "").startsWith("<!doctype html>")
+      && String(einladung.HTML).trim().endsWith("</html>"), String(einladung.HTML || "").slice(0, 60));
+    check("6 HTML-Teil traegt Anrede, Schaltflaeche und denselben Link wie der Text",
+      /Hallo /.test(String(einladung.HTML)) && />Passwort festlegen<\/a>/.test(String(einladung.HTML))
+      && String(einladung.HTML).includes(`http://127.0.0.1:${port}/passwort-setzen?token=`));
+    check("6 HTML-Teil laedt nichts von aussen (kein Bild, keine Schrift, kein Skript)",
+      !/<img\b|<script\b|<link\b|@import|url\s*\(/i.test(String(einladung.HTML)));
 
     // 7) Gueltiger LOKALER Einladungslink.
     const tokenAusMail = tokenAusText(einladung.Text);
@@ -249,8 +260,13 @@ async function nachricht(id) {
     const alle = nachReset.daten.messages || [];
     check("10 genau EINE zusaetzliche (Reset-)Nachricht", alle.length === 3, `n=${alle.length}`);
     const resetNachricht = alle.length ? await nachricht(alle[0].ID) : {};
-    check("10 Reset-Betreff ist klar unterscheidbar", resetNachricht.Subject === "Passwort zurücksetzen", resetNachricht.Subject);
-    check("10 Reset-Text nennt die 1-Stunde-Gueltigkeit", /1 Stunde gültig/.test(String(resetNachricht.Text)));
+    check("10 Reset-Betreff ist klar unterscheidbar", resetNachricht.Subject === "Neues Passwort für Helmut festlegen", resetNachricht.Subject);
+    check("10 Reset-Text nennt die Befristung ohne erfundene Zahl",
+      /zeitlich begrenzt/.test(String(resetNachricht.Text))
+      && !/\b\d+\s*(Tage?|Stunden?)\b/.test(String(resetNachricht.Text)));
+    check("10 Reset-HTML-Teil traegt die Reset-Schaltflaeche",
+      />Neues Passwort festlegen<\/a>/.test(String(resetNachricht.HTML || "")),
+      String(resetNachricht.HTML || "").slice(0, 60));
     const resetToken = tokenAusText(resetNachricht.Text);
 
     // 11/12) Unbekannte reservierte Adresse: identische Antwort, KEINE Nachricht.

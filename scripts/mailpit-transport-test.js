@@ -126,23 +126,33 @@ function tokenFromText(text) {
   // ── A · Einladungsvorlage ──────────────────────────────────────────────────────────────
   process.env.HELMUT_MAIL_FROM = TEST_ABSENDER;
   const invite = inviteMail.buildInviteMail({ name: "Eva Eingeladen", inviteUrl: "http://127.0.0.1:3000/passwort-setzen?token=abc" });
-  check("A Einladung: Betreff unveraendert", invite.subject === "Dein Zugang zu Helmut steht bereit", invite.subject);
+  check("A Einladung: Betreff (neu seit dem HTML-Mail-Sprint)", invite.subject === "Deine Einladung zu Helmut", invite.subject);
   check("A Einladung: Absender aus HELMUT_MAIL_FROM", invite.from === TEST_ABSENDER, invite.from);
   check("A Einladung: Anrede mit Vornamen", invite.text.startsWith("Hallo Eva,"), invite.text.slice(0, 30));
   check("A Einladung: enthaelt genau einen Link", (invite.text.match(/passwort-setzen\?token=/g) || []).length === 1);
-  check("A Einladung: nennt Gueltigkeit und Einmaligkeit", /7 Tage gültig/.test(invite.text) && /nur einmal/.test(invite.text));
-  check("A Einladung: reiner Text, kein HTML", !HTML_TAG.test(invite.text) && invite.html === undefined);
+  // Frueher stand hier "7 Tage gültig". Diese Zahl war nur der Default von
+  // HELMUT_INVITE_TOKEN_TTL_MS und wurde falsch, sobald jemand die Variable setzt —
+  // deshalb nennt die Mail die Befristung jetzt ohne Zahl (scripts/mail-vorlagen-test.js).
+  check("A Einladung: nennt die Befristung ohne erfundene Zahl",
+    /zeitlich begrenzt/.test(invite.text) && !/\b\d+\s*(Tage?|Stunden?)\b/.test(invite.text));
+  // Seit dem HTML-Mail-Sprint gibt es BEIDE Fassungen. Die Textfassung bleibt reiner Text.
+  check("A Einladung: Textfassung ist reiner Text", !HTML_TAG.test(invite.text));
+  check("A Einladung: HTML-Fassung vorhanden und vollstaendiges Dokument",
+    typeof invite.html === "string" && invite.html.startsWith("<!doctype html>"));
   check("A Einladung: Fusszeile mit Absender und Impressum", invite.text.includes("Impressum:") && invite.text.includes(TEST_ABSENDER));
   const inviteOhneName = inviteMail.buildInviteMail({ inviteUrl: "http://127.0.0.1:3000/passwort-setzen?token=abc" });
   check("A Einladung ohne Namen: neutrale Anrede", inviteOhneName.text.startsWith("Hallo,"));
 
   // ── B · Passwort-Reset-Vorlage ─────────────────────────────────────────────────────────
   const reset = inviteMail.buildResetMail({ name: "Eva Eingeladen", resetUrl: "http://127.0.0.1:3000/passwort-setzen?token=xyz" });
-  check("B Reset: Betreff unveraendert", reset.subject === "Passwort zurücksetzen", reset.subject);
+  check("B Reset: Betreff (neu seit dem HTML-Mail-Sprint)", reset.subject === "Neues Passwort für Helmut festlegen", reset.subject);
   check("B Betreffzeilen von Einladung und Reset sind klar unterscheidbar", invite.subject !== reset.subject);
   check("B Reset: enthaelt genau einen Link", (reset.text.match(/passwort-setzen\?token=/g) || []).length === 1);
-  check("B Reset: nennt 1 Stunde und Einmaligkeit", /1 Stunde gültig/.test(reset.text) && /nur einmal/.test(reset.text));
-  check("B Reset: reiner Text, kein HTML", !HTML_TAG.test(reset.text) && reset.html === undefined);
+  check("B Reset: nennt die Befristung ohne erfundene Zahl",
+    /zeitlich begrenzt/.test(reset.text) && !/\b\d+\s*(Tage?|Stunden?)\b/.test(reset.text));
+  check("B Reset: Textfassung ist reiner Text", !HTML_TAG.test(reset.text));
+  check("B Reset: HTML-Fassung vorhanden und vollstaendiges Dokument",
+    typeof reset.html === "string" && reset.html.startsWith("<!doctype html>"));
   check("B Reset: Texte von Einladung und Reset sind verschieden", reset.text !== invite.text);
 
   // Absender-Standard bleibt der Platzhalter, solange nichts konfiguriert ist.
@@ -185,9 +195,14 @@ function tokenFromText(text) {
   check("D Rumpf: Absender nach Mailpit-Vertrag {Name,Email}",
     rumpf.From && rumpf.From.Email === "noreply@helmut.test" && rumpf.From.Name === "Helmut", JSON.stringify(rumpf.From));
   check("D Rumpf: genau ein Empfaenger", Array.isArray(rumpf.To) && rumpf.To.length === 1 && rumpf.To[0].Email === TEST_EMPFAENGER);
-  check("D Rumpf: Betreff der Einladung", rumpf.Subject === "Dein Zugang zu Helmut steht bereit");
+  check("D Rumpf: Betreff der Einladung", rumpf.Subject === "Deine Einladung zu Helmut");
   check("D Rumpf: Text enthaelt den Einladungslink", String(rumpf.Text).includes("/passwort-setzen?token=abc"));
-  check("D Rumpf: kein HTML-Teil", rumpf.HTML === undefined);
+  // Mailpit-Sendevertrag fuer mehrteilige Nachrichten: Feld `HTML` neben `Text`.
+  check("D Rumpf: HTML-Teil im Mailpit-Feld HTML", typeof rumpf.HTML === "string" && rumpf.HTML === invite.html);
+  check("D Rumpf: ohne HTML-Teil bleibt der Schluessel weg (Rueckwaertskompatibilitaet)",
+    JSON.parse((await (async () => { const f = testFetch(jsonAntwort(200, { ID: "x" }));
+      await transport.sendeMailpit({ from: TEST_ABSENDER, to: TEST_EMPFAENGER, subject: "S", text: "T" },
+        { env: LOOPBACK_ENV, fetchImpl: f }); return f.zustand.letzteOptionen.body; })())).HTML === undefined);
   check("D Standard-Ziel ohne HELMUT_MAILPIT_URL ist 127.0.0.1:8025",
     transport.transportKonfiguration({ HELMUT_MAIL_TRANSPORT: "mailpit" }).sendeUrl === "http://127.0.0.1:8025/api/v1/send");
   for (const [name, url] of [["localhost", "http://localhost:8025"], ["IPv6-Loopback", "http://[::1]:8025"], ["Webroot", "http://127.0.0.1:8025/mail/"]]) {
@@ -352,7 +367,7 @@ function tokenFromText(text) {
     const eingang = postfach[0] || {};
     check("K1 Empfaenger korrekt", eingang.To && eingang.To[0] && eingang.To[0].Email === TEST_EMPFAENGER, JSON.stringify(eingang.To));
     check("K1 Absender korrekt", eingang.From && eingang.From.Email === "noreply@helmut.test", JSON.stringify(eingang.From));
-    check("K1 Betreff ist der Einladungsbetreff", eingang.Subject === "Dein Zugang zu Helmut steht bereit", eingang.Subject);
+    check("K1 Betreff ist der Einladungsbetreff", eingang.Subject === "Deine Einladung zu Helmut", eingang.Subject);
     check("K1 Text traegt denselben Token wie der Kopierlink",
       tokenFromText(eingang.Text) === new URL(create.inviteUrl).searchParams.get("token"), tokenFromText(eingang.Text).slice(0, 8));
     check("K1 Link im Text zeigt auf den lokalen Server",
@@ -387,7 +402,7 @@ function tokenFromText(text) {
     await resetTiming.offeneArbeit();
     check("K4 anonymer Reset bekannte Adresse -> 200 generisch", bekannt.status === 200 && !/resetUrl/.test(bekannt.body), bekannt.body.slice(0, 120));
     check("K4 genau EINE Reset-Nachricht", postfach.length === 1, `n=${postfach.length}`);
-    check("K4 Reset-Betreff ist unterscheidbar", postfach.length === 1 && postfach[0].Subject === "Passwort zurücksetzen", JSON.stringify(postfach[0] && postfach[0].Subject));
+    check("K4 Reset-Betreff ist unterscheidbar", postfach.length === 1 && postfach[0].Subject === "Neues Passwort für Helmut festlegen", JSON.stringify(postfach[0] && postfach[0].Subject));
     const resetToken = postfach.length === 1 ? tokenFromText(postfach[0].Text) : "";
 
     // K5) Anonymer Reset fuer UNBEKANNTE Adresse -> identische Antwort, KEINE Nachricht.

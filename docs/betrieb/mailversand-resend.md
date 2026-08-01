@@ -115,6 +115,7 @@ jeder Aktivierung:
 | Prüfung | Befehl | Braucht Netz? |
 |---|---|---|
 | Resend-Transport vollständig (Auswahl, Sperren, Fehlerbilder, Zeitabbruch, Anfrageformat) | `npm run test:resend` | nein |
+| Mailvorlagen HTML + Text, Maskierung, beide Transporte | `npm run test:mail-vorlagen` | nein |
 | Lokales Testpostfach (Mailpit), unverändert | `npm run test:mailpit` | nein |
 | Echter Mailpit-Smoke-Test | `npm run test:mailpit-smoke` | nur lokal |
 | Kanonischer Gesamtlauf | `node scripts/run-offline-tests.js` | nein |
@@ -122,6 +123,12 @@ jeder Aktivierung:
 `scripts/resend-transport-test.js` ruft die echte Resend-API **nie** auf: jeder Aufruf läuft
 gegen ein eingespeistes `fetch`, der Schlüssel ist ein offensichtlicher Platzhalter, und im
 kanonischen Lauf blockt der Netz-Guard jede Nicht-Localhost-Verbindung zusätzlich technisch.
+
+**Mehrteilige Nachrichten (seit dem HTML-Mail-Sprint):** Einladung und Reset tragen HTML **und**
+reinen Text. Resend erwartet die beiden Teile in den Feldern `html` und `text` — das ist der
+Anbietervertrag und offline nicht gegenprüfbar, weil kein Test je die echte API aufruft. Ohne
+HTML-Teil steht `html` gar nicht erst im Rumpf; das Verhalten ist dann byte-identisch zu vorher.
+Inhalte und Gestaltung: [`systemmails.md`](systemmails.md).
 
 Der lokale Mailpit-Weg bleibt vollständig erhalten und ist von dieser Arbeit unberührt.
 **Einzige benannte Grenze:** `HELMUT_MAIL_REPLY_TO` wirkt **nur** im Resend-Transport — der
@@ -164,14 +171,14 @@ verändern. Wie die Antwortadresse gesetzt wird, prüft stattdessen die Offline-
    selbst liest — nicht mit der Adresse eines echten Mandanten.
 2. Antwort der Route prüfen: `mail.sent` muss `true` sein. Bei `false` steht dort ein
    Grundcode (§10).
-3. Postfach prüfen: Absender, Antwortadresse, Betreff („Dein Zugang zu Helmut steht bereit"),
+3. Postfach prüfen: Absender, Antwortadresse, Betreff („Deine Einladung zu Helmut"),
    Text und der Link. Der Link muss funktionieren und **einmalig** sein.
 4. **Spam-Ordner prüfen.** Landet die Mail dort, sind SPF/DKIM/DMARC oder die Reputation der
    Domain die Ursache — nicht der Code.
 5. Resend-Dashboard → **Logs**: Die Nachricht muss als *delivered* geführt sein, nicht nur
    als *sent*. Bounces und Beschwerden stehen ebenfalls dort.
 6. „Passwort vergessen" mit derselben eigenen Adresse auslösen und Betreff
-   („Passwort zurücksetzen") sowie Link prüfen. **Erwartet:** die HTTP-Antwort kommt nach
+   („Neues Passwort für Helmut festlegen") sowie Link prüfen. **Erwartet:** die HTTP-Antwort kommt nach
    rund einer halben Sekunde und trägt **nur** den generischen Hinweis — die Mail wird erst
    danach zugestellt, das ist der Timing-Schutz (§9.1) und kein Fehler. Dieselbe Anfrage mit
    einer garantiert **unbekannten** Adresse wiederholen: Statuscode, Rumpf und gefühlte
@@ -281,7 +288,8 @@ der HTTP-Status und eine zeichengefilterte Fehlerart den Transport, nie der Antw
 | Datei | Rolle |
 |---|---|
 | `lib/helmut/mail-transport.js` | zentrale Transportauswahl + beide Transporte |
-| `lib/helmut/invite-mail.js` | Vorlagen (inhaltlich unverändert) + eine gemeinsame Versandstelle |
+| `lib/helmut/invite-mail.js` | Wortlaute beider Systemmails + eine gemeinsame Versandstelle |
+| `lib/helmut/mail-layout.js` | gemeinsames HTML-/Text-Layout, Maskierung, Linkprüfung ([`systemmails.md`](systemmails.md)) |
 | `lib/helmut/redact.js` | kennt `HELMUT_RESEND_API_KEY` als Secret |
 | `scripts/resend-transport-test.js` | Offline-Suite für den Resend-Transport (neu) |
 | `.env.example` · [`env-inventar.md`](env-inventar.md) · [`secret-rotation.md`](secret-rotation.md) | Konfigurations- und Rotationsdokumentation |
