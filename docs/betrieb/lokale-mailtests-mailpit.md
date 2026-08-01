@@ -8,8 +8,14 @@ eigenen Rechner verlässt.
 
 **Was dieser Weg ausdrücklich NICHT ist:** kein Production-Versand. Über Anbieter,
 Absenderdomain, SPF/DKIM/DMARC, Zustellbarkeit, Bounces, Versandlimits und
-Production-Secrets ist hier **nichts** entschieden — das bleibt ein eigener,
-freigabepflichtiger Sprint.
+Production-Secrets ist hier **nichts** entschieden.
+
+> **Nachtrag 2026-08-01:** Der echte Versand ist inzwischen als **zweiter** Transport
+> (`HELMUT_MAIL_TRANSPORT=resend`) vorbereitet, aber **in Production nicht aktiviert**.
+> Der hier beschriebene lokale Weg ist davon unberührt und unverändert gültig. Alles zum
+> echten Versand steht ausschließlich in [`mailversand-resend.md`](mailversand-resend.md).
+> Eine Ausnahme, die man kennen muss: `HELMUT_MAIL_REPLY_TO` wirkt **nur** im
+> Resend-Transport — der Mailpit-Rumpf wurde bewusst nicht angefasst.
 
 ---
 
@@ -127,6 +133,7 @@ Mailpits Vertrag, kein Versehen):
 | Test | Befehl | Braucht Mailpit? |
 |---|---|---|
 | **Offline-Suite** (Transport, Vorlagen, alle Sperren, kompletter HTTP-Ablauf gegen ein Stub-Mailpit) | `npm run test:mailpit` | nein |
+| Resend-Transport (offline, ruft die echte API nie auf) | `npm run test:resend` | nein |
 | **Echter Smoke-Test** (gegen das laufende Mailpit) | `npm run test:mailpit-smoke` | **ja** |
 | Bestehender Invite-/Passwort-Ablauf (unverändert) | `npm run test:invite-flow` | nein |
 | Kanonischer Gesamtlauf | `node scripts/run-offline-tests.js` | nein |

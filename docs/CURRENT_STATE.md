@@ -1,6 +1,77 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-08-01 (**Sprint Mailpit — lokale E-Mail-Tests. TEILWEISE
+**Letzte Aktualisierung:** 2026-08-01 (**Sprint Resend — echter Mailversand VORBEREITET, in
+Production NICHT aktiviert. TEILWEISE ABGESCHLOSSEN: der Transport ist gebaut, offline bewiesen
+und mutationsgesichert; er ist ausgeschaltet, und genau das war der Auftrag. Keine echte E-Mail
+versendet, keine Production-Konfiguration verändert, kein Merge.** **Was gebaut wurde:** aus dem
+bisherigen Mailpit-Modul ist eine **zentrale Transportschicht** geworden — `sendeMail()` ist die
+EINE Stelle, die entscheidet, welcher Transport eine Nachricht bekommt; `invite-mail.sendAccessMail`
+ruft nur noch diese. Einladung und Passwort-Reset laufen damit unverändert über **dieselbe**
+Versandlogik. Neuer zweiter Transport `resend` (HTTP-API `POST https://api.resend.com/emails`,
+Bearer-Auth). **Transportentscheidung (begründet, nicht vermutet):** direkte API statt des
+offiziellen `resend`-Pakets — `package.json` bleibt `"dependencies": {}`/`"devDependencies": {}`,
+CI und Vercel-Build brauchen keinen Installationsschritt, und für EINEN POST mit vier Feldern wäre
+ein zusätzlicher Lieferkettenpfad unverhältnismäßig; Node 22 (CI `node-version: 22`) bringt `fetch`
+und `AbortController` mit. Dieselbe Begründung wie beim Mailpit-Transport. **Wie versehentlicher
+echter Versand verhindert wird — jede Sperre einzeln offline getestet:** **zwei unabhängige
+Bedingungen** (Transportname **exakt** `resend` UND gültiger Schlüssel; `resendx` schaltet nicht,
+Groß-/Kleinschreibung und Leerraum egal) · Default AUS, ohne Variable ist das Verhalten
+**byte-identisch** zu vorher (`sent:false`, `mail-versand-nicht-konfiguriert`, Kopierlink im Admin) ·
+**Ziel-URL ist eine Code-Konstante und bewusst NICHT konfigurierbar** (eine umstellbare Ziel-URL wäre
+ein Ausleitungsweg für den Schlüssel; selbst ein gefälschtes Konfigurationsobjekt mit fremdem Ziel
+landet nachweislich bei `api.resend.com`) · der Schlüssel wird **ausschließlich** aus `process.env`
+gelesen, steht in **keinem** Konfigurations- oder Ergebnisobjekt und geht nur in die
+`Authorization`-Kopfzeile · zweite, unabhängige Schlüsselprüfung direkt vor dem Aufruf ·
+Verwechslungsschutz in **beide** Richtungen (Mailpit-Konfiguration kann nicht über den Resend-Pfad
+senden und umgekehrt) · `redirect: "error"` · Zeitlimit 10 s · Kopfzeilen-Einschleusung in Absender,
+Antwortadresse, Empfänger und Betreff abgelehnt · **kein falsches Grün** (Versand gilt erst mit
+`2xx` UND echter Nachrichtenkennung als erfolgt; die Kennung wird bewusst nicht zurückgegeben) ·
+**Anbieterfehler werden bereinigt** — es verlassen nur der HTTP-Status und eine zeichengefilterte
+Fehlerart (`^[a-z][a-z0-9_]{0,39}$`) den Transport, **nie** der Antworttext; ein im Fehlertext
+gespiegelter Schlüssel wird nachweislich nicht durchgereicht · **es wird nichts protokolliert**
+(keine einzige Konsolenzeile in fünf Konstellationen gemessen). `HELMUT_RESEND_API_KEY` steht
+zusätzlich in `redact.js`. **Mailpit unverändert:** 116/116, Rumpf, Loopback-Zwang und
+Production-/Vercel-Sperre unangetastet; einzige benannte Grenze: `HELMUT_MAIL_REPLY_TO` wirkt **nur**
+im Resend-Transport (der bewiesene Mailpit-Rumpf wurde bewusst nicht angefasst). **Tests, real
+gemessen:** neue Offline-Suite `scripts/resend-transport-test.js` **199/199** (A Transportauswahl ·
+B nie ohne Aktivierung aufgerufen, auch nicht über das globale `fetch` · C Schlüssel · D Absender/
+Antwortadresse/Empfänger · E Anfrageformat · F sieben Anbieterfehlerbilder bereinigt · G Netzfehler ·
+H Zeitabbruch · I Einladung und Reset mit Empfänger, Betreff, Inhalt · J kein Leck in Logs oder
+Ergebnissen · K echter HTTP-Ablauf Admin→Konto→Versand gegen ein gestubbtes globales `fetch` inkl.
+Kopierlink-Rückfallweg · L Mailpit-Regression) · **Mutationsprobe 7/7 rot** — ehrlich benannt: die
+erste Fassung erwischte **6 von 7**; die Mutation „Ziel aus dem Konfigurationsobjekt statt Konstante"
+blieb grün, deshalb zwei zusätzliche Zusicherungen (197→199) · `mailpit-transport` **116/116** ·
+`invite-flow` **39/39** · `passwort-setzen-login-fix` **39/39** · `admin-neue-routen` **74/74** ·
+`admin-nutzer-loeschen` **75/75** · `admin-nutzer-anlegen-schnellstart` **34/34** · `env-inventar`
+**38/38** · `secret-redaction` **21/21** · `cross-tenant-security` **43/43** · `privacy-authz` **6/6** ·
+Offline-Suite **182/196** gegen im selben Arbeitsbaum gemessene Basislinie `main` `b75b2ce`
+**181/195** mit **identischer** 14er-Fehlschlagliste (umgebungsbedingt), Delta genau **+1** = die
+neue Suite · Browser-/Mobile-Smoke **32/32**. **Kein Test ruft je die echte Resend-API auf** — drei
+unabhängige Schichten: eingespeistes `fetch` bzw. im Testprozess ersetztes globales `fetch`,
+offensichtlicher Platzhalter-Schlüssel, und im kanonischen Lauf blockt der Netz-Guard jede
+Nicht-Localhost-Verbindung technisch. **Grenzen eingehalten:** keine echte E-Mail, kein Resend-Konto,
+keine Domain, kein DNS-Eintrag, keine Vercel-Variable gesetzt oder verändert, kein Secret im Repo
+(`.env.example` trägt nur leere Schlüssel), keine Migration, keine UI-Änderung, keine geänderte
+HTTP-Antwort ohne Konfiguration, Crons/Quellen/Mandate/Matching/Berlin/Brandenburg/M8 unverändert,
+**0 KI-Aufrufe, 0,00 USD, Production-Auswirkung: keine.** **Vor einer Aktivierung zwingend zu
+klären (nicht Gegenstand dieses Sprints):** (1) **Timing-Seitenkanal zur Nutzer-Enumeration** — mit
+JEDEM konfigurierten Transport wird der **anonyme** `request-reset`-Zweig aktiv, und der
+Treffer-Zweig leistet mehr Store-Arbeit (Token + Audit) als der Not-Found-Zweig; der Punkt ist seit
+Langem im Code notiert (`server.js`, `handleAuthRequestReset`) und bleibt **Vorbedingung** für den
+echten Versand; (2) Bounces/Beschwerden werden nicht ausgewertet (keine Resend-Webhooks); (3)
+Resend ist Auftragsverarbeiter — AVV gehört zu **OP-02**; (4) Domain-Verifizierung, DNS
+(SPF/DKIM/DMARC) und Schlüsselerzeugung sind manuelle Betreiberschritte. **Neue/geänderte Dateien:**
+`lib/helmut/mail-transport.js`, `lib/helmut/invite-mail.js`, `lib/helmut/redact.js`,
+`scripts/resend-transport-test.js` (neu), `docs/betrieb/mailversand-resend.md` (neu, kanonisch),
+`docs/betrieb/env-inventar.md`, `docs/betrieb/secret-rotation.md`,
+`docs/betrieb/lokale-mailtests-mailpit.md`, `.env.example`, `package.json`, `docs/CURRENT_STATE.md`.
+**Später benötigte Umgebungsvariablen:** `HELMUT_MAIL_TRANSPORT=resend`, `HELMUT_RESEND_API_KEY`
+(Secret), `HELMUT_MAIL_FROM`, optional `HELMUT_MAIL_REPLY_TO`, empfohlen `HELMUT_PUBLIC_URL`.
+Branch `claude/resend-production-transport-yvewda`. **Nächster Schritt:** Review und
+Merge-Entscheidung; die Production-Aktivierung ist ein getrennter, freigabepflichtiger Schritt nach
+[`betrieb/mailversand-resend.md`](betrieb/mailversand-resend.md) §6. Kanonisch:
+[`betrieb/mailversand-resend.md`](betrieb/mailversand-resend.md).) ·
+(**Sprint Mailpit — lokale E-Mail-Tests. TEILWEISE
 ABGESCHLOSSEN: Einladungs- und Reset-Mails landen lokal in einem echten Mailpit-Testpostfach,
 alle Sperren sind offline bewiesen und der echte Smoke-Test lief grün — aber gegen ein in der
 Cloud-Sitzung selbst gestartetes Mailpit v1.30.6, NICHT gegen das auf dem Mac des Betreibers
