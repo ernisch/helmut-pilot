@@ -1,6 +1,62 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-07-31 (**Sprint 25B — rein lesender Production-Nachweis.
+**Letzte Aktualisierung:** 2026-08-01 (**Sprint Mailpit — lokale E-Mail-Tests. TEILWEISE
+ABGESCHLOSSEN: Einladungs- und Reset-Mails landen lokal in einem echten Mailpit-Testpostfach,
+alle Sperren sind offline bewiesen und der echte Smoke-Test lief grün — aber gegen ein in der
+Cloud-Sitzung selbst gestartetes Mailpit v1.30.6, NICHT gegen das auf dem Mac des Betreibers
+installierte. Keine Production-Änderung, kein Merge.** **Was jetzt lokal geht:** mit
+`HELMUT_MAIL_TRANSPORT=mailpit` übergibt der bestehende Ablauf (Admin legt Konto an ·
+„Zugangslink erstellen" · „Passwort vergessen") die Nachricht an das lokale Mailpit; Absender,
+Empfänger, Betreff, Text und der Link sind in <http://localhost:8025> sichtbar und maschinell
+prüfbar. **Ohne diese Variable ist das Verhalten byte-identisch zu vorher** (`sent:false`,
+Grund `mail-versand-nicht-konfiguriert`, Kopierlink im Admin) — belegt, nicht behauptet.
+**Transportentscheidung (belegt):** Mailpits HTTP-API `POST /api/v1/send` gegen den Quellcode
+des Tags **v1.30.6** geprüft (`server/server.go` Routentabelle, `server/apiv1/send.go`
+Sendevertrag). Damit genügt das native `fetch` — **keine SMTP-Bibliothek, keine neue
+Paketabhängigkeit** (`package.json` bleibt `"dependencies": {}`), kein Docker. **Sperren, jede
+einzeln offline getestet:** Default AUS · nur der Wert `mailpit` schaltet ein · **Production
+(`NODE_ENV=production`) und Vercel (`VERCEL`, `VERCEL_ENV`) verweigern den Transport VOR jeder
+Zielprüfung** — auch mit gültiger Loopback-URL · nur Loopback (`127.0.0.1`/`localhost`/`::1`,
+exakter Hostvergleich: `127.0.0.1.example.org` und `0.0.0.0` abgelehnt) · keine Zugangsdaten in
+der URL · nur `http`/`https` · keine Weiterleitungen (`redirect: "error"`) · Zeitabbruch 3 s ·
+Kopfzeilen-Einschleusung abgelehnt · **kein falsches Grün** (Versand gilt erst mit
+Mailpit-Nachrichtenkennung als erfolgt) · **es wird nie ein Empfänger, Text, Token oder Link
+protokolliert** (Gründe sind nutzdatenfreie Codes). **Nebenwirkung, benannt statt versteckt:**
+mit konfiguriertem Mailpit wird der **anonyme** `request-reset`-Zweig aktiv (bisher nur der
+eingeloggte Besitzer) — das ist gewollt und nur lokal; der bereits im Code notierte Punkt
+„Store-Arbeit gegen den Not-Found-Zweig angleichen" bleibt für einen künftigen ECHTEN Versand
+offen. **Tests, real gemessen:** neue Offline-Suite `scripts/mailpit-transport-test.js`
+**116/116** (Vorlagen · Standardzustand · Testtransport · nicht erreichbar · Zeitabbruch ·
+externe Hosts · Production · Vercel · ehrliches `sent:false` · vollständiger HTTP-Ablauf gegen
+ein Stub-Mailpit inkl. Token-Einmaligkeit und Sitzungsentzug) · echter Smoke-Test
+`scripts/mailpit-smoke.js` **34/34 grün gegen Mailpit v1.30.6** (in der Cloud-Sitzung
+gestartet) · Offline-Suite **181/195** gegen im selben Arbeitsbaum gemessene Basislinie `main`
+`048571e` **180/194** mit **identischer** 14er-Fehlschlagliste (umgebungsbedingt), Delta genau
+**+1** = die neue Suite · `invite-flow` **39/39** · `passwort-setzen-login-fix` **39/39** ·
+`admin-neue-routen` **74/74** · `admin-nutzer-loeschen` **75/75** ·
+`admin-nutzer-anlegen-schnellstart` **34/34** · `env-inventar` **38/38** ·
+`cross-tenant-security` **43/43** · `secret-redaction` **21/21** · `privacy-authz` **6/6** ·
+`profile-auth-decoupling` **13/13** · Syntaxprüfung aller geänderten Dateien grün. Die
+Offline-Suite ist **hermetisch**: sie bleibt grün, während Mailpit gestoppt ist (gegengeprüft).
+**Grenzen eingehalten:** keine echte Adresse (nur `example.org`/`.test`, RFC 2606), keine
+Nachricht kann das lokale System verlassen, kein Production-Anbieter, keine Production-Secrets
+gelesen oder verändert, keine Production-Konfiguration, keine Migration, keine UI-Änderung,
+keine geänderte HTTP-Antwort ohne Konfiguration, keine Selbstregistrierung, keine
+Supabase-Auth-Migration, kein 2FA, Berlin/Brandenburg/M8 unverändert AUS, **0 KI-Aufrufe,
+0,00 USD, Production-Auswirkung: keine.** **Was offen bleibt:** (1) der Bestätigungslauf
+`npm run test:mailpit-smoke` auf dem Mac des Betreibers — die Cloud-Sitzung kann das dort
+installierte Mailpit nicht erreichen, deshalb wird hier **kein** Ende-zu-Ende-Nachweis auf der
+Betreibermaschine behauptet; (2) die Merge-Entscheidung. **Production-Versand bleibt ein
+eigener, freigabepflichtiger Sprint** (Anbieter, Absenderdomain, SPF/DKIM/DMARC,
+Zustellbarkeit, Bounces, Limits — hier nichts entschieden). Geänderte/neue Dateien:
+`lib/helmut/mail-transport.js` (neu), `lib/helmut/invite-mail.js`,
+`scripts/mailpit-transport-test.js` (neu), `scripts/mailpit-smoke.js` (neu),
+`docs/betrieb/lokale-mailtests-mailpit.md` (neu, kanonisch), `docs/betrieb/env-inventar.md`,
+`docs/betrieb/kostenmessung.md`, `.env.example`, `package.json`, `docs/CURRENT_STATE.md`.
+Branch `claude/helmut-mailpit-local-tests-tg6a6j`. **Nächster Schritt:** Mailpit lokal starten
+(`mailpit`), `npm run test:mailpit-smoke` ausführen, danach Merge-Entscheidung. Kanonisch:
+[`betrieb/lokale-mailtests-mailpit.md`](betrieb/lokale-mailtests-mailpit.md).) ·
+(**Sprint 25B — rein lesender Production-Nachweis.
 ERFOLGREICH ABGESCHLOSSEN. Punkt 25 ist damit VOLLSTÄNDIG abgeschlossen; Checklisten-Zeile 25
 steht auf ✅, Stand der Phase-1-Checkliste 14 ✅ · 12 ⏳ · 4 ☐.** Nach dem Merge von PR #190
 (Rezeptanhebung `legacy_relevance_v1`→`v2`) und dem Deployment `dpl_BK8WrEEPw3HxmXJfu2pT2eNSNGLv`
