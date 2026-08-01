@@ -331,7 +331,9 @@ async function mitProtokollmitschnitt(fn) {
   check("E Rumpf: genau ein Empfaenger", Array.isArray(eRumpf.to) && eRumpf.to.length === 1 && eRumpf.to[0] === TEST_EMPFAENGER);
   check("E Rumpf: Betreff unveraendert", eRumpf.subject === "Dein Zugang zu Helmut steht bereit");
   check("E Rumpf: Text enthaelt den Link", String(eRumpf.text).includes("/passwort-setzen?token=abc"));
-  check("E Rumpf: kein HTML-Teil", eRumpf.html === undefined);
+  // Diese Nachricht hat bewusst KEINEN HTML-Teil: dann steht der Schluessel auch nicht
+  // im Rumpf — das Verhalten ist byte-identisch zu der Fassung vor dem HTML-Mail-Sprint.
+  check("E Rumpf: ohne HTML-Teil kein html-Schluessel", eRumpf.html === undefined);
   check("E ohne Antwortadresse kein reply_to-Feld", eRumpf.reply_to === undefined, JSON.stringify(eRumpf.reply_to));
   check("E Nachrichtenkennung wird NICHT zurueckgegeben", !JSON.stringify(erfolg).includes("4ef9a417"), JSON.stringify(erfolg));
 
@@ -473,9 +475,11 @@ async function mitProtokollmitschnitt(fn) {
   check("I Einladung -> sent:true ueber Resend", inviteStatus.sent === true && inviteStatus.transport === "resend", JSON.stringify(inviteStatus));
   check("I Einladung: richtiger Empfaenger", inviteRumpf.to[0] === TEST_EMPFAENGER, JSON.stringify(inviteRumpf.to));
   check("I Einladung: richtiger Absender", inviteRumpf.from === TEST_ABSENDER, inviteRumpf.from);
-  check("I Einladung: richtiger Betreff", inviteRumpf.subject === "Dein Zugang zu Helmut steht bereit", inviteRumpf.subject);
-  check("I Einladung: Anrede, Gueltigkeit, Einmaligkeit im Text",
-    inviteRumpf.text.startsWith("Hallo Eva,") && /7 Tage gültig/.test(inviteRumpf.text) && /nur einmal/.test(inviteRumpf.text));
+  check("I Einladung: richtiger Betreff", inviteRumpf.subject === "Deine Einladung zu Helmut", inviteRumpf.subject);
+  // Frueher wurde hier "7 Tage gültig" erwartet. Die Zahl war nur der Default von
+  // HELMUT_INVITE_TOKEN_TTL_MS und stand damit potenziell falsch in der Mail.
+  check("I Einladung: Anrede und Befristungshinweis im Text",
+    inviteRumpf.text.startsWith("Hallo Eva,") && /zeitlich begrenzt/.test(inviteRumpf.text));
   check("I Einladung: genau ein Link, und zwar der richtige",
     (inviteRumpf.text.match(/passwort-setzen\?token=/g) || []).length === 1 && inviteRumpf.text.includes(inviteUrl));
   check("I Einladung: Fusszeile mit Absender und Impressum",
@@ -486,14 +490,21 @@ async function mitProtokollmitschnitt(fn) {
   const resetRumpf = JSON.parse(resetFetch.zustand.letzteOptionen.body);
   check("I Reset -> sent:true ueber Resend", resetStatus.sent === true, JSON.stringify(resetStatus));
   check("I Reset: richtiger Empfaenger", resetRumpf.to[0] === TEST_EMPFAENGER);
-  check("I Reset: richtiger Betreff", resetRumpf.subject === "Passwort zurücksetzen", resetRumpf.subject);
-  check("I Reset: 1 Stunde und Einmaligkeit im Text",
-    /1 Stunde gültig/.test(resetRumpf.text) && /nur einmal/.test(resetRumpf.text));
+  check("I Reset: richtiger Betreff", resetRumpf.subject === "Neues Passwort für Helmut festlegen", resetRumpf.subject);
+  check("I Reset: Befristungshinweis im Text", /zeitlich begrenzt/.test(resetRumpf.text));
   check("I Reset: genau ein Link, und zwar der richtige",
     (resetRumpf.text.match(/passwort-setzen\?token=/g) || []).length === 1 && resetRumpf.text.includes(resetUrl));
   check("I Einladung und Reset sind klar unterscheidbar",
     inviteRumpf.subject !== resetRumpf.subject && inviteRumpf.text !== resetRumpf.text);
-  check("I beide Nachrichten sind reiner Text", inviteRumpf.html === undefined && resetRumpf.html === undefined);
+  // Seit dem HTML-Mail-Sprint tragen beide Nachrichten BEIDE Fassungen. Resend erwartet
+  // den HTML-Teil im Feld `html` (Anbietervertrag) neben `text`.
+  check("I beide Nachrichten tragen HTML- UND Textfassung",
+    typeof inviteRumpf.html === "string" && inviteRumpf.html === einladung.html
+    && typeof resetRumpf.html === "string" && resetRumpf.html === zuruecksetzen.html);
+  check("I der HTML-Teil traegt denselben Link wie die Textfassung",
+    inviteRumpf.html.includes(inviteUrl) && resetRumpf.html.includes(resetUrl));
+  check("I der Schluessel steht in keinem der beiden Rumpfe",
+    !JSON.stringify([inviteRumpf, resetRumpf]).includes(TEST_SCHLUESSEL));
 
   // ── J · Keine Protokollierung, kein Leck ────────────────────────────────────────────────
   const mitschnitte = [];
@@ -574,7 +585,7 @@ async function mitProtokollmitschnitt(fn) {
     check("K1 Absender und Antwortadresse korrekt",
       gesendet.length === 1 && gesendet[0].rumpf.from === TEST_ABSENDER && gesendet[0].rumpf.reply_to === TEST_ANTWORT,
       JSON.stringify(gesendet[0] && [gesendet[0].rumpf.from, gesendet[0].rumpf.reply_to]));
-    check("K1 Betreff ist der Einladungsbetreff", gesendet.length === 1 && gesendet[0].rumpf.subject === "Dein Zugang zu Helmut steht bereit");
+    check("K1 Betreff ist der Einladungsbetreff", gesendet.length === 1 && gesendet[0].rumpf.subject === "Deine Einladung zu Helmut");
     check("K1 Text traegt denselben Token wie der Kopierlink",
       gesendet.length === 1 && tokenFromText(gesendet[0].rumpf.text) === new URL(create.inviteUrl).searchParams.get("token"));
     check("K1 HTTP-Antwort verraet weder Schluessel noch Anbieterkennung",

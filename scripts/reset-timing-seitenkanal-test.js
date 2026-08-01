@@ -367,7 +367,7 @@ function verteilung(name, werte) {
     check("E bekannte Adresse erzeugt GENAU EINE Nachricht", postfach.length === 1, `n=${postfach.length}`);
     check("E Nachricht geht an genau diese Adresse",
       postfach[0]?.To?.[0]?.Email === BEKANNT, JSON.stringify(postfach[0]?.To));
-    check("E Betreff ist der Reset-Betreff", postfach[0]?.Subject === "Passwort zurücksetzen",
+    check("E Betreff ist der Reset-Betreff", postfach[0]?.Subject === "Neues Passwort für Helmut festlegen",
       String(postfach[0]?.Subject));
     check("E jedes gespeicherte Token gehoert einem existierenden Konto", alleTokensGehoerenEinemKonto(),
       JSON.stringify((authStore().passwordTokens || []).map((t) => t.userId)));

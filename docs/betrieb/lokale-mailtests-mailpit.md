@@ -10,7 +10,12 @@ eigenen Rechner verlässt.
 Absenderdomain, SPF/DKIM/DMARC, Zustellbarkeit, Bounces, Versandlimits und
 Production-Secrets ist hier **nichts** entschieden.
 
-> **Nachtrag 2026-08-01:** Der echte Versand ist inzwischen als **zweiter** Transport
+> **Nachtrag 2026-08-01 (HTML-Mails):** Einladung und Passwort-Reset sind seit dem
+> HTML-Mail-Sprint gestaltete, mehrteilige Nachrichten (HTML + vollständige Textfassung).
+> Der hier beschriebene lokale Weg ist davon unberührt. Inhalte, Gestaltung, Personalisierung
+> und der visuelle Nachweis stehen kanonisch in [`systemmails.md`](systemmails.md).
+
+> **Nachtrag 2026-08-01 (Resend):** Der echte Versand ist inzwischen als **zweiter** Transport
 > (`HELMUT_MAIL_TRANSPORT=resend`) vorbereitet, aber **in Production nicht aktiviert**.
 > Der hier beschriebene lokale Weg ist davon unberührt und unverändert gültig. Alles zum
 > echten Versand steht ausschließlich in [`mailversand-resend.md`](mailversand-resend.md).
@@ -61,10 +66,11 @@ Ebenfalls von Hand auslösbar: „Passwort vergessen" auf der Login-Seite
 
 **Funktioniert:**
 
-- Einladung (Betreff „Dein Zugang zu Helmut steht bereit") und Passwort-Reset
-  (Betreff „Passwort zurücksetzen") landen als **echte Nachricht** im lokalen Mailpit.
-- Absender, Empfänger, Betreff, Text und der jeweilige Link sind dort sichtbar und
-  automatisiert prüfbar.
+- Einladung (Betreff „Deine Einladung zu Helmut") und Passwort-Reset
+  (Betreff „Neues Passwort für Helmut festlegen") landen als **echte Nachricht** im lokalen
+  Mailpit — seit dem HTML-Mail-Sprint **mehrteilig**, also als HTML **und** als reiner Text.
+- Absender, Empfänger, Betreff, beide Fassungen und der jeweilige Link sind dort sichtbar und
+  automatisiert prüfbar (Reiter **HTML** / **Text** / **HTML Check**).
 - Der Link in der Mail ist derselbe wie im Admin-Kopierlink und funktioniert.
 - Fällt Mailpit aus, bleibt der Status **ehrlich `sent:false`** und der Kopierlink im
   Admin ist weiterhin der Zustellweg.
@@ -73,7 +79,6 @@ Ebenfalls von Hand auslösbar: „Passwort vergessen" auf der Login-Seite
 
 - **Kein Versand an echte Adressen.** Nichts verlässt den lokalen Rechner.
 - **Kein Versand in Production/Preview.** Der Transport ist dort technisch gesperrt.
-- **Kein HTML-Design.** Die Vorlagen bleiben reiner Text (unverändert).
 - **Keine öffentliche Selbstregistrierung**, keine Supabase-Auth-Migration, keine
   Zwei-Faktor-Anmeldung — an alledem ändert dieser Weg nichts.
 
@@ -98,11 +103,13 @@ Ebenfalls von Hand auslösbar: „Passwort vergessen" auf der Login-Seite
 
 **Nebenwirkung, die man kennen muss:** Mit konfiguriertem Mailpit wird der **anonyme**
 `request-reset`-Zweig aktiv (bisher erzeugte nur der eingeloggte Besitzer einen Token).
-Das ist gewollt — sonst ließe sich der Reset-Weg nicht prüfen. Der bereits im Code
-notierte Punkt bleibt offen und ist **kein** Thema dieses lokalen Wegs: bei einem
-späteren **echten** Versand muss die Store-Arbeit des Treffer-Zweigs (Token + Audit)
-gegen den Not-Found-Zweig angeglichen werden, damit kein Timing-Seitenkanal zur
-Nutzer-Enumeration entsteht (`server.js`, `handleAuthRequestReset`).
+Das ist gewollt — sonst ließe sich der Reset-Weg nicht prüfen.
+
+> **Korrektur 2026-08-01:** An dieser Stelle stand bis zuletzt, der Timing-Seitenkanal zur
+> Nutzer-Enumeration sei noch offen. Das ist **überholt** — er ist mit PR #206 geschlossen
+> (Entkopplung von Token/Versand/Audit aus dem Antwortpfad plus Antwortgitter,
+> `lib/helmut/reset-timing.js`). Kanonisch dazu: `CURRENT_STATE.md` und
+> [`mailversand-resend.md`](mailversand-resend.md) §9.1.
 
 ---
 
@@ -132,7 +139,10 @@ Mailpits Vertrag, kein Versehen):
 
 | Test | Befehl | Braucht Mailpit? |
 |---|---|---|
-| **Offline-Suite** (Transport, Vorlagen, alle Sperren, kompletter HTTP-Ablauf gegen ein Stub-Mailpit) | `npm run test:mailpit` | nein |
+| **Offline-Suite** (Transport, alle Sperren, kompletter HTTP-Ablauf gegen ein Stub-Mailpit) | `npm run test:mailpit` | nein |
+| Mailvorlagen (Wortlaut, Anrede, Maskierung, Layout — HTML **und** Text) | `npm run test:mail-vorlagen` | nein |
+| Mutationsprobe der Vorlagenprüfungen | `npm run test:mail-vorlagen-mutation` | nein |
+| **Visueller Nachweis** (die sechs Sprintfälle, HTML + Text) | `npm run mail:vorschau` | **ja** |
 | Resend-Transport (offline, ruft die echte API nie auf) | `npm run test:resend` | nein |
 | **Echter Smoke-Test** (gegen das laufende Mailpit) | `npm run test:mailpit-smoke` | **ja** |
 | Bestehender Invite-/Passwort-Ablauf (unverändert) | `npm run test:invite-flow` | nein |
@@ -167,7 +177,8 @@ wiederherzustellen.
 | Datei | Rolle |
 |---|---|
 | `lib/helmut/mail-transport.js` | der lokale Transport samt aller Sperren (neu) |
-| `lib/helmut/invite-mail.js` | Vorlagen (inhaltlich unverändert) + Anbindung des Transports |
+| `lib/helmut/invite-mail.js` | Wortlaute beider Systemmails + Anbindung des Transports |
+| `lib/helmut/mail-layout.js` | gemeinsames HTML-/Text-Layout ([`systemmails.md`](systemmails.md)) |
 | `scripts/mailpit-transport-test.js` | Offline-Suite (neu) |
 | `scripts/mailpit-smoke.js` | echter Smoke-Test gegen laufendes Mailpit (neu) |
 | `.env.example` · [`env-inventar.md`](env-inventar.md) | Konfigurationsdokumentation |

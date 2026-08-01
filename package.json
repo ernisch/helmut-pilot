@@ -128,7 +128,10 @@
     "test:landesmodule-kandidaten": "node scripts/landesmodule-kandidaten-test.js",
     "test:sprint6-pilot-migration": "node scripts/sprint6-pilot-migration-test.js",
     "sprint6:dryrun": "node scripts/sprint6-migration-dryrun.js",
-    "test:sprint10-preflight-sql": "node scripts/sprint10-preflight-sql.js"
+    "test:sprint10-preflight-sql": "node scripts/sprint10-preflight-sql.js",
+    "test:mail-vorlagen": "node scripts/mail-vorlagen-test.js",
+    "test:mail-vorlagen-mutation": "node scripts/mail-vorlagen-mutationsprobe.js",
+    "mail:vorschau": "node scripts/mailpit-vorschau.js"
   },
   "dependencies": {},
   "devDependencies": {}
