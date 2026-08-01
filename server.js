@@ -44,6 +44,8 @@ const { pushStatus, sendBriefingReadyPush, sendLageChangePush, sendPushToPolitic
 const auth = require("./lib/helmut/auth");
 const accounts = require("./lib/helmut/accounts");
 const inviteMail = require("./lib/helmut/invite-mail");
+// Timing-Schutz des anonymen Passwort-Resets (Entkopplung + Antwortgitter).
+const resetTiming = require("./lib/helmut/reset-timing");
 const helmutFlags = require("./lib/helmut/flags");
 const { getRelevantParliamentaryItems } = require("./lib/helmut/dip");
 const { runPendingUnderstandingShadow, clusterRawDocuments, deriveVorgangId, diagnosePendingUnderstanding } = require("./lib/helmut/understanding");
@@ -4463,54 +4465,95 @@ function handleAuthSetPassword(request, response) {
   });
 }
 
+// Zustellung eines ANONYM angeforderten Reset-/Invite-Links. Laeuft bewusst
+// NACH der Antwort (siehe lib/helmut/reset-timing.js): Token schreiben, Mail
+// uebergeben, Audit schreiben — genau die drei Schritte, die den Treffer-Zweig
+// frueher messbar langsamer machten als den Not-Found-Zweig.
+// Der Request wird NICHT mitgereicht: alles, was von ihm gebraucht wird (Basis-URL,
+// IP), ist beim Start bereits ausgelesen.
+async function zustellenAnonymerReset(user, kontext) {
+  const purpose = user.passwordHash ? "reset" : "invite";
+  // Wirft z. B. bei gesperrtem Status — der Aufrufer verschluckt das; nach aussen
+  // ist der Fall ohnehin von jedem anderen nicht unterscheidbar.
+  const issued = await accounts.createPasswordToken(user.id, purpose);
+  const linkUrl = `${kontext.basisUrl}/passwort-setzen?token=${encodeURIComponent(issued.token)}`;
+  const mailContent = purpose === "reset"
+    ? inviteMail.buildResetMail({ name: user.name, resetUrl: linkUrl })
+    : inviteMail.buildInviteMail({ name: user.name, inviteUrl: linkUrl });
+  await inviteMail.sendAccessMail({ to: user.email, ...mailContent });
+  await accounts.recordAudit({ action: "password.reset-requested", userId: user.id, ip: kontext.ip });
+}
+
 // POST /api/auth/request-reset — { email }: antwortet IMMER generisch mit 200
 // (keine User-Enumeration). Eingeladene ohne Passwort bekommen erneut einen
 // Invite-Link (7 Tage), alle anderen einen Reset-Link (1 Stunde).
+//
+// SICHERHEIT (Timing-Seitenkanal, Sprint 2026-08-01): fuer ANONYME Anfragen ist
+// nicht nur die Antwort, sondern auch die Antwortzeit unabhaengig davon, ob die
+// Adresse existiert. Zwei unabhaengige Massnahmen, Begruendung und verworfene
+// Alternativen: lib/helmut/reset-timing.js.
+//   1. Token, Mailversand und Audit-Write liegen nicht mehr im Antwortpfad,
+//      sondern laufen als Hintergrundarbeit derselben Anfrage. Bis zur Antwort
+//      leisten beide Zweige exakt dieselbe Arbeit (ein Lesezugriff).
+//   2. Die Antwort verlaesst den Server nur auf einem festen Zeitgitter.
+// Die Hintergrundarbeit wird NACH dem Schreiben der Antwort abgewartet — die
+// Nachricht geht also unveraendert raus, sie beeinflusst nur nicht mehr, wann
+// der Client antwortet. Der eingeloggte BESITZER-Pfad ("Passwort aendern")
+// bleibt unveraendert synchron: wer eine gueltige Sitzung fuer genau dieses
+// Konto hat, kennt dessen Existenz bereits — dort ist nichts zu enumerieren.
 function handleAuthRequestReset(request, response) {
   if (!allowRate(request, "request-reset", 5, 15 * 60 * 1000)) {
     return sendTooManyRequests(response);
   }
+  const beginn = Date.now();
   return handleJson(request, response, async (body) => {
     const email = accounts.normalizeEmail(body.email);
     const generic = { ok: true, hinweis: "Wenn die Adresse existiert, wurde ein Link erstellt." };
-    if (!email) return generic;
     // Besitzer-Erkennung VOR jeder Kontoabfrage (kostet fuer alle Anfragen gleich viel).
-    const ctx = await auth.getAuthContext(request).catch(() => null);
-    const user = await accounts.getUserByEmailRaw(email).catch(() => null);
+    const ctx = email ? await auth.getAuthContext(request).catch(() => null) : null;
+    const user = email ? await accounts.getUserByEmailRaw(email).catch(() => null) : null;
     const isOwner = Boolean(user && ctx?.user?.id === user.id);
-    // Interim §6 + Review-Fixes: Solange kein Mail-Dienst existiert, kann ein anonym
-    // erzeugter Token NIEMANDEN erreichen (Mail tot, Antwort bleibt generisch) — er
-    // wuerde nur den einzigen Zustellweg zerstoeren (createPasswordToken invalidiert
-    // offene Links, z. B. den vom Admin kopierten Einladungs-Link). Deshalb: ohne
-    // Mail-Dienst erzeugen NUR eingeloggte Besitzer ("Passwort aendern") einen Token.
-    // Nebeneffekt: der anonyme Pfad macht fuer bekannte wie unbekannte Adressen
-    // exakt dieselbe Store-Arbeit (1 Read) — kein Timing-Seitenkanal zur User-
-    // Enumeration. WICHTIG bei Mail-Aktivierung: dann laeuft der Token-Zweig auch
-    // anonym, und die Store-Arbeit (Token + Audit-Write) muss gegen den Not-Found-
-    // Zweig angeglichen werden (Muster: Login-Dummy-scrypt, accounts.verifyPassword).
-    if (!user || user.active === false) return generic;
-    if (!isOwner && !inviteMail.isMailConfigured()) return generic;
-    const purpose = user.passwordHash ? "reset" : "invite";
-    let issued;
-    try {
-      issued = await accounts.createPasswordToken(user.id, purpose);
-    } catch {
-      // z. B. gesperrter Status: nach aussen identisch zur generischen Antwort.
-      return generic;
-    }
-    const linkUrl = passwordSetUrl(request, issued.token);
-    const mailContent = purpose === "reset"
-      ? inviteMail.buildResetMail({ name: user.name, resetUrl: linkUrl })
-      : inviteMail.buildInviteMail({ name: user.name, inviteUrl: linkUrl });
-    const mail = await inviteMail.sendAccessMail({ to: user.email, ...mailContent });
-    await accounts.recordAudit({ action: "password.reset-requested", userId: user.id, ip: auth.clientIp(request) });
-    if (isOwner) {
+
+    if (isOwner && user.active !== false) {
+      const purpose = user.passwordHash ? "reset" : "invite";
+      let issued;
+      try {
+        issued = await accounts.createPasswordToken(user.id, purpose);
+      } catch {
+        // z. B. gesperrter Status: nach aussen identisch zur generischen Antwort.
+        return generic;
+      }
+      const linkUrl = passwordSetUrl(request, issued.token);
+      const mailContent = purpose === "reset"
+        ? inviteMail.buildResetMail({ name: user.name, resetUrl: linkUrl })
+        : inviteMail.buildInviteMail({ name: user.name, inviteUrl: linkUrl });
+      const mail = await inviteMail.sendAccessMail({ to: user.email, ...mailContent });
+      await accounts.recordAudit({ action: "password.reset-requested", userId: user.id, ip: auth.clientIp(request) });
       // Dem Besitzer ehrlich antworten: ohne Mail-Versand den Link direkt (Interim-
       // Kopierweg), mit Mail-Versand den Zustellstatus (Client zeigt den Toast).
       if (!mail.sent) return { ...generic, resetUrl: linkUrl, expiresAt: issued.expiresAt, mail };
       return { ...generic, mail: { sent: true } };
     }
-    return generic;
+
+    // ── Anonymer Zweig: ab hier ist JEDER Ausgang von aussen ununterscheidbar ──
+    // Interim §6 + Review-Fixes: Solange kein Mail-Dienst existiert, kann ein anonym
+    // erzeugter Token NIEMANDEN erreichen (Mail tot, Antwort bleibt generisch) — er
+    // wuerde nur den einzigen Zustellweg zerstoeren (createPasswordToken invalidiert
+    // offene Links, z. B. den vom Admin kopierten Einladungs-Link). Deshalb: ohne
+    // Mail-Dienst erzeugen NUR eingeloggte Besitzer ("Passwort aendern") einen Token.
+    const zustellbar = Boolean(user && user.active !== false && inviteMail.isMailConfigured());
+    const versand = zustellbar
+      ? resetTiming.starteHintergrundarbeit(() => zustellenAnonymerReset(user, {
+        basisUrl: publicBaseUrl(request),
+        ip: auth.clientIp(request)
+      }))
+      : null;
+    await resetTiming.warteBisFreigabe(beginn);
+    sendJson(response, generic);
+    // NACH der Antwort: die Funktionsinstanz bleibt bis zum Abschluss des Versands
+    // am Leben, damit die Entkopplung keine Nachricht kostet.
+    if (versand) await versand;
+    return null;
   });
 }
 

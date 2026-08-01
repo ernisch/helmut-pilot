@@ -378,8 +378,13 @@ function tokenFromText(text) {
       (await req(port, "POST", "/api/auth/set-password", { body: { token: neuToken, password: "zweiter-versuch-1" } })).status === 410);
 
     // K4) Anonymer Reset fuer BEKANNTE Adresse -> genau eine Reset-Nachricht.
+    // Der ANONYME Zweig uebergibt die Nachricht seit dem Timing-Sprint bewusst NACH der
+    // HTTP-Antwort an den Transport (lib/helmut/reset-timing.js). offeneArbeit() wartet
+    // diesen Vorgang deterministisch ab — statt sich auf ein Zeitfenster zu verlassen.
+    const resetTiming = require("../lib/helmut/reset-timing");
     postfach.length = 0;
     const bekannt = await req(port, "POST", "/api/auth/request-reset", { headers: { "x-forwarded-for": "10.0.0.1" }, body: { email: TEST_EMPFAENGER } });
+    await resetTiming.offeneArbeit();
     check("K4 anonymer Reset bekannte Adresse -> 200 generisch", bekannt.status === 200 && !/resetUrl/.test(bekannt.body), bekannt.body.slice(0, 120));
     check("K4 genau EINE Reset-Nachricht", postfach.length === 1, `n=${postfach.length}`);
     check("K4 Reset-Betreff ist unterscheidbar", postfach.length === 1 && postfach[0].Subject === "Passwort zurücksetzen", JSON.stringify(postfach[0] && postfach[0].Subject));
@@ -388,6 +393,7 @@ function tokenFromText(text) {
     // K5) Anonymer Reset fuer UNBEKANNTE Adresse -> identische Antwort, KEINE Nachricht.
     postfach.length = 0;
     const unbekannt = await req(port, "POST", "/api/auth/request-reset", { headers: { "x-forwarded-for": "10.0.0.2" }, body: { email: "niemand@example.org" } });
+    await resetTiming.offeneArbeit();
     check("K5 unbekannte Adresse -> identische HTTP-Antwort", unbekannt.status === bekannt.status && unbekannt.body === bekannt.body,
       `${unbekannt.status} ${unbekannt.body.slice(0, 120)}`);
     check("K5 unbekannte Adresse erzeugt KEINE Nachricht", postfach.length === 0, `n=${postfach.length}`);

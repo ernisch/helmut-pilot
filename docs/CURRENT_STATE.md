@@ -1,6 +1,98 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-08-01 (**Sprint Resend — echter Mailversand VORBEREITET, in
+**Letzte Aktualisierung:** 2026-08-01 (**Sprint Timing-Seitenkanal Passwort-Reset —
+ERFOLGREICH ABGESCHLOSSEN. Der Kanal ist bestätigt, geschlossen und mutationsgesichert; keine
+echte E-Mail versendet, Resend bleibt deaktiviert, keine Production-Konfiguration verändert,
+kein Merge.** **Der bestätigte Befund (gemessen am Code, nicht vermutet):** Statuscode, Rumpf
+und Kopfzeilen des anonymen `POST /api/auth/request-reset` waren schon vorher für bekannte und
+unbekannte Adressen identisch — die **Antwortzeit** war es nicht. Mit JEDEM konfigurierten
+Transport leistete der Treffer-Zweig **innerhalb** der HTTP-Anfrage zusätzlich
+`createPasswordToken` (1 Lesen + 1 Schreiben des **ganzen** Auth-Blobs), `sendAccessMail`
+(externer HTTPS-Roundtrip, Zeitlimit 10 s) und `recordAudit` (nochmals 1 Lesen + 1 Schreiben),
+während der Not-Found-Zweig direkt nach dem einen Lesezugriff antwortete. Delta: **2 volle
+Store-Reads + 2 volle Store-Writes + 1 externer Roundtrip** — Größenordnung mehrere hundert ms
+bis Sekunden. **Eine einzige Anfrage** hätte genügt, um eine Adresse als registriert zu
+erkennen; es hätte keine Statistik gebraucht. Das Rate-Limit (5 Anfragen je IP/15 min) begrenzt
+den Durchsatz, nicht den Kanal. **Wie er geschlossen ist — zwei UNABHÄNGIGE Maßnahmen, bewusst
+keine davon allein:** **(1) Entkopplung (die eigentliche Maßnahme, strukturell):** Token,
+Versand und Audit verlassen den Antwortpfad und laufen als Hintergrundarbeit **derselben**
+Anfrage. Bis zur Antwort leisten beide Zweige exakt dieselbe Arbeit — der eine Lesezugriff
+holt ohnehin den ganzen Auth-Blob und filtert erst im Speicher, die Netzlast ist bei Treffer
+und Nicht-Treffer **byte-identisch**; übrig bleibt ein vorzeitig abbrechendes `Array.find()`.
+**(2) Antwortgitter (Restrauschen, deterministisch statt zufällig):** die Antwort verlässt den
+Server nur zu `t0 + n·Fenster` (`HELMUT_RESET_ANTWORT_MS`, Default **500 ms**, hart auf
+50…5000 ms geklemmt — eine Fehlkonfiguration kann den Schutz weder abschalten noch den Endpunkt
+unbrauchbar machen). **Es geht dabei keine Nachricht verloren:** die Hintergrundarbeit wird
+**nach** dem Schreiben der Antwort weiterhin abgewartet, die Funktionsinstanz bleibt also bis
+zum Abschluss des Versands am Leben — und weil der Versand parallel zum 500-ms-Fenster läuft,
+ist er im Regelfall schon fertig, bevor die Antwort überhaupt geschrieben wird. Deshalb
+brauchte es **weder eine persistente Warteschlange noch `waitUntil` noch eine
+Architekturänderung** (`ARCHITECTURE.md` unverändert). **Ausdrücklich verworfen, mit
+Begründung im Code:** zufälliger Jitter (mittelt sich über viele Messungen heraus, verdeckt nur
+das Symptom) · feste Zusatzwartezeit nur auf dem Not-Found-Zweig (müsste die durch einen
+externen Anbieter nach oben offene Obergrenze treffen) · Dummy-Schreibzugriffe nach dem Muster
+Login-Dummy-scrypt (schriebe für JEDE fremde Anfrage den ganzen Auth-Blob neu und glich die
+Zeiten trotzdem nur an). **Unverändert geblieben:** der eingeloggte **Besitzer**-Pfad
+(„Passwort ändern") bleibt synchron inkl. Kopierlink und ehrlichem `mail.sent` — wer eine
+gültige Sitzung für genau dieses Konto hat, kennt dessen Existenz bereits; ein Eingeloggter,
+der eine FREMDE Adresse abfragt, läuft nachweislich in den anonymen Zweig. Mailpit und Resend
+behalten **dieselbe** zentrale Versandlogik (`sendeMail`), es wurde nur verschoben, WANN sie
+gerufen wird. **Tests, real gemessen:** neue Offline-Suite
+`scripts/reset-timing-seitenkanal-test.js` **80/80** (A Antwortgitter als reine Funktionen ·
+B Warten mit eingespeister Uhr · C Hintergrundarbeit: Fehler verschluckt, abwartbar,
+protokolliert nichts · D identische Antwort in Status, **byteweisem** Rumpf und Kopfzeilen —
+auch für leere, syntaktisch unsinnige und großgeschriebene Adressen · E unbekannt = **0**
+Nachrichten und **0** neue Tokens, bekannt = **genau 1** · F gültiger Reset, Token einmalig
+(410), abgelaufener Token abgelehnt (410), bestehende Sitzung beendet, Login mit neuem Passwort ·
+G Transportfehler liefert dieselbe Antwort wie eine unbekannte Adresse · H **Timing-Messung
+über 2×48 verschränkte Durchläufe** · I Resend-Pfad ebenso entkoppelt · J Besitzer-Pfad
+unverändert · K keine Protokollzeile nennt Empfänger, Token oder Link). **Ergebnis der
+Timing-Messung (Antwortgitter im Test 100 ms, Transport künstlich 150 ms verzögert):** bekannt
+`min 100,2 · p50 101,5 · p90 102,3 · p95 102,5 · p99 102,7 · max 102,7 ms`, unbekannt
+`min 100,2 · p50 101,4 · p90 102,2 · p95 102,8 · p99 106,7 · max 106,7 ms` →
+**Δp50 = 0,0 ms · Δp95 = 0,3 ms · Δp99 = 4,0 ms · AUC = 0,533** (0,5 = ununterscheidbar). Zum
+Vergleich im selben Lauf gemessen: **ein Versand kostet 154 ms**, und die **Gesamtdauer inkl.
+Hintergrundarbeit** beträgt bekannt **156 ms** gegen unbekannt **102 ms** — die Mehrarbeit von
+**54 ms** existiert also weiterhin, ist aber an der Antwortzeit nicht mehr ablesbar.
+**Mutationsprobe `scripts/reset-timing-mutationsprobe.js` 8/8 rot** (Versand wieder vor der
+Antwort abwarten · Antwortgitter entfernt · Not-Found-Zweig antwortet sofort · semantisches
+Leck im Rumpf · anonymer Zweig fällt in den Besitzer-Pfad · Freigabezeitpunkt ohne
+Stufenaufschlag · Fenster ohne Klemmung · unbekannte Adresse bekommt eine Nachricht), inklusive
+Gegenprobe, dass der unveränderte Abzug grün ist. **Bestandssuiten:** `mailpit-transport`
+**116/116** · `resend-transport` **199/199** · `invite-flow` **39/39** ·
+`passwort-setzen-login-fix` **39/39** · `env-inventar` **38/38** · Offline-Gesamtlauf
+**183/197** gegen die im selben Arbeitsbaum gemessene Basislinie `main` `bd33c91` **182/196**
+mit **identischer** 14er-Fehlschlagliste (umgebungsbedingt), Delta genau **+1** = die neue
+Suite · Browser-/Mobile-Smoke **32/32**. **Eine bestehende Testzeile wurde angepasst und das
+wird nicht versteckt:** `mailpit-transport-test.js` wartet in K4/K5 jetzt mit
+`resetTiming.offeneArbeit()` deterministisch auf die Hintergrundzustellung, statt sich auf ein
+Zeitfenster zu verlassen — die Zusicherung selbst („genau EINE Nachricht" / „KEINE Nachricht")
+ist unverändert. **Kein Test ruft je die echte Resend-API auf:** Abschnitt I ersetzt
+`globalThis.fetch` im Testprozess, der Schlüssel ist ein offensichtlicher Platzhalter, und im
+kanonischen Lauf blockt der Netz-Guard jede Nicht-Localhost-Verbindung technisch; alle
+Adressen sind reservierte Domains (RFC 2606). **Benannte Restgrenze, kein falsches Grün:** das
+verbleibende Delta ist nicht mathematisch null. Auf Loopback ohne jedes Netzrauschen liegt die
+AUC bei ~0,53 statt exakt 0,50 — Ursache ist Ereignisschleifen-Last durch den parallel
+laufenden Versand, nicht die Zweigentscheidung; über ein echtes Netz mit zweistelligem
+Jitter ist das nicht nutzbar. Das Wächterband der Suite (AUC 0,20…0,80) ist bewusst weit: es
+soll einen **wieder eingebauten** Seitenkanal fangen (der liefert AUC nahe 1,0), nicht
+Gleichheit auf die Mikrosekunde behaupten; der quantitative Befund sind die Perzentil-Deltas.
+**Grenzen eingehalten:** keine echte E-Mail, kein Resend-Konto, keine Domain, kein DNS-Eintrag,
+**keine Vercel-Variable gesetzt oder verändert**, Resend bleibt **deaktiviert**, Mailpit
+unangetastet, kein Secret im Repo, keine Migration, keine UI-Änderung, keine Änderung an Crons,
+Quellen, Mandaten, Matching, Berlin, Brandenburg oder M8, **0 KI-Aufrufe, 0,00 USD,
+Production-Auswirkung: keine.** **Neue/geänderte Dateien:** `lib/helmut/reset-timing.js` (neu),
+`server.js` (`handleAuthRequestReset` + neue `zustellenAnonymerReset`),
+`scripts/reset-timing-seitenkanal-test.js` (neu), `scripts/reset-timing-mutationsprobe.js`
+(neu), `scripts/mailpit-transport-test.js`, `docs/betrieb/env-inventar.md`,
+`docs/betrieb/mailversand-resend.md` (§6/§7/§9.1), `package.json`, `docs/CURRENT_STATE.md`.
+Branch `claude/timing-seitenkanal-passwort-reset-5eszb5`, PR-Nummer und CI-Ergebnis werden
+nach dem Push nachgetragen. **Nächster Schritt:**
+Review und Merge-Entscheidung. Danach ist die Resend-Aktivierung nach
+[`betrieb/mailversand-resend.md`](betrieb/mailversand-resend.md) §6 **sicherheitsseitig
+freigegeben** — offen bleiben dort nur noch §9.2 (Bounces werden nicht ausgewertet) und §9.3
+(AVV, gehört zu **OP-02**) sowie die manuellen Betreiberschritte Domain/DNS/Schlüssel.) ·
+(**Sprint Resend — echter Mailversand VORBEREITET, in
 Production NICHT aktiviert. TEILWEISE ABGESCHLOSSEN: der Transport ist gebaut, offline bewiesen
 und mutationsgesichert; er ist ausgeschaltet, und genau das war der Auftrag. Keine echte E-Mail
 versendet, keine Production-Konfiguration verändert, kein Merge.** **Was gebaut wurde:** aus dem
@@ -54,11 +146,9 @@ keine Domain, kein DNS-Eintrag, keine Vercel-Variable gesetzt oder verändert, k
 (`.env.example` trägt nur leere Schlüssel), keine Migration, keine UI-Änderung, keine geänderte
 HTTP-Antwort ohne Konfiguration, Crons/Quellen/Mandate/Matching/Berlin/Brandenburg/M8 unverändert,
 **0 KI-Aufrufe, 0,00 USD, Production-Auswirkung: keine.** **Vor einer Aktivierung zwingend zu
-klären (nicht Gegenstand dieses Sprints):** (1) **Timing-Seitenkanal zur Nutzer-Enumeration** — mit
-JEDEM konfigurierten Transport wird der **anonyme** `request-reset`-Zweig aktiv, und der
-Treffer-Zweig leistet mehr Store-Arbeit (Token + Audit) als der Not-Found-Zweig; der Punkt ist seit
-Langem im Code notiert (`server.js`, `handleAuthRequestReset`) und bleibt **Vorbedingung** für den
-echten Versand; (2) Bounces/Beschwerden werden nicht ausgewertet (keine Resend-Webhooks); (3)
+klären (nicht Gegenstand dieses Sprints):** (1) **Timing-Seitenkanal zur Nutzer-Enumeration** —
+**ÜBERHOLT: am 2026-08-01 geschlossen, siehe den Sprint-Eintrag ganz oben; keine Vorbedingung
+mehr.** (2) Bounces/Beschwerden werden nicht ausgewertet (keine Resend-Webhooks); (3)
 Resend ist Auftragsverarbeiter — AVV gehört zu **OP-02**; (4) Domain-Verifizierung, DNS
 (SPF/DKIM/DMARC) und Schlüsselerzeugung sind manuelle Betreiberschritte. **Neue/geänderte Dateien:**
 `lib/helmut/mail-transport.js`, `lib/helmut/invite-mail.js`, `lib/helmut/redact.js`,

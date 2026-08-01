@@ -136,7 +136,9 @@ verändern. Wie die Antwortadresse gesetzt wird, prüft stattdessen die Offline-
 
 1. Domain im Resend-Dashboard auf **Verified**.
 2. API-Schlüssel mit `Sending access` im Passwort-Manager.
-3. Die offenen Punkte aus §9 entschieden (insbesondere der Reset-Zweig).
+3. Die offenen Punkte aus §9 entschieden. Der frühere Blocker „Timing-Seitenkanal im
+   anonymen Reset-Zweig" (§9.1) ist seit 2026-08-01 geschlossen; offen bleiben §9.2 (Bounces)
+   und §9.3 (AVV, gehört zu OP-02).
 4. Eine Freigabeentscheidung des Betreibers — das Setzen dieser Variablen ist laut
    CLAUDE.md §5 ausdrücklich freigabepflichtig.
 
@@ -169,7 +171,11 @@ verändern. Wie die Antwortadresse gesetzt wird, prüft stattdessen die Offline-
 5. Resend-Dashboard → **Logs**: Die Nachricht muss als *delivered* geführt sein, nicht nur
    als *sent*. Bounces und Beschwerden stehen ebenfalls dort.
 6. „Passwort vergessen" mit derselben eigenen Adresse auslösen und Betreff
-   („Passwort zurücksetzen") sowie Link prüfen.
+   („Passwort zurücksetzen") sowie Link prüfen. **Erwartet:** die HTTP-Antwort kommt nach
+   rund einer halben Sekunde und trägt **nur** den generischen Hinweis — die Mail wird erst
+   danach zugestellt, das ist der Timing-Schutz (§9.1) und kein Fehler. Dieselbe Anfrage mit
+   einer garantiert **unbekannten** Adresse wiederholen: Statuscode, Rumpf und gefühlte
+   Antwortzeit müssen ununterscheidbar sein, und es darf **keine** Mail ankommen.
 7. Erst wenn 1–6 sauber sind: echten Nutzenden anlegen.
 
 ---
@@ -193,15 +199,30 @@ vom Mailversand.
 
 ## 9 · Vor der Aktivierung noch zu entscheiden (offen)
 
-1. **Anonymer Passwort-Reset wird aktiv.** Sobald ein Transport konfiguriert ist, erzeugt
-   auch der **nicht eingeloggte** Weg (`POST /api/auth/request-reset`) einen Token — bisher
-   tat das nur der eingeloggte Besitzer. Das ist gewollt, hat aber eine bekannte Folge, die
-   bereits im Code notiert ist (`server.js`, `handleAuthRequestReset`): Der Treffer-Zweig
-   leistet mehr Store-Arbeit (Token schreiben + Audit) als der Not-Found-Zweig. Daraus wird
-   ein **Timing-Seitenkanal zur Nutzer-Enumeration**. Vor einem echten Production-Versand
-   muss die Store-Arbeit beider Zweige angeglichen werden (Muster: Dummy-scrypt im Login,
-   `accounts.verifyPassword`). **Dieser Punkt ist in diesem Sprint bewusst nicht angefasst
-   worden** und ist Vorbedingung für Schritt §6.
+1. ~~**Timing-Seitenkanal im anonymen Passwort-Reset.**~~ **Erledigt am 2026-08-01** — dieser
+   Punkt ist **keine offene Vorbedingung mehr.**
+
+   *Was er war:* Sobald ein Transport konfiguriert ist, wird auch der **nicht eingeloggte**
+   Weg (`POST /api/auth/request-reset`) aktiv. Der Treffer-Zweig leistete danach zusätzlich
+   Token-Schreiben, Mailversand und Audit-Schreiben **innerhalb** der HTTP-Anfrage, der
+   Not-Found-Zweig antwortete direkt nach dem einen Lesezugriff. Das Delta lag in der
+   Größenordnung mehrerer hundert Millisekunden — **eine einzige Anfrage** hätte genügt, um
+   eine Adresse als registriert zu erkennen.
+
+   *Wie er geschlossen ist:* zwei unabhängige Maßnahmen, keine davon allein (Begründung und
+   verworfene Alternativen stehen in `lib/helmut/reset-timing.js`):
+   **(1) Entkopplung** — Token, Versand und Audit liegen nicht mehr im Antwortpfad, sondern
+   laufen als Hintergrundarbeit derselben Anfrage, die **nach** dem Schreiben der Antwort
+   abgewartet wird. Bis zur Antwort leisten beide Zweige exakt dieselbe Arbeit.
+   **(2) Antwortgitter** — die Antwort verlässt den Server nur zu `t0 + n·Fenster`
+   (`HELMUT_RESET_ANTWORT_MS`, Default 500 ms, hart auf 50…5000 ms geklemmt).
+   Der eingeloggte Besitzer-Pfad („Passwort ändern") ist unverändert: wer eine gültige
+   Sitzung für genau dieses Konto hat, kennt dessen Existenz bereits.
+
+   *Beleg:* `scripts/reset-timing-seitenkanal-test.js` (Abschnitt H misst beide Zweige über
+   viele Durchläufe und weist Verteilung, Median und hohe Perzentile aus) plus
+   `scripts/reset-timing-mutationsprobe.js`. **Es geht dabei keine Nachricht verloren** — die
+   Entkopplung verschiebt nur, wann geantwortet wird, nicht ob gesendet wird.
 2. **Bounces und Beschwerden.** Helmut wertet Resend-Webhooks nicht aus. Eine dauerhaft
    unzustellbare Adresse fällt nur im Resend-Dashboard auf. Für den Pilot vertretbar; vor
    mehreren Mandanten neu bewerten.

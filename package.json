@@ -96,6 +96,8 @@
     "test:mailpit": "node scripts/mailpit-transport-test.js",
     "test:mailpit-smoke": "node scripts/mailpit-smoke.js",
     "test:resend": "node scripts/resend-transport-test.js",
+    "test:reset-timing": "node scripts/reset-timing-seitenkanal-test.js",
+    "test:reset-timing-mutation": "node scripts/reset-timing-mutationsprobe.js",
     "test:ki-profilfelder": "node scripts/ki-profilfelder-test.js",
     "test:admin-nutzer-anlegen-schnellstart": "node scripts/admin-nutzer-anlegen-schnellstart-test.js",
     "test:passwort-setzen-login-fix": "node scripts/passwort-setzen-login-fix-test.js",
