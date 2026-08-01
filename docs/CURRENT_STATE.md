@@ -132,14 +132,13 @@ Hintergrund), keine Gültigkeitsdauer im Text (siehe oben), kein Vorschautext-El
 `docs/betrieb/systemmails.md` (neu, kanonisch), `docs/betrieb/lokale-mailtests-mailpit.md`,
 `docs/betrieb/mailversand-resend.md`, `package.json`, `.gitignore`, `docs/CURRENT_STATE.md`.
 `server.js`, das Konten-/Sitzungsmodell, die Token-Logik und die Oberfläche sind **nicht**
-verändert. Branch `claude/helmut-html-mails-9jalza`, **PR #207** (offen, kein Draft; **beide Pflicht-Checks
-grün** auf dem Code-Commit `e38ae32`: `Syntax + Offline-Suiten` und
-`Browser-/Mobile-Smoke (Chromium)`, Lauf `30705138587`). Dass CI **197/197 bzw. 198/198** meldet
-und der Lauf in dieser Cloud-Sitzung **184/198**, ist kein Widerspruch: die 14 Fehlschläge sind
-umgebungsbedingt (fehlende Umgebungsvariablen in der Sitzung) und stehen identisch in der
-Basislinie. **Der Diff wurde zusätzlich unabhängig gegengeprüft** (vier getrennte Lesarten:
-Sicherheit · Korrektheit/Rückwärtskompatibilität · kein falsches Grün · Auftragstreue), jeder
-Befund von zwei Skeptikern angegriffen. **Nächster Schritt:** Review und Merge-Entscheidung. Für den echten
+verändert. Branch `claude/helmut-html-mails-9jalza` mit **zwei** Commits (`e38ae32` Umsetzung,
+`eafb307` die Befunde der Gegenprüfung), **PR #207** (offen, kein Draft). **Beide Pflicht-Checks
+grün auf BEIDEN Commits:** `e38ae32` Lauf `30705138587`, `eafb307` Lauf `30705987032` mit
+`Syntax + Offline-Suiten` **198/198 Suiten in 61 s** und `Browser-/Mobile-Smoke (Chromium)` grün.
+Dass CI **198/198** meldet und der Lauf in dieser Cloud-Sitzung **184/198**, ist kein
+Widerspruch: die 14 Fehlschläge sind umgebungsbedingt (fehlende Umgebungsvariablen in der
+Sitzung) und stehen identisch in der Basislinie. **Nächster Schritt:** Review und Merge-Entscheidung. Für den echten
 Nutzerbetrieb fehlen unverändert Versanddomain, neuer API-Schlüssel, AVV (**OP-02**) und die
 kontrollierte Production-Aktivierung. Kanonisch:
 [`betrieb/systemmails.md`](betrieb/systemmails.md).) · (**Sprint Timing-Seitenkanal Passwort-Reset —
