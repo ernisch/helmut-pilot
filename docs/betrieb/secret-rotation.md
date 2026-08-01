@@ -148,6 +148,26 @@ Allgemeine Regeln:
 - **Prüfschritt:** nächster Crawl-Lauf ohne DIP-Fehler in den Logs; DIP-Items
   erscheinen weiterhin.
 
+## HELMUT_RESEND_API_KEY
+
+- **Ablageort:** Passwort-Manager + Vercel (Production). **Stand 2026-08-01 nirgends
+  gesetzt** — der echte Mailversand ist vorbereitet, aber nicht aktiviert
+  ([`mailversand-resend.md`](mailversand-resend.md)).
+- **Anlass/Intervall:** bei Verdacht, Gerätewechsel oder Personalwechsel SOFORT; sonst
+  Turnus 12 Monate. Schadenspotenzial: Versand unter der eigenen Absenderdomain
+  (Phishing im Namen von Helmut), Verbrauch des Tageslimits. **Kein** Lesezugriff auf
+  Helmut-Daten.
+- **Schritte:**
+  1. Resend-Dashboard → API Keys → **neuen** Key mit `Sending access` erzeugen.
+  2. Vercel-Wert ersetzen → Redeploy.
+  3. Erst danach den alten Key im Resend-Dashboard widerrufen (Reihenfolge vermeidet
+     eine Lücke).
+- **Abhängigkeiten:** nur Einladungs-/Reset-Mails. Ohne gültigen Key liefert Helmut
+  ehrlich `sent:false` (`resend-api-schluessel-fehlt` bzw. `resend-nicht-autorisiert`);
+  der **Kopierlink im Admin bleibt der Zustellweg** — es geht kein Zugang verloren.
+- **Prüfschritt:** Testkonto auf eine **eigene** Adresse anlegen → `mail.sent:true`;
+  im Resend-Dashboard unter *Logs* als *delivered* geführt.
+
 ## VERCEL_TOKEN
 
 - **Ablageort:** NICHT in Vercel-Envs — lokales Credential der vercel-CLI auf
