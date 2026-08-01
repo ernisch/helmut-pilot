@@ -87,11 +87,22 @@ Production-Auswirkung: keine.** **Neue/geänderte Dateien:** `lib/helmut/reset-t
 (neu), `scripts/mailpit-transport-test.js`, `docs/betrieb/env-inventar.md`,
 `docs/betrieb/mailversand-resend.md` (§6/§7/§9.1), `package.json`, `docs/CURRENT_STATE.md`.
 Branch `claude/timing-seitenkanal-passwort-reset-5eszb5`, **PR #206** (offen, kein Draft,
-**beide Pflicht-Checks im ERSTEN Anlauf grün**: `Syntax + Offline-Suiten` **197/197 Suiten in
-62 s** und `Browser-/Mobile-Smoke (Chromium)` **grün**, Lauf `30701423057`). Dass CI **197/197**
-meldet und der Lauf in dieser Cloud-Sitzung **183/197**, ist kein Widerspruch: die 14
-Fehlschläge sind umgebungsbedingt (fehlende Umgebungsvariablen in der Sitzung) und stehen
-identisch in der Basislinie. **Nächster Schritt:**
+**beide Pflicht-Checks grün**: `Syntax + Offline-Suiten` **197/197 Suiten in 62 s** und
+`Browser-/Mobile-Smoke (Chromium)` **grün**, Lauf `30701423057` auf dem Code-Commit `7b4c32b`).
+Dass CI **197/197** meldet und der Lauf in dieser Cloud-Sitzung **183/197**, ist kein
+Widerspruch: die 14 Fehlschläge sind umgebungsbedingt (fehlende Umgebungsvariablen in der
+Sitzung) und stehen identisch in der Basislinie. **Ehrlich benannt — das Offline-Gate hat
+erneut geflackert:** der Folgelauf `30701495751` auf dem **reinen Doku-Commit** `8df3693` war im
+ersten Anlauf rot, an **einer** fremden Suite (`pilot-e2e-vertrag-test.js`, 95/96). Belege, dass
+das nichts mit diesem Sprint zu tun hat: der Commit ändert ausschließlich Markdown, der Code ist
+byte-identisch zum grünen Lauf davor · die Suite lief **vor** der neuen Suite und kann von ihr
+nicht beeinflusst worden sein · sie berührt keinen Mail-/Auth-/Reset-Pfad (E2E-Vertrag mit
+simuliertem KI-Transportfehler und Publish-Abbruch) · lokal 5 von 5 Läufen grün · im
+Wiederholungslauf (Attempt 2) wieder **197/197 in 61 s**, und
+`reset-timing-seitenkanal-test.js` war in **beiden** Anläufen grün (13,8 s). Damit ist es der
+**dritte** dokumentierte Flackerfall des Offline-Gates nach `werkzeug-lesefehler-test.js` und
+`berlin-e2e-vertrag-test.js` — die **Flackerneigung des Gates bleibt als eigene Beobachtung
+offen** und ist kein Befund dieses Sprints. **Nächster Schritt:**
 Review und Merge-Entscheidung. Danach ist die Resend-Aktivierung nach
 [`betrieb/mailversand-resend.md`](betrieb/mailversand-resend.md) §6 **sicherheitsseitig
 freigegeben** — offen bleiben dort nur noch §9.2 (Bounces werden nicht ausgewertet) und §9.3
