@@ -86,8 +86,12 @@ Production-Auswirkung: keine.** **Neue/geänderte Dateien:** `lib/helmut/reset-t
 `scripts/reset-timing-seitenkanal-test.js` (neu), `scripts/reset-timing-mutationsprobe.js`
 (neu), `scripts/mailpit-transport-test.js`, `docs/betrieb/env-inventar.md`,
 `docs/betrieb/mailversand-resend.md` (§6/§7/§9.1), `package.json`, `docs/CURRENT_STATE.md`.
-Branch `claude/timing-seitenkanal-passwort-reset-5eszb5`, PR-Nummer und CI-Ergebnis werden
-nach dem Push nachgetragen. **Nächster Schritt:**
+Branch `claude/timing-seitenkanal-passwort-reset-5eszb5`, **PR #206** (offen, kein Draft,
+**beide Pflicht-Checks im ERSTEN Anlauf grün**: `Syntax + Offline-Suiten` **197/197 Suiten in
+62 s** und `Browser-/Mobile-Smoke (Chromium)` **grün**, Lauf `30701423057`). Dass CI **197/197**
+meldet und der Lauf in dieser Cloud-Sitzung **183/197**, ist kein Widerspruch: die 14
+Fehlschläge sind umgebungsbedingt (fehlende Umgebungsvariablen in der Sitzung) und stehen
+identisch in der Basislinie. **Nächster Schritt:**
 Review und Merge-Entscheidung. Danach ist die Resend-Aktivierung nach
 [`betrieb/mailversand-resend.md`](betrieb/mailversand-resend.md) §6 **sicherheitsseitig
 freigegeben** — offen bleiben dort nur noch §9.2 (Bounces werden nicht ausgewertet) und §9.3
