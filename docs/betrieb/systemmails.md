@@ -53,9 +53,24 @@ Eintrag im Feld `absaetze`, mehr nicht.
 - **Keine Bilder, keine Grafiken, kein Zählpixel, keine Animation, keine Social-Links, kein
   verstecktes Vorschautext-Element.** Der Helmut-Schriftzug ist echter Text.
 - Genau **zwei** Linkziele: der Aktionslink und das Impressum. Mehr ist nicht zulässig.
-- Farben stammen aus dem bestehenden Designsystem (`styles.css`, Light-Mode-Tokens), als
-  deckende Hex-Werte. Jede Text-/Hintergrundkombination erfüllt **WCAG AAA** (≥ 7:1):
-  `#0f1729`/weiß 16,9:1 · `#4c5568`/weiß 7,3:1 · weiß/`#2c3f9e` 9,0:1.
+- Farben stammen aus dem bestehenden Designsystem (`styles.css`, Light-Mode-Tokens) — als
+  deckende Hex-Werte, weil `rgba()` und CSS-Variablen in Mailprogrammen unzuverlässig sind.
+  Zwei Werte sind bewusst **keine** direkte Übernahme: `#4c5568`/`#3f4759` sind die deckend
+  gerechneten Entsprechungen des halbtransparenten `--muted`, und die Fußzeile bekam einen
+  eigenen, dunkleren Wert (Begründung unten). Jede Kombination erfüllt **WCAG AAA** (≥ 7:1),
+  gerechnet jeweils gegen den Hintergrund, auf dem der Text **tatsächlich** steht — die
+  Suite rechnet diese Werte nach, sie sind nicht behauptet:
+
+  | Rolle | Vordergrund auf Hintergrund | Kontrast |
+  |---|---|---|
+  | Fließtext, Schriftzug | `#0f1729` auf `#ffffff` | 17,87:1 |
+  | Nebentext, Hinweis (auf der Karte) | `#4c5568` auf `#ffffff` | 7,48:1 |
+  | Schaltflächenbeschriftung | `#ffffff` auf `#2c3f9e` | 9,08:1 |
+  | Links (auf der Karte) | `#2c3f9e` auf `#ffffff` | 9,08:1 |
+  | **Fußzeile** (steht als einzige auf dem Seitenhintergrund) | `#3f4759` auf `#f4f6fb` | 8,61:1 |
+
+  Die Fußzeile braucht den eigenen Wert, weil `#4c5568` dort nur auf 6,92:1 käme und AAA
+  knapp verfehlte.
 - Der **vollständige Ziel-Link** steht zusätzlich als sichtbarer Rückfallweg unter der
   Schaltfläche — in **beiden** Fassungen.
 
@@ -65,14 +80,30 @@ Helmut hat **kein getrenntes Vornamensfeld**: `accounts.createUser` speichert ei
 `name`-Feld und fällt, wenn es leer ist, auf die **E-Mail-Adresse** zurück. Der Vorname wird
 deshalb hergeleitet — und nur benutzt, wenn dabei etwas Brauchbares herauskommt:
 
-| Namensfeld | Anrede |
-|---|---|
-| `Eva Eingeladen` | `Hallo Eva,` |
-| `Dr. h.c. Maximiliane-Charlotte von Sonnenberg` | `Hallo Maximiliane-Charlotte,` (Titel werden übersprungen) |
-| *(leer)* · `kontakt@example.org` · `123` · Vorname > 64 Zeichen | `Hallo,` |
+| Namensfeld | Anrede | warum |
+|---|---|---|
+| `Eva Eingeladen` | `Hallo Eva,` | Normalfall |
+| `Dr. h.c. Maximiliane-Charlotte von Sonnenberg` | `Hallo Maximiliane-Charlotte,` | Titel und Abkürzungen werden übersprungen |
+| `Müller, Eva` | `Hallo Eva,` | Sortierform aus Mandats-/Ausschusslisten — sonst grüßte Helmut mit dem **Nach**namen |
+| `Eva Müller, MdB` | `Hallo Eva,` | hinter dem Komma steht nur ein Titel, also greift der Teil davor |
+| `Jean-Luc` · `Renée` · `O'Brien` · `Ayşe` | wie geschrieben | Bindestrich, Diakritika, Apostroph, nicht-lateinische Schrift sind zulässig |
+| *(leer)* · `kontakt@example.org` · `123` · `---` · Vorname > 64 Zeichen | `Hallo,` | kein brauchbarer Vorname |
+| `http://example.org` · `www.example.org` | `Hallo,` | Mailprogramme **verlinken** so etwas automatisch — ein Anzeigename wäre damit ein Klickziel in einer Mail, die von Helmut zu kommen scheint |
+
+Ein Vorname besteht danach aus einem Buchstaben, gefolgt von Buchstaben, diakritischen
+Zeichen, Bindestrichen und Apostrophen — sonst grüßt Helmut neutral. Diese Prüfung ist eine
+**zweite, unabhängige** Schicht; die Maskierung (§5) bleibt die eigentliche Schutzmaßnahme.
 
 **Es wird nichts erfunden.** Keine internen Kennungen, keine Mandanten-ID, keine Rolle, kein
 Token außerhalb des Links.
+
+**Was mit dem neuen Wortlaut wegfällt — ausdrücklich benannt:** die alten Mails sagten
+zusätzlich „und funktioniert nur einmal". Der Wortlaut dieses Sprints sieht diesen Satz nicht
+vor, deshalb steht er nicht mehr in der Mail. **Technisch ist die Einmaligkeit unverändert
+erzwungen** (`accounts.verifyPasswordToken` setzt `usedAt`; ein zweiter Versuch endet mit
+410 — durch `mailpit-smoke` und `reset-timing-seitenkanal` weiterhin abgedeckt), sie wird dem
+Empfänger nur nicht mehr angekündigt. Anders als bei der Gültigkeitsdauer wäre die Aussage
+dauerhaft korrekt gewesen; sie wieder aufzunehmen ist eine reine Produktentscheidung.
 
 **Keine Gültigkeitsdauer im Text — das ist eine Korrektur, kein Weglassen.** Die früheren
 Fassungen behaupteten „7 Tage gültig" bzw. „1 Stunde gültig". Beides sind nur die *Defaults*
@@ -87,7 +118,7 @@ informiert. Eine Zahl, die nicht dauerhaft korrekt gehalten wird, gehört nach B
 | Schutz | Umsetzung |
 |---|---|
 | **Maskierung** | Jeder dynamische Wert (Name, Link, Absender) geht durch `escapeHtml` — den **einen** vorhandenen Maskierer des Repos (`lib/helmut/template.js`). Es gibt in `mail-layout.js` keinen Pfad, auf dem ein Wert unmaskiert ins HTML gelangt |
-| **Linkprüfung** | Nur `http:`/`https:`. `javascript:`, `data:`, `vbscript:`, protokollrelative und leerraumhaltige Ziele werden abgelehnt — an der Protokollprüfung, nicht an einer Musterliste |
+| **Linkprüfung** | Zwei unabhängige Wachen: die Zeichenkette muss **buchstäblich** mit `http://` oder `https://` beginnen, **und** der geparste `protocol` muss `http:`/`https:` sein. `javascript:`, `data:`, `vbscript:`, `mailto:`, protokollrelative und leerraumhaltige Ziele fallen durch — an der Prüfung, nicht an einer Musterliste. Verlinkt wird immer **exakt der geprüfte** String, nie der Rohwert |
 | **Fail closed** | Ist der Link unsicher, entfallen **Schaltfläche und Verlinkung**; die Adresse erscheint nur noch als maskierter Text. Relevant, weil die Basis-URL im lokalen Betrieb aus der `Host`-Kopfzeile stammt |
 | **Kopfzeilen** | Unverändert: CR/LF in Absender, Empfänger oder Betreff sperren den Versand. Der HTML-Teil ist **Nutzlast**, keine Kopfzeile — Umbrüche darin sind zulässig und blockieren nichts |
 | **Keine Protokollierung** | Unverändert: kein Empfänger, kein Text, kein Token, kein Link in irgendeinem Log |
@@ -129,10 +160,20 @@ export HELMUT_MAIL_FROM="Helmut <noreply@helmut.test>"
 npm run mail:vorschau
 ```
 
-Das Skript erzeugt die sechs Sprintfälle — Einladung und Reset, jeweils **mit** Vorname,
-**ohne** Vorname, mit sehr **langem** Namen und mit **Umlauten/Sonderzeichen** — übergibt sie
-über die echte zentrale Versandlogik an Mailpit, liest jede Nachricht **zurück** und prüft
-beide Fassungen. Die HTML- und Textfassungen landen zusätzlich in `.helmut-mailvorschau/`
+Das Skript erzeugt die sechs Sprintfälle. Sie sind bewusst **nicht** symmetrisch verteilt —
+jede Ausprägung wird einmal geprüft, nicht jede Kombination:
+
+| # | Mail | Namensfeld |
+|---|---|---|
+| 1 | Einladung | mit Vorname |
+| 2 | Einladung | ohne Vorname (leer) |
+| 3 | Reset | mit Vorname |
+| 4 | Reset | ohne Vorname (leer) |
+| 5 | Einladung | sehr langer Name |
+| 6 | Reset | Umlaute und Sonderzeichen |
+
+Sie gehen über die echte zentrale Versandlogik an Mailpit; jede Nachricht wird danach
+**zurückgelesen** und in beiden Fassungen geprüft. Die HTML- und Textfassungen landen zusätzlich in `.helmut-mailvorschau/`
 (gitignoriert), damit man sie direkt im Browser ansehen oder als Screenshot sichern kann.
 
 Anschauen: <http://localhost:8025> → Reiter **HTML** und **Text** derselben Nachricht.

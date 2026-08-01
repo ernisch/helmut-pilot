@@ -5,91 +5,141 @@ Passwort-Reset — ERFOLGREICH ABGESCHLOSSEN. Beide Systemmails sind jetzt gesta
 HTML-Nachrichten mit vollständiger Textfassung; lokal gegen ein laufendes Mailpit v1.30.6
 nachgewiesen, keine echte E-Mail versendet, Resend unverändert deaktiviert, keine
 Production-Konfiguration verändert, kein Merge.** **Was gebaut wurde:** neues Modul
-\`lib/helmut/mail-layout.js\` — die EINE Stelle, die aus einer Inhaltsbeschreibung beide Fassungen
+`lib/helmut/mail-layout.js` — die EINE Stelle, die aus einer Inhaltsbeschreibung beide Fassungen
 baut. HTML und Text entstehen aus DEMSELBEN Datensatz und können deshalb nicht inhaltlich
-auseinanderlaufen; \`invite-mail.js\` enthält nur noch den Wortlaut, \`mail-transport.js\` nur noch
+auseinanderlaufen; `invite-mail.js` enthält nur noch den Wortlaut, `mail-transport.js` nur noch
 den Versandweg. **Gestaltung:** weiße Karte auf hellem Grund, Inhaltsspalte 600 px,
-tabellenbasiert mit direkten \`style\`-Attributen (der \`<style>\`-Block trägt ausschließlich
+tabellenbasiert mit direkten `style`-Attributen (der `<style>`-Block trägt ausschließlich
 Mobil-Verbesserungen — entfernt ein Mailprogramm ihn, sieht die Mail trotzdem richtig aus),
 Helmut-Schriftzug als echter Text, eine primäre Schaltfläche, darunter der vollständige Link als
-sichtbarer Rückfallweg. Farben aus den Light-Mode-Tokens von \`styles.css\`; jede Kombination
+sichtbarer Rückfallweg. Farben aus den Light-Mode-Tokens von `styles.css`; jede Kombination
 erfüllt **WCAG AAA** (#0f1729/weiß 16,9:1 · #4c5568/weiß 7,3:1 · weiß/#2c3f9e 9,0:1).
 **Keine Bilder, keine externen Schriften, kein Zählpixel, keine Social-Links, kein verstecktes
 Vorschautext-Element**, genau zwei Linkziele (Aktion + Impressum) — jeweils als Zusicherung
 verdrahtet, nicht nur als Vorsatz. **Transport:** mehrteilige Nachrichten in beiden Transporten —
-Mailpit \`HTML\` (gegen v1.30.6 UND gegen ein laufendes Mailpit belegt), Resend \`html\`
+Mailpit `HTML` (gegen v1.30.6 UND gegen ein laufendes Mailpit belegt), Resend `html`
 (Anbietervertrag, offline nicht gegenprüfbar, weil kein Test je die echte API aufruft). **Ohne
 HTML-Teil steht der Schlüssel gar nicht erst im Rumpf** — das Verhalten ist dann byte-identisch
 zu vorher. **Zwei inhaltliche Korrekturen, die nicht versteckt werden:** (1) Die Mails
 behaupteten „7 Tage gültig" bzw. „1 Stunde gültig". Beides sind nur die **Defaults** von
-\`HELMUT_INVITE_TOKEN_TTL_MS\` / \`HELMUT_RESET_TOKEN_TTL_MS\` — wer eine der Variablen setzt, bekam
+`HELMUT_INVITE_TOKEN_TTL_MS` / `HELMUT_RESET_TOKEN_TTL_MS` — wer eine der Variablen setzt, bekam
 eine Mail, die den Empfänger **nachweislich falsch** informiert. Die Zahl ist raus, der Hinweis
-nennt die Befristung ohne Zahl (Belegpflicht, kein falsches Grün). (2) \`accounts.createUser\`
+nennt die Befristung ohne Zahl (Belegpflicht, kein falsches Grün). (2) `accounts.createUser`
 speichert bei leerem Namen die **E-Mail-Adresse** als Namen — die alte Anrede wäre „Hallo
 kontakt@example.org," geworden. Es gibt kein getrenntes Vornamensfeld; der Vorname wird jetzt
 hergeleitet und nur benutzt, wenn etwas Brauchbares herauskommt (Adresse, reine Ziffern, Titel
 wie „Dr."/„h.c.", Vorname > 64 Zeichen → neutrales „Hallo,"). **Es wird nichts erfunden**, keine
 interne Kennung, keine Rolle, kein Mandant, kein Token außerhalb des Links. **HTML-Sicherheit:**
 jeder Fremdwert geht durch den EINEN vorhandenen Maskierer des Repos
-(\`template.js escapeHtml\`) — bewusst keine zweite Kopie, die irgendwann abweicht; zusätzlich
-werden Ziel-Links geprüft (nur \`http:\`/\`https:\`, keine Steuerzeichen), und ist der Link unsicher,
+(`template.js escapeHtml`) — bewusst keine zweite Kopie, die irgendwann abweicht; zusätzlich
+werden Ziel-Links geprüft (nur `http:`/`https:`, keine Steuerzeichen), und ist der Link unsicher,
 entfallen **Schaltfläche und Verlinkung** und die Adresse erscheint nur noch als maskierter Text
 (fail closed). Das ist kein theoretischer Fall: die Basis-URL stammt im lokalen Betrieb aus der
-\`Host\`-Kopfzeile. **Der Schutz gegen Nutzererkennung aus PR #206 ist unberührt** — geändert hat
+`Host`-Kopfzeile. **Der Schutz gegen Nutzererkennung aus PR #206 ist unberührt** — geändert hat
 sich nur der Nachrichteninhalt, nicht wann oder ob gesendet wird; die Kopfzeilen-Sperre gilt
 unverändert für Absender/Empfänger/Betreff, der HTML-Teil ist Nutzlast und wird (wie der Text)
 bewusst nicht auf CR/LF geprüft. **Tests, real gemessen:** neue Offline-Suite
-\`scripts/mail-vorlagen-test.js\` **119/119** (A Einladung · B Reset · C Gleichstand beider
+`scripts/mail-vorlagen-test.js` **143/143** (A Einladung · B Reset · C Gleichstand beider
 Fassungen · D Maskierung und Einschleusung · E keine externen Ressourcen · F keine internen
 Kennungen, keine Tokens in Logs · G Layoutregeln · H beide Fassungen unverändert durch Mailpit
-und Resend · I Linkprüfung fail closed) · **Mutationsprobe \`scripts/mail-vorlagen-mutationsprobe.js\`
-18/18 rot** inklusive grüner Gegenprobe — **ehrlich benannt: die erste Fassung erwischte 17 von
-18.** Die Mutation „Rückfall-Adresse ohne Maskierung" blieb grün, weil kein Test einen Link mit
-Sonderzeichen führte; das war eine echte Lücke (der Link ist über die \`Host\`-Kopfzeile genauso
-ein Fremdwert wie der Name), zwei zusätzliche Zusicherungen schließen sie (117→119).
-**Bestandssuiten:** \`mailpit-transport\` **119/119** (vorher 116/116) · \`resend-transport\`
-**201/201** (vorher 199/199) · \`reset-timing-seitenkanal\` **80/80** · \`invite-flow\` **39/39** ·
-\`passwort-setzen-login-fix\` **39/39** · \`admin-neue-routen\` **74/74** · \`secret-redaction\`
-**21/21** · \`env-inventar\` **38/38** · Offline-Gesamtlauf **184/198** gegen die im selben
-Arbeitsbaum gemessene Basislinie \`main\` \`cb6b6be\` **183/197** mit **identischer**
+und Resend · I Linkprüfung fail closed) · **Mutationsprobe `scripts/mail-vorlagen-mutationsprobe.js`
+20/20 rot** inklusive grüner Gegenprobe. **Vier Mängel in der eigenen Arbeit wurden dabei
+gefunden und geschlossen — alle werden benannt, keiner versteckt:** (1) Die erste Fassung der
+Probe erwischte nur **17 von 18** — die Mutation „Rückfall-Adresse ohne Maskierung" blieb grün,
+weil kein Test einen Link mit Sonderzeichen führte; der Link ist über die `Host`-Kopfzeile aber
+genauso ein Fremdwert wie der Name (+2 Zusicherungen). (2) In vier angepassten Zeilen von
+`mailpit-transport-test.js` und `mailpit-smoke.js` standen zunächst **doppelte Backslashes** im
+Regex-Literal, wodurch die Zusicherung „keine erfundene Gültigkeitsdauer" **nie** greifen konnte —
+stilles Grün, ausgerechnet an der Garantie, die dieser Sprint einführt. Korrigiert und mit einer
+Beißprobe belegt: mit wieder eingebauter Zahl schlagen beide Zusicherungen rot an.
+(3) Der **Impressum-Link** in der Fußzeile war zwar maskiert, aber **nicht protokollgeprüft** —
+heute eine Code-Konstante und damit kein aktives Risiko, aber eine Fußangel, sobald er
+konfigurierbar wird; er läuft jetzt durch dieselbe Prüfung wie das Aktionsziel (+3 Zusicherungen,
++1 Mutation). (4) Der **Rückfall-Link** trug den ungetrimmten Rohwert im `href`, während geprüft
+der getrimmte Wert wurde — **kein** Schema-Bypass (`trim()` entfernt nur Leerraum, die
+Protokollprüfung urteilt für beide Formen gleich, und `escapeHtml` verhindert jeden
+Attributausbruch), aber „geprüft" und „verlinkt" müssen derselbe String sein; jetzt wird überall
+der geprüfte Wert benutzt (+2 Zusicherungen, +1 Mutation).
+**Danach wurde der Diff zusätzlich unabhängig gegengeprüft** (vier getrennte Lesarten:
+Sicherheit · Korrektheit/Rückwärtskompatibilität · kein falsches Grün · Auftragstreue). Sie
+bestätigten die vier oben genannten Punkte und fanden **sechs weitere**, die alle behoben
+sind — auch sie werden benannt: (5) Ohne verlinkbares Ziel fiel die
+**Schaltflächenbeschriftung aus dem HTML**, während die Textfassung sie behielt — die
+Fassungen liefen genau dort auseinander, wo sie es nicht dürfen. (6) Die Sortierform
+**„Nachname, Vorname“** (in Mandats- und Ausschusslisten die Regel) führte zur Anrede mit dem
+**Nach**namen. (7) **URL-artige Namensfelder** wurden zur Anrede — Mailprogramme verlinken so
+etwas automatisch, ein Anzeigename wäre damit ein Klickziel in einer Mail, die von Helmut zu
+kommen scheint; ein Vorname muss jetzt einer engen Zeichenklasse genügen. (8) Die **Fußzeile**
+steht als einzige NICHT auf der weißen Karte, sondern auf dem Seitenhintergrund, und verfehlte
+dort mit 6,92:1 die behauptete AAA-Schwelle — sie hat jetzt einen eigenen, dunkleren Wert
+(8,61:1), und die Suite **rechnet** alle fünf Kontraste nach, statt sie zu behaupten.
+(9) Der **Zahlwächter** gegen erfundene Gültigkeitsdauern fing nur „Ziffer + Einheit“ —
+„sieben Tage“ oder „30 Minuten“ wären durchgegangen. (10) Der Gleichstand-Test prüfte nur
+die Richtung Text→HTML; HTML-only-Inhalt blieb unentdeckt. Er vergleicht jetzt **beide**
+Richtungen strukturell über die `<p>`-Elemente. Zusätzlich gehärtet: die Mutationsprobe
+startet die Suite jetzt mit dem **Netz-Guard** des Repos und bereinigter Umgebung, und
+`mailpit-vorschau.js` prüft `HELMUT_MAILPIT_URL` vor **jedem** eigenen Aufruf gegen den
+Loopback-Zwang (die Zusicherung im Dateikopf war sonst nur behauptet). **Zwei Mutationen
+wurden dabei umformuliert statt stillschweigend entfernt:** „Linkprüfung abgeschaltet“ und
+„E-Mail als Vorname“ waren nach den neuen Wachen nicht mehr erkennbar — nicht weil ein Loch
+entstand, sondern weil jeweils eine **zweite, unabhängige** Wache greift; die Mutationen
+nehmen jetzt beide Schichten zurück. Endstand **143 Zusicherungen** und **25 Mutationen**.
+**Bestandssuiten:** `mailpit-transport` **119/119** (vorher 116/116) · `resend-transport`
+**201/201** (vorher 199/199) · `reset-timing-seitenkanal` **80/80** · `invite-flow` **39/39** ·
+`passwort-setzen-login-fix` **39/39** · `admin-neue-routen` **74/74** · `secret-redaction`
+**21/21** · `env-inventar` **38/38** · Offline-Gesamtlauf **184/198** gegen die im selben
+Arbeitsbaum gemessene Basislinie `main` `cb6b6be` **183/197** mit **identischer**
 14er-Fehlschlagliste (umgebungsbedingt), Delta genau **+1** = die neue Suite ·
 Browser-/Mobile-Smoke **32/32**. **Bestehende Testzeilen wurden angepasst und das wird nicht
-versteckt:** die Betreffzeilen und die Gültigkeitszusicherungen in \`mailpit-transport-test.js\`,
-\`resend-transport-test.js\`, \`mailpit-smoke.js\` und \`reset-timing-seitenkanal-test.js\` prüfen den
+versteckt:** die Betreffzeilen und die Gültigkeitszusicherungen in `mailpit-transport-test.js`,
+`resend-transport-test.js`, `mailpit-smoke.js` und `reset-timing-seitenkanal-test.js` prüfen den
 neuen Wortlaut; die frühere Zusicherung „reiner Text, kein HTML" wurde **nicht gestrichen,
 sondern aufgeteilt** (Textfassung bleibt reiner Text · HTML-Fassung ist ein vollständiges
-Dokument), und wo vorher \`HTML === undefined\` stand, prüft jetzt zusätzlich der Fall OHNE
+Dokument), und wo vorher `HTML === undefined` stand, prüft jetzt zusätzlich der Fall OHNE
 HTML-Teil, dass der Schlüssel weiterhin wegbleibt. **Lokaler visueller Nachweis erbracht:**
 Mailpit v1.30.6 in dieser Cloud-Sitzung selbst gestartet; neues Skript
-\`scripts/mailpit-vorschau.js\` (\`npm run mail:vorschau\`) erzeugt die sechs verlangten Fälle
+`scripts/mailpit-vorschau.js` (`npm run mail:vorschau`) erzeugt die sechs verlangten Fälle
 (Einladung/Reset je mit Vorname, ohne Vorname, langer Name, Umlaut/Sonderzeichen), übergibt sie
 über die echte Versandlogik und **liest jede Nachricht zurück**: **60/60**. Echter
-Ende-zu-Ende-Lauf \`npm run test:mailpit-smoke\` gegen dasselbe Mailpit **37/37** (vorher 34/34).
+Ende-zu-Ende-Lauf `npm run test:mailpit-smoke` gegen dasselbe Mailpit **37/37** (vorher 34/34).
 Mailpits eingebauter Kompatibilitätsprüfer (**HTML Check**) bewertet die Einladung mit
 **88,4 % unterstützt · 10,3 % teilweise · 1,3 % nicht unterstützt** über 187 Tests auf 45 Knoten;
 **jeder** der wenigen nicht unterstützten Punkte hat einen Rückfallweg im Layout
-(\`<style>\`-Block nur Verbesserung · \`max-width\` zusätzlich als \`width\`-Attribut ·
-Hintergrundfarbe zusätzlich auf der äußeren Tabelle · \`border-radius\`/\`word-break\` rein
+(`<style>`-Block nur Verbesserung · `max-width` zusätzlich als `width`-Attribut ·
+Hintergrundfarbe zusätzlich auf der äußeren Tabelle · `border-radius`/`word-break` rein
 kosmetisch). Screenshots der HTML- und der Textansicht in Mailpit sowie Desktop- und
 Mobilrenderings aller sechs Fälle wurden erstellt und gesichtet. **Grenzen eingehalten:** keine
 echte E-Mail, kein Resend-Aufruf, keine Domain, kein DNS-Eintrag, **keine Vercel-Variable gesetzt
 oder verändert**, Resend bleibt **deaktiviert**, kein Secret im Repo, keine neue Abhängigkeit
-(\`package.json\` bleibt \`"dependencies": {}\`), keine Migration, keine Änderung am Token-Verhalten,
+(`package.json` bleibt `"dependencies": {}`), keine Migration, keine Änderung am Token-Verhalten,
 an der Token-Laufzeit oder an der Authentifizierung, keine UI-Änderung, der Admin-Kopierlink
 bleibt unverändert, keine Änderung an Crons, Quellen, Mandaten, Matching, Berlin, Brandenburg
-oder M8, **0 KI-Aufrufe, 0,00 USD, Production-Auswirkung: keine.** **Was bewusst NICHT enthalten
+oder M8, **0 KI-Aufrufe, 0,00 USD, Production-Auswirkung: keine.** **Eine Aussage ist aus den Mails verschwunden und das wird nicht unterschlagen:** die alten
+Fassungen sagten zusätzlich „und funktioniert nur einmal“. Der vorgegebene Wortlaut dieses
+Sprints sieht den Satz nicht vor, deshalb steht er nicht mehr in der Mail. **Technisch ist
+die Einmaligkeit unverändert erzwungen** (`accounts.verifyPasswordToken` setzt `usedAt`, ein
+zweiter Versuch endet mit 410 — weiterhin von `mailpit-smoke` und
+`reset-timing-seitenkanal` abgedeckt); sie wird dem Empfänger nur nicht mehr angekündigt.
+Anders als bei der Gültigkeitsdauer wäre die Aussage dauerhaft korrekt gewesen — sie wieder
+aufzunehmen ist eine reine Produktentscheidung. **Was bewusst NICHT enthalten
 ist:** keine Willkommensmail, keine Dunkelmodus-Fassung (der Auftrag verlangt hellen
 Hintergrund), keine Gültigkeitsdauer im Text (siehe oben), kein Vorschautext-Element.
-**Neue/geänderte Dateien:** \`lib/helmut/mail-layout.js\` (neu), \`lib/helmut/invite-mail.js\`,
-\`lib/helmut/mail-transport.js\`, \`scripts/mail-vorlagen-test.js\` (neu),
-\`scripts/mail-vorlagen-mutationsprobe.js\` (neu), \`scripts/mailpit-vorschau.js\` (neu),
-\`scripts/mailpit-transport-test.js\`, \`scripts/resend-transport-test.js\`,
-\`scripts/mailpit-smoke.js\`, \`scripts/reset-timing-seitenkanal-test.js\`,
-\`docs/betrieb/systemmails.md\` (neu, kanonisch), \`docs/betrieb/lokale-mailtests-mailpit.md\`,
-\`docs/betrieb/mailversand-resend.md\`, \`package.json\`, \`.gitignore\`, \`docs/CURRENT_STATE.md\`.
-\`server.js\`, das Konten-/Sitzungsmodell, die Token-Logik und die Oberfläche sind **nicht**
-verändert. Branch \`claude/helmut-html-mails-9jalza\`, PR-Nummer und CI-Zustand werden nach dem
-Push nachgetragen. **Nächster Schritt:** Review und Merge-Entscheidung. Für den echten
+**Neue/geänderte Dateien:** `lib/helmut/mail-layout.js` (neu), `lib/helmut/invite-mail.js`,
+`lib/helmut/mail-transport.js`, `scripts/mail-vorlagen-test.js` (neu),
+`scripts/mail-vorlagen-mutationsprobe.js` (neu), `scripts/mailpit-vorschau.js` (neu),
+`scripts/mailpit-transport-test.js`, `scripts/resend-transport-test.js`,
+`scripts/mailpit-smoke.js`, `scripts/reset-timing-seitenkanal-test.js`,
+`docs/betrieb/systemmails.md` (neu, kanonisch), `docs/betrieb/lokale-mailtests-mailpit.md`,
+`docs/betrieb/mailversand-resend.md`, `package.json`, `.gitignore`, `docs/CURRENT_STATE.md`.
+`server.js`, das Konten-/Sitzungsmodell, die Token-Logik und die Oberfläche sind **nicht**
+verändert. Branch `claude/helmut-html-mails-9jalza`, **PR #207** (offen, kein Draft; **beide Pflicht-Checks
+grün** auf dem Code-Commit `e38ae32`: `Syntax + Offline-Suiten` und
+`Browser-/Mobile-Smoke (Chromium)`, Lauf `30705138587`). Dass CI **197/197 bzw. 198/198** meldet
+und der Lauf in dieser Cloud-Sitzung **184/198**, ist kein Widerspruch: die 14 Fehlschläge sind
+umgebungsbedingt (fehlende Umgebungsvariablen in der Sitzung) und stehen identisch in der
+Basislinie. **Der Diff wurde zusätzlich unabhängig gegengeprüft** (vier getrennte Lesarten:
+Sicherheit · Korrektheit/Rückwärtskompatibilität · kein falsches Grün · Auftragstreue), jeder
+Befund von zwei Skeptikern angegriffen. **Nächster Schritt:** Review und Merge-Entscheidung. Für den echten
 Nutzerbetrieb fehlen unverändert Versanddomain, neuer API-Schlüssel, AVV (**OP-02**) und die
 kontrollierte Production-Aktivierung. Kanonisch:
 [`betrieb/systemmails.md`](betrieb/systemmails.md).) · (**Sprint Timing-Seitenkanal Passwort-Reset —

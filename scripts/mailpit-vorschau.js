@@ -39,6 +39,19 @@ process.env.HELMUT_MAILPIT_URL = MAILPIT_URL;
 process.env.HELMUT_MAIL_FROM = ABSENDER;
 
 const inviteMail = require("../lib/helmut/invite-mail");
+const mailTransport = require("../lib/helmut/mail-transport");
+
+// Der Dateikopf sichert zu, dass nichts den lokalen Rechner verlaesst. Der Versand selbst
+// erzwingt das ohnehin (Loopback-Zwang im Transport) — aber DIESES Skript spricht Mailpit
+// auch direkt an (Suche, Nachricht lesen, Aufraeumen). Diese direkten Aufrufe muessen
+// derselben Regel folgen, sonst waere die Zusicherung im Kopf nur behauptet.
+const ZIEL = mailTransport.pruefeZiel(MAILPIT_URL);
+if (!ZIEL.ok) {
+  console.error(`ABBRUCH  HELMUT_MAILPIT_URL ist kein zulaessiges lokales Ziel (${ZIEL.grund}).`);
+  console.error("         Erlaubt sind ausschliesslich Loopback-Adressen — es darf keine");
+  console.error("         Testnachricht den eigenen Rechner verlassen.");
+  process.exit(2);
+}
 
 let passed = 0, failed = 0;
 function check(name, cond, detail = "") {
@@ -61,7 +74,8 @@ const FAELLE = [
 ];
 
 async function mailpit(pfad, optionen) {
-  const antwort = await fetch(`${MAILPIT_URL}${pfad}`, optionen);
+  // Immer gegen das GEPRUEFTE Loopback-Ziel, nie gegen den Rohwert der Variablen.
+  const antwort = await fetch(`${ZIEL.basis}${pfad}`, optionen);
   if (!antwort.ok) throw new Error(`Mailpit ${pfad} -> HTTP ${antwort.status}`);
   return antwort.json();
 }
@@ -127,7 +141,7 @@ async function mailpit(pfad, optionen) {
   // Nur die EIGENEN Nachrichten dieses Laufs wieder entfernen.
   for (const adresse of empfaenger) {
     try {
-      await fetch(`${MAILPIT_URL}/api/v1/search?query=${encodeURIComponent(`to:${adresse}`)}`, { method: "DELETE" });
+      await fetch(`${ZIEL.basis}/api/v1/search?query=${encodeURIComponent(`to:${adresse}`)}`, { method: "DELETE" });
     } catch (_) { /* Aufraeumen ist best effort */ }
   }
 

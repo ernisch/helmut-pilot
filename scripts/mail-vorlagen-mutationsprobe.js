@@ -25,6 +25,7 @@ const ROOT = path.join(__dirname, "..");
 const SUITE = "mail-vorlagen-test.js";
 
 const VERZEICHNISSE = ["lib"];
+// run-offline-tests.js wird als Netz-Guard mitkopiert (siehe fuehreSuiteAus).
 const DATEIEN = ["package.json"];
 
 const MUTATIONEN = [
@@ -51,10 +52,27 @@ const MUTATIONEN = [
     nach: "    .replace(/'/g, \"&#39;\");"
   },
   {
-    name: "M4 Linkpruefung abgeschaltet (javascript:-Ziel wird verlinkt)",
+    // BEIDE Wachen auf einmal. Einzeln geht es nicht mehr: seit der Praefixpruefung sind es
+    // zwei unabhaengige Schichten, und das Entfernen NUR der Protokollpruefung laesst den
+    // Code korrekt (die Praefixpruefung faengt `javascript:` weiterhin ab). Das ist
+    // Redundanz, kein Loch — und deshalb waere eine Mutation darauf keine echte Regression.
+    // M25 nimmt die Praefixpruefung einzeln zurueck; hier fallen beide.
+    name: "M4 Linkpruefung vollstaendig abgeschaltet (javascript:-Ziel wird verlinkt)",
     datei: "lib/helmut/mail-layout.js",
-    von: "  if (url.protocol !== \"http:\" && url.protocol !== \"https:\") return null;",
-    nach: "  if (false) return null;"
+    von: "  if (!/^https?:\\/\\//i.test(wert)) return null;\n"
+      + "  let url;\n"
+      + "  try {\n"
+      + "    url = new URL(wert);\n"
+      + "  } catch (_) {\n"
+      + "    return null;\n"
+      + "  }\n"
+      + "  if (url.protocol !== \"http:\" && url.protocol !== \"https:\") return null;",
+    nach: "  let url;\n"
+      + "  try {\n"
+      + "    url = new URL(wert);\n"
+      + "  } catch (_) {\n"
+      + "    return null;\n"
+      + "  }"
   },
   {
     name: "M5 HTML-Teil wird gar nicht erst versendet (nur Text kommt an)",
@@ -65,8 +83,8 @@ const MUTATIONEN = [
   {
     name: "M6 Schaltflaeche zeigt auf ein anderes Ziel als der Rueckfallweg",
     datei: "lib/helmut/mail-layout.js",
-    von: "    verlinkbar ? schaltflaecheHtml(aktionLabel, zielUrl) : \"\",",
-    nach: "    verlinkbar ? schaltflaecheHtml(aktionLabel, \"https://helmut-website.vercel.app/impressum.html\") : \"\","
+    von: "      ? schaltflaecheHtml(aktionLabel, zielUrl)",
+    nach: "      ? schaltflaecheHtml(aktionLabel, \"https://helmut-website.vercel.app/impressum.html\")"
   },
   {
     name: "M7 externes Bild (Zaehlpixel) im Layout",
@@ -114,10 +132,14 @@ const MUTATIONEN = [
   },
   {
     // Der Notnagel aus accounts.js schlaegt durch: die Adresse wird zur Anrede.
+    // Realistische Regression: „wir gruessen halt mit dem, was im Namensfeld steht".
+    // Ein blosses Entfernen des @-Schutzes genuegt hier NICHT mehr als Mutation — seit der
+    // Vornamenspruefung (M22) faengt die Zeichenklasse die Adresse ohnehin ab. Das ist
+    // Redundanz, kein Loch; die Mutation muss die Adresse deshalb aktiv durchreichen.
     name: "M14 E-Mail-Adresse wird als Vorname benutzt",
     datei: "lib/helmut/invite-mail.js",
     von: "  if (roh.includes(\"@\")) return \"\";",
-    nach: "  if (false) return \"\";"
+    nach: "  if (roh.includes(\"@\")) return roh.split(/\\s+/)[0];"
   },
   {
     name: "M15 interne Kennung (Rolle) landet in der Mail",
@@ -139,6 +161,53 @@ const MUTATIONEN = [
     datei: "lib/helmut/mail-transport.js",
     von: "  if (hatSteuerzeichen(betreff) || hatSteuerzeichen(an)) return { sent: false, reason: GRUND.KOPFZEILEN };",
     nach: "  if (!nachricht.html && (hatSteuerzeichen(betreff) || hatSteuerzeichen(an))) return { sent: false, reason: GRUND.KOPFZEILEN };"
+  },
+  {
+    // Der Fusszeilen-Link ist heute eine Konstante — die Pruefung soll trotzdem bestehen
+    // bleiben, falls er je konfigurierbar wird.
+    name: "M19 Impressum-Ziel umgeht die Linkpruefung",
+    datei: "lib/helmut/mail-layout.js",
+    von: "  const impressumZiel = sichereZielUrl(impressumUrl);",
+    nach: "  const impressumZiel = impressumUrl;"
+  },
+  {
+    // „Geprueft" und „verlinkt" duerfen nicht auseinanderfallen: der Rohwert ist nicht
+    // getrimmt, im href staende sonst ein anderer String als der geprueufte.
+    name: "M20 Rueckfall-Link traegt den Rohwert statt des geprueften Ziels",
+    datei: "lib/helmut/mail-layout.js",
+    von: "  const anzeigeUrl = verlinkbar ? zielUrl : aktionUrlRoh;",
+    nach: "  const anzeigeUrl = aktionUrlRoh;"
+  },
+  {
+    // Ohne Schaltflaeche verlaeren die beiden Fassungen die Beschriftung unterschiedlich.
+    name: "M21 ohne verlinkbares Ziel faellt die Beschriftung aus dem HTML",
+    datei: "lib/helmut/mail-layout.js",
+    von: "      : absatzHtml(`<strong>${escapeHtml(aktionLabel)}:</strong>`, { oben: 28 }),",
+    nach: "      : \"\","
+  },
+  {
+    name: "M22 Vornamenspruefung abgeschaltet (URL-artiger Name wird zur Anrede)",
+    datei: "lib/helmut/invite-mail.js",
+    von: "    if (!VORNAME_MUSTER.test(sauber)) continue;",
+    nach: "    if (false) continue;"
+  },
+  {
+    name: "M23 Sortierform „Nachname, Vorname“ gruesst wieder mit dem Nachnamen",
+    datei: "lib/helmut/invite-mail.js",
+    von: "  const komma = roh.indexOf(\",\");",
+    nach: "  const komma = -1;"
+  },
+  {
+    name: "M24 Fusszeile benutzt die Kartenfarbe und verfehlt AAA auf dem Seitenhintergrund",
+    datei: "lib/helmut/mail-layout.js",
+    von: "  gedaempftAufSeite: \"#3f4759\", // dieselbe Rolle, aber auf dem Seitenhintergrund",
+    nach: "  gedaempftAufSeite: \"#4c5568\", // dieselbe Rolle, aber auf dem Seitenhintergrund"
+  },
+  {
+    name: "M25 Ziel muss nicht mehr buchstaeblich mit http(s):// beginnen",
+    datei: "lib/helmut/mail-layout.js",
+    von: "  if (!/^https?:\\/\\//i.test(wert)) return null;",
+    nach: "  if (false) return null;"
   },
   {
     name: "M18 HTML-Schluessel steht auch ohne Inhalt im Rumpf (Rueckwaertskompatibilitaet weg)",
@@ -167,14 +236,23 @@ function baueAbzug() {
   }
   fs.mkdirSync(path.join(basis, "scripts"), { recursive: true });
   fs.copyFileSync(path.join(ROOT, "scripts", SUITE), path.join(basis, "scripts", SUITE));
+  fs.copyFileSync(path.join(ROOT, "scripts", "run-offline-tests.js"), path.join(basis, "scripts", "run-offline-tests.js"));
   return basis;
 }
 
+// Die Suite laeuft im Abzug unter DENSELBEN Bedingungen wie im kanonischen Lauf:
+// mit dem Netz-Guard aus scripts/run-offline-tests.js als `--require`-Preload und mit einer
+// bereinigten Umgebung. Sonst pruefte die Probe eine Suite, die es so nirgends gibt — und
+// eine geerbte Umgebungsvariable koennte ein Ergebnis verfaelschen.
 function fuehreSuiteAus(basis) {
-  return spawnSync(process.execPath, [path.join(basis, "scripts", SUITE)], {
-    cwd: basis, encoding: "utf8", timeout: 120000,
-    env: { ...process.env, SUPABASE_URL: "", SUPABASE_SERVICE_ROLE_KEY: "", HELMUT_V3_STORE: "" }
-  });
+  return spawnSync(process.execPath,
+    ["--require", path.join(basis, "scripts", "run-offline-tests.js"), path.join(basis, "scripts", SUITE)], {
+      cwd: basis, encoding: "utf8", timeout: 120000,
+      env: {
+        PATH: process.env.PATH, HOME: process.env.HOME, NODE_PATH: process.env.NODE_PATH || "",
+        HELMUT_OFFLINE_TEST: "1", NO_NETWORK_TESTS: "1"
+      }
+    });
 }
 
 function entferne(basis) {

@@ -103,11 +103,13 @@ Ebenfalls von Hand auslösbar: „Passwort vergessen" auf der Login-Seite
 
 **Nebenwirkung, die man kennen muss:** Mit konfiguriertem Mailpit wird der **anonyme**
 `request-reset`-Zweig aktiv (bisher erzeugte nur der eingeloggte Besitzer einen Token).
-Das ist gewollt — sonst ließe sich der Reset-Weg nicht prüfen. Der bereits im Code
-notierte Punkt bleibt offen und ist **kein** Thema dieses lokalen Wegs: bei einem
-späteren **echten** Versand muss die Store-Arbeit des Treffer-Zweigs (Token + Audit)
-gegen den Not-Found-Zweig angeglichen werden, damit kein Timing-Seitenkanal zur
-Nutzer-Enumeration entsteht (`server.js`, `handleAuthRequestReset`).
+Das ist gewollt — sonst ließe sich der Reset-Weg nicht prüfen.
+
+> **Korrektur 2026-08-01:** An dieser Stelle stand bis zuletzt, der Timing-Seitenkanal zur
+> Nutzer-Enumeration sei noch offen. Das ist **überholt** — er ist mit PR #206 geschlossen
+> (Entkopplung von Token/Versand/Audit aus dem Antwortpfad plus Antwortgitter,
+> `lib/helmut/reset-timing.js`). Kanonisch dazu: `CURRENT_STATE.md` und
+> [`mailversand-resend.md`](mailversand-resend.md) §9.1.
 
 ---
 
@@ -175,7 +177,8 @@ wiederherzustellen.
 | Datei | Rolle |
 |---|---|
 | `lib/helmut/mail-transport.js` | der lokale Transport samt aller Sperren (neu) |
-| `lib/helmut/invite-mail.js` | Vorlagen (inhaltlich unverändert) + Anbindung des Transports |
+| `lib/helmut/invite-mail.js` | Wortlaute beider Systemmails + Anbindung des Transports |
+| `lib/helmut/mail-layout.js` | gemeinsames HTML-/Text-Layout ([`systemmails.md`](systemmails.md)) |
 | `scripts/mailpit-transport-test.js` | Offline-Suite (neu) |
 | `scripts/mailpit-smoke.js` | echter Smoke-Test gegen laufendes Mailpit (neu) |
 | `.env.example` · [`env-inventar.md`](env-inventar.md) | Konfigurationsdokumentation |

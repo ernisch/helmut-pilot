@@ -213,7 +213,7 @@ async function nachricht(id) {
     check("6 Text traegt die Einladungsformulierung ohne erfundene Gueltigkeitsdauer",
       /du wurdest eingeladen, Helmut zu nutzen\./.test(String(einladung.Text))
       && /zeitlich begrenzt/.test(String(einladung.Text))
-      && !/\b\d+\s*(Tage?|Stunden?)\b/.test(String(einladung.Text)));
+      && !/\b(\d+|ein|eine|einen|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|elf|zwölf|dreißig)\s*(Minute|Minuten|Stunde|Stunden|Tag|Tage|Tagen|Woche|Wochen|Monat|Monate)\b/i.test(String(einladung.Text)));
     // Seit dem HTML-Mail-Sprint ist die Nachricht mehrteilig: Mailpit muss BEIDE Teile
     // ausliefern. Das ist der echte Ende-zu-Ende-Nachweis, dass der HTML-Teil ankommt.
     check("6 HTML-Teil ist vorhanden und ein vollstaendiges Dokument",
@@ -263,7 +263,7 @@ async function nachricht(id) {
     check("10 Reset-Betreff ist klar unterscheidbar", resetNachricht.Subject === "Neues Passwort für Helmut festlegen", resetNachricht.Subject);
     check("10 Reset-Text nennt die Befristung ohne erfundene Zahl",
       /zeitlich begrenzt/.test(String(resetNachricht.Text))
-      && !/\b\d+\s*(Tage?|Stunden?)\b/.test(String(resetNachricht.Text)));
+      && !/\b(\d+|ein|eine|einen|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|elf|zwölf|dreißig)\s*(Minute|Minuten|Stunde|Stunden|Tag|Tage|Tagen|Woche|Wochen|Monat|Monate)\b/i.test(String(resetNachricht.Text)));
     check("10 Reset-HTML-Teil traegt die Reset-Schaltflaeche",
       />Neues Passwort festlegen<\/a>/.test(String(resetNachricht.HTML || "")),
       String(resetNachricht.HTML || "").slice(0, 60));

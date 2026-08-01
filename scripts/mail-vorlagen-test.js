@@ -32,6 +32,14 @@ function check(name, cond, detail = "") {
   else { failed += 1; console.log(`FAIL  ${name}${detail ? "  -- " + detail : ""}`); }
 }
 
+// Wächter gegen eine erfundene Gültigkeitsdauer. Bewusst breiter als „Ziffer + Einheit":
+// „sieben Tage", „30 Minuten" und „einen Monat" müssen genauso auffallen — sonst genügt eine
+// andere Schreibweise, um die Garantie dieses Sprints zu unterlaufen.
+const DAUER_MUSTER = new RegExp(
+  "\\b(\\d+|ein|eine|einen|einem|einer|zwei|drei|vier|f\u00fcnf|sechs|sieben|acht|neun|zehn|elf|zw\u00f6lf"
+  + "|vierundzwanzig|drei\u00dfig|sechzig|neunzig|hundert)\\s*"
+  + "(Minute|Minuten|Stunde|Stunden|Tag|Tage|Tagen|Woche|Wochen|Monat|Monate|Monaten|h|min)\\b", "i");
+
 const TEST_ABSENDER = "Helmut <noreply@helmut.test>";
 const TEST_EMPFAENGER = "eva@example.org";
 const INVITE_URL = "https://helmut.example/passwort-setzen?token=einladungs-token-1";
@@ -108,7 +116,8 @@ function hrefs(html) {
   check("A3 Einladung: genau der vorgesehene Aktivierungslink im Text",
     (einladung.text.match(/passwort-setzen\?token=/g) || []).length === 1 && einladung.text.includes(INVITE_URL));
   check("A3 Einladung: Schaltflaeche zeigt auf genau diesen Link",
-    hrefs(einladung.html).filter((h) => h.includes("passwort-setzen")).every((h) => h === INVITE_URL));
+    (einladung.html.match(/<a href="([^"]*)"[^>]*class="h-knopf"/) || [])[1] === INVITE_URL,
+    String((einladung.html.match(/<a href="([^"]*)"[^>]*class="h-knopf"/) || [])[1]));
   check("A3 Einladung: kein zweites, fremdes Linkziel",
     hrefs(einladung.html).every((h) => h === INVITE_URL || h === "https://helmut-website.vercel.app/impressum.html"),
     JSON.stringify(hrefs(einladung.html)));
@@ -119,7 +128,8 @@ function hrefs(html) {
     && einladung.text.includes("politische Entwicklungen einzuordnen"));
   check("A Einladung: Hinweistext zur Befristung ohne erfundene Zahl",
     einladung.text.includes("Der Link ist nur für dich bestimmt und zeitlich begrenzt.")
-    && !/\b\d+\s*(Tag|Tage|Stunde|Stunden|Minuten)\b/.test(einladung.text), einladung.text);
+    && !DAUER_MUSTER.test(einladung.text) && !DAUER_MUSTER.test(sichtbarerText(einladung.html)),
+    einladung.text);
   check("A Einladung: Ignorier-Hinweis vorhanden",
     einladung.text.includes("Falls du diese Einladung nicht erwartet hast"));
   check("A Einladung: Grussformel", einladung.text.includes("Viele Grüße")
@@ -136,7 +146,8 @@ function hrefs(html) {
   check("B7 Reset: genau der vorgesehene Reset-Link im Text",
     (reset.text.match(/passwort-setzen\?token=/g) || []).length === 1 && reset.text.includes(RESET_URL));
   check("B7 Reset: Schaltflaeche zeigt auf genau diesen Link",
-    hrefs(reset.html).filter((h) => h.includes("passwort-setzen")).every((h) => h === RESET_URL));
+    (reset.html.match(/<a href="([^"]*)"[^>]*class="h-knopf"/) || [])[1] === RESET_URL,
+    String((reset.html.match(/<a href="([^"]*)"[^>]*class="h-knopf"/) || [])[1]));
   check("B7 Reset traegt NICHT den Einladungslink", !reset.text.includes(INVITE_URL) && !reset.html.includes(INVITE_URL));
   check("B8 Reset: Schaltflaechenbeschriftung „Neues Passwort festlegen“",
     />Neues Passwort festlegen<\/a>/.test(reset.html) && reset.text.includes("Neues Passwort festlegen:"));
@@ -146,7 +157,7 @@ function hrefs(html) {
     reset.text.includes("Dein bisheriges Passwort bleibt unverändert."));
   check("B Reset: Befristungshinweis ohne erfundene Zahl",
     reset.text.includes("Der Link ist nur für dich bestimmt und zeitlich begrenzt.")
-    && !/\b\d+\s*(Tag|Tage|Stunde|Stunden|Minuten)\b/.test(reset.text), reset.text);
+    && !DAUER_MUSTER.test(reset.text) && !DAUER_MUSTER.test(sichtbarerText(reset.html)), reset.text);
   check("B Einladung und Reset sind in beiden Fassungen verschieden",
     reset.text !== einladung.text && reset.html !== einladung.html);
 
@@ -160,14 +171,31 @@ function hrefs(html) {
       html.includes("Hallo Eva,") && mail.text.includes("Hallo Eva,")
       && html.includes(label) && mail.text.includes(label)
       && html.includes("Viele Grüße") && mail.text.includes("Viele Grüße"));
-    check(`C9 ${name}: jeder Fliess- und Hinweisabsatz steht in BEIDEN Fassungen`,
-      mail.text.split("\n").filter((z) => z.trim().length > 25 && !z.includes("http"))
-        .every((z) => html.includes(z.trim())),
-      mail.text.split("\n").filter((z) => z.trim().length > 25 && !z.includes("http") && !html.includes(z.trim())).join(" | "));
+    // BEIDE Richtungen. Nur Text->HTML zu pruefen liesse HTML-only-Inhalt unentdeckt, nur
+    // HTML->Text liesse Textverlust unentdeckt. Verglichen wird strukturell: jeder
+    // Inhaltsabsatz der HTML-Fassung ist genau ein <p>-Element.
+    const textAbsaetze = mail.text.split("\n").map((z) => z.trim())
+      .filter((z) => z.length > 25 && !z.includes("http") && !z.startsWith("Absender:"));
+    const fehltImHtml = textAbsaetze.filter((z) => !html.includes(z));
+    check(`C9 ${name}: jeder Text-Absatz steht auch im HTML (Richtung Text -> HTML)`,
+      textAbsaetze.length >= 4 && fehltImHtml.length === 0,
+      `n=${textAbsaetze.length} fehlt: ${fehltImHtml.join(" | ")}`);
+    // Rueckrichtung: KEIN <p> der HTML-Fassung darf Inhalt tragen, den die Textfassung nicht
+    // hat. Ausgenommen ist einzig die Erklaerung des Rueckfallwegs — sie ist reines Layout.
+    const RUECKFALL_ERKLAERUNG = "Falls die Schaltfläche nicht funktioniert";
+    const htmlAbsaetze = Array.from(mail.html.matchAll(/<p [^>]*>([\s\S]*?)<\/p>/g))
+      .map((m) => sichtbarerText(m[1]))
+      .filter((z) => z.length > 25 && !z.includes("http") && !z.startsWith(RUECKFALL_ERKLAERUNG));
+    const fehltImText = htmlAbsaetze.filter((z) => !mail.text.includes(z));
+    check(`C9 ${name}: kein HTML-Absatz traegt Inhalt, den die Textfassung nicht hat (HTML -> Text)`,
+      htmlAbsaetze.length >= 4 && fehltImText.length === 0,
+      `n=${htmlAbsaetze.length} fehlt: ${fehltImText.join(" | ")}`);
     check(`C10 ${name}: vollstaendiger Link sichtbar in BEIDEN Fassungen`,
       mail.text.includes(url) && html.includes(url), url);
+    const posKnopf = mail.html.indexOf(`>${label}</a>`);
+    const posRueckfall = mail.html.indexOf("kopiere diese Adresse in deinen Browser");
     check(`C10 ${name}: der sichtbare Rueckfallweg steht unter der Schaltflaeche`,
-      mail.html.indexOf(`>${label}</a>`) < mail.html.indexOf("kopiere diese Adresse in deinen Browser"));
+      posKnopf >= 0 && posRueckfall >= 0 && posKnopf < posRueckfall, `${posKnopf} / ${posRueckfall}`);
     check(`C ${name}: Textfassung enthaelt keine HTML-Auszeichnung`,
       !/<\/?(?:a|p|br|div|span|html|body|table|tr|td|img|style)\b/i.test(mail.text));
     check(`C ${name}: HTML ist ein vollstaendiges Dokument mit UTF-8`,
@@ -179,24 +207,55 @@ function hrefs(html) {
 
   // ── D · Maskierung und Einschleusung ────────────────────────────────────────────────────
   const boesartig = '<script>alert("x")</script>';
+  // SCHICHT 1 — die Maskierung im Layout. Sie ist DIE Schutzmassnahme und wird deshalb
+  // direkt am Layout festgenagelt, unabhaengig davon, was invite-mail vorher herausfiltert.
+  {
+    const roh = layout.baueLayout({
+      titel: `T ${boesartig}`,
+      anrede: `Hallo ${boesartig},`,
+      absaetze: [`Absatz ${boesartig}`],
+      aktionLabel: `Los ${boesartig}`,
+      aktionUrl: 'https://a.test/x?t=1"><script>alert(1)</script>',
+      hinweise: [`Hinweis ${boesartig}`],
+      gruss: [`Gruss ${boesartig}`],
+      absender: `Helmut ${boesartig} <x@a.test>`,
+      impressumUrl: 'https://a.test/i?x="><script>alert(1)</script>'
+    });
+    check("D11 Layout: KEIN Feld laesst Auszeichnung durch (neun Einsetzstellen auf einmal)",
+      !/<script/i.test(roh.html) && !/<\/script/i.test(roh.html));
+    check("D11 Layout: die Auszeichnung erscheint maskiert, geht also nicht verloren",
+      (roh.html.match(/&lt;script&gt;/g) || []).length >= 9,
+      String((roh.html.match(/&lt;script&gt;/g) || []).length));
+    check("D12 Layout: keine Ereignis-Attribute (onload/onerror/onclick)", !/\son[a-z]+\s*=/i.test(roh.html));
+    check("D12 Layout: kein javascript:-Ziel irgendwo im HTML", !/javascript:/i.test(roh.html));
+    check("D11 Layout: Anfuehrungszeichen brechen kein Attribut auf",
+      !/<img/i.test(layout.baueLayout({
+        titel: "T", anrede: '"><img src=x onerror=alert(1)>', absaetze: ["A"], aktionLabel: "L",
+        aktionUrl: "https://a.test/x", hinweise: ["H"], gruss: ["G"], absender: "H <x@a.test>", impressumUrl: ""
+      }).html));
+    check("D11 Layout: Kaufmanns-Und wird maskiert",
+      layout.baueLayout({
+        titel: "T", anrede: "Hallo Eva&Otto,", absaetze: ["A"], aktionLabel: "L",
+        aktionUrl: "https://a.test/x", hinweise: ["H"], gruss: ["G"], absender: "H <x@a.test>", impressumUrl: ""
+      }).html.includes("Hallo Eva&amp;Otto,"));
+    check("D11 der Maskierer verhaelt sich wie erwartet (fuenf Zeichen)",
+      require("../lib/helmut/template").escapeHtml('<>&"\'') === "&lt;&gt;&amp;&quot;&#39;",
+      require("../lib/helmut/template").escapeHtml('<>&"\''));
+  }
+  // SCHICHT 2 — invite-mail laesst einen solchen Wert gar nicht erst zur Anrede werden.
+  // Zweite, UNABHAENGIGE Schicht; sie ersetzt die Maskierung nicht.
   const boese = inviteMail.buildInviteMail({ name: `${boesartig} Eva`, inviteUrl: INVITE_URL });
-  check("D11 manipulierter Name erscheint maskiert, nicht als Auszeichnung",
-    !boese.html.includes("<script>") && boese.html.includes("&lt;script&gt;"), "");
+  check("D12 manipulierter Namensteil wird gar nicht erst zur Anrede",
+    boese.text.startsWith("Hallo Eva,") && !boese.html.includes("script"), boese.text.slice(0, 40));
   check("D12 kein ausfuehrbares script-Element in der Mail",
     !/<script/i.test(boese.html) && !/<\/script/i.test(boese.html));
   check("D12 keine Ereignis-Attribute (onload/onerror/onclick)", !/\son[a-z]+\s*=/i.test(boese.html));
   check("D12 kein javascript:-Ziel irgendwo im HTML", !/javascript:/i.test(boese.html));
-  check("D11 Anfuehrungszeichen im Namen brechen kein Attribut auf",
-    inviteMail.buildInviteMail({ name: '"><img src=x onerror=alert(1)> Eva', inviteUrl: INVITE_URL })
-      .html.includes("&quot;&gt;&lt;img") === true);
-  check("D11 kein img-Element, auch nicht ueber den Namen eingeschleust",
-    !/<img/i.test(inviteMail.buildInviteMail({ name: '"><img src=x> Eva', inviteUrl: INVITE_URL }).html));
-  check("D11 Kaufmanns-Und im Namen wird maskiert",
-    inviteMail.buildInviteMail({ name: "Eva&Otto Müller", inviteUrl: INVITE_URL }).html.includes("Hallo Eva&amp;Otto,"),
-    inviteMail.anredeAus("Eva&Otto Müller"));
-  check("D11 der Maskierer verhaelt sich wie erwartet (fuenf Zeichen)",
-    require("../lib/helmut/template").escapeHtml('<>&"\'') === "&lt;&gt;&amp;&quot;&#39;",
-    require("../lib/helmut/template").escapeHtml('<>&"\''));
+  check("D12 URL-artiger Namensteil wird nicht zur Anrede (Mailprogramme verlinken das)",
+    inviteMail.anredeAus("http://evil.example Eva") === "Hallo Eva,"
+    && inviteMail.anredeAus("www.evil.example Eva") === "Hallo Eva,"
+    && inviteMail.anredeAus("http://evil.example") === "Hallo,",
+    inviteMail.anredeAus("http://evil.example Eva"));
   {
     // Nicht nur der Name ist ein Fremdwert: die Basis-URL entsteht im lokalen Betrieb aus
     // der `Host`-Kopfzeile (server.js publicBaseUrl) und ist damit von aussen beeinflussbar.
@@ -221,6 +280,17 @@ function hrefs(html) {
     inviteMail.anredeAus(`${"x".repeat(200)} Eva`) === "Hallo,");
   check("D Namensfeld ohne einen einzigen Buchstaben ergibt die neutrale Anrede",
     inviteMail.anredeAus("123 456") === "Hallo," && inviteMail.anredeAus("--") === "Hallo,");
+  check("D Sortierform „Nachname, Vorname“ gruesst mit dem VORnamen",
+    inviteMail.anredeAus("Müller, Eva") === "Hallo Eva,"
+    && inviteMail.anredeAus("Mustermann, Erika Dr.") === "Hallo Erika,",
+    inviteMail.anredeAus("Müller, Eva"));
+  check("D „Vorname Nachname, Titel“ bleibt trotzdem richtig",
+    inviteMail.anredeAus("Eva Müller, MdB") === "Hallo Eva,", inviteMail.anredeAus("Eva Müller, MdB"));
+  check("D gaengige Vornamensformen gehen durch (Bindestrich, Apostroph, nicht-lateinisch)",
+    inviteMail.anredeAus("Jean-Luc Picard") === "Hallo Jean-Luc,"
+    && inviteMail.anredeAus("O’Brien Eva") === "Hallo O’Brien,"
+    && inviteMail.anredeAus("Ayşe Yılmaz") === "Hallo Ayşe,",
+    [inviteMail.anredeAus("Jean-Luc Picard"), inviteMail.anredeAus("O’Brien Eva"), inviteMail.anredeAus("Ayşe Yılmaz")].join(" | "));
 
   // ── E · Keine externen Ressourcen, kein Zaehlpixel ──────────────────────────────────────
   for (const [name, mail] of [["Einladung", einladung], ["Reset", reset]]) {
@@ -235,7 +305,8 @@ function hrefs(html) {
     // Genau zwei Ziele sind zulaessig: der Aktionslink und das Impressum. Alles andere
     // waere ein Rueckkanal oder ein Marketingelement.
     const ziele = new Set(hrefs(mail.html));
-    check(`E13 ${name}: hoechstens zwei Linkziele (Aktion + Impressum)`, ziele.size <= 2, JSON.stringify([...ziele]));
+    check(`E13 ${name}: GENAU zwei Linkziele (Aktion + Impressum), nicht mehr und nicht weniger`,
+      ziele.size === 2, JSON.stringify([...ziele]));
     check(`E13 ${name}: keine Social-Media-Ziele`,
       ![...ziele].some((z) => /(twitter|x\.com|facebook|instagram|linkedin|mastodon|bsky|youtube)/i.test(z)));
     check(`E ${name}: keine Abmelde-/Marketingfloskeln`,
@@ -297,6 +368,34 @@ function hrefs(html) {
     && einladung.html.includes('<meta name="viewport"'));
   check("G Farben stammen aus dem Designsystem (Light-Mode-Tokens)",
     layout.FARBE.text === "#0f1729" && layout.FARBE.akzent === "#2c3f9e" && layout.FARBE.karte === "#ffffff");
+  {
+    // Kontraste werden GERECHNET, nicht behauptet — und zwar jeweils gegen den Hintergrund,
+    // auf dem der Text tatsaechlich steht. Die Fusszeile steht als einzige NICHT auf der
+    // weissen Karte, sondern auf dem Seitenhintergrund.
+    const leuchtdichte = (hex) => {
+      const teile = [1, 3, 5].map((i) => parseInt(hex.substr(i, 2), 16) / 255)
+        .map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)));
+      return 0.2126 * teile[0] + 0.7152 * teile[1] + 0.0722 * teile[2];
+    };
+    const kontrast = (a, b) => {
+      const x = leuchtdichte(a), y = leuchtdichte(b);
+      return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+    };
+    const paare = [
+      ["Fliesstext", layout.FARBE.text, layout.FARBE.karte],
+      ["Nebentext auf der Karte", layout.FARBE.gedaempft, layout.FARBE.karte],
+      ["Schaltflaechenbeschriftung", layout.FARBE.aufAkzent, layout.FARBE.akzent],
+      ["Links auf der Karte", layout.FARBE.akzent, layout.FARBE.karte],
+      ["Fusszeile auf dem Seitenhintergrund", layout.FARBE.gedaempftAufSeite, layout.FARBE.seite]
+    ];
+    for (const [was, vorn, hinten] of paare) {
+      const k = kontrast(vorn, hinten);
+      check(`G Kontrast erfuellt AAA (>= 7:1): ${was}`, k >= 7, `${k.toFixed(2)}:1 (${vorn} auf ${hinten})`);
+    }
+    check("G die Fusszeile benutzt NICHT die Kartenfarbe (die verfehlte dort AAA)",
+      layout.FARBE.gedaempftAufSeite !== layout.FARBE.gedaempft
+      && einladung.html.includes(`color:${layout.FARBE.gedaempftAufSeite}`));
+  }
   check("G Langer Link kann die Spalte nicht sprengen", einladung.html.includes("word-break:break-all"));
 
   // ── H · Beide Fassungen kommen unveraendert durch die zentrale Versandlogik ─────────────
@@ -358,9 +457,14 @@ function hrefs(html) {
   check("I sichereZielUrl laesst http und https durch",
     layout.sichereZielUrl("http://127.0.0.1:3000/x") === "http://127.0.0.1:3000/x"
     && layout.sichereZielUrl("https://helmut.example/x?token=a-b_c") === "https://helmut.example/x?token=a-b_c");
+  check("I das Ziel muss BUCHSTAEBLICH mit http:// oder https:// beginnen",
+    layout.sichereZielUrl("HTTPS://A.TEST/x") === "HTTPS://A.TEST/x"
+    && layout.sichereZielUrl("https:/a.test/x") === null
+    && layout.sichereZielUrl("https:a.test/x") === null,
+    JSON.stringify([layout.sichereZielUrl("https:/a.test/x"), layout.sichereZielUrl("https:a.test/x")]));
   for (const boeses of ["javascript:alert(1)", "JavaScript:alert(1)", "data:text/html,<script>x</script>",
     "vbscript:msgbox", "file:///etc/passwd", "//helmut.example/x", "", "   ", "java\nscript:alert(1)",
-    "http://helmut.example/ onmouseover=x"]) {
+    "http://helmut.example/ onmouseover=x", "https:/\\/\\evil.example/x", "mailto:x@a.test"]) {
     check(`I unsicheres Ziel wird abgelehnt: ${JSON.stringify(boeses).slice(0, 40)}`,
       layout.sichereZielUrl(boeses) === null, String(layout.sichereZielUrl(boeses)));
   }
@@ -372,9 +476,52 @@ function hrefs(html) {
       unsicher.html.includes("javascript:alert(1)") && !/javascript:alert\(1\)"/.test(unsicher.html));
     check("I unsicheres Ziel: Textfassung bleibt ehrlich und zeigt den Wert",
       unsicher.text.includes("javascript:alert(1)"));
+    // Ohne Schaltflaeche darf die Beschriftung nicht verschwinden — sonst traegt die
+    // Textfassung eine Information, die dem HTML fehlt.
+    check("I unsicheres Ziel: beide Fassungen tragen weiterhin die Beschriftung",
+      sichtbarerText(unsicher.html).includes("Passwort festlegen:")
+      && unsicher.text.includes("Passwort festlegen:"), sichtbarerText(unsicher.html).slice(0, 200));
     check("I unsicheres Ziel: das Impressum bleibt der einzige verlinkte Rest",
-      hrefs(unsicher.html).every((h) => h === "https://helmut-website.vercel.app/impressum.html"),
+      hrefs(unsicher.html).length === 1
+      && hrefs(unsicher.html)[0] === "https://helmut-website.vercel.app/impressum.html",
       JSON.stringify(hrefs(unsicher.html)));
+  }
+  {
+    // Der Impressum-Link laeuft durch DIESELBE Pruefung wie das Aktionsziel — heute eine
+    // Code-Konstante, morgen vielleicht konfigurierbar. Direkt am Layout geprueft.
+    const boese = layout.baueLayout({
+      titel: "T", anrede: "Hallo,", absaetze: ["A"], aktionLabel: "Los", aktionUrl: "https://a.test/x",
+      hinweise: ["H"], gruss: ["G"], absender: "Helmut <x@a.test>", impressumUrl: "javascript:alert(1)"
+    });
+    // Uebrig bleiben genau die zwei Ziele des SICHEREN Aktionslinks (Schaltflaeche +
+    // Rueckfallweg) — das Impressum ist nicht mehr darunter.
+    check("I unsicheres Impressum-Ziel wird nicht verlinkt",
+      !/javascript/i.test(hrefs(boese.html).join(" ")) && hrefs(boese.html).length === 2
+      && hrefs(boese.html).every((h) => h === "https://a.test/x"), JSON.stringify(hrefs(boese.html)));
+    check("I unsicheres Impressum-Ziel bleibt als maskierter Text sichtbar",
+      boese.html.includes("Impressum: javascript:alert(1)"));
+    const gut = layout.baueLayout({
+      titel: "T", anrede: "Hallo,", absaetze: ["A"], aktionLabel: "Los", aktionUrl: "https://a.test/x",
+      hinweise: ["H"], gruss: ["G"], absender: "Helmut <x@a.test>", impressumUrl: "https://a.test/impressum"
+    });
+    check("I sicheres Impressum-Ziel wird normal verlinkt",
+      gut.html.includes('href="https://a.test/impressum"'));
+  }
+  {
+    // „Geprüft" und „verlinkt" müssen derselbe String sein. Der Rohwert ist NICHT getrimmt —
+    // stünde er im href, wäre ein anderer Wert verlinkt als der, der die Prüfung bestand.
+    const mitLeerraum = layout.baueLayout({
+      titel: "T", anrede: "Hallo,", absaetze: ["A"], aktionLabel: "Los",
+      aktionUrl: "  https://a.test/x?token=1  ",
+      hinweise: ["H"], gruss: ["G"], absender: "Helmut <x@a.test>", impressumUrl: ""
+    });
+    check("I jedes href trägt exakt den geprüften Wert (kein ungetrimmter Rohwert)",
+      hrefs(mitLeerraum.html).length === 2
+      && hrefs(mitLeerraum.html).every((h) => h === "https://a.test/x?token=1"),
+      JSON.stringify(hrefs(mitLeerraum.html)));
+    check("I Textfassung zeigt denselben geprüften Wert wie das HTML",
+      mitLeerraum.text.includes("\nhttps://a.test/x?token=1\n")
+      && !mitLeerraum.text.includes("  https://a.test"), JSON.stringify(mitLeerraum.text.slice(0, 120)));
   }
 
   delete process.env.HELMUT_MAIL_FROM;

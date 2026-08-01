@@ -25,7 +25,9 @@ Diese Datei beschreibt ausschließlich den **echten** Versand.
 
 **Sendevertrag:** `POST https://api.resend.com/emails`, Kopfzeile
 `Authorization: Bearer <API-Schlüssel>`, Rumpf
-`{ from, to: [...], subject, text, reply_to? }`, Antwort `{"id":"…"}`.
+`{ from, to: [...], subject, text, html?, reply_to? }`, Antwort `{"id":"…"}`.
+`html` steht seit den gestalteten Systemmails daneben (mehrteilige Nachricht) und wird nur
+gesetzt, wenn es auch Inhalt gibt — ohne HTML-Teil ist der Rumpf byte-identisch zu vorher.
 Die Ziel-URL ist im Code eine **Konstante** und bewusst **nicht** über eine Umgebungsvariable
 umstellbar — eine konfigurierbare Ziel-URL wäre ein Ausleitungsweg für den API-Schlüssel.
 
@@ -102,8 +104,9 @@ HELMUT_MAIL_REPLY_TO=Helmut Büro <buero@deine-domain.de>
 
 Begründung: Der Absender ist eine **nicht überwachte** Adresse auf der Versand-Subdomain
 (Antworten dorthin gehen niemandem verloren, weil `Reply-To` gesetzt ist); die Antwortadresse
-ist ein **echtes, gelesenes** Postfach auf der Hauptdomain. Die Mail nennt beide bereits im
-Fußzeilentext samt Impressum.
+ist ein **echtes, gelesenes** Postfach auf der Hauptdomain. Die Fußzeile der Mail nennt den
+**Absender** und das Impressum — die Antwortadresse steht dort bewusst **nicht** im Text,
+sondern ausschließlich in der Kopfzeile `Reply-To`.
 
 ---
 

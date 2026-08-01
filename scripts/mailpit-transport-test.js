@@ -134,7 +134,7 @@ function tokenFromText(text) {
   // HELMUT_INVITE_TOKEN_TTL_MS und wurde falsch, sobald jemand die Variable setzt —
   // deshalb nennt die Mail die Befristung jetzt ohne Zahl (scripts/mail-vorlagen-test.js).
   check("A Einladung: nennt die Befristung ohne erfundene Zahl",
-    /zeitlich begrenzt/.test(invite.text) && !/\b\d+\s*(Tage?|Stunden?)\b/.test(invite.text));
+    /zeitlich begrenzt/.test(invite.text) && !/\b(\d+|ein|eine|einen|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|elf|zwölf|dreißig)\s*(Minute|Minuten|Stunde|Stunden|Tag|Tage|Tagen|Woche|Wochen|Monat|Monate)\b/i.test(invite.text));
   // Seit dem HTML-Mail-Sprint gibt es BEIDE Fassungen. Die Textfassung bleibt reiner Text.
   check("A Einladung: Textfassung ist reiner Text", !HTML_TAG.test(invite.text));
   check("A Einladung: HTML-Fassung vorhanden und vollstaendiges Dokument",
@@ -149,7 +149,7 @@ function tokenFromText(text) {
   check("B Betreffzeilen von Einladung und Reset sind klar unterscheidbar", invite.subject !== reset.subject);
   check("B Reset: enthaelt genau einen Link", (reset.text.match(/passwort-setzen\?token=/g) || []).length === 1);
   check("B Reset: nennt die Befristung ohne erfundene Zahl",
-    /zeitlich begrenzt/.test(reset.text) && !/\b\d+\s*(Tage?|Stunden?)\b/.test(reset.text));
+    /zeitlich begrenzt/.test(reset.text) && !/\b(\d+|ein|eine|einen|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|elf|zwölf|dreißig)\s*(Minute|Minuten|Stunde|Stunden|Tag|Tage|Tagen|Woche|Wochen|Monat|Monate)\b/i.test(reset.text));
   check("B Reset: Textfassung ist reiner Text", !HTML_TAG.test(reset.text));
   check("B Reset: HTML-Fassung vorhanden und vollstaendiges Dokument",
     typeof reset.html === "string" && reset.html.startsWith("<!doctype html>"));
