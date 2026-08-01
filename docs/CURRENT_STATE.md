@@ -67,7 +67,9 @@ Resend ist Auftragsverarbeiter — AVV gehört zu **OP-02**; (4) Domain-Verifizi
 `docs/betrieb/lokale-mailtests-mailpit.md`, `.env.example`, `package.json`, `docs/CURRENT_STATE.md`.
 **Später benötigte Umgebungsvariablen:** `HELMUT_MAIL_TRANSPORT=resend`, `HELMUT_RESEND_API_KEY`
 (Secret), `HELMUT_MAIL_FROM`, optional `HELMUT_MAIL_REPLY_TO`, empfohlen `HELMUT_PUBLIC_URL`.
-Branch `claude/resend-production-transport-yvewda`. **Nächster Schritt:** Review und
+Branch `claude/resend-production-transport-yvewda`, **PR #205** (offen, kein Draft, **beide
+Pflicht-Checks im ERSTEN Anlauf grün**: `Syntax + Offline-Suiten` **196/196 Suiten** und
+`Browser-/Mobile-Smoke (Chromium)` **32/32**, Lauf `30700252212`). **Nächster Schritt:** Review und
 Merge-Entscheidung; die Production-Aktivierung ist ein getrennter, freigabepflichtiger Schritt nach
 [`betrieb/mailversand-resend.md`](betrieb/mailversand-resend.md) §6. Kanonisch:
 [`betrieb/mailversand-resend.md`](betrieb/mailversand-resend.md).) ·
