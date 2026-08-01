@@ -27,7 +27,7 @@ anderen Dokumenten sind nachrangig.
 | Crawl-Ziele (Google News, Ministerien, PARDOK) | Requests / Volumen | Abrufe ja, **Volumen nein** | entfällt (unentgeltlich) | Mengengrenzen, keine Kostengrenze |
 | DIP Bundestag | Requests | nein | entfällt (laut `dip.js` kostenlos) | nein |
 | Web-Push | Nachrichten | nein | nein | nein |
-| Mailversand | — | **existiert nicht** (`isMailConfigured()` gibt hart `false`) | — | — |
+| Mailversand | — | **kein Production-Versand** (`isMailConfigured()` ist ohne `HELMUT_MAIL_TRANSPORT` false; in Production/Vercel technisch gesperrt). Lokal existiert seit 2026-08-01 ein **kostenloses** Mailpit-Testpostfach (Loopback, [`lokale-mailtests-mailpit.md`](lokale-mailtests-mailpit.md)) | — (0,00 USD) | — |
 
 **Folge:** Eine Aussage „Helmut kostet heute X" ist nur für den LLM-Anteil belegbar.
 Alle übrigen Anbieter sind **unbekannt, nicht null** — sie liegen vollständig
