@@ -127,7 +127,7 @@ Ordnung nach RFC 5546: `SEQUENCE` entscheidet, bei Gleichstand `DTSTAMP`.
 
 ## 5 · Was getestet ist
 
-`scripts/kalender-ics-test.js` — **130/130 grün**, ausschließlich künstliche
+`scripts/kalender-ics-test.js` — **134/134 grün**, ausschließlich künstliche
 Fixtures (erfundene Namen, reservierte Domains nach RFC 2606/6761), **keine
 Daten des Pilotmandanten**.
 
@@ -162,11 +162,24 @@ Rücknahme bemerkt: **18/18 rot**, Referenzlauf grün.
 > rot zu machen — ein Absturz sagt nicht, *welche* Zusicherung fehlt; sie ist
 > jetzt eine rein semantische Rücknahme.
 
+Dazu abgesichert: ganztägige Termine ohne `DTEND` über die **Monats-, Jahres-
+und Schaltjahresgrenze** — „31.08. + 1 Tag" hätte einen 32. August erzeugen
+können, ohne dass ein Test es bemerkt. `ical.js` normalisiert korrekt; das ist
+jetzt zugesichert statt nur beobachtet.
+
 **Bestandssuiten unverändert:** Offline-Gesamtlauf **186/200** gegen die im
 selben Arbeitsbaum gemessene Basislinie **185/199**, mit **identischer**
 14er-Fehlschlagliste (umgebungsbedingt: fehlende Umgebungsvariablen in der
 Cloud-Sitzung, steht so auch in `CURRENT_STATE.md`). Delta genau **+1** = die
 neue Suite. Keine Regression.
+
+**In CI belegt, nicht nur lokal behauptet** (Lauf `30757186651`): beide
+Pflicht-Checks grün — `Syntax + Offline-Suiten` **200/200 Suiten in 62 s** und
+`Browser-/Mobile-Smoke (Chromium)`. Der `npm ci`-Schritt lief in **beiden** Jobs
+in rund einer Sekunde durch; damit ist die einzige riskante Änderung dieses
+Sprints unter echten CI-Bedingungen nachgewiesen. Dass CI 200/200 meldet und die
+Cloud-Sitzung 186/200, ist kein Widerspruch — die 14 Fehlschläge sind
+umgebungsbedingt und stehen identisch in der Basislinie.
 
 ## 6 · Was noch NICHT unterstützt wird — ehrlich
 

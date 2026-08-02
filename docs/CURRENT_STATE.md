@@ -83,8 +83,17 @@ Empfangsweg + zufällige, widerrufbare Terminadresse je Mandat (Empfehlung in
 Adresse ist der **einzige** Träger der Mandatszuordnung — der Absender ausdrücklich nicht), dann
 Ablage/Migration, dann Serienauflösung. **Nicht empfohlen:** die Komponente jetzt an einen
 Production-Pfad hängen — ohne Empfang und Ablage gäbe es nichts zu zeigen, aber bereits eine
-Angriffsfläche. **Branch/PR:** `claude/kalender-machbarkeit-1-d3f7wr`, ein Commit `a8533cb`,
-**PR #209 (Draft)**. **Nicht gemergt, nicht deployt** — Merge = Production-Deployment und bleibt
+Angriffsfläche. **Branch/PR:** `claude/kalender-machbarkeit-1-d3f7wr`, drei Commits (zuletzt `33ea570`),
+**PR #209 (Draft)**. **Beide Pflicht-Checks grün** (Lauf `30757186651`): `Syntax + Offline-Suiten`
+**200/200 Suiten in 62 s** und `Browser-/Mobile-Smoke (Chromium)`. Dass CI **200/200** meldet und der
+Lauf in dieser Cloud-Sitzung **186/200**, ist kein Widerspruch: die 14 Fehlschläge sind
+umgebungsbedingt (fehlende Umgebungsvariablen in der Sitzung) und stehen identisch in der Basislinie
+— dieselbe Lage wie bei PR #208. **Der `npm ci`-Schritt lief in beiden Jobs in ~1 s durch**; damit ist
+die einzige riskante Änderung dieses PRs in CI belegt, nicht nur lokal. Ein Nachtrag-Commit sichert
+Ganztagstermine über die Monats-, Jahres- und Schaltjahresgrenze ab (`31.08.`+1 Tag hätte einen
+32. August erzeugen können, ohne dass ein Test es bemerkt — ical.js normalisiert korrekt, das ist
+jetzt zugesichert statt nur beobachtet): Suite **134/134** statt 130/130.
+**Nicht gemergt, nicht deployt** — Merge = Production-Deployment und bleibt
 Betreiberentscheidung. **Risiko und Rollback:** der Anwendungscode ist unerreichbar (kein `require`
 von irgendwo) und im Betrieb wirkungslos; das reale Risiko liegt **allein** in der CI-Änderung —
 schlägt `npm ci` fehl, blockiert das Merge-Gate (lokal gegen einen leeren `node_modules`-Baum
