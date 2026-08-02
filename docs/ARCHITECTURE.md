@@ -120,8 +120,14 @@ einen Zustand ab (gesund · eingeschränkt · ausgefallen · inaktiv · unbekann
 - Zwei Speicherformen nebeneinander: relationale Tabellen **und** ein zentraler
   JSON-Blob (`helmut_store`, Zeilen `main`, `main-auth`, `main-p-<id>`; seit 2026-07-29
   zusätzlich die **kleine, eigenständige** Zeile `main-cron-fairness` mit dem
-  Fairnesszustand der Crons — nur Scheduler-Metadaten, genau ein Schreiber, monotone
-  Verschmelzung, deshalb **nicht** vom Last-Write-Wins-Risiko unten betroffen, §7).
+  Fairnesszustand der Crons — nur Scheduler-Metadaten, monotone Verschmelzung und seit
+  2026-08-02 **bedingtes Schreiben** (Compare-and-Set über `data.rev`), deshalb **nicht**
+  vom Last-Write-Wins-Risiko unten betroffen, §7. **Korrektur, in Production belegt
+  (Befund F-CAS, 2026-08-02):** die frühere Angabe „genau ein Schreiber" war falsch —
+  es ist ein Codepfad, aber mehrere gleichzeitig laufende Cron-Prozesse benutzen ihn, und
+  ohne Bedingung verlor die Zeile dadurch nachweislich einen Abschluss. Monotone
+  Verschmelzung allein schützt **nicht**; sie ist monoton gegenüber dem *gelesenen* Stand.
+  Kanonisch: [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) §13).
   Der Blob ist **Last-Write-Wins** — dort ist das Verlustrisiko (→ OP-01).
   **Belegt am 2026-07-27 (Befund W-2):** parallele Auth-Store-Writer überschreiben
   einander die Prozess-Lauftelemetrie (`processRuns`). Deshalb ist die
@@ -173,8 +179,12 @@ persistiert, Erfolg/Fehler/Dauer danach — daraus folgt die Obergrenze **ceil(n
 solange ein Lauf mindestens **k ≥ 1** Mandate beginnen kann (bei `k = 0` gibt es für diesen Lauf
 keine Fortschrittsgarantie; er wird als solcher ausgewiesen).
 Zustandsablage ist eine **eigene** `helmut_store`-Zeile `main-cron-fairness` (§6), bewusst getrennt
-vom Last-Write-Wins-Blob und ohne eigene Tabelle. Kanonisch:
-[`betrieb/cron-fairness.md`](betrieb/cron-fairness.md).
+vom Last-Write-Wins-Blob und ohne eigene Tabelle. Geschrieben wird sie seit 2026-08-02
+**bedingt** (Compare-and-Set über `data.rev`): zwei überlappende Crons — etwa ein nach seinem
+äußeren Zeitlimit intern weiterlaufender `crawl` und der nächste reguläre Cron — teilen sich diese
+Zeile, und ohne Bedingung konnte der spätere Schreiber den Abschluss des früheren löschen (Befund
+F-CAS, in Production belegt). Ergänzend prüft jeder Lauf am Ende, ob die Ablage trägt, was er
+meldet. Kanonisch: [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) §13.
 
 **Globale Erfassung vs. mandatsbezogene Projektion (OP-25 K1, gebaut 2026-07-31 — DORMANT).**
 Der heute laufende Weg startet je Mandat einen **vollständigen** Ablauf, obwohl Abruf,
