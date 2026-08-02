@@ -287,6 +287,22 @@ function ersterTermin(ergebnis) { return ergebnis.termine[0]; }
     ]), MANDAT_A);
     check("C6 Ganztags ohne DTEND: Ende = Folgetag",
       r.ok && ersterTermin(r).end_at === "2026-08-15", r.ok ? String(ersterTermin(r).end_at) : r.grund);
+
+    // Monats-, Jahres- und Schaltjahresgrenze: „ein Tag weiter" darf kein
+    // 32. August und kein 29. Februar im Nichtschaltjahr werden.
+    for (const [name, tag, erwartet] of [
+      ["Monatsende 31.08.", "20260831", "2026-09-01"],
+      ["Jahresende 31.12.", "20261231", "2027-01-01"],
+      ["Schaltjahr 28.02.2028", "20280228", "2028-02-29"],
+      ["Nichtschaltjahr 28.02.2027", "20270228", "2027-03-01"]
+    ]) {
+      const g = ics.leseEinladung(roh([
+        `UID:ganztag-${tag}@example.org`, "DTSTAMP:20260801T120000Z",
+        `DTSTART;VALUE=DATE:${tag}`, "SUMMARY:Ganztags ohne DTEND"
+      ]), MANDAT_A);
+      check(`C6 Ganztags ohne DTEND ueber die ${name}`,
+        g.ok && ersterTermin(g).end_at === erwartet, g.ok ? String(ersterTermin(g).end_at) : g.grund);
+    }
   }
 
   // ══ D · Umlaute und gefaltete Zeilen ═══════════════════════════════════════
