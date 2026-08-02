@@ -1213,6 +1213,9 @@ const SECHS = ["anna-a", "bela-b", "cem-c", "dora-d", "emil-e", "frida-f"];
     process.env.SUPABASE_SERVICE_ROLE_KEY = "attrappe-kein-secret";
     try {
       // Attrappe der Zeile helmut_store/<storeId>-cron-fairness.
+      // F-CAS: die Ablage schreibt jetzt BEDINGT (PATCH mit `data->>rev`-Vergleich,
+      // Einfuegen per POST). Die Attrappe bildet genau diese Bedingung nach — ein
+      // PATCH auf einen veralteten Zaehler trifft 0 Zeilen, wie in Postgres.
       function attrappe({ nachSchreiben = null, leseFehler = null } = {}) {
         const st = { row: null, lesen: 0, schreiben: 0 };
         st.request = async (endpoint, options = {}) => {
@@ -1223,11 +1226,22 @@ const SECHS = ["anna-a", "bela-b", "cem-c", "dora-d", "emil-e", "frida-f"];
           }
           if (options.method === "POST") {
             st.schreiben += 1;
+            if (st.row) throw new Error("Supabase storage failed (409): duplicate key");
             st.row = JSON.parse(options.body).data;
             // Ein gleichzeitiger Lauf schreibt DIREKT NACH uns und traegt unseren
             // Eintrag nicht mit — der klassische verlorene Schreibvorgang.
             if (nachSchreiben) nachSchreiben(st);
             return null;
+          }
+          if (options.method === "PATCH") {
+            st.schreiben += 1;
+            const treffer = /data-%3E%3Erev=is\.null/.test(endpoint)
+              ? (st.row && st.row.rev === undefined)
+              : (st.row && String(st.row.rev) === String((/data-%3E%3Erev=eq\.(\d+)/.exec(endpoint) || [])[1]));
+            if (!treffer) return [];
+            st.row = JSON.parse(options.body).data;
+            if (nachSchreiben) nachSchreiben(st);
+            return [{ id: "attrappe" }];
           }
           throw new Error(`unerwartete Methode ${options.method}`);
         };

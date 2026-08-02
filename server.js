@@ -6254,6 +6254,10 @@ async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000, run
     // traegt der Laufdatensatz denselben Stand.
     + ` lauf=${fairness.laufId || "-"}`
     + ` laufzustand=${fairness.laufStatus || "-"}`
+    // F-CAS: Gegenprobe gegen die ABLAGE. Ohne sie konnte diese Zeile `erfolgreich=6`
+    // melden, waehrend die Fairnesszeile nur fuenf Abschluesse trug (2026-08-02).
+    // `-` heisst: gemeldete und persistierte Wahrheit stimmen ueberein.
+    + ` abweichung=${(fairness.persistenzAbweichung || []).join(",") || "-"}`
     + ` zustand=${fairnessAn ? (fairness.zustandGeladen && !fairness.zustandFehler ? "ok" : "gestoert") : "aus"}`);
   // SICHTBARKEIT (Incident 2026-07-25): vom Zeitbudget abgeschnittene Mandate
   // standen bisher nur im Antwort-Body, den niemand liest — vier aktive Mandate
@@ -6278,9 +6282,27 @@ async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000, run
       path: `/api/cron/${cronName}`
     }).catch(() => {});
   }
+  // F-CAS: Die Protokollzeile oben behauptet einen Ausgang je Mandat. Deckt die ABLAGE
+  // ihn nicht, ist genau das der Vorfall vom 2026-08-02 (`erfolgreich=6` im Log, fuenf
+  // Abschluesse in der Zeile). Er bekommt eine EIGENE, zutreffende Meldung — nicht die
+  // allgemeine "Reihenfolge ohne Verlaufswissen", die hier sachlich falsch waere.
+  const persistenzAbweichung = (fairness.persistenzAbweichung || []);
+  if (fairnessAn && persistenzAbweichung.length) {
+    console.error(`[cron/${cronName}] Persistenzabweichung — die Ablage traegt NICHT, was dieser Lauf meldet: ${persistenzAbweichung.join(", ")}`);
+    await accounts.recordSystemError({
+      scope: `cron-${cronName}`,
+      message: `Fairness-Persistenz weicht ab: gemeldete und gespeicherte Mandatsausgaenge stimmen nicht ueberein`
+        + ` (${persistenzAbweichung.join(", ")}). Die Telemetriezeile dieses Laufs ist NICHT durch die Ablage gedeckt.`,
+      path: `/api/cron/${cronName}`
+    }).catch(() => {});
+  }
   // Ein nicht speicherbarer Fairnesszustand hebt die Garantie auf — das darf nicht
   // still bleiben (CLAUDE.md §4.4). Der Lauf selbst bleibt davon unberuehrt.
-  if (fairnessAn && (!fairness.zustandGeladen || fairness.zustandFehler)) {
+  // Die Abweichung oben hat ihre eigene Meldung und wird hier nicht doppelt gemeldet.
+  const nurAbweichung = persistenzAbweichung.length > 0
+    && fairness.zustandGeladen
+    && /^persistenz-abweichung: /.test(String(fairness.zustandFehler || ""));
+  if (fairnessAn && !nurAbweichung && (!fairness.zustandGeladen || fairness.zustandFehler)) {
     console.error(`[cron/${cronName}] Fairnesszustand gestoert: ${fairness.zustandFehler || "nicht lesbar"}`);
     await accounts.recordSystemError({
       scope: `cron-${cronName}`,
@@ -6300,6 +6322,10 @@ async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000, run
     results,
     budgetSkipped: budgetSkipped.length,
     fairnessGestoert: Boolean(fairnessAn && (!fairness.zustandGeladen || fairness.zustandFehler)),
+    // F-CAS: getrennt ausgewiesen, weil es eine ANDERE Aussage ist als ein gestoerter
+    // Zustand — hier war der Zustand nutzbar, aber gemeldete und gespeicherte Wahrheit
+    // fielen auseinander. Leeres Feld = beide stimmen ueberein.
+    persistenzAbweichung,
     ohneFortschritt: Boolean(fairness.ohneFortschritt),
     fairness
   };

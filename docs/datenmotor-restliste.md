@@ -567,6 +567,29 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   **0 KI, 0,00 USD.** Kanonisch inkl. Nachweisverfahren:
   [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) **§11** (§11.8 = späterer Nachweis).
   **Der Kapazitätsblocker bleibt unverändert offen** — er war ausdrücklich nicht Gegenstand.
+- **Status R-6 (2026-08-02): PRODUCTION-NACHWEIS §11.8 GESCHEITERT, R-6 damit WIEDER OFFEN —
+  Ursache liegt aber NICHT in R-6.** Der reguläre Lauf
+  `cron-morning-briefing-20260802050021-opjp0` meldete `erfolgreich=6 … zustand=ok`, während
+  die Zeile `main-cron-fairness` für denselben Lauf nur **fünf** Abschlüsse trug; ein Mandat
+  stand dort mit der Kennung genau dieses Laufs auf `begonnen`/`laufend` und mit einem letzten
+  Erfolg vom Vortag. **Belegte Ursache (neuer Befund F-CAS):**
+  `storage.saveCronFairnessState` war ein Lesen–Verschmelzen–Schreiben **ohne Bedingung**; der
+  nach seinem äußeren Zeitlimit intern weiterlaufende `crawl`-Lauf
+  `cron-crawl-20260802040020-5rsy9` schrieb ~05:00:33 UTC auf einem Lesestand von **vor** dem
+  Abschluss zurück und löschte ihn. Die monotone Verschmelzung schützt dagegen prinzipiell
+  nicht — sie ist monoton gegenüber dem *gelesenen* Stand. Dass der Lauf `zustand=ok` meldete,
+  **beweist** den verlorenen (nicht den fehlgeschlagenen) Schreibvorgang. **Behoben
+  (2026-08-02):** bedingtes Schreiben (Compare-and-Set über `data.rev`, kein unbedingter
+  Schreiber mehr auf dieser Zeile), keine Rückstufung eines persistierten Abschlusses durch
+  einen verspäteten Versuchsvermerk, und eine Gegenprobe am Laufende, die gemeldete gegen
+  gespeicherte Wahrheit prüft und jede Abweichung als eigenen `systemError` meldet.
+  **Fachliche Verarbeitung war nicht betroffen** (alle sechs Mandate wurden verarbeitet); die
+  Rotation war im beobachteten Lauf unverändert, ist durch denselben Defekt aber **nicht
+  garantiert**. Keine Migration, `FAIRNESS_VERSION` bleibt 2, Reihenfolge/Budgets/Cron-Zeiten
+  unverändert. Tests: neue Suite `cron-fairness-persistenz-test.js` **54/54** ·
+  Mutationsprobe **11/11 rot** · `cron-fairness` **285/285** unverändert. Kanonisch:
+  [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) **§13** (§13.6 = neuer Nachweis).
+  **§11.8 muss nach dem Merge vollständig neu laufen.**
 - **Status K1 (2026-07-31, Sprint „Globale Erfassung und mandatsbezogene Projektion trennen"):
   IM REPOSITORY UMGESETZT als SCHATTENPFAD, in Production NICHT aktiviert.** **Bestandsprüfung
   gegen `main`:** von den zwölf Schritten in `runSourceCrawl` sind **fünf global** (Abruf,

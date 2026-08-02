@@ -1,13 +1,15 @@
 # Faire Mandantenreihenfolge der Mehrmandanten-Crons (OP-25)
 
-**Stand:** 2026-07-31 (§11 neu: **R-6 behoben** — Laufprotokoll, Telemetrievertrag bei
-Zeitüberschreitung; §10 regulärer Production-Nachweis — **teilweise bestanden**, Fairness
+**Stand:** 2026-08-02 (§13 neu: **Befund F-CAS** — die Fairnesszeile verlor Abschlüsse an
+überlappende Crons; bedingtes Schreiben + Gegenprobe. **§11.8 (R-6-Nachweis) ist damit
+GESCHEITERT und muss nach dem Merge neu laufen** — siehe §13.6) · zuvor 2026-07-31 (§11:
+R-6 im Code behoben; §10 regulärer Production-Nachweis — **teilweise bestanden**, Fairness
 korrekt, Kapazität unzureichend) · **Kanonisch für:** Reihenfolge, Fairnessgarantie,
-Beobachtbarkeit, **Laufprotokoll/Telemetrievertrag** und
+Beobachtbarkeit, **Laufprotokoll/Telemetrievertrag**, **Persistenzvertrag der Zeile** und
 Wiederaufnahme in `runCronForTenants` · **Code:** [`lib/helmut/cron-fairness.js`](../../lib/helmut/cron-fairness.js),
 `server.js` (`runCronForTenants`, `markiereAeusseresCronTimeout`), `lib/helmut/storage.js`
 (`readCronFairnessState` / `saveCronFairnessState` / `deleteCronFairnessTenant`) ·
-**Tests:** `scripts/cron-fairness-test.js`
+**Tests:** `scripts/cron-fairness-test.js`, `scripts/cron-fairness-persistenz-test.js`
 
 > **Nummerierung:** Der Sprintauftrag nennt diesen Punkt „Roadmap Punkt 25". Gemeint ist
 > **OP-25** aus [`../datenmotor-restliste.md`](../datenmotor-restliste.md). Zeile 25 der
@@ -629,7 +631,14 @@ vollständig offen**; dieser Sprint macht ihn nur zuverlässig **messbar**, er b
 
 ### 11.8 · Späterer Production-Nachweis (rein lesend, nach einem Merge)
 
-**Noch nicht durchgeführt.** Zu beobachten sind die reguläre Kadenz aus `vercel.json` —
+> **GESCHEITERT am 2026-08-02 — Prüfpunkt 1 und 3.** Der reguläre Lauf
+> `cron-morning-briefing-20260802050021-opjp0` meldete im Log sechs Erfolge, die Zeile trug
+> nur fünf; ein Mandat stand dort mit der Kennung genau dieses Laufs auf `begonnen`. Ursache
+> ist **nicht** R-6, sondern ein darunterliegender Schreibfehler, den R-6 erstmals sichtbar
+> gemacht hat: **§13**. Dieser Nachweis muss nach dem Merge des F-CAS-Fixes **vollständig neu**
+> laufen; die untenstehende Tabelle gilt unverändert weiter und wird um §13.6 ergänzt.
+
+**Noch nicht bestanden.** Zu beobachten sind die reguläre Kadenz aus `vercel.json` —
 `crawl` 04:00/20:00 UTC · `morning-briefing` 05:00 · `lage-check` 10:00 · `pipeline` 16:00 —
 über **mindestens 24 h nach einem `READY`-Deployment**, davon mindestens **ein Lauf mit
 äußerem Zeitlimit** (bei `crawl`/`pipeline` derzeit der Regelfall, 3 von 5).
@@ -673,3 +682,134 @@ Der Kapazitätsblocker wird in [`cron-globalphase.md`](cron-globalphase.md) adre
   Hochrechnung aus §10.6 und die Testmandat-Sperre aus §9 — gelten unverändert weiter.**
 - Der Production-Nachweis aus §11.8 (R-6) ist **unabhängig** vom K1-Nachweis und muss zuerst
   erbracht werden: er misst den heutigen Pfad.
+
+---
+
+## 13 · Persistenzvertrag der Fairnesszeile (Befund F-CAS, 2026-08-02)
+
+**Was dieser Abschnitt regelt:** unter welcher Bedingung ein Schreibvorgang auf die Zeile
+`<storeId>-cron-fairness` gilt — und warum die Telemetriezeile eines Laufs erst dann etwas
+behaupten darf, wenn die Ablage es trägt. **Was er nicht ändert:** Reihenfolge,
+Fairnessgarantie, `k`, `ceil(n/k)`, Zeitbudgets, Cron-Zeiten, Schemaversion, Kosten.
+
+### 13.1 · Der Befund
+
+Realer regulärer Lauf, rein lesend belegt:
+
+| Quelle | Aussage |
+|---|---|
+| Runtime-Log 2026-08-02 ~05:00 UTC, `cron-morning-briefing-20260802050021-opjp0` | geplant 6 · begonnen 6 · **erfolgreich 6** · fehlgeschlagen 0 · `kapazitaet=6` · `laufzustand=abgeschlossen` · **`zustand=ok`** |
+| `helmut_store/main-cron-fairness`, `laeufe["morning-briefing"]`, derselbe Lauf | `status=abgeschlossen` · `kapazitaet=6` · **fünf** Mandate `erfolgreich` · **eines `begonnen`** |
+| `crons["morning-briefing"][<dieses Mandat>]` | `status=laufend` · `versuche=3` · `erfolge=2` · `letzterVersuchAt=05:00:26.807Z` · **`letzterErfolgAt` vom Vortag** · `letzteLaufkennung` = genau dieser Lauf |
+
+Zeitlich davor: der reguläre `crawl`-Lauf `cron-crawl-20260802040020-5rsy9` lief nach seinem
+**äußeren** Zeitlimit intern weiter und schrieb **während** des Briefinglaufs; seine
+Fairnessmeldung erschien ~05:00:33 UTC, der Briefinglauf lief ~05:00:21–05:00:42 UTC.
+
+### 13.2 · Die Ursache, im Code belegt
+
+`storage.saveCronFairnessState` war ein **Lesen → Verschmelzen → Schreiben ohne Bedingung**:
+die Zeile wurde frisch gelesen, der Patch monoton hineinverschmolzen und das Ergebnis als
+**ganze Zeile** zurückgeschrieben (`POST … resolution=merge-duplicates`). Zwischen Lesen und
+Schreiben liegt ein Rundlauf zur Datenbank. Schreibt ein **anderer** Prozess in genau diesem
+Fenster, geht dessen Schreibvorgang beim Zurückschreiben verloren — ohne Fehler, ohne Signal.
+
+**Warum die monotone Verschmelzung nicht schützt:** `mergeState`/`mergeEntry` sind monoton
+gegenüber dem **gelesenen** Stand. Gegen einen Schreibvorgang, den der Prozess **nie gesehen
+hat**, können sie nichts ausrichten — er ist im Lesestand nicht enthalten.
+
+**Warum das genau die beobachtete Signatur erzeugt:** der clobbernde Lesestand enthielt den
+**Claim** des Briefinglaufs (`versuche=3`, Laufkennung, Versuchszeitpunkt 05:00:26.807), aber
+nicht dessen **Abschluss**. Genau ein Schreibvorgang ging verloren.
+
+**Warum es kein Schreibfehler war:** ein fehlgeschlagener Schreibvorgang hätte
+`zustandFehler` gesetzt und die Zeile hätte `zustand=gestoert` gemeldet. Sie meldete
+`zustand=ok`. Der Schreibvorgang war also erfolgreich **und wurde danach überschrieben**.
+
+**Warum es niemandem auffiel:** `[cron/*/fairness]` entsteht aus dem, was der **Lauf** getan
+hat (`verlauf`), nicht aus dem, was in der **Ablage** steht. Beide Sichten waren nie
+gegeneinander geprüft.
+
+### 13.3 · Reichweite — was betroffen ist und was nicht
+
+| Frage | Antwort |
+|---|---|
+| Fachliche Verarbeitung (Briefing, Crawl, Matching, Inhalte)? | **Nein.** Die Zeile ist reine Scheduler-Buchführung. Alle sechs Mandate wurden verarbeitet. |
+| Rotationsreihenfolge im beobachteten Lauf? | **Nein.** `letzterVersuchAt` ist der Anker der Rotation; der verlorene Abschluss hätte **denselben** Wert geschrieben (`finishPatch` setzt ihn auf den Claim-Zeitpunkt). |
+| Rotation grundsätzlich? | **Nicht garantiert.** Ein verlorener **Claim** (statt eines Abschlusses) dreht `letzterVersuchAt` zurück und schiebt ein Mandat nach vorn; ein zurückgerollter Stand kann ein veraltetes `laufend` wieder einspielen und ein Mandat bis zu `HELMUT_CRON_FAIRNESS_STALE_MS` (30 min) **fälschlich** aus der Planung nehmen. Die Fairnessgarantie beruht auf dieser Zeile — ist die Zeile nicht verlässlich, ist die Garantie **unbelegt**, auch wenn sie im Einzelfall hielt. |
+| Beobachtbarkeit? | **Ja, nachweislich.** Ein `erfolgreich=6` ohne Deckung ist genau das falsche Grün aus `CLAUDE.md` §4.4. |
+| Erfundener Erfolg in der Ablage? | **Nein.** Der Verlust wirkt nur in die Richtung „echter Abschluss verschwindet". Ein Erfolg entsteht weiterhin ausschließlich durch einen Schreibvorgang. |
+
+### 13.4 · Die Behebung
+
+**(1) Bedingtes Schreiben (Compare-and-Set) — die eigentliche Maßnahme.** Die Zeile trägt
+neben `version`, `crons` und `laeufe` einen Fortschreibungszähler `rev`. Geschrieben wird als
+`PATCH … ?id=eq.<zeile>&data->>rev=eq.<gelesener Wert>`; Postgres serialisiert konkurrierende
+Updates derselben Zeile über den Row-Lock und prüft die Bedingung gegen den **neuen** Stand.
+Trifft sie nicht mehr zu, ändert das Update **0 Zeilen** — das ist das Konfliktsignal. Der
+Aufrufer liest dann neu und verschmilzt denselben Patch erneut. Das Anlegen der Zeile läuft
+als `POST` **ohne** `merge-duplicates`, damit ein gleichzeitiges Anlegen ein sichtbarer
+Konflikt (409) ist und kein stilles Überschreiben. `deleteCronFairnessTenant` (DSGVO) nutzt
+denselben Weg — es gibt **keinen** unbedingten Schreiber mehr auf dieser Zeile.
+
+Daraus folgt eine Zusage, die vorher nicht galt: **ein erfolgreicher Schreibvorgang bedeutet,
+dass die Zeile genau den zurückgegebenen Stand trägt.**
+
+**(2) Kein Rückfall eines Abschlusses (`mergeEntry`).** Die Regel „gleicher Lauf → der Patch
+führt immer" (nötig, damit ein Abschluss nicht hinter seinem eigenen Claim zurückfällt) konnte
+umgekehrt einen **verspäteten Claim** über einen bereits persistierten Abschluss legen. Ein
+Endzustand (`erfolgreich`/`fehlgeschlagen`) wird jetzt nur noch von einem **echt neueren**
+Versuch (strikt jüngerer Versuchszeitpunkt) zurückgedreht. Der Überlappungsschutz bleibt
+unberührt: ein fremder Lauf, der ein Mandat neu beginnt, setzt weiterhin `laufend`, und
+`fremderHalter` sieht ihn.
+
+**(3) Gegenprobe am Laufende.** Nach dem Abschluss-Schreibvorgang vergleicht
+`cron-fairness.persistenzAbweichungen` das, was der Lauf gleich meldet, mit dem **vom Speicher
+zurückgegebenen Stand** — nicht mit der eigenen Sicht, die sich sonst selbst bestätigen würde.
+Geprüft werden: jeder gemeldete Erfolg/Fehlschlag hat denselben Ausgang im Laufdatensatz ·
+jeder gemeldete Erfolg hat einen `erfolgreich`-Mandatseintrag dieses Laufs · die Kapazität
+stimmt · der Laufdatensatz ist nicht auf einen **älteren** Lauf zurückgefallen. Ein **neuerer**
+Laufdatensatz desselben Crons ist keine Abweichung (§11.5), und ein von einem **fremden** Lauf
+übernommenes Mandat ebenfalls nicht — beides ist erlaubtes Verhalten und darf keinen Fehlalarm
+erzeugen.
+
+Bei einer Abweichung: Protokollfeld `abweichung=…`, `zustand=gestoert`, ein **eigener**
+`systemError` mit zutreffendem Wortlaut, das Antwortfeld `persistenzAbweichung` — **und** ein
+Vermerk im Laufdatensatz selbst, damit ein späterer Leser die falsche Zeile nicht ungewarnt
+liest. Der Vermerk hebt den Laufzustand nicht (er behauptet keinen Abschluss).
+
+**Ehrliche Grenze von (3):** die Gegenprobe sieht nur, was **bis zum Laufende** passiert ist.
+Wird die Zeile **nach** dem letzten Schreibvorgang eines Laufs beschädigt, kann dieser Lauf es
+nicht mehr melden. Gegen genau diesen Fall wirkt (1) — deshalb ersetzt (3) das bedingte
+Schreiben nicht, sondern ergänzt es.
+
+### 13.5 · Kosten, Grenzen, Rolloutverhalten
+
+- **Kein zusätzliches IO im Normalfall:** weiterhin ein Lesen und ein Schreiben je Vorgang.
+  Nur ein erkannter Konflikt kostet einen weiteren Rundlauf (bis zu 3 Versuche), und nur eine
+  festgestellte Abweichung kostet einen zusätzlichen kleinen Schreibvorgang.
+- **Keine Migration, keine neue Tabelle, kein RPC, keine Transaktion, kein Lock.** `rev` ist
+  ein Feld im vorhandenen `data`-JSON.
+- **`FAIRNESS_VERSION` bleibt 2.** Eine Erhöhung wäre nicht nur unnötig, sondern schädlich:
+  sie würde jede noch laufende Vorgänger-Instanz im Rolloutfenster am Schreiben hindern. Der
+  Schutz greift auch ohne sie — ein Codestand **ohne** CAS schreibt `rev` nicht mit, wodurch
+  die Bedingung eines neuen Codestandes **nicht** mehr trifft und dessen Patch korrekt
+  wiederholt wird. Im Rolloutfenster kann also nur noch die **alte** Instanz ihren eigenen
+  Schreibvorgang verlieren — das ist ihr heutiges Verhalten und endet mit dem Rollout.
+- **Fail-safe unverändert:** ein dauerhafter Wettlauf endet nach 3 Versuchen mit `ok:false`;
+  der Lauf verarbeitet weiter und meldet die Störung, statt sie zu verschweigen.
+
+### 13.6 · Nachweis nach dem Merge (rein lesend, zusätzlich zu §11.8)
+
+| # | Prüfpunkt | Quelle (rein lesend) |
+|---|---|---|
+| 1 | Die Zeile trägt einen **monoton wachsenden** `rev` | `SELECT data->>'rev' FROM helmut_store WHERE id='<storeId>-cron-fairness'` über mehrere Läufe |
+| 2 | Kein Lauf meldet `abweichung=…` | Runtime-Log `[cron/*/fairness] … abweichung=- zustand=ok` |
+| 3 | Für **jeden** im Log als erfolgreich gemeldeten Mandanten trägt die Zeile denselben Ausgang | `laeufe[<cron>].ausgaenge` gegen die Logzeile desselben `lauf=<laufId>` |
+| 4 | Ein Lauf, der einen **überlappenden** Cron trifft, verliert nichts | ein `crawl`/`pipeline`-Lauf mit äußerem Zeitlimit und ein danach startender Cron: beide Bereiche vollständig |
+| 5 | Keine neuen `systemError`-Einträge mit `Fairness-Persistenz weicht ab` | Health-Report/Fehlerliste |
+| 6 | Kein Anstieg der Cron-Laufzeiten | `[cron/*] …ms` im Vergleich zu den Vortagen |
+
+**Der Altstand der Zeile wird nicht repariert.** Der Eintrag des betroffenen Mandats läuft
+über `HELMUT_CRON_FAIRNESS_STALE_MS` (30 min) von selbst ab; ein Eingriff in
+Production-Daten ist freigabepflichtig (`CLAUDE.md` §5) und wäre hier ohne Nutzen.

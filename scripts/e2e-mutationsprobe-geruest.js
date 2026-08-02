@@ -41,7 +41,10 @@ function kopiereVerzeichnis(quelle, ziel) {
 // zusatzdateien: repo-relative Pfade, die eine Suite ZUSAETZLICH braucht
 // (z. B. scripts/fixtures/test-profiles.js beim 25A-Vertrag). Rueckwaerts-
 // kompatibel: ohne Angabe ist der Abzug byte-identisch zum bisherigen Verhalten.
-function baueAbzug(suite, zusatzdateien = []) {
+// zusatzverzeichnisse: repo-relative Verzeichnisse, die eine Suite vollstaendig braucht
+// (z. B. supabase/migrations, wenn sie prueft, dass KEINE neue Migration entstanden ist).
+// Ohne Angabe unveraendertes Verhalten.
+function baueAbzug(suite, zusatzdateien = [], zusatzverzeichnisse = []) {
   const basis = fs.mkdtempSync(path.join(os.tmpdir(), "helmut-e2e-mutation-"));
   kopiereVerzeichnis(path.join(ROOT, "lib"), path.join(basis, "lib"));
   kopiereVerzeichnis(path.join(ROOT, "test", "fixtures", "pardok"), path.join(basis, "test", "fixtures", "pardok"));
@@ -59,6 +62,9 @@ function baueAbzug(suite, zusatzdateien = []) {
     fs.mkdirSync(path.dirname(z), { recursive: true });
     fs.copyFileSync(q, z);
   }
+  for (const rel of zusatzverzeichnisse) {
+    kopiereVerzeichnis(path.join(ROOT, rel), path.join(basis, rel));
+  }
   return basis;
 }
 
@@ -68,16 +74,16 @@ function fuehreSuiteAus(basis, suite) {
     env: { ...process.env, SUPABASE_URL: "", SUPABASE_SERVICE_ROLE_KEY: "", HELMUT_V3_STORE: "" }
   });
   const text = `${ergebnis.stdout || ""}${ergebnis.stderr || ""}`;
-  const rot = (text.match(/^FAIL /gm) || []).length;
+  const rot = (text.match(/^\s*FAIL /gm) || []).length;
   return { status: ergebnis.status, rot, text };
 }
 
 // mutationen: [{ name, beschreibung, datei, von, nach }] — jede Mutation nimmt GENAU EINE
 // Garantie zurueck; `von` muss in `datei` genau einmal vorkommen.
-function fuehreMutationsprobe({ titel, suite, mutationen, zusatzdateien = [] }) {
+function fuehreMutationsprobe({ titel, suite, mutationen, zusatzdateien = [], zusatzverzeichnisse = [] }) {
   const verbose = process.argv.includes("--verbose");
 
-  const referenz = baueAbzug(suite, zusatzdateien);
+  const referenz = baueAbzug(suite, zusatzdateien, zusatzverzeichnisse);
   const rLauf = fuehreSuiteAus(referenz, suite);
   fs.rmSync(referenz, { recursive: true, force: true });
   console.log(`\n${titel} — Suite: scripts/${suite}\n`);
@@ -91,7 +97,7 @@ function fuehreMutationsprobe({ titel, suite, mutationen, zusatzdateien = [] }) 
   let ueberlebt = 0;
   const zeilen = [];
   for (const m of mutationen) {
-    const basis = baueAbzug(suite, zusatzdateien);
+    const basis = baueAbzug(suite, zusatzdateien, zusatzverzeichnisse);
     const ziel = path.join(basis, m.datei);
     const inhalt = fs.readFileSync(ziel, "utf8");
     if (!inhalt.includes(m.von)) {

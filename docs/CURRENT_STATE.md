@@ -1,6 +1,110 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-08-01 (**Sprint Professionelle HTML-Mails für Einladung und
+**Letzte Aktualisierung:** 2026-08-02 (**Sprint Widersprüchliche Cron-Fairness-Persistenz (Befund
+F-CAS) — TEILWEISE ABGESCHLOSSEN: Ursache im Code belegt, kleinster belastbarer Fix umgesetzt,
+offline bewiesen und mutationsgesichert; der rein lesende Production-Nachweis steht aus (Merge
+nötig). Kein Production-Schreibzugriff, kein manueller Cron, kein Trigger, keine Env-Änderung,
+kein Merge.** **Ausgangslage:** der reguläre Lauf `cron-morning-briefing-20260802050021-opjp0`
+meldete im Runtime-Log `geplant 6 · begonnen 6 · erfolgreich 6 · fehlgeschlagen 0 · kapazitaet=6 ·
+laufzustand=abgeschlossen · zustand=ok`, während `helmut_store/main-cron-fairness` für **denselben
+Lauf** nur **fünf** Abschlüsse trug: ein Mandat stand auf `begonnen` bzw. `laufend`, mit der
+Laufkennung genau dieses Laufs, `versuche=3`, `erfolge=2` und einem letzten Erfolg **vom Vortag**.
+**Ursache belegt, nicht vermutet (Befund F-CAS):** `storage.saveCronFairnessState` war ein
+**Lesen → Verschmelzen → Schreiben ohne Bedingung** — die ganze Zeile wurde per
+`POST … resolution=merge-duplicates` zurückgeschrieben. Zwischen Lesen und Schreiben liegt ein
+Rundlauf zur Datenbank; schreibt ein anderer Prozess in genau dieses Fenster, geht sein
+Schreibvorgang verloren. Genau das geschah: der reguläre Crawl-Lauf
+`cron-crawl-20260802040020-5rsy9` lief nach seinem **äußeren** Zeitlimit intern weiter
+(`withTimeout` ist ein `Promise.race` und beendet nichts) und schrieb ~05:00:33 UTC auf einem
+Lesestand von **vor** dem Abschluss zurück. **Die monotone Verschmelzung schützt hier prinzipiell
+nicht** — `mergeState`/`mergeEntry` sind monoton gegenüber dem *gelesenen* Stand, nicht gegenüber
+einem Schreibvorgang, den der Prozess nie gesehen hat. **Zwei Belege schließen die Alternativen
+aus:** (1) der clobbernde Lesestand enthielt den **Claim** (versuche=3, Laufkennung,
+Versuchszeitpunkt 05:00:26.807), aber nicht den **Abschluss** — es ging genau **ein**
+Schreibvorgang verloren; (2) ein *fehlgeschlagener* Schreibvorgang hätte `zustandFehler` gesetzt
+und `zustand=gestoert` gemeldet — die Zeile meldete `zustand=ok`, der Schreibvorgang war also
+erfolgreich **und wurde danach überschrieben**. Unbemerkt blieb es, weil `[cron/*/fairness]` aus
+dem **Lauf** entsteht (`verlauf`) und nicht aus der **Ablage**; beide Sichten waren nie
+gegeneinander geprüft. **Reichweite, ehrlich abgegrenzt:** die **fachliche Verarbeitung ist NICHT
+betroffen** — alle sechs Mandate wurden verarbeitet, die Zeile trägt nur Scheduler-Buchführung.
+Die **Rotation war im beobachteten Lauf ebenfalls nicht verschoben** (`letzterVersuchAt` ist ihr
+Anker, und der verlorene Abschluss hätte denselben Wert geschrieben). Sie ist durch denselben
+Defekt aber **nicht garantiert**: ein verlorener *Claim* dreht den Anker zurück, und ein
+zurückgerollter Stand kann ein veraltetes `laufend` wieder einspielen und ein Mandat bis zu 30 min
+fälschlich aus der Planung nehmen. Betroffen ist also **mehr als nur Beobachtbarkeit** — die
+Fairnessgarantie verliert ihre Grundlage, auch wo sie im Einzelfall hielt. **Ein erfundener Erfolg
+ist weiterhin unmöglich**; der Verlust wirkt nur in die Richtung „echter Abschluss verschwindet".
+**Statusfolgen, verbindlich:** **R-6 ist wieder offen** — nicht weil sein Code falsch wäre, sondern
+weil sein Vertrag (§11.3: nach jedem Übergang ist der Ausgang jedes geplanten Mandats eindeutig
+zuzuordnen) an dieser Zeile hängt; der Production-Nachweis **§11.8 ist an den Prüfpunkten 1 und 3
+gescheitert** und muss nach dem Merge **vollständig neu** laufen. **29B ist an drei seiner sechs
+Punkte blockiert** (§6.1 Fairness/Timeout-Verhalten, §6.2 Sperren, §6.6 „falsches Grün
+ausschließen") — sie lesen genau diese Zeile bzw. genau diese Logzeile; die Punkte 3–5
+(`crawl_runs`, `source_crawl_telemetry`, `process_runs`, `matching_results`) sind **unberührt** und
+bleiben messbar. **Der Fix (kleinstmöglich, additiv, ohne Migration):** (1) **bedingtes Schreiben
+(Compare-and-Set)** — die Zeile trägt einen Fortschreibungszähler `data.rev`, geschrieben wird als
+`PATCH …&data->>rev=eq.<gelesener Wert>`; Postgres serialisiert konkurrierende Updates über den
+Row-Lock und prüft die Bedingung gegen den **neuen** Stand, ein Nicht-Treffer ändert 0 Zeilen und
+ist damit das Konfliktsignal — der Aufrufer liest neu und verschmilzt denselben Patch erneut. Das
+Anlegen läuft als `POST` **ohne** `merge-duplicates` (409 statt stillem Überschreiben), und die
+DSGVO-Löschung geht denselben Weg: **es gibt keinen unbedingten Schreiber mehr auf dieser Zeile.**
+Daraus folgt eine Zusage, die vorher nicht galt: ein erfolgreicher Schreibvorgang bedeutet, dass
+die Zeile **genau** den zurückgegebenen Stand trägt. (2) **Kein Rückfall eines Abschlusses** in
+`mergeEntry`: die Regel „gleicher Lauf → der Patch führt immer" konnte umgekehrt einen verspäteten
+Claim über einen bereits persistierten Abschluss legen; ein Endzustand wird jetzt nur noch von
+einem **echt neueren** Versuch zurückgedreht — der Überlappungsschutz (`fremderHalter`) bleibt
+unberührt. (3) **Gegenprobe am Laufende** (`persistenzAbweichungen`): der Lauf vergleicht das, was
+er gleich meldet, mit dem **vom Speicher zurückgegebenen** Stand — nicht mit der eigenen Sicht, die
+sich sonst selbst bestätigen würde. Eine Abweichung erzeugt `abweichung=…` in der Protokollzeile,
+`zustand=gestoert`, einen **eigenen** `systemError` mit zutreffendem Wortlaut, das Antwortfeld
+`persistenzAbweichung` **und** einen Vermerk in der Ablage selbst. Kein Fehlalarm bei erlaubtem
+Verhalten: ein **neuerer** Laufdatensatz desselben Crons (§11.5) und ein von einem **fremden** Lauf
+übernommenes Mandat gelten ausdrücklich nicht als Abweichung. **Ehrliche Grenze von (3):** sie
+sieht nur, was bis zum Laufende geschah — wird die Zeile **danach** beschädigt, kann dieser Lauf es
+nicht mehr melden; dagegen wirkt (1). **Kosten:** im Normalfall unverändert ein Lesen und ein
+Schreiben je Vorgang; nur ein erkannter Konflikt kostet einen weiteren Rundlauf (max. 3 Versuche),
+nur eine festgestellte Abweichung einen zusätzlichen kleinen Schreibvorgang. **0 KI-Aufrufe,
+0,00 USD.** **`FAIRNESS_VERSION` bleibt bewusst 2:** eine Erhöhung wäre hier nicht nur unnötig,
+sondern schädlich — sie würde jede Vorgänger-Instanz im Rolloutfenster am Schreiben hindern,
+während der Schutz auch ohne sie greift (ein Codestand ohne CAS schreibt `rev` nicht mit, wodurch
+die Bedingung des neuen Codestandes nicht trifft und dessen Patch korrekt wiederholt wird; nur die
+alte Instanz kann im Rolloutfenster noch ihren eigenen Schreibvorgang verlieren — ihr heutiges
+Verhalten). **Tests, real gemessen:** neue Offline-Suite `scripts/cron-fairness-persistenz-test.js`
+**54/54** — darunter die **deterministisch nachgestellte Überlappung** des Vorfalls (der
+crawl-Lauf liest, der Morning-Briefing-Lauf läuft **vollständig** in dessen Lese-Schreib-Fenster
+durch, danach schreibt der crawl-Lauf; kein Timer, kein Zufall, echte `storage.js`-Funktionen gegen
+eine Attrappe mit echter CAS-Semantik) und eine **Gegenprobe, die zeigt, dass das Szenario ohne
+Bedingung wirklich verlustfähig ist**. **Mutationsprobe
+`scripts/cron-fairness-persistenz-mutationsprobe.js` 11/11 rot** inklusive grünem Referenzlauf; M1
+stellt exakt den alten unbedingten Schreibvorgang wieder her und macht genau die Zusicherung „alle
+sechs Abschlüsse stehen in der Ablage" rot. **Bestandssuiten unverändert grün:** `cron-fairness`
+**285/285** · `punkt29-fehlervertrag` **80/80** · `punkt29-fixpfade` grün · `punkt29-Mutationsprobe`
+**7/7 rot** · `cron-globalphase` **176/176** · `berlin-abnahmeprofil` **79/79** ·
+`vorgangs-lebenszyklus` grün · **Offline-Gesamtlauf 185/199** gegen die im selben Arbeitsbaum
+gemessene Basislinie `main` `8395c81` **184/198** mit **identischer** 14er-Fehlschlagliste
+(umgebungsbedingt), Delta genau **+1** = die neue Suite. **Ein Befund in der eigenen Arbeit wird
+benannt statt versteckt:** die erste Fassung der Regressionssuite stürzte unter M1 ab, statt sauber
+rot zu werden (ein vollständig gelöschter Laufdatensatz lief in einen `TypeError`) — ein Absturz
+sagt nicht, *was* fehlt; die Zusicherungen sind jetzt rückfallsicher und melden
+`laufdatensatz-fehlt`. Zusätzlich musste die Attrappe die `Prefer`-Kopfzeile auswerten, sonst wäre
+die Mutation „Anlegen überschreibt einen fremden Stand" unentdeckt geblieben (sie überlebte im
+ersten Lauf). **Geänderte Dateien:** `lib/helmut/storage.js`, `lib/helmut/cron-fairness.js`,
+`server.js`, `scripts/cron-fairness-persistenz-test.js` (neu),
+`scripts/cron-fairness-persistenz-mutationsprobe.js` (neu), `scripts/cron-fairness-test.js` (die
+Attrappe in §19c bildet jetzt die bedingte Schreibweise nach),
+`scripts/e2e-mutationsprobe-geruest.js` (optionale `zusatzverzeichnisse`; die FAIL-Zählung erkennt
+jetzt auch eingerückte Zeilen), `docs/betrieb/cron-fairness.md` (§13 neu, Kopf und §11.8
+nachgezogen), `docs/datenmotor-restliste.md`, `docs/CURRENT_STATE.md`. **Grenzen eingehalten:**
+keine Änderung an Reihenfolge, Losentscheid, `k`, `ceil(n/k)`, Zeitbudgets (270 000/240 000 ms),
+äußeren Zeitlimits (280 000 ms), Cron-Zeiten, Quellen, Mandatszahl, Kostenbudgets oder
+Feature-Flags — alles vertragsgetestet; Berlin, Brandenburg, M8 und `HELMUT_CRON_GLOBALPHASE`
+bleiben **AUS**; keine Migration, kein Secret, keine neue Abhängigkeit, **kein Production-Eingriff
+und keine Reparatur des Altstands** (der betroffene Eintrag läuft über die 30-Minuten-Frist von
+selbst ab; ein Eingriff in Production-Daten ist freigabepflichtig). **Nächster Schritt:** Review und
+Merge-Entscheidung des Betreibers; danach **beide** rein lesenden Nachweise —
+[`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) **§13.6** (neu) und **§11.8** (R-6,
+vollständig neu), erst danach 29B §6.1/§6.2/§6.6. Kanonisch:
+[`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) §13.) · (**Sprint Professionelle HTML-Mails für Einladung und
 Passwort-Reset — ERFOLGREICH ABGESCHLOSSEN. Beide Systemmails sind jetzt gestaltete
 HTML-Nachrichten mit vollständiger Textfassung; lokal gegen ein laufendes Mailpit v1.30.6
 nachgewiesen, keine echte E-Mail versendet, Resend unverändert deaktiviert, keine

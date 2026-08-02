@@ -4,7 +4,7 @@ Diese Datei ist die **Einstiegsschicht**, kein Handbuch. Sie gibt Orientierung i
 zwei Minuten und verweist danach auf die kanonischen Dokumente. Sie wird **nur**
 geändert, wenn eine neue dauerhaft verbindliche Projektregel entsteht.
 
-**Stand:** 2026-07-25 (§4.9 ergänzt: Secrets für Cloud-Sitzungen)
+**Stand:** 2026-08-02 (§4.10 ergänzt: bedingtes Schreiben gemeinsamer Zustände, Befund F-CAS)
 
 ---
 
@@ -89,6 +89,14 @@ festgestellt wurde.
    erreichen Secrets den Prozess **ausschließlich über die Claude-Code-Environment-
    Einstellungen** (Environment → Environment Variables), **niemals über den Chat und
    niemals über Commits**. Details/Referenz: [`docs/betrieb/env-inventar.md`](docs/betrieb/env-inventar.md) §8.
+10. **Gemeinsam genutzter Zustand wird bedingt geschrieben, und eine Meldung behauptet nur, was
+    die Ablage trägt.** Schreiben mehrere Läufe dieselbe Zeile/denselben Blob, ist Lesen →
+    Ändern → Schreiben **ohne Bedingung** verboten (Compare-and-Set oder ein atomarer
+    Schreibvorgang). Eine monotone Verschmelzung genügt **nicht** — sie ist monoton gegenüber
+    dem *gelesenen* Stand, nicht gegenüber einem Schreibvorgang, den der Prozess nie gesehen
+    hat. Wer einen Erfolg **meldet**, prüft ihn gegen den persistierten Stand oder meldet den
+    Persistenzfehler ausdrücklich. Belegter Anlass: F-CAS, 2026-08-02
+    ([`docs/betrieb/cron-fairness.md`](docs/betrieb/cron-fairness.md) §13).
 
 ## 5 · Ohne ausdrückliche Freigabe verboten
 
