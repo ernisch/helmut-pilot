@@ -378,6 +378,17 @@ Routen (alle `requireRoleOr403`). Aufbau, bewusste Entscheidungen und Risiken:
   dürfen **nicht** als Required Check gesetzt werden.
 - Env-Inventar: [`betrieb/env-inventar.md`](betrieb/env-inventar.md) ·
   Rollback: [`betrieb/deploy-rollback.md`](betrieb/deploy-rollback.md).
+- **Abhängigkeiten (seit 2026-08-02):** das Repo war bis dahin **abhängigkeitsfrei**;
+  CI und der Vercel-Build brauchten keinen Installationsschritt. Seit dem Sprint
+  „Kalender Machbarkeit 1" führt `package.json` **genau eine** Laufzeitabhängigkeit:
+  **`ical.js`** (MPL-2.0, RFC-5545-Parser, selbst **ohne** Transitivabhängigkeiten,
+  ohne Netz-/Dateizugriff). `package-lock.json` ist getrackt, beide CI-Jobs laufen
+  über `npm ci` — nicht `npm install`, damit ein Lauf nie still eine andere Version
+  zieht als der geprüfte Lockfile-Stand. **Der Grund für die Ausnahme:** ein
+  selbstgebauter ICS-Parser hätte Zeilenfaltung, Escaping, `VTIMEZONE`,
+  `RECURRENCE-ID` und `RRULE` nur teilweise verstanden. Eine weitere Abhängigkeit
+  ist eine **Freigabeentscheidung des Betreibers**, keine Code-Entscheidung
+  (CLAUDE.md §5). Details: [`kalender-machbarkeit-1.md`](kalender-machbarkeit-1.md) §2.
 
 ## 11 · Wichtige Verzeichnisse
 
@@ -386,6 +397,7 @@ server.js  client.js  styles.css  sw.js      # Anwendung (groß — nur abschnit
 api/index.js                                  # Vercel-Einstieg
 lib/helmut/                                   # Fachlogik
 lib/helmut/quellenarchitektur/                # Quellenmodell + Seeds
+lib/helmut/kalender/                          # ICS-Einladungen (isoliert, KEIN aktiver Pfad)
 supabase/migrations/                          # Migration + Rollback paarweise
 scripts/                                      # ~180 Test-/Werkzeugskripte
 scripts/run-offline-tests.js                  # kanonischer Testlauf

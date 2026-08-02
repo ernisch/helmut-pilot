@@ -133,6 +133,7 @@
     "test:mail-vorlagen-mutation": "node scripts/mail-vorlagen-mutationsprobe.js",
     "mail:vorschau": "node scripts/mailpit-vorschau.js"
   },
-  "dependencies": {},
-  "devDependencies": {}
+  "dependencies": {
+    "ical.js": "2.2.1"
+  }
 }
