@@ -100,7 +100,13 @@ keine Änderung an Reihenfolge, Losentscheid, `k`, `ceil(n/k)`, Zeitbudgets (270
 Feature-Flags — alles vertragsgetestet; Berlin, Brandenburg, M8 und `HELMUT_CRON_GLOBALPHASE`
 bleiben **AUS**; keine Migration, kein Secret, keine neue Abhängigkeit, **kein Production-Eingriff
 und keine Reparatur des Altstands** (der betroffene Eintrag läuft über die 30-Minuten-Frist von
-selbst ab; ein Eingriff in Production-Daten ist freigabepflichtig). **Nächster Schritt:** Review und
+selbst ab; ein Eingriff in Production-Daten ist freigabepflichtig). **Branch/PR:** `claude/cron-fairness-persistence-bug-f3unfi`, ein Commit
+`2b5552e`, **PR #208** (offen, kein Draft). **Beide Pflicht-Checks grün** (Lauf `30742147286`):
+`Syntax + Offline-Suiten` **199/199 Suiten in 62 s** und `Browser-/Mobile-Smoke (Chromium)`. Dass
+CI **199/199** meldet und der Lauf in dieser Cloud-Sitzung **185/199**, ist kein Widerspruch: die
+14 Fehlschläge sind umgebungsbedingt (fehlende Umgebungsvariablen in der Sitzung) und stehen
+identisch in der Basislinie. **Nicht gemergt, nicht deployt** — Merge = Production-Deployment und
+bleibt Betreiberentscheidung. **Nächster Schritt:** Review und
 Merge-Entscheidung des Betreibers; danach **beide** rein lesenden Nachweise —
 [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) **§13.6** (neu) und **§11.8** (R-6,
 vollständig neu), erst danach 29B §6.1/§6.2/§6.6. Kanonisch:
