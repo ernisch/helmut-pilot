@@ -83,7 +83,14 @@ Empfangsweg + zufällige, widerrufbare Terminadresse je Mandat (Empfehlung in
 Adresse ist der **einzige** Träger der Mandatszuordnung — der Absender ausdrücklich nicht), dann
 Ablage/Migration, dann Serienauflösung. **Nicht empfohlen:** die Komponente jetzt an einen
 Production-Pfad hängen — ohne Empfang und Ablage gäbe es nichts zu zeigen, aber bereits eine
-Angriffsfläche. Kanonisch: [`kalender-machbarkeit-1.md`](kalender-machbarkeit-1.md).) ·
+Angriffsfläche. **Branch/PR:** `claude/kalender-machbarkeit-1-d3f7wr`, ein Commit `a8533cb`,
+**PR #209 (Draft)**. **Nicht gemergt, nicht deployt** — Merge = Production-Deployment und bleibt
+Betreiberentscheidung. **Risiko und Rollback:** der Anwendungscode ist unerreichbar (kein `require`
+von irgendwo) und im Betrieb wirkungslos; das reale Risiko liegt **allein** in der CI-Änderung —
+schlägt `npm ci` fehl, blockiert das Merge-Gate (lokal gegen einen leeren `node_modules`-Baum
+verifiziert). Rollback = `git revert` des einen Commits; da kein Pfad die Komponente aufruft und
+keine Migration existiert, gibt es keinen Datenzustand zurückzudrehen. Kanonisch:
+[`kalender-machbarkeit-1.md`](kalender-machbarkeit-1.md).) ·
 (**Sprint Widersprüchliche Cron-Fairness-Persistenz (Befund
 F-CAS) — TEILWEISE ABGESCHLOSSEN: Ursache im Code belegt, kleinster belastbarer Fix umgesetzt,
 offline bewiesen und mutationsgesichert; der rein lesende Production-Nachweis steht aus (Merge
