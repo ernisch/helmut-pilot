@@ -39,10 +39,20 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+      - name: Abhängigkeiten installieren (aus package-lock.json)
+        # Seit Sprint „Kalender Machbarkeit 1" hat das Repo GENAU EINE
+        # Laufzeitabhängigkeit: ical.js (MPL-2.0, RFC-5545-Parser, selbst ohne
+        # Transitivabhängigkeiten). Davor war das Repo installationsfrei.
+        # `npm ci` statt `npm install`: installiert ausschließlich das, was im
+        # Lockfile steht, und schlägt fehl, wenn package.json und Lockfile
+        # auseinanderlaufen — sonst könnte ein Lauf still eine andere Version
+        # ziehen als der Lockfile-Stand, den wir geprüft haben.
+        run: npm ci
       - name: Syntax-Check aller JS-Dateien
         run: |
           set -e
-          for f in server.js client.js sw.js api/index.js lib/helmut/*.js lib/helmut/quellenarchitektur/*.js lib/helmut/quellenarchitektur/seeds/*.js scripts/*.js; do
+          for f in server.js client.js sw.js api/index.js lib/helmut/*.js lib/helmut/kalender/*.js lib/helmut/quellenarchitektur/*.js lib/helmut/quellenarchitektur/seeds/*.js scripts/*.js; do
             node --check "$f"
           done
           echo "Syntax OK"
@@ -63,6 +73,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+      - name: Abhängigkeiten installieren (aus package-lock.json)
+        run: npm ci
       - name: Playwright + Chromium installieren
         run: |
           # Version gepinnt (Review-Fix): ohne Pin zöge jeder CI-Lauf die neueste

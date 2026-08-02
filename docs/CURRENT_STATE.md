@@ -1,6 +1,106 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-08-02 (**Sprint Widersprüchliche Cron-Fairness-Persistenz (Befund
+**Letzte Aktualisierung:** 2026-08-02 (**Sprint Kalender Machbarkeit 1 — ERFOLGREICH ABGESCHLOSSEN
+als Machbarkeitsnachweis, NICHT als Funktion. Helmut kann standardisierte Kalendereinladungen aus
+Outlook, Google Kalender und internen Systemen zuverlässig verstehen; kein aktiver Production-Pfad
+berührt, kein Empfang, keine Adresse, keine Ablage, keine Oberfläche, keine Migration, kein Merge.**
+**Geprüfte Produktidee:** ein Nutzer trägt eine persönliche Helmut-Terminadresse als Teilnehmer in
+einen Termin ein; Helmut bekommt die Einladung wie jeder andere Teilnehmer. Der Umweg über die
+Einladung statt über einen Kalenderzugriff ist begründet: Bundestags-/Landtagskalender sind nicht
+verlässlich direkt abrufbar, und Outlook kann an Microsoft 365 **oder** an ein hausinternes Exchange
+hängen. **Nachgewiesen wurde ausschließlich der mittlere Schritt** — aus dem ICS-Anhang einen
+verlässlichen Termin machen. **Technisches Kernergebnis:** dieselbe Ortszeit, von Outlook-Desktop und
+von Google verschickt, ergibt **denselben** UTC-Zeitpunkt (`2026-08-14T07:30:00Z`), obwohl beide den
+Termin völlig unterschiedlich aufschreiben. **Wichtigster Einzelbefund:** Outlook-Desktop/Exchange
+schreibt `TZID:W. Europe Standard Time` — einen **Windows**-Zonennamen, den `Intl`/ICU in Node
+**nicht** kennt; ohne die CLDR-Übersetzungstabelle in `lib/helmut/kalender/zeitzonen.js` wäre **jede**
+Outlook-Desktop-Einladung unverarbeitbar gewesen. Was nicht in der Tabelle steht, wird **abgelehnt und
+nicht geraten**. **Zeitzonen kommen bewusst NICHT aus der Einladung:** die mitgelieferte `VTIMEZONE`
+stammt vom Absender und ist teils jahrealt — gerechnet wird über den IANA-Namen mit der
+ICU-Zeitzonendatenbank von Node. **ARCHITEKTURBRUCH, vom Betreiber vorab entschieden:** das Repo war
+bis hierhin **abhängigkeitsfrei**; `ical.js` 2.2.1 (MPL-2.0, Thunderbird-Kalender-Autor, **null**
+Transitivabhängigkeiten, kein Netz-/Dateizugriff — geprüft) ist die **erste** Laufzeitabhängigkeit
+überhaupt. **`.github/workflows/ci.yml` ist geändert:** beide Pflicht-Jobs laufen jetzt zusätzlich
+`npm ci` (nicht `npm install`), `package-lock.json` ist getrackt, der Syntax-Check deckt
+`lib/helmut/kalender/*.js` mit ab. Die Namen der beiden Required Checks sind **unverändert**. Vor der
+Installation gestoppt und gefragt (CLAUDE.md §5); Alternativen Vendoring und devDependency wurden
+vorgelegt. Begründung gegen einen Eigenbau: ein selbstgebauter Parser hätte Zeilenfaltung, Escaping,
+`VTIMEZONE`, `RECURRENCE-ID` und `RRULE` nur teilweise verstanden. **Vertrag** (`termin-vertrag.js`):
+`mandat_id` · `event_uid` · `recurrence_id` · `sequence` · `method` · `status` · `summary` ·
+`start_at`/`end_at` · `all_day` · `timezone` · `location` · `organizer` · `last_modified` · `serie`.
+Terminidentität = **Mandat + UID + Recurrence-ID**; die Feldliste ist eine **weiße Liste**.
+**Mandantentrennung:** `mandat_id` wird als bereits vertrauenswürdig aufgelöster Wert übergeben und
+**nie** aus Absender, `ORGANIZER`, Titel oder UID hergeleitet — auch eine Einladung, die eine fremde
+Mandatskennung in Titel, `ORGANIZER` und einem eigenen `X-HELMUT-MANDAT`-Feld unterbringt, ändert
+daran nichts (getestet). **Zustandslogik** (`termin-zustand.js`, rein — kein Speicher, keine Uhr, kein
+Zufall): Ordnung nach RFC 5546 (`SEQUENCE`, bei Gleichstand `DTSTAMP`); neu→angelegt,
+höher→aktualisiert, identisch→unverändert, älter→veraltet-ignoriert, Absage→abgesagt. **Zwei
+begründete Sonderregeln:** eine Absage bei *gleichem* Stand wird trotzdem angenommen (Outlook
+wiederholt bei Absagen teils `SEQUENCE` **und** `DTSTAMP`; strikt „gleich = nichts tun" ließe einen
+abgesagten Termin stehen), und eine Absage ist **Endzustand** (Wiederbelebung verlangt laut RFC 5546
+eine neue UID). **Tests, real gemessen:** neue Offline-Suite `scripts/kalender-ics-test.js`
+**130/130** — alle 17 Pflichtfälle inklusive **beider** Sommerzeit-Umstellungstage 2026 (29.03.,
+25.10.), gefalteter Zeilen mit Umlauten, Serie und Änderung/Absage **einer** Wiederholung; dazu
+Reihenfolgeunabhängigkeit des Endstands. **Mutationsprobe
+`scripts/kalender-ics-mutationsprobe.js` 18/18 rot** bei grünem Referenzlauf. **Vier Mutationen
+überlebten den ersten Anlauf und werden benannt statt versteckt:** (1) ein Mandatsübergriff wurde
+zwar abgewiesen, aber mit der Begründung „UID passt nicht" — Übergriff und UID-Irrläufer dürfen im
+Betrieb nicht gleich aussehen; (2) die Sommerzeitkorrektur an der Umstellgrenze konnte falsch rechnen
+und den Fehler anschließend **selbst zurechtbiegen**, mit einem unfundierten Hinweis „Ortszeit nicht
+existent" als einzigem Überbleibsel — jetzt ist zugesichert, dass gültige Ortszeiten **keinen**
+solchen Hinweis erzeugen; (3) die Steuerzeichen-Entfernung war nur an Zeilenumbrüchen geprüft, die
+schon die Leerraum-Normalisierung abfängt — ein rohes `U+0007` fiel durch; (4) die vierte Mutation
+zielte auf die falsche Datei und prüfte ins Leere (die Garantie hängt an der weißen Liste in
+`baueTermin`, nicht am Parser). Zusätzlich ließ eine Mutation die Suite erst **abstürzen** statt
+sauber rot zu werden — ein Absturz sagt nicht, *welche* Zusicherung fehlt; sie ist jetzt rein
+semantisch. **Bestandssuiten unverändert:** Offline-Gesamtlauf **186/200** gegen die im selben
+Arbeitsbaum gemessene Basislinie **185/199** mit **identischer** 14er-Fehlschlagliste
+(umgebungsbedingt), Delta genau **+1** = die neue Suite. **Sicherheitsgrenzen, als Zusicherung
+verdrahtet:** kein `fetch`/`http`/`fs`/Kindprozess in der gesamten Komponente (über den eigenen
+Quelltext geprüft) · `DESCRIPTION`, `X-ALT-DESC` (Outlook-HTML), `URL` und `ATTACH` gelangen **nicht**
+in den Vertrag · kein KI-Aufruf, **0,00 USD** · auch der Fehlertext der Bibliothek wird nicht
+durchgereicht (er kann Inhaltsbruchstücke tragen) · 512 KiB / 200 VEVENT / 1000 Zeichen, Größenprüfung
+**vor** dem Parsen · jede ungültige Eingabe (auch `null`, Zahlen, Objekte) ergibt eine kontrollierte
+Ablehnung mit maschinenlesbarem Grund, nie eine Ausnahme. **Ehrliche Grenzen:** Serien werden
+**nicht** in Einzeltermine aufgelöst (`RRULE` nur als Rohtext, `serie.termine_aufgeloest=false`) —
+„wann genau ist der nächste Wochenauftakt?" beantwortet Helmut heute **nicht**; `EXDATE` und
+`METHOD:REPLY` unausgewertet; schwebende Zeiten (`DTSTART` ohne `TZID` und ohne `Z`) und unbekannte
+Zeitzonen werden **abgelehnt statt geraten**; mehrdeutige Ortszeit → erstes Vorkommen; ganztägiges
+`DTEND` ist RFC-konform **exklusiv**. **Nur künstliche Fixtures** (erfundene Namen, reservierte
+Domains nach RFC 2606/6761), **keine Daten des Pilotmandanten**. **Nicht angefasst:** Migration,
+Secret, Production-Variable, Route, Microsoft-/Google-Anmeldung, E-Mail-Empfang, Quellen, Crons,
+Budgets, Sperren, Berlin, Brandenburg, M8, reale Testmandate. **Geänderte/neue Dateien:**
+`lib/helmut/kalender/{termin-vertrag,zeitzonen,ics-einladung,termin-zustand}.js` (neu),
+`scripts/kalender-ics-test.js` (neu), `scripts/kalender-ics-mutationsprobe.js` (neu),
+`docs/kalender-machbarkeit-1.md` (neu, kanonisch), `package.json`, `package-lock.json` (neu),
+`.github/workflows/ci.yml`, `docs/ARCHITECTURE.md` (§10 Abhängigkeiten, §11 Verzeichnis),
+`docs/betrieb/mailversand-resend.md` (veraltete Aussage „Repo ist abhängigkeitsfrei" korrigiert; die
+Resend-Entscheidung selbst bleibt gültig), `docs/CURRENT_STATE.md`. **Nächster Schritt, empfohlen:**
+**zuerst die Rechtsfrage** — ein Abgeordnetenkalender verrät Gesprächspartner, Orte und Zeiten;
+was gespeichert werden darf und wie lange, gehört geklärt, **bevor** eine Adresse existiert. Danach
+Empfangsweg + zufällige, widerrufbare Terminadresse je Mandat (Empfehlung in
+[`kalender-machbarkeit-1.md`](kalender-machbarkeit-1.md) §8: ≥128 Bit Zufall, nicht ableitbar,
+Adresse ist der **einzige** Träger der Mandatszuordnung — der Absender ausdrücklich nicht), dann
+Ablage/Migration, dann Serienauflösung. **Nicht empfohlen:** die Komponente jetzt an einen
+Production-Pfad hängen — ohne Empfang und Ablage gäbe es nichts zu zeigen, aber bereits eine
+Angriffsfläche. **Branch/PR:** `claude/kalender-machbarkeit-1-d3f7wr`, drei Commits (zuletzt `33ea570`),
+**PR #209 (Draft)**. **Beide Pflicht-Checks grün** (Lauf `30757186651`): `Syntax + Offline-Suiten`
+**200/200 Suiten in 62 s** und `Browser-/Mobile-Smoke (Chromium)`. Dass CI **200/200** meldet und der
+Lauf in dieser Cloud-Sitzung **186/200**, ist kein Widerspruch: die 14 Fehlschläge sind
+umgebungsbedingt (fehlende Umgebungsvariablen in der Sitzung) und stehen identisch in der Basislinie
+— dieselbe Lage wie bei PR #208. **Der `npm ci`-Schritt lief in beiden Jobs in ~1 s durch**; damit ist
+die einzige riskante Änderung dieses PRs in CI belegt, nicht nur lokal. Ein Nachtrag-Commit sichert
+Ganztagstermine über die Monats-, Jahres- und Schaltjahresgrenze ab (`31.08.`+1 Tag hätte einen
+32. August erzeugen können, ohne dass ein Test es bemerkt — ical.js normalisiert korrekt, das ist
+jetzt zugesichert statt nur beobachtet): Suite **134/134** statt 130/130.
+**Nicht gemergt, nicht deployt** — Merge = Production-Deployment und bleibt
+Betreiberentscheidung. **Risiko und Rollback:** der Anwendungscode ist unerreichbar (kein `require`
+von irgendwo) und im Betrieb wirkungslos; das reale Risiko liegt **allein** in der CI-Änderung —
+schlägt `npm ci` fehl, blockiert das Merge-Gate (lokal gegen einen leeren `node_modules`-Baum
+verifiziert). Rollback = `git revert` des einen Commits; da kein Pfad die Komponente aufruft und
+keine Migration existiert, gibt es keinen Datenzustand zurückzudrehen. Kanonisch:
+[`kalender-machbarkeit-1.md`](kalender-machbarkeit-1.md).) ·
+(**Sprint Widersprüchliche Cron-Fairness-Persistenz (Befund
 F-CAS) — TEILWEISE ABGESCHLOSSEN: Ursache im Code belegt, kleinster belastbarer Fix umgesetzt,
 offline bewiesen und mutationsgesichert; der rein lesende Production-Nachweis steht aus (Merge
 nötig). Kein Production-Schreibzugriff, kein manueller Cron, kein Trigger, keine Env-Änderung,
