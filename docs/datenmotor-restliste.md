@@ -824,20 +824,32 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   (`/api/cron/pipeline`, 16:00 UTC / 18:00 Berlin)**, weisungsgemäß weder ausgelöst noch
   abgewartet; aus demselben Grund ist auch das Fehlen der `pfadwahl`-Zeile heute nur schwach
   aussagekräftig. **Offen bleibt der volle Nachweis über ≥ 24 h** (`mode: "global"`-Laufdatensatz je
-  Lauf, `datenstand.status = abgeschlossen`, je Mandat ein `mode: "mandat"`-Datensatz, **`kontexte`
-  innerhalb der getesteten Schranke `1 ≤ kontexte ≤ 2n + 1`, bei sechs Mandaten also 1 … 13**,
-  keine `kontextvertrag`-Fehler, keine neue Fehlerklasse, LLM-Kosten unverändert) gegen die vorher
-  aufgenommene Baseline (`crawl` und `pipeline` je 2 begonnen / 1 erfolgreich, `lage-check` 1/6,
-  `morning-briefing` 6/6). **Zur Kontextzahl, am Code gemessen statt geschätzt:** `kontexte` ist
-  die **Anzahl verschiedener Sichtbarkeitsmengen** unter den Rohdokumenten eines Laufs — 1 für die
-  Quellen, die **alle** Mandate erhalten, je 1 für jede Quellengruppe mit einer **echten
-  Teilmenge** (Partei, Region, Ausschuss), je 1 je Mandat für dessen **eigene** Quellen, plus je
-  ein isolierter Kontext bei unbestimmbarer Sichtbarkeit. Sie ist **datenabhängig, keine Funktion
-  von `n` allein**; maßgeblich ist die in `cron-globalphase-test.js` **8.13f** getestete Schranke
-  `≤ 2n + 1`. Offline gemessen **1 · 3 · 10 · 15** bei n = 1 · 2 · 6 · 11 — die **10** ist
-  **1 + 3 + 6** und ein Vergleichswert der Simulationsprofilwelt, **keine** Production-Sollzahl.
-  Die frühere Formulierung „≈ 1 + Zahl der Mandate" war zu eng und ist ersetzt; kanonisch
-  [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) **§7.5**.
+  Lauf, `datenstand.status = abgeschlossen`, für **alle sechs** Mandate ein vollständig
+  abgeschlossener `mode: "mandat"`-Datensatz, keine neue Fehlerklasse, LLM-Kosten unverändert)
+  gegen die vorher aufgenommene Baseline (`crawl` und `pipeline` je 2 begonnen / 1 erfolgreich,
+  `lage-check` 1/6, `morning-briefing` 6/6). **Das Bestehenskriterium zu den Kontexten prüft
+  Verträge, keine Zahlengrenze:** jedes Dokument liegt **genau einmal** in **genau einem** Kontext
+  (Partition) · alle Dokumente eines **bekannten** Kontexts tragen **dieselbe** Sichtbarkeitsmenge,
+  und in einem unbekannten Kontext liegt kein Dokument mit bestimmbarer Sichtbarkeit · **unbekannte
+  Kontexte werden vollständig ausgewiesen und untersucht** · **keine** `kontextvertrag`-Fehler ·
+  die **gemessene Kontextzahl wird berichtet** und bei auffälliger Höhe **erklärt**, aber **nicht**
+  allein aufgrund einer Zahl als falsch bewertet. **Zur Kontextzahl, am Code gemessen statt
+  geschätzt:** `kontexte` ist die **Anzahl verschiedener Sichtbarkeitsmengen** unter den
+  Rohdokumenten eines Laufs — 1 für die Quellen, die **alle** Mandate erhalten, je 1 für jede
+  Quellengruppe mit einer **echten Teilmenge** (Partei, Region, Ausschuss), je 1 je Mandat für
+  dessen **eigene** Quellen; bei **unbestimmbarer** Sichtbarkeit **je 1 Kontext pro Quelle**, und
+  **nur** Dokumente **ohne bestimmbare Quelle** werden einzeln isoliert. Es gilt
+  `kontexte = geteilt + mandatseigen + unbekannt` — zu `geteilt + mandatseigen` vereinfacht es sich
+  **nur bei `unbekannt = 0`**, weil ein unbekannter Kontext keine Mandate trägt. Die Zahl ist
+  **datenabhängig, keine Funktion von `n` allein** und im allgemeinen Fall **exponentiell möglich**
+  (bei sechs Mandaten theoretisch **bis zu 63** bekannte, nicht leere Sichtbarkeitsmengen, plus
+  unbekannte Kontexte). **Die Schranke `1 ≤ kontexte ≤ 2n + 1` aus Prüfpunkt 8.13f gilt
+  ausschließlich für die vier konstruierten Simulationsprofile — Beobachtung dieser Profilwelt,
+  KEIN allgemeiner Vertrag und KEIN Production-Bestehenskriterium.** Offline gemessen
+  **1 · 3 · 10 · 15** bei n = 1 · 2 · 6 · 11 — die **10** ist **1 + 3 + 6** und bleibt ein
+  **Messwert der Simulationsprofilwelt**, **keine** Production-Sollzahl. Die früheren
+  Formulierungen „≈ 1 + Zahl der Mandate", „erwartet 10" und „Abnahmeschranke" sind ersetzt;
+  kanonisch [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) **§7.5**.
   **Betriebsgrenzen unverändert und weiter gültig:** der **Rückbau bleibt Betreiberaktion** (Vercel-
   Egress gesperrt), **weitere reale Testmandate bleiben deaktiviert**, Berlin/Brandenburg/M8 AUS
   (0 aktive Landeswege), Cron-Zeiten, Budgets und Quellen unberührt. Diese Sitzung hat **nichts

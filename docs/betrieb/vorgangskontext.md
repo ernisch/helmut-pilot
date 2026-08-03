@@ -152,7 +152,7 @@ Rohdokumente global entdoppelt werden, landen geteilte Dokumente vollständig im
 |---|---|
 | Flag nicht gesetzt / Tippfehler / `off` | Altpfad, unverändert |
 | Beide Flaggen gesetzt | **Altpfad**, laut protokolliert (`[cron/*/pfadwahl]`) |
-| Dokument ohne bestimmbare Sichtbarkeit | **isoliert** in einen eigenen Kontext — nie geraten, nie einem fremden Kontext zugeschlagen |
+| Dokument ohne bestimmbare Sichtbarkeit | in einen **unbekannten** Kontext — **je Quelle einer**, wenn die Quelle bekannt ist (Dokumente derselben Quelle haben zwangsläufig dieselbe, wenn auch unbekannte Sichtbarkeit); **je Dokument einer**, wenn auch die Quelle unbestimmbar ist. Nie geraten, nie einem bekannten Kontext zugeschlagen (§7.5) |
 | Partition verletzt (Dokument verloren/doppelt) | Datenstand wird **FEHLGESCHLAGEN** versiegelt, **keine** Mandatsprojektion in diesem Lauf |
 | Kontextgrenze verletzt | dito |
 | Globale Phase unvollständig | Datenstand `teilweise` — projizierbar, aber **nie** als `frisch` ausgewiesen |
@@ -299,7 +299,7 @@ Agenten-Sitzung nicht ausführbar ist — er wurde am selben Tag vom Betreiber a
 | 1 | Merge des PR (= Production-Deployment) durch den Betreiber | **erledigt** — PR #201 gemergt (`255df01`); **zum Aktivierungszeitpunkt trug Production den Stand `ded0e24`** (Deployment `dpl_J4g3k4QPUEaKAad3pB83ByGcvUkn`, `READY` 2026-08-03 13:15:11 UTC), der `255df01` enthält. *(Die Vorprüfung in §7.3 lief auf dem Vorgängerstand `c6f3f9f`; `ded0e24` unterscheidet sich davon nur in vier Markdown-Dateien unter `docs/` — der Anwendungscode ist identisch, §7.4.)* |
 | 2 | `HELMUT_CRON_GLOBALABRUF=on` **in der Vercel-Env** setzen — nicht in `helmut-flags.json` (dort wirkt es nicht) und nicht im Repo | **erledigt** — 2026-08-03, 13:15:11 UTC, Betreiberaktion, §7.4 |
 | 3 | Sicherstellen, dass `HELMUT_CRON_GLOBALPHASE` **nicht** gesetzt ist (sonst greift die Widerspruchsregel und es läuft der Altpfad) | **erfüllt** — unverändert nicht gesetzt, §7.3/§7.4 |
-| 4 | Rein lesender Production-Nachweis über mindestens 24 h: `mode: "global"`-Laufdatensatz vorhanden, `datenstand.status = abgeschlossen`, je Mandat ein `mode: "mandat"`-Datensatz, **`kontexte` innerhalb der getesteten Schranke `1 ≤ kontexte ≤ 2n + 1`** (§7.5), keine `kontextvertrag`-Fehler | **OFFEN — der einzige noch offene Punkt des Nachweises**, §7.4 |
+| 4 | Rein lesender Production-Nachweis über mindestens 24 h: `mode: "global"`-Laufdatensatz vorhanden, `datenstand.status = abgeschlossen`, je Mandat ein vollständig abgeschlossener `mode: "mandat"`-Datensatz, **die sieben Vertragskriterien aus §7.5** (Partition · Kontextgrenze · unbekannte Kontexte ausgewiesen · keine `kontextvertrag`-Fehler · Datenstand abgeschlossen · alle sechs Mandate fertig · Kontextzahl berichtet und bei Auffälligkeit erklärt) | **OFFEN — der einzige noch offene Punkt des Nachweises**, §7.4 |
 | 5 | Bewertung, ob die verbleibenden Bestandsbefunde (F10/Z2, Formularvokabular) einen eigenen Sprint auslösen sollen | **offen, aber KEIN Nachweispunkt** — unabhängige Produktentscheidung, blockiert die Abnahme von K2.1 nicht |
 
 ### 7.2 Rückbaupfad
@@ -401,10 +401,13 @@ deployt, **aber wirkungsseitig unbelegt**.
 
 **Der Nachweis nach Punkt 4 bleibt vollständig offen** und verlangt über **mindestens 24 h**
 reguläre Kadenz, rein lesend: je Lauf ein `mode: "global"`-Laufdatensatz · `datenstand.status =
-abgeschlossen` · je Mandat ein `mode: "mandat"`-Datensatz · **`kontexte` innerhalb der getesteten
-Schranke `1 ≤ kontexte ≤ 2n + 1`, bei sechs Mandaten also 1 … 13** (die maßgebliche Regel und wie
-sie zu lesen ist: **§7.5**) · **keine** `kontextvertrag`-Fehler · keine neue Fehlerklasse ·
-LLM-Kosten unverändert. **Die Kapazitätsaussage selbst** (Offline-Simulation: alt
+abgeschlossen` · für **alle sechs** Mandate ein vollständig abgeschlossener
+`mode: "mandat"`-Datensatz · die **sieben Vertragskriterien** aus **§7.5** (Partition ·
+Kontextgrenze · unbekannte Kontexte vollständig ausgewiesen und untersucht · **keine**
+`kontextvertrag`-Fehler · Datenstand `abgeschlossen` · alle Mandate fertig · Kontextzahl berichtet
+und bei auffälliger Höhe erklärt) · keine neue Fehlerklasse · LLM-Kosten unverändert. **Eine
+Obergrenze für `kontexte` gehört ausdrücklich NICHT dazu** — die Zahl ist eine Beobachtungsgröße,
+kein Schwellwert (§7.5). **Die Kapazitätsaussage selbst** (Offline-Simulation: alt
 2/6 → K2.1 6/6, §6) ist bis dahin **kein Production-Nachweis**. Vergleichsmaßstab ist die am
 2026-08-03 vor der Aktivierung aufgenommene Baseline: `crawl` und `pipeline` je **2 begonnen /
 1 erfolgreich** mit äußerem Zeitlimit, `lage-check` 1/6, `morning-briefing` 6/6.
@@ -416,61 +419,91 @@ ein regulärer Lauf ab 16:00 UTC ein Problem, liegt der Rückbau beim Betreiber.
 
 ---
 
-### 7.5 Die Zahl der Bündelungskontexte — die maßgebliche Regel
+### 7.5 Die Zahl der Bündelungskontexte — Definition, Beobachtung, Bestehenskriterium
 
-Diese Regel gilt **überall** in der Doku; frühere Formulierungen („≈ 1 + Zahl der Mandate")
-waren **zu eng** und sind hiermit ersetzt. Sie ist am Code und an der Suite gemessen, nicht
-geschätzt.
+Diese Regel gilt **überall** in der Doku; frühere Formulierungen („≈ 1 + Zahl der Mandate",
+„erwartet 10", „Abnahmeschranke `≤ 2n + 1`") waren **falsch oder zu weitgehend** und sind hiermit
+ersetzt. Alles Folgende ist am Code (`lib/helmut/vorgangskontext.js`) und an der Suite gemessen.
 
-**Definition (`lib/helmut/vorgangskontext.js`, `planKontexte`):**
+**Definition (`planKontexte`):**
 
 > **`kontexte` ist die Anzahl *verschiedener Sichtbarkeitsmengen* unter den Rohdokumenten eines
-> Laufs** — plus je ein isolierter fail-closed-Kontext für Dokumente ohne bestimmbare
-> Sichtbarkeit.
+> Laufs**, zuzüglich der fail-closed gebildeten **unbekannten** Kontexte.
 
-Die Zahl ist damit **datenabhängig und keine Funktion von `n` allein**. Sie setzt sich zusammen
-aus:
+Die Zahl ist **datenabhängig und keine Funktion von `n` allein**. Sie setzt sich zusammen aus:
 
 | Anteil | Beitrag |
 |---|---|
 | Quellen, die **alle** Mandate erhalten (der geteilte Katalog) | **1** Kontext |
 | jede Quellengruppe, die eine **echte Teilmenge** der Mandate versorgt (Partei-, Regional-, Ausschussquellen) | **1** Kontext **je verschiedener Teilmenge** |
 | die **eigenen** Quellen eines Mandats (`<mandats-id>-news` usw.) | **1** Kontext **je Mandat** |
-| Dokumente ohne bestimmbare Sichtbarkeit | je **1** isolierter Kontext (fail closed, nie geraten) |
+| Dokumente mit **unbestimmbarer Sichtbarkeit**, aber **bekannter Quelle** | **1** unbekannter Kontext **je Quelle** — Dokumente derselben unbekannten Quelle haben zwangsläufig dieselbe, wenn auch unbekannte Sichtbarkeit |
+| Dokumente **ohne bestimmbare Quelle** | **1** unbekannter Kontext **je Dokument** (einzeln isoliert) |
 
-**Maßgebliche Abnahmeschranke — getestet, nicht behauptet:**
-`scripts/cron-globalphase-test.js` Prüfpunkt **8.13f** sichert
+Fail closed heißt hier: eine unbestimmbare Sichtbarkeit wird **nie geraten** und **nie** einem
+bekannten Kontext zugeschlagen.
+
+#### Die Telemetriegleichung
+
+Die Zeile `[globalphase/kontext]` meldet je Lauf `kontexte`, `geteilt`, `mandatseigen`,
+`unbekannt`, `dokumente` und `ohneSichtbarkeit`. `planKontexte` zählt
+
+- `geteilt` = Kontexte mit **mehr als einem** Mandat,
+- `mandatseigen` = Kontexte mit **genau einem** Mandat,
+- `unbekannt` = Kontexte ohne bestimmbare Sichtbarkeit.
+
+Ein unbekannter Kontext trägt **keine** Mandate (`signaturZuMandaten` liefert für ihn `[]`), fällt
+also **weder** unter `geteilt` **noch** unter `mandatseigen`. Es gilt deshalb:
 
 ```
-1 ≤ kontexte ≤ 2n + 1
+kontexte = geteilt + mandatseigen + unbekannt
 ```
 
-Bei den heutigen **sechs** aktiven Mandaten ist der zulässige Bereich also **1 … 13**.
-Theoretisch wäre die Zahl exponentiell möglich (jede Teilmenge könnte auftreten); in der
-gemessenen Profilwelt ist sie linear, und ab sechs Mandaten kommt genau **ein** Kontext je
-zusätzlichem Mandat hinzu.
+Nur **wenn `unbekannt = 0` ist**, vereinfacht sich das zu `kontexte = geteilt + mandatseigen`.
+Zusätzlich gilt immer `mandatseigen ≤ n`.
 
-**Offline gemessen** (Laufzeitsimulation, §6): **1 · 3 · 10 · 15** für n = **1 · 2 · 6 · 11**.
+#### Was `1 ≤ kontexte ≤ 2n + 1` ist — und was nicht
+
+`scripts/cron-globalphase-test.js` Prüfpunkt **8.13f** prüft diese Grenze **ausschließlich für die
+vier konstruierten Simulationsprofile** (n = 1 · 2 · 6 · 11). Sie ist damit eine **Beobachtung
+dieser Profilwelt**, **kein allgemeiner Vertrag** und **kein Production-Bestehenskriterium**. Der
+Test selbst hält fest, dass die Zahl im allgemeinen Fall **exponentiell** sein kann: bei sechs
+Mandaten sind theoretisch **bis zu 63** verschiedene bekannte, nicht leere Sichtbarkeitsmengen
+möglich (2⁶ − 1) — zuzüglich unbekannter Kontexte. Ein Lauf mit mehr als 13 Kontexten ist deshalb
+**nicht** allein deswegen fehlerhaft.
+
+**Offline gemessen** (Laufzeitsimulation, §6): **1 · 3 · 10 · 15** für n = **1 · 2 · 6 · 11**; in
+dieser Profilwelt kommt ab sechs Mandaten genau **ein** Kontext je zusätzlichem Mandat hinzu.
 **Wie die 10 bei sechs Mandaten entsteht** — am echten Code nachgemessen, nicht gerechnet:
 
 ```
- 1  alle sechs      geteilter Katalog (Drucksachen, Ausschüsse, Leitmedium)
+ 1  alle sechs        geteilter Katalog (Drucksachen, Ausschüsse, Leitmedium)
  3  echte Teilmengen  Partei A (4 Mandate) · Regionalpresse einer Region (4) · Partei B (2)
- 6  je Mandat       dessen eigene Personen-, Ausschuss-, Themen- und Regionsuchen
+ 6  je Mandat         dessen eigene Personen-, Ausschuss-, Themen- und Regionsuchen
 ──  ─────────────
 10  Kontexte
 ```
 
-**Wo man es in Production abliest:** die Zeile `[globalphase/kontext]` meldet je Lauf
-`kontexte`, `geteilt` (Kontexte mit ≥ 2 Mandaten), `mandatseigen` (genau 1 Mandat), `unbekannt`,
-`dokumente` und `ohneSichtbarkeit` — in der Messung oben
-`kontexte=10 geteilt=4 mandatseigen=6 unbekannt=0`. Es gilt immer
-`kontexte = geteilt + mandatseigen` und `mandatseigen ≤ n`.
+Die **10** ist und bleibt ein **Messwert der Simulationsprofilwelt** — **keine
+Production-Sollzahl** und kein Erwartungswert für einen echten Lauf.
 
-**Erfüllt ist Punkt 4 bezüglich der Kontexte, wenn:** `1 ≤ kontexte ≤ 2n + 1` · `unbekannt = 0`
-(oder, falls > 0, benannt statt übergangen) · `mandatseigen ≤ n` · **keine**
-`kontextvertrag`-Fehlerzeile. Eine **Sollzahl** gibt es bewusst nicht: die 10 aus der Simulation
-ist ein Vergleichswert aus deren Profilwelt, **kein** Production-Erwartungswert.
+#### Das Production-Bestehenskriterium
+
+Es prüft **Verträge, keine Zahlengrenze**. Erfüllt ist Punkt 4 der Aktivierungsvoraussetzungen,
+wenn über das Beobachtungsfenster gilt:
+
+| # | Kriterium | Woran belegt |
+|---|---|---|
+| 1 | **Jedes Dokument liegt genau einmal in genau einem Kontext** (Partition) | `pruefePartition`; eine Verletzung versiegelt den Datenstand als **fehlgeschlagen** |
+| 2 | **Alle Dokumente eines bekannten Kontexts tragen dieselbe Sichtbarkeitsmenge** — und in einem unbekannten Kontext liegt kein Dokument mit bestimmbarer Sichtbarkeit | `pruefeAlleKontextgrenzen` |
+| 3 | **Unbekannte Kontexte werden vollständig ausgewiesen und untersucht** — `unbekannt` und `ohneSichtbarkeit` stehen in der Telemetriezeile und werden benannt, nicht überlesen | `[globalphase/kontext]` |
+| 4 | **Keine `kontextvertrag`-Fehler** | Fehlerliste des Laufdatensatzes |
+| 5 | **Der globale Datenstand ist `abgeschlossen`** | `datenstand.status` |
+| 6 | **Für alle sechs aktiven Mandate existiert ein vollständig abgeschlossener Mandatslauf** | je Mandat ein `mode: "mandat"`-Datensatz |
+| 7 | **Die gemessene Kontextzahl wird berichtet** und bei auffälliger Höhe **erklärt** — sie wird **nicht** allein wegen einer Zahl (etwa 13) als falsch bewertet | `kontexte` in der Telemetriezeile |
+
+Punkt 7 ist die bewusste Grenze dieses Kriteriums: die Kontextzahl ist eine **Beobachtungsgröße**,
+kein Schwellwert. Auffällig hoch heißt „erklären", nicht „durchgefallen".
 
 ## 8 · Verbleibende Risiken
 
