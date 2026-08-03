@@ -1,6 +1,70 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-08-03 (**Sprint „OP-25 — finaler Production-Nachweis der
+**Letzte Aktualisierung:** 2026-08-03 (**Sprint „Flackernden Timing-Seitenkanal-Sicherheitstest
+stabilisieren" — ERFOLGREICH ABGESCHLOSSEN. Nur Testcode und Runner-Diagnose. KEINE
+Produktionslogik geändert — `git diff origin/main -- server.js` ist leer, `lib/helmut/reset-timing.js`
+ist unberührt. Keine Migration, kein Flag, kein Production-Zugriff, kein manueller Lauf, kein
+Trigger, kein Merge, 0 KI-Aufrufe, 0,00 USD.** **Kurz:** der Test maß falsch, der Schutz war nie
+defekt. **Das Sicherheitsziel gegen Nutzer-Enumeration ist unverändert geschützt und die
+Nachweiskraft nachweislich intakt.** **Ursache — zwei unabhängige Messfehler, beide in Abschnitt H,
+beide erzeugen genau EINEN roten Prüfpunkt von 80 und passen damit exakt auf das CI-Bild
+„79 passed, 1 failed" (Lauf `30806535691`):** **(U-1)** die Vorbedingung „der Treffer-Zweig leistet
+mehr Arbeit" verglich die Differenz **zweier einzelner** Messungen gegen eine absolute 30-ms-Schwelle.
+Die Not-Found-Messung ist nach unten hart am 100-ms-Zeitgitter festgenagelt, nach oben aber durch
+Prozess-Scheduling offen (**bis +45 ms gemessen**); diese Streuung ging 1:1 in die Differenz —
+**in 1 von 60 Runden** unter 24-facher CPU-Überbuchung fiel sie unter 30 ms. **(U-2)** die Prüfung
+`dMedian * 10 < Arbeits-Delta` verlangte betragsmäßig **unter ~5 ms** Genauigkeit auf einer Maschine,
+deren Scheduler stärker zittert — **3 von 10 Läufen rot**. Dahinter steckt ein echtes Messartefakt:
+der Mailversand des Treffer-Zweigs (150 ms Stub) läuft in **derselben Ereignisschleife** noch während
+der darauffolgenden unbekannt-Messung und verlangsamt sie systematisch. **Belegt durch das
+Vorzeichen:** AUC liegt reproduzierbar **unter** 0,5, der NOT-FOUND-Zweig ist also der langsamere —
+genau **umgekehrt** zu einem echten Seitenkanal. **Welcher der beiden Punkte im CI rot war, ist aus
+dem Log nicht ableitbar**, weil der Runner nur die letzten 15 Zeilen ausgab; die zeigen die
+Abschnitte I/J/K grün, der Fehlschlag lag also in A–H. **Korrektur eines früheren Befunds
+(kein falsches Grün):** die im Kopf vom 03.08. genannte Reproduktion „dreimal rot, wenn parallel die
+gesamte Offline-Suite die CPU belegt" war ein **Artefakt** — **24 Suiten teilen sich `.helmut-data/`**;
+zwei gleichzeitige Suiten überschreiben gegenseitig den Auth-Store (Ergebnis dann **9** Fehlschläge,
+Muster „gar keine Mail"), was im CI **nicht** passieren kann, weil der Runner strikt **sequenziell**
+läuft. **Parallele CPU-Last war also NICHT die Ursache**, und Isolation war nicht die Lösung: reine
+CPU-Last allein (6-fach) hielt den Test in 3 von 3 Läufen grün. **Lösung — keine einzige Schwelle
+gelockert, kein Test übersprungen, keine Wiederholung, keine Warnung:** (1) die Referenzmessung ist
+jetzt der **Median aus 7 verschränkten Runden** statt einer Einzelstichprobe, die 30-ms-Schwelle
+bleibt unverändert; (2) die Verhältnisprüfung ist jetzt **vorzeichenbehaftet** — nur „Treffer-Zweig
+langsamer" ist ein Seitenkanal, das Artefakt ist negativ und kann nicht mehr rot färben, während die
+Gegenrichtung weiterhin **betragsmäßig** durch `Median < 25 ms`, `Median < Transportzeit/3`, das
+AUC-Band und die Überlappungsprüfung abgedeckt bleibt; (3) der Offline-Runner gibt bei einem
+Fehlschlag zusätzlich die **FAIL-Zeilen der Suite** aus (auf 20 gedeckelt) — genau die Diagnose, die
+dem Vorsprint gefehlt hat. **Getestete Sackgasse, dokumentiert damit sie nicht wiederholt wird:** die
+Hintergrundarbeit **vor** der unbekannt-Messung auslaufen zu lassen macht es **schlechter**
+(AUC 0,237…0,409 statt 0,342…0,497, **7 von 10** Läufen rot), weil der Versand dann unmittelbar vor
+der Messung liegt statt sie zu überlappen — die Hypothese wurde durch Messung **widerlegt** und
+zurückgenommen. **Nachweiskraft belegt (Mutationsproben, beide vollständig entfernt):** (M-1) die
+Entkopplung rückgängig gemacht, also **die Schwachstelle wiederhergestellt** → **AUC = 1,000**,
+p50-Delta 100,0 ms, **7 Prüfpunkte rot**; (M-2) die Quantisierung entfernt → AUC 0,985,
+**4 Prüfpunkte rot**. **Zahlen:** **12 von 12** Läufen grün unter 24-facher CPU-Überbuchung
+(vorher 3 von 10 rot), **6 von 6** und **8 von 8** grün allein. **Die Sicherheitsaussagen selbst
+waren nie das Problem** und blieben auch unter 24-facher Überbuchung weit im Band: p50-Delta
+≤ 6,9 ms (Grenze 25), p95-Delta ≤ 12,9 ms (Grenze 60), AUC 0,382…0,493 (Band 0,20…0,80).
+**Tests:** `node scripts/run-offline-tests.js` **186/200** — **exakt die bekannte Basislinie**, in
+derselben Sitzung auf unverändertem `origin/main` gegengemessen (ebenfalls 186/200, identische
+14er-Fehlschlagliste); `node scripts/browser-smoke-test.js` **32/32**. Laufzeit der Suite 15 s → ~21 s.
+**CI beim ERSTEN regulären Durchlauf vollständig grün, ohne Wiederholung** (Lauf `30810771618`,
+`run_attempt: 1`): `Syntax + Offline-Suiten` **200/200 in 57 s**, `Browser-/Mobile-Smoke (Chromium)`
+grün — beide Pflicht-Checks. (Dass CI 200/200 zeigt und diese Sitzung 186/200, ist erwartbar: die
+14 Fehlschläge sind sandbox-eigene Netz-/Proxy-Effekte, keine Repo-Fehler.)
+**Neue Beobachtung, benannt statt verschwiegen:** `werkzeug-lesefehler-test.js` flackert
+**selbst** (in einem Stapel 1 von 3 Einzelläufen rot, danach 6 von 6 grün; nicht in der Basislinie,
+von diesem Sprint nicht berührt). **Nicht behoben** — der Sprint sollte nicht eigenmächtig erweitert
+werden; das ist der nächste sinnvolle Schritt, falls es erneut auftritt. **Restrisiko, ausdrücklich
+benannt:** die **untere** Kante des AUC-Bandes. AUC ist eine Rangstatistik **ohne Effektstärke-Boden**,
+deshalb verschieben sie schon Bruchteile einer Millisekunde; beobachtet wurden 0,264…0,598 allein und
+0,382…0,493 unter Last bei Effektstärken von 0,1…0,4 ms — Boden ist 0,20. Der Wert war **nie** rot und
+wurde in diesem Sprint **nicht** angefasst, weil das eine Sicherheitsschranke lockern hieße.
+**Branch/PR:** `claude/timing-seitenkanal-stabilisieren-gck09j`, **PR #212** (offen, nicht selbst
+gemergt). **Geänderte Dateien:** `scripts/reset-timing-seitenkanal-test.js`,
+`scripts/run-offline-tests.js`, `docs/CURRENT_STATE.md`. **Risiko: gering** — nur Testcode; ein
+Fehler hier kann Production nicht erreichen, wohl aber das Merge-Gate, deshalb die 26 Wiederholläufe
+oben. **Rollback:** `git revert`.) · (**Sprint „OP-25 — finaler Production-Nachweis der
 Cron-Fairness" — TEILWEISE ABGESCHLOSSEN. Der Nachweis selbst ist BESTANDEN; OP-25 als Ganzes
 bleibt teilweise abgeschlossen. Rein lesend in Production, reine Dokumentation, kein Code, keine
 Migration, kein Flag, kein manueller Lauf, kein Trigger, kein Merge, 0 KI-Aufrufe, 0,00 USD.**
