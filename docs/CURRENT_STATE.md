@@ -1,6 +1,89 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-08-03 (**Sprint „OP-25 K2.1 kontrolliert in Production aktivieren"
+**Letzte Aktualisierung:** 2026-08-03 (**Sprint „OP-25 K2.1 — Production-Aktivierung ausgeführt"
+— TEILWEISE ABGESCHLOSSEN. K2.1 ist in Production AKTIVIERT. Deployment READY und unmittelbarer
+Smoke-Check bestanden. Der reguläre Production-Kapazitätsnachweis über das vorgeschriebene
+Beobachtungsfenster ist noch offen. OP-25 bleibt teilweise abgeschlossen.** **Der Handgriff war
+eine Betreiberaktion** — der im Vorsprint belegte Blocker (kein Vercel-Schreibweg aus einer
+Agenten-Sitzung, `api.vercel.com`/`vercel.com`/`helmut-pilot.vercel.app` alle `CONNECT → 403`)
+besteht **unverändert fort** und wurde **nicht umgangen**; der Betreiber hat
+`HELMUT_CRON_GLOBALABRUF = on` über die Vercel-Oberfläche gesetzt, **ausschließlich für
+`Production`** (Preview und Development unverändert, `Sensitive` bewusst aus, weil der Wert kein
+Geheimnis ist). Diese Sitzung hat **nichts geschrieben**: keine Env, kein Deployment, kein Cron,
+kein Trigger, kein Production-Schreibzugriff, keine Migration, kein Anwendungscode, **0 KI-Aufrufe,
+0,00 USD**. **Harte Daten:** Flag **`HELMUT_CRON_GLOBALABRUF = on`** · `HELMUT_CRON_GLOBALPHASE`
+**unverändert nicht gesetzt (AUS)** — die Widerspruchsregel greift also nicht, es läuft `kontext`
+und nicht der Altpfad · Deployment **`dpl_J4g3k4QPUEaKAad3pB83ByGcvUkn`**, `target: production`,
+`readyState: READY`, `action/source: redeploy` (aus `dpl_9ihAmLeKea3rcySF8jm3Xa6nq1ch`), Region
+`fra1` · Commit **`ded0e240e24ca081b5ff68e150a95f7006b08ad7`** · **READY 2026-08-03 13:15:11 UTC =
+15:15:11 Berlin** (Buildstart 13:15:00). **Abweichung vom freigegebenen Stand geprüft statt
+übergangen:** deployt ist `ded0e24`, freigegeben war `c6f3f9f` — `ded0e24` ist der **Merge von
+PR #213** (der Doku dieses Vorhabens), und `git diff c6f3f9f ded0e24` über `server.js`,
+`client.js`, `styles.css`, `lib/`, `scripts/`, `supabase/`, `vercel.json`, `helmut-flags.json`,
+`.github/`, `api/`, `package*.json` ist **leer**: der Unterschied sind **vier Markdown-Dateien
+unter `docs/`**. Der deployte **Anwendungscode ist identisch** mit dem geprüften Stand.
+**Rein lesender Smoke-Check 13:21–13:23 UTC — BESTANDEN, keine Production-Daten verändert:**
+Startseite `GET /` **HTTP 200** (Region `fra1`) · **Asset-Rotation korrekt** —
+`styles.css?v=`**`ded0e240`** und `client.js?v=`**`ded0e240`** tragen exakt den deployten Commit,
+also keine Stale-Asset-Falle (Pflichtprüfung nach jedem Redeploy,
+[`betrieb/deploy-rollback.md`](betrieb/deploy-rollback.md) §3) · alle Sicherheits-/Routing-Header
+aus `vercel.json` vorhanden (CSP, HSTS, `X-Frame-Options: DENY`, `nosniff`, Referrer-/Permissions-
+Policy) · `site.webmanifest` HTTP 200 · `/api/health` **HTTP 401** = das Auth-Gate antwortet
+korrekt (dokumentiertes Verhalten ohne Secret, Route erreichbar) · Build **ohne Fehlerzeile**
+(`Build Completed in /vercel/output [2s]`) · **0 Runtime-Fehler** (aggregierte Fehlertabelle) ·
+Runtime-Logs seit `READY`: **3** Anfragen, alle `GET / 200` auf dem neuen Deployment, **0**
+Einträge der Stufen `error`/`warning`/`fatal` · **keine** `[cron/*/pfadwahl]`-Widerspruchszeile ·
+Datenbank **unverändert**: 0 aktive Sperren, Fairnesszeile `rev = 46` / 9 467 Bytes /
+`updated_at` 10:04:36 UTC wie vor der Aktivierung, `process_runs` unverändert, **0** neue
+`systemError` seit `READY`, keine DB-Fehler · Betriebsgrenzen unverändert: **0** aktive
+Berliner/Brandenburger Abrufwege (alle 17 `needs_review`/`manual`), 6 aktive Mandate, Cron-Zeiten,
+Budgets und Quellen unberührt. **Ein Rückbau war NICHT erforderlich** — kein Fehler, kein
+Widerspruch, kein Abbruchkriterium. **Was ausdrücklich NOCH NICHT belegt ist (kein falsches Grün):**
+der Flagwert ist aus einer Sitzung unlesbar — keine Route gibt ihn aus, und `waehleCronPfad()`
+wird **ausschließlich zur Cron-Zeit** ausgewertet. **Der erste Wirkungsbeleg ist deshalb der
+nächste reguläre schwere Lauf, `/api/cron/pipeline` um 16:00 UTC / 18:00 Berlin** — er wurde
+weisungsgemäß **nicht ausgelöst und nicht abgewartet**. Aus demselben Grund ist auch das Fehlen
+der `pfadwahl`-Zeile heute nur schwach aussagekräftig. **Offen bleibt der vollständige reguläre
+Production-Kapazitätsnachweis über mindestens 24 h** ([`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md)
+§7.1 Nr. 4 / §7.4): je Lauf ein `mode: "global"`-Laufdatensatz · `datenstand.status =
+abgeschlossen` · für **alle sechs** Mandate ein vollständig abgeschlossener
+`mode: "mandat"`-Datensatz · **sieben Vertragskriterien statt einer Zahlengrenze:** jedes Dokument
+liegt **genau einmal** in **genau einem** Kontext (Partition) · alle Dokumente eines **bekannten**
+Kontexts tragen **dieselbe** Sichtbarkeitsmenge, und in einem unbekannten Kontext liegt kein
+Dokument mit bestimmbarer Sichtbarkeit · **unbekannte Kontexte werden vollständig ausgewiesen und
+untersucht** · **keine** `kontextvertrag`-Fehler · Datenstand `abgeschlossen` · alle sechs
+Mandatsläufe fertig · die **gemessene Kontextzahl wird berichtet** und bei auffälliger Höhe
+**erklärt** — **nicht** allein wegen einer Zahl als falsch bewertet. Dazu keine neue Fehlerklasse
+und unveränderte LLM-Kosten. **Zur Kontextzahl, weil sie in der Doku widersprüchlich war und jetzt
+am Code gemessen ist:** `kontexte` ist die **Anzahl verschiedener Sichtbarkeitsmengen** unter den
+Rohdokumenten eines Laufs — **1** für die Quellen, die alle Mandate erhalten, **je 1** für jede
+Quellengruppe, die eine **echte Teilmenge** versorgt (Partei, Region, Ausschuss), **je 1** je
+Mandat für dessen **eigene** Quellen; bei **unbestimmbarer** Sichtbarkeit **je 1 Kontext pro
+Quelle**, und **nur** Dokumente **ohne bestimmbare Quelle** werden einzeln isoliert. Es gilt
+`kontexte = geteilt + mandatseigen + unbekannt` (ein unbekannter Kontext trägt keine Mandate und
+fällt unter keines der beiden anderen Felder); zu `geteilt + mandatseigen` vereinfacht es sich
+**nur bei `unbekannt = 0`**. Die Zahl ist **datenabhängig, keine Funktion von `n` allein** und im
+allgemeinen Fall **exponentiell möglich** — bei sechs Mandaten sind theoretisch **bis zu 63**
+bekannte, nicht leere Sichtbarkeitsmengen möglich, zuzüglich unbekannter Kontexte. **Die Schranke
+`1 ≤ kontexte ≤ 2n + 1` aus Prüfpunkt 8.13f gilt ausschließlich für die vier konstruierten
+Simulationsprofile — sie ist eine Beobachtung dieser Profilwelt, KEIN allgemeiner Vertrag und KEIN
+Production-Bestehenskriterium.** Offline gemessen **1 · 3 · 10 · 15** bei n = 1 · 2 · 6 · 11; die
+**10** bei sechs Mandaten ist **1 (alle) + 3 (echte Teilmengen) + 6 (je Mandat)** und bleibt ein
+**Messwert der Simulationsprofilwelt**, **keine** Production-Sollzahl. Abgelesen wird alles an der
+Zeile `[globalphase/kontext]` (`kontexte`, `geteilt`, `mandatseigen`, `unbekannt`, `dokumente`,
+`ohneSichtbarkeit`). Die früheren Formulierungen „≈ 1 + Zahl der Mandate", „erwartet 10" und
+„Abnahmeschranke `≤ 2n + 1`" sind damit ersetzt — kanonisch:
+[`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) **§7.5**. Vergleichsmaßstab ist die vor der Aktivierung aufgenommene Baseline: `crawl` und
+`pipeline` je **2 begonnen / 1 erfolgreich** mit äußerem Zeitlimit, `lage-check` 1/6,
+`morning-briefing` 6/6. **Betriebsgrenze, die bestehen bleibt:** der **Rückbau ist weiterhin
+Betreiberaktion** — Stufe 1 (`HELMUT_CRON_GLOBALABRUF` auf `off` + Redeploy) ist aus einer Sitzung
+nicht ausführbar, solange der Vercel-Egress gesperrt ist. Zeigt ein Lauf ab 16:00 UTC ein Problem,
+muss der Betreiber zurückrollen. **Weitere reale Testmandate bleiben deaktiviert**, Berlin,
+Brandenburg und M8 bleiben AUS. **Tests:** `node scripts/run-offline-tests.js` **186/200** = exakte
+Basislinie mit identischer 14er-Fehlschlagliste · `node scripts/browser-smoke-test.js` **32/32** ·
+`vorgangskontext` **102/102**, `cron-globalphase` **176/176**, `cron-fairness` **285/285**,
+`env-inventar` **38/38**. **Branch/PR:** `claude/op25-k21-produktion-aktiviert`, **PR #214**, reine
+Dokumentation. **Rollback der Doku:** `git revert`.) · (**Sprint „OP-25 K2.1 kontrolliert in Production aktivieren"
 — BLOCKIERT. NICHTS VERÄNDERT: keine Environment-Variable gesetzt, kein Deployment ausgelöst, kein
 Cron, kein Trigger, kein Production-Schreibzugriff, keine Migration, kein Anwendungscode, kein
 Merge, 0 KI-Aufrufe, 0,00 USD.** **Kurz:** **11 von 13 Aktivierungsgates sind erfüllt** — die
@@ -3505,22 +3588,28 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 4. **Branch Protection unbestätigt.** Das CI-Gate blockiert erst mit aktivierter
    Branch Protection; Aktivierungsstand ist nicht verifiziert (OP-11,
    `betrieb/branch-protection.md`).
-5. **Kein Vercel-Schreibweg aus einer Agenten-Sitzung — jede Flag-Aktivierung bleibt
-   Betreiberaktion (gemessen 2026-07-26, erneut 2026-08-03).** `VERCEL_TOKEN` ist inzwischen
-   in den Claude-Code-Environment-Einstellungen hinterlegt, aber die Egress-Richtlinie sperrt
-   `api.vercel.com`, `vercel.com` und `mcp.vercel.com` (`CONNECT → HTTP 403`); die Vercel CLI
-   scheitert deshalb schon rein lesend, und der Vercel-MCP-Server hat kein Environment- und
-   kein Redeploy-Werkzeug. **Beide Bedingungen zusammen sind nötig, eine allein genügt nicht**
+5. **Kein Vercel-Schreibweg aus einer Agenten-Sitzung — jede Flag-Aktivierung UND jeder
+   Flag-Rückbau bleiben Betreiberaktion (gemessen 2026-07-26, erneut 2026-08-03).**
+   `VERCEL_TOKEN` ist inzwischen in den Claude-Code-Environment-Einstellungen hinterlegt, aber
+   die Egress-Richtlinie sperrt `api.vercel.com`, `vercel.com`, `mcp.vercel.com` und auch
+   `helmut-pilot.vercel.app` (`CONNECT → HTTP 403`); die Vercel CLI scheitert deshalb schon rein
+   lesend, und der Vercel-MCP-Server hat kein Environment- und kein Redeploy-Werkzeug. **Beide
+   Bedingungen zusammen sind nötig, eine allein genügt nicht**
    ([`betrieb/env-inventar.md`](betrieb/env-inventar.md) §8,
-   [`betrieb/berlin-aktivierung.md`](betrieb/berlin-aktivierung.md) §20.3). Betrifft aktuell
-   `HELMUT_CRON_GLOBALABRUF` (OP-25 K2.1) und `HELMUT_LANDESMODULE` (Punkt 14).
+   [`betrieb/berlin-aktivierung.md`](betrieb/berlin-aktivierung.md) §20.3). **Praktische Folge
+   seit dem 2026-08-03:** `HELMUT_CRON_GLOBALABRUF` ist scharf, aber der Rückweg (`off` +
+   Redeploy) liegt **ausschließlich** beim Betreiber — zeigt ein regulärer schwerer Lauf ein
+   Problem, kann keine Sitzung zurückrollen. Betrifft ebenso `HELMUT_LANDESMODULE` (Punkt 14).
+   *Lesende* Production-Prüfungen sind davon nicht betroffen: Deployments, Runtime-Logs,
+   Build-Logs und die App selbst sind über den Vercel-MCP erreichbar.
 
 ## 8 · Offene Pull Requests
 
-**Stand 2026-08-03 (nach dem K2.1-Aktivierungssprint), gegen GitHub geprüft: vor diesem Sprint
-gab es NULL offene Pull Requests** — #212 ist gemergt. Offen ist danach genau **EINER**: der
-Dokumentations-PR dieses Sprints (`claude/helmut-op25-k21-prod-fopp7g`, reine Doku). **#203 ist
-geschlossen** (2026-08-03, 07:19 UTC, `merged: false`), genau wie am 2026-08-02 empfohlen.
+**Stand 2026-08-03 (nach der K2.1-Production-Aktivierung), gegen GitHub geprüft: offen ist genau
+EINER** — der Dokumentations-PR dieses Sprints (`claude/op25-k21-produktion-aktiviert`, **PR #214**,
+reine Doku). **PR #213** (Aktivierungsprüfung, reine Doku) ist am 2026-08-03 gemergt (`ded0e24`);
+#212 war bereits gemergt. **#203 ist geschlossen** (2026-08-03, 07:19 UTC, `merged: false`), genau
+wie am 2026-08-02 empfohlen.
 
 | PR | Inhalt | Zustand / Empfehlung |
 |---|---|---|
@@ -3934,6 +4023,7 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 
 | Sprint | Datum | Zustand |
 |---|---|---|
+| **Sprint „OP-25 K2.1 — Production-Aktivierung ausgeführt"** | 2026-08-03 | **Teilweise abgeschlossen.** **K2.1 ist in Production aktiviert; Deployment READY und unmittelbarer Smoke-Check bestanden; der reguläre Production-Kapazitätsnachweis über das vorgeschriebene Beobachtungsfenster ist noch offen; OP-25 bleibt teilweise abgeschlossen.** Den Handgriff hat der **Betreiber** ausgeführt (`HELMUT_CRON_GLOBALABRUF = on`, ausschließlich `Production`); der Vercel-Blocker aus dem Vorsprint besteht fort und wurde nicht umgangen. Diese Sitzung schrieb nichts: keine Env, kein Deployment, kein Cron, kein Trigger, kein Production-Schreibzugriff, 0 KI, 0,00 USD. Deployment `dpl_J4g3k4QPUEaKAad3pB83ByGcvUkn`, Commit `ded0e24`, **READY 13:15:11 UTC = 15:15:11 Berlin**; `HELMUT_CRON_GLOBALPHASE` unverändert AUS. Abweichung `c6f3f9f` → `ded0e24` geprüft: **nur vier Markdown-Dateien**, Anwendungscode identisch. Smoke: `GET /` 200, **Asset-Version `?v=ded0e240` = deployter Commit**, alle Security-Header, `/api/health` 401 (korrektes Gate), Build ohne Fehler, **0** Runtime-Fehler, **0** `error`/`warning`/`fatal`, keine `pfadwahl`-Widerspruchszeile, DB unverändert (0 Sperren, `rev = 46`, 0 neue `systemError`). **Kein Rückbau nötig.** Ehrliche Grenze: der Flagwert ist aus einer Sitzung unlesbar, `waehleCronPfad()` läuft nur zur Cron-Zeit — **der erste Wirkungsbeleg ist der 16:00-UTC-`pipeline`**, weisungsgemäß weder ausgelöst noch abgewartet. **Rückbau bleibt Betreiberaktion.** Testmandate weiter gesperrt, Berlin/Brandenburg/M8 AUS. Offline 186/200 = Basislinie, Browser 32/32. Branch `claude/op25-k21-produktion-aktiviert`, **PR #214**, reine Doku. |
 | **Sprint „OP-25 K2.1 kontrolliert in Production aktivieren"** | 2026-08-03 | **BLOCKIERT — nichts verändert.** Keine Env gesetzt, kein Deployment, kein Cron, kein Trigger, kein Production-Schreibzugriff, kein Merge, 0 KI, 0,00 USD. **11 von 13 Aktivierungsgates erfüllt;** die beiden offenen (Rechte für Aktivierung **und** sofort ausführbarer Rückbau) haben dieselbe Ursache: `VERCEL_TOKEN` ist gesetzt, aber `api.vercel.com`/`vercel.com`/`mcp.vercel.com` sind per Egress-Richtlinie gesperrt (`CONNECT → 403`); CLI 58.4.4 scheitert schon rein lesend, der Vercel-MCP hat kein Environment-/Redeploy-Werkzeug. Ohne Rückweg wird nicht aktiviert (`CLAUDE.md` §4.4). Bereits belegt in [`betrieb/berlin-aktivierung.md`](betrieb/berlin-aktivierung.md) §20.3 — heute ist die Token-Hälfte erfüllt, die Egress-Hälfte nicht. **Alles Übrige geprüft und erfüllt:** Arbeitsbaum sauber, `HEAD = origin/main = c6f3f9f8…`, PR #201/#211/#212 enthalten, 0 offene PRs, Production-Deployment `dpl_APNCTVthBNBKptpCSGfPejtZCz8y` READY auf genau diesem Commit (11:52:36 UTC), Team `nohut` / Projekt `helmut-pilot` zweifelsfrei, **beide Flaggen an der Wirkung als AUS belegt** (keine `globalphase`-/`pfadwahl`-Logzeile in 24 h, Stapelspuren durch `runSourceCrawl`), nur `crawl` und `pipeline` wechseln (zwei Aufrufstellen von `cronSchwererPfad`), **0 aktive Sperren**, kein laufender schwerer Cron, Offline **186/200** = exakte Basislinie, Browser **32/32**, CI von `main` grün im ersten Anlauf (`30811251231`), Berlin/Brandenburg **0** aktive Wege, 6 aktive Mandate. **Sicheres Fenster war offen** (heute 12:40–15:30 UTC = 14:40–17:30 Berlin; täglich verlässlich 09:15–15:30 UTC = 11:15–17:30 Berlin) und wurde bewusst nicht genutzt. Baseline aufgenommen: `crawl` und `pipeline` je **2 begonnen / 1 erfolgreich**, `lage-check` 1/6, `morning-briefing` 6/6; **F-POS unverändert bestätigt**. **OP-25 bleibt teilweise abgeschlossen**, Testmandat-Sperre unverändert. Branch `claude/helmut-op25-k21-prod-fopp7g`, reine Doku. |
 | **Sprint „OP-25 — finaler Production-Nachweis der Cron-Fairness"** | 2026-08-03 | **Teilweise abgeschlossen (der Nachweis ist bestanden; OP-25 als Ganzes bleibt teilweise abgeschlossen).** Rein lesend in Production, reine Doku, kein Code, kein manueller Lauf, kein Trigger, kein Merge, 0 KI, 0,00 USD. Fenster 2026-08-02 09:42:33 → 2026-08-03 10:04:36 UTC (24 h 22 min) nach dem `READY`-Deployment `26dc9b1` (PR #208); **sieben** reguläre Läufe, vier mit äußerem Zeitlimit. **§11.8 6/7 Prüfpunkte voll erfüllt** (Nr. 7 der Sache nach erfüllt, Zahl „~4–8 KB" durch Messung **9,2 KB** überholt), **§13.6 6/6 erfüllt**. Kernbeleg: `erfolgreich=6` im Log **und** sechs Abschlüsse in der Zeile; `rev = 46` trifft die nachgerechnete Zahl fälliger Schreibvorgänge exakt. Zwei Einschränkungen: CAS-Konfliktpfad und verweigerte Sperre traten nicht auf. **Neuer Befund F-POS** (stabile Position im Lauf → dieselben Mandate schließen nie ab) verschärft den Kapazitätsblocker. Tests 186/200 (Basislinie) und 32/32. Branch `claude/op25-production-nachweis-cron-mk73rq`, **PR #211**. Kanonisch: [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) §14 |
 | **Sprint „PR 203 bereinigen und Projektstatus konsolidieren"** | 2026-08-02 | **Erfolgreich abgeschlossen (reine Doku, kein Code, kein Production-Zugriff, kein Merge).** PR #203 ist **vollständig überholt** — derselbe 25B-Nachweis liegt seit PR #202 (gemergt 2026-07-31, 16:41 UTC) in genauerer Fassung auf `main`; zwei Inhalte von #203 wären eine Verschlechterung (überholte Zahl „5 → 0", fehlende Nebenbeobachtung B25-3). **Empfehlung: #203 schließen**, sein Branch wurde nicht angefasst. Bereinigt: §8 (zehn angeblich offene PRs → tatsächlich nur #203), §3 (PR #208 gemergt), die Kopfeinträge zu PR #204…#209 („offen"/„Draft"/„nicht gemergt") und der Kopf von `roadmap/phase_1_checkliste.md` („PR #185 offen", `main`-Stand `d9006c1`). **Der Production-Nachweis nach PR #208 bleibt offen** und ist vor dem 2026-08-03 nicht erbringbar (§11.8: 24 h Kadenz nach dem Merge; §13.6 Nr. 4: Lauf mit äußerem Zeitlimit). Kein manueller Lauf, kein Trigger; Berlin/Brandenburg/M8 unverändert AUS. Offline-Suite **186/200** (14 umgebungsbedingte Basislinien-Fehlschläge), Browser-Smoke **32/32**. Branch `claude/pr-203-cleanup-status-et8vlb` |
