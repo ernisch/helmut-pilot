@@ -1,8 +1,13 @@
 # Faire Mandantenreihenfolge der Mehrmandanten-Crons (OP-25)
 
-**Stand:** 2026-08-02 (§13 neu: **Befund F-CAS** — die Fairnesszeile verlor Abschlüsse an
-überlappende Crons; bedingtes Schreiben + Gegenprobe. **§11.8 (R-6-Nachweis) ist damit
-GESCHEITERT und muss nach dem Merge neu laufen** — siehe §13.6) · zuvor 2026-07-31 (§11:
+**Stand:** 2026-08-03 (§14 neu: **regulärer Production-Nachweis nach dem F-CAS-Fix —
+§11.8 und §13.6 BESTANDEN**, rein lesend, sieben reguläre Läufe über 24 h 22 min; zwei
+Einschränkungen benannt, **neuer Befund F-POS**: die Position im Lauf ist über die Zyklen
+stabil, der Rückstand trifft strukturell dieselben Mandate. **OP-25 bleibt insgesamt
+teilweise abgeschlossen** — Kapazitätsblocker §10.5/§10.7 unverändert offen) · zuvor
+2026-08-02 (§13: **Befund F-CAS** — die Fairnesszeile verlor Abschlüsse an
+überlappende Crons; bedingtes Schreiben + Gegenprobe; §11.8 im 1. Durchgang gescheitert)
+· zuvor 2026-07-31 (§11:
 R-6 im Code behoben; §10 regulärer Production-Nachweis — **teilweise bestanden**, Fairness
 korrekt, Kapazität unzureichend) · **Kanonisch für:** Reihenfolge, Fairnessgarantie,
 Beobachtbarkeit, **Laufprotokoll/Telemetrievertrag**, **Persistenzvertrag der Zeile** und
@@ -604,7 +609,16 @@ und `aeusseresTimeoutAt` bleibt als Tatsache daneben stehen.
 - Höchstens `MAX_LAUF_CRONS = 12` Datensätze; die ältesten fallen weg.
 - Höchstens `MAX_LAUF_MANDATE = 200` Kennungen je Datensatz.
 - Datensätze, die seit `LAUF_RETENTION_MS` (14 Tage) niemand fortschreibt, fallen weg.
-- Gemessen: **< 8 KB** bei 6 Mandaten und 40 Läufen.
+- Gemessen (offline, kurze Testkennungen): **< 8 KB** bei 6 Mandaten und 40 Läufen.
+- **Nachtrag 2026-08-03, in Production gemessen (§14.4):** die reale Zeile trägt bei
+  **6 Mandaten und 4 bespielten Crons 9,2 KB** (kompakt; 10 160 B als `jsonb::text`, das
+  Trennzeichen-Leerraum einfügt). Aufteilung: `crons` **7,4 KB** = 24 Mandatseinträge à
+  **~286 B**, `laeufe` **2,7 KB** = 4 Laufdatensätze à ~672 B, Rest 48 B (`version`, `rev`).
+  Die Offline-Zahl galt für kurze Testkennungen — Production-Mandats- und -Laufkennungen sind
+  länger. **Die Deckelung bleibt bestehen und wurde nicht verletzt:** kein Feld wächst
+  unbegrenzt, `crons` ist auf *Anzahl Crons × Anzahl Mandate* begrenzt, `laeufe` auf
+  `MAX_LAUF_CRONS = 12` Datensätze. Rechnerische Obergrenze mit den heutigen vier Crons bei
+  **n = 11**: ~15 KB. **Die Angabe „~4–8 KB" in §11.8 Prüfpunkt 7 ist damit überholt.**
 - **DSGVO:** `withoutTenant` entfernt die Kennung eines Mandats auch aus `geplant`,
   `blockiert` und `ausgaenge`. Inhalt bleiben ausschließlich pseudonyme Kennungen,
   Zeitstempel, Zähler und Statuswörter — keine Inhalte, keine PII, keine Roh-Fehlertexte.
@@ -631,14 +645,22 @@ vollständig offen**; dieser Sprint macht ihn nur zuverlässig **messbar**, er b
 
 ### 11.8 · Späterer Production-Nachweis (rein lesend, nach einem Merge)
 
-> **GESCHEITERT am 2026-08-02 — Prüfpunkt 1 und 3.** Der reguläre Lauf
+> **1. Durchgang GESCHEITERT am 2026-08-02 — Prüfpunkt 1 und 3.** Der reguläre Lauf
 > `cron-morning-briefing-20260802050021-opjp0` meldete im Log sechs Erfolge, die Zeile trug
 > nur fünf; ein Mandat stand dort mit der Kennung genau dieses Laufs auf `begonnen`. Ursache
 > ist **nicht** R-6, sondern ein darunterliegender Schreibfehler, den R-6 erstmals sichtbar
-> gemacht hat: **§13**. Dieser Nachweis muss nach dem Merge des F-CAS-Fixes **vollständig neu**
+> gemacht hat: **§13**. Dieser Nachweis musste nach dem Merge des F-CAS-Fixes **vollständig neu**
 > laufen; die untenstehende Tabelle gilt unverändert weiter und wird um §13.6 ergänzt.
+>
+> **2. Durchgang am 2026-08-03 BESTANDEN — mit einer benannten Abweichung bei Prüfpunkt 7.**
+> Beobachtungsfenster 2026-08-02 09:42:33 UTC (Deployment `READY`, Commit `26dc9b1`) →
+> 2026-08-03 10:04:36 UTC, sieben reguläre Läufe, davon vier mit äußerem Zeitlimit.
+> Vollständiger Beleg: **§14**. Prüfpunkt 7 ist **der Sache nach** erfüllt (kein
+> Wachstumsmechanismus), die Zahl „~4–8 KB" ist durch die Production-Messung **überholt**
+> (§14.4, §11.5).
 
-**Noch nicht bestanden.** Zu beobachten sind die reguläre Kadenz aus `vercel.json` —
+**Bestanden im 2. Durchgang (2026-08-03) — Beleg §14.** Zu beobachten sind die reguläre
+Kadenz aus `vercel.json` —
 `crawl` 04:00/20:00 UTC · `morning-briefing` 05:00 · `lage-check` 10:00 · `pipeline` 16:00 —
 über **mindestens 24 h nach einem `READY`-Deployment**, davon mindestens **ein Lauf mit
 äußerem Zeitlimit** (bei `crawl`/`pipeline` derzeit der Regelfall, 3 von 5).
@@ -680,8 +702,8 @@ Der Kapazitätsblocker wird in [`cron-globalphase.md`](cron-globalphase.md) adre
 - K1 ist **Default AUS** (`HELMUT_CRON_GLOBALPHASE`) und in Production **nicht gesetzt**.
   **Alle Messwerte dieses Dokuments — `k`, `ceil(n/k)`, die Kapazitätszahlen aus §10.5, die
   Hochrechnung aus §10.6 und die Testmandat-Sperre aus §9 — gelten unverändert weiter.**
-- Der Production-Nachweis aus §11.8 (R-6) ist **unabhängig** vom K1-Nachweis und muss zuerst
-  erbracht werden: er misst den heutigen Pfad.
+- Der Production-Nachweis aus §11.8 (R-6) ist **unabhängig** vom K1-Nachweis und musste zuerst
+  erbracht werden: er misst den heutigen Pfad. **Erbracht am 2026-08-03 (§14).**
 
 ---
 
@@ -813,3 +835,217 @@ Schreiben nicht, sondern ergänzt es.
 **Der Altstand der Zeile wird nicht repariert.** Der Eintrag des betroffenen Mandats läuft
 über `HELMUT_CRON_FAIRNESS_STALE_MS` (30 min) von selbst ab; ein Eingriff in
 Production-Daten ist freigabepflichtig (`CLAUDE.md` §5) und wäre hier ohne Nutzen.
+
+---
+
+## 14 · Regulärer Production-Nachweis nach dem F-CAS-Fix (2026-08-03, rein lesend)
+
+**Ergebnis in einem Satz:** Die beiden ausstehenden Nachweise **§11.8 (R-6)** und
+**§13.6 (F-CAS)** sind in Production **bestanden** — die Telemetriezeile eines Laufs und die
+Ablage stimmen jetzt nachweislich überein, ein am äußeren Zeitlimit endender Lauf bleibt
+vollständig rekonstruierbar, und die Rotation ist unbeschädigt. **Zwei Einschränkungen werden
+benannt** (§14.7), und ein **neuer Befund F-POS** (§14.8) verschärft den Kapazitätsblocker aus
+§10.5/§10.7. **OP-25 bleibt insgesamt teilweise abgeschlossen.**
+
+Alle Angaben stammen aus rein lesenden Zugriffen: Vercel-Deployment-Metadaten und
+Runtime-Logs, GitHub-Actions-Laufliste, `SELECT` auf `helmut_store`, `mandate_profiles`,
+`pipeline_locks`, sowie `git`. **Kein Cron wurde ausgelöst, kein Trigger gesetzt, kein
+Production-Datum verändert, keine Env-Variable und kein Flag angefasst, kein Deployment
+angestoßen, kein Anwendungscode geändert.**
+
+**Mandate erscheinen ausschließlich pseudonymisiert** (`M-1` … `M-6`, `CLAUDE.md` §4.2). Die
+Zuordnung ist **für diesen Abschnitt neu vergeben** und **nicht** identisch mit der in §10 —
+Aussagen der beiden Abschnitte dürfen deshalb nicht über die Kennungen verknüpft werden. Die
+alphabetische Reihenfolge der sechs Mandatskennungen lautet in dieser Vergabe
+`M-5, M-3, M-1, M-6, M-2, M-4`; nur sie wird gebraucht, um „nicht alphabetisch" prüfbar zu
+machen.
+
+### 14.1 · Geprüfter Codestand
+
+| # | Prüfpunkt | Ergebnis |
+|---|---|---|
+| 1 | PR #210 auf `main` | ✅ Merge-Commit `9ad7bcf`, `HEAD == origin/main == 9ad7bcf`, Arbeitsbaum sauber |
+| 2 | Maßgebliches Deployment (F-CAS-Fix) | ✅ `dpl_edbwPAYyhFLtnCLnR3zuBFpoNM5w`, Commit `26dc9b1` (Merge PR #208), **READY 2026-08-02 09:42:33 UTC** |
+| 3 | Zwei Folge-Deployments im Fenster | `dpl_Fvww4RzdcmB4sYivPKjm67oBD33s` (`645ce55`, PR #209) READY 2026-08-02 16:54:30 · `dpl_8pmQ3YoY2JuQs6Gf91xu9FGkmbG8` (`9ad7bcf`, PR #210) READY 2026-08-03 07:16:57 |
+| 4 | Fairness-/Speicherpfad im Fenster unverändert | ✅ `git diff 26dc9b1 9ad7bcf -- lib/helmut/cron-fairness.js lib/helmut/storage.js server.js vercel.json helmut-flags.json` ist **leer**. Der zu prüfende Code ist über alle drei Deployments **byte-identisch**; das Beobachtungsfenster ist dadurch nicht unterbrochen |
+| 5 | Cron-Zeiten/-Reihenfolge unverändert | ✅ `vercel.json` zuletzt in PR #154 geändert, lange vor dem Fenster |
+| 6 | Aktive Mandate | ✅ **6** (`mandate_profiles.aktiv = true`), unverändert gegenüber §10.5 — **kein** neues Testmandat |
+| 7 | Berlin / Brandenburg deaktiviert | ✅ alle 6 aktiven Profile `politische_ebene = bundestag`; das einzige `landtag`-Profil (Berlin) ist **inaktiv**, kein Brandenburg-Profil. `HELMUT_PARDOK_DISPATCH=shadow` |
+| 8 | M8 deaktiviert | ✅ `HELMUT_MATCHING_RELEVANZ_GATE` nicht in `helmut-flags.json` und nicht in der Allowlist (Default aus) |
+| 9 | `HELMUT_CRON_FAIRNESS` nicht auf `off` | ✅ positiv belegt: `zustand=ok` in allen Telemetriezeilen und die Reihenfolge weicht nachweislich von der alphabetischen ab (§14.4 Prüfpunkt 4) |
+
+### 14.2 · Beobachtungsfenster
+
+**Fenster:** 2026-08-02 09:42:33 UTC (READY des F-CAS-Fixes) → 2026-08-03 10:04:36 UTC
+(Ende des letzten gewerteten Laufs) = **24 h 22 min**. Die Vorbedingung aus §11.8
+(„mindestens 24 h reguläre Kadenz nach einem `READY`-Deployment, davon mindestens ein Lauf mit
+äußerem Zeitlimit") ist damit erfüllt — **vier** der sieben Läufe endeten im äußeren Zeitlimit.
+
+**Zwei reguläre Auslöser, beide planmäßig:**
+
+1. **Vercel-Cron** aus `vercel.json`: `crawl` 04:00/20:00 · `morning-briefing` 05:00 ·
+   `lage-check` 10:00 · `pipeline` 16:00 UTC.
+2. **GitHub-Actions-Watchdog** `.github/workflows/briefing-watchdog.yml`, `schedule: 30 5 * * *`
+   — er triggert planmäßig `/api/cron/pipeline` als Backstop. GitHub verzögert geplante
+   Workflows regelmäßig um zwei bis drei Stunden; die Laufliste zeigt für **jeden** dieser
+   Läufe `event=schedule`, nie `workflow_dispatch`.
+
+> **Korrektur zu §10.2:** der dort als „nicht regulär" ausgeschlossene `pipeline`-Lauf vom
+> 30.07. **07:52:56** war **nicht** manuell. Er stammt vom planmäßigen Watchdog (Lauf
+> `30524440777`, `event=schedule`, gestartet 07:52:47 UTC). Die damalige Ausschlussbegründung
+> („entspricht keinem Cron-Eintrag in `vercel.json`") war **zu eng** — `vercel.json` ist nicht
+> die einzige Zeitplanquelle. Der Lauf war regulär; an den Schlussfolgerungen von §10 ändert
+> das nichts, weil er dort ohnehin nur als Zustandswirkung ausgewiesen wurde.
+
+### 14.3 · Gewertete Läufe (alle sieben vollständig abgeschlossen)
+
+| # | Cron | Start UTC | Auslöser | Depl. | n | **k** | Ausgang des Laufs | Telemetriezeile |
+|---|---|---|---|---|---|---|---|---|
+| 1 | `lage-check` | 02.08. 10:00:02 | Vercel `0 10 * * *` | #208 | 6 | **3** | `teilweise` · 3 erfolgreich · 3 zeitbudget · 254 030 ms | ✅ `abweichung=- zustand=ok` |
+| 2 | `pipeline` | 02.08. 16:00:43 | Vercel `0 16 * * *` | #208 | 6 | **2** | äußeres Zeitlimit 280 434 ms → `abgebrochen` | ❌ planmäßig keine (R-6) |
+| 3 | `crawl` | 02.08. 20:00:47 | Vercel `0 20 * * *` | #209 | 6 | **2** | äußeres Zeitlimit 280 134 ms → `abgebrochen` | ❌ planmäßig keine |
+| 4 | `crawl` | 03.08. 04:00:37 | Vercel `0 4 * * *` | #209 | 6 | **2** | äußeres Zeitlimit 280 137 ms → `abgebrochen` | ❌ planmäßig keine |
+| 5 | `morning-briefing` | 03.08. 05:00:35 | Vercel `0 5 * * *` | #209 | 6 | **6** | `abgeschlossen` · **6 erfolgreich** · 16 090 ms | ✅ `abweichung=- zustand=ok` |
+| 6 | `pipeline` | 03.08. 08:46:05 | Watchdog `30 5 * * *` (Lauf `30798656893`, `event=schedule`) | #210 | 6 | **2** | äußeres Zeitlimit 280 167 ms → `abgebrochen` | ❌ planmäßig keine |
+| 7 | `lage-check` | 03.08. 10:00:34 | Vercel `0 10 * * *` | #210 | 6 | **1** | `teilweise` · 1 fehlgeschlagen · 5 zeitbudget · 243 571 ms | ✅ `abweichung=- zustand=ok` |
+
+Die **fehlende** Telemetriezeile bei 2, 3, 4 und 6 ist **kein Befund**, sondern das
+dokumentierte Verhalten aus R-6 (§10.4): kehrt `runCronForTenants` wegen des äußeren
+Zeitlimits nie zurück, entsteht keine Zeile. Genau dafür wurde der Laufdatensatz gebaut — und
+genau dort greift Prüfpunkt 2 aus §11.8 (§14.4).
+
+Laufkennungen: `cron-lage-check-20260802100002-2ptvy` · `cron-pipeline-20260802160043-9jyct` ·
+`cron-crawl-20260802200047-9l71q` · `cron-crawl-20260803040037-apmz3` ·
+`cron-morning-briefing-20260803050035-a98pb` · `cron-pipeline-20260803084605-9qv95` ·
+`cron-lage-check-20260803100034-est8n`.
+
+### 14.4 · Prüfpunkte aus §11.8 (R-6)
+
+| # | Prüfpunkt | Ergebnis mit Production-Beleg |
+|---|---|---|
+| 1 | Persistenter Fortschritt = sichtbare Mandatsausgänge | ✅ **erfüllt.** Alle Ausgänge in `laeufe[<cron>].ausgaenge` wurden gegen `crons[<cron>][<mandat>]` geprüft: jeder `erfolgreich` trägt ein `letzterErfolgAt` **dieses** Laufs, jeder `begonnen` steht auf `laufend` **ohne** neues `letzterErfolgAt`, jeder `fehlgeschlagen` trägt ein `letzterFehlerAt` dieses Laufs — und jedes `zeitbudget`-Mandat hat seinen Mandatseintrag **unberührt** gelassen (die fünf `zeitbudget`-Mandate aus Lauf 7 zeigen weiterhin auf ältere Laufkennungen). |
+| 2 | Lauf mit äußerem Zeitlimit vollständig rekonstruierbar | ✅ **erfüllt, an zwei Läufen.** `crawl` (Lauf 4): Log `[cron/crawl] 280137ms tenants=undefined bounded=true lauf=cron-crawl-20260803040037-apmz3` → derselbe `laufId` im Laufdatensatz, `status=abgebrochen`, `aeusseresTimeoutAt=2026-08-03T04:05:17.919Z`, `geplant` vollständig (6/6), Ausgänge `M-5=erfolgreich`, `M-4=begonnen`. `pipeline` (Lauf 6) analog mit `aeusseresTimeoutAt=2026-08-03T08:50:45.350Z`. Zusätzlich schreiben die Routen die Tatsache selbst ins Protokoll: `[cron/*] aeusseres Zeitlimit — Laufdatensatz <laufId> als abgebrochen vermerkt`. |
+| 3 | Kein erfundener Erfolg | ✅ **erfüllt.** Acht `erfolgreich`-Ausgänge im Fenster (6 × `morning-briefing`, 1 × `crawl`, 1 × `pipeline`), **jeder** mit passendem `letzterErfolgAt` derselben Laufkennung. **Der F-CAS-Fall tritt nicht mehr auf:** das `morning-briefing` meldete im Log `erfolgreich=6` und die Zeile trägt **sechs** Abschlüsse — am Vortag waren es bei derselben Meldung nur fünf (§13.1). Umgekehrt gilt es auch: die vier am Zeitlimit gestorbenen zweiten Mandate stehen als `begonnen`/`laufend` da, **nicht** als Erfolg. |
+| 4 | Kein Verlust der Fairnessrotation | ✅ **erfüllt, dreifach.** (a) **Nicht alphabetisch:** alphabetisch wäre `M-5, M-3, M-1, M-6, M-2, M-4`; beobachtet `morning-briefing` `M-6, M-2, M-3, M-5, M-1, M-4` und `lage-check` (Lauf 7) `M-3, M-6, M-1, M-2, M-5, M-4` — beide weichen ab und voneinander. (b) **Nachrücken:** `lage-check` Lauf 1 begann `M-2, M-5, M-4`, die drei nicht begonnenen waren `M-3, M-6, M-1` — Lauf 7 plante sie **exakt in dieser Reihenfolge** an die ersten drei Plätze, nach ältestem Versuch. Im `crawl` wurde über drei Läufe **jedes** der sechs Mandate begonnen (`M-6,M-2` → `M-3,M-1` → `M-5,M-4`), im `pipeline` ebenso. (c) **`ceil(n/k)`:** `lage-check` `k=1` → gemeldet `obergrenzeLaeufe=6` = `ceil(6/1)`; `morning-briefing` `k=6` → `1`; `crawl`/`pipeline` `k=2` → rekonstruiert `3`, und genau nach drei Läufen war jedes Mandat begonnen. |
+| 5 | Keine neuen Sperr- oder Laufzeitfehler | ✅ **erfüllt.** `zustand=ok` in allen drei geschriebenen Telemetriezeilen, kein `zustandFehler` in einem der vier Laufdatensätze. `pipeline_locks` trägt **drei** Zeilen, alle mit regulärer TTL und alle abgelaufen — sie gehören zu genau den drei Mandaten, deren Lambda am Zeitlimit endete; kein hängender Halter. Beobachtete Fehler sind **ausnahmslos Bestandsbefunde**: Google-News-Timeouts/`503` (OP-15), das 280-s-Zeitlimit (**B5**) und der Mandatsfehler im `lage-check` (siehe unten). **Keine** Datenbank-, Sperr- oder Fairnessfehler. |
+| 6 | Je Cron genau ein Laufdatensatz mit ableitbarem Status | ✅ **erfüllt.** Vier Crons, vier Datensätze: `crawl` `abgebrochen`, `pipeline` `abgebrochen`, `morning-briefing` `abgeschlossen`, `lage-check` `teilweise`. **Kein** veraltetes `laufend`. |
+| 7 | Kein Wachstum der Zeile (~4–8 KB) | ⚠️ **der Sache nach erfüllt, Zahl überholt.** Gemessen **9,2 KB** kompakt (10 160 B als `jsonb::text`): `crons` 7,4 KB (24 Mandatseinträge à ~286 B, zehn feste Felder, kein unbegrenztes Feld), `laeufe` 2,7 KB (4 Datensätze), Rest 48 B. **Es gibt keinen Wachstumsmechanismus** — beide Bereiche sind gedeckelt (§11.5). Die Zahl „~4–8 KB" stammt aus einer Offline-Messung mit kurzen Testkennungen; sie wird **nicht** gelockert, sondern als überholt ausgewiesen und in §11.5 durch die Production-Messung ersetzt. |
+
+**Zum Mandatsfehler in Lauf 7:** `M-3` wurde 10:00:35 begonnen und 10:04:35 als
+`fehlgeschlagen` gebucht — exakt 240 s, also das **innere** `withTimeout(runLageCheck(…),
+240000)` der Route (`server.js`). Dasselbe Muster steht in der Buchführung schon für den
+31.07. (`M-6`) und den 01.08. (`M-1`); es ist **Bestandsverhalten des `lage-check` und kein
+neuer Fehler**. Die Fehlerisolation greift wie in §5 zugesagt: `fehlerSerie=1` (keine
+Dauerstörung), der Lauf lief weiter, meldete `fehlgeschlagen=1` statt eines Erfolgs und
+schrieb den Zeitbudget-Systemfehler mit Kennungen.
+
+**Betriebsbeobachtung, ausdrücklich benannt:** der GitHub-Actions-Watchdog schlägt **täglich
+fehl** (Läufe 27.07.–03.08. `failure`, einzige Ausnahme 26.07.). Die Ursache ist im Fenster
+direkt belegt: Watchdog-Lauf `30798656893` lief 08:45:50–08:50:48 UTC, die von ihm ausgelöste
+`pipeline` endete 08:46:03 + 280 167 ms im äußeren Zeitlimit. Das ist **B5**, kein neuer
+Befund und keine Folge des F-CAS-Fixes — aber es heißt, dass der Backstop-Alarm seit Tagen
+dauerhaft rot steht und damit als Signal wertlos geworden ist.
+
+### 14.5 · Prüfpunkte aus §13.6 (F-CAS)
+
+| # | Prüfpunkt | Ergebnis mit Production-Beleg |
+|---|---|---|
+| 1 | Die Zeile trägt einen **monoton wachsenden** `rev` | ✅ **erfüllt, exakt.** Gemessen `data->>'rev' = 46`. Aus der Buchführung der sieben Läufe lässt sich die Zahl der fälligen Schreibvorgänge unabhängig nachrechnen (§11.2: 1 × Laufbeginn, 1 × je Claim, 1 × je Abschluss, 1 × Laufende **oder** 1 × Timeoutvermerk): 8 + 5 + 5 + 5 + 14 + 5 + 4 = **46**. `storage.js` erhöht `rev` um **genau 1** je erfolgreichem Schreibvorgang und beginnt bei einer Zeile ohne `rev` mit 1. Die Rekonstruktion trifft den Messwert **auf den Punkt**: kein Schreibvorgang fehlt, keiner ist doppelt, `rev` ist lückenlos von 1 auf 46 gewachsen. |
+| 2 | Kein Lauf meldet `abweichung=…` | ✅ **erfüllt.** Alle drei geschriebenen Zeilen tragen `abweichung=- zustand=ok`. Die vier Läufe mit äußerem Zeitlimit schreiben planmäßig keine Zeile (R-6); für sie steht die Aussage im Laufdatensatz, dessen `zustandFehler` bei allen `null` ist. |
+| 3 | Jeder im Log gemeldete Erfolg trägt denselben Ausgang in der Zeile | ✅ **erfüllt.** `morning-briefing` Log `erfolgreich=6` ↔ sechs `erfolgreich` in `laeufe["morning-briefing"].ausgaenge` mit demselben `lauf=`; `lage-check` Lauf 1 `erfolgreich=3` ↔ drei; `lage-check` Lauf 7 `erfolgreich=0 fehlgeschlagen=1` ↔ genau ein `fehlgeschlagen`. Das ist die direkte Widerlegung der F-CAS-Signatur. |
+| 4 | Ein Lauf, der einen überlappenden Cron trifft, verliert nichts | ✅ **nach Wortlaut erfüllt**, ⚠️ **der auslösende Wettlauf trat nicht auf.** Erfüllt: `crawl` (Zeitlimit 04:05:17) und der um 05:00:35 startende `morning-briefing` tragen **beide** vollständige Bereiche, ebenso `pipeline` (08:50:45) und der um 10:00:34 startende `lage-check`; nichts ging verloren. **Nicht eingetreten:** in keinem Fall hat ein am Zeitlimit gestorbener Lauf **während** eines anderen Crons noch geschrieben — anders als am 02.08., wo genau das den Verlust erzeugte. Die letzten Schreibvorgänge der vier abgebrochenen Läufe liegen ausnahmslos vor dem Timeoutvermerk. **Der Compare-and-Set-Konfliktpfad wurde in Production also nicht ausgeübt** und bleibt allein offline belegt (`cron-fairness-persistenz-test.js`). Ein gezieltes Herbeiführen wäre ein manueller Lauf und ist verboten. |
+| 5 | Keine `systemError` „Fairness-Persistenz weicht ab" | ✅ **erfüllt.** Im Fenster existieren **zwei** `systemError`-Einträge, beide mit `scope=cron-lage-check` und beide vom Typ „Zeitbudget erschoepft" mit Mandatskennungen — also genau die ehrliche Meldung aus §6. Kein Persistenz-Eintrag. |
+| 6 | Kein Anstieg der Cron-Laufzeiten | ✅ **erfüllt.** `crawl` 280 134 / 280 137 ms (= das äußere Limit, wie vor dem Fix), `pipeline` 280 434 / 280 167 ms, `lage-check` 254 030 → 243 571 ms, `morning-briefing` 22 814 ms (02.08., vor dem Fix) → **16 090 ms** (03.08.). Kein Lauf wurde langsamer; das bedingte Schreiben kostet im Normalfall keinen zusätzlichen Rundlauf (§13.5). |
+
+### 14.6 · Warum die `rev`-Rechnung mehr ist als eine Plausibilitätsprobe
+
+`rev` zählt **ausschließlich** erfolgreiche Schreibvorgänge auf dieser Zeile. Drei Aussagen
+folgen aus dem exakten Treffer 46 = 46:
+
+1. **Kein Schreibvorgang ging verloren.** Ein verlorener Schreibvorgang alter Bauart wäre ein
+   *erfolgreicher* Write, der danach überschrieben wird — mit Compare-and-Set müsste der
+   Überschreiber selbst `rev + 1` tragen. Die Kette ist lückenlos.
+2. **Kein Schreibvorgang schlug fehl.** Ein endgültig gescheiterter Versuch (3 Anläufe) hätte
+   `rev` bei 45 belassen **und** `zustand=gestoert` gemeldet. Beides trat nicht ein.
+3. **Die Buchführung ist vollständig.** Wären Ausgänge in der Ablage verschwunden, ließe sich
+   die Zahl der fälligen Schreibvorgänge nicht mehr korrekt aus ihr ableiten — sie ließe sich.
+
+Was der Treffer **nicht** zeigt: ob ein Konflikt erkannt und erfolgreich wiederholt wurde.
+Eine erfolgreiche Wiederholung erhöht `rev` ebenfalls nur um 1 und hinterlässt keine Spur.
+Siehe §14.5 Prüfpunkt 4.
+
+### 14.7 · Einschränkungen dieses Nachweises
+
+1. **Der CAS-Konfliktpfad wurde in Production nicht ausgeübt** (§14.5 Prüfpunkt 4). Belegt ist,
+   dass die neue Ablage unter regulärer Last **nichts verliert** und dass die Gegenprobe
+   `abweichung=-` meldet; **nicht** belegt ist ein realer, gewonnener Wettlauf zweier
+   überlappender Schreiber.
+2. **Verweigerte Sperre trat erneut nicht auf.** `sperreVerweigert=-` in allen drei Zeilen, kein
+   `sperre-verweigert`- und kein `laeuft-bereits`-Ausgang in den vier Laufdatensätzen. Die
+   Zusicherungen aus §3a.1 (kein `begonnen`, nicht in `k`, kein Abschluss-Schreibvorgang, kein
+   falscher Erfolgsstatus) bleiben damit — wie schon in §10.3 Prüfpunkt 4/5/7 — **nur offline
+   belegt**. Das ist kein Fehlschlag, sondern ein nicht eingetretener Randfall; er lässt sich
+   ohne einen manuellen, verbotenen Lauf nicht erzwingen.
+3. **`kapazitaet` und `obergrenzeLaeufe` sind im Rohdatensatz eines abgebrochenen Laufs
+   irreführend** (`0` statt der tatsächlichen `2` bzw. `3`), weil der Abschluss-Schreibvorgang
+   nie stattfand und `normalizeLauf` auf `0` vorbelegt. Der Vertrag ist dadurch **nicht**
+   verletzt — §11.3 verweist Leser ausdrücklich auf `rekonstruiereLauf`, das beide Werte aus
+   den Ausgängen nachrechnet (geprüft: 2 bzw. `ceil(6/2) = 3`). Wer die Zeile aber **roh**
+   liest, sieht `kapazitaet=0`, und genau das bedeutet in der Telemetriesprache „keine
+   Fortschrittsgarantie" (§4). **Kein falsches Grün, aber ein falsches Rot.** Empfehlung für
+   einen späteren Sprint: `obergrenzeLaeufe` und `kapazitaet` im Laufdatensatz mit `null`
+   vorbelegen statt mit `0`.
+
+### 14.8 · Neuer Befund F-POS — die Position im Lauf ist über die Zyklen stabil
+
+**Was beobachtet wurde.** In `crawl` und `pipeline` (`k = 2`, `n = 6`) wird jedes Mandat
+innerhalb von `ceil(6/2) = 3` Läufen **begonnen** — die Garantie aus §4 hält, im Fenster
+lückenlos. **Wer aber im Lauf an zweiter Stelle steht, schließt fast nie ab**, weil das äußere
+Zeitlimit den Prozess vorher beendet. Und die Position ist **nicht zufällig**: sie ist über die
+Zyklen **stabil**.
+
+**Warum sie stabil ist.** Anker der Rotation ist `letzterVersuchAt`. Innerhalb eines Laufs
+erhält das erste Mandat einen um die Verarbeitungsdauer (~4 min) **älteren** Versuchszeitpunkt
+als das zweite. Nach einem vollen Zyklus stehen beide wieder direkt hintereinander — in
+derselben Reihenfolge. Der Losentscheid greift nur bei Gleichstand und kommt bei vier Minuten
+Abstand nie zum Zug.
+
+**Die Buchführung bestätigt es.** Erfolgszähler seit Bestehen der Zeile:
+
+| Cron | Erstplatzierte | Zweitplatzierte |
+|---|---|---|
+| `crawl` | 2 · 3 · 3 Erfolge | 1 · 1 · **0** Erfolge |
+| `pipeline` | 3 · 3 · 3 Erfolge | 0 · 0 · 1 Erfolge |
+
+Ein Mandat trägt im `crawl` `versuche=3, erfolge=0` und **kein** `letzterErfolgAt` — es wurde
+dreimal begonnen und hat in dieser Buchführung **noch nie** einen Crawl abgeschlossen. Zwei
+weitere stehen im `pipeline` genauso da.
+
+**Was das bedeutet — und was nicht.** Es ist **kein Fairnessfehler**: die Garantie aus §4 ist
+über *begonnen* definiert, und sie hält. Es ist die **direkte Fortsetzung des
+Kapazitätsblockers** aus §10.5/§10.7 — mit einer neuen, schärferen Aussage: **der Rückstand
+verteilt sich nicht gleichmäßig, sondern trifft strukturell dieselben Mandate.**
+
+**Damit ist eine Zahl aus §10.5 zu optimistisch.** Die Spalte „Läufe bis **erfolgreich**"
+(`crawl` 6 Läufe = 3 Tage, `pipeline` 6 Läufe = 6 Tage) unterstellt, dass die Erfolge
+rotieren. Sie rotieren nicht. Für die Zweitplatzierten ist die richtige Antwort **„nicht
+garantiert"** — ein Abschluss entsteht dort nur, wenn der Prozess nach dem Zeitlimit intern
+noch weiterläuft und seinen Abschluss schreibt (am 02.08. beobachtet, am 03.08. nicht). Die
+Spalte „Läufe bis **begonnen**" bleibt korrekt und gemessen.
+
+**Konsequenz für die Testmandat-Sperre (§9, §10.7): unverändert — jetzt besser begründet.**
+Weitere reale Testmandate bleiben deaktiviert. Der Blocker heißt weiterhin Kapazität, nicht
+Fairness; F-POS zeigt nur, dass er härter zuschlägt als bisher dokumentiert.
+
+### 14.9 · Dokumentation gegen tatsächliches Verhalten
+
+Geprüft, ob die Doku beschreibt, was in Production geschieht. Zwei Ungenauigkeiten, beide ohne
+Verhaltenswirkung:
+
+| # | Stelle | Befund |
+|---|---|---|
+| D-1 | §11.2/§11.3 sprechen von `zeitbudget[]` als Feld des Laufdatensatzes | Ein solches Feld existiert nicht. `laufAbschlussPatch` schreibt die betroffenen Mandate als Ausgang `zeitbudget` nach `ausgaenge`, und `teilweise` wird daraus abgeleitet (`offen.length ? teilweise : abgeschlossen`). In Production bestätigt: Lauf 7 steht auf `teilweise` mit fünf `zeitbudget`-Ausgängen und **ohne** `zeitbudget`-Feld. **Verhalten korrekt, Feldname in der Doku unpräzise.** |
+| D-2 | §10.2 stuft den `pipeline`-Lauf vom 30.07. 07:52 als „nicht regulär" ein | Falsch — planmäßiger GitHub-Actions-Watchdog, `event=schedule` (§14.2). |
+
+Nicht bestätigt hat sich der Verdacht, Telemetrie und Ablage könnten weiterhin auseinanderlaufen:
+sie stimmen in allen sieben Läufen überein.
