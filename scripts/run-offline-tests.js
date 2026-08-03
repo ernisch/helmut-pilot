@@ -170,7 +170,20 @@ function main() {
     if (!ok) {
       failed.push(suite);
       console.log(`FAIL  ${suite} (${ms}ms, exit=${res.status})`);
-      const tail = `${res.stdout || ""}\n${res.stderr || ""}`.trim().split("\n").slice(-15).join("\n");
+      const zeilen = `${res.stdout || ""}\n${res.stderr || ""}`.trim().split("\n");
+      // Diagnose-Fix 2026-08-03: der Auszug "letzte 15 Zeilen" verfehlt bei langen
+      // Suiten genau die Zeile, die den Fehlschlag BENENNT. Beim CI-Flackern vom
+      // 03.08. (Lauf 30806535691, reset-timing-seitenkanal-test.js, "79 passed,
+      // 1 failed") war aus dem Log deshalb nicht ablesbar, WELCHE der 80 Pruefungen
+      // rot war — die Ursachensuche musste raten. Die FAIL-Zeilen der Suite werden
+      // jetzt zusaetzlich ausgegeben (gedeckelt, damit ein Totalausfall das Log
+      // nicht flutet). Das versteckt nichts und aendert kein Ergebnis.
+      const eigeneFails = zeilen.filter((l) => /^\s*FAIL\b/.test(l));
+      if (eigeneFails.length) {
+        console.log(eigeneFails.slice(0, 20).join("\n").replace(/^/gm, "      "));
+        if (eigeneFails.length > 20) console.log(`      … ${eigeneFails.length - 20} weitere FAIL-Zeilen`);
+      }
+      const tail = zeilen.slice(-15).join("\n");
       console.log(tail.replace(/^/gm, "      "));
     } else {
       console.log(`PASS  ${suite} (${ms}ms)`);

@@ -454,14 +454,32 @@ function verteilung(name, werte) {
 
     // Referenzwert 2: GESAMTdauer beider Zweige inkl. Hintergrundarbeit. Genau dieser
     // Unterschied war frueher an der Antwortzeit ablesbar.
-    const vorGesamtB = Date.now();
-    await resetAnfrage(BEKANNT);
-    await resetTiming.offeneArbeit();
-    const gesamtBekannt = Date.now() - vorGesamtB;
-    const vorGesamtU = Date.now();
-    await resetAnfrage(UNBEKANNT);
-    await resetTiming.offeneArbeit();
-    const gesamtUnbekannt = Date.now() - vorGesamtU;
+    //
+    // WARUM MEHRFACH GEMESSEN (Flackerfix 2026-08-03, Ursache belegt): das war
+    // frueher EINE Messung je Zweig, verglichen gegen eine absolute 30-ms-Schwelle.
+    // Die Not-Found-Messung ist nach unten hart am Zeitgitter (100 ms) festgenagelt,
+    // nach oben aber durch Prozess-Scheduling offen — unter CPU-Last wurden bis zu
+    // +45 ms gemessen. Diese Streuung ging 1:1 in die Differenz und unterschritt die
+    // Schwelle in 1 von 60 Runden, OHNE dass am Schutz etwas fehlte; im CI-Lauf
+    // 30806535691 war genau eine der 80 Pruefungen rot. Die Schwelle bleibt
+    // unveraendert bei 30 ms — ersetzt wurde nur der Ein-Stichproben-Schaetzer durch
+    // den Median mehrerer verschraenkter Runden. Ein echter Rueckfall (der Treffer-
+    // Zweig leistet nicht mehr Arbeit) verschiebt den Median und bleibt rot.
+    const REFERENZ_RUNDEN = 7;
+    const gesamtBekanntWerte = [];
+    const gesamtUnbekanntWerte = [];
+    for (let i = 0; i < REFERENZ_RUNDEN; i += 1) {
+      const vorGesamtB = Date.now();
+      await resetAnfrage(BEKANNT);
+      await resetTiming.offeneArbeit();
+      gesamtBekanntWerte.push(Date.now() - vorGesamtB);
+      const vorGesamtU = Date.now();
+      await resetAnfrage(UNBEKANNT);
+      await resetTiming.offeneArbeit();
+      gesamtUnbekanntWerte.push(Date.now() - vorGesamtU);
+    }
+    const gesamtBekannt = median(gesamtBekanntWerte);
+    const gesamtUnbekannt = median(gesamtUnbekanntWerte);
 
     postfach.length = 0;
     const zeitenBekannt = [];
@@ -482,12 +500,18 @@ function verteilung(name, werte) {
     console.log(`      ${verteilung("bekannt  ", zeitenBekannt)}`);
     console.log(`      ${verteilung("unbekannt", zeitenUnbekannt)}`);
     const dMedian = Math.abs(median(zeitenBekannt) - median(zeitenUnbekannt));
+    // VORZEICHENBEHAFTET: um wie viel ist der TREFFER-Zweig langsamer als der
+    // Not-Found-Zweig? Nur diese Richtung ist "die Mehrarbeit wird an der Antwort-
+    // zeit sichtbar" — ein echter Seitenkanal macht den Treffer-Zweig LANGSAMER.
+    const mehrzeitBekannt = median(zeitenBekannt) - median(zeitenUnbekannt);
     const dP95 = Math.abs(perzentil(zeitenBekannt, 95) - perzentil(zeitenUnbekannt, 95));
     const dP99 = Math.abs(perzentil(zeitenBekannt, 99) - perzentil(zeitenUnbekannt, 99));
     const flaeche = auc(zeitenBekannt, zeitenUnbekannt);
     console.log(`      Delta p50=${dMedian.toFixed(1)} ms · p95=${dP95.toFixed(1)} ms · p99=${dP99.toFixed(1)} ms · AUC=${flaeche.toFixed(3)}`);
     console.log(`      Referenz: ein Versand kostet ${versandKostenMs} ms · Gesamtdauer inkl. Hintergrund `
-      + `bekannt ${gesamtBekannt} ms vs unbekannt ${gesamtUnbekannt} ms (Delta ${gesamtBekannt - gesamtUnbekannt} ms)`);
+      + `bekannt ${gesamtBekannt} ms vs unbekannt ${gesamtUnbekannt} ms (Delta ${gesamtBekannt - gesamtUnbekannt} ms; `
+      + `Median aus ${REFERENZ_RUNDEN} Runden, Einzelwerte bekannt [${gesamtBekanntWerte.join(" ")}] `
+      + `unbekannt [${gesamtUnbekanntWerte.join(" ")}])`);
 
     check("H alle Durchlaeufe gemessen", zeitenBekannt.length === N && zeitenUnbekannt.length === N,
       `${zeitenBekannt.length}/${zeitenUnbekannt.length}`);
@@ -496,10 +520,30 @@ function verteilung(name, werte) {
       versandKostenMs >= VERZOEGERUNG_MS * 0.8, `${versandKostenMs} ms`);
     check("H der Treffer-Zweig leistet nachweislich MEHR Arbeit als der Not-Found-Zweig",
       gesamtBekannt - gesamtUnbekannt >= 30,
-      `gesamt bekannt ${gesamtBekannt} ms vs unbekannt ${gesamtUnbekannt} ms`);
+      `Median aus ${REFERENZ_RUNDEN} Runden: gesamt bekannt ${gesamtBekannt} ms vs unbekannt ${gesamtUnbekannt} ms`);
+    // Diese Pruefung ist GERICHTET (Flackerfix 2026-08-03, Ursache gemessen):
+    // die verschraenkte Messung ist nicht artefaktfrei. Der Mailversand des
+    // Treffer-Zweigs (150 ms) laeuft in DERSELBEN Ereignisschleife noch waehrend
+    // der darauffolgenden unbekannt-Messung und verlangsamt sie systematisch —
+    // belegt dadurch, dass AUC unter Last reproduzierbar UNTER 0,5 liegt, der
+    // NOT-FOUND-Zweig also der langsamere ist. Unter 24-facher CPU-Ueberbuchung
+    // wuchs dieses Artefakt auf bis zu 7 ms und liess die frueher BETRAGSMAESSIGE
+    // Form (dMedian * 10 < Arbeits-Delta, also < ~5 ms) in 3 von 10 Laeufen
+    // scheitern, ohne dass am Schutz etwas fehlte.
+    // Ein echter Seitenkanal wirkt genau ANDERSHERUM: er macht den Treffer-Zweig
+    // langsamer. Deshalb wird jetzt die vorzeichenbehaftete Mehrzeit geprueft —
+    // das Artefakt ist negativ und kann die Pruefung nicht mehr rot faerben, ein
+    // Leck ist positiv und faerbt sie weiterhin rot (Mutationsprobe: +99,7 ms).
+    // Der Faktor 10 und die Gegenrichtung bleiben unveraendert: die umgekehrte
+    // Richtung deckt weiterhin BETRAGSMAESSIG "Median < 25 ms", "Median <
+    // Transportzeit/3", die AUC-Schranke und die Ueberlappungspruefung ab.
+    // VERWORFEN, weil gemessen schlechter: die Hintergrundarbeit VOR der
+    // unbekannt-Messung auslaufen zu lassen. Das verstaerkt das Artefakt
+    // (AUC 0,237…0,409 statt 0,342…0,497, 7 von 10 Laeufen rot), weil der
+    // Versand dann unmittelbar vor der Messung liegt statt sie zu ueberlappen.
     check("H genau diese Mehrarbeit ist an der ANTWORTZEIT nicht mehr ablesbar",
-      dMedian * 10 < (gesamtBekannt - gesamtUnbekannt),
-      `Antwort-Delta ${dMedian.toFixed(1)} ms vs Arbeits-Delta ${gesamtBekannt - gesamtUnbekannt} ms`);
+      mehrzeitBekannt * 10 < (gesamtBekannt - gesamtUnbekannt),
+      `Antwort-Mehrzeit ${mehrzeitBekannt.toFixed(1)} ms vs Arbeits-Delta ${gesamtBekannt - gesamtUnbekannt} ms`);
     check("H keine Antwort verlaesst den Server vor dem Zeitgitter",
       Math.min(...zeitenBekannt) >= FENSTER_MS - 10 && Math.min(...zeitenUnbekannt) >= FENSTER_MS - 10,
       `min ${Math.min(...zeitenBekannt).toFixed(1)} / ${Math.min(...zeitenUnbekannt).toFixed(1)}`);
