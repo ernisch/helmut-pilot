@@ -79,8 +79,32 @@ Agenten-Sitzung öffnen; `VERCEL_TOKEN` liegt bereits vor, dann ist der Sprint a
 vollständig durchführbar. **OP-25 bleibt TEILWEISE ABGESCHLOSSEN**, der Kapazitätsblocker offen,
 der reguläre Production-Kapazitätsnachweis unangetastet offen; **weitere reale Testmandate bleiben
 deaktiviert**, Berlin/Brandenburg/M8 bleiben AUS. **Branch/PR:** `claude/helmut-op25-k21-prod-fopp7g`,
-**reine Dokumentation** — `git diff origin/main -- server.js lib/ scripts/` ist leer.
-**Rollback:** `git revert`.) · (**Sprint „Flackernden Timing-Seitenkanal-Sicherheitstest
+**PR #213**, **reine Dokumentation** — `git diff origin/main -- server.js lib/ scripts/` ist leer.
+**Rollback:** `git revert`. **CI dieses PR im ersten Anlauf ROT — benannt statt weggedrückt
+(`CLAUDE.md` §4.4):** `Browser-/Mobile-Smoke (Chromium)` **grün**, `Syntax + Offline-Suiten`
+**199/200** mit **genau einer** roten Suite — **`werkzeug-lesefehler-test.js`**, dort **genau
+einer** von 43 Prüfpunkten: „Netzwerkfehler: Meldung nennt Quelle und Fehlerklasse" (Lauf
+`30815041452`, `run_attempt: 1`). **Das ist exakt die Suite, die der Vorsprint am 2026-08-03 als
+selbst flackernd benannt und ausdrücklich NICHT behoben hat („der nächste sinnvolle Schritt, falls
+es erneut auftritt") — es ist erneut aufgetreten, und jetzt zum ersten Mal in CI, also an einem
+Pflicht-Check.** **Nicht durch diesen Sprint verursacht, belegt statt behauptet:** der Diff sind
+**vier Markdown-Dateien unter `docs/`** und sonst nichts; `werkzeug-lesefehler-test.js` liest
+**keine** Dokumentationsdatei (die zehn doku-lesenden Suiten sind bekannt und laufen alle grün);
+derselbe Code hat auf `main` als `c6f3f9f` im **ersten** Anlauf CI-grün bestanden (Lauf
+`30811251231`); und in dieser Sitzung lief die Suite **14 von 14** Mal grün — **6/6** einzeln,
+**8/8** unter dreifacher CPU-Überbuchung — plus **2/2** in den vollständigen Offline-Läufen.
+**Mechanismus als Hypothese aus dem Code, ausdrücklich NICHT gemessen:** der Prüfpunkt verlangt
+die Fehlerklasse `dns` **oder** `connection`, die `klassifiziereLesefehler` nur bei
+`ENOTFOUND`/`EAI_AGAIN`/`getaddrinfo`/`ECONNREFUSED`/`ECONNRESET` vergibt; der Test erzeugt den
+Fehler über einen **soeben geschlossenen** lokalen Port. Scheitert die Verbindung auf einem
+belasteten Runner stattdessen an einem **Verbindungs-Timeout**, bleibt `Exit 6` richtig (er gilt
+für jeden Lesefehler — dieser Prüfpunkt war denn auch **grün**), aber die Klassenprüfung greift
+daneben. Das passt auf das beobachtete Bild, **reproduziert wurde es hier aber nicht**. **CI wurde
+NICHT wiederholt, um Grün zu erzeugen.** Fachliche Wirkung: **keine** — die Suite prüft die
+Fehlerklassenmeldung des Nachholwerkzeugs, nicht K2.1, nicht die Fairness und nichts
+Produktionsrelevantes an diesem PR. **Empfohlene Folge:** die Stabilisierung dieser Suite als
+eigener kleiner Sprint (deterministische Fehlerklasse statt Portschließungs-Rennen), analog zum
+Timing-Seitenkanaltest aus PR #212.) · (**Sprint „Flackernden Timing-Seitenkanal-Sicherheitstest
 stabilisieren" — ERFOLGREICH ABGESCHLOSSEN. Nur Testcode und Runner-Diagnose. KEINE
 Produktionslogik geändert — `git diff origin/main -- server.js` ist leer, `lib/helmut/reset-timing.js`
 ist unberührt. Keine Migration, kein Flag, kein Production-Zugriff, kein manueller Lauf, kein
