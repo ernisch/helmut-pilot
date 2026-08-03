@@ -791,6 +791,50 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   **194/194 Suiten**, `Browser-/Mobile-Smoke (Chromium)` gruen), **PR #201**, nicht gemergt.
   **Empfehlung: mergefähig als Schattenpfad; Aktivierung bleibt Betreiberentscheidung.**
   Kanonisch: [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md).
+  **Nachtrag 2026-08-03: PR #201 ist gemergt (`255df01`) und deployt; das Flag ist weiterhin
+  nicht gesetzt** — siehe den Aktivierungsstatus unten.
+- **Status K2.1-Aktivierung (2026-08-03, Sprint „K2.1 kontrolliert in Production aktivieren",
+  rein lesend): BLOCKIERT — NICHT aktiviert, nichts verändert. OP-25 bleibt TEILWEISE
+  ABGESCHLOSSEN.** Vollständige Vorprüfung mit ausdrücklicher Freigabe: **11 von 13
+  Aktivierungsgates erfüllt.** **Die beiden offenen Gates haben dieselbe Ursache:** der
+  Vercel-Schreibweg existiert in einer Agenten-Sitzung nicht, und damit ist auch der Rückbau
+  (Stufe 1: Flag auf `off` + Redeploy) nicht ausführbar. `VERCEL_TOKEN` **ist** gesetzt, aber
+  `api.vercel.com`, `vercel.com` und `mcp.vercel.com` sind per Egress-Richtlinie gesperrt
+  (`CONNECT → HTTP 403`, je einzeln vom Sitzungsproxy protokolliert); die Vercel CLI **58.4.4**
+  scheitert damit schon beim rein lesenden `project ls`, und der Vercel-MCP-Server hat **kein**
+  Environment- und **kein** Redeploy-Werkzeug. **Ohne ausführbaren Rückweg wird nicht aktiviert**
+  (`CLAUDE.md` §4.4). Die Bedingung ist seit 2026-07-26 dokumentiert und unverändert:
+  „`VERCEL_TOKEN` **und** geöffneter Egress — eines allein genügt nicht"
+  ([`betrieb/berlin-aktivierung.md`](betrieb/berlin-aktivierung.md) §20.3). **Erfüllt und belegt:**
+  `HEAD = origin/main = c6f3f9f`, PR #201/#211/#212 enthalten, **0 offene PRs**;
+  Production-Deployment `dpl_APNCTVthBNBKptpCSGfPejtZCz8y` **READY** auf genau diesem Commit
+  (11:52:36 UTC); Team `nohut` / Projekt `helmut-pilot` zweifelsfrei; **beide Flaggen an der
+  Wirkung als AUS belegt** (keine `[cron/*/globalphase]`- und keine `[cron/*/pfadwahl]`-Zeile in
+  24 h, Stapelspuren durch `runSourceCrawl`/`perTenant` = Altpfad); **nur `crawl` und `pipeline`
+  wechseln** (genau zwei Aufrufstellen von `cronSchwererPfad`, `server.js:829`/`:903`); **0 aktive
+  Sperren**, kein laufender schwerer Cron, kein konkurrierendes Deployment; Offline-Suite
+  **186/200** = exakte Basislinie mit identischer 14er-Fehlschlagliste, Browser **32/32**,
+  `vorgangskontext` 102/102 + 18/18 rot, `cron-globalphase` 176/176 + 17/17 rot,
+  `globalphase-buendelung` 56/56, `cron-fairness` 285/285, `cron-fairness-persistenz` 54/54,
+  `cross-tenant-security` 43/43, `env-inventar` 38/38; CI von `main` grün im **ersten** Anlauf
+  (`30811251231`); **0** aktive Berliner/Brandenburger Abrufwege (alle 17 `needs_review`/`manual`),
+  6 aktive Mandate, Cron-Zeiten/Budgets/Quellen unverändert. **Sicheres Aktivierungsfenster
+  bestimmt und ungenutzt geblieben:** täglich verlässlich **09:15–15:30 UTC = 11:15–17:30 Berlin**
+  (nach dem GitHub-Actions-Watchdog, der real zwischen 07:30 und 08:55 UTC startet, und 30 min vor
+  dem 16:00-UTC-`pipeline`). **Baseline der schweren Läufe aufgenommen** (Vergleichsmaßstab für den
+  späteren Kapazitätsnachweis): `crawl` 04:00:37 UTC und `pipeline` 08:46:05 UTC je **2 begonnen /
+  1 erfolgreich** mit äußerem Zeitlimit, `lage-check` **1 von 6**, `morning-briefing` **6 von 6**;
+  Fairnesszeile `rev = 46`, 9 467 Bytes; **3** `systemError` in 36 h, alle „Zeitbudget erschoepft"
+  (B5), kein Persistenz-/DB-/Sperr-/Fairnessfehler. **F-POS unverändert bestätigt** (ein Mandat im
+  `crawl` mit `versuche=3, erfolge=0` ohne jedes `letzterErfolgAt`, zwei weitere im `pipeline`).
+  **Kleinste Betreiberaktion:** Vercel-Oberfläche → `helmut-pilot` → Settings → Environment
+  Variables → **Production** `HELMUT_CRON_GLOBALABRUF` = `on` + Redeploy (Rücknahme: `off` oder
+  löschen + Redeploy; `HELMUT_CRON_GLOBALPHASE` dabei **nicht** setzen) — **oder** den Egress zu
+  `api.vercel.com` für die Agenten-Sitzung öffnen. **Der reguläre Production-Kapazitätsnachweis
+  bleibt vollständig offen; weitere reale Testmandate bleiben deaktiviert.** Rein lesend erhoben,
+  **0 KI-Aufrufe, 0,00 USD**, kein Production-Schreibzugriff, kein manueller Lauf, kein Trigger,
+  keine Env-/Flag-/Cron-/Budget-/Quellenänderung, Mandate nur pseudonymisiert. Kanonisch:
+  [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) **§7.1/§7.3**.
 - **Ausgangsbefund (2026-07-29, vor diesem Sprint):** **Ursache belegt, Umfang noch nicht vermessen** (Befund B5).
   Der Crawl-Cron endet reproduzierbar nach ~280 s mit `bounded=true`
   (`[cron/crawl] 280001ms tenants=undefined bounded=true`, gemessen 28.07. 04:00, 28.07. 20:00

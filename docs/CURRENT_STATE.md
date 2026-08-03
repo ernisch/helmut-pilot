@@ -1,6 +1,86 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-08-03 (**Sprint „Flackernden Timing-Seitenkanal-Sicherheitstest
+**Letzte Aktualisierung:** 2026-08-03 (**Sprint „OP-25 K2.1 kontrolliert in Production aktivieren"
+— BLOCKIERT. NICHTS VERÄNDERT: keine Environment-Variable gesetzt, kein Deployment ausgelöst, kein
+Cron, kein Trigger, kein Production-Schreibzugriff, keine Migration, kein Anwendungscode, kein
+Merge, 0 KI-Aufrufe, 0,00 USD.** **Kurz:** **11 von 13 Aktivierungsgates sind erfüllt** — die
+beiden offenen haben **dieselbe** Ursache: der Schreibweg nach Vercel existiert in dieser Sitzung
+nicht, und ohne ihn gibt es auch keinen Rückbau. **Belegter Blocker:** `VERCEL_TOKEN` **ist**
+gesetzt (die erste Hälfte der Voraussetzung ist damit erfüllt), aber die Egress-Richtlinie der
+Sitzung sperrt `api.vercel.com`, `vercel.com` **und** `mcp.vercel.com` mit `CONNECT → HTTP 403`;
+der Sitzungsproxy protokolliert jede Ablehnung einzeln (`connect_rejected`, „gateway answered 403
+to CONNECT"). **Gegenprobe mit dem dokumentierten Werkzeug statt nur mit `curl`:** die Vercel CLI
+**58.4.4** installiert sich, liest `VERCEL_TOKEN` selbstständig aus der Umgebung und scheitert
+schon beim **rein lesenden** `project ls` mit `Not able to load user because of unexpected error:
+fetch failed`. Der Vercel-MCP-Server ist **authentifiziert** und liefert Teams, Projekte,
+Deployments und Runtime-Logs — seine Werkzeugliste enthält aber **kein** Environment-Werkzeug und
+**keinen** Redeploy; für diesen Zweck ist er rein lesend. Damit sind **Aktivierung und Rückbau
+gleichermaßen unausführbar**; ein Setzen ohne gesicherten Rückweg wäre nach der Freigabebedingung
+des Auftrags („Rückbau sofort ausführbar") und nach `CLAUDE.md` §4.4 unzulässig. **Kein Workaround
+gebaut, keine Umgehung versucht** — die Proxy-Richtlinie verbietet das Umgehen einer
+403-Ablehnung ausdrücklich. **Das ist kein neuer, sondern ein halb geschlossener Blocker:**
+[`betrieb/berlin-aktivierung.md`](betrieb/berlin-aktivierung.md) §20.3 hält seit 2026-07-26 fest:
+„`VERCEL_TOKEN` **und** geöffneter Egress zu `api.vercel.com` — **eines allein genügt nicht**."
+Heute ist die erste Hälfte erfüllt, die zweite nicht. **Alles Übrige wurde geprüft und ist
+erfüllt (rein lesend):** **(G1/G2)** Arbeitsbaum sauber, `HEAD = origin/main = c6f3f9f8…`; die
+Merge-Commits von **PR #201** (`255df01`), **#211** (`19bfcc5`) und **#212** (`c6f3f9f`) sind
+Vorfahren von `HEAD`; **0 offene Pull Requests**, keine konkurrierende Änderung. Production-
+Deployment **`dpl_APNCTVthBNBKptpCSGfPejtZCz8y`**, `state: READY`, `target: production`, Commit
+**`c6f3f9f8…`** — **identisch** mit `origin/main`; READY **2026-08-03 11:52:36 UTC / 13:52:36
+Berlin**. **(G6)** Team **`nohut`** (`team_bTAfz…`), Projekt **`helmut-pilot`**
+(`prj_xbZ6…`) — genau **ein** Projekt im Team, zweifelsfrei bestimmt. **(G3/G4) Beide Flaggen
+sind in Production wirkungslos** — an der **Wirkung** belegt statt am (aus einer Sitzung
+unlesbaren) Wert: in 24 h Production-Runtime-Logs existiert **keine** `[cron/*/globalphase]`-Zeile
+und **keine** `[cron/*/pfadwahl]`-Widerspruchszeile, und die Stapelspuren der Läufe 04:00 und
+20:00 UTC führen durch `runSourceCrawl` und `perTenant` — das **ist** der Altpfad.
+`HELMUT_CRON_GLOBALPHASE` ist damit sicher AUS, `HELMUT_CRON_GLOBALABRUF` noch nicht gesetzt.
+**(G11) Codeprüfung gegen `main`:** `cronSchwererPfad` hat genau **zwei** Aufrufstellen —
+`server.js:829` (`/api/cron/crawl`) und `server.js:903` (`/api/cron/pipeline`); `morning-briefing`,
+`lage-check`, `health-report`, `lage-briefing` und `understanding` rufen sie **nicht**. Nur `crawl`
+und `pipeline` wechseln auf K2.1. **(G7) Betriebslage:** **0 aktive Sperren** (`pipeline_locks`,
+jüngste 10:12 UTC abgelaufen), der letzte schwere Lauf endete **08:50:45 UTC**, kein Build und
+kein Deployment in Arbeit; der GitHub-Actions-Watchdog (löst `pipeline` aus) ist heute um
+**08:45:50 UTC** bereits gelaufen und feuert einmal täglich, also nicht erneut. **(G9) Tests auf
+dem unveränderten `c6f3f9f`:** `node scripts/run-offline-tests.js` **186/200** — **exakt** die
+dokumentierte Basislinie mit **denselben 14** umgebungsbedingten Suiten, **kein neuer und kein
+abweichender Fehlschlag**; der als gelegentlich flackernd dokumentierte
+`werkzeug-lesefehler-test.js` lief **grün**. `node scripts/browser-smoke-test.js` **32/32**.
+Gezielt: `vorgangskontext` **102/102** + Mutationsprobe **18/18 rot**, `cron-globalphase`
+**176/176** + Mutationsprobe **17/17 rot**, `globalphase-buendelung` **56/56**, `cron-fairness`
+**285/285**, `cron-fairness-persistenz` **54/54**, `cross-tenant-security` **43/43**,
+`env-inventar` **38/38**. CI von `main` auf `c6f3f9f`: **beide Pflicht-Checks grün im ERSTEN
+Anlauf** (Lauf `30811251231`, `run_attempt: 1`). **(G11/G12) Betriebsgrenzen unverändert:** **0**
+aktive Berliner/Brandenburger Abrufwege (alle **17** stehen auf `needs_review`/`manual`), **6**
+aktive Mandate in **jedem** Laufdatensatz von heute, `vercel.json` (Cron-Zeiten) und
+`helmut-flags.json` unverändert, keine Quellen-/Budgetänderung. **Baseline der letzten regulären
+schweren Läufe (rein lesend, Mandate pseudonymisiert)** — der Vergleichsmaßstab für einen späteren
+Kapazitätsnachweis: `crawl` **04:00:37 UTC**, äußeres Zeitlimit 04:05:17, **2 begonnen /
+1 erfolgreich**; `pipeline` **08:46:05 UTC** (Watchdog), Zeitlimit 08:50:45, **2 begonnen /
+1 erfolgreich**; `lage-check` **10:00:34 UTC**, **1 von 6** (fünf `zeitbudget`), `kapazitaet: 1`,
+`obergrenzeLaeufe: 6`; `morning-briefing` **05:00:35 UTC**, **6 von 6**, `kapazitaet: 6`,
+`obergrenzeLaeufe: 1`. **Damit ist das dokumentierte Bild „zwei begonnen, eines fertig"
+unverändert bestätigt** — und **F-POS ebenso**: im `crawl` trägt ein Mandat `versuche=3, erfolge=0`
+**ohne jedes** `letzterErfolgAt`, im `pipeline` zwei weitere ebenso. Fairnesszeile
+`main-cron-fairness`: `rev = 46`, `version 2`, **9 467 Bytes**, zuletzt 10:04:36 UTC — Stand
+unverändert seit dem Nachweis aus PR #211. **3** `systemError` in 36 h, **alle** „Zeitbudget
+erschoepft" (B5); **kein** Persistenz-, DB-, Sperr- oder Fairnessfehler. **(G8) Sicheres
+Aktivierungsfenster, aus den echten Zeitplänen berechnet** (`vercel.json` **plus** der
+GitHub-Actions-Watchdog — `vercel.json` ist nicht die einzige Zeitplanquelle, Befund D-2): heute
+**12:40–15:30 UTC = 14:40–17:30 Berlin** (Ende 30 min vor dem 16:00-UTC-`pipeline`), danach
+**16:20–19:30 UTC = 18:20–21:30 Berlin**. **Das täglich verlässlichste Fenster ist 09:15–15:30 UTC
+= 11:15–17:30 Berlin** — nach dem Watchdog (heute 08:45, historisch 07:30–08:55 UTC) und vor dem
+16:00-UTC-`pipeline`. Das Fenster war während des gesamten Sprints offen und wurde **nicht**
+genutzt, weil der Rückbau fehlt. **Nächster Schritt — kleinste Betreiberaktion, genau eine von
+beiden:** **(1)** Vercel-Oberfläche → Projekt `helmut-pilot` → Settings → Environment Variables →
+**Production** `HELMUT_CRON_GLOBALABRUF` = `on`, danach Redeploy; Rücknahme = Wert auf `off` oder
+Variable löschen + Redeploy (fail closed). `HELMUT_CRON_GLOBALPHASE` dabei **nicht** setzen — sind
+beide gesetzt, läuft absichtlich der Altpfad. **(2)** Oder den Egress zu `api.vercel.com` für die
+Agenten-Sitzung öffnen; `VERCEL_TOKEN` liegt bereits vor, dann ist der Sprint aus einer Sitzung
+vollständig durchführbar. **OP-25 bleibt TEILWEISE ABGESCHLOSSEN**, der Kapazitätsblocker offen,
+der reguläre Production-Kapazitätsnachweis unangetastet offen; **weitere reale Testmandate bleiben
+deaktiviert**, Berlin/Brandenburg/M8 bleiben AUS. **Branch/PR:** `claude/helmut-op25-k21-prod-fopp7g`,
+**reine Dokumentation** — `git diff origin/main -- server.js lib/ scripts/` ist leer.
+**Rollback:** `git revert`.) · (**Sprint „Flackernden Timing-Seitenkanal-Sicherheitstest
 stabilisieren" — ERFOLGREICH ABGESCHLOSSEN. Nur Testcode und Runner-Diagnose. KEINE
 Produktionslogik geändert — `git diff origin/main -- server.js` ist leer, `lib/helmut/reset-timing.js`
 ist unberührt. Keine Migration, kein Flag, kein Production-Zugriff, kein manueller Lauf, kein
@@ -3396,12 +3476,22 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
 4. **Branch Protection unbestätigt.** Das CI-Gate blockiert erst mit aktivierter
    Branch Protection; Aktivierungsstand ist nicht verifiziert (OP-11,
    `betrieb/branch-protection.md`).
+5. **Kein Vercel-Schreibweg aus einer Agenten-Sitzung — jede Flag-Aktivierung bleibt
+   Betreiberaktion (gemessen 2026-07-26, erneut 2026-08-03).** `VERCEL_TOKEN` ist inzwischen
+   in den Claude-Code-Environment-Einstellungen hinterlegt, aber die Egress-Richtlinie sperrt
+   `api.vercel.com`, `vercel.com` und `mcp.vercel.com` (`CONNECT → HTTP 403`); die Vercel CLI
+   scheitert deshalb schon rein lesend, und der Vercel-MCP-Server hat kein Environment- und
+   kein Redeploy-Werkzeug. **Beide Bedingungen zusammen sind nötig, eine allein genügt nicht**
+   ([`betrieb/env-inventar.md`](betrieb/env-inventar.md) §8,
+   [`betrieb/berlin-aktivierung.md`](betrieb/berlin-aktivierung.md) §20.3). Betrifft aktuell
+   `HELMUT_CRON_GLOBALABRUF` (OP-25 K2.1) und `HELMUT_LANDESMODULE` (Punkt 14).
 
 ## 8 · Offene Pull Requests
 
-**Stand 2026-08-03, gegen GitHub geprüft: es gibt genau EINEN offenen Pull Request** — den
-Dokumentations-PR dieses Sprints. **#203 ist geschlossen** (2026-08-03, 07:19 UTC,
-`merged: false`), genau wie am 2026-08-02 empfohlen.
+**Stand 2026-08-03 (nach dem K2.1-Aktivierungssprint), gegen GitHub geprüft: vor diesem Sprint
+gab es NULL offene Pull Requests** — #212 ist gemergt. Offen ist danach genau **EINER**: der
+Dokumentations-PR dieses Sprints (`claude/helmut-op25-k21-prod-fopp7g`, reine Doku). **#203 ist
+geschlossen** (2026-08-03, 07:19 UTC, `merged: false`), genau wie am 2026-08-02 empfohlen.
 
 | PR | Inhalt | Zustand / Empfehlung |
 |---|---|---|
@@ -3815,6 +3905,7 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 
 | Sprint | Datum | Zustand |
 |---|---|---|
+| **Sprint „OP-25 K2.1 kontrolliert in Production aktivieren"** | 2026-08-03 | **BLOCKIERT — nichts verändert.** Keine Env gesetzt, kein Deployment, kein Cron, kein Trigger, kein Production-Schreibzugriff, kein Merge, 0 KI, 0,00 USD. **11 von 13 Aktivierungsgates erfüllt;** die beiden offenen (Rechte für Aktivierung **und** sofort ausführbarer Rückbau) haben dieselbe Ursache: `VERCEL_TOKEN` ist gesetzt, aber `api.vercel.com`/`vercel.com`/`mcp.vercel.com` sind per Egress-Richtlinie gesperrt (`CONNECT → 403`); CLI 58.4.4 scheitert schon rein lesend, der Vercel-MCP hat kein Environment-/Redeploy-Werkzeug. Ohne Rückweg wird nicht aktiviert (`CLAUDE.md` §4.4). Bereits belegt in [`betrieb/berlin-aktivierung.md`](betrieb/berlin-aktivierung.md) §20.3 — heute ist die Token-Hälfte erfüllt, die Egress-Hälfte nicht. **Alles Übrige geprüft und erfüllt:** Arbeitsbaum sauber, `HEAD = origin/main = c6f3f9f8…`, PR #201/#211/#212 enthalten, 0 offene PRs, Production-Deployment `dpl_APNCTVthBNBKptpCSGfPejtZCz8y` READY auf genau diesem Commit (11:52:36 UTC), Team `nohut` / Projekt `helmut-pilot` zweifelsfrei, **beide Flaggen an der Wirkung als AUS belegt** (keine `globalphase`-/`pfadwahl`-Logzeile in 24 h, Stapelspuren durch `runSourceCrawl`), nur `crawl` und `pipeline` wechseln (zwei Aufrufstellen von `cronSchwererPfad`), **0 aktive Sperren**, kein laufender schwerer Cron, Offline **186/200** = exakte Basislinie, Browser **32/32**, CI von `main` grün im ersten Anlauf (`30811251231`), Berlin/Brandenburg **0** aktive Wege, 6 aktive Mandate. **Sicheres Fenster war offen** (heute 12:40–15:30 UTC = 14:40–17:30 Berlin; täglich verlässlich 09:15–15:30 UTC = 11:15–17:30 Berlin) und wurde bewusst nicht genutzt. Baseline aufgenommen: `crawl` und `pipeline` je **2 begonnen / 1 erfolgreich**, `lage-check` 1/6, `morning-briefing` 6/6; **F-POS unverändert bestätigt**. **OP-25 bleibt teilweise abgeschlossen**, Testmandat-Sperre unverändert. Branch `claude/helmut-op25-k21-prod-fopp7g`, reine Doku. |
 | **Sprint „OP-25 — finaler Production-Nachweis der Cron-Fairness"** | 2026-08-03 | **Teilweise abgeschlossen (der Nachweis ist bestanden; OP-25 als Ganzes bleibt teilweise abgeschlossen).** Rein lesend in Production, reine Doku, kein Code, kein manueller Lauf, kein Trigger, kein Merge, 0 KI, 0,00 USD. Fenster 2026-08-02 09:42:33 → 2026-08-03 10:04:36 UTC (24 h 22 min) nach dem `READY`-Deployment `26dc9b1` (PR #208); **sieben** reguläre Läufe, vier mit äußerem Zeitlimit. **§11.8 6/7 Prüfpunkte voll erfüllt** (Nr. 7 der Sache nach erfüllt, Zahl „~4–8 KB" durch Messung **9,2 KB** überholt), **§13.6 6/6 erfüllt**. Kernbeleg: `erfolgreich=6` im Log **und** sechs Abschlüsse in der Zeile; `rev = 46` trifft die nachgerechnete Zahl fälliger Schreibvorgänge exakt. Zwei Einschränkungen: CAS-Konfliktpfad und verweigerte Sperre traten nicht auf. **Neuer Befund F-POS** (stabile Position im Lauf → dieselben Mandate schließen nie ab) verschärft den Kapazitätsblocker. Tests 186/200 (Basislinie) und 32/32. Branch `claude/op25-production-nachweis-cron-mk73rq`, **PR #211**. Kanonisch: [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) §14 |
 | **Sprint „PR 203 bereinigen und Projektstatus konsolidieren"** | 2026-08-02 | **Erfolgreich abgeschlossen (reine Doku, kein Code, kein Production-Zugriff, kein Merge).** PR #203 ist **vollständig überholt** — derselbe 25B-Nachweis liegt seit PR #202 (gemergt 2026-07-31, 16:41 UTC) in genauerer Fassung auf `main`; zwei Inhalte von #203 wären eine Verschlechterung (überholte Zahl „5 → 0", fehlende Nebenbeobachtung B25-3). **Empfehlung: #203 schließen**, sein Branch wurde nicht angefasst. Bereinigt: §8 (zehn angeblich offene PRs → tatsächlich nur #203), §3 (PR #208 gemergt), die Kopfeinträge zu PR #204…#209 („offen"/„Draft"/„nicht gemergt") und der Kopf von `roadmap/phase_1_checkliste.md` („PR #185 offen", `main`-Stand `d9006c1`). **Der Production-Nachweis nach PR #208 bleibt offen** und ist vor dem 2026-08-03 nicht erbringbar (§11.8: 24 h Kadenz nach dem Merge; §13.6 Nr. 4: Lauf mit äußerem Zeitlimit). Kein manueller Lauf, kein Trigger; Berlin/Brandenburg/M8 unverändert AUS. Offline-Suite **186/200** (14 umgebungsbedingte Basislinien-Fehlschläge), Browser-Smoke **32/32**. Branch `claude/pr-203-cleanup-status-et8vlb` |
 | **Sprint R-6 — Zuverlässige Cron-Telemetrie bei Zeitüberschreitung** | 2026-07-31 | **Teilweise abgeschlossen (Ursache belegt, Behebung offline bewiesen und mutationsgesichert; Production-Nachweis offen, weil er einen Merge voraussetzt).** **Ursache in drei Teilen, im Code belegt:** (1) `withTimeout` ist ein `Promise.race` und **beendet die ursprüngliche Promise nicht** — greift das äußere Zeitlimit (280 000 ms), kehrt `runCronForTenants` nie zurück und die `[cron/*/fairness]`-Zeile entsteht nie; (2) die 10 s Differenz zur inneren Deadline (270 000 ms) reichen **prinzipiell** nicht, weil die innere Deadline ein **START-Gatter** ist (`if (now() + reserveMs > deadline) … continue`) und ein einmal begonnenes Mandat sie beliebig weit überzieht — offline gemessen **> 400 s**; (3) ein `finally` allein wäre keine Lösung, weil bei einem Vercel-Prozessabbruch die Ereignisschleife nicht weiterläuft. **Behebung:** Laufdatensatz je Cron (`laeufe[<cron>]`) in derselben `helmut_store`-Zeile `<storeId>-cron-fairness` — Laufbeginn (Planung, aktive Zahl, blockierte Mandate) vor dem ersten Mandat, jeder Mandatsausgang huckepack auf Claim/Abschluss (**0 zusätzliches IO**), Abschluss am Ende; verweigerte Sperre und fremder Halter erhalten einen eigenen Ausgang, der die Buchführung je Mandat **nicht** anfasst (kein erfundener Erfolg, kein erfundener Fehler). Der äußere Catch der drei betroffenen Routen vermerkt **nur die Tatsache** `aeusseresTimeoutAt` und hebt den Status auf `abgebrochen` **nur**, solange er `laufend` ist — ein später eintreffender echter Abschluss gewinnt (monotone Rangfolge). `rekonstruiereLauf` rechnet die vollständige Telemetrie aus den Zwischenständen nach; Rekonstruktion und gemeldete Telemetrie werden im Test **gegeneinander** geprüft. **Warum ein Prozessabbruch keinen erfundenen Erfolg erzeugen kann:** ein Abschluss entsteht nur durch einen Schreibvorgang; bleibt er aus, bleibt der Datensatz `laufend`, und ein veraltetes `laufend` **ist** die Abbruchmeldung. **Bewusst nicht getan:** `process_runs` als Ablage (relational flaggegated und damit freigabepflichtig, Blob-Rückfallpfad ist genau der W-2-Last-Write-Wins-Pfad mit 1,24 MB je Schreibvorgang), zweites Telemetriesystem, neue Tabelle, Anhebung irgendeiner Zeitgrenze, Kapazitätsarbeit. **Preis:** `FAIRNESS_VERSION` 1 → 2; im Rolloutfenster kann eine Vorgänger-Instanz den Schreibvorgang verweigern (`zustand-neuere-version-2`) → getesteter Fail-safe-Pfad, laut statt still. **Tests:** cron-fairness **285/285** (+84 gegenüber 201/201), Mutationsprobe **15/15 rot** (5 neu), p29-Vertrag **80/80**, p29-Mutationsprobe **7/7 rot**, Offline-Suite **177/191** mit identischer Basislinie und Fehlschlagliste wie `main` `bd7c889` (nach dem Rebase erneut gemessen), Browser-/Mobile-Smoke **32/32**. **0 KI, 0,00 USD**, keine Migration, keine Production-Änderung, kein Merge, kein Deployment. **Der Kapazitätsblocker (OP-25 §10.5/§10.7) bleibt offen** und war ausdrücklich nicht Gegenstand. Branch `claude/cron-telemetry-timeout-sg8emb`. Kanonisch: [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) §11. |
