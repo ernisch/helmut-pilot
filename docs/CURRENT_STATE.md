@@ -45,8 +45,11 @@ Zahlen und Gegenprobe kanonisch in
 **Restrisiko benannt:** in Szenario (4) derselben Suite bleibt ein Flackerrisiko von ≈ 0,2 % je
 Lauf, das testseitig nur durch Verwässern der Zusicherung „Fehlerklasse timeout benannt"
 verschwände — es bleibt stehen und ist über OP-28 zu beheben. **Branch/PR:**
-`claude/werkzeug-lesefehler-flake-portklasse`, **PR #216**. **Rollback:** `git revert` —
-die Änderung ist auf eine Testdatei begrenzt und ohne Laufzeitwirkung.
+`claude/werkzeug-lesefehler-flake-portklasse`, **PR #216**. **CI auf dem PR — beide Pflicht-Checks GRÜN im ERSTEN Anlauf, nicht wiederholt:** Lauf
+`30828537621`, `run_attempt: 1`, Commit `e6e6739` · `Syntax + Offline-Suiten` **200/200 in 63 s**,
+darin `werkzeug-lesefehler-test.js` **PASS in 1 777 ms** · `Browser-/Mobile-Smoke (Chromium)`
+**success**. **Rollback:** `git revert` — die Änderung ist auf eine Testdatei begrenzt und ohne
+Laufzeitwirkung.
 **Nächster sinnvoller Schritt:** Betreiberentscheidung zu **OP-28**.) ·
 (**Sprint „OP-25 K2.1 — Production-Aktivierung ausgeführt"
 — TEILWEISE ABGESCHLOSSEN. K2.1 ist in Production AKTIVIERT. Deployment READY und unmittelbarer
