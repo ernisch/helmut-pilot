@@ -590,6 +590,53 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Mutationsprobe **11/11 rot** · `cron-fairness` **285/285** unverändert. Kanonisch:
   [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) **§13** (§13.6 = neuer Nachweis).
   **§11.8 muss nach dem Merge vollständig neu laufen.**
+- **Status R-6 + F-CAS (2026-08-03, regulärer Production-Nachweis, 2. Durchgang, rein lesend):
+  BESTANDEN. R-6 und F-CAS sind damit geschlossen — OP-25 insgesamt bleibt TEILWEISE
+  ABGESCHLOSSEN.** Beobachtungsfenster **2026-08-02 09:42:33 UTC** (Deployment `READY`,
+  Commit `26dc9b1` = Merge PR #208) → **2026-08-03 10:04:36 UTC** = **24 h 22 min**;
+  **sieben** reguläre fairness-relevante Läufe gewertet, **vier** davon mit äußerem Zeitlimit.
+  Der Fairness-/Speicherpfad ist über die drei Deployments des Fensters (#208, #209, #210)
+  **byte-identisch** — `git diff 26dc9b1 9ad7bcf` über `cron-fairness.js`, `storage.js`,
+  `server.js`, `vercel.json`, `helmut-flags.json` ist leer. **§11.8: 6 von 7 Prüfpunkten voll
+  erfüllt**, Prüfpunkt 7 der Sache nach erfüllt (kein Wachstumsmechanismus), aber die
+  Zahlenangabe „~4–8 KB" ist durch die Production-Messung **9,2 KB** überholt und wurde als
+  überholt ausgewiesen statt gelockert. **§13.6: alle 6 Prüfpunkte erfüllt.** **Kernbeleg
+  gegen F-CAS:** das `morning-briefing` vom 03.08. meldete `erfolgreich=6` **und** die Zeile
+  trägt sechs Abschlüsse — am 02.08. waren es bei derselben Meldung fünf. Zusätzlich trägt die
+  Zeile `rev = 46`, exakt die aus der Buchführung der sieben Läufe unabhängig nachgerechnete
+  Zahl fälliger Schreibvorgänge (8+5+5+5+14+5+4): kein Schreibvorgang fehlt, keiner ist
+  doppelt. Alle drei geschriebenen Telemetriezeilen tragen `abweichung=- zustand=ok`; im
+  Fenster existieren genau **zwei** `systemError` (beide „Zeitbudget erschoepft" mit
+  Kennungen), **kein** Persistenz-Eintrag; `pipeline_locks` unauffällig (3 Zeilen, alle mit
+  regulärer TTL abgelaufen); keine neuen DB-, Sperr- oder Fairnessfehler. **Zwei
+  Einschränkungen, ausdrücklich:** (1) der **Compare-and-Set-Konfliktpfad wurde in Production
+  nicht ausgeübt** — kein am Zeitlimit gestorbener Lauf hat während eines anderen Crons noch
+  geschrieben; er bleibt offline belegt, ein Erzwingen wäre ein verbotener manueller Lauf.
+  (2) **Verweigerte Sperre trat erneut nicht auf** (`sperreVerweigert=-` überall) — die
+  Zusicherungen aus §3a.1 bleiben wie schon 2026-07-31 nur offline belegt. **NEUER BEFUND
+  F-POS:** in `crawl`/`pipeline` (`k=2`) ist die Position im Lauf über die Zyklen **stabil**,
+  weil `letzterVersuchAt` der Rotationsanker ist und das erste Mandat einen ~4 min älteren
+  Versuchszeitpunkt behält. Folge: die Zweitplatzierten schließen fast nie ab — Erfolgszähler
+  `crawl` 2/3/3 (erst) gegen 1/1/**0** (zweit), `pipeline` 3/3/3 gegen 0/0/1; ein Mandat trägt
+  im `crawl` `versuche=3, erfolge=0` **ohne jedes** `letzterErfolgAt`. **Kein Fairnessfehler**
+  (die Garantie aus §4 ist über *begonnen* definiert und hielt lückenlos: jedes Mandat wurde in
+  `ceil(6/2)=3` Läufen begonnen), sondern die Fortsetzung des Kapazitätsblockers — mit der
+  schärferen Aussage, dass der Rückstand **strukturell dieselben** Mandate trifft. **Damit ist
+  die Spalte „Läufe bis erfolgreich" in `cron-fairness.md` §10.5 zu optimistisch**; für die
+  Zweitplatzierten lautet die richtige Antwort „nicht garantiert". **Zwei
+  Dokumentationskorrekturen:** (D-1) `zeitbudget[]` ist kein Feld des Laufdatensatzes, der
+  Ausgang steht in `ausgaenge` — Verhalten korrekt, Feldname unpräzise; (D-2) der in §10.2 als
+  „nicht regulär" ausgeschlossene `pipeline`-Lauf vom 30.07. 07:52 war **planmäßig** (GitHub-
+  Actions-Watchdog `briefing-watchdog.yml`, `event=schedule`) — `vercel.json` ist nicht die
+  einzige Zeitplanquelle. **Betriebsbeobachtung:** der Watchdog schlägt seit 27.07. **täglich**
+  fehl, weil die von ihm ausgelöste `pipeline` im 280-s-Limit endet (**B5**) — der
+  Backstop-Alarm steht dauerhaft rot und ist als Signal wertlos. **Offen bleibt unverändert:**
+  der Kapazitätsblocker (§10.5/§10.7), Teilstück **(a)** Abdeckungsmessung, Teilstück **(c)**
+  Abdeckungsalarm über mehrere Läufe, und die Aktivierung von **K1** (Default AUS).
+  **Testmandat-Sperre unverändert: weitere reale Testmandate bleiben deaktiviert.**
+  Rein lesend erhoben, **0 KI-Aufrufe, 0,00 USD**, kein Production-Schreibzugriff, kein
+  manueller Lauf, kein Trigger, keine Env-/Flag-/Cron-/Budget-/Quellenänderung, Mandate nur
+  pseudonymisiert. Kanonisch: [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) **§14**.
 - **Status K1 (2026-07-31, Sprint „Globale Erfassung und mandatsbezogene Projektion trennen"):
   IM REPOSITORY UMGESETZT als SCHATTENPFAD, in Production NICHT aktiviert.** **Bestandsprüfung
   gegen `main`:** von den zwölf Schritten in `runSourceCrawl` sind **fünf global** (Abruf,
