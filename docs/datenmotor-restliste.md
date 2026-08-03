@@ -14,7 +14,7 @@
 
 | | |
 |---|---|
-| **Stand / Prüfdatum** | **2026-07-29** (Basisstand 2026-07-17, re-verankert 2026-07-22, siehe Banner; OP-05/06/08/13/14 nachgezogen durch den Pending/Understanding/KO-Sprint — Belege: `docs/betrieb/datenmotor_sprint_pending_understanding_ko.md`; §4 und §6 nachgezogen durch Sprint 23B-1 — neue Befunde **B5**/**B6** und neue Punkte **OP-25**/**OP-26**; §4 zusaetzlich nachgezogen durch Sprint 23C-2A — neue Befunde **B7**/**B8**; **B7 nachgemessen und entschieden in Sprint M-8 → neuer Punkt OP-27**, B8 bleibt bei OP-04. *Die übrigen Abschnitte tragen weiterhin den Stand 2026-07-18 und wurden in diesem Sprint nicht nachgemessen.*) |
+| **Stand / Prüfdatum** | **2026-07-29** (Basisstand 2026-07-17, re-verankert 2026-07-22, siehe Banner; OP-05/06/08/13/14 nachgezogen durch den Pending/Understanding/KO-Sprint — Belege: `docs/betrieb/datenmotor_sprint_pending_understanding_ko.md`; §4 und §6 nachgezogen durch Sprint 23B-1 — neue Befunde **B5**/**B6** und neue Punkte **OP-25**/**OP-26**; §4 zusaetzlich nachgezogen durch Sprint 23C-2A — neue Befunde **B7**/**B8**; **B7 nachgemessen und entschieden in Sprint M-8 → neuer Punkt OP-27**, B8 bleibt bei OP-04. *Die übrigen Abschnitte tragen weiterhin den Stand 2026-07-18 und wurden in diesem Sprint nicht nachgemessen.* **Nachtrag 2026-08-03:** neuer Punkt **OP-28** aus Sprint F-PORT — Lesefehler-Klassifikation, Beleg in `docs/betrieb/befund-werkzeug-haertung-w1-w2.md` §16; sonst nichts nachgemessen.) |
 | **Geprüfter Stand** | historisch `main`-HEAD `ca7e404` (Merge PR #102); Re-Anker (siehe Banner) `d6d9063` (#113); seither weiter nachgezogen (Pending/Understanding/KO-Sprint + Recovery-Stilllegung PR #105, Kontextstruktur PR #119, Doku-Nachzug PR #121) — **aktuell `045393c` (#121)** |
 | **Grundlagen** | PR #95–#102, `docs/betrieb/production_beweisprotokoll.md` (inkl. §7 Google-News-Härtung), `docs/betrieb/google_news_haertung.md`, `docs/betrieb/health_report_rollierend.md`, `docs/betrieb/f5_freigabe.md`, `docs/helmut_datenmotor_thread2_handoff.md` §0a, `docs/quellenarchitektur/00-master-status.md` (Nachtrag 2026-07-17), Audit-Serie |
 
@@ -977,6 +977,31 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Briefings (CLAUDE.md §5, Feature-Flag scharfschalten). Bau und Test lagen über den
   normalen PR-Weg. Kanonisch:
   [`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md) Teil E §42–§49.
+
+#### OP-28 · Lesefehler-Klassifikation: `401`/`403` schlagen als Teilstring durch (neu, Sprint F-PORT 2026-08-03; Prioritätsklasse P3)
+- **Status:** offen, **Ursache belegt und reproduziert, Behebung nicht begonnen** (sie
+  berührt Production-Logik und war im Analysesprint ausdrücklich ausgeschlossen).
+- **Befund:** `klassifiziereLesefehler` (`lib/helmut/storage.js`) prüft `401`/`403` als
+  **Teilstring der gesamten Fehlerkette** und **vor** den spezifischeren Regeln für
+  DNS, Verbindung und Timeout. Trifft die Zeichenfolge zufällig — in einer Portnummer
+  (`connect ECONNREFUSED 127.0.0.1:40123`) oder im Endpunkt einer Timeout-Meldung
+  (ISO-Millisekunde `…47.401Z`) — wird eine Netz- oder Timeout-Störung als **`auth`**
+  gemeldet. Beweis, Zahlen und Gegenprobe kanonisch in
+  [`betrieb/befund-werkzeug-haertung-w1-w2.md`](betrieb/befund-werkzeug-haertung-w1-w2.md) §16.
+- **Betriebliche Folge:** die Fehlerklasse steuert die Ursachensuche. Eine als
+  Zugangsdatenproblem gemeldete Verbindungsstörung schickt die Behebung in die
+  falsche Richtung — kein falsches Grün, aber eine falsche Ursache.
+- **Fehlender Schritt:** die Auth-Erkennung an Fehlertoken statt an nackte Zahlen binden
+  (z. B. HTTP-Status aus `failed (401)`/`(403)` bzw. Schlüsselwörter), Reihenfolge der
+  Regeln belassen, mit einer Mutationsprobe belegen. **Freigabe nötig**, weil
+  Produktionsverhalten (Störungsmeldungen, Telemetrieklassen) sich ändert.
+- **Auswirkung auf das CI-Gate:** die belegte Flackerursache von
+  `werkzeug-lesefehler-test.js` ist testseitig beseitigt; ein Restrisiko von ≈ 0,2 %
+  je Lauf bleibt im Timeout-Szenario derselben Suite und ist nur über diesen Punkt
+  behebbar.
+- **Rückweg:** rein lokale Funktionsänderung ohne Migration und ohne Datenschreibung;
+  Rücknahme = Revert des PR.
+- **Parallelisierbarkeit:** unabhängig, kleiner Umfang.
 
 ---
 

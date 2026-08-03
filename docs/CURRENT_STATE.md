@@ -1,6 +1,54 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-08-03 (**Sprint „OP-25 K2.1 — Production-Aktivierung ausgeführt"
+**Letzte Aktualisierung:** 2026-08-03 (**Sprint „Flackernden `werkzeug-lesefehler-test.js`
+stabilisieren" (F-PORT) — TEILWEISE ABGESCHLOSSEN. Root Cause belegt, reproduziert und
+testseitig beseitigt; die zugrundeliegende Fehlklassifikation ist Production-Logik und bleibt
+als OP-28 offen.** **Nur Testcode:** `git diff origin/main -- server.js lib/ supabase/ api/
+client.js styles.css` ist **leer**; geändert ist genau **eine** Codedatei,
+`scripts/werkzeug-lesefehler-test.js`. Keine Migration, kein Flag, kein Cron, kein Trigger, kein
+Production-Zugriff, kein Deployment, kein Merge, **0 KI-Aufrufe, 0,00 USD**. Berlin, Brandenburg
+und M8 unberührt, OP-25 und sein laufender Production-Nachweis unberührt, keine neuen Testmandate.
+**Exakte Ursache — eine einzige, gemessen statt vermutet:** Szenario (3) der Suite erzeugt
+„Verbindung verweigert" über einen soeben geschlossenen lokalen Port aus `listen(0)`. Die
+**zufällige Portnummer** steht wörtlich in der Fehlerkette (`connect ECONNREFUSED
+127.0.0.1:<port>`), und `klassifiziereLesefehler` prüft die Auth-Zeichenfolgen **`401`/`403` als
+Teilstring der gesamten Kette** und **vor** der `ECONNREFUSED`-Regel. Enthält der Port `401` oder
+`403`, wird der Verbindungsfehler als Fehlerklasse **`auth`** statt `connection` eingestuft —
+`Exit 6`, `Quelle:` und `Fehlerklasse:` bleiben korrekt, nur `/dns|connection/` trifft nicht mehr.
+Das ergibt **genau einen** roten Prüfpunkt bei grünen Nachbarprüfungen und passt damit exakt auf
+das CI-Bild von Lauf `30815041452` (42 PASS / 1 FAIL, „Netzwerkfehler: Meldung nennt Quelle und
+Fehlerklasse"). **Die im Vorsprint notierte Timeout-Hypothese ist damit widerlegt:** ein
+800-ms-Timeout hätte den Suitenlauf um ≈ 800 ms verlängert, der rote CI-Lauf war aber nur 170 ms
+langsamer als der grüne (1 757 ms vs. 1 587 ms) — die Portklassifikation kostet keine Zeit
+(gemessen 231 ms vs. 124 ms Kindlaufzeit). **Zahlen:** **316 von 28 232** Ports des
+Linux-Ephemeralbereichs (32768–60999) sind betroffen = **1,12 %**; empirisch gezogen **403 von
+20 000 = 2,02 %**. **Gegenprobe (Mutationsprobe) bestanden:** Fixture-Port erzwungen auf `40123`
+bzw. `40312` → Suite reproduzierbar **42 PASS / 1 FAIL** mit exakt der CI-Fehlermeldung
+(`Fehlerklasse: auth`); Kontrollport `45678` → **43 PASS / 0 FAIL**. **Korrektur:** die Suite
+zieht den Fixture-Port neu, bis er keine Statuszahl enthält (`geschlossenerPortOhneStatuszahl()`,
+max. 300 Versuche; längster betroffener Block ist 100 Ports), plus eine Diagnosezeile am roten
+Prüfpunkt. **Alle 43 Prüfungen bleiben erhalten**, keine Zusicherung gelockert, kein Timeout
+erhöht, kein Skip, kein Rot-zu-Warnung. **Wiederholungsmessung nach dem Fix:** **30/30** grün
+sequenziell (2 071–2 371 ms, Ø 2 162 ms), **20/20** grün unter CPU-Überbuchung 6 Endlosschleifen
+auf 4 Kernen (2 961–3 899 ms, Ø 3 433 ms), **3 × vollständige Offline-Suite** je **185/200 in
+83–85 s** — die 15 roten Suiten sind **byte-identisch** zur `origin/main`-Baseline in derselben
+Sandbox (ebenfalls 185/200, Netz-Guard-/Env-Artefakte ohne Secrets) und enthalten
+`werkzeug-lesefehler-test.js` **nicht**; **Browser-Smoke 32/32**. **Nicht behoben, ausdrücklich
+benannt (`CLAUDE.md` §4.4):** die Ursache liegt in Production-Logik
+(`lib/helmut/storage.js`, `klassifiziereLesefehler`) und war in diesem Sprint ausgeschlossen. Sie
+wirkt **nicht nur** auf Testports: bei Timeouts enthält die Kette den vollständigen Endpunkt samt
+ISO-Zeitstempel, und eine Millisekunde `401`/`403` klassifiziert eine Timeout-Störung als `auth`
+(gegengeprüft). Betriebliche Folge: eine Netzstörung kann als Zugangsdatenproblem gemeldet werden.
+Daraus **neuer Punkt OP-28** in [`datenmotor-restliste.md`](datenmotor-restliste.md); Beleg,
+Zahlen und Gegenprobe kanonisch in
+[`betrieb/befund-werkzeug-haertung-w1-w2.md`](betrieb/befund-werkzeug-haertung-w1-w2.md) §16.
+**Restrisiko benannt:** in Szenario (4) derselben Suite bleibt ein Flackerrisiko von ≈ 0,2 % je
+Lauf, das testseitig nur durch Verwässern der Zusicherung „Fehlerklasse timeout benannt"
+verschwände — es bleibt stehen und ist über OP-28 zu beheben. **Branch/PR:**
+`claude/werkzeug-lesefehler-flake-portklasse`, **PR #215**. **Rollback:** `git revert` —
+die Änderung ist auf eine Testdatei begrenzt und ohne Laufzeitwirkung.
+**Nächster sinnvoller Schritt:** Betreiberentscheidung zu **OP-28**.) ·
+(**Sprint „OP-25 K2.1 — Production-Aktivierung ausgeführt"
 — TEILWEISE ABGESCHLOSSEN. K2.1 ist in Production AKTIVIERT. Deployment READY und unmittelbarer
 Smoke-Check bestanden. Der reguläre Production-Kapazitätsnachweis über das vorgeschriebene
 Beobachtungsfenster ist noch offen. OP-25 bleibt teilweise abgeschlossen.** **Der Handgriff war
@@ -182,7 +230,9 @@ die Fehlerklasse `dns` **oder** `connection`, die `klassifiziereLesefehler` nur 
 Fehler über einen **soeben geschlossenen** lokalen Port. Scheitert die Verbindung auf einem
 belasteten Runner stattdessen an einem **Verbindungs-Timeout**, bleibt `Exit 6` richtig (er gilt
 für jeden Lesefehler — dieser Prüfpunkt war denn auch **grün**), aber die Klassenprüfung greift
-daneben. Das passt auf das beobachtete Bild, **reproduziert wurde es hier aber nicht**. **CI wurde
+daneben. Das passt auf das beobachtete Bild, **reproduziert wurde es hier aber nicht**.
+**ÜBERHOLT am 2026-08-03 durch den Sprint F-PORT (oberster Eintrag): diese Timeout-Hypothese ist
+gemessen und WIDERLEGT; die belegte Ursache ist die zufällige Fixture-Portnummer.** **CI wurde
 NICHT wiederholt, um Grün zu erzeugen** — der rote Lauf steht unverändert in der PR-Historie. Der
 **zweite** CI-Lauf entstand durch den Commit, der genau diesen roten Befund dokumentiert
 (`ce3a062`, ausschließlich `docs/CURRENT_STATE.md`): **beide Pflicht-Checks grün, Offline-Suiten
@@ -192,7 +242,9 @@ beiden Läufen **keine Zeile** geändert — rot, dann grün. Fachliche Wirkung:
 Fehlerklassenmeldung des Nachholwerkzeugs, nicht K2.1, nicht die Fairness und nichts
 Produktionsrelevantes an diesem PR. **Empfohlene Folge:** die Stabilisierung dieser Suite als
 eigener kleiner Sprint (deterministische Fehlerklasse statt Portschließungs-Rennen), analog zum
-Timing-Seitenkanaltest aus PR #212.) · (**Sprint „Flackernden Timing-Seitenkanal-Sicherheitstest
+Timing-Seitenkanaltest aus PR #212. **ERLEDIGT am 2026-08-03 durch den Sprint F-PORT — siehe
+obersten Eintrag; die Ursache war tatsächlich die Portwahl, aber nicht als Rennen, sondern als
+Teilstringtreffer `401`/`403` in der Klassifikation.**) · (**Sprint „Flackernden Timing-Seitenkanal-Sicherheitstest
 stabilisieren" — ERFOLGREICH ABGESCHLOSSEN. Nur Testcode und Runner-Diagnose. KEINE
 Produktionslogik geändert — `git diff origin/main -- server.js` ist leer, `lib/helmut/reset-timing.js`
 ist unberührt. Keine Migration, kein Flag, kein Production-Zugriff, kein manueller Lauf, kein

@@ -58,6 +58,37 @@ function startStub({ rawDocs = [], links = [], kos = [], status = 200, body = nu
   });
 }
 
+// ── Fixture-Port fuer "Verbindung verweigert" ────────────────────────────────
+// FLAKE-BEFUND 2026-08-03 (CI-Lauf 30815041452, PR #213 — reiner Doku-PR, rot
+// bei unveraendertem Code): `listen(0)` zieht einen ZUFAELLIGEN ephemeren Port.
+// Der Port steht woertlich in der Fehlerkette ("connect ECONNREFUSED
+// 127.0.0.1:<port>"), und `klassifiziereLesefehler` prueft die Auth-Zeichenfolgen
+// "401"/"403" auf der GESAMTEN Kette und VOR der ECONNREFUSED-Regel. Ein Port wie
+// 40123 oder 45403 wird deshalb als Fehlerklasse "auth" statt "connection"
+// eingestuft — Exit 6 bleibt korrekt, aber die Pruefung "Meldung nennt Quelle und
+// Fehlerklasse" wird rot. Betroffen sind 316 der 28 232 Ports des
+// Linux-Ephemeralbereichs (1,12 %); das ist die belegte Ursache des Flackerns.
+// Die Ziehung wird deshalb wiederholt, bis der Port keine Statuszahl enthaelt —
+// damit ist das Szenario wirklich deterministisch, nicht nur die Fehlerart.
+// Der ZUGRUNDELIEGENDE Klassifikationsfehler in lib/helmut/storage.js ist damit
+// NICHT behoben (Production-Logik, ausserhalb dieses Sprints) und als OP-28
+// gefuehrt: docs/betrieb/befund-werkzeug-haertung-w1-w2.md §16.
+const PORT_STATUSZAHL = /401|403/;
+
+async function geschlossenerPortOhneStatuszahl() {
+  // Der laengste zusammenhaengende Block betroffener Ports ist 100 (40100–40199
+  // bzw. 40300–40399); Linux vergibt ephemere Ports weitgehend fortlaufend,
+  // deshalb sind 300 Versuche mit Sicherheitsabstand ausreichend.
+  for (let versuch = 0; versuch < 300; versuch += 1) {
+    const port = await new Promise((resolve) => {
+      const s = http.createServer();
+      s.listen(0, "127.0.0.1", () => { const p = s.address().port; s.close(() => resolve(p)); });
+    });
+    if (!PORT_STATUSZAHL.test(String(port))) return port;
+  }
+  throw new Error("kein Fixture-Port ohne Statuszahl-Zeichenfolge gefunden");
+}
+
 // ── Kindprozess-Umgebung: STRIKTE Allowlist, erbt NIE Production-Env ─────────
 function kindUmgebung(port, extra = {}) {
   return {
@@ -174,14 +205,13 @@ async function main() {
   // geschlossener lokaler Port liefert sofort ECONNREFUSED. Ein Live-DNS-Lookup
   // (.invalid) waere timing-abhaengig — in einer Sandbox kann der Resolver
   // langsamer sein als das Request-Timeout, und die Suite wuerde zufaellig rot.
-  const zuPort = await new Promise((resolve) => {
-    const s = http.createServer();
-    s.listen(0, "127.0.0.1", () => { const p = s.address().port; s.close(() => resolve(p)); });
-  });
+  // Zur Portwahl siehe geschlossenerPortOhneStatuszahl() (Flake-Befund 2026-08-03).
+  const zuPort = await geschlossenerPortOhneStatuszahl();
   const rDns = await laufe(["--vorschau"], kindUmgebung(zuPort));
   check("Netzwerkfehler (Verbindung verweigert): Exit 6", rDns.code === 6, `Exit ${rDns.code}: ${rDns.alles.slice(0, 300)}`);
   check("Netzwerkfehler: Meldung nennt Quelle und Fehlerklasse",
-    rDns.err.includes("Quelle:") && rDns.err.includes("Fehlerklasse:") && /dns|connection/.test(rDns.err));
+    rDns.err.includes("Quelle:") && rDns.err.includes("Fehlerklasse:") && /dns|connection/.test(rDns.err),
+    `Fixture-Port ${zuPort} · stderr: ${rDns.err.replace(/\s+/g, " ").slice(0, 200)}`);
   check("Netzwerkfehler: KEIN 'Nichts nachzuholen'", !rDns.alles.includes("Nichts nachzuholen"));
 
   // (4) Timeout -> Exit 6.
