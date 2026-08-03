@@ -59,7 +59,25 @@ deaktiviert;** Berlin, Brandenburg und M8 bleiben AUS (alle 6 aktiven Profile si
 das einzige `landtag`-Profil ist inaktiv). **Tests:** `node scripts/run-offline-tests.js`
 **186/200** in dieser Cloud-Sitzung — die 14 Fehlschläge sind die bekannte, umgebungsbedingte
 Basislinie (`npm ci` vorher nötig, siehe Sprint vom 02.08.); `node scripts/browser-smoke-test.js`
-**32/32**. **Branch/PR:** `claude/op25-production-nachweis-cron-mk73rq`, Commit `ce03c78`, **PR #211** (offen, nicht selbst gemergt). **Geänderte Dateien:**
+**32/32**. **CI-Flackerbefund, ehrlich nachgetragen (kein falsches Grün):** der CI-Lauf `30806535691`
+auf dem reinen Markdown-Commit `de25870` war im ersten Anlauf **rot** — `Syntax + Offline-Suiten`
+meldete **199/200** mit **einer** fehlgeschlagenen Suite: `reset-timing-seitenkanal-test.js`.
+Das ist **Flackern des Offline-Gates, kein Befund dieses Sprints**, und es ist belegt statt
+behauptet: der Diff zum grünen Vorgängercommit `f081b23` (Lauf `30806416851`, **beide**
+Pflicht-Checks grün) besteht aus **13 Zeilen Markdown in einer einzigen Datei** — kein Code, kein
+Test, keine Konfiguration; die Suite misst **Antwortzeiten** (Median, p95, AUC) und ist damit
+lastempfindlich; lokal ist sie **allein ausgeführt grün** (80/80, Exitcode 0) und im vollständigen
+Offline-Lauf grün (nicht in der 14er-Fehlschlagliste), aber **dreimal reproduzierbar rot**, wenn
+parallel die gesamte Offline-Suite die CPU belegt. **Neu ist die Beobachtung für genau diese
+Suite:** am 2026-08-01 flackerte an derselben Stelle `pilot-e2e-vertrag-test.js`, während
+`reset-timing-seitenkanal-test.js` in beiden Anläufen grün war. Ein zeitmessender Test in einem
+Gate, das 200 Suiten parallel zur Messung laufen lässt, ist strukturell flackeranfällig — das
+gehört als eigener kleiner Sprint behoben (Messung serialisieren oder Schwellen lastunabhängig
+machen), nicht durch Wiederholen weggedrückt. **Im Wiederholungslauf (Anlauf 2 desselben Laufs
+`30806535691`) ist `Syntax + Offline-Suiten` grün**, `Browser-/Mobile-Smoke (Chromium)` war in
+beiden Anläufen grün — beide Pflicht-Checks stehen damit auf `de25870` grün. **Branch/PR:** `claude/op25-production-nachweis-cron-mk73rq`,
+Commits `ce03c78` · `f081b23` · `de25870`, **PR #211** (offen, nicht selbst gemergt).
+**Geänderte Dateien:**
 `docs/betrieb/cron-fairness.md` (§14 neu, Kopf/§11.5/§11.8/§12 nachgezogen),
 `docs/datenmotor-restliste.md` (OP-25-Status), `docs/CURRENT_STATE.md`. **Risiko: keins** (nur
 Markdown). **Rollback:** `git revert`. **Nächster sinnvoller Schritt:** Kapazität, nicht
