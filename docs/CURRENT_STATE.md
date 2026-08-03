@@ -1,6 +1,48 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-08-02 (**Sprint Kalender Machbarkeit 1 — ERFOLGREICH ABGESCHLOSSEN
+**Letzte Aktualisierung:** 2026-08-02 (**Sprint „PR 203 bereinigen und Projektstatus konsolidieren"
+— ERFOLGREICH ABGESCHLOSSEN. Reine Dokumentation, kein Code, keine Migration, kein Flag, kein
+Production-Zugriff, kein manueller Lauf, kein Trigger, kein Merge, 0 KI-Aufrufe, 0,00 USD.**
+**Ergebnis zu PR #203: vollständig überholt — Empfehlung: schließen, nicht mergen; sein Branch
+wurde nicht angefasst.** Der vollständige Diff von #203 (`827e67f`, Basis `255df01`, 3 Dateien,
++129/−41) wurde gegen den aktuellen `main` (`645ce55`) geprüft. Befund: **derselbe** 25B-Nachweis
+kam 13 Minuten nach Eröffnung von #203 über **PR #202** (gemergt 2026-07-31, 16:41 UTC) in `main`,
+und zwar in der **späteren und genaueren** Fassung — `punkt-25-e2e-nachweis.md` §6d auf `main`
+belegt **23 von 23 Prüfungen** mit dem lesenden Werkzeug `scripts/punkt25b-production-nachweis.js`,
+#203 nennt 22 Prüfpunkte ohne Werkzeugbeleg. Die Checklistenwirkung von #203 (Zeile 25 → ✅,
+Stand **14 ✅ · 12 ⏳ · 4 ☐**) steht im Ergebnis bereits auf `main`. **Zwei Inhalte von #203 wären
+sogar eine Verschlechterung:** die Zahl „Gesamtbestand falscher Ausschussbelege **5 → 0**" ist auf
+`main` ausdrücklich als überholt korrigiert (zum Messzeitpunkt 11:05 UTC waren es nur noch 2, die
+3 des Zweitmandanten hatte ein natürlicher Lauf am 30.07. bereits abgelöst), und #203 kennt die
+Nebenbeobachtung **B25-3** nicht. Zusätzlich hätte #203 den gesamten aktuellen Kopf dieses
+Dokuments (Sprints zu PR #204…#209) durch den Stand vom 31.07. ersetzt (`mergeable_state: dirty`).
+**Nichts an #203 ist einzigartig und notwendig** — deshalb wurde nichts von dort übernommen und
+nichts rebased. **Bereinigt wurde stattdessen der Projektstatus** (§8, §3, §12 und die Kopfeinträge
+zu PR #204…#209 sowie der Kopf von `roadmap/phase_1_checkliste.md`): §8 führte „Stand 2026-07-28"
+zehn offene PRs, von denen **keiner** mehr offen ist; sechs Kopfeinträge behaupteten „offen" bzw.
+„Draft" und „nicht gemergt, nicht deployt" für PR #204…#209, die alle am 01./02.08. gemergt sind;
+der Checklistenkopf trug „PR #185 offen, nicht gemergt" (gemergt `cf290ab`) und einen `main`-Stand
+`d9006c1`. **Vier Feststellungen, ausdrücklich:** (1) **Punkt 25B ist abgeschlossen**, damit Punkt
+25 vollständig — Zeile 25 steht auf ✅, Beleg §6d. (2) **PR #209 ist gemergt** (2026-08-02,
+16:54 UTC, `645ce55`). (3) **Kalender-Machbarkeit 1 ist abgeschlossen, aber KEINE Produktfunktion**
+— es gibt weiterhin **keine aktive Terminfunktion**: kein Empfang, keine Adresse, keine Ablage,
+keine Oberfläche, keine Migration; die vier Module unter `lib/helmut/kalender/` werden von keinem
+Pfad aufgerufen. (4) **Der Production-Nachweis nach PR #208 bleibt OFFEN.** Er ist nicht „noch
+nicht geprüft", sondern **noch nicht erbringbar**: `cron-fairness.md` §11.8 verlangt mind. 24 h
+reguläre Kadenz **nach** dem Merge (2026-08-02, 09:42 UTC) und §13.6 Prüfpunkt 4 zusätzlich einen
+Lauf mit äußerem Zeitlimit samt danach startendem Cron; frühestens ab 2026-08-03 vollständig
+belegbar. Es wurde bewusst **kein** manueller Lauf und **kein** Trigger ausgelöst und nicht auf
+künftige Läufe gewartet. Berlin, Brandenburg und M8 bleiben AUS, keine weiteren realen
+Testmandate aktiviert. **Tests:** `node scripts/run-offline-tests.js` **186/200** in dieser
+Cloud-Sitzung — die 14 Fehlschläge sind die bekannte, umgebungsbedingte Basislinie (fehlende
+Umgebungsvariablen), identisch zur Basislinie auf `main`; `node scripts/browser-smoke-test.js`
+**32/32**. **Neue Betriebsbeobachtung, belegt:** seit PR #209 braucht ein frischer Arbeitsbaum
+**erst ein `npm ci`**, bevor die Offline-Suite vollständig läuft — ohne `node_modules` fehlt
+`ical.js`, und `kalender-ics-test.js` schlägt zusätzlich fehl (**185/200** statt 186/200; in dieser
+Sitzung zuerst genau so gemessen, danach mit `npm ci` auf 186/200 gebracht). In CI deckt der neue
+`npm ci`-Schritt das ab; in einer Cloud-Sitzung ist es ein Handgriff, der vor PR #209 nicht nötig
+war. **Branch:** `claude/pr-203-cleanup-status-et8vlb`. **Risiko: keins** (nur Markdown).
+**Rollback:** `git revert`.) · (**Sprint Kalender Machbarkeit 1 — ERFOLGREICH ABGESCHLOSSEN
 als Machbarkeitsnachweis, NICHT als Funktion. Helmut kann standardisierte Kalendereinladungen aus
 Outlook, Google Kalender und internen Systemen zuverlässig verstehen; kein aktiver Production-Pfad
 berührt, kein Empfang, keine Adresse, keine Ablage, keine Oberfläche, keine Migration, kein Merge.**
@@ -84,7 +126,8 @@ Adresse ist der **einzige** Träger der Mandatszuordnung — der Absender ausdr�
 Ablage/Migration, dann Serienauflösung. **Nicht empfohlen:** die Komponente jetzt an einen
 Production-Pfad hängen — ohne Empfang und Ablage gäbe es nichts zu zeigen, aber bereits eine
 Angriffsfläche. **Branch/PR:** `claude/kalender-machbarkeit-1-d3f7wr`, drei Commits (zuletzt `33ea570`),
-**PR #209 (Draft)**. **Beide Pflicht-Checks grün** (Lauf `30757186651`): `Syntax + Offline-Suiten`
+**PR #209 — inzwischen GEMERGT** (2026-08-02, 16:54 UTC, `645ce55`; die Angabe „Draft" stammt aus
+dem Sprint selbst). **Beide Pflicht-Checks grün** (Lauf `30757186651`): `Syntax + Offline-Suiten`
 **200/200 Suiten in 62 s** und `Browser-/Mobile-Smoke (Chromium)`. Dass CI **200/200** meldet und der
 Lauf in dieser Cloud-Sitzung **186/200**, ist kein Widerspruch: die 14 Fehlschläge sind
 umgebungsbedingt (fehlende Umgebungsvariablen in der Sitzung) und stehen identisch in der Basislinie
@@ -93,8 +136,11 @@ die einzige riskante Änderung dieses PRs in CI belegt, nicht nur lokal. Ein Nac
 Ganztagstermine über die Monats-, Jahres- und Schaltjahresgrenze ab (`31.08.`+1 Tag hätte einen
 32. August erzeugen können, ohne dass ein Test es bemerkt — ical.js normalisiert korrekt, das ist
 jetzt zugesichert statt nur beobachtet): Suite **134/134** statt 130/130.
-**Nicht gemergt, nicht deployt** — Merge = Production-Deployment und bleibt
-Betreiberentscheidung. **Risiko und Rollback:** der Anwendungscode ist unerreichbar (kein `require`
+**Nachtrag 2026-08-02: gemergt und deployt** — die Merge-Entscheidung des Betreibers ist gefallen;
+`ical.js` und die vier Kalendermodule liegen damit auf `main`. **Das ändert nichts am
+Sprintergebnis: es gibt weiterhin KEINE Terminfunktion** — kein Empfang, keine Adresse, keine
+Ablage, keine Oberfläche, keine Migration; der Anwendungscode wird von nirgendwo aufgerufen.
+**Risiko und Rollback:** der Anwendungscode ist unerreichbar (kein `require`
 von irgendwo) und im Betrieb wirkungslos; das reale Risiko liegt **allein** in der CI-Änderung —
 schlägt `npm ci` fehl, blockiert das Merge-Gate (lokal gegen einen leeren `node_modules`-Baum
 verifiziert). Rollback = `git revert` des einen Commits; da kein Pfad die Komponente aufruft und
@@ -201,15 +247,18 @@ Feature-Flags — alles vertragsgetestet; Berlin, Brandenburg, M8 und `HELMUT_CR
 bleiben **AUS**; keine Migration, kein Secret, keine neue Abhängigkeit, **kein Production-Eingriff
 und keine Reparatur des Altstands** (der betroffene Eintrag läuft über die 30-Minuten-Frist von
 selbst ab; ein Eingriff in Production-Daten ist freigabepflichtig). **Branch/PR:** `claude/cron-fairness-persistence-bug-f3unfi`, ein Commit
-`2b5552e`, **PR #208** (offen, kein Draft). **Beide Pflicht-Checks grün** (Lauf `30742147286`):
+`2b5552e`, **PR #208 — inzwischen GEMERGT** (2026-08-02, 09:42 UTC, `26dc9b1`; die Angabe „offen"
+stammt aus dem Sprint selbst). **Beide Pflicht-Checks grün** (Lauf `30742147286`):
 `Syntax + Offline-Suiten` **199/199 Suiten in 62 s** und `Browser-/Mobile-Smoke (Chromium)`. Dass
 CI **199/199** meldet und der Lauf in dieser Cloud-Sitzung **185/199**, ist kein Widerspruch: die
 14 Fehlschläge sind umgebungsbedingt (fehlende Umgebungsvariablen in der Sitzung) und stehen
-identisch in der Basislinie. **Nicht gemergt, nicht deployt** — Merge = Production-Deployment und
-bleibt Betreiberentscheidung. **Nächster Schritt:** Review und
-Merge-Entscheidung des Betreibers; danach **beide** rein lesenden Nachweise —
+identisch in der Basislinie. **Nachtrag 2026-08-02: gemergt und deployt.** **Nächster Schritt —
+und er ist OFFEN:** **beide** rein lesenden Nachweise —
 [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) **§13.6** (neu) und **§11.8** (R-6,
-vollständig neu), erst danach 29B §6.1/§6.2/§6.6. Kanonisch:
+vollständig neu), erst danach 29B §6.1/§6.2/§6.6. **Beide sind am 2026-08-02 NICHT erbracht** und
+können es auch nicht sein: §11.8 verlangt mind. 24 h reguläre Kadenz **nach** dem Merge (09:42 UTC),
+§13.6 Prüfpunkt 4 zusätzlich einen Lauf mit äußerem Zeitlimit und einen danach startenden Cron.
+Frühestens ab dem 2026-08-03 vollständig belegbar — **kein manueller Lauf, kein Trigger.** Kanonisch:
 [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) §13.) · (**Sprint Professionelle HTML-Mails für Einladung und
 Passwort-Reset — ERFOLGREICH ABGESCHLOSSEN. Beide Systemmails sind jetzt gestaltete
 HTML-Nachrichten mit vollständiger Textfassung; lokal gegen ein laufendes Mailpit v1.30.6
@@ -342,7 +391,7 @@ Hintergrund), keine Gültigkeitsdauer im Text (siehe oben), kein Vorschautext-El
 `docs/betrieb/mailversand-resend.md`, `package.json`, `.gitignore`, `docs/CURRENT_STATE.md`.
 `server.js`, das Konten-/Sitzungsmodell, die Token-Logik und die Oberfläche sind **nicht**
 verändert. Branch `claude/helmut-html-mails-9jalza` mit **zwei** Commits (`e38ae32` Umsetzung,
-`eafb307` die Befunde der Gegenprüfung), **PR #207** (offen, kein Draft). **Beide Pflicht-Checks
+`eafb307` die Befunde der Gegenprüfung), **PR #207 — inzwischen GEMERGT** (2026-08-01, 15:54 UTC). **Beide Pflicht-Checks
 grün auf BEIDEN Commits:** `e38ae32` Lauf `30705138587`, `eafb307` Lauf `30705987032` mit
 `Syntax + Offline-Suiten` **198/198 Suiten in 61 s** und `Browser-/Mobile-Smoke (Chromium)` grün.
 Dass CI **198/198** meldet und der Lauf in dieser Cloud-Sitzung **184/198**, ist kein
@@ -436,7 +485,7 @@ Production-Auswirkung: keine.** **Neue/geänderte Dateien:** `lib/helmut/reset-t
 `scripts/reset-timing-seitenkanal-test.js` (neu), `scripts/reset-timing-mutationsprobe.js`
 (neu), `scripts/mailpit-transport-test.js`, `docs/betrieb/env-inventar.md`,
 `docs/betrieb/mailversand-resend.md` (§6/§7/§9.1), `package.json`, `docs/CURRENT_STATE.md`.
-Branch `claude/timing-seitenkanal-passwort-reset-5eszb5`, **PR #206** (offen, kein Draft,
+Branch `claude/timing-seitenkanal-passwort-reset-5eszb5`, **PR #206 — inzwischen GEMERGT** (2026-08-01, 14:08 UTC; damals offen, kein Draft,
 **beide Pflicht-Checks grün**: `Syntax + Offline-Suiten` **197/197 Suiten in 62 s** und
 `Browser-/Mobile-Smoke (Chromium)` **grün**, Lauf `30701423057` auf dem Code-Commit `7b4c32b`).
 Dass CI **197/197** meldet und der Lauf in dieser Cloud-Sitzung **183/197**, ist kein
@@ -522,7 +571,7 @@ Resend ist Auftragsverarbeiter — AVV gehört zu **OP-02**; (4) Domain-Verifizi
 `docs/betrieb/lokale-mailtests-mailpit.md`, `.env.example`, `package.json`, `docs/CURRENT_STATE.md`.
 **Später benötigte Umgebungsvariablen:** `HELMUT_MAIL_TRANSPORT=resend`, `HELMUT_RESEND_API_KEY`
 (Secret), `HELMUT_MAIL_FROM`, optional `HELMUT_MAIL_REPLY_TO`, empfohlen `HELMUT_PUBLIC_URL`.
-Branch `claude/resend-production-transport-yvewda`, **PR #205** (offen, kein Draft, **beide
+Branch `claude/resend-production-transport-yvewda`, **PR #205 — inzwischen GEMERGT** (2026-08-01, 12:48 UTC; damals offen, kein Draft, **beide
 Pflicht-Checks im ERSTEN Anlauf grün**: `Syntax + Offline-Suiten` **196/196 Suiten** und
 `Browser-/Mobile-Smoke (Chromium)` **32/32**, Lauf `30700252212`). **Nächster Schritt:** Review und
 Merge-Entscheidung; die Production-Aktivierung ist ein getrennter, freigabepflichtiger Schritt nach
@@ -581,7 +630,7 @@ Zustellbarkeit, Bounces, Limits — hier nichts entschieden). Geänderte/neue Da
 `scripts/mailpit-transport-test.js` (neu), `scripts/mailpit-smoke.js` (neu),
 `docs/betrieb/lokale-mailtests-mailpit.md` (neu, kanonisch), `docs/betrieb/env-inventar.md`,
 `docs/betrieb/kostenmessung.md`, `.env.example`, `package.json`, `docs/CURRENT_STATE.md`.
-Branch `claude/helmut-mailpit-local-tests-tg6a6j`, **PR #204** (offen, kein Draft, **beide
+Branch `claude/helmut-mailpit-local-tests-tg6a6j`, **PR #204 — inzwischen GEMERGT** (2026-08-01, 12:15 UTC; damals offen, kein Draft, **beide
 Pflicht-Checks grün**: `Syntax + Offline-Suiten` **195/195 Suiten** und `Browser-/Mobile-Smoke
 (Chromium)` **32/32**, Lauf `30696961219`). **Ehrlich benannt:** der erste CI-Anlauf war rot —
 an **einer** fremden, bekannt zeitkritischen Suite (`werkzeug-lesefehler-test.js`, 42/43
@@ -3051,8 +3100,8 @@ von Betriebs-, Rechts- und Sicherheitsreife.
 
 | Punkt | Was fehlt | → OP |
 |---|---|---|
-| **Zuverlässige Cron-Telemetrie bei Zeitüberschreitung (R-6)** — Laufdatensatz je Cron in der bestehenden Fairnesszeile, bei jedem Mandatsübergang fortgeschrieben; äußerer Timeout-Vermerk ohne Abschlussbehauptung; `rekonstruiereLauf` rechnet die vollständige Telemetrie nach. Ursache dreiteilig belegt (`Promise.race` beendet nichts · innere Deadline ist ein START-Gatter · `finally` trägt bei Prozessabbruch nicht) | **Nur noch Merge + rein lesender Production-Nachweis** nach [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) §11.8: mind. 24 h reguläre Kadenz, darunter **mindestens ein Lauf mit äußerem Zeitlimit**. Repository-Umsetzung vollständig: Suite **285/285**, Mutationsprobe **15/15 rot**, Offline-Suite ohne Delta zur Basislinie, Smoke **32/32**. Keine Migration, keine Konfigurationsänderung | OP-25 (R-6) |
-| **Faire Mandantenreihenfolge der Mehrmandanten-Crons** (Rotation nach ältestem Versuch, persistent, ohne Migration; Garantie ceil(n/k) für k ≥ 1, Beobachtbarkeit je Mandat) | **Nur noch Merge + regulärer Production-Lauf**: erwartet werden über die vier Läufe (04/10/16/20 UTC) alle aktiven Mandate mindestens einmal begonnen, belegt über die `[cron/*/fairness]`-Zeilen. Repository-Umsetzung vollständig: Suite **176/176**, Mutationsprobe **9/9 rot**, **CI-Gate grün** (183/183 + 32/32, Lauf `30499103799`), Überlappungsschutz und Persistenzhärtung belegt | OP-25 |
+| **Zuverlässige Cron-Telemetrie bei Zeitüberschreitung (R-6)** — Laufdatensatz je Cron in der bestehenden Fairnesszeile, bei jedem Mandatsübergang fortgeschrieben; äußerer Timeout-Vermerk ohne Abschlussbehauptung; `rekonstruiereLauf` rechnet die vollständige Telemetrie nach. Ursache dreiteilig belegt (`Promise.race` beendet nichts · innere Deadline ist ein START-Gatter · `finally` trägt bei Prozessabbruch nicht) | **Nur noch der rein lesende Production-Nachweis** — der Merge ist erfolgt (**PR #208 gemergt 2026-08-02, 09:42 UTC**, `26dc9b1`). Gefordert nach [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) §11.8: mind. 24 h reguläre Kadenz, darunter **mindestens ein Lauf mit äußerem Zeitlimit**; zusätzlich §13.6 (F-CAS). **Der frühere §11.8-Nachweis vom 2026-07-31 ist GESCHEITERT und muss neu laufen** (F-CAS). Damit ist der Production-Nachweis nach PR #208 **offen** und kann frühestens ab dem 2026-08-03 vollständig belegt sein — vorher fehlt schlicht die geforderte 24-h-Kadenz nach dem Merge. Repository-Umsetzung vollständig: Suite **285/285**, Mutationsprobe **15/15 rot**, Offline-Suite ohne Delta zur Basislinie, Smoke **32/32**. Keine Migration, keine Konfigurationsänderung | OP-25 (R-6) |
+| **Faire Mandantenreihenfolge der Mehrmandanten-Crons** (Rotation nach ältestem Versuch, persistent, ohne Migration; Garantie ceil(n/k) für k ≥ 1, Beobachtbarkeit je Mandat) | **Nur noch der reguläre Production-Lauf** — der Code liegt seit PR #208 (2026-08-02) vollständig auf `main`: erwartet werden über die vier Läufe (04/10/16/20 UTC) alle aktiven Mandate mindestens einmal begonnen, belegt über die `[cron/*/fairness]`-Zeilen. Repository-Umsetzung vollständig: Suite **176/176**, Mutationsprobe **9/9 rot**, **CI-Gate grün** (183/183 + 32/32, Lauf `30499103799`), Überlappungsschutz und Persistenzhärtung belegt | OP-25 |
 | Google-News-Härtung (Gate/Retry/Breaker/Cooldown, Default AN) | Production-Beweislauf unter echter Drosselung | OP-15 |
 | Monitoring-Zweitkanal + Meta-Heartbeat (Sender gehärtet) | `HELMUT_MONITORING_WEBHOOK_URL` unset → No-Op, kein `webhook.sent`-Beleg | OP-07 |
 | `source_id`-Dubletten-Fix | Live-Nachweis „Telemetriezeilen = distinct `source_id`" | OP-19 |
@@ -3195,7 +3244,23 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
    Branch Protection; Aktivierungsstand ist nicht verifiziert (OP-11,
    `betrieb/branch-protection.md`).
 
-## 8 · Offene Pull Requests (Stand 2026-07-28)
+## 8 · Offene Pull Requests
+
+**Stand 2026-08-02, gegen GitHub geprüft: es gibt genau EINEN offenen Pull Request.**
+
+| PR | Inhalt | Zustand / Empfehlung |
+|---|---|---|
+| **#203** | „Punkt 25B ERFÜLLT — Punkt 25 vollständig abgeschlossen (reine Doku)", Branch `claude/punkt-25b-abschluss`, ein Commit `827e67f`, Basis `255df01` | **offen, aber inhaltlich vollständig überholt — Empfehlung: schließen, nicht mergen.** Derselbe Nachweis wurde 13 Minuten nach der Eröffnung von #203 durch **PR #202** (gemergt 2026-07-31, 16:41 UTC) in `main` gebracht, in einer **späteren und genaueren** Fassung: `punkt-25-e2e-nachweis.md` §6d auf `main` belegt **23 von 23 Prüfungen** mit dem lesenden Werkzeug [`../scripts/punkt25b-production-nachweis.js`](../scripts/punkt25b-production-nachweis.js), #203 nennt 22 Prüfpunkte ohne Werkzeugbeleg. Die Checklistenänderung von #203 (Zeile 25 → ✅, Stand 14 ✅ · 12 ⏳ · 4 ☐) steht **wortgleich im Ergebnis** bereits auf `main`. Zwei Aussagen von #203 wären sogar eine **Verschlechterung**: die Zahl „Gesamtbestand falscher Ausschussbelege **5 → 0**" ist auf `main` ausdrücklich als überholt korrigiert (zum Messzeitpunkt 11:05 UTC waren es nur noch 2), und #203 kennt die Nebenbeobachtung **B25-3** nicht. Zusätzlich würde #203 den gesamten aktuellen Kopf von `CURRENT_STATE.md` (Sprints zu PR #204…#209) durch den Stand vom 31.07. ersetzen — `mergeable_state: dirty`. **Nichts an #203 ist einzigartig und notwendig.** |
+
+Alle übrigen in diesem Abschnitt historisch geführten Pull Requests sind **geschlossen oder
+gemergt** — darunter #204 (Mailpit), #205 (Resend-Transport), #206 (Timing-Seitenkanal),
+#207 (HTML-Mails), #208 (Cron-Fairness F-CAS) und #209 (Kalender-Machbarkeit 1), alle
+zwischen 2026-08-01 und 2026-08-02 gemergt. Die frühere Aufstellung „Stand 2026-07-28" mit
+zehn offenen PRs (#184, #178, #177, #175, #155, #154, #132, #117, #115, #112, #111, #88,
+#70, #8) war zum 2026-08-02 in **keinem** Punkt mehr aktuell und ist unten nur noch als
+**historische Tabelle** erhalten.
+
+### 8a · Historische Tabelle (Stand 2026-07-28 — **nicht als aktueller Stand zitieren**)
 
 > **Konfliktprüfung für Roadmap-Punkt 23 (Sprint 23A, 2026-07-28):** alle 10 offenen PRs geprüft,
 > **keiner angefasst**. Fachlich relevant ist nur **#112** (Onboarding verändert, wie
@@ -3586,8 +3651,15 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
 
 ## 12 · Letzter Sprintausgang
 
+> **Hinweis 2026-08-02:** Die Sprints vom 2026-08-01 und 2026-08-02 (PR #204 Mailpit · #205
+> Resend-Transport · #206 Timing-Seitenkanal · #207 HTML-Mails · #208 Cron-Fairness F-CAS ·
+> #209 Kalender-Machbarkeit 1) sind **im Kopf dieses Dokuments** ausführlich dokumentiert und
+> hier bewusst nicht doppelt geführt (Token-Regel §7.7: keine zweite Zusammenfassung derselben
+> Information). Die Tabelle unten beginnt deshalb erst beim 2026-07-31.
+
 | Sprint | Datum | Zustand |
 |---|---|---|
+| **Sprint „PR 203 bereinigen und Projektstatus konsolidieren"** | 2026-08-02 | **Erfolgreich abgeschlossen (reine Doku, kein Code, kein Production-Zugriff, kein Merge).** PR #203 ist **vollständig überholt** — derselbe 25B-Nachweis liegt seit PR #202 (gemergt 2026-07-31, 16:41 UTC) in genauerer Fassung auf `main`; zwei Inhalte von #203 wären eine Verschlechterung (überholte Zahl „5 → 0", fehlende Nebenbeobachtung B25-3). **Empfehlung: #203 schließen**, sein Branch wurde nicht angefasst. Bereinigt: §8 (zehn angeblich offene PRs → tatsächlich nur #203), §3 (PR #208 gemergt), die Kopfeinträge zu PR #204…#209 („offen"/„Draft"/„nicht gemergt") und der Kopf von `roadmap/phase_1_checkliste.md` („PR #185 offen", `main`-Stand `d9006c1`). **Der Production-Nachweis nach PR #208 bleibt offen** und ist vor dem 2026-08-03 nicht erbringbar (§11.8: 24 h Kadenz nach dem Merge; §13.6 Nr. 4: Lauf mit äußerem Zeitlimit). Kein manueller Lauf, kein Trigger; Berlin/Brandenburg/M8 unverändert AUS. Offline-Suite **186/200** (14 umgebungsbedingte Basislinien-Fehlschläge), Browser-Smoke **32/32**. Branch `claude/pr-203-cleanup-status-et8vlb` |
 | **Sprint R-6 — Zuverlässige Cron-Telemetrie bei Zeitüberschreitung** | 2026-07-31 | **Teilweise abgeschlossen (Ursache belegt, Behebung offline bewiesen und mutationsgesichert; Production-Nachweis offen, weil er einen Merge voraussetzt).** **Ursache in drei Teilen, im Code belegt:** (1) `withTimeout` ist ein `Promise.race` und **beendet die ursprüngliche Promise nicht** — greift das äußere Zeitlimit (280 000 ms), kehrt `runCronForTenants` nie zurück und die `[cron/*/fairness]`-Zeile entsteht nie; (2) die 10 s Differenz zur inneren Deadline (270 000 ms) reichen **prinzipiell** nicht, weil die innere Deadline ein **START-Gatter** ist (`if (now() + reserveMs > deadline) … continue`) und ein einmal begonnenes Mandat sie beliebig weit überzieht — offline gemessen **> 400 s**; (3) ein `finally` allein wäre keine Lösung, weil bei einem Vercel-Prozessabbruch die Ereignisschleife nicht weiterläuft. **Behebung:** Laufdatensatz je Cron (`laeufe[<cron>]`) in derselben `helmut_store`-Zeile `<storeId>-cron-fairness` — Laufbeginn (Planung, aktive Zahl, blockierte Mandate) vor dem ersten Mandat, jeder Mandatsausgang huckepack auf Claim/Abschluss (**0 zusätzliches IO**), Abschluss am Ende; verweigerte Sperre und fremder Halter erhalten einen eigenen Ausgang, der die Buchführung je Mandat **nicht** anfasst (kein erfundener Erfolg, kein erfundener Fehler). Der äußere Catch der drei betroffenen Routen vermerkt **nur die Tatsache** `aeusseresTimeoutAt` und hebt den Status auf `abgebrochen` **nur**, solange er `laufend` ist — ein später eintreffender echter Abschluss gewinnt (monotone Rangfolge). `rekonstruiereLauf` rechnet die vollständige Telemetrie aus den Zwischenständen nach; Rekonstruktion und gemeldete Telemetrie werden im Test **gegeneinander** geprüft. **Warum ein Prozessabbruch keinen erfundenen Erfolg erzeugen kann:** ein Abschluss entsteht nur durch einen Schreibvorgang; bleibt er aus, bleibt der Datensatz `laufend`, und ein veraltetes `laufend` **ist** die Abbruchmeldung. **Bewusst nicht getan:** `process_runs` als Ablage (relational flaggegated und damit freigabepflichtig, Blob-Rückfallpfad ist genau der W-2-Last-Write-Wins-Pfad mit 1,24 MB je Schreibvorgang), zweites Telemetriesystem, neue Tabelle, Anhebung irgendeiner Zeitgrenze, Kapazitätsarbeit. **Preis:** `FAIRNESS_VERSION` 1 → 2; im Rolloutfenster kann eine Vorgänger-Instanz den Schreibvorgang verweigern (`zustand-neuere-version-2`) → getesteter Fail-safe-Pfad, laut statt still. **Tests:** cron-fairness **285/285** (+84 gegenüber 201/201), Mutationsprobe **15/15 rot** (5 neu), p29-Vertrag **80/80**, p29-Mutationsprobe **7/7 rot**, Offline-Suite **177/191** mit identischer Basislinie und Fehlschlagliste wie `main` `bd7c889` (nach dem Rebase erneut gemessen), Browser-/Mobile-Smoke **32/32**. **0 KI, 0,00 USD**, keine Migration, keine Production-Änderung, kein Merge, kein Deployment. **Der Kapazitätsblocker (OP-25 §10.5/§10.7) bleibt offen** und war ausdrücklich nicht Gegenstand. Branch `claude/cron-telemetry-timeout-sg8emb`. Kanonisch: [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) §11. |
 | **Sprint OP-25, Vorprüfung Mergefreigabe: verweigerte Mandatssperre wurde als Erfolg verbucht** | 2026-07-30 | **Teilweise abgeschlossen (Fehler gefunden und behoben, Repository-Umsetzung vollständig; Production-Nachweis offen).** Die Betreiberfrage nach der Reihenfolge „Fairnessvermerk vor Mandatslock" traf einen **realen Defekt**. Ablauf: der Vermerk entsteht vor der Verarbeitung, die Sperre `crawl-<mandat>` erst in `runSourceCrawl` — und die **wirft** bei verweigerter Sperre nicht, sondern liefert `{ skipped: true, reason: "already running" }`. Die Schleife wertete das als Erfolg und schrieb einen **erfundenen Erfolg** (Erfolgszeitpunkt, Erfolgszähler +1, Fehlerserie 0), zählte das Mandat in `begonnen` und damit in `k`, wodurch die gemeldete Obergrenze `ceil(n/k)` **zu optimistisch** wurde und `fairness.erfolgreich` ein nie angefasstes Mandat nannte. **Korrektur einer früheren Aussage dieses Sprints:** `fremderHalter` deckt diesen Pfad **nicht** ab — claimt der andere Lauf erst nach der Planung dieses Laufs, ist der eigene Vermerk der jüngere, führt die Verschmelzung, und die Prüfung greift nicht. Nur die Sperre fängt es, und deren Rückgabewert war falsch verbucht. **Fix, ohne die Sperre anzufassen:** `sperreVerweigert()` erkennt genau die Zeichenkette `already running` (Vertragstest gegen `scheduler.js`); das Mandat wird aus `begonnen` zurückgenommen, es gibt **keinen** Abschluss-Schreibvorgang (kein erfundener Erfolg, kein erfundener Fehler), und der Fall ist eindeutig beobachtbar in `fairness.lockVerweigert` (Teilmenge von `laeuftBereits`) sowie in der Protokollzeile als `sperreVerweigert=…`. Der bereits geschriebene Versuchsvermerk bleibt bewusst `laufend` — monotone Verschmelzung lässt ihn nicht zurücknehmen, er sperrt das Mandat für weitere überlappende Läufe und läuft nach 30 min ab; danach steht es wieder vorn, weil sein Versuchszeitpunkt der älteste ist (getestet). Andere `skipped`-Gründe (`profil-deaktiviert`) bleiben normale Versuche. **Zusätzlich belegt:** `HELMUT_CRON_FAIRNESS` ist ohne gesetzte Variable **aktiv**; nur `off`/`false`/`0` schalten ab, jeder andere Wert lässt es an; der Schalter steht **nicht** in der Datei-Flag-Allowlist, der Rückweg läuft nur über die Vercel-Env; der Merge verändert damit **unmittelbar** das Production-Verhalten (neue Reihenfolge + erste Schreibvorgänge in `main-cron-fairness`) — und das ist jetzt durch sieben eigene Prüfungen abgedeckt (§19e). **Tests:** Suite **201/201** (von 176), **Mutationsprobe 10 von 10 rot**, Offline-Suite **169/183** gegen Basislinie `main` **168/182**, Browser-Smoke **32/32**. Ein Einzellauf zeigte `werkzeug-lesefehler-test.js` rot (Parallellast-Flake: allein 43/0, unter dem Runner 3× grün, Wiederholung der vollen Suite wieder auf der Basislinie). **Keine Änderung an der Sperre, Cron-Zeiten, Budgets, Quellen, M8, Berlin, Brandenburg; kein Production-Zugriff, 0 KI-Aufrufe.** Kanonisch: [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) §3a.1 |
 | **Sprint OP-25, Abschlussdurchgang: CI grün, Garantie präzisiert, Überlappung bewiesen, Persistenz gehärtet** | 2026-07-30 | **Teilweise abgeschlossen (Repository-Umsetzung vollständig und CI-belegt; nur der reguläre Production-Nachweis fehlt, und der kann erst nach dem Merge entstehen).** **CI-Gate zweimal grün** — beide Pflicht-Checks auf `eeaa363` (Lauf `30499103799`) und nach der Härtung auf `2dc4154` (Lauf `30516881711`), jeweils Offline-Suite **183/183** und Browser-/Mobile-Smoke **32/32**. Drei Nachprüfungen, jede mit echter Nachbesserung: **(1) `k = 0` ist jetzt ein benannter Zustand.** `ceil(n/k)` gilt nur für Läufe mit `k ≥ 1`; ein Lauf, dessen Restlaufzeit nicht einmal für das erste Mandat reicht, trägt keine Fortschrittsgarantie und weist das aus (`kapazitaet`, `fortschrittsgarantie`, `ohneFortschritt`, `obergrenzeLaeufe: null` statt `Infinity`, `kapazitaet=0 obergrenzeLaeufe=keine-garantie` im Protokoll, wörtlicher `systemError`). Er schreibt **nichts**, die Warteschlange bleibt unverändert, der nächste Lauf holt genau dort nach — im selben Zeitfenster deterministisch getestet (§12b, 8 Prüfungen). **0 aktive Mandate** sind ausdrücklich **kein** `ohneFortschritt`. **(2) Überlappungsschutz bewiesen, ein falsches Dokument korrigiert.** Der Watchdog ruft `/api/cron/pipeline` außerplanmäßig (`workflow_dispatch`), der Pfad existiert real. Sperre `crawl-<mandat>`: erste Anweisung in `runSourceCrawl`, TTL 15 min > Funktionslimit 300 s, deckt den gesamten Mandatslauf, verweigert dem zweiten Lauf die Verarbeitung, bleibt bei Prozessabbruch bis zum Ablauf stehen, Freigabe token-gebunden. **`env-inventar.md` behauptete „Migration `20260719` NICHT auf Prod angewendet" und „Default fail-open" — beides falsch**; rein lesend gegengeprüft (0 Schreibzugriffe): beide Lock-Funktionen und `pipeline_locks.token` existieren, und die Zeilen des regulären 04:00-Crawls vom 2026-07-30 tragen einen **Token**, den ausschließlich die atomare RPC schreibt. `HELMUT_ATOMIC_LOCK` ist in Production **AN** → die Sperre ist atomar und fail-closed, **ein atomarer Mandatsclaim in der Fairnessschicht ist nicht erforderlich**, keine Queue, keine Parallelisierung, keine Architekturänderung. Inventar korrigiert (widersprach `datenmotor-restliste.md` FT2-2 und `CLAUDE.md` §5, die recht hatten). **Frischer OP-25-Beleg aus derselben Abfrage:** der 04:05:04-Lauf vom 2026-07-30 gab seine Sperre **nie** frei — Prozessende am Zeitlimit beim **zweiten** Mandat der alphabetischen Reihenfolge, gleicher Mandant und gleiches Muster wie am 29.07.; der Fehler trat bis zuletzt auf. **(3) Persistenz gehärtet — drei Schranken, jede getestet.** Lesefehler → **kein** Schreibvorgang (ein Patch trägt nur ein Mandat und hätte alle anderen Einträge gelöscht); **neuere** Schemaversion → kein Schreibvorgang (Rollout mit zwei Codeständen; das Feld `version` wird jetzt ausgewertet statt nur geschrieben); Versuchsvermerk wird nach dem Schreiben **gegengelesen** und begrenzt wiederholt (Default 3, danach ehrlich `ok:false, konflikt:true`) — gewinnt dabei ein neuerer fremder Versuch, ist nichts verloren und dieser Lauf lässt das Mandat aus. Der **Abschluss** wird bewusst nicht gegengelesen (er läuft über die Frist ab): ein Lesen, ein Schreiben, damit die Buchführung das Zeitbudget nicht auffrisst. Ein **korrupter** Eintrag (Nicht-Objekt, unbekannter Status, unlesbares Datum, negative Zähler, fremde Felder) blockiert niemanden: er wird verworfen, das Mandat gilt als „ohne Versuch", wird zuerst verarbeitet und heilt sich selbst; alle übrigen bleiben planbar. Ein gestörter Zustand erzeugt weiterhin einen eigenen `systemError` plus `fairnessGestoert: true` — `ok` bleibt bewusst `true`, weil die Verarbeitung stattfand und ein `false` einen erfolgreichen Crawl als Ausfall melden und den Watchdog fehlalarmieren würde. **Tests:** Suite **176/176** (von 118 im 1. Durchgang), **Mutationsprobe 9 von 9 rot** (neu: Wettlauf-Verlierer verarbeitet trotzdem · Lauf ohne Kapazität behauptet eine Garantie), Offline-Suite lokal **169/183** gegen Basislinie `main` **168/182** (dieselben 14 umgebungsbedingten Fehlschläge, kein Regress), Browser-Smoke **32/32**, Integrationsbeweis erneut gegen den echten Cron-Pfad. **Keine Migration, keine Cron-/Budget-/Flagänderung, keine Production-Schreibzugriffe, 0 KI-Aufrufe, 0,00 USD; M8, Berlin und Brandenburg unverändert deaktiviert, aktive Bundestagsquellen unverändert.** **Warum nicht „erfolgreich abgeschlossen":** der reguläre Production-Nachweis fehlt und kann erst nach dem Merge entstehen; die Roadmap trennt Implementierung und Nachweis, die Repository-Umsetzung selbst ist vollständig. Branch `claude/helmut-roadmap-25-cron-fairness-g8qjcx`, **PR #179**. **Nächster Schritt:** Merge-Freigabe, dann die vier regulären Läufe beobachten |

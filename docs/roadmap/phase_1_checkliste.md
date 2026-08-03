@@ -1,16 +1,35 @@
 # Phase 1 — Checkliste (operative Wahrheit)
 
-**Letzte Prüfung:** 2026-07-30 (Punkt 29 **geschnitten in 29A/29B**, 29A — deterministischer
+**Letzte Prüfung:** 2026-08-02 (**Punkt 25 vollständig abgeschlossen — 25B ERFÜLLT.** Der Nachweis
+ist der reguläre `crawl`-Cron-Lauf des Pilotmandanten am **2026-07-31, 16:04:28 UTC**
+(`vollstaendig`, `wiederholungen=0` = echte neue Generation, 20 veröffentlicht), **23 von 23
+Prüfungen grün** mit dem rein lesenden Werkzeug
+[`../../scripts/punkt25b-production-nachweis.js`](../../scripts/punkt25b-production-nachweis.js);
+Zeile 25 steht auf ✅, kanonisch [`punkt-25-e2e-nachweis.md`](punkt-25-e2e-nachweis.md) §6d.
+Die weiter unten stehende Angabe **„PR #185 offen, nicht gemergt"** ist damit **überholt** —
+#185 ist als `cf290ab` gemergt und ausgerollt. Ebenfalls überholt: „25B wartet auf den ersten
+regulären Production-Lauf". **Unverändert offen bleibt der Production-Nachweis nach PR #208**
+(Cron-Fairness/F-CAS, gemergt 2026-08-02, 09:42 UTC) — er verlangt nach
+[`../betrieb/cron-fairness.md`](../betrieb/cron-fairness.md) §11.8 mind. 24 h reguläre Kadenz
+**nach** dem Merge und nach §13.6 zusätzlich einen Lauf mit äußerem Zeitlimit; er berührt
+**keine** Zeile dieser Checkliste, sondern OP-25 der Restliste. **Kalender-Machbarkeit 1**
+(PR #209, gemergt 2026-08-02) ist ein **Machbarkeitsnachweis, keine Produktfunktion** — es gibt
+keine aktive Terminfunktion und keine Checklistenzeile dafür. · davor 2026-07-30: Punkt 29
+**geschnitten in 29A/29B**, 29A — deterministischer
 Belastungs- und Fehlervertrag — **erfüllt** (Vertrag 79/79, Mutationsprobe 12/12 rot, Bestandsbelege
 wiederverwendet); dabei **vier echte Produktionsfehler gefunden, nicht behoben** (P29-1…P29-4,
 deterministisch reproduziert in `scripts/punkt29-befundproben.js`, Fix = eigene freigabepflichtige
 Sprints); 29B — rein lesender Production-Nachweis an regulären Läufen — offen; kanonisch:
 [`punkt-29-fehlervertrag.md`](punkt-29-fehlervertrag.md); davor Punkt 25 **geschnitten in 25A/25B**, 25A — deterministischer
 Repository-E2E-Vertrag für den Pilotmandanten (Bund) — **erfüllt** (96/96, Mutationsprobe 10/10 rot);
-25B wartet auf den ersten regulären Production-Lauf nach dem Deployment von **PR #185, inzwischen
-GEMERGT** (`cf290ab`, 13:21:45 UTC — die Angabe „offen" weiter unten ist vom Vortag); die rein lesende
-Wiederholung der PR-184-Messung liefert bereits **qualifizierte falsche Belege NACHHER = 0**; davor
-Punkt 27 **geschnitten in 27A/27B**, 27A — deterministischer Repository-E2E-Vertrag für ein Brandenburger Profil — **erfolgreich abgeschlossen**: der im Vertragssprint gefundene reale Matchingfehler **Befund 27A-1** ist behoben (Ausschussbeleg nur bei passendem institutionellen Zuständigkeitsraum) und als Regression im Vertrag verankert; der ebenenübergreifende Restfall **Befund 27A-2** ist in Production gemessen (PR #184) und **im Fix-Sprint vom 2026-07-30 behoben** — die Zuständigkeitsprüfung ist jetzt **symmetrisch** (Bundesmandat × Landes-/Kommunalvorgang → kein Ausschussbeleg), gemessene Wirkung 14 → 0 falsche Belege, **PR #185 offen, nicht gemergt, Production-Abnahme steht aus**; **Punkt 27 gesamt bleibt ⏳**, weil 27B durch Punkt 15 blockiert ist; davor Punkt 26 **geschnitten in 26A/26B**, 26A — deterministischer Repository-E2E-Vertrag für ein Berliner Profil — erfüllt; davor Punkt 24 **abgeschlossen**: Landtags-Parser BE/BB — Dokumentklassen belegt, Berliner Vorgangsstruktur nachgewiesen, Identitätskollision behoben, Gate-Änderung begrenzt; davor Punkt 23: Sprint 23C-2A gemergt, ausgerollt und in Production nachgewiesen — Befund M-7 behoben; davor 23C, 23B-1, Punkte 20, 21, 22) · **`main`:** `d9006c1` (Merge #182) ·
+25B **ist am 2026-07-31 erfüllt** (siehe oben; die Formulierung „25B wartet auf den ersten regulären
+Production-Lauf nach dem Deployment von PR #185" war der Stand vom 2026-07-30). **PR #185 ist
+gemergt** (`cf290ab`, 13:21:45 UTC); die rein lesende
+Wiederholung der PR-184-Messung lieferte bereits **qualifizierte falsche Belege NACHHER = 0**; davor
+Punkt 27 **geschnitten in 27A/27B**, 27A — deterministischer Repository-E2E-Vertrag für ein Brandenburger Profil — **erfolgreich abgeschlossen**: der im Vertragssprint gefundene reale Matchingfehler **Befund 27A-1** ist behoben (Ausschussbeleg nur bei passendem institutionellen Zuständigkeitsraum) und als Regression im Vertrag verankert; der ebenenübergreifende Restfall **Befund 27A-2** ist in Production gemessen (PR #184) und **im Fix-Sprint vom 2026-07-30 behoben** — die Zuständigkeitsprüfung ist jetzt **symmetrisch** (Bundesmandat × Landes-/Kommunalvorgang → kein Ausschussbeleg), gemessene Wirkung 14 → 0 falsche Belege, **PR #185 gemergt** (`cf290ab`, ausgerollt; die Production-Abnahme ist über den 25B-Nachweis vom
+2026-07-31 erbracht — die frühere Angabe „offen, nicht gemergt" war der Stand vom 2026-07-30);
+**Punkt 27 gesamt bleibt ⏳**, weil 27B durch Punkt 15 blockiert ist; davor Punkt 26 **geschnitten in 26A/26B**, 26A — deterministischer Repository-E2E-Vertrag für ein Berliner Profil — erfüllt; davor Punkt 24 **abgeschlossen**: Landtags-Parser BE/BB — Dokumentklassen belegt, Berliner Vorgangsstruktur nachgewiesen, Identitätskollision behoben, Gate-Änderung begrenzt; davor Punkt 23: Sprint 23C-2A gemergt, ausgerollt und in Production nachgewiesen — Befund M-7 behoben; davor 23C, 23B-1, Punkte 20, 21, 22) · **`main`:** `645ce55` (Merge #209, 2026-08-02; der frühere
+Eintrag `d9006c1` / Merge #182 war der Stand vom 2026-07-30) ·
 **Prüfer:** Sprint 22A „Embedding-Architektur"; davor 2026-07-27 (nur Punkt 19), Sprint 19
 „Politische Ebene dauerhaft speichern"; davor 2026-07-26, `9f1def5` (Merge #130), Punkt 13
 
