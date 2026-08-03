@@ -48,6 +48,10 @@ waren nie das Problem** und blieben auch unter 24-facher Überbuchung weit im Ba
 **Tests:** `node scripts/run-offline-tests.js` **186/200** — **exakt die bekannte Basislinie**, in
 derselben Sitzung auf unverändertem `origin/main` gegengemessen (ebenfalls 186/200, identische
 14er-Fehlschlagliste); `node scripts/browser-smoke-test.js` **32/32**. Laufzeit der Suite 15 s → ~21 s.
+**CI beim ERSTEN regulären Durchlauf vollständig grün, ohne Wiederholung** (Lauf `30810771618`,
+`run_attempt: 1`): `Syntax + Offline-Suiten` **200/200 in 57 s**, `Browser-/Mobile-Smoke (Chromium)`
+grün — beide Pflicht-Checks. (Dass CI 200/200 zeigt und diese Sitzung 186/200, ist erwartbar: die
+14 Fehlschläge sind sandbox-eigene Netz-/Proxy-Effekte, keine Repo-Fehler.)
 **Neue Beobachtung, benannt statt verschwiegen:** `werkzeug-lesefehler-test.js` flackert
 **selbst** (in einem Stapel 1 von 3 Einzelläufen rot, danach 6 von 6 grün; nicht in der Basislinie,
 von diesem Sprint nicht berührt). **Nicht behoben** — der Sprint sollte nicht eigenmächtig erweitert
