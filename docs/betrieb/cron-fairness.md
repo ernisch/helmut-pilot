@@ -897,7 +897,12 @@ machen.
 > die einzige Zeitplanquelle. Der Lauf war regulär; an den Schlussfolgerungen von §10 ändert
 > das nichts, weil er dort ohnehin nur als Zustandswirkung ausgewiesen wurde.
 
-### 14.3 · Gewertete Läufe (alle sieben vollständig abgeschlossen)
+### 14.3 · Gewertete Läufe (alle sieben beendet, keiner läuft noch)
+
+**„Beendet" heißt hier: die HTTP-Anfrage ist zurück und der Laufzustand ist eindeutig
+ableitbar** — nicht, dass alle Mandate verarbeitet wurden. Vier der sieben Läufe endeten im
+äußeren Zeitlimit und stehen deshalb auf `abgebrochen`; kein Lauf steht als veraltetes
+`laufend` da (§11.8 Prüfpunkt 6).
 
 | # | Cron | Start UTC | Auslöser | Depl. | n | **k** | Ausgang des Laufs | Telemetriezeile |
 |---|---|---|---|---|---|---|---|---|
@@ -913,6 +918,13 @@ Die **fehlende** Telemetriezeile bei 2, 3, 4 und 6 ist **kein Befund**, sondern 
 dokumentierte Verhalten aus R-6 (§10.4): kehrt `runCronForTenants` wegen des äußeren
 Zeitlimits nie zurück, entsteht keine Zeile. Genau dafür wurde der Laufdatensatz gebaut — und
 genau dort greift Prüfpunkt 2 aus §11.8 (§14.4).
+
+**Herkunft der `k`-Werte, ehrlich getrennt:** für die Läufe 1, 4, 5, 6 und 7 stammt `k` aus
+einer Telemetriezeile **oder** aus dem noch vorhandenen Laufdatensatz. Für die Läufe 2 und 3
+ist `k` aus den **Mandatseinträgen** (`crons[<cron>][<mandat>]` mit der Laufkennung genau
+dieses Laufs) rekonstruiert — ihre Laufdatensätze wurden inzwischen planmäßig von den
+jüngeren Läufen desselben Crons abgelöst (§11.5: genau ein Datensatz je Cron). Das ist eine
+Rekonstruktion aus Primärdaten, keine Schätzung.
 
 Laufkennungen: `cron-lage-check-20260802100002-2ptvy` · `cron-pipeline-20260802160043-9jyct` ·
 `cron-crawl-20260802200047-9l71q` · `cron-crawl-20260803040037-apmz3` ·
