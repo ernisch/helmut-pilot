@@ -100,7 +100,12 @@ Fehler über einen **soeben geschlossenen** lokalen Port. Scheitert die Verbindu
 belasteten Runner stattdessen an einem **Verbindungs-Timeout**, bleibt `Exit 6` richtig (er gilt
 für jeden Lesefehler — dieser Prüfpunkt war denn auch **grün**), aber die Klassenprüfung greift
 daneben. Das passt auf das beobachtete Bild, **reproduziert wurde es hier aber nicht**. **CI wurde
-NICHT wiederholt, um Grün zu erzeugen.** Fachliche Wirkung: **keine** — die Suite prüft die
+NICHT wiederholt, um Grün zu erzeugen** — der rote Lauf steht unverändert in der PR-Historie. Der
+**zweite** CI-Lauf entstand durch den Commit, der genau diesen roten Befund dokumentiert
+(`ce3a062`, ausschließlich `docs/CURRENT_STATE.md`): **beide Pflicht-Checks grün, Offline-Suiten
+200/200 in 60 s**, `werkzeug-lesefehler-test.js` **PASS** in 1 587 ms (Lauf `30815537152`). **Damit
+ist das Flackern nicht mehr Hypothese, sondern belegt:** an derselben Suite hat sich zwischen den
+beiden Läufen **keine Zeile** geändert — rot, dann grün. Fachliche Wirkung: **keine** — die Suite prüft die
 Fehlerklassenmeldung des Nachholwerkzeugs, nicht K2.1, nicht die Fairness und nichts
 Produktionsrelevantes an diesem PR. **Empfohlene Folge:** die Stabilisierung dieser Suite als
 eigener kleiner Sprint (deterministische Fehlerklasse statt Portschließungs-Rennen), analog zum
