@@ -1,9 +1,12 @@
 # OP-25 K2.1 — Globaler Abruf, kontextgebundene Vorgangsbildung
 
-**Kanonische Dokumentation des K2.1-Schattenpfads.** Stand: **2026-07-31**.
-Zustand: **im Repository umgesetzt, offline bewiesen, mutationsgesichert, in Production
-NICHT aktiviert.** **PR #201**, beide Pflicht-Checks grün (Lauf `30638964148`,
+**Kanonische Dokumentation des K2.1-Schattenpfads.** Stand: **2026-08-03** (§7.1/§7.3:
+Aktivierungsprüfung ergänzt). Zustand: **gemergt und in Production deployt, offline bewiesen,
+mutationsgesichert — das Flag ist in Production NICHT gesetzt, der Pfad also ohne Wirkung.**
+**PR #201** gemergt (`255df01`), beide Pflicht-Checks grün (Lauf `30638964148`,
 `Syntax + Offline-Suiten` **194/194 Suiten**, `Browser-/Mobile-Smoke (Chromium)`).
+**Aktivierungsprüfung 2026-08-03: 11 von 13 Gates erfüllt, nicht aktiviert — der Vercel-
+Schreibweg fehlt in einer Agenten-Sitzung (§7.3).**
 
 > **Flaggrenze, verbindlich:** `HELMUT_CRON_GLOBALABRUF` ist **Default AUS**. Ohne
 > ausdrücklich gesetzten Wert (`on`/`true`/`1`/`an`) läuft ausschließlich der bisherige Pfad.
@@ -272,18 +275,19 @@ verglichen werden): **alt 66 670 ms · K1 7 110 ms · K2.1 7 110 ms**.
 
 ## 7 · Aktivierungsvoraussetzungen und Rückbaupfad
 
-### 7.1 Voraussetzungen für eine Aktivierung (alle offen)
+### 7.1 Voraussetzungen für eine Aktivierung
 
-1. Merge des PR (= Production-Deployment) durch den Betreiber.
-2. `HELMUT_CRON_GLOBALABRUF=on` **in der Vercel-Env** setzen — nicht in `helmut-flags.json`
-   (dort wirkt es nicht) und nicht im Repo.
-3. Sicherstellen, dass `HELMUT_CRON_GLOBALPHASE` **nicht** gesetzt ist (sonst greift die
-   Widerspruchsregel und es läuft der Altpfad).
-4. Rein lesender Production-Nachweis über mindestens 24 h: `mode: "global"`-Laufdatensatz
-   vorhanden, `datenstand.status = abgeschlossen`, je Mandat ein `mode: "mandat"`-Datensatz,
-   `kontexte` plausibel (≈ 1 + Zahl der Mandate), keine `kontextvertrag`-Fehler.
-5. Bewertung, ob die verbleibenden Bestandsbefunde (F10/Z2, Formularvokabular) einen eigenen
-   Sprint auslösen sollen.
+**Stand 2026-08-03 (Aktivierungssprint, rein lesend geprüft):** Punkt 1 ist **erledigt**,
+Punkt 3 ist **erfüllt und belegt**, Punkt 2 ist der **einzige** verbleibende Handgriff — und
+genau er ist aus einer Agenten-Sitzung nicht ausführbar (§7.3).
+
+| # | Voraussetzung | Stand |
+|---|---|---|
+| 1 | Merge des PR (= Production-Deployment) durch den Betreiber | **erledigt** — PR #201 gemergt (`255df01`); der aktuelle Production-Stand `c6f3f9f` enthält ihn und ist `READY` |
+| 2 | `HELMUT_CRON_GLOBALABRUF=on` **in der Vercel-Env** setzen — nicht in `helmut-flags.json` (dort wirkt es nicht) und nicht im Repo | **offen** — Betreiberaktion, §7.3 |
+| 3 | Sicherstellen, dass `HELMUT_CRON_GLOBALPHASE` **nicht** gesetzt ist (sonst greift die Widerspruchsregel und es läuft der Altpfad) | **erfüllt** — an der Wirkung belegt, §7.3 |
+| 4 | Rein lesender Production-Nachweis über mindestens 24 h: `mode: "global"`-Laufdatensatz vorhanden, `datenstand.status = abgeschlossen`, je Mandat ein `mode: "mandat"`-Datensatz, `kontexte` plausibel (≈ 1 + Zahl der Mandate), keine `kontextvertrag`-Fehler | **offen** — setzt Punkt 2 voraus |
+| 5 | Bewertung, ob die verbleibenden Bestandsbefunde (F10/Z2, Formularvokabular) einen eigenen Sprint auslösen sollen | **offen** — Produktentscheidung |
 
 ### 7.2 Rückbaupfad
 
@@ -296,6 +300,45 @@ verglichen werden): **alt 66 670 ms · K1 7 110 ms · K2.1 7 110 ms**.
 **Es gibt keinen Datenrückbau:** K2.1 schreibt keine neuen Tabellen, keine neuen Spalten und
 keine Migration. Alles, was entsteht, sind dieselben `raw_documents`, Wissensobjekte und
 Telemetriezeilen wie heute.
+
+### 7.3 Aktivierungsprüfung 2026-08-03 — geprüfter Ausgangszustand und der eine Blocker
+
+Vollständige Vorprüfung mit ausdrücklicher Betreiberfreigabe, **rein lesend**. **Ergebnis:
+11 von 13 Gates erfüllt, nicht aktiviert.** Sprintprotokoll und Zahlen:
+[`../CURRENT_STATE.md`](../CURRENT_STATE.md), Kopfeintrag vom 2026-08-03.
+
+**Der Blocker — der Schreibweg, nicht die Sache.** `VERCEL_TOKEN` liegt inzwischen in den
+Claude-Code-Environment-Einstellungen; die Egress-Richtlinie der Sitzung sperrt aber
+`api.vercel.com`, `vercel.com` **und** `mcp.vercel.com` (`CONNECT → HTTP 403`, vom Sitzungsproxy
+je einzeln als `connect_rejected` protokolliert). Die Vercel CLI **58.4.4** liest den Token
+selbstständig und scheitert schon beim **rein lesenden** `project ls` (`fetch failed`); der
+Vercel-MCP-Server ist authentifiziert und liefert Teams, Projekte, Deployments und Runtime-Logs,
+hat aber **kein** Environment-Werkzeug und **keinen** Redeploy. Damit ist **Stufe 1 des
+Rückbaupfads (§7.2) aus einer Sitzung nicht ausführbar** — und ohne ausführbaren Rückweg wird
+nicht aktiviert (`CLAUDE.md` §4.4). Die Bedingung ist seit 2026-07-26 bekannt und unverändert:
+*„`VERCEL_TOKEN` **und** geöffneter Egress — eines allein genügt nicht"*
+([`berlin-aktivierung.md`](berlin-aktivierung.md) §20.3, [`env-inventar.md`](env-inventar.md) §8).
+
+**Wie „beide Flaggen AUS" belegt wurde, ohne den Wert lesen zu können.** Der Flagwert bleibt aus
+einer Sitzung unlesbar; geprüft wurde deshalb die **Wirkung**: in 24 h Production-Runtime-Logs
+existiert **keine** `[cron/*/globalphase]`-Zeile (die der neue Pfad je Lauf schreibt) und **keine**
+`[cron/*/pfadwahl]`-Widerspruchszeile (die bei zwei gesetzten Flaggen entsteht), und die
+Stapelspuren der `crawl`-Läufe 04:00 und 20:00 UTC führen durch `runSourceCrawl` und `perTenant` —
+den **Altpfad**. Beides zusammen schließt jeden der drei Pfade außer `alt` aus.
+
+**Wirkungsgrenze am Code gegengeprüft:** `cronSchwererPfad` hat genau **zwei** Aufrufstellen —
+`server.js:829` (`/api/cron/crawl`) und `server.js:903` (`/api/cron/pipeline`). `morning-briefing`,
+`lage-check`, `health-report`, `lage-briefing` und `understanding` rufen sie **nicht**; sie bleiben
+von einer Aktivierung unberührt.
+
+**Sicheres Aktivierungsfenster.** Es folgt aus `vercel.json` **und** dem GitHub-Actions-Watchdog
+(`briefing-watchdog.yml`), der `pipeline` auslöst — `vercel.json` ist nicht die einzige
+Zeitplanquelle (Befund D-2, [`cron-fairness.md`](cron-fairness.md) §14.9). Der Watchdog ist auf
+05:30 UTC geplant, startete real aber zwischen **07:30 und 08:55 UTC** (zehn Läufe geprüft) und
+feuert einmal täglich. Daraus: **das täglich verlässlichste Fenster ist 09:15–15:30 UTC =
+11:15–17:30 Berlin** — nach dem Watchdog und mit 30 min Abstand vor dem 16:00-UTC-`pipeline`.
+Zweitfenster: 16:20–19:30 UTC = 18:20–21:30 Berlin. Es muss Environment-Änderung, Redeploy bis
+`READY`, Smoke-Check **und** vollständigen Rückbau tragen.
 
 ---
 
