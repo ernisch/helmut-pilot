@@ -791,8 +791,12 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   **194/194 Suiten**, `Browser-/Mobile-Smoke (Chromium)` gruen), **PR #201**, nicht gemergt.
   **Empfehlung: mergefähig als Schattenpfad; Aktivierung bleibt Betreiberentscheidung.**
   Kanonisch: [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md).
-  **Nachtrag 2026-08-03: PR #201 ist gemergt (`255df01`) und deployt; das Flag ist weiterhin
-  nicht gesetzt** — siehe den Aktivierungsstatus unten.
+  **ÜBERHOLT — alle Aussagen dieses Statusblocks beschreiben den Zustand VOR dem
+  2026-08-03, 13:15:11 UTC.** Das gilt insbesondere für „Default AUS" (das ist der
+  **Code**-Default und bleibt gültig) und für „nicht aktiviert": PR #201 ist gemergt
+  (`255df01`) und deployt, und **seit dem 2026-08-03, 13:15:11 UTC ist
+  `HELMUT_CRON_GLOBALABRUF` in der Production-Umgebung auf `on`** — siehe den
+  Aktivierungsstatus unmittelbar unten.
 - **Status K2.1 (2026-08-03, 13:15:11 UTC, Betreiberaktion): IN PRODUCTION AKTIVIERT —
   Deployment READY und unmittelbarer Smoke-Check bestanden, REGULÄRER
   PRODUCTION-KAPAZITÄTSNACHWEIS NOCH OFFEN. OP-25 bleibt TEILWEISE ABGESCHLOSSEN.**
@@ -820,10 +824,20 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   (`/api/cron/pipeline`, 16:00 UTC / 18:00 Berlin)**, weisungsgemäß weder ausgelöst noch
   abgewartet; aus demselben Grund ist auch das Fehlen der `pfadwahl`-Zeile heute nur schwach
   aussagekräftig. **Offen bleibt der volle Nachweis über ≥ 24 h** (`mode: "global"`-Laufdatensatz je
-  Lauf, `datenstand.status = abgeschlossen`, je Mandat ein `mode: "mandat"`-Datensatz, `kontexte`
-  plausibel — erwartet **10** bei sechs Mandaten —, keine `kontextvertrag`-Fehler, keine neue
-  Fehlerklasse, LLM-Kosten unverändert) gegen die vorher aufgenommene Baseline (`crawl` und
-  `pipeline` je 2 begonnen / 1 erfolgreich, `lage-check` 1/6, `morning-briefing` 6/6).
+  Lauf, `datenstand.status = abgeschlossen`, je Mandat ein `mode: "mandat"`-Datensatz, **`kontexte`
+  innerhalb der getesteten Schranke `1 ≤ kontexte ≤ 2n + 1`, bei sechs Mandaten also 1 … 13**,
+  keine `kontextvertrag`-Fehler, keine neue Fehlerklasse, LLM-Kosten unverändert) gegen die vorher
+  aufgenommene Baseline (`crawl` und `pipeline` je 2 begonnen / 1 erfolgreich, `lage-check` 1/6,
+  `morning-briefing` 6/6). **Zur Kontextzahl, am Code gemessen statt geschätzt:** `kontexte` ist
+  die **Anzahl verschiedener Sichtbarkeitsmengen** unter den Rohdokumenten eines Laufs — 1 für die
+  Quellen, die **alle** Mandate erhalten, je 1 für jede Quellengruppe mit einer **echten
+  Teilmenge** (Partei, Region, Ausschuss), je 1 je Mandat für dessen **eigene** Quellen, plus je
+  ein isolierter Kontext bei unbestimmbarer Sichtbarkeit. Sie ist **datenabhängig, keine Funktion
+  von `n` allein**; maßgeblich ist die in `cron-globalphase-test.js` **8.13f** getestete Schranke
+  `≤ 2n + 1`. Offline gemessen **1 · 3 · 10 · 15** bei n = 1 · 2 · 6 · 11 — die **10** ist
+  **1 + 3 + 6** und ein Vergleichswert der Simulationsprofilwelt, **keine** Production-Sollzahl.
+  Die frühere Formulierung „≈ 1 + Zahl der Mandate" war zu eng und ist ersetzt; kanonisch
+  [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) **§7.5**.
   **Betriebsgrenzen unverändert und weiter gültig:** der **Rückbau bleibt Betreiberaktion** (Vercel-
   Egress gesperrt), **weitere reale Testmandate bleiben deaktiviert**, Berlin/Brandenburg/M8 AUS
   (0 aktive Landeswege), Cron-Zeiten, Budgets und Quellen unberührt. Diese Sitzung hat **nichts

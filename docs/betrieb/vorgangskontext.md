@@ -12,12 +12,15 @@ Zustand: **gemergt, deployt und seit 2026-08-03, 13:15:11 UTC in Production AKTI
 > tatsächliche Wirkung des Pfades in Production **nichts** belegt, und **OP-25 bleibt teilweise
 > abgeschlossen**. Kein falsches Grün (`CLAUDE.md` §4.4).
 
-> **Flaggrenze, verbindlich:** `HELMUT_CRON_GLOBALABRUF` ist **Default AUS**. Ohne
-> ausdrücklich gesetzten Wert (`on`/`true`/`1`/`an`) läuft ausschließlich der bisherige Pfad.
-> Das Flag ist **nicht** über `helmut-flags.json` setzbar — nur über die Vercel-Env, also nur
-> durch den Betreiber. **Es ist heute nicht gesetzt. Der Pfad ist in Production ohne
-> Wirkung.** Sind `HELMUT_CRON_GLOBALPHASE` **und** `HELMUT_CRON_GLOBALABRUF` gesetzt, läuft
-> der **Altpfad** (fail closed bei Widerspruch).
+> **Flaggrenze, verbindlich — Code-Default und Production-Zustand sind zu unterscheiden:**
+> `HELMUT_CRON_GLOBALABRUF` hat den **Code-Default AUS**; ohne ausdrücklich gesetzten Wert
+> (`on`/`true`/`1`/`an`) läuft ausschließlich der bisherige Pfad, und das bleibt so. Das Flag ist
+> **nicht** über `helmut-flags.json` setzbar — nur über die Vercel-Env, also nur durch den
+> Betreiber. **Aktueller Production-Zustand: `on`, gesetzt am 2026-08-03, 13:15:11 UTC,
+> ausschließlich in der Umgebung `Production`** (Preview und Development unverändert ohne Wert,
+> dort greift weiter der Default). Sind `HELMUT_CRON_GLOBALPHASE` **und**
+> `HELMUT_CRON_GLOBALABRUF` gesetzt, läuft der **Altpfad** (fail closed bei Widerspruch);
+> `HELMUT_CRON_GLOBALPHASE` ist unverändert **nicht** gesetzt.
 
 Verwandte Dokumente: [`cron-globalphase.md`](cron-globalphase.md) (K1-Vertrag und der
 K2-Befund §8a) · [`cron-fairness.md`](cron-fairness.md) (Rotation, `ceil(n/k)`) ·
@@ -43,8 +46,11 @@ Mandats verändern, zusammenschieben oder auseinanderreißen.
 - **Zusammengefasst** wird nur noch innerhalb einer **Sichtbarkeitsgrenze**: zwei Meldungen
   dürfen nur dann locker zusammengeworfen werden, wenn **dieselben Mandate beide sehen**.
 
-**Heute ändert sich nichts.** Der neue Weg liegt hinter einem Schalter, der ausgeschaltet
-ist. Ihn einzuschalten ist eine Freigabeentscheidung des Betreibers.
+**Stand 2026-08-03:** der Schalter ist **eingeschaltet** — der Betreiber hat
+`HELMUT_CRON_GLOBALABRUF=on` für Production gesetzt (13:15:11 UTC). Der neue Weg ist damit
+scharf, aber **noch nicht abgenommen**: der reguläre Production-Nachweis über mindestens 24 h
+steht aus (§7.4). *(Bis dahin galt: der Weg lag hinter einem ausgeschalteten Schalter, und ihn
+einzuschalten war eine Freigabeentscheidung des Betreibers.)*
 
 ---
 
@@ -281,18 +287,20 @@ verglichen werden): **alt 66 670 ms · K1 7 110 ms · K2.1 7 110 ms**.
 
 ### 7.1 Voraussetzungen für eine Aktivierung
 
-**Stand 2026-08-03, 13:15 UTC:** die Punkte 1–3 sind **erledigt**. **Offen ist nur noch Punkt 4** —
-der reguläre Production-Nachweis über mindestens 24 h (§7.4). Die Vorprüfung, die zu Punkt 2
-führte, steht in §7.3; sie endete zunächst blockiert, weil der Handgriff aus einer Agenten-Sitzung
-nicht ausführbar ist — er wurde am selben Tag vom Betreiber ausgeführt.
+**Stand 2026-08-03, 13:15 UTC:** die Punkte 1–3 sind **erledigt**. **Punkt 4 ist der einzige noch
+offene Punkt des Production-Nachweises** (§7.4). **Punkt 5 ist kein Nachweispunkt**, sondern eine
+davon unabhängige Produktentscheidung über einen möglichen Folgesprint — er blockiert die Abnahme
+von K2.1 nicht und wird hier nur mitgeführt, damit er nicht verlorengeht. Die Vorprüfung, die zu
+Punkt 2 führte, steht in §7.3; sie endete zunächst blockiert, weil der Handgriff aus einer
+Agenten-Sitzung nicht ausführbar ist — er wurde am selben Tag vom Betreiber ausgeführt.
 
 | # | Voraussetzung | Stand |
 |---|---|---|
-| 1 | Merge des PR (= Production-Deployment) durch den Betreiber | **erledigt** — PR #201 gemergt (`255df01`); der aktuelle Production-Stand `c6f3f9f` enthält ihn und ist `READY` |
+| 1 | Merge des PR (= Production-Deployment) durch den Betreiber | **erledigt** — PR #201 gemergt (`255df01`); **zum Aktivierungszeitpunkt trug Production den Stand `ded0e24`** (Deployment `dpl_J4g3k4QPUEaKAad3pB83ByGcvUkn`, `READY` 2026-08-03 13:15:11 UTC), der `255df01` enthält. *(Die Vorprüfung in §7.3 lief auf dem Vorgängerstand `c6f3f9f`; `ded0e24` unterscheidet sich davon nur in vier Markdown-Dateien unter `docs/` — der Anwendungscode ist identisch, §7.4.)* |
 | 2 | `HELMUT_CRON_GLOBALABRUF=on` **in der Vercel-Env** setzen — nicht in `helmut-flags.json` (dort wirkt es nicht) und nicht im Repo | **erledigt** — 2026-08-03, 13:15:11 UTC, Betreiberaktion, §7.4 |
 | 3 | Sicherstellen, dass `HELMUT_CRON_GLOBALPHASE` **nicht** gesetzt ist (sonst greift die Widerspruchsregel und es läuft der Altpfad) | **erfüllt** — unverändert nicht gesetzt, §7.3/§7.4 |
-| 4 | Rein lesender Production-Nachweis über mindestens 24 h: `mode: "global"`-Laufdatensatz vorhanden, `datenstand.status = abgeschlossen`, je Mandat ein `mode: "mandat"`-Datensatz, `kontexte` plausibel (≈ 1 + Zahl der Mandate), keine `kontextvertrag`-Fehler | **OFFEN — der eine verbleibende Punkt**, §7.4 |
-| 5 | Bewertung, ob die verbleibenden Bestandsbefunde (F10/Z2, Formularvokabular) einen eigenen Sprint auslösen sollen | **offen** — Produktentscheidung |
+| 4 | Rein lesender Production-Nachweis über mindestens 24 h: `mode: "global"`-Laufdatensatz vorhanden, `datenstand.status = abgeschlossen`, je Mandat ein `mode: "mandat"`-Datensatz, **`kontexte` innerhalb der getesteten Schranke `1 ≤ kontexte ≤ 2n + 1`** (§7.5), keine `kontextvertrag`-Fehler | **OFFEN — der einzige noch offene Punkt des Nachweises**, §7.4 |
+| 5 | Bewertung, ob die verbleibenden Bestandsbefunde (F10/Z2, Formularvokabular) einen eigenen Sprint auslösen sollen | **offen, aber KEIN Nachweispunkt** — unabhängige Produktentscheidung, blockiert die Abnahme von K2.1 nicht |
 
 ### 7.2 Rückbaupfad
 
@@ -393,9 +401,10 @@ deployt, **aber wirkungsseitig unbelegt**.
 
 **Der Nachweis nach Punkt 4 bleibt vollständig offen** und verlangt über **mindestens 24 h**
 reguläre Kadenz, rein lesend: je Lauf ein `mode: "global"`-Laufdatensatz · `datenstand.status =
-abgeschlossen` · je Mandat ein `mode: "mandat"`-Datensatz · `kontexte` plausibel (≈ 1 + Zahl der
-Mandate, erwartet **10** bei sechs Mandaten) · **keine** `kontextvertrag`-Fehler · keine neue
-Fehlerklasse · LLM-Kosten unverändert. **Die Kapazitätsaussage selbst** (Offline-Simulation: alt
+abgeschlossen` · je Mandat ein `mode: "mandat"`-Datensatz · **`kontexte` innerhalb der getesteten
+Schranke `1 ≤ kontexte ≤ 2n + 1`, bei sechs Mandaten also 1 … 13** (die maßgebliche Regel und wie
+sie zu lesen ist: **§7.5**) · **keine** `kontextvertrag`-Fehler · keine neue Fehlerklasse ·
+LLM-Kosten unverändert. **Die Kapazitätsaussage selbst** (Offline-Simulation: alt
 2/6 → K2.1 6/6, §6) ist bis dahin **kein Production-Nachweis**. Vergleichsmaßstab ist die am
 2026-08-03 vor der Aktivierung aufgenommene Baseline: `crawl` und `pipeline` je **2 begonnen /
 1 erfolgreich** mit äußerem Zeitlimit, `lage-check` 1/6, `morning-briefing` 6/6.
@@ -407,11 +416,67 @@ ein regulärer Lauf ab 16:00 UTC ein Problem, liegt der Rückbau beim Betreiber.
 
 ---
 
+### 7.5 Die Zahl der Bündelungskontexte — die maßgebliche Regel
+
+Diese Regel gilt **überall** in der Doku; frühere Formulierungen („≈ 1 + Zahl der Mandate")
+waren **zu eng** und sind hiermit ersetzt. Sie ist am Code und an der Suite gemessen, nicht
+geschätzt.
+
+**Definition (`lib/helmut/vorgangskontext.js`, `planKontexte`):**
+
+> **`kontexte` ist die Anzahl *verschiedener Sichtbarkeitsmengen* unter den Rohdokumenten eines
+> Laufs** — plus je ein isolierter fail-closed-Kontext für Dokumente ohne bestimmbare
+> Sichtbarkeit.
+
+Die Zahl ist damit **datenabhängig und keine Funktion von `n` allein**. Sie setzt sich zusammen
+aus:
+
+| Anteil | Beitrag |
+|---|---|
+| Quellen, die **alle** Mandate erhalten (der geteilte Katalog) | **1** Kontext |
+| jede Quellengruppe, die eine **echte Teilmenge** der Mandate versorgt (Partei-, Regional-, Ausschussquellen) | **1** Kontext **je verschiedener Teilmenge** |
+| die **eigenen** Quellen eines Mandats (`<mandats-id>-news` usw.) | **1** Kontext **je Mandat** |
+| Dokumente ohne bestimmbare Sichtbarkeit | je **1** isolierter Kontext (fail closed, nie geraten) |
+
+**Maßgebliche Abnahmeschranke — getestet, nicht behauptet:**
+`scripts/cron-globalphase-test.js` Prüfpunkt **8.13f** sichert
+
+```
+1 ≤ kontexte ≤ 2n + 1
+```
+
+Bei den heutigen **sechs** aktiven Mandaten ist der zulässige Bereich also **1 … 13**.
+Theoretisch wäre die Zahl exponentiell möglich (jede Teilmenge könnte auftreten); in der
+gemessenen Profilwelt ist sie linear, und ab sechs Mandaten kommt genau **ein** Kontext je
+zusätzlichem Mandat hinzu.
+
+**Offline gemessen** (Laufzeitsimulation, §6): **1 · 3 · 10 · 15** für n = **1 · 2 · 6 · 11**.
+**Wie die 10 bei sechs Mandaten entsteht** — am echten Code nachgemessen, nicht gerechnet:
+
+```
+ 1  alle sechs      geteilter Katalog (Drucksachen, Ausschüsse, Leitmedium)
+ 3  echte Teilmengen  Partei A (4 Mandate) · Regionalpresse einer Region (4) · Partei B (2)
+ 6  je Mandat       dessen eigene Personen-, Ausschuss-, Themen- und Regionsuchen
+──  ─────────────
+10  Kontexte
+```
+
+**Wo man es in Production abliest:** die Zeile `[globalphase/kontext]` meldet je Lauf
+`kontexte`, `geteilt` (Kontexte mit ≥ 2 Mandaten), `mandatseigen` (genau 1 Mandat), `unbekannt`,
+`dokumente` und `ohneSichtbarkeit` — in der Messung oben
+`kontexte=10 geteilt=4 mandatseigen=6 unbekannt=0`. Es gilt immer
+`kontexte = geteilt + mandatseigen` und `mandatseigen ≤ n`.
+
+**Erfüllt ist Punkt 4 bezüglich der Kontexte, wenn:** `1 ≤ kontexte ≤ 2n + 1` · `unbekannt = 0`
+(oder, falls > 0, benannt statt übergangen) · `mandatseigen ≤ n` · **keine**
+`kontextvertrag`-Fehlerzeile. Eine **Sollzahl** gibt es bewusst nicht: die 10 aus der Simulation
+ist ein Vergleichswert aus deren Profilwelt, **kein** Production-Erwartungswert.
+
 ## 8 · Verbleibende Risiken
 
 | # | Risiko | Bewertung |
 |---|---|---|
-| R1 | **Kein Production-Nachweis.** Alle Aussagen sind offline erhoben. | Der Sprintauftrag verbietet die Aktivierung. Der Nachweis ist der nächste Schritt, nicht ein Versäumnis. |
+| R1 | **Kein Production-Nachweis.** Alle fachlichen Aussagen sind offline erhoben. | **Unverändert offen — und seit dem 2026-08-03 das einzige verbleibende Risiko dieser Liste, das eine Handlung verlangt.** Das Flag ist seit 13:15:11 UTC gesetzt, der Pfad läuft also scharf, **bevor** er in Production nachgewiesen ist; der Nachweis über ≥ 24 h ist der nächste Schritt (§7.4/§7.5). Verschärfend: der **Rückbau ist aus einer Agenten-Sitzung nicht ausführbar** (§7.3) — zeigt ein regulärer Lauf ein Problem, muss der Betreiber zurückrollen. |
 | R2 | **Die Fallfamilien sind konstruiert.** Wie oft die Muster real auftreten, ist unbekannt. | Bewusst so (Auftrag Phase 4). Die Gleichheit mit dem heutigen Pfad gilt unabhängig von der Häufigkeit. |
 | R3 | **Bestandsbefund F10/Z2** — Formularvokabular verschmilzt auch heute falsch. | Nicht durch K2.1 verursacht und nicht durch K2.1 verschlimmert. Eigener Sprint, freigabepflichtig. |
 | R4 | **Reihenfolgeempfindlichkeit** des strengen Regimes (F3, F7, F13). | Bestand, unverändert. K2.1 ist nicht empfindlicher als heute (4.4b). |
@@ -421,7 +486,11 @@ ein regulärer Lauf ab 16:00 UTC ein Problem, liegt der Rückbau beim Betreiber.
 
 ---
 
-## 9 · Production-Auswirkung dieses Sprints
+## 9 · Production-Auswirkung des Bausprints (2026-07-31) — historisch
+
+> **Historischer Abschnitt.** Er beschreibt den Sprint, der K2.1 **gebaut** hat, und gilt
+> unverändert **für diesen Sprint**. Für den heutigen Zustand ist **§7.4** maßgeblich: das Flag
+> ist seit dem 2026-08-03, 13:15:11 UTC in Production gesetzt.
 
 **Keine.** Kein Flag gesetzt, keine Env geändert, kein Cron gestartet, keine Production-Daten
 geschrieben, keine Migration ausgeführt, keine Cron-Zeit und kein Budget geändert, keine
