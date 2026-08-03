@@ -1,12 +1,16 @@
 # OP-25 K2.1 — Globaler Abruf, kontextgebundene Vorgangsbildung
 
-**Kanonische Dokumentation des K2.1-Schattenpfads.** Stand: **2026-08-03** (§7.1/§7.3:
-Aktivierungsprüfung ergänzt). Zustand: **gemergt und in Production deployt, offline bewiesen,
-mutationsgesichert — das Flag ist in Production NICHT gesetzt, der Pfad also ohne Wirkung.**
+**Kanonische Dokumentation des K2.1-Pfads.** Stand: **2026-08-03** (§7.4: Aktivierung ergänzt).
+Zustand: **gemergt, deployt und seit 2026-08-03, 13:15:11 UTC in Production AKTIVIERT** —
+`HELMUT_CRON_GLOBALABRUF=on`, ausschließlich in der Production-Umgebung.
 **PR #201** gemergt (`255df01`), beide Pflicht-Checks grün (Lauf `30638964148`,
 `Syntax + Offline-Suiten` **194/194 Suiten**, `Browser-/Mobile-Smoke (Chromium)`).
-**Aktivierungsprüfung 2026-08-03: 11 von 13 Gates erfüllt, nicht aktiviert — der Vercel-
-Schreibweg fehlt in einer Agenten-Sitzung (§7.3).**
+
+> **Der Pfad ist damit scharf, aber NICHT abgenommen.** Deployment `READY` und unmittelbarer,
+> rein lesender Smoke-Check sind bestanden (§7.4). **Der reguläre Production-Kapazitätsnachweis
+> über mindestens 24 h reguläre Kadenz steht vollständig aus** — bis dahin ist über die
+> tatsächliche Wirkung des Pfades in Production **nichts** belegt, und **OP-25 bleibt teilweise
+> abgeschlossen**. Kein falsches Grün (`CLAUDE.md` §4.4).
 
 > **Flaggrenze, verbindlich:** `HELMUT_CRON_GLOBALABRUF` ist **Default AUS**. Ohne
 > ausdrücklich gesetzten Wert (`on`/`true`/`1`/`an`) läuft ausschließlich der bisherige Pfad.
@@ -277,16 +281,17 @@ verglichen werden): **alt 66 670 ms · K1 7 110 ms · K2.1 7 110 ms**.
 
 ### 7.1 Voraussetzungen für eine Aktivierung
 
-**Stand 2026-08-03 (Aktivierungssprint, rein lesend geprüft):** Punkt 1 ist **erledigt**,
-Punkt 3 ist **erfüllt und belegt**, Punkt 2 ist der **einzige** verbleibende Handgriff — und
-genau er ist aus einer Agenten-Sitzung nicht ausführbar (§7.3).
+**Stand 2026-08-03, 13:15 UTC:** die Punkte 1–3 sind **erledigt**. **Offen ist nur noch Punkt 4** —
+der reguläre Production-Nachweis über mindestens 24 h (§7.4). Die Vorprüfung, die zu Punkt 2
+führte, steht in §7.3; sie endete zunächst blockiert, weil der Handgriff aus einer Agenten-Sitzung
+nicht ausführbar ist — er wurde am selben Tag vom Betreiber ausgeführt.
 
 | # | Voraussetzung | Stand |
 |---|---|---|
 | 1 | Merge des PR (= Production-Deployment) durch den Betreiber | **erledigt** — PR #201 gemergt (`255df01`); der aktuelle Production-Stand `c6f3f9f` enthält ihn und ist `READY` |
-| 2 | `HELMUT_CRON_GLOBALABRUF=on` **in der Vercel-Env** setzen — nicht in `helmut-flags.json` (dort wirkt es nicht) und nicht im Repo | **offen** — Betreiberaktion, §7.3 |
-| 3 | Sicherstellen, dass `HELMUT_CRON_GLOBALPHASE` **nicht** gesetzt ist (sonst greift die Widerspruchsregel und es läuft der Altpfad) | **erfüllt** — an der Wirkung belegt, §7.3 |
-| 4 | Rein lesender Production-Nachweis über mindestens 24 h: `mode: "global"`-Laufdatensatz vorhanden, `datenstand.status = abgeschlossen`, je Mandat ein `mode: "mandat"`-Datensatz, `kontexte` plausibel (≈ 1 + Zahl der Mandate), keine `kontextvertrag`-Fehler | **offen** — setzt Punkt 2 voraus |
+| 2 | `HELMUT_CRON_GLOBALABRUF=on` **in der Vercel-Env** setzen — nicht in `helmut-flags.json` (dort wirkt es nicht) und nicht im Repo | **erledigt** — 2026-08-03, 13:15:11 UTC, Betreiberaktion, §7.4 |
+| 3 | Sicherstellen, dass `HELMUT_CRON_GLOBALPHASE` **nicht** gesetzt ist (sonst greift die Widerspruchsregel und es läuft der Altpfad) | **erfüllt** — unverändert nicht gesetzt, §7.3/§7.4 |
+| 4 | Rein lesender Production-Nachweis über mindestens 24 h: `mode: "global"`-Laufdatensatz vorhanden, `datenstand.status = abgeschlossen`, je Mandat ein `mode: "mandat"`-Datensatz, `kontexte` plausibel (≈ 1 + Zahl der Mandate), keine `kontextvertrag`-Fehler | **OFFEN — der eine verbleibende Punkt**, §7.4 |
 | 5 | Bewertung, ob die verbleibenden Bestandsbefunde (F10/Z2, Formularvokabular) einen eigenen Sprint auslösen sollen | **offen** — Produktentscheidung |
 
 ### 7.2 Rückbaupfad
@@ -339,6 +344,66 @@ feuert einmal täglich. Daraus: **das täglich verlässlichste Fenster ist 09:15
 11:15–17:30 Berlin** — nach dem Watchdog und mit 30 min Abstand vor dem 16:00-UTC-`pipeline`.
 Zweitfenster: 16:20–19:30 UTC = 18:20–21:30 Berlin. Es muss Environment-Änderung, Redeploy bis
 `READY`, Smoke-Check **und** vollständigen Rückbau tragen.
+
+### 7.4 Aktivierung 2026-08-03 — ausgeführt, Smoke bestanden, Kapazitätsnachweis offen
+
+**Kurzstatus, verbindlich:** *K2.1 ist in Production aktiviert. Deployment `READY` und der
+unmittelbare Smoke-Check sind bestanden. Der reguläre Production-Kapazitätsnachweis über das
+vorgeschriebene Beobachtungsfenster ist noch offen. **OP-25 bleibt teilweise abgeschlossen.***
+
+**Der Handgriff war eine Betreiberaktion** — der in §7.3 belegte Blocker (kein Vercel-Schreibweg
+aus einer Agenten-Sitzung) besteht unverändert fort und wurde **nicht** umgangen, sondern vom
+Betreiber über die Vercel-Oberfläche erledigt.
+
+| Feld | Wert |
+|---|---|
+| Aktiviertes Flag | **`HELMUT_CRON_GLOBALABRUF = on`** |
+| Geltungsbereich | **ausschließlich `Production`**; Preview und Development unverändert. `Sensitive` bewusst deaktiviert — der Wert ist kein Geheimnis |
+| `HELMUT_CRON_GLOBALPHASE` | **unverändert nicht gesetzt (AUS)** — die Widerspruchsregel greift damit nicht, es läuft `kontext` und nicht der Altpfad |
+| Aktivierungs-/READY-Zeitpunkt | **2026-08-03 13:15:11 UTC = 15:15:11 Berlin** (Buildstart 13:15:00, Deploymentanlage 13:14:58) |
+| Production-Deployment | **`dpl_J4g3k4QPUEaKAad3pB83ByGcvUkn`**, `target: production`, `readyState: READY`, `source/action: redeploy` (aus `dpl_9ihAmLeKea3rcySF8jm3Xa6nq1ch`), Region `fra1` |
+| Deployter Commit | **`ded0e240e24ca081b5ff68e150a95f7006b08ad7`** = `origin/main` (Merge PR #213) |
+| Verhältnis zum freigegebenen Stand `c6f3f9f` | `git diff c6f3f9f ded0e24` über `server.js`, `client.js`, `styles.css`, `lib/`, `scripts/`, `supabase/`, `vercel.json`, `helmut-flags.json`, `.github/`, `api/`, `package*.json` ist **leer** — der Unterschied sind **vier Markdown-Dateien unter `docs/`**. Der deployte **Anwendungscode ist identisch** mit dem geprüften Stand |
+| Aliasse | `helmut-pilot.vercel.app`, `helmut-pilot-nohut.vercel.app`, `helmut-pilot-git-main-nohut.vercel.app` — die Production-Domain zeigt auf dieses Deployment |
+
+**Rein lesender Smoke-Check (13:21–13:23 UTC) — bestanden, keine Production-Daten verändert:**
+
+| Prüfung | Ergebnis |
+|---|---|
+| Startseite `GET /` | **HTTP 200**, Ausführungsregion `fra1`, `cache-control: no-store` |
+| **Asset-Rotation** (Pflichtprüfung nach jedem Redeploy, [`deploy-rollback.md`](deploy-rollback.md) §3) | `styles.css?v=**ded0e240**`, `client.js?v=**ded0e240**`, Icons und Manifest ebenso — **exakt der deployte Commit**. Keine Stale-Asset-Falle |
+| Sicherheits-/Routing-Header | CSP, HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy` vollständig — die Regeln aus `vercel.json` greifen |
+| `GET /site.webmanifest` | HTTP 200, korrekter Content-Type |
+| `GET /api/health` | **HTTP 401** — das Auth-Gate antwortet korrekt (dokumentiertes Verhalten ohne Secret); die Route ist erreichbar, nicht defekt |
+| Build | **keine** Fehlerzeile, `Build Completed in /vercel/output [2s]` |
+| Runtime-Fehler | **0** (aggregierte Fehlertabelle, 2-h-Fenster) |
+| Runtime-Logs seit `READY` | 3 Anfragen, **alle** `GET / 200` auf dem neuen Deployment; **0** Einträge der Stufen `error`/`warning`/`fatal` |
+| Konfigurationswiderspruch | **keine** `[cron/*/pfadwahl]`-Zeile — sie entstünde nur bei zwei gesetzten Flaggen. *Aussagekraft heute begrenzt:* seit dem Deployment lief noch kein schwerer Cron, die Zeile könnte also auch aus diesem Grund fehlen |
+| Datenbank | **0** aktive Sperren; Fairnesszeile `main-cron-fairness` unverändert (`rev = 46`, 9 467 Bytes, `updated_at` 10:04:36 UTC); `process_runs` unverändert; **0** neue `systemError` seit `READY`; **0** DB-Fehler |
+| Betriebsgrenzen | unverändert: **0** aktive Berliner/Brandenburger Abrufwege (alle 17 `needs_review`/`manual`), 1 aktiver Abrufweg insgesamt, 6 aktive Mandate, Cron-Zeiten und Budgets unberührt |
+
+**Ein Rückbau war nicht erforderlich** — kein Fehler, kein Widerspruch, kein Abbruchkriterium.
+
+**Was ausdrücklich NOCH NICHT belegt ist.** Der Flagwert ist aus einer Sitzung unlesbar: keine
+Route gibt ihn aus, und `waehleCronPfad()` wird **ausschließlich zur Cron-Zeit** ausgewertet
+(`cronSchwererPfad`, `server.js`). **Der erste Beleg, dass der Pfad wirklich greift, ist deshalb
+der nächste reguläre schwere Lauf** — `/api/cron/pipeline` um **16:00 UTC / 18:00 Berlin**. Er
+wurde **nicht** ausgelöst und **nicht** abgewartet. Bis dahin gilt: aktiviert und fehlerfrei
+deployt, **aber wirkungsseitig unbelegt**.
+
+**Der Nachweis nach Punkt 4 bleibt vollständig offen** und verlangt über **mindestens 24 h**
+reguläre Kadenz, rein lesend: je Lauf ein `mode: "global"`-Laufdatensatz · `datenstand.status =
+abgeschlossen` · je Mandat ein `mode: "mandat"`-Datensatz · `kontexte` plausibel (≈ 1 + Zahl der
+Mandate, erwartet **10** bei sechs Mandaten) · **keine** `kontextvertrag`-Fehler · keine neue
+Fehlerklasse · LLM-Kosten unverändert. **Die Kapazitätsaussage selbst** (Offline-Simulation: alt
+2/6 → K2.1 6/6, §6) ist bis dahin **kein Production-Nachweis**. Vergleichsmaßstab ist die am
+2026-08-03 vor der Aktivierung aufgenommene Baseline: `crawl` und `pipeline` je **2 begonnen /
+1 erfolgreich** mit äußerem Zeitlimit, `lage-check` 1/6, `morning-briefing` 6/6.
+
+**Rückbau — weiterhin Betreiberaktion.** Stufe 1 aus §7.2 (`HELMUT_CRON_GLOBALABRUF` auf `off`
+oder löschen, Redeploy) ist aus einer Agenten-Sitzung **nicht** ausführbar, solange der Egress zu
+`api.vercel.com` gesperrt ist (§7.3). Wer aktiviert hat, muss auch zurücknehmen können: **zeigt
+ein regulärer Lauf ab 16:00 UTC ein Problem, liegt der Rückbau beim Betreiber.**
 
 ---
 

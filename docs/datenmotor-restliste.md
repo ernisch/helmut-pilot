@@ -793,9 +793,45 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Kanonisch: [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md).
   **Nachtrag 2026-08-03: PR #201 ist gemergt (`255df01`) und deployt; das Flag ist weiterhin
   nicht gesetzt** — siehe den Aktivierungsstatus unten.
-- **Status K2.1-Aktivierung (2026-08-03, Sprint „K2.1 kontrolliert in Production aktivieren",
-  rein lesend): BLOCKIERT — NICHT aktiviert, nichts verändert. OP-25 bleibt TEILWEISE
-  ABGESCHLOSSEN.** Vollständige Vorprüfung mit ausdrücklicher Freigabe: **11 von 13
+- **Status K2.1 (2026-08-03, 13:15:11 UTC, Betreiberaktion): IN PRODUCTION AKTIVIERT —
+  Deployment READY und unmittelbarer Smoke-Check bestanden, REGULÄRER
+  PRODUCTION-KAPAZITÄTSNACHWEIS NOCH OFFEN. OP-25 bleibt TEILWEISE ABGESCHLOSSEN.**
+  **`HELMUT_CRON_GLOBALABRUF = on`, ausschließlich in der Production-Umgebung** (Preview und
+  Development unverändert; `Sensitive` bewusst aus, der Wert ist kein Geheimnis);
+  **`HELMUT_CRON_GLOBALPHASE` unverändert nicht gesetzt** — die Widerspruchsregel greift also
+  nicht, es läuft `kontext` und nicht der Altpfad. Deployment
+  **`dpl_J4g3k4QPUEaKAad3pB83ByGcvUkn`** (`target: production`, `readyState: READY`,
+  `action: redeploy`, Region `fra1`) auf Commit
+  **`ded0e240e24ca081b5ff68e150a95f7006b08ad7`**, **READY 2026-08-03 13:15:11 UTC =
+  15:15:11 Berlin**. **Abweichung zum freigegebenen Stand geprüft statt übergangen:** `ded0e24`
+  ist der Merge von PR #213 (reine Doku); `git diff c6f3f9f ded0e24` über `server.js`,
+  `client.js`, `styles.css`, `lib/`, `scripts/`, `supabase/`, `vercel.json`, `helmut-flags.json`,
+  `.github/`, `api/`, `package*.json` ist **leer** — der deployte Anwendungscode ist identisch mit
+  dem geprüften Stand. **Smoke-Check (rein lesend, 13:21–13:23 UTC) bestanden:** `GET /` **200**
+  (Region `fra1`), **Asset-Rotation korrekt** (`styles.css?v=ded0e240`, `client.js?v=ded0e240` =
+  deployter Commit, [`betrieb/deploy-rollback.md`](betrieb/deploy-rollback.md) §3), alle
+  Sicherheits-/Routing-Header, `site.webmanifest` 200, `/api/health` **401** (korrektes Auth-Gate),
+  Build ohne Fehlerzeile, **0** Runtime-Fehler, **0** Log-Einträge der Stufen
+  `error`/`warning`/`fatal`, **keine** `[cron/*/pfadwahl]`-Widerspruchszeile, Datenbank unverändert
+  (0 aktive Sperren, Fairnesszeile `rev = 46` / 9 467 Bytes, `process_runs` unverändert, **0** neue
+  `systemError`). **Ein Rückbau war nicht erforderlich.** **Noch NICHT belegt, ausdrücklich:** der
+  Flagwert ist aus einer Sitzung unlesbar, und `waehleCronPfad()` wird **nur zur Cron-Zeit**
+  ausgewertet — **der erste Wirkungsbeleg ist der nächste reguläre schwere Lauf
+  (`/api/cron/pipeline`, 16:00 UTC / 18:00 Berlin)**, weisungsgemäß weder ausgelöst noch
+  abgewartet; aus demselben Grund ist auch das Fehlen der `pfadwahl`-Zeile heute nur schwach
+  aussagekräftig. **Offen bleibt der volle Nachweis über ≥ 24 h** (`mode: "global"`-Laufdatensatz je
+  Lauf, `datenstand.status = abgeschlossen`, je Mandat ein `mode: "mandat"`-Datensatz, `kontexte`
+  plausibel — erwartet **10** bei sechs Mandaten —, keine `kontextvertrag`-Fehler, keine neue
+  Fehlerklasse, LLM-Kosten unverändert) gegen die vorher aufgenommene Baseline (`crawl` und
+  `pipeline` je 2 begonnen / 1 erfolgreich, `lage-check` 1/6, `morning-briefing` 6/6).
+  **Betriebsgrenzen unverändert und weiter gültig:** der **Rückbau bleibt Betreiberaktion** (Vercel-
+  Egress gesperrt), **weitere reale Testmandate bleiben deaktiviert**, Berlin/Brandenburg/M8 AUS
+  (0 aktive Landeswege), Cron-Zeiten, Budgets und Quellen unberührt. Diese Sitzung hat **nichts
+  geschrieben** — keine Env, kein Deployment, kein Cron, kein Trigger, kein
+  Production-Schreibzugriff, keine Migration, kein Anwendungscode, **0 KI-Aufrufe, 0,00 USD**.
+  Kanonisch: [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) **§7.4**.
+- **Status K2.1-Aktivierungsprüfung (2026-08-03, Vorsprint, rein lesend): BLOCKIERT — damals NICHT
+  aktiviert, nichts verändert. Am selben Tag durch die Betreiberaktion oben aufgelöst.** Vollständige Vorprüfung mit ausdrücklicher Freigabe: **11 von 13
   Aktivierungsgates erfüllt.** **Die beiden offenen Gates haben dieselbe Ursache:** der
   Vercel-Schreibweg existiert in einer Agenten-Sitzung nicht, und damit ist auch der Rückbau
   (Stufe 1: Flag auf `off` + Redeploy) nicht ausführbar. `VERCEL_TOKEN` **ist** gesetzt, aber
