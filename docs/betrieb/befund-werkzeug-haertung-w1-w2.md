@@ -10,6 +10,12 @@ entdeckten Werkzeugdefekte (`CURRENT_STATE.md`,
 `crawl-20260727160048-ct8lt` relational gespeichert und erhalten (§15) ·
 **Sprintstatus: erfolgreich abgeschlossen** (alle 15 Erfolgskriterien, §15.6).
 
+**Nachtrag 2026-08-03 — Flackerbefund F-PORT (§16):** das CI-Flackern von
+`werkzeug-lesefehler-test.js` hat eine belegte Einzelursache (Fehlerklasse hängt
+an der zufälligen Fixture-Portnummer). Testseitig behoben; die zugrundeliegende
+Fehlklassifikation in `klassifiziereLesefehler` ist **Production-Logik** und
+bleibt offen als **OP-28**.
+
 ---
 
 ## 1 · Beobachtete Production-Symptome
@@ -567,3 +573,72 @@ den Blob zurück; der Blob-Spiegel enthält alle Abschluss-Einträge, nur reine
 `running`-Startbelege existieren ausschließlich relational. Die Migration wird
 dafür **nicht** zurückgerollt (`…_rollback.sql` existiert, ist aber nicht der
 betriebliche Rückweg).
+
+---
+
+## 16 · Flackerbefund F-PORT (2026-08-03) — Fehlerklasse hängt an der Portnummer
+
+**Symptom.** `scripts/werkzeug-lesefehler-test.js` wurde in CI wiederholt und
+ohne Codeänderung rot — zuletzt in **PR #213** (reiner Doku-PR, vier Markdown-
+Dateien, kein Code), CI-Lauf **30815041452**, `run_attempt 1`:
+**199/200 Suiten**, in der Suite **42 PASS / 1 FAIL**, und zwar genau
+`Netzwerkfehler: Meldung nennt Quelle und Fehlerklasse`. Derselbe Code war auf
+`main` (Lauf `30811251231`) und in den beiden Folgeläufen grün.
+
+**Belegte Ursache — eine einzige, keine Liste von Möglichkeiten.**
+Szenario (3) der Suite erzeugt „Verbindung verweigert" über einen soeben
+geschlossenen lokalen Port aus `listen(0)`. Die Portnummer ist **zufällig** und
+steht wörtlich in der Fehlerkette (`fetch failed :: connect ECONNREFUSED
+127.0.0.1:<port> :: ECONNREFUSED`). `klassifiziereLesefehler`
+(`lib/helmut/storage.js`) prüft die Auth-Zeichenfolgen `401`/`403` als
+**Teilstring der gesamten Kette** und **vor** der ECONNREFUSED-Regel. Enthält die
+gezogene Portnummer `401` oder `403`, wird der Verbindungsfehler als
+Fehlerklasse **`auth`** statt `connection` eingestuft. Exit 6, `Quelle:` und
+`Fehlerklasse:` bleiben korrekt — nur `/dns|connection/` trifft nicht mehr.
+Das ist exakt das beobachtete Bild: **eine** rote Prüfung, die beiden
+Nachbarprüfungen grün.
+
+Messungen (2026-08-03, lokal):
+
+| Messung | Ergebnis |
+|---|---|
+| Betroffene Ports im Linux-Ephemeralbereich 32768–60999 | **316 / 28 232 = 1,12 %** |
+| Empirisch gezogen (20 000 × `listen(0)`) | **403 / 20 000 = 2,02 %** betroffen |
+| Direktprobe Klassifikation, Port 40123 / 45403 / 33403 | `auth` |
+| Direktprobe Klassifikation, Port 45678 / 32800 | `connection` |
+| Gegenprobe End-to-End, Fixture-Port erzwungen auf 40123 bzw. 40312 | **42 PASS / 1 FAIL**, identische Fehlermeldung wie CI |
+| Kontrolle, Fixture-Port erzwungen auf 45678 | **43 PASS / 0 FAIL** |
+
+**Korrektur (testseitig, kleinstmöglich).** Die Suite zieht den Fixture-Port
+jetzt so lange neu, bis seine Dezimaldarstellung weder `401` noch `403` enthält
+(`geschlossenerPortOhneStatuszahl()`). Der längste zusammenhängende betroffene
+Block ist 100 Ports (40100–40199 bzw. 40300–40399), 300 Versuche sind mit
+Sicherheitsabstand ausreichend; über 20 000 gefilterte Ziehungen: **0** betroffen.
+Damit ist das Szenario tatsächlich deterministisch — bisher war nur die
+*Fehlerart* deterministisch, nicht die *Portnummer*. Die rote Prüfung trägt
+zusätzlich eine Diagnosezeile (Fixture-Port + stderr-Auszug), damit ein künftiger
+Fehlschlag ohne Rateschritt lesbar ist. **Alle 43 Prüfungen bleiben erhalten und
+unverändert scharf**; keine Zusicherung wurde gelockert, kein Timeout erhöht,
+kein Skip eingeführt.
+
+**Nicht behoben — neue Restrisikoquelle, siehe OP-28.** Die Ursache liegt in
+Production-Logik (`klassifiziereLesefehler`): ein reiner Teilstringtreffer `401`/
+`403` irgendwo in der Fehlerkette überstimmt die spezifischere Verbindungs- und
+Timeout-Regel. Das ist **nicht** auf Testports beschränkt — die Kette enthält bei
+Timeouts den vollständigen Endpunkt samt ISO-Zeitstempel. Gegenprobe:
+`Supabase storage timed out after 800ms: …&created_at=gte.2026-06-19T13%3A05%3A47.401Z…`
+→ `auth`; mit Millisekunde `123` → `timeout`. Betrieblich heißt das: eine
+Netz-/Timeout-Störung kann als Zugangsdatenproblem gemeldet werden und die
+Behebung in die falsche Richtung schicken. Die Suite behält deshalb ein
+**Restflackerrisiko in Szenario (4)** (Millisekundenfeld `401`/`403`, ≈ 0,2 % je
+Lauf), das testseitig nicht behebbar ist, ohne die Zusicherung
+„Fehlerklasse timeout benannt" zu verwässern. Behebung erfordert eine Änderung an
+Production-Logik und damit eine Betreiberentscheidung → **OP-28**
+([`../datenmotor-restliste.md`](../datenmotor-restliste.md)).
+
+**Dauerhafte Testregel aus diesem Befund.** Zufällig gezogene Fixture-Werte
+(Ports, Kennungen, Zeitstempel), die in eine **klassifizierte** Fehlermeldung
+gelangen, sind kein Implementierungsdetail: sie werden Teil der Zusicherung.
+Wer eine Fehlerklasse prüft, muss die Fixture-Werte gegen die Klassifikations-
+Zeichenfolgen des geprüften Klassifikators abgrenzen — sonst ist der Test
+scheinbar deterministisch und tatsächlich stochastisch.
