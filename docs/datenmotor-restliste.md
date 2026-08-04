@@ -806,12 +806,7 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   (`bounded=true`, `abgebrochen`). Der Betreiber setzte danach `HELMUT_CRON_GLOBALABRUF` in
   Production wieder auf `off` und deployte neu (`dpl_2YJkxWKYGALiCbd779XsarAkRc94`, `READY`
   22:51 UTC) — alle drei Fakten rein lesend gegen Vercel-Runtime-Logs/-Deployments geprüft.
-  **Root Cause, zweigeteilt:** (1) ein Durchsetzungsfehler in `runGlobaleErfassung`
-  (`lib/helmut/scheduler.js`) — die Restzeitprüfung im Stufenabruf ist nur ein Start-Gatter
-  zwischen Stufen von `HELMUT_GLOBALPHASE_ABRUF_STUFE` Quellen, kein Stopp-Gatter währenddessen;
-  **behoben** durch Senkung des Defaults von 20 auf 5 (= Google-Gate-Nebenläufigkeit), belegt in
-  `scripts/globalabruf-kapazitaet-test.js` (21/21 grün): schlechtestmögliche Überziehung sinkt
-  von 28 323 ms auf 5 756 ms bei einem gezielt adversarialen Budgetwert. (2) eine strukturelle
+  **Root Cause — KORRIGIERT am 2026-08-04, die urspruengliche Zuschreibung dieses PR traegt nicht.** Nachgemessen: der Abruf endete bei **t = 115,2 s** eines **221,674-s**-Budgets (`nichtAbgerufen = 0`, `fehler: 0`) — das Start-Gatter des Stufenabrufs hat nie gegriffen, die Ueberziehung entstand vollstaendig **danach**. Die Formel `ceil(stufenGroesse / googleConcurrency) * CRAWLER_TIMEOUT_MS` setzt voraus, dass EINE Quelle GENAU EINE HTTP-Anfrage ist; am Code ist das nicht so (Feedabruf je Feed-URL, je Eintrag `resolveArticleUrl` mit `fetchUrl` + bis zu 2x `postForm`, fuer `type: "person"` zusaetzlich eine sequenzielle Anreicherungsschleife). Offline gemessen: EINE Suchquelle = 37 Anfragen = 11,5 Anfragezeitlimits, EINE Personenquelle = 98 Anfragen = 45,4 Anfragezeitlimits; Production bestaetigt es mit einzelnen Quellen von 41 892 / 41 340 / 40 851 / 35 005 ms bei `CRAWLER_TIMEOUT_MS = 7 000` und `retry_count = 0`. **Die Senkung des Defaults von 20 auf 5 ist deshalb ZURUECKGENOMMEN** (`lib/helmut/scheduler.js` ist wieder identisch mit `main`): sie begrenzt die Ueberziehung nicht, hebt die Untergrenze des Abrufs (Stufe 20 -> 71,3 s, Stufe 10 -> 90,2 s, Stufe 5 -> 153,0 s an den 181 gemessenen Quellendauern) und verzoegert die direkten/amtlichen Quellen (spaeteste Startuntergrenze 9,85 s -> 31,53 s). Belege: `scripts/quellen-mehrfachabruf-test.js`. Die bewiesene Ursache und ihre Reparatur stehen in PR #219. Unveraendert gilt: (2) eine strukturelle
   Kapazitätsgrenze des Google-News-Gates bei ~140 gemeinsamen Abrufwegen — **bleibt bestehen**,
   Entscheidungsvorlage in [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.6.5.
   Nebenbefund: die bestehende Kapazitätssuite (`cron-globalphase-test.js` §8) modellierte die

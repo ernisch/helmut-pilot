@@ -46,6 +46,22 @@ const scheduler = require(path.join(ROOT, "lib", "helmut", "scheduler.js"));
 const G = require(path.join(ROOT, "lib", "helmut", "cron-globalphase.js"));
 const GN = require(path.join(ROOT, "lib", "helmut", "google-news-hardening.js"));
 
+// Die 181 GEMESSENEN Quellendauern des gescheiterten Production-Laufs, in Laufreihenfolge
+// (`source_crawl_telemetry`, `run_id = cron-pipeline-20260803160002-xm71n-global`). Rohdaten.
+const VERMESSENE_QUELLENDAUERN = [
+  67, 102, 2592, 2441, 2099, 1958, 2130, 1662, 1628, 833, 698, 668, 704, 729, 902, 701, 790, 576,
+  650, 619, 155, 602, 708, 631, 739, 634, 619, 644, 702, 745, 654, 637, 824, 619, 458, 985, 991,
+  926, 1038, 969, 994, 1232, 929, 747, 757, 812, 1154, 1421, 1357, 885, 1380, 1372, 1174, 1312,
+  801, 1105, 1851, 1254, 1305, 1287, 1212, 1235, 1376, 1427, 1236, 1505, 1441, 1144, 1612, 1109,
+  1332, 1578, 1176, 1221, 1310, 1264, 1477, 1307, 1468, 1179, 989, 742, 1230, 1220, 1024, 632,
+  801, 1200, 1182, 770, 738, 942, 1183, 1247, 1195, 1267, 1551, 1439, 1370, 1227, 26, 1148, 1195,
+  769, 837, 1029, 927, 816, 778, 829, 676, 1089, 884, 1208, 1084, 1135, 1127, 945, 1023, 1060, 55,
+  1223, 990, 1001, 984, 898, 1342, 904, 968, 1042, 1104, 827, 1117, 1137, 986, 1193, 958, 1190,
+  1105, 1207, 1374, 1216, 1000, 818, 822, 578, 5054, 2111, 2090, 191, 2003, 1991, 1898, 586, 1952,
+  1699, 206, 1173, 1666, 1550, 0, 1725, 1978, 226, 1966, 8625, 1918, 3174, 1624, 1668, 173, 41340,
+  8397, 1648, 41892, 1493, 35005, 174, 7001, 40851, 13115
+];
+
 let pass = 0;
 let fail = 0;
 function check(name, ok, detail = "") {
@@ -520,60 +536,57 @@ async function laufGlobal({ budgetMs, laufKennung }) {
   }
 
   // ──────────────────────────────────────────────────────────────────────────────────────────
-  abschnitt("3 · NACH der Korrektur — kleinerer Stufen-Default (HELMUT_GLOBALPHASE_ABRUF_STUFE 20 -> 5)");
-  let nachLauf;
+  abschnitt("3 · ZURUECKGENOMMEN: der kleinere Stufen-Default (20 -> 5) traegt nicht");
   {
-    // KEINE Env-Ueberschreibung: der neue Code-Default (5) aus scheduler.js greift.
-    nachLauf = await laufGlobal({ budgetMs: aufteilung.globalMs, laufKennung: "nach" });
-    const g = nachLauf.global;
-    const ueberziehungVor = vorLauf.dauerMs - aufteilung.globalMs;
-    const ueberziehungNach = nachLauf.dauerMs - aufteilung.globalMs;
-    console.log(`  INFO  budgetGlobalMs=${aufteilung.globalMs} tatsaechlichDauerMs=${nachLauf.dauerMs}`
-      + ` ueberzogenMs=${Math.max(0, ueberziehungNach)} datenstand=${g.datenstand.status}`
-      + ` rohdokumente=${g.datenstand.rohdokumente} (vor der Korrektur: ueberzogenMs=${ueberziehungVor})`);
-    // EIN einzelner Vergleich beim REGULAEREN Production-Budget (Abschnitt 2/3 oben, 222 000 ms)
-    // ist als WORST-CASE-Beleg nicht robust — welche Stufe genau die Deadline ueberschreitet,
-    // haengt vom kalibrierten Latenzmix DIESER einen Stufe ab. Belastbar ist ein gezielt
-    // ADVERSARIALER Budgetwert: die schlechtestmoegliche Ueberziehung EINER Stufe ist strukturell
-    // durch `ceil(stufenGroesse / googleConcurrency) * fetchTimeoutMs` begrenzt — beim alten
-    // Default (20/5=4 Runden) bis zu 28 000 ms, beim neuen (5/5=1 Runde) bis zu 7 000 ms (+
-    // Mindestabstand). 205 000 ms liegt (durch Vorlauf ermittelt, deterministisch reproduzierbar)
-    // kurz vor einer Stufengrenze des ALTEN Defaults und trifft dort die naeher am theoretischen
-    // Maximum liegende Ueberziehung — eine gezielte Verschaerfung fuer den ALTEN Pfad, kein
-    // guenstig gewaehlter Punkt fuer den NEUEN. Bewusst EIN Wert statt eines breiten Sweeps: jeder
-    // weitere Wert kostet einen weiteren vollen 181-Quellen-Simulationslauf je Konfiguration.
-    const adversarialesBudgetMs = 205000;
-    process.env.HELMUT_GLOBALPHASE_ABRUF_STUFE = "20";
-    const altAdv = await laufGlobal({ budgetMs: adversarialesBudgetMs, laufKennung: "adv-alt" });
-    delete process.env.HELMUT_GLOBALPHASE_ABRUF_STUFE;
-    const neuAdv = await laufGlobal({ budgetMs: adversarialesBudgetMs, laufKennung: "adv-neu" });
-    const maxAlt = Math.max(0, altAdv.dauerMs - adversarialesBudgetMs);
-    const maxNeu = Math.max(0, neuAdv.dauerMs - adversarialesBudgetMs);
-    console.log(`  INFO  Adversariales Budget ${adversarialesBudgetMs} ms`
-      + ` — alt (Stufe 20): Ueberziehung ${maxAlt} ms — neu (Stufe 5): Ueberziehung ${maxNeu} ms`);
-    check("3.1 beim gezielt adversarialen Budgetwert ist die Ueberziehung NACH der Korrektur kleiner als VOR der Korrektur",
-      maxNeu < maxAlt, `alt=${maxAlt} neu=${maxNeu}`);
-    // Bewusst KEIN Vergleich gegen eine absolute Zielzahl (das waere wieder Nachtunen). Die
-    // Aussage ist strukturell: das schlechtestmoegliche Zeitfenster EINER Stufe schrumpft von
-    // ceil(20/5)=4 Google-Gate-Runden auf ceil(5/5)=1 Runde — siehe Kommentar in scheduler.js
-    // an der Stelle der Korrektur.
-    check("3.2 die Ueberziehung bleibt unter EINER Google-Gate-Runde in der Groessenordnung (grob < 15 000 ms, nicht mehrere Zehntausend)",
-      ueberziehungNach < 15000, `${ueberziehungNach} ms`);
-    // EHRLICH, keine falsche Erfolgsmeldung (CLAUDE.md §4.4): die Korrektur behebt die
-    // UNKONTROLLIERTE Ueberziehung, NICHT die zugrundeliegende Kapazitaetsgrenze. Der
-    // Datenstand bleibt bei dieser Lastprobe weiterhin "teilweise", nicht "abgeschlossen" —
-    // wer hier "6 von 6 Mandate" oder "abgeschlossen" erwartet, bekommt das NICHT.
-    check("3.3 EHRLICH: die Korrektur behauptet KEINEN vollstaendigen Lauf — der Datenstand bleibt bei dieser Last weiterhin NICHT abgeschlossen",
-      g.datenstand.status !== G.DATENSTAND_ABGESCHLOSSEN, g.datenstand.status);
-    const restMsNach = Math.max(0, 270000 - nachLauf.dauerMs);
-    const passendeMandateNach = Math.floor(restMsNach / F_DEFAULT_TENANT_RESERVE_MS());
-    console.log(`  INFO  Restzeit fuer die Mandatsphase NACH der Korrektur: ${restMsNach} ms`
-      + ` (reicht rechnerisch fuer hoechstens ${passendeMandateNach} von 6 Mandaten)`);
-    check("3.4 EHRLICH: auch NACH der Korrektur erreichen bei dieser Last nicht alle sechs Mandate denselben Lauf — das ist die verbleibende, groessere Kapazitaetsfrage (Abschnitt 6)",
-      passendeMandateNach < 6, `${passendeMandateNach} von 6`);
+    // Dieser Abschnitt hat bis zum 2026-08-04 einen kleineren Stufen-Default begruendet. Die
+    // Begruendung ist NACHGEMESSEN WORDEN UND FALSCH; die Codeaenderung ist zurueckgenommen
+    // (`lib/helmut/scheduler.js` ist wieder identisch mit `main`). Was hier steht, ist der
+    // korrigierte Befund — kein Erfolg, sondern eine widerrufene Annahme (CLAUDE.md §4.4).
+    //
+    // (a) Die Formel `ceil(stufenGroesse / googleConcurrency) * CRAWLER_TIMEOUT_MS` setzt
+    //     voraus, dass EINE Quelle GENAU EINE HTTP-Anfrage ist. Am Code ist das nicht so:
+    //     ein Feedabruf je Feed-URL (Personenquellen haben ZWEI), je Eintrag
+    //     `resolveArticleUrl` (1x `fetchUrl` mit bis zu 6 Weiterleitungen + bis zu 2x
+    //     `postForm`), und fuer `type: "person"` danach eine vollstaendig SEQUENZIELLE
+    //     Anreicherungsschleife. Offline gemessen (`scripts/quellen-mehrfachabruf-test.js`):
+    //     EINE Suchquelle = 37 Anfragen = 11,5 Anfragezeitlimits; EINE Personenquelle =
+    //     98 Anfragen = 45,4 Anfragezeitlimits.
+    // (b) Production bestaetigt es: einzelne Quellen liefen 41 892 / 41 340 / 40 851 /
+    //     35 005 ms bei `CRAWLER_TIMEOUT_MS = 7 000` — mit `retry_count = 0`.
+    // (c) Eine kleinere Stufe kann den Abruf nicht beschleunigen: die Summe der Stufenmaxima
+    //     ist eine Untergrenze der Abrufdauer und steigt beim Verfeinern monoton.
+    // (d) Der gescheiterte Lauf hat das Start-Gatter nie erreicht (Abruf endete bei t = 115,2 s
+    //     eines 221,674-s-Budgets, `nichtAbgerufen = 0`). Die Ueberziehung entstand danach.
+    const DAUERN = VERMESSENE_QUELLENDAUERN;
+    const summeMaxima = (g) => {
+      let t = 0;
+      for (let i = 0; i < DAUERN.length; i += g) t += Math.max(...DAUERN.slice(i, i + g));
+      return t;
+    };
+    const startUntergrenze = (g, idx) => {
+      let t = 0;
+      for (let k = 0; k < Math.floor(idx / g); k += 1) t += Math.max(...DAUERN.slice(k * g, (k + 1) * g));
+      return t;
+    };
+    console.log(`  INFO  Abruf-Untergrenze aus den 181 gemessenen Quellendauern:`
+      + ` Stufe 20 -> ${(summeMaxima(20) / 1000).toFixed(1)} s,`
+      + ` Stufe 10 -> ${(summeMaxima(10) / 1000).toFixed(1)} s,`
+      + ` Stufe 5 -> ${(summeMaxima(5) / 1000).toFixed(1)} s`);
+    check("3.1 ZURUECKGENOMMEN: eine kleinere Stufe SENKT die Abrufdauer nicht, sie hebt deren Untergrenze",
+      summeMaxima(5) > summeMaxima(10) && summeMaxima(10) > summeMaxima(20),
+      `20 -> ${summeMaxima(20)} ms, 5 -> ${summeMaxima(5)} ms`);
+    check("3.2 ZURUECKGENOMMEN: eine kleinere Stufe verzoegert zusaetzlich die direkten/amtlichen Quellen",
+      startUntergrenze(5, 120) > startUntergrenze(20, 120),
+      `Stufe 20: ${(startUntergrenze(20, 120) / 1000).toFixed(2)} s,`
+      + ` Stufe 5: ${(startUntergrenze(5, 120) / 1000).toFixed(2)} s`);
+    check("3.3 die Codeaenderung ist entfernt — `scheduler.js` traegt wieder den Default 20",
+      /HELMUT_GLOBALPHASE_ABRUF_STUFE \|\| 20/.test(
+        require("fs").readFileSync(require("path").join(ROOT, "lib", "helmut", "scheduler.js"), "utf8")));
+    check("3.4 EHRLICH: die eigentliche Ueberziehung lag NACH dem Abruf und ist hier nicht behoben"
+      + " — Ursache und Reparatur stehen in `docs/betrieb/vorgangskontext.md` §7.6",
+      vorLauf.dauerMs > aufteilung.globalMs);
   }
 
-  // ──────────────────────────────────────────────────────────────────────────────────────────
   abschnitt("4 · Woran die Zeit haengt — Phasenzuordnung");
   {
     // Nutzt die bereits waehrend Abschnitt 2 mitgeschriebene reine Abrufzeit

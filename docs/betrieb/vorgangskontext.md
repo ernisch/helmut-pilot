@@ -528,17 +528,7 @@ Beide Läufe zeigten wiederholt `[crawler] Google-News URL-Auflösung: N/M aufge
 
 ### 7.6.2 Root Cause, zweigeteilt
 
-**(1) Durchsetzungsfehler, BEHOBEN.** `runGlobaleErfassung` (`lib/helmut/scheduler.js`) ruft
-`crawlAllSources` in Stufen von `HELMUT_GLOBALPHASE_ABRUF_STUFE` Quellen (Default **war** 20) auf
-und prüft die Restzeit nur **zwischen** Stufen (Start-Gatter) — strukturell derselbe Fehler wie
-R-6 ([`cron-fairness.md`](cron-fairness.md) §11.1), nur an dieser Stelle statt in der
-Fairnessschleife. Schlechtestmögliche Überziehung **einer** Stufe:
-`ceil(stufenGroesse / HELMUT_GOOGLE_CONCURRENCY) * CRAWLER_TIMEOUT_MS` — beim alten Default
-(20 Quellen, Google-Gate-Nebenläufigkeit 5, Timeout 7 000 ms) bis zu **28 000 ms**. Das erklärt
-sowohl die 45 448-ms-Überziehung des 16:00-Laufs als auch den Anschlag ans äußere Limit um
-20:00 Uhr. **Korrektur:** Default auf **5** gesenkt (= Google-Gate-Nebenläufigkeit) — bindet die
-schlechtestmögliche Überziehung an **eine** Gate-Runde (~7–8 s) statt vier. Ändert **nichts** an
-`crawler.js`, `google-news-hardening.js`, Cron-Zeiten, Budgets oder LLM-Aufrufen.
+**(1) Angenommener Durchsetzungsfehler — ZURUECKGENOMMEN (2026-08-04).** **Root Cause — KORRIGIERT am 2026-08-04, die urspruengliche Zuschreibung dieses PR traegt nicht.** Nachgemessen: der Abruf endete bei **t = 115,2 s** eines **221,674-s**-Budgets (`nichtAbgerufen = 0`, `fehler: 0`) — das Start-Gatter des Stufenabrufs hat nie gegriffen, die Ueberziehung entstand vollstaendig **danach**. Die Formel `ceil(stufenGroesse / googleConcurrency) * CRAWLER_TIMEOUT_MS` setzt voraus, dass EINE Quelle GENAU EINE HTTP-Anfrage ist; am Code ist das nicht so (Feedabruf je Feed-URL, je Eintrag `resolveArticleUrl` mit `fetchUrl` + bis zu 2x `postForm`, fuer `type: "person"` zusaetzlich eine sequenzielle Anreicherungsschleife). Offline gemessen: EINE Suchquelle = 37 Anfragen = 11,5 Anfragezeitlimits, EINE Personenquelle = 98 Anfragen = 45,4 Anfragezeitlimits; Production bestaetigt es mit einzelnen Quellen von 41 892 / 41 340 / 40 851 / 35 005 ms bei `CRAWLER_TIMEOUT_MS = 7 000` und `retry_count = 0`. **Die Senkung des Defaults von 20 auf 5 ist deshalb ZURUECKGENOMMEN** (`lib/helmut/scheduler.js` ist wieder identisch mit `main`): sie begrenzt die Ueberziehung nicht, hebt die Untergrenze des Abrufs (Stufe 20 -> 71,3 s, Stufe 10 -> 90,2 s, Stufe 5 -> 153,0 s an den 181 gemessenen Quellendauern) und verzoegert die direkten/amtlichen Quellen (spaeteste Startuntergrenze 9,85 s -> 31,53 s). Belege: `scripts/quellen-mehrfachabruf-test.js`. Die bewiesene Ursache und ihre Reparatur stehen in PR #219.
 
 **(2) Strukturelle Kapazitätsgrenze, NICHT behoben.** Der Google-News-Gate (Nebenläufigkeit 5,
 Mindestabstand 200 ms, 7 000-ms-Timeout je Quelle) reicht bei ~140 gemeinsamen, überwiegend
