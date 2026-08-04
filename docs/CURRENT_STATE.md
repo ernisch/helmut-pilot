@@ -1,6 +1,62 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-08-04, 5. Durchgang (**Sprint „OP-25 E3-Entscheidung + vollständige
+**Letzte Aktualisierung:** 2026-08-04, 6. Durchgang (**Review zu PR #222 vollständig eingearbeitet —
+drei nachweisrelevante Lücken geschlossen, alle fail closed, KEIN Production-Eingriff, kein Merge.**
+**Der Reviewer fand drei Wege, auf denen der Nachweisvertrag fälschlich GRÜN hätte werden können:**
+**(1) KOSTENVERTRAG** — geprüft wurde nur auf `null`; `NaN > rahmen` ist aber *immer* `false`, ein
+kaputter Kostenwert wäre also ein BESTANDENER Vertrag gewesen, und ein fehlendes `llmUsage` sah im
+CLI wie 0,00 USD aus. **Jetzt:** jeder Kostenwert muss eine endliche, nicht negative **Zahl** sein
+(`NaN`/`±Infinity`/negativ/Zeichenkette/Wahrheitswert fallen durch); die **Vollständigkeit** der
+Kostendaten ist eine ausdrückliche Zusage statt einer Annahme (fehlendes `llmUsage`, nicht lesbarer
+Auth-Store oder ein an der 5 000er-Grenze verdrängtes Kostenfenster ⇒ `blockiert`); nicht
+bepreisbare Einträge im Fenster werden gezählt und blockieren, statt die Summe still zu verkleinern;
+eine **belegte** 0,00 USD besteht weiterhin. **Gemeinsame Wurzel mitgeschlossen:** `Number(null)`
+ist `0` und gilt als „endlich" — der Vertrag liest Zahlen jetzt überall durch `alsZahl()`, das
+`null`/`undefined`/`""` strikt als *nicht vorhanden* behandelt (dieselbe Falle steckte in Dauer,
+Budget und Rückstandszählung). **(2) MANDATSMENGE war nicht wirklich eingefroren** — das Werkzeug
+las bei der späteren Auswertung den AKTUELLEN Bestand, und `quellenVereinigung` speicherte nur die
+**Anzahl**; ein Austausch bei gleicher Anzahl wäre unsichtbar geblieben. **Jetzt** Zwei-Schritt-
+Ablauf: `--startbaseline-schreiben` erhebt unmittelbar nach der Aktivierung rein lesend eine
+**Startbaseline** (Aktivierungszeitpunkt, exakte Menge, stabiler Hash `m<n>-<sha256/16>`), die
+Auswertung prüft **identitätsgenau** gegen **jeden Lauf** (neues persistiertes Feld
+`quellenVereinigung.mandateIds`) **und** den Endzustand. Fehlende, nachträglich veränderte, zu spät
+erhobene oder zu einer fremden Aktivierung gehörende Baseline ⇒ `blockiert` (kein Ersatz aus dem
+aktuellen Bestand); ein Lauf ohne Mandatskennungen ⇒ `blockiert`; eine spätere **Rückkehr** zur
+Ursprungsmenge heilt das Fenster nicht. **(3) DAUERHAFTE BELEGQUELLE wurde behauptet, aber nicht
+benutzt** — bewertet wurden allein `mainStore.crawlRuns` mit Retention **20**, während ein
+24-h-Fenster bei fünf Mandaten schon **18** Datensätze braucht. **Jetzt** gehen die
+`process_runs`-Zeilen `globalphase` (relational + Auth-Store-Spiegel, dedupliziert) wirklich in die
+Bewertung ein und trennen **„verdrängt"** (`blockiert`) von **„nie gelaufen"** (`nicht_bestanden`);
+dazu ein reproduzierbarer **Aufbewahrungsvertrag** (Bedarf = Läufe × (1 + n Mandate); Retention zu
+klein ⇒ `blockiert` mit Handlungsanweisung, knapp ⇒ Warnung; Ablage an der Grenze + Termin vor dem
+ältesten Datensatz ⇒ `blockiert`). **Und die Laufzeit kommt jetzt aus dem VERSIEGELTEN Beleg:**
+`datenstandVermerk` trägt neu `dauerMs` (aus `datenstandVersiegeln`) und `budgetMs` (in den
+Datenstand hineingegeben) — Dauer und Grenze aus DERSELBEN Quelle; der Laufdatensatz-Wert
+`durationMs` entsteht **vor** dem Versiegeln, unterzeichnet die Phase systematisch und belegt den
+Budgetvertrag nicht mehr. Fehlen beide Zeitquellen ⇒ `blockiert`; widersprechen sie sich ⇒
+`nicht_bestanden`. **GEÄNDERTE DATEIEN (Review-Durchgang):** `lib/helmut/op25-nachweis.js` ·
+`lib/helmut/cron-globalphase.js` (Vermerk + `budgetMs` im Datenstand) · `lib/helmut/scheduler.js`
+(`mandateIds`, `budgetMs` beim Versiegeln) · `lib/helmut/storage.js` (Allowlist: `mandateIds`,
+`dauerMs`, `budgetMs`) · `scripts/op25-production-nachweis.js` (Startbaseline, dauerhafte Quelle,
+Kostenvollständigkeit) · `scripts/op25-nachweis-vertrag-test.js` · `scripts/op25-e3-dauerhaftigkeit-test.js` ·
+`scripts/op25-nachweis-mutationsprobe.js` · `scripts/cron-globalphase-test.js` (Vermerk-Allowlist
+bewusst um zwei PII-freie Zahlenfelder erweitert) · `docs/betrieb/vorgangskontext.md` (§7.7.1) ·
+`docs/datenmotor-restliste.md` · `docs/CURRENT_STATE.md`. **TESTS (real gemessen):**
+`op25-nachweis-vertrag-test` **108/108** (vorher 71; +37 Prüfpunkte allein für die drei Härtungen) ·
+`op25-e3-dauerhaftigkeit-test` **52/52** (vorher 44) · Mutationsprobe **31 von 31 rot** (vorher 14;
+die Probe zählt eine nicht mehr treffende Mutation jetzt als eigenen Fehlerfall `unwirksam`, statt
+sie als Beleg durchgehen zu lassen) · `cron-globalphase` **176/176** · `globalphase-buendelung`
+**56/56** · `globalabruf-kapazitaet` **47/47** · `vorgangskontext` **102/102** ·
+`compact-store-roundtrip` **26/26** · `prozesslauf-telemetrie` **37/37** · `cron-fairness`
+**285/285** · `run-offline-tests` **191/205** mit exakt derselben 14er-Fehlschlagliste wie vor der
+Review (Basislinie `origin/main` 186/203, deren 17er-Liste diese 14 enthält) — kein neuer Fehlschlag.
+**PRODUCTION-DRY-RUN erneut (rein lesend, 2026-08-04 12:22 UTC): ehrlich `noch_nicht_auswertbar`
+(Exit 3)**; zusätzlich am echten Production-Bestand geprobt: `--startbaseline-schreiben` erhebt die
+Startbaseline korrekt (`m5-9aee228dbf2c9f13`, 5 aktive reale Mandate, lokale Belegdatei außerhalb
+des Repos) und die anschließende Auswertung meldet ehrlich `fenster-noch-nicht-vergangen`. **0
+Writes in Production, 0 KI-Aufrufe, 0,00 USD, keine Migration, kein Flag, kein Cron, kein Merge;
+`dauerhafte globalphase-Zeilen: 0` — erwartungsgemäß, der Schreibpfad ist noch nicht deployt.**) ·
+(5. Durchgang: **Sprint „OP-25 E3-Entscheidung + vollständige
 Vorbereitung des neuen Production-Nachweises" — TEILWEISE ABGESCHLOSSEN: die Vorbereitung ist
 vollständig (Vertrag ausführbar, Werkzeug gebaut und getestet, Dry-Run ehrlich nicht grün), der
 Production-Nachweis selbst beginnt erst nach der getrennt freigabepflichtigen Wiederaktivierung.

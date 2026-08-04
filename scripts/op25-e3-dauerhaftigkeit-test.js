@@ -65,6 +65,16 @@ console.log("== 1 · Statusableitung (datenstandVersiegeln) — unabhaengige Sol
     })());
   check("1.7 'teilweise' ist nie 'frisch' (kein falsches Gruen im Lesepfad)",
     G.datenstandFrisch(G.datenstandVersiegeln(neu(), { nowMs: 2000, budgetErschoepft: true })) === false);
+  // Review-Haertung 3: Dauer UND Budget gehoeren in den VERSIEGELTEN Datenstand, damit der
+  // Nachweis die Budgetgrenze nicht am vorher gebildeten `durationMs` pruefen muss.
+  const versiegelt = G.datenstandVersiegeln(neu(), { nowMs: 9500, budgetMs: 221000 });
+  check("1.9 Versiegeln setzt dauerMs = nowMs - startAt (hier 9500 - 1000 = 8500)",
+    versiegelt.dauerMs === 8500, String(versiegelt.dauerMs));
+  const vermerk = G.datenstandVermerk(versiegelt);
+  check("1.10 Der Vermerk traegt versiegelte dauerMs UND budgetMs",
+    vermerk.dauerMs === 8500 && vermerk.budgetMs === 221000, JSON.stringify({ d: vermerk.dauerMs, b: vermerk.budgetMs }));
+  check("1.11 Ohne uebergebenes Budget bleibt budgetMs ehrlich null (keine erfundene 0)",
+    G.datenstandVermerk(G.datenstandVersiegeln(neu(), { nowMs: 2000 })).budgetMs === null);
   check("1.8 Mandatsphase wirft auf fehlgeschlagenem Datenstand",
     (() => {
       const d = G.datenstandVersiegeln(neu(), { nowMs: 2000, fehler: [{ schritt: "erfassung", grund: "x", fatal: true }] });
@@ -204,6 +214,19 @@ async function laufGlobal(welt, extra = {}) {
       Boolean(zeile) && zeile.runId === "cron-pipeline-20260810160003-testr-global" && zeile.mode === "global");
     check("2a.7 Prozesszeile: status=success, reason traegt die Ursachenzerlegung",
       zeile && zeile.status === "success" && /status=abgeschlossen/.test(zeile.reason) && /persistenz=ok/.test(zeile.reason));
+    // Review-Haertung 3: die dauerhafte Zeile traegt die VERSIEGELTE Dauer, nicht die
+    // vorher gebildete — sie wird nach `datenstandVersiegeln` geschrieben.
+    check("2a.8 Prozesszeile traegt die VERSIEGELTE Dauer (= datenstand.dauerMs)",
+      zeile && zeile.durationMs === datenstand.dauerMs, `${zeile && zeile.durationMs} vs ${datenstand.dauerMs}`);
+    // Review-Haertung 2: der Laufdatensatz traegt die Mandats-IDENTITAETEN, nicht nur die Zahl.
+    check("2a.9 quellenVereinigung traegt die geplanten Mandatskennungen (nicht nur die Anzahl)",
+      g && g.quellenVereinigung && Array.isArray(g.quellenVereinigung.mandateIds)
+      && g.quellenVereinigung.mandateIds.join(",") === "t-1,t-2"
+      && g.quellenVereinigung.mandate === 2,
+      g && JSON.stringify(g.quellenVereinigung));
+    // Review-Haertung 3: der versiegelte Datenstand traegt sein eigenes Budget.
+    check("2a.10 Versiegelter Datenstand traegt budgetMs (Dauer und Grenze aus EINER Quelle)",
+      datenstand.budgetMs === 240000 && datenstand.dauerMs != null, JSON.stringify({ b: datenstand.budgetMs, d: datenstand.dauerMs }));
   }
 
   // ---- 2b: Lazy-Stapel uebersprungen => ehrliches teilweise + exakte Zaehlung ---------------
@@ -419,7 +442,10 @@ async function laufGlobal(welt, extra = {}) {
       runId: "cron-pipeline-20260810160003-testr-global",
       globalphase: true,
       datenstandDetail: detail,
-      quellenVereinigung: { gesamt: 181, gemeinsam: 140, mandatseigen: 41, doppelteAbrufwege: 3, fehlerhafteProfile: [], mandate: 5 },
+      quellenVereinigung: {
+        gesamt: 181, gemeinsam: 140, mandatseigen: 41, doppelteAbrufwege: 3,
+        fehlerhafteProfile: [], mandate: 5, mandateIds: ["m-a", "m-b", "m-c", "m-d", "m-e"]
+      },
       geheimesFeld: "DARF NICHT PERSISTIERT WERDEN"
     });
     check("4.1 datenstandDetail ueberlebt die Kompaktierung (Zaehler exakt)",
@@ -430,6 +456,9 @@ async function laufGlobal(welt, extra = {}) {
       && kompakt.datenstandDetail.persistenz.zaehlerVerfehlt === 0);
     check("4.2 quellenVereinigung + globalphase-Kennzeichen ueberleben",
       kompakt.quellenVereinigung && kompakt.quellenVereinigung.mandate === 5 && kompakt.globalphase === true);
+    check("4.2b Mandats-IDENTITAETEN ueberleben die Kompaktierung (Review-Haertung 2)",
+      kompakt.quellenVereinigung.mandateIds
+      && kompakt.quellenVereinigung.mandateIds.join(",") === "m-a,m-b,m-c,m-d,m-e");
     check("4.3 Fremd-/Textfelder werden weiterhin GESTRIPPT (Datensparsamkeit)",
       !("geheimesFeld" in kompakt)
       && !("grundVollText" in (kompakt.datenstandDetail.fehlerSchritte[0] || {}))
@@ -440,13 +469,16 @@ async function laufGlobal(welt, extra = {}) {
       runId: "cron-pipeline-20260810160003-testr",
       globalLaufId: "cron-pipeline-20260810160003-testr-global",
       datenstandFrisch: false,
-      datenstand: { laufId: "cron-pipeline-20260810160003-testr-global", status: "teilweise", versiegelt: true, frisch: false, beendetAt: 5, quellen: 181, rohdokumente: 2179, verstanden: 30, budgetErschoepft: true, fehler: 0, buendelung: "kontext", kontexte: 14 }
+      datenstand: { laufId: "cron-pipeline-20260810160003-testr-global", status: "teilweise", versiegelt: true, frisch: false, beendetAt: 5, quellen: 181, rohdokumente: 2179, verstanden: 30, budgetErschoepft: true, fehler: 0, buendelung: "kontext", kontexte: 14, dauerMs: 197190, budgetMs: 221674 }
     });
     check("4.4 Mandatslauf behaelt datenstand-Vermerk + globalLaufId + datenstandFrisch",
       mandatKompakt.datenstand && mandatKompakt.datenstand.status === "teilweise"
       && mandatKompakt.datenstand.versiegelt === true
       && mandatKompakt.globalLaufId === "cron-pipeline-20260810160003-testr-global"
       && mandatKompakt.datenstandFrisch === false);
+    check("4.5 VERSIEGELTE Dauer und Budget ueberleben die Kompaktierung (Review-Haertung 3)",
+      mandatKompakt.datenstand.dauerMs === 197190 && mandatKompakt.datenstand.budgetMs === 221674,
+      JSON.stringify({ d: mandatKompakt.datenstand.dauerMs, b: mandatKompakt.datenstand.budgetMs }));
   }
 
   console.log(`\n${passed + failed} Pruefpunkte · ${passed} PASS · ${failed} FAIL`);

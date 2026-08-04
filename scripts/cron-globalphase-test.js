@@ -717,9 +717,14 @@ function sechsProfile() {
     // K2.1 (2026-07-31): der Vermerk hat ZWEI additive Felder bekommen (`buendelung`,
     // `kontexte`). Beide sind Zaehler/Enum ohne Personenbezug — die Zusage „PII-frei und
     // kompakt" gilt unveraendert, die erwartete Feldliste ist nachgezogen.
+    // Die Allowlist ist bewusst EXAKT: jedes neue Feld muss hier eingetragen werden und ist
+    // damit eine bewusste Entscheidung. OP-25 E3 (2026-08-04) ergaenzt `dauerMs` und
+    // `budgetMs` — die VERSIEGELTE Laufzeit und ihre Grenze, beide reine Zahlen ohne PII.
+    // Sie sind noetig, weil der Production-Nachweis die Budgetgrenze sonst am vor dem
+    // Versiegeln gebildeten `durationMs` pruefen muesste (Review zu PR #222).
     check("3.12 der Vermerk ist PII-frei und kompakt (nur Kennung, Status, Zaehler)",
       Object.keys(G.datenstandVermerk(sauber)).sort().join(",")
-      === "beendetAt,budgetErschoepft,buendelung,fehler,frisch,kontexte,laufId,quellen,rohdokumente,status,versiegelt,verstanden");
+      === "beendetAt,budgetErschoepft,budgetMs,buendelung,dauerMs,fehler,frisch,kontexte,laufId,quellen,rohdokumente,status,versiegelt,verstanden");
     check("3.13 ein teilweiser Datenstand meldet `frisch:false` im Vermerk",
       G.datenstandVermerk(teil).frisch === false && G.datenstandVermerk(teil).status === G.DATENSTAND_TEILWEISE);
   }

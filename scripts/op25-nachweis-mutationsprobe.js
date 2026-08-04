@@ -102,8 +102,8 @@ const PROBEN = [
     name: "M4 Vorrang kippt: Belegluecke schlaegt bewiesene Verletzung",
     suite: VERTRAG_SUITE,
     mutiere: (b) => ersetze(b, KERN,
-      "  if (hat(AUSGANG_NICHT_BESTANDEN)) return ergebnis(AUSGANG_NICHT_BESTANDEN, laufErgebnisse);\n  if (hat(AUSGANG_BLOCKIERT)) return ergebnis(AUSGANG_BLOCKIERT, laufErgebnisse);",
-      "  if (hat(AUSGANG_BLOCKIERT)) return ergebnis(AUSGANG_BLOCKIERT, laufErgebnisse);\n  if (hat(AUSGANG_NICHT_BESTANDEN)) return ergebnis(AUSGANG_NICHT_BESTANDEN, laufErgebnisse);")
+      "  if (hat(AUSGANG_NICHT_BESTANDEN)) return ergebnis(AUSGANG_NICHT_BESTANDEN, laufErgebnisse, zusatz);\n  if (hat(AUSGANG_BLOCKIERT)) return ergebnis(AUSGANG_BLOCKIERT, laufErgebnisse, zusatz);",
+      "  if (hat(AUSGANG_BLOCKIERT)) return ergebnis(AUSGANG_BLOCKIERT, laufErgebnisse, zusatz);\n  if (hat(AUSGANG_NICHT_BESTANDEN)) return ergebnis(AUSGANG_NICHT_BESTANDEN, laufErgebnisse, zusatz);")
   },
   {
     name: "M5 Persistenz 'fehlend' gilt ploetzlich als belegt",
@@ -174,17 +174,154 @@ const PROBEN = [
     mutiere: (b) => ersetze(b, UNDER,
       "const vermerk = await deps.savePending(vorgangId, {",
       "const vermerk = null && await deps.savePending(vorgangId, {")
+  },
+
+  // --- Review-Haertung 1: Kostenvertrag ------------------------------------------------------
+  {
+    name: "M15 Kostenzahlen werden nicht mehr validiert (NaN/negativ passieren)",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  return typeof wert === \"number\" && Number.isFinite(wert) && wert >= 0;",
+      "  return true;")
+  },
+  {
+    name: "M16 alsZahl deutet null wieder still in 0 um",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (wert == null || wert === \"\") return null;",
+      "  if (wert === \"\") return null;")
+  },
+  {
+    name: "M17 Vollstaendigkeit der Kostendaten wird nicht mehr verlangt",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (kosten.vollstaendig !== true) {",
+      "  if (false) {")
+  },
+  {
+    name: "M18 Unbepreiste Nutzungseintraege werden ignoriert",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  } else if (unbepreist > 0) {",
+      "  } else if (false) {")
+  },
+
+  // --- Review-Haertung 2: eingefrorene Mandatsmenge ------------------------------------------
+  {
+    name: "M19 Mandatsmenge wird wieder nur nach ANZAHL verglichen (Austausch unsichtbar)",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  } else if (!mengeGleich(geplanteIds, mandatsMenge)) {",
+      "  } else if (geplanteIds.length !== mandatsMenge.length) {")
+  },
+  {
+    name: "M20 Fehlende Startbaseline wird durch den AKTUELLEN Bestand ersetzt",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (!startbaseline || !Array.isArray(startbaseline.mandate) || !startbaseline.mandate.length) {",
+      "  if (false && !startbaseline) {")
+  },
+  {
+    name: "M21 Endzustand wird nicht mehr gegen die eingefrorene Menge geprueft",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (endzustand.signatur !== frozen.signatur) {",
+      "  if (endzustand.anzahl !== frozen.anzahl) {")
+  },
+  {
+    name: "M22 Laeufe ohne Mandatskennungen gelten wieder als geprueft",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (!Array.isArray(geplanteIds)) {",
+      "  if (false) {")
+  },
+
+  // --- Review-Haertung 3: dauerhafte Quelle, Aufbewahrung, versiegelte Dauer -----------------
+  {
+    name: "M23 Dauerhafte Laufzeile wird nicht mehr konsultiert (verdraengt = fehlend)",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "    if (prozessLauf) {\n      befunde.push(befund(AUSGANG_BLOCKIERT, \"laufbeleg-verdraengt\",",
+      "    if (false) {\n      befunde.push(befund(AUSGANG_BLOCKIERT, \"laufbeleg-verdraengt\",")
+  },
+  {
+    name: "M24 Aufbewahrungsvertrag faellt weg (Retention kleiner als Bedarf passiert)",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "    if (benoetigteDatensaetze > retention) {",
+      "    if (false) {")
+  },
+  {
+    name: "M25 Budget wird wieder am VOR dem Versiegeln gebildeten durationMs geprueft",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "    if (alsZahl(vermerk.dauerMs) !== null) versiegelteDauerMs = alsZahl(vermerk.dauerMs);",
+      "    if (alsZahl(globalerLauf.durationMs) !== null) versiegelteDauerMs = alsZahl(globalerLauf.durationMs);")
+  },
+  {
+    name: "M26 Fehlende versiegelte Laufzeit wird stillschweigend hingenommen",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (versiegelteDauerMs == null || versiegeltesBudgetMs == null) {",
+      "  if (false) {")
+  },
+  {
+    name: "M27 Widerspruch zwischen dauerhafter Zeile und Vermerk wird verschluckt",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "    if (alsZahl(prozessLauf.durationMs) !== null && versiegelteDauerMs != null",
+      "    if (false && alsZahl(prozessLauf.durationMs) !== null && versiegelteDauerMs != null")
+  },
+
+  // --- Die neuen Belegfelder im Produktionscode ----------------------------------------------
+  {
+    name: "M28 Laufdatensatz traegt die Mandatskennungen nicht mehr",
+    suite: E3_SUITE,
+    mutiere: (b) => ersetze(b, SCHED,
+      "        mandateIds: [...tenantIds]",
+      "        mandateIds: undefined")
+  },
+  {
+    name: "M29 Budget wandert nicht mehr in den versiegelten Datenstand",
+    suite: E3_SUITE,
+    mutiere: (b) => ersetze(b, SCHED,
+      "      budgetMs,\n      quellen: plan.gesamt,",
+      "      quellen: plan.gesamt,")
+  },
+  {
+    name: "M30 compactQuellenVereinigung strippt die Mandatskennungen",
+    suite: E3_SUITE,
+    mutiere: (b) => ersetze(b, STORE,
+      "    mandateIds: Array.isArray(value.mandateIds)\n      ? value.mandateIds.slice(0, 200).map((id) => String(id).slice(0, 80))\n      : null",
+      "    mandateIds: null")
+  },
+  {
+    name: "M31 compactDatenstandVermerk strippt die versiegelte Dauer",
+    suite: E3_SUITE,
+    mutiere: (b) => ersetze(b, STORE,
+      "    dauerMs: num(value.dauerMs),\n    budgetMs: num(value.budgetMs)",
+      "    dauerMs: null,\n    budgetMs: null")
   }
 ];
 
 let rot = 0;
 let gruen = 0;
+let unwirksam = 0;
 console.log("OP-25 Mutationsprobe — jede Probe MUSS die Suite rot machen");
 console.log("=".repeat(78));
 for (const probe of PROBEN) {
   const basis = baueArbeitskopie();
   try {
-    probe.mutiere(basis);
+    try {
+      probe.mutiere(basis);
+    } catch (fehler) {
+      // Eine Mutation, deren Muster nicht (mehr) trifft, ist KEIN Beleg — sie waere ein
+      // falsch gruenes Ergebnis. Sie wird als eigener Fehlerfall gezaehlt statt den Lauf
+      // abzubrechen, damit alle uebrigen Proben trotzdem messbar bleiben.
+      unwirksam += 1;
+      console.log(`UNWIRKSAM      ${probe.name} — ${(fehler && fehler.message) || fehler}`);
+      continue;
+    }
     const bestehtNoch = laeuftGruen(basis, probe.suite);
     if (bestehtNoch) {
       gruen += 1;
@@ -199,5 +336,5 @@ for (const probe of PROBEN) {
 }
 
 console.log("=".repeat(78));
-console.log(`${rot} von ${PROBEN.length} Proben rot · ${gruen} Loecher`);
-process.exit(gruen ? 1 : 0);
+console.log(`${rot} von ${PROBEN.length} Proben rot · ${gruen} Loecher · ${unwirksam} unwirksam`);
+process.exit(gruen || unwirksam ? 1 : 0);

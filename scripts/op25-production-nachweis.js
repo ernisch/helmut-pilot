@@ -23,6 +23,9 @@
 //    keinen Cron-Trigger, keinen Pipeline-Aufruf, keine Flag-/Env-Aenderung, 0 KI-Aufrufe.
 // 4. Ausgegeben werden ausschliesslich technische Kennungen (Mandats-Slugs, Laufkennungen),
 //    Zaehler und Zeitstempel — keine Profilinhalte, keine Dokumenttexte, keine Secrets.
+// 5. Der EINZIGE Schreibvorgang des Werkzeugs ist `--startbaseline-schreiben <datei>`: eine
+//    LOKALE Belegdatei ausserhalb von Production (technische Slugs, Zaehler, Zeitstempel).
+//    Production wird dabei ausschliesslich gelesen.
 //
 // ── BEOBACHTUNGSFENSTER ──────────────────────────────────────────────────────────────────────
 // Das Fenster ist EXPLIZIT (Start/Ende) und beginnt erst nach der erneuten Aktivierung
@@ -31,12 +34,19 @@
 // Untergrenze im Bewertungskern). Ein Fenster unter 24 vollstaendig vergangenen Stunden
 // wird nie gruen.
 //
-// Aufruf (Beispiele):
-//   node scripts/op25-production-nachweis.js                      # Dry-Run: ehrlicher Zustand heute
-//   node scripts/op25-production-nachweis.js --baseline           # rein lesende Baseline
-//   node scripts/op25-production-nachweis.js \
-//     --aktivierung 2026-08-10T12:00:00Z \
-//     --fenster-start 2026-08-10T12:00:00Z --fenster-ende 2026-08-11T12:00:00Z
+// ── ZWEI SCHRITTE, WEIL DIE MANDATSMENGE EINGEFROREN WIRD ────────────────────────────────────
+// Schritt 1 (unmittelbar NACH der Aktivierung): Startbaseline erheben.
+//   node scripts/op25-production-nachweis.js --aktivierung <ISO> \
+//        --startbaseline-schreiben belege/op25-startbaseline.json
+// Schritt 2 (fruehestens 24 h spaeter): auswerten.
+//   node scripts/op25-production-nachweis.js --aktivierung <ISO> \
+//        --startbaseline belege/op25-startbaseline.json
+// Ohne Startbaseline ist der Mandatsbestand zum Aktivierungszeitpunkt nicht belegt — das
+// Ergebnis ist dann ehrlich `blockiert`, nie ein Ersatz aus dem AKTUELLEN Bestand.
+//
+// Weitere Aufrufe:
+//   node scripts/op25-production-nachweis.js              # Dry-Run: ehrlicher Zustand heute
+//   node scripts/op25-production-nachweis.js --baseline   # rein lesender Betriebsquerschnitt
 
 const https = require("https");
 const fs = require("fs");
@@ -62,6 +72,11 @@ const DOKUMENTIERTE_ERWARTETE_MANDATE = 5;
 // fail-closed Fallback 50). Ueberschreibbar per --kostenrahmen-usd bzw.
 // HELMUT_OP25_KOSTENRAHMEN_USD; ohne belastbaren Rahmen bleibt der Nachweis `blockiert`.
 const DOKUMENTIERTER_KOSTENRAHMEN_USD = Number(process.env.HELMUT_OP25_KOSTENRAHMEN_USD || 2);
+
+// Retention der Laufdatensaetze im Blob (storage.js: HELMUT_CRAWL_RUN_RETENTION, Default 20)
+// und der Nutzungseintraege im Auth-Store (storage.js `normalizeAuthStore`, fest 5 000).
+const LAUF_RETENTION = Math.max(1, Number(process.env.HELMUT_CRAWL_RUN_RETENTION) || 20);
+const LLM_USAGE_RETENTION = 5000;
 
 function pfadErlaubt(pfad) {
   if (typeof pfad !== "string" || !pfad.startsWith("/rest/v1/")) return false;
@@ -134,28 +149,144 @@ function istAktivesMandat(profil) {
   return true;
 }
 
+function aktiveMandateAus(mainStore) {
+  if (!mainStore || typeof mainStore !== "object") return null;
+  const profile = Object.values(mainStore.profiles || {});
+  if (!profile.length) return null;
+  return profile.filter(istAktivesMandat).map((p) => String(p.id)).sort();
+}
+
 function leseCrons() {
   const datei = path.join(__dirname, "..", "vercel.json");
   const inhalt = JSON.parse(fs.readFileSync(datei, "utf8"));
   return Array.isArray(inhalt.crons) ? inhalt.crons : [];
 }
 
-function kostenImFenster(llmUsage, vonMs, bisMs) {
-  let summe = 0;
-  for (const u of Array.isArray(llmUsage) ? llmUsage : []) {
-    const t = Date.parse((u && u.createdAt) || "");
-    if (!Number.isFinite(t) || t < vonMs || t >= bisMs) continue;
-    const kosten = Number(u.estimatedCost ?? u.costUsd ?? u.cost);
-    if (Number.isFinite(kosten)) summe += kosten;
+// DAUERHAFTE Laufbelege der globalen Phase. Zwei Quellen, dedupliziert ueber die
+// Laufkennung: die relationale Tabelle `process_runs` (kanonisch, sofern das Dual-Write-
+// Flag aktiv ist) und der Auth-Store-Spiegel (Blob, bis zu 300 Eintraege). Sie sind der
+// Beleg dafuer, DASS ein Lauf stattgefunden hat, auch wenn sein reicher Laufdatensatz
+// der Blob-Retention (20) zum Opfer gefallen ist.
+async function leseDauerhafteLaufzeilen(authStore) {
+  const gefunden = new Map();
+  let relationalFehler = null;
+  try {
+    const rows = await holen(
+      `/rest/v1/process_runs?select=run_id,process,status,duration_ms,started_at,finished_at,created_at`
+      + `&process=eq.${vertrag.GLOBALPHASE_PROZESS}&order=created_at.desc&limit=1000`
+    );
+    for (const r of Array.isArray(rows) ? rows : []) {
+      if (!r || !r.run_id) continue;
+      gefunden.set(String(r.run_id), {
+        runId: String(r.run_id),
+        process: r.process,
+        status: r.status || null,
+        durationMs: r.duration_ms == null ? null : Number(r.duration_ms),
+        createdAt: r.created_at || null,
+        quelle: "relational"
+      });
+    }
+  } catch (fehler) {
+    relationalFehler = String((fehler && fehler.message) || fehler).slice(0, 160);
   }
-  return Math.round(summe * 10000) / 10000;
+  for (const r of (authStore && Array.isArray(authStore.processRuns)) ? authStore.processRuns : []) {
+    if (!r || r.process !== vertrag.GLOBALPHASE_PROZESS || !r.runId) continue;
+    if (gefunden.has(String(r.runId))) continue;
+    gefunden.set(String(r.runId), {
+      runId: String(r.runId),
+      process: r.process,
+      status: r.status || null,
+      durationMs: r.durationMs == null ? null : Number(r.durationMs),
+      createdAt: r.createdAt || null,
+      quelle: "blob"
+    });
+  }
+  return { zeilen: [...gefunden.values()], relationalFehler };
+}
+
+// --- Kostenvertrag: Summe UND belegte Vollstaendigkeit ---------------------------------------
+// Eine leere oder fehlende Nutzungsliste sieht wie 0,00 USD aus. Genau das darf nie als
+// bestandener Kostenvertrag durchgehen — deshalb liefert diese Funktion nicht nur die Summe,
+// sondern auch, ob die Datenlage die Summe ueberhaupt TRAEGT.
+function kostenImFenster(authStore, vonMs, bisMs, rahmenUsd) {
+  if (!authStore || typeof authStore !== "object") {
+    return { fensterUsd: null, rahmenUsd, vollstaendig: false, unbepreisteEintraege: null, grund: "Auth-Store nicht lesbar" };
+  }
+  if (!Array.isArray(authStore.llmUsage)) {
+    return { fensterUsd: null, rahmenUsd, vollstaendig: false, unbepreisteEintraege: null, grund: "llmUsage fehlt im Auth-Store" };
+  }
+  const alle = authStore.llmUsage;
+  let summe = 0;
+  let unbepreist = 0;
+  let imFenster = 0;
+  let aeltesterMs = Infinity;
+  for (const u of alle) {
+    const t = Date.parse((u && u.createdAt) || "");
+    if (Number.isFinite(t) && t < aeltesterMs) aeltesterMs = t;
+    if (!Number.isFinite(t) || t < vonMs || t >= bisMs) continue;
+    imFenster += 1;
+    const roh = u.estimatedCost ?? u.costUsd ?? u.cost;
+    const kosten = typeof roh === "number" ? roh : Number(roh);
+    if (!Number.isFinite(kosten) || kosten < 0) { unbepreist += 1; continue; }
+    summe += kosten;
+  }
+  // VERDRAENGUNG: sitzt die Nutzungsliste an ihrer Grenze und beginnt sie erst NACH dem
+  // Fensterstart, sind fruehe Kosten des Fensters ueberschrieben — die Summe waere zu klein.
+  if (alle.length >= LLM_USAGE_RETENTION && Number.isFinite(aeltesterMs) && aeltesterMs > vonMs) {
+    return {
+      fensterUsd: Math.round(summe * 10000) / 10000, rahmenUsd, vollstaendig: false,
+      unbepreisteEintraege: unbepreist,
+      grund: `Nutzungsliste an der Aufbewahrungsgrenze (${alle.length}); aeltester Eintrag`
+        + ` ${new Date(aeltesterMs).toISOString()} liegt nach dem Fensterstart — fruehe Kosten verdraengt`
+    };
+  }
+  return {
+    fensterUsd: Math.round(summe * 10000) / 10000,
+    rahmenUsd,
+    vollstaendig: true,
+    unbepreisteEintraege: unbepreist,
+    eintraegeImFenster: imFenster
+  };
 }
 
 const zeit = (ms) => (Number.isFinite(ms) ? new Date(ms).toISOString().replace("T", " ").slice(0, 19) + "Z" : "—");
 
+// --- Startbaseline (lokale Belegdatei, Production nur gelesen) --------------------------------
+
+function schreibeStartbaseline(datei, { aktivierungAtMs, aktiveMandate, deploymentCommit }) {
+  const sig = vertrag.mandatsSignatur(aktiveMandate);
+  const inhalt = {
+    zweck: "OP-25 Startbaseline: Mandatsmenge am Fensterstart, identitaetsgenau eingefroren",
+    erhobenAt: new Date().toISOString(),
+    erhobenAtMs: Date.now(),
+    aktivierungAt: Number.isFinite(aktivierungAtMs) ? new Date(aktivierungAtMs).toISOString() : null,
+    aktivierungAtMs: Number.isFinite(aktivierungAtMs) ? aktivierungAtMs : null,
+    deploymentCommit: deploymentCommit || null,
+    anzahl: sig.anzahl,
+    mandate: sig.mandate,
+    signatur: sig.signatur
+  };
+  fs.mkdirSync(path.dirname(path.resolve(datei)), { recursive: true });
+  fs.writeFileSync(path.resolve(datei), JSON.stringify(inhalt, null, 2) + "\n", "utf8");
+  return inhalt;
+}
+
+function leseStartbaseline(datei) {
+  const roh = JSON.parse(fs.readFileSync(path.resolve(datei), "utf8"));
+  return {
+    ...roh,
+    aktivierungAtMs: Number.isFinite(Number(roh.aktivierungAtMs))
+      ? Number(roh.aktivierungAtMs)
+      : (roh.aktivierungAt ? Date.parse(roh.aktivierungAt) : null),
+    erhobenAtMs: Number.isFinite(Number(roh.erhobenAtMs))
+      ? Number(roh.erhobenAtMs)
+      : (roh.erhobenAt ? Date.parse(roh.erhobenAt) : null)
+  };
+}
+
 // --- Baseline (rein lesend, PII-frei) --------------------------------------------------------
 
-async function erhebeBaseline({ mainStore, authStore, fairnessStore }) {
+async function erhebeBaseline({ mainStore, authStore, fairnessStore, dauerhafte }) {
   const profile = Object.values((mainStore && mainStore.profiles) || {});
   const aktive = profile.filter(istAktivesMandat).map((p) => String(p.id)).sort();
   const inaktive = profile.filter((p) => !istAktivesMandat(p)).map((p) => String(p.id)).sort();
@@ -187,26 +318,39 @@ async function erhebeBaseline({ mainStore, authStore, fairnessStore }) {
   } catch (_) { abrufwege = null; }
 
   const heuteVorMs = Date.now() - 24 * 60 * 60 * 1000;
-  const kosten24h = kostenImFenster((authStore && authStore.llmUsage) || [], heuteVorMs, Date.now());
+  const kosten24h = kostenImFenster(authStore, heuteVorMs, Date.now(), DOKUMENTIERTER_KOSTENRAHMEN_USD);
   const systemFehler = ((authStore && authStore.systemErrors) || []).slice(0, 200);
   const fehlerklassenBeobachtet = [...new Set(systemFehler.map((e) => String((e && e.scope) || "unbekannt")))].sort();
 
   const fairnessLaeufe = (fairnessStore && fairnessStore.laeufe) || {};
   const commit = (prozessZeilen.find((z) => z && z.commit_ref) || {}).commit_ref || null;
+  const sig = vertrag.mandatsSignatur(aktive);
 
   return {
     erhobenAt: new Date().toISOString(),
     deploymentCommit: commit,
-    mandate: { gesamt: profile.length, aktiv: aktive, inaktiv: inaktive, testmandateInProduction: testmandate.length },
+    mandate: {
+      gesamt: profile.length, aktiv: sig.mandate, signatur: sig.signatur,
+      inaktiv: inaktive, testmandateInProduction: testmandate.length
+    },
     cronKadenz: vertrag.schwereKadenz(leseCrons()).map((k) => `${k.cronName}: ${k.schedule}`),
-    laufdatensaetze: { retention: laeufe.length, nachModus, juengsterGlobalerLauf: juengsterGlobal ? juengsterGlobal.runId : null },
+    laufdatensaetze: {
+      retention: LAUF_RETENTION, gelesen: laeufe.length, nachModus,
+      juengsterGlobalerLauf: juengsterGlobal ? juengsterGlobal.runId : null,
+      // Aufbewahrungsvertrag: was ein 24-h-Fenster bei dieser Mandatszahl braucht.
+      benoetigtFuer24hFenster: 3 * (1 + sig.anzahl)
+    },
+    dauerhafteGlobalphasenZeilen: {
+      gefunden: (dauerhafte && dauerhafte.zeilen.length) || 0,
+      relationalFehler: (dauerhafte && dauerhafte.relationalFehler) || null,
+      juengste: (dauerhafte && dauerhafte.zeilen[0] && dauerhafte.zeilen[0].runId) || null
+    },
     globalabrufBeleg: juengsterGlobal
       ? `letzter mode=global-Lauf: ${juengsterGlobal.runId} (${juengsterGlobal.createdAt})`
       : "kein mode=global-Laufdatensatz im Blob-Fenster — globaler Abruf nicht aktiv oder Retention ueberschritten",
     pendingWissensobjekte: pendingKos,
     abrufwege,
-    llmKosten24hUsd: kosten24h,
-    kostenrahmenUsd: DOKUMENTIERTER_KOSTENRAHMEN_USD,
+    llmKosten24h: kosten24h,
     systemfehlerScopes: fehlerklassenBeobachtet,
     bekannteFehlerklassen: vertrag.BEKANNTE_FEHLERKLASSEN,
     fairness: Object.fromEntries(Object.entries(fairnessLaeufe).map(([cron, l]) => [cron, {
@@ -230,37 +374,68 @@ async function erhebeBaseline({ mainStore, authStore, fairnessStore }) {
   const mainStore = await leseStoreZeile(STORE_ID);
   const authStore = await leseStoreZeile(AUTH_STORE_ID);
   const fairnessStore = await leseStoreZeile(`${STORE_ID}-cron-fairness`);
+  const dauerhafte = await leseDauerhafteLaufzeilen(authStore);
+
+  const aktivierungAtMs = parseIsoMs(args.aktivierung ?? process.env.HELMUT_OP25_AKTIVIERUNG_AT, "--aktivierung");
+  const aktiveMandate = aktiveMandateAus(mainStore);
 
   if (args.baseline) {
-    const baseline = await erhebeBaseline({ mainStore, authStore, fairnessStore });
+    const baseline = await erhebeBaseline({ mainStore, authStore, fairnessStore, dauerhafte });
     console.log("== BASELINE (rein lesend, PII-frei) ==");
     console.log(JSON.stringify(baseline, null, 2));
     process.exit(0);
   }
 
-  const aktivierungAtMs = parseIsoMs(args.aktivierung ?? process.env.HELMUT_OP25_AKTIVIERUNG_AT, "--aktivierung");
+  // ---- Schritt 1: Startbaseline erheben (Production nur gelesen) ---------------------------
+  if (args["startbaseline-schreiben"]) {
+    if (!Array.isArray(aktiveMandate) || !aktiveMandate.length) {
+      console.error("MESSFEHLER: aktive Mandatsmenge nicht lesbar — keine Startbaseline geschrieben.");
+      process.exit(2);
+    }
+    const commitZeile = dauerhafte.zeilen[0] || null;
+    const inhalt = schreibeStartbaseline(String(args["startbaseline-schreiben"]), {
+      aktivierungAtMs, aktiveMandate, deploymentCommit: commitZeile ? commitZeile.runId : null
+    });
+    console.log("== STARTBASELINE GESCHRIEBEN (lokale Belegdatei; Production nur gelesen) ==");
+    console.log(JSON.stringify(inhalt, null, 2));
+    console.log("\nFruehestens 24 h nach der Aktivierung mit `--startbaseline <datei>` auswerten.");
+    process.exit(0);
+  }
+
   const fensterStartMs = parseIsoMs(args["fenster-start"], "--fenster-start") ?? aktivierungAtMs;
   const fensterEndeMs = parseIsoMs(args["fenster-ende"], "--fenster-ende")
     ?? (fensterStartMs != null ? fensterStartMs + vertrag.MIN_FENSTER_MS : null);
 
-  const profile = Object.values((mainStore && mainStore.profiles) || {});
-  const aktiveMandate = mainStore ? profile.filter(istAktivesMandat).map((p) => String(p.id)).sort() : null;
+  let startbaseline = null;
+  if (args.startbaseline) {
+    try {
+      startbaseline = leseStartbaseline(String(args.startbaseline));
+    } catch (fehler) {
+      console.error(`MESSFEHLER: Startbaseline nicht lesbar (${(fehler && fehler.message) || fehler}) — fail closed.`);
+      console.log(`[op25-nachweis/json] ${JSON.stringify({ ausgang: "blockiert", exitCode: 2, grund: "startbaseline-nicht-lesbar" })}`);
+      process.exit(2);
+    }
+  }
+
   const laeufe = mainStore && Array.isArray(mainStore.crawlRuns) ? mainStore.crawlRuns : null;
   const fairnessLaeufe = (fairnessStore && fairnessStore.laeufe) || null;
 
   const kostenrahmenUsd = args["kostenrahmen-usd"] != null
     ? Number(args["kostenrahmen-usd"])
     : DOKUMENTIERTER_KOSTENRAHMEN_USD;
-  const kosten = (fensterStartMs != null && fensterEndeMs != null && authStore)
-    ? { fensterUsd: kostenImFenster(authStore.llmUsage || [], fensterStartMs, fensterEndeMs), rahmenUsd: kostenrahmenUsd }
+  const kosten = (fensterStartMs != null && fensterEndeMs != null)
+    ? kostenImFenster(authStore, fensterStartMs, fensterEndeMs, kostenrahmenUsd)
     : null;
 
   const bewertung = vertrag.bewerteNachweisfenster({
     jetztMs,
     fenster: (fensterStartMs != null && fensterEndeMs != null) ? { vonMs: fensterStartMs, bisMs: fensterEndeMs } : null,
     aktivierungAtMs,
+    startbaseline,
     crons: leseCrons(),
     laeufe,
+    prozessLaeufe: dauerhafte.zeilen,
+    laufRetention: LAUF_RETENTION,
     aktiveMandate,
     erwarteteMandatszahl: args["erwartete-mandate"] != null
       ? Number(args["erwartete-mandate"])
@@ -270,16 +445,25 @@ async function erhebeBaseline({ mainStore, authStore, fairnessStore }) {
     fairnessLaeufe
   });
 
+  const endSig = Array.isArray(aktiveMandate) ? vertrag.mandatsSignatur(aktiveMandate) : null;
   console.log("== EINGABEN (rein lesend) ==");
-  console.log(`aktive Mandate (dynamisch): ${aktiveMandate ? `${aktiveMandate.length} (${aktiveMandate.join(", ")})` : "NICHT LESBAR"}`);
-  console.log(`Laufdatensaetze im Blob: ${laeufe ? laeufe.length : "NICHT LESBAR"}`);
+  console.log(`aktive Mandate am Fensterende (dynamisch): ${endSig ? `${endSig.signatur} (${endSig.mandate.join(", ")})` : "NICHT LESBAR"}`);
+  console.log(`eingefrorene Startbaseline: ${startbaseline
+    ? `${vertrag.mandatsSignatur(startbaseline.mandate || []).signatur} (erhoben ${startbaseline.erhobenAt || "?"})`
+    : "FEHLT — ohne sie ist der Zustand am Fensterstart nicht belegt"}`);
+  console.log(`Laufdatensaetze im Blob: ${laeufe ? `${laeufe.length} (Retention ${LAUF_RETENTION})` : "NICHT LESBAR"}`
+    + ` · dauerhafte globalphase-Zeilen: ${dauerhafte.zeilen.length}`
+    + `${dauerhafte.relationalFehler ? ` (relational nicht lesbar: ${dauerhafte.relationalFehler})` : ""}`);
   console.log(`Aktivierung: ${zeit(aktivierungAtMs)} · Fenster: ${zeit(fensterStartMs)} → ${zeit(fensterEndeMs)}`);
-  console.log(`Kosten im Fenster: ${kosten ? `${kosten.fensterUsd} USD (Rahmen ${kosten.rahmenUsd} USD)` : "—"}\n`);
+  console.log(`Kosten im Fenster: ${kosten
+    ? `${kosten.fensterUsd} USD (Rahmen ${kosten.rahmenUsd} USD, vollstaendig=${kosten.vollstaendig}, unbepreist=${kosten.unbepreisteEintraege})`
+    : "—"}\n`);
 
   console.log("== BEWERTUNG JE ERWARTETEM LAUF ==");
   if (!bewertung.laeufe.length) console.log("(keine Laufbewertung — Fenster-/Eingabepruefung hat vorher geendet)");
   for (const l of bewertung.laeufe) {
-    console.log(`  ${l.slot} → ${l.einstufung}${l.status ? ` (datenstand=${l.status})` : ""}`);
+    console.log(`  ${l.slot} → ${l.einstufung}${l.status ? ` (datenstand=${l.status})` : ""}`
+      + `${l.versiegelteDauerMs != null ? ` · versiegelt ${l.versiegelteDauerMs} ms` : ""}`);
     for (const b of l.befunde) console.log(`      [${b.schwere}] ${b.grund}${b.detail ? ` — ${b.detail}` : ""}`);
   }
   if (bewertung.ausgeschlossen.length) {
@@ -301,7 +485,10 @@ async function erhebeBaseline({ mainStore, authStore, fairnessStore }) {
     ausgang: bewertung.ausgang,
     exitCode: bewertung.exitCode,
     fenster: { von: zeit(fensterStartMs), bis: zeit(fensterEndeMs) },
-    aktiveMandate: aktiveMandate || null,
+    mandatsmenge: bewertung.mandatsmenge ? bewertung.mandatsmenge.signatur : null,
+    endzustand: endSig ? endSig.signatur : null,
+    benoetigteDatensaetze: bewertung.benoetigteDatensaetze ?? null,
+    dauerhafteZeilen: dauerhafte.zeilen.length,
     befunde: bewertung.befunde.map((b) => ({ schwere: b.schwere, grund: b.grund })),
     warnungen: bewertung.warnungen.length,
     ausgeschlossen: bewertung.ausgeschlossen.length

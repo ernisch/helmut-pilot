@@ -495,6 +495,27 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   READY-Deployment dieses Stands, dann `HELMUT_CRON_GLOBALABRUF=on` (nur Production), dann
   frühestens nach 24 h `node scripts/op25-production-nachweis.js --aktivierung <ISO>`.
   Der Verstehensrückstand (~1 242 Cluster) bleibt offen und gehört zu **OP-14**.
+  **Nachtrag 2026-08-04/3 (Review zu PR #222 vollständig eingearbeitet):** drei Wege, auf denen
+  der Vertrag fälschlich grün hätte werden können, sind geschlossen — **(1) Kostenvertrag:**
+  `NaN`/`±Infinity`/negative/nicht-numerische Werte fallen durch (`NaN > rahmen` war *immer*
+  `false`), die **Vollständigkeit** der Kostendaten ist eine ausdrückliche Zusage (fehlendes
+  `llmUsage`, nicht lesbarer Auth-Store, verdrängtes Kostenfenster → `blockiert`), nicht
+  bepreisbare Einträge werden gezählt und blockieren; gemeinsame Wurzel `Number(null) === 0`
+  überall durch strikte Zahlenlesung ersetzt. **(2) Mandatsmenge:** identitätsgenau am
+  Fensterstart eingefroren über eine rein lesend erhobene **Startbaseline** (Aktivierungszeit,
+  exakte Menge, stabiler Hash) — geprüft gegen **jeden Lauf** (neues persistiertes Feld
+  `quellenVereinigung.mandateIds`) **und** den Endzustand; ein Austausch bei gleicher Anzahl,
+  eine Änderung zwischen zwei Läufen und eine spätere Rückkehr zur Ursprungsmenge fallen jetzt
+  auf; ohne Startbaseline `blockiert` statt Ersatz aus dem aktuellen Bestand. **(3) Dauerhafte
+  Belegquelle:** die `process_runs`-Zeilen `globalphase` gehen wirklich in die Bewertung ein und
+  trennen „verdrängt" (`blockiert`) von „nie gelaufen" (`nicht_bestanden`); dazu ein
+  reproduzierbarer **Aufbewahrungsvertrag** (Bedarf = Läufe × (1 + n Mandate); Retention zu klein
+  → `blockiert`, knapp → Warnung; 24-h-Fenster braucht heute **18** von **20** Datensätzen) und
+  die Budgetprüfung an der **versiegelten** Laufzeit (`datenstand.dauerMs`/`budgetMs`, neu im
+  Vermerk) statt am vor dem Versiegeln gebildeten `durationMs`. Kanonisch:
+  [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) **§7.7.1**. Tests: Vertrag
+  **108/108**, Dauerhaftigkeit **52/52**, Mutationsprobe **31 von 31 rot**; Production-Dry-Run
+  erneut ehrlich **`noch_nicht_auswertbar`**. Der Nachweis selbst bleibt unverändert offen.
 - **Nachtrag 2026-08-04 (Profilreparatursprint):** Künftige OP-25-Production-Nachweise arbeiten
   mit **fünf aktiven realen Mandaten** statt sechs — das Demo-Mandat `max-mustermann` ist seit
   2026-08-04 deaktiviert (nicht gelöscht, OP-04-Teilschritt), sofern bis zum Nachweis keine

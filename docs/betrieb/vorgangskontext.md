@@ -714,9 +714,13 @@ nachweislich nicht reicht.** C ist ausdrücklich **nicht** ohne neue Freigabe um
 > beschriebene Abnahme. Ausführung: `node scripts/op25-production-nachweis.js` (rein lesend,
 > GET-Literal + Tabellen-Allowlist, kein Trigger, keine Flag-/Env-Änderung, 0 KI-Aufrufe);
 > Bewertungskern: [`lib/helmut/op25-nachweis.js`](../../lib/helmut/op25-nachweis.js)
-> (reine Logik, testgesichert über `scripts/op25-nachweis-vertrag-test.js` (71 Prüfpunkte),
-> `scripts/op25-e3-dauerhaftigkeit-test.js` (44 Prüfpunkte) und
-> `scripts/op25-nachweis-mutationsprobe.js` (**14 von 14 rot**)).
+> (reine Logik, testgesichert über `scripts/op25-nachweis-vertrag-test.js` (108 Prüfpunkte),
+> `scripts/op25-e3-dauerhaftigkeit-test.js` (52 Prüfpunkte) und
+> `scripts/op25-nachweis-mutationsprobe.js` (**31 von 31 rot**)).
+>
+> **Stand 2026-08-04/2:** um die drei Befunde der Review zu PR #222 gehärtet — Kostenvertrag,
+> identitätsgenau eingefrorene Mandatsmenge, dauerhafte Belegquelle samt versiegelter Laufzeit
+> (§7.7.1).
 
 **Die verbindlichen Produktentscheidungen (2026-08-04):** **E1 bleibt Option A** (keine neue
 Crawler-Deadline, kein `AbortSignal`, kein Eingriff in Gate/Retry/Breaker/Netz). **E2 bleibt
@@ -743,14 +747,14 @@ erneuten Betreiber-Aktivierung von `HELMUT_CRON_GLOBALABRUF` (Übergabe an das W
 `--aktivierung <ISO>` / `--fenster-start` / `--fenster-ende`). **Harte Untergrenze
 2026-08-04T00:00Z:** der gescheiterte Lauf vom 2026-08-03 (`cron-pipeline-20260803160002-xm71n`)
 kann **niemals** in einen Erfolgsnachweis einfließen. Die aktive Mandatsmenge wird am
-Fensterstart **dynamisch** ermittelt und für das Fenster eingefroren — keine hartkodierten
+Fensterstart **dynamisch und identitätsgenau** eingefroren (§7.7.1 (2)) — keine hartkodierten
 Mandats-IDs, keine feste Sollzahl im Vertrag (die dokumentierte Gegenprobe „fünf" ist ein
 überschreibbarer Baseline-Wert, keine Namensliste); **jede** Änderung der Menge im Fenster macht
 das Fenster ungültig (`blockiert`). Alte, manuelle, außerplanmäßige oder unvollständige Läufe
 werden **mit Grund gezählt und ausgeschlossen**, nie als Beleg verwendet; die erwarteten Läufe
 kommen aus der **wirksamen Cron-Konfiguration** (`vercel.json`: `crawl` 04:00/20:00, `pipeline`
 16:00 UTC — nichts wird erfunden). Das Werkzeug unterscheidet je erwartetem Termin **fehlend ·
-möglicherweise noch laufend · abgebrochen · Altpfad · irregulär · Beleglücke ·
+verdrängt · möglicherweise noch laufend · abgebrochen · Altpfad · irregulär · Beleglücke ·
 Vertragsverletzung · vollständig**.
 
 **Ein Lauf besteht den Kapazitätsvertrag nur, wenn ALLE folgenden Punkte aus persistierten,
@@ -760,9 +764,10 @@ Freifahrtschein):
 1. regulärer schwerer Cron (Laufkennung `cron-crawl-…`/`cron-pipeline-…` im ±15-min-Fenster des
    Termins), kein manueller/künstlicher Lauf;
 2. globaler Pfad tatsächlich verwendet (`mode: "global"`, `buendelung: "kontext"`);
-3. globale Phase innerhalb ihres Budgets (`durationMs ≤ datenstandDetail.budgetMs`) und der
-   Gesamtlauf innerhalb des äußeren Zeitlimits (280 s + Schreibtoleranz; ein
-   Abbruch-/Timeout-Vermerk im Fairness-Laufdatensatz fällt durch);
+3. globale Phase innerhalb ihres Budgets — geprüft an der **versiegelten** Dauer
+   (`datenstand.dauerMs ≤ datenstand.budgetMs`, §7.7.1 (3)), **nicht** am vor dem Versiegeln
+   gebildeten `durationMs` — und der Gesamtlauf innerhalb des äußeren Zeitlimits (280 s +
+   Schreibtoleranz; ein Abbruch-/Timeout-Vermerk im Fairness-Laufdatensatz fällt durch);
 4. Quellenabruf vollständig (`nichtAbgerufen = 0`, kein `abruf`-Fehlerschritt); fehlgeschlagene
    Quellen nur als **klassifizierte** Abweichung (`errorCodes` vorhanden, `runState` nicht
    stark degradiert) — sonst durchgefallen;
@@ -785,7 +790,8 @@ Freifahrtschein):
 16. keine erfundene Erfolgsmeldung bei Sperrverweigerung oder Skip (ein sperrverweigertes
    Mandat hat keinen Datensatz und fällt als fehlend auf);
 17. LLM-Kosten des Fensters innerhalb des dokumentierten Rahmens (Baseline 2026-08-04:
-   0,20 USD/24 h gemessen, Rahmen 2 USD, überschreibbar; ohne belegbaren Rahmen `blockiert`);
+   0,20 USD/24 h gemessen, Rahmen 2 USD, überschreibbar) — **und** die Kostendaten selbst
+   belegt vollständig und brauchbar (§7.7.1 (1)); sonst `blockiert`;
 18. **E3-Regel:** ein `teilweise` besteht **ausschließlich**, wenn zusätzlich zu 1–17 der
    gesamte Verstehensrückstand **vollständig gezählt** (`datenstandDetail.lazy`/`.eager`) und
    **dauerhaft** ist. Dauerhaft heißt beweisbar: **lazy komplett** (jeder Stapel erreicht, jeder
@@ -816,10 +822,76 @@ konnte als `abgeschlossen` versiegeln); er wird jetzt als Fehlerschritt `persist
 macht den Datenstand ehrlich `teilweise`.
 
 **Betriebshinweis:** die Auswertung zeitnah nach Fensterende ausführen — die reichen
-Laufdatensätze liegen im Blob mit Retention 20 (≈ 1–2 Tage Kadenz); die dauerhafte
-`globalphase`-Zeile und `matching_runs` bleiben als Rückfallebene, ersetzen aber nicht jedes
-Detail. Fehlt einem Fensterlauf das `datenstandDetail` (z. B. Lauf vor dem Deployment dieses
-Sprints), ist das Ergebnis ehrlich `blockiert`.
+Laufdatensätze liegen im Blob mit Retention 20 (≈ 1–2 Tage Kadenz). Fehlt einem Fensterlauf das
+`datenstandDetail` (z. B. Lauf vor dem Deployment dieses Sprints), ist das Ergebnis ehrlich
+`blockiert`.
+
+### 7.7.1 Die drei Härtungen aus der Review zu PR #222 (2026-08-04) — alle fail closed
+
+Die Review hat drei Wege gefunden, auf denen der Vertrag **fälschlich grün** hätte werden
+können. Alle drei sind geschlossen; jede Zusage ist mutationsgeprüft.
+
+**(1) Der Kostenvertrag konnte durch kaputte Zahlen bestehen.** Geprüft wurde nur auf `null` —
+und `NaN > rahmen` ist *immer* `false`, ein `NaN` wäre also ein bestandener Kostenvertrag
+gewesen. Ebenso hätte eine **fehlende** Nutzungsliste im CLI wie **0,00 USD** ausgesehen.
+Jetzt gilt: jeder Kostenwert muss eine **endliche, nicht negative Zahl** sein (`NaN`,
+`±Infinity`, negative Werte, Zeichenketten und Wahrheitswerte fallen durch); die
+**Vollständigkeit** der Kostendaten ist eine **ausdrückliche Zusage** des Lesers, keine
+Annahme — fehlt `llmUsage`, ist der Auth-Store nicht lesbar, oder sitzt die Nutzungsliste an
+ihrer Aufbewahrungsgrenze (5 000) mit einem ältesten Eintrag *nach* dem Fensterstart, ist das
+Ergebnis `blockiert`; **nicht bepreisbare** Nutzungseinträge im Fenster werden gezählt und
+blockieren, statt die Summe still zu verkleinern. Eine **belegte** 0,00 USD besteht weiterhin —
+der Unterschied ist der Beleg, nicht die Zahl. *Gemeinsame Wurzel, ebenfalls geschlossen:*
+`Number(null)` ist `0` und gilt als „endlich". Der Vertrag liest Zahlen deshalb überall durch
+`alsZahl()`, das `null`/`undefined`/`""` strikt als **nicht vorhanden** behandelt — nie als Null.
+
+**(2) Die Mandatsmenge war nicht wirklich eingefroren.** Das Werkzeug las bei der späteren
+Auswertung den *aktuellen* Profilbestand, und `quellenVereinigung` speicherte nur die **Anzahl**.
+Ein **Austausch bei gleicher Anzahl** (Mandat A raus, Mandat B rein) wäre damit unsichtbar
+geblieben. Jetzt gilt ein Zwei-Schritt-Ablauf:
+
+```
+# Schritt 1 — unmittelbar NACH der Aktivierung (rein lesend gegen Production):
+node scripts/op25-production-nachweis.js --aktivierung <ISO> \
+     --startbaseline-schreiben belege/op25-startbaseline.json
+# Schritt 2 — frühestens 24 h später:
+node scripts/op25-production-nachweis.js --aktivierung <ISO> \
+     --startbaseline belege/op25-startbaseline.json
+```
+
+Die **Startbaseline** hält Aktivierungszeitpunkt, exakte Mandatsmenge und einen stabilen Hash
+(`m<n>-<sha256/16>`) fest. Geprüft wird **identitätsgenau** gegen: jeden einzelnen Lauf
+(`quellenVereinigung.mandateIds`, neu persistiert) **und** den Endzustand am Fensterende.
+Fehlt die Startbaseline, ist das Ergebnis `blockiert` — der aktuelle Bestand wird **nicht**
+ersatzweise verwendet. Eine nachträglich veränderte Baseline (Liste ≠ Signatur), eine Baseline
+einer fremden Aktivierung und eine erst nach dem Fensterstart erhobene Baseline blockieren
+ebenfalls. Ein Lauf **ohne** Mandatskennungen (Altdatensatz) ist nicht prüfbar und blockiert.
+Eine **spätere Rückkehr** zur Ursprungsmenge heilt das Fenster nicht: der abweichende Lauf
+bleibt der Beleg, auch wenn der Endzustand wieder stimmt.
+
+**(3) Die dauerhafte Belegquelle wurde behauptet, aber nicht benutzt — und die Laufzeit kam aus
+der falschen Quelle.** Bewertet wurden ausschließlich `mainStore.crawlRuns` (Retention **20**),
+während ein 24-h-Fenster bei fünf Mandaten bereits **18** Datensätze braucht. Jetzt gilt:
+
+- Die `process_runs`-Zeilen `globalphase` gehen **wirklich** in die Bewertung ein (relational
+  plus Auth-Store-Spiegel, dedupliziert). Sie unterscheiden zwei völlig verschiedene Fälle:
+  fehlt der reiche Laufdatensatz, **existiert** aber die dauerhafte Zeile, ist das eine
+  **Beleglücke** (`blockiert`, „verdrängt"), kein bewiesener Vertragsbruch; fehlen **beide**,
+  ist der Termin nachweislich leer geblieben (`nicht_bestanden`).
+- **Aufbewahrungsvertrag, reproduzierbar und fail closed:** benötigt werden
+  `Zahl schwerer Läufe × (1 global + n Mandate)` Datensätze. Ist die Retention kleiner, ist das
+  Ergebnis `blockiert` (mit der Handlungsanweisung: `HELMUT_CRAWL_RUN_RETENTION` anheben oder
+  das Fenster verkürzen). Wird es knapp (heute 18 von 20), erscheint eine ausdrückliche Warnung.
+  Sitzt die Ablage an ihrer Grenze und liegt ein erwarteter Termin **vor** dem ältesten
+  sichtbaren Datensatz, ist er weder belegt noch widerlegt → `blockiert`.
+- **Die Laufzeit stammt aus dem versiegelten Beleg.** `datenstandVermerk` trägt jetzt `dauerMs`
+  (aus `datenstandVersiegeln`) und `budgetMs` (in den Datenstand hineingegeben) — Dauer und
+  Grenze also aus **derselben** versiegelten Quelle. Der Laufdatensatz-Wert `durationMs` wird
+  **vor** dem Versiegeln gebildet (er entsteht im `saveCrawlRun`-Aufruf, der selbst noch Teil der
+  Phase ist) und unterzeichnet die Dauer systematisch; er belegt den Budgetvertrag **nicht mehr**.
+  Fehlen Vermerk *und* dauerhafte Zeile, ist die Grenze nicht prüfbar → `blockiert`.
+  Widersprechen sich beide Belege, wird das benannt (`nicht_bestanden`) statt einer Quelle blind
+  geglaubt.
 
 ## 8 · Verbleibende Risiken
 
