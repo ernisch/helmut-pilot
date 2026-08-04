@@ -723,9 +723,9 @@ nachweislich nicht reicht.** C ist ausdrücklich **nicht** ohne neue Freigabe um
 > beschriebene Abnahme. Ausführung: `node scripts/op25-production-nachweis.js` (rein lesend,
 > GET-Literal + Tabellen-Allowlist, kein Trigger, keine Flag-/Env-Änderung, 0 KI-Aufrufe);
 > Bewertungskern: [`lib/helmut/op25-nachweis.js`](../../lib/helmut/op25-nachweis.js)
-> (reine Logik, testgesichert über `scripts/op25-nachweis-vertrag-test.js` (207 Prüfpunkte),
+> (reine Logik, testgesichert über `scripts/op25-nachweis-vertrag-test.js` (211 Prüfpunkte),
 > `scripts/op25-e3-dauerhaftigkeit-test.js` (52 Prüfpunkte) und
-> `scripts/op25-nachweis-mutationsprobe.js` (**62 von 62 rot**)).
+> `scripts/op25-nachweis-mutationsprobe.js` (**63 von 63 rot**)).
 >
 > **Stand 2026-08-04/5 (nach Merge von PR #222):** um die Befunde aller vier Reviewdurchgänge
 > **und** die Nachtragskorrektur gehärtet — Kostenvertrag, identitätsgenau eingefrorene
@@ -1096,6 +1096,14 @@ bevor sie geschlossen wurden):
   `fremder-deployment-commit` (**`nicht_bestanden`** — im Fenster lief ein anderer Stand,
   z. B. ein weiteres Deployment). Auch eine **fehlende dauerhafte Zeile** zu einem bewerteten
   Fensterlauf ist jetzt `commit-beleg-fehlt` (`blockiert`) statt nur einer Warnung.
+- **Exakte runId-Bindung (Reviewbefund zum PR-#223-Kopfstand `86df95e`, behoben):** die
+  dauerhafte Zeile eines **vorhandenen** globalen Laufs wird ausschließlich über die **exakt
+  identische runId** zugeordnet (scheduler.js schreibt beide mit derselben `laufId`). Zuvor
+  genügte Slot-Nähe (gleicher Cron, ±15 min) — eine **andere** `globalphase`-Zeile desselben
+  Termins mit korrektem Commit hätte den fehlenden exakten Beleg ersetzen können
+  (Täuschungsfall, per Verhaltenstest zuerst am fehlerhaften Stand nachgewiesen). Eine
+  Ersatzzeile ersetzt den Beleg **nie**; nur wenn der Blob-Lauf selbst fehlt (Retention),
+  bleibt die Slot-Zuordnung für die ehrliche Verdrängt-Klassifikation zulässig.
 - **Läufe vor dem Fenster (Alt-Bestand) werden weder geprüft noch als Bestätigung verwendet.**
 - **Unverändert streng:** Mandatsmenge/Signatur, Aktivierungszeitpunkt, Erhebungsfenster
   (`aktivierung ≤ erhoben ≤ aktivierung + 15 min`), Fensterregeln, Kosten.
@@ -1122,14 +1130,17 @@ node scripts/op25-production-nachweis.js --aktivierung <READY-ISO> \
 prüfungen: fehlender/verkürzter/ungültiger erwarteter Commit, Vorab-Bestätigung, Gegenprobe,
 korrekter Commit in allen Fensterläufen, fehlender/ungültiger/abweichender/gemischter
 `commit_ref`, Präfix-Fall, alter Lauf vor der Aktivierung, 15-min-Grenze; §32 führt
-`erwarteterDeploymentCommit` als Pflichtfeld) — **207/207**. Mutationsprobe **62 von 62 rot**
-(M50/M51/M53/M54 auf die neue Logik umgezogen; neu **M55–M62**: Pflichtfeld entfällt,
-Kurzform akzeptiert, Vorab-Bestätigung akzeptiert, fehlender `commit_ref` blockiert nicht
-mehr, alte Läufe mitgeprüft, dauerhafte Zeile wieder nur Warnung, Präfix als Bestätigung,
-Gegenprobe entfällt). Production-Proben rein lesend: Dry-Run `noch_nicht_auswertbar`
-(Exit 3) · Schreiben ohne Commit / mit Kurzform / mit Anhang ⇒ je **Exit 2, keine Datei** ·
-voller Commit mit 2 h alter Aktivierung ⇒ **Exit 2, keine Datei** (15-min-Grenze) ·
-Auswertung mit Baseline ohne Commit ⇒ **`blockiert` (Exit 2)**.
+`erwarteterDeploymentCommit` als Pflichtfeld) und §35 (exakte runId-Bindung: beide
+Täuschungsfälle, Exakt-Fall, Retentionsfall — 35.1 wurde **zuerst gegen den fehlerhaften
+Stand** ausgeführt und schlug nachweislich fehl) — **211/211**. Mutationsprobe
+**63 von 63 rot** (M50/M51/M53/M54 auf die neue Logik umgezogen; neu **M55–M62**:
+Pflichtfeld entfällt, Kurzform akzeptiert, Vorab-Bestätigung akzeptiert, fehlender
+`commit_ref` blockiert nicht mehr, alte Läufe mitgeprüft, dauerhafte Zeile wieder nur
+Warnung, Präfix als Bestätigung, Gegenprobe entfällt; **M63**: exakte runId-Bindung fällt
+auf reine Slotzuordnung zurück). Production-Proben rein lesend: Dry-Run
+`noch_nicht_auswertbar` (Exit 3) · Schreiben ohne Commit / mit Kurzform / mit Anhang ⇒ je
+**Exit 2, keine Datei** · voller Commit mit 2 h alter Aktivierung ⇒ **Exit 2, keine Datei**
+(15-min-Grenze) · Auswertung mit Baseline ohne Commit ⇒ **`blockiert` (Exit 2)**.
 
 ## 8 · Verbleibende Risiken
 

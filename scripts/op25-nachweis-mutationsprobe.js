@@ -541,6 +541,15 @@ const PROBEN = [
     mutiere: (b) => ersetze(b, KERN,
       "  if (commitGegenprobe != null && commitGegenprobe !== \"\") {",
       "  if (false) {")
+  },
+  {
+    name: "M63 Exakte runId-Bindung der dauerhaften Zeile faellt zurueck auf reine Slotzuordnung",
+    suite: VERTRAG_SUITE,
+    // Exakt die Regression aus der Review zu PR #223: eine ANDERE globalphase-Zeile
+    // innerhalb der Slot-Toleranz koennte den fehlenden exakten Beleg wieder ersetzen.
+    mutiere: (b) => ersetze(b, KERN,
+      "    const prozessLauf = globalerLauf\n      ? dauerhafte.find((p) => p && p.runId === globalerLauf.runId) || null\n      : dauerhafte.find((p) => passt(p.runId)) || null;",
+      "    const prozessLauf = dauerhafte.find((p) => passt(p.runId)) || null;")
   }
 ];
 

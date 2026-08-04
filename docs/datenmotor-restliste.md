@@ -605,10 +605,15 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   24-h-Fenster** auf, das deshalb verboten ist) · alte Läufe vor der Aktivierung blockieren
   nicht und bestätigen nichts · Baseline ohne/mit ungültigem/verkürztem Commit oder mit
   Vorab-Bestätigung ⇒ fail closed `blockiert` · Mandatsmenge, Signatur, Aktivierungszeitpunkt
-  und Erhebungsfenster (15 min) unverändert streng. **Tests:** Vertrag **207/207** (§34 neu:
-  alle acht geforderten Fallfamilien als Verhaltensprüfungen; §32 führt den Commit als
-  Pflichtfeld) · Dauerhaftigkeit **52/52** · Mutationsprobe **62 von 62 rot** (M50/51/53/54
-  umgezogen, **M55–M62** neu). **Production-Proben rein lesend (KEINE Baseline erzeugt):**
+  und Erhebungsfenster (15 min) unverändert streng. **Reviewbefund zum Kopfstand `86df95e`
+  eingearbeitet:** die dauerhafte Zeile eines vorhandenen globalen Laufs wird jetzt
+  ausschließlich über die **exakt identische runId** zugeordnet (zuvor genügte Slot-Nähe —
+  eine andere Zeile desselben Termins hätte den fehlenden exakten Commitbeleg ersetzen
+  können; Täuschungstest zuerst am fehlerhaften Stand rot, danach grün); Slot-Zuordnung
+  bleibt nur als Rückfallebene für die Verdrängt-Klassifikation ohne Blob-Lauf. **Tests:**
+  Vertrag **211/211** (§34 neu: alle acht geforderten Fallfamilien als Verhaltensprüfungen;
+  §32 führt den Commit als Pflichtfeld; §35 exakte runId-Bindung) · Dauerhaftigkeit
+  **52/52** · Mutationsprobe **63 von 63 rot** (M50/51/53/54 umgezogen, **M55–M63** neu). **Production-Proben rein lesend (KEINE Baseline erzeugt):**
   Dry-Run `noch_nicht_auswertbar` (Exit 3) · Schreiben ohne Commit / Kurzform / Anhang /
   2 h alte Aktivierung ⇒ je **Exit 2, keine Datei** · Auswertung mit Baseline ohne Commit ⇒
   `blockiert` (Exit 2). Branch `claude/op25-startbaseline-commitnachweis-mqjixo`, **PR #223**

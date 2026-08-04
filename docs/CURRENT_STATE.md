@@ -35,7 +35,18 @@ statt nur Warnung) · echtes Präfix ⇒ `blockiert` (`commit-beleg-unvollstaend
 `nicht_bestanden` (`fremder-deployment-commit`) · Läufe **vor** der Aktivierung blockieren
 nicht und bestätigen nichts · optional `--erwarteter-commit` an der Auswertung als Gegenprobe
 gegen die Belegdatei (`startbaseline-fremder-commit`). Mandatsmenge, Signatur,
-Aktivierungszeitpunkt und Erhebungsfenster (15 min) bleiben unverändert streng. **GEÄNDERTE
+Aktivierungszeitpunkt und Erhebungsfenster (15 min) bleiben unverändert streng.
+**REVIEWBEFUND ZUM PR-#223-KOPFSTAND `86df95e`, EINGEARBEITET (Folgecommit):** die dauerhafte
+Zeile eines **vorhandenen** globalen Laufs wurde nur **slotbasiert** gesucht (gleicher Cron,
+±15 min) statt über die **exakt identische runId** — eine ANDERE `globalphase`-Zeile desselben
+Termins mit korrektem Commit hätte den fehlenden exakten Beleg ersetzen können, der echte Lauf
+wäre ohne eigenen dauerhaften Commitbeleg **bestanden**. Der Täuschungstest (§35.1) wurde
+**zuerst gegen den fehlerhaften Stand** ausgeführt und schlug nachweislich fehl (209/211,
+35.1+35.2 FAIL); nach der Korrektur (exakte runId-Bindung bei vorhandenem globalen Lauf;
+Slot-Zuordnung nur noch als Rückfallebene für die ehrliche Verdrängt-Klassifikation ohne
+Blob-Lauf) **211/211**. Eine Ersatzzeile mit fremdem Commit verdeckt den fehlenden Beleg
+nicht: `commit-beleg-fehlt` **und** `fremder-deployment-commit`, Vorrang `nicht_bestanden`.
+Mutationsprobe um **M63** ergänzt (Rückfall auf reine Slotzuordnung ⇒ Suite rot). **GEÄNDERTE
 DATEIEN:** `lib/helmut/op25-nachweis.js` (`normalisiereVollenCommit`, `pruefeFensterlaufCommit`,
 Commit-Pflicht in `pruefeStartbaseline`, Fenster-Sweep in `bewerteNachweisfenster`;
 `pruefeCommitBeleg` entfernt) · `scripts/op25-production-nachweis.js` (Pflicht-Gate, kein
@@ -44,11 +55,12 @@ Altlauf-Abgleich, Gegenprobe, ehrliche Ausgaben) · `scripts/op25-nachweis-vertr
 nachgeführt, **M55–M62** neu) · `docs/betrieb/vorgangskontext.md` (**§7.7.5** kanonisch,
 Überholt-Vermerke §7.7.3/§7.7.4, Historisch-Vermerk §7.4, R1) · `docs/datenmotor-restliste.md`
 (OP-25-Nachtrag /7) · `docs/CURRENT_STATE.md`. **TESTS:** `op25-nachweis-vertrag-test`
-**207/207** (vorher 202; §34.1–34.27 Verhaltensprüfungen aller acht geforderten Fallfamilien:
+**211/211** (vorher 202; §34.1–34.27 Verhaltensprüfungen aller acht geforderten Fallfamilien:
 fehlender erwarteter Commit · ungültiger/verkürzter Commit · alter Prozesscommit vor der
 Aktivierung · korrekter Commit in allen Fensterläufen · fehlender `commit_ref` · abweichender
-`commit_ref` · gemischte Commits · 15-min-Grenze) · `op25-e3-dauerhaftigkeit-test` **52/52** ·
-Mutationsprobe **62 von 62 rot, 0 Löcher, 0 unwirksam** · `run-offline-tests` **190/205**
+`commit_ref` · gemischte Commits · 15-min-Grenze; §35.1–35.4 exakte runId-Bindung) ·
+`op25-e3-dauerhaftigkeit-test` **52/52** ·
+Mutationsprobe **63 von 63 rot, 0 Löcher, 0 unwirksam** · `run-offline-tests` **190/205**
 gegen frisch ausgecheckten `origin/main` (`3fa8830`) im selben Container ebenfalls **190/205
 mit exakt derselben 15er-Fehlschlagliste** (Netz-Guard/Umgebung, nicht Branchfolge) ·
 `browser-smoke` **32/32**. **PRODUCTION-PROBEN (rein lesend, KEINE Baseline erzeugt):** Dry-Run

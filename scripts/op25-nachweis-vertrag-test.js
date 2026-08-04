@@ -1374,5 +1374,54 @@ console.log("\n== 34 · NACHTRAGSKORREKTUR · Deploymentgebundene Baseline + ver
     && !/deploymentCommit:/.test(cliQuelle));
 }
 
+// =============================================================================================
+console.log("\n== 35 · REVIEW PR #223 · Exakte runId-Bindung der dauerhaften Zeile ==");
+// =============================================================================================
+{
+  // BEFUND: der Slot-Sucher fuer die dauerhafte Zeile verlangte nur denselben Cronnamen und
+  // die 15-min-Toleranz — NICHT die exakte runId des vorhandenen globalen Laufs. scheduler.js
+  // schreibt Blob-Lauf und globalphase-Zeile aber mit DERSELBEN laufId; wenn der globale
+  // Lauf vorhanden ist, darf ausschliesslich die Zeile mit exakt identischer runId seinen
+  // Status, seine Dauer und seinen Commit belegen. Eine ANDERE Zeile desselben Termins darf
+  // den fehlenden Beleg niemals ersetzen.
+  const ersatzZeile = (commit) => ({
+    // 4 min 53 s nach dem crawl@20:00-Slot, ANDERE Kennung als der echte Lauf (…200002-bbbbb):
+    runId: "cron-crawl-20260810200455-fremd-global",
+    process: "globalphase", status: "success", durationMs: VERSIEGELT_DAUER_MS,
+    createdAt: "2026-08-10T20:08:00.000Z", commit, quelle: "relational"
+  });
+  check("35.1 TAEUSCHUNG: Ersatzzeile (andere runId, korrekter Commit) ersetzt den fehlenden exakten Beleg NICHT => blockiert (commit-beleg-fehlt)",
+    (() => {
+      const b = V.bewerteNachweisfenster(baueEingaben({
+        prozessLaeufe: [baueProzessZeile(SLOTS[0]), ersatzZeile(ERWARTETER_COMMIT), baueProzessZeile(SLOTS[2])]
+      }));
+      return b.ausgang === "blockiert"
+        && b.befunde.some((x) => x.grund === "commit-beleg-fehlt" && x.detail.includes("crawl@2026-08-10T20:00:00.000Z"));
+    })());
+  check("35.2 Ersatzzeile mit FREMDEM Commit verdeckt den fehlenden Beleg nicht: commit-beleg-fehlt UND fremder-deployment-commit, Vorrang nicht_bestanden",
+    (() => {
+      const b = V.bewerteNachweisfenster(baueEingaben({
+        prozessLaeufe: [baueProzessZeile(SLOTS[0]), ersatzZeile(ANDERER_COMMIT), baueProzessZeile(SLOTS[2])]
+      }));
+      return b.ausgang === "nicht_bestanden"
+        && hatBefund(b, "commit-beleg-fehlt") && hatBefund(b, "fremder-deployment-commit");
+    })());
+  check("35.3 Exakt identische runId mit korrektem Commit besteht unveraendert",
+    V.bewerteNachweisfenster(baueEingaben()).ausgang === "bestanden");
+  check("35.4 Retentionsfall OHNE globalen Blob-Lauf: slotbezogene Zeile (auch mit anderem Zeitstempel/Kuerzel) klassifiziert weiterhin ehrlich als verdraengt",
+    (() => {
+      const ohneMittleren = baueLaeufe().filter((r) => !r.runId.includes("20260810200002"));
+      // Der Blob-Lauf ist verdraengt — seine exakte Kennung ist damit unbekannt. Die
+      // dauerhafte Zeile des Termins traegt hier bewusst eine ANDERE Sekunden-/Kuerzel-
+      // Kennung; die Slot-Zuordnung bleibt fuer diese ehrliche Klassifikation zulaessig.
+      const zeileAnderesKuerzel = { ...baueProzessZeile(SLOTS[1]), runId: "cron-crawl-20260810200019-real1-global" };
+      const b = V.bewerteNachweisfenster(baueEingaben({
+        laeufe: ohneMittleren,
+        prozessLaeufe: [baueProzessZeile(SLOTS[0]), zeileAnderesKuerzel, baueProzessZeile(SLOTS[2])]
+      }));
+      return b.ausgang === "blockiert" && hatBefund(b, "laufbeleg-verdraengt");
+    })());
+}
+
 console.log(`\n${passed + failed} Pruefpunkte · ${passed} PASS · ${failed} FAIL`);
 process.exit(failed ? 1 : 0);
