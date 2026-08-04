@@ -1,6 +1,32 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-08-04, 10. Durchgang (**OP-25-Nachtragskorrektur nach dem Merge
+**Letzte Aktualisierung:** 2026-08-05, Produktsprint LINIE
+
+**Sprintzustand:** **Erfolgreich abgeschlossen.** LINIE ist als geplante Premium
+Produktinitiative verbindlich in
+[roadmap/produkt-roadmap.md](roadmap/produkt-roadmap.md) dokumentiert. Der Eintrag definiert
+Produktversprechen, sicheren öffentlichen MVP Umfang, Ausschlüsse, Datenschutz und
+Rechtsgates, technische Voraussetzungen, Kostenannahme, Umsetzungsstufen und messbare
+Abnahmekriterien. Die Priorität ist bewusst: zuerst P0 Verkaufsblocker, danach KALENDER für
+den täglichen Nutzen, danach LINIE als Differenzierung. Der öffentliche LINIE MVP ist nicht
+vom Kalender abhängig.
+
+**Grenzen:** keine Implementierung, keine Migration, keine neuen Production Daten, kein
+Feature Flag, kein KI Aufruf, kein Deployment und keine Aktivierung. Besonders private E Mails,
+Kalendernotizen, Bürgeranfragen und vertrauliche Gespräche sind aus dem MVP ausgeschlossen.
+Eine spätere private Datenstufe ist kein stiller Ausbau, sondern braucht eine neue Produkt,
+Rechts und Sicherheitsentscheidung.
+
+**Nächster Schritt für LINIE:** erst LINIE A mit Produktvertrag, zulässigen Datenkategorien,
+Rechtsgrundlage, Datenschutz Folgenabschätzung, Goldset und Datenmodell. Eine Production
+Aktivierung bleibt mindestens durch OP 02, OP 03 und die dokumentierten LINIE
+Abnahmekriterien gesperrt.
+
+**Branch:** agent/linie-produkt-roadmap. Dokumentationsänderung, noch nicht gemergt.
+
+---
+
+**Vorherige operative Aktualisierung:** 2026-08-04, 10. Durchgang (**OP-25-Nachtragskorrektur nach dem Merge
 von PR #222: deploymentgebundene Startbaseline und verbindlicher Commitnachweis. KEIN
 Production-Eingriff, kein Merge.** **STATUSKORREKTUR ZUERST, weil die bisherigen Angaben sich
 widersprachen:** (1) **PR #222 IST GEMERGT** — `origin/main` = Merge-Commit `3fa8830`; die
