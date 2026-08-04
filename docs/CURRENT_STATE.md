@@ -1,6 +1,66 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-08-04, 3. Durchgang (**Letzte fachliche Korrektur PR #220
+**Letzte Aktualisierung:** 2026-08-04, 4. Durchgang (**Sprint „Kontrollierte Production-Profilreparatur
+nach PR #220" — ERFOLGREICH ABGESCHLOSSEN, mit ausdrücklicher Betreiberfreigabe (Lüey, 2026-08-04) für exakt
+diesen Umfang. Ausgangsstand geprüft: `origin/main` = Merge-Commit `d1a51d8` (PR #220), kein neuerer Commit,
+kein nachträglicher Eingriff in den Profilvertrag; OP-29 als Repo-Sprint abgeschlossen.** **WAS IN PRODUCTION
+GEÄNDERT WURDE (7 Schreibvorgänge, profilweise, je mit exaktem Ist-Vergleich gegen den dokumentierten
+Ausgangswert DIREKT vor dem Schreiben, sofortigem Rücklesen und sofortiger Bereitschaftsprüfung; Schreibweg =
+bestehender getesteter Storage-/Admin-Pfad `storage.saveProfile` auf der wirksamen Blob-Sicht — identischer
+Pfad wie `/api/admin/profile/<id>` —, kein neues Schreibwerkzeug, kein improvisiertes SQL):** **(1) Fünf
+Bestandsprofile repariert**, ausschließlich Felder mit Status `belegt` aus dem gemergten Paket
+`scripts/fixtures/profil-reparatur-2026-08-04.js`, angewendet über dessen getestete idempotente Funktion
+`wendeReparaturAn`: `annika-klose` (committees → Arbeit und Soziales; deputyCommittees → Finanzausschuss;
+function/role → Obfrau; reportingTopics → leer, Rollenfloskeln entfernt) · `cem-ince` (deputyCommittees →
+Wirtschaft und Energie + Digitales/Staatsmodernisierung) · `helmut-kleebank` (committees → Wirtschaft und
+Energie + Umwelt/Klimaschutz) · `ottilie-paola-klein-2` (committees → Kultur und Medien + Arbeit und Soziales;
+deputyCommittees → EU + Finanzausschuss; constituency → Berlin-Neukölln) · `ruppert-st-we` (committees →
+Petitionsausschuss; deputyCommittees → Forschung/Technologie/Raumfahrt/TA + Haushaltsausschuss +
+Wohnen/Stadtentwicklung; function/role → Schriftführer). **(2) Demo-Mandat `max-mustermann` DEAKTIVIERT, NICHT
+gelöscht** (profileActive=false über den bestehenden Aktivierungsmechanismus; alle übrigen Felder im
+Rücklesen byte-identisch; vorab geprüft: kein Benutzerkonto, keine Zuordnung, keine Einladung, keine
+Abrechnung). **(3) Relationale `profiles.name`-Zeile des Pilotmandats per BEDINGTEM PATCH (Compare-and-Set
+auf den dokumentierten Ausgangswert, CLAUDE.md §4.10) auf den Klarnamen korrigiert — exakt 1 Zeile betroffen
+(F-P6-Namenszeile behoben).** **BEWUSST NICHT ANGEWENDET (Status `entscheidung`/Hinweis/Modelllücke):**
+Stüwes Rechnungsprüfungsausschuss (Modelllücke, kein Ausschussfeld) · Kloses Mandatsart-Hinweis (kein
+Schemafeld) · Umbenennung des Demo-Mandats (durch Deaktivierung gelöst). **NACHPRÜFUNG (rein lesend,
+39/39 Einzelprüfungen bestanden):** zentrale Prüfung `profil-bereitschaft.js --production`: **alle fünf
+aktiven realen Profile BEREIT** (nur zulässige Qualitätswarnungen: nameVariants/topicPriorities — nicht als
+behoben behauptet); Mandate **8 → 8**, aktive Mandate **6 → 5** (exakt −1, keine weiteren
+Aktivierungen/Deaktivierungen); `max-mustermann` vorhanden, deaktiviert, wird nicht mehr als aktives Mandat
+verarbeitet; die **doppelte AKTIVE Personensuche** Demo↔`ottilie-paola-klein-2` **besteht nicht mehr**
+(Bestandsprüfung: kein Problem mehr, nur noch Warnung zum Namensduplikat auf dem deaktivierten Demo — Löschen/
+Umbenennen war nicht freigegeben, OP-04-Rest offen); **keine** Testmandate in Production (Blob und relational
+0 × `test-mdb-*`); Nutzer 5 (unverändert), 0 Einladungen, 0 neue Konten; Abrufwege 163 unverändert
+(155 needs_review / 4 broken / 4 healthy), Flags/Crons/Budgets unberührt; **kein Crawl und kein
+Pipeline-Lauf ausgelöst** (0 neue `process_runs` seit Sprintbeginn); **globaler Abruf weiterhin DEAKTIVIERT**
+(belegt: seit dem `global`-Lauf 2026-08-03 16:04 UTC ausschließlich `full`/`cron`-Läufe des Altpfads, auch
+der 04:00-Crawl vom 2026-08-04); Lesepfad lädt alle fünf aktiven Profile korrekt. **RÜCKWEG:** minimale
+Sicherung der sechs Blob-Profilobjekte + 12 relationalen Zeilen VOR der Änderung, außerhalb des Repos in
+geschütztem Verzeichnis (0600), SHA-256 `2c8377…f4de`, Inhalte nicht ausgegeben; zusätzlich sind die exakten
+Ausgangswerte aller geänderten Felder dauerhaft im Repo dokumentiert (`BESTAND_IST` im Reparaturpaket) —
+der Rückweg bleibt damit auch nach Ablauf des Sitzungscontainers reproduzierbar. **EHRLICHE GRENZEN:**
+**(a)** der Blob-Schreibpfad ist Last-Write-Wins ohne CAS (bekannte W-2-Eigenschaft des bestehenden
+Admin-Pfads) — gemindert durch cronfreies Zeitfenster (~10:30 UTC, nächster Cron 16:00 UTC), deaktivierten
+Store-Cache, profilweises Vorgehen und Rücklesen JEDES Schreibvorgangs gegen den persistierten Stand;
+**(b)** die relationalen `mandate_profiles`-Zeilen bleiben veraltete Backfill-Schnappschüsse (der wirksame
+Blob-Lesepfad pflegt sie nicht mit; vor einem `HELMUT_PROFILE_DB_MODE`-Cutover ist ein Backfill nötig,
+F-P6-Familie; auch `mandate_profiles.aktiv` des Demos steht relational noch auf true — heute wirkungslos);
+**(c)** das Prüfwerkzeug endet weiterhin mit Exit 2 wegen der zwei ALT-Demo-Mandate
+`angela-merkel`/`james-brown` (deaktiviert, inhaltlich unvollständig — Vorbestand, nicht Teil der Freigabe,
+OP-04-Rest); **(d)** der **OP-25-Production-Nachweis bleibt OFFEN** — dieser Sprint erbringt ihn ausdrücklich
+nicht; künftige Nachweise arbeiten mit **fünf aktiven realen Mandaten**; **(e)** die fünf Offline-Testmandate
+(`test-mdb-*`) bleiben unverändert reine deaktivierte Repo-Daten; **(f)** die Profilfehler waren NICHT die
+Ursache des 267-s-Laufs (unverändert F-RT/F-CL). **TESTS:** `profil-bereitschaft-test.js` **91/91** ·
+`run-offline-tests` **188/203** = exakt die bekannte umgebungsbedingte 15er-Fehlschlagliste, kein neuer
+Fehlschlag · `browser-smoke-test` **32/32**. **0 KI-Aufrufe, 0,00 USD; keine Migration, kein Schema, keine
+Env-/Flag-/Cron-/Budget-/Quellenänderung, kein Deployment.** **GEÄNDERTE REPO-DATEIEN (nur Doku):**
+`docs/CURRENT_STATE.md` · `docs/datenmotor-restliste.md` (OP-04 teilerledigt, OP-25-Nachtrag,
+OP-29-Nachtrag /4). **Branch/PR:** `claude/production-profile-repair-sprint-d200pt`, PR siehe Verlauf —
+Merge-Entscheidung beim Betreiber. **NÄCHSTE SCHRITTE (je einzeln freigabepflichtig):** OP-04-Rest
+(Löschen/Behalten der drei deaktivierten Demos) · OP-25-Production-Nachweis mit 5 Mandaten ·
+Testmandat-Aktivierung · Backfill der relationalen Profilzeilen vor einem DB-Cutover.**) ·
+(3. Durchgang: **Letzte fachliche Korrektur PR #220
 „Profilreife" — ERFOLGREICH ABGESCHLOSSEN nach Korrektur der Testmandate; während der Korrektur
 galt der Sprint als TEILWEISE ABGESCHLOSSEN. KEIN Production-Eingriff, kein Merge, keine Profile
 angelegt/repariert/aktiviert.** **Anlass: eine externe DIREKTE Prüfung der amtlichen
