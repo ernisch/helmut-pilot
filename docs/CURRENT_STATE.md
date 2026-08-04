@@ -40,8 +40,25 @@ mit **exakt derselben 14er-Fehlschlagliste** wie in allen Durchgängen zuvor · 
 **32/32**. **PRODUCTION-PROBEN (rein lesend):** Dry-Run unverändert **`noch_nicht_auswertbar`
 (Exit 3)** · zukünftige Aktivierung ⇒ **Exit 2, keine Datei** · Aktivierung 2 h zurück (außerhalb
 der 15-min-Toleranz) ⇒ **Exit 2, keine Datei** · falscher `--erwarteter-commit` ⇒ **Exit 2, keine
-Datei** · korrekte Kurzform `89427c5` ⇒ `deploymentCommitBestaetigt: true`. **0 Writes in
-Production, 0 KI-Aufrufe, 0,00 USD, keine Migration, kein Flag, kein Cron, kein Merge.**) ·
+Datei** · korrekte Kurzform `89427c5` ⇒ `deploymentCommitBestaetigt: true`. **NEUER BEFUND F-E2E
+(nicht von diesem Sprint verursacht, nicht behoben, ausdrücklich offen):** der erste CI-Lauf zu
+Commit `8cfcaa1` meldete **203/205** mit zwei Fehlschlägen — `pilot-e2e-vertrag-test.js` (I10) und
+`brandenburg-e2e-vertrag-test.js` (J8), beides **Rangfolge**-Zusicherungen. Der **Re-Run des
+IDENTISCHEN Commits** (`run_attempt: 2`, Lauf `30913579533`) lief **205/205 grün** — dieselbe
+Eingabe, zwei verschiedene Ergebnisse. Das ist **belegter Nichtdeterminismus**, kein Vorbestand-
+Etikett: **(a)** der Diff zwischen dem grünen (`4f0d0c2`) und dem roten Lauf (`8cfcaa1`) umfasst
+ausschließlich Doku, drei `scripts/op25-*`-Dateien und das **neue** Modul
+`lib/helmut/op25-nachweis.js`; **(b)** dieses Modul wird nachweislich **nur** von den drei
+op25-Skripten geladen (`grep`-Beleg) und von den beiden E2E-Suiten **nicht** (`0` op25-Requires);
+**(c)** `lib/helmut/matching.js`, `lage.js` und `matching-relevanz.js` sind vom Diff **unberührt**;
+**(d)** lokal 10/10 bzw. 15/15 Läufe grün, auch unter vier verschiedenen Locales
+(`C`/`de_DE`/`en_US`/`sv_SE`) und mit dem Netz-Guard des Runners. **Verdachtsmoment, NICHT bewiesen:**
+der Rangfolge-Tiebreak in `lib/helmut/matching.js:595-598` bricht Punktgleichstände mit
+`localeCompare` **ohne feste Locale**; die beobachtete Reihenfolge war jedoch nicht alphabetisch,
+die Punktzahlen müssen also selbst abgewichen sein — die Ursache ist damit **offen** und gehört in
+einen eigenen Sprint (Vorschlag: deterministischer Tiebreak + Nachweis, woher die Punktdifferenz
+kommt). **0 Writes in Production, 0 KI-Aufrufe, 0,00 USD, keine Migration, kein Flag, kein Cron,
+kein Merge.**) ·
 (7. Durchgang: **Zweiter Reviewdurchgang zu PR #222 eingearbeitet —
 zwei Stellen geschlossen, an denen das Werkzeug WEICHER war als seine eigene Doku. KEIN
 Production-Eingriff, kein Merge.** **(1) Der ECHTE Kostenleser lag im CLI und war laxer als der
