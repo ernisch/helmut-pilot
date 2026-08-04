@@ -40,6 +40,14 @@ const gesehene = [];
 // Minimaler PostgREST-Nachbau fuer genau die hier genutzten Operatoren:
 // filtern -> sortieren -> limitieren, in DIESER Reihenfolge. Das ist der Punkt
 // des Hotfixes: der Aktualitaetsfilter greift VOR dem Limit.
+// `null`/fehlender Rang sortiert nach hinten (PostgREST: nullslast).
+function rangWert(r) {
+  const roh = r ? r.rank : null;
+  if (roh == null || roh === "") return Number.POSITIVE_INFINITY;
+  const n = Number(roh);
+  return Number.isFinite(n) ? n : Number.POSITIVE_INFINITY;
+}
+
 function fakePostgrest(bestand) {
   return (endpoint, options) => {
     gesehene.push({ endpoint, options: options || null });
@@ -51,6 +59,13 @@ function fakePostgrest(bestand) {
     if (params.get("aktuell") === "is.true") rows = rows.filter((r) => r.aktuell === true);
     if (params.get("order") === "created_at.desc") {
       rows = rows.slice().sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+    }
+    // Seit dem F-E2E-Fix (2026-08-04) sortiert der Lesepfad nach dem BERECHNETEN
+    // Rang; Zeilen ohne Rang stehen hinten, Tiebreak ist die Objektkennung.
+    if (params.get("order") === "rank.asc.nullslast,knowledge_object_id.asc") {
+      rows = rows.slice().sort((a, b) => (rangWert(a) - rangWert(b))
+        || (String(a.knowledge_object_id) < String(b.knowledge_object_id) ? -1
+          : (String(a.knowledge_object_id) > String(b.knowledge_object_id) ? 1 : 0)));
     }
     const limit = Number(params.get("limit"));
     if (Number.isFinite(limit) && limit > 0) rows = rows.slice(0, limit);
@@ -79,15 +94,22 @@ for (let i = 0; i < 19; i += 1) {
   bestandA.push(zeile({
     id: `mr-alt-${i}`,
     knowledge_object_id: `ko-alt-${i}`,
+    // Abgeloeste Zeilen tragen den Rang IHRES Laufs — sie stehen in der
+    // rangbasierten Sortierung also ganz vorne, wenn der Aktualitaetsfilter fehlt.
+    rank: i + 1,
     aktuell: false,
     abgeloest_am: "2026-07-29T10:05:00.000Z",
     created_at: `2026-07-29T11:${String(i).padStart(2, "0")}:00.000Z`
   }));
 }
+// Die Raenge laufen BEWUSST gegen die Schreibzeit (juengste Zeile = schlechtester
+// Rang). Nur so ist belegbar, dass der Lesepfad nach Rang und nicht nach Alter
+// sortiert (Befund F-E2E, 2026-08-04).
 for (let i = 0; i < 8; i += 1) {
   bestandA.push(zeile({
     id: `mr-neu-${i}`,
     knowledge_object_id: `ko-neu-${i}`,
+    rank: 8 - i,
     created_at: `2026-07-29T10:${String(20 - i).padStart(2, "0")}:00.000Z`
   }));
 }
@@ -126,8 +148,10 @@ const deps = { ready: () => true, request: fakePostgrest(bestandA) };
     standard.length === 9);
   const ohneFilter = await storage.listMatchingResults(
     { userId: "mdb-a", limit: 12, includeAbgeloest: true }, deps);
-  check("A5 Gegenprobe: ohne Filter wuerden abgeloeste Zeilen verdraengen",
-    ohneFilter.length === 12 && ohneFilter.filter((r) => r.aktuell === false).length === 12);
+  check("A5 Gegenprobe: ohne Filter verdraengen abgeloeste Zeilen aktuelle aus dem Limit",
+    ohneFilter.length === 12
+    && ohneFilter.filter((r) => r.aktuell === false).length > 0
+    && ohneFilter.filter((r) => r.aktuell === true).length < 9);
   check("A6 Filter greift VOR dem Limit (Filter und Limit im selben Endpoint)",
     gesehene[0].endpoint.includes("aktuell=is.true") && gesehene[0].endpoint.includes("limit=12"));
 
@@ -140,19 +164,21 @@ const deps = { ready: () => true, request: fakePostgrest(bestandA) };
     gesehene[1].endpoint.includes("user_id=eq.mdb-a")
     && ohneFilter.every((r) => r.user_id === "mdb-a"));
 
-  // 5 · Sortierung unveraendert
-  check("A10 Sortierung bleibt created_at.desc (keine Rangaenderung)",
-    gesehene[0].endpoint.includes("order=created_at.desc"));
-  const aktuelleAbsteigend = standard
-    .every((r, i) => i === 0 || String(standard[i - 1].created_at) >= String(r.created_at));
-  check("A11 aktuelle Ergebnisse behalten ihre Reihenfolge",
-    aktuelleAbsteigend);
-  check("A12 Reihenfolge entspricht exakt der ungefilterten Reihenfolge der aktuellen Zeilen",
-    JSON.stringify(standard.map((r) => r.knowledge_object_id))
-    === JSON.stringify(bestandA
-      .filter((r) => r.user_id === "mdb-a" && r.aktuell === true)
-      .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))
-      .map((r) => r.knowledge_object_id)));
+  // 5 · Sortierung: seit dem F-E2E-Fix (2026-08-04) entscheidet der BERECHNETE
+  //     Rang, nicht der Schreibzeitpunkt. Vorher stand hier `created_at.desc` —
+  //     das war unbestimmt (alle Zeilen eines Laufs teilen ein `now()`) und
+  //     fachlich falsch (`created_at` friert beim ersten Auftreten ein).
+  check("A10 Sortierung nach berechnetem Rang mit eindeutigem Tiebreak (kein created_at)",
+    gesehene[0].endpoint.includes("order=rank.asc.nullslast,knowledge_object_id.asc")
+    && !gesehene[0].endpoint.includes("created_at"));
+  const nachRangAufsteigend = standard
+    .every((r, i) => i === 0 || rangWert(standard[i - 1]) <= rangWert(r));
+  check("A11 aktuelle Ergebnisse stehen in aufsteigender Rangfolge (Zeilen ohne Rang hinten)",
+    nachRangAufsteigend);
+  check("A12 der schlechteste Rang steht hinten, obwohl seine Zeile die JUENGSTE ist",
+    standard[0].knowledge_object_id === "ko-neu-7"
+    && standard[7].knowledge_object_id === "ko-neu-0"
+    && standard[8].knowledge_object_id === "ko-legacy");
 
   // 7 · Legacy-Zeilen
   check("A13 Legacy-Zeile (run_id=NULL, aktuell=true) bleibt sichtbar",

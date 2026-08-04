@@ -188,8 +188,14 @@ const deps = { ready: () => true, request: fakeRequest };
     gesehene[0].includes("aktuell=is.true"));
   check("B2 Mandantenfilter bleibt Pflicht",
     gesehene[0].includes("user_id=eq.mdb-a"));
-  check("B3 Sortierung unveraendert (created_at.desc) — keine Rangaenderung",
-    gesehene[0].includes("order=created_at.desc"));
+  // Geaendert am 2026-08-04 (Befund F-E2E): frueher `created_at.desc`. Das war
+  // weder deterministisch (alle Zeilen eines Laufs teilen ein `now()`) noch
+  // fachlich richtig (`created_at` friert beim ersten Auftreten ein). Die
+  // Zusicherung ist damit nicht schwaecher, sondern schaerfer: eine eindeutige,
+  // rangbasierte Reihenfolge statt einer zeitbasierten Zufallsreihenfolge.
+  check("B3 Sortierung nach berechnetem Rang mit eindeutigem Tiebreak (kein created_at)",
+    gesehene[0].includes("order=rank.asc.nullslast,knowledge_object_id.asc")
+      && !gesehene[0].includes("created_at"));
 
   await storage.listMatchingResults({ userId: "mdb-a", limit: 12, includeAbgeloest: true }, deps);
   check("B4 Historienzugang bleibt erhalten (includeAbgeloest=true ohne Filter)",
@@ -244,16 +250,24 @@ const deps = { ready: () => true, request: fakeRequest };
     karteOhne.relevanz === null);
 
   // Bestandspfad ohne jede Auditdaten (heutiger Production-Stand).
+  // Seit dem F-E2E-Fix (2026-08-04) entscheidet der gespeicherte Rang. Legacy-
+  // Zeilen tragen keinen — sie stehen deshalb byte-stabil nach Objektkennung und
+  // nicht mehr in der (bei gleichem Schreibzeitpunkt unbestimmten) Ablagefolge.
   const rowsLegacy = [
     { knowledge_object_id: "ko-2", matched_features: [{ type: "partei", value: "SPD" }] },
     { knowledge_object_id: "ko-1", matched_features: [] }
   ];
   const rankedLegacy = await lage.loadRankedVorgaenge(mkStorage(rowsLegacy), null, {}, "mdb-a");
-  check("C8 Bestand ohne Auditspalten funktioniert unveraendert weiter",
-    rankedLegacy.map((k) => k.id).join(",") === "ko-2,ko-1");
+  check("C8 Bestand ohne Auditspalten funktioniert weiter (beide Zeilen, deterministisch nach Kennung)",
+    rankedLegacy.map((k) => k.id).join(",") === "ko-1,ko-2");
+  const legacyMitTreffer = rankedLegacy.find((k) => k.id === "ko-2");
   check("C9 Legacy-Zeile mit Merkmalstreffer bekommt eine Erklaerung",
-    rankedLegacy[0].relevanz_erklaerung
-    && rankedLegacy[0].relevanz_erklaerung.satz === "Betrifft deine Partei SPD.");
+    legacyMitTreffer && legacyMitTreffer.relevanz_erklaerung
+    && legacyMitTreffer.relevanz_erklaerung.satz === "Betrifft deine Partei SPD.");
+  const rowsLegacyUmgedreht = rowsLegacy.slice().reverse();
+  const rankedLegacyUmgedreht = await lage.loadRankedVorgaenge(mkStorage(rowsLegacyUmgedreht), null, {}, "mdb-a");
+  check("C9b auch ohne Rang haengt die Reihenfolge NICHT an der Lieferreihenfolge der Ablage",
+    rankedLegacyUmgedreht.map((k) => k.id).join(",") === rankedLegacy.map((k) => k.id).join(","));
 
   // Fallbackpfade ohne gespeichertes Matching.
   const leerStorage = { listKnowledgeObjects: async () => kos, listMatchingResults: async () => [] };

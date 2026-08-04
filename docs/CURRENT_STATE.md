@@ -1,6 +1,50 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-08-04, 10. Durchgang (**OP-25-Nachtragskorrektur nach dem Merge
+**Letzte Aktualisierung:** 2026-08-04, 11. Durchgang (**Befund F-E2E behoben: die sichtbare
+Rangfolge kam aus der ABLAGE statt aus dem berechneten RANG. KEIN Production-Eingriff, kein
+Merge, kein Deployment, keine Migration, kein Flag, kein Cron, OP-25-Baseline unberührt.**
+**BEWIESENE URSACHE (nicht Locale):** `storage.listMatchingResults` las `matching_results` mit
+`order=created_at.desc`, und `lage.loadRankedVorgaenge` übernahm diese Reihenfolge **unverändert**
+als Ausgabereihenfolge — `matching_results.rank`, das einzige Feld mit der fachlichen
+Relevanzreihenfolge, wurde im Lesepfad **nie** benutzt. In Production teilen sich alle Zeilen
+eines Laufs ein `now()` (ein Statement) und behalten beim Upsert ihr **altes** `created_at`
+(`helmut_publish_matching_run`, Schritt 2) ⇒ die Reihenfolge gleicher Werte ist in PostgreSQL
+nicht zugesichert, über mehrere Läufe sortiert die Liste nach „zuerst gesehen" und `limit`
+schneidet die **jüngsten** statt der **relevantesten** Zeilen ab. Im E2E-Gerüst wurde
+`created_at` **zeilenweise** mit `new Date()` gesetzt: überschritt der Publish-Lauf unter Last
+eine **Millisekundengrenze**, standen die schlechter platzierten Zeilen vorne ⇒ I10/J8 fielen um.
+**Das ist die Erklärung für „derselbe Commit, zwei Ergebnisse":** es entschied nicht die
+Eingabe, sondern eine Millisekundengrenze. **EMPIRISCH BELEGT, beide Richtungen:** unter
+36-facher Parallellast auf dem unveränderten Stand `2e4e00e` **1 roter Lauf in 72**
+(`berlin` J8) — mit einer vorgeschalteten Uhr, die je `new Date()` 1 ms weiterläuft,
+**deterministisch alle drei** Suiten rot (pilot 95/96, brandenburg 97/98, berlin 75/76); nach dem
+Fix dieselbe Tick-Uhr **3× grün** und **72/72** grün unter derselben Parallellast.
+**FIX (nur Reihenfolge, keine Punktwerte/Schwellen/Auswahl):** `lib/helmut/lage.js` legt die
+Reihenfolge im Lesepfad selbst fest (`rank` aufsteigend · ranglose Zeilen hinten · byte-stabiler
+Tiebreak `knowledge_object_id` via `matching-contract.compareIds`) · `lib/helmut/storage.js`
+liest `order=rank.asc.nullslast,knowledge_object_id.asc` (damit auch `limit` die relevantesten
+statt der jüngsten Zeilen behält) · `lib/helmut/matching.js` nutzt beim Punktgleichstand
+`compareIds` statt `localeCompare` (nicht die Ursache, aber dieselbe Fehlerklasse) ·
+`scripts/e2e-vertrag-geruest.js` bildet den echten Lesevertrag nach.
+**REGRESSIONSTEST:** `scripts/lage-rangfolge-determinismus-test.js` **15/15** — gegen den Stand
+**vor** dem Fix **11 von 15 rot**. **TESTS:** pilot-e2e **96/96** · brandenburg-e2e **98/98** ·
+berlin-e2e **76/76** · die drei E2E-Mutationsproben grün · `matching-erklaerung` **65/65**
+(B3/C8/C9 auf den neuen Vertrag nachgezogen, C9b neu) · `matching-aktualitaet` **29/29**
+(A10–A12 nachgezogen, Fixtures tragen jetzt Ränge gegen die Schreibzeit) · `matching-audit`
+**178/178** · `lage-test` **138/138** · `run-offline-tests` **191/206** mit **exakt derselben
+15er-Umgebungs-Fehlschlagliste**; derselbe Container, Stand `2e4e00e` **plus** der neuen Suite:
+**190/206** — einziges Delta ist die neue Suite (dort rot) · `browser-smoke` **32/32**.
+**VERBLEIBENDES RISIKO, bewusst offen:** die pgvector-RPC `match_knowledge_objects` sortiert
+ohne Tiebreak (`order by ko.embedding <=> query_embedding`) — bei exakt gleicher Distanz ist der
+vergebene `rank` nicht zugesichert. Das zu schließen wäre eine **Migration** und damit
+freigabepflichtig; siehe Abbruchbedingung, hier bewusst nicht enthalten. **Kanonische Doku:**
+[`docs/matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md) **§54**. Damit ist auch
+**B29-F1** ursächlich erklärt und geschlossen. **Branch:**
+`claude/nondeterministic-ranking-tests-dwhfox`, **Draft-PR** gegen `main`, **nicht gemergt** —
+Merge bleibt Betreiberentscheidung, insbesondere während des laufenden OP-25-Nachweisfensters.
+**0 Writes in Production, 0 KI-Aufrufe, 0,00 USD, keine Änderung an
+`belege/op25-startbaseline.json`.**) ·
+(10. Durchgang: **OP-25-Nachtragskorrektur nach dem Merge
 von PR #222: deploymentgebundene Startbaseline und verbindlicher Commitnachweis. KEIN
 Production-Eingriff, kein Merge.** **STATUSKORREKTUR ZUERST, weil die bisherigen Angaben sich
 widersprachen:** (1) **PR #222 IST GEMERGT** — `origin/main` = Merge-Commit `3fa8830`; die

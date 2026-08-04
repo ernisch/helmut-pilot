@@ -3752,3 +3752,77 @@ Datenkorrektur · keine Migration · keine Sonderbehandlung des Pilotmandanten (
 Anhebung wirkt mandantenneutral für **alle**) · keine künstlichen Fehler für 29B ·
 keine Änderung an Cron, Flags, Budget, Quellen oder Env · Berlin/Brandenburg/M8
 unverändert AUS · kein Merge.
+
+---
+
+## 54 · Befund F-E2E: die sichtbare Rangfolge kam aus der Ablage statt aus dem Rang (2026-08-04)
+
+**Ausgangslage.** Zwei Rangfolge-Zusicherungen schlugen im CI **ohne Codeänderung**
+fehl (`pilot-e2e-vertrag-test.js` I10, `brandenburg-e2e-vertrag-test.js` J8, Commit
+`8cfcaa1`), der Wiederholungslauf **desselben** Commits war grün. Dieselbe Signatur
+war schon als **B29-F1** notiert (`berlin-e2e-vertrag-test.js` J8, „flaky unter
+Last"). Der damalige Verdacht — `localeCompare` ohne feste Locale — war **nicht** die
+Ursache; die beobachtete Reihenfolge war nicht alphabetisch.
+
+### 54.1 Die bewiesene Ursache
+
+Die sichtbare Rangfolge der Lage kam aus der **Reihenfolge der Ablage**, nicht aus
+dem **berechneten Rang**: `storage.listMatchingResults` las
+`matching_results` mit `order=created_at.desc`, und `lage.loadRankedVorgaenge`
+übernahm diese Reihenfolge **unverändert** als Ausgabereihenfolge. `matching_results.rank`
+— das einzige Feld, das die fachliche Relevanzreihenfolge trägt — wurde im Lesepfad
+**nie** verwendet.
+
+Damit hing die Ausgabe an einem Wert, der die Rangfolge gar nicht abbildet:
+
+| Weg | Was `created_at` dort tut | Folge |
+|---|---|---|
+| Production (`helmut_publish_matching_run`) | ein Insert-Statement, ein `now()` → **alle Zeilen eines Laufs teilen denselben Wert**; beim Upsert bleibt `created_at` bewusst unangetastet und friert beim **ersten** Auftreten einer Zeile ein | Reihenfolge gleicher Werte ist in PostgreSQL **nicht zugesichert**; über mehrere Läufe sortiert die Liste faktisch nach „zuerst gesehen" statt nach Relevanz, und `limit` schneidet die **jüngsten** statt der **relevantesten** Zeilen ab |
+| E2E-Gerüst (`scripts/e2e-vertrag-geruest.js`) | `created_at` wurde **zeilenweise** mit `new Date()` gesetzt | überschritt der Publish-Lauf unter Last eine **Millisekundengrenze**, bekamen die schlechter platzierten Zeilen einen **späteren** Zeitstempel und standen nach `created_at.desc` **vorne** → I10/J8 fielen um |
+
+Das erklärt den Kern des Befunds: **derselbe Commit, zwei Ergebnisse.** Es entschied
+nicht die Eingabe, sondern ob der Publish-Lauf zufällig eine Millisekundengrenze
+überschritt (lokal reproduziert: 1 roter Lauf in 72 unter 36-facher Parallellast).
+
+**Deterministischer Nachweis statt Zufallstreffer:** mit einer vorgeschalteten Uhr,
+die bei jedem `new Date()` um 1 ms weiterläuft, kippten **alle drei** Suiten
+zuverlässig (pilot 95/96, brandenburg 97/98, berlin 75/76).
+
+### 54.2 Der Fix
+
+1. **`lib/helmut/lage.js`** — die Reihenfolge wird im Lesepfad **selbst** festgelegt:
+   `rank` aufsteigend, Zeilen ohne lesbaren Rang hinten, Tiebreak byte-stabil über
+   `knowledge_object_id` (`matching-contract.compareIds`). Die Ausgabe hängt damit
+   **nicht mehr** davon ab, in welcher Reihenfolge die Ablage liefert.
+2. **`lib/helmut/storage.js`** — der Lesevertrag sortiert selbst nach Rang
+   (`order=rank.asc.nullslast,knowledge_object_id.asc`), damit auch `limit` die
+   **relevantesten** und nicht die jüngsten Zeilen behält.
+3. **`lib/helmut/matching.js`** — der Tiebreak bei Punktgleichstand nutzt
+   `compareIds` statt `localeCompare` (§14: „bewusst kein `localeCompare`"). Das war
+   nicht die Ursache, aber dieselbe Fehlerklasse: ein Ergebnis, das an der
+   Laufzeitumgebung hängt (`"Bx"` vs `"ax"` sortiert unter ICU anders als byteweise).
+4. **`scripts/e2e-vertrag-geruest.js`** — das Testdoppel bildet den echten
+   Lesevertrag nach (Rang statt `created_at`).
+
+**Nicht angefasst:** Punktwerte, Schwellen, Rezeptversion, Auswahl, Gate. Es ändert
+sich ausschließlich, **welche Reihenfolge** aus bereits berechneten Rängen entsteht.
+
+### 54.3 Regressionsschutz
+
+`scripts/lage-rangfolge-determinismus-test.js` (15 Prüfpunkte, offline): identische
+`created_at` · zeilenweise tickende `created_at` in der **alten** Lieferreihenfolge ·
+umgekehrte Lieferung · „jüngste Zeile mit schlechtestem Rang" · **alle 24
+Lieferreihenfolgen ergeben genau eine Ausgabe** · Rangloser Altbestand · unlesbarer
+Rang · der Endpunktvertrag (Rang statt `created_at`) · der byte-stabile Tiebreak des
+reinen Matchings. Gegen den Stand **vor** dem Fix (`2e4e00e`) ist die Suite **11 von
+15 rot**.
+
+### 54.4 Verbleibendes Risiko (bewusst offen, freigabepflichtig)
+
+Der **Schreibpfad** bleibt an einer Stelle unbestimmt: die pgvector-RPC
+`match_knowledge_objects` sortiert `order by ko.embedding <=> query_embedding`
+**ohne** Tiebreak — bei exakt gleicher Distanz ist die Trefferreihenfolge und damit
+der vergebene `rank` nicht zugesichert. Das zu schließen erfordert eine **Migration**
+(RPC-Änderung) und ist damit freigabepflichtig; es ist in diesem Sprint bewusst
+**nicht** enthalten. Der Lesepfad ist davon unabhängig deterministisch: er gibt
+denselben gespeicherten Rang immer in derselben Reihenfolge aus.
