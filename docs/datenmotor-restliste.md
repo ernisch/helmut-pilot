@@ -516,6 +516,25 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) **§7.7.1**. Tests: Vertrag
   **108/108**, Dauerhaftigkeit **52/52**, Mutationsprobe **31 von 31 rot**; Production-Dry-Run
   erneut ehrlich **`noch_nicht_auswertbar`**. Der Nachweis selbst bleibt unverändert offen.
+  **Nachtrag 2026-08-04/4 (zweiter Reviewdurchgang):** zwei Stellen, an denen das Werkzeug noch
+  weicher war als seine eigene Doku, sind geschlossen — **(a) der ECHTE Kostenleser** lag im CLI
+  und deutete mit `typeof roh === "number" ? roh : Number(roh)` genau die Werte um, die der
+  Vertrag als unbrauchbar führt (`"1.20"` → 1,20 USD, `true` → 1, `false`/`null` → 0); Einträge
+  ohne lesbaren Zeitstempel wurden still übersprungen. Er liegt jetzt als `kostenAusNutzung` im
+  **reinen Kern** (eine Umsetzung, direkt testbar), akzeptiert nur **roh** endliche, nicht
+  negative `number`-Werte und macht zeitlich nicht zuordenbare Einträge zur Beleglücke
+  ⇒ `blockiert`. **(b) Die Startbaseline** verlangte `signatur`, `aktivierungAtMs` und
+  `erhobenAtMs` nur, *wenn* sie vorhanden waren; das CLI schrieb sie auch ohne gültige
+  `--aktivierung` (mit `null`) und las sie mit `Number(null)` zurück. Jetzt prüft
+  `pruefeStartbaseline` **alle** Pflichtfelder strikt (Mandate ohne Duplikate, Anzahl
+  widerspruchsfrei, Signatur passend, Aktivierungs- und Erhebungszeitpunkt vorhanden und
+  stimmig) — jeder Verstoß ⇒ `blockiert`; das CLI verweigert das Schreiben ohne gültigen
+  Aktivierungszeitpunkt (Exit 2, keine Datei) und liest die Belegdatei roh. **Nebenbefund
+  behoben:** `deploymentCommit` trug eine Laufkennung statt einer Commit-Kennung und stammt jetzt
+  aus `process_runs.commit_ref` (Production-Probe: `89427c5b…`) oder ist ehrlich `null`.
+  Kanonisch: [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) **§7.7.2**. Tests:
+  Vertrag **158/158** (+50), Dauerhaftigkeit **52/52**, Mutationsprobe **41 von 41 rot** (+10);
+  Dry-Run unverändert `noch_nicht_auswertbar`.
 - **Nachtrag 2026-08-04 (Profilreparatursprint):** Künftige OP-25-Production-Nachweise arbeiten
   mit **fünf aktiven realen Mandaten** statt sechs — das Demo-Mandat `max-mustermann` ist seit
   2026-08-04 deaktiviert (nicht gelöscht, OP-04-Teilschritt), sofern bis zum Nachweis keine

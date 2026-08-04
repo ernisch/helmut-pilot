@@ -1,6 +1,52 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-08-04, 6. Durchgang (**Review zu PR #222 vollständig eingearbeitet —
+**Letzte Aktualisierung:** 2026-08-04, 7. Durchgang (**Zweiter Reviewdurchgang zu PR #222 eingearbeitet —
+zwei Stellen geschlossen, an denen das Werkzeug WEICHER war als seine eigene Doku. KEIN
+Production-Eingriff, kein Merge.** **(1) Der ECHTE Kostenleser lag im CLI und war laxer als der
+Vertrag:** `typeof roh === "number" ? roh : Number(roh)` deutete genau die Werte um, die §7.7.1
+als unbrauchbar führt — `"1.20"` wurde zu 1,20 USD, `true` zu 1, `false`/`null` zu 0; zusätzlich
+wurden Nutzungseinträge **ohne lesbaren Zeitstempel** stillschweigend übersprungen, obwohl sie im
+Fenster liegen könnten. **Jetzt** liegt der Leser als `kostenAusNutzung` im **reinen Kern** (eine
+einzige Umsetzung, direkt testbar), das CLI reicht nur noch durch; ein Kostenwert zählt **nur**,
+wenn er **roh schon eine `number`** ist (endlich, nicht negativ) — alles andere ist `unbepreist`
+und blockiert; ein Eintrag ohne eindeutig lesbaren `createdAt` (fehlend/`null`/leer/unparsbar/Zahl)
+macht die Kostendaten unvollständig ⇒ `blockiert`. Eine leere, aber lesbare Nutzungsliste bleibt
+eine **belegte** 0,00 USD. **(2) Die Startbaseline war nicht vollständig fail closed:** `signatur`,
+`aktivierungAtMs` und `erhobenAtMs` wurden nur geprüft, *wenn* sie vorhanden waren; das CLI
+erlaubte `--startbaseline-schreiben` ohne gültige `--aktivierung` und schrieb `null`, und
+`leseStartbaseline` enthielt mit `Number(null)` erneut dieselbe Umdeutung. **Jetzt** prüft
+`pruefeStartbaseline` an genau einer Stelle **alle** Pflichtfelder strikt — Mandatsliste (nicht
+leer, nur nicht leere Zeichenketten, **ohne Duplikate**), `anzahl` (vorhanden und widerspruchsfrei),
+`signatur` (vorhanden und passend), `aktivierungAtMs` (vorhanden und identisch zur bewerteten
+Aktivierung), `erhobenAtMs` (vorhanden und nicht nach dem Fensterstart) — jeder Verstoß ⇒
+`blockiert`; das CLI **verweigert** das Schreiben ohne gültigen Aktivierungszeitpunkt (Exit 2, es
+entsteht keine Datei) und liest die Belegdatei **roh**, ohne Ergänzung oder Reparatur.
+**Nebenbefund behoben:** `deploymentCommit` trug eine **Laufkennung** statt einer Commit-Kennung
+und stammt jetzt aus `process_runs.commit_ref` (Production-Probe: `89427c5b…`) oder ist ehrlich
+`null`. **GEÄNDERTE DATEIEN:** `lib/helmut/op25-nachweis.js` (Kostenleser + strikte
+Baseline-Prüfung) · `scripts/op25-production-nachweis.js` (Weitergabe statt zweiter Fassung,
+Schreibsperre, roher Lesepfad, echte Commit-Kennung) · `scripts/op25-nachweis-vertrag-test.js`
+(§31/§32) · `scripts/op25-nachweis-mutationsprobe.js` (M32–M41, M20 nachgeführt) ·
+`docs/betrieb/vorgangskontext.md` (§7.7.2) · `docs/datenmotor-restliste.md` ·
+`docs/CURRENT_STATE.md`. **TESTS:** `op25-nachweis-vertrag-test` **158/158** (vorher 108; +50
+Prüfpunkte: direkte Lesertests inkl. `"1.20"`/`true`/`false`/`null`/`""`, fünf Varianten kaputter
+Zeitstempel, Fenstergrenzen, Verdrängung — sowie **jedes Baseline-Pflichtfeld einzeln fehlend UND
+`null`**) · `op25-e3-dauerhaftigkeit-test` **52/52** · Mutationsprobe **41 von 41 rot** (vorher 31;
+M20 nach dem Refactoring auf die neue Struktur nachgeführt und dadurch präziser: sie ersetzt die
+fehlende Baseline jetzt genau so, wie der Review es befürchtete) · `cron-globalphase` **176/176** ·
+`globalphase-buendelung` **56/56** · `globalabruf-kapazitaet` **47/47** · `vorgangskontext`
+**102/102** · `compact-store-roundtrip` **26/26** · `prozesslauf-telemetrie` **37/37** ·
+`cron-fairness` **285/285** · `run-offline-tests` **191/205** mit **exakt derselben
+14er-Fehlschlagliste** wie in den beiden Durchgängen zuvor · `browser-smoke` **32/32**.
+**PRODUCTION-PROBEN (rein lesend):** Dry-Run unverändert **`noch_nicht_auswertbar` (Exit 3)** ·
+`--startbaseline-schreiben` **ohne** `--aktivierung` ⇒ **Exit 2, keine Datei entstanden** · mit
+gültiger Aktivierung ⇒ Baseline `m5-9aee228dbf2c9f13` mit echter Commit-SHA · unlesbare bzw.
+fehlende Belegdatei ⇒ **Exit 2** (`startbaseline-nicht-lesbar`). **Ehrliche Grenze:** die strikte
+Baseline-Gate ist über das CLI heute nicht erreichbar, weil die Fensterprüfung ihr vertragsgemäß
+vorausgeht (ein 24-h-Fenster ab dem frühesten erlaubten Start ist noch nicht vergangen) — sie ist
+offline erschöpfend geprüft (§32, 20 Prüfpunkte). **0 Writes in Production, 0 KI-Aufrufe, 0,00 USD,
+keine Migration, kein Flag, kein Cron, kein Merge.**) ·
+(6. Durchgang: **Review zu PR #222 vollständig eingearbeitet —
 drei nachweisrelevante Lücken geschlossen, alle fail closed, KEIN Production-Eingriff, kein Merge.**
 **Der Reviewer fand drei Wege, auf denen der Nachweisvertrag fälschlich GRÜN hätte werden können:**
 **(1) KOSTENVERTRAG** — geprüft wurde nur auf `null`; `NaN > rahmen` ist aber *immer* `false`, ein

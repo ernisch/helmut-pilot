@@ -73,10 +73,10 @@ const DOKUMENTIERTE_ERWARTETE_MANDATE = 5;
 // HELMUT_OP25_KOSTENRAHMEN_USD; ohne belastbaren Rahmen bleibt der Nachweis `blockiert`.
 const DOKUMENTIERTER_KOSTENRAHMEN_USD = Number(process.env.HELMUT_OP25_KOSTENRAHMEN_USD || 2);
 
-// Retention der Laufdatensaetze im Blob (storage.js: HELMUT_CRAWL_RUN_RETENTION, Default 20)
-// und der Nutzungseintraege im Auth-Store (storage.js `normalizeAuthStore`, fest 5 000).
+// Retention der Laufdatensaetze im Blob (storage.js: HELMUT_CRAWL_RUN_RETENTION, Default 20).
+// Die Aufbewahrungsgrenze der Nutzungseintraege steht im Kern (`vertrag.LLM_USAGE_RETENTION`),
+// damit Leser und Grenze nicht auseinanderlaufen koennen.
 const LAUF_RETENTION = Math.max(1, Number(process.env.HELMUT_CRAWL_RUN_RETENTION) || 20);
-const LLM_USAGE_RETENTION = 5000;
 
 function pfadErlaubt(pfad) {
   if (typeof pfad !== "string" || !pfad.startsWith("/rest/v1/")) return false;
@@ -172,7 +172,7 @@ async function leseDauerhafteLaufzeilen(authStore) {
   let relationalFehler = null;
   try {
     const rows = await holen(
-      `/rest/v1/process_runs?select=run_id,process,status,duration_ms,started_at,finished_at,created_at`
+      `/rest/v1/process_runs?select=run_id,process,status,duration_ms,started_at,finished_at,created_at,commit_ref`
       + `&process=eq.${vertrag.GLOBALPHASE_PROZESS}&order=created_at.desc&limit=1000`
     );
     for (const r of Array.isArray(rows) ? rows : []) {
@@ -183,6 +183,7 @@ async function leseDauerhafteLaufzeilen(authStore) {
         status: r.status || null,
         durationMs: r.duration_ms == null ? null : Number(r.duration_ms),
         createdAt: r.created_at || null,
+        commit: r.commit_ref || null,
         quelle: "relational"
       });
     }
@@ -198,70 +199,66 @@ async function leseDauerhafteLaufzeilen(authStore) {
       status: r.status || null,
       durationMs: r.durationMs == null ? null : Number(r.durationMs),
       createdAt: r.createdAt || null,
+      commit: r.commit || null,
       quelle: "blob"
     });
   }
   return { zeilen: [...gefunden.values()], relationalFehler };
 }
 
+// ECHTE Commit-Kennung des laufenden Production-Stands: `process_runs.commit_ref` wird aus
+// `VERCEL_GIT_COMMIT_SHA` gespeist (storage.sanitizeProcessRun). Gibt es keine, bleibt das
+// Feld ehrlich `null` — es wird NICHTS anderes hineingeschrieben, was wie ein Commit aussieht.
+async function leseDeploymentCommit() {
+  try {
+    const rows = await holen(
+      "/rest/v1/process_runs?select=commit_ref,created_at&commit_ref=not.is.null"
+      + "&order=created_at.desc&limit=1"
+    );
+    const treffer = Array.isArray(rows) && rows[0] ? rows[0].commit_ref : null;
+    return (typeof treffer === "string" && treffer.trim()) ? treffer.trim() : null;
+  } catch (_) {
+    return null;
+  }
+}
+
 // --- Kostenvertrag: Summe UND belegte Vollstaendigkeit ---------------------------------------
-// Eine leere oder fehlende Nutzungsliste sieht wie 0,00 USD aus. Genau das darf nie als
-// bestandener Kostenvertrag durchgehen — deshalb liefert diese Funktion nicht nur die Summe,
-// sondern auch, ob die Datenlage die Summe ueberhaupt TRAEGT.
+// Der Leser selbst liegt im REINEN KERN (`vertrag.kostenAusNutzung`) — dort ist er direkt
+// testbar, und der strikte Zahlenvertrag hat genau EINE Umsetzung. Frueher stand hier eine
+// zweite, laxere Fassung (`typeof roh === "number" ? roh : Number(roh)`), die `"1.20"`,
+// `true`, `false` und `null` still umdeutete, waehrend die Doku sie als unbrauchbar fuehrte.
 function kostenImFenster(authStore, vonMs, bisMs, rahmenUsd) {
-  if (!authStore || typeof authStore !== "object") {
-    return { fensterUsd: null, rahmenUsd, vollstaendig: false, unbepreisteEintraege: null, grund: "Auth-Store nicht lesbar" };
-  }
-  if (!Array.isArray(authStore.llmUsage)) {
-    return { fensterUsd: null, rahmenUsd, vollstaendig: false, unbepreisteEintraege: null, grund: "llmUsage fehlt im Auth-Store" };
-  }
-  const alle = authStore.llmUsage;
-  let summe = 0;
-  let unbepreist = 0;
-  let imFenster = 0;
-  let aeltesterMs = Infinity;
-  for (const u of alle) {
-    const t = Date.parse((u && u.createdAt) || "");
-    if (Number.isFinite(t) && t < aeltesterMs) aeltesterMs = t;
-    if (!Number.isFinite(t) || t < vonMs || t >= bisMs) continue;
-    imFenster += 1;
-    const roh = u.estimatedCost ?? u.costUsd ?? u.cost;
-    const kosten = typeof roh === "number" ? roh : Number(roh);
-    if (!Number.isFinite(kosten) || kosten < 0) { unbepreist += 1; continue; }
-    summe += kosten;
-  }
-  // VERDRAENGUNG: sitzt die Nutzungsliste an ihrer Grenze und beginnt sie erst NACH dem
-  // Fensterstart, sind fruehe Kosten des Fensters ueberschrieben — die Summe waere zu klein.
-  if (alle.length >= LLM_USAGE_RETENTION && Number.isFinite(aeltesterMs) && aeltesterMs > vonMs) {
-    return {
-      fensterUsd: Math.round(summe * 10000) / 10000, rahmenUsd, vollstaendig: false,
-      unbepreisteEintraege: unbepreist,
-      grund: `Nutzungsliste an der Aufbewahrungsgrenze (${alle.length}); aeltester Eintrag`
-        + ` ${new Date(aeltesterMs).toISOString()} liegt nach dem Fensterstart — fruehe Kosten verdraengt`
-    };
-  }
-  return {
-    fensterUsd: Math.round(summe * 10000) / 10000,
-    rahmenUsd,
-    vollstaendig: true,
-    unbepreisteEintraege: unbepreist,
-    eintraegeImFenster: imFenster
-  };
+  return vertrag.kostenAusNutzung({
+    authStore, vonMs, bisMs, rahmenUsd, retention: vertrag.LLM_USAGE_RETENTION
+  });
 }
 
 const zeit = (ms) => (Number.isFinite(ms) ? new Date(ms).toISOString().replace("T", " ").slice(0, 19) + "Z" : "—");
 
 // --- Startbaseline (lokale Belegdatei, Production nur gelesen) --------------------------------
 
+// Schreibt die Startbaseline. Ein GUELTIGER Aktivierungszeitpunkt ist Pflicht — eine Baseline
+// mit `aktivierungAtMs: null` waere wertlos (sie koennte zu jeder Aktivierung gehoeren) und
+// wuerde die Auswertung spaeter ohnehin blockieren. Deshalb wird hier gar nicht erst
+// geschrieben (Review 2 zu PR #222).
 function schreibeStartbaseline(datei, { aktivierungAtMs, aktiveMandate, deploymentCommit }) {
+  if (!Number.isFinite(aktivierungAtMs)) {
+    throw new Error("--startbaseline-schreiben verlangt einen gueltigen --aktivierung-Zeitpunkt"
+      + " (ISO). Ohne ihn belegt die Baseline nichts.");
+  }
   const sig = vertrag.mandatsSignatur(aktiveMandate);
+  if (!sig.anzahl) throw new Error("Startbaseline ohne Mandate — nichts zu belegen.");
+  const jetztMs = Date.now();
   const inhalt = {
     zweck: "OP-25 Startbaseline: Mandatsmenge am Fensterstart, identitaetsgenau eingefroren",
-    erhobenAt: new Date().toISOString(),
-    erhobenAtMs: Date.now(),
-    aktivierungAt: Number.isFinite(aktivierungAtMs) ? new Date(aktivierungAtMs).toISOString() : null,
-    aktivierungAtMs: Number.isFinite(aktivierungAtMs) ? aktivierungAtMs : null,
-    deploymentCommit: deploymentCommit || null,
+    erhobenAt: new Date(jetztMs).toISOString(),
+    erhobenAtMs: jetztMs,
+    aktivierungAt: new Date(aktivierungAtMs).toISOString(),
+    aktivierungAtMs,
+    // ECHTE Commit-Kennung des laufenden Production-Stands (`process_runs.commit_ref`,
+    // gespeist aus VERCEL_GIT_COMMIT_SHA) — oder ehrlich `null`. Frueher stand hier eine
+    // LAUFKENNUNG, was keine Commit-Kennung ist (Nebenbefund Review 2).
+    deploymentCommit: (typeof deploymentCommit === "string" && deploymentCommit.trim()) ? deploymentCommit.trim() : null,
     anzahl: sig.anzahl,
     mandate: sig.mandate,
     signatur: sig.signatur
@@ -271,17 +268,12 @@ function schreibeStartbaseline(datei, { aktivierungAtMs, aktiveMandate, deployme
   return inhalt;
 }
 
+// Liest die Belegdatei ROH ein. Es wird bewusst NICHTS ergaenzt, umgedeutet oder repariert —
+// die vollstaendige, strikte Pruefung macht `vertrag.pruefeStartbaseline` an genau einer
+// Stelle. (Frueher stand hier ein `Number(null)`-Fallback, also erneut die stille Umdeutung
+// von „fehlt" nach `0`.)
 function leseStartbaseline(datei) {
-  const roh = JSON.parse(fs.readFileSync(path.resolve(datei), "utf8"));
-  return {
-    ...roh,
-    aktivierungAtMs: Number.isFinite(Number(roh.aktivierungAtMs))
-      ? Number(roh.aktivierungAtMs)
-      : (roh.aktivierungAt ? Date.parse(roh.aktivierungAt) : null),
-    erhobenAtMs: Number.isFinite(Number(roh.erhobenAtMs))
-      ? Number(roh.erhobenAtMs)
-      : (roh.erhobenAt ? Date.parse(roh.erhobenAt) : null)
-  };
+  return JSON.parse(fs.readFileSync(path.resolve(datei), "utf8"));
 }
 
 // --- Baseline (rein lesend, PII-frei) --------------------------------------------------------
@@ -392,9 +384,14 @@ async function erhebeBaseline({ mainStore, authStore, fairnessStore, dauerhafte 
       console.error("MESSFEHLER: aktive Mandatsmenge nicht lesbar — keine Startbaseline geschrieben.");
       process.exit(2);
     }
-    const commitZeile = dauerhafte.zeilen[0] || null;
+    // FAIL CLOSED: ohne gueltigen Aktivierungszeitpunkt wird gar nicht erst geschrieben.
+    if (!Number.isFinite(aktivierungAtMs)) {
+      console.error("MESSFEHLER: --startbaseline-schreiben verlangt einen gueltigen"
+        + " --aktivierung-Zeitpunkt (ISO). Ohne ihn belegt die Baseline nichts — nichts geschrieben.");
+      process.exit(2);
+    }
     const inhalt = schreibeStartbaseline(String(args["startbaseline-schreiben"]), {
-      aktivierungAtMs, aktiveMandate, deploymentCommit: commitZeile ? commitZeile.runId : null
+      aktivierungAtMs, aktiveMandate, deploymentCommit: await leseDeploymentCommit()
     });
     console.log("== STARTBASELINE GESCHRIEBEN (lokale Belegdatei; Production nur gelesen) ==");
     console.log(JSON.stringify(inhalt, null, 2));
@@ -449,7 +446,8 @@ async function erhebeBaseline({ mainStore, authStore, fairnessStore, dauerhafte 
   console.log("== EINGABEN (rein lesend) ==");
   console.log(`aktive Mandate am Fensterende (dynamisch): ${endSig ? `${endSig.signatur} (${endSig.mandate.join(", ")})` : "NICHT LESBAR"}`);
   console.log(`eingefrorene Startbaseline: ${startbaseline
-    ? `${vertrag.mandatsSignatur(startbaseline.mandate || []).signatur} (erhoben ${startbaseline.erhobenAt || "?"})`
+    ? `${Array.isArray(startbaseline.mandate) ? vertrag.mandatsSignatur(startbaseline.mandate).signatur : "(ohne Mandatsliste)"}`
+      + ` (erhoben ${startbaseline.erhobenAt || "?"}, Datei-Signatur ${startbaseline.signatur || "fehlt"})`
     : "FEHLT — ohne sie ist der Zustand am Fensterstart nicht belegt"}`);
   console.log(`Laufdatensaetze im Blob: ${laeufe ? `${laeufe.length} (Retention ${LAUF_RETENTION})` : "NICHT LESBAR"}`
     + ` · dauerhafte globalphase-Zeilen: ${dauerhafte.zeilen.length}`

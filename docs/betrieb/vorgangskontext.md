@@ -714,13 +714,14 @@ nachweislich nicht reicht.** C ist ausdrücklich **nicht** ohne neue Freigabe um
 > beschriebene Abnahme. Ausführung: `node scripts/op25-production-nachweis.js` (rein lesend,
 > GET-Literal + Tabellen-Allowlist, kein Trigger, keine Flag-/Env-Änderung, 0 KI-Aufrufe);
 > Bewertungskern: [`lib/helmut/op25-nachweis.js`](../../lib/helmut/op25-nachweis.js)
-> (reine Logik, testgesichert über `scripts/op25-nachweis-vertrag-test.js` (108 Prüfpunkte),
+> (reine Logik, testgesichert über `scripts/op25-nachweis-vertrag-test.js` (158 Prüfpunkte),
 > `scripts/op25-e3-dauerhaftigkeit-test.js` (52 Prüfpunkte) und
-> `scripts/op25-nachweis-mutationsprobe.js` (**31 von 31 rot**)).
+> `scripts/op25-nachweis-mutationsprobe.js` (**41 von 41 rot**)).
 >
-> **Stand 2026-08-04/2:** um die drei Befunde der Review zu PR #222 gehärtet — Kostenvertrag,
-> identitätsgenau eingefrorene Mandatsmenge, dauerhafte Belegquelle samt versiegelter Laufzeit
-> (§7.7.1).
+> **Stand 2026-08-04/3:** um die Befunde **beider** Reviewdurchgänge zu PR #222 gehärtet —
+> Kostenvertrag, identitätsgenau eingefrorene Mandatsmenge, dauerhafte Belegquelle samt
+> versiegelter Laufzeit (§7.7.1) sowie der **echte Kostenleser** und die **vollständig
+> fail-closed Startbaseline** (§7.7.2).
 
 **Die verbindlichen Produktentscheidungen (2026-08-04):** **E1 bleibt Option A** (keine neue
 Crawler-Deadline, kein `AbortSignal`, kein Eingriff in Gate/Retry/Breaker/Netz). **E2 bleibt
@@ -892,6 +893,46 @@ während ein 24-h-Fenster bei fünf Mandaten bereits **18** Datensätze braucht.
   Fehlen Vermerk *und* dauerhafte Zeile, ist die Grenze nicht prüfbar → `blockiert`.
   Widersprechen sich beide Belege, wird das benannt (`nicht_bestanden`) statt einer Quelle blind
   geglaubt.
+
+### 7.7.2 Zweiter Reviewdurchgang (2026-08-04) — der echte Leser und die Belegdatei
+
+Der erste Härtungsdurchgang schrieb den strikten Zahlenvertrag in den Bewertungskern, ließ
+aber zwei Stellen aus, an denen das Werkzeug **selbst** noch weicher war als seine Doku.
+
+**(1) Der Kostenleser lebte im CLI und war laxer als der Vertrag.** Er benutzte
+`typeof roh === "number" ? roh : Number(roh)` und deutete damit genau die Werte um, die §7.7.1
+ausdrücklich als unbrauchbar führt: `"1.20"` wurde zu 1,20 USD, `true` zu 1, `false` und `null`
+zu 0. Zusätzlich wurden Nutzungseinträge **ohne lesbaren Zeitstempel** stillschweigend
+übersprungen — obwohl sie im Fenster liegen könnten und die Summe dann zu klein wäre.
+**Jetzt** liegt der Leser als `kostenAusNutzung` im **reinen Kern** (eine einzige Umsetzung,
+direkt testbar); das CLI reicht nur noch durch. Ein Kostenwert zählt **nur**, wenn er **roh
+schon eine `number`** ist — endlich und nicht negativ; alles andere ist `unbepreist` und
+blockiert. Ein Eintrag ohne eindeutig lesbaren `createdAt` (fehlend, `null`, leer, unparsbar,
+Zahl statt Zeichenkette) macht die Kostendaten **unvollständig** ⇒ `blockiert`. Eine leere,
+aber lesbare Nutzungsliste bleibt eine **belegte** 0,00 USD und besteht.
+
+**(2) Die Startbaseline war noch nicht vollständig fail closed.** `signatur`,
+`aktivierungAtMs` und `erhobenAtMs` wurden nur geprüft, **wenn** sie vorhanden waren — eine
+Baseline ohne diese Felder wurde also akzeptiert. Das CLI erlaubte außerdem
+`--startbaseline-schreiben` **ohne** gültige `--aktivierung` und schrieb dann `null`, und
+`leseStartbaseline` enthielt mit `Number(null)` erneut dieselbe stille Umdeutung.
+**Jetzt** prüft `pruefeStartbaseline` an genau einer Stelle **alle** Pflichtfelder strikt:
+
+| Feld | Bedingung | Befund bei Verstoß |
+|---|---|---|
+| `mandate` | Array, nicht leer, nur nicht leere Zeichenketten, **ohne Duplikate** | `startbaseline-mandate-fehlen` / `…-ungueltig` |
+| `anzahl` | vorhanden **und** gleich der Listenlänge | `startbaseline-anzahl-fehlt` / `…-widerspruch` |
+| `signatur` | vorhanden **und** gleich dem berechneten Hash | `startbaseline-signatur-fehlt` / `…-passt-nicht` |
+| `aktivierungAtMs` (oder ISO-Zwilling) | vorhanden **und** identisch zur bewerteten Aktivierung | `startbaseline-aktivierung-fehlt` / `…-fremde-aktivierung` |
+| `erhobenAtMs` (oder ISO-Zwilling) | vorhanden **und** nicht nach dem Fensterstart (+15 min) | `startbaseline-erhebung-fehlt` / `…-zu-spaet-erhoben` |
+
+Jeder Verstoß ergibt `blockiert`. Das CLI **verweigert** das Schreiben ohne gültigen
+Aktivierungszeitpunkt (Exit 2, es entsteht keine Datei) und liest die Belegdatei **roh** ein —
+ohne Ergänzung, Umdeutung oder Reparatur. Eine unlesbare oder fehlende Datei ist `blockiert`.
+
+**Nebenbefund, mit behoben:** `deploymentCommit` wurde mit einer **Laufkennung** befüllt, was
+keine Commit-Kennung ist. Die Baseline trägt jetzt die echte Commit-SHA aus
+`process_runs.commit_ref` (gespeist aus `VERCEL_GIT_COMMIT_SHA`) — oder ehrlich `null`.
 
 ## 8 · Verbleibende Risiken
 

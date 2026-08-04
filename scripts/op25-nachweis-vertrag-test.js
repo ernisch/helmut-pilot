@@ -879,5 +879,204 @@ console.log("\n== 30 · REVIEW-HAERTUNG 3: dauerhafte Belegquelle, Aufbewahrung,
     && bOhneDauerhaft.warnungen.some((w) => w.includes("keine dauerhafte Laufzeile")));
 }
 
+// =============================================================================================
+console.log("\n== 31 · REVIEW 2 · Punkt 1: der ECHTE Kostenleser ist strikt ==");
+// =============================================================================================
+{
+  // Direkte Tests des Lesers selbst — nicht nur des bereits aggregierten Kostenblocks.
+  const von = FENSTER.vonMs;
+  const bis = FENSTER.bisMs;
+  const imFenster = new Date(von + 3600000).toISOString();
+  const lies = (llmUsage, extra = {}) => V.kostenAusNutzung({
+    authStore: { llmUsage }, vonMs: von, bisMs: bis, rahmenUsd: 5, ...extra
+  });
+
+  check("31.1 Auth-Store nicht lesbar => unvollstaendig, KEINE 0-USD-Summe",
+    (() => { const k = V.kostenAusNutzung({ authStore: null, vonMs: von, bisMs: bis, rahmenUsd: 5 });
+      return k.vollstaendig === false && k.fensterUsd === null; })());
+  check("31.2 llmUsage fehlt => unvollstaendig, KEINE 0-USD-Summe",
+    (() => { const k = V.kostenAusNutzung({ authStore: {}, vonMs: von, bisMs: bis, rahmenUsd: 5 });
+      return k.vollstaendig === false && k.fensterUsd === null && /llmUsage/.test(k.grund); })());
+
+  // DER KERN VON REVIEW-2-PUNKT-1: rohe Nicht-Zahlen wurden bisher umgedeutet.
+  const umdeutbar = [
+    { createdAt: imFenster, estimatedCost: "1.20" },
+    { createdAt: imFenster, estimatedCost: true },
+    { createdAt: imFenster, estimatedCost: false },
+    { createdAt: imFenster, estimatedCost: null },
+    { createdAt: imFenster, estimatedCost: "" }
+  ];
+  const kUmdeutbar = lies(umdeutbar);
+  check("31.3 \"1.20\"/true/false/null/\"\" sind UNBEPREIST, werden nicht zu Zahlen umgedeutet",
+    kUmdeutbar.unbepreisteEintraege === 5 && kUmdeutbar.fensterUsd === 0,
+    JSON.stringify(kUmdeutbar));
+  check("31.4 Der Vertrag blockiert diesen Fall (Summe waere zu klein)",
+    V.pruefeKosten(kUmdeutbar).some((b) => b.grund === "kosten-nicht-bepreisbar"));
+  check("31.5 Gegenprobe: \"1.20\" wurde NICHT als 1.20 gezaehlt", kUmdeutbar.fensterUsd !== 1.2);
+
+  const kEchte = lies([
+    { createdAt: imFenster, estimatedCost: 0.5 },
+    { createdAt: imFenster, estimatedCost: 0.25 }
+  ]);
+  check("31.6 Echte Zahlen werden summiert und gelten als vollstaendig",
+    kEchte.fensterUsd === 0.75 && kEchte.vollstaendig === true && kEchte.unbepreisteEintraege === 0);
+  check("31.7 NaN/Infinity/negativ im Rohwert sind unbepreist",
+    (() => { const k = lies([
+      { createdAt: imFenster, estimatedCost: NaN },
+      { createdAt: imFenster, estimatedCost: Infinity },
+      { createdAt: imFenster, estimatedCost: -1 }
+    ]); return k.unbepreisteEintraege === 3 && k.fensterUsd === 0; })());
+
+  // ZEITLICHE ZUORDENBARKEIT: fehlende/kaputte Zeitstempel duerfen keine Vollstaendigkeit.
+  for (const [name, stempel] of [["fehlt", undefined], ["null", null], ["leer", "   "], ["unparsbar", "kein-datum"], ["Zahl", 12345]]) {
+    const k = lies([{ createdAt: stempel, estimatedCost: 0.5 }, { createdAt: imFenster, estimatedCost: 0.5 }]);
+    check(`31.8 createdAt ${name} => zeitlich nicht zuordenbar, vollstaendig=false`,
+      k.vollstaendig === false && k.zeitlichNichtZuordenbar === 1 && /Zeitstempel/.test(k.grund || ""),
+      JSON.stringify(k));
+  }
+  check("31.9 Der Vertrag blockiert einen zeitlich nicht zuordenbaren Bestand",
+    V.pruefeKosten(lies([{ createdAt: null, estimatedCost: 0.5 }]))
+      .some((b) => b.grund === "kostendaten-unvollstaendig"));
+
+  // Fensterzuschnitt: nur Eintraege IM Fenster zaehlen.
+  check("31.10 Eintraege ausserhalb des Fensters zaehlen nicht in die Summe",
+    (() => { const k = lies([
+      { createdAt: new Date(von - 3600000).toISOString(), estimatedCost: 99 },
+      { createdAt: new Date(bis + 3600000).toISOString(), estimatedCost: 99 },
+      { createdAt: imFenster, estimatedCost: 1 }
+    ]); return k.fensterUsd === 1 && k.eintraegeImFenster === 1 && k.vollstaendig === true; })());
+  check("31.11 Fenstergrenzen: Start zaehlt, Ende zaehlt NICHT (halboffen)",
+    (() => { const k = lies([
+      { createdAt: new Date(von).toISOString(), estimatedCost: 2 },
+      { createdAt: new Date(bis).toISOString(), estimatedCost: 40 }
+    ]); return k.fensterUsd === 2; })());
+
+  // VERDRAENGUNG der Nutzungsliste.
+  const vieleNachStart = Array.from({ length: 10 }, () => ({ createdAt: imFenster, estimatedCost: 0.1 }));
+  const kVerdraengt = lies(vieleNachStart, { retention: 10 });
+  check("31.12 Nutzungsliste an der Aufbewahrungsgrenze, aeltester Eintrag nach Fensterstart => unvollstaendig",
+    kVerdraengt.vollstaendig === false && /Aufbewahrungsgrenze/.test(kVerdraengt.grund || ""),
+    JSON.stringify(kVerdraengt));
+  check("31.13 Dieselbe Liste mit einem Eintrag VOR dem Fensterstart ist vollstaendig",
+    lies([{ createdAt: new Date(von - 1000).toISOString(), estimatedCost: 0 }, ...vieleNachStart], { retention: 11 })
+      .vollstaendig === true);
+  check("31.14 Leere, aber lesbare Nutzungsliste ist vollstaendig mit 0,00 USD (belegte Null)",
+    (() => { const k = lies([]); return k.vollstaendig === true && k.fensterUsd === 0; })());
+
+  // Das CLI benutzt GENAU diesen Leser — keine zweite, laxere Fassung mehr. Geprueft wird der
+  // FUNKTIONSRUMPF ohne Kommentare (der Kommentar zitiert die alte Fassung absichtlich).
+  const cliQuelle = fs.readFileSync(path.join(__dirname, "op25-production-nachweis.js"), "utf8");
+  const rumpf = (cliQuelle.split("function kostenImFenster(")[1] || "").split("\n}")[0]
+    .split("\n").filter((z) => !z.trim().startsWith("//")).join("\n");
+  check("31.15 Der CLI-Kostenleser ist reine Weitergabe an den Kern — keine eigene Umdeutung, keine eigene Schleife",
+    /vertrag\.kostenAusNutzung/.test(rumpf) && !/Number\(/.test(rumpf) && !/for\s*\(/.test(rumpf),
+    JSON.stringify(rumpf.slice(0, 200)));
+}
+
+// =============================================================================================
+console.log("\n== 32 · REVIEW 2 · Punkt 2: Startbaseline vollstaendig fail closed ==");
+// =============================================================================================
+{
+  const vollstaendig = () => ({
+    erhobenAtMs: FENSTER.vonMs - 60000,
+    erhobenAt: new Date(FENSTER.vonMs - 60000).toISOString(),
+    aktivierungAtMs: AKTIVIERUNG_MS,
+    aktivierungAt: new Date(AKTIVIERUNG_MS).toISOString(),
+    anzahl: 5,
+    mandate: [...MANDATE],
+    signatur: V.mandatsSignatur(MANDATE).signatur
+  });
+  const pruefe = (roh) => V.pruefeStartbaseline({
+    roh, aktivierungAtMs: AKTIVIERUNG_MS, fensterVonMs: FENSTER.vonMs
+  });
+  check("32.1 Vollstaendige, stimmige Baseline besteht",
+    pruefe(vollstaendig()).befunde.length === 0 && pruefe(vollstaendig()).frozen.anzahl === 5);
+
+  // JEDES Pflichtfeld einzeln: fehlend, null, leer, ungueltig.
+  const pflichtfelder = [
+    ["mandate", "startbaseline-mandate-fehlen"],
+    ["anzahl", "startbaseline-anzahl-fehlt"],
+    ["signatur", "startbaseline-signatur-fehlt"],
+    ["aktivierungAtMs", "startbaseline-aktivierung-fehlt"],
+    ["erhobenAtMs", "startbaseline-erhebung-fehlt"]
+  ];
+  for (const [feld, grund] of pflichtfelder) {
+    // Die ISO-Zwillinge muessen mit weg, sonst greift der zulaessige Zweitweg.
+    const ohne = vollstaendig();
+    delete ohne[feld];
+    if (feld === "aktivierungAtMs") delete ohne.aktivierungAt;
+    if (feld === "erhobenAtMs") delete ohne.erhobenAt;
+    const b1 = pruefe(ohne);
+    const mitNull = vollstaendig();
+    mitNull[feld] = null;
+    if (feld === "aktivierungAtMs") mitNull.aktivierungAt = null;
+    if (feld === "erhobenAtMs") mitNull.erhobenAt = null;
+    const b2 = pruefe(mitNull);
+    check(`32.2 Pflichtfeld '${feld}' fehlt => blockiert (${grund})`,
+      b1.befunde.length === 1 && b1.befunde[0].schwere === "blockiert" && b1.befunde[0].grund === grund,
+      JSON.stringify(b1.befunde));
+    check(`32.3 Pflichtfeld '${feld}' ist null => blockiert (kein Number(null) => 0)`,
+      b2.befunde.length === 1 && b2.befunde[0].schwere === "blockiert" && b2.befunde[0].grund === grund,
+      JSON.stringify(b2.befunde));
+  }
+  check("32.4 Leere Mandatsliste => blockiert",
+    pruefe({ ...vollstaendig(), mandate: [] }).befunde[0].grund === "startbaseline-mandate-fehlen");
+  check("32.5 Mandatsliste mit Nicht-Zeichenketten/leeren Eintraegen => blockiert",
+    pruefe({ ...vollstaendig(), mandate: ["a", "", "c"] }).befunde[0].grund === "startbaseline-mandate-ungueltig"
+    && pruefe({ ...vollstaendig(), mandate: ["a", 7, "c"] }).befunde[0].grund === "startbaseline-mandate-ungueltig");
+  check("32.6 Duplikate in der Mandatsliste => blockiert (Menge nicht eindeutig)",
+    pruefe({ ...vollstaendig(), mandate: ["a", "a", "b"], anzahl: 3, signatur: V.mandatsSignatur(["a", "b"]).signatur })
+      .befunde[0].grund === "startbaseline-mandate-ungueltig");
+  check("32.7 anzahl widerspricht der Liste => blockiert",
+    pruefe({ ...vollstaendig(), anzahl: 4 }).befunde[0].grund === "startbaseline-anzahl-widerspruch");
+  check("32.8 Leere/ungueltige Signatur => blockiert",
+    pruefe({ ...vollstaendig(), signatur: "   " }).befunde[0].grund === "startbaseline-signatur-fehlt"
+    && pruefe({ ...vollstaendig(), signatur: 42 }).befunde[0].grund === "startbaseline-signatur-fehlt");
+  check("32.9 Falsche Signatur => blockiert (nachtraeglich veraendert)",
+    pruefe({ ...vollstaendig(), signatur: "m5-deadbeefdeadbeef" }).befunde[0].grund === "startbaseline-signatur-passt-nicht");
+  check("32.10 Unparsbarer Aktivierungs-/Erhebungszeitpunkt => blockiert",
+    pruefe({ ...vollstaendig(), aktivierungAtMs: "gestern", aktivierungAt: "gestern" }).befunde[0].grund === "startbaseline-aktivierung-fehlt"
+    && pruefe({ ...vollstaendig(), erhobenAtMs: "irgendwann", erhobenAt: "irgendwann" }).befunde[0].grund === "startbaseline-erhebung-fehlt");
+  check("32.11 ISO-Zwilling allein genuegt (aktivierungAt/erhobenAt ohne …Ms)",
+    (() => { const b = vollstaendig(); delete b.aktivierungAtMs; delete b.erhobenAtMs;
+      return pruefe(b).befunde.length === 0; })());
+  check("32.12 Baseline zu einer FREMDEN Aktivierung => blockiert",
+    pruefe({ ...vollstaendig(), aktivierungAtMs: AKTIVIERUNG_MS + 3600000, aktivierungAt: new Date(AKTIVIERUNG_MS + 3600000).toISOString() })
+      .befunde[0].grund === "startbaseline-fremde-aktivierung");
+  check("32.13 Bewertete Aktivierung unbekannt => blockiert (nicht stillschweigend akzeptiert)",
+    V.pruefeStartbaseline({ roh: vollstaendig(), aktivierungAtMs: null, fensterVonMs: FENSTER.vonMs })
+      .befunde[0].grund === "startbaseline-fremde-aktivierung");
+  check("32.14 Zu spaet erhobene Baseline => blockiert",
+    pruefe({ ...vollstaendig(), erhobenAtMs: FENSTER.bisMs, erhobenAt: new Date(FENSTER.bisMs).toISOString() })
+      .befunde[0].grund === "startbaseline-zu-spaet-erhoben");
+  check("32.15 Nicht-Objekt/fehlende Baseline => blockiert",
+    pruefe(null).befunde[0].grund === "startbaseline-fehlt"
+    && pruefe("baseline").befunde[0].grund === "startbaseline-fehlt");
+
+  // Die Gesamtbewertung reicht jeden dieser Befunde durch.
+  for (const [feld, grund] of pflichtfelder) {
+    const kaputt = vollstaendig();
+    kaputt[feld] = null;
+    if (feld === "aktivierungAtMs") kaputt.aktivierungAt = null;
+    if (feld === "erhobenAtMs") kaputt.erhobenAt = null;
+    const b = V.bewerteNachweisfenster(baueEingaben({ startbaseline: kaputt }));
+    check(`32.16 Gesamtbewertung blockiert bei fehlendem '${feld}'`,
+      b.ausgang === "blockiert" && hatBefund(b, grund), JSON.stringify(b.befunde.slice(0, 1)));
+  }
+
+  // CLI: kein Schreiben ohne gueltige Aktivierung, kein Number(null) beim Lesen,
+  // deploymentCommit wird nicht mehr aus einer Laufkennung erfunden.
+  const cliQuelle = fs.readFileSync(path.join(__dirname, "op25-production-nachweis.js"), "utf8");
+  check("32.17 CLI verweigert --startbaseline-schreiben ohne gueltige --aktivierung",
+    /--startbaseline-schreiben verlangt einen gueltigen/.test(cliQuelle)
+    && /if \(!Number\.isFinite\(aktivierungAtMs\)\)/.test(cliQuelle));
+  check("32.18 CLI liest die Belegdatei ROH (kein Number(null)-Fallback mehr)",
+    !/Number\.isFinite\(Number\(roh\.aktivierungAtMs\)\)/.test(cliQuelle)
+    && !/roh\.aktivierungAt \? Date\.parse/.test(cliQuelle));
+  check("32.19 deploymentCommit stammt aus commit_ref, nicht aus einer Laufkennung",
+    /commit_ref/.test(cliQuelle) && !/deploymentCommit: commitZeile \? commitZeile\.runId : null/.test(cliQuelle)
+    && /leseDeploymentCommit/.test(cliQuelle));
+}
+
 console.log(`\n${passed + failed} Pruefpunkte · ${passed} PASS · ${failed} FAIL`);
 process.exit(failed ? 1 : 0);

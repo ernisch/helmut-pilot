@@ -217,9 +217,16 @@ const PROBEN = [
   {
     name: "M20 Fehlende Startbaseline wird durch den AKTUELLEN Bestand ersetzt",
     suite: VERTRAG_SUITE,
+    // Genau die Regression, die der Review beschreibt: statt zu blockieren wird die Menge
+    // still aus dem AKTUELLEN Bestand gebildet — der Zustand am Fensterstart wäre erfunden.
     mutiere: (b) => ersetze(b, KERN,
-      "  if (!startbaseline || !Array.isArray(startbaseline.mandate) || !startbaseline.mandate.length) {",
-      "  if (false && !startbaseline) {")
+      "  const baselinePruefung = pruefeStartbaseline({\n    roh: startbaseline, aktivierungAtMs, fensterVonMs: fenster.vonMs\n  });",
+      "  const ersatz = startbaseline || {\n"
+      + "    mandate: aktiveMandate || [], anzahl: (aktiveMandate || []).length,\n"
+      + "    signatur: mandatsSignatur(aktiveMandate || []).signatur,\n"
+      + "    aktivierungAtMs, erhobenAtMs: fenster.vonMs\n"
+      + "  };\n"
+      + "  const baselinePruefung = pruefeStartbaseline({\n    roh: ersatz, aktivierungAtMs, fensterVonMs: fenster.vonMs\n  });")
   },
   {
     name: "M21 Endzustand wird nicht mehr gegen die eingefrorene Menge geprueft",
@@ -301,6 +308,81 @@ const PROBEN = [
     mutiere: (b) => ersetze(b, STORE,
       "    dauerMs: num(value.dauerMs),\n    budgetMs: num(value.budgetMs)",
       "    dauerMs: null,\n    budgetMs: null")
+  },
+
+  // --- Review 2, Punkt 1: der echte Kostenleser ---------------------------------------------
+  {
+    name: "M32 Kostenleser deutet rohe Nicht-Zahlen wieder um (\"1.20\", true, null)",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "    if (!istBrauchbareKostenzahl(roh)) { unbepreist += 1; continue; }\n    summe += roh;",
+      "    const z = typeof roh === \"number\" ? roh : Number(roh);\n"
+      + "    if (!Number.isFinite(z) || z < 0) { unbepreist += 1; continue; }\n    summe += z;")
+  },
+  {
+    name: "M33 Eintraege ohne lesbaren Zeitstempel werden wieder still uebersprungen",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (nichtZuordenbar > 0) {",
+      "  if (false) {")
+  },
+  {
+    name: "M34 Kaputte Zeitstempel gelten wieder als zuordenbar (Date.parse auf alles)",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "    const t = (typeof roherStempel === \"string\" && roherStempel.trim())\n      ? Date.parse(roherStempel)\n      : NaN;\n    if (!Number.isFinite(t)) { nichtZuordenbar += 1; continue; }",
+      "    const t = Date.parse(roherStempel || \"\");\n    if (!Number.isFinite(t)) { continue; }")
+  },
+  {
+    name: "M35 Verdraengte Nutzungsliste gilt wieder als vollstaendig",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (grenze !== null && alle.length >= grenze && Number.isFinite(aeltesterMs) && aeltesterMs > vonMs) {",
+      "  if (false) {")
+  },
+
+  // --- Review 2, Punkt 2: Startbaseline vollstaendig fail closed ----------------------------
+  {
+    name: "M36 Fehlende Baseline-Signatur wird wieder akzeptiert",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (typeof roh.signatur !== \"string\" || !roh.signatur.trim()) {",
+      "  if (false) {")
+  },
+  {
+    name: "M37 Fehlender Aktivierungszeitpunkt in der Baseline wird wieder akzeptiert",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (baselineAktivierungMs === null) {\n    return fehler(\"startbaseline-aktivierung-fehlt\",",
+      "  if (false) {\n    return fehler(\"startbaseline-aktivierung-fehlt\",")
+  },
+  {
+    name: "M38 Fehlender Erhebungszeitpunkt in der Baseline wird wieder akzeptiert",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (baselineErhobenMs === null) {\n    return fehler(\"startbaseline-erhebung-fehlt\",",
+      "  if (false) {\n    return fehler(\"startbaseline-erhebung-fehlt\",")
+  },
+  {
+    name: "M39 Fehlende/widerspruechliche Mandatsanzahl wird wieder akzeptiert",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (anzahl !== frozen.anzahl) {",
+      "  if (false) {")
+  },
+  {
+    name: "M40 Ungueltige Mandatseintraege (leer/Nicht-Zeichenkette) werden wieder akzeptiert",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (!roh.mandate.every((id) => typeof id === \"string\" && id.trim())) {",
+      "  if (false) {")
+  },
+  {
+    name: "M41 baselineZeit deutet null wieder in 0 um",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  const alsMs = alsZahl(roh);\n  if (alsMs !== null) return alsMs;",
+      "  const alsMs = Number(roh);\n  if (Number.isFinite(alsMs)) return alsMs;")
   }
 ];
 
