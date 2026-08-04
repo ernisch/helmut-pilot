@@ -1,6 +1,311 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-08-04, 4. Durchgang (**Sprint „Kontrollierte Production-Profilreparatur
+**Letzte Aktualisierung:** 2026-08-04, 9. Durchgang (**Vierter Reviewdurchgang zu PR #222 — die
+Commitprüfung selbst war zu schwach. KEIN Production-Eingriff, kein Merge.** Der Befund aus dem
+8. Durchgang war richtig, seine Umsetzung nicht: `pruefeErwartetenCommit` prüfte nur Längen und
+`startsWith` und lag im **CLI** statt im Bewertungskern. **BELEGTE UMGEHUNG (vor der Korrektur
+empirisch reproduziert):** beobachtet `89427c5b5aac…1085d` (gültige volle SHA), erwartet dieselbe
+SHA **plus** `-VOELLIGER-UNSINN` ⇒ `deploymentCommitBestaetigt: true`, weil der längere Wert mit
+dem kürzeren beginnt; ebenso mit hexadezimalem Anhang (`…1085dzzzz`) und mit **verdoppelter** SHA.
+Zweiter Mangel: die §34-Prüfpunkte bestanden überwiegend aus **Textsuchen im Quelltext** und die
+Mutationen M42–M46 betrafen nur die Zeitlogik — eine Lockerung der Commitprüfung wäre **nicht rot**
+geworden. **KORREKTUR:** die Prüfung liegt jetzt als `pruefeCommitBeleg` im **reinen
+Bewertungskern** (`lib/helmut/op25-nachweis.js`); das CLI ruft genau diese Funktion auf, die
+Zusicherung ist also direkt testbar. Gültig ist nach `trim` + Kleinschreibung ausschließlich
+`/^[0-9a-f]+$/` mit **7–40** Zeichen; Übereinstimmung nur bei Gleichheit oder **echtem** Präfix
+(kürzer **und** Anfang von) — auf **beiden** Seiten, auch beim beobachteten Wert. Angehängter
+Unsinn scheitert damit schon an der Formatprüfung, nicht erst am Vergleich. Großbuchstaben und
+Randleerzeichen sind nach Normalisierung zulässig (derselbe Commit); fehlende, zu kurze, zu lange
+und nicht hexadezimale Werte bleiben **fail closed**; ein übergebener, nicht bestätigter Commit
+bleibt **Exit 2 ohne Datei**. **GEÄNDERTE DATEIEN:** `lib/helmut/op25-nachweis.js`
+(`normalisiereCommit`, `istEchtesPraefix`, `pruefeCommitBeleg` + Konstanten) ·
+`scripts/op25-production-nachweis.js` (delegiert die Prüfung an den Kern) ·
+`scripts/op25-nachweis-vertrag-test.js` (§34 neu: **echte Verhaltensprüfungen**) ·
+`scripts/op25-nachweis-mutationsprobe.js` (M47–M54) · `docs/betrieb/vorgangskontext.md` (§7.7.4) ·
+`docs/datenmotor-restliste.md` · `docs/CURRENT_STATE.md`. **TESTS:**
+`op25-nachweis-vertrag-test` **202/202** (vorher 178; +24 — §34.1–34.24 rufen die Funktion
+**tatsächlich auf**: identische volle SHA, gültige erwartete Kurzform, gültige beobachtete
+Kurzform, abweichende SHA, volle SHA mit angehängtem Unsinn, Nicht-Hex, < 7 Zeichen, > 40 Zeichen,
+Großbuchstaben, Randleerzeichen, fehlender erwarteter Wert, fehlender/ungültiger beobachteter Wert
+— Textsuche nur noch **ergänzend** in §34.25–34.30) · `op25-e3-dauerhaftigkeit-test` **52/52** ·
+Mutationsprobe **54 von 54 rot, 0 Löcher, 0 unwirksam** (vorher 46; **M47** Formatprüfung entfernt,
+**M48** Mindestlänge entfernt, **M49** Obergrenze entfernt, **M50** angehängter Unsinn wieder
+akzeptiert (exakt die alte `startsWith`-Logik), **M51** abweichender Commit wieder bestätigt,
+**M52** Präfix nicht mehr strikt, **M53** ungültiger erwarteter Wert fällt nicht mehr durch,
+**M54** ungültiger **beobachteter** Wert wieder akzeptiert) · `cron-globalphase` **176/176** ·
+`globalphase-buendelung` **56/56** · `globalabruf-kapazitaet` **47/47** · `vorgangskontext`
+**102/102** · `compact-store-roundtrip` **26/26** · `prozesslauf-telemetrie` **37/37** ·
+`cron-fairness` **285/285** · `run-offline-tests` **191/205** · `browser-smoke` **32/32**.
+**ZUR 14er-FEHLSCHLAGLISTE — diesmal gegengeprüft statt behauptet:** ein **unveränderter
+`origin/main`-Baumstand** (`22aada9`) wurde in diesem Container frisch ausgecheckt und ergab
+**189/203 mit exakt derselben 14er-Liste**; dieser Branch bringt zwei Suiten mehr, beide grün
+(191/205). Die Fehlschläge sind Umgebungsfolge (kein DB-/Netzzugang: `tenant-guard-test.js` läuft
+einzeln **37/37** grün, `p1-security-check.js` endet in `request timeout`), nicht Branchfolge.
+**PRODUCTION-PROBEN (rein lesend, 9 Stück gegen den echten Stand):** identische volle SHA ⇒
+bestätigt · gültige Kurzform `89427c5` ⇒ bestätigt · Großschreibung mit Randleerzeichen ⇒ bestätigt
+· angehängter Unsinn ⇒ **Exit 2, keine Datei** · hexadezimaler Anhang ⇒ **Exit 2, keine Datei** ·
+abweichende SHA ⇒ **Exit 2, keine Datei** · 6 Zeichen ⇒ **Exit 2, keine Datei** · Nicht-Hex ⇒
+**Exit 2, keine Datei** · 41 Zeichen ⇒ **Exit 2, keine Datei**. Dry-Run unverändert
+**`noch_nicht_auswertbar` (Exit 3)**, 5 aktive reale Mandate (`m5-9aee228dbf2c9f13`), 0 Testmandate
+in Production. **F-E2E bleibt unverändert offen** (siehe 8. Durchgang). **0 Writes in Production,
+0 KI-Aufrufe, 0,00 USD, keine Migration, kein Flag, kein Cron, kein Merge.**) ·
+(8. Durchgang: **Dritter Reviewdurchgang zu PR #222
+eingearbeitet — zwei gezielte Korrekturen, beide fail closed. KEIN Production-Eingriff, kein Merge.**
+**(1) DAS ERHEBUNGSFENSTER DER STARTBASELINE war am FENSTERSTART verankert statt an der
+AKTIVIERUNG.** Damit wäre eine Baseline zulässig gewesen, die *vor* der Aktivierung erhoben wurde —
+sie zeigt dann den Bestand der Zeit DAVOR — oder erst Stunden danach. Bezugspunkt ist jetzt die
+Aktivierung; verbindlich gilt `aktivierungAtMs ≤ erhobenAtMs ≤ aktivierungAtMs +
+BASELINE_TOLERANZ_MS (15 min)` (beide Grenzen **inklusiv**) sowie `aktivierungAtMs ≤ jetzt`.
+**Drei Fälle sind fail closed `blockiert`:** Baseline vor der Aktivierung
+(`startbaseline-vor-aktivierung`) · Aktivierung in der Zukunft (`aktivierung-in-zukunft`, in der
+Gesamtbewertung ausdrücklich **vor** allen Fensterprüfungen, damit daraus kein harmloses „noch
+nicht vergangen" wird; in der Baselineprüfung `startbaseline-aktivierung-in-zukunft`) · zu späte
+Erhebung (`startbaseline-zu-spaet-erhoben`). **Die Schreibseite setzt dieselben Grenzen** und
+erzeugt gar keine Datei (Exit 2), statt eine zu schreiben, welche die Auswertung ohnehin ablehnen
+müsste. **(2) KEIN MÖGLICHERWEISE VERALTETER COMMIT ALS DEPLOYMENT-STAND:**
+`process_runs.commit_ref` ist der Commit des **jüngsten gespeicherten Laufs** — nach einem frischen
+Deployment ohne Lauf ist er veraltet; ihn `deploymentCommit` zu nennen war eine Behauptung über
+etwas, das hier nicht gemessen wird (der Vercel-Zustand ist aus einer Sitzung nicht lesbar, §7.3).
+**Jetzt** heißt das Feld `zuletztBeobachteterProzessCommit` mit ausdrücklichem Hinweis „kein
+Deployment-Beleg"; ein Feld `deploymentCommit` gibt es nicht mehr, auch nicht im
+`--baseline`-Querschnitt. Wer den Stand **belegen** will, übergibt `--erwarteter-commit <sha>` —
+strikt geprüft (Voll- oder Kurzform als echtes Präfix); nur dann wird
+`deploymentCommitBestaetigt: true` gesetzt. Eine Abweichung ist **fail closed** (Exit 2, keine
+Datei): entweder läuft ein anderer Stand, oder der erwartete hat noch keinen Lauf hinterlassen.
+**GEÄNDERTE DATEIEN:** `lib/helmut/op25-nachweis.js` (`BASELINE_TOLERANZ_MS`, aktivierungs-
+verankerte Prüfung, frühe Zukunftsprüfung) · `scripts/op25-production-nachweis.js` (Schreibgrenzen,
+ehrliche Commit-Benennung, `--erwarteter-commit`) · `scripts/op25-nachweis-vertrag-test.js` (§33/§34)
+· `scripts/op25-nachweis-mutationsprobe.js` (M42–M46, M20 nachgeführt) ·
+`docs/betrieb/vorgangskontext.md` (§7.7.3) · `docs/datenmotor-restliste.md` · `docs/CURRENT_STATE.md`.
+**TESTS:** `op25-nachweis-vertrag-test` **178/178** (vorher 158; +20 Prüfpunkte: beide
+Toleranzgrenzen exakt, 1 ms davor/danach, Erhebung vor der Aktivierung, Zukunfts-Aktivierung in
+Baselineprüfung UND Gesamtbewertung, Nachweis dass die Toleranz an der Aktivierung und nicht am
+Fensterstart hängt, plus sechs Prüfpunkte zur Commit-Wahrheit) · `op25-e3-dauerhaftigkeit-test`
+**52/52** · Mutationsprobe **46 von 46 rot** (vorher 41; M20 dem geänderten Aufruf nachgeführt) ·
+`cron-globalphase` **176/176** · `globalphase-buendelung` **56/56** · `globalabruf-kapazitaet`
+**47/47** · `vorgangskontext` **102/102** · `compact-store-roundtrip` **26/26** ·
+`prozesslauf-telemetrie` **37/37** · `cron-fairness` **285/285** · `run-offline-tests` **191/205**
+mit **exakt derselben 14er-Fehlschlagliste** wie in allen Durchgängen zuvor · `browser-smoke`
+**32/32**. **PRODUCTION-PROBEN (rein lesend):** Dry-Run unverändert **`noch_nicht_auswertbar`
+(Exit 3)** · zukünftige Aktivierung ⇒ **Exit 2, keine Datei** · Aktivierung 2 h zurück (außerhalb
+der 15-min-Toleranz) ⇒ **Exit 2, keine Datei** · falscher `--erwarteter-commit` ⇒ **Exit 2, keine
+Datei** · korrekte Kurzform `89427c5` ⇒ `deploymentCommitBestaetigt: true`. **NEUER BEFUND F-E2E
+(nicht von diesem Sprint verursacht, nicht behoben, ausdrücklich offen):** der erste CI-Lauf zu
+Commit `8cfcaa1` meldete **203/205** mit zwei Fehlschlägen — `pilot-e2e-vertrag-test.js` (I10) und
+`brandenburg-e2e-vertrag-test.js` (J8), beides **Rangfolge**-Zusicherungen. Der **Re-Run des
+IDENTISCHEN Commits** (`run_attempt: 2`, Lauf `30913579533`) lief **205/205 grün** — dieselbe
+Eingabe, zwei verschiedene Ergebnisse. Das ist **belegter Nichtdeterminismus**, kein Vorbestand-
+Etikett: **(a)** der Diff zwischen dem grünen (`4f0d0c2`) und dem roten Lauf (`8cfcaa1`) umfasst
+ausschließlich Doku, drei `scripts/op25-*`-Dateien und das **neue** Modul
+`lib/helmut/op25-nachweis.js`; **(b)** dieses Modul wird nachweislich **nur** von den drei
+op25-Skripten geladen (`grep`-Beleg) und von den beiden E2E-Suiten **nicht** (`0` op25-Requires);
+**(c)** `lib/helmut/matching.js`, `lage.js` und `matching-relevanz.js` sind vom Diff **unberührt**;
+**(d)** lokal 10/10 bzw. 15/15 Läufe grün, auch unter vier verschiedenen Locales
+(`C`/`de_DE`/`en_US`/`sv_SE`) und mit dem Netz-Guard des Runners. **Verdachtsmoment, NICHT bewiesen:**
+der Rangfolge-Tiebreak in `lib/helmut/matching.js:595-598` bricht Punktgleichstände mit
+`localeCompare` **ohne feste Locale**; die beobachtete Reihenfolge war jedoch nicht alphabetisch,
+die Punktzahlen müssen also selbst abgewichen sein — die Ursache ist damit **offen** und gehört in
+einen eigenen Sprint (Vorschlag: deterministischer Tiebreak + Nachweis, woher die Punktdifferenz
+kommt). **0 Writes in Production, 0 KI-Aufrufe, 0,00 USD, keine Migration, kein Flag, kein Cron,
+kein Merge.**) ·
+(7. Durchgang: **Zweiter Reviewdurchgang zu PR #222 eingearbeitet —
+zwei Stellen geschlossen, an denen das Werkzeug WEICHER war als seine eigene Doku. KEIN
+Production-Eingriff, kein Merge.** **(1) Der ECHTE Kostenleser lag im CLI und war laxer als der
+Vertrag:** `typeof roh === "number" ? roh : Number(roh)` deutete genau die Werte um, die §7.7.1
+als unbrauchbar führt — `"1.20"` wurde zu 1,20 USD, `true` zu 1, `false`/`null` zu 0; zusätzlich
+wurden Nutzungseinträge **ohne lesbaren Zeitstempel** stillschweigend übersprungen, obwohl sie im
+Fenster liegen könnten. **Jetzt** liegt der Leser als `kostenAusNutzung` im **reinen Kern** (eine
+einzige Umsetzung, direkt testbar), das CLI reicht nur noch durch; ein Kostenwert zählt **nur**,
+wenn er **roh schon eine `number`** ist (endlich, nicht negativ) — alles andere ist `unbepreist`
+und blockiert; ein Eintrag ohne eindeutig lesbaren `createdAt` (fehlend/`null`/leer/unparsbar/Zahl)
+macht die Kostendaten unvollständig ⇒ `blockiert`. Eine leere, aber lesbare Nutzungsliste bleibt
+eine **belegte** 0,00 USD. **(2) Die Startbaseline war nicht vollständig fail closed:** `signatur`,
+`aktivierungAtMs` und `erhobenAtMs` wurden nur geprüft, *wenn* sie vorhanden waren; das CLI
+erlaubte `--startbaseline-schreiben` ohne gültige `--aktivierung` und schrieb `null`, und
+`leseStartbaseline` enthielt mit `Number(null)` erneut dieselbe Umdeutung. **Jetzt** prüft
+`pruefeStartbaseline` an genau einer Stelle **alle** Pflichtfelder strikt — Mandatsliste (nicht
+leer, nur nicht leere Zeichenketten, **ohne Duplikate**), `anzahl` (vorhanden und widerspruchsfrei),
+`signatur` (vorhanden und passend), `aktivierungAtMs` (vorhanden und identisch zur bewerteten
+Aktivierung), `erhobenAtMs` (vorhanden und nicht nach dem Fensterstart) — jeder Verstoß ⇒
+`blockiert`; das CLI **verweigert** das Schreiben ohne gültigen Aktivierungszeitpunkt (Exit 2, es
+entsteht keine Datei) und liest die Belegdatei **roh**, ohne Ergänzung oder Reparatur.
+**Nebenbefund behoben:** `deploymentCommit` trug eine **Laufkennung** statt einer Commit-Kennung
+und stammt jetzt aus `process_runs.commit_ref` (Production-Probe: `89427c5b…`) oder ist ehrlich
+`null`. **GEÄNDERTE DATEIEN:** `lib/helmut/op25-nachweis.js` (Kostenleser + strikte
+Baseline-Prüfung) · `scripts/op25-production-nachweis.js` (Weitergabe statt zweiter Fassung,
+Schreibsperre, roher Lesepfad, echte Commit-Kennung) · `scripts/op25-nachweis-vertrag-test.js`
+(§31/§32) · `scripts/op25-nachweis-mutationsprobe.js` (M32–M41, M20 nachgeführt) ·
+`docs/betrieb/vorgangskontext.md` (§7.7.2) · `docs/datenmotor-restliste.md` ·
+`docs/CURRENT_STATE.md`. **TESTS:** `op25-nachweis-vertrag-test` **158/158** (vorher 108; +50
+Prüfpunkte: direkte Lesertests inkl. `"1.20"`/`true`/`false`/`null`/`""`, fünf Varianten kaputter
+Zeitstempel, Fenstergrenzen, Verdrängung — sowie **jedes Baseline-Pflichtfeld einzeln fehlend UND
+`null`**) · `op25-e3-dauerhaftigkeit-test` **52/52** · Mutationsprobe **41 von 41 rot** (vorher 31;
+M20 nach dem Refactoring auf die neue Struktur nachgeführt und dadurch präziser: sie ersetzt die
+fehlende Baseline jetzt genau so, wie der Review es befürchtete) · `cron-globalphase` **176/176** ·
+`globalphase-buendelung` **56/56** · `globalabruf-kapazitaet` **47/47** · `vorgangskontext`
+**102/102** · `compact-store-roundtrip` **26/26** · `prozesslauf-telemetrie` **37/37** ·
+`cron-fairness` **285/285** · `run-offline-tests` **191/205** mit **exakt derselben
+14er-Fehlschlagliste** wie in den beiden Durchgängen zuvor · `browser-smoke` **32/32**.
+**PRODUCTION-PROBEN (rein lesend):** Dry-Run unverändert **`noch_nicht_auswertbar` (Exit 3)** ·
+`--startbaseline-schreiben` **ohne** `--aktivierung` ⇒ **Exit 2, keine Datei entstanden** · mit
+gültiger Aktivierung ⇒ Baseline `m5-9aee228dbf2c9f13` mit echter Commit-SHA · unlesbare bzw.
+fehlende Belegdatei ⇒ **Exit 2** (`startbaseline-nicht-lesbar`). **Ehrliche Grenze:** die strikte
+Baseline-Gate ist über das CLI heute nicht erreichbar, weil die Fensterprüfung ihr vertragsgemäß
+vorausgeht (ein 24-h-Fenster ab dem frühesten erlaubten Start ist noch nicht vergangen) — sie ist
+offline erschöpfend geprüft (§32, 20 Prüfpunkte). **0 Writes in Production, 0 KI-Aufrufe, 0,00 USD,
+keine Migration, kein Flag, kein Cron, kein Merge.**) ·
+(6. Durchgang: **Review zu PR #222 vollständig eingearbeitet —
+drei nachweisrelevante Lücken geschlossen, alle fail closed, KEIN Production-Eingriff, kein Merge.**
+**Der Reviewer fand drei Wege, auf denen der Nachweisvertrag fälschlich GRÜN hätte werden können:**
+**(1) KOSTENVERTRAG** — geprüft wurde nur auf `null`; `NaN > rahmen` ist aber *immer* `false`, ein
+kaputter Kostenwert wäre also ein BESTANDENER Vertrag gewesen, und ein fehlendes `llmUsage` sah im
+CLI wie 0,00 USD aus. **Jetzt:** jeder Kostenwert muss eine endliche, nicht negative **Zahl** sein
+(`NaN`/`±Infinity`/negativ/Zeichenkette/Wahrheitswert fallen durch); die **Vollständigkeit** der
+Kostendaten ist eine ausdrückliche Zusage statt einer Annahme (fehlendes `llmUsage`, nicht lesbarer
+Auth-Store oder ein an der 5 000er-Grenze verdrängtes Kostenfenster ⇒ `blockiert`); nicht
+bepreisbare Einträge im Fenster werden gezählt und blockieren, statt die Summe still zu verkleinern;
+eine **belegte** 0,00 USD besteht weiterhin. **Gemeinsame Wurzel mitgeschlossen:** `Number(null)`
+ist `0` und gilt als „endlich" — der Vertrag liest Zahlen jetzt überall durch `alsZahl()`, das
+`null`/`undefined`/`""` strikt als *nicht vorhanden* behandelt (dieselbe Falle steckte in Dauer,
+Budget und Rückstandszählung). **(2) MANDATSMENGE war nicht wirklich eingefroren** — das Werkzeug
+las bei der späteren Auswertung den AKTUELLEN Bestand, und `quellenVereinigung` speicherte nur die
+**Anzahl**; ein Austausch bei gleicher Anzahl wäre unsichtbar geblieben. **Jetzt** Zwei-Schritt-
+Ablauf: `--startbaseline-schreiben` erhebt unmittelbar nach der Aktivierung rein lesend eine
+**Startbaseline** (Aktivierungszeitpunkt, exakte Menge, stabiler Hash `m<n>-<sha256/16>`), die
+Auswertung prüft **identitätsgenau** gegen **jeden Lauf** (neues persistiertes Feld
+`quellenVereinigung.mandateIds`) **und** den Endzustand. Fehlende, nachträglich veränderte, zu spät
+erhobene oder zu einer fremden Aktivierung gehörende Baseline ⇒ `blockiert` (kein Ersatz aus dem
+aktuellen Bestand); ein Lauf ohne Mandatskennungen ⇒ `blockiert`; eine spätere **Rückkehr** zur
+Ursprungsmenge heilt das Fenster nicht. **(3) DAUERHAFTE BELEGQUELLE wurde behauptet, aber nicht
+benutzt** — bewertet wurden allein `mainStore.crawlRuns` mit Retention **20**, während ein
+24-h-Fenster bei fünf Mandaten schon **18** Datensätze braucht. **Jetzt** gehen die
+`process_runs`-Zeilen `globalphase` (relational + Auth-Store-Spiegel, dedupliziert) wirklich in die
+Bewertung ein und trennen **„verdrängt"** (`blockiert`) von **„nie gelaufen"** (`nicht_bestanden`);
+dazu ein reproduzierbarer **Aufbewahrungsvertrag** (Bedarf = Läufe × (1 + n Mandate); Retention zu
+klein ⇒ `blockiert` mit Handlungsanweisung, knapp ⇒ Warnung; Ablage an der Grenze + Termin vor dem
+ältesten Datensatz ⇒ `blockiert`). **Und die Laufzeit kommt jetzt aus dem VERSIEGELTEN Beleg:**
+`datenstandVermerk` trägt neu `dauerMs` (aus `datenstandVersiegeln`) und `budgetMs` (in den
+Datenstand hineingegeben) — Dauer und Grenze aus DERSELBEN Quelle; der Laufdatensatz-Wert
+`durationMs` entsteht **vor** dem Versiegeln, unterzeichnet die Phase systematisch und belegt den
+Budgetvertrag nicht mehr. Fehlen beide Zeitquellen ⇒ `blockiert`; widersprechen sie sich ⇒
+`nicht_bestanden`. **GEÄNDERTE DATEIEN (Review-Durchgang):** `lib/helmut/op25-nachweis.js` ·
+`lib/helmut/cron-globalphase.js` (Vermerk + `budgetMs` im Datenstand) · `lib/helmut/scheduler.js`
+(`mandateIds`, `budgetMs` beim Versiegeln) · `lib/helmut/storage.js` (Allowlist: `mandateIds`,
+`dauerMs`, `budgetMs`) · `scripts/op25-production-nachweis.js` (Startbaseline, dauerhafte Quelle,
+Kostenvollständigkeit) · `scripts/op25-nachweis-vertrag-test.js` · `scripts/op25-e3-dauerhaftigkeit-test.js` ·
+`scripts/op25-nachweis-mutationsprobe.js` · `scripts/cron-globalphase-test.js` (Vermerk-Allowlist
+bewusst um zwei PII-freie Zahlenfelder erweitert) · `docs/betrieb/vorgangskontext.md` (§7.7.1) ·
+`docs/datenmotor-restliste.md` · `docs/CURRENT_STATE.md`. **TESTS (real gemessen):**
+`op25-nachweis-vertrag-test` **108/108** (vorher 71; +37 Prüfpunkte allein für die drei Härtungen) ·
+`op25-e3-dauerhaftigkeit-test` **52/52** (vorher 44) · Mutationsprobe **31 von 31 rot** (vorher 14;
+die Probe zählt eine nicht mehr treffende Mutation jetzt als eigenen Fehlerfall `unwirksam`, statt
+sie als Beleg durchgehen zu lassen) · `cron-globalphase` **176/176** · `globalphase-buendelung`
+**56/56** · `globalabruf-kapazitaet` **47/47** · `vorgangskontext` **102/102** ·
+`compact-store-roundtrip` **26/26** · `prozesslauf-telemetrie` **37/37** · `cron-fairness`
+**285/285** · `run-offline-tests` **191/205** mit exakt derselben 14er-Fehlschlagliste wie vor der
+Review (Basislinie `origin/main` 186/203, deren 17er-Liste diese 14 enthält) — kein neuer Fehlschlag.
+**PRODUCTION-DRY-RUN erneut (rein lesend, 2026-08-04 12:22 UTC): ehrlich `noch_nicht_auswertbar`
+(Exit 3)**; zusätzlich am echten Production-Bestand geprobt: `--startbaseline-schreiben` erhebt die
+Startbaseline korrekt (`m5-9aee228dbf2c9f13`, 5 aktive reale Mandate, lokale Belegdatei außerhalb
+des Repos) und die anschließende Auswertung meldet ehrlich `fenster-noch-nicht-vergangen`. **0
+Writes in Production, 0 KI-Aufrufe, 0,00 USD, keine Migration, kein Flag, kein Cron, kein Merge;
+`dauerhafte globalphase-Zeilen: 0` — erwartungsgemäß, der Schreibpfad ist noch nicht deployt.**) ·
+(5. Durchgang: **Sprint „OP-25 E3-Entscheidung + vollständige
+Vorbereitung des neuen Production-Nachweises" — TEILWEISE ABGESCHLOSSEN: die Vorbereitung ist
+vollständig (Vertrag ausführbar, Werkzeug gebaut und getestet, Dry-Run ehrlich nicht grün), der
+Production-Nachweis selbst beginnt erst nach der getrennt freigabepflichtigen Wiederaktivierung.
+KEIN Production-Eingriff: kein Write, kein Flag, kein Cron, kein manueller Lauf, keine Migration,
+kein Merge, 0 KI-Aufrufe, 0,00 USD; Production wurde ausschließlich rein lesend geprüft.**
+**Ausgangsstand geprüft: `origin/main` = `22aada9` (PR #221), enthält `d1a51d8` (PR #220) und
+`89427c5` (PR #219), kein neuerer Commit, kein nachträglicher Eingriff in den Kapazitäts-/
+Statusvertrag.** **DIE VERBINDLICHEN PRODUKTENTSCHEIDUNGEN:** E1 bleibt Option A (kein Eingriff in
+Abrufstufe/Crawler/Gate/Retry/Breaker) · E2 bleibt unverändert (`HELMUT_CRAWL_MAX_CANDIDATES`
+stabil) · **E3 entschieden:** Kapazitätsvertrag ≠ Verstehensrückstand; `datenstand.status` wird
+nicht kosmetisch umgedeutet; ein ehrliches `teilweise` besteht den OP-25-Nachweis NUR, wenn aus
+strukturierten Laufdaten bewiesen ist, dass die einzige Ursache regulär zurückgestellte,
+vollständig gezählte und DAUERHAFT als pending-Wissensobjekte (mit Dokumentverknüpfung)
+vorgemerkte Verstehensarbeit ist; jedes `teilweise` aus Quellen/Persistenz/Kontext/DB/Sperre/
+unbekannter Ursache fällt durch; der fachliche Rückstand (~1 242 Cluster) bleibt offen und gehört
+zu OP-14. **E3-DAUERHAFTIGKEIT AM ECHTEN CODE BEWIESEN** (`scripts/op25-e3-dauerhaftigkeit-test.js`
+**44/44**): zurückgestellte Eager-Cluster werden verbindlich vorgemerkt UND verknüpft; ein
+erschöpftes Vormerkbudget wird als `nichtVorgemerkt` GEZÄHLT (benannte Lücke, macht den Nachweis
+fail-closed rot); Wiederauffindung läuft über die persistierte Verknüpfung (B4-Fix), idempotent
+ohne Duplikate; die Statusableitung ist mit unabhängigen Soll-Werten verankert. **DABEI BEHOBEN
+(kein falsches Grün, CLAUDE.md §4.4): ein Persistenzfehler der Rohdokumente war stilles Grün** —
+`persistRawDocuments(...).catch(() => null)` erzeugte keinen Fehlereintrag, der Lauf konnte als
+`abgeschlossen` versiegeln; jetzt Fehlerschritt `persistenz` → ehrlich `teilweise`
+(mutationsgeprüft). **ADDITIVE TELEMETRIE (keine Migration, keine neue Tabelle, keine
+Budgetänderung):** globaler Laufdatensatz trägt `datenstandDetail` (Fehlerschritte,
+Persistenzbilanz inkl. CAS-Zähler, Lazy-/Eager-Bilanz inkl. `vorgemerkt`/`nichtVorgemerkt`,
+Kontexttelemetrie, `budgetMs`, `buendelung`) + `quellenVereinigung`; Mandatsläufe behalten
+`datenstand`-Vermerk/`globalLaufId`/`datenstandFrisch` über die `compactCrawlRunForStore`-
+Allowlist (vorher wurden GENAU diese Felder beim Schreiben gestrippt); je globaler Phase EINE
+dauerhafte `process_runs`-Zeile `globalphase` (übersteht Blob-Retention 20 + LWW-Fenster W-2);
+`fasseEagerErgebnisseZusammen` verwirft die Vormerkbilanz nicht mehr; übersprungene Eager-Stapel
+zählen ihre Dokumente. **NEUER AUSFÜHRBARER ABNAHMEVERTRAG (kanonisch:
+[`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7):** vier Ausgänge =
+Exit-Codes (`bestanden` 0 · `nicht_bestanden` 1 · `blockiert` 2 · `noch_nicht_auswertbar` 3),
+Vorrang Fensterprüfung → bewiesene Verletzung → Beleglücke; Fenster explizit, ≥ 24 vollständig
+vergangene Stunden, beginnt erst nach künftigem READY-Deployment + Wiederaktivierung; harte
+Untergrenze 2026-08-04T00:00Z (der gescheiterte Lauf vom 03.08. kann NIE einfließen); aktive
+Mandatsmenge dynamisch ermittelt und eingefroren, KEINE hartkodierten IDs, Mengenänderung im
+Fenster = ungültig; Kadenz aus `vercel.json` (crawl 04:00/20:00, pipeline 16:00 UTC), manuelle/
+außerplanmäßige/alte Läufe werden mit Grund gezählt und ausgeschlossen; 18 Bestehenspunkte inkl.
+Persistenz-CAS, Kontextgleichung, Erklärungspflicht für unbekannte/auffällige Kontexte,
+Fehlerklassen-Vokabular (`unknown` = neue Klasse = durchgefallen), LLM-Kostenrahmen;
+**die veraltete Sechs-Mandate-Erwartung ist überall im OP-25-Vertrag durch „alle beim
+Fensterstart aktiven Mandate (Stand: fünf reale)" ersetzt** (§7.1/§7.4/§7.5). **WERKZEUG:**
+`scripts/op25-production-nachweis.js` — standardmäßig ausschließlich lesend (EINE GET-Literal-
+HTTP-Funktion + Tabellen-Allowlist, `storage.js` nicht geladen, kein Trigger-/Flag-/Env-Pfad,
+0 KI, keine Secrets/PII im Bericht), Bewertungskern `lib/helmut/op25-nachweis.js` (reine Logik);
+`--baseline` liefert den rein lesenden Betriebsquerschnitt. **TESTS:**
+`op25-nachweis-vertrag-test.js` **71/71** (alle 24 geforderten Fallfamilien + Vorrang/Fenster/
+Parsing; unabhängige, hart kodierte Erwartungen) · `op25-e3-dauerhaftigkeit-test.js` **44/44** ·
+Mutationsprobe `op25-nachweis-mutationsprobe.js` **14 von 14 rot** · betroffene Bestands-Suiten
+grün: `cron-globalphase` 176/176 · `globalphase-buendelung` 56/56 · `globalabruf-kapazitaet`
+47/47 · `vorgangskontext` 102/102 · `compact-store-roundtrip` 26/26 · `prozesslauf-telemetrie`
+37/37 · `run-offline-tests` **191/205** gegen Basislinie `origin/main` **186/203** in derselben
+Sandbox (je nach `npm ci`): die 14 Branch-Fehlschläge sind eine **Teilmenge** der
+17er-Basislinienliste (3 laufabhängige Umgebungsflacker der Basislinie liefen auf dem Branch
+grün; die frühere „15er-Liste" flackert umgebungsbedingt zwischen 14 und 17) — **kein neuer und
+kein abweichender Fehlschlag**, +2 = die neuen Suiten · `browser-smoke-test` **32/32** · CI siehe
+PR. **PRODUCTION-DRY-RUN (rein lesend, 2026-08-04
+11:36 UTC): ERGEBNIS EHRLICH `noch_nicht_auswertbar` (Exit 3)** — globaler Abruf deaktiviert,
+kein Aktivierungszeitpunkt, kein 24-h-Fenster; kein alter Lauf wurde als Ersatz verwendet.
+**BASELINE (rein lesend):** Deployment-Commit der jüngsten Production-Läufe `89427c5`; Mandate
+8 = **5 aktive reale** (dynamisch: annika-klose · cem-ince · helmut-kleebank ·
+ottilie-paola-klein-2 · ruppert-st-we) + **3 deaktivierte Demos** (angela-merkel · james-brown ·
+max-mustermann); **0 Testmandate in Production** (`test-mdb-*` nur Offline-Repo-Daten,
+deaktiviert); Kadenz crawl 04:00/20:00 + pipeline 16:00 UTC; LLM-Kosten 24 h **0,20 USD**
+(berechneter Schätzwert) → dokumentierter Rahmen **2 USD** (überschreibbar); bekannte
+Fehlerklassen = das geschlossene `classifyPipelineError`-Vokabular; Fairnesszustand: crawl
+04:00 und ein außerplanmäßiger pipeline-Lauf 07:59 UTC vom 2026-08-04 tragen Abbruchvermerke
+(**bekanntes B5-Verhalten des ALTPFADS**, keine neue Fehlerklasse); jüngster
+`mode:"global"`-Lauf bleibt der gescheiterte vom 2026-08-03 16:04 UTC; Abrufwege 163
+(155 needs_review / 4 broken / 4 healthy) unverändert; pending-Wissensobjekte ≥ 1 000
+(Leseseite gedeckelt). **EHRLICHE GRENZEN:** (a) Läufe OHNE das neue `datenstandDetail`
+(Deployment-Stand vor diesem Sprint) sind für den Nachweis `blockiert` — das neue Fenster
+beginnt ohnehin erst nach dem Deployment dieses Stands; (b) die reichen Laufdatensätze liegen
+im Blob (Retention 20, LWW W-2) — Auswertung zeitnah nach Fensterende, die `globalphase`-Zeile
+und `matching_runs` sind die dauerhafte Rückfallebene; (c) der Kostenrahmen beruht auf einem
+BERECHNETEN Schätzwert (`llmPriceProvenance` unbelegt); (d) OP-25 bleibt TEILWEISE
+ABGESCHLOSSEN — dieser Sprint erbringt den Nachweis ausdrücklich nicht. **GEÄNDERTE DATEIEN:**
+`lib/helmut/scheduler.js` (additive Telemetrie + Persistenz-Ehrlichkeit) · `lib/helmut/storage.js`
+(Compact-Allowlist + Kompakt-Helfer) · `lib/helmut/op25-nachweis.js` (neu, Bewertungskern) ·
+`scripts/op25-production-nachweis.js` (neu, rein lesendes CLI) ·
+`scripts/op25-nachweis-vertrag-test.js` (neu) · `scripts/op25-e3-dauerhaftigkeit-test.js` (neu) ·
+`scripts/op25-nachweis-mutationsprobe.js` (neu) · `docs/betrieb/vorgangskontext.md` (§7.7 +
+6→5-Korrekturen) · `docs/betrieb/env-inventar.md` (2 Werkzeug-Variablen; Stale-Angabe zu
+Migration 20260727 korrigiert) · `docs/datenmotor-restliste.md` (OP-25-Nachtrag /2) ·
+`docs/CURRENT_STATE.md`. **RISIKO:** gering — Laufzeitänderungen sind additiv (Telemetrie) bzw.
+machen einen Fehlerfall ehrlicher (`persistenz`-Fehlerschritt); der Schreibpfad selbst ist
+unverändert; Rückweg `git revert`. **NÄCHSTE SCHRITTE (je einzeln freigabepflichtig):**
+(1) Merge dieses PR (= Production-Deployment, Betreiber) · (2) `HELMUT_CRON_GLOBALABRUF=on`
+setzen (nur Production, Betreiberaktion) · (3) frühestens 24 h nach der Aktivierung:
+`node scripts/op25-production-nachweis.js --aktivierung <ISO-Zeitpunkt>` — das früheste
+vollständige Fenster endet 24 h nach der Aktivierung; Berlin, Brandenburg, M8 und die fünf
+Offline-Testmandate bleiben deaktiviert.**) ·
+(4. Durchgang: **Sprint „Kontrollierte Production-Profilreparatur
 nach PR #220" — ERFOLGREICH ABGESCHLOSSEN, mit ausdrücklicher Betreiberfreigabe (Lüey, 2026-08-04) für exakt
 diesen Umfang. Ausgangsstand geprüft: `origin/main` = Merge-Commit `d1a51d8` (PR #220), kein neuerer Commit,
 kein nachträglicher Eingriff in den Profilvertrag; OP-29 als Repo-Sprint abgeschlossen.** **WAS IN PRODUCTION

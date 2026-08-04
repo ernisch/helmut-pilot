@@ -1,0 +1,519 @@
+"use strict";
+
+// OP-25 — Mutationsprobe des Nachweisvertrags und der E3-Telemetrie.
+// =============================================================================================
+// ZWECK: belegen, dass `scripts/op25-nachweis-vertrag-test.js` und
+// `scripts/op25-e3-dauerhaftigkeit-test.js` die zentralen Zusicherungen WIRKLICH absichern.
+// Jede Probe verletzt GENAU EINE Zusage im Produktions-/Vertragscode und erwartet, dass die
+// zugehoerige Suite ROT wird. Bleibt sie gruen, ist die Zusage nicht abgesichert — und genau
+// das waere der Befund.
+//
+// Verfahren (Repo-Konvention, Muster globalphase-buendelung-mutationsprobe): der Code wird in
+// ein WEGWERF-Verzeichnis kopiert, dort mutiert und die Suite gegen die Kopie gefahren.
+// Das Repository selbst wird NIE veraendert. Kein Netz, keine KI, keine Production-Daten.
+//
+// Aufruf:  `node scripts/op25-nachweis-mutationsprobe.js`
+// Ergebnis: „N von N rot" = die Suiten halten. Jede gruene Probe ist ein Loch.
+
+const fs = require("fs");
+const path = require("path");
+const os = require("os");
+const { execFileSync } = require("child_process");
+
+const ROOT = path.join(__dirname, "..");
+const ZU_KOPIEREN = ["lib", "scripts", "vercel.json", "helmut-flags.json", "package.json"];
+
+function kopiere(quelle, ziel) {
+  fs.mkdirSync(ziel, { recursive: true });
+  for (const eintrag of fs.readdirSync(quelle, { withFileTypes: true })) {
+    if (eintrag.name === "node_modules" || eintrag.name === ".git") continue;
+    const q = path.join(quelle, eintrag.name);
+    const z = path.join(ziel, eintrag.name);
+    if (eintrag.isDirectory()) kopiere(q, z);
+    else if (eintrag.isFile()) fs.copyFileSync(q, z);
+  }
+}
+
+function baueArbeitskopie() {
+  const basis = fs.mkdtempSync(path.join(os.tmpdir(), "helmut-op25-mutation-"));
+  for (const name of ZU_KOPIEREN) {
+    const q = path.join(ROOT, name);
+    if (!fs.existsSync(q)) continue;
+    const z = path.join(basis, name);
+    if (fs.statSync(q).isDirectory()) kopiere(q, z);
+    else { fs.mkdirSync(path.dirname(z), { recursive: true }); fs.copyFileSync(q, z); }
+  }
+  return basis;
+}
+
+// Eine Ersetzung im Quelltext. Wirft, wenn das Muster nicht (oder mehrdeutig) vorkommt —
+// eine wirkungslose Mutation waere ein FALSCH GRUENES Ergebnis.
+function ersetze(basis, datei, von, nach, { erwarteteTreffer = 1 } = {}) {
+  const p = path.join(basis, datei);
+  const src = fs.readFileSync(p, "utf8");
+  const treffer = src.split(von).length - 1;
+  if (treffer !== erwarteteTreffer) {
+    throw new Error(`Mutation trifft ${treffer}x statt ${erwarteteTreffer}x in ${datei}: ${von.slice(0, 60)}…`);
+  }
+  fs.writeFileSync(p, src.split(von).join(nach));
+}
+
+function laeuftGruen(basis, suite) {
+  try {
+    execFileSync(process.execPath, [path.join(basis, "scripts", suite)], {
+      stdio: "pipe", timeout: 180000, env: { ...process.env, HELMUT_STORAGE_BACKEND: "local" }
+    });
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+const KERN = path.join("lib", "helmut", "op25-nachweis.js");
+const SCHED = path.join("lib", "helmut", "scheduler.js");
+const STORE = path.join("lib", "helmut", "storage.js");
+const UNDER = path.join("lib", "helmut", "understanding.js");
+const VERTRAG_SUITE = "op25-nachweis-vertrag-test.js";
+const E3_SUITE = "op25-e3-dauerhaftigkeit-test.js";
+
+const PROBEN = [
+  {
+    name: "M1 Dauerhaftigkeitsregel: nichtVorgemerkt wird ignoriert",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "&& Number(eager.nichtVorgemerkt) === 0;",
+      "&& true;")
+  },
+  {
+    name: "M2 24-h-Mindestfenster wird auf 1 h gelockert",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "const MIN_FENSTER_MS = 24 * 60 * 60 * 1000;",
+      "const MIN_FENSTER_MS = 1 * 60 * 60 * 1000;")
+  },
+  {
+    name: "M3 Harte Untergrenze 2026-08-04 (03.08-Lauf-Schutz) faellt",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      'const FRUEHESTER_FENSTERSTART_MS = Date.parse("2026-08-04T00:00:00Z");',
+      'const FRUEHESTER_FENSTERSTART_MS = Date.parse("2026-08-01T00:00:00Z");')
+  },
+  {
+    name: "M4 Vorrang kippt: Belegluecke schlaegt bewiesene Verletzung",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (hat(AUSGANG_NICHT_BESTANDEN)) return ergebnis(AUSGANG_NICHT_BESTANDEN, laufErgebnisse, zusatz);\n  if (hat(AUSGANG_BLOCKIERT)) return ergebnis(AUSGANG_BLOCKIERT, laufErgebnisse, zusatz);",
+      "  if (hat(AUSGANG_BLOCKIERT)) return ergebnis(AUSGANG_BLOCKIERT, laufErgebnisse, zusatz);\n  if (hat(AUSGANG_NICHT_BESTANDEN)) return ergebnis(AUSGANG_NICHT_BESTANDEN, laufErgebnisse, zusatz);")
+  },
+  {
+    name: "M5 Persistenz 'fehlend' gilt ploetzlich als belegt",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      'if (!p || p.ergebnis !== "ok") {',
+      "if (false) {")
+  },
+  {
+    name: "M6 Fehlende Mandatslaeufe werden nicht mehr geprueft",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "if (fehlend.length) {",
+      "if (false) {")
+  },
+  {
+    name: "M13 Unbekannte Kontexte brauchen keine Erklaerung mehr",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "if ((Number(k.unbekannt) || 0) > 0 && !kontextErklaerung) {",
+      "if (false) {")
+  },
+  {
+    name: "M14 Slot-Toleranz waechst auf 6 h — manuelle Laeufe wuerden regulaere ersetzen",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "const SLOT_TOLERANZ_MS = 15 * 60 * 1000;",
+      "const SLOT_TOLERANZ_MS = 6 * 60 * 60 * 1000;")
+  },
+  {
+    name: "M7 budgetErschoepft ignoriert uebersprungene Lazy-Stapel",
+    suite: E3_SUITE,
+    mutiere: (b) => ersetze(b, SCHED,
+      "budgetErschoepft: verbleibendMs() <= 0 || lazyRan < lazyCluster || lazyUebersprungeneStapel > 0,",
+      "budgetErschoepft: verbleibendMs() <= 0 || lazyRan < lazyCluster,")
+  },
+  {
+    name: "M8 Persistenzfehler wird wieder stilles Gruen",
+    suite: E3_SUITE,
+    mutiere: (b) => ersetze(b, SCHED,
+      'if (savedItems.length && !persistenzOk) {\n      fehler.push({ schritt: "persistenz", grund: "persistenz-fehlgeschlagen-oder-unbekannt" });\n    }',
+      "")
+  },
+  {
+    name: "M9 Uebersprungene Eager-Stapel verlieren ihre Dokumentzahl",
+    suite: E3_SUITE,
+    mutiere: (b) => ersetze(b, SCHED,
+      'eagerErgebnisse.push({ skipped: true, reason: "zeitbudget", processed: 0, deferred: 0, dokumente: teil.dokumente.length });',
+      'eagerErgebnisse.push({ skipped: true, reason: "zeitbudget", processed: 0, deferred: 0 });')
+  },
+  {
+    name: "M10 Eager-Bilanz verschluckt nichtVorgemerkt wieder",
+    suite: E3_SUITE,
+    mutiere: (b) => ersetze(b, SCHED,
+      "nichtVorgemerkt: eagerErgebnisse.reduce((s, e) => s + (Number(e && e.nichtVorgemerkt) || 0), 0),",
+      "nichtVorgemerkt: 0,")
+  },
+  {
+    name: "M11 compactCrawlRunForStore strippt datenstandDetail wieder",
+    suite: E3_SUITE,
+    mutiere: (b) => ersetze(b, STORE,
+      "datenstandDetail: compactDatenstandDetail(run.datenstandDetail),",
+      "datenstandDetail: null,")
+  },
+  {
+    name: "M12 Zurueckgestellte Cluster werden nicht mehr vorgemerkt",
+    suite: E3_SUITE,
+    mutiere: (b) => ersetze(b, UNDER,
+      "const vermerk = await deps.savePending(vorgangId, {",
+      "const vermerk = null && await deps.savePending(vorgangId, {")
+  },
+
+  // --- Review-Haertung 1: Kostenvertrag ------------------------------------------------------
+  {
+    name: "M15 Kostenzahlen werden nicht mehr validiert (NaN/negativ passieren)",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  return typeof wert === \"number\" && Number.isFinite(wert) && wert >= 0;",
+      "  return true;")
+  },
+  {
+    name: "M16 alsZahl deutet null wieder still in 0 um",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (wert == null || wert === \"\") return null;",
+      "  if (wert === \"\") return null;")
+  },
+  {
+    name: "M17 Vollstaendigkeit der Kostendaten wird nicht mehr verlangt",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (kosten.vollstaendig !== true) {",
+      "  if (false) {")
+  },
+  {
+    name: "M18 Unbepreiste Nutzungseintraege werden ignoriert",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  } else if (unbepreist > 0) {",
+      "  } else if (false) {")
+  },
+
+  // --- Review-Haertung 2: eingefrorene Mandatsmenge ------------------------------------------
+  {
+    name: "M19 Mandatsmenge wird wieder nur nach ANZAHL verglichen (Austausch unsichtbar)",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  } else if (!mengeGleich(geplanteIds, mandatsMenge)) {",
+      "  } else if (geplanteIds.length !== mandatsMenge.length) {")
+  },
+  {
+    name: "M20 Fehlende Startbaseline wird durch den AKTUELLEN Bestand ersetzt",
+    suite: VERTRAG_SUITE,
+    // Genau die Regression, die der Review beschreibt: statt zu blockieren wird die Menge
+    // still aus dem AKTUELLEN Bestand gebildet — der Zustand am Fensterstart wäre erfunden.
+    mutiere: (b) => ersetze(b, KERN,
+      "  const baselinePruefung = pruefeStartbaseline({\n    roh: startbaseline, aktivierungAtMs, jetztMs\n  });",
+      "  const ersatz = startbaseline || {\n"
+      + "    mandate: aktiveMandate || [], anzahl: (aktiveMandate || []).length,\n"
+      + "    signatur: mandatsSignatur(aktiveMandate || []).signatur,\n"
+      + "    aktivierungAtMs, erhobenAtMs: aktivierungAtMs\n"
+      + "  };\n"
+      + "  const baselinePruefung = pruefeStartbaseline({\n    roh: ersatz, aktivierungAtMs, jetztMs\n  });")
+  },
+  {
+    name: "M21 Endzustand wird nicht mehr gegen die eingefrorene Menge geprueft",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (endzustand.signatur !== frozen.signatur) {",
+      "  if (endzustand.anzahl !== frozen.anzahl) {")
+  },
+  {
+    name: "M22 Laeufe ohne Mandatskennungen gelten wieder als geprueft",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (!Array.isArray(geplanteIds)) {",
+      "  if (false) {")
+  },
+
+  // --- Review-Haertung 3: dauerhafte Quelle, Aufbewahrung, versiegelte Dauer -----------------
+  {
+    name: "M23 Dauerhafte Laufzeile wird nicht mehr konsultiert (verdraengt = fehlend)",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "    if (prozessLauf) {\n      befunde.push(befund(AUSGANG_BLOCKIERT, \"laufbeleg-verdraengt\",",
+      "    if (false) {\n      befunde.push(befund(AUSGANG_BLOCKIERT, \"laufbeleg-verdraengt\",")
+  },
+  {
+    name: "M24 Aufbewahrungsvertrag faellt weg (Retention kleiner als Bedarf passiert)",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "    if (benoetigteDatensaetze > retention) {",
+      "    if (false) {")
+  },
+  {
+    name: "M25 Budget wird wieder am VOR dem Versiegeln gebildeten durationMs geprueft",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "    if (alsZahl(vermerk.dauerMs) !== null) versiegelteDauerMs = alsZahl(vermerk.dauerMs);",
+      "    if (alsZahl(globalerLauf.durationMs) !== null) versiegelteDauerMs = alsZahl(globalerLauf.durationMs);")
+  },
+  {
+    name: "M26 Fehlende versiegelte Laufzeit wird stillschweigend hingenommen",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (versiegelteDauerMs == null || versiegeltesBudgetMs == null) {",
+      "  if (false) {")
+  },
+  {
+    name: "M27 Widerspruch zwischen dauerhafter Zeile und Vermerk wird verschluckt",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "    if (alsZahl(prozessLauf.durationMs) !== null && versiegelteDauerMs != null",
+      "    if (false && alsZahl(prozessLauf.durationMs) !== null && versiegelteDauerMs != null")
+  },
+
+  // --- Die neuen Belegfelder im Produktionscode ----------------------------------------------
+  {
+    name: "M28 Laufdatensatz traegt die Mandatskennungen nicht mehr",
+    suite: E3_SUITE,
+    mutiere: (b) => ersetze(b, SCHED,
+      "        mandateIds: [...tenantIds]",
+      "        mandateIds: undefined")
+  },
+  {
+    name: "M29 Budget wandert nicht mehr in den versiegelten Datenstand",
+    suite: E3_SUITE,
+    mutiere: (b) => ersetze(b, SCHED,
+      "      budgetMs,\n      quellen: plan.gesamt,",
+      "      quellen: plan.gesamt,")
+  },
+  {
+    name: "M30 compactQuellenVereinigung strippt die Mandatskennungen",
+    suite: E3_SUITE,
+    mutiere: (b) => ersetze(b, STORE,
+      "    mandateIds: Array.isArray(value.mandateIds)\n      ? value.mandateIds.slice(0, 200).map((id) => String(id).slice(0, 80))\n      : null",
+      "    mandateIds: null")
+  },
+  {
+    name: "M31 compactDatenstandVermerk strippt die versiegelte Dauer",
+    suite: E3_SUITE,
+    mutiere: (b) => ersetze(b, STORE,
+      "    dauerMs: num(value.dauerMs),\n    budgetMs: num(value.budgetMs)",
+      "    dauerMs: null,\n    budgetMs: null")
+  },
+
+  // --- Review 2, Punkt 1: der echte Kostenleser ---------------------------------------------
+  {
+    name: "M32 Kostenleser deutet rohe Nicht-Zahlen wieder um (\"1.20\", true, null)",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "    if (!istBrauchbareKostenzahl(roh)) { unbepreist += 1; continue; }\n    summe += roh;",
+      "    const z = typeof roh === \"number\" ? roh : Number(roh);\n"
+      + "    if (!Number.isFinite(z) || z < 0) { unbepreist += 1; continue; }\n    summe += z;")
+  },
+  {
+    name: "M33 Eintraege ohne lesbaren Zeitstempel werden wieder still uebersprungen",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (nichtZuordenbar > 0) {",
+      "  if (false) {")
+  },
+  {
+    name: "M34 Kaputte Zeitstempel gelten wieder als zuordenbar (Date.parse auf alles)",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "    const t = (typeof roherStempel === \"string\" && roherStempel.trim())\n      ? Date.parse(roherStempel)\n      : NaN;\n    if (!Number.isFinite(t)) { nichtZuordenbar += 1; continue; }",
+      "    const t = Date.parse(roherStempel || \"\");\n    if (!Number.isFinite(t)) { continue; }")
+  },
+  {
+    name: "M35 Verdraengte Nutzungsliste gilt wieder als vollstaendig",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (grenze !== null && alle.length >= grenze && Number.isFinite(aeltesterMs) && aeltesterMs > vonMs) {",
+      "  if (false) {")
+  },
+
+  // --- Review 2, Punkt 2: Startbaseline vollstaendig fail closed ----------------------------
+  {
+    name: "M36 Fehlende Baseline-Signatur wird wieder akzeptiert",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (typeof roh.signatur !== \"string\" || !roh.signatur.trim()) {",
+      "  if (false) {")
+  },
+  {
+    name: "M37 Fehlender Aktivierungszeitpunkt in der Baseline wird wieder akzeptiert",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (baselineAktivierungMs === null) {\n    return fehler(\"startbaseline-aktivierung-fehlt\",",
+      "  if (false) {\n    return fehler(\"startbaseline-aktivierung-fehlt\",")
+  },
+  {
+    name: "M38 Fehlender Erhebungszeitpunkt in der Baseline wird wieder akzeptiert",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (baselineErhobenMs === null) {\n    return fehler(\"startbaseline-erhebung-fehlt\",",
+      "  if (false) {\n    return fehler(\"startbaseline-erhebung-fehlt\",")
+  },
+  {
+    name: "M39 Fehlende/widerspruechliche Mandatsanzahl wird wieder akzeptiert",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (anzahl !== frozen.anzahl) {",
+      "  if (false) {")
+  },
+  {
+    name: "M40 Ungueltige Mandatseintraege (leer/Nicht-Zeichenkette) werden wieder akzeptiert",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (!roh.mandate.every((id) => typeof id === \"string\" && id.trim())) {",
+      "  if (false) {")
+  },
+  {
+    name: "M41 baselineZeit deutet null wieder in 0 um",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  const alsMs = alsZahl(roh);\n  if (alsMs !== null) return alsMs;",
+      "  const alsMs = Number(roh);\n  if (Number.isFinite(alsMs)) return alsMs;")
+  },
+
+  // --- Review 3, Punkt 1: das Erhebungsfenster der Startbaseline ----------------------------
+  {
+    name: "M42 Baseline VOR der Aktivierung wird wieder akzeptiert",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (baselineErhobenMs < baselineAktivierungMs) {",
+      "  if (false) {")
+  },
+  {
+    name: "M43 Zu spaete Erhebung wird wieder akzeptiert",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (baselineErhobenMs > baselineAktivierungMs + toleranzMs) {",
+      "  if (false) {")
+  },
+  {
+    name: "M44 Toleranz haengt wieder am Fensterstart statt an der Aktivierung",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "const BASELINE_TOLERANZ_MS = 15 * 60 * 1000;",
+      "const BASELINE_TOLERANZ_MS = 24 * 60 * 60 * 1000;")
+  },
+  {
+    name: "M45 Zukuenftige Aktivierung wird in der Baseline-Pruefung wieder akzeptiert",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (jetzt !== null && baselineAktivierungMs > jetzt) {",
+      "  if (false) {")
+  },
+  {
+    name: "M46 Zukuenftige Aktivierung wird in der Gesamtbewertung wieder durchgelassen",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (Number(aktivierungAtMs) > jetztMs) {",
+      "  if (false) {")
+  },
+
+  // --- Review 4: die Commitpruefung ---------------------------------------------------------
+  {
+    name: "M47 SHA-Formatpruefung entfernt (Nicht-Hex wird wieder akzeptiert)",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  return COMMIT_MUSTER.test(s) ? s : null;",
+      "  return s;")
+  },
+  {
+    name: "M48 Mindestlaenge entfernt (zu kurze Werte werden wieder akzeptiert)",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (s.length < COMMIT_MIN_LAENGE || s.length > COMMIT_MAX_LAENGE) return null;",
+      "  if (s.length > COMMIT_MAX_LAENGE) return null;")
+  },
+  {
+    name: "M49 Obergrenze entfernt (SHA mit hexadezimalem Anhang wird wieder akzeptiert)",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (s.length < COMMIT_MIN_LAENGE || s.length > COMMIT_MAX_LAENGE) return null;",
+      "  if (s.length < COMMIT_MIN_LAENGE) return null;")
+  },
+  {
+    name: "M50 Angehaengter Unsinn wieder akzeptiert (alte startsWith-Logik ohne Formatpruefung)",
+    suite: VERTRAG_SUITE,
+    // Exakt der gemeldete Befund: Vergleich nur ueber Laengen und startsWith, ohne dass die
+    // Werte selbst gueltige SHAs sein muessen.
+    mutiere: (b) => ersetze(b, KERN,
+      "  const soll = normalisiereCommit(erwartet);",
+      "  const soll = (typeof erwartet === \"string\" && erwartet.trim()) ? erwartet.trim().toLowerCase() : null;")
+  },
+  {
+    name: "M51 Abweichender Commit wird wieder bestaetigt",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  const gleich = soll === ist || istEchtesPraefix(soll, ist) || istEchtesPraefix(ist, soll);",
+      "  const gleich = true;")
+  },
+  {
+    name: "M52 Praefixpruefung nicht mehr STRIKT (gleich lange Werte gelten als Praefix)",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  return kurz.length < lang.length && lang.startsWith(kurz);",
+      "  return lang.startsWith(kurz);")
+  },
+  {
+    name: "M53 Uebergebener, aber ungueltiger erwarteter Commit faellt nicht mehr durch",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (soll === null) {\n    return {\n      uebergeben: true, bestaetigt: false, erwartet: null,",
+      "  if (false) {\n    return {\n      uebergeben: true, bestaetigt: false, erwartet: null,")
+  },
+  {
+    name: "M54 Ungueltiger BEOBACHTETER Commit wird wieder als Beleg akzeptiert",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  const ist = normalisiereCommit(beobachtet);\n  if (ist === null) {",
+      "  const ist = normalisiereCommit(beobachtet) || String(beobachtet || \"\").trim().toLowerCase();\n  if (!ist) {")
+  }
+];
+
+let rot = 0;
+let gruen = 0;
+let unwirksam = 0;
+console.log("OP-25 Mutationsprobe — jede Probe MUSS die Suite rot machen");
+console.log("=".repeat(78));
+for (const probe of PROBEN) {
+  const basis = baueArbeitskopie();
+  try {
+    try {
+      probe.mutiere(basis);
+    } catch (fehler) {
+      // Eine Mutation, deren Muster nicht (mehr) trifft, ist KEIN Beleg — sie waere ein
+      // falsch gruenes Ergebnis. Sie wird als eigener Fehlerfall gezaehlt statt den Lauf
+      // abzubrechen, damit alle uebrigen Proben trotzdem messbar bleiben.
+      unwirksam += 1;
+      console.log(`UNWIRKSAM      ${probe.name} — ${(fehler && fehler.message) || fehler}`);
+      continue;
+    }
+    const bestehtNoch = laeuftGruen(basis, probe.suite);
+    if (bestehtNoch) {
+      gruen += 1;
+      console.log(`GRUEN (LOCH!)  ${probe.name}`);
+    } else {
+      rot += 1;
+      console.log(`rot            ${probe.name}`);
+    }
+  } finally {
+    fs.rmSync(basis, { recursive: true, force: true });
+  }
+}
+
+console.log("=".repeat(78));
+console.log(`${rot} von ${PROBEN.length} Proben rot · ${gruen} Loecher · ${unwirksam} unwirksam`);
+process.exit(gruen || unwirksam ? 1 : 0);

@@ -14,7 +14,7 @@
 
 | | |
 |---|---|
-| **Stand / Prüfdatum** | **2026-07-29** (Basisstand 2026-07-17, re-verankert 2026-07-22, siehe Banner; OP-05/06/08/13/14 nachgezogen durch den Pending/Understanding/KO-Sprint — Belege: `docs/betrieb/datenmotor_sprint_pending_understanding_ko.md`; §4 und §6 nachgezogen durch Sprint 23B-1 — neue Befunde **B5**/**B6** und neue Punkte **OP-25**/**OP-26**; §4 zusaetzlich nachgezogen durch Sprint 23C-2A — neue Befunde **B7**/**B8**; **B7 nachgemessen und entschieden in Sprint M-8 → neuer Punkt OP-27**, B8 bleibt bei OP-04; §6 ergänzt **2026-08-04** durch Sprint „Profilreife" → neuer Punkt **OP-29** (OP-28 bleibt für PR #216 reserviert); **OP-04/OP-25/OP-29 nachgeführt 2026-08-04** durch den Production-Profilreparatursprint (Reparaturpaket angewendet, `max-mustermann` deaktiviert, 5 aktive reale Mandate). *Die übrigen Abschnitte tragen weiterhin den Stand 2026-07-18 und wurden in diesem Sprint nicht nachgemessen.*) |
+| **Stand / Prüfdatum** | **2026-07-29** (Basisstand 2026-07-17, re-verankert 2026-07-22, siehe Banner; OP-05/06/08/13/14 nachgezogen durch den Pending/Understanding/KO-Sprint — Belege: `docs/betrieb/datenmotor_sprint_pending_understanding_ko.md`; §4 und §6 nachgezogen durch Sprint 23B-1 — neue Befunde **B5**/**B6** und neue Punkte **OP-25**/**OP-26**; §4 zusaetzlich nachgezogen durch Sprint 23C-2A — neue Befunde **B7**/**B8**; **B7 nachgemessen und entschieden in Sprint M-8 → neuer Punkt OP-27**, B8 bleibt bei OP-04; §6 ergänzt **2026-08-04** durch Sprint „Profilreife" → neuer Punkt **OP-29** (OP-28 bleibt für PR #216 reserviert); **OP-04/OP-25/OP-29 nachgeführt 2026-08-04** durch den Production-Profilreparatursprint (Reparaturpaket angewendet, `max-mustermann` deaktiviert, 5 aktive reale Mandate); **OP-25 erneut nachgeführt 2026-08-04/2** durch den E3-Sprint (verbindliche E3-Entscheidung, ausführbarer Nachweisvertrag `betrieb/vorgangskontext.md` §7.7, rein lesendes Werkzeug `scripts/op25-production-nachweis.js`, Dry-Run ehrlich `noch_nicht_auswertbar`). *Die übrigen Abschnitte tragen weiterhin den Stand 2026-07-18 und wurden in diesem Sprint nicht nachgemessen.*) |
 | **Geprüfter Stand** | historisch `main`-HEAD `ca7e404` (Merge PR #102); Re-Anker (siehe Banner) `d6d9063` (#113); seither weiter nachgezogen (Pending/Understanding/KO-Sprint + Recovery-Stilllegung PR #105, Kontextstruktur PR #119, Doku-Nachzug PR #121) — **aktuell `045393c` (#121)** |
 | **Grundlagen** | PR #95–#102, `docs/betrieb/production_beweisprotokoll.md` (inkl. §7 Google-News-Härtung), `docs/betrieb/google_news_haertung.md`, `docs/betrieb/health_report_rollierend.md`, `docs/betrieb/f5_freigabe.md`, `docs/helmut_datenmotor_thread2_handoff.md` §0a, `docs/quellenarchitektur/00-master-status.md` (Nachtrag 2026-07-17), Audit-Serie |
 
@@ -463,6 +463,119 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   ist damit ausgeführt (§14 des kanonischen Dokuments). Keine weitere Freigabe offen.
 
 #### OP-25 · Crawl-Zeitdeckelung: je Lauf wird nur ein Teil der Mandanten erreicht (neu, Sprint 23B-1; Prioritätsklasse P1)
+- **Nachtrag 2026-08-04/2 (Sprint „E3-Entscheidung + neuer Production-Nachweis", TEILWEISE
+  ABGESCHLOSSEN — Vorbereitung vollständig, der Nachweis selbst beginnt erst nach der
+  freigabepflichtigen Wiederaktivierung):** **E3 ist verbindlich entschieden** — Kapazitätsvertrag
+  und Verstehensrückstand sind getrennt; `datenstand.status` wird **nicht** kosmetisch umgedeutet;
+  ein ehrliches `teilweise` besteht den Nachweis **nur**, wenn strukturierte Laufdaten beweisen,
+  dass die einzige Ursache regulär zurückgestellte, **vollständig gezählte und dauerhaft als
+  pending-Wissensobjekte (mit Dokumentverknüpfung) vorgemerkte** Verstehensarbeit ist; jede
+  andere Ursache (Quellen/Persistenz/Kontext/DB/Sperre/unbekannt) fällt durch. **E1 bleibt
+  Option A, E2 bleibt unverändert.** Kanonischer, ausführbarer Vertrag mit vier Ausgängen
+  (`bestanden`/`nicht_bestanden`/`blockiert`/`noch_nicht_auswertbar`, Exit 0–3):
+  [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) **§7.7**; Werkzeug (rein lesend,
+  GET-Literal + Allowlist): `scripts/op25-production-nachweis.js`; Bewertungskern
+  `lib/helmut/op25-nachweis.js`. **Dauerhaftigkeit am echten Code bewiesen**
+  (`op25-e3-dauerhaftigkeit-test.js` 44/44): zurückgestellte Eager-Cluster werden verbindlich
+  vorgemerkt + verknüpft, ein erschöpftes Vormerkbudget wird als `nichtVorgemerkt` gezählt,
+  Wiederauffindung läuft über die Verknüpfung (B4), idempotent ohne Duplikate. **Additive
+  Telemetrie** (keine Migration, keine neue Tabelle, keine Budgetänderung): `datenstandDetail`
+  + `quellenVereinigung` im globalen Laufdatensatz, Mandats-Vermerke in der Compact-Allowlist,
+  eine dauerhafte `process_runs`-Zeile `globalphase` je Lauf; **Fix „kein falsches Grün":** ein
+  Persistenzfehler der Rohdokumente versiegelt jetzt ehrlich `teilweise` (vorher stilles
+  `abgeschlossen`). **Production-Dry-Run 2026-08-04 (rein lesend): ehrlich
+  `noch_nicht_auswertbar` (Exit 3)** — globaler Abruf deaktiviert, kein Aktivierungszeitpunkt,
+  kein 24-h-Fenster; **Baseline erhoben:** 5 aktive reale Mandate (dynamisch) · 3 deaktivierte
+  Demos · 0 Testmandate · Kadenz crawl 04:00/20:00 + pipeline 16:00 UTC · LLM-Kosten 24 h
+  0,20 USD (Rahmen 2 USD dokumentiert) · Fairness: crawl/pipeline-Altpfadläufe vom 2026-08-04
+  mit Abbruchvermerk (bekanntes B5-Verhalten des Altpfads) · jüngster `mode:"global"`-Lauf
+  bleibt der gescheiterte vom 2026-08-03 (fließt per harter Untergrenze 2026-08-04T00:00Z nie in
+  einen neuen Nachweis ein). Tests: `op25-nachweis-vertrag-test.js` **71/71** (inkl. der 24
+  geforderten Fallfamilien) · Mutationsprobe **14 von 14 rot**. **Nächster Betreiberhandgriff:**
+  READY-Deployment dieses Stands, dann `HELMUT_CRON_GLOBALABRUF=on` (nur Production), dann
+  frühestens nach 24 h `node scripts/op25-production-nachweis.js --aktivierung <ISO>`.
+  Der Verstehensrückstand (~1 242 Cluster) bleibt offen und gehört zu **OP-14**.
+  **Nachtrag 2026-08-04/3 (Review zu PR #222 vollständig eingearbeitet):** drei Wege, auf denen
+  der Vertrag fälschlich grün hätte werden können, sind geschlossen — **(1) Kostenvertrag:**
+  `NaN`/`±Infinity`/negative/nicht-numerische Werte fallen durch (`NaN > rahmen` war *immer*
+  `false`), die **Vollständigkeit** der Kostendaten ist eine ausdrückliche Zusage (fehlendes
+  `llmUsage`, nicht lesbarer Auth-Store, verdrängtes Kostenfenster → `blockiert`), nicht
+  bepreisbare Einträge werden gezählt und blockieren; gemeinsame Wurzel `Number(null) === 0`
+  überall durch strikte Zahlenlesung ersetzt. **(2) Mandatsmenge:** identitätsgenau am
+  Fensterstart eingefroren über eine rein lesend erhobene **Startbaseline** (Aktivierungszeit,
+  exakte Menge, stabiler Hash) — geprüft gegen **jeden Lauf** (neues persistiertes Feld
+  `quellenVereinigung.mandateIds`) **und** den Endzustand; ein Austausch bei gleicher Anzahl,
+  eine Änderung zwischen zwei Läufen und eine spätere Rückkehr zur Ursprungsmenge fallen jetzt
+  auf; ohne Startbaseline `blockiert` statt Ersatz aus dem aktuellen Bestand. **(3) Dauerhafte
+  Belegquelle:** die `process_runs`-Zeilen `globalphase` gehen wirklich in die Bewertung ein und
+  trennen „verdrängt" (`blockiert`) von „nie gelaufen" (`nicht_bestanden`); dazu ein
+  reproduzierbarer **Aufbewahrungsvertrag** (Bedarf = Läufe × (1 + n Mandate); Retention zu klein
+  → `blockiert`, knapp → Warnung; 24-h-Fenster braucht heute **18** von **20** Datensätzen) und
+  die Budgetprüfung an der **versiegelten** Laufzeit (`datenstand.dauerMs`/`budgetMs`, neu im
+  Vermerk) statt am vor dem Versiegeln gebildeten `durationMs`. Kanonisch:
+  [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) **§7.7.1**. Tests: Vertrag
+  **108/108**, Dauerhaftigkeit **52/52**, Mutationsprobe **31 von 31 rot**; Production-Dry-Run
+  erneut ehrlich **`noch_nicht_auswertbar`**. Der Nachweis selbst bleibt unverändert offen.
+  **Nachtrag 2026-08-04/4 (zweiter Reviewdurchgang):** zwei Stellen, an denen das Werkzeug noch
+  weicher war als seine eigene Doku, sind geschlossen — **(a) der ECHTE Kostenleser** lag im CLI
+  und deutete mit `typeof roh === "number" ? roh : Number(roh)` genau die Werte um, die der
+  Vertrag als unbrauchbar führt (`"1.20"` → 1,20 USD, `true` → 1, `false`/`null` → 0); Einträge
+  ohne lesbaren Zeitstempel wurden still übersprungen. Er liegt jetzt als `kostenAusNutzung` im
+  **reinen Kern** (eine Umsetzung, direkt testbar), akzeptiert nur **roh** endliche, nicht
+  negative `number`-Werte und macht zeitlich nicht zuordenbare Einträge zur Beleglücke
+  ⇒ `blockiert`. **(b) Die Startbaseline** verlangte `signatur`, `aktivierungAtMs` und
+  `erhobenAtMs` nur, *wenn* sie vorhanden waren; das CLI schrieb sie auch ohne gültige
+  `--aktivierung` (mit `null`) und las sie mit `Number(null)` zurück. Jetzt prüft
+  `pruefeStartbaseline` **alle** Pflichtfelder strikt (Mandate ohne Duplikate, Anzahl
+  widerspruchsfrei, Signatur passend, Aktivierungs- und Erhebungszeitpunkt vorhanden und
+  stimmig) — jeder Verstoß ⇒ `blockiert`; das CLI verweigert das Schreiben ohne gültigen
+  Aktivierungszeitpunkt (Exit 2, keine Datei) und liest die Belegdatei roh. **Nebenbefund
+  behoben:** `deploymentCommit` trug eine Laufkennung statt einer Commit-Kennung und stammt jetzt
+  aus `process_runs.commit_ref` (Production-Probe: `89427c5b…`) oder ist ehrlich `null`.
+  Kanonisch: [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) **§7.7.2**. Tests:
+  Vertrag **158/158** (+50), Dauerhaftigkeit **52/52**, Mutationsprobe **41 von 41 rot** (+10);
+  Dry-Run unverändert `noch_nicht_auswertbar`.
+  **Nachtrag 2026-08-04/5 (dritter Reviewdurchgang):** **(a) Das Erhebungsfenster der
+  Startbaseline** war am Fensterstart verankert — damit wäre eine Baseline zulässig gewesen, die
+  *vor* der Aktivierung (also aus der Zeit des alten Bestands) oder Stunden danach erhoben wurde.
+  Bezugspunkt ist jetzt die **Aktivierung**: `aktivierung ≤ erhoben ≤ aktivierung + 15 min`
+  (beide Grenzen inklusiv), und `aktivierung ≤ jetzt`. Alle drei Verstöße sind fail closed —
+  `startbaseline-vor-aktivierung`, `aktivierung-in-zukunft` (in der Gesamtbewertung **vor** allen
+  Fensterprüfungen) und `startbaseline-zu-spaet-erhoben`. Die Schreibseite setzt dieselben
+  Grenzen und erzeugt gar keine Datei (Exit 2). **(b) Kein möglicherweise veralteter Commit als
+  Deployment-Stand:** `process_runs.commit_ref` ist der Commit des *jüngsten gespeicherten Laufs*
+  und nach einem frischen Deployment veraltet. Das Feld heißt jetzt
+  `zuletztBeobachteterProzessCommit` (kein Deployment-Beleg; ein Feld `deploymentCommit` gibt es
+  nicht mehr, auch nicht im `--baseline`-Querschnitt); wer den Stand belegen will, übergibt
+  `--erwarteter-commit <sha>` — strikt geprüft (Voll-/Kurzform als echtes Präfix), Abweichung ⇒
+  Exit 2 ohne Datei, ohne Übergabe bleibt `deploymentCommitBestaetigt: false`. Kanonisch:
+  [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) **§7.7.3**. Tests: Vertrag
+  **178/178** (+20), Dauerhaftigkeit **52/52**, Mutationsprobe **46 von 46 rot** (+5);
+  Production-Proben rein lesend: zukünftige Aktivierung, 2 h zurückliegende Aktivierung und
+  falscher erwarteter Commit je **Exit 2 ohne Datei**; korrekter Kurzform-Commit ⇒ bestätigt.
+  Dry-Run unverändert `noch_nicht_auswertbar`.
+
+  **Nachtrag 2026-08-04/6 (vierter Reviewdurchgang — die Commitprüfung selbst):** Die in /5
+  eingeführte strikte Prüfung war **nicht strikt**. Sie bestand nur aus Längenvergleich und
+  `startsWith` und lag im CLI statt im Bewertungskern. Empirisch reproduziert: beobachtet
+  `89427c5…1085d`, erwartet dieselbe SHA **plus** `-VOELLIGER-UNSINN` ⇒
+  `deploymentCommitBestaetigt: true`; ebenso mit hexadezimalem Anhang und mit verdoppelter SHA.
+  Zusätzlich bestanden die §34-Prüfpunkte überwiegend aus **Textsuchen im Quelltext**, und die
+  Mutationen M42–M46 betrafen nur die Zeitlogik — eine Lockerung der Commitprüfung wäre nicht
+  rot geworden. **Korrektur:** die Prüfung liegt jetzt als `pruefeCommitBeleg` im reinen
+  Bewertungskern (`lib/helmut/op25-nachweis.js`), das CLI ruft genau diese Funktion auf. Gültig
+  ist nach `trim` + Kleinschreibung nur `/^[0-9a-f]+$/` mit **7–40** Zeichen; Übereinstimmung
+  nur bei Gleichheit oder **echtem** Präfix (kürzer *und* Anfang von) — auf **beiden** Seiten.
+  Fehlende, zu kurze, zu lange und nicht hexadezimale Werte bleiben fail closed; Großbuchstaben
+  und Randleerzeichen sind nach Normalisierung zulässig; ein übergebener, nicht bestätigter
+  Commit bleibt Exit 2 ohne Datei. Kanonisch:
+  [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) **§7.7.4**. Tests: Vertrag
+  **202/202** (+24, davon 24 **echte Verhaltensprüfungen** in §34.1–34.24; Textsuche nur noch
+  ergänzend in 34.25–34.30), Dauerhaftigkeit **52/52**, Mutationsprobe **54 von 54 rot** (+8,
+  M47–M54, darunter die vier geforderten Lockerungen). Production-Proben rein lesend: identische
+  volle SHA, gültige Kurzform und Großschreibung mit Randleerzeichen ⇒ bestätigt; angehängter
+  Unsinn, hexadezimaler Anhang, abweichende SHA, 6 Zeichen, Nicht-Hex und 41 Zeichen ⇒ je
+  **Exit 2 ohne Datei**. Dry-Run unverändert `noch_nicht_auswertbar` (Exit 3).
 - **Nachtrag 2026-08-04 (Profilreparatursprint):** Künftige OP-25-Production-Nachweise arbeiten
   mit **fünf aktiven realen Mandaten** statt sechs — das Demo-Mandat `max-mustermann` ist seit
   2026-08-04 deaktiviert (nicht gelöscht, OP-04-Teilschritt), sofern bis zum Nachweis keine

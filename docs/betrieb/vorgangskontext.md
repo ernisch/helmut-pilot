@@ -1,8 +1,12 @@
 # OP-25 K2.1 — Globaler Abruf, kontextgebundene Vorgangsbildung
 
-**Kanonische Dokumentation des K2.1-Pfads.** Stand: **2026-08-03** (§7.4: Aktivierung ergänzt).
-Zustand: **gemergt, deployt und seit 2026-08-03, 13:15:11 UTC in Production AKTIVIERT** —
-`HELMUT_CRON_GLOBALABRUF=on`, ausschließlich in der Production-Umgebung.
+**Kanonische Dokumentation des K2.1-Pfads.** Stand: **2026-08-04** (§7.7 ergänzt: ausführbarer
+Nachweisvertrag nach der E3-Entscheidung; Mandatserwartung überall von sechs auf **fünf aktive
+reale Mandate / dynamisch ermittelt** korrigiert).
+Zustand: **gemergt und deployt; `HELMUT_CRON_GLOBALABRUF` ist seit dem gescheiterten
+Kapazitätslauf vom 2026-08-03 wieder DEAKTIVIERT** (Betreiberaktion, §7.6). Die Reparatur der
+Kapazitätsursachen ist als **PR #219** gemergt (`89427c5`) und ausgerollt; die erneute
+Aktivierung ist eine **getrennte, noch nicht erfolgte Betreiberaktion**.
 **PR #201** gemergt (`255df01`), beide Pflicht-Checks grün (Lauf `30638964148`,
 `Syntax + Offline-Suiten` **194/194 Suiten**, `Browser-/Mobile-Smoke (Chromium)`).
 
@@ -299,7 +303,7 @@ Agenten-Sitzung nicht ausführbar ist — er wurde am selben Tag vom Betreiber a
 | 1 | Merge des PR (= Production-Deployment) durch den Betreiber | **erledigt** — PR #201 gemergt (`255df01`); **zum Aktivierungszeitpunkt trug Production den Stand `ded0e24`** (Deployment `dpl_J4g3k4QPUEaKAad3pB83ByGcvUkn`, `READY` 2026-08-03 13:15:11 UTC), der `255df01` enthält. *(Die Vorprüfung in §7.3 lief auf dem Vorgängerstand `c6f3f9f`; `ded0e24` unterscheidet sich davon nur in vier Markdown-Dateien unter `docs/` — der Anwendungscode ist identisch, §7.4.)* |
 | 2 | `HELMUT_CRON_GLOBALABRUF=on` **in der Vercel-Env** setzen — nicht in `helmut-flags.json` (dort wirkt es nicht) und nicht im Repo | **erledigt** — 2026-08-03, 13:15:11 UTC, Betreiberaktion, §7.4 |
 | 3 | Sicherstellen, dass `HELMUT_CRON_GLOBALPHASE` **nicht** gesetzt ist (sonst greift die Widerspruchsregel und es läuft der Altpfad) | **erfüllt** — unverändert nicht gesetzt, §7.3/§7.4 |
-| 4 | Rein lesender Production-Nachweis über mindestens 24 h: `mode: "global"`-Laufdatensatz vorhanden, `datenstand.status = abgeschlossen`, je Mandat ein vollständig abgeschlossener `mode: "mandat"`-Datensatz, **die sieben Vertragskriterien aus §7.5** (Partition · Kontextgrenze · unbekannte Kontexte ausgewiesen · keine `kontextvertrag`-Fehler · Datenstand abgeschlossen · alle sechs Mandate fertig · Kontextzahl berichtet und bei Auffälligkeit erklärt) | **OFFEN — der einzige noch offene Punkt des Nachweises**, §7.4 |
+| 4 | Rein lesender Production-Nachweis über mindestens 24 h: `mode: "global"`-Laufdatensatz vorhanden, `datenstand.status` gemäß **E3-Regel aus §7.7** (`abgeschlossen` ODER ein ehrliches `teilweise` ausschließlich aus dauerhaft vorgemerkter Verstehensarbeit), je Mandat ein vollständig abgeschlossener `mode: "mandat"`-Datensatz, **die sieben Vertragskriterien aus §7.5** (Partition · Kontextgrenze · unbekannte Kontexte ausgewiesen · keine `kontextvertrag`-Fehler · Datenstand gemäß E3-Regel · **alle beim Fensterstart aktiven Mandate** fertig (dynamisch ermittelt; Stand 2026-08-04: **fünf** reale) · Kontextzahl berichtet und bei Auffälligkeit erklärt) | **OFFEN — der einzige noch offene Punkt des Nachweises**; ausführbar über `scripts/op25-production-nachweis.js`, §7.7 |
 | 5 | Bewertung, ob die verbleibenden Bestandsbefunde (F10/Z2, Formularvokabular) einen eigenen Sprint auslösen sollen | **offen, aber KEIN Nachweispunkt** — unabhängige Produktentscheidung, blockiert die Abnahme von K2.1 nicht |
 
 ### 7.2 Rückbaupfad
@@ -400,12 +404,14 @@ wurde **nicht** ausgelöst und **nicht** abgewartet. Bis dahin gilt: aktiviert u
 deployt, **aber wirkungsseitig unbelegt**.
 
 **Der Nachweis nach Punkt 4 bleibt vollständig offen** und verlangt über **mindestens 24 h**
-reguläre Kadenz, rein lesend: je Lauf ein `mode: "global"`-Laufdatensatz · `datenstand.status =
-abgeschlossen` · für **alle sechs** Mandate ein vollständig abgeschlossener
+reguläre Kadenz, rein lesend: je Lauf ein `mode: "global"`-Laufdatensatz · `datenstand.status`
+gemäß **E3-Regel (§7.7)** · für **alle beim Fensterstart aktiven** Mandate (dynamisch ermittelt;
+Stand 2026-08-04: **fünf** reale — die frühere Sechs-Mandate-Erwartung ist seit der Deaktivierung
+von `max-mustermann` überholt) ein vollständig abgeschlossener
 `mode: "mandat"`-Datensatz · die **sieben Vertragskriterien** aus **§7.5** (Partition ·
 Kontextgrenze · unbekannte Kontexte vollständig ausgewiesen und untersucht · **keine**
-`kontextvertrag`-Fehler · Datenstand `abgeschlossen` · alle Mandate fertig · Kontextzahl berichtet
-und bei auffälliger Höhe erklärt) · keine neue Fehlerklasse · LLM-Kosten unverändert. **Eine
+`kontextvertrag`-Fehler · Datenstand gemäß E3-Regel · alle Mandate fertig · Kontextzahl berichtet
+und bei auffälliger Höhe erklärt) · keine neue Fehlerklasse · LLM-Kosten im dokumentierten Rahmen. **Eine
 Obergrenze für `kontexte` gehört ausdrücklich NICHT dazu** — die Zahl ist eine Beobachtungsgröße,
 kein Schwellwert (§7.5). **Die Kapazitätsaussage selbst** (Offline-Simulation: alt
 2/6 → K2.1 6/6, §6) ist bis dahin **kein Production-Nachweis**. Vergleichsmaßstab ist die am
@@ -499,7 +505,7 @@ wenn über das Beobachtungsfenster gilt:
 | 3 | **Unbekannte Kontexte werden vollständig ausgewiesen und untersucht** — `unbekannt` und `ohneSichtbarkeit` stehen in der Telemetriezeile und werden benannt, nicht überlesen | `[globalphase/kontext]` |
 | 4 | **Keine `kontextvertrag`-Fehler** | Fehlerliste des Laufdatensatzes |
 | 5 | **Der globale Datenstand ist `abgeschlossen`** | `datenstand.status` |
-| 6 | **Für alle sechs aktiven Mandate existiert ein vollständig abgeschlossener Mandatslauf** | je Mandat ein `mode: "mandat"`-Datensatz |
+| 6 | **Für alle beim Fensterstart aktiven Mandate existiert ein vollständig abgeschlossener Mandatslauf** (dynamisch ermittelt, keine feste Zahl; Stand 2026-08-04: **fünf** aktive reale Mandate) | je Mandat ein `mode: "mandat"`-Datensatz |
 | 7 | **Die gemessene Kontextzahl wird berichtet** und bei auffälliger Höhe **erklärt** — sie wird **nicht** allein wegen einer Zahl (etwa 13) als falsch bewertet | `kontexte` in der Telemetriezeile |
 
 Punkt 7 ist die bewusste Grenze dieses Kriteriums: die Kontextzahl ist eine **Beobachtungsgröße**,
@@ -649,7 +655,7 @@ Verstehen zu, das im gescheiterten Lauf gar nicht mehr lief (Lazy 0 Cluster, Eag
 |---|---|---|---|
 | **E-1** | **Stufenbarriere im Abruf.** Der Abruf läuft in 10 Stufen à 20 Quellen; jede Stufe ist eine Sperre, die auf ihre langsamste Quelle wartet. Stufe 9 enthielt 200,9 s Arbeit und dauerte 53,1 s, Stufe 10 bestand aus **einer** Quelle und begann erst bei t = 99 s. | Untere Schranke bei idealer Bündelung: 391,3 s Arbeit / 5 Gate-Slots = **78,3 s**; gemessen **112,1 s**. Einsparpotenzial ≈ **34 s**. | Der Rückbau der Barriere verlangt eine Deadline **im** Crawler (`crawler.js`) — aktiver Produktionspfad, eng verzahnt mit der Google-Härtung. Nicht nötig, um den Vertrag zu erfüllen. **Die Stufe zu VERKLEINERN ist keine Option** (siehe §7.6.1). |
 | **E-2** | **`HELMUT_CRAWL_MAX_CANDIDATES` wirkt je STUFE statt je LAUF.** Der Kandidatendeckel (1 000) sitzt in `crawlAllSources` und wird im globalen Pfad zehnmal angewendet. | Altpfad: **603–621** Dokumente je Lauf vom Deckel verworfen. Globaler Pfad: **0**. Der globale Pfad verarbeitet **2 140** statt ~**945** neuer Kandidaten — **2,3-fach**. | Das ist eine stille **Ausweitung**, keine Reduktion. Sie zurückzunehmen hieße, Dokumente zu verwerfen — eine Produktentscheidung, keine Reparatur. |
-| **E-3** | **`datenstand.status = abgeschlossen` ist mit dem heutigen Verstehensrückstand praktisch unerreichbar.** `budgetErschoepft` wird schon wahr, wenn **ein** Lazy-Cluster zurückgestellt wurde. Bei 1 242 Clustern und 60 s Lazy-Budget bleibt immer ein Rest. | Nachher-Lauf des Kapazitätstests: `teilweise` trotz eingehaltenem Budget und 6 von 6 Mandaten. | **Berührt direkt das Abnahmekriterium 5 aus §7.5.** Entweder wird der Rückstand erst abgearbeitet, oder das Kriterium wird auf „alle sechs Mandatsläufe abgeschlossen und keine `kontextvertrag`-Fehler" geschärft. Das ist eine Freigabeentscheidung. |
+| **E-3** | **`datenstand.status = abgeschlossen` ist mit dem heutigen Verstehensrückstand praktisch unerreichbar.** `budgetErschoepft` wird schon wahr, wenn **ein** Lazy-Cluster zurückgestellt wurde. Bei 1 242 Clustern und 60 s Lazy-Budget bleibt immer ein Rest. | Nachher-Lauf des Kapazitätstests: `teilweise` trotz eingehaltenem Budget und 6 von 6 Mandaten. | **ENTSCHIEDEN 2026-08-04 (verbindliche Produktentscheidung), umgesetzt in §7.7:** `datenstand.status` wird **nicht** kosmetisch umgedeutet — ein ehrliches `teilweise` bleibt `teilweise`. Der Kapazitätsvertrag kann trotzdem bestehen, aber **nur**, wenn strukturierte Laufdaten beweisen, dass die **einzige** Ursache regulär zurückgestellte, **vollständig gezählte und dauerhaft vorgemerkte** Verstehensarbeit ist. Jede andere `teilweise`-Ursache fällt durch. Der fachliche Rückstand bleibt offen (**OP-14**) und gilt **nicht** als gelöst. |
 
 ### 7.6.1 Die Abrufstufe: warum „kleiner" nicht „sicherer" heißt — und was ein echtes Stopp-Gatter kostet
 
@@ -701,6 +707,316 @@ Vorfall 2026-07-25 trägt.
 
 **Empfehlung: A jetzt, B als eigener kleiner Sprint mit eigenem Nachweis, C nur, wenn B
 nachweislich nicht reicht.** C ist ausdrücklich **nicht** ohne neue Freigabe umzusetzen.
+
+### 7.7 Der ausführbare Nachweisvertrag (E3-Entscheidung, 2026-08-04) — kanonisch
+
+> **Kanonisch für den neuen OP-25-Production-Nachweis.** Er ersetzt jede frühere, nur in Prosa
+> beschriebene Abnahme. Ausführung: `node scripts/op25-production-nachweis.js` (rein lesend,
+> GET-Literal + Tabellen-Allowlist, kein Trigger, keine Flag-/Env-Änderung, 0 KI-Aufrufe);
+> Bewertungskern: [`lib/helmut/op25-nachweis.js`](../../lib/helmut/op25-nachweis.js)
+> (reine Logik, testgesichert über `scripts/op25-nachweis-vertrag-test.js` (178 Prüfpunkte),
+> `scripts/op25-e3-dauerhaftigkeit-test.js` (52 Prüfpunkte) und
+> `scripts/op25-nachweis-mutationsprobe.js` (**46 von 46 rot**)).
+>
+> **Stand 2026-08-04/4:** um die Befunde **aller drei** Reviewdurchgänge zu PR #222 gehärtet —
+> Kostenvertrag, identitätsgenau eingefrorene Mandatsmenge, dauerhafte Belegquelle samt
+> versiegelter Laufzeit (§7.7.1) · der **echte Kostenleser** und die **vollständig fail-closed
+> Startbaseline** (§7.7.2) · das **Erhebungsfenster der Baseline** und die **Commit-Wahrheit**
+> (§7.7.3).
+
+**Die verbindlichen Produktentscheidungen (2026-08-04):** **E1 bleibt Option A** (keine neue
+Crawler-Deadline, kein `AbortSignal`, kein Eingriff in Gate/Retry/Breaker/Netz). **E2 bleibt
+unverändert** (`HELMUT_CRAWL_MAX_CANDIDATES` wird für den Nachweis nicht angefasst; die heutige
+Kandidatenmenge bleibt stabil). **E3 trennt Kapazitätsvertrag und Verstehensrückstand** — siehe
+E-3-Zeile in §7.6 und die Regel unten.
+
+**Vier eindeutige Ausgänge (= Exit-Codes des Werkzeugs):**
+
+| Ausgang | Exit | Bedeutung |
+|---|---:|---|
+| `bestanden` | 0 | alle Vertragspunkte aus strukturierten Laufdaten belegt |
+| `nicht_bestanden` | 1 | mindestens eine **bewiesene** Vertragsverletzung |
+| `blockiert` | 2 | Beleg-/Konfigurationslücke oder ungültiges Fenster (auch: Mandatsmengen-Änderung im Fenster, Fenster vor Aktivierung, Lauf ohne `datenstandDetail`, Kosten nicht belegbar) |
+| `noch_nicht_auswertbar` | 3 | kein Fenster, Fenster < 24 h oder noch nicht vollständig vergangen |
+
+**Vorrang:** Fensterprüfung zuerst (ein Fenster unter 24 vollständig vergangenen Stunden wird
+**nie** grün und nie rot); danach schlägt eine bewiesene Verletzung (`nicht_bestanden`) jede
+Beleglücke (`blockiert`), diese wiederum ein „Lauf möglicherweise noch nicht versiegelt".
+
+**Das Beobachtungsfenster** ist explizit (Start/Ende), umfasst **mindestens 24 vollständig
+vergangene Stunden** und beginnt **erst nach** dem künftigen READY-Deployment **und** der
+erneuten Betreiber-Aktivierung von `HELMUT_CRON_GLOBALABRUF` (Übergabe an das Werkzeug per
+`--aktivierung <ISO>` / `--fenster-start` / `--fenster-ende`). **Harte Untergrenze
+2026-08-04T00:00Z:** der gescheiterte Lauf vom 2026-08-03 (`cron-pipeline-20260803160002-xm71n`)
+kann **niemals** in einen Erfolgsnachweis einfließen. Die aktive Mandatsmenge wird am
+Fensterstart **dynamisch und identitätsgenau** eingefroren (§7.7.1 (2)) — keine hartkodierten
+Mandats-IDs, keine feste Sollzahl im Vertrag (die dokumentierte Gegenprobe „fünf" ist ein
+überschreibbarer Baseline-Wert, keine Namensliste); **jede** Änderung der Menge im Fenster macht
+das Fenster ungültig (`blockiert`). Alte, manuelle, außerplanmäßige oder unvollständige Läufe
+werden **mit Grund gezählt und ausgeschlossen**, nie als Beleg verwendet; die erwarteten Läufe
+kommen aus der **wirksamen Cron-Konfiguration** (`vercel.json`: `crawl` 04:00/20:00, `pipeline`
+16:00 UTC — nichts wird erfunden). Das Werkzeug unterscheidet je erwartetem Termin **fehlend ·
+verdrängt · möglicherweise noch laufend · abgebrochen · Altpfad · irregulär · Beleglücke ·
+Vertragsverletzung · vollständig**.
+
+**Ein Lauf besteht den Kapazitätsvertrag nur, wenn ALLE folgenden Punkte aus persistierten,
+strukturierten Daten belegt sind** (jede fehlende Zählung ist eine Beleglücke, nie ein
+Freifahrtschein):
+
+1. regulärer schwerer Cron (Laufkennung `cron-crawl-…`/`cron-pipeline-…` im ±15-min-Fenster des
+   Termins), kein manueller/künstlicher Lauf;
+2. globaler Pfad tatsächlich verwendet (`mode: "global"`, `buendelung: "kontext"`);
+3. globale Phase innerhalb ihres Budgets — geprüft an der **versiegelten** Dauer
+   (`datenstand.dauerMs ≤ datenstand.budgetMs`, §7.7.1 (3)), **nicht** am vor dem Versiegeln
+   gebildeten `durationMs` — und der Gesamtlauf innerhalb des äußeren Zeitlimits (280 s +
+   Schreibtoleranz; ein Abbruch-/Timeout-Vermerk im Fairness-Laufdatensatz fällt durch);
+4. Quellenabruf vollständig (`nichtAbgerufen = 0`, kein `abruf`-Fehlerschritt); fehlgeschlagene
+   Quellen nur als **klassifizierte** Abweichung (`errorCodes` vorhanden, `runState` nicht
+   stark degradiert) — sonst durchgefallen;
+5. Persistenz belegt und ohne unaufgelöste Kollision (`persistenz.ergebnis = "ok"`,
+   `zaehlerVerfehlt = 0`, `newRawDocuments ≠ null`); ein leerer Datenbestand ist nie ein Erfolg;
+6.–7. Partition und Kontextgrenzen korrekt (eine Verletzung versiegelt fatal — es existiert dann
+   kein bestehensfähiger Laufdatensatz);
+8. keine `kontextvertrag`-Fehler und überhaupt **kein** Eintrag in `fehlerSchritte`, keine
+   `fehlerhafteProfile`;
+9.–10. Kontexttelemetrie vorhanden, Telemetriegleichung erfüllt
+   (`kontexte = geteilt + mandatseigen + unbekannt`); unbekannte Kontexte und eine auffällige
+   Kontextzahl (> 2n+1 als **Aufgreifschwelle**, kein Fehlwert — §7.5) brauchen eine
+   dokumentierte Erklärung, sonst durchgefallen; mit Erklärung: bestanden mit Warnung;
+11.–13. für **alle beim Fensterstart aktiven** Mandate ein vollständiger Mandatslauf
+   (Datensatz + versiegelter Datenstands-Vermerk desselben globalen Laufs + Matching- und
+   Entscheidungsschritt nicht verschluckt); keine Mandatsmengen-Änderung im Fenster;
+14. keine neue System-/Fehlerklasse (beobachtete `errorCodes` ⊆ dokumentiertes Vokabular;
+   `unknown` gilt als **unbekannte** Klasse und fällt durch);
+15. keine Budgetüberziehung (siehe 3);
+16. keine erfundene Erfolgsmeldung bei Sperrverweigerung oder Skip (ein sperrverweigertes
+   Mandat hat keinen Datensatz und fällt als fehlend auf);
+17. LLM-Kosten des Fensters innerhalb des dokumentierten Rahmens (Baseline 2026-08-04:
+   0,20 USD/24 h gemessen, Rahmen 2 USD, überschreibbar) — **und** die Kostendaten selbst
+   belegt vollständig und brauchbar (§7.7.1 (1)); sonst `blockiert`;
+18. **E3-Regel:** ein `teilweise` besteht **ausschließlich**, wenn zusätzlich zu 1–17 der
+   gesamte Verstehensrückstand **vollständig gezählt** (`datenstandDetail.lazy`/`.eager`) und
+   **dauerhaft** ist. Dauerhaft heißt beweisbar: **lazy komplett** (jeder Stapel erreicht, jeder
+   Cluster bewertet — alle interessierten Cluster sind pending-Wissensobjekte) **oder** **eager
+   komplett** (kein Stapel übersprungen, `nichtVorgemerkt = 0` — jeder zurückgestellte Cluster
+   ist als pending-Wissensobjekt **mit Dokumentverknüpfung** vorgemerkt). Zurückgestellte
+   Cluster **ohne** Vormerkung sind später nicht garantiert wiederauffindbar → durchgefallen.
+   Die Prüfung hängt am **Rückstand**, nicht am Statuswort: auch ein `abgeschlossen` mit
+   zählbarem, nicht dauerhaftem Rückstand fällt durch.
+
+**Ein `teilweise` wegen Quellen, Persistenz, Kontext, Datenbank, Sperre, unbekannter Ursache
+oder Datenverlust ergibt immer `nicht_bestanden`.** Der fachliche Verstehensrückstand
+(~1 242 Cluster, Stand 2026-08-03) gehört weiterhin zu **OP-14** und wird durch ein Bestehen
+des Kapazitätsvertrags **nicht** als gelöst behauptet.
+
+**Datengrundlage (additive Telemetrie dieses Sprints — keine Migration, keine neue Tabelle,
+keine Budgetänderung):** der globale Laufdatensatz trägt jetzt `datenstandDetail`
+(Fehlerschritte, Persistenzbilanz inkl. CAS-Zähler, Lazy-/Eager-Bilanz inkl.
+`vorgemerkt`/`nichtVorgemerkt`, Kontexttelemetrie, `buendelung`, `budgetMs`) und
+`quellenVereinigung`; Mandatsläufe behalten `datenstand`-Vermerk, `globalLaufId`,
+`datenstandFrisch` sowie die Matching-/Entscheidungs-Zusammenfassungen über die
+`compactCrawlRunForStore`-Allowlist. Zusätzlich schreibt jede globale Phase **eine** dauerhafte
+`process_runs`-Zeile (`process: "globalphase"`) mit versiegeltem Status und kompakter
+Ursachenzerlegung — sie übersteht die Blob-Retention (20 Einträge) und das
+Last-Write-Wins-Fenster (Befund W-2). Dabei behoben: ein **Persistenzfehler** der
+Rohdokumente war zuvor **stilles Grün** (`.catch(() => null)` ohne Fehlereintrag — der Lauf
+konnte als `abgeschlossen` versiegeln); er wird jetzt als Fehlerschritt `persistenz` benannt und
+macht den Datenstand ehrlich `teilweise`.
+
+**Betriebshinweis:** die Auswertung zeitnah nach Fensterende ausführen — die reichen
+Laufdatensätze liegen im Blob mit Retention 20 (≈ 1–2 Tage Kadenz). Fehlt einem Fensterlauf das
+`datenstandDetail` (z. B. Lauf vor dem Deployment dieses Sprints), ist das Ergebnis ehrlich
+`blockiert`.
+
+### 7.7.1 Die drei Härtungen aus der Review zu PR #222 (2026-08-04) — alle fail closed
+
+Die Review hat drei Wege gefunden, auf denen der Vertrag **fälschlich grün** hätte werden
+können. Alle drei sind geschlossen; jede Zusage ist mutationsgeprüft.
+
+**(1) Der Kostenvertrag konnte durch kaputte Zahlen bestehen.** Geprüft wurde nur auf `null` —
+und `NaN > rahmen` ist *immer* `false`, ein `NaN` wäre also ein bestandener Kostenvertrag
+gewesen. Ebenso hätte eine **fehlende** Nutzungsliste im CLI wie **0,00 USD** ausgesehen.
+Jetzt gilt: jeder Kostenwert muss eine **endliche, nicht negative Zahl** sein (`NaN`,
+`±Infinity`, negative Werte, Zeichenketten und Wahrheitswerte fallen durch); die
+**Vollständigkeit** der Kostendaten ist eine **ausdrückliche Zusage** des Lesers, keine
+Annahme — fehlt `llmUsage`, ist der Auth-Store nicht lesbar, oder sitzt die Nutzungsliste an
+ihrer Aufbewahrungsgrenze (5 000) mit einem ältesten Eintrag *nach* dem Fensterstart, ist das
+Ergebnis `blockiert`; **nicht bepreisbare** Nutzungseinträge im Fenster werden gezählt und
+blockieren, statt die Summe still zu verkleinern. Eine **belegte** 0,00 USD besteht weiterhin —
+der Unterschied ist der Beleg, nicht die Zahl. *Gemeinsame Wurzel, ebenfalls geschlossen:*
+`Number(null)` ist `0` und gilt als „endlich". Der Vertrag liest Zahlen deshalb überall durch
+`alsZahl()`, das `null`/`undefined`/`""` strikt als **nicht vorhanden** behandelt — nie als Null.
+
+**(2) Die Mandatsmenge war nicht wirklich eingefroren.** Das Werkzeug las bei der späteren
+Auswertung den *aktuellen* Profilbestand, und `quellenVereinigung` speicherte nur die **Anzahl**.
+Ein **Austausch bei gleicher Anzahl** (Mandat A raus, Mandat B rein) wäre damit unsichtbar
+geblieben. Jetzt gilt ein Zwei-Schritt-Ablauf:
+
+```
+# Schritt 1 — unmittelbar NACH der Aktivierung (rein lesend gegen Production):
+node scripts/op25-production-nachweis.js --aktivierung <ISO> \
+     --startbaseline-schreiben belege/op25-startbaseline.json
+# Schritt 2 — frühestens 24 h später:
+node scripts/op25-production-nachweis.js --aktivierung <ISO> \
+     --startbaseline belege/op25-startbaseline.json
+```
+
+Die **Startbaseline** hält Aktivierungszeitpunkt, exakte Mandatsmenge und einen stabilen Hash
+(`m<n>-<sha256/16>`) fest. Geprüft wird **identitätsgenau** gegen: jeden einzelnen Lauf
+(`quellenVereinigung.mandateIds`, neu persistiert) **und** den Endzustand am Fensterende.
+Fehlt die Startbaseline, ist das Ergebnis `blockiert` — der aktuelle Bestand wird **nicht**
+ersatzweise verwendet. Eine nachträglich veränderte Baseline (Liste ≠ Signatur), eine Baseline
+einer fremden Aktivierung und eine erst nach dem Fensterstart erhobene Baseline blockieren
+ebenfalls. Ein Lauf **ohne** Mandatskennungen (Altdatensatz) ist nicht prüfbar und blockiert.
+Eine **spätere Rückkehr** zur Ursprungsmenge heilt das Fenster nicht: der abweichende Lauf
+bleibt der Beleg, auch wenn der Endzustand wieder stimmt.
+
+**(3) Die dauerhafte Belegquelle wurde behauptet, aber nicht benutzt — und die Laufzeit kam aus
+der falschen Quelle.** Bewertet wurden ausschließlich `mainStore.crawlRuns` (Retention **20**),
+während ein 24-h-Fenster bei fünf Mandaten bereits **18** Datensätze braucht. Jetzt gilt:
+
+- Die `process_runs`-Zeilen `globalphase` gehen **wirklich** in die Bewertung ein (relational
+  plus Auth-Store-Spiegel, dedupliziert). Sie unterscheiden zwei völlig verschiedene Fälle:
+  fehlt der reiche Laufdatensatz, **existiert** aber die dauerhafte Zeile, ist das eine
+  **Beleglücke** (`blockiert`, „verdrängt"), kein bewiesener Vertragsbruch; fehlen **beide**,
+  ist der Termin nachweislich leer geblieben (`nicht_bestanden`).
+- **Aufbewahrungsvertrag, reproduzierbar und fail closed:** benötigt werden
+  `Zahl schwerer Läufe × (1 global + n Mandate)` Datensätze. Ist die Retention kleiner, ist das
+  Ergebnis `blockiert` (mit der Handlungsanweisung: `HELMUT_CRAWL_RUN_RETENTION` anheben oder
+  das Fenster verkürzen). Wird es knapp (heute 18 von 20), erscheint eine ausdrückliche Warnung.
+  Sitzt die Ablage an ihrer Grenze und liegt ein erwarteter Termin **vor** dem ältesten
+  sichtbaren Datensatz, ist er weder belegt noch widerlegt → `blockiert`.
+- **Die Laufzeit stammt aus dem versiegelten Beleg.** `datenstandVermerk` trägt jetzt `dauerMs`
+  (aus `datenstandVersiegeln`) und `budgetMs` (in den Datenstand hineingegeben) — Dauer und
+  Grenze also aus **derselben** versiegelten Quelle. Der Laufdatensatz-Wert `durationMs` wird
+  **vor** dem Versiegeln gebildet (er entsteht im `saveCrawlRun`-Aufruf, der selbst noch Teil der
+  Phase ist) und unterzeichnet die Dauer systematisch; er belegt den Budgetvertrag **nicht mehr**.
+  Fehlen Vermerk *und* dauerhafte Zeile, ist die Grenze nicht prüfbar → `blockiert`.
+  Widersprechen sich beide Belege, wird das benannt (`nicht_bestanden`) statt einer Quelle blind
+  geglaubt.
+
+### 7.7.2 Zweiter Reviewdurchgang (2026-08-04) — der echte Leser und die Belegdatei
+
+Der erste Härtungsdurchgang schrieb den strikten Zahlenvertrag in den Bewertungskern, ließ
+aber zwei Stellen aus, an denen das Werkzeug **selbst** noch weicher war als seine Doku.
+
+**(1) Der Kostenleser lebte im CLI und war laxer als der Vertrag.** Er benutzte
+`typeof roh === "number" ? roh : Number(roh)` und deutete damit genau die Werte um, die §7.7.1
+ausdrücklich als unbrauchbar führt: `"1.20"` wurde zu 1,20 USD, `true` zu 1, `false` und `null`
+zu 0. Zusätzlich wurden Nutzungseinträge **ohne lesbaren Zeitstempel** stillschweigend
+übersprungen — obwohl sie im Fenster liegen könnten und die Summe dann zu klein wäre.
+**Jetzt** liegt der Leser als `kostenAusNutzung` im **reinen Kern** (eine einzige Umsetzung,
+direkt testbar); das CLI reicht nur noch durch. Ein Kostenwert zählt **nur**, wenn er **roh
+schon eine `number`** ist — endlich und nicht negativ; alles andere ist `unbepreist` und
+blockiert. Ein Eintrag ohne eindeutig lesbaren `createdAt` (fehlend, `null`, leer, unparsbar,
+Zahl statt Zeichenkette) macht die Kostendaten **unvollständig** ⇒ `blockiert`. Eine leere,
+aber lesbare Nutzungsliste bleibt eine **belegte** 0,00 USD und besteht.
+
+**(2) Die Startbaseline war noch nicht vollständig fail closed.** `signatur`,
+`aktivierungAtMs` und `erhobenAtMs` wurden nur geprüft, **wenn** sie vorhanden waren — eine
+Baseline ohne diese Felder wurde also akzeptiert. Das CLI erlaubte außerdem
+`--startbaseline-schreiben` **ohne** gültige `--aktivierung` und schrieb dann `null`, und
+`leseStartbaseline` enthielt mit `Number(null)` erneut dieselbe stille Umdeutung.
+**Jetzt** prüft `pruefeStartbaseline` an genau einer Stelle **alle** Pflichtfelder strikt:
+
+| Feld | Bedingung | Befund bei Verstoß |
+|---|---|---|
+| `mandate` | Array, nicht leer, nur nicht leere Zeichenketten, **ohne Duplikate** | `startbaseline-mandate-fehlen` / `…-ungueltig` |
+| `anzahl` | vorhanden **und** gleich der Listenlänge | `startbaseline-anzahl-fehlt` / `…-widerspruch` |
+| `signatur` | vorhanden **und** gleich dem berechneten Hash | `startbaseline-signatur-fehlt` / `…-passt-nicht` |
+| `aktivierungAtMs` (oder ISO-Zwilling) | vorhanden **und** identisch zur bewerteten Aktivierung | `startbaseline-aktivierung-fehlt` / `…-fremde-aktivierung` |
+| `erhobenAtMs` (oder ISO-Zwilling) | vorhanden **und** nicht nach dem Fensterstart (+15 min) | `startbaseline-erhebung-fehlt` / `…-zu-spaet-erhoben` |
+
+Jeder Verstoß ergibt `blockiert`. Das CLI **verweigert** das Schreiben ohne gültigen
+Aktivierungszeitpunkt (Exit 2, es entsteht keine Datei) und liest die Belegdatei **roh** ein —
+ohne Ergänzung, Umdeutung oder Reparatur. Eine unlesbare oder fehlende Datei ist `blockiert`.
+
+**Nebenbefund, mit behoben:** `deploymentCommit` wurde mit einer **Laufkennung** befüllt, was
+keine Commit-Kennung ist. Der Wert stammt jetzt aus `process_runs.commit_ref` — und wird
+seit §7.7.3 auch nicht mehr als Deployment-Stand *bezeichnet*.
+
+### 7.7.3 Dritter Reviewdurchgang (2026-08-04) — Erhebungsfenster und Commit-Wahrheit
+
+**(1) Die Startbaseline gilt nur unmittelbar nach der Aktivierung.** Die Toleranz war zuvor am
+**Fensterstart** verankert. Damit wäre eine Baseline zulässig gewesen, die *lange vor* der
+Aktivierung erhoben wurde — also den Bestand der Zeit **davor** zeigt — oder erst Stunden
+danach. Der Bezugspunkt ist jetzt die **Aktivierung**; verbindlich gilt:
+
+```
+aktivierungAtMs ≤ erhobenAtMs ≤ aktivierungAtMs + BASELINE_TOLERANZ_MS   (15 min)
+aktivierungAtMs ≤ jetzt                                                   (keine Zukunft)
+```
+
+Beide Grenzen sind **inklusiv** (Erhebung exakt zur Aktivierung und exakt an der
+Toleranzgrenze bestehen). Drei Fälle sind fail closed `blockiert`:
+
+| Fall | Befund |
+|---|---|
+| Baseline **vor** der Aktivierung erhoben | `startbaseline-vor-aktivierung` |
+| Aktivierungszeitpunkt liegt in der **Zukunft** | `aktivierung-in-zukunft` (Gesamtbewertung, **vor** allen Fensterprüfungen) bzw. `startbaseline-aktivierung-in-zukunft` (Baselineprüfung) |
+| Erhebung **später** als Aktivierung + 15 min | `startbaseline-zu-spaet-erhoben` |
+
+Die **Schreibseite** setzt dieselben Grenzen: `--startbaseline-schreiben` verweigert eine
+zukünftige Aktivierung und eine Aktivierung, die mehr als 15 min zurückliegt (Exit 2, **es
+entsteht keine Datei**) — statt eine Datei zu erzeugen, die die Auswertung ohnehin ablehnen
+müsste.
+
+**(2) Kein möglicherweise veralteter Commit als Deployment-Stand.** `process_runs.commit_ref`
+ist der Commit **des jüngsten gespeicherten Laufs**. Nach einem frischen Deployment, das noch
+keinen Lauf erzeugt hat, ist er **veraltet** — ihn `deploymentCommit` zu nennen war eine
+Behauptung über etwas, das hier nicht gemessen wird. Der Vercel-Deployment-Zustand ist aus
+einer Sitzung nicht lesbar (Egress zu `api.vercel.com` gesperrt, §7.3), also wird er **nicht
+geraten**. Stattdessen:
+
+- Das Feld heißt jetzt **`zuletztBeobachteterProzessCommit`** — mit dem ausdrücklichen
+  Hinweis, dass es **kein Deployment-Beleg** ist. Ein Feld `deploymentCommit` gibt es nicht
+  mehr, auch nicht im `--baseline`-Querschnitt.
+- Wer den Stand **belegen** will, übergibt ihn ausdrücklich: `--erwarteter-commit <sha>`.
+  Er wird **strikt** gegen den beobachteten Prozess-Commit geprüft (Voll- oder Kurzform als
+  echtes Präfix). Nur bei Übereinstimmung wird `deploymentCommitBestaetigt: true` gesetzt.
+- Eine **Abweichung ist fail closed**: es wird nichts geschrieben (Exit 2). Entweder läuft ein
+  anderer Stand, oder der erwartete hat noch keinen Lauf hinterlassen — in beiden Fällen darf
+  nichts als „aktueller Deployment-Stand" festgehalten werden.
+- Ohne `--erwarteter-commit` bleibt `deploymentCommitBestaetigt: false`, und das Werkzeug sagt
+  das im Bericht ausdrücklich.
+
+### 7.7.4 Vierter Reviewdurchgang (2026-08-04) — die Commitprüfung selbst war zu schwach
+
+Der Befund aus §7.7.3 war richtig, seine **Umsetzung** nicht. Die Prüfung bestand nur aus
+Längenvergleich und `startsWith` und **im CLI**, nicht im Bewertungskern. Beides war belegbar
+falsch:
+
+- **Angehängter Unsinn wurde bestätigt.** Beobachtet `89427c5…1085d` (gültige volle SHA),
+  erwartet dieselbe SHA **plus** `-VOELLIGER-UNSINN` → `deploymentCommitBestaetigt: true`,
+  weil der längere Wert mit dem kürzeren beginnt. Ebenso `…1085dzzzz` und eine **verdoppelte**
+  SHA. Alle drei sind empirisch reproduziert und heute abgewiesen.
+- **Die Absicherung war Textsuche.** Die Prüfpunkte suchten im Quelltext nach Zeichenketten
+  statt die Funktion aufzurufen; die Mutationen betrafen nur die Zeitlogik. Eine Lockerung der
+  Commitprüfung hätte die Suite nicht rot gemacht.
+
+**Korrektur.** Die Prüfung liegt jetzt im reinen Bewertungskern (`lib/helmut/op25-nachweis.js`)
+als `pruefeCommitBeleg` — genau die Funktion, die das CLI aufruft, ist damit direkt testbar.
+Verbindlich gilt nach `trim` + Kleinschreibung:
+
+```
+gueltig ⇔ /^[0-9a-f]+$/  ∧  7 ≤ Länge ≤ 40
+Übereinstimmung ⇔ soll = ist  ∨  soll ist ECHTES Präfix von ist  ∨  ist ist ECHTES Präfix von soll
+```
+
+„Echtes Präfix" heißt **kürzer und Anfang von** — gleich lange, aber verschiedene Werte
+bestehen nicht. Ein Wert, der nach `trim` nicht dem Muster entspricht, ist **kein Commit**,
+also kein Präfix von irgendetwas; angehängter Unsinn scheitert damit schon an der Formatprüfung
+und nicht erst am Vergleich. Fehlende, zu kurze, zu lange und nicht hexadezimale Werte bleiben
+fail closed — auf **beiden** Seiten, auch beim beobachteten Wert. Großbuchstaben und
+Leerzeichen am Rand sind nach Normalisierung zulässig, weil sie denselben Commit bezeichnen.
+Ein **übergebener**, aber nicht bestätigter Commit bleibt Exit 2 ohne Datei.
+
+**Absicherung.** `scripts/op25-nachweis-vertrag-test.js` §34 ruft in 34.1–34.24 die Funktion
+tatsächlich auf (die zwölf geforderten Fälle plus Normalisierungs- und Grenzfälle); die
+Textsuchen sind auf 34.25–34.30 reduziert und nur noch **ergänzend**. Die Mutationsprobe deckt
+die Lockerungen mit **M47–M54** ab, darunter die vier geforderten: Formatprüfung entfernt (M47),
+Mindestlänge entfernt (M48), angehängter Unsinn wieder akzeptiert (M50, exakt die alte
+`startsWith`-Logik), abweichender Commit wieder bestätigt (M51).
 
 ## 8 · Verbleibende Risiken
 
