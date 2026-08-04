@@ -610,10 +610,18 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   ausschließlich über die **exakt identische runId** zugeordnet (zuvor genügte Slot-Nähe —
   eine andere Zeile desselben Termins hätte den fehlenden exakten Commitbeleg ersetzen
   können; Täuschungstest zuerst am fehlerhaften Stand rot, danach grün); Slot-Zuordnung
-  bleibt nur als Rückfallebene für die Verdrängt-Klassifikation ohne Blob-Lauf. **Tests:**
-  Vertrag **211/211** (§34 neu: alle acht geforderten Fallfamilien als Verhaltensprüfungen;
-  §32 führt den Commit als Pflichtfeld; §35 exakte runId-Bindung) · Dauerhaftigkeit
-  **52/52** · Mutationsprobe **63 von 63 rot** (M50/51/53/54 umgezogen, **M55–M63** neu). **Production-Proben rein lesend (KEINE Baseline erzeugt):**
+  bleibt nur als Rückfallebene für die Verdrängt-Klassifikation ohne Blob-Lauf. **Adversariale
+  Nachprobe eingearbeitet (5 weitere Befunde, alle fail closed):** unplatzierbare
+  `globalphase`-Zeilen ⇒ `blockiert` statt Warnung · Lesefehler der relationalen
+  `process_runs` ⇒ `blockiert` statt Konsolentext · CLI-Pflicht-Gates vor jedem
+  Production-Lesezugriff und ohne Netz verhaltensgetestet (Mutationsprobe mutiert erstmals
+  auch das CLI) · beide Zugehörigkeitswege des Fenster-Sweeps einzeln festgenagelt ·
+  widersprüchliche Flag-Gegenwartsbehauptungen im Kopf von `vorgangskontext.md` als offene
+  Betreiberprüfung markiert. **Tests:**
+  Vertrag **222/222** (§34 neu: alle acht geforderten Fallfamilien als Verhaltensprüfungen;
+  §32 führt den Commit als Pflichtfeld; §35 exakte runId-Bindung; §36 CLI-Gates; §37
+  Sweep-Zuordenbarkeit/Belegquelle) · Dauerhaftigkeit
+  **52/52** · Mutationsprobe **69 von 69 rot** (M50/51/53/54 umgezogen, **M55–M69** neu). **Production-Proben rein lesend (KEINE Baseline erzeugt):**
   Dry-Run `noch_nicht_auswertbar` (Exit 3) · Schreiben ohne Commit / Kurzform / Anhang /
   2 h alte Aktivierung ⇒ je **Exit 2, keine Datei** · Auswertung mit Baseline ohne Commit ⇒
   `blockiert` (Exit 2). Branch `claude/op25-startbaseline-commitnachweis-mqjixo`, **PR #223**

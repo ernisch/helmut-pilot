@@ -420,6 +420,29 @@ async function erhebeBaseline({ mainStore, authStore, fairnessStore, dauerhafte 
   console.log("kein Cron-Trigger, keine Flag-/Env-Aenderung, 0 KI-Aufrufe.");
   console.log(`Messzeitpunkt: ${new Date(jetztMs).toISOString()}\n`);
 
+  // ---- FRUEHE ARG-GATES des Schreibpfads: fail fast VOR jedem Production-Lesezugriff ------
+  // Damit sind die Pflichtparameter OHNE Netz verhaltenstestbar, und ein fehlerhafter Aufruf
+  // beruehrt Production gar nicht erst.
+  if (args["startbaseline-schreiben"]) {
+    const aktivierungFruehMs = parseIsoMs(args.aktivierung ?? process.env.HELMUT_OP25_AKTIVIERUNG_AT, "--aktivierung");
+    // FAIL CLOSED: ohne gueltigen Aktivierungszeitpunkt wird gar nicht erst geschrieben.
+    if (!Number.isFinite(aktivierungFruehMs)) {
+      console.error("MESSFEHLER: --startbaseline-schreiben verlangt einen gueltigen"
+        + " --aktivierung-Zeitpunkt (ISO; der READY-Zeitpunkt des neuen Production-Deployments)."
+        + " Ohne ihn belegt die Baseline nichts — nichts geschrieben.");
+      process.exit(2);
+    }
+    // PFLICHT (Nachtragskorrektur 2026-08-04/5): der VOLLSTAENDIGE erwartete Merge-Commit.
+    if (vertrag.normalisiereVollenCommit(args["erwarteter-commit"]) === null) {
+      console.error("MESSFEHLER: --startbaseline-schreiben verlangt --erwarteter-commit mit dem"
+        + ` VOLLSTAENDIGEN erwarteten Merge-Commit (${vertrag.COMMIT_VOLL_LAENGE} Hexziffern)`
+        + " — nichts geschrieben.");
+      console.error("Kurzformen genuegen nicht: die spaetere Auswertung prueft die commit_ref"
+        + " aller Fensterlaeufe EXAKT gegen diesen Wert.");
+      process.exit(2);
+    }
+  }
+
   const mainStore = await leseStoreZeile(STORE_ID);
   const authStore = await leseStoreZeile(AUTH_STORE_ID);
   const fairnessStore = await leseStoreZeile(`${STORE_ID}-cron-fairness`);
@@ -441,22 +464,9 @@ async function erhebeBaseline({ mainStore, authStore, fairnessStore, dauerhafte 
       console.error("MESSFEHLER: aktive Mandatsmenge nicht lesbar — keine Startbaseline geschrieben.");
       process.exit(2);
     }
-    // FAIL CLOSED: ohne gueltigen Aktivierungszeitpunkt wird gar nicht erst geschrieben.
-    if (!Number.isFinite(aktivierungAtMs)) {
-      console.error("MESSFEHLER: --startbaseline-schreiben verlangt einen gueltigen"
-        + " --aktivierung-Zeitpunkt (ISO; der READY-Zeitpunkt des neuen Production-Deployments)."
-        + " Ohne ihn belegt die Baseline nichts — nichts geschrieben.");
-      process.exit(2);
-    }
-    // PFLICHT (Nachtragskorrektur 2026-08-04/5): der VOLLSTAENDIGE erwartete Merge-Commit.
-    if (vertrag.normalisiereVollenCommit(args["erwarteter-commit"]) === null) {
-      console.error("MESSFEHLER: --startbaseline-schreiben verlangt --erwarteter-commit mit dem"
-        + ` VOLLSTAENDIGEN erwarteten Merge-Commit (${vertrag.COMMIT_VOLL_LAENGE} Hexziffern)`
-        + " — nichts geschrieben.");
-      console.error("Kurzformen genuegen nicht: die spaetere Auswertung prueft die commit_ref"
-        + " aller Fensterlaeufe EXAKT gegen diesen Wert.");
-      process.exit(2);
-    }
+    // Die Pflichtparameter (Aktivierung + voller erwarteter Commit) sind bereits an den
+    // FRUEHEN Arg-Gates oben geprueft — vor jedem Production-Lesezugriff. Die Funktion
+    // `schreibeStartbaseline` prueft beide zusaetzlich selbst (Doppelgate, fail closed).
     // AUSDRUECKLICH KEINE Pruefung gegen den juengsten alten Prozesslauf: unmittelbar nach
     // READY kann noch kein Lauf des NEUEN Deployments existieren; ein alter Lauf darf die
     // Baseline weder blockieren noch faelschlich bestaetigen. Der Beleg entsteht erst in
@@ -526,7 +536,11 @@ async function erhebeBaseline({ mainStore, authStore, fairnessStore, dauerhafte 
     fairnessLaeufe,
     // Optional: an der Auswertung erneut uebergebener erwarteter Commit — der Kern prueft
     // ihn als Gegenprobe gegen den in der Baseline gespeicherten (Schutz vor falscher Datei).
-    commitGegenprobe: args["erwarteter-commit"] ?? null
+    commitGegenprobe: args["erwarteter-commit"] ?? null,
+    // FAIL CLOSED (Review-Nachprobe): ein Lesefehler der KANONISCHEN Belegquelle
+    // process_runs geht in die Bewertung ein (blockiert), statt nur als Konsolentext zu
+    // erscheinen — sonst koennte der Commitnachweis allein auf dem Blob-Spiegel bestehen.
+    prozessLaeufeLesefehler: dauerhafte.relationalFehler
   });
 
   const endSig = Array.isArray(aktiveMandate) ? vertrag.mandatsSignatur(aktiveMandate) : null;
@@ -578,6 +592,7 @@ async function erhebeBaseline({ mainStore, authStore, fairnessStore, dauerhafte 
     erwarteterCommit: bewertung.erwarteterCommit ?? null,
     benoetigteDatensaetze: bewertung.benoetigteDatensaetze ?? null,
     dauerhafteZeilen: dauerhafte.zeilen.length,
+    relationalFehler: dauerhafte.relationalFehler,
     befunde: bewertung.befunde.map((b) => ({ schwere: b.schwere, grund: b.grund })),
     warnungen: bewertung.warnungen.length,
     ausgeschlossen: bewertung.ausgeschlossen.length

@@ -46,7 +46,25 @@ wäre ohne eigenen dauerhaften Commitbeleg **bestanden**. Der Täuschungstest (�
 Slot-Zuordnung nur noch als Rückfallebene für die ehrliche Verdrängt-Klassifikation ohne
 Blob-Lauf) **211/211**. Eine Ersatzzeile mit fremdem Commit verdeckt den fehlenden Beleg
 nicht: `commit-beleg-fehlt` **und** `fremder-deployment-commit`, Vorrang `nicht_bestanden`.
-Mutationsprobe um **M63** ergänzt (Rückfall auf reine Slotzuordnung ⇒ Suite rot). **GEÄNDERTE
+Mutationsprobe um **M63** ergänzt (Rückfall auf reine Slotzuordnung ⇒ Suite rot).
+**ADVERSARIALE NACHPROBE (15 unabhängige Prüf-/Widerlegungsagenten gegen den PR-Stand), 6
+bestätigte Befunde — 1 identisch mit dem Reviewbefund oben (durch `9b32763` behoben), 5 weitere
+im zweiten Folgecommit geschlossen, alle fail closed:** (1) zeitlich **nicht platzierbare**
+`globalphase`-Zeilen (weder Laufkennung noch `createdAt` lesbar) umgingen den Commit-Sweep mit
+bloßer Warnung — jetzt `blockiert` (`prozesszeile-nicht-zuordenbar`); solche Zeilen erzeugt
+kein Writer des Bestands, die Eingabeklasse wird aber fail closed entschieden statt fail open
+(§37.1/37.2, M64). (2) Ein **Lesefehler der kanonischen Belegquelle `process_runs`** blieb
+reiner Konsolentext — der Commitnachweis hätte allein auf dem Blob-Spiegel bestehen können;
+jetzt Bewertungseingabe `prozessLaeufeLesefehler` ⇒ `prozesszeilen-quelle-nicht-lesbar`
+(`blockiert`), bewiesene Verletzungen behalten den Vorrang (§37.5/37.6, M65). (3) Die
+**CLI-Pflicht-Gates** waren nur per Textsuche gesichert — sie liegen jetzt **vor jedem
+Production-Lesezugriff** und sind ohne Netz **verhaltensgetestet** (§36.1–36.5, Zugangsdaten
+im Test ausdrücklich entfernt); die Mutationsprobe mutiert erstmals auch das CLI (M68/M69).
+(4) Beide **Zugehörigkeitswege des Fenster-Sweeps** (createdAt-Rückfallebene · Slot-Klausel
+auch knapp vor Fensterstart) einzeln festgenagelt (§37.3/37.4, M66/M67). (5) Der **Kopf von
+`vorgangskontext.md`** behauptete weiterhin unmarkiert zwei sich widersprechende
+Gegenwartszustände des Flags („wieder DEAKTIVIERT" / „Aktueller Production-Zustand: on") —
+jetzt durchgängig als offene Betreiberprüfung markiert, Historisches als Historie. **GEÄNDERTE
 DATEIEN:** `lib/helmut/op25-nachweis.js` (`normalisiereVollenCommit`, `pruefeFensterlaufCommit`,
 Commit-Pflicht in `pruefeStartbaseline`, Fenster-Sweep in `bewerteNachweisfenster`;
 `pruefeCommitBeleg` entfernt) · `scripts/op25-production-nachweis.js` (Pflicht-Gate, kein
@@ -55,12 +73,13 @@ Altlauf-Abgleich, Gegenprobe, ehrliche Ausgaben) · `scripts/op25-nachweis-vertr
 nachgeführt, **M55–M62** neu) · `docs/betrieb/vorgangskontext.md` (**§7.7.5** kanonisch,
 Überholt-Vermerke §7.7.3/§7.7.4, Historisch-Vermerk §7.4, R1) · `docs/datenmotor-restliste.md`
 (OP-25-Nachtrag /7) · `docs/CURRENT_STATE.md`. **TESTS:** `op25-nachweis-vertrag-test`
-**211/211** (vorher 202; §34.1–34.27 Verhaltensprüfungen aller acht geforderten Fallfamilien:
+**222/222** (vorher 202; §34.1–34.27 Verhaltensprüfungen aller acht geforderten Fallfamilien:
 fehlender erwarteter Commit · ungültiger/verkürzter Commit · alter Prozesscommit vor der
 Aktivierung · korrekter Commit in allen Fensterläufen · fehlender `commit_ref` · abweichender
-`commit_ref` · gemischte Commits · 15-min-Grenze; §35.1–35.4 exakte runId-Bindung) ·
+`commit_ref` · gemischte Commits · 15-min-Grenze; §35.1–35.4 exakte runId-Bindung; §36.1–36.5
+CLI-Gates als Verhalten ohne Netz; §37.1–37.6 Sweep-Zuordenbarkeit + kanonische Belegquelle) ·
 `op25-e3-dauerhaftigkeit-test` **52/52** ·
-Mutationsprobe **63 von 63 rot, 0 Löcher, 0 unwirksam** · `run-offline-tests` **190/205**
+Mutationsprobe **69 von 69 rot, 0 Löcher, 0 unwirksam** · `run-offline-tests` **190/205**
 gegen frisch ausgecheckten `origin/main` (`3fa8830`) im selben Container ebenfalls **190/205
 mit exakt derselben 15er-Fehlschlagliste** (Netz-Guard/Umgebung, nicht Branchfolge) ·
 `browser-smoke` **32/32**. **PRODUCTION-PROBEN (rein lesend, KEINE Baseline erzeugt):** Dry-Run

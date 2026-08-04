@@ -70,6 +70,7 @@ function laeuftGruen(basis, suite) {
 }
 
 const KERN = path.join("lib", "helmut", "op25-nachweis.js");
+const CLI_DATEI = path.join("scripts", "op25-production-nachweis.js");
 const SCHED = path.join("lib", "helmut", "scheduler.js");
 const STORE = path.join("lib", "helmut", "storage.js");
 const UNDER = path.join("lib", "helmut", "understanding.js");
@@ -550,6 +551,50 @@ const PROBEN = [
     mutiere: (b) => ersetze(b, KERN,
       "    const prozessLauf = globalerLauf\n      ? dauerhafte.find((p) => p && p.runId === globalerLauf.runId) || null\n      : dauerhafte.find((p) => passt(p.runId)) || null;",
       "    const prozessLauf = dauerhafte.find((p) => passt(p.runId)) || null;")
+  },
+
+  // --- Review-Nachprobe (adversariale Gegenpruefung des PR-#223-Stands) ----------------------
+  {
+    name: "M64 Unplatzierbare globalphase-Zeile ist wieder nur eine Warnung (Fail-open)",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "        befunde.push(befund(AUSGANG_BLOCKIERT, \"prozesszeile-nicht-zuordenbar\",",
+      "        warnungen.push(befund(AUSGANG_BLOCKIERT, \"prozesszeile-nicht-zuordenbar\",")
+  },
+  {
+    name: "M65 Lesefehler der relationalen process_runs wird wieder ignoriert",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (prozessLaeufeLesefehler != null && prozessLaeufeLesefehler !== \"\") {",
+      "  if (false) {")
+  },
+  {
+    name: "M66 createdAt-Rueckfallebene des Fenster-Sweeps gestrichen",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "    const startMs = startZeile ? startZeile.startMs : Date.parse((p && p.createdAt) || \"\");",
+      "    const startMs = startZeile ? startZeile.startMs : NaN;")
+  },
+  {
+    name: "M67 Slot-Zuordnungsklausel des Fenster-Sweeps gestrichen",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "      || (startZeile && slots.some((s) => s.cronName === startZeile.cronName\n        && Math.abs(startZeile.startMs - s.geplantMs) <= SLOT_TOLERANZ_MS));",
+      "      || false;")
+  },
+  {
+    name: "M68 CLI: Arg-Gate fuer den vollen erwarteten Commit entfernt",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, CLI_DATEI,
+      "    if (vertrag.normalisiereVollenCommit(args[\"erwarteter-commit\"]) === null) {",
+      "    if (false) {")
+  },
+  {
+    name: "M69 CLI: Arg-Gate fuer den Aktivierungszeitpunkt entfernt",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, CLI_DATEI,
+      "    if (!Number.isFinite(aktivierungFruehMs)) {",
+      "    if (false) {")
   }
 ];
 

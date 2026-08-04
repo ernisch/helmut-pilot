@@ -1423,5 +1423,118 @@ console.log("\n== 35 · REVIEW PR #223 · Exakte runId-Bindung der dauerhaften Z
     })());
 }
 
+// =============================================================================================
+console.log("\n== 36 · CLI-Schreibpfad: VERHALTEN der Pflicht-Gates (ohne Netz, ohne Production) ==");
+// =============================================================================================
+{
+  // Die Pflicht-Gates des Schreibpfads liegen VOR jedem Production-Lesezugriff und sind
+  // damit ohne Netz verhaltenstestbar. Die Zugangsdaten werden hier AUSDRUECKLICH entfernt:
+  // kein Test beruehrt Production; ein Aufruf, der die Gates passiert, scheitert danach
+  // ehrlich am fehlenden Zugang (Exit 2, keine Datei).
+  const { execFileSync } = require("child_process");
+  const os = require("os");
+  const CLI = path.join(__dirname, "op25-production-nachweis.js");
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "op25-cli-gate-"));
+  const umgebung = { ...process.env, SUPABASE_URL: "", SUPABASE_SERVICE_ROLE_KEY: "" };
+  delete umgebung.HELMUT_OP25_AKTIVIERUNG_AT;
+  const lauf = (argv) => {
+    try {
+      const stdout = execFileSync(process.execPath, [CLI, ...argv], { env: umgebung, stdio: "pipe", timeout: 30000 });
+      return { code: 0, out: String(stdout), err: "" };
+    } catch (f) {
+      return { code: f.status, out: String(f.stdout || ""), err: String(f.stderr || "") };
+    }
+  };
+  const aktIso = new Date(JETZT_MS).toISOString(); // fester Zeitpunkt — die Gates feuern vor jeder Zeitfensterpruefung
+  const datei = (name) => path.join(tmp, name);
+
+  const ohneCommit = lauf(["--aktivierung", aktIso, "--startbaseline-schreiben", datei("a.json")]);
+  check("36.1 Schreiben OHNE --erwarteter-commit => Exit 2 am Arg-Gate (vor jedem Zugriff), keine Datei",
+    ohneCommit.code === 2 && /VOLLSTAENDIGEN erwarteten Merge-Commit/.test(ohneCommit.err)
+    && /Kurzformen genuegen nicht/.test(ohneCommit.err)
+    && !fs.existsSync(datei("a.json")) && !/SUPABASE_URL/.test(ohneCommit.err),
+    JSON.stringify({ code: ohneCommit.code, err: ohneCommit.err.slice(0, 160) }));
+  const kurz = lauf(["--aktivierung", aktIso, "--erwarteter-commit", ERWARTETER_COMMIT.slice(0, 7), "--startbaseline-schreiben", datei("b.json")]);
+  check("36.2 Kurzform (7 Zeichen) => Exit 2, keine Datei",
+    kurz.code === 2 && /Kurzformen genuegen nicht/.test(kurz.err) && !fs.existsSync(datei("b.json")));
+  const anhang = lauf(["--aktivierung", aktIso, "--erwarteter-commit", `${ERWARTETER_COMMIT}-VOELLIGER-UNSINN`, "--startbaseline-schreiben", datei("c.json")]);
+  check("36.3 Volle SHA mit angehaengtem Unsinn => Exit 2, keine Datei",
+    anhang.code === 2 && /VOLLSTAENDIGEN/.test(anhang.err) && !fs.existsSync(datei("c.json")));
+  const ohneAkt = lauf(["--erwarteter-commit", ERWARTETER_COMMIT, "--startbaseline-schreiben", datei("d.json")]);
+  check("36.4 Ohne --aktivierung => Exit 2 mit READY-Gate-Meldung, keine Datei",
+    ohneAkt.code === 2 && /READY-Zeitpunkt des neuen Production-Deployments/.test(ohneAkt.err)
+    && !fs.existsSync(datei("d.json")),
+    JSON.stringify({ code: ohneAkt.code, err: ohneAkt.err.slice(0, 160) }));
+  const gueltig = lauf(["--aktivierung", aktIso, "--erwarteter-commit", ERWARTETER_COMMIT, "--startbaseline-schreiben", datei("e.json")]);
+  check("36.5 Gueltige Pflichtargumente passieren die Gates und scheitern DANACH ehrlich am fehlenden Zugang (Exit 2, keine Datei)",
+    gueltig.code === 2 && /SUPABASE_URL/.test(gueltig.err) && !fs.existsSync(datei("e.json")),
+    JSON.stringify({ code: gueltig.code, err: gueltig.err.slice(0, 160) }));
+  fs.rmSync(tmp, { recursive: true, force: true });
+}
+
+// =============================================================================================
+console.log("\n== 37 · Fenster-Sweep: Zuordenbarkeit fail closed + kanonische Belegquelle ==");
+// =============================================================================================
+{
+  // (a) Eine zeitlich NICHT platzierbare globalphase-Zeile (weder Laufkennung noch createdAt
+  //     lesbar) kann weder dem Fenster zugeordnet noch als Alt-Bestand ausgeschlossen werden.
+  //     Sie darf die Commitpruefung nicht still umgehen (frueher: nur Warnung => Fail-open).
+  const unplatzierbar = (commit) => ({
+    runId: "manual-globalphase", process: "globalphase", status: "success",
+    durationMs: VERSIEGELT_DAUER_MS, createdAt: null, commit, quelle: "blob"
+  });
+  const b1 = V.bewerteNachweisfenster(baueEingaben({
+    prozessLaeufe: [...SLOTS.map((s) => baueProzessZeile(s)), unplatzierbar(ANDERER_COMMIT)]
+  }));
+  check("37.1 Unplatzierbare Zeile mit FREMDEM Commit => blockiert (prozesszeile-nicht-zuordenbar), nie bestanden",
+    b1.ausgang === "blockiert" && hatBefund(b1, "prozesszeile-nicht-zuordenbar"),
+    JSON.stringify(b1.befunde.slice(0, 2)));
+  const b2 = V.bewerteNachweisfenster(baueEingaben({
+    prozessLaeufe: [...SLOTS.map((s) => baueProzessZeile(s)), unplatzierbar(null)]
+  }));
+  check("37.2 Unplatzierbare Zeile OHNE Commit => ebenfalls blockiert",
+    b2.ausgang === "blockiert" && hatBefund(b2, "prozesszeile-nicht-zuordenbar"));
+
+  // (b) createdAt-Rueckfallebene festgenagelt: unparsbare Kennung, aber createdAt IM Fenster.
+  const b3 = V.bewerteNachweisfenster(baueEingaben({
+    prozessLaeufe: [...SLOTS.map((s) => baueProzessZeile(s)), {
+      runId: "understanding-recovery-global", process: "globalphase", status: "success",
+      durationMs: VERSIEGELT_DAUER_MS, createdAt: "2026-08-10T18:00:00.000Z",
+      commit: ANDERER_COMMIT, quelle: "blob"
+    }]
+  }));
+  check("37.3 Unparsbare Kennung, createdAt IM Fenster, fremder Commit => nicht_bestanden (createdAt-Rueckfallebene wirkt)",
+    b3.ausgang === "nicht_bestanden" && hatBefund(b3, "fremder-deployment-commit"),
+    JSON.stringify(b3.befunde.slice(0, 2)));
+
+  // (c) Slot-Zuordnungsklausel festgenagelt: Lauf 14 min VOR dem Fensterstart (Jitter),
+  //     dem ersten erwarteten Termin zugeordnet — er gehoert zum Nachweis.
+  const b4 = V.bewerteNachweisfenster(baueEingaben({
+    fenster: { vonMs: Date.parse("2026-08-10T16:00:00Z"), bisMs: Date.parse("2026-08-11T16:30:00Z") },
+    prozessLaeufe: [...SLOTS.map((s) => baueProzessZeile(s)), {
+      runId: "cron-pipeline-20260810154600-jitr1-global", process: "globalphase", status: "success",
+      durationMs: VERSIEGELT_DAUER_MS, createdAt: "2026-08-10T15:49:00.000Z",
+      commit: ANDERER_COMMIT, quelle: "relational"
+    }]
+  }));
+  check("37.4 Slot-zugeordneter Lauf knapp VOR Fensterstart mit fremdem Commit => fremder-deployment-commit (Slot-Klausel wirkt)",
+    b4.ausgang === "nicht_bestanden" && hatBefund(b4, "fremder-deployment-commit"),
+    JSON.stringify(b4.befunde.slice(0, 2)));
+
+  // (d) Kanonische Belegquelle: ein Lesefehler der relationalen process_runs ist eine
+  //     Beleg-Luecke und darf nie in einem stillen `bestanden` untergehen.
+  const b5 = V.bewerteNachweisfenster(baueEingaben({ prozessLaeufeLesefehler: "HTTP 500: kaputt" }));
+  check("37.5 Lesefehler der relationalen process_runs => blockiert (prozesszeilen-quelle-nicht-lesbar)",
+    b5.ausgang === "blockiert" && hatBefund(b5, "prozesszeilen-quelle-nicht-lesbar"),
+    JSON.stringify(b5.befunde.slice(0, 2)));
+  const b6 = V.bewerteNachweisfenster(baueEingaben({
+    prozessLaeufeLesefehler: "HTTP 500: kaputt",
+    kosten: baueKosten({ fensterUsd: 9.5 })
+  }));
+  check("37.6 Vorrang bleibt: Lesefehler + BEWIESENE Verletzung => nicht_bestanden (kein frueher Abbruch)",
+    b6.ausgang === "nicht_bestanden" && hatBefund(b6, "prozesszeilen-quelle-nicht-lesbar")
+    && hatBefund(b6, "llm-kosten-ueber-rahmen"));
+}
+
 console.log(`\n${passed + failed} Pruefpunkte · ${passed} PASS · ${failed} FAIL`);
 process.exit(failed ? 1 : 0);

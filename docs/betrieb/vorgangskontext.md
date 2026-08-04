@@ -3,26 +3,32 @@
 **Kanonische Dokumentation des K2.1-Pfads.** Stand: **2026-08-04** (§7.7 ergänzt: ausführbarer
 Nachweisvertrag nach der E3-Entscheidung; Mandatserwartung überall von sechs auf **fünf aktive
 reale Mandate / dynamisch ermittelt** korrigiert).
-Zustand: **gemergt und deployt; `HELMUT_CRON_GLOBALABRUF` ist seit dem gescheiterten
-Kapazitätslauf vom 2026-08-03 wieder DEAKTIVIERT** (Betreiberaktion, §7.6). Die Reparatur der
+Zustand: **gemergt und deployt. Der AKTUELLE Production-Zustand von `HELMUT_CRON_GLOBALABRUF`
+ist aus einer Sitzung nicht lesbar und wird hier nicht behauptet — offene Betreiberprüfung**
+(§7.4-Vermerk; frühere Fassungen dieses Kopfes enthielten sowohl „gesetzt seit 2026-08-03"
+als auch „wieder DEAKTIVIERT", beides unbelegt). Die Reparatur der
 Kapazitätsursachen ist als **PR #219** gemergt (`89427c5`) und ausgerollt; die erneute
-Aktivierung ist eine **getrennte, noch nicht erfolgte Betreiberaktion**.
+Aktivierung ist eine **getrennte, noch nicht erfolgte Betreiberaktion** — sie verlangt seit
+§7.7.5 ein **neues** READY-Deployment (das Setzen der Env allein wirkt nicht).
 **PR #201** gemergt (`255df01`), beide Pflicht-Checks grün (Lauf `30638964148`,
 `Syntax + Offline-Suiten` **194/194 Suiten**, `Browser-/Mobile-Smoke (Chromium)`).
 
-> **Der Pfad ist damit scharf, aber NICHT abgenommen.** Deployment `READY` und unmittelbarer,
-> rein lesender Smoke-Check sind bestanden (§7.4). **Der reguläre Production-Kapazitätsnachweis
-> über mindestens 24 h reguläre Kadenz steht vollständig aus** — bis dahin ist über die
-> tatsächliche Wirkung des Pfades in Production **nichts** belegt, und **OP-25 bleibt teilweise
-> abgeschlossen**. Kein falsches Grün (`CLAUDE.md` §4.4).
+> **Der Pfad ist NICHT abgenommen; ob er aktuell scharf ist, ist unbelegt (offene
+> Betreiberprüfung, §7.4-Vermerk).** Deployment `READY` und unmittelbarer, rein lesender
+> Smoke-Check der Aktivierung vom 2026-08-03 waren bestanden (§7.4, historisch); der erste
+> Wirkungslauf scheiterte am Kapazitätsvertrag (§7.6). **Der reguläre
+> Production-Kapazitätsnachweis über mindestens 24 h reguläre Kadenz steht vollständig aus** —
+> bis dahin ist über die tatsächliche Wirkung des Pfades in Production **nichts** belegt, und
+> **OP-25 bleibt teilweise abgeschlossen**. Kein falsches Grün (`CLAUDE.md` §4.4).
 
 > **Flaggrenze, verbindlich — Code-Default und Production-Zustand sind zu unterscheiden:**
 > `HELMUT_CRON_GLOBALABRUF` hat den **Code-Default AUS**; ohne ausdrücklich gesetzten Wert
 > (`on`/`true`/`1`/`an`) läuft ausschließlich der bisherige Pfad, und das bleibt so. Das Flag ist
 > **nicht** über `helmut-flags.json` setzbar — nur über die Vercel-Env, also nur durch den
-> Betreiber. **Aktueller Production-Zustand: `on`, gesetzt am 2026-08-03, 13:15:11 UTC,
-> ausschließlich in der Umgebung `Production`** (Preview und Development unverändert ohne Wert,
-> dort greift weiter der Default). Sind `HELMUT_CRON_GLOBALPHASE` **und**
+> Betreiber. **Der aktuelle Production-Zustand ist aus einer Sitzung nicht lesbar — offene
+> Betreiberprüfung** (historisch belegt ist nur: `on` gesetzt am 2026-08-03, 13:15:11 UTC,
+> ausschließlich Umgebung `Production`; spätere Änderungen sind unbelegt). Zusätzlich gilt:
+> eine Env-Änderung **wirkt erst in einem neuen Deployment** (§7.7.5). Sind `HELMUT_CRON_GLOBALPHASE` **und**
 > `HELMUT_CRON_GLOBALABRUF` gesetzt, läuft der **Altpfad** (fail closed bei Widerspruch);
 > `HELMUT_CRON_GLOBALPHASE` ist unverändert **nicht** gesetzt.
 
@@ -50,11 +56,11 @@ Mandats verändern, zusammenschieben oder auseinanderreißen.
 - **Zusammengefasst** wird nur noch innerhalb einer **Sichtbarkeitsgrenze**: zwei Meldungen
   dürfen nur dann locker zusammengeworfen werden, wenn **dieselben Mandate beide sehen**.
 
-**Stand 2026-08-03:** der Schalter ist **eingeschaltet** — der Betreiber hat
-`HELMUT_CRON_GLOBALABRUF=on` für Production gesetzt (13:15:11 UTC). Der neue Weg ist damit
-scharf, aber **noch nicht abgenommen**: der reguläre Production-Nachweis über mindestens 24 h
-steht aus (§7.4). *(Bis dahin galt: der Weg lag hinter einem ausgeschalteten Schalter, und ihn
-einzuschalten war eine Freigabeentscheidung des Betreibers.)*
+**Historisch (2026-08-03):** der Betreiber hat `HELMUT_CRON_GLOBALABRUF=on` für Production
+gesetzt (13:15:11 UTC); der erste Wirkungslauf scheiterte am Kapazitätsvertrag (§7.6). **Ob
+der Schalter heute gesetzt ist, ist aus einer Sitzung nicht lesbar — offene Betreiberprüfung**
+(§7.4-Vermerk). Der reguläre Production-Nachweis steht vollständig aus und beginnt erst mit
+dem Betreiberablauf aus **§7.7.5** (neues READY-Deployment = Aktivierungszeitpunkt).
 
 ---
 
@@ -723,9 +729,9 @@ nachweislich nicht reicht.** C ist ausdrücklich **nicht** ohne neue Freigabe um
 > beschriebene Abnahme. Ausführung: `node scripts/op25-production-nachweis.js` (rein lesend,
 > GET-Literal + Tabellen-Allowlist, kein Trigger, keine Flag-/Env-Änderung, 0 KI-Aufrufe);
 > Bewertungskern: [`lib/helmut/op25-nachweis.js`](../../lib/helmut/op25-nachweis.js)
-> (reine Logik, testgesichert über `scripts/op25-nachweis-vertrag-test.js` (211 Prüfpunkte),
+> (reine Logik, testgesichert über `scripts/op25-nachweis-vertrag-test.js` (222 Prüfpunkte),
 > `scripts/op25-e3-dauerhaftigkeit-test.js` (52 Prüfpunkte) und
-> `scripts/op25-nachweis-mutationsprobe.js` (**63 von 63 rot**)).
+> `scripts/op25-nachweis-mutationsprobe.js` (**69 von 69 rot**)).
 >
 > **Stand 2026-08-04/5 (nach Merge von PR #222):** um die Befunde aller vier Reviewdurchgänge
 > **und** die Nachtragskorrektur gehärtet — Kostenvertrag, identitätsgenau eingefrorene
@@ -1132,15 +1138,42 @@ korrekter Commit in allen Fensterläufen, fehlender/ungültiger/abweichender/gem
 `commit_ref`, Präfix-Fall, alter Lauf vor der Aktivierung, 15-min-Grenze; §32 führt
 `erwarteterDeploymentCommit` als Pflichtfeld) und §35 (exakte runId-Bindung: beide
 Täuschungsfälle, Exakt-Fall, Retentionsfall — 35.1 wurde **zuerst gegen den fehlerhaften
-Stand** ausgeführt und schlug nachweislich fehl) — **211/211**. Mutationsprobe
-**63 von 63 rot** (M50/M51/M53/M54 auf die neue Logik umgezogen; neu **M55–M62**:
-Pflichtfeld entfällt, Kurzform akzeptiert, Vorab-Bestätigung akzeptiert, fehlender
-`commit_ref` blockiert nicht mehr, alte Läufe mitgeprüft, dauerhafte Zeile wieder nur
-Warnung, Präfix als Bestätigung, Gegenprobe entfällt; **M63**: exakte runId-Bindung fällt
-auf reine Slotzuordnung zurück). Production-Proben rein lesend: Dry-Run
-`noch_nicht_auswertbar` (Exit 3) · Schreiben ohne Commit / mit Kurzform / mit Anhang ⇒ je
-**Exit 2, keine Datei** · voller Commit mit 2 h alter Aktivierung ⇒ **Exit 2, keine Datei**
-(15-min-Grenze) · Auswertung mit Baseline ohne Commit ⇒ **`blockiert` (Exit 2)**.
+Stand** ausgeführt und schlug nachweislich fehl) — dazu §36/§37 aus der **adversarialen
+Nachprobe** (unten) — **222/222**. Mutationsprobe **69 von 69 rot** (M50/M51/M53/M54 auf die
+neue Logik umgezogen; **M55–M62**: Pflichtfeld entfällt, Kurzform akzeptiert,
+Vorab-Bestätigung akzeptiert, fehlender `commit_ref` blockiert nicht mehr, alte Läufe
+mitgeprüft, dauerhafte Zeile wieder nur Warnung, Präfix als Bestätigung, Gegenprobe entfällt;
+**M63**: exakte runId-Bindung fällt auf reine Slotzuordnung zurück; **M64–M69** siehe
+Nachprobe). Production-Proben rein lesend: Dry-Run `noch_nicht_auswertbar` (Exit 3) ·
+Schreiben ohne Commit / mit Kurzform / mit Anhang ⇒ je **Exit 2, keine Datei** · voller
+Commit mit 2 h alter Aktivierung ⇒ **Exit 2, keine Datei** (15-min-Grenze) · Auswertung mit
+Baseline ohne Commit ⇒ **`blockiert` (Exit 2)**.
+
+**Adversariale Nachprobe (2026-08-04, gegen den PR-#223-Stand), fünf weitere Befunde
+geschlossen — alle fail closed:**
+
+1. **Zeitlich nicht platzierbare `globalphase`-Zeilen** (weder Laufkennung noch `createdAt`
+   lesbar) umgingen den Commit-Sweep mit bloßer Warnung — eine Zeile mit fremdem oder
+   fehlendem `commit_ref` konnte so ein `bestanden` überleben. Jetzt: `blockiert`
+   (`prozesszeile-nicht-zuordenbar`). Solche Zeilen erzeugt kein Writer des Bestands; die
+   Eingabeklasse existiert aber und wird jetzt fail closed entschieden (§37.1/37.2, M64).
+2. **Ein Lesefehler der kanonischen Belegquelle `process_runs`** blieb reiner Konsolentext —
+   der Commitnachweis hätte allein auf dem Blob-Spiegel „bestanden" können. Jetzt geht er als
+   `prozesszeilen-quelle-nicht-lesbar` (`blockiert`) in die Bewertung ein; eine gleichzeitig
+   bewiesene Verletzung behält ihren Vorrang (§37.5/37.6, M65; im CLI zusätzlich in der
+   JSON-Zeile ausgewiesen).
+3. **Die CLI-Pflicht-Gates waren nur per Textsuche gesichert.** Sie liegen jetzt **vor jedem
+   Production-Lesezugriff** (fail fast) und sind ohne Netz **verhaltensgetestet** (§36.1–36.5:
+   Exit 2 + keine Datei je fehlendem/verkürztem/ungültigem Commit bzw. fehlender Aktivierung;
+   gültige Argumente passieren die Gates). Die Mutationsprobe mutiert erstmals auch das CLI
+   (M68/M69).
+4. **Beide Zugehörigkeitswege des Fenster-Sweeps** (Laufstart im Fenster via `createdAt`-
+   Rückfallebene · Slot-Zuordnung, auch knapp vor Fensterstart) sind einzeln festgenagelt
+   (§37.3/37.4, M66/M67).
+5. **Der Dateikopf dieses Dokuments** behauptete zwei sich widersprechende
+   Gegenwartszustände des Flags („wieder DEAKTIVIERT" / „Aktueller Production-Zustand: on")
+   — beide unbelegt. Der Kopf verweist jetzt auf die offene Betreiberprüfung (§7.4-Vermerk);
+   historisch Belegtes bleibt als Historie gekennzeichnet.
 
 ## 8 · Verbleibende Risiken
 
