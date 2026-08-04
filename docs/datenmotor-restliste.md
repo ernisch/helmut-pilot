@@ -611,7 +611,8 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   umgezogen, **M55–M62** neu). **Production-Proben rein lesend (KEINE Baseline erzeugt):**
   Dry-Run `noch_nicht_auswertbar` (Exit 3) · Schreiben ohne Commit / Kurzform / Anhang /
   2 h alte Aktivierung ⇒ je **Exit 2, keine Datei** · Auswertung mit Baseline ohne Commit ⇒
-  `blockiert` (Exit 2). Kanonisch (inkl. verbindlichem Betreiberablauf):
+  `blockiert` (Exit 2). Branch `claude/op25-startbaseline-commitnachweis-mqjixo`, **PR #223**
+  (offen, kein Merge). Kanonisch (inkl. verbindlichem Betreiberablauf):
   [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) **§7.7.5**.
 - **Nachtrag 2026-08-04 (Profilreparatursprint):** Künftige OP-25-Production-Nachweise arbeiten
   mit **fünf aktiven realen Mandaten** statt sechs — das Demo-Mandat `max-mustermann` ist seit

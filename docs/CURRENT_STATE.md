@@ -61,7 +61,7 @@ SHA mit angehängtem Unsinn ⇒ **Exit 2, keine Datei** · volle SHA mit 2 h alt
 Production-Deployment, READY-Zeitpunkt notieren → binnen 15 min Baseline mit `--aktivierung
 <READY-ISO> --erwarteter-commit <40-hex>` → 24 h ohne weiteres Deployment → Auswertung.
 **F-E2E bleibt unverändert offen** (siehe 8. Durchgang). **Branch/PR:**
-`claude/op25-startbaseline-commitnachweis-mqjixo`, PR gegen `main` eröffnet, **nicht gemergt**
+`claude/op25-startbaseline-commitnachweis-mqjixo`, **PR #223** gegen `main`, **nicht gemergt**
 — Merge und alle Production-Schritte bleiben Betreiberentscheidung. **0 Writes in Production,
 0 KI-Aufrufe, 0,00 USD, keine Migration, kein Flag, kein Cron, kein Deployment, keine Baseline,
 kein Merge.**) ·
