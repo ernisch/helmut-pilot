@@ -797,6 +797,50 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   (`255df01`) und deployt, und **seit dem 2026-08-03, 13:15:11 UTC ist
   `HELMUT_CRON_GLOBALABRUF` in der Production-Umgebung auf `on`** — siehe den
   Aktivierungsstatus unmittelbar unten.
+- **Status K2.1 (2026-08-04, Reparatursprint Kapazitätsfehler): URSACHE BEWIESEN UND REPARIERT,
+  PRODUCTION-NACHWEIS MUSS VOLLSTÄNDIG NEU BEGINNEN. OP-25 bleibt TEILWEISE ABGESCHLOSSEN.**
+  Der erste reguläre Wirkungslauf (`cron-pipeline-20260803160002-xm71n`, 16:00 UTC) ist am
+  Kapazitätsnachweis **gescheitert**: globale Phase **267,12 s** bei Budget **221,674 s**,
+  Restzeit **2,552 s**, **0 von 6** Mandaten. **Bewiesene Ursache (Messwerte, keine Vermutung):**
+  **124,74 s = 46,7 %** des Laufs waren **sequenzielle Einzelzeilen-Round-Trips** —
+  616 Einzel-Upserts auf `raw_documents` (89,89 s) plus ~108 × (GET + PATCH) für `finding_count`
+  (34,85 s), zusammen **834 Requests à ~149,6 ms** (Befund **F-RT**); dazu **15,94 s** reine
+  Doppelarbeit, weil die Stapelschleife 1 242 Cluster bildete und **erst danach** das bereits
+  erschöpfte Budget prüfte (Befund **F-CL**). **Nicht** ursächlich: der Abruf (alle 181 Quellen
+  vollständig abgerufen, 112,11 s realer Netzaufwand) und keine Mehrfachverarbeitung
+  (`gesamt=181 gemeinsam=140 mandatseigen=41` ist vertragsgemäß). **Repariert:** Bulk-Upsert der
+  Rohdokumente (nach Spaltensignatur gruppiert, Einzelfallback je Block), **bedingtes**
+  gebündeltes `finding_count`-Update (Compare-and-Set statt unbedingtem Lesen→Ändern→Schreiben,
+  CLAUDE.md §4.10), Budgetriegel **vor** der Clusterbildung, Phasenmessung
+  (`[globalphase/phasen]`). **Gemessen (Offline-Kapazitätstest in Production-Größenordnung):**
+  Round-Trips **834 → 10**, Persistenz **130,51 s → 1,56 s**, globale Phase **263,79 s → 197,19 s**
+  bei Budget 222 s, Restzeit **6,21 s → 72,80 s**, Mandate **0 von 6 → 6 von 6**, Gesamtlauf
+  **207,10 s** unter dem 270-s-Limit. Alle 181 Quellen und 2 179 Dokumente bleiben enthalten,
+  Sichtbarkeitsvertrag, Sperren, Fairness und Mandatstrennung unverändert. **Nebenbefund F-REQ,
+  nachgemessen 2026-08-04:** `CRAWLER_TIMEOUT_MS` ist ein Socket-Timeout **je einzelner Anfrage**
+  und begrenzt weder `crawlSource` noch eine Quelle noch eine Abrufstufe — eine Google-Quelle löst
+  offline gemessen **37** (Suchquelle) bzw. **98** (Personenquelle, zwei Feeds und sequenzielle
+  Bildanreicherung) Anfragen aus, Production zeigt einzelne Quellen mit **41 892 / 41 340 /
+  40 851 / 35 005 ms** bei 7 000 ms Limit und `retry_count = 0`. Damit ist die Formel
+  `ceil(stufenGroesse / concurrency) × CRAWLER_TIMEOUT_MS` widerlegt, und eine **Verkleinerung**
+  der Abrufstufe hilft nicht, sondern schadet: die Summe der Stufenmaxima ist eine Untergrenze
+  der Abrufdauer und steigt monoton (20 → 71,3 s, 10 → 90,2 s, 5 → 153,0 s), und die
+  **direkten/amtlichen** Quellen starten später (9,85 s → 31,53 s), weil `plan.quellen`
+  unabhängig vom Quellentyp geschnitten wird. Quellenmix gemessen: **176 Google-Wege / 5 direkte
+  = 97,2 %**. Belege: `scripts/quellen-mehrfachabruf-test.js` (18/18). Die entsprechende
+  Codeänderung aus PR #218 (Default 20 → 5) ist dort zurückgenommen; eine Entscheidungsvorlage
+  für ein **echtes** Stopp-Gatter steht in
+  [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.6.1. **Drei Befunde bleiben
+  bewusst offen und brauchen eine Entscheidung:** **E-1** Stufenbarriere im Abruf (≈ 34 s
+  Einsparpotenzial, verlangt einen Eingriff in `crawler.js`), **E-2** `HELMUT_CRAWL_MAX_CANDIDATES`
+  wirkt je Stufe statt je Lauf (der globale Pfad verarbeitet **2 140** statt ~**945** Kandidaten —
+  eine stille **Ausweitung**; ihre Rücknahme wäre eine Produktentscheidung), **E-3**
+  `datenstand.status = abgeschlossen` ist mit dem heutigen Verstehensrückstand praktisch
+  unerreichbar und berührt damit **Abnahmekriterium 5** aus
+  [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.5. **Keine Production-Änderung in
+  diesem Sprint:** kein Flag gesetzt, kein Deployment, kein Cron ausgelöst, kein
+  Production-Schreibzugriff, keine Migration, 0 KI-Aufrufe, 0,00 USD.
+  Kanonisch: [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) **§7.6**.
 - **Status K2.1 (2026-08-03, 13:15:11 UTC, Betreiberaktion): IN PRODUCTION AKTIVIERT —
   Deployment READY und unmittelbarer Smoke-Check bestanden, REGULÄRER
   PRODUCTION-KAPAZITÄTSNACHWEIS NOCH OFFEN. OP-25 bleibt TEILWEISE ABGESCHLOSSEN.**

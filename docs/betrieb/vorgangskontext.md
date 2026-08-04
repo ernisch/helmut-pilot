@@ -505,6 +505,203 @@ wenn über das Beobachtungsfenster gilt:
 Punkt 7 ist die bewusste Grenze dieses Kriteriums: die Kontextzahl ist eine **Beobachtungsgröße**,
 kein Schwellwert. Auffällig hoch heißt „erklären", nicht „durchgefallen".
 
+### 7.6 Der gescheiterte Kapazitätsnachweis vom 2026-08-03 — Ursache, Reparatur, offene Entscheidungen
+
+> **Kanonisch für den Kapazitätsteil.** §7.4 beschreibt die Aktivierung, §7.5 das
+> Kontextkriterium. Dieser Abschnitt beschreibt, **warum der erste reguläre Wirkungslauf am
+> Kapazitätsnachweis gescheitert ist**, was dagegen gebaut wurde und was ausdrücklich **nicht**
+> gebaut wurde.
+
+**Der Befund.** Der erste reguläre schwere Lauf nach der Aktivierung
+(`/api/cron/pipeline`, 2026-08-03 16:00 UTC, Lauf `cron-pipeline-20260803160002-xm71n`) meldete:
+
+```
+[cron/pipeline/globalphase] 267122ms status=teilweise quellen=181 rohdokumente=2179
+                            verstanden=0 budgetGlobalMs=221674 reserveMs=48000 restMs=2552
+[cron/pipeline] Zeitbudget erschoepft — 6 von 6 Mandaten NICHT verarbeitet.
+```
+
+Die globale Phase überzog ihr Budget (221,674 s) um **45,45 s** und verbrauchte damit die
+Mandatsreserve (48 s) vollständig. Übrig blieben **2,552 s**; die Fairnessschleife beginnt ein
+Mandat nur mit **15 s** Vorlaufreserve (`HELMUT_CRON_TENANT_RESERVE_MS`) — daher **0 von 6**.
+Ein späterer regulärer Crawl lief aus demselben Grund in das äußere Zeitlimit.
+`HELMUT_CRON_GLOBALABRUF` wurde danach durch den Betreiber wieder auf `off` gesetzt.
+
+**Die Zerlegung.** Rekonstruiert aus `source_crawl_telemetry` (181 Zeilen mit
+`started_at`/`finished_at`/`duration_ms`), `raw_documents.created_at`,
+`document_findings.created_at`, `process_runs` und den Vercel-Runtime-Logs desselben Laufs;
+alle Zeiten relativ zum Start der globalen Phase (16:00:02,895 UTC):
+
+| Phase | Dauer | Anteil |
+|---|---:|---:|
+| Vorlauf (Sperre, 6 Profile, 6 Quellenpläne, Cooldown-Vorlauf) | 3,10 s | 1,2 % |
+| **Quellenabruf**, 181 Quellen in 10 Stufen à 20 | **112,11 s** | 42,0 % |
+| DIP (inaktiv) + `saveRawItems` + Bestandsabruf + Dedup-Plan | 5,41 s | 2,0 % |
+| **`raw_documents`: 616 EINZELNE Upserts** | **89,89 s** | 33,6 % |
+| `document_findings` (1 Bulk) + **`finding_count`: ~108 × (GET + PATCH)** | **34,85 s** | 13,1 % |
+| Lazy-Understanding: 14 Stapel geclustert, **1 242 Cluster gebildet, 0 verarbeitet** | 15,94 s | 6,0 % |
+| Eager-Understanding — übersprungen, Grund `zeitbudget` | 0,00 s | 0,0 % |
+| Lauftelemetrie + 181 Quellen-Telemetriezeilen | 5,19 s | 1,9 % |
+| **Summe** | **267,12 s** | |
+
+**Hauptursache F-RT — 124,74 s (46,7 %) sind sequenzielle Einzelzeilen-Round-Trips.**
+`persistRawDocumentsDeduped` schrieb **je Dokument einen eigenen Request** an PostgREST
+(616 Einzel-Upserts) und erhöhte `finding_count` je Bestandstreffer mit einem **eigenen
+GET plus einem eigenen PATCH** (~108 × 2). Zusammen **834 Requests à ~149,6 ms**. Derselbe
+Pfad benutzt für `document_findings` in derselben Funktion längst einen Bulk-Write — die
+Fähigkeit war da, sie wurde an den beiden teuren Stellen nur nicht genutzt.
+
+**Zweitursache F-CL — 15,94 s reine Doppelarbeit.** Die Stapelschleife des
+Lazy-Understanding bildete für **jeden** der 14 Kontexte erst die Cluster und prüfte **danach**
+das Restbudget. Das Budget war zu diesem Zeitpunkt bereits aufgebraucht: 1 242 Cluster gebildet,
+**0** verarbeitet.
+
+**Was `CRAWLER_TIMEOUT_MS` begrenzt — und was nicht (Befund F-REQ, nachgemessen 2026-08-04).**
+Der Wert (Default 7 000 ms) wird ausschließlich als `timeout` an `client.get(...)` (`fetchUrl`,
+`fetchText`, `fetchPardokText`) und `client.request(...)` (`postForm`) durchgereicht. Das ist ein
+Socket-Timeout **je einzelner Anfrage** — und dort ein *Inaktivitäts-*, kein Gesamtdauerlimit. Es
+begrenzt **weder `crawlSource` noch eine Quelle noch eine Stufe**. Eine Google-News-Quelle löst
+eine ganze Anfragenkette aus:
+
+| Schritt | Sequenzielle Anfragen |
+|---|---|
+| Feedabruf je Feed-URL (`personNewsSource` hat **zwei**, sequenziell abgearbeitet) | 1, unter dem Gate zzgl. `withGoogleRetry` (bis 3 Versuche + Backoff bis 8 s bzw. 15 s) |
+| `resolveEntryUrls` — Nebenläufigkeit **4 innerhalb** der Quelle, je Eintrag `resolveArticleUrl` | 1× `fetchUrl` (folgt bis zu **6** Weiterleitungen, jede eine eigene Anfrage mit eigenem Timeout) + bis zu **2×** `postForm` |
+| `enrichPersonArticleImages` (nur `type: "person"`) — **vollständig sequenzielle** Schleife | je Eintrag nochmals `resolveArticleUrl` + 1× `fetchText` |
+
+Mengengerüst je Feed: `HELMUT_GOOGLE_NEWS_MAX_ITEMS` 12, `HELMUT_PROFILE_NEWS_MAX_ITEMS` 24,
+`HELMUT_PERSON_NEWS_MAX_ITEMS` **30**. Offline gemessen
+(`scripts/quellen-mehrfachabruf-test.js` — echter Crawler, echtes Gate, ersetzte HTTP-Schicht):
+**eine** Suchquelle mit 12 Einträgen = **37 Anfragen = 11,5 Anfragezeitlimits**; **eine**
+Personenquelle (2 Feeds × 12 Einträge) = **98 Anfragen = 45,4 Anfragezeitlimits**. Production
+bestätigt es: einzelne Quellen liefen **41 892 / 41 340 / 40 851 / 35 005 ms** bei
+`CRAWLER_TIMEOUT_MS = 7 000` — drei davon mit `retry_count = 0`, es waren also keine
+Wiederholungen, sondern die Kette selbst. **Jede Aussage, die eine Quelle oder eine Abrufstufe an
+`CRAWLER_TIMEOUT_MS` bindet, ist damit widerlegt** — insbesondere die Formel
+`ceil(stufenGroesse / HELMUT_GOOGLE_CONCURRENCY) × CRAWLER_TIMEOUT_MS`.
+
+**Was NICHT die Ursache war — ausdrücklich geprüft:**
+
+- **Der Abruf nicht.** Alle 181 Quellen wurden abgerufen (`fehler: 0`, keine Zeile
+  „Abrufbudget erschoepft"). 112,11 s sind der reale Netzaufwand von 181 Abrufwegen durch das
+  Google-Gate (Parallelität 5, Mindestabstand 200 ms) — die Härtung ist eine
+  Sicherheitsmaßnahme aus dem Vorfall 2026-07-25 und wurde **nicht** angefasst.
+  **Quellenmix gemessen statt geschätzt** (`source_crawl_telemetry` gegen `retrieval_paths`):
+  **134** Katalog-Google-News-Wege + **42** profilgenerierte Google-Suchen (`personNewsSource`
+  und `newsSearchSource` bauen beide `news.google.com/rss/search`) = **176 Google-Wege** und
+  genau **5 direkte/amtliche** — **97,2 %**. Die fünf direkten Quellen sind im Laufprotokoll
+  eindeutig wiederzufinden: sie starten sofort und enden in unter 200 ms (26 / 55 / 67 / 102 /
+  155 ms). Eine frühere Annahme von „88 % Google" ist damit ersetzt.
+- **Das Start-Gatter des Stufenabrufs nicht.** Die Restzeitprüfung zwischen den Abrufstufen ist
+  tatsächlich nur ein *Start*-Gatter — eine begonnene Stufe läuft ungebremst zu Ende. In diesem
+  Lauf hat sie aber **nie gegriffen**: der Abruf endete bei **t = 115,2 s** eines
+  **221,674-s**-Budgets, `nichtAbgerufen = 0`, `fehler: 0`. Die Überziehung entstand vollständig
+  danach.
+- **Keine Mehrfachverarbeitung.** Die Vereinigungsmenge ist vertragsgemäß:
+  `gesamt=181 gemeinsam=140 mandatseigen=41` = 6 Mandate × 7 eigene Quellen (eines mit 6) plus
+  140 geteilte. `doppelteWege=3` sind bekannte, ausgewiesene strukturgleiche Wege; der
+  prozessweite `sharedFetchLedger` hat sie erwartungsgemäß übersprungen (`skipped-shared`).
+- **Die interne Zeitreservierung hat gerechnet, aber nicht gegriffen.** `budgetAufteilung`
+  hat korrekt 221,674 s / 48 s geteilt. Zwischen dem Ende des Abrufs (t = 115 s) und der
+  Versiegelung (t = 267 s) gab es jedoch **keine einzige Stelle**, an der der Lauf sein
+  Restbudget geprüft hätte: Persistenz, Fundstellen, Zählerpflege und Telemetrie liefen
+  unbegrenzt. Die Grenze existierte als Zahl, nicht als Riegel.
+
+**Die Reparatur (dieser Sprint).**
+
+1. **Bulk-Upsert der Rohdokumente.** Blockweise statt zeilenweise
+   (`HELMUT_RAW_DOCUMENT_BULK_CHUNK`, Default 200). Zeilen werden nach ihrer **Spaltensignatur**
+   gruppiert, statt fehlende Spalten mit `null` aufzufüllen — sonst überschriebe ein
+   `merge-duplicates`-Upsert eine vorhandene Spalte eines bestehenden Dokuments mit `null`.
+   Schlägt ein Block fehl, wird **genau dieser Block** einmal einzeln nachgezogen; die
+   bisherige Robustheit gegen eine einzelne unbrauchbare Zeile bleibt damit erhalten.
+2. **Gebündeltes UND bedingtes `finding_count`-Update.** Gruppiert nach (gelesener Stand,
+   Zuwachs), ein `PATCH …&finding_count=eq.<gelesener Stand>` je Gruppe. Das ist ein echtes
+   **Compare-and-Set** (CLAUDE.md §4.10): eine Zeile, die inzwischen ein anderer Lauf verändert
+   hat, wird **nicht** getroffen und **nicht** überschrieben, sondern gezählt und benannt. Der
+   bisherige Pfad war ein unbedingtes Lesen→Ändern→Schreiben und hätte still überschrieben.
+3. **Budgetriegel vor der Clusterbildung.** Die Stapelschleife entscheidet zuerst über das
+   Budget. Ein übersprungener Stapel wird mit Dokumentzahl gezählt und macht den Datenstand
+   ehrlich `teilweise` (`datenstand.lazy.uebersprungeneStapel` / `…uebersprungeneDokumente`).
+4. **Phasenmessung.** `[globalphase/phasen]` und `datenstand.phasen` zerlegen jeden Lauf.
+   Der gescheiterte Lauf musste über vier Tabellen rekonstruiert werden; das ist einmalig.
+
+**Gemessene Wirkung** (Offline-Kapazitätstest `scripts/globalabruf-kapazitaet-test.js`,
+Production-Größenordnung 181 Quellen / 2 179 Dokumente / 6 Mandate, Production-Latenzen als
+Eingabe):
+
+| | vorher | nachher |
+|---|---:|---:|
+| Round-Trips des Schreibpfads | **834** | **10** |
+| Persistenzphase | 130,51 s | **1,56 s** |
+| globale Phase (Budget 222 s) | **263,79 s** | **197,19 s** |
+| Restzeit für die Mandatsphase | 6,21 s | **72,80 s** |
+| verarbeitete Mandate | **0 von 6** | **6 von 6** |
+| Gesamtlauf (Limit 270 s) | am Limit | **207,10 s** |
+
+Die globale Phase wird **nicht** um die volle Ersparnis kürzer: die gewonnene Zeit fällt dem
+Verstehen zu, das im gescheiterten Lauf gar nicht mehr lief (Lazy 0 Cluster, Eager
+`zeitbudget`). Genau das ist beabsichtigt — es ist fachliche Arbeit, die vorher ausfiel.
+
+**Offene Entscheidungen — bewusst NICHT in diesem Sprint umgesetzt:**
+
+| # | Befund | Messwert | Warum nicht hier entschieden |
+|---|---|---|---|
+| **E-1** | **Stufenbarriere im Abruf.** Der Abruf läuft in 10 Stufen à 20 Quellen; jede Stufe ist eine Sperre, die auf ihre langsamste Quelle wartet. Stufe 9 enthielt 200,9 s Arbeit und dauerte 53,1 s, Stufe 10 bestand aus **einer** Quelle und begann erst bei t = 99 s. | Untere Schranke bei idealer Bündelung: 391,3 s Arbeit / 5 Gate-Slots = **78,3 s**; gemessen **112,1 s**. Einsparpotenzial ≈ **34 s**. | Der Rückbau der Barriere verlangt eine Deadline **im** Crawler (`crawler.js`) — aktiver Produktionspfad, eng verzahnt mit der Google-Härtung. Nicht nötig, um den Vertrag zu erfüllen. **Die Stufe zu VERKLEINERN ist keine Option** (siehe §7.6.1). |
+| **E-2** | **`HELMUT_CRAWL_MAX_CANDIDATES` wirkt je STUFE statt je LAUF.** Der Kandidatendeckel (1 000) sitzt in `crawlAllSources` und wird im globalen Pfad zehnmal angewendet. | Altpfad: **603–621** Dokumente je Lauf vom Deckel verworfen. Globaler Pfad: **0**. Der globale Pfad verarbeitet **2 140** statt ~**945** neuer Kandidaten — **2,3-fach**. | Das ist eine stille **Ausweitung**, keine Reduktion. Sie zurückzunehmen hieße, Dokumente zu verwerfen — eine Produktentscheidung, keine Reparatur. |
+| **E-3** | **`datenstand.status = abgeschlossen` ist mit dem heutigen Verstehensrückstand praktisch unerreichbar.** `budgetErschoepft` wird schon wahr, wenn **ein** Lazy-Cluster zurückgestellt wurde. Bei 1 242 Clustern und 60 s Lazy-Budget bleibt immer ein Rest. | Nachher-Lauf des Kapazitätstests: `teilweise` trotz eingehaltenem Budget und 6 von 6 Mandaten. | **Berührt direkt das Abnahmekriterium 5 aus §7.5.** Entweder wird der Rückstand erst abgearbeitet, oder das Kriterium wird auf „alle sechs Mandatsläufe abgeschlossen und keine `kontextvertrag`-Fehler" geschärft. Das ist eine Freigabeentscheidung. |
+
+### 7.6.1 Die Abrufstufe: warum „kleiner" nicht „sicherer" heißt — und was ein echtes Stopp-Gatter kostet
+
+Am 2026-08-04 wurde geprüft, ob eine **kleinere** Abrufstufe
+(`HELMUT_GLOBALPHASE_ABRUF_STUFE` 20 → 5) die Überziehung begrenzt. **Sie tut es nicht, und sie
+schadet.** Drei Belege, keiner davon eine Annahme:
+
+1. **Die Stufe war nie die wirksame Grenze.** Der Abruf endete bei t = 115,2 s eines
+   221,674-s-Budgets. Das Start-Gatter hat nicht gegriffen.
+2. **Die behauptete Schranke existiert nicht.** `ceil(stufenGroesse / concurrency) ×
+   CRAWLER_TIMEOUT_MS` setzt voraus, dass eine Quelle eine Anfrage ist — sie ist es nicht
+   (Befund F-REQ oben: 37 bzw. 98 Anfragen je Quelle, Production 41 892 ms bei 7 000 ms Limit
+   und `retry_count = 0`).
+3. **Kleiner ist langsamer, und zwar beweisbar.** Eine Stufe wartet auf ihre langsamste Quelle,
+   also ist die **Summe der Stufenmaxima** eine Untergrenze der Abrufdauer. Beim Verfeinern der
+   Aufteilung kann diese Summe nie sinken, weil `max(A ∪ B) ≤ max(A) + max(B)` gilt — das ist
+   datenunabhängig. An den 181 gemessenen Quellendauern:
+
+| Stufengröße | Stufen | Untergrenze des Abrufs | späteste direkte Quelle startet frühestens |
+|---:|---:|---:|---:|
+| **20 (heute)** | 10 | **71,3 s** | **9,85 s** |
+| 10 | 19 | 90,2 s | 16,92 s |
+| **5** | 37 | **153,0 s** | **31,53 s** |
+
+Der letzte Punkt widerlegt zugleich die Annahme, direkte und amtliche Quellen seien von der
+Stufengröße unberührt: `runGlobaleErfassung` schneidet `plan.quellen` **unabhängig vom
+Quellentyp**, eine direkte Quelle in Stufe *k* kann also erst starten, wenn alle Google-Quellen
+der Stufen davor fertig sind. Am laufenden Code gegengeprüft
+(`scripts/quellen-mehrfachabruf-test.js` §4, echter `crawlAllSources`, echtes Gate, 181 Quellen
+mit den gemessenen Kostenverhältnissen): identische Abrufmenge, Gesamtlauf nicht schneller, die
+direkten Quellen sind bei Stufe 5 später fertig.
+
+**Entscheidungsvorlage — echtes Stopp-Gatter (nicht umgesetzt, Freigabe erforderlich).**
+Ein Gatter, das laufende Netzarbeit *wirklich* abbricht, ist keine Konstantenänderung. Nötig
+wären: ein `AbortSignal` (oder ein Abbruchtoken) durch `crawlAllSources` → `crawlSource` →
+`parseRssFeed` → `fetchText` → **`fetchUrl`** (inklusive der rekursiven Weiterleitungsschleife),
+**`postForm`**, `fetchPardokText`, `resolveEntryUrls` und `enrichPersonArticleImages`; ein
+`request.destroy()` je offener Anfrage; und die Zusage, dass nach der Rückkehr **keine**
+Hintergrundarbeit weiterläuft (heute hält `withGoogleRetry` Backoff-Schlafzeiten, und der
+Gate-Semaphor gibt Slots erst im `finally` frei). Das berührt **mehrere Netzwerkfunktionen und
+Abbruchsignale** in einem aktiven Produktionspfad, der zugleich die Google-Härtung aus dem
+Vorfall 2026-07-25 trägt.
+
+| Option | Aufwand | Wirkung | Risiko |
+|---|---|---|---|
+| **A — nichts ändern** (heutiger Stand nach der Reparatur) | keiner | Der Abruf endete bei t = 115 s; die Überziehung lag danach und ist behoben. Reserve nach dem Fix: 72,80 s. | keins |
+| **B — Deadline im Crawler, ohne Abbruch** (`crawlAllSources` startet keine *neue* Quelle mehr nach der Deadline) | klein, additiv, ein optionaler Parameter mit Default „kein Limit" | Beseitigt die Stufenbarriere (≈ 34 s) und macht das Start-Gatter feinkörnig (je Quelle statt je 20). Begrenzt eine **laufende** Quelle nicht. | gering — bestehende Aufrufer bleiben byte-gleich |
+| **C — echtes Stopp-Gatter mit `AbortSignal`** | groß, quer durch 6+ Netzwerkfunktionen | Bricht auch laufende Anfragen ab. | hoch: Abbruch mitten in der Google-Auflösung, Wechselwirkung mit Retry/Breaker/Semaphor, Fehlerklassifikation ändert sich |
+
+**Empfehlung: A jetzt, B als eigener kleiner Sprint mit eigenem Nachweis, C nur, wenn B
+nachweislich nicht reicht.** C ist ausdrücklich **nicht** ohne neue Freigabe umzusetzen.
+
 ## 8 · Verbleibende Risiken
 
 | # | Risiko | Bewertung |
