@@ -1,0 +1,20 @@
+{
+  "zweck": "OP-25 Startbaseline: Mandatsmenge und Deployment-Stand am Fensterstart, verbindlich eingefroren",
+  "erhobenAt": "2026-08-04T18:25:02.716Z",
+  "erhobenAtMs": 1785867902716,
+  "aktivierungAt": "2026-08-04T18:23:57.472Z",
+  "aktivierungAtMs": 1785867837472,
+  "zuletztBeobachteterProzessCommit": "3fa88301e70a79da2e8901e3712691ab81ae87a6",
+  "hinweisProzessCommit": "kein Deployment-Beleg: Commit des juengsten gespeicherten Laufs (Alt-Bestand); beim Schreiben nicht geprueft",
+  "erwarteterDeploymentCommit": "2e4e00e9ecd19e059e2cd73b9dfb6da59082f4f5",
+  "commitPruefung": "erst in der Auswertung: alle globalphase-Fensterlaeufe muessen commit_ref == erwarteterDeploymentCommit tragen",
+  "anzahl": 5,
+  "mandate": [
+    "annika-klose",
+    "cem-ince",
+    "helmut-kleebank",
+    "ottilie-paola-klein-2",
+    "ruppert-st-we"
+  ],
+  "signatur": "m5-9aee228dbf2c9f13"
+}
