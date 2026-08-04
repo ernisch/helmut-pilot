@@ -1,25 +1,29 @@
 # OP-25 K2.1 — Globaler Abruf, kontextgebundene Vorgangsbildung
 
-**Kanonische Dokumentation des K2.1-Pfads.** Stand: **2026-08-03** (§7.4: Aktivierung ergänzt).
-Zustand: **gemergt, deployt und seit 2026-08-03, 13:15:11 UTC in Production AKTIVIERT** —
-`HELMUT_CRON_GLOBALABRUF=on`, ausschließlich in der Production-Umgebung.
+**Kanonische Dokumentation des K2.1-Pfads.** Stand: **2026-08-03** (§7.6 neu: Aktivierung
+gescheitert, Rückbau, Root Cause, Teilkorrektur). Zustand: **gemergt und deployt, in Production
+AKTUELL DEAKTIVIERT** — `HELMUT_CRON_GLOBALABRUF` wurde vom Betreiber am 2026-08-03, 22:51 UTC
+wieder auf `off` gesetzt und neu deployt, nachdem der reguläre Production-Kapazitätsnachweis
+**gescheitert** war (§7.6).
 **PR #201** gemergt (`255df01`), beide Pflicht-Checks grün (Lauf `30638964148`,
 `Syntax + Offline-Suiten` **194/194 Suiten**, `Browser-/Mobile-Smoke (Chromium)`).
 
-> **Der Pfad ist damit scharf, aber NICHT abgenommen.** Deployment `READY` und unmittelbarer,
-> rein lesender Smoke-Check sind bestanden (§7.4). **Der reguläre Production-Kapazitätsnachweis
-> über mindestens 24 h reguläre Kadenz steht vollständig aus** — bis dahin ist über die
-> tatsächliche Wirkung des Pfades in Production **nichts** belegt, und **OP-25 bleibt teilweise
+> **Der Pfad ist damit NICHT scharf und NICHT abgenommen.** Die Aktivierung 2026-08-03, 13:15 UTC
+> (§7.4) war ein Testlauf unter Betreiberaufsicht; der reguläre Production-Kapazitätsnachweis
+> **ist gelaufen und gescheitert** (§7.6) — Root Cause ursächlich geklärt, eine Teilkorrektur ist
+> vorgeschlagen (Durchsetzung des Zeitbudgets), die zugrundeliegende Kapazitätsgrenze bleibt offen
+> und braucht eine Betreiberentscheidung, bevor erneut aktiviert wird. **OP-25 bleibt teilweise
 > abgeschlossen**. Kein falsches Grün (`CLAUDE.md` §4.4).
 
 > **Flaggrenze, verbindlich — Code-Default und Production-Zustand sind zu unterscheiden:**
 > `HELMUT_CRON_GLOBALABRUF` hat den **Code-Default AUS**; ohne ausdrücklich gesetzten Wert
 > (`on`/`true`/`1`/`an`) läuft ausschließlich der bisherige Pfad, und das bleibt so. Das Flag ist
 > **nicht** über `helmut-flags.json` setzbar — nur über die Vercel-Env, also nur durch den
-> Betreiber. **Aktueller Production-Zustand: `on`, gesetzt am 2026-08-03, 13:15:11 UTC,
-> ausschließlich in der Umgebung `Production`** (Preview und Development unverändert ohne Wert,
-> dort greift weiter der Default). Sind `HELMUT_CRON_GLOBALPHASE` **und**
-> `HELMUT_CRON_GLOBALABRUF` gesetzt, läuft der **Altpfad** (fail closed bei Widerspruch);
+> Betreiber. **Aktueller Production-Zustand: `off`** — von 2026-08-03, 13:15:11 UTC bis
+> 2026-08-03, 22:51 UTC war die Variable ausschließlich in der Umgebung `Production` auf `on`
+> gesetzt; nach dem gescheiterten Kapazitätsnachweis (§7.6) hat der Betreiber sie zurückgesetzt
+> (Preview und Development waren durchgehend unverändert ohne Wert). Sind `HELMUT_CRON_GLOBALPHASE`
+> **und** `HELMUT_CRON_GLOBALABRUF` gesetzt, läuft der **Altpfad** (fail closed bei Widerspruch);
 > `HELMUT_CRON_GLOBALPHASE` ist unverändert **nicht** gesetzt.
 
 Verwandte Dokumente: [`cron-globalphase.md`](cron-globalphase.md) (K1-Vertrag und der
@@ -46,11 +50,13 @@ Mandats verändern, zusammenschieben oder auseinanderreißen.
 - **Zusammengefasst** wird nur noch innerhalb einer **Sichtbarkeitsgrenze**: zwei Meldungen
   dürfen nur dann locker zusammengeworfen werden, wenn **dieselben Mandate beide sehen**.
 
-**Stand 2026-08-03:** der Schalter ist **eingeschaltet** — der Betreiber hat
-`HELMUT_CRON_GLOBALABRUF=on` für Production gesetzt (13:15:11 UTC). Der neue Weg ist damit
-scharf, aber **noch nicht abgenommen**: der reguläre Production-Nachweis über mindestens 24 h
-steht aus (§7.4). *(Bis dahin galt: der Weg lag hinter einem ausgeschalteten Schalter, und ihn
-einzuschalten war eine Freigabeentscheidung des Betreibers.)*
+**Stand 2026-08-04:** der Schalter ist **wieder ausgeschaltet**. Der Betreiber hatte
+`HELMUT_CRON_GLOBALABRUF=on` für Production gesetzt (2026-08-03, 13:15:11 UTC); der reguläre
+Production-Nachweis über mindestens 24 h **ist gelaufen und gescheitert** (§7.6) — zwei Läufe
+überzogen ihr Budget bzw. das äußere Zeitlimit, danach hat der Betreiber zurückgesetzt (22:51 UTC).
+Root Cause ist geklärt, eine zunächst vermutete kleine Korrektur wurde nachgemessen und
+zurückgenommen (§7.6.2); die zugrundeliegende Kapazitätsgrenze braucht eine
+Betreiberentscheidung (§7.6.5), bevor der Schalter erneut umgelegt wird.
 
 ---
 
@@ -505,11 +511,109 @@ wenn über das Beobachtungsfenster gilt:
 Punkt 7 ist die bewusste Grenze dieses Kriteriums: die Kontextzahl ist eine **Beobachtungsgröße**,
 kein Schwellwert. Auffällig hoch heißt „erklären", nicht „durchgefallen".
 
+---
+
+## 7.6 · Production-Kapazitätsnachweis 2026-08-03 — GESCHEITERT, Rückbau, Root Cause in PR #219
+
+**Rein lesend gegen Vercel-Runtime-Logs und -Deployments geprüft** (Vercel-MCP, kein
+Production-Schreibzugriff). Sprintauftrag: OP-25 Kapazitätsfehler ursächlich beheben.
+
+### 7.6.1 Der gescheiterte Nachweis
+
+| Lauf | Zeit (UTC) | Befund |
+|---|---|---|
+| `cron/pipeline` | 16:00:01 | `[globalphase] Quellen vereinigt: gesamt=181 gemeinsam=140 mandatseigen=41`. `[cron/pipeline/globalphase] 267122ms status=teilweise quellen=181 rohdokumente=2179 verstanden=0 frisch=false budgetGlobalMs=221674 reserveMs=48000 restMs=2552`. `[cron/pipeline/fairness] … kapazitaet=0 obergrenzeLaeufe=keine-garantie`. `[cron/pipeline] Zeitbudget erschoepft — 6 von 6 Mandaten NICHT verarbeitet.` |
+| `cron/crawl` | 20:00:49 | `[cron/crawl] aeusseres Zeitlimit — Laufdatensatz … als abgebrochen vermerkt`. `[cron/crawl] 280184ms tenants=undefined bounded=true` — traf das ÄUSSERE 280 000-ms-Limit. |
+| Rückbau | 22:51:00 | Production-Deployment `dpl_2YJkxWKYGALiCbd779XsarAkRc94`, `target: production`, `action: redeploy` (aus `dpl_Ycbyi5Z3fkmfFRYaqqMSabcDJUux`), `readyState: READY` — Betreiberaktion, `HELMUT_CRON_GLOBALABRUF` zurück auf `off`. |
+
+Beide Läufe zeigten wiederholt `[crawler] Google-News URL-Auflösung: N/M aufgelöst` und mehrere
+`Crawl failed for … Timeout for https://news.google.com/rss/search?…`.
+
+### 7.6.2 Root Cause — erster Versuch dieser PR zurückgenommen, tatsächliche Ursache in PR #219
+
+**Zunächst vermutet, dann ZURÜCKGENOMMEN (2026-08-04):** ein Durchsetzungsfehler im Stufenabruf —
+`runGlobaleErfassung` prüft die Restzeit nur als Start-Gatter zwischen Stufen von
+`HELMUT_GLOBALPHASE_ABRUF_STUFE` Quellen, nicht als Stopp-Gatter währenddessen. **Der Mechanismus
+existiert am Code wirklich**, trägt aber **für diesen Lauf nicht als Erklärung**: nachgemessen
+endete der Abruf bei **t ≈ 115 s** eines **221,674-s-Budgets** (`nichtAbgerufen=0`, `fehler=0`) —
+das Start-Gatter hat nie gegriffen, die Überziehung entstand vollständig **danach**. Die zunächst
+vorgeschlagene Abhilfe (Default `HELMUT_GLOBALPHASE_ABRUF_STUFE` 20 → 5) wurde deshalb
+**zurückgenommen** (`lib/helmut/scheduler.js` ist wieder identisch mit `main`) — sie hätte den
+Abruf zudem nicht beschleunigt, sondern seine Untergrenze angehoben: eine Stufe wartet auf ihre
+langsamste Quelle, die Summe der Stufenmaxima ist eine Untergrenze der Gesamtdauer und kann beim
+Verkleinern der Stufe nie sinken (`max(A∪B) ≤ max(A)+max(B)`, datenunabhängig) — an den 181
+gemessenen Quellendauern des gescheiterten Laufs: Stufe 20 → 71,3 s, Stufe 10 → 90,2 s, Stufe 5 →
+153,0 s. Belege: `scripts/quellen-mehrfachabruf-test.js`.
+
+**Die tatsächliche Ursache, in PR #219 aus denselben Rohdaten des gescheiterten Laufs
+rekonstruiert** (`source_crawl_telemetry`, `raw_documents.created_at`,
+`document_findings.created_at`, `process_runs`, rein lesend): **834 sequenzielle
+Einzelzeilen-Round-Trips gegen PostgREST — 124,74 s = 46,7 % des gesamten Laufs.** Davon 616
+`raw_documents`-Upserts **einzeln statt gebündelt** (89,89 s) und rund 108 `finding_count`-Zeilen
+mit je einem GET+PATCH-Paar statt eines bedingten Bulk-Updates (34,85 s); dazu 15,94 s doppelte
+Cluster-Arbeit, weil die Lazy-Understanding-Stapelschleife erst clusterte und **danach** das
+längst erschöpfte Budget prüfte. Der Abruf selbst (112,11 s für alle 181 Quellen, 0 Fehler) war
+**nicht** die Ursache — die Google-Härtung (Nebenläufigkeit 5, Mindestabstand 200 ms) blieb
+unangetastet. Reparatur (PR #219): Bulk-Upsert der Rohdokumente, bedingt gebündeltes
+`finding_count`-Update (echtes Compare-and-Set, `CLAUDE.md` §4.10), Budgetriegel vor der
+Clusterbildung — offline an production-kalibrierten Latenzen nachgewiesen: Persistenzphase
+130,51 s → 1,56 s, globale Phase 263,79 s → 197,19 s, **0 von 6 → 6 von 6 Mandate** im selben
+Lauf. Details, Testergebnisse und drei offene Freigabefragen (E-1 Stufenbarriere im Abruf, ≈ 34 s
+Restpotenzial; E-2 `HELMUT_CRAWL_MAX_CANDIDATES` wirkt je Stufe statt je Lauf; E-3
+Abnahmekriterium „abgeschlossen" praktisch unerreichbar bei heutigem Verstehensrückstand): siehe
+PR #219-Beschreibung. **Diese drei Punkte zeigen, dass E-1 (der Abruf/Google-Gate) nur ein
+kleiner Restfaktor ist (~34 s von ~267 s), nicht der Hauptblocker** — die in einer früheren
+Fassung dieses Abschnitts behauptete „strukturelle Kapazitätsgrenze des Google-Gates, die eine
+größere Architekturänderung erfordert" war **selbst Teil des zurückgenommenen ersten
+Erklärungsversuchs** und ist mit der PR-#219-Reparatur gegenstandslos.
+
+### 7.6.3 Warum die bestehende Kapazitätssuite den Fehler nicht zeigte
+
+`scripts/cron-globalphase-test.js` §8 (`messen()`) ersetzt `crawlAllSources` durch einen
+**seriellen** Testdouble mit einer **flachen** Kostenkonstante je Quelle (`KOSTEN.abrufMs`). Das
+modelliert weder die Google-Gate-Nebenläufigkeit/-Mindestabstand/-Timeouts noch die reale
+Größenordnung von 181 Quellen (die Simulationswelt hat nur einen Katalog aus rund zehn
+Basisquellen). Das erklärt, warum die Suite „K2.1 6/6 in 205 145 ms" meldete, während Production
+scheiterte. **Die Fachlogik der Vorgangsbildung (K2.1-Vertrag, Abschnitt 5 dieses Dokuments,
+`vorgangskontext-test.js`) ist davon nicht betroffen** — sie prüft die Bündelung, nicht die
+Zeitdynamik des Abrufs, und bleibt unverändert richtig.
+
+### 7.6.4 Lastprobe dieser PR — korrigiert auf eine widerlegte Annahme statt eines Erfolgs
+
+[`scripts/globalabruf-kapazitaet-test.js`](../../scripts/globalabruf-kapazitaet-test.js)
+(**21/21 grün**) trieb ursprünglich den echten `createGoogleNewsGate` gegen eine synthetische
+181-Quellen-Welt, um den (inzwischen zurückgenommenen) Stufen-Fix zu belegen. Nach der Korrektur
+weist Abschnitt 3 der Suite stattdessen **anhand der 181 tatsächlich gemessenen
+Quellendauern des gescheiterten Laufs** nach, dass eine kleinere Stufe die Abrufdauer **nicht**
+senkt, sondern deren Untergrenze anhebt (Stufe 20 → 71,3 s, Stufe 10 → 90,2 s, Stufe 5 → 153,0 s;
+`max(A∪B) ≤ max(A)+max(B)`), und dass der Abruf im gescheiterten Lauf ohnehin bei t ≈ 115 s eines
+221,674-s-Budgets endete — die Überziehung entstand danach und ist hier nicht behoben. Die
+verbliebenen Abschnitte der Suite (4: Phasenzuordnung, 5: Gegenproben für degradierte/hängende
+Quellen und nahezu erschöpftes Budget) bleiben gültig und grün. Die **tatsächliche** Ursache und
+ihr Nachweis (Persistenzphase 130,51 s → 1,56 s, 0 → 6 von 6 Mandaten) stehen in PR #219, belegt
+über production-kalibrierte Latenzen der ECHTEN Persistenz- und Abrufpfade.
+
+### 7.6.5 Empfehlung
+
+Diese PR (#218) implementiert **keine** Reparatur mehr — der ursprüngliche Fix war falsch
+begründet und wurde zurückgenommen. Sie bleibt als dokumentierter Fehlversuch samt Korrektur und
+als Quelle für zwei wiederverwendbare Testbausteine stehen
+(`scripts/globalabruf-kapazitaet-test.js`, `scripts/quellen-mehrfachabruf-test.js`).
+**Empfehlung: PR #219 mergen** (die tatsächliche Ursache und ihre geprüfte Reparatur), **PR #218
+nicht mergen** — beide legen dieselbe neue Testdatei mit unterschiedlichem Inhalt an und
+schließen sich damit gegenseitig aus. Vor einer erneuten Aktivierung von
+`HELMUT_CRON_GLOBALABRUF` sind zusätzlich die drei in PR #219 offen benannten Fragen zu
+entscheiden (Stufenbarriere im Abruf E-1, `HELMUT_CRAWL_MAX_CANDIDATES` je Stufe statt je Lauf
+E-2, praktisch unerreichbares Abnahmekriterium „abgeschlossen" bei heutigem Verstehensrückstand
+E-3) — ohne E-3 schlägt Abnahmekriterium 5 aus §7.5 planmäßig fehl.
+
+---
+
 ## 8 · Verbleibende Risiken
 
 | # | Risiko | Bewertung |
 |---|---|---|
-| R1 | **Kein Production-Nachweis.** Alle fachlichen Aussagen sind offline erhoben. | **Unverändert offen — und seit dem 2026-08-03 das einzige verbleibende Risiko dieser Liste, das eine Handlung verlangt.** Das Flag ist seit 13:15:11 UTC gesetzt, der Pfad läuft also scharf, **bevor** er in Production nachgewiesen ist; der Nachweis über ≥ 24 h ist der nächste Schritt (§7.4/§7.5). Verschärfend: der **Rückbau ist aus einer Agenten-Sitzung nicht ausführbar** (§7.3) — zeigt ein regulärer Lauf ein Problem, muss der Betreiber zurückrollen. |
+| R1 | **Kein Production-Nachweis.** Alle fachlichen Aussagen sind offline erhoben. | **Erledigt sich anders als erwartet: der Production-Nachweis IST gelaufen (2026-08-03) und GESCHEITERT** (§7.6.1) — der Betreiber hat wie in §7.3 vorhergesagt selbst zurückgerollt, weil kein Agenten-Rückweg existierte. Root Cause ist jetzt geklärt (§7.6.2), Reparatur in PR #219. Vor einer erneuten Aktivierung muss ein **vollständig neues** ≥ 24-h-Beobachtungsfenster beginnen. |
 | R2 | **Die Fallfamilien sind konstruiert.** Wie oft die Muster real auftreten, ist unbekannt. | Bewusst so (Auftrag Phase 4). Die Gleichheit mit dem heutigen Pfad gilt unabhängig von der Häufigkeit. |
 | R3 | **Bestandsbefund F10/Z2** — Formularvokabular verschmilzt auch heute falsch. | Nicht durch K2.1 verursacht und nicht durch K2.1 verschlimmert. Eigener Sprint, freigabepflichtig. |
 | R4 | **Reihenfolgeempfindlichkeit** des strengen Regimes (F3, F7, F13). | Bestand, unverändert. K2.1 ist nicht empfindlicher als heute (4.4b). |

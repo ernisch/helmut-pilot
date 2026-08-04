@@ -1,6 +1,43 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-08-03 (**Sprint „OP-25 K2.1 — Production-Aktivierung ausgeführt"
+**Letzte Aktualisierung:** 2026-08-04 (**Zwei parallele Sprints zu OP-25, an Messwerten
+gegeneinander bewertet — PR #219 trägt die Ursache, PR #218 ist auf diesen Befund korrigiert und
+teilweise abgeschlossen.** Ausgangslage (rein lesend gegen Vercel-Runtime-Logs/-Deployments
+geprüft): der reguläre `cron/pipeline`-Lauf 2026-08-03 16:00:01 UTC überzog sein zugeteiltes
+Budget (`budgetGlobalMs=221674`) um 45 448 ms auf 267 122 ms, Datenstand `teilweise`, 0 von 6
+Mandaten erreicht (`restMs=2552`); ein späterer `cron/crawl`-Lauf 20:00:49 UTC riss sogar das
+ÄUSSERE 280 000-ms-Limit (`280184ms bounded=true`, als `abgebrochen` vermerkt); der Betreiber hat
+danach `HELMUT_CRON_GLOBALABRUF` auf Production wieder auf `off` gesetzt und neu deployt
+(`dpl_2YJkxWKYGALiCbd779XsarAkRc94`, `READY` 22:51 UTC). **PR #218 (dieser Branch,
+`claude/exciting-goodall-hdvcyg`)** vermutete zunächst einen Durchsetzungsfehler im Stufenabruf
+(Start-Gatter statt Stopp-Gatter) und senkte `HELMUT_GLOBALPHASE_ABRUF_STUFE` von 20 auf 5 —
+**diese Zuschreibung trägt nicht und wurde in derselben PR zurückgenommen**
+(`lib/helmut/scheduler.js` ist wieder identisch mit `main`): der Abruf endete im gescheiterten
+Lauf bei t ≈ 115 s eines 221,674-s-Budgets (`nichtAbgerufen=0`, `fehler=0`) — das Start-Gatter hat
+nie gegriffen, die Überziehung entstand vollständig danach; eine kleinere Stufe hätte den Abruf
+zudem nicht beschleunigt, sondern seine Untergrenze angehoben (`max(A∪B) ≤ max(A)+max(B)`,
+gemessen Stufe 20 → 71,3 s, Stufe 5 → 153,0 s). **PR #219
+(`claude/helmut-kapazitaetsfehler-abrufpfad-m17ynl`) fand die tatsächliche Ursache**, rekonstruiert
+aus `source_crawl_telemetry`, `raw_documents.created_at`, `document_findings.created_at` und
+`process_runs` desselben gescheiterten Laufs: **834 sequenzielle Einzelzeilen-Round-Trips gegen
+PostgREST — 616 `raw_documents`-Upserts einzeln (89,89 s) plus ~108 `finding_count`-GET+PATCH-Paare
+(34,85 s) = 124,74 s = 46,7 % des Laufs** (F-RT), dazu 15,94 s doppelte Cluster-Arbeit vor der
+Budgetprüfung (F-CL). Der Abruf selbst (112,11 s, alle 181 Quellen, 0 Fehler) war **nicht** die
+Ursache. Reparatur in PR #219: Bulk-Upsert der Rohdokumente, bedingt gebündeltes
+`finding_count`-Update (Compare-and-Set, `CLAUDE.md` §4.10), Budgetriegel vor der Clusterbildung —
+offline nachgewiesen an production-kalibrierten Latenzen: Persistenzphase 130,51 s → 1,56 s,
+globale Phase 263,79 s → 197,19 s, **0 von 6 → 6 von 6 Mandate** im selben Lauf. Details, drei
+offene Freigabefragen (E-1..E-3) und Testergebnisse: PR #219-Beschreibung. **Empfehlung: PR #219
+mergen, PR #218 nicht mergen** (beide legen dieselbe neue Testdatei an und schließen sich aus;
+PR #218 bleibt als dokumentierter Fehlversuch samt Korrektur stehen, `CLAUDE.md` §8). Vor einer
+erneuten Aktivierung von `HELMUT_CRON_GLOBALABRUF` sind zusätzlich E-3 (Abnahmekriterium
+„abgeschlossen" praktisch unerreichbar bei heutigem Verstehensrückstand) und die in PR #219 §
+„Was bewusst NICHT enthalten ist" benannten Punkte zu entscheiden. Getestet (dieser Branch):
+`node scripts/run-offline-tests.js` 186/201 grün (dieselben 15 vorbestehenden
+NETZ-GUARD-/Umgebungsfehler wie auf unverändertem `main`, per Stash-Vergleich verifiziert);
+`node scripts/browser-smoke-test.js` 32/32 grün. Production/Flags/Crons/Quellen/Mandate/Kosten
+unberührt, kein Merge, kein Deploy, 0 KI-Aufrufe, 0,00 USD.**) · (**Sprint „OP-25 K2.1 —
+Production-Aktivierung ausgeführt"
 — TEILWEISE ABGESCHLOSSEN. K2.1 ist in Production AKTIVIERT. Deployment READY und unmittelbarer
 Smoke-Check bestanden. Der reguläre Production-Kapazitätsnachweis über das vorgeschriebene
 Beobachtungsfenster ist noch offen. OP-25 bleibt teilweise abgeschlossen.** **Der Handgriff war

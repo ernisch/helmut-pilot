@@ -797,7 +797,44 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   (`255df01`) und deployt, und **seit dem 2026-08-03, 13:15:11 UTC ist
   `HELMUT_CRON_GLOBALABRUF` in der Production-Umgebung auf `on`** — siehe den
   Aktivierungsstatus unmittelbar unten.
-- **Status K2.1 (2026-08-03, 13:15:11 UTC, Betreiberaktion): IN PRODUCTION AKTIVIERT —
+- **Status K2.1, Nachweis, Rückbau, Root Cause (2026-08-03/04): DER REGULÄRE
+  PRODUCTION-KAPAZITÄTSNACHWEIS IST GESCHEITERT, DER BETREIBER HAT ZURÜCKGEROLLT. DIE URSACHE IST
+  IN PR #219 GEKLÄRT UND DORT REPARIERT (0 → 6 VON 6 MANDATEN, OFFLINE NACHGEWIESEN); DIESE
+  RESTLISTENZEILE BLEIBT TEILWEISE ABGESCHLOSSEN, BIS PR #219 GEMERGT UND EIN NEUER
+  ≥ 24-H-PRODUCTION-NACHWEIS BESTANDEN IST.** `cron/pipeline` 16:00:01 UTC überzog sein
+  zugeteiltes Budget (`budgetGlobalMs=221674`) um 45 448 ms auf 267 122 ms — Datenstand
+  `teilweise`, 0 von 6 Mandaten erreicht; `cron/crawl` 20:00:49 UTC riss sogar das äußere
+  280 000-ms-Limit (`bounded=true`, `abgebrochen`). Der Betreiber setzte danach
+  `HELMUT_CRON_GLOBALABRUF` in Production wieder auf `off` und deployte neu
+  (`dpl_2YJkxWKYGALiCbd779XsarAkRc94`, `READY` 22:51 UTC) — alle drei Fakten rein lesend gegen
+  Vercel-Runtime-Logs/-Deployments geprüft. **Zwei parallele Sprints, an Messwerten
+  gegeneinander bewertet:** dieser Zweig (PR #218) vermutete zunächst einen Durchsetzungsfehler
+  im Stufenabruf und senkte `HELMUT_GLOBALPHASE_ABRUF_STUFE` 20→5 — **nachgemessen falsch und
+  zurückgenommen** (`lib/helmut/scheduler.js` wieder identisch mit `main`): der Abruf endete im
+  gescheiterten Lauf bei t ≈ 115 s eines 221,674-s-Budgets (`nichtAbgerufen=0`, `fehler=0`), die
+  Überziehung entstand vollständig danach, und eine kleinere Stufe hätte den Abruf ohnehin nicht
+  beschleunigt, sondern verlangsamt (`max(A∪B) ≤ max(A)+max(B)`, gemessen Stufe 20 → 71,3 s,
+  Stufe 5 → 153,0 s). **PR #219 fand die tatsächliche Ursache**, aus den Rohdaten desselben
+  Laufs rekonstruiert: **834 sequenzielle Einzelzeilen-Round-Trips gegen PostgREST (616
+  `raw_documents`-Upserts + ~108 `finding_count`-GET/PATCH-Paare) = 124,74 s = 46,7 % des
+  Laufs**, dazu 15,94 s doppelte Cluster-Arbeit vor der Budgetprüfung — der Abruf selbst (112 s,
+  0 Fehler) war nicht die Ursache. Reparatur in PR #219 (Bulk-Upsert, bedingt gebündeltes
+  Compare-and-Set-Update, Budgetriegel vor Clusterbildung): offline production-kalibriert
+  nachgewiesen, Persistenzphase 130,51 s → 1,56 s, **0 → 6 von 6 Mandate**. Drei offene
+  Freigabefragen vor erneuter Aktivierung (E-1 Stufenbarriere im Abruf ≈ 34 s Restpotenzial, E-2
+  `HELMUT_CRAWL_MAX_CANDIDATES` je Stufe statt je Lauf, E-3 Abnahmekriterium „abgeschlossen"
+  praktisch unerreichbar) — Details: [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md)
+  §7.6. Nebenbefund: die bestehende Kapazitätssuite (`cron-globalphase-test.js` §8) modellierte
+  weder die reale Google-Gate-Nebenläufigkeit noch die reale Größenordnung (181 Quellen) noch
+  den echten Persistenzpfad — deshalb zeigte sie Erfolg, während Production scheiterte; die
+  K2.1-Fachlogik (Vorgangsbildung) ist davon unberührt. **Empfehlung: PR #219 mergen** (trägt die
+  Ursache), **PR #218 nicht mergen** (Fehlversuch, gleichnamige Testdatei, schließt sich mit
+  #219 aus — bleibt als dokumentierte Korrektur stehen). Getestet (PR #218): Offline-Suite
+  186/201 grün (15 vorbestehende Umgebungsfehler, per Baseline-Vergleich verifiziert),
+  Browser-Smoke 32/32 grün. Production/Flags/Crons/Quellen/Mandate/Kosten unberührt, kein Merge,
+  kein Deploy, 0 KI-Aufrufe, 0,00 USD.
+- **Status K2.1 (2026-08-03, 13:15:11 UTC, Betreiberaktion, historisch — siehe oben für den
+  weiteren Verlauf): IN PRODUCTION AKTIVIERT —
   Deployment READY und unmittelbarer Smoke-Check bestanden, REGULÄRER
   PRODUCTION-KAPAZITÄTSNACHWEIS NOCH OFFEN. OP-25 bleibt TEILWEISE ABGESCHLOSSEN.**
   **`HELMUT_CRON_GLOBALABRUF = on`, ausschließlich in der Production-Umgebung** (Preview und
