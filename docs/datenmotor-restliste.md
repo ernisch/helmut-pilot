@@ -535,6 +535,25 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Kanonisch: [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) **§7.7.2**. Tests:
   Vertrag **158/158** (+50), Dauerhaftigkeit **52/52**, Mutationsprobe **41 von 41 rot** (+10);
   Dry-Run unverändert `noch_nicht_auswertbar`.
+  **Nachtrag 2026-08-04/5 (dritter Reviewdurchgang):** **(a) Das Erhebungsfenster der
+  Startbaseline** war am Fensterstart verankert — damit wäre eine Baseline zulässig gewesen, die
+  *vor* der Aktivierung (also aus der Zeit des alten Bestands) oder Stunden danach erhoben wurde.
+  Bezugspunkt ist jetzt die **Aktivierung**: `aktivierung ≤ erhoben ≤ aktivierung + 15 min`
+  (beide Grenzen inklusiv), und `aktivierung ≤ jetzt`. Alle drei Verstöße sind fail closed —
+  `startbaseline-vor-aktivierung`, `aktivierung-in-zukunft` (in der Gesamtbewertung **vor** allen
+  Fensterprüfungen) und `startbaseline-zu-spaet-erhoben`. Die Schreibseite setzt dieselben
+  Grenzen und erzeugt gar keine Datei (Exit 2). **(b) Kein möglicherweise veralteter Commit als
+  Deployment-Stand:** `process_runs.commit_ref` ist der Commit des *jüngsten gespeicherten Laufs*
+  und nach einem frischen Deployment veraltet. Das Feld heißt jetzt
+  `zuletztBeobachteterProzessCommit` (kein Deployment-Beleg; ein Feld `deploymentCommit` gibt es
+  nicht mehr, auch nicht im `--baseline`-Querschnitt); wer den Stand belegen will, übergibt
+  `--erwarteter-commit <sha>` — strikt geprüft (Voll-/Kurzform als echtes Präfix), Abweichung ⇒
+  Exit 2 ohne Datei, ohne Übergabe bleibt `deploymentCommitBestaetigt: false`. Kanonisch:
+  [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) **§7.7.3**. Tests: Vertrag
+  **178/178** (+20), Dauerhaftigkeit **52/52**, Mutationsprobe **46 von 46 rot** (+5);
+  Production-Proben rein lesend: zukünftige Aktivierung, 2 h zurückliegende Aktivierung und
+  falscher erwarteter Commit je **Exit 2 ohne Datei**; korrekter Kurzform-Commit ⇒ bestätigt.
+  Dry-Run unverändert `noch_nicht_auswertbar`.
 - **Nachtrag 2026-08-04 (Profilreparatursprint):** Künftige OP-25-Production-Nachweise arbeiten
   mit **fünf aktiven realen Mandaten** statt sechs — das Demo-Mandat `max-mustermann` ist seit
   2026-08-04 deaktiviert (nicht gelöscht, OP-04-Teilschritt), sofern bis zum Nachweis keine

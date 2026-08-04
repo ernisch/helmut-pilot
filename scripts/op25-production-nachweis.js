@@ -206,20 +206,56 @@ async function leseDauerhafteLaufzeilen(authStore) {
   return { zeilen: [...gefunden.values()], relationalFehler };
 }
 
-// ECHTE Commit-Kennung des laufenden Production-Stands: `process_runs.commit_ref` wird aus
-// `VERCEL_GIT_COMMIT_SHA` gespeist (storage.sanitizeProcessRun). Gibt es keine, bleibt das
-// Feld ehrlich `null` — es wird NICHTS anderes hineingeschrieben, was wie ein Commit aussieht.
-async function leseDeploymentCommit() {
+// ZULETZT BEOBACHTETER PROZESS-COMMIT — ausdruecklich NICHT der aktuelle Deployment-Stand.
+// `process_runs.commit_ref` wird aus `VERCEL_GIT_COMMIT_SHA` desjenigen Laufs gespeist, der
+// die Zeile geschrieben hat. Er ist damit der Commit des JUENGSTEN GESPEICHERTEN LAUFS —
+// nach einem frischen Deployment, das noch keinen Lauf erzeugt hat, ist er VERALTET.
+// Ihn „Deployment-Commit" zu nennen waere eine Behauptung ueber etwas, das hier nicht
+// gemessen wird (Review 3 zu PR #222). Der Vercel-Deployment-Zustand ist aus einer Sitzung
+// nicht lesbar (Egress zu `api.vercel.com` gesperrt, vorgangskontext.md §7.3) — deshalb wird
+// er nicht geraten, sondern der Betreiber kann ihn per `--erwarteter-commit` ausdruecklich
+// uebergeben; dann wird STRIKT geprueft.
+async function leseZuletztBeobachtetenProzessCommit() {
   try {
     const rows = await holen(
       "/rest/v1/process_runs?select=commit_ref,created_at&commit_ref=not.is.null"
       + "&order=created_at.desc&limit=1"
     );
-    const treffer = Array.isArray(rows) && rows[0] ? rows[0].commit_ref : null;
-    return (typeof treffer === "string" && treffer.trim()) ? treffer.trim() : null;
+    const zeile = Array.isArray(rows) && rows[0] ? rows[0] : null;
+    const treffer = zeile ? zeile.commit_ref : null;
+    return {
+      commit: (typeof treffer === "string" && treffer.trim()) ? treffer.trim() : null,
+      beobachtetAt: (zeile && zeile.created_at) || null
+    };
   } catch (_) {
-    return null;
+    return { commit: null, beobachtetAt: null };
   }
+}
+
+// Strikte Gegenprobe eines AUSDRUECKLICH uebergebenen erwarteten Deployment-Commits gegen
+// den zuletzt beobachteten Prozess-Commit. Nur bei exakter Uebereinstimmung ist belegt, dass
+// der erwartete Stand bereits Laeufe erzeugt hat. Jede Abweichung ist fail closed: entweder
+// laeuft ein anderer Stand, oder der erwartete Stand hat noch keinen Lauf hinterlassen —
+// in beiden Faellen darf nichts als „aktueller Deployment-Stand" festgehalten werden.
+function pruefeErwartetenCommit(erwartet, beobachtet) {
+  const soll = (typeof erwartet === "string" && erwartet.trim()) ? erwartet.trim() : null;
+  if (!soll) return { uebergeben: false, bestaetigt: false, erwartet: null };
+  if (!beobachtet) {
+    return {
+      uebergeben: true, bestaetigt: false, erwartet: soll,
+      grund: "Es gibt keinen gespeicherten Prozess-Commit — der erwartete Stand ist nicht belegbar."
+    };
+  }
+  // Kurzform (7–12 Zeichen) gegen Vollform zulassen, aber nur als echtes Praefix.
+  const gleich = soll === beobachtet
+    || (soll.length >= 7 && beobachtet.startsWith(soll))
+    || (beobachtet.length >= 7 && soll.startsWith(beobachtet));
+  return gleich
+    ? { uebergeben: true, bestaetigt: true, erwartet: soll }
+    : {
+      uebergeben: true, bestaetigt: false, erwartet: soll,
+      grund: `Zuletzt beobachteter Prozess-Commit ${beobachtet} weicht vom erwarteten ${soll} ab.`
+    };
 }
 
 // --- Kostenvertrag: Summe UND belegte Vollstaendigkeit ---------------------------------------
@@ -241,24 +277,42 @@ const zeit = (ms) => (Number.isFinite(ms) ? new Date(ms).toISOString().replace("
 // mit `aktivierungAtMs: null` waere wertlos (sie koennte zu jeder Aktivierung gehoeren) und
 // wuerde die Auswertung spaeter ohnehin blockieren. Deshalb wird hier gar nicht erst
 // geschrieben (Review 2 zu PR #222).
-function schreibeStartbaseline(datei, { aktivierungAtMs, aktiveMandate, deploymentCommit }) {
+function schreibeStartbaseline(datei, { aktivierungAtMs, aktiveMandate, prozessCommit, commitPruefung }) {
   if (!Number.isFinite(aktivierungAtMs)) {
     throw new Error("--startbaseline-schreiben verlangt einen gueltigen --aktivierung-Zeitpunkt"
       + " (ISO). Ohne ihn belegt die Baseline nichts.");
   }
+  const jetztMs = Date.now();
+  // Eine Aktivierung in der ZUKUNFT kann nicht belegt werden — es gibt noch nichts zu sehen.
+  if (aktivierungAtMs > jetztMs) {
+    throw new Error(`Der Aktivierungszeitpunkt ${new Date(aktivierungAtMs).toISOString()} liegt`
+      + ` in der Zukunft (jetzt ${new Date(jetztMs).toISOString()}). Die Baseline wird erst`
+      + " NACH der Aktivierung erhoben.");
+  }
+  // Und sie muss INNERHALB der dokumentierten Toleranz erhoben werden, sonst belegt sie
+  // nicht den Bestand zum Aktivierungszeitpunkt (der Bewertungsvertrag wuerde sie ohnehin
+  // ablehnen — dann gar nicht erst schreiben).
+  if (jetztMs > aktivierungAtMs + vertrag.BASELINE_TOLERANZ_MS) {
+    throw new Error(`Die Aktivierung liegt ${Math.round((jetztMs - aktivierungAtMs) / 60000)} min`
+      + ` zurueck, zulaessig sind ${Math.round(vertrag.BASELINE_TOLERANZ_MS / 60000)} min.`
+      + " Eine so spaet erhobene Baseline belegt den Bestand zum Aktivierungszeitpunkt nicht.");
+  }
   const sig = vertrag.mandatsSignatur(aktiveMandate);
   if (!sig.anzahl) throw new Error("Startbaseline ohne Mandate — nichts zu belegen.");
-  const jetztMs = Date.now();
   const inhalt = {
     zweck: "OP-25 Startbaseline: Mandatsmenge am Fensterstart, identitaetsgenau eingefroren",
     erhobenAt: new Date(jetztMs).toISOString(),
     erhobenAtMs: jetztMs,
     aktivierungAt: new Date(aktivierungAtMs).toISOString(),
     aktivierungAtMs,
-    // ECHTE Commit-Kennung des laufenden Production-Stands (`process_runs.commit_ref`,
-    // gespeist aus VERCEL_GIT_COMMIT_SHA) — oder ehrlich `null`. Frueher stand hier eine
-    // LAUFKENNUNG, was keine Commit-Kennung ist (Nebenbefund Review 2).
-    deploymentCommit: (typeof deploymentCommit === "string" && deploymentCommit.trim()) ? deploymentCommit.trim() : null,
+    // EHRLICHE BENENNUNG (Review 3): das ist der Commit des juengsten GESPEICHERTEN Laufs,
+    // NICHT der aktuelle Deployment-Stand. Nach einem frischen Deployment ohne Lauf ist er
+    // veraltet. Ein Feld `deploymentCommit` gibt es bewusst nicht mehr.
+    zuletztBeobachteterProzessCommit: (typeof prozessCommit === "string" && prozessCommit.trim()) ? prozessCommit.trim() : null,
+    // Nur wenn der Betreiber einen erwarteten Commit UEBERGEBEN hat und er strikt zum
+    // beobachteten passt, gilt der Stand als belegt. Sonst ausdruecklich `false`.
+    erwarteterDeploymentCommit: (commitPruefung && commitPruefung.erwartet) || null,
+    deploymentCommitBestaetigt: Boolean(commitPruefung && commitPruefung.bestaetigt),
     anzahl: sig.anzahl,
     mandate: sig.mandate,
     signatur: sig.signatur
@@ -320,7 +374,10 @@ async function erhebeBaseline({ mainStore, authStore, fairnessStore, dauerhafte 
 
   return {
     erhobenAt: new Date().toISOString(),
-    deploymentCommit: commit,
+    // EHRLICHE BENENNUNG (Review 3): Commit des juengsten GESPEICHERTEN Laufs, NICHT der
+    // aktuelle Deployment-Stand — nach einem frischen Deployment ohne Lauf ist er veraltet.
+    zuletztBeobachteterProzessCommit: commit,
+    hinweisProzessCommit: "kein Deployment-Beleg: Commit des juengsten gespeicherten Laufs",
     mandate: {
       gesamt: profile.length, aktiv: sig.mandate, signatur: sig.signatur,
       inaktiv: inaktive, testmandateInProduction: testmandate.length
@@ -390,11 +447,32 @@ async function erhebeBaseline({ mainStore, authStore, fairnessStore, dauerhafte 
         + " --aktivierung-Zeitpunkt (ISO). Ohne ihn belegt die Baseline nichts — nichts geschrieben.");
       process.exit(2);
     }
-    const inhalt = schreibeStartbaseline(String(args["startbaseline-schreiben"]), {
-      aktivierungAtMs, aktiveMandate, deploymentCommit: await leseDeploymentCommit()
-    });
+    const beobachtet = await leseZuletztBeobachtetenProzessCommit();
+    const commitPruefung = pruefeErwartetenCommit(args["erwarteter-commit"], beobachtet.commit);
+    // Ein AUSDRUECKLICH erwarteter Commit, der nicht belegt ist, ist fail closed: entweder
+    // laeuft ein anderer Stand oder der erwartete hat noch keinen Lauf hinterlassen.
+    if (commitPruefung.uebergeben && !commitPruefung.bestaetigt) {
+      console.error(`MESSFEHLER: ${commitPruefung.grund} — nichts geschrieben.`);
+      console.error("Entweder das Deployment abwarten, bis es einen Lauf erzeugt hat, oder"
+        + " --erwarteter-commit weglassen (dann wird KEIN Deployment-Stand behauptet).");
+      process.exit(2);
+    }
+    let inhalt;
+    try {
+      inhalt = schreibeStartbaseline(String(args["startbaseline-schreiben"]), {
+        aktivierungAtMs, aktiveMandate, prozessCommit: beobachtet.commit, commitPruefung
+      });
+    } catch (fehler) {
+      console.error(`MESSFEHLER: ${(fehler && fehler.message) || fehler} — nichts geschrieben.`);
+      process.exit(2);
+    }
     console.log("== STARTBASELINE GESCHRIEBEN (lokale Belegdatei; Production nur gelesen) ==");
     console.log(JSON.stringify(inhalt, null, 2));
+    if (!inhalt.deploymentCommitBestaetigt) {
+      console.log("\nHINWEIS: `zuletztBeobachteterProzessCommit` ist der Commit des juengsten"
+        + " GESPEICHERTEN Laufs, NICHT der aktuelle Deployment-Stand. Wer ihn belegen will,"
+        + " uebergibt `--erwarteter-commit <sha>` — dann wird strikt geprueft.");
+    }
     console.log("\nFruehestens 24 h nach der Aktivierung mit `--startbaseline <datei>` auswerten.");
     process.exit(0);
   }

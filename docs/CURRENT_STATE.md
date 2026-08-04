@@ -1,6 +1,48 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-08-04, 7. Durchgang (**Zweiter Reviewdurchgang zu PR #222 eingearbeitet —
+**Letzte Aktualisierung:** 2026-08-04, 8. Durchgang (**Dritter (letzter) Reviewdurchgang zu PR #222
+eingearbeitet — zwei gezielte Korrekturen, beide fail closed. KEIN Production-Eingriff, kein Merge.**
+**(1) DAS ERHEBUNGSFENSTER DER STARTBASELINE war am FENSTERSTART verankert statt an der
+AKTIVIERUNG.** Damit wäre eine Baseline zulässig gewesen, die *vor* der Aktivierung erhoben wurde —
+sie zeigt dann den Bestand der Zeit DAVOR — oder erst Stunden danach. Bezugspunkt ist jetzt die
+Aktivierung; verbindlich gilt `aktivierungAtMs ≤ erhobenAtMs ≤ aktivierungAtMs +
+BASELINE_TOLERANZ_MS (15 min)` (beide Grenzen **inklusiv**) sowie `aktivierungAtMs ≤ jetzt`.
+**Drei Fälle sind fail closed `blockiert`:** Baseline vor der Aktivierung
+(`startbaseline-vor-aktivierung`) · Aktivierung in der Zukunft (`aktivierung-in-zukunft`, in der
+Gesamtbewertung ausdrücklich **vor** allen Fensterprüfungen, damit daraus kein harmloses „noch
+nicht vergangen" wird; in der Baselineprüfung `startbaseline-aktivierung-in-zukunft`) · zu späte
+Erhebung (`startbaseline-zu-spaet-erhoben`). **Die Schreibseite setzt dieselben Grenzen** und
+erzeugt gar keine Datei (Exit 2), statt eine zu schreiben, welche die Auswertung ohnehin ablehnen
+müsste. **(2) KEIN MÖGLICHERWEISE VERALTETER COMMIT ALS DEPLOYMENT-STAND:**
+`process_runs.commit_ref` ist der Commit des **jüngsten gespeicherten Laufs** — nach einem frischen
+Deployment ohne Lauf ist er veraltet; ihn `deploymentCommit` zu nennen war eine Behauptung über
+etwas, das hier nicht gemessen wird (der Vercel-Zustand ist aus einer Sitzung nicht lesbar, §7.3).
+**Jetzt** heißt das Feld `zuletztBeobachteterProzessCommit` mit ausdrücklichem Hinweis „kein
+Deployment-Beleg"; ein Feld `deploymentCommit` gibt es nicht mehr, auch nicht im
+`--baseline`-Querschnitt. Wer den Stand **belegen** will, übergibt `--erwarteter-commit <sha>` —
+strikt geprüft (Voll- oder Kurzform als echtes Präfix); nur dann wird
+`deploymentCommitBestaetigt: true` gesetzt. Eine Abweichung ist **fail closed** (Exit 2, keine
+Datei): entweder läuft ein anderer Stand, oder der erwartete hat noch keinen Lauf hinterlassen.
+**GEÄNDERTE DATEIEN:** `lib/helmut/op25-nachweis.js` (`BASELINE_TOLERANZ_MS`, aktivierungs-
+verankerte Prüfung, frühe Zukunftsprüfung) · `scripts/op25-production-nachweis.js` (Schreibgrenzen,
+ehrliche Commit-Benennung, `--erwarteter-commit`) · `scripts/op25-nachweis-vertrag-test.js` (§33/§34)
+· `scripts/op25-nachweis-mutationsprobe.js` (M42–M46, M20 nachgeführt) ·
+`docs/betrieb/vorgangskontext.md` (§7.7.3) · `docs/datenmotor-restliste.md` · `docs/CURRENT_STATE.md`.
+**TESTS:** `op25-nachweis-vertrag-test` **178/178** (vorher 158; +20 Prüfpunkte: beide
+Toleranzgrenzen exakt, 1 ms davor/danach, Erhebung vor der Aktivierung, Zukunfts-Aktivierung in
+Baselineprüfung UND Gesamtbewertung, Nachweis dass die Toleranz an der Aktivierung und nicht am
+Fensterstart hängt, plus sechs Prüfpunkte zur Commit-Wahrheit) · `op25-e3-dauerhaftigkeit-test`
+**52/52** · Mutationsprobe **46 von 46 rot** (vorher 41; M20 dem geänderten Aufruf nachgeführt) ·
+`cron-globalphase` **176/176** · `globalphase-buendelung` **56/56** · `globalabruf-kapazitaet`
+**47/47** · `vorgangskontext` **102/102** · `compact-store-roundtrip` **26/26** ·
+`prozesslauf-telemetrie` **37/37** · `cron-fairness` **285/285** · `run-offline-tests` **191/205**
+mit **exakt derselben 14er-Fehlschlagliste** wie in allen Durchgängen zuvor · `browser-smoke`
+**32/32**. **PRODUCTION-PROBEN (rein lesend):** Dry-Run unverändert **`noch_nicht_auswertbar`
+(Exit 3)** · zukünftige Aktivierung ⇒ **Exit 2, keine Datei** · Aktivierung 2 h zurück (außerhalb
+der 15-min-Toleranz) ⇒ **Exit 2, keine Datei** · falscher `--erwarteter-commit` ⇒ **Exit 2, keine
+Datei** · korrekte Kurzform `89427c5` ⇒ `deploymentCommitBestaetigt: true`. **0 Writes in
+Production, 0 KI-Aufrufe, 0,00 USD, keine Migration, kein Flag, kein Cron, kein Merge.**) ·
+(7. Durchgang: **Zweiter Reviewdurchgang zu PR #222 eingearbeitet —
 zwei Stellen geschlossen, an denen das Werkzeug WEICHER war als seine eigene Doku. KEIN
 Production-Eingriff, kein Merge.** **(1) Der ECHTE Kostenleser lag im CLI und war laxer als der
 Vertrag:** `typeof roh === "number" ? roh : Number(roh)` deutete genau die Werte um, die §7.7.1

@@ -714,14 +714,15 @@ nachweislich nicht reicht.** C ist ausdrücklich **nicht** ohne neue Freigabe um
 > beschriebene Abnahme. Ausführung: `node scripts/op25-production-nachweis.js` (rein lesend,
 > GET-Literal + Tabellen-Allowlist, kein Trigger, keine Flag-/Env-Änderung, 0 KI-Aufrufe);
 > Bewertungskern: [`lib/helmut/op25-nachweis.js`](../../lib/helmut/op25-nachweis.js)
-> (reine Logik, testgesichert über `scripts/op25-nachweis-vertrag-test.js` (158 Prüfpunkte),
+> (reine Logik, testgesichert über `scripts/op25-nachweis-vertrag-test.js` (178 Prüfpunkte),
 > `scripts/op25-e3-dauerhaftigkeit-test.js` (52 Prüfpunkte) und
-> `scripts/op25-nachweis-mutationsprobe.js` (**41 von 41 rot**)).
+> `scripts/op25-nachweis-mutationsprobe.js` (**46 von 46 rot**)).
 >
-> **Stand 2026-08-04/3:** um die Befunde **beider** Reviewdurchgänge zu PR #222 gehärtet —
+> **Stand 2026-08-04/4:** um die Befunde **aller drei** Reviewdurchgänge zu PR #222 gehärtet —
 > Kostenvertrag, identitätsgenau eingefrorene Mandatsmenge, dauerhafte Belegquelle samt
-> versiegelter Laufzeit (§7.7.1) sowie der **echte Kostenleser** und die **vollständig
-> fail-closed Startbaseline** (§7.7.2).
+> versiegelter Laufzeit (§7.7.1) · der **echte Kostenleser** und die **vollständig fail-closed
+> Startbaseline** (§7.7.2) · das **Erhebungsfenster der Baseline** und die **Commit-Wahrheit**
+> (§7.7.3).
 
 **Die verbindlichen Produktentscheidungen (2026-08-04):** **E1 bleibt Option A** (keine neue
 Crawler-Deadline, kein `AbortSignal`, kein Eingriff in Gate/Retry/Breaker/Netz). **E2 bleibt
@@ -931,8 +932,53 @@ Aktivierungszeitpunkt (Exit 2, es entsteht keine Datei) und liest die Belegdatei
 ohne Ergänzung, Umdeutung oder Reparatur. Eine unlesbare oder fehlende Datei ist `blockiert`.
 
 **Nebenbefund, mit behoben:** `deploymentCommit` wurde mit einer **Laufkennung** befüllt, was
-keine Commit-Kennung ist. Die Baseline trägt jetzt die echte Commit-SHA aus
-`process_runs.commit_ref` (gespeist aus `VERCEL_GIT_COMMIT_SHA`) — oder ehrlich `null`.
+keine Commit-Kennung ist. Der Wert stammt jetzt aus `process_runs.commit_ref` — und wird
+seit §7.7.3 auch nicht mehr als Deployment-Stand *bezeichnet*.
+
+### 7.7.3 Dritter Reviewdurchgang (2026-08-04) — Erhebungsfenster und Commit-Wahrheit
+
+**(1) Die Startbaseline gilt nur unmittelbar nach der Aktivierung.** Die Toleranz war zuvor am
+**Fensterstart** verankert. Damit wäre eine Baseline zulässig gewesen, die *lange vor* der
+Aktivierung erhoben wurde — also den Bestand der Zeit **davor** zeigt — oder erst Stunden
+danach. Der Bezugspunkt ist jetzt die **Aktivierung**; verbindlich gilt:
+
+```
+aktivierungAtMs ≤ erhobenAtMs ≤ aktivierungAtMs + BASELINE_TOLERANZ_MS   (15 min)
+aktivierungAtMs ≤ jetzt                                                   (keine Zukunft)
+```
+
+Beide Grenzen sind **inklusiv** (Erhebung exakt zur Aktivierung und exakt an der
+Toleranzgrenze bestehen). Drei Fälle sind fail closed `blockiert`:
+
+| Fall | Befund |
+|---|---|
+| Baseline **vor** der Aktivierung erhoben | `startbaseline-vor-aktivierung` |
+| Aktivierungszeitpunkt liegt in der **Zukunft** | `aktivierung-in-zukunft` (Gesamtbewertung, **vor** allen Fensterprüfungen) bzw. `startbaseline-aktivierung-in-zukunft` (Baselineprüfung) |
+| Erhebung **später** als Aktivierung + 15 min | `startbaseline-zu-spaet-erhoben` |
+
+Die **Schreibseite** setzt dieselben Grenzen: `--startbaseline-schreiben` verweigert eine
+zukünftige Aktivierung und eine Aktivierung, die mehr als 15 min zurückliegt (Exit 2, **es
+entsteht keine Datei**) — statt eine Datei zu erzeugen, die die Auswertung ohnehin ablehnen
+müsste.
+
+**(2) Kein möglicherweise veralteter Commit als Deployment-Stand.** `process_runs.commit_ref`
+ist der Commit **des jüngsten gespeicherten Laufs**. Nach einem frischen Deployment, das noch
+keinen Lauf erzeugt hat, ist er **veraltet** — ihn `deploymentCommit` zu nennen war eine
+Behauptung über etwas, das hier nicht gemessen wird. Der Vercel-Deployment-Zustand ist aus
+einer Sitzung nicht lesbar (Egress zu `api.vercel.com` gesperrt, §7.3), also wird er **nicht
+geraten**. Stattdessen:
+
+- Das Feld heißt jetzt **`zuletztBeobachteterProzessCommit`** — mit dem ausdrücklichen
+  Hinweis, dass es **kein Deployment-Beleg** ist. Ein Feld `deploymentCommit` gibt es nicht
+  mehr, auch nicht im `--baseline`-Querschnitt.
+- Wer den Stand **belegen** will, übergibt ihn ausdrücklich: `--erwarteter-commit <sha>`.
+  Er wird **strikt** gegen den beobachteten Prozess-Commit geprüft (Voll- oder Kurzform als
+  echtes Präfix). Nur bei Übereinstimmung wird `deploymentCommitBestaetigt: true` gesetzt.
+- Eine **Abweichung ist fail closed**: es wird nichts geschrieben (Exit 2). Entweder läuft ein
+  anderer Stand, oder der erwartete hat noch keinen Lauf hinterlassen — in beiden Fällen darf
+  nichts als „aktueller Deployment-Stand" festgehalten werden.
+- Ohne `--erwarteter-commit` bleibt `deploymentCommitBestaetigt: false`, und das Werkzeug sagt
+  das im Bericht ausdrücklich.
 
 ## 8 · Verbleibende Risiken
 

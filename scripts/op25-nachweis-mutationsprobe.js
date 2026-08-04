@@ -220,13 +220,13 @@ const PROBEN = [
     // Genau die Regression, die der Review beschreibt: statt zu blockieren wird die Menge
     // still aus dem AKTUELLEN Bestand gebildet — der Zustand am Fensterstart wäre erfunden.
     mutiere: (b) => ersetze(b, KERN,
-      "  const baselinePruefung = pruefeStartbaseline({\n    roh: startbaseline, aktivierungAtMs, fensterVonMs: fenster.vonMs\n  });",
+      "  const baselinePruefung = pruefeStartbaseline({\n    roh: startbaseline, aktivierungAtMs, jetztMs\n  });",
       "  const ersatz = startbaseline || {\n"
       + "    mandate: aktiveMandate || [], anzahl: (aktiveMandate || []).length,\n"
       + "    signatur: mandatsSignatur(aktiveMandate || []).signatur,\n"
-      + "    aktivierungAtMs, erhobenAtMs: fenster.vonMs\n"
+      + "    aktivierungAtMs, erhobenAtMs: aktivierungAtMs\n"
       + "  };\n"
-      + "  const baselinePruefung = pruefeStartbaseline({\n    roh: ersatz, aktivierungAtMs, fensterVonMs: fenster.vonMs\n  });")
+      + "  const baselinePruefung = pruefeStartbaseline({\n    roh: ersatz, aktivierungAtMs, jetztMs\n  });")
   },
   {
     name: "M21 Endzustand wird nicht mehr gegen die eingefrorene Menge geprueft",
@@ -383,6 +383,43 @@ const PROBEN = [
     mutiere: (b) => ersetze(b, KERN,
       "  const alsMs = alsZahl(roh);\n  if (alsMs !== null) return alsMs;",
       "  const alsMs = Number(roh);\n  if (Number.isFinite(alsMs)) return alsMs;")
+  },
+
+  // --- Review 3, Punkt 1: das Erhebungsfenster der Startbaseline ----------------------------
+  {
+    name: "M42 Baseline VOR der Aktivierung wird wieder akzeptiert",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (baselineErhobenMs < baselineAktivierungMs) {",
+      "  if (false) {")
+  },
+  {
+    name: "M43 Zu spaete Erhebung wird wieder akzeptiert",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (baselineErhobenMs > baselineAktivierungMs + toleranzMs) {",
+      "  if (false) {")
+  },
+  {
+    name: "M44 Toleranz haengt wieder am Fensterstart statt an der Aktivierung",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "const BASELINE_TOLERANZ_MS = 15 * 60 * 1000;",
+      "const BASELINE_TOLERANZ_MS = 24 * 60 * 60 * 1000;")
+  },
+  {
+    name: "M45 Zukuenftige Aktivierung wird in der Baseline-Pruefung wieder akzeptiert",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (jetzt !== null && baselineAktivierungMs > jetzt) {",
+      "  if (false) {")
+  },
+  {
+    name: "M46 Zukuenftige Aktivierung wird in der Gesamtbewertung wieder durchgelassen",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (Number(aktivierungAtMs) > jetztMs) {",
+      "  if (false) {")
   }
 ];
 

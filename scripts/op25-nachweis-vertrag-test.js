@@ -169,11 +169,15 @@ function baueLaeufe({ status = "abgeschlossen", detail = null, mandate = MANDATE
   return laeufe;
 }
 
+// Die Baseline wird UNMITTELBAR NACH der Aktivierung erhoben (Vertrag: innerhalb
+// BASELINE_TOLERANZ_MS = 15 min). Eine Minute danach ist der Regelfall.
+const BASELINE_ERHOBEN_MS = AKTIVIERUNG_MS + 60000;
+
 function baueStartbaseline(mandate = MANDATE, extra = {}) {
   const sig = V.mandatsSignatur(mandate);
   return {
-    erhobenAtMs: FENSTER.vonMs - 60000,
-    erhobenAt: new Date(FENSTER.vonMs - 60000).toISOString(),
+    erhobenAtMs: BASELINE_ERHOBEN_MS,
+    erhobenAt: new Date(BASELINE_ERHOBEN_MS).toISOString(),
     aktivierungAtMs: AKTIVIERUNG_MS,
     anzahl: sig.anzahl,
     mandate: sig.mandate,
@@ -978,8 +982,8 @@ console.log("\n== 32 · REVIEW 2 · Punkt 2: Startbaseline vollstaendig fail clo
 // =============================================================================================
 {
   const vollstaendig = () => ({
-    erhobenAtMs: FENSTER.vonMs - 60000,
-    erhobenAt: new Date(FENSTER.vonMs - 60000).toISOString(),
+    erhobenAtMs: BASELINE_ERHOBEN_MS,
+    erhobenAt: new Date(BASELINE_ERHOBEN_MS).toISOString(),
     aktivierungAtMs: AKTIVIERUNG_MS,
     aktivierungAt: new Date(AKTIVIERUNG_MS).toISOString(),
     anzahl: 5,
@@ -987,7 +991,7 @@ console.log("\n== 32 · REVIEW 2 · Punkt 2: Startbaseline vollstaendig fail clo
     signatur: V.mandatsSignatur(MANDATE).signatur
   });
   const pruefe = (roh) => V.pruefeStartbaseline({
-    roh, aktivierungAtMs: AKTIVIERUNG_MS, fensterVonMs: FENSTER.vonMs
+    roh, aktivierungAtMs: AKTIVIERUNG_MS, jetztMs: JETZT_MS
   });
   check("32.1 Vollstaendige, stimmige Baseline besteht",
     pruefe(vollstaendig()).befunde.length === 0 && pruefe(vollstaendig()).frozen.anzahl === 5);
@@ -1044,7 +1048,7 @@ console.log("\n== 32 · REVIEW 2 · Punkt 2: Startbaseline vollstaendig fail clo
     pruefe({ ...vollstaendig(), aktivierungAtMs: AKTIVIERUNG_MS + 3600000, aktivierungAt: new Date(AKTIVIERUNG_MS + 3600000).toISOString() })
       .befunde[0].grund === "startbaseline-fremde-aktivierung");
   check("32.13 Bewertete Aktivierung unbekannt => blockiert (nicht stillschweigend akzeptiert)",
-    V.pruefeStartbaseline({ roh: vollstaendig(), aktivierungAtMs: null, fensterVonMs: FENSTER.vonMs })
+    V.pruefeStartbaseline({ roh: vollstaendig(), aktivierungAtMs: null, jetztMs: JETZT_MS })
       .befunde[0].grund === "startbaseline-fremde-aktivierung");
   check("32.14 Zu spaet erhobene Baseline => blockiert",
     pruefe({ ...vollstaendig(), erhobenAtMs: FENSTER.bisMs, erhobenAt: new Date(FENSTER.bisMs).toISOString() })
@@ -1073,9 +1077,101 @@ console.log("\n== 32 · REVIEW 2 · Punkt 2: Startbaseline vollstaendig fail clo
   check("32.18 CLI liest die Belegdatei ROH (kein Number(null)-Fallback mehr)",
     !/Number\.isFinite\(Number\(roh\.aktivierungAtMs\)\)/.test(cliQuelle)
     && !/roh\.aktivierungAt \? Date\.parse/.test(cliQuelle));
-  check("32.19 deploymentCommit stammt aus commit_ref, nicht aus einer Laufkennung",
-    /commit_ref/.test(cliQuelle) && !/deploymentCommit: commitZeile \? commitZeile\.runId : null/.test(cliQuelle)
-    && /leseDeploymentCommit/.test(cliQuelle));
+  check("32.19 Commit-Beleg stammt aus commit_ref, nicht aus einer Laufkennung",
+    /commit_ref/.test(cliQuelle) && !/deploymentCommit: commitZeile \? commitZeile\.runId : null/.test(cliQuelle));
+}
+
+// =============================================================================================
+console.log("\n== 33 · REVIEW 3 · Punkt 1: die Baseline gilt NUR unmittelbar nach der Aktivierung ==");
+// =============================================================================================
+{
+  const basis = () => ({
+    erhobenAtMs: BASELINE_ERHOBEN_MS,
+    erhobenAt: new Date(BASELINE_ERHOBEN_MS).toISOString(),
+    aktivierungAtMs: AKTIVIERUNG_MS,
+    aktivierungAt: new Date(AKTIVIERUNG_MS).toISOString(),
+    anzahl: 5, mandate: [...MANDATE], signatur: V.mandatsSignatur(MANDATE).signatur
+  });
+  const pruefe = (roh, jetzt = JETZT_MS) => V.pruefeStartbaseline({
+    roh, aktivierungAtMs: roh.aktivierungAtMs, jetztMs: jetzt
+  });
+  const mitErhebung = (ms) => ({ ...basis(), erhobenAtMs: ms, erhobenAt: new Date(ms).toISOString() });
+  const mitAktivierung = (ms) => ({ ...basis(), aktivierungAtMs: ms, aktivierungAt: new Date(ms).toISOString() });
+
+  check("33.1 Die dokumentierte Toleranz ist 15 min", V.BASELINE_TOLERANZ_MS === 15 * 60 * 1000);
+
+  // FALL A — Baseline VOR der Aktivierung.
+  check("33.2 Erhebung 1 ms vor der Aktivierung => blockiert (startbaseline-vor-aktivierung)",
+    pruefe(mitErhebung(AKTIVIERUNG_MS - 1)).befunde[0].grund === "startbaseline-vor-aktivierung");
+  check("33.3 Erhebung eine Stunde vor der Aktivierung => blockiert",
+    pruefe(mitErhebung(AKTIVIERUNG_MS - 3600000)).befunde[0].grund === "startbaseline-vor-aktivierung");
+  check("33.4 Erhebung GENAU zur Aktivierung ist zulaessig (untere Grenze inklusiv)",
+    pruefe(mitErhebung(AKTIVIERUNG_MS)).befunde.length === 0);
+
+  // FALL B — Aktivierung in der ZUKUNFT.
+  const zukunft = JETZT_MS + 3600000;
+  check("33.5 Aktivierung in der Zukunft => blockiert (startbaseline-aktivierung-in-zukunft)",
+    (() => { const b = mitAktivierung(zukunft);
+      b.erhobenAtMs = zukunft + 60000; b.erhobenAt = new Date(zukunft + 60000).toISOString();
+      return pruefe(b).befunde[0].grund === "startbaseline-aktivierung-in-zukunft"; })());
+  check("33.6 Gesamtbewertung: zukuenftige Aktivierung => blockiert VOR jeder Fensterpruefung",
+    (() => { const b = V.bewerteNachweisfenster(baueEingaben({
+      aktivierungAtMs: zukunft,
+      startbaseline: baueStartbaseline(),
+      fenster: { vonMs: zukunft, bisMs: zukunft + V.MIN_FENSTER_MS }
+    }));
+      return b.ausgang === "blockiert" && hatBefund(b, "aktivierung-in-zukunft"); })());
+
+  // FALL C — zu spaete Erhebung.
+  check("33.7 Erhebung genau an der Toleranzgrenze (+15 min) ist zulaessig",
+    pruefe(mitErhebung(AKTIVIERUNG_MS + V.BASELINE_TOLERANZ_MS)).befunde.length === 0);
+  check("33.8 Erhebung 1 ms nach der Toleranzgrenze => blockiert (zu spaet)",
+    pruefe(mitErhebung(AKTIVIERUNG_MS + V.BASELINE_TOLERANZ_MS + 1)).befunde[0].grund === "startbaseline-zu-spaet-erhoben");
+  check("33.9 Erhebung eine Stunde nach der Aktivierung => blockiert",
+    pruefe(mitErhebung(AKTIVIERUNG_MS + 3600000)).befunde[0].grund === "startbaseline-zu-spaet-erhoben");
+  check("33.10 Die Toleranz haengt an der AKTIVIERUNG, nicht am Fensterstart",
+    // Fensterstart ist 12:00, Aktivierung 11:00. Eine Erhebung um 11:59 laege am Fensterstart
+    // knapp davor — gegen die Aktivierung ist sie aber 59 min zu spaet.
+    pruefe(mitErhebung(FENSTER.vonMs - 60000)).befunde[0].grund === "startbaseline-zu-spaet-erhoben");
+
+  // Durchreichen in die Gesamtbewertung.
+  for (const [name, roh, grund] of [
+    ["vor der Aktivierung", mitErhebung(AKTIVIERUNG_MS - 60000), "startbaseline-vor-aktivierung"],
+    ["zu spaet erhoben", mitErhebung(AKTIVIERUNG_MS + 3600000), "startbaseline-zu-spaet-erhoben"]
+  ]) {
+    const b = V.bewerteNachweisfenster(baueEingaben({ startbaseline: roh }));
+    check(`33.11 Gesamtbewertung blockiert bei Baseline ${name}`,
+      b.ausgang === "blockiert" && hatBefund(b, grund), JSON.stringify(b.befunde.slice(0, 1)));
+  }
+
+  // CLI-Schreibseite: Zukunft und zu spaet werden gar nicht erst geschrieben.
+  const cliQuelle = fs.readFileSync(path.join(__dirname, "op25-production-nachweis.js"), "utf8");
+  check("33.12 CLI verweigert das Schreiben bei zukuenftiger Aktivierung (aktivierungAtMs <= now)",
+    /if \(aktivierungAtMs > jetztMs\) \{[\s\S]{0,400}?throw new Error/.test(cliQuelle));
+  check("33.13 CLI verweigert das Schreiben ausserhalb der Toleranz",
+    /jetztMs > aktivierungAtMs \+ vertrag\.BASELINE_TOLERANZ_MS/.test(cliQuelle));
+}
+
+// =============================================================================================
+console.log("\n== 34 · REVIEW 3 · Punkt 2: kein veralteter Commit als Deployment-Stand ==");
+// =============================================================================================
+{
+  const cliQuelle = fs.readFileSync(path.join(__dirname, "op25-production-nachweis.js"), "utf8");
+  check("34.1 Es gibt kein Feld/keine Funktion mehr, die einen Deployment-Commit BEHAUPTET",
+    !/deploymentCommit:/.test(cliQuelle) && !/function leseDeploymentCommit/.test(cliQuelle));
+  check("34.2 Der beobachtete Wert heisst ehrlich 'zuletztBeobachteterProzessCommit'",
+    /zuletztBeobachteterProzessCommit/.test(cliQuelle)
+    && /leseZuletztBeobachtetenProzessCommit/.test(cliQuelle));
+  check("34.3 Ein erwarteter Commit ist ausdruecklich uebergebbar und wird strikt geprueft",
+    /--erwarteter-commit|erwarteter-commit/.test(cliQuelle) && /function pruefeErwartetenCommit/.test(cliQuelle));
+  check("34.4 Nur ein bestaetigter Commit wird als belegt gefuehrt",
+    /deploymentCommitBestaetigt: Boolean\(commitPruefung && commitPruefung\.bestaetigt\)/.test(cliQuelle));
+  check("34.5 Ein uebergebener, aber nicht bestaetigter Commit ist fail closed (nichts geschrieben)",
+    /commitPruefung\.uebergeben && !commitPruefung\.bestaetigt/.test(cliQuelle)
+    && /nichts geschrieben/.test(cliQuelle));
+  check("34.6 Auch der --baseline-Querschnitt behauptet keinen Deployment-Stand",
+    /hinweisProzessCommit/.test(cliQuelle)
+    && /kein Deployment-Beleg/.test(cliQuelle));
 }
 
 console.log(`\n${passed + failed} Pruefpunkte · ${passed} PASS · ${failed} FAIL`);
