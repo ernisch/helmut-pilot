@@ -1,8 +1,58 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-08-04 (**Sprint „Profilreife, Bestandsprüfung und kontrollierte
-Testmandate" — ERFOLGREICH ABGESCHLOSSEN (Repo-Sprint; alle Production-Folgeschritte sind
-getrennte, einzeln freigabepflichtige Betreiberaktionen). KEIN Production-Eingriff: kein Write,
+**Letzte Aktualisierung:** 2026-08-04, 2. Durchgang (**Korrekturprüfung PR #220 „Profilreife" —
+ERFOLGREICH ABGESCHLOSSEN nach Korrektur; bis zur Korrektur galt der Sprint als TEILWEISE
+ABGESCHLOSSEN. KEIN Production-Eingriff, kein Merge, keine Profile angelegt/repariert/aktiviert,
+0 KI-Aufrufe in Production.** **Anlass (extern gefunden, gegen amtliche Biografien bestätigt):
+die Erstfassung des Reparaturpakets enthielt DREI Sachfehler, und die grünen Tests des ersten
+CI-Laufs `30892756678` bewiesen das nicht — sie prüften Fixture-Erwartungen gegen sich selbst,
+nicht gegen die amtliche Wahrheit.** **Bestätigte Sachfehler:** **(1)** `annika-klose`: der
+Petitionsausschuss ist eine **20.-WP**-Mitgliedschaft und war fälschlich als aktueller Vorschlag
+enthalten; die stellvertretende Mitgliedschaft (Finanzausschuss) und die Funktion (Obfrau im
+Ausschuss für Arbeit und Soziales) fehlten. **(2)** `ottilie-paola-klein-2`: Vorschlag „nur
+Kultur und Medien" war unvollständig — ordentlich sind **Kultur und Medien + Arbeit und
+Soziales**, stellvertretend **EU-Ausschuss + Finanzausschuss**. **(3)** `ruppert-st-we`:
+ordentlich/stellvertretend vermischt — ordentlich ist **nur der Petitionsausschuss** (plus
+Rechnungsprüfungsausschuss AUSSERHALB der Sollmenge), der Haushaltsausschuss ist
+**stellvertretend** (ebenso Forschung/Technologie/Raumfahrt/TA und
+Wohnen/Stadtentwicklung/Bauwesen/Kommunen); „Schriftführer" ist eine **Funktion**, kein
+Ausschuss. **KORREKTUREN:** Reparaturpaket vollständig auf die amtlichen WP-21-Daten
+umgeschrieben (kanonische Ausschussnamen aus `seeds/bundestag-ausschuesse.js`; ordentlich →
+`committees`, stellvertretend → `deputyCommittees`, Funktionen → `function`; je Eintrag Quelle +
+Abrufdatum + Status, Korrektureinträge als „2026-08-04 (Korrektur 2. Durchgang)" markiert).
+**Bereitschaftsprüfung erweitert:** `deputyCommittees` wird jetzt ebenfalls gegen die
+WP-21-Sollmenge validiert — ein veralteter/unbekannter stellvertretender Ausschuss macht das
+Profil „nicht bereit" (neue Testfälle 22a–22e: Trennung ordentlich/stellvertretend, veralteter
+deputy-Eintrag abgelehnt, kanonische Namen erzwungen, Modelllücke). **Modelllücke dokumentiert
+statt gepresst:** Rechnungsprüfungsausschuss (Stüwe, ordentlich; Unterausschuss des
+Haushaltsausschusses) gehört nicht zur 24er-Sollmenge und wird in KEIN Ausschussfeld
+geschrieben; Datenmodell unverändert (gleiches gilt für Pellmanns amtlich belegte Sitze im
+Wahlprüfungsausschuss und im Gemeinsamen Ausschuss). **ALLE ELF Profile erneut verifiziert**
+(11 parallele Recherchen + adversariale Gegenprobe, Abrufgrenze HTTP 403 dokumentiert,
+WP-20-Angaben systematisch ausgeschlossen): Ince und Kleebank bestätigt (Kleebank ohne stv.
+Sitze); Testmandate nachgeführt — Lindholz jetzt mit stv. Innen-/Rechtsausschuss (Beleg:
+offizielle persönliche Seite, als `zuBestaetigen` markiert), Stegner mit zweitem ordentlichen
+Ausschuss (Menschenrechte) + stv. Innenausschuss + UA-Vorsitz als Funktion, Verlinden mit stv.
+1. Ausschuss (Fraktionsseite), Pellmann mit ordentlichem Petitionsausschuss (amtlich); nicht
+amtlich Bestätigbares steht je Profil unter `zuBestaetigen` statt als belegt behauptet
+(Stegners stv. EU/OSZE nur abgeordnetenwatch → NICHT übernommen). **TESTS:**
+`profil-bereitschaft-test.js` **60/60** (vorher 49) · `run-offline-tests` **188/203** = exakt
+die bekannte umgebungsbedingte 15er-Fehlschlagliste, kein neuer Fehlschlag ·
+`browser-smoke-test` **32/32**. **GEÄNDERTE DATEIEN (2. Durchgang):**
+`lib/helmut/profile-readiness.js` (deputy-Validierung) ·
+`scripts/fixtures/profil-reparatur-2026-08-04.js` (amtliche Korrekturen) ·
+`lib/helmut/quellenarchitektur/seeds/bundestag-testmandate.js` (Nachführung + `zuBestaetigen`) ·
+`scripts/profil-bereitschaft-test.js` (Fälle 22a–22e) ·
+`docs/multitenancy-profilbereitschaft-bundestag.md` (Korrekturvermerk, Matrix, Modelllücke) ·
+`docs/datenmotor-restliste.md` (OP-29-Nachtrag) · `docs/CURRENT_STATE.md`. **Merge-Empfehlung:**
+Review des Korrektur-Commits, dann Merge durch den Betreiber — die Reparatur der sechs
+Production-Profile, die Testmandat-Aktivierung und alle weiteren Schritte bleiben einzeln
+freigabepflichtig.**) · (**Sprint „Profilreife, Bestandsprüfung und kontrollierte
+Testmandate" — Repo-Sprint, nach Korrektur 2026-08-04/2 erfolgreich abgeschlossen; alle
+Production-Folgeschritte sind getrennte, einzeln freigabepflichtige Betreiberaktionen.
+KORREKTURVERMERK: die folgende Erstfassung enthielt drei Sachfehler im Reparaturpaket
+(Klose/Klein/Stüwe) — korrigiert im Kopfeintrag oben; Zahlen wie „49/49" sind der Stand der
+Erstfassung. KEIN Production-Eingriff: kein Write,
 kein Flag, keine Migration, kein Cron, keine Quellen-/Budgetänderung, keine Benutzerkonten, keine
 E-Mails, kein Merge, 0 KI-Aufrufe, 0,00 USD; Production wurde ausschließlich rein lesend geprüft
 (SELECT auf `profiles`/`mandate_profiles`/Quellentabellen + `storage.listFullProfiles`).**

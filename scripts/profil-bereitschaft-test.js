@@ -218,6 +218,57 @@ const vollstaendig = Object.freeze({
     JSON.stringify({ klose: kloseRepariert.hinweise, klein: kleinRepariert.hinweise }));
   check("19g. Reparaturanwendung ist idempotent", JSON.stringify(wendeReparaturAn(wendeReparaturAn(BESTAND_IST[0], REPARATUREN[0]), REPARATUREN[0])) === JSON.stringify(wendeReparaturAn(BESTAND_IST[0], REPARATUREN[0])));
 
+  // ── (22) Korrekturauftrag 2026-08-04/2: Trennung ordentlich/stellvertretend,
+  //         deputyCommittees-Validierung, kanonische Namen, Modellluecke ──────
+  const { AUSSCHUSS_NAMEN } = require("../lib/helmut/quellenarchitektur/seeds/bundestag-ausschuesse");
+  // (22a) Ein veralteter stellvertretender Ausschuss macht das Profil NICHT bereit.
+  const e22a = bewerteBundestagsprofil({ ...vollstaendig, deputyCommittees: ["Ausschuss für Bildung, Forschung und Technikfolgenabschätzung"] });
+  check("22a. veralteter deputyCommittees-Eintrag (WP 20) wird abgelehnt", !e22a.bereit && e22a.ungueltig.some((u) => u.feld === "deputyCommittees"));
+  const e22a2 = bewerteBundestagsprofil({ ...vollstaendig, deputyCommittees: ["Zukunftsrat"] });
+  check("22a2. unbekannter deputyCommittees-Eintrag wird abgelehnt", !e22a2.bereit && e22a2.ungueltig.some((u) => u.feld === "deputyCommittees" && u.wert === "Zukunftsrat"));
+  check("22a3. gültiger deputyCommittees-Eintrag bleibt bereit", bewerteBundestagsprofil({ ...vollstaendig, deputyCommittees: ["Finanzausschuss"] }).bereit === true);
+  // (22b) Amtliche Korrekturen: ordentlich und stellvertretend strikt getrennt.
+  const repKlose = wendeReparaturAn(BESTAND_IST.find((p) => p.id === "annika-klose"), REPARATUREN.find((r) => r.id === "annika-klose"));
+  const repKlein = wendeReparaturAn(BESTAND_IST.find((p) => p.id === "ottilie-paola-klein-2"), REPARATUREN.find((r) => r.id === "ottilie-paola-klein-2"));
+  const repStuewe = wendeReparaturAn(BESTAND_IST.find((p) => p.id === "ruppert-st-we"), REPARATUREN.find((r) => r.id === "ruppert-st-we"));
+  check("22b. Klose repariert: ordentlich NUR Arbeit und Soziales, stv. Finanzausschuss, Funktion Obfrau",
+    JSON.stringify(repKlose.committees) === JSON.stringify(["Ausschuss für Arbeit und Soziales"])
+    && JSON.stringify(repKlose.deputyCommittees) === JSON.stringify(["Finanzausschuss"])
+    && repKlose.function === "Obfrau im Ausschuss für Arbeit und Soziales"
+    && !repKlose.committees.includes("Petitionsausschuss"));
+  check("22b2. Klein repariert: ordentlich Kultur/Medien + Arbeit/Soziales, stv. EU + Finanzen",
+    JSON.stringify(repKlein.committees) === JSON.stringify(["Ausschuss für Kultur und Medien", "Ausschuss für Arbeit und Soziales"])
+    && JSON.stringify(repKlein.deputyCommittees) === JSON.stringify(["Ausschuss für die Angelegenheiten der Europäischen Union", "Finanzausschuss"]));
+  check("22b3. Stüwe repariert: ordentlich NUR Petitionsausschuss, stv. Forschung/Haushalt/Wohnen, Funktion Schriftführer",
+    JSON.stringify(repStuewe.committees) === JSON.stringify(["Petitionsausschuss"])
+    && repStuewe.deputyCommittees.length === 3 && repStuewe.deputyCommittees.includes("Haushaltsausschuss")
+    && repStuewe.function === "Schriftführer des Deutschen Bundestages");
+  for (const [name, rep] of [["klose", repKlose], ["klein", repKlein], ["stuewe", repStuewe]]) {
+    const e = bewerteBundestagsprofil(rep);
+    const ueberlappung = (rep.committees || []).filter((a) => (rep.deputyCommittees || []).map((x) => x.toLowerCase()).includes(a.toLowerCase()));
+    check(`22c. ${name}: repariert bereit, keine Überlappung ordentlich/stellvertretend`,
+      e.bereit && ueberlappung.length === 0, JSON.stringify({ hinweise: e.hinweise, ueberlappung }));
+  }
+  // (22d) Kanonische Namen: jeder BELEGTE Ausschuss-Vorschlag ist exakt eine amtliche
+  // WP-21-Bezeichnung aus der Sollmenge (keine Kurzformen, keine Altnamen).
+  const nichtKanonisch = [];
+  for (const rep of REPARATUREN) {
+    for (const f of rep.felder) {
+      if (f.status !== "belegt" || !["committees", "deputyCommittees"].includes(f.feld)) continue;
+      for (const wert of f.vorschlag) if (!AUSSCHUSS_NAMEN.includes(wert)) nichtKanonisch.push(`${rep.id}:${wert}`);
+    }
+  }
+  check("22d. alle belegten Ausschuss-Vorschläge tragen kanonische WP-21-Namen", nichtKanonisch.length === 0, nichtKanonisch.join("; "));
+  // (22e) Modellluecke Rechnungspruefungsausschuss: dokumentiert, aber NIE angewendet
+  // (er gehoert nicht zur Sollmenge der 24 staendigen Ausschuesse).
+  const stueweRep = REPARATUREN.find((r) => r.id === "ruppert-st-we");
+  const luecke = stueweRep.felder.find((f) => f.feld.includes("Rechnungsprüfungsausschuss"));
+  check("22e. Rechnungsprüfungsausschuss ist dokumentierte Modelllücke (status entscheidung), landet in keinem Ausschussfeld",
+    Boolean(luecke) && luecke.status === "entscheidung"
+    && !repStuewe.committees.includes("Rechnungsprüfungsausschuss")
+    && !(repStuewe.deputyCommittees || []).includes("Rechnungsprüfungsausschuss")
+    && !AUSSCHUSS_NAMEN.includes("Rechnungsprüfungsausschuss"));
+
   // ── (20) deterministische und stabile Fehlerausgabe ───────────────────────
   const chaotisch = { ...vollstaendig, committees: ["Zukunftsrat", "Bildung, Forschung und Technikfolgenabschätzung"], focusTopics: [], topicPriorities: {}, state: "", nameVariants: [], regionalInterests: [] };
   const l1 = JSON.stringify(bewerteBundestagsprofil(chaotisch));

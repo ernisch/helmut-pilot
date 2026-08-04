@@ -85,16 +85,32 @@ const REPARATUREN = Object.freeze([
       Object.freeze({
         feld: "committees",
         ist: ["Gesundheit", "Europäische Union", "Kultur und Medien"],
-        vorschlag: ["Arbeit und Soziales", "Petitionsausschuss"],
-        grund: "Die gespeicherten Ausschuesse entsprechen nicht den WP-21-Mitgliedschaften; falsche Ausschuesse erzeugen falsche Radar-Zustaendigkeitsbelege und ein fehlgeleitetes Ausschuss-Themenradar.",
-        quelle: "bundestag.de/abgeordnete/biografien/K/klose_annika-1045438; bundestag.de/ausschuesse/a11_arbeit_soziales (Mitgliederliste WP 21)",
-        status: "belegt", abrufdatum: ABRUFDATUM
+        vorschlag: ["Ausschuss für Arbeit und Soziales"],
+        grund: "Die gespeicherten Ausschuesse entsprechen nicht den WP-21-Mitgliedschaften; ordentliches Mitglied ist sie ausschliesslich im Ausschuss fuer Arbeit und Soziales. KORREKTUR 2026-08-04/2: die Erstfassung dieses Pakets schlug zusaetzlich den Petitionsausschuss vor — dessen Mitgliedschaft nennt die amtliche Biografie nur fuer die 20. WP; eine WP-20-Angabe darf nicht als aktuell uebernommen werden.",
+        quelle: "bundestag.de/abgeordnete/biografien/K/klose_annika-1045438 (amtliche Biografie, 21. WP)",
+        status: "belegt", abrufdatum: "2026-08-04 (Korrektur 2. Durchgang)"
+      }),
+      Object.freeze({
+        feld: "deputyCommittees",
+        ist: [],
+        vorschlag: ["Finanzausschuss"],
+        grund: "Stellvertretendes Mitglied im Finanzausschuss (21. WP) — getrennt vom ordentlichen Sitz zu fuehren (stellvertretende_ausschuesse), nicht in committees.",
+        quelle: "bundestag.de/abgeordnete/biografien/K/klose_annika-1045438",
+        status: "belegt", abrufdatum: "2026-08-04 (Korrektur 2. Durchgang)"
+      }),
+      Object.freeze({
+        feld: "function",
+        ist: "Bundestagsabgeordnete:r",
+        vorschlag: "Obfrau im Ausschuss für Arbeit und Soziales",
+        grund: "Parlamentarische FUNKTION, kein Ausschuss und kein Thema — gehoert in rolle/function.",
+        quelle: "bundestag.de/abgeordnete/biografien/K/klose_annika-1045438",
+        status: "belegt", abrufdatum: "2026-08-04 (Korrektur 2. Durchgang)"
       }),
       Object.freeze({
         feld: "reportingTopics",
         ist: ["Sprecher/in der Fraktion", "Obmann/Obfrau im Ausschuss"],
         vorschlag: [],
-        grund: "Funktionsbezeichnungen sind keine Berichterstatter-THEMEN; sie speisen als Pseudo-Themen die Quellen-Queries (scheduler.topProfileTopics). Funktionen gehoeren nach rolle/function (Sprecherin der Landesgruppe Berlin seit 2023 dorthin uebernehmen, falls gewuenscht).",
+        grund: "Funktionsbezeichnungen sind keine Berichterstatter-THEMEN; sie speisen als Pseudo-Themen die Quellen-Queries (scheduler.topProfileTopics). Funktionen gehoeren nach rolle/function (siehe eigener function-Eintrag).",
         quelle: "bundestag.de/abgeordnete/biografien/K/klose_annika-1045438 (Funktionen vs. Themen)",
         status: "belegt", abrufdatum: ABRUFDATUM
       }),
@@ -122,10 +138,10 @@ const REPARATUREN = Object.freeze([
       Object.freeze({
         feld: "deputyCommittees",
         ist: [],
-        vorschlag: ["Wirtschaft und Energie", "Digitales und Staatsmodernisierung"],
-        grund: "Qualitaetsergaenzung (empfohlen, kein Blocker): stellvertretende Mitgliedschaften verbessern Zustaendigkeitsbelege.",
-        quelle: "dielinkebt.de/abgeordnete/profil/cem-ince; bundestag.de/abgeordnete/biografien/I/ince_cem-1045160",
-        status: "belegt", abrufdatum: ABRUFDATUM
+        vorschlag: ["Ausschuss für Wirtschaft und Energie", "Ausschuss für Digitales und Staatsmodernisierung"],
+        grund: "Qualitaetsergaenzung (empfohlen, kein Blocker): stellvertretende Mitgliedschaften verbessern Zustaendigkeitsbelege. Getrennt vom ordentlichen Sitz (Arbeit und Soziales) gefuehrt.",
+        quelle: "dielinkebt.de/abgeordnete/profil/cem-ince (Fraktionsprofil); bundestag.de/abgeordnete/biografien/I/ince_cem-1045160",
+        status: "belegt", abrufdatum: "2026-08-04 (Korrektur 2. Durchgang: kanonische Namen)"
       })
     ])
   }),
@@ -135,10 +151,10 @@ const REPARATUREN = Object.freeze([
       Object.freeze({
         feld: "committees",
         ist: ["Finanzen", "Haushalt"],
-        vorschlag: ["Wirtschaft und Energie", "Umwelt, Klimaschutz, Naturschutz und nukleare Sicherheit"],
+        vorschlag: ["Ausschuss für Wirtschaft und Energie", "Ausschuss für Umwelt, Klimaschutz, Naturschutz und nukleare Sicherheit"],
         grund: "Die gespeicherten Ausschuesse entsprechen nicht den WP-21-Mitgliedschaften (beide seit 21.05.2025); falsche Ausschuesse verfaelschen Radar-Zustaendigkeitsbelege und Matching-Gewichte.",
         quelle: "bundestag.de/abgeordnete/biografien/K/kleebank_helmut-1045402; spdfraktion.de/abgeordnete/kleebank",
-        status: "belegt", abrufdatum: ABRUFDATUM
+        status: "belegt", abrufdatum: "2026-08-04 (Korrektur 2. Durchgang: kanonische Namen)"
       })
     ])
   }),
@@ -161,10 +177,18 @@ const REPARATUREN = Object.freeze([
       Object.freeze({
         feld: "committees",
         ist: ["Gesundheit", "Digitales", "Bildung, Forschung und Technikfolgenabschätzung"],
-        vorschlag: ["Kultur und Medien"],
-        grund: "„Bildung, Forschung und Technikfolgenabschaetzung\" ist ein Ausschuss der 20. Wahlperiode (in der 21. WP aufgeteilt) — nicht aufloesbar gegen die Sollmenge; die WP-21-Mitgliedschaft ist der Ausschuss fuer Kultur und Medien (kulturpolitische Sprecherin der CDU/CSU-Fraktion). Gesundheit/Digitales sind fuer WP 21 nicht belegt.",
-        quelle: "cducsu.de/abgeordnete/dr-ottilie-paola-klein; bundestag.de/abgeordnete/biografien/K/klein_ottilie-1045410; Sollmenge: seeds/bundestag-ausschuesse.js (Drs. 21/150)",
-        status: "belegt", abrufdatum: ABRUFDATUM
+        vorschlag: ["Ausschuss für Kultur und Medien", "Ausschuss für Arbeit und Soziales"],
+        grund: "„Bildung, Forschung und Technikfolgenabschaetzung\" ist ein Ausschuss der 20. Wahlperiode (in der 21. WP aufgeteilt) — nicht aufloesbar gegen die Sollmenge; Gesundheit/Digitales sind fuer WP 21 nicht belegt. Ordentliche WP-21-Mitgliedschaften sind Kultur und Medien UND Arbeit und Soziales. KORREKTUR 2026-08-04/2: die Erstfassung dieses Pakets nannte nur Kultur und Medien und war unvollstaendig.",
+        quelle: "bundestag.de/abgeordnete/biografien/K/klein_ottilie-1045410 (amtliche Biografie, 21. WP); cducsu.de/abgeordnete/dr-ottilie-paola-klein; Sollmenge: seeds/bundestag-ausschuesse.js (Drs. 21/150)",
+        status: "belegt", abrufdatum: "2026-08-04 (Korrektur 2. Durchgang)"
+      }),
+      Object.freeze({
+        feld: "deputyCommittees",
+        ist: [],
+        vorschlag: ["Ausschuss für die Angelegenheiten der Europäischen Union", "Finanzausschuss"],
+        grund: "Stellvertretende WP-21-Mitgliedschaften — getrennt vom ordentlichen Sitz zu fuehren (stellvertretende_ausschuesse), nicht in committees.",
+        quelle: "bundestag.de/abgeordnete/biografien/K/klein_ottilie-1045410",
+        status: "belegt", abrufdatum: "2026-08-04 (Korrektur 2. Durchgang)"
       }),
       Object.freeze({
         feld: "constituency",
@@ -182,10 +206,38 @@ const REPARATUREN = Object.freeze([
       Object.freeze({
         feld: "committees",
         ist: ["Haushalt"],
-        vorschlag: ["Petitionsausschuss", "Haushalt"],
-        grund: "Die WP-21-Mitgliedschaft im Petitionsausschuss (stellv. Sprecher der AG Petitionen) fehlt. Der Status im Haushaltsausschuss (ordentlich vs. stellvertretend seit 21.05.2025; Berichterstattung Einzelplan BMWSB; Mitglied Rechnungspruefungsausschuss) ist in den Quellen uneinheitlich — vor Anwendung bestaetigen.",
-        quelle: "ruppert-stuewe.de/ausschuesse; spdfraktion.de/abgeordnete/stuewe; bundestag.de/abgeordnete/biografien/S/stuewe_ruppert-1047638",
-        status: "zu_bestaetigen", abrufdatum: ABRUFDATUM
+        vorschlag: ["Petitionsausschuss"],
+        grund: "Ordentliches WP-21-Mitglied ist er im Petitionsausschuss (und im Rechnungspruefungsausschuss, siehe Modellluecken-Eintrag); der Haushaltsausschuss ist eine STELLVERTRETENDE Mitgliedschaft und gehoert nicht in committees. KORREKTUR 2026-08-04/2: die Erstfassung dieses Pakets vermischte ordentliche und stellvertretende Mitgliedschaften (Vorschlag „Petitionsausschuss + Haushalt\").",
+        quelle: "bundestag.de/abgeordnete/biografien/S/stuewe_ruppert-1047638 (amtliche Biografie, 21. WP)",
+        status: "belegt", abrufdatum: "2026-08-04 (Korrektur 2. Durchgang)"
+      }),
+      Object.freeze({
+        feld: "deputyCommittees",
+        ist: [],
+        vorschlag: [
+          "Ausschuss für Forschung, Technologie, Raumfahrt und Technikfolgenabschätzung",
+          "Haushaltsausschuss",
+          "Ausschuss für Wohnen, Stadtentwicklung, Bauwesen und Kommunen"
+        ],
+        grund: "Stellvertretende WP-21-Mitgliedschaften — getrennt vom ordentlichen Sitz zu fuehren (stellvertretende_ausschuesse).",
+        quelle: "bundestag.de/abgeordnete/biografien/S/stuewe_ruppert-1047638",
+        status: "belegt", abrufdatum: "2026-08-04 (Korrektur 2. Durchgang)"
+      }),
+      Object.freeze({
+        feld: "function",
+        ist: "Bundestagsabgeordnete:r",
+        vorschlag: "Schriftführer des Deutschen Bundestages",
+        grund: "Schriftfuehrer ist eine parlamentarische FUNKTION, kein Fachausschuss — gehoert in rolle/function, nicht in eine Ausschussliste.",
+        quelle: "bundestag.de/abgeordnete/biografien/S/stuewe_ruppert-1047638",
+        status: "belegt", abrufdatum: "2026-08-04 (Korrektur 2. Durchgang)"
+      }),
+      Object.freeze({
+        feld: "Rechnungsprüfungsausschuss (begrenzte Modelllücke, kein Profilfeld)",
+        ist: "ordentliches Mitglied, im Profil nicht abgebildet",
+        vorschlag: "(nicht anwenden — im bestehenden Datenmodell nicht sauber abbildbar)",
+        grund: "Der Rechnungspruefungsausschuss gehoert NICHT zur Sollmenge der 24 staendigen Ausschuesse des Einsetzungsbeschlusses (Drs. 21/150); `ausschuesse`/`stellvertretende_ausschuesse` werden gegen diese Sollmenge validiert, ein Eintrag dort waere ein falscher Zustaendigkeitsbeleg. Das Datenmodell wird in diesem Sprint nicht geaendert (Auftrag) — die Mitgliedschaft bleibt als dokumentierte Modellluecke offen; abbildbar waere sie perspektivisch nur ueber ein eigenes Gremienfeld (Betreiber-/Architekturentscheidung).",
+        quelle: "bundestag.de/abgeordnete/biografien/S/stuewe_ruppert-1047638; Sollmenge: seeds/bundestag-ausschuesse.js",
+        status: "entscheidung", abrufdatum: "2026-08-04 (Korrektur 2. Durchgang)"
       })
     ])
   })
@@ -202,8 +254,10 @@ function wendeReparaturAn(profil, reparatur) {
     else if (f.feld === "reportingTopics") kopie.reportingTopics = [...f.vorschlag];
     else if (f.feld === "deputyCommittees") kopie.deputyCommittees = [...f.vorschlag];
     else if (f.feld === "constituency") kopie.constituency = String(f.vorschlag);
+    else if (f.feld === "function") { kopie.function = String(f.vorschlag); kopie.role = String(f.vorschlag); }
     // "profiles.name (relationale Zeile)" betrifft die SQL-Zeile, nicht die wirksame
     // Blob-Sicht (dort steht der Klarname bereits) -> kein Feld-Update der Repraesentation.
+    // Hinweis-/Modellluecken-Felder (kein Profilfeld) haben hier bewusst keinen Zweig.
   }
   return kopie;
 }

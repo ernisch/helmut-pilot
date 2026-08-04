@@ -1060,6 +1060,19 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   (e) OP-25-Production-Nachweis — der Offlinetest ersetzt ihn **nicht**.
 - **Freigabe:** Repo-Merge über normalen PR-Weg (keine Migration, kein Flag, keine
   Cron-/Quellenänderung). Alle Schritte (a)–(e) sind **einzeln freigabepflichtig**.
+- **Nachtrag 2026-08-04/2 (Korrekturprüfung, extern angestoßen):** Die Erstfassung des
+  Reparaturpakets enthielt **drei Sachfehler** gegen die amtlichen WP-21-Biografien —
+  Klose (Petitionsausschuss war nur 20. WP; stv. Finanzausschuss + Obfrau-Funktion fehlten),
+  Klein (unvollständig: ordentlich auch Arbeit und Soziales, stv. EU + Finanzen),
+  Stüwe (ordentlich/stellvertretend vermischt; Haushalt ist stellvertretend, Schriftführer
+  ist eine Funktion). Alle korrigiert (kanonische Ausschussnamen, strikte Trennung
+  `committees`/`deputyCommittees`/`function`); die Bereitschaftsprüfung validiert jetzt auch
+  `deputyCommittees` gegen die Sollmenge; **begrenzte Modelllücke dokumentiert:** Gremien
+  außerhalb der 24 ständigen Ausschüsse (Rechnungsprüfungsausschuss, Wahlprüfungsausschuss,
+  Gemeinsamer Ausschuss) sind im Profilmodell bewusst nicht abbildbar — Datenmodell
+  unverändert. Alle elf Profile erneut verifiziert; Tests 60/60. Kanonisch:
+  [`multitenancy-profilbereitschaft-bundestag.md`](multitenancy-profilbereitschaft-bundestag.md)
+  (Korrekturvermerk).
 
 ---
 

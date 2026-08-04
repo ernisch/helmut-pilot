@@ -1,9 +1,23 @@
 # Bundestags-Profilbereitschaft — Vertrag, Bestandsprüfung, Reparaturpaket, Testmandate
 
-**Stand:** 2026-08-04 · **Sprint:** „Profilreife, Bestandsprüfung und kontrollierte Testmandate"
+**Stand:** 2026-08-04, **2. Durchgang (Korrekturprüfung)** · **Sprint:** „Profilreife, Bestandsprüfung und kontrollierte Testmandate"
 **Modul:** `lib/helmut/profile-readiness.js` · **Werkzeug:** `scripts/profil-bereitschaft.js`
-**Tests:** `scripts/profil-bereitschaft-test.js` (49/49) · **Seed:** `lib/helmut/quellenarchitektur/seeds/bundestag-testmandate.js`
+**Tests:** `scripts/profil-bereitschaft-test.js` (60/60) · **Seed:** `lib/helmut/quellenarchitektur/seeds/bundestag-testmandate.js`
 **Reparaturpaket:** `scripts/fixtures/profil-reparatur-2026-08-04.js` (nicht automatisch angewendet)
+
+> **Korrekturvermerk 2026-08-04/2 (kein falsches Grün):** Die Erstfassung dieses Dokuments
+> enthielt drei sachliche Fehler im Reparaturpaket, die eine externe Prüfung gegen die
+> amtlichen Biografien fand — die damals grünen Tests prüften Fixture-Erwartungen gegen
+> sich selbst, nicht gegen die amtliche Wahrheit: **(1)** Klose: Petitionsausschuss ist eine
+> **20.-WP**-Mitgliedschaft und wurde fälschlich als aktuell vorgeschlagen; ihre
+> stellvertretende Mitgliedschaft (Finanzausschuss) fehlte. **(2)** Klein: der Vorschlag
+> „nur Kultur und Medien" war unvollständig (zusätzlich ordentlich Arbeit und Soziales,
+> stellvertretend EU + Finanzen). **(3)** Stüwe: ordentliche und stellvertretende
+> Mitgliedschaften waren vermischt (Haushaltsausschuss ist stellvertretend; ordentlich sind
+> Petitionsausschuss und — außerhalb der Sollmenge — der Rechnungsprüfungsausschuss).
+> Alle drei sind korrigiert; zusätzlich prüft die Bereitschaftsprüfung jetzt auch
+> `deputyCommittees` gegen die WP-21-Sollmenge, und alle elf Profile wurden erneut gegen
+> die amtlichen Profile verifiziert (11 parallele Recherchen + adversariale Gegenprobe).
 
 Dieses Dokument ist die **eine kanonische Stelle** für den Bundestags-Bereitschaftsvertrag.
 Es baut auf [`multitenancy-profilvalidierung.md`](multitenancy-profilvalidierung.md)
@@ -43,7 +57,7 @@ erfundenen Pflichtfelder. Kanonische Ablage: `profiles` (id, name) + `mandate_pr
 | Partei **oder** „Fraktionslos" | Matching-Parteidimension, Fraktions-/Partei-Quelle (`mandateNewsSources` Nr. 2), Parteipakete |
 | Region **oder** Wahlkreis | Regionale Lage (Quelle Nr. 7), Radar-Wahlkreisbezug |
 | ≥ 1 Ausschuss **oder** Thema | Matching-Themendimension, Quellen Nr. 1/4/5 — ohne beides läuft der Job leer |
-| angegebene Ausschüsse in der **WP-21-Sollmenge** auflösbar | Radar-Ausschussbeleg, Ausschuss-Themenradar; ein Ausschuss einer früheren Wahlperiode erzeugt **falsche Zuständigkeitsbelege** (Sollmenge: `seeds/bundestag-ausschuesse.js`, Drs. 21/150) |
+| angegebene Ausschüsse in der **WP-21-Sollmenge** auflösbar — gilt für `committees` **und** `deputyCommittees` | Radar-Ausschussbeleg, Ausschuss-Themenradar; ein Ausschuss einer früheren Wahlperiode erzeugt **falsche Zuständigkeitsbelege** (Sollmenge: `seeds/bundestag-ausschuesse.js`, Drs. 21/150). Ordentliche (`ausschuesse`) und stellvertretende (`stellvertretende_ausschuesse`) Mitgliedschaften werden **strikt getrennt** geführt; parlamentarische Funktionen (Obfrau, Schriftführer, Präsidium, Fraktionsämter) gehören nach `rolle`/`function`, sonstige Gremien außerhalb der 24 ständigen Ausschüsse (Unterausschüsse, Rechnungsprüfungsausschuss, Wahlprüfungsausschuss, Gemeinsamer Ausschuss) sind **nicht** abbildbar (begrenzte Modelllücke, §5) |
 
 ### Empfohlen (Qualität — Warnung, kein Blocker)
 
@@ -90,19 +104,21 @@ gelesen. Die Mandats-Kennungen stehen bereits offen in der Repo-Doku (u. a.
 
 | Mandat | Gesamtstatus | Blocker | Warnungen | betroffene Funktionen | Korrektur (Beleg: §5) |
 |---|---|---|---|---|---|
-| `annika-klose` | **nicht bereit** | 2 Widersprüche: Funktionsbezeichnungen („Sprecher/in der Fraktion", „Obmann/Obfrau im Ausschuss") im Themenfeld `reportingTopics`; zusätzlich Ausschüsse ≠ WP-21-Mitgliedschaften (Gesundheit/EU/Kultur statt **Arbeit und Soziales + Petitionsausschuss**) | keine Prioritäten, keine Namensvarianten | Quellen-Queries (Pseudo-Themen), Radar-Ausschussbeleg, Ausschuss-Themenradar | Ausschüsse ersetzen, Rollen aus Themenfeld entfernen |
+| `annika-klose` | **nicht bereit** | 2 Widersprüche: Funktionsbezeichnungen („Sprecher/in der Fraktion", „Obmann/Obfrau im Ausschuss") im Themenfeld `reportingTopics`; zusätzlich Ausschüsse ≠ WP-21-Mitgliedschaften (Gesundheit/EU/Kultur statt ordentlich **Ausschuss für Arbeit und Soziales** [Obfrau] + stellvertretend **Finanzausschuss**; der Petitionsausschuss war **nur 20. WP**) | keine Prioritäten, keine Namensvarianten | Quellen-Queries (Pseudo-Themen), Radar-Ausschussbeleg, Ausschuss-Themenradar | Ausschüsse ersetzen (ordentlich/stellvertretend getrennt), Rollen aus Themenfeld in `function` |
 | `cem-ince` | **bereit** | — | keine Namensvarianten | — | latent: relationale `profiles.name` = Slug (§5); stv. Ausschüsse ergänzen (empfohlen) |
 | `helmut-kleebank` | **bereit** (Inhalt formal) | — · **aber:** Ausschüsse (Finanzen, Haushalt) ≠ WP-21-Mitgliedschaften (**Wirtschaft und Energie + Umwelt/Klimaschutz/Naturschutz/nukleare Sicherheit**) — formal gültige, inhaltlich falsche Angaben | keine Prioritäten, keine Namensvarianten | Radar-Zuständigkeitsbelege, Matching-Gewichte | Ausschüsse ersetzen |
 | `max-mustermann` (Demo) | **bereit** (Inhalt formal) | **Bestandsproblem:** trägt den Klarnamen einer realen Abgeordneten → identische Personensuche wie `ottilie-paola-klein-2` (Vermischung) | kein Wahlkreis, keine Prioritäten | Radar-Personensuche beider Mandate | Produktentscheidung OP-04 (Demo entfernen/umbenennen) |
-| `ottilie-paola-klein-2` | **nicht bereit** | ungültiger Ausschuss „Bildung, Forschung und Technikfolgenabschätzung" (WP-20-Bezeichnung, in WP 21 aufgeteilt); Namensduplikat mit Demo-Mandat | Wahlkreis unspezifisch („Berlin"), keine Prioritäten | Radar-Ausschussbeleg, Ausschuss-Themenradar, Personensuche | Ausschüsse → **Kultur und Medien**; Wahlkreis präzisieren |
-| `ruppert-st-we` | **bereit** (Inhalt formal) | — · Ausschussliste unvollständig (Petitionsausschuss fehlt; Haushalts-Status zu bestätigen) | keine Prioritäten, keine Namensvarianten | Zuständigkeitsbelege (unvollständig) | Petitionsausschuss ergänzen, Haushalts-Status bestätigen |
+| `ottilie-paola-klein-2` | **nicht bereit** | ungültiger Ausschuss „Bildung, Forschung und Technikfolgenabschätzung" (WP-20-Bezeichnung, in WP 21 aufgeteilt); Namensduplikat mit Demo-Mandat | Wahlkreis unspezifisch („Berlin"), keine Prioritäten | Radar-Ausschussbeleg, Ausschuss-Themenradar, Personensuche | Ausschüsse → ordentlich **Kultur und Medien + Arbeit und Soziales**, stellvertretend **EU-Ausschuss + Finanzausschuss**; Wahlkreis präzisieren |
+| `ruppert-st-we` | **bereit** (Inhalt formal) | — · Ausschussliste falsch geschnitten: ordentlich ist **nur der Petitionsausschuss** (+ Rechnungsprüfungsausschuss, außerhalb der Sollmenge → Modelllücke); der gespeicherte „Haushalt" ist eine **stellvertretende** Mitgliedschaft (dazu stv. Forschung/Technologie/Raumfahrt/TA und Wohnen/Stadtentwicklung); Schriftführer ist eine **Funktion** | keine Prioritäten, keine Namensvarianten | Zuständigkeitsbelege (falsch gewichtet) | ordentlich/stellvertretend trennen, Funktion nach `function` |
 
 **Antworten auf die Pflichtfragen des Auftrags:**
 
 1. **Sind alle sechs Profile vollständig?** Nein. Formal bereit sind 4 von 6; `annika-klose`
    und `ottilie-paola-klein-2` sind nicht bereit. Inhaltlich (gegen amtliche WP-21-Daten)
    tragen **drei** Profile falsche Ausschüsse (`annika-klose`, `helmut-kleebank`,
-   `ottilie-paola-klein-2`).
+   `ottilie-paola-klein-2`), und `ruppert-st-we` führt eine stellvertretende Mitgliedschaft
+   („Haushalt") fälschlich als ordentliche — kein Profil pflegt heute die Trennung
+   ordentlich/stellvertretend (`stellvertretende_ausschuesse` ist überall leer).
 2. **Nicht testbereit:** `annika-klose`, `ottilie-paola-klein-2`; dazu das Namensduplikat
    `max-mustermann`/`ottilie-paola-klein-2` als Bestandsproblem.
 3. **Matching-/Briefing-verfälschend:** falsche Ausschüsse (falsche Zuständigkeitsbelege,
@@ -125,8 +141,18 @@ die Personenversorgung läuft heute ausschließlich über die zur Laufzeit erzeu
 
 Kanonische Ablage: `scripts/fixtures/profil-reparatur-2026-08-04.js` — je Feld: aktueller
 Wert → vorgeschlagener Wert → Grund → offizielle Quelle → Abrufdatum → Status
-(`belegt`/`zu_bestaetigen`/`entscheidung`). Getestet (49/49): belegte Vorschläge machen die
+(`belegt`/`zu_bestaetigen`/`entscheidung`). Getestet (60/60): belegte Vorschläge machen die
 nicht-bereiten Profile bereit, Anwendung ist idempotent, kein Skript wendet sie automatisch an.
+Alle belegten Ausschuss-Vorschläge tragen die **kanonischen WP-21-Namen** aus
+`seeds/bundestag-ausschuesse.js`; ordentliche Mitgliedschaften gehen nach `committees`,
+stellvertretende nach `deputyCommittees`, Funktionen nach `function` (Testfälle 22a–22e).
+**Begrenzte Modelllücke (dokumentiert, Datenmodell unverändert):** Der
+**Rechnungsprüfungsausschuss** (Stüwe, ordentliches Mitglied; Unterausschuss des
+Haushaltsausschusses) gehört nicht zur Sollmenge der 24 ständigen Ausschüsse und würde in
+`ausschuesse`/`stellvertretende_ausschuesse` als falscher Zuständigkeitsbeleg validiert —
+er wird deshalb **nicht** in ein unpassendes Feld gepresst, sondern bleibt als offener
+Punkt eines künftigen Gremienfelds dokumentiert (gleiches gilt für Pellmanns amtlich
+belegte Sitze im Wahlprüfungsausschuss und im Gemeinsamen Ausschuss nach Art. 53a GG).
 **Anwendungsweg (spätere, ausdrückliche Betreiberentscheidung):** vorhandene
 Admin-Profilverwaltung (`/api/admin/profile/<id>`); kein neues Production-Schreibwerkzeug.
 **Abrufgrenze (ehrlich):** Direktabrufe externer Seiten sind aus der Arbeitsumgebung gesperrt
@@ -142,13 +168,19 @@ E-Mail, keine Einladung, kein zahlender Tenant, kein automatischer Import beim M
 spätere Aktivierung ist eine getrennte ausdrückliche Betreiberentscheidung. Die betreffenden
 Abgeordneten **nutzen Helmut nicht** und dürfen nicht so dargestellt werden.
 
-| Kennung | Name | Fraktion | Land | Mandatsart | Fachbereich/Ausschuss | Rolle | Testnutzen |
+| Kennung | Name | Fraktion | Land | Mandatsart | Ausschüsse (ordentlich / stellvertretend) | Rolle | Testnutzen |
 |---|---|---|---|---|---|---|---|
-| `test-mdb-andrea-lindholz` | Andrea Lindholz | CDU/CSU (CSU) | Bayern | Direktmandat Aschaffenburg | Inneres/Recht (Themenpfad, kein Ausschuss) | Bundestagsvizepräsidentin | Präsidiumsrolle, Fraktionsgemeinschaft CSU↔CDU/CSU |
-| `test-mdb-bernd-baumann` | Bernd Baumann | AfD | Hamburg | Landesliste | Innenausschuss | 1. Parlamentarischer Geschäftsführer | Stadtstaat ohne Wahlkreis, Fraktionsgeschäftsführung |
-| `test-mdb-ralf-stegner` | Ralf Stegner | SPD | Schleswig-Holstein | Landesliste (betreut Pinneberg) | Auswärtiger Ausschuss | Fachpolitiker Außen | GG-Ausschuss, betreuter Wahlkreis |
-| `test-mdb-julia-verlinden` | Julia Verlinden | Bündnis 90/Die Grünen | Niedersachsen | Landesliste | Energie/Umwelt (Koordination, kein Ausschuss behauptet) | stellv. Fraktionsvorsitzende | Themenkoordination statt Ausschuss |
-| `test-mdb-soeren-pellmann` | Sören Pellmann | Die Linke | Sachsen | Direktmandat Leipzig II | Soziales/Inklusion (Themenpfad) | Fraktionsvorsitzender (Co) | ostdeutsches Direktmandat, Namens-/Paket-Kollisionsprobe |
+| `test-mdb-andrea-lindholz` | Andrea Lindholz | CDU/CSU (CSU) | Bayern | Direktmandat Aschaffenburg | — / Innenausschuss, Recht und Verbraucherschutz | Bundestagsvizepräsidentin | Präsidiumsrolle, nur stellvertretende Sitze, Fraktionsgemeinschaft CSU↔CDU/CSU |
+| `test-mdb-bernd-baumann` | Bernd Baumann | AfD | Hamburg | Landesliste | Innenausschuss / — | 1. Parlamentarischer Geschäftsführer | Stadtstaat ohne Wahlkreis, Fraktionsgeschäftsführung |
+| `test-mdb-ralf-stegner` | Ralf Stegner | SPD | Schleswig-Holstein | Landesliste (betreut Pinneberg) | Auswärtiger Ausschuss, Menschenrechte und humanitäre Hilfe / Innenausschuss | Vorsitzender UA Rüstungs- und Proliferationskontrolle | GG-Ausschuss, UA-Vorsitz als Funktion (nicht als Ausschuss) |
+| `test-mdb-julia-verlinden` | Julia Verlinden | Bündnis 90/Die Grünen | Niedersachsen | Landesliste | — / Wahlprüfung, Immunität und Geschäftsordnung | stellv. Fraktionsvorsitzende | Themenkoordination statt ordentlichem Ausschuss |
+| `test-mdb-soeren-pellmann` | Sören Pellmann | Die Linke | Sachsen | Direktmandat Leipzig II | Petitionsausschuss / — | Fraktionsvorsitzender (Co) | ostdeutsches Direktmandat, Namens-/Paket-Kollisionsprobe; Wahlprüfungs-/Gemeinsamer Ausschuss = Modelllücke |
+
+Alle elf Profile wurden am 2026-08-04 (2. Durchgang) erneut gegen die amtlichen
+Bundestagsprofile verifiziert (11 parallele Recherchen + adversariale Gegenprobe);
+nicht amtlich Bestätigbares steht je Eintrag unter `zuBestaetigen` im Seed statt als
+belegt behauptet zu werden (u. a. Lindholz' stv. Sitze: Beleg ist die offizielle
+persönliche Seite; Stegners stv. EU-/OSZE-Angaben: nur abgeordnetenwatch → nicht übernommen).
 
 Abdeckung: alle 5 Fraktionen der 21. WP (Sollmenge `seeds/parlamentszusammensetzung.js`),
 5 Bundesländer, Direkt- und Listenmandate, 2 w / 3 m, Rollen vom Präsidium bis zum
