@@ -1,6 +1,118 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-08-03 (**Sprint „OP-25 K2.1 — Production-Aktivierung ausgeführt"
+**Letzte Aktualisierung:** 2026-08-04 (**Sprint „Reparatur: Kapazitätsfehler des globalen
+Abrufpfads" — TEILWEISE ABGESCHLOSSEN. Die Ursache ist mit Messwerten bewiesen, die Reparatur ist
+gebaut und im Offline-Kapazitätstest belegt; offen sind Review, Merge und der Production-Nachweis,
+der vollständig NEU beginnen muss. Es wurde NICHTS in Production verändert: kein Flag, kein
+Deployment, kein Cron ausgelöst, kein manueller Lauf, kein Production-Schreibzugriff, keine
+Migration, kein Merge, 0 KI-Aufrufe, 0,00 USD.** **Der Ausgangsbefund:** der erste reguläre
+Wirkungslauf nach der Aktivierung — `/api/cron/pipeline`, 2026-08-03 16:00 UTC, Lauf
+`cron-pipeline-20260803160002-xm71n` — meldete `[cron/pipeline/globalphase] 267122ms
+status=teilweise quellen=181 rohdokumente=2179 verstanden=0 budgetGlobalMs=221674 reserveMs=48000
+restMs=2552` und `[cron/pipeline] Zeitbudget erschoepft — 6 von 6 Mandaten NICHT verarbeitet`. Die
+globale Phase überzog ihr Budget um **45,45 s** und verbrauchte damit die Mandatsreserve (48 s)
+ganz; übrig blieben 2,552 s, während die Fairnessschleife je Mandat **15 s** Vorlaufreserve
+braucht — daher 0 von 6. **BEWIESENE URSACHE, zerlegt aus `source_crawl_telemetry` (181 Zeilen mit
+Start/Ende je Quelle), `raw_documents.created_at`, `document_findings.created_at`, `process_runs`
+und den Vercel-Runtime-Logs desselben Laufs** (alles rein lesend, kein neuer Lauf ausgelöst):
+Vorlauf **3,10 s** · Quellenabruf 181 Quellen in 10 Stufen à 20 **112,11 s** (42,0 %) · DIP +
+`saveRawItems` + Bestandsabruf **5,41 s** · **`raw_documents`: 616 EINZELNE Upserts 89,89 s
+(33,6 %)** · `document_findings` (1 Bulk) + **`finding_count`: ~108 × (GET+PATCH) 34,85 s
+(13,1 %)** · Lazy-Understanding **15,94 s** (14 Stapel geclustert, **1 242 Cluster gebildet,
+0 verarbeitet**) · Eager **0,00 s** (übersprungen, `zeitbudget`) · Lauftelemetrie + 181
+Quellenzeilen **5,19 s** = **267,12 s**. **Hauptursache F-RT: 124,74 s = 46,7 % des Laufs sind
+sequenzielle Einzelzeilen-Round-Trips gegen PostgREST — 834 Requests à ~149,6 ms**, obwohl
+derselbe Schreibpfad für `document_findings` in derselben Funktion längst einen Bulk-Write
+benutzt. **Zweitursache F-CL: 15,94 s reine Doppelarbeit**, weil die Stapelschleife des
+Lazy-Understanding erst clusterte und **danach** das längst erschöpfte Budget prüfte.
+**Ausdrücklich NICHT die Ursache, geprüft statt vermutet:** der Abruf nicht (alle 181 Quellen
+vollständig abgerufen, `fehler: 0`, keine Zeile „Abrufbudget erschoepft"; die 112,11 s sind der
+reale Netzaufwand durch das Google-Gate mit Parallelität 5 und 200 ms Mindestabstand — die
+Härtung stammt aus dem Vorfall 2026-07-25 und wurde **nicht** angefasst) · keine
+Mehrfachverarbeitung (`gesamt=181 gemeinsam=140 mandatseigen=41` = 6 Mandate × 7 eigene Quellen,
+eines mit 6, plus 140 geteilte — vertragsgemäß; `doppelteWege=3` sind bekannte strukturgleiche
+Wege, vom prozessweiten `sharedFetchLedger` erwartungsgemäß übersprungen) · **die interne
+Zeitreservierung hat korrekt gerechnet (221,674 s / 48 s), aber nicht gegriffen**: zwischen
+Abrufende (t = 115 s) und Versiegelung (t = 267 s) gab es **keine einzige** Stelle, an der der
+Lauf sein Restbudget prüfte — Persistenz, Fundstellen, Zählerpflege und Telemetrie liefen
+unbegrenzt. Die Grenze existierte als Zahl, nicht als Riegel. **REPARATUR (klein, lokal, keine
+Architekturänderung):** **(1)** Bulk-Upsert der Rohdokumente in `persistRawDocumentsDeduped`,
+Zeilen nach **Spaltensignatur** gruppiert statt fehlende Spalten mit `null` aufzufüllen (sonst
+überschriebe ein `merge-duplicates`-Upsert vorhandene Spalten eines Bestandsdokuments mit `null`);
+schlägt ein Block fehl, wird **genau dieser Block** einmal einzeln nachgezogen — die bisherige
+Robustheit gegen eine einzelne unbrauchbare Zeile bleibt erhalten. **(2)** `finding_count`
+gebündelt **und bedingt**: gruppiert nach (gelesener Stand, Zuwachs), ein
+`PATCH …&finding_count=eq.<gelesener Stand>` je Gruppe — ein echtes **Compare-and-Set**
+(**CLAUDE.md §4.10**), das eine zwischenzeitlich fremd veränderte Zeile **nicht** überschreibt,
+sondern zählt und benennt; der bisherige Pfad war ein unbedingtes Lesen→Ändern→Schreiben.
+**(3)** Budgetriegel **vor** der Clusterbildung; ein übersprungener Stapel wird mit Dokumentzahl
+gezählt und macht den Datenstand ehrlich `teilweise`. **(4)** Phasenmessung
+(`[globalphase/phasen]`, `datenstand.phasen`, `datenstand.lazy`) — der gescheiterte Lauf musste
+über vier Tabellen rekonstruiert werden, das bleibt einmalig. **GEMESSENE WIRKUNG** (neuer
+deterministischer Offline-Kapazitätstest `scripts/globalabruf-kapazitaet-test.js` in
+Production-Größenordnung: 181 Quellen, 2 179 Dokumente, 6 Mandate, gemessene Production-Latenzen
+als Eingabe): Round-Trips des Schreibpfads **834 → 10** · Persistenzphase **130,51 s → 1,56 s** ·
+globale Phase **263,79 s → 197,19 s** bei Budget 222 s · Restzeit für die Mandatsphase
+**6,21 s → 72,80 s** · Mandate **0 von 6 → 6 von 6** · Gesamtlauf **207,10 s** unter dem
+270-s-Limit. **Der Test bildet den Production-Lauf nachprüfbar ab:** er misst am ECHTEN
+Schreibpfad **834 Round-Trips / 125,25 s** gegen die in Production gemessenen **834 / 124,74 s**
+(Abweichung 0,4 %) und reproduziert den gescheiterten Lauf mit **265,80 s** gegen 267,12 s
+(0,5 %). **Vor dem Fix war die Suite rot (12 von 41 Prüfpunkten), nach dem Fix grün (45/45).**
+**Keine stille Reduktion:** alle 181 Quellen werden abgerufen, alle 2 179 Dokumente stehen im
+Datenstand, Sichtbarkeitsvertrag (14 Kontexte, Partition, Kontextgrenze), Sperren, Fairness und
+Mandatstrennung sind unverändert; ein teilweiser Lauf bleibt `teilweise` und gilt nie als frisch.
+**DREI BEFUNDE BLEIBEN BEWUSST OFFEN UND BRAUCHEN EINE ENTSCHEIDUNG (Phase-4-Stopp des
+Auftrags):** **E-1 Stufenbarriere im Abruf** — der Abruf läuft in 10 Stufen à 20 Quellen, jede
+Stufe wartet auf ihre langsamste Quelle; Stufe 9 enthielt 200,9 s Arbeit und dauerte 53,1 s,
+Stufe 10 bestand aus **einer** Quelle und begann erst bei t = 99 s. Untere Schranke bei idealer
+Bündelung: 391,3 s Arbeit / 5 Gate-Slots = **78,3 s** gegen gemessene **112,1 s**, also ≈ **34 s**
+Einsparpotenzial — der Rückbau verlangt eine Deadline **im** Crawler (`crawler.js`, aktiver
+Produktionspfad, eng verzahnt mit der Google-Härtung) und ist für die Vertragserfüllung nicht
+nötig. **E-2 `HELMUT_CRAWL_MAX_CANDIDATES` wirkt je STUFE statt je LAUF** — der Kandidatendeckel
+(1 000) sitzt in `crawlAllSources` und wird im globalen Pfad zehnmal angewendet; gemessen:
+Altpfad verwirft **603–621** Dokumente je Lauf, der globale Pfad **0**, und verarbeitet damit
+**2 140** statt ~**945** neuer Kandidaten (**2,3-fach**). Das ist eine stille **Ausweitung**,
+keine Reduktion — ihre Rücknahme wäre eine Produktentscheidung, keine Reparatur. **E-3
+`datenstand.status = abgeschlossen` ist mit dem heutigen Verstehensrückstand praktisch
+unerreichbar** — `budgetErschoepft` wird schon wahr, wenn **ein** Lazy-Cluster zurückgestellt
+wurde; bei 1 242 Clustern und 60 s Lazy-Budget bleibt immer ein Rest. Das berührt unmittelbar
+**Abnahmekriterium 5** des Production-Nachweises: entweder wird der Rückstand erst abgearbeitet,
+oder das Kriterium wird auf „alle sechs Mandatsläufe abgeschlossen und keine
+`kontextvertrag`-Fehler" geschärft. **TESTS:** `node scripts/run-offline-tests.js`
+**186/201 grün** — Basislinie desselben Arbeitsbaums ohne diese Änderung ist **185/200** mit
+**exakt derselben** 15er-Fehlschlagliste (alle umgebungsbedingt: fehlendes Netz/Supabase); die
++1 ist die neue Suite, **kein neuer und kein abweichender Fehlschlag**. `node
+scripts/browser-smoke-test.js` **32/32**. Gezielt: `globalabruf-kapazitaet` **45/45**,
+`vorgangskontext` **102/102** + Mutationsprobe **18/18 rot**, `cron-globalphase` **176/176** +
+Mutationsprobe **17/17 rot**, `globalphase-buendelung` **56/56** + Mutationsprobe **15/15 rot**,
+`cron-fairness` **285/285**, `cron-fairness-persistenz` **54/54**, `cross-tenant-security`
+**43/43**, `env-inventar` **38/38**. **GEÄNDERTE DATEIEN:** `lib/helmut/storage.js`
+(Schreibpfad), `lib/helmut/scheduler.js` (Budgetriegel + Phasenmessung),
+`scripts/globalabruf-kapazitaet-test.js` (neu), `docs/betrieb/vorgangskontext.md` (§7.6,
+kanonisch), `docs/betrieb/env-inventar.md` (zwei neue Stellschrauben),
+`docs/datenmotor-restliste.md`, `docs/CURRENT_STATE.md`. **RISIKO:** der Schreibpfad wird auch
+vom **aktiven** Altpfad benutzt (`runSourceCrawl` → `persistRawDocumentsShadow`) — dort wirkt die
+Beschleunigung ebenso; die fachliche Wirkung ist unverändert (dieselben Zeilen, dieselben Werte),
+und das Fehlerverhalten bleibt durch den Einzelfallback je Block erhalten. **RÜCKWEG:**
+`git revert`; zusätzlich lassen sich die Blockgrößen über `HELMUT_RAW_DOCUMENT_BULK_CHUNK=1` und
+`HELMUT_FINDING_COUNT_CHUNK=1` ohne Deployment auf Einzelzeilen zurückstellen.
+**KONKURRIERENDE ARBEIT (`CLAUDE.md` §6, bei Sprintbeginn übersehen und nachgeholt):** **PR #218**
+(2026-08-04 00:02 UTC) bearbeitet denselben Befund und legt eine Datei **desselben Namens** an —
+die beiden PRs schließen sich aus. Er nennt als Ursache das *Start*-Gatter des Stufenabrufs und
+senkt `HELMUT_GLOBALPHASE_ABRUF_STUFE` von 20 auf 5. Der beschriebene Mechanismus existiert, aber
+die Zuschreibung trägt für diesen Lauf nicht: der Abruf endete bei **t = 115,2 s** eines
+221,674-s-Budgets, das Start-Gatter hat nie gegriffen (`nichtAbgerufen = 0`, `fehler: 0`), die
+Überziehung entstand vollständig **danach**. Und die Abhilfe wirkt in die falsche Richtung: die
+Summe der Stufenmaxima ist eine Untergrenze der Abrufdauer und kann beim Verkleinern der Stufe nie
+sinken (`max(A ∪ B) ≤ max(A) + max(B)`, datenunabhängig) — an den 181 gemessenen Quellendauern:
+Stufe 20 → **71,3 s**, Stufe 10 → **90,2 s**, Stufe 5 → **153,0 s**, also **≥ 81,7 s** höhere
+Untergrenze. **Empfehlung: die Codeänderung aus #218 nicht übernehmen**; seine Gate-/Stufen-
+Modellierung ist erhaltenswert und schließt genau die Lücke, die der Test dieses Sprints
+ausdrücklich offen lässt. Details in §8. **NÄCHSTER SCHRITT:** Review und Merge-Entscheidung durch den Betreiber; **danach** erst die
+Wiederaktivierung von `HELMUT_CRON_GLOBALABRUF` und ein **vollständig neues**
+Beobachtungsfenster über ≥ 24 h. **Der OP-25-Production-Nachweis ist gescheitert und beginnt
+neu.** Berlin, Brandenburg und M8 bleiben AUS, weitere reale Testmandate bleiben deaktiviert.
+**Branch:** `claude/helmut-kapazitaetsfehler-abrufpfad-m17ynl`.) · (**Sprint „OP-25 K2.1 — Production-Aktivierung ausgeführt"
 — TEILWEISE ABGESCHLOSSEN. K2.1 ist in Production AKTIVIERT. Deployment READY und unmittelbarer
 Smoke-Check bestanden. Der reguläre Production-Kapazitätsnachweis über das vorgeschriebene
 Beobachtungsfenster ist noch offen. OP-25 bleibt teilweise abgeschlossen.** **Der Handgriff war
@@ -3597,16 +3709,48 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
    Bedingungen zusammen sind nötig, eine allein genügt nicht**
    ([`betrieb/env-inventar.md`](betrieb/env-inventar.md) §8,
    [`betrieb/berlin-aktivierung.md`](betrieb/berlin-aktivierung.md) §20.3). **Praktische Folge
-   seit dem 2026-08-03:** `HELMUT_CRON_GLOBALABRUF` ist scharf, aber der Rückweg (`off` +
-   Redeploy) liegt **ausschließlich** beim Betreiber — zeigt ein regulärer schwerer Lauf ein
-   Problem, kann keine Sitzung zurückrollen. Betrifft ebenso `HELMUT_LANDESMODULE` (Punkt 14).
+   seit dem 2026-08-03:** `HELMUT_CRON_GLOBALABRUF` war scharf, aber der Rückweg (`off` +
+   Redeploy) lag **ausschließlich** beim Betreiber — genau dieser Fall ist am 2026-08-03
+   eingetreten (Kapazitätsfehler des ersten regulären Wirkungslaufs), und **der Betreiber hat
+   zurückgerollt; das Flag steht seit dem Rückbau wieder auf `off`.** Der Blocker selbst besteht
+   unverändert fort: keine Sitzung kann aktivieren oder zurückrollen.
+   Betrifft ebenso `HELMUT_LANDESMODULE` (Punkt 14).
    *Lesende* Production-Prüfungen sind davon nicht betroffen: Deployments, Runtime-Logs,
    Build-Logs und die App selbst sind über den Vercel-MCP erreichbar.
 
 ## 8 · Offene Pull Requests
 
-**Stand 2026-08-03 (nach der K2.1-Production-Aktivierung), gegen GitHub geprüft: offen ist genau
-EINER** — der Dokumentations-PR dieses Sprints (`claude/op25-k21-produktion-aktiviert`, **PR #214**,
+**Stand 2026-08-04, gegen GitHub geprüft — drei offene PRs, davon zwei zum SELBEN Thema:**
+
+- **PR dieses Sprints** (`claude/helmut-kapazitaetsfehler-abrufpfad-m17ynl`) — Kapazitätsfehler
+  des globalen Abrufpfads, Code + Test + Doku.
+- **PR #218** (`claude/exciting-goodall-hdvcyg`, 2026-08-04 00:02 UTC) — **konkurrierender PR zum
+  selben Befund.** Er legt eine Datei desselben Namens an
+  (`scripts/globalabruf-kapazitaet-test.js`); die beiden PRs schließen sich dadurch aus, es kann
+  nur einer gemergt werden. **Bewertung nach `CLAUDE.md` §6, an Messwerten statt an Meinung:**
+  #218 nennt als Ursache, dass die Restzeitprüfung des Stufenabrufs nur ein *Start*-Gatter ist,
+  und senkt als Abhilfe `HELMUT_GLOBALPHASE_ABRUF_STUFE` von 20 auf 5. Die Beschreibung des
+  Mechanismus ist richtig, die **Ursachenzuschreibung trägt für diesen Lauf aber nicht**: der
+  Abruf endete bei **t = 115,2 s** eines **221,674-s**-Budgets, das Start-Gatter hat nie
+  gegriffen (`nichtAbgerufen = 0`, `fehler: 0`, keine Zeile „Abrufbudget erschoepft"); die
+  gesamte Überziehung entstand **nach** dem Abruf. **Die vorgeschlagene Abhilfe wirkt zudem in
+  die falsche Richtung:** eine Stufe wartet auf ihre langsamste Quelle, also ist die Summe der
+  Stufenmaxima eine Untergrenze der Abrufdauer, und diese Summe kann beim **Verkleinern** der
+  Stufe nie sinken (`max(A ∪ B) ≤ max(A) + max(B)` — datenunabhängig). An den 181 gemessenen
+  Quellendauern desselben Laufs: Stufe 20 → **71,3 s**, Stufe 10 → **90,2 s**, Stufe 5 →
+  **153,0 s**. Stufe 5 höbe die Untergrenze des Abrufs also um **≥ 81,7 s**. **Empfehlung: die
+  Codeänderung aus #218 nicht übernehmen.** Erhaltenswert ist seine Modellierung von Gate und
+  Stufenbarriere — sie deckt genau die Lücke ab, die der Test dieses Sprints ausdrücklich offen
+  lässt (er verrechnet die *gemessenen* Stufenspannen und bemerkt deshalb keine Regression an der
+  Abruf-Nebenläufigkeit). Sinnvoll als eigener Prüfabschnitt nachziehen, nicht als
+  Default-Änderung.
+- **PR #216** (`claude/werkzeug-lesefehler-flake-portklasse`) — davon **unabhängiger**
+  Test-/Dokumentations-PR (flackernder `werkzeug-lesefehler-test.js`), in diesem Sprint
+  weisungsgemäß weder verändert noch als Voraussetzung behandelt.
+
+**PR #214** (K2.1-Aktivierungsdoku) ist inzwischen gemergt (`0ac7a31`).
+**Stand 2026-08-03 (nach der K2.1-Production-Aktivierung), gegen GitHub geprüft: offen war genau
+EINER** — der Dokumentations-PR jenes Sprints (`claude/op25-k21-produktion-aktiviert`, **PR #214**,
 reine Doku). **PR #213** (Aktivierungsprüfung, reine Doku) ist am 2026-08-03 gemergt (`ded0e24`);
 #212 war bereits gemergt. **#203 ist geschlossen** (2026-08-03, 07:19 UTC, `merged: false`), genau
 wie am 2026-08-02 empfohlen.
@@ -3683,6 +3827,15 @@ zehn offenen PRs (#184, #178, #177, #175, #155, #154, #132, #117, #115, #112, #1
   isolierter Rückweg bewiesen.
 - **Flags:** `HELMUT_SOURCE_MODE=on` · `HELMUT_UNDERSTANDING_GATE=shadow` ·
   `HELMUT_PARDOK_DISPATCH=shadow` · Scoring `off` ·
+  **`HELMUT_CRON_GLOBALABRUF` steht wieder auf `off` (Stand 2026-08-04).** Es war am
+  2026-08-03, 13:15:11 UTC in Production auf `on` gesetzt; der erste reguläre Wirkungslauf ist am
+  Kapazitätsnachweis gescheitert (globale Phase 267,12 s bei Budget 221,674 s, **0 von 6**
+  Mandaten), ein späterer Crawl lief ebenfalls ins äußere Zeitlimit. Der Betreiber hat das Flag
+  daraufhin auf `off` gesetzt und neu ausgerollt (Rückbau-Deployment `READY`, Startseite 200,
+  Health-Gate 401, Build sauber, keine neue Runtime-Fehlerklasse).
+  **`HELMUT_CRON_GLOBALPHASE` wurde dabei nicht verändert und bleibt nicht gesetzt (AUS).**
+  Es läuft damit wieder ausschließlich der Altpfad. Ursache, Reparatur und die drei offenen
+  Entscheidungen: [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.6 ·
   **`HELMUT_MATCHING_AUDIT=on` seit 2026-07-28, ~20:55 UTC — ausschließlich in Production**
   (Redeploy `dpl_ChLoTuKztU1B835PfckELKp8doMZ` / `5c254c4`, `READY` 20:56:48 UTC; Preview und
   Development bleiben aus). Wirkung in Production belegt: erster Auditlauf 29.07. 04:05 UTC,
