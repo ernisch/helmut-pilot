@@ -1,15 +1,18 @@
 # OP-25 K2.1 — Globaler Abruf, kontextgebundene Vorgangsbildung
 
-**Kanonische Dokumentation des K2.1-Pfads.** Stand: **2026-08-03** (§7.4: Aktivierung ergänzt).
-Zustand: **gemergt, deployt und seit 2026-08-03, 13:15:11 UTC in Production AKTIVIERT** —
-`HELMUT_CRON_GLOBALABRUF=on`, ausschließlich in der Production-Umgebung.
+**Kanonische Dokumentation des K2.1-Pfads.** Stand: **2026-08-03** (§7.6 neu: Aktivierung
+gescheitert, Rückbau, Root Cause, Teilkorrektur). Zustand: **gemergt und deployt, in Production
+AKTUELL DEAKTIVIERT** — `HELMUT_CRON_GLOBALABRUF` wurde vom Betreiber am 2026-08-03, 22:51 UTC
+wieder auf `off` gesetzt und neu deployt, nachdem der reguläre Production-Kapazitätsnachweis
+**gescheitert** war (§7.6).
 **PR #201** gemergt (`255df01`), beide Pflicht-Checks grün (Lauf `30638964148`,
 `Syntax + Offline-Suiten` **194/194 Suiten**, `Browser-/Mobile-Smoke (Chromium)`).
 
-> **Der Pfad ist damit scharf, aber NICHT abgenommen.** Deployment `READY` und unmittelbarer,
-> rein lesender Smoke-Check sind bestanden (§7.4). **Der reguläre Production-Kapazitätsnachweis
-> über mindestens 24 h reguläre Kadenz steht vollständig aus** — bis dahin ist über die
-> tatsächliche Wirkung des Pfades in Production **nichts** belegt, und **OP-25 bleibt teilweise
+> **Der Pfad ist damit NICHT scharf und NICHT abgenommen.** Die Aktivierung 2026-08-03, 13:15 UTC
+> (§7.4) war ein Testlauf unter Betreiberaufsicht; der reguläre Production-Kapazitätsnachweis
+> **ist gelaufen und gescheitert** (§7.6) — Root Cause ursächlich geklärt, eine Teilkorrektur ist
+> vorgeschlagen (Durchsetzung des Zeitbudgets), die zugrundeliegende Kapazitätsgrenze bleibt offen
+> und braucht eine Betreiberentscheidung, bevor erneut aktiviert wird. **OP-25 bleibt teilweise
 > abgeschlossen**. Kein falsches Grün (`CLAUDE.md` §4.4).
 
 > **Flaggrenze, verbindlich — Code-Default und Production-Zustand sind zu unterscheiden:**
@@ -504,6 +507,95 @@ wenn über das Beobachtungsfenster gilt:
 
 Punkt 7 ist die bewusste Grenze dieses Kriteriums: die Kontextzahl ist eine **Beobachtungsgröße**,
 kein Schwellwert. Auffällig hoch heißt „erklären", nicht „durchgefallen".
+
+---
+
+## 7.6 · Production-Kapazitätsnachweis 2026-08-03 — GESCHEITERT, Rückbau, Root Cause, Teilkorrektur
+
+**Rein lesend gegen Vercel-Runtime-Logs und -Deployments geprüft** (Vercel-MCP, kein
+Production-Schreibzugriff). Sprintauftrag: OP-25 Kapazitätsfehler ursächlich beheben.
+
+### 7.6.1 Der gescheiterte Nachweis
+
+| Lauf | Zeit (UTC) | Befund |
+|---|---|---|
+| `cron/pipeline` | 16:00:01 | `[globalphase] Quellen vereinigt: gesamt=181 gemeinsam=140 mandatseigen=41`. `[cron/pipeline/globalphase] 267122ms status=teilweise quellen=181 rohdokumente=2179 verstanden=0 frisch=false budgetGlobalMs=221674 reserveMs=48000 restMs=2552`. `[cron/pipeline/fairness] … kapazitaet=0 obergrenzeLaeufe=keine-garantie`. `[cron/pipeline] Zeitbudget erschoepft — 6 von 6 Mandaten NICHT verarbeitet.` |
+| `cron/crawl` | 20:00:49 | `[cron/crawl] aeusseres Zeitlimit — Laufdatensatz … als abgebrochen vermerkt`. `[cron/crawl] 280184ms tenants=undefined bounded=true` — traf das ÄUSSERE 280 000-ms-Limit. |
+| Rückbau | 22:51:00 | Production-Deployment `dpl_2YJkxWKYGALiCbd779XsarAkRc94`, `target: production`, `action: redeploy` (aus `dpl_Ycbyi5Z3fkmfFRYaqqMSabcDJUux`), `readyState: READY` — Betreiberaktion, `HELMUT_CRON_GLOBALABRUF` zurück auf `off`. |
+
+Beide Läufe zeigten wiederholt `[crawler] Google-News URL-Auflösung: N/M aufgelöst` und mehrere
+`Crawl failed for … Timeout for https://news.google.com/rss/search?…`.
+
+### 7.6.2 Root Cause, zweigeteilt
+
+**(1) Durchsetzungsfehler, BEHOBEN.** `runGlobaleErfassung` (`lib/helmut/scheduler.js`) ruft
+`crawlAllSources` in Stufen von `HELMUT_GLOBALPHASE_ABRUF_STUFE` Quellen (Default **war** 20) auf
+und prüft die Restzeit nur **zwischen** Stufen (Start-Gatter) — strukturell derselbe Fehler wie
+R-6 ([`cron-fairness.md`](cron-fairness.md) §11.1), nur an dieser Stelle statt in der
+Fairnessschleife. Schlechtestmögliche Überziehung **einer** Stufe:
+`ceil(stufenGroesse / HELMUT_GOOGLE_CONCURRENCY) * CRAWLER_TIMEOUT_MS` — beim alten Default
+(20 Quellen, Google-Gate-Nebenläufigkeit 5, Timeout 7 000 ms) bis zu **28 000 ms**. Das erklärt
+sowohl die 45 448-ms-Überziehung des 16:00-Laufs als auch den Anschlag ans äußere Limit um
+20:00 Uhr. **Korrektur:** Default auf **5** gesenkt (= Google-Gate-Nebenläufigkeit) — bindet die
+schlechtestmögliche Überziehung an **eine** Gate-Runde (~7–8 s) statt vier. Ändert **nichts** an
+`crawler.js`, `google-news-hardening.js`, Cron-Zeiten, Budgets oder LLM-Aufrufen.
+
+**(2) Strukturelle Kapazitätsgrenze, NICHT behoben.** Der Google-News-Gate (Nebenläufigkeit 5,
+Mindestabstand 200 ms, 7 000-ms-Timeout je Quelle) reicht bei ~140 gemeinsamen, überwiegend
+Google-News-gestützten Abrufwegen strukturell nicht aus, um die Erfassung innerhalb des
+zugeteilten Budgets (~220 s) abzuschließen — unabhängig von (1). Eine kleine, lokal begrenzte
+Korrektur kann das nicht zuverlässig lösen, ohne entweder die Google-Härtungsgrenzen zu lockern
+(Sicherheitsrisiko, siehe die Begründung der Härtung selbst,
+[`google_news_haertung.md`](google_news_haertung.md), Incident 2026-07-16) oder eine größere
+Architekturänderung vorzunehmen (siehe Optionen unten).
+
+### 7.6.3 Warum die bestehende Kapazitätssuite den Fehler nicht zeigte
+
+`scripts/cron-globalphase-test.js` §8 (`messen()`) ersetzt `crawlAllSources` durch einen
+**seriellen** Testdouble mit einer **flachen** Kostenkonstante je Quelle (`KOSTEN.abrufMs`). Das
+modelliert weder die Google-Gate-Nebenläufigkeit/-Mindestabstand/-Timeouts noch die reale
+Größenordnung von 181 Quellen (die Simulationswelt hat nur einen Katalog aus rund zehn
+Basisquellen). Das erklärt, warum die Suite „K2.1 6/6 in 205 145 ms" meldete, während Production
+scheiterte. **Die Fachlogik der Vorgangsbildung (K2.1-Vertrag, Abschnitt 5 dieses Dokuments,
+`vorgangskontext-test.js`) ist davon nicht betroffen** — sie prüft die Bündelung, nicht die
+Zeitdynamik des Abrufs, und bleibt unverändert richtig.
+
+### 7.6.4 Neue Lastprobe, real-code-getrieben
+
+[`scripts/globalabruf-kapazitaet-test.js`](../../scripts/globalabruf-kapazitaet-test.js)
+(**21/21 grün**) treibt den ECHTEN `createGoogleNewsGate`
+(`lib/helmut/google-news-hardening.js`, unverändert) und die ECHTE Budget-/Stufenlogik aus
+`runGlobaleErfassung` gegen eine synthetische, aber massstabsgetreue Welt (181 Quellen, 140
+gemeinsam / 41 mandatseigen, Dokumentausbeute in der Größenordnung der Production-Beobachtung).
+Nur die HTTP-Schicht ist ein kalibriertes Testdouble mit eigenem virtuellem Taktgeber (keine
+echten Netzwerkaufrufe, deterministisch, Sekundenbruchteile Testlaufzeit). Ergebnisse:
+
+- **Vor der Korrektur** (Stufe 20) reproduziert: Budgetüberziehung, Datenstand `teilweise`, 0 von
+  6 Mandaten erreichbar in der Restzeit.
+- **Nach der Korrektur** (Stufe 5): bei einem gezielt adversarialen Budgetwert sinkt die
+  schlechtestmögliche Überziehung von 28 323 ms auf 5 756 ms.
+- **Ehrlich, kein falsches Grün:** auch nach der Korrektur bleibt der Datenstand bei dieser Last
+  `teilweise`, und rechnerisch passen nur rund 2 von 6 Mandaten in die verbleibende Zeit — die
+  Korrektur behebt die unkontrollierte Überziehung, nicht die Kapazitätsgrenze aus 7.6.2 (2).
+- **Gegenproben:** eine vollständig degradierte Google-Oberfläche (60 gleichzeitig
+  zeitüberschrittene Quellen) öffnet den Circuit Breaker zuverlässig und verhindert ein Hängen;
+  ein nahezu erschöpftes bzw. leeres Budget erzeugt keinen Absturz und keinen erfundenen Erfolg.
+
+### 7.6.5 Entscheidungsvorlage für die verbleibende Kapazitätsgrenze
+
+Keine dieser Optionen ist in diesem Sprint umgesetzt — Betreiberentscheidung erforderlich, bevor
+`HELMUT_CRON_GLOBALABRUF` erneut aktiviert wird:
+
+| # | Option | Wirkung | Preis / Risiko |
+|---|---|---|---|
+| **A** | Google-Timeout senken (`CRAWLER_TIMEOUT_MS`) und/oder Google-Gate-Nebenläufigkeit vorsichtig erhöhen (`HELMUT_GOOGLE_CONCURRENCY`) — in der Restliste bereits als **OP-15** vorgesehen | proportionale Verkürzung der Abrufzeit, kleiner bis mittlerer Eingriff | lockert genau die Sicherheitsgrenzen, die der Incident 2026-07-16/25 (Google-Drosselung) erzwungen hat — braucht einen **eigenen, dedizierten** Sicherheits-/Lastnachweis, nicht in diesem Sprint bewertet |
+| **B** (empfohlen als nächster Schritt) | Erfassung über mehrere Cron-Läufe strecken — ein Fortschritts-/Wiederaufnahmevertrag für den globalen Abruf, analog zur bestehenden `ceil(n/k)`-Fairnessrotation der Mandatsphase | löst die Ursache (nicht genug Zeit in einem Funktionsaufruf), ohne Google-Härtungsgrenzen anzufassen | größerer Architekturwechsel: neuer Persistenzzustand für Teilfortschritt, neue Wiederaufnahmelogik, ggf. geänderte Cron-Kadenz — eigener Sprint mit eigenem Production-Nachweis |
+| **C** | Vereinigungsmenge selbst verkleinern — prüfen, ob strukturell ähnliche Partei-/Ausschuss-/Regionalsuchen zu weniger, breiteren Abrufwegen zusammengefasst werden können | reduziert die Zahl der Google-Anfragen an der Wurzel | rein explorativ, keine Zusage — braucht eine eigene fachliche Prüfung, ob dabei Abdeckung verloren geht (`CLAUDE.md` §4.3: kein Abschneiden ohne belegte fachliche Regel) |
+
+**Diese Sitzung hat KEINE dieser Optionen umgesetzt** — nur die Analyse und die
+Teilkorrektur aus 7.6.2 (1).
+
+---
 
 ## 8 · Verbleibende Risiken
 

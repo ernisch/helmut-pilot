@@ -797,7 +797,32 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   (`255df01`) und deployt, und **seit dem 2026-08-03, 13:15:11 UTC ist
   `HELMUT_CRON_GLOBALABRUF` in der Production-Umgebung auf `on`** — siehe den
   Aktivierungsstatus unmittelbar unten.
-- **Status K2.1 (2026-08-03, 13:15:11 UTC, Betreiberaktion): IN PRODUCTION AKTIVIERT —
+- **Status K2.1, Nachweis und Rückbau (2026-08-03/04): DER REGULÄRE
+  PRODUCTION-KAPAZITÄTSNACHWEIS IST GESCHEITERT, DER BETREIBER HAT ZURÜCKGEROLLT.
+  ROOT CAUSE URSÄCHLICH GEKLÄRT, TEILKORREKTUR VORGESCHLAGEN. OP-25 BLEIBT TEILWEISE
+  ABGESCHLOSSEN.** `cron/pipeline` 16:00:01 UTC überzog sein zugeteiltes Budget
+  (`budgetGlobalMs=221674`) um 45 448 ms auf 267 122 ms — Datenstand `teilweise`, 0 von 6
+  Mandaten erreicht; `cron/crawl` 20:00:49 UTC riss sogar das äußere 280 000-ms-Limit
+  (`bounded=true`, `abgebrochen`). Der Betreiber setzte danach `HELMUT_CRON_GLOBALABRUF` in
+  Production wieder auf `off` und deployte neu (`dpl_2YJkxWKYGALiCbd779XsarAkRc94`, `READY`
+  22:51 UTC) — alle drei Fakten rein lesend gegen Vercel-Runtime-Logs/-Deployments geprüft.
+  **Root Cause, zweigeteilt:** (1) ein Durchsetzungsfehler in `runGlobaleErfassung`
+  (`lib/helmut/scheduler.js`) — die Restzeitprüfung im Stufenabruf ist nur ein Start-Gatter
+  zwischen Stufen von `HELMUT_GLOBALPHASE_ABRUF_STUFE` Quellen, kein Stopp-Gatter währenddessen;
+  **behoben** durch Senkung des Defaults von 20 auf 5 (= Google-Gate-Nebenläufigkeit), belegt in
+  `scripts/globalabruf-kapazitaet-test.js` (21/21 grün): schlechtestmögliche Überziehung sinkt
+  von 28 323 ms auf 5 756 ms bei einem gezielt adversarialen Budgetwert. (2) eine strukturelle
+  Kapazitätsgrenze des Google-News-Gates bei ~140 gemeinsamen Abrufwegen — **bleibt bestehen**,
+  Entscheidungsvorlage in [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.6.5.
+  Nebenbefund: die bestehende Kapazitätssuite (`cron-globalphase-test.js` §8) modellierte die
+  reale Google-Gate-Nebenläufigkeit und die reale Größenordnung (181 Quellen) nicht — deshalb
+  zeigte sie Erfolg, während Production scheiterte; die K2.1-Fachlogik (Vorgangsbildung) ist
+  davon unberührt. Vollständig: [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.6.
+  Getestet: Offline-Suite 186/201 grün (15 vorbestehende Umgebungsfehler, per Baseline-Vergleich
+  verifiziert), Browser-Smoke 32/32 grün. Production/Flags/Crons/Quellen/Mandate/Kosten
+  unberührt, kein Merge, kein Deploy, 0 KI-Aufrufe, 0,00 USD.
+- **Status K2.1 (2026-08-03, 13:15:11 UTC, Betreiberaktion, historisch — siehe oben für den
+  weiteren Verlauf): IN PRODUCTION AKTIVIERT —
   Deployment READY und unmittelbarer Smoke-Check bestanden, REGULÄRER
   PRODUCTION-KAPAZITÄTSNACHWEIS NOCH OFFEN. OP-25 bleibt TEILWEISE ABGESCHLOSSEN.**
   **`HELMUT_CRON_GLOBALABRUF = on`, ausschließlich in der Production-Umgebung** (Preview und

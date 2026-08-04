@@ -1,6 +1,44 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-08-03 (**Sprint „OP-25 K2.1 — Production-Aktivierung ausgeführt"
+**Letzte Aktualisierung:** 2026-08-03 (**Sprint „OP-25 — Kapazitätsfehler im globalen Abrufpfad
+ursächlich behoben (Teilkorrektur)" — TEILWEISE ABGESCHLOSSEN. Der Aktivierungsversuch aus dem
+Vorsprint ist GESCHEITERT: der reguläre `cron/pipeline`-Lauf 2026-08-03 16:00:01 UTC überzog sein
+zugeteiltes Budget (`budgetGlobalMs=221674`) um 45 448 ms auf 267 122 ms, Datenstand `teilweise`,
+0 von 6 Mandaten erreicht (`restMs=2552`); ein späterer `cron/crawl`-Lauf 20:00:49 UTC riss sogar
+das ÄUSSERE 280 000-ms-Limit (`280184ms bounded=true`, als `abgebrochen` vermerkt). Der Betreiber
+hat danach `HELMUT_CRON_GLOBALABRUF` auf Production wieder auf `off` gesetzt und neu deployt
+(Deployment `dpl_2YJkxWKYGALiCbd779XsarAkRc94`, `target: production`, `action: redeploy`, `READY`
+2026-08-03 22:51 UTC) — alle drei Fakten rein lesend gegen Vercel-Runtime-Logs/-Deployments
+geprüft, nicht nur behauptet. **Root Cause, zweigeteilt:** (1) ein Durchsetzungsfehler — der
+Stufenabruf in `runGlobaleErfassung` (`lib/helmut/scheduler.js`) prüft die Restzeit nur als
+START-Gatter zwischen Stufen von `HELMUT_GLOBALPHASE_ABRUF_STUFE` Quellen (Default war 20), nicht
+als Stopp-Gatter währenddessen — schlechtestmögliche Überziehung
+`ceil(stufenGroesse / googleConcurrency) * fetchTimeoutMs`, beim alten Default bis 28 000 ms,
+strukturell derselbe Fehler wie R-6 nur an anderer Stelle; **behoben** durch Senkung des Defaults
+auf 5 (= `HELMUT_GOOGLE_CONCURRENCY`), belegt in `scripts/globalabruf-kapazitaet-test.js`
+(21/21 grün): schlechtestmögliche Überziehung bei einem gezielt adversarialen Budgetwert sinkt
+von 28 323 ms auf 5 756 ms. (2) eine strukturelle Kapazitätsgrenze — der Google-News-Gate
+(Nebenläufigkeit 5, Mindestabstand 200 ms, 7 000-ms-Timeout je Quelle) reicht bei ~140 gemeinsamen,
+überwiegend Google-News-gestützten Abrufwegen NICHT aus, um die Erfassung innerhalb des
+zugeteilten Budgets abzuschließen — **bleibt NACH der Korrektur bestehen** (die Lastprobe zeigt
+weiterhin `teilweise` und nur ~2 von 6 Mandaten erreichbar) und braucht eine Betreiberentscheidung
+(Entscheidungsvorlage in PR-Beschreibung/Branch, siehe unten) statt einer kleinen Korrektur.
+**Neuer Befund, wichtig für künftige Kapazitätsaussagen:** die bestehende Offline-Kapazitätssuite
+(`scripts/cron-globalphase-test.js` §8) ersetzt `crawlAllSources` durch einen seriellen
+Testdouble mit einer FLACHEN Kostenkonstante je Quelle — sie prüft nie die reale
+Google-Gate-Nebenläufigkeit/-Timeouts und nie die reale Größenordnung von 181 Quellen. Das
+erklärt, warum sie „K2.1 6/6 in 205 145 ms" meldete, während Production scheiterte; die
+Fachlogik der Vorgangsbildung (K2.1-Vertrag, `vorgangskontext-test.js`) ist davon NICHT
+betroffen und bleibt unverändert richtig. **Getestet:** `node scripts/run-offline-tests.js`
+186/201 grün — dieselben 15 vorbestehenden NETZ-GUARD-/Umgebungsfehler wie auf unverändertem
+`main` (per Stash-Vergleich verifiziert, 0 Regressionen); `node scripts/browser-smoke-test.js`
+32/32 grün. **Production/Flags/Crons/Quellen/Mandate/Kosten unberührt, kein Merge, kein Deploy,
+0 KI-Aufrufe, 0,00 USD.** Geänderte Dateien: `lib/helmut/scheduler.js` (ein Zeilen-Default),
+`scripts/globalabruf-kapazitaet-test.js` (neu). Branch `claude/exciting-goodall-hdvcyg`.
+**Nächster Schritt:** Betreiberentscheidung zur Kapazitätsgrenze (Optionen in der
+PR-Beschreibung); `HELMUT_CRON_GLOBALABRUF` bleibt AUS, bis diese Entscheidung getroffen und ein
+neuer Aktivierungsversuch ausdrücklich freigegeben ist.**) · (**Sprint „OP-25 K2.1 —
+Production-Aktivierung ausgeführt"
 — TEILWEISE ABGESCHLOSSEN. K2.1 ist in Production AKTIVIERT. Deployment READY und unmittelbarer
 Smoke-Check bestanden. Der reguläre Production-Kapazitätsnachweis über das vorgeschriebene
 Beobachtungsfenster ist noch offen. OP-25 bleibt teilweise abgeschlossen.** **Der Handgriff war
