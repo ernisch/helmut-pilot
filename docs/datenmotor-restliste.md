@@ -14,7 +14,7 @@
 
 | | |
 |---|---|
-| **Stand / Prüfdatum** | **2026-07-29** (Basisstand 2026-07-17, re-verankert 2026-07-22, siehe Banner; OP-05/06/08/13/14 nachgezogen durch den Pending/Understanding/KO-Sprint — Belege: `docs/betrieb/datenmotor_sprint_pending_understanding_ko.md`; §4 und §6 nachgezogen durch Sprint 23B-1 — neue Befunde **B5**/**B6** und neue Punkte **OP-25**/**OP-26**; §4 zusaetzlich nachgezogen durch Sprint 23C-2A — neue Befunde **B7**/**B8**; **B7 nachgemessen und entschieden in Sprint M-8 → neuer Punkt OP-27**, B8 bleibt bei OP-04; §6 ergänzt **2026-08-04** durch Sprint „Profilreife" → neuer Punkt **OP-29** (OP-28 bleibt für PR #216 reserviert); **OP-04/OP-25/OP-29 nachgeführt 2026-08-04** durch den Production-Profilreparatursprint (Reparaturpaket angewendet, `max-mustermann` deaktiviert, 5 aktive reale Mandate). *Die übrigen Abschnitte tragen weiterhin den Stand 2026-07-18 und wurden in diesem Sprint nicht nachgemessen.*) |
+| **Stand / Prüfdatum** | **2026-07-29** (Basisstand 2026-07-17, re-verankert 2026-07-22, siehe Banner; OP-05/06/08/13/14 nachgezogen durch den Pending/Understanding/KO-Sprint — Belege: `docs/betrieb/datenmotor_sprint_pending_understanding_ko.md`; §4 und §6 nachgezogen durch Sprint 23B-1 — neue Befunde **B5**/**B6** und neue Punkte **OP-25**/**OP-26**; §4 zusaetzlich nachgezogen durch Sprint 23C-2A — neue Befunde **B7**/**B8**; **B7 nachgemessen und entschieden in Sprint M-8 → neuer Punkt OP-27**, B8 bleibt bei OP-04; §6 ergänzt **2026-08-04** durch Sprint „Profilreife" → neuer Punkt **OP-29** (OP-28 bleibt für PR #216 reserviert); **OP-04/OP-25/OP-29 nachgeführt 2026-08-04** durch den Production-Profilreparatursprint (Reparaturpaket angewendet, `max-mustermann` deaktiviert, 5 aktive reale Mandate); **OP-25 erneut nachgeführt 2026-08-04/2** durch den E3-Sprint (verbindliche E3-Entscheidung, ausführbarer Nachweisvertrag `betrieb/vorgangskontext.md` §7.7, rein lesendes Werkzeug `scripts/op25-production-nachweis.js`, Dry-Run ehrlich `noch_nicht_auswertbar`). *Die übrigen Abschnitte tragen weiterhin den Stand 2026-07-18 und wurden in diesem Sprint nicht nachgemessen.*) |
 | **Geprüfter Stand** | historisch `main`-HEAD `ca7e404` (Merge PR #102); Re-Anker (siehe Banner) `d6d9063` (#113); seither weiter nachgezogen (Pending/Understanding/KO-Sprint + Recovery-Stilllegung PR #105, Kontextstruktur PR #119, Doku-Nachzug PR #121) — **aktuell `045393c` (#121)** |
 | **Grundlagen** | PR #95–#102, `docs/betrieb/production_beweisprotokoll.md` (inkl. §7 Google-News-Härtung), `docs/betrieb/google_news_haertung.md`, `docs/betrieb/health_report_rollierend.md`, `docs/betrieb/f5_freigabe.md`, `docs/helmut_datenmotor_thread2_handoff.md` §0a, `docs/quellenarchitektur/00-master-status.md` (Nachtrag 2026-07-17), Audit-Serie |
 
@@ -463,6 +463,38 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   ist damit ausgeführt (§14 des kanonischen Dokuments). Keine weitere Freigabe offen.
 
 #### OP-25 · Crawl-Zeitdeckelung: je Lauf wird nur ein Teil der Mandanten erreicht (neu, Sprint 23B-1; Prioritätsklasse P1)
+- **Nachtrag 2026-08-04/2 (Sprint „E3-Entscheidung + neuer Production-Nachweis", TEILWEISE
+  ABGESCHLOSSEN — Vorbereitung vollständig, der Nachweis selbst beginnt erst nach der
+  freigabepflichtigen Wiederaktivierung):** **E3 ist verbindlich entschieden** — Kapazitätsvertrag
+  und Verstehensrückstand sind getrennt; `datenstand.status` wird **nicht** kosmetisch umgedeutet;
+  ein ehrliches `teilweise` besteht den Nachweis **nur**, wenn strukturierte Laufdaten beweisen,
+  dass die einzige Ursache regulär zurückgestellte, **vollständig gezählte und dauerhaft als
+  pending-Wissensobjekte (mit Dokumentverknüpfung) vorgemerkte** Verstehensarbeit ist; jede
+  andere Ursache (Quellen/Persistenz/Kontext/DB/Sperre/unbekannt) fällt durch. **E1 bleibt
+  Option A, E2 bleibt unverändert.** Kanonischer, ausführbarer Vertrag mit vier Ausgängen
+  (`bestanden`/`nicht_bestanden`/`blockiert`/`noch_nicht_auswertbar`, Exit 0–3):
+  [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) **§7.7**; Werkzeug (rein lesend,
+  GET-Literal + Allowlist): `scripts/op25-production-nachweis.js`; Bewertungskern
+  `lib/helmut/op25-nachweis.js`. **Dauerhaftigkeit am echten Code bewiesen**
+  (`op25-e3-dauerhaftigkeit-test.js` 44/44): zurückgestellte Eager-Cluster werden verbindlich
+  vorgemerkt + verknüpft, ein erschöpftes Vormerkbudget wird als `nichtVorgemerkt` gezählt,
+  Wiederauffindung läuft über die Verknüpfung (B4), idempotent ohne Duplikate. **Additive
+  Telemetrie** (keine Migration, keine neue Tabelle, keine Budgetänderung): `datenstandDetail`
+  + `quellenVereinigung` im globalen Laufdatensatz, Mandats-Vermerke in der Compact-Allowlist,
+  eine dauerhafte `process_runs`-Zeile `globalphase` je Lauf; **Fix „kein falsches Grün":** ein
+  Persistenzfehler der Rohdokumente versiegelt jetzt ehrlich `teilweise` (vorher stilles
+  `abgeschlossen`). **Production-Dry-Run 2026-08-04 (rein lesend): ehrlich
+  `noch_nicht_auswertbar` (Exit 3)** — globaler Abruf deaktiviert, kein Aktivierungszeitpunkt,
+  kein 24-h-Fenster; **Baseline erhoben:** 5 aktive reale Mandate (dynamisch) · 3 deaktivierte
+  Demos · 0 Testmandate · Kadenz crawl 04:00/20:00 + pipeline 16:00 UTC · LLM-Kosten 24 h
+  0,20 USD (Rahmen 2 USD dokumentiert) · Fairness: crawl/pipeline-Altpfadläufe vom 2026-08-04
+  mit Abbruchvermerk (bekanntes B5-Verhalten des Altpfads) · jüngster `mode:"global"`-Lauf
+  bleibt der gescheiterte vom 2026-08-03 (fließt per harter Untergrenze 2026-08-04T00:00Z nie in
+  einen neuen Nachweis ein). Tests: `op25-nachweis-vertrag-test.js` **71/71** (inkl. der 24
+  geforderten Fallfamilien) · Mutationsprobe **14 von 14 rot**. **Nächster Betreiberhandgriff:**
+  READY-Deployment dieses Stands, dann `HELMUT_CRON_GLOBALABRUF=on` (nur Production), dann
+  frühestens nach 24 h `node scripts/op25-production-nachweis.js --aktivierung <ISO>`.
+  Der Verstehensrückstand (~1 242 Cluster) bleibt offen und gehört zu **OP-14**.
 - **Nachtrag 2026-08-04 (Profilreparatursprint):** Künftige OP-25-Production-Nachweise arbeiten
   mit **fünf aktiven realen Mandaten** statt sechs — das Demo-Mandat `max-mustermann` ist seit
   2026-08-04 deaktiviert (nicht gelöscht, OP-04-Teilschritt), sofern bis zum Nachweis keine

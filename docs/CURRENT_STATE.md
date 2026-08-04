@@ -1,6 +1,101 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-08-04, 4. Durchgang (**Sprint „Kontrollierte Production-Profilreparatur
+**Letzte Aktualisierung:** 2026-08-04, 5. Durchgang (**Sprint „OP-25 E3-Entscheidung + vollständige
+Vorbereitung des neuen Production-Nachweises" — TEILWEISE ABGESCHLOSSEN: die Vorbereitung ist
+vollständig (Vertrag ausführbar, Werkzeug gebaut und getestet, Dry-Run ehrlich nicht grün), der
+Production-Nachweis selbst beginnt erst nach der getrennt freigabepflichtigen Wiederaktivierung.
+KEIN Production-Eingriff: kein Write, kein Flag, kein Cron, kein manueller Lauf, keine Migration,
+kein Merge, 0 KI-Aufrufe, 0,00 USD; Production wurde ausschließlich rein lesend geprüft.**
+**Ausgangsstand geprüft: `origin/main` = `22aada9` (PR #221), enthält `d1a51d8` (PR #220) und
+`89427c5` (PR #219), kein neuerer Commit, kein nachträglicher Eingriff in den Kapazitäts-/
+Statusvertrag.** **DIE VERBINDLICHEN PRODUKTENTSCHEIDUNGEN:** E1 bleibt Option A (kein Eingriff in
+Abrufstufe/Crawler/Gate/Retry/Breaker) · E2 bleibt unverändert (`HELMUT_CRAWL_MAX_CANDIDATES`
+stabil) · **E3 entschieden:** Kapazitätsvertrag ≠ Verstehensrückstand; `datenstand.status` wird
+nicht kosmetisch umgedeutet; ein ehrliches `teilweise` besteht den OP-25-Nachweis NUR, wenn aus
+strukturierten Laufdaten bewiesen ist, dass die einzige Ursache regulär zurückgestellte,
+vollständig gezählte und DAUERHAFT als pending-Wissensobjekte (mit Dokumentverknüpfung)
+vorgemerkte Verstehensarbeit ist; jedes `teilweise` aus Quellen/Persistenz/Kontext/DB/Sperre/
+unbekannter Ursache fällt durch; der fachliche Rückstand (~1 242 Cluster) bleibt offen und gehört
+zu OP-14. **E3-DAUERHAFTIGKEIT AM ECHTEN CODE BEWIESEN** (`scripts/op25-e3-dauerhaftigkeit-test.js`
+**44/44**): zurückgestellte Eager-Cluster werden verbindlich vorgemerkt UND verknüpft; ein
+erschöpftes Vormerkbudget wird als `nichtVorgemerkt` GEZÄHLT (benannte Lücke, macht den Nachweis
+fail-closed rot); Wiederauffindung läuft über die persistierte Verknüpfung (B4-Fix), idempotent
+ohne Duplikate; die Statusableitung ist mit unabhängigen Soll-Werten verankert. **DABEI BEHOBEN
+(kein falsches Grün, CLAUDE.md §4.4): ein Persistenzfehler der Rohdokumente war stilles Grün** —
+`persistRawDocuments(...).catch(() => null)` erzeugte keinen Fehlereintrag, der Lauf konnte als
+`abgeschlossen` versiegeln; jetzt Fehlerschritt `persistenz` → ehrlich `teilweise`
+(mutationsgeprüft). **ADDITIVE TELEMETRIE (keine Migration, keine neue Tabelle, keine
+Budgetänderung):** globaler Laufdatensatz trägt `datenstandDetail` (Fehlerschritte,
+Persistenzbilanz inkl. CAS-Zähler, Lazy-/Eager-Bilanz inkl. `vorgemerkt`/`nichtVorgemerkt`,
+Kontexttelemetrie, `budgetMs`, `buendelung`) + `quellenVereinigung`; Mandatsläufe behalten
+`datenstand`-Vermerk/`globalLaufId`/`datenstandFrisch` über die `compactCrawlRunForStore`-
+Allowlist (vorher wurden GENAU diese Felder beim Schreiben gestrippt); je globaler Phase EINE
+dauerhafte `process_runs`-Zeile `globalphase` (übersteht Blob-Retention 20 + LWW-Fenster W-2);
+`fasseEagerErgebnisseZusammen` verwirft die Vormerkbilanz nicht mehr; übersprungene Eager-Stapel
+zählen ihre Dokumente. **NEUER AUSFÜHRBARER ABNAHMEVERTRAG (kanonisch:
+[`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7):** vier Ausgänge =
+Exit-Codes (`bestanden` 0 · `nicht_bestanden` 1 · `blockiert` 2 · `noch_nicht_auswertbar` 3),
+Vorrang Fensterprüfung → bewiesene Verletzung → Beleglücke; Fenster explizit, ≥ 24 vollständig
+vergangene Stunden, beginnt erst nach künftigem READY-Deployment + Wiederaktivierung; harte
+Untergrenze 2026-08-04T00:00Z (der gescheiterte Lauf vom 03.08. kann NIE einfließen); aktive
+Mandatsmenge dynamisch ermittelt und eingefroren, KEINE hartkodierten IDs, Mengenänderung im
+Fenster = ungültig; Kadenz aus `vercel.json` (crawl 04:00/20:00, pipeline 16:00 UTC), manuelle/
+außerplanmäßige/alte Läufe werden mit Grund gezählt und ausgeschlossen; 18 Bestehenspunkte inkl.
+Persistenz-CAS, Kontextgleichung, Erklärungspflicht für unbekannte/auffällige Kontexte,
+Fehlerklassen-Vokabular (`unknown` = neue Klasse = durchgefallen), LLM-Kostenrahmen;
+**die veraltete Sechs-Mandate-Erwartung ist überall im OP-25-Vertrag durch „alle beim
+Fensterstart aktiven Mandate (Stand: fünf reale)" ersetzt** (§7.1/§7.4/§7.5). **WERKZEUG:**
+`scripts/op25-production-nachweis.js` — standardmäßig ausschließlich lesend (EINE GET-Literal-
+HTTP-Funktion + Tabellen-Allowlist, `storage.js` nicht geladen, kein Trigger-/Flag-/Env-Pfad,
+0 KI, keine Secrets/PII im Bericht), Bewertungskern `lib/helmut/op25-nachweis.js` (reine Logik);
+`--baseline` liefert den rein lesenden Betriebsquerschnitt. **TESTS:**
+`op25-nachweis-vertrag-test.js` **71/71** (alle 24 geforderten Fallfamilien + Vorrang/Fenster/
+Parsing; unabhängige, hart kodierte Erwartungen) · `op25-e3-dauerhaftigkeit-test.js` **44/44** ·
+Mutationsprobe `op25-nachweis-mutationsprobe.js` **14 von 14 rot** · betroffene Bestands-Suiten
+grün: `cron-globalphase` 176/176 · `globalphase-buendelung` 56/56 · `globalabruf-kapazitaet`
+47/47 · `vorgangskontext` 102/102 · `compact-store-roundtrip` 26/26 · `prozesslauf-telemetrie`
+37/37 · `run-offline-tests` **191/205** gegen Basislinie `origin/main` **186/203** in derselben
+Sandbox (je nach `npm ci`): die 14 Branch-Fehlschläge sind eine **Teilmenge** der
+17er-Basislinienliste (3 laufabhängige Umgebungsflacker der Basislinie liefen auf dem Branch
+grün; die frühere „15er-Liste" flackert umgebungsbedingt zwischen 14 und 17) — **kein neuer und
+kein abweichender Fehlschlag**, +2 = die neuen Suiten · `browser-smoke-test` **32/32** · CI siehe
+PR. **PRODUCTION-DRY-RUN (rein lesend, 2026-08-04
+11:36 UTC): ERGEBNIS EHRLICH `noch_nicht_auswertbar` (Exit 3)** — globaler Abruf deaktiviert,
+kein Aktivierungszeitpunkt, kein 24-h-Fenster; kein alter Lauf wurde als Ersatz verwendet.
+**BASELINE (rein lesend):** Deployment-Commit der jüngsten Production-Läufe `89427c5`; Mandate
+8 = **5 aktive reale** (dynamisch: annika-klose · cem-ince · helmut-kleebank ·
+ottilie-paola-klein-2 · ruppert-st-we) + **3 deaktivierte Demos** (angela-merkel · james-brown ·
+max-mustermann); **0 Testmandate in Production** (`test-mdb-*` nur Offline-Repo-Daten,
+deaktiviert); Kadenz crawl 04:00/20:00 + pipeline 16:00 UTC; LLM-Kosten 24 h **0,20 USD**
+(berechneter Schätzwert) → dokumentierter Rahmen **2 USD** (überschreibbar); bekannte
+Fehlerklassen = das geschlossene `classifyPipelineError`-Vokabular; Fairnesszustand: crawl
+04:00 und ein außerplanmäßiger pipeline-Lauf 07:59 UTC vom 2026-08-04 tragen Abbruchvermerke
+(**bekanntes B5-Verhalten des ALTPFADS**, keine neue Fehlerklasse); jüngster
+`mode:"global"`-Lauf bleibt der gescheiterte vom 2026-08-03 16:04 UTC; Abrufwege 163
+(155 needs_review / 4 broken / 4 healthy) unverändert; pending-Wissensobjekte ≥ 1 000
+(Leseseite gedeckelt). **EHRLICHE GRENZEN:** (a) Läufe OHNE das neue `datenstandDetail`
+(Deployment-Stand vor diesem Sprint) sind für den Nachweis `blockiert` — das neue Fenster
+beginnt ohnehin erst nach dem Deployment dieses Stands; (b) die reichen Laufdatensätze liegen
+im Blob (Retention 20, LWW W-2) — Auswertung zeitnah nach Fensterende, die `globalphase`-Zeile
+und `matching_runs` sind die dauerhafte Rückfallebene; (c) der Kostenrahmen beruht auf einem
+BERECHNETEN Schätzwert (`llmPriceProvenance` unbelegt); (d) OP-25 bleibt TEILWEISE
+ABGESCHLOSSEN — dieser Sprint erbringt den Nachweis ausdrücklich nicht. **GEÄNDERTE DATEIEN:**
+`lib/helmut/scheduler.js` (additive Telemetrie + Persistenz-Ehrlichkeit) · `lib/helmut/storage.js`
+(Compact-Allowlist + Kompakt-Helfer) · `lib/helmut/op25-nachweis.js` (neu, Bewertungskern) ·
+`scripts/op25-production-nachweis.js` (neu, rein lesendes CLI) ·
+`scripts/op25-nachweis-vertrag-test.js` (neu) · `scripts/op25-e3-dauerhaftigkeit-test.js` (neu) ·
+`scripts/op25-nachweis-mutationsprobe.js` (neu) · `docs/betrieb/vorgangskontext.md` (§7.7 +
+6→5-Korrekturen) · `docs/betrieb/env-inventar.md` (2 Werkzeug-Variablen; Stale-Angabe zu
+Migration 20260727 korrigiert) · `docs/datenmotor-restliste.md` (OP-25-Nachtrag /2) ·
+`docs/CURRENT_STATE.md`. **RISIKO:** gering — Laufzeitänderungen sind additiv (Telemetrie) bzw.
+machen einen Fehlerfall ehrlicher (`persistenz`-Fehlerschritt); der Schreibpfad selbst ist
+unverändert; Rückweg `git revert`. **NÄCHSTE SCHRITTE (je einzeln freigabepflichtig):**
+(1) Merge dieses PR (= Production-Deployment, Betreiber) · (2) `HELMUT_CRON_GLOBALABRUF=on`
+setzen (nur Production, Betreiberaktion) · (3) frühestens 24 h nach der Aktivierung:
+`node scripts/op25-production-nachweis.js --aktivierung <ISO-Zeitpunkt>` — das früheste
+vollständige Fenster endet 24 h nach der Aktivierung; Berlin, Brandenburg, M8 und die fünf
+Offline-Testmandate bleiben deaktiviert.**) ·
+(4. Durchgang: **Sprint „Kontrollierte Production-Profilreparatur
 nach PR #220" — ERFOLGREICH ABGESCHLOSSEN, mit ausdrücklicher Betreiberfreigabe (Lüey, 2026-08-04) für exakt
 diesen Umfang. Ausgangsstand geprüft: `origin/main` = Merge-Commit `d1a51d8` (PR #220), kein neuerer Commit,
 kein nachträglicher Eingriff in den Profilvertrag; OP-29 als Repo-Sprint abgeschlossen.** **WAS IN PRODUCTION
