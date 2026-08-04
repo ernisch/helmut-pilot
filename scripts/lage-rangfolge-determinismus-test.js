@@ -26,6 +26,7 @@ const root = path.join(__dirname, "..");
 const lage = require(path.join(root, "lib/helmut/lage.js"));
 const matching = require(path.join(root, "lib/helmut/matching.js"));
 const storage = require(path.join(root, "lib/helmut/storage.js"));
+const contract = require(path.join(root, "lib/helmut/matching-contract.js"));
 
 // Der Lage-Pfad darf nicht in den flag-gesicherten Scoring-Zweig laufen.
 process.env.HELMUT_SCORING_MODE = "off";
@@ -178,6 +179,68 @@ async function rangfolge(rows) {
   check("D3 Eingabereihenfolge aendert das Ergebnis nicht",
     JSON.stringify(treffer.map((t) => t.knowledge_object_id))
       === JSON.stringify(umgedreht.map((t) => t.knowledge_object_id)));
+
+  // ── E · Das Lesefenster der Ablage darf nicht VOR dem KO-Fenster kappen ────
+  // Reviewbefund F-E2E-2 (2026-08-04): die Ablage sortiert jetzt nach Rang und
+  // schneidet dort ab. `loadRankedVorgaenge` verwirft danach jede Zeile, deren
+  // Wissensobjekt nicht im KO-Scanfenster liegt. Wird in der Ablage bereits auf
+  // MAX_VORGAENGE gekappt, verbrauchen genau diese Zeilen die sichtbaren
+  // Plaetze und die Lage bleibt leerer als der Bestand hergibt (Production
+  // 2026-08-04, rein lesend: 15 statt 31 sichtbare Vorgaenge, ein Mandat auf 0).
+  abschnitt("E · Lesefenster der Ablage vs. KO-Scanfenster");
+
+  const MAX = Number(process.env.HELMUT_LAGE_MAX_VORGAENGE) || 12;
+  // 20 Wissensobjekte IM Scanfenster, in genau dieser Reihenfolge — das ist
+  // zugleich die Reihenfolge des unpersonalisierten Rueckfalls.
+  const KOS_E = Array.from({ length: 20 }, (_, i) => ({
+    id: `ko-f-${String(i).padStart(2, "0")}`, vorgang_id: `vg-f-${i}`,
+    status: "update", understanding_status: "complete",
+    headline: `F${i}`, was_ist_passiert: "Beschlossen.", warum_wichtig: "Wichtig.",
+    updated_at: "2026-08-01T06:00:00Z"
+  }));
+  // Rang 1..12 zeigen auf Wissensobjekte AUSSERHALB des Scanfensters,
+  // Rang 13..32 auf die vorhandenen — bewusst in umgekehrter Fensterreihenfolge,
+  // damit die richtige Ausgabe sich vom Rueckfall unterscheidet.
+  const zeilenE = [
+    ...Array.from({ length: 12 }, (_, i) => ({
+      id: `mr-aussen-${i}`, user_id: "mdb-a", knowledge_object_id: `ko-aussen-${i}`,
+      rank: i + 1, aktuell: true, matched_features: [], signale: {},
+      created_at: "2026-08-01T05:00:00.000Z"
+    })),
+    ...KOS_E.slice().reverse().map((k, i) => ({
+      id: `mr-${k.id}`, user_id: "mdb-a", knowledge_object_id: k.id, vorgang_id: k.vorgang_id,
+      rank: 13 + i, aktuell: true, matched_features: [], signale: {},
+      created_at: "2026-08-01T05:00:00.000Z"
+    }))
+  ];
+  // Testdoppel wie der ECHTE Lesevertrag: sortieren (Rang, dann Kennung) und
+  // ERST DANN auf `limit` kappen — genau die Reihenfolge, die PostgREST
+  // anwendet (where -> order -> limit).
+  const gesehenesLimit = [];
+  const storeE = {
+    listKnowledgeObjects: async () => KOS_E.map((k) => ({ ...k })),
+    listMatchingResults: async ({ limit }) => {
+      gesehenesLimit.push(limit);
+      return zeilenE.slice()
+        .sort((a, b) => (a.rank - b.rank) || contract.compareIds(a.knowledge_object_id, b.knowledge_object_id))
+        .slice(0, limit)
+        .map((r) => ({ ...r }));
+    }
+  };
+  const rankedE = (await lage.loadRankedVorgaenge(storeE, null, { id: "mdb-a" }, "mdb-a")).map((k) => k.id);
+  const erwartetE = KOS_E.slice().reverse().slice(0, MAX).map((k) => k.id);
+  const rueckfallE = KOS_E.slice(0, MAX).map((k) => k.id);
+
+  check("E1 Lesefenster der Ablage ist groesser als die sichtbare Anzahl",
+    gesehenesLimit.length > 0 && gesehenesLimit[0] > MAX, `limit=${gesehenesLimit[0]}, MAX=${MAX}`);
+  check("E2 volle Anzahl sichtbarer Vorgaenge, obwohl die besten Raenge kein Wissensobjekt im Fenster haben",
+    rankedE.length === MAX, `${rankedE.length} statt ${MAX}`);
+  check("E3 die sichtbaren Vorgaenge stehen in Rangfolge (nicht im unpersonalisierten Rueckfall)",
+    JSON.stringify(rankedE) === JSON.stringify(erwartetE)
+      && JSON.stringify(rankedE) !== JSON.stringify(rueckfallE),
+    JSON.stringify(rankedE));
+  check("E4 Lesefenster bleibt hart begrenzt (keine unbegrenzte Abfrage)",
+    Number.isFinite(gesehenesLimit[0]) && gesehenesLimit[0] <= 200, String(gesehenesLimit[0]));
 
   console.log(`\n${passed} bestanden, ${failed} fehlgeschlagen`);
   if (failed > 0) process.exit(1);

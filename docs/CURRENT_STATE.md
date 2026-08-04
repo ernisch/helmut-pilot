@@ -1,6 +1,62 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-08-04, 11. Durchgang (**Befund F-E2E behoben: die sichtbare
+**Letzte Aktualisierung:** 2026-08-04, 12. Durchgang (**Unabhängige adversariale Reviewrunde zu
+Draft-PR #224 (`47b3532`). Ein echter Befund gefunden und auf demselben PR-Branch korrigiert.
+KEIN Merge, kein Deployment, keine Production-Änderung, keine Migration, kein Cron, kein Flag,
+OP-25-Startbaseline unberührt.** **URTEIL: freigabefähig mit Restrisiko** — die Ursachenanalyse
+von PR #224 ist unabhängig **bestätigt** (Regressionssuite gegen `2e4e00e` reproduziert **11 von
+15 rot**), der Fix ist richtig, hatte aber eine **nicht gemeldete Nebenwirkung**.
+**NEUER BEFUND F-E2E-2 (mittel, behoben):** `lage.loadRankedVorgaenge` las mit
+`limit = MAX_VORGAENGE` (12) und verwarf **danach** jede Zeile, deren Wissensobjekt nicht im
+KO-Scanfenster liegt (`HELMUT_KO_SCAN_LIMIT`, Default 500 der zuletzt **geänderten** von 2 422).
+Unter `created_at.desc` zeigten die 12 gelesenen Zeilen meist auf frische Wissensobjekte; unter
+`rank.asc` sind es die **bestplatzierten**, die oft auf **ältere** zeigen — der Rest der
+Rangliste war durch das `limit` schon abgeschnitten. **Am Production-Bestand rein lesend
+gemessen** (7 Mandate mit je 20 aktuellen Zeilen): sichtbare Vorgänge **vorher 30 · mit PR #224
+15 · nach der Korrektur 31**; **ein Mandat fiel von 2 auf 0** und damit still in den
+unpersonalisierten Rückfall (falsches Grün). **KORREKTUR (keine Migration, keine Ranglogik):**
+eigenes hart begrenztes Lesefenster `MATCHING_LESEFENSTER = min(200, max(60, MAX_VORGAENGE × 5))`
+und Kappen auf `MAX_VORGAENGE` **nach** dem KO-Fenster statt davor; Reihenfolge, Mandanten- und
+Aktualitätsfilter unverändert. **REGRESSIONSTEST:** `lage-rangfolge-determinismus-test.js` §E
+(E1–E4) — gegen `47b3532` sind **E1 und E3 rot**, E2 ist dort nur grün, **weil der Rückfall die
+Liste auffüllt** (deshalb prüft E3 zusätzlich auf Rangfolge statt Rückfallreihenfolge).
+**GEGEN DEN ECHTEN PRODUCTION-LESEPFAD GEPRÜFT (rein lesend, 0 Writes):**
+`order=rank.asc.nullslast,knowledge_object_id.asc` ⇒ **HTTP 200**; Gegenproben belegen die
+Wirksamkeit der Probe (erfundene Spalte ⇒ `400/42703`, erfundenes Schlüsselwort ⇒
+`400/PGRST100`). Datenmodell: `rank` = `integer`, 140 aktuelle Zeilen, **0 ohne Rang, 0 doppelte
+`(user_id, rank)`-Paare, 0 Ränge < 1**, Unique-Index `(user_id, knowledge_object_id)` vorhanden ⇒
+der Tiebreak ist total, `nullslast` ist reine Schutzschicht.
+**ADVERSARIALE SONDERFÄLLE, alle geprüft:** gleiche Ränge · Rang als Zahl **und** als Text
+(`"10"` vs `9` numerisch korrekt) · `null` · `undefined` · `0` · negativ · `NaN`/nicht numerisch ·
+leerer Text · Boolean · doppelte Objektkennungen · Kennungen mit Groß-/Sonderzeichen/Umlauten ·
+mehr Zeilen als das Leselimit · **200 zufällige Lieferreihenfolgen ⇒ genau 1 Ausgabe** ·
+gemischte alte/neue Zeilen. Zwei Sonderfälle stabil, aber ohne Praxisbezug: `Number([1]) === 1`
+(aus PostgREST unmöglich, Spalte ist `integer`) und zwei ranglose Zeilen ⇒ `Infinity − Infinity =
+NaN`, das über `||` **korrekt** auf den Tiebreak fällt.
+**RESTRISIKEN, bewusst offen (keine Korrektur, freigabepflichtig oder Migration):** (1) die
+pgvector-RPC `match_knowledge_objects` sortiert weiterhin ohne Tiebreak — **kein sichtbarer
+Effekt**, weil der Rang persistiert wird und der Lesepfad ihn deterministisch ausgibt; sichtbar
+würde nur ein Wechsel **zwischen** zwei Läufen bei exakt gleicher Distanz. (2) Der Tiebreak
+divergiert zwischen Datenbank (Kollation `en_US.UTF-8`) und `lage.js` (byteweise) — wirksam nur
+bei Rangdubletten, die es heute nicht gibt. (3) Bei `HELMUT_MATCHING_AUDIT=off` (dokumentierter
+Rückweg) stünden mehrere Laufgenerationen auf `aktuell=true`; eine **veraltete** Zeile mit Rang 1
+stünde dann vorne statt hinten. (4) Kein Index auf `(user_id, rank)`; bei 140 Zeilen
+vernachlässigbar. **TESTS:** `lage-rangfolge-determinismus` **19/19** (vorher 15) ·
+pilot-e2e **96/96** · brandenburg-e2e **98/98** · berlin-e2e **76/76** · `matching-aktualitaet`
+**29/29** · `matching-erklaerung` **65/65** · `matching-audit` **178/178** ·
+`matching-ausschuss-zustaendigkeit` **88/88** · `matching-rezeptversion-v2` **39/39** ·
+`matching-relevanz-gate` **40/40** · `matching-normalization` **20/20** ·
+`matching-erklaerungsabdeckung` **60/60** · `lage-test` **138/138** · `lage-frische-live-flow`
+**27/27** · `lage-visible-vorgaenge` **6/6** · `lage-cacheonly` **7/9** (identisch auf
+unverändertem `main`, umgebungsbedingt) · `run-offline-tests` **191/206** gegen `main`
+(`2e4e00e`) **190/205** im selben Container mit **exakt derselben 15er-Fehlschlagliste** ⇒ +1
+Suite, +1 grün, 0 Regressionen · `browser-smoke` **32/32**.
+**GEÄNDERTE DATEIEN:** `lib/helmut/lage.js` · `scripts/lage-rangfolge-determinismus-test.js` ·
+`docs/matching-nachvollziehbarkeit.md` (**§54.5** kanonisch, Korrektur in §54.2/§54.3) ·
+`docs/CURRENT_STATE.md`. **Branch:** `claude/nondeterministic-ranking-tests-dwhfox`, **Draft-PR
+#224**, **nicht gemergt**. **0 Writes in Production, 0 KI-Aufrufe, 0,00 USD, keine Änderung an
+`belege/op25-startbaseline.json`.**) ·
+(11. Durchgang: **Befund F-E2E behoben: die sichtbare
 Rangfolge kam aus der ABLAGE statt aus dem berechneten RANG. KEIN Production-Eingriff, kein
 Merge, kein Deployment, keine Migration, kein Flag, kein Cron, OP-25-Baseline unberührt.**
 **BEWIESENE URSACHE (nicht Locale):** `storage.listMatchingResults` las `matching_results` mit
