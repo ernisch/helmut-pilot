@@ -1,7 +1,179 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-08-04 (**Sprint „Reparatur: Kapazitätsfehler des globalen
-Abrufpfads" — TEILWEISE ABGESCHLOSSEN. Die Ursache ist mit Messwerten bewiesen, die Reparatur ist
+**Letzte Aktualisierung:** 2026-08-04, 3. Durchgang (**Letzte fachliche Korrektur PR #220
+„Profilreife" — ERFOLGREICH ABGESCHLOSSEN nach Korrektur der Testmandate; während der Korrektur
+galt der Sprint als TEILWEISE ABGESCHLOSSEN. KEIN Production-Eingriff, kein Merge, keine Profile
+angelegt/repariert/aktiviert.** **Anlass: eine externe DIREKTE Prüfung der amtlichen
+Bundestagsprofile fand drei weitere Sachfehler in den fünf Offline-Testmandaten, die die
+Snippet-Recherche des 2. Durchgangs nicht erkannt hatte — bestätigt und korrigiert:**
+**(1)** `test-mdb-ralf-stegner`: stellvertretend sind amtlich **EU-Ausschuss + Innenausschuss**
+(Profilstand 03.08.2026) — die frühere Einordnung „EU nur über abgeordnetenwatch belegt →
+nicht übernommen" war **falsch** und ist entfernt; OSZE-Versammlung nur als sonstiges Gremium.
+**(2)** `test-mdb-julia-verlinden`: stellvertretend sind amtlich **Wirtschaft und Energie +
+Verkehrsausschuss** (Profilstand 29.07.2026) — die zuvor aus einer Fraktionsseiten-Auswertung
+übernommene stv. Mitgliedschaft im Ausschuss für Wahlprüfung/Immunität/GO ist gegen das
+amtliche Profil nicht haltbar und wurde entfernt (Korrekturvermerk im Seed); Gemeinsamer
+Ausschuss nur als Modelllücke. **(3)** `test-mdb-soeren-pellmann`: stellvertretend amtlich
+**Arbeit und Soziales** ergänzt (Profilstand 01.08.2026); die Obmann-Funktion im
+Petitionsausschuss ist amtlich bestätigt und wird — weil `function`/`rolle` EIN Freitextfeld
+ist (begrenzte Modelllücke, keine Schemaänderung) — MIT dem Co-Fraktionsvorsitz kombiniert
+geführt, damit keine belegte Information stillschweigend verworfen wird. **Kontrollwerte
+bestätigt:** Lindholz (committees leer; stv. Innenausschuss + Recht/Verbraucherschutz — jetzt
+amtlich belegt, `zuBestaetigen`-Markierung aufgelöst; Gemeinsamer Ausschuss sonstiges Gremium)
+und Baumann (ordentlich nur Innenausschuss; Ältestenrat/Gemeinsamer Ausschuss nicht in
+Ausschussfeldern). **Sonstige Gremien einheitlich getrennt:** alles außerhalb der 24er-Sollmenge
+(Unterausschüsse, OSZE, Ältestenrat, Gemeinsamer Ausschuss, Wahlprüfungsausschuss,
+Rechnungsprüfungsausschuss) steht ausschließlich unter `herkunft.sonstigeGremien` bzw. im
+Reparaturpaket als Modelllücke — nie in `committees`/`deputyCommittees`. **Neue UNABHÄNGIGE
+Tests (18f):** hart kodierte amtliche Soll-Werte je Testmandat (nicht aus dem Seed abgeleitet)
+prüfen exakt committees, deputyCommittees, function/role, kanonische Namen, Gremien-Trennung,
+amtliche Quelle und Prüfdatum — ein falscher, fehlender oder zusätzlicher Ausschuss macht rot.
+**Ehrlich dokumentierte Grenze:** Offline-Tests sichern interne Konsistenz; ob Soll-Tabelle
+und Seed der amtlichen Wahrheit entsprechen, braucht weiterhin menschliche Quellenprüfung
+(Abrufgrenze HTTP 403). **Das Reparaturpaket der sechs Bestandsprofile blieb unverändert**
+(kein neuer belegter Fehler; Klose/Klein/Stüwe-Korrekturen des 2. Durchgangs bestehen fort).
+**TESTS:** `profil-bereitschaft-test.js` **91/91** (vorher 60) · `run-offline-tests`
+**188/203** = exakt die bekannte umgebungsbedingte 15er-Fehlschlagliste · `browser-smoke-test`
+**32/32** · CI: siehe PR #220. **GEÄNDERTE DATEIEN (3. Durchgang):**
+`lib/helmut/quellenarchitektur/seeds/bundestag-testmandate.js` ·
+`scripts/profil-bereitschaft-test.js` (18f) ·
+`docs/multitenancy-profilbereitschaft-bundestag.md` · `docs/datenmotor-restliste.md` ·
+`docs/CURRENT_STATE.md`. **Merge-Empfehlung:** Review der drei Korrektur-Commits, dann Merge
+durch den Betreiber; alle Production-Folgeschritte bleiben einzeln freigabepflichtig.**) ·
+(2. Durchgang, 2026-08-04: **Korrekturprüfung PR #220 „Profilreife" —
+nach Korrektur wieder erfolgreich; die Testmandat-Werte dieses Durchgangs wurden im
+3. Durchgang teilweise erneut korrigiert (Stegner/Verlinden/Pellmann), siehe Kopfeintrag. KEIN Production-Eingriff, kein Merge, keine Profile angelegt/repariert/aktiviert,
+0 KI-Aufrufe in Production.** **Anlass (extern gefunden, gegen amtliche Biografien bestätigt):
+die Erstfassung des Reparaturpakets enthielt DREI Sachfehler, und die grünen Tests des ersten
+CI-Laufs `30892756678` bewiesen das nicht — sie prüften Fixture-Erwartungen gegen sich selbst,
+nicht gegen die amtliche Wahrheit.** **Bestätigte Sachfehler:** **(1)** `annika-klose`: der
+Petitionsausschuss ist eine **20.-WP**-Mitgliedschaft und war fälschlich als aktueller Vorschlag
+enthalten; die stellvertretende Mitgliedschaft (Finanzausschuss) und die Funktion (Obfrau im
+Ausschuss für Arbeit und Soziales) fehlten. **(2)** `ottilie-paola-klein-2`: Vorschlag „nur
+Kultur und Medien" war unvollständig — ordentlich sind **Kultur und Medien + Arbeit und
+Soziales**, stellvertretend **EU-Ausschuss + Finanzausschuss**. **(3)** `ruppert-st-we`:
+ordentlich/stellvertretend vermischt — ordentlich ist **nur der Petitionsausschuss** (plus
+Rechnungsprüfungsausschuss AUSSERHALB der Sollmenge), der Haushaltsausschuss ist
+**stellvertretend** (ebenso Forschung/Technologie/Raumfahrt/TA und
+Wohnen/Stadtentwicklung/Bauwesen/Kommunen); „Schriftführer" ist eine **Funktion**, kein
+Ausschuss. **KORREKTUREN:** Reparaturpaket vollständig auf die amtlichen WP-21-Daten
+umgeschrieben (kanonische Ausschussnamen aus `seeds/bundestag-ausschuesse.js`; ordentlich →
+`committees`, stellvertretend → `deputyCommittees`, Funktionen → `function`; je Eintrag Quelle +
+Abrufdatum + Status, Korrektureinträge als „2026-08-04 (Korrektur 2. Durchgang)" markiert).
+**Bereitschaftsprüfung erweitert:** `deputyCommittees` wird jetzt ebenfalls gegen die
+WP-21-Sollmenge validiert — ein veralteter/unbekannter stellvertretender Ausschuss macht das
+Profil „nicht bereit" (neue Testfälle 22a–22e: Trennung ordentlich/stellvertretend, veralteter
+deputy-Eintrag abgelehnt, kanonische Namen erzwungen, Modelllücke). **Modelllücke dokumentiert
+statt gepresst:** Rechnungsprüfungsausschuss (Stüwe, ordentlich; Unterausschuss des
+Haushaltsausschusses) gehört nicht zur 24er-Sollmenge und wird in KEIN Ausschussfeld
+geschrieben; Datenmodell unverändert (gleiches gilt für Pellmanns amtlich belegte Sitze im
+Wahlprüfungsausschuss und im Gemeinsamen Ausschuss). **ALLE ELF Profile erneut verifiziert**
+(11 parallele Recherchen + adversariale Gegenprobe, Abrufgrenze HTTP 403 dokumentiert,
+WP-20-Angaben systematisch ausgeschlossen): Ince und Kleebank bestätigt (Kleebank ohne stv.
+Sitze); Testmandate nachgeführt — Lindholz jetzt mit stv. Innen-/Rechtsausschuss (Beleg:
+offizielle persönliche Seite, als `zuBestaetigen` markiert), Stegner mit zweitem ordentlichen
+Ausschuss (Menschenrechte) + stv. Innenausschuss + UA-Vorsitz als Funktion, Verlinden mit stv.
+1. Ausschuss (Fraktionsseite), Pellmann mit ordentlichem Petitionsausschuss (amtlich); nicht
+amtlich Bestätigbares steht je Profil unter `zuBestaetigen` statt als belegt behauptet
+(Stegners stv. EU/OSZE nur abgeordnetenwatch → NICHT übernommen). **TESTS:**
+`profil-bereitschaft-test.js` **60/60** (vorher 49) · `run-offline-tests` **188/203** = exakt
+die bekannte umgebungsbedingte 15er-Fehlschlagliste, kein neuer Fehlschlag ·
+`browser-smoke-test` **32/32**. **GEÄNDERTE DATEIEN (2. Durchgang):**
+`lib/helmut/profile-readiness.js` (deputy-Validierung) ·
+`scripts/fixtures/profil-reparatur-2026-08-04.js` (amtliche Korrekturen) ·
+`lib/helmut/quellenarchitektur/seeds/bundestag-testmandate.js` (Nachführung + `zuBestaetigen`) ·
+`scripts/profil-bereitschaft-test.js` (Fälle 22a–22e) ·
+`docs/multitenancy-profilbereitschaft-bundestag.md` (Korrekturvermerk, Matrix, Modelllücke) ·
+`docs/datenmotor-restliste.md` (OP-29-Nachtrag) · `docs/CURRENT_STATE.md`. **Merge-Empfehlung:**
+Review des Korrektur-Commits, dann Merge durch den Betreiber — die Reparatur der sechs
+Production-Profile, die Testmandat-Aktivierung und alle weiteren Schritte bleiben einzeln
+freigabepflichtig.**) · (**Sprint „Profilreife, Bestandsprüfung und kontrollierte
+Testmandate" — Repo-Sprint, nach Korrektur 2026-08-04/2 erfolgreich abgeschlossen; alle
+Production-Folgeschritte sind getrennte, einzeln freigabepflichtige Betreiberaktionen.
+KORREKTURVERMERK: die folgende Erstfassung enthielt drei Sachfehler im Reparaturpaket
+(Klose/Klein/Stüwe) — korrigiert im Kopfeintrag oben; Zahlen wie „49/49" sind der Stand der
+Erstfassung. KEIN Production-Eingriff: kein Write,
+kein Flag, keine Migration, kein Cron, keine Quellen-/Budgetänderung, keine Benutzerkonten, keine
+E-Mails, kein Merge, 0 KI-Aufrufe, 0,00 USD; Production wurde ausschließlich rein lesend geprüft
+(SELECT auf `profiles`/`mandate_profiles`/Quellentabellen + `storage.listFullProfiles`).**
+**Statuskorrektur zuerst: PR #219 IST GEMERGT und ausgerollt** — `origin/main` = Merge-Commit
+`89427c5`; die Angabe „offen sind Review und Merge" im nachfolgenden Kapazitäts-Sprint-Eintrag
+ist damit überholt. `HELMUT_CRON_GLOBALABRUF` bleibt DEAKTIVIERT, der OP-25-Production-Nachweis
+bleibt offen und beginnt vollständig neu; der Verstehensrückstand (~1 242 Cluster) wurde
+weisungsgemäß nicht angefasst; PR #216/#218 unverändert. **WAS DIESER SPRINT LIEFERT (Branch
+`claude/helmut-profile-readiness-test-awgjch`):** **(1) Bundestags-Profilvertrag aus dem echten
+Code abgeleitet** — jedes harte Pflichtfeld mit konkretem Verbraucher belegt (personNewsSource
+baut die Radar-Personensuche wörtlich aus `fullName`; Ausschüsse müssen gegen die extern
+verankerte WP-21-Sollmenge `seeds/bundestag-ausschuesse.js` auflösbar sein, sonst falsche
+Zuständigkeitsbelege; Benutzerkonto ist ausdrücklich KEINE Voraussetzung für den Datenmotor) —
+kanonisch: `docs/multitenancy-profilbereitschaft-bundestag.md`. **(2) Zentrale deterministische
+Bereitschaftsprüfung** `lib/helmut/profile-readiness.js` (lesend, ohne Netz, stabile Reihenfolge,
+Landtag wird nicht vermischt) AUF `validateProfile` aufbauend statt daneben. **(3) Harte Sperre
+NUR für den neuen Aktivierungsübergang:** `provisioning.provisionTenant` weist ein unvollständiges
+neues Bundestagsprofil VOR jedem Write mit konkreter Fehlerliste ab
+(`bundestagsprofil-nicht-bereit`); **bestehende aktive Mandate werden nachweislich nicht anders
+verarbeitet** (Jobs lesen unverändert nur `validateProfile`; Test 17), Admin-API/-Tabelle zeigen
+die Bereitschaft additiv als Warnung. **(4) Rein lesendes Prüfwerkzeug**
+`scripts/profil-bereitschaft.js` (`--fixtures`/`--production`, Text/JSON, Exit 0/2/3, keine
+Secrets, wendet nie Korrekturen an). **(5) BESTANDSPRÜFUNG DER SECHS AKTIVEN MANDATE (rein
+lesend, wirksame Blob-Sicht — `HELMUT_PROFILE_DB_MODE` ist in Production nicht gesetzt):**
+formal bereit 4/6; **nicht bereit:** `annika-klose` (Funktionsbezeichnungen als
+Berichterstatter-„Themen" speisen die Quellen-Queries) und `ottilie-paola-klein-2` (Ausschuss der
+20. WP „Bildung, Forschung und Technikfolgenabschätzung"); **inhaltlich falsche Ausschüsse gegen
+amtliche WP-21-Daten bei DREI Mandaten** (`annika-klose` → tatsächlich Arbeit und Soziales +
+Petitionsausschuss; `helmut-kleebank` → tatsächlich Wirtschaft und Energie + Umwelt/Klimaschutz;
+`ottilie-paola-klein-2` → tatsächlich Kultur und Medien); **Vermischungsbefund:** das
+Demo-Mandat `max-mustermann` trägt den Klarnamen der realen Abgeordneten von
+`ottilie-paola-klein-2` → zwei identische Personensuchen auf zwei Mandaten (OP-04-Entscheidung);
+**latenter Befund F-P6:** relationale `profiles.name`-Zeile des Pilotmandats trägt den Slug statt
+„Cem Ince" — heute wirkungslos (Blob-Sicht trägt den Klarnamen), würde aber beim
+`HELMUT_PROFILE_DB_MODE`-Cutover die Personensuche degradieren; zusätzlich ist der relationale
+persönliche Abrufweg (`profil-cem-ince`) `needs_review`/inaktiv, die Personenversorgung läuft
+über die Laufzeit-Profilquelle. **AUSDRÜCKLICH GEPRÜFT: kein Profilfehler kann den
+267-s-Lauf verursacht haben** — die Mandatsphase begann dort wegen erschöpften Zeitbudgets gar
+nicht erst; die bestehende Ursachenanalyse (F-RT/F-CL) bleibt unverändert. **(6) Belegtes
+Reparaturpaket, NICHT angewendet** (`scripts/fixtures/profil-reparatur-2026-08-04.js`): je Feld
+aktueller Wert → Vorschlag → Grund → offizielle Quelle → Abrufdatum → Status
+(belegt/zu_bestaetigen/entscheidung); getestet: belegte Vorschläge machen die nicht-bereiten
+Profile bereit, idempotent; Anwendungsweg ist die vorhandene Admin-Profilverwaltung — kein neues
+Schreibwerkzeug. Abrufgrenze ehrlich dokumentiert: externe Direktabrufe aus der Sitzung gesperrt
+(HTTP 403), Verifikation über Suchtreffer amtlicher/offizieller Quellen, Unsicheres als
+`zu_bestaetigen` markiert statt behauptet. **(7) FÜNF reale, DEAKTIVIERTE Offline-Testmandate**
+(`lib/helmut/quellenarchitektur/seeds/bundestag-testmandate.js`, Auswahl 2026-08-04 über
+offizielle Quellen verifiziert): Andrea Lindholz (CSU/CDU-CSU, Bayern, Direktmandat,
+Bundestagsvizepräsidentin) · Bernd Baumann (AfD, Hamburg, Liste, 1. PGF, Innenausschuss) ·
+Ralf Stegner (SPD, Schleswig-Holstein, Liste, Auswärtiger Ausschuss) · Julia Verlinden (Grüne,
+Niedersachsen, Liste, stellv. Fraktionsvorsitzende) · Sören Pellmann (Linke, Sachsen,
+Direktmandat Leipzig II, Co-Fraktionsvorsitzender) — alle 5 Fraktionen der 21. WP, 5
+Bundesländer, 2 w/3 m, verschiedene Rollen/Mandatsarten; alle `profileActive: false` +
+`internesTestmandat: true`, KEINE Benutzerkonten/E-Mails/Einladungen/zahlenden Tenants, kein
+automatischer Import beim Merge, jede Aktivierung ist eine eigene Betreiberentscheidung; es wird
+nicht behauptet, dass diese Abgeordneten Helmut verwenden. **(8) TESTS:**
+`scripts/profil-bereitschaft-test.js` **49/49** (deckt die 21 geforderten Regressionsfälle + den
+Elf-Profile-Gesamttest ab: eindeutige Kennungen, Bundestagsklassifizierung, keine
+Ebenen-Vermischung, geteilte Quellen nie als Duplikat, Fehlzuordnung/Vermischung erkannt,
+Aktivierungssperre greift nur neu, Bestand unverändert; der Elf-Profile-Test ist ausdrücklich
+KEIN Ersatz für den OP-25-Production-Nachweis). `node scripts/run-offline-tests.js` **188/203**
+gegen Basislinie desselben Arbeitsbaums **187/203** mit **exakt derselben 15er-Fehlschlagliste**
+(alle umgebungsbedingt Netz/Supabase-Sandbox; +1 = die neue, grüne Suite — kein neuer und kein
+abweichender Fehlschlag). `node scripts/browser-smoke-test.js` **32/32**. Bestehende berührte
+Suiten einzeln grün: `provision-tenant` 40 PASS/1 FAIL exakt wie Basislinie (umgebungsbedingt),
+`profile-validation` 36/36, `onboarding-tenant` 25 PASS, `berlin-abnahmeprofil` 79/79.
+**GEÄNDERTE DATEIEN:** `lib/helmut/profile-readiness.js` (neu) · `lib/helmut/provisioning.js`
+(Sperre Schritt 2b) · `server.js` (Bereitschaft additiv in Admin-Profil-API + Overview) ·
+`client.js` (Blocker-Zeile in „Daten & Profile") · `scripts/profil-bereitschaft.js` (neu) ·
+`scripts/profil-bereitschaft-test.js` (neu) · `scripts/fixtures/profil-reparatur-2026-08-04.js`
+(neu) · `lib/helmut/quellenarchitektur/seeds/bundestag-testmandate.js` (neu) ·
+`docs/multitenancy-profilbereitschaft-bundestag.md` (neu, kanonisch) ·
+`docs/datenmotor-restliste.md` (**neuer OP-29**; OP-28 bleibt für PR #216 reserviert) ·
+`docs/CURRENT_STATE.md`. **RISIKO:** gering — die Sperre wirkt nur im Provisionierungspfad neuer
+Mandate (validate-first, vor jedem Write); Bestandsverarbeitung byte-identisch; Admin-Änderungen
+rein additiv. **RÜCKWEG:** `git revert`. **NÄCHSTE SCHRITTE (je einzeln freigabepflichtig):**
+Reparatur der sechs Profile über die Admin-Profilverwaltung · OP-04-Entscheidung zum Demo-Mandat ·
+F-P6 vor einem Profil-DB-Cutover · Anlage/Aktivierung der Testmandate · OP-25-Nachweis.) ·
+(**Sprint „Reparatur: Kapazitätsfehler des globalen
+Abrufpfads" — TEILWEISE ABGESCHLOSSEN, NACHTRAG 2026-08-04: inzwischen als PR #219 GEMERGT
+(`89427c5`) und ausgerollt; der Production-Nachweis bleibt offen. Ursprünglicher Stand: Die Ursache ist mit Messwerten bewiesen, die Reparatur ist
 gebaut und im Offline-Kapazitätstest belegt; offen sind Review, Merge und der Production-Nachweis,
 der vollständig NEU beginnen muss. Es wurde NICHTS in Production verändert: kein Flag, kein
 Deployment, kein Cron ausgelöst, kein manueller Lauf, kein Production-Schreibzugriff, keine

@@ -2165,12 +2165,20 @@ function renderAdmDaten() {
       : admChip("bad", val.zustandLabel || "nicht bereit");
     const missing = val && Array.isArray(val.fehlendePflichtfelder) && val.fehlendePflichtfelder.length
       ? `<div class="adm-cell-sub">Fehlt: ${escapeHtml(val.fehlendePflichtfelder.join(", "))}</div>` : "";
+    // Bundestags-Bereitschaft (profile-readiness.js): konkrete Blocker als Zusatzzeile —
+    // reine Anzeige/Warnung, Bestandsprofile werden dadurch nicht gesperrt.
+    const ber = m.bereitschaft || null;
+    const readiness = ber && ber.zutreffend
+      ? (ber.bereit
+        ? `<div class="adm-cell-sub">Bundestagsreife: bereit</div>`
+        : `<div class="adm-cell-sub">Bundestagsreife: ${escapeHtml((ber.blocker || []).join("; ") || "nicht bereit")}</div>`)
+      : "";
     return `<tr>
       <td data-label="Mandat"><strong>${escapeHtml(m.fullName || m.id)}</strong><div class="adm-cell-sub">${escapeHtml(m.id || "")}</div></td>
       <td data-label="Partei">${escapeHtml(m.party || ADM_DASH)}</td>
       <td data-label="Ausschüsse">${admNum(Array.isArray(m.committees) ? m.committees.length : null)}</td>
       <td data-label="Schwerpunkte">${admNum(Array.isArray(m.focusTopics) ? m.focusTopics.length : null)}</td>
-      <td data-label="Vollständigkeit">${badge}${missing}</td>
+      <td data-label="Vollständigkeit">${badge}${missing}${readiness}</td>
       <td data-label="Tages-Inputs heute">${di && admIsNum(di.heute) ? `${admNum(di.heute)} / ${admNum(di.max)}` : ADM_DASH}</td>
       <td data-label="Aktion" class="admin-actions-cell"><button class="account-logout" type="button" data-profile-test-briefing="${escapeAttribute(m.id)}">Testbriefing</button></td>
     </tr>`;

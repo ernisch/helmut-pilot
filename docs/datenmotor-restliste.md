@@ -14,7 +14,7 @@
 
 | | |
 |---|---|
-| **Stand / Prüfdatum** | **2026-07-29** (Basisstand 2026-07-17, re-verankert 2026-07-22, siehe Banner; OP-05/06/08/13/14 nachgezogen durch den Pending/Understanding/KO-Sprint — Belege: `docs/betrieb/datenmotor_sprint_pending_understanding_ko.md`; §4 und §6 nachgezogen durch Sprint 23B-1 — neue Befunde **B5**/**B6** und neue Punkte **OP-25**/**OP-26**; §4 zusaetzlich nachgezogen durch Sprint 23C-2A — neue Befunde **B7**/**B8**; **B7 nachgemessen und entschieden in Sprint M-8 → neuer Punkt OP-27**, B8 bleibt bei OP-04. *Die übrigen Abschnitte tragen weiterhin den Stand 2026-07-18 und wurden in diesem Sprint nicht nachgemessen.*) |
+| **Stand / Prüfdatum** | **2026-07-29** (Basisstand 2026-07-17, re-verankert 2026-07-22, siehe Banner; OP-05/06/08/13/14 nachgezogen durch den Pending/Understanding/KO-Sprint — Belege: `docs/betrieb/datenmotor_sprint_pending_understanding_ko.md`; §4 und §6 nachgezogen durch Sprint 23B-1 — neue Befunde **B5**/**B6** und neue Punkte **OP-25**/**OP-26**; §4 zusaetzlich nachgezogen durch Sprint 23C-2A — neue Befunde **B7**/**B8**; **B7 nachgemessen und entschieden in Sprint M-8 → neuer Punkt OP-27**, B8 bleibt bei OP-04; §6 ergänzt **2026-08-04** durch Sprint „Profilreife" → neuer Punkt **OP-29** (OP-28 bleibt für PR #216 reserviert). *Die übrigen Abschnitte tragen weiterhin den Stand 2026-07-18 und wurden in diesem Sprint nicht nachgemessen.*) |
 | **Geprüfter Stand** | historisch `main`-HEAD `ca7e404` (Merge PR #102); Re-Anker (siehe Banner) `d6d9063` (#113); seither weiter nachgezogen (Pending/Understanding/KO-Sprint + Recovery-Stilllegung PR #105, Kontextstruktur PR #119, Doku-Nachzug PR #121) — **aktuell `045393c` (#121)** |
 | **Grundlagen** | PR #95–#102, `docs/betrieb/production_beweisprotokoll.md` (inkl. §7 Google-News-Härtung), `docs/betrieb/google_news_haertung.md`, `docs/betrieb/health_report_rollierend.md`, `docs/betrieb/f5_freigabe.md`, `docs/helmut_datenmotor_thread2_handoff.md` §0a, `docs/quellenarchitektur/00-master-status.md` (Nachtrag 2026-07-17), Audit-Serie |
 
@@ -1021,6 +1021,70 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Briefings (CLAUDE.md §5, Feature-Flag scharfschalten). Bau und Test lagen über den
   normalen PR-Weg. Kanonisch:
   [`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md) Teil E §42–§49.
+
+#### OP-29 · Profilprüfung, Vollständigkeitsregel und kontrollierte Testmandate (neu, Sprint „Profilreife" 2026-08-04; Prioritätsklasse P1)
+
+> Nummernhinweis: **OP-28 wird hier bewusst nicht vergeben** — die Nummer ist durch den
+> unabhängigen, noch offenen Stabilisierungsvorgang des flackernden
+> `werkzeug-lesefehler-test.js` (PR #216) beansprucht; dieser Sprint verändert PR #216 nicht.
+
+- **Befund (2026-08-04, rein lesend):** Von den sechs aktiven Bundestagsmandaten sind
+  **2 nicht bereit** (`annika-klose`: Rollenfloskeln als Berichterstatter-„Themen";
+  `ottilie-paola-klein-2`: Ausschuss der 20. Wahlperiode) und **3 tragen inhaltlich
+  falsche Ausschüsse** gegenüber den amtlichen WP-21-Mitgliedschaften (zusätzlich
+  `helmut-kleebank`). Das **Demo-Mandat `max-mustermann` trägt den Klarnamen einer realen
+  Abgeordneten** und erzeugt eine zweite identische Personensuche neben
+  `ottilie-paola-klein-2` (Vermischungsrisiko; verwandt mit OP-04). Latent (F-P6): die
+  relationale `profiles.name`-Zeile des Pilotmandats trägt den Slug statt des Klarnamens —
+  wirksam erst bei einem `HELMUT_PROFILE_DB_MODE`-Cutover. **Ausdrücklich geprüft: kein
+  Profilfehler war Ursache des 267-s-Laufs** (Mandatsphase begann dort gar nicht erst).
+- **Erledigt (Repo-Sprint 2026-08-04, Branch `claude/helmut-profile-readiness-test-awgjch`):**
+  Bundestags-Bereitschaftsvertrag aus dem Code abgeleitet und implementiert
+  (`lib/helmut/profile-readiness.js`, deterministisch, lesend, ohne Konto-Pflicht);
+  **harte Sperre des neuen Aktivierungsübergangs** in `provisioning.provisionTenant`
+  (unvollständiges neues Bundestagsprofil wird vor jedem Write mit konkreter Fehlerliste
+  abgewiesen; bestehende aktive Mandate bleiben unberührt — Verarbeitung liest weiterhin
+  nur `validateProfile`); rein lesendes Prüfwerkzeug `scripts/profil-bereitschaft.js`
+  (Text/JSON, Exit-Codes, fixture- und productionfähig); **belegtes Reparaturpaket** für
+  die sechs Profile (`scripts/fixtures/profil-reparatur-2026-08-04.js`, nicht angewendet);
+  **fünf reale, deaktivierte Offline-Testmandate** mit Belegen und Auswahlmatrix
+  (`seeds/bundestag-testmandate.js` — alle 5 Fraktionen, 5 Länder, Direkt-/Listenmandate,
+  ohne Benutzerkonten); Elf-Profile-Gesamttest + 21 Regressionsfälle
+  (`scripts/profil-bereitschaft-test.js`, 49/49). Kanonisch:
+  [`multitenancy-profilbereitschaft-bundestag.md`](multitenancy-profilbereitschaft-bundestag.md).
+- **Offen (getrennte Betreiberschritte, nichts davon im Sprint ausgeführt):**
+  (a) Reparatur der sechs Bestandsprofile über die Admin-Profilverwaltung (Paket §5),
+  (b) OP-04-Entscheidung zum Demo-Mandat mit realem Klarnamen,
+  (c) `profiles.name`-Korrektur vor einem Profil-DB-Cutover,
+  (d) Anlage/Aktivierung der fünf Testmandate (je eigene Freigabe),
+  (e) OP-25-Production-Nachweis — der Offlinetest ersetzt ihn **nicht**.
+- **Freigabe:** Repo-Merge über normalen PR-Weg (keine Migration, kein Flag, keine
+  Cron-/Quellenänderung). Alle Schritte (a)–(e) sind **einzeln freigabepflichtig**.
+- **Nachtrag 2026-08-04/2 (Korrekturprüfung, extern angestoßen):** Die Erstfassung des
+  Reparaturpakets enthielt **drei Sachfehler** gegen die amtlichen WP-21-Biografien —
+  Klose (Petitionsausschuss war nur 20. WP; stv. Finanzausschuss + Obfrau-Funktion fehlten),
+  Klein (unvollständig: ordentlich auch Arbeit und Soziales, stv. EU + Finanzen),
+  Stüwe (ordentlich/stellvertretend vermischt; Haushalt ist stellvertretend, Schriftführer
+  ist eine Funktion). Alle korrigiert (kanonische Ausschussnamen, strikte Trennung
+  `committees`/`deputyCommittees`/`function`); die Bereitschaftsprüfung validiert jetzt auch
+  `deputyCommittees` gegen die Sollmenge; **begrenzte Modelllücke dokumentiert:** Gremien
+  außerhalb der 24 ständigen Ausschüsse (Rechnungsprüfungsausschuss, Wahlprüfungsausschuss,
+  Gemeinsamer Ausschuss) sind im Profilmodell bewusst nicht abbildbar — Datenmodell
+  unverändert. Alle elf Profile erneut verifiziert; Tests 60/60. Kanonisch:
+  [`multitenancy-profilbereitschaft-bundestag.md`](multitenancy-profilbereitschaft-bundestag.md)
+  (Korrekturvermerk).
+- **Nachtrag 2026-08-04/3 (letzte fachliche Korrektur, extern gegen die amtlichen Profile
+  geprüft):** Drei weitere Sachfehler in den fünf **Testmandaten** bestätigt und korrigiert —
+  Stegner (stv. amtlich EU-Ausschuss + Innenausschuss; die frühere Nicht-Übernahme des
+  EU-Ausschusses war falsch), Verlinden (stv. amtlich Wirtschaft und Energie +
+  Verkehrsausschuss; der zuvor behauptete 1. Ausschuss entfernt), Pellmann (stv. Arbeit und
+  Soziales ergänzt; Obmann-Funktion amtlich bestätigt, mit Co-Fraktionsvorsitz im
+  Freitextfeld kombiniert). Sonstige Gremien (OSZE, Ältestenrat, Gemeinsamer Ausschuss,
+  Wahlprüfungsausschuss) einheitlich nur als `herkunft.sonstigeGremien`/Modelllücke geführt.
+  Neue unabhängige Soll-Tests (18f, hart kodiert, nicht aus dem Seed abgeleitet); Tests
+  91/91. Reparaturpaket der sechs Bestandsprofile unverändert (kein neuer belegter Fehler).
+  Ehrliche Grenze dokumentiert: Offline-Tests sichern interne Konsistenz, die amtliche
+  Wahrheit braucht weiterhin menschliche Quellenprüfung.
 
 ---
 
