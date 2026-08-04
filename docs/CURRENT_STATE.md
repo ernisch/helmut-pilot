@@ -1,8 +1,48 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-08-04, 2. Durchgang (**Korrekturprüfung PR #220 „Profilreife" —
-ERFOLGREICH ABGESCHLOSSEN nach Korrektur; bis zur Korrektur galt der Sprint als TEILWEISE
-ABGESCHLOSSEN. KEIN Production-Eingriff, kein Merge, keine Profile angelegt/repariert/aktiviert,
+**Letzte Aktualisierung:** 2026-08-04, 3. Durchgang (**Letzte fachliche Korrektur PR #220
+„Profilreife" — ERFOLGREICH ABGESCHLOSSEN nach Korrektur der Testmandate; während der Korrektur
+galt der Sprint als TEILWEISE ABGESCHLOSSEN. KEIN Production-Eingriff, kein Merge, keine Profile
+angelegt/repariert/aktiviert.** **Anlass: eine externe DIREKTE Prüfung der amtlichen
+Bundestagsprofile fand drei weitere Sachfehler in den fünf Offline-Testmandaten, die die
+Snippet-Recherche des 2. Durchgangs nicht erkannt hatte — bestätigt und korrigiert:**
+**(1)** `test-mdb-ralf-stegner`: stellvertretend sind amtlich **EU-Ausschuss + Innenausschuss**
+(Profilstand 03.08.2026) — die frühere Einordnung „EU nur über abgeordnetenwatch belegt →
+nicht übernommen" war **falsch** und ist entfernt; OSZE-Versammlung nur als sonstiges Gremium.
+**(2)** `test-mdb-julia-verlinden`: stellvertretend sind amtlich **Wirtschaft und Energie +
+Verkehrsausschuss** (Profilstand 29.07.2026) — die zuvor aus einer Fraktionsseiten-Auswertung
+übernommene stv. Mitgliedschaft im Ausschuss für Wahlprüfung/Immunität/GO ist gegen das
+amtliche Profil nicht haltbar und wurde entfernt (Korrekturvermerk im Seed); Gemeinsamer
+Ausschuss nur als Modelllücke. **(3)** `test-mdb-soeren-pellmann`: stellvertretend amtlich
+**Arbeit und Soziales** ergänzt (Profilstand 01.08.2026); die Obmann-Funktion im
+Petitionsausschuss ist amtlich bestätigt und wird — weil `function`/`rolle` EIN Freitextfeld
+ist (begrenzte Modelllücke, keine Schemaänderung) — MIT dem Co-Fraktionsvorsitz kombiniert
+geführt, damit keine belegte Information stillschweigend verworfen wird. **Kontrollwerte
+bestätigt:** Lindholz (committees leer; stv. Innenausschuss + Recht/Verbraucherschutz — jetzt
+amtlich belegt, `zuBestaetigen`-Markierung aufgelöst; Gemeinsamer Ausschuss sonstiges Gremium)
+und Baumann (ordentlich nur Innenausschuss; Ältestenrat/Gemeinsamer Ausschuss nicht in
+Ausschussfeldern). **Sonstige Gremien einheitlich getrennt:** alles außerhalb der 24er-Sollmenge
+(Unterausschüsse, OSZE, Ältestenrat, Gemeinsamer Ausschuss, Wahlprüfungsausschuss,
+Rechnungsprüfungsausschuss) steht ausschließlich unter `herkunft.sonstigeGremien` bzw. im
+Reparaturpaket als Modelllücke — nie in `committees`/`deputyCommittees`. **Neue UNABHÄNGIGE
+Tests (18f):** hart kodierte amtliche Soll-Werte je Testmandat (nicht aus dem Seed abgeleitet)
+prüfen exakt committees, deputyCommittees, function/role, kanonische Namen, Gremien-Trennung,
+amtliche Quelle und Prüfdatum — ein falscher, fehlender oder zusätzlicher Ausschuss macht rot.
+**Ehrlich dokumentierte Grenze:** Offline-Tests sichern interne Konsistenz; ob Soll-Tabelle
+und Seed der amtlichen Wahrheit entsprechen, braucht weiterhin menschliche Quellenprüfung
+(Abrufgrenze HTTP 403). **Das Reparaturpaket der sechs Bestandsprofile blieb unverändert**
+(kein neuer belegter Fehler; Klose/Klein/Stüwe-Korrekturen des 2. Durchgangs bestehen fort).
+**TESTS:** `profil-bereitschaft-test.js` **91/91** (vorher 60) · `run-offline-tests`
+**188/203** = exakt die bekannte umgebungsbedingte 15er-Fehlschlagliste · `browser-smoke-test`
+**32/32** · CI: siehe PR #220. **GEÄNDERTE DATEIEN (3. Durchgang):**
+`lib/helmut/quellenarchitektur/seeds/bundestag-testmandate.js` ·
+`scripts/profil-bereitschaft-test.js` (18f) ·
+`docs/multitenancy-profilbereitschaft-bundestag.md` · `docs/datenmotor-restliste.md` ·
+`docs/CURRENT_STATE.md`. **Merge-Empfehlung:** Review der drei Korrektur-Commits, dann Merge
+durch den Betreiber; alle Production-Folgeschritte bleiben einzeln freigabepflichtig.**) ·
+(2. Durchgang, 2026-08-04: **Korrekturprüfung PR #220 „Profilreife" —
+nach Korrektur wieder erfolgreich; die Testmandat-Werte dieses Durchgangs wurden im
+3. Durchgang teilweise erneut korrigiert (Stegner/Verlinden/Pellmann), siehe Kopfeintrag. KEIN Production-Eingriff, kein Merge, keine Profile angelegt/repariert/aktiviert,
 0 KI-Aufrufe in Production.** **Anlass (extern gefunden, gegen amtliche Biografien bestätigt):
 die Erstfassung des Reparaturpakets enthielt DREI Sachfehler, und die grünen Tests des ersten
 CI-Laufs `30892756678` bewiesen das nicht — sie prüften Fixture-Erwartungen gegen sich selbst,

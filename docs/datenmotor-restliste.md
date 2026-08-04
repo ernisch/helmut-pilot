@@ -1073,6 +1073,18 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   unverändert. Alle elf Profile erneut verifiziert; Tests 60/60. Kanonisch:
   [`multitenancy-profilbereitschaft-bundestag.md`](multitenancy-profilbereitschaft-bundestag.md)
   (Korrekturvermerk).
+- **Nachtrag 2026-08-04/3 (letzte fachliche Korrektur, extern gegen die amtlichen Profile
+  geprüft):** Drei weitere Sachfehler in den fünf **Testmandaten** bestätigt und korrigiert —
+  Stegner (stv. amtlich EU-Ausschuss + Innenausschuss; die frühere Nicht-Übernahme des
+  EU-Ausschusses war falsch), Verlinden (stv. amtlich Wirtschaft und Energie +
+  Verkehrsausschuss; der zuvor behauptete 1. Ausschuss entfernt), Pellmann (stv. Arbeit und
+  Soziales ergänzt; Obmann-Funktion amtlich bestätigt, mit Co-Fraktionsvorsitz im
+  Freitextfeld kombiniert). Sonstige Gremien (OSZE, Ältestenrat, Gemeinsamer Ausschuss,
+  Wahlprüfungsausschuss) einheitlich nur als `herkunft.sonstigeGremien`/Modelllücke geführt.
+  Neue unabhängige Soll-Tests (18f, hart kodiert, nicht aus dem Seed abgeleitet); Tests
+  91/91. Reparaturpaket der sechs Bestandsprofile unverändert (kein neuer belegter Fehler).
+  Ehrliche Grenze dokumentiert: Offline-Tests sichern interne Konsistenz, die amtliche
+  Wahrheit braucht weiterhin menschliche Quellenprüfung.
 
 ---
 

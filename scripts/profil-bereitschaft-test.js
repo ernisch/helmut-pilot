@@ -193,6 +193,75 @@ const vollstaendig = Object.freeze({
   check("18e. Testmandate sind per validateProfile 'deaktiviert' (keine Referenzzählung/Verarbeitung)",
     TESTMANDATE.every((t) => validateProfile(t).state === "deaktiviert"));
 
+  // ── (18f) UNABHÄNGIGE amtliche Soll-Werte je Testmandat (Korrektur 3. Durchgang) ──
+  // Diese Erwartungen sind BEWUSST hart kodiert und NICHT aus TESTMANDATE abgeleitet:
+  // 18d beweist nur technische Bereitschaft, nicht die personenspezifische Richtigkeit.
+  // Quelle je Person: amtliches Bundestagsprofil (Stand siehe `stand`). EHRLICHE GRENZE:
+  // dieser Offline-Test sichert die interne Konsistenz zwischen Soll-Tabelle und Seed —
+  // ob BEIDE der amtlichen Wahrheit entsprechen, muss weiterhin ein Mensch gegen die
+  // amtliche Quelle prüfen (Abrufgrenze der Umgebung, HTTP 403).
+  const { AUSSCHUSS_NAMEN } = require("../lib/helmut/quellenarchitektur/seeds/bundestag-ausschuesse");
+  const AMTLICHE_SOLL_TESTMANDATE = {
+    "test-mdb-andrea-lindholz": {
+      committees: [], deputyCommittees: ["Innenausschuss", "Ausschuss für Recht und Verbraucherschutz"],
+      funktionEnthaelt: ["Vizepräsidentin"], quelle: "lindholz_andrea-1045830", stand: "2026-08-04",
+      nieInAusschussfeldern: ["Gemeinsamer Ausschuss"]
+    },
+    "test-mdb-bernd-baumann": {
+      committees: ["Innenausschuss"], deputyCommittees: [],
+      funktionEnthaelt: ["Erster Parlamentarischer Geschäftsführer"], quelle: "baumann_bernd-1043568", stand: "2026-08-04",
+      nieInAusschussfeldern: ["Ältestenrat", "Aeltestenrat", "Gemeinsamer Ausschuss"]
+    },
+    "test-mdb-ralf-stegner": {
+      committees: ["Auswärtiger Ausschuss", "Ausschuss für Menschenrechte und humanitäre Hilfe"],
+      deputyCommittees: ["Ausschuss für die Angelegenheiten der Europäischen Union", "Innenausschuss"],
+      funktionEnthaelt: ["Vorsitzender des Unterausschusses"], quelle: "stegner_ralf-1047542", stand: "03.08.2026",
+      nieInAusschussfeldern: ["OSZE", "Unterausschuss"]
+    },
+    "test-mdb-julia-verlinden": {
+      committees: [], deputyCommittees: ["Ausschuss für Wirtschaft und Energie", "Verkehrsausschuss"],
+      funktionEnthaelt: ["Stellvertretende Fraktionsvorsitzende"], quelle: "verlinden_julia-1047856", stand: "29.07.2026",
+      nieInAusschussfeldern: ["Wahlprüfung", "Gemeinsamer Ausschuss"]
+    },
+    "test-mdb-soeren-pellmann": {
+      committees: ["Petitionsausschuss"], deputyCommittees: ["Ausschuss für Arbeit und Soziales"],
+      funktionEnthaelt: ["Fraktionsvorsitzender", "Obmann im Petitionsausschuss"], quelle: "pellmann_soeren-1046508", stand: "01.08.2026",
+      nieInAusschussfeldern: ["Wahlprüfungsausschuss", "Wahlpruefungsausschuss", "Gemeinsamer Ausschuss"]
+    }
+  };
+  const sortiert = (a) => [...(a || [])].sort((x, y) => x.localeCompare(y, "de"));
+  check("18f. Soll-Tabelle deckt exakt die fünf Kennungen ab", JSON.stringify(Object.keys(AMTLICHE_SOLL_TESTMANDATE).sort()) === JSON.stringify(TESTMANDATE.map((t) => t.id).sort()));
+  for (const [id, soll] of Object.entries(AMTLICHE_SOLL_TESTMANDATE)) {
+    const t = TESTMANDATE.find((x) => x.id === id);
+    if (!t) { check(`18f. ${id}: im Seed vorhanden`, false); continue; }
+    // Exakte Mengen: ein falscher, fehlender ODER zusätzlicher Ausschuss macht rot.
+    check(`18f. ${id}: committees exakt amtlich`,
+      JSON.stringify(sortiert(t.committees)) === JSON.stringify(sortiert(soll.committees)),
+      JSON.stringify({ ist: t.committees, soll: soll.committees }));
+    check(`18f. ${id}: deputyCommittees exakt amtlich`,
+      JSON.stringify(sortiert(t.deputyCommittees)) === JSON.stringify(sortiert(soll.deputyCommittees)),
+      JSON.stringify({ ist: t.deputyCommittees || [], soll: soll.deputyCommittees }));
+    check(`18f. ${id}: Funktion(en) in function/role abgebildet`,
+      soll.funktionEnthaelt.every((f) => String(t.function || "").includes(f) && String(t.role || "").includes(f)),
+      JSON.stringify({ function: t.function }));
+    // Kanonische Namen: jeder Soll-/Ist-Ausschuss ist eine amtliche WP-21-Bezeichnung.
+    const alleAusschuesse = [...(t.committees || []), ...(t.deputyCommittees || []), ...soll.committees, ...soll.deputyCommittees];
+    check(`18f. ${id}: alle Ausschusswerte kanonisch (Sollmenge WP 21)`,
+      alleAusschuesse.every((a) => AUSSCHUSS_NAMEN.includes(a)),
+      alleAusschuesse.filter((a) => !AUSSCHUSS_NAMEN.includes(a)).join("; "));
+    // Sonstige Gremien (Unterausschüsse, OSZE, Ältestenrat, Gemeinsamer/Wahlprüfungs-
+    // Ausschuss) dürfen in KEINEM Ausschussfeld stehen — nur dokumentiert in herkunft.
+    const felderText = JSON.stringify([t.committees, t.deputyCommittees]);
+    check(`18f. ${id}: sonstige Gremien nicht in Ausschussfeldern`,
+      soll.nieInAusschussfeldern.every((g) => !felderText.includes(g)));
+    // Amtliche Profilquelle + Prüfdatum sind je Person festgehalten.
+    const belegText = (t.herkunft.belege || []).join(" ");
+    check(`18f. ${id}: amtliche Profilquelle + Prüfdatum dokumentiert`,
+      belegText.includes(soll.quelle) && String(t.herkunft.abrufdatum || "").includes("2026-08-04")
+      && (soll.stand === "2026-08-04" || String(t.herkunft.abrufdatum).includes(soll.stand) || belegText.includes(soll.stand)),
+      JSON.stringify({ abrufdatum: t.herkunft.abrufdatum }));
+  }
+
   // ── (19) gemeinsamer Bestand von elf Profilen ─────────────────────────────
   const elf = [...BESTAND_IST, ...TESTMANDATE];
   check("19. elf Profile mit eindeutigen Kennungen", new Set(elf.map((p) => p.id)).size === 11);
@@ -220,7 +289,7 @@ const vollstaendig = Object.freeze({
 
   // ── (22) Korrekturauftrag 2026-08-04/2: Trennung ordentlich/stellvertretend,
   //         deputyCommittees-Validierung, kanonische Namen, Modellluecke ──────
-  const { AUSSCHUSS_NAMEN } = require("../lib/helmut/quellenarchitektur/seeds/bundestag-ausschuesse");
+  // (AUSSCHUSS_NAMEN ist oben in Block 18f geladen.)
   // (22a) Ein veralteter stellvertretender Ausschuss macht das Profil NICHT bereit.
   const e22a = bewerteBundestagsprofil({ ...vollstaendig, deputyCommittees: ["Ausschuss für Bildung, Forschung und Technikfolgenabschätzung"] });
   check("22a. veralteter deputyCommittees-Eintrag (WP 20) wird abgelehnt", !e22a.bereit && e22a.ungueltig.some((u) => u.feld === "deputyCommittees"));

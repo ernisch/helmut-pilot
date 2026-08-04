@@ -1,8 +1,8 @@
 # Bundestags-Profilbereitschaft — Vertrag, Bestandsprüfung, Reparaturpaket, Testmandate
 
-**Stand:** 2026-08-04, **2. Durchgang (Korrekturprüfung)** · **Sprint:** „Profilreife, Bestandsprüfung und kontrollierte Testmandate"
+**Stand:** 2026-08-04, **3. Durchgang (Korrekturprüfung Testmandate)** · **Sprint:** „Profilreife, Bestandsprüfung und kontrollierte Testmandate"
 **Modul:** `lib/helmut/profile-readiness.js` · **Werkzeug:** `scripts/profil-bereitschaft.js`
-**Tests:** `scripts/profil-bereitschaft-test.js` (60/60) · **Seed:** `lib/helmut/quellenarchitektur/seeds/bundestag-testmandate.js`
+**Tests:** `scripts/profil-bereitschaft-test.js` (91/91) · **Seed:** `lib/helmut/quellenarchitektur/seeds/bundestag-testmandate.js`
 **Reparaturpaket:** `scripts/fixtures/profil-reparatur-2026-08-04.js` (nicht automatisch angewendet)
 
 > **Korrekturvermerk 2026-08-04/2 (kein falsches Grün):** Die Erstfassung dieses Dokuments
@@ -18,6 +18,23 @@
 > Alle drei sind korrigiert; zusätzlich prüft die Bereitschaftsprüfung jetzt auch
 > `deputyCommittees` gegen die WP-21-Sollmenge, und alle elf Profile wurden erneut gegen
 > die amtlichen Profile verifiziert (11 parallele Recherchen + adversariale Gegenprobe).
+>
+> **Korrekturvermerk 2026-08-04/3 (Testmandate):** Eine externe **direkte** Prüfung der
+> amtlichen Profile fand drei weitere Sachfehler in den fünf Offline-Testmandaten, die die
+> Snippet-Recherche des 2. Durchgangs nicht erkannt hatte: **(1)** Stegner ist amtlich
+> **stellvertretendes Mitglied im EU-Ausschuss** (Stand 03.08.2026) — die frühere Einordnung
+> „nur abgeordnetenwatch, nicht übernommen" war falsch. **(2)** Verlinden ist stellvertretend
+> im **Ausschuss für Wirtschaft und Energie** und im **Verkehrsausschuss** (Stand
+> 29.07.2026) — die zuvor aus einer Fraktionsseiten-Auswertung übernommene stv. Mitgliedschaft
+> im 1. Ausschuss ist gegen das amtliche Profil nicht haltbar und wurde entfernt. **(3)**
+> Pellmann ist zusätzlich **stellvertretendes Mitglied im Ausschuss für Arbeit und Soziales**,
+> und die Obmann-Funktion im Petitionsausschuss ist amtlich bestätigt (Stand 01.08.2026).
+> Lindholz' stv. Sitze (Innen + Recht/Verbraucherschutz) und Baumanns Innenausschuss sind nun
+> amtlich bestätigt. Neue **unabhängige Soll-Tests** (18f) prüfen alle fünf Testmandate exakt
+> gegen hart kodierte amtliche Erwartungen (nicht aus dem Seed abgeleitet). **Ehrliche
+> Grenze:** Offline-Tests sichern die interne Konsistenz zwischen Soll-Tabelle, Seed und Doku —
+> ob beide der amtlichen Wahrheit entsprechen, muss weiterhin eine menschliche Quellenprüfung
+> gegen bundestag.de sicherstellen (Abrufgrenze der Arbeitsumgebung).
 
 Dieses Dokument ist die **eine kanonische Stelle** für den Bundestags-Bereitschaftsvertrag.
 Es baut auf [`multitenancy-profilvalidierung.md`](multitenancy-profilvalidierung.md)
@@ -172,15 +189,20 @@ Abgeordneten **nutzen Helmut nicht** und dürfen nicht so dargestellt werden.
 |---|---|---|---|---|---|---|---|
 | `test-mdb-andrea-lindholz` | Andrea Lindholz | CDU/CSU (CSU) | Bayern | Direktmandat Aschaffenburg | — / Innenausschuss, Recht und Verbraucherschutz | Bundestagsvizepräsidentin | Präsidiumsrolle, nur stellvertretende Sitze, Fraktionsgemeinschaft CSU↔CDU/CSU |
 | `test-mdb-bernd-baumann` | Bernd Baumann | AfD | Hamburg | Landesliste | Innenausschuss / — | 1. Parlamentarischer Geschäftsführer | Stadtstaat ohne Wahlkreis, Fraktionsgeschäftsführung |
-| `test-mdb-ralf-stegner` | Ralf Stegner | SPD | Schleswig-Holstein | Landesliste (betreut Pinneberg) | Auswärtiger Ausschuss, Menschenrechte und humanitäre Hilfe / Innenausschuss | Vorsitzender UA Rüstungs- und Proliferationskontrolle | GG-Ausschuss, UA-Vorsitz als Funktion (nicht als Ausschuss) |
-| `test-mdb-julia-verlinden` | Julia Verlinden | Bündnis 90/Die Grünen | Niedersachsen | Landesliste | — / Wahlprüfung, Immunität und Geschäftsordnung | stellv. Fraktionsvorsitzende | Themenkoordination statt ordentlichem Ausschuss |
-| `test-mdb-soeren-pellmann` | Sören Pellmann | Die Linke | Sachsen | Direktmandat Leipzig II | Petitionsausschuss / — | Fraktionsvorsitzender (Co) | ostdeutsches Direktmandat, Namens-/Paket-Kollisionsprobe; Wahlprüfungs-/Gemeinsamer Ausschuss = Modelllücke |
+| `test-mdb-ralf-stegner` | Ralf Stegner | SPD | Schleswig-Holstein | Landesliste (betreut Pinneberg) | Auswärtiger Ausschuss, Menschenrechte und humanitäre Hilfe / EU-Ausschuss, Innenausschuss | Vorsitzender UA Rüstungs- und Proliferationskontrolle | GG-Ausschuss, UA-Vorsitz als Funktion (nicht als Ausschuss), OSZE = sonstiges Gremium |
+| `test-mdb-julia-verlinden` | Julia Verlinden | Bündnis 90/Die Grünen | Niedersachsen | Landesliste | — / Wirtschaft und Energie, Verkehrsausschuss | stellv. Fraktionsvorsitzende | Themenkoordination statt ordentlichem Ausschuss; Gemeinsamer Ausschuss = Modelllücke |
+| `test-mdb-soeren-pellmann` | Sören Pellmann | Die Linke | Sachsen | Direktmandat Leipzig II | Petitionsausschuss / Arbeit und Soziales | Fraktionsvorsitzender (Co); Obmann im Petitionsausschuss | ostdeutsches Direktmandat, Namens-/Paket-Kollisionsprobe; Wahlprüfungs-/Gemeinsamer Ausschuss = Modelllücke |
 
-Alle elf Profile wurden am 2026-08-04 (2. Durchgang) erneut gegen die amtlichen
-Bundestagsprofile verifiziert (11 parallele Recherchen + adversariale Gegenprobe);
-nicht amtlich Bestätigbares steht je Eintrag unter `zuBestaetigen` im Seed statt als
-belegt behauptet zu werden (u. a. Lindholz' stv. Sitze: Beleg ist die offizielle
-persönliche Seite; Stegners stv. EU-/OSZE-Angaben: nur abgeordnetenwatch → nicht übernommen).
+Stand 3. Durchgang (2026-08-04): die Ausschusswerte aller fünf Testmandate entsprechen den
+**amtlichen Bundestagsprofilen** (Stegner Stand 03.08.2026, Verlinden 29.07.2026, Pellmann
+01.08.2026; Lindholz/Baumann amtlich bestätigt). Gremien außerhalb der 24 ständigen
+Ausschüsse (Unterausschüsse, OSZE-Versammlung, Ältestenrat, Gemeinsamer Ausschuss,
+Wahlprüfungsausschuss) stehen ausschließlich unter `herkunft.sonstigeGremien` im Seed —
+nie in `committees`/`deputyCommittees`. Mehrere parlamentarische Funktionen einer Person
+(Pellmann: Co-Fraktionsvorsitz + Obmann) werden im Freitextfeld `function`/`role` kombiniert
+geführt — eine strukturierte Funktionsliste gibt das Schema nicht her (begrenzte
+Modelllücke, keine Schemaänderung, keine belegte Information verworfen). Testfall 18f prüft
+alle fünf Profile exakt gegen **unabhängig hart kodierte** amtliche Soll-Werte.
 
 Abdeckung: alle 5 Fraktionen der 21. WP (Sollmenge `seeds/parlamentszusammensetzung.js`),
 5 Bundesländer, Direkt- und Listenmandate, 2 w / 3 m, Rollen vom Präsidium bis zum
