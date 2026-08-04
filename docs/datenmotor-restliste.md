@@ -491,9 +491,12 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   mit Abbruchvermerk (bekanntes B5-Verhalten des Altpfads) · jüngster `mode:"global"`-Lauf
   bleibt der gescheiterte vom 2026-08-03 (fließt per harter Untergrenze 2026-08-04T00:00Z nie in
   einen neuen Nachweis ein). Tests: `op25-nachweis-vertrag-test.js` **71/71** (inkl. der 24
-  geforderten Fallfamilien) · Mutationsprobe **14 von 14 rot**. **Nächster Betreiberhandgriff:**
-  READY-Deployment dieses Stands, dann `HELMUT_CRON_GLOBALABRUF=on` (nur Production), dann
-  frühestens nach 24 h `node scripts/op25-production-nachweis.js --aktivierung <ISO>`.
+  geforderten Fallfamilien) · Mutationsprobe **14 von 14 rot**. **Nächster Betreiberhandgriff (ÜBERHOLT durch /7 —
+  verbindlich ist [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7.5: erst
+  Flag setzen, dann NEUES Deployment, Aktivierung = READY-Zeitpunkt, Startbaseline innerhalb
+  15 min mit vollem `--erwarteter-commit`):** ~~READY-Deployment dieses Stands, dann
+  `HELMUT_CRON_GLOBALABRUF=on` (nur Production), dann frühestens nach 24 h
+  `node scripts/op25-production-nachweis.js --aktivierung <ISO>`.~~
   Der Verstehensrückstand (~1 242 Cluster) bleibt offen und gehört zu **OP-14**.
   **Nachtrag 2026-08-04/3 (Review zu PR #222 vollständig eingearbeitet):** drei Wege, auf denen
   der Vertrag fälschlich grün hätte werden können, sind geschlossen — **(1) Kostenvertrag:**
@@ -576,6 +579,40 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   volle SHA, gültige Kurzform und Großschreibung mit Randleerzeichen ⇒ bestätigt; angehängter
   Unsinn, hexadezimaler Anhang, abweichende SHA, 6 Zeichen, Nicht-Hex und 41 Zeichen ⇒ je
   **Exit 2 ohne Datei**. Dry-Run unverändert `noch_nicht_auswertbar` (Exit 3).
+
+  **Nachtrag 2026-08-04/7 (Nachtragskorrektur nach Merge von PR #222 — deploymentgebundene
+  Startbaseline + verbindlicher Commitnachweis):** **Statuskorrektur zuerst: PR #222 IST
+  GEMERGT** (`origin/main` = Merge-Commit `3fa8830`). **Der OP-25-Production-Nachweis wurde
+  NICHT gestartet, es existiert KEINE gültige Startbaseline.** Der aktuelle Zustand von
+  `HELMUT_CRON_GLOBALABRUF` in Production ist aus einer Sitzung nicht lesbar und wird nicht
+  behauptet — **offene Betreiberprüfung** (frühere Einträge enthalten sowohl „gesetzt seit
+  2026-08-03" als auch „bleibt deaktiviert"; keiner der Sätze ist lesend belegt). **Vier am
+  alten Stand empirisch reproduzierte Lücken geschlossen:** (1) eine Startbaseline konnte
+  **ohne** `--erwarteter-commit` geschrieben werden; (2) `pruefeStartbaseline` prüfte
+  `erwarteterDeploymentCommit`/`deploymentCommitBestaetigt` gar nicht (Baseline mit
+  `"voelliger-unsinn"` + Vorab-Bestätigung ⇒ akzeptiert); (3) die Gesamtauswertung prüfte die
+  `commit_ref`-Werte der `globalphase`-Fensterläufe nie (alle Zeilen mit **fremdem** Commit ⇒
+  `bestanden`; alle **ohne** Commit ⇒ `bestanden`); (4) die Schreibzeit-Prüfung verglich den
+  erwarteten Commit mit dem **jüngsten alten** Prozesslauf und verwechselte damit den
+  Zeitpunkt der Env-Änderung mit ihrer Wirksamkeit — **eine Vercel-Env gilt erst in einem
+  neuen Deployment**. **Jetzt gilt:** Aktivierungszeitpunkt = **READY** des neuen
+  Production-Deployments, das das Flag enthält · `--startbaseline-schreiben` verlangt
+  zwingend den **vollen** erwarteten Merge-Commit (40 Hexziffern), speichert ihn verbindlich
+  und prüft beim Schreiben **nicht** gegen alte Läufe · die Auswertung verlangt für **alle**
+  Fensterläufe einen gültigen `commit_ref` **exakt** zum gespeicherten Commit — fehlend ⇒
+  `blockiert` (`commit-beleg-fehlt`, auch bei fehlender dauerhafter Zeile), abweichend ⇒
+  `nicht_bestanden` (`fremder-deployment-commit`; deckt auch ein **weiteres Deployment im
+  24-h-Fenster** auf, das deshalb verboten ist) · alte Läufe vor der Aktivierung blockieren
+  nicht und bestätigen nichts · Baseline ohne/mit ungültigem/verkürztem Commit oder mit
+  Vorab-Bestätigung ⇒ fail closed `blockiert` · Mandatsmenge, Signatur, Aktivierungszeitpunkt
+  und Erhebungsfenster (15 min) unverändert streng. **Tests:** Vertrag **207/207** (§34 neu:
+  alle acht geforderten Fallfamilien als Verhaltensprüfungen; §32 führt den Commit als
+  Pflichtfeld) · Dauerhaftigkeit **52/52** · Mutationsprobe **62 von 62 rot** (M50/51/53/54
+  umgezogen, **M55–M62** neu). **Production-Proben rein lesend (KEINE Baseline erzeugt):**
+  Dry-Run `noch_nicht_auswertbar` (Exit 3) · Schreiben ohne Commit / Kurzform / Anhang /
+  2 h alte Aktivierung ⇒ je **Exit 2, keine Datei** · Auswertung mit Baseline ohne Commit ⇒
+  `blockiert` (Exit 2). Kanonisch (inkl. verbindlichem Betreiberablauf):
+  [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) **§7.7.5**.
 - **Nachtrag 2026-08-04 (Profilreparatursprint):** Künftige OP-25-Production-Nachweise arbeiten
   mit **fünf aktiven realen Mandaten** statt sechs — das Demo-Mandat `max-mustermann` ist seit
   2026-08-04 deaktiviert (nicht gelöscht, OP-04-Teilschritt), sofern bis zum Nachweis keine

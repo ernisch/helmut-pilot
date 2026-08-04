@@ -58,6 +58,10 @@ const SLOTS = [
 // Laufdatensatz-Feld `durationMs` — genau daran haengt Haertung 3.
 const VERSIEGELT_DAUER_MS = 190000;
 const VERSIEGELT_BUDGET_MS = 221000;
+// Der erwartete Deployment-Commit des Nachweisfensters (volle SHA) und ein gueltiger,
+// aber FREMDER Commit — beides Fixture-Werte, keine Production-Stande.
+const ERWARTETER_COMMIT = "89427c5b5aac4b362d2040c7b71bde8d52c1085d";
+const ANDERER_COMMIT = "1f3a9d7e2c4b6a8f0e5d3c1b9a7f5e3d1c9b7a5f";
 
 function detailAbgeschlossen() {
   return {
@@ -146,13 +150,14 @@ function baueMandat(slot, politicianId, { status = "abgeschlossen", dauerMs = VE
   };
 }
 
-function baueProzessZeile(slot, { durationMs = VERSIEGELT_DAUER_MS, status = "success" } = {}) {
+function baueProzessZeile(slot, { durationMs = VERSIEGELT_DAUER_MS, status = "success", commit = ERWARTETER_COMMIT } = {}) {
   return {
     runId: `${laufkennungVon(slot)}-global`,
     process: "globalphase",
     status,
     durationMs,
     createdAt: new Date(Date.parse(slot.slotIso) + 210000).toISOString(),
+    commit,
     quelle: "relational"
   };
 }
@@ -179,6 +184,7 @@ function baueStartbaseline(mandate = MANDATE, extra = {}) {
     erhobenAtMs: BASELINE_ERHOBEN_MS,
     erhobenAt: new Date(BASELINE_ERHOBEN_MS).toISOString(),
     aktivierungAtMs: AKTIVIERUNG_MS,
+    erwarteterDeploymentCommit: ERWARTETER_COMMIT,
     anzahl: sig.anzahl,
     mandate: sig.mandate,
     signatur: sig.signatur,
@@ -876,11 +882,13 @@ console.log("\n== 30 · REVIEW-HAERTUNG 3: dauerhafte Belegquelle, Aufbewahrung,
   check("30.12 Dauerhafte Zeile meldet failed => nicht_bestanden",
     bFailed.ausgang === "nicht_bestanden" && hatBefund(bFailed, "dauerhafter-beleg-fehlgeschlagen"));
 
-  // (i) Fehlt die dauerhafte Zeile ganz, wird die schwaechere Belegbasis BENANNT.
+  // (i) NACHTRAGSKORREKTUR 2026-08-04/5: die dauerhafte Zeile traegt den EINZIGEN
+  //     Commit-Beleg eines Fensterlaufs. Fehlt sie, ist der Deployment-Stand des Laufs
+  //     nicht belegbar — frueher nur eine Warnung, jetzt fail closed `blockiert`.
   const bOhneDauerhaft = V.bewerteNachweisfenster(baueEingaben({ prozessLaeufe: [] }));
-  check("30.13 Ohne dauerhafte Zeile: besteht, aber mit ausdruecklicher Warnung",
-    bOhneDauerhaft.ausgang === "bestanden"
-    && bOhneDauerhaft.warnungen.some((w) => w.includes("keine dauerhafte Laufzeile")));
+  check("30.13 Ohne dauerhafte Zeile: blockiert (fehlender Commit-Beleg), kein Warn-Gruen mehr",
+    bOhneDauerhaft.ausgang === "blockiert" && hatBefund(bOhneDauerhaft, "commit-beleg-fehlt"),
+    JSON.stringify(bOhneDauerhaft.befunde.slice(0, 2)));
 }
 
 // =============================================================================================
@@ -986,6 +994,7 @@ console.log("\n== 32 · REVIEW 2 · Punkt 2: Startbaseline vollstaendig fail clo
     erhobenAt: new Date(BASELINE_ERHOBEN_MS).toISOString(),
     aktivierungAtMs: AKTIVIERUNG_MS,
     aktivierungAt: new Date(AKTIVIERUNG_MS).toISOString(),
+    erwarteterDeploymentCommit: ERWARTETER_COMMIT,
     anzahl: 5,
     mandate: [...MANDATE],
     signatur: V.mandatsSignatur(MANDATE).signatur
@@ -1002,7 +1011,8 @@ console.log("\n== 32 · REVIEW 2 · Punkt 2: Startbaseline vollstaendig fail clo
     ["anzahl", "startbaseline-anzahl-fehlt"],
     ["signatur", "startbaseline-signatur-fehlt"],
     ["aktivierungAtMs", "startbaseline-aktivierung-fehlt"],
-    ["erhobenAtMs", "startbaseline-erhebung-fehlt"]
+    ["erhobenAtMs", "startbaseline-erhebung-fehlt"],
+    ["erwarteterDeploymentCommit", "startbaseline-erwarteter-commit-fehlt"]
   ];
   for (const [feld, grund] of pflichtfelder) {
     // Die ISO-Zwillinge muessen mit weg, sonst greift der zulaessige Zweitweg.
@@ -1090,6 +1100,7 @@ console.log("\n== 33 · REVIEW 3 · Punkt 1: die Baseline gilt NUR unmittelbar n
     erhobenAt: new Date(BASELINE_ERHOBEN_MS).toISOString(),
     aktivierungAtMs: AKTIVIERUNG_MS,
     aktivierungAt: new Date(AKTIVIERUNG_MS).toISOString(),
+    erwarteterDeploymentCommit: ERWARTETER_COMMIT,
     anzahl: 5, mandate: [...MANDATE], signatur: V.mandatsSignatur(MANDATE).signatur
   });
   const pruefe = (roh, jetzt = JETZT_MS) => V.pruefeStartbaseline({
@@ -1153,137 +1164,214 @@ console.log("\n== 33 · REVIEW 3 · Punkt 1: die Baseline gilt NUR unmittelbar n
 }
 
 // =============================================================================================
-console.log("\n== 34 · REVIEW 3+4 · Commit-Beleg: VERHALTEN der Pruefung, nicht Quelltextsuche ==");
+console.log("\n== 34 · NACHTRAGSKORREKTUR · Deploymentgebundene Baseline + verbindlicher Commitnachweis ==");
 // =============================================================================================
 {
-  // Diese Faelle pruefen `pruefeCommitBeleg` DIREKT — genau die Funktion, die das CLI
-  // benutzt. Quelltextsuchen stehen nur noch ergaenzend am Ende (34.20+).
-  const SHA = "89427c5b5aac4b362d2040c7b71bde8d52c1085d";           // 40 Hexziffern
-  const SHA2 = "1f3a9d7e2c4b6a8f0e5d3c1b9a7f5e3d1c9b7a5f";          // andere gueltige SHA
-  const belegt = (erwartet, beobachtet = SHA) => V.pruefeCommitBeleg({ erwartet, beobachtet });
+  // VERHALTENSPRUEFUNGEN der Nachtragskorrektur (2026-08-04/5): der erwartete Merge-Commit
+  // ist Pflichtinhalt der Startbaseline (volle SHA), wird beim Schreiben NICHT gegen alte
+  // Prozesslaeufe geprueft und in der Auswertung gegen die `commit_ref`-Werte ALLER
+  // Fensterlaeufe durchgesetzt. Quelltextsuchen stehen nur ergaenzend am Ende.
+  const SHA = ERWARTETER_COMMIT;   // 40 Hexziffern
+  const SHA2 = ANDERER_COMMIT;     // andere gueltige volle SHA
 
-  check("34.1 Grenzen sind 7 und 40 Hexziffern",
-    V.COMMIT_MIN_LAENGE === 7 && V.COMMIT_MAX_LAENGE === 40);
+  // --- (A) Werkzeugfunktionen: VERHALTEN, nicht Quelltextsuche ----------------------------
+  check("34.1 Grenzen: 7..40 Hexziffern, volle Laenge ist 40",
+    V.COMMIT_MIN_LAENGE === 7 && V.COMMIT_MAX_LAENGE === 40 && V.COMMIT_VOLL_LAENGE === 40);
+  check("34.2 normalisiereVollenCommit akzeptiert NUR die volle SHA",
+    V.normalisiereVollenCommit(SHA) === SHA
+    && V.normalisiereVollenCommit(` ${SHA.toUpperCase()} `) === SHA
+    && [SHA.slice(0, 7), SHA.slice(0, 39), SHA + "a", SHA + "-UNSINN", "", null, undefined, 42, true, "g".repeat(40)]
+      .every((v) => V.normalisiereVollenCommit(v) === null));
+  check("34.3 normalisiereCommit bleibt strikt (Nicht-Hex, zu kurz, zu lang => null)",
+    ["nichthex", "89427g5", "0x89427c5", SHA + "a", SHA.slice(0, 6), "", "   ", "89427c 5", "89427c5-"]
+      .every((v) => V.normalisiereCommit(v) === null)
+    && V.normalisiereCommit(SHA.slice(0, 7)) === SHA.slice(0, 7)
+    && V.normalisiereCommit(` ${SHA.toUpperCase()}\n`) === SHA);
+  check("34.4 istEchtesPraefix ist STRIKT (gleich lang ist kein Praefix)",
+    V.istEchtesPraefix(SHA.slice(0, 7), SHA) === true
+    && V.istEchtesPraefix(SHA, SHA) === false
+    && V.istEchtesPraefix(SHA, SHA.slice(0, 7)) === false);
 
-  // --- (1) identische vollstaendige SHA ---------------------------------------------------
-  check("34.2 Identische vollstaendige SHA => bestaetigt",
-    (() => { const r = belegt(SHA); return r.uebergeben === true && r.bestaetigt === true
-      && r.erwartet === SHA && r.beobachtet === SHA; })());
-
-  // --- (2) gueltige erwartete Kurzform ----------------------------------------------------
-  check("34.3 Erwartete Kurzform (7 Zeichen) als echtes Praefix => bestaetigt",
-    belegt(SHA.slice(0, 7)).bestaetigt === true);
-  check("34.4 Erwartete Kurzform in mehreren Laengen (7..39) => durchgaengig bestaetigt",
-    Array.from({ length: 33 }, (_, i) => i + 7).every((n) => belegt(SHA.slice(0, n)).bestaetigt === true));
-
-  // --- (3) gueltige BEOBACHTETE Kurzform (bewusst unterstuetzt) ---------------------------
-  check("34.5 Beobachtete Kurzform, erwartete Vollform => bestaetigt (bewusst unterstuetzt)",
-    V.pruefeCommitBeleg({ erwartet: SHA, beobachtet: SHA.slice(0, 8) }).bestaetigt === true);
-
-  // --- (4) abweichende SHA ----------------------------------------------------------------
-  check("34.6 Andere vollstaendige SHA => NICHT bestaetigt, mit Grund",
-    (() => { const r = belegt(SHA2); return r.uebergeben === true && r.bestaetigt === false
-      && /weicht vom erwarteten/.test(r.grund || ""); })());
-  check("34.7 Gleich lange Kurzformen, die sich in EINEM Zeichen unterscheiden => nicht bestaetigt",
-    belegt("89427c5".slice(0, 6) + "6").bestaetigt === false);
-  check("34.8 Unterschied an JEDER Position wird erkannt (40 Varianten)",
+  const fl = (beobachtet, erwartet = SHA) => V.pruefeFensterlaufCommit(erwartet, beobachtet);
+  check("34.5 Fensterlauf: identische volle SHA => bestaetigt (auch nach Normalisierung)",
+    fl(SHA).ergebnis === "bestaetigt" && fl(` ${SHA.toUpperCase()} `).ergebnis === "bestaetigt");
+  check("34.6 Fensterlauf: fehlender/ungueltiger commit_ref => fehlt (nie bestaetigt)",
+    [null, undefined, "", "kaputt", SHA.slice(0, 6), SHA + "zz", SHA + "-VOELLIGER-UNSINN", 42, true]
+      .every((v) => fl(v).ergebnis === "fehlt"));
+  check("34.7 Fensterlauf: echtes Praefix => unvollstaendig (nie bestaetigt, nie abweichend)",
+    Array.from({ length: 33 }, (_, i) => i + 7).every((n) => fl(SHA.slice(0, n)).ergebnis === "unvollstaendig"));
+  check("34.8 Fensterlauf: gueltiger, anderer Commit => abweichend (voll und Kurzform)",
+    fl(SHA2).ergebnis === "abweichend" && fl(SHA2.slice(0, 12)).ergebnis === "abweichend");
+  check("34.9 Fensterlauf: Unterschied an JEDER Position wird erkannt (40 Varianten)",
     Array.from({ length: 40 }, (_, i) => {
       const anders = SHA.slice(0, i) + (SHA[i] === "a" ? "b" : "a") + SHA.slice(i + 1);
-      return belegt(anders).bestaetigt === false;
+      return fl(anders).ergebnis === "abweichend";
     }).every(Boolean));
+  check("34.10 Fensterlauf: erwarteter Commit fehlt/ungueltig/verkuerzt => fehlt (kein Raten)",
+    fl(SHA, null).ergebnis === "fehlt" && fl(SHA, SHA.slice(0, 7)).ergebnis === "fehlt"
+    && fl(SHA, SHA + "a").ergebnis === "fehlt");
 
-  // --- (5) vollstaendige SHA mit angehaengtem Unsinn — DER GEMELDETE BEFUND ---------------
-  const anhaenge = ["-VOELLIGER-UNSINN", "zzzz", "!", " x", "_1", ".git", "/HEAD", "#1", ":tag", SHA];
-  check("34.9 Vollstaendige SHA mit angehaengtem Unsinn => NIEMALS bestaetigt (gemeldeter Befund)",
-    anhaenge.every((suffix) => belegt(SHA + suffix).bestaetigt === false),
-    JSON.stringify(anhaenge.filter((s) => belegt(SHA + s).bestaetigt)));
-  check("34.10 Auch vorangestellter oder eingefuegter Unsinn wird abgelehnt",
-    ["commit " + SHA, "sha256:" + SHA, SHA.slice(0, 20) + "-" + SHA.slice(20), `"${SHA}"`]
-      .every((v) => belegt(v).bestaetigt === false));
-  check("34.11 Auch HEXADEZIMALER Anhang (41+ Zeichen) wird abgelehnt — Laenge zaehlt",
-    belegt(SHA + "a").bestaetigt === false && belegt(SHA + SHA).bestaetigt === false);
-
-  // --- (6) nicht hexadezimale Zeichen -----------------------------------------------------
-  // `"89427c5\n"` gehoert NICHT hierher: der Zeilenumbruch am Rand wird getrimmt, der Rest
-  // ist gueltig (Fall 10). Nicht-hex meint Zeichen INNERHALB des Werts.
-  check("34.12 Nicht-hexadezimale Werte => nicht bestaetigt und nicht normalisierbar",
-    ["nichthex", "89427g5", "89427c5-", "ghijklm", "89427c 5", "89427c5\n8", "0x89427c5", "89427c5​"]
-      .every((v) => belegt(v).bestaetigt === false && V.normalisiereCommit(v) === null));
-
-  // --- (7)/(8) Laengengrenzen -------------------------------------------------------------
-  check("34.13 Weniger als 7 Zeichen => abgelehnt (6 nein, 7 ja)",
-    belegt(SHA.slice(0, 6)).bestaetigt === false && V.normalisiereCommit(SHA.slice(0, 6)) === null
-    && belegt(SHA.slice(0, 7)).bestaetigt === true);
-  check("34.14 Mehr als 40 Zeichen => abgelehnt (41 nein, 40 ja)",
-    V.normalisiereCommit(SHA + "a") === null && V.normalisiereCommit(SHA) === SHA);
-  check("34.15 Leer und nur Leerzeichen sind nie gueltige Werte",
-    V.normalisiereCommit("") === null && V.normalisiereCommit("       ") === null);
-
-  // --- (9) Grossbuchstaben ----------------------------------------------------------------
-  check("34.16 Grossbuchstaben werden normalisiert und bestaetigt",
-    (() => { const r = belegt(SHA.toUpperCase()); return r.bestaetigt === true && r.erwartet === SHA; })());
-  check("34.17 Gemischte Schreibweise auf BEIDEN Seiten wird bestaetigt",
-    V.pruefeCommitBeleg({ erwartet: SHA.toUpperCase(), beobachtet: SHA.toUpperCase() }).bestaetigt === true);
-
-  // --- (10) Leerzeichen am Rand -----------------------------------------------------------
-  check("34.18 Leerzeichen/Tabs/Zeilenumbrueche am Rand werden getrimmt",
-    [` ${SHA} `, `\t${SHA}\n`, `\n  ${SHA.toUpperCase()}  \t`].every((v) => belegt(v).bestaetigt === true));
-
-  // --- (11) fehlender erwarteter Wert -----------------------------------------------------
-  check("34.19 Kein erwarteter Commit => uebergeben:false, bestaetigt:false, KEIN Fehler",
-    [null, undefined, "", "   "].every((v) => {
-      const r = belegt(v);
-      return r.uebergeben === false && r.bestaetigt === false && r.erwartet === null && !r.grund;
-    }));
-  check("34.20 Flagge OHNE Wert (Parser liefert true) gilt als UEBERGEBEN und faellt durch",
-    (() => { const r = belegt(true); return r.uebergeben === true && r.bestaetigt === false
-      && /kein gueltiger Git-SHA/.test(r.grund || ""); })());
-
-  // --- (12) fehlender oder ungueltiger beobachteter Wert ----------------------------------
-  check("34.21 Kein beobachteter Commit => nicht bestaetigt, mit eigenem Grund",
-    [null, undefined, ""].every((b) => {
-      const r = V.pruefeCommitBeleg({ erwartet: SHA, beobachtet: b });
-      return r.uebergeben === true && r.bestaetigt === false && /keinen gespeicherten Prozess-Commit/.test(r.grund || "");
-    }));
-  check("34.22 Ungueltiger beobachteter Commit => nicht bestaetigt, eigener Grund",
-    ["kaputt", "89427", SHA + "zz", 42, true].every((b) => {
-      const r = V.pruefeCommitBeleg({ erwartet: SHA, beobachtet: b });
-      return r.bestaetigt === false && /kein gueltiger Git-SHA-Wert/.test(r.grund || "");
-    }));
-
-  // --- Typen und Robustheit ---------------------------------------------------------------
-  check("34.23 Nicht-Zeichenketten sind nie gueltig und loesen keinen Absturz aus",
-    [42, 0, true, false, [], [SHA], {}, { toString: () => SHA }, new Date(), Symbol.iterator]
-      .every((v) => {
-        try { return V.pruefeCommitBeleg({ erwartet: v, beobachtet: SHA }).bestaetigt === false; }
-        catch (_) { return false; }
-      }));
-  check("34.24 istEchtesPraefix ist STRIKT (gleich lang ist kein Praefix)",
-    V.istEchtesPraefix("89427c5", SHA) === true
-    && V.istEchtesPraefix(SHA, SHA) === false
-    && V.istEchtesPraefix(SHA, "89427c5") === false);
-
-  // --- Ergaenzend (NICHT der einzige Beleg): Quelltextzusagen des CLI ---------------------
-  const cliQuelle = fs.readFileSync(path.join(__dirname, "op25-production-nachweis.js"), "utf8");
-  check("34.25 Es gibt kein Feld/keine Funktion mehr, die einen Deployment-Commit BEHAUPTET",
-    !/deploymentCommit:/.test(cliQuelle) && !/function leseDeploymentCommit/.test(cliQuelle));
-  check("34.26 Der beobachtete Wert heisst ehrlich 'zuletztBeobachteterProzessCommit'",
-    /zuletztBeobachteterProzessCommit/.test(cliQuelle)
-    && /leseZuletztBeobachtetenProzessCommit/.test(cliQuelle));
-  check("34.27 Das CLI hat KEINE eigene Commitpruefung mehr — es reicht an den Kern durch",
+  // --- (B) Baseline: fehlender / ungueltiger / verkuerzter Commit (Familien 1+2) ----------
+  const pruefeB = (roh, extra = {}) => V.pruefeStartbaseline({
+    roh, aktivierungAtMs: AKTIVIERUNG_MS, jetztMs: JETZT_MS, ...extra
+  });
+  check("34.11 Baseline OHNE erwarteten Commit => blockiert (fehlt), auch in der Gesamtbewertung",
     (() => {
-      const rumpf = (cliQuelle.split("function pruefeErwartetenCommit(")[1] || "").split("\n}")[0]
-        .split("\n").filter((z) => !z.trim().startsWith("//")).join("\n");
-      return /vertrag\.pruefeCommitBeleg/.test(rumpf)
-        && !/startsWith/.test(rumpf) && !/\.length/.test(rumpf);
+      const ohne = baueStartbaseline();
+      delete ohne.erwarteterDeploymentCommit;
+      const direkt = pruefeB(ohne);
+      const gesamt = V.bewerteNachweisfenster(baueEingaben({ startbaseline: ohne }));
+      return direkt.befunde[0].grund === "startbaseline-erwarteter-commit-fehlt"
+        && direkt.erwarteterCommit === null
+        && gesamt.ausgang === "blockiert" && hatBefund(gesamt, "startbaseline-erwarteter-commit-fehlt");
     })());
-  check("34.28 Nur ein bestaetigter Commit wird als belegt gefuehrt",
-    /deploymentCommitBestaetigt: Boolean\(commitPruefung && commitPruefung\.bestaetigt\)/.test(cliQuelle));
-  check("34.29 Ein uebergebener, aber nicht bestaetigter Commit ist fail closed (nichts geschrieben)",
-    /commitPruefung\.uebergeben && !commitPruefung\.bestaetigt/.test(cliQuelle)
-    && /nichts geschrieben/.test(cliQuelle));
-  check("34.30 Auch der --baseline-Querschnitt behauptet keinen Deployment-Stand",
-    /hinweisProzessCommit/.test(cliQuelle) && /kein Deployment-Beleg/.test(cliQuelle));
+  check("34.12 VERKUERZTER erwarteter Commit (7/12/39 Zeichen) => blockiert (ungueltig)",
+    [SHA.slice(0, 7), SHA.slice(0, 12), SHA.slice(0, 39)].every((kurz) =>
+      pruefeB(baueStartbaseline(MANDATE, { erwarteterDeploymentCommit: kurz }))
+        .befunde[0].grund === "startbaseline-erwarteter-commit-ungueltig"));
+  check("34.13 UNGUELTIGER erwarteter Commit (Nicht-Hex, 41, Anhang, Nicht-Zeichenkette) => blockiert",
+    ["nichthex".repeat(5), SHA + "a", SHA + "-VOELLIGER-UNSINN", SHA + SHA, 42, true, {}]
+      .every((v) => pruefeB(baueStartbaseline(MANDATE, { erwarteterDeploymentCommit: v }))
+        .befunde[0].grund === "startbaseline-erwarteter-commit-ungueltig"));
+  check("34.14 Grossschreibung + Randleerzeichen der vollen SHA bestehen (derselbe Commit)",
+    (() => {
+      const b = pruefeB(baueStartbaseline(MANDATE, { erwarteterDeploymentCommit: `  ${SHA.toUpperCase()}\n` }));
+      return b.befunde.length === 0 && b.erwarteterCommit === SHA;
+    })());
+  check("34.15 Vorab-Bestaetigung (deploymentCommitBestaetigt) wird fail closed abgewiesen",
+    pruefeB(baueStartbaseline(MANDATE, { deploymentCommitBestaetigt: true }))
+      .befunde[0].grund === "startbaseline-commit-vorab-bestaetigt"
+    && pruefeB(baueStartbaseline(MANDATE, { deploymentCommitBestaetigt: "true" }))
+      .befunde[0].grund === "startbaseline-commit-vorab-bestaetigt");
+  check("34.16 Gegenprobe: passend (voll/Kurzform) besteht, abweichend/ungueltig blockiert",
+    (() => {
+      const ok1 = pruefeB(baueStartbaseline(), { commitGegenprobe: SHA });
+      const ok2 = pruefeB(baueStartbaseline(), { commitGegenprobe: SHA.slice(0, 8).toUpperCase() });
+      const falsch = pruefeB(baueStartbaseline(), { commitGegenprobe: SHA2 });
+      const kaputt = pruefeB(baueStartbaseline(), { commitGegenprobe: "nicht-hex" });
+      return ok1.befunde.length === 0 && ok1.erwarteterCommit === SHA
+        && ok2.befunde.length === 0
+        && falsch.befunde[0].grund === "startbaseline-fremder-commit"
+        && kaputt.befunde[0].grund === "startbaseline-fremder-commit";
+    })());
+  check("34.17 Gesamtbewertung: abweichende Gegenprobe => blockiert (falsche Belegdatei)",
+    (() => {
+      const b = V.bewerteNachweisfenster(baueEingaben({ commitGegenprobe: SHA2 }));
+      return b.ausgang === "blockiert" && hatBefund(b, "startbaseline-fremder-commit");
+    })());
+
+  // --- (C) Fensterlaeufe in der Gesamtbewertung (Familien 3-7) ----------------------------
+  check("34.18 Korrekter Commit in ALLEN Fensterlaeufen => bestanden, erwarteterCommit ausgewiesen",
+    (() => {
+      const b = V.bewerteNachweisfenster(baueEingaben());
+      return b.ausgang === "bestanden" && b.erwarteterCommit === SHA;
+    })());
+  check("34.19 FEHLENDER commit_ref in EINEM Fensterlauf => blockiert (commit-beleg-fehlt)",
+    (() => {
+      const b = V.bewerteNachweisfenster(baueEingaben({
+        prozessLaeufe: [baueProzessZeile(SLOTS[0]), baueProzessZeile(SLOTS[1], { commit: null }), baueProzessZeile(SLOTS[2])]
+      }));
+      return b.ausgang === "blockiert"
+        && b.befunde.some((x) => x.grund === "commit-beleg-fehlt" && x.detail.includes("20260810200002"));
+    })());
+  check("34.20 UNGUELTIGER commit_ref (kein SHA-Wert) => blockiert, nie bestaetigt",
+    (() => {
+      const b = V.bewerteNachweisfenster(baueEingaben({
+        prozessLaeufe: [baueProzessZeile(SLOTS[0], { commit: "deploy-123" }), baueProzessZeile(SLOTS[1]), baueProzessZeile(SLOTS[2])]
+      }));
+      return b.ausgang === "blockiert" && hatBefund(b, "commit-beleg-fehlt");
+    })());
+  check("34.21 ABWEICHENDER commit_ref in EINEM Fensterlauf => nicht_bestanden (fremder-deployment-commit)",
+    (() => {
+      const b = V.bewerteNachweisfenster(baueEingaben({
+        prozessLaeufe: [baueProzessZeile(SLOTS[0]), baueProzessZeile(SLOTS[1], { commit: SHA2 }), baueProzessZeile(SLOTS[2])]
+      }));
+      return b.ausgang === "nicht_bestanden"
+        && b.befunde.filter((x) => x.grund === "fremder-deployment-commit").length === 1
+        && b.befunde.some((x) => x.grund === "fremder-deployment-commit" && x.detail.includes("20260810200002"));
+    })());
+  check("34.22 GEMISCHTE Commits im Fenster => nicht_bestanden (Verletzung schlaegt Belegluecke)",
+    (() => {
+      const b = V.bewerteNachweisfenster(baueEingaben({
+        prozessLaeufe: [baueProzessZeile(SLOTS[0]), baueProzessZeile(SLOTS[1], { commit: SHA2 }), baueProzessZeile(SLOTS[2], { commit: null })]
+      }));
+      return b.ausgang === "nicht_bestanden"
+        && hatBefund(b, "fremder-deployment-commit") && hatBefund(b, "commit-beleg-fehlt");
+    })());
+  check("34.23 commit_ref als ECHTES Praefix => blockiert (unvollstaendig), NICHT abweichend",
+    (() => {
+      const b = V.bewerteNachweisfenster(baueEingaben({
+        prozessLaeufe: [baueProzessZeile(SLOTS[0], { commit: SHA.slice(0, 8) }), baueProzessZeile(SLOTS[1]), baueProzessZeile(SLOTS[2])]
+      }));
+      return b.ausgang === "blockiert" && hatBefund(b, "commit-beleg-unvollstaendig")
+        && !hatBefund(b, "fremder-deployment-commit");
+    })());
+  // Familie 3: ein ALTER Prozesslauf vor der Aktivierung darf weder blockieren noch bestaetigen.
+  check("34.24 ALTER Prozesslauf VOR der Aktivierung (fremder Commit) blockiert nicht und bestaetigt nicht",
+    (() => {
+      const alt = {
+        runId: "cron-pipeline-20260808160002-altpf-global", process: "globalphase",
+        status: "success", durationMs: 190000, createdAt: "2026-08-08T16:03:30.000Z",
+        commit: SHA2, quelle: "relational"
+      };
+      const b = V.bewerteNachweisfenster(baueEingaben({
+        prozessLaeufe: [...SLOTS.map((s) => baueProzessZeile(s)), alt]
+      }));
+      return b.ausgang === "bestanden"
+        && !hatBefund(b, "fremder-deployment-commit") && !hatBefund(b, "commit-beleg-fehlt");
+    })());
+  check("34.25 Alter Lauf OHNE commit_ref vor der Aktivierung blockiert ebenfalls nicht",
+    (() => {
+      const alt = {
+        runId: "cron-crawl-20260808040002-altpf-global", process: "globalphase",
+        status: "success", durationMs: 190000, createdAt: "2026-08-08T04:03:30.000Z",
+        commit: null, quelle: "blob"
+      };
+      const b = V.bewerteNachweisfenster(baueEingaben({
+        prozessLaeufe: [...SLOTS.map((s) => baueProzessZeile(s)), alt]
+      }));
+      return b.ausgang === "bestanden";
+    })());
+  check("34.26 AUSSERPLANMAESSIGER globalphase-Lauf IM Fenster mit fremdem Commit => nicht_bestanden",
+    (() => {
+      const extra = {
+        runId: "cron-crawl-20260810120002-xtra1-global", process: "globalphase",
+        status: "success", durationMs: 190000, createdAt: "2026-08-10T12:03:30.000Z",
+        commit: SHA2, quelle: "relational"
+      };
+      const b = V.bewerteNachweisfenster(baueEingaben({
+        prozessLaeufe: [...SLOTS.map((s) => baueProzessZeile(s)), extra]
+      }));
+      return b.ausgang === "nicht_bestanden" && hatBefund(b, "fremder-deployment-commit");
+    })());
+  // Familie 8: die 15-Minuten-Grenze der Baseline-Erhebung bleibt unveraendert streng (§33).
+  check("34.27 Die 15-Minuten-Grenze bleibt verbindlich (Toleranz unveraendert, 1 ms drueber blockiert)",
+    V.BASELINE_TOLERANZ_MS === 15 * 60 * 1000
+    && pruefeB(baueStartbaseline(MANDATE, {
+      erhobenAtMs: AKTIVIERUNG_MS + V.BASELINE_TOLERANZ_MS + 1,
+      erhobenAt: new Date(AKTIVIERUNG_MS + V.BASELINE_TOLERANZ_MS + 1).toISOString()
+    })).befunde[0].grund === "startbaseline-zu-spaet-erhoben");
+
+  // --- (D) Ergaenzend (NICHT der einzige Beleg): Quelltextzusagen des CLI -----------------
+  const cliQuelle = fs.readFileSync(path.join(__dirname, "op25-production-nachweis.js"), "utf8");
+  check("34.28 Schreibseite verlangt den VOLLEN erwarteten Commit (doppeltes Gate: CLI + Funktion)",
+    /normalisiereVollenCommit\(args\["erwarteter-commit"\]\) === null/.test(cliQuelle)
+    && /normalisiereVollenCommit\(erwarteterCommit\)/.test(cliQuelle));
+  check("34.29 Beim Schreiben KEIN Abgleich mit dem juengsten alten Prozesslauf (Gate entfernt)",
+    !/pruefeErwartetenCommit/.test(cliQuelle)
+    && !/pruefeCommitBeleg/.test(cliQuelle)
+    && !/commitPruefung\.uebergeben/.test(cliQuelle));
+  check("34.30 Keine Vorab-Bestaetigung mehr: `deploymentCommitBestaetigt` existiert im CLI nicht",
+    !/deploymentCommitBestaetigt/.test(cliQuelle)
+    && /erwarteterDeploymentCommit: vollerCommit/.test(cliQuelle));
+  check("34.31 Auswertung reicht --erwarteter-commit als Gegenprobe an den Kern durch",
+    /commitGegenprobe: args\["erwarteter-commit"\]/.test(cliQuelle));
+  check("34.32 Der beobachtete Wert bleibt ehrlich benannt (kein Deployment-Beleg, kein deploymentCommit-Feld)",
+    /zuletztBeobachteterProzessCommit/.test(cliQuelle)
+    && /leseZuletztBeobachtetenProzessCommit/.test(cliQuelle)
+    && /hinweisProzessCommit/.test(cliQuelle)
+    && /kein Deployment-Beleg/.test(cliQuelle)
+    && !/deploymentCommit:/.test(cliQuelle));
 }
 
 console.log(`\n${passed + failed} Pruefpunkte · ${passed} PASS · ${failed} FAIL`);
