@@ -79,10 +79,15 @@ wurde; bei 1 242 Clustern und 60 s Lazy-Budget bleibt immer ein Rest. Das berüh
 **Abnahmekriterium 5** des Production-Nachweises: entweder wird der Rückstand erst abgearbeitet,
 oder das Kriterium wird auf „alle sechs Mandatsläufe abgeschlossen und keine
 `kontextvertrag`-Fehler" geschärft. **TESTS:** `node scripts/run-offline-tests.js`
-**186/201 grün** — Basislinie desselben Arbeitsbaums ohne diese Änderung ist **185/200** mit
+**187/202 grün** — Basislinie desselben Arbeitsbaums ohne diese Änderung ist **185/200** mit
 **exakt derselben** 15er-Fehlschlagliste (alle umgebungsbedingt: fehlendes Netz/Supabase); die
-+1 ist die neue Suite, **kein neuer und kein abweichender Fehlschlag**. `node
-scripts/browser-smoke-test.js` **32/32**. Gezielt: `globalabruf-kapazitaet` **45/45**,
++2 sind die beiden neuen Suiten, **kein neuer und kein abweichender Fehlschlag**. **Maßgeblich ist
+der grüne CI-Gesamtstand, nicht die lokale Sandbox:** in GitHub Actions laufen alle Suiten grün —
+Lauf **`30865013513`** (dieser PR, `run_attempt: 1`, beide Pflicht-Checks **success**) und für den
+Vergleichs-PR #218 Lauf **`30864294046`** (`run_attempt: 1`, **success**). Die 15 lokalen
+Fehlschläge sind Umgebungsfehler der Offline-Sandbox und ersetzen diesen Stand nicht. `node
+scripts/browser-smoke-test.js` **32/32**. Gezielt: `globalabruf-kapazitaet` **47/47**,
+`quellen-mehrfachabruf` **18/18**,
 `vorgangskontext` **102/102** + Mutationsprobe **18/18 rot**, `cron-globalphase` **176/176** +
 Mutationsprobe **17/17 rot**, `globalphase-buendelung` **56/56** + Mutationsprobe **15/15 rot**,
 `cron-fairness` **285/285**, `cron-fairness-persistenz` **54/54**, `cross-tenant-security`
@@ -90,7 +95,8 @@ Mutationsprobe **17/17 rot**, `globalphase-buendelung` **56/56** + Mutationsprob
 (Schreibpfad), `lib/helmut/scheduler.js` (Budgetriegel + Phasenmessung),
 `scripts/globalabruf-kapazitaet-test.js` (neu), `docs/betrieb/vorgangskontext.md` (§7.6,
 kanonisch), `docs/betrieb/env-inventar.md` (zwei neue Stellschrauben),
-`docs/datenmotor-restliste.md`, `docs/CURRENT_STATE.md`. **RISIKO:** der Schreibpfad wird auch
+`docs/datenmotor-restliste.md`, `docs/CURRENT_STATE.md`, `scripts/quellen-mehrfachabruf-test.js`
+(neu — Mehrfachanfragen-Vertrag einer Quelle und Wirkung der Abrufstufe). **RISIKO:** der Schreibpfad wird auch
 vom **aktiven** Altpfad benutzt (`runSourceCrawl` → `persistRawDocumentsShadow`) — dort wirkt die
 Beschleunigung ebenso; die fachliche Wirkung ist unverändert (dieselben Zeilen, dieselben Werte),
 und das Fehlerverhalten bleibt durch den Einzelfallback je Block erhalten. **RÜCKWEG:**
@@ -98,17 +104,40 @@ und das Fehlerverhalten bleibt durch den Einzelfallback je Block erhalten. **RÜ
 `HELMUT_FINDING_COUNT_CHUNK=1` ohne Deployment auf Einzelzeilen zurückstellen.
 **KONKURRIERENDE ARBEIT (`CLAUDE.md` §6, bei Sprintbeginn übersehen und nachgeholt):** **PR #218**
 (2026-08-04 00:02 UTC) bearbeitet denselben Befund und legt eine Datei **desselben Namens** an —
-die beiden PRs schließen sich aus. Er nennt als Ursache das *Start*-Gatter des Stufenabrufs und
-senkt `HELMUT_GLOBALPHASE_ABRUF_STUFE` von 20 auf 5. Der beschriebene Mechanismus existiert, aber
-die Zuschreibung trägt für diesen Lauf nicht: der Abruf endete bei **t = 115,2 s** eines
-221,674-s-Budgets, das Start-Gatter hat nie gegriffen (`nichtAbgerufen = 0`, `fehler: 0`), die
-Überziehung entstand vollständig **danach**. Und die Abhilfe wirkt in die falsche Richtung: die
-Summe der Stufenmaxima ist eine Untergrenze der Abrufdauer und kann beim Verkleinern der Stufe nie
-sinken (`max(A ∪ B) ≤ max(A) + max(B)`, datenunabhängig) — an den 181 gemessenen Quellendauern:
-Stufe 20 → **71,3 s**, Stufe 10 → **90,2 s**, Stufe 5 → **153,0 s**, also **≥ 81,7 s** höhere
-Untergrenze. **Empfehlung: die Codeänderung aus #218 nicht übernehmen**; seine Gate-/Stufen-
-Modellierung ist erhaltenswert und schließt genau die Lücke, die der Test dieses Sprints
-ausdrücklich offen lässt. Details in §8. **NÄCHSTER SCHRITT:** Review und Merge-Entscheidung durch den Betreiber; **danach** erst die
+die beiden PRs schließen sich aus. Er nannte als Ursache das *Start*-Gatter des Stufenabrufs und
+senkte `HELMUT_GLOBALPHASE_ABRUF_STUFE` von 20 auf 5, mit der Begründung, die
+schlechtestmögliche Überziehung einer Stufe sei
+`ceil(stufenGroesse / googleConcurrency) × CRAWLER_TIMEOUT_MS` und schrumpfe damit auf „eine
+Google-Runde" (~7 s). **Diese Beweiskette ist am 2026-08-04 nachgemessen und widerlegt worden;
+die Codeänderung ist auf dem Branch von #218 zurückgenommen** (`lib/helmut/scheduler.js` dort
+wieder identisch mit `main`, Commit `cc6e3fd`). **Drei Gründe, jeder gemessen:** **(a) Befund
+F-REQ** — `CRAWLER_TIMEOUT_MS` ist ein Socket-Timeout je EINZELNER Anfrage und begrenzt weder
+`crawlSource` noch eine Quelle noch eine Stufe. Eine Quelle ist eine ganze Anfragenkette
+(Feedabruf je Feed-URL — Personenquellen haben **zwei** —, je Eintrag `resolveArticleUrl` mit
+`fetchUrl` inkl. bis zu 6 Weiterleitungen plus bis zu 2× `postForm`, für `type: "person"`
+zusätzlich eine **vollständig sequenzielle** Anreicherungsschleife). Offline gemessen: **eine**
+Suchquelle = **37 Anfragen = 11,5 Anfragezeitlimits**, **eine** Personenquelle = **98 Anfragen =
+45,4 Anfragezeitlimits**; Production bestätigt es mit einzelnen Quellen von **41 892 / 41 340 /
+40 851 / 35 005 ms** bei `CRAWLER_TIMEOUT_MS = 7 000` — drei davon mit **`retry_count = 0`**.
+**(b)** Das Start-Gatter hat in diesem Lauf **nie gegriffen**: der Abruf endete bei
+**t = 115,2 s** eines 221,674-s-Budgets (`nichtAbgerufen = 0`, `fehler: 0`), die Überziehung
+entstand vollständig danach. **(c)** Eine kleinere Stufe **verlangsamt**: die Summe der
+Stufenmaxima ist eine Untergrenze der Abrufdauer und steigt beim Verfeinern monoton
+(`max(A ∪ B) ≤ max(A) + max(B)`, datenunabhängig) — an den 181 gemessenen Quellendauern Stufe 20
+→ **71,3 s**, Stufe 10 → **90,2 s**, Stufe 5 → **153,0 s**; und weil `plan.quellen`
+**unabhängig vom Quellentyp** geschnitten wird, starten auch die **direkten/amtlichen** Quellen
+später (späteste Startuntergrenze **9,85 s → 31,53 s**, Faktor 3,2). Die Aussage „direkte und
+amtliche Quellen sind von der kleineren Stufe unberührt" ist damit **widerlegt**. Belegt in der
+neuen Suite `scripts/quellen-mehrfachabruf-test.js` (**18/18**), die den echten `crawlAllSources`,
+den echten Gate und die echte Anfragenkette gegen eine ersetzte HTTP-Schicht treibt.
+**Quellenmix gemessen statt angenommen:** **176 Google-Wege** (134 Katalog + 42
+profilgeneriert) und **5 direkte** = **97,2 %**, nicht die früher angenommenen 88 %.
+**Entscheidungsvorlage für ein ECHTES Stopp-Gatter** (AbortSignal durch `fetchUrl`, `postForm`,
+`fetchText`, `fetchPardokText`, `resolveEntryUrls`, `enrichPersonArticleImages` + `request.destroy()`
++ Zusage, dass nach der Rückkehr keine Hintergrundarbeit weiterläuft) steht in
+[`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) **§7.6.1** — drei Optionen, Empfehlung
+**A jetzt, B als eigener kleiner Sprint, C nur mit neuer Freigabe**. Details in §8.
+**NÄCHSTER SCHRITT:** Review und Merge-Entscheidung durch den Betreiber; **danach** erst die
 Wiederaktivierung von `HELMUT_CRON_GLOBALABRUF` und ein **vollständig neues**
 Beobachtungsfenster über ≥ 24 h. **Der OP-25-Production-Nachweis ist gescheitert und beginnt
 neu.** Berlin, Brandenburg und M8 bleiben AUS, weitere reale Testmandate bleiben deaktiviert.
@@ -3728,22 +3757,20 @@ Vollständig und verbindlich in [`datenmotor-restliste.md`](datenmotor-restliste
   selben Befund.** Er legt eine Datei desselben Namens an
   (`scripts/globalabruf-kapazitaet-test.js`); die beiden PRs schließen sich dadurch aus, es kann
   nur einer gemergt werden. **Bewertung nach `CLAUDE.md` §6, an Messwerten statt an Meinung:**
-  #218 nennt als Ursache, dass die Restzeitprüfung des Stufenabrufs nur ein *Start*-Gatter ist,
-  und senkt als Abhilfe `HELMUT_GLOBALPHASE_ABRUF_STUFE` von 20 auf 5. Die Beschreibung des
-  Mechanismus ist richtig, die **Ursachenzuschreibung trägt für diesen Lauf aber nicht**: der
-  Abruf endete bei **t = 115,2 s** eines **221,674-s**-Budgets, das Start-Gatter hat nie
-  gegriffen (`nichtAbgerufen = 0`, `fehler: 0`, keine Zeile „Abrufbudget erschoepft"); die
-  gesamte Überziehung entstand **nach** dem Abruf. **Die vorgeschlagene Abhilfe wirkt zudem in
-  die falsche Richtung:** eine Stufe wartet auf ihre langsamste Quelle, also ist die Summe der
-  Stufenmaxima eine Untergrenze der Abrufdauer, und diese Summe kann beim **Verkleinern** der
-  Stufe nie sinken (`max(A ∪ B) ≤ max(A) + max(B)` — datenunabhängig). An den 181 gemessenen
-  Quellendauern desselben Laufs: Stufe 20 → **71,3 s**, Stufe 10 → **90,2 s**, Stufe 5 →
-  **153,0 s**. Stufe 5 höbe die Untergrenze des Abrufs also um **≥ 81,7 s**. **Empfehlung: die
-  Codeänderung aus #218 nicht übernehmen.** Erhaltenswert ist seine Modellierung von Gate und
-  Stufenbarriere — sie deckt genau die Lücke ab, die der Test dieses Sprints ausdrücklich offen
-  lässt (er verrechnet die *gemessenen* Stufenspannen und bemerkt deshalb keine Regression an der
-  Abruf-Nebenläufigkeit). Sinnvoll als eigener Prüfabschnitt nachziehen, nicht als
-  Default-Änderung.
+  seine Ursachenzuschreibung (Start-Gatter des Stufenabrufs) und seine Abhilfe
+  (`HELMUT_GLOBALPHASE_ABRUF_STUFE` 20 → 5) tragen **nicht** — Begründung oben im Kopfeintrag
+  (Befund F-REQ, das nie greifende Start-Gatter, die monoton steigende Untergrenze, die
+  verzögerten direkten Quellen). **Die Codeänderung wurde deshalb auf dem Branch von #218
+  zurückgenommen** (Commit `cc6e3fd`): `lib/helmut/scheduler.js` ist dort wieder identisch mit
+  `main`, Abschnitt 3 seiner Suite dokumentiert die Rücknahme statt eines Erfolgs, und die
+  falschen Aussagen in seinen vier Dokumenten sind korrigiert. Seine Suite bleibt danach
+  **21/21** grün. **Erhaltenswert an #218:** die Modellierung von Gate und Stufenbarriere mit
+  virtuellem Taktgeber sowie der Nachweis, dass die alte Kapazitätssuite
+  (`cron-globalphase-test.js` §8) die reale Größenordnung nicht abbildete. **Nicht
+  erhaltenswert:** die Default-Änderung. **Empfehlung: #218 nicht mergen** — der
+  Erkenntnisgewinn ist in diesem PR und in `quellen-mehrfachabruf-test.js` aufgenommen.
+  **Maßgeblicher CI-Stand von #218:** GitHub-Lauf **`30864294046`**, `run_attempt: 1`,
+  **success** (auf `6f2a71f`, dem Stand vor der Rücknahme).
 - **PR #216** (`claude/werkzeug-lesefehler-flake-portklasse`) — davon **unabhängiger**
   Test-/Dokumentations-PR (flackernder `werkzeug-lesefehler-test.js`), in diesem Sprint
   weisungsgemäß weder verändert noch als Voraussetzung behandelt.
@@ -3830,9 +3857,13 @@ zehn offenen PRs (#184, #178, #177, #175, #155, #154, #132, #117, #115, #112, #1
   **`HELMUT_CRON_GLOBALABRUF` steht wieder auf `off` (Stand 2026-08-04).** Es war am
   2026-08-03, 13:15:11 UTC in Production auf `on` gesetzt; der erste reguläre Wirkungslauf ist am
   Kapazitätsnachweis gescheitert (globale Phase 267,12 s bei Budget 221,674 s, **0 von 6**
-  Mandaten), ein späterer Crawl lief ebenfalls ins äußere Zeitlimit. Der Betreiber hat das Flag
-  daraufhin auf `off` gesetzt und neu ausgerollt (Rückbau-Deployment `READY`, Startseite 200,
-  Health-Gate 401, Build sauber, keine neue Runtime-Fehlerklasse).
+  Mandaten), ein späterer Crawl (20:00 UTC) lief ebenfalls ins äußere Zeitlimit — er schrieb
+  **keine einzige** Quellen-Telemetriezeile, erreichte also nicht einmal Schritt 8. Der Betreiber
+  hat das Flag daraufhin auf `off` gesetzt und neu ausgerollt: Rückbau-Deployment
+  **`dpl_2YJkxWKYGALiCbd779XsarAkRc94`** (`target: production`, `readyState: READY`,
+  `action: redeploy` aus `dpl_Ycbyi5Z3fkmfFRYaqqMSabcDJUux`, Region `fra1`) auf Commit
+  **`0ac7a31`**, **READY 2026-08-03 22:51:13 UTC = 00:51:13 Berlin** — rein lesend gegen die
+  Vercel-Deployment-API gegengeprüft.
   **`HELMUT_CRON_GLOBALPHASE` wurde dabei nicht verändert und bleibt nicht gesetzt (AUS).**
   Es läuft damit wieder ausschließlich der Altpfad. Ursache, Reparatur und die drei offenen
   Entscheidungen: [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.6 ·

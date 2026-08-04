@@ -816,7 +816,21 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Round-Trips **834 → 10**, Persistenz **130,51 s → 1,56 s**, globale Phase **263,79 s → 197,19 s**
   bei Budget 222 s, Restzeit **6,21 s → 72,80 s**, Mandate **0 von 6 → 6 von 6**, Gesamtlauf
   **207,10 s** unter dem 270-s-Limit. Alle 181 Quellen und 2 179 Dokumente bleiben enthalten,
-  Sichtbarkeitsvertrag, Sperren, Fairness und Mandatstrennung unverändert. **Drei Befunde bleiben
+  Sichtbarkeitsvertrag, Sperren, Fairness und Mandatstrennung unverändert. **Nebenbefund F-REQ,
+  nachgemessen 2026-08-04:** `CRAWLER_TIMEOUT_MS` ist ein Socket-Timeout **je einzelner Anfrage**
+  und begrenzt weder `crawlSource` noch eine Quelle noch eine Abrufstufe — eine Google-Quelle löst
+  offline gemessen **37** (Suchquelle) bzw. **98** (Personenquelle, zwei Feeds und sequenzielle
+  Bildanreicherung) Anfragen aus, Production zeigt einzelne Quellen mit **41 892 / 41 340 /
+  40 851 / 35 005 ms** bei 7 000 ms Limit und `retry_count = 0`. Damit ist die Formel
+  `ceil(stufenGroesse / concurrency) × CRAWLER_TIMEOUT_MS` widerlegt, und eine **Verkleinerung**
+  der Abrufstufe hilft nicht, sondern schadet: die Summe der Stufenmaxima ist eine Untergrenze
+  der Abrufdauer und steigt monoton (20 → 71,3 s, 10 → 90,2 s, 5 → 153,0 s), und die
+  **direkten/amtlichen** Quellen starten später (9,85 s → 31,53 s), weil `plan.quellen`
+  unabhängig vom Quellentyp geschnitten wird. Quellenmix gemessen: **176 Google-Wege / 5 direkte
+  = 97,2 %**. Belege: `scripts/quellen-mehrfachabruf-test.js` (18/18). Die entsprechende
+  Codeänderung aus PR #218 (Default 20 → 5) ist dort zurückgenommen; eine Entscheidungsvorlage
+  für ein **echtes** Stopp-Gatter steht in
+  [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.6.1. **Drei Befunde bleiben
   bewusst offen und brauchen eine Entscheidung:** **E-1** Stufenbarriere im Abruf (≈ 34 s
   Einsparpotenzial, verlangt einen Eingriff in `crawler.js`), **E-2** `HELMUT_CRAWL_MAX_CANDIDATES`
   wirkt je Stufe statt je Lauf (der globale Pfad verarbeitet **2 140** statt ~**945** Kandidaten —
