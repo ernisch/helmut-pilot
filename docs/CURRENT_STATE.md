@@ -1,6 +1,102 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-08-04, 9. Durchgang (**Vierter Reviewdurchgang zu PR #222 — die
+**Letzte Aktualisierung:** 2026-08-04, 10. Durchgang (**OP-25-Nachtragskorrektur nach dem Merge
+von PR #222: deploymentgebundene Startbaseline und verbindlicher Commitnachweis. KEIN
+Production-Eingriff, kein Merge.** **STATUSKORREKTUR ZUERST, weil die bisherigen Angaben sich
+widersprachen:** (1) **PR #222 IST GEMERGT** — `origin/main` = Merge-Commit `3fa8830`; die
+Formulierung „kein Merge" der Durchgänge 5–9 beschreibt nur deren eigene Sitzungen. (2) **Der
+OP-25-Production-Nachweis wurde NICHT gestartet.** (3) **Es existiert KEINE gültige
+Startbaseline.** (4) Der aktuelle Zustand von `HELMUT_CRON_GLOBALABRUF` in Production ist aus
+einer Sitzung **nicht lesbar** und wird hier **nicht behauptet** — ältere Einträge enthalten
+sowohl „gesetzt seit 2026-08-03" (§7.4 vorgangskontext) als auch „bleibt DEAKTIVIERT"
+(Profilreparatursprint-Eintrag unten); beides ist unbelegt ⇒ **offene Betreiberprüfung**.
+(5) **Das Setzen des Flags allein ist KEINE wirksame Aktivierung** — eine Vercel-Env gilt erst
+in einem **neuen Deployment**; der Aktivierungszeitpunkt des Nachweises ist der
+**READY-Zeitpunkt** des Deployments, das das Flag enthält. (6) **Während des späteren
+24-h-Fensters darf kein weiteres Production-Deployment erfolgen** (die Auswertung deckt es
+jetzt über abweichende `commit_ref`-Werte auf ⇒ `nicht_bestanden`). **VIER LÜCKEN, alle am
+unveränderten `main`-Stand `3fa8830` empirisch reproduziert:** (a) `--startbaseline-schreiben`
+funktionierte **ohne** `--erwarteter-commit` (Gate feuerte nur bei Übergabe); (b)
+`pruefeStartbaseline` prüfte `erwarteterDeploymentCommit`/`deploymentCommitBestaetigt` **gar
+nicht** — eine Baseline mit `"voelliger-unsinn"` als Commit **plus** Vorab-Bestätigung ergab
+`befunde: []`; (c) die Gesamtauswertung prüfte die `commit_ref`-Werte der
+`globalphase`-Fensterläufe **nie** — alle Zeilen mit **fremdem** Commit ⇒ `bestanden`, alle
+**ohne** Commit ⇒ ebenfalls `bestanden`; (d) die Schreibzeit-Prüfung aus §7.7.3/§7.7.4 verglich
+den erwarteten Commit mit dem **jüngsten gespeicherten (alten)** Lauf und verwechselte damit
+den Zeitpunkt der Env-Änderung mit ihrer Wirksamkeit. **KORREKTUR (kleinste robuste Fassung):**
+`--startbaseline-schreiben` verlangt zwingend den **vollen** erwarteten Merge-Commit (40
+Hexziffern), speichert ihn verbindlich (`erwarteterDeploymentCommit`) und prüft beim Schreiben
+**ausdrücklich nicht** gegen alte Prozessläufe (direkt nach READY existiert noch kein Lauf des
+neuen Stands; `deploymentCommitBestaetigt` gibt es nicht mehr, eine Baseline mit diesem Feld
+auf wahr wird abgewiesen). Die **Auswertung** verlangt für **alle** zum Fenster gehörenden
+`globalphase`-Läufe einen gültigen `commit_ref` **exakt** zum gespeicherten Commit: fehlend ⇒
+`blockiert` (`commit-beleg-fehlt`; auch eine fehlende dauerhafte Zeile ist jetzt blockierend
+statt nur Warnung) · echtes Präfix ⇒ `blockiert` (`commit-beleg-unvollstaendig`) · abweichend ⇒
+`nicht_bestanden` (`fremder-deployment-commit`) · Läufe **vor** der Aktivierung blockieren
+nicht und bestätigen nichts · optional `--erwarteter-commit` an der Auswertung als Gegenprobe
+gegen die Belegdatei (`startbaseline-fremder-commit`). Mandatsmenge, Signatur,
+Aktivierungszeitpunkt und Erhebungsfenster (15 min) bleiben unverändert streng.
+**REVIEWBEFUND ZUM PR-#223-KOPFSTAND `86df95e`, EINGEARBEITET (Folgecommit):** die dauerhafte
+Zeile eines **vorhandenen** globalen Laufs wurde nur **slotbasiert** gesucht (gleicher Cron,
+±15 min) statt über die **exakt identische runId** — eine ANDERE `globalphase`-Zeile desselben
+Termins mit korrektem Commit hätte den fehlenden exakten Beleg ersetzen können, der echte Lauf
+wäre ohne eigenen dauerhaften Commitbeleg **bestanden**. Der Täuschungstest (§35.1) wurde
+**zuerst gegen den fehlerhaften Stand** ausgeführt und schlug nachweislich fehl (209/211,
+35.1+35.2 FAIL); nach der Korrektur (exakte runId-Bindung bei vorhandenem globalen Lauf;
+Slot-Zuordnung nur noch als Rückfallebene für die ehrliche Verdrängt-Klassifikation ohne
+Blob-Lauf) **211/211**. Eine Ersatzzeile mit fremdem Commit verdeckt den fehlenden Beleg
+nicht: `commit-beleg-fehlt` **und** `fremder-deployment-commit`, Vorrang `nicht_bestanden`.
+Mutationsprobe um **M63** ergänzt (Rückfall auf reine Slotzuordnung ⇒ Suite rot).
+**ADVERSARIALE NACHPROBE (15 unabhängige Prüf-/Widerlegungsagenten gegen den PR-Stand), 6
+bestätigte Befunde — 1 identisch mit dem Reviewbefund oben (durch `9b32763` behoben), 5 weitere
+im zweiten Folgecommit geschlossen, alle fail closed:** (1) zeitlich **nicht platzierbare**
+`globalphase`-Zeilen (weder Laufkennung noch `createdAt` lesbar) umgingen den Commit-Sweep mit
+bloßer Warnung — jetzt `blockiert` (`prozesszeile-nicht-zuordenbar`); solche Zeilen erzeugt
+kein Writer des Bestands, die Eingabeklasse wird aber fail closed entschieden statt fail open
+(§37.1/37.2, M64). (2) Ein **Lesefehler der kanonischen Belegquelle `process_runs`** blieb
+reiner Konsolentext — der Commitnachweis hätte allein auf dem Blob-Spiegel bestehen können;
+jetzt Bewertungseingabe `prozessLaeufeLesefehler` ⇒ `prozesszeilen-quelle-nicht-lesbar`
+(`blockiert`), bewiesene Verletzungen behalten den Vorrang (§37.5/37.6, M65). (3) Die
+**CLI-Pflicht-Gates** waren nur per Textsuche gesichert — sie liegen jetzt **vor jedem
+Production-Lesezugriff** und sind ohne Netz **verhaltensgetestet** (§36.1–36.5, Zugangsdaten
+im Test ausdrücklich entfernt); die Mutationsprobe mutiert erstmals auch das CLI (M68/M69).
+(4) Beide **Zugehörigkeitswege des Fenster-Sweeps** (createdAt-Rückfallebene · Slot-Klausel
+auch knapp vor Fensterstart) einzeln festgenagelt (§37.3/37.4, M66/M67). (5) Der **Kopf von
+`vorgangskontext.md`** behauptete weiterhin unmarkiert zwei sich widersprechende
+Gegenwartszustände des Flags („wieder DEAKTIVIERT" / „Aktueller Production-Zustand: on") —
+jetzt durchgängig als offene Betreiberprüfung markiert, Historisches als Historie. **GEÄNDERTE
+DATEIEN:** `lib/helmut/op25-nachweis.js` (`normalisiereVollenCommit`, `pruefeFensterlaufCommit`,
+Commit-Pflicht in `pruefeStartbaseline`, Fenster-Sweep in `bewerteNachweisfenster`;
+`pruefeCommitBeleg` entfernt) · `scripts/op25-production-nachweis.js` (Pflicht-Gate, kein
+Altlauf-Abgleich, Gegenprobe, ehrliche Ausgaben) · `scripts/op25-nachweis-vertrag-test.js`
+(§34 neu, §32 Pflichtfeld) · `scripts/op25-nachweis-mutationsprobe.js` (M20/M50/M51/M53/M54
+nachgeführt, **M55–M62** neu) · `docs/betrieb/vorgangskontext.md` (**§7.7.5** kanonisch,
+Überholt-Vermerke §7.7.3/§7.7.4, Historisch-Vermerk §7.4, R1) · `docs/datenmotor-restliste.md`
+(OP-25-Nachtrag /7) · `docs/CURRENT_STATE.md`. **TESTS:** `op25-nachweis-vertrag-test`
+**222/222** (vorher 202; §34.1–34.27 Verhaltensprüfungen aller acht geforderten Fallfamilien:
+fehlender erwarteter Commit · ungültiger/verkürzter Commit · alter Prozesscommit vor der
+Aktivierung · korrekter Commit in allen Fensterläufen · fehlender `commit_ref` · abweichender
+`commit_ref` · gemischte Commits · 15-min-Grenze; §35.1–35.4 exakte runId-Bindung; §36.1–36.5
+CLI-Gates als Verhalten ohne Netz; §37.1–37.6 Sweep-Zuordenbarkeit + kanonische Belegquelle) ·
+`op25-e3-dauerhaftigkeit-test` **52/52** ·
+Mutationsprobe **69 von 69 rot, 0 Löcher, 0 unwirksam** · `run-offline-tests` **190/205**
+gegen frisch ausgecheckten `origin/main` (`3fa8830`) im selben Container ebenfalls **190/205
+mit exakt derselben 15er-Fehlschlagliste** (Netz-Guard/Umgebung, nicht Branchfolge) ·
+`browser-smoke` **32/32**. **PRODUCTION-PROBEN (rein lesend, KEINE Baseline erzeugt):** Dry-Run
+`noch_nicht_auswertbar` (Exit 3), 5 aktive reale Mandate (`m5-9aee228dbf2c9f13`) · Schreiben
+ohne Commit ⇒ **Exit 2, keine Datei** · Kurzform `3fa8830` ⇒ **Exit 2, keine Datei** · volle
+SHA mit angehängtem Unsinn ⇒ **Exit 2, keine Datei** · volle SHA mit 2 h alter Aktivierung ⇒
+**Exit 2, keine Datei** (15-min-Grenze) · Auswertung mit Baseline ohne erwarteten Commit ⇒
+**`blockiert` (Exit 2)**. **NEUER VERBINDLICHER BETREIBERABLAUF** (kanonisch §7.7.5): Merge
+→ vollen Merge-Commit notieren → Flag setzen (wirkt noch nicht) → **neues**
+Production-Deployment, READY-Zeitpunkt notieren → binnen 15 min Baseline mit `--aktivierung
+<READY-ISO> --erwarteter-commit <40-hex>` → 24 h ohne weiteres Deployment → Auswertung.
+**F-E2E bleibt unverändert offen** (siehe 8. Durchgang). **Branch/PR:**
+`claude/op25-startbaseline-commitnachweis-mqjixo`, **PR #223** gegen `main`, **nicht gemergt**
+— Merge und alle Production-Schritte bleiben Betreiberentscheidung. **0 Writes in Production,
+0 KI-Aufrufe, 0,00 USD, keine Migration, kein Flag, kein Cron, kein Deployment, keine Baseline,
+kein Merge.**) ·
+(9. Durchgang: **Vierter Reviewdurchgang zu PR #222 — die
 Commitprüfung selbst war zu schwach. KEIN Production-Eingriff, kein Merge.** Der Befund aus dem
 8. Durchgang war richtig, seine Umsetzung nicht: `pruefeErwartetenCommit` prüfte nur Längen und
 `startsWith` und lag im **CLI** statt im Bewertungskern. **BELEGTE UMGEHUNG (vor der Korrektur

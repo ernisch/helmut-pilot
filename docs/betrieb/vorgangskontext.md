@@ -3,26 +3,32 @@
 **Kanonische Dokumentation des K2.1-Pfads.** Stand: **2026-08-04** (§7.7 ergänzt: ausführbarer
 Nachweisvertrag nach der E3-Entscheidung; Mandatserwartung überall von sechs auf **fünf aktive
 reale Mandate / dynamisch ermittelt** korrigiert).
-Zustand: **gemergt und deployt; `HELMUT_CRON_GLOBALABRUF` ist seit dem gescheiterten
-Kapazitätslauf vom 2026-08-03 wieder DEAKTIVIERT** (Betreiberaktion, §7.6). Die Reparatur der
+Zustand: **gemergt und deployt. Der AKTUELLE Production-Zustand von `HELMUT_CRON_GLOBALABRUF`
+ist aus einer Sitzung nicht lesbar und wird hier nicht behauptet — offene Betreiberprüfung**
+(§7.4-Vermerk; frühere Fassungen dieses Kopfes enthielten sowohl „gesetzt seit 2026-08-03"
+als auch „wieder DEAKTIVIERT", beides unbelegt). Die Reparatur der
 Kapazitätsursachen ist als **PR #219** gemergt (`89427c5`) und ausgerollt; die erneute
-Aktivierung ist eine **getrennte, noch nicht erfolgte Betreiberaktion**.
+Aktivierung ist eine **getrennte, noch nicht erfolgte Betreiberaktion** — sie verlangt seit
+§7.7.5 ein **neues** READY-Deployment (das Setzen der Env allein wirkt nicht).
 **PR #201** gemergt (`255df01`), beide Pflicht-Checks grün (Lauf `30638964148`,
 `Syntax + Offline-Suiten` **194/194 Suiten**, `Browser-/Mobile-Smoke (Chromium)`).
 
-> **Der Pfad ist damit scharf, aber NICHT abgenommen.** Deployment `READY` und unmittelbarer,
-> rein lesender Smoke-Check sind bestanden (§7.4). **Der reguläre Production-Kapazitätsnachweis
-> über mindestens 24 h reguläre Kadenz steht vollständig aus** — bis dahin ist über die
-> tatsächliche Wirkung des Pfades in Production **nichts** belegt, und **OP-25 bleibt teilweise
-> abgeschlossen**. Kein falsches Grün (`CLAUDE.md` §4.4).
+> **Der Pfad ist NICHT abgenommen; ob er aktuell scharf ist, ist unbelegt (offene
+> Betreiberprüfung, §7.4-Vermerk).** Deployment `READY` und unmittelbarer, rein lesender
+> Smoke-Check der Aktivierung vom 2026-08-03 waren bestanden (§7.4, historisch); der erste
+> Wirkungslauf scheiterte am Kapazitätsvertrag (§7.6). **Der reguläre
+> Production-Kapazitätsnachweis über mindestens 24 h reguläre Kadenz steht vollständig aus** —
+> bis dahin ist über die tatsächliche Wirkung des Pfades in Production **nichts** belegt, und
+> **OP-25 bleibt teilweise abgeschlossen**. Kein falsches Grün (`CLAUDE.md` §4.4).
 
 > **Flaggrenze, verbindlich — Code-Default und Production-Zustand sind zu unterscheiden:**
 > `HELMUT_CRON_GLOBALABRUF` hat den **Code-Default AUS**; ohne ausdrücklich gesetzten Wert
 > (`on`/`true`/`1`/`an`) läuft ausschließlich der bisherige Pfad, und das bleibt so. Das Flag ist
 > **nicht** über `helmut-flags.json` setzbar — nur über die Vercel-Env, also nur durch den
-> Betreiber. **Aktueller Production-Zustand: `on`, gesetzt am 2026-08-03, 13:15:11 UTC,
-> ausschließlich in der Umgebung `Production`** (Preview und Development unverändert ohne Wert,
-> dort greift weiter der Default). Sind `HELMUT_CRON_GLOBALPHASE` **und**
+> Betreiber. **Der aktuelle Production-Zustand ist aus einer Sitzung nicht lesbar — offene
+> Betreiberprüfung** (historisch belegt ist nur: `on` gesetzt am 2026-08-03, 13:15:11 UTC,
+> ausschließlich Umgebung `Production`; spätere Änderungen sind unbelegt). Zusätzlich gilt:
+> eine Env-Änderung **wirkt erst in einem neuen Deployment** (§7.7.5). Sind `HELMUT_CRON_GLOBALPHASE` **und**
 > `HELMUT_CRON_GLOBALABRUF` gesetzt, läuft der **Altpfad** (fail closed bei Widerspruch);
 > `HELMUT_CRON_GLOBALPHASE` ist unverändert **nicht** gesetzt.
 
@@ -50,11 +56,11 @@ Mandats verändern, zusammenschieben oder auseinanderreißen.
 - **Zusammengefasst** wird nur noch innerhalb einer **Sichtbarkeitsgrenze**: zwei Meldungen
   dürfen nur dann locker zusammengeworfen werden, wenn **dieselben Mandate beide sehen**.
 
-**Stand 2026-08-03:** der Schalter ist **eingeschaltet** — der Betreiber hat
-`HELMUT_CRON_GLOBALABRUF=on` für Production gesetzt (13:15:11 UTC). Der neue Weg ist damit
-scharf, aber **noch nicht abgenommen**: der reguläre Production-Nachweis über mindestens 24 h
-steht aus (§7.4). *(Bis dahin galt: der Weg lag hinter einem ausgeschalteten Schalter, und ihn
-einzuschalten war eine Freigabeentscheidung des Betreibers.)*
+**Historisch (2026-08-03):** der Betreiber hat `HELMUT_CRON_GLOBALABRUF=on` für Production
+gesetzt (13:15:11 UTC); der erste Wirkungslauf scheiterte am Kapazitätsvertrag (§7.6). **Ob
+der Schalter heute gesetzt ist, ist aus einer Sitzung nicht lesbar — offene Betreiberprüfung**
+(§7.4-Vermerk). Der reguläre Production-Nachweis steht vollständig aus und beginnt erst mit
+dem Betreiberablauf aus **§7.7.5** (neues READY-Deployment = Aktivierungszeitpunkt).
 
 ---
 
@@ -358,6 +364,15 @@ Zweitfenster: 16:20–19:30 UTC = 18:20–21:30 Berlin. Es muss Environment-Änd
 `READY`, Smoke-Check **und** vollständigen Rückbau tragen.
 
 ### 7.4 Aktivierung 2026-08-03 — ausgeführt, Smoke bestanden, Kapazitätsnachweis offen
+
+> **Historisch-Vermerk (2026-08-04/5):** Dieser Abschnitt beschreibt die Aktivierung vom
+> **2026-08-03** und den damals gescheiterten ersten Wirkungslauf. **Der HEUTIGE Zustand von
+> `HELMUT_CRON_GLOBALABRUF` in Production ist aus einer Sitzung nicht lesbar (§7.3) und wird
+> deshalb nicht behauptet — er ist eine offene Betreiberprüfung.** Spätere Statusdokumente
+> enthalten sowohl „gesetzt seit 2026-08-03" als auch „bleibt deaktiviert"; keiner der beiden
+> Sätze ist lesend belegt. Zusätzlich gilt seit §7.7.5: das **Setzen** der Env allein ist
+> keine wirksame Aktivierung — eine Vercel-Umgebungsvariable gilt erst in einem **neuen
+> Deployment**, und der Aktivierungszeitpunkt des Nachweises ist dessen READY-Zeitpunkt.
 
 **Kurzstatus, verbindlich:** *K2.1 ist in Production aktiviert. Deployment `READY` und der
 unmittelbare Smoke-Check sind bestanden. Der reguläre Production-Kapazitätsnachweis über das
@@ -714,15 +729,17 @@ nachweislich nicht reicht.** C ist ausdrücklich **nicht** ohne neue Freigabe um
 > beschriebene Abnahme. Ausführung: `node scripts/op25-production-nachweis.js` (rein lesend,
 > GET-Literal + Tabellen-Allowlist, kein Trigger, keine Flag-/Env-Änderung, 0 KI-Aufrufe);
 > Bewertungskern: [`lib/helmut/op25-nachweis.js`](../../lib/helmut/op25-nachweis.js)
-> (reine Logik, testgesichert über `scripts/op25-nachweis-vertrag-test.js` (178 Prüfpunkte),
+> (reine Logik, testgesichert über `scripts/op25-nachweis-vertrag-test.js` (222 Prüfpunkte),
 > `scripts/op25-e3-dauerhaftigkeit-test.js` (52 Prüfpunkte) und
-> `scripts/op25-nachweis-mutationsprobe.js` (**46 von 46 rot**)).
+> `scripts/op25-nachweis-mutationsprobe.js` (**69 von 69 rot**)).
 >
-> **Stand 2026-08-04/4:** um die Befunde **aller drei** Reviewdurchgänge zu PR #222 gehärtet —
-> Kostenvertrag, identitätsgenau eingefrorene Mandatsmenge, dauerhafte Belegquelle samt
-> versiegelter Laufzeit (§7.7.1) · der **echte Kostenleser** und die **vollständig fail-closed
-> Startbaseline** (§7.7.2) · das **Erhebungsfenster der Baseline** und die **Commit-Wahrheit**
-> (§7.7.3).
+> **Stand 2026-08-04/5 (nach Merge von PR #222):** um die Befunde aller vier Reviewdurchgänge
+> **und** die Nachtragskorrektur gehärtet — Kostenvertrag, identitätsgenau eingefrorene
+> Mandatsmenge, dauerhafte Belegquelle samt versiegelter Laufzeit (§7.7.1) · der **echte
+> Kostenleser** und die **vollständig fail-closed Startbaseline** (§7.7.2) · das
+> **Erhebungsfenster der Baseline** (§7.7.3) · die strikte SHA-Normalisierung (§7.7.4) ·
+> **deploymentgebundene Startbaseline + verbindlicher Commitnachweis der Fensterläufe**
+> (**§7.7.5**, kanonisch für Aktivierungszeitpunkt und Betreiberablauf).
 
 **Die verbindlichen Produktentscheidungen (2026-08-04):** **E1 bleibt Option A** (keine neue
 Crawler-Deadline, kein `AbortSignal`, kein Eingriff in Gate/Retry/Breaker/Netz). **E2 bleibt
@@ -853,11 +870,14 @@ Ein **Austausch bei gleicher Anzahl** (Mandat A raus, Mandat B rein) wäre damit
 geblieben. Jetzt gilt ein Zwei-Schritt-Ablauf:
 
 ```
-# Schritt 1 — unmittelbar NACH der Aktivierung (rein lesend gegen Production):
-node scripts/op25-production-nachweis.js --aktivierung <ISO> \
+# Schritt 1 — unmittelbar NACH der Aktivierung (rein lesend gegen Production).
+# Seit §7.7.5 ist --erwarteter-commit (voller Merge-Commit, 40 Hexziffern) PFLICHT,
+# und die Aktivierung ist der READY-Zeitpunkt des neuen Deployments:
+node scripts/op25-production-nachweis.js --aktivierung <READY-ISO> \
+     --erwarteter-commit <voller-merge-commit> \
      --startbaseline-schreiben belege/op25-startbaseline.json
 # Schritt 2 — frühestens 24 h später:
-node scripts/op25-production-nachweis.js --aktivierung <ISO> \
+node scripts/op25-production-nachweis.js --aktivierung <READY-ISO> \
      --startbaseline belege/op25-startbaseline.json
 ```
 
@@ -980,6 +1000,14 @@ geraten**. Stattdessen:
 - Ohne `--erwarteter-commit` bleibt `deploymentCommitBestaetigt: false`, und das Werkzeug sagt
   das im Bericht ausdrücklich.
 
+> **Überholt-Vermerk (2026-08-04/5, §7.7.5):** Die drei vorstehenden Punkte zur
+> **Schreibzeit-Bestätigung** sind ersetzt — genau dieser Vergleich mit dem Commit des
+> **jüngsten gespeicherten (alten) Laufs** verwechselte den Zeitpunkt der Env-Änderung mit
+> ihrer Wirksamkeit. Heute gilt: `--erwarteter-commit` ist beim Schreiben **Pflicht** (volle
+> SHA), wird dort **nicht** geprüft und erst in der **Auswertung** gegen die `commit_ref`
+> aller Fensterläufe durchgesetzt. Die ehrliche Benennung `zuletztBeobachteterProzessCommit`
+> gilt unverändert.
+
 ### 7.7.4 Vierter Reviewdurchgang (2026-08-04) — die Commitprüfung selbst war zu schwach
 
 Der Befund aus §7.7.3 war richtig, seine **Umsetzung** nicht. Die Prüfung bestand nur aus
@@ -1018,11 +1046,140 @@ die Lockerungen mit **M47–M54** ab, darunter die vier geforderten: Formatprüf
 Mindestlänge entfernt (M48), angehängter Unsinn wieder akzeptiert (M50, exakt die alte
 `startsWith`-Logik), abweichender Commit wieder bestätigt (M51).
 
+> **Überholt-Vermerk (2026-08-04/5, §7.7.5):** Die hier beschriebene **Schreibzeit-Bestätigung**
+> (`pruefeCommitBeleg` gegen den zuletzt beobachteten Prozess-Commit,
+> `deploymentCommitBestaetigt`, „übergebener, aber nicht bestätigter Commit bleibt Exit 2")
+> ist **ersetzt**. Sie verglich den erwarteten Commit mit dem Commit des **jüngsten alten**
+> Laufs — direkt nach READY existiert aber noch kein Lauf des neuen Deployments. Die strikte
+> SHA-Normalisierung dieses Abschnitts (`normalisiereCommit`, `istEchtesPraefix`) gilt
+> unverändert weiter; die Bestätigung selbst geschieht seit §7.7.5 ausschließlich in der
+> **Auswertung** gegen die `commit_ref`-Werte der Fensterläufe.
+
+### 7.7.5 Nachtragskorrektur (2026-08-04/5) — deploymentgebundene Startbaseline und verbindlicher Commitnachweis
+
+**Vier belegte Lücken** (alle am unveränderten `main`-Stand `3fa8830` empirisch reproduziert,
+bevor sie geschlossen wurden):
+
+1. **Eine Startbaseline konnte ohne `--erwarteter-commit` geschrieben werden.** Das Gate im
+   CLI feuerte nur, *wenn* ein erwarteter Commit übergeben war (`commitPruefung.uebergeben &&
+   !bestaetigt`); ohne Übergabe entstand eine Baseline ohne jeden Deployment-Bezug.
+2. **`pruefeStartbaseline` prüfte `erwarteterDeploymentCommit` und
+   `deploymentCommitBestaetigt` überhaupt nicht.** Reproduziert: eine Baseline **ohne** diese
+   Felder und sogar eine mit `erwarteterDeploymentCommit: "voelliger-unsinn"` **plus**
+   `deploymentCommitBestaetigt: true` ergab `befunde: []` — akzeptiert.
+3. **Die Gesamtauswertung prüfte die `commit_ref`-Werte der `globalphase`-Fensterläufe nie.**
+   Reproduziert: ein 24-h-Fenster, in dem **alle** dauerhaften Zeilen einen **fremden** Commit
+   trugen — `bestanden`; dieselben Zeilen ganz **ohne** `commit_ref` — ebenfalls `bestanden`.
+4. **Zeitpunktverwechslung:** die Schreibzeit-Prüfung aus §7.7.3/§7.7.4 verglich den
+   erwarteten Commit mit `process_runs.commit_ref` des **jüngsten gespeicherten** Laufs.
+   Eine Vercel-Umgebungsvariable gilt aber erst in einem **neuen Deployment**, und unmittelbar
+   nach dessen READY existiert noch **kein** Lauf des neuen Stands — der Vergleich traf also
+   systematisch den **alten** Stand und hätte eine korrekte Baseline abgewiesen (bzw. bei
+   zufälliger Übereinstimmung Falsches „bestätigt").
+
+**Die Korrektur (kleinste robuste Fassung, alle Zusagen mutationsgeprüft):**
+
+- **Der Aktivierungszeitpunkt ist der READY-Zeitpunkt des neuen Production-Deployments, das
+  `HELMUT_CRON_GLOBALABRUF=on` tatsächlich enthält.** Das Setzen der Env allein ist **keine**
+  Aktivierung.
+- **`--startbaseline-schreiben` verlangt zwingend `--erwarteter-commit` mit dem vollständigen
+  erwarteten Merge-Commit (40 Hexziffern).** Kurzformen, Anhänge, Nicht-Hex ⇒ Exit 2, **keine
+  Datei**. Die Baseline speichert den Commit verbindlich (`erwarteterDeploymentCommit`).
+- **Beim Schreiben wird ausdrücklich NICHT gegen alte Prozessläufe geprüft** — ein alter Lauf
+  darf die Baseline weder blockieren noch fälschlich bestätigen. Das Feld
+  `zuletztBeobachteterProzessCommit` bleibt rein informativ; ein Feld
+  `deploymentCommitBestaetigt` gibt es nicht mehr, und eine Baseline, die es auf wahr trägt,
+  wird als `startbaseline-commit-vorab-bestaetigt` **abgewiesen**.
+- **`pruefeStartbaseline` prüft den Commit verbindlich:** fehlend ⇒
+  `startbaseline-erwarteter-commit-fehlt` · ungültig/verkürzt ⇒
+  `…-ungueltig` · Vorab-Bestätigung ⇒ `…-commit-vorab-bestaetigt` — alle `blockiert`.
+  Optional erlaubt die Auswertung `--erwarteter-commit` als **Gegenprobe** gegen die
+  Belegdatei (`startbaseline-fremder-commit` bei Abweichung).
+- **Die Auswertung prüft alle zum Nachweisfenster gehörenden `globalphase`-Prozessläufe**
+  (Laufstart im Fenster oder einem erwarteten Termin zugeordnet): `commit_ref` fehlt oder ist
+  kein SHA-Wert ⇒ `commit-beleg-fehlt` (`blockiert`) · gültiges echtes Präfix ⇒
+  `commit-beleg-unvollstaendig` (`blockiert`) · gültiger, **abweichender** Commit ⇒
+  `fremder-deployment-commit` (**`nicht_bestanden`** — im Fenster lief ein anderer Stand,
+  z. B. ein weiteres Deployment). Auch eine **fehlende dauerhafte Zeile** zu einem bewerteten
+  Fensterlauf ist jetzt `commit-beleg-fehlt` (`blockiert`) statt nur einer Warnung.
+- **Exakte runId-Bindung (Reviewbefund zum PR-#223-Kopfstand `86df95e`, behoben):** die
+  dauerhafte Zeile eines **vorhandenen** globalen Laufs wird ausschließlich über die **exakt
+  identische runId** zugeordnet (scheduler.js schreibt beide mit derselben `laufId`). Zuvor
+  genügte Slot-Nähe (gleicher Cron, ±15 min) — eine **andere** `globalphase`-Zeile desselben
+  Termins mit korrektem Commit hätte den fehlenden exakten Beleg ersetzen können
+  (Täuschungsfall, per Verhaltenstest zuerst am fehlerhaften Stand nachgewiesen). Eine
+  Ersatzzeile ersetzt den Beleg **nie**; nur wenn der Blob-Lauf selbst fehlt (Retention),
+  bleibt die Slot-Zuordnung für die ehrliche Verdrängt-Klassifikation zulässig.
+- **Läufe vor dem Fenster (Alt-Bestand) werden weder geprüft noch als Bestätigung verwendet.**
+- **Unverändert streng:** Mandatsmenge/Signatur, Aktivierungszeitpunkt, Erhebungsfenster
+  (`aktivierung ≤ erhoben ≤ aktivierung + 15 min`), Fensterregeln, Kosten.
+
+**Der verbindliche Betreiberablauf** (ersetzt die Kurzfassung in §7.7.1 (2)):
+
+```
+# Voraussetzung: Ziel-PR gemergt; vollen Merge-Commit (40 Hexziffern) notieren.
+# 1. Betreiber setzt HELMUT_CRON_GLOBALABRUF=on (nur Production). Setzen allein wirkt NICHT.
+# 2. Betreiber löst ein neues Production-Deployment dieses Stands aus und notiert den
+#    READY-Zeitpunkt. Aktivierungszeitpunkt := READY.
+# 3. Innerhalb von 15 min nach READY (rein lesend gegen Production):
+node scripts/op25-production-nachweis.js --aktivierung <READY-ISO> \
+     --erwarteter-commit <voller-merge-commit> \
+     --startbaseline-schreiben belege/op25-startbaseline.json
+# 4. Während der folgenden 24 h: KEIN weiteres Production-Deployment, keine Mandatsänderung.
+# 5. Frühestens 24 h nach READY:
+node scripts/op25-production-nachweis.js --aktivierung <READY-ISO> \
+     --startbaseline belege/op25-startbaseline.json
+#    (optional erneut --erwarteter-commit als Gegenprobe gegen die Belegdatei)
+```
+
+**Absicherung.** `scripts/op25-nachweis-vertrag-test.js` §34 (neu, 34.1–34.27 Verhaltens-
+prüfungen: fehlender/verkürzter/ungültiger erwarteter Commit, Vorab-Bestätigung, Gegenprobe,
+korrekter Commit in allen Fensterläufen, fehlender/ungültiger/abweichender/gemischter
+`commit_ref`, Präfix-Fall, alter Lauf vor der Aktivierung, 15-min-Grenze; §32 führt
+`erwarteterDeploymentCommit` als Pflichtfeld) und §35 (exakte runId-Bindung: beide
+Täuschungsfälle, Exakt-Fall, Retentionsfall — 35.1 wurde **zuerst gegen den fehlerhaften
+Stand** ausgeführt und schlug nachweislich fehl) — dazu §36/§37 aus der **adversarialen
+Nachprobe** (unten) — **222/222**. Mutationsprobe **69 von 69 rot** (M50/M51/M53/M54 auf die
+neue Logik umgezogen; **M55–M62**: Pflichtfeld entfällt, Kurzform akzeptiert,
+Vorab-Bestätigung akzeptiert, fehlender `commit_ref` blockiert nicht mehr, alte Läufe
+mitgeprüft, dauerhafte Zeile wieder nur Warnung, Präfix als Bestätigung, Gegenprobe entfällt;
+**M63**: exakte runId-Bindung fällt auf reine Slotzuordnung zurück; **M64–M69** siehe
+Nachprobe). Production-Proben rein lesend: Dry-Run `noch_nicht_auswertbar` (Exit 3) ·
+Schreiben ohne Commit / mit Kurzform / mit Anhang ⇒ je **Exit 2, keine Datei** · voller
+Commit mit 2 h alter Aktivierung ⇒ **Exit 2, keine Datei** (15-min-Grenze) · Auswertung mit
+Baseline ohne Commit ⇒ **`blockiert` (Exit 2)**.
+
+**Adversariale Nachprobe (2026-08-04, gegen den PR-#223-Stand), fünf weitere Befunde
+geschlossen — alle fail closed:**
+
+1. **Zeitlich nicht platzierbare `globalphase`-Zeilen** (weder Laufkennung noch `createdAt`
+   lesbar) umgingen den Commit-Sweep mit bloßer Warnung — eine Zeile mit fremdem oder
+   fehlendem `commit_ref` konnte so ein `bestanden` überleben. Jetzt: `blockiert`
+   (`prozesszeile-nicht-zuordenbar`). Solche Zeilen erzeugt kein Writer des Bestands; die
+   Eingabeklasse existiert aber und wird jetzt fail closed entschieden (§37.1/37.2, M64).
+2. **Ein Lesefehler der kanonischen Belegquelle `process_runs`** blieb reiner Konsolentext —
+   der Commitnachweis hätte allein auf dem Blob-Spiegel „bestanden" können. Jetzt geht er als
+   `prozesszeilen-quelle-nicht-lesbar` (`blockiert`) in die Bewertung ein; eine gleichzeitig
+   bewiesene Verletzung behält ihren Vorrang (§37.5/37.6, M65; im CLI zusätzlich in der
+   JSON-Zeile ausgewiesen).
+3. **Die CLI-Pflicht-Gates waren nur per Textsuche gesichert.** Sie liegen jetzt **vor jedem
+   Production-Lesezugriff** (fail fast) und sind ohne Netz **verhaltensgetestet** (§36.1–36.5:
+   Exit 2 + keine Datei je fehlendem/verkürztem/ungültigem Commit bzw. fehlender Aktivierung;
+   gültige Argumente passieren die Gates). Die Mutationsprobe mutiert erstmals auch das CLI
+   (M68/M69).
+4. **Beide Zugehörigkeitswege des Fenster-Sweeps** (Laufstart im Fenster via `createdAt`-
+   Rückfallebene · Slot-Zuordnung, auch knapp vor Fensterstart) sind einzeln festgenagelt
+   (§37.3/37.4, M66/M67).
+5. **Der Dateikopf dieses Dokuments** behauptete zwei sich widersprechende
+   Gegenwartszustände des Flags („wieder DEAKTIVIERT" / „Aktueller Production-Zustand: on")
+   — beide unbelegt. Der Kopf verweist jetzt auf die offene Betreiberprüfung (§7.4-Vermerk);
+   historisch Belegtes bleibt als Historie gekennzeichnet.
+
 ## 8 · Verbleibende Risiken
 
 | # | Risiko | Bewertung |
 |---|---|---|
-| R1 | **Kein Production-Nachweis.** Alle fachlichen Aussagen sind offline erhoben. | **Unverändert offen — und seit dem 2026-08-03 das einzige verbleibende Risiko dieser Liste, das eine Handlung verlangt.** Das Flag ist seit 13:15:11 UTC gesetzt, der Pfad läuft also scharf, **bevor** er in Production nachgewiesen ist; der Nachweis über ≥ 24 h ist der nächste Schritt (§7.4/§7.5). Verschärfend: der **Rückbau ist aus einer Agenten-Sitzung nicht ausführbar** (§7.3) — zeigt ein regulärer Lauf ein Problem, muss der Betreiber zurückrollen. |
+| R1 | **Kein Production-Nachweis.** Alle fachlichen Aussagen sind offline erhoben. | **Unverändert offen — das einzige verbleibende Risiko dieser Liste, das eine Handlung verlangt.** Der Nachweis wurde **nicht gestartet**, es existiert **keine gültige Startbaseline**. Der aktuelle Flagzustand ist aus einer Sitzung **nicht lesbar** und damit eine **offene Betreiberprüfung** (§7.4-Vermerk); die Aktivierung selbst verlangt seit §7.7.5 ein **neues** READY-Deployment, dessen Zeitpunkt der Aktivierungszeitpunkt ist. Verschärfend: der **Rückbau ist aus einer Agenten-Sitzung nicht ausführbar** (§7.3) — zeigt ein regulärer Lauf ein Problem, muss der Betreiber zurückrollen. |
 | R2 | **Die Fallfamilien sind konstruiert.** Wie oft die Muster real auftreten, ist unbekannt. | Bewusst so (Auftrag Phase 4). Die Gleichheit mit dem heutigen Pfad gilt unabhängig von der Häufigkeit. |
 | R3 | **Bestandsbefund F10/Z2** — Formularvokabular verschmilzt auch heute falsch. | Nicht durch K2.1 verursacht und nicht durch K2.1 verschlimmert. Eigener Sprint, freigabepflichtig. |
 | R4 | **Reihenfolgeempfindlichkeit** des strengen Regimes (F3, F7, F13). | Bestand, unverändert. K2.1 ist nicht empfindlicher als heute (4.4b). |

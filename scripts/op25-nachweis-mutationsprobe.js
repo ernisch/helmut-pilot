@@ -70,6 +70,7 @@ function laeuftGruen(basis, suite) {
 }
 
 const KERN = path.join("lib", "helmut", "op25-nachweis.js");
+const CLI_DATEI = path.join("scripts", "op25-production-nachweis.js");
 const SCHED = path.join("lib", "helmut", "scheduler.js");
 const STORE = path.join("lib", "helmut", "storage.js");
 const UNDER = path.join("lib", "helmut", "understanding.js");
@@ -219,14 +220,17 @@ const PROBEN = [
     suite: VERTRAG_SUITE,
     // Genau die Regression, die der Review beschreibt: statt zu blockieren wird die Menge
     // still aus dem AKTUELLEN Bestand gebildet — der Zustand am Fensterstart wäre erfunden.
+    // (Der Ersatz traegt absichtlich einen zur Fixture passenden vollen Commit, damit die
+    // Probe GENAU die Baseline-Ersetzung testet und nicht an der Commitpflicht scheitert.)
     mutiere: (b) => ersetze(b, KERN,
-      "  const baselinePruefung = pruefeStartbaseline({\n    roh: startbaseline, aktivierungAtMs, jetztMs\n  });",
+      "  const baselinePruefung = pruefeStartbaseline({\n    roh: startbaseline, aktivierungAtMs, jetztMs, commitGegenprobe\n  });",
       "  const ersatz = startbaseline || {\n"
       + "    mandate: aktiveMandate || [], anzahl: (aktiveMandate || []).length,\n"
       + "    signatur: mandatsSignatur(aktiveMandate || []).signatur,\n"
+      + "    erwarteterDeploymentCommit: \"89427c5b5aac4b362d2040c7b71bde8d52c1085d\",\n"
       + "    aktivierungAtMs, erhobenAtMs: aktivierungAtMs\n"
       + "  };\n"
-      + "  const baselinePruefung = pruefeStartbaseline({\n    roh: ersatz, aktivierungAtMs, jetztMs\n  });")
+      + "  const baselinePruefung = pruefeStartbaseline({\n    roh: ersatz, aktivierungAtMs, jetztMs, commitGegenprobe\n  });")
   },
   {
     name: "M21 Endzustand wird nicht mehr gegen die eingefrorene Menge geprueft",
@@ -445,20 +449,20 @@ const PROBEN = [
       "  if (s.length < COMMIT_MIN_LAENGE) return null;")
   },
   {
-    name: "M50 Angehaengter Unsinn wieder akzeptiert (alte startsWith-Logik ohne Formatpruefung)",
+    name: "M50 Erwarteter Baseline-Commit wieder ohne Formatpruefung uebernommen (angehaengter Unsinn passiert)",
     suite: VERTRAG_SUITE,
-    // Exakt der gemeldete Befund: Vergleich nur ueber Laengen und startsWith, ohne dass die
-    // Werte selbst gueltige SHAs sein muessen.
+    // Die Familie des alten startsWith-Befunds: der erwartete Wert wird wieder roh
+    // uebernommen, ohne dass er selbst eine gueltige volle SHA sein muss.
     mutiere: (b) => ersetze(b, KERN,
-      "  const soll = normalisiereCommit(erwartet);",
-      "  const soll = (typeof erwartet === \"string\" && erwartet.trim()) ? erwartet.trim().toLowerCase() : null;")
+      "  const erwarteterCommit = normalisiereVollenCommit(commitRoh);",
+      "  const erwarteterCommit = String(commitRoh).trim().toLowerCase();")
   },
   {
-    name: "M51 Abweichender Commit wird wieder bestaetigt",
+    name: "M51 Abweichender Fensterlauf-Commit wird wieder bestaetigt",
     suite: VERTRAG_SUITE,
     mutiere: (b) => ersetze(b, KERN,
-      "  const gleich = soll === ist || istEchtesPraefix(soll, ist) || istEchtesPraefix(ist, soll);",
-      "  const gleich = true;")
+      "  return { ergebnis: \"abweichend\", beobachtet: ist };",
+      "  return { ergebnis: \"bestaetigt\", beobachtet: ist };")
   },
   {
     name: "M52 Praefixpruefung nicht mehr STRIKT (gleich lange Werte gelten als Praefix)",
@@ -468,18 +472,129 @@ const PROBEN = [
       "  return lang.startsWith(kurz);")
   },
   {
-    name: "M53 Uebergebener, aber ungueltiger erwarteter Commit faellt nicht mehr durch",
+    name: "M53 Ungueltiger erwarteter Baseline-Commit faellt nicht mehr durch",
     suite: VERTRAG_SUITE,
     mutiere: (b) => ersetze(b, KERN,
-      "  if (soll === null) {\n    return {\n      uebergeben: true, bestaetigt: false, erwartet: null,",
-      "  if (false) {\n    return {\n      uebergeben: true, bestaetigt: false, erwartet: null,")
+      "  if (erwarteterCommit === null) {\n    return fehler(\"startbaseline-erwarteter-commit-ungueltig\",",
+      "  if (false) {\n    return fehler(\"startbaseline-erwarteter-commit-ungueltig\",")
   },
   {
-    name: "M54 Ungueltiger BEOBACHTETER Commit wird wieder als Beleg akzeptiert",
+    name: "M54 Ungueltiger BEOBACHTETER commit_ref wird wieder als Beleg akzeptiert",
     suite: VERTRAG_SUITE,
     mutiere: (b) => ersetze(b, KERN,
-      "  const ist = normalisiereCommit(beobachtet);\n  if (ist === null) {",
-      "  const ist = normalisiereCommit(beobachtet) || String(beobachtet || \"\").trim().toLowerCase();\n  if (!ist) {")
+      "  if (ist === null) return { ergebnis: \"fehlt\", beobachtet: null };",
+      "  if (ist === null) return { ergebnis: \"bestaetigt\", beobachtet: null };")
+  },
+
+  // --- Nachtragskorrektur 2026-08-04/5: deploymentgebundene Baseline + Commitnachweis --------
+  {
+    name: "M55 Baseline OHNE erwarteten Commit wird wieder akzeptiert",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (commitRoh == null || (typeof commitRoh === \"string\" && !commitRoh.trim())) {",
+      "  if (false) {")
+  },
+  {
+    name: "M56 Kurzform wird wieder als erwarteter Baseline-Commit akzeptiert",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  const erwarteterCommit = normalisiereVollenCommit(commitRoh);",
+      "  const erwarteterCommit = normalisiereCommit(commitRoh);")
+  },
+  {
+    name: "M57 Vorab-Bestaetigung (deploymentCommitBestaetigt) wird wieder akzeptiert",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (roh.deploymentCommitBestaetigt) {",
+      "  if (false) {")
+  },
+  {
+    name: "M58 Fensterlauf ohne gueltigen commit_ref blockiert nicht mehr",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "      befunde.push(befund(AUSGANG_BLOCKIERT, \"commit-beleg-fehlt\",\n        `${p.runId}: die dauerhafte Laufzeile traegt keinen gueltigen commit_ref —`",
+      "      false && befunde.push(befund(AUSGANG_BLOCKIERT, \"commit-beleg-fehlt\",\n        `${p.runId}: die dauerhafte Laufzeile traegt keinen gueltigen commit_ref —`")
+  },
+  {
+    name: "M59 Alte Prozesslaeufe VOR dem Fenster werden ploetzlich mitgeprueft",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "    if (!zumFenster) {",
+      "    if (false) {")
+  },
+  {
+    name: "M60 Fehlende dauerhafte Zeile ist wieder nur eine Warnung",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "    befunde.push(befund(AUSGANG_BLOCKIERT, \"commit-beleg-fehlt\",\n      `${slotName}: keine dauerhafte Laufzeile (process_runs/globalphase) — ohne sie fehlt`",
+      "    warnungen.push((\n      `${slotName}: keine dauerhafte Laufzeile (process_runs/globalphase) — ohne sie fehlt`")
+  },
+  {
+    name: "M61 Praefix-commit_ref gilt wieder als exakte Bestaetigung",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (istEchtesPraefix(ist, soll)) return { ergebnis: \"unvollstaendig\", beobachtet: ist };",
+      "  if (istEchtesPraefix(ist, soll)) return { ergebnis: \"bestaetigt\", beobachtet: ist };")
+  },
+  {
+    name: "M62 Gegenprobe des erwarteten Commits an der Auswertung entfaellt",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (commitGegenprobe != null && commitGegenprobe !== \"\") {",
+      "  if (false) {")
+  },
+  {
+    name: "M63 Exakte runId-Bindung der dauerhaften Zeile faellt zurueck auf reine Slotzuordnung",
+    suite: VERTRAG_SUITE,
+    // Exakt die Regression aus der Review zu PR #223: eine ANDERE globalphase-Zeile
+    // innerhalb der Slot-Toleranz koennte den fehlenden exakten Beleg wieder ersetzen.
+    mutiere: (b) => ersetze(b, KERN,
+      "    const prozessLauf = globalerLauf\n      ? dauerhafte.find((p) => p && p.runId === globalerLauf.runId) || null\n      : dauerhafte.find((p) => passt(p.runId)) || null;",
+      "    const prozessLauf = dauerhafte.find((p) => passt(p.runId)) || null;")
+  },
+
+  // --- Review-Nachprobe (adversariale Gegenpruefung des PR-#223-Stands) ----------------------
+  {
+    name: "M64 Unplatzierbare globalphase-Zeile ist wieder nur eine Warnung (Fail-open)",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "        befunde.push(befund(AUSGANG_BLOCKIERT, \"prozesszeile-nicht-zuordenbar\",",
+      "        warnungen.push(befund(AUSGANG_BLOCKIERT, \"prozesszeile-nicht-zuordenbar\",")
+  },
+  {
+    name: "M65 Lesefehler der relationalen process_runs wird wieder ignoriert",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (prozessLaeufeLesefehler != null && prozessLaeufeLesefehler !== \"\") {",
+      "  if (false) {")
+  },
+  {
+    name: "M66 createdAt-Rueckfallebene des Fenster-Sweeps gestrichen",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "    const startMs = startZeile ? startZeile.startMs : Date.parse((p && p.createdAt) || \"\");",
+      "    const startMs = startZeile ? startZeile.startMs : NaN;")
+  },
+  {
+    name: "M67 Slot-Zuordnungsklausel des Fenster-Sweeps gestrichen",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "      || (startZeile && slots.some((s) => s.cronName === startZeile.cronName\n        && Math.abs(startZeile.startMs - s.geplantMs) <= SLOT_TOLERANZ_MS));",
+      "      || false;")
+  },
+  {
+    name: "M68 CLI: Arg-Gate fuer den vollen erwarteten Commit entfernt",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, CLI_DATEI,
+      "    if (vertrag.normalisiereVollenCommit(args[\"erwarteter-commit\"]) === null) {",
+      "    if (false) {")
+  },
+  {
+    name: "M69 CLI: Arg-Gate fuer den Aktivierungszeitpunkt entfernt",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, CLI_DATEI,
+      "    if (!Number.isFinite(aktivierungFruehMs)) {",
+      "    if (false) {")
   }
 ];
 

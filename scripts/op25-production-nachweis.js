@@ -34,13 +34,26 @@
 // Untergrenze im Bewertungskern). Ein Fenster unter 24 vollstaendig vergangenen Stunden
 // wird nie gruen.
 //
-// ── ZWEI SCHRITTE, WEIL DIE MANDATSMENGE EINGEFROREN WIRD ────────────────────────────────────
-// Schritt 1 (unmittelbar NACH der Aktivierung): Startbaseline erheben.
-//   node scripts/op25-production-nachweis.js --aktivierung <ISO> \
+// ── ZWEI SCHRITTE, WEIL BASELINE UND DEPLOYMENT-STAND EINGEFROREN WERDEN ─────────────────────
+// DER AKTIVIERUNGSZEITPUNKT ist der READY-Zeitpunkt des NEUEN Production-Deployments, das
+// `HELMUT_CRON_GLOBALABRUF=on` tatsaechlich enthaelt. Das Setzen der Vercel-Env allein ist
+// KEINE Aktivierung — eine Umgebungsvariable wirkt erst in einem neuen Deployment.
+//
+// Schritt 1 (unmittelbar NACH READY, innerhalb von 15 min): Startbaseline erheben.
+//   node scripts/op25-production-nachweis.js --aktivierung <READY-ISO> \
+//        --erwarteter-commit <voller Merge-Commit, 40 Hexziffern> \
 //        --startbaseline-schreiben belege/op25-startbaseline.json
+//   Der erwartete Commit ist PFLICHT und wird verbindlich gespeichert. Er wird beim
+//   Schreiben AUSDRUECKLICH NICHT gegen alte Prozesslaeufe geprueft — direkt nach READY
+//   kann noch kein Lauf des neuen Deployments existieren.
+// Waehrend des 24-h-Fensters darf KEIN weiteres Production-Deployment erfolgen.
 // Schritt 2 (fruehestens 24 h spaeter): auswerten.
-//   node scripts/op25-production-nachweis.js --aktivierung <ISO> \
+//   node scripts/op25-production-nachweis.js --aktivierung <READY-ISO> \
 //        --startbaseline belege/op25-startbaseline.json
+//   (optional erneut --erwarteter-commit als Gegenprobe gegen die Belegdatei)
+//   Alle zum Fenster gehoerenden `globalphase`-Prozesslaeufe muessen einen gueltigen
+//   `commit_ref` tragen, der exakt zum gespeicherten Commit gehoert: fehlender Beleg =>
+//   `blockiert`, abweichender Commit => `nicht_bestanden`.
 // Ohne Startbaseline ist der Mandatsbestand zum Aktivierungszeitpunkt nicht belegt — das
 // Ergebnis ist dann ehrlich `blockiert`, nie ein Ersatz aus dem AKTUELLEN Bestand.
 //
@@ -232,19 +245,6 @@ async function leseZuletztBeobachtetenProzessCommit() {
   }
 }
 
-// Strikte Gegenprobe eines AUSDRUECKLICH uebergebenen erwarteten Deployment-Commits gegen
-// den zuletzt beobachteten Prozess-Commit. Nur bei exakter Uebereinstimmung ist belegt, dass
-// der erwartete Stand bereits Laeufe erzeugt hat. Jede Abweichung ist fail closed: entweder
-// laeuft ein anderer Stand, oder der erwartete Stand hat noch keinen Lauf hinterlassen —
-// in beiden Faellen darf nichts als „aktueller Deployment-Stand" festgehalten werden.
-// Die Pruefung selbst liegt im REINEN KERN (`vertrag.pruefeCommitBeleg`) — dort ist sie
-// direkt und verhaltensbasiert testbar, und es gibt genau EINE Umsetzung. Frueher stand
-// hier eine eigene Fassung, die nur Laengen und `startsWith` verglich; sie bestaetigte
-// eine gueltige SHA MIT ANGEHAENGTEM UNSINN (Review 4 zu PR #222).
-function pruefeErwartetenCommit(erwartet, beobachtet) {
-  return vertrag.pruefeCommitBeleg({ erwartet, beobachtet });
-}
-
 // --- Kostenvertrag: Summe UND belegte Vollstaendigkeit ---------------------------------------
 // Der Leser selbst liegt im REINEN KERN (`vertrag.kostenAusNutzung`) — dort ist er direkt
 // testbar, und der strikte Zahlenvertrag hat genau EINE Umsetzung. Frueher stand hier eine
@@ -260,14 +260,23 @@ const zeit = (ms) => (Number.isFinite(ms) ? new Date(ms).toISOString().replace("
 
 // --- Startbaseline (lokale Belegdatei, Production nur gelesen) --------------------------------
 
-// Schreibt die Startbaseline. Ein GUELTIGER Aktivierungszeitpunkt ist Pflicht — eine Baseline
-// mit `aktivierungAtMs: null` waere wertlos (sie koennte zu jeder Aktivierung gehoeren) und
-// wuerde die Auswertung spaeter ohnehin blockieren. Deshalb wird hier gar nicht erst
-// geschrieben (Review 2 zu PR #222).
-function schreibeStartbaseline(datei, { aktivierungAtMs, aktiveMandate, prozessCommit, commitPruefung }) {
+// Schreibt die Startbaseline. Ein GUELTIGER Aktivierungszeitpunkt (der READY-Zeitpunkt des
+// neuen Production-Deployments) und der VOLLSTAENDIGE erwartete Merge-Commit sind Pflicht —
+// eine Baseline ohne beides waere wertlos (sie koennte zu jeder Aktivierung/jedem Stand
+// gehoeren) und wuerde die Auswertung spaeter ohnehin fail closed abweisen. Deshalb wird
+// hier gar nicht erst geschrieben.
+function schreibeStartbaseline(datei, { aktivierungAtMs, aktiveMandate, prozessCommit, erwarteterCommit }) {
   if (!Number.isFinite(aktivierungAtMs)) {
     throw new Error("--startbaseline-schreiben verlangt einen gueltigen --aktivierung-Zeitpunkt"
-      + " (ISO). Ohne ihn belegt die Baseline nichts.");
+      + " (ISO; der READY-Zeitpunkt des neuen Deployments). Ohne ihn belegt die Baseline nichts.");
+  }
+  // PFLICHT (Nachtragskorrektur 2026-08-04/5): der volle erwartete Merge-Commit. Kurzformen
+  // genuegen nicht — die spaetere Auswertung prueft die `commit_ref`-Werte der Fensterlaeufe
+  // EXAKT gegen diesen Wert.
+  const vollerCommit = vertrag.normalisiereVollenCommit(erwarteterCommit);
+  if (vollerCommit === null) {
+    throw new Error("--startbaseline-schreiben verlangt --erwarteter-commit mit dem"
+      + ` VOLLSTAENDIGEN erwarteten Merge-Commit (${vertrag.COMMIT_VOLL_LAENGE} Hexziffern).`);
   }
   const jetztMs = Date.now();
   // Eine Aktivierung in der ZUKUNFT kann nicht belegt werden — es gibt noch nichts zu sehen.
@@ -287,19 +296,23 @@ function schreibeStartbaseline(datei, { aktivierungAtMs, aktiveMandate, prozessC
   const sig = vertrag.mandatsSignatur(aktiveMandate);
   if (!sig.anzahl) throw new Error("Startbaseline ohne Mandate — nichts zu belegen.");
   const inhalt = {
-    zweck: "OP-25 Startbaseline: Mandatsmenge am Fensterstart, identitaetsgenau eingefroren",
+    zweck: "OP-25 Startbaseline: Mandatsmenge und Deployment-Stand am Fensterstart, verbindlich eingefroren",
     erhobenAt: new Date(jetztMs).toISOString(),
     erhobenAtMs: jetztMs,
+    // Der Aktivierungszeitpunkt ist der READY-Zeitpunkt des neuen Production-Deployments,
+    // das das Flag tatsaechlich enthaelt — NICHT der Zeitpunkt der Env-Aenderung.
     aktivierungAt: new Date(aktivierungAtMs).toISOString(),
     aktivierungAtMs,
-    // EHRLICHE BENENNUNG (Review 3): das ist der Commit des juengsten GESPEICHERTEN Laufs,
-    // NICHT der aktuelle Deployment-Stand. Nach einem frischen Deployment ohne Lauf ist er
-    // veraltet. Ein Feld `deploymentCommit` gibt es bewusst nicht mehr.
+    // EHRLICHE BENENNUNG (Review 3): das ist der Commit des juengsten GESPEICHERTEN Laufs —
+    // in der Regel des ALTEN Deployments. Rein informativ; er wird beim Schreiben
+    // AUSDRUECKLICH NICHT gegen den erwarteten Commit geprueft (direkt nach READY kann noch
+    // kein Lauf des neuen Deployments existieren) und bestaetigt nichts.
     zuletztBeobachteterProzessCommit: (typeof prozessCommit === "string" && prozessCommit.trim()) ? prozessCommit.trim() : null,
-    // Nur wenn der Betreiber einen erwarteten Commit UEBERGEBEN hat und er strikt zum
-    // beobachteten passt, gilt der Stand als belegt. Sonst ausdruecklich `false`.
-    erwarteterDeploymentCommit: (commitPruefung && commitPruefung.erwartet) || null,
-    deploymentCommitBestaetigt: Boolean(commitPruefung && commitPruefung.bestaetigt),
+    hinweisProzessCommit: "kein Deployment-Beleg: Commit des juengsten gespeicherten Laufs (Alt-Bestand); beim Schreiben nicht geprueft",
+    // VERBINDLICH gespeichert: der volle erwartete Merge-Commit. Bestaetigt wird er erst in
+    // der Auswertung — alle `globalphase`-Fensterlaeufe muessen exakt diesen Commit tragen.
+    erwarteterDeploymentCommit: vollerCommit,
+    commitPruefung: "erst in der Auswertung: alle globalphase-Fensterlaeufe muessen commit_ref == erwarteterDeploymentCommit tragen",
     anzahl: sig.anzahl,
     mandate: sig.mandate,
     signatur: sig.signatur
@@ -407,6 +420,29 @@ async function erhebeBaseline({ mainStore, authStore, fairnessStore, dauerhafte 
   console.log("kein Cron-Trigger, keine Flag-/Env-Aenderung, 0 KI-Aufrufe.");
   console.log(`Messzeitpunkt: ${new Date(jetztMs).toISOString()}\n`);
 
+  // ---- FRUEHE ARG-GATES des Schreibpfads: fail fast VOR jedem Production-Lesezugriff ------
+  // Damit sind die Pflichtparameter OHNE Netz verhaltenstestbar, und ein fehlerhafter Aufruf
+  // beruehrt Production gar nicht erst.
+  if (args["startbaseline-schreiben"]) {
+    const aktivierungFruehMs = parseIsoMs(args.aktivierung ?? process.env.HELMUT_OP25_AKTIVIERUNG_AT, "--aktivierung");
+    // FAIL CLOSED: ohne gueltigen Aktivierungszeitpunkt wird gar nicht erst geschrieben.
+    if (!Number.isFinite(aktivierungFruehMs)) {
+      console.error("MESSFEHLER: --startbaseline-schreiben verlangt einen gueltigen"
+        + " --aktivierung-Zeitpunkt (ISO; der READY-Zeitpunkt des neuen Production-Deployments)."
+        + " Ohne ihn belegt die Baseline nichts — nichts geschrieben.");
+      process.exit(2);
+    }
+    // PFLICHT (Nachtragskorrektur 2026-08-04/5): der VOLLSTAENDIGE erwartete Merge-Commit.
+    if (vertrag.normalisiereVollenCommit(args["erwarteter-commit"]) === null) {
+      console.error("MESSFEHLER: --startbaseline-schreiben verlangt --erwarteter-commit mit dem"
+        + ` VOLLSTAENDIGEN erwarteten Merge-Commit (${vertrag.COMMIT_VOLL_LAENGE} Hexziffern)`
+        + " — nichts geschrieben.");
+      console.error("Kurzformen genuegen nicht: die spaetere Auswertung prueft die commit_ref"
+        + " aller Fensterlaeufe EXAKT gegen diesen Wert.");
+      process.exit(2);
+    }
+  }
+
   const mainStore = await leseStoreZeile(STORE_ID);
   const authStore = await leseStoreZeile(AUTH_STORE_ID);
   const fairnessStore = await leseStoreZeile(`${STORE_ID}-cron-fairness`);
@@ -428,26 +464,19 @@ async function erhebeBaseline({ mainStore, authStore, fairnessStore, dauerhafte 
       console.error("MESSFEHLER: aktive Mandatsmenge nicht lesbar — keine Startbaseline geschrieben.");
       process.exit(2);
     }
-    // FAIL CLOSED: ohne gueltigen Aktivierungszeitpunkt wird gar nicht erst geschrieben.
-    if (!Number.isFinite(aktivierungAtMs)) {
-      console.error("MESSFEHLER: --startbaseline-schreiben verlangt einen gueltigen"
-        + " --aktivierung-Zeitpunkt (ISO). Ohne ihn belegt die Baseline nichts — nichts geschrieben.");
-      process.exit(2);
-    }
+    // Die Pflichtparameter (Aktivierung + voller erwarteter Commit) sind bereits an den
+    // FRUEHEN Arg-Gates oben geprueft — vor jedem Production-Lesezugriff. Die Funktion
+    // `schreibeStartbaseline` prueft beide zusaetzlich selbst (Doppelgate, fail closed).
+    // AUSDRUECKLICH KEINE Pruefung gegen den juengsten alten Prozesslauf: unmittelbar nach
+    // READY kann noch kein Lauf des NEUEN Deployments existieren; ein alter Lauf darf die
+    // Baseline weder blockieren noch faelschlich bestaetigen. Der Beleg entsteht erst in
+    // der Auswertung gegen die commit_ref aller Fensterlaeufe.
     const beobachtet = await leseZuletztBeobachtetenProzessCommit();
-    const commitPruefung = pruefeErwartetenCommit(args["erwarteter-commit"], beobachtet.commit);
-    // Ein AUSDRUECKLICH erwarteter Commit, der nicht belegt ist, ist fail closed: entweder
-    // laeuft ein anderer Stand oder der erwartete hat noch keinen Lauf hinterlassen.
-    if (commitPruefung.uebergeben && !commitPruefung.bestaetigt) {
-      console.error(`MESSFEHLER: ${commitPruefung.grund} — nichts geschrieben.`);
-      console.error("Entweder das Deployment abwarten, bis es einen Lauf erzeugt hat, oder"
-        + " --erwarteter-commit weglassen (dann wird KEIN Deployment-Stand behauptet).");
-      process.exit(2);
-    }
     let inhalt;
     try {
       inhalt = schreibeStartbaseline(String(args["startbaseline-schreiben"]), {
-        aktivierungAtMs, aktiveMandate, prozessCommit: beobachtet.commit, commitPruefung
+        aktivierungAtMs, aktiveMandate, prozessCommit: beobachtet.commit,
+        erwarteterCommit: args["erwarteter-commit"]
       });
     } catch (fehler) {
       console.error(`MESSFEHLER: ${(fehler && fehler.message) || fehler} — nichts geschrieben.`);
@@ -455,12 +484,12 @@ async function erhebeBaseline({ mainStore, authStore, fairnessStore, dauerhafte 
     }
     console.log("== STARTBASELINE GESCHRIEBEN (lokale Belegdatei; Production nur gelesen) ==");
     console.log(JSON.stringify(inhalt, null, 2));
-    if (!inhalt.deploymentCommitBestaetigt) {
-      console.log("\nHINWEIS: `zuletztBeobachteterProzessCommit` ist der Commit des juengsten"
-        + " GESPEICHERTEN Laufs, NICHT der aktuelle Deployment-Stand. Wer ihn belegen will,"
-        + " uebergibt `--erwarteter-commit <sha>` — dann wird strikt geprueft.");
-    }
-    console.log("\nFruehestens 24 h nach der Aktivierung mit `--startbaseline <datei>` auswerten.");
+    console.log("\nHINWEIS: `zuletztBeobachteterProzessCommit` ist der Commit des juengsten"
+      + " GESPEICHERTEN Laufs (in der Regel des ALTEN Deployments) — rein informativ, keine"
+      + " Bestaetigung. Der erwartete Commit wird erst in der Auswertung gegen die commit_ref"
+      + " aller Fensterlaeufe geprueft.");
+    console.log("\nWaehrend des 24-h-Fensters darf KEIN weiteres Production-Deployment erfolgen.");
+    console.log("Fruehestens 24 h nach der Aktivierung mit `--startbaseline <datei>` auswerten.");
     process.exit(0);
   }
 
@@ -504,7 +533,14 @@ async function erhebeBaseline({ mainStore, authStore, fairnessStore, dauerhafte 
       : DOKUMENTIERTE_ERWARTETE_MANDATE,
     kosten,
     kontextErklaerungen: args["kontext-erklaerung"] ? { "*": String(args["kontext-erklaerung"]) } : {},
-    fairnessLaeufe
+    fairnessLaeufe,
+    // Optional: an der Auswertung erneut uebergebener erwarteter Commit — der Kern prueft
+    // ihn als Gegenprobe gegen den in der Baseline gespeicherten (Schutz vor falscher Datei).
+    commitGegenprobe: args["erwarteter-commit"] ?? null,
+    // FAIL CLOSED (Review-Nachprobe): ein Lesefehler der KANONISCHEN Belegquelle
+    // process_runs geht in die Bewertung ein (blockiert), statt nur als Konsolentext zu
+    // erscheinen — sonst koennte der Commitnachweis allein auf dem Blob-Spiegel bestehen.
+    prozessLaeufeLesefehler: dauerhafte.relationalFehler
   });
 
   const endSig = Array.isArray(aktiveMandate) ? vertrag.mandatsSignatur(aktiveMandate) : null;
@@ -517,7 +553,10 @@ async function erhebeBaseline({ mainStore, authStore, fairnessStore, dauerhafte 
   console.log(`Laufdatensaetze im Blob: ${laeufe ? `${laeufe.length} (Retention ${LAUF_RETENTION})` : "NICHT LESBAR"}`
     + ` · dauerhafte globalphase-Zeilen: ${dauerhafte.zeilen.length}`
     + `${dauerhafte.relationalFehler ? ` (relational nicht lesbar: ${dauerhafte.relationalFehler})` : ""}`);
-  console.log(`Aktivierung: ${zeit(aktivierungAtMs)} · Fenster: ${zeit(fensterStartMs)} → ${zeit(fensterEndeMs)}`);
+  console.log(`Aktivierung (READY des neuen Deployments): ${zeit(aktivierungAtMs)} · Fenster: ${zeit(fensterStartMs)} → ${zeit(fensterEndeMs)}`);
+  console.log(`erwarteter Deployment-Commit (aus der Baseline): ${startbaseline && typeof startbaseline.erwarteterDeploymentCommit === "string" && startbaseline.erwarteterDeploymentCommit.trim()
+    ? startbaseline.erwarteterDeploymentCommit.trim()
+    : "FEHLT — die Auswertung ist damit fail closed blockiert"}`);
   console.log(`Kosten im Fenster: ${kosten
     ? `${kosten.fensterUsd} USD (Rahmen ${kosten.rahmenUsd} USD, vollstaendig=${kosten.vollstaendig}, unbepreist=${kosten.unbepreisteEintraege})`
     : "—"}\n`);
@@ -550,8 +589,10 @@ async function erhebeBaseline({ mainStore, authStore, fairnessStore, dauerhafte 
     fenster: { von: zeit(fensterStartMs), bis: zeit(fensterEndeMs) },
     mandatsmenge: bewertung.mandatsmenge ? bewertung.mandatsmenge.signatur : null,
     endzustand: endSig ? endSig.signatur : null,
+    erwarteterCommit: bewertung.erwarteterCommit ?? null,
     benoetigteDatensaetze: bewertung.benoetigteDatensaetze ?? null,
     dauerhafteZeilen: dauerhafte.zeilen.length,
+    relationalFehler: dauerhafte.relationalFehler,
     befunde: bewertung.befunde.map((b) => ({ schwere: b.schwere, grund: b.grund })),
     warnungen: bewertung.warnungen.length,
     ausgeschlossen: bewertung.ausgeschlossen.length
