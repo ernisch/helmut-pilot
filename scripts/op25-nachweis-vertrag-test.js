@@ -1153,25 +1153,137 @@ console.log("\n== 33 · REVIEW 3 · Punkt 1: die Baseline gilt NUR unmittelbar n
 }
 
 // =============================================================================================
-console.log("\n== 34 · REVIEW 3 · Punkt 2: kein veralteter Commit als Deployment-Stand ==");
+console.log("\n== 34 · REVIEW 3+4 · Commit-Beleg: VERHALTEN der Pruefung, nicht Quelltextsuche ==");
 // =============================================================================================
 {
+  // Diese Faelle pruefen `pruefeCommitBeleg` DIREKT — genau die Funktion, die das CLI
+  // benutzt. Quelltextsuchen stehen nur noch ergaenzend am Ende (34.20+).
+  const SHA = "89427c5b5aac4b362d2040c7b71bde8d52c1085d";           // 40 Hexziffern
+  const SHA2 = "1f3a9d7e2c4b6a8f0e5d3c1b9a7f5e3d1c9b7a5f";          // andere gueltige SHA
+  const belegt = (erwartet, beobachtet = SHA) => V.pruefeCommitBeleg({ erwartet, beobachtet });
+
+  check("34.1 Grenzen sind 7 und 40 Hexziffern",
+    V.COMMIT_MIN_LAENGE === 7 && V.COMMIT_MAX_LAENGE === 40);
+
+  // --- (1) identische vollstaendige SHA ---------------------------------------------------
+  check("34.2 Identische vollstaendige SHA => bestaetigt",
+    (() => { const r = belegt(SHA); return r.uebergeben === true && r.bestaetigt === true
+      && r.erwartet === SHA && r.beobachtet === SHA; })());
+
+  // --- (2) gueltige erwartete Kurzform ----------------------------------------------------
+  check("34.3 Erwartete Kurzform (7 Zeichen) als echtes Praefix => bestaetigt",
+    belegt(SHA.slice(0, 7)).bestaetigt === true);
+  check("34.4 Erwartete Kurzform in mehreren Laengen (7..39) => durchgaengig bestaetigt",
+    Array.from({ length: 33 }, (_, i) => i + 7).every((n) => belegt(SHA.slice(0, n)).bestaetigt === true));
+
+  // --- (3) gueltige BEOBACHTETE Kurzform (bewusst unterstuetzt) ---------------------------
+  check("34.5 Beobachtete Kurzform, erwartete Vollform => bestaetigt (bewusst unterstuetzt)",
+    V.pruefeCommitBeleg({ erwartet: SHA, beobachtet: SHA.slice(0, 8) }).bestaetigt === true);
+
+  // --- (4) abweichende SHA ----------------------------------------------------------------
+  check("34.6 Andere vollstaendige SHA => NICHT bestaetigt, mit Grund",
+    (() => { const r = belegt(SHA2); return r.uebergeben === true && r.bestaetigt === false
+      && /weicht vom erwarteten/.test(r.grund || ""); })());
+  check("34.7 Gleich lange Kurzformen, die sich in EINEM Zeichen unterscheiden => nicht bestaetigt",
+    belegt("89427c5".slice(0, 6) + "6").bestaetigt === false);
+  check("34.8 Unterschied an JEDER Position wird erkannt (40 Varianten)",
+    Array.from({ length: 40 }, (_, i) => {
+      const anders = SHA.slice(0, i) + (SHA[i] === "a" ? "b" : "a") + SHA.slice(i + 1);
+      return belegt(anders).bestaetigt === false;
+    }).every(Boolean));
+
+  // --- (5) vollstaendige SHA mit angehaengtem Unsinn — DER GEMELDETE BEFUND ---------------
+  const anhaenge = ["-VOELLIGER-UNSINN", "zzzz", "!", " x", "_1", ".git", "/HEAD", "#1", ":tag", SHA];
+  check("34.9 Vollstaendige SHA mit angehaengtem Unsinn => NIEMALS bestaetigt (gemeldeter Befund)",
+    anhaenge.every((suffix) => belegt(SHA + suffix).bestaetigt === false),
+    JSON.stringify(anhaenge.filter((s) => belegt(SHA + s).bestaetigt)));
+  check("34.10 Auch vorangestellter oder eingefuegter Unsinn wird abgelehnt",
+    ["commit " + SHA, "sha256:" + SHA, SHA.slice(0, 20) + "-" + SHA.slice(20), `"${SHA}"`]
+      .every((v) => belegt(v).bestaetigt === false));
+  check("34.11 Auch HEXADEZIMALER Anhang (41+ Zeichen) wird abgelehnt — Laenge zaehlt",
+    belegt(SHA + "a").bestaetigt === false && belegt(SHA + SHA).bestaetigt === false);
+
+  // --- (6) nicht hexadezimale Zeichen -----------------------------------------------------
+  // `"89427c5\n"` gehoert NICHT hierher: der Zeilenumbruch am Rand wird getrimmt, der Rest
+  // ist gueltig (Fall 10). Nicht-hex meint Zeichen INNERHALB des Werts.
+  check("34.12 Nicht-hexadezimale Werte => nicht bestaetigt und nicht normalisierbar",
+    ["nichthex", "89427g5", "89427c5-", "ghijklm", "89427c 5", "89427c5\n8", "0x89427c5", "89427c5​"]
+      .every((v) => belegt(v).bestaetigt === false && V.normalisiereCommit(v) === null));
+
+  // --- (7)/(8) Laengengrenzen -------------------------------------------------------------
+  check("34.13 Weniger als 7 Zeichen => abgelehnt (6 nein, 7 ja)",
+    belegt(SHA.slice(0, 6)).bestaetigt === false && V.normalisiereCommit(SHA.slice(0, 6)) === null
+    && belegt(SHA.slice(0, 7)).bestaetigt === true);
+  check("34.14 Mehr als 40 Zeichen => abgelehnt (41 nein, 40 ja)",
+    V.normalisiereCommit(SHA + "a") === null && V.normalisiereCommit(SHA) === SHA);
+  check("34.15 Leer und nur Leerzeichen sind nie gueltige Werte",
+    V.normalisiereCommit("") === null && V.normalisiereCommit("       ") === null);
+
+  // --- (9) Grossbuchstaben ----------------------------------------------------------------
+  check("34.16 Grossbuchstaben werden normalisiert und bestaetigt",
+    (() => { const r = belegt(SHA.toUpperCase()); return r.bestaetigt === true && r.erwartet === SHA; })());
+  check("34.17 Gemischte Schreibweise auf BEIDEN Seiten wird bestaetigt",
+    V.pruefeCommitBeleg({ erwartet: SHA.toUpperCase(), beobachtet: SHA.toUpperCase() }).bestaetigt === true);
+
+  // --- (10) Leerzeichen am Rand -----------------------------------------------------------
+  check("34.18 Leerzeichen/Tabs/Zeilenumbrueche am Rand werden getrimmt",
+    [` ${SHA} `, `\t${SHA}\n`, `\n  ${SHA.toUpperCase()}  \t`].every((v) => belegt(v).bestaetigt === true));
+
+  // --- (11) fehlender erwarteter Wert -----------------------------------------------------
+  check("34.19 Kein erwarteter Commit => uebergeben:false, bestaetigt:false, KEIN Fehler",
+    [null, undefined, "", "   "].every((v) => {
+      const r = belegt(v);
+      return r.uebergeben === false && r.bestaetigt === false && r.erwartet === null && !r.grund;
+    }));
+  check("34.20 Flagge OHNE Wert (Parser liefert true) gilt als UEBERGEBEN und faellt durch",
+    (() => { const r = belegt(true); return r.uebergeben === true && r.bestaetigt === false
+      && /kein gueltiger Git-SHA/.test(r.grund || ""); })());
+
+  // --- (12) fehlender oder ungueltiger beobachteter Wert ----------------------------------
+  check("34.21 Kein beobachteter Commit => nicht bestaetigt, mit eigenem Grund",
+    [null, undefined, ""].every((b) => {
+      const r = V.pruefeCommitBeleg({ erwartet: SHA, beobachtet: b });
+      return r.uebergeben === true && r.bestaetigt === false && /keinen gespeicherten Prozess-Commit/.test(r.grund || "");
+    }));
+  check("34.22 Ungueltiger beobachteter Commit => nicht bestaetigt, eigener Grund",
+    ["kaputt", "89427", SHA + "zz", 42, true].every((b) => {
+      const r = V.pruefeCommitBeleg({ erwartet: SHA, beobachtet: b });
+      return r.bestaetigt === false && /kein gueltiger Git-SHA-Wert/.test(r.grund || "");
+    }));
+
+  // --- Typen und Robustheit ---------------------------------------------------------------
+  check("34.23 Nicht-Zeichenketten sind nie gueltig und loesen keinen Absturz aus",
+    [42, 0, true, false, [], [SHA], {}, { toString: () => SHA }, new Date(), Symbol.iterator]
+      .every((v) => {
+        try { return V.pruefeCommitBeleg({ erwartet: v, beobachtet: SHA }).bestaetigt === false; }
+        catch (_) { return false; }
+      }));
+  check("34.24 istEchtesPraefix ist STRIKT (gleich lang ist kein Praefix)",
+    V.istEchtesPraefix("89427c5", SHA) === true
+    && V.istEchtesPraefix(SHA, SHA) === false
+    && V.istEchtesPraefix(SHA, "89427c5") === false);
+
+  // --- Ergaenzend (NICHT der einzige Beleg): Quelltextzusagen des CLI ---------------------
   const cliQuelle = fs.readFileSync(path.join(__dirname, "op25-production-nachweis.js"), "utf8");
-  check("34.1 Es gibt kein Feld/keine Funktion mehr, die einen Deployment-Commit BEHAUPTET",
+  check("34.25 Es gibt kein Feld/keine Funktion mehr, die einen Deployment-Commit BEHAUPTET",
     !/deploymentCommit:/.test(cliQuelle) && !/function leseDeploymentCommit/.test(cliQuelle));
-  check("34.2 Der beobachtete Wert heisst ehrlich 'zuletztBeobachteterProzessCommit'",
+  check("34.26 Der beobachtete Wert heisst ehrlich 'zuletztBeobachteterProzessCommit'",
     /zuletztBeobachteterProzessCommit/.test(cliQuelle)
     && /leseZuletztBeobachtetenProzessCommit/.test(cliQuelle));
-  check("34.3 Ein erwarteter Commit ist ausdruecklich uebergebbar und wird strikt geprueft",
-    /--erwarteter-commit|erwarteter-commit/.test(cliQuelle) && /function pruefeErwartetenCommit/.test(cliQuelle));
-  check("34.4 Nur ein bestaetigter Commit wird als belegt gefuehrt",
+  check("34.27 Das CLI hat KEINE eigene Commitpruefung mehr — es reicht an den Kern durch",
+    (() => {
+      const rumpf = (cliQuelle.split("function pruefeErwartetenCommit(")[1] || "").split("\n}")[0]
+        .split("\n").filter((z) => !z.trim().startsWith("//")).join("\n");
+      return /vertrag\.pruefeCommitBeleg/.test(rumpf)
+        && !/startsWith/.test(rumpf) && !/\.length/.test(rumpf);
+    })());
+  check("34.28 Nur ein bestaetigter Commit wird als belegt gefuehrt",
     /deploymentCommitBestaetigt: Boolean\(commitPruefung && commitPruefung\.bestaetigt\)/.test(cliQuelle));
-  check("34.5 Ein uebergebener, aber nicht bestaetigter Commit ist fail closed (nichts geschrieben)",
+  check("34.29 Ein uebergebener, aber nicht bestaetigter Commit ist fail closed (nichts geschrieben)",
     /commitPruefung\.uebergeben && !commitPruefung\.bestaetigt/.test(cliQuelle)
     && /nichts geschrieben/.test(cliQuelle));
-  check("34.6 Auch der --baseline-Querschnitt behauptet keinen Deployment-Stand",
-    /hinweisProzessCommit/.test(cliQuelle)
-    && /kein Deployment-Beleg/.test(cliQuelle));
+  check("34.30 Auch der --baseline-Querschnitt behauptet keinen Deployment-Stand",
+    /hinweisProzessCommit/.test(cliQuelle) && /kein Deployment-Beleg/.test(cliQuelle));
 }
 
 console.log(`\n${passed + failed} Pruefpunkte · ${passed} PASS · ${failed} FAIL`);

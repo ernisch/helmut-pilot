@@ -420,6 +420,66 @@ const PROBEN = [
     mutiere: (b) => ersetze(b, KERN,
       "  if (Number(aktivierungAtMs) > jetztMs) {",
       "  if (false) {")
+  },
+
+  // --- Review 4: die Commitpruefung ---------------------------------------------------------
+  {
+    name: "M47 SHA-Formatpruefung entfernt (Nicht-Hex wird wieder akzeptiert)",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  return COMMIT_MUSTER.test(s) ? s : null;",
+      "  return s;")
+  },
+  {
+    name: "M48 Mindestlaenge entfernt (zu kurze Werte werden wieder akzeptiert)",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (s.length < COMMIT_MIN_LAENGE || s.length > COMMIT_MAX_LAENGE) return null;",
+      "  if (s.length > COMMIT_MAX_LAENGE) return null;")
+  },
+  {
+    name: "M49 Obergrenze entfernt (SHA mit hexadezimalem Anhang wird wieder akzeptiert)",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (s.length < COMMIT_MIN_LAENGE || s.length > COMMIT_MAX_LAENGE) return null;",
+      "  if (s.length < COMMIT_MIN_LAENGE) return null;")
+  },
+  {
+    name: "M50 Angehaengter Unsinn wieder akzeptiert (alte startsWith-Logik ohne Formatpruefung)",
+    suite: VERTRAG_SUITE,
+    // Exakt der gemeldete Befund: Vergleich nur ueber Laengen und startsWith, ohne dass die
+    // Werte selbst gueltige SHAs sein muessen.
+    mutiere: (b) => ersetze(b, KERN,
+      "  const soll = normalisiereCommit(erwartet);",
+      "  const soll = (typeof erwartet === \"string\" && erwartet.trim()) ? erwartet.trim().toLowerCase() : null;")
+  },
+  {
+    name: "M51 Abweichender Commit wird wieder bestaetigt",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  const gleich = soll === ist || istEchtesPraefix(soll, ist) || istEchtesPraefix(ist, soll);",
+      "  const gleich = true;")
+  },
+  {
+    name: "M52 Praefixpruefung nicht mehr STRIKT (gleich lange Werte gelten als Praefix)",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  return kurz.length < lang.length && lang.startsWith(kurz);",
+      "  return lang.startsWith(kurz);")
+  },
+  {
+    name: "M53 Uebergebener, aber ungueltiger erwarteter Commit faellt nicht mehr durch",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (soll === null) {\n    return {\n      uebergeben: true, bestaetigt: false, erwartet: null,",
+      "  if (false) {\n    return {\n      uebergeben: true, bestaetigt: false, erwartet: null,")
+  },
+  {
+    name: "M54 Ungueltiger BEOBACHTETER Commit wird wieder als Beleg akzeptiert",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  const ist = normalisiereCommit(beobachtet);\n  if (ist === null) {",
+      "  const ist = normalisiereCommit(beobachtet) || String(beobachtet || \"\").trim().toLowerCase();\n  if (!ist) {")
   }
 ];
 

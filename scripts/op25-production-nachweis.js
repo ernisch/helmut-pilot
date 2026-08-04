@@ -237,25 +237,12 @@ async function leseZuletztBeobachtetenProzessCommit() {
 // der erwartete Stand bereits Laeufe erzeugt hat. Jede Abweichung ist fail closed: entweder
 // laeuft ein anderer Stand, oder der erwartete Stand hat noch keinen Lauf hinterlassen —
 // in beiden Faellen darf nichts als „aktueller Deployment-Stand" festgehalten werden.
+// Die Pruefung selbst liegt im REINEN KERN (`vertrag.pruefeCommitBeleg`) — dort ist sie
+// direkt und verhaltensbasiert testbar, und es gibt genau EINE Umsetzung. Frueher stand
+// hier eine eigene Fassung, die nur Laengen und `startsWith` verglich; sie bestaetigte
+// eine gueltige SHA MIT ANGEHAENGTEM UNSINN (Review 4 zu PR #222).
 function pruefeErwartetenCommit(erwartet, beobachtet) {
-  const soll = (typeof erwartet === "string" && erwartet.trim()) ? erwartet.trim() : null;
-  if (!soll) return { uebergeben: false, bestaetigt: false, erwartet: null };
-  if (!beobachtet) {
-    return {
-      uebergeben: true, bestaetigt: false, erwartet: soll,
-      grund: "Es gibt keinen gespeicherten Prozess-Commit — der erwartete Stand ist nicht belegbar."
-    };
-  }
-  // Kurzform (7–12 Zeichen) gegen Vollform zulassen, aber nur als echtes Praefix.
-  const gleich = soll === beobachtet
-    || (soll.length >= 7 && beobachtet.startsWith(soll))
-    || (beobachtet.length >= 7 && soll.startsWith(beobachtet));
-  return gleich
-    ? { uebergeben: true, bestaetigt: true, erwartet: soll }
-    : {
-      uebergeben: true, bestaetigt: false, erwartet: soll,
-      grund: `Zuletzt beobachteter Prozess-Commit ${beobachtet} weicht vom erwarteten ${soll} ab.`
-    };
+  return vertrag.pruefeCommitBeleg({ erwartet, beobachtet });
 }
 
 // --- Kostenvertrag: Summe UND belegte Vollstaendigkeit ---------------------------------------

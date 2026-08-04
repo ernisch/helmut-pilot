@@ -980,6 +980,44 @@ geraten**. Stattdessen:
 - Ohne `--erwarteter-commit` bleibt `deploymentCommitBestaetigt: false`, und das Werkzeug sagt
   das im Bericht ausdrücklich.
 
+### 7.7.4 Vierter Reviewdurchgang (2026-08-04) — die Commitprüfung selbst war zu schwach
+
+Der Befund aus §7.7.3 war richtig, seine **Umsetzung** nicht. Die Prüfung bestand nur aus
+Längenvergleich und `startsWith` und **im CLI**, nicht im Bewertungskern. Beides war belegbar
+falsch:
+
+- **Angehängter Unsinn wurde bestätigt.** Beobachtet `89427c5…1085d` (gültige volle SHA),
+  erwartet dieselbe SHA **plus** `-VOELLIGER-UNSINN` → `deploymentCommitBestaetigt: true`,
+  weil der längere Wert mit dem kürzeren beginnt. Ebenso `…1085dzzzz` und eine **verdoppelte**
+  SHA. Alle drei sind empirisch reproduziert und heute abgewiesen.
+- **Die Absicherung war Textsuche.** Die Prüfpunkte suchten im Quelltext nach Zeichenketten
+  statt die Funktion aufzurufen; die Mutationen betrafen nur die Zeitlogik. Eine Lockerung der
+  Commitprüfung hätte die Suite nicht rot gemacht.
+
+**Korrektur.** Die Prüfung liegt jetzt im reinen Bewertungskern (`lib/helmut/op25-nachweis.js`)
+als `pruefeCommitBeleg` — genau die Funktion, die das CLI aufruft, ist damit direkt testbar.
+Verbindlich gilt nach `trim` + Kleinschreibung:
+
+```
+gueltig ⇔ /^[0-9a-f]+$/  ∧  7 ≤ Länge ≤ 40
+Übereinstimmung ⇔ soll = ist  ∨  soll ist ECHTES Präfix von ist  ∨  ist ist ECHTES Präfix von soll
+```
+
+„Echtes Präfix" heißt **kürzer und Anfang von** — gleich lange, aber verschiedene Werte
+bestehen nicht. Ein Wert, der nach `trim` nicht dem Muster entspricht, ist **kein Commit**,
+also kein Präfix von irgendetwas; angehängter Unsinn scheitert damit schon an der Formatprüfung
+und nicht erst am Vergleich. Fehlende, zu kurze, zu lange und nicht hexadezimale Werte bleiben
+fail closed — auf **beiden** Seiten, auch beim beobachteten Wert. Großbuchstaben und
+Leerzeichen am Rand sind nach Normalisierung zulässig, weil sie denselben Commit bezeichnen.
+Ein **übergebener**, aber nicht bestätigter Commit bleibt Exit 2 ohne Datei.
+
+**Absicherung.** `scripts/op25-nachweis-vertrag-test.js` §34 ruft in 34.1–34.24 die Funktion
+tatsächlich auf (die zwölf geforderten Fälle plus Normalisierungs- und Grenzfälle); die
+Textsuchen sind auf 34.25–34.30 reduziert und nur noch **ergänzend**. Die Mutationsprobe deckt
+die Lockerungen mit **M47–M54** ab, darunter die vier geforderten: Formatprüfung entfernt (M47),
+Mindestlänge entfernt (M48), angehängter Unsinn wieder akzeptiert (M50, exakt die alte
+`startsWith`-Logik), abweichender Commit wieder bestätigt (M51).
+
 ## 8 · Verbleibende Risiken
 
 | # | Risiko | Bewertung |

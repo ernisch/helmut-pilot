@@ -554,6 +554,28 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Production-Proben rein lesend: zukünftige Aktivierung, 2 h zurückliegende Aktivierung und
   falscher erwarteter Commit je **Exit 2 ohne Datei**; korrekter Kurzform-Commit ⇒ bestätigt.
   Dry-Run unverändert `noch_nicht_auswertbar`.
+
+  **Nachtrag 2026-08-04/6 (vierter Reviewdurchgang — die Commitprüfung selbst):** Die in /5
+  eingeführte strikte Prüfung war **nicht strikt**. Sie bestand nur aus Längenvergleich und
+  `startsWith` und lag im CLI statt im Bewertungskern. Empirisch reproduziert: beobachtet
+  `89427c5…1085d`, erwartet dieselbe SHA **plus** `-VOELLIGER-UNSINN` ⇒
+  `deploymentCommitBestaetigt: true`; ebenso mit hexadezimalem Anhang und mit verdoppelter SHA.
+  Zusätzlich bestanden die §34-Prüfpunkte überwiegend aus **Textsuchen im Quelltext**, und die
+  Mutationen M42–M46 betrafen nur die Zeitlogik — eine Lockerung der Commitprüfung wäre nicht
+  rot geworden. **Korrektur:** die Prüfung liegt jetzt als `pruefeCommitBeleg` im reinen
+  Bewertungskern (`lib/helmut/op25-nachweis.js`), das CLI ruft genau diese Funktion auf. Gültig
+  ist nach `trim` + Kleinschreibung nur `/^[0-9a-f]+$/` mit **7–40** Zeichen; Übereinstimmung
+  nur bei Gleichheit oder **echtem** Präfix (kürzer *und* Anfang von) — auf **beiden** Seiten.
+  Fehlende, zu kurze, zu lange und nicht hexadezimale Werte bleiben fail closed; Großbuchstaben
+  und Randleerzeichen sind nach Normalisierung zulässig; ein übergebener, nicht bestätigter
+  Commit bleibt Exit 2 ohne Datei. Kanonisch:
+  [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) **§7.7.4**. Tests: Vertrag
+  **202/202** (+24, davon 24 **echte Verhaltensprüfungen** in §34.1–34.24; Textsuche nur noch
+  ergänzend in 34.25–34.30), Dauerhaftigkeit **52/52**, Mutationsprobe **54 von 54 rot** (+8,
+  M47–M54, darunter die vier geforderten Lockerungen). Production-Proben rein lesend: identische
+  volle SHA, gültige Kurzform und Großschreibung mit Randleerzeichen ⇒ bestätigt; angehängter
+  Unsinn, hexadezimaler Anhang, abweichende SHA, 6 Zeichen, Nicht-Hex und 41 Zeichen ⇒ je
+  **Exit 2 ohne Datei**. Dry-Run unverändert `noch_nicht_auswertbar` (Exit 3).
 - **Nachtrag 2026-08-04 (Profilreparatursprint):** Künftige OP-25-Production-Nachweise arbeiten
   mit **fünf aktiven realen Mandaten** statt sechs — das Demo-Mandat `max-mustermann` ist seit
   2026-08-04 deaktiviert (nicht gelöscht, OP-04-Teilschritt), sofern bis zum Nachweis keine

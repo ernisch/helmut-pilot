@@ -1,6 +1,55 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-08-04, 8. Durchgang (**Dritter (letzter) Reviewdurchgang zu PR #222
+**Letzte Aktualisierung:** 2026-08-04, 9. Durchgang (**Vierter Reviewdurchgang zu PR #222 — die
+Commitprüfung selbst war zu schwach. KEIN Production-Eingriff, kein Merge.** Der Befund aus dem
+8. Durchgang war richtig, seine Umsetzung nicht: `pruefeErwartetenCommit` prüfte nur Längen und
+`startsWith` und lag im **CLI** statt im Bewertungskern. **BELEGTE UMGEHUNG (vor der Korrektur
+empirisch reproduziert):** beobachtet `89427c5b5aac…1085d` (gültige volle SHA), erwartet dieselbe
+SHA **plus** `-VOELLIGER-UNSINN` ⇒ `deploymentCommitBestaetigt: true`, weil der längere Wert mit
+dem kürzeren beginnt; ebenso mit hexadezimalem Anhang (`…1085dzzzz`) und mit **verdoppelter** SHA.
+Zweiter Mangel: die §34-Prüfpunkte bestanden überwiegend aus **Textsuchen im Quelltext** und die
+Mutationen M42–M46 betrafen nur die Zeitlogik — eine Lockerung der Commitprüfung wäre **nicht rot**
+geworden. **KORREKTUR:** die Prüfung liegt jetzt als `pruefeCommitBeleg` im **reinen
+Bewertungskern** (`lib/helmut/op25-nachweis.js`); das CLI ruft genau diese Funktion auf, die
+Zusicherung ist also direkt testbar. Gültig ist nach `trim` + Kleinschreibung ausschließlich
+`/^[0-9a-f]+$/` mit **7–40** Zeichen; Übereinstimmung nur bei Gleichheit oder **echtem** Präfix
+(kürzer **und** Anfang von) — auf **beiden** Seiten, auch beim beobachteten Wert. Angehängter
+Unsinn scheitert damit schon an der Formatprüfung, nicht erst am Vergleich. Großbuchstaben und
+Randleerzeichen sind nach Normalisierung zulässig (derselbe Commit); fehlende, zu kurze, zu lange
+und nicht hexadezimale Werte bleiben **fail closed**; ein übergebener, nicht bestätigter Commit
+bleibt **Exit 2 ohne Datei**. **GEÄNDERTE DATEIEN:** `lib/helmut/op25-nachweis.js`
+(`normalisiereCommit`, `istEchtesPraefix`, `pruefeCommitBeleg` + Konstanten) ·
+`scripts/op25-production-nachweis.js` (delegiert die Prüfung an den Kern) ·
+`scripts/op25-nachweis-vertrag-test.js` (§34 neu: **echte Verhaltensprüfungen**) ·
+`scripts/op25-nachweis-mutationsprobe.js` (M47–M54) · `docs/betrieb/vorgangskontext.md` (§7.7.4) ·
+`docs/datenmotor-restliste.md` · `docs/CURRENT_STATE.md`. **TESTS:**
+`op25-nachweis-vertrag-test` **202/202** (vorher 178; +24 — §34.1–34.24 rufen die Funktion
+**tatsächlich auf**: identische volle SHA, gültige erwartete Kurzform, gültige beobachtete
+Kurzform, abweichende SHA, volle SHA mit angehängtem Unsinn, Nicht-Hex, < 7 Zeichen, > 40 Zeichen,
+Großbuchstaben, Randleerzeichen, fehlender erwarteter Wert, fehlender/ungültiger beobachteter Wert
+— Textsuche nur noch **ergänzend** in §34.25–34.30) · `op25-e3-dauerhaftigkeit-test` **52/52** ·
+Mutationsprobe **54 von 54 rot, 0 Löcher, 0 unwirksam** (vorher 46; **M47** Formatprüfung entfernt,
+**M48** Mindestlänge entfernt, **M49** Obergrenze entfernt, **M50** angehängter Unsinn wieder
+akzeptiert (exakt die alte `startsWith`-Logik), **M51** abweichender Commit wieder bestätigt,
+**M52** Präfix nicht mehr strikt, **M53** ungültiger erwarteter Wert fällt nicht mehr durch,
+**M54** ungültiger **beobachteter** Wert wieder akzeptiert) · `cron-globalphase` **176/176** ·
+`globalphase-buendelung` **56/56** · `globalabruf-kapazitaet` **47/47** · `vorgangskontext`
+**102/102** · `compact-store-roundtrip` **26/26** · `prozesslauf-telemetrie` **37/37** ·
+`cron-fairness` **285/285** · `run-offline-tests` **191/205** · `browser-smoke` **32/32**.
+**ZUR 14er-FEHLSCHLAGLISTE — diesmal gegengeprüft statt behauptet:** ein **unveränderter
+`origin/main`-Baumstand** (`22aada9`) wurde in diesem Container frisch ausgecheckt und ergab
+**189/203 mit exakt derselben 14er-Liste**; dieser Branch bringt zwei Suiten mehr, beide grün
+(191/205). Die Fehlschläge sind Umgebungsfolge (kein DB-/Netzzugang: `tenant-guard-test.js` läuft
+einzeln **37/37** grün, `p1-security-check.js` endet in `request timeout`), nicht Branchfolge.
+**PRODUCTION-PROBEN (rein lesend, 9 Stück gegen den echten Stand):** identische volle SHA ⇒
+bestätigt · gültige Kurzform `89427c5` ⇒ bestätigt · Großschreibung mit Randleerzeichen ⇒ bestätigt
+· angehängter Unsinn ⇒ **Exit 2, keine Datei** · hexadezimaler Anhang ⇒ **Exit 2, keine Datei** ·
+abweichende SHA ⇒ **Exit 2, keine Datei** · 6 Zeichen ⇒ **Exit 2, keine Datei** · Nicht-Hex ⇒
+**Exit 2, keine Datei** · 41 Zeichen ⇒ **Exit 2, keine Datei**. Dry-Run unverändert
+**`noch_nicht_auswertbar` (Exit 3)**, 5 aktive reale Mandate (`m5-9aee228dbf2c9f13`), 0 Testmandate
+in Production. **F-E2E bleibt unverändert offen** (siehe 8. Durchgang). **0 Writes in Production,
+0 KI-Aufrufe, 0,00 USD, keine Migration, kein Flag, kein Cron, kein Merge.**) ·
+(8. Durchgang: **Dritter Reviewdurchgang zu PR #222
 eingearbeitet — zwei gezielte Korrekturen, beide fail closed. KEIN Production-Eingriff, kein Merge.**
 **(1) DAS ERHEBUNGSFENSTER DER STARTBASELINE war am FENSTERSTART verankert statt an der
 AKTIVIERUNG.** Damit wäre eine Baseline zulässig gewesen, die *vor* der Aktivierung erhoben wurde —
