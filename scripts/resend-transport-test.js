@@ -563,6 +563,13 @@ async function mitProtokollmitschnitt(fn) {
     process.env.HELMUT_RESEND_API_KEY = TEST_SCHLUESSEL;
     process.env.HELMUT_MAIL_FROM = TEST_ABSENDER;
     process.env.HELMUT_MAIL_REPLY_TO = TEST_ANTWORT;
+    // NEUE VORBEDINGUNG seit 2026-08-04 (Befund B1, Host-Header-Poisoning): Der echte
+    // Versand verlangt eine Basis-URL, die NICHT aus dem faelschbaren `Host`-Kopf stammt.
+    // Ohne diesen Wert antwortet der Server hier korrekt mit
+    // `mail-basis-url-nicht-vertrauenswuerdig` und sendet nichts — dieser Abschnitt will
+    // aber den Versandpfad pruefen. Die Sperre selbst ist in
+    // scripts/resend-mail-haertung-test.js Abschnitt C festgenagelt (beide Richtungen).
+    process.env.HELMUT_PUBLIC_URL = "https://helmut.example.org";
 
     await accounts.createUser({ email: "admin-resend@example.org", name: "Admin Resend", role: "admin", password: "sicher-genug-1" });
     const loginRes = await req(port, "POST", "/api/auth/login", { body: { email: "admin-resend@example.org", password: "sicher-genug-1" } });
@@ -635,6 +642,7 @@ async function mitProtokollmitschnitt(fn) {
     delete process.env.HELMUT_RESEND_API_KEY;
     delete process.env.HELMUT_MAIL_FROM;
     delete process.env.HELMUT_MAIL_REPLY_TO;
+    delete process.env.HELMUT_PUBLIC_URL;
   }
 
   // ── L · Der lokale Mailpit-Transport bleibt unveraendert ─────────────────────────────────

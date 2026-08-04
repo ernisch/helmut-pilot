@@ -45,6 +45,9 @@ const { pushStatus, sendBriefingReadyPush, sendLageChangePush, sendPushToPolitic
 const auth = require("./lib/helmut/auth");
 const accounts = require("./lib/helmut/accounts");
 const inviteMail = require("./lib/helmut/invite-mail");
+// Transportauswahl — hier nur gelesen, um echten Versand von der lokalen
+// Testzustellung zu unterscheiden (siehe sendeZugangsMail).
+const mailTransport = require("./lib/helmut/mail-transport");
 // Timing-Schutz des anonymen Passwort-Resets (Entkopplung + Antwortgitter).
 const resetTiming = require("./lib/helmut/reset-timing");
 const helmutFlags = require("./lib/helmut/flags");
@@ -1455,7 +1458,7 @@ async function handleRequest(request, response) {
       const mailContent = purpose === "reset"
         ? inviteMail.buildResetMail({ name: target.name, resetUrl: linkUrl })
         : inviteMail.buildInviteMail({ name: target.name, inviteUrl: linkUrl });
-      const mail = await inviteMail.sendAccessMail({ to: target.email, ...mailContent });
+      const mail = await sendeZugangsMail({ to: target.email, ...mailContent });
       const action = purpose === "reset" ? "admin.user.reset-link" : "admin.user.invite";
       await accounts.recordAudit({ action, userId: authUser.id, actorEmail: authUser.email, detail: target.email });
       return { ok: true, purpose, inviteUrl: linkUrl, expiresAt: issued.expiresAt, mail };
@@ -4431,6 +4434,16 @@ async function handleAuthLogout(request, response) {
 // Anfragenden spoofbar — wer sie in den Link uebernimmt, laesst einen Angreifer
 // per request-reset Links mit SEINEM Host erzeugen (Token-Exfiltration, sobald
 // Mail-Versand aktiv ist). Auf echten Deployments deshalb NIE dem Header vertrauen.
+// Woher die Basis-URL stammt: "env" (HELMUT_PUBLIC_URL) · "kanonisch"
+// (HELMUT_CANONICAL_HOST auf einem Deployment) · "request-host" (Header der Anfrage).
+// Nur die ersten beiden sind vom Anfragenden NICHT beeinflussbar.
+function publicBaseSource() {
+  if (String(process.env.HELMUT_PUBLIC_URL || "").trim()) return "env";
+  const httpsDeploy = Boolean(process.env.VERCEL || process.env.VERCEL_ENV || process.env.NODE_ENV === "production");
+  if (httpsDeploy && canonicalHost) return "kanonisch";
+  return "request-host";
+}
+
 function publicBaseUrl(request) {
   const envBase = String(process.env.HELMUT_PUBLIC_URL || "").trim().replace(/\/+$/, "");
   if (envBase) return envBase;
@@ -4438,6 +4451,33 @@ function publicBaseUrl(request) {
   if (httpsDeploy && canonicalHost) return `https://${canonicalHost}`;
   const host = String(request.headers.host || "").split(",")[0].trim();
   return host ? `http://${host}` : "";
+}
+
+// Die EINE Stelle, an der eine Zugangsmail (Einladung/Reset) den Prozess verlaesst.
+// =============================================================================
+// SICHERHEIT (Befund B1, 2026-08-04, empirisch reproduziert): Stammt die Basis-URL
+// aus dem `Host`-Kopf der Anfrage, kann JEDER sie faelschen. Solange kein echter
+// Versand lief, war das folgenlos — der Link ging nur an den Admin zurueck, der
+// selbst mit dem richtigen Host aufgerufen hatte. Mit einem ECHTEN Transport ist es
+// ein Token-Exfiltrationsweg: eine anonyme `request-reset`-Anfrage mit gefaelschtem
+// `Host` laesst Helmut eine echte Mail an ein fremdes Opfer schicken, deren Link auf
+// den Server des Angreifers zeigt (gemessen: `http://angreifer.example.net/passwort-setzen?token=…`).
+//
+// Deshalb FAIL CLOSED: aus einer nur per Header bestimmten Basis-URL geht keine
+// echte Mail raus. Der Kopierweg im Admin bleibt unveraendert der Rueckfallweg.
+//
+// Warum das den lokalen Testtransport NICHT sperrt: `mailpit` ist Loopback und
+// technisch nicht in der Lage, ein Opfer zu erreichen — die Trennlinie ist "kann
+// diese Nachricht einen fremden Empfaenger erreichen", nicht "ist der Host krumm".
+const GRUND_BASIS_URL = "mail-basis-url-nicht-vertrauenswuerdig";
+
+async function sendeZugangsMail(nachricht = {}) {
+  if (publicBaseSource() === "request-host"
+    && inviteMail.isMailConfigured()
+    && mailTransport.transportKonfiguration(process.env).transport === mailTransport.TRANSPORT_RESEND) {
+    return { sent: false, reason: GRUND_BASIS_URL };
+  }
+  return inviteMail.sendAccessMail(nachricht);
 }
 
 function passwordSetUrl(request, token) {
@@ -4451,7 +4491,7 @@ async function issueInvite(request, user) {
   const { token, expiresAt } = await accounts.createPasswordToken(user.id, "invite");
   const inviteUrl = passwordSetUrl(request, token);
   const mailContent = inviteMail.buildInviteMail({ name: user.name, inviteUrl });
-  const mail = await inviteMail.sendAccessMail({ to: user.email, ...mailContent });
+  const mail = await sendeZugangsMail({ to: user.email, ...mailContent });
   return { inviteUrl, expiresAt, mail };
 }
 
@@ -4489,17 +4529,43 @@ function handleAuthSetPassword(request, response) {
 // frueher messbar langsamer machten als den Not-Found-Zweig.
 // Der Request wird NICHT mitgereicht: alles, was von ihm gebraucht wird (Basis-URL,
 // IP), ist beim Start bereits ausgelesen.
+// INTERNER NACHWEIS (Befund B2, 2026-08-04): Der Audit-Eintrag trug frueher nur
+// "angefordert" — unabhaengig davon, ob die Nachricht rausging. Ein von Resend
+// abgelehnter Versand (429, gesperrter Absender, Zeitabbruch) war damit von einem
+// erfolgreichen NICHT unterscheidbar; das ist genau das "falsche Gruen", das
+// CLAUDE.md §4.4 verbietet. Der Eintrag traegt jetzt das Versandergebnis als
+// nutzdatenfreien Grundcode aus mail-transport.js — keine Adresse, kein Token,
+// kein Link, kein Anbietertext. `detail` ist bewusst der einzige Traeger: das
+// Audit-Schema bleibt unveraendert.
+function versandDetail(mail) {
+  if (mail && mail.sent === true) return "mail:gesendet";
+  const grund = String((mail && mail.reason) || "unbekannt").slice(0, 60);
+  return `mail:nicht-gesendet:${grund}`;
+}
+
 async function zustellenAnonymerReset(user, kontext) {
   const purpose = user.passwordHash ? "reset" : "invite";
-  // Wirft z. B. bei gesperrtem Status — der Aufrufer verschluckt das; nach aussen
-  // ist der Fall ohnehin von jedem anderen nicht unterscheidbar.
-  const issued = await accounts.createPasswordToken(user.id, purpose);
+  let issued;
+  try {
+    // Wirft z. B. bei gesperrtem Status. Nach aussen bleibt der Fall ununterscheidbar,
+    // INTERN darf er nicht spurlos verschwinden — sonst sieht der Betrieb einen
+    // ausgefallenen Zustellweg nie.
+    issued = await accounts.createPasswordToken(user.id, purpose);
+  } catch (_) {
+    await accounts.recordAudit({
+      action: "password.reset-requested", userId: user.id, ip: kontext.ip,
+      detail: "mail:nicht-erstellt:token-nicht-ausstellbar"
+    });
+    return;
+  }
   const linkUrl = `${kontext.basisUrl}/passwort-setzen?token=${encodeURIComponent(issued.token)}`;
   const mailContent = purpose === "reset"
     ? inviteMail.buildResetMail({ name: user.name, resetUrl: linkUrl })
     : inviteMail.buildInviteMail({ name: user.name, inviteUrl: linkUrl });
-  await inviteMail.sendAccessMail({ to: user.email, ...mailContent });
-  await accounts.recordAudit({ action: "password.reset-requested", userId: user.id, ip: kontext.ip });
+  const mail = await sendeZugangsMail({ to: user.email, ...mailContent });
+  await accounts.recordAudit({
+    action: "password.reset-requested", userId: user.id, ip: kontext.ip, detail: versandDetail(mail)
+  });
 }
 
 // POST /api/auth/request-reset — { email }: antwortet IMMER generisch mit 200
@@ -4545,8 +4611,13 @@ function handleAuthRequestReset(request, response) {
       const mailContent = purpose === "reset"
         ? inviteMail.buildResetMail({ name: user.name, resetUrl: linkUrl })
         : inviteMail.buildInviteMail({ name: user.name, inviteUrl: linkUrl });
-      const mail = await inviteMail.sendAccessMail({ to: user.email, ...mailContent });
-      await accounts.recordAudit({ action: "password.reset-requested", userId: user.id, ip: auth.clientIp(request) });
+      const mail = await sendeZugangsMail({ to: user.email, ...mailContent });
+      // Auch hier das Versandergebnis belegen (Befund B2) — der Besitzer sieht es zwar
+      // sofort in der Antwort, der Betrieb aber nur im Audit.
+      await accounts.recordAudit({
+        action: "password.reset-requested", userId: user.id, ip: auth.clientIp(request),
+        detail: versandDetail(mail)
+      });
       // Dem Besitzer ehrlich antworten: ohne Mail-Versand den Link direkt (Interim-
       // Kopierweg), mit Mail-Versand den Zustellstatus (Client zeigt den Toast).
       if (!mail.sent) return { ...generic, resetUrl: linkUrl, expiresAt: issued.expiresAt, mail };
@@ -4560,11 +4631,32 @@ function handleAuthRequestReset(request, response) {
     // offene Links, z. B. den vom Admin kopierten Einladungs-Link). Deshalb: ohne
     // Mail-Dienst erzeugen NUR eingeloggte Besitzer ("Passwort aendern") einen Token.
     const zustellbar = Boolean(user && user.active !== false && inviteMail.isMailConfigured());
+    // Alles, was vom Request gebraucht wird, JETZT auslesen — nach der Antwort ist
+    // der Request nicht mehr anzufassen.
+    const kontext = zustellbar
+      ? { basisUrl: publicBaseUrl(request), ip: auth.clientIp(request) }
+      : null;
+    // REIHENFOLGE: Die Zustellarbeit laeuft WAEHREND des Wartefensters, nicht danach.
+    // =========================================================================
+    // Das ist der Stand seit 2026-08-01 und wurde am 2026-08-04 gegen drei Alternativen
+    // GEMESSEN, weil ein Restkanal im Schwanz der Verteilung gefunden wurde (Befund B3,
+    // siehe docs/betrieb/mailversand-resend.md §9.1). Alle drei Alternativen waren
+    // SCHLECHTER — deshalb steht hier bewusst weiterhin die urspruengliche Reihenfolge:
+    //
+    //   Arbeit nach der Antwort + Gitter-Rueckkehr .... AUC 0,63–0,73 (Nachbarkaskade)
+    //   Arbeit vor der Antwort  + Gitter-Rueckkehr .... AUC 0,69, deterministischer
+    //                                                   Fenstersprung 201 ms / 102 ms
+    //   Arbeit nach der Antwort, ohne Gitter-Rueckkehr  AUC 1,00 — JEDE Messung verraet
+    //                                                   den Zweig
+    //   diese Fassung ............................... AUC 0,44–0,53
+    //
+    // Der Grund ist immer derselbe: Node ist einkernig, und die Store-Serialisierung
+    // blockiert den Event-Loop, egal wann sie laeuft. Im Wartefenster ist sie am besten
+    // aufgehoben, weil diese Zeit ohnehin verstreicht. Wer hier etwas umstellt, misst es
+    // bitte zuerst — scripts/resend-mail-haertung-test.js Abschnitt E und
+    // scripts/reset-timing-seitenkanal-test.js Abschnitt H tun genau das.
     const versand = zustellbar
-      ? resetTiming.starteHintergrundarbeit(() => zustellenAnonymerReset(user, {
-        basisUrl: publicBaseUrl(request),
-        ip: auth.clientIp(request)
-      }))
+      ? resetTiming.starteHintergrundarbeit(() => zustellenAnonymerReset(user, kontext))
       : null;
     await resetTiming.warteBisFreigabe(beginn);
     sendJson(response, generic);

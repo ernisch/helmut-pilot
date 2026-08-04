@@ -1,6 +1,72 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-08-04, 10. Durchgang (**OP-25-Nachtragskorrektur nach dem Merge
+**Letzte Aktualisierung:** 2026-08-04, 11. Durchgang (**Unabhängige Sicherheitsprüfung und
+Härtung des Resend-Mailtransports und des Einladungs-/Reset-Ablaufs. KEIN Production-Eingriff,
+kein Merge, kein Deployment, keine Baseline berührt.** **STATUSKORREKTUR ZUERST: PR #205 ist
+seit 2026-08-01 12:48 UTC GEMERGT** (Merge durch `ernisch`, Head `b65f019`, Base `b75b2ce`) —
+es gibt keinen offenen Draft-PR #205 mehr. Der Auftrag nannte ihn als Draft; da der Code
+inzwischen in `main` steht, wurde die Prüfung am gemergten Stand durchgeführt, auf dem
+separaten Branch `claude/resend-mail-security-audit-u4jupe`. Der Timing-Befund aus der
+PR-#205-Beschreibung war bereits mit `7b4c32b` bearbeitet worden; er wurde **unabhängig
+nachgemessen, nicht geglaubt**. **DREI BEFUNDE, alle am unveränderten `main`-Stand `2e4e00e`
+empirisch reproduziert:** **(B1) Host-Header-Poisoning bei echtem Versand — GESCHLOSSEN.**
+Fehlen `HELMUT_PUBLIC_URL` **und** die Deployment-Marker, leitete Helmut die Basis-URL des
+Zugangslinks aus dem `Host`-Kopf ab — der ist frei fälschbar. Mit aktivem Resend-Transport ist
+das ein **Token-Exfiltrationsweg**: eine anonyme `request-reset`-Anfrage mit gefälschtem `Host`
+lässt Helmut eine **echte Mail an ein fremdes Opfer** schicken, deren Link auf den Server des
+Angreifers zeigt. Reproduziert mit `http://angreifer.example.net/passwort-setzen?token=…` im
+tatsächlich an Resend übergebenen Nachrichtenrumpf. **Korrektur:** alle vier Sendestellen
+laufen über die neue Funktion `sendeZugangsMail`; stammt die Basis nur aus dem Request-Kopf,
+wird bei `resend` **nicht gesendet** (`mail-basis-url-nicht-vertrauenswuerdig`), der Kopierlink
+im Admin bleibt Rückfallweg. `mailpit` ist ausgenommen — Loopback kann kein Opfer erreichen.
+`HELMUT_PUBLIC_URL` ist damit von „empfohlen" auf **verbindlich** hochgestuft.
+**(B2) Falsches Grün im Audit — GESCHLOSSEN.** Der anonyme Zweig schrieb
+`password.reset-requested` unabhängig vom Versandergebnis: ein von Resend mit **429**
+abgelehnter Versand war intern von einem erfolgreichen **nicht unterscheidbar**, und ein
+Fehler beim Token-Ausstellen verschwand spurlos (CLAUDE.md §4.4). **Korrektur:** der Eintrag
+trägt jetzt `mail:gesendet` · `mail:nicht-gesendet:<grundcode>` ·
+`mail:nicht-erstellt:token-nicht-ausstellbar` — nutzdatenfreie Codes, **nie** Adresse, Token,
+Link oder Schlüssel. Für eine **unbekannte** Adresse entsteht weiterhin **kein** Eintrag, sonst
+wäre das Audit selbst der Enumerationskanal. **(B3) Timing-Restkanal — GEMESSEN, NICHT
+GESCHLOSSEN, ehrlich offen geführt.** Der anonyme Zweig ist am **Median** ununterscheidbar
+(101,5 ms gegen 101,4 ms; AUC 0,56), im **Schwanz** nicht ganz: 3 × 40 Messungen ergaben
+Treffer-Maxima von **528,0 / 516,3 / 514,4 ms** gegen Nicht-Treffer-Maxima von
+**509,7 / 504,0 / 503,8 ms** (Fenster 500 ms) — betroffen sind rund 2,5 % der Anfragen.
+**Drei Gegenmaßnahmen wurden gebaut und gemessen, ALLE DREI waren schlechter** und sind
+**zurückgenommen**: Arbeit nach der Antwort + Gitter-Rückkehr ⇒ AUC 0,63–0,73
+(Nachbarkaskade) · Arbeit im Wartefenster + Gitter-Rückkehr ⇒ AUC 0,69 mit
+**deterministischem** Fenstersprung 201 ms/102 ms (eine einzige Anfrage genügte) · Arbeit nach
+der Antwort ohne Gitter ⇒ **AUC 1,00**, jede Messung verrät den Zweig. Ursache ist immer
+dieselbe: Node ist einkernig, die Serialisierung des Auth-Blobs blockiert den Event-Loop,
+gleich wann sie läuft. Eine vollständige Schließung bräuchte eine **Architekturänderung**
+(Zustellung außerhalb des Anfrageprozesses); wirksame Bremse bleibt das Rate-Limit
+(5/15 min/IP). `lib/helmut/reset-timing.js` ist deshalb **unverändert**.
+**WEBHOOKS/BOUNCES: bewertet, bewusst NICHT gebaut** — bräuchte öffentlichen Webhook-Endpunkt
+mit Signaturprüfung, neues Production-Geheimnis, externe Resend-Konfiguration und eine neue
+Ablage (Datenmigration), also genau die Abbruchbedingungen des Auftrags. **Kein Blocker für
+den Pilot**; als **OP-30** aufgenommen. Ehrliche Restlücke: nimmt Resend an und stellt später
+nicht zu, meldet Helmut „gesendet". **GEÄNDERTE DATEIEN:** `server.js` (`publicBaseSource`,
+`sendeZugangsMail`, `versandDetail`, `zustellenAnonymerReset`, Audit-Detail in beiden
+Reset-Pfaden, Messbegründung an `handleAuthRequestReset`) · `scripts/resend-mail-haertung-test.js`
+(**neu**) · `scripts/resend-transport-test.js` + `scripts/reset-timing-seitenkanal-test.js`
+(nur **neue Vorbedingung** `HELMUT_PUBLIC_URL`, keine Zusicherung abgeschwächt) ·
+`.env.example` · `docs/betrieb/mailversand-resend.md` · `docs/betrieb/env-inventar.md` ·
+`docs/datenmotor-restliste.md` (OP-30) · `docs/CURRENT_STATE.md`. **TESTS:**
+`resend-mail-haertung-test` **30/30** (neu; Gegenprobe: die Kernzusicherung „beide Zweige
+antworten im selben Fenster" wird gegen die Vorgängerfassung nachweislich **rot**) ·
+`resend-transport` **201/201** · `mailpit-transport` **119/119** ·
+`reset-timing-seitenkanal` **80/80** · `reset-timing-mutationsprobe` **8/8 erkannt** ·
+`mail-vorlagen` **147/147** + Mutationsprobe **26/26** · `invite-flow` **39/39** ·
+`passwort-setzen-login-fix` **39/39** · `admin-neue-routen` **74/74** ·
+`admin-nutzer-loeschen` **75/75** · `admin-nutzer-anlegen-schnellstart` **34/34** ·
+`env-inventar` **38/38** · `secret-redaction` **21/21** · `cross-tenant-security` **43/43** ·
+`privacy-authz` **6/6** · `run-offline-tests` **191/206** gegen im selben Container gemessene
+Basislinie **190/205** mit **identischer** 15er-Fehlschlagliste (Netz-Guard/Umgebung), Delta
+genau **+1** = die neue Suite · `browser-smoke` **32/32**.
+**Branch/PR:** `claude/resend-mail-security-audit-u4jupe`, **kein PR erstellt** (nicht
+beauftragt), **nicht gemergt**. **0 Writes in Production, 0 KI-Aufrufe, 0,00 USD, keine
+Migration, kein Flag, kein Cron, kein Deployment, OP-25-Startbaseline unberührt.**) ·
+(10. Durchgang (**OP-25-Nachtragskorrektur nach dem Merge
 von PR #222: deploymentgebundene Startbaseline und verbindlicher Commitnachweis. KEIN
 Production-Eingriff, kein Merge.** **STATUSKORREKTUR ZUERST, weil die bisherigen Angaben sich
 widersprachen:** (1) **PR #222 IST GEMERGT** — `origin/main` = Merge-Commit `3fa8830`; die

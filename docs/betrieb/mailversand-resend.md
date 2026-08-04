@@ -41,7 +41,7 @@ umstellbar — eine konfigurierbare Ziel-URL wäre ein Ausleitungsweg für den A
 | `HELMUT_RESEND_API_KEY` | ja | **Secret.** Der Resend-API-Schlüssel. Wird ausschließlich aus der Umgebung gelesen, steht in keinem Konfigurations- oder Antwortobjekt und wird nur in die `Authorization`-Kopfzeile geschrieben. Gehört **nie** ins Repo, nie in einen Commit, nie in den Chat. |
 | `HELMUT_MAIL_FROM` | ja | Absender, z. B. `Helmut <no-reply@deine-domain.de>`. Bereits vorhandene Konfiguration — es gibt bewusst keine zweite. Der Code-Default ist ein Platzhalter ohne gültige Domain und wird **ehrlich abgelehnt** (`resend-absender-ungueltig`). |
 | `HELMUT_MAIL_REPLY_TO` | nein | Antwortadresse, z. B. `Büro <buero@deine-domain.de>`. Fehlt sie, geht die Mail ohne `Reply-To` hinaus. Ungültiger Wert → `resend-antwortadresse-ungueltig`, **kein** Versand. |
-| `HELMUT_PUBLIC_URL` | empfohlen | Basis-URL für den Zugangslink in der Mail. Ohne den Wert wird sie aus den Request-Headern abgeleitet — bei Mails, die aus einem Cron oder hinter einem Proxy entstehen, ist der explizite Wert verlässlicher. |
+| `HELMUT_PUBLIC_URL` | **ja**, sofern nicht `HELMUT_CANONICAL_HOST` auf einem Deployment greift | Basis-URL für den Zugangslink in der Mail. **Sicherheitsrelevant, seit 2026-08-04 erzwungen:** Ließe Helmut die Basis aus dem `Host`-Kopf der Anfrage ableiten, könnte **jeder** sie fälschen und sich per anonymem `request-reset` eine echte Mail an ein **fremdes** Opfer schicken lassen, deren Link auf **seinen** Server zeigt (Token-Exfiltration, empirisch reproduziert). Steht die Basis nur im Request-Header, wird bei aktivem `resend`-Transport **nicht gesendet** — `mail-basis-url-nicht-vertrauenswuerdig`, der Kopierlink im Admin bleibt der Rückfallweg. Auf Vercel greift ersatzweise `HELMUT_CANONICAL_HOST` (Default `helmut-pilot.vercel.app`); der lokale Testtransport `mailpit` ist ausgenommen, weil Loopback niemanden erreichen kann. |
 
 Vollständige Referenz aller Variablen: [`env-inventar.md`](env-inventar.md).
 
@@ -209,8 +209,38 @@ vom Mailversand.
 
 ## 9 · Vor der Aktivierung noch zu entscheiden (offen)
 
-1. ~~**Timing-Seitenkanal im anonymen Passwort-Reset.**~~ **Erledigt am 2026-08-01** — dieser
-   Punkt ist **keine offene Vorbedingung mehr.**
+1. ~~**Timing-Seitenkanal im anonymen Passwort-Reset.**~~ **Wesentlich geschlossen am
+   2026-08-01, am 2026-08-04 unabhängig nachgemessen** — **keine offene Vorbedingung**,
+   aber mit einer **benannten Restschwäche** (siehe Kasten).
+
+   > **Präzisierung 2026-08-04 (Belegpflicht, „kein falsches Grün"):** Die Formulierung
+   > „erledigt" war zu stark. Eine unabhängige Nachmessung zeigt: am **Median** sind beide
+   > Zweige ununterscheidbar (101,5 ms gegen 101,4 ms bei 100-ms-Fenster; AUC 0,56), im
+   > **Schwanz** der Verteilung aber nicht ganz. Nur der Treffer-Zweig hat Arbeit, die den
+   > Freigabezeitpunkt überziehen kann; 3 × 40 Messungen ergaben Treffer-Maxima von
+   > **528,0 / 516,3 / 514,4 ms** gegen Nicht-Treffer-Maxima von **509,7 / 504,0 / 503,8 ms**
+   > (Fenster 500 ms). Eine Antwort deutlich oberhalb des Gitterpunkts ist damit ein
+   > schwaches Existenz-Signal — es betrifft rund 2,5 % der Anfragen und braucht viele
+   > Messungen.
+   >
+   > **Drei Gegenmaßnahmen wurden gebaut und gemessen — alle drei waren schlechter** und
+   > sind deshalb **nicht** übernommen worden (Zahlen und Begründung stehen im Code bei
+   > `handleAuthRequestReset`):
+   >
+   > | Variante | AUC (0,5 = ununterscheidbar) | Bewertung |
+   > |---|---|---|
+   > | **Ist-Zustand** (Arbeit im Wartefenster, festes Gitter) | **0,44–0,56** | bestes gemessenes Ergebnis |
+   > | Arbeit nach der Antwort + Rückkehr auf das Gitter | 0,63–0,73 | Zustellung stört die **Folgeanfrage** |
+   > | Arbeit im Wartefenster + Rückkehr auf das Gitter | 0,69 | **deterministischer** Fenstersprung 201 ms / 102 ms |
+   > | Arbeit nach der Antwort, ohne Gitter | **1,00** | jede einzelne Messung verrät den Zweig |
+   >
+   > Ursache ist in allen Fällen dieselbe: Node ist einkernig, und die Serialisierung des
+   > Auth-Blobs blockiert den Event-Loop, gleich wann sie läuft. Eine vollständige Schließung
+   > bräuchte eine **Architekturänderung** (Zustellung außerhalb des Anfrageprozesses) — das
+   > ist bewusst nicht Teil eines Härtungssprints. **Wirksame Bremse bleibt das
+   > Rate-Limit** (5 Anfragen / 15 min / IP). Beleg: `scripts/resend-mail-haertung-test.js`
+   > Abschnitt E (friert die gemessene Lage ein) und `scripts/reset-timing-seitenkanal-test.js`
+   > Abschnitt H.
 
    *Was er war:* Sobald ein Transport konfiguriert ist, wird auch der **nicht eingeloggte**
    Weg (`POST /api/auth/request-reset`) aktiv. Der Treffer-Zweig leistete danach zusätzlich
@@ -236,6 +266,16 @@ vom Mailversand.
 2. **Bounces und Beschwerden.** Helmut wertet Resend-Webhooks nicht aus. Eine dauerhaft
    unzustellbare Adresse fällt nur im Resend-Dashboard auf. Für den Pilot vertretbar; vor
    mehreren Mandanten neu bewerten.
+
+   **Bewertet und bewusst nicht gebaut (2026-08-04)** — jetzt als **OP-30** geführt
+   ([`../datenmotor-restliste.md`](../datenmotor-restliste.md)). Eine Auswertung bräuchte
+   einen öffentlichen Webhook-Endpunkt mit Signaturprüfung, ein neues Production-Geheimnis,
+   externe Konfiguration bei Resend **und** eine neue Ablage für den Zustellstatus — also
+   genau die Mittel, die ohne getrennte Freigabe nicht eingesetzt werden. **Kein Blocker für
+   den Pilotbetrieb:** jeder synchron gemeldete Fehler ist fail closed, wird im Audit als
+   `mail:nicht-gesendet:<grund>` belegt, und der Kopierlink bleibt der Zustellweg.
+   **Ehrliche Restlücke:** nimmt Resend an und stellt später doch nicht zu, meldet Helmut
+   „gesendet" — die einzige Stelle des Mailwegs mit einer ungeprüften Behauptung.
 3. **Rechtlicher Rahmen.** Resend ist ein Auftragsverarbeiter (Empfängeradressen sind
    personenbezogene Daten). AVV/Auftragsverarbeitung gehört zu OP-02
    ([`../datenmotor-restliste.md`](../datenmotor-restliste.md)) und ist vor dem ersten
@@ -283,6 +323,17 @@ der HTTP-Status und eine zeichengefilterte Fehlerart den Transport, nie der Antw
 | `resend-antwort-fehlerhaft` | Antwort ohne Nachrichtenkennung | fail closed — gilt **nicht** als versendet |
 | `resend-kopfzeilen-einschleusung` | Zeilenumbruch in Empfänger/Betreff/Absender | Eingabe prüfen (sollte im Normalbetrieb nie auftreten) |
 | `mail-transport-fehlgeleitet` | interner Verwechslungsschutz (Konfiguration passt nicht zum Pfad) | sollte nie auftreten; als Fehler melden |
+| `mail-basis-url-nicht-vertrauenswuerdig` | Die Basis-URL des Zugangslinks stammt nur aus dem `Host`-Kopf der Anfrage — der ist fälschbar. **Kein echter Versand** (seit 2026-08-04, siehe §2). | `HELMUT_PUBLIC_URL` setzen und neu deployen. Auf Vercel greift ersatzweise `HELMUT_CANONICAL_HOST`; tritt der Grund dort trotzdem auf, ist beides leer. |
+
+**Interner Nachweis (seit 2026-08-04).** Der anonyme Reset-Weg kann von außen nichts über
+den Ausgang verraten — intern muss er es trotzdem. Der Audit-Eintrag
+`password.reset-requested` trägt deshalb das Versandergebnis als nutzdatenfreien Code:
+`mail:gesendet` · `mail:nicht-gesendet:<grund>` (Codes aus der Tabelle oben) ·
+`mail:nicht-erstellt:token-nicht-ausstellbar`. Enthält **nie** Adresse, Token, Link oder
+Schlüssel. Vorher stand dort nur „angefordert" — ein von Resend abgelehnter Versand war
+intern von einem erfolgreichen nicht unterscheidbar (`CLAUDE.md` §4.4, kein falsches Grün).
+Für eine **unbekannte** Adresse entsteht weiterhin **kein** Eintrag: sonst wäre das
+Audit-Log selbst der Enumerationskanal für jeden, der es lesen darf.
 
 ---
 

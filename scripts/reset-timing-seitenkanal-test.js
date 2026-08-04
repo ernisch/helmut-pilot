@@ -571,6 +571,14 @@ function verteilung(name, werte) {
       };
       process.env.HELMUT_MAIL_TRANSPORT = "resend";
       process.env.HELMUT_RESEND_API_KEY = PLATZHALTER_SCHLUESSEL;
+      // NEUE VORBEDINGUNG seit 2026-08-04 (Befund B1): Der ECHTE Versand verlangt eine
+      // Basis-URL, die nicht aus dem faelschbaren `Host`-Kopf stammt — sonst liesse sich
+      // per gefaelschtem Host ein Reset-Link auf einen fremden Server in eine echte Mail
+      // schreiben. Ohne diesen Wert wuerde hier korrekt gar nicht gesendet; dieser
+      // Abschnitt will aber die ENTKOPPLUNG des Versands pruefen. Die Sperre selbst ist in
+      // scripts/resend-mail-haertung-test.js Abschnitt C in beiden Richtungen festgenagelt.
+      // (Der Mailpit-Teil dieser Suite braucht sie nicht: Loopback erreicht niemanden.)
+      process.env.HELMUT_PUBLIC_URL = "https://helmut.example.org";
       try {
         const iBekannt = await resetAnfrage(BEKANNT);
         const iUnbekannt = await resetAnfrage(UNBEKANNT);
@@ -591,6 +599,7 @@ function verteilung(name, werte) {
         globalThis.fetch = echtesFetch;
         process.env.HELMUT_MAIL_TRANSPORT = "mailpit";
         delete process.env.HELMUT_RESEND_API_KEY;
+        delete process.env.HELMUT_PUBLIC_URL;
       }
     }
 

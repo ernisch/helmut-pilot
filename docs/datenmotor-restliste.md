@@ -1298,6 +1298,41 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Ehrliche Grenze dokumentiert: Offline-Tests sichern interne Konsistenz, die amtliche
   Wahrheit braucht weiterhin menschliche Quellenprüfung.
 
+#### OP-30 · Zustellstatus echter Mails: Bounces und Beschwerden werden nicht ausgewertet (neu, Sprint „Resend-Härtung" 2026-08-04; Prioritätsklasse P2)
+- **Status:** offen, **bewusst nicht umgesetzt.** Bewertet im Sprint „Resend-Härtung"
+  (2026-08-04) mit dem ausdrücklichen Auftrag, Webhooks/Bounces **nur** zu bauen, wenn sie
+  für den sicheren ersten Pilotbetrieb zwingend sind. **Ergebnis: sie sind es nicht** — und
+  sie sind ohne die im selben Auftrag ausgeschlossenen Mittel gar nicht baubar.
+- **Was fehlt:** Resend meldet einen Hard-Bounce, eine Spam-Beschwerde oder eine
+  Zustellverzögerung **nicht synchron**. Ein `2xx` mit Nachrichtenkennung heißt „Resend hat
+  die Nachricht angenommen", **nicht** „sie wurde zugestellt". Eine dauerhaft unzustellbare
+  Adresse fällt in Helmut deshalb nie auf; sichtbar ist sie nur im Resend-Dashboard.
+- **Warum nicht in diesem Sprint gebaut:** Eine Auswertung bräuchte **alle vier** Dinge, die
+  der Auftrag als Abbruchbedingung nennt — (1) einen **öffentlichen Webhook-Endpunkt** mit
+  Signaturprüfung, (2) ein **neues Production-Geheimnis** (Webhook Signing Secret),
+  (3) **externe Konfiguration** in der Resend-Oberfläche und (4) eine **neue Ablage** für den
+  Zustellstatus je Empfänger (Tabelle bzw. Blob-Struktur, also eine Datenmigration).
+  Damit ist die Abbruchbedingung erfüllt; gebaut wurde nichts.
+- **Warum der Pilot trotzdem sicher läuft:** Der Versand ist **fail closed** — jeder
+  Fehler, den Resend synchron meldet (Ablehnung, Limit, fehlende Autorisierung,
+  Zeitabbruch, Netzfehler, ungültige Antwort), ergibt `sent:false` mit nutzdatenfreiem
+  Grundcode, wird seit 2026-08-04 im Audit als `mail:nicht-gesendet:<grund>` belegt und
+  fällt nie fälschlich als Erfolg an. Der **Kopierlink im Admin** bleibt in jedem
+  Fehlerfall der Zustellweg. Bei einem Einzelpiloten mit einstelliger Nutzerzahl ist eine
+  nicht ankommende Einladung außerdem sofort menschlich sichtbar.
+- **Ehrlich benannte Restlücke:** Genau **ein** Fall bleibt unerkannt — Resend nimmt an
+  (`sent:true`), stellt aber später nicht zu. Helmut meldet dann „gesendet", obwohl die
+  Mail zurückkam. Das ist die einzige Stelle des Mailwegs, an der Helmut heute etwas
+  behauptet, das es nicht geprüft hat.
+- **Fehlender Schritt:** vor dem ersten **zahlenden Zweitmandanten** neu bewerten; dann
+  gemeinsam mit **OP-02** (AVV/Auftragsverarbeitung Resend) und **OP-03** entscheiden.
+- **Abhängigkeiten:** setzt die Aktivierung des Resend-Transports voraus (heute nicht
+  aktiviert). Ohne echten Versand gibt es nichts auszuwerten.
+- **Rückweg:** entfällt — es wurde nichts gebaut.
+- **Freigabe:** **JA**, sobald umgesetzt (Production-Geheimnis + externe Webhook-Konfiguration
+  + Datenmigration, CLAUDE.md §5). Kanonisch:
+  [`betrieb/mailversand-resend.md`](betrieb/mailversand-resend.md) §9.2.
+
 ---
 
 ## 7 · Historisch markierte Dokumente
