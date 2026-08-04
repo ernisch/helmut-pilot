@@ -8,6 +8,7 @@ loadLocalEnv();
 const { profileCompleteness } = require("./lib/helmut/config");
 const tenantContext = require("./lib/helmut/tenant-context");
 const { validateProfile } = require("./lib/helmut/profile-validation");
+const { bewerteBundestagsprofil } = require("./lib/helmut/profile-readiness");
 const sourceSafety = require("./lib/helmut/sourceSafety");
 const { runLageCheck, runSourceCrawl, runGlobaleErfassung, runMandatsProjektion } = require("./lib/helmut/scheduler");
 const { buildLearningProfile } = require("./lib/helmut/learning");
@@ -1540,6 +1541,9 @@ async function handleRequest(request, response) {
       return handleAsync(response, async () => {
         const profile = await activeProfile(pid).catch(() => null);
         const validation = validateProfile(profile || { id: pid });
+        // Bundestags-Bereitschaft additiv mitliefern (rein lesend, deterministisch;
+        // fuer Landtagsprofile meldet sie sich selbst als nicht zutreffend).
+        const bereitschaft = bewerteBundestagsprofil(profile || { id: pid });
         return { profile: profile || { id: pid }, validierung: {
           zustand: validation.state,
           zustandLabel: validation.stateLabel,
@@ -1550,6 +1554,16 @@ async function handleRequest(request, response) {
           fehlendePflichtfelder: validation.missingRequiredLabels,
           budgetProbleme: validation.budgetProblems,
           funktionsauswirkung: validation.impact
+        }, bereitschaft: {
+          zutreffend: bereitschaft.zutreffend,
+          bereit: bereitschaft.bereit,
+          fehlend: bereitschaft.fehlend,
+          ungueltig: bereitschaft.ungueltig,
+          widersprueche: bereitschaft.widersprueche,
+          duplikate: bereitschaft.duplikate,
+          warnungen: bereitschaft.warnungen,
+          betroffeneFunktionen: bereitschaft.betroffeneFunktionen,
+          hinweise: bereitschaft.hinweise
         } };
       });
     }
@@ -1559,7 +1573,11 @@ async function handleRequest(request, response) {
         const saved = await saveProfile(await normalizeProfile(body, pid));
         await accounts.recordAudit({ action: "admin.profile.update", userId: authUser.id, actorEmail: authUser.email, politicianId: pid });
         const validation = validateProfile(saved);
-        return { profile: saved, validierung: { zustand: validation.state, zustandLabel: validation.stateLabel, bereit: validation.ready, fehlendePflichtfelder: validation.missingRequiredLabels } };
+        // Bereitschaft als WARNUNG mitgeben, nicht als Sperre: bestehende Profile
+        // duerfen weiter bearbeitet werden; die harte Sperre gilt nur dem neuen
+        // Aktivierungsuebergang (provisioning.provisionTenant).
+        const bereitschaft = bewerteBundestagsprofil(saved);
+        return { profile: saved, validierung: { zustand: validation.state, zustandLabel: validation.stateLabel, bereit: validation.ready, fehlendePflichtfelder: validation.missingRequiredLabels }, bereitschaft: { zutreffend: bereitschaft.zutreffend, bereit: bereitschaft.bereit, hinweise: bereitschaft.hinweise } };
       });
     }
   }
@@ -4876,8 +4894,30 @@ function adminMandateSummary(p = {}) {
     profileActive: p.profileActive !== false,
     // Profil-Validierung (reine Funktion, keine Zusatz-Reads): der Betreiber muss
     // pro Mandat sehen, ob das Profil fuer Matching/Briefing ausreichend ist.
-    validierung: adminMandateValidierung(p)
+    validierung: adminMandateValidierung(p),
+    // Bundestags-Bereitschaft (ebenfalls reine Funktion): konkrete Blocker fuer
+    // die Anzeige — nur Warnung, keine Sperre fuer Bestandsprofile.
+    bereitschaft: adminMandateBereitschaft(p)
   };
+}
+
+function adminMandateBereitschaft(p) {
+  try {
+    const b = bewerteBundestagsprofil(p);
+    if (!b.zutreffend) return { zutreffend: false };
+    return {
+      zutreffend: true,
+      bereit: b.bereit,
+      blocker: [
+        ...b.fehlend.map((f) => `fehlt: ${f.feld}`),
+        ...b.ungueltig.map((u) => `ungültig: ${u.feld} („${u.wert}")`),
+        ...b.widersprueche.map((w) => `Widerspruch: ${w.feld}`)
+      ],
+      warnungen: b.warnungen.map((w) => w.feld)
+    };
+  } catch (_) {
+    return null;
+  }
 }
 
 function adminMandateValidierung(p) {
