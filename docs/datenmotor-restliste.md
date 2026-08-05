@@ -680,6 +680,27 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   neuen Abnahmekriterien: kanonisch
   [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) **§7.7.6**. Production
   unverändert (nur GET/SELECT, 0 KI); Flag laut Betreiber inzwischen `off` + Redeploy.
+- **Nachtrag 2026-08-05/3 (Korrektursprint K1–K8 — Repo-Umsetzung vollständig, Production-
+  Schritte offen):** Alle acht Korrekturen aus §7.7.6 sind umgesetzt und grün geprüft —
+  **K1** Bindung über `globalLaufId` (+ Fixture-Härtung, echtes Scheduler-Laufpaar in
+  `scripts/op25-laufpaar-test.js`; Folgefund behoben: Kompaktierung strippte
+  `matching`/`decisions`), **K2** CLI liest die kanonische relationale Mandatswahrheit über
+  dieselbe Laufzeitfunktion (kein Blob-Rückfall; Signatur-Widerspruch blockiert den Start),
+  **K3** Aufbewahrungsbedarf = (Regel+Watchdog)×(1+n)+Puffer mit harter Blockade und
+  Start-Gate, **K4** E3 eingelöst (Bulk-Vormerkung nach F-RT, reservierte Vormerk-/
+  Abschlusszeit, Vormerkpfad für Lazy-Rest und übersprungene Stapel, aufgehende Laufbilanz,
+  Test 3b verschärft, 1 250-Cluster-Test), **K5** persistierte Kontext-Zusammensetzung
+  (unbelegt = Diagnosebedarf statt Fehlurteil), **K6** Persistenzfehler der Projektion
+  ⇒ `failed:true` (nie stilles Grün), **K7** Watchdog nur noch bedingt (Lesefehler fail
+  closed, Zeitplan unverändert), **K8** Abschlussreserve 10 s + Versiegelungstoleranz 1 s
+  (+313 ms korrekt als Messartefakt). Tests: Vertrag **268/268** · Dauerhaftigkeit
+  **55/55** · Laufpaar **29/29** · Watchdog **25/25** · Mutationsprobe **87 von 87 rot**
+  (M70–M87 neu). Kein Production-Write, 0 KI, keine Migration. **Offene Betreiberschritte
+  vor dem neuen Nachweis:** `max-mustermann` relational deaktivieren (nie löschen) und
+  `HELMUT_CRAWL_RUN_RETENTION=36` setzen — Ablauf, empfohlene Werte und kleinste sichere
+  Betreiberaktion: [`betrieb/op25-korrektursprint-2026-08-05.md`](betrieb/op25-korrektursprint-2026-08-05.md)
+  §5–§7. **OP-25 bleibt TEILWEISE ABGESCHLOSSEN** (Production-Nachweis beginnt danach von
+  vorn nach §7.7.5).
 - **Nachtrag 2026-08-04 (Profilreparatursprint):** Künftige OP-25-Production-Nachweise arbeiten
   mit **fünf aktiven realen Mandaten** statt sechs — das Demo-Mandat `max-mustermann` ist seit
   2026-08-04 deaktiviert (nicht gelöscht, OP-04-Teilschritt), sofern bis zum Nachweis keine
