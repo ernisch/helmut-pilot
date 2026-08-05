@@ -4,7 +4,7 @@ Diese Datei ist die **Einstiegsschicht**, kein Handbuch. Sie gibt Orientierung i
 zwei Minuten und verweist danach auf die kanonischen Dokumente. Sie wird **nur**
 geändert, wenn eine neue dauerhaft verbindliche Projektregel entsteht.
 
-**Stand:** 2026-08-02 (§4.10 ergänzt: bedingtes Schreiben gemeinsamer Zustände, Befund F-CAS)
+**Stand:** 2026-08-05 (§9 geschärft: `CURRENT_STATE.md` nur noch kompakt, Historie ins Archiv)
 
 ---
 
@@ -111,7 +111,7 @@ festgestellt wurde.
 - Cron-Zeiten oder -Reihenfolge ändern
 - Ausführen kostenverursachender Läufe (Backfills, Recovery, Massen-Crawls)
 - Ausführen von `.github/workflows/understanding-recovery.yml` — dieser Pfad ist in
-  Production bereits **gescheitert** (siehe `CURRENT_STATE.md` §5, F-3)
+  Production bereits **gescheitert** (siehe `CURRENT_STATE.md` §10, F-3)
 - Retention/Löschung scharfschalten (`HELMUT_RETENTION_EXECUTE`)
 - Umschreiben der Git-Historie / Force-Push auf `main`
 - Löschen von Dokumenten oder Ändern grundlegender Architekturentscheidungen
@@ -207,7 +207,7 @@ Analyse stattfand.
 
 | Datei | Wann |
 |---|---|
-| [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md) | nach jedem größeren Sprint · jede Aktualisierung trägt ein Datum · der aktuelle Stand hat Vorrang vor älteren Statusdokumenten |
+| [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md) | nach jedem größeren Sprint, **nur kompakt**: ausschließlich der aktuelle, entscheidungsrelevante Zustand (Grenze 30.000 Zeichen / 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`) · vollständige Sprintberichte, große Prüfprotokolle und historische Nachweise gehören in Beleg- bzw. Archivdateien ([`docs/archive/README.md`](docs/archive/README.md)) und werden **nie** kumulativ an den Status angehängt · historische Dateien werden nur aufgabenbezogen gelesen · jede Aktualisierung trägt ein Datum · der aktuelle Stand hat Vorrang vor älteren Statusdokumenten |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | nur bei tatsächlicher Architekturänderung |
 | [`docs/START_HERE.md`](docs/START_HERE.md) | nur bei Änderung von Produktziel, Zielgruppe oder Prinzipien |
 | `CLAUDE.md` | nur bei einer neuen dauerhaft verbindlichen Projektregel |
